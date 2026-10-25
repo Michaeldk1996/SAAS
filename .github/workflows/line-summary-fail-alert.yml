@@ -1,0 +1,40 @@
+name: Line-summary failure alert
+
+# Founder brief 2026-10-24 (bet105-line-prices, Part 1 item 2). workflow_run fires on EVERY completion of the watched
+# workflow, including cancelled and timed-out runs — the 60-minute kills that went unseen from 6 to 23 Oct. The decision
+# (alert on any conclusion but success / skipped / neutral) is in tools/line-summary-fail-alert.mjs, tested by
+# tools/test-line-summary-fail-alert.mjs.
+on:
+  workflow_run:
+    workflows: ['TEN-225 line summary']
+    types: [completed]
+  # A live test (founder-approved 2026-10-25): replays the real alert for a named past run, prefixed "TEST — no
+  # action needed", so the ops chat's wiring can be proven without failing anything.
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: 'A past ten225-line-summary run id to replay as a TEST alert'
+        required: true
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  alert:
+    if: github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion != 'success' && github.event.workflow_run.conclusion != 'skipped')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with: { sparse-checkout: tools, fetch-depth: 1 }
+      - uses: actions/setup-node@v4
+        with: { node-version: '24' }
+      - name: Alert — line-summary run did not succeed (Telegram)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ github.event.workflow_run.id || inputs.run_id }}
+          ALERT_TEST: ${{ github.event_name == 'workflow_dispatch' && '1' || '' }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: node tools/line-summary-fail-alert.mjs

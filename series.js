@@ -677,6 +677,10 @@
       fonts.addEventListener('loadingdone', function () { if (_active && _data) render(); });
     }
   }
+  // Founder 2026-10-22: the player's photo over the initials, by player ID through the dashboard's one resolver.
+  function photoOf(key, name) {
+    return (key != null && typeof playerPhotoImg === 'function') ? playerPhotoImg(String(key), name) : '';   // eslint-disable-line no-undef
+  }
   function cardHtml(c, idx) {
     var p = c.player, st = c.streak;
     var name = displayName(p.key, p.name || (p.upcoming && p.upcoming.playerName) || '');
@@ -693,7 +697,7 @@
     };
     return '<article class="sr-card' + (hasDetail ? ' sr-has-detail' : '') + '" data-count="' + esc(String(st.count)) + '"' + clickAttrs + '>' +
       '<div class="sr-chead">' +
-        '<span class="sr-ava">' + esc(initialsOf(name)) + '</span>' +
+        '<span class="sr-ava">' + esc(initialsOf(name)) + photoOf(p.key, name) + '</span>' +
         '<span class="sr-who">' +
           '<span class="sr-nameline"><span class="sr-pname">' + (name ? esc(name) : DASH) + '</span> ' +
             '<span class="sr-prank">' + rankTxt + '</span></span>' +
@@ -1008,7 +1012,9 @@
     panel.style.setProperty('--sr-score', scoreTrackPx(c.streak) + 'px');
     panel.innerHTML = popupHtml(c);
   }
-  function onOvKey(e) { if (e.key === 'Escape') { e.stopPropagation(); closeOverlay(); } }
+  // Esc is one layer in the global handler (esc-nav.js); closeOverlay hands focus back to the card itself.
+  (window.sfEscLayers = window.sfEscLayers || []).push({ id: 'series-overlay', z: 76,
+    isOpen: function () { return !!(_ov && !_ov.hasAttribute('hidden')); }, close: function () { closeOverlay(); }, ownFocus: true });
   function openOverlay(idxStr) {
     var idx = Number(idxStr);
     if (!_view || !isFinite(idx) || !_view[idx]) return;
@@ -1020,7 +1026,6 @@
     _ovReturnFocus = document.querySelector('.sr-card[data-card-idx="' + idxStr + '"]');
     back.removeAttribute('hidden');
     document.body.classList.add('sr-ov-open');
-    document.addEventListener('keydown', onOvKey, true);
     var panel = back.querySelector('.sr-ov');
     if (panel && panel.focus) panel.focus();
   }
@@ -1031,7 +1036,6 @@
     _ov.setAttribute('hidden', '');
     _ovCard = null;
     document.body.classList.remove('sr-ov-open');
-    document.removeEventListener('keydown', onOvKey, true);
     if (_ovReturnFocus && _ovReturnFocus.focus) _ovReturnFocus.focus();
     _ovReturnFocus = null;
   }

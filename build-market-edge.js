@@ -49,6 +49,9 @@ const base = require('./build-odds-performance.js');
 // TEN-310 (founder ruling 2026-09-27): the profile's Market edge uses the Match analysis Market edge
 // tab's rules, through the same compute — bands, role and P&L come from market-edge-core.js.
 const core = require('./market-edge-core.js');
+// Founder ruling 2026-10-25 (round 2 item 1.3): the retirement rules live in settlement.js — settleBet (Pinnacle rules)
+// decides every unit / yield figure here; this file never re-derives it.
+const Settlement = require('./settlement.js');
 const { readCsv, keyFromArchiveName, ourCandidateKeys, fullKey, devig, LEVEL_ALIASES, archiveOverride } = base;
 
 const { buildIdentityGate } = require('./td-identity.js');
@@ -200,15 +203,61 @@ function pickBook(row) {
 // The 1.01 floor (CLAUDE.md odds invariant) is the core's too: a price below it has no band, so it is
 // on no basis — never in the headline while missing from the bands.
 const BASIS_BOOKS = new Set(['pinnacle', 'pinnacle-capture', 'bet365-archive', 'bet365-capture',
-  'pinnacle-history', 'pinnacle-approx', 'pinnacle-approx-od10']);   // the Database's own books (founder 2026-10-17, item 1)
+  'pinnacle-history', 'pinnacle-approx', 'pinnacle-approx-od10', 'pinnacle-early']);   // the Database's own books (founder 2026-10-17, item 1; 9 = early cut 2026-10-25)
 
 // Founder ruling 2026-10-17: the master's book codes (build-database-yield.js) -> this file's book ids and labels.
 const DB_BOOK = {
   0: ['pinnacle', 'Pinnacle'], 1: ['bet365-archive', 'Bet365 (archive close)'], 2: ['pinnacle-approx', 'Pinnacle (approx.)'],
   3: ['pinnacle-history', 'Pinnacle (from Pinnacle history)'], 4: ['pinnacle-capture', 'Pinnacle (our capture)'],
   5: ['pinnacle-approx-od10', 'Pinnacle (approx., start − 10)'],
+  // founder ruling 2026-10-25 (the 13 Apr - 16 Sep fill): a Pinnacle price cut the tier buffer before the start, not a close
+  9: ['pinnacle-early', 'Pinnacle (early cut, not a close)'],
 };
-const isYieldBasis = (side) => BASIS_BOOKS.has(side.book) && core.bandOf(side.price) >= 0;
+// ruling 4 (founder 2026-10-22): a retirement is on the basis only when its first set was completed (Pinnacle's rule) —
+// void, or no set scores, leaves every aggregate (player, band, curve, tour)
+const isYieldBasis = (side) => BASIS_BOOKS.has(side.book) && core.bandOf(side.price) >= 0 && Settlement.betCounts(side);
+
+// Ruling 4 · item 1 (founder 2026-10-23): the first set of a retirement from the PLAYERS' OWN career rows, when
+// tools/started-evidence.js left it unknown. The evidence join is narrower than the page's (measured 23 Oct: 30 of the 1,282
+// profile-ledger retirements with units settled "no set scores" though both career rows held the first set):
+//   8 had no Tennis-Data row (2026 matches priced from our own archive, which the evidence file never reads);
+//   7 met an earlier meeting of the same pair inside the -16..+3 day window and refused to pick;
+//   5 were archive rows dated at the event's Monday start, one day "after" Tennis-Data's Sunday first round;
+//   6 had Tennis-Data's winner as our row's loser (the first set does not depend on who won);
+//   4 had an opponent name the evidence resolver could not key.
+// So: each side's player (the builder's own resolveAt), his career rows against that opponent's SURNAME dated -16..+1 days
+// from the match (archive rows carry the event start), the latest such meeting only (one row on that day, or no answer),
+// and the two players' rows must agree. 'c' complete, 'i' incomplete, 'm' unknown — never guessed.
+const sameSurname = (x, y) => {
+  const t = (v) => String(v || '').replace(/(jr|sr|ii|iii)$/, '');
+  const p = t(x), q = t(y);
+  if (!p || !q) return false;
+  return p === q || (Math.min(p.length, q.length) >= 4 && (p.endsWith(q) || q.endsWith(p)));
+};
+function careerFirstSet(row, resolveAt, rowsOf) {
+  const dayN = (x) => Date.parse(String(x).slice(0, 10)) / 864e5;
+  const d = dayN(row.date);
+  if (!Number.isFinite(d)) return 'm';
+  const states = [];
+  for (const [me, opp] of [[row.winner, row.loser], [row.loser, row.winner]]) {
+    const h = resolveAt(me, row.date);
+    const ok = keyFromArchiveName(opp);
+    if (!h || !ok) continue;
+    const near = (rowsOf(h.key) || []).filter((x) => {
+      if (!x || x.walkover || x.unconfirmed) return false;
+      const dd = dayN(x.date) - d;
+      return dd >= -16 && dd <= 1 && ourCandidateKeys(x.opponent).some((c) => sameSurname(c.surname, ok.surname));
+    });
+    if (!near.length) continue;
+    const latest = near.reduce((m, x) => (String(x.date) > m ? String(x.date) : m), '');
+    const at = near.filter((x) => String(x.date) === latest);
+    if (at.length !== 1) continue;
+    const st = Settlement.firstSetState(at[0].sets);
+    if (st !== 'missing') states.push(st);
+  }
+  if (!states.length || states.some((x) => x !== states[0])) return 'm';
+  return states[0] === 'complete' ? 'c' : 'i';
+}
 
 function emptyAgg() {
   // profitCents, not profit. Summing `price - 1` as a float reorders with the row
@@ -225,7 +274,8 @@ function addTo(a, side) {
   const cents = Math.round(side.price * 100);
   a.profitCents += core.plCents(side);          // the tab's P&L, the same function
   a.priceCents += cents;
-  if (String(side.book).startsWith('pinnacle-approx')) a.approx += 1;   // Pinnacle (approx.): a snapshot, never a close
+  // Pinnacle (approx.) and the early cut (book 9, 2026-10-25): never a close — counted with the snapshots
+  if (String(side.book).startsWith('pinnacle-approx') || side.book === 'pinnacle-early') a.approx += 1;
   else if (String(side.book).startsWith('pinnacle')) a.pinnacle += 1; else a.bet365 += 1;
 }
 
@@ -264,44 +314,27 @@ function summarise(a) {
   };
 }
 
-/** Tennis-Data `comment` of an in-match retirement: "Retired", and the archive's one "Rrtired" typo. */
-const RETIRED_COMMENTS = new Set(['retired', 'rrtired']);
-const isRetiredComment = (c) => RETIRED_COMMENTS.has(String(c || '').trim().toLowerCase());
+/** Tennis-Data `comment` of an in-match retirement: "Retired", and the archive's one "Rrtired" typo (settlement.js kindOf). */
+const isRetiredComment = (c) => Settlement.kindOf(c) === 'retired';
 
-function median(xs) {
-  if (!xs.length) return null;
-  const s = xs.slice().sort((a, b) => a - b);
-  const m = Math.floor(s.length / 2);
-  return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
-}
-
-function main() {
-  const args = process.argv.slice(2);
-  const quiet = args.includes('--quiet');
-  const onlyIdx = args.indexOf('--only');
-  const only = onlyIdx >= 0 ? args[onlyIdx + 1] : null;
-  const log = (...a) => { if (!quiet) console.log(...a); };
-  // Build stamp (TEN-263 follow-up, founder 2026-09-24): when this run built the files, and
-  // from which commit. "Assert site completeness" WARNS (does not fail) when the shipped index was
-  // not built by this run (the committed floor carries an older stamp, or none), and the
-  // Market edge modal prints it as "rebuilt DD Mon HH:MMZ".
-  const stamp = { builtAt: new Date().toISOString(), builtFromCommit: process.env.GITHUB_SHA || null };
-
-  const profiles = JSON.parse(fs.readFileSync(PROFILES_PATH, 'utf8')).players || {};
-  // TEN-263 (ruling 2026-09-24): market-edge is a per-run pipeline output. The pipeline's
-  // player-profiles.json is the eager board roster, so without this a run would refresh only
-  // the players on today's board and leave every other published shard as it was. Every
-  // player that already has a shard stays on the roster (its shard carries its name).
-  if (fs.existsSync(OUT_DIR)) {
-    for (const f of fs.readdirSync(OUT_DIR)) {
+/** The player-profile roster this builder joins on: player-profiles.json, plus every player that already has a
+ *  market-edge shard (TEN-263, ruling 2026-09-24 — the pipeline's profiles are the eager board roster). */
+function rosterProfiles(root) {
+  const profiles = JSON.parse(fs.readFileSync(path.join(root, 'player-profiles.json'), 'utf8')).players || {};
+  const outDir = path.join(root, 'market-edge');
+  if (fs.existsSync(outDir)) {
+    for (const f of fs.readdirSync(outDir)) {
       const m = /^(\d+)\.json$/.exec(f);
       if (!m || profiles[m[1]]) continue;
-      try { const s = JSON.parse(fs.readFileSync(path.join(OUT_DIR, f), 'utf8')); if (s && s.name) profiles[m[1]] = { name: s.name }; } catch (e) { /* unreadable shard: rebuilt only if the profile roster has it */ }
+      try { const s = JSON.parse(fs.readFileSync(path.join(outDir, f), 'utf8')); if (s && s.name) profiles[m[1]] = { name: s.name }; } catch (e) { /* unreadable shard: rebuilt only if the profile roster has it */ }
     }
   }
-  const speedMap = loadSpeedMap();
-  log(speedMap ? 'court-speed map loaded' : 'court-speed map absent — venue/speed will be null on every row');
+  return profiles;
+}
 
+/** The archive-name → player join (TEN-263 §2c alias table first, then the full key, then a unique surname + initials
+ *  prefix), gated by the identity gate (founder 2026-10-18, td-identity.js). Returns { resolve, resolveAt, idGate }. */
+function makeResolver(root, profiles) {
   const byFullKey = new Map();
   const bySurname = new Map();
   Object.entries(profiles).forEach(([key, p]) => {
@@ -335,9 +368,73 @@ function main() {
   }
 
   // founder ruling 2026-10-18 (the Martín mix-up): one identity gate on every Tennis-Data name join (td-identity.js)
-  const idGate = buildIdentityGate(ROOT, new Map(Object.entries(profiles).map(([k, p]) => [k, p && p.name])));
+  const idGate = buildIdentityGate(root, new Map(Object.entries(profiles).map(([k, p]) => [k, p && p.name])));
+  const resolveAt = (archiveName, date, opp) => { const h = resolve(archiveName); return h && idGate && date && !idGate.allow(h.key, archiveName, date, opp) ? null : h; };   // opp: the row's other side (gate rule 4)
+  return { resolve, resolveAt, idGate };
+}
+
+/** Ruling 4 (founder 2026-10-22): a retired master row's first set — 'c' complete, 'i' incomplete, 'm' unknown, never
+ *  guessed. tools/started-evidence.js's answer first (written earlier in the same run; keyed date|tournament|winner|loser),
+ *  else the players' own career rows (careerFirstSet, ruling 4 · item 1). ONE lookup: this builder and
+ *  build-database-yield.js (the Database's retRows, founder 2026-10-25) both read it, so a retirement can never settle
+ *  one way on Market edge and another on the Database. Returns { of(row) → { fs, fromCareer }, evidence: bool }. */
+function firstSetLookup(root, opts) {
+  const o = opts || {};
+  const evPath = o.evidencePath || path.join(root, 'started-evidence.json');
+  const retFs = new Map();
+  const evidence = fs.existsSync(evPath);
+  if (evidence) {
+    const ev = JSON.parse(fs.readFileSync(evPath, 'utf8'));
+    (ev.retired || []).forEach((x) => retFs.set([x.date, x.tournament, x.winner, x.loser].join('|'), x.fs));
+  }
+  const chDir = path.join(root, 'career-history'), chCache = new Map();
+  const rowsOf = (k) => {
+    if (!chCache.has(k)) { let v = null; try { v = JSON.parse(fs.readFileSync(path.join(chDir, k + '.json'), 'utf8')).matches || null; } catch (e) { v = null; } chCache.set(k, v); }
+    return chCache.get(k);
+  };
+  let resolveAt = o.resolveAt || null;
+  const of = (row) => {
+    const fs0 = retFs.get([row.date, row.tournament, row.winner, row.loser].join('|')) || 'm';
+    if (fs0 !== 'm') return { fs: fs0, fromCareer: false };
+    if (!resolveAt) {
+      if (!fs.existsSync(path.join(root, 'player-profiles.json'))) return { fs: 'm', fromCareer: false };
+      resolveAt = makeResolver(root, rosterProfiles(root)).resolveAt;
+    }
+    const v = careerFirstSet(row, resolveAt, rowsOf);
+    return { fs: v, fromCareer: v !== 'm' };
+  };
+  return { of, evidence, evidencePath: evPath };
+}
+
+function median(xs) {
+  if (!xs.length) return null;
+  const s = xs.slice().sort((a, b) => a - b);
+  const m = Math.floor(s.length / 2);
+  return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
+}
+
+function main() {
+  const args = process.argv.slice(2);
+  const quiet = args.includes('--quiet');
+  const onlyIdx = args.indexOf('--only');
+  const only = onlyIdx >= 0 ? args[onlyIdx + 1] : null;
+  const log = (...a) => { if (!quiet) console.log(...a); };
+  // Build stamp (TEN-263 follow-up, founder 2026-09-24): when this run built the files, and
+  // from which commit. "Assert site completeness" WARNS (does not fail) when the shipped index was
+  // not built by this run (the committed floor carries an older stamp, or none), and the
+  // Market edge modal prints it as "rebuilt DD Mon HH:MMZ".
+  const stamp = { builtAt: new Date().toISOString(), builtFromCommit: process.env.GITHUB_SHA || null };
+
+  // TEN-263 (ruling 2026-09-24): market-edge is a per-run pipeline output. The pipeline's
+  // player-profiles.json is the eager board roster, so without this a run would refresh only
+  // the players on today's board and leave every other published shard as it was. Every
+  // player that already has a shard stays on the roster (its shard carries its name) — rosterProfiles().
+  const profiles = rosterProfiles(ROOT);
+  const speedMap = loadSpeedMap();
+  log(speedMap ? 'court-speed map loaded' : 'court-speed map absent — venue/speed will be null on every row');
+
+  const { resolveAt, idGate } = makeResolver(ROOT, profiles);
   log(idGate ? 'identity gate: career-history store loaded' : 'SKIP identity gate: no career-history store (names joined as before)');
-  const resolveAt = (archiveName, date) => { const h = resolve(archiveName); return h && idGate && date && !idGate.allow(h.key, archiveName, date) ? null : h; };
 
   /**
    * TEN-206 §5.6 — the OPPONENT's archetype, stamped per row.
@@ -378,7 +475,13 @@ function main() {
   const ci = {}; MC.forEach((c, i) => { ci[c] = i; });
   const tour = { all: emptyAgg(), level: {}, season: {} };
   const perPlayer = new Map();
-  const stats = { rows: 0, retired: 0, team: 0, sides: 0, joined: 0, ties: 0, latest: '' };
+  const stats = { rows: 0, retired: 0, team: 0, sides: 0, joined: 0, ties: 0, latest: '', retStands: 0, retVoid: 0, retNoSets: 0 };
+  // ruling 4: each retired Tennis-Data row's first set (tools/started-evidence.js, written earlier in the same run). No file
+  // = no evidence: every retirement then carries no units — never guessed — and the log says so.
+  const EV_PATH = process.env.DB_YIELD_STARTED || path.join(ROOT, 'started-evidence.json');
+  const firstSet = firstSetLookup(ROOT, { evidencePath: EV_PATH, resolveAt });
+  if (!firstSet.evidence) log(`ruling 4: ${EV_PATH} absent — every retirement carries no units this run`);
+  const noSetsRows = [];
   const pinnacleEnd = {};
   const bet365End = {};
 
@@ -397,7 +500,7 @@ function main() {
     const row = { date: m[ci.date], tournament: m[ci.tournament], series: m[ci.series], surface: m[ci.surface], court: m[ci.court],
       round: m[ci.round], winner: m[ci.winner], loser: m[ci.loser], comment: m[ci.comment] };
     const quarantined = (qDb.size || qMe.size) && (qDb.has(`${String(row.date).replace(/-/g, '')}|${row.winner}|${row.loser}`)
-      || [[row.winner, row.loser, 1], [row.loser, row.winner, 0]].some(([nm, opp, w]) => { const h = resolveAt(nm, row.date); return h && qMe.has(`${h.key}|${row.date}|${opp}|${w}`); }));
+      || [[row.winner, row.loser, 1], [row.loser, row.winner, 0]].some(([nm, opp, w]) => { const h = resolveAt(nm, row.date, opp); return h && qMe.has(`${h.key}|${row.date}|${opp}|${w}`); }));
     const flags = String(m[ci.flags] || '');
     if (flags.includes('t')) { stats.team += 1; return; }   // a team event: in the master, never in Market edge (as the Database)
     if (flags.includes('l')) { stats.lower = (stats.lower || 0) + 1; return; }   // ATP qualifying / Challenger / ITF (founder 2026-10-18): the join's, never Market edge's
@@ -408,6 +511,15 @@ function main() {
     const season = String(row.date).slice(0, 4);
     const retired = isRetiredComment(row.comment);
     if (retired) stats.retired += 1;
+    // ruling 4: the evidence file's first set, else (item 1) the players' own career rows — the shared lookup
+    const fsHit = retired ? firstSet.of(row) : null;
+    const fsv = fsHit ? fsHit.fs : null;
+    if (fsHit && fsHit.fromCareer) stats.retFromCareer = (stats.retFromCareer || 0) + 1;
+    if (retired) {
+      const st = Settlement.settleBet({ ret: true, fs: fsv });
+      if (st === 'stands') stats.retStands += 1; else if (st === 'void') stats.retVoid += 1;
+      else { stats.retNoSets += 1; noSetsRows.push(`${row.date} ${row.tournament}: ${row.winner} d. ${row.loser}`); }
+    }
     const level = LEVEL_ALIASES[row.series] || null;
     const L = level || row.series;
     if (/^pinnacle(-history|-capture)?$/.test(bk[0]) && (!pinnacleEnd[L] || row.date > pinnacleEnd[L])) pinnacleEnd[L] = row.date;
@@ -424,7 +536,7 @@ function main() {
         // Court type (Indoor/Outdoor), carried in the master from Tennis-Data's court column (the feed's for added
         // matches): what the Calendar modal's Indoors segment reads. Scope: ATP tour MAIN DRAW only.
         court: (row.court || '').trim() || null,
-        round: row.round, season, ret: retired,
+        round: row.round, season, ret: retired, ...(retired ? { fs: fsv } : {}),
         speed: speedMap ? speedMap.forRow(row.tournament, row.surface, row.court) : null,
         oppArchetype: archetypeOf(b.opp, row.date),
         opp: b.opp, won: b.won, p, price, oppPrice,
@@ -439,7 +551,7 @@ function main() {
         tour.season[season] = tour.season[season] || emptyAgg();
         addTo(tour.season[season], side);
       }
-      const hit = resolveAt(b.name, row.date);
+      const hit = resolveAt(b.name, row.date, b.opp);
       if (!hit) return;
       // the player keeps a shard (rewritten without the match), so an old copy that priced it never stays behind
       if (quarantined) { stats.quarantined += 1; if (!perPlayer.has(hit.key)) perPlayer.set(hit.key, { name: hit.name, sides: [] }); return; }
@@ -544,14 +656,16 @@ function main() {
         book: s.book, role: s.role,
         // The band this row was counted in (= core.bandOf(price) now that price keeps 3 decimals).
         band: bandFor(s.price) ? bandFor(s.price).band.id : null,
-        // Per-row P&L in units, struck in cents (the shared core's formula).
-        pl: core.plCents(s) / 100,
+        // Per-row P&L in units, struck in cents (the shared core's formula). Ruling 4: a void retirement, or one with no
+        // set scores, carries its prices and NO units (pl null), with the reason in `settle`.
+        pl: Settlement.betCounts(s) ? core.plCents(s) / 100 : null,
         inBasis: isYieldBasis(s),
-        // Ruling A: a retired match, settled at its close like any other (the tab marks it "ret.").
         ret: !!s.ret,
+        ...(s.ret ? { fs: s.fs, settle: Settlement.settleBet(s) } : {}),
       })),
     };
 
+    out.identityHidden = idGate && idGate.hidden ? idGate.hidden(key) : 0;   // rows dashed: identity unverified (gate rule 4)
     fs.writeFileSync(path.join(OUT_DIR, `${key}.json`), JSON.stringify(out));
     index[key] = { n: out.headline.n, yield: out.headline.yield, pinnacle: out.headline.book.pinnacle, bet365: out.headline.book.bet365 };
     shipped += 1;
@@ -567,10 +681,13 @@ function main() {
     // founder ruling 2026-10-17: built from the master; the publish guard compares these two (a lag fails the upload)
     identityGate: idGate ? { stats: idGate.stats, merged: idGate.merged } : null,
     source: 'database-yield-master.json', latestMatch: stats.latest, masterLatest: master.meta.latest || null,
+    // ruling 4 (founder 2026-10-22): how the master's retirements settled, and every one left without units for want of set scores
+    retirements: { stands: stats.retStands, void: stats.retVoid, noSets: stats.retNoSets, noSetsRows },
     players: index,
   }, null, 1));
 
-  log(`master rows ${stats.rows} (${master.meta.counts ? JSON.stringify(master.meta.counts) : ''}), ${stats.retired} retired kept (ruling A), ${stats.team} team-event matches left out`);
+  log(`master rows ${stats.rows} (${master.meta.counts ? JSON.stringify(master.meta.counts) : ''}), ${stats.retired} retired (Pinnacle rules: ${stats.retStands} stand, ${stats.retVoid} void, ${stats.retNoSets} no set scores; ${stats.retFromCareer || 0} first sets read from the players' own career rows), ${stats.team} team-event matches left out`);
+  if (noSetsRows.length) log(`ruling 4 · retired with no set scores (no units): ${noSetsRows.join(' · ')}`);
   log(`player-sides ${stats.sides}, joined to a profile ${stats.joined}, exact price ties ${stats.ties}, latest match ${stats.latest} (master ${master.meta.latest})`);
   log(`tour baseline (${PRICE_BASIS}): ${tourSummary.n} priced sides, yield ${tourSummary.yield}%, `
     + `book mix ${tourSummary.book.pinnacle} Pinnacle / ${tourSummary.book.bet365} Bet365-archive`);
@@ -580,4 +697,4 @@ function main() {
 }
 
 if (require.main === module) process.exit(main());
-module.exports = { pickBook, pickSide, capPair, summarise, isRetiredComment, PRICE_BANDS, bandFor, PRICE_BASIS, GATE_FULL, GATE_SMALL };
+module.exports = { careerFirstSet, firstSetLookup, makeResolver, rosterProfiles, pickBook, pickSide, capPair, summarise, isRetiredComment, PRICE_BANDS, bandFor, PRICE_BASIS, GATE_FULL, GATE_SMALL, emptyAgg, addTo };

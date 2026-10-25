@@ -60,10 +60,22 @@ def build_roster_index(roster):
     return out
 
 
+# Founder-approved aliases (exact sheet name + IOC → our key), each with its evidence. Checked BEFORE the token matcher;
+# the matcher itself is never loosened (a spelling variant is not bridged automatically).
+ALIASES = {
+    # Approved 2026-10-20. Sheet (Almaty 2026 qs, slot 9, seed 3, KAZ, rank 111) "Aleksandr" = our 566 "Alexander
+    # Shevchenko" (Kazakhstan): api-tennis 566 born 29.11.2000; Wikidata Q110287122 (both spellings resolve to it)
+    # born 2000-11-29, ATP id S0H2; the only Shevchenko among 2,479 roster players.
+    ("SHEVCHENKO, Aleksandr", "KAZ"): "566",
+}
+
+
 def resolve_key(index, pdf_name, ioc):
     """'SURNAME, Given' (possibly truncated with …) → (key, how) or (None, why). Never a guess: a unique token match only."""
     if not pdf_name:
         return None, "no-name"
+    if (pdf_name.strip(), ioc) in ALIASES:
+        return ALIASES[(pdf_name.strip(), ioc)], "alias"
     if "," not in pdf_name:
         if "…" not in pdf_name:
             return None, "no-name"

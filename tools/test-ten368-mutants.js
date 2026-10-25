@@ -12,6 +12,10 @@ const MUTANTS = [
   ['window cut to recent seasons (Q9: all editions)', "      if (!e || e.t !== 'atp' || e.tk == null || !e.tn) continue;",
     "      if (!e || e.t !== 'atp' || e.tk == null || !e.tn || String(e.d || '') < '2025') continue;"],
   ['an ambiguous name joined', '  clash.forEach(lk => { delete byName[lk]; });', ''],
+  // defect brief 2026-10-24 item 5 (main draw only)
+  ['qualifying counted', '      if (isQualifying(ek, e, qFlags)) { qualifying++; continue; }\n', ''],
+  ['own flag ignored', '  if (e.q === true || e.q === false) return e.q;\n', ''],
+  ['flag file ignored', '  if (qFlags && Object.prototype.hasOwnProperty.call(qFlags, ek)) return qFlags[ek] === 1;\n', ''],
 ];
 const TEST = path.join(__dirname, 'test-ten368-event-hold.js');
 const run = env => spawnSync(process.execPath, [TEST], { env: Object.assign({}, process.env, env || {}), encoding: 'utf8' });

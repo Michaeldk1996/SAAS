@@ -304,3 +304,24 @@ CREATE OR REPLACE TRIGGER oddspapi_fixtures_touch_upd
 
 CREATE INDEX IF NOT EXISTS oddspapi_fixtures_updated_idx
   ON oddspapi_fixtures (updated_at);
+
+-- ---------------------------------------------------------------------------
+-- hotlines-mtb-and-loader, Fix 2 (2026-10-24): the incremental load's object state.
+-- One row per bucket object whose rows are IN oddspapi_line_summary (written only
+-- after they land). `fingerprint` hashes everything an object's rows depend on
+-- besides its immutable payload (loader version, catalogue, archive time, resolved
+-- start); a differing fingerprint reloads the object. `row_keys` (book|market|side|
+-- line) are the keys that object owns, so the bet365-history pass never overwrites
+-- them. Deleting a row here only makes its object reload; nothing else reads it.
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS oddspapi_line_summary_objects (
+  object_path       text PRIMARY KEY,
+  fixture_id        text NOT NULL,
+  object_created_at timestamptz,
+  fingerprint       text NOT NULL,
+  loader_version    text NOT NULL,
+  rows              integer NOT NULL,
+  row_keys          text[] NOT NULL DEFAULT '{}',
+  loaded_at         timestamptz NOT NULL
+);
+ALTER TABLE oddspapi_line_summary_objects ENABLE ROW LEVEL SECURITY;

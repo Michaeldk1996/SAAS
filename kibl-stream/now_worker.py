@@ -40,6 +40,12 @@ sys.path.insert(0, os.path.join(HERE, ".."))
 import card_join as CJ  # noqa: E402
 import consumer as C    # noqa: E402
 import sweep_bridge as B  # noqa: E402  — the sweep's own row key, for history dedupe
+try:
+    # bet105 line prices ride the same stream (founder 2026-10-25). Imported defensively: an image that cannot load
+    # it still runs the Now prices exactly as before.
+    import line_engine as LE  # noqa: E402
+except Exception as _e:  # noqa: BLE001
+    LE, LE_IMPORT_ERROR = None, f"{type(_e).__name__}: {_e}"
 
 BOARD_URL = "https://michaeldk1996.github.io/SAAS/matches.json"
 TABLE_NOW = "kibl_now_price"
@@ -440,7 +446,7 @@ def broker_rtt_ms(host, port, n=5):
 
 B64_SECRETS = ("KIBL_RMQ_HOST", "KIBL_RMQ_PORT", "KIBL_RMQ_VHOST", "KIBL_RMQ_USER",
                "KIBL_RMQ_PASS", "KIBL_RMQ_QUEUE", "KIBL_USERNAME", "KIBL_PASSWORD",
-               "SUPABASE_URL", "SUPABASE_SECRET_KEY")
+               "SUPABASE_URL", "SUPABASE_SECRET_KEY", "API_TENNIS_KEY")
 
 
 def decode_b64_env(env):
@@ -471,6 +477,43 @@ def decode_b64_env(env):
     return done
 
 
+class _LinesOff:
+    """Stands in for line_engine.LineDriver when line prices cannot run: every hook is a no-op."""
+
+    def __init__(self, why):
+        self.why = why
+
+    def request_seed(self):
+        pass
+
+    def accept(self, row):
+        pass
+
+    def tick(self):
+        pass
+
+    def summary(self):
+        return {"off": self.why}
+
+
+def start_lines(fsid, env, enabled, log, secrets):
+    """The line-price driver, or a no-op stand-in. Its writes need BOTH switches: KIBL_NOW_WRITE=1 (this process may
+    write at all) and KIBL_LINES_WRITE=1. Nothing in here can stop the Now worker from starting."""
+    if LE is None:
+        log(f"::warning::line prices off: line_engine did not import ({LE_IMPORT_ERROR[:160]})")
+        return _LinesOff("line_engine did not import")
+    try:
+        from kibl_client import KiblClient
+        write = enabled and env.get("KIBL_LINES_WRITE") == "1"
+        drv = LE.LineDriver(fsid, env, lambda m, p, b, prefer: C.sb_request(env, m, p, b, prefer=prefer),
+                            lambda: KiblClient(verbose=False), write, log)
+        drv.start()
+        return drv
+    except Exception as e:  # noqa: BLE001
+        log(f"::warning::line prices off: {C.redact(e, secrets)[:160]}")
+        return _LinesOff(type(e).__name__)
+
+
 def main(env=None, log=print):
     # kibl_client reads os.environ itself, so the decode must land THERE too.
     decoded = decode_b64_env(os.environ)
@@ -486,7 +529,8 @@ def main(env=None, log=print):
         log(f"KIBL_RMQ_* not fully set (missing: {', '.join(missing)}) — nothing to connect to.")
         return 0
     secrets = C.env_secrets(env, conn) + [s for s in (env.get("KIBL_USERNAME"),
-                                                      env.get("KIBL_PASSWORD")) if s]
+                                                      env.get("KIBL_PASSWORD"),
+                                                      env.get("API_TENNIS_KEY")) if s]
     C.install_log_redaction(secrets)
     import pika
     from kibl_client import KiblClient
@@ -512,6 +556,7 @@ def main(env=None, log=print):
         log(f"::warning::Kibl book tag {tag!r} is not one the card state uses — "
             "stream prices will not reach any card until they agree")
     eng = NowEngine(tag, name, fsid)
+    lines = start_lines(fsid, env, enabled, log, secrets)
     where = {"region": env.get("FLY_REGION") or None,
              "broker_rtt_ms": broker_rtt_ms(conn["host"], conn["port"])}
     log(f"region {where['region']}: broker TCP RTT median {where['broker_rtt_ms']} ms (n=5)")
@@ -571,6 +616,7 @@ def main(env=None, log=print):
                     except Exception as e:  # noqa: BLE001
                         log(f"::warning::seed failed — cards stay on the poller: "
                             f"{C.redact(e, secrets)[:160]}")
+                    lines.request_seed()
                 if method is not None:
                     # Only a RECEIVED message proves the stream was alive: an idle
                     # tick on a half-open socket is not (review round 5, finding 5).
@@ -585,6 +631,7 @@ def main(env=None, log=print):
                     for r in rows or []:
                         if isinstance(r, dict):
                             writes += eng.accept(r, rcv)
+                            lines.accept(r)
                     if writes:
                         retry += flush(env, writes, log, enabled, eng)
                     # Ack everything, tennis or not: an unacked message counts
@@ -595,6 +642,7 @@ def main(env=None, log=print):
                 # COALESCE_S to ~COALESCE_S + 1 s.
                 if eng.dirty:
                     flush_cards(env, eng.card_rows(time.monotonic()), log, enabled, eng)
+                lines.tick()
                 t = time.time()
                 if pending_gap is not None and t - last_gap_try >= 10:
                     last_gap_try = t
@@ -608,7 +656,8 @@ def main(env=None, log=print):
                     last_retry = t
                 refresh()
                 if t - last_beat >= HEARTBEAT_EVERY_S:
-                    write_hb(env, eng.heartbeat(datetime.now(timezone.utc), True, where), log, enabled)
+                    write_hb(env, eng.heartbeat(datetime.now(timezone.utc), True,
+                                                dict(where, lines=lines.summary())), log, enabled)
                     last_beat = t
                 if t - last_prune >= 3600:
                     prune(env, log, enabled)
@@ -617,7 +666,8 @@ def main(env=None, log=print):
             return 0
         except Exception as e:  # noqa: BLE001
             if connected:
-                write_hb(env, eng.heartbeat(datetime.now(timezone.utc), False, where), log, enabled)
+                write_hb(env, eng.heartbeat(datetime.now(timezone.utc), False,
+                                            dict(where, lines=lines.summary())), log, enabled)
             if gap_from is None:
                 gap_from = last_alive or datetime.now(timezone.utc)
                 gap_reason = "disconnect"

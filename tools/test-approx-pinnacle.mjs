@@ -107,7 +107,7 @@ check('trDbJoinPx passes the join\'s own source on (the Tournament tab printed e
 ${constLine(html, 'FH_B365_APPROX_HOVER')}
 ${fn(html, 'fhB365Approx')}
       function fhEsc(s){ return String(s == null ? '' : s); } function trPxAfterTitle(){ return 'after'; }
-      ${fn(html, 'fhSrcTitle')}\n${fn(html, 'fhH2hSrcTitle')}\n${fn(html, 'fhB365Tag')}\n${fn(html, 'fhPriceCell')}\n${fn(html, 'trPxTitle')}\n${extra}`, ctx);
+      ${fn(html, 'fhPxMark')}\n${fn(html, 'fhSrcTitle')}\n${fn(html, 'fhH2hSrcTitle')}\n${fn(html, 'fhB365Tag')}\n${fn(html, 'fhPriceCell')}\n${fn(html, 'trPxTitle')}\n${extra}`, ctx);
     const hist = { book: 'P', src: 'hist' }, b = { book: 'B', src: 'td' };
     const res = {};
     for (const [k, f] of Object.entries({ h2hTab: () => ctx.fhH2hSrcTitle(hist), b365Tag: () => ctx.fhB365Tag(b, false), priceCell: () => ctx.fhPriceCell(1.5, 'right', false, hist, true), tournamentTab: () => ctx.trPxTitle(hist) }))
@@ -146,7 +146,7 @@ check('a Head to Head ledger price from our archive names it: "Pinnacle closing 
   && H.h2hPriceTitle({ price: 1.8, book: 'P', src: 'cap', srcLabel: 'captured' }) === 'Pinnacle closing price · captured');
 check('a Head to Head ledger price on the start − 10 snapshot hovers its own words', H.h2hPriceTitle({ price: 1.8, book: 'A', src: 'od10' }) === 'Pinnacle (approx.) · ' + OD10);
 check('the profile hands a start − 10 price to its sheet as its own source (A / od10), never the api-tennis hover',
-  /r\.src === 'od10' \? 'pinnacle-approx-od10' : r\.src === 'te' \? 'pinnacle-approx-te' : 'pinnacle-approx'/.test(fn(html, 'trProfilePriceOf'))
+  /r\.src === 'od10' \? 'pinnacle-approx-od10' : r\.src === 'te' \? 'pinnacle-approx-te' : r\.src === 'early' \? 'pinnacle-early' : 'pinnacle-approx'/.test(fn(html, 'trProfilePriceOf'))
   && /'pinnacle-approx-od10': \['A', 'od10'\]/.test(readFileSync(join(ROOT, 'player-profile-v2.js'), 'utf8')));
 check('control: a Tennis-Data Pinnacle ledger price still names Tennis-Data', H.h2hPriceTitle({ price: 1.8, book: 'P', src: 'td' }) === 'Pinnacle closing price · Database join (Tennis-Data)');
 check('control: a Bet365 / Pinnacle ledger price keeps its words (TEN-437 Bet365 hover)', H.h2hPriceTitle({ price: 1.8, book: 'B' }) === 'Bet365 closing odds, Pinnacle not available' && /^Pinnacle closing price/.test(H.h2hPriceTitle({ price: 1.8, book: 'P' })));
@@ -169,8 +169,10 @@ const oneHover = src => {
   const F = hoverSrc(src), A = { price: 1.8, oppPrice: 2.1, book: 'A', src: 'td' }, B = { price: 1.8, oppPrice: 2.1, book: 'B', src: 'td' };
   const titles = [F.fhSrcTitle(A), F.fhH2hSrcTitle(A), F.trPxTitle(A), F.h2hPriceTitle(A)];
   const tags = F.fhB365Tag(A, true) + F.fhB365Tag(A, false) + F.fhB365Meta(A);
-  const marks = [...src.matchAll(/hMark: r\.price != null && r\.book === '([A-Z])' \? '([A-Z])' : ''/g)].map(m => m[1] + m[2]);
-  return { ok: titles.every(t => t === 'Pinnacle (approx.) · ' + HOVER) && tags === '' && marks.length >= 4 && marks.every(m => m === 'BB')
+  // founder ruling 2026-10-25: every marker site draws through fhPxMark ('B' Bet365, 'E' the early cut) — an approx. snapshot none
+  const PM = new Function(`${fn(src, 'fhPxMark')}\nreturn fhPxMark;`)();
+  const marks = [...src.matchAll(/hMark: (?:typeof fhPxMark === 'function' \? )?fhPxMark\(r\)/g)].map(() => PM(A) + '|' + PM(B));
+  return { ok: titles.every(t => t === 'Pinnacle (approx.) · ' + HOVER) && tags === '' && marks.length >= 4 && marks.every(m => m === '|B')
     && F.fhH2hSrcTitle(B) === B365H && F.h2hPriceTitle(B) === B365H, titles, tags, marks };
 };
 const oh = oneHover(html);
@@ -211,7 +213,7 @@ check('control: a store without snapshot rows paints the footnote as before', !/
 // the real builder on a synthetic feed: order Tennis-Data Pinnacle > archive close > snapshot > Bet365
 const d = mkdtempSync(join(tmpdir(), 'approx-'));
 mkdirSync(join(d, 'odds-archive'));
-for (const f of ['build-database-yield.js', 'build-odds-performance.js']) copyFileSync(join(ROOT, f), join(d, f));
+for (const f of ['build-database-yield.js', 'build-odds-performance.js', 'settlement.js']) copyFileSync(join(ROOT, f), join(d, f));
 const H26 = 'date,tournament,series,court,surface,round,bestof,winner,loser,wrank,lrank,comment,b365w,b365l,psw,psl\n';
 writeFileSync(join(d, 'odds-archive', '2026.csv'), H26 + [
   '2026-01-13,Adelaide International,ATP250,Outdoor,Hard,1st Round,3,Pin P.,Ned N.,1,2,Completed,1.5,2.6,1.55,2.62',   // TD Pinnacle: kept

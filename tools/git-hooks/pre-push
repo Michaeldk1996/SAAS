@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+# Pre-push gate for main (founder ruling 2026-10-21, after 1a935c1b9 reached main with npm test red).
+# Installed by tools/install-git-hooks.sh (core.hooksPath — shared by the checkout and every worktree).
+#
+# A push that moves refs/heads/main is refused unless BOTH hold for the commit being pushed:
+#   1. the deploy lane (founder 2026-10-22): it is tools/deploy-batch.mjs pushing for the current, unexpired lane holder,
+#      on a green tools/ci-suite.sh receipt for the commit — or for a receipted commit that differs from it in data files
+#      only (main gains data-bot commits every few minutes). A raw `git push` of code is refused;
+#   2. tools/clobber-check.sh is clear for every file the push changes against origin/main.
+# Exempt: a push whose every new commit is a DATA-BOT commit by the deploy lane's one definition (tools/deploy-lane.mjs
+# isDataCommit: the skip marker in the subject, a data-bot author, every file one a data bot really writes) — the
+# Mac's daily refresh jobs. The FILES decide, never the marker (founder 2026-10-22); a merge is judged by what it brings.
+# Refused even with a suite pass: a non-data commit whose message carries a skip marker anywhere, or a push whose tip
+# carries one while the push holds code — GitHub would run no workflow for it, so the Code gate would never see it
+# (a7fcdc55f, 2026-10-21). Other refs are never checked. Deleting main is refused.
+# The Code gate (gate.yml) stays the enforced backstop: `git push --no-verify` bypasses this hook, never the gate.
+set -u
+Z40=0000000000000000000000000000000000000000
+TOP="$(git rev-parse --show-toplevel)"
+refuse() { printf '\npre-push: REFUSED push to main — %s\n' "$1" >&2; exit 1; }
+CLASSIFY="$(cd "$(dirname "$0")" && pwd)/push-classify.mjs"
+[ -f "$CLASSIFY" ] && [ -f "${TOP}/tools/deploy-lane.mjs" ] || refuse "the hook's classifier or tools/deploy-lane.mjs is missing — rebase onto origin/main and re-run tools/install-git-hooks.sh."
+
+while read -r LREF LSHA RREF RSHA; do
+  [ "$RREF" = "refs/heads/main" ] || continue
+  [ "$LSHA" = "$Z40" ] && refuse "deleting main."
+  NEW="$(git rev-list "$LSHA" --not --remotes=origin 2>/dev/null)"
+  [ -z "$NEW" ] && continue                                   # nothing new to land
+  # classify every new commit by its FILES (first-parent diff) — the deploy lane's data-bot definition
+  CLS="$(node "$CLASSIFY" "$TOP" commits $NEW)" || refuse "could not classify the pushed commits (node / tools/deploy-lane.mjs)."
+  if ! printf '%s\n' "$CLS" | grep -q '"data":false'; then echo "pre-push: data-bot push to main (every commit's files are data) — no suite needed."; continue; fi
+  # a skip marker on a commit that carries code — or on the tip of a push that holds code — means GitHub runs no
+  # workflow for the push: the Code gate would never check it
+  BAD="$(printf '%s\n' "$CLS" | grep '"data":false' | grep '"marker":true' | head -1)"
+  [ -z "$BAD" ] || refuse "commit $(printf '%s' "$BAD" | sed 's/.*"sha":"\([0-9a-f]\{9\}\).*/\1/') changes code (e.g. $(printf '%s' "$BAD" | sed 's/.*"codeFiles":\[\([^]]*\)\].*/\1/')) but its message carries a skip marker — GitHub would run no workflow, so the Code gate would never check it. Reword the message (write skip-ci without brackets) and push again."
+  # (the classifier's one marker definition; the tip is always among the new commits here)
+  printf '%s\n' "$CLS" | grep "\"sha\":\"$(git rev-parse "$LSHA")\"" | grep -q '"marker":true' \
+    && refuse "the push's last commit $(git rev-parse --short "$LSHA") carries a skip marker while the push holds code — GitHub decides from the tip, so the Code gate would skip the whole push. Push the code commits on their own first."
+
+  # 1. the deploy lane (founder 2026-10-22, item 4): the push is tools/deploy-batch.mjs acting for the current, unexpired
+  #    lane holder (it sets STENNISFY_LANE_PUSH to its ticket for the push), on a green ci-suite.sh receipt for the pushed
+  #    commit or a receipted one that differs from it in data files only. ONE suite record: the lane's.
+  WHY="$(node "$CLASSIFY" "$TOP" lane "${DEPLOY_LANE_FILE:-$HOME/.stennisfy/deploy-lane.json}" "${SUITE_RECEIPTS_DIR:-$HOME/.stennisfy/suite-receipts}" "$(git rev-parse "$LSHA")" "${STENNISFY_LANE_PUSH:-}")" \
+    || refuse "$WHY"
+  echo "pre-push: lane held by ${STENNISFY_LANE_PUSH}; ${WHY}."
+
+  # 2. the clobber check, against origin/main, for every file this push changes
+  git fetch -q origin || refuse "git fetch failed — cannot check against origin/main."
+  BASE="$(git merge-base "$LSHA" origin/main)"
+  FILES=()
+  while IFS= read -r f; do [ -n "$f" ] && FILES+=("$f"); done < <(git diff --name-only "$BASE" "$LSHA")
+  if [ "${#FILES[@]}" -gt 0 ]; then
+    bash "${TOP}/tools/clobber-check.sh" "$BASE" "${FILES[@]}" >&2 || refuse "the clobber check is not clear (above). Rebase onto origin/main, re-run tools/ci-suite.sh if code moved, claim again."
+  fi
+done
+exit 0

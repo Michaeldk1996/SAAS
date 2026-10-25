@@ -19,7 +19,8 @@ const MIGRATIONS = new Set(['supabase/migrations/20261016090000_historical_odds_
   'supabase/migrations/20261019090000_historical_snapshot_bet365.sql',
   'supabase/migrations/20261020090000_historical_snapshot_te.sql']);
 const ALLOWED = new Set([...MIGRATIONS, 'tools/tdarch.py', 'tools/histarch-guard.mjs', '.github/workflows/historical-archive.yml',
-  'tools/test-histarch.mjs', 'tools/test-historical-archive-sql.py', 'tools/test-tdarch.py']);
+  'tools/test-histarch.mjs', 'tools/test-historical-archive-sql.py', 'tools/test-tdarch.py',
+  'tools/archive_install.py', 'tools/test-archive-ledger.py']);   // the install's migration ledger (founder 2026-10-20, item 9): reads only
 const isDoc = f => /^\.claude\/rules\/.*\.md$/.test(f) || f === 'CLAUDE.md';
 export function faults(file, text) {
   const t = TABLES.find(n => text.includes(n));

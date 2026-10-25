@@ -49,10 +49,24 @@
   }
   const isFavPrice = (price) => price != null && milli(price) < 2000;
 
-  /** TEN-325 (founder 2026-09-28, TEN-314 comment 70fb039e): a retirement settles on the ATP result — the player the
-   *  ATP credits with the win is the winner, at his listed close; bookmaker rules do not apply. Every surface that
-   *  counts retirements in profit (Market edge, Form, H2H, Tournament Backing) prints this one line. */
-  const RET_SETTLE_NOTE = 'Retirements settled on the official ATP result.';
+  /** Founder ruling 2026-10-22 (ruling 4; replaces TEN-325's "settled on the official ATP result"): every priced
+   *  retirement settles on Pinnacle's rule, whichever book supplied the price. Every surface that counts retirements in
+   *  profit (Market edge, Form, H2H, Tournament Backing, the profile ledger) prints this one line. */
+  const RET_SETTLE_NOTE = 'Retirements settle on Pinnacle rules for all rows.';
+
+  /** Retirement settlement lives in settlement.js (founder ruling 2026-10-25, round 2 item 1.3: one module for the two
+   *  rules — settleBet, Pinnacle rules; matchWinner, the official result). This file delegates; it never re-derives.
+   *  firstSetState = Settlement.firstSetState. retSettlement keeps this file's contract: null (not a retirement — and a
+   *  walkover, which every caller here has already left out as 'walkover'), else Settlement.settleBet: 'stands' (first set
+   *  completed), 'void' (not completed) or 'no-sets' (no stored set scores: no units, never guessed). A precomputed `fs`
+   *  ('c' / 'i' / 'm', the Market edge shard's own) wins over the row's sets. */
+  const S = (typeof module !== 'undefined' && module.exports) ? require('./settlement.js') : root.Settlement;
+  if (!S || typeof S.settleBet !== 'function') throw new Error('market-edge-core.js: settlement.js (window.Settlement) must load first');
+  const firstSetState = S.firstSetState;
+  function retSettlement(r) {
+    if (!r || r.wo) return null;
+    return S.settleBet(r);
+  }
 
   /** Flat 1u P&L of one row in integer cents (a decimal price is exact in cents). */
   function plCents(r) { return r.won ? Math.round(Number(r.price) * 100) - 100 : -100; }
@@ -67,6 +81,10 @@
     if (r.wo) return 'walkover';
     if (r.price == null || r.oppPrice == null || !r.book) return 'unpriced';
     if (bandOf(r.price) < 0) return 'unpriced';
+    // ruling 4: a retirement before the first set was completed is void; one with no stored set scores carries no units
+    const rs = retSettlement(r);
+    if (rs === 'void') return 'void';
+    if (rs === 'no-sets') return 'retired, no set scores';
     return '';
   }
   const inWinner = (r) => whyNotPriced(r) === '';
@@ -245,7 +263,7 @@
     return { bo3: true, reason: 'atp-tour' };
   }
 
-  const api = { matchFormat, RET_SETTLE_NOTE, ME_THIN_FLOOR, ME_NEEDS, BANDS, bandOf, isFavPrice, plCents, whyNotPriced, whyNotBo3, inWinner, inBo3,
+  const api = { matchFormat, RET_SETTLE_NOTE, firstSetState, retSettlement, ME_THIN_FLOOR, ME_NEEDS, BANDS, bandOf, isFavPrice, plCents, whyNotPriced, whyNotBo3, inWinner, inBo3,
     inScope, summarise, needsCandidates, roundRank, byDate, playerModel, lineDefs, lineModel, chartModel };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.MarketEdgeCore = api;

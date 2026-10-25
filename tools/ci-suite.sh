@@ -53,6 +53,19 @@ NODE_MODULES="${CI_SUITE_NODE_MODULES:-/Users/Michael/bsp-consult-project/node_m
 RECEIPTS="${SUITE_RECEIPTS_DIR:-$HOME/.stennisfy/suite-receipts}"
 [ -n "$RECEIPTS" ] || fail "no receipts dir"
 mkdir -p "$RECEIPTS/logs" || fail "cannot create $RECEIPTS/logs"
+# Low disk (founder 2026-10-22): a suite that fills the disk fails mid-way, in different tests each time, and reads like a
+# code failure. Refuse BEFORE cloning: exit 4, nothing ran, no receipt. CI_SUITE_MIN_FREE_KB overrides (tests).
+MIN_FREE_KB="${CI_SUITE_MIN_FREE_KB:-3145728}"
+free_kb() { df -Pk "${1}" 2>/dev/null | awk 'NR==2{print $4}'; }
+low_disk() {   # $1 = where: the clone's filesystem (TMPDIR) and the receipts' — whichever has less
+  local a b; a="$(free_kb "${TMPDIR:-/tmp}")"; b="$(free_kb "$RECEIPTS")"; a="${a:-0}"; b="${b:-0}"
+  local f="$a"; [ "$b" -lt "$f" ] && f="$b"
+  if [ "$f" -lt "$MIN_FREE_KB" ]; then
+    echo "::error:: low disk: $((f / 1024)) MB free, need $((MIN_FREE_KB / 1024)) MB — $1; no receipt" >&2
+    echo "EXIT=4"; echo "log: $LOG"; exit 4
+  fi
+}
+low_disk "nothing ran"
 
 D="$(mktemp -d "${TMPDIR:-/tmp}/ci-suite.XXXXXX")"
 [ -n "$D" ] || fail "mktemp gave no path"
@@ -63,7 +76,11 @@ LOG="$RECEIPTS/logs/${SHA}-$(date -u +%Y%m%dT%H%M%SZ).log"
 [ -n "$LOG" ] || fail "no log path"
 CHECKIN_PID=""
 stop_checkin() { if [ -n "$CHECKIN_PID" ]; then kill "$CHECKIN_PID" 2>/dev/null; wait "$CHECKIN_PID" 2>/dev/null; CHECKIN_PID=""; fi; }
-trap 'stop_checkin; rm -rf "$D"' EXIT
+NPM_PID=""
+# A TERM/INT must stop the TEST RUN too, not just this script: npm test runs in its own process group (set -m below)
+# and the whole group is signalled — on 2026-10-22 a killed runner left npm test running on as an orphan.
+stop_tests() { if [ -n "$NPM_PID" ]; then kill -TERM -- "-$NPM_PID" 2>/dev/null; sleep 1; kill -KILL -- "-$NPM_PID" 2>/dev/null; NPM_PID=""; fi; }
+trap 'stop_tests; stop_checkin; rm -rf "$D"' EXIT
 trap 'exit 130' INT
 trap 'exit 143' TERM
 
@@ -103,9 +120,18 @@ if [ -n "${DEPLOY_LANE_TICKET:-}" ] && [ -f "$LANE_TOOL" ]; then
   CHECKIN_PID=$!
   echo "deploy-lane check-in every ${CI_SUITE_CHECKIN_SEC:-240}s for $DEPLOY_LANE_TICKET while the suite runs (loop pid $CHECKIN_PID)"
 fi
+# Test temp folders live INSIDE the clone, so they go with it (they leaked ~5.8 GB into the shared TMPDIR by 2026-10-22).
+mkdir -p "$D/.tmp" || fail "cannot create $D/.tmp"
+export TMPDIR="$D/.tmp"
+low_disk "checked again before npm test"
 echo "running npm test (log: $LOG) ..."
-npm test > "$LOG" 2>&1
+set -m
+npm test > "$LOG" 2>&1 &
+NPM_PID=$!
+set +m
+wait "$NPM_PID"
 EXIT=$?
+NPM_PID=""
 stop_checkin
 FINISHED="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 

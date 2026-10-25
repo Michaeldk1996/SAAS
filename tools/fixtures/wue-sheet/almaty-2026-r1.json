@@ -1,5 +1,5 @@
 {
- "_note": "Real api-tennis Almaty 2026 R1, built by bsp-pipeline.js progressionSheetMatches on 2026-10-20 (live feed). Pinned for the W/UE sheet acceptance test.",
+ "_note": "Real api-tennis Almaty 2026 R32 (1/16-finals), built by bsp-pipeline.js progressionSheetMatches from the pinned 17–23 Oct get_fixtures snapshot (tools/fixtures/single-extraction/fixtures.json). Pinned for the W/UE sheet tests.",
  "rounds": [
   "R1"
  ],
@@ -7,6 +7,8 @@
   {
    "eventKey": "12171884",
    "round": "R1",
+   "roundCode": "R32",
+   "hasStats": true,
    "date": "2026-10-19",
    "time": "08:40",
    "status": "finished",
@@ -47,6 +49,8 @@
   {
    "eventKey": "12171888",
    "round": "R1",
+   "roundCode": "R32",
+   "hasStats": true,
    "date": "2026-10-19",
    "time": "08:40",
    "status": "finished",
@@ -87,6 +91,8 @@
   {
    "eventKey": "12171885",
    "round": "R1",
+   "roundCode": "R32",
+   "hasStats": true,
    "date": "2026-10-19",
    "time": "10:05",
    "status": "finished",
@@ -127,6 +133,8 @@
   {
    "eventKey": "12172160",
    "round": "R1",
+   "roundCode": "R32",
+   "hasStats": true,
    "date": "2026-10-19",
    "time": "12:55",
    "status": "finished",
@@ -167,6 +175,8 @@
   {
    "eventKey": "12172161",
    "round": "R1",
+   "roundCode": "R32",
+   "hasStats": true,
    "date": "2026-10-19",
    "time": "16:40",
    "status": "finished",
@@ -207,6 +217,8 @@
   {
    "eventKey": "12172164",
    "round": "R1",
+   "roundCode": "R32",
+   "hasStats": true,
    "date": "2026-10-20",
    "time": "08:35",
    "status": "finished",
@@ -247,6 +259,8 @@
   {
    "eventKey": "12171882",
    "round": "R1",
+   "roundCode": "R32",
+   "hasStats": true,
    "date": "2026-10-20",
    "time": "08:40",
    "status": "finished",
@@ -287,6 +301,8 @@
   {
    "eventKey": "12171889",
    "round": "R1",
+   "roundCode": "R32",
+   "hasStats": true,
    "date": "2026-10-20",
    "time": "10:20",
    "status": "finished",
@@ -321,6 +337,48 @@
     "returnPoints": {
      "won": 22,
      "total": 86
+    }
+   }
+  },
+  {
+   "eventKey": "12171886",
+   "round": "R1",
+   "roundCode": "R32",
+   "hasStats": true,
+   "date": "2026-10-20",
+   "time": "12:40",
+   "status": "finished",
+   "winner": 1,
+   "p1": {
+    "name": "F. Marozsan",
+    "playerKey": "10148",
+    "winners": 37,
+    "unforcedErrors": 37,
+    "wueSource": "api-tennis",
+    "totalPoints": 175,
+    "servicePoints": {
+     "won": 52,
+     "total": 70
+    },
+    "returnPoints": {
+     "won": 43,
+     "total": 105
+    }
+   },
+   "p2": {
+    "name": "T. Skatov",
+    "playerKey": "362",
+    "winners": 17,
+    "unforcedErrors": 35,
+    "wueSource": "api-tennis",
+    "totalPoints": 175,
+    "servicePoints": {
+     "won": 62,
+     "total": 105
+    },
+    "returnPoints": {
+     "won": 18,
+     "total": 70
     }
    }
   }

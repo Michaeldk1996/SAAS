@@ -72,7 +72,9 @@ permissions:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # Founder ruling 2026-10-20: 30 → 45. On 20 Oct 4 of 25 executed jobs hit 30 min and were cancelled (11:10, 11:40,
+    # 13:30, 14:00Z) while successful jobs took 19–28.5 min; the "Run pipeline" step alone ranged 8.8–20.1 min.
+    timeout-minutes: 45
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -190,14 +192,47 @@ jobs:
             exit 1
           fi
           echo "v=$V" >> "$GITHUB_OUTPUT"
+          echo "vprev=$((V - 1))" >> "$GITHUB_OUTPUT"   # the point-by-point fallback below restores the previous version's store
           echo "PROFILE_SCHEMA_VERSION = $V"
 
       # Persist the heavy derived caches + TML archive between runs so each run
       # is fast and makes minimal API calls (matches how the local run reuses
-      # them). Keyed per-schema-per-day so it refreshes but still restores older
-      # caches OF THE SAME SCHEMA.
-      - name: Restore pipeline caches
-        uses: actions/cache@v4
+      # them). Restores the NEWEST entry OF THE SAME SCHEMA.
+      #
+      # Founder ruling 2026-10-21 (A2). The per-day key was immutable — the day's first save won — so every later run
+      # re-built what the morning had not seen: 20 Oct after 11:19Z, 286–296 opponent profiles per run, the profile
+      # phase median 5.1 min (0.7 min on 19 Oct). Each run now has its OWN key (day + run id + attempt): restore takes
+      # the newest of today's entries, else the newest of the schema; the explicit "Save pipeline caches" step after the
+      # site-data upload stores this run's work only when tools/cache-save-decision.mjs says it is worth an entry.
+      # POINT-BY-POINT FALLBACK ACROSS A VERSION BUMP (founder brief 2026-10-23). The key below carries
+      # PROFILE_SCHEMA_VERSION and deliberately never restores an older version: a stale profile cache stalled
+      # the pipeline once. But point-by-point-cache.json rides the same entry, and its logs do not depend on that
+      # schema. The 15 -> 16 bump (ba97e451a, 2026-10-22) restored nothing, the store fell back to the 52-entry
+      # committed copy, and 23,490 logs left the site. So the PREVIOUS version's newest entry is restored first,
+      # ONLY its point-by-point-cache.json is kept (as .pbp-prev-cache.json, merged under the current store by
+      # build-point-by-point.js: a log the current store holds always wins), and every other file it restored is
+      # put back exactly as the checkout had it before the real restore below runs. Same path list as the save,
+      # or the entry's version hash does not match and nothing restores.
+      # Only until this version's store has caught up: the deployed repair ledger carries the previous version's
+      # store size (target) and the size this version's restore delivered before any merge. Once that reaches the
+      # target the download stops. A missing or unreadable ledger means "not known yet": the fallback runs.
+      - name: Does the point-by-point store still need the previous version?
+        id: pbpneed
+        run: |
+          curl -4 -s -f --max-time 60 -o .pbp-ledger.json "https://michaeldk1996.github.io/SAAS/pbp-repairs.json?cb=$GITHUB_RUN_ID" || rm -f .pbp-ledger.json
+          node -e '
+            let f = null; try { f = JSON.parse(require("fs").readFileSync(".pbp-ledger.json", "utf8")).fallback || null; } catch (e) {}
+            const t = f && Number.isInteger(f.target) ? f.target : null, cur = f && Number.isInteger(f.storeBeforeMerge) ? f.storeBeforeMerge : null;
+            const need = !(t != null && cur != null && cur >= t);
+            require("fs").appendFileSync(process.env.GITHUB_OUTPUT, `need=${need}\ntarget=${t == null ? "" : t}\n`);
+            console.log(`::notice title=pbp fallback::${need ? "previous version needed" : "not needed"} (store before merge ${cur == null ? "unknown" : cur}, target ${t == null ? "unknown" : t})`);
+          '
+          rm -f .pbp-ledger.json
+
+      - name: Restore the previous cache version's point-by-point store (fallback across a bump)
+        id: prevpbp
+        if: steps.pbpneed.outputs.need == 'true'
+        uses: actions/cache/restore@v4
         with:
           path: |
             player-profiles-cache.json
@@ -209,14 +244,55 @@ jobs:
             model-output.json
             news-feed.json
             tournament-entries.json
-          key: bsp-caches-v${{ steps.schema.outputs.v }}-${{ steps.cacheday.outputs.day }}
+          key: bsp-caches-v${{ steps.schema.outputs.vprev }}-none
+          restore-keys: |
+            bsp-caches-v${{ steps.schema.outputs.vprev }}-
+
+      - name: Keep only the previous version's point-by-point store
+        run: |
+          if [ -f point-by-point-cache.json ] && [ "${{ steps.prevpbp.outputs.cache-matched-key }}" != "" ]; then
+            mv point-by-point-cache.json .pbp-prev-cache.json
+            echo "::notice title=pbp fallback::restored point-by-point-cache.json from ${{ steps.prevpbp.outputs.cache-matched-key }} ($(wc -c < .pbp-prev-cache.json) bytes)"
+          else
+            echo "::notice title=pbp fallback::${{ steps.pbpneed.outputs.need == 'true' && format('no bsp-caches-v{0}- entry to fall back on', steps.schema.outputs.vprev) || 'skipped: this version''s store has reached the previous size' }}"
+          fi
+          git checkout -- player-profiles.json point-by-point-cache.json tournament-profiles.json
+          rm -rf player-profiles-cache.json player-tournament-history.json tml-cache model-output.json news-feed.json tournament-entries.json
+
+      - name: Restore pipeline caches
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            player-profiles-cache.json
+            player-profiles.json
+            player-tournament-history.json
+            tournament-profiles.json
+            point-by-point-cache.json
+            tml-cache
+            model-output.json
+            news-feed.json
+            tournament-entries.json
+          key: bsp-caches-v${{ steps.schema.outputs.v }}-${{ steps.cacheday.outputs.day }}-${{ github.run_id }}-${{ github.run_attempt }}
           # THE PREFIX MUST CARRY THE VERSION TOO, and this is the half that is easy
           # to miss. `restore-keys: bsp-caches-` is a prefix match, so a v15 key miss
           # would fall straight back onto a v14 snapshot and reproduce the stall
           # exactly — a new key that inherits the old schema anyway. Narrowed to the
           # schema's own line: yesterday's v15 cache still restores, v14's never does.
           restore-keys: |
+            bsp-caches-v${{ steps.schema.outputs.v }}-${{ steps.cacheday.outputs.day }}-
             bsp-caches-v${{ steps.schema.outputs.v }}-
+
+      # Founder 2026-10-23 (outage prevention, item 4): the profile cache a FAILED run built, saved under its own key
+      # family by "Save the profile cache of a failed run" below. hydrate unions it with the cache restored above and the
+      # committed floor (higher schema wins, then the newer build), so a red run's rebuilt profiles are never lost.
+      # 22 Oct: every run failed the roster floor mid-convergence and, saving nothing, rebuilt the same 60 profiles for ~6 h.
+      - name: Restore the profile cache a failed run saved
+        uses: actions/cache/restore@v4
+        with:
+          path: .failed-run-cache/player-profiles-cache.json
+          key: bsp-profiles-failed-v${{ steps.schema.outputs.v }}-${{ steps.cacheday.outputs.day }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            bsp-profiles-failed-v${{ steps.schema.outputs.v }}-
 
       # historical-match-stats.json is cached SEPARATELY, keyed by the content hash
       # of the committed floor. It used to sit in the list above, and that quietly
@@ -333,6 +409,24 @@ jobs:
           restore-keys: |
             model-prematch-v1-
 
+      # Draw matches store (founder 2026-10-21 round 3): every finished main-draw match's board row + model entry, kept
+      # after the board drops it (4 days) so a draw card still opens its Match Analysis. Same two sources as the model
+      # store: its own cache (saved every run, below) and the last published copy (next step).
+      - name: Restore the draw matches store
+        uses: actions/cache/restore@v4
+        with:
+          path: draw-matches.json
+          key: draw-matches-v1-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            draw-matches-v1-
+      - name: Fetch the published draw matches store
+        run: |
+          if curl -sfL --retry 2 --max-time 60 -o draw-matches.published.json "https://michaeldk1996.github.io/SAAS/draw-matches.json?cb=$(date +%s)"; then
+            echo "published draw-matches.json: $(wc -c < draw-matches.published.json) bytes"
+          else
+            rm -f draw-matches.published.json; echo "::warning::no published draw-matches.json — the store carries the cache snapshot only"
+          fi
+
       # The last published copy: a second source for the store (and the only one on the first run after this shipped).
       # Fail-open: no copy = the store and the cache snapshot only, said in the step log.
       - name: Fetch the published model output (pre-match freeze source)
@@ -359,6 +453,19 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           DOTENV_CONFIG_QUIET: 'true'
         run: node run-pipeline.js github-actions
+
+      # Ruling 4 (founder 2026-10-20): api-tennis shows main-draw matches in play but matches.json has 0 live cards →
+      # this run fails visibly and publishes nothing (the site keeps the last good build). Same fetch, no race.
+      - name: Live-card check (in-play matches must be carded)
+        run: node tools/check-live-cards.mjs
+
+      # Round 3 (founder 2026-10-21): saved even when a later step fails, so a match off the board is never lost.
+      - name: Save the draw matches store
+        if: ${{ always() && hashFiles('draw-matches.json') != '' }}
+        uses: actions/cache/save@v4
+        with:
+          path: draw-matches.json
+          key: draw-matches-v1-${{ github.run_id }}-${{ github.run_attempt }}
 
       # TEN-437: saved even when a later step fails, so the next run never loses a pre-match prediction.
       - name: Save the model pre-match store
@@ -388,11 +495,14 @@ jobs:
       # failure here leaves the previous point-by-point.json (from cache) or none.
       - name: Build point-by-point sidecar (best-effort)
         env:
+          PBP_FALLBACK_TARGET: ${{ steps.pbpneed.outputs.target }}
           API_TENNIS_KEY: ${{ secrets.API_TENNIS_KEY }}
         run: |
           t0=$(date +%s); rc=0
           node build-point-by-point.js || rc=$?
-          node tools/step-check.mjs --step "Build point-by-point sidecar (best-effort)" --rc "$rc" --since "$t0" --exists point-by-point.json --exists pbp-index.json
+          # --fresh, not --exists: both files ride the Actions cache, so an early exit (no key, no matches.json) left last
+          # run's copies in place and the check read them as success. Every completed run rewrites both.
+          node tools/step-check.mjs --step "Build point-by-point sidecar (best-effort)" --rc "$rc" --since "$t0" --fresh point-by-point.json --fresh pbp-index.json --fresh pbp-repairs.json
 
       # News feed (TEN-8): pull the api-tennis get_news window and store every
       # article verbatim in news-feed.json for the dashboard's News page. Uses the
@@ -495,6 +605,13 @@ jobs:
           node build-database-yield.js || { echo "build-database-yield failed" > .archive-failed; exit 1; }
           node tools/archive-gate.mjs --dir . --baseline-url https://michaeldk1996.github.io/SAAS/database-yield-master-meta.json
 
+      # Round 2 item 1.2 (founder 2026-10-25): a finished board card's Pinnacle close is the archive's close when the
+      # archive holds one, else the captured close stays. READ-ONLY toward the archive — it reads this run's export
+      # (pinnacle-closes.json) and rewrites matches.json only, atomically. Best-effort: a failure leaves the captured close.
+      - name: Board cards take the archive's Pinnacle close (best-effort)
+        run: |
+          node tools/apply-archive-pinclose.mjs --closes pinnacle-closes.json --matches matches.json || echo "::warning::apply-archive-pinclose failed — board cards keep the captured close"
+
       - name: Alert — the Pinnacle archive gate failed (Telegram)
         if: failure() && hashFiles('.archive-failed') != ''
         env:
@@ -512,11 +629,12 @@ jobs:
       # just refreshed. Founder ruling 2026-10-17 (ruling 5): they read the ONE master the Database rebuild above wrote
       # (database-yield-master.json, each match's own price — never the cross-book average), so this step runs after it.
       # No network calls. Rebuilding here keeps players who newly enter the profile roster from missing the block.
-      - name: Build market performance shards (best-effort)
-        run: |
-          t0=$(date +%s); rc=0
-          node build-odds-performance.js || rc=$?
-          node tools/step-check.mjs --step "Build market performance shards (best-effort)" --rc "$rc" --since "$t0" --fresh odds-performance-index.json
+      # Founder ruling 2026-10-25: FAIL-CLOSED. As best-effort (`|| rc=$?` + a warning-only step-check) this step died on
+      # every run from the identity gate's landing to 25 Oct ("ourCandidateKeys is not a function", a require cycle) and
+      # the shards silently stayed at their 7 Aug floor. A failure now fails the run: nothing is published (the site keeps
+      # the last good data) and the fail-alert job sends its Telegram. No `|| true`, no swallowed exit code.
+      - name: Build market performance shards (fail-closed)
+        run: node build-odds-performance.js
 
       # Per-tournament market performance (TEN-8 Tournaments Overview §4/§5):
       # flat-stake yields backing favourites/underdogs + favourite reliability,
@@ -532,11 +650,30 @@ jobs:
       # service games played from the committed box-score archive (boxscore-archive/),
       # all editions on file, n = service games. No network calls. Best-effort: a
       # failure leaves the Tournament tab's and Key factors' hold cells dashed.
+      # Round 2 item 2.2: favourites vs underdogs by round (cumulative) for the tournament page — current season, same-venue
+      # past editions and the ATP best-of-three hard baseline, priced from database-yield-master.json (the one master),
+      # winners by Settlement.matchWinner. No network calls. Best-effort: a failure dashes the block with its reason.
+      - name: Build favourites by round (best-effort)
+        run: |
+          t0=$(date +%s); rc=0
+          node build-favourites-by-round.js || rc=$?
+          node tools/step-check.mjs --step "Build favourites by round (best-effort)" --rc "$rc" --since "$t0" --fresh favourites-by-round.json
+
       - name: Build event hold rate (best-effort)
         run: |
           t0=$(date +%s); rc=0
           node build-event-hold.js || rc=$?
           node tools/step-check.mjs --step "Build event hold rate (best-effort)" --rc "$rc" --since "$t0" --fresh event-hold.json
+
+      # How it plays (round 2 item 2.1): per ATP hard event, hold / 1st / 2nd serve won, aces per match, tiebreaks per
+      # set with n, vs the 2016-2025 indoor/outdoor hard baseline. Reads the committed boxscore-archive/,
+      # how-it-plays-history.json (Sackmann sums), odds-archive/, and this run's tournament-surfaces.json,
+      # tournament-progression.json and matches.json. No network calls. Best-effort: a failure dashes the panel.
+      - name: Build how it plays (best-effort)
+        run: |
+          t0=$(date +%s); rc=0
+          node build-how-it-plays.js || rc=$?
+          node tools/step-check.mjs --step "Build how it plays (best-effort)" --rc "$rc" --since "$t0" --fresh how-it-plays.json
 
       # TEN-263 match-close shards: per player, every closing price we hold — Tennis-Data
       # (committed odds-archive/ CSVs, Pinnacle + Bet365) and our own captures (committed
@@ -724,6 +861,8 @@ jobs:
           # TEN-270: the Kibl stream -> live "Now" client. Same public creds as the
           # Live tab; reads kibl_now_price only (SELECT-only policy).
           cp kibl-now-stream.js _site/
+          # bet105-line-prices: the ONE line-price lookup (Derived lines + every Hot lines view). Required; asserted below.
+          cp line-prices.js _site/
           cp price-history-box.js _site/
           # TEN-206 ruling 7: the shared hold/break engine, lifted OUT of the
           # dashboard so the Live tab and the Player Profile run one engine. The
@@ -738,6 +877,9 @@ jobs:
           cp player-profile-v2.js _site/
           # TEN-310: the Match analysis Market edge compute (window.MarketEdgeCore). Not
           # copied = 404 => the tab renders nothing. Required; asserted below.
+          # Round 2 item 1.3 (founder 2026-10-25): the two retirement rules (window.Settlement). market-edge-core.js delegates
+          # to it and throws without it, so not copied = 404 => Market edge and the Database figures break. Required.
+          cp settlement.js _site/
           cp market-edge-core.js _site/
           # TEN-384 fx2: the canonical tournament identity table (window.TournamentIdentity). The page
           # merges a served tournament-history shard's same-event rows through it ("London" + "Queen's
@@ -748,6 +890,14 @@ jobs:
           cp h2h-core.js _site/
           # W/UE tournament sheet export (window.WueSheet). Not copied = 404 => the Reports W/UE buttons never render. Required; asserted below.
           cp wue-sheet.js _site/
+          # Draw view (window.DrawView), founder ruling 2026-10-20 item 2. Required; asserted below.
+          cp draw-view.js _site/
+          # ESC brief 2026-10-21: the ONE Escape handler + detail-view return (window.SfEsc / SfNav). Not copied = 404 =>
+          # Esc closes nothing anywhere and the profile Back link falls back to the list. Required; asserted below.
+          cp esc-nav.js _site/
+          # The point-by-point integrity check (window.PbpIntegrity). Not copied = 404 => a garbled game's points are drawn
+          # again instead of "Point-by-point unavailable for this game". Required; asserted below.
+          cp pbp-integrity.js _site/
           # TEN-206 §5.5/§5.7: the court-speed venue map (build-court-speed-map.js)
           # and the per-player market-edge shards + index (build-market-edge.js).
           # The shards also feed the full ledger's two closing-odds columns.
@@ -795,7 +945,7 @@ jobs:
           node tools/build-event-stat-coverage.js
           cp match-stat-event-coverage.json _site/
           cp admin.html admin-config.js _site/ 2>/dev/null || true
-          cp matches.json tournament-profiles.json tournament-progression.json player-profiles.json _site/
+          cp matches.json tournament-profiles.json tournament-progression.json player-profiles.json draw-matches.json _site/
           # TEN-391: career splits are ONE FILE PER PLAYER (career-splits/<key>.json, fetched
           # when a profile / the H2H page shows him) + the small tour file. Committed by the
           # local splits refresh (TA-sourced; CI can't fetch it). The old single
@@ -835,10 +985,6 @@ jobs:
           fi
           cp profiles/*.json _site/profiles/
           echo "published $SHARDS profile shard(s)."
-          # TEN-173 Points at Risk: static artifact refreshed daily by
-          # points-at-risk.yml (its own fail-closed workflow). The profile "Points
-          # at Risk" tile reads it once, keyed by player_key. Assert-gated below.
-          cp points-at-risk.json _site/
           # TEN-162: per-player match lists behind each split row (the profile
           # splits drawer). Committed by the local career-splits refresh alongside
           # career-splits/ (TA-sourced, CI can't fetch it). Index-gated on the
@@ -860,12 +1006,24 @@ jobs:
           # with the profile data. Committed but not copied = 404 = every profile's tour line
           # dashes. Required: in the assert list below, with its roles checked.
           cp tour-baselines.json _site/
+          # Founder approval 2026-10-23: the Derived lines FIELD (each line's cover record pooled over every player in the
+          # database, per Window x Tier x format x card x Surface x Court speed), built from THIS run's stores by the page's
+          # own lineCoverage (tools/build-derived-field.js, ~1-2 min). Tolerant: a failed build ships no file and the
+          # profile's Field column dashes, never another population. Not in the assert list.
+          node tools/build-derived-field.js --dir . --out derived-field.json || echo "::warning::build-derived-field.js failed; the Derived lines Field column dashes this run"
+          cp derived-field.json _site/ 2>/dev/null || true
           # TEN-136: ATP headshot alias map ({player_key: ATP_ALIAS}), hand-committed,
           # written by no job. The dashboard avatar chain fetches it as the ATP step
           # above the api-tennis logo. Committed but not copied = silent 404, which
           # makes the entire ATP headshot layer disappear (every player falls back to
           # the api-tennis logo). Required — in the assert list below.
           cp player-atp-aliases.json _site/
+          # Self-hosted headshots (founder 2026-10-24): player-photos/{s,l}/<id>.webp + index.json, refreshed by the Mac
+          # photo job (tools/photos/refresh-photos.sh). Committed but not copied = every avatar falls back to initials.
+          cp -r player-photos _site/ 2>/dev/null || true
+          # Stored-photo coverage alert: a drop versus the published site is a ::warning:: annotation, never a failure —
+          # the script exits 0 on every path, including an unreadable index (tools/test-player-photos.js §8).
+          node tools/photos/coverage-check.mjs
           # TEN-225 Part 3: Open / Now / Close, published from the odds_card_state
           # table by ten225-publish-card-state.py (Actions-only — the table has RLS
           # on and zero policies, so the browser reads this FILE, not the database).
@@ -900,6 +1058,7 @@ jobs:
           cp -r career-record _site/ 2>/dev/null || true
           cp point-by-point.json _site/ 2>/dev/null || true
           cp pbp-index.json _site/ 2>/dev/null || true
+          cp pbp-repairs.json _site/ 2>/dev/null || true
           cp -r pbp _site/ 2>/dev/null || true
           cp setstats-index.json _site/ 2>/dev/null || true
           cp matchstats-index.json _site/ 2>/dev/null || true
@@ -962,19 +1121,16 @@ jobs:
           cp holdbreak.json _site/ 2>/dev/null || true
           # TEN-206 item 3 Situational rows (build-situational.js, daily styles job).
           cp situational.json _site/ 2>/dev/null || true
-          # Entry Lists shard (TEN-150): per-tournament acceptance lists scraped daily by
-          # tools/entry-lists/build-entry-lists.py via launchd cron. Committed but not
-          # copied = silent 404 (Entry Lists tab shows "unavailable"). Best-effort so an
-          # absent shard (first-boot, before the cron runs) never blocks the deploy.
-          cp entry_lists.json _site/ 2>/dev/null || true
+          # entry_lists.json (protennislive draw half, Mac cron) is RETIRED — founder ruling 2026-10-20: the Entry list
+          # tab's draw regime reads draws.json (below). The committed file stays as history; it is no longer served.
           # Entry Lists ADVANCE shard (TEN-150): upcoming-week acceptance lists scraped
-          # daily from ticktocktennis by tools/entry-lists/build-entry-lists-advance.mjs.
-          # The Entry Lists tab merges this (advance regime) with entry_lists.json (draw
+          # daily from ticktocktennis by tools/entry-lists/build-entry-lists-advance.mjs — in GitHub's cloud since
+          # 2026-10-20 (entry-lists-advance.yml). The Entry Lists tab merges this (advance regime) with draws.json (draw
           # regime). Committed but not copied = silent 404 and the tab loses discovery /
           # every upcoming tournament. Best-effort so an absent shard never blocks deploy.
           cp entry_lists_advance.json _site/ 2>/dev/null || true
-          # Official ATP draws (tools/draws/build-draws.py via draws.yml; founder approval 2026-10-20). Published as data
-          # only — no page reads it until the draw view / W/UE quarters are approved. Absent before draws.yml's first run.
+          # Official ATP draws (tools/draws/build-draws.py via draws.yml; founder approval 2026-10-20). Read by the W/UE
+          # export (quarters, ruling 7) and the Entry list tab's draw regime (ruling 1). Absent before draws.yml's first run.
           cp draws.json _site/ 2>/dev/null || true
           # TEN-88 option B: per-player CAREER meeting shards + their index gate the
           # "vs this style" detail list on the Playing-style tab. The index gates the
@@ -1013,6 +1169,12 @@ jobs:
           # Event hold rate (TEN-368, built above). Fetched by the Match analysis Tournament
           # tab and Key factors; a missing file dashes the hold cells with the reason.
           cp event-hold.json _site/ 2>/dev/null || true
+          # Favourites vs underdogs by round (round 2 item 2.2, built above); a missing file dashes the block.
+          cp favourites-by-round.json _site/ 2>/dev/null || true
+          # How it plays (round 2 item 2.1, built above). A missing file dashes the panel.
+          cp how-it-plays.json _site/ 2>/dev/null || true
+          # Points to defend (round 2 item 2.3): committed by points-to-defend.yml twice a day; a missing file hides the block.
+          cp points-to-defend.json _site/ 2>/dev/null || true
           # TEN-263 match-close shards (built above). Lazily fetched per player by the
           # Match analysis Form/H2H tabs; a missing shard dashes the price cells.
           cp match-closes-index.json _site/ 2>/dev/null || true
@@ -1054,11 +1216,6 @@ jobs:
           cp series.json _site/ 2>/dev/null || true
           cp trading-splits-index.json _site/ 2>/dev/null || true
           cp -r trading-splits _site/ 2>/dev/null || true
-          # Wikidata-P18 headshot override map (enrich-player-photos.py). Committed
-          # but never copied → 404 at runtime → _photos={} → EVERY avatar (Trading
-          # Report AND the main dashboard) fell back to a monogram. Publishing it is
-          # what actually makes the photos appear; the render/URL logic was fine.
-          cp player-photos.json _site/ 2>/dev/null || true
           # tournament_key → surface map: the Trading Report reads it client-side to
           # label each live row's surface and pick the surface split. Same map the
           # generator used, so the board can't diverge. Not previously published.
@@ -1110,11 +1267,11 @@ jobs:
           # every match and nothing else complains. bsp-pipeline.js writes it on
           # every run alongside matches.json.
           for f in index.html bsp-consult-dashboard.html auth.html auth.js analytics.js account.html funnel.html verify.html \
-                   live-tab.js kibl-now-stream.js price-history-box.js house-ratings.js \
-                   holdbreak-heatmap.js player-profile-v2.js market-edge-core.js tournament-identity.js h2h-core.js wue-sheet.js \
+                   live-tab.js kibl-now-stream.js price-history-box.js house-ratings.js line-prices.js \
+                   holdbreak-heatmap.js player-profile-v2.js settlement.js market-edge-core.js tournament-identity.js h2h-core.js wue-sheet.js draw-view.js \
+                   esc-nav.js pbp-integrity.js \
                    matches.json player-profiles.json career-splits-tour.json form-index.json \
                    player-index.json \
-                   points-at-risk.json \
                    player-atp-aliases.json \
                    matchup-matrix.json playing-styles.json style-radar.json \
                    dna-apitennis-ratings.json \
@@ -1585,6 +1742,50 @@ jobs:
           retention-days: 1
           compression-level: 1
           include-hidden-files: true
+
+      # Founder ruling 2026-10-21 (A2): save this run's caches only when worth an entry — the day's first, or >= 25
+      # opponent profiles built — and never past 6 entries a day (tools/cache-save-decision.mjs). After the upload, so a
+      # save can never hold a publish back; success() only, so a failed run never stores half-built caches.
+      - name: Decide whether to save pipeline caches
+        id: cachesave
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PREFIX: bsp-caches-v${{ steps.schema.outputs.v }}-${{ steps.cacheday.outputs.day }}-
+        run: |
+          TODAY="$(gh api "repos/$GITHUB_REPOSITORY/actions/caches?key=$PREFIX&per_page=100" --jq '.total_count' 2>/dev/null || true)"
+          node tools/cache-save-decision.mjs --stats profile-build-stats.json --today "$TODAY" --pbp-stats pbp-build-stats.json | tee -a "$GITHUB_OUTPUT"
+
+      - name: Save pipeline caches
+        if: success() && steps.cachesave.outputs.save == 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            player-profiles-cache.json
+            player-profiles.json
+            player-tournament-history.json
+            tournament-profiles.json
+            point-by-point-cache.json
+            tml-cache
+            model-output.json
+            news-feed.json
+            tournament-entries.json
+          key: bsp-caches-v${{ steps.schema.outputs.v }}-${{ steps.cacheday.outputs.day }}-${{ github.run_id }}-${{ github.run_attempt }}
+
+      # Founder 2026-10-23 (outage prevention, item 4): a failed (or timed-out) run keeps the profiles it built. Only the
+      # profile cache, never the other caches (those may be half-built), and only when this run built profiles
+      # (tools/profile-cache-store.js keep-failed). Its own key family, restored and merged at the next run's hydrate.
+      - name: Keep the profile cache of a failed run
+        id: failedcache
+        if: failure() || cancelled()
+        run: node tools/profile-cache-store.js keep-failed
+
+      - name: Save the profile cache of a failed run
+        if: (failure() || cancelled()) && steps.failedcache.outputs.keep == 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: .failed-run-cache/player-profiles-cache.json
+          key: bsp-profiles-failed-v${{ steps.schema.outputs.v }}-${{ steps.cacheday.outputs.day }}-${{ github.run_id }}-${{ github.run_attempt }}
 
       # Founder ruling 2026-10-18: one Telegram per run listing every match the price check dashed (which match, which page
       # tripped, the likely cause), sent AFTER the upload so the message can never hold a publish back. A message that

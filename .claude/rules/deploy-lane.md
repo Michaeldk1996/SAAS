@@ -216,6 +216,40 @@ Supersedes TEN-178's tick-only deploy (the push trigger stays off; nothing here 
 - **Tests:** `tools/test-publish-split.js` (resolve, assemble, workflow wiring, lane), `tools/test-ten351-gate-run.js`
   (`--shard`, W1–W4), `tools/test-ten329-built-store-gate.js` (the reconcile runs before the `site-data` upload).
 
+## Pre-push gate for main (founder ruling 2026-10-21)
+After 1a935c1b9 reached main with `npm test` red. The **Code gate** (`gate.yml` → `publish.yml` publishes only the newest
+gated commit) stays the enforced backstop against *deploying* a red commit; the pre-push hook stops it being *pushed*
+from this Mac. Installed once per repository by `tools/install-git-hooks.sh` (copies `tools/git-hooks/` into the shared
+git dir, absolute `core.hooksPath`: the checkout and every worktree). Re-run the installer when the hook changes.
+- **Test — the hook enforces the lane (founder 2026-10-22, supersedes the separate `land-check.sh` record):** a push that
+  moves `main` must be `tools/deploy-batch.mjs` pushing for the current, unexpired lane holder (it sets
+  `STENNISFY_LANE_PUSH` to its ticket for the push only), with a green `tools/ci-suite.sh` receipt for the pushed commit
+  or a receipted commit that differs from it in data files only — ONE suite record, the lane's — and
+  `tools/clobber-check.sh` clear for every file the push changes. A raw `git push` of code is refused.
+- **Exempt — the files decide, never the marker (founder 2026-10-22):** a push whose every new commit is a data-bot
+  commit by this file's one definition (`isDataCommit` in `tools/deploy-lane.mjs`: the marker in the subject, a
+  `DATA_BOT_AUTHORS` author, every file on `DATA_FILES` / `DATA_DIRS`) — the Mac's daily refresh jobs. A commit's files
+  are its first-parent diff, so a merge is judged by what it brings in. Other branches are never checked. Deleting
+  `main` is refused. `--no-verify` bypasses the hook, never the Code gate.
+- **Test:** code never rides under a skip marker. Refused even with a suite pass: a non-data commit whose message holds
+  any GitHub skip token anywhere (`[skip ci]` `[ci skip]` `[no ci]` `[skip actions]` `[actions skip]`, a
+  `skip-checks: true` trailer), or a push whose tip holds one while the push holds code — GitHub would run no workflow,
+  so the Code gate would never see it (a7fcdc55f, 2026-10-21).
+- **Test:** `tools/test-pre-push-hook.js` (real git, throwaway repositories, no-hook control).
+
+## Suite runs and disk (founder 2026-10-22)
+- **Test:** `tools/ci-suite.sh` refuses below 3 GB free (`CI_SUITE_MIN_FREE_KB`) BEFORE cloning — exit 4, "low disk: N MB
+  free, need 3072 MB — nothing ran", no receipt — and checks again before `npm test`. A full disk otherwise fails a suite
+  mid-way, in different tests each time, and reads like a code failure.
+- **Test:** `npm test` runs in its own process group with `TMPDIR` inside the throwaway clone; EXIT / INT / TERM stop the
+  whole test run and remove the clone. A killed runner never leaves an orphaned `npm test` or a 1.3 GB clone, and test
+  temp folders never pile up in the shared TMPDIR. **Test:** `test-ten273-deploy-batch.mjs` (real runs + mutants).
+- **The daily space report** (`tools/prune-agent-space.sh`, installed by `tools/install-prune-agent.sh` as the
+  `com.stennisfy.prune-report` LaunchAgent, 06:30 local) is **report-only** until the founder approves deletion. Safe =
+  idle (7 days; TMPDIR test folders 48 h), no open files, and for a worktree clean and fully pushed — a worktree holding
+  work is listed, never removed. Never: the main checkout, tool caches, Paperclip's own data. **Test:**
+  `tools/test-prune-agent-space.js`.
+
 ## Pipeline-down alert (founder ruling 2026-10-18)
 
 - **Two failed `pipeline.yml` runs in a row → ONE Telegram naming the failing step in plain words** (the step name
@@ -395,3 +429,13 @@ Only 0 lets you push. Codes 4 and 5 (TEN-261) are retired; no path returns them.
 
 Change the numbers only on a founder ruling, in the tool and here together. Tests:
 `test-ten261-deploy-lane.mjs`, `test-ten273-deploy-batch.mjs`, `tools/test-ten273-lane-alert.js`.
+
+## Archive gate exceptions (founder 2026-10-25)
+- **A deliberate row removal lands with its gate exception in the SAME push.** Before landing anything that lowers
+  `masterRows` / `exportEvents` / `feedRows` / `approxRows` / `xRows`, measure the new count and commit
+  `node tools/archive-gate.mjs accept --key <k> --expect <n> --reason "…"` with the change. **Test:** is there a code
+  change that drops a gate count without an `archive-gate-accept.json` entry in the same commit range? Then it is wrong.
+  (fbe32022f dropped feedRows 298 → 286 without one and every pipeline run failed for ~3.5 h.)
+- **Bot data paths:** `line-prices/*.json` and `.ten225-fixture-index.json.gz` are data (`DATA_DIRS` / `DATA_FILES`),
+  so their 15-min / daily bot commits never make a claim "not rebased".
+

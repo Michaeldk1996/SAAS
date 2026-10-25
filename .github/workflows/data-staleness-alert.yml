@@ -1,0 +1,68 @@
+name: Data staleness alert
+
+# Founder brief "round 2" item 1.5 (2026-10-25): Telegram when the PUBLISHED site data (live build-info.json
+# `data.builtAt`) is more than 60 min old; once when first seen, then at most hourly while the same stale build lasts.
+# An unreadable build-info.json alerts too, but only after 3 failed tries in one pass (a single blip never does).
+# Decision: tools/data-staleness-alert.mjs; its unit test sits beside it in tools/ and runs in npm test. (The test's
+# file name is deliberately not written here: tools/test-every-suite-is-wired.js counts any workflow text naming a
+# suite as wiring it.)
+#
+# TRIGGERS. `schedule:` is the one asked for, but Actions throttles it on this repo (pipeline-stall-guard.yml measured 5
+# of 96 */15 ticks firing on 6 Oct), so — as the stall guard does — the pass also rides on the completion of the two
+# workflows the Supabase pg_cron pingers dispatch every 10-15 min. Every trigger runs this file from main (schedule and
+# workflow_run always use the default branch; the job refuses any other ref). More passes cost no extra messages: the
+# hourly limit is enforced from the saved state, not from the schedule.
+#
+# STATE. The last delivered alert is carried between passes by actions/cache: restored by prefix (the newest entry),
+# saved under a new key only when a message was delivered. One pass at a time (concurrency, no cancel), so a pass
+# always restores what the one before it saved.
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_run:
+    workflows: ['BSP data pipeline', 'BSP oddspapi post-match archive']
+    types: [completed]
+  workflow_dispatch:
+
+concurrency:
+  group: data-staleness-alert
+  cancel-in-progress: false
+
+permissions:
+  contents: read   # actions/cache uses the runner's own cache token, not GITHUB_TOKEN
+
+jobs:
+  check:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          sparse-checkout: |
+            tools/data-staleness-alert.mjs
+            tools/price-alert-send.mjs
+          sparse-checkout-cone-mode: false
+      - uses: actions/setup-node@v4
+        with: { node-version: '24' }
+      - name: Restore the last alert sent
+        uses: actions/cache/restore@v4
+        with:
+          path: .data-staleness-alert
+          key: data-staleness-alert-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: data-staleness-alert-
+      - name: Published data older than 60 min (Telegram)
+        id: alert
+        env:
+          SITE_URL: https://michaeldk1996.github.io/SAAS
+          STATE_FILE: .data-staleness-alert/state.json
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: node tools/data-staleness-alert.mjs
+      - name: Save the alert just sent
+        if: steps.alert.outputs.save == 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: .data-staleness-alert
+          key: data-staleness-alert-${{ github.run_id }}-${{ github.run_attempt }}

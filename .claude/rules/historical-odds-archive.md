@@ -74,7 +74,10 @@ file we hold is irreplaceable.
   TE shows when Pinnacle's price last CHANGED, never that it still stood at a verified start). Read on the Mac by
   `stennisfy-ops` `tools/te-odds-batch.mjs` (one page a match, 9–12 s apart, the first error page stops it; join = TE date ±1
   day, both names, one candidate both ways, else no row) into the private store `stennisfy-te-store/te-odds/`; stored only by
-  `tdarch.py te-import` (`historical-archive.yml` modes `te-dry-run` / `te-import`) from COMPLETE batch files, the result and
+  `tdarch.py te-import` (`historical-archive.yml` modes `te-dry-run` / `te-import`; every 3 h on its own through `te-import-scheduled.yml` →
+  `te-import-new`, which imports only a batch the archive holds no row of and sends its line — rows stored, in-play dropped,
+  no-timestamp kept and its share (flagged over 25%), coverage gained — to Telegram, a FAILED line on an error; founder
+  2026-10-23) from COMPLETE batch files, the result and
   names from the current api-tennis fixture. A TE row carries `price_ts` = the later side's last change (null = TE shows no
   change; kept in the archive, shown on no page — founder 2026-10-19), `fetched_at` = when the page was read, and names its TE match and page sha256 (CHECKs); it claims no cut, start or
   Oddspapi fixture. ITF is out of scope (refused by the importer). **In-play rule (founder 2026-10-20):** a price whose last change (`price_ts`) is after the start is not stored — our verified start (the batch row's close start, else `live_flip_log`) where we have one, otherwise api-tennis's scheduled start (UTC); each stored row names the start it was checked against (`detail.startChecked` / `startKind`); the dropped count per batch is in the import report. **The same rule is applied again at read time** (founder 2026-10-20, item 5 revised): `lower_feed_rows` never feeds a TE row whose `price_ts` is after its `startChecked` (`te_in_play`), so the rule can be tightened later without touching the append-only table. **Kept for these levels** (same ruling): a row with no TE time, a change in the start's own minute (TE prints minutes) and a row with no start time; the import report counts each per batch, with the over-1pp share of the no-time group where the batch row carries our verified close (calib-01: 10 of 51). **Test:** `tools/test-historical-archive-sql.py`
@@ -82,6 +85,14 @@ file we hold is irreplaceable.
 - **Where it is used:** the Database join only (`database.md` "Pinnacle (approx.)"), never over a Tennis-Data or Oddspapi
   close; Bet365 stays the fallback where api-tennis has no pair. The private CSV export does NOT carry it (its columns are
   closes).
+
+## The install runs each migration once (founder 2026-10-20, item 9)
+- `historical-archive.yml` mode `install` runs `tools/archive_install.py`: each listed migration is applied ONCE and recorded in
+  `archive_migrations` (name, sha256, how; append-only like the archive) in the same transaction; a recorded file is skipped,
+  a recorded file whose bytes changed stops the install ("add a new migration instead"), a failed new file records nothing.
+  The archive installed before the ledger was recorded at bootstrap (never re-run). Replaces PR #63's 23514 tolerance.
+  **Test:** `tools/test-archive-ledger.py` (a real throwaway Postgres; controls: the old re-run fails, a half-installed
+  archive is not bootstrapped).
 
 ## Same-day re-runs (founder ruling 2026-10-16, round 3 item 5)
 - A second daily run on a day already written skips that day's export / backup with the log line "day already written,

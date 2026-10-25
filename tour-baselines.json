@@ -4,7 +4,7 @@
  "equalsDatabaseTour": true,
  "source": "build-database-yield.js over odds-archive/*.csv, the same run that writes database-yield.json",
  "priceRule": "Pinnacle closing, else Bet365 closing, per row (build-market-edge.js pickBook)",
- "filters": "ATP main tour, all levels incl. Finals, all surfaces, seasons 2010 on; completed matches only (walkovers, retirements and other non-results excluded); exact price ties and overround > 1.15 excluded; favourite = the shorter price; flat 1u, a win pays price − 1",
+ "filters": "ATP main tour, all levels incl. Finals, all surfaces, seasons 2010 on; completed matches, plus retirements settled on Pinnacle rules (settlement.js settleBet: after the first set was completed the bet stands on the result; before it, or with no set scores, void); walkovers excluded; exact price ties and overround > 1.15 excluded; favourite = the shorter price; flat 1u, a win pays price − 1",
  "dateRange": [
   "2010-01-04",
   "2026-10-06"

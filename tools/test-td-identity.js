@@ -61,6 +61,45 @@ ok(g.allow('1746', 'Huesler M.A.', '2018-07-26'), 'a name a Tennis Abstract id c
 ok(g.allow('99999', 'Nobody N.', '2020-01-01'), 'a key the store does not hold passes (nothing to check against)');
 ok(g.stats.byKey['1056'] && g.stats.byKey['1056'].beforeCareer === 2 && g.stats.byKey['1056'].otherActive === 1, 'the gate counts each refusal by key and cause');
 
+// --- rule 4 (founder 2026-10-22, containment): an AMBIGUOUS name takes a row only on the key's own match --------------
+// ambiguous-archive-names.json.gz: Tennis Abstract players per surname|first-initial, and their matches [yyyymmdd, i, opp]
+const zlib = require('zlib');
+const ambDoc = (matches) => ({ v: 2, names: { 'martin|a': ['Alberto Martin', 'Andrej Martin', 'Andres Martin'], 'hernandez|a': ['Alejandro Hernandez', 'Alex Hernandez'] },
+  players: ['Alberto Martin', 'Andrej Martin', 'Andres Martin', 'Alex Hernandez'], matches });
+const writeAmb = (m) => fs.writeFileSync(path.join(tmp, 'ambiguous-archive-names.json.gz'), zlib.gzipSync(JSON.stringify(ambDoc(m))));
+fs.writeFileSync(path.join(tmp, 'player-index.json'), JSON.stringify({ players: [{ key: '1056', name: 'Andres Martin' }, { key: '1307', name: 'A. Hernandez' }] }));
+sh('1307', 'HX01', [R('2022-02-23', 'P. Andujar', { oppKey: '33998' })]);
+roster.set('1307', 'A. Hernandez');
+writeAmb({ 'martin|a': [], 'hernandez|a': [] });
+let g4 = buildIdentityGate(tmp, roster);
+ok(g4.allow('1056', 'Martin A.', '2024-07-24', 'Shang J.'), 'ambiguous name, his OWN match that day against that opponent → kept');
+ok(!g4.allow('1056', 'Martin A.', '2024-07-30', 'Shang J.'), 'no own match within ±3 days → a dash ("identity unverified")');
+ok(!g4.allow('1056', 'Martin A.', '2024-07-24', 'Fritz T.'), 'an own match that day, but against another opponent → a dash');
+ok(g4.allow('1056', 'Martin A.', '2024-07-30'), 'no opponent passed (a caller outside the Tennis-Data builders): rule 4 does not apply');
+g4.allow('1056', 'Martin A.', '2024-07-30', 'Shang J.');
+ok(g4.hidden('1056') === 2 && g4.stats.byKey['1056'].unverified === 3, 'hidden() counts each dashed ROW once (a builder may ask twice); the stats count every refusal');
+ok(g4.allow('438', 'Mannarino A.', '2022-07-28', 'Martin A.'), 'a name nobody else fits is not ambiguous → no own-match check');
+// the Tennis Abstract veto: our own store holds a match that TML gives to a namesake with a different first name
+writeAmb({ 'martin|a': [[20220725, 1, 'adrianmannarino']], 'hernandez|a': [[20220221, 3, 'pabloandujar']] });
+g4 = buildIdentityGate(tmp, roster);
+ok(!g4.allow('1056', 'Martin A.', '2022-07-28', 'Mannarino A.'), 'TML says Andrej played that week\'s match against Mannarino → vetoed, even though our store files it under 1056');
+writeAmb({ 'martin|a': [[20220725, 1, 'adrianmannarino'], [20220725, 2, 'adrianmannarino']], 'hernandez|a': [[20220221, 3, 'pabloandujar']] });
+g4 = buildIdentityGate(tmp, roster);
+ok(g4.allow('1056', 'Martin A.', '2022-07-28', 'Mannarino A.'), '...but when TML also has Andres against him that week (Vesely beat both Zhangs in Shenzhen 2015), no veto');
+ok(g4.allow('1307', 'Hernandez A.', '2022-02-23', 'Andujar P.'), 'an abbreviated name ("A. Hernandez") is never vetoed on a first name it cannot compare; his own match keeps the row');
+// mutant: rule 4 switched off → the unverified row comes back (the check above is not vacuous)
+{
+  const src = fs.readFileSync(path.join(__dirname, '..', 'td-identity.js'), 'utf8');
+  const anchor = '    if (opp) {\n      const ambiguous';
+  ok(src.split(anchor).length === 2, 'mutant anchor found once');
+  const mf = path.join(__dirname, '..', '.td-identity-mutant.js');
+  fs.writeFileSync(mf, src.replace(anchor, '    if (false) {\n      const ambiguous'));
+  try { const gm = require(mf).buildIdentityGate(tmp, roster); ok(gm.allow('1056', 'Martin A.', '2024-07-30', 'Shang J.'), 'mutant (rule 4 off) keeps the unverified row — the real gate dashes it'); }
+  finally { fs.rmSync(mf, { force: true }); }
+}
+fs.rmSync(path.join(tmp, 'ambiguous-archive-names.json.gz')); fs.rmSync(path.join(tmp, 'player-index.json'));
+fs.rmSync(path.join(tmp, 'career-history', '1307.json')); roster.delete('1307');
+
 // --- the closes builder on fixtures: the store check ---------------------------------------------------------------
 const H = 'date,tournament,series,court,surface,round,bestof,winner,loser,wrank,lrank,comment,b365w,b365l,psw,psl,maxw,maxl,avgw,avgl,avgsrc';
 const L = (d, t, w, l) => [d, t, 'ATP250', 'Outdoor', 'Clay', '1st Round', 3, w, l, 10, 20, 'Completed', 1.5, 2.6, 1.5, 2.6, 1.6, 2.7, 1.5, 2.6, 'file'].join(',');
@@ -90,7 +129,7 @@ ok(idx.identityGate && idx.identityGate.byKey['1056'].beforeCareer === 2, 'the c
 
 // --- mutant: the gate removed → the store check goes red ------------------------------------------------------------
 const src = fs.readFileSync(path.join(__dirname, '..', 'build-match-closes.js'), 'utf8');
-const anchor = 'return k && gate && date && !gate.allow(k, name, date) ? null : k;';
+const anchor = 'return k && gate && date && !gate.allow(k, name, date, opp) ? null : k;';
 ok(src.split(anchor).length === 2, 'the mutant anchor is found exactly once');
 const mp = path.join(__dirname, '..', '.mutant-match-closes.js');
 fs.writeFileSync(mp, src.replace(anchor, 'return k;'));
@@ -98,6 +137,32 @@ let red = false;
 try { const out2 = fs.mkdtempSync(path.join(tmp, 'mc2-')); require(mp).build(tmp, out2, path.join(out2, 'index.json')); red = beforeCareerRows(out2, g).length > 0; }
 finally { fs.unlinkSync(mp); }
 ok(red, 'MUTANT (the identity gate removed) hands Alberto and Andrej to key 1056 and the store check goes red');
+
+// rule 4 through the real closes builder: an ambiguous name's unverified row is dropped and its shard says how many
+{
+  writeAmb({ 'martin|a': [] });
+  fs.writeFileSync(path.join(tmp, 'player-index.json'), JSON.stringify({ players: [{ key: '1056', name: 'Andres Martin' }] }));
+  fs.writeFileSync(path.join(tmp, 'odds-archive', '2024.csv'), [H, L('2024-07-24', 'Atlanta Open', 'Martin A.', 'Shang J.'), L('2024-08-12', 'Cincinnati', 'Martin A.', 'Fritz T.')].join('\n') + '\n');
+  const out4 = fs.mkdtempSync(path.join(tmp, 'mc4-'));
+  require('../build-match-closes.js').build(tmp, out4, path.join(out4, 'index.json'));
+  const s1056 = JSON.parse(fs.readFileSync(path.join(out4, '1056.json'), 'utf8'));
+  const dates = s1056.rows.map((r) => r[0]);
+  ok(dates.includes('2024-07-24') && !dates.includes('2024-08-12'), 'closes builder: the verified 2024-07-24 row stays, the unverified 2024-08-12 row is dropped');
+  ok(s1056.identityHidden === 1, `closes shard says 1 row hidden: identity unverified (got ${s1056.identityHidden})`);
+  fs.rmSync(path.join(tmp, 'odds-archive', '2024.csv'));
+}
+
+// wiring: every Tennis-Data builder passes the row's opponent and publishes identityHidden; the pages say the count
+{
+  const rd = (f) => fs.readFileSync(path.join(__dirname, '..', f), 'utf8');
+  ok(/resolveAt\(b\.name, row\.date, b\.opp\)/.test(rd('build-market-edge.js')) && /out\.identityHidden = idGate && idGate\.hidden/.test(rd('build-market-edge.js')), 'market edge: passes the opponent, publishes identityHidden');
+  ok(/td\.archive\(r\.winner, r\.date, r\.loser\), kl = td\.archive\(r\.loser, r\.date, r\.winner\)/.test(rd('build-match-closes.js')) && /identityHidden: idGate && idGate\.hidden/.test(rd('build-match-closes.js')), 'match closes: passes the opponent, publishes identityHidden');
+  ok(/idGate\.allow\(hit0\.key, side\.name, row\.date, side\.name === row\.winner \? row\.loser : row\.winner\)/.test(rd('build-odds-performance.js')) && /shard\.identityHidden = idGate && idGate\.hidden/.test(rd('build-odds-performance.js')), 'odds performance: passes the opponent, publishes identityHidden');
+  ok(/' hidden: identity unverified'/.test(rd('player-profile-v2.js')) && /mk\.identityHidden > 0/.test(rd('player-profile-v2.js')), 'profile Market edge line says "N rows hidden: identity unverified"');
+  const h = rd('bsp-consult-dashboard.html');
+  ok(/rows\.idHidden = \(ms && ms\.identityHidden\) \|\| 0;/.test(h) && /class="me-id-hidden"/.test(h) && /hidden: identity unverified` : ''\]\.filter\(Boolean\)\.join\(' · '\)/.test(h), 'Market edge tab: the section line and the band pop-up say the count');
+  ok(fs.existsSync(path.join(__dirname, '..', 'ambiguous-archive-names.json.gz')), 'the ambiguous-names evidence is committed (the gate reads it with no TML at run time)');
+}
 
 if (process.env.KEEP) console.log(tmp); else fs.rmSync(tmp, { recursive: true, force: true });
 console.log(`\ntest-td-identity: ${pass} passed, ${fail} failed`);

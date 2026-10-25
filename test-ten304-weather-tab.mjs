@@ -420,7 +420,7 @@ test('"may start later" note on every match that is not first on court that day'
   assert.deepEqual(note(Object.assign({}, M, { time: '10:00' })), [], 'a tie with the first slot is first on court');
 });
 
-// Mutation: drop the Escape keydown listener from initAOddsTips (the shared TEN-303 tooltip).
+// Mutation: the shared TEN-303 tooltip's Esc layer closes nothing (registered in initAOddsTips, run by esc-nav.js).
 test('Escape closes the shared tooltip (open or pending)', () => {
   const T = buildTips(); T.api.initAOddsTips();
   const el = T.mkEl({ 'data-aotip': '<b>x</b>', tabindex: '0' });
@@ -431,12 +431,14 @@ test('Escape closes the shared tooltip (open or pending)', () => {
   T.fire('focusin', T.mkEl({ 'data-aotip': '<b>z</b>' })); T.key('Enter'); T.tick(250); assert.ok(T.tip(), 'other keys do nothing');
 });
 
-// TEN-335. Mutations: the tooltip's Esc listener in the bubble phase, or not stopped — one Esc would close the tooltip
-// AND the Odds pop-up under it (maPopEscKey, bubble phase), losing the layered dismissal; or stopped while the tooltip is
-// only pending / in a hidden modal (an Esc meant for the page is swallowed).
-test('Escape with a tooltip up is consumed by the tooltip (capture phase, stopped); with none it passes on', () => {
+// TEN-335. Mutations: the tooltip's Esc layer ranked at or below the pop-up, or never taking the press — one Esc would
+// close the tooltip AND the Odds pop-up under it (ma-pop, z 78), losing the layered dismissal; or taking it while the
+// tooltip is only pending / in a hidden modal (an Esc meant for the page is swallowed). Since the ESC brief (2026-10-21)
+// every layer goes through esc-nav.js, which acts on ONE layer per press and stops the event only when it acts.
+test('Escape with a tooltip up is consumed by the tooltip (ranked above the pop-up, stopped); with none it passes on', () => {
   const T = buildTips(); T.api.initAOddsTips();
-  assert.deepEqual(T.keyCapture(), [true], 'the tooltip listens in the capture phase, ahead of maPopEscKey');
+  assert.deepEqual(T.keyCapture(), [], 'no keydown listener of its own: Esc is the one handler in esc-nav.js');
+  assert.ok(T.layer('ao-tip') && T.layer('ao-tip').z > 78, 'the tooltip layer ranks above the pop-up frame (ma-pop, z 78)');
   T.fire('mouseover', T.mkEl({ 'data-aotip': '<b>x</b>' })); T.tick(250);
   assert.equal(T.key('Escape').stopped, true, 'an open tooltip stops the Esc');
   assert.equal(T.tip(), null, 'and closes');
@@ -460,11 +462,11 @@ const WX_ROLE = { text: 'var(--text)', sub: 'var(--text-soft)', muted: 'var(--te
   chipBd: 'var(--edge-16)', unavail: 'color-mix(in srgb, var(--text) 15%, transparent)',
   match: 'var(--text)', matchFill: 'var(--inner)', matchBd: 'var(--edge-24)', badgeInk: 'var(--text-soft)', badgeBd: 'var(--edge-16)' };
 // tokens.css Night values the roles above must resolve to
-const WX_NIGHT = { text: '#FFFFFF', sub: '#DDE0EA', muted: '#DDE0EA', dim: '#A3AABE', faint: '#A3AABE', card: '#10131D', lead: '#10131D',
+const WX_NIGHT = { text: '#E7E9EE', sub: '#DDE0EA', muted: '#DDE0EA', dim: '#A3AABE', faint: '#A3AABE', card: '#10131D', lead: '#10131D',
   bd: 'RGBA(255,255,255,0.06)', box: 'RGBA(255,255,255,0.05)', rule: 'RGBA(255,255,255,0.05)', ruleFx: 'RGBA(255,255,255,0.05)', inner: '#171B28',
-  dashBd: 'RGBA(255,255,255,0.1)', tagBd: 'RGBA(255,255,255,0.1)', bar: 'RGBA(255,255,255,0.06)', amber: '#DDE0EA', red: '#FFFFFF',
-  amberBd: 'RGBA(255,255,255,0.06)', redBd: 'RGBA(255,255,255,0.06)', chipBd: 'RGBA(255,255,255,0.16)', unavail: 'RGBA(255,255,255,0.15)',
-  match: '#FFFFFF', matchFill: '#171B28', matchBd: 'RGBA(255,255,255,0.24)', badgeInk: '#DDE0EA', badgeBd: 'RGBA(255,255,255,0.16)' };
+  dashBd: 'RGBA(255,255,255,0.1)', tagBd: 'RGBA(255,255,255,0.1)', bar: 'RGBA(255,255,255,0.06)', amber: '#DDE0EA', red: '#E7E9EE',
+  amberBd: 'RGBA(255,255,255,0.06)', redBd: 'RGBA(255,255,255,0.06)', chipBd: 'RGBA(255,255,255,0.16)', unavail: 'RGBA(231,233,238,0.15)',
+  match: '#E7E9EE', matchFill: '#171B28', matchBd: 'RGBA(255,255,255,0.24)', badgeInk: '#DDE0EA', badgeBd: 'RGBA(255,255,255,0.16)' };
 test('Weather colours are foundation role tokens (no literal), resolving to the tokens.css Night values; borders 1px', () => {
   const C = build({}).WX_C, n = v => String(v).replace(/\s/g, '');
   assert.deepEqual(Object.keys(C).sort(), Object.keys(WX_ROLE).concat(['hw', 'hw1']).sort(), 'every colour is locked');

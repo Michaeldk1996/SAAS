@@ -34,7 +34,7 @@ function constSrc(name) {
 const FNS = ['escapeHtml', 'fhEsc', 'fhSafeId', 'ppCleanTournamentName', 'fhTournClean', 'fhSurfName', 'h2hRoundLabel', 'maRoundName', 'psRoundAbbr', 'fhRoundCode',
   'fhSetsFrom', 'psNormTour', 'fhBestOf', 'fhSetDone', 'fhFinishRow', 'fhRowFromForm', 'fhDayNum', 'fhDDMM', 'fhLongDate', 'fhIsInitial', 'fhNameKey',
   'fhPickBook', 'fhCloseFor', 'fhEloKey', 'fhEloKeyOwners', 'fhEloAt', 'fhRefDay', 'tourxSampleGate', 'maGate', 'maGateBar', 'maSmallNote', 'fhMedian',
-  'fhOdd', 'fhSigned', 'fhSourceNote', 'fhB365Approx', 'fhSrcTitle', 'fhScoreText', 'fhEligible', 'fhIneligibleWhy', 'fhScoreLines', 'fhHotLineRank', 'fhFamOf',
+  'fhOdd', 'fhSigned', 'fhSourceNote', 'fhB365Approx', 'fhPxMark', 'fhSrcTitle', 'fhScoreText', 'fhEligible', 'fhMtbOf', 'fhIneligibleWhy', 'fhScoreLines', 'fhHotLineRank', 'fhFamOf',
   'fhFormLineDefs', 'surnameFirstName', 'fhOppFmt', 'psShortName', 'fhSurname', 'fhTournCode', 'fhHotLinesHead', 'fhHotRateHtml', 'fhHotLinesTable', 'fhHotMoreHtml',
   'maPct', 'maRate', 'maRateHtml', 'fhFormRowsFromCareer',
   'fhFormPlayer', 'fhFormSetScores', 'fhFormTipScore', 'fhFormRowData', 'maMatchRowsHtml', 'maTipHtml', 'fhFormColumnHtml', 'fhFormListHtml', 'fhFormHotHtml',
@@ -42,6 +42,17 @@ const FNS = ['escapeHtml', 'fhEsc', 'fhSafeId', 'ppCleanTournamentName', 'fhTour
 const CONSTS = ['FH_SLAMS', 'FH_BOOK_ORDER', 'FH_BOOK', 'FH_SRC', 'FH_B365_APPROX_HOVER', 'FH_DASHC', 'FH_MONO', 'FH_THIN', 'FH_AC', 'FH_SURF', 'FH_ELO_MAX_AGE_DAYS',
   'FH_HOT_MIN_ELIGIBLE', 'FH_HOT_FAM', 'FH_TCODE', 'FH_MONS', 'FH_FORM_ROW_CAP', 'FH_FORM_EVENTS_NOT_COUNTED', 'FH_FORM_NOT_ATP_RECORD', 'MA_GREY', 'MA_SMALL_NOTE', 'MA_ROW_COLS', 'MA_ROW_GAP', 'FH_HOT_COLS', 'FH_HOT_FOOT'];
 globalThis.MarketEdgeCore = (await import('node:module')).createRequire(import.meta.url)(join(HERE, 'market-edge-core.js'));
+// hotlines-mtb (2026-10-24): fhEligible reads Derived lines' match-tiebreak rule from the REAL player-profile-v2.js
+// (PlayerProfileV2._internals.lineFormatOf); without it every games-based Hot line fails closed. The sliced page code
+// below resolves `window` to this global.
+function hlmtbLoadPP2() {
+  const sb = { FEATURE_PP2: true, playerProfiles: { players: {} }, matches: [], addEventListener() {},
+    document: { addEventListener() {}, getElementById: () => null, querySelector: () => null, querySelectorAll: () => [] } };
+  const prev = globalThis.window; globalThis.window = sb;
+  try { new Function('window', readFileSync(join(HERE, 'player-profile-v2.js'), 'utf8'))(sb); } finally { globalThis.window = prev; }
+  return sb.PlayerProfileV2;
+}
+globalThis.window = Object.assign(globalThis.window || {}, { PlayerProfileV2: hlmtbLoadPP2() });
 const S = new Function(`
   let _fh = null; const playerProfiles = {};
   function eventKeyOfMatch(m){ return m.eventKey || null; }
@@ -125,8 +136,11 @@ test('a player without a form shard reads career-history, capped at the form-row
   assert.equal(rows.length, 40, 'capped at FH_FORM_ROW_CAP');
   assert.equal(rows[1].qualifying, true, 'a "Qualifying" round is a qualifying row');
   assert.equal(rows[1].tier, 'chitf', 'Challenger / ITF rows stay (recent form is never ATP-only)');
+  // founder 2026-10-22: the cap counts PLAYED rows (the walkover is split off first and listed on its own)
+  assert.ok(rows.every(r => !r.walkover), 'no walkover among the capped Form rows');
+  assert.deepEqual(S.fhFormRowsFromCareer(ch, true).map(r => r.opponent), ['Q. Opp0'], 'the walkover row, for the list');
   const P = player(match({ _fhFormRows: [rows, []], _fhFormSrc: ['career', null], _fhCloses: [null, null] }));
-  assert.ok(P.win.every(r => !r.wo) && P.shown.length === 39, 'the walkover row is dropped; 39 played matches on record');
+  assert.ok(P.win.every(r => !r.wo) && P.shown.length === 40, '40 played matches on record; the walkover is in none of them');
 });
 
 // Mutation: the group header meta dropped, or the tooltip/rows back to the double-space score join, or Form back on the
@@ -219,9 +233,9 @@ test('a career-history row (no opponent key) is priced by name against a keyed a
 });
 
 // Mutation: the settlement note dropped from the v-market pill or the Flat 1u value (TEN-325, founder 70fb039e).
-test('profit figures that count retirements carry "Retirements settled on the official ATP result." (one constant)', () => {
+test('profit figures that count retirements carry "Retirements settle on Pinnacle rules for all rows." (one constant)', () => {
   const NOTE = globalThis.MarketEdgeCore.RET_SETTLE_NOTE;
-  assert.equal(NOTE, 'Retirements settled on the official ATP result.');
+  assert.equal(NOTE, 'Retirements settle on Pinnacle rules for all rows.');
   const many = Array.from({ length: 6 }, (_, i) => row(`2026-07-${String(18 - i).padStart(2, '0')}`, 'P. ' + ['Alpha', 'Bravo', 'Carlo', 'Delta', 'Echo', 'Foxtrot'][i], i % 2 === 0, [[6, 4], [6, 3]]));
   const cl = { rows: many.map(r => ({ date: r.date, opp: r.opponent, won: r.won, P: [1.7, 2.2], B: null, ret: false, oppKey: null })), cap: [] };
   const m = match({ _fhFormRows: [many, many], _fhFormSrc: ['form', 'form'], _fhCloses: [cl, cl] });
@@ -356,13 +370,3 @@ test('TEN-383: the Player Profile Recent form (ribbon, chips, ledger) counts the
   assert.equal((led.match(/class="pp2-ledger-row"/g) || []).length, 11, 'the ledger draws the 11 form rows');
 });
 
-// The legacy renderer (buildPlayerProfileHtml, reached on ?pp2=0) is ~900 lines of page-coupled template and is not
-// executed here; these source checks pin its two TEN-383 reads so a revert cannot pass silently. Mutations: the tile's
-// last10 or the list's formMatches back on the unfiltered recentMatches.
-test('TEN-383: the legacy profile renderer reads the Form list for its tile and list, every match for the season', () => {
-  const src = slice('buildPlayerProfileHtml');
-  assert.match(src, /const formRows = recentMatches\.filter\(m => !FH_FORM_NOT_ATP_RECORD\.test\(/);
-  assert.match(src, /const last10 = formRows\.slice\(0, 10\);/);
-  assert.match(src, /const formMatches = formSurf === 'All' \? formRows : formRows\.filter\(/);
-  assert.match(src, /const seasonMatches = recentMatches\.filter\(/, 'the season record keeps every match');
-});

@@ -228,15 +228,16 @@ test('Q14: court speed — abstract 2 dp, the N4 category, the knob on the 0–1
   assert.doesNotMatch(h, /usual/);
   assert.doesNotMatch(S.kfTourCard(match({ courtSpeed: { abstractSpeed: 1.18, category: 'Fast' } })), /kf-knob/, 'no index: no knob, never a guess');
 });
-// Mutation: the ROI tiles ungated, or coloured by the delta instead of the sign.
+// Mutation: the ROI tiles ungated, or coloured by the delta instead of the sign. Fixture shape = build-tournament-market.js
+// (round 2 item 1.3): n = the ROI figure rows (settleBet), nRel = Fav wins' own n (matchWinner, retirements counted).
 test('Tournament: ROI fav / ROI dog / Fav wins = tournament-market.json, gated on n, "±x.xpp vs tour avg" (Q14)', () => {
   setup();
-  S.market = { baseline: { roiFav: -3, roiDog: -5, favRel: 66 }, tournaments: { Basel: { n: 120, roiFav: -2.2, roiDog: 1.04, favRel: 69, archiveNames: ['Swiss Indoors'] } } };
+  S.market = { baseline: { roiFav: -3, roiDog: -5, favRel: 66 }, tournaments: { Basel: { n: 120, roiFav: -2.2, roiDog: 1.04, favRel: 69, nRel: 124, archiveNames: ['Swiss Indoors'] } } };
   const h = S.kfTourCard(match({ courtSpeed: null }));
   assert.match(vis(h), /−2\.2% ROI fav in line with tour avg \+1\.0% ROI dog \+6\.0pp vs tour avg 69% Fav wins/);
   assert.match(h, /class="kf-roi-fav"[\s\S]*?color:var\(--neg\)/, 'a negative ROI is red');
   assert.match(h, /class="kf-roi-dog"[\s\S]*?color:var\(--pos\)/);
-  S.market = { baseline: { roiFav: -3, roiDog: -5, favRel: 66 }, tournaments: { Basel: { n: 3, roiFav: 9, roiDog: 9, favRel: 90 } } };
+  S.market = { baseline: { roiFav: -3, roiDog: -5, favRel: 66 }, tournaments: { Basel: { n: 3, roiFav: 9, roiDog: 9, favRel: 90, nRel: 3 } } };
   assert.match(vis(S.kfTourCard(match())), /— ROI fav too few settled — ROI dog too few settled — Fav wins too few settled/, 'n = 3: no rate');
 });
 // Founder Q9: the event hold rate is the Tournament tab's own cell. Mutation: Key factors back on a count-less figure.
@@ -334,7 +335,7 @@ test('DNA: below the 10-match floor an axis is a dash, never a 0; only Surface E
 function h2hMatch(rows, over){
   const extra = new Map(((over && over._fhCh && over._fhCh[0]) || []).filter(x => x.eventKey != null).map(x => [x.eventKey, x]));
   const ch = rows.map(r => Object.assign({ date: r.date, tournament: r.tournament, round: r.round, surface: r.surface, opponent: 'C. Alcaraz', won: r.p1Won,
-    result: r.result, level: r.level === 'ATP' ? 'atp' : 'chitf', eventKey: r.eventKey }, extra.get(r.eventKey) || {}));
+    result: r.result, level: r.level === 'ATP' ? 'atp' : 'chitf', eventKey: r.eventKey, ...(r.walkover ? { walkover: true } : {}) }, extra.get(r.eventKey) || {}));
   return match(Object.assign({ _fhH2hData: true, _fhCloses: [null, null], _fhElo: null }, over || {}, { _fhCh: [ch, []] }));
 }
 const mt = (date, won, extra) => Object.assign({ date, tournament: 'Ev', round: 'R16', surface: 'Hard', p1Won: won, result: won ? '2 - 1' : '1 - 2', level: 'ATP', eventKey: null }, extra || {});
@@ -343,7 +344,7 @@ const mt = (date, won, extra) => Object.assign({ date, tournament: 'Ev', round: 
 // a record never carries a level mix. Mutation: Challenger rows back in the population.
 test('Head to head: the H2H tab\'s record — walkovers out (N2), a retirement counts, the tug toward the leader, Challengers out (ATP rule)', () => {
   setup();
-  const h = S.kfH2HCard(h2hMatch([mt('2023-03-01', true), mt('2024-05-10', false, { tournament: 'Munich' }), mt('2025-01-20', true, { result: '0 - 0', tournament: 'Ghost' }),
+  const h = S.kfH2HCard(h2hMatch([mt('2023-03-01', true), mt('2024-05-10', false, { tournament: 'Munich' }), mt('2025-01-20', true, { result: '0 - 0', tournament: 'Ghost', walkover: true }),
     mt('2024-11-02', true, { result: '1 - 0', tournament: 'Paris', surface: 'Clay' }), mt('2022-06-01', false, { tournament: 'Heilbronn', level: 'CH' })]));
   assert.match(head(h), /^Head to head 3 meetings ›$/);
   assert.doesNotMatch(text(h), /Heilbronn|incl\./, 'the Challenger meeting is not in the record');

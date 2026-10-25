@@ -42,6 +42,14 @@ Where this file conflicts with `modal-analysis.md` (TEN-312, 2026-09-28), that f
     undercounts Challenger-era players (N. Borges 2019 counted 3, 21 on record). Down: a pre-2021 season where
     the aggregate held more than TE lists. Every moved cell is reported to the founder, old → new, before it goes
     live (TEN-449 doc `moved-cells`).
+  - **One match = one row when TE lists a match twice (founder rulings 2026-10-23, `te-join.js` `applyTeHistory`).** A TE-only
+    row is dropped and counted (`teDuplicatesDropped`) when (a) a row TE already paired with ours has its day and opponent
+    and neither or both are qualifying rounds (Arevalo v Romero, Davis Cup 2008-04-11), or (b) a MATCH-DATED row of ours
+    (api-tennis, not a week-dated archive row) has its day, opponent and result — TE files ITF main-draw matches as
+    Q-R16 (8 roster-wide) and listed a Davis Cup rubber twice (Al Janahi v Elyasi 2022-08-12). Our main-draw row stands and
+    is counted, with the round disagreement on it. A qualifying and a main-draw match against the same opponent in one
+    week stay two matches (Stakhovsky, Marseille 2019; Arguello, Buenos Aires 2013). **Test:** `test-ten443-te-ingest.js`
+    "one match = one row, TE side" (both cases fail without the guard).
   - **For a player joined to TE on his date of birth, the record counts the rows TE lists, plus our api-tennis rows
     dated on or after the day we read his TE current-season page (provisional)** (founder TEN-449, 2026-10-19;
     provisional counting amends ruling 2A, founder 2026-10-19). **Test:** with `PROVISIONAL` on, an api-tennis row TE
@@ -72,6 +80,18 @@ Where this file conflicts with `modal-analysis.md` (TEN-312, 2026-09-28), that f
     files have answered: the season table's drills, the Last 52 window, and the undated-match notes, which compare
     the season table with the record's counted rows. The Calendar tile still paints the feed rows and names the
     record's Tennis-Explorer-only rows it does not paint.
+  - **Form and Tournament show the record's corrections on their own matches** (founder, 2026-10-21, option A — payload B
+    stands). The Match analysis Form tab and Tournament tab (and Key factors' Form and "Record here") keep the feed's
+    matches, and each one they show reads as the career record counts it: its **result**, and on Form its **surface**.
+    A match is the record's when it is the same career-history row — by index (the tab's career join or Form's career
+    fallback), else by event key — **and** the feed's result agrees with that row (a disagreeing row is the feed's
+    name-order scramble: no correction). Not applied: season and indoor (neither tab shows them per match; Tournament
+    groups by the event's own edition); the record's Tennis-Explorer-only rows (no box score or prices behind them); the
+    record's left-out rows (they stay shown). A corrected result moves its edition's W–L. A side whose record has not
+    answered: Form shows the feed rows and retries on the next open; the Tournament tab marks the side failed.
+    **Test:** a match whose result or surface the record corrects never shows the feed's value on Form or Tournament,
+    and the files H2H, Lines and the model read are unchanged (`test-ten332-tournament.mjs` "option A", mutants in
+    `tools/test-ten332-mutants.js`).
   - **Three switches, each rolled back alone:** `TE_INGEST` (the record), `SET_REPAIR` (the dropped sets) and
     `PROVISIONAL` (provisional counting, above; acts only inside the TE merge, off = the record without it) are the
     repository variables `vars.TE_INGEST` / `vars.SET_REPAIR` / `vars.PROVISIONAL` (`.github/workflows/pipeline.yml`,
@@ -146,21 +166,25 @@ Where this file conflicts with `modal-analysis.md` (TEN-312, 2026-09-28), that f
   *Convergence:* a builder change reaches a player's cells and shard on his next profile rebuild (14-day
   TTL, `OPPONENT_PROFILE_MAX_AGE_MS`), not on deploy; re-measure after the TTL, not before.
 
-- **Walkovers — current rule (TEN-312 N2, founder 2026-09-28): a walkover is neither a win nor a loss, for
-  either player, on every surface, the player profile included.** It is not a match played and never enters
-  a W–L, a set count, a rate, a hot line or a price population; it may appear as a row only where the design
-  lists results, marked "w/o", excluded from every count on that page. Canonical text:
-  `modal-analysis.md` "Walkovers and retirements — every tab". This **replaces** the 2026-08-04 ruling "a
-  pre-match walkover a player GAVE is NOT a loss" and its "a walkover RECEIVED is still a win" clause (the
-  TEN-8 / Flashscore convention); that clause is superseded and must not be implemented. Carried over from
-  the 2026-08-04 ruling because it does not conflict: detect a walkover on the feed's
-  `event_status === 'Walk Over'`, **never** on an empty scoreline (a retirement the provider stored with no
-  partial score would else be misread). Note: the shared predicate `isWalkoverGiven(f, won)` covers only the
-  given side; the current rule needs the received side excluded too.
+- **Walkovers (founder 2026-10-22; counting from TEN-312 N2 kept, display N6 reversed): a walkover is neither a win nor
+  a loss, for either player, on every surface, the player profile included — and it IS a row.** Canonical text:
+  `modal-analysis.md` "Walkovers and retirements — every tab". The career-history files carry every explicitly flagged
+  walkover (`walkover: true`, `incomplete: true`): api-tennis `event_status === 'Walk Over'` and archive `W/O` rows.
+  Every builder and reader keeps them out of every count on the flag (`r.walkover`), never on the score. A tournament
+  history edition left by a walkover given is listed with the round reached. **Test:** a `Walk Over` fixture adds 0 to
+  won and 0 to lost for both players on every record surface, and its row is in the player's career-history file.
+  A listed walkover row is never Database evidence (odds.md, founder 2026-10-23).
+- **Explicit flags only; Tennis Explorer empty scores are resolved (founder 2026-10-22).** TE's `wo` (an empty score)
+  is never a walkover by itself. `te-join.js` resolves each such row against our own rows (api-tennis status, TML
+  `W/O`) and the pinned Sackmann copy in the store (`sackmann/`, main + qual_chall + futures, checksummed): played →
+  counted; walkover → a walkover row; unresolved or disagreeing → `unconfirmed: true`, listed with score `–`, counted
+  nowhere. A paired row of ours with an explicit result keeps it (Gasquet d. Verdasco, Buenos Aires 2004, counts).
+- **Targets follow our counting (founder 2026-10-22).** Tennis Explorer is the reference for which matches exist, not
+  for what TEN-449 excludes. Griekspoor (22 Oct 2026): career 444–286, 2025 32–24, 2025 indoors 5–4.
 
 - **Retirements count as matches (founder ruling 2026-08-04, restated TEN-312 N2 2026-09-28).** An
   **in-match `Retired`** (he quit mid-match) is still a **loss** for the retiree and a win for the opponent,
   marked "ret."; its unfinished set is excluded from set tallies, deciding sets and games/sets lines (H2H
-  rule e, `modal-form-h2h.md`). In **price** figures a retirement settles at the listed price everywhere (ruling A, 2026-09-28; see `modal-analysis.md` "Retirements in price figures").md`).
+  rule e, `modal-form-h2h.md`). In **price** figures a retirement settles on Pinnacle rules (founder 2026-10-22; `modal-analysis.md` "Retirements in price figures").
   **Test:** a `Retired` loss still adds 1 to lost; a `Walk Over` fixture adds 0 to won and 0 to lost for
   both players, on every record surface.

@@ -1,0 +1,6 @@
+[
+ { "name": "job", "sql": "select jobname, schedule, active from cron.job where jobname = 'stale_watch_10min'" },
+ { "name": "heartbeat", "sql": "select last_tick from stale_watch.heartbeat" },
+ { "name": "checks", "sql": "select id, fired_at, status_code, built_at, error from stale_watch.checks order by fired_at desc limit 6" },
+ { "name": "messages", "sql": "select id, episode, kind, delivery, created_at from stale_watch.messages order by id desc limit 6" }
+]

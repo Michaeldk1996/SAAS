@@ -562,9 +562,18 @@ def archive_close_row(ev, raw_id, fixture_id, series):
     return row, None
 
 
+def _close_rank(r):
+    """Which close an event shows: an archive close at a true start (2) > a captured close (1) > a fill-rule row (0,
+    founder ruling 2026-10-25: a fill row is re-cuttable — any true close for the event, from any later source, wins)."""
+    if fill_cut(r):
+        return 0
+    return 2 if r.get('label') == ARCHIVE_LABEL else 1
+
+
 def current_closes(rows):
     """One close per event: the newest archive row ('from Pinnacle history') that no later row supersedes; else the
-    newest such captured row. Every other row stays in the archive (the log of what was replaced)."""
+    newest such captured row; a fill-rule row (fill_cut) only when the event has no other close. Every other row stays in
+    the archive (the log of what was replaced)."""
     superseded = {r['supersedes'] for r in rows if r.get('supersedes')}
     best = {}
     for r in sorted(rows, key=lambda r: r['id']):
@@ -572,7 +581,7 @@ def current_closes(rows):
             continue
         k = r['event_key']
         cur = best.get(k)
-        if cur is None or (r['label'] == ARCHIVE_LABEL) >= (cur['label'] == ARCHIVE_LABEL):
+        if cur is None or _close_rank(r) >= _close_rank(cur):
             best[k] = r
     return best
 
@@ -616,10 +625,41 @@ HELD_BACK_RULES = {
 CAPTURED_VERIFIED_SOURCES = ('api-tennis-live',)   # build-captured-pinnacle.js startSource = our live-flip (the card state's)
 
 
+# Founder ruling 2026-10-25 (round 2 item 1.4): the 13 Apr - 16 Sep ATP main-draw fill. Measured against our live-flip,
+# Oddspapi's gated trueStart becomes a close cut for the rows that fill writes — at trueStart itself ('trueStart') or at
+# trueStart - X min ('trueStart-buffer', X = ceil(p98 lateness)). Those rows, and ONLY those (their own start_source AND a
+# valid closeCut in detail), export as closes: this supersedes the start-alone hold-back for them alone. Every other
+# start-alone row (derive-held, NO_FLIP_SOURCE) stays held back exactly as before. Writer: tools/archive-fill-probe.py.
+FILL_START_SOURCE = 'oddspapi trueStart (fill rule 2026-10-25)'
+FILL_CUTS = ('trueStart', 'trueStart-buffer')
+
+
+def fill_cut(r):
+    """The row's closeCut when it is a fill-rule close (label, start_source and detail.closeCut all agree; a buffered cut
+    must name a whole-minute buffer > 0), else None."""
+    if r.get('label') != ARCHIVE_LABEL or r.get('start_source') != FILL_START_SOURCE:
+        return None
+    d = r.get('detail') or {}
+    if isinstance(d, str):
+        try:
+            d = json.loads(d)
+        except ValueError:
+            return None
+    c = d.get('closeCut')
+    if c == 'trueStart':
+        return c
+    if c == 'trueStart-buffer' and isinstance(d.get('bufferMin'), int) and not isinstance(d.get('bufferMin'), bool) and d['bufferMin'] > 0:
+        return c
+    return None
+
+
 def verified_start(r):
     """Founder ruling 2026-10-17 item 3: a price may be labelled a close only when cut at a VERIFIED start — our live-flip,
     or the earlier-of rule (live-flip vs the gated trueStart) from 17 Sep. Archive closes name it in start_source; a
-    captured close is verified only from 17 Sep and only when its start is the live-flip."""
+    captured close is verified only from 17 Sep and only when its start is the live-flip. Founder ruling 2026-10-25: a
+    fill-rule close (fill_cut) counts as verified — the trueStart was measured against our live-flip."""
+    if fill_cut(r):
+        return True
     if r.get('label') == ARCHIVE_LABEL:
         return r.get('start_source') in (CUT_SOURCE, TRUE_START_SOURCE)
     if r.get('label') == 'captured':
@@ -657,6 +697,11 @@ def export_rows(rows):
                     'label': r['label'], 'source': r['source'], 'book': r['book'], 'closeTs': r.get('close_ts'),
                     'startTs': r.get('start_ts'), 'startSource': r.get('start_source'), 'gapToStartS': r.get('gap_to_start_s'), 'archiveId': r['id'],
                     'apiTennis': ((r.get('detail') or {}).get('apiTennis')) or None})
+        fc = fill_cut(r)
+        if fc:                                                  # founder ruling 2026-10-25: the cut travels with the row
+            out[-1]['closeCut'] = fc
+            if fc == 'trueStart-buffer':
+                out[-1]['bufferMin'] = (r.get('detail') or {})['bufferMin']
     return out
 
 
@@ -1548,6 +1593,25 @@ def new_event_meta(key, api, catalog, surfaces, sizes):
             'bestof': '5' if series == 'Grand Slam' else '3', 'K': K, 'year': None, 'newEvent': True}
 
 
+def td_event_key(a):
+    """The td-feed's event key for an api-tennis fixture: its tournament name without "ATP " and without a trailing
+    " - Qualification" (round 2 item 1.1: api-tennis names the Lyon (France) MAIN draw "Lyon (France) - Qualification").
+    ONE key for the edition lookup and the draw-size table, so a new event's K (its R32 / R16 labels) is found."""
+    key = re.sub(r'^ATP\s+', '', str(a.get('tournament_name') or '')).strip()
+    return re.sub(r'\s*-\s*Qualification$', '', key, flags=re.I).strip()
+
+
+def api_is_qualifying(a):
+    """Qualifying status of an api-tennis fixture (defect brief 2026-10-24 items 1-2). The feed's own flag decides:
+    event_qualification 'True' / 'False'. Its round label never overrides it - api-tennis labels the qualifying bracket's
+    rounds "Semi-finals" / "Final" (Almaty 2026: 12 qualifying matches filed as main-draw SF and F), and names one main draw
+    "Lyon (France) - Qualification". Only a fixture with no flag falls back to the 'qualif' text test."""
+    flag = str(a.get('event_qualification'))
+    if flag in ('True', 'False'):
+        return flag == 'True'
+    return 'qualif' in (str(a.get('tournament_name') or '') + ' ' + str(a.get('tournament_round') or '')).lower()
+
+
 def td_round(api_round, K):
     r = _fold((api_round or '').split(' - ')[-1]).strip()
     if 'qualif' in r:
@@ -1612,6 +1676,17 @@ FEED_RESULT_STATUSES = ('Finished', 'Retired', 'Awarded')
 FEED_COMMENT = {'Retired': 'Retired', 'Awarded': 'Awarded'}
 
 
+EARLY_CUT_LABEL = 'early cut'
+
+
+def feed_label(e):
+    """The feed's label for an export row: its own label, except a buffer-cut fill row (founder ruling 2026-10-25) —
+    'early cut N' (N = its bufferMin), which build-database-yield.js reads as book 9 and the page marks 'E'."""
+    if e.get('closeCut') == 'trueStart-buffer' and isinstance(e.get('bufferMin'), int) and e['bufferMin'] > 0:
+        return f"{EARLY_CUT_LABEL} {e['bufferMin']}"
+    return e.get('label')
+
+
 def td_feed_rows(export_rows, td_rows, alias, pin_stop, table_names=None, catalog=None, surfaces=None):
     """Feed rows + a report. `override`: a Tennis-Data row (same day ±1, both surnames) with no Pinnacle pair gets our
     close (the row is named exactly as Tennis-Data wrote it). `add`: an ATP main-draw match after Tennis-Data's last day,
@@ -1626,10 +1701,10 @@ def td_feed_rows(export_rows, td_rows, alias, pin_stop, table_names=None, catalo
     sizes = {}                                   # (event, year) -> the draw sizes its archive closes show (a new event's K)
     for e in export_rows:
         a = e.get('apiTennis') or {}
-        k = (re.sub(r'^ATP\s+', '', str(a.get('tournament_name') or '')).strip(), e['date'][:4])
+        k = (td_event_key(a), e['date'][:4])
         sizes.setdefault(k, []).append(ROUND_SIZE.get(_fold(str(a.get('tournament_round') or '').split(' - ')[-1]).strip(), 0))
     out, rep = [], {'closes': 0, 'beforePinnacleStop': 0, 'override': 0, 'tdHasPinnacle': 0, 'twoTdRows': 0, 'add': 0, 'addRetired': 0,
-                    'notInTdWindow': 0, 'capturedOnlyAfterTd': 0, 'notAtpSingles': 0, 'qualifyingOrRound': 0, 'walkover': 0,
+                    'notInTdWindow': 0, 'capturedOnlyAfterTd': 0, 'notAtpSingles': 0, 'qualifying': 0, 'qualifyingOrRound': 0, 'walkover': 0,
                     'noTdEdition': 0, 'noResult': 0, 'spelledAsTennisData': 0, 'newEvent': 0, 'team': 0, 'teamRetired': 0, 'addAwarded': 0, 'teamAwarded': 0,
                     'teamWalkover': 0, 'teamNoResult': 0}
     for e in export_rows:
@@ -1651,7 +1726,7 @@ def td_feed_rows(export_rows, td_rows, alias, pin_stop, table_names=None, catalo
             out.append({'kind': 'override', 'date': r['date'], 'tournament': r['tournament'], 'series': r.get('series'), 'court': r.get('court'),
                         'surface': r.get('surface'), 'round': r.get('round'), 'bestof': r.get('bestof'), 'winner': r['winner'], 'loser': r['loser'],
                         'comment': r.get('comment'), 'psw': e['p1'] if w1 else e['p2'], 'psl': e['p2'] if w1 else e['p1'],
-                        'archiveId': e.get('archiveId'), 'label': e.get('label'), 'eventKey': e.get('eventKey')})
+                        'archiveId': e.get('archiveId'), 'label': feed_label(e), 'eventKey': e.get('eventKey')})
             rep['override'] += 1; continue
         # Founder ruling 2026-10-17 (fix 2): a team event (Davis Cup, Laver Cup …) our archive prices goes into the master
         # with the same source order and hover; Tennis-Data never carries one, so it is its own feed kind ('team'), read
@@ -1670,7 +1745,7 @@ def td_feed_rows(export_rows, td_rows, alias, pin_stop, table_names=None, catalo
             out.append({'kind': 'team', 'date': d, 'tournament': str(ta.get('tournament_name')).replace(',', ' '), 'series': 'Team event',
                         'court': '', 'surface': '', 'round': '', 'bestof': '', 'winner': wn or td_name(w), 'loser': ln or td_name(l),
                         'comment': FEED_COMMENT.get(st, 'Completed'), 'psw': e['p1'] if first_won else e['p2'],
-                        'psl': e['p2'] if first_won else e['p1'], 'archiveId': e.get('archiveId'), 'label': e.get('label'), 'eventKey': e.get('eventKey')})
+                        'psl': e['p2'] if first_won else e['p1'], 'archiveId': e.get('archiveId'), 'label': feed_label(e), 'eventKey': e.get('eventKey')})
             rep['teamRetired' if st == 'Retired' else 'teamAwarded' if st == 'Awarded' else 'team'] += 1; continue
         if d <= td_last:
             rep['notInTdWindow'] += 1; continue       # inside Tennis-Data's window but not in it: not an ATP main-draw match
@@ -1684,7 +1759,9 @@ def td_feed_rows(export_rows, td_rows, alias, pin_stop, table_names=None, catalo
             rep['walkover'] += 1; continue
         if a.get('event_winner') not in ('First Player', 'Second Player') or st not in FEED_RESULT_STATUSES:
             rep['noResult'] += 1; continue
-        key = re.sub(r'^ATP\s+', '', str(a.get('tournament_name') or '')).strip()
+        if api_is_qualifying(a):
+            rep['qualifying'] += 1; continue          # the flag decides; a qualifying round label never reads as main draw
+        key = td_event_key(a)
         meta = td_edition_meta(td_rows, alias, key)
         if not meta and catalog is not None:
             meta = new_event_meta(key, a, catalog, surfaces, sizes.get((key, d[:4])))
@@ -1703,7 +1780,7 @@ def td_feed_rows(export_rows, td_rows, alias, pin_stop, table_names=None, catalo
         out.append({'kind': 'add', 'date': d, 'tournament': meta['tournament'], 'series': meta['series'], 'court': meta['court'],
                     'surface': meta['surface'], 'round': rnd, 'bestof': meta['bestof'], 'winner': wn or td_name(w), 'loser': ln or td_name(l),
                     'comment': FEED_COMMENT.get(st, 'Completed'), 'psw': e['p1'] if first_won else e['p2'],
-                    'psl': e['p2'] if first_won else e['p1'], 'archiveId': e.get('archiveId'), 'label': e.get('label'), 'eventKey': e.get('eventKey')})
+                    'psl': e['p2'] if first_won else e['p1'], 'archiveId': e.get('archiveId'), 'label': feed_label(e), 'eventKey': e.get('eventKey')})
         rep['addRetired' if st == 'Retired' else 'addAwarded' if st == 'Awarded' else 'add'] += 1
     rep['tdLastDay'] = td_last
     return out, rep
@@ -1746,7 +1823,7 @@ def cmd_td_feed(export_path, out_csv):
 def lower_level(f):
     """'atp-q' | 'ch' | 'ch-q' | 'itf' | None, from api-tennis's own fields (ATP main draw is Tennis-Data's)."""
     t = f.get('event_type_type')
-    q = str(f.get('event_qualification')) == 'True' or 'qualif' in (str(f.get('tournament_name') or '') + ' ' + str(f.get('tournament_round') or '')).lower()
+    q = api_is_qualifying(f)
     if t == 'Atp Singles':
         return 'atp-q' if q else None
     if t == 'Challenger Men Singles':

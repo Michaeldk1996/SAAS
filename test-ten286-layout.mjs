@@ -253,7 +253,7 @@ test('C · all 12 nav glyphs are the design paths, element for element', () => {
 // (Night) carries the foundation values.
 const TOKENS_CSS = read('tokens.css');
 const FOUNDATION = { page: '#090B12', card: '#10131D', inner: '#171B28', selected: '#1B2031', 'tile-hover': '#141824',
-  text: '#FFFFFF', 'text-soft': '#DDE0EA', 'text-label': '#A3AABE', bar: '#007AFF', 'bar-2': 'rgba(0,122,255,0.45)', link: '#6A9AF8',
+  text: '#E7E9EE', 'text-soft': '#DDE0EA', 'text-label': '#A3AABE', bar: '#007AFF', 'bar-2': 'rgba(0,122,255,0.45)', link: '#6A9AF8',
   pro: '#2F52D6', 'pro-text': '#F2F3F7', pos: '#5CCB84', neg: '#E06266', 'serve-ball': '#EAF928',
   'edge-6': 'rgba(255,255,255,0.06)', 'edge-7': 'rgba(255,255,255,0.07)', 'edge-10': 'rgba(255,255,255,0.10)', 'edge-16': 'rgba(255,255,255,0.16)',
   'edge-24': 'rgba(255,255,255,0.24)', line: 'rgba(255,255,255,0.05)', track: 'rgba(255,255,255,0.06)', 'open-card': 'rgba(106,154,248,0.30)',
@@ -378,7 +378,8 @@ test('no colour value is hard-coded in a style attribute (was: the 12a tokeniser
 test('S1: a trusted sidebar click runs every registered overlay closer; each overlay module registers one', () => {
   const dash = readFileSync(new URL('./bsp-consult-dashboard.html', import.meta.url), 'utf8');
   const nav = dash.slice(dash.indexOf("document.getElementById('mainNav').addEventListener('click'"));
-  assert.match(nav.slice(0, 400), /if \(!btn\) return;\s*if \(e\.isTrusted\) sfCloseOverlays\(\);/, 'the nav handler closes overlays on trusted clicks only');
+  // ESC brief 2026-10-21: the same trusted click also clears the Esc return trail (SfNav), still inside the trusted branch
+  assert.match(nav.slice(0, 400), /if \(!btn\) return;\s*if \(e\.isTrusted\) \{ sfCloseOverlays\(\);/, 'the nav handler closes overlays on trusted clicks only');
   assert.ok(!/data-sf-theme-switch/.test(dash.slice(dash.indexOf('<nav class="sf-nav" id="mainNav">'), dash.indexOf('</nav>', dash.indexOf('<nav class="sf-nav" id="mainNav">')))),
     'the theme switch is outside #mainNav, so it leaves the modal open');
   const REG = '(window.sfOverlayClosers = window.sfOverlayClosers || []).push(';

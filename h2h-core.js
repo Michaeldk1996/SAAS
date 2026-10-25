@@ -202,17 +202,11 @@
   }
 
   // The meetings that count (walkovers out) and the record over them (A's wins first): n = the population.
-  // A walkover = the flag, or no set played: no set scores and no readable score above 0 - 0. Byte for byte the test the
-  // rows the pages draw apply (fhFinishRow: `!r.sets && (r.pS == null || r.pS + r.oS === 0)`), so a record here and a
-  // record on screen can never disagree.
+  // A walkover = the row's EXPLICIT flag (api-tennis 'Walk Over', Sackmann/TML W/O) — founder 2026-10-22, ruling 3: never
+  // an empty score. The same test the rows the pages draw apply (fhFinishRow), so a record here and a record on screen can
+  // never disagree. A default ("Awarded") and a retirement before the first set finished are meetings (TEN-437).
   function isWalkover(x) {
-    if (x.walkover) return true;
-    if (x.defaulted) return false;   // TEN-437: a default ("Awarded") is a meeting ATP counts, even at 0 - 0
-    if (x.retired) return false;     // TEN-437 D5: a retirement before the first set finished (0 - 0) is a meeting
-
-    if (Array.isArray(x.sets) && x.sets.length) return false;
-    const m = /^\s*(\d+)\s*-\s*(\d+)\s*$/.exec(String(x.result || ''));
-    return !m || +m[1] + +m[2] === 0;
+    return !!(x && x.walkover);
   }
   function played(rows) { return (rows || []).filter(x => !isWalkover(x)); }
   function record(rows) { const p = played(rows), a = p.filter(x => x.won).length; return { a, b: p.length - a, n: p.length }; }

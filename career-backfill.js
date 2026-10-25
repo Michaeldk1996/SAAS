@@ -861,17 +861,16 @@ function buildEmbeddedHistory(existing, tmlMs) {
     if (present.has(y)) continue; // existing/API year wins
     const sorted = ms.slice().sort((a, b) => rank(b.round) - rank(a.round));
     // TEN-313 (N2, founder 2026-09-28): a walkover, given or received, is not a match
-    // played — out of the list and the W-L, exactly as buildTournamentHistory does for the
-    // API years. Its round still counts as reached; an edition of only walkovers given
-    // gets no row (founder N6: no synthesised "Withdrawal" header).
-    const emMatches = sorted.filter((m) => !m.walkover).map((m) => ({
+    // played — out of the W-L and the match count, exactly as buildTournamentHistory does for
+    // the API years. Founder 2026-10-22 (N6 reversed): it is listed (`walkover: true`) and an
+    // edition of only walkovers is kept, with the round reached.
+    const emMatches = sorted.map((m) => ({
       date: '', opponent: m.oppName, round: TML_TO_API_ROUND[m.round] || m.round,
-      won: !!m.won, result: swapScore(m.score),
+      won: !!m.won, result: m.walkover ? null : swapScore(m.score), ...(m.walkover ? { walkover: true } : {}),
     }));
     let won = 0, lost = 0;
-    for (const mm of emMatches) { if (mm.won) won++; else lost++; }
-    if (!emMatches.length && sorted.every((m) => m.walkover && !m.won)) continue;
-    realYears.push({ year: String(y), matchCount: emMatches.length, won, lost,
+    for (const mm of emMatches) { if (mm.walkover) continue; if (mm.won) won++; else lost++; }
+    realYears.push({ year: String(y), matchCount: emMatches.filter((mm) => !mm.walkover).length, won, lost,
       roundReached: TML_TO_API_ROUND[sorted[0].round] || sorted[0].round, matches: emMatches });
     present.add(y);
     added++;

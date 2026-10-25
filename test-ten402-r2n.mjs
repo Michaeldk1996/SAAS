@@ -85,14 +85,17 @@ test('r2.1 Montreal / Toronto: one official name, two rows — the city tells th
 
 // ── 2 · the rail: rows, search, keys ─────────────────────────────────────────────────────────────────────────────────
 const railFor = (q, week) => make([lineSrc('const TOURX_TIER_CODE'), fnSrc('tourxTierCode'), lineSrc('const TOURX_TIER_CHIP_MONO_ALL'),
-  fnSrc('tourxEsc'), fnSrc('tourxOverviewListHtml')].join('\n'), 'tourxOverviewListHtml()',
+  fnSrc('tourxEsc'), fnSrc('tpEventLabel'), fnSrc('tpPageEvents'), fnSrc('tourxOverviewListHtml')].join('\n'), 'tourxOverviewListHtml()',
   { tourxState: { tsQ: q, tsSel: 'Turin' }, tourxActiveWeekNames: () => new Set(week || ['Shanghai']) });
 const rows = h => [...h.matchAll(/class="tourx-ovrow[^"]*" onclick="tourxSelectCondition\('((?:[^'\\]|\\.)*)'\)"[\s\S]*?text-overflow:ellipsis;[^"]*">([^<]*)<\/span>/g)]
   .map(m => ({ key: m[1].replace(/\\'/g, "'"), name: m[2] }));
 
 test('r2.2 the rail prints the one name on every row and keeps the KEY in its click (state = data key)', () => {
   const r = rows(railFor(''));
-  assert.equal(r.length, 64);
+  // round 2 (founder 2026-10-25): every catalog event is listed (75 entries; French Open and Roland Garros are one event)
+  assert.equal(r.length, 74);
+  assert.ok(r.some(x => x.key === 'Brussels') && r.some(x => x.key === 'Lyon (France)'), 'the unrated 2026 events are listed');
+  assert.equal(r.filter(x => x.name === 'Roland Garros').length, 1, 'one event, one row');
   for (const x of r) assert.equal(x.name, P.tourxEventName(x.key), x.key);
   assert.ok(r.some(x => x.key === 'Turin' && x.name === 'ATP Finals'));
   assert.ok(r.some(x => x.key === 'Shanghai' && x.name === 'Shanghai Masters'), 'the This-week row too');
@@ -107,7 +110,7 @@ test('r2.2 search: "Cincinnati Open" and "Cincinnati" both find it; the city, th
   assert.deepEqual(find('Cincinnati Open'), ['Cincinnati Open']);
   assert.deepEqual(find('cincinnati'), ['Cincinnati Open']);
   assert.deepEqual(find('Turin'), ['ATP Finals']);
-  assert.deepEqual(find('ATP Finals'), ['ATP Finals']);
+  assert.deepEqual(find('ATP Finals'), ['ATP Finals', 'Next Gen ATP Finals'], 'round 2: Jeddah (Next Gen) is listed too');
   assert.deepEqual(find('china open'), ['China Open']);
   assert.deepEqual(find('Beijing'), ['China Open']);
   assert.deepEqual(find('Monte-Carlo'), ['Monte-Carlo Masters']);
@@ -126,6 +129,7 @@ test('r2.3 the hero title, the Compare all rows and the ROI / What players say o
   const hero = make(fnSrc('tourxConditionsPanelHtml'), 'tourxConditionsPanelHtml()', {
     tourxState: { tsSel: 'Turin' }, tourxResolveCondition: stub, tourxKnobPct: () => 50, tourxRankLineHtml: () => '', tourxCap: s => s,
     tourxConditionsProse: () => '', tourxBounce: () => '', tourxQuotesCardHtml: () => '', tourxSpeedSeriesHtml: () => '', tourxRoiPairHtml: () => '',
+    tpPointsDefendHtml: () => '', tpHowItPlaysHtml: () => '', tpFavDogHtml: () => '',
     tourxReliabilityHtml: () => '', tourxReportCtaHtml: () => '' });
   assert.match(hero, /letter-spacing:-0\.015em;color:var\(--text\);">ATP Finals<\/span>/);
   assert.doesNotMatch(hero, />Turin</, 'control: the key is not printed');
@@ -177,7 +181,7 @@ test('r2.4 Reports: the match-stats sheet header and the empty-state lines print
   assert.doesNotMatch(h, /Tokyo 2026/, 'control: the key is not printed');
   // the "no box scores yet" / "not played yet" / progression empty lines name the event the same way
   const printed = (html.match(/\$\{typeof tourxEventName === 'function' \? tourxEventName\(T\.name\) : T\.name\}/g) || []).length;
-  assert.equal(printed, 5, 'round view (3) + player progression (2) print the event through tourxEventName');
+  assert.equal(printed, 6, 'round view (4) + player progression (2) print the event through tourxEventName');
   assert.doesNotMatch(fnSrc('tourxRoundViewHtml') + fnSrc('tourxPlayerViewHtml'), /\$\{T\.name\}/, 'a raw ${T.name} is printed');
 });
 

@@ -38,7 +38,14 @@ const { attachWue, lookupWue } = require('./atp-entry-fallback');
 // row arrives as a literal "0" for both players; it is read as NOT SENT (null),
 // never as a real 0. One rule, shared with build-point-by-point.js and
 // tools/match-stats-store.js — see match-stat-placeholders.js.
-const { sanitizeFixture, sanitizeFixtures, parseCount, sanitizeMatchStatsStore } = require('./match-stat-placeholders');
+const { sanitizeFixture: sanitizeFixtureStats, parseCount, sanitizeMatchStatsStore } = require('./match-stat-placeholders');
+// Founder 2026-10-23: api-tennis re-imported ITF events with `event_winner: null` on matches still "Finished"; every
+// reader skips a winnerless fixture, so they left career-history. The winner is read back from the vendor's own score —
+// only a complete, unambiguous one (fixture-winner.js) — at the one place every fetched fixture passes, so every reader
+// (records, form, H2H, draws) sees the same fixture.
+const { fillWinnerFromScore } = require('./fixture-winner');
+const sanitizeFixture = (fx) => (fx ? fillWinnerFromScore(sanitizeFixtureStats(fx)) : fx);
+const sanitizeFixtures = (list) => { if (Array.isArray(list)) for (const fx of list) sanitizeFixture(fx); return list; };
 // TEN-371: the pre-publish gate reads these players by key with no stand-in, so
 // their profiles are always built: first, and outside the per-run build budget.
 const PINNED_PROFILE_KEYS = new Set(Object.values(require('./pp2-fixture-players')));
@@ -419,20 +426,17 @@ function buildTournamentHistory(matches, playerKey) {
   if (!matches || matches.length === 0) return null;
   const bySeason = {};
   // TEN-313 (N2, founder ruling 2026-09-28, "as the ATP rules and the ATP website do"): a
-  // walkover — given or received — is neither a win nor a loss: it leaves the W-L, the
-  // match list and the edition's match count. The round it sits in still counts as
-  // reached (roundReached), as on the ATP site. An edition whose only match was a
-  // walkover GIVEN gets NO row (founder N6, 2026-09-28: no synthesised "Withdrawal"
-  // header; TEN-320 removed the gap-year fill too). An in-match retirement is a match.
+  // walkover — given or received — is neither a win nor a loss: it leaves the W-L and the
+  // edition's match count. The round it sits in still counts as reached (roundReached).
+  // Founder 2026-10-22 (N6 reversed): it IS listed — a `walkover: true` row in the edition's
+  // match list — and an edition he left by a walkover given is an edition, with the round
+  // reached (Griekspoor, Vienna 2025 = QF). Still no gap-year fill (TEN-320). An in-match
+  // retirement is a match.
   const woGiven = {}; // season -> walkover fixtures (either side)
-  const woOnlyGiven = {}; // season -> true while every walkover that season was given
   for (const m of matches) {
-    const isP1 = String(m.p1Key) === String(playerKey);
-    const didWin = (m.winner === 'First Player' && isP1) || (m.winner === 'Second Player' && !isP1);
     const season = m.season || m.date.slice(0, 4);
     if (m.walkover) {
       (woGiven[season] = woGiven[season] || []).push(m);
-      woOnlyGiven[season] = (woOnlyGiven[season] !== false) && !didWin;
       continue;
     }
     if (!bySeason[season]) bySeason[season] = [];
@@ -449,6 +453,11 @@ function buildTournamentHistory(matches, playerKey) {
       if (didWin) won++; else lost++;
     }
     const latest = seasonMatches.concat(woGiven[season] || []).reduce((a, b) => (b.date > a.date ? b : a));
+    const woRows = (woGiven[season] || []).map((m) => {
+      const isP1 = String(m.p1Key) === String(playerKey);
+      const won2 = (m.winner === 'First Player' && isP1) || (m.winner === 'Second Player' && !isP1);
+      return { date: m.date, opponent: isP1 ? m.p2 : m.p1, round: roundLabel(m.round), won: won2, result: null, walkover: true, eventKey: m.eventKey || null };
+    });
     // Per-match detail (opponent, round, self-first score, win/loss) for this
     // edition — same self-first score reordering already used in
     // buildH2HMatchList (event_final_result is always "player1 sets -
@@ -475,15 +484,23 @@ function buildTournamentHistory(matches, playerKey) {
         }
         return { date: m.date, opponent, round: roundLabel(m.round), won: won2, result, eventKey: m.eventKey || null };
       })
+      .concat(woRows)
       .sort((a, b) => new Date(b.date) - new Date(a.date));
     years.push({ year: season, matchCount: seasonMatches.length, won, lost, roundReached: roundLabel(latest.round), matches: matchList });
   }
-  // An edition whose only matches were walkovers: a walkover RECEIVED is a real edition
-  // he advanced in unplayed (0-0, round reached). Walkovers GIVEN only: no row at all.
+  // An edition whose only matches were walkovers, given or received (founder 2026-10-22): an edition he entered,
+  // 0-0, the round reached, its walkover rows listed.
   for (const season of Object.keys(woGiven)) {
-    if (bySeason[season] || woOnlyGiven[season]) continue;
+    if (bySeason[season]) continue;
     const latest = woGiven[season].reduce((a, b) => (b.date > a.date ? b : a));
-    years.push({ year: season, matchCount: 0, won: 0, lost: 0, roundReached: roundLabel(latest.round), matches: [] });
+    const matchList = woGiven[season].map((m) => {
+      const isP1 = String(m.p1Key) === String(playerKey);
+      const won2 = (m.winner === 'First Player' && isP1) || (m.winner === 'Second Player' && !isP1);
+      return { date: m.date, opponent: isP1 ? m.p2 : m.p1, round: roundLabel(m.round), won: won2, result: null, walkover: true, eventKey: m.eventKey || null };
+    }).sort((a, b) => new Date(b.date) - new Date(a.date));
+    const givenOnly = matchList.every((x) => !x.won);
+    years.push({ year: season, matchCount: 0, won: 0, lost: 0, roundReached: roundLabel(latest.round), matches: matchList,
+      ...(givenOnly ? { woGivenOnly: true } : {}) });
   }
   if (years.length === 0) return null;
 
@@ -493,7 +510,7 @@ function buildTournamentHistory(matches, playerKey) {
   // 2020). A year with no fixture is not an edition entered, so it gets no row.
   years.sort((a, b) => parseInt(b.year, 10) - parseInt(a.year, 10));
   return {
-    editionsPlayed: years.length,
+    editionsPlayed: years.filter((y) => !y.woGivenOnly).length,
     totalWon: years.reduce((s, y) => s + y.won, 0),
     totalLost: years.reduce((s, y) => s + y.lost, 0),
     longMatches,
@@ -823,10 +840,9 @@ function playerMatchHistory(fixtures, playerKey, currentYear, surfaceMap, courtM
     const rawSurface = fixtureSurface(f, surfaceMap);
     const surface = ['clay', 'hard', 'grass'].includes(rawSurface) ? rawSurface : null;
     const won = (f.event_winner === 'First Player' && isFirst) || (f.event_winner === 'Second Player' && isSecond);
-    // Skip a pre-match walkover the player GAVE — kept in lockstep with
-    // buildAllTierYearly, which now skips the same fixture, so this drill-down
-    // list stays 1:1 tallyable against that table's counts (its invariant).
-    if (isWalkover(f)) continue;
+    // A walkover is a ROW, never a match (founder 2026-10-22, reversing N6's "no row"): it ships flagged `walkover`
+    // (the writer stamps it `incomplete`) and every tally skips it on the flag — tallyCareerYears here, the page's
+    // spine readers there — so this list stays 1:1 tallyable against buildAllTierYearly's counts, which skip it too.
     const opponent = isFirst ? f.event_second_player : f.event_first_player;
     let result = f.event_final_result;
     if (isSecond && result && result.includes('-')) {
@@ -1533,6 +1549,10 @@ const TOURNAMENT_VENUE_HINTS = {
   'Estoril': { city: 'Estoril', country: 'PT', category: 'ATP 250', indoor: false, surface: 'clay' },
   'Geneva': { city: 'Geneva', country: 'CH', category: 'ATP 250', indoor: false, surface: 'clay' },
   'Lyon': { city: 'Lyon', country: 'FR', category: 'ATP 250', indoor: false, surface: 'clay' },
+  // Round 2 item 1.1 (founder 2026-10-25): Lyon October 2026 is a NEW event — api-tennis key 14763 "Lyon (France)",
+  // surface "Hard (Indoor)" — with no lineage to the clay Lyon above (May, to 2025). Its own key, so no clay edition,
+  // palmares or court reading feeds it (venueHintKeyFor takes the longest key a name contains).
+  'Lyon (France)': { city: 'Lyon', country: 'FR', category: 'ATP 250', indoor: true, surface: 'hard' },
   'Gstaad': { city: 'Gstaad', country: 'CH', category: 'ATP 250', indoor: false, surface: 'clay' },
   'Bastad': { city: 'Bastad', country: 'SE', category: 'ATP 250', indoor: false, surface: 'clay' },
   'Newport': { city: 'Newport', country: 'US', category: 'ATP 250', indoor: false, surface: 'grass' },
@@ -1680,11 +1700,23 @@ function courtConditionsFor(tournamentName) {
 // never fall through to 'Paris' — that row is Bercy, indoor hard 0.97.
 const COURT_CONDITIONS_ALIASES = { 'French Open': 'Roland Garros' };
 
+// The venue-hint key a tournament name contains — the LONGEST one, so a specific key wins over a city it contains
+// ("Lyon (France) - Qualification" is the October event, never the clay 'Lyon'). Round 2 item 1.1.
+function venueHintKeyFor(name, keys) {
+  const n = String(name || '');
+  return (keys || Object.keys(TOURNAMENT_VENUE_HINTS)).filter(k => n.includes(k)).sort((a, b) => b.length - a.length)[0];
+}
+
 // The one hint → venue + court-speed join, shared by every match build path.
-function venueAndCourtSpeedFor(name) {
-  const hintKey = Object.keys(TOURNAMENT_VENUE_HINTS).find(k => String(name || '').includes(k));
+// Defect brief 2026-10-24 item 4: a hint names a CITY, and one city can host two events on different surfaces — Lyon
+// was a clay 250 to 2024 and is an indoor-hard 250 from 2026. When the match's OWN feed surface (fixtureSurface: the
+// tournament's api-tennis surface, never a 'hard' default) is known and differs from the hint's, the court reading
+// belongs to the other event, so there is no court speed (a dash). An unknown surface keeps the hint's reading.
+function venueAndCourtSpeedFor(name, feedSurface) {
+  const hintKey = venueHintKeyFor(name);
   const hint = hintKey ? TOURNAMENT_VENUE_HINTS[hintKey] : null;
-  const courtConditions = hintKey ? COURT_CONDITIONS[COURT_CONDITIONS_ALIASES[hintKey] || hintKey] : null;
+  const otherEvent = !!(hint && hint.surface && feedSurface && String(feedSurface).toLowerCase() !== hint.surface);
+  const courtConditions = hintKey && !otherEvent ? COURT_CONDITIONS[COURT_CONDITIONS_ALIASES[hintKey] || hintKey] : null;
   return {
     hintKey,
     venue: hint ? { city: hint.city, country: hint.country, category: hint.category, indoor: hint.indoor } : null,
@@ -1836,7 +1868,7 @@ async function loadTournamentProfiles() {
       const fixtures = await fetchAtpFixturesForMonth(year, month);
       for (const f of fixtures) {
         if (!f.tournament_round || f.event_qualification === 'True') continue;
-        const key = hintKeys.find(k => f.tournament_name && f.tournament_name.includes(k));
+        const key = f.tournament_name ? venueHintKeyFor(f.tournament_name, hintKeys) : undefined;
         if (!key) continue;
         const season = f.tournament_season || String(year);
         if (!matchesByTournament[key][season]) matchesByTournament[key][season] = [];
@@ -2018,7 +2050,7 @@ function buildForecastWeek(daily, hourly, matchDateStr) {
 // on match day" instead of "Forecast". A future match with no forecast still
 // returns null (genuine no-data) — we only reach the archive for past matches.
 async function fetchMatchWeather(tournamentName, matchDateTimeISO, venueMap) {
-  const key = Object.keys(venueMap).find(k => tournamentName.includes(k));
+  const key = venueHintKeyFor(tournamentName, Object.keys(venueMap));
   if (!key) return null;
   const { lat, lon } = venueMap[key];
 
@@ -2251,9 +2283,12 @@ async function buildMatchObject(oddsEvent, apiTennisFixtures, surfaceMap, venueM
   // of truth as TOURNAMENT_VENUE_HINTS used for weather above, not a new lookup.
   // Court-conditions data reuses the same hintKey lookup (through the TEN-321
   // alias) — real data from the user's court-conditions sheet, not re-derived.
-  const { hintKey, venue, courtSpeed } = venueAndCourtSpeedFor(venueName);
+  const { hintKey, venue, courtSpeed } = venueAndCourtSpeedFor(venueName, (surfaceMap ? fixtureSurface(fixture, surfaceMap) : null));
   match.venue = venue;
   match.courtSpeed = courtSpeed;
+  // Defect brief 2026-10-24 item 4: the event's own api-tennis key, so a page reads the event (event-hold.json events[key])
+  // and never another event that shares its city name (Lyon clay 2024 vs Lyon indoor hard 2026).
+  match.tournamentKey = fixture.tournament_key != null ? String(fixture.tournament_key) : null;
 
   match.tournamentRound = fixture.tournament_round;
   match.qualifying = fixture.event_qualification === 'True';
@@ -2321,6 +2356,8 @@ async function buildMatchObject(oddsEvent, apiTennisFixtures, surfaceMap, venueM
   match.p2RecentForm = p2Form.pct;
   match.p1RecentFormMatches = p1Form.matches;
   match.p2RecentFormMatches = p2Form.matches;
+  match.p1RecentFormWalkovers = p1Form.walkovers;
+  match.p2RecentFormWalkovers = p2Form.walkovers;
 
   const [p1Stats, p2Stats] = await Promise.all([
     fetchPlayerStats(p1Key),
@@ -2678,6 +2715,30 @@ const PROGRESSION_DERIVED_METRIC_KEYS = [
 // match's already stat_period==='match'-filtered statistics list. Shared
 // by the per-player round loop and the per-round field-average aggregator
 // below so both use exactly the same derivation logic.
+// Ruling 3 (founder 2026-10-20): the ONE place the per-player W/UE sheet counts are read. The Reports tab's metrics
+// (extractProgressionMetrics → winnersPct / unforcedErrorsPct / winnersUnforcedRatio) and the W/UE export rows
+// (progressionSheetMatches → winners / unforcedErrors / totalPoints) both derive from this, so they cannot drift.
+// W/UE source rule (Layer #8, never mixed): api-tennis when it sends BOTH; else the reviewed @ATP_Entry OCR corpus;
+// else null. totalPoints = total points PLAYED (Total Points Won's total). Raw counts only — callers derive rates.
+function extractSheetCounts(matchStats, playerKey, fallbackCtx) {
+  const won = (st) => { const n = parseInt(st && st.stat_won, 10); return Number.isFinite(n) ? n : null; };
+  const tot = (st) => { const n = parseInt(st && st.stat_total, 10); return Number.isFinite(n) && n > 0 ? n : null; };
+  const pair = (st) => (won(st) != null && tot(st) != null) ? { won: won(st), total: tot(st) } : null;
+  const out = { winners: null, unforcedErrors: null, wueSource: null, totalPoints: null, servicePoints: null, returnPoints: null };
+  if (!matchStats) return out;
+  const w = parseCount((findMatchStat(matchStats, playerKey, 'Points', 'Winners') || {}).stat_value);
+  const ue = parseCount((findMatchStat(matchStats, playerKey, 'Points', 'Unforced errors') || {}).stat_value);
+  if (w != null && ue != null) { out.winners = w; out.unforcedErrors = ue; out.wueSource = 'api-tennis'; }
+  else if (fallbackCtx) {
+    const fb = lookupWue(fallbackCtx.tour, fallbackCtx.playerName, fallbackCtx.opponentName);
+    if (fb) { out.winners = fb.winners; out.unforcedErrors = fb.unforcedErrors; out.wueSource = 'ATP_Entry_OCR'; }
+  }
+  out.totalPoints = tot(findMatchStat(matchStats, playerKey, 'Points', 'Total Points Won'));
+  out.servicePoints = pair(findMatchStat(matchStats, playerKey, 'Points', 'Service Points Won'));
+  out.returnPoints = pair(findMatchStat(matchStats, playerKey, 'Points', 'Return Points Won'));
+  return out;
+}
+
 function extractProgressionMetrics(matchStats, playerKey, fallbackCtx) {
   const metrics = {};
   for (const def of PROGRESSION_METRIC_DEFS) {
@@ -2702,20 +2763,17 @@ function extractProgressionMetrics(matchStats, playerKey, fallbackCtx) {
   // field-average line empty. When (and only when) api-tennis has neither value
   // for this player, fall back to the reviewed @ATP_Entry OCR corpus, honouring
   // the same strict priority + never-mix rule as attachWue(). Flagged wueSource.
-  let wueSource = (metrics.winners != null && metrics.unforcedErrors != null) ? 'api-tennis' : null;
-  if (wueSource == null && fallbackCtx) {
-    const fb = lookupWue(fallbackCtx.tour, fallbackCtx.playerName, fallbackCtx.opponentName);
-    if (fb) { metrics.winners = fb.winners; metrics.unforcedErrors = fb.unforcedErrors; wueSource = 'ATP_Entry_OCR'; }
-  }
+  // Ruling 3: winners / UE / source come from the ONE extraction (extractSheetCounts) the export rows read too.
+  const counts = extractSheetCounts(matchStats, playerKey, fallbackCtx);
+  metrics.winners = counts.winners;
+  metrics.unforcedErrors = counts.unforcedErrors;
+  const wueSource = counts.wueSource;
 
   // winnersPct / unforcedErrorsPct need total points played as the denominator.
   // That row (Total Points Won) is on every stat sheet even for fixtures missing
   // W/UE, so it is available for OCR-sourced matches too. It is a point count,
   // not a W/UE stat, so pairing it with OCR winners/UE does not mix W/UE sources.
-  const totalPoints = metrics.winners != null && metrics.unforcedErrors != null
-    ? findMatchStat(matchStats, playerKey, 'Points', 'Total Points Won')
-    : null;
-  const totalPointsPlayed = totalPoints && totalPoints.stat_total > 0 ? totalPoints.stat_total : null;
+  const totalPointsPlayed = metrics.winners != null && metrics.unforcedErrors != null ? counts.totalPoints : null;
   // Raw serve counts for the Layer #9 in-tournament serve tier's three
   // now-observable components (hold% / ace% / df%). Confirmed live on the
   // api-tennis per-match sheet: `Games:Service games won` carries a real
@@ -2791,6 +2849,17 @@ function average(nums) {
 // Returns null only if EVERY chunk failed (so the caller can bail); an empty
 // array means "queried fine, no fixtures".
 const _progressionFixturesCache = new Map();
+const PROGRESSION_CHUNK_RETRY_MS = process.env.PROGRESSION_CHUNK_RETRY_MS ? JSON.parse(process.env.PROGRESSION_CHUNK_RETRY_MS) : [0, 5000, 15000];   // first try + two retries per failed 7-day chunk (env override: tests)
+// Founder ruling 2026-10-21 (A4). The first progression chunk failed "fetch failed (cause: EPIPE write EPIPE)" in every
+// run once the cause was logged: it is the first api-tennis request after ~9 min of synchronous work (career-history
+// shards), and fetch hands it a pooled keep-alive socket the far end has already closed. The retry recovered every time;
+// this removes the dependence on it — the progression requests go out on a NEW connection pool (a fresh undici Agent,
+// the same class as Node's global dispatcher; Node ships undici but does not export it). If the global dispatcher is not
+// reachable the requests fall back to plain fetch, and the retry still covers them.
+function freshDispatcher() {
+  const G = globalThis[Symbol.for('undici.globalDispatcher.1')];
+  try { return G && typeof G.constructor === 'function' ? new G.constructor() : undefined; } catch (e) { return undefined; }
+}
 async function fetchProgressionFixtures(windowStart, today) {
   const dateStr = d => d.toISOString().split('T')[0];
   const cacheKey = `${dateStr(windowStart)}|${dateStr(today)}`;
@@ -2798,24 +2867,44 @@ async function fetchProgressionFixtures(windowStart, today) {
   const CHUNK_MS = 7 * 86400000; // API hard limit: 7-day max range per call
   const byKey = new Map();
   let anySuccess = false;
+  // Founder ruling 2026-10-20 (item 5): a chunk that fails must never be published as if the window were complete —
+  // on 20 Oct the 05..12 Oct chunk "fetch failed" and Shanghai published 15 of its 95 matches as a full draw. Each
+  // chunk is retried twice (5 s, 15 s); a chunk that still fails is recorded on the result as `failedRanges`, and
+  // buildTournamentProgression marks every tournament built from that fetch `partial` (shown on screen).
+  const failedRanges = [];
+  const fresh = freshDispatcher();
+  console.log(`Progression fixtures: ${fresh ? 'fresh connection pool' : 'shared connection pool (no fresh dispatcher available)'}`);
   for (let s = new Date(windowStart); s < today; s = new Date(s.getTime() + CHUNK_MS + 86400000)) {
     const e = new Date(Math.min(s.getTime() + CHUNK_MS, today.getTime()));
     const url = `${API_TENNIS_BASE}?method=get_fixtures&APIkey=${API_TENNIS_KEY}&date_start=${dateStr(s)}&date_stop=${dateStr(e)}&event_type_key=265`;
-    try {
-      const res = await fetch(url);
-      const data = await res.json();
-      if (Array.isArray(data.result)) {
-        sanitizeFixtures(data.result);
-        anySuccess = true;
-        for (const f of data.result) if (f && f.event_key != null) byKey.set(f.event_key, f);
-      } else {
+    let ok = false, why = null;
+    for (const waitMs of PROGRESSION_CHUNK_RETRY_MS) {
+      if (waitMs) await new Promise(r => setTimeout(r, waitMs));
+      try {
+        const res = await fetch(url, fresh ? { dispatcher: fresh } : undefined);
+        const data = await res.json();
+        if (Array.isArray(data.result)) {
+          sanitizeFixtures(data.result);
+          anySuccess = true; ok = true;
+          for (const f of data.result) if (f && f.event_key != null) byKey.set(f.event_key, f);
+          break;
+        }
+        why = 'returned non-array: ' + JSON.stringify(data.result).slice(0, 80);
         console.error(`Progression fixtures ${dateStr(s)}..${dateStr(e)} returned non-array:`, JSON.stringify(data.result).slice(0, 80));
+      } catch (err) {
+        // undici reports every network-level failure as the bare "fetch failed"; the real error (ECONNRESET,
+        // UND_ERR_SOCKET "other side closed", ETIMEDOUT, …) is on err.cause. 65 straight runs logged only the
+        // bare message (19–20 Oct) and the identical request succeeds off the runner, so print the cause.
+        const c = err.cause;
+        why = 'failed: ' + err.message + (c ? ` (cause: ${[c.code, c.message].filter(Boolean).join(' ')})` : '');
+        console.error(`Progression fixtures ${dateStr(s)}..${dateStr(e)} ${why}`);
       }
-    } catch (err) {
-      console.error(`Progression fixtures ${dateStr(s)}..${dateStr(e)} failed:`, err.message);
     }
+    if (!ok) failedRanges.push({ from: dateStr(s), to: dateStr(e), reason: why });
   }
+  if (fresh) fresh.close().catch(() => {});
   const merged = anySuccess ? [...byKey.values()] : null;
+  if (merged) merged.failedRanges = failedRanges;
   _progressionFixturesCache.set(cacheKey, merged);
   return merged;
 }
@@ -2873,26 +2962,46 @@ function isSlamQualifyingLeak(f) {
 // stamps the feed's Retired / Walk Over status so those rows are flagged. W/UE
 // follow extractProgressionMetrics' source rule exactly (api-tennis, else the
 // reviewed @ATP_Entry OCR corpus, never mixed) and carry the same wueSource.
-function progressionSheetMatches(played, roundLabelByName) {
-  const won = (s) => { const n = parseInt(s && s.stat_won, 10); return Number.isFinite(n) ? n : null; };
-  const tot = (s) => { const n = parseInt(s && s.stat_total, 10); return Number.isFinite(n) && n > 0 ? n : null; };
-  const pair = (s) => (won(s) != null && tot(s) != null) ? { won: won(s), total: tot(s) } : null;
-  const side = (f, matchStats, key, name, oppName) => {
-    const out = { name, playerKey: key != null ? String(key) : null, winners: null, unforcedErrors: null, wueSource: null, totalPoints: null, servicePoints: null, returnPoints: null };
-    if (!matchStats) return out;
-    const w = parseCount((findMatchStat(matchStats, key, 'Points', 'Winners') || {}).stat_value);
-    const ue = parseCount((findMatchStat(matchStats, key, 'Points', 'Unforced errors') || {}).stat_value);
-    if (w != null && ue != null) { out.winners = w; out.unforcedErrors = ue; out.wueSource = 'api-tennis'; }
-    else {
-      const fb = lookupWue(f.tournament_name, name, oppName);
-      if (fb) { out.winners = fb.winners; out.unforcedErrors = fb.unforcedErrors; out.wueSource = 'ATP_Entry_OCR'; }
-    }
-    const tp = findMatchStat(matchStats, key, 'Points', 'Total Points Won');
-    out.totalPoints = tot(tp);                                        // total points PLAYED in the match
-    out.servicePoints = pair(findMatchStat(matchStats, key, 'Points', 'Service Points Won'));
-    out.returnPoints = pair(findMatchStat(matchStats, key, 'Points', 'Return Points Won'));
-    return out;
+// The feed's own round text → the round's name ("ATP Almaty - 1/16-finals" → R32). 1/N-finals is the round with 2N
+// players. Anything else (round-robin, unknown text) → null: shown as a dash, never guessed from position or date.
+function feedRoundCode(round) {
+  const r = String(round || '').toLowerCase();
+  const m = r.match(/1\/(\d+)-finals?/);
+  if (m) return `R${Number(m[1]) * 2}`;
+  if (/semi[-\s]?finals?/.test(r)) return 'SF';
+  if (/quarter[-\s]?finals?/.test(r)) return 'QF';
+  if (/(^|[^a-z])final$/.test(r.trim()) || /- final$/.test(r.trim())) return 'F';
+  return null;
+}
+
+// Per-set games [[p1, p2], …] from the feed's own `scores` (null when it sent none). Never derived from the result line.
+function feedSetScores(f) {
+  if (!Array.isArray(f && f.scores) || !f.scores.length) return null;
+  const sets = [...f.scores].sort((a, b) => Number(a.score_set) - Number(b.score_set))
+    .map(x => [parseInt(x.score_first, 10), parseInt(x.score_second, 10)]);
+  return sets.every(([a, b]) => Number.isFinite(a) && Number.isFinite(b)) ? sets : null;
+}
+
+// Draw view: a fixture's two sides as {name, playerKey}, plus where/when it stands — for the qualifying results and the
+// day's scheduled matches the bracket shows. Placement on the bracket is by the players' own draw slots, client-side.
+function drawFixtureRow(f) {
+  return {
+    eventKey: f.event_key != null ? String(f.event_key) : null,
+    roundText: f.tournament_round || null,
+    date: f.event_date || null, time: f.event_time || null,
+    status: f.event_status === 'Retired' ? 'retired' : f.event_status === 'Walk Over' ? 'walkover'
+      : (f.event_winner === 'First Player' || f.event_winner === 'Second Player') ? 'finished' : f.event_live === '1' ? 'live' : 'scheduled',
+    winner: f.event_winner === 'First Player' ? 1 : f.event_winner === 'Second Player' ? 2 : null,
+    p1: { name: f.event_first_player || null, playerKey: f.first_player_key != null ? String(f.first_player_key) : null },
+    p2: { name: f.event_second_player || null, playerKey: f.second_player_key != null ? String(f.second_player_key) : null },
+    score: feedSetScores(f),
   };
+}
+
+function progressionSheetMatches(played, roundLabelByName) {
+  // Ruling 3: the same extraction the Reports metrics read (extractSheetCounts) — one derivation, no drift.
+  const side = (f, matchStats, key, name, oppName) => ({ name, playerKey: key != null ? String(key) : null,
+    ...extractSheetCounts(matchStats, key, { tour: f.tournament_name, playerName: name, opponentName: oppName }) });
   return [...played]
     .sort((a, b) => {
       const ka = `${a.event_date || ''} ${a.event_time || ''}`, kb = `${b.event_date || ''} ${b.event_time || ''}`;
@@ -2905,6 +3014,11 @@ function progressionSheetMatches(played, roundLabelByName) {
       return {
         eventKey: f.event_key != null ? String(f.event_key) : null,
         round: roundLabelByName[f.tournament_round] || f.tournament_round,
+        // Ruling 6 (founder 2026-10-20): the ACTUAL round, read from the feed's own round text — never from position.
+        roundCode: feedRoundCode(f.tournament_round),
+        hasStats: !!stats,
+        // Draw view (founder ruling 2026-10-20 item 2): the set score as the feed sent it, p1/p2 games per set.
+        score: feedSetScores(f),
         date: f.event_date || null,
         time: f.event_time || null,
         status: f.event_status === 'Retired' ? 'retired' : f.event_status === 'Walk Over' ? 'walkover' : 'finished',
@@ -3022,13 +3136,24 @@ async function buildTournamentProgression(tourName) {
   for (const f of played) feedNameCounts[f.tournament_name] = (feedNameCounts[f.tournament_name] || 0) + 1;
   const feedName = Object.keys(feedNameCounts).sort((a, b) => feedNameCounts[b] - feedNameCounts[a])[0] || bareName;
 
-  return {
+  const out = {
     feedName,
     rounds: roundLabels,
     players,
     fieldAverage: { rounds: roundLabels, metrics: fieldAverageMetrics, sampleSize: fieldSampleSize },
     matches: progressionSheetMatches(played, roundLabelByName),
+    // Draw view (item 2): this event's qualifying results and today's not-yet-finished fixtures (both draws), from the
+    // SAME fetch. Additive — nothing above changes.
+    qualifying: fixtures.filter(f => f.tournament_name && matchNames.some(nm => f.tournament_name.includes(nm))
+      && f.event_qualification === 'True' && (f.event_winner === 'First Player' || f.event_winner === 'Second Player')).map(drawFixtureRow),
+    scheduled: fixtures.filter(f => f.tournament_name && matchNames.some(nm => f.tournament_name.includes(nm))
+      && !(f.event_winner === 'First Player' || f.event_winner === 'Second Player') && !isCancelledFixture(f)
+      && f.first_player_key && f.second_player_key).map(drawFixtureRow),
   };
+  // Item 5: a fetch with a failed chunk is published as PARTIAL, never as complete. Which tournament the missing days
+  // belonged to cannot be known from the data that did arrive, so every tournament built from that fetch is marked.
+  if (fixtures.failedRanges && fixtures.failedRanges.length) out.partial = { failedRanges: fixtures.failedRanges };
+  return out;
 }
 
 // Task 4: api-tennis' get_odds carries real per-book Home/Away prices for BOTH
@@ -3318,9 +3443,12 @@ async function buildPastMatchObject(fixture, surfaceMap, venueMap) {
   // player's `wue.source`. No-op for matches with no stat sheet.
   attachWue(match.matchStats, match.tour, match.p1, match.p2);
 
-  const { hintKey, venue, courtSpeed } = venueAndCourtSpeedFor(fixture.tournament_name);
+  const { hintKey, venue, courtSpeed } = venueAndCourtSpeedFor(fixture.tournament_name, (surfaceMap ? fixtureSurface(fixture, surfaceMap) : null));
   match.venue = venue;
   match.courtSpeed = courtSpeed;
+  // Defect brief 2026-10-24 item 4: the event's own api-tennis key, so a page reads the event (event-hold.json events[key])
+  // and never another event that shares its city name (Lyon clay 2024 vs Lyon indoor hard 2026).
+  match.tournamentKey = fixture.tournament_key != null ? String(fixture.tournament_key) : null;
 
   // Task 3 — real weather on the day the match was played (historical archive
   // fallback lives inside fetchMatchWeather). Task 4 — pre-match odds recovered
@@ -3366,6 +3494,8 @@ async function buildPastMatchObject(fixture, surfaceMap, venueMap) {
   match.p2RecentForm = p2Form.pct;
   match.p1RecentFormMatches = p1Form.matches;
   match.p2RecentFormMatches = p2Form.matches;
+  match.p1RecentFormWalkovers = p1Form.walkovers;
+  match.p2RecentFormWalkovers = p2Form.walkovers;
 
   const [p1Stats, p2Stats] = await Promise.all([
     fetchPlayerStats(p1Key),
@@ -3442,6 +3572,17 @@ function isCardableFixture(f) {
 }
 // Live state for a fixture-built card (p1 = the fixture's first player). Guard A (TEN-107, founder 2026-09-03), as in
 // buildMatchObject: a terminal status beats a lagging event_live flag, so a decided match never strands as LIVE.
+// Ruling 4 (founder 2026-10-20): the in-play gap (B8) must never return silently. From the SAME fixture fetch the
+// cards were built from: which ATP main-draw singles api-tennis reports in play, and how many live cards the board got.
+// Not ok = api-tennis shows ≥1 match in play and the board has 0 live cards (tools/check-live-cards.mjs fails the run).
+function liveCardCheck(fixtures, matches) {
+  const apiLive = (fixtures || []).filter(f => f.event_live === '1' && !RECORD_STATUSES.includes(f.event_status)
+    && f.event_qualification !== 'True' && !isCancelledFixture(f) && !isInterruptedFixture(f))
+    .map(f => ({ eventKey: String(f.event_key), players: `${f.event_first_player} v ${f.event_second_player}`, status: f.event_status, tournament: f.tournament_name }));
+  const cardsLive = (matches || []).filter(m => m.live).length;
+  return { apiLive, apiLiveCount: apiLive.length, cardsLive, ok: !(apiLive.length > 0 && cardsLive === 0) };
+}
+
 function fixtureLiveState(fixture) {
   const live = fixture.event_live === '1' && !RECORD_STATUSES.includes(fixture.event_status);
   return {
@@ -3531,9 +3672,12 @@ async function buildUpcomingMatchObject(fixture, surfaceMap, venueMap) {
     if (upOdds.allBooks) match.apiTennisBooks = upOdds.allBooks;
   }
 
-  const { hintKey, venue, courtSpeed } = venueAndCourtSpeedFor(fixture.tournament_name);
+  const { hintKey, venue, courtSpeed } = venueAndCourtSpeedFor(fixture.tournament_name, (surfaceMap ? fixtureSurface(fixture, surfaceMap) : null));
   match.venue = venue;
   match.courtSpeed = courtSpeed;
+  // Defect brief 2026-10-24 item 4: the event's own api-tennis key, so a page reads the event (event-hold.json events[key])
+  // and never another event that shares its city name (Lyon clay 2024 vs Lyon indoor hard 2026).
+  match.tournamentKey = fixture.tournament_key != null ? String(fixture.tournament_key) : null;
 
   const h2hData = await fetchH2H(p1Key, p2Key);
   if (h2hData) {
@@ -3554,6 +3698,8 @@ async function buildUpcomingMatchObject(fixture, surfaceMap, venueMap) {
   match.p2RecentForm = p2Form.pct;
   match.p1RecentFormMatches = p1Form.matches;
   match.p2RecentFormMatches = p2Form.matches;
+  match.p1RecentFormWalkovers = p1Form.walkovers;
+  match.p2RecentFormWalkovers = p2Form.walkovers;
 
   const [p1Stats, p2Stats] = await Promise.all([
     fetchPlayerStats(p1Key),
@@ -3786,14 +3932,15 @@ function recentFormFromFixtures(fixtures, playerKey, surfaceMap) {
   // A given one was reaching the Form tab's W-L as a loss (Alcaraz's last 10 carried
   // Barcelona 2026), a received one as a win, and the card's form % with them. Same
   // fingerprint as every other record builder (isWalkover); a retirement is a match and stays.
-  const clean = (fixtures || [])
+  // Founder 2026-10-22: a walkover is still LISTED — in `walkovers`, its own array, never in `matches` (every form
+  // count, the card's %, Key factors and the model's fatigue/inactivity read `matches`). The Form list merges it back.
+  const decided = (fixtures || [])
     .filter(f => isSingles(f) && RECORD_STATUSES.includes(f.event_status))
-    .filter(f => !isWalkover(f))
     .filter(f => f.event_winner === 'First Player' || f.event_winner === 'Second Player')   // TEN-437 review: no winner = no form row (as every other history builder)
     .slice()
     .sort((a, b) => new Date(b.event_date) - new Date(a.event_date));
-
-  const matches = clean.map(f => {
+  const clean = decided.filter(f => !isWalkover(f));
+  const toRow = f => {
     const isFirst = String(f.first_player_key) === String(playerKey);
     const opponent = isFirst ? f.event_second_player : f.event_first_player;
     const opponentKey = isFirst ? f.second_player_key : f.first_player_key;
@@ -3824,10 +3971,18 @@ function recentFormFromFixtures(fixtures, playerKey, surfaceMap) {
         : (/^\s*[MW]\d{2}\b/.test(f.tournament_name || '') ? 'itf' : 'challenger'),
       eventKey: f.event_key,
     };
-  });
+  };
+  const matches = clean.map(toRow);
+  const walkovers = decided.filter(isWalkover).map(toRow);
 
   const pct = matches.length ? Math.round((matches.filter(m => m.won).length / matches.length) * 1000) / 10 : null;
-  return { pct, matches };
+  return { pct, matches, walkovers };
+}
+// The walkovers a capped `matches` list spans: on or after its oldest row (all of them when the list is empty, which
+// only happens for a player with no played match in the window).
+function walkoversWithin(walkovers, matches) {
+  const oldest = (matches || []).reduce((d, m) => (!d || String(m.date) < d ? String(m.date) : d), '');
+  return (walkovers || []).filter(w => !oldest || String(w.date) >= oldest);
 }
 
 // Per-match recent form for the Match Analysis modal. Uses the SAME broad
@@ -3857,7 +4012,7 @@ const RECENT_FORM_ROW_CAP = Number(process.env.RECENT_FORM_ROW_CAP || 40);
 async function buildRecentFormForMatch(playerKey, surfaceMap) {
   const full = recentFormFromFixtures(await fetchRecentSinglesFixtures(playerKey), playerKey, surfaceMap);
   const matches = full.matches.slice(0, RECENT_FORM_ROW_CAP);
-  return { pct: recentFormPct(full.matches), matches };
+  return { pct: recentFormPct(full.matches), matches, walkovers: walkoversWithin(full.walkovers, matches) };
 }
 // The card's Recent form %: the last RECENT_FORM_PCT_WINDOW matches that count toward
 // form (FORM_NOT_ATP_RECORD out, the next match slides in), newest first. The rows
@@ -3896,22 +4051,24 @@ const FORM_INDEX_PATH = 'form-index.json';
 function extractFormShards(matches) {
   const byPlayer = new Map();
   for (const m of matches) {
-    for (const [field, keyField] of [['p1RecentFormMatches', 'p1Key'], ['p2RecentFormMatches', 'p2Key']]) {
+    for (const [field, keyField, woField] of [['p1RecentFormMatches', 'p1Key', 'p1RecentFormWalkovers'], ['p2RecentFormMatches', 'p2Key', 'p2RecentFormWalkovers']]) {
       const rows = m[field];
       const key = m[keyField];
       if (rows && rows.length && key != null && !byPlayer.has(String(key))) {
-        byPlayer.set(String(key), rows);
+        byPlayer.set(String(key), { rows, walkovers: m[woField] || [] });
       }
       m[field] = null;   // out of the critical path — the modal fetches the shard
+      delete m[woField];
     }
   }
 
   fs.mkdirSync(FORM_SHARD_DIR, { recursive: true });
   const index = [];
   let bytes = 0;
-  for (const [key, rows] of byPlayer) {
+  for (const [key, { rows, walkovers }] of byPlayer) {
     const file = `${FORM_SHARD_DIR}/${key}.json`;
-    writeJsonAtomic(file, { key, matches: rows }, true);
+    // `walkovers`: listed in the Form tab, never one of its matches (founder 2026-10-22). Emitted only when non-empty.
+    writeJsonAtomic(file, { key, matches: rows, ...(walkovers.length ? { walkovers } : {}) }, true);
     bytes += fs.statSync(file).size;
     index.push(key);
   }
@@ -3920,7 +4077,7 @@ function extractFormShards(matches) {
   // availability ships as data, not as a failed request (same reasoning as
   // pbp-index.json).
   writeJsonAtomic(FORM_INDEX_PATH, index, true);
-  const rowCount = [...byPlayer.values()].reduce((n, r) => n + r.length, 0);
+  const rowCount = [...byPlayer.values()].reduce((n, r) => n + r.rows.length, 0);
   console.log(`Wrote ${index.length} recent-form shard(s) to ${FORM_SHARD_DIR}/ (${rowCount} rows, ${(bytes / 1024).toFixed(0)} KB total, lazy — off the matches.json critical path).`);
 }
 
@@ -4024,6 +4181,7 @@ function tallyCareerYears(rows) {
   for (const r of (rows || [])) {
     const y = String(r.year || '');
     if (!/^\d{4}$/.test(y)) continue;
+    if (r.walkover) continue;   // a walkover is a row, never a match played (N2; founder 2026-10-22)
     if (!byYear[y]) {
       byYear[y] = { rows: 0, holeRows: 0, atpOnly: true, ...blankSplit(),
         tiers: { atp: blankSplit(), chitf: blankSplit() }, holeIndoor: { atp: blankSplit(), chitf: blankSplit() } };
@@ -4158,6 +4316,19 @@ const TE_STORE_DIR = process.env.TE_STORE_DIR || '.';
 const TE_HISTORY_DIR = require('path').join(TE_STORE_DIR, 'te-history');
 const TE_HISTORY_INDEX = require('path').join(TE_STORE_DIR, 'te-history-index.json');
 const TE_INGEST = process.env.TE_INGEST === '1';   // founder approval of the moved-cell report flips this default
+// Founder 2026-10-22 (ruling 6): TE empty-score rows are resolved against the store's pinned Sackmann copy
+// (`sackmann/`, verified against SHA256SUMS; te-resolve.js). Loaded once, only with TE_INGEST on; a missing or changed
+// copy stops the run rather than count on an unverified source.
+const TeResolve = require('./te-resolve.js');
+let _teResolver = null;
+function teResolverFor(teRec) {
+  if (!_teResolver) {
+    const idx = TeResolve.loadSackmann(require('path').join(TE_STORE_DIR, 'sackmann'));
+    console.log(`TE ruling 6: Sackmann copy verified — ${idx.rows} match rows indexed for empty-score resolution`);
+    _teResolver = TeResolve.makeResolver(idx);
+  }
+  return _teResolver(teRec);
+}
 // TEN-443 · the sets api-tennis drops (a set in which one player won no games): set-repairs.json, written only by
 // tools/build-set-repairs.mjs, repairs a row where Tennis Explorer AND Sackmann agree and flags the rest. Behind
 // SET_REPAIR: off until the founder approves the moved-figures report (ruling b5b5ef00 item 1).
@@ -4243,23 +4414,18 @@ async function writeCareerHistoryShards(profiles, opts = {}) {
 
   for (const [key, p] of Object.entries(profiles)) {
     if (!p) continue;
-    // TEN-313 (N2): a profile built before the walkover rule (cached, 14-day TTL) still
-    // carries its walkovers-received in careerMatches, and its careerByYear counts them
-    // as wins. Take them out of both here, so the rule reaches every profile this run.
-    // A fresh profile has none (playerMatchHistory skips them), so this is a no-op there.
-    const fixtureAll = Array.isArray(p.careerMatches) ? p.careerMatches : [];
-    const fixtureWo = fixtureAll.filter(r => r && r.walkover);
-    if (fixtureWo.length) subtractYearTally(p.careerByYear, tallyCareerYears(fixtureWo));
-    const fixtureRows = fixtureWo.length ? fixtureAll.filter(r => !(r && r.walkover)) : fixtureAll;
-    // TEN-313 (N2): a walkover is not a match — neither half carries one now
-    // (playerMatchHistory skips it too), so a TML walkover can no longer reach a year
-    // tally as a loss or a win.
-    const tmlAll = (archive[key] || []).filter(r => !r.walkover);
+    // Founder 2026-10-22: both halves carry their explicitly flagged walkovers (api-tennis 'Walk Over', TML 'W/O') as
+    // rows. No tally counts one (tallyCareerYears, buildAllTierYearly skip the flag), so nothing is subtracted: every
+    // profile cached before this (PROFILE_SCHEMA_VERSION 16) is rebuilt rather than patched here.
+    const fixtureRows = Array.isArray(p.careerMatches) ? p.careerMatches : [];
+    const tmlAll = archive[key] || [];
     const archiveRows = tmlAll.filter(r => Number(r.year) <= archiveMaxYear).map(r => ({ ...r, src: 'archive' }));
-    // TEN-310: the 2021 hole, filled only where the feed half has neither the edition nor the match.
+    // TEN-310: the 2021 hole, filled only where the feed half has neither the edition nor the match — from played rows
+    // only, and only against the feed's played rows (a feed walkover proves no edition was played).
+    const fixturePlayed = fixtureRows.filter(r => !(r && r.walkover));
     for (const y of holeYears) {
-      const offered = tmlAll.filter(r => Number(r.year) === y);
-      const kept = fillFixtureHole(fixtureRows, offered, y);
+      const offered = tmlAll.filter(r => Number(r.year) === y && !r.walkover);
+      const kept = fillFixtureHole(fixturePlayed, offered, y);
       holeFill[y] = holeFill[y] || { offered: 0, kept: 0, players: 0 };
       holeFill[y].offered += offered.length; holeFill[y].kept += kept.length; if (kept.length) holeFill[y].players++;
       for (const r of kept) archiveRows.push({ ...r, src: 'archive', holeFill: true });
@@ -4285,7 +4451,7 @@ async function writeCareerHistoryShards(profiles, opts = {}) {
         // TEN-449 golden guard (founder 2026-10-19), on every run with the switch on: the merge may not touch a byte of
         // the shared rows — H2H, Lines and the model read them, and none of them may move. A merge that did stops the run.
         const feedBefore = JSON.stringify(rows);
-        const m = teMerge = TeJoin.applyTeHistory(rows, teRec, { provisional: PROVISIONAL });
+        const m = teMerge = TeJoin.applyTeHistory(rows, teRec, { provisional: PROVISIONAL, resolveEmpty: teResolverFor(teRec) });
         if (JSON.stringify(rows) !== feedBefore) throw new Error(`TEN-449: the Tennis Explorer merge changed ${key}'s shared career-history rows — H2H, Lines and the model would move; refusing to publish`);
         teTotals.players++;
         for (const [k, v] of Object.entries(m.diag)) if (typeof v === 'number') teTotals[k] = (teTotals[k] || 0) + v;
@@ -5415,7 +5581,10 @@ function nextShardCacheEntry(cached, profile, nowIso) {
 // v15 = TEN-244. FORCES THE PROFILE-CACHE REBUILD so the per-set `sets`,
 //       `incomplete` and `altFormat` fields reach every cached opponent at once
 //       instead of over the 14-day TTL. Founder-authorised 2026-09-21.
-const PROFILE_SCHEMA_VERSION = 15;
+// v16 = walkover rows (founder 2026-10-22): careerMatches now carries every flagged walkover and recentForm a
+//       `walkovers` list; a cached profile built before this has neither. Founder-ordered rebuild ("bump the profile
+//       cache version so no stored profile keeps the stripped rows") — the cost note below applies unchanged.
+const PROFILE_SCHEMA_VERSION = 16;
 
 // ─── WHY v15 EXISTS, AND WHAT IT COSTS — read this before bumping again ──────
 //
@@ -5506,7 +5675,8 @@ function historyCacheFresh(cached, now, isSeed) {
 // and (b) guards the structural first-loss net with the '1/N-finals' main-draw
 // certifier, parity with the set-count net (v5) and the record-by-season twin.
 // Bumping to 6 busts every cached history so the corrected rows rebuild.
-const TOURNAMENT_HISTORY_SCHEMA_VERSION = 6;
+// v7 (founder 2026-10-22): walkover rows listed in each edition, walkover-only editions kept with the round reached.
+const TOURNAMENT_HISTORY_SCHEMA_VERSION = 7;
 
 // Round depth ranking (higher = deeper run). Used to derive each player's best
 // result at a tournament. Covers both the word forms ("Quarter-finals") and the
@@ -6063,6 +6233,11 @@ async function buildPlayerProfiles(matches, surfaceMap) {
   const shardStart = Date.now();
   for (const [key, name] of shardOrder) {
     const cached = cachedPlayers[key];
+    // The floor's exemption signal counts here too (2026-10-22): after a schema bump the opponent pass converges first,
+    // and the stale entries left are all shard-pool players. Counted only in pass 2, a run met 127 of them (deferred or
+    // rebuilt), reported "wrong-schema 0", lost the ratio exemption mid-convergence and failed every run on 544 of 731,
+    // and a failed run saves no cache, so it could never converge.
+    if (cached && cached.v !== PROFILE_SCHEMA_VERSION) wrongSchemaRejections++;
     const fresh = cached && cached.builtAt
       && cached.v === PROFILE_SCHEMA_VERSION
       && (now - new Date(cached.builtAt).getTime() < OPPONENT_PROFILE_MAX_AGE_MS)
@@ -6198,8 +6373,11 @@ async function buildPlayerProfiles(matches, surfaceMap) {
     profiles[key].insights = buildPlayerInsights(profiles[key], tourAverage);
   }
 
-  fs.writeFileSync(PLAYER_PROFILE_CACHE_PATH,
-    JSON.stringify({ fetchedAt: new Date().toISOString(), players: cachedPlayers }, null, 2));
+  // Atomic (founder ruling 2026-10-21, A2): the cache file is saved to the Actions cache by its own step now — a
+  // half-written file must never be what a later run restores.
+  writeJsonAtomic(PLAYER_PROFILE_CACHE_PATH, { fetchedAt: new Date().toISOString(), players: cachedPlayers });
+  // tools/cache-save-decision.mjs reads this to decide whether the run's caches are worth saving
+  writeJsonAtomic('profile-build-stats.json', { builtAt: new Date().toISOString(), opponentsBuilt: built, reused, noStats: skippedNull, wrongSchema: wrongSchemaRejections });
   console.log(`Player profiles: ${Object.keys(seedProfiles).length} seed, `
     + `opponents [built ${built}, reused ${reused}, no-stats ${skippedNull}, `
     + `wrong-schema ${wrongSchemaRejections}] `
@@ -7573,6 +7751,11 @@ async function runPipeline() {
   console.log(`H2H: removed ${ownH2HRemoved} own-fixture row(s) from the board's H2H records.`);
   writeJsonAtomic('matches.json', matches);
   console.log(`Wrote ${matches.length} matches to matches.json`);
+  {
+    const lc = liveCardCheck(apiTennisFixtures, matches);
+    writeJsonAtomic('live-check.json', { checkedAt: new Date().toISOString(), ...lc });
+    console.log(`Live-card check: api-tennis shows ${lc.apiLiveCount} main-draw match(es) in play; matches.json has ${lc.cardsLive} live card(s) → ${lc.ok ? 'ok' : 'GAP'}`);
+  }
   const enriched = matches.filter(m => m.h2h !== null).length;
   console.log(`${enriched}/${matches.length} matches got real H2H/stats data (rest had no API-Tennis fixture match).`);
 
@@ -7735,6 +7918,72 @@ async function runPipeline() {
         console.warn(`valueSnapshot persist skipped: ${e.message}`);
       }
     }
+  }
+
+  // Draw matches store (founder 2026-10-21 round 3): LAST, after matches.json is final (the valueSnapshot patch above).
+  writeDrawMatchesStore(progressionTournaments, modelOut);
+}
+
+// ---- Draw matches store (founder 2026-10-21 round 3: "Yes" — keep finished draw matches openable all week) ----------
+// The board (matches.json) keeps a finished match for 4 days (founder 2026-08-08, Results rail), so a draw card's Match
+// Analysis would disappear mid-tournament. draw-matches.json keeps, per finished MAIN-DRAW match of this run's
+// progression, the board row exactly as matches.json published it plus its model entry (model-output.json drops a match
+// with the board; the Key factors card reads it). While the match is on the board the entry is refreshed every run; once
+// it leaves, the last copy is kept unchanged. An entry leaves the store DRAW_MATCHES_KEEP_DAYS after its match date
+// (a Slam fortnight fits). Two prior sources, merged — its own Actions cache (saved every run, pipeline.yml "draw
+// matches store") and the last published copy — newest savedAt per match wins. Nothing here calls an API.
+const DRAW_MATCHES_PATH = process.env.DRAW_MATCHES_PATH || 'draw-matches.json';
+const DRAW_MATCHES_PUBLISHED_PATH = 'draw-matches.published.json';
+const DRAW_MATCHES_KEEP_DAYS = 16;
+function buildDrawMatchesStore({ files, board, model, progression, nowIso }) {
+  const prior = new Map();
+  for (const f of files || []) {
+    for (const [id, e] of Object.entries((f && f.matches) || {})) {
+      if (!e || !e.match || !e.savedAt) continue;
+      const p = prior.get(id);
+      if (!p || Date.parse(e.savedAt) > Date.parse(p.savedAt)) prior.set(id, e);
+    }
+  }
+  const byId = new Map((board || []).filter(r => r && r.id && r.finalScore).map(r => [r.id, r]));
+  const out = {};
+  let fresh = 0, kept = 0;
+  for (const [tour, t] of Object.entries(progression || {})) {
+    for (const m of (t && t.matches) || []) {
+      if (!(m.winner === 1 || m.winner === 2) || m.eventKey == null) continue;
+      const id = `past-${m.eventKey}`, row = byId.get(id), p = prior.get(id);
+      if (row) {
+        const md = model && model[id];
+        out[id] = { id, eventKey: String(m.eventKey), tour, date: row.date || null, savedAt: nowIso, match: row,
+          model: md || (p && p.model) || null };
+        fresh++;
+      } else if (p) { out[id] = p; kept++; }
+    }
+  }
+  // a match no longer in this run's progression (its tournament ended, or this run's fetch missed it) keeps its entry
+  // until it ages out — never dropped because one run did not see it
+  const keepFrom = Date.parse(nowIso) - DRAW_MATCHES_KEEP_DAYS * 86400e3;
+  let aged = 0;
+  for (const [id, e] of prior) {
+    if (out[id]) continue;
+    const d = Date.parse((e.date || '') + 'T00:00:00Z');
+    if (Number.isFinite(d) && d >= keepFrom) { out[id] = e; kept++; } else aged++;
+  }
+  return { store: { v: 1, savedAt: nowIso, keepDays: DRAW_MATCHES_KEEP_DAYS, matches: out }, fresh, kept, aged };
+}
+function writeDrawMatchesStore(progression, modelOut) {
+  const read = f => { try { return JSON.parse(fs.readFileSync(f, 'utf8')); } catch (e) { return null; } };
+  const files = [read(DRAW_MATCHES_PATH), read(DRAW_MATCHES_PUBLISHED_PATH)];
+  try {
+    const board = read('matches.json') || [];
+    const { store, fresh, kept, aged } = buildDrawMatchesStore({ files, board, model: modelOut || {},
+      progression, nowIso: new Date().toISOString() });
+    writeJsonAtomic(DRAW_MATCHES_PATH, store, true);
+    console.log(`Wrote ${DRAW_MATCHES_PATH} — ${Object.keys(store.matches).length} finished draw match(es): ${fresh} from this run's board, ${kept} kept from earlier runs, ${aged} aged out (> ${DRAW_MATCHES_KEEP_DAYS} days). Prior sources: cache ${files[0] ? 'yes' : 'no'}, published ${files[1] ? 'yes' : 'no'}.`);
+  } catch (e) {
+    // never publish an empty store over a good one: carry the newest prior copy forward unchanged
+    const keep = files.filter(Boolean).sort((a, b) => Date.parse(b.savedAt || 0) - Date.parse(a.savedAt || 0))[0];
+    writeJsonAtomic(DRAW_MATCHES_PATH, keep || { v: 1, savedAt: null, keepDays: DRAW_MATCHES_KEEP_DAYS, matches: {} }, true);
+    console.warn(`${DRAW_MATCHES_PATH} not rebuilt (${e.message}) — ${keep ? 'the previous copy is published unchanged' : 'no previous copy: an empty store is published'}.`);
   }
 }
 
@@ -8040,7 +8289,7 @@ if (require.main === module) {
   });
 }
 
-module.exports = { isCardableFixture, fixtureLiveState, olympicSurface, fixtureSurface, modelH2hMatches, modelMatchStarted, modelEventKey, modelPreMatchCandidates, buildModelOutput, isUnplayedFinishedFixture, buildMatchObject, buildUpcomingMatchObject, buildOneProfile, profileNameFromFixtures, findApiTennisFixture, fixtureFirstIsHome, pinnacleOrFirst, normalizeName, venueAndCourtSpeedFor, courtConditionsFor, courtSpeedRecordFromFixtures, COURT_CONDITIONS, ocsMatchKey, ocsNameKey, fetchH2H, h2hCountsInAtpRecord, H2H_NOT_ATP_RECORD, FORM_NOT_ATP_RECORD, recentFormPct, capRecentFormMatches, PROFILE_FORM_WINDOW, tourLabelOf, aggregatePlayerWue, aggregateStatsFromFixtures, isCancelledFixture, profileRosterFloorVerdict, lastPublishedRosterCount, profilesWithoutTournamentHistory, PROFILE_ROSTER_BACKSTOP, PROFILE_ROSTER_RATIO, MAX_OPPONENT_BUILDS_PER_RUN, isIndoorTournament, loadTournamentCourtMap, fetchRecentSinglesFixtures, recentFormFromFixtures, progressionSheetMatches, buildTournamentProgression, extractProgressionMetrics, buildSetStatsFromFixture, buildMatchStatsFromFixture, extractFormShards, buildRecentFormForMatch,
+module.exports = { venueHintKeyFor, buildDrawMatchesStore, feedSetScores, drawFixtureRow, feedRoundCode, liveCardCheck, isCardableFixture, fixtureLiveState, olympicSurface, fixtureSurface, modelH2hMatches, modelMatchStarted, modelEventKey, modelPreMatchCandidates, buildModelOutput, isUnplayedFinishedFixture, buildMatchObject, buildUpcomingMatchObject, buildOneProfile, profileNameFromFixtures, findApiTennisFixture, fixtureFirstIsHome, pinnacleOrFirst, normalizeName, venueAndCourtSpeedFor, courtConditionsFor, courtSpeedRecordFromFixtures, COURT_CONDITIONS, ocsMatchKey, ocsNameKey, fetchH2H, h2hCountsInAtpRecord, H2H_NOT_ATP_RECORD, FORM_NOT_ATP_RECORD, recentFormPct, capRecentFormMatches, PROFILE_FORM_WINDOW, tourLabelOf, aggregatePlayerWue, aggregateStatsFromFixtures, isCancelledFixture, profileRosterFloorVerdict, lastPublishedRosterCount, profilesWithoutTournamentHistory, PROFILE_ROSTER_BACKSTOP, PROFILE_ROSTER_RATIO, MAX_OPPONENT_BUILDS_PER_RUN, isIndoorTournament, loadTournamentCourtMap, fetchRecentSinglesFixtures, recentFormFromFixtures, progressionSheetMatches, buildTournamentProgression, extractProgressionMetrics, buildSetStatsFromFixture, buildMatchStatsFromFixture, extractFormShards, buildRecentFormForMatch,
   // The Career-record pair. Exported together on purpose: their whole contract
   // is that the counts one returns are tallyable from the rows the other
   // returns, and that is what ten8-career-verify.js asserts.

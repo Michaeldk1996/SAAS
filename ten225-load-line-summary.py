@@ -47,14 +47,17 @@ local .env). Stdlib only. Secrets are never printed.
 import argparse
 import collections
 import gzip
+import hashlib
 import json
 import os
 import statistics
 import sys
+import time
 import unicodedata
 import urllib.error
 import urllib.parse
 import urllib.request
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -134,10 +137,16 @@ def sb_download(url, key, path):
                   + urllib.parse.quote(path), url, key)
     if got is None:
         return None, err
+    # Measured 2026-10-24: every object archived from 2026-10-08 on (uploaded, as
+    # always, with Content-Encoding: gzip) is served DECODED — plain JSON, no
+    # gzip magic — while older objects still come back as gzip bytes. Decompress
+    # only what is gzip (the same magic-byte rule as archive-oddspapi-raw.py
+    # payload_of and tools/pinarch.py payload_parts).
     try:
-        return json.loads(gzip.decompress(got).decode('utf-8')), None
+        raw = gzip.decompress(got) if got[:2] == b'\x1f\x8b' else got
+        return json.loads(raw.decode('utf-8')), None
     except Exception as e:                      # noqa: BLE001 — reported
-        return None, (0, f'unreadable: {e}')
+        return None, (0, f'unreadable: {type(e).__name__}')
 
 
 def fetch_flips(url, key, page=1000):
@@ -398,6 +407,108 @@ def print_close_corrections(c, min_n=None):
         f"close appeared {c['close_appeared']}, close withdrawn "
         f"{c['close_disappeared']} (denominator {c['corrected']})",
     ]
+
+
+def merge_corrections(parts):
+    """Sum per-chunk correction counts. Any None part (a failed pre-upsert read)
+    makes the total UNMEASURED (None), never a smaller number."""
+    if any(p is None for p in parts):
+        return None
+    out = {k: 0 for k in parts[0] if k != 'examples'}
+    out['examples'] = []
+    for p in parts:
+        for k, v in p.items():
+            if k == 'examples':
+                out['examples'].extend(v)
+            else:
+                out[k] = out.get(k, 0) + v
+    out['examples'] = out['examples'][:5]
+    return out
+
+
+# --------------------------------------------- incremental bucket load (2026-10-24)
+# hotlines-mtb-and-loader, Fix 2. Every run used to list, download and re-summarise
+# EVERY object in the bucket, serially, then re-read and re-upsert every row. The
+# bucket only grows (4,460 objects on 5 Oct), so the load step crossed the job's
+# 60-minute limit: 21 of 30 runs cancelled, last success 2026-10-05.
+#
+# An object's rows are a pure function of (its payload, its resolved start, its
+# archive time, the catalogue, this loader's rules). Bucket objects are immutable
+# (uploaded without overwrite), so an object needs reloading only when one of the
+# OTHER inputs moves: a later trueStart in the index, a newly paired live flip, a
+# rule change here (bump LOADER_VERSION). Each loaded object's fingerprint of those
+# inputs is kept in OBJECT_STATE_TABLE; a run loads the objects whose fingerprint
+# differs, in chunks, committing rows + state per chunk, and stops at a deadline.
+LOADER_VERSION = 'ls-2026-10-24'   # bump on ANY change to how a payload becomes rows
+OBJECT_STATE_TABLE = 'oddspapi_line_summary_objects'
+CHUNK_OBJECTS = 300
+DL_WORKERS = 8
+
+
+def catalogue_digest(catalogue):
+    return hashlib.sha1(json.dumps(catalogue, sort_keys=True).encode()).hexdigest()[:16]
+
+
+def object_fingerprint(path, created, start, cat_digest):
+    """What the object's rows depend on besides its (immutable) payload."""
+    s = json.dumps([LOADER_VERSION, cat_digest, path, created, list(start)],
+                   sort_keys=True, default=str)
+    return hashlib.sha1(s.encode()).hexdigest()
+
+
+def fetch_object_state(url, key, page=1000, _get=None):
+    """{object_path: {'fingerprint', 'row_keys'}} for every loaded object, paged and
+    ORDERED (an unordered limit/offset walk repeats and skips rows). None on a
+    failed read — never "nothing loaded yet"."""
+    get = _get or (lambda path: sb_json(path, url, key))
+    out, offset = {}, 0
+    while True:
+        q = urllib.parse.urlencode({'select': 'object_path,fingerprint,row_keys',
+                                    'order': 'object_path.asc',
+                                    'limit': page, 'offset': offset})
+        got, err = get(f'/rest/v1/{OBJECT_STATE_TABLE}?{q}')
+        if got is None:
+            return None, err
+        for r in got:
+            out[r['object_path']] = r
+        if len(got) < page:
+            return out, None
+        offset += page
+
+
+def plan_objects(objects, state, fx_index, flips, cat_digest, full=False):
+    """Split the listing into (pending, unchanged, why). A pending item carries the
+    fingerprint its state row gets once its rows are committed."""
+    pending, unchanged, why = [], [], collections.Counter()
+    for path, fid, created in objects:
+        start = start_for(fid, fx_index.get(fid) or {}, flips)
+        fp = object_fingerprint(path, created, start, cat_digest)
+        prev = state.get(path)
+        if full:
+            why['full_reload'] += 1
+        elif prev is None:
+            why['new'] += 1
+        elif prev.get('fingerprint') != fp:
+            why['inputs_changed'] += 1
+        else:
+            unchanged.append(path)
+            continue
+        pending.append((path, fid, created, start, fp))
+    return pending, unchanged, why
+
+
+def download_many(url, key, paths, workers=DL_WORKERS, _dl=None):
+    """Parallel downloads, results in the order given: [(payload|None, err|None)]."""
+    dl = _dl or (lambda p: sb_download(url, key, p))
+    with ThreadPoolExecutor(max_workers=max(1, workers)) as ex:
+        return list(ex.map(dl, paths))
+
+
+def row_key_str(r):
+    """book|market|side|line — a row's key within its fixture, as kept in the
+    object state, so the history pass never overwrites a key the bucket owns."""
+    return '|'.join('' if r.get(k) is None else str(r.get(k))
+                    for k in ('book', 'market', 'side', 'line'))
 
 
 def epoch(ts):
@@ -935,7 +1046,16 @@ def main():
                     help='summarise and report, write nothing')
     ap.add_argument('--limit', type=int, default=0,
                     help='cap bucket objects processed (0 = all)')
+    ap.add_argument('--full', action='store_true',
+                    help='reload every bucket object, ignoring the object state')
+    ap.add_argument('--deadline-min', type=float, default=40.0,
+                    help='stop starting bucket chunks after this many minutes; '
+                         'committed chunks stay, the rest load next run, and the '
+                         'run exits 1 so an unfinished load never reads green')
+    ap.add_argument('--workers', type=int, default=DL_WORKERS,
+                    help='parallel bucket downloads')
     a = ap.parse_args()
+    t0 = time.monotonic()
     if not (a.history or a.bucket or a.fixtures):
         a.history = a.bucket = a.fixtures = True
 
@@ -1043,14 +1163,17 @@ def main():
     result['flips'] = {'rows': len(flips), 'stats': dict(flip_st)}
 
     # --------------------------------------------------------- bet365-history
-    # Loaded BEFORE the bucket on purpose. Where a fixture is in both, the raw
-    # payload is strictly richer (verified 12 -> 17 ticks on a paired fixture),
-    # so the bucket pass must be the one that lands last and wins the upsert.
+    # Summarised here, UPSERTED LAST. Where a fixture is in both, the raw payload
+    # is strictly richer (verified 12 -> 17 ticks on a paired fixture), so the
+    # bucket must win. A full reload won that by upserting bucket rows after
+    # history rows; the incremental load wins it by never sending a history row
+    # whose key a bucket object owns (that object's state carries its row keys).
+    hist_rows = []
     if a.history:
-        hist_rows, hst, gens = [], collections.Counter(), {}
+        hst, gens = collections.Counter(), {}
         months = sorted(f for f in os.listdir(HISTORY_DIR)
                         if f.endswith('.json') and f != 'index.json')
-        print(f'\nbet365-history: {len(months)} months {months}')
+        print(f'\nbet365-history: {len(months)} months {months}', flush=True)
         for mf in months:
             r, s, gen = summarise_history(os.path.join(HISTORY_DIR, mf),
                                           catalogue, fx_index, flips)
@@ -1060,12 +1183,15 @@ def main():
             gens[mf] = {'rows': len(r), 'generatedAt': iso(gen), 'reliable': rel}
             hist_rows.extend(r)
             hst.update(s)
-        print(f'  total {len(hist_rows)} rows; {dict(hst)}')
+        print(f'  total {len(hist_rows)} rows; {dict(hst)}', flush=True)
         result['history'] = {'rows': len(hist_rows), 'perMonth': gens,
                              'stats': dict(hst)}
-        all_rows.extend(hist_rows)
 
     # ---------------------------------------------------------------- bucket
+    report_rows = []              # this run's rows, for the reporting below
+    bucket_keys = None            # fixture_id -> {book|market|side|line} the bucket owns
+    bucket_corrections = None
+    remaining = 0
     if a.bucket:
         if a.dry_run:
             print('\nbucket: SKIPPED in --dry-run (it needs the Supabase key).')
@@ -1089,42 +1215,135 @@ def main():
             if a.limit:
                 objects = objects[:a.limit]
             print(f'\nbucket {BUCKET}: {len(objects)} objects '
-                  f'(listing complete: {ok})')
+                  f'(listing complete: {ok})', flush=True)
             if not ok:
                 print('::warning::bucket listing INCOMPLETE — counts are a '
                       'LOWER bound.')
 
-            brows, bst = [], collections.Counter()
-            unindexed = unreadable = norow = 0
-            for path, fid, created in objects:
-                payload, err = sb_download(url, key, path)
-                if payload is None:
-                    unreadable += 1
+            state, serr = fetch_object_state(url, key)
+            if state is None:
+                # Fail closed: an unreadable state is not "nothing loaded" — reading
+                # it as that would silently turn every run into a full reload again.
+                print(f'::error::{OBJECT_STATE_TABLE} unreadable ({serr}) — '
+                      f'no bucket load this run.')
+                return 1
+            pending, unchanged, why = plan_objects(objects, state, fx_index, flips,
+                                                   catalogue_digest(catalogue), a.full)
+            print(f'  object state: {len(state)} loaded objects on record; '
+                  f'{len(unchanged)} of {len(objects)} unchanged (skipped), '
+                  f'{len(pending)} to load {dict(why)}', flush=True)
+
+            bucket_keys = collections.defaultdict(set)
+            loaded_now = set()
+            brows, bst, bcorr = [], collections.Counter(), []
+            unindexed = unreadable = norow = chunks = 0
+            unread_why = collections.Counter()
+            deadline_s = a.deadline_min * 60.0
+            done_n = 0
+            for ci in range(0, len(pending), CHUNK_OBJECTS):
+                if time.monotonic() - t0 > deadline_s:
+                    break
+                chunk = pending[ci:ci + CHUNK_OBJECTS]
+                got = download_many(url, key, [c[0] for c in chunk], a.workers)
+                crows, cstate = [], []
+                for (path, fid, created, start, fp), (payload, err) in zip(chunk, got):
+                    if payload is None:
+                        unreadable += 1          # no state row: retried next run
+                        unread_why[str(err)[:80]] += 1
+                        continue
+                    if not fx_index.get(fid):
+                        unindexed += 1
+                    r, s = summarise_payload(payload, fid, start, epoch(created), catalogue)
+                    bst.update(s)
+                    if not r:
+                        norow += 1
+                    crows.extend(r)
+                    keys = sorted({row_key_str(x) for x in r})
+                    bucket_keys[fid].update(keys)
+                    loaded_now.add(path)
+                    cstate.append({'object_path': path, 'fixture_id': fid,
+                                   'object_created_at': created, 'fingerprint': fp,
+                                   'loader_version': LOADER_VERSION, 'rows': len(r),
+                                   'row_keys': keys, 'loaded_at': result['generatedAt']})
+                existing, err = fetch_existing(url, key, crows) if crows else ({}, None)
+                if existing is None:
+                    print(f'::warning::pre-upsert read failed ({err}) — close '
+                          f'corrections for this chunk are UNMEASURED, not zero')
+                    bcorr.append(None)
+                else:
+                    bcorr.append(count_close_corrections(existing, crows))
+                if crows:
+                    sent, err = upsert(url, key, 'oddspapi_line_summary', crows,
+                                       ','.join(CORRECTION_KEY))
+                    if err:
+                        print(f'::error::bucket chunk {chunks + 1}: upserted '
+                              f'{sent}/{len(crows)} rows — FAILED {err}')
+                        return 1
+                # State only after its rows are in: a state row never claims rows
+                # that did not land.
+                sent, err = upsert(url, key, OBJECT_STATE_TABLE, cstate, 'object_path')
+                if err:
+                    print(f'::error::object state upsert failed ({err}) after the '
+                          f'chunk\'s rows landed; they reload next run.')
+                    return 1
+                chunks += 1
+                done_n += len(chunk)
+                brows.extend(crows)
+                print(f'  chunk {chunks}: {len(chunk)} objects, {len(crows)} rows; '
+                      f'{done_n}/{len(pending)} done, '
+                      f'{(time.monotonic() - t0) / 60:.1f} min elapsed', flush=True)
+            remaining = len(pending) - done_n
+            # Keys of every object NOT reloaded this run come from its state row.
+            by_path = {p: f for p, f, _ in objects}
+            for path, prev in state.items():
+                if path in loaded_now or path not in by_path:
                     continue
-                meta = fx_index.get(fid) or {}
-                if not meta:
-                    unindexed += 1
-                r, s = summarise_payload(payload, fid,
-                                         start_for(fid, meta, flips),
-                                         epoch(created), catalogue)
-                bst.update(s)
-                if not r:
-                    norow += 1
-                brows.extend(r)
+                bucket_keys[prev.get('fixture_id') or by_path[path]].update(prev.get('row_keys') or [])
             rel = sum(1 for x in brows if x['close_reliable'])
-            print(f'  {len(brows)} rows from {len(objects)} objects; '
+            print(f'  {len(brows)} rows from {done_n} loaded objects '
+                  f'({len(unchanged)} unchanged, {remaining} left for the next run); '
                   f'{unindexed} not in the 180d index, {unreadable} unreadable, '
                   f'{norow} with no keep-list pre-start series')
             print(f'  {rel} reliable close ({rel/max(len(brows),1):.1%}); {dict(bst)}')
             fam = collections.Counter(x['market'] for x in brows)
             for k, v in fam.most_common():
                 print(f'    {k:<16} {v:>7} rows')
+            bucket_corrections = bcorr          # per-chunk counts (None = read failed)
             result['bucket'] = {
                 'objects': len(objects), 'listingComplete': ok,
-                'rows': len(brows), 'unindexed': unindexed,
-                'unreadable': unreadable, 'noKeeplistSeries': norow,
+                'unchanged': len(unchanged), 'pending': len(pending),
+                'pendingWhy': dict(why), 'loaded': done_n, 'remaining': remaining,
+                'chunks': chunks, 'rows': len(brows), 'unindexed': unindexed,
+                'unreadable': unreadable, 'unreadWhy': dict(unread_why),
+                'noKeeplistSeries': norow,
                 'reliableClose': rel, 'byFamily': dict(fam), 'stats': dict(bst)}
-            all_rows.extend(brows)
+            report_rows.extend(brows)
+
+    # History rows go out after the bucket, minus every key a bucket object owns.
+    if hist_rows:
+        if bucket_keys is not None:
+            kept = [x for x in hist_rows
+                    if row_key_str(x) not in bucket_keys.get(x['fixture_id'], ())]
+            print(f'\nbet365-history: {len(hist_rows) - len(kept)} of {len(hist_rows)} '
+                  f'rows held back — a bucket object owns their key (bucket wins)')
+            hist_rows = kept
+        elif a.history and not a.dry_run:
+            # No bucket pass: the bucket's keys are read from the object state so
+            # a history-only run cannot overwrite a richer bucket row either.
+            state, serr = fetch_object_state(url, key)
+            if state is None:
+                print(f'::error::{OBJECT_STATE_TABLE} unreadable ({serr}) — a '
+                      f'history-only load could overwrite bucket rows; not loading.')
+                return 1
+            bk = collections.defaultdict(set)
+            for prev in state.values():
+                bk[prev.get('fixture_id')].update(prev.get('row_keys') or [])
+            kept = [x for x in hist_rows if row_key_str(x) not in bk.get(x['fixture_id'], ())]
+            print(f'\nbet365-history: {len(hist_rows) - len(kept)} of {len(hist_rows)} '
+                  f'rows held back — a bucket object owns their key (bucket wins)')
+            hist_rows = kept
+        all_rows.extend(hist_rows)
+        report_rows.extend(hist_rows)
 
     # ------------------------------------- the ruling's own reporting asks
     # "Report how many fixtures were rejected per level" (item 1) and, for the
@@ -1132,9 +1351,9 @@ def main():
     # counts beyond 5 min in each direction (item 2). Reported at FIXTURE grain,
     # not row grain: a fixture with 8 side-rows is one rejected start, and
     # quoting 8 would inflate every rate by the market count.
-    if all_rows:
+    if report_rows:
         by_fix = {}
-        for x in all_rows:
+        for x in report_rows:
             by_fix.setdefault(x['fixture_id'], x)
         lvl_rej = collections.defaultdict(collections.Counter)
         for fid, x in by_fix.items():
@@ -1209,9 +1428,10 @@ def main():
         result['crossCheck'] = dict(cross['all'], byLevel=cross)
 
     # ----------------------------------------------------------------- write
-    print(f'\ntotal summary rows: {len(all_rows)}')
-    if all_rows:
-        lags = [x['close_lag_minutes'] for x in all_rows
+    print(f'\ntotal summary rows this run: {len(report_rows)} '
+          f'(bucket {len(report_rows) - len(all_rows)} committed per chunk, history {len(all_rows)})')
+    if report_rows:
+        lags = [x['close_lag_minutes'] for x in report_rows
                 if x['close_lag_minutes'] is not None]
         if lags:
             flag = f'  <-- n<{MIN_N}' if len(lags) < MIN_N else ''
@@ -1238,13 +1458,17 @@ def main():
                   f'are UNMEASURED for this run, not zero')
         else:
             corrections = count_close_corrections(existing, all_rows)
-    else:
+    # The bucket's chunks were counted before each chunk's own upsert; one total.
+    # A failed read in ANY part makes the total unmeasured (None), never smaller.
+    parts = list(bucket_corrections or []) + ([corrections] if all_rows else [])
+    corrections = merge_corrections(parts) if parts else None
+    if not report_rows:
         # EVERY run, as ruled — including one that produced no rows at all.
         # Silence here is indistinguishable from a run that never reached this
         # code, and a run with nothing to upsert is itself worth seeing.
         print('close corrections: — (this run produced NO rows to upsert, so there '
               'was nothing to compare; not a clean run, an empty one)')
-    if all_rows:
+    else:
         for line in print_close_corrections(corrections):
             print(line)
     result['closeCorrections'] = corrections
@@ -1252,7 +1476,7 @@ def main():
     if not a.dry_run and all_rows:
         sent, err = upsert(url, key, 'oddspapi_line_summary', all_rows,
                            ','.join(CORRECTION_KEY))
-        print(f'upserted {sent}/{len(all_rows)} summary rows'
+        print(f'upserted {sent}/{len(all_rows)} history summary rows'
               + (f' — FAILED {err}' if err else ''))
         result['upserted'] = sent
         if err:
@@ -1260,8 +1484,22 @@ def main():
             json.dump(result, open(OUT, 'w'), indent=1)
             return 1
 
+    result['elapsedMinutes'] = round((time.monotonic() - t0) / 60, 2)
     json.dump(result, open(OUT, 'w'), indent=1)
-    print(f'wrote {OUT}')
+    print(f'wrote {OUT} ({result["elapsedMinutes"]} min)')
+    unread = result.get('bucket', {}).get('unreadable')
+    if unread:
+        # A run that could not read objects is not a clean run, whatever else it
+        # loaded: 3,425 unread objects sat under green runs on 2026-10-24.
+        print(f"::error::{unread} bucket object(s) unreadable "
+              f"{result['bucket'].get('unreadWhy')} — no state row, they retry next run.")
+        return 1
+    if remaining:
+        # Committed chunks stay; the rest load next run. Red on purpose: a load
+        # that did not finish must never read as a green run (nor as "cancelled").
+        print(f'::error::bucket load stopped at the {a.deadline_min:g}-minute deadline '
+              f'with {remaining} object(s) still to load; they load next run.')
+        return 1
     return 0
 
 

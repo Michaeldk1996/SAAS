@@ -437,7 +437,7 @@ if (require.main === module) (async () => {
     const nm = prof[k].name; if (!nm || seen.has(nm)) continue; seen.add(nm);
     const t = normTokens(nm); if (!t.length) continue;
     const sur = profileSurname(t);
-    pool.push({ name: nm, rank: parseInt(prof[k].rank, 10) || 9999, fi: t[0][0], surname: sur, lastTok: sur[sur.length - 1] });
+    pool.push({ key: String(k), name: nm, rank: parseInt(prof[k].rank, 10) || 9999, fi: t[0][0], surname: sur, lastTok: sur[sur.length - 1] });
   }
   console.log(`Pool: ${pool.length} current-ATP players.`);
 
@@ -740,7 +740,9 @@ if (require.main === module) (async () => {
     // 17 of the 40 zero-Challenger players on the 2026-09-23 board were the second.
     const candKey = candKeyByName.get(meta.name);
     const challResolved = candKey != null && challResult.resolvedKeys.has(candKey);
-    rows.push({ name: meta.name, rank: meta.rank, challResolved, surfaces });
+    // founder 2026-10-22: the row keeps its player ID (the player-profiles.json key it was read under) — the
+    // Ratings board resolves its photo by this ID, never by name.
+    rows.push({ key: meta.key, name: meta.name, rank: meta.rank, challResolved, surfaces });
   }
   console.log(`Reconciled + qualified: ${rows.length} players.`);
   const resolvedCount = rows.filter(r => r.challResolved).length;
@@ -811,7 +813,8 @@ if (require.main === module) (async () => {
     // JSON.stringify discards undefined, so there was no error and no empty field to
     // notice — just a missing key. Locked by tools/test-ten254-chall-resolution.js,
     // which now asserts the serialisation names it.
-    players: rows.map(r => ({ name: r.name, rank: r.rank, challResolved: r.challResolved, surfaces: r.surfaces })),
+    // `key` (founder 2026-10-22): the player ID the Ratings board resolves its photo by — named here or it never ships.
+    players: rows.map(r => ({ key: r.key, name: r.name, rank: r.rank, challResolved: r.challResolved, surfaces: r.surfaces })),
   };
   const dest = path.join(__dirname, 'surface-ratings.json');
   const tmp = dest + '.tmp';

@@ -14,6 +14,7 @@
 // confirm-before-live gate. STAGED / not yet executed against Supabase runtime.
 
 import { createClient } from "jsr:@supabase/supabase-js@2";
+import { fetchFinals, FINALS_EVERY_S, FINALS_MAX_PER_TICK, FINALS_WINDOW_MIN } from "./finals.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 // Prefer the platform-injected legacy service_role JWT; fall back to the new
@@ -56,6 +57,7 @@ Deno.serve(async (req) => {
   }
 
   const instance = crypto.randomUUID();
+  const startedAt = Date.now();   // the lease clock: the finals re-asks below must end inside it
 
   // 1. Single-flight: claim the lease. Lost the race → another tick owns it.
   const { data: acquired, error: lockErr } = await db.rpc("begin_poll", {
@@ -109,8 +111,28 @@ Deno.serve(async (req) => {
   // 4. Persist the point logs to the non-Realtime store (on-demand read path).
   //    A failure here must NOT fail the tick — the board (Stats/Ratings) is already
   //    written; only the Points tab degrades. Log and continue.
-  const { error: pbpErr } = await db.rpc("write_live_pbp", { _pbp: pbpByEk });
+  //    `_live` = every key on the board, so a match that is still on it without a log yet is never taken as ended.
+  const liveKeys = board.map((f) => f?.event_key).filter((k) => k != null).map(String);
+  const { error: pbpErr } = await db.rpc("write_live_pbp", { _pbp: pbpByEk, _live: liveKeys });
   if (pbpErr) console.warn("write_live_pbp failed:", pbpErr.message);
 
-  return json({ ok: true, matches: matchCount, pbp: Object.keys(pbpByEk).length });
+  // 5. Point-by-point carry-over (founder brief 2026-10-23): a match that has just left the board keeps its row
+  //    (write_live_pbp stamps ended_at) and, for FINALS_WINDOW_MIN minutes, is re-asked from the provider at most once a
+  //    minute, so the finished-match view shows the provider's latest log before the next pipeline publish. Inside this
+  //    tick's lease only (finals.ts); a failure never fails the tick.
+  let finals = 0;
+  const { data: due, error: dueErr } = await db.rpc("live_pbp_due_finals",
+    { _window_min: FINALS_WINDOW_MIN, _every_s: FINALS_EVERY_S, _max: FINALS_MAX_PER_TICK });
+  if (dueErr) console.warn("live_pbp_due_finals failed:", dueErr.message);
+  else if (Array.isArray(due) && due.length) {
+    // a setof-text RPC may arrive as plain strings or as { live_pbp_due_finals: "<ek>" } rows: accept both
+    const keys = due.map((x: unknown) => (x && typeof x === "object") ? String(Object.values(x as Record<string, unknown>)[0]) : String(x));
+    const got = await fetchFinals(keys, { apiKey: API_TENNIS_KEY, fetchFn: fetch, startedAt, leaseMs: LEASE_TTL_SECONDS * 1000 });
+    for (const f of got) {
+      const { error } = await db.rpc("write_live_pbp_final", { _event_key: f.ek, _pbp: f.pbp, _final: f.final, _fetched_at: f.fetchedAt });
+      if (error) console.warn("write_live_pbp_final failed:", f.ek, error.message); else finals++;
+    }
+  }
+
+  return json({ ok: true, matches: matchCount, pbp: Object.keys(pbpByEk).length, finals });
 });

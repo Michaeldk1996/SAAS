@@ -81,7 +81,10 @@ this file wins.
 - **No figure without a count** (founder, same comment). **The event hold rate** (founder Q9, 2026-09-30) = service
   games held ÷ service games played at this event, from **our own box scores over every edition on file**
   (`event-hold.json`, built by `build-event-hold.js` from `boxscore-archive/` in every pipeline run), n = service games,
-  both players, qualifying included (the archive carries no round). The Tournament tab (header meta cell) and Key
+  both players, **main draw only** (defect brief 2026-10-24 item 5, replacing "qualifying included"): the feed's own
+  qualifying flag decides (`q` on the entry, else `boxscore-qualifying.json`; team events and the Finals carry none and
+  count). A card reads its event by `m.tournamentKey` (item 4) and falls back to the cleaned name only without one, so a
+  city's other event (clay Lyon 2024 for indoor-hard Lyon 2026) is never read. The Tournament tab (header meta cell) and Key
   factors' Tournament card print the same cell (`trHoldHtml`); its tooltip always states n. It replaces the
   court-conditions sheet's count-less `COURT_CONDITIONS.serviceHold`, which no modal surface prints. No box score for
   the event → "—" with the reason. **Test:** `test-ten341-key-factors.mjs` "Q9" (Key factors = the Tournament tab,
@@ -95,7 +98,7 @@ this file wins.
   the link blue, and the header's player-B name and price read `--text` (`test-ten303-colours.mjs`).
 - **Avatars = ATP photos from `player-atp-aliases.json`, monogram fallback**, in the header and the match stats
   sheet, **inside the design's ring and size geometry** (header 40px, sheet 56px, ring as designed).
-  **Test:** a player with an alias renders an `<img>` from the alias chain at the design's size and ring; one
+  **Test:** a player with an alias renders an `<img>` from the one resolver (`playerPhotoUrl`) at the design's size and ring; one
   without renders the monogram in the same ring.
 
 ## Opening tab (founder step 3, TEN-380 README §1, 2026-10-03; replaces Q26 "always opens on Key factors")
@@ -194,7 +197,9 @@ this file wins.
   below. The closes shard (`match-closes/`) and its R8 picker no longer price anything on this tab.
 - **N6:** Tournament / profile edition lists show **only editions the player actually entered**. No edition header is
   synthesised from a gap year (the old `withdrew` fill in `bsp-pipeline.js` minted "Withdrawal" for editions never
-  held). **Test:** a player with editions 2019 and 2022 shows no 2020/2021 header.
+  held). **Test:** a player with editions 2019 and 2022 shows no 2020/2021 header. *Reversed in part (founder
+  2026-10-22):* an edition he entered and left by a walkover given IS listed, with its walkover row and the round
+  reached (Griekspoor, Vienna 2025 = QF) — see "Walkovers and retirements — every tab".
 - **N7:** Tournament W–L is **main draw only** — qualifying rows are filtered out.
 - **N8 (superseded by founder ruling 2026-10-18, item 3):** Challenger, qualifying and ITF rows take the master join's price like
   every other match (`odds.md` "The lower levels in the master"); a dash only where the join holds none.
@@ -228,12 +233,12 @@ this file wins.
   Charts (founder TEN-380 Q2, 2026-10-03): the court-speed bar is flat `--white-bar` with a white knob (README §11; no
   gradient, no blue); the seven-season trend is a line only on dotted horizontal guides (`--viz-guide`, dash 2 6), no area
   fill, no vertical ticks. **Test:** `test-ten332-tournament.mjs` "TEN-380" + the Q2 mutants in `tools/test-ten332-mutants.js`.
-- **Data:** editions = `m.p?TournamentHistory` (pipeline; main draw only, N7; walkovers out, N2; only editions entered,
-  N6). Set scores from `career-history/{key}.json` joined by event key, else season + opponent + result (exactly one row).
+- **Data:** editions = `m.p?TournamentHistory` (pipeline; main draw only, N7; walkover rows listed, never counted, 2026-10-22;
+  only editions entered, N6). Set scores from `career-history/{key}.json` joined by event key, else season + opponent + result (exactly one row).
   Prices: the one Database join (see "Prices" below). Header / panel from `m.venue`, `m.courtSpeed`
   (N4 label = `courtSpeed.category`, never re-banded in the tab) and `tournament-market.json`.
-- **Backing** = flat 1u over the rows the Database join prices; a retirement settles on the official ATP result at its
-  listed close (TEN-325, the note from `MarketEdgeCore.RET_SETTLE_NOTE` in the tile's tooltip). **"vs market"** (D6) = win rate − mean de-vigged implied rate,
+- **Backing** = flat 1u over the rows the Database join prices; a retirement settles on Pinnacle rules (2026-10-22,
+  the note from `MarketEdgeCore.RET_SETTLE_NOTE` in the tile's tooltip). **"vs market"** (D6) = win rate − mean de-vigged implied rate,
   n ≥ 5 priced, 5–9 greyed. Units show at any priced n.
 - **Result label** per edition: "Won" (won the final) · the round lost in the feed's words ("Quarter-final", "Round of 16")
   · "In progress" (this event, this year, last match a win; DESIGN GAP G17) · "<round> · w/o" (reached unplayed).
@@ -242,8 +247,10 @@ this file wins.
   "Q11" (no paragraph node; the header card ends at its meta grid).
 - **Hold rate:** a fifth header meta cell (DESIGN GAP G43: the file draws no hold rate on this tab), the event hold
   rate of Palette "No figure without a count" (founder Q9).
-- **Seven-season trend:** the axis is 2020–2026 as drawn; only seasons the sheet holds (2023–25) get a dot and a value, the
-  rest a dash; a hole breaks the line; the delta states the real span. Roland Garros speed and altitude dash with the
+- **Court-speed trend** (defect brief 2026-10-24 item 6, replacing "2020–2026 as drawn"): the axis is exactly the seasons
+  the court-conditions sheet can hold, `TR_SPEED_YEARS` = 2023–2025, with its header span built from that array. A season the
+  sheet leaves empty is a dash; a hole breaks the line; the delta states the real span. **Test:** is there an axis slot that
+  can never carry a value? Then it is wrong. Divergence: the design file draws 2020–2026 over placeholder values. Roland Garros speed and altitude dash with the
   TEN-321 note until its key lands.
 - **Prices — ONE join with the player profile and Head to Head (founder ruling 2026-10-09, TEN-402 card 7bc622d5,
   "same join"; supersedes the 2026-10-08 "this tab keeps its own R8 closes join").** Every price the tab shows — each
@@ -251,11 +258,11 @@ this file wins.
   "N priced" and "vs market" — comes from the Database join: `database-yield.json` rows plus the retirements behind its
   flag (`DatabaseTab.priceRows()`), Pinnacle closing, else Bet365 closing, per match, through `H2HPage.priceJoin`
   (`trModelFor` → `trModelOf` with `trDbJoinPx`, the function the profile's `trProfileModel` passes), a retirement
-  settled on the official ATP result. Never the closes shard: the tab does not fetch `match-closes/` and `trRowOf` sets
+  settled on Pinnacle rules (2026-10-22). Never the closes shard: the tab does not fetch `match-closes/` and `trRowOf` sets
   no price. A row joined to career-history meets the join on that career row's date (`r.chDate`; a pre-2021 row is dated
   at the tournament start), exactly as the profile hands it on.
   - **Population stays the tab's own** (by design): the pipeline history of this event (`m.p?TournamentHistory`, main
-    draw, walkovers out, the current edition included). Where it lists the same matches as the profile's
+    draw, walkover rows listed but never counted, the current edition included). Where it lists the same matches as the profile's
     `tournament-history/{key}.json` entry, the tab's Backing = Player Profile → Record per tournament = the Head to Head
     Tournament tile for that player and event (measured 9 Oct 2026: Alcaraz, US Open +7.1u / 32 priced on all three;
     Zverev, US Open −2.2u / 45; Zverev, Shanghai +0.6u / 20). Where the two lists differ, the counts differ by those
@@ -273,22 +280,29 @@ this file wins.
   **Test:** `test-ten332-tournament.mjs` "ruling 2026-10-08" (the tab = the profile, row for row, on one model), "TEN-402
   r2" (live edition, one session load, start-dated career row), `tools/test-ten332-mutants.js` (TEN-402 r2 mutants).
 
-## Retirements in price figures (founder 2026-09-28, TEN-312 option A)
-- **An in-match retirement settles at the listed closing price, everywhere**: Form (flat 1u, v market, medians), H2H
-  (price range), Market edge (tab and profile), Tournament Backing and "vs market". One treatment for the same match on
-  every surface. W–L already counts it (N2). Evidence: document `retirement-options` (1,237 of 42,858 priced ATP
-  matches, 2.9%). **Test:** the same retired match contributes the same P&L on Form, Market edge and Backing.
-- **Settled on the ATP result only** (founder 2026-09-28, TEN-314 comment 70fb039e): the player the ATP credits with
-  the win is the winner, at his listed closing price. **Bookmaker settlement rules do not apply** — no book's
-  retirement rule (void, "one set completed", etc.) is fetched, quoted or modelled, and no "unconfirmed book rule"
-  label appears anywhere.
-- **Every surface that counts retirements in profit prints "Retirements settled on the official ATP result."** as a
-  footnote or tooltip: Market edge (tab band card + profit chart, player-profile Market edge), Form (flat 1u / v market),
-  H2H (Price range), Tournament Backing (modal tile and the profile per-event Backing column). The words come from one
-  constant, `MarketEdgeCore.RET_SETTLE_NOTE` (`market-edge-core.js`); no surface spells them out. A tab rebuild
-  (TEN-330 … TEN-341) that renders one of these figures carries the note in its definition of done.
+## Retirements in price figures — Pinnacle rules (founder 2026-10-22; replaces TEN-312 option A, 2026-09-28)
+- **Every priced retirement settles on Pinnacle's retirement rule, whichever book supplied the price** (Pinnacle,
+  bet365, a snapshot close), on every surface that counts it: Form (flat 1u, v market, medians), H2H (price range and
+  ledgers), Market edge (tab and profile), Tournament Backing and "vs market", and the profile ledger. One treatment for
+  the same match on every surface. **Test:** the same retired match contributes the same P&L on Form, Market edge and
+  Backing.
+  - **First set completed → the bet stands** and settles on the result: a win at the winner's price, a loss at the
+    retiree's.
+  - **First set not completed → void.** Prices are shown; the units cell reads `void`; the row is in no units sum, no
+    yield and no priced count. A retirement during the first-set tiebreak (stored 6–6) is not completed.
+  - **No stored set scores → no units**, and the row is listed by name in the build report; never guessed.
+  - **Test for "first set completed"** (on the row's stored per-set games, `sets[0]`, never the scheduled format): the
+    first set reads 6–0 … 6–4, 7–5 or 7–6. Anything else (≤ 5 games for the leader, 6–5, 6–6) is not completed; no
+    `sets`, an empty list or a non-numeric game count is missing. `MarketEdgeCore.firstSetState` is the one predicate.
+  - W–L is unchanged: a retirement is a match, a loss for the retiree (N2).
+- **Every surface that counts retirements in profit prints "Retirements settle on Pinnacle rules for all rows."** as
+  a footnote or tooltip: Market edge (tab band card + profit chart, player-profile Market edge and ledger), Form (flat
+  1u / v market), H2H (Price range), Tournament Backing (modal tile and the profile per-event Backing column). The words
+  come from one constant, `MarketEdgeCore.RET_SETTLE_NOTE` (`market-edge-core.js`); no surface spells them out.
   **Test:** `tools/test-ten325-retirements.js` (exact text, one source, H2H + profile sites) and
   `test-ten310-market-edge.mjs` "TEN-325" (both Market edge footnotes, rendered).
+- The Database tab itself still voids every retirement (2026-09-20, `database.md`): its rows, tour baselines and
+  tournament market never read one.
 
 ## Court-speed label — one scheme site-wide (N4, founder 2026-09-28)
 - The label is the **pipeline 3-band on the 0–100 index**: `courtSpeedCategory` (`bsp-pipeline.js`) — ≤ 43 Slow,
@@ -326,17 +340,30 @@ this file wins.
 - Market edge band `bandOf` returns −1 above 15 in the design (DF L3422) and crashes; the live band ladder is
   open-ended above 6.00 and stays so. **Test:** a 21.00 price lands in the 6.00+ band.
 
-## Walkovers and retirements — every tab (N2: "as the ATP rules and the ATP website do")
-- **A walkover is neither a win nor a loss, for either player, on every tab** (Form, H2H, Overview,
-  Tournament, Playing style, Market edge, Key factors): it is not a match played. It never enters a W–L,
-  a set count, a rate, a hot line or a price population. It may appear as a row only where the design
-  lists results, marked "w/o", and it is excluded from every count on that row's page.
-- **An in-match retirement is a match** for W–L: a win for the opponent, a loss for the retiree, marked "ret."; its
-  unfinished set is excluded from set tallies, deciding sets and games/sets lines (H2H rule e). In **price** figures a retirement settles at the listed price everywhere (ruling A, 2026-09-28; see `modal-analysis.md` "Retirements in price figures").
-- This **supersedes the TEN-8 "W/O received = win" records rule everywhere**, the player profile included
-  (founder 2026-09-28: one spine, both surfaces agree). `careerByYear`, career-history-derived W–L and
-  tournament-history W–L all follow it. **Test:** a fixture player with one W/O given, one W/O received and one
-  retirement shows W–L that counts only the retirement, on Form, H2H, Overview and Tournament alike.
+## Walkovers and retirements — every tab (founder 2026-10-22; N2 counting kept, N6 reversed)
+- **A walkover is neither a win nor a loss, for either player, on every tab** (ATP rule; Tennis Explorer's balance
+  agrees: Griekspoor 2025 lists the Vienna QF walkover and counts 33/25 played rows). A walkover received is not a
+  win, a walkover given is not a loss. It never enters a W–L, a set count, a rate, a hot line, a stat-based metric
+  (serve/return, games, archetype matrix, playing-style win rates, court-speed bands) or a price population.
+- **A walkover is a visible row in every match list and tournament result** (N6 reversed, founder 2026-10-22). Display,
+  after Flashscore: `WO` under the date; both players listed as on any other row; `–` in the set scores; the result
+  marker on both sides, L for the player who withdrew and W for the player who advanced, in the same marker style as
+  other rows; in our tables the round in RD, `–` in H and A, no units. A tournament result shows the round reached
+  through a walkover exit (Griekspoor, Vienna 2025 = QF).
+- **Only an explicitly flagged walkover is one** (founder 2026-10-22): api-tennis `event_status === 'Walk Over'` or a
+  Sackmann/TML score `W/O`. Never an empty score — Tennis Explorer's empty-score inference is not a source (it read
+  Ultimate Tennis Showdown quarters and Gasquet d. Verdasco, Buenos Aires 2004, as walkovers).
+- **A Tennis Explorer empty-score row** is resolved against api-tennis and Sackmann (main draw, qual_chall, futures):
+  played → counted (with the source's score); walkover → a walkover row; neither, or the sources disagree →
+  **unconfirmed**: the row is shown with the score `–`, no result marker, no units, and it is in no W–L count and no
+  stat-based metric. Exhibitions stay out under TEN-449 whatever their score.
+- **An in-match retirement is a match** for W–L: a win for the opponent, a loss for the retiree, marked "ret." after its
+  actual set scores; its unfinished set is excluded from set tallies, deciding sets and games/sets lines (H2H rule e).
+  In **price** figures it settles on Pinnacle rules ("Retirements in price figures" above).
+- **H2H is unchanged:** its population stays ATP-official, walkovers excluded from the record.
+- **Test:** a fixture player with one W/O given, one W/O received, one unconfirmed row and one retirement shows W–L
+  that counts only the retirement, on Form, H2H, Overview, Tournament and every profile record; every match list
+  renders the W/O and unconfirmed rows; a pre-first-set retirement carries `void`, a post-first-set one units.
 
 ## Overview career spine (N3)
 - The Overview reads `careerByYear` (the player-profile spine), not `matches.json p?Yearly`.

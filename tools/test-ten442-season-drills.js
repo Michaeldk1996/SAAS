@@ -48,7 +48,8 @@ const fixtures = [
   fx('2026-02-10', 901, false, 'A. De Minaur'),
   fx('2026-03-20', 900, true, 'A. Aa'), fx('2026-03-22', 900, false, 'B. Bb'),
   fx('2026-05-08', 902, true, 'C. Cc'), fx('2026-06-18', 903, true, 'D. Dd'),
-  // 2025: a walkover (not a match — in neither the cell nor the list) and an unsurfaced match (Total only)
+  // 2025: a walkover (not a match — in no cell; founder 2026-10-22: LISTED in its drills, marked WO) and an unsurfaced
+  // match (Total only)
   fx('2025-03-01', 900, true, 'E. Ee', { event_status: 'Walk Over', event_final_result: '0 - 0' }),
   fx('2025-03-03', 900, false, 'F. Ff'), fx('2025-09-10', 905, true, 'G. Gg'),
   // 2023: Challenger-heavy, indoor clay at a Challenger and indoor hard at another, plus ATP outdoor clay
@@ -114,8 +115,11 @@ function audit(I, p) {
         const w = (html.match(/data-pp2-drill-row="W"/g) || []).length;
         const l = (html.match(/data-pp2-drill-row="L"/g) || []).length;
         const note = (/data-pp2-drill-note="1"[^>]*>([^<]*)</.exec(html) || [])[1];
+        // a walkover row is listed beside the matches (data-pp2-drill-row="WO") and the note says so; W / L count only matches
+        const wo = (html.match(/data-pp2-drill-row="WO"/g) || []).length;
         opened++;
-        if (w !== rec.won || l !== rec.lost || note !== 'All ' + n + ' match' + (n === 1 ? '' : 'es')) {
+        if (w !== rec.won || l !== rec.lost || note !== 'All ' + n + ' match' + (n === 1 ? '' : 'es') +
+            (wo ? ' · ' + wo + ' walkover' + (wo === 1 ? '' : 's') + ', not counted' : '')) {
           bad.push(`${tier} ${s.key} ${c || 'total'}: cell ${rec.won}/${rec.lost}, list ${w}/${l}, note "${note}"`);
         }
       }
@@ -127,7 +131,7 @@ function audit(I, p) {
       if (n < 5) continue;   // a 1–4 row does not open (README §9 gate)
       I.state.careerDrill = { kind: 'surface', surf: c, year: null };
       const html = I.renderCareerModal(p);
-      const rows = (html.match(/data-pp2-drill-row=/g) || []).length;
+      const rows = (html.match(/data-pp2-drill-row="[WL]"/g) || []).length;   // matches; walkover rows ("WO") are listed beside them
       opened++;
       if (rows !== n) bad.push(`${tier} surface row ${c}: counts ${n}, lists ${rows}`);
     }
@@ -199,6 +203,18 @@ function audit(I, p) {
     assert.deepStrictEqual(noteOf(''), [4, 'All 4 matches · 4 have no court type on record yet']);
   });
   // r2 item 5 · a pre-window season (provider aggregate, tour-level archive rows) names its gap
+  // Founder 2026-10-22 · RENDER PATH: the walkover must be IN the match list, never dropped. Mutation: filter walkover rows
+  // out of recordSpine / calSpineAll in player-profile-v2.js -> no WO row painted, this goes red.
+  check('2026-10-22 · the 2025 walkover is painted in its season drill: WO under the date, the W marker, – scores, no count', () => {
+    const I2 = loadModule(profile, rows); I2.resetState(); I2.state.careerTab = 'record'; I2.state.careerScope = 'career';
+    I2.state.careerTier = 'all'; I2.state.careerDrill = { kind: 'cell', year: '2025', surf: '' };
+    const html = I2.renderCareerModal(profile);
+    assert.strictEqual((html.match(/data-pp2-drill-row="WO"/g) || []).length, 1, 'one walkover row listed');
+    assert.ok(/data-pp2-wo="1"[^>]*>WO</.test(html), 'WO under the date');
+    assert.ok(html.includes('E. Ee'), 'the walkover opponent is listed');
+    const y25 = profile.careerByYear.find((y) => String(y.year) === '2025');
+    assert.strictEqual(y25.total.won + y25.total.lost, (html.match(/data-pp2-drill-row="[WL]"/g) || []).length, 'the cell counts the matches only');
+  });
   check('a pre-2021 season states "N not in database · Challenger/ITF results before 2021 not in database"', () => {
     const pre = Object.assign({}, profile, { careerByYear: profile.careerByYear.concat([{ year: '2020', allTier: false,
       total: { won: 2, lost: 1 }, clay: { won: 2, lost: 1 }, hard: null, grass: null, indoor: null, atp: null, chitf: null }]) });
@@ -209,7 +225,7 @@ function audit(I, p) {
     assert.strictEqual(noteOf('2020', ''), '3 counted · 0 found in results · 3 not in database · Challenger/ITF results before ' + cut + ' not in database');
     assert.strictEqual(noteOf('2020', 'clay'), '3 counted · 0 found in results · 3 not in database · Challenger/ITF results before ' + cut + ' not in database');
     // the Career row names that part of its gap, and only that part
-    assert.ok(/^\d+ counted · \d+ found in results · 3 not in database · Challenger\/ITF results before \d{4} not in database$/.test(noteOf('career', '')),
+    assert.ok(/^\d+ counted · \d+ found in results · 3 not in database · Challenger\/ITF results before \d{4} not in database( · \d+ walkovers?, not counted)?$/.test(noteOf('career', '')),
       'career note: ' + noteOf('career', ''));
   });
   // r2 item 3 · Option A: the footnote says where the unsurfaced matches are listed, with the player's own count
@@ -265,7 +281,7 @@ function audit(I, p) {
       for (const c of ['hard', 'indoors']) {
         if (!g[c]) continue;
         Ix.state.careerDrill = { kind: 'cell', year: String(y.year), surf: c };
-        const n = (Ix.renderCareerModal(profile).match(/data-pp2-drill-row=/g) || []).length;
+        const n = (Ix.renderCareerModal(profile).match(/data-pp2-drill-row="[WL]"/g) || []).length;
         if (n > g[c].won + g[c].lost) out.push(`${y.year} ${c}: lists ${n} > ${g[c].won + g[c].lost}`);
       }
     }

@@ -9,7 +9,7 @@ since 2026-10-08 while the draw content never changed. The publish step compares
 """
 import hashlib, json, sys
 
-VOLATILE = ("generatedAt",)
+VOLATILE = ("generatedAt", "fetchedAt")   # run stamps, not content (fetchedAt: the advance shard)
 
 def content_hash(path):
     with open(path, encoding="utf-8") as f:

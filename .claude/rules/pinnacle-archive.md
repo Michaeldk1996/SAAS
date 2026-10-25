@@ -52,7 +52,13 @@ Applies to `supabase/migrations/20261014120000_pinnacle_archive.sql`, `tools/pin
   BOTH surnames within 36 h (exactly one candidate; two or more, or none → no close, counted). Player keys are
   api-tennis's (`get_fixtures`, `timezone=UTC`). The Oddspapi fixtures list is the only METERED call (`/v4/fixtures`, one
   per 6-day window, cached; re-asked every 6 h); the meter is printed before and after.
-- **Held back (never exported, never deleted):** a `derive-held` close (rule `start-alone`) and a `captured` close of a
+- **Fill (founder ruling 2026-10-25, round 2 item 1.4)** — `.github/workflows/archive-fill-probe.yml` (dispatch only):
+  `write=false` plans read-only (measurement, rule, fill rows, diff, digest; artifact `archive-fill-plan`); `write=true` +
+  `plan_digest` inserts exactly that plan through `pinarch.insert` after a fresh no-collision read (artifact
+  `archive-fill-write`). Its rows (`FILL_START_SOURCE` + `detail.closeCut`) export as closes (`pinarch.fill_cut`); rules:
+  `odds.md` "The 13 Apr – 16 Sep ATP main-draw fill" (per-tier X, the "E" marker, re-cut by any true close). **Test:**
+  `tools/test-archive-fill-probe.py`, `tools/test-early-cut-marker.mjs`.
+- **Held back (never exported, never deleted):** a `derive-held` close (rule `start-alone`; the fill rows above are not) and a `captured` close of a
   match on or before 16 Sep (rule `captured-before-live-flip`, founder ruling 2026-10-17 item 1: those 420 were cut at
   Oddspapi's start alone). `pinarch.py` `HELD_BACK_RULES` carries how each was made; the export's `heldBack.byRule`
   counts them (`odds.md` "held back").

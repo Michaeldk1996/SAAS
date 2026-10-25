@@ -321,9 +321,9 @@ check('W/O is excluded BY ITS FLAG, not by the 0-0 arithmetic accident', async (
   // The whole point of giving walkovers a real flag: a walkover carrying a
   // score that is NOT 0-0 must still be excluded. Under the old behaviour this
   // row passed, because only "0 - 0" failed the format check.
-  // TEN-313 (founder 2026-09-28): a walkover is not a match played, so the writer
-  // now keeps it out of the shard altogether — keyed on the same flag. A second,
-  // real row rides along so the shard exists and the check is not vacuous.
+  // TEN-313 (founder 2026-09-28): a walkover is not a match played. Founder 2026-10-22: it IS a row — the writer
+  // ships it and the flag stamps it `incomplete` (out of every games population), whatever its set count. A second,
+  // real row rides along so the check is not vacuous.
   const cwd = process.cwd();
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'ten244g-'));
   try {
@@ -335,7 +335,8 @@ check('W/O is excluded BY ITS FLAG, not by the 0-0 arithmetic accident', async (
         result: '2 - 0', won: true, src: 'archive', bestOf: 3 },
     ] } }, { log: () => {} });
     const sh = JSON.parse(fs.readFileSync(path.join('career-history', 'p.json'), 'utf8'));
-    assert.deepStrictEqual([sh.matches.length, sh.matches[0].tournament, sh.incomplete], [1, 'Other Open', 0],
+    const w = sh.matches.find((m) => m.walkover);
+    assert.deepStrictEqual([sh.matches.length, w && w.tournament, w && w.incomplete, sh.incomplete], [2, 'Test Open', true, 1],
       'a walkover with a non-0-0 set count must still be excluded — the flag, not the arithmetic');
   } finally { process.chdir(cwd); fs.rmSync(tmp, { recursive: true, force: true }); }
 });

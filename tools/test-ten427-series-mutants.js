@@ -22,7 +22,7 @@ const MUTANTS = [
   ['js', 'Header: Longest run not white', "longest != null ? '' : ' sfh__v--none')", "longest != null ? ' sfh__v--soft' : ' sfh__v--none')"],
   ['js', 'Header: the old one-line sentence', "var SUBTITLE = 'Current streaks for players scheduled today and tomorrow, each with the pool it was drawn from and the date of its latest match.';", "var SUBTITLE = 'Current streaks for players scheduled today and tomorrow.';"],
   ['js', 'Filters: Type counts follow the Type filter', 'if (!passesFilters(c, true)) return;', 'if (!passesFilters(c, false)) return;'],
-  ['js', 'Card: a photo instead of initials', "'<span class=\"sr-ava\">' + esc(initialsOf(name)) + '</span>'", "'<img class=\"sr-ava\" src=\"https://randomuser.me/api/portraits/men/1.jpg\">'"],
+  ['js', 'Card: the photo gone', "'<span class=\"sr-ava\">' + esc(initialsOf(name)) + photoOf(p.key, name) + '</span>'", "'<span class=\"sr-ava\">' + esc(initialsOf(name)) + '</span>'"],
   ['js', 'Card: direction read off the raw direction (lines lose Neutral)', 'esc(DIR_LABEL[valence(st)])', 'esc(DIR_LABEL[st.direction])'],
   ['js', 'Card: Started loses its year', 'var startTxt = fmtShort(startedOf(st), true);', 'var startTxt = fmtShort(startedOf(st), false);'],
   ['js', 'Data 5: Avg price from the Away price', 'if (rows[i].price != null) { sumC += cents(rows[i].price); n++; }', 'if (rows[i].price != null) { sumC += cents(rows[i].oppPrice); n++; }'],

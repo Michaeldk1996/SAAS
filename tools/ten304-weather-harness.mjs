@@ -4,6 +4,7 @@
 // every function below is the page's own source.
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import vm from 'node:vm';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
@@ -69,18 +70,27 @@ export function buildTips({ src = HTML } = {}) {
   const window = { innerWidth: 1000, innerHeight: 800 };
   const setTimeout = (f, ms) => { delays.push(ms); timers.push({ at: now + ms, f }); return timers.length; };
   const clearTimeout = id => { if (timers[id - 1]) timers[id - 1].f = null; };
-  const api = new Function('document', 'window', 'setTimeout', 'clearTimeout', `
+  // Esc goes through the page's ONE handler (esc-nav.js, ESC brief 2026-10-21): the tooltip registers a layer on
+  // \`globalThis.sfEscLayers\`, shadowed here so it lands in this sandbox, and key() runs the real dispatcher over it.
+  const esc = { console, Event: class { constructor(t) { this.type = t; } }, setTimeout, clearTimeout, queueMicrotask,
+    document: { activeElement: null, addEventListener() {} }, sfEscLayers: [] };
+  vm.runInNewContext(readFileSync(join(HERE, 'esc-nav.js'), 'utf8'), esc, { filename: 'esc-nav.js' });
+  const api = new Function('document', 'window', 'setTimeout', 'clearTimeout', 'globalThis', `
     ${constSrc('AODDS_C', src)}
     ${slice('escapeHtml', src)}
     let _aoTipTimer = null, _aoTipFor = null;
     ${['aOddsTipEl', 'aOddsTipHide', 'aOddsTipShow', 'initAOddsTips'].map(n => slice(n, src)).join('\n')}
     return { initAOddsTips, aOddsTipHide };
-  `)(document, window, setTimeout, clearTimeout);
+  `)(document, window, setTimeout, clearTimeout, esc);
   return {
     api, delays, mkEl,
     fire: (type, el) => (listeners[type] || []).forEach(f => f({ target: el, relatedTarget: null })),
-    key: k => { const ev = { key: k, target: null, stopped: false, stopPropagation() { this.stopped = true; } }; (listeners.keydown || []).forEach(f => f(ev)); return ev; },
+    key: k => {
+      const ev = { key: k, target: null, stopped: false, stopPropagation() { this.stopped = true; }, stopImmediatePropagation() { this.stopped = true; }, preventDefault() {} };
+      (listeners.keydown || []).forEach(f => f(ev)); esc.SfEsc.handle(ev); return ev;
+    },
     keyCapture: () => (listeners.keydown || []).map(f => f.__capture),
+    layer: id => esc.sfEscLayers.find(L => L.id === id) || null,
     tick: ms => { now += ms; timers.forEach(t => { if (t.f && t.at <= now) { const f = t.f; t.f = null; f(); } }); },
     tip: () => (tipEl && tipEl.style.display === 'block' ? tipEl.innerHTML : null),
     listenerTypes: () => Object.keys(listeners),

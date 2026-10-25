@@ -16,7 +16,7 @@ no day work, checks or screenshots on this page until the founder reopens it.
   across every metric." + the coverage line as the grey `.sfh__tail`, reading "· a dash means not covered" (founder R1
   nit 2026-10-09, replaces "· Data honesty · em dash means not covered"); no caps line, no stats) → pickers → Surface /
   Format strip, all in the one card. Sticky with its shadow; the page owns only that shadow (`#h2hRoot .h2h-head`), no
-  header type/padding rule. Search box `--inner`, no edge; avatars = initials; "Change" Hanken 10.5 caps
+  header type/padding rule. Search box `--inner`, no edge; avatars = the player's photo by ID over initials (`playerPhotoImg`, founder 2026-10-22); "Change" Hanken 10.5 caps
   `--text-label`, white on hover. **Test:** `test-ten403-header.mjs` (H2H check + mutants), `test-ten402-a.mjs`.
 - **Nothing shows above the sticky header** (founder r4 fix 1, 2026-10-09): the window scrolls and the header sticks 30px
   down; the strip above it is page tone at every scroll position — a sticky page-wide band in `.h2h-page`'s own top
@@ -61,8 +61,8 @@ no day work, checks or screenshots on this page until the founder reopens it.
 - **Prices — ONE join across the site (founder ruling 2026-10-08, card 01102d24).** Ledger Home / Away = the Database
   join, Pinnacle closing else Bet365 closing, per match: `DatabaseTab.priceRows()` = `database-yield.json` rows PLUS the
   retirements the store keeps behind its flag (`retRows` / `retNames`, `dbPriceJoinRows`; same book rule, ties,
-  overround > 1.15 and pre-2010 out). **A retirement is priced and settled on the official ATP result** (a win at the
-  winner's close, a loss at the retiree's), never `—`: Sinner–Alcaraz Cincinnati 2025 F = Alcaraz 2.71 / Sinner 1.53, all
+  overround > 1.15 and pre-2010 out). **A retirement is priced, never `—`, and settled on Pinnacle rules** (founder 2026-10-22: first set
+  completed → a win at the winner's close, a loss at the retiree's; not completed → `void`; no set scores → no units): Sinner–Alcaraz Cincinnati 2025 F = Alcaraz 2.71 / Sinner 1.53, all
   17 meetings priced. **An exact price tie is priced** at the tie for both players (founder ruling 2026-10-16: "keep tied
   prices, exclude them only from favourite/underdog figures" — the store's `tieRows` / `tieNames`, behind a flag like the
   retirements; no Database figure reads them). Favourite = shorter price; yield = flat
@@ -99,7 +99,7 @@ no day work, checks or screenshots on this page until the founder reopens it.
     "archive name table". Residual: "Silva J." (1 row, US Open 2010, Júlio Silva) would
     pass the rule for J. Reis Da Silva but has no career match to join.
   - **Backing tile (Tournament) = flat 1u over the Tournament ledger's priced rows, on the one join, retirements settled
-    on the official ATP result** (founder ruling 2026-10-08, card 01102d24 — the same rule as Market edge on this page
+    on Pinnacle rules** (founder 2026-10-22; join from ruling 2026-10-08, card 01102d24 — the same rule as Market edge on this page
     and its footnote). One model draws both: `trProfileModel` prices every row on the Database join (`trDbJoinPx` →
     `H2HPage.priceJoin`) and the panel prints `P.all`'s prices and `P.priced` / `P.units` — so the tile's "N priced" IS the
     ledger's priced-row count, and the tile = Player Profile → Record per tournament for the event (`trProfileBacking`
@@ -113,8 +113,8 @@ no day work, checks or screenshots on this page until the founder reopens it.
     **Test:** `test-ten402-c.mjs` "ruling 2026-10-08: the Tournament panel draws ONE model", `test-ten332-tournament.mjs`
     "ruling 2026-10-08", `tools/test-ten402-fix-mutants.js`, `tools/test-ten332-mutants.js` (TEN-402 mutants).
   - **Market edge** (this page) reads each player's `market-edge/{key}.json` rows (`meWinnerRows`): Pinnacle closing, else
-    Bet365, retirements settled on the official ATP result — its footnote prints `MarketEdgeCore.RET_SETTLE_NOTE`
-    ("Retirements settled on the official ATP result."). The shard is built from the master (`database-yield-master.json`, founder 2026-10-17
+    Bet365, retirements settled on Pinnacle rules — its footnote prints `MarketEdgeCore.RET_SETTLE_NOTE`
+    ("Retirements settle on Pinnacle rules for all rows."). The shard is built from the master (`database-yield-master.json`, founder 2026-10-17
     "one source of truth"), so its prices equal the Database join (team events stay out of Market edge).
   **Test:** `test-ten402-b.mjs` "review 2 …" (real `database-yield.json` + synthetic career fixtures), `test-ten402-c.mjs`
   (the ledgers' own path), `tools/test-ten402-fix-mutants.js`. Tests never read a bot-rewritten store

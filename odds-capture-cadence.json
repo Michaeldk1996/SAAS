@@ -1,2812 +1,2812 @@
 {
   "observed": {
-    "maxGapMin": 20.9,
+    "maxGapMin": 22.0,
     "medianGapMin": 15.0,
     "note": "Measured gap between consecutive captures. Compare against the configured interval; the difference IS the delivery shortfall.",
-    "spanHours": 99.76,
+    "spanHours": 99.78,
     "ticks": 400
   },
   "schema": "odds-capture-cadence/1",
   "ticks": [
     {
-      "at": "2026-10-16T11:16:30Z",
-      "iter": 14,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "38862794551/1"
-    },
-    {
-      "at": "2026-10-16T11:31:31Z",
-      "iter": 15,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "38862794551/1"
-    },
-    {
-      "at": "2026-10-16T11:46:32Z",
-      "iter": 16,
-      "mode": "free+metered",
-      "outcome": "captured",
-      "run": "38862794551/1"
-    },
-    {
-      "at": "2026-10-16T12:01:29Z",
-      "iter": 17,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "38862794551/1"
-    },
-    {
-      "at": "2026-10-16T12:16:06Z",
-      "iter": 18,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "38862794551/1"
-    },
-    {
-      "at": "2026-10-16T12:31:32Z",
-      "iter": 19,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "38862794551/1"
-    },
-    {
-      "at": "2026-10-16T12:46:33Z",
-      "iter": 20,
-      "mode": "free+metered",
-      "outcome": "captured",
-      "run": "38862794551/1"
-    },
-    {
-      "at": "2026-10-16T13:01:30Z",
-      "iter": 21,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "38862794551/1"
-    },
-    {
-      "at": "2026-10-16T13:16:30Z",
-      "iter": 22,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "38862794551/1"
-    },
-    {
-      "at": "2026-10-16T13:30:54Z",
-      "iter": 1,
-      "mode": "free+metered+redo",
-      "outcome": "captured",
-      "run": "38897342874/1"
-    },
-    {
-      "at": "2026-10-16T13:46:30Z",
-      "iter": 2,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "38897342874/1"
-    },
-    {
-      "at": "2026-10-16T14:00:13Z",
-      "iter": 3,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "38897342874/1"
-    },
-    {
-      "at": "2026-10-16T14:15:13Z",
-      "iter": 4,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "38897342874/1"
-    },
-    {
-      "at": "2026-10-16T14:30:17Z",
-      "iter": 5,
-      "mode": "free+metered",
-      "outcome": "captured",
-      "run": "38897342874/1"
-    },
-    {
-      "at": "2026-10-16T14:45:19Z",
-      "iter": 6,
-      "mode": "free",
-      "outcome": "captured",
-      "run": "38897342874/1"
-    },
-    {
-      "at": "2026-10-16T15:00:20Z",
-      "iter": 7,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "38897342874/1"
-    },
-    {
-      "at": "2026-10-16T15:15:19Z",
-      "iter": 8,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "38897342874/1"
-    },
-    {
-      "at": "2026-10-16T15:30:21Z",
-      "iter": 9,
-      "mode": "free+metered",
-      "outcome": "captured",
-      "run": "38897342874/1"
-    },
-    {
-      "at": "2026-10-16T15:45:24Z",
-      "iter": 10,
-      "mode": "free",
-      "outcome": "captured",
-      "run": "38897342874/1"
-    },
-    {
-      "at": "2026-10-16T16:00:21Z",
-      "iter": 11,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "38897342874/1"
-    },
-    {
-      "at": "2026-10-16T16:15:31Z",
-      "iter": 12,
-      "mode": "free+metered-deferred+redo",
-      "outcome": "captured",
-      "run": "38897342874/1"
-    },
-    {
-      "at": "2026-10-16T16:30:27Z",
-      "iter": 13,
-      "mode": "free+metered",
-      "outcome": "captured",
-      "run": "38897342874/1"
-    },
-    {
-      "at": "2026-10-16T16:45:20Z",
-      "iter": 14,
-      "mode": "free",
-      "outcome": "captured",
-      "run": "38897342874/1"
-    },
-    {
-      "at": "2026-10-16T17:00:19Z",
-      "iter": 15,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "38897342874/1"
-    },
-    {
-      "at": "2026-10-16T17:15:19Z",
-      "iter": 16,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "38897342874/1"
-    },
-    {
-      "at": "2026-10-16T17:30:21Z",
-      "iter": 17,
-      "mode": "free+metered",
-      "outcome": "captured",
-      "run": "38897342874/1"
-    },
-    {
-      "at": "2026-10-16T17:45:19Z",
-      "iter": 18,
-      "mode": "free",
-      "outcome": "captured",
-      "run": "38897342874/1"
-    },
-    {
-      "at": "2026-10-16T18:00:18Z",
-      "iter": 19,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "38897342874/1"
-    },
-    {
-      "at": "2026-10-16T18:15:22Z",
-      "iter": 20,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "38897342874/1"
-    },
-    {
-      "at": "2026-10-16T18:30:22Z",
-      "iter": 21,
-      "mode": "free+metered",
-      "outcome": "captured",
-      "run": "38897342874/1"
-    },
-    {
-      "at": "2026-10-16T18:45:23Z",
+      "at": "2026-10-21T19:46:26Z",
       "iter": 22,
       "mode": "free",
       "outcome": "captured",
-      "run": "38897342874/1"
+      "run": "39600204756/1"
     },
     {
-      "at": "2026-10-16T19:01:44Z",
+      "at": "2026-10-21T20:01:47Z",
       "iter": 1,
       "mode": "free+metered+redo",
       "outcome": "captured",
-      "run": "38929176103/1"
+      "run": "39646308407/1"
     },
     {
-      "at": "2026-10-16T19:15:22Z",
+      "at": "2026-10-21T20:16:23Z",
       "iter": 2,
       "mode": "free+metered-deferred",
       "outcome": "captured",
-      "run": "38929176103/1"
+      "run": "39646308407/1"
     },
     {
-      "at": "2026-10-16T19:30:22Z",
+      "at": "2026-10-21T20:31:24Z",
       "iter": 3,
       "mode": "free+metered-deferred",
       "outcome": "captured",
-      "run": "38929176103/1"
+      "run": "39646308407/1"
     },
     {
-      "at": "2026-10-16T19:45:22Z",
+      "at": "2026-10-21T20:46:33Z",
       "iter": 4,
       "mode": "free+metered-deferred",
       "outcome": "captured",
-      "run": "38929176103/1"
+      "run": "39646308407/1"
     },
     {
-      "at": "2026-10-16T20:00:25Z",
+      "at": "2026-10-21T21:01:31Z",
       "iter": 5,
       "mode": "free+metered",
       "outcome": "captured",
-      "run": "38929176103/1"
+      "run": "39646308407/1"
     },
     {
-      "at": "2026-10-16T20:16:09Z",
-      "iter": 6,
-      "mode": "free",
-      "outcome": "captured",
-      "run": "38929176103/1"
-    },
-    {
-      "at": "2026-10-16T20:31:16Z",
-      "iter": 7,
-      "mode": "free+metered-deferred+redo",
-      "outcome": "captured",
-      "run": "38929176103/1"
-    },
-    {
-      "at": "2026-10-16T20:46:08Z",
-      "iter": 8,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "38929176103/1"
-    },
-    {
-      "at": "2026-10-16T21:01:11Z",
-      "iter": 9,
-      "mode": "free+metered",
-      "outcome": "captured",
-      "run": "38929176103/1"
-    },
-    {
-      "at": "2026-10-16T21:16:10Z",
-      "iter": 10,
-      "mode": "free",
-      "outcome": "captured",
-      "run": "38929176103/1"
-    },
-    {
-      "at": "2026-10-16T21:31:09Z",
-      "iter": 11,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "38929176103/1"
-    },
-    {
-      "at": "2026-10-16T21:46:13Z",
-      "iter": 12,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "38929176103/1"
-    },
-    {
-      "at": "2026-10-16T22:01:19Z",
-      "iter": 13,
-      "mode": "free+metered",
-      "outcome": "captured",
-      "run": "38929176103/1"
-    },
-    {
-      "at": "2026-10-16T22:17:04Z",
-      "iter": 14,
-      "mode": "free",
-      "outcome": "captured",
-      "run": "38929176103/1"
-    },
-    {
-      "at": "2026-10-16T22:32:00Z",
-      "iter": 15,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "38929176103/1"
-    },
-    {
-      "at": "2026-10-16T22:47:00Z",
-      "iter": 16,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "38929176103/1"
-    },
-    {
-      "at": "2026-10-16T23:02:04Z",
-      "iter": 17,
-      "mode": "free+metered",
-      "outcome": "captured",
-      "run": "38929176103/1"
-    },
-    {
-      "at": "2026-10-16T23:17:11Z",
-      "iter": 18,
-      "mode": "free+redo",
-      "outcome": "captured",
-      "run": "38929176103/1"
-    },
-    {
-      "at": "2026-10-16T23:31:59Z",
-      "iter": 19,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "38929176103/1"
-    },
-    {
-      "at": "2026-10-16T23:47:11Z",
-      "iter": 20,
-      "mode": "free+metered-deferred+redo",
-      "outcome": "captured",
-      "run": "38929176103/1"
-    },
-    {
-      "at": "2026-10-17T00:02:01Z",
-      "iter": 21,
-      "mode": "free+metered",
-      "outcome": "captured",
-      "run": "38929176103/1"
-    },
-    {
-      "at": "2026-10-17T00:17:00Z",
-      "iter": 22,
-      "mode": "free",
-      "outcome": "captured",
-      "run": "38929176103/1"
-    },
-    {
-      "at": "2026-10-17T00:32:34Z",
-      "iter": 1,
-      "mode": "free+metered+redo",
-      "outcome": "captured",
-      "run": "38974854880/1"
-    },
-    {
-      "at": "2026-10-17T00:46:58Z",
-      "iter": 2,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "38974854880/1"
-    },
-    {
-      "at": "2026-10-17T01:02:05Z",
-      "iter": 3,
-      "mode": "free+metered",
-      "outcome": "captured",
-      "run": "38974854880/1"
-    },
-    {
-      "at": "2026-10-17T01:16:59Z",
-      "iter": 4,
-      "mode": "free",
-      "outcome": "captured",
-      "run": "38974854880/1"
-    },
-    {
-      "at": "2026-10-17T01:32:00Z",
-      "iter": 5,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "38974854880/1"
-    },
-    {
-      "at": "2026-10-17T01:46:58Z",
-      "iter": 6,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "38974854880/1"
-    },
-    {
-      "at": "2026-10-17T02:02:00Z",
-      "iter": 7,
-      "mode": "free+metered",
-      "outcome": "captured",
-      "run": "38974854880/1"
-    },
-    {
-      "at": "2026-10-17T02:16:57Z",
-      "iter": 8,
-      "mode": "free",
-      "outcome": "captured",
-      "run": "38974854880/1"
-    },
-    {
-      "at": "2026-10-17T02:31:57Z",
-      "iter": 9,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "38974854880/1"
-    },
-    {
-      "at": "2026-10-17T02:46:57Z",
-      "iter": 10,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "38974854880/1"
-    },
-    {
-      "at": "2026-10-17T03:02:10Z",
-      "iter": 11,
-      "mode": "free+metered+redo",
-      "outcome": "captured",
-      "run": "38974854880/1"
-    },
-    {
-      "at": "2026-10-17T03:16:57Z",
-      "iter": 12,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "38974854880/1"
-    },
-    {
-      "at": "2026-10-17T03:31:58Z",
-      "iter": 13,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "38974854880/1"
-    },
-    {
-      "at": "2026-10-17T03:46:58Z",
-      "iter": 14,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "38974854880/1"
-    },
-    {
-      "at": "2026-10-17T04:01:59Z",
-      "iter": 15,
-      "mode": "free+metered",
-      "outcome": "captured",
-      "run": "38974854880/1"
-    },
-    {
-      "at": "2026-10-17T04:16:59Z",
-      "iter": 16,
-      "mode": "free",
-      "outcome": "captured",
-      "run": "38974854880/1"
-    },
-    {
-      "at": "2026-10-17T04:31:58Z",
-      "iter": 17,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "38974854880/1"
-    },
-    {
-      "at": "2026-10-17T04:46:57Z",
-      "iter": 18,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "38974854880/1"
-    },
-    {
-      "at": "2026-10-17T05:02:01Z",
-      "iter": 19,
-      "mode": "free+metered",
-      "outcome": "captured",
-      "run": "38974854880/1"
-    },
-    {
-      "at": "2026-10-17T05:16:59Z",
-      "iter": 20,
-      "mode": "free",
-      "outcome": "captured",
-      "run": "38974854880/1"
-    },
-    {
-      "at": "2026-10-17T05:31:56Z",
-      "iter": 21,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "38974854880/1"
-    },
-    {
-      "at": "2026-10-17T05:46:57Z",
-      "iter": 22,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "38974854880/1"
-    },
-    {
-      "at": "2026-10-17T06:02:33Z",
-      "iter": 1,
-      "mode": "free+metered+redo",
-      "outcome": "captured",
-      "run": "39005217456/1"
-    },
-    {
-      "at": "2026-10-17T06:17:03Z",
-      "iter": 2,
-      "mode": "free+metered",
-      "outcome": "captured",
-      "run": "39005217456/1"
-    },
-    {
-      "at": "2026-10-17T06:31:57Z",
-      "iter": 3,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39005217456/1"
-    },
-    {
-      "at": "2026-10-17T06:46:58Z",
-      "iter": 4,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39005217456/1"
-    },
-    {
-      "at": "2026-10-17T07:01:59Z",
-      "iter": 5,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39005217456/1"
-    },
-    {
-      "at": "2026-10-17T07:17:03Z",
-      "iter": 6,
-      "mode": "free+metered",
-      "outcome": "captured",
-      "run": "39005217456/1"
-    },
-    {
-      "at": "2026-10-17T07:31:56Z",
-      "iter": 7,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39005217456/1"
-    },
-    {
-      "at": "2026-10-17T07:47:00Z",
-      "iter": 8,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39005217456/1"
-    },
-    {
-      "at": "2026-10-17T08:01:58Z",
-      "iter": 9,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39005217456/1"
-    },
-    {
-      "at": "2026-10-17T08:17:15Z",
-      "iter": 10,
-      "mode": "free+metered",
-      "outcome": "captured",
-      "run": "39005217456/1"
-    },
-    {
-      "at": "2026-10-17T08:31:54Z",
-      "iter": 11,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39005217456/1"
-    },
-    {
-      "at": "2026-10-17T08:46:51Z",
-      "iter": 12,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39005217456/1"
-    },
-    {
-      "at": "2026-10-17T09:07:41Z",
-      "iter": 13,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39005217456/1"
-    },
-    {
-      "at": "2026-10-17T09:22:47Z",
-      "iter": 14,
-      "mode": "free+metered",
-      "outcome": "captured",
-      "run": "39005217456/1"
-    },
-    {
-      "at": "2026-10-17T09:38:27Z",
-      "iter": 15,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39005217456/1"
-    },
-    {
-      "at": "2026-10-17T09:53:41Z",
-      "iter": 16,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39005217456/1"
-    },
-    {
-      "at": "2026-10-17T10:03:14Z",
-      "iter": 17,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39005217456/1"
-    },
-    {
-      "at": "2026-10-17T10:23:03Z",
-      "iter": 18,
-      "mode": "free+metered",
-      "outcome": "captured",
-      "run": "39005217456/1"
-    },
-    {
-      "at": "2026-10-17T10:38:18Z",
-      "iter": 19,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39005217456/1"
-    },
-    {
-      "at": "2026-10-17T10:53:52Z",
-      "iter": 20,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39005217456/1"
-    },
-    {
-      "at": "2026-10-17T11:08:47Z",
-      "iter": 21,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39005217456/1"
-    },
-    {
-      "at": "2026-10-17T11:23:44Z",
-      "iter": 22,
-      "mode": "free+metered",
-      "outcome": "captured",
-      "run": "39005217456/1"
-    },
-    {
-      "at": "2026-10-17T11:37:21Z",
-      "iter": 1,
-      "mode": "free+metered+redo",
-      "outcome": "captured",
-      "run": "39022612369/1"
-    },
-    {
-      "at": "2026-10-17T11:53:50Z",
-      "iter": 2,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39022612369/1"
-    },
-    {
-      "at": "2026-10-17T12:07:58Z",
-      "iter": 3,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39022612369/1"
-    },
-    {
-      "at": "2026-10-17T12:23:41Z",
-      "iter": 4,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39022612369/1"
-    },
-    {
-      "at": "2026-10-17T12:36:54Z",
-      "iter": 5,
-      "mode": "free+metered",
-      "outcome": "captured",
-      "run": "39022612369/1"
-    },
-    {
-      "at": "2026-10-17T12:53:16Z",
+      "at": "2026-10-21T21:16:49Z",
       "iter": 6,
       "mode": "free+redo",
       "outcome": "captured",
-      "run": "39022612369/1"
+      "run": "39646308407/1"
     },
     {
-      "at": "2026-10-17T13:06:06Z",
+      "at": "2026-10-21T21:31:28Z",
       "iter": 7,
       "mode": "free+metered-deferred",
       "outcome": "captured",
-      "run": "39022612369/1"
+      "run": "39646308407/1"
     },
     {
-      "at": "2026-10-17T13:23:33Z",
+      "at": "2026-10-21T21:46:28Z",
       "iter": 8,
       "mode": "free+metered-deferred",
       "outcome": "captured",
-      "run": "39022612369/1"
+      "run": "39646308407/1"
     },
     {
-      "at": "2026-10-17T13:34:35Z",
+      "at": "2026-10-21T22:01:33Z",
       "iter": 9,
       "mode": "free+metered",
       "outcome": "captured",
-      "run": "39022612369/1"
+      "run": "39646308407/1"
     },
     {
-      "at": "2026-10-17T13:47:09Z",
+      "at": "2026-10-21T22:16:28Z",
       "iter": 10,
       "mode": "free",
       "outcome": "captured",
-      "run": "39022612369/1"
+      "run": "39646308407/1"
     },
     {
-      "at": "2026-10-17T14:01:57Z",
+      "at": "2026-10-21T22:31:30Z",
       "iter": 11,
       "mode": "free+metered-deferred",
       "outcome": "captured",
-      "run": "39022612369/1"
+      "run": "39646308407/1"
     },
     {
-      "at": "2026-10-17T14:18:53Z",
+      "at": "2026-10-21T22:46:28Z",
       "iter": 12,
       "mode": "free+metered-deferred",
       "outcome": "captured",
-      "run": "39022612369/1"
+      "run": "39646308407/1"
     },
     {
-      "at": "2026-10-17T14:32:01Z",
+      "at": "2026-10-21T23:01:34Z",
       "iter": 13,
       "mode": "free+metered",
       "outcome": "captured",
-      "run": "39022612369/1"
+      "run": "39646308407/1"
     },
     {
-      "at": "2026-10-17T14:47:08Z",
+      "at": "2026-10-21T23:16:39Z",
       "iter": 14,
       "mode": "free",
       "outcome": "captured",
-      "run": "39022612369/1"
+      "run": "39646308407/1"
     },
     {
-      "at": "2026-10-17T15:02:05Z",
+      "at": "2026-10-21T23:31:40Z",
       "iter": 15,
       "mode": "free+metered-deferred",
       "outcome": "captured",
-      "run": "39022612369/1"
+      "run": "39646308407/1"
     },
     {
-      "at": "2026-10-17T15:17:04Z",
+      "at": "2026-10-21T23:46:34Z",
       "iter": 16,
       "mode": "free+metered-deferred",
       "outcome": "captured",
-      "run": "39022612369/1"
+      "run": "39646308407/1"
     },
     {
-      "at": "2026-10-17T15:32:07Z",
+      "at": "2026-10-22T00:01:45Z",
       "iter": 17,
       "mode": "free+metered",
       "outcome": "captured",
-      "run": "39022612369/1"
+      "run": "39646308407/1"
     },
     {
-      "at": "2026-10-17T15:47:12Z",
+      "at": "2026-10-22T00:16:33Z",
       "iter": 18,
       "mode": "free",
       "outcome": "captured",
-      "run": "39022612369/1"
+      "run": "39646308407/1"
     },
     {
-      "at": "2026-10-17T16:02:13Z",
+      "at": "2026-10-22T00:31:34Z",
       "iter": 19,
       "mode": "free+metered-deferred",
       "outcome": "captured",
-      "run": "39022612369/1"
+      "run": "39646308407/1"
     },
     {
-      "at": "2026-10-17T16:17:10Z",
+      "at": "2026-10-22T00:46:35Z",
       "iter": 20,
       "mode": "free+metered-deferred",
       "outcome": "captured",
-      "run": "39022612369/1"
+      "run": "39646308407/1"
     },
     {
-      "at": "2026-10-17T16:32:14Z",
+      "at": "2026-10-22T01:01:45Z",
       "iter": 21,
       "mode": "free+metered",
       "outcome": "captured",
-      "run": "39022612369/1"
+      "run": "39646308407/1"
     },
     {
-      "at": "2026-10-17T16:47:24Z",
+      "at": "2026-10-22T01:16:41Z",
       "iter": 22,
       "mode": "free",
       "outcome": "captured",
-      "run": "39022612369/1"
+      "run": "39646308407/1"
     },
     {
-      "at": "2026-10-17T17:03:00Z",
+      "at": "2026-10-22T01:32:17Z",
       "iter": 1,
+      "mode": "free+metered+redo",
+      "outcome": "captured",
+      "run": "39696187261/1"
+    },
+    {
+      "at": "2026-10-22T01:46:41Z",
+      "iter": 2,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "39696187261/1"
+    },
+    {
+      "at": "2026-10-22T02:01:41Z",
+      "iter": 3,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "39696187261/1"
+    },
+    {
+      "at": "2026-10-22T02:16:43Z",
+      "iter": 4,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "39696187261/1"
+    },
+    {
+      "at": "2026-10-22T02:31:45Z",
+      "iter": 5,
+      "mode": "free+metered",
+      "outcome": "captured",
+      "run": "39696187261/1"
+    },
+    {
+      "at": "2026-10-22T02:46:48Z",
+      "iter": 6,
+      "mode": "free",
+      "outcome": "captured",
+      "run": "39696187261/1"
+    },
+    {
+      "at": "2026-10-22T03:01:48Z",
+      "iter": 7,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "39696187261/1"
+    },
+    {
+      "at": "2026-10-22T03:16:59Z",
+      "iter": 8,
       "mode": "free+metered-deferred+redo",
       "outcome": "captured",
-      "run": "39050651915/1"
+      "run": "39696187261/1"
     },
     {
-      "at": "2026-10-17T17:17:21Z",
-      "iter": 2,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39050651915/1"
-    },
-    {
-      "at": "2026-10-17T17:32:28Z",
-      "iter": 3,
-      "mode": "free+metered",
-      "outcome": "captured",
-      "run": "39050651915/1"
-    },
-    {
-      "at": "2026-10-17T17:48:59Z",
-      "iter": 4,
-      "mode": "free",
-      "outcome": "captured",
-      "run": "39050651915/1"
-    },
-    {
-      "at": "2026-10-17T18:02:24Z",
-      "iter": 5,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39050651915/1"
-    },
-    {
-      "at": "2026-10-17T18:17:23Z",
-      "iter": 6,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39050651915/1"
-    },
-    {
-      "at": "2026-10-17T18:32:28Z",
-      "iter": 7,
-      "mode": "free+metered",
-      "outcome": "captured",
-      "run": "39050651915/1"
-    },
-    {
-      "at": "2026-10-17T18:47:23Z",
-      "iter": 8,
-      "mode": "free",
-      "outcome": "captured",
-      "run": "39050651915/1"
-    },
-    {
-      "at": "2026-10-17T19:02:24Z",
+      "at": "2026-10-22T03:31:51Z",
       "iter": 9,
-      "mode": "free+metered-deferred",
+      "mode": "free+metered",
       "outcome": "captured",
-      "run": "39050651915/1"
+      "run": "39696187261/1"
     },
     {
-      "at": "2026-10-17T19:17:22Z",
+      "at": "2026-10-22T03:46:46Z",
       "iter": 10,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39050651915/1"
-    },
-    {
-      "at": "2026-10-17T19:32:25Z",
-      "iter": 11,
-      "mode": "free+metered",
-      "outcome": "captured",
-      "run": "39050651915/1"
-    },
-    {
-      "at": "2026-10-17T19:47:22Z",
-      "iter": 12,
       "mode": "free",
       "outcome": "captured",
-      "run": "39050651915/1"
+      "run": "39696187261/1"
     },
     {
-      "at": "2026-10-17T20:02:22Z",
-      "iter": 13,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39050651915/1"
-    },
-    {
-      "at": "2026-10-17T20:17:31Z",
-      "iter": 14,
-      "mode": "free+metered-deferred+redo",
-      "outcome": "captured",
-      "run": "39050651915/1"
-    },
-    {
-      "at": "2026-10-17T20:32:24Z",
-      "iter": 15,
-      "mode": "free+metered",
-      "outcome": "captured",
-      "run": "39050651915/1"
-    },
-    {
-      "at": "2026-10-17T20:47:22Z",
-      "iter": 16,
-      "mode": "free",
-      "outcome": "captured",
-      "run": "39050651915/1"
-    },
-    {
-      "at": "2026-10-17T21:02:24Z",
-      "iter": 17,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39050651915/1"
-    },
-    {
-      "at": "2026-10-17T21:17:22Z",
-      "iter": 18,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39050651915/1"
-    },
-    {
-      "at": "2026-10-17T21:32:28Z",
-      "iter": 19,
-      "mode": "free+metered",
-      "outcome": "captured",
-      "run": "39050651915/1"
-    },
-    {
-      "at": "2026-10-17T21:47:23Z",
-      "iter": 20,
-      "mode": "free",
-      "outcome": "captured",
-      "run": "39050651915/1"
-    },
-    {
-      "at": "2026-10-17T22:02:21Z",
-      "iter": 21,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39050651915/1"
-    },
-    {
-      "at": "2026-10-17T22:17:22Z",
-      "iter": 22,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39050651915/1"
-    },
-    {
-      "at": "2026-10-17T22:32:49Z",
-      "iter": 1,
-      "mode": "free+metered+redo",
-      "outcome": "captured",
-      "run": "39069681394/1"
-    },
-    {
-      "at": "2026-10-17T22:47:21Z",
-      "iter": 2,
-      "mode": "free+metered",
-      "outcome": "captured",
-      "run": "39069681394/1"
-    },
-    {
-      "at": "2026-10-17T23:02:31Z",
-      "iter": 3,
-      "mode": "free+metered-deferred+redo",
-      "outcome": "captured",
-      "run": "39069681394/1"
-    },
-    {
-      "at": "2026-10-17T23:17:20Z",
-      "iter": 4,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39069681394/1"
-    },
-    {
-      "at": "2026-10-17T23:32:19Z",
-      "iter": 5,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39069681394/1"
-    },
-    {
-      "at": "2026-10-17T23:47:22Z",
-      "iter": 6,
-      "mode": "free+metered",
-      "outcome": "captured",
-      "run": "39069681394/1"
-    },
-    {
-      "at": "2026-10-18T00:02:19Z",
-      "iter": 7,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39069681394/1"
-    },
-    {
-      "at": "2026-10-18T00:17:20Z",
-      "iter": 8,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39069681394/1"
-    },
-    {
-      "at": "2026-10-18T00:32:22Z",
-      "iter": 9,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39069681394/1"
-    },
-    {
-      "at": "2026-10-18T00:47:25Z",
-      "iter": 10,
-      "mode": "free+metered",
-      "outcome": "captured",
-      "run": "39069681394/1"
-    },
-    {
-      "at": "2026-10-18T01:03:10Z",
+      "at": "2026-10-22T04:01:47Z",
       "iter": 11,
       "mode": "free+metered-deferred",
       "outcome": "captured",
-      "run": "39069681394/1"
+      "run": "39696187261/1"
     },
     {
-      "at": "2026-10-18T01:18:10Z",
+      "at": "2026-10-22T04:16:48Z",
       "iter": 12,
       "mode": "free+metered-deferred",
       "outcome": "captured",
-      "run": "39069681394/1"
+      "run": "39696187261/1"
     },
     {
-      "at": "2026-10-18T01:33:10Z",
+      "at": "2026-10-22T04:31:52Z",
       "iter": 13,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39069681394/1"
-    },
-    {
-      "at": "2026-10-18T01:48:09Z",
-      "iter": 14,
       "mode": "free+metered",
       "outcome": "captured",
-      "run": "39069681394/1"
+      "run": "39696187261/1"
     },
     {
-      "at": "2026-10-18T02:03:07Z",
+      "at": "2026-10-22T04:46:47Z",
+      "iter": 14,
+      "mode": "free",
+      "outcome": "captured",
+      "run": "39696187261/1"
+    },
+    {
+      "at": "2026-10-22T05:01:49Z",
       "iter": 15,
       "mode": "free+metered-deferred",
       "outcome": "captured",
-      "run": "39069681394/1"
+      "run": "39696187261/1"
     },
     {
-      "at": "2026-10-18T02:18:08Z",
+      "at": "2026-10-22T05:16:49Z",
       "iter": 16,
       "mode": "free+metered-deferred",
       "outcome": "captured",
-      "run": "39069681394/1"
+      "run": "39696187261/1"
     },
     {
-      "at": "2026-10-18T02:33:08Z",
+      "at": "2026-10-22T05:31:56Z",
       "iter": 17,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39069681394/1"
-    },
-    {
-      "at": "2026-10-18T02:48:09Z",
-      "iter": 18,
       "mode": "free+metered",
       "outcome": "captured",
-      "run": "39069681394/1"
+      "run": "39696187261/1"
     },
     {
-      "at": "2026-10-18T03:03:21Z",
-      "iter": 19,
-      "mode": "free+metered-deferred+redo",
+      "at": "2026-10-22T05:46:49Z",
+      "iter": 18,
+      "mode": "free",
       "outcome": "captured",
-      "run": "39069681394/1"
+      "run": "39696187261/1"
     },
     {
-      "at": "2026-10-18T03:18:09Z",
+      "at": "2026-10-22T06:01:48Z",
+      "iter": 19,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "39696187261/1"
+    },
+    {
+      "at": "2026-10-22T06:16:46Z",
       "iter": 20,
       "mode": "free+metered-deferred",
       "outcome": "captured",
-      "run": "39069681394/1"
+      "run": "39696187261/1"
     },
     {
-      "at": "2026-10-18T03:33:06Z",
+      "at": "2026-10-22T06:31:41Z",
       "iter": 21,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39069681394/1"
-    },
-    {
-      "at": "2026-10-18T03:48:10Z",
-      "iter": 22,
       "mode": "free+metered",
       "outcome": "captured",
-      "run": "39069681394/1"
+      "run": "39696187261/1"
     },
     {
-      "at": "2026-10-18T04:03:48Z",
+      "at": "2026-10-22T06:46:43Z",
+      "iter": 22,
+      "mode": "free",
+      "outcome": "captured",
+      "run": "39696187261/1"
+    },
+    {
+      "at": "2026-10-22T07:03:37Z",
       "iter": 1,
       "mode": "free+metered+redo",
       "outcome": "captured",
-      "run": "39088014601/1"
+      "run": "39710103302/1"
     },
     {
-      "at": "2026-10-18T04:18:10Z",
+      "at": "2026-10-22T07:16:42Z",
       "iter": 2,
       "mode": "free+metered-deferred",
       "outcome": "captured",
-      "run": "39088014601/1"
+      "run": "39710103302/1"
     },
     {
-      "at": "2026-10-18T04:33:10Z",
+      "at": "2026-10-22T07:31:43Z",
       "iter": 3,
       "mode": "free+metered-deferred",
       "outcome": "captured",
-      "run": "39088014601/1"
+      "run": "39710103302/1"
     },
     {
-      "at": "2026-10-18T04:48:15Z",
+      "at": "2026-10-22T07:46:43Z",
       "iter": 4,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "39710103302/1"
+    },
+    {
+      "at": "2026-10-22T08:01:41Z",
+      "iter": 5,
       "mode": "free+metered",
       "outcome": "captured",
-      "run": "39088014601/1"
+      "run": "39710103302/1"
     },
     {
-      "at": "2026-10-18T05:03:09Z",
-      "iter": 5,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39088014601/1"
-    },
-    {
-      "at": "2026-10-18T05:18:10Z",
+      "at": "2026-10-22T08:16:55Z",
       "iter": 6,
-      "mode": "free+metered-deferred",
+      "mode": "free",
       "outcome": "captured",
-      "run": "39088014601/1"
+      "run": "39710103302/1"
     },
     {
-      "at": "2026-10-18T05:33:10Z",
+      "at": "2026-10-22T08:31:36Z",
       "iter": 7,
       "mode": "free+metered-deferred",
       "outcome": "captured",
-      "run": "39088014601/1"
+      "run": "39710103302/1"
     },
     {
-      "at": "2026-10-18T05:48:12Z",
+      "at": "2026-10-22T08:46:36Z",
       "iter": 8,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "39710103302/1"
+    },
+    {
+      "at": "2026-10-22T09:01:43Z",
+      "iter": 9,
       "mode": "free+metered",
       "outcome": "captured",
-      "run": "39088014601/1"
+      "run": "39710103302/1"
     },
     {
-      "at": "2026-10-18T06:02:58Z",
-      "iter": 9,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39088014601/1"
-    },
-    {
-      "at": "2026-10-18T06:18:00Z",
+      "at": "2026-10-22T09:16:31Z",
       "iter": 10,
-      "mode": "free+metered-deferred",
+      "mode": "free",
       "outcome": "captured",
-      "run": "39088014601/1"
+      "run": "39710103302/1"
     },
     {
-      "at": "2026-10-18T06:32:58Z",
+      "at": "2026-10-22T09:31:23Z",
       "iter": 11,
       "mode": "free+metered-deferred",
       "outcome": "captured",
-      "run": "39088014601/1"
+      "run": "39710103302/1"
     },
     {
-      "at": "2026-10-18T06:48:00Z",
+      "at": "2026-10-22T09:53:24Z",
       "iter": 12,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "39710103302/1"
+    },
+    {
+      "at": "2026-10-22T10:09:02Z",
+      "iter": 13,
       "mode": "free+metered",
       "outcome": "captured",
-      "run": "39088014601/1"
+      "run": "39710103302/1"
     },
     {
-      "at": "2026-10-18T07:03:00Z",
-      "iter": 13,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39088014601/1"
-    },
-    {
-      "at": "2026-10-18T07:18:00Z",
+      "at": "2026-10-22T10:22:36Z",
       "iter": 14,
-      "mode": "free+metered-deferred",
+      "mode": "free",
       "outcome": "captured",
-      "run": "39088014601/1"
+      "run": "39710103302/1"
     },
     {
-      "at": "2026-10-18T07:32:57Z",
+      "at": "2026-10-22T10:38:42Z",
       "iter": 15,
       "mode": "free+metered-deferred",
       "outcome": "captured",
-      "run": "39088014601/1"
+      "run": "39710103302/1"
     },
     {
-      "at": "2026-10-18T07:50:49Z",
+      "at": "2026-10-22T10:53:16Z",
       "iter": 16,
-      "mode": "free+metered+redo",
+      "mode": "free+metered-deferred",
       "outcome": "captured",
-      "run": "39088014601/1"
+      "run": "39710103302/1"
     },
     {
-      "at": "2026-10-18T08:03:02Z",
+      "at": "2026-10-22T11:08:27Z",
       "iter": 17,
       "mode": "free+metered",
       "outcome": "captured",
-      "run": "39088014601/1"
+      "run": "39710103302/1"
     },
     {
-      "at": "2026-10-18T08:20:07Z",
+      "at": "2026-10-22T11:24:16Z",
       "iter": 18,
       "mode": "free",
       "outcome": "captured",
-      "run": "39088014601/1"
+      "run": "39710103302/1"
     },
     {
-      "at": "2026-10-18T08:32:54Z",
+      "at": "2026-10-22T11:36:47Z",
       "iter": 19,
       "mode": "free+metered-deferred",
       "outcome": "captured",
-      "run": "39088014601/1"
+      "run": "39710103302/1"
     },
     {
-      "at": "2026-10-18T08:47:55Z",
+      "at": "2026-10-22T11:50:29Z",
       "iter": 20,
       "mode": "free+metered-deferred",
       "outcome": "captured",
-      "run": "39088014601/1"
+      "run": "39710103302/1"
     },
     {
-      "at": "2026-10-18T09:02:54Z",
+      "at": "2026-10-22T12:04:09Z",
       "iter": 21,
       "mode": "free+metered",
       "outcome": "captured",
-      "run": "39088014601/1"
+      "run": "39710103302/1"
     },
     {
-      "at": "2026-10-18T09:23:42Z",
+      "at": "2026-10-22T12:19:11Z",
       "iter": 22,
       "mode": "free",
       "outcome": "captured",
-      "run": "39088014601/1"
+      "run": "39710103302/1"
     },
     {
-      "at": "2026-10-18T09:39:00Z",
+      "at": "2026-10-22T12:33:49Z",
       "iter": 1,
       "mode": "free+metered+redo",
       "outcome": "captured",
-      "run": "39105104368/1"
+      "run": "39744755579/1"
     },
     {
-      "at": "2026-10-18T09:53:16Z",
+      "at": "2026-10-22T12:49:52Z",
       "iter": 2,
       "mode": "free+metered-deferred",
       "outcome": "captured",
-      "run": "39105104368/1"
+      "run": "39744755579/1"
     },
     {
-      "at": "2026-10-18T10:08:16Z",
-      "iter": 3,
-      "mode": "free+metered",
-      "outcome": "captured",
-      "run": "39105104368/1"
-    },
-    {
-      "at": "2026-10-18T10:23:33Z",
-      "iter": 4,
-      "mode": "free",
-      "outcome": "captured",
-      "run": "39105104368/1"
-    },
-    {
-      "at": "2026-10-18T10:38:26Z",
-      "iter": 5,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39105104368/1"
-    },
-    {
-      "at": "2026-10-18T10:54:01Z",
-      "iter": 6,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39105104368/1"
-    },
-    {
-      "at": "2026-10-18T11:08:32Z",
-      "iter": 7,
-      "mode": "free+metered",
-      "outcome": "captured",
-      "run": "39105104368/1"
-    },
-    {
-      "at": "2026-10-18T11:19:05Z",
-      "iter": 8,
-      "mode": "free",
-      "outcome": "captured",
-      "run": "39105104368/1"
-    },
-    {
-      "at": "2026-10-18T11:38:13Z",
-      "iter": 9,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39105104368/1"
-    },
-    {
-      "at": "2026-10-18T11:53:15Z",
-      "iter": 10,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39105104368/1"
-    },
-    {
-      "at": "2026-10-18T12:08:57Z",
-      "iter": 11,
-      "mode": "free+metered",
-      "outcome": "captured",
-      "run": "39105104368/1"
-    },
-    {
-      "at": "2026-10-18T12:19:29Z",
-      "iter": 12,
-      "mode": "free",
-      "outcome": "captured",
-      "run": "39105104368/1"
-    },
-    {
-      "at": "2026-10-18T12:38:39Z",
-      "iter": 13,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39105104368/1"
-    },
-    {
-      "at": "2026-10-18T12:53:38Z",
-      "iter": 14,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39105104368/1"
-    },
-    {
-      "at": "2026-10-18T13:08:31Z",
-      "iter": 15,
-      "mode": "free+metered",
-      "outcome": "captured",
-      "run": "39105104368/1"
-    },
-    {
-      "at": "2026-10-18T13:23:49Z",
-      "iter": 16,
-      "mode": "free",
-      "outcome": "captured",
-      "run": "39105104368/1"
-    },
-    {
-      "at": "2026-10-18T13:36:37Z",
-      "iter": 17,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39105104368/1"
-    },
-    {
-      "at": "2026-10-18T13:47:32Z",
-      "iter": 18,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39105104368/1"
-    },
-    {
-      "at": "2026-10-18T14:02:33Z",
-      "iter": 19,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39105104368/1"
-    },
-    {
-      "at": "2026-10-18T14:17:43Z",
-      "iter": 20,
-      "mode": "free+metered",
-      "outcome": "captured",
-      "run": "39105104368/1"
-    },
-    {
-      "at": "2026-10-18T14:33:03Z",
-      "iter": 21,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39105104368/1"
-    },
-    {
-      "at": "2026-10-18T14:48:01Z",
-      "iter": 22,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39105104368/1"
-    },
-    {
-      "at": "2026-10-18T15:03:13Z",
-      "iter": 1,
-      "mode": "free+metered+redo",
-      "outcome": "captured",
-      "run": "39124869155/1"
-    },
-    {
-      "at": "2026-10-18T15:18:02Z",
-      "iter": 2,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39124869155/1"
-    },
-    {
-      "at": "2026-10-18T15:33:00Z",
+      "at": "2026-10-22T13:04:36Z",
       "iter": 3,
       "mode": "free+metered-deferred",
       "outcome": "captured",
-      "run": "39124869155/1"
+      "run": "39744755579/1"
     },
     {
-      "at": "2026-10-18T15:48:03Z",
+      "at": "2026-10-22T13:16:43Z",
       "iter": 4,
       "mode": "free+metered-deferred",
       "outcome": "captured",
-      "run": "39124869155/1"
+      "run": "39744755579/1"
     },
     {
-      "at": "2026-10-18T16:06:19Z",
+      "at": "2026-10-22T13:34:03Z",
       "iter": 5,
       "mode": "free+metered",
       "outcome": "captured",
-      "run": "39124869155/1"
+      "run": "39744755579/1"
     },
     {
-      "at": "2026-10-18T16:18:02Z",
+      "at": "2026-10-22T13:48:58Z",
       "iter": 6,
       "mode": "free",
       "outcome": "captured",
-      "run": "39124869155/1"
+      "run": "39744755579/1"
     },
     {
-      "at": "2026-10-18T16:34:31Z",
+      "at": "2026-10-22T14:05:58Z",
       "iter": 7,
       "mode": "free+metered-deferred",
       "outcome": "captured",
-      "run": "39124869155/1"
+      "run": "39744755579/1"
     },
     {
-      "at": "2026-10-18T16:48:01Z",
+      "at": "2026-10-22T14:16:06Z",
       "iter": 8,
       "mode": "free+metered-deferred",
       "outcome": "captured",
-      "run": "39124869155/1"
+      "run": "39744755579/1"
     },
     {
-      "at": "2026-10-18T17:03:18Z",
+      "at": "2026-10-22T14:30:59Z",
       "iter": 9,
       "mode": "free+metered",
       "outcome": "captured",
-      "run": "39124869155/1"
+      "run": "39744755579/1"
     },
     {
-      "at": "2026-10-18T17:20:55Z",
+      "at": "2026-10-22T14:45:55Z",
       "iter": 10,
       "mode": "free",
       "outcome": "captured",
-      "run": "39124869155/1"
+      "run": "39744755579/1"
     },
     {
-      "at": "2026-10-18T17:34:35Z",
+      "at": "2026-10-22T15:00:51Z",
       "iter": 11,
       "mode": "free+metered-deferred",
       "outcome": "captured",
-      "run": "39124869155/1"
+      "run": "39744755579/1"
     },
     {
-      "at": "2026-10-18T17:48:18Z",
+      "at": "2026-10-22T15:15:51Z",
       "iter": 12,
       "mode": "free+metered-deferred",
       "outcome": "captured",
-      "run": "39124869155/1"
+      "run": "39744755579/1"
     },
     {
-      "at": "2026-10-18T18:03:12Z",
+      "at": "2026-10-22T15:30:53Z",
       "iter": 13,
       "mode": "free+metered",
       "outcome": "captured",
-      "run": "39124869155/1"
+      "run": "39744755579/1"
     },
     {
-      "at": "2026-10-18T18:18:09Z",
+      "at": "2026-10-22T15:45:48Z",
       "iter": 14,
       "mode": "free",
       "outcome": "captured",
-      "run": "39124869155/1"
+      "run": "39744755579/1"
     },
     {
-      "at": "2026-10-18T18:34:50Z",
+      "at": "2026-10-22T16:00:49Z",
       "iter": 15,
       "mode": "free+metered-deferred",
       "outcome": "captured",
-      "run": "39124869155/1"
+      "run": "39744755579/1"
     },
     {
-      "at": "2026-10-18T18:48:19Z",
+      "at": "2026-10-22T16:15:47Z",
       "iter": 16,
       "mode": "free+metered-deferred",
       "outcome": "captured",
-      "run": "39124869155/1"
+      "run": "39744755579/1"
     },
     {
-      "at": "2026-10-18T19:03:23Z",
+      "at": "2026-10-22T16:30:55Z",
       "iter": 17,
       "mode": "free+metered",
       "outcome": "captured",
-      "run": "39124869155/1"
+      "run": "39744755579/1"
     },
     {
-      "at": "2026-10-18T19:23:18Z",
+      "at": "2026-10-22T16:45:58Z",
       "iter": 18,
-      "mode": "free",
-      "outcome": "captured",
-      "run": "39124869155/1"
-    },
-    {
-      "at": "2026-10-18T19:38:17Z",
-      "iter": 19,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39124869155/1"
-    },
-    {
-      "at": "2026-10-18T19:49:47Z",
-      "iter": 20,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39124869155/1"
-    },
-    {
-      "at": "2026-10-18T20:03:13Z",
-      "iter": 21,
-      "mode": "free+metered",
-      "outcome": "captured",
-      "run": "39124869155/1"
-    },
-    {
-      "at": "2026-10-18T20:19:02Z",
-      "iter": 22,
-      "mode": "free",
-      "outcome": "captured",
-      "run": "39124869155/1"
-    },
-    {
-      "at": "2026-10-18T20:33:51Z",
-      "iter": 1,
-      "mode": "free+metered+redo",
-      "outcome": "captured",
-      "run": "39153629125/1"
-    },
-    {
-      "at": "2026-10-18T20:48:47Z",
-      "iter": 2,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39153629125/1"
-    },
-    {
-      "at": "2026-10-18T21:03:47Z",
-      "iter": 3,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39153629125/1"
-    },
-    {
-      "at": "2026-10-18T21:19:48Z",
-      "iter": 4,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39153629125/1"
-    },
-    {
-      "at": "2026-10-18T21:35:22Z",
-      "iter": 5,
-      "mode": "free+metered",
-      "outcome": "captured",
-      "run": "39153629125/1"
-    },
-    {
-      "at": "2026-10-18T21:51:13Z",
-      "iter": 6,
-      "mode": "free",
-      "outcome": "captured",
-      "run": "39153629125/1"
-    },
-    {
-      "at": "2026-10-18T22:06:13Z",
-      "iter": 7,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39153629125/1"
-    },
-    {
-      "at": "2026-10-18T22:19:03Z",
-      "iter": 8,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39153629125/1"
-    },
-    {
-      "at": "2026-10-18T22:34:31Z",
-      "iter": 9,
-      "mode": "free+metered",
-      "outcome": "captured",
-      "run": "39153629125/1"
-    },
-    {
-      "at": "2026-10-18T22:52:22Z",
-      "iter": 10,
       "mode": "free+redo",
       "outcome": "captured",
-      "run": "39153629125/1"
+      "run": "39744755579/1"
     },
     {
-      "at": "2026-10-18T23:04:15Z",
-      "iter": 11,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39153629125/1"
-    },
-    {
-      "at": "2026-10-18T23:19:28Z",
-      "iter": 12,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39153629125/1"
-    },
-    {
-      "at": "2026-10-18T23:33:54Z",
-      "iter": 13,
-      "mode": "free+metered",
-      "outcome": "captured",
-      "run": "39153629125/1"
-    },
-    {
-      "at": "2026-10-18T23:50:34Z",
-      "iter": 14,
-      "mode": "free",
-      "outcome": "captured",
-      "run": "39153629125/1"
-    },
-    {
-      "at": "2026-10-19T00:05:41Z",
-      "iter": 15,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39153629125/1"
-    },
-    {
-      "at": "2026-10-19T00:19:46Z",
-      "iter": 16,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39153629125/1"
-    },
-    {
-      "at": "2026-10-19T00:33:54Z",
-      "iter": 17,
-      "mode": "free+metered",
-      "outcome": "captured",
-      "run": "39153629125/1"
-    },
-    {
-      "at": "2026-10-19T00:49:43Z",
-      "iter": 18,
-      "mode": "free",
-      "outcome": "captured",
-      "run": "39153629125/1"
-    },
-    {
-      "at": "2026-10-19T01:04:09Z",
+      "at": "2026-10-22T17:00:40Z",
       "iter": 19,
       "mode": "free+metered-deferred",
       "outcome": "captured",
-      "run": "39153629125/1"
+      "run": "39744755579/1"
     },
     {
-      "at": "2026-10-19T01:19:53Z",
+      "at": "2026-10-22T17:15:42Z",
       "iter": 20,
       "mode": "free+metered-deferred",
       "outcome": "captured",
-      "run": "39153629125/1"
+      "run": "39744755579/1"
     },
     {
-      "at": "2026-10-19T01:34:11Z",
+      "at": "2026-10-22T17:30:44Z",
       "iter": 21,
       "mode": "free+metered",
       "outcome": "captured",
-      "run": "39153629125/1"
+      "run": "39744755579/1"
     },
     {
-      "at": "2026-10-19T01:51:59Z",
+      "at": "2026-10-22T17:45:41Z",
       "iter": 22,
       "mode": "free",
       "outcome": "captured",
-      "run": "39153629125/1"
+      "run": "39744755579/1"
     },
     {
-      "at": "2026-10-19T02:04:51Z",
+      "at": "2026-10-22T18:01:28Z",
       "iter": 1,
       "mode": "free+metered+redo",
       "outcome": "captured",
-      "run": "39177860885/1"
+      "run": "39793408254/1"
     },
     {
-      "at": "2026-10-19T02:19:44Z",
+      "at": "2026-10-22T18:15:36Z",
       "iter": 2,
       "mode": "free+metered-deferred",
       "outcome": "captured",
-      "run": "39177860885/1"
+      "run": "39793408254/1"
     },
     {
-      "at": "2026-10-19T02:35:30Z",
-      "iter": 3,
-      "mode": "free+metered",
-      "outcome": "captured",
-      "run": "39177860885/1"
-    },
-    {
-      "at": "2026-10-19T02:48:55Z",
-      "iter": 4,
-      "mode": "free",
-      "outcome": "captured",
-      "run": "39177860885/1"
-    },
-    {
-      "at": "2026-10-19T03:03:56Z",
-      "iter": 5,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39177860885/1"
-    },
-    {
-      "at": "2026-10-19T03:19:12Z",
-      "iter": 6,
-      "mode": "free+metered-deferred+redo",
-      "outcome": "captured",
-      "run": "39177860885/1"
-    },
-    {
-      "at": "2026-10-19T03:34:12Z",
-      "iter": 7,
-      "mode": "free+metered+redo",
-      "outcome": "captured",
-      "run": "39177860885/1"
-    },
-    {
-      "at": "2026-10-19T03:48:54Z",
-      "iter": 8,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39177860885/1"
-    },
-    {
-      "at": "2026-10-19T04:03:55Z",
-      "iter": 9,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39177860885/1"
-    },
-    {
-      "at": "2026-10-19T04:18:56Z",
-      "iter": 10,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39177860885/1"
-    },
-    {
-      "at": "2026-10-19T04:33:59Z",
-      "iter": 11,
-      "mode": "free+metered",
-      "outcome": "captured",
-      "run": "39177860885/1"
-    },
-    {
-      "at": "2026-10-19T04:49:09Z",
-      "iter": 12,
-      "mode": "free",
-      "outcome": "captured",
-      "run": "39177860885/1"
-    },
-    {
-      "at": "2026-10-19T05:04:14Z",
-      "iter": 13,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39177860885/1"
-    },
-    {
-      "at": "2026-10-19T05:18:54Z",
-      "iter": 14,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39177860885/1"
-    },
-    {
-      "at": "2026-10-19T05:35:28Z",
-      "iter": 15,
-      "mode": "free+metered",
-      "outcome": "captured",
-      "run": "39177860885/1"
-    },
-    {
-      "at": "2026-10-19T05:50:40Z",
-      "iter": 16,
-      "mode": "free",
-      "outcome": "captured",
-      "run": "39177860885/1"
-    },
-    {
-      "at": "2026-10-19T06:03:54Z",
-      "iter": 17,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39177860885/1"
-    },
-    {
-      "at": "2026-10-19T06:20:40Z",
-      "iter": 18,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39177860885/1"
-    },
-    {
-      "at": "2026-10-19T06:36:11Z",
-      "iter": 19,
-      "mode": "free+metered",
-      "outcome": "captured",
-      "run": "39177860885/1"
-    },
-    {
-      "at": "2026-10-19T06:48:54Z",
-      "iter": 20,
-      "mode": "free",
-      "outcome": "captured",
-      "run": "39177860885/1"
-    },
-    {
-      "at": "2026-10-19T07:04:37Z",
-      "iter": 21,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39177860885/1"
-    },
-    {
-      "at": "2026-10-19T07:20:05Z",
-      "iter": 22,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39177860885/1"
-    },
-    {
-      "at": "2026-10-19T07:34:36Z",
-      "iter": 1,
-      "mode": "free+metered+redo",
-      "outcome": "captured",
-      "run": "39188571028/1"
-    },
-    {
-      "at": "2026-10-19T07:51:29Z",
-      "iter": 2,
-      "mode": "free+metered",
-      "outcome": "captured",
-      "run": "39188571028/1"
-    },
-    {
-      "at": "2026-10-19T08:06:27Z",
+      "at": "2026-10-22T18:30:38Z",
       "iter": 3,
       "mode": "free+metered-deferred",
       "outcome": "captured",
-      "run": "39188571028/1"
+      "run": "39793408254/1"
     },
     {
-      "at": "2026-10-19T08:18:49Z",
+      "at": "2026-10-22T18:45:38Z",
       "iter": 4,
       "mode": "free+metered-deferred",
       "outcome": "captured",
-      "run": "39188571028/1"
+      "run": "39793408254/1"
     },
     {
-      "at": "2026-10-19T08:33:50Z",
-      "iter": 5,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39188571028/1"
-    },
-    {
-      "at": "2026-10-19T08:48:43Z",
-      "iter": 6,
-      "mode": "free+metered",
-      "outcome": "captured",
-      "run": "39188571028/1"
-    },
-    {
-      "at": "2026-10-19T09:03:32Z",
-      "iter": 7,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39188571028/1"
-    },
-    {
-      "at": "2026-10-19T09:17:56Z",
-      "iter": 8,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39188571028/1"
-    },
-    {
-      "at": "2026-10-19T09:32:52Z",
-      "iter": 9,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39188571028/1"
-    },
-    {
-      "at": "2026-10-19T09:50:15Z",
-      "iter": 10,
-      "mode": "free+metered",
-      "outcome": "captured",
-      "run": "39188571028/1"
-    },
-    {
-      "at": "2026-10-19T10:02:29Z",
-      "iter": 11,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39188571028/1"
-    },
-    {
-      "at": "2026-10-19T10:17:27Z",
-      "iter": 12,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39188571028/1"
-    },
-    {
-      "at": "2026-10-19T10:38:23Z",
-      "iter": 13,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39188571028/1"
-    },
-    {
-      "at": "2026-10-19T10:48:35Z",
-      "iter": 14,
-      "mode": "free+metered",
-      "outcome": "captured",
-      "run": "39188571028/1"
-    },
-    {
-      "at": "2026-10-19T11:05:16Z",
-      "iter": 15,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39188571028/1"
-    },
-    {
-      "at": "2026-10-19T11:19:39Z",
-      "iter": 16,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39188571028/1"
-    },
-    {
-      "at": "2026-10-19T11:34:33Z",
-      "iter": 17,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39188571028/1"
-    },
-    {
-      "at": "2026-10-19T11:49:48Z",
-      "iter": 18,
-      "mode": "free+metered",
-      "outcome": "captured",
-      "run": "39188571028/1"
-    },
-    {
-      "at": "2026-10-19T12:07:37Z",
-      "iter": 19,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39188571028/1"
-    },
-    {
-      "at": "2026-10-19T12:20:36Z",
-      "iter": 20,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39188571028/1"
-    },
-    {
-      "at": "2026-10-19T12:34:16Z",
-      "iter": 21,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39188571028/1"
-    },
-    {
-      "at": "2026-10-19T12:52:23Z",
-      "iter": 22,
-      "mode": "free+metered",
-      "outcome": "captured",
-      "run": "39188571028/1"
-    },
-    {
-      "at": "2026-10-19T13:03:38Z",
-      "iter": 1,
-      "mode": "free+metered+redo",
-      "outcome": "captured",
-      "run": "39221022124/1"
-    },
-    {
-      "at": "2026-10-19T13:19:52Z",
-      "iter": 2,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39221022124/1"
-    },
-    {
-      "at": "2026-10-19T13:33:17Z",
-      "iter": 3,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39221022124/1"
-    },
-    {
-      "at": "2026-10-19T13:50:39Z",
-      "iter": 4,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39221022124/1"
-    },
-    {
-      "at": "2026-10-19T14:03:09Z",
+      "at": "2026-10-22T19:00:44Z",
       "iter": 5,
       "mode": "free+metered",
       "outcome": "captured",
-      "run": "39221022124/1"
+      "run": "39793408254/1"
     },
     {
-      "at": "2026-10-19T14:21:09Z",
+      "at": "2026-10-22T19:16:19Z",
       "iter": 6,
       "mode": "free",
       "outcome": "captured",
-      "run": "39221022124/1"
+      "run": "39793408254/1"
     },
     {
-      "at": "2026-10-19T14:38:21Z",
+      "at": "2026-10-22T19:31:19Z",
       "iter": 7,
       "mode": "free+metered-deferred",
       "outcome": "captured",
-      "run": "39221022124/1"
+      "run": "39793408254/1"
     },
     {
-      "at": "2026-10-19T14:49:49Z",
+      "at": "2026-10-22T19:46:17Z",
       "iter": 8,
       "mode": "free+metered-deferred",
       "outcome": "captured",
-      "run": "39221022124/1"
+      "run": "39793408254/1"
     },
     {
-      "at": "2026-10-19T15:02:56Z",
+      "at": "2026-10-22T20:01:22Z",
       "iter": 9,
       "mode": "free+metered",
       "outcome": "captured",
-      "run": "39221022124/1"
+      "run": "39793408254/1"
     },
     {
-      "at": "2026-10-19T15:17:48Z",
+      "at": "2026-10-22T20:16:17Z",
       "iter": 10,
       "mode": "free",
       "outcome": "captured",
-      "run": "39221022124/1"
+      "run": "39793408254/1"
     },
     {
-      "at": "2026-10-19T15:32:42Z",
+      "at": "2026-10-22T20:31:16Z",
       "iter": 11,
       "mode": "free+metered-deferred",
       "outcome": "captured",
-      "run": "39221022124/1"
+      "run": "39793408254/1"
     },
     {
-      "at": "2026-10-19T15:47:42Z",
+      "at": "2026-10-22T20:46:16Z",
       "iter": 12,
       "mode": "free+metered-deferred",
       "outcome": "captured",
-      "run": "39221022124/1"
+      "run": "39793408254/1"
     },
     {
-      "at": "2026-10-19T16:02:39Z",
+      "at": "2026-10-22T21:01:24Z",
       "iter": 13,
       "mode": "free+metered",
       "outcome": "captured",
-      "run": "39221022124/1"
+      "run": "39793408254/1"
     },
     {
-      "at": "2026-10-19T16:17:34Z",
-      "iter": 14,
-      "mode": "free",
-      "outcome": "captured",
-      "run": "39221022124/1"
-    },
-    {
-      "at": "2026-10-19T16:32:37Z",
-      "iter": 15,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39221022124/1"
-    },
-    {
-      "at": "2026-10-19T16:48:23Z",
-      "iter": 16,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39221022124/1"
-    },
-    {
-      "at": "2026-10-19T17:02:38Z",
-      "iter": 17,
-      "mode": "free+metered",
-      "outcome": "captured",
-      "run": "39221022124/1"
-    },
-    {
-      "at": "2026-10-19T17:17:51Z",
-      "iter": 18,
-      "mode": "free",
-      "outcome": "captured",
-      "run": "39221022124/1"
-    },
-    {
-      "at": "2026-10-19T17:32:38Z",
-      "iter": 19,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39221022124/1"
-    },
-    {
-      "at": "2026-10-19T17:47:50Z",
-      "iter": 20,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39221022124/1"
-    },
-    {
-      "at": "2026-10-19T18:02:43Z",
-      "iter": 21,
-      "mode": "free+metered",
-      "outcome": "captured",
-      "run": "39221022124/1"
-    },
-    {
-      "at": "2026-10-19T18:18:44Z",
-      "iter": 22,
-      "mode": "free",
-      "outcome": "captured",
-      "run": "39221022124/1"
-    },
-    {
-      "at": "2026-10-19T18:33:09Z",
-      "iter": 1,
-      "mode": "free+metered+redo",
-      "outcome": "captured",
-      "run": "39281805694/1"
-    },
-    {
-      "at": "2026-10-19T18:47:36Z",
-      "iter": 2,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39281805694/1"
-    },
-    {
-      "at": "2026-10-19T19:02:38Z",
-      "iter": 3,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39281805694/1"
-    },
-    {
-      "at": "2026-10-19T19:17:40Z",
-      "iter": 4,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39281805694/1"
-    },
-    {
-      "at": "2026-10-19T19:32:42Z",
-      "iter": 5,
-      "mode": "free+metered",
-      "outcome": "captured",
-      "run": "39281805694/1"
-    },
-    {
-      "at": "2026-10-19T19:47:39Z",
-      "iter": 6,
-      "mode": "free",
-      "outcome": "captured",
-      "run": "39281805694/1"
-    },
-    {
-      "at": "2026-10-19T20:03:00Z",
-      "iter": 7,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39281805694/1"
-    },
-    {
-      "at": "2026-10-19T20:17:37Z",
-      "iter": 8,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39281805694/1"
-    },
-    {
-      "at": "2026-10-19T20:33:01Z",
-      "iter": 9,
-      "mode": "free+metered+redo",
-      "outcome": "captured",
-      "run": "39281805694/1"
-    },
-    {
-      "at": "2026-10-19T20:47:09Z",
-      "iter": 10,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39281805694/1"
-    },
-    {
-      "at": "2026-10-19T21:02:36Z",
-      "iter": 11,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39281805694/1"
-    },
-    {
-      "at": "2026-10-19T21:17:35Z",
-      "iter": 12,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39281805694/1"
-    },
-    {
-      "at": "2026-10-19T21:32:44Z",
-      "iter": 13,
-      "mode": "free+metered",
-      "outcome": "captured",
-      "run": "39281805694/1"
-    },
-    {
-      "at": "2026-10-19T21:47:47Z",
-      "iter": 14,
-      "mode": "free",
-      "outcome": "captured",
-      "run": "39281805694/1"
-    },
-    {
-      "at": "2026-10-19T22:02:47Z",
-      "iter": 15,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39281805694/1"
-    },
-    {
-      "at": "2026-10-19T22:17:42Z",
-      "iter": 16,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39281805694/1"
-    },
-    {
-      "at": "2026-10-19T22:31:23Z",
-      "iter": 17,
-      "mode": "free+metered",
-      "outcome": "captured",
-      "run": "39281805694/1"
-    },
-    {
-      "at": "2026-10-19T22:48:28Z",
-      "iter": 18,
-      "mode": "free",
-      "outcome": "captured",
-      "run": "39281805694/1"
-    },
-    {
-      "at": "2026-10-19T23:05:25Z",
-      "iter": 19,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39281805694/1"
-    },
-    {
-      "at": "2026-10-19T23:19:07Z",
-      "iter": 20,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39281805694/1"
-    },
-    {
-      "at": "2026-10-19T23:33:32Z",
-      "iter": 21,
-      "mode": "free+metered",
-      "outcome": "captured",
-      "run": "39281805694/1"
-    },
-    {
-      "at": "2026-10-19T23:48:25Z",
-      "iter": 22,
-      "mode": "free",
-      "outcome": "captured",
-      "run": "39281805694/1"
-    },
-    {
-      "at": "2026-10-20T00:03:33Z",
-      "iter": 1,
-      "mode": "free+metered+redo",
-      "outcome": "captured",
-      "run": "39322667283/1"
-    },
-    {
-      "at": "2026-10-20T00:20:25Z",
-      "iter": 2,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39322667283/1"
-    },
-    {
-      "at": "2026-10-20T00:35:24Z",
-      "iter": 3,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39322667283/1"
-    },
-    {
-      "at": "2026-10-20T00:48:27Z",
-      "iter": 4,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39322667283/1"
-    },
-    {
-      "at": "2026-10-20T01:03:59Z",
-      "iter": 5,
-      "mode": "free+metered",
-      "outcome": "captured",
-      "run": "39322667283/1"
-    },
-    {
-      "at": "2026-10-20T01:19:50Z",
-      "iter": 6,
-      "mode": "free",
-      "outcome": "captured",
-      "run": "39322667283/1"
-    },
-    {
-      "at": "2026-10-20T01:34:55Z",
-      "iter": 7,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39322667283/1"
-    },
-    {
-      "at": "2026-10-20T01:49:10Z",
-      "iter": 8,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39322667283/1"
-    },
-    {
-      "at": "2026-10-20T02:03:23Z",
-      "iter": 9,
-      "mode": "free+metered",
-      "outcome": "captured",
-      "run": "39322667283/1"
-    },
-    {
-      "at": "2026-10-20T02:18:57Z",
-      "iter": 10,
-      "mode": "free",
-      "outcome": "captured",
-      "run": "39322667283/1"
-    },
-    {
-      "at": "2026-10-20T02:35:07Z",
-      "iter": 11,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39322667283/1"
-    },
-    {
-      "at": "2026-10-20T02:48:28Z",
-      "iter": 12,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39322667283/1"
-    },
-    {
-      "at": "2026-10-20T03:03:37Z",
-      "iter": 13,
-      "mode": "free+metered",
-      "outcome": "captured",
-      "run": "39322667283/1"
-    },
-    {
-      "at": "2026-10-20T03:19:59Z",
-      "iter": 14,
-      "mode": "free",
-      "outcome": "captured",
-      "run": "39322667283/1"
-    },
-    {
-      "at": "2026-10-20T03:33:17Z",
-      "iter": 15,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39322667283/1"
-    },
-    {
-      "at": "2026-10-20T03:48:15Z",
-      "iter": 16,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39322667283/1"
-    },
-    {
-      "at": "2026-10-20T04:03:21Z",
-      "iter": 17,
-      "mode": "free+metered",
-      "outcome": "captured",
-      "run": "39322667283/1"
-    },
-    {
-      "at": "2026-10-20T04:18:17Z",
-      "iter": 18,
-      "mode": "free",
-      "outcome": "captured",
-      "run": "39322667283/1"
-    },
-    {
-      "at": "2026-10-20T04:33:15Z",
-      "iter": 19,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39322667283/1"
-    },
-    {
-      "at": "2026-10-20T04:49:18Z",
-      "iter": 20,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39322667283/1"
-    },
-    {
-      "at": "2026-10-20T05:03:24Z",
-      "iter": 21,
-      "mode": "free+metered",
-      "outcome": "captured",
-      "run": "39322667283/1"
-    },
-    {
-      "at": "2026-10-20T05:23:09Z",
-      "iter": 22,
-      "mode": "free",
-      "outcome": "captured",
-      "run": "39322667283/1"
-    },
-    {
-      "at": "2026-10-20T05:35:23Z",
-      "iter": 1,
-      "mode": "free+metered-deferred+redo",
-      "outcome": "captured",
-      "run": "39375059539/1"
-    },
-    {
-      "at": "2026-10-20T05:49:52Z",
-      "iter": 2,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39375059539/1"
-    },
-    {
-      "at": "2026-10-20T06:03:26Z",
-      "iter": 3,
-      "mode": "free+metered",
-      "outcome": "captured",
-      "run": "39375059539/1"
-    },
-    {
-      "at": "2026-10-20T06:18:45Z",
-      "iter": 4,
-      "mode": "free",
-      "outcome": "captured",
-      "run": "39375059539/1"
-    },
-    {
-      "at": "2026-10-20T06:34:18Z",
-      "iter": 5,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39375059539/1"
-    },
-    {
-      "at": "2026-10-20T06:49:18Z",
-      "iter": 6,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39375059539/1"
-    },
-    {
-      "at": "2026-10-20T07:02:55Z",
-      "iter": 7,
-      "mode": "free+metered",
-      "outcome": "captured",
-      "run": "39375059539/1"
-    },
-    {
-      "at": "2026-10-20T07:19:19Z",
-      "iter": 8,
-      "mode": "free",
-      "outcome": "captured",
-      "run": "39375059539/1"
-    },
-    {
-      "at": "2026-10-20T07:32:40Z",
-      "iter": 9,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39375059539/1"
-    },
-    {
-      "at": "2026-10-20T07:47:37Z",
-      "iter": 10,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39375059539/1"
-    },
-    {
-      "at": "2026-10-20T08:02:13Z",
-      "iter": 11,
-      "mode": "free+metered",
-      "outcome": "captured",
-      "run": "39375059539/1"
-    },
-    {
-      "at": "2026-10-20T08:17:48Z",
-      "iter": 12,
-      "mode": "free+redo",
-      "outcome": "captured",
-      "run": "39375059539/1"
-    },
-    {
-      "at": "2026-10-20T08:32:36Z",
-      "iter": 13,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39375059539/1"
-    },
-    {
-      "at": "2026-10-20T08:48:01Z",
-      "iter": 14,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39375059539/1"
-    },
-    {
-      "at": "2026-10-20T09:02:07Z",
-      "iter": 15,
-      "mode": "free+metered",
-      "outcome": "captured",
-      "run": "39375059539/1"
-    },
-    {
-      "at": "2026-10-20T09:16:51Z",
-      "iter": 16,
-      "mode": "free",
-      "outcome": "captured",
-      "run": "39375059539/1"
-    },
-    {
-      "at": "2026-10-20T09:31:39Z",
-      "iter": 17,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39375059539/1"
-    },
-    {
-      "at": "2026-10-20T09:48:41Z",
-      "iter": 18,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39375059539/1"
-    },
-    {
-      "at": "2026-10-20T10:04:41Z",
-      "iter": 19,
-      "mode": "free+metered",
-      "outcome": "captured",
-      "run": "39375059539/1"
-    },
-    {
-      "at": "2026-10-20T10:22:13Z",
-      "iter": 20,
-      "mode": "free",
-      "outcome": "captured",
-      "run": "39375059539/1"
-    },
-    {
-      "at": "2026-10-20T10:34:01Z",
-      "iter": 21,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39375059539/1"
-    },
-    {
-      "at": "2026-10-20T10:53:24Z",
-      "iter": 22,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39375059539/1"
-    },
-    {
-      "at": "2026-10-20T11:04:13Z",
-      "iter": 1,
-      "mode": "free+metered+redo",
-      "outcome": "captured",
-      "run": "39408641321/1"
-    },
-    {
-      "at": "2026-10-20T11:18:48Z",
-      "iter": 2,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39408641321/1"
-    },
-    {
-      "at": "2026-10-20T11:33:51Z",
-      "iter": 3,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39408641321/1"
-    },
-    {
-      "at": "2026-10-20T11:49:15Z",
-      "iter": 4,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39408641321/1"
-    },
-    {
-      "at": "2026-10-20T12:04:38Z",
-      "iter": 5,
-      "mode": "free+metered",
-      "outcome": "captured",
-      "run": "39408641321/1"
-    },
-    {
-      "at": "2026-10-20T12:23:21Z",
-      "iter": 6,
-      "mode": "free",
-      "outcome": "captured",
-      "run": "39408641321/1"
-    },
-    {
-      "at": "2026-10-20T12:35:04Z",
-      "iter": 7,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39408641321/1"
-    },
-    {
-      "at": "2026-10-20T12:48:08Z",
-      "iter": 8,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39408641321/1"
-    },
-    {
-      "at": "2026-10-20T13:03:29Z",
-      "iter": 9,
-      "mode": "free+metered",
-      "outcome": "captured",
-      "run": "39408641321/1"
-    },
-    {
-      "at": "2026-10-20T13:21:39Z",
-      "iter": 10,
-      "mode": "free",
-      "outcome": "captured",
-      "run": "39408641321/1"
-    },
-    {
-      "at": "2026-10-20T13:32:57Z",
-      "iter": 11,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39408641321/1"
-    },
-    {
-      "at": "2026-10-20T13:50:35Z",
-      "iter": 12,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39408641321/1"
-    },
-    {
-      "at": "2026-10-20T14:03:31Z",
-      "iter": 13,
-      "mode": "free+metered",
-      "outcome": "captured",
-      "run": "39408641321/1"
-    },
-    {
-      "at": "2026-10-20T14:17:24Z",
+      "at": "2026-10-22T21:16:26Z",
       "iter": 14,
       "mode": "free+redo",
       "outcome": "captured",
-      "run": "39408641321/1"
+      "run": "39793408254/1"
     },
     {
-      "at": "2026-10-20T14:31:51Z",
+      "at": "2026-10-22T21:31:17Z",
       "iter": 15,
       "mode": "free+metered-deferred",
       "outcome": "captured",
-      "run": "39408641321/1"
+      "run": "39793408254/1"
     },
     {
-      "at": "2026-10-20T14:46:51Z",
+      "at": "2026-10-22T21:46:17Z",
       "iter": 16,
       "mode": "free+metered-deferred",
       "outcome": "captured",
-      "run": "39408641321/1"
+      "run": "39793408254/1"
     },
     {
-      "at": "2026-10-20T15:01:56Z",
+      "at": "2026-10-22T22:01:21Z",
       "iter": 17,
       "mode": "free+metered",
       "outcome": "captured",
-      "run": "39408641321/1"
+      "run": "39793408254/1"
+    },
+    {
+      "at": "2026-10-22T22:16:17Z",
+      "iter": 18,
+      "mode": "free",
+      "outcome": "captured",
+      "run": "39793408254/1"
+    },
+    {
+      "at": "2026-10-22T22:31:19Z",
+      "iter": 19,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "39793408254/1"
+    },
+    {
+      "at": "2026-10-22T22:46:16Z",
+      "iter": 20,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "39793408254/1"
+    },
+    {
+      "at": "2026-10-22T23:01:24Z",
+      "iter": 21,
+      "mode": "free+metered",
+      "outcome": "captured",
+      "run": "39793408254/1"
+    },
+    {
+      "at": "2026-10-22T23:16:22Z",
+      "iter": 22,
+      "mode": "free",
+      "outcome": "captured",
+      "run": "39793408254/1"
+    },
+    {
+      "at": "2026-10-22T23:31:50Z",
+      "iter": 1,
+      "mode": "free+metered+redo",
+      "outcome": "captured",
+      "run": "39861465893/1"
+    },
+    {
+      "at": "2026-10-22T23:46:23Z",
+      "iter": 2,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "39861465893/1"
+    },
+    {
+      "at": "2026-10-23T00:01:22Z",
+      "iter": 3,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "39861465893/1"
+    },
+    {
+      "at": "2026-10-23T00:16:21Z",
+      "iter": 4,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "39861465893/1"
+    },
+    {
+      "at": "2026-10-23T00:31:24Z",
+      "iter": 5,
+      "mode": "free+metered",
+      "outcome": "captured",
+      "run": "39861465893/1"
+    },
+    {
+      "at": "2026-10-23T00:46:21Z",
+      "iter": 6,
+      "mode": "free",
+      "outcome": "captured",
+      "run": "39861465893/1"
+    },
+    {
+      "at": "2026-10-23T01:01:24Z",
+      "iter": 7,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "39861465893/1"
+    },
+    {
+      "at": "2026-10-23T01:16:23Z",
+      "iter": 8,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "39861465893/1"
+    },
+    {
+      "at": "2026-10-23T01:31:25Z",
+      "iter": 9,
+      "mode": "free+metered",
+      "outcome": "captured",
+      "run": "39861465893/1"
+    },
+    {
+      "at": "2026-10-23T01:46:22Z",
+      "iter": 10,
+      "mode": "free",
+      "outcome": "captured",
+      "run": "39861465893/1"
+    },
+    {
+      "at": "2026-10-23T02:01:22Z",
+      "iter": 11,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "39861465893/1"
+    },
+    {
+      "at": "2026-10-23T02:16:21Z",
+      "iter": 12,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "39861465893/1"
+    },
+    {
+      "at": "2026-10-23T02:31:25Z",
+      "iter": 13,
+      "mode": "free+metered",
+      "outcome": "captured",
+      "run": "39861465893/1"
+    },
+    {
+      "at": "2026-10-23T02:46:21Z",
+      "iter": 14,
+      "mode": "free",
+      "outcome": "captured",
+      "run": "39861465893/1"
+    },
+    {
+      "at": "2026-10-23T03:01:22Z",
+      "iter": 15,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "39861465893/1"
+    },
+    {
+      "at": "2026-10-23T03:16:23Z",
+      "iter": 16,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "39861465893/1"
+    },
+    {
+      "at": "2026-10-23T03:31:24Z",
+      "iter": 17,
+      "mode": "free+metered",
+      "outcome": "captured",
+      "run": "39861465893/1"
+    },
+    {
+      "at": "2026-10-23T03:46:21Z",
+      "iter": 18,
+      "mode": "free",
+      "outcome": "captured",
+      "run": "39861465893/1"
+    },
+    {
+      "at": "2026-10-23T04:01:21Z",
+      "iter": 19,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "39861465893/1"
+    },
+    {
+      "at": "2026-10-23T04:16:20Z",
+      "iter": 20,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "39861465893/1"
+    },
+    {
+      "at": "2026-10-23T04:31:24Z",
+      "iter": 21,
+      "mode": "free+metered",
+      "outcome": "captured",
+      "run": "39861465893/1"
+    },
+    {
+      "at": "2026-10-23T04:46:20Z",
+      "iter": 22,
+      "mode": "free",
+      "outcome": "captured",
+      "run": "39861465893/1"
+    },
+    {
+      "at": "2026-10-23T05:01:51Z",
+      "iter": 1,
+      "mode": "free+metered+redo",
+      "outcome": "captured",
+      "run": "39877854799/1"
+    },
+    {
+      "at": "2026-10-23T05:16:30Z",
+      "iter": 2,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "39877854799/1"
+    },
+    {
+      "at": "2026-10-23T05:31:19Z",
+      "iter": 3,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "39877854799/1"
+    },
+    {
+      "at": "2026-10-23T05:46:38Z",
+      "iter": 4,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "39877854799/1"
+    },
+    {
+      "at": "2026-10-23T06:01:22Z",
+      "iter": 5,
+      "mode": "free+metered",
+      "outcome": "captured",
+      "run": "39877854799/1"
+    },
+    {
+      "at": "2026-10-23T06:16:14Z",
+      "iter": 6,
+      "mode": "free",
+      "outcome": "captured",
+      "run": "39877854799/1"
+    },
+    {
+      "at": "2026-10-23T06:31:11Z",
+      "iter": 7,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "39877854799/1"
+    },
+    {
+      "at": "2026-10-23T06:46:10Z",
+      "iter": 8,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "39877854799/1"
+    },
+    {
+      "at": "2026-10-23T07:01:13Z",
+      "iter": 9,
+      "mode": "free+metered",
+      "outcome": "captured",
+      "run": "39877854799/1"
+    },
+    {
+      "at": "2026-10-23T07:16:10Z",
+      "iter": 10,
+      "mode": "free",
+      "outcome": "captured",
+      "run": "39877854799/1"
+    },
+    {
+      "at": "2026-10-23T07:31:11Z",
+      "iter": 11,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "39877854799/1"
+    },
+    {
+      "at": "2026-10-23T07:46:09Z",
+      "iter": 12,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "39877854799/1"
+    },
+    {
+      "at": "2026-10-23T08:01:17Z",
+      "iter": 13,
+      "mode": "free+metered",
+      "outcome": "captured",
+      "run": "39877854799/1"
+    },
+    {
+      "at": "2026-10-23T08:16:10Z",
+      "iter": 14,
+      "mode": "free",
+      "outcome": "captured",
+      "run": "39877854799/1"
+    },
+    {
+      "at": "2026-10-23T08:31:10Z",
+      "iter": 15,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "39877854799/1"
+    },
+    {
+      "at": "2026-10-23T08:46:10Z",
+      "iter": 16,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "39877854799/1"
+    },
+    {
+      "at": "2026-10-23T09:01:07Z",
+      "iter": 17,
+      "mode": "free+metered",
+      "outcome": "captured",
+      "run": "39877854799/1"
+    },
+    {
+      "at": "2026-10-23T09:16:05Z",
+      "iter": 18,
+      "mode": "free",
+      "outcome": "captured",
+      "run": "39877854799/1"
+    },
+    {
+      "at": "2026-10-23T09:30:58Z",
+      "iter": 19,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "39877854799/1"
+    },
+    {
+      "at": "2026-10-23T09:48:53Z",
+      "iter": 20,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "39877854799/1"
+    },
+    {
+      "at": "2026-10-23T10:04:30Z",
+      "iter": 21,
+      "mode": "free+metered",
+      "outcome": "captured",
+      "run": "39877854799/1"
+    },
+    {
+      "at": "2026-10-23T10:16:58Z",
+      "iter": 22,
+      "mode": "free",
+      "outcome": "captured",
+      "run": "39877854799/1"
+    },
+    {
+      "at": "2026-10-23T10:34:39Z",
+      "iter": 1,
+      "mode": "free+metered+redo",
+      "outcome": "captured",
+      "run": "39906188670/1"
+    },
+    {
+      "at": "2026-10-23T10:48:59Z",
+      "iter": 2,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "39906188670/1"
+    },
+    {
+      "at": "2026-10-23T11:04:50Z",
+      "iter": 3,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "39906188670/1"
+    },
+    {
+      "at": "2026-10-23T11:19:56Z",
+      "iter": 4,
+      "mode": "free+metered-deferred+redo",
+      "outcome": "captured",
+      "run": "39906188670/1"
+    },
+    {
+      "at": "2026-10-23T11:34:03Z",
+      "iter": 5,
+      "mode": "free+metered",
+      "outcome": "captured",
+      "run": "39906188670/1"
+    },
+    {
+      "at": "2026-10-23T11:48:05Z",
+      "iter": 6,
+      "mode": "free",
+      "outcome": "captured",
+      "run": "39906188670/1"
+    },
+    {
+      "at": "2026-10-23T12:05:17Z",
+      "iter": 7,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "39906188670/1"
+    },
+    {
+      "at": "2026-10-23T12:19:50Z",
+      "iter": 8,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "39906188670/1"
+    },
+    {
+      "at": "2026-10-23T12:33:14Z",
+      "iter": 9,
+      "mode": "free+metered",
+      "outcome": "captured",
+      "run": "39906188670/1"
+    },
+    {
+      "at": "2026-10-23T12:49:22Z",
+      "iter": 10,
+      "mode": "free",
+      "outcome": "captured",
+      "run": "39906188670/1"
+    },
+    {
+      "at": "2026-10-23T13:03:04Z",
+      "iter": 11,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "39906188670/1"
+    },
+    {
+      "at": "2026-10-23T13:19:22Z",
+      "iter": 12,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "39906188670/1"
+    },
+    {
+      "at": "2026-10-23T13:32:34Z",
+      "iter": 13,
+      "mode": "free+metered",
+      "outcome": "captured",
+      "run": "39906188670/1"
+    },
+    {
+      "at": "2026-10-23T13:47:03Z",
+      "iter": 14,
+      "mode": "free",
+      "outcome": "captured",
+      "run": "39906188670/1"
+    },
+    {
+      "at": "2026-10-23T14:01:25Z",
+      "iter": 15,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "39906188670/1"
+    },
+    {
+      "at": "2026-10-23T14:15:46Z",
+      "iter": 16,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "39906188670/1"
+    },
+    {
+      "at": "2026-10-23T14:30:42Z",
+      "iter": 17,
+      "mode": "free+metered",
+      "outcome": "captured",
+      "run": "39906188670/1"
+    },
+    {
+      "at": "2026-10-23T14:45:39Z",
+      "iter": 18,
+      "mode": "free",
+      "outcome": "captured",
+      "run": "39906188670/1"
+    },
+    {
+      "at": "2026-10-23T15:00:38Z",
+      "iter": 19,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "39906188670/1"
+    },
+    {
+      "at": "2026-10-23T15:15:40Z",
+      "iter": 20,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "39906188670/1"
+    },
+    {
+      "at": "2026-10-23T15:30:41Z",
+      "iter": 21,
+      "mode": "free+metered",
+      "outcome": "captured",
+      "run": "39906188670/1"
+    },
+    {
+      "at": "2026-10-23T15:45:50Z",
+      "iter": 22,
+      "mode": "free+redo",
+      "outcome": "captured",
+      "run": "39906188670/1"
+    },
+    {
+      "at": "2026-10-23T16:03:02Z",
+      "iter": 1,
+      "mode": "free+metered+redo",
+      "outcome": "captured",
+      "run": "39978839338/1"
+    },
+    {
+      "at": "2026-10-23T16:15:40Z",
+      "iter": 2,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "39978839338/1"
+    },
+    {
+      "at": "2026-10-23T16:30:42Z",
+      "iter": 3,
+      "mode": "free+metered-deferred+redo",
+      "outcome": "captured",
+      "run": "39978839338/1"
+    },
+    {
+      "at": "2026-10-23T16:45:33Z",
+      "iter": 4,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "39978839338/1"
+    },
+    {
+      "at": "2026-10-23T17:00:37Z",
+      "iter": 5,
+      "mode": "free+metered",
+      "outcome": "captured",
+      "run": "39978839338/1"
+    },
+    {
+      "at": "2026-10-23T17:15:30Z",
+      "iter": 6,
+      "mode": "free",
+      "outcome": "captured",
+      "run": "39978839338/1"
+    },
+    {
+      "at": "2026-10-23T17:30:27Z",
+      "iter": 7,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "39978839338/1"
+    },
+    {
+      "at": "2026-10-23T17:45:30Z",
+      "iter": 8,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "39978839338/1"
+    },
+    {
+      "at": "2026-10-23T18:00:29Z",
+      "iter": 9,
+      "mode": "free+metered",
+      "outcome": "captured",
+      "run": "39978839338/1"
+    },
+    {
+      "at": "2026-10-23T18:15:29Z",
+      "iter": 10,
+      "mode": "free",
+      "outcome": "captured",
+      "run": "39978839338/1"
+    },
+    {
+      "at": "2026-10-23T18:30:28Z",
+      "iter": 11,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "39978839338/1"
+    },
+    {
+      "at": "2026-10-23T18:45:29Z",
+      "iter": 12,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "39978839338/1"
+    },
+    {
+      "at": "2026-10-23T19:00:43Z",
+      "iter": 13,
+      "mode": "free+metered",
+      "outcome": "captured",
+      "run": "39978839338/1"
+    },
+    {
+      "at": "2026-10-23T19:17:09Z",
+      "iter": 14,
+      "mode": "free",
+      "outcome": "captured",
+      "run": "39978839338/1"
+    },
+    {
+      "at": "2026-10-23T19:32:11Z",
+      "iter": 15,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "39978839338/1"
+    },
+    {
+      "at": "2026-10-23T19:47:25Z",
+      "iter": 16,
+      "mode": "free+metered-deferred+redo",
+      "outcome": "captured",
+      "run": "39978839338/1"
+    },
+    {
+      "at": "2026-10-23T20:02:44Z",
+      "iter": 17,
+      "mode": "free+metered",
+      "outcome": "captured",
+      "run": "39978839338/1"
+    },
+    {
+      "at": "2026-10-23T20:17:10Z",
+      "iter": 18,
+      "mode": "free",
+      "outcome": "captured",
+      "run": "39978839338/1"
+    },
+    {
+      "at": "2026-10-23T20:32:05Z",
+      "iter": 19,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "39978839338/1"
+    },
+    {
+      "at": "2026-10-23T20:47:07Z",
+      "iter": 20,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "39978839338/1"
+    },
+    {
+      "at": "2026-10-23T21:02:23Z",
+      "iter": 21,
+      "mode": "free+metered+redo",
+      "outcome": "captured",
+      "run": "39978839338/1"
+    },
+    {
+      "at": "2026-10-23T21:17:09Z",
+      "iter": 22,
+      "mode": "free+metered",
+      "outcome": "captured",
+      "run": "39978839338/1"
+    },
+    {
+      "at": "2026-10-23T21:32:36Z",
+      "iter": 1,
+      "mode": "free+metered+redo",
+      "outcome": "captured",
+      "run": "40012670510/1"
+    },
+    {
+      "at": "2026-10-23T21:47:04Z",
+      "iter": 2,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40012670510/1"
+    },
+    {
+      "at": "2026-10-23T22:02:05Z",
+      "iter": 3,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40012670510/1"
+    },
+    {
+      "at": "2026-10-23T22:17:05Z",
+      "iter": 4,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40012670510/1"
+    },
+    {
+      "at": "2026-10-23T22:32:09Z",
+      "iter": 5,
+      "mode": "free+metered",
+      "outcome": "captured",
+      "run": "40012670510/1"
+    },
+    {
+      "at": "2026-10-23T22:47:11Z",
+      "iter": 6,
+      "mode": "free",
+      "outcome": "captured",
+      "run": "40012670510/1"
+    },
+    {
+      "at": "2026-10-23T23:02:10Z",
+      "iter": 7,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40012670510/1"
+    },
+    {
+      "at": "2026-10-23T23:17:09Z",
+      "iter": 8,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40012670510/1"
+    },
+    {
+      "at": "2026-10-23T23:32:13Z",
+      "iter": 9,
+      "mode": "free+metered",
+      "outcome": "captured",
+      "run": "40012670510/1"
+    },
+    {
+      "at": "2026-10-23T23:47:09Z",
+      "iter": 10,
+      "mode": "free",
+      "outcome": "captured",
+      "run": "40012670510/1"
+    },
+    {
+      "at": "2026-10-24T00:02:10Z",
+      "iter": 11,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40012670510/1"
+    },
+    {
+      "at": "2026-10-24T00:17:08Z",
+      "iter": 12,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40012670510/1"
+    },
+    {
+      "at": "2026-10-24T00:32:12Z",
+      "iter": 13,
+      "mode": "free+metered",
+      "outcome": "captured",
+      "run": "40012670510/1"
+    },
+    {
+      "at": "2026-10-24T00:47:12Z",
+      "iter": 14,
+      "mode": "free",
+      "outcome": "captured",
+      "run": "40012670510/1"
+    },
+    {
+      "at": "2026-10-24T01:02:13Z",
+      "iter": 15,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40012670510/1"
+    },
+    {
+      "at": "2026-10-24T01:17:10Z",
+      "iter": 16,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40012670510/1"
+    },
+    {
+      "at": "2026-10-24T01:32:13Z",
+      "iter": 17,
+      "mode": "free+metered",
+      "outcome": "captured",
+      "run": "40012670510/1"
+    },
+    {
+      "at": "2026-10-24T01:47:10Z",
+      "iter": 18,
+      "mode": "free",
+      "outcome": "captured",
+      "run": "40012670510/1"
+    },
+    {
+      "at": "2026-10-24T02:02:08Z",
+      "iter": 19,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40012670510/1"
+    },
+    {
+      "at": "2026-10-24T02:17:09Z",
+      "iter": 20,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40012670510/1"
+    },
+    {
+      "at": "2026-10-24T02:32:14Z",
+      "iter": 21,
+      "mode": "free+metered",
+      "outcome": "captured",
+      "run": "40012670510/1"
+    },
+    {
+      "at": "2026-10-24T02:47:14Z",
+      "iter": 22,
+      "mode": "free",
+      "outcome": "captured",
+      "run": "40012670510/1"
+    },
+    {
+      "at": "2026-10-24T03:02:49Z",
+      "iter": 1,
+      "mode": "free+metered+redo",
+      "outcome": "captured",
+      "run": "40048764305/1"
+    },
+    {
+      "at": "2026-10-24T03:17:29Z",
+      "iter": 2,
+      "mode": "free+metered-deferred+redo",
+      "outcome": "captured",
+      "run": "40048764305/1"
+    },
+    {
+      "at": "2026-10-24T03:32:16Z",
+      "iter": 3,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40048764305/1"
+    },
+    {
+      "at": "2026-10-24T03:47:16Z",
+      "iter": 4,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40048764305/1"
+    },
+    {
+      "at": "2026-10-24T04:02:20Z",
+      "iter": 5,
+      "mode": "free+metered",
+      "outcome": "captured",
+      "run": "40048764305/1"
+    },
+    {
+      "at": "2026-10-24T04:17:15Z",
+      "iter": 6,
+      "mode": "free",
+      "outcome": "captured",
+      "run": "40048764305/1"
+    },
+    {
+      "at": "2026-10-24T04:32:16Z",
+      "iter": 7,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40048764305/1"
+    },
+    {
+      "at": "2026-10-24T04:47:15Z",
+      "iter": 8,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40048764305/1"
+    },
+    {
+      "at": "2026-10-24T05:02:20Z",
+      "iter": 9,
+      "mode": "free+metered",
+      "outcome": "captured",
+      "run": "40048764305/1"
+    },
+    {
+      "at": "2026-10-24T05:17:15Z",
+      "iter": 10,
+      "mode": "free",
+      "outcome": "captured",
+      "run": "40048764305/1"
+    },
+    {
+      "at": "2026-10-24T05:32:17Z",
+      "iter": 11,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40048764305/1"
+    },
+    {
+      "at": "2026-10-24T05:47:16Z",
+      "iter": 12,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40048764305/1"
+    },
+    {
+      "at": "2026-10-24T06:02:19Z",
+      "iter": 13,
+      "mode": "free+metered",
+      "outcome": "captured",
+      "run": "40048764305/1"
+    },
+    {
+      "at": "2026-10-24T06:17:15Z",
+      "iter": 14,
+      "mode": "free",
+      "outcome": "captured",
+      "run": "40048764305/1"
+    },
+    {
+      "at": "2026-10-24T06:32:16Z",
+      "iter": 15,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40048764305/1"
+    },
+    {
+      "at": "2026-10-24T06:47:15Z",
+      "iter": 16,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40048764305/1"
+    },
+    {
+      "at": "2026-10-24T07:02:19Z",
+      "iter": 17,
+      "mode": "free+metered",
+      "outcome": "captured",
+      "run": "40048764305/1"
+    },
+    {
+      "at": "2026-10-24T07:21:08Z",
+      "iter": 18,
+      "mode": "free",
+      "outcome": "captured",
+      "run": "40048764305/1"
+    },
+    {
+      "at": "2026-10-24T07:32:15Z",
+      "iter": 19,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40048764305/1"
+    },
+    {
+      "at": "2026-10-24T07:47:16Z",
+      "iter": 20,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40048764305/1"
+    },
+    {
+      "at": "2026-10-24T08:02:18Z",
+      "iter": 21,
+      "mode": "free+metered",
+      "outcome": "captured",
+      "run": "40048764305/1"
+    },
+    {
+      "at": "2026-10-24T08:17:16Z",
+      "iter": 22,
+      "mode": "free",
+      "outcome": "captured",
+      "run": "40048764305/1"
+    },
+    {
+      "at": "2026-10-24T08:32:59Z",
+      "iter": 1,
+      "mode": "free+metered+redo",
+      "outcome": "captured",
+      "run": "40070884929/1"
+    },
+    {
+      "at": "2026-10-24T08:47:20Z",
+      "iter": 2,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40070884929/1"
+    },
+    {
+      "at": "2026-10-24T09:02:16Z",
+      "iter": 3,
+      "mode": "free+metered",
+      "outcome": "captured",
+      "run": "40070884929/1"
+    },
+    {
+      "at": "2026-10-24T09:23:37Z",
+      "iter": 4,
+      "mode": "free",
+      "outcome": "captured",
+      "run": "40070884929/1"
+    },
+    {
+      "at": "2026-10-24T09:38:35Z",
+      "iter": 5,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40070884929/1"
+    },
+    {
+      "at": "2026-10-24T09:50:44Z",
+      "iter": 6,
+      "mode": "free+metered-deferred+redo",
+      "outcome": "captured",
+      "run": "40070884929/1"
+    },
+    {
+      "at": "2026-10-24T10:08:04Z",
+      "iter": 7,
+      "mode": "free+metered",
+      "outcome": "captured",
+      "run": "40070884929/1"
+    },
+    {
+      "at": "2026-10-24T10:22:19Z",
+      "iter": 8,
+      "mode": "free+redo",
+      "outcome": "captured",
+      "run": "40070884929/1"
+    },
+    {
+      "at": "2026-10-24T10:32:33Z",
+      "iter": 9,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40070884929/1"
+    },
+    {
+      "at": "2026-10-24T10:50:07Z",
+      "iter": 10,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40070884929/1"
+    },
+    {
+      "at": "2026-10-24T11:04:09Z",
+      "iter": 11,
+      "mode": "free+metered",
+      "outcome": "captured",
+      "run": "40070884929/1"
+    },
+    {
+      "at": "2026-10-24T11:22:23Z",
+      "iter": 12,
+      "mode": "free",
+      "outcome": "captured",
+      "run": "40070884929/1"
+    },
+    {
+      "at": "2026-10-24T11:32:38Z",
+      "iter": 13,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40070884929/1"
+    },
+    {
+      "at": "2026-10-24T11:49:31Z",
+      "iter": 14,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40070884929/1"
+    },
+    {
+      "at": "2026-10-24T12:03:17Z",
+      "iter": 15,
+      "mode": "free+metered",
+      "outcome": "captured",
+      "run": "40070884929/1"
+    },
+    {
+      "at": "2026-10-24T12:19:24Z",
+      "iter": 16,
+      "mode": "free",
+      "outcome": "captured",
+      "run": "40070884929/1"
+    },
+    {
+      "at": "2026-10-24T12:35:03Z",
+      "iter": 17,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40070884929/1"
+    },
+    {
+      "at": "2026-10-24T12:52:00Z",
+      "iter": 18,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40070884929/1"
+    },
+    {
+      "at": "2026-10-24T13:03:58Z",
+      "iter": 19,
+      "mode": "free+metered",
+      "outcome": "captured",
+      "run": "40070884929/1"
+    },
+    {
+      "at": "2026-10-24T13:21:38Z",
+      "iter": 20,
+      "mode": "free",
+      "outcome": "captured",
+      "run": "40070884929/1"
+    },
+    {
+      "at": "2026-10-24T13:33:38Z",
+      "iter": 21,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40070884929/1"
+    },
+    {
+      "at": "2026-10-24T13:45:59Z",
+      "iter": 22,
+      "mode": "free+metered-deferred+redo",
+      "outcome": "captured",
+      "run": "40070884929/1"
+    },
+    {
+      "at": "2026-10-24T14:01:11Z",
+      "iter": 1,
+      "mode": "free+metered+redo",
+      "outcome": "captured",
+      "run": "40090895205/1"
+    },
+    {
+      "at": "2026-10-24T14:15:35Z",
+      "iter": 2,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40090895205/1"
+    },
+    {
+      "at": "2026-10-24T14:30:29Z",
+      "iter": 3,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40090895205/1"
+    },
+    {
+      "at": "2026-10-24T14:45:28Z",
+      "iter": 4,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40090895205/1"
+    },
+    {
+      "at": "2026-10-24T15:00:32Z",
+      "iter": 5,
+      "mode": "free+metered",
+      "outcome": "captured",
+      "run": "40090895205/1"
+    },
+    {
+      "at": "2026-10-24T15:15:29Z",
+      "iter": 6,
+      "mode": "free",
+      "outcome": "captured",
+      "run": "40090895205/1"
+    },
+    {
+      "at": "2026-10-24T15:30:43Z",
+      "iter": 7,
+      "mode": "free+metered-deferred+redo",
+      "outcome": "captured",
+      "run": "40090895205/1"
+    },
+    {
+      "at": "2026-10-24T15:45:27Z",
+      "iter": 8,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40090895205/1"
+    },
+    {
+      "at": "2026-10-24T16:00:26Z",
+      "iter": 9,
+      "mode": "free+metered",
+      "outcome": "captured",
+      "run": "40090895205/1"
+    },
+    {
+      "at": "2026-10-24T16:15:23Z",
+      "iter": 10,
+      "mode": "free",
+      "outcome": "captured",
+      "run": "40090895205/1"
+    },
+    {
+      "at": "2026-10-24T16:30:15Z",
+      "iter": 11,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40090895205/1"
+    },
+    {
+      "at": "2026-10-24T16:45:16Z",
+      "iter": 12,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40090895205/1"
+    },
+    {
+      "at": "2026-10-24T17:00:22Z",
+      "iter": 13,
+      "mode": "free+metered",
+      "outcome": "captured",
+      "run": "40090895205/1"
+    },
+    {
+      "at": "2026-10-24T17:15:13Z",
+      "iter": 14,
+      "mode": "free",
+      "outcome": "captured",
+      "run": "40090895205/1"
+    },
+    {
+      "at": "2026-10-24T17:30:14Z",
+      "iter": 15,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40090895205/1"
+    },
+    {
+      "at": "2026-10-24T17:45:13Z",
+      "iter": 16,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40090895205/1"
+    },
+    {
+      "at": "2026-10-24T18:00:17Z",
+      "iter": 17,
+      "mode": "free+metered",
+      "outcome": "captured",
+      "run": "40090895205/1"
+    },
+    {
+      "at": "2026-10-24T18:15:13Z",
+      "iter": 18,
+      "mode": "free",
+      "outcome": "captured",
+      "run": "40090895205/1"
+    },
+    {
+      "at": "2026-10-24T18:30:13Z",
+      "iter": 19,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40090895205/1"
+    },
+    {
+      "at": "2026-10-24T18:45:18Z",
+      "iter": 20,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40090895205/1"
+    },
+    {
+      "at": "2026-10-24T19:00:17Z",
+      "iter": 21,
+      "mode": "free+metered",
+      "outcome": "captured",
+      "run": "40090895205/1"
+    },
+    {
+      "at": "2026-10-24T19:16:26Z",
+      "iter": 22,
+      "mode": "free",
+      "outcome": "captured",
+      "run": "40090895205/1"
+    },
+    {
+      "at": "2026-10-24T19:30:44Z",
+      "iter": 1,
+      "mode": "free+metered+redo",
+      "outcome": "captured",
+      "run": "40117873267/1"
+    },
+    {
+      "at": "2026-10-24T19:46:22Z",
+      "iter": 2,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40117873267/1"
+    },
+    {
+      "at": "2026-10-24T20:01:24Z",
+      "iter": 3,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40117873267/1"
+    },
+    {
+      "at": "2026-10-24T20:16:38Z",
+      "iter": 4,
+      "mode": "free+metered-deferred+redo",
+      "outcome": "captured",
+      "run": "40117873267/1"
+    },
+    {
+      "at": "2026-10-24T20:31:33Z",
+      "iter": 5,
+      "mode": "free+metered",
+      "outcome": "captured",
+      "run": "40117873267/1"
+    },
+    {
+      "at": "2026-10-24T20:46:56Z",
+      "iter": 6,
+      "mode": "free",
+      "outcome": "captured",
+      "run": "40117873267/1"
+    },
+    {
+      "at": "2026-10-24T21:01:57Z",
+      "iter": 7,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40117873267/1"
+    },
+    {
+      "at": "2026-10-24T21:16:58Z",
+      "iter": 8,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40117873267/1"
+    },
+    {
+      "at": "2026-10-24T21:32:01Z",
+      "iter": 9,
+      "mode": "free+metered",
+      "outcome": "captured",
+      "run": "40117873267/1"
+    },
+    {
+      "at": "2026-10-24T21:47:08Z",
+      "iter": 10,
+      "mode": "free",
+      "outcome": "captured",
+      "run": "40117873267/1"
+    },
+    {
+      "at": "2026-10-24T22:02:08Z",
+      "iter": 11,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40117873267/1"
+    },
+    {
+      "at": "2026-10-24T22:17:07Z",
+      "iter": 12,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40117873267/1"
+    },
+    {
+      "at": "2026-10-24T22:32:12Z",
+      "iter": 13,
+      "mode": "free+metered",
+      "outcome": "captured",
+      "run": "40117873267/1"
+    },
+    {
+      "at": "2026-10-24T22:48:12Z",
+      "iter": 14,
+      "mode": "free",
+      "outcome": "captured",
+      "run": "40117873267/1"
+    },
+    {
+      "at": "2026-10-24T23:03:56Z",
+      "iter": 15,
+      "mode": "free+metered-deferred+redo",
+      "outcome": "captured",
+      "run": "40117873267/1"
+    },
+    {
+      "at": "2026-10-24T23:18:09Z",
+      "iter": 16,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40117873267/1"
+    },
+    {
+      "at": "2026-10-24T23:33:13Z",
+      "iter": 17,
+      "mode": "free+metered",
+      "outcome": "captured",
+      "run": "40117873267/1"
+    },
+    {
+      "at": "2026-10-24T23:48:11Z",
+      "iter": 18,
+      "mode": "free",
+      "outcome": "captured",
+      "run": "40117873267/1"
+    },
+    {
+      "at": "2026-10-25T00:03:10Z",
+      "iter": 19,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40117873267/1"
+    },
+    {
+      "at": "2026-10-25T00:18:09Z",
+      "iter": 20,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40117873267/1"
+    },
+    {
+      "at": "2026-10-25T00:33:13Z",
+      "iter": 21,
+      "mode": "free+metered",
+      "outcome": "captured",
+      "run": "40117873267/1"
+    },
+    {
+      "at": "2026-10-25T00:48:11Z",
+      "iter": 22,
+      "mode": "free",
+      "outcome": "captured",
+      "run": "40117873267/1"
+    },
+    {
+      "at": "2026-10-25T01:03:49Z",
+      "iter": 1,
+      "mode": "free+metered-deferred+redo",
+      "outcome": "captured",
+      "run": "40147462882/1"
+    },
+    {
+      "at": "2026-10-25T01:18:13Z",
+      "iter": 2,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40147462882/1"
+    },
+    {
+      "at": "2026-10-25T01:33:15Z",
+      "iter": 3,
+      "mode": "free+metered",
+      "outcome": "captured",
+      "run": "40147462882/1"
+    },
+    {
+      "at": "2026-10-25T01:48:17Z",
+      "iter": 4,
+      "mode": "free",
+      "outcome": "captured",
+      "run": "40147462882/1"
+    },
+    {
+      "at": "2026-10-25T02:03:10Z",
+      "iter": 5,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40147462882/1"
+    },
+    {
+      "at": "2026-10-25T02:18:13Z",
+      "iter": 6,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40147462882/1"
+    },
+    {
+      "at": "2026-10-25T02:33:16Z",
+      "iter": 7,
+      "mode": "free+metered",
+      "outcome": "captured",
+      "run": "40147462882/1"
+    },
+    {
+      "at": "2026-10-25T02:48:15Z",
+      "iter": 8,
+      "mode": "free",
+      "outcome": "captured",
+      "run": "40147462882/1"
+    },
+    {
+      "at": "2026-10-25T03:03:14Z",
+      "iter": 9,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40147462882/1"
+    },
+    {
+      "at": "2026-10-25T03:18:29Z",
+      "iter": 10,
+      "mode": "free+metered-deferred+redo",
+      "outcome": "captured",
+      "run": "40147462882/1"
+    },
+    {
+      "at": "2026-10-25T03:33:14Z",
+      "iter": 11,
+      "mode": "free+metered",
+      "outcome": "captured",
+      "run": "40147462882/1"
+    },
+    {
+      "at": "2026-10-25T03:48:13Z",
+      "iter": 12,
+      "mode": "free",
+      "outcome": "captured",
+      "run": "40147462882/1"
+    },
+    {
+      "at": "2026-10-25T04:03:13Z",
+      "iter": 13,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40147462882/1"
+    },
+    {
+      "at": "2026-10-25T04:18:14Z",
+      "iter": 14,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40147462882/1"
+    },
+    {
+      "at": "2026-10-25T04:33:12Z",
+      "iter": 15,
+      "mode": "free+metered",
+      "outcome": "captured",
+      "run": "40147462882/1"
+    },
+    {
+      "at": "2026-10-25T04:48:10Z",
+      "iter": 16,
+      "mode": "free",
+      "outcome": "captured",
+      "run": "40147462882/1"
+    },
+    {
+      "at": "2026-10-25T05:03:11Z",
+      "iter": 17,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40147462882/1"
+    },
+    {
+      "at": "2026-10-25T05:18:11Z",
+      "iter": 18,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40147462882/1"
+    },
+    {
+      "at": "2026-10-25T05:33:15Z",
+      "iter": 19,
+      "mode": "free+metered",
+      "outcome": "captured",
+      "run": "40147462882/1"
+    },
+    {
+      "at": "2026-10-25T05:48:16Z",
+      "iter": 20,
+      "mode": "free",
+      "outcome": "captured",
+      "run": "40147462882/1"
+    },
+    {
+      "at": "2026-10-25T06:03:15Z",
+      "iter": 21,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40147462882/1"
+    },
+    {
+      "at": "2026-10-25T06:18:17Z",
+      "iter": 22,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40147462882/1"
+    },
+    {
+      "at": "2026-10-25T06:33:45Z",
+      "iter": 1,
+      "mode": "free+metered+redo",
+      "outcome": "captured",
+      "run": "40165574254/1"
+    },
+    {
+      "at": "2026-10-25T06:48:18Z",
+      "iter": 2,
+      "mode": "free+metered",
+      "outcome": "captured",
+      "run": "40165574254/1"
+    },
+    {
+      "at": "2026-10-25T07:03:10Z",
+      "iter": 3,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40165574254/1"
+    },
+    {
+      "at": "2026-10-25T07:18:10Z",
+      "iter": 4,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40165574254/1"
+    },
+    {
+      "at": "2026-10-25T07:33:10Z",
+      "iter": 5,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40165574254/1"
+    },
+    {
+      "at": "2026-10-25T07:48:15Z",
+      "iter": 6,
+      "mode": "free+metered",
+      "outcome": "captured",
+      "run": "40165574254/1"
+    },
+    {
+      "at": "2026-10-25T08:03:11Z",
+      "iter": 7,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40165574254/1"
+    },
+    {
+      "at": "2026-10-25T08:18:08Z",
+      "iter": 8,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40165574254/1"
+    },
+    {
+      "at": "2026-10-25T08:33:09Z",
+      "iter": 9,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40165574254/1"
+    },
+    {
+      "at": "2026-10-25T08:48:12Z",
+      "iter": 10,
+      "mode": "free+metered",
+      "outcome": "captured",
+      "run": "40165574254/1"
+    },
+    {
+      "at": "2026-10-25T09:03:11Z",
+      "iter": 11,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40165574254/1"
+    },
+    {
+      "at": "2026-10-25T09:18:11Z",
+      "iter": 12,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40165574254/1"
+    },
+    {
+      "at": "2026-10-25T09:33:16Z",
+      "iter": 13,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40165574254/1"
+    },
+    {
+      "at": "2026-10-25T09:48:14Z",
+      "iter": 14,
+      "mode": "free+metered",
+      "outcome": "captured",
+      "run": "40165574254/1"
+    },
+    {
+      "at": "2026-10-25T10:03:06Z",
+      "iter": 15,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40165574254/1"
+    },
+    {
+      "at": "2026-10-25T10:18:20Z",
+      "iter": 16,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40165574254/1"
+    },
+    {
+      "at": "2026-10-25T10:33:03Z",
+      "iter": 17,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40165574254/1"
+    },
+    {
+      "at": "2026-10-25T10:48:23Z",
+      "iter": 18,
+      "mode": "free+metered+redo",
+      "outcome": "captured",
+      "run": "40165574254/1"
+    },
+    {
+      "at": "2026-10-25T11:03:06Z",
+      "iter": 19,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40165574254/1"
+    },
+    {
+      "at": "2026-10-25T11:18:08Z",
+      "iter": 20,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40165574254/1"
+    },
+    {
+      "at": "2026-10-25T11:33:09Z",
+      "iter": 21,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40165574254/1"
+    },
+    {
+      "at": "2026-10-25T11:48:13Z",
+      "iter": 22,
+      "mode": "free+metered",
+      "outcome": "captured",
+      "run": "40165574254/1"
+    },
+    {
+      "at": "2026-10-25T12:03:37Z",
+      "iter": 1,
+      "mode": "free+metered+redo",
+      "outcome": "captured",
+      "run": "40184174167/1"
+    },
+    {
+      "at": "2026-10-25T12:17:54Z",
+      "iter": 2,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40184174167/1"
+    },
+    {
+      "at": "2026-10-25T12:32:59Z",
+      "iter": 3,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40184174167/1"
+    },
+    {
+      "at": "2026-10-25T12:47:51Z",
+      "iter": 4,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40184174167/1"
+    },
+    {
+      "at": "2026-10-25T13:02:52Z",
+      "iter": 5,
+      "mode": "free+metered",
+      "outcome": "captured",
+      "run": "40184174167/1"
+    },
+    {
+      "at": "2026-10-25T13:17:51Z",
+      "iter": 6,
+      "mode": "free",
+      "outcome": "captured",
+      "run": "40184174167/1"
+    },
+    {
+      "at": "2026-10-25T13:32:38Z",
+      "iter": 7,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40184174167/1"
+    },
+    {
+      "at": "2026-10-25T13:47:37Z",
+      "iter": 8,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40184174167/1"
+    },
+    {
+      "at": "2026-10-25T14:02:46Z",
+      "iter": 9,
+      "mode": "free+metered",
+      "outcome": "captured",
+      "run": "40184174167/1"
+    },
+    {
+      "at": "2026-10-25T14:17:39Z",
+      "iter": 10,
+      "mode": "free",
+      "outcome": "captured",
+      "run": "40184174167/1"
+    },
+    {
+      "at": "2026-10-25T14:32:41Z",
+      "iter": 11,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40184174167/1"
+    },
+    {
+      "at": "2026-10-25T14:47:36Z",
+      "iter": 12,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40184174167/1"
+    },
+    {
+      "at": "2026-10-25T15:02:33Z",
+      "iter": 13,
+      "mode": "free+metered",
+      "outcome": "captured",
+      "run": "40184174167/1"
+    },
+    {
+      "at": "2026-10-25T15:17:30Z",
+      "iter": 14,
+      "mode": "free",
+      "outcome": "captured",
+      "run": "40184174167/1"
+    },
+    {
+      "at": "2026-10-25T15:32:28Z",
+      "iter": 15,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40184174167/1"
+    },
+    {
+      "at": "2026-10-25T15:47:30Z",
+      "iter": 16,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40184174167/1"
+    },
+    {
+      "at": "2026-10-25T16:02:34Z",
+      "iter": 17,
+      "mode": "free+metered",
+      "outcome": "captured",
+      "run": "40184174167/1"
+    },
+    {
+      "at": "2026-10-25T16:17:35Z",
+      "iter": 18,
+      "mode": "free",
+      "outcome": "captured",
+      "run": "40184174167/1"
+    },
+    {
+      "at": "2026-10-25T16:32:30Z",
+      "iter": 19,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40184174167/1"
+    },
+    {
+      "at": "2026-10-25T16:47:30Z",
+      "iter": 20,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40184174167/1"
+    },
+    {
+      "at": "2026-10-25T17:02:36Z",
+      "iter": 21,
+      "mode": "free+metered",
+      "outcome": "captured",
+      "run": "40184174167/1"
+    },
+    {
+      "at": "2026-10-25T17:17:30Z",
+      "iter": 22,
+      "mode": "free",
+      "outcome": "captured",
+      "run": "40184174167/1"
+    },
+    {
+      "at": "2026-10-25T17:33:14Z",
+      "iter": 1,
+      "mode": "free+metered+redo",
+      "outcome": "captured",
+      "run": "40203174476/1"
+    },
+    {
+      "at": "2026-10-25T17:47:29Z",
+      "iter": 2,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40203174476/1"
+    },
+    {
+      "at": "2026-10-25T18:02:35Z",
+      "iter": 3,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40203174476/1"
+    },
+    {
+      "at": "2026-10-25T18:17:30Z",
+      "iter": 4,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40203174476/1"
+    },
+    {
+      "at": "2026-10-25T18:32:37Z",
+      "iter": 5,
+      "mode": "free+metered",
+      "outcome": "captured",
+      "run": "40203174476/1"
+    },
+    {
+      "at": "2026-10-25T18:47:31Z",
+      "iter": 6,
+      "mode": "free",
+      "outcome": "captured",
+      "run": "40203174476/1"
+    },
+    {
+      "at": "2026-10-25T19:02:33Z",
+      "iter": 7,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40203174476/1"
+    },
+    {
+      "at": "2026-10-25T19:17:31Z",
+      "iter": 8,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40203174476/1"
+    },
+    {
+      "at": "2026-10-25T19:32:35Z",
+      "iter": 9,
+      "mode": "free+metered",
+      "outcome": "captured",
+      "run": "40203174476/1"
+    },
+    {
+      "at": "2026-10-25T19:47:30Z",
+      "iter": 10,
+      "mode": "free",
+      "outcome": "captured",
+      "run": "40203174476/1"
+    },
+    {
+      "at": "2026-10-25T20:02:30Z",
+      "iter": 11,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40203174476/1"
+    },
+    {
+      "at": "2026-10-25T20:17:37Z",
+      "iter": 12,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40203174476/1"
+    },
+    {
+      "at": "2026-10-25T20:32:49Z",
+      "iter": 13,
+      "mode": "free+metered+redo",
+      "outcome": "captured",
+      "run": "40203174476/1"
+    },
+    {
+      "at": "2026-10-25T20:47:31Z",
+      "iter": 14,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40203174476/1"
+    },
+    {
+      "at": "2026-10-25T21:02:33Z",
+      "iter": 15,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40203174476/1"
+    },
+    {
+      "at": "2026-10-25T21:17:31Z",
+      "iter": 16,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40203174476/1"
+    },
+    {
+      "at": "2026-10-25T21:32:40Z",
+      "iter": 17,
+      "mode": "free+metered",
+      "outcome": "captured",
+      "run": "40203174476/1"
+    },
+    {
+      "at": "2026-10-25T21:48:29Z",
+      "iter": 18,
+      "mode": "free",
+      "outcome": "captured",
+      "run": "40203174476/1"
+    },
+    {
+      "at": "2026-10-25T22:03:25Z",
+      "iter": 19,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40203174476/1"
+    },
+    {
+      "at": "2026-10-25T22:18:26Z",
+      "iter": 20,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40203174476/1"
+    },
+    {
+      "at": "2026-10-25T22:33:35Z",
+      "iter": 21,
+      "mode": "free+metered",
+      "outcome": "captured",
+      "run": "40203174476/1"
+    },
+    {
+      "at": "2026-10-25T22:48:28Z",
+      "iter": 22,
+      "mode": "free",
+      "outcome": "captured",
+      "run": "40203174476/1"
+    },
+    {
+      "at": "2026-10-25T23:04:04Z",
+      "iter": 1,
+      "mode": "free+metered-deferred+redo",
+      "outcome": "captured",
+      "run": "40242240248/1"
+    },
+    {
+      "at": "2026-10-25T23:18:20Z",
+      "iter": 2,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "40242240248/1"
+    },
+    {
+      "at": "2026-10-25T23:33:23Z",
+      "iter": 3,
+      "mode": "free+metered",
+      "outcome": "captured",
+      "run": "40242240248/1"
     }
   ]
 }

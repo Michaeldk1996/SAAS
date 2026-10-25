@@ -143,13 +143,13 @@ test('Download report: aBuildForReport settles only after every tab load, and su
 
 // ---- D5: avatars ----
 function avatar() {
-  return new Function('playerInitials', 'profileLinkAttrs', 'atpPhotoFor', 'escapeHtml', 'photoCandidatesFor',
+  return new Function('playerInitials', 'profileLinkAttrs', 'playerPhotoUrl', 'escapeHtml', 'photoOverrideFor',
     `${slice('aAvatarHtml')}; return aAvatarHtml;`)(
     n => n.split(/\s+/).map(w => w[0]).join('').toUpperCase(), () => '',
     k => ({ 206173: 'https://www.atptour.com/-/media/alias/player-headshot/S0AG' })[k] || null,
     s => String(s), () => ['https://api.api-tennis.com/logo-tennis/x.jpg']);
 }
-// Mutation: aAvatarHtml reads photoCandidatesFor (the board's chain: ATP → Wikimedia → api-tennis) instead of atpPhotoFor.
+// Mutation: aAvatarHtml falls back to a retired source (photoOverrideFor) behind the one resolver (playerPhotoUrl).
 test('D5: an aliased player renders the ATP headshot; a player without an alias renders the monogram, never another source', () => {
   const a = avatar();
   const withAlias = a('J. Sinner', 206173), none = a('C. Alcaraz', 999);
@@ -190,6 +190,8 @@ function modalVM(opts = {}) {
     h2hRoundLabel: () => 'Quarter-finals', maRoundName: () => 'Quarter-finals', _mcCardCloseOf: () => null, aContextLine: () => 'ATP Washington · Quarter-finals', formatLiveScore: () => '', progressionRoundState: () => ({ state: 'shown' }),
     teTrack: undefined,
     maApplyTheme: () => 'night',   // the Night / Day / Auto writer (match-analysis-tokens.css); not under test here
+    // PBP carry-over (2026-10-23): not a candidate, no live row, the view is the match itself; not under test here
+    pbpLiveCandidate: () => false, pbpLiveMark: () => {}, loadPbpLive: () => Promise.resolve(null), pbpLiveView: m => m, eventKeyOfMatch: () => null,
   };
   const names = Object.keys(stubs);
   const body = `
@@ -199,6 +201,8 @@ function modalVM(opts = {}) {
     ${objSrc('const A_TAB_REVISIT')}
     ${slice('aBuildForReport')}
     ${slice('aShowTab')}
+    let _drawMatchStore = null;   // round 3 (2026-10-21): openAnalysisModal finds its match through matchById (board, then the draw store)
+    ${slice('matchById')}
     ${slice('openAnalysisModal')}
     return { openAnalysisModal, aShowTab, aBuildForReport, built: () => [..._aBuilt] };`;
   const api = new Function('document', 'matches', ...names, body)(document, [{ id: 'a', p1: 'J. Sinner', p2: 'C. Alcaraz' }, { id: 'b', p1: 'X', p2: 'Y' }], ...names.map(n => stubs[n]));
@@ -273,12 +277,13 @@ test('revisit: Weather re-reads and Market edge retries on every visit; other ta
   assert.deepEqual(log, ['load:weather', 'load:marketedge']);
 });
 
-// Mutation: mxOpenCardStats back to openAnalysisModal(id) + aGoTab('matchstats') (Key factors built and fetched first).
+// Mutation: mxOpenCompletedCard back to openAnalysisModal(id) + aGoTab('key') (Odds built and fetched first).
 test('a named tab opens directly: nothing else is built first', async () => {
   const { api, log } = modalVM();
   api.openAnalysisModal('a', 'matchstats'); await flush();
   assert.deepEqual([...new Set(log.filter(x => x.startsWith('build:')))], ['build:matchstats']);
-  assert.ok(slice('mxOpenCardStats').includes("openAnalysisModal(id, 'matchstats');") && !slice('mxOpenCardStats').includes('aGoTab('));
+  // the completed card's landing (Key factors, founder 2026-10-22) goes through the same tab argument
+  assert.ok(slice('mxOpenCompletedCard').includes("openAnalysisModal(id, 'key');") && !slice('mxOpenCompletedCard').includes('aGoTab('));
 });
 
 // Mutation: drop `return` from the h2h or form builder (live 2026-09-28: the report printed H2H's loading line, 21 chars).

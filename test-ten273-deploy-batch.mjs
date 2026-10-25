@@ -602,7 +602,7 @@ async function ciSuiteReceiptOnlyWhenGreen(script) {
 
 const SUITE_MUTANTS = [
   ['a receipt is written for a red suite', 'if [ "$EXIT" -eq 0 ]; then', 'if true; then'],
-  ['the exit code is read off a pipe', 'npm test > "$LOG" 2>&1\nEXIT=$?', 'npm test 2>&1 | tee "$LOG" >/dev/null\nEXIT=$?'],
+  ['the exit code is read off a pipe', 'npm test > "$LOG" 2>&1 &\nNPM_PID=$!', 'npm test 2>&1 | tee "$LOG" >/dev/null &\nNPM_PID=$!'],
   ['the suite runs on origin/main, not the sha', 'git -C "$D" checkout -q --detach "$SHA" || fail "could not check out $SHA in the clone"\n[ "$(git -C "$D" rev-parse HEAD)" = "$SHA" ] || fail "clone HEAD is not $SHA"\n', ''],
   ['node_modules is not linked into the clone', 'ln -s "$NODE_MODULES" "$D/node_modules" || fail "could not link node_modules into the clone"', ':'],
 ];
@@ -619,6 +619,84 @@ for (const [label, find, replace] of SUITE_MUTANTS) {
     assert.equal(await ciSuiteReceiptOnlyWhenGreen(f), false);
   });
 }
+
+// ── founder 2026-10-22: low disk refuses before cloning; test temp folders live in the clone; TERM stops the tests ──
+function runSuiteEnv(script, f, sha, extra) {
+  const r = spawnSync('bash', [script, sha], { cwd: f.local, encoding: 'utf8', env: { ...process.env, CI_SUITE_CLONE_URL: pathToFileURL(f.origin).href,
+    CI_SUITE_NODE_MODULES: f.nm, SUITE_RECEIPTS_DIR: f.receipts, MARKS: f.marks, ...extra } });
+  return { status: r.status, out: `${r.stdout}${r.stderr}` };
+}
+test('real ci-suite.sh: low disk → exit 4, "low disk" said, nothing cloned, no receipt (a free floor nothing can meet)', () => {
+  const f = suiteFixture();
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'ten273-lowdisk-'));
+  const r = runSuiteEnv(SUITE_SRC, f, f.green, { CI_SUITE_MIN_FREE_KB: '999999999999', TMPDIR: tmp });
+  assert.equal(r.status, 4, r.out);
+  assert.match(r.out, /low disk: \d+ MB free, need \d+ MB — nothing ran/);
+  assert.match(r.out, /EXIT=4/);
+  assert.equal(fs.readdirSync(tmp).length, 0, 'no clone was made');
+  assert.equal(fs.existsSync(path.join(f.receipts, `${f.green}.json`)), false);
+  assert.equal(fs.readdirSync(f.marks).length, 0, 'npm test never ran');
+  const ok = runSuiteEnv(SUITE_SRC, f, f.green, { TMPDIR: tmp });   // control: the default floor (3 GB) passes on this machine
+  assert.equal(ok.status, 0, ok.out);
+});
+function tmpFixture(script) {
+  const f = suiteFixture();
+  const sha = commit(f.local, 'package.json', JSON.stringify({ name: 'x', private: true, scripts: { test: script } }), 'tmp probe');   // exit.txt stays 0 from `green`
+  return { f, sha };
+}
+test('real ci-suite.sh: a test\'s os.tmpdir() is INSIDE the throwaway clone, so its temp folders go with it', () => {
+  const { f, sha } = tmpFixture(`node -e "const fs=require('fs'),os=require('os'),p=require('path');const d=fs.mkdtempSync(p.join(os.tmpdir(),'leak-'));fs.writeFileSync(process.env.MARKS+'/tmp',d)"`);
+  const outer = fs.mkdtempSync(path.join(os.tmpdir(), 'ten273-outer-'));
+  const r = runSuiteEnv(SUITE_SRC, f, sha, { TMPDIR: outer });
+  assert.equal(r.status, 0, r.out);
+  const d = fs.readFileSync(path.join(f.marks, 'tmp'), 'utf8');
+  assert.match(d, /\/ci-suite\.[^/]+\/\.tmp\/leak-/, d);
+  assert.equal(fs.existsSync(d), false, 'gone with the clone');
+  assert.deepEqual(fs.readdirSync(outer), [], 'nothing left in the caller\'s TMPDIR');
+});
+const HEARTBEAT = `node -e "const fs=require('fs');setInterval(()=>fs.writeFileSync(process.env.MARKS+'/beat',String(Date.now())),200)"`;
+async function termStopsTheTests(script) {
+  const { f, sha } = tmpFixture(HEARTBEAT);
+  const outer = fs.mkdtempSync(path.join(os.tmpdir(), 'ten273-term-'));
+  const { spawn } = await import('node:child_process');
+  const p = spawn('bash', [script, sha], { cwd: f.local, env: { ...process.env, CI_SUITE_CLONE_URL: pathToFileURL(f.origin).href, CI_SUITE_NODE_MODULES: f.nm,
+    SUITE_RECEIPTS_DIR: f.receipts, MARKS: f.marks, TMPDIR: outer }, stdio: 'ignore' });
+  const beat = path.join(f.marks, 'beat');
+  for (let i = 0; i < 100 && !fs.existsSync(beat); i++) await new Promise((r) => setTimeout(r, 100));
+  p.kill('SIGTERM');
+  await new Promise((r) => p.on('exit', r));
+  await new Promise((r) => setTimeout(r, 1500));
+  const a = fs.readFileSync(beat, 'utf8');
+  await new Promise((r) => setTimeout(r, 1000));
+  const stopped = fs.readFileSync(beat, 'utf8') === a;
+  const left = fs.readdirSync(outer);
+  if (!stopped) spawnSync('pkill', ['-f', 'MARKS.*beat|setInterval\\(\\(\\)=>fs.writeFileSync']);
+  return { stopped, cloneGone: left.length === 0, left };
+}
+test('real ci-suite.sh: SIGTERM stops the test run itself (no orphaned npm test) and removes the clone', async () => {
+  const r = await termStopsTheTests(SUITE_SRC);
+  assert.equal(r.stopped, true, 'the heartbeat kept beating after TERM');
+  assert.equal(r.cloneGone, true, JSON.stringify(r.left));
+});
+test('mutant bites — ci-suite.sh: TERM leaves the test process group running', async () => {
+  const src = fs.readFileSync(SUITE_SRC, 'utf8');
+  const find = 'kill -TERM -- "-$NPM_PID" 2>/dev/null; sleep 1; kill -KILL -- "-$NPM_PID" 2>/dev/null;';
+  assert.equal(src.split(find).length - 1, 1, `anchor must occur exactly once: ${find}`);
+  const f = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'ten273-suite-mut-')), 'ci-suite.sh');
+  fs.writeFileSync(f, src.replace(find, ':;'));
+  assert.equal((await termStopsTheTests(f)).stopped, false);
+});
+test('mutant bites — ci-suite.sh: test temp folders go to the caller\'s TMPDIR', () => {
+  const src = fs.readFileSync(SUITE_SRC, 'utf8');
+  const find = 'export TMPDIR="$D/.tmp"';
+  assert.equal(src.split(find).length - 1, 1);
+  const m = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'ten273-suite-mut-')), 'ci-suite.sh');
+  fs.writeFileSync(m, src.replace(find, ':'));
+  const { f, sha } = tmpFixture(`node -e "const fs=require('fs'),os=require('os'),p=require('path');fs.writeFileSync(process.env.MARKS+'/tmp',fs.mkdtempSync(p.join(os.tmpdir(),'leak-')))"`);
+  const outer = fs.mkdtempSync(path.join(os.tmpdir(), 'ten273-outer-'));
+  runSuiteEnv(m, f, sha, { TMPDIR: outer });
+  assert.notEqual(fs.readdirSync(outer).length, 0, 'the mutant leaks into the caller TMPDIR (the real script does not)');
+});
 
 test('CLI: deploy-batch usage is exit 2; a caller that does not hold the lane gets exit 1 and nothing runs', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ten273-cli-'));

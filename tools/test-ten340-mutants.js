@@ -11,7 +11,7 @@ const MUTANTS = [
   ['matchup: the cell read in p2\'s direction', "return { kind: 'cell', a: c.pct, b: 100 - c.pct,", "return { kind: 'cell', a: 100 - c.pct, b: c.pct,"],
   ['lean: a 1-point cell "leans" (the coin-flip threshold dropped)', "pts < 2 ? 'Effectively a coin-flip", "pts < 1 ? 'Effectively a coin-flip"],
   ['surface tiles: the pooled cell on every surface', "const c = psSurfaceCellFor(sf.toLowerCase(), E.i1, E.i2), on = sf === today;", "const c = psCellFor(E.i1, E.i2), on = sf === today;"],
-  ['N2: a walkover counted in the personal record and listed', "const rows = raw.filter(r => !ps2IsWalkover(r));", "const rows = raw;"],
+  ['N2: a walkover counted in the personal record', "const rows = raw.filter(r => !ps2IsWalkover(r));", "const rows = raw;"],
   ['D2: a rate printed on n 1–4', "const rate = ready && n ? maRateHtml(R.w, n, { nopct: ''", "const rate = ready && n ? maRateHtml(R.w, n, { nopct: Math.round(R.w / n * 100) + '%'"],
   ['D2: the tug and the deviation off the gate', "const g = maGate(n).mode, shown = g === 'full' || g === 'small', small = g === 'small';", "const g = n ? 'full' : 'none', shown = g === 'full' || g === 'small', small = g === 'small';"],
   ['mirror: no matrix avg on a mirror (the diagonal\'s 50% dropped)', "const c = i === j ? { pct: 50 } : psCellFor(i, j);", "const c = psCellFor(i, j);"],

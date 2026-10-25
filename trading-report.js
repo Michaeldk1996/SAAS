@@ -659,9 +659,11 @@ window.SfCountryIoc = (function () {
   }
 
   // ─── player identity cell ───────────────────────────────────────────────────
-  // Initials avatar (override: no photos), as on Live, Model and the shell.
+  // The player's photo over the initials (founder 2026-10-22, deliberately overriding TEN-421's "no photos"): the
+  // row's player ID -> the dashboard's one resolver (playerPhotoImg); no ID or no photo = the initials alone.
   function avatarHtml(row) {
-    return '<span class="tr-ava">' + esc(playerInitials(row.name)) + '</span>';
+    var ph = (row.key && typeof playerPhotoImg === 'function') ? playerPhotoImg(String(row.key), row.name) : '';   // eslint-disable-line no-undef
+    return '<span class="tr-ava">' + esc(playerInitials(row.name)) + ph + '</span>';
   }
   // The tag says which matches the figures read: TOUR = ATP main tour (qualifying included), CHAL = Challenger
   // (qualifying included). One tag — the tier the row reads; the other tier is never blended in.
@@ -1187,11 +1189,10 @@ window.SfCountryIoc = (function () {
       if (e.target && e.target.id === 'trSearch') { S.q = e.target.value; render(); }
     });
 
-    // Escape and a document click close any open menu.
-    document.addEventListener('keydown', function (e) {
-      if (e.key !== 'Escape') return;
-      if (S.menu || S.surfOpen || S.tourOpen) { S.menu = null; S.surfOpen = false; S.tourOpen = false; render(); }
-    });
+    // Escape (esc-nav.js) and a document click close any open menu.
+    (window.sfEscLayers = window.sfEscLayers || []).push({ id: 'trading-menu', z: 90,
+      isOpen: function () { return !!(_active && (S.menu || S.surfOpen || S.tourOpen)); },
+      close: function () { S.menu = null; S.surfOpen = false; S.tourOpen = false; render(); } });
     document.addEventListener('click', function () {
       if (!_active) return;
       if (S.menu || S.surfOpen || S.tourOpen) { S.menu = null; S.surfOpen = false; S.tourOpen = false; render(); }

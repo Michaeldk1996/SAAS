@@ -6,8 +6,15 @@
  *
  * Source: database-yield.json — the Database page's own rows (build-database-yield.js
  * from odds-archive/*.csv: Pinnacle closing, else Bet365 closing, per match; 2010+;
- * walkovers, retirements, exact ties and >1.15-overround markets excluded). Grouped
- * BY TOURNAMENT here. See the founder ruling in main().
+ * walkovers, exact ties and >1.15-overround markets excluded). Grouped BY TOURNAMENT here.
+ * See the founder ruling in main().
+ *
+ * Retirements (founder ruling 2026-10-25, round 2 item 1.3 — settlement.js, two rules, never re-derived here):
+ *   - the ROI figures (roiFav / roiDog, and their n) read the Database's FIGURE rows: `rows` + the retRows
+ *     Settlement.settleBet lets stand (Pinnacle rules: after the first set was completed) — the same rows the Database
+ *     panel shows, so card = panel still holds;
+ *   - Favourite reliability (favRel, its n = nRel) reads `rows` + every retRow Settlement.matchWinner gives a winner
+ *     (the official ATP result: every retirement counts; walkovers never reach the store).
  *
  * For every completed match we take the favourite = the shorter closing price:
  *   - ROI backing favourites  flat 1u on the favourite every match, at its
@@ -26,6 +33,7 @@
  */
 const fs = require('fs');
 const path = require('path');
+const Settlement = require('./settlement.js');   // founder 2026-10-25: the two retirement rules, one module
 
 const ROOT = __dirname;
 const OUT = path.join(ROOT, 'tournament-market.json');
@@ -50,7 +58,11 @@ const ROW_SPLIT = {
   'Toronto': { 'Rogers Masters': { year: CANADA.toronto }, 'Canadian Open': { year: CANADA.toronto } },
   'Turin': { 'Masters Cup': { year: y => y >= 2021 } },
   'Hamburg': { 'European Open': { surface: 'Clay', month: m => m === 7 } },
-  'Antwerp': { 'European Open': { surface: 'Hard', month: m => m === 10 } },
+  'Antwerp': { 'European Open': { surface: 'Hard', month: m => m === 10, year: y => y <= 2024 } },
+  // Round 2 item 1.1 (founder 2026-10-25): the European Open moved Antwerp → Brussels in 2025 and Tennis-Data kept the
+  // name. Brussels takes the name for its OWN rows (2025+) — a name/price join, NOT a lineage merge: no Antwerp year
+  // feeds Brussels, and Brussels' rows no longer count for Antwerp.
+  'Brussels': { 'European Open': { surface: 'Hard', month: m => m === 10, year: y => y >= 2025 } },
 };
 const ALIAS = {
   'Montreal': ['Rogers Masters', 'Canadian Open'],
@@ -111,6 +123,8 @@ const ALIAS = {
   'Bucharest': ['Open Romania', 'BRD Nastase Tiriac Trophy', 'Tiriac Open'],
   'Lyon': ['Lyon Open', 'Open de Nice Côte d’Azur'],
   'Antwerp': ['European Open'],
+  'Brussels': ['European Open'],   // its own 2025+ rows only (ROW_SPLIT)
+  'Lyon (France)': ['Lyon (France)'],   // Lyon October 2026, a new event: its own Database rows, no Tennis-Data past
   'Dallas': ['Dallas Open'],
   'Los Cabos': ['Los Cabos Open'],
   'Almaty': ['Almaty Open'],
@@ -153,10 +167,20 @@ function main() {
   }
   const Y = JSON.parse(fs.readFileSync(YIELD, 'utf8'));
   const meta = Y.meta || {};
-  const rows = Y.rows;
   const names = meta.tournaments;
-  if (!Array.isArray(rows) || !rows.length) throw new Error('database-yield.json carries no rows.');
+  if (!Array.isArray(Y.rows) || !Y.rows.length) throw new Error('database-yield.json carries no rows.');
   if (!Array.isArray(names) || !names.length) throw new Error('database-yield.json carries no meta.tournaments.');
+  // Each store row tagged with the two settlement verdicts (settlement.js): bet = in the ROI figures, win = in favRel.
+  // A Database row is a played result (Completed, or a non-result its sources show played out) — in both. A retRow
+  // carries its comment and first set; a store without them cannot be settled, so it fails rather than guess.
+  const ret = Y.retRows || [], retC = Y.retComment, retF = Y.retFs;
+  if (ret.length && (!Array.isArray(retC) || !Array.isArray(retF) || retC.length !== ret.length || retF.length !== ret.length)) {
+    throw new Error('database-yield.json retRows carry no retComment / retFs (or out of step) - settlement.js cannot settle them.');
+  }
+  const rows = Y.rows.map(r => ({ r, bet: true, win: true })).concat(ret.map((r, i) => ({ r,
+    bet: Settlement.betCounts({ comment: retC[i], fs: retF[i] }),
+    win: Settlement.matchWinner({ comment: retC[i], winnerSide: r[7] ? 'fav' : 'dog' }) != null })))
+    .filter(x => x.bet || x.win);
 
   // row = [date, level, surface, round, tournamentIdx, favPrice, dogPrice, favWon, book]
   const R_SURF = 2, R_TOURN = 4, R_FAV = 5, R_DOG = 6, R_WON = 7;
@@ -164,11 +188,11 @@ function main() {
   const idxOf = new Map();
   names.forEach((n, i) => idxOf.set(n, i));
 
-  const byIdx = new Map();          // tournamentIdx -> rows
-  for (const r of rows) {
-    const t = r[R_TOURN];
+  const byIdx = new Map();          // tournamentIdx -> tagged rows
+  for (const x of rows) {
+    const t = x.r[R_TOURN];
     if (!byIdx.has(t)) byIdx.set(t, []);
-    byIdx.get(t).push(r);
+    byIdx.get(t).push(x);
   }
 
   const baseline = aggRows(rows);
@@ -188,10 +212,10 @@ function main() {
       const rule = split[a];
       const surfIx = rule && rule.surface ? (meta.surfaces || []).indexOf(rule.surface) : null;
       if (rule && rule.surface && surfIx < 0) throw new Error(`ROW_SPLIT surface ${rule.surface} is not in database-yield.json meta.surfaces`);
-      const kept = rule ? rs.filter(r => (!rule.year || rule.year(Math.floor(r[0] / 10000))) && (!rule.month || rule.month(Math.floor(r[0] / 100) % 100)) && (surfIx == null || r[R_SURF] === surfIx)) : rs;
+      const kept = rule ? rs.filter(({ r }) => (!rule.year || rule.year(Math.floor(r[0] / 10000))) && (!rule.month || rule.month(Math.floor(r[0] / 100) % 100)) && (surfIx == null || r[R_SURF] === surfIx)) : rs;
       if (!kept.length) { miss.push(a); continue; }
-      if (rule) filter[a] = Object.assign({ years: [...new Set(kept.map(r => Math.floor(r[0] / 10000)))].sort((p, q) => p - q), surfaces: [...new Set(kept.map(r => r[R_SURF]))].sort() },
-        rule.month ? { months: [...new Set(kept.map(r => Math.floor(r[0] / 100) % 100))].sort((p, q) => p - q) } : {});
+      if (rule) filter[a] = Object.assign({ years: [...new Set(kept.map(({ r }) => Math.floor(r[0] / 10000)))].sort((p, q) => p - q), surfaces: [...new Set(kept.map(({ r }) => r[R_SURF]))].sort() },
+        rule.month ? { months: [...new Set(kept.map(({ r }) => Math.floor(r[0] / 100) % 100))].sort((p, q) => p - q) } : {});
       hit.push(a);
       pool = pool.concat(kept);
     }
@@ -215,6 +239,7 @@ function main() {
     windowStart: meta.windowStart || null,
     dateRange: meta.dateRange || null,
     note: 'Flat 1u yields and favourite win rate per tournament, computed from database-yield.json so that an ROI card and the Database panel it links to cover exactly the same matches. Baseline pooled over every row in that store.',
+    settlement: 'settlement.js: roiFav / roiDog over n = the Database figure rows (completed matches + retirements whose bet stands on Pinnacle rules: first set completed); favRel over nRel = completed matches + every retirement on the official ATP result (matchWinner). Walkovers never.',
     minMatches: MIN_MATCHES,
     baseline,
     tournaments,
@@ -222,8 +247,8 @@ function main() {
   fs.writeFileSync(OUT, JSON.stringify(out, null, 0) + '\n');
 
   const nUnres = Object.keys(unresolved).length;
-  console.log(`tournament-market.json: from database-yield.json (${meta.windowStart || '?'}+, ${(meta.books || []).join('/')}), ${rows.length} rows.`);
-  console.log(`tournament-market.json: ${Object.keys(tournaments).length} tournaments with a real figure (>=${MIN_MATCHES} matches); baseline roiFav=${baseline.roiFav}% roiDog=${baseline.roiDog}% favRel=${baseline.favRel}% over ${baseline.n} matches.`);
+  console.log(`tournament-market.json: from database-yield.json (${meta.windowStart || '?'}+, ${(meta.books || []).join('/')}), ${Y.rows.length} rows + ${ret.length} retRows (settlement.js: ${rows.filter(x => x.bet).length} in the ROI figures, ${rows.filter(x => x.win).length} in favRel).`);
+  console.log(`tournament-market.json: ${Object.keys(tournaments).length} tournaments with a real figure (>=${MIN_MATCHES} matches); baseline roiFav=${baseline.roiFav}% roiDog=${baseline.roiDog}% over ${baseline.n} matches, favRel=${baseline.favRel}% over ${baseline.nRel}.`);
   if (nUnres) {
     // NOT fatal: every unresolved alias measured so far is a pre-2010 sponsor
     // name the window legitimately excludes. Loud, because the day one is NOT
@@ -235,18 +260,19 @@ function main() {
 
 // Flat-stake aggregation over database-yield rows. One definition, used for the
 // baseline and every event, so a per-event figure and the tour figure can never
-// be computed two different ways.
+// be computed two different ways. Each row arrives tagged by settlement.js (main()): the ROI figures and their n read the
+// rows whose bet stands (settleBet), favRel and nRel the rows with a match winner (matchWinner).
 function aggRows(rs) {
-  const n = rs.length;
-  if (!n) return null;
-  let sf = 0, sd = 0, fw = 0;
-  for (const r of rs) {
+  let n = 0, nRel = 0, sf = 0, sd = 0, fw = 0;
+  for (const { r, bet, win } of rs) {
     const won = !!r[7];
-    sf += (won ? r[5] : 0) - 1;
-    sd += (won ? 0 : r[6]) - 1;
-    if (won) fw += 1;
+    if (bet) { n += 1; sf += (won ? r[5] : 0) - 1; sd += (won ? 0 : r[6]) - 1; }
+    if (win) { nRel += 1; if (won) fw += 1; }
   }
-  return { n, roiFav: +(sf / n * 100).toFixed(1), roiDog: +(sd / n * 100).toFixed(1), favRel: Math.round(fw / n * 100) };
+  if (!n) return null;
+  return { n, roiFav: +(sf / n * 100).toFixed(1), roiDog: +(sd / n * 100).toFixed(1), favRel: nRel ? Math.round(fw / nRel * 100) : null, nRel };
 }
 
-main();
+// Round 2 item 2.2: the favourites-by-round builder reuses this lineage (ALIAS + ROW_SPLIT) — one name join.
+if (require.main === module) main();
+module.exports = { ALIAS, ROW_SPLIT };

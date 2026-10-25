@@ -174,7 +174,8 @@ t('the index stays small enough to load on every page view', () => {
 // ---------------------------------------------------------------------------
 const V = 14; // PROFILE_SCHEMA_VERSION at time of writing; asserted below
 const NOW = '2026-09-17T12:00:00.000Z';
-const held = { builtAt: '2026-07-01T00:00:00.000Z', v: 7, profile: profile(1001, 'Held Guy') };
+// a schema older than the current one, whatever the current one is (it was a literal 7 until v7 became current)
+const held = { builtAt: '2026-07-01T00:00:00.000Z', v: require('../bsp-pipeline.js').TOURNAMENT_HISTORY_SCHEMA_VERSION - 1, profile: profile(1001, 'Held Guy') };
 
 t('a successful rebuild replaces the entry at the current schema', () => {
   const e = pipeline.nextShardCacheEntry(held, profile(1001, 'Fresh Guy'), NOW);
@@ -187,7 +188,7 @@ t('MUTATION: a FAILED rebuild keeps the held profile instead of evicting it', ()
   const e = pipeline.nextShardCacheEntry(held, null, NOW);
   assert.ok(e.profile, 'a transient failure evicted a player we already held — permanent loss');
   assert.strictEqual(e.profile.name, 'Held Guy');
-  assert.strictEqual(e.v, 7, 'the kept profile must keep its ORIGINAL schema version, not be relabelled current');
+  assert.strictEqual(e.v, held.v, 'the kept profile must keep its ORIGINAL schema version, not be relabelled current');
   assert.strictEqual(e.builtAt, NOW, 'the clock restamps so the TTL retries later');
 });
 
@@ -197,7 +198,7 @@ t('a failed rebuild for a player we hold nothing for is negative-cached', () => 
 });
 
 t('a kept-but-stale-schema profile is never promoted to current', () => {
-  // Relabelling would let a v7 ghost past the schema gate and onto the page.
+  // Relabelling would let a stale-schema ghost past the schema gate and onto the page.
   const e = pipeline.nextShardCacheEntry(held, null, NOW);
   assert.notStrictEqual(e.v, require('../bsp-pipeline.js').TOURNAMENT_HISTORY_SCHEMA_VERSION);
   assert.strictEqual(e.v, held.v);

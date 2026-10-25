@@ -25,15 +25,18 @@ const tk = (o) => Object.assign({ p1: 'S. Tsitsipas', p1Key: '1011', p2: 'X', p2
     tk({ date: '2024-09-25', season: '2024', winner: 'First Player', round: 'ATP Tokyo - 1/16-finals' }),
   ], '1011');
   // Mutation: restore the "Fill in any year strictly between…" loop in buildTournamentHistory
-  // → 2020, 2021 (never held) and 2023 (W/O given only) come back as Withdrawal rows.
-  check('Tsitsipas Tokyo: only the editions entered — 2024, 2022, 2019; no 2020/2021 header', () => {
-    assert.deepStrictEqual(yearsOf(h), ['2024', '2022', '2019']);
+  // → 2020, 2021 (never held) come back as Withdrawal rows. Founder 2026-10-22 (N6 reversed): 2023, entered and left
+  // by a W/O given, IS listed — with its walkover row, the round reached, and no Withdrawal label.
+  check('Tsitsipas Tokyo: only the editions entered — 2024, 2023 (W/O given), 2022, 2019; no 2020/2021 header', () => {
+    assert.deepStrictEqual(yearsOf(h), ['2024', '2023', '2022', '2019']);
+    const y23 = h.years.find((y) => y.year === '2023');
+    assert.deepStrictEqual([y23.won, y23.lost, y23.roundReached, y23.woGivenOnly, y23.matches.map((m) => m.walkover)], [0, 0, '1/16-finals', true, [true]]);
   });
   check('Tsitsipas Tokyo: no row carries withdrew / "Withdrawal"', () => {
     assert.ok(!h.years.some((y) => y.withdrew || y.roundReached === 'Withdrawal'));
   });
-  // Mutation: editionsPlayed: years.length + 1 (or counting a gap row) → 4.
-  check('Tsitsipas Tokyo: "editions played" counts the three entered (a W/O given is not one)', () => {
+  // Mutation: editionsPlayed: years.length (counting the W/O-given-only 2023) → 4.
+  check('Tsitsipas Tokyo: "editions played" counts the three played (a W/O given is listed, not played)', () => {
     assert.strictEqual(h.editionsPlayed, 3);
     assert.deepStrictEqual([h.totalWon, h.totalLost], [2, 2]);
   });

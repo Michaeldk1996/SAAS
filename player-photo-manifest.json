@@ -1,0 +1,1470 @@
+{
+  "_doc": "Founder rulings 2026-10-22 (.claude/rules/player-photos.md). One entry per ATP code in player-atp-aliases.json: the headshot's bytes + sha1 (first 16 hex) and the ATP player record (hero endpoint) it belongs to. tools/test-player-photos.js rejects a mapped code whose file is a known placeholder or shares its bytes with another code, and a code whose ATP birth year disagrees with the api-tennis profile for that ID.",
+  "regenerate": "ATP answers 403 to command-line fetches: run tools/atp-photo-probe.browser.js in a browser tab on https://www.atptour.com, then save its output over this file. Required whenever player-atp-aliases.json changes.",
+  "capturedAt": "2026-10-22",
+  "placeholders": [
+    {
+      "sha1_16": "d027bd09f6529734",
+      "bytes": 4729,
+      "what": "ATP's grey silhouette (served with HTTP 200 for H346 and TA12)"
+    }
+  ],
+  "photos": {
+    "A0E2": {
+      "status": 200,
+      "bytes": 42728,
+      "sha1_16": "239c195c88b00296",
+      "atpName": "Carlos Alcaraz",
+      "atpBirth": "2003-05-05",
+      "atpNat": "ESP"
+    },
+    "A0FC": {
+      "status": 200,
+      "bytes": 38503,
+      "sha1_16": "74f9db13a0d3a047",
+      "atpName": "Matteo Arnaldi",
+      "atpBirth": "2001-02-22",
+      "atpNat": "ITA"
+    },
+    "A0GC": {
+      "status": 200,
+      "bytes": 32506,
+      "sha1_16": "cd6fd46516aec828",
+      "atpName": "Terence Atmane",
+      "atpBirth": "2002-01-09",
+      "atpNat": "FRA"
+    },
+    "A829": {
+      "status": 200,
+      "bytes": 31194,
+      "sha1_16": "78a427e2d1af69b6",
+      "atpName": "Radu Albot",
+      "atpBirth": "1989-11-11",
+      "atpNat": "MDA"
+    },
+    "AE14": {
+      "status": 200,
+      "bytes": 33941,
+      "sha1_16": "1bbee4826fb855b4",
+      "atpName": "Daniel Altmaier",
+      "atpBirth": "1998-09-12",
+      "atpNat": "GER"
+    },
+    "AG37": {
+      "status": 200,
+      "bytes": 33471,
+      "sha1_16": "2694d568481b5ef7",
+      "atpName": "Felix Auger-Aliassime",
+      "atpBirth": "2000-08-08",
+      "atpNat": "CAN"
+    },
+    "B0BI": {
+      "status": 200,
+      "bytes": 39554,
+      "sha1_16": "1a3c47502a489dc4",
+      "atpName": "Sebastian Baez",
+      "atpBirth": "2000-12-28",
+      "atpNat": "ARG"
+    },
+    "B0CD": {
+      "status": 200,
+      "bytes": 36006,
+      "sha1_16": "2f919b38e6553ab1",
+      "atpName": "Jenson Brooksby",
+      "atpBirth": "2000-10-26",
+      "atpNat": "USA"
+    },
+    "B0FV": {
+      "status": 200,
+      "bytes": 35212,
+      "sha1_16": "598eea380af93ce5",
+      "atpName": "Roman Andres Burruchaga",
+      "atpBirth": "2002-01-23",
+      "atpNat": "ARG"
+    },
+    "B0GG": {
+      "status": 200,
+      "bytes": 38342,
+      "sha1_16": "b338058b7af58ddb",
+      "atpName": "Mattia Bellucci",
+      "atpBirth": "2001-06-01",
+      "atpNat": "ITA"
+    },
+    "B0ID": {
+      "status": 200,
+      "bytes": 25720,
+      "sha1_16": "cef7ce91081e3a75",
+      "atpName": "Ignacio Buse",
+      "atpBirth": "2004-03-25",
+      "atpNat": "PER"
+    },
+    "B0NN": {
+      "status": 200,
+      "bytes": 36796,
+      "sha1_16": "2566e3f894f5021f",
+      "atpName": "Nishesh Basavareddy",
+      "atpBirth": "2005-05-02",
+      "atpNat": "USA"
+    },
+    "B0PG": {
+      "status": 200,
+      "bytes": 33161,
+      "sha1_16": "ac79b12419b1d820",
+      "atpName": "Alexander Blockx",
+      "atpBirth": "2005-04-08",
+      "atpNat": "BEL"
+    },
+    "BD06": {
+      "status": 200,
+      "bytes": 33547,
+      "sha1_16": "df65023b46982750",
+      "atpName": "Roberto Bautista Agut",
+      "atpBirth": "1988-04-14",
+      "atpNat": "ESP"
+    },
+    "BF23": {
+      "status": 200,
+      "bytes": 32162,
+      "sha1_16": "c6692a89952c4a10",
+      "atpName": "Facundo Bagnis",
+      "atpBirth": "1990-02-27",
+      "atpNat": "ARG"
+    },
+    "BG23": {
+      "status": 200,
+      "bytes": 36937,
+      "sha1_16": "f6bb5ebe71d0d48d",
+      "atpName": "Nikoloz Basilashvili",
+      "atpBirth": "1992-02-23",
+      "atpNat": "GEO"
+    },
+    "BI81": {
+      "status": 200,
+      "bytes": 34083,
+      "sha1_16": "28bec0df81668401",
+      "atpName": "Alex Bolt",
+      "atpBirth": "1993-01-05",
+      "atpNat": "AUS"
+    },
+    "BK40": {
+      "status": 200,
+      "bytes": 37210,
+      "sha1_16": "be790a4fa8807829",
+      "atpName": "Matteo Berrettini",
+      "atpBirth": "1996-04-12",
+      "atpNat": "ITA"
+    },
+    "BK92": {
+      "status": 200,
+      "bytes": 34412,
+      "sha1_16": "a5e6052590995540",
+      "atpName": "Alexander Bublik",
+      "atpBirth": "1997-06-17",
+      "atpNat": "KAZ"
+    },
+    "BM95": {
+      "status": 200,
+      "bytes": 31835,
+      "sha1_16": "1cf75db3d3d677ce",
+      "atpName": "Benjamin Bonzi",
+      "atpBirth": "1996-06-09",
+      "atpNat": "FRA"
+    },
+    "BT72": {
+      "status": 200,
+      "bytes": 32649,
+      "sha1_16": "1a1ac28c6fbbb45f",
+      "atpName": "Nuno Borges",
+      "atpBirth": "1997-02-19",
+      "atpNat": "POR"
+    },
+    "BU13": {
+      "status": 200,
+      "bytes": 36741,
+      "sha1_16": "1d1ed116e0fbca7d",
+      "atpName": "Zizou Bergs",
+      "atpBirth": "1999-06-03",
+      "atpNat": "BEL"
+    },
+    "C0AU": {
+      "status": 200,
+      "bytes": 34150,
+      "sha1_16": "d925d7f3463032d5",
+      "atpName": "Francisco Cerundolo",
+      "atpBirth": "1998-08-13",
+      "atpNat": "ARG"
+    },
+    "C0C8": {
+      "status": 200,
+      "bytes": 35761,
+      "sha1_16": "6a4fbaac8d76fdd5",
+      "atpName": "Juan Manuel Cerundolo",
+      "atpBirth": "2001-11-15",
+      "atpNat": "ARG"
+    },
+    "C0DF": {
+      "status": 200,
+      "bytes": 31791,
+      "sha1_16": "c5128e80f553731d",
+      "atpName": "Francisco Comesana",
+      "atpBirth": "2000-10-06",
+      "atpNat": "ARG"
+    },
+    "C0E9": {
+      "status": 200,
+      "bytes": 41942,
+      "sha1_16": "3f61da1519b5468a",
+      "atpName": "Flavio Cobolli",
+      "atpBirth": "2002-05-06",
+      "atpNat": "ITA"
+    },
+    "C0H0": {
+      "status": 200,
+      "bytes": 37008,
+      "sha1_16": "975a958dac2b87c4",
+      "atpName": "Arthur Cazaux",
+      "atpBirth": "2002-08-23",
+      "atpNat": "FRA"
+    },
+    "C0JP": {
+      "status": 200,
+      "bytes": 35861,
+      "sha1_16": "e8c10d2d04dd28be",
+      "atpName": "Raphael Collignon",
+      "atpBirth": "2002-01-13",
+      "atpNat": "BEL"
+    },
+    "C977": {
+      "status": 200,
+      "bytes": 38302,
+      "sha1_16": "9c0a1caaa9589d46",
+      "atpName": "Marin Cilic",
+      "atpBirth": "1988-09-28",
+      "atpNat": "CRO"
+    },
+    "CD85": {
+      "status": 200,
+      "bytes": 34704,
+      "sha1_16": "060543e76ee1fa88",
+      "atpName": "Pablo Carreno Busta",
+      "atpBirth": "1991-07-12",
+      "atpNat": "ESP"
+    },
+    "CE77": {
+      "status": 200,
+      "bytes": 34443,
+      "sha1_16": "0a2878bba3361831",
+      "atpName": "Federico Coria",
+      "atpBirth": "1992-03-09",
+      "atpNat": "ARG"
+    },
+    "CF01": {
+      "status": 200,
+      "bytes": 33373,
+      "sha1_16": "a1c5d71f83291984",
+      "atpName": "Marco Cecchinato",
+      "atpBirth": "1992-09-30",
+      "atpNat": "ITA"
+    },
+    "CF59": {
+      "status": 200,
+      "bytes": 38345,
+      "sha1_16": "39213af89e8bb236",
+      "atpName": "Roberto Carballes Baena",
+      "atpBirth": "1993-03-23",
+      "atpNat": "ESP"
+    },
+    "CG80": {
+      "status": 200,
+      "bytes": 35829,
+      "sha1_16": "4438dba4ee357452",
+      "atpName": "Borna Coric",
+      "atpBirth": "1996-11-14",
+      "atpNat": "CRO"
+    },
+    "CH27": {
+      "status": 200,
+      "bytes": 32825,
+      "sha1_16": "bb78781d03cb50d4",
+      "atpName": "Hyeon Chung",
+      "atpBirth": "1996-05-19",
+      "atpNat": "KOR"
+    },
+    "D0C1": {
+      "status": 200,
+      "bytes": 28367,
+      "sha1_16": "9cf4d6c877a9fbd4",
+      "atpName": "Jesper de Jong",
+      "atpBirth": "2000-05-31",
+      "atpNat": "NED"
+    },
+    "D0CG": {
+      "status": 200,
+      "bytes": 38057,
+      "sha1_16": "4edbfd53f3cc5b58",
+      "atpName": "Facundo Diaz Acosta",
+      "atpBirth": "2000-12-15",
+      "atpNat": "ARG"
+    },
+    "D0CO": {
+      "status": 200,
+      "bytes": 28420,
+      "sha1_16": "84c0d039a6bc8d43",
+      "atpName": "Jack Draper",
+      "atpBirth": "2001-12-22",
+      "atpNat": "GBR"
+    },
+    "D0DT": {
+      "status": 200,
+      "bytes": 30216,
+      "sha1_16": "a3725637c1661720",
+      "atpName": "Martin Damm",
+      "atpBirth": "2003-09-30",
+      "atpNat": "USA"
+    },
+    "D0F6": {
+      "status": 200,
+      "bytes": 35140,
+      "sha1_16": "5293d2bf905f2e96",
+      "atpName": "Gabriel Diallo",
+      "atpBirth": "2001-09-24",
+      "atpNat": "CAN"
+    },
+    "D0FJ": {
+      "status": 200,
+      "bytes": 34483,
+      "sha1_16": "392a488bf7353b9f",
+      "atpName": "Luciano Darderi",
+      "atpBirth": "2002-02-14",
+      "atpNat": "ITA"
+    },
+    "D643": {
+      "status": 200,
+      "bytes": 36612,
+      "sha1_16": "25a534f51763df21",
+      "atpName": "Novak Djokovic",
+      "atpBirth": "1987-05-22",
+      "atpNat": "SRB"
+    },
+    "D875": {
+      "status": 200,
+      "bytes": 35249,
+      "sha1_16": "bf7b24f14cb51054",
+      "atpName": "Grigor Dimitrov",
+      "atpBirth": "1991-05-16",
+      "atpNat": "BUL"
+    },
+    "D923": {
+      "status": 200,
+      "bytes": 36909,
+      "sha1_16": "d507e93d5bb73cca",
+      "atpName": "Damir Dzumhur",
+      "atpBirth": "1992-05-20",
+      "atpNat": "BIH"
+    },
+    "D994": {
+      "status": 200,
+      "bytes": 31558,
+      "sha1_16": "b4fa370495b6dd0b",
+      "atpName": "James Duckworth",
+      "atpBirth": "1992-01-21",
+      "atpNat": "AUS"
+    },
+    "DA31": {
+      "status": 200,
+      "bytes": 34264,
+      "sha1_16": "0a5aec40cb3197c3",
+      "atpName": "Hugo Dellien",
+      "atpBirth": "1993-06-16",
+      "atpNat": "BOL"
+    },
+    "DA81": {
+      "status": 200,
+      "bytes": 41972,
+      "sha1_16": "3968aa166993c53c",
+      "atpName": "Taro Daniel",
+      "atpBirth": "1993-01-27",
+      "atpNat": "JPN"
+    },
+    "DB63": {
+      "status": 200,
+      "bytes": 34723,
+      "sha1_16": "776cf1d5d5908499",
+      "atpName": "Laslo Djere",
+      "atpBirth": "1995-06-02",
+      "atpNat": "SRB"
+    },
+    "DH50": {
+      "status": 200,
+      "bytes": 39497,
+      "sha1_16": "0619d2c0fc871647",
+      "atpName": "Alejandro Davidovich Fokina",
+      "atpBirth": "1999-06-05",
+      "atpNat": "ESP"
+    },
+    "DH58": {
+      "status": 200,
+      "bytes": 31956,
+      "sha1_16": "b97c693e3f8ee045",
+      "atpName": "Alex de Minaur",
+      "atpBirth": "1999-02-17",
+      "atpNat": "AUS"
+    },
+    "E687": {
+      "status": 200,
+      "bytes": 35372,
+      "sha1_16": "ad073dbff681a42f",
+      "atpName": "Daniel Evans",
+      "atpBirth": "1990-05-23",
+      "atpNat": "GBR"
+    },
+    "E865": {
+      "status": 200,
+      "bytes": 37113,
+      "sha1_16": "c6a3502dcdc912d6",
+      "atpName": "Christopher Eubanks",
+      "atpBirth": "1996-05-05",
+      "atpNat": "USA"
+    },
+    "EA24": {
+      "status": 200,
+      "bytes": 34739,
+      "sha1_16": "16ac4540dab9adcb",
+      "atpName": "Tomas Martin Etcheverry",
+      "atpBirth": "1999-07-18",
+      "atpNat": "ARG"
+    },
+    "F0BY": {
+      "status": 200,
+      "bytes": 38652,
+      "sha1_16": "def7c9168cac04e5",
+      "atpName": "Jacob Fearnley",
+      "atpBirth": "2001-07-15",
+      "atpNat": "GBR"
+    },
+    "F0DM": {
+      "status": 200,
+      "bytes": 36718,
+      "sha1_16": "22702f3cdd634b79",
+      "atpName": "Arthur Fery",
+      "atpBirth": "2002-07-12",
+      "atpNat": "GBR"
+    },
+    "F0F1": {
+      "status": 200,
+      "bytes": 38218,
+      "sha1_16": "7ac47012e5555739",
+      "atpName": "Arthur Fils",
+      "atpBirth": "2004-06-12",
+      "atpNat": "FRA"
+    },
+    "F0F2": {
+      "status": 200,
+      "bytes": 32946,
+      "sha1_16": "290fee3b39cdda91",
+      "atpName": "Jaime Faria",
+      "atpBirth": "2003-08-06",
+      "atpNat": "POR"
+    },
+    "F0FV": {
+      "status": 200,
+      "bytes": 37680,
+      "sha1_16": "597f7d9ef6b6251e",
+      "atpName": "Joao Fonseca",
+      "atpBirth": "2006-08-21",
+      "atpNat": "BRA"
+    },
+    "F510": {
+      "status": 200,
+      "bytes": 31438,
+      "sha1_16": "96bcbc0bb80d83ce",
+      "atpName": "Fabio Fognini",
+      "atpBirth": "1987-05-24",
+      "atpNat": "ITA"
+    },
+    "F724": {
+      "status": 200,
+      "bytes": 35012,
+      "sha1_16": "403fa3bc82dc82d6",
+      "atpName": "Marton Fucsovics",
+      "atpBirth": "1992-02-08",
+      "atpNat": "HUN"
+    },
+    "FB98": {
+      "status": 200,
+      "bytes": 38366,
+      "sha1_16": "2f08e7557725c967",
+      "atpName": "Taylor Fritz",
+      "atpBirth": "1997-10-28",
+      "atpNat": "USA"
+    },
+    "G09O": {
+      "status": 200,
+      "bytes": 33571,
+      "sha1_16": "458aa7ea1c7bd1a0",
+      "atpName": "Hugo Gaston",
+      "atpBirth": "2000-09-26",
+      "atpNat": "FRA"
+    },
+    "G628": {
+      "status": 200,
+      "bytes": 30572,
+      "sha1_16": "c781784a5dbe12b3",
+      "atpName": "Richard Gasquet",
+      "atpBirth": "1986-06-18",
+      "atpNat": "FRA"
+    },
+    "GB88": {
+      "status": 200,
+      "bytes": 35889,
+      "sha1_16": "e869195a3272076f",
+      "atpName": "David Goffin",
+      "atpBirth": "1990-12-07",
+      "atpNat": "BEL"
+    },
+    "GB93": {
+      "status": 200,
+      "bytes": 31900,
+      "sha1_16": "bb2939eb1ed7343c",
+      "atpName": "Norbert Gombos",
+      "atpBirth": "1990-08-13",
+      "atpNat": "SVK"
+    },
+    "GC88": {
+      "status": 200,
+      "bytes": 32340,
+      "sha1_16": "38b401e4ac928a78",
+      "atpName": "Marcos Giron",
+      "atpBirth": "1993-07-24",
+      "atpNat": "USA"
+    },
+    "GD64": {
+      "status": 200,
+      "bytes": 36053,
+      "sha1_16": "0699cc378f182acd",
+      "atpName": "Cristian Garin",
+      "atpBirth": "1996-05-30",
+      "atpNat": "CHI"
+    },
+    "GE33": {
+      "status": 200,
+      "bytes": 36193,
+      "sha1_16": "78c7b49ee4f6fa70",
+      "atpName": "Daniel Elahi Galan",
+      "atpBirth": "1996-06-18",
+      "atpNat": "COL"
+    },
+    "GH92": {
+      "status": 200,
+      "bytes": 36210,
+      "sha1_16": "bce7194c772890a7",
+      "atpName": "Borna Gojo",
+      "atpBirth": "1998-02-27",
+      "atpNat": "CRO"
+    },
+    "GJ37": {
+      "status": 200,
+      "bytes": 36717,
+      "sha1_16": "8b7dc575e6dc81bc",
+      "atpName": "Tallon Griekspoor",
+      "atpBirth": "1996-07-02",
+      "atpNat": "NED"
+    },
+    "H0BH": {
+      "status": 200,
+      "bytes": 31302,
+      "sha1_16": "e784428e39a53fa6",
+      "atpName": "Rinky Hijikata",
+      "atpBirth": "2001-02-23",
+      "atpNat": "AUS"
+    },
+    "H996": {
+      "status": 200,
+      "bytes": 39720,
+      "sha1_16": "5d0be12e2f775dc0",
+      "atpName": "Pierre-Hugues Herbert",
+      "atpBirth": "1991-03-18",
+      "atpNat": "FRA"
+    },
+    "H997": {
+      "status": 200,
+      "bytes": 25510,
+      "sha1_16": "8accd4cb0ff6facb",
+      "atpName": "Yannick Hanfmann",
+      "atpBirth": "1991-11-13",
+      "atpNat": "GER"
+    },
+    "HB64": {
+      "status": 200,
+      "bytes": 41621,
+      "sha1_16": "cff82edf1944b01e",
+      "atpName": "Quentin Halys",
+      "atpBirth": "1996-10-26",
+      "atpNat": "FRA"
+    },
+    "HB71": {
+      "status": 200,
+      "bytes": 33250,
+      "sha1_16": "029dc2092287200a",
+      "atpName": "Hubert Hurkacz",
+      "atpBirth": "1997-02-11",
+      "atpNat": "POL"
+    },
+    "HD68": {
+      "status": 200,
+      "bytes": 31327,
+      "sha1_16": "bf564808313395c2",
+      "atpName": "Billy Harris",
+      "atpBirth": "1995-01-25",
+      "atpNat": "GBR"
+    },
+    "HG86": {
+      "status": 200,
+      "bytes": 35590,
+      "sha1_16": "150b0ea5daafaab3",
+      "atpName": "Lloyd Harris",
+      "atpBirth": "1997-02-24",
+      "atpNat": "RSA"
+    },
+    "HH06": {
+      "status": 200,
+      "bytes": 35670,
+      "sha1_16": "eec2a7cf23ae0632",
+      "atpName": "Marc-Andrea Huesler",
+      "atpBirth": "1996-06-24",
+      "atpNat": "SUI"
+    },
+    "HH26": {
+      "status": 200,
+      "bytes": 38030,
+      "sha1_16": "07ae8b7187c88319",
+      "atpName": "Ugo Humbert",
+      "atpBirth": "1998-06-26",
+      "atpNat": "FRA"
+    },
+    "J0DZ": {
+      "status": 200,
+      "bytes": 34225,
+      "sha1_16": "c5e340f59cfbddb0",
+      "atpName": "Rafael Jodar",
+      "atpBirth": "2006-09-17",
+      "atpNat": "ESP"
+    },
+    "J551": {
+      "status": 200,
+      "bytes": 33363,
+      "sha1_16": "677e55d00932397d",
+      "atpName": "Nicolas Jarry",
+      "atpBirth": "1995-10-11",
+      "atpNat": "CHI"
+    },
+    "K09F": {
+      "status": 200,
+      "bytes": 37916,
+      "sha1_16": "79700bef8faba818",
+      "atpName": "Pavel Kotov",
+      "atpBirth": "1998-11-18",
+      "atpNat": "RUS"
+    },
+    "K0AH": {
+      "status": 200,
+      "bytes": 38353,
+      "sha1_16": "ad4bfa81dbfec71d",
+      "atpName": "Sebastian Korda",
+      "atpBirth": "2000-07-05",
+      "atpNat": "USA"
+    },
+    "K0AZ": {
+      "status": 200,
+      "bytes": 35028,
+      "sha1_16": "153d7ec0637e2946",
+      "atpName": "Aleksandar Kovacevic",
+      "atpBirth": "1998-08-29",
+      "atpNat": "USA"
+    },
+    "K926": {
+      "status": 200,
+      "bytes": 30879,
+      "sha1_16": "9e0aa17719594409",
+      "atpName": "Mikhail Kukushkin",
+      "atpBirth": "1987-12-26",
+      "atpNat": "KAZ"
+    },
+    "KB95": {
+      "status": 200,
+      "bytes": 29459,
+      "sha1_16": "3896bcc9d6b5e1e4",
+      "atpName": "Jason Kubler",
+      "atpBirth": "1993-05-19",
+      "atpNat": "AUS"
+    },
+    "KC04": {
+      "status": 200,
+      "bytes": 28313,
+      "sha1_16": "ab2a0a73baf1c385",
+      "atpName": "Jozef Kovalik",
+      "atpBirth": "1992-11-04",
+      "atpNat": "SVK"
+    },
+    "KC12": {
+      "status": 200,
+      "bytes": 38479,
+      "sha1_16": "3af8bf29021e340c",
+      "atpName": "Mitchell Krueger",
+      "atpBirth": "1994-01-12",
+      "atpNat": "USA"
+    },
+    "KD46": {
+      "status": 200,
+      "bytes": 34475,
+      "sha1_16": "8684204a7161378e",
+      "atpName": "Thanasi Kokkinakis",
+      "atpBirth": "1996-04-10",
+      "atpNat": "AUS"
+    },
+    "KE17": {
+      "status": 200,
+      "bytes": 38472,
+      "sha1_16": "67bce21ecc576c8a",
+      "atpName": "Nick Kyrgios",
+      "atpBirth": "1995-04-27",
+      "atpNat": "AUS"
+    },
+    "KE29": {
+      "status": 200,
+      "bytes": 33632,
+      "sha1_16": "76c07e60c1f81e62",
+      "atpName": "Karen Khachanov",
+      "atpBirth": "1996-05-21",
+      "atpNat": "RUS"
+    },
+    "KE73": {
+      "status": 200,
+      "bytes": 28741,
+      "sha1_16": "7d35db6b5fab064d",
+      "atpName": "Dominik Koepfer",
+      "atpBirth": "1994-04-29",
+      "atpNat": "GER"
+    },
+    "KF17": {
+      "status": 200,
+      "bytes": 34288,
+      "sha1_16": "abdb7e6ac721916f",
+      "atpName": "Soonwoo Kwon",
+      "atpBirth": "1997-12-02",
+      "atpNat": "KOR"
+    },
+    "KI82": {
+      "status": 200,
+      "bytes": 31471,
+      "sha1_16": "b62cd8d7113e3c9a",
+      "atpName": "Vit Kopriva",
+      "atpBirth": "1997-06-15",
+      "atpNat": "CZE"
+    },
+    "KI95": {
+      "status": 200,
+      "bytes": 36459,
+      "sha1_16": "2fed78e55f6aa077",
+      "atpName": "Miomir Kecmanovic",
+      "atpBirth": "1999-08-31",
+      "atpNat": "SRB"
+    },
+    "L0BV": {
+      "status": 200,
+      "bytes": 29624,
+      "sha1_16": "1309377f5bd2fa2f",
+      "atpName": "Jiri Lehecka",
+      "atpBirth": "2001-11-08",
+      "atpNat": "CZE"
+    },
+    "L0IL": {
+      "status": 200,
+      "bytes": 35799,
+      "sha1_16": "95e6c79405448314",
+      "atpName": "Martin Landaluce",
+      "atpBirth": "2006-01-08",
+      "atpNat": "ESP"
+    },
+    "L987": {
+      "status": 200,
+      "bytes": 37098,
+      "sha1_16": "fcb79589796015c7",
+      "atpName": "Dusan Lajovic",
+      "atpBirth": "1990-06-30",
+      "atpNat": "SRB"
+    },
+    "LB66": {
+      "status": 200,
+      "bytes": 38115,
+      "sha1_16": "b7f3aa0fb0b593d7",
+      "atpName": "Constant Lestienne",
+      "atpBirth": "1992-05-23",
+      "atpNat": "FRA"
+    },
+    "M0CI": {
+      "status": 200,
+      "bytes": 31678,
+      "sha1_16": "dbb865c8f8d493e6",
+      "atpName": "Fabian Marozsan",
+      "atpBirth": "1999-10-08",
+      "atpNat": "HUN"
+    },
+    "M0EJ": {
+      "status": 200,
+      "bytes": 37471,
+      "sha1_16": "631cde49fa82cc87",
+      "atpName": "Lorenzo Musetti",
+      "atpBirth": "2002-03-03",
+      "atpNat": "ITA"
+    },
+    "M0FH": {
+      "status": 200,
+      "bytes": 37721,
+      "sha1_16": "126c74759fb7bc3a",
+      "atpName": "Tomas Machac",
+      "atpBirth": "2000-10-13",
+      "atpNat": "CZE"
+    },
+    "M0GZ": {
+      "status": 200,
+      "bytes": 32602,
+      "sha1_16": "71ff269c3088c0d6",
+      "atpName": "Giovanni Mpetshi Perricard",
+      "atpBirth": "2003-07-08",
+      "atpNat": "FRA"
+    },
+    "M0HU": {
+      "status": 200,
+      "bytes": 35441,
+      "sha1_16": "25eefe5d22ce7128",
+      "atpName": "Shintaro Mochizuki",
+      "atpBirth": "2003-06-02",
+      "atpNat": "JPN"
+    },
+    "M0JF": {
+      "status": 200,
+      "bytes": 33901,
+      "sha1_16": "82e41784cc357884",
+      "atpName": "Hamad Medjedovic",
+      "atpBirth": "2003-07-18",
+      "atpNat": "SRB"
+    },
+    "M0JZ": {
+      "status": 200,
+      "bytes": 32162,
+      "sha1_16": "f8fc588798417bbe",
+      "atpName": "Filip Misolic",
+      "atpBirth": "2001-08-08",
+      "atpNat": "AUT"
+    },
+    "M0NI": {
+      "status": 200,
+      "bytes": 30391,
+      "sha1_16": "be4a30a5846c4bfa",
+      "atpName": "Jakub Mensik",
+      "atpBirth": "2005-09-01",
+      "atpNat": "CZE"
+    },
+    "M0QI": {
+      "status": 200,
+      "bytes": 30797,
+      "sha1_16": "a023613b5f8eac4f",
+      "atpName": "Alex Michelsen",
+      "atpBirth": "2004-08-25",
+      "atpNat": "USA"
+    },
+    "MC65": {
+      "status": 200,
+      "bytes": 35660,
+      "sha1_16": "68c4ad045397a89a",
+      "atpName": "Gael Monfils",
+      "atpBirth": "1986-09-01",
+      "atpNat": "FRA"
+    },
+    "ME82": {
+      "status": 200,
+      "bytes": 41068,
+      "sha1_16": "9c94d54abe8c1118",
+      "atpName": "Adrian Mannarino",
+      "atpBirth": "1988-06-29",
+      "atpNat": "FRA"
+    },
+    "MJ08": {
+      "status": 200,
+      "bytes": 35036,
+      "sha1_16": "3dcbfd9afc4b89be",
+      "atpName": "Thiago Monteiro",
+      "atpBirth": "1994-05-31",
+      "atpNat": "BRA"
+    },
+    "MK66": {
+      "status": 200,
+      "bytes": 34305,
+      "sha1_16": "7c296a50f3fbc52f",
+      "atpName": "Mackenzie McDonald",
+      "atpBirth": "1995-04-16",
+      "atpNat": "USA"
+    },
+    "MM58": {
+      "status": 200,
+      "bytes": 38507,
+      "sha1_16": "1d30062e6f0ae1ef",
+      "atpName": "Daniil Medvedev",
+      "atpBirth": "1996-02-11",
+      "atpNat": "RUS"
+    },
+    "MN13": {
+      "status": 200,
+      "bytes": 31888,
+      "sha1_16": "10eea709137d5598",
+      "atpName": "Maximilian Marterer",
+      "atpBirth": "1995-06-15",
+      "atpNat": "GER"
+    },
+    "MO44": {
+      "status": 200,
+      "bytes": 38980,
+      "sha1_16": "93a1a2d07f2112df",
+      "atpName": "Pedro Martinez",
+      "atpBirth": "1997-04-26",
+      "atpNat": "ESP"
+    },
+    "MP01": {
+      "status": 200,
+      "bytes": 32728,
+      "sha1_16": "4ae0fa43ef56ff1b",
+      "atpName": "Michael Mmoh",
+      "atpBirth": "1998-01-10",
+      "atpNat": "USA"
+    },
+    "MP20": {
+      "status": 200,
+      "bytes": 39319,
+      "sha1_16": "7d3e1bcc72f12679",
+      "atpName": "Alexandre Muller",
+      "atpBirth": "1997-02-01",
+      "atpNat": "FRA"
+    },
+    "MQ75": {
+      "status": 200,
+      "bytes": 29862,
+      "sha1_16": "f50788586073b51b",
+      "atpName": "Kamil Majchrzak",
+      "atpBirth": "1996-01-13",
+      "atpNat": "POL"
+    },
+    "MU94": {
+      "status": 200,
+      "bytes": 35641,
+      "sha1_16": "1f2be1f6070c83de",
+      "atpName": "Jaume Munar",
+      "atpBirth": "1997-05-05",
+      "atpNat": "ESP"
+    },
+    "MV14": {
+      "status": 200,
+      "bytes": 33446,
+      "sha1_16": "b5c7348725bfbee6",
+      "atpName": "Alex Molcan",
+      "atpBirth": "1997-12-01",
+      "atpNat": "SVK"
+    },
+    "MW02": {
+      "status": 200,
+      "bytes": 36699,
+      "sha1_16": "0ddfdf41ecfb1cb0",
+      "atpName": "Corentin Moutet",
+      "atpBirth": "1999-04-19",
+      "atpNat": "FRA"
+    },
+    "N0AE": {
+      "status": 200,
+      "bytes": 29313,
+      "sha1_16": "2c30f76acb15aa2c",
+      "atpName": "Brandon Nakashima",
+      "atpBirth": "2001-08-03",
+      "atpNat": "USA"
+    },
+    "N0AM": {
+      "status": 200,
+      "bytes": 35665,
+      "sha1_16": "c5fef1188eed41d6",
+      "atpName": "Emilio Nava",
+      "atpBirth": "2001-12-02",
+      "atpNat": "USA"
+    },
+    "N0BG": {
+      "status": 200,
+      "bytes": 33128,
+      "sha1_16": "9aec9441d7fdd808",
+      "atpName": "Luca Nardi",
+      "atpBirth": "2003-08-06",
+      "atpNat": "ITA"
+    },
+    "N0BS": {
+      "status": 200,
+      "bytes": 44347,
+      "sha1_16": "4b54cd1aaf85b644",
+      "atpName": "Mariano Navone",
+      "atpBirth": "2001-02-27",
+      "atpNat": "ARG"
+    },
+    "N552": {
+      "status": 200,
+      "bytes": 26595,
+      "sha1_16": "924c8dc8953857c0",
+      "atpName": "Kei Nishikori",
+      "atpBirth": "1989-12-29",
+      "atpNat": "JPN"
+    },
+    "N732": {
+      "status": 200,
+      "bytes": 31417,
+      "sha1_16": "7dcc49d2f8e7830f",
+      "atpName": "Yoshihito Nishioka",
+      "atpBirth": "1995-09-27",
+      "atpNat": "JPN"
+    },
+    "N771": {
+      "status": 200,
+      "bytes": 37313,
+      "sha1_16": "5fef98d0488d2778",
+      "atpName": "Cameron Norrie",
+      "atpBirth": "1995-08-23",
+      "atpNat": "GBR"
+    },
+    "N897": {
+      "status": 200,
+      "bytes": 33599,
+      "sha1_16": "a69c489b69d319ee",
+      "atpName": "Sumit Nagal",
+      "atpBirth": "1997-08-16",
+      "atpNat": "IND"
+    },
+    "O483": {
+      "status": 200,
+      "bytes": 34259,
+      "sha1_16": "6ae53f7dd994f4d9",
+      "atpName": "Christopher O'Connell",
+      "atpBirth": "1994-06-03",
+      "atpNat": "AUS"
+    },
+    "O513": {
+      "status": 200,
+      "bytes": 35962,
+      "sha1_16": "76c1db30786d417b",
+      "atpName": "Sebastian Ofner",
+      "atpBirth": "1996-05-12",
+      "atpNat": "AUT"
+    },
+    "O522": {
+      "status": 200,
+      "bytes": 29339,
+      "sha1_16": "e6b1944c2c25bf2a",
+      "atpName": "Reilly Opelka",
+      "atpBirth": "1997-08-28",
+      "atpNat": "USA"
+    },
+    "P09Z": {
+      "status": 200,
+      "bytes": 40943,
+      "sha1_16": "60b7c3d5382f303c",
+      "atpName": "Alexei Popyrin",
+      "atpBirth": "1999-08-05",
+      "atpNat": "AUS"
+    },
+    "P0CT": {
+      "status": 200,
+      "bytes": 36619,
+      "sha1_16": "c3274b2ac71d96bf",
+      "atpName": "Francesco Passaro",
+      "atpBirth": "2001-01-07",
+      "atpNat": "ITA"
+    },
+    "P0HW": {
+      "status": 200,
+      "bytes": 31066,
+      "sha1_16": "e689adc96466fffa",
+      "atpName": "Dino Prizmic",
+      "atpBirth": "2005-08-05",
+      "atpNat": "CRO"
+    },
+    "PL56": {
+      "status": 200,
+      "bytes": 38591,
+      "sha1_16": "1c555fb137e73594",
+      "atpName": "Tommy Paul",
+      "atpBirth": "1997-05-17",
+      "atpNat": "USA"
+    },
+    "Q02L": {
+      "status": 200,
+      "bytes": 30076,
+      "sha1_16": "4e01181e88b4279f",
+      "atpName": "Ethan Quinn",
+      "atpBirth": "2004-03-12",
+      "atpNat": "USA"
+    },
+    "R09X": {
+      "status": 200,
+      "bytes": 30829,
+      "sha1_16": "38f169c083b0e01a",
+      "atpName": "Jurij Rodionov",
+      "atpBirth": "1999-05-16",
+      "atpNat": "AUT"
+    },
+    "R0DG": {
+      "status": 200,
+      "bytes": 31407,
+      "sha1_16": "d406bc387ebc1310",
+      "atpName": "Holger Rune",
+      "atpBirth": "2003-04-29",
+      "atpNat": "DEN"
+    },
+    "R0EB": {
+      "status": 200,
+      "bytes": 34888,
+      "sha1_16": "a0f6fea06da134a7",
+      "atpName": "Valentin Royer",
+      "atpBirth": "2001-05-29",
+      "atpNat": "FRA"
+    },
+    "RC91": {
+      "status": 200,
+      "bytes": 40738,
+      "sha1_16": "75d37fe7f4d56bca",
+      "atpName": "Arthur Rinderknech",
+      "atpBirth": "1995-07-23",
+      "atpNat": "FRA"
+    },
+    "RE44": {
+      "status": 200,
+      "bytes": 56612,
+      "sha1_16": "e39a7920a25e13c5",
+      "atpName": "Andrey Rublev",
+      "atpBirth": "1997-10-20",
+      "atpNat": "RUS"
+    },
+    "RH16": {
+      "status": 200,
+      "bytes": 29991,
+      "sha1_16": "63a0b7e0c551ab4e",
+      "atpName": "Casper Ruud",
+      "atpBirth": "1998-12-22",
+      "atpNat": "NOR"
+    },
+    "S0AG": {
+      "status": 200,
+      "bytes": 31914,
+      "sha1_16": "69ac2f6cb552ebba",
+      "atpName": "Jannik Sinner",
+      "atpBirth": "2001-08-16",
+      "atpNat": "ITA"
+    },
+    "S0H2": {
+      "status": 200,
+      "bytes": 34021,
+      "sha1_16": "6c96c24f7466fc56",
+      "atpName": "Aleksandr Shevchenko",
+      "atpBirth": "2000-11-29",
+      "atpNat": "KAZ"
+    },
+    "S0K7": {
+      "status": 200,
+      "bytes": 34786,
+      "sha1_16": "ccb5b2946194b0da",
+      "atpName": "Zachary Svajda",
+      "atpBirth": "2002-11-29",
+      "atpNat": "USA"
+    },
+    "S0LA": {
+      "status": 200,
+      "bytes": 39001,
+      "sha1_16": "8e562ac0447095be",
+      "atpName": "Dominic Stricker",
+      "atpBirth": "2002-08-16",
+      "atpNat": "SUI"
+    },
+    "S0RE": {
+      "status": 200,
+      "bytes": 31553,
+      "sha1_16": "d33e6adcd3ec5673",
+      "atpName": "Juncheng Shang",
+      "atpBirth": "2005-02-02",
+      "atpNat": "CHN"
+    },
+    "S0S1": {
+      "status": 200,
+      "bytes": 37969,
+      "sha1_16": "0fcdd0783f218714",
+      "atpName": "Ben Shelton",
+      "atpBirth": "2002-10-09",
+      "atpNat": "USA"
+    },
+    "SL28": {
+      "status": 200,
+      "bytes": 34498,
+      "sha1_16": "8e09b7de02afd131",
+      "atpName": "Jan-Lennard Struff",
+      "atpBirth": "1990-04-25",
+      "atpNat": "GER"
+    },
+    "SM37": {
+      "status": 200,
+      "bytes": 33138,
+      "sha1_16": "99ca7b9e25062d87",
+      "atpName": "Diego Schwartzman",
+      "atpBirth": "1992-08-16",
+      "atpNat": "ARG"
+    },
+    "SU55": {
+      "status": 200,
+      "bytes": 37993,
+      "sha1_16": "2cc6f8073e475571",
+      "atpName": "Denis Shapovalov",
+      "atpBirth": "1999-04-15",
+      "atpNat": "CAN"
+    },
+    "SU87": {
+      "status": 200,
+      "bytes": 35208,
+      "sha1_16": "44193870a33b5622",
+      "atpName": "Lorenzo Sonego",
+      "atpBirth": "1995-05-11",
+      "atpNat": "ITA"
+    },
+    "SX50": {
+      "status": 200,
+      "bytes": 43504,
+      "sha1_16": "98f904fcdd1392de",
+      "atpName": "Roman Safiullin",
+      "atpBirth": "1997-08-07",
+      "atpNat": "RUS"
+    },
+    "SX91": {
+      "status": 200,
+      "bytes": 41459,
+      "sha1_16": "7a0bb334ce39b372",
+      "atpName": "Thiago Seyboth Wild",
+      "atpBirth": "2000-03-10",
+      "atpNat": "BRA"
+    },
+    "T0A1": {
+      "status": 200,
+      "bytes": 39265,
+      "sha1_16": "6326ebceed0891ca",
+      "atpName": "Thiago Agustin Tirante",
+      "atpBirth": "2001-04-10",
+      "atpNat": "ARG"
+    },
+    "T0AP": {
+      "status": 200,
+      "bytes": 40708,
+      "sha1_16": "5372618631f4d785",
+      "atpName": "Chun-Hsin Tseng",
+      "atpBirth": "2001-08-08",
+      "atpNat": "TPE"
+    },
+    "T0HA": {
+      "status": 200,
+      "bytes": 34711,
+      "sha1_16": "805eeb47c48ba444",
+      "atpName": "Learner Tien",
+      "atpBirth": "2005-12-02",
+      "atpNat": "USA"
+    },
+    "TA29": {
+      "status": 200,
+      "bytes": 46138,
+      "sha1_16": "43227845ee041652",
+      "atpName": "Marco Trungelliti",
+      "atpBirth": "1990-01-31",
+      "atpNat": "ARG"
+    },
+    "TA46": {
+      "status": 200,
+      "bytes": 32311,
+      "sha1_16": "aa59a70412e5efd1",
+      "atpName": "Bernard Tomic",
+      "atpBirth": "1992-10-21",
+      "atpNat": "AUS"
+    },
+    "TC61": {
+      "status": 200,
+      "bytes": 34846,
+      "sha1_16": "cc9cafb942b6c6df",
+      "atpName": "Jordan Thompson",
+      "atpBirth": "1994-04-20",
+      "atpNat": "AUS"
+    },
+    "TD51": {
+      "status": 200,
+      "bytes": 44242,
+      "sha1_16": "81a0ce7e3c234322",
+      "atpName": "Frances Tiafoe",
+      "atpBirth": "1998-01-20",
+      "atpNat": "USA"
+    },
+    "TE16": {
+      "status": 200,
+      "bytes": 32696,
+      "sha1_16": "4da13fc485c2db68",
+      "atpName": "Carlos Taberner",
+      "atpBirth": "1997-08-08",
+      "atpNat": "ESP"
+    },
+    "TE30": {
+      "status": 200,
+      "bytes": 32930,
+      "sha1_16": "7e6a7f8fe30183e0",
+      "atpName": "Alejandro Tabilo",
+      "atpBirth": "1997-06-02",
+      "atpNat": "CHI"
+    },
+    "TE51": {
+      "status": 200,
+      "bytes": 36990,
+      "sha1_16": "39a04f2c975c10d5",
+      "atpName": "Stefanos Tsitsipas",
+      "atpBirth": "1998-08-12",
+      "atpNat": "GRE"
+    },
+    "U134": {
+      "status": 200,
+      "bytes": 35786,
+      "sha1_16": "9829d91013c2d8df",
+      "atpName": "Yasutaka Uchiyama",
+      "atpBirth": "1992-08-05",
+      "atpNat": "JPN"
+    },
+    "U182": {
+      "status": 200,
+      "bytes": 38102,
+      "sha1_16": "8f8cff2f4a2c1bc4",
+      "atpName": "Camilo Ugo Carabelli",
+      "atpBirth": "1999-06-17",
+      "atpNat": "ARG"
+    },
+    "V0DZ": {
+      "status": 200,
+      "bytes": 36287,
+      "sha1_16": "5af68ed7a3c31f75",
+      "atpName": "Luca Van Assche",
+      "atpBirth": "2004-05-11",
+      "atpNat": "FRA"
+    },
+    "V812": {
+      "status": 200,
+      "bytes": 35306,
+      "sha1_16": "af193bce673f7aa4",
+      "atpName": "Botic van de Zandschulp",
+      "atpBirth": "1995-10-04",
+      "atpNat": "NED"
+    },
+    "V832": {
+      "status": 200,
+      "bytes": 38330,
+      "sha1_16": "3b68a6102a1bc5fb",
+      "atpName": "Aleksandar Vukic",
+      "atpBirth": "1996-04-06",
+      "atpNat": "AUS"
+    },
+    "V836": {
+      "status": 200,
+      "bytes": 36551,
+      "sha1_16": "0c7cf7fd070ef2af",
+      "atpName": "Juan Pablo Varillas",
+      "atpBirth": "1995-10-06",
+      "atpNat": "PER"
+    },
+    "VA25": {
+      "status": 200,
+      "bytes": 43284,
+      "sha1_16": "a2c104474c0a92c2",
+      "atpName": "Valentin Vacherot",
+      "atpBirth": "1998-11-16",
+      "atpNat": "MON"
+    },
+    "W09E": {
+      "status": 200,
+      "bytes": 34361,
+      "sha1_16": "efbfd5e03a5c0958",
+      "atpName": "Adam Walton",
+      "atpBirth": "1999-04-17",
+      "atpNat": "AUS"
+    },
+    "W0BH": {
+      "status": 200,
+      "bytes": 27732,
+      "sha1_16": "462164617754c2b5",
+      "atpName": "Coleman Wong",
+      "atpBirth": "2004-06-06",
+      "atpNat": "HKG"
+    },
+    "W367": {
+      "status": 200,
+      "bytes": 33833,
+      "sha1_16": "f2983977540114c4",
+      "atpName": "Stan Wawrinka",
+      "atpBirth": "1985-03-28",
+      "atpNat": "SUI"
+    },
+    "WB08": {
+      "status": 200,
+      "bytes": 28314,
+      "sha1_16": "9c065a7d5ec95f39",
+      "atpName": "Yosuke Watanuki",
+      "atpBirth": "1998-04-12",
+      "atpNat": "JPN"
+    },
+    "WB32": {
+      "status": 200,
+      "bytes": 34332,
+      "sha1_16": "ef1219eedabf527b",
+      "atpName": "Yibing Wu",
+      "atpBirth": "1999-10-14",
+      "atpNat": "CHN"
+    },
+    "Y09V": {
+      "status": 200,
+      "bytes": 36956,
+      "sha1_16": "ea8970e8ede85d09",
+      "atpName": "Yunchaokete Bu",
+      "atpBirth": "2002-01-19",
+      "atpNat": "CHN"
+    },
+    "Y218": {
+      "status": 200,
+      "bytes": 36858,
+      "sha1_16": "ad924960176bbe9d",
+      "atpName": "Elias Ymer",
+      "atpBirth": "1996-04-10",
+      "atpNat": "SWE"
+    },
+    "Y268": {
+      "status": 200,
+      "bytes": 43269,
+      "sha1_16": "07cd2c19947b7ce8",
+      "atpName": "Mikael Ymer",
+      "atpBirth": "1998-09-09",
+      "atpNat": "SWE"
+    },
+    "Z355": {
+      "status": 200,
+      "bytes": 35637,
+      "sha1_16": "45ad4fd6c2825387",
+      "atpName": "Alexander Zverev",
+      "atpBirth": "1997-04-20",
+      "atpNat": "GER"
+    },
+    "Z371": {
+      "status": 200,
+      "bytes": 46054,
+      "sha1_16": "85c6f61d47863cab",
+      "atpName": "Zhizhen Zhang",
+      "atpBirth": "1996-10-16",
+      "atpNat": "CHN"
+    }
+  }
+}

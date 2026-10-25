@@ -72,6 +72,8 @@ chall-cache/
 # would churn on every run, and a keyless local build carries no AI summaries.
 model-output.json
 model-output.published.json
+draw-matches.json
+draw-matches.published.json
 # TEN-437: the model pre-match store (its own Actions cache, never committed)
 model-prematch.json
 
@@ -107,6 +109,9 @@ trading-splits-divergence.json
 # bsp-pipeline.js reads/writes. Tracking them uncompressed is how the 57.4 MB
 # July-2026 v7 copy sat in the repo for 56 days as the silent cache-miss floor.
 player-profiles-cache.json
+profile-build-stats.json
+pbp-build-stats.json
+.pbp-prev-cache.json
 player-tournament-history.json
 
 # TEN-206 founder ruling 2026-09-18 (Q2): historical-match-stats.json joins them.
@@ -163,6 +168,11 @@ lines-field.json
 .dna-boxscores/
 # TEN-368: built by build-event-hold.js in pipeline.yml from boxscore-archive/, published, never committed
 event-hold.json
+# Round 2 item 2.2: built by build-favourites-by-round.js in pipeline.yml, published, never committed
+favourites-by-round.json
+# Round 2 item 2.1: built by build-how-it-plays.js in pipeline.yml (box scores + how-it-plays-history.json), published, never committed
+how-it-plays.json
+.howplays-mutant-*.js
 
 # Python bytecode (never committed)
 __pycache__/
@@ -174,3 +184,9 @@ price-quarantine.confirm.json
 .price-alert.txt
 .mutant-started-build.js
 .mutant-capture-fields.js
+
+# founder 2026-10-23: a failed run's kept profile cache (tools/profile-cache-store.js keep-failed), saved to the Actions cache only
+.failed-run-cache/
+# Founder 2026-10-23: Derived lines Field, built each pipeline run (tools/build-derived-field.js), never committed
+derived-field.json
+derived-field.json.tmp

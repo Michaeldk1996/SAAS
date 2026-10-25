@@ -154,8 +154,10 @@ test('data: a best-of-3 recorded at a Slam-named event is a complete match, in t
   assert.deepEqual([r.bo, r.ret, r.complete, r.decider], [3, false, true, false]);
   const three = ui.meRowsFor([Object.assign({}, x, { result: '2 - 1', sets: [{ p: 6, o: 4 }, { p: 3, o: 6 }, { p: 6, o: 3 }] })], null, '9', 'A. Test')[0];
   assert.deepEqual([three.ret, three.complete, three.decider], [false, true, true], 'a third set decides a best-of-3');
-  const wo = ui.meRowsFor([Object.assign({}, x, { result: '0 - 0', sets: [], walkover: true, retired: true })], null, '9', 'A. Test')[0];
-  assert.equal(wo.ret, false, 'a walkover is never a retirement');
+  const woX = Object.assign({}, x, { result: '0 - 0', sets: [], walkover: true, retired: true });
+  // founder 2026-10-22: a walkover row is listed elsewhere and is in no Market edge population; built, it is no retirement
+  assert.equal(ui.meRowsFor([woX], null, '9', 'A. Test').length, 0, 'a walkover is in no Market edge population');
+  assert.equal(ui.meRowFromCareer(woX, null, '9', 'A. Test', 0).ret, false, 'a walkover is never a retirement');
   const five = ui.meRowsFor([Object.assign({}, x, { bestOf: 5, tournament: 'Washington' })], null, '9', 'A. Test')[0];
   assert.deepEqual([five.bo, five.ret, five.complete], [5, true, false], 'a Bo5 winner short of three sets still stopped');
   const ret = ui.meRowsFor([Object.assign({}, x, { retired: true })], null, '9', 'A. Test')[0];

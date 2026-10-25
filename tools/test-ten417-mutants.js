@@ -15,7 +15,7 @@ const MUTANTS = [
   ['card: dead hover (edge inline again)', "<div class=\"lvcard\" data-open=\"${e(m.ek)}\" style=\"background:var(--card);", "<div class=\"lvcard\" data-open=\"${e(m.ek)}\" style=\"background:var(--card);border:1px solid transparent;"],
   ['sheet: opens on Stats', "setState({sel:ek,tab:'Ratings',scope:'MATCH',pset:1,hb:'HOLD'});", "setState({sel:ek,tab:'Stats',scope:'MATCH',pset:1,hb:'HOLD'});"],
   ['sheet: state carried between opens', "setState({sel:ek,tab:'Ratings',scope:'MATCH',pset:1,hb:'HOLD'});", "setState({sel:ek});"],
-  ['sheet: no Esc', "if(ev.key==='Escape'&&ST.sel!=null", "if(ev.key==='Esc'&&ST.sel!=null"],
+  ['sheet: no Esc', "isOpen: ()=>ST.sel!=null&&!!document.getElementById('lvOverlay')", "isOpen: ()=>false&&ST.sel!=null&&!!document.getElementById('lvOverlay')"],
   ['sheet: "· serving" while interrupted', "(m.serving===side&&liveM?' · serving':'')", "(m.serving===side?' · serving':'')"],
   ['stats: only MATCH + the current set', ".concat(m.sets.map((_,i)=>({id:i+1,per:'set'+(i+1),label:'SET '+(i+1),name:'Set '+(i+1)})))", ".concat([{id:m.sets.length,per:'set'+m.sets.length,label:'SET '+m.sets.length,name:'Set '+m.sets.length}])"],
   ['stats: lead colour inverted', "aColor:aNull?MISS:(aLead?INK:'var(--text-soft)')", "aColor:aNull?MISS:(aLead?'var(--text-soft)':INK)"],
@@ -45,7 +45,7 @@ const MUTANTS = [
   ['R2 fix 2: BP back to the feed flag', "bp:(()=>{ const st=ptState(pt); if(!st||!(aServ||bServ)) return false;", "bp:pt.break_point!=null&&String(pt.break_point).trim()!=='',bpX:(()=>{ const st=ptState(pt); if(!st||!(aServ||bServ)) return false;"],
   ['R2 fix 2: BP on deuce too', "return rc===4||(rc===3&&sv<=2); })(),", "return rc===4||(rc===3&&sv<=3); })(),"],
   ['R2 fix 4: no 0:0 chip', "const pts=(!isTbGame(gm)&&dec.length&&ptReach([0,0],ptState(dec[0])))?[{score:'0 - 0'}].concat(dec):dec;", "const pts=dec;"],
-  ['photos back on the cards', "    ${avaHtml(lvIni(m.names[side]),30,11)}\n", "    <img src=\"x\" alt=\"\">\n"],
+  ['photos gone from the cards', "    ${avaHtml(lvIni(m.names[side]),30,11,m.keys&&m.keys[side],m.names[side])}\n", "    ${avaHtml(lvIni(m.names[side]),30,11)}\n"],
 ];
 const SUITES = ['test-ten417-live.mjs'];
 const run = env => spawnSync(process.execPath, ['--test', ...SUITES.map(f => path.join(ROOT, f))], { env: Object.assign({}, process.env, env), encoding: 'utf8', timeout: 60000 });

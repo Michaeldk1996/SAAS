@@ -119,6 +119,12 @@ function isSlamSetCountQualifier({ isGrandSlam, tournamentRound, finalScore, sta
   return Number.isFinite(ws) && ws < 3;
 }
 
+/** The qualifying-bracket round code of a qualifying row's label (F / SF / QF / R16 …), or null. */
+function qualBracketCode(round) {
+  const c = roundShort(round);
+  return ROUND_RANK[c] != null ? c : null;
+}
+
 /**
  * Full per-row round classification. Applies the signal hierarchy and returns
  * the round code plus whether the row is qualifying and which signal decided it.
@@ -142,15 +148,20 @@ function classifyRound(fx = {}) {
     : GRAND_SLAM_NAMES.has(tournamentName);
 
   // (1) PRIMARY — the explicit qualifying flag is authoritative.
-  if (qualification === 'True') return { code: 'Q', qualifying: true, reason: 'flag' };
+  // `qualRound` (points-to-defend, round 2 item 2.3 error 1): api-tennis labels a qualifying match with the
+  // QUALIFYING bracket's own word round — "Final" = the last qualifying round, "Semi-finals" = the one before,
+  // "Quarter-finals" = two before (US Open 2025: 64 / 32 / 16 = Q1 / Q2 / Q3; Almaty 2025: 8 / 4 = Q1 / Q2).
+  // It is that bracket code (F / SF / QF / …), or null when the label carries none. `code` stays 'Q' for every
+  // existing reader; only qualRound tells Q1 from the final round.
+  if (qualification === 'True') return { code: 'Q', qualifying: true, reason: 'flag', qualRound: qualBracketCode(tournamentRound) };
 
   const base = roundShort(tournamentRound);
-  if (base === 'Q') return { code: 'Q', qualifying: true, reason: 'flag' };
+  if (base === 'Q') return { code: 'Q', qualifying: true, reason: 'flag', qualRound: null };
 
   // (2)/(3) A `1/N-finals` fraction label is an authoritative main-draw signal
   // that the set-count net may not override; otherwise the tertiary net decides.
   if (isSlamSetCountQualifier({ isGrandSlam, tournamentRound, finalScore, status })) {
-    return { code: 'Q', qualifying: true, reason: 'slam-set-count' };
+    return { code: 'Q', qualifying: true, reason: 'slam-set-count', qualRound: qualBracketCode(tournamentRound) };
   }
 
   return { code: base, qualifying: false, reason: 'main-draw' };
@@ -165,4 +176,5 @@ module.exports = {
   winnerSets,
   isSlamSetCountQualifier,
   classifyRound,
+  qualBracketCode,
 };

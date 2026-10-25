@@ -47,7 +47,10 @@ const CASES = {
     fs.writeFileSync(path.join(site, 'index.html'), 'OLD CODE');   // the pipeline's copy of older code
     fs.writeFileSync(path.join(site, 'build-info.json'), JSON.stringify({ commit: 'f'.repeat(40), runId: '123', builtAt: '2026-10-12T01:00:00Z' }));
     const tool = path.join(dir, 'tools'); fs.mkdirSync(tool);
-    fs.writeFileSync(path.join(tool, 'publish-site.mjs'), S.site); fs.writeFileSync(path.join(tool, 'site-code.sh'), S.code);
+    fs.writeFileSync(path.join(tool, 'publish-site.mjs'), S.site);
+    // the TIP's list names a file the gated code does not have yet (21 Oct: draw-view.js vs gated e3cc5f0dd) — publish must
+    // still succeed, because it copies with the gated checkout's own site-code.sh, never the tip's
+    fs.writeFileSync(path.join(tool, 'site-code.sh'), S.code.replace('cp tokens.css theme.js "$SITE/"', 'cp tokens.css theme.js "$SITE/"\ncp not-in-the-gated-code-yet.js "$SITE/"'));
     const M = await import(path.join(tool, 'publish-site.mjs'));
     const info = M.publish({ code: ROOT, site, env: { CODE_SHA: SHA, DATA_RUN_ID: '123', SUPABASE_URL: 'https://x.supabase.co/', SUPABASE_PUBLISHABLE_KEY: 'pk_test' } });
     const dash = fs.readFileSync(path.join(site, 'index.html'), 'utf8');
@@ -111,7 +114,8 @@ const MUTANTS = [
   ['a failed gate counts as passed', 'resolve', "if (r.conclusion === 'success' && !bySha.has(r.head_sha))", "if (!bySha.has(r.head_sha))", 'resolve: CODE'],
   ['an expired artifact is published', 'resolve', "a.name === DATA_ARTIFACT && !a.expired", "a.name === DATA_ARTIFACT", 'resolve: DATA'],
   ['the oldest artifact wins', 'resolve', "String(b.created_at).localeCompare(String(a.created_at))", "String(a.created_at).localeCompare(String(b.created_at))", 'resolve: DATA'],
-  ['the code overlay skipped', 'site', "execFileSync('bash', [path.join(ROOT, 'tools', 'site-code.sh'), code, site], { stdio: 'inherit' });", '', 'publish-site'],
+  ['the code overlay skipped', 'site', "execFileSync('bash', [path.join(code, 'tools', 'site-code.sh'), code, site], { stdio: 'inherit' });", '', 'publish-site'],
+  ['the code overlay copies with the TIP\'s file list, not the gated checkout\'s', 'site', "path.join(code, 'tools', 'site-code.sh')", "path.join(ROOT, 'tools', 'site-code.sh')", 'publish-site'],
   ['the data info dropped from the stamp', 'site', "data: { runId: env.DATA_RUN_ID || dataInfo.runId || null, commit: dataInfo.commit || null, builtAt: dataInfo.builtAt || null },", '', 'publish-site'],
   ['Supabase not injected', 'site', "if (env.SUPABASE_URL && env.SUPABASE_PUBLISHABLE_KEY) {", "if (false) {", 'publish-site'],
   ['a shard missing from the matrix', 'gate', 'shard: [1, 2, 3, 4, 5, 6]', 'shard: [1, 2, 3, 4, 5]', 'gate.yml'],

@@ -40,6 +40,8 @@ Commands
                             Pinnacle pair in the private store's COMPLETE te-odds/ batch files (stennisfy-te-store), into the
                             snapshot table as source 'Tennis Explorer · Pinnacle' (never a close); the result and names from
                             the current api-tennis fixture; env API_TENNIS_KEY. --dry-run counts, inserts nothing
+  te-import-new STORE OUT   the scheduled import (te-import-scheduled.yml): runs te-import only when the store holds a
+                            complete batch the archive has no row of; one line per new batch into OUT (else OUT is empty)
   approx-feed OUT.csv       the current snapshots as the Database builder's feed (build-database-yield.js), each row with
                             its source
 Env: SUPABASE_URL, SUPABASE_SECRET_KEY (service_role: SELECT + INSERT only)."""
@@ -1258,9 +1260,18 @@ def te_coverage(rows, held, closed):
             'overB365': {k: dict(v) for k, v in over.items()}}
 
 
-def cmd_te_import(store, dry_run=False):
-    """Append the TE batches into the snapshot table (insert-only; a changed price for a held match is a new row that
-    supersedes the old one). Env SUPABASE_URL / SUPABASE_SECRET_KEY, API_TENNIS_KEY (the current fixture per event)."""
+def te_coverage_lines(gained):
+    """One line per level: per year, the matches TE now prices, split into newly priced / replacing an api-tennis Bet365
+    snapshot. A level with nothing in one split reads 0 there (atp-x on 22 Oct: no api-tennis Bet365 to replace)."""
+    return [f"te-import coverage {lv}: " + ' · '.join(f"{y} {n} priced by TE ({gained['newlyPriced'].get(lv, {}).get(y, 0)} with no snapshot before, "
+                                                     f"{gained['overB365'].get(lv, {}).get(y, 0)} replacing an api-tennis Bet365 snapshot)"
+                                                     for y, n in sorted(gained['teWins'][lv].items()))
+            for lv in sorted(gained['teWins'])]
+
+
+def te_import_run(store, dry_run=False):
+    """The te-import itself (insert-only; a changed price for a held match is a new row that supersedes the old one), with
+    everything the report lines need. Env SUPABASE_URL / SUPABASE_SECRET_KEY, API_TENNIS_KEY (the current fixture per event)."""
     docs, skipped = te_docs(store)
     if not docs:
         P.die(f'{store}/te-odds: no complete batch file — nothing to import' + (f' (partial: {", ".join(skipped)})' if skipped else ''))
@@ -1272,7 +1283,8 @@ def cmd_te_import(store, dry_run=False):
     rows, rep = te_rows(docs, fx.get, flip.get)
     held = P.select_all(SNAP, 'id,dedupe_key,source,match_date,tournament,winner,loser,supersedes,event_key')
     add = plan_snapshots(rows, held)
-    gained = te_coverage(rows, held, {str(r['event_key']) for r in P.select_all(P.CLOSE, 'event_key')})
+    closed = {str(r['event_key']) for r in P.select_all(P.CLOSE, 'event_key')}
+    gained = te_coverage(rows, held, closed)
     ids = []
     if not dry_run:
         for i in range(0, len(add), 500):
@@ -1281,13 +1293,69 @@ def cmd_te_import(store, dry_run=False):
                                        'byLevel': collections.Counter(r['detail']['level'] for r in rows),
                                        'wouldAdd' if dry_run else 'added': len(add) if dry_run else len(ids), 'feedOn': TE_FEED_ON,
                                        'coverage': gained}))
-    for lv in sorted(gained['teWins']):
-        print(f"te-import coverage {lv}: " + ' · '.join(f"{y} {n} priced by TE ({gained['newlyPriced'][lv].get(y, 0)} with no snapshot before, "
-                                                         f"{gained['overB365'][lv].get(y, 0)} replacing an api-tennis Bet365 snapshot)"
-                                                         for y, n in sorted(gained['teWins'][lv].items())))
+    for line in te_coverage_lines(gained):
+        print(line)
     if not dry_run:
         cmd_snapshot_counts('te-import')
-    return rows
+    return {'docs': docs, 'rows': rows, 'rep': rep, 'add': add, 'held': held, 'closed': closed, 'added': len(ids)}
+
+
+def cmd_te_import(store, dry_run=False):
+    return te_import_run(store, dry_run)['rows']
+
+
+# founder brief 2026-10-23 item 5: a batch whose no-timestamp share passes this is flagged to the founder
+TE_NO_TS_FLAG = 0.25
+
+
+def te_batch_lines(batches, rows, add, rep, held, closed):
+    """One plain line per batch: rows stored (this import), in-play dropped, kept with no TE timestamp (with its share of the
+    stored rows), and the coverage gained per level and year (the matches this batch's rows price, te_coverage's rule).
+    A share over TE_NO_TS_FLAG is flagged. Pure: the scheduled job and the tests read it the same way."""
+    out = []
+    for b in batches:
+        stored = sum(1 for r in add if (r.get('detail') or {}).get('batch') == b)
+        dropped = rep.get(f'dropped in batch {b}', 0)
+        no_ts = rep.get(f'batch {b}: kept, no TE timestamp', 0)
+        mine = [r for r in rows if r['detail'].get('batch') == b]
+        gained = te_coverage(mine, held, closed)
+        cov = '; '.join(f"{lv} " + ', '.join(f"{y} +{n}" for y, n in sorted(ys.items())) for lv, ys in sorted(gained['teWins'].items())) or 'none'
+        share = no_ts / stored if stored else 0
+        line = (f"TE batch {b}: {stored} rows stored, {dropped} dropped as in-play, {no_ts} of {stored} kept with no TE timestamp "
+                f"({share:.0%}); coverage gained {cov}")
+        if share > TE_NO_TS_FLAG:
+            line += f" — FLAG: no-timestamp share {share:.0%} is over {TE_NO_TS_FLAG:.0%}"
+        out.append(line)
+    return out
+
+
+def te_imported_batches():
+    """The batch ids the snapshot table already holds Tennis Explorer rows for (detail.batch)."""
+    import urllib.parse
+    got = P.select_all(SNAP, 'detail', 'source=eq.' + urllib.parse.quote(TE_SOURCE))
+    return {(g.get('detail') or {}).get('batch') for g in got} - {None}
+
+
+def cmd_te_import_new(store, out_path):
+    """The scheduled import (founder brief 2026-10-23 item 3): a complete batch in the store that the archive holds no row of
+    is imported (the same te-import: insert-only, idempotent, so a re-run adds 0) and its line is written to out_path for the
+    alert. Nothing new: the file is left empty and nothing is written to the archive (no count row)."""
+    docs, skipped = te_docs(store)
+    have = te_imported_batches()
+    # a batch with no joined Pinnacle pair can never store a row (atp-x-02: 74 joined, 0 with Pinnacle): never "new"
+    storable = lambda d: any(x.get('status') == 'joined' and x.get('pin') for x in d['rows'])
+    new = [d.get('batch') for d in docs if d.get('batch') not in have and storable(d)]
+    print('### te-import-new', json.dumps({'storeBatches': [d.get('batch') for d in docs], 'partial': skipped, 'imported': sorted(have), 'new': new}))
+    lines = []
+    if new:
+        r = te_import_run(store)
+        lines = te_batch_lines(new, r['rows'], r['add'], r['rep'], r['held'], r['closed'])
+        for l in lines:
+            print(l)
+    with open(out_path + '.tmp', 'w') as fh:
+        fh.write('\n'.join(lines) + ('\n' if lines else ''))
+    os.replace(out_path + '.tmp', out_path)
+    return lines
 
 
 def cmd_approx_feed(out_csv, lower_csv=None):
@@ -1391,6 +1459,8 @@ if __name__ == '__main__':
                          a[a.index('--unpriced') + 1] if '--unpriced' in a else None)
     elif a[0] == 'te-import':
         cmd_te_import(a[1], '--dry-run' in a)
+    elif a[0] == 'te-import-new':
+        cmd_te_import_new(a[1], a[2])
     elif a[0] == 'snapshot-counts':
         cmd_snapshot_counts(a[a.index('--record') + 1] if '--record' in a else None)
     else:

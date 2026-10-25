@@ -32,9 +32,11 @@ RUN pip install --no-cache-dir 'pika==1.3.2'
 # failure, and the wrong fix is to copy the functions in beside it.
 # ten225_names.py too: archive-kibl.py imports it at module level, so the
 # TEN-253 image (which omitted it) could not have started at all.
-COPY archive-kibl.py kibl_client.py ten225_names.py ./
+# line_prices.py + line_engine.py: the bet105 line prices on the same stream (founder 2026-10-25). The worker imports
+# line_engine defensively — an image without them still runs the Now prices — but then line prices are off.
+COPY archive-kibl.py kibl_client.py ten225_names.py line_prices.py ./
 COPY kibl-stream/sweep_bridge.py kibl-stream/consumer.py kibl-stream/card_join.py \
-     kibl-stream/now_worker.py ./kibl-stream/
+     kibl-stream/now_worker.py kibl-stream/line_engine.py ./kibl-stream/
 
 # No healthcheck here on purpose. Liveness for this worker is NOT "is the
 # process up" — a process can be up with a dead channel, which is the failure

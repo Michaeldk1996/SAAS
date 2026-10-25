@@ -93,7 +93,10 @@ function archiveEntry(f, tier) {
   if (!isSingles(f) || !FINAL_STATUSES.includes(f.event_status)) return null;
   if (f.event_key == null) return null;
   const e = buildCacheEntry(parseFixture(f));
-  return { ...e, t: TIER_NAMES[tier] || String(tier), d: f.event_date || null, tn: f.tournament_name || null, tk: f.tournament_key ?? null };
+  // q: the feed's own qualifying flag (event_qualification "True"/"False"), so a main-draw figure can leave qualifying
+  // out (defect brief 2026-10-24 item 5). Absent or another value → null (unknown), never a guess.
+  const q = f.event_qualification === 'True' ? true : f.event_qualification === 'False' ? false : null;
+  return { ...e, t: TIER_NAMES[tier] || String(tier), d: f.event_date || null, tn: f.tournament_name || null, tk: f.tournament_key ?? null, q };
 }
 
 const FILE_RE = /^(\d+)-(\d{4}-\d{2}-\d{2})\.json\.gz$/;
@@ -187,4 +190,4 @@ if (require.main === module) {
   main().catch(e => { console.error('tier-sweep: unexpected error —', e); process.exit(1); });
 }
 
-module.exports = { weekWindows, lastSettledDay, planWindows, archiveEntry, readWeek, writeWeek, listWeeks, weekPath, FILE_RE, SETTLE_DAYS };
+module.exports = { weekWindows, lastSettledDay, planWindows, archiveEntry, fetchPage, readWeek, writeWeek, listWeeks, weekPath, FILE_RE, SETTLE_DAYS };

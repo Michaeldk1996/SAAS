@@ -1,0 +1,1834 @@
+{
+ "_note": "Almaty entry built by bsp-pipeline.js buildTournamentProgression (this branch: matches[] with set scores, qualifying[], scheduled[]) from the pinned real api-tennis snapshot tools/fixtures/single-extraction/fixtures.json (17–23 Oct). Draw-view test input.",
+ "feedName": "Almaty",
+ "rounds": [
+  "R1"
+ ],
+ "players": [
+  {
+   "name": "A. Vukic",
+   "playerKey": "360",
+   "eliminated": true,
+   "rounds": [
+    {
+     "round": "R1",
+     "opponent": "A. Mannarino",
+     "resultDisplay": "2 - 1",
+     "metrics": {
+      "firstServePct": 64,
+      "firstServeWonPct": 65.3,
+      "secondServeWonPct": 61,
+      "winnersPct": 16.1,
+      "unforcedErrorsPct": 17.6,
+      "winnersUnforcedRatio": 0.92,
+      "totalPointsWonPct": 46.3,
+      "svHold": {
+       "won": 14,
+       "total": 15
+      },
+      "aces": 8,
+      "dfs": 2,
+      "svPts": 113,
+      "ret1": {
+       "won": 12,
+       "total": 65
+      },
+      "ret2": {
+       "won": 11,
+       "total": 27
+      },
+      "retGames": {
+       "won": 1,
+       "total": 16
+      },
+      "bpConv": {
+       "won": 1,
+       "total": 1
+      },
+      "wueSource": "api-tennis"
+     }
+    }
+   ]
+  },
+  {
+   "name": "T. Skatov",
+   "playerKey": "362",
+   "eliminated": true,
+   "rounds": [
+    {
+     "round": "R1",
+     "opponent": "F. Marozsan",
+     "resultDisplay": "2 - 0",
+     "metrics": {
+      "firstServePct": 65,
+      "firstServeWonPct": 66.2,
+      "secondServeWonPct": 45.9,
+      "winnersPct": 9.7,
+      "unforcedErrorsPct": 20,
+      "winnersUnforcedRatio": 0.49,
+      "totalPointsWonPct": 45.7,
+      "svHold": {
+       "won": 10,
+       "total": 12
+      },
+      "aces": 5,
+      "dfs": 5,
+      "svPts": 105,
+      "ret1": {
+       "won": 12,
+       "total": 50
+      },
+      "ret2": {
+       "won": 6,
+       "total": 20
+      },
+      "retGames": {
+       "won": 1,
+       "total": 12
+      },
+      "bpConv": {
+       "won": 1,
+       "total": 1
+      },
+      "wueSource": "api-tennis"
+     }
+    }
+   ]
+  },
+  {
+   "name": "T. A. Tirante",
+   "playerKey": "366",
+   "eliminated": true,
+   "rounds": [
+    {
+     "round": "R1",
+     "opponent": "F. Diaz Acosta",
+     "resultDisplay": "1 - 2",
+     "metrics": {
+      "firstServePct": 59,
+      "firstServeWonPct": 80.7,
+      "secondServeWonPct": 35,
+      "winnersPct": 17.2,
+      "unforcedErrorsPct": 21,
+      "winnersUnforcedRatio": 0.82,
+      "totalPointsWonPct": 44.1,
+      "svHold": {
+       "won": 11,
+       "total": 14
+      },
+      "aces": 13,
+      "dfs": 1,
+      "svPts": 97,
+      "ret1": {
+       "won": 14,
+       "total": 63
+      },
+      "ret2": {
+       "won": 8,
+       "total": 26
+      },
+      "retGames": {
+       "won": 0,
+       "total": 15
+      },
+      "bpConv": {
+       "won": 0,
+       "total": 5
+      },
+      "wueSource": "api-tennis"
+     }
+    }
+   ]
+  },
+  {
+   "name": "N. Basilashvili",
+   "playerKey": "424",
+   "eliminated": false,
+   "rounds": [
+    {
+     "round": "R1",
+     "opponent": "M. Cilic",
+     "resultDisplay": "0 - 2",
+     "metrics": {
+      "firstServePct": 56,
+      "firstServeWonPct": 78.1,
+      "secondServeWonPct": 48,
+      "winnersPct": 21.3,
+      "unforcedErrorsPct": 16.4,
+      "winnersUnforcedRatio": 1.3,
+      "totalPointsWonPct": 54.9,
+      "svHold": {
+       "won": 8,
+       "total": 10
+      },
+      "aces": 13,
+      "dfs": 3,
+      "svPts": 57,
+      "ret1": {
+       "won": 11,
+       "total": 35
+      },
+      "ret2": {
+       "won": 19,
+       "total": 30
+      },
+      "retGames": {
+       "won": 5,
+       "total": 10
+      },
+      "bpConv": {
+       "won": 5,
+       "total": 9
+      },
+      "wueSource": "api-tennis"
+     }
+    }
+   ]
+  },
+  {
+   "name": "A. Mannarino",
+   "playerKey": "438",
+   "eliminated": false,
+   "rounds": [
+    {
+     "round": "R1",
+     "opponent": "A. Vukic",
+     "resultDisplay": "2 - 1",
+     "metrics": {
+      "firstServePct": 71,
+      "firstServeWonPct": 81.5,
+      "secondServeWonPct": 59.3,
+      "winnersPct": 16.6,
+      "unforcedErrorsPct": 18,
+      "winnersUnforcedRatio": 0.92,
+      "totalPointsWonPct": 53.7,
+      "svHold": {
+       "won": 15,
+       "total": 16
+      },
+      "aces": 13,
+      "dfs": 1,
+      "svPts": 92,
+      "ret1": {
+       "won": 25,
+       "total": 72
+      },
+      "ret2": {
+       "won": 16,
+       "total": 41
+      },
+      "retGames": {
+       "won": 1,
+       "total": 15
+      },
+      "bpConv": {
+       "won": 1,
+       "total": 8
+      },
+      "wueSource": "api-tennis"
+     }
+    }
+   ]
+  },
+  {
+   "name": "S. Sakellaridis",
+   "playerKey": "742",
+   "eliminated": true,
+   "rounds": [
+    {
+     "round": "R1",
+     "opponent": "M. Kukushkin",
+     "resultDisplay": "2 - 0",
+     "metrics": {
+      "firstServePct": 59,
+      "firstServeWonPct": 70,
+      "secondServeWonPct": 45.7,
+      "winnersPct": 16.5,
+      "unforcedErrorsPct": 25,
+      "winnersUnforcedRatio": 0.66,
+      "totalPointsWonPct": 48.3,
+      "svHold": {
+       "won": 9,
+       "total": 12
+      },
+      "aces": 9,
+      "dfs": 3,
+      "svPts": 85,
+      "ret1": {
+       "won": 21,
+       "total": 61
+      },
+      "ret2": {
+       "won": 13,
+       "total": 30
+      },
+      "retGames": {
+       "won": 3,
+       "total": 12
+      },
+      "bpConv": {
+       "won": 3,
+       "total": 8
+      },
+      "wueSource": "api-tennis"
+     }
+    }
+   ]
+  },
+  {
+   "name": "R. Safiullin",
+   "playerKey": "1057",
+   "eliminated": true,
+   "rounds": [
+    {
+     "round": "R1",
+     "opponent": "S. Shimabukuro",
+     "resultDisplay": "2 - 1",
+     "metrics": {
+      "firstServePct": 66,
+      "firstServeWonPct": 73,
+      "secondServeWonPct": 59.4,
+      "winnersPct": 21.6,
+      "unforcedErrorsPct": 15.6,
+      "winnersUnforcedRatio": 1.39,
+      "totalPointsWonPct": 49.7,
+      "svHold": {
+       "won": 13,
+       "total": 16
+      },
+      "aces": 18,
+      "dfs": 5,
+      "svPts": 95,
+      "ret1": {
+       "won": 18,
+       "total": 68
+      },
+      "ret2": {
+       "won": 16,
+       "total": 36
+      },
+      "retGames": {
+       "won": 1,
+       "total": 16
+      },
+      "bpConv": {
+       "won": 1,
+       "total": 4
+      },
+      "wueSource": "api-tennis"
+     }
+    }
+   ]
+  },
+  {
+   "name": "J. Duckworth",
+   "playerKey": "1900",
+   "eliminated": false,
+   "rounds": [
+    {
+     "round": "R1",
+     "opponent": "M. Kecmanovic",
+     "resultDisplay": "0 - 2",
+     "metrics": {
+      "firstServePct": 66,
+      "firstServeWonPct": 71.8,
+      "secondServeWonPct": 60,
+      "winnersPct": 23.9,
+      "unforcedErrorsPct": 15.9,
+      "winnersUnforcedRatio": 1.5,
+      "totalPointsWonPct": 54,
+      "svHold": {
+       "won": 9,
+       "total": 10
+      },
+      "aces": 6,
+      "dfs": 2,
+      "svPts": 59,
+      "ret1": {
+       "won": 11,
+       "total": 37
+      },
+      "ret2": {
+       "won": 10,
+       "total": 17
+      },
+      "retGames": {
+       "won": 3,
+       "total": 9
+      },
+      "bpConv": {
+       "won": 3,
+       "total": 4
+      },
+      "wueSource": "api-tennis"
+     }
+    }
+   ]
+  },
+  {
+   "name": "S. Tsitsipas",
+   "playerKey": "1906",
+   "eliminated": false,
+   "rounds": [
+    {
+     "round": "R1",
+     "opponent": "A. Kovacevic",
+     "resultDisplay": "2 - 1",
+     "metrics": {
+      "firstServePct": 67,
+      "firstServeWonPct": 82.8,
+      "secondServeWonPct": 57.1,
+      "winnersPct": 17.6,
+      "unforcedErrorsPct": 14.4,
+      "winnersUnforcedRatio": 1.22,
+      "totalPointsWonPct": 51.6,
+      "svHold": {
+       "won": 14,
+       "total": 15
+      },
+      "aces": 7,
+      "dfs": 2,
+      "svPts": 86,
+      "ret1": {
+       "won": 22,
+       "total": 78
+      },
+      "ret2": {
+       "won": 11,
+       "total": 24
+      },
+      "retGames": {
+       "won": 1,
+       "total": 15
+      },
+      "bpConv": {
+       "won": 1,
+       "total": 4
+      },
+      "wueSource": "api-tennis"
+     }
+    }
+   ]
+  },
+  {
+   "name": "F. Diaz Acosta",
+   "playerKey": "2002",
+   "eliminated": false,
+   "rounds": [
+    {
+     "round": "R1",
+     "opponent": "T. A. Tirante",
+     "resultDisplay": "1 - 2",
+     "metrics": {
+      "firstServePct": 71,
+      "firstServeWonPct": 77.8,
+      "secondServeWonPct": 69.2,
+      "winnersPct": 14,
+      "unforcedErrorsPct": 12.9,
+      "winnersUnforcedRatio": 1.08,
+      "totalPointsWonPct": 55.9,
+      "svHold": {
+       "won": 15,
+       "total": 15
+      },
+      "aces": 4,
+      "dfs": 2,
+      "svPts": 89,
+      "ret1": {
+       "won": 11,
+       "total": 57
+      },
+      "ret2": {
+       "won": 26,
+       "total": 40
+      },
+      "retGames": {
+       "won": 3,
+       "total": 14
+      },
+      "bpConv": {
+       "won": 3,
+       "total": 4
+      },
+      "wueSource": "api-tennis"
+     }
+    }
+   ]
+  },
+  {
+   "name": "M. Cilic",
+   "playerKey": "2167",
+   "eliminated": true,
+   "rounds": [
+    {
+     "round": "R1",
+     "opponent": "N. Basilashvili",
+     "resultDisplay": "0 - 2",
+     "metrics": {
+      "firstServePct": 54,
+      "firstServeWonPct": 68.6,
+      "secondServeWonPct": 36.7,
+      "winnersPct": 13.1,
+      "unforcedErrorsPct": 24.6,
+      "winnersUnforcedRatio": 0.53,
+      "totalPointsWonPct": 45.1,
+      "svHold": {
+       "won": 5,
+       "total": 10
+      },
+      "aces": 8,
+      "dfs": 5,
+      "svPts": 65,
+      "ret1": {
+       "won": 7,
+       "total": 32
+      },
+      "ret2": {
+       "won": 13,
+       "total": 25
+      },
+      "retGames": {
+       "won": 2,
+       "total": 10
+      },
+      "bpConv": {
+       "won": 2,
+       "total": 5
+      },
+      "wueSource": "api-tennis"
+     }
+    }
+   ]
+  },
+  {
+   "name": "M. Kecmanovic",
+   "playerKey": "2848",
+   "eliminated": true,
+   "rounds": [
+    {
+     "round": "R1",
+     "opponent": "J. Duckworth",
+     "resultDisplay": "0 - 2",
+     "metrics": {
+      "firstServePct": 69,
+      "firstServeWonPct": 70.3,
+      "secondServeWonPct": 41.2,
+      "winnersPct": 13.3,
+      "unforcedErrorsPct": 13.3,
+      "winnersUnforcedRatio": 1,
+      "totalPointsWonPct": 46,
+      "svHold": {
+       "won": 6,
+       "total": 9
+      },
+      "aces": 4,
+      "dfs": 3,
+      "svPts": 54,
+      "ret1": {
+       "won": 11,
+       "total": 39
+      },
+      "ret2": {
+       "won": 8,
+       "total": 20
+      },
+      "retGames": {
+       "won": 1,
+       "total": 10
+      },
+      "bpConv": {
+       "won": 1,
+       "total": 3
+      },
+      "wueSource": "api-tennis"
+     }
+    }
+   ]
+  },
+  {
+   "name": "M. Kukushkin",
+   "playerKey": "2970",
+   "eliminated": false,
+   "rounds": [
+    {
+     "round": "R1",
+     "opponent": "S. Sakellaridis",
+     "resultDisplay": "2 - 0",
+     "metrics": {
+      "firstServePct": 67,
+      "firstServeWonPct": 65.6,
+      "secondServeWonPct": 56.7,
+      "winnersPct": 13.6,
+      "unforcedErrorsPct": 17,
+      "winnersUnforcedRatio": 0.8,
+      "totalPointsWonPct": 51.7,
+      "svHold": {
+       "won": 9,
+       "total": 12
+      },
+      "aces": 1,
+      "dfs": 1,
+      "svPts": 91,
+      "ret1": {
+       "won": 15,
+       "total": 50
+      },
+      "ret2": {
+       "won": 19,
+       "total": 35
+      },
+      "retGames": {
+       "won": 3,
+       "total": 12
+      },
+      "bpConv": {
+       "won": 3,
+       "total": 7
+      },
+      "wueSource": "api-tennis"
+     }
+    }
+   ]
+  },
+  {
+   "name": "A. Kovacevic",
+   "playerKey": "2978",
+   "eliminated": true,
+   "rounds": [
+    {
+     "round": "R1",
+     "opponent": "S. Tsitsipas",
+     "resultDisplay": "2 - 1",
+     "metrics": {
+      "firstServePct": 76,
+      "firstServeWonPct": 71.8,
+      "secondServeWonPct": 54.2,
+      "winnersPct": 20.7,
+      "unforcedErrorsPct": 14.9,
+      "winnersUnforcedRatio": 1.39,
+      "totalPointsWonPct": 48.4,
+      "svHold": {
+       "won": 14,
+       "total": 15
+      },
+      "aces": 13,
+      "dfs": 3,
+      "svPts": 102,
+      "ret1": {
+       "won": 10,
+       "total": 58
+      },
+      "ret2": {
+       "won": 12,
+       "total": 28
+      },
+      "retGames": {
+       "won": 1,
+       "total": 15
+      },
+      "bpConv": {
+       "won": 1,
+       "total": 1
+      },
+      "wueSource": "api-tennis"
+     }
+    }
+   ]
+  },
+  {
+   "name": "R. Hijikata",
+   "playerKey": "3317",
+   "eliminated": true,
+   "rounds": [
+    {
+     "round": "R1",
+     "opponent": "T. Atmane",
+     "resultDisplay": "2 - 0",
+     "metrics": {
+      "firstServePct": 66,
+      "firstServeWonPct": 69,
+      "secondServeWonPct": 59.1,
+      "winnersPct": 9,
+      "unforcedErrorsPct": 13.9,
+      "winnersUnforcedRatio": 0.65,
+      "totalPointsWonPct": 44.3,
+      "svHold": {
+       "won": 8,
+       "total": 10
+      },
+      "aces": 3,
+      "dfs": 1,
+      "svPts": 64,
+      "ret1": {
+       "won": 5,
+       "total": 37
+      },
+      "ret2": {
+       "won": 7,
+       "total": 21
+      },
+      "retGames": {
+       "won": 0,
+       "total": 10
+      },
+      "bpConv": {
+       "won": 0,
+       "total": 1
+      },
+      "wueSource": "api-tennis"
+     }
+    }
+   ]
+  },
+  {
+   "name": "S. Shimabukuro",
+   "playerKey": "9608",
+   "eliminated": false,
+   "rounds": [
+    {
+     "round": "R1",
+     "opponent": "R. Safiullin",
+     "resultDisplay": "2 - 1",
+     "metrics": {
+      "firstServePct": 65,
+      "firstServeWonPct": 73.5,
+      "secondServeWonPct": 55.6,
+      "winnersPct": 17.1,
+      "unforcedErrorsPct": 12.6,
+      "winnersUnforcedRatio": 1.36,
+      "totalPointsWonPct": 50.3,
+      "svHold": {
+       "won": 15,
+       "total": 16
+      },
+      "aces": 9,
+      "dfs": 1,
+      "svPts": 104,
+      "ret1": {
+       "won": 17,
+       "total": 63
+      },
+      "ret2": {
+       "won": 13,
+       "total": 32
+      },
+      "retGames": {
+       "won": 3,
+       "total": 16
+      },
+      "bpConv": {
+       "won": 3,
+       "total": 6
+      },
+      "wueSource": "api-tennis"
+     }
+    }
+   ]
+  },
+  {
+   "name": "F. Marozsan",
+   "playerKey": "10148",
+   "eliminated": false,
+   "rounds": [
+    {
+     "round": "R1",
+     "opponent": "T. Skatov",
+     "resultDisplay": "2 - 0",
+     "metrics": {
+      "firstServePct": 71,
+      "firstServeWonPct": 76,
+      "secondServeWonPct": 70,
+      "winnersPct": 21.1,
+      "unforcedErrorsPct": 21.1,
+      "winnersUnforcedRatio": 1,
+      "totalPointsWonPct": 54.3,
+      "svHold": {
+       "won": 11,
+       "total": 12
+      },
+      "aces": 4,
+      "dfs": 2,
+      "svPts": 70,
+      "ret1": {
+       "won": 23,
+       "total": 68
+      },
+      "ret2": {
+       "won": 20,
+       "total": 37
+      },
+      "retGames": {
+       "won": 2,
+       "total": 12
+      },
+      "bpConv": {
+       "won": 2,
+       "total": 10
+      },
+      "wueSource": "api-tennis"
+     }
+    }
+   ]
+  },
+  {
+   "name": "T. Atmane",
+   "playerKey": "13091",
+   "eliminated": false,
+   "rounds": [
+    {
+     "round": "R1",
+     "opponent": "R. Hijikata",
+     "resultDisplay": "2 - 0",
+     "metrics": {
+      "firstServePct": 64,
+      "firstServeWonPct": 86.5,
+      "secondServeWonPct": 66.7,
+      "winnersPct": 21.3,
+      "unforcedErrorsPct": 20.5,
+      "winnersUnforcedRatio": 1.04,
+      "totalPointsWonPct": 55.7,
+      "svHold": {
+       "won": 10,
+       "total": 10
+      },
+      "aces": 9,
+      "dfs": 1,
+      "svPts": 58,
+      "ret1": {
+       "won": 13,
+       "total": 42
+      },
+      "ret2": {
+       "won": 9,
+       "total": 22
+      },
+      "retGames": {
+       "won": 2,
+       "total": 10
+      },
+      "bpConv": {
+       "won": 2,
+       "total": 4
+      },
+      "wueSource": "api-tennis"
+     }
+    }
+   ]
+  }
+ ],
+ "fieldAverage": {
+  "rounds": [
+   "R1"
+  ],
+  "metrics": {
+   "firstServePct": [
+    65.33
+   ],
+   "firstServeWonPct": [
+    73.81
+   ],
+   "secondServeWonPct": [
+    54.49
+   ],
+   "winnersPct": [
+    16.87
+   ],
+   "unforcedErrorsPct": [
+    17.48
+   ],
+   "winnersUnforcedRatio": [
+    1
+   ],
+   "totalPointsWonPct": [
+    50
+   ]
+  },
+  "sampleSize": [
+   18
+  ]
+ },
+ "matches": [
+  {
+   "eventKey": "12171884",
+   "round": "R1",
+   "roundCode": "R32",
+   "hasStats": true,
+   "score": [
+    [
+     4,
+     6
+    ],
+    [
+     3,
+     6
+    ]
+   ],
+   "date": "2026-10-19",
+   "time": "08:40",
+   "status": "finished",
+   "winner": 2,
+   "p1": {
+    "name": "M. Kecmanovic",
+    "playerKey": "2848",
+    "winners": 15,
+    "unforcedErrors": 15,
+    "wueSource": "api-tennis",
+    "totalPoints": 113,
+    "servicePoints": {
+     "won": 33,
+     "total": 54
+    },
+    "returnPoints": {
+     "won": 19,
+     "total": 59
+    }
+   },
+   "p2": {
+    "name": "J. Duckworth",
+    "playerKey": "1900",
+    "winners": 27,
+    "unforcedErrors": 18,
+    "wueSource": "api-tennis",
+    "totalPoints": 113,
+    "servicePoints": {
+     "won": 40,
+     "total": 59
+    },
+    "returnPoints": {
+     "won": 21,
+     "total": 54
+    }
+   }
+  },
+  {
+   "eventKey": "12171888",
+   "round": "R1",
+   "roundCode": "R32",
+   "hasStats": true,
+   "score": [
+    [
+     7,
+     6
+    ],
+    [
+     1,
+     6
+    ],
+    [
+     4,
+     6
+    ]
+   ],
+   "date": "2026-10-19",
+   "time": "08:40",
+   "status": "finished",
+   "winner": 2,
+   "p1": {
+    "name": "T. A. Tirante",
+    "playerKey": "366",
+    "winners": 32,
+    "unforcedErrors": 39,
+    "wueSource": "api-tennis",
+    "totalPoints": 186,
+    "servicePoints": {
+     "won": 60,
+     "total": 97
+    },
+    "returnPoints": {
+     "won": 22,
+     "total": 89
+    }
+   },
+   "p2": {
+    "name": "F. Diaz Acosta",
+    "playerKey": "2002",
+    "winners": 26,
+    "unforcedErrors": 24,
+    "wueSource": "api-tennis",
+    "totalPoints": 186,
+    "servicePoints": {
+     "won": 67,
+     "total": 89
+    },
+    "returnPoints": {
+     "won": 37,
+     "total": 97
+    }
+   }
+  },
+  {
+   "eventKey": "12171885",
+   "round": "R1",
+   "roundCode": "R32",
+   "hasStats": true,
+   "score": [
+    [
+     7,
+     6
+    ],
+    [
+     4,
+     6
+    ],
+    [
+     6,
+     3
+    ]
+   ],
+   "date": "2026-10-19",
+   "time": "10:05",
+   "status": "finished",
+   "winner": 1,
+   "p1": {
+    "name": "A. Mannarino",
+    "playerKey": "438",
+    "winners": 34,
+    "unforcedErrors": 37,
+    "wueSource": "api-tennis",
+    "totalPoints": 205,
+    "servicePoints": {
+     "won": 69,
+     "total": 92
+    },
+    "returnPoints": {
+     "won": 41,
+     "total": 113
+    }
+   },
+   "p2": {
+    "name": "A. Vukic",
+    "playerKey": "360",
+    "winners": 33,
+    "unforcedErrors": 36,
+    "wueSource": "api-tennis",
+    "totalPoints": 205,
+    "servicePoints": {
+     "won": 72,
+     "total": 113
+    },
+    "returnPoints": {
+     "won": 23,
+     "total": 92
+    }
+   }
+  },
+  {
+   "eventKey": "12172160",
+   "round": "R1",
+   "roundCode": "R32",
+   "hasStats": true,
+   "score": [
+    [
+     2,
+     6
+    ],
+    [
+     5,
+     7
+    ]
+   ],
+   "date": "2026-10-19",
+   "time": "12:55",
+   "status": "finished",
+   "winner": 2,
+   "p1": {
+    "name": "M. Cilic",
+    "playerKey": "2167",
+    "winners": 16,
+    "unforcedErrors": 30,
+    "wueSource": "api-tennis",
+    "totalPoints": 122,
+    "servicePoints": {
+     "won": 35,
+     "total": 65
+    },
+    "returnPoints": {
+     "won": 20,
+     "total": 57
+    }
+   },
+   "p2": {
+    "name": "N. Basilashvili",
+    "playerKey": "424",
+    "winners": 26,
+    "unforcedErrors": 20,
+    "wueSource": "api-tennis",
+    "totalPoints": 122,
+    "servicePoints": {
+     "won": 37,
+     "total": 57
+    },
+    "returnPoints": {
+     "won": 30,
+     "total": 65
+    }
+   }
+  },
+  {
+   "eventKey": "12172161",
+   "round": "R1",
+   "roundCode": "R32",
+   "hasStats": true,
+   "score": [
+    [
+     7,
+     6
+    ],
+    [
+     7,
+     6
+    ]
+   ],
+   "date": "2026-10-19",
+   "time": "16:40",
+   "status": "finished",
+   "winner": 1,
+   "p1": {
+    "name": "M. Kukushkin",
+    "playerKey": "2970",
+    "winners": 24,
+    "unforcedErrors": 30,
+    "wueSource": "api-tennis",
+    "totalPoints": 176,
+    "servicePoints": {
+     "won": 57,
+     "total": 91
+    },
+    "returnPoints": {
+     "won": 34,
+     "total": 85
+    }
+   },
+   "p2": {
+    "name": "S. Sakellaridis",
+    "playerKey": "742",
+    "winners": 29,
+    "unforcedErrors": 44,
+    "wueSource": "api-tennis",
+    "totalPoints": 176,
+    "servicePoints": {
+     "won": 51,
+     "total": 85
+    },
+    "returnPoints": {
+     "won": 34,
+     "total": 91
+    }
+   }
+  },
+  {
+   "eventKey": "12172164",
+   "round": "R1",
+   "roundCode": "R32",
+   "hasStats": true,
+   "score": [
+    [
+     6,
+     7
+    ],
+    [
+     6,
+     4
+    ],
+    [
+     6,
+     4
+    ]
+   ],
+   "date": "2026-10-20",
+   "time": "08:35",
+   "status": "finished",
+   "winner": 1,
+   "p1": {
+    "name": "S. Shimabukuro",
+    "playerKey": "9608",
+    "winners": 34,
+    "unforcedErrors": 25,
+    "wueSource": "api-tennis",
+    "totalPoints": 199,
+    "servicePoints": {
+     "won": 70,
+     "total": 104
+    },
+    "returnPoints": {
+     "won": 30,
+     "total": 95
+    }
+   },
+   "p2": {
+    "name": "R. Safiullin",
+    "playerKey": "1057",
+    "winners": 43,
+    "unforcedErrors": 31,
+    "wueSource": "api-tennis",
+    "totalPoints": 199,
+    "servicePoints": {
+     "won": 65,
+     "total": 95
+    },
+    "returnPoints": {
+     "won": 34,
+     "total": 104
+    }
+   }
+  },
+  {
+   "eventKey": "12171882",
+   "round": "R1",
+   "roundCode": "R32",
+   "hasStats": true,
+   "score": [
+    [
+     7,
+     6
+    ],
+    [
+     6,
+     2
+    ]
+   ],
+   "date": "2026-10-20",
+   "time": "08:40",
+   "status": "finished",
+   "winner": 1,
+   "p1": {
+    "name": "T. Atmane",
+    "playerKey": "13091",
+    "winners": 26,
+    "unforcedErrors": 25,
+    "wueSource": "api-tennis",
+    "totalPoints": 122,
+    "servicePoints": {
+     "won": 46,
+     "total": 58
+    },
+    "returnPoints": {
+     "won": 22,
+     "total": 64
+    }
+   },
+   "p2": {
+    "name": "R. Hijikata",
+    "playerKey": "3317",
+    "winners": 11,
+    "unforcedErrors": 17,
+    "wueSource": "api-tennis",
+    "totalPoints": 122,
+    "servicePoints": {
+     "won": 42,
+     "total": 64
+    },
+    "returnPoints": {
+     "won": 12,
+     "total": 58
+    }
+   }
+  },
+  {
+   "eventKey": "12171889",
+   "round": "R1",
+   "roundCode": "R32",
+   "hasStats": true,
+   "score": [
+    [
+     7,
+     6
+    ],
+    [
+     3,
+     6
+    ],
+    [
+     6,
+     3
+    ]
+   ],
+   "date": "2026-10-20",
+   "time": "10:20",
+   "status": "finished",
+   "winner": 1,
+   "p1": {
+    "name": "S. Tsitsipas",
+    "playerKey": "1906",
+    "winners": 33,
+    "unforcedErrors": 27,
+    "wueSource": "api-tennis",
+    "totalPoints": 188,
+    "servicePoints": {
+     "won": 64,
+     "total": 86
+    },
+    "returnPoints": {
+     "won": 33,
+     "total": 102
+    }
+   },
+   "p2": {
+    "name": "A. Kovacevic",
+    "playerKey": "2978",
+    "winners": 39,
+    "unforcedErrors": 28,
+    "wueSource": "api-tennis",
+    "totalPoints": 188,
+    "servicePoints": {
+     "won": 69,
+     "total": 102
+    },
+    "returnPoints": {
+     "won": 22,
+     "total": 86
+    }
+   }
+  },
+  {
+   "eventKey": "12171886",
+   "round": "R1",
+   "roundCode": "R32",
+   "hasStats": true,
+   "score": [
+    [
+     7,
+     5
+    ],
+    [
+     7,
+     6
+    ]
+   ],
+   "date": "2026-10-20",
+   "time": "12:40",
+   "status": "finished",
+   "winner": 1,
+   "p1": {
+    "name": "F. Marozsan",
+    "playerKey": "10148",
+    "winners": 37,
+    "unforcedErrors": 37,
+    "wueSource": "api-tennis",
+    "totalPoints": 175,
+    "servicePoints": {
+     "won": 52,
+     "total": 70
+    },
+    "returnPoints": {
+     "won": 43,
+     "total": 105
+    }
+   },
+   "p2": {
+    "name": "T. Skatov",
+    "playerKey": "362",
+    "winners": 17,
+    "unforcedErrors": 35,
+    "wueSource": "api-tennis",
+    "totalPoints": 175,
+    "servicePoints": {
+     "won": 62,
+     "total": 105
+    },
+    "returnPoints": {
+     "won": 18,
+     "total": 70
+    }
+   }
+  }
+ ],
+ "qualifying": [
+  {
+   "eventKey": "12171713",
+   "roundText": "ATP Almaty - Semi-finals",
+   "date": "2026-10-17",
+   "time": "13:50",
+   "status": "finished",
+   "winner": 2,
+   "p1": {
+    "name": "P. Bar Biryukov",
+    "playerKey": "14515"
+   },
+   "p2": {
+    "name": "S. Sakellaridis",
+    "playerKey": "742"
+   },
+   "score": [
+    [
+     2,
+     6
+    ],
+    [
+     3,
+     6
+    ]
+   ]
+  },
+  {
+   "eventKey": "12171714",
+   "roundText": "ATP Almaty - Semi-finals",
+   "date": "2026-10-17",
+   "time": "10:00",
+   "status": "finished",
+   "winner": 2,
+   "p1": {
+    "name": "T. Daniel",
+    "playerKey": "2406"
+   },
+   "p2": {
+    "name": "N. Basilashvili",
+    "playerKey": "424"
+   },
+   "score": [
+    [
+     2,
+     6
+    ],
+    [
+     5,
+     7
+    ]
+   ]
+  },
+  {
+   "eventKey": "12171715",
+   "roundText": "ATP Almaty - Semi-finals",
+   "date": "2026-10-17",
+   "time": "08:05",
+   "status": "finished",
+   "winner": 1,
+   "p1": {
+    "name": "G. Diallo",
+    "playerKey": "9909"
+   },
+   "p2": {
+    "name": "H. Mayot",
+    "playerKey": "1189"
+   },
+   "score": [
+    [
+     7,
+     6
+    ],
+    [
+     6,
+     2
+    ]
+   ]
+  },
+  {
+   "eventKey": "12171716",
+   "roundText": "ATP Almaty - Semi-finals",
+   "date": "2026-10-17",
+   "time": "08:05",
+   "status": "finished",
+   "winner": 2,
+   "p1": {
+    "name": "A. Omarkhanov",
+    "playerKey": "63488"
+   },
+   "p2": {
+    "name": "R. Sakamoto",
+    "playerKey": "37897"
+   },
+   "score": [
+    [
+     2,
+     6
+    ],
+    [
+     1,
+     6
+    ]
+   ]
+  },
+  {
+   "eventKey": "12171717",
+   "roundText": "ATP Almaty - Semi-finals",
+   "date": "2026-10-17",
+   "time": "11:30",
+   "status": "finished",
+   "winner": 2,
+   "p1": {
+    "name": "L. Pavlovic",
+    "playerKey": "2103"
+   },
+   "p2": {
+    "name": "I. Simakin",
+    "playerKey": "1238"
+   },
+   "score": [
+    [
+     3,
+     6
+    ],
+    [
+     6,
+     3
+    ],
+    [
+     6,
+     7
+    ]
+   ]
+  },
+  {
+   "eventKey": "12171718",
+   "roundText": "ATP Almaty - Semi-finals",
+   "date": "2026-10-17",
+   "time": "11:10",
+   "status": "finished",
+   "winner": 1,
+   "p1": {
+    "name": "R. Safiullin",
+    "playerKey": "1057"
+   },
+   "p2": {
+    "name": "I. Ivashka",
+    "playerKey": "432"
+   },
+   "score": [
+    [
+     6,
+     1
+    ],
+    [
+     6,
+     7
+    ],
+    [
+     6,
+     4
+    ]
+   ]
+  },
+  {
+   "eventKey": "12171719",
+   "roundText": "ATP Almaty - Semi-finals",
+   "date": "2026-10-17",
+   "time": "14:10",
+   "status": "finished",
+   "winner": 1,
+   "p1": {
+    "name": "A. Shevchenko",
+    "playerKey": "566"
+   },
+   "p2": {
+    "name": "D. Glinka",
+    "playerKey": "780"
+   },
+   "score": [
+    [
+     6,
+     3
+    ],
+    [
+     6,
+     7
+    ],
+    [
+     7,
+     5
+    ]
+   ]
+  },
+  {
+   "eventKey": "12171720",
+   "roundText": "ATP Almaty - Semi-finals",
+   "date": "2026-10-17",
+   "time": "09:25",
+   "status": "finished",
+   "winner": 1,
+   "p1": {
+    "name": "A. Walton",
+    "playerKey": "10070"
+   },
+   "p2": {
+    "name": "B. Zhukayev",
+    "playerKey": "579"
+   },
+   "score": [
+    [
+     6,
+     1
+    ],
+    [
+     7,
+     5
+    ]
+   ]
+  },
+  {
+   "eventKey": "12171878",
+   "roundText": "ATP Almaty - Final",
+   "date": "2026-10-18",
+   "time": "08:10",
+   "status": "finished",
+   "winner": 2,
+   "p1": {
+    "name": "G. Diallo",
+    "playerKey": "9909"
+   },
+   "p2": {
+    "name": "R. Sakamoto",
+    "playerKey": "37897"
+   },
+   "score": [
+    [
+     6,
+     2
+    ],
+    [
+     4,
+     6
+    ],
+    [
+     4,
+     6
+    ]
+   ]
+  },
+  {
+   "eventKey": "12171879",
+   "roundText": "ATP Almaty - Final",
+   "date": "2026-10-18",
+   "time": "08:10",
+   "status": "finished",
+   "winner": 2,
+   "p1": {
+    "name": "A. Walton",
+    "playerKey": "10070"
+   },
+   "p2": {
+    "name": "N. Basilashvili",
+    "playerKey": "424"
+   },
+   "score": [
+    [
+     4,
+     6
+    ],
+    [
+     6,
+     7
+    ]
+   ]
+  },
+  {
+   "eventKey": "12171902",
+   "roundText": "ATP Almaty - Final",
+   "date": "2026-10-18",
+   "time": "10:00",
+   "status": "finished",
+   "winner": 1,
+   "p1": {
+    "name": "R. Safiullin",
+    "playerKey": "1057"
+   },
+   "p2": {
+    "name": "I. Simakin",
+    "playerKey": "1238"
+   },
+   "score": [
+    [
+     7,
+     6
+    ],
+    [
+     6,
+     1
+    ]
+   ]
+  },
+  {
+   "eventKey": "12171966",
+   "roundText": "ATP Almaty - Final",
+   "date": "2026-10-18",
+   "time": "12:10",
+   "status": "finished",
+   "winner": 2,
+   "p1": {
+    "name": "A. Shevchenko",
+    "playerKey": "566"
+   },
+   "p2": {
+    "name": "S. Sakellaridis",
+    "playerKey": "742"
+   },
+   "score": [
+    [
+     6,
+     7
+    ],
+    [
+     4,
+     6
+    ]
+   ]
+  }
+ ],
+ "scheduled": [
+  {
+   "eventKey": "12172163",
+   "roundText": "ATP Almaty - 1/16-finals",
+   "date": "2026-10-20",
+   "time": "16:30",
+   "status": "scheduled",
+   "winner": null,
+   "p1": {
+    "name": "R. Sakamoto",
+    "playerKey": "37897"
+   },
+   "p2": {
+    "name": "K. Khachanov",
+    "playerKey": "435"
+   },
+   "score": [
+    [
+     0,
+     0
+    ]
+   ]
+  },
+  {
+   "eventKey": "12171883",
+   "roundText": "ATP Almaty - 1/16-finals",
+   "date": "2026-10-21",
+   "time": "08:00",
+   "status": "scheduled",
+   "winner": null,
+   "p1": {
+    "name": "M. Bellucci",
+    "playerKey": "2112"
+   },
+   "p2": {
+    "name": "T. M. Etcheverry",
+    "playerKey": "1777"
+   },
+   "score": [
+    [
+     0,
+     0
+    ]
+   ]
+  },
+  {
+   "eventKey": "12171887",
+   "roundText": "ATP Almaty - 1/16-finals",
+   "date": "2026-10-21",
+   "time": "08:00",
+   "status": "scheduled",
+   "winner": null,
+   "p1": {
+    "name": "Z. Nurlanuly",
+    "playerKey": "78981"
+   },
+   "p2": {
+    "name": "T. Machac",
+    "playerKey": "2981"
+   },
+   "score": [
+    [
+     0,
+     0
+    ]
+   ]
+  },
+  {
+   "eventKey": "12172316",
+   "roundText": "ATP Almaty - 1/8-finals",
+   "date": "2026-10-21",
+   "time": "08:00",
+   "status": "scheduled",
+   "winner": null,
+   "p1": {
+    "name": "J. Duckworth",
+    "playerKey": "1900"
+   },
+   "p2": {
+    "name": "L. Darderi",
+    "playerKey": "8781"
+   },
+   "score": [
+    [
+     0,
+     0
+    ]
+   ]
+  },
+  {
+   "eventKey": "12172317",
+   "roundText": "ATP Almaty - 1/8-finals",
+   "date": "2026-10-21",
+   "time": "08:00",
+   "status": "scheduled",
+   "winner": null,
+   "p1": {
+    "name": "A. Mannarino",
+    "playerKey": "438"
+   },
+   "p2": {
+    "name": "A. Rublev",
+    "playerKey": "2847"
+   },
+   "score": [
+    [
+     0,
+     0
+    ]
+   ]
+  },
+  {
+   "eventKey": "12172375",
+   "roundText": "ATP Almaty - 1/8-finals",
+   "date": "2026-10-21",
+   "time": "08:00",
+   "status": "scheduled",
+   "winner": null,
+   "p1": {
+    "name": "F. Diaz Acosta",
+    "playerKey": "2002"
+   },
+   "p2": {
+    "name": "N. Basilashvili",
+    "playerKey": "424"
+   },
+   "score": [
+    [
+     0,
+     0
+    ]
+   ]
+  },
+  {
+   "eventKey": "12172778",
+   "roundText": null,
+   "date": "2026-10-21",
+   "time": "08:00",
+   "status": "scheduled",
+   "winner": null,
+   "p1": {
+    "name": "D. Medvedev",
+    "playerKey": "1093"
+   },
+   "p2": {
+    "name": "S. Shimabukuro",
+    "playerKey": "9608"
+   },
+   "score": null
+  },
+  {
+   "eventKey": "12172807",
+   "roundText": null,
+   "date": "2026-10-21",
+   "time": "08:00",
+   "status": "scheduled",
+   "winner": null,
+   "p1": {
+    "name": "S. Tsitsipas",
+    "playerKey": "1906"
+   },
+   "p2": {
+    "name": "M. Kukushkin",
+    "playerKey": "2970"
+   },
+   "score": null
+  }
+ ]
+}

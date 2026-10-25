@@ -26,7 +26,7 @@ const MUTANTS = [
   ['js', 'tomorrow: Live counts today\'s matches', "var live = S.day === 'tomorrow' ? 0 : inPlayCount();", "var live = inPlayCount();"],
   ['js', 'names: the card spelling, not the shared formatter', "      name: displayName(key, isFirst ? m.p1 : m.p2),", "      name: (isFirst ? m.p1 : m.p2),"],
   ['js', 'events: raw tournament label', "    var ev = eventLabel(m.tour);", "    var ev = m.tour;"],
-  ['js', 'avatars: a photo back', "    return '<span class=\"tr-ava\">' + esc(playerInitials(row.name)) + '</span>';", "    return '<img class=\"tr-av\" src=\"x\" alt=\"\">';"],
+  ['js', 'avatars: the photo gone', "    return '<span class=\"tr-ava\">' + esc(playerInitials(row.name)) + ph + '</span>';", "    return '<span class=\"tr-ava\">' + esc(playerInitials(row.name)) + '</span>';"],
   ['js', 'prices: the other player\'s price', "return { price: Number(pair[who]), book: cardBookName(pair.book, pair), kind: 'now' };", "return { price: Number(pair[who === 'p1' ? 'p2' : 'p1']), book: cardBookName(pair.book, pair), kind: 'now' };"],
   ['js', 'prices: the raw book key, not the card\'s name', "return { price: Number(pair[who]), book: cardBookName(pair.book, pair), kind: 'now' };", "return { price: Number(pair[who]), book: pair.book, kind: 'now' };"],
   ['js', 'Updated: the clock, not the split build', "var updated = (_indexOk && _builtAt != null) ? fmtZoneClock(_builtAt) : '—';", "var updated = fmtZoneClock(Date.now());"],

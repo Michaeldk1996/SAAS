@@ -1,0 +1,44 @@
+name: Post-deploy check
+
+# Founder ruling 2026-10-25. After every successful "Publish site" run, load the DEPLOYED dashboard in headless Chrome and
+# fail + Telegram if an inline script throws on load, the page's build-sha differs from build-info.json, or the main
+# view does not render. The case: 25 Oct 05:03–10:03Z, a duplicate `const _tpLoad` killed the dashboard's main script.
+# Nothing is signed in: the deployed bytes are served locally with only the sign-in redirect call removed.
+# Logic: tools/post-deploy-check.mjs (its unit and browser test sits beside it in tools/ and runs in npm test).
+on:
+  workflow_run:
+    workflows: ['Publish site']
+    types: [completed]
+  workflow_dispatch:
+
+# the newest publish is what is live: an older pass still running checks nothing new
+concurrency:
+  group: post-deploy-check
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          sparse-checkout: |
+            tools/post-deploy-check.mjs
+            tools/price-alert-send.mjs
+          sparse-checkout-cone-mode: false
+      - uses: actions/setup-node@v4
+        with: { node-version: '24' }
+      - name: Load the deployed dashboard (no uncaught error, build-sha = build-info, main view rendered)
+        env:
+          CHROME_BIN: google-chrome
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          PUBLISH_RUN: ${{ github.event.workflow_run.id }}
+        run: node tools/post-deploy-check.mjs --alert --expect-run "$PUBLISH_RUN"

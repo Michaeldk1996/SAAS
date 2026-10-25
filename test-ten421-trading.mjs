@@ -67,7 +67,9 @@ function boot(opts = {}) {
   const ctx = vm.createContext({ window, document, Date: FakeDate, Intl, fetch, console: { warn() {}, log() {}, error() {} },
     localStorage: { getItem: k => (k in store ? store[k] : null), setItem() {} },
     setTimeout: (f, ms) => (ms >= 1000 ? 0 : setTimeout(f, ms)), clearTimeout() {}, setInterval: () => 0, clearInterval() {},
-    WebSocket: function () {}, matches: fix.matches, playerProfiles: fix.profiles });
+    WebSocket: function () {}, matches: fix.matches, playerProfiles: fix.profiles,
+    // founder 2026-10-22: the host's one photo resolver; here every even player ID has a photo
+    playerPhotoImg: (k, n) => (/^\d*[02468]$/.test(String(k)) ? `<img class="sf-ph" data-k="${k}" alt="${n}">` : ''), });
   ctx.globalThis = ctx;
   // Today's Matches board state = its defaults (Today · Upcoming · no filters · time sort).
   vm.runInContext(`var state = { day:'today', view:'upcoming', surface:'all', tournaments:new Set(), search:'', sort:'time' };
@@ -233,11 +235,14 @@ test('Data 3: names = the shared formatter, country = 3-letter code (— unknown
   assert.ok(rows.some(r => r.name === 'Profile Spelling'), 'the profile spelling wins over the card');
 });
 
-test('Data 4 (override): initials avatars, no photos', async () => {
+test('Data 4 (founder 2026-10-22, overrides TEN-421): the player\'s photo by ID over the initials', async () => {
   const b = await start();
   const page = b.html(), rows = rowsOf(page);
-  assert.ok(!/<img/.test(page), 'no <img> on the page');                                                                    // mutant: photo-back
-  assert.ok(!/randomuser|photoCandidatesFor|resolveProfilePhotoUrl/.test(SRC), 'no photo resolver');
+  const avas = [...page.matchAll(/<span class="tr-ava">([^<]*)(<img [^>]*>)?<\/span>/g)];
+  assert.ok(avas.length > 0 && avas.some(a => a[2]) && avas.some(a => !a[2]), 'photos where the ID has one, initials alone where not');   // mutant: photo-gone
+  assert.ok(avas.every(a => !a[2] || /^<img class="sf-ph" data-k="\d*[02468]"/.test(a[2])), 'asked by player ID');
+  assert.equal((page.match(/<img /g) || []).length, avas.filter(a => a[2]).length, 'every <img> is an avatar photo');
+  assert.ok(!/randomuser|photoCandidatesFor|resolveProfilePhotoUrl|photoOverrideFor/.test(SRC) && SRC.includes('playerPhotoImg(String(row.key), row.name)'), 'the one resolver, by ID');
   rows.forEach(r => assert.equal(r.ava, b.ctx.fhIni(r.name), 'initials = fhIni(name)'));
   assert.match(TR_CSS, /\.tr-ava\{[^}]*background:var\(--inner\); border:1px solid var\(--edge-10\)/);
 });

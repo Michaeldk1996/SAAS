@@ -1,12 +1,20 @@
 # Player Profile page: founder rulings
 
-Applies to the Player Profile page in `bsp-consult-dashboard.html` (`buildPlayerProfileHtml` — the legacy
-renderer — and the TEN-206 renderer behind the `pp2` flag, default ON).
+Applies to the Player Profile page: the TEN-206 renderer (`player-profile-v2.js`, mounted from
+`bsp-consult-dashboard.html`), the only player profile since the legacy renderer was retired (2026-10-21).
 Restored from CLAUDE.md before 011e3e20 (2026-09-21 trim); TEN-312 N13, founder-approved 2026-09-28.
 Newer rulings that also bind the profile: `modal-analysis.md` "Walkovers and retirements" (the TEN-8
 "W/O received = win" rule is superseded on the profile too) and "Overview career spine"; `modal-market-edge.md`
 (player-profile Market edge basis).
 
+- **No legacy fallback (founder, 2026-10-21).** The TEN-206 renderer is the only player profile: the legacy
+  full-page view (`buildPlayerProfileHtml`, `ppCareerYears`) and its `?pp2=0` / `stennisfy.flags.pp2` switch are
+  retired. A profile that cannot paint — the module did not load, or its mount refused or threw — shows
+  "Couldn't load this profile" and a Retry (a missing module is fetched again first), nothing else.
+  **Points at Risk is retired with it** (TEN-172/173: the tile, its breakdown drawer and the profile's
+  `points-at-risk.json` loader lived only in the legacy view); no profile shows a Points at Risk figure.
+  **Test:** force a failed mount — the view holds only that message and Retry, no digit, and a lazy repaint
+  leaves it (`tools/test-pp-load-error.mjs`).
 - **Player Profile — export parity (founder ruling 2026-08-01).** The Player Profile page
   (`buildPlayerProfileHtml`) drops three intentional enrichments the export lacks. **(1) No "Surface record"
   rail card** — the Layer #4A career + rolling-52-week per-surface card is removed; the left rail carries
@@ -17,8 +25,8 @@ Newer rulings that also bind the profile: `modal-analysis.md` "Walkovers and ret
   **primary text** — never brand blue (Blue rule). These are the **fourth** export-has-not / product-had
   divergence resolved toward the export, alongside Extra-stats, the Summary view and the H2H trend.
   *Colour value (TEN-376 foundation):* primary text is `--text`; every colour is a `tokens.css` token.
-  *Scope note (2026-09-28):* this ruling names `buildPlayerProfileHtml`, now the legacy renderer; the TEN-206
-  renderer is the default. Whether the three parity points bind the TEN-206 renderer has not been re-ruled.
+  *Scope note:* this ruling named `buildPlayerProfileHtml`, retired 2026-10-21. Whether the three parity points
+  bind the TEN-206 renderer has not been re-ruled.
   **Test:** the profile rail has no "Surface record" card; Recent form shows no tournament group headers;
   the archetype line is one label in primary text, not blue and with no Specialist suffix.
 - **Recent form counts the Form list** (founder TEN-383, 2026-10-04): Laver Cup and exhibitions are never a Recent form
@@ -32,7 +40,7 @@ Newer rulings that also bind the profile: `modal-analysis.md` "Walkovers and ret
   `trProfilePriceOf`): the event's main-draw rows (walkovers and qualifying out) resolved to career-history and priced on
   the **Database join** — `database-yield.json` rows plus the retirements behind its flag (`DatabaseTab.priceRows()`),
   Pinnacle closing, else Bet365 closing, per match, through the Head to Head page's `h2hPriceJoin` — flat 1u, **a
-  retirement settled on the official ATP result**. Never the closes shard (`match-closes/`), never the market-edge
+  retirement settled on Pinnacle rules** (founder 2026-10-22). Never the closes shard (`match-closes/`), never the market-edge
   shard's attribution or price. A row the join lacks (no career-history row, no archive row) is `—`; an exact price tie is priced at the tie since the
   founder ruling of 2026-10-16 (`tieRows`, `database.md` "Price join").
   The Head to Head page's Tournament card reads the same model, so both print the identical figure (Alcaraz, US Open
@@ -138,7 +146,19 @@ Newer rulings that also bind the profile: `modal-analysis.md` "Walkovers and ret
     - **Price join (founder ruling TEN-384, 2026-10-07, option "me"):** the file and the Database use ONE join — each row priced Pinnacle closing when both Pinnacle prices are valid, else Bet365 closing (`build-market-edge.js` `pickBook`), every season. `tour-baselines.json` is `basis: 'market-edge'`, `equalsDatabaseTour: true`, computed from the same rows as `database-yield.json` (the `--baseline-basis` flag is gone). Today: All −4.37% · Favourite −1.78% · Underdog −6.96% over 40,972 matches (Pinnacle 38,830 / Bet365 2,142). Rule text: `odds-archive.md` "Price join".
     - **Test:** `test-pp2-reconcile.js` "Q8" (file = Database `agg`/`bands` over `database-yield.json`, size, never requests, publish wiring).
   - **Heatmap cell colour = the gap to the pair's all-sets rate** (founder TEN-417, 2026-10-10, SUPERSEDES U3's ≥ ±3): **neutral within ±3 inclusive, green from +4 pts, red from −4**, the same rule as Live. The gap is taken on the printed integers, and the tooltip word follows the same band ("at global · −3 pts vs this bucket's global 83%"; "above global" from +4, "below global" from −4), so colour, word and printed figure never disagree. **Test:** `test-holdbreak-engine.js` "TEN-417: −3 / +3 … −4 / +4". Cells with n 5–9 get an 8%/16% wash; n ≥ 10 get 16%/36%. The all-sets cell is never tinted. **Test:** `test-holdbreak-engine.js` 1c, `test-heatmap-shape.js`.
-  - **Derived lines "Vs avg pp"** = the line's cover rate minus the unweighted mean cover rate of every rated line in the same table (same format, same role), in points. The footnote states it with its value.
+  - **Derived lines: "Vs avg pp" is withdrawn; Field and vs Field replace it (founder rulings 2026-10-23).** Vs avg compared a line with the player's own other lines (an easy line read as an edge): not computed, not shown. **Field (tier)** = the same line, same Window · Tier · format · card · Surface · Court speed, pooled over every player-side in the database (`derived-field.json`, built each pipeline run by `tools/build-derived-field.js` from the page's own `lineCoverage` — same exclusions, retirements, void rule); **vs Field** = player rate − field rate, pp. The header reads **"Field"**, with the muted note "Field = tracked players under the same filters" under the table (never "tour"). **Challenger & ITF has no favourite / underdog** (no closing prices: 2 of 222,732 player-sides): those cards' counts and tables read a dash, never a rate off a match or two. **vs Field dims within sampling noise (founder ruling 2026-10-23):** dimmed when |gap| ≤ 2 × √(f(1 − f)/n), f = the Field rate, n = the player's covered + not covered (voids and retirements out), on the unrounded gap; a gap beyond it keeps full ink. Altmaier L24 · ATP · underdog · +1.5 sets −6.0pp on 55 dims; Alcaraz Career +3.5 +16.5pp on 359 does not. **Test:** `test-derived-field.js` N + mutant. A field of n < 10 dims like the player's. **One green, one red per table (founder ruling 2026-10-24, supersedes "both columns neutral"):** among the vs Field values on screen (this card, these filters) that are not dimmed, the highest positive is `--pos` and the lowest negative `--neg`; ties all coloured; a dimmed value (noise or thin) never; if none is undimmed, nothing is coloured. Applied to vs Field only: the Rate, the Field and the bar never take green / red (the old Rate "≥ 65% full sample = --pos" highlight is gone). `lcBestWorst`. **Test:** `test-derived-field.js` K + three mutants. No file (404, a failed build) = a dash. **Test:** `test-derived-field.js` F (one player's field = his own tallies, every cell), R, [neg]; `test-derived-lines-drill.js` A.
+  - **Derived lines population, ±3.5 / ±3, filters, drill (founder briefs 2026-10-21 / 22).**
+    - **Population = the Career record's counted rows** (`drillScope`), every tier and year; never cut for want of a price. **Test:** record = Bo3 + Bo5 + every match out, by reason (+ undated) — `test-derived-lines-drill.js` P.
+    - **Out of every line, every filter (rulings 2026-10-22):** NextGen (by name, or every set first-to-4); a best-of-3 decided by a **match tiebreak** stored as a set (`lineFormatOf`: decider won on 10+ — by 3+ always, by exactly 2 unless a Slam / Davis Cup / Olympics advantage set; or a 1-0 decider). A decider won on 9 (9-7) is a real advantage set and counts. Walkovers (no score), level set counts and other short sets also out, each counted in the note. **Test:** X (no NextGen / match-tiebreak match in any line or tab).
+    - **Retirements are shown, never counted.** Never in a record, rate or Vs avg; listed on every line's **Retired** tab ("Retired — not counted", never "void"). No retired count on the family label (founder 2026-10-23). Roster-wide 3.3% of counted matches are retirements (10,007 of 305,424, 2026-10-23); none walkover-flagged. A retirement's table: Bo5 for a Slam main draw, a Davis Cup tie through 2018, or 3 sets already won; else Bo3 (`lineRetiredFormat`). No margin is read off an unfinished match (dash). **Test:** D (tabs = n + retired; a retired match in a record fails), [neg] mutant.
+    - **Bettable side only (founder ruling 2026-10-23).** As favourite: the − games and set handicaps; As underdog: the + ones; All matches: every line. Total games and Match shape in every card. A hidden line leaves the table (and its Vs avg baseline), never dashed. **Test:** B.
+    - **Thin samples are shown dimmed (2026-10-23).** Below n = 10 (threshold unchanged) the rate, bar and Vs avg are real values in `--text-label` with the bar at 0.4 opacity; no "n < 5" / "small sample" text anywhere; zero matches is a dash. The Vs avg mean still takes rows of n ≥ 5 only. **Test:** N.
+    - **Surface filter (2026-10-23):** All / Hard / Indoors / Clay / Grass, the Career record's own per-match cell (`drillScope` `cell`, `seasonCellOf`); a row with no surface (or an unresolved court in an Indoors-split season) counts under All only. Second control row, under Window / Tier / format, fixed widths. Vs avg follows it (the filtered table's mean). **Test:** U (the five buckets partition All, every line and result).
+    - **Court speed filter (founder 2026-10-23):** All / Slow / Medium / Fast / Unrated, beside Surface, fixed widths. The band is exactly the Court speed record's `speedBandForRow(speedRowOf(r))` (no cut-off in this module, none inferred from surface or event); a venue with no rating is **Unrated**, under every tier (ATP rows 88–100% banded, Challenger & ITF 2–8%, 2026-10-23). The record has no speed cell, so under a speed filter the note's record figure is the filtered list's own count. **Test:** Z (the four buckets partition All, every line and result) + mutant.
+    - **Games handicap (Bo3 only) order:** −4.5, −3.5, −3, −2.5, +2.5, +3, +3.5, +4.5. Bo5 keeps its own ±3.5 / ±6.5 and gets no ±3. **±3 is a whole line:** margin exactly 3 = **void** (the ±3 push, nothing else); record W–V–L; rate = W ÷ (W + L). **Test:** +3.5 W = +3 W + +3 V.
+    - **Window** Last 52 weeks / Last 24 months / Career (default Career; 52 weeks = the record's 364-day cutoff; 24 months = same day two years back) and **Tier** All / ATP / Challenger & ITF (the record's assignment: a season with no tier split counts under All only, stated in the note) re-cut every figure, Vs avg and the drill. **Test:** ATP + CH = All on a TE record.
+    - **Nothing moves on a filter or card click.** Fixed "Coverage by line" title; every control button reserves its 700-weight width (`mkSeg(…, steady)`); each coverage card's subtitle shares its cell with a hidden widest-case copy, so a "—" card is as tall as a full one. **Test:** S (structure, npm test); `tools/probe-derived-lines-layout.js` (Chrome, by hand: title, controls, cards and table top identical across 54 states at 1000 / 760 / 560 / 400 / 340 px; 4af952d4c fails at 400).
+    - **Drill:** every line opens its matches in the career drill panel (`drillPanelHtml`); tabs Covered / Not covered / Void (±3 only) / Retired, opening on the first that holds a match (an empty tab the reader picks says "No matches"), each with its count, adding to the line's matches + its retirements. **The LINE badge is the row's only colour** (Covered `--pos`, Not covered `--neg`, Void and Retired grey, LOST SERVE badge form); the match result is neutral text ("W 2-0", no square), the margin neutral and signed. Header = "record · N matches[ · R retired, not counted]", the same on every tab. No provisional source label on a line drill row (the field stays). At a narrow width the drill scrolls sideways inside its panel (opponent and set-score columns keep a floor), never overlapping. **Test:** D, O, V, [neg] mutants.
 - **TEN-384 fix round 1 (founder "Not ready", 2026-10-05), items 7–13.**
   - **8 · A tile headline only from a split of n ≥ 10.** Matchup = the first row of the modal's rate-sorted list with n ≥ 10 (`bestMatchup`). Live trading = "from a set down" at n ≥ 10, else the Situational row of n ≥ 10 with the largest gap to its tour figure (`liveTileFallback`).
     **fx3 (founder D10, 2026-10-07): no split qualifies → the tile shows the OVERALL figure, never a dash** (a dash only when the overall population is under 5 or there is no data): Matchup = the rate over every labelled archetype ("all archetypes · none at 10+ matches · W–L"); Live trading = his record over every match with set-by-set scores ("all matches with set scores · rate"); Draw record = his rate across these splits, the modal's own baseline ("all splits · none at 10+ matches | no split above it · W–L"); Court speed = the rate over every speed-rated match ("all rated courts · no band above it | none at 10+ matches · W–L", fx4); Record per tournament = fx4: the rate and W–L over every event ("all events · W–L"), the fx3 summed Backing ("all events · W–L · N priced") held behind `TOURN_TILE_SUMMED_UNITS` (off: founder ruling 2026-10-07, see below). Draw record and Court speed keep their positive-gap pick (Q1 / §8.3): a band or split below his own rate is never headlined as "best".
@@ -169,11 +189,10 @@ Newer rulings that also bind the profile: `modal-analysis.md` "Walkovers and ret
     R64 + R128 (no RR / BR); Other Tours = the source's level A (ATP 250 / 500, plus Laver Cup, United Cup, ATP Cup, the
     Olympics and the 2023 Tour Finals the source codes A).
   - **Prices (founder: "confirm")** = the site's ONE join: the Database archive, Pinnacle closing, else Bet365 closing, per
-    match (`H2HPage.priceJoin` via `window.pp2DrawJoin`, with his career-history), a retirement settled on the official ATP
-    result (`RET_SETTLE_NOTE` in the footnote). P&L = 1u flat on him at his price. Missing price = "—", never 0.
-  - **Walkovers (founder: "yes")** are listed "w/o" with no price and no P&L; they stay in the W–L the Draw record already
-    shows. Whether the Draw record should count them at all (the site rule says a walkover is never a win or a loss) is
-    an OPEN founder question — figures untouched until ruled.
+    match (`H2HPage.priceJoin` via `window.pp2DrawJoin`, with his career-history), a retirement settled on Pinnacle rules
+    (`RET_SETTLE_NOTE` in the footnote; founder 2026-10-22). P&L = 1u flat on him at his price. Missing price = "—", never 0.
+  - **Walkovers** are listed as walkover rows with no price and no P&L, and are in no W–L — the Draw record
+    included (founder 2026-10-22 closes the open question: a walkover is never a win or a loss).
   - **Date** = the tournament's month (the source dates every match at its event start; founder: "yes").
   - **Every row opens the step-3 stats sheet (founder: required):** on the career-history match the join met for it
     (`careerMatch`, event key → the full sheet), else on the row's own date, score and event (the sheet's "Match stats not

@@ -41,12 +41,15 @@ const S = new Function('window', `
   const playerProfiles = {};
   const MarketEdgeCore = window.MarketEdgeCore;
   function formPanelHtml(){ return ''; } function ensureFormPanelTabs(){}
-  function ensureFormRows(m){ return Promise.resolve(m); } function loadCareerHistory(){ return Promise.resolve([]); }
+  function ensureFormRows(m){ return Promise.resolve(m); } function loadCareerHistory(k){ return Promise.resolve(_careerHistoryShards[String(k)] || []); }
   function ensureStyleMeetings(m){ return Promise.resolve(m); } function ensurePsMatrix(){ return Promise.resolve(); }
   function ppStyleFor(){ return null; } function psArchFor(){ return null; } function styleMeetRowsFor(){ return []; }
   function openPlayerProfileFromMatch(){} function aGoTab(){}
   let _aM = null; const _aBuilt = new Set(); function aBuilt(){ return false; } function aPaint(){}
   const _careerHistoryShards = {};
+  const _careerRecordLayers = {};
+  function loadCareerRecord(k){ const s = String(k); if (globalThis.__recFail) return Promise.resolve(false);
+    if (!(s in _careerRecordLayers)) _careerRecordLayers[s] = (globalThis.__recSrc || {})[s] || null; return Promise.resolve(true); }
   const _tourHistShards = {};
   let tourxMarketData = null; function tourxFetchMarket(){ return Promise.resolve(tourxMarketData); }
   const HouseRatings = (function(){ const window = {}; ${HOUSE_RATINGS_SRC}; return window.HouseRatings; })();
@@ -57,7 +60,8 @@ const S = new Function('window', `
   ${['escapeHtml', 'surnameFirstName', 'psShortName', 'formIni', 'ppCleanTournamentName', 'psNormTour', 'psTourMeta', 'psRoundAbbr', 'h2hRoundLabel', 'maRoundName',
      'eventKeyOfMatch', 'courtSpeedCategory', 'tourxKnobPct', 'tourxConditionRegistry'].map(slice).join('\n')}
   ${between('/* =====================================================================\n   TEN-263 ', '// Extra stats tab REMOVED (TEN-8 Item 5)')}
-  return { meRowFromCareer, sfDbPxRows, buildTournamentSection, trModelFor, trStateFor, trProfileModel, trLoad, trMarketHtml, trHeaderHtml, trRowOf, fhStateFor, maMatchRowsHtml, trProfileBacking,
+  return { recLayers: _careerRecordLayers, recordFixOf, recordFixRow, fhEnsureFormData, fhFormPlayer, trModelOf,
+    meRowFromCareer, sfDbPxRows, buildTournamentSection, trModelFor, trStateFor, trProfileModel, trLoad, trMarketHtml, trHeaderHtml, trRowOf, fhStateFor, maMatchRowsHtml, trProfileBacking,
     chShards: _careerHistoryShards, thShards: _tourHistShards, fhCl: _fhCl, profiles: playerProfiles, profileFail: _trProfileFail, set hold(v){ _trHoldData = v; },
     get tr(){ return _tr; }, get fh(){ return _fh; }, set market(v){ tourxMarketData = v; }, TR_RG_NOTE, TR_NO_SPEED,
     // TEN-402 (founder 2026-10-08): the page-wide Database join rows (sfDbJoinLoad's state), set by the tests
@@ -198,15 +202,31 @@ test('Backing (N5 + D6 + TEN-325): the Database join\'s closes, retirements sett
   assert.ok(t4.includes('+0.5u') && t4.includes('4 priced') && !/vs market/.test(t4.replace('vs market needs', '')), t4);
 });
 
-// Mutation 'N2: a set-less history row read as a walkover' (the pipeline history carries no walkovers — TEN-313 drops
-// them — so a "0 - 0" row with no set is a match stopped in set 1: a retirement, played, settled at the close)
-test('N2 + TEN-325: a set-less "0 - 0" history row is a first-set retirement — counted and settled at its close', () => {
+// Founder 2026-10-22 · the pipeline history now LISTS walkovers (flagged). Mutation 'trRowOf: a flagged walkover is a
+// retirement again' → the row reads ret, is priced and counted.
+test('2026-10-22: a flagged walkover history row is listed as a walkover — never a retirement, a price or a count', () => {
+  const m = fixture([ed(2024, [['2024-07-20', 'A. B', 'Final', true, W2, { p: [1.5, 2.6] }]])]);
+  S.tr.data[0].ch[0].sets = []; S.tr.data[0].ch[0].result = '-'; S.tr.data[0].ch[0].walkover = true;
+  Object.assign(m.p1TournamentHistory.years[0].matches[0], { result: null, walkover: true });
+  m.p1TournamentHistory.years[0].won = 0; m.p1TournamentHistory.years[0].lost = 0; m.p1TournamentHistory.years[0].matchCount = 0;
+  const P = S.trModelFor(m, 0);
+  assert.ok(P.all[0].wo && !P.all[0].ret && !P.all[0].retSettle, 'a walkover, not a retirement');
+  assert.equal(P.all[0].price, null, 'no price');
+  assert.equal(P.priced.length, 0); assert.equal(P.W + P.L, 0);
+  assert.equal(P.played.length, 0, 'an edition left only by a walkover is listed, not played');
+});
+// (the pipeline history used to carry no walkovers — TEN-313 dropped them — so a "0 - 0" row with no set is a match stopped
+// in set 1: a retirement, played, settled at the close)
+// Ruling 4 (founder 2026-10-22): a retirement with no stored set scores carries no units — its price stays on the row,
+// it leaves the priced figures; never guessed. (An unflagged empty score is never a walkover: ruling 3.)
+test('N2 + ruling 4: a set-less "0 - 0" history row is a retirement with no set scores — listed, priced, no units', () => {
   const m = fixture([ed(2024, [['2024-07-20', 'A. B', 'Final', true, W2, { p: [1.5, 2.6] }]])]);
   S.tr.data[0].ch[0].sets = []; S.tr.data[0].ch[0].result = '0 - 0'; m.p1TournamentHistory.years[0].matches[0].result = '0 - 0';
   const P = S.trModelFor(m, 0);
-  assert.equal(P.priced.length, 1);
   assert.ok(P.all[0].ret && !P.all[0].wo);
-  assert.equal(Math.round(P.units * 100), 50);
+  assert.equal(P.all[0].price, 1.5, 'its price is shown');
+  assert.equal(P.priced.length, 0, 'no units: no first set on record');
+  assert.equal(Math.round(P.units * 100), 0);
 });
 
 // Mutation 'join: the season + opponent fallback takes another event's row'
@@ -218,7 +238,7 @@ test('the season + opponent fallback joins only a row of this event (name or arc
   let P = S.trModelFor(m, 0);
   assert.equal(P.all[0].sets, null, 'a Toronto row never joins a Washington edition');
   E.data[0].ch[0].tournament = 'Citi Open';                                                 // an archive name of this event
-  S.market = { baseline: { roiFav: 0, roiDog: 0, favRel: 70 }, tournaments: { Washington: { n: 50, roiFav: 1, roiDog: 1, favRel: 70, archiveNames: ['Citi Open'] } } };
+  S.market = { baseline: { roiFav: 0, roiDog: 0, favRel: 70 }, tournaments: { Washington: { n: 50, roiFav: 1, roiDog: 1, favRel: 70, nRel: 52, archiveNames: ['Citi Open'] } } };
   P = S.trModelFor(m, 0);
   assert.ok(P.all[0].sets && P.all[0].sets.length === 2, 'the archive name joins');
   S.market = null;
@@ -262,16 +282,33 @@ test('Q9: the header carries the event hold rate with its n; a dash with the rea
   S.hold = undefined;
 });
 
+// Defect brief 2026-10-24 items 4 + 5. Mutations: the card's tournamentKey ignored (name lookup first) → Lyon 2026 reads the
+// clay Lyon 2024; the tooltip back on "qualifying included".
+test('event hold: a card with its own tournamentKey reads that event or nothing — never a name twin; main draw only', () => {
+  S.hold = { events: { 2752: { name: 'Lyon', names: ['Lyon'], held: 418, games: 554, matches: 25, years: ['2024'] } }, byName: { lyon: '2752' } };
+  const lyon26 = text(S.trHeaderHtml(fixture([nMatches(2, () => true)], { m: { tour: 'ATP Lyon', tournamentKey: '14763' } })));
+  assert.match(lyon26, /Hold rate — No box score on file for Lyon/, 'Lyon 2026 (key 14763) never shows the clay Lyon 2024 figure');
+  const clay = text(S.trHeaderHtml(fixture([nMatches(2, () => true)], { m: { tour: 'ATP Lyon', tournamentKey: '2752' } })));
+  assert.match(clay, /Hold rate 75% Service hold at [^:]+: 418 of 554 service games held/);
+  assert.match(clay, /main draw only\. Our own box scores\./);
+  assert.doesNotMatch(clay, /qualifying included/);
+  const legacy = text(S.trHeaderHtml(fixture([nMatches(2, () => true)], { m: { tour: 'ATP Lyon' } })));
+  assert.match(legacy, /Hold rate 75%/, 'a card published before the key falls back to the cleaned name');
+  S.hold = undefined;
+});
+
 // Mutations 'trend: a missing season interpolated', 'trend: header span claims 7 years'
-test('seven-season trend: 2020–2026 on the axis, dots only where the sheet holds a value, the rest dashed', () => {
+// Defect brief 2026-10-24 item 6: the axis holds only the seasons the sheet can carry (2023–2025).
+test('court-speed trend: 2023–2025 on the axis, dots only where the sheet holds a value, the rest dashed', () => {
   const m = fixture([], { m: { courtSpeed: { speed: 66, abstractSpeed: 1.02, altitude: 20, as2023: 0.98, as2024: null, as2025: 1.02, category: 'Medium' } } });
   S.market = null;
   const h = S.trMarketHtml(m);
   const v = [...h.matchAll(/class="tr-sp-v"[^>]*>([^<]*)</g)].map(x => x[1]);
-  assert.deepEqual(v, ['—', '—', '—', '0.98', '—', '1.02', '—']);
+  assert.deepEqual(v, ['0.98', '—', '1.02']);
+  assert.deepEqual([...h.matchAll(/letter-spacing:0\.06em; color:[^;]+;">(\d{4})</g)].map(x => x[1]), ['2023', '2024', '2025'], 'no 2020–22 or 2026 slot');
   assert.equal((h.match(/<polyline/g) || []).length, 0, 'a hole in 2024 breaks the line: no segment of 2+ adjacent seasons');
   assert.ok(text(h).includes('Trending faster +0.04 over 2 yrs'));
-  assert.ok(text(h).includes('Abstract court speed · 2020–2026'));
+  assert.ok(text(h).includes('Abstract court speed · 2023–2025'));
 });
 
 // Mutations 'ROI: a card clickable with no archive names', 'ROI: a small-n yield in full colour'
@@ -280,12 +317,12 @@ test('ROI + reliability: tournament-market.json figures, dashed when absent, gre
   S.market = null;
   let h = S.trMarketHtml(m);
   assert.ok(!/onclick="trSet\(\{roi/.test(h) && text(h).includes('ROI backing favourites — flat-stake yield'));
-  S.market = { baseline: { roiFav: -1.8, roiDog: -6.9, favRel: 70 }, tournaments: { Washington: { n: 120, roiFav: 2.5, roiDog: -9, favRel: 74, archiveNames: ['Citi Open'] } } };
+  S.market = { baseline: { roiFav: -1.8, roiDog: -6.9, favRel: 70 }, tournaments: { Washington: { n: 120, roiFav: 2.5, roiDog: -9, favRel: 74, nRel: 123, archiveNames: ['Citi Open'] } } };
   h = S.trMarketHtml(m);
   assert.ok(text(h).includes('+2.5% flat-stake yield +4.3pp vs tour avg'));
   assert.ok(/data-tr="roi-fav" onclick="trSet\(\{roi:'fav'\}\)"/.test(h));
   assert.ok(text(h).includes('74% Reliable'));
-  S.market = { baseline: { roiFav: -1.8, roiDog: -6.9, favRel: 70 }, tournaments: { Washington: { n: 7, roiFav: 2.5, roiDog: -9, favRel: 74 } } };
+  S.market = { baseline: { roiFav: -1.8, roiDog: -6.9, favRel: 70 }, tournaments: { Washington: { n: 7, roiFav: 2.5, roiDog: -9, favRel: 74, nRel: 7 } } };
   h = S.trMarketHtml(m);
   assert.ok(text(h).includes('small sample') && !/data-tr="roi-fav" onclick/.test(h));
   assert.match(h, /color:var\(--text-label\);">\+2\.5%</, 'a 5–9 yield is greyed');
@@ -431,7 +468,7 @@ test('Q8: two meetings with one opponent in an edition resolve by round; a profi
 // Bug 2: the Backing tile's hidden 280px pop, centred on the row's last tile, ran past the column → a horizontal scrollbar.
 test('TEN-380: ROI values --text (never green on a negative yield); Backing pop opens leftwards; panels, chip, toggle, bar', () => {
   const m = fixture([nMatches(6, i => i % 2 === 0, null)]);
-  S.market = { baseline: { roiFav: -1.8, roiDog: -6.9, favRel: 70 }, tournaments: { Washington: { n: 120, roiFav: 2.5, roiDog: -3.7, favRel: 74, archiveNames: ['Citi Open'] } } };
+  S.market = { baseline: { roiFav: -1.8, roiDog: -6.9, favRel: 70 }, tournaments: { Washington: { n: 120, roiFav: 2.5, roiDog: -3.7, favRel: 74, nRel: 123, archiveNames: ['Citi Open'] } } };
   const h = S.trMarketHtml(m);
   const val = side => new RegExp(`data-tr="roi-${side}"[^]*?font-size:26px;[^"]*color:([^;"]+);">([^<]*)<`).exec(h);
   assert.equal(val('dog')[2], '−3.7%'); assert.equal(val('dog')[1], 'var(--text)', 'a negative yield is not green');
@@ -570,4 +607,85 @@ test('founder ruling 2026-10-17 (item 1): the closes-shard tabs show the Databas
   assert.deepEqual(pk(S.meRowFromCareer(chx, d.cl, '1', 'J. Sinner', ci)).slice(0, 2), [null, null], 'a Challenger row the join does not hold: a dash, never the closes 2.00 / 1.85');
   // every closes tab hands its rows to the ONE shared function
   for (const f of ['fhFormPlayer', 'fhMeetings', 'meRowFromCareer']) assert.ok(/sfDbPxRows\(/.test(slice(f)), f + ' prices through sfDbPxRows');
+});
+
+// ---- Option A (founder 2026-10-21): Form and Tournament keep the feed's matches (TEN-449: the record is its own population)
+// and show each one as the career record counts it — the result, and on Form the surface. Mutants: tools/test-ten332-mutants.js.
+const recReset = (src) => { for (const k of Object.keys(S.recLayers)) delete S.recLayers[k]; globalThis.__recSrc = src || {}; globalThis.__recFail = false; };
+// offline, and the Database rows answered (empty) — never a join promise an earlier test left pending
+const offline = async (fn) => { const f = globalThis.fetch, D = globalThis.DatabaseTab; globalThis.fetch = () => Promise.reject(new Error('offline'));
+  globalThis.DatabaseTab = { priceRows: () => Promise.resolve(null) }; try { return await fn(); } finally { globalThis.fetch = f; globalThis.DatabaseTab = D; } };
+function flipFixture() {
+  // newest first: A. Flip (SF, a feed win the record counts as a loss), B. Keep (QF, a win), C. Loss (R16, a loss)
+  const m = fixture([ed(2025, [['2025-07-25', 'A. Flip', 'Semi-finals', true, W2], ['2025-07-24', 'B. Keep', 'Quarter-finals', true, W2], ['2025-07-23', 'C. Loss', '1/8-finals', false, L2]])]);
+  return { m, E: S.trStateFor(m), ch: S.trStateFor(m).data[0].ch };
+}
+
+test('option A · Tournament: the record\'s result is the one shown, and the edition W–L moves with it', () => {
+  const { m, E, ch } = flipFixture();
+  assert.equal(ch[0].opponent, 'A. Flip');
+  E.data[0].fix = S.recordFixOf(ch, { over: [[0, { won: false }]] });
+  const P = S.trModelFor(m, 0);
+  assert.equal(P.eds[0].rows[0].won, false, 'A. Flip reads as the record counts it');
+  assert.equal(m.p1TournamentHistory.years[0].matches[0].won, true, 'the feed row is untouched');
+  assert.deepEqual([P.eds[0].won, P.eds[0].lost, P.W, P.L], [1, 2, 1, 2], 'edition and tile W–L: 1–2, not the feed\'s 2–1');
+  assert.ok(text(S.buildTournamentSection(m)).includes('1–2'), 'the edition header prints 1–2');
+});
+
+test('option A · a feed row whose result disagrees with its career row (the name-order scramble) takes no correction', () => {
+  const { m, E, ch } = flipFixture();
+  ch[0] = Object.assign({}, ch[0], { won: false });   // the career row says lost, the history won: not the same match
+  E.data[0].fix = S.recordFixOf(ch, { over: [[0, { won: false }]] });   // differs from the history's win: the guard is what keeps it
+  assert.equal(S.trModelFor(m, 0).eds[0].rows[0].won, true);
+});
+
+test('option A · Key factors "Record here": the record\'s results by event key, with no career join', () => {
+  const { m, ch } = flipFixture();
+  const T = S.trModelOf(m.p1TournamentHistory, { ch: null, cl: null, fix: S.recordFixOf(ch, { over: [[0, { won: false }]] }) }, '1', 'J. Sinner', 'Washington', ['Washington'], '2026', 'idle');
+  assert.deepEqual([T.W, T.L], [1, 2]);
+  assert.match(html, /trModelOf\(i \? m\.p2TournamentHistory : m\.p1TournamentHistory, \{ ch: null, cl: null, fix: recordFixFor\(i \? m\.p2Key : m\.p1Key\) \}/, 'kfTourCard passes the record');
+});
+
+test('option A · the Tournament tab loads the record with the history; a record that does not answer fails the side', { timeout: 15000 }, async () => {
+  const { m, E, ch } = flipFixture();
+  S.chShards['1'] = ch;
+  recReset({ 1: { over: [[0, { won: false }]] } });
+  E.state = ['idle', 'idle']; E.data = [null, null];
+  await offline(() => S.trLoad(m));
+  assert.equal(E.state[0], 'ready');
+  assert.deepEqual([S.trModelFor(m, 0).W, S.trModelFor(m, 0).L], [1, 2], 'the loaded record corrects the tab');
+  recReset(); globalThis.__recFail = true;
+  E.state = ['idle', 'idle']; E.data = [null, null];
+  await offline(() => S.trLoad(m));
+  assert.equal(E.state[0], 'failed', 'never the feed rows uncorrected as if checked');
+  recReset(); delete S.chShards['1'];
+});
+
+test('option A · Form: rows read as the record counts them (result, surface), from the form shard and the career fallback', { timeout: 15000 }, async () => {
+  S.dbJoin = null;   // a fresh join state: fhEnsureFormData loads it (offline answers it)
+  // p1 from his form shard (joined by event key); p2 from his career history (joined by index: these rows carry no key)
+  const fr = (ek, date, opp, won, surface) => ({ eventKey: ek, date, opponent: opp, opponentKey: null, tournament: 'ATP Washington', round: '1/8-finals', surface, won, result: won ? '2 - 0' : '0 - 2', sets: won ? [{ p: 6, o: 3 }, { p: 6, o: 4 }] : [{ p: 3, o: 6 }, { p: 4, o: 6 }], tier: 'atp' });
+  const cr = (ek, date, opp, won, surface) => ({ eventKey: ek, date, year: date.slice(0, 4), opponent: opp, tournament: 'ATP Washington', round: '1/8-finals', surface, won, level: 'atp', result: won ? '2 - 0' : '0 - 2', sets: won ? [{ p: 6, o: 3 }, { p: 6, o: 4 }] : [{ p: 3, o: 6 }, { p: 4, o: 6 }] });
+  S.chShards['7'] = [cr(701, '2026-08-03', 'R. Flip', true, 'hard'), cr(702, '2026-08-02', 'S. Surf', true, 'hard'), cr(703, '2026-08-01', 'T. Scram', false, 'hard')];
+  S.chShards['8'] = [cr(null, '2026-08-03', 'U. Flip', true, 'clay'), cr(null, '2026-08-02', 'V. Keep', false, 'clay')];
+  recReset({ 7: { over: [[0, { won: false }], [1, { surface: 'grass' }], [2, { won: false }]] }, 8: { over: [[0, { won: false, surface: 'grass' }]] } });
+  const shard = [fr(701, '2026-08-03', 'R. Flip', true, 'hard'), fr(702, '2026-08-02', 'S. Surf', true, 'hard'), fr(703, '2026-08-01', 'T. Scram', true, 'hard')];
+  const m = { id: 'fx-optA', p1: 'A. One', p2: 'B. Two', p1Key: '7', p2Key: '8', date: '2026-10-20', surface: 'Hard', tour: 'ATP Somewhere', p1RecentFormMatches: shard, p2RecentFormMatches: null };
+  await offline(() => S.fhEnsureFormData(m));
+  const rows = i => { const F = S.fhStateFor(m); return S.fhFormPlayer(m, i, Object.assign(F.form, { surf: 'all' })).shown; };
+  const by = (i, opp) => rows(i).find(r => r.opp === opp);
+  assert.equal(by(0, 'R. Flip').won, false, 'form shard: the record\'s result');
+  assert.equal(by(0, 'S. Surf').surface, 'Grass', 'form shard: the record\'s surface');
+  assert.equal(by(0, 'T. Scram').won, true, 'a disagreeing career row (scramble) corrects nothing');
+  assert.equal(by(1, 'U. Flip').won, false, 'career fallback: corrected by its career index');
+  assert.equal(by(1, 'U. Flip').surface, 'Grass');
+  assert.equal(shard[0].won, true, 'the feed rows are untouched');
+  assert.equal(m._fhFormRetry, false);
+  // a side whose record did not answer is shown uncorrected this time and retried
+  recReset(); globalThis.__recFail = true;
+  const m2 = Object.assign({}, m, { id: 'fx-optA2', _fhFormData: false, _fhFormRows: null, p1RecentFormMatches: shard.map(x => Object.assign({}, x)) });
+  S.dbJoin = null;
+  await offline(() => S.fhEnsureFormData(m2));
+  assert.equal(m2._fhFormRetry, true, 'the next open retries the record');
+  recReset(); delete S.chShards['7']; delete S.chShards['8'];
 });

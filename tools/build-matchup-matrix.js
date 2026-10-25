@@ -340,6 +340,20 @@ function main() {
   // bump() owns BOTH the w/l aggregate and the per-meeting row so they can never
   // drift: every counted endpoint increments the count AND pushes exactly one row
   // under the same key, so meetings[k].vs[opp].length === byPlayer[k].vs[opp].(w+l).
+  // Founder 2026-10-22 · a walkover meeting row: listed in the shard (flagged), never in byPlayer, the matrix or any count.
+  // The invariant above holds over the played rows: meetings[k].vs[opp] minus its walkover rows === byPlayer w + l.
+  let woListed = 0;
+  const listWalkover = (name, oppLabel, won, meeting) => {
+    const k = clientKey(name);
+    if (!k) return;
+    const slot = byClientKey.get(k);
+    if (!slot || slot === CK_AMB) return;
+    const me = meetings[k] || (meetings[k] = { name: slot.name, vs: {} });
+    (me.vs[oppLabel] || (me.vs[oppLabel] = [])).push({ won: !!won, opponent: meeting.opponent, surface: meeting.surface,
+      tournament: meeting.tournament, result: 'W/O', date: meeting.date, round: meeting.round || null,
+      oddsSelf: null, oddsOpp: null, walkover: true });
+    woListed++;
+  };
   const bump = (name, oppLabel, won, meeting) => {
     const k = clientKey(name);
     if (!k) return;
@@ -406,6 +420,14 @@ function main() {
         // still register the pair + date, so the api supplement's ±1-day dedup drops the same walkover in its feed too
         const wd = isoDate(c[ix.tourney_date]), wpk = pairKey(wn, ln);
         if (wpk && wd) (tmlPairDates.get(wpk) || tmlPairDates.set(wpk, []).get(wpk)).push(wd);
+        // founder 2026-10-22: listed in both players' meetings, flagged, counted nowhere
+        const wwl = lookup(wn), wll = lookup(ln);
+        if (wwl && wll) {
+          const surfW = surfaceOf(c[ix.surface]);
+          const wmeta = { surface: surfW === 'other' ? null : surfW, tournament: c[ix.tourney_name] || null, date: wd, round: c[ix.round] || null };
+          listWalkover(wn, wll, true, { ...wmeta, opponent: ln });
+          listWalkover(ln, wwl, false, { ...wmeta, opponent: wn });
+        }
         continue;
       }
       const wl = lookup(wn), ll = lookup(ln);
@@ -453,7 +475,19 @@ function main() {
       ? new Map(Object.entries(JSON.parse(fs.readFileSync(SURFACE_MAP, 'utf8')).surfaces || {}))
       : new Map();
     for (const r of (cache.fixtures || [])) {
-      if (r.status === 'Walk Over') { supp.walkover++; continue; }
+      if (r.status === 'Walk Over') {
+        supp.walkover++;
+        // founder 2026-10-22: listed (flagged, counted nowhere) unless TML already lists the same walkover
+        const wl0 = r.winner ? lookup(r.p1) : null, ll0 = r.winner ? lookup(r.p2) : null, pk0 = pairKey(r.p1, r.p2);
+        const dup = pk0 && (tmlPairDates.get(pk0) || []).some(d => daysApart(d, r.date) <= SUPP_DEDUP_TOL_DAYS);
+        if (wl0 && ll0 && r.date && !dup) {
+          const p1won0 = r.winner === '1';
+          const wmeta = { surface: surfMap.get(String(r.tournament_key)) || null, tournament: r.tournament || null, date: r.date, round: apiRound(r.round) };
+          listWalkover(canonicalName(p1won0 ? r.p1 : r.p2), p1won0 ? ll0 : wl0, true, { ...wmeta, opponent: canonicalName(p1won0 ? r.p2 : r.p1) });
+          listWalkover(canonicalName(p1won0 ? r.p2 : r.p1), p1won0 ? wl0 : ll0, false, { ...wmeta, opponent: canonicalName(p1won0 ? r.p1 : r.p2) });
+        }
+        continue;
+      }
       if (!r.winner || !r.date) { supp.noWinner++; continue; }
       const wl = lookup(r.p1), ll = lookup(r.p2);       // p1/p2 archetypes (winner not yet applied)
       if (!wl || !ll) { supp.unlabelled++; continue; }  // at least one endpoint outside the deployed pool
@@ -585,7 +619,7 @@ function main() {
   for (const k of Object.keys(byPlayer)) {
     const agg = byPlayer[k].vs, det = (meetings[k] && meetings[k].vs) || {};
     for (const opp of Object.keys(agg)) {
-      const want = agg[opp].w + agg[opp].l, got = (det[opp] || []).length;
+      const want = agg[opp].w + agg[opp].l, got = (det[opp] || []).filter((r) => !r.walkover).length;
       if (want !== got) { console.error(`RECONCILE MISMATCH ${k} vs ${opp}: byPlayer=${want} rows=${got}`); mism++; }
     }
   }

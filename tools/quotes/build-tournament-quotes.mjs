@@ -50,6 +50,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import QS from './quote-speaker.cjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '..', '..');
@@ -59,6 +60,10 @@ const CSV = arg('csv', path.join(ROOT, 'data', 'tournament-quotes.csv'));
 const OUT = arg('out', path.join(ROOT, 'tournament-quotes.json'));
 const REPORT = arg('report', path.join(ROOT, 'tournament-quotes-report.md'));
 const ROSTER = arg('roster', path.join(ROOT, 'player-profiles.json'));
+// Founder 2026-10-24 (Option C): the entrant stores a dated speaker resolves against. In the pipeline the working-dir
+// tournament-profiles.json is the fresh store (restored from the cache or rebuilt), not the committed snapshot.
+const PROFILES = arg('profiles', path.join(ROOT, 'tournament-profiles.json'));
+const ENTRANTS = arg('entrants', path.join(ROOT, 'quote-entrants.json'));
 const MAP = path.join(HERE, 'tournament-quote-map.json');
 
 // ---------------------------------------------------------------- CSV
@@ -105,50 +110,25 @@ function hygiene(raw) {
 // decide whether to add curly quotes — see the report's "presentation" section.
 const carriesOwnQuotes = (t) => /["“”]/.test(t);
 
-// ---------------------------------------------------------------- roster (f)
-const norm = (s) => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z]/g, '');
-
+// ---------------------------------------------------------------- roster + entrant stores (f)
+// Founder 2026-10-24 (Option C): a dated speaker resolves against THAT tournament-season's entrants through the ONE
+// quote rule (./quote-speaker.cjs) — never against the roster, which grows (Petros Tsitsipas joining it once hid four
+// Stefanos quotes). The roster only names a resolved ID ("S. Tsitsipas").
 function loadRoster() {
   try {
     const raw = JSON.parse(fs.readFileSync(ROSTER, 'utf8'));
     const players = raw.players || raw;
-    const bySurname = new Map(); const full = new Set();
+    const byKey = new Map();
     for (const k of Object.keys(players)) {
       const p = players[k]; const name = p && (p.name || p.fullName);
-      if (typeof name !== 'string' || !name.trim()) continue;
-      full.add(name.trim());
-      // Index EVERY trailing-token suffix, not just the last token. Our roster
-      // writes "A. de Minaur" and the sheet writes "De Minaur"; a last-token
-      // index gives "minaur" and never matches. Suffixes give "minaur" AND
-      // "deminaur", so compound surnames and particles resolve without any
-      // fuzzy matching — it is still an exact comparison, just of the right
-      // string. Same for Auger-Aliassime / "Aliassime" and Mpetshi Perricard.
-      const toks = name.trim().split(/\s+/);
-      for (let s = Math.max(1, toks.length - 3); s < toks.length; s++) {
-        const key = norm(toks.slice(s).join(''));
-        if (!key) continue;
-        if (!bySurname.has(key)) bySurname.set(key, new Set());
-        bySurname.get(key).add(name.trim());
-      }
+      if (typeof name === 'string' && name.trim()) byKey.set(String(k), name.trim());
     }
-    return { bySurname, full, n: full.size };
-  } catch (e) { return { bySurname: new Map(), full: new Set(), n: 0, error: String(e.message || e) }; }
+    return { byKey, n: byKey.size };
+  } catch (e) { return { byKey: new Map(), n: 0, error: String(e.message || e) }; }
 }
-function resolvePlayer(cell, roster) {
-  const raw = cell.trim();
-  if (!raw) return { status: 'absent' };
-  // exact full name
-  for (const f of roster.full) if (norm(f) === norm(raw)) return { status: 'exact', name: f };
-  // surname-only, or "X. Surname" / "X.Surname" -> unique roster surname.
-  // The initial is only stripped when a DOT actually follows it. `\.?` made the
-  // dot optional, which ate the first letter of every bare surname — "Medvedev"
-  // became "edvedev" and nothing matched. Caught because 42 Medvedev rows
-  // reported as unresolved people.
-  const token = raw.replace(/^[A-Z]\.\s*/, '').trim() || raw;
-  const cands = roster.bySurname.get(norm(token));
-  if (cands && cands.size === 1) return { status: 'surname', name: [...cands][0] };
-  if (cands && cands.size > 1) return { status: 'ambiguous', options: [...cands] };
-  return { status: 'unmatched' };
+function loadStore(file, field) {
+  try { const j = JSON.parse(fs.readFileSync(file, 'utf8')); return { data: (j && j[field]) || {} }; }
+  catch (e) { return { data: {}, error: String(e.message || e) }; }
 }
 
 // ---------------------------------------------------------------- main
@@ -164,6 +144,15 @@ if (roster.error && !process.argv.includes('--allow-no-roster')) {
     `one made with the roster present. Pass --allow-no-roster only if that is intended.`);
   process.exit(3);
 }
+// The entrant stores are as load-bearing as the roster was: without them every dated speaker reads "no entrants" and
+// every card disappears. Fail rather than emit that quietly.
+const profilesStore = loadStore(PROFILES, 'profiles'), entrantsStore = loadStore(ENTRANTS, 'events');
+if ((profilesStore.error || entrantsStore.error) && !process.argv.includes('--allow-no-entrants')) {
+  console.error(`entrant store unreadable: ${profilesStore.error ? PROFILES + ': ' + profilesStore.error : ''} ${entrantsStore.error ? ENTRANTS + ': ' + entrantsStore.error : ''}\n` +
+    `Dated quotes could not resolve their speakers. Pass --allow-no-entrants only if that is intended.`);
+  process.exit(3);
+}
+const stores = { profiles: profilesStore.data, entrants: entrantsStore.data };
 if (!fs.existsSync(CSV)) {
   console.error(`quote CSV not found at ${CSV}\n` +
     `Export the sheet as CSV to that path, or pass --csv. This step FAILS rather than\n` +
@@ -212,7 +201,7 @@ const R = {                           // the report
   imported: 0, noPlayerCell: 0,
   unmappedGroup: new Map(), nullGroup: new Map(),
   unresolvedPrefix: new Map(), conflicts: [],
-  nonPlayer: [], ambiguousPlayer: [], normalised: 0, keptSourceSpelling: 0, yearAsPlayer: [],
+  unresolvedDated: [], resolved: 0, resolvedNoId: 0, undated: 0, yearAsPlayer: [],
   altered: [], withYear: 0, withoutYear: 0, carriesOwnQuotes: 0, truncatedDropped: [],
   years: new Set(),
 };
@@ -258,12 +247,15 @@ for (let i = 0; i < body.length; i++) {
     }
   }
 
-  // (f) player normalisation
-  const pr = resolvePlayer(pCell, roster);
+  // (f) the speaker -> ONE entrant of this tournament-season (the shared rule); the roster only names a resolved ID
+  const sp = QS.resolveSpeaker(pCell, group, curY ? Number(curY) : null, stores);
   let player = pCell;
-  if (pr.status === 'exact' || pr.status === 'surname') { player = pr.name; R.normalised++; }
-  else if (pr.status === 'ambiguous') { R.ambiguousPlayer.push({ row: lineNo, cell: pCell, options: pr.options }); R.keptSourceSpelling++; }
-  else { R.nonPlayer.push({ row: lineNo, cell: pCell, event: group }); R.keptSourceSpelling++; }
+  if (sp.status === 'entrant') {
+    R.resolved++;
+    if (sp.key == null) R.resolvedNoId++;
+    else if (roster.byKey.has(sp.key)) player = roster.byKey.get(sp.key);
+  } else if (sp.status === 'undated') R.undated++;
+  else R.unresolvedDated.push({ row: lineNo, cell: pCell, event: group, year: Number(curY), status: sp.status, candidates: sp.candidates });
 
   // (g) hygiene
   const h = hygiene(tCell);
@@ -281,7 +273,7 @@ for (let i = 0; i < body.length; i++) {
   }
 
   (out[group] ||= []).push({
-    player, playerRaw: pCell, playerMatch: pr.status,
+    player, playerRaw: pCell, playerMatch: sp.status, playerKey: sp.key,
     year: curY ? Number(curY) : null,     // (b) null is null. Never inferred.
     text: h.text,
     selfQuoted: carriesOwnQuotes(h.text), // the card must not double-wrap these
@@ -292,6 +284,13 @@ for (let i = 0; i < body.length; i++) {
 
 // ------------------------------------------------------------- write artefact
 const events = Object.keys(out).sort();
+// "Shipped" = what the page can show: dated and resolved to one entrant (pre-Option-C artefacts: exact | surname).
+const shippedIn = (tours) => Object.values(tours || {}).reduce((n, l) => n + l.filter((q) => q.year != null &&
+  (q.playerMatch === 'entrant' || q.playerMatch === 'exact' || q.playerMatch === 'surname')).length, 0);
+const prevShipped = (() => { try { return shippedIn(JSON.parse(fs.readFileSync(OUT, 'utf8')).tournaments); } catch { return null; } })();
+const nowShipped = shippedIn(out);
+const dropped = prevShipped != null && nowShipped < prevShipped;
+if (dropped) console.error(`::warning::tournament quotes: SHIPPED QUOTES DROPPED ${prevShipped} -> ${nowShipped} versus the last build — see the report's "Shipped quotes" section (${REPORT})`);
 for (const k of events) {
   // C5 PROPOSED ORDER (dull and checkable): most recent year first, undated
   // last, source-sheet order preserved inside each bucket. NOT implemented as a
@@ -304,8 +303,9 @@ fs.writeFileSync(OUT, JSON.stringify({
   builtAt: new Date().toISOString(),
   source: 'founder quote sheet (CSV export)',
   ordering: 'year desc, undated last, source order within a bucket (TEN-242 C5 — PROPOSED, awaiting ruling)',
-  counts: { imported: R.imported, events: events.length,
-            truncatedDropped: R.truncatedDropped.length },
+  counts: { imported: R.imported, events: events.length, shipped: nowShipped, shippedLastRun: prevShipped,
+            truncatedDropped: R.truncatedDropped.length,
+            speakers: { resolved: R.resolved, resolvedNoId: R.resolvedNoId, unresolvedDated: R.unresolvedDated.length, undated: R.undated } },
   tournaments: out,
 }, null, 2) + '\n');
 
@@ -328,6 +328,9 @@ const tbl = (m, label) => { if (!m.size) { p(`_none_`); return; }
     p(`| \`${k}\` | ${v.length} | ${v.slice(0, 8).join(', ')}${v.length > 8 ? ' …' : ''} |`); };
 
 p('# Tournament quote import — report');
+p('');
+p(dropped ? `## ⚠ SHIPPED QUOTES DROPPED: ${prevShipped} → ${nowShipped} versus the last build — check "Dated speakers that did not resolve" below`
+  : `## Shipped quotes: ${nowShipped} (last build: ${prevShipped == null ? 'none' : prevShipped})`);
 p('');
 p(`Generated \`${new Date().toISOString()}\` by \`tools/quotes/build-tournament-quotes.mjs\`.`);
 p('');
@@ -377,29 +380,21 @@ else {
     p(`| ${c.row} | ${c.group} (\`${c.groupRaw}\`) | **${c.prefix}** | ${c.player} | ${c.text.replace(/\|/g, '\\|').slice(0, 110)}… |`);
 }
 p('');
-p('## People');
+p('## Speakers (one rule: that tournament-season\'s entrants — tools/quotes/quote-speaker.cjs)');
 p('');
-p(`- Normalised against our roster (${roster.n} players${roster.error ? ' — ROSTER UNREADABLE: ' + roster.error : ''}): **${R.normalised}**`);
-p(`- Kept the source spelling (unmatched or ambiguous): **${R.keptSourceSpelling}**`);
+p(`- Dated rows resolved to exactly one entrant: **${R.resolved}** (${R.resolvedNoId} of them with no ID chain: monogram)`);
+p(`- Dated rows NOT resolved (zero or several entrants, or no entrant list): **${R.unresolvedDated.length}** — they do not ship`);
+p(`- Undated rows (never resolved, never shipped): **${R.undated}**`);
+p(`- Roster used only to name a resolved ID (${roster.n} players${roster.error ? ' — ROSTER UNREADABLE: ' + roster.error : ''})`);
 p('');
-p('### Player cells that did not resolve — check these are people (rule d)');
+p('### Dated speakers that did not resolve');
 p('');
-if (!R.nonPlayer.length) p('_none_');
+if (!R.unresolvedDated.length) p('_none_');
 else {
-  const byCell = new Map();
-  for (const x of R.nonPlayer) { if (!byCell.has(x.cell)) byCell.set(x.cell, []); byCell.get(x.cell).push(x.row); }
-  p('| player cell | rows | source lines |'); p('|---|---:|---|');
-  for (const [k, v] of [...byCell.entries()].sort((a, b) => b[1].length - a[1].length))
-    p(`| \`${k}\` | ${v.length} | ${v.slice(0, 6).join(', ')}${v.length > 6 ? ' …' : ''} |`);
+  p('| row | event | year | cell | why | candidates |'); p('|---:|---|---:|---|---|---|');
+  for (const x of R.unresolvedDated) p(`| ${x.row} | ${x.event} | ${x.year} | \`${x.cell}\` | ${x.status} | ${(x.candidates || []).join(' · ')} |`);
 }
 p('');
-if (R.ambiguousPlayer.length) {
-  p('### Ambiguous surnames (more than one roster match) — source spelling kept');
-  p('');
-  p('| row | cell | roster candidates |'); p('|---:|---|---|');
-  for (const x of R.ambiguousPlayer.slice(0, 40)) p(`| ${x.row} | \`${x.cell}\` | ${x.options.join(' · ')} |`);
-  p('');
-}
 p('## Text alterations');
 p('');
 p(`Only two alterations are ever made, and every one is listed. The WORDS are never touched.`);

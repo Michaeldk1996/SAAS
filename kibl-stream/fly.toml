@@ -38,9 +38,13 @@ primary_region = "sjc"
   #   fly deploy --dockerfile kibl-stream/Dockerfile --config kibl-stream/fly.toml .
 
 [env]
-  WORKER_VERSION = "0.3.0"
+  WORKER_VERSION = "0.4.1"
   # Writes are opt-in in the code; this deployment is the one place they are on.
   KIBL_NOW_WRITE = "1"
+  # bet105 line prices (founder 2026-10-25): their OWN switch, on top of KIBL_NOW_WRITE. "0" = dry run — computed,
+  # counted in the heartbeat's `lines`, never written. ON since the 2026-10-25 dry run (deploy 05:33Z, verified
+  # 05:47Z: 286 stream rows -> 306 would-be writes, the Now path's counts and write lag unchanged).
+  KIBL_LINES_WRITE = "1"
   # Without this, print() is block-buffered in a container with no TTY and the
   # worker's own log never reaches `fly logs` (measured: silent after start).
   PYTHONUNBUFFERED = "1"

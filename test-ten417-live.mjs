@@ -62,7 +62,9 @@ function boot(opts = {}) {
     holdbreak: opts.holdbreak || null };
   const ctx = vm.createContext({ window, document, localStorage: { getItem: k => (k in store ? store[k] : null) },
     fetch: opts.rows ? async () => ({ ok: true, json: async () => opts.rows }) : () => new Promise(() => {}), setTimeout, clearTimeout, setInterval: () => 0, clearInterval() {}, console: { warn() {}, log() {}, error() {} },
-    playerProfiles: opts.profiles || {}, WebSocket: function () {} });
+    playerProfiles: opts.profiles || {}, WebSocket: function () {},
+    // founder 2026-10-22: the host's one photo resolver; here Musetti (2849) and Khachanov (435) have a photo
+    playerPhotoImg: (k, n) => ({ 2849: 1, 435: 1 })[k] ? `<img class="sf-ph" data-k="${k}" alt="${n}">` : '' });
   ctx.globalThis = ctx;
   vm.runInContext(readFileSync(join(HERE, 'house-ratings.js'), 'utf8'), ctx);
   vm.runInContext(readFileSync(join(HERE, 'holdbreak-heatmap.js'), 'utf8'), ctx);
@@ -70,6 +72,8 @@ function boot(opts = {}) {
   // The canonical event table is tested where it lives (TEN-402); here it is the two names this fixture needs.
   vm.runInContext(`const SF_TEST = { Shanghai: 'Shanghai Masters' }; function sfEventName(raw){ return SF_TEST[raw] || raw; }\n${HELPERS}`, ctx);
   if (opts.rail) vm.runInContext(RAIL, ctx);
+  // ESC brief 2026-10-21: Esc is the page's ONE handler (esc-nav.js); the sheet registers a layer on it.
+  vm.runInContext(readFileSync(join(HERE, 'esc-nav.js'), 'utf8'), ctx);
   vm.runInContext(LIVE_BLOCK, ctx);
   vm.runInContext(readFileSync(join(HERE, 'live-tab.js'), 'utf8'), ctx);
   const LF = window.LiveFeed;
@@ -85,7 +89,7 @@ function boot(opts = {}) {
     open(ek) { handlers.cards[ek](); },
     click(attr, val) { handlers.overlay({ target: target(attr, val) }); },
     backdrop() { handlers.overlay({ target: null, get _() { return 0; } }); },
-    esc() { handlers.keydown.forEach(f => f({ key: 'Escape' })); },
+    esc() { handlers.keydown.forEach(f => f({ key: 'Escape', preventDefault() {}, stopImmediatePropagation() {} })); },
   };
 }
 const text = h => h.replace(/<[^>]+>/g, ' ').replace(/&amp;/g, '&').replace(/\s+/g, ' ').trim();
@@ -113,9 +117,11 @@ test('Before the first snapshot every header figure dashes and no empty state sh
   assert.doesNotMatch(P.html(), /Nothing in play/);
 });
 
-test('Cards: canonical event + round, initials not photos, Live pulses white, Interrupted amber caps, PTS white, no footer (mutants: photo back / raw tournament_name / --pos PTS)', () => {
+test('Cards: canonical event + round, the photo by player ID over the initials, Live pulses white, Interrupted amber caps, PTS white, no footer (mutants: photo gone / raw tournament_name / --pos PTS)', () => {
   const h = live().html();
-  assert.doesNotMatch(h, /<img|randomuser|placeholder data|feed has not reported that figure/);
+  assert.doesNotMatch(h, /randomuser|placeholder data|feed has not reported that figure/);
+  // founder 2026-10-22 (reverses TEN-417's no-photos override): every <img> is a player's photo, asked by ID
+  assert.deepEqual([...h.matchAll(/<img [^>]*>/g)].map(m => (m[0].match(/^<img class="sf-ph" data-k="(\d+)"/) || [])[1]).sort(), ['2849', '435']);
   assert.match(h, /Shanghai Masters · 1\/32-finals/);
   assert.doesNotMatch(h, />Shanghai · /);
   const zc = h.slice(h.indexOf(`data-open="${ZHOU}"`), h.indexOf('data-open=', h.indexOf(`data-open="${ZHOU}"`) + 20));
@@ -218,7 +224,8 @@ test('Break/Hold: real rollup, initials, signed gap under the rate, HOLD / BREAK
   const hb = { players: { '39862': { serve: { all: { '1': { '1': { won: 14, n: 15 } }, '2': { '1': { won: 10, n: 12 } } } }, return: { all: {} } } } };
   const P = boot({ holdbreak: hb }); P.publish(FIX.board); P.open(ZHOU); P.click('data-tab', 'Break/Hold');
   const s = sheet(P.html());
-  assert.doesNotMatch(s, /<img/);
+  const imgs = [...s.matchAll(/<img [^>]*>/g)].map(m => (m[0].match(/^<img class="sf-ph" data-k="(\d+)"/) || [])[1]);
+  assert.ok(imgs.length > 0 && imgs.every(k => k === '2849'), 'Musetti\'s photo by ID; Zhou has none, so his initials alone');
   assert.match(s, /data-hb="HOLD"/);
   assert.match(s.slice(s.indexOf('data-hb="HOLD"') - 400, s.indexOf('data-hb="HOLD"')), /background:var\(--inner\);border:1px solid transparent;border-radius:9px;padding:3px;/);
   // Game 1-2: S1 14/15 = 93%, S2 10/12 = 83%, all-sets 24/27 = 89% → +4 pts / −6 pts (true minus)

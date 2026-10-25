@@ -330,6 +330,55 @@ check('S5 · drift does NOT disarm the newer-committed guard', () => {
   assert.strictEqual(store.freeze(root), 0, 'an older live store overwrote a newer committed one');
 });
 
+// ── F · a FAILED run keeps the profiles it built (founder 2026-10-23, outage prevention item 4) ─────────────────────
+// 22 Oct: a v16 convergence failed the roster floor on every run; each run rebuilt the same profiles and saved nothing.
+const keptPath = (root) => path.join(root, store.FAILED_DIR, 'player-profiles-cache.json');
+check('F1 · keep-failed keeps the cache when the run built profiles', () => {
+  const root = tmpRoot();
+  writePlain(root, makeStore(todayStamp, 30, 'built', { v: 16 }));
+  fs.writeFileSync(path.join(root, 'profile-build-stats.json'), JSON.stringify({ opponentsBuilt: 60 }));
+  assert.strictEqual(store.keepFailed(root), true);
+  assert.strictEqual(Object.keys(JSON.parse(fs.readFileSync(keptPath(root), 'utf8')).players).length, 30);
+});
+check('F2 · NEG — a run that built nothing (or never reached the build) keeps nothing', () => {
+  const root = tmpRoot();
+  writePlain(root, makeStore(todayStamp, 30, 'restored', { v: 16 }));
+  assert.strictEqual(store.keepFailed(root), false, 'kept with no profile-build-stats.json');
+  fs.writeFileSync(path.join(root, 'profile-build-stats.json'), JSON.stringify({ opponentsBuilt: 0 }));
+  assert.strictEqual(store.keepFailed(root), false, 'kept a run that built 0 profiles');
+  assert.ok(!fs.existsSync(keptPath(root)), 'a cache file was written anyway');
+});
+check('F3 · hydrate unions the kept cache: the failed run\'s v16 builds replace the restored v15 entries', () => {
+  const root = tmpRoot();
+  writeGz(root, makeStore(todayStamp, 40, 'committed', { v: 15 }));
+  writePlain(root, makeStore(todayStamp, 40, 'restored', { v: 15 }));
+  fs.mkdirSync(path.join(root, store.FAILED_DIR));
+  fs.writeFileSync(keptPath(root), JSON.stringify(makeStore(todayStamp, 25, 'failed-run', { v: 16 })));
+  store.hydrate(root);
+  const out = readPlain(root).players;
+  const v16 = Object.values(out).filter((e) => e.v === 16).length;
+  assert.strictEqual(Object.keys(out).length, 40, 'the union lost or invented keys');
+  assert.strictEqual(v16, 25, `the failed run's 25 rebuilt profiles did not land (v16: ${v16})`);
+});
+check('F4 · NEG — without the kept cache the same hydrate leaves every entry at v15', () => {
+  const root = tmpRoot();
+  writeGz(root, makeStore(todayStamp, 40, 'committed', { v: 15 }));
+  writePlain(root, makeStore(todayStamp, 40, 'restored', { v: 15 }));
+  store.hydrate(root);
+  assert.strictEqual(Object.values(readPlain(root).players).filter((e) => e.v === 16).length, 0);
+});
+check('F5 · the workflow restores it before hydrate, and saves ONLY the profile cache, only on a failed run', () => {
+  const wf = fs.readFileSync(path.join(__dirname, '..', '.github', 'workflows', 'pipeline.yml'), 'utf8');
+  const iRestore = wf.indexOf('name: Restore the profile cache a failed run saved'), iHydrate = wf.indexOf('profile-cache-store.js hydrate');
+  assert.ok(iRestore > 0 && iHydrate > iRestore, 'the kept cache is not restored before hydrate');
+  const save = wf.slice(wf.indexOf('name: Save the profile cache of a failed run'));
+  const step = save.slice(0, save.indexOf('\n      - name:', 10) > 0 ? save.indexOf('\n      - name:', 10) : save.length);
+  assert.ok(/if: \(failure\(\) \|\| cancelled\(\)\) && steps\.failedcache\.outputs\.keep == 'true'/.test(step), 'the save is not gated on a failed run that kept profiles');
+  assert.ok(/path: \.failed-run-cache\/player-profiles-cache\.json\n/.test(step), 'the failed-run save carries more than the profile cache');
+  assert.ok(/key: bsp-profiles-failed-v/.test(step) && /bsp-profiles-failed-v\$\{\{ steps\.schema\.outputs\.v \}\}-\n/.test(wf), 'the key family is not its own, schema-scoped one');
+  assert.ok(/name: Save pipeline caches\n\s+if: success\(\)/.test(wf), 'the full cache save is no longer success-only');
+});
+
 console.log(`test-profile-cache-store: ${passed} checks passed${failures.length ? `, ${failures.length} FAILED` : ''}`);
 if (failures.length) {
   for (const f of failures) console.error(`  FAIL ${f}`);

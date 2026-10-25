@@ -154,8 +154,10 @@ export async function runBatch({ lane, me, sha, repo = process.cwd(), git = real
       if ((await lane.renew(me)).code !== 0) return { ok: false, fatal: true, reason: 'you no longer hold the lane (released at the hold cap?) — nothing pushed' };
       // pushedAt is captured BEFORE the push: the owner's pipeline run is the
       // first to start at/after it, and a tick can start the moment it lands.
+      process.env.STENNISFY_LANE_PUSH = me.ticket;   // the pre-push hook accepts code on main only from the lane holder's batch (founder 2026-10-22)
       const pushedAt = new Date(clock()).toISOString();
       const p = W(['push', '-q', 'origin', `${b.head}:refs/heads/main`]);
+      delete process.env.STENNISFY_LANE_PUSH;
       if (p.status === 0) return { ok: true, b, attempts: attempt + 1, pushedAt };
       if (attempt >= 1) return { ok: false, reason: `push rejected twice: ${p.stderr.split('\n')[0]}` };
       if (G(['fetch', 'origin', '--quiet']).status !== 0) return { ok: false, reason: 'git fetch origin failed after a rejected push' };

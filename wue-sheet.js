@@ -30,6 +30,7 @@
 const DASH = '—';
 const COLUMNS = ['Player', 'W', 'UE', 'TT points', 'W/P', 'UE/P', 'Ratio W/UE', 'Dominance Ratio'];
 const PROGRESSION_URL = './tournament-progression.json';
+const DRAWS_URL = './draws.json';
 
 const r2 = (x) => Math.round(x * 100) / 100;
 const isNum = (x) => typeof x === 'number' && Number.isFinite(x);
@@ -44,17 +45,19 @@ function dominanceRatio(servicePoints, returnPoints) {
 }
 
 const FLAG = { retired: 'RET', walkover: 'W/O' };
+const NO_STATS = 'NO STATS';
 
-// One player's sheet row: numbers stay numbers (ratios rounded to 2dp); an
-// absent value is null (rendered as the dash).
-function playerRow(side, status) {
+// One player's sheet row: numbers stay numbers (ratios rounded to 2dp); an absent value is null (the dash). A finished
+// match the feed sent no stat sheet for is flagged [NO STATS] — dashes, never zeros (ruling 6, 2026-10-20).
+function playerRow(side, status, hasStats) {
   const W = isNum(side.winners) ? side.winners : null;
   const UE = isNum(side.unforcedErrors) ? side.unforcedErrors : null;
   const TT = isNum(side.totalPoints) && side.totalPoints > 0 ? side.totalPoints : null;
   const dr = dominanceRatio(side.servicePoints, side.returnPoints);
+  const flags = [FLAG[status], hasStats === false ? NO_STATS : null].filter(Boolean);
   return {
-    player: side.name + (FLAG[status] ? ` [${FLAG[status]}]` : ''),
-    flag: FLAG[status] || null,
+    player: side.name + flags.map(x => ` [${x}]`).join(''),
+    flag: flags[0] || null,
     values: [
       W, UE, TT,
       W != null && TT != null ? r2(W / TT) : null,
@@ -65,33 +68,146 @@ function playerRow(side, status) {
   };
 }
 
-// The progression entry → [{ round, title, rows }] in round order. Rounds with
-// no completed match are omitted (unplayed matches are not rows).
-function sheetRounds(entry) {
+// ── Rounds (ruling 6, founder 2026-10-20) ─────────────────────────────────────────────────────────────────────────
+// A tab per ACTUAL round, named by the feed's own round text (pipeline: roundCode, "1/16-finals" → R32) — never
+// "ROUND 1". A round's tab exists as soon as ONE of its matches has finished with stats; every completed match of that
+// round is in it (no-stats ones as flagged dashes). Matches not yet played are left out — or, once the official draw
+// is posted, shown as blank rows in draw order (quarters Q1–Q4 + BYE rows, ruling 7). Never zeros.
+const ROUND_ORDER = ['R256', 'R128', 'R64', 'R32', 'R16', 'QF', 'SF', 'F'];
+const roundRank = (c) => { const k = ROUND_ORDER.indexOf(c); return k < 0 ? 99 : k; };
+const roundOf = (m) => m.roundCode || null;
+const BLANK = '';                                  // an unplayed match: left blank (not a dash — nothing is missing yet)
+const BYE_ROW = ['BYE', BLANK, BLANK, BLANK, BLANK, BLANK, BLANK];
+
+function drawFor(draws, tour) {
+  const ts = draws && draws.tournaments ? Object.values(draws.tournaments) : [];
+  const hit = ts.filter(t => String(t.city || '').toLowerCase() === String(tour).toLowerCase() && t.main && t.main.status === 'posted');
+  return hit.length === 1 ? hit[0] : null;
+}
+function slotName(s) {                            // "DIAZ ACOSTA, Facundo" → "F. Diaz Acosta" (the feed's own style)
+  if (!s || !s.name) return DASH;
+  const [sur, given] = s.name.split(/,\s*/);
+  const title = String(sur).toLowerCase().replace(/(^|[\s-])\S/g, c => c.toUpperCase());
+  const ini = String(given || '').trim().split(/\s+/).filter(w => w && w !== '…')
+    .map(w => w.split('-').map(p => p[0].toUpperCase()).join('-') + '.').join(' ');      // "Tomas Martin" → "T. M.", "Jan-Lennard" → "J-L."
+  return ini ? `${ini} ${title}` : title;
+}
+// The draw's rounds, first to last: a 32-slot draw → R32, R16, QF, SF, F.
+function drawRounds(size) {
+  const out = []; for (let n = size; n >= 2; n /= 2) out.push(n === 8 ? 'QF' : n === 4 ? 'SF' : n === 2 ? 'F' : `R${n}`);
+  return out;
+}
+// Matches a round holds, from the draw: the first round = slot pairs without a bye; later rounds = size / 2^k.
+function drawRoundTotals(draw) {
+  const size = draw.main.size, slots = draw.main.slots, rounds = drawRounds(size), out = {};
+  rounds.forEach((r, k) => {
+    if (k === 0) { let n = 0; for (let p = 0; p < size; p += 2) if (!slots[p].bye && !slots[p + 1].bye) n++; out[r] = n; }
+    else out[r] = size / Math.pow(2, k + 1);
+  });
+  return out;
+}
+
+// ── Winners only (founder ruling 2026-10-20, item 1) ──────────────────────────────────────────────────────────────
+// A round tab lists the players who ADVANCED from that round, with the stats of the match they won. With the official
+// draw, it is one row per MATCH SLOT in draw order (R32: 4 per quarter, R16: 2, QF: 1), so it lines up with Michael's
+// sheet: a finished match → its winner; a first-round bye → "BYE" for the player advancing; a match not yet played →
+// "TBD (A v B)" with blank stats (a side not decided yet is "TBD" — never a guessed name); finished without stats →
+// the winner, dashes, flagged [NO STATS]. A match is placed by its two players' OWN draw positions — never inferred.
+const TBD = 'TBD';
+// Draw quarter (1–4) of draw position `pos` in a `size`-slot draw — the ONE mapping behind the sheet's Q1–Q4 headers
+// and the Reports quarter grouping (founder brief 2026-10-24, item 3: same function, not a copy).
+function quarterOfPos(size, pos) { return 1 + Math.floor((pos - 1) / (size / 4)); }
+// A player's quarter in a posted official draw, found by the draw's own playerKey. null when there is no posted draw or
+// the player holds no slot in it — never inferred from seeding.
+function playerQuarter(draw, playerKey) {
+  const main = draw && draw.main;
+  if (!main || main.status !== 'posted' || !Array.isArray(main.slots) || !(main.size >= 4) || playerKey == null || playerKey === '') return null;
+  const s = main.slots.find(x => x && x.playerKey != null && String(x.playerKey) === String(playerKey));
+  return s && s.pos >= 1 && s.pos <= main.size ? quarterOfPos(main.size, s.pos) : null;
+}
+function winnerSide(m) { return m.winner === 1 ? m.p1 : m.winner === 2 ? m.p2 : null; }
+
+function sheetRounds(entry, draw) {
   if (!entry || !Array.isArray(entry.matches)) return [];
-  const labels = Array.isArray(entry.rounds) ? entry.rounds : [];
+  const withDraw = draw && draw.main && draw.main.status === 'posted' && Array.isArray(draw.main.slots);
   const byRound = new Map();
-  for (const m of entry.matches) {
-    if (!byRound.has(m.round)) byRound.set(m.round, []);
-    byRound.get(m.round).push(m);
+  for (const m of entry.matches) { const r = roundOf(m) || `? ${m.round}`; if (!byRound.has(r)) byRound.set(r, []); byRound.get(r).push(m); }
+  // A tab exists once one of its matches finished WITH stats.
+  const tabs = [...byRound.keys()].filter(r => byRound.get(r).some(m => m.hasStats !== false)).sort((a, b) => roundRank(a) - roundRank(b));
+  if (!withDraw) {
+    return tabs.map(r => ({ round: r, title: r, rows: byRound.get(r).map(m => { const w = winnerSide(m); return w ? playerRow(w, m.status, m.hasStats) : null; }).filter(Boolean) }));
   }
-  const order = labels.filter(l => byRound.has(l)).concat([...byRound.keys()].filter(l => !labels.includes(l)));
-  return order.map(round => {
-    const idx = labels.indexOf(round);
-    return {
-      round,
-      title: idx >= 0 ? `ROUND ${idx + 1}` : String(round).toUpperCase(),
-      rows: byRound.get(round).flatMap(m => [playerRow(m.p1, m.status), playerRow(m.p2, m.status)]),
-    };
+  return roundsWithDraw(byRound, tabs, draw);
+}
+
+function roundsWithDraw(byRound, tabs, draw) {
+  const main = draw.main, size = main.size, slots = main.slots, order = drawRounds(size);
+  const posByKey = new Map(slots.filter(s => s.playerKey).map(s => [String(s.playerKey), s.pos]));
+  const nameOf = (side) => side ? side.name : TBD;
+  // decided[k][j] = the side object that won match slot j of round k (null = not decided yet). Round k's slot j covers
+  // draw positions j*2^(k+1)+1 … (j+1)*2^(k+1). A completed match lands in the slot holding BOTH players' positions.
+  const decided = order.map((_, k) => new Array(size / Math.pow(2, k + 1)).fill(null));
+  const matchAt = order.map((_, k) => new Array(size / Math.pow(2, k + 1)).fill(null));
+  const unplaced = {};
+  order.forEach((r, k) => {
+    const span = Math.pow(2, k + 1);
+    for (const m of byRound.get(r) || []) {
+      const a = posByKey.get(String(m.p1.playerKey)), b = posByKey.get(String(m.p2.playerKey));
+      const ja = a ? Math.floor((a - 1) / span) : null, jb = b ? Math.floor((b - 1) / span) : null;
+      if (ja == null || jb == null || ja !== jb || matchAt[k][ja]) { (unplaced[r] = unplaced[r] || []).push(m); continue; }
+      matchAt[k][ja] = m; decided[k][ja] = winnerSide(m);
+    }
+    if (k === 0) for (let j = 0; j < size / 2; j++) {            // a first-round bye: the player advances, no match
+      const x = slots[2 * j], y = slots[2 * j + 1];
+      if (!matchAt[0][j] && (x.bye || y.bye)) decided[0][j] = { bye: true, name: slotName(x.bye ? y : x) };
+    }
+  });
+  // who plays in round k slot j: the two winners feeding it (or the two draw slots in the first round)
+  const sidesOf = (k, j) => k === 0
+    ? [slots[2 * j].bye ? null : { name: slotName(slots[2 * j]) }, slots[2 * j + 1].bye ? null : { name: slotName(slots[2 * j + 1]) }]
+    : [decided[k - 1][2 * j], decided[k - 1][2 * j + 1]];
+  return tabs.filter(r => order.includes(r) || unplaced[r]).map(r => {
+    const k = order.indexOf(r), rows = [];
+    if (k >= 0) {
+      const n = size / Math.pow(2, k + 1), perQ = n / 4;
+      for (let j = 0; j < n; j++) {
+        if (perQ >= 1 && j % perQ === 0) rows.push({ header: `Q${quarterOfPos(size, j * Math.pow(2, k + 1) + 1)}` });
+        else if (n === 2) rows.push({ header: j === 0 ? 'TOP HALF' : 'BOTTOM HALF' });   // SF: one row per half; F: no header
+        const m = matchAt[k][j];
+        if (m) { const w = winnerSide(m); rows.push(w ? playerRow(w, m.status, m.hasStats) : { player: DASH, flag: null, values: Array(7).fill(null) }); continue; }
+        if (k === 0 && decided[0][j] && decided[0][j].bye) { rows.push({ player: decided[0][j].name, flag: null, values: BYE_ROW.slice() }); continue; }
+        const [p, q] = sidesOf(k, j);
+        rows.push({ player: `${TBD} (${nameOf(p && p.bye ? { name: p.name } : p)} v ${nameOf(q && q.bye ? { name: q.name } : q)})`, flag: null, values: Array(7).fill(BLANK) });
+      }
+    }
+    if (unplaced[r]) { rows.push({ header: 'UNPLACED' }); for (const m of unplaced[r]) { const w = winnerSide(m); if (w) rows.push(playerRow(w, m.status, m.hasStats)); } }
+    return { round: r, title: r, quarters: true, rows };
   });
 }
 
-const fmt = (v, i) => v == null ? DASH : (i >= 3 ? v.toFixed(2) : String(v));   // values[3..6] are the ratios
+// On-page status, every round that has started: "R32: 11 of 12 · R16: 3 of 8". The total comes from the official
+// draw; without one it is a dash, never a guess. Completed matches the feed sent no stats for are said out loud.
+function roundStatus(entry, draw) {
+  if (!entry || !Array.isArray(entry.matches)) return '';
+  const totals = draw && draw.main && draw.main.status === 'posted' ? drawRoundTotals(draw) : {};
+  const byRound = new Map();
+  for (const m of entry.matches) { const r = roundOf(m) || `? ${m.round}`; if (!byRound.has(r)) byRound.set(r, []); byRound.get(r).push(m); }
+  return [...byRound.keys()].sort((a, b) => roundRank(a) - roundRank(b)).map(r => {
+    const ms = byRound.get(r), noStats = ms.filter(m => m.hasStats === false).length;
+    return `${r}: ${ms.length} of ${totals[r] != null ? totals[r] : DASH}${noStats ? ` (${noStats} without stats)` : ''}`;
+  }).join(' · ');
+}
+
+// Founder rulings 2026-10-21: every stat is a REAL NUMBER, never text. The counts W, UE and TT points are whole numbers
+// (format 0: "34"); W/P, UE/P, W/UE and Dominance carry 2 decimals (0.00). Copy prints them with a DOT decimal whatever
+// the viewer's browser locale: Number#toFixed is locale-independent (never toLocaleString here).
+const COUNT_COLS = 3;                                       // values[0..2] = W, UE, TT points
+const fmt = (v, i) => v == null ? DASH : typeof v === 'string' ? v : v.toFixed(i < COUNT_COLS ? 0 : 2);
 
 // Tab-separated rows for pasting into a Round tab (data rows only — no header,
 // so it never overwrites the tab's own header row).
 function roundTsv(round) {
-  return round.rows.map(r => [r.player].concat(r.values.map(fmt)).join('\t')).join('\n');
+  return round.rows.map(r => r.header ? r.header : [r.player].concat(r.values.map((v, i) => fmt(v, i))).join('\t')).join('\n');
 }
 
 // ---------------------------------------------------------------- xlsx writer
@@ -101,16 +217,19 @@ const colName = (i) => String.fromCharCode(65 + i);   // 8 columns: A..H
 const sheetName = (s) => String(s).replace(/[:\\/?*[\]]/g, ' ').slice(0, 31);
 
 function sheetXml(round) {
-  // s="1" header (bold) · s="2" ratio (0.00) · s="3" right-aligned dash
-  const cell = (ref, v, ratio) => {
+  // s="1" header (bold) · s="2" ratio (0.00) · s="3" right-aligned dash · s="4" count (0)
+  const cell = (ref, v, style) => {
     if (v == null) return `<c r="${ref}" t="inlineStr" s="3"><is><t>${DASH}</t></is></c>`;
-    if (typeof v === 'number') return `<c r="${ref}"${ratio ? ' s="2"' : ''}><v>${v}</v></c>`;
+    if (v === BLANK) return '';                                                      // unplayed: an empty cell
+    if (typeof v === 'number') return `<c r="${ref}"${style ? ` s="${style}"` : ''}><v>${v}</v></c>`;
     return `<c r="${ref}" t="inlineStr"><is><t xml:space="preserve">${xmlEsc(v)}</t></is></c>`;
   };
   const rows = [`<row r="1">${COLUMNS.map((h, i) => `<c r="${colName(i)}1" t="inlineStr" s="1"><is><t>${xmlEsc(h)}</t></is></c>`).join('')}</row>`];
   round.rows.forEach((r, k) => {
     const n = k + 2;
-    rows.push(`<row r="${n}">${cell('A' + n, r.player)}${r.values.map((v, i) => cell(colName(i + 1) + n, v, i >= 3)).join('')}</row>`);
+    if (r.header) { rows.push(`<row r="${n}"><c r="A${n}" t="inlineStr" s="1"><is><t>${xmlEsc(r.header)}</t></is></c></row>`); return; }
+    // counts (W, UE, TT) carry the 0 format (s="4"), the four ratios 0.00 (s="2"); the stored value is the number itself
+    rows.push(`<row r="${n}">${cell('A' + n, r.player)}${r.values.map((v, i) => cell(colName(i + 1) + n, v, i < COUNT_COLS ? '4' : '2')).join('')}</row>`);
   });
   return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
     + '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
@@ -149,10 +268,11 @@ function workbookFiles(rounds) {
     + '<fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills>'
     + '<borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>'
     + '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>'
-    + '<cellXfs count="4"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>'
+    + '<cellXfs count="5"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>'
     + '<xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"/>'
     + '<xf numFmtId="2" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>'
-    + '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0" applyAlignment="1"><alignment horizontal="right"/></xf></cellXfs>'
+    + '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0" applyAlignment="1"><alignment horizontal="right"/></xf>'
+    + '<xf numFmtId="1" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/></cellXfs>'
     + '<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>'
     + '</styleSheet>']);
   sheets.forEach((s, i) => files.push([`xl/worksheets/sheet${i + 1}.xml`, sheetXml(s)]));
@@ -186,10 +306,22 @@ function zipStore(files) {
   return out;
 }
 
-function buildXlsx(entry) { return zipStore(workbookFiles(sheetRounds(entry))); }
+function buildXlsx(entry, draw) { return zipStore(workbookFiles(sheetRounds(entry, draw))); }
 
 // ---------------------------------------------------------------- browser glue
 // Always the latest publish: cache-busted, no-store, never the page's loaded copy.
+// The page's copy of draws.json, for the status line's totals + the Copy buttons (approved 2026-10-20, ruling 7).
+// Loaded once in the background; the export itself re-reads both files at click time (fetchLatest).
+let _draws = null, _drawsP = null;
+function prefetchDraws() {
+  if (_drawsP) return _drawsP;
+  _drawsP = fetch(`${DRAWS_URL}?_=${Date.now()}`, { cache: 'no-store' })
+    .then(r => (r.ok ? r.json() : null)).catch(() => null)
+    .then(d => { _draws = d; if (d && typeof window !== 'undefined' && typeof window.renderTourxReports === 'function') { try { window.renderTourxReports(); } catch (e) { /* page not on Reports */ } } return d; });
+  return _drawsP;
+}
+function cachedDraw(tour) { return drawFor(_draws, tour); }
+
 async function fetchLatest(tour) {
   const res = await fetch(`${PROGRESSION_URL}?_=${Date.now()}`, { cache: 'no-store' });
   if (!res.ok) throw new Error(`tournament-progression.json HTTP ${res.status}`);
@@ -197,7 +329,13 @@ async function fetchLatest(tour) {
   const entry = data && data.tournaments ? data.tournaments[tour] : null;
   if (!entry) throw new Error(`${tour} is no longer in the published progression data`);
   if (!Array.isArray(entry.matches)) throw new Error(`${tour}: published data has no per-match sheet rows yet`);
-  return { entry, fetchedAt: data.fetchedAt || null };
+  // The official draw is optional: absent / unreachable → the sheet stays in match order (no quarters), never invented.
+  let draw = null;
+  try {
+    const d = await fetch(`${DRAWS_URL}?_=${Date.now()}`, { cache: 'no-store' });
+    if (d.ok) draw = drawFor(await d.json(), tour);
+  } catch (e) { draw = null; }
+  return { entry, draw, fetchedAt: data.fetchedAt || null };
 }
 
 function fileName(tour, fetchedAt) {
@@ -206,21 +344,21 @@ function fileName(tour, fetchedAt) {
 }
 
 async function download(tour) {
-  const { entry, fetchedAt } = await fetchLatest(tour);
-  const blob = new Blob([buildXlsx(entry)], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  const { entry, draw, fetchedAt } = await fetchLatest(tour);
+  const blob = new Blob([buildXlsx(entry, draw)], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = fileName(tour, fetchedAt);
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(a.href), 4000);
-  return sheetRounds(entry).length;
+  return sheetRounds(entry, draw).length;
 }
 
 // Copy one round as TSV. The text is fetched AFTER the click, so it goes through a
 // ClipboardItem promise where supported (Safari drops the user gesture across an await).
 async function copyRound(tour, round) {
-  const textP = fetchLatest(tour).then(({ entry }) => {
-    const r = sheetRounds(entry).find(x => x.round === round);
+  const textP = fetchLatest(tour).then(({ entry, draw }) => {
+    const r = sheetRounds(entry, draw).find(x => x.round === round);
     if (!r) throw new Error(`${tour} ${round}: no completed matches in the published data`);
     return roundTsv(r);
   });
@@ -243,7 +381,8 @@ async function copyRound(tour, round) {
   return text.split('\n').length;
 }
 
-const WUE_SHEET = { COLUMNS, DASH, dominanceRatio, playerRow, sheetRounds, roundTsv, workbookFiles, zipStore, crc32, buildXlsx, fileName, fetchLatest, download, copyRound };
+const WUE_SHEET = { COLUMNS, DASH, BLANK, NO_STATS, drawFor, slotName, drawRounds, drawRoundTotals, quarterOfPos, playerQuarter, roundStatus, prefetchDraws, cachedDraw, dominanceRatio, playerRow, sheetRounds, roundTsv, workbookFiles, zipStore, crc32, buildXlsx, fileName, fetchLatest, download, copyRound };
 if (typeof module !== 'undefined' && module.exports) module.exports = WUE_SHEET;
 if (typeof window !== 'undefined') window.WueSheet = WUE_SHEET;
+if (typeof window !== 'undefined' && typeof fetch === 'function') prefetchDraws();
 }());

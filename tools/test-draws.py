@@ -103,7 +103,10 @@ ix = B.build_roster_index(roster)
 check("hyphenated given name: STRUFF, Jan-Lennard → 2831", B.resolve_key(ix, "STRUFF, Jan-Lennard", "GER") == ("2831", "surname+given"))
 check("truncated given name as a prefix: CERUNDOLO, Juan Ma… → 388 (not Francisco)", B.resolve_key(ix, "CERUNDOLO, Juan Ma…", "ARG")[0] == "388")
 check("fully truncated given name: a UNIQUE surname only", B.resolve_key(ix, "VAN DE ZANDSCHULP, …", "NED") == ("2972", "surname-only"))
-check("a spelling variant is not bridged (Aleksandr ≠ Alexander) → None", B.resolve_key(ix, "SHEVCHENKO, Aleksandr", "KAZ")[0] is None)
+check("approved alias: SHEVCHENKO, Aleksandr + KAZ → 566 (keyMatch 'alias')", B.resolve_key(ix, "SHEVCHENKO, Aleksandr", "KAZ") == ("566", "alias"))
+check("the alias is exact: the same name with another country is NOT bridged → None", B.resolve_key(ix, "SHEVCHENKO, Aleksandr", "RUS")[0] is None)
+check("a spelling variant without an approved alias is still not bridged (Aleksandrov ≠ Alexandrov) → None",
+      B.resolve_key(B.build_roster_index({"players": [{"key": "1", "name": "Ivan Alexandrov", "country": "X"}]}), "ALEKSANDROV, Ivan", None)[0] is None)
 check("comma-less cut surname: 'GUEYMARD WAYENBUR…' → the unique Gueymard Wayenburg", B.resolve_key(B.build_roster_index({"players": [
     {"key": "77", "name": "Sascha Gueymard Wayenburg", "country": "France"}, {"key": "78", "name": "Ugo Gueymard", "country": "France"}]}),
     "GUEYMARD WAYENBUR…", None) == ("77", "surname-prefix"))
@@ -187,12 +190,23 @@ check("calendar: no id is ever guessed — events without one are listed, not fi
       "2026 Stockholm Open" in calj["articlesWithoutId"] and not any("Stockholm" in (t["article"] or "") for t in calj["tournaments"]))
 check("calendar: non-empty (>= 40 events with an id)", len(calj["tournaments"]) >= 40, len(calj["tournaments"]))
 
-# ── founder condition (2026-10-20): draws.json publishes, but NO page reads it until the draw view / W/UE quarters
-#    are approved. Approval flips this check deliberately; until then a reader appearing in shipped code is a failure.
+# ── founder rulings 2026-10-20: draws.json published as data only, then the W/UE quarters + BYE rows APPROVED (ruling
+#    7). So exactly ONE shipped reader: wue-sheet.js. The draw view is not approved yet — any other reader is a failure.
 shipped = [f for f in subprocess.run(["git", "ls-files", "-z", "*.html", "*.js"], cwd=ROOT, capture_output=True, text=True).stdout.split("\0") if f]
 readers = [f for f in shipped if not f.startswith(("tools/", "test", ".github/", ".")) and os.path.isfile(os.path.join(ROOT, f))
            and "draws.json" in open(os.path.join(ROOT, f), encoding="utf-8", errors="ignore").read()]
-check("no shipped page or script reads draws.json yet (awaiting the founder's UI approval)", readers == [], readers)
+check("draws.json's shipped readers are exactly wue-sheet.js (W/UE quarters, ruling 7), the Entry list tab (ruling 1) + the Draw view (ruling 2, 20 Oct)",
+      sorted(readers) == ["bsp-consult-dashboard.html", "draw-view.js", "wue-sheet.js"], readers)
+
+# ── draws.yml cadence clock (fixed 2026-10-20): the last run that FETCHED, never a skipped run ──
+spec3 = importlib.util.spec_from_file_location("lfr", os.path.join(ROOT, "tools", "draws", "last-fetch-run.py"))
+LFR = importlib.util.module_from_spec(spec3); spec3.loader.exec_module(LFR)
+runs = [{"id": 9, "run_started_at": "T3"}, {"id": 3, "run_started_at": "T2"}, {"id": 2, "run_started_at": "T1"}, {"id": 1, "run_started_at": "T0"}]
+st = {9: "skipped", 3: "skipped", 2: "skipped", 1: "success"}
+jobs = lambda r: [{"steps": [{"name": "Cadence gate", "conclusion": "success"}, {"name": "Build draws.json (fail-closed parser)", "conclusion": st[r["id"]]}]}]
+check("cadence clock: three skipped runs after a fetch → the FETCH's start time (skips never reset it)", LFR.last_fetch(runs, jobs) == "T0")
+check("cadence clock: the current run is excluded", LFR.last_fetch([{"id": 1, "run_started_at": "T0"}], jobs, exclude=1) == "")
+check("cadence clock: no fetching run on record → '' (the gate then goes)", LFR.last_fetch(runs[:3], jobs) == "")
 
 print(f"\n{P} passed, {F} failed")
 sys.exit(1 if F else 0)

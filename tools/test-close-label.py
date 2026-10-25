@@ -66,7 +66,7 @@ check('every snapshot hover in the code is found', all(hovers.values()), hovers)
 check('every snapshot hover says "not a confirmed close" and never names itself a close', all(snapshot_ok(t) for t in hovers.values()), hovers)
 check('control: a hover that called a snapshot a "Pinnacle close" fails the rule', not snapshot_ok('Pinnacle close · start − 10'))
 html = open(os.path.join(ROOT, 'bsp-consult-dashboard.html'), encoding='utf8').read()
-m = re.search(r"function fhSrcTitle\(r\)\{ return r && r\.book === 'A' \? `\$\{FH_BOOK\.A\} · \$\{r\.src === 'od10' \? SF_OD10_HOVER : r\.src === 'te' \? SF_TE_HOVER : SF_APPROX_HOVER\}`", html)
+m = re.search(r"function fhSrcTitle\(r\)\{ return (?:r && r\.book === 'A' && r\.src === 'early' \? \(r\.srcLabel \|\| SF_EARLY_HOVER_NO_X\) : )?r && r\.book === 'A' \? `\$\{FH_BOOK\.A\} · \$\{r\.src === 'od10' \? SF_OD10_HOVER : r\.src === 'te' \? SF_TE_HOVER : SF_APPROX_HOVER\}`", html)
 check('the shared source title gives a snapshot (book A) its snapshot hover before the "… close ·" branch', bool(m))
 check('no snapshot label reads "Pinnacle (approx.) close" anywhere in the shipped code', not any(
     re.search(r'Pinnacle \(approx\.\)\s*close', open(os.path.join(ROOT, f), encoding='utf8').read())

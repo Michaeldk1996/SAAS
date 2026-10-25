@@ -16,7 +16,7 @@ Stennisfy is a tennis betting analytics SaaS dashboard for serious ATP bettors, 
 
 | Layer | Detail |
 |---|---|
-| Frontend | Served live from the repo at `michaeldk1996.github.io/SAAS/`. The old single-file `bsp-consult-dashboard.html` is no longer the frontend — read the repo for the current entry point, don't assume |
+| Frontend | `bsp-consult-dashboard.html` is the live dashboard frontend, plus the scripts it loads (`player-profile-v2.js`, `esc-nav.js`, `live-tab.js`, …). `tools/site-code.sh` publishes it as the site's `index.html` at `michaeldk1996.github.io/SAAS/` |
 | Pipeline | `bsp-pipeline.js` (Node.js) — GitHub Actions cron `*/15 * * * *` |
 | Data files | `matches.json`, `tournament-profiles.json`, `tournament-progression.json`, `player-profiles.json` |
 | Odds | OddsAPI + Oddsapi (250s, broader coverage) + kibl + bet105 (The Odds API retired 2026-10-16) |
@@ -269,6 +269,32 @@ What the live build carries, for anything reading it directly: `build-info.json`
 
 ---
 
+## Merging your own PRs (founder standing rule, 2026-10-20)
+
+Replaces "nothing is merged without my approval". You may merge your own PR into main without asking when **all** hold:
+- it only implements something the founder has already approved or ruled on;
+- the full suite passes in a fresh clone (EXIT=0), `tools/clobber-check.sh` is clear, and the PR has no conflicts;
+- it changes no business or methodology decision (pricing, thresholds, labels, scoring, what data is shown or hidden)
+  beyond what was ruled.
+
+After every merge, tell the founder in one line: the PR number, what it does, and the commit.
+**Ask first** for: anything not approved, a failing or skipped check, deleting or rewriting archive data, or changes to
+secrets, payments or access. If the permission system blocks the merge, name once the exact setting the founder must
+change to allow it.
+
+## Open, other session (founder 2026-10-21 — parked; not worked on in the TE-prices session)
+
+- **Staleness alarm.** `tools/pipeline-stall-guard.mjs` reads `build-info.json` `builtAt` (the publish time), which code
+  publishes keep fresh; `data.builtAt` was 15:01Z while `builtAt` read 16:58Z on 20 Oct, so no alert went out. Proposal on
+  file: alert on `data.builtAt` older than 90 min, one Telegram per stale data build + a recovery line.
+- **Profile rebuild.** On 20 Oct from ~11Z to midnight every data run rebuilt 286–296 opponent profiles + the 60-player cap
+  (+4.5–6.5 min a run); the per-day immutable `bsp-caches-v<schema>-<day>` key kept none of them. Cleared at the day roll
+  (01:09Z 21 Oct: 6 built). Likely the 14-day profile TTL on a bulk-built batch; not confirmed from code.
+- **TE career-record timing.** From ~11–12Z 19 Oct the "Run pipeline" step spends 5–9 min between "Archive drill-down" and
+  "TEN-449: … career-record file(s)" (absent at 10:58Z). Coincides with the TE record switch; not confirmed from code.
+- **`bsp-ceo-bot`.** Another agent commits code to main under this name (e.g. the 30 → 45 timeout, `763c080a`); coordinate
+  before touching the files it owns.
+
 ## Where the rest lives
 
 Surface-specific rulings moved out of this file so they load only when relevant:
@@ -284,6 +310,7 @@ Surface-specific rulings moved out of this file so they load only when relevant:
 | Records counting (Tennis Explorer rules minus exhibitions, TEN-443), walkovers, retirements | `.claude/rules/pipeline-records.md` |
 | Match analysis modal rebuild (TEN-312): players/avatars, walkovers on every tab, sample gate, build order | `.claude/rules/modal-analysis.md` |
 | Odds sources, book ladder, card rules, close rules | `.claude/rules/odds.md` |
+| Player photos — one resolver (ATP headshot by player ID, else monogram) on every avatar; alias map, manifest, probe | `.claude/rules/player-photos.md` |
 | Match analysis Form / H2H tabs — price order, display constants, all-level H2H, market-edge, odds alarms | `.claude/rules/modal-form-h2h.md` |
 | Market edge (Match analysis tab + player-profile basis) — data path, populations, settlement, today's price, Needs, floor, pill, shared basis | `.claude/rules/modal-market-edge.md` |
 | Odds archive (tennis-data closing prices): drop-in refresh, merge, never-thinner, readers | `.claude/rules/odds-archive.md` |

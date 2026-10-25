@@ -117,7 +117,9 @@ test('header: the meta date follows the design per source (Form DD.MM · lists D
 // Mutation: the Match Stats tab back to buildMatchStatsSheet for a completed match, or maMsSheetInit not called.
 test('the Match Stats tab renders THE sheet inline for a finished match, filled from the match\'s own box score', () => {
   assert.match(slice('buildMatchStatsSection'), /if \(hasPointLog\) return maMsSheetHtml\(m\);/);
-  assert.match(html, /  matchstats\(m\)\{\n    aPaint\('aSectionMatchStats', buildMatchStatsSection\(m\)\); maMsSheetInit\(m\);/);
+  // the tab paints THE sheet inline through buildMatchStatsSection + maMsSheetInit; since the PBP carry-over (2026-10-23) it
+  // paints the carry-over view of m (pbpLiveView: m itself unless a just-finished match's live row supplies the result)
+  assert.match(html, /  matchstats\(m\)\{[\s\S]{0,700}?const mv = pbpLiveView\(m\);\n    aPaint\('aSectionMatchStats', buildMatchStatsSection\(mv\)\); maMsSheetInit\(mv\);/);
   // ruling 5 (founder 2026-10-17): the header prices are the master's join (sfDbPxRows); the card close never stands in
   const mk = px => new Function('eventKeyOfMatch', 'h2hRoundLabel', 'maRoundName', '_mcCardCloseOf', 'sfDbPxRows', `${slice('fhSurfName')}; ${slice('maMsSheetEntry')}; return maMsSheetEntry;`)(
     () => 99, x => x, x => x, (m, w) => (w === 'p1' ? 9.99 : 9.99), px);

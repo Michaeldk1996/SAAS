@@ -18,6 +18,10 @@
 set -euo pipefail
 
 cd "$(dirname "$0")/.."                       # repo root of the clone
+# MOVED (founder ruling 2026-10-20): the ticktocktennis advance half runs in GitHub Actions (entry-lists-advance.yml).
+if [ "${GITHUB_ACTIONS:-}" != "true" ]; then
+  mkdir -p "$HOME/.bsp-splits-cron"; echo "$(date -u +%FT%TZ) MOVED (founder ruling 2026-10-20): the ticktocktennis advance half runs in GitHub Actions (entry-lists-advance.yml)." >> "$HOME/.bsp-splits-cron/refresh-entry-lists-advance.retired.log"; exit 0
+fi
 LOG_DIR="$HOME/.bsp-splits-cron"; mkdir -p "$LOG_DIR"
 exec >> "$LOG_DIR/entry-lists-advance-refresh.log" 2>&1
 

@@ -115,6 +115,8 @@ Expand at **display only**; identity tests use `canon()`, never the display name
 
 > **Bet105 / Kibl (rank 1) > bet365 via Oddspapi (rank 2) > bet365 via api-tennis (rank 3) > other api-tennis books (rank 4)**
 
+Rank 2 is `source = 'oddspapi'`, whatever book its `oddspapi_line_summary` row carries. Oddspapi is **Pinnacle +30 only** since 26 Sep 2026 (bet365 403s), so new rank-2 rows are `pinnacle+30`; bet365 rows there are frozen history (last tick 25 Sep).
+
 Bet105 is the **top** of this ladder. Test: for any fixture `odds-card-state.json` covers, the book it names is the one the card shows.
 
 **2. The `matches.json` ladder** orders api-tennis books only, and only where the card state does not cover a fixture:
@@ -179,6 +181,19 @@ SBOBET, Marathon and BetVictor rank **below every unlisted book** — SBOBET car
 
 ---
 
+## Archive identity (Tennis-Data names) — founder 2026-10-22, containment
+Tennis-Data names a player only "Surname I.". One gate (`td-identity.js`) decides every join, for market edge, match
+closes, odds performance and started-evidence.
+- **Test:** a name that more than one real player ever fit (our store, or `ambiguous-archive-names.json.gz` built from
+  Tennis Abstract by `tools/build-ambiguous-archive-names.js`) takes a row only when the key's OWN career-history shard
+  holds that match: a played row within 3 days, against that opponent. Tennis Abstract can veto: when its match that
+  week against that opponent was a namesake's with a spelled-out, different first name, the row is refused. An
+  abbreviated name ("A. Hernandez") is never vetoed. A wrong number is worse than a missing one: anything unverified is
+  a dash.
+- **Test:** each shard publishes `identityHidden` (unique rows dashed); the profile's Market edge line and the Market
+  edge tab say "N rows hidden: identity unverified". **Test:** `tools/test-td-identity.js` (fixtures, the real closes
+  builder, a mutant with the rule off).
+
 ## Close rules
 
 **Close = last price before the *actual* start.**
@@ -217,7 +232,8 @@ SBOBET, Marathon and BetVictor rank **below every unlisted book** — SBOBET car
   `close_at`, `archive_close_row`; rules and jobs: `.claude/rules/pinnacle-archive.md`.
   **Test:** `tools/test-pinarch-close.py` (the earlier cut wins; a later trueStart never moves it; the gate's rejects; the
   in-play control; the correction row).
-- **A close cut at Oddspapi's `trueStartTime` ALONE is held back — never shown as a close** (founder ruling 2026-10-16,
+- **A close cut at Oddspapi's `trueStartTime` ALONE is held back — never shown as a close**, with ONE exception: the
+  13 Apr – 16 Sep ATP main-draw fill rows (founder ruling 2026-10-25, below) export as closes. (Founder ruling 2026-10-16,
   round 3 item 2; REPLACES TEN-437 item 6's "derive closes … using oddspapi's own start time as the cut": the start-alone
   cut was rejected on 1,211 matches, 48% exact). The `derive-held` rows (13–30 Apr, `start_source` = `oddspapi trueStart
   (no live-flip held)`) stay in the archive as their own source (append-only, never deleted or rewritten) and the export
@@ -227,6 +243,26 @@ SBOBET, Marathon and BetVictor rank **below every unlisted book** — SBOBET car
   that adds more such rows changes nothing a reader sees. **Test:** `tools/test-pinarch-close.py` "hold-back" (the
   trueStart-only close never exported; an event it superseded keeps its captured close; control: without the rule it
   would be the export).
+- **The 13 Apr – 16 Sep ATP main-draw fill (founder rulings 2026-10-25, round 2 item 1.4).** Measure first: over every
+  `live_flip_log` match with a gated Oddspapi `trueStartTime` (17 Sep on), d = trueStart − the flip's LOWER edge
+  (`last_not_live_seen_at`), flips with `gap_seconds` ≤ 300 only (both edges and every gap reported beside). **Per tier,
+  never pooled:** ATP singles and Challenger each get their own rule from their own matches. **Test:** a tier's n < 50 →
+  no fill. trueStart later in ≤ 2% of the tier's matches AND never by > 2 min → cut at trueStart (`closeCut`
+  `trueStart`); else cut at trueStart − X min, X = ceil(the tier's nearest-rank p98 of the later matches' d, in minutes)
+  (`closeCut` `trueStart-buffer`, `bufferMin` X, `detail.tier`; measured 25 Oct: ATP X 71 on n 490, Challenger X 12 on n
+  1,320). The fill population is Tennis-Data ATP main draw, so only the ATP X is used; Challenger's is reported. Close =
+  last active pinnacle+30 pair ≥ 1.01 at or before the cut, both sides; stale (more than 60 min before the CUT) → a dash.
+  Rows: `start_source` `oddspapi trueStart (fill rule 2026-10-25)` + `detail.closeCut` (+ `bufferMin`, `cutTs`, `tier`) —
+  that pair, and only that pair, exempts a row from the start-alone hold-back (`pinarch.fill_cut`); a `derive-held` row
+  stays held back. Only events with NO held close row are filled (append-only; nothing superseded).
+  **Re-cuttable:** in `current_closes` a fill row ranks below every true close — an archive close at a verified start or a
+  captured close beats it whatever their ids; a Tennis-Data Pinnacle close is never replaced (td-feed, the Database build).
+  **Marked like "B":** a buffer-cut fill price is NOT a close. Export row `closeCut` / `bufferMin` → td-feed label
+  `early cut X` → Database / master book **9** (never a Pinnacle close in any figure: its own book count) with
+  `meta.earlyCut` → the page reads it as Pinnacle (approx.) `A` + src `early` and draws **"E"** wherever "B" is drawn,
+  tooltip exactly `Pinnacle price ≥X min before scheduled start; true close unavailable` (X from the build; without it the
+  same words with no number). Written only by `archive-fill-probe.yml` with `write=true` and the plan's digest. **Test:**
+  `tools/test-archive-fill-probe.py`, `tools/test-early-cut-marker.mjs` (+ `-mutants`).
 - **Our captured closes of 12 Jul – 16 Sep are held back — never shown as a close** (founder ruling 2026-10-17 item 1). The
   420 `captured` rows dated on or before 16 Sep were cut at Oddspapi's start alone (the plain-Pinnacle series was read every
   3 h from `/v4/historical-odds`; 298 of 408 closing prices first appeared after the start), the method held back for
@@ -312,8 +348,8 @@ SBOBET, Marathon and BetVictor rank **below every unlisted book** — SBOBET car
 - **A match that started is played and priced; only a true walkover is a dash** (founder ruling 2026-10-17, odds master
   close-out item 1). A match counts as played and shows its price once play began — retired, defaulted, or marked
   "Awarded" / "Disqualified" / any other non-result after the first ball. Only a match where no ball was played (a true
-  walkover) stays a dash. Sources: both players' career-history rows (`walkover: true` = no ball; a set score with a game
-  won = started), our archive's close (cut only at a verified live start = api-tennis showed it in play), and
+  walkover) stays a dash. Sources: both players' career-history rows (a set score with a game won = started; a listed walkover row is never
+  read — rule below), our archive's close (cut only at a verified live start = api-tennis showed it in play), and
   Tennis-Data's own comment ("Walkover" claims no ball). **A career row speaks only for its OWN match** (founder ruling 2026-10-18, walkover join fix): a feed row (eventKey) within ±1 day of Tennis-Data's date; an archive row (dated at its event's start) never after the match and with no round that contradicts Tennis-Data's (`sameMatch`). Measured: only the 4 walkovers that had paired a neighbouring real meeting (Federer v Kyrgios IW 2017, Rublev v Fucsovics Doha 2021, Rublev v Monfils Madrid 2025, Wawrinka v Pospisil AO 2014) move disagree → walkover; every other verdict and every price is unchanged. **Where the sources disagree, the match is flagged and keeps the
   dash** — never picked. `tools/started-evidence.js` (verdict, run in `pipeline.yml` after the career-history store is
   written) → `build-database-yield.js` (`startedOf`, `meta.started`); the td-feed passes an api-tennis "Awarded" with an
@@ -327,6 +363,12 @@ SBOBET, Marathon and BetVictor rank **below every unlisted book** — SBOBET car
   `tools/test-started-priced.js` (a started "Awarded" priced, a true walkover a dash, disagreeing sources a dash, a
   played-out "Sched" a Database row; two mutants — the started rule removed, a played-out match kept behind the flag —
   go red).
+- **A listed career walkover row is never Database evidence** (founder ruling 2026-10-23; replaces the 22 Oct hold).
+  Career-history lists every flagged walkover (`walkover: true`, pipeline-records.md "Walkovers") so the match lists can
+  show it; `tools/started-evidence.js` skips those rows when it decides whether a Tennis-Data match started. A true
+  walkover still reaches the Database as a dash through Tennis-Data's own "Walkover" comment. No archive-gate override
+  is pending or wanted. **Test:** does a career walkover row change any started-evidence verdict? It must not —
+  `tools/test-started-priced.js` (Dee v Gee: a played row and a walkover row → `started`, the walkover row unread).
 - **The archive gate: nothing empty or partial publishes** (founder ruling 2026-10-17, close-out item 3). The archive
   export, the snapshot export, the Database feed, the evidence step and the Database build are fail-closed in
   `pipeline.yml` (no `|| true`, no fallback to a partial Database); after them `tools/archive-gate.mjs` fails the run when
@@ -342,6 +384,15 @@ SBOBET, Marathon and BetVictor rank **below every unlisted book** — SBOBET car
   count is published the entry says it is no longer needed. **Test:** `tools/test-archive-gate.mjs` (archive unreachable →
   fail; fewer rows than the last good master → fail; an approved override passes and is logged; a hand-edited or
   uncommitted override, or a drop below it, fails; CONTROL: the same drop with no override fails; the wiring).
+- **Per-source counts beside the total (founder ruling 2026-10-24 — RULED, NOT YET BUILT).** The archive gate compares
+  totals, so one source's drop can hide behind another's growth (23 Oct: captured-Bet365 rows −10 behind ~1,800 new Tennis
+  Explorer rows). Each run will compare, per source, against the last good run: resolved captured-Bet365 fixtures and the
+  rows each book prices. **A source that feeds a Database figure** (master rows outside flag `l`: Pinnacle closes, the
+  Tennis-Data archive, the Database feed) **stops the publish** like the archive gate today. **A source read by the price
+  join only** (flag `l`: captured Bet365, api-tennis snapshots, Tennis Explorer approx., Oddspapi start − 10) **alerts
+  only** (Telegram, the run publishes), naming the source and the drop. **Test (when built):** does a drop in a price-join
+  source change whether the run publishes? It must not — it must send one alert naming that source; a drop in a
+  Database-figure source must fail the run.
 - **The lower levels in the master** (founder ruling 2026-10-18, item 3: "every completed match in a player's record must show a price wherever a real source exists"; order measured and window widened by the founder brief 2026-10-19, items 2–3). ATP qualifying (Slams, Masters and every ATP event), Challenger main draw and qualifying, and ITF are master rows, one source per match (by event key), in the MEASURED order — on 1,177 lower-level matches with a real close (17 Sep – 19 Oct 2026) api-tennis's Pinnacle snapshot was 0.08pp (median no-vig gap) from it, 366 of 789 exact; api-tennis Bet365 1.47pp (802 priced); SportsAPI365 Pinnacle 1.02pp on 22 (not wired: licence unconfirmed); SportsAPI365 Marathonbet 3.75pp (361): **from 17 Sep** our close at a verified start (book 3 / 4, `tools/pinarch.py lower-closes` from the export); **13 Apr – 16 Sep** the Oddspapi archive at start − 10 (5) → api-tennis's Pinnacle snapshot (2) → our captured Bet365 (6, "Bet365 (approx.) · not a confirmed close") → api-tennis's Bet365 snapshot (7, "Bet365 (approx.) · Bet365 snapshot from api-tennis, no timestamp, not a confirmed close") → a dash; **1 Jan 2021 – 12 Apr 2026** api-tennis Pinnacle (2) → captured Bet365 (6) → api-tennis Bet365 (7) → a dash (api-tennis keeps prices back to 2022-23; 2021 holds almost none). **Tennis Explorer's Pinnacle (approx.)** (book 8; founder 2026-10-20, after the calibration batch passed: median no-vig gap 0.10pp on 988 verified closes; `tools/tdarch.py` `TE_FEED_ON` on) goes after api-tennis's Pinnacle snapshot for ATP qualifying, Challenger, Challenger qualifying and the ATP events Tennis-Data does not carry — our close at a verified start > start − 10 > api-tennis Pinnacle > **Tennis Explorer Pinnacle (approx.)** > captured Bet365 > api-tennis Bet365 > a dash. ITF unchanged (no TE rows). **In-play rule:** a Tennis Explorer price whose last change came after the start is never stored — the start is our verified start (our close's start, else our live-flip) where we have one, otherwise api-tennis's scheduled start; the dropped count is reported per batch (`te-import` report). **Test:** `tools/test-tdarch.py` (order, in-play rule, control), `tools/test-lower-master.js` (order; MUTANT: TE above api-tennis Pinnacle → red). **The ATP events Tennis-Data does not carry** (Davis Cup, United Cup, ATP Cup, Laver Cup, Hopman Cup, the Olympics, the Next Gen Finals, the Asian Games: level `atp-x`, tdarch's own) take the same snapshot order (start − 10, api-tennis Pinnacle, api-tennis Bet365) behind the team flag `t` (founder brief 2026-10-19 item 1: "price them where any source has a price"); from 17 Sep their archive close travels the td-feed `team` path as before. **Test:** `tools/test-lower-master.js` (book 7 last, atp-x behind `t`), `tools/test-tdarch.py` (atp-x, the Bet365 tier, the rank), `tools/test-historical-archive-sql.py` (its source and label). Snapshots come from `tools/tdarch.py lower-import` (`historical-archive.yml` mode `lower-import`, append-only into the snapshot table, each row naming its level, round and both api-tennis keys; the fixture itself is the join), handed on by `approx-feed` (`pinnacle-approx-lower.csv`); the Bet365 captures come from `bet365-history/` and are joined to their match on the player's own career-history row against that opponent's key (identity, never a name). `build-database-yield.js` puts them in the era shard behind flag `l` (+ `r` / `e`): read by the price join only, never a Database figure, ROI, tour baseline, Market edge or odds-performance row. Every surface prices every played match from the join (`sfMasterClass` = every non-walkover row; N8 superseded); a dash where the join holds none. ITF has no verified start (our live poller watches ATP / Challenger), so an ITF price is always a snapshot, never a close; after 16 Sep an ITF match and a Challenger match with no archive close are a dash (pending a ruling). The publish guard (`tools/price-consistency.mjs`) checks every level (`byLevel`). The back-fill pulls Oddspapi ITF Men history too (`pinnacle-archive.md`). **Test:** `tools/test-lower-master.js` (order, one source, flag, Database byte-identical; MUTANT: order reversed → red), `tools/test-tdarch.py` (lower levels), `test-ten402-b.mjs` "item 3" (the join prices each source), `test-ten332-tournament.mjs` (a Challenger row the join lacks is a dash).
 - **Every dash carries its reason; coverage is reported every run** (founder ruling 2026-10-18, item 5). An unpriced played match's hover says why (`sfNoPriceReason`, `SF_NOPRICE`): walkover · not a result · no bookmaker priced it · one side only · no source found yet (the last = the master holds nothing for it). Every data run, the publish guard writes `_site/price-coverage.json` (`tools/price-consistency.mjs --coverage-out`: every played match of every player with a career-history shard, per level × year and per 2026 month, priced by source or its reason, the 20 players with most unpriced) and `tools/price-coverage-alert.mjs` sends ONE Telegram when a level's priced count drops against the published report, or when a "no source found yet" dash the published report did not already list (so a known case is sent once, never every run) has a master row that fits it (same pair, −1…+16 days) and does not contradict it. A fitting row whose ROUND contradicts (a qualifying or Challenger row beside the pair's ATP main-draw row) is another match the join refuses on purpose: counted as `roundDisagree` and listed, never an alert (the first run, 18 Oct, flagged 77 such cases as misses). Never holds a publish back. **Test:** `tools/test-price-coverage-alert.mjs`, `tools/test-price-consistency.mjs` check 5 (CONTROL: the pre-fix detector counts the round disagreement as a miss → red).
 - **A Tennis-Data name joins ONE player active on that date, never before his career began** (founder ruling 2026-10-18, the Martín mix-up). Every Tennis-Data name join (`build-market-edge.js`, `build-odds-performance.js`, `build-match-closes.js`, `tools/started-evidence.js`) passes its answer through ONE gate, `td-identity.js` over the career-history store: a row dated more than 30 days before the key's first match is a dash; a row whose name also fits ANOTHER player active within 30 days of it (his own shard, or a Tennis Abstract identity; a name he carries in at least a quarter of his rows) is a dash; Tennis-Data's longer abbreviation ("Zhang Zh.", "Blanch Dar.") never fits a rival known by the bare initial; the hand-checked key table (`ARCHIVE_NAME_ALIASES`) skips the rival check (identity, not a guess). One person under two keys is recognised from the data only (a shared Tennis Abstract id; an opponent-only key whose every match is a match of one shard key); an api-tennis key seen only as an opponent is never a rival. No store = the gate is skipped out loud. Measured 18 Oct on the live store: closes-shard rows 43,769 → 43,518; only key 1056 A. Martín (255 → 6: 238 rows before his 2021 career — Alberto Martín 2004–10, Andrej Martin 2010–20 — and 17 of 2021 while Andrej was active) and 389 C. H. Tseng (−2, 2018–19: his shard starts 2021) change. **Test:** `tools/test-td-identity.js` (the three Martíns, the real closes builder: no key holds a row before his career; MUTANT: the gate removed → red).
@@ -402,6 +453,15 @@ Reject `trueStartTime` when `end − start > 6h` or `end < start`.
 - **Numbers:** CLV, ROI, upsets, the header Upsets count and the close-based sorts (closing favourite, upset, market got it wrong) read **only** within-60 card-book closes (`_mcCardCloseDerivedOf`). Test: an older close changes none of those figures; one older leg disqualifies the pair. **Exception — the Move (founder TEN-403, comment 414de0fe, 2026-10-09):** the Completed card's Move, the Completed Biggest market move tile (`mxCompletedBiggestMove`) and the "Biggest move" sort (`moveScore`) rank EVERY close the cards show (`_mcCardCloseOf`, any age) on the printed move (`mxMovePct`) — one figure from one set, so the tile always names the largest |Move| a card prints, with that card's player. Test: `test-ten403-matches.mjs` (tile = largest printed card Move, older close included; mutant: a within-60-only tile), `test-ten253-close-display.mjs`.
 
 One-sided close = dash on both sides.
+
+---
+
+## Line prices (bet105, Kibl)
+
+- **Source and path (founder 2026-10-25):** the live Kibl worker on Fly (`kibl-stream/line_engine.py`) writes `line_prices_current` / `line_price_ticks`. The page reads the current table by REST with the publishable key (`line-prices.js`). Never a repo shard, never an Actions job. **Test:** no line price is committed to the repo, and the browser can SELECT current only.
+- **Guards before write:** the four guards run on a fixture's whole ladder before any row is written.
+- **Stale (founder 2026-10-25):** a price is current only while the worker's last heartbeat is **≤ 180 s** old (`STALE_MIN = 3`, the same rule the match-winner Now uses), the worker reports line writes on and landing, and the broker is connected. Past that, the face dashes `— stale` and the last price moves to the hover. **Test:** at 181 s it dashes, judged in milliseconds, not on the rounded minute label.
+- **Age on screen:** every priced cell shows minutes since that heartbeat ("0m ago").
 
 ---
 

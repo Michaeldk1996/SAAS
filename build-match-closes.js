@@ -79,17 +79,23 @@ function makeResolver(players, gate) {
     return ks.length === 1 ? ks[0] : null;
   };
   return {
-    archive(name, date) {                    // "Sinner J." (+ the row's date: the identity gate, td-identity.js)
+    archive(name, date, opp) {               // "Sinner J." (+ the row's date and other side: the identity gate, td-identity.js)
       const ov = archiveOverride(name);
       const k = ov ? (ov.block ? null : (keys.has(String(ov.key)) ? String(ov.key) : null)) : fromKey(keyFromArchiveName(name));
-      return k && gate && date && !gate.allow(k, name, date) ? null : k;
+      return k && gate && date && !gate.allow(k, name, date, opp) ? null : k;
     },
   };
 }
 
-// Every name a key is seen under: profiles, the board, and every form-shard opponent.
-// Profiles hold api-tennis's order-scrambled names ("Ivan Justo Guido"), so ONE name per
+// Every name a key is seen under: profiles, the board, every form-shard opponent, and every api-tennis opponent in the
+// career-history store. Profiles hold api-tennis's order-scrambled names ("Ivan Justo Guido"), so ONE name per
 // key misses players the form shards spell plainly ("G. I. Justo"); all of them count.
+// Founder 2026-10-23 ([WALKOVER-GATE]): the board and form shards change every UTC day, so on their own they made the
+// roster — and with it the captured-Bet365 joins and the Database's lower-level row count — move with whoever was on
+// that day's board (00:00Z 23 Oct: 120 captures fewer, 2 Database matches unpriced, the archive gate stopped the run).
+// The career-history store names every opponent of every profiled player whatever the day, so it holds the board's
+// names too (measured: the 23 Oct board and form shards add none it lacks). Archive rows are left out: they spell
+// names the Tennis-Data / TML way, not api-tennis's.
 function rosterNames(root) {
   const out = new Map();
   const add = (key, name) => { if (key == null || !name) return; const k = String(key); if (!out.has(k)) out.set(k, new Set()); out.get(k).add(String(name)); };
@@ -102,6 +108,12 @@ function rosterNames(root) {
     if (!/^\d+\.json$/.test(f)) continue;
     const d = readJson(path.join(dir, f), null);
     ((d && d.matches) || []).forEach(r => add(r.opponentKey, r.opponent));
+  }
+  const ch = path.join(root, 'career-history');
+  if (fs.existsSync(ch)) for (const f of fs.readdirSync(ch)) {
+    if (!/^\d+\.json$/.test(f)) continue;
+    const d = readJson(path.join(ch, f), null);
+    ((d && d.matches) || []).forEach(r => { if (r && r.src === 'fixtures') add(r.oppKey, r.opponent); });
   }
   return out;
 }
@@ -134,18 +146,32 @@ function makeCommaResolver(names) {
     const given = s.slice(i + 1).trim().split(/[\s-]+/).map(fold).filter(Boolean);
     if (!k || !given.length) return null;
     const gIni = given.map(t => t[0]).join('');
+    const keys = keysOf(k, given, gIni);
+    return keys.length === 1 ? keys[0] : null;
+  }
+  // every key the name reaches at its best initials match (one = joined; several = namesakes, refused by comma)
+  function keysOf(k, given, gIni) {
     const cands = bySurname.get(k.surname) || [];
     const hits = cands.filter(c => gIni.startsWith(c.ini) || given[0].startsWith(c.ini));
     if (hits.length) {
       const best = Math.max(...hits.map(c => c.ini.length));
-      const keys = [...new Set(hits.filter(c => c.ini.length === best).map(c => c.key))];
-      return keys.length === 1 ? keys[0] : null;
+      return [...new Set(hits.filter(c => c.ini.length === best).map(c => c.key))];
     }
-    const more = [...new Set(cands.filter(c => c.ini.startsWith(gIni)).map(c => c.key))];
-    return more.length === 1 ? more[0] : null;
+    return [...new Set(cands.filter(c => c.ini.startsWith(gIni)).map(c => c.key))];
+  }
+  // the namesakes a refused name reaches (2+ keys), for a join that settles them on evidence; [] otherwise
+  function candidates(name) {
+    const s = String(name || '').trim(), i = s.indexOf(',');
+    if (i < 1 || s.includes('/') || archiveOverride(s)) return [];
+    const k = keyFromArchiveName(s.slice(0, i).trim().split(/\s+/).filter(t => !NAME_SUFFIX.test(fold(t))).join(' ') + ' X.');
+    const given = s.slice(i + 1).trim().split(/[\s-]+/).map(fold).filter(Boolean);
+    if (!k || !given.length) return [];
+    const keys = keysOf(k, given, given.map(t => t[0]).join(''));
+    return keys.length > 1 ? keys : [];
   }
   return {
     comma,
+    candidates,
     // Resolve a whole name list at once. oddspapi names players our roster may not hold,
     // and a namesake off the roster lands on the one who is ("Nakashima, Bryce" →
     // B. Nakashima = Brandon). So when one key is reached by two first given names that
@@ -197,12 +223,40 @@ function capturedBet365(root, resolver, stats) {
     for (const [id, v] of Object.entries((d && d.fixtures) || {})) if (CAPTURE_CATS.has(v.cat)) fixtures.push([id, v]);
   }
   const keyOf = resolver.resolveAll(fixtures.flatMap(([, v]) => [v.p1, v.p2]));
+  // A name two players share (E. Nava = Emilio or Eduardo) settles only on evidence: of the candidate pairs, exactly
+  // one played each other within a day of the capture (a career-history row of one, the other as its opponent).
+  const chDir = path.join(root, 'career-history'), shards = new Map();
+  const rowsOf = (k) => { if (!shards.has(k)) { const d = readJson(path.join(chDir, k + '.json'), null); shards.set(k, (d && d.matches) || []); } return shards.get(k); };
+  const met = (a, b, day) => rowsOf(a).some((x) => x && !x.walkover && String(x.oppKey) === String(b) && Math.abs(Date.parse(String(x.date).slice(0, 10)) / 864e5 - day) <= 1);
+  const shardKnown = new Map();
+  const profiled = (k) => { if (!shardKnown.has(k)) shardKnown.set(k, fs.existsSync(path.join(chDir, k + '.json'))); return shardKnown.get(k); };
+  const confirmedByCareer = (k1, k2, day) => {
+    if (!fs.existsSync(chDir)) return true;
+    const p1 = profiled(k1), p2 = profiled(k2);
+    if (!p1 && !p2) return true;
+    return (p1 && met(k1, k2, day)) || (p2 && met(k2, k1, day));
+  };
+  const settle = (n1, n2, k1, k2, day) => {
+    const c1 = k1 ? [k1] : (resolver.candidates ? resolver.candidates(n1) : []), c2 = k2 ? [k2] : (resolver.candidates ? resolver.candidates(n2) : []);
+    if (!c1.length || !c2.length || !fs.existsSync(chDir)) return [k1, k2];
+    const pairs = [];
+    for (const a of c1) for (const b of c2) if (a !== b && (met(a, b, day) || met(b, a, day))) pairs.push([a, b]);
+    if (pairs.length === 1) { stats.capSettled = (stats.capSettled || 0) + 1; return pairs[0]; }
+    return [k1, k2];
+  };
   for (const [id, v] of fixtures) {
     stats.capSeen++;
     const trueStart = toSec(v.trueStart != null ? v.trueStart : (fx[id] && fx[id].trueStart));
     if (trueStart == null) { stats.capNoStart++; continue; }       // never cut at a scheduled time
-    const k1 = keyOf.get(v.p1), k2 = keyOf.get(v.p2);
+    let k1 = keyOf.get(v.p1), k2 = keyOf.get(v.p2);
+    if (!k1 || !k2) [k1, k2] = settle(v.p1, v.p2, k1, k2, Math.floor(trueStart / 86400));
     if (!k1 || !k2 || k1 === k2) { stats.capUnresolved++; continue; }
+    // Founder 2026-10-24 (spot-check of the [WALKOVER-GATE] roster): a name can resolve to the OTHER key of a player
+    // api-tennis files under two (Rodríguez Rodríguez 8372 / J. A. Rodriguez 9221, Dedura-Palomero 55858 / 100332): 10 of
+    // 2,619 newly matched captures, plus 4 whose player's row that day names a different opponent. So when either player
+    // has a career-history shard, the capture is kept only if one of them has a row against the other within ±1 day; with
+    // no profiled player (nothing to confirm against, and nothing that can display it) it is kept as before.
+    if (!confirmedByCareer(k1, k2, Math.floor(trueStart / 86400))) { stats.capUnconfirmed = (stats.capUnconfirmed || 0) + 1; continue; }
     const [s1, s2] = dropSuspended(v.s1, v.s2);
     const a = lastAtOrBefore(s1, trueStart), b = lastAtOrBefore(s2, trueStart);
     if (a == null || b == null) { stats.capOneSided++; continue; } // one-sided = no price
@@ -263,7 +317,7 @@ function build(root = ROOT, outDir = OUT_DIR, indexPath = INDEX) {
       if (comment.startsWith('walkover') || comment === 'w/o') { stats.walkovers++; return; }
       const ret = comment && comment !== 'completed' ? 1 : 0;
       const P = pair(r.psw, r.psl), B = pair(r.b365w, r.b365l);
-      const kw = td.archive(r.winner, r.date), kl = td.archive(r.loser, r.date);
+      const kw = td.archive(r.winner, r.date, r.loser), kl = td.archive(r.loser, r.date, r.winner);
       [[kw, r.loser, kl, 1, 0, 1], [kl, r.winner, kw, 0, 1, 0]].forEach(([key, opp, oppKey, won, i, j]) => {
         if (!key) return;
         stats.sides++;
@@ -291,7 +345,7 @@ function build(root = ROOT, outDir = OUT_DIR, indexPath = INDEX) {
   for (const key of new Set([...rows.keys(), ...cap.keys()])) {
     const list = (rows.get(key) || []).sort(byDate), cl = (cap.get(key) || []).sort(byDate);
     const tmp = path.join(outDir, `.${key}.json.tmp`);
-    fs.writeFileSync(tmp, JSON.stringify({ key, through: latest,
+    fs.writeFileSync(tmp, JSON.stringify({ key, through: latest, identityHidden: idGate && idGate.hidden ? idGate.hidden(key) : 0,
       cols: ['date', 'opp', 'won', 'pin', 'pinOpp', 'b365', 'b365Opp', 'ret', 'oppKey'], rows: list,
       capCols: ['date', 'oppKey', 'pin', 'pinOpp', 'b365', 'b365Opp', 'eventKey', 'pinLabel'], cap: cl }));
     fs.renameSync(tmp, path.join(outDir, `${key}.json`));

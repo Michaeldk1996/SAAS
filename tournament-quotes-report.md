@@ -1,6 +1,8 @@
 # Tournament quote import — report
 
-Generated `2026-09-21T03:16:48.017Z` by `tools/quotes/build-tournament-quotes.mjs`.
+## Shipped quotes: 175 (last build: 161)
+
+Generated `2026-10-24T01:02:10.048Z` by `tools/quotes/build-tournament-quotes.mjs`.
 
 ## Headline
 
@@ -59,60 +61,22 @@ _none_
 | 464 | Bastad (`NORDEA OPEN`) | **Umag** | Gasquet | UMAG: "It's always tough to play with this heat and humidity, it's a battle for everybody," said Gasquet.… |
 | 465 | Bastad (`NORDEA OPEN`) | **Umag** | Alcaraz | UMAG: "It's not easy to play here, because the humidity is so high," said Alcaraz.… |
 
-## People
+## Speakers (one rule: that tournament-season's entrants — tools/quotes/quote-speaker.cjs)
 
-- Normalised against our roster (428 players): **365**
-- Kept the source spelling (unmatched or ambiguous): **59**
+- Dated rows resolved to exactly one entrant: **182** (1 of them with no ID chain: monogram)
+- Dated rows NOT resolved (zero or several entrants, or no entrant list): **5** — they do not ship
+- Undated rows (never resolved, never shipped): **237**
+- Roster used only to name a resolved ID (492 players)
 
-### Player cells that did not resolve — check these are people (rule d)
+### Dated speakers that did not resolve
 
-| player cell | rows | source lines |
-|---|---:|---|
-| `Aliassime` | 6 | 62, 71, 127, 324, 452, 508 |
-| `Tommy` | 5 | 18, 19, 49, 139, 250 |
-| `Murray` | 4 | 126, 234, 448, 491 |
-| `Kygrios` | 3 | 21, 120, 133 |
-| `Federer` | 3 | 134, 156, 416 |
-| `Thiem` | 3 | 191, 315, 371 |
-| `Mpetshi` | 2 | 6, 88 |
-| `Colin` | 1 | 15 |
-| `J.Melzer` | 1 | 16 |
-| `Khachanov coach` | 1 | 56 |
-| `Dimitrov/ Rublev` | 1 | 82 |
-| `Raducanu` | 1 | 105 |
-| `Harri` | 1 | 111 |
-| `Parcell` | 1 | 124 |
-| `Svrcine` | 1 | 128 |
-| `Borna` | 1 | 136 |
-| `Sandgren` | 1 | 141 |
-| `Busta` | 1 | 151 |
-| `Sean` | 1 | 167 |
-| `Karlovic` | 1 | 169 |
-| `Prizimic` | 1 | 200 |
-| `Nadal` | 1 | 238 |
-| `Isner` | 1 | 261 |
-| `Tommy paul` | 1 | 395 |
-| `Paire` | 1 | 405 |
-| `Barrerre` | 1 | 447 |
-| `Beana` | 1 | 456 |
-| `Drapper` | 1 | 493 |
-| `Purcell` | 1 | 504 |
-
-### Ambiguous surnames (more than one roster match) — source spelling kept
-
-| row | cell | roster candidates |
-|---:|---|---|
-| 116 | `Mcdonald` | M. McDonald · N. McDonald |
-| 146 | `Tsitsipas` | Pe. Tsitsipas · S. Tsitsipas |
-| 187 | `Mcdonald` | M. McDonald · N. McDonald |
-| 194 | `Tsitsipas` | Pe. Tsitsipas · S. Tsitsipas |
-| 225 | `Tsitsipas` | Pe. Tsitsipas · S. Tsitsipas |
-| 229 | `Tsitsipas` | Pe. Tsitsipas · S. Tsitsipas |
-| 271 | `Mcdonald` | M. McDonald · N. McDonald |
-| 333 | `Tsitsipas` | Pe. Tsitsipas · S. Tsitsipas |
-| 347 | `Tsitsipas` | Pe. Tsitsipas · S. Tsitsipas |
-| 505 | `Tsitsipas` | Pe. Tsitsipas · S. Tsitsipas |
-| 506 | `Tsitsipas` | Pe. Tsitsipas · S. Tsitsipas |
+| row | event | year | cell | why | candidates |
+|---:|---|---:|---|---|---|
+| 371 | Rome | 2026 | `Thiem` | unmatched |  |
+| 395 | Roland Garros | 2026 | `Tommy paul` | unmatched |  |
+| 447 | Wimbledon | 2023 | `Barrerre` | unmatched |  |
+| 456 | Bastad | 2024 | `Beana` | unmatched |  |
+| 493 | Washington | 2022 | `Drapper` | unmatched |  |
 
 ## Text alterations
 

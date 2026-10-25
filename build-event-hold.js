@@ -14,6 +14,10 @@
 //
 // RULES
 //   · ATP tier only (`t === 'atp'`, event_type 265): the board is ATP only.
+//   · MAIN DRAW only (defect brief 2026-10-24 item 5): qualifying is out. The feed's own flag decides — the entry's `q`
+//     (tier-page-sweep.js stores event_qualification), else boxscore-qualifying.json (the same flag, asked again for the
+//     write-once weeks swept before `q` existed: tools/backfill-qualifying-flags.js). With no flag at all (team events,
+//     the Finals — no qualifying draw) the name decides: 'qualif' in it is qualifying, else main draw.
 //   · A match counts only when BOTH players' service-game counts are on file, so
 //     every match in the population is whole. Walkovers have no box score.
 //   · One event key per match: a match listed on two weekly pages counts once.
@@ -34,6 +38,7 @@ const zlib = require('zlib');
 
 const ARCHIVE_DIR = path.join(__dirname, 'boxscore-archive');
 const OUT_PATH = path.join(__dirname, 'event-hold.json');
+const Q_PATH = path.join(__dirname, 'boxscore-qualifying.json');
 const SG = 'Games:Service games won';
 
 function cleanName(tn) { return String(tn || '').replace(/^ATP\s+/i, '').trim(); }
@@ -44,8 +49,16 @@ function sgOf(side) {
   return r;
 }
 
-// weeks: an iterable of { [eventKey]: archiveEntry } objects, oldest file first.
-function buildEventHold(weeks) {
+function isQualifying(ek, e, qFlags) {
+  if (e.q === true || e.q === false) return e.q;
+  if (qFlags && Object.prototype.hasOwnProperty.call(qFlags, ek)) return qFlags[ek] === 1;
+  return /qualif/i.test(String(e.tn || ''));
+}
+
+// weeks: an iterable of { [eventKey]: archiveEntry } objects, oldest file first. qFlags: { [eventKey]: 1 | 0 } from
+// boxscore-qualifying.json (1 = qualifying).
+function buildEventHold(weeks, qFlags) {
+  let qualifying = 0;
   const seen = new Set();
   const ev = {};
   for (const week of weeks) {
@@ -54,6 +67,7 @@ function buildEventHold(weeks) {
       seen.add(ek);
       const e = week[ek];
       if (!e || e.t !== 'atp' || e.tk == null || !e.tn) continue;
+      if (isQualifying(ek, e, qFlags)) { qualifying++; continue; }
       const ms = e.matchStats || {};
       const a = sgOf(ms.p1), b = sgOf(ms.p2);
       if (!a || !b) continue;
@@ -83,7 +97,7 @@ function buildEventHold(weeks) {
     }
   }
   clash.forEach(lk => { delete byName[lk]; });
-  return { v: 1, source: 'boxscore-archive (api-tennis tier pages, TEN-323)', events: ev, byName, ambiguous: [...clash].sort() };
+  return { v: 1, source: 'boxscore-archive (api-tennis tier pages, TEN-323)', scope: 'main draw', qualifyingExcluded: qualifying, events: ev, byName, ambiguous: [...clash].sort() };
 }
 
 function readWeeks(dir) {
@@ -100,14 +114,17 @@ function readWeeks(dir) {
 function main() {
   const { weeks, files, bad } = readWeeks(ARCHIVE_DIR);
   if (!files) { console.error('event-hold: no box-score archive — nothing written'); process.exit(1); }
-  const out = Object.assign({ builtAt: new Date().toISOString(), files, unreadable: bad }, buildEventHold(weeks));
+  let qFlags = null;
+  try { qFlags = JSON.parse(fs.readFileSync(Q_PATH, 'utf8')).q || null; }
+  catch (err) { console.error(`event-hold: ${path.basename(Q_PATH)} unreadable (${err.message}) — entries without their own flag fall back to the name`); }
+  const out = Object.assign({ builtAt: new Date().toISOString(), files, unreadable: bad }, buildEventHold(weeks, qFlags));
   const tmp = OUT_PATH + '.tmp';
   fs.writeFileSync(tmp, JSON.stringify(out));
   fs.renameSync(tmp, OUT_PATH);
   const evs = Object.values(out.events);
-  console.log(`event-hold: ${evs.length} ATP events, ${evs.reduce((s, x) => s + x.matches, 0)} matches, ` +
+  console.log(`event-hold: ${evs.length} ATP events, ${evs.reduce((s, x) => s + x.matches, 0)} main-draw matches (${out.qualifyingExcluded} qualifying left out), ` +
     `${evs.reduce((s, x) => s + x.games, 0)} service games from ${files} archive files (${bad} unreadable)`);
 }
 
-module.exports = { buildEventHold, cleanName };
+module.exports = { buildEventHold, cleanName, isQualifying };
 if (require.main === module) main();

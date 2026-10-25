@@ -17,8 +17,16 @@
  *              every later row; there is no season seam. Each row carries the book used.
  *              This supersedes TEN-146/TEN-262 "one book per season, never fill a
  *              missing Pinnacle price from another book".
- *   Results:   completed matches only; retirements VOIDED on the Database (2026-09-20, below);
- *              walkovers excluded; edge non-results (Awarded/Disqualified/Sched) excluded.
+ *   Results:   completed matches in `rows`; retirements in `retRows` (below); walkovers excluded; edge non-results
+ *              (Awarded/Disqualified/Sched) excluded unless they started (behind the retired flag).
+ *   Settlement (founder ruling 2026-10-25, round 2 item 1.3 — supersedes the 2026-09-20 "void them" ruling for every
+ *              figure): settlement.js, two rules. Every Database yield / ROI figure, tour-baselines.json and the ROI in
+ *              tournament-market.json read the FIGURE rows = `rows` + the retRows settleBet lets stand (Pinnacle rules: a
+ *              retirement after the first set was completed stands on the result; before it, or with no set scores,
+ *              void). Every win-rate figure (tournament-market.json favRel) reads `rows` + every retRow matchWinner
+ *              gives a winner (retirements count on the official result). Each retRow carries `retComment` (its
+ *              comment) and `retFs` (its first set: 'c' / 'i' / 'm', '' for a started non-result), parallel arrays,
+ *              from the ONE first-set lookup Market edge uses (build-market-edge.js firstSetLookup).
  *   Retired:   TEN-402 founder ruling (2026-10-08): the same join prices retirements for the
  *              Head to Head page and the Player Profile per-event Backing, settled on the
  *              official ATP result (the archive's winner column). They ride BEHIND A FLAG:
@@ -151,6 +159,26 @@ const startedVerdict = (comment, says) => {
 const verdictOfRow = (tdKey, comment, archiveLiveFlip) =>
   startedVerdict(comment, (started.says.get(tdKey) || []).concat(archiveLiveFlip ? ['live'] : []));
 const FEED_STARTED = new Set(['Awarded']);   // an archive-fed row: api-tennis "Awarded" after our poller saw it go live
+// Founder ruling 2026-10-25 (round 2 item 1.3): the two settlement rules, one module (settlement.js). Never re-derived here.
+const Settlement = require('./settlement.js');
+// The first set of each retirement: build-market-edge.js firstSetLookup — the started-evidence file's answer, else the
+// players' own career rows (ruling 4 · item 1). Loaded only when a retirement asks (a copy of this builder in a test's
+// temp folder may carry neither the module nor a career store: every first set is then 'm', no units — said in the log).
+const FS_ROOT = process.env.DB_YIELD_CAREER_ROOT || __dirname;
+let _fsLookup;
+const fsLookupNote = { lookup: null, fromCareer: 0 };
+function firstSetOf(dateInt, tournament, winner, loser) {
+  if (_fsLookup === undefined) {
+    const me = path.join(__dirname, 'build-market-edge.js');
+    _fsLookup = fs.existsSync(me) ? require(me).firstSetLookup(FS_ROOT, { evidencePath: STARTED_PATH }) : null;
+    fsLookupNote.lookup = _fsLookup ? (_fsLookup.evidence ? 'evidence + career rows' : 'career rows only (no evidence file)') : 'none (no build-market-edge.js)';
+  }
+  if (!_fsLookup) return 'm';
+  const d = String(dateInt);
+  const hit = _fsLookup.of({ date: `${d.slice(0, 4)}-${d.slice(4, 6)}-${d.slice(6, 8)}`, tournament, winner, loser });
+  if (hit.fromCareer) fsLookupNote.fromCareer++;
+  return hit.fs;
+}
 
 function num(x) {
   if (x === undefined || x === null) return NaN;
@@ -179,6 +207,22 @@ const isApproxIdx = i => i === 2 || i === 5;
 // carry their own codes so every surface names their source: 3 = 'from Pinnacle history', 4 = 'captured'. Both are
 // Pinnacle closing prices: every Pinnacle count, yield and figure counts them as Pinnacle (prices unchanged).
 const ARCH_BOOK = { 'from Pinnacle history': 3, captured: 4 };
+// Founder ruling 2026-10-25 (round 2 item 1.4, the 13 Apr - 16 Sep fill): a buffer-cut fill row reaches the feed labelled
+// 'early cut N' (tools/pinarch.py feed_label; N = its tier's buffer, minutes): book 9 — a Pinnacle price taken at least N min
+// before the start, NOT a close. Priced from the archive pair like 3 / 4, but never counted as a Pinnacle close (isPinIdx):
+// its own BOOK_COUNTS entry, like the approx. books. The page marks it 'E' with the founder's tooltip (meta.earlyCut).
+const EARLY_CUT_RE = /^early cut (\d+)$/;
+const EARLY_BOOK = 9;
+const earlyMinutes = new Set();
+const archBookOf = label => {
+  if (ARCH_BOOK[label] != null) return ARCH_BOOK[label];
+  const m = EARLY_CUT_RE.exec(label || '');
+  if (!m) return undefined;
+  earlyMinutes.add(+m[1]);
+  return EARLY_BOOK;
+};
+// founder wording 2026-10-25: the cut is trueStart − X and the price may be up to 60 min older than the cut
+const earlyHover = min => `Early Pinnacle price \u2014 taken ${min}\u2013${min + 60} min before Oddspapi's recorded start. True closing price unavailable.`;
 const isPinIdx = i => i === 0 || i === 3 || i === 4;
 
 const rows = [];      // [dateInt, lvlIdx, surfIdx, rndIdx, tourIdx, favPrice, dogPrice, favWon, bookIdx]
@@ -207,7 +251,7 @@ const retBucket = { priced: 0, noPrice: 0, tie: 0, overround: 0, preWindow: 0, e
 // number is exactly what the footnote was criticised for.
 const bucket = { archive: 0, used: 0, walkover: 0, retired: 0, edge: 0, noPrice: 0, tie: 0, overround: 0, preWindow: 0 };
 const WINDOW_START = 2010; // founder TEN-146 ruling (2026-09-04): window starts 2010, fail-closed, no pre-window fallback
-const bookCount = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+const bookCount = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 9: 0 };
 let dateMin = '99999999', dateMax = '00000000';
 // TEN-262: the latest archive date with a valid Pinnacle pair, read BEFORE any exclusion.
 // The Database header says where the source's Pinnacle prices stop; it is never typed.
@@ -300,7 +344,7 @@ function processLine(c, col, season, fromFeed) {
         }
       }
     }
-    const pinIdx = archLabel ? ARCH_BOOK[archLabel] : 0;
+    const pinIdx = archLabel ? archBookOf(archLabel) : 0;
     if (archLabel && pinIdx == null) { console.error(`archive feed: unknown label ${JSON.stringify(archLabel)}`); process.exit(1); }
     const bookIdx = (validPrice(P[0]) && validPrice(P[1])) ? pinIdx : AP ? (APS === 'od' ? 5 : 2) : (validPrice(B365[0]) && validPrice(B365[1])) ? 1 : -1;
     // TEN-402: a retirement passes the SAME filters as a used row, counted in its own buckets (retBucket),
@@ -315,7 +359,7 @@ function processLine(c, col, season, fromFeed) {
       if (Number.isFinite(dU)) uRaw.push([dU, (c[col.winner] || '').trim(), (c[col.loser] || '').trim(), one ? 'one' : 'nobook']);
       return;
     }
-    const [pw, pl] = isPinIdx(bookIdx) ? P : isApproxIdx(bookIdx) ? AP : B365;
+    const [pw, pl] = isPinIdx(bookIdx) || bookIdx === EARLY_BOOK ? P : isApproxIdx(bookIdx) ? AP : B365;
 
     if (pw === pl) {                                            // exact tie: no favourite, no underdog
       B_.tie++;
@@ -422,7 +466,7 @@ if (feedOn) {
 // 4 'captured'), flagged out of every Database statistic and ROI. The same price guards: both sides >= 1.01 (here > 1.00
 // as validPrice), overround <= 1.15; an exact tie is kept (flag 'e').
 for (const r of feed.team) {
-  const pw = num(r.psw), pl = num(r.psl), bk = ARCH_BOOK[(r.label || '').trim()];
+  const pw = num(r.psw), pl = num(r.psl), bk = archBookOf((r.label || '').trim());
   const dI = parseInt(String(r.date || '').replace(/-/g, ''), 10);
   if (!validPrice(pw) || !validPrice(pl) || bk == null || !Number.isFinite(dI) || (1 / pw) + (1 / pl) > 1.15) { feed.teamDropped++; continue; }
   const isRet = RETIRED.has((r.comment || '').trim()) || FEED_STARTED.has((r.comment || '').trim());   // a started default
@@ -541,11 +585,28 @@ if (lower.unpriced.file) {
 console.log('lower levels:', JSON.stringify(lower));
 
 // TEN-402: the retired rows' dictionary indices, assigned after every Database row has claimed its own.
-const retRows = [], retNames = [];
-for (const x of retRaw) {
+const retRows = [], retNames = [], retComment = [], retFs = [];
+retRaw.forEach((x, i) => {
   retRows.push([x[0], x[1], idxOf(surfaces, x[2]), idxOf(rounds, x[3]), idxOf(tournaments, x[4]), x[5], x[6], x[7], x[8]]);
   retNames.push([x[9], x[10]]);
-}
+  // founder 2026-10-25: each retRow's comment and first set, so settleBet / matchWinner decide it (never this file)
+  const cm = retAtt[i][3];
+  retComment.push(cm);
+  retFs.push(Settlement.kindOf(cm) === 'retired' ? firstSetOf(x[0], x[4], x[9], x[10]) : '');
+});
+// The FIGURE rows (founder 2026-10-25): every Database yield / ROI, tour-baselines.json and tournament-market.json's ROI
+// read `rows` + the retRows whose bet stands (settleBet). `rows` first, then the standing retRows in retRows order — the
+// page builds the same list in the same order (DatabaseTab loadBase), so the floats agree bit for bit.
+const retStands = retRows.map((r, i) => Settlement.betCounts({ comment: retComment[i], fs: retFs[i] }));
+const figRows = rows.concat(retRows.filter((r, i) => retStands[i]));
+const settleCount = { retired: { stands: 0, void: 0, noSets: 0 }, started: 0 };
+retRows.forEach((r, i) => {
+  const st = Settlement.settleBet({ comment: retComment[i], fs: retFs[i] });
+  if (st === 'stands') { settleCount.retired.stands++; bookCount[r[8]]++; }
+  else if (st === 'void') settleCount.retired.void++;
+  else if (st === 'no-sets') settleCount.retired.noSets++;
+  else { settleCount.started++; bookCount[r[8]]++; }   // a started non-result: an ordinary result (settleBet null)
+});
 
 // Founder 2026-10-16: the kept ties' dictionary indices, after every Database and retired row has claimed its own.
 const tieRows = [], tieNames = [];
@@ -557,7 +618,7 @@ for (const x of tieRaw) {
 // --- overall yields (for the verify report + a page cross-check) ------------
 function yields(pred) {
   let n = 0, favProfit = 0, dogProfit = 0;
-  for (const r of rows) {
+  for (const r of figRows) {
     if (pred && !pred(r)) continue;
     const fav = r[5], dog = r[6], favWon = r[7];
     n++;
@@ -592,8 +653,14 @@ function baselinesOf(list, books) {
     bookCounts: books,
   };
 }
-const dbList = rows.map(r => ({ fav: r[5], dog: r[6], won: r[7], book: r[8] }));
-const BOOK_COUNTS = { Pinnacle: bookCount[0] + bookCount[3] + bookCount[4], Bet365: bookCount[1], ...(approxOn ? { [BOOKS[2]]: bookCount[2] + bookCount[5] } : {}) };
+const dbList = figRows.map(r => ({ fav: r[5], dog: r[6], won: r[7], book: r[8] }));
+const BOOK_COUNTS = { Pinnacle: bookCount[0] + bookCount[3] + bookCount[4], Bet365: bookCount[1], ...(approxOn ? { [BOOKS[2]]: bookCount[2] + bookCount[5] } : {}),
+  ...(bookCount[EARLY_BOOK] ? { 'Pinnacle (early cut)': bookCount[EARLY_BOOK] } : {}) };
+// one buffer per feed: the page's tooltip names it, so two different minutes in one build would make one of them wrong
+if (earlyMinutes.size > 1) { console.error(`archive feed: early-cut rows carry ${earlyMinutes.size} different buffers (${[...earlyMinutes].join(', ')} min): one per build`); process.exit(1); }
+const EARLY_MIN = earlyMinutes.size ? [...earlyMinutes][0] : null;
+const EARLY_META = EARLY_MIN != null ? { earlyCut: { book: EARLY_BOOK, minutes: EARLY_MIN, mark: 'E', hover: earlyHover(EARLY_MIN),
+  rule: 'founder ruling 2026-10-25: the 13 Apr - 16 Sep ATP main-draw fill, cut at Oddspapi trueStart minus the tier buffer; not a close' } } : {};
 const TB = baselinesOf(dbList, BOOK_COUNTS);
 
 // --- write artefacts --------------------------------------------------------
@@ -615,7 +682,7 @@ const meta = {
   windowStart: WINDOW_START,
   books: approxOn ? BOOKS : BOOKS.slice(0, 2),
   priceRule: PRICE_RULE,
-  bookCounts: BOOK_COUNTS,   // rows per book ACTUALLY used (r[8]); 'Pinnacle (approx.)' only when its feed exists
+  bookCounts: BOOK_COUNTS,   // FIGURE rows per book ACTUALLY used (r[8]; rows + standing retRows); 'Pinnacle (approx.)' only when its feed exists
   // No season seam (TEN-384): Bet365 prices any row Pinnacle cannot. The page marks the
   // change where the source's Pinnacle prices stop — the latest archive date with a valid
   // Pinnacle pair, read before any exclusion; every used row after it is Bet365-priced.
@@ -626,7 +693,8 @@ const meta = {
   // (DatabaseTab.priceRows), which settle them on the official ATP result (the archive's winner).
   retired: {
     rule: 'Retirements priced on the same join (Pinnacle closing, else Bet365 closing; ties, overround > 1.15 and pre-' +
-      WINDOW_START + ' out), settled on the official ATP result. Not Database rows.',
+      WINDOW_START + ' out). Not in rows: each carries its comment (retComment) and first set (retFs), and settlement.js decides ' +
+      'every figure — settleBet (Pinnacle rules) for yields, matchWinner (the official result) for win rates.',
     priced: retBucket.priced,
     dropped: { noResolvingBookPrice: retBucket.noPrice, exactTie: retBucket.tie, overroundGt115: retBucket.overround,
       preWindow: retBucket.preWindow, edge: retBucket.edge },
@@ -666,9 +734,20 @@ const meta = {
     overridden: feed.overridden, tdHadPinnacle: feed.tdHadPinnacle, overrideUnmatched: feed.overrideUnmatched,
     added: feed.added, addedRetired: feed.addedRetired, addedDropped: feed.addedDropped,
     // founder 2026-10-16 (round 3, item 1): the Database rows priced on our archive's closes, by their own code / label
-    bookCodes: { 3: 'from Pinnacle history', 4: 'captured' },
-    rowsByLabel: { 'from Pinnacle history': bookCount[3], captured: bookCount[4] },
+    bookCodes: { 3: 'from Pinnacle history', 4: 'captured', ...(EARLY_MIN != null ? { 9: `early cut ${EARLY_MIN}` } : {}) },
+    rowsByLabel: { 'from Pinnacle history': bookCount[3], captured: bookCount[4], ...(EARLY_MIN != null ? { [`early cut ${EARLY_MIN}`]: bookCount[EARLY_BOOK] } : {}) },
   } } : {}),
+  // Founder ruling 2026-10-25 (round 2 item 1.3): how the retRows settle in the Database figures (settlement.js).
+  settlement: {
+    rule: 'Yields: Pinnacle rules (settlement.js settleBet) — a retirement after the first set was completed stands on the result; ' +
+      'before it, or with no set scores, it is void. Win rates: the official result (settlement.js matchWinner) — every retirement counts; ' +
+      'walkovers never.',
+    figureRows: figRows.length,
+    retired: settleCount.retired,
+    started: settleCount.started,
+    firstSet: { lookup: fsLookupNote.lookup || 'not needed', fromCareerRows: fsLookupNote.fromCareer },
+  },
+  ...EARLY_META,
   levels, surfaces, rounds, tournaments,
   yieldOverall: {
     all: yAll, Pinnacle: yPS, Bet365: yB365,
@@ -677,7 +756,7 @@ const meta = {
 
 // Atomic writes (CLAUDE.md rule 3): temp file + rename, never a half-written live JSON.
 function writeAtomic(p, text) { const tmp = p + '.tmp'; fs.writeFileSync(tmp, text); fs.renameSync(tmp, p); }
-writeAtomic(OUT_BASE, JSON.stringify({ meta, rows, retRows, tieRows }));
+writeAtomic(OUT_BASE, JSON.stringify({ meta, rows, retRows, retComment, retFs, tieRows }));
 // Founder brief 2026-10-15 item 2: the site's ONE archive name table (build-odds-performance.js ARCHIVE_NAME_ALIASES /
 // ARCHIVE_NAME_BLOCK, hand-checked) reaches the page's price join too: `aliases` = a Tennis-Data name in this store ->
 // our spelling of the player it names ("Barrios M." -> "T. Barrios Vera", "Miguel L." -> "G. Miguel"). Only names the
@@ -721,21 +800,24 @@ writeAtomic(OUT_X, JSON.stringify({ meta: X_META,
 const iso = d => { const s = String(d); return `${s.slice(0, 4)}-${s.slice(4, 6)}-${s.slice(6, 8)}`; };
 // wrank / lrank: the archive's ranks at the match (Tennis-Data's own columns; empty for a match our archive added) — the
 // legacy profile odds card's opponent-rank splits read them (founder ruling 2026-10-17, ruling 5)
-const MASTER_COLS = ['date', 'tournament', 'series', 'surface', 'court', 'round', 'bestof', 'winner', 'loser', 'comment', 'pw', 'pl', 'book', 'set', 'flags', 'wrank', 'lrank'];
+// fs (founder 2026-10-25): a retirement's first set ('c' / 'i' / 'm', the shared lookup), '' on every other row and on the
+// lower-level / team rows no figure reads — so build-odds-performance.js settles a retirement exactly as the Database does
+const MASTER_COLS = ['date', 'tournament', 'series', 'surface', 'court', 'round', 'bestof', 'winner', 'loser', 'comment', 'pw', 'pl', 'book', 'set', 'flags', 'wrank', 'lrank', 'fs'];
 const masterRows = [];
-const pushM = (d, tour, surf, rnd, w, l, fav, dog, favWon, book, a, set, flags) => masterRows.push([iso(d), tour, a[0], surf, a[1], rnd, a[2], w, l, a[3],
-  favWon ? fav : dog, favWon ? dog : fav, book, set, flags, a[4] || '', a[5] || '']);
+const pushM = (d, tour, surf, rnd, w, l, fav, dog, favWon, book, a, set, flags, fsv) => masterRows.push([iso(d), tour, a[0], surf, a[1], rnd, a[2], w, l, a[3],
+  favWon ? fav : dog, favWon ? dog : fav, book, set, flags, a[4] || '', a[5] || '', fsv || '']);
+const fsIfRetired = (a, flags, d, tour, w, l) => (Settlement.kindOf(a[3]) === 'retired' && !/[lt]/.test(flags) ? firstSetOf(d, tour, w, l) : '');
 rows.forEach((r, i) => pushM(r[0], tournaments[r[4]], surfaces[r[2]], rounds[r[3]], names[i][0], names[i][1], r[5], r[6], r[7], r[8], rowsAtt[i], 'db', ''));
-retRaw.forEach((x, i) => pushM(x[0], x[4], x[2], x[3], x[9], x[10], x[5], x[6], x[7], x[8], retAtt[i], 'ret', 'r'));
-tieRaw.forEach((x, i) => pushM(x[0], x[4], x[2], x[3], x[9], x[10], x[5], x[6], x[7], x[8], tieAtt[i], 'tie', 'e' + (x[11] ? 'r' : '')));
-xRaw.forEach((x, i) => pushM(x[0], x[4], x[2], x[3], x[9], x[10], x[5], x[6], x[7], x[8], xAtt[i], 'x', x[11]));
+retRaw.forEach((x, i) => pushM(x[0], x[4], x[2], x[3], x[9], x[10], x[5], x[6], x[7], x[8], retAtt[i], 'ret', 'r', retFs[i]));
+tieRaw.forEach((x, i) => { const fl = 'e' + (x[11] ? 'r' : ''); pushM(x[0], x[4], x[2], x[3], x[9], x[10], x[5], x[6], x[7], x[8], tieAtt[i], 'tie', fl, fsIfRetired(tieAtt[i], fl, x[0], x[4], x[9], x[10])); });
+xRaw.forEach((x, i) => pushM(x[0], x[4], x[2], x[3], x[9], x[10], x[5], x[6], x[7], x[8], xAtt[i], 'x', x[11], fsIfRetired(xAtt[i], x[11], x[0], x[4], x[9], x[10])));
 if (rowsAtt.length !== rows.length || retAtt.length !== retRaw.length || tieAtt.length !== tieRaw.length || xAtt.length !== xRaw.length) {
   console.error('master: an attribute array is out of step with its rows'); process.exit(1);
 }
 writeAtomic(OUT_MASTER, JSON.stringify({ meta: { schema: 1, cols: MASTER_COLS, builtFrom: 'build-database-yield.js (the same run as database-yield.json)',
   dateRange: [dateMin, dateMax], latest: masterRows.reduce((m, r) => (r[0] > m ? r[0] : m), ''), bookCodes: { 0: 'Tennis-Data Pinnacle', 1: 'Bet365 (Tennis-Data)',
   2: 'Pinnacle (approx.) api-tennis', 3: 'Pinnacle (from Pinnacle history)', 4: 'Pinnacle (captured)', 5: 'Pinnacle (approx.) start - 10',
-  6: 'Bet365 (approx.) captured', 7: 'Bet365 (approx.) api-tennis', 8: 'Pinnacle (approx.) Tennis Explorer' },
+  6: 'Bet365 (approx.) captured', 7: 'Bet365 (approx.) api-tennis', 8: 'Pinnacle (approx.) Tennis Explorer', 9: 'Pinnacle early cut (not a close)' }, ...EARLY_META,
   counts: { all: masterRows.length, db: rows.length, ret: retRaw.length, tie: tieRaw.length, x: xRaw.length } }, rows: masterRows }));
 console.log(`name table (archive aliases → page join): ${JSON.stringify(nameTable)}`);
 // TEN-384: loaded by the player profile WITH the profile data (never database-yield.json).
@@ -746,8 +828,9 @@ writeAtomic(BASELINES_OUT, JSON.stringify({
   equalsDatabaseTour: true,   // one join (TEN-384 option "me"): the same rows as database-yield.json
   source: 'build-database-yield.js over odds-archive/*.csv, the same run that writes database-yield.json',
   priceRule: PRICE_RULE,
-  filters: 'ATP main tour, all levels incl. Finals, all surfaces, seasons ' + WINDOW_START + ' on; completed matches only ' +
-    '(walkovers, retirements and other non-results excluded); exact price ties and overround > 1.15 excluded; ' +
+  filters: 'ATP main tour, all levels incl. Finals, all surfaces, seasons ' + WINDOW_START + ' on; completed matches, plus ' +
+    'retirements settled on Pinnacle rules (settlement.js settleBet: after the first set was completed the bet stands on the ' +
+    'result; before it, or with no set scores, void); walkovers excluded; exact price ties and overround > 1.15 excluded; ' +
     'favourite = the shorter price; flat 1u, a win pays price − 1',
   dateRange: [dateMin, dateMax],
   bookCounts: B.bookCounts,
@@ -772,6 +855,9 @@ console.log(`  - overround>1.15  : ${bucket.overround}`);
 console.log(`  - pre-${WINDOW_START} regime  : ${bucket.preWindow}  (otherwise-usable rows dropped by the window)`);
 console.log(`RECONCILE used+excl : ${recon}  ${recon === bucket.archive ? 'OK == archive' : 'MISMATCH!'}`);
 const retSum = retBucket.priced + retBucket.noPrice + retBucket.tie + retBucket.overround + retBucket.preWindow + retBucket.edge;
+console.log(`settlement          : ${figRows.length} figure rows = ${rows.length} rows + ${settleCount.retired.stands} retirements standing + ` +
+  `${settleCount.started} started non-results; void ${settleCount.retired.void}, no set scores ${settleCount.retired.noSets} ` +
+  `(first sets: ${fsLookupNote.lookup || 'not needed'}, ${fsLookupNote.fromCareer} from career rows)`);
 console.log(`retired, flagged    : ${retBucket.priced} priced (retRows) of ${bucket.retired}  ` +
   `[no price ${retBucket.noPrice}, tie ${retBucket.tie}, overround ${retBucket.overround}, pre-${WINDOW_START} ${retBucket.preWindow}, edge ${retBucket.edge}]  ` +
   `${retSum === bucket.retired ? 'OK' : 'MISMATCH!'}`);

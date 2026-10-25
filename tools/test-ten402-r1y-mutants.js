@@ -11,7 +11,7 @@ const MUTANTS = [
   // ---- fix 3: price mark
   // TEN-437 (founder 2026-10-16) reverses fix 3 for the Meetings ledger: its Bet365 rows carry the B; the mutant drops it.
   ['TEN-437: the Meetings ledger drops the Bet365 B again', 'html',
-    "            hTitle: h2hPriceTitle(r), aTitle: h2hPriceTitle(r), hMark: r.price != null && r.book === 'B' ? 'B' : '',",
+    "            hTitle: h2hPriceTitle(r), aTitle: h2hPriceTitle(r), hMark: typeof fhPxMark === 'function' ? fhPxMark(r) : r.price != null && r.book === 'B' ? 'B' : '',",
     "            hTitle: h2hPriceTitle(r), aTitle: h2hPriceTitle(r), hMark: '',"],
   ['fix 3: the Playing styles ledger marks Bet365 rows again', 'html',
     "          hTitle: h2hPriceTitle(q), aTitle: h2hPriceTitle(q), hMark: '' };",
@@ -48,8 +48,8 @@ const MUTANTS = [
     "    const rec = aw === bw ? 'level ' + aw + '–' + bw : (aw > bw ? h.aS : h.bS) + ' leads ' + Math.max(aw, bw) + '–' + Math.min(aw, bw);",
     "    const rec = aw === bw ? 'level ' + aw + '-' + bw : (aw > bw ? h.aS : h.bS) + ' leads ' + Math.max(aw, bw) + '-' + Math.min(aw, bw);"],
   ['fix 7: a Hot lines name in a hyphen-minus', 'html',
-    "    { g: 'gh', name: bS + ' −2.5 games', need: 'games', bo3: true, cov: m => m.diff <= -3, basis: 'Bo3 completed' },",
-    "    { g: 'gh', name: bS + ' -2.5 games', need: 'games', bo3: true, cov: m => m.diff <= -3, basis: 'Bo3 completed' },"],
+    "    { g: 'gh', name: bS + ' −2.5 games', need: 'games', bo3: true, cov: m => m.diff <= -3, basis: 'Bo3 completed', px: { mk: 'gh', who: 'B', line: -2.5 } },",
+    "    { g: 'gh', name: bS + ' -2.5 games', need: 'games', bo3: true, cov: m => m.diff <= -3, basis: 'Bo3 completed', px: { mk: 'gh', who: 'B', line: -2.5 } },"],
   ['fix 7: the location back to the country alone', 'html',
     '    const region = typeof tournamentLocation === \'function\' ? tournamentLocation(cat) : null;',
     "    let region = null; try { region = cat && cat.country ? new Intl.DisplayNames(['en'], { type: 'region' }).of(cat.country) : null; } catch (x) { region = null; }"],

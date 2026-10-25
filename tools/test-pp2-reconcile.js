@@ -1214,10 +1214,13 @@ check('price bands sum to the headline priced count, for every shard', () => {
 // founder ruling 2026-10-17 (one price per match): a row the Database prices carries the Database's book, so the
 // archive close ('pinnacle-history') and the two Pinnacle (approx.) snapshots join the labels; a snapshot is counted
 // under its own `approx` bucket, never as a Pinnacle close
-const ME_BOOKS = new Set(['pinnacle', 'pinnacle-capture', 'bet365-archive', 'bet365-capture', 'pinnacle-history', 'pinnacle-approx', 'pinnacle-approx-od10']);
-const meIsApprox = (m) => String(m.book).startsWith('pinnacle-approx');
+const ME_BOOKS = new Set(['pinnacle', 'pinnacle-capture', 'bet365-archive', 'bet365-capture', 'pinnacle-history', 'pinnacle-approx', 'pinnacle-approx-od10', 'pinnacle-early']);   // + the early cut (2026-10-25)
+const meIsApprox = (m) => String(m.book).startsWith('pinnacle-approx') || m.book === 'pinnacle-early';   // the early cut is never a Pinnacle close
 const meIsPinnacle = (m) => String(m.book).startsWith('pinnacle') && !meIsApprox(m);
 const meApproxN = (h) => (h.book && h.book.approx) || 0;
+// ruling 4 (founder 2026-10-22): a retirement before the first set is complete is void, and one with no set scores has no
+// units; both keep their book and price on the row, carry pl null, and sit off the basis — counted in no figure
+const meUnsettled = (m) => m.settle === 'void' || m.settle === 'no-sets';
 check('per-row book counts sum to the headline, and the label is never blended', () => {
   let captured = 0;
   for (const k of MK_KEYS) {
@@ -1226,11 +1229,12 @@ check('per-row book counts sum to the headline, and the label is never blended',
       `${k}: book mix does not sum to the priced count`);
     const rows = s.matches.filter(m => !ME_BOOKS.has(m.book));
     assert.strictEqual(rows.length, 0, `${k}: ${rows.length} rows carry no book label`);
-    assert.strictEqual(s.matches.filter(meIsPinnacle).length, s.headline.book.pinnacle,
+    const settled = s.matches.filter(m => !meUnsettled(m));
+    assert.strictEqual(settled.filter(meIsPinnacle).length, s.headline.book.pinnacle,
       `${k}: row-level Pinnacle count disagrees with the summary`);
-    assert.strictEqual(s.matches.filter(meIsApprox).length, meApproxN(s.headline),
+    assert.strictEqual(settled.filter(meIsApprox).length, meApproxN(s.headline),
       `${k}: row-level Pinnacle (approx.) count disagrees with the summary`);
-    assert.strictEqual(s.matches.filter(m => !meIsPinnacle(m) && !meIsApprox(m)).length, s.headline.book.bet365,
+    assert.strictEqual(settled.filter(m => !meIsPinnacle(m) && !meIsApprox(m)).length, s.headline.book.bet365,
       `${k}: row-level Bet365 count disagrees with the summary`);
     captured += s.matches.filter(m => /-capture$/.test(m.book)).length;
   }
@@ -1257,12 +1261,29 @@ check('TEN-310 · Bet365 fallback rows are inside the headline basis, and the bo
   for (const k of MK_KEYS) {
     const h = MARKET[k].headline;
     assert.strictEqual(h.book.pinnacle + h.book.bet365 + meApproxN(h), h.n, `${k}: book mix ${JSON.stringify(h.book)} does not add to n=${h.n}`);
-    const off = (MARKET[k].matches || []).filter(m => m.book && !m.inBasis);
+    const off = (MARKET[k].matches || []).filter(m => m.book && !m.inBasis && !meUnsettled(m));
     assert.strictEqual(off.length, 0, `${k}: ${off.length} priced rows left out of the basis`);
   }
   console.log(`        headline basis: ${p} Pinnacle + ${b} Bet365 rows across ${MK_KEYS.length} shards, every priced row counted`);
 });
 
+check('ruling 4 · a void or set-less retirement is off the basis with no units, and only a retirement is', () => {
+  let unsettled = 0;
+  for (const k of MK_KEYS) {
+    for (const m of MARKET[k].matches || []) {
+      if (!meUnsettled(m)) continue;
+      unsettled++;
+      assert(m.ret, `${k} ${m.date}: a row settled '${m.settle}' is not a retirement`);
+      assert(!m.inBasis && m.pl == null, `${k} ${m.date}: a '${m.settle}' retirement is on the basis or carries units`);
+      assert(m.book && m.price != null, `${k} ${m.date}: a '${m.settle}' retirement lost its own price`);
+    }
+  }
+  console.log(`        ${unsettled} void / no-set-scores retirement rows across ${MK_KEYS.length} shards, every one off the basis`);
+});
+mustFail('the ruling-4 lock would catch a void retirement left on the basis', () => {
+  const m = { ret: true, settle: 'void', inBasis: true, pl: 0.5, book: 'pinnacle', price: 1.5 };
+  assert(!m.inBasis && m.pl == null, 'X: a void retirement is on the basis or carries units');
+});
 mustFail('the TEN-310 check would catch the Pinnacle-only build coming back', () => {
   const shards = [{ headline: { book: { pinnacle: 300, bet365: 0 } } }];
   assert(shards.reduce((a, s) => a + s.headline.book.bet365, 0) > 0, 'Pinnacle-only build not caught');
@@ -1343,7 +1364,12 @@ const DB_SRC = fs.readFileSync(path.join(ROOT, 'bsp-consult-dashboard.html'), 'u
 const DB_BLOCK = DB_SRC.slice(DB_SRC.indexOf("var BASE_URL = './database-yield.json';"));
 const DB_FNS = new Function(dbSlice(DB_BLOCK, 'function median(a){') + '\n' + dbSlice(DB_BLOCK, 'function agg(slice){') +
   '\n' + dbSlice(DB_BLOCK, 'function bands(values){') + '\nreturn { bands: bands };')();
-const DB_ROWS = JSON.parse(fs.readFileSync(path.join(ROOT, 'database-yield.json'), 'utf8')).rows;
+// Round 2 item 1.3 (founder 2026-10-25): the Database's figures read the FIGURE rows — the store's rows plus the
+// retirements whose bet stands (settlement.js settleBet) — through the page's own dbFigureView, run here with the real
+// settlement.js. tour-baselines.json is built on the same list. A store served before the rebuild (no retComment / retFs)
+// is its rows alone, exactly as the page reads it.
+const DB_FIGURE_VIEW = new Function('window', dbSlice(DB_SRC, 'function dbFigureView(j){') + '\nreturn dbFigureView;')({ Settlement: require(path.join(ROOT, 'settlement.js')) });
+const DB_ROWS = DB_FIGURE_VIEW(JSON.parse(fs.readFileSync(path.join(ROOT, 'database-yield.json'), 'utf8'))).rows;
 const TB_PATH = path.join(ROOT, 'tour-baselines.json');
 const TB_RAW = fs.readFileSync(TB_PATH, 'utf8');
 const TB = JSON.parse(TB_RAW);
@@ -1946,8 +1972,12 @@ check('real shards: Σ grid cells = subtitle M, and the priced set is a subset',
     for (const k of keys.slice(0, 40)) {
       const p = PLAYERS[k];
       const rows = I.calSpineFiltered(p);
-      const dated = CAREER_HIST[k].filter(r => r && /^\d{4}-\d{2}-\d{2}$/.test(String(r.date)));
+      const datedAll = CAREER_HIST[k].filter(r => r && /^\d{4}-\d{2}-\d{2}$/.test(String(r.date)));
+      // founder 2026-10-22 · walkover and unconfirmed rows are listed, never counted: the played spine excludes exactly
+      // them, and the listed spine (calSpineAll) carries every dated row
+      const dated = datedAll.filter(r => !r.walkover && !r.unconfirmed);
       assert.strictEqual(rows.length, dated.length, `${k}: spine dropped rows`);
+      assert.strictEqual(I.calSpineAll(p).length, datedAll.length, `${k}: the listed spine dropped a walkover/unconfirmed row`);
       let total = 0;
       I.calGrid(rows).forEach(yr => yr.cells.forEach(c => { total += c.won + c.lost; }));
       assert.strictEqual(total, I.calScope(p).n, `${k}: Σ cells != subtitle M`);
@@ -1973,7 +2003,7 @@ check('cal-2 · the Calendar spine is the CAREER rows, never the priced archive 
       if (!p) continue;
       const rows = I.calSpineFiltered(p);
       assert.strictEqual(rows.length, (CAREER_HIST[k] || [])
-        .filter(r => r && /^\d{4}-\d{2}-\d{2}$/.test(String(r.date))).length,
+        .filter(r => r && /^\d{4}-\d{2}-\d{2}$/.test(String(r.date)) && !r.walkover && !r.unconfirmed).length,
         `${k}: the Calendar spine is not the career match rows`);
       if (rows.length) {
         assert.notStrictEqual(rows.length, I.calMarketRows(p).length,
@@ -2737,21 +2767,22 @@ mustFail('the SETS check would catch a score written from the wrong side', () =>
 // skip the fourth, and the miss would look exactly like a match with no flag.
 check('item 27 · the status helper reads BOTH store field names', () => {
   assert.strictEqual(I.scoreWithStatus({ retired: true }, '6-3, 2-1'), '6-3, 2-1 ret.');
-  assert.strictEqual(I.scoreWithStatus({ wo: true }, ''), 'w/o', 'spine rows flag walkovers as `wo`');
-  assert.strictEqual(I.scoreWithStatus({ walkover: true }, ''), 'w/o', 'recentForm rows flag them as `walkover`');
-  // A walkover REPLACES the score; it never trails a dash.
-  assert.strictEqual(I.scoreWithStatus({ wo: true }, '6-3'), 'w/o');
+  // founder 2026-10-22 (Flashscore pattern): a walkover's set scores read "—" — its WO sits under the date (woDateHtml)
+  assert.strictEqual(I.scoreWithStatus({ wo: true }, ''), '\u2014', 'spine rows flag walkovers as `wo`');
+  assert.strictEqual(I.scoreWithStatus({ walkover: true }, ''), '\u2014', 'recentForm rows flag them as `walkover`');
+  // A walkover REPLACES the score; it never trails one.
+  assert.strictEqual(I.scoreWithStatus({ wo: true }, '6-3'), '\u2014');
   // A clean match is untouched, and a missing score stays a dash — not "ret.".
   assert.strictEqual(I.scoreWithStatus({}, '6-3, 6-4'), '6-3, 6-4');
   assert.strictEqual(I.scoreWithStatus({}, ''), '\u2014');
   // A retirement with nothing on record is still declared.
   assert.strictEqual(I.scoreWithStatus({ retired: true }, ''), 'ret.');
   // wo wins over ret on a row carrying both — nothing was played.
-  assert.strictEqual(I.scoreWithStatus({ wo: true, retired: true }, '6-3'), 'w/o');
+  assert.strictEqual(I.scoreWithStatus({ wo: true, retired: true }, '6-3'), '\u2014');
 });
 mustFail('[neg] the status check would catch a helper that ignored `walkover`', () => {
-  const half = (m, t) => (m.wo ? 'w/o' : String(t || '\u2014'));
-  assert.strictEqual(half({ walkover: true }, ''), 'w/o');
+  const half = (m, t) => (m.wo ? '\u2014' : String(t || '6-3'));
+  assert.strictEqual(half({ walkover: true }, '6-3'), '\u2014');
 });
 
 // The helper existing proves nothing — the render sites have to CALL it, and a
@@ -3837,6 +3868,22 @@ const STORES = [
         return before + after;
       } finally { W.careerRecord = saved.cr; W.careerRecordMeta = saved.m; }
     } },
+  // Founder approval 2026-10-23 · the Derived lines FIELD (derived-field.json, built each pipeline run by
+  // tools/build-derived-field.js; the host bridges its state as window.pp2Field()). Built by construction and read through
+  // the page's own lcFieldOf: a filled cell resolves its rate, a Challenger & ITF favourite cell stays blank (ruling).
+  { name: 'pp2Field', file: 'derived-field.json', universe: () => 2, floor: 1,
+    resolve: () => {
+      const W = global.window, saved = W.pp2Field;
+      try {
+        const cell = [[7, 3, 0, 4]];
+        W.pp2Field = () => ({ st: 'ready', d: { lines: { bo3: ['−4.5 games'] },
+          cells: { 'career|all|bo3|all|all|all': cell, 'career|chitf|bo3|fav|all|all': cell } } });
+        const d = { win: 'career', tier: 'all', role: 'all', surf: 'all', speed: 'all' };
+        const f = I.lcFieldOf(d, 'bo3', '−4.5 games');
+        const blank = I.lcFieldOf(Object.assign({}, d, { tier: 'chitf', role: 'fav' }), 'bo3', '−4.5 games');
+        return (f && f.rate === 70 && f.players === 4 ? 1 : 0) + (blank === null ? 1 : 0);
+      } finally { W.pp2Field = saved; }
+    } },
 ];
 
 for (const s of STORES) {
@@ -3975,6 +4022,7 @@ check('the all-stores table covers every data store the module reads', () => {
   // (TEN-310) is the Market edge compute both surfaces share; HouseRatings (TEN-327) is the one
   // Serve / Return rating helper every surface shares.
   // sfOverlayClosers (TEN-376 S1): the shell's list of overlay-close functions a sidebar click runs — functions, no rows.
+  // sfEscLayers (ESC brief 2026-10-21): the same kind of list for the one Esc handler (esc-nav.js) — functions, no rows.
   // TEN-384 fx2: TournamentIdentity is the builders' canonical-name table (logic, no rows); marketEdgePending is
   // the host's in-flight flag per market-edge shard (a loading state, no rows — the shard itself is marketEdge).
   // TEN-384 fx5: tourHistPending is the same in-flight flag for the tournament-history shard (the rows land on
@@ -3982,7 +4030,10 @@ check('the all-stores table covers every data store the module reads', () => {
   // TEN-391: careerSplitsPending is the same in-flight flag for a player's career-splits file (the rows land on
   // careerSplits[key]).
   const NOT_STORES = new Set(['FEATURE_PP2', 'PlayerProfileV2', 'RoundClassify', 'HoldBreakHeatmap', 'MarketEdgeCore', 'HouseRatings', 'sfOverlayClosers',
-    'TournamentIdentity', 'marketEdgePending', 'tourHistPending', 'careerSplitsPending']);
+    'TournamentIdentity', 'marketEdgePending', 'tourHistPending', 'careerSplitsPending', 'sfEscLayers',
+    // bet105-line-prices (founder brief 2026-10-24): LinePrices is the one line-price lookup (line-prices.js) and its lazy
+    // per-date shard cache — bet105 prices for UPCOMING matches, no player rows to reconcile; covered by test-line-prices.mjs
+    'LinePrices']);
   // Host callbacks the mount calls back into (navigation, not data). Exempt from
   // the coverage table but NOT from scrutiny: the module must not assume the
   // host defined them, so each is asserted to be typeof-guarded at its call
@@ -3992,11 +4043,11 @@ check('the all-stores table covers every data store the module reads', () => {
   // founder 2026-10-08): the same model's per-row H / A on the Database join — logic over the page's loaded stores.
   // TEN-384: the §8.1 sheet's onPp2SheetOpen is gone with the sheet; the hand-off to the step-3 stats sheet
   // (pp2OpenMatchSheet / pp2CloseMatchSheet), the header's Elo (pp2EloFor, the Players card's pgEloFor), its
-  // Next match (pp2NextMatchFor, today's fixture feed) and the avatar photo chain (photoCandidatesFor) are host
+  // Next match (pp2NextMatchFor, today's fixture feed) and the avatar photo resolver (playerPhotoUrl) are host
   // logic, not data stores. TEN-384 fx4: pp2LiveRank is the host's live-standings read (pp2LiveRankOf over
   // player-index.json) — the SAME function the Players card ranks with, so the header and the card agree.
-  const HOST_CALLBACKS = new Set(['showPlayerList', 'onPp2MatchPageOpen', 'trProfileBacking', 'trProfilePriceOf',
-    'pp2OpenMatchSheet', 'pp2CloseMatchSheet', 'pp2EloFor', 'photoCandidatesFor', 'pp2NextMatchFor', 'pp2LiveRank',
+  const HOST_CALLBACKS = new Set(['showPlayerList', 'sfDetailBack', 'sfDetailBackLabel', 'onPp2MatchPageOpen', 'trProfileBacking', 'trProfilePriceOf',
+    'pp2OpenMatchSheet', 'pp2CloseMatchSheet', 'pp2EloFor', 'playerPhotoUrl', 'pp2NextMatchFor', 'pp2LiveRank',
     // fx6 item 6: the host's match-closes join (meRowFromCareer -> fhCloseFor over the page's own closes cache) — logic
     'pp2ClosesOf', 'pp2CareerClose',
     // TEN-402 R2 (founder card 7bc622d5): the host's "Record per tournament was opened — request the Database join now"
@@ -4015,9 +4066,17 @@ check('the all-stores table covers every data store the module reads', () => {
     // price join over the page's already-loaded Database rows + career-history (pp2DrawJoin), and the opponent profile
     // link (pp2HasProfile over the standings, pp2OpenProfile = psOpenProfile) — triggers and logic, no store of their own
     'pp2DrawNeed', 'pp2DrawMatches', 'pp2DrawJoin', 'pp2HasProfile', 'pp2OpenProfile',
+    // founder 2026-10-23: the Derived lines Field's fetch trigger (pp2FieldNeed: one fetch per session) — a trigger; the
+    // field itself (pp2Field) is a store with its own row above
+    'pp2FieldNeed',
     // founder 2026-10-16 (round 3, item 1): the host's one source wording for a price (fhSrcTitle, the Match analysis
     // Tournament tab's words) — Record per tournament's H / A hover reads it; a display function, no rows
-    'fhSrcTitle']);
+    'fhSrcTitle',
+    // founder ruling 2026-10-20 item 1: the host's "Data paused" rule for a Mac-only feed (sfFeedPaused over the
+    // career-splits-tour.json build date the page already loaded) — logic, no rows
+    'sfFeedPaused',
+    // bet105-line-prices: the host's repaint once a line-price shard lands (Derived lines' price cell) — a trigger, no rows
+    'pp2RepaintIfOpen']);
   for (const cb of HOST_CALLBACKS) {
     assert(new RegExp(`typeof window\\.${cb} === 'function'`).test(src),
       `window.${cb} is called without a typeof guard — the page must not assume the host defines it`);
@@ -4318,17 +4377,13 @@ mustFail('the bridge check would catch a store left unassigned', () => {
 // Reproduced live before this guard existed: opening a v2 profile and then
 // firing ppRepaint() (which three lazy loaders do when they resolve) replaced
 // the rebuilt page with the LEGACY one, mid-session, in front of the reader.
-check('ppRepaint hands back to v2 instead of overwriting it with the legacy page', () => {
+check('ppRepaint hands back to v2 and never paints the retired legacy page', () => {
   const body = DASHBOARD.slice(DASHBOARD.indexOf('function ppRepaint()'));
   const fn = body.slice(0, body.indexOf('\n}'));
-  const guardAt = fn.indexOf('PlayerProfileV2.repaint()');
-  const legacyAt = fn.indexOf('buildPlayerProfileHtml(profile)');
-  assert(guardAt > -1, 'ppRepaint does not delegate to v2 — a lazy loader will clobber the page');
-  assert(legacyAt > -1, 'ppRepaint no longer paints the legacy page at all — verify that was intended');
-  assert(guardAt < legacyAt,
-    'the v2 delegation comes AFTER the legacy innerHTML write, so it cannot prevent the clobber');
-  assert(/return;/.test(fn.slice(guardAt, legacyAt)),
-    'the v2 branch does not return — it falls through and repaints legacy anyway');
+  assert(fn.indexOf('PlayerProfileV2.repaint()') > -1, 'ppRepaint does not delegate to v2 — a lazy loader will clobber the page');
+  // the legacy renderer is retired (2026-10-21): with no v2 page painted (a load error) ppRepaint writes nothing
+  const code = fn.split('\n').filter(l => !/^\s*\/\//.test(l)).join('\n');   // its comments name innerHTML
+  assert(!/innerHTML|buildPlayerProfileHtml/.test(code), 'ppRepaint writes the view — it would paint over the load error');
 });
 
 mustFail('the ppRepaint-guard check would catch the guard being removed', () => {
@@ -4428,6 +4483,70 @@ check('TEN-313: an edition W-L does not count a walkover received (tournViews)',
       { res: 'L', round: 'QF', opp: 'C. Three', score: '1 - 2' }] }] }] };
   const v = I.tournViews(p)[0];
   assert.deepStrictEqual([v.won, v.lost, v.reconciles], [1, 1, true]);
+});
+
+// TEN-344 (founder 2026-10-23, ported from c29dc76af): the same two surfaces over EVERY player of the store under test.
+const isWoRow = (m) => !!(m && (m.walkover || m.res === 'WD'));
+// 1 · Tournament header (stored t.won / t.lost) = the edition rows that were PLAYED.
+function woHeaderViolations(players) {
+  const out = [];
+  for (const p of Object.values(players)) for (const t of (p && p.tournamentHistory) || []) {
+    let w = 0, l = 0;
+    (t.editions || []).forEach((e) => (e.matches || []).forEach((m) => { if (isWoRow(m)) return; if (m.res === 'W') w++; else if (m.res === 'L') l++; }));
+    if ((t.won || 0) !== w || (t.lost || 0) !== l) out.push(`${p.name} / ${t.name}: header ${t.won}-${t.lost}, played ${w}-${l}`);
+  }
+  return out;
+}
+// A real tournament win, flipped to a walkover with its header left alone — precisely a header that counts a walkover.
+function woFirstWin(players) {
+  for (const k of Object.keys(players)) for (const t of (players[k] && players[k].tournamentHistory) || []) for (const e of t.editions || [])
+    for (const m of e.matches || []) if (m.res === 'W' && !isWoRow(m)) return { k, t: t.name, year: e.year, opp: m.opp };
+  return null;
+}
+const WO_WIN = woFirstWin(PLAYERS);
+function woFlipped() {
+  const p = JSON.parse(JSON.stringify(PLAYERS[WO_WIN.k]));
+  const e = p.tournamentHistory.find((t) => t.name === WO_WIN.t).editions.find((x) => x.year === WO_WIN.year);
+  e.matches.find((m) => m.res === 'W' && m.opp === WO_WIN.opp && !isWoRow(m)).walkover = true;
+  return p;
+}
+check('TEN-344 · tournament header: no stored tournament W-L counts a walkover (whole store)', () => {
+  assert.ok(WO_WIN, 'no tournament win anywhere in the store — the scan measured nothing');
+  const v = woHeaderViolations(PLAYERS);
+  assert.strictEqual(v.length, 0, `${v.length} header(s) count a walkover: ${v.slice(0, 3).join('; ')}`);
+  console.log(`        ${Object.values(PLAYERS).reduce((n, p) => n + ((p && p.tournamentHistory) || []).length, 0)} tournament headers scanned`);
+});
+mustFail('TEN-344 · tournament header: a header still counting a win that became a walkover is caught', () => {
+  assert.strictEqual(woHeaderViolations({ [WO_WIN.k]: woFlipped() }).length, 0);
+});
+// 2 · Edition rows as RENDERED (tournViews -> editions[].won / .lost), every player.
+function woEditionViolations(mod, players) {
+  const out = [];
+  for (const p of Object.values(players)) if (p) for (const v of mod.tournViews(p)) for (const e of v.editions || []) {
+    const ms = e.matches || [];
+    const w = ms.filter((m) => m.res === 'W' && !isWoRow(m)).length, l = ms.filter((m) => m.res === 'L' && !isWoRow(m)).length;
+    if (e.won !== w || e.lost !== l) out.push(`${p.name} / ${v.name} ${e.year}: row ${e.won}-${e.lost}, played ${w}-${l}`);
+  }
+  return out;
+}
+const WO_EDITION_ANCHOR = "ms.forEach(function (m) { if (m.walkover) return; if (m.res === 'W') w++; else if (m.res === 'L') l++; });";
+function woEditionMutant() {
+  const src = fs.readFileSync(path.join(ROOT, 'player-profile-v2.js'), 'utf8');
+  assert.strictEqual(src.split(WO_EDITION_ANCHOR).length - 1, 1, 'TEN-344 edition anchor not found exactly once — the control would be vacuous');
+  const saved = global.window;
+  const sb = { FEATURE_PP2: true, playerProfiles: { players: {} }, courtSpeedMap: SPEED_MAP, COURT_CONDITIONS: DASH_SPEED.cc,
+    courtSpeedCategory: DASH_SPEED.cat, TournamentIdentity: require('../tournament-identity.js') };
+  global.window = sb;
+  try { new Function('window', src.replace(WO_EDITION_ANCHOR, WO_EDITION_ANCHOR.replace('if (m.walkover) return; ', '')))(sb); } finally { global.window = saved; }
+  return sb.PlayerProfileV2._internals;
+}
+check('TEN-344 · edition rows: no rendered edition W-L counts a walkover (tournViews, whole store)', () => {
+  const v = woEditionViolations(I, PLAYERS);
+  assert.strictEqual(v.length, 0, `${v.length} edition row(s) count a walkover: ${v.slice(0, 3).join('; ')}`);
+  assert.strictEqual(woEditionViolations(I, { [WO_WIN.k]: woFlipped() }).length, 0, 'a walkover flipped into a real edition was counted');
+});
+mustFail('TEN-344 · edition rows: the edition count without its walkover guard is caught', () => {
+  assert.strictEqual(woEditionViolations(woEditionMutant(), { [WO_WIN.k]: woFlipped() }).length, 0);
 });
 // (TEN-442: the season drill no longer reads tournament-history editions, so drillSpine's walkover skip is gone with
 // it. The store it reads, career-history, carries no walkover by construction — tools/test-ten313-records.js
@@ -4590,6 +4709,18 @@ function ledgerHtmlFor(p) {
 check('item 1 · the back link reads "Back to Players"', () => {
   const html = I.renderBackLink();
   assert(/>\s*Back to Players<\/a>/.test(html), `back link is: ${html.slice(-40)}`);
+});
+// ESC follow-ups brief: the words follow the host's return trail (sfDetailBackLabel), escaped; no host = the list.
+check('item 1 · the back link names the host\'s real destination, escaped', () => {
+  const had = Object.prototype.hasOwnProperty.call(global.window, 'sfDetailBackLabel'), prev = global.window.sfDetailBackLabel;
+  try {
+    global.window.sfDetailBackLabel = () => 'Back to Matches';
+    assert(/>\s*Back to Matches<\/a>/.test(I.renderBackLink()), 'Matches origin');
+    global.window.sfDetailBackLabel = () => 'Back';
+    assert(/<\/svg>Back<\/a>/.test(I.renderBackLink()), 'unknown origin reads plain Back');
+    global.window.sfDetailBackLabel = () => 'Back to <b>';
+    assert(/Back to &lt;b&gt;<\/a>/.test(I.renderBackLink()), 'escaped');
+  } finally { if (had) global.window.sfDetailBackLabel = prev; else delete global.window.sfDetailBackLabel; }
 });
 mustFail('the back-link check would catch the old one-word label', () => {
   assert(/>\s*Back to Players<\/a>/.test('<a>Players</a>'), 'back link is wrong');

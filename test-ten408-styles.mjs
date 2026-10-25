@@ -410,7 +410,7 @@ test('one style per player: the Blanch pair on Match analysis / Head to Head (pp
   assert.ok(checkOneStyle(mut('.some(t => g.startsWith(t) || t.startsWith(g));', '.slice(0, 1).some(t => g.startsWith(t) || t.startsWith(g));')), 'mutant: the key name compared on its first word only (scrambled names)');
   // every caller that holds a key passes it
   for (const c of ['ppStyleFor(other, idx ? m.p1Key : m.p2Key)', 'ppStyleFor(name, side ? m.p2Key : m.p1Key), opp = ppStyleFor(other, side ? m.p1Key : m.p2Key)',
-    'ppStyleFor(m.p1, m.p1Key), s2 = ppStyleFor(m.p2, m.p2Key)', 'ppStyleFor(p && p.name, p && p.key)', 'ppStyleFor(p.name, p.key)', 'styleOf(r.opp, r.oppKey)',
+    'ppStyleFor(m.p1, m.p1Key), s2 = ppStyleFor(m.p2, m.p2Key)', 'ppStyleFor(p && p.name, p && p.key)', 'styleOf(r.opp, r.oppKey)',
     'styleOf(opp, k ? m.p1Key : m.p2Key)', 'ppStyleFor(p.full, p.key)', 'pgArchetypeFor(p.name, p.key)'])
     assert.ok(HTML.includes(c), 'a caller lost its key: ' + c);
   assert.equal((HTML.match(/ppStyleFor\((?![^)]*[Kk]ey)[^)]*\)/g) || []).filter(x => !/ppStyleFor\(name, key\)/.test(x)).length, 0, 'a ppStyleFor call without the key');

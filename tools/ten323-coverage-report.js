@@ -48,7 +48,7 @@ let players = 0;
 for (const f of fs.readdirSync(chDir).filter(f => /^\d+\.json$/.test(f))) {
   players++;
   for (const r of (readJson(path.join(chDir, f)).matches || [])) {
-    if (!r || r.eventKey == null || !r.date || r.date < '2021-01-01' || r.date > THROUGH) continue;
+    if (!r || r.walkover || r.eventKey == null || !r.date || r.date < '2021-01-01' || r.date > THROUGH) continue;
     const tier = tierOf(r);
     if (!tier) continue;
     const ek = String(r.eventKey);

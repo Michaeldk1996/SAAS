@@ -1,0 +1,99 @@
+# Archive fill probe + fill (round 2, item 1.4). Dispatch only, never scheduled.
+#
+#   write=false (default) — the PLAN run, read-only: measures Oddspapi trueStart vs our live-flip (17 Sep .. measure_to),
+#     applies the founder rule of 2026-10-25 (n < 50 stop; later in <= 2% and never > 2 min -> cut at trueStart; else
+#     trueStart - X min, X = ceil(p98 lateness)), builds the fill rows, their diff against pinnacle_archive_close and a
+#     plan digest. Artifact: archive-fill-plan.
+#   write=true + plan_digest — the WRITE run: recomputes the plan with the same inputs, refuses unless its digest equals
+#     plan_digest, the rule is not 'stop', n >= 50 and a fresh read finds no candidate's event key or dedupe key held;
+#     then INSERTs exactly the plan's rows (pinarch.insert, ON CONFLICT DO NOTHING) and one pinnacle_archive_count row.
+#     The write guard (check_write_request) lets out nothing but those INSERTs and GETs. Artifact: archive-fill-write.
+#
+# What the permanent Pinnacle archive (oddspapi_archive_raw) could yield for ATP main-draw matches of from .. to (default
+# 13 Apr - 16 Sep 2026): pinnacle+30 payload held, first captured price (flagged < 6 h before the start), a close cut at
+# the ruled start ladder with close_reliable, against what the site exports today. Candidate close rows and their diff
+# against pinnacle_archive_close go into the plan artifact; nothing is inserted until a write=true dispatch with its digest.
+#
+# How the plan run is read-only (tools/archive-fill-probe.py, install_guard): every PostgREST call is checked before it is
+# sent — GET only, an allow-listed table, a select, no body, no write Prefer / on_conflict; pinarch's insert, count
+# record and RPC helpers are replaced by refusers. PostgREST runs each GET in a READ ONLY transaction, and the archive's
+# triggers refuse UPDATE / DELETE / TRUNCATE. `permissions: contents: read`: no commit-back, no push.
+name: Archive fill probe and fill
+on:
+  workflow_dispatch:
+    inputs:
+      from:
+        description: first Tennis-Data date (inclusive, YYYY-MM-DD)
+        required: false
+        default: '2026-04-13'
+      to:
+        description: last Tennis-Data date (inclusive, YYYY-MM-DD)
+        required: false
+        default: '2026-09-16'
+      measure_to:
+        description: last live-flip day measured (UTC, inclusive). Empty = yesterday. The write run MUST repeat the plan run's value
+        required: false
+        default: ''
+      write:
+        description: "'false' = plan only (read-only); 'true' = insert the plan's rows (needs plan_digest)"
+        required: false
+        default: 'false'
+      plan_digest:
+        description: write=true only — the 64-hex plan digest from the archive-fill-plan artifact
+        required: false
+        default: ''
+permissions:
+  contents: read
+concurrency:
+  group: archive-fill-probe
+  cancel-in-progress: false
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Refuse to run off main
+        run: |
+          if [ "${GITHUB_REF}" != "refs/heads/main" ]; then echo "::error::the probe runs from main only (got ${GITHUB_REF})"; exit 1; fi
+      - name: Unit test of the pure logic (no network) before any read
+        run: python3 -B tools/test-archive-fill-probe.py
+      - name: Plan (GET only) — or, with write=true and the approved digest, the INSERT of exactly that plan
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          API_TENNIS_KEY: ${{ secrets.API_TENNIS_KEY }}
+          FROM: ${{ github.event.inputs.from || '2026-04-13' }}
+          TO: ${{ github.event.inputs.to || '2026-09-16' }}
+          MEASURE_TO: ${{ github.event.inputs.measure_to }}
+          WRITE: ${{ github.event.inputs.write || 'false' }}
+          PLAN_DIGEST: ${{ github.event.inputs.plan_digest }}
+        run: |
+          set -euo pipefail
+          MT=()
+          if [ -n "$MEASURE_TO" ]; then MT=(--measure-to "$MEASURE_TO"); fi
+          # fail closed: only the exact value "true" writes; anything but "true" / "false" runs nothing
+          case "$WRITE" in
+            false) python3 -B tools/archive-fill-probe.py --out archive-fill --from "$FROM" --to "$TO" "${MT[@]}" ;;
+            true)  python3 -B tools/archive-fill-probe.py --out archive-fill --from "$FROM" --to "$TO" "${MT[@]}" --write true --plan-digest "$PLAN_DIGEST" ;;
+            *)     echo "write must be exactly 'true' or 'false' (got '$WRITE') — nothing run" >&2; exit 2 ;;
+          esac
+          cat archive-fill/archive-fill-probe.md >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload the plan
+        if: always() && github.event.inputs.write != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: archive-fill-plan
+          path: archive-fill/
+          retention-days: 30
+          if-no-files-found: warn
+      - name: Upload the write result
+        if: always() && github.event.inputs.write == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: archive-fill-write
+          path: archive-fill/
+          retention-days: 90
+          if-no-files-found: warn

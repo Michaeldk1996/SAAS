@@ -18,8 +18,8 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 export const CODE_REQUIRED = ['index.html', 'bsp-consult-dashboard.html', 'auth.html', 'account.html', 'funnel.html', 'verify.html',
-  'auth.js', 'analytics.js', 'house-ratings.js', 'live-tab.js', 'kibl-now-stream.js', 'price-history-box.js', 'holdbreak-heatmap.js',
-  'player-profile-v2.js', 'market-edge-core.js', 'tournament-identity.js', 'h2h-core.js', 'wue-sheet.js', 'series.js', 'series.css', 'tokens.css', 'theme.js',
+  'auth.js', 'analytics.js', 'house-ratings.js', 'live-tab.js', 'kibl-now-stream.js', 'price-history-box.js', 'line-prices.js', 'holdbreak-heatmap.js',
+  'player-profile-v2.js', 'settlement.js', 'market-edge-core.js', 'tournament-identity.js', 'h2h-core.js', 'wue-sheet.js', 'draw-view.js', 'esc-nav.js', 'pbp-integrity.js', 'series.js', 'series.css', 'tokens.css', 'theme.js',
   'drops-page.js', 'drops-page.css', 'assets/logo-dark-transparent.png', 'assets/ring-transparent.png'];
 const DASH = ['index.html', 'bsp-consult-dashboard.html'];
 const ANCHOR = '<meta charset="UTF-8">';
@@ -33,8 +33,9 @@ export function publish({ code, site, env = process.env }) {
   if (!fs.existsSync(path.join(site, 'matches.json'))) fail(`${site} holds no pipeline data (matches.json missing)`);
   const dataInfo = fs.existsSync(dataInfoFile) ? JSON.parse(fs.readFileSync(dataInfoFile, 'utf8')) : {};
 
-  // 1. code over data
-  execFileSync('bash', [path.join(ROOT, 'tools', 'site-code.sh'), code, site], { stdio: 'inherit' });
+  // 1. code over data — with the GATED checkout's own file list (founder 2026-10-21). The tip's list named draw-view.js
+  // while the gated code (e3cc5f0dd) predated it: every publish failed "cp: cannot stat" until the gate caught up.
+  execFileSync('bash', [path.join(code, 'tools', 'site-code.sh'), code, site], { stdio: 'inherit' });
 
   // 2. public Supabase config (placeholders stay when the secrets are absent, as pipeline.yml does)
   if (env.SUPABASE_URL && env.SUPABASE_PUBLISHABLE_KEY) {

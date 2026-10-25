@@ -80,6 +80,10 @@ jobs:
           # BEFORE the poller deploy below, since the poller calls write_live_pbp().
           apply supabase/migrations/20260901000000_live_pbp.sql
           apply supabase/migrations/20260901000100_live_pbp_rpc.sql
+          # Point-by-point carry-over (founder brief 2026-10-23): a finished match's row is kept 6 h (ended_at) and the
+          # poller writes the provider's final log into it. AFTER live_pbp_rpc.sql (it replaces that one-argument
+          # write_live_pbp) and BEFORE the poller deploy (the new poller calls the two-argument form + the finals RPCs).
+          apply supabase/migrations/20261024000000_live_pbp_retention.sql
 
       - name: Set Edge Function secrets (Management API)
         run: |
@@ -163,4 +167,9 @@ jobs:
           age=$(echo "$snap" | jq -r '.[0].updated_at' | { read ts; node -e "console.log(Math.round((Date.now()-new Date(process.argv[1]).getTime())/1000))" "$ts"; })
           echo "  snapshot age: ${age}s"
           [ "$age" -lt 180 ] || { echo "::error::snapshot is stale (${age}s) — poller not writing"; exit 1; }
+          echo "── live_pbp carry-over columns readable by the browser role"
+          pb=$(curl -sS -w $'\n%{http_code}' "$SUPABASE_URL/rest/v1/live_pbp?select=event_key,ended_at,final,final_at&limit=1" \
+            -H "apikey: $SUPABASE_PUBLISHABLE_KEY" -H "Authorization: Bearer $SUPABASE_PUBLISHABLE_KEY")
+          pcode=$(printf '%s' "$pb" | tail -n1); echo "  http $pcode"
+          [ "$pcode" = "200" ] || { echo "::error::live_pbp carry-over columns not readable ($pcode): $(printf '%s' "$pb" | sed '$d')"; exit 1; }
           echo "✅ Live proxy is up: poller wrote a fresh snapshot, readable by the browser anon role."

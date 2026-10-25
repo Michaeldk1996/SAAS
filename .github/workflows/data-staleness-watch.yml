@@ -1,0 +1,55 @@
+name: Data staleness watch (pg_cron)
+
+# Founder ruling 2026-10-25: the published-data staleness alert runs in the Supabase pg_cron heartbeat, every 10 min
+# (GitHub's */15 schedule never fired on this repo). This workflow only INSTALLS / inspects / removes it, by hand:
+#   install    the Telegram secrets → Vault under the watch's own names, the SQL (tools/data-staleness-watch.sql),
+#              the cron job stale_watch_10min, a first tick, a test ping that must be CONFIRMED delivered (pg_net 2xx);
+#   status     the job, the last tick, the last checks and messages;
+#   uninstall  the job, the schema and its two Vault entries.
+# Results are encrypted to tools/ten294-pub.pem (the TEN-294 runner): the log carries statement names and HTTP
+# status only, never a secret. Uses repo secrets that already exist: SUPABASE_URL, SUPABASE_ACCESS_TOKEN,
+# TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID. Its test: the SQL test beside tools/data-staleness-watch.sql.
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'install | status | uninstall'
+        required: true
+        default: 'status'
+        type: choice
+        options: [install, status, uninstall]
+
+concurrency:
+  group: data-staleness-watch
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  manage:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with: { ref: main }
+      - name: SQL test (throwaway Postgres)
+        if: inputs.action == 'install'
+        run: python3 tools/test-data-staleness-watch-sql.py
+      - name: Supabase steps (encrypted output)
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TEN294_STEPS: ${{ inputs.action == 'install' && 'tools/data-staleness-watch-steps.json' || inputs.action == 'uninstall' && 'tools/data-staleness-watch-steps-uninstall.json' || 'tools/data-staleness-watch-steps-status.json' }}
+        run: python3 tools/ten294-sql.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: data-staleness-watch-${{ inputs.action }}
+          path: |
+            out/result.enc
+            out/pass.enc
+          retention-days: 2

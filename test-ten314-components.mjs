@@ -126,15 +126,17 @@ test('maPopFrame: outside click closes, an inner click does not; ✕ closes', ()
   new Function('close', /class="seg ma-pop-x"[^>]*onclick="([^"]*)"/.exec(h)[1])(close); assert.equal(closed, 2, '✕ closes');
 });
 
-// Mutation: maPopEscKey closes the first frame instead of the topmost, ignores Escape, or the listener is never registered.
-test('Esc closes the topmost frame through its ✕; other keys do nothing; one listener, bubble phase', () => {
+// Mutation: maPopEscKey closes the first frame instead of the topmost, ignores Escape, or its Esc layer is never registered.
+// ESC brief 2026-10-21: maPopEscKey is the close of the 'ma-pop' layer in the one Esc handler (esc-nav.js), not a listener.
+test('Esc closes the topmost frame through its ✕; other keys do nothing; one layer in the global handler', () => {
   const log = [];
   const frame = id => ({ querySelector: s => (s === '.ma-pop-x' ? { click: () => log.push(id) } : null) });
   const E = api({ querySelectorAll: s => (s === '.ma-pop-overlay' ? [frame('under'), frame('top')] : []) });
   E.maPopEscKey({ key: 'Enter' }); assert.deepEqual(log, []);
   E.maPopEscKey({ key: 'Escape' }); assert.deepEqual(log, ['top']);
   api({ querySelectorAll: () => [] }).maPopEscKey({ key: 'Escape' });   // nothing open: no throw
-  assert.match(html, /\ndocument\.addEventListener\('keydown', maPopEscKey\);\n/);
+  assert.match(html, /\.push\(\{ id: 'ma-pop', z: 78, isOpen: \(\) => !!document\.querySelector\('\.ma-pop-overlay \.ma-pop-x'\), close: \(\) => maPopEscKey\(\{ key: 'Escape' \}\) \}\);/);
+  assert.ok(!/addEventListener\('keydown', maPopEscKey/.test(html), 'no listener of its own');
   assert.ok(!/_me\.S\.meBand \|\| _me\.S\.meLine\)\) return;\n  meSet\(\{ meBand: null, meLine: null \}\);/.test(html), 'Market edge has no second Esc listener');
 });
 
@@ -207,11 +209,14 @@ test('tooltip: .elotip-pop — 120ms opacity, raised surface, strong hairline, m
   assert.match(U.maTipHtml('<b>x</b>', 'tip'), /^<span class="elotip"[^>]*><b>x<\/b><span class="elotip-pop" role="tooltip"[^>]*><span style="[^"]*">tip<\/span><\/span><\/span>$/);
 });
 
-// Mutation: the sheet's Esc listener loses capture:true or stopPropagation (one Esc would close the sheet AND the
-// Market edge pop-up under it — review 2026-09-28), or closing the modal leaves #mePop behind.
-test('Esc closes the topmost layer only: the stats sheet (capture phase, stops the event) before any pop-up frame; closing the modal clears both', () => {
+// Mutation: the sheet's Esc layer ranked at or below the pop-up frame (one Esc would close the Market edge pop-up under
+// the sheet first — review 2026-09-28), or closing the modal leaves #mePop behind. Since the ESC brief (2026-10-21) the
+// one handler (esc-nav.js) closes ONE layer per press, highest z first, and stops the event; the order is the z.
+test('Esc closes the topmost layer only: the stats sheet (ranked above every pop-up frame) first; closing the modal clears both', () => {
   const H = readFileSync(process.env.TEN314_HTML || join(HERE, 'bsp-consult-dashboard.html'), 'utf8');
-  assert.ok(H.includes("document.addEventListener('keydown', ev => { if (ev.key === 'Escape' && _fh && _fh.sheet){ ev.stopPropagation(); fhCloseSheet(); } }, true);"), 'sheet: capture phase + stopPropagation');
+  const z = id => { const m = new RegExp(`\\.push\\(\\{ id: '${id}', z: (\\d+),`).exec(H); return m ? +m[1] : null; };
+  assert.ok(H.includes("{ id: 'fh-sheet', z: 80, isOpen: () => typeof _fh !== 'undefined' && !!(_fh && _fh.sheet), close: () => fhCloseSheet() }"), 'sheet: its own Esc layer');
+  assert.ok(z('fh-sheet') > z('ma-pop') && z('ma-pop') > z('analysis-modal'), `sheet ${z('fh-sheet')} > pop-up ${z('ma-pop')} > modal ${z('analysis-modal')}`);
   const at = H.indexOf('\nfunction closeAnalysisModal(');
   const close = H.slice(at, H.indexOf('\n', at + 1));
   assert.ok(close.includes('fhCloseSheet()') && close.includes("const mp = document.getElementById('mePop'); if (mp) mp.innerHTML = '';"));

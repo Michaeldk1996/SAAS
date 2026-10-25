@@ -1,0 +1,13 @@
+{
+ "note": "Approved archive-gate drops (founder ruling 2026-10-18). Written by \"node tools/archive-gate.mjs accept\"; a hand edit is refused.",
+ "entries": [
+  {
+   "key": "feedRows",
+   "expect": 286,
+   "reason": "defect brief 2026-10-24 item 1 (fbe32022f): the feed's qualifying flag decides - the 12 Almaty 2026 qualifying matches api-tennis labels Semi-finals/Final leave the td-feed (298 -> 286)",
+   "by": "bsp-ceo-bot",
+   "at": "2026-10-24T17:00:30.481Z",
+   "check": "54632161c4e556f2"
+  }
+ ]
+}

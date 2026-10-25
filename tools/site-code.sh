@@ -21,12 +21,17 @@ cp house-ratings.js "$SITE/"
 cp live-tab.js "$SITE/"
 cp kibl-now-stream.js "$SITE/"
 cp price-history-box.js "$SITE/"
+cp line-prices.js "$SITE/"
 cp holdbreak-heatmap.js "$SITE/"
 cp player-profile-v2.js "$SITE/"
+cp settlement.js "$SITE/"
 cp market-edge-core.js "$SITE/"
 cp tournament-identity.js "$SITE/"
 cp h2h-core.js "$SITE/"
 cp wue-sheet.js "$SITE/"
+cp draw-view.js "$SITE/"
+cp esc-nav.js "$SITE/"
+cp pbp-integrity.js "$SITE/"
 cp admin.html admin-config.js "$SITE/" 2>/dev/null || true
 cp trading-report.js "$SITE/" 2>/dev/null || true
 cp series.js series.css "$SITE/" 2>/dev/null || true

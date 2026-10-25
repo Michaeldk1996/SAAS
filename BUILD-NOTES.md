@@ -2156,3 +2156,114 @@ modal-progression, odds, player-profile). Reasoning, where it is not in the ruli
   (computed while the match was upcoming); a `past-` one never does.
 - **Alias scope:** H2H join only (`h2h-core.js`), the one table, one pair. 7374f71ab already treats 34000/1735 as one
   person inside the Tennis-Data price identity gate; that gate is unchanged.
+
+## Walkovers visible, retirements on Pinnacle rules (2026-10-22)
+- **Why walkovers became rows:** Griekspoor's Vienna 2025 QF walkover to Zverev (api-tennis 12081982, status `Walk Over`)
+  was missing from every match list. `playerMatchHistory` skipped every walkover on status and the shard writer stripped
+  any that reached it, so 0 of 870 api-tennis walkover player-sides (2021 →, profiled players) reached a career-history
+  file and Court speed / Calendar / Streaks could not list them. Counting was already right (N2); only the rows were lost.
+- **Why explicit flags only:** Tennis Explorer's `wo` is an empty score. Of its 1,709 empty-score rows (631 players), 82
+  are exhibitions (51 Ultimate Tennis Showdown in 2025, scored in quarters), 38 were played (Sackmann score; Gasquet d.
+  Verdasco, Buenos Aires 2004, was left out of his record), 1,261 are walkovers and 328 stay unconfirmed (mostly ITF
+  qualifying, which neither api-tennis nor Sackmann carries).
+- **Why Pinnacle rules for retirements:** founder ruling; settles every book's price the same way. Measured 22 Oct over
+  477 players' ledgers (player-side rows): 186 retirements before the first set was complete become void (Pinnacle 184,
+  +29.66u; bet365 2, +1.40u) and 13 with no stored set scores lose their units (+1.36u).
+- **Why walkover rows are not Database evidence (founder 2026-10-23):** read by `started-evidence.js`, the new rows moved
+  Database rows from "started" (priced) to a dash and the archive gate stopped every pipeline run (xRows 80,581 < 80,582,
+  22 Oct). The 22 Oct hotfix held them out pending a measured override; the founder made that permanent instead: the
+  rows exist for the match lists, and Tennis-Data's own "Walkover" comment already carries a true walkover to its dash.
+- **Targets:** our counting (TEN-449) stands; Tennis Explorer decides which matches exist, not what TEN-449 excludes.
+  The brief's first targets (465–302 / 33–25) were TE's own balance, which counts Bundesliga club matches.
+
+## Per-source gate counts: alert for the price join, stop for Database figures (2026-10-24, ruled, not built)
+- **Why:** on 23 Oct the captured-Bet365 name join depended on the day's board. 00:00Z: resolved captures 4,804 → 4,684,
+  captured-Bet365 rows 185 → 176, two matches unpriced, master −2: the total gate stopped every run, naming only "the archive
+  answered short". 18:21Z: the same loss (4,678 / 175) passed, masked by ~1,800 new Tennis Explorer rows. Fixed at the source
+  in [WALKOVER-GATE] `2ee934e50` (first run after: 7,422 captures, 311 rows, gate +34).
+- **What a per-source check would have done:** named the cause at 00:00Z; and at 18:21Z, as a hard stop, kept the site stale
+  ~7 more hours over 10 rows that feed no Database figure. Hence the founder's split: hard stop only where a Database figure
+  moves, an alert where only the price join does.
+
+## Player photos: one resolver, ATP headshot by player ID (2026-10-22)
+- **Why one source:** eleven surfaces read photos three ways (ATP alias -> Wikimedia -> api-tennis logo; ATP -> monogram;
+  initials only), so one player could show three faces, and the api-tennis logo is where a wrong face shipped (TEN-97).
+  The founder ruled one player, one photo, everywhere: the ATP headshot by ID, else the monogram.
+- **Why the Trading Report, Live, Series, Ratings and H2H changed back to photos:** their "no photos" overrides
+  (TEN-421, TEN-417, TEN-427) predate the ruling; the founder reversed them deliberately on 2026-10-22.
+- **Why a manifest, not a runtime check:** ATP serves its silhouette with HTTP 200, so an image error never fires; and ATP
+  answers 403 to the command line, so CI cannot fetch the files. A browser probe records each code's bytes + sha1 and ATP
+  record; CI checks the map against it (placeholder hash, shared bytes, birth year). The 2026-10-22 audit of all 184
+  codes found two wrong people (D214 Damm Sr. on Damm Jr.; H346 a 1977-born Mexican on a 21-year-old Venezuelan) and two
+  silhouettes (H346, TA12). Six other codes differ from the profile only in the country label (TPE vs Taiwan; neutral
+  Russians shown as World) — not mismatches.
+- **Why the photo layer paints the circle's fill:** ATP headshots are transparent PNGs (17–58% transparent pixels, n=5),
+  so a monogram drawn underneath shows through around the head unless the photo carries the circle's own fill.
+- **Not built (report-first):** Drops (the drops service links 264 of 339 rows to an api-tennis fixture but drops the
+  player keys; upcoming rows are linked only after a live sighting) and Tournament quotes (surname vs that edition's
+  entrants: 155 of 180 dated notes unique, 3 ambiguous Cerundolo, 9 unmatched spellings, 13 with no entrant list).
+
+## Player photos round 2: Drops and quotes by ID, the Wikimedia map deleted (2026-10-23)
+- **Why the Drops join is the Kibl rule and not boardKeyFor:** the founder ruled the Kibl rule (full compound surname,
+  initial against any given name, Jr/Sr dropped, ±24 h, exactly one). boardKeyFor (first initial + last token, 36 h)
+  still joins prices and events, unchanged — scope. Measured 23 Oct on 378 live rows: 99 of 101 ATP rows join, 0
+  ambiguous; Challenger / ITF 0 of 277 (Today's Matches carries ATP fixtures only). Option 2 (the drops service keeps
+  the api-tennis player keys it already has, 78% of rows across tiers) is parked as a follow-up ticket.
+- **Why the quote initial is a tie-break only:** the founder ruled surname first; the initial counts only when it leaves
+  exactly one entrant (F. Cerundolo = Francisco). On the 165 shipped notes: 151 resolve, 0 ambiguous, 14 do not (13 with
+  no edition on record for that season — tournament-profiles.json keeps the last five editions and has no 2026 Kitzbuhel /
+  Washington / Los Cabos — and D. Rincon, not in Madrid 2023's main draw).
+- **Why player-photos.json could go:** nothing read it after 5456dee9d. Its only consumers were its own generator (run by
+  no job) and validate-player-photos.js (in no suite or workflow, and already failing on main since it required the
+  retired photoOverrideFor); the pipeline copy was `|| true` and outside the required-file asserts.
+
+## Legacy player view retired (2026-10-21)
+
+The full-page legacy renderer (`buildPlayerProfileHtml`, ~500 lines, with `ppCareerYears` and the helpers only it
+called) was reachable only as a fallback: `?pp2=0`, or the TEN-206 module failing to open. Its Record by season
+disagreed with the verified Career record — Hard included indoor matches, no Indoors or Surface-not-known column, no
+tier — and an empty year cell printed `0-0`. Founder chose to retire it rather than fix it: a profile that cannot paint
+now shows a load error with a Retry and no figures, so no reader can land on an older, different record. The `pp2`
+switch went with it (`FEATURE_PP2` is always true); there are no members, so no revert path is kept (CLAUDE.md
+rule 12). Removed with it: the six handlers and loaders left with no caller (`ppLegacySplitsLoads`,
+`loadOddsPerfShardThenRerender`, `setPpSurface`, `togglePpFollow`, `togglePpFormExpanded`, `setPpFormSurface`).
+Not swept: code those in turn fed, now unreachable too (`ppInsightsSplits`, `loadPointsAtRisk`, the legacy splits
+tables) — dead, not live, and left for a separate pass rather than chased through the file in one change.
+
+Points at Risk (TEN-172/173) went with it (founder, 2026-10-21): its tile, breakdown drawer and loader existed only in
+the legacy view — the TEN-206 profile never showed it — so its two tests (`tools/test-points-at-risk-dash.js`, the
+unwired `tools/points-at-risk/test-drawer-render.js`) were removed. Nothing rebuilds or publishes `points-at-risk.json`
+any more: the daily `points-at-risk.yml` is deleted, `pipeline.yml` no longer copies it into `_site`, and the deploy
+lane no longer lists it as a data-bot file. The last committed copy and `tools/points-at-risk/` stay in the repo
+(`round-classify.js` is still read by `tools/test-pp2-reconcile.js`).
+
+## Form and Tournament read the record's corrections (2026-10-21, option A)
+
+The founder's brief asked that Form and Tournament read "the same verified match data as the career record". They do
+not, by design: TEN-449 payload B keeps the record as its own population (the TE merge never changes the career-history
+files H2H, Lines and the model read). Measured on the deployed records (631 players): 115,560 Tennis-Explorer-only rows,
+11,015 indoor flags, 2,258 surfaces, 568 seasons and 2 results corrected on our rows. Of two readings — move the tabs onto
+the record's whole population (reverses payload B; TE-only rows have no box score or prices) or keep the feed's matches
+and show each with the record's corrections — the founder chose the second. Only result and surface are shown per match
+on these tabs, so those are the two fields applied; Tournament's edition W–L moves with a corrected result. The two real
+result corrections are retirements the feed scored as wins for the player who retired (TE: a loss, e.g. M15 Pirot 2021
+SF, 6-2 3-0 ret.); the set scores are already from the player's side, so the corrected L reads correctly beside them.
+
+## Player photos self-hosted (2026-10-24)
+- **Why:** measured 24 Oct, ATP's headshot CDN sits behind a Cloudflare challenge. A browser without Cloudflare's
+  clearance cookie (any private window; any browser that has not passed atptour.com's check recently) got 403
+  `cf-mitigated: challenge` for 24 of 24 headshots on Today's Matches, so avatars fell back to initials; cleared, the
+  same page took ~2.2 s for 849 KB of 300 px PNGs. Michael has an agreement with ATP covering stored copies.
+- **Why a visible Chrome on the Mac:** curl, GitHub runners and headless Chrome are all challenged; a normal Chrome
+  window clears it in under a second. Cloudflare re-challenges after ~25 rapid requests, so the job paces (0.7 s) and
+  re-opens a headshot page on any 403. 182 photos take ~3 min.
+- **Why WebP made in the browser:** canvas `convertToBlob('image/webp')` needs no image library in a zero-dependency
+  repo. 96 px mean 3.4 KB, 256 px mean 11.3 KB (n=182); every source byte-identical to the 22 Oct audited manifest.
+
+## Line prices move to the Kibl stream; stale at 180 s (2026-10-25)
+
+- **Route.** The Actions route (`line-prices.yml` → shard → pipeline publish) put a median of 112 min on screen (45–169 min, n=9). Its */15 cron delivered about one run in two hours.
+- **Founder ruling:** use the Kibl Now path through Supabase. The worker carries the six line markets and guards each fixture's ladder before writing. The page reads by REST.
+- **Measured on deployed code:** the heartbeat is 3.7–60.2 s old at read (median 30.5 s, n=60), and 98% of cells read "0m ago".
+- **Stale threshold.** It was 60 min on the old route, a figure set by publish lag. The founder set it to the Now's own 180 s live rule. A 60-minute rule on the stream would keep showing a price for an hour after the worker went quiet.
+

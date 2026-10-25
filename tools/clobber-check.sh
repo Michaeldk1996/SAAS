@@ -28,10 +28,13 @@
 #   <base>  the commit your edits are based on — the checkout you actually read
 #           and modified. `git rev-parse HEAD` at the moment you started, or the
 #           base of your `git worktree add --detach`.
-#   <file>  every file your commit will write.
+#   <file>  every file your commit will write — ONE path per argument. An empty
+#           argument, or one that is not a path in the repo (an unsplit list),
+#           is refused with exit 2: in zsh, pass a list with xargs, not $VAR.
 #
 # Exit 0: none of your files moved under you. Land.
 # Exit 1: at least one did. DO NOT LAND — rebase onto the new tip and replay.
+# Exit 2: bad input (no files, an empty or unsplit list, a non-path, a bad base).
 #
 # It runs `git fetch` first, because a check against a stale origin/main is the
 # same false all-clear it exists to prevent.
@@ -63,6 +66,40 @@ git fetch origin --quiet || {
 }
 
 TIP="$(git rev-parse origin/main)"
+
+# ── The file list must be real (ESC follow-ups brief, 2026-10-21) ────────────
+# A check that passes on an empty set is not a check. On 2026-10-21 the list
+# went in as one unquoted zsh variable: zsh does not word-split it, this script
+# got ONE argument holding every path, matched nothing, and printed "clear"
+# while 932c587b3 had moved three of the files. So every argument must be a
+# path git knows — at the base, at origin's tip, at HEAD, or a new file in the
+# working tree — and an empty argument is refused. This runs BEFORE the
+# "origin/main has not moved" early exit, which would otherwise wave a bad list
+# through too.
+TOP="$(git rev-parse --show-toplevel)"
+BAD=0
+for f in "$@"; do
+  if [ -z "$f" ]; then
+    echo "::error:: an empty file argument — an empty variable expanded into the list?" >&2
+    BAD=$((BAD + 1)); continue
+  fi
+  if git cat-file -e "${BASE}:${f}" 2>/dev/null || git cat-file -e "${TIP}:${f}" 2>/dev/null \
+     || git cat-file -e "HEAD:${f}" 2>/dev/null || [ -e "${TOP}/${f}" ]; then
+    continue
+  fi
+  case "$f" in
+    *[[:space:]]*)
+      echo "::error:: '${f}' is not a path in this repository and contains whitespace — an UNSPLIT file list (zsh does not split an unquoted \$VAR). Pass one path per argument, e.g. xargs tools/clobber-check.sh <base> < files.txt" >&2 ;;
+    *)
+      echo "::error:: '${f}' is not a path in this repository (at the base, origin/main, HEAD or in the working tree)." >&2 ;;
+  esac
+  BAD=$((BAD + 1))
+done
+if [ "$BAD" -gt 0 ]; then
+  echo "::error:: ${BAD} bad file argument(s) — refusing to report clear on a list that names nothing." >&2
+  exit 2
+fi
+
 echo "clobber check: base $(git rev-parse --short "$BASE") -> origin/main $(git rev-parse --short "$TIP")"
 
 if [ "$(git rev-parse "$BASE")" = "$TIP" ]; then

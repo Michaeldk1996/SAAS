@@ -60,7 +60,8 @@ function quoteApi(src) {
     'return { tourxQuoteClean, tourxQuoteTraceable, tourxQuoteAttrib, tourxQuoteText, tourxQuoteOtherEvent, TOURX_QUOTE_EXCLUDE };'].join('\n');
   return new Function(code)();
 }
-const baseTraceable = q => !!(q && q.player && q.year && (q.playerMatch === 'exact' || q.playerMatch === 'surname'));
+// founder 2026-10-24: traceable = the importer resolved the speaker to exactly one entrant of that tournament-season
+const baseTraceable = q => !!(q && q.player && q.year && q.playerMatch === 'entrant');
 // Independent detectors (not the cleaner's own patterns) — run on the raw sheet value and on the rendered words.
 const DET = {
   dateline: t => /^[“"]?\s*[A-Z]{3,}(?:[ -][A-Z]{2,})*\b\s*(?:[,:]|\s[-–]\s|\s*["“])/.test(t),
@@ -118,7 +119,7 @@ function checkQuotes(src) {
   const hou = QUOTES.Houston.find(q => /^after his win over McDonald:/.test(q.text));
   const mu = find('Bastad', 'L. Musetti', /defeating Musetti/);
   if (!hou || !mu) return 'conflict fixtures gone';
-  const mc = { ...hou, player: 'M. McDonald', playerMatch: 'surname', year: 2026 };
+  const mc = { ...hou, player: 'M. McDonald', playerMatch: 'entrant', year: 2026 };
   if (api.tourxQuoteTraceable(mc) || api.tourxQuoteTraceable(mu)) return 'a note crediting the beaten opponent still ships';
   const dropped = notes.filter(n => !api.tourxQuoteTraceable(n.q));
   if (dropped.length < 1 || dropped.length > 2 || !dropped.some(n => n.q === mu)) return 'expected only the beaten-opponent notes dropped, dropped ' + dropped.map(n => n.ev + ' ' + n.q.player).join(', ');

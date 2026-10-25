@@ -338,7 +338,7 @@ H.check('7 · a player missing from the standings: card and header both read the
     const document = { getElementById: id => els[id] || null };
     const tournamentProgression = { tournaments: {} };
     let pgLookupsLoaded = true;
-    const cardStartMs = () => NaN; const photoCandidatesFor = () => []; const pgArchetypeFor = () => null;
+    const cardStartMs = () => NaN; const playerPhotoImg = () => ''; const pgArchetypeFor = () => null;
     const pgEloFor = () => null; const loadPlayerCardLookups = () => {}; const mxOddsUpdatedAt = () => null;
     ${src}
     renderPlayers('');

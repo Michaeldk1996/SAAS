@@ -22,7 +22,7 @@ const CORE_MUTANTS = [
   ['walkovers counted', "  function played(rows) { return (rows || []).filter(x => !isWalkover(x)); }", "  function played(rows) { return rows || []; }"],
   ['dedupe off (Shanghai 2019 counted twice)', "    return drop.size ? rows.filter(x => !drop.has(x)) : rows;", "    return rows;"],
   ['the namesake rule dropped (a one-sided row credited to any same-named player)', "    const uniq = k => !!k && ((nkCount || {})[k] || 0) <= 1;", "    const uniq = k => !!k;"],
-  ['a 0 - 0 default read as a walkover (ATP counts defaults)', "    if (x.defaulted) return false;", "    if (false) return false;"],
+  ['ruling 3: the core infers a walkover from a 0 - 0 score again (a default, a 0 - 0 retirement read as one)', "    return !!(x && x.walkover);", "    return !!(x && (x.walkover || !/[1-9]/.test(String(x.result || ''))));"],
   ['Laver Cup excluded from H2H (ATP counts it)', "  const ATP_RECORD_NOT_COUNTED = /hopman cup|", "  const ATP_RECORD_NOT_COUNTED = /laver cup|hopman cup|"],
   ['the join\'s list no longer the exported ATP list (H2H_NOT_COUNTED a copy)', "  const H2H_NOT_COUNTED = ATP_RECORD_NOT_COUNTED;", "  const H2H_NOT_COUNTED = new RegExp(ATP_RECORD_NOT_COUNTED.source, 'i');"],
   // TEN-437 reconciliation fixes (founder 2026-10-16)
@@ -36,7 +36,6 @@ const CORE_MUTANTS = [
   ['D2: Davis Cup Group III/IV counted', "|davis cup.*group (iii|iv)\\b|davis cup g[34]\\b/i;", "/i;"],
   ['D3: a one-sided archive row credited on its name', "      if (r.src === 'archive') return !!up(r.oppId) && up(r.oppId) === up(other.id);", "      if (r.src === 'archive') return uniq(nkOther);"],
   ['D3: a feed row\'s api key ignored', "      if (r.oppKey != null && r.oppKey !== '') return other.key != null && ck(r.oppKey) === ck(other.key);", ""],
-  ['D5: a 0 - 0 retirement read as a walkover', "    if (x.retired) return false;", "    if (false) return false;"],
   ['D1: a same-day main-draw double read as qualifying (on-or-before instead of before)', "    if (md == null || d0 < md) return Object.assign({}, x, { qualifying: true });", "    if (md == null || d0 <= md) return Object.assign({}, x, { qualifying: true });"],
 ];
 const PAGE_MUTANTS = [
@@ -50,7 +49,7 @@ const PAGE_MUTANTS = [
   ['two meetings share one close (the pairing takes the first, not a dash)', "      if (cls.size !== grp.length) continue;", "      if (cls.size < 1) continue;"],
   ['the coverage line counts priced meetings only (Y ≠ the full H2H count)', "`${nP} of ${F.length} meetings priced`", "`${nP} of ${PR.length} meetings priced`"],
   ['D3: the tab passes no TML/ATP id', "id: key != null ? careerHistoryIdOf(key) : null", "id: null"],
-  ['D5: the page reads a 0 - 0 retirement as a walkover', "if (!r.wo && !r.def && !r.ret && !r.sets", "if (!r.wo && !r.def && !r.sets"],
+  ['ruling 3: the page infers a walkover from an empty score again (a 0 - 0 retirement read as one)', "  // Founder 2026-10-22 (ruling 3): a walkover is the row's EXPLICIT flag", "  if (!r.wo && !r.sets && (r.pS == null || r.pS + r.oS === 0)) r.wo = true;\n  // Founder 2026-10-22 (ruling 3): a walkover is the row's EXPLICIT flag"],
   ['S1: Next Gen sets read with the 6-game set test (a retirement)', "const setDone = x => (ng ? Math.max(x[0], x[1]) === 4 : fhSetDone(x));", "const setDone = x => fhSetDone(x);"],
   ['S1: games counted on a Next Gen match', "    r.gA = r.gB = r.tot = r.diff = null;   // S1", "    r.tot = 0; r.diff = 0;   // S1"],
   ['S1: a games-based hot line reads a Next Gen match', "  if (def.need === 'games' && r.ng) return false;", ""],
@@ -58,7 +57,7 @@ const PAGE_MUTANTS = [
   ['ruling 3: a price group paired by round alone (RG 2020 QF handed Hamburg 2020 F\'s close)', "const ms = grp.slice().sort((a, b) => String(a.date).localeCompare(String(b.date)) || (rk(a) || 0) - (rk(b) || 0))", "const ms = grp.slice().sort((a, b) => (rk(a) || 0) - (rk(b) || 0))"],
   ['ruling 3: ATP Cup / United Cup back in the window pairing', "!/davis cup|laver cup|atp cup|united cup/i.test(String(x.tournament || '')));\n    const cand", "!/davis cup|laver cup/i.test(String(x.tournament || '')));\n    const cand"],
   ['ruling 4: the Bet365 hover back to the source label', "const FH_B365_HOVER = 'Bet365 closing odds, Pinnacle not available';", "const FH_B365_HOVER = 'Bet365 close · Tennis-Data';"],
-  ['item 4: the H2H page meeting rows lose the B marker', "            hTitle: h2hPriceTitle(r), aTitle: h2hPriceTitle(r), hMark: r.price != null && r.book === 'B' ? 'B' : '',", "            hTitle: h2hPriceTitle(r), aTitle: h2hPriceTitle(r), hMark: '',"],
+  ['item 4: the H2H page meeting rows lose the B marker', "            hTitle: h2hPriceTitle(r), aTitle: h2hPriceTitle(r), hMark: typeof fhPxMark === 'function' ? fhPxMark(r) : r.price != null && r.book === 'B' ? 'B' : '',", "            hTitle: h2hPriceTitle(r), aTitle: h2hPriceTitle(r), hMark: '',"],
   ['ruling 4: the H2H hover spreads to Form (fhSrcTitle)', "`${FH_BOOK.A} · ${r.src === 'od10' ? SF_OD10_HOVER : r.src === 'te' ? SF_TE_HOVER : SF_APPROX_HOVER}` : fhB365Approx(r) ? (r.src === 'atb' ? FH_B365_AT_HOVER : FH_B365_APPROX_HOVER) : r && r.book ?", "`${FH_BOOK.A} · ${r.src === 'od10' ? SF_OD10_HOVER : r.src === 'te' ? SF_TE_HOVER : SF_APPROX_HOVER}` : fhB365Approx(r) ? (r.src === 'atb' ? FH_B365_AT_HOVER : FH_B365_APPROX_HOVER) : r && r.book === 'B' ? FH_B365_HOVER : r && r.book ?"],
   ['board exclusion: the tab counts its own match while upcoming / live', "  const own = m.finalScore ? [] : [eventKeyOfMatch(m)].filter(x => x != null && x !== '');", "  const own = [];"],
   ['board exclusion: the tab still leaves its own match out once finished', "  const own = m.finalScore ? [] : [eventKeyOfMatch(m)].filter(x => x != null && x !== '');", "  const own = [eventKeyOfMatch(m)].filter(x => x != null && x !== '');"],

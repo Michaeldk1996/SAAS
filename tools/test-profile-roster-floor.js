@@ -153,6 +153,24 @@ ok('...but the backstop still binds with no prior roster', v(50, 0, 0).ok === fa
     lastPublishedRosterCount(path.join(root, 'nope')) === 0);
 }
 
+// ── The exemption signal is counted in EVERY pass that meets a cache entry ──
+// 2026-10-22, v15 -> v16: the opponent pass had converged and the 127 stale entries left were all in the shard pool.
+// Counted in pass 2 only, the run read "wrong-schema 0", the ratio re-engaged on 544 of 731 mid-convergence, and
+// every run failed (a failed run saves no cache, so nothing converged). Source-level, like the call-site lock below:
+// the risk is a future edit that counts in one loop and not the other.
+{
+  const src = fs.readFileSync(path.join(__dirname, '..', 'bsp-pipeline.js'), 'utf8');
+  const counts = src.split('\n').filter(l => /cached && cached\.v !== PROFILE_SCHEMA_VERSION\) wrongSchemaRejections\+\+/.test(l)).length;
+  ok('the wrong-schema signal is counted in the opponent pass AND the shard pass', counts === 2, `${counts} counting site(s)`);
+  const shardLoop = src.slice(src.indexOf('for (const [key, name] of shardOrder)'), src.indexOf('Shard roster: pool'));
+  ok('...and one of them is inside the shard loop', /wrongSchemaRejections\+\+/.test(shardLoop));
+  const r = v(544, 731, 127);
+  ok('CONTROL · the 2026-10-22 shard-pool convergence (544 of 731, 127 stale met) is NOT blocked',
+    r.ok === true && r.reason === 'ratio-suspended', `${r.reason}: ${r.detail}`);
+  const r0 = v(544, 731, 0);
+  ok('...while the same count with nothing stale met still FIRES', r0.ok === false && r0.reason === 'ratio', r0.reason);
+}
+
 // ── The test-only opt-out must stay test-only ─────────────────────────────
 // `enforceFloor: false` exists so the index-shape suite can drive 2-profile
 // fixtures. That is exactly the shape of thing the founder ruled against when

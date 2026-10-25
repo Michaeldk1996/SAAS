@@ -17,7 +17,7 @@ const MUTANTS = [
   ['src', 'pending prices print a zero total', "var pl = pend ? '<span data-pp2-pending=\"draw-pl\">&nbsp;</span>'", "var pl = pend ? 'P&amp;L +0.00u over 0 of ' + listN + ' priced matches'"],
   ['src', 'Esc closes the whole modal from the drill', "if (state.modal === 'splits' && state.drawDrill) {", "if (false) {"],
   ['src', 'Sets & Games / Service rows clickable too', "if (tab.id !== 'results') return line;", "if (false) return line;"],
-  ['src', 'the chips do not filter', "return filt === 'all' || (filt === 'W') === r.won;", "return true;"],
+  ['src', 'the chips do not filter', "return filt === 'all' || (!r.sc.wo && (filt === 'W') === r.won);", "return true;"],
   ['src', 'an opponent linked without a profile', "window.pp2HasProfile(k) && k !== String(state.key)", "true"],
   ['src', 'a disagreeing list is not stated', "var mismatch = listN !== n", "var mismatch = false"],
   ['src', 'the breadcrumb names the group, not the row', "data-pp2-draw-crumb=\"1\" style=\"color:var(--text);font-weight:700;white-space:nowrap;\">' + esc(M.label)", "data-pp2-draw-crumb=\"1\" style=\"color:var(--text);font-weight:700;white-space:nowrap;\">' + esc('Draw')"],

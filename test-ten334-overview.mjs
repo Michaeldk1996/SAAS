@@ -9,7 +9,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { closure, fnSrc } from './tools/ten334-overview-vm.mjs';
+import { closure, fnSrc, profileWindow } from './tools/ten334-overview-vm.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const HTML = readFileSync(join(HERE, 'bsp-consult-dashboard.html'), 'utf8');
@@ -55,16 +55,20 @@ const MASTER = { [d(5, 9) + '|A. Alpha']: [1.52, 2.55], [d(5, 7) + '|B. Bravo']:
 const MASTER_STUB = (key, name, views) => views.map(v => { const p = MASTER[v.date + '|' + v.opp]; return p ? { price: p[0], oppPrice: p[1], book: 'P', src: 'td' } : null; });
 function vm(src) {
   const body = closure(src, ['ovPopModel', 'ovPopHtml', 'ovColumnHtml', 'buildYearlyTables', 'ovOpenRow', 'ovOpenCell', 'ovFlatBox', 'careerRecordCountedRows'],
-    ['document', 'window', 'aPaint', 'aBuilt', 'loadCareerHistory', 'loadCareerRecord', 'fhLoadCloses', 'fhOpenSheet', 'ovRenderPop', 'playerProfiles', 'ensurePlayerProfile', 'matches', 'state', 'wl', 'sfDbPxRows']);
+    ['document', 'window', 'aPaint', 'aBuilt', 'loadCareerHistory', 'loadCareerRecord', 'fhLoadCloses', 'fhOpenSheet', 'ovRenderPop', 'playerProfiles', 'ensurePlayerProfile', 'matches', 'state', 'wl', 'sfDbPxRows', 'loadPp2CareerHistory']);
   const opened = [], painted = {};
-  const api = new Function('document', 'window', 'aPaint', 'aBuilt', 'loadCareerHistory', 'loadCareerRecord', 'fhLoadCloses', 'fhOpenSheet', 'ovRenderPop', 'playerProfiles', 'ensurePlayerProfile', 'sfDbPxRows', `
+  // the profile module over the same profiles, with this player's career-history bridged (loadPp2CareerHistory's job)
+  const PROFILES = { 1: { key: '1', name: 'Z. Zulu', careerByYear: CBY }, 2: { key: '2', name: 'Y. Yankee', careerByYear: null } };
+  const win = profileWindow(PROFILES, { MarketEdgeCore: { RET_SETTLE_NOTE: RET }, careerHistory: { 1: HIST }, careerRecord: { 1: null } });
+  const api = new Function('document', 'window', 'aPaint', 'aBuilt', 'loadCareerHistory', 'loadCareerRecord', 'fhLoadCloses', 'fhOpenSheet', 'ovRenderPop', 'playerProfiles', 'ensurePlayerProfile', 'sfDbPxRows', 'loadPp2CareerHistory', `
     ${body}
     _careerHistoryShards['1'] = ${JSON.stringify(HIST)}; _fhCl['1'] = ${JSON.stringify(CL)};
     _careerRecordLayers['1'] = null;   // TEN-449: answered, not joined to Tennis Explorer — his record is these rows
-    return { ovPopModel, ovPopHtml, ovColumnHtml, buildYearlyTables, ovOpenRow, ovOpenCell, ovStateFor, get _ov(){ return _ov; }, get _fh(){ return _fh; } };`)(
-    { addEventListener() {}, querySelectorAll: () => [], getElementById: () => null }, { MarketEdgeCore: { RET_SETTLE_NOTE: RET } },
+    const ovCol = (i, n, pk, rows, real, tier) => ovColumnHtml(i, n, pk, rows, real, tier, ovRecApi());
+    return { ovPopModel, ovPopHtml, ovColumnHtml: ovCol, buildYearlyTables, ovOpenRow, ovOpenCell, ovStateFor, get _ov(){ return _ov; }, get _fh(){ return _fh; } };`)(
+    { addEventListener() {}, querySelectorAll: () => [], getElementById: () => null }, win,
     (id, h) => { painted[id] = h; }, () => true, () => Promise.resolve([]), () => Promise.resolve(true), () => Promise.resolve(null), (mid) => opened.push(mid), () => {},
-    { 1: { careerByYear: CBY }, 2: { careerByYear: null } }, () => Promise.resolve(true), MASTER_STUB);
+    PROFILES, () => Promise.resolve(true), MASTER_STUB, () => Promise.resolve());
   return Object.assign(api, { opened, painted });
 }
 const M = { id: 'x', p1: 'Z. Zulu', p2: 'Y. Yankee', p1Key: '1', p2Key: '2' };
@@ -77,11 +81,13 @@ const stat = (h, l) => { const i = h.indexOf(`data-me-stat="${l}"`); return text
 const rowsOf = h => [...h.matchAll(/data-ov-mid="([^"]+)"/g)].map(x => x[1]);
 
 const CHECKS = {
-  // Mutation: the pop-up keeps walkovers (drop `if (r.wo) return;` — flagged and score-inferred walkovers alike).
-  'N2: a walkover is not a row, a win or a price in the pop-up'(src) {
+  // Founder 2026-10-22: the walkover is LISTED (WO under the date, no price, no sheet) and is not a match: not in Mo.rows,
+  // not in the record, not priced. Mutation: count M.listed into Mo.rows → 9 rows and a 6–3 record.
+  'N2 + 2026-10-22: a walkover is listed in the pop-up, never a match, a win or a price'(src) {
     const { Mo, html } = pop(src, `0|season|clay`);
-    assert.equal(Mo.rows.length, 8, '5 ATP + 3 Challenger matches, the walkover out');
-    assert.ok(!/W\. Walker/.test(html));
+    assert.equal(Mo.rows.length, 8, '5 ATP + 3 Challenger matches, the walkover not one of them');
+    assert.ok(/data-ov-wo="1"/.test(html) && /W\. Walker/.test(html), 'the walkover row is listed');
+    assert.ok(/class="ma-row-datesub"[^>]*>WO</.test(html), 'WO under the date');
     assert.equal(stat(html, 'Record'), '5–3');
   },
   // Founder ruling 2026-10-18 (item 3; supersedes N8): a Challenger / ITF row takes the master join's price only — the
@@ -144,9 +150,9 @@ const CHECKS = {
   'DoD item 8: pop-up rows are maMatchRowsHtml rows and every row opens the one sheet'(src) {
     const { V, html } = pop(src, `0|season|clay`);
     assert.match(html, /class="ma-rows ma-rows-table"/, 'the shared table variant');
-    assert.equal((html.match(/class="seg ma-row"/g) || []).length, 8);
+    assert.equal((html.match(/class="seg ma-row"/g) || []).length, 9, '8 matches + the listed walkover');
     const mids = rowsOf(html);
-    assert.equal(mids.length, 8);
+    assert.equal(mids.length, 8, 'every match opens the sheet; the walkover row carries no sheet');
     for (const mid of mids) assert.match(html, new RegExp(`onclick="ovOpenRow\\('${mid}'\\)"`));
     V.ovOpenRow(mids[0]);
     assert.deepEqual(V.opened, [mids[0]], 'fhOpenSheet(mid)');
@@ -181,7 +187,7 @@ const CHECKS = {
       assert.match(h, /<div style="height:6px; border-radius:3px; background:var\(--track\); overflow:hidden;"><div class="ov-bar" data-ov-bar="hard" style="width:\d+%; height:100%; background:var\(--bar\);/);
       assert.match(h, /data-ov-bar="clay" style="width:\d+%; height:100%; background:var\(--text-label\);/);
       assert.ok(!/border-left:3px/.test(h), 'no season accent bar');
-      assert.match(h, /class="ov-surf-v"[^>]*>11-5 · <span class="ma-rate" data-ma-gate="full" style="color:var\(--text\);font-weight:700;">69%</);
+      assert.match(h, /class="ov-surf-v"[^>]*>11-5 · <span class="ma-rate" data-ma-gate="full" style="color:var\(--text\);font-weight:700;">68\.8%</);
       assert.match(h, /class="seg ov-srow ov-open"[^>]*background:var\(--card\); border:1px solid var\(--edge-6\);/);
       assert.match(h, /margin-left:auto; color:var\(--link\); font-size:14px;">›</, 'season chevron --link');
     }
@@ -214,7 +220,7 @@ test('DoD item 8: the old Overview row / drill / tooltip renderers are deleted',
 });
 
 const MUTANTS = [
-  ['walkovers kept', "    if (r.wo) return;                                         // N2: a walkover is not a match played\n", ''],
+  ['walkover dropped from the pop-up list (2026-10-22)', "{ M.listed.push(d); return; }", '{ return; }'],
   ['ATP row back on the closes shard', "  if (!r.wo && typeof sfDbPxRows === 'function'){   // founder ruling 2026-10-18 (item 3): every level, qualifying included", "  if (false){"],
   ['1u ungated', "  const R = maRate(0, np, { text: fhSigned(pl, 1, 'u').replace(/^(?=\\d)/, '±'), nopct: '—' });", "  const R = { mode: 'full', txt: fhSigned(pl, 1, 'u') };"],
   ['win rate ungated', "    + meRateBox('Win rate', w, n, null, OV_C.text, true)", "    + meStatBox('Win rate', n ? Math.round(w / n * 100) + '%' : '0%', OV_C.text, true)"],
@@ -225,7 +231,7 @@ const MUTANTS = [
   ['no key reason', "  const why = n > 0 && pk == null ? ` title=\"${fhEsc(OV_NO_KEY)}\"` : n > 0", "  const why = n > 0"],
   ['reopen keeps the tab state', "ovPopEl.innerHTML = ''; _ov = { m: null, tier: 'all', cell: null, sel: null, rows: {} };", "ovPopEl.innerHTML = '';"],
   ['rows unsorted', "  M.rows.sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));", "  M.rows.reverse();"],
-  ['tier filter ignored', "    if (tier !== 'all' && x.level !== tier) return;", ''],
+  ['tier filter ignored', "api.drillScope(prof, year, null, tier)", "api.drillScope(prof, year, null, 'all')"],
   ['row opens nothing', "    selected: _ov.sel === r.mid, click: ` onclick=\"ovOpenRow('${r.mid}')\"`,", "    selected: _ov.sel === r.mid, click: '',"],
   ['sheet not opened', "  ovRenderPop();\n  fhOpenSheet(mid);\n}", "  ovRenderPop();\n}"],
   ['aggregate row opens', "function ovListable(r){ return !!r && (r.allTier === true || (r.allTier === false && !!r.atp)); }", "function ovListable(r){ return !!r; }"],

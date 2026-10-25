@@ -40,6 +40,8 @@ const { sanitizeFixture, sanitizePbpCache } = require('./match-stat-placeholders
 // TEN-318: tiebreak point rows are no longer refetchable, so they ride a committed
 // merge-only floor as well as this cache. See the header of tools/pbp-tiebreak-floor.js.
 const tbFloor = require('./tools/pbp-tiebreak-floor.js');
+// The per-game integrity check every renderer applies (window.PbpIntegrity on the page).
+const integrity = require('./pbp-integrity.js');
 
 const API_TENNIS_KEY = process.env.API_TENNIS_KEY;
 const API_TENNIS_BASE = 'https://api.api-tennis.com/tennis/';
@@ -49,6 +51,11 @@ const OUT_PATH = 'point-by-point.json';
 const CACHE_PATH = 'point-by-point-cache.json';
 const SHARD_DIR = 'pbp';
 const INDEX_PATH = 'pbp-index.json';
+// The previous cache version's store, restored by pipeline.yml beside the current one (a version bump must never
+// wipe the logs). Merged UNDER the current cache: an entry the current store holds always wins.
+const PREV_CACHE_PATH = '.pbp-prev-cache.json';
+const REPAIRS_PATH = 'pbp-repairs.json';
+const REFETCH_ONCE_PATH = 'pbp-refetch-once.json';   // committed: event keys to fetch once if the store lacks them   // the repair ledger, published beside the shards
 // Per-set box scores ride the same shard-plus-index shape as the point log, and
 // for the same reason: ~3.5 KB of set stats per match across ~730 recent-form
 // rows would add ~2.5 MB to matches.json (3.4 MB today) on every page load, to
@@ -88,6 +95,48 @@ const ARCHIVE_DIR = 'boxscore-archive';
 // still deferred on run 4586 (2026-09-24). A cap above the backlog clears it in
 // ONE run, and the next day's first run makes that permanent.
 const MAX_FETCHES_PER_RUN = Number(process.env.PBP_MAX_FETCHES || 750);
+
+// THE STORED LOG IS THE PROVIDER'S LATEST (founder brief 2026-10-22). api-tennis can serve a just-finished match's
+// point list garbled — the real sequence, then a replay of part of it (Bonzi v Norrie, Lyon R32, event 12172010: 26 of 27
+// games) — and replace it with the clean list later. The old rule ("a completed match's point log is immutable, so it is
+// fetched once and cached forever") froze the first copy. Now every fetch that returns a log REPLACES ours with it
+// (adoptFeedLog), whether or not it passes pbp-integrity.js: the page shows the provider's data as received and dashes
+// only a game the provider's own sequence makes impossible. The one exception: a provider log that is SHORTER than ours
+// (fewer games, or no tiebreak where we hold one) is not adopted, and ours is kept — measured 2026-10-22 on 40 affected
+// matches back to 2026-07-31 the provider returned every game and tiebreak in all 40, but TEN-318 saw it drop tiebreak
+// rows, so the check stays.
+// RE-ASKED, beyond the normal fetches: every stored log with a game or tiebreak that fails the check. Once each (the
+// backlog: 4,016 deployed shards on 2026-10-22), and again at most once per PBP_RECHECK_MIN minutes while the match is
+// within PBP_RECHECK_DAYS (the provider corrects a fresh match's log after it finishes). PBP_RECHECK_MAX calls per run, on
+// a budget of their own, newest first, so it never starves a new match's first fetch. `pbpRecheckAt` records the ask.
+const RECHECK_DAYS = Number(process.env.PBP_RECHECK_DAYS || 7);
+const RECHECK_MIN = Number(process.env.PBP_RECHECK_MIN || 60);
+const RECHECK_MAX = Number(process.env.PBP_RECHECK_MAX || 500);
+const failingLog = e => integrity.check(e).some(i => i.kind !== 'header');
+// FRESHLY FINISHED (brief item 5). The provider keeps revising a match after it reports Finished: measured 2026-10-22
+// on 12 ATP/Challenger matches, the point log changed after Finished in 11 (last change +2..+16 min; 5 of the 12 gained
+// points that the first Finished copy lacked, and that copy passed the check), the statistics in 11 (last +4..+57 min).
+// So a board match is re-asked on EVERY run for PBP_FRESH_MIN minutes after the board stamped it finished
+// (m.finishedAt), whether or not its log fails the check, and its box score is refreshed from the same response.
+const FRESH_MIN = Number(process.env.PBP_FRESH_MIN || 120);
+const realGames = sets => sets.reduce((a, s) => a + ((s && s.games) || []).filter(integrity.isGame).length, 0);
+const tiebreakSets = sets => new Set(sets.filter(s => ((s && s.games) || []).filter(integrity.isTbRow).length >= tbFloor.MIN_TB_ROWS).map(s => String(s.set)));
+// Put the provider's log `fresh` ({ sets }) in place of the entry's own. Returns 'replaced', 'same' (identical already),
+// 'shorter' (kept ours: the provider's lacks a game or a tiebreak we hold) or 'none' (the fetch carried no log).
+function adoptFeedLog(e, fresh, now = new Date().toISOString()) {
+  if (!e || !fresh || !Array.isArray(fresh.sets) || !fresh.sets.length) return 'none';
+  const held = Array.isArray(e.sets) ? e.sets : [];
+  if (JSON.stringify(fresh.sets) === JSON.stringify(held)) { e.pbpFeedAt = now; e.pbpFetchedAt = now; return 'same'; }
+  if (realGames(fresh.sets) < realGames(held)) return 'shorter';
+  const ft = tiebreakSets(fresh.sets);
+  for (const s of tiebreakSets(held)) if (!ft.has(s)) return 'shorter';
+  e.sets = fresh.sets;
+  e.pbpFeedAt = now;   // the tiebreak floor leaves a set this log covers alone (see restore's skip below)
+  e.pbpFetchedAt = now;
+  return 'replaced';
+}
+// tbFloor.restore skip: a set whose tiebreak came from the provider's own latest log keeps exactly the provider's rows.
+const feedTiebreak = (ek, e, setNo) => !!(e && e.pbpFeedAt && tiebreakSets(e.sets || []).has(String(setNo)));
 
 // The recent-form queue, NEWEST FIRST. It used to be walked in form-shard file
 // order (player key, alphabetical) with rows in each shard's own order, so a
@@ -246,6 +295,9 @@ function eventKeyOf(id) {
   return /^\d+$/.test(last) ? last : null;
 }
 
+// Per emitted shard: the repairs made and what still fails (drawn as received), for pbp-repairs.json. Reset per emitShards.
+const emitIntegrity = new Map();
+
 // Shard emission for one entry. Either half of the box score is worth a setstats
 // shard on its own: requiring per-set stats silently withheld the whole-match box
 // score for every match played between 2024-03 and 2024-11 — the window where the
@@ -253,8 +305,19 @@ function eventKeyOf(id) {
 function emitEntry(ek, e, index, setIndex, matchIndex) {
   if (!e) return;
   if (e.sets && e.sets.length && e.p1) {   // a real, named log (unnamed legacy entries are skipped)
-    writeAtomic(`${SHARD_DIR}/${ek}.json`, JSON.stringify({ p1: e.p1, p2: e.p2, sets: e.sets }));
+    // The provider's log less its provable duplicates (pbp-integrity.js repair: deletion only, every removal logged). The
+    // cache keeps the log exactly as received; only the shard the page reads is repaired.
+    const { sets, repairs } = integrity.repair(e);
+    // 'provider': this log is the provider's latest (replaced by it, or found identical); 'stored': our copy, not yet
+    // checked against the provider, so its duplicates may be our own old appends (founder brief 2026-10-23 item 4).
+    for (const r of repairs) r.src = e.pbpFeedAt ? 'provider' : 'stored';
+    // asOf: when this log was fetched from the provider (null for a log stored before the stamp). The page shows the
+    // newer of this and a just-finished match's live copy (pbp-integrity.js chooseLog).
+    writeAtomic(`${SHARD_DIR}/${ek}.json`, JSON.stringify({ p1: e.p1, p2: e.p2, sets, asOf: e.pbpFetchedAt || e.pbpFeedAt || null }));
     index.push(ek);
+    const remaining = integrity.check({ sets }).filter(i => i.kind !== 'header');
+    if (repairs.length || remaining.length) emitIntegrity.set(ek, { repairs, remaining });
+    else emitIntegrity.delete(ek);
   }
   if (e.p1Key == null || e.p2Key == null) return;   // unorientable — a row could not tell which side is its own
   const hasSets = !!(e.stats && Object.keys(e.stats).length);
@@ -280,6 +343,7 @@ function emitEntry(ek, e, index, setIndex, matchIndex) {
 // held TB rows put back first. Without this a from-scratch rebuild, whose cache holds
 // almost nothing, would publish those shards with the tiebreak section gone.
 function emitShards(cache, index, setIndex, matchIndex, { archiveDir = ARCHIVE_DIR, tbFloor: floor = null } = {}) {
+  emitIntegrity.clear();
   for (const ek of Object.keys(cache)) emitEntry(ek, cache[ek], index, setIndex, matchIndex);
   const counts = { files: 0, entries: 0, added: 0, completed: 0, tbRestored: 0 };
   const withFloorTb = (ek, e) => {
@@ -344,6 +408,25 @@ async function main() {
   // the whole-match sheet and the per-set sheets. A cached match is never
   // refetched, so the correction is applied to the stored shape here; the setstats/
   // shards below are rewritten from it on this same run.
+  // Fallback across a cache version bump: every log the previous version held and this store lacks comes back.
+  let prevLogs = 0, prevAdded = 0, prevFailing = 0, prevSeen = false;
+  const namedLog = e => !!(e && e.p1 && e.sets && e.sets.length);
+  const storeBeforeMerge = Object.values(cache).filter(namedLog).length;
+  if (fs.existsSync(PREV_CACHE_PATH)) {
+    prevSeen = true;
+    let prev = null;
+    try { prev = JSON.parse(fs.readFileSync(PREV_CACHE_PATH, 'utf8')); } catch (e) { console.log(`::error title=pbp fallback::${PREV_CACHE_PATH} unreadable: ${e.message}`); }
+    for (const [ek, pe] of Object.entries(prev || {})) {
+      const named = !!(pe && pe.p1 && pe.sets && pe.sets.length);
+      if (named) prevLogs++;
+      const held = cache[ek];
+      // A restored log is a pre-fix copy (it may carry our old appended replays): never provider-confirmed, re-asked first.
+      const restore = e => { delete e.pbpFeedAt; delete e.pbpRecheckAt; e.pbpRestoredAt = new Date().toISOString(); if (failingLog(e)) prevFailing++; return e; };
+      if (!held) { cache[ek] = named ? restore({ ...pe }) : pe; if (named) prevAdded++; continue; }
+      if (named && !(held.p1 && held.sets && held.sets.length)) { cache[ek] = restore(mergeEntry({ ...pe }, held)); prevAdded++; }
+    }
+    console.log(`::notice title=pbp fallback::previous version held ${prevLogs} named logs; ${prevAdded} added to this store (which held ${storeBeforeMerge} and now holds ${Object.values(cache).filter(namedLog).length}); ${prevFailing} of the ${prevAdded} restored fail the validator before repair.`);
+  }
   const placeholderSheets = sanitizePbpCache(cache);
   if (placeholderSheets) console.log(`set-stats: ${placeholderSheets} cached sheet(s) carried the untracked W/UE placeholder (all four 0) — now null.`);
 
@@ -359,12 +442,15 @@ async function main() {
   }
   const held = tbFloor.clone(floorLoad.floor || {});
   const tbAbsorbed = tbFloor.absorb(held, cache);
-  const tbHealed = tbFloor.restore(cache, held);
+  const tbHealed = tbFloor.restore(cache, held, { skip: feedTiebreak });
   const tbAtLoad = tbFloor.census(held);
   console.log(`tiebreak-floor: ${tbAtLoad.rows} TB point rows in ${tbAtLoad.sets} sets of ${tbAtLoad.matches} matches (${floorLoad.status}; +${tbAbsorbed} from the cache; ${tbHealed.rows} rows restored into ${tbHealed.entries} cache entries).`);
 
   const out = {};
   let fetched = 0, reused = 0, skipped = 0;
+  const windowDate = new Map();   // event key -> match date, for the integrity re-fetch below
+  const finishedAt = new Map();   // event key -> when the board first saw it finished (ms), for the fresh-finish re-ask
+  const adoptCounts = { replaced: 0, same: 0, shorter: 0, none: 0 };   // every fetch's adoptFeedLog verdict, for the run log and the cache-save decision
 
   // Resolve one event key to { p1, p2, sets }, from cache when possible.
   // `names` is the dashboard's own p1/p2 for a window match, used only to
@@ -386,9 +472,23 @@ async function main() {
     // The per-set box score rides along in the same fixture, so a match resolved
     // from here needs no backfill pass below.
     const built = buildCacheEntry(got, names);
+    if (built.sets && built.sets.length) built.pbpFetchedAt = new Date().toISOString();   // fetch time, for the shard's asOf (NOT pbpFeedAt: that also stops the tiebreak floor topping up a partial log)
     if (!provisional) cache[ek] = built;   // cache the negative too, avoid refetching
     return built;
   }
+
+  // ONE-OFF FETCHES (pbp-refetch-once.json, committed): event keys the store must hold that no fetch path asks for any
+  // more (2026-10-23: 11 logs the 15 -> 16 cache wipe lost; founder-approved). A key whose named log the store already
+  // holds costs nothing, so the list is harmless to leave in place. Same resolve(), same budget as every new log.
+  let onceAsked = 0, onceHeld = 0;
+  for (const ek of (() => { try { return JSON.parse(fs.readFileSync(REFETCH_ONCE_PATH, 'utf8')).keys || []; } catch (e) { return []; } })()) {
+    const e = cache[String(ek)];
+    if (e && e.p1 && e.sets && e.sets.length) { onceHeld++; continue; }
+    if (cache[String(ek)]) delete cache[String(ek)];   // a cached negative from an earlier ask must not block the fetch
+    try { const got = await resolve(String(ek)); onceAsked++; if (got && got.p1 && got.sets && got.sets.length) onceHeld++; }
+    catch (err) { console.error(`pbp-refetch-once: ${ek}: ${err.message}`); }
+  }
+  if (onceAsked || onceHeld) console.log(`::notice title=pbp one-off::${onceHeld} of the listed logs held after this run (${onceAsked} fetched this run).`);
 
   for (const m of matches) {
     // An interrupted match has a real point log frozen at the suspension, so it
@@ -400,6 +500,8 @@ async function main() {
     if (!m.finalScore && !provisional) continue;
     const ek = eventKeyOf(m.id);
     if (!ek) { skipped++; continue; }
+    if (m.date) windowDate.set(ek, String(m.date));
+    if (m.finishedAt) finishedAt.set(ek, Date.parse(m.finishedAt));
 
     let compact;
     const before = fetched;
@@ -502,6 +604,43 @@ async function main() {
   for (const [ek, d] of h2hRowDate) if (!formRowDate.has(ek)) formRowDate.set(ek, d);
   for (const ek of h2hKeys) formKeys.add(ek);
 
+  // Re-ask every stored log that fails the check (see RECHECK_DAYS). Newest first, on its own budget.
+  const nowMs = Date.now(), nowIso = new Date(nowMs).toISOString();
+  const dateOf = ek => windowDate.get(ek) || formRowDate.get(ek) || '';
+  const recentEnough = ek => { const t = Date.parse(dateOf(ek)); return Number.isFinite(t) && nowMs - t <= (RECHECK_DAYS + 1) * 864e5; };
+  const due = (ek, e) => !e.pbpRecheckAt || (recentEnough(ek) && nowMs - Date.parse(e.pbpRecheckAt) >= RECHECK_MIN * 6e4);
+  const fresh = ek => { const t = finishedAt.get(ek); return Number.isFinite(t) && nowMs - t <= FRESH_MIN * 6e4; };
+  const restoredPending = e => !!(e && e.pbpRestoredAt && !e.pbpRecheckAt);   // restored from the previous version, not yet re-asked
+  const recheck = Object.keys(cache)
+    .filter(ek => { const e = cache[ek]; return e && e.p1 && e.sets && e.sets.length && (fresh(ek) || restoredPending(e) || (due(ek, e) && failingLog(e))); })
+    .sort((a, b) => (fresh(b) - fresh(a)) || (restoredPending(cache[b]) - restoredPending(cache[a])) || dateOf(b).localeCompare(dateOf(a)) || Number(b) - Number(a));
+  let freshAsked = 0;
+  let rechecked = 0, recheckFailed = 0;
+  for (const ek of recheck.slice(0, RECHECK_MAX)) {
+    const e = cache[ek];
+    rechecked++;
+    try {
+      const got = await fetchFixture(ek);
+      await new Promise(r => setTimeout(r, PACE_MS));
+      e.pbpRecheckAt = nowIso;
+      const r = adoptFeedLog(e, got ? compactPbp(got.raw) : null, nowIso);
+      adoptCounts[r]++;
+      if (fresh(ek)) {
+        freshAsked++;
+        // the provider's latest box score too (it was still changing up to +57 min after Finished); never blanked by a miss
+        if (got && got.stats) e.stats = got.stats;
+        if (got && got.matchStats) e.matchStats = got.matchStats;
+      }
+      if (r === 'replaced' && out[ek]) out[ek].sets = e.sets;
+      if (r === 'shorter') console.log(`pbp-storage: ${ek} — the provider's log is shorter than ours (a game or tiebreak missing); ours kept.`);
+    } catch (err) {
+      recheckFailed++;   // pbpRecheckAt untouched: a transient failure is retried next run
+      console.error(`pbp-storage: re-fetch failed for ${ek}: ${err.message}`);
+    }
+  }
+  console.log(`pbp-storage: ${freshAsked} freshly finished match(es) re-asked (within ${FRESH_MIN} min of Finished).`);
+  console.log(`pbp-storage: ${recheck.length} stored log(s) due (failing the check, or freshly finished); ${rechecked} re-fetched — ${adoptCounts.replaced} replaced by the provider's latest, ${adoptCounts.same} already identical, ${adoptCounts.shorter} kept (provider's shorter), ${adoptCounts.none} no log${recheckFailed ? `, ${recheckFailed} fetch error(s)` : ''}${recheck.length > RECHECK_MAX ? `, ${recheck.length - RECHECK_MAX} deferred (budget)` : ''}.`);
+
   // Set-stats backfill for matches cached before the set filter existed. This
   // cache is permanent, so those entries are never re-resolved above and would
   // otherwise never gain a `stats` key — the filter would only ever appear on
@@ -549,6 +688,7 @@ async function main() {
       // Written in place: the entry's point log and names are already correct and
       // must survive a fixture that comes back without one.
       e.stats = (got && got.stats) || null;   // key present even when null — asked once, never again
+      if (e.p1 && e.sets && e.sets.length) { const r = adoptFeedLog(e, got ? compactPbp(got.raw) : null); adoptCounts[r]++; }   // the same response carries the log: the provider's latest replaces ours
       e.matchStats = (got && got.matchStats) || null;   // same response, same rule
       if (got && got.p1Key != null) { e.p1Key = got.p1Key; e.p2Key = got.p2Key; }
       if (got && !e.p1 && got.p1) { e.p1 = got.p1; e.p2 = got.p2; }
@@ -563,7 +703,7 @@ async function main() {
   // back with fewer tiebreak points (the feed's one-row summary). Keep any NEW rows a
   // fetch brought, then put every held row back, before a single shard is written.
   const tbAbsorbedAfter = tbFloor.absorb(held, cache);
-  const tbHealedAfter = tbFloor.restore(cache, held);
+  const tbHealedAfter = tbFloor.restore(cache, held, { skip: feedTiebreak });
   if (tbHealedAfter.rows) console.log(`tiebreak-floor: a refetch dropped ${tbHealedAfter.rows} stored TB rows in ${tbHealedAfter.entries} entries — restored.`);
   // Never write a floor that lost a row. A refusal withholds only the floor write:
   // the shards below still ship, so the page never pays for it.
@@ -603,12 +743,38 @@ async function main() {
 
   writeAtomic(CACHE_PATH, JSON.stringify(cache));
   writeAtomic(OUT_PATH, JSON.stringify(out));
+  // Read by tools/cache-save-decision.mjs: a run that replaced stored logs asks for a cache save, or the next run would
+  // restore the old copies (the cache otherwise saves only on a day's first run or a large profile build).
+  writeAtomic('pbp-build-stats.json', JSON.stringify({ builtAt: new Date().toISOString(), ...adoptCounts, restored: prevAdded }));
+  // A version bump must never shrink the published store: say so loudly if it did (the publish still runs).
+  if (prevLogs && index.length < prevLogs) console.log(`::error title=pbp store shrank::${index.length} shards published, the previous cache version held ${prevLogs} named logs.`);
   const kb = (fs.statSync(OUT_PATH).size / 1024).toFixed(0);
   console.log(`point-by-point: ${Object.keys(out).length} matches with point logs (${fetched} fetched, ${reused} cached, ${skipped} skipped) -> ${OUT_PATH} (${kb} KB)`);
   console.log(`point-by-point: ${index.length} shards -> ${SHARD_DIR}/ (${formResolved} recent-form rows resolved this run)`);
   console.log(`set-stats: ${setIndex.length} shards -> ${SETSTATS_DIR}/ (${backfilled} backfilled this run${backfillFailed ? `, ${backfillFailed} failed` : ''})`);
   console.log(`match-stats: ${matchIndex.length} matches carry a whole-match box score -> ${MATCHSTATS_INDEX_PATH}`);
   if (archived.files) console.log(`box-score archive: ${archived.entries} archived matches in ${archived.files} week file(s) — ${archived.added} not in the cache, ${archived.completed} cache entries completed (shards only; the cache is unchanged).`);
+  {
+    const listed = new Set(index);   // the final index: a key re-emitted from the archive is listed there once
+    const ledger = { builtAt: new Date().toISOString(), shards: index.length, byRule: {}, byRuleSource: {}, repaired: 0, unrepaired: 0, matches: {},
+      // read back by pipeline.yml: the previous-version download stops once storeBeforeMerge reaches target
+      fallback: { target: prevSeen && prevLogs ? prevLogs : (/^\d+$/.test(process.env.PBP_FALLBACK_TARGET || '') ? Number(process.env.PBP_FALLBACK_TARGET) : null),
+        storeBeforeMerge, restored: prevAdded, restoredFailing: prevFailing } };
+    for (const [ek, v] of emitIntegrity) {
+      if (!listed.has(ek)) continue;
+      ledger.matches[ek] = v;
+      if (v.repairs.length) ledger.repaired++;
+      if (v.remaining.length) ledger.unrepaired++;
+      for (const r of v.repairs) {
+        ledger.byRule[r.rule] = (ledger.byRule[r.rule] || 0) + 1;
+        const k = `${r.rule}:${r.src}`; ledger.byRuleSource[k] = (ledger.byRuleSource[k] || 0) + 1;
+      }
+    }
+    // Published with the site: every repair (what was removed, by which rule) and every log still failing, shown as received.
+    writeAtomic(REPAIRS_PATH, JSON.stringify(ledger));
+    const left = Object.keys(ledger.matches).filter(ek => ledger.matches[ek].remaining.length).sort((a, b) => Number(b) - Number(a));
+    console.log(`pbp-repair: ${ledger.repaired} of ${index.length} shards repaired by deletion (${Object.entries(ledger.byRule).map(([k, n]) => `${k} ${n}`).join(', ') || 'none'}); ${ledger.unrepaired} still fail the check and are shown as received${left.length ? ` — newest: ${left.slice(0, 25).join(', ')}` : ''} -> ${REPAIRS_PATH}.`);
+  }
   if (archived.tbRestored) console.log(`tiebreak-floor: ${archived.tbRestored} held TB rows put back into archive-sourced pbp shards.`);
   // Entries that predate the match box score are refilled by the PLAYER-WINDOW
   // path in backfill-history-shards.js (one call per player), NOT by the
@@ -635,9 +801,11 @@ async function main() {
 // fixture parser without kicking off a full shard build — the same guard
 // bsp-pipeline.js uses, and the reason requiring it here is safe.
 if (require.main === module) {
-  main().catch(e => { console.error('point-by-point: unexpected error —', e.message); process.exit(0); });
+  // Non-zero: the workflow step is best-effort (`|| rc=$?`), so this never blocks the deploy, but step-check reports it
+  // instead of reading a crashed run as a successful one.
+  main().catch(e => { console.error('point-by-point: unexpected error —', e.message); process.exit(1); });
 }
 
 // `main` is exported for tools/test-pbp-tiebreak-floor.js, which drives the real
 // writer end to end against a stubbed feed.
-module.exports = { compactPbp, parseFixture, buildCacheEntry, orderFormQueue, mergeEntry, emitShards, MAX_FETCHES_PER_RUN, main };
+module.exports = { compactPbp, parseFixture, buildCacheEntry, orderFormQueue, mergeEntry, emitShards, MAX_FETCHES_PER_RUN, RECHECK_DAYS, emitIntegrity, adoptFeedLog, main };

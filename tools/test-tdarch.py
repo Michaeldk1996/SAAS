@@ -366,11 +366,48 @@ cov = T.te_coverage([crow(1, 2024), crow(2, 2024), crow(3, 2024), crow(4, 2023, 
                      {'event_key': 5, 'source': T.TE_SOURCE, 'supersedes': None}], {'4'})
 check('coverage: newly priced (1, 5), over api-tennis Bet365 (3); none where api-tennis Pinnacle (2) or our close (4) holds it',
       cov == {'teWins': {'ch': {'2024': 3}}, 'newlyPriced': {'ch': {'2024': 2}}, 'overB365': {'ch': {'2024': 1}}}, cov)
+cl = T.te_coverage_lines({'teWins': {'atp-x': {'2021': 82, '2024': 161}}, 'newlyPriced': {'atp-x': {'2021': 82, '2024': 161}}, 'overB365': {}})
+check('coverage lines: a level with no api-tennis Bet365 to replace reads 0 there, never a KeyError (te-import 22 Oct, atp-x)',
+      cl == ['te-import coverage atp-x: 2021 82 priced by TE (82 with no snapshot before, 0 replacing an api-tennis Bet365 snapshot) · '
+             '2024 161 priced by TE (161 with no snapshot before, 0 replacing an api-tennis Bet365 snapshot)'], cl)
 td = tempfile.mkdtemp(); os.makedirs(os.path.join(td, 'te-odds'))
 json.dump(tdocs[0], open(os.path.join(td, 'te-odds', 'calib-01.json'), 'w'))
 json.dump(dict(tdocs[0], batch='ch-01', complete=False), open(os.path.join(td, 'te-odds', 'ch-01.json'), 'w'))
 dd, sk = T.te_docs(td)
 check('TE import reads COMPLETE batch files only; a partial batch is skipped and named', [d['batch'] for d in dd] == ['calib-01'] and sk == ['ch-01'], (dd, sk))
+shutil.rmtree(td)
+# the scheduled import's batch line (founder brief 2026-10-23 items 3 + 5): per batch, rows stored, in-play dropped, no-timestamp
+# kept with its share, coverage gained; a share over 25% is flagged
+brow = lambda ek, y, b, lv='ch': {'event_key': ek, 'match_date': f'{y}-05-01', 'detail': {'level': lv, 'batch': b}}
+brows = [brow(1, 2021, 'ch-02'), brow(2, 2021, 'ch-02'), brow(3, 2022, 'ch-02'), brow(4, 2022, 'ch-02', 'ch-q'), brow(5, 2021, 'ch-01')]
+brep = {'dropped in batch ch-02': 1, 'batch ch-02: kept, no TE timestamp': 1, 'batch ch-01: kept, no TE timestamp': 1}
+bl = T.te_batch_lines(['ch-02'], brows, brows[:4], brep, [{'event_key': 3, 'source': T.APPROX_SOURCE, 'supersedes': None}], {'2'})
+check('batch line: stored, in-play dropped, no-timestamp share, coverage gained per level and year (only this batch, the order rule)',
+      bl == ['TE batch ch-02: 4 rows stored, 1 dropped as in-play, 1 of 4 kept with no TE timestamp (25%); coverage gained ch 2021 +1; ch-q 2022 +1'], bl)
+bl2 = T.te_batch_lines(['ch-01'], brows, brows[4:], brep, [], set())
+check('batch line: a no-timestamp share over 25% is flagged', bl2[0].endswith('FLAG: no-timestamp share 100% is over 25%'), bl2)
+check('batch line: a batch with nothing new reads 0 of 0, never a ZeroDivisionError', T.te_batch_lines(['x'], [], [], {}, [], set())
+      == ['TE batch x: 0 rows stored, 0 dropped as in-play, 0 of 0 kept with no TE timestamp (0%); coverage gained none'])
+# te-import-new: nothing new -> no import, an empty lines file; a new batch -> the import runs once and its line is written
+td = tempfile.mkdtemp(); os.makedirs(os.path.join(td, 'te-odds'))
+json.dump(dict(tdocs[0], batch='calib-01'), open(os.path.join(td, 'te-odds', 'calib-01.json'), 'w'))
+json.dump(dict(tdocs[0], batch='ch-02'), open(os.path.join(td, 'te-odds', 'ch-02.json'), 'w'))
+_imp, _run, calls = T.te_imported_batches, T.te_import_run, []
+try:
+    T.te_import_run = lambda store, dry_run=False: calls.append(store) or {'rows': brows, 'add': brows[:4], 'rep': brep, 'held': [], 'closed': set()}
+    T.te_imported_batches = lambda: {'calib-01', 'ch-02'}
+    out = os.path.join(td, 'lines.txt')
+    check('te-import-new: every store batch already held -> no import and an empty lines file',
+          T.cmd_te_import_new(td, out) == [] and calls == [] and open(out).read() == '', calls)
+    json.dump(dict(tdocs[0], batch='atp-x-02', rows=[dict(x, pin=None) for x in tdocs[0]['rows']]), open(os.path.join(td, 'te-odds', 'atp-x-02.json'), 'w'))
+    check('te-import-new: a batch with no joined Pinnacle pair is never new (atp-x-02, 23 Oct: it was re-sent every run)',
+          T.cmd_te_import_new(td, out) == [] and calls == [], calls)
+    T.te_imported_batches = lambda: {'calib-01'}
+    got = T.cmd_te_import_new(td, out)
+    check('te-import-new: a batch the archive holds no row of -> one import, its line in the file (control: the held batch has none)',
+          len(calls) == 1 and len(got) == 1 and got[0].startswith('TE batch ch-02:') and open(out).read() == got[0] + '\n', (calls, got))
+finally:
+    T.te_imported_batches, T.te_import_run = _imp, _run
 shutil.rmtree(td)
 print(f'\ntest-tdarch: {passed} passed, {failed} failed')
 sys.exit(1 if failed else 0)

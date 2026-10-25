@@ -9,7 +9,7 @@ const MUTANTS = [
   ['N6: a synthesised Withdrawal edition renders', "function trEditionsOf(hist){ return ((hist && hist.years) || []).filter(y => !y.withdrew); }", "function trEditionsOf(hist){ return ((hist && hist.years) || []); }"],
   ['result: a won final not "Won"', "    else if (last.won && lastRd === 'F') result = 'Won';", "    else if (false) result = 'Won';"],
   ['result: an in-progress edition labelled by its last round', "    else if (String(y.year) === mYear) result = 'In progress';", "    else if (String(y.year) === mYear && !m.finalScore) result = 'In progress';"],
-  ['N2: a set-less history row read as a walkover', "  if (r.wo){ r.wo = false; r.ret = true; r.retSettle = true;", "  if (false){ r.wo = false; r.ret = true; r.retSettle = true;"],
+  ['2026-10-22: trRowOf classifies a flagged walkover as a retirement again', "  if (isWo){ r.wo = true; r.ret = false; r.retSettle = false;", "  if (isWo){ r.wo = false; r.ret = true; r.retSettle = true;"],
   ["join: the season + opponent fallback takes another event's row", "      && trSameEvent(c.tournament, names)\n", ""],
   ['rows: group meta loses the W–L', "meta: e.result + ' · ' + e.won + '–' + e.lost,", "meta: e.result,"],
   ['gate: the W–L % ungated (0% at n 0, % below n 5)', "  const wlRate = maRateHtml(P.W, P.n, { note: 'title', nopct: '' });", "  const wlRate = (P.n ? Math.round(P.W / P.n * 100) : 0) + '%';"],
@@ -55,12 +55,27 @@ MUTANTS.push(
   ['TEN-402 r2: the after-archive reason dropped', "  if (r.pxAfter) return trPxAfterTitle();", "  if (false) return trPxAfterTitle();"],
   ['TEN-402 r2: the tab never loads the Database rows', "  if (_sfDbJoinSt !== 'ready') loads.push(sfDbJoinLoad().catch(() => null).then(paint));\n", ''],
   ['TEN-402 r2: the tab fetches the closes shard again', "    loads.push(Promise.resolve(loadCareerHistory(key)).then(ch => {", "    loads.push(Promise.all([loadCareerHistory(key), fhLoadCloses(key)]).then(([ch]) => {"],
-  ["TEN-402 r2: a joined row meets the join on the history's match day", "date: r.chDate || r.date, won: r.won,", "date: r.date, won: r.won,"],
+  ["TEN-402 r2: a joined row meets the join on the history's match day", "date: r.wo ? null : (r.chDate || r.date), won: r.won,", "date: r.wo ? null : r.date, won: r.won,"],
+  ['2026-10-22: a walkover row meets the join on its date (and takes a price)', "date: r.wo ? null : (r.chDate || r.date), won: r.won,", "date: (r.chDate || r.date), won: r.won,"],
 );
 MUTANTS.push(
   ['Q2: the court-speed gradient back', 'background:var(--white-bar); margin-top:18px;', 'background:linear-gradient(90deg,var(--inner),var(--text-label),var(--bar)); margin-top:18px;'],
   ['Q2: an area fill under the trend', '${guides}${poly}</svg>', '${guides}<path d="M0 0 L1 1 Z" fill="url(#f)"></path>${poly}</svg>'],
   ['Q2: the trend guides dropped', '${guides}${poly}</svg>', '${poly}</svg>'],
+);
+MUTANTS.push(   // option A (founder 2026-10-21): Form and Tournament show the record's corrections
+  ["optA: Form ignores the record's result", "'won' in d ? { won: !!d.won } : null, d.surface", "null, d.surface"],
+  ["optA: Form ignores the record's surface", "d.surface ? { surface: d.surface } : null);", "null);"],
+  ['optA: the career fallback loses its index', "eventKey: x.eventKey, ci }));", "eventKey: x.eventKey }));"],
+  ['optA: Form shows the feed rows', "rows.map(x => fhRecordRow(fix[i], x))", "rows"],
+  ['optA: Form does not load the records', "ch(m.p2Key), rec(m.p1Key), rec(m.p2Key)]);", "ch(m.p2Key)]);"],
+  ['optA: Form never retries a missing record', "(!m._fhFormSrc[i] || !fix[i])", "!m._fhFormSrc[i]"],
+  ['optA: the scramble guard dropped', "if (i == null || !fix.rows[i] || !!fix.rows[i].won !== !!won) return null;", "if (i == null || !fix.rows[i]) return null;"],
+  ["optA: a Tournament row ignores the record", "if (fx && 'won' in fx && !!fx.won !== r.won){", "if (false){"],
+  ["optA: the edition W–L does not move", "won: y.won + flip, lost: y.lost - flip", "won: y.won, lost: y.lost"],
+  ['optA: Key factors without the record', "{ ch: null, cl: null, fix: recordFixFor(i ? m.p2Key : m.p1Key) }", "null"],
+  ['optA: a side ready without its record', "ok = String(key) in _careerHistoryShards && !!fix;", "ok = String(key) in _careerHistoryShards;"],
+  ['optA: no event-key lookup', "if (c && c.eventKey != null && over.has(i)) byEk.set(String(c.eventKey), i);", ""],
 );
 const SUITES = ['test-ten332-tournament.mjs'];
 const run = env => spawnSync(process.execPath, ['--test', ...SUITES.map(f => path.join(ROOT, f))], { env: Object.assign({}, process.env, env || {}), encoding: 'utf8' });
