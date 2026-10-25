@@ -7,7 +7,7 @@ row) and the per-month n.
 
 Then every MUTANT below must turn the suite red (a check that passes on a broken build is not a check): source mutants of
 the probe itself, and monkeypatches of the reused pinarch functions it depends on."""
-import datetime as dt, importlib.util, json, os, sys, types
+import datetime as dt, importlib.util, json, math, os, sys, types
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 PATH = os.path.join(HERE, 'archive-fill-probe.py')
@@ -242,12 +242,65 @@ def fill_suite(M):
           and f10['detail']['cutTs'] == U('2026-06-01T11:50:00Z').isoformat() and f10['start_ts'] == U(START).isoformat() and f10['gap_to_start_s'] == 600.0)
     check('fill buffer X=2: the 11:55 price counts (11:58 cut), the in-play ones never', M.evaluate(TD, F, True, 'idX', True, FX, None, RAW, S, RB(2))[2]['p2'] == 2.30)
     r30, _, f30 = M.evaluate(TD, F, True, 'idX', True, FX, None, RAW, S, RB(30))
-    check('fill: a pair more than 60 min before trueStart is not a close (dash, reason kept)', f30 is None and 'close_lag' in r30['fill']['why'])
+    check('fill: a pair more than 60 min before the CUT is stale (dash, reason kept)', f30 is None and r30['fill']['why'].startswith(M.STALE_WHY))
     check('fill: rule stop -> no fill row', M.evaluate(TD, F, True, 'idX', True, FX, None, RAW, S, {'decision': 'stop', 'X': None})[2] is None)
     flip = {'last_not_live_seen_at': '2026-06-01T11:58:00Z', 'first_live_seen_at': '2026-06-01T12:01:00Z', 'gap_seconds': 180}
     check('fill: an event with a live-flip row is not filled (the derive job owns it)', M.evaluate(TD, F, True, 'idX', True, FX, flip, RAW, S, RS)[2] is None)
     check('fill: a buffered rule without a whole-minute X makes no row', M.fill_row({'cut': U(START), 'cutSource': P.NO_FLIP_SOURCE}, 1, 'f', S,
                                                                                     {'decision': 'trueStart-buffer', 'X': None})[0] is None)
+
+    near = {'bookmakers': {'pinnacle+30': {'markets': {'121': {'outcomes': {'121': {'players': {'0': [e('2026-06-01T10:50:00Z', 1.7)]}},
+                                                                            '122': {'players': {'0': [e('2026-06-01T10:50:00Z', 2.2)]}}}}}}}}
+    _, _, f65 = M.evaluate(TD, F, True, 'idX', True, FX, None, RAW, P.mw_series(json.dumps(near).encode()), RB(65))
+    check('fill X=65: a price 5 min before the cut and 70 min before trueStart fills (staleness is measured from the cut)',
+          f65 is not None and f65['gap_to_start_s'] == 4200.0 and f65['detail']['bufferMin'] == 65)
+
+    # ── per tier (founder ruling 2026-10-25 (2): never pooled)
+    def lv(level, ds):
+        return [{'eventKey': str(i), 'level': level, 'date': '2026-10-01', 'dLowerS': float(d), 'dUpperS': float(d) - 120, 'gapS': 120.0} for i, d in enumerate(ds)]
+    mt = M.measure(lv('Atp Singles', [-60] * 40 + [600] * 50 + [4231] * 10) + lv('Challenger Men Singles', [-60] * 50 + [300] * 145 + [671] * 5))
+    tr = M.tier_rules(mt)
+    check('per tier: X_ATP = ceil(ATP-only p98) = 71, X_Challenger = ceil(Challenger-only p98) = 12', tr['ATP']['X'] == 71 and tr['Challenger']['X'] == 12
+          and tr['ATP']['tier'] == 'ATP' and tr['Challenger']['level'] == 'Challenger Men Singles')
+    check('per tier: the pooled X (71 here) would wrongly give Challenger 71 — each tier reads only its own matches (control)',
+          M.fill_rule(mt['primary'])['X'] == 71 and tr['Challenger']['X'] == 12)
+    tt = M.tier_table(tr, mt)
+    check('per tier: the table names n, median lateness, p98 and X; only ATP is filled here', tt['ATP']['n'] == 100 and tt['Challenger']['n'] == 200
+          and tt['ATP']['medianLateS'] == 600 and tt['ATP']['p98LateS'] == 4231 and tt['ATP']['filled'] and not tt['Challenger']['filled'])
+    check('per tier: a tier below n = 50 stops on its own', M.tier_rules(M.measure(lv('Atp Singles', [600] * 49)))['ATP']['decision'] == 'stop')
+    RT = dict(RB(71), tier='ATP')
+    _, _, ft = M.evaluate(TD, F, True, 'idX', True, FX, None, RAW, P.mw_series(json.dumps(near).encode()), dict(RB(65), tier='ATP'))
+    check('per tier: the row carries its tier and its X (bufferMin)', ft['detail']['tier'] == 'ATP' and ft['detail']['bufferMin'] == 65)
+    check('per tier: the digest moves with the tier', M.plan_digest(RT, [ft]) != M.plan_digest(dict(RT, tier='Challenger'), [ft])
+          and M.plan_digest(RT, [ft]) != M.plan_digest(RT, [dict(ft, detail=dict(ft['detail'], tier='Challenger'))]))
+    check('marker text: the founder\'s tooltip with the row\'s own X', M.early_hover(71) == 'Pinnacle price ≥71 min before scheduled start; true close unavailable'
+          and M.early_hover(12).startswith('Pinnacle price ≥12 min'))
+
+    # ── re-cut (founder ruling 2026-10-25 (3)): any true close supersedes a fill row in the export
+    fb = dict(base_row := {'label': P.ARCHIVE_LABEL, 'match_date': '2026-06-01', 'p1_key': 1, 'p2_key': 2, 'p1': 1.6, 'p2': 2.3, 'source': 's', 'book': 'b',
+                           'supersedes': None, 'event_key': 50}, id=10, start_source=P.FILL_START_SOURCE, detail={'closeCut': 'trueStart-buffer', 'bufferMin': 71})
+    true_arch = dict(base_row, id=9, start_source=P.CUT_SOURCE, p1=1.55, detail={})
+    true_cap = dict(base_row, id=11, label='captured', match_date='2026-09-20', start_source='api-tennis-live', p1=1.5, detail={})
+    ex1 = P.export_rows([fb])
+    check('re-cut: a fill row alone exports, marked (closeCut, bufferMin) and fed as "early cut 71"', len(ex1) == 1 and ex1[0]['closeCut'] == 'trueStart-buffer'
+          and ex1[0]['bufferMin'] == 71 and P.feed_label(ex1[0]) == 'early cut 71')
+    ex2 = P.export_rows([fb, true_arch])
+    check('re-cut: an archive close at a true start beats a NEWER fill row', len(ex2) == 1 and ex2[0]['archiveId'] == 9 and 'closeCut' not in ex2[0]
+          and P.feed_label(ex2[0]) == P.ARCHIVE_LABEL)
+    ex3 = P.export_rows([fb, true_cap])
+    check('re-cut: a captured close at our live-flip beats the fill row', len(ex3) == 1 and ex3[0]['archiveId'] == 11)
+    ex4 = P.export_rows([dict(fb, id=12, detail={'closeCut': 'trueStart'}), fb])
+    check('re-cut: between two fill rows the newer one stands (both re-cuttable)', ex4[0]['archiveId'] == 12)
+    check('feed label: a trueStart-alone fill row (no buffer) keeps the archive label; a buffer without minutes too',
+          P.feed_label({'label': P.ARCHIVE_LABEL, 'closeCut': 'trueStart'}) == P.ARCHIVE_LABEL
+          and P.feed_label({'label': P.ARCHIVE_LABEL, 'closeCut': 'trueStart-buffer'}) == P.ARCHIVE_LABEL)
+    tdr = [{'date': '2026-06-01', 'tournament': 'X Open', 'winner': 'Alpha A.', 'loser': 'Beta B.', 'psw': '', 'psl': '', 'comment': 'Completed', 'round': '1st Round'},
+           {'date': '2026-06-02', 'tournament': 'X Open', 'winner': 'Alpha A.', 'loser': 'Gamma G.', 'psw': '1.5', 'psl': '2.6', 'comment': 'Completed', 'round': '2nd Round'}]
+    exf = [dict(ex1[0], eventKey=50, date='2026-06-01', p1Name='A. Alpha', p2Name='B. Beta', p1Key=None, p2Key=None),
+           dict(ex1[0], eventKey=51, date='2026-06-02', p1Name='A. Alpha', p2Name='G. Gamma', p1Key=None, p2Key=None)]
+    fr, frep = P.td_feed_rows(exf, tdr, {}, '2025-12-31')
+    check('td-feed: the fill row overrides an unpriced Tennis-Data row with label "early cut 71"; a Tennis-Data Pinnacle close is never replaced',
+          [(r['kind'], r['label'], r['eventKey']) for r in fr] == [('override', 'early cut 71', 50)] and frep['tdHasPinnacle'] == 1)
 
     # ── the export exemption (pinarch.held_back / verified_start / export_rows)
     base = {'label': P.ARCHIVE_LABEL, 'match_date': '2026-06-01', 'p1_key': 1, 'p2_key': 2, 'p1': 1.6, 'p2': 2.3, 'source': 's', 'book': 'b', 'supersedes': None}
@@ -531,12 +584,13 @@ MUTANTS = [
     ('fill: buffer ignored', src_mutant('cut = ts - dt.timedelta(minutes=x or 0)', 'cut = ts')),
     ('fill: closeCut not marked', src_mutant("row['detail']['closeCut'] = cut_kind", 'pass')),
     ('fill: bufferMin not carried', src_mutant("row['detail']['bufferMin'] = x", 'pass')),
-    ('fill: 60-min lag not enforced', src_mutant("if not 0 <= lag <= RELIABLE_LAG_S:\n        return None, f'close_lag", "if False:\n        return None, f'close_lag")),
+    ('fill: staleness guard not enforced', src_mutant("if not 0 <= stale <= RELIABLE_LAG_S:", "if False:")),
+    ('fill: staleness measured from trueStart, not the cut', src_mutant("stale = (cut - close_ts).total_seconds()", "stale = lag")),
     ('fill: start_source not the fill source', src_mutant('dict(ev, cut=cut, cutSource=P.FILL_START_SOURCE)', 'dict(ev, cut=cut)')),
     ('fill: live-flip events filled too (both guards: evaluate and fill_row)', src_mutants(("        if src != P.NO_FLIP_SOURCE:\n            rec['fill']", "        if False:\n            rec['fill']"),
                                                                                        ("if ts is None or ev.get('cutSource') != P.NO_FLIP_SOURCE:", 'if ts is None:'))),
     ('digest: prices left out', src_mutant("'p1': float(r['p1']), 'p2': float(r['p2']), ", '')),
-    ('digest: X left out', src_mutant("{'decision': rule.get('decision'), 'X': rule.get('X'), 'rows': proj}", "{'decision': rule.get('decision'), 'rows': proj}")),
+    ('digest: X left out', src_mutant("'X': rule.get('X'), 'tier': rule.get('tier'), 'rows': proj}", "'tier': rule.get('tier'), 'rows': proj}")),
     ('write guard: any method', src_mutant("if method != 'POST':", 'if False:')),
     ('write guard: an upsert allowed', src_mutant("if prefer != {'resolution=ignore-duplicates', 'return=representation'}:", 'if False:')),
     ('write guard: rows outside the plan allowed', src_mutant('if stray:', 'if False:')),
@@ -550,6 +604,13 @@ MUTANTS = [
     ('pinarch: the fill source alone exempts (no closeCut needed)', pin_mutant("    if c == 'trueStart':\n        return c", "    if True:\n        return c")),
     ('pinarch: a buffered cut without bufferMin exempts', pin_mutant(" and isinstance(d.get('bufferMin'), int) and not isinstance(d.get('bufferMin'), bool) and d['bufferMin'] > 0", '')),
     ('pinarch: start-alone rows exempted too', pin_mutant("    if r.get('start_source') == NO_FLIP_SOURCE:\n        return 'start-alone'\n", '')),
+    ('per tier: pooled measurement used for every tier', src_mutant("out[t] = dict(fill_rule(st), tier=t, level=lv)", "out[t] = dict(fill_rule(meas['primary']), tier=t, level=lv)")),
+    ('per tier: the tier not carried in the row', src_mutant("        row['detail']['tier'] = rule['tier']", "        pass")),
+    ('per tier: the tier not in the digest', src_mutant("'tier': rule.get('tier'), 'rows': proj}", "'rows': proj}")),
+    ('marker: tooltip text changed', src_mutant("min before scheduled start; true close unavailable'", "min before the start'")),
+    ('pinarch: a fill row ranks as a true close (no re-cut)', pin_mutant("    if fill_cut(r):\n        return 0\n", "")),
+    ('pinarch: the cut does not travel with the export row', pin_mutant("            out[-1]['closeCut'] = fc\n", "            pass\n")),
+    ('pinarch: the feed label ignores the buffer', pin_mutant('        return f"{EARLY_CUT_LABEL} {e[\'bufferMin\']}"', "        return e.get('label')")),
     ('pinarch close_at takes inactive entries', patch_mutant('close_at', _close_at_no_active)),
     ('pinarch price floor removed', patch_mutant('_price', lambda P: (lambda p: float(p.get('price'))))),
 ]
@@ -571,7 +632,11 @@ def main():
     caught = 0
     for name, mk in MUTANTS:
         try:
-            _, b = both(mk())
+            mod = mk()                                      # an anchor that is gone is a FAILED mutant, never a catch
+        except AssertionError as ex:
+            print('  FAIL ', f'mutant {name}: {ex}'); continue
+        try:
+            _, b = both(mod)
             hit = bool(b)
         except Exception as ex:                             # a mutant that crashes the suite is caught too, but say so
             hit, b = True, [f'crashed: {type(ex).__name__}: {ex}']

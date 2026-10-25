@@ -227,9 +227,11 @@ def evaluate(td, f, winner_is_first, fid, first_is_p1, fx, flip, raw, series, ru
 def fill_row(ev, raw_id, fid, series, rule):
     """The fill-rule close (founder ruling 2026-10-25) for one event whose start is the gated trueStart alone: the last
     active pinnacle+30 pair (>= 1.01, both sides) at or before trueStart ('trueStart') or trueStart - X min
-    ('trueStart-buffer'). start_ts = trueStart, gap_to_start_s = trueStart - close_ts; it must be <= 60 min (close_lag),
-    else no fill. The row carries closeCut (+ bufferMin) in detail so it can be re-cut later. Returns (row, None) or
-    (None, reason)."""
+    ('trueStart-buffer', X = the TIER's buffer: founder ruling 2026-10-25 (2), per tier, never pooled). start_ts =
+    trueStart, gap_to_start_s = trueStart - close_ts (>= X min by construction). Staleness guard: the price must be within
+    60 min BEFORE THE CUT (cut - close_ts <= 60 min), else a dash — at a 71-min buffer a 60-min limit measured from trueStart
+    could never be met. The row carries closeCut (+ bufferMin, tier, cutTs) in detail so it can be re-cut later. Returns
+    (row, None) or (None, reason)."""
     ts = ev.get('cut')
     if ts is None or ev.get('cutSource') != P.NO_FLIP_SOURCE:
         return None, 'no gated trueStart'
@@ -243,14 +245,17 @@ def fill_row(ev, raw_id, fid, series, rule):
         return None, why
     close_ts = P.iso_ms(row['close_ts'])
     lag = (ts - close_ts).total_seconds()
-    if not 0 <= lag <= RELIABLE_LAG_S:
-        return None, f'close_lag {round(lag / 60, 1)} min > 60 (not reliable: dash)'
+    stale = (cut - close_ts).total_seconds()
+    if not 0 <= stale <= RELIABLE_LAG_S:
+        return None, f'{STALE_WHY} ({round(stale / 60, 1)} min)'
     row['start_ts'] = ts.isoformat()
     row['gap_to_start_s'] = round(lag, 3)
     row['detail']['closeCut'] = cut_kind
     if x:
         row['detail']['bufferMin'] = x
     row['detail']['cutTs'] = cut.isoformat()
+    if rule.get('tier'):
+        row['detail']['tier'] = rule['tier']
     row['detail']['fillRule'] = {'ruling': 'founder 2026-10-25, round 2 item 1.4', 'measured': {k: rule.get(k) for k in ('n', 'lateShare', 'maxLateS', 'p98LateS')}}
     return row, None
 
@@ -260,6 +265,37 @@ MIN_OVERLAP_N = 50                 # n < 50: stop, no fill
 TRUESTART_LATE_SHARE_MAX = 0.02    # trueStart later than live-flip in <= 2% of matches ...
 TRUESTART_LATE_MAX_S = 120         # ... and never by more than 2 minutes -> the cut is trueStart alone
 HIST_EDGES_S = (30, 60, 120, 300, 600, 1800, 3600)
+STALE_WHY = 'stale: the last price is more than 60 min before the cut'
+# Founder ruling 2026-10-25 (2): the buffer is per tier, never pooled. The tier of a live_flip_log level; the fill
+# population (Tennis-Data ATP main draw) is the ATP tier. Challenger is measured and its X reported, never filled here.
+TIER_OF_LEVEL = {'Atp Singles': 'ATP', 'Challenger Men Singles': 'Challenger'}
+FILL_TIER = 'ATP'
+
+
+def tier_rules(meas):
+    """One fill_rule per tier, each on that tier's own primary measurement (lower edge, gap <= 300 s)."""
+    out = {}
+    for lv, st in (meas.get('byLevel') or {}).items():
+        t = TIER_OF_LEVEL.get(lv)
+        if t:
+            out[t] = dict(fill_rule(st), tier=t, level=lv)
+    return out
+
+
+def early_hover(minutes):
+    """The founder's tooltip for a buffer-cut price (2026-10-25), with the row's own X."""
+    return f'Pinnacle price ≥{minutes} min before scheduled start; true close unavailable'
+
+
+def tier_table(rules, meas):
+    """Per tier: n, median d, median lateness (p50 of the later matches), p98 (s and min), X and the decision."""
+    out = {}
+    for t, r in rules.items():
+        st = meas['byLevel'][r['level']]
+        out[t] = {'n': st['n'], 'medianDS': st['medianS'], 'lateShare': st['lateShare'], 'medianLateS': st['lateS']['p50'],
+                  'p98LateS': st['lateS']['p98'], 'p98LateMin': st['lateMin']['p98'], 'X': r.get('X'), 'decision': r['decision'],
+                  'filled': t == FILL_TIER, 'smallN': st['n'] < SMALL_N}
+    return out
 
 
 def pct(sorted_vals, p):
@@ -350,9 +386,10 @@ def plan_digest(rule, rows):
     run recomputes the plan and refuses unless this matches the digest the plan run reported."""
     proj = [{'dedupe_key': r['dedupe_key'], 'event_key': str(r['event_key']), 'fixture_id': r.get('fixture_id'), 'raw_id': r.get('raw_id'),
              'p1': float(r['p1']), 'p2': float(r['p2']), 'close_ts': r['close_ts'], 'start_ts': r['start_ts'],
-             'closeCut': (r.get('detail') or {}).get('closeCut'), 'bufferMin': (r.get('detail') or {}).get('bufferMin')}
+             'closeCut': (r.get('detail') or {}).get('closeCut'), 'bufferMin': (r.get('detail') or {}).get('bufferMin'),
+             'tier': (r.get('detail') or {}).get('tier')}
             for r in sorted(rows, key=lambda r: r['dedupe_key'])]
-    blob = json.dumps({'decision': rule.get('decision'), 'X': rule.get('X'), 'rows': proj}, sort_keys=True, separators=(',', ':'))
+    blob = json.dumps({'decision': rule.get('decision'), 'X': rule.get('X'), 'tier': rule.get('tier'), 'rows': proj}, sort_keys=True, separators=(',', ':'))
     return hashlib.sha256(blob.encode()).hexdigest()
 
 
@@ -447,6 +484,24 @@ def flag(k, n):
     return f'{k}/{n}' + (' (n<30)' if n < SMALL_N else '')
 
 
+def dash_reason(r, before_by_event, fill_events):
+    """Why a match has no exported price after the fill (one reason, the first that applies)."""
+    if not r.get('eventKey'):
+        return 'no api-tennis fixture joined'
+    if not r.get('fixtureId'):
+        return 'no Oddspapi fixture joined (one, exactly)'
+    if not r.get('hasPayload'):
+        return 'no pinnacle+30 payload held'
+    if r.get('why') and not r.get('close'):
+        return 'no start' if str(r['why']).startswith('no start') else 'no pre-start pair (both sides)'
+    f = r.get('fill') or {}
+    if f.get('why'):
+        return STALE_WHY if f['why'].startswith(STALE_WHY) else f['why']
+    if f:
+        return 'the event already holds an archive row (held back; never overwritten)'
+    return 'no fill row'
+
+
 def summarize(records, before_by_event, fill_events=frozenset()):
     """Per month: n = Tennis-Data ATP main-draw matches (walkovers out); every count over n, n < 30 flagged."""
     months = collections.OrderedDict()
@@ -472,16 +527,26 @@ def summarize(records, before_by_event, fill_events=frozenset()):
                   'after': {'closeAny': sum(1 for r in rs if r.get('close') or (r.get('eventKey') and before_by_event.get(r['eventKey']))),
                             'closeReliable': sum(1 for r in cl if r['close']['reliable'])},
                   'exportedAfterFill': sum(1 for r in rs if r.get('eventKey') and (before_by_event.get(r['eventKey']) or r['eventKey'] in fill_events)),
-                  'fillRows': sum(1 for r in rs if r.get('eventKey') in fill_events)}
+                  'fillRows': sum(1 for r in rs if r.get('eventKey') in fill_events),
+                  'dashedByReason': dict(collections.Counter(dash_reason(r, before_by_event, fill_events) for r in rs
+                                                             if not (r.get('eventKey') and (before_by_event.get(r['eventKey']) or r['eventKey'] in fill_events))))}
         out[m]['display'] = {k: flag(out[m][k], n) for k in ('hasPinnacle30Payload', 'firstCaptured', 'close', 'closeReliable')}
         out[m]['display']['beforeExported'] = flag(len(bef), n)
         out[m]['display']['afterExported'] = flag(out[m]['exportedAfterFill'], n)
     return out
 
 
+def _r(v):
+    return '—' if v is None else round(v, 1)
+
+
+def _pc(v):
+    return '—' if v is None else f'{round(100 * v, 1)}%'
+
+
 def markdown(rep):
     L = [f"# Archive fill probe — ATP main draw {rep['window'][0]} … {rep['window'][1]} (read-only)", '',
-         f"Generated {rep['generatedAt']} from commit {rep['commit']}. Nothing was written anywhere.", '',
+         f"Generated {rep['generatedAt']} from commit {rep['commit']}. " + ('Plan run: nothing was written.' if rep.get('mode') != 'write' else 'Write run: see archive-fill-write.json.'), '',
          '| month | n | pinnacle+30 payload | first captured | of which < 6 h | close at start | close_reliable | Pinnacle close BEFORE (exported) | AFTER the fill |',
          '|---|---|---|---|---|---|---|---|---|']
     for m, s in rep['perMonth'].items():
@@ -496,7 +561,20 @@ def markdown(rep):
           'Primary (the rule reads it): d against the flip\'s LOWER edge (last_not_live_seen_at) on flips with gap ≤ 300 s; '
           'percentiles are nearest-rank; lateness = d over the matches where trueStart is later.', '', '```json',
           json.dumps({k: v for k, v in rep['measure'].items() if k not in ('byMonth',)}, indent=1), '```', '',
-          f"**Fill rule:** {rep['rule']['decision']}" + (f" (X = {rep['rule']['X']} min)" if rep['rule'].get('X') else '') + f" — {rep['rule']['why']}", '',
+          '## Per tier (founder ruling 2026-10-25: the buffer is per tier, never pooled)', '',
+          '| tier | n | median d (s) | share later | median lateness (s) | p98 lateness | X (min) | decision | filled here |',
+          '|---|---|---|---|---|---|---|---|---|'] + [
+          f"| {t} | {v['n']}{' ⚑' if v['smallN'] else ''} | {_r(v['medianDS'])} | {_pc(v['lateShare'])} | {_r(v['medianLateS'])} | "
+          f"{_r(v['p98LateS'])} s = {v['p98LateMin']} min | {v['X'] if v['X'] is not None else '—'} | {v['decision']} | "
+          f"{'yes (ATP main draw)' if v['filled'] else 'no — not in the fill population (Tennis-Data ATP main draw)'} |"
+          for t, v in sorted(rep['tiers'].items())] + ['',
+          f"**Fill rule (tier {rep['rule'].get('tier')}):** {rep['rule']['decision']}" + (f" (X = {rep['rule']['X']} min)" if rep['rule'].get('X') else '') + f" — {rep['rule']['why']}", '',
+          f"Marker: **E**, tooltip `{rep['earlyHover']}`" if rep.get('earlyHover') else 'Marker: none (no buffer cut).', '',
+          '## Filled vs dashed per month (ATP main draw)', '',
+          '| month | n | filled (E) | stays dashed | dashed by reason |', '|---|---|---|---|---|'] + [
+          f"| {m} | {s_['n']}{' ⚑' if s_['smallN'] else ''} | {flag(s_['fillRows'], s_['n'])} | {flag(s_['n'] - s_['exportedAfterFill'], s_['n'])} | "
+          + '; '.join(f'{k}: {v}' for k, v in sorted(s_['dashedByReason'].items(), key=lambda kv: -kv[1])) + ' |'
+          for m, s_ in rep['perMonth'].items()] + ['',
           f"**Plan digest** (the write run's `plan_digest` input): `{rep['digest']}` over {rep['diff']['candidates']} row(s).", '',
           '## Candidate rows (NOT written by the plan run)', '', '```json', json.dumps({k: v for k, v in rep['diff'].items() if k != 'supersedeList'}, indent=1), '```', '',
           '## Unmatched / not derived', '', '```json', json.dumps(rep['why'], indent=1), '```', '',
@@ -578,7 +656,8 @@ def run(out_dir, frm, to, td_path=None, measure_to=None, write=False, digest_in=
     m_events, m_miss = P.events_for(fl_all, bmap, disc, {})
     pairs, m_rej = overlap_pairs(m_events, fixtures, flips_by_key)
     meas = measure(pairs)
-    rule = fill_rule(meas['primary'])
+    rules = tier_rules(meas)
+    rule = rules.get(FILL_TIER) or dict(fill_rule(lateness_stats([])), tier=FILL_TIER, level=None)
 
     # 2. the window: joins, payloads, closes, fill rows
     why = collections.Counter()
@@ -619,7 +698,7 @@ def run(out_dir, frm, to, td_path=None, measure_to=None, write=False, digest_in=
         if rec.get('why') and raw is not None:
             why['not derived: ' + rec['why']] += 1
         if (rec.get('fill') or {}).get('why'):
-            why['no fill: ' + rec['fill']['why']] += 1
+            why['no fill: ' + (STALE_WHY if rec['fill']['why'].startswith(STALE_WHY) else rec['fill']['why'])] += 1
         records.append(rec)
         if row:
             rows.append(row)
@@ -642,7 +721,8 @@ def run(out_dir, frm, to, td_path=None, measure_to=None, write=False, digest_in=
            'population': {'tennisDataRows': len(targets), 'walkoversExcluded': walkovers, 'source': 'odds-archive/2026.csv'},
            'measure': dict(meas, window=[MEASURE_FROM, measure_to or 'now'], liveFlipRows=len(fl_all), joinMisses=m_miss,
                            rejected=m_rej, pairs=len(pairs)),
-           'rule': rule, 'digest': digest, 'liveFlipRowsInWindow': sum(1 for r in records if r.get('liveFlip')),
+           'rule': rule, 'rulesByTier': rules, 'tiers': tier_table(rules, meas), 'fillTier': FILL_TIER,
+           'earlyHover': early_hover(rule['X']) if rule.get('X') else None, 'digest': digest, 'liveFlipRowsInWindow': sum(1 for r in records if r.get('liveFlip')),
            'perMonth': per, 'totals': tot, 'why': dict(why),
            'before': {'heldCloseRows': len(held), 'heldBackByRule': dict(held_back), 'exportedForTheseEvents': len(exported),
                       'exportedByLabel': dict(collections.Counter(x['label'] for x in exported.values()))},

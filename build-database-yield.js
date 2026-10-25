@@ -207,6 +207,21 @@ const isApproxIdx = i => i === 2 || i === 5;
 // carry their own codes so every surface names their source: 3 = 'from Pinnacle history', 4 = 'captured'. Both are
 // Pinnacle closing prices: every Pinnacle count, yield and figure counts them as Pinnacle (prices unchanged).
 const ARCH_BOOK = { 'from Pinnacle history': 3, captured: 4 };
+// Founder ruling 2026-10-25 (round 2 item 1.4, the 13 Apr - 16 Sep fill): a buffer-cut fill row reaches the feed labelled
+// 'early cut N' (tools/pinarch.py feed_label; N = its tier's buffer, minutes): book 9 — a Pinnacle price taken at least N min
+// before the start, NOT a close. Priced from the archive pair like 3 / 4, but never counted as a Pinnacle close (isPinIdx):
+// its own BOOK_COUNTS entry, like the approx. books. The page marks it 'E' with the founder's tooltip (meta.earlyCut).
+const EARLY_CUT_RE = /^early cut (\d+)$/;
+const EARLY_BOOK = 9;
+const earlyMinutes = new Set();
+const archBookOf = label => {
+  if (ARCH_BOOK[label] != null) return ARCH_BOOK[label];
+  const m = EARLY_CUT_RE.exec(label || '');
+  if (!m) return undefined;
+  earlyMinutes.add(+m[1]);
+  return EARLY_BOOK;
+};
+const earlyHover = min => `Pinnacle price \u2265${min} min before scheduled start; true close unavailable`;
 const isPinIdx = i => i === 0 || i === 3 || i === 4;
 
 const rows = [];      // [dateInt, lvlIdx, surfIdx, rndIdx, tourIdx, favPrice, dogPrice, favWon, bookIdx]
@@ -235,7 +250,7 @@ const retBucket = { priced: 0, noPrice: 0, tie: 0, overround: 0, preWindow: 0, e
 // number is exactly what the footnote was criticised for.
 const bucket = { archive: 0, used: 0, walkover: 0, retired: 0, edge: 0, noPrice: 0, tie: 0, overround: 0, preWindow: 0 };
 const WINDOW_START = 2010; // founder TEN-146 ruling (2026-09-04): window starts 2010, fail-closed, no pre-window fallback
-const bookCount = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+const bookCount = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 9: 0 };
 let dateMin = '99999999', dateMax = '00000000';
 // TEN-262: the latest archive date with a valid Pinnacle pair, read BEFORE any exclusion.
 // The Database header says where the source's Pinnacle prices stop; it is never typed.
@@ -328,7 +343,7 @@ function processLine(c, col, season, fromFeed) {
         }
       }
     }
-    const pinIdx = archLabel ? ARCH_BOOK[archLabel] : 0;
+    const pinIdx = archLabel ? archBookOf(archLabel) : 0;
     if (archLabel && pinIdx == null) { console.error(`archive feed: unknown label ${JSON.stringify(archLabel)}`); process.exit(1); }
     const bookIdx = (validPrice(P[0]) && validPrice(P[1])) ? pinIdx : AP ? (APS === 'od' ? 5 : 2) : (validPrice(B365[0]) && validPrice(B365[1])) ? 1 : -1;
     // TEN-402: a retirement passes the SAME filters as a used row, counted in its own buckets (retBucket),
@@ -343,7 +358,7 @@ function processLine(c, col, season, fromFeed) {
       if (Number.isFinite(dU)) uRaw.push([dU, (c[col.winner] || '').trim(), (c[col.loser] || '').trim(), one ? 'one' : 'nobook']);
       return;
     }
-    const [pw, pl] = isPinIdx(bookIdx) ? P : isApproxIdx(bookIdx) ? AP : B365;
+    const [pw, pl] = isPinIdx(bookIdx) || bookIdx === EARLY_BOOK ? P : isApproxIdx(bookIdx) ? AP : B365;
 
     if (pw === pl) {                                            // exact tie: no favourite, no underdog
       B_.tie++;
@@ -450,7 +465,7 @@ if (feedOn) {
 // 4 'captured'), flagged out of every Database statistic and ROI. The same price guards: both sides >= 1.01 (here > 1.00
 // as validPrice), overround <= 1.15; an exact tie is kept (flag 'e').
 for (const r of feed.team) {
-  const pw = num(r.psw), pl = num(r.psl), bk = ARCH_BOOK[(r.label || '').trim()];
+  const pw = num(r.psw), pl = num(r.psl), bk = archBookOf((r.label || '').trim());
   const dI = parseInt(String(r.date || '').replace(/-/g, ''), 10);
   if (!validPrice(pw) || !validPrice(pl) || bk == null || !Number.isFinite(dI) || (1 / pw) + (1 / pl) > 1.15) { feed.teamDropped++; continue; }
   const isRet = RETIRED.has((r.comment || '').trim()) || FEED_STARTED.has((r.comment || '').trim());   // a started default
@@ -638,7 +653,13 @@ function baselinesOf(list, books) {
   };
 }
 const dbList = figRows.map(r => ({ fav: r[5], dog: r[6], won: r[7], book: r[8] }));
-const BOOK_COUNTS = { Pinnacle: bookCount[0] + bookCount[3] + bookCount[4], Bet365: bookCount[1], ...(approxOn ? { [BOOKS[2]]: bookCount[2] + bookCount[5] } : {}) };
+const BOOK_COUNTS = { Pinnacle: bookCount[0] + bookCount[3] + bookCount[4], Bet365: bookCount[1], ...(approxOn ? { [BOOKS[2]]: bookCount[2] + bookCount[5] } : {}),
+  ...(bookCount[EARLY_BOOK] ? { 'Pinnacle (early cut)': bookCount[EARLY_BOOK] } : {}) };
+// one buffer per feed: the page's tooltip names it, so two different minutes in one build would make one of them wrong
+if (earlyMinutes.size > 1) { console.error(`archive feed: early-cut rows carry ${earlyMinutes.size} different buffers (${[...earlyMinutes].join(', ')} min): one per build`); process.exit(1); }
+const EARLY_MIN = earlyMinutes.size ? [...earlyMinutes][0] : null;
+const EARLY_META = EARLY_MIN != null ? { earlyCut: { book: EARLY_BOOK, minutes: EARLY_MIN, mark: 'E', hover: earlyHover(EARLY_MIN),
+  rule: 'founder ruling 2026-10-25: the 13 Apr - 16 Sep ATP main-draw fill, cut at Oddspapi trueStart minus the tier buffer; not a close' } } : {};
 const TB = baselinesOf(dbList, BOOK_COUNTS);
 
 // --- write artefacts --------------------------------------------------------
@@ -712,8 +733,8 @@ const meta = {
     overridden: feed.overridden, tdHadPinnacle: feed.tdHadPinnacle, overrideUnmatched: feed.overrideUnmatched,
     added: feed.added, addedRetired: feed.addedRetired, addedDropped: feed.addedDropped,
     // founder 2026-10-16 (round 3, item 1): the Database rows priced on our archive's closes, by their own code / label
-    bookCodes: { 3: 'from Pinnacle history', 4: 'captured' },
-    rowsByLabel: { 'from Pinnacle history': bookCount[3], captured: bookCount[4] },
+    bookCodes: { 3: 'from Pinnacle history', 4: 'captured', ...(EARLY_MIN != null ? { 9: `early cut ${EARLY_MIN}` } : {}) },
+    rowsByLabel: { 'from Pinnacle history': bookCount[3], captured: bookCount[4], ...(EARLY_MIN != null ? { [`early cut ${EARLY_MIN}`]: bookCount[EARLY_BOOK] } : {}) },
   } } : {}),
   // Founder ruling 2026-10-25 (round 2 item 1.3): how the retRows settle in the Database figures (settlement.js).
   settlement: {
@@ -725,6 +746,7 @@ const meta = {
     started: settleCount.started,
     firstSet: { lookup: fsLookupNote.lookup || 'not needed', fromCareerRows: fsLookupNote.fromCareer },
   },
+  ...EARLY_META,
   levels, surfaces, rounds, tournaments,
   yieldOverall: {
     all: yAll, Pinnacle: yPS, Bet365: yB365,
@@ -794,7 +816,7 @@ if (rowsAtt.length !== rows.length || retAtt.length !== retRaw.length || tieAtt.
 writeAtomic(OUT_MASTER, JSON.stringify({ meta: { schema: 1, cols: MASTER_COLS, builtFrom: 'build-database-yield.js (the same run as database-yield.json)',
   dateRange: [dateMin, dateMax], latest: masterRows.reduce((m, r) => (r[0] > m ? r[0] : m), ''), bookCodes: { 0: 'Tennis-Data Pinnacle', 1: 'Bet365 (Tennis-Data)',
   2: 'Pinnacle (approx.) api-tennis', 3: 'Pinnacle (from Pinnacle history)', 4: 'Pinnacle (captured)', 5: 'Pinnacle (approx.) start - 10',
-  6: 'Bet365 (approx.) captured', 7: 'Bet365 (approx.) api-tennis', 8: 'Pinnacle (approx.) Tennis Explorer' },
+  6: 'Bet365 (approx.) captured', 7: 'Bet365 (approx.) api-tennis', 8: 'Pinnacle (approx.) Tennis Explorer', 9: 'Pinnacle early cut (not a close)' }, ...EARLY_META,
   counts: { all: masterRows.length, db: rows.length, ret: retRaw.length, tie: tieRaw.length, x: xRaw.length } }, rows: masterRows }));
 console.log(`name table (archive aliases → page join): ${JSON.stringify(nameTable)}`);
 // TEN-384: loaded by the player profile WITH the profile data (never database-yield.json).

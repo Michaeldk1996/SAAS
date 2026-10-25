@@ -46,7 +46,7 @@ function sandbox(db, careers, blk) {
     function psTourMeta() { return null; }
     function fhEsc(s) { return escapeHtml(s == null ? '' : String(s)); }
     ${['H2H_PAGE_PRICE_WINDOW', 'H2H_PAGE_MATCH_WINDOW', 'H2H_PAGE_START_WINDOW', 'H2H_PAGE_ROW_WINDOW', 'H2H_TD_ROUND', 'H2H_PAGE_BEFORE_RANK', '_h2hLedPx', 'H2H_PX_NOTE'].map(innerConst).join('')}
-    ${['fhIsInitial', 'fhNameKey', 'h2hRoundLabel', 'fhRoundCode', 'h2hTdIx', 'h2hTdKey', 'h2hTdSame', 'h2hTdRound', 'h2hTdEvent', 'h2hNearest', 'h2hPriceJoin', 'h2hCareerOf', 'h2hLedgerJoin', 'h2hPriceTitle', 'h2hPxNote', 'fhOdd', 'fhDDMM', 'fhSetTxt', 'fhH2hSetScores', 'fhB365Approx', 'fhSrcTitle', 'trPxTitle', 'trDbEnd', 'trDayWords', 'trRowData', 'trLastPlayed',
+    ${['fhIsInitial', 'fhNameKey', 'h2hRoundLabel', 'fhRoundCode', 'h2hTdIx', 'h2hTdKey', 'h2hTdSame', 'h2hTdRound', 'h2hTdEvent', 'h2hNearest', 'h2hPriceJoin', 'h2hCareerOf', 'h2hLedgerJoin', 'h2hPriceTitle', 'h2hPxNote', 'fhOdd', 'fhDDMM', 'fhSetTxt', 'fhH2hSetScores', 'fhB365Approx', 'fhPxMark', 'fhSrcTitle', 'trPxTitle', 'trDbEnd', 'trDayWords', 'trRowData', 'trLastPlayed',
       'psRoundAbbr', 'psGroupMeetings', 'psFmtMeetDate', 'ps2SetDone', 'ps2Meeting'].map(slice).join('\n')}
     const document = undefined;
     const state = {}; let handlers = [];

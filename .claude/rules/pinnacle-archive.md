@@ -56,7 +56,8 @@ Applies to `supabase/migrations/20261014120000_pinnacle_archive.sql`, `tools/pin
   `write=false` plans read-only (measurement, rule, fill rows, diff, digest; artifact `archive-fill-plan`); `write=true` +
   `plan_digest` inserts exactly that plan through `pinarch.insert` after a fresh no-collision read (artifact
   `archive-fill-write`). Its rows (`FILL_START_SOURCE` + `detail.closeCut`) export as closes (`pinarch.fill_cut`); rules:
-  `odds.md` "The 13 Apr – 16 Sep ATP main-draw fill". **Test:** `tools/test-archive-fill-probe.py`.
+  `odds.md` "The 13 Apr – 16 Sep ATP main-draw fill" (per-tier X, the "E" marker, re-cut by any true close). **Test:**
+  `tools/test-archive-fill-probe.py`, `tools/test-early-cut-marker.mjs`.
 - **Held back (never exported, never deleted):** a `derive-held` close (rule `start-alone`; the fill rows above are not) and a `captured` close of a
   match on or before 16 Sep (rule `captured-before-live-flip`, founder ruling 2026-10-17 item 1: those 420 were cut at
   Oddspapi's start alone). `pinarch.py` `HELD_BACK_RULES` carries how each was made; the export's `heldBack.byRule`

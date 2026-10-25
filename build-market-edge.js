@@ -203,13 +203,15 @@ function pickBook(row) {
 // The 1.01 floor (CLAUDE.md odds invariant) is the core's too: a price below it has no band, so it is
 // on no basis — never in the headline while missing from the bands.
 const BASIS_BOOKS = new Set(['pinnacle', 'pinnacle-capture', 'bet365-archive', 'bet365-capture',
-  'pinnacle-history', 'pinnacle-approx', 'pinnacle-approx-od10']);   // the Database's own books (founder 2026-10-17, item 1)
+  'pinnacle-history', 'pinnacle-approx', 'pinnacle-approx-od10', 'pinnacle-early']);   // the Database's own books (founder 2026-10-17, item 1; 9 = early cut 2026-10-25)
 
 // Founder ruling 2026-10-17: the master's book codes (build-database-yield.js) -> this file's book ids and labels.
 const DB_BOOK = {
   0: ['pinnacle', 'Pinnacle'], 1: ['bet365-archive', 'Bet365 (archive close)'], 2: ['pinnacle-approx', 'Pinnacle (approx.)'],
   3: ['pinnacle-history', 'Pinnacle (from Pinnacle history)'], 4: ['pinnacle-capture', 'Pinnacle (our capture)'],
   5: ['pinnacle-approx-od10', 'Pinnacle (approx., start − 10)'],
+  // founder ruling 2026-10-25 (the 13 Apr - 16 Sep fill): a Pinnacle price cut the tier buffer before the start, not a close
+  9: ['pinnacle-early', 'Pinnacle (early cut, not a close)'],
 };
 // ruling 4 (founder 2026-10-22): a retirement is on the basis only when its first set was completed (Pinnacle's rule) —
 // void, or no set scores, leaves every aggregate (player, band, curve, tour)

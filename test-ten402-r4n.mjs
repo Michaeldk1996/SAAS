@@ -123,7 +123,7 @@ test('r4 fix 3: the shared Tournament row (H2H Tournament ledger + Match analysi
   const tr = new Function([
     "const FH_DASHC = '—', FH_DASH = 'var(--text-label)';",
     'function fhDDMM(d){ return String(d).slice(8, 10) + "." + String(d).slice(5, 7); }',
-    'function fhH2hSetScores(r){ return "6-3, 6-4"; } function fhOdd(x){ return x.toFixed(2); } function trPxTitle(){ return ""; }',
+    'function fhH2hSetScores(r){ return "6-3, 6-4"; } function fhOdd(x){ return x.toFixed(2); } function trPxTitle(){ return ""; } function fhPxMark(){ return ""; }',
     'function fhEsc(s){ return String(s == null ? "" : s); } const _fh = null;',
     fnSrc('trRowData'), 'return trRowData;'].join('\n'))();
   assert.equal(tr({ date: '2025-09-07', won: true, opp: 'J. Sinner', round: 'F', pS: 3, oS: 1, sets: [[6, 2]] }).sets, '3–1');

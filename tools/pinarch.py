@@ -562,9 +562,18 @@ def archive_close_row(ev, raw_id, fixture_id, series):
     return row, None
 
 
+def _close_rank(r):
+    """Which close an event shows: an archive close at a true start (2) > a captured close (1) > a fill-rule row (0,
+    founder ruling 2026-10-25: a fill row is re-cuttable — any true close for the event, from any later source, wins)."""
+    if fill_cut(r):
+        return 0
+    return 2 if r.get('label') == ARCHIVE_LABEL else 1
+
+
 def current_closes(rows):
     """One close per event: the newest archive row ('from Pinnacle history') that no later row supersedes; else the
-    newest such captured row. Every other row stays in the archive (the log of what was replaced)."""
+    newest such captured row; a fill-rule row (fill_cut) only when the event has no other close. Every other row stays in
+    the archive (the log of what was replaced)."""
     superseded = {r['supersedes'] for r in rows if r.get('supersedes')}
     best = {}
     for r in sorted(rows, key=lambda r: r['id']):
@@ -572,7 +581,7 @@ def current_closes(rows):
             continue
         k = r['event_key']
         cur = best.get(k)
-        if cur is None or (r['label'] == ARCHIVE_LABEL) >= (cur['label'] == ARCHIVE_LABEL):
+        if cur is None or _close_rank(r) >= _close_rank(cur):
             best[k] = r
     return best
 
@@ -688,6 +697,11 @@ def export_rows(rows):
                     'label': r['label'], 'source': r['source'], 'book': r['book'], 'closeTs': r.get('close_ts'),
                     'startTs': r.get('start_ts'), 'startSource': r.get('start_source'), 'gapToStartS': r.get('gap_to_start_s'), 'archiveId': r['id'],
                     'apiTennis': ((r.get('detail') or {}).get('apiTennis')) or None})
+        fc = fill_cut(r)
+        if fc:                                                  # founder ruling 2026-10-25: the cut travels with the row
+            out[-1]['closeCut'] = fc
+            if fc == 'trueStart-buffer':
+                out[-1]['bufferMin'] = (r.get('detail') or {})['bufferMin']
     return out
 
 
@@ -1654,6 +1668,17 @@ FEED_RESULT_STATUSES = ('Finished', 'Retired', 'Awarded')
 FEED_COMMENT = {'Retired': 'Retired', 'Awarded': 'Awarded'}
 
 
+EARLY_CUT_LABEL = 'early cut'
+
+
+def feed_label(e):
+    """The feed's label for an export row: its own label, except a buffer-cut fill row (founder ruling 2026-10-25) —
+    'early cut N' (N = its bufferMin), which build-database-yield.js reads as book 9 and the page marks 'E'."""
+    if e.get('closeCut') == 'trueStart-buffer' and isinstance(e.get('bufferMin'), int) and e['bufferMin'] > 0:
+        return f"{EARLY_CUT_LABEL} {e['bufferMin']}"
+    return e.get('label')
+
+
 def td_feed_rows(export_rows, td_rows, alias, pin_stop, table_names=None, catalog=None, surfaces=None):
     """Feed rows + a report. `override`: a Tennis-Data row (same day ±1, both surnames) with no Pinnacle pair gets our
     close (the row is named exactly as Tennis-Data wrote it). `add`: an ATP main-draw match after Tennis-Data's last day,
@@ -1693,7 +1718,7 @@ def td_feed_rows(export_rows, td_rows, alias, pin_stop, table_names=None, catalo
             out.append({'kind': 'override', 'date': r['date'], 'tournament': r['tournament'], 'series': r.get('series'), 'court': r.get('court'),
                         'surface': r.get('surface'), 'round': r.get('round'), 'bestof': r.get('bestof'), 'winner': r['winner'], 'loser': r['loser'],
                         'comment': r.get('comment'), 'psw': e['p1'] if w1 else e['p2'], 'psl': e['p2'] if w1 else e['p1'],
-                        'archiveId': e.get('archiveId'), 'label': e.get('label'), 'eventKey': e.get('eventKey')})
+                        'archiveId': e.get('archiveId'), 'label': feed_label(e), 'eventKey': e.get('eventKey')})
             rep['override'] += 1; continue
         # Founder ruling 2026-10-17 (fix 2): a team event (Davis Cup, Laver Cup …) our archive prices goes into the master
         # with the same source order and hover; Tennis-Data never carries one, so it is its own feed kind ('team'), read
@@ -1712,7 +1737,7 @@ def td_feed_rows(export_rows, td_rows, alias, pin_stop, table_names=None, catalo
             out.append({'kind': 'team', 'date': d, 'tournament': str(ta.get('tournament_name')).replace(',', ' '), 'series': 'Team event',
                         'court': '', 'surface': '', 'round': '', 'bestof': '', 'winner': wn or td_name(w), 'loser': ln or td_name(l),
                         'comment': FEED_COMMENT.get(st, 'Completed'), 'psw': e['p1'] if first_won else e['p2'],
-                        'psl': e['p2'] if first_won else e['p1'], 'archiveId': e.get('archiveId'), 'label': e.get('label'), 'eventKey': e.get('eventKey')})
+                        'psl': e['p2'] if first_won else e['p1'], 'archiveId': e.get('archiveId'), 'label': feed_label(e), 'eventKey': e.get('eventKey')})
             rep['teamRetired' if st == 'Retired' else 'teamAwarded' if st == 'Awarded' else 'team'] += 1; continue
         if d <= td_last:
             rep['notInTdWindow'] += 1; continue       # inside Tennis-Data's window but not in it: not an ATP main-draw match
@@ -1750,7 +1775,7 @@ def td_feed_rows(export_rows, td_rows, alias, pin_stop, table_names=None, catalo
         out.append({'kind': 'add', 'date': d, 'tournament': meta['tournament'], 'series': meta['series'], 'court': meta['court'],
                     'surface': meta['surface'], 'round': rnd, 'bestof': meta['bestof'], 'winner': wn or td_name(w), 'loser': ln or td_name(l),
                     'comment': FEED_COMMENT.get(st, 'Completed'), 'psw': e['p1'] if first_won else e['p2'],
-                    'psl': e['p2'] if first_won else e['p1'], 'archiveId': e.get('archiveId'), 'label': e.get('label'), 'eventKey': e.get('eventKey')})
+                    'psl': e['p2'] if first_won else e['p1'], 'archiveId': e.get('archiveId'), 'label': feed_label(e), 'eventKey': e.get('eventKey')})
         rep['addRetired' if st == 'Retired' else 'addAwarded' if st == 'Awarded' else 'add'] += 1
     rep['tdLastDay'] = td_last
     return out, rep
