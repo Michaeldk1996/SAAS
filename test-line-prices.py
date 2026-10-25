@@ -9,7 +9,9 @@ that turns it red; tools/test-line-prices-mutants.py applies each one to a copy 
   B  guard (b): a pair whose sides do not add up dashes                      (mutant NO_COHERENCE)
   C  guard (c): a ladder out of order dashes                                 (mutant NO_LADDER)
   P  pre-match only: an api-tennis live / finished status dashes as started  (mutant NO_STARTED)
-  J  join: both surnames, one candidate, initials agree; else unmatched      (mutant JOIN_ONE_SURNAME)
+  J  join: both players, one candidate; disjoint initials block; else unmatched, LISTED  (mutant JOIN_ONE_SURNAME)
+  K  name ruling 2026-10-25: extra given / middle names and extra surname parts never block — the 5 real unmatched
+     spellings of 25 Oct 00:4xZ join, each in the right orientation    (mutants LAST_TOKEN_ONLY, ANY_INITIAL_BLOCKS)
   X  an opener on a different line is no opening price for this line       (mutant OPEN_ANY_LINE)
   U  two Kibl slots on the SAME line are one price, the newest (run 40115201276 upserted one key twice)
                                                                              (mutant NO_COLLAPSE)
@@ -142,6 +144,26 @@ _, mapping, jst = run(BASE, [wrong_i])
 check('J  disagreeing initials (M. Medvedev vs Daniil) -> no match', not mapping, dict(jst))
 _, mapping, _ = run(BASE)
 check('J  the match: event 12173801, side 2 = 1093 (Medvedev), side 3 = 1895', mapping and mapping[771905]['keys'] == {2: '1093', 3: '1895'})
+
+check('J  every unmatched Kibl fixture is listed with its players and reason',
+      all('reason' in u for u in LP.join_fixtures(KFX, [other])[1]['unmatched_list']) and LP.join_fixtures(KFX, [other])[1]['unmatched_list'][0]['players'] == ['Daniil Medvedev', 'Alexander Bublik'])
+
+print('\nK  name ruling: the five real cases')
+REAL = [  # Kibl side 2, side 3  |  api-tennis first, second  |  expected: side 2 is api-tennis FIRST?
+    (('Daniel Merida', 'Daniil Medvedev'), ('D. Merida Aguilar', 'D. Medvedev'), True),
+    (('Qian Sun', 'Mitsuki Wei Kang Leong'), ('W. K. Leong M.', 'Sun Qian'), False),
+    (('Darwin Blanch', 'Jenson Brooksby'), ('J. Brooksby', 'Dar. Blanch'), False),
+    (('Digvijay Pratap Singh', 'Karan Singh'), ('D. Singh', 'K. Singh'), True),
+    (('Pedro Sakamoto', 'Joao Victor Couto Loureiro'), ('P. Sakamoto', 'V. C. Loureiro J.'), True),
+]
+for (n2, n3), (a, b), first in REAL:
+    kf = [{'fixture_id': 1, 'start_time': '2026-10-25T10:00:00Z', 'participants': [{'side_id': 2, 'name': n2}, {'side_id': 3, 'name': n3}]}]
+    af = [{'event_key': 5, 'event_date': '2026-10-25', 'event_time': '10:00', 'event_type_type': 'Itf Men Singles',
+           'event_first_player': a, 'first_player_key': 'A', 'event_second_player': b, 'second_player_key': 'B', 'event_status': ''}]
+    m, stt = LP.join_fixtures(kf, af)
+    check(f'K  {n2} / {n3}  ~  {a} / {b}', 1 in m and m[1]['keys'] == ({2: 'A', 3: 'B'} if first else {2: 'B', 3: 'A'}), (m, stt.get('unmatched_list')))
+check('K  a genuinely different given name still blocks (M. Medvedev vs Daniil)', not LP._same_player('Daniil Medvedev', 'M. Medvedev'))
+check('K  a different player sharing one surname still blocks (D. Singh vs Karan Singh)', not LP._same_player('Karan Singh', 'D. Singh'))
 
 print('\nX  opening price')
 rows = BASE + [row(2, 1, 2, -2.5, 1.98, alt=1, opener=True, ins='2026-10-23T09:00:00Z'),

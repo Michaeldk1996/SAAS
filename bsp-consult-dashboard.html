@@ -13760,9 +13760,10 @@ function fhLinePx(L, ctx){
   const px = L && L.px;
   const side = !px ? null : px.side || (px.who === 'A' ? ctx.aKey : px.who === 'B' ? ctx.bKey : null);
   const r = LinePrices.linePrice(ctx.ek, side, px ? px.mk : null, px ? px.line : null, { date: ctx.date, started: !!ctx.started });
-  if (r.state === 'loading'){ LinePrices.load(ctx.date).then(() => { if (ctx.repaint) ctx.repaint(); }); return ''; }
+  if (r.state === 'loading'){ LinePrices.load(ctx.date, ctx.ek).then(() => { if (ctx.repaint) ctx.repaint(); }); return ''; }
   const body = LinePrices.hoverLines(r, L.name).map(fhEsc).join('<br>');
-  const face = `<span class="fh-hl-px" data-lp-state="${r.state}" data-lp-reason="${fhEsc(r.reason || '')}" style="${FH_MONO} font-size:10.5px; color:${r.state === 'ok' ? 'var(--text-soft)' : 'var(--text-label)'}; white-space:nowrap;">${fhEsc(LinePrices.faceText(r))}</span>`;
+  const fp = LinePrices.faceParts(r);   // founder 2026-10-25: the price's age on screen, its own line in a narrow cell
+  const face = `<span class="fh-hl-px" data-lp-state="${r.state}" data-lp-reason="${fhEsc(r.reason || '')}" data-lp-face="${fhEsc(LinePrices.faceText(r))}" style="${FH_MONO} display:inline-flex; flex-direction:column; gap:1px; font-size:10.5px; color:${r.state === 'ok' ? 'var(--text-soft)' : 'var(--text-label)'}; white-space:nowrap;"><span>${fhEsc(fp.main)}</span>${fp.age ? `<span style="font-size:9.5px; color:var(--text-label);">${fhEsc(fp.age)}</span>` : ''}</span>`;
   return maTipHtml(face, `<span style="font-family:'IBM Plex Mono',monospace; font-size:11px; line-height:1.5;">${body}</span>`, { below: true, start: true });
 }
 // The match a matchup view prices: the modal's own match (not started), or null.

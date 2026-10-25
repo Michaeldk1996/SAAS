@@ -6766,13 +6766,16 @@
     else if (lcNextFormat(nx) !== fmt) res = { state: 'dash', reason: 'other_format', reasonText: 'his next match is ' + (fmt === 'bo3' ? 'best of 5' : 'best of 3'), ladder: [], market: mk, line: line };
     else res = LP.linePrice(nx.eventKey, side, mk || null, line, { date: nx.date, started: !!nx.live });
     if (res.state === 'loading') {
-      LP.load(nx.date).then(function () { if (typeof window.pp2RepaintIfOpen === 'function') window.pp2RepaintIfOpen(p.key); });
+      LP.load(nx.date, nx.eventKey).then(function () { if (typeof window.pp2RepaintIfOpen === 'function') window.pp2RepaintIfOpen(p.key); });
       return '';
     }
     var tip = LP.hoverLines(res, r.label).join('\n');
-    return '<span data-lp-state="' + res.state + '" data-lp-reason="' + esc(res.reason || '') + '"' + (tip ? ' title="' + esc(tip) + '"' : '') +
-      ' style="' + MK_MONO + 'font-size:10.5px;white-space:nowrap;color:' + (res.state === 'ok' ? 'var(--text-soft)' : 'var(--text-label)') + ';' +
-      (tip ? 'cursor:help;' : '') + '">' + esc(LP.faceText(res)) + '</span>';
+    var fp = LP.faceParts(res);   // founder 2026-10-25: the price's age on screen, on its own line
+    return '<span data-lp-state="' + res.state + '" data-lp-reason="' + esc(res.reason || '') + '" data-lp-face="' + esc(LP.faceText(res)) + '"' +
+      (tip ? ' title="' + esc(tip) + '"' : '') +
+      ' style="' + MK_MONO + 'display:inline-flex;flex-direction:column;align-items:flex-end;gap:1px;font-size:10.5px;white-space:nowrap;color:' +
+      (res.state === 'ok' ? 'var(--text-soft)' : 'var(--text-label)') + ';' + (tip ? 'cursor:help;' : '') + '"><span>' + esc(fp.main) + '</span>' +
+      (fp.age ? '<span style="font-size:9.5px;color:var(--text-label);">' + esc(fp.age) + '</span>' : '') + '</span>';
   }
 
   /** One ledger row's figures, on the sample gate (n < 5 dash, 5–9 small sample). A whole line's voids sit

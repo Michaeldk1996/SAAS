@@ -2,6 +2,7 @@ name: TEN-270 Kibl stream -> live Now
 
 # MANUAL ONLY. Four actions:
 #   schema         apply kibl-stream/now-schema.sql (idempotent), then `verify`
+#   lines-schema   apply line-prices-schema.sql (idempotent; bet105 line prices), then its own read checks
 #   verify         prove, WITH THE PAGE'S OWN PUBLISHABLE KEY, that the browser
 #                  can SELECT kibl_now_price and nothing else: history refused,
 #                  inserts refused. Also that the table is in supabase_realtime.
@@ -26,7 +27,7 @@ on:
   workflow_dispatch:
     inputs:
       action:
-        description: 'schema | verify | deploy-worker | status | logs | realtime-config | usage | unpublish-price | heartbeat-check'
+        description: 'schema | lines-schema | verify | deploy-worker | status | logs | realtime-config | usage | unpublish-price | heartbeat-check'
         required: true
         default: 'status'
       max_events:
@@ -295,13 +296,88 @@ jobs:
                   bad.append(f"{len(unsent)} post-match alert(s) unsent")
               else:
                   print("post-match unsent alerts -> none")
+          if act == "lines-schema":
+              st, r = sql(open("line-prices-schema.sql").read())
+              print(f"line-prices-schema.sql apply HTTP {st}")
+              if st >= 400:
+                  print(r[:500]); sys.exit(1)
+          if act in ("lines-schema", "verify"):
+              # bet105 line prices (founder 2026-10-25): the page reads the CURRENT table with its publishable
+              # key; it can write nothing and cannot read the ticks.
+              pk = os.environ["SUPABASE_PUBLISHABLE_KEY"]
+              st, r = call(f"{url}/rest/v1/line_prices_current?select=event_key&limit=1", key=pk)
+              print(f"[publishable] SELECT line_prices_current -> HTTP {st}  (want 200)")
+              if st != 200: bad.append("line_prices_current not readable")
+              st, r = call(f"{url}/rest/v1/line_price_ticks?select=id&limit=1", key=pk)
+              try:
+                  n_t = len(json.loads(r)) if st == 200 else -1
+              except (ValueError, TypeError):
+                  n_t = -1
+              print(f"[publishable] SELECT line_price_ticks -> HTTP {st}, {n_t} row(s)  (want 401/403, or 200 with 0 rows)")
+              if st not in (401, 403) and not (st == 200 and n_t == 0): bad.append(f"ticks readable ({st}, {n_t} rows)")
+              st, r = call(f"{url}/rest/v1/line_prices_current", "POST",
+                           [{"event_key": -1, "market": "ml", "side": "__rls_probe__", "book": "probe", "status": "probe",
+                             "seen_at": "2026-01-01T00:00:00Z"}], key=pk)
+              print(f"[publishable] INSERT line_prices_current -> HTTP {st}  (want 401/403)")
+              if st not in (401, 403):
+                  bad.append(f"publishable key could INSERT a line price ({st})")
+              # UPDATE on a REAL row (a filter matching nothing would pass vacuously), setting its price to the
+              # value it already has, so even a wrongly allowed update changes nothing.
+              st, r = call(f"{url}/rest/v1/line_prices_current?select=event_key,market,side,price&price=not.is.null&limit=1",
+                           key=os.environ["SUPABASE_SECRET_KEY"])
+              real = json.loads(r) if st == 200 else []
+              if not real:
+                  print("[publishable] UPDATE line_prices_current -> SKIPPED: no priced row to aim at (not a pass)")
+              else:
+                  x = real[0]
+                  q = urllib.parse.urlencode({"event_key": f"eq.{x['event_key']}", "market": f"eq.{x['market']}",
+                                              "side": f"eq.{x['side']}", "price": f"eq.{x['price']}"})
+                  st, r = call(f"{url}/rest/v1/line_prices_current?{q}", "PATCH", {"price": x["price"]}, key=pk,
+                               prefer="return=representation")
+                  try:
+                      n_p = len(json.loads(r)) if st == 200 else 0
+                  except (ValueError, TypeError):
+                      n_p = -1
+                  print(f"[publishable] UPDATE line_prices_current (a real row) -> HTTP {st}, {n_p} row(s)  (want 401/403, or 0 rows)")
+                  if n_p != 0: bad.append(f"publishable key could UPDATE line prices ({st}, {n_p})")
           if act == "status":
               sk = os.environ["SUPABASE_SECRET_KEY"]
               st, r = call(f"{url}/rest/v1/kibl_now_price?kind=eq.heartbeat&select=written_at,note", key=sk)
-              print(f"heartbeat -> HTTP {st} {r[:1500]}")
+              print(f"heartbeat -> HTTP {st} {r[:6000]}")
               st, r = call(f"{url}/rest/v1/kibl_now_price?kind=eq.price&select=card_key", key=sk,
                            prefer="count=exact")
               print(f"price rows -> HTTP {st} {len(json.loads(r)) if st == 200 else r[:200]}")
+              # The Now path's own health, comparable across a deploy (bet105 line prices, 2026-10-25): card rows
+              # written in the last 60 min and their write lag (written_at - the newer side's Kibl insert time).
+              import datetime as _dt
+              def _p(v):
+                  try: return _dt.datetime.fromisoformat(str(v).replace("Z", "+00:00"))
+                  except ValueError: return None
+              since = (_dt.datetime.now(_dt.timezone.utc) - _dt.timedelta(minutes=60)).strftime("%Y-%m-%dT%H:%M:%SZ")
+              st, r = call(f"{url}/rest/v1/kibl_now_card?select=written_at,a_at,b_at,source&written_at=gte.{since}"
+                           "&order=written_at.desc&limit=1000", key=sk)
+              cards = json.loads(r) if st == 200 else []
+              lags = sorted((_p(c["written_at"]) - max(_p(c["a_at"]), _p(c["b_at"]))).total_seconds()
+                            for c in cards if _p(c["written_at"]) and _p(c["a_at"]) and _p(c["b_at"]))
+              med = lambda v: v[len(v) // 2] if v else None
+              print(f"now cards written, last 60 min: {len(cards)} (HTTP {st}); write lag s median {med(lags)}, "
+                    f"min {lags[0] if lags else None}, max {lags[-1] if lags else None} (n={len(lags)})")
+              # Line prices: current rows by status (events from a day back) and ticks in the last 60 min.
+              d1 = (_dt.datetime.now(_dt.timezone.utc) - _dt.timedelta(days=1)).strftime("%Y-%m-%dT%H:%M:%SZ")
+              byst, off = {}, 0
+              while True:
+                  st, r = call(f"{url}/rest/v1/line_prices_current?select=status,seen_at&start_ts=gte.{d1}"
+                               f"&order=event_key.asc,market.asc,side.asc,line.asc&limit=1000&offset={off}", key=sk)
+                  got = json.loads(r) if st == 200 else []
+                  for x in got: byst[x["status"]] = byst.get(x["status"], 0) + 1
+                  if len(got) < 1000: break
+                  off += 1000
+              newest = None
+              st2, r2 = call(f"{url}/rest/v1/line_prices_current?select=seen_at&order=seen_at.desc&limit=1", key=sk)
+              if st2 == 200 and json.loads(r2): newest = json.loads(r2)[0]["seen_at"]
+              print(f"line_prices_current (events from {d1}): {sum(byst.values())} row(s) by status {byst}; newest seen_at {newest}")
+              st, r = call(f"{url}/rest/v1/line_price_ticks?select=id&seen_at=gte.{since}", key=sk, prefer="count=exact")
+              print(f"line_price_ticks, last 60 min: HTTP {st} {len(json.loads(r)) if st == 200 else r[:200]}")
           if act == "unpublish-price":
               st, r = sql("do $$ begin if exists (select 1 from pg_publication_tables where pubname='supabase_realtime' "
                           "and schemaname='public' and tablename='kibl_now_price') then "
@@ -619,6 +695,8 @@ jobs:
           KIBL_PASSWORD: ${{ secrets.KIBL_PASSWORD }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          # bet105 line prices join Kibl fixtures to api-tennis on the worker (founder 2026-10-25).
+          API_TENNIS_KEY: ${{ secrets.API_TENNIS_KEY }}
         run: |
           set -euo pipefail
           APP=$(sed -n 's/^app *= *"\(.*\)"/\1/p' kibl-stream/fly.toml)
@@ -636,7 +714,8 @@ jobs:
           python3 - <<'PY' | flyctl secrets import --app "$APP" --stage
           import base64, os
           for k in ("KIBL_RMQ_HOST","KIBL_RMQ_PORT","KIBL_RMQ_VHOST","KIBL_RMQ_USER","KIBL_RMQ_PASS",
-                    "KIBL_RMQ_QUEUE","KIBL_USERNAME","KIBL_PASSWORD","SUPABASE_URL","SUPABASE_SECRET_KEY"):
+                    "KIBL_RMQ_QUEUE","KIBL_USERNAME","KIBL_PASSWORD","SUPABASE_URL","SUPABASE_SECRET_KEY",
+                    "API_TENNIS_KEY"):
               v = os.environ.get(k, "").strip()
               if not v:
                   raise SystemExit(f"missing secret {k}")

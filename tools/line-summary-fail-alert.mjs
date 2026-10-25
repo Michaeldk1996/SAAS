@@ -44,6 +44,8 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   try {
     const d = await decide(process.env);
     if (!d.alert) { console.log(`line-summary alert: no message (${d.why})`); process.exit(0); }
+    // A manual replay (ALERT_TEST, the workflow's dispatch path) says so on its first line — never mistaken for a live failure.
+    if (process.env.ALERT_TEST) d.text = 'TEST — no action needed. A replay of the alert for an earlier run, proving the ops chat receives it.\n' + d.text;
     const r = await sendTelegram(d.text, process.env);
     if (r.ok) console.log(`line-summary alert: Telegram sent (${r.why})`);
     else { console.log(`::error title=Line-summary alert not sent::Telegram ${r.why}`); if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, `### Line-summary alert NOT sent (${r.why})\n\n${d.text}\n`); }

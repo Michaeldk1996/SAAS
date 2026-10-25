@@ -59,8 +59,17 @@ const watched = /^name:\s*(.+)$/m.exec(readFileSync(join(ROOT, '.github/workflow
 const listens = /workflows:\s*\[\s*'([^']+)'\s*\]/.exec(wf);
 ok(listens && listens[1] === watched && /types:\s*\[\s*completed\s*\]/.test(wf),
   `5. wiring: workflow_run completed of "${watched}" (exact name; a wrong name never fires)`, listens && listens[1]);
-ok(/if:\s*github\.event\.workflow_run\.conclusion != 'success'/.test(wf) && !/conclusion != 'cancelled'/.test(wf) && /node tools\/line-summary-fail-alert\.mjs/.test(wf),
+ok(/github\.event\.workflow_run\.conclusion != 'success'/.test(wf) && !/conclusion != 'cancelled'/.test(wf) && /node tools\/line-summary-fail-alert\.mjs/.test(wf),
   '   the job condition lets cancelled through and runs the tested script');
+ok(/workflow_dispatch:/.test(wf) && /ALERT_TEST: \$\{\{ github\.event_name == 'workflow_dispatch' && '1' \|\| '' \}\}/.test(wf),
+  '6. the manual replay path always marks its message TEST');
+SENT = [];
+const cli2 = await new Promise(res => {
+  const p = spawn(process.execPath, [join(ROOT, 'tools', 'line-summary-fail-alert.mjs')], { env: Object.assign({}, process.env, env, { RUN_ID: '1', ALERT_TEST: '1' }) });
+  p.on('close', status => res({ status }));
+});
+ok(cli2.status === 0 && SENT.length === 1 && /^TEST — no action needed\./.test(SENT[0].text) && /CANCELLED/.test(SENT[0].text),
+  '6. a replay posts ONE message whose first line says TEST', SENT.map(x => x.text.slice(0, 60)).join(' | '));
 srv.close();
 console.log(`PASS ${pass}   FAIL ${fail}`);
 process.exit(fail ? 1 : 0);

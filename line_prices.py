@@ -19,7 +19,7 @@ side_id 7 = Over, 6 = Under (the 7-side price rises with the line on 131 of 131 
 import collections
 import math
 
-from ten225_names import name_key, given_initial
+from ten225_names import name_key, nfd
 
 BOOK = 'bet105'
 MARKETS = {(1, 1): 'ml', (1, 22): 'ml1', (2, 1): 'gh', (2, 54): 'sh', (3, 1): 'tg', (3, 54): 'ts'}
@@ -60,60 +60,88 @@ def at_start_ts(f):
 
 
 # ----------------------------------------------------------------------------------------------- 1. fixture join
+def _tokens(name):
+    """A name's parts after the standing NFD / punctuation fold: 'V. C. Loureiro J.' -> ['v', 'c', 'loureiro', 'j']."""
+    return nfd(name or '').split()
+
+
+def _same_player(kibl_name, at_name):
+    """True when two feeds' spellings can be one player (founder ruling 2026-10-25: extra given / middle names, and extra
+    surname parts, must not block a match).
+      * surname: either feed's surname key (ten225_names.name_key) is ANY part of the other name — a compound surname
+        ('Daniel Merida' / 'D. Merida Aguilar') or a surname-first spelling ('Qian Sun' / 'Sun Qian') still meets;
+      * given names: compared as INITIAL LETTERS of every other part, and they only block when the two sets share NO
+        letter ('Dar.' / 'Darwin', 'V. C. Loureiro J.' / 'Joao Victor Couto Loureiro', 'W. K. Leong M.' / 'Mitsuki Wei
+        Kang Leong' all pass; 'M. Medvedev' / 'Daniil Medvedev' does not). A feed with no given part never blocks."""
+    tk, ta = _tokens(kibl_name), _tokens(at_name)
+    kk, ka = name_key(kibl_name or ''), name_key(at_name or '')
+    if not tk or not ta or not kk or not ka:
+        return False
+    if kk in ta:
+        sur = kk
+    elif ka in tk:
+        sur = ka
+    else:
+        return False
+    gk = {t[0] for t in tk if t != sur}
+    ga = {t[0] for t in ta if t != sur}
+    return not gk or not ga or bool(gk & ga)
+
+
 def join_fixtures(kibl_fixtures, at_fixtures):
     """Kibl fixture -> {event_key, keys: {kibl_side_id: api-tennis player key}, start_ts, date, tier, status}.
 
-    Both surnames must match (either orientation), the starts within JOIN_WINDOW_S, exactly ONE api-tennis candidate,
-    and no api-tennis fixture claimed by two Kibl fixtures. A pair whose two players share a surname is unkeyable.
-    Given initials, when both feeds carry one, must agree. Anything else is unmatched and gets no prices.
-    Returns (mapping, stats)."""
+    Both players must be the same players in either orientation (_same_player), the starts within JOIN_WINDOW_S, exactly
+    ONE api-tennis candidate, and no api-tennis fixture claimed by two Kibl fixtures. Two players sharing a surname are
+    told apart by their given initials (the same rule). Anything else is unmatched, gets no prices, and is LISTED with its
+    names and reason (stats['unmatched_list']). Returns (mapping, stats)."""
     st = collections.Counter()
+    unmatched = []
     cands = []
     for f in at_fixtures or ():
         if f.get('event_type_type') not in AT_TYPES:
             continue
         a, b = f.get('event_first_player') or '', f.get('event_second_player') or ''
-        if '/' in a or '/' in b:
+        if '/' in a or '/' in b or not a or not b:
             continue
-        ka, kb = name_key(a), name_key(b)
-        if not ka or not kb or ka == kb:
-            continue
-        cands.append((f, ka, kb, at_start_ts(f)))
+        cands.append((f, a, b, at_start_ts(f)))
     claim = collections.defaultdict(list)
     out = {}
     for kf in kibl_fixtures or ():
         parts = {p.get('side_id'): p.get('name') for p in (kf.get('participants') or []) if p.get('side_id') in (2, 3)}
         if len(parts) != 2:
             st['unmatched_no_two_participants'] += 1
+            unmatched.append({'kibl': kf.get('fixture_id'), 'name': kf.get('name'), 'reason': 'not two participants'})
             continue
         n2, n3 = parts[2] or '', parts[3] or ''
         if '/' in n2 or '/' in n3:
             st['skipped_doubles'] += 1
             continue
-        k2, k3 = name_key(n2), name_key(n3)
-        if not k2 or not k3 or k2 == k3:
-            st['unmatched_unkeyable'] += 1
-            continue
         ks = _ts(kf.get('start_time'))
         hits = []
-        for f, ka, kb, at_ts in cands:
-            if {ka, kb} != {k2, k3}:
-                continue
+        for f, a, b, at_ts in cands:
             if ks is not None and at_ts is not None and abs(ks - at_ts) > JOIN_WINDOW_S:
                 continue
-            first_is_2 = ka == k2
-            i_at = (given_initial(f.get('event_first_player')), given_initial(f.get('event_second_player')))
-            i_kb = (given_initial(n2), given_initial(n3)) if first_is_2 else (given_initial(n3), given_initial(n2))
-            if any(x and y and x != y for x, y in zip(i_at, i_kb)):
-                continue
-            hits.append((f, first_is_2))
-        if len(hits) != 1:
+            straight = _same_player(n2, a) and _same_player(n3, b)
+            crossed = _same_player(n2, b) and _same_player(n3, a)
+            if straight != crossed:              # exactly one orientation: both true = the names cannot say who is who
+                hits.append((f, straight))
+            elif straight and crossed:
+                hits.append((f, None))
+        clean = [h for h in hits if h[1] is not None]
+        if len(clean) != 1 or len(hits) != 1:
+            why = 'no api-tennis fixture with both players' if not hits else \
+                  'players not told apart (same surname, no initial)' if hits and not clean else 'more than one api-tennis candidate'
             st['unmatched_none' if not hits else 'unmatched_ambiguous'] += 1
+            unmatched.append({'kibl': kf.get('fixture_id'), 'start': kf.get('start_time'), 'players': [n2, n3],
+                              'league': kf.get('league_id'), 'reason': why,
+                              'candidates': [[h[0].get('event_key'), h[0].get('event_first_player'), h[0].get('event_second_player')] for h in hits][:3]})
             continue
-        f, first_is_2 = hits[0]
+        f, first_is_2 = clean[0]
         p1, p2 = f.get('first_player_key'), f.get('second_player_key')
         if p1 is None or p2 is None:
             st['unmatched_no_player_key'] += 1
+            unmatched.append({'kibl': kf.get('fixture_id'), 'players': [n2, n3], 'reason': 'api-tennis has no player key'})
             continue
         ek = int(f['event_key'])
         claim[ek].append(kf['fixture_id'])
@@ -125,8 +153,10 @@ def join_fixtures(kibl_fixtures, at_fixtures):
         if len(fids) > 1:
             for fid in fids:
                 out.pop(fid, None)
+                unmatched.append({'kibl': fid, 'reason': f'api-tennis event {ek} claimed by two Kibl fixtures'})
             st['unmatched_claimed_twice'] += len(fids)
     st['matched'] = len(out)
+    st['unmatched_list'] = unmatched
     return out, st
 
 
