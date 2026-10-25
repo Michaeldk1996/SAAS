@@ -13483,7 +13483,7 @@ const SF_TE_HOVER = 'Tennis Explorer, last pre-match price, not a confirmed clos
 // the start — NOT a close. Read as Pinnacle (approx.) ('A', src 'early'), marked 'E' wherever the 'B' marker is drawn, with
 // the founder's tooltip naming the build's X (database-yield.json meta.earlyCut.hover). Before the Database join answers
 // (a Market edge shard row), the same words without a number — never a guessed X.
-const SF_EARLY_HOVER_NO_X = 'Pinnacle price taken before scheduled start; true close unavailable';
+const SF_EARLY_HOVER_NO_X = "Early Pinnacle price — taken before Oddspapi's recorded start. True closing price unavailable.";
 function fhPxMark(r){ return r && r.price != null ? (r.book === 'B' ? 'B' : r.book === 'A' && r.src === 'early' ? 'E' : '') : ''; }
 // the words after "Pinnacle (approx.) · " for every 'A' row: start − 10, Tennis Explorer, else api-tennis
 function sfApproxHover(r){ return r && r.src === 'od10' ? SF_OD10_HOVER : r && r.src === 'te' ? SF_TE_HOVER : SF_APPROX_HOVER; }

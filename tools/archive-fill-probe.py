@@ -284,7 +284,7 @@ def tier_rules(meas):
 
 def early_hover(minutes):
     """The founder's tooltip for a buffer-cut price (2026-10-25), with the row's own X."""
-    return f'Pinnacle price ≥{minutes} min before scheduled start; true close unavailable'
+    return f"Early Pinnacle price — taken {minutes}–{minutes + 60} min before Oddspapi's recorded start. True closing price unavailable."
 
 
 def tier_table(rules, meas):

@@ -31,7 +31,7 @@ const constLine = name => {
   assert.ok(m, `const ${name} not found`);
   return m[0].replace(/\/\/[^'\n]*$/, '');
 };
-const HOVER = 'Pinnacle price ≥71 min before scheduled start; true close unavailable';
+const HOVER = "Early Pinnacle price — taken 71–131 min before Oddspapi's recorded start. True closing price unavailable.";
 
 // ── 1. pinarch: export → td-feed (python, the real functions) ─────────────────────────────────────────────────────────
 const py = String.raw`
@@ -128,7 +128,7 @@ check('render: the early cut draws "E" with the founder\'s tooltip; Bet365 still
   assert.match(UI.fhPriceCell(b.price, 'right', false, b, true), /class="fh-bmark"[^>]*>B<\/span>/);
 });
 check('render: before the join answers, the tooltip never guesses an X', () => {
-  assert.equal(UI.fhSrcTitle({ price: 1.6, book: 'A', src: 'early' }), 'Pinnacle price taken before scheduled start; true close unavailable');
+  assert.equal(UI.fhSrcTitle({ price: 1.6, book: 'A', src: 'early' }), "Early Pinnacle price — taken before Oddspapi's recorded start. True closing price unavailable.");
 });
 check('every "B" marker site now draws through fhPxMark (Form, H2H tab, Tournament, Head to Head page, price cell)', () => {
   const old = html.match(/hMark: r\.price != null && r\.book === 'B' \? 'B' : ''/g) || [];

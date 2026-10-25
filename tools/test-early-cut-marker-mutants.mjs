@@ -17,7 +17,7 @@ const MUTANTS = [
   ['build-database-yield.js', 'the builder reads "early cut" as an unknown label', '  if (!m) return undefined;\n  earlyMinutes.add(+m[1]);\n  return EARLY_BOOK;', '  return undefined;'],
   ['build-database-yield.js', 'book 9 counted as a Pinnacle close', 'const isPinIdx = i => i === 0 || i === 3 || i === 4;', 'const isPinIdx = i => i === 0 || i === 3 || i === 4 || i === 9;'],
   ['build-database-yield.js', 'two buffers accepted', 'if (earlyMinutes.size > 1) {', 'if (false) {'],
-  ['build-database-yield.js', 'the tooltip text changed', 'min before scheduled start; true close unavailable`', 'min before the start`'],
+  ['build-database-yield.js', 'the tooltip text changed', "min before Oddspapi's recorded start. True closing price unavailable.`", 'min before the start`'],
   ['build-database-yield.js', 'no earlyCut meta on the master', "'Pinnacle early cut (not a close)' }, ...EARLY_META,", "'Pinnacle early cut (not a close)' },"],
   ['bsp-consult-dashboard.html', 'the join leaves book 9 as Bet365', "      if (bk === 9) { r.book = 'A'; r.src = 'early'; r.srcLabel = (db.meta && db.meta.earlyCut && db.meta.earlyCut.hover) || undefined; }\n", ''],
   ['bsp-consult-dashboard.html', 'the marker never draws E', "r.book === 'A' && r.src === 'early' ? 'E' : ''", "''"],

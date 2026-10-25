@@ -221,7 +221,8 @@ const archBookOf = label => {
   earlyMinutes.add(+m[1]);
   return EARLY_BOOK;
 };
-const earlyHover = min => `Pinnacle price \u2265${min} min before scheduled start; true close unavailable`;
+// founder wording 2026-10-25: the cut is trueStart − X and the price may be up to 60 min older than the cut
+const earlyHover = min => `Early Pinnacle price \u2014 taken ${min}\u2013${min + 60} min before Oddspapi's recorded start. True closing price unavailable.`;
 const isPinIdx = i => i === 0 || i === 3 || i === 4;
 
 const rows = [];      // [dateInt, lvlIdx, surfIdx, rndIdx, tourIdx, favPrice, dogPrice, favWon, bookIdx]

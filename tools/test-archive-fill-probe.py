@@ -273,8 +273,8 @@ def fill_suite(M):
     check('per tier: the row carries its tier and its X (bufferMin)', ft['detail']['tier'] == 'ATP' and ft['detail']['bufferMin'] == 65)
     check('per tier: the digest moves with the tier', M.plan_digest(RT, [ft]) != M.plan_digest(dict(RT, tier='Challenger'), [ft])
           and M.plan_digest(RT, [ft]) != M.plan_digest(RT, [dict(ft, detail=dict(ft['detail'], tier='Challenger'))]))
-    check('marker text: the founder\'s tooltip with the row\'s own X', M.early_hover(71) == 'Pinnacle price ≥71 min before scheduled start; true close unavailable'
-          and M.early_hover(12).startswith('Pinnacle price ≥12 min'))
+    check('marker text: the founder\'s tooltip with the row\'s own X', M.early_hover(71) == "Early Pinnacle price — taken 71–131 min before Oddspapi's recorded start. True closing price unavailable."
+          and M.early_hover(12).startswith('Early Pinnacle price — taken 12–72 min'))
 
     # ── re-cut (founder ruling 2026-10-25 (3)): any true close supersedes a fill row in the export
     fb = dict(base_row := {'label': P.ARCHIVE_LABEL, 'match_date': '2026-06-01', 'p1_key': 1, 'p2_key': 2, 'p1': 1.6, 'p2': 2.3, 'source': 's', 'book': 'b',
@@ -607,7 +607,7 @@ MUTANTS = [
     ('per tier: pooled measurement used for every tier', src_mutant("out[t] = dict(fill_rule(st), tier=t, level=lv)", "out[t] = dict(fill_rule(meas['primary']), tier=t, level=lv)")),
     ('per tier: the tier not carried in the row', src_mutant("        row['detail']['tier'] = rule['tier']", "        pass")),
     ('per tier: the tier not in the digest', src_mutant("'tier': rule.get('tier'), 'rows': proj}", "'rows': proj}")),
-    ('marker: tooltip text changed', src_mutant("min before scheduled start; true close unavailable'", "min before the start'")),
+    ('marker: tooltip text changed', src_mutant("min before Oddspapi's recorded start. True closing price unavailable.\"", "min before the start\"")),
     ('pinarch: a fill row ranks as a true close (no re-cut)', pin_mutant("    if fill_cut(r):\n        return 0\n", "")),
     ('pinarch: the cut does not travel with the export row', pin_mutant("            out[-1]['closeCut'] = fc\n", "            pass\n")),
     ('pinarch: the feed label ignores the buffer', pin_mutant('        return f"{EARLY_CUT_LABEL} {e[\'bufferMin\']}"', "        return e.get('label')")),
