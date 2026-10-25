@@ -1593,6 +1593,14 @@ def new_event_meta(key, api, catalog, surfaces, sizes):
             'bestof': '5' if series == 'Grand Slam' else '3', 'K': K, 'year': None, 'newEvent': True}
 
 
+def td_event_key(a):
+    """The td-feed's event key for an api-tennis fixture: its tournament name without "ATP " and without a trailing
+    " - Qualification" (round 2 item 1.1: api-tennis names the Lyon (France) MAIN draw "Lyon (France) - Qualification").
+    ONE key for the edition lookup and the draw-size table, so a new event's K (its R32 / R16 labels) is found."""
+    key = re.sub(r'^ATP\s+', '', str(a.get('tournament_name') or '')).strip()
+    return re.sub(r'\s*-\s*Qualification$', '', key, flags=re.I).strip()
+
+
 def api_is_qualifying(a):
     """Qualifying status of an api-tennis fixture (defect brief 2026-10-24 items 1-2). The feed's own flag decides:
     event_qualification 'True' / 'False'. Its round label never overrides it - api-tennis labels the qualifying bracket's
@@ -1693,7 +1701,7 @@ def td_feed_rows(export_rows, td_rows, alias, pin_stop, table_names=None, catalo
     sizes = {}                                   # (event, year) -> the draw sizes its archive closes show (a new event's K)
     for e in export_rows:
         a = e.get('apiTennis') or {}
-        k = (re.sub(r'^ATP\s+', '', str(a.get('tournament_name') or '')).strip(), e['date'][:4])
+        k = (td_event_key(a), e['date'][:4])
         sizes.setdefault(k, []).append(ROUND_SIZE.get(_fold(str(a.get('tournament_round') or '').split(' - ')[-1]).strip(), 0))
     out, rep = [], {'closes': 0, 'beforePinnacleStop': 0, 'override': 0, 'tdHasPinnacle': 0, 'twoTdRows': 0, 'add': 0, 'addRetired': 0,
                     'notInTdWindow': 0, 'capturedOnlyAfterTd': 0, 'notAtpSingles': 0, 'qualifying': 0, 'qualifyingOrRound': 0, 'walkover': 0,
@@ -1753,10 +1761,7 @@ def td_feed_rows(export_rows, td_rows, alias, pin_stop, table_names=None, catalo
             rep['noResult'] += 1; continue
         if api_is_qualifying(a):
             rep['qualifying'] += 1; continue          # the flag decides; a qualifying round label never reads as main draw
-        key = re.sub(r'^ATP\s+', '', str(a.get('tournament_name') or '')).strip()
-        # round 2 item 1.1: a main-draw event api-tennis names "… - Qualification" (Lyon (France), key 14763) is keyed
-        # without the suffix — the flag above already said it is not qualifying.
-        key = re.sub(r'\s*-\s*Qualification$', '', key, flags=re.I).strip()
+        key = td_event_key(a)
         meta = td_edition_meta(td_rows, alias, key)
         if not meta and catalog is not None:
             meta = new_event_meta(key, a, catalog, surfaces, sizes.get((key, d[:4])))

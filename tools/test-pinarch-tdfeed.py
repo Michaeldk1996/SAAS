@@ -180,6 +180,17 @@ check('ruling 4: a new event is added from our own tables (surface Hard, court I
       len(na) == 2 and all(r['series'] == 'ATP250' and r['surface'] == 'Hard' and r['court'] == 'Indoor' and r['bestof'] == '3' for r in na)
       and sorted(r['round'] for r in na) == ['1st Round', '2nd Round'] and nr['newEvent'] == 2, (na, nr))
 check('ruling 4: an event the catalog lacks is counted, never guessed', nr['noTdEdition'] == 1, nr)
+# Round 2 item 1.1: api-tennis names the Lyon (France) MAIN draw "ATP Lyon (France) - Qualification" (flag False). The
+# edition key AND the draw-size table use one key (td_event_key), so its R32 / R16 rows get their rounds — with the
+# suffix left on the size table, K was 0 and only QF / SF / F were labelled (4 of 24 Lyon rows, live 2026-10-25).
+# Mutation: key the size table on the raw name again → the 1/16 and 1/8 matches are not added → red.
+LY = [dict(eventKey=51 + i, date='2026-10-2%d' % (i + 1), p1Name='L%d. A' % i, p2Name='L%d. B' % i, p1=1.6, p2=2.4, label='from Pinnacle history',
+           apiTennis=api(tournament_name='ATP Lyon (France) - Qualification', tournament_key=14763, event_qualification='False',
+                         tournament_round='ATP Lyon (France) - Qualification - ' + rnd)) for i, rnd in enumerate(['1/16-finals', '1/8-finals', 'Quarter-finals'])]
+lf, lr = P.td_feed_rows(LY, tdn, {}, '2026-01-13', None, {'Lyon (France)': 'ATP 250'}, {'surfaces': {'14763': 'hard'}, 'courts': {'14763': 'indoor'}})
+la = sorted(r['round'] for r in lf if r['kind'] == 'add')
+check('round 2 item 1.1: the Lyon (France) main draw ("… - Qualification", flag False) is a new event with every round: R32, R16, QF',
+      la == ['1st Round', '2nd Round', 'Quarterfinals'] and all(r['tournament'] == 'Lyon (France)' and r['court'] == 'Indoor' for r in lf if r['kind'] == 'add'), (la, lr))
 # founder ruling 2026-10-17 (fix 2): a Davis Cup close is never a Database row ('add'); it is its own kind, 'team', for the era shard
 tm = [r for r in nf if r['kind'] == 'team']
 check('2026-10-17 fix 2: Davis Cup is a team row (the era shard), never an added Database row',
