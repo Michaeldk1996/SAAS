@@ -24,7 +24,21 @@
 // says so out loud (callers keep their resolver unchanged).
 const fs = require('fs');
 const path = require('path');
-const { keyFromArchiveName, ourCandidateKeys, archiveOverride } = require('./build-odds-performance.js');
+// The name helpers live in build-odds-performance.js, which requires THIS file back (its main() builds the gate). Bound
+// at call time, never destructured at load: whichever module loads first, the gate reads the finished exports — and a
+// missing helper fails loudly here, never as "x is not a function" deep inside a build (founder ruling 2026-10-25).
+let _names = null;
+function names() {
+  if (_names) return _names;
+  const m = require('./build-odds-performance.js');
+  for (const f of ['keyFromArchiveName', 'ourCandidateKeys', 'archiveOverride']) {
+    if (typeof m[f] !== 'function') throw new Error(`td-identity.js: build-odds-performance.js exports no ${f} (a require cycle read it half-built)`);
+  }
+  return (_names = m);
+}
+const keyFromArchiveName = (n) => names().keyFromArchiveName(n);
+const ourCandidateKeys = (n) => names().ourCandidateKeys(n);
+const archiveOverride = (n) => names().archiveOverride(n);
 
 const CAREER_SLACK_DAYS = 30;
 const OWN_MATCH_DAYS = 3;

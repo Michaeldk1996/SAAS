@@ -629,11 +629,12 @@ jobs:
       # just refreshed. Founder ruling 2026-10-17 (ruling 5): they read the ONE master the Database rebuild above wrote
       # (database-yield-master.json, each match's own price — never the cross-book average), so this step runs after it.
       # No network calls. Rebuilding here keeps players who newly enter the profile roster from missing the block.
-      - name: Build market performance shards (best-effort)
-        run: |
-          t0=$(date +%s); rc=0
-          node build-odds-performance.js || rc=$?
-          node tools/step-check.mjs --step "Build market performance shards (best-effort)" --rc "$rc" --since "$t0" --fresh odds-performance-index.json
+      # Founder ruling 2026-10-25: FAIL-CLOSED. As best-effort (`|| rc=$?` + a warning-only step-check) this step died on
+      # every run from the identity gate's landing to 25 Oct ("ourCandidateKeys is not a function", a require cycle) and
+      # the shards silently stayed at their 7 Aug floor. A failure now fails the run: nothing is published (the site keeps
+      # the last good data) and the fail-alert job sends its Telegram. No `|| true`, no swallowed exit code.
+      - name: Build market performance shards (fail-closed)
+        run: node build-odds-performance.js
 
       # Per-tournament market performance (TEN-8 Tournaments Overview §4/§5):
       # flat-stake yields backing favourites/underdogs + favourite reliability,

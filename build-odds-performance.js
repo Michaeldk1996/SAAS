@@ -486,6 +486,9 @@ function main() {
   // founder ruling 2026-10-18 (the Martín mix-up): one identity gate on every Tennis-Data name join (td-identity.js)
   const idGate = require('./td-identity.js').buildIdentityGate(ROOT, new Map(Object.entries(profiles).map(([k, p]) => [k, p && p.name])));
   log(idGate ? 'identity gate: career-history store loaded' : 'SKIP identity gate: no career-history store (names joined as before)');
+  // Founder ruling 2026-10-25 (the step is fail-closed now): a CI run with no career-history store is not an error — the
+  // names join as before, exactly as build-market-edge.js does — but it is said where it is seen (an Actions annotation).
+  if (!idGate && process.env.GITHUB_ACTIONS) console.log('::warning title=odds-performance::no career-history store — the identity gate is off this run (names joined without it)');
 
   const master = JSON.parse(fs.readFileSync(MASTER_PATH, 'utf8'));
   const MC = {}; ((master.meta && master.meta.cols) || []).forEach((c, i) => { MC[c] = i; });
@@ -749,6 +752,10 @@ function main() {
     shipped += 1;
   });
 
+  // A profile roster that yields no shard at all is a broken input (no master rows joined, an empty roster), never a real
+  // answer: publishing an empty index would hide the block for every player. Fail loudly instead (fail-closed step).
+  if (!shipped) throw new Error(`odds-performance: 0 shards written (${stats.rows} master rows, ${stats.matchedSides} player-sides joined, ` +
+    `${Object.keys(profiles).length} profiled players) — refusing to publish an empty index`);
   fs.writeFileSync(INDEX_PATH, JSON.stringify({
     identityGate: idGate ? idGate.stats : null,
     version: ODDS_PERF_SCHEMA_VERSION,
@@ -785,7 +792,6 @@ function main() {
   return 0;
 }
 
-if (require.main === module) process.exit(main());
 // readCsv/ourCandidateKeys/fullKey are exported so build-market-edge.js can join on the
 // SAME name logic rather than a second copy of it. A duplicated joiner is exactly the
 // drift that lost Vallejo and Shang from career-splits; one implementation, two callers.
@@ -794,3 +800,9 @@ module.exports = {
   readCsv, ourCandidateKeys, fullKey, LEVEL_ALIASES, ARCHIVE_PAGE_SPELLINGS,
   archiveOverride, ARCHIVE_NAME_ALIASES, ARCHIVE_NAME_BLOCK, ARCHIVE_ALIAS_NAMES,
 };
+
+// Founder ruling 2026-10-25: run AFTER module.exports. td-identity.js (the identity gate main() loads) requires this module
+// back for its name helpers; with main() above the exports, a script run handed it the half-built {} and every pipeline
+// run since the gate landed died here ("ourCandidateKeys is not a function") — the step was best-effort, so the Profile
+// market shards silently stayed at their 7 Aug floor. Exports first, then main: the cycle sees the finished module.
+if (require.main === module) process.exit(main());
