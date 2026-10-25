@@ -28,9 +28,9 @@ const box = { COURT_CONDITIONS: { Lyon: { abstractSpeed: 0.7, speed: 29, altitud
   tourxEventName: n => n, tourxRpEsc: s => String(s), tourxEsc: s => String(s), tourxState: {}, tournamentProgression: null, matches: [], document: { getElementById: () => null },
   window: { SfCountryIoc: { of: n => ({ 'Russia': 'RUS', 'Japan': 'JPN', 'France': 'FRA' })[n] || null } } };
 vm.createContext(box);
-vm.runInContext(catalogSrc + '\n' + constBlock('TP_SAMPLE_FLOOR', "'—');\n") + constBlock('TP_HIP_METRICS', '\n];\n') + constBlock('TP_PTS_SHOW', ';') + '\nconst _tpData = {}, _tpLoad = {};\n'
+vm.runInContext(catalogSrc + '\n' + constBlock('TP_SAMPLE_FLOOR', "'—');\n") + constBlock('TP_HIP_METRICS', '\n];\n') + constBlock('TP_PTS_SHOW', ';') + '\nconst _tpFileData = {}, _tpFileLoad = {};\n'
   + ['tpPageEvents', 'tpEventLabel', 'tpEventOfCard', 'tpData', 'tpHipEventOf', 'tpHowItPlaysHtml', 'tpFavDogHtml', 'tpPointsKey', 'tpPointsDefendHtml'].map(grab).join('\n')
-  + '\nthis.T = { tpPageEvents, tpEventOfCard, tpHowItPlaysHtml, tpFavDogHtml, tpPointsDefendHtml, data: _tpData, cat: TOURNAMENT_CATALOG };', box);
+  + '\nthis.T = { tpPageEvents, tpEventOfCard, tpHowItPlaysHtml, tpFavDogHtml, tpPointsDefendHtml, data: _tpFileData, cat: TOURNAMENT_CATALOG };', box);
 const T = box.T;
 
 console.log('=== the page lists every calendar event; a card finds its event by its own key ===');

@@ -25789,12 +25789,12 @@ function tpEventOfCard(m){
 }
 // One loader for the page's published files: undefined = not asked, null = failed / absent (the block says so), else
 // the parsed file. A finished load repaints the Overview.
-const _tpData = {}, _tpLoad = {};
+const _tpFileData = {}, _tpFileLoad = {};
 function tpData(file){
-  if (_tpData[file] !== undefined) return _tpData[file];
-  if (!_tpLoad[file] && typeof fetch === 'function') {
-    _tpLoad[file] = fetch('./' + file, { cache: 'no-cache' }).then(r => (r.ok ? r.json() : null)).catch(() => null).then(d => {
-      _tpData[file] = d || null; _tpLoad[file] = null;
+  if (_tpFileData[file] !== undefined) return _tpFileData[file];
+  if (!_tpFileLoad[file] && typeof fetch === 'function') {
+    _tpFileLoad[file] = fetch('./' + file, { cache: 'no-cache' }).then(r => (r.ok ? r.json() : null)).catch(() => null).then(d => {
+      _tpFileData[file] = d || null; _tpFileLoad[file] = null;
       try { if (typeof renderTourxOverview === 'function' && document.getElementById('tourxOverview')) renderTourxOverview(); } catch (e) { /* not on the page */ }
       return d;
     });
