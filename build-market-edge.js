@@ -274,7 +274,8 @@ function addTo(a, side) {
   const cents = Math.round(side.price * 100);
   a.profitCents += core.plCents(side);          // the tab's P&L, the same function
   a.priceCents += cents;
-  if (String(side.book).startsWith('pinnacle-approx')) a.approx += 1;   // Pinnacle (approx.): a snapshot, never a close
+  // Pinnacle (approx.) and the early cut (book 9, 2026-10-25): never a close — counted with the snapshots
+  if (String(side.book).startsWith('pinnacle-approx') || side.book === 'pinnacle-early') a.approx += 1;
   else if (String(side.book).startsWith('pinnacle')) a.pinnacle += 1; else a.bet365 += 1;
 }
 

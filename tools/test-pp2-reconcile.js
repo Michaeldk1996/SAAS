@@ -1214,8 +1214,8 @@ check('price bands sum to the headline priced count, for every shard', () => {
 // founder ruling 2026-10-17 (one price per match): a row the Database prices carries the Database's book, so the
 // archive close ('pinnacle-history') and the two Pinnacle (approx.) snapshots join the labels; a snapshot is counted
 // under its own `approx` bucket, never as a Pinnacle close
-const ME_BOOKS = new Set(['pinnacle', 'pinnacle-capture', 'bet365-archive', 'bet365-capture', 'pinnacle-history', 'pinnacle-approx', 'pinnacle-approx-od10']);
-const meIsApprox = (m) => String(m.book).startsWith('pinnacle-approx');
+const ME_BOOKS = new Set(['pinnacle', 'pinnacle-capture', 'bet365-archive', 'bet365-capture', 'pinnacle-history', 'pinnacle-approx', 'pinnacle-approx-od10', 'pinnacle-early']);   // + the early cut (2026-10-25)
+const meIsApprox = (m) => String(m.book).startsWith('pinnacle-approx') || m.book === 'pinnacle-early';   // the early cut is never a Pinnacle close
 const meIsPinnacle = (m) => String(m.book).startsWith('pinnacle') && !meIsApprox(m);
 const meApproxN = (h) => (h.book && h.book.approx) || 0;
 // ruling 4 (founder 2026-10-22): a retirement before the first set is complete is void, and one with no set scores has no

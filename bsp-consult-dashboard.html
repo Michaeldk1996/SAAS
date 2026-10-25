@@ -30550,7 +30550,7 @@ window.DatabaseTab = (function(){
   function agg(slice){
     if(!slice.length) return null;
     var profit=0, prices=[], byb={0:{n:0,pr:0},1:{n:0,pr:0},2:{n:0,pr:0}};
-    for(var i=0;i<slice.length;i++){ var v=slice[i], pr=v.w?(v.p-1):-1; profit+=pr; prices.push(v.p); var bb=(v.b===3||v.b===4)?0:v.b===5?2:v.b; byb[bb].n++; byb[bb].pr+=pr; }
+    for(var i=0;i<slice.length;i++){ var v=slice[i], pr=v.w?(v.p-1):-1; profit+=pr; prices.push(v.p); var bb=(v.b===3||v.b===4)?0:(v.b===5||v.b===9)?2:v.b;   /* 9 = early cut (2026-10-25): never a Pinnacle close, the snapshot bucket */ byb[bb].n++; byb[bb].pr+=pr; }
     return { n:slice.length, median:median(prices), yield:profit/slice.length, lo:slice[0].p, hi:slice[slice.length-1].p,
              book:{ ps: byb[0].n?{n:byb[0].n,yield:byb[0].pr/byb[0].n}:null, b365: byb[1].n?{n:byb[1].n,yield:byb[1].pr/byb[1].n}:null,
                     ap: byb[2].n?{n:byb[2].n,yield:byb[2].pr/byb[2].n}:null } };
@@ -33369,7 +33369,7 @@ window.DatabaseTab = (function(){
       var v=recs[i], price = fading? v.op : v.p, won = fading? (v.w?0:1) : v.w;
       var pr = won ? (price-1) : -1;
       profit+=pr; prices.push(price); if(won) wins++;
-      var bb=(v.b===3||v.b===4)?0:v.b===5?2:v.b; byb[bb].n++; byb[bb].pr+=pr;
+      var bb=(v.b===3||v.b===4)?0:(v.b===5||v.b===9)?2:v.b;   /* 9 = early cut (2026-10-25): never a Pinnacle close, the snapshot bucket */ byb[bb].n++; byb[bb].pr+=pr;
     }
     var n=recs.length;
     return { n:n, wins:wins, losses:n-wins, winpct:n?wins/n:null, yield:n?profit/n:null, median:median(prices),

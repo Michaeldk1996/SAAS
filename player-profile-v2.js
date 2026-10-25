@@ -7311,7 +7311,8 @@
       var ps = { n: 0, pl: 0 }, b3 = { n: 0, pl: 0 }, ap = { n: 0, pl: 0 };
       basisRows.forEach(function (m) {
         // Pinnacle (approx.) is a snapshot, never a close: its own count, never folded into Pinnacle (founder 2026-10-17)
-        var t = /^pinnacle-approx/.test(String(m.book || '')) ? ap : /^pinnacle/.test(String(m.book || '')) ? ps : b3;
+        // the early cut (pinnacle-early, 2026-10-25) is not a close either: counted with the snapshots
+        var t = (/^pinnacle-approx/.test(String(m.book || '')) || m.book === 'pinnacle-early') ? ap : /^pinnacle/.test(String(m.book || '')) ? ps : b3;
         t.n++; t.pl += (m.pl || 0);
       });
       function y(t) { return t.n ? signed(100 * t.pl / t.n, 2, '%') : DASH; }
