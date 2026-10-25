@@ -142218,7 +142218,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-7(4), 7-6(2), 7-6(5)",
+      "display": "6-7, 7-6, 7-6",
       "sets": [
         {
           "p1": 6,
@@ -147682,7 +147682,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "2-6, 6-4, 6-7(7)",
+      "display": "2-6, 6-4, 6-7",
       "sets": [
         {
           "p1": 2,
@@ -197370,7 +197370,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "4-6, 7-6(5), 7-6(5)",
+      "display": "4-6, 7-6, 7-6",
       "sets": [
         {
           "p1": 4,
@@ -206142,7 +206142,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-7(5), 7-6(7), 4-6",
+      "display": "6-7, 7-6, 4-6",
       "sets": [
         {
           "p1": 6,
@@ -210949,7 +210949,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-7(5), 2-6",
+      "display": "6-7, 2-6",
       "sets": [
         {
           "p1": 6,
@@ -227467,7 +227467,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-4, 6-7(5), 6-3",
+      "display": "6-4, 6-7, 6-3",
       "sets": [
         {
           "p1": 6,
@@ -273047,13 +273047,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 1.57,
+      "p2": 2.37,
+      "bookmaker": "bet365"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 1.62,
+        "bookmaker": "Betfair"
+      },
+      "p2": {
+        "price": 2.47,
+        "bookmaker": "Pncl"
+      }
     },
     "tournamentRound": "ATP Basel - 1/16-finals",
     "qualifying": false,
