@@ -10,6 +10,12 @@ const cases = [
   ['Draws Bot identity, code file', { subject: 'chore(draws): x [skip ci]', authorEmail: 'bot@bspconsult.local', files: ['draws.json', 'tools/draws/build-draws.py'] }, false],
   ['draws.json under an agent identity', { subject: 'draws [skip ci]', authorEmail: 'bsp-ceo-bot@users.noreply.github.com', files: ['draws.json'] }, false],
   ['draws.json without [skip ci]', { subject: 'chore(draws): official draw content changed', authorEmail: 'bot@bspconsult.local', files: ['draws.json'] }, false],
+  // 2026-10-25: line-prices.yml (bsp-bot, every 15 min) commits only line-prices/<date>.json; read as code it made every
+  // `claim` during a 30-min suite run return 7 "not rebased". Real shape: 12221fbac (four date shards, nothing else).
+  ['line-prices bot: date shards', { subject: 'chore(odds): bet105 line prices [skip ci]', authorEmail: 'bsp-bot@users.noreply.github.com', files: ['line-prices/2026-10-23.json', 'line-prices/2026-10-24.json', 'line-prices/2026-10-25.json', 'line-prices/2026-10-26.json'] }, true],
+  ['line-prices bot identity, line-prices.js', { subject: 'chore(odds): bet105 line prices [skip ci]', authorEmail: 'bsp-bot@users.noreply.github.com', files: ['line-prices/2026-10-25.json', 'line-prices.js'] }, false],
+  ['line-prices bot identity, non-json under line-prices/', { subject: 'chore(odds): bet105 line prices [skip ci]', authorEmail: 'bsp-bot@users.noreply.github.com', files: ['line-prices/2026-10-25.json', 'line-prices/README.md'] }, false],
+  ['line-prices shards under an agent identity', { subject: 'chore(odds): bet105 line prices [skip ci]', authorEmail: 'bsp-ceo-bot@users.noreply.github.com', files: ['line-prices/2026-10-25.json'] }, false],
 ];
 let fail = 0;
 for (const [name, c, want] of cases) {
