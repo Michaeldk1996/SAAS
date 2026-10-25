@@ -11,7 +11,7 @@ def one(k):
     except Exception: return k, None
 cats = collections.Counter(); seen = {}; noid = collections.Counter(); failed = 0; sample = None
 def lvl(r):
-    c = str(r.get('teCat') or ''); q = re.search('qualif', c, re.I) or re.match(r'^q', str(r.get('round') or ''), re.I)
+    c = str(r.get('teCat') or ''); q = re.search('qual', c, re.I) or re.match(r'^q-', str(r.get('round') or ''), re.I)
     if c.startswith('Challenger'): return 'Challenger qualifying' if q else 'Challenger main draw'
     if c.startswith('ITF'): return 'ITF'
     if c in ('ATP', 'Grand Slam', 'Masters', '') or c.startswith('ATP') or c.startswith('Grand'): return 'ATP qualifying' if q else 'ATP main draw'
