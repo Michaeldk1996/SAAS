@@ -24,9 +24,10 @@
  */
 (function (root) {
   'use strict';
-  // Founder ruling 2026-10-25: show the price's age on screen; the stale WARNING starts at 60 min. One-line switch.
-  // On the stream path the age is minutes since the worker's last heartbeat (it beats every 60 s while live).
-  var STALE_MIN = 60;
+  // Founder ruling 2026-10-25: show the price's age on screen. Stale = the worker's last heartbeat is more than
+  // STALE_MIN old — 3 min, the match-winner Now's own 180 s live rule (founder 2026-10-25, replacing 60). The worker
+  // beats every 60 s while live. Judged to the millisecond, not on the rounded label. One-line switch.
+  var STALE_MIN = 3;
   var REFETCH_MS = 60000;
   var BOOK = 'bet105';
   var COLS = 'market,side,line,price,implied,status,open_price,open_ts,max_limit,inserted_on';
@@ -81,9 +82,9 @@
    *  writing them (dry run, off, failing, or the broker disconnected). */
   function freshness(h) {
     var n = h && h.note, L = n && n.lines;
-    if (!n || !L || L.off || L.write !== true || L.write_ok === false || n.connected !== true) return { ageMin: null, seenAt: h ? h.written_at : null };
+    if (!n || !L || L.off || L.write !== true || L.write_ok === false || n.connected !== true) return { ageMin: null, ageMs: null, seenAt: h ? h.written_at : null };
     var t = Date.parse(h.written_at);
-    return { ageMin: isFinite(t) ? Math.max(0, Math.floor((now() - t) / 60000)) : null, seenAt: h.written_at };
+    return { ageMin: isFinite(t) ? Math.max(0, Math.floor((now() - t) / 60000)) : null, ageMs: isFinite(t) ? Math.max(0, now() - t) : null, seenAt: h.written_at };
   }
   var same = function (a, b) { return a == null || b == null ? a == null && b == null : Math.abs(+a - +b) < 1e-9; };
 
@@ -105,7 +106,7 @@
     var extra = { ladder: ladder, seenAt: fr.seenAt, ageMin: fr.ageMin };
     if (opts.started) return dash('started', extra);
     var hit = ladder.filter(function (r) { return same(r.line, signedLine); })[0];
-    if (!(fr.ageMin != null && fr.ageMin <= STALE_MIN)) return dash('stale', Object.assign(extra, hit && hit.status === 'ok' ? { lastPrice: hit.price, lastImplied: hit.implied } : {}));
+    if (!(fr.ageMs != null && fr.ageMs <= STALE_MIN * 60000)) return dash('stale', Object.assign(extra, hit && hit.status === 'ok' ? { lastPrice: hit.price, lastImplied: hit.implied } : {}));
     if (!hit) return dash('not_offered', extra);
     if (hit.status !== 'ok' || hit.price == null || !(hit.price >= 1.01) || hit.implied == null) return dash(hit.status === 'ok' ? 'suspended' : hit.status, extra);
     return Object.assign({}, base, extra, { state: 'ok', price: hit.price, implied: hit.implied, open: hit.open, openTs: hit.openTs,
@@ -124,7 +125,7 @@
     var d = new Date(t); return ('0' + d.getUTCHours()).slice(-2) + ':' + ('0' + d.getUTCMinutes()).slice(-2) + 'Z';
   }
   /** The face text: "2.05 · 49%" when priced, "—" otherwise. */
-  /** The face: "2.06 · 46% · 34m" when priced (the price's age, founder 2026-10-25), "— stale 74m" past STALE_MIN,
+  /** The face: "2.06 · 46% · 0m" when priced (the price's age, founder 2026-10-25), "— stale 5m" past STALE_MIN,
    *  "—" otherwise. */
   function faceText(r) {
     if (r && r.state === 'ok') return fmtOdd(r.price) + ' · ' + Math.round(r.implied * 100) + '%' + (r.ageMin != null ? ' · ' + r.ageMin + 'm' : '');

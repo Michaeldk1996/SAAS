@@ -2,7 +2,7 @@
 // the H2H tab, the Key factors H2H card and the Head-to-head page) and Derived lines' cell (player-profile-v2.js lcLinePx),
 // on the same Supabase rows. Each check names the mutation that turns it red (applied to copies in the M* checks at the end).
 //   1  exact line only: a line bet105 does not offer is a dash with the ladder on hover, never another line's price
-//   2  age on screen (founder 2026-10-25): every priced face carries its age; past STALE_MIN (60) it dashes, the last
+//   2  age on screen (founder 2026-10-25): every priced face carries its age; past STALE_MIN (3 min, the Now's 180 s rule) it dashes, the last
 //      price moves to the hover (mutants: no staleness; threshold back at 30)                    3  started dashes        4  suspended dashes
 //   5  SAME line, SAME match, SAME price: Derived lines and all three Hot lines views read one value
 //   6  right side: "Bublik −2.5" is Bublik's price even on the H2H page where Bublik is the row's player A
@@ -19,7 +19,7 @@ const require = createRequire(import.meta.url);
 const html = readFileSync(process.env.LPT_HTML || join(HERE, 'bsp-consult-dashboard.html'), 'utf8');
 const LPSRC = process.env.LPT_JS || join(HERE, 'line-prices.js');
 
-const NOW = Date.parse('2026-10-24T12:10:00Z');
+const NOW = Date.parse('2026-10-24T12:01:30Z');   // the worker's beat (12:00:00Z) is 90 s old
 // line_prices_current rows as PostgREST returns them (numerics may arrive as strings), and the worker's heartbeat.
 const R = (market, side, line, price, implied, status, open_price = null, open_ts = null, max_limit = 3900) =>
   ({ market, side, line, price, implied, status, open_price, open_ts, max_limit, inserted_on: '2026-10-24T11:05:06Z' });
@@ -57,8 +57,8 @@ test('1-4: the lookup — exact line only; stale, started and suspended dash; lo
     assert.equal(L.linePrice(12173801, '1093', 'gh', -3, { date: '2026-10-24' }).state, 'loading', 'before the event loads: loading, never a dash or a price');
     await L.load('2026-10-24', 12173801);
     const r = L.linePrice(12173801, '1093', 'gh', -3, { date: '2026-10-24' });
-    assert.equal(r.state, 'ok'); assert.equal(r.price, 2.29); assert.equal(L.faceText(r), '2.29 · 42% · 10m', '2: the age is on the face');
-    assert.match(L.hoverLines(r, 'Medvedev −3 games').join('\n'), /Updated 10 min ago \(bet105 stream live at 12:00Z\)/);
+    assert.equal(r.state, 'ok'); assert.equal(r.price, 2.29); assert.equal(L.faceText(r), '2.29 · 42% · 1m', '2: the age is on the face');
+    assert.match(L.hoverLines(r, 'Medvedev −3 games').join('\n'), /Updated 1 min ago \(bet105 stream live at 12:00Z\)/);
     assert.equal(r.open, 2.2); assert.equal(r.maxLimit, 3900);
     const miss = L.linePrice(12173801, '1093', 'gh', -4.5, { date: '2026-10-24' });
     assert.equal(miss.state, 'dash', '1: −4.5 is not offered (mutant: nearest-line fallback)'); assert.equal(miss.reason, 'not_offered');
@@ -73,17 +73,20 @@ test('1-4: the lookup — exact line only; stale, started and suspended dash; lo
     assert.equal(L.linePrice(null, '1093', 'gh', -3, { date: null }).reason, 'no_match');
     assert.equal(L.linePrice(12173801, '1093', null, null, { date: '2026-10-24' }).reason, 'no_market', 'Tiebreak in match has no bet105 market');
     assert.equal(L.linePrice(12173801, 'over', 'tg', 22.5, { date: '2026-10-24' }).price, 1.66);
-    assert.equal(L.STALE_MIN, 60, '2: the founder\'s 60-minute threshold, one named constant');
-    Date.now = () => NOW + 49 * 60000;     // the worker's beat is 59 minutes old: still priced, with its age
-    assert.equal(L.linePrice(12173801, '1093', 'gh', -3, { date: '2026-10-24' }).state, 'loading', 'an event read over REFETCH_MS ago is read again');
+    assert.equal(L.STALE_MIN, 3, '2: the founder\'s 3-minute threshold (the Now\'s 180 s live rule), one named constant');
+    const B = Date.parse('2026-10-24T12:00:00Z');
+    Date.now = () => B + 180000;           // the worker's beat is exactly 180 s old: still priced
     await L.load('2026-10-24', 12173801);
-    assert.equal(L.faceText(L.linePrice(12173801, '1093', 'gh', -3, { date: '2026-10-24' })), '2.29 · 42% · 59m', '2: 59 min is not stale (mutant: threshold back at 30)');
-    Date.now = () => NOW + 51 * 60000;     // 61 minutes old
+    assert.equal(L.faceText(L.linePrice(12173801, '1093', 'gh', -3, { date: '2026-10-24' })), '2.29 · 42% · 3m', '2: 180 s is not stale (mutant: threshold back at 60 min is caught below)');
+    Date.now = () => B + 181000;           // 181 s
     await L.load('2026-10-24', 12173801);
-    const st = L.linePrice(12173801, '1093', 'gh', -3, { date: '2026-10-24' });
-    assert.equal(st.reason, 'stale', '2: > 60 min since the worker last confirmed the stream (mutant: no staleness)');
-    assert.equal(L.faceText(st), '— stale 61m', '2: the stale face says how old, never the price');
-    assert.match(L.hoverLines(st, 'Medvedev −3 games').join('\n'), /not shown as current[\s\S]*Last price 2\.29 · 42%[\s\S]*Updated 61 min ago/, '2: the last price is on the hover only');
+    let st = L.linePrice(12173801, '1093', 'gh', -3, { date: '2026-10-24' });
+    assert.equal(st.reason, 'stale', '2: > 180 s since the worker last confirmed the stream (mutant: no staleness / STALE_MIN 60)');
+    assert.equal(L.faceText(st), '— stale 3m', '2: the stale face says how old, never the price');
+    assert.match(L.hoverLines(st, 'Medvedev −3 games').join('\n'), /over 3 min: not shown as current[\s\S]*Last price 2\.29 · 42%[\s\S]*Updated 3 min ago/, '2: the last price is on the hover only');
+    Date.now = () => B + 230000;           // 230 s: the label still reads 3m, the rule is in seconds
+    await L.load('2026-10-24', 12173801);
+    assert.equal(L.linePrice(12173801, '1093', 'gh', -3, { date: '2026-10-24' }).reason, 'stale', '2: judged in ms, not the rounded label (mutant: ageMin <= STALE_MIN)');
   } finally { restore(); }
 });
 
@@ -175,7 +178,7 @@ test('5-6: same line, same match, same price — Derived lines and the three Hot
     // Derived lines: Medvedev's −2.5 games row, his next match = this one
     const nx = { eventKey: 12173801, date: '2026-10-24', tour: 'ATP Vienna', round: 'R16', qualifying: false, live: false };
     const derived = face(P.lcLinePx({ key: 1093 }, 'bo3', { label: '−2.5 games', spec: ['−2.5 games', 'gh', 2.5, -1] }, nx));
-    assert.equal(tab, '2.01 · 48% · 10m');
+    assert.equal(tab, '2.01 · 48% · 1m');
     assert.deepEqual([kf, page, derived], [tab, tab, tab], '5: one value on every view (mutant: any view reading its own source)');
     // 6: the other side of the same line is Bublik +2.5 — never what a Medvedev row shows
     assert.equal(face(D.fhLinePx(pageDefs.find(d => d.name === 'Bublik −2.5 games'), pageCtx)), '—', '6: Bublik −2.5 is suspended here: a dash, not Medvedev\'s price');

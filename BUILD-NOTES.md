@@ -2259,3 +2259,11 @@ SF, 6-2 3-0 ret.); the set scores are already from the player's side, so the cor
   re-opens a headshot page on any 403. 182 photos take ~3 min.
 - **Why WebP made in the browser:** canvas `convertToBlob('image/webp')` needs no image library in a zero-dependency
   repo. 96 px mean 3.4 KB, 256 px mean 11.3 KB (n=182); every source byte-identical to the 22 Oct audited manifest.
+
+## Line prices move to the Kibl stream; stale at 180 s (2026-10-25)
+
+- **Route.** The Actions route (`line-prices.yml` → shard → pipeline publish) put a median of 112 min on screen (45–169 min, n=9). Its */15 cron delivered about one run in two hours.
+- **Founder ruling:** use the Kibl Now path through Supabase. The worker carries the six line markets and guards each fixture's ladder before writing. The page reads by REST.
+- **Measured on deployed code:** the heartbeat is 3.7–60.2 s old at read (median 30.5 s, n=60), and 98% of cells read "0m ago".
+- **Stale threshold.** It was 60 min on the old route, a figure set by publish lag. The founder set it to the Now's own 180 s live rule. A 60-minute rule on the stream would keep showing a price for an hour after the worker went quiet.
+

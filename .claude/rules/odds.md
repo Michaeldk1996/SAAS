@@ -456,6 +456,15 @@ One-sided close = dash on both sides.
 
 ---
 
+## Line prices (bet105, Kibl)
+
+- **Source and path (founder 2026-10-25):** the live Kibl worker on Fly (`kibl-stream/line_engine.py`) writes `line_prices_current` / `line_price_ticks`. The page reads the current table by REST with the publishable key (`line-prices.js`). Never a repo shard, never an Actions job. **Test:** no line price is committed to the repo, and the browser can SELECT current only.
+- **Guards before write:** the four guards run on a fixture's whole ladder before any row is written.
+- **Stale (founder 2026-10-25):** a price is current only while the worker's last heartbeat is **≤ 180 s** old (`STALE_MIN = 3`, the same rule the match-winner Now uses), the worker reports line writes on and landing, and the broker is connected. Past that, the face dashes `— stale` and the last price moves to the hover. **Test:** at 181 s it dashes, judged in milliseconds, not on the rounded minute label.
+- **Age on screen:** every priced cell shows minutes since that heartbeat ("0m ago").
+
+---
+
 ## Known open issues
 
 - **api-tennis coverage collapse**, two events, ruled not our fault: 12 Sep books 13 → 9 with Superbet and Unibet to zero; 16 Sep broad fall, bet365 191 → 4 priced fixtures. SBOBET is the only book rising. Question to api-tennis drafted.
