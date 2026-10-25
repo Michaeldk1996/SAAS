@@ -3930,17 +3930,11 @@
         }
       ]
     },
-    "live": true,
-    "liveStatus": "Set 1",
-    "liveScore": [
-      {
-        "set": 1,
-        "p1": 0,
-        "p2": 0
-      }
-    ],
-    "liveGameScore": "0 - 0",
-    "liveServer": "p2",
+    "live": false,
+    "liveStatus": null,
+    "liveScore": null,
+    "liveGameScore": null,
+    "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1093_d-medvedev.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/424_n-basilashvili.jpg",
     "tournamentKey": "11851",
@@ -4843,7 +4837,31 @@
       "p2": 4.63,
       "ts": null,
       "vfP1": 0.7888
-    }
+    },
+    "retired": false,
+    "walkover": false,
+    "finalScore": {
+      "display": "6-7(6), 6-1, 6-3",
+      "sets": [
+        {
+          "p1": 6,
+          "p2": 7
+        },
+        {
+          "p1": 6,
+          "p2": 1
+        },
+        {
+          "p1": 6,
+          "p2": 3
+        }
+      ],
+      "p1Sets": 2,
+      "p2Sets": 1,
+      "winner": "p1"
+    },
+    "interrupted": false,
+    "partialScore": null
   },
   {
     "id": "upcoming-12174011",
@@ -23454,13 +23472,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 2.92,
+      "p2": 1.43,
+      "bookmaker": "1xBet"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 2.92,
+        "bookmaker": "1xBet"
+      },
+      "p2": {
+        "price": 1.43,
+        "bookmaker": "1xBet"
+      }
     },
     "tournamentRound": "ATP Vienna - 1/16-finals",
     "qualifying": false,
@@ -191836,7 +191860,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-4, 7-6",
+      "display": "6-4, 7-6(12)",
       "sets": [
         {
           "p1": 6,
@@ -206940,7 +206964,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-3, 7-6",
+      "display": "6-3, 7-6(6)",
       "sets": [
         {
           "p1": 6,
@@ -227137,7 +227161,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-2, 3-6, 6-7",
+      "display": "6-2, 3-6, 6-7(4)",
       "sets": [
         {
           "p1": 6,
@@ -237625,7 +237649,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "4-6, 7-6, 6-7",
+      "display": "4-6, 7-6(7), 6-7(5)",
       "sets": [
         {
           "p1": 4,
@@ -246632,11 +246656,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 2,
+        "p2": 3
+      }
+    ],
+    "liveGameScore": "0 - 0",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/2022_l-neumayer.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/8926_t-droguet.jpg",
     "tournamentKey": "1684",
@@ -247286,7 +247316,10 @@
         "seenAt": "2026-10-25T02:39:31.517Z",
         "since": "2026-10-25T00:51:38.012Z"
       }
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12174014",
@@ -249889,11 +249922,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 1,
+        "p2": 4
+      }
+    ],
+    "liveGameScore": "0 - 30",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/2843_l-sonego.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/12951_j-fearnley.jpg",
     "tournamentKey": "1684",
@@ -250656,7 +250695,10 @@
         "seenAt": "2026-10-25T02:39:31.517Z",
         "since": "2026-10-25T00:51:38.012Z"
       }
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12174015",
@@ -254115,7 +254157,23 @@
         "seenAt": "2026-10-25T02:39:31.517Z",
         "since": "2026-10-25T00:51:38.012Z"
       }
-    }
+    },
+    "retired": false,
+    "walkover": true,
+    "finalScore": {
+      "display": "0-0",
+      "sets": [
+        {
+          "p1": 0,
+          "p2": 0
+        }
+      ],
+      "p1Sets": 0,
+      "p2Sets": 0,
+      "winner": "p2"
+    },
+    "interrupted": false,
+    "partialScore": null
   },
   {
     "id": "upcoming-12174072",
@@ -254130,13 +254188,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 2.25,
+      "p2": 1.57,
+      "bookmaker": "bet365"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 2.44,
+        "bookmaker": "Pncl"
+      },
+      "p2": {
+        "price": 1.67,
+        "bookmaker": "Betfair"
+      }
     },
     "tournamentRound": null,
     "qualifying": false,
@@ -265120,7 +265184,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-7, 6-7",
+      "display": "6-7(4), 6-7(5)",
       "sets": [
         {
           "p1": 6,
@@ -275102,7 +275166,7 @@
     "retired": false,
     "walkover": false,
     "finalScore": {
-      "display": "5-7, 6-7",
+      "display": "5-7, 6-7(5)",
       "sets": [
         {
           "p1": 5,
@@ -280147,7 +280211,7 @@
     "retired": false,
     "walkover": false,
     "finalScore": {
-      "display": "7-6, 6-3",
+      "display": "7-6(6), 6-3",
       "sets": [
         {
           "p1": 7,
@@ -290783,7 +290847,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-7, 3-6",
+      "display": "6-7(5), 3-6",
       "sets": [
         {
           "p1": 6,
@@ -320741,7 +320805,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "4-6, 6-7",
+      "display": "4-6, 6-7(5)",
       "sets": [
         {
           "p1": 4,
