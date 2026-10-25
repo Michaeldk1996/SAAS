@@ -6,7 +6,7 @@ for fixtures, names, results — Kibl never supplies a name to the site), normal
     (event_key, market, side = api-tennis player key | 'over' | 'under', signed line, book, price, ...)
 
 and runs the fail-closed guards. Home / away and Kibl's side ids never leave this module. I/O lives in
-build-line-prices.py; tests in test-line-prices.py.
+kibl-stream/line_engine.py (the live Kibl stream worker, founder ruling 2026-10-25); tests in test-line-prices.py.
 
 MARKETS (Kibl market_type_id / segment_id, measured 2026-10-24 on the live feed — see the market-inventory report):
   ml   1/1   match winner (needed for guard d)        gh   2/1   games handicap, full ladder with alternates

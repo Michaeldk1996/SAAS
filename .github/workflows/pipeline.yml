@@ -1034,13 +1034,6 @@ jobs:
           # its matches.json binding and dashes what it does not have), so a hard
           # assert would red the deploy over a degradation rather than a break. The
           # warning is what stops its absence passing unnoticed.
-          # bet105-line-prices: line-prices/<date>.json, committed every 15 min by line-prices.yml. Tolerant like the card
-          # state: absent = every price cell dashes (line-prices.js), a degradation, not a break.
-          if [ -d line-prices ] && ls line-prices/*.json >/dev/null 2>&1; then
-            cp -R line-prices _site/
-          else
-            echo "::warning::line-prices/ absent — every bet105 line price dashes"
-          fi
           if [ -s odds-card-state.json ]; then
             cp odds-card-state.json _site/
           else

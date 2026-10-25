@@ -6749,7 +6749,7 @@
    *  line, for THIS player, on his next scheduled match (pp2NextMatchFor) — through the one lookup every view uses,
    *  line-prices.js linePrice(eventKey, playerKey, market, signedLine). No upcoming match, a match of the other format
    *  (a Bo5 row against a Bo3 match — the same line is a different bet) or a line with no bet105 market (Match shape)
-   *  is a dash with its reason; while the date's shard loads the cell is empty and its arrival repaints once. */
+   *  is a dash with its reason; while the event's rows load (Supabase) the cell is empty and their arrival repaints once. */
   var LC_PX_MARKET = { gh: 'gh', sh: 'sh', tg: 'tg' };
   function lcNextFormat(nx) {
     var t = String(nx.tour || '');
