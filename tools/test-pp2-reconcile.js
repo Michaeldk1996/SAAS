@@ -1364,7 +1364,12 @@ const DB_SRC = fs.readFileSync(path.join(ROOT, 'bsp-consult-dashboard.html'), 'u
 const DB_BLOCK = DB_SRC.slice(DB_SRC.indexOf("var BASE_URL = './database-yield.json';"));
 const DB_FNS = new Function(dbSlice(DB_BLOCK, 'function median(a){') + '\n' + dbSlice(DB_BLOCK, 'function agg(slice){') +
   '\n' + dbSlice(DB_BLOCK, 'function bands(values){') + '\nreturn { bands: bands };')();
-const DB_ROWS = JSON.parse(fs.readFileSync(path.join(ROOT, 'database-yield.json'), 'utf8')).rows;
+// Round 2 item 1.3 (founder 2026-10-25): the Database's figures read the FIGURE rows — the store's rows plus the
+// retirements whose bet stands (settlement.js settleBet) — through the page's own dbFigureView, run here with the real
+// settlement.js. tour-baselines.json is built on the same list. A store served before the rebuild (no retComment / retFs)
+// is its rows alone, exactly as the page reads it.
+const DB_FIGURE_VIEW = new Function('window', dbSlice(DB_SRC, 'function dbFigureView(j){') + '\nreturn dbFigureView;')({ Settlement: require(path.join(ROOT, 'settlement.js')) });
+const DB_ROWS = DB_FIGURE_VIEW(JSON.parse(fs.readFileSync(path.join(ROOT, 'database-yield.json'), 'utf8'))).rows;
 const TB_PATH = path.join(ROOT, 'tour-baselines.json');
 const TB_RAW = fs.readFileSync(TB_PATH, 'utf8');
 const TB = JSON.parse(TB_RAW);
