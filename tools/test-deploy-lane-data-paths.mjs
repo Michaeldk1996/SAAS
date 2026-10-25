@@ -16,6 +16,9 @@ const cases = [
   ['line-prices bot identity, line-prices.js', { subject: 'chore(odds): bet105 line prices [skip ci]', authorEmail: 'bsp-bot@users.noreply.github.com', files: ['line-prices/2026-10-25.json', 'line-prices.js'] }, false],
   ['line-prices bot identity, non-json under line-prices/', { subject: 'chore(odds): bet105 line prices [skip ci]', authorEmail: 'bsp-bot@users.noreply.github.com', files: ['line-prices/2026-10-25.json', 'line-prices/README.md'] }, false],
   ['line-prices shards under an agent identity', { subject: 'chore(odds): bet105 line prices [skip ci]', authorEmail: 'bsp-ceo-bot@users.noreply.github.com', files: ['line-prices/2026-10-25.json'] }, false],
+  // ten225-fixture-index.yml (bsp-bot, daily 05:50Z, [skip ci]) commits only .ten225-fixture-index.json.gz (coordinator 2026-10-25).
+  ['fixture-index bot: index only', { subject: 'chore(odds): refresh the Oddspapi fixture index [skip ci]', authorEmail: 'bsp-bot@users.noreply.github.com', files: ['.ten225-fixture-index.json.gz'] }, true],
+  ['fixture-index bot identity, index + code', { subject: 'chore(odds): refresh the Oddspapi fixture index [skip ci]', authorEmail: 'bsp-bot@users.noreply.github.com', files: ['.ten225-fixture-index.json.gz', 'ten225-fixture-index.py'] }, false],
 ];
 let fail = 0;
 for (const [name, c, want] of cases) {
