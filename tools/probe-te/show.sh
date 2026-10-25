@@ -1,5 +1,5 @@
 set -uo pipefail
-# read-only: one 2024 ATP qualifying match Tennis Explorer prices (book 8, not a team event), through the page's own functions on the LIVE site; then Bergs' coverage
+# read-only: one 2024 Challenger main-draw match Tennis Explorer prices (book 8, not a team event), through the page's own functions on the LIVE site; then Bergs' coverage
 SITE=https://michaeldk1996.github.io/SAAS
 git fetch -q origin main && git worktree add -q m origin/main && cd m
 curl -sS -m 60 "$SITE/build-info.json" | python3 -c 'import json,sys;b=json.load(sys.stdin);print("data built",b["data"]["builtAt"])'
@@ -18,7 +18,7 @@ for v in it:
     parts = norm(v['name']).split(); idx.setdefault((parts[-1], parts[0][0]), []).append(v)
 out = []
 for r, nm in zip(x['xRows'], x['xNames']):
-    if r[8] != 8 or not str(r[0]).startswith('2024') or 't' in ''.join(r[9:]): continue
+    if r[8] != 8 or not str(r[0]).startswith('2024') or r[1] != 'Challenger' or 'l' not in ''.join(r[9:]): continue
     w, l = nm
     ws = norm(w).replace('.', '').split(); ls = norm(l).replace('.', '').split()
     c = idx.get((ws[0], ws[-1][0])) if len(ws) > 1 else None
@@ -45,3 +45,6 @@ for lv, ys in c['byLevel'].items():
         if '2021' <= y <= '2024': tot['n'] += v['n']; tot['p'] += v['priced']; print(f"  {lv} {y}: {v['priced']} of {v['n']} {v['byBook']}")
 print('2021-24 priced', tot['p'], 'of', tot['n'], '· whole record', allv['p'], 'of', allv['n'])
 PY
+
+echo '== feasibility (pre-2021 lower levels, our data only)'
+python3 ../tools/probe-te/feas.py "$SITE"

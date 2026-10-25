@@ -17,3 +17,13 @@ for c in get(R + '/commits?per_page=8'): print(c['commit']['committer']['date'],
 # check-in 2026-10-22T23:10:31Z
 # check-in 2026-10-23T02:21:53Z
 # check-in 2026-10-23T18:47:35Z
+# per batch: rows by status, Pinnacle-bearing, request fields if the batch records any
+import collections
+HR = dict(H, Accept='application/vnd.github.raw')
+for x in get(R + '/contents/te-odds'):
+    d = json.loads(urllib.request.urlopen(urllib.request.Request(R + '/contents/te-odds/' + x['name'], headers=HR), timeout=120).read())
+    rows = d.get('rows', [])
+    st = collections.Counter(r.get('status') for r in rows)
+    print('BATCH', x['name'], 'rows', len(rows), dict(st), 'with pin', sum(1 for r in rows if r.get('status') == 'joined' and r.get('pin')),
+          'keys', [k for k in d if k != 'rows'], {k: d[k] for k in d if k not in ('rows',) and not isinstance(d[k], (list, dict))},
+          'summary', json.dumps(d.get('summary') or d.get('stats') or {})[:400])
