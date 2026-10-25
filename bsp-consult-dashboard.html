@@ -2945,7 +2945,7 @@ window.sfPlanLocks(null);   // locked until the account says Edge / Pro: no unlo
       <div class="sfh tourx-head">
         <div class="sfh__text">
           <h1 class="sfh__title">Tournaments</h1>
-          <p class="sfh__sub">Court speed, conditions and market yields for every event on the calendar.</p>
+          <p class="sfh__sub">Conditions and market yields for every event on the calendar.</p>
         </div>
         <div class="sfh__stats" id="tourxHeadStats" aria-label="Tournaments summary"></div>
       </div>
@@ -25019,7 +25019,10 @@ function tourxHeadStatValues(){
     (typeof tournamentProgression !== 'undefined' && tournamentProgression) ? tournamentProgression.fetchedAt : null,
   ].map(s => (s ? Date.parse(s) : NaN)).filter(Number.isFinite);
   if (!stamps.length) return null;
-  return { events: reg.length, week: wk.length, updated: Math.max(...stamps) };
+  // round 2 (founder 2026-10-25): Events counts the page's own list (every catalog event, tpPageEvents), not the
+  // court-speed registry it no longer lists by.
+  const listed = typeof tpPageEvents === 'function' ? tpPageEvents() : reg;
+  return { events: listed.length, week: wk.length, updated: Math.max(...stamps) };
 }
 function tourxHeadStamp(ms, now){
   let tz;
@@ -25970,7 +25973,7 @@ function tpFavDogHtml(c){
   foot.push(`Exact closing ties with no first-captured price to break them: ${ties} (dash, counted).`);
   const wo = [cur && cur.walkovers != null ? `${yr} ${cur.walkovers}` : null, past && past.walkovers != null ? `past ${past.walkovers}` : null].filter(Boolean).join(' · ');
   if (wo) foot.push(`Walkovers excluded: ${wo}.`);
-  foot.push(`Favourite = shorter Pinnacle close; B = the Bet365 close (Jan–Apr 2026). Retirements count on the official result. A % shows from ${floor} matches.`);
+  foot.push(`Favourite = shorter Pinnacle close; B = priced on the Bet365 close where Pinnacle has none. Retirements count on the official result. A % shows from ${floor} matches.`);
   return shell(`<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;">
       <thead><tr><th style="${EY}padding:0 8px 8px 0;text-align:left;vertical-align:bottom;">Round</th>
         ${head('This event', yr)}${head('Past editions', pastYears || '—')}${head('ATP tour', base ? `${courtWord} hard · best of 3 · ${base.years[0]}–${base.years[1]}` : '—')}</tr></thead>

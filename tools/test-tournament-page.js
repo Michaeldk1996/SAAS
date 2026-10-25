@@ -54,6 +54,11 @@ ok('the panel carries the three blocks, in order: points to defend, how it plays
 ok('the sheet\'s count-less 1st-serve / service-hold tiles are off the page (How it plays prints ours, with n); altitude stays',
   !/tile\('1st serve point won'/.test(panel) && !/tile\('Service hold'/.test(panel) && /tile\('Altitude'/.test(panel));
 
+// Mutation: the header names court speed again, or counts the court-speed registry (64) instead of the page's list → red.
+ok('the page header names no court speed and counts the page\'s own event list', !/Court speed, conditions/.test(html)
+  && /const listed = typeof tpPageEvents === 'function' \? tpPageEvents\(\) : reg;\n  return \{ events: listed\.length,/.test(grab('tourxHeadStatValues')));
+ok('the B footnote is true for every year (not "Jan–Apr 2026" only)', /B = priced on the Bet365 close where Pinnacle has none/.test(grab('tpFavDogHtml')) && !/B = the Bet365 close \(Jan–Apr 2026\)/.test(html));
+
 console.log('=== How it plays (2.1) ===');
 const sl = (n, metrics, years) => ({ n, years, excludedPartial: 1, metrics });
 const met = (value, n, num, den) => ({ value, n, num, den });
