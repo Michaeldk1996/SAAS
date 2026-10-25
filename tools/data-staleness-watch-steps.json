@@ -1,0 +1,14 @@
+[
+ { "name": "vault_tg_token", "vault_from_env": "TELEGRAM_BOT_TOKEN", "vault_name": "stale_watch_telegram_bot_token", "required": true, "stop_on_error": true },
+ { "name": "vault_tg_chat", "vault_from_env": "TELEGRAM_CHAT_ID", "vault_name": "stale_watch_telegram_chat_id", "required": true, "stop_on_error": true },
+ { "name": "extensions", "sql": "create extension if not exists pg_cron; create extension if not exists pg_net; select extname from pg_extension where extname in ('pg_cron','pg_net') order by 1", "required": true, "stop_on_error": true },
+ { "name": "install_watch", "sql_files": ["tools/data-staleness-watch.sql"], "transaction": true, "required": true, "stop_on_error": true },
+ { "name": "schedule", "sql": "select cron.schedule('stale_watch_10min', '*/10 * * * *', 'select stale_watch.tick()') as jobid", "required": true, "stop_on_error": true },
+ { "name": "first_tick", "sql": "select stale_watch.tick() as result" },
+ { "name": "selftest_send", "sql": "do $$ begin if stale_watch.send('selftest', 'selftest', E'Stennisfy data-staleness watch: TEST PING\\n\\nInstalled in Supabase pg_cron: every 10 min it reads https://michaeldk1996.github.io/SAAS/build-info.json and alerts this chat when the published data is more than 60 min old (then at most hourly), or when the file cannot be read twice in a row. No action needed.') is null then raise exception 'selftest ping not queued: %', (select delivery from stale_watch.messages where kind = 'selftest' order by id desc limit 1); end if; end $$; select 'queued' as selftest", "required": true, "stop_on_error": true },
+ { "sleep": 75 },
+ { "name": "settle", "sql": "select stale_watch.tick() as result" },
+ { "name": "selftest_delivered", "sql": "do $$ declare d text := (select delivery from stale_watch.messages where kind = 'selftest' order by id desc limit 1); begin if d is distinct from 'sent' then raise exception 'selftest ping not confirmed sent: %', d; end if; end $$; select 'sent' as selftest", "required": true },
+ { "name": "checks", "sql": "select id, fired_at, status_code, built_at, error from stale_watch.checks order by fired_at desc limit 3" },
+ { "name": "job", "sql": "select jobname, schedule, active from cron.job where jobname = 'stale_watch_10min'" }
+]

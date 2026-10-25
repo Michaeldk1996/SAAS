@@ -1,0 +1,4 @@
+[
+ { "name": "unschedule", "sql": "do $$ begin perform cron.unschedule('stale_watch_10min'); exception when others then null; end $$; select 'unscheduled' as result", "required": true },
+ { "name": "drop", "sql": "drop schema if exists stale_watch cascade; delete from vault.secrets where name in ('stale_watch_telegram_bot_token', 'stale_watch_telegram_chat_id'); select 'dropped' as result", "required": true }
+]
