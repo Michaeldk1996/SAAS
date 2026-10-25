@@ -19,7 +19,7 @@ def lvl(r):
 with cf.ThreadPoolExecutor(8) as ex:
     for k, d in ex.map(one, keys):
         if d is None: failed += 1; continue
-        for r in (d.get('add') or []):
+        for r in ((d.get('record') or {}).get('add') or []):
             if sample is None: sample = r
             y = str(r.get('year') or str(r.get('date') or '')[:4])
             if not ('2010' <= y <= '2020'): continue

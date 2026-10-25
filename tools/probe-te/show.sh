@@ -46,6 +46,6 @@ for lv, ys in c['byLevel'].items():
 print('2021-24 priced', tot['p'], 'of', tot['n'], '· whole record', allv['p'], 'of', allv['n'])
 PY
 
-echo '== feasibility (pre-2021 lower levels, our data only)'
-python3 ../tools/probe-te/feas.py "$SITE"
+
+
 python3 ../tools/probe-te/feas2.py "$SITE"
