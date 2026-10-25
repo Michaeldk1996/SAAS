@@ -1,11 +1,11 @@
 {
  "schemaVersion": 1,
- "generatedAt": "2026-10-25T10:06:48.113Z",
+ "generatedAt": "2026-10-25T19:55:13.219Z",
  "asOf": "2026-10-25",
  "sources": {
   "fixtures": "api-tennis get_fixtures (event_type_key 265), per prior edition",
   "playerIndex": {
-   "fetchedAt": "2026-10-25T04:47:51.986Z",
+   "fetchedAt": "2026-10-25T19:18:01.174Z",
    "source": "api-tennis get_standings (ATP)"
   },
   "draws": {
@@ -7373,11 +7373,11 @@
      "dropDate": "2026-10-26",
      "byeCorrected": false,
      "flags": [],
-     "status": "Playing",
-     "statusBasis": "draw-sheet",
+     "status": "Withdrew",
+     "statusBasis": "draw-sheet-withdrawal",
      "statusInferred": false,
      "drawSection": "main",
-     "drawEntry": null
+     "withdrawalReason": "illness"
     },
     {
      "order": 3,
@@ -7789,8 +7789,8 @@
      "status": "Playing",
      "statusBasis": "draw-sheet",
      "statusInferred": false,
-     "drawSection": "qualifying",
-     "drawEntry": "WC"
+     "drawSection": "main",
+     "drawEntry": "Q"
     },
     {
      "order": 19,
@@ -8084,8 +8084,8 @@
      "status": "Playing",
      "statusBasis": "draw-sheet",
      "statusInferred": false,
-     "drawSection": "qualifying",
-     "drawEntry": null
+     "drawSection": "main",
+     "drawEntry": "Q"
     },
     {
      "playerKey": "9909",
@@ -8303,8 +8303,8 @@
      "status": "Playing",
      "statusBasis": "draw-sheet",
      "statusInferred": false,
-     "drawSection": "qualifying",
-     "drawEntry": "WC"
+     "drawSection": "main",
+     "drawEntry": "LL"
     },
     {
      "playerKey": "1746",
@@ -8847,8 +8847,8 @@
      "status": "Playing",
      "statusBasis": "draw-sheet",
      "statusInferred": false,
-     "drawSection": "qualifying",
-     "drawEntry": null
+     "drawSection": "main",
+     "drawEntry": "Q"
     },
     {
      "order": 20,
@@ -9145,8 +9145,8 @@
      "status": "Playing",
      "statusBasis": "draw-sheet",
      "statusInferred": false,
-     "drawSection": "qualifying",
-     "drawEntry": null
+     "drawSection": "main",
+     "drawEntry": "Q"
     },
     {
      "playerKey": "401",
@@ -9383,8 +9383,8 @@
      "status": "Playing",
      "statusBasis": "draw-sheet",
      "statusInferred": false,
-     "drawSection": "qualifying",
-     "drawEntry": "WC"
+     "drawSection": "main",
+     "drawEntry": "Q"
     },
     {
      "playerKey": "32558",
