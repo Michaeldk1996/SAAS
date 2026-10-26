@@ -70,13 +70,13 @@ test('ruling 1: the hero band word derives from courtSpeedCategory(), not the RE
   assert.match(PIPE, /function courtSpeedCategory\(speed\)/,
     'courtSpeedCategory() is the ruled single source of truth and must exist in the pipeline');
 
-  // Round 2 (founder 2026-10-25, replacing the hero ruling on this page): the tournament page prints NO court speed —
-  // no hero, band word, knob or rank line. The detail column must not re-derive a band either.
+  // The Tournaments detail column must read speedCat (courtSpeedCategory's output
+  // via tourxConditionRegistry), NOT a locally re-derived ladder (founder 2026-10-26: the Overview hero is back).
   const detail = DASH.slice(DASH.indexOf('function tourxConditionsPanelHtml()'),
                             DASH.indexOf('function tourxRankLineHtml'));
   assert.ok(detail.length > 500, 'could not isolate the detail-column renderer');
-  assert.ok(!/bandWord|c\.speedCat|abstractSpeed|tourxKnobPct/.test(detail),
-    'the tournament page prints no court speed (round 2): a hero / band word / knob survives');
+  assert.match(detail, /const bandWord = c\.speedCat/,
+    'the hero word must come from c.speedCat (courtSpeedCategory), not a local threshold');
 
   // and the README's ladder must not be reintroduced anywhere on the page.
   assert.ok(!/Medium-slow/.test(DASH_CODE),
@@ -736,9 +736,10 @@ test('TEN-401 items 3–5: rail, hero scale and Overview blocks', () => {
   assert.match(rail, /class="tourx-search" style="display:flex;align-items:center;gap:10px;background:var\(--inner\);/);
   assert.match(DASH, /#tourxOverview \.tourx-search\{ border:1px solid transparent; \}/);
   const panel = fnSource(DASH, 'function tourxConditionsPanelHtml(){');
-  // item 4's court-speed scale is gone with the hero (round 2, founder 2026-10-25: no court speed on tournament pages)
-  assert.ok(!/tourxOpenSpeedPanel|border:3px solid var\(--card\);transform:translate\(-50%,-50%\)/.test(panel), 'the court-speed knob / scale survives on the page');
-  assert.ok(!/linear-gradient/.test(code(panel)), 'a gradient appears on the page');
+  // item 4 (override): 8px track at 6% white, no gradient; white knob + 3px card ring, nothing else (founder 2026-10-26: restored)
+  assert.match(panel, /height:8px;border-radius:5px;background:var\(--track\);cursor:pointer;/);
+  assert.ok(!/linear-gradient/.test(code(panel)), 'the court-speed scale still carries a gradient');
+  assert.match(panel, /width:16px;height:16px;border-radius:50%;background:var\(--text\);border:3px solid var\(--card\);transform:translate\(-50%,-50%\);"/);
   // Completed badge: inner, grey caps, no edge
   assert.match(panel, /text-transform:uppercase;color:var\(--text-label\);background:var\(--inner\);border:1px solid transparent;[^`]*>Completed</);
   // ROI cards: clickable tiles when they open something; report button: inner, white, 10% edge on hover only

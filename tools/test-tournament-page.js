@@ -1,7 +1,7 @@
 'use strict';
 // Round 2 (founder brief 2026-10-25) — the tournament page (Tournaments → Overview, one event). SLICES the real page
 // functions out of the dashboard and runs them on fixtures; every check names the mutation that turns it red.
-//   · no court speed on the page (hero, knob, speed-derived prose, speed trend, rail figures all gone);
+//   · founder 2026-10-26: the Overview is the pre-round-2 build again (court speed back); the blocks are on the Stats tab;
 //   · every catalog event is listed (Brussels and Lyon (France) have no court-conditions row);
 //   · a card resolves to its event by its own tournamentKey (Lyon 2026 → 'Lyon (France)', never the clay 'Lyon');
 //   · How it plays (2.1), Favourites by round (2.2), Points to defend (2.3) blocks: n, floor, dashes, no verdict words.
@@ -43,20 +43,35 @@ ok('a Lyon 2026 card (tournamentKey 14763) resolves to Lyon (France); a keyless 
   && T.tpEventOfCard({ venue: { city: 'Lyon' } }) === 'Lyon' && T.tpEventOfCard({ tournamentKey: '3669', venue: { city: 'Brussels' } }) === 'Brussels');
 ok('the floor is one named constant, 15 (founder default)', /^const TP_SAMPLE_FLOOR = 15;/m.test(html));
 
-console.log('=== no court speed on the tournament page ===');
-const panel = grab('tourxConditionsPanelHtml'), rail = grab('tourxOverviewListHtml');
-// Mutation: put the hero / prose / trend back → red.
-ok('the panel prints no abstract court speed, knob, rank line, speed prose or speed trend',
-  !/abstractSpeed|abstract court speed|tourxKnobPct|tourxRankLineHtml|tourxConditionsProse|tourxSpeedSeriesHtml/.test(panel));
-ok('the rail prints no speed figure and is not sorted by speed', !/abstractSpeed/.test(rail) && /tpPageEvents\(\)/.test(rail));
-ok('the panel carries the three blocks, in order: points to defend, how it plays, favourites by round',
-  /\$\{title\}\$\{tpPointsDefendHtml\(c\)\}\$\{tpHowItPlaysHtml\(c\)\}\$\{tpFavDogHtml\(c\)\}/.test(panel));
-ok('the sheet\'s count-less 1st-serve / service-hold tiles are off the page (How it plays prints ours, with n); altitude stays',
-  !/tile\('1st serve point won'/.test(panel) && !/tile\('Service hold'/.test(panel) && /tile\('Altitude'/.test(panel));
-
-// Mutation: the header names court speed again, or counts the court-speed registry (64) instead of the page's list → red.
-ok('the page header names no court speed and counts the page\'s own event list', !/Court speed, conditions/.test(html)
-  && /const listed = typeof tpPageEvents === 'function' \? tpPageEvents\(\) : reg;\n  return \{ events: listed\.length,/.test(grab('tourxHeadStatValues')));
+console.log('=== Overview restored as before round 2 (founder 2026-10-26); the round-2 blocks live on the Stats tab ===');
+const panel = grab('tourxConditionsPanelHtml'), rail = grab('tourxOverviewListHtml'), stats = grab('tpStatsPanelHtml');
+// Mutation: drop the hero / slider / rank / prose / trend again → red.
+ok('the Overview panel prints the court-speed hero, knob, rank line, Conditions read and speed trend',
+  /abstract court speed/.test(panel) && /tourxKnobPct\(as,/.test(panel) && /tourxRankLineHtml\(as\)/.test(panel) && /tourxConditionsProse\(/.test(panel)
+  && /\$\{title\}\$\{hero\}\$\{tiles\}\$\{read\}\$\{tourxQuotesCardHtml\(c\)\}\$\{tourxSpeedSeriesHtml\(c\)\}\$\{tourxRoiPairHtml\(c\)\}\$\{tourxReliabilityHtml\(c\)\}\$\{tourxReportCtaHtml\(c\)\}/.test(panel));
+// Mutation: drop the Tennis Abstract credit → red.
+ok('the "abstract court speed" label credits Tennis Abstract on hover', /class="tourx-as-label"[^>]*title="\$\{asTip\}"/.test(panel) && /Tennis Abstract's court-speed rating \(tennisabstract\.com\)/.test(panel));
+// Mutation: an event with no reading prints a number / prose → red (the dash paths must exist).
+ok('no reading → a dash in the hero, no knob, no rank line, a dash for the Conditions read', /as == null \? '—' : as\.toFixed\(2\)/.test(panel)
+  && /knob == null \? ''/.test(panel) && /as == null \? '' : tourxRankLineHtml\(as\)/.test(panel) && /as == null \? '—' : tourxConditionsProse/.test(panel));
+ok('the Altitude / 1st serve point won / Service hold tiles are back', /tile\('Altitude'/.test(panel) && /tile\('1st serve point won'/.test(panel) && /tile\('Service hold'/.test(panel));
+ok('the Overview panel no longer carries the round-2 blocks', !/tpPointsDefendHtml|tpHowItPlaysHtml|tpFavDogHtml/.test(panel));
+// Mutation: list by tpPageEvents (every catalog event) or sort by name → red.
+ok('the rail lists the court-speed registry + listUnrated events, fastest first, speed figure or a dash', /const reg = tourxOverviewEvents\(\);/.test(rail) && /\.sort\(bySpeed\)/.test(rail)
+  && /t\.abstractSpeed == null \? '—' : t\.abstractSpeed\.toFixed\(2\)/.test(rail));
+ok('the Stats tab carries the three blocks: how it plays, favourites by round, points to defend', /\$\{title\}\$\{tpHowItPlaysHtml\(c\)\}\$\{tpFavDogHtml\(c\)\}\$\{tpPointsDefendHtml\(c\)\}/.test(stats)
+  && /\['stats', 'Stats'\]/.test(grab('renderTournamentsTab')) && /tourxState\.section === 'stats' \? tpStatsPanelHtml\(\) : tourxConditionsPanelHtml\(\)/.test(grab('renderTourxOverview')));
+ok('the page header names court speed again and counts the Overview\'s own list', /Court speed, conditions and market yields/.test(html)
+  && /const listed = typeof tourxOverviewEvents === 'function' \? tourxOverviewEvents\(\) : reg;\n  return \{ events: listed\.length,/.test(grab('tourxHeadStatValues')));
+{
+  const b2 = { COURT_CONDITIONS: box.COURT_CONDITIONS, courtSpeedCategory: v => 'x' };
+  vm.createContext(b2);
+  vm.runInContext(catalogSrc + '\n' + ['tourxConditionRegistry', 'tourxOverviewEvents'].map(grab).join('\n') + '\nthis.E = tourxOverviewEvents();', b2);
+  const en = b2.E.map(e => e.name), ly = b2.E.find(e => e.name === 'Lyon (France)');
+  // Mutation: drop listUnrated from the catalog → Brussels / Lyon (France) leave the Overview → red.
+  ok('Overview list: the rated events + Brussels and Lyon (France) with no speed (dash)', en.includes('Lyon') && en.includes('Almaty') && en.includes('Brussels') && en.includes('Lyon (France)')
+    && ly.abstractSpeed === null && en.length === 4, en);
+}
 ok('the B footnote is true for every year (not "Jan–Apr 2026" only)', /B = priced on the Bet365 close where Pinnacle has none/.test(grab('tpFavDogHtml')) && !/B = the Bet365 close \(Jan–Apr 2026\)/.test(html));
 
 console.log('=== How it plays (2.1) ===');
@@ -71,11 +86,11 @@ const cat = n => T.cat.find(t => t.name === n);
 const hipA = T.tpHowItPlaysHtml(cat('Almaty')), tA = text(hipA);
 // Mutation: drop the plain-words header, or the court / best-of-three words → red.
 ok('header: "Main draw, 2024–2025, 53 matches · compared with ATP indoor hard, best-of-three"', /Main draw, 2024–2025, 53 matches · compared with ATP indoor hard, best-of-three/.test(tA), tA.slice(0, 160));
-ok('Almaty past hold 83.3% vs tour 81.1%; n and num / den in the tooltip', /83\.3%/.test(tA) && /81\.1%/.test(tA) && /This event: 83\.3% \(1015 \/ 1219 service games; 53 matches\)/.test(hipA));
+ok('Almaty past hold 83.3% vs tour 81.1%; n and num / den in the tooltip', /83\.3%/.test(tA) && /81\.1%/.test(tA) && /2024–2025 editions: 83\.3% \(1015 \/ 1219 service games; 53 matches\)/.test(hipA));
 // Mutation: show a figure below the floor → the 12-match current hold 85.8% prints → red.
-ok('this year so far below the floor (12 < 15) is a dash with its count', /This year so far · n 12/.test(tA) && !/85\.8%/.test(tA));
+ok('this year so far below the floor (12 < 15) is a dash with its count', /2026 so far · n 12/.test(tA) && !/85\.8%/.test(tA));
 const tB = text(T.tpHowItPlaysHtml(cat('Brussels')));
-ok('Brussels: a metric with n 14 < 15 is a dash with "n 14"', /This event · n 14/.test(tB) && !/88\.7%/.test(tB));
+ok('Brussels: a metric with n 14 < 15 is a dash with "n 14"', /2025 edition · n 14/.test(tB) && !/88\.7%/.test(tB));
 // Mutation: map Lyon (France) to the clay Lyon or print a past edition → red.
 const tL = text(T.tpHowItPlaysHtml(cat('Lyon (France)')));
 ok('Lyon (France): "First edition — no past edition", its 2026 figure shown at n 24', /First edition — no past edition/.test(tL) && /86\.5%/.test(tL), tL.slice(0, 200));

@@ -2945,7 +2945,7 @@ window.sfPlanLocks(null);   // locked until the account says Edge / Pro: no unlo
       <div class="sfh tourx-head">
         <div class="sfh__text">
           <h1 class="sfh__title">Tournaments</h1>
-          <p class="sfh__sub">Conditions and market yields for every event on the calendar.</p>
+          <p class="sfh__sub">Court speed, conditions and market yields for every event on the calendar.</p>
         </div>
         <div class="sfh__stats" id="tourxHeadStats" aria-label="Tournaments summary"></div>
       </div>
@@ -23498,8 +23498,8 @@ const TOURNAMENT_CATALOG = [
   { name: 'Lyon', category: 'ATP 250', surface: 'clay', indoor: false, country: 'FR', pointsKey: null },   // no 2026 edition: points-to-defend's lyon-* is the October event
   // Round 2 item 1.1 (founder 2026-10-25): Lyon October 2026 — a new event (api-tennis 14763, Hard (Indoor)), no lineage
   // to the clay Lyon above; Brussels — the European Open since 2025 (its own editions, never Antwerp's).
-  { name: 'Lyon (France)', category: 'ATP 250', surface: 'hard', indoor: true, country: 'FR', tournamentKeys: ['14763'], firstEdition: 2026, pointsKey: 'lyon' },
-  { name: 'Brussels', category: 'ATP 250', surface: 'hard', indoor: true, country: 'BE', tournamentKeys: ['3669'] },
+  { name: 'Lyon (France)', category: 'ATP 250', surface: 'hard', indoor: true, country: 'FR', tournamentKeys: ['14763'], firstEdition: 2026, pointsKey: 'lyon', listUnrated: true },
+  { name: 'Brussels', category: 'ATP 250', surface: 'hard', indoor: true, country: 'BE', tournamentKeys: ['3669'], listUnrated: true },
   { name: 'Gstaad', category: 'ATP 250', surface: 'clay', indoor: false, country: 'CH' },
   { name: 'Bastad', category: 'ATP 250', surface: 'clay', indoor: false, country: 'SE' },
   { name: 'Newport', category: 'ATP 250', surface: 'grass', indoor: false, country: 'US' },
@@ -24634,7 +24634,7 @@ function tourxLoadQuotes(){
   tourxQuotesLoading = true;
   fetch('./tournament-quotes.json', { cache: 'no-cache' })
     .then(r => r.ok ? r.json() : null)
-    .then(j => { tourxQuotes = (j && j.tournaments) || {}; if (tourxState.section === 'overview') renderTourxOverview(); })
+    .then(j => { tourxQuotes = (j && j.tournaments) || {}; if (tourxState.section === 'overview' || tourxState.section === 'stats') renderTourxOverview(); })
     .catch(() => { tourxQuotes = {}; });
 }
 // TEN-401 Data 3 / lead default L3 (founder: "real quotes only; no real source → hide the card"). A note ships only
@@ -24700,7 +24700,7 @@ function tourxFetchMarket(){
 }
 function tourxLoadMarket(){
   if (tourxMarketData || tourxMarketLoading || tourxMarketFailed) return;
-  tourxFetchMarket().then(d => { if (d && tourxState.section === 'overview') renderTourxOverview(); });
+  tourxFetchMarket().then(d => { if (d && (tourxState.section === 'overview' || tourxState.section === 'stats')) renderTourxOverview(); });
 }
 function tourxMarketFor(name){
   if (!tourxMarketData || !tourxMarketData.tournaments) return null;
@@ -24946,7 +24946,8 @@ function renderTournamentsTab(){
   const secs = [['overview', 'Overview']]
     .concat(window.FEATURE_ENTRY_LISTS ? [['entry', 'Entry list']] : [])
     .concat([['draw', 'Draw']])          // founder ruling 2026-10-20 item 2: the official draw as a bracket (draw-view.js)
-    .concat([['reports', 'Reports']]);
+    .concat([['reports', 'Reports']])
+    .concat([['stats', 'Stats']]);   // founder 2026-10-26: How it plays, Favourites vs underdogs, Points to defend
   if (tourxState.section === 'entry' && !window.FEATURE_ENTRY_LISTS) tourxState.section = 'overview';
   // TEN-401 item 2: the page tabs are the darker track (sfSegHtml) — selected --inner + --edge-10, white 700; no blue.
   tabs.innerHTML = sfSegHtml(secs.map(([v, l]) => ({ label: l, on: tourxState.section === v, onclick: `tourxSetSection('${v}')`, cls: 'tourx-secttab' })),
@@ -24962,11 +24963,11 @@ function renderTournamentsTab(){
         rp = document.getElementById('tourxReports'),
         dw = document.getElementById('tourxDraw');
   const sec = tourxState.section;
-  ov.style.display = sec === 'overview' ? '' : 'none';
+  ov.style.display = sec === 'overview' || sec === 'stats' ? '' : 'none';
   if (en) en.style.display = sec === 'entry' ? '' : 'none';
   rp.style.display = sec === 'reports' ? '' : 'none';
   if (dw) dw.style.display = sec === 'draw' ? '' : 'none';
-  if (sec === 'overview') renderTourxOverview();
+  if (sec === 'overview' || sec === 'stats') renderTourxOverview();
   else if (sec === 'entry') { if (window.EntryListsTab) window.EntryListsTab.init(); }
   else if (sec === 'draw') tourxRenderDraw();
   else renderTourxReports();
@@ -25056,9 +25057,8 @@ function tourxHeadStatValues(){
     (typeof tournamentProgression !== 'undefined' && tournamentProgression) ? tournamentProgression.fetchedAt : null,
   ].map(s => (s ? Date.parse(s) : NaN)).filter(Number.isFinite);
   if (!stamps.length) return null;
-  // round 2 (founder 2026-10-25): Events counts the page's own list (every catalog event, tpPageEvents), not the
-  // court-speed registry it no longer lists by.
-  const listed = typeof tpPageEvents === 'function' ? tpPageEvents() : reg;
+  // Founder 2026-10-26: Events counts the Overview's own list (the court-speed registry plus the listUnrated events).
+  const listed = typeof tourxOverviewEvents === 'function' ? tourxOverviewEvents() : reg;
   return { events: listed.length, week: wk.length, updated: Math.max(...stamps) };
 }
 function tourxHeadStamp(ms, now){
@@ -25290,7 +25290,7 @@ function renderTourxOverview(){
   tourxState.railQ = tourxState.tsQ;
   el.innerHTML = `<div class="tourx-ovwrap"><div class="tourx-ovgrid">
       <div class="tourx-ovleft"><div class="tourx-ovleft-inner">${tourxOverviewListHtml()}</div></div>
-      <div class="tourx-ovright">${tourxConditionsPanelHtml()}</div>
+      <div class="tourx-ovright">${tourxState.section === 'stats' ? tpStatsPanelHtml() : tourxConditionsPanelHtml()}</div>
     </div></div>`;
   const list = el.querySelector('.tourlist');
   if (list) { if (keepPad) list.style.paddingBottom = keepPad; list.scrollTop = keepTop; }
@@ -25329,15 +25329,15 @@ function tourxRevealRailSel(){
 function tourxOverviewListHtml(){
   // README §1.1 - search, then two groups: "This week" then "Season". The export
   // has no scope toggle; both groups always render and search filters both.
-  const reg = tpPageEvents();   // round 2: every catalog event (court speed no longer decides who is listed)
+  const reg = tourxOverviewEvents();
   const q = tourxState.tsQ.trim().toLowerCase();
   // §1.1: "Search filters both groups by case-insensitive substring on the NAME" — TEN-402 r2: the printed name, the
   // official name, the city key or another catalog spelling (tourxEventSearchText).
   const match = t => !q || (typeof tourxEventSearchText === 'function' ? tourxEventSearchText(t.name) : t.name.toLowerCase()).includes(q);
   const weekNames = tourxActiveWeekNames();
-  const byLabel = (a, b) => tpEventLabel(a.name).localeCompare(tpEventLabel(b.name));
-  const week = reg.filter(t => weekNames.has(t.name) && match(t)).sort(byLabel);
-  const season = reg.filter(t => !weekNames.has(t.name) && match(t)).sort(byLabel);
+  const bySpeed = (a, b) => (b.abstractSpeed == null ? -1 : b.abstractSpeed) - (a.abstractSpeed == null ? -1 : a.abstractSpeed);
+  const week = reg.filter(t => weekNames.has(t.name) && match(t)).sort(bySpeed);
+  const season = reg.filter(t => !weekNames.has(t.name) && match(t)).sort(bySpeed);
   const row = t => {
     const seld = t.name === tourxState.tsSel;
     // TEN-401 ticket item 3: the selected row is the selected tile (.tourx-ovrow.on — --selected + inset 16% ring,
@@ -25355,6 +25355,7 @@ function tourxOverviewListHtml(){
     return `<div class="tourx-ovrow${seld ? ' on' : ''}" onclick="tourxSelectCondition('${tourxEsc(t.name)}')" style="display:flex;align-items:center;gap:11px;padding:11px 14px;border-radius:11px;cursor:pointer;">
         <span style="min-width:42px;height:22px;padding:0 7px;border-radius:6px;background:${chipBg};border:none;color:var(--text-label);${chipFont}font-size:10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;flex:none;">${code}</span>
         <span style="flex:1;min-width:0;font-size:13.5px;font-weight:${seld ? 600 : 700};color:var(--text);white-space:normal;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-height:1.3;">${typeof tourxEventName === 'function' ? tourxEventName(t.name) : t.name}</span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:700;letter-spacing:-0.01em;font-variant-numeric:tabular-nums;color:${t.abstractSpeed == null ? 'var(--text-label)' : 'var(--text)'};flex:none;">${t.abstractSpeed == null ? '—' : t.abstractSpeed.toFixed(2)}</span>
       </div>`;
   };
   // Search = control (ticket item 3): --inner, no edge; focus lifts to --edge-16 (.tourx-search:focus-within).
@@ -25370,7 +25371,7 @@ function tourxOverviewListHtml(){
     // two empty headings read as a rendering failure, not as "no results".
     body = q
       ? `<div style="padding:16px 8px;font-size:12.5px;color:var(--text-label);">No tournament matches “${tourxState.tsQ}”.</div>`
-      : `<div style="padding:16px 8px;font-size:12.5px;color:var(--text-label);">No tournaments to show.</div>`;
+      : `<div style="padding:16px 8px;font-size:12.5px;color:var(--text-label);">No rated tournaments to show.</div>`;
   } else {
     // A4 (founder, phase 2): a heading with nothing under it is noise. "This
     // week" is empty for most of the calendar — between events, and all of the
@@ -25389,6 +25390,7 @@ function tourxConditionsPanelHtml(){
   const c = tourxResolveCondition(tourxState.tsSel);
   if (!c) return `<div style="padding:40px 26px;color:var(--text-label);font-size:14px;">Select a tournament to view its conditions.</div>`;
   const MONO = "'IBM Plex Mono',monospace";
+  const as = c.abstractSpeed == null ? null : c.abstractSpeed;   // null = no court-speed sheet row (Brussels, Lyon (France)): dashes
   const EY = `font-family:var(--font-words); font-size:10.5px;font-weight:700;letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);`;
   const CARD = `background:var(--card);border:1px solid var(--edge-6);`;
 
@@ -25399,7 +25401,29 @@ function tourxConditionsPanelHtml(){
     ? `<span style="font-family:var(--font-words);font-size:10.5px;font-weight:700;letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);background:var(--inner);border:1px solid transparent;border-radius:6px;padding:3px 10px;">Completed</span>` : '';
   const title = `<div>
       <div style="display:flex;align-items:center;gap:11px;flex-wrap:wrap;"><span style="font-size:29px;font-weight:800;letter-spacing:-0.015em;color:var(--text);">${typeof tourxEventName === 'function' ? tourxEventName(c.name) : c.name}</span>${badge}</div>
-      <div style="font-size:13px;color:var(--text-label);margin-top:6px;">${c.category} · ${tourxCap(c.surface)} court${c.indoor === true ? ' · Indoor' : c.indoor === false ? ' · Outdoor' : ''}</div>
+      <div style="font-size:13px;color:var(--text-label);margin-top:6px;">${c.category} · ${tourxCap(c.surface)} court</div>
+    </div>`;
+
+  // ---- court-speed hero (§1.2) -------------------------------------------
+  // FOUNDER RULING 2026-09-19: the band word is courtSpeedCategory()'s, not the
+  // README's four bands. c.speedCat IS that function's output, and the Conditions
+  // read below is generated from the same value - one function, one word.
+  // Founder 2026-10-26: restored as it was before round 2; the label credits Tennis Abstract on hover.
+  const bandWord = c.speedCat || '—';
+  const knob = as == null ? null : tourxKnobPct(as, tourxConditionRegistry().map(t => t.abstractSpeed));
+  const asTip = `Abstract court speed: Tennis Abstract's court-speed rating (tennisabstract.com)${c.abstractSpeedYear ? `, ${c.abstractSpeedYear} reading` : ''}.${as == null ? ' No reading for this event.' : ''}`;
+  const hero = `<div>
+      <div style="display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;">
+        <span style="font-family:${MONO};font-size:52px;font-weight:700;line-height:0.9;letter-spacing:-0.02em;font-variant-numeric:tabular-nums;color:${as == null ? 'var(--text-label)' : 'var(--text)'};">${as == null ? '—' : as.toFixed(2)}</span>
+        <span class="tourx-as-label" tabindex="0" title="${asTip}" style="font-size:13px;color:var(--text-label);cursor:help;">abstract court speed · <span style="color:var(--text);font-weight:600;">${bandWord}</span></span>
+      </div>
+      <!-- TEN-401 ticket item 4 (override, closes the step-1 court-speed scale item): an 8px track at 6% white, no
+           gradient; a white knob with a 3px card-tone ring and nothing else. -->
+      <div onclick="tourxOpenSpeedPanel()" title="Compare every rated event" style="position:relative;margin-top:18px;height:8px;border-radius:5px;background:var(--track);cursor:pointer;">
+        ${knob == null ? '' : `<span style="position:absolute;top:50%;left:${knob}%;width:16px;height:16px;border-radius:50%;background:var(--text);border:3px solid var(--card);transform:translate(-50%,-50%);"></span>`}
+      </div>
+      <div style="margin-top:9px;display:flex;justify-content:space-between;font-size:10.5px;letter-spacing:0.10em;text-transform:uppercase; font-weight:700;color:var(--text-label);"><span>Slow</span><span>Medium</span><span>Fast</span></div>
+      ${as == null ? '' : tourxRankLineHtml(as)}
     </div>`;
 
   // ---- three condition tiles (§1.2) --------------------------------------
@@ -25409,6 +25433,15 @@ function tourxConditionsPanelHtml(){
   const tile = (label, val) => `<div style="${CARD}border-radius:11px;padding:15px 16px;"><div style="${EY}">${label}</div><div style="font-family:${MONO};font-size:26px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums;color:${val == null ? 'var(--text-label)' : 'var(--text)'};margin-top:10px;">${val == null ? '—' : val}</div></div>`;
   const tiles = `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;${CARD}border-radius:12px;padding:14px;">
       ${tile('Altitude', c.altitude != null ? c.altitude + ' m' : null)}
+      ${tile('1st serve point won', c.firstServeWon != null ? c.firstServeWon + '%' : null)}
+      ${tile('Service hold', c.serviceHold != null ? c.serviceHold + '%' : null)}
+    </div>`;
+
+  // ---- conditions read (§1.2) --------------------------------------------
+  // generated from the court-speed reading; no reading → a dash, never prose without its number
+  const read = `<div style="${CARD}border-radius:12px;padding:16px 18px;">
+      <div style="${EY}margin-bottom:11px;">Conditions read</div>
+      <p style="margin:0;font-size:13.5px;line-height:1.7;color:${as == null ? 'var(--text-label)' : 'var(--text)'};text-wrap:pretty;">${as == null ? '—' : tourxConditionsProse(c.surface, c.speedCat, as, tourxBounce(c.surface, c.altitude, c.speedCat))}</p>
     </div>`;
 
   // README §1.2 "What players say" sits between the conditions read and the
@@ -25419,7 +25452,19 @@ function tourxConditionsPanelHtml(){
   // spacer to remove.
 
   return `<div style="display:flex;flex-direction:column;gap:16px;min-width:0;padding-left:24px;">
-      ${title}${tpPointsDefendHtml(c)}${tpHowItPlaysHtml(c)}${tpFavDogHtml(c)}${tiles}${tourxQuotesCardHtml(c)}${tourxRoiPairHtml(c)}${tourxReliabilityHtml(c)}${tourxReportCtaHtml(c)}
+      ${title}${hero}${tiles}${read}${tourxQuotesCardHtml(c)}${tourxSpeedSeriesHtml(c)}${tourxRoiPairHtml(c)}${tourxReliabilityHtml(c)}${tourxReportCtaHtml(c)}
+    </div>`;
+}
+// Founder 2026-10-26: the Stats tab — the round-2 blocks, unchanged, under the same title (same rail, same selection).
+function tpStatsPanelHtml(){
+  const c = tourxResolveCondition(tourxState.tsSel);
+  if (!c) return `<div style="padding:40px 26px;color:var(--text-label);font-size:14px;">Select a tournament to view its stats.</div>`;
+  const title = `<div>
+      <div style="display:flex;align-items:center;gap:11px;flex-wrap:wrap;"><span style="font-size:29px;font-weight:800;letter-spacing:-0.015em;color:var(--text);">${typeof tourxEventName === 'function' ? tourxEventName(c.name) : c.name}</span></div>
+      <div style="font-size:13px;color:var(--text-label);margin-top:6px;">${c.category} · ${tourxCap(c.surface)} court${c.indoor === true ? ' · Indoor' : c.indoor === false ? ' · Outdoor' : ''}</div>
+    </div>`;
+  return `<div style="display:flex;flex-direction:column;gap:16px;min-width:0;padding-left:24px;">
+      ${title}${tpHowItPlaysHtml(c)}${tpFavDogHtml(c)}${tpPointsDefendHtml(c)}
     </div>`;
 }
 
@@ -25745,7 +25790,7 @@ function tourxReportCtaHtml(c){
 }
 // Join conditions + catalog + this-week status + defending champion for one name.
 function tourxResolveCondition(name){
-  const c = tpPageEvents().find(t => t.name === name);   // round 2: every catalog event
+  const c = tourxOverviewEvents().find(t => t.name === name);
   if (!c) return null;
   const wk = tourxWeeklyTiles().find(t => t.name === name) || null;
   const prof = (tournamentProfiles && tournamentProfiles[name]) || null;
@@ -25817,6 +25862,12 @@ function tpPageEvents(){
     seen.add(l); out.push(Object.assign({}, COURT_CONDITIONS[t.name] || {}, t));
   });
   return out;
+}
+function tourxOverviewEvents(){
+  const reg = tourxConditionRegistry(), have = new Set(reg.map(t => t.name));
+  const extra = TOURNAMENT_CATALOG.filter(t => t.listUnrated && !have.has(t.name))
+    .map(t => Object.assign({ abstractSpeed: null, speedCat: null, altitude: null, firstServeWon: null, serviceHold: null }, t));
+  return reg.concat(extra);
 }
 function tpEventLabel(name){ return typeof tourxEventName === 'function' ? tourxEventName(name) : name; }
 // A card's event: the catalog entry that lists the card's own api-tennis tournament key (Lyon 2026 = 14763 → 'Lyon
@@ -25936,6 +25987,9 @@ function tpHowItPlaysHtml(c){
   const courtWord = e.indoor === true ? 'indoor' : e.indoor === false ? 'outdoor' : '';
   const yrs = sl => (sl && sl.years && sl.years.length ? (sl.years.length > 1 ? `${sl.years[0]}–${sl.years[sl.years.length - 1]}` : String(sl.years[0])) : '');
   const past = e.past, cur = e.current;
+  // founder 2026-10-26: "This event" → "[year] edition", "This year so far" → "[year] so far" (the years the rows hold)
+  const pastLabel = past && past.years && past.years.length ? `${yrs(past)} edition${past.years.length > 1 ? 's' : ''}` : 'Past editions';
+  const curLabel = `${cur && cur.years && cur.years.length ? yrs(cur) : new Date().getUTCFullYear()} so far`;
   const sub = (past ? `Main draw, ${yrs(past)}, ${past.n} match${past.n === 1 ? '' : 'es'}` : (c.firstEdition ? 'First edition — no past edition' : 'No past edition on file'))
     + (base ? ` · compared with ATP ${courtWord} hard, best-of-three` : '');
   const val = (sl, key) => (sl && sl.metrics && sl.metrics[key]) || null;
@@ -25948,17 +26002,17 @@ function tpHowItPlaysHtml(c){
     const bar = (v, col) => `<div style="height:5px;border-radius:4px;background:var(--track);overflow:hidden;margin-top:6px;"><span style="display:block;height:100%;width:${v == null ? 0 : Math.max(2, v / hi * 100)}%;background:${col};border-radius:4px;"></span></div>`;
     const tipOf = (lbl, m, n) => m ? `${lbl}: ${m.value == null ? '—' : fmt(m.value)} (${m.num} / ${m.den} ${unit}; ${n} match${n === 1 ? '' : 'es'})${n < floor ? ` — fewer than ${floor} matches, shown as —` : ''}` : `${lbl}: no data`;
     const excl = (past && past.excludedPartial) || 0;
-    const tip = [tipOf('This event', pm, pn), tipOf('ATP tour', bm, bn), cm ? tipOf(`${cur.years ? yrs(cur) : 'This year'} so far`, cm, cn) : null,
+    const tip = [tipOf(pastLabel, pm, pn), tipOf('ATP tour', bm, bn), cm ? tipOf(curLabel, cm, cn) : null,
       excl ? `${excl} match${excl === 1 ? '' : 'es'} left out: partial box score` : null].filter(Boolean).join(' · ');
     return `<div title="${tourxRpEsc(tip)}" style="background:var(--inner);border-radius:10px;padding:12px 13px;min-width:0;">
         <div style="font-size:12.5px;font-weight:600;color:var(--text);">${label}</div>
         <div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:8px;font-size:11px;color:var(--text-label);">
-          <span>This event${pm && pn < floor ? ` · n ${pn}` : ''}</span><span style="${MONO}font-size:14px;font-weight:700;color:${pv == null ? 'var(--text-label)' : 'var(--text)'};">${shown(pm, pn, fmt)}</span></div>
+          <span>${pastLabel}${pm && pn < floor ? ` · n ${pn}` : ''}</span><span style="${MONO}font-size:14px;font-weight:700;color:${pv == null ? 'var(--text-label)' : 'var(--text)'};">${shown(pm, pn, fmt)}</span></div>
         ${bar(pv, 'var(--bar)')}
         <div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:7px;font-size:11px;color:var(--text-label);">
           <span>ATP tour</span><span style="${MONO}font-size:12px;font-weight:600;">${shown(bm, bn, fmt)}</span></div>
         ${bar(bv, 'var(--text-label)')}
-        ${cm ? `<div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:7px;font-size:11px;color:var(--text-label);"><span>This year so far · n ${cn}</span><span style="${MONO}font-size:12px;font-weight:600;color:${cn >= floor ? 'var(--text)' : 'var(--text-label)'};">${shown(cm, cn, fmt)}</span></div>` : ''}
+        ${cm ? `<div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:7px;font-size:11px;color:var(--text-label);"><span>${curLabel} · n ${cn}</span><span style="${MONO}font-size:12px;font-weight:600;color:${cn >= floor ? 'var(--text)' : 'var(--text-label)'};">${shown(cm, cn, fmt)}</span></div>` : ''}
       </div>`;
   };
   const foot = `Our own box scores (2025 on) and Sackmann match stats (2016–24), main draw. A figure shows from ${floor} matches; below that it is — with its count. Hover a tile for every n.`;
