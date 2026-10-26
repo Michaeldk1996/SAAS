@@ -5905,6 +5905,33 @@
       "p2": "L. Neumayer",
       "startTime": "2026-10-26T16:30:00.000Z",
       "tournamentId": 3103
+    },
+    "12174303": {
+      "fixtureId": "id1200261376034534",
+      "mappedAt": "2026-10-26T00:33:20Z",
+      "orient": "same",
+      "p1": "G. Mpetshi Perricard",
+      "p2": "A. Fils",
+      "startTime": "2026-10-27T10:00:00.000Z",
+      "tournamentId": 2613
+    },
+    "12174304": {
+      "fixtureId": "id1200261376029754",
+      "mappedAt": "2026-10-26T00:33:20Z",
+      "orient": "same",
+      "p1": "H. Hurkacz",
+      "p2": "Z. Bergs",
+      "startTime": "2026-10-27T10:00:00.000Z",
+      "tournamentId": 2613
+    },
+    "12174305": {
+      "fixtureId": "id1200261376034538",
+      "mappedAt": "2026-10-26T00:33:20Z",
+      "orient": "same",
+      "p1": "T. Fritz",
+      "p2": "R. Hijikata",
+      "startTime": "2026-10-27T10:00:00.000Z",
+      "tournamentId": 2613
     }
   },
   "missAudit": {
@@ -5917,23 +5944,12 @@
       "observedSpanDays": 18.59,
       "projectedTtlUnitsPerDay": 2.9,
       "runs": 400,
-      "spentRuns": 170,
+      "spentRuns": 171,
       "ttlBitRuns": 54,
       "ttlBitShare": 0.135,
       "ttlHours": 1.0
     },
     "runs": [
-      {
-        "at": "2026-10-07T09:17:16Z",
-        "fixturesUnitsSpent": 0,
-        "hitExpired": 0,
-        "missExpired": 0,
-        "openMisses": 0,
-        "stale": 0,
-        "ttlBit": false,
-        "unmapped": 0,
-        "upcoming": 34
-      },
       {
         "at": "2026-10-07T10:17:10Z",
         "fixturesUnitsSpent": 0,
@@ -10322,9 +10338,20 @@
         "ttlBit": false,
         "unmapped": 0,
         "upcoming": 33
+      },
+      {
+        "at": "2026-10-26T00:33:20Z",
+        "fixturesUnitsSpent": 1,
+        "hitExpired": 0,
+        "missExpired": 0,
+        "openMisses": 0,
+        "stale": 3,
+        "ttlBit": false,
+        "unmapped": 3,
+        "upcoming": 35
       }
     ]
   },
   "schema": "odds-fixture-map/1",
-  "updatedAt": "2026-10-25T21:32:35Z"
+  "updatedAt": "2026-10-26T00:33:20Z"
 }
