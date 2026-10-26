@@ -27,7 +27,7 @@ on:
   workflow_dispatch:
     inputs:
       action:
-        description: 'schema | lines-schema | lines-coverage | verify | deploy-worker | status | logs | realtime-config | usage | unpublish-price | heartbeat-check'
+        description: 'schema | lines-schema | lines-coverage | lines-unmatched | verify | deploy-worker | status | logs | realtime-config | usage | unpublish-price | heartbeat-check'
         required: true
         default: 'status'
       max_events:
@@ -715,6 +715,35 @@ jobs:
                   print(f"      client heartbeats: - (heartbeat interval {'unread' if not hb_s else hb_s}; connected time {fmt(lo_min)})")
           if bad:
               print("::error::" + "; ".join(bad)); sys.exit(1)
+          PY
+
+      # READ-ONLY (founder brief 2026-10-26): the Kibl fixtures the line-price worker cannot join to api-tennis, each
+      # with its Kibl names, the api-tennis candidates and the reason — the worker's own join (line_prices.join_fixtures)
+      # over the same windows (kibl-stream/line_engine.py fetch_kibl_fixtures / fetch_at_fixtures). Prints names only.
+      - name: Lines — unmatched Kibl fixtures
+        if: inputs.action == 'lines-unmatched'
+        env:
+          KIBL_USERNAME: ${{ secrets.KIBL_USERNAME }}
+          KIBL_PASSWORD: ${{ secrets.KIBL_PASSWORD }}
+          API_TENNIS_KEY: ${{ secrets.API_TENNIS_KEY }}
+        run: |
+          python3 - <<'PY'
+          import json, os, sys
+          from datetime import datetime, timezone
+          sys.path.insert(0, '.'); sys.path.insert(0, 'kibl-stream')
+          import line_prices as LP, line_engine as LE
+          from kibl_client import KiblClient
+          now = datetime.now(timezone.utc)
+          kfx = LE.fetch_kibl_fixtures(KiblClient(verbose=False), now)
+          at = LE.fetch_at_fixtures(os.environ['API_TENNIS_KEY'], now)
+          mapping, st = LP.join_fixtures(kfx, at)
+          un = st.pop('unmatched_list', [])
+          print(f"Kibl fixtures {len(kfx)}, matched {len(mapping)}, counts {dict(st)}")
+          lg = {f.get('fixture_id'): f.get('league_id') for f in kfx}
+          for u in un:
+              print(json.dumps({'kibl': u.get('kibl'), 'league': u.get('league') or lg.get(u.get('kibl')), 'start': u.get('start'),
+                                'kibl_players': u.get('players') or u.get('name'), 'reason': u.get('reason'),
+                                'api_tennis_candidates': u.get('candidates')}, ensure_ascii=False))
           PY
 
       - name: Install flyctl
