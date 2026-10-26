@@ -1,28 +1,28 @@
 {
- "generatedAt": "2026-10-26T11:56:37.588Z",
+ "generatedAt": "2026-10-26T13:27:57.106Z",
  "source": "matches.json git history: oddsMovement.books.Pinnacle (Oddspapi pinnacle, to 2026-09-02) and oddsMovement.chart.books[\"Pinnacle +30s\"] (Oddspapi pinnacle+30, from 2026-09-23)",
  "rule": "each side = last tick at or before the actual start (Oddspapi trueStart, else the card-state start: Oddspapi or the live-flip lower bound); both sides required; dropped when no unique actual start",
  "scannedThrough": {
-  "commit": "04055431ec6b8e5f4111a5ecbbe86e40cfc26570",
-  "at": "2026-10-26T11:33:28Z"
+  "commit": "ae0f19e3fbc1ed4b82bb69042055097d2d5beef4",
+  "at": "2026-10-26T13:03:19Z"
  },
- "commitsScanned": 5966,
+ "commitsScanned": 5974,
  "lastRun": {
-  "from": "2026-10-25T16:02:36Z",
-  "snapshots": 47,
-  "added": 6,
+  "from": "2026-10-26T11:33:28Z",
+  "snapshots": 9,
+  "added": 3,
   "replaced": 0,
-  "series": 84,
-  "kept": 51,
+  "series": 73,
+  "kept": 43,
   "bySource": {
-   "api-tennis-live": 20,
-   "oddspapi": 31
+   "oddspapi": 31,
+   "api-tennis-live": 12
   },
   "byBook": {
-   "Pinnacle +30s": 51
+   "Pinnacle +30s": 43
   },
   "dropped": {
-   "noStart": 32,
+   "noStart": 29,
    "oneSided": 1
   }
  },
@@ -10870,6 +10870,57 @@
    "round": null,
    "qualifying": false,
    "event": "ATP Vienna"
+  },
+  {
+   "eventKey": 12173975,
+   "date": "2026-10-26",
+   "p1Key": 2844,
+   "p2Key": 1777,
+   "p1Name": "M. Berrettini",
+   "p2Name": "T. M. Etcheverry",
+   "p1": 1.581,
+   "p2": 2.53,
+   "at": "2026-10-26T11:53:16.422Z",
+   "trueStart": "2026-10-26T12:18:21.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s",
+   "round": "ATP Vienna - 1/16-finals",
+   "qualifying": false,
+   "event": "ATP Vienna"
+  },
+  {
+   "eventKey": 12174058,
+   "date": "2026-10-26",
+   "p1Key": 1852,
+   "p2Key": 949,
+   "p1Name": "V. Vacherot",
+   "p2Name": "M. Navone",
+   "p1": 1.52,
+   "p2": 2.69,
+   "at": "2026-10-26T12:02:11.193Z",
+   "trueStart": "2026-10-26T12:18:21.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s",
+   "round": "ATP Basel - 1/16-finals",
+   "qualifying": false,
+   "event": "ATP Basel"
+  },
+  {
+   "eventKey": 12174267,
+   "date": "2026-10-26",
+   "p1Key": 37882,
+   "p2Key": 358,
+   "p1Name": "M. Brunold",
+   "p2Name": "N. Borges",
+   "p1": 2.93,
+   "p2": 1.454,
+   "at": "2026-10-26T09:48:42.697Z",
+   "trueStart": "2026-10-26T12:30:23.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s",
+   "round": "ATP Basel - 1/16-finals",
+   "qualifying": false,
+   "event": "ATP Basel"
   }
  ]
 }
