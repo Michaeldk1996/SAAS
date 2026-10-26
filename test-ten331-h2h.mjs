@@ -308,6 +308,7 @@ test('hot lines format first: a best-of-3 match whose only meetings are best of 
   const slam = fixture([[d(1), true, B5, { t: 'Wimbledon' }], [d(2), false, [[3, 6], [4, 6], [2, 6]], { t: 'Australian Open' }]]);
   const t = text(build(slam));
   assert.ok(t.includes('No best-of-3 meetings'), 'the plain note: ' + t.slice(t.indexOf('Hot lines'), t.indexOf('Hot lines') + 120));
+  assert.ok(!t.includes('Best-covered') && t.includes('Only best-of-3 meetings count'), 'no "best-covered" wording over an empty table');
   assert.ok(!/\d of \d/.test(t.slice(t.indexOf('Hot lines'), t.indexOf('Hot lines') + 400)), 'no line reads a best-of-5 meeting');
   const mixed = build(fixture([[d(1), true, B5, { t: 'Wimbledon' }], [d(2), true, W2]]));
   const mh = text(mixed.slice(mixed.indexOf('fh-h2hot'), mixed.indexOf('One dot per meeting')));

@@ -13721,7 +13721,10 @@ function fhHotModel(rows, defs, m){
 }
 // The section's subtitle for each mode.
 function fhHotSub(H, base){
-  return H.mode === 'results' ? `Each line's result in the ${H.N === 1 ? 'one' : 'two'} comparable ${H.N === 1 ? 'meeting' : 'meetings'} — too few to rate or rank` : base;
+  if (H.mode === 'results') return `Each line's result in the ${H.N === 1 ? 'one' : 'two'} comparable ${H.N === 1 ? 'meeting' : 'meetings'} — too few to rate or rank`;
+  // nothing to show: no "best-covered" wording over an empty table — only what counts
+  if (H.mode === 'none') return H.bo ? `Only best-of-${H.bo} meetings count` : 'Only comparable meetings count';
+  return base;
 }
 // The table: column header (one per match) + the line rows. Returns HTML.
 // TEN-380 (README §5, measured on the reference; identical on Form and H2H): Line · Rate · Covered · one dot column per
