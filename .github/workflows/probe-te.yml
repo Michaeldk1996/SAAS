@@ -18,3 +18,5 @@ jobs:
         env:
           STORE_TOKEN: ${{ secrets.TE_STORE_READ_TOKEN }}
       - run: bash tools/probe-te/show.sh
+        env:
+          STORE_TOKEN: ${{ secrets.TE_STORE_READ_TOKEN }}
