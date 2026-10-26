@@ -27,7 +27,7 @@ on:
   workflow_dispatch:
     inputs:
       action:
-        description: 'schema | lines-schema | lines-coverage | lines-unmatched | verify | deploy-worker | status | logs | realtime-config | usage | unpublish-price | heartbeat-check'
+        description: 'schema | lines-schema | lines-coverage | lines-clear-false-closes | lines-unmatched | verify | deploy-worker | status | logs | realtime-config | usage | unpublish-price | heartbeat-check'
         required: true
         default: 'status'
       max_events:
@@ -340,6 +340,21 @@ jobs:
                       n_p = -1
                   print(f"[publishable] UPDATE line_prices_current (a real row) -> HTTP {st}, {n_p} row(s)  (want 401/403, or 0 rows)")
                   if n_p != 0: bad.append(f"publishable key could UPDATE line prices ({st}, {n_p})")
+          if act == "lines-clear-false-closes":
+              # ONE-OFF CORRECTION (2026-10-26). The build live from 10:10Z to 13:05Z took api-tennis's live flag as a
+              # start without checking play (fixed in 72b50b046: line_engine.played). Every close it wrote is
+              # untrusted: 12173975, 12174058, 12174272 were flagged live at 0-0 hours before play (12:19Z), 12174267's
+              # start (12:30Z) was never checked. Null their close fields — our own table, these four events, that
+              # capture route, before the fix — so the page dashes "no close on record" instead of a wrong close.
+              # Ticks are untouched (a close is not a tick). Idempotent; prints the rows before and after.
+              where = ("event_key in (12173975, 12174058, 12174272, 12174267) and close_src in ('api-tennis-live', "
+                       "'api-tennis-fixtures') and seen_at < '2026-10-26T13:05:00Z'")
+              st, r = sql(f"select count(*) n from line_prices_current where {where} and close_price is not null")
+              print(f"before: HTTP {st} {r}")
+              st, r = sql(f"update line_prices_current set close_price = null, close_implied = null, close_at = null, close_src = null where {where}")
+              print(f"update: HTTP {st} {r[:200]}")
+              st, r = sql("select count(*) n from line_prices_current where close_price is not null")
+              print(f"close rows left (all events): HTTP {st} {r}")
           if act == "lines-coverage":
               # READ-ONLY (founder brief 2026-10-26, "report, don't resolve"): line closes for completed matches —
               # bet105 (line_prices_current, since 24 Oct) and Pinnacle (oddspapi_line_summary, since mid-Sep).
