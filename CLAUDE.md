@@ -292,6 +292,14 @@ change to allow it.
   (01:09Z 21 Oct: 6 built). Likely the 14-day profile TTL on a bulk-built batch; not confirmed from code.
 - **TE career-record timing.** From ~11–12Z 19 Oct the "Run pipeline" step spends 5–9 min between "Archive drill-down" and
   "TEN-449: … career-record file(s)" (absent at 10:58Z). Coincides with the TE record switch; not confirmed from code.
+- **Price check "Failed to fetch".** 14 of the 33 `pipeline.yml` data runs that finished between 24 Oct 23:40Z and 25 Oct 23:40Z
+  failed the step "One price per match on every surface (quarantine, then publish)": `price-consistency: the in-page check
+  threw: TypeError: Failed to fetch` → `price-guard-run` fails closed, nothing uploads (e.g. run 40238904044, 22:38Z). The
+  other 19 published. The failures began as the TE imports grew the era shard and master (book 8 lower rows 6,119 on 23 Oct
+  → 17,338 on 25 Oct): check the in-page fetch timeouts and the file sizes first.
+  Also: `tools/test-post-deploy-check.mjs` fails in the TE-prices session's cloud container (its network blocks
+  `www.gstatic.com`, the Firebase script), so a full `npm test` there exits 1 and blocks pushes from it (founder one-time
+  exception for the docs-only note, 2026-10-26).
 - **`bsp-ceo-bot`.** Another agent commits code to main under this name (e.g. the 30 → 45 timeout, `763c080a`); coordinate
   before touching the files it owns.
 
