@@ -267,7 +267,7 @@ tdocs = [{'batch': 'calib-01', 'source': T.TE_SOURCE, 'complete': True, 'rows': 
     TX(37), TX(38)]}]
 tfx = {'31': F(31, 'Challenger Men Singles', d='2026-09-28'), '32': F(32, 'Challenger Men Singles', win='Second Player', d='2026-09-28'),
        '37': F(37, 'Challenger Men Singles', st='Walk Over', d='2026-09-28'), '38': None}
-te, terep = T.te_rows(tdocs, tfx.get)
+te, terep = T.te_rows(tdocs, tfx.get, lambda ek: '2026-09-28T23:00:00Z')   # a verified start: no start of any kind is not stored (2026-10-26)
 check('TE: a joined match with a Pinnacle pair is a "Tennis Explorer · Pinnacle" snapshot labelled "Pinnacle (approx.)", never a close',
       [(r['event_key'], r['source'], r['label']) for r in te] == [(31, T.TE_SOURCE, 'Pinnacle (approx.)'), (32, T.TE_SOURCE, 'Pinnacle (approx.)')], (te, terep))
 check('TE: oriented to the winner — TE a / b = api-tennis first / second; a reversed target and a second-player win still read the right side',
@@ -304,19 +304,19 @@ idocs = [{'batch': 'atp-q-01', 'complete': True, 'rows': [
     TX(73, pin=PIN('2026-09-28T10:05:00Z')),                                                          # after our live-flip -> dropped
     TX(74, pin=PIN('2024-03-01T12:31:00Z')),                                                          # after the scheduled 12:30 -> dropped
     TX(75, pin=PIN('2024-03-01T12:29:00Z')),                                                          # before it -> kept
-    TX(76, pin=PIN('2024-03-01T12:31:00Z')),                                                          # no time on the fixture -> kept, counted
+    TX(76, pin=PIN('2024-03-01T12:31:00Z')),                                                          # no start of any kind -> not stored, counted (2026-10-26)
     TX(77, pin=PIN(None))]}]                                                                         # no change recorded -> kept
 G = lambda ek, d, tm=None: dict(F(ek, 'Challenger Men Singles', d=d), **({'event_time': tm} if tm else {}))
 ifx = {'71': G(71, '2026-09-28'), '72': G(72, '2026-09-28'), '73': G(73, '2026-09-28', '11:00'), '74': G(74, '2024-03-01', '12:30'),
        '75': G(75, '2024-03-01', '12:30'), '76': G(76, '2024-03-01'), '77': G(77, '2024-03-01', '12:30')}
 irows, irep = T.te_rows(idocs, ifx.get, {'73': '2026-09-28T10:00:00Z'}.get)
-check('in-play rule: dropped after our close start (71), after our live-flip although the schedule says 11:00 (73), after the scheduled start (74); kept before them (72, 75), with no change (77), and with no start time (76, counted)',
-      sorted(r['event_key'] for r in irows) == [72, 75, 76, 77] and irep.get('dropped: last change after the start') == 3
-      and irep.get('dropped in batch atp-q-01') == 3 and irep.get('no start time to check (kept)') == 1
+check('in-play rule: dropped after our close start (71), after our live-flip although the schedule says 11:00 (73), after the scheduled start (74); kept before them (72, 75) and with no change (77); no start of any kind is not stored (76, counted; founder 2026-10-26)',
+      sorted(r['event_key'] for r in irows) == [72, 75, 77] and irep.get('dropped: last change after the start') == 3
+      and irep.get('dropped in batch atp-q-01') == 3 and irep.get('not stored: no start of any kind') == 1
       and irep.get('dropped: last change after the start (scheduled)') == 1 and irep.get('dropped: last change after the start (verified (live-flip))') == 1, irep)
 check('in-play rule: each kept row names the start it was checked against',
       [(r['event_key'], r['detail']['startKind']) for r in sorted(irows, key=lambda r: r['event_key'])]
-      == [(72, 'verified (our close)'), (75, 'scheduled'), (76, None), (77, 'scheduled')], irows)
+      == [(72, 'verified (our close)'), (75, 'scheduled'), (77, 'scheduled')], irows)
 nrows, _ = T.te_rows(idocs, ifx.get)
 check('control: without the live-flip start, 73 is checked against its schedule (11:00) and kept — the verified start decides',
       73 in [r['event_key'] for r in nrows])

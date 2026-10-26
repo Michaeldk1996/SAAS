@@ -5,7 +5,8 @@
 -- to each bot's events exactly as the drops endpoint joins its rows (stennisfy-drops/status.mjs):
 --   * both players: the surname key (accents, hyphens and a Jr/Sr/II suffix ignored) AND the given-name initials
 --     agree whenever both names carry given names ("Adolfo Daniel Vallejo" = "D. Vallejo");
---   * the vendor's scheduled start within 24 h of api-tennis's scheduled start;
+--   * the vendor's scheduled start within 24 h of our live sighting (founder 2026-10-26: the sighting, never api-tennis's
+--     scheduled time -- TEN-225 ruling 1);
 --   * exactly one sighting -> cut at its live time; two or more (ambiguous) -> cut at the vendor's scheduled start.
 -- A match with no sighting is not cut here (the vendor's start is not a live signal: Superbet's ran up to 1 h 52 min
 -- late). Measured 2026-09-27: every in-play Superbet alert of the last 24 h joined a sighting (30 of 30).
@@ -43,14 +44,14 @@ create or replace function drops_live.ini_ok(a text, b text) returns boolean
 language sql immutable set search_path = pg_catalog, pg_temp as $$
   select cardinality(drops_live.gi(a)) = 0 or cardinality(drops_live.gi(b)) = 0 or drops_live.gi(a) && drops_live.gi(b)
 $$;
--- singles sightings since p_from, keyed once (event_time is the API's default zone, Europe/Berlin)
+-- singles sightings since p_from, keyed once. The join window is measured from the sighting itself (live_at), a real
+-- observed instant; the API's scheduled time is not read here (TEN-225 ruling 1). The old definition returned one more
+-- column, so it is dropped first (create or replace cannot change a return type; its callers are SQL functions, untracked).
+drop function if exists drops_live.flips(timestamptz);
 create or replace function drops_live.flips(p_from timestamptz)
-returns table(event_key text, live_at timestamptz, sched timestamptz, p1 text, p2 text, k1 text, k2 text)
+returns table(event_key text, live_at timestamptz, p1 text, p2 text, k1 text, k2 text)
 language sql stable set search_path = pg_catalog, pg_temp as $$
   select f.event_key, f.first_live_seen_at,
-         case when f.event_date ~ '^\d{4}-\d\d-\d\d$'
-              then ((f.event_date || ' ' || case when f.event_time ~ '^\d\d:\d\d$' then f.event_time else '00:00' end)::timestamp
-                    at time zone 'Europe/Berlin') end,   -- an odd value never throws (it would stop both bots)
          f.first_player, f.second_player, drops_live.sk(f.first_player), drops_live.sk(f.second_player)
     from public.live_flip_log f
    where f.first_live_seen_at >= p_from
@@ -72,10 +73,10 @@ language sql stable set search_path = pg_catalog, pg_temp as $$
   ), fl as (select * from drops_live.flips(p_from - interval '1 day')),
   m as (
     select ev.event_id, ev.start_at, fl.event_key, fl.live_at from ev join fl on fl.k1 = ev.h and fl.k2 = ev.a
-     where ev.h <> '' and ev.a <> '' and drops_live.ini_ok(fl.p1, ev.home) and drops_live.ini_ok(fl.p2, ev.away) and abs(extract(epoch from fl.sched - ev.start_at)) < 86400
+     where ev.h <> '' and ev.a <> '' and drops_live.ini_ok(fl.p1, ev.home) and drops_live.ini_ok(fl.p2, ev.away) and abs(extract(epoch from fl.live_at - ev.start_at)) < 86400
     union
     select ev.event_id, ev.start_at, fl.event_key, fl.live_at from ev join fl on fl.k1 = ev.a and fl.k2 = ev.h
-     where ev.h <> '' and ev.a <> '' and drops_live.ini_ok(fl.p1, ev.away) and drops_live.ini_ok(fl.p2, ev.home) and abs(extract(epoch from fl.sched - ev.start_at)) < 86400
+     where ev.h <> '' and ev.a <> '' and drops_live.ini_ok(fl.p1, ev.away) and drops_live.ini_ok(fl.p2, ev.home) and abs(extract(epoch from fl.live_at - ev.start_at)) < 86400
   )
   select event_id, drops_live.cut_of(min(start_at), array_agg(distinct event_key), array_agg(live_at order by live_at))
     from m group by event_id
@@ -93,10 +94,10 @@ language sql stable set search_path = pg_catalog, pg_temp as $$
   ), fl as (select * from drops_live.flips(p_from - interval '1 day')),
   m as (
     select ev.fixture_id, ev.st, fl.event_key, fl.live_at from ev join fl on fl.k1 = ev.h and fl.k2 = ev.a
-     where ev.h <> '' and ev.a <> '' and drops_live.ini_ok(fl.p1, ev.p1) and drops_live.ini_ok(fl.p2, ev.p2) and abs(extract(epoch from fl.sched - ev.st)) < 86400
+     where ev.h <> '' and ev.a <> '' and drops_live.ini_ok(fl.p1, ev.p1) and drops_live.ini_ok(fl.p2, ev.p2) and abs(extract(epoch from fl.live_at - ev.st)) < 86400
     union
     select ev.fixture_id, ev.st, fl.event_key, fl.live_at from ev join fl on fl.k1 = ev.a and fl.k2 = ev.h
-     where ev.h <> '' and ev.a <> '' and drops_live.ini_ok(fl.p1, ev.p2) and drops_live.ini_ok(fl.p2, ev.p1) and abs(extract(epoch from fl.sched - ev.st)) < 86400
+     where ev.h <> '' and ev.a <> '' and drops_live.ini_ok(fl.p1, ev.p2) and drops_live.ini_ok(fl.p2, ev.p1) and abs(extract(epoch from fl.live_at - ev.st)) < 86400
   )
   select fixture_id, drops_live.cut_of(min(st), array_agg(distinct event_key), array_agg(live_at order by live_at))
     from m group by fixture_id

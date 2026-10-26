@@ -1126,9 +1126,10 @@ def _ts(v):
 
 
 def te_start(x, f, flip_start):
-    """The start the in-play rule measures against (founder 2026-10-20): our VERIFIED start where we have one — the close's
-    start in the batch row (the calibration rows), else our live-flip (live_flip_log, from 17 Sep) — otherwise the SCHEDULED
-    start, api-tennis's event_date + event_time read in UTC (the fixture is asked with timezone=UTC). (start, kind)."""
+    """The time the in-play rule rejects against (founder 2026-10-20): our VERIFIED start where we have one — the close's
+    start in the batch row (the calibration rows), else our live-flip (live_flip_log, from 17 Sep) — otherwise api-tennis's
+    scheduled time, read in UTC (the fixture is asked with timezone=UTC), used ONLY to reject a price (founder ruling
+    2026-10-26: the scheduled time may only reject or stop, never create, cut or label a start). (time, kind)."""
     v = _ts(((x.get('close') or {}).get('startTs')))
     if v:
         return v, 'verified (our close)'
@@ -1184,8 +1185,10 @@ def te_rows(docs, fixture_of, flip_start=lambda ek: None):
             start, kind = te_start(x, f, flip_start)
             bt = f"batch {d.get('batch')}: "
             if start is None:
-                rep['no start time to check (kept)'] += 1; rep[bt + 'kept, no start time'] += 1
-            elif pts and _ts(pts) and _ts(pts) > start:
+                # founder 2026-10-26: no start of any kind (no verified start, no scheduled time) -> not stored
+                rep['not stored: no start of any kind'] += 1; rep[bt + 'not stored, no start'] += 1
+                continue
+            if pts and _ts(pts) and _ts(pts) > start:
                 rep['dropped: last change after the start'] += 1
                 rep[f'dropped: last change after the start ({kind})'] += 1
                 rep[f"dropped in batch {d.get('batch')}"] += 1
