@@ -859,8 +859,11 @@ def audit(out_dir, measure_to=None):
     eks = sorted({str(by_key[k]['event_key']) for k in ((r['date'], r['tournament'], r['winner'], r['loser']) for r in od) if k in by_key})
     flips = {}
     for i in range(0, len(eks), 150):
-        for f in P.select_all('live_flip_log', 'event_key,first_live_seen_at,last_not_live_seen_at,gap_seconds',
-                              'event_key=in.(' + ','.join(eks[i:i + 150]) + ')'):
+        # live_flip_log is keyed by event_key and has no `id`, so select_all's id-paged read does not apply: one GET per
+        # batch of <= 150 keys returns <= 150 rows (as tdarch reads it)
+        _, got, _ = P.rest('GET', '/rest/v1/live_flip_log?select=event_key,first_live_seen_at,last_not_live_seen_at,gap_seconds'
+                           '&event_key=in.(' + ','.join(eks[i:i + 150]) + ')')
+        for f in got or []:
             flips[str(f['event_key'])] = f
     od_out = []
     for r in od:

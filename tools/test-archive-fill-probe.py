@@ -7,6 +7,7 @@ row) and the per-month n.
 
 Then every MUTANT below must turn the suite red (a check that passes on a broken build is not a check): source mutants of
 the probe itself, and monkeypatches of the reused pinarch functions it depends on."""
+import re
 import datetime as dt, importlib.util, json, math, os, sys, types
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -548,6 +549,9 @@ def audit_suite(M):
             return 200, [{'id': 1, 'event_key': 9, 'match_date': '2026-06-01', 'tournament': 'X', 'winner': 'Van V.', 'loser': 'Gau G.',
                           'source': M.T.START10_SOURCE, 'cut_ts': '2026-06-01T11:50:00+00:00', 'price_ts': '2026-06-01T11:49:00+00:00', 'supersedes': None}], {}
         if path.startswith('/rest/v1/live_flip_log'):
+            # the real table has no `id` column (event_key is its key): PostgREST answers 42703 to an id-paged read
+            if re.search(r'(^|[?&,=])id([.,&=]|$)', path.split('?', 1)[1]):
+                raise RuntimeError('GET /rest/v1/live_flip_log -> HTTP 400: column live_flip_log.id does not exist')
             return 200, [], {}
         return 200, [], {}
     P.rest = fake
@@ -561,6 +565,7 @@ def audit_suite(M):
     check('audit: the od10 row joined its snapshot, no live-flip -> dashed', rep['od10']['n'] == 1 and rep['od10']['verdicts'] == {'dashed: no live-flip': 1}
           and rep['od10']['snapshotsJoined'] == 1)
     check('audit: GET only, through the guard', seen and all(m == 'GET' and M.check_request(m, p_) for m, p_ in seen))
+    check('audit: live_flip_log is read by event_key, never id-paged (the table has no id)', any(p_.startswith('/rest/v1/live_flip_log') for _, p_ in seen))
     return out, bad
 
 
