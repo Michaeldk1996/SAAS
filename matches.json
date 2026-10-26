@@ -2274,22 +2274,11 @@
         }
       ]
     },
-    "live": true,
-    "liveStatus": "Set 2",
-    "liveScore": [
-      {
-        "set": 1,
-        "p1": 7,
-        "p2": 5
-      },
-      {
-        "set": 2,
-        "p1": 1,
-        "p2": 0
-      }
-    ],
-    "liveGameScore": "15 - 15",
-    "liveServer": "p1",
+    "live": false,
+    "liveStatus": null,
+    "liveScore": null,
+    "liveGameScore": null,
+    "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/8781_l-darderi.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1192_m-arnaldi.jpg",
     "tournamentKey": "1684",
@@ -3286,7 +3275,27 @@
         "seenAt": "2026-10-26T18:53:15.349Z",
         "since": "2026-10-26T10:03:30.947Z"
       }
-    }
+    },
+    "retired": false,
+    "walkover": false,
+    "finalScore": {
+      "display": "7-5, 6-2",
+      "sets": [
+        {
+          "p1": 7,
+          "p2": 5
+        },
+        {
+          "p1": 6,
+          "p2": 2
+        }
+      ],
+      "p1Sets": 2,
+      "p2Sets": 0,
+      "winner": "p1"
+    },
+    "interrupted": false,
+    "partialScore": null
   },
   {
     "id": "upcoming-12173985",
@@ -5515,11 +5524,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 2",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 3,
+        "p2": 6
+      }
+    ],
+    "liveGameScore": "40 - 40",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1066_l-van-assche.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/10520_l-tien.jpg",
     "tournamentKey": "1684",
@@ -7021,7 +7036,10 @@
       "edgeVsPinnacleP1": -0.0787,
       "edgeVsPinnacleP2": 0.0787,
       "ts": "2026-10-26T05:27:53.920Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12174056",
@@ -9954,11 +9972,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 1,
+        "p2": 0
+      }
+    ],
+    "liveGameScore": "0 - 15",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/379_d-stricker.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/430_c-ruud.jpg",
     "tournamentKey": "1706",
@@ -12036,7 +12060,10 @@
         "seenAt": "2026-10-26T18:53:15.350Z",
         "since": "2026-10-26T18:53:15.350Z"
       }
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12173976",
@@ -139873,7 +139900,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-7, 7-6, 4-6",
+      "display": "6-7(5), 7-6(7), 4-6",
       "sets": [
         {
           "p1": 6,
@@ -144687,7 +144714,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-7, 2-6",
+      "display": "6-7(5), 2-6",
       "sets": [
         {
           "p1": 6,
@@ -192222,7 +192249,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-7(6), 6-1, 6-3",
+      "display": "6-7, 6-1, 6-3",
       "sets": [
         {
           "p1": 6,
