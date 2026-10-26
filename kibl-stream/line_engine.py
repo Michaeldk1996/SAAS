@@ -53,6 +53,32 @@ NUMERIC = ("price", "implied", "open_price", "max_limit", "close_price", "close_
 _ERR_LOG_EVERY_S = 60
 
 
+FINISHED = ("finished", "retired", "walk over", "walkover", "cancelled", "abandoned", "defaulted")
+
+
+def played(f):
+    """Has play started in this api-tennis event (a get_livescore or get_fixtures row)? MEASURED 2026-10-26 12:19Z:
+    api-tennis flagged Berrettini v Etcheverry, Vacherot v Navone and Echargui v Hassan event_live 1 / "Set 1" at 0-0,
+    no server, no point — hours before they played. A live flag or a "Set N" status alone is therefore NOT a start:
+    a point must be on the board (a game score, a set score above 0-0, a point in the point-by-point), or the event over."""
+    st = str(f.get("event_status") or "").strip().lower()
+    if st in FINISHED:
+        return True
+    g = str(f.get("event_game_result") or "").replace(" ", "")
+    if g and g not in ("0-0", "-"):
+        return True
+    for x in f.get("scores") or []:
+        try:
+            if float(x.get("score_first") or 0) + float(x.get("score_second") or 0) > 0:
+                return True
+        except (TypeError, ValueError, AttributeError):
+            continue
+    for game in f.get("pointbypoint") or []:
+        if isinstance(game, dict) and (game.get("points") or []):
+            return True
+    return False
+
+
 def iso(dt):
     return dt.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
@@ -106,8 +132,16 @@ class LineEngine:
             self.openers.pop(fid, None)
             self.dirty.pop(fid, None)
         self.by_ev = {m["event_key"]: m for m in mapping.values()}
+        # a start only where play is on the board (played()), never on a status word alone (2026-10-26 false lives)
+        on = set()
+        for f in at_fixtures or ():
+            try:
+                if played(f):
+                    on.add(int(f.get("event_key")))
+            except (TypeError, ValueError):
+                continue
         for fid, m in mapping.items():
-            if m.get("status") not in LP.AT_NOT_STARTED:
+            if m["event_key"] in on:
                 self._start(fid, "api-tennis-fixtures", now_mono)
         self.mapping_at = iso(datetime.now(timezone.utc))
         self.count["mapping_refreshes"] += 1
@@ -185,10 +219,9 @@ class LineEngine:
             return [], [], {}
         m = dict(m)
         started = fid in self.started
-        if started:
-            # The guards run on the last PRE-MATCH rows as if not started (the stored rows are pre-match only), so a
-            # started key keeps the verdict it closed on; every key is then written as 'started'.
-            m["status"] = ""
+        # The guards run on the last PRE-MATCH rows as if not started — always: started or not is OURS (_start, from
+        # play on the board), never api-tennis's status word (2026-10-26: "Set 1" at 0-0 hours before play).
+        m["status"] = ""
         rows = list(self.rows.get(fid, {}).values()) + list(self.openers.get(fid, {}).values())
         entries, _ = LP.normalise(rows, {fid: m})
         LP.apply_guards(entries, {m["event_key"]: m})
@@ -204,7 +237,8 @@ class LineEngine:
             k = row_key(row)
             if not started and e["status"] == "ok" and e["price"] is not None:
                 self.last_ok[k] = {"close_price": e["price"], "close_implied": e["implied"], "close_at": e["inserted_on"]}
-            row.update(self._close_of(fid, k, e if started else None))
+            # a fixture not started carries no close — and clears one written in error (the 26 Oct false lives)
+            row.update(self._close_of(fid, k, e) if started else {f: None for f in CLOSE_FIELDS})
             if started:
                 row["status"] = "started"
             seen.add(k)
@@ -218,7 +252,7 @@ class LineEngine:
                    "implied": None, "status": "started" if fid in self.started else WITHDRAWN, "open_price": w.get("open_price"),
                    "open_ts": None, "max_limit": None, "inserted_on": w.get("inserted_on"), "seen_at": seen_at,
                    "start_ts": start, "kibl_fixture": fid, "alt_id": None}
-            row.update(self._close_of(fid, k, None))
+            row.update(self._close_of(fid, k, None) if fid in self.started else {f: None for f in CLOSE_FIELDS})
             self._diff(k, row, cur, ticks, upd, False, seen_at)
         return cur, ticks, upd
 
@@ -427,7 +461,8 @@ def fetch_live_events(api_key):
     out = set()
     for x in res if isinstance(res, list) else []:
         try:
-            out.add(int(x.get("event_key")))
+            if played(x):                                # a live flag at 0-0 is not a start (2026-10-26)
+                out.add(int(x.get("event_key")))
         except (TypeError, ValueError, AttributeError):
             continue
     return out

@@ -171,7 +171,7 @@ e.flush(s, now_mono=500)
 check('nothing more for a started fixture', s.calls == [], s.calls)
 e = LE.LineEngine(171, write=True, log=lambda *_: None)
 e.load_written([])
-e.set_mapping(KFX, [dict(AT[0], event_status='Set 1')], now_mono=0)
+e.set_mapping(KFX, [dict(AT[0], event_status='Set 1', event_game_result='15 - 0')], now_mono=0)
 check('api-tennis already live: started at the join', 771905 in e.started)
 
 print('6  dry run')
@@ -251,7 +251,7 @@ check('a pair that was dashed at the start (incoherent) has no close',
 check('every key is still written as started', all(r['status'] == 'started' for r in c.values()))
 e2, s2 = eng(), Store()
 e2.flush(s2, now_mono=100)
-e2.set_mapping(KFX, [dict(AT[0], event_status='Set 1')], now_mono=200)   # the start learnt from api-tennis, not seen live
+e2.set_mapping(KFX, [dict(AT[0], event_status='Set 1', event_game_result='15 - 0')], now_mono=200)   # the start learnt from api-tennis, not seen live
 s2 = Store()
 e2.flush(s2, now_mono=300)
 c2 = cur(s2)
@@ -273,7 +273,7 @@ back = [dict(r) for r in s1.rows('line_prices_current')]
 e3 = LE.LineEngine(171, write=True, log=lambda *_: None)
 e3.checked()
 e3.load_written(json.loads(json.dumps(back, default=str)))
-e3.set_mapping(KFX, [dict(AT[0], event_status='Set 2')], now_mono=0)   # restarted mid-match: live at the first join
+e3.set_mapping(KFX, [dict(AT[0], event_status='Set 2', event_game_result='30 - 15')], now_mono=0)   # restarted mid-match: live at the first join
 for r in SEED:
     e3.accept(r, now_mono=0)
 e3.seeded.add(771905)
@@ -291,7 +291,7 @@ for r in SEED:
     e8.accept(r, now_mono=0)
 e8.seeded.add(771905)
 e8.last_check = time.time() - 600                            # no fresh check: this start can capture nothing new
-e8.set_mapping(KFX, [dict(AT[0], event_status='Set 1')], now_mono=0)
+e8.set_mapping(KFX, [dict(AT[0], event_status='Set 1', event_game_result='15 - 0')], now_mono=0)
 s8 = Store()
 e8.flush(s8, now_mono=100)
 check('a start that cannot capture keeps the close already on record (mutant CLOSE_LOST_ON_RESTART)',
@@ -331,6 +331,31 @@ cmp_src = inspect.getsource(LE.LineEngine.compute)
 uses = [ln.strip() for ln in cmp_src.splitlines() if 'start_ts' in ln]
 check('compute uses start_ts only to copy the scheduled label onto the row, never to cut or compare',
       uses and all(ln.startswith('start = iso(datetime.fromtimestamp(m["start_ts"]') or '"start_ts": start' in ln for ln in uses), uses)
+
+print('15 a live flag at 0-0 is not a start (2026-10-26: api-tennis "Set 1", 0-0, hours before play)')
+FALSE = {'event_key': 12173801, 'event_live': '1', 'event_status': 'Set 1', 'event_game_result': '0 - 0', 'event_serve': None,
+         'scores': [{'score_first': '0', 'score_second': '0', 'score_set': '1'}], 'pointbypoint': [{'set_number': 'Set 1', 'points': []}]}
+check('played(): "Set 1" at 0-0 with no point is NOT play (mutant LIVE_FLAG_IS_START)', LE.played(FALSE) is False)
+check('played(): a point on the board is play', LE.played(dict(FALSE, event_game_result='15 - 0')) is True)
+check('played(): a set score above 0-0 is play', LE.played(dict(FALSE, scores=[{'score_first': '1', 'score_second': '0'}])) is True)
+check('played(): a point in the point-by-point is play', LE.played(dict(FALSE, pointbypoint=[{'points': [{'score': '15 - 0'}]}])) is True)
+check('played(): a finished event is play', LE.played(dict(FALSE, event_status='Finished')) is True)
+e9 = eng()
+e9.set_mapping(KFX, [dict(AT[0], **{k: v for k, v in FALSE.items() if k != 'event_key'})], now_mono=0)
+check('the join does not start a fixture on a false live', 771905 not in e9.started)
+# a fixture wrongly closed before this fix: on the next recompute it is priced again and its close cleared
+bad = [dict(r) for r in s1.rows('line_prices_current')]
+e10 = LE.LineEngine(171, write=True, log=lambda *_: None)
+e10.checked(); e10.load_written(json.loads(json.dumps(bad, default=str)))
+e10.set_mapping(KFX, AT, now_mono=0)
+for r in SEED:
+    e10.accept(r, now_mono=0)
+e10.seeded.add(771905)
+s10 = Store()
+e10.flush(s10, now_mono=100)
+c10 = cur(s10).get(('gh', '1093', -2.5)) or {}
+check('a fixture written as started in error is priced again, its close cleared (mutant CLOSE_KEPT_WHEN_NOT_STARTED)',
+      c10.get('status') == 'ok' and c10.get('close_price') is None, c10)
 
 print('11 the worker hooks')
 import now_worker as W  # noqa: E402
