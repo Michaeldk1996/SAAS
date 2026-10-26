@@ -1,28 +1,29 @@
 {
- "generatedAt": "2026-10-25T16:29:10.414Z",
+ "generatedAt": "2026-10-26T11:56:37.588Z",
  "source": "matches.json git history: oddsMovement.books.Pinnacle (Oddspapi pinnacle, to 2026-09-02) and oddsMovement.chart.books[\"Pinnacle +30s\"] (Oddspapi pinnacle+30, from 2026-09-23)",
  "rule": "each side = last tick at or before the actual start (Oddspapi trueStart, else the card-state start: Oddspapi or the live-flip lower bound); both sides required; dropped when no unique actual start",
  "scannedThrough": {
-  "commit": "21193db05f0ef6d74f4c24033a8c9ab7c3166b08",
-  "at": "2026-10-25T16:02:36Z"
+  "commit": "04055431ec6b8e5f4111a5ecbbe86e40cfc26570",
+  "at": "2026-10-26T11:33:28Z"
  },
- "commitsScanned": 5920,
+ "commitsScanned": 5966,
  "lastRun": {
-  "from": "2026-10-25T14:02:46Z",
-  "snapshots": 11,
-  "added": 0,
-  "replaced": 12,
-  "series": 77,
-  "kept": 46,
+  "from": "2026-10-25T16:02:36Z",
+  "snapshots": 47,
+  "added": 6,
+  "replaced": 0,
+  "series": 84,
+  "kept": 51,
   "bySource": {
-   "api-tennis-live": 21,
-   "oddspapi": 25
+   "api-tennis-live": 20,
+   "oddspapi": 31
   },
   "byBook": {
-   "Pinnacle +30s": 46
+   "Pinnacle +30s": 51
   },
   "dropped": {
-   "noStart": 31
+   "noStart": 32,
+   "oneSided": 1
   }
  },
  "stats": {
@@ -10767,6 +10768,108 @@
    "round": null,
    "qualifying": false,
    "event": "ATP Basel"
+  },
+  {
+   "eventKey": 12173999,
+   "date": "2026-10-25",
+   "p1Key": 1093,
+   "p2Key": 424,
+   "p1Name": "D. Medvedev",
+   "p2Name": "N. Basilashvili",
+   "p1": 1.236,
+   "p2": 4.63,
+   "at": "2026-10-25T08:43:04.707Z",
+   "trueStart": "2026-10-25T10:07:35.745Z",
+   "startSource": "oddspapi",
+   "book": "Pinnacle +30s",
+   "round": "ATP Almaty - Final",
+   "qualifying": false,
+   "event": "ATP Almaty"
+  },
+  {
+   "eventKey": 12174011,
+   "date": "2026-10-25",
+   "p1Key": 2849,
+   "p2Key": 2832,
+   "p1Name": "L. Musetti",
+   "p2Name": "T. Fritz",
+   "p1": 2.84,
+   "p2": 1.487,
+   "at": "2026-10-25T12:05:38.280Z",
+   "trueStart": "2026-10-25T13:35:20.022Z",
+   "startSource": "oddspapi",
+   "book": "Pinnacle +30s",
+   "round": "ATP Lyon - Final",
+   "qualifying": false,
+   "event": "ATP Lyon"
+  },
+  {
+   "eventKey": 12174013,
+   "date": "2026-10-25",
+   "p1Key": 2022,
+   "p2Key": 8926,
+   "p1Name": "L. Neumayer",
+   "p2Name": "T. Droguet",
+   "p1": 3.25,
+   "p2": 1.369,
+   "at": "2026-10-25T08:43:33.983Z",
+   "trueStart": "2026-10-25T12:12:32.186Z",
+   "startSource": "oddspapi",
+   "book": "Pinnacle +30s",
+   "round": null,
+   "qualifying": false,
+   "event": "ATP Vienna"
+  },
+  {
+   "eventKey": 12174014,
+   "date": "2026-10-25",
+   "p1Key": 2843,
+   "p2Key": 12951,
+   "p1Name": "L. Sonego",
+   "p2Name": "J. Fearnley",
+   "p1": 2.02,
+   "p2": 1.84,
+   "at": "2026-10-25T11:58:39.984Z",
+   "trueStart": "2026-10-25T12:10:28.069Z",
+   "startSource": "oddspapi",
+   "book": "Pinnacle +30s",
+   "round": null,
+   "qualifying": false,
+   "event": "ATP Vienna"
+  },
+  {
+   "eventKey": 12174071,
+   "date": "2026-10-25",
+   "p1Key": 2831,
+   "p2Key": 427,
+   "p1Name": "J-L. Struff",
+   "p2Name": "T. Griekspoor",
+   "p1": 2.18,
+   "p2": 1.769,
+   "at": "2026-10-25T13:52:19.364Z",
+   "trueStart": "2026-10-25T15:39:28.928Z",
+   "startSource": "oddspapi",
+   "book": "Pinnacle +30s",
+   "round": "ATP Brussels - Final",
+   "qualifying": false,
+   "event": "ATP Brussels"
+  },
+  {
+   "eventKey": 12174072,
+   "date": "2026-10-25",
+   "p1Key": 438,
+   "p2Key": 436,
+   "p1Name": "A. Mannarino",
+   "p2Name": "A. Molcan",
+   "p1": 2.39,
+   "p2": 1.613,
+   "at": "2026-10-25T12:59:55.300Z",
+   "trueStart": "2026-10-25T14:10:22.536Z",
+   "startSource": "oddspapi",
+   "book": "Pinnacle +30s",
+   "round": null,
+   "qualifying": false,
+   "event": "ATP Vienna"
   }
  ]
 }
