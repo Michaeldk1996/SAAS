@@ -22,11 +22,12 @@ MUTANTS = {
     'DRY_WRITES': ("        if not self.write:\n            self.count[\"would_write_current\"]",
                    "        if False:\n            self.count[\"would_write_current\"]"),
     'FORGET_ON_FAIL': ("            self.write_ok = False\n", "            self.write_ok = False\n            self.written.update(upd)\n"),
-    'CLOSE_ANY_START': ("                if fid in self.seeded:\n                    # Seen live", "                if True:\n                    # Seen live"),
+    'CLOSE_ANY_START': ("        if fid not in self.seeded:\n            self.count[\"close_not_seeded\"] += 1", "        if False:\n            self.count[\"close_not_seeded\"] += 1"),
     'CLOSE_ANY_STATUS': ('            if e["status"] == "ok" and e["price"] is not None:', '            if e["price"] is not None:'),
     'CLOSE_LOST_ON_RESTART': ("        w = self.written.get(k) or {}\n        return {f: w.get(f) for f in CLOSE_FIELDS}",
                               "        return {f: None for f in CLOSE_FIELDS}"),
-    'CLOSE_ANY_AGE': ("                    if self.last_check is not None and t - self.last_check <= CLOSE_FRESH_S:", "                    if True:"),
+    'CLOSE_ANY_AGE': ("        elif self.last_check is not None and t - self.last_check <= CLOSE_FRESH_S:", "        elif True:"),
+    'CLOSE_LOSES_SUSPENDED': ('            if e["status"] == "suspended" and lo:', '            if False:'),
     'NO_READ_BACK': ("        for r in rows or ():\n            self.written[row_key(r)]", "        for r in ():\n            self.written[row_key(r)]"),
 }
 bad = []

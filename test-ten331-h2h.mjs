@@ -317,6 +317,6 @@ test('hot lines format first: a best-of-3 match whose only meetings are best of 
   const games = mh.slice(0, mh.indexOf('Sets & tiebreaks'));
   assert.ok(!games.includes('of 2'), 'no games / set-handicap line counts the Bo5 meeting');
   // founder 2026-10-26 item 8 (reverted until ruled): the set-1 winners count EVERY meeting (mutant: hot: set-1 lines format-locked)
-  assert.match(mh, /Match goes to a deciding set — \d of 1 /, 'the deciding set counts the Bo3 meeting only (mutant: hot: format lock off)');
-  assert.match(mh, /Sinner wins set 1 — 2 of 2/, 'set 1 counts both meetings, Bo5 included: ' + mh.slice(mh.indexOf('Sets & tiebreaks'), mh.indexOf('Sets & tiebreaks') + 160));
+  assert.match(mh, /Match goes to a deciding set (— )*\d of 1 /, 'the deciding set counts the Bo3 meeting only (mutant: hot: format lock off)');
+  assert.match(mh, /Sinner wins set 1 (— )*2 of 2/, 'set 1 counts both meetings, Bo5 included: ' + mh.slice(mh.indexOf('Sets & tiebreaks'), mh.indexOf('Sets & tiebreaks') + 160));
 });

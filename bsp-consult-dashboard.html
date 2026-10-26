@@ -13750,10 +13750,13 @@ function fhHotSub(H, base){
 // (covered = filled, not covered = ring only, not eligible = a small white-8% dot); the column-head dot is white for a
 // match on today's surface (opts.today), white 22% otherwise; the "Most covered" row = --inner, no edge, its label --link.
 const FH_HOT_COLS = 'minmax(150px,0.8fr) 56px 72px minmax(234px,1.6fr)';
-function fhHotLinesHead(dotsHtml){
+// Founder 2026-10-26 (close brief, item 2): a priced table (the match card's H2H tab) carries its own Price column between
+// Line and Rate — the price at the Rate's size and weight, its implied % and age beneath. No price = a dash, same layout.
+const FH_HOT_COLS_PX = 'minmax(150px,0.8fr) 84px 56px 72px minmax(234px,1.6fr)';
+function fhHotLinesHead(dotsHtml, priced){
   const cap = `font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label);`;
-  return `<div class="fh-hl-head" style="display:grid; grid-template-columns:${FH_HOT_COLS}; align-items:end; gap:12px; padding:10px 0 8px; border-bottom:1px solid var(--line);">
-      <span style="${cap}">Line</span><span style="${cap}">Rate</span><span style="${cap}">Covered</span>${dotsHtml || '<span></span>'}</div>`;
+  return `<div class="fh-hl-head" style="display:grid; grid-template-columns:${priced ? FH_HOT_COLS_PX : FH_HOT_COLS}; align-items:end; gap:12px; padding:10px 0 8px; border-bottom:1px solid var(--line);">
+      <span style="${cap}">Line</span>${priced ? `<span style="${cap}">Price</span>` : ''}<span style="${cap}">Rate</span><span style="${cap}">Covered</span>${dotsHtml || '<span></span>'}</div>`;
 }
 // A line's Rate cell: the gate's markup (5–9 greyed with its note on hover); 1–4 eligible = no rate, a grey dash that says why.
 function fhHotRateHtml(c, n){
@@ -13768,7 +13771,8 @@ function fhHotLinesTable(rows, sc, opts){
   const jc = opts.fixedCols ? ' justify-content:end;' : '';
   const dotC = 'var(--hot-dot)', offDot = 'color-mix(in srgb, var(--text) 8%, transparent)';
   const heads = rows.map(r => `<span class="seg" title="${fhEsc(opts.colTip(r))}" onclick="fhOpenSheet('${fhEsc(r.mid)}')" style="display:flex; flex-direction:column; align-items:center; gap:3px; cursor:pointer;"><span class="fh-hl-sdot" style="width:6px; height:6px; border-radius:50%; background:${r.surface && r.surface === opts.today ? 'var(--text)' : 'color-mix(in srgb, var(--text) 22%, transparent)'};"></span><span style="${FH_MONO} font-size:8.5px; color:var(--text-label); white-space:nowrap;">${fhEsc(fhTournCode(r.tournRaw || r.tourn))}</span><span style="${FH_MONO} font-size:8.5px; color:var(--text-label);${opts.colHead === 'date' ? ' white-space:nowrap;' : ''}">${fhEsc(opts.colHead === 'date' ? fhDDMM(r.date) : "'" + String(r.date).slice(2, 4))}</span></span>`).join('');
-  const head = fhHotLinesHead(`<div style="display:grid; grid-template-columns:${cols};${jc}">${heads}</div>`);
+  const head = fhHotLinesHead(`<div style="display:grid; grid-template-columns:${cols};${jc}">${heads}</div>`, !!opts.price);
+  const HC = opts.price ? FH_HOT_COLS_PX : FH_HOT_COLS;
   const topK = !opts.results && sc.scored.length ? sc.scored[0].k : -1;   // results mode (1–2 meetings): nothing is ranked
   const lineHtml = (x, famLbl) => {
     const isTop = x.k === topK;
@@ -13780,18 +13784,18 @@ function fhHotLinesTable(rows, sc, opts){
       const tip = opts.dotTip(r) + ' · ' + (!e ? 'not eligible' + (why ? ' (' + why + ')' : '') : c ? 'covered' : 'not covered');
       return `<span style="display:flex; justify-content:center;"><span class="seg" title="${fhEsc(tip)}" onclick="fhOpenSheet('${fhEsc(r.mid)}')" style="width:${e ? '10px' : '6px'}; height:${e ? '10px' : '6px'}; border-radius:50%; background:${!e ? offDot : c ? dotC : 'transparent'}; border:1px solid ${!e ? 'transparent' : dotC}; box-sizing:border-box; cursor:pointer; flex:none;"></span></span>`;
     }).join('');
-    return `<div class="${opts.lineCls(x.k)}${isTop ? ' fh-hl-top' : ''}" style="display:grid; grid-template-columns:${FH_HOT_COLS}; align-items:center; gap:12px; padding:11px 12px; margin:0 -12px; border-radius:10px; background:${isTop ? 'var(--inner)' : 'transparent'}; cursor:default;">
+    return `<div class="${opts.lineCls(x.k)}${isTop ? ' fh-hl-top' : ''}" style="display:grid; grid-template-columns:${HC}; align-items:center; gap:12px; padding:11px 12px; margin:0 -12px; border-radius:10px; background:${isTop ? 'var(--inner)' : 'transparent'}; cursor:default;">
         <span style="display:flex; flex-direction:column; gap:3px; min-width:0;">
           ${famLbl ? `<span style="font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label);">${fhEsc(famLbl)}</span>` : ''}
           <span style="font-size:13.5px; font-weight:700; color:var(--text);">${fhEsc(x.name)}</span>
           ${isTop ? `<span style="font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--link);">Most covered</span>` : ''}
           ${exp ? `<span style="${FH_MONO} font-size:9.5px; color:var(--text-label); white-space:nowrap;">priced in at ${fhOdd(opts.shortPriced)}</span>` : ''}
         </span>
+        ${opts.price ? `<span class="fh-hl-pxcol" style="display:flex; min-width:0;">${opts.price(x)}</span>` : ''}
         ${opts.results ? `<span class="fh-hl-rate" data-hl-results="1" title="${fhEsc('results only: fewer than ' + FH_HOT_MIN_ELIGIBLE + ' comparable meetings')}" style="${FH_MONO} font-size:15px; font-weight:700; color:var(--text-label);">${FH_DASHC}</span>` : fhHotRateHtml(x.c, x.n)}
         <span style="display:flex; flex-direction:column; gap:2px;">
           <span class="fh-hl-cov" style="${FH_MONO} font-size:12.5px; font-weight:600; color:var(--text); white-space:nowrap;">${x.c} of ${x.n}</span>
           ${hasBasis ? `<span style="${FH_MONO} font-size:9.5px; color:var(--text-label); white-space:nowrap;">${fhEsc(x.L.basis)}</span>` : ''}
-          ${opts.price ? opts.price(x) : ''}
         </span>
         <span style="display:grid; grid-template-columns:${cols}; align-items:center;${jc}">${dots}</span>
       </div>`;
@@ -13822,6 +13826,25 @@ function fhLinePx(L, ctx){
   const fp = LinePrices.faceParts(r);   // founder 2026-10-25: the price's age on screen, its own line in a narrow cell
   const face = `<span class="fh-hl-px" data-lp-state="${r.state}" data-lp-reason="${fhEsc(r.reason || '')}" data-lp-face="${fhEsc(LinePrices.faceText(r))}" style="${FH_MONO} display:inline-flex; flex-direction:column; gap:1px; font-size:10.5px; color:${r.state === 'ok' || r.state === 'close' ? 'var(--text-soft)' : 'var(--text-label)'}; white-space:nowrap;"><span>${fhEsc(fp.main)}</span>${fp.age ? `<span style="font-size:9.5px; color:var(--text-label);">${fhEsc(fp.age)}</span>` : ''}</span>`;
   return maTipHtml(face, `<span style="font-family:'IBM Plex Mono',monospace; font-size:11px; line-height:1.5;">${body}</span>`, { below: true, start: true });
+}
+// The Price column's cell (founder 2026-10-26, close brief item 2): the price at the Rate's size and weight (IBM Plex Mono
+// 15/700); beneath, smaller, its implied % and age ("51% · 0m ago"); a completed match "Close 2.05" over its implied %;
+// no price a dash in the same box (loading too, so nothing shifts when it lands). Same lookup and hover as fhLinePx.
+function fhLinePxCell(L, ctx){
+  const face = (main, sub, r) => `<span class="fh-hl-px" data-lp-state="${r ? r.state : 'dash'}" data-lp-reason="${fhEsc((r && r.reason) || '')}" data-lp-face="${fhEsc(r ? LinePrices.faceText(r) : FH_DASHC)}" style="display:flex; flex-direction:column; gap:2px; min-width:0;">`
+    + `<span style="${FH_MONO} font-size:15px; font-weight:700; white-space:nowrap; color:${main === FH_DASHC ? 'var(--text-label)' : 'var(--text)'};">${fhEsc(main)}</span>`
+    + (sub ? `<span style="${FH_MONO} font-size:10.5px; color:var(--text-label); white-space:nowrap;">${fhEsc(sub)}</span>` : '') + `</span>`;
+  if (!ctx || typeof LinePrices === 'undefined') return face(FH_DASHC, '', null);
+  const px = L && L.px;
+  const side = !px ? null : px.side || (px.who === 'A' ? ctx.aKey : px.who === 'B' ? ctx.bKey : null);
+  const r = LinePrices.linePrice(ctx.ek, side, px ? px.mk : null, px ? px.line : null, { date: ctx.date, started: !!ctx.started });
+  if (r.state === 'loading'){ LinePrices.load(ctx.date, ctx.ek).then(() => { if (ctx.repaint) ctx.repaint(); }); return face(FH_DASHC, '', r); }
+  const pct = v => Math.round(v * 100) + '%';
+  const html = r.state === 'ok' ? face(LinePrices.fmtOdd(r.price), pct(r.implied) + (r.ageMin != null ? ' · ' + r.ageMin + 'm ago' : ''), r)
+    : r.state === 'close' ? face('Close ' + LinePrices.fmtOdd(r.price), pct(r.implied), r)
+    : face(FH_DASHC, '', r);
+  const body = LinePrices.hoverLines(r, L.name).map(fhEsc).join('<br>');
+  return body ? maTipHtml(html, `<span style="font-family:'IBM Plex Mono',monospace; font-size:11px; line-height:1.5;">${body}</span>`, { below: true, start: true }) : html;
 }
 // The match a matchup view prices: the modal's own match — upcoming: the current price; started or completed: the line's
 // close (line-prices.js), or null.
@@ -14784,7 +14807,7 @@ function fhBuildH2H(m){
   const hotFew = HM.note || '';
   const pxCtx = fhLinePxCtx(m, () => { if (_fh && _fh.m === m && aBuilt(m, 'h2h')) fhH2h({}); });
   const table = hotOk ? fhHotLinesTable(F, sc, { colMin: '26px', colHead: 'year', fixedCols: 9, today: fhSurfName(m.surface), showAll: !!S.allLines, shortPriced: null,
-    results: HM.mode === 'results', price: x => fhLinePx(x.L, pxCtx),
+    results: HM.mode === 'results', price: x => fhLinePxCell(x.L, pxCtx),
     lineCls: k => `h2hl hl-${k}`,
     colTip: r => r.tourn + ' ' + String(r.date).slice(0, 4) + ' · ' + r.round,
     dotTip: r => r.tourn + ' ' + String(r.date).slice(0, 4) }) : null;
@@ -15748,7 +15771,8 @@ const ME_FOOT = `font-size:11px; color:${ME_C.m3};`;
 const ME_HINT = `font-size:11.5px; color:${ME_C.m2};`;
 const ME_PGRID = 'display:grid; grid-template-columns:repeat(auto-fit,minmax(min(460px,100%),1fr)); gap:16px; align-items:start;';
 const ME_BCOLS = 'minmax(92px,1fr) minmax(110px,1.4fr) 52px 52px 56px';
-const ME_LCOLS = 'minmax(0,1.1fr) 104px 104px 44px';
+// Line · Price (founder 2026-10-26, its own column) · All · In band · Diff
+const ME_LCOLS = 'minmax(0,1.1fr) 84px 104px 104px 44px';
 const meScopeLbl = S => (S.meScope === 'l52' ? 'Last 52 weeks' : 'Career');
 function meScopeSeg(S){ return meSegHtml([['l52', 'Last 52 weeks'], ['career', 'Career']].map(t => ({ label: t[1], on: S.meScope === t[0], onclick: `meSet({meScope:'${t[0]}'})` }))); }
 // DESIGN GAP G12 (the file draws no loading state): while a shard loads the body keeps its loaded height (measured:
@@ -15856,12 +15880,12 @@ function meLinesCol(E, i, M){
   // Founder 2026-10-26: each line's bet105 price for THIS player in this match, under its label (upcoming: the current
   // price with its age; started or completed: the line's close) — the one lookup every match-card view uses (fhLinePx).
   const pxCtx = typeof fhLinePxCtx === 'function' ? fhLinePxCtx(E.m, () => { if (_me && _me.m === E.m) meRender(); }) : null;
-  const pxOf = r => !pxCtx || typeof fhLinePx !== 'function' ? ''
-    : fhLinePx({ name: r.label, px: r.px ? (r.px.who === 'self' ? Object.assign({}, r.px, { who: i ? 'B' : 'A' }) : r.px) : null }, pxCtx);
+  const pxOf = r => typeof fhLinePxCell !== 'function' ? '<span style="color:var(--text-label);">—</span>'
+    : fhLinePxCell({ name: r.label, px: r.px ? (r.px.who === 'self' ? Object.assign({}, r.px, { who: i ? 'B' : 'A' }) : r.px) : null }, pxCtx);
   const L = M.state === 'ready' ? M.lines : null;
   const bandLbl = L && L.tb >= 0 ? `in band <span style="color:${ME_C.text}; font-weight:700;">${core.BANDS[L.tb].label}</span> · n=${L.inBand.length}` : '';
   const head = `<div style="display:grid; grid-template-columns:${ME_LCOLS}; gap:0 10px; align-items:end; padding:0 10px 7px; border-bottom:${ME_C.hw} solid ${ME_C.headLine};">`
-    + `<span style="${ME_COLH}">Line</span><span style="${ME_COLH} text-align:right;">All</span><span style="${ME_COLH} text-align:right; color:${ME_C.link};">In band</span><span style="${ME_COLH} text-align:right;">Diff</span></div>`;
+    + `<span style="${ME_COLH}">Line</span><span style="${ME_COLH}">Price</span><span style="${ME_COLH} text-align:right;">All</span><span style="${ME_COLH} text-align:right; color:${ME_C.link};">In band</span><span style="${ME_COLH} text-align:right;">Diff</span></div>`;
   let body;
   if (M.state !== 'ready') body = M.state === 'loading' ? meLoadingRow('7px 10px', 228) : meNoHist(M, '7px 10px');
   else if (!L) body = `<div class="me-noprice" style="padding:28px 0; text-align:center; font-size:12.5px; color:${ME_C.m2};">${ME_NOPRICE_MSG}</div>`;
@@ -15872,7 +15896,8 @@ function meLinesCol(E, i, M){
     const aR = maRate(r.aC, r.aN, {}), bR = maRate(r.bC, r.bN, {});
     const d = r.diff, dSmall = aR.mode === 'small' || bR.mode === 'small';
     return `<div class="seg me-row" onclick="meSet({meLine:'${i ? 'b' : 'a'}|${r.li}', meLineScope:'all'})" data-me-line="${i ? 'b' : 'a'}|${r.li}" style="display:grid; grid-template-columns:${ME_LCOLS}; gap:0 10px; align-items:center; cursor:pointer; padding:7px 10px; border-bottom:${ME_C.hw} solid ${ME_C.rowLine}; border-radius:6px;">`
-      + `<span style="display:flex; flex-direction:column; gap:2px; min-width:0;"><span style="font-size:12.5px; font-weight:600;">${fhEsc(r.label)}</span>${pxOf(r)}</span>`
+      + `<span style="font-size:12.5px; font-weight:600;">${fhEsc(r.label)}</span>`
+      + `<span class="me-pxcol" style="display:flex; min-width:0;">${pxOf(r)}</span>`
       + cell(r.aC, r.aN, r.aPct, `${FH_MONO} font-size:11px; text-align:right; white-space:nowrap;`, ME_C.m2)
       + cell(r.bC, r.bN, r.bPct, `justify-self:end; ${FH_MONO} font-size:12px; font-weight:700; white-space:nowrap; background:${r.top ? ME_C.hiBg : 'transparent'}; border:${ME_C.hw} solid ${r.top ? ME_C.hiBd : 'transparent'}; border-radius:6px; padding:3px 8px;`, ME_C.text)
       + `<span style="${FH_MONO} font-size:11px; font-weight:700; text-align:right; color:${d == null ? ME_C.m1 : dSmall ? MA_GREY : meUC(d, 0)};">${d == null ? '' : meSg(d, 0, '')}</span></div>`;

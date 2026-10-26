@@ -42,6 +42,7 @@ COALESCE_S = 2.0                  # a fixture's rows arrive as separate particip
 RETRY_S = 10
 MAPPING_EVERY_S = 600             # Kibl fixtures + api-tennis fixtures, re-joined
 RESEED_EVERY_S = 1800             # REST state repair on top of the reconnect seed
+LIVE_EVERY_S = 60                 # api-tennis live score: a start is seen within a minute (founder 2026-10-26, closes)
 UNSEEDED_RESEED_S = 120           # sooner when a newly joined fixture waits for its first full ladder
 CHUNK = 500
 WITHDRAWN = "withdrawn"
@@ -73,7 +74,8 @@ class LineEngine:
         self.rows = collections.defaultdict(dict)   # fixture -> slot -> current row
         self.openers = collections.defaultdict(dict)  # fixture -> slot -> opener row
         self.started = set()                          # fixtures past their Closing point
-        self.flip = {}                                # fixture -> when THIS worker saw its first in-play row (seeded)
+        self.flip = {}                                # fixture -> (when, how) THIS worker saw the start, ladder held
+        self.last_ok = {}                             # row_key -> the last ok (guarded) pre-match state: the close source
         self.last_check = None                        # epoch s of the worker's last heartbeat while connected (the "check")
         self.seeded = set()                           # fixtures a full REST seed has covered (only these are computed)
         self.written = {}                             # row_key -> the row as last written (or read back)
@@ -105,9 +107,8 @@ class LineEngine:
             self.dirty.pop(fid, None)
         self.by_ev = {m["event_key"]: m for m in mapping.values()}
         for fid, m in mapping.items():
-            if m.get("status") not in LP.AT_NOT_STARTED and fid not in self.started:
-                self.started.add(fid)
-                self._mark(fid, now_mono)
+            if m.get("status") not in LP.AT_NOT_STARTED:
+                self._start(fid, "api-tennis-fixtures", now_mono)
         self.mapping_at = iso(datetime.now(timezone.utc))
         self.count["mapping_refreshes"] += 1
         return st
@@ -143,24 +144,7 @@ class LineEngine:
         if row.get("is_live"):
             # The first in-play row is the fixture's Closing point: written once as 'started', never priced again.
             self.count["inplay_seen"] += 1
-            if fid not in self.started:
-                self.started.add(fid)
-                self.count["fixtures_started"] += 1
-                if fid in self.seeded:
-                    # Seen live, with a full ladder held: the guarded state just before this row IS the close
-                    # (founder 2026-10-26: the last price before the start). A start found any other way — the
-                    # api-tennis status at a join, a restart mid-match — captures no close. And only if the worker's
-                    # last check before this start is <= CLOSE_FRESH_S old (founder 2026-10-26, item 6): else no close,
-                    # counted and logged.
-                    t = time.time()
-                    if self.last_check is not None and t - self.last_check <= CLOSE_FRESH_S:
-                        self.flip[fid] = iso(datetime.now(timezone.utc))
-                    else:
-                        self.count["close_stale_check"] += 1
-                        age = None if self.last_check is None else round(t - self.last_check)
-                        self.log(f"lines: fixture {fid} started with the worker's last check {age} s old "
-                                 f"(> {CLOSE_FRESH_S} s or none): no close")
-                self._mark(fid, now_mono)
+            self._start(fid, "kibl-inplay", now_mono)
             return False
         if fid in self.started:
             self.count["skip_past_closing_point"] += 1
@@ -218,6 +202,8 @@ class LineEngine:
                    "inserted_on": e["inserted_on"], "seen_at": seen_at, "start_ts": start,
                    "kibl_fixture": fid, "alt_id": e["alt_id"]}
             k = row_key(row)
+            if not started and e["status"] == "ok" and e["price"] is not None:
+                self.last_ok[k] = {"close_price": e["price"], "close_implied": e["implied"], "close_at": e["inserted_on"]}
             row.update(self._close_of(fid, k, e if started else None))
             if started:
                 row["status"] = "started"
@@ -241,10 +227,14 @@ class LineEngine:
         an ok pair gives its price and de-vigged implied, a dashed one (suspended, one-sided, a guard) no close. Any
         other key keeps the close it already holds (a read-back after a restart), or none — never one inferred."""
         if e is not None and fid in self.flip:
+            how = self.flip[fid][1]
             if e["status"] == "ok" and e["price"] is not None:
-                return {"close_price": e["price"], "close_implied": e["implied"], "close_at": e["inserted_on"],
-                        "close_src": "live-flip"}
-            return {f: None for f in CLOSE_FIELDS}
+                return {"close_price": e["price"], "close_implied": e["implied"], "close_at": e["inserted_on"], "close_src": how}
+            lo = self.last_ok.get(k)
+            if e["status"] == "suspended" and lo:
+                # Kibl suspends the pre-match market at the start: the price that stood until then is the close.
+                return dict(lo, close_src=how)
+            return {f: None for f in CLOSE_FIELDS}       # dashed at the start by a guard (incoherent, ladder, ...)
         w = self.written.get(k) or {}
         return {f: w.get(f) for f in CLOSE_FIELDS}
 
@@ -259,6 +249,39 @@ class LineEngine:
                           "book": row["book"], "price": row["price"], "status": row["status"], "is_opener": bool(is_opener),
                           "max_limit": row["max_limit"], "inserted_on": row["inserted_on"], "seen_at": seen_at})
         upd[k] = new
+
+    def _start(self, fid, how, now_mono=None):
+        """The fixture's Closing point, however it was learnt (a Kibl in-play row, api-tennis's live score or its
+        fixture status). Its close is captured only if THIS worker held its full ladder (seeded — never right after a
+        restart, whose join finds the match already on) AND its last check before the start is <= CLOSE_FRESH_S old
+        (founder 2026-10-26, item 6); else no close, counted and logged.
+        MEASURED 2026-10-26: Kibl sends no in-play row on a joined pre-match fixture (0 of 11 starts since 01:05Z
+        came that way), so the api-tennis routes are the ones that fire."""
+        if fid in self.started or fid not in self.mapping:
+            return False
+        self.started.add(fid)
+        self.count["fixtures_started"] += 1
+        self.count["started_by_" + how] += 1
+        t = time.time()
+        if fid not in self.seeded:
+            self.count["close_not_seeded"] += 1
+        elif self.last_check is not None and t - self.last_check <= CLOSE_FRESH_S:
+            self.flip[fid] = (iso(datetime.now(timezone.utc)), how)
+        else:
+            self.count["close_stale_check"] += 1
+            age = None if self.last_check is None else round(t - self.last_check)
+            self.log(f"lines: fixture {fid} started ({how}) with the worker's last check {age} s old "
+                     f"(> {CLOSE_FRESH_S} s or none): no close")
+        self._mark(fid, now_mono)
+        return True
+
+    def started_events(self, event_keys, now_mono=None):
+        """api-tennis says these events are live (get_livescore): each joined fixture starts now."""
+        n = 0
+        for fid, m in list(self.mapping.items()):
+            if m.get("event_key") in event_keys:
+                n += bool(self._start(fid, "api-tennis-live", now_mono))
+        return n
 
     def checked(self, t=None):
         """The worker's heartbeat landed while connected: the line state is confirmed live as of now."""
@@ -392,6 +415,24 @@ def fetch_at_fixtures(api_key, now):
     return res
 
 
+def fetch_live_events(api_key):
+    """api-tennis get_livescore -> the event keys live now. The URL carries the key: never logged, never raised."""
+    u = "https://api.api-tennis.com/tennis/?" + urllib.parse.urlencode(
+        {"method": "get_livescore", "APIkey": api_key, "timezone": "UTC"})
+    try:
+        with urllib.request.urlopen(u, timeout=60) as r:
+            res = json.load(r).get("result") or []
+    except Exception as e:  # noqa: BLE001
+        raise RuntimeError(f"api-tennis get_livescore failed ({type(e).__name__})") from None
+    out = set()
+    for x in res if isinstance(res, list) else []:
+        try:
+            out.add(int(x.get("event_key")))
+        except (TypeError, ValueError, AttributeError):
+            continue
+    return out
+
+
 def seed_rows(kc, fsid, now):
     """Current + opener rows for the six markets, pre-match — the stream only sends changes."""
     w0, w1 = iso(now - timedelta(hours=3)), iso(now + timedelta(hours=60))
@@ -435,7 +476,7 @@ class LineDriver:
         self.key = (env.get("API_TENNIS_KEY") or "").strip()
         self.eng = LineEngine(fsid, write=write, log=log)
         self.lock = threading.Lock()
-        self.state = {"map": 0.0, "seed": 0.0, "rb": 0.0, "written": False, "seed_now": False}
+        self.state = {"map": 0.0, "seed": 0.0, "rb": 0.0, "live": 0.0, "written": False, "seed_now": False}
         self.disabled = None if self.key else "API_TENNIS_KEY not set — line prices off"
         self.kc = None
         log("lines: " + (self.disabled or ("writes ENABLED" if write else "writes DISABLED (KIBL_LINES_WRITE != 1) — dry run")))
@@ -462,6 +503,26 @@ class LineDriver:
             self.kc = self.kc_factory()
         self.refresh()
         self.seed()
+        self.live()
+
+    def live(self):
+        """Every LIVE_EVERY_S: api-tennis's live score starts each joined fixture now on (its close is captured)."""
+        if self.disabled or not self.state["written"] or not self.eng.mapping:
+            return
+        t = time.time()
+        if t - self.state["live"] < LIVE_EVERY_S:
+            return
+        self.state["live"] = t
+        try:
+            keys = fetch_live_events(self.key)
+            with self.lock:
+                n = self.eng.started_events(keys)
+                self.eng.count["livescore_polls"] += 1
+            if n:
+                self.log(f"lines: api-tennis live score started {n} fixture(s)")
+        except Exception as e:  # noqa: BLE001
+            with self.lock:
+                self.eng._fault("livescore", e)
 
     def refresh(self, force=False):
         if self.disabled:

@@ -10,6 +10,8 @@ Each check names the mutation that turns it red; tools/test-line-engine-mutants.
   7  a failed write retries from the NEWEST rows and leaves the written state alone             (mutant FORGET_ON_FAIL)
   8  restart: rows read back are not re-ticked; a line gone since is withdrawn                  (mutant NO_READ_BACK)
   9  isolation: a bad row or a failing store never raises into the Now loop
+ 12b a start learnt from api-tennis (fixture status or live score) closes too; a market Kibl suspended at the start closes on
+      the price that stood until then (mutant CLOSE_LOSES_SUSPENDED)
  13  close freshness: the worker's last check before the start <= 180 s, else no close, counted (mutant CLOSE_ANY_AGE)
  12  the close: a start seen live closes each ok key on its last pre-match price; a dashed pair, a start found at the join
       and the in-play price give none; a restart keeps the close it read back   (mutants CLOSE_ANY_START, CLOSE_ANY_STATUS,
@@ -239,8 +241,8 @@ e.accept(row(2, 1, 2, -2.5, 1.70, live=True, ins='2026-10-25T13:05:00Z'), now_mo
 s1 = Store()
 e.flush(s1, now_mono=300)
 c = cur(s1)
-check('a start seen live: an ok key closes on its last pre-match price, source live-flip',
-      c[('gh', '1093', -2.5)]['close_price'] == 2.05 and c[('gh', '1093', -2.5)]['close_src'] == 'live-flip'
+check('a start seen live: an ok key closes on its last pre-match price, source kibl-inplay',
+      c[('gh', '1093', -2.5)]['close_price'] == 2.05 and c[('gh', '1093', -2.5)]['close_src'] == 'kibl-inplay'
       and c[('gh', '1093', -2.5)]['close_at'] == '2026-10-25T12:58:00Z', c.get(('gh', '1093', -2.5)))
 check('… with its de-vigged implied', c[('gh', '1093', -2.5)]['close_implied'] is not None)
 check('the in-play price is never the close', all(r['close_price'] != 1.70 for r in c.values()))
@@ -252,18 +254,29 @@ e2.flush(s2, now_mono=100)
 e2.set_mapping(KFX, [dict(AT[0], event_status='Set 1')], now_mono=200)   # the start learnt from api-tennis, not seen live
 s2 = Store()
 e2.flush(s2, now_mono=300)
-check('a start found at a join (api-tennis already live, no in-play row seen) captures no close',
-      len(cur(s2)) == 8 and all(r['status'] == 'started' and r['close_price'] is None for r in cur(s2).values()),
-      [(r['status'], r['close_price']) for r in cur(s2).values()][:3])
+c2 = cur(s2)
+check('a start learnt from api-tennis while the ladder is held closes too (measured: Kibl sends no in-play row), '
+      'source api-tennis-fixtures', len(c2) == 8 and c2[('gh', '1093', -2.5)]['close_price'] == 2.01
+      and c2[('gh', '1093', -2.5)]['close_src'] == 'api-tennis-fixtures', [(r['status'], r['close_price'], r['close_src']) for r in c2.values()][:3])
+e7, s7 = eng(), Store()
+e7.flush(s7, now_mono=100)
+e7.accept(row(2, 1, 2, -2.5, 0, status=2, ins='2026-10-25T13:01:00Z'), now_mono=150)   # Kibl suspends -2.5 at the start
+e7.accept(row(2, 1, 3, 2.5, 0, status=2, ins='2026-10-25T13:01:00Z'), now_mono=150)
+e7.flush(Store(), now_mono=160)
+check('api-tennis live score starts the fixture', e7.started_events({12173801}, now_mono=170) == 1)
+s7 = Store()
+e7.flush(s7, now_mono=300)
+c7 = cur(s7).get(('gh', '1093', -2.5)) or {}
+check('a market Kibl suspended at the start closes on the price that stood until then (mutant CLOSE_LOSES_SUSPENDED)',
+      c7.get('close_price') == 2.01 and c7.get('close_src') == 'api-tennis-live', c7)
 back = [dict(r) for r in s1.rows('line_prices_current')]
 e3 = LE.LineEngine(171, write=True, log=lambda *_: None)
 e3.checked()
 e3.load_written(json.loads(json.dumps(back, default=str)))
-e3.set_mapping(KFX, AT, now_mono=0)
+e3.set_mapping(KFX, [dict(AT[0], event_status='Set 2')], now_mono=0)   # restarted mid-match: live at the first join
 for r in SEED:
     e3.accept(r, now_mono=0)
 e3.seeded.add(771905)
-e3.set_mapping(KFX, [dict(AT[0], event_status='Set 2')], now_mono=0)   # restarted mid-match: the start learnt at the join
 s3 = Store()
 e3.flush(s3, now_mono=100)
 k25 = (12173801, 'gh', '1093', -2.5, 'bet105')
@@ -271,6 +284,18 @@ check('a restart mid-match keeps the close it read back (never nulled, never rew
       e3.written[k25]['close_price'] == 2.05 and all(r['close_price'] is not None for r in cur(s3).values()
                                                      if (r['market'], r['side'], r['line']) == ('gh', '1093', -2.5)),
       (e3.written[k25].get('close_price'), cur(s3).get(('gh', '1093', -2.5))))
+e8 = LE.LineEngine(171, write=True, log=lambda *_: None)
+e8.load_written(json.loads(json.dumps(back, default=str)))   # restarted after the close was captured
+e8.set_mapping(KFX, AT, now_mono=0)                          # api-tennis still says not started
+for r in SEED:
+    e8.accept(r, now_mono=0)
+e8.seeded.add(771905)
+e8.last_check = time.time() - 600                            # no fresh check: this start can capture nothing new
+e8.set_mapping(KFX, [dict(AT[0], event_status='Set 1')], now_mono=0)
+s8 = Store()
+e8.flush(s8, now_mono=100)
+check('a start that cannot capture keeps the close already on record (mutant CLOSE_LOST_ON_RESTART)',
+      (cur(s8).get(('gh', '1093', -2.5)) or {}).get('close_price') == 2.05, cur(s8).get(('gh', '1093', -2.5)))
 e4 = eng(seed=False)
 e4.accept(row(2, 1, 2, -2.5, 1.70, live=True, ins='2026-10-25T13:05:00Z'), now_mono=10)
 s4 = Store()
@@ -296,6 +321,16 @@ for r in SEED:
 e6.seeded.add(771905)
 e6.accept(row(2, 1, 2, -2.5, 1.70, live=True, ins='2026-10-25T13:05:00Z'), now_mono=200)
 check('no check ever made (a worker that never beat): no close', 771905 not in e6.flip and e6.count['close_stale_check'] == 1)
+
+print('14 the close is never cut on start_ts (the api-tennis SCHEDULED time, line_prices.at_start_ts)')
+import inspect, re as _re  # noqa: E402
+for fn in ('_start', '_close_of', 'started_events', '_accept'):
+    body = inspect.getsource(getattr(LE.LineEngine, fn))
+    check(f'LineEngine.{fn} never reads start_ts (a close is cut on an OBSERVED start only)', 'start_ts' not in body, fn)
+cmp_src = inspect.getsource(LE.LineEngine.compute)
+uses = [ln.strip() for ln in cmp_src.splitlines() if 'start_ts' in ln]
+check('compute uses start_ts only to copy the scheduled label onto the row, never to cut or compare',
+      uses and all(ln.startswith('start = iso(datetime.fromtimestamp(m["start_ts"]') or '"start_ts": start' in ln for ln in uses), uses)
 
 print('11 the worker hooks')
 import now_worker as W  # noqa: E402

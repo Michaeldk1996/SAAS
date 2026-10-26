@@ -145,10 +145,10 @@ function slice(name) {
 const constSrc = (name) => { const s = html.indexOf(`\nconst ${name} = `); return html.slice(s, html.indexOf('\n', s + 1)); };
 function dash() {
   return new Function('LinePrices', `
-    ${['escapeHtml', 'fhEsc', 'maTipHtml', 'fhLinePx', 'fhLinePxCtx', 'eventKeyOfMatch', 'fhH2hLineDefs'].map(slice).join('\n')}
+    ${['escapeHtml', 'fhEsc', 'maTipHtml', 'fhLinePx', 'fhLinePxCell', 'fhLinePxCtx', 'eventKeyOfMatch', 'fhH2hLineDefs'].map(slice).join('\n')}
     ${constSrc('FH_MONO')}
-    const FH_H2H_SET1_MIRROR = true;
-    return { fhLinePx, fhLinePxCtx, fhH2hLineDefs };`)(globalThis.window.LinePrices);
+    const FH_H2H_SET1_MIRROR = true, FH_DASHC = '—';
+    return { fhLinePx, fhLinePxCell, fhLinePxCtx, fhH2hLineDefs };`)(globalThis.window.LinePrices);
 }
 const face = h => { const m = /data-lp-face="([^"]*)"/.exec(h); return m ? m[1].replace(/&amp;/g, '&') : undefined; };
 
@@ -164,6 +164,11 @@ test('5-6: same line, same match, same price — the three match-card views; the
     const ctx = D.fhLinePxCtx(m, null);
     const tab = face(D.fhLinePx(A25, ctx)), kf = face(D.fhLinePx(A25, D.fhLinePxCtx(m, null)));
     assert.equal(tab, '2.01 · 48% · 1m');
+    // the Price column (Hot lines and Derived lines read the same cell): the price at the face, "48% · 1m ago" beneath
+    const cell = D.fhLinePxCell(A25, ctx);
+    assert.equal(face(cell), tab, '5: the column reads the same lookup');
+    assert.match(cell.replace(/<[^>]*>/g, '|'), /\|2\.01\|+48% · 1m ago\|/, 'face 2.01, beneath "48% · 1m ago"');
+    assert.match(D.fhLinePxCell(defs.find(d => d.name === 'Tiebreak in match'), ctx), /data-lp-state="dash"[\s\S]*>—</, 'no price: a dash in the column');
     assert.equal(kf, tab, '5: one value on the H2H tab and the Key factors card (mutant: a view reading its own source)');
     // Market edge → Derived lines inside Match analysis (founder 2026-10-26): each line is a bet105 market, from THIS
     // column's player (meLinesCol: who 'self' -> A for p1's column, B for p2's)
@@ -199,18 +204,27 @@ test('9: a started or completed match shows the line\'s CLOSE, labelled as the c
     assert.equal(nc.reason, 'no_close', 'no close captured: a dash with its reason, never the last live price (mutant: price in place of close)');
     assert.equal(t.L.faceText(nc), '—');
     assert.equal(t.L.linePrice(777, '7', 'gh', -3.5, { date: '2026-10-25', started: true }).reason, 'started', 'a line never offered: a dash');
+    const D = dash();
+    const cc = D.fhLinePxCell({ name: 'x', px: { mk: 'gh', who: 'A', line: -2.5 } }, { ek: 777, date: '2026-10-25', aKey: '7', bKey: '8', started: true });
+    assert.match(cc.replace(/<[^>]*>/g, '|'), /\|Close 2\.05\|+47%\|/, 'the Price column on a completed match: "Close 2.05" over its implied % (mutant: close shown as a price)');
     const viaRow = t.L.linePrice(777, '8', 'gh', 2.5, { date: '2026-10-25' });
     assert.equal(viaRow.state, 'close', 'the row itself says started even before the page sees the match go live');
   } finally { t.restore(); }
 });
 
 test('7: wiring — line prices only in the match card: the H2H tab, Key factors and Market edge Derived lines; never the profile or the Head-to-head page', () => {
-  assert.match(html, /price: x => fhLinePx\(x\.L, pxCtx\),\n    lineCls: k => `h2hl hl-\$\{k\}`/, 'H2H tab (mutant: hook removed)');
+  assert.match(html, /results: HM\.mode === 'results', price: x => fhLinePxCell\(x\.L, pxCtx\),/, 'H2H tab: the Price column (mutant: hook removed)');
   assert.match(html, /\$\{x\.c\} of \$\{x\.n\}<\/span>\$\{fhLinePx\(x\.L, kfPx\)\}/, 'Key factors H2H card');
   const page = html.slice(html.indexOf("const HM = fhHotModel(F, fhH2hLineDefs(h.aS, h.bS), null)"), html.indexOf("const toSheet = s => s.replace(/fhOpenSheet"));
   assert.ok(page.length > 200 && !/price:|fhLinePx|LinePrices/.test(page), 'the Head-to-head page shows no line price (founder 2026-10-26: tied to no match)');
-  assert.match(slice('meLinesCol'), /fhLinePx\(/, 'Match analysis → Market edge → Derived lines prices each line');
-  assert.match(slice('fhHotLinesTable'), /class="fh-hl-cov"[^\n]*\n[^\n]*\n\s*\$\{opts\.price \? opts\.price\(x\) : ''\}/, 'the price sits in the Covered cell, under "x of n"');
+  assert.match(slice('meLinesCol'), /fhLinePxCell\(/, 'Match analysis → Market edge → Derived lines prices each line in its Price column');
+  // founder 2026-10-26 (close brief item 2): its own column between Line and Rate; Covered is the count only
+  const T = slice('fhHotLinesTable');
+  assert.ok(T.indexOf('fh-hl-pxcol') > 0 && T.indexOf('fh-hl-pxcol') < T.indexOf('class="fh-hl-rate"'), 'the Price column sits before Rate (mutant: price in Covered)');
+  const cov = T.slice(T.indexOf('class="fh-hl-cov"'), T.indexOf('<span style="display:grid; grid-template-columns:${cols}'));
+  assert.ok(cov.length > 20 && !/opts\.price/.test(cov), 'Covered is the count only');
+  assert.match(slice('fhHotLinesHead'), />Line<\/span>\$\{priced \? `<span style="\$\{cap\}">Price<\/span>` : ''\}<span style="\$\{cap\}">Rate</, 'the head reads Line · Price · Rate · Covered');
+  assert.match(html, /\/\/ Line · Price[^\n]*\nconst ME_LCOLS = 'minmax\(0,1\.1fr\) 84px /, 'Derived lines: Line · Price · All · In band · Diff');
   assert.match(html, /<script src="line-prices\.js"><\/script>\n<script src="player-profile-v2\.js"><\/script>/, 'the helper loads before the profile module');
   assert.doesNotMatch(html, /line-prices\/[^'"`]*\.json/, 'no shard read anywhere: the rows come from Supabase');
   assert.doesNotMatch(readFileSync(LPSRC, 'utf8'), /line-prices\/|\.json['"]/, 'line-prices.js reads no shard');
