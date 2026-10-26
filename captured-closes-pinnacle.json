@@ -1,28 +1,28 @@
 {
- "generatedAt": "2026-10-26T13:27:57.106Z",
+ "generatedAt": "2026-10-26T20:03:01.323Z",
  "source": "matches.json git history: oddsMovement.books.Pinnacle (Oddspapi pinnacle, to 2026-09-02) and oddsMovement.chart.books[\"Pinnacle +30s\"] (Oddspapi pinnacle+30, from 2026-09-23)",
  "rule": "each side = last tick at or before the actual start (Oddspapi trueStart, else the card-state start: Oddspapi or the live-flip lower bound); both sides required; dropped when no unique actual start",
  "scannedThrough": {
-  "commit": "ae0f19e3fbc1ed4b82bb69042055097d2d5beef4",
-  "at": "2026-10-26T13:03:19Z"
+  "commit": "e430600aca980d089c8db62d6a53c2d7dc16cdce",
+  "at": "2026-10-26T19:32:34Z"
  },
- "commitsScanned": 5974,
+ "commitsScanned": 6001,
  "lastRun": {
-  "from": "2026-10-26T11:33:28Z",
-  "snapshots": 9,
-  "added": 3,
-  "replaced": 0,
-  "series": 73,
-  "kept": 43,
+  "from": "2026-10-26T13:03:19Z",
+  "snapshots": 27,
+  "added": 7,
+  "replaced": 3,
+  "series": 75,
+  "kept": 50,
   "bySource": {
    "oddspapi": 31,
-   "api-tennis-live": 12
+   "api-tennis-live": 19
   },
   "byBook": {
-   "Pinnacle +30s": 43
+   "Pinnacle +30s": 50
   },
   "dropped": {
-   "noStart": 29,
+   "noStart": 24,
    "oneSided": 1
   }
  },
@@ -10779,7 +10779,7 @@
    "p1": 1.236,
    "p2": 4.63,
    "at": "2026-10-25T08:43:04.707Z",
-   "trueStart": "2026-10-25T10:07:35.745Z",
+   "trueStart": "2026-10-25T10:07:35.000Z",
    "startSource": "oddspapi",
    "book": "Pinnacle +30s",
    "round": "ATP Almaty - Final",
@@ -10796,7 +10796,7 @@
    "p1": 2.84,
    "p2": 1.487,
    "at": "2026-10-25T12:05:38.280Z",
-   "trueStart": "2026-10-25T13:35:20.022Z",
+   "trueStart": "2026-10-25T13:35:20.000Z",
    "startSource": "oddspapi",
    "book": "Pinnacle +30s",
    "round": "ATP Lyon - Final",
@@ -10847,7 +10847,7 @@
    "p1": 2.18,
    "p2": 1.769,
    "at": "2026-10-25T13:52:19.364Z",
-   "trueStart": "2026-10-25T15:39:28.928Z",
+   "trueStart": "2026-10-25T15:39:28.000Z",
    "startSource": "oddspapi",
    "book": "Pinnacle +30s",
    "round": "ATP Brussels - Final",
@@ -10889,6 +10889,74 @@
    "event": "ATP Vienna"
   },
   {
+   "eventKey": 12173977,
+   "date": "2026-10-26",
+   "p1Key": 8781,
+   "p2Key": 1192,
+   "p1Name": "L. Darderi",
+   "p2Name": "M. Arnaldi",
+   "p1": 2.12,
+   "p2": 1.793,
+   "at": "2026-10-26T05:13:57.624Z",
+   "trueStart": "2026-10-26T17:16:05.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s",
+   "round": "ATP Vienna - 1/16-finals",
+   "qualifying": false,
+   "event": "ATP Vienna"
+  },
+  {
+   "eventKey": 12173985,
+   "date": "2026-10-26",
+   "p1Key": 1066,
+   "p2Key": 10520,
+   "p1Name": "L. van Assche",
+   "p2Name": "L. Tien",
+   "p1": 3.04,
+   "p2": 1.427,
+   "at": "2026-10-26T17:54:02.903Z",
+   "trueStart": "2026-10-26T18:54:07.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s",
+   "round": "ATP Vienna - 1/16-finals",
+   "qualifying": false,
+   "event": "ATP Vienna"
+  },
+  {
+   "eventKey": 12174055,
+   "date": "2026-10-26",
+   "p1Key": 437,
+   "p2Key": 1925,
+   "p1Name": "H. Rune",
+   "p2Name": "Q. Halys",
+   "p1": 1.909,
+   "p2": 1.98,
+   "at": "2026-10-26T13:09:16.191Z",
+   "trueStart": "2026-10-26T14:47:59.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s",
+   "round": "ATP Basel - 1/16-finals",
+   "qualifying": false,
+   "event": "ATP Basel"
+  },
+  {
+   "eventKey": 12174056,
+   "date": "2026-10-26",
+   "p1Key": 379,
+   "p2Key": 430,
+   "p1Name": "D. Stricker",
+   "p2Name": "C. Ruud",
+   "p1": 3.09,
+   "p2": 1.416,
+   "at": "2026-10-26T18:42:13.316Z",
+   "trueStart": "2026-10-26T18:54:07.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s",
+   "round": "ATP Basel - 1/16-finals",
+   "qualifying": false,
+   "event": "ATP Basel"
+  },
+  {
    "eventKey": 12174058,
    "date": "2026-10-26",
    "p1Key": 1852,
@@ -10921,6 +10989,57 @@
    "round": "ATP Basel - 1/16-finals",
    "qualifying": false,
    "event": "ATP Basel"
+  },
+  {
+   "eventKey": 12174269,
+   "date": "2026-10-26",
+   "p1Key": 2981,
+   "p2Key": 1106,
+   "p1Name": "T. Machac",
+   "p2Name": "A. De Minaur",
+   "p1": 2.95,
+   "p2": 1.448,
+   "at": "2026-10-26T13:19:22.078Z",
+   "trueStart": "2026-10-26T14:12:05.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s",
+   "round": "ATP Vienna - 1/16-finals",
+   "qualifying": false,
+   "event": "ATP Vienna"
+  },
+  {
+   "eventKey": 12174270,
+   "date": "2026-10-26",
+   "p1Key": 8174,
+   "p2Key": 12951,
+   "p1Name": "A. Fery",
+   "p2Name": "J. Fearnley",
+   "p1": 1.961,
+   "p2": 1.925,
+   "at": "2026-10-26T16:10:04.958Z",
+   "trueStart": "2026-10-26T16:24:19.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s",
+   "round": "ATP Vienna - 1/16-finals",
+   "qualifying": false,
+   "event": "ATP Vienna"
+  },
+  {
+   "eventKey": 12174271,
+   "date": "2026-10-26",
+   "p1Key": 902,
+   "p2Key": 2022,
+   "p1Name": "J. Mensik",
+   "p2Name": "L. Neumayer",
+   "p1": 1.158,
+   "p2": 5.9,
+   "at": "2026-10-26T15:48:18.348Z",
+   "trueStart": "2026-10-26T16:32:02.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s",
+   "round": "ATP Vienna - 1/16-finals",
+   "qualifying": false,
+   "event": "ATP Vienna"
   }
  ]
 }
