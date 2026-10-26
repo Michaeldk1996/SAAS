@@ -2267,3 +2267,9 @@ SF, 6-2 3-0 ret.); the set scores are already from the player's side, so the cor
 - **Measured on deployed code:** the heartbeat is 3.7–60.2 s old at read (median 30.5 s, n=60), and 98% of cells read "0m ago".
 - **Stale threshold.** It was 60 min on the old route, a figure set by publish lag. The founder set it to the Now's own 180 s live rule. A 60-minute rule on the stream would keep showing a price for an hour after the worker went quiet.
 
+
+## Line prices belong to the match; closes; H2H Hot lines from one meeting (2026-10-26)
+
+- **Placement:** a line price is a property of one match, so it shows only inside the match card: the H2H tab, the Key factors H2H card, and Market edge → Derived lines. The profile's Derived lines priced the player's next match, which was a different object from the row's record. The standalone Head-to-head page is tied to no match.
+- **Close:** the worker writes it once, at the live flip it observes itself. It is the guarded pre-start verdict, so a pair suspended at the start shows no close. A start learnt any other way (an api-tennis join, a restart) gets no close, rather than one inferred from a stale state. bet105 closes therefore exist from the deploy onwards. Earlier completed matches dash, pending the founder's call on the Pinnacle line close.
+- **Hot lines:** with fewer than 3 comparable meetings a rate or ranking is noise, so those rows show raw results. "Comparable" means the same format on every line, which closes a gap where set-based lines counted best-of-5 meetings for a best-of-3 match.

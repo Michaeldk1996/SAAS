@@ -10,6 +10,9 @@ Each check names the mutation that turns it red; tools/test-line-engine-mutants.
   7  a failed write retries from the NEWEST rows and leaves the written state alone             (mutant FORGET_ON_FAIL)
   8  restart: rows read back are not re-ticked; a line gone since is withdrawn                  (mutant NO_READ_BACK)
   9  isolation: a bad row or a failing store never raises into the Now loop
+ 12  the close: a start seen live closes each ok key on its last pre-match price; a dashed pair, a start found at the join
+      and the in-play price give none; a restart keeps the close it read back   (mutants CLOSE_ANY_START, CLOSE_ANY_STATUS,
+      CLOSE_LOST_ON_RESTART)
  10  other book, other market, superseded row: ignored
  11  the worker: line_engine is wired by hooks only; the Now engine's decisions are byte-identical with it present
 """
@@ -223,6 +226,53 @@ check('an unmatched fixture is ignored', e.accept(row(2, 1, 2, -2.5, 2.2, fid=1,
 check('an older row never replaces a newer one', e.accept(row(2, 1, 2, -2.5, 9.9, ins='2026-10-24T00:00:00Z')) and
       e.rows[771905][(2, 1, 0, 2, 2)]['price_decimal'] == 2.01)
 check('nothing above was accepted as a price', e.count['accepted'] == n)
+
+print('12 the close (founder 2026-10-26: the last price before the start, labelled as the close)')
+e, s0 = eng(), Store()
+e.flush(s0, now_mono=100)
+e.accept(row(3, 1, 7, 22.5, 1.20, ins='2026-10-25T12:59:00Z'), now_mono=150)     # Over 22.5 goes incoherent just before
+e.accept(row(2, 1, 2, -2.5, 2.05, ins='2026-10-25T12:58:00Z'), now_mono=150)     # the last pre-match move on −2.5
+e.accept(row(2, 1, 2, -2.5, 1.70, live=True, ins='2026-10-25T13:05:00Z'), now_mono=200)
+s1 = Store()
+e.flush(s1, now_mono=300)
+c = cur(s1)
+check('a start seen live: an ok key closes on its last pre-match price, source live-flip',
+      c[('gh', '1093', -2.5)]['close_price'] == 2.05 and c[('gh', '1093', -2.5)]['close_src'] == 'live-flip'
+      and c[('gh', '1093', -2.5)]['close_at'] == '2026-10-25T12:58:00Z', c.get(('gh', '1093', -2.5)))
+check('… with its de-vigged implied', c[('gh', '1093', -2.5)]['close_implied'] is not None)
+check('the in-play price is never the close', all(r['close_price'] != 1.70 for r in c.values()))
+check('a pair that was dashed at the start (incoherent) has no close',
+      c[('tg', 'over', 22.5)]['close_price'] is None and c[('tg', 'under', 22.5)]['close_price'] is None, c.get(('tg', 'over', 22.5)))
+check('every key is still written as started', all(r['status'] == 'started' for r in c.values()))
+e2, s2 = eng(), Store()
+e2.flush(s2, now_mono=100)
+e2.set_mapping(KFX, [dict(AT[0], event_status='Set 1')], now_mono=200)   # the start learnt from api-tennis, not seen live
+s2 = Store()
+e2.flush(s2, now_mono=300)
+check('a start found at a join (api-tennis already live, no in-play row seen) captures no close',
+      len(cur(s2)) == 8 and all(r['status'] == 'started' and r['close_price'] is None for r in cur(s2).values()),
+      [(r['status'], r['close_price']) for r in cur(s2).values()][:3])
+back = [dict(r) for r in s1.rows('line_prices_current')]
+e3 = LE.LineEngine(171, write=True, log=lambda *_: None)
+e3.load_written(json.loads(json.dumps(back, default=str)))
+e3.set_mapping(KFX, AT, now_mono=0)
+for r in SEED:
+    e3.accept(r, now_mono=0)
+e3.seeded.add(771905)
+e3.set_mapping(KFX, [dict(AT[0], event_status='Set 2')], now_mono=0)   # restarted mid-match: the start learnt at the join
+s3 = Store()
+e3.flush(s3, now_mono=100)
+k25 = (12173801, 'gh', '1093', -2.5, 'bet105')
+check('a restart mid-match keeps the close it read back (never nulled, never rewritten)',
+      e3.written[k25]['close_price'] == 2.05 and all(r['close_price'] is not None for r in cur(s3).values()
+                                                     if (r['market'], r['side'], r['line']) == ('gh', '1093', -2.5)),
+      (e3.written[k25].get('close_price'), cur(s3).get(('gh', '1093', -2.5))))
+e4 = eng(seed=False)
+e4.accept(row(2, 1, 2, -2.5, 1.70, live=True, ins='2026-10-25T13:05:00Z'), now_mono=10)
+s4 = Store()
+e4.flush(s4, now_mono=100)
+check('a start seen before any full seed captures no close (a partial ladder is no close)',
+      all(r['close_price'] is None for r in cur(s4).values()) and 771905 not in e4.flip, list(cur(s4).values())[:1])
 
 print('11 the worker hooks')
 import now_worker as W  # noqa: E402

@@ -13666,6 +13666,7 @@ function fhMtbOf(r){
 // Why a match is not eligible for a line (the dot tooltip).
 function fhIneligibleWhy(r, def){
   if (r.wo) return 'W/O';
+  if (def.bo && r.bo !== def.bo) return r.bo ? 'Bo' + r.bo : 'format unknown';
   if (r.ret) return 'RET';
   if (def.need === 'games' && !r.sets) return 'no set scores';
   if (def.need === 'games' && r.ng) return 'Next Gen format';   // TEN-437 S1: 4-game sets — no games-based line
@@ -13676,6 +13677,7 @@ function fhIneligibleWhy(r, def){
 }
 function fhEligible(r, def){
   if (r.wo || r.pS == null) return false;
+  if (def.bo && r.bo !== def.bo) return false;   // founder 2026-10-26: only the match's own format counts, on every line
   if (def.need === 'set1') return !!(r.sets && r.sets.length && (r.sets.length > 1 || !r.ret));
   if (r.ret) return false;
   if (def.need === 'games' && !r.sets) return false;
@@ -13684,14 +13686,42 @@ function fhEligible(r, def){
   if (def.bo3 && r.bo !== 3) return false;
   return true;
 }
-function fhScoreLines(rows, defs){
+function fhScoreLines(rows, defs, o){
+  const min = o && o.min != null ? o.min : FH_HOT_MIN_ELIGIBLE, rank = !(o && o.rank === false);
   const covMap = {};
   const scored = defs.map((L, k) => {
     const elig = rows.filter(r => fhEligible(r, L)), cov = elig.filter(L.cov);
     cov.forEach(r => { (covMap[r.mid] = covMap[r.mid] || []).push(k); });
     return { k, L, name: L.name, n: elig.length, c: cov.length, r: elig.length ? cov.length / elig.length : 0 };
-  }).filter(x => x.n >= FH_HOT_MIN_ELIGIBLE).sort(fhHotLineRank);
+  }).filter(x => x.n >= min);
+  if (rank) scored.sort(fhHotLineRank);
   return { scored, covMap };
+}
+// Founder ruling 2026-10-26 · Hot lines from ONE meeting, format first. Only meetings in the match's own format count
+// (the existing lock, now on every line: a best-of-3 match reads best-of-3 meetings). 0 comparable meetings: a plain note
+// ("No best-of-3 meetings"). 1–2: results, not rates — every line with its "c of n" and a dot per meeting, in definition
+// order: no rate, no ranking, no "Most covered". 3+: unchanged (a line needs FH_HOT_MIN_ELIGIBLE eligible, ranked).
+// m = the match (H2H tab, Key factors card); null = the standalone Head-to-head page, which is tied to no match and so
+// to no format: there each line keeps only its own lock.
+function fhHotModel(rows, defs, m){
+  const core = (typeof window !== 'undefined' && window.MarketEdgeCore) || globalThis.MarketEdgeCore || null;
+  let bo = null;
+  if (m){
+    const f = core ? core.matchFormat(m) : null;
+    bo = f && f.bo3 ? 3 : f && f.reason === 'best-of-5' ? 5 : null;
+  }
+  const comp = m ? (bo ? rows.filter(r => r.bo === bo) : []) : rows;
+  const N = comp.length, D = bo ? defs.map(L => Object.assign({}, L, { bo })) : defs;
+  const none = note => ({ mode: 'none', N, bo, note, sc: { scored: [], covMap: {} } });
+  if (!N) return none(!m ? 'No meetings' : bo ? `No best-of-${bo} meetings` : 'Match format unknown — no comparable meetings');
+  const results = N < FH_HOT_MIN_ELIGIBLE;
+  const sc = fhScoreLines(rows, D, results ? { min: 1, rank: false } : null);
+  if (!sc.scored.length) return none(`No scored ${bo ? 'best-of-' + bo + ' ' : ''}meetings to read lines from (n=${N})`);
+  return { mode: results ? 'results' : 'rank', N, bo, sc };
+}
+// The section's subtitle for each mode.
+function fhHotSub(H, base){
+  return H.mode === 'results' ? `Each line's result in the ${H.N === 1 ? 'one' : 'two'} comparable ${H.N === 1 ? 'meeting' : 'meetings'} — too few to rate or rank` : base;
 }
 // The table: column header (one per match) + the line rows. Returns HTML.
 // TEN-380 (README §5, measured on the reference; identical on Form and H2H): Line · Rate · Covered · one dot column per
@@ -13718,7 +13748,7 @@ function fhHotLinesTable(rows, sc, opts){
   const dotC = 'var(--hot-dot)', offDot = 'color-mix(in srgb, var(--text) 8%, transparent)';
   const heads = rows.map(r => `<span class="seg" title="${fhEsc(opts.colTip(r))}" onclick="fhOpenSheet('${fhEsc(r.mid)}')" style="display:flex; flex-direction:column; align-items:center; gap:3px; cursor:pointer;"><span class="fh-hl-sdot" style="width:6px; height:6px; border-radius:50%; background:${r.surface && r.surface === opts.today ? 'var(--text)' : 'color-mix(in srgb, var(--text) 22%, transparent)'};"></span><span style="${FH_MONO} font-size:8.5px; color:var(--text-label); white-space:nowrap;">${fhEsc(fhTournCode(r.tournRaw || r.tourn))}</span><span style="${FH_MONO} font-size:8.5px; color:var(--text-label);${opts.colHead === 'date' ? ' white-space:nowrap;' : ''}">${fhEsc(opts.colHead === 'date' ? fhDDMM(r.date) : "'" + String(r.date).slice(2, 4))}</span></span>`).join('');
   const head = fhHotLinesHead(`<div style="display:grid; grid-template-columns:${cols};${jc}">${heads}</div>`);
-  const topK = sc.scored.length ? sc.scored[0].k : -1;
+  const topK = !opts.results && sc.scored.length ? sc.scored[0].k : -1;   // results mode (1–2 meetings): nothing is ranked
   const lineHtml = (x, famLbl) => {
     const isTop = x.k === topK;
     const exp = opts.shortPriced != null && !!x.L.fav;
@@ -13736,7 +13766,7 @@ function fhHotLinesTable(rows, sc, opts){
           ${isTop ? `<span style="font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--link);">Most covered</span>` : ''}
           ${exp ? `<span style="${FH_MONO} font-size:9.5px; color:var(--text-label); white-space:nowrap;">priced in at ${fhOdd(opts.shortPriced)}</span>` : ''}
         </span>
-        ${fhHotRateHtml(x.c, x.n)}
+        ${opts.results ? `<span class="fh-hl-rate" data-hl-results="1" title="${fhEsc('results only: fewer than ' + FH_HOT_MIN_ELIGIBLE + ' comparable meetings')}" style="${FH_MONO} font-size:15px; font-weight:700; color:var(--text-label);">${FH_DASHC}</span>` : fhHotRateHtml(x.c, x.n)}
         <span style="display:flex; flex-direction:column; gap:2px;">
           <span class="fh-hl-cov" style="${FH_MONO} font-size:12.5px; font-weight:600; color:var(--text); white-space:nowrap;">${x.c} of ${x.n}</span>
           ${hasBasis ? `<span style="${FH_MONO} font-size:9.5px; color:var(--text-label); white-space:nowrap;">${fhEsc(x.L.basis)}</span>` : ''}
@@ -13746,7 +13776,7 @@ function fhHotLinesTable(rows, sc, opts){
       </div>`;
   };
   const out = [];
-  if (opts.showAll){
+  if (opts.showAll || opts.results){
     FH_HOT_FAM.forEach(f => {
       const ls = sc.scored.filter(x => fhFamOf(x.L.g) === f[0]); if (!ls.length) return;
       out.push(`<span style="font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label); padding:12px 0 4px;">${f[1]}</span>`);
@@ -13755,7 +13785,7 @@ function fhHotLinesTable(rows, sc, opts){
   } else {
     FH_HOT_FAM.forEach(f => { const best = sc.scored.find(x => fhFamOf(x.L.g) === f[0]); if (best) out.push(lineHtml(best, f[1])); });
   }
-  return { head, lines: out.join(''), shown: opts.showAll ? sc.scored.length : out.length };
+  return { head, lines: out.join(''), shown: opts.showAll || opts.results ? sc.scored.length : out.length };
 }
 // bet105 line price under a Hot line's record (founder brief 2026-10-24, bet105-line-prices): ONE lookup for every view —
 // line-prices.js linePrice(eventKey, playerKey, market, signedLine). ctx = { ek, date, aKey, bKey, started, repaint }: the
@@ -13769,10 +13799,11 @@ function fhLinePx(L, ctx){
   if (r.state === 'loading'){ LinePrices.load(ctx.date, ctx.ek).then(() => { if (ctx.repaint) ctx.repaint(); }); return ''; }
   const body = LinePrices.hoverLines(r, L.name).map(fhEsc).join('<br>');
   const fp = LinePrices.faceParts(r);   // founder 2026-10-25: the price's age on screen, its own line in a narrow cell
-  const face = `<span class="fh-hl-px" data-lp-state="${r.state}" data-lp-reason="${fhEsc(r.reason || '')}" data-lp-face="${fhEsc(LinePrices.faceText(r))}" style="${FH_MONO} display:inline-flex; flex-direction:column; gap:1px; font-size:10.5px; color:${r.state === 'ok' ? 'var(--text-soft)' : 'var(--text-label)'}; white-space:nowrap;"><span>${fhEsc(fp.main)}</span>${fp.age ? `<span style="font-size:9.5px; color:var(--text-label);">${fhEsc(fp.age)}</span>` : ''}</span>`;
+  const face = `<span class="fh-hl-px" data-lp-state="${r.state}" data-lp-reason="${fhEsc(r.reason || '')}" data-lp-face="${fhEsc(LinePrices.faceText(r))}" style="${FH_MONO} display:inline-flex; flex-direction:column; gap:1px; font-size:10.5px; color:${r.state === 'ok' || r.state === 'close' ? 'var(--text-soft)' : 'var(--text-label)'}; white-space:nowrap;"><span>${fhEsc(fp.main)}</span>${fp.age ? `<span style="font-size:9.5px; color:var(--text-label);">${fhEsc(fp.age)}</span>` : ''}</span>`;
   return maTipHtml(face, `<span style="font-family:'IBM Plex Mono',monospace; font-size:11px; line-height:1.5;">${body}</span>`, { below: true, start: true });
 }
-// The match a matchup view prices: the modal's own match (not started), or null.
+// The match a matchup view prices: the modal's own match — upcoming: the current price; started or completed: the line's
+// close (line-prices.js), or null.
 function fhLinePxCtx(m, repaint){
   if (!m) return null;
   const ek = typeof eventKeyOfMatch === 'function' ? eventKeyOfMatch(m) : (m.eventKey || null);
@@ -14727,20 +14758,18 @@ function fhBuildH2H(m){
     </div>`;
   // ---- Hot lines (DF L1301–1332): one table, one dot per played meeting; a line needs FH_HOT_MIN_ELIGIBLE eligible
   // meetings to appear and its bar follows the gate (maGateBar). Column-head dots: the neutral surface token (U22). ----
-  const sc = fhScoreLines(F, fhH2hLineDefs(aS, bS));
-  const hotOk = F.length >= FH_HOT_MIN_ELIGIBLE && sc.scored.length > 0;
-  const withSets = F.filter(r => r.pS != null).length;
-  const hotFew = F.length < FH_HOT_MIN_ELIGIBLE ? 'Not enough meetings to rank lines (n=' + F.length + ')'
-    : (!sc.scored.length ? 'Not enough scored meetings to rank lines (n=' + withSets + ')' : '');
+  const HM = fhHotModel(F, fhH2hLineDefs(aS, bS), m), sc = HM.sc;
+  const hotOk = HM.mode !== 'none';
+  const hotFew = HM.note || '';
   const pxCtx = fhLinePxCtx(m, () => { if (_fh && _fh.m === m && aBuilt(m, 'h2h')) fhH2h({}); });
   const table = hotOk ? fhHotLinesTable(F, sc, { colMin: '26px', colHead: 'year', fixedCols: 9, today: fhSurfName(m.surface), showAll: !!S.allLines, shortPriced: null,
-    price: x => fhLinePx(x.L, pxCtx),
+    results: HM.mode === 'results', price: x => fhLinePx(x.L, pxCtx),
     lineCls: k => `h2hl hl-${k}`,
     colTip: r => r.tourn + ' ' + String(r.date).slice(0, 4) + ' · ' + r.round,
     dotTip: r => r.tourn + ' ' + String(r.date).slice(0, 4) }) : null;
-  const hotMore = hotOk && (sc.scored.length > table.shown || S.allLines);
+  const hotMore = HM.mode === 'rank' && (sc.scored.length > table.shown || S.allLines);
   const soft = 'var(--line)';
-  const hotHtml = secHead('Hot lines', 'Best-covered line in each market family across these meetings', '')
+  const hotHtml = secHead('Hot lines', fhHotSub(HM, 'Best-covered line in each market family across these meetings'), '')
     + `<div class="fh-h2hot" style="background:${card}; border:1px solid ${hair}; border-radius:16px; padding:18px 20px 12px; display:flex; flex-direction:column; gap:12px;">
       ${hotOk ? `<div style="display:flex; flex-direction:column; border-top:1px solid ${soft};">${table.head}${table.lines}</div>
       <div style="display:flex; flex-direction:column; align-items:center; gap:10px; padding-top:8px; border-top:1px solid ${soft};">
@@ -15803,6 +15832,11 @@ function meChartCard(E, MM){
 // §4 Derived lines at today's price — one player's column.
 function meLinesCol(E, i, M){
   const name = i ? E.m.p2 : E.m.p1, core = window.MarketEdgeCore;
+  // Founder 2026-10-26: each line's bet105 price for THIS player in this match, under its label (upcoming: the current
+  // price with its age; started or completed: the line's close) — the one lookup every match-card view uses (fhLinePx).
+  const pxCtx = typeof fhLinePxCtx === 'function' ? fhLinePxCtx(E.m, () => { if (_me && _me.m === E.m) meRender(); }) : null;
+  const pxOf = r => !pxCtx || typeof fhLinePx !== 'function' ? ''
+    : fhLinePx({ name: r.label, px: r.px ? (r.px.who === 'self' ? Object.assign({}, r.px, { who: i ? 'B' : 'A' }) : r.px) : null }, pxCtx);
   const L = M.state === 'ready' ? M.lines : null;
   const bandLbl = L && L.tb >= 0 ? `in band <span style="color:${ME_C.text}; font-weight:700;">${core.BANDS[L.tb].label}</span> · n=${L.inBand.length}` : '';
   const head = `<div style="display:grid; grid-template-columns:${ME_LCOLS}; gap:0 10px; align-items:end; padding:0 10px 7px; border-bottom:${ME_C.hw} solid ${ME_C.headLine};">`
@@ -15817,7 +15851,7 @@ function meLinesCol(E, i, M){
     const aR = maRate(r.aC, r.aN, {}), bR = maRate(r.bC, r.bN, {});
     const d = r.diff, dSmall = aR.mode === 'small' || bR.mode === 'small';
     return `<div class="seg me-row" onclick="meSet({meLine:'${i ? 'b' : 'a'}|${r.li}', meLineScope:'all'})" data-me-line="${i ? 'b' : 'a'}|${r.li}" style="display:grid; grid-template-columns:${ME_LCOLS}; gap:0 10px; align-items:center; cursor:pointer; padding:7px 10px; border-bottom:${ME_C.hw} solid ${ME_C.rowLine}; border-radius:6px;">`
-      + `<span style="font-size:12.5px; font-weight:600;">${fhEsc(r.label)}</span>`
+      + `<span style="display:flex; flex-direction:column; gap:2px; min-width:0;"><span style="font-size:12.5px; font-weight:600;">${fhEsc(r.label)}</span>${pxOf(r)}</span>`
       + cell(r.aC, r.aN, r.aPct, `${FH_MONO} font-size:11px; text-align:right; white-space:nowrap;`, ME_C.m2)
       + cell(r.bC, r.bN, r.bPct, `justify-self:end; ${FH_MONO} font-size:12px; font-weight:700; white-space:nowrap; background:${r.top ? ME_C.hiBg : 'transparent'}; border:${ME_C.hw} solid ${r.top ? ME_C.hiBd : 'transparent'}; border-radius:6px; padding:3px 8px;`, ME_C.text)
       + `<span style="${FH_MONO} font-size:11px; font-weight:700; text-align:right; color:${d == null ? ME_C.m1 : dSmall ? MA_GREY : meUC(d, 0)};">${d == null ? '' : meSg(d, 0, '')}</span></div>`;
@@ -18507,16 +18541,19 @@ function kfH2HCard(m){
     [surf ? 'On ' + surf.toLowerCase() : 'On this surface', S && n ? [String(sa), String(S.length - sa)] : [FH_DASHC, FH_DASHC]]]
     .map(([l, v]) => kfVsRow(v[0], l, v[1], { cls: 'kf-h2h-vs' })).join('');
   // hot lines: the H2H tab's ranking over the same meetings (a line needs FH_HOT_MIN_ELIGIBLE eligible meetings)
-  const sc = fhScoreLines(counted, fhH2hLineDefs(A, B));
-  const hotOk = n >= FH_HOT_MIN_ELIGIBLE && sc.scored.length > 0;
+  const HM = fhHotModel(counted, fhH2hLineDefs(A, B), m), sc = HM.sc;
+  const hotOk = HM.mode !== 'none';
   const kfPx = fhLinePxCtx(m, () => { if (_fh && _fh.m === m && aBuilt(m, 'key')) aPaint('aSectionKey', buildKeyFactorsSection(m)); });
-  const hot = hotOk ? Object.keys(KF_HOT_FAM).map(f => sc.scored.find(x => fhFamOf(x.L.g) === f)).filter(Boolean).map(x => {
-    const rate = maRateHtml(x.c, x.n, { nopct: '', note: false, color: C.text });
+  // 1–2 comparable meetings: every line's result in family order, no rate and no pick (founder 2026-10-26); 3+: the best per family
+  const picks = HM.mode === 'results' ? Object.keys(KF_HOT_FAM).flatMap(f => sc.scored.filter(x => fhFamOf(x.L.g) === f))
+    : Object.keys(KF_HOT_FAM).map(f => sc.scored.find(x => fhFamOf(x.L.g) === f)).filter(Boolean);
+  const hot = hotOk ? picks.map(x => {
+    const rate = HM.mode === 'results' ? '' : maRateHtml(x.c, x.n, { nopct: '', note: false, color: C.text });
     return `<div class="kf-h2h-hot" style="display:grid; grid-template-columns:minmax(0,1fr) auto; gap:4px 14px; align-items:center; padding:8px 12px; ${KF_PANEL} border-radius:8px; min-width:0;">
         <span style="display:flex; flex-direction:column; gap:3px; min-width:0;"><span style="${KF_CAP} line-height:13.65px;">${KF_HOT_FAM[fhFamOf(x.L.g)]}</span><span style="font-size:12.5px; font-weight:700; line-height:16.875px; color:${C.text};">${fhEsc(x.name)}</span></span>
         <span style="display:flex; flex-direction:column; align-items:flex-end; gap:3px;">${rate ? `<span style="${M} font-size:16px; font-weight:800; line-height:16px;">${rate}</span>` : ''}<span style="${M} font-size:10.5px; color:${C.t3}; white-space:nowrap;">${x.c} of ${x.n}</span>${fhLinePx(x.L, kfPx)}</span>
       </div>`;
-  }).join('') : kfNote(n < FH_HOT_MIN_ELIGIBLE ? `Not enough meetings to rank lines (n=${n})` : `Not enough scored meetings to rank lines (n=${counted.filter(r => r.pS != null).length})`);
+  }).join('') : kfNote(HM.note);
   return kfCard('h2h', `${kfHead('Head to head', fhEsc(meta))}
     <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;">${kfName(m.p1)}${kfName(m.p2, 'text-align:right;')}</div>
     ${score}<div style="display:flex; flex-direction:column;">${rows}</div>
@@ -28594,18 +28631,17 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
       </div>`;
     // Hot lines: the shared table (Match analysis Form + H2H), unchanged — dots --hot-dot (ticket item 5's one exception).
     // Its dots call fhOpenSheet; here they go through h2hOpenMeeting, which registers the entry first.
-    const sc = fhScoreLines(F, fhH2hLineDefs(h.aS, h.bS));
-    const hotOk = n >= FH_HOT_MIN_ELIGIBLE && sc.scored.length > 0;
-    const meet = typeof LinePrices !== 'undefined' && typeof matches !== 'undefined' ? LinePrices.meetingOf(matches, h.aKey, h.bKey) : null;
-    const h2hPx = meet ? Object.assign(fhLinePxCtx(meet, () => setState({})), meet.p1Key == h.aKey ? {} : { aKey: meet.p2Key, bKey: meet.p1Key })
-      : { ek: null, date: null, aKey: h.aKey, bKey: h.bKey, started: false, repaint: null };
+    // Founder 2026-10-26: records only on this page — it is tied to no match, so no line prices (they live in the match
+    // card) and no match format (each line keeps its own lock); from ONE meeting, results not rates below three.
+    const HM = fhHotModel(F, fhH2hLineDefs(h.aS, h.bS), null), sc = HM.sc;
+    const hotOk = HM.mode !== 'none';
     const table = hotOk ? fhHotLinesTable(F, sc, { colMin: '26px', colHead: 'year', fixedCols: 9, today: null, showAll: !!state.h2hAllLines, shortPriced: null,
-      price: x => fhLinePx(x.L, h2hPx),
+      results: HM.mode === 'results',
       lineCls: k => `h2hl hl-${k}`, colTip: r => r.tourn + ' ' + String(r.date).slice(0, 4) + ' · ' + r.round, dotTip: r => r.tourn + ' ' + String(r.date).slice(0, 4) }) : null;
-    const hotMore = hotOk && (sc.scored.length > table.shown || state.h2hAllLines);
-    const hotFew = n < FH_HOT_MIN_ELIGIBLE ? 'Not enough meetings to rank lines (n=' + n + ')' : 'Not enough scored meetings to rank lines (n=' + F.filter(r => r.pS != null).length + ')';
+    const hotMore = HM.mode === 'rank' && (sc.scored.length > table.shown || state.h2hAllLines);
+    const hotFew = HM.note || '';
     const toSheet = s => s.replace(/fhOpenSheet\(/g, 'H2HPage._open(');
-    const hot = subHead('Hot lines', 'Best-covered line in each market family across these meetings · both players\' sides', '')
+    const hot = subHead('Hot lines', fhHotSub(HM, 'Best-covered line in each market family across these meetings · both players\' sides'), '')
       + `<div class="h2hp-hot" style="${panel} padding:6px 18px 10px; display:flex; flex-direction:column; gap:10px;">
         ${hotOk ? `<div style="display:flex; flex-direction:column;">${toSheet(table.head)}${toSheet(table.lines)}</div>
         <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; padding-top:8px; border-top:1px solid var(--line);">

@@ -44,7 +44,10 @@ RESEED_EVERY_S = 1800             # REST state repair on top of the reconnect se
 UNSEEDED_RESEED_S = 120           # sooner when a newly joined fixture waits for its first full ladder
 CHUNK = 500
 WITHDRAWN = "withdrawn"
-CMP = ("price", "status", "implied", "open_price", "max_limit", "inserted_on")
+CMP = ("price", "status", "implied", "open_price", "max_limit", "inserted_on",
+       "close_price", "close_implied", "close_at", "close_src")
+CLOSE_FIELDS = ("close_price", "close_implied", "close_at", "close_src")
+NUMERIC = ("price", "implied", "open_price", "max_limit", "close_price", "close_implied")
 _ERR_LOG_EVERY_S = 60
 
 
@@ -69,6 +72,7 @@ class LineEngine:
         self.rows = collections.defaultdict(dict)   # fixture -> slot -> current row
         self.openers = collections.defaultdict(dict)  # fixture -> slot -> opener row
         self.started = set()                          # fixtures past their Closing point
+        self.flip = {}                                # fixture -> when THIS worker saw its first in-play row (seeded)
         self.seeded = set()                           # fixtures a full REST seed has covered (only these are computed)
         self.written = {}                             # row_key -> the row as last written (or read back)
         self.dirty = {}                               # fixture -> monotonic due time
@@ -110,8 +114,7 @@ class LineEngine:
         """line_prices_current as read back at start-up: what is already there, so a restart neither re-ticks an
         unchanged price nor leaves a line that has gone since (it is withdrawn on the fixture's first recompute)."""
         for r in rows or ():
-            self.written[row_key(r)] = {k: (_num(r.get(k)) if k in ("price", "implied", "open_price", "max_limit") else r.get(k))
-                                        for k in CMP}
+            self.written[row_key(r)] = {k: (_num(r.get(k)) if k in NUMERIC else r.get(k)) for k in CMP}
         self.written_loaded_at = iso(datetime.now(timezone.utc))
 
     def _mark(self, fid, now_mono=None):
@@ -141,6 +144,11 @@ class LineEngine:
             if fid not in self.started:
                 self.started.add(fid)
                 self.count["fixtures_started"] += 1
+                if fid in self.seeded:
+                    # Seen live, with a full ladder held: the guarded state just before this row IS the close
+                    # (founder 2026-10-26: the last price before the start). A start found any other way — the
+                    # api-tennis status at a join, a restart mid-match — captures no close.
+                    self.flip[fid] = iso(datetime.now(timezone.utc))
                 self._mark(fid, now_mono)
             return False
         if fid in self.started:
@@ -181,8 +189,11 @@ class LineEngine:
         if m is None:
             return [], [], {}
         m = dict(m)
-        if fid in self.started:
-            m["status"] = "started"                      # not in AT_NOT_STARTED -> apply_guards marks every key started
+        started = fid in self.started
+        if started:
+            # The guards run on the last PRE-MATCH rows as if not started (the stored rows are pre-match only), so a
+            # started key keeps the verdict it closed on; every key is then written as 'started'.
+            m["status"] = ""
         rows = list(self.rows.get(fid, {}).values()) + list(self.openers.get(fid, {}).values())
         entries, _ = LP.normalise(rows, {fid: m})
         LP.apply_guards(entries, {m["event_key"]: m})
@@ -196,6 +207,9 @@ class LineEngine:
                    "inserted_on": e["inserted_on"], "seen_at": seen_at, "start_ts": start,
                    "kibl_fixture": fid, "alt_id": e["alt_id"]}
             k = row_key(row)
+            row.update(self._close_of(fid, k, e if started else None))
+            if started:
+                row["status"] = "started"
             seen.add(k)
             self._diff(k, row, cur, ticks, upd, e.get("is_opener", False), seen_at)
         for k, w in list(self.written.items()):
@@ -207,8 +221,21 @@ class LineEngine:
                    "implied": None, "status": "started" if fid in self.started else WITHDRAWN, "open_price": w.get("open_price"),
                    "open_ts": None, "max_limit": None, "inserted_on": w.get("inserted_on"), "seen_at": seen_at,
                    "start_ts": start, "kibl_fixture": fid, "alt_id": None}
+            row.update(self._close_of(fid, k, None))
             self._diff(k, row, cur, ticks, upd, False, seen_at)
         return cur, ticks, upd
+
+    def _close_of(self, fid, k, e):
+        """The close fields for one key. A start THIS worker saw live (`flip`) closes the key on its pre-start verdict:
+        an ok pair gives its price and de-vigged implied, a dashed one (suspended, one-sided, a guard) no close. Any
+        other key keeps the close it already holds (a read-back after a restart), or none — never one inferred."""
+        if e is not None and fid in self.flip:
+            if e["status"] == "ok" and e["price"] is not None:
+                return {"close_price": e["price"], "close_implied": e["implied"], "close_at": e["inserted_on"],
+                        "close_src": "live-flip"}
+            return {f: None for f in CLOSE_FIELDS}
+        w = self.written.get(k) or {}
+        return {f: w.get(f) for f in CLOSE_FIELDS}
 
     def _diff(self, k, row, cur, ticks, upd, is_opener, seen_at):
         w = self.written.get(k)

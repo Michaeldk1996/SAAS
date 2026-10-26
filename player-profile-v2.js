@@ -6709,7 +6709,7 @@
         if (!LINE_SPLIT_KINDS[spec[1]] || sel === 'all') return true;
         return sel === 'fav' ? spec[3] < 0 : spec[3] > 0;
       }).map(function (spec) {
-        var row = lineRow(spec[0], tally(spec[1], spec[2], spec[3])); row.spec = spec; return row;   // spec: the price lookup's key
+        return lineRow(spec[0], tally(spec[1], spec[2], spec[3]));
       });
       var needsGames = /Games handicap|Total games/.test(gr[0]);
       return { title: gr[0], n: needsGames ? withGames : sub.length, retired: retSub.length, rows: rows };
@@ -6743,39 +6743,6 @@
       // kept for the readers that predate the reasons split
       excluded: why.retired, noScore: why.noScore, unshaped: why.unshaped
     };
-  }
-
-  /** bet105 line price beside a Derived-lines row (founder brief 2026-10-24, bet105-line-prices): the price of THIS row's
-   *  line, for THIS player, on his next scheduled match (pp2NextMatchFor) — through the one lookup every view uses,
-   *  line-prices.js linePrice(eventKey, playerKey, market, signedLine). No upcoming match, a match of the other format
-   *  (a Bo5 row against a Bo3 match — the same line is a different bet) or a line with no bet105 market (Match shape)
-   *  is a dash with its reason; while the event's rows load (Supabase) the cell is empty and their arrival repaints once. */
-  var LC_PX_MARKET = { gh: 'gh', sh: 'sh', tg: 'tg' };
-  function lcNextFormat(nx) {
-    var t = String(nx.tour || '');
-    return LC_SLAM.test(t) && !nx.qualifying && !/qualif/i.test(t + ' ' + (nx.round || '')) ? 'bo5' : 'bo3';
-  }
-  function lcLinePx(p, fmt, r, nx) {
-    var LP = window.LinePrices;
-    if (!LP || !r.spec) return '';
-    var kind = r.spec[1], mk = LC_PX_MARKET[kind];
-    var side = kind === 'tg' ? (r.spec[3] > 0 ? 'over' : 'under') : String(p.key);
-    var line = kind === 'tg' ? r.spec[2] : r.spec[3] * r.spec[2];
-    var res;
-    if (!nx || nx.eventKey == null) res = LP.linePrice(null, side, mk || null, line, {});
-    else if (lcNextFormat(nx) !== fmt) res = { state: 'dash', reason: 'other_format', reasonText: 'his next match is ' + (fmt === 'bo3' ? 'best of 5' : 'best of 3'), ladder: [], market: mk, line: line };
-    else res = LP.linePrice(nx.eventKey, side, mk || null, line, { date: nx.date, started: !!nx.live });
-    if (res.state === 'loading') {
-      LP.load(nx.date, nx.eventKey).then(function () { if (typeof window.pp2RepaintIfOpen === 'function') window.pp2RepaintIfOpen(p.key); });
-      return '';
-    }
-    var tip = LP.hoverLines(res, r.label).join('\n');
-    var fp = LP.faceParts(res);   // founder 2026-10-25: the price's age on screen, on its own line
-    return '<span data-lp-state="' + res.state + '" data-lp-reason="' + esc(res.reason || '') + '" data-lp-face="' + esc(LP.faceText(res)) + '"' +
-      (tip ? ' title="' + esc(tip) + '"' : '') +
-      ' style="' + MK_MONO + 'display:inline-flex;flex-direction:column;align-items:flex-end;gap:1px;font-size:10.5px;white-space:nowrap;color:' +
-      (res.state === 'ok' ? 'var(--text-soft)' : 'var(--text-label)') + ';' + (tip ? 'cursor:help;' : '') + '"><span>' + esc(fp.main) + '</span>' +
-      (fp.age ? '<span style="font-size:9.5px;color:var(--text-label);">' + esc(fp.age) + '</span>' : '') + '</span>';
   }
 
   /** One ledger row's figures, on the sample gate (n < 5 dash, 5–9 small sample). A whole line's voids sit
@@ -6920,7 +6887,6 @@
       }).join('') + '</div>';
 
     var pick = lcBestWorst(d, fmt);
-    var lcNext = typeof window.pp2NextMatchFor === 'function' ? window.pp2NextMatchFor(p.key) : null;
     var body = d.groups.map(function (g) {
       return g.rows.map(function (r, i) {
         var fam = i ? '<span></span>'
@@ -6953,9 +6919,7 @@
           (softRow
             ? '<span style="' + MK_MONO + 'font-size:14px;font-weight:700;color:' + rateInk + ';">' + rateOverMark(rateTxt, r.n - r.voids) + '</span>'
             : '<span style="' + MK_MONO + 'font-size:14px;font-weight:700;text-align:right;color:' + rateInk + ';">' + rateTxt + '</span>') +
-          '<span style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;min-width:0;">' +
-            '<span style="' + MK_MONO + 'font-size:12px;text-align:right;white-space:nowrap;color:var(--text-label);">' + r.record + '</span>' +
-            lcLinePx(p, fmt, r, lcNext) + '</span>' +
+          '<span style="' + MK_MONO + 'font-size:12px;text-align:right;white-space:nowrap;color:var(--text-label);">' + r.record + '</span>' +
           // the Field and the gap to it: neutral ink, dimmed when either side is thin or the gap is noise; only the
           // table's best and worst undimmed gap take green / red (lcBestWorst, founder 2026-10-24)
           (function () {
@@ -12349,7 +12313,7 @@
       earlyRoundsRow: earlyRoundsRow,
       drawGrainHtml: drawGrainHtml,
       // §5.8 Derived lines
-      lineCoverage: lineCoverage, lcBestWorst: lcBestWorst, lcVsField: lcVsField, lineFormatOf: lineFormatOf, lcLinePx: lcLinePx, lineRetiredFormat: lineRetiredFormat, speedRowOf: speedRowOf, lcFieldOf: lcFieldOf,
+      lineCoverage: lineCoverage, lcBestWorst: lcBestWorst, lcVsField: lcVsField, lineFormatOf: lineFormatOf, lineRetiredFormat: lineRetiredFormat, speedRowOf: speedRowOf, lcFieldOf: lcFieldOf,
       renderLinesTab: renderLinesTab,
       lineSetCount: lineSetCount,
       lineGames: lineGames,

@@ -4,9 +4,10 @@
 //   1  exact line only: a line bet105 does not offer is a dash with the ladder on hover, never another line's price
 //   2  age on screen (founder 2026-10-25): every priced face carries its age; past STALE_MIN (3 min, the Now's 180 s rule) it dashes, the last
 //      price moves to the hover (mutants: no staleness; threshold back at 30)                    3  started dashes        4  suspended dashes
-//   5  SAME line, SAME match, SAME price: Derived lines and all three Hot lines views read one value
+//   5  SAME line, SAME match, SAME price: the H2H tab, the Key factors card and Match analysis Derived lines read one value
 //   6  right side: "Bublik −2.5" is Bublik's price even on the H2H page where Bublik is the row's player A
-//   7  wiring: each of the three Hot lines call sites passes the price hook; the table puts it under the record
+//   7  wiring: prices only in the match card (founder 2026-10-26) — never the player profile or the Head-to-head page
+//   9  started / completed: the line's close, labelled as the close; no close captured = a dash
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -67,7 +68,7 @@ test('1-4: the lookup — exact line only; stale, started and suspended dash; lo
     assert.match(L.hoverLines(miss, 'Medvedev −4.5 games').join('\n'), /Offered: −3\.5 2\.48 · −3 2\.29 · −2\.5 2\.01/);
     assert.equal(L.linePrice(12173801, '1093', 'gh', -4.5, { date: '2026-10-24' }).reason, 'not_offered', 'a withdrawn line is not offered, never its old price (mutant: withdrawn kept)');
     assert.equal(L.linePrice(12173801, '1895', 'gh', -2.5, { date: '2026-10-24' }).reason, 'suspended', '4: suspended -> dash (mutant: no status check)');
-    assert.equal(L.linePrice(12173801, '1093', 'gh', -3, { date: '2026-10-24', started: true }).reason, 'started', '3: started (mutant: ignore started)');
+    assert.equal(L.linePrice(12173801, '1093', 'gh', -3, { date: '2026-10-24', started: true }).reason, 'no_close', '3: started, no close captured: a dash, never the live price (mutant: ignore started)');
     await L.load('2026-10-24', 99);
     assert.equal(L.linePrice(99, '1093', 'gh', -3, { date: '2026-10-24' }).reason, 'no_event');
     assert.equal(L.linePrice(null, '1093', 'gh', -3, { date: null }).reason, 'no_match');
@@ -110,7 +111,7 @@ test('2b, 8: the stream path — freshness is the worker heartbeat; started rows
   t = fresh();
   try {
     await t.L.load('2026-10-24', 555);
-    assert.equal(t.L.linePrice(555, '7', 'gh', -1.5, { date: '2026-10-24' }).reason, 'started', '3: a row the worker closed as started dashes even if the page has not seen the match go live');
+    assert.equal(t.L.linePrice(555, '7', 'gh', -1.5, { date: '2026-10-24' }).reason, 'no_close', '3: a row the worker closed as started (no close) dashes even if the page has not seen the match go live');
     await t.L.load('2026-10-24', 12173801);
     for (const c of t.calls) {
       assert.ok(!c.init || !c.init.method || c.init.method === 'GET', '8: GET only — the browser writes nothing');
@@ -149,56 +150,71 @@ function dash() {
     const FH_H2H_SET1_MIRROR = true;
     return { fhLinePx, fhLinePxCtx, fhH2hLineDefs };`)(globalThis.window.LinePrices);
 }
-function pp2() {
-  const sb = { FEATURE_PP2: true, playerProfiles: { players: {} }, matches: [], addEventListener() {}, LinePrices: globalThis.window.LinePrices,
-    document: { addEventListener() {}, getElementById: () => null, querySelector: () => null, querySelectorAll: () => [] } };
-  const prev = globalThis.window; globalThis.window = sb;
-  try { new Function('window', readFileSync(process.env.LPT_PP2 || join(HERE, 'player-profile-v2.js'), 'utf8'))(sb); } finally { globalThis.window = prev; }
-  return sb.PlayerProfileV2._internals;
-}
 const face = h => { const m = /data-lp-face="([^"]*)"/.exec(h); return m ? m[1].replace(/&amp;/g, '&') : undefined; };
 
-test('5-6: same line, same match, same price — Derived lines and the three Hot lines views; the right side everywhere', async () => {
+test('5-6: same line, same match, same price — the three match-card views; the right side everywhere', async () => {
   const { L, restore } = fresh();
   try {
     await L.load('2026-10-24', 12173801);
-    const D = dash(), P = pp2();
+    const D = dash(), core = require(join(HERE, 'market-edge-core.js'));
     const m = { id: 'upcoming-12173801', date: '2026-10-24', p1: 'D. Medvedev', p2: 'A. Bublik', p1Key: 1093, p2Key: 1895 };
     const defs = D.fhH2hLineDefs('Medvedev', 'Bublik');
     const A25 = defs.find(d => d.name === 'Medvedev −2.5 games'), O225 = defs.find(d => d.name === 'Over 22.5 games');
     // H2H tab and Key factors H2H card: the modal's match
     const ctx = D.fhLinePxCtx(m, null);
     const tab = face(D.fhLinePx(A25, ctx)), kf = face(D.fhLinePx(A25, D.fhLinePxCtx(m, null)));
-    // Head-to-head page with BUBLIK as the page's player A: "Medvedev −2.5" is then the B line of fhH2hLineDefs(Bublik, Medvedev)
-    const pageDefs = D.fhH2hLineDefs('Bublik', 'Medvedev');
-    const B25 = pageDefs.find(d => d.name === 'Medvedev −2.5 games');
-    const meet = L.meetingOf([m], 1895, 1093);
-    const pageCtx = Object.assign(D.fhLinePxCtx(meet, null), meet.p1Key == 1895 ? {} : { aKey: meet.p2Key, bKey: meet.p1Key });
-    const page = face(D.fhLinePx(B25, pageCtx));
-    // Derived lines: Medvedev's −2.5 games row, his next match = this one
-    const nx = { eventKey: 12173801, date: '2026-10-24', tour: 'ATP Vienna', round: 'R16', qualifying: false, live: false };
-    const derived = face(P.lcLinePx({ key: 1093 }, 'bo3', { label: '−2.5 games', spec: ['−2.5 games', 'gh', 2.5, -1] }, nx));
     assert.equal(tab, '2.01 · 48% · 1m');
-    assert.deepEqual([kf, page, derived], [tab, tab, tab], '5: one value on every view (mutant: any view reading its own source)');
+    assert.equal(kf, tab, '5: one value on the H2H tab and the Key factors card (mutant: a view reading its own source)');
+    // Market edge → Derived lines inside Match analysis (founder 2026-10-26): each line is a bet105 market, from THIS
+    // column's player (meLinesCol: who 'self' -> A for p1's column, B for p2's)
+    const asCol = (r, i) => ({ name: r[0], px: r[2] && r[2].who === 'self' ? Object.assign({}, r[2], { who: i ? 'B' : 'A' }) : r[2] });
+    const fav = core.lineDefs(true, 'Medvedev'), dog = core.lineDefs(false, 'Bublik');
+    assert.deepEqual(fav.map(r => r[2] && [r[2].mk, r[2].line]), [['ml', null], ['ml1', null], ['sh', -1.5], ['gh', -3.5], ['tg', 22.5], null],
+      'fav lines -> markets: Wins match, Wins set 1, Wins 2–0 = −1.5 sets, −3.5 games, Over 22.5, Tiebreak (none) (mutant: a wrong market)');
+    assert.deepEqual(dog.map(r => r[2] && [r[2].mk, r[2].line]), [['ml', null], ['ml1', null], ['sh', 1.5], ['gh', 3.5], ['tg', 22.5], null],
+      'dog lines: Wins a set = +1.5 sets, +3.5 games');
+    assert.equal(face(D.fhLinePx(asCol(fav[3], 0), ctx)), '2.48 · 39% · 1m', 'Medvedev −3.5 games on his column');
+    assert.equal(face(D.fhLinePx(asCol(fav[4], 0), ctx)), face(D.fhLinePx(O225, ctx)), '5: Over 22.5 reads one price on Derived lines and Hot lines');
+    assert.equal(face(D.fhLinePx(asCol(dog[3], 1), ctx)), '—', '6: Bublik +3.5 is not offered here: never Medvedev\'s −3.5 price (mutant: who ignored)');
+    assert.equal(face(D.fhLinePx(asCol(fav[5], 0), ctx)), '—', 'Tiebreak in match has no bet105 market: a dash');
     // 6: the other side of the same line is Bublik +2.5 — never what a Medvedev row shows
-    assert.equal(face(D.fhLinePx(pageDefs.find(d => d.name === 'Bublik −2.5 games'), pageCtx)), '—', '6: Bublik −2.5 is suspended here: a dash, not Medvedev\'s price');
-    assert.equal(face(D.fhLinePx(O225, ctx)), face(P.lcLinePx({ key: 1093 }, 'bo3', { label: 'over 22.5', spec: ['over 22.5', 'tg', 22.5, 1] }, nx)),
-      'Over 22.5 is one price on both surfaces');
+    assert.equal(face(D.fhLinePx(defs.find(d => d.name === 'Bublik −2.5 games'), ctx)), '—', '6: Bublik −2.5 is suspended here: a dash');
     assert.equal(face(D.fhLinePx(defs.find(d => d.name === 'Tiebreak in match'), ctx)), '—', 'a line with no bet105 market dashes');
-    assert.equal(face(P.lcLinePx({ key: 1093 }, 'bo5', { label: '−3.5 games', spec: ['−3.5 games', 'gh', 3.5, -1] }, nx)), '—',
-      'a Bo5 row against a Bo3 match dashes (the same line is a different bet)');
-    assert.equal(face(P.lcLinePx({ key: 1093 }, 'bo3', { label: '−2.5 games', spec: ['−2.5 games', 'gh', 2.5, -1] }, null)), '—', 'no upcoming match -> dash');
   } finally { restore(); }
 });
 
-test('7: wiring — every Hot lines instance passes the price hook; the table renders it under the record', () => {
+test('9: a started or completed match shows the line\'s CLOSE, labelled as the close (founder 2026-10-26)', async () => {
+  const C = (market, side, line, close, ci) => Object.assign(R(market, side, line, 2.2, null, 'started'), { close_price: close, close_implied: ci, close_at: '2026-10-25T13:58:00Z' });
+  const rows = { '777': [C('gh', '7', -2.5, '2.05', '0.47'), C('gh', '8', 2.5, 1.84, 0.53), C('tg', 'over', 22.5, null, null)] };
+  const t = fresh(rows, HB({ lines: { write: false } }));   // a close is history: the worker's live state does not gate it
+  try {
+    await t.L.load('2026-10-25', 777);
+    const r = t.L.linePrice(777, '7', 'gh', -2.5, { date: '2026-10-25', started: true });
+    assert.equal(r.state, 'close', 'a close (mutant: started always dashes)'); assert.equal(r.price, 2.05);
+    assert.equal(t.L.faceText(r), 'Close 2.05 · 47%', 'labelled as the close');
+    assert.deepEqual(t.L.faceParts(r), { main: '2.05 · 47%', age: 'close' }, 'the second line says "close", never an age');
+    assert.match(t.L.hoverLines(r, 'x').join('\n'), /Close 2\.05 · 47%[\s\S]*The last bet105 price before the start · Kibl insert 13:58Z/);
+    assert.ok(!/Offered/.test(t.L.hoverLines(r, 'x').join('\n')), 'no "offered" ladder on a close');
+    const nc = t.L.linePrice(777, 'over', 'tg', 22.5, { date: '2026-10-25', started: true });
+    assert.equal(nc.reason, 'no_close', 'no close captured: a dash with its reason, never the last live price (mutant: price in place of close)');
+    assert.equal(t.L.faceText(nc), '—');
+    assert.equal(t.L.linePrice(777, '7', 'gh', -3.5, { date: '2026-10-25', started: true }).reason, 'started', 'a line never offered: a dash');
+    const viaRow = t.L.linePrice(777, '8', 'gh', 2.5, { date: '2026-10-25' });
+    assert.equal(viaRow.state, 'close', 'the row itself says started even before the page sees the match go live');
+  } finally { t.restore(); }
+});
+
+test('7: wiring — line prices only in the match card: the H2H tab, Key factors and Market edge Derived lines; never the profile or the Head-to-head page', () => {
   assert.match(html, /price: x => fhLinePx\(x\.L, pxCtx\),\n    lineCls: k => `h2hl hl-\$\{k\}`/, 'H2H tab (mutant: hook removed)');
   assert.match(html, /\$\{x\.c\} of \$\{x\.n\}<\/span>\$\{fhLinePx\(x\.L, kfPx\)\}/, 'Key factors H2H card');
-  assert.match(html, /price: x => fhLinePx\(x\.L, h2hPx\),/, 'Head-to-head page');
+  const page = html.slice(html.indexOf("const HM = fhHotModel(F, fhH2hLineDefs(h.aS, h.bS), null)"), html.indexOf("const toSheet = s => s.replace(/fhOpenSheet"));
+  assert.ok(page.length > 200 && !/price:|fhLinePx|LinePrices/.test(page), 'the Head-to-head page shows no line price (founder 2026-10-26: tied to no match)');
+  assert.match(slice('meLinesCol'), /fhLinePx\(/, 'Match analysis → Market edge → Derived lines prices each line');
   assert.match(slice('fhHotLinesTable'), /class="fh-hl-cov"[^\n]*\n[^\n]*\n\s*\$\{opts\.price \? opts\.price\(x\) : ''\}/, 'the price sits in the Covered cell, under "x of n"');
   assert.match(html, /<script src="line-prices\.js"><\/script>\n<script src="player-profile-v2\.js"><\/script>/, 'the helper loads before the profile module');
   assert.doesNotMatch(html, /line-prices\/[^'"`]*\.json/, 'no shard read anywhere: the rows come from Supabase');
   assert.doesNotMatch(readFileSync(LPSRC, 'utf8'), /line-prices\/|\.json['"]/, 'line-prices.js reads no shard');
   assert.match(html, /LinePrices\.load\(ctx\.date, ctx\.ek\)/, 'the Hot lines cell asks for its event (mutant: the date alone)');
-  assert.match(readFileSync(process.env.LPT_PP2 || join(HERE, 'player-profile-v2.js'), 'utf8'), /LP\.load\(nx\.date, nx\.eventKey\)/, 'Derived lines asks for its event');
+  assert.doesNotMatch(readFileSync(process.env.LPT_PP2 || join(HERE, 'player-profile-v2.js'), 'utf8'), /LinePrices|lcLinePx/,
+    'the player profile shows no line price (founder 2026-10-26: line prices belong to a match)');
 });

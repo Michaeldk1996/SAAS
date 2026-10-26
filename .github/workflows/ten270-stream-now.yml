@@ -27,7 +27,7 @@ on:
   workflow_dispatch:
     inputs:
       action:
-        description: 'schema | lines-schema | verify | deploy-worker | status | logs | realtime-config | usage | unpublish-price | heartbeat-check'
+        description: 'schema | lines-schema | lines-coverage | verify | deploy-worker | status | logs | realtime-config | usage | unpublish-price | heartbeat-check'
         required: true
         default: 'status'
       max_events:
@@ -340,6 +340,38 @@ jobs:
                       n_p = -1
                   print(f"[publishable] UPDATE line_prices_current (a real row) -> HTTP {st}, {n_p} row(s)  (want 401/403, or 0 rows)")
                   if n_p != 0: bad.append(f"publishable key could UPDATE line prices ({st}, {n_p})")
+          if act == "lines-coverage":
+              # READ-ONLY (founder brief 2026-10-26, "report, don't resolve"): line closes for completed matches —
+              # bet105 (line_prices_current, since 24 Oct) and Pinnacle (oddspapi_line_summary, since mid-Sep).
+              def q(label, text):
+                  st, r = sql(text)
+                  print(f"== {label} (HTTP {st})")
+                  try:
+                      for row in json.loads(r): print("   ", json.dumps(row, default=str))
+                  except ValueError:
+                      print("   ", r[:400])
+              q("oddspapi_line_summary: book x market", "select book, market, count(distinct fixture_id) fixtures, "
+                "count(*) filter (where close_reliable) reliable_closes, min(start_ts)::date first_start, max(start_ts)::date last_start "
+                "from oddspapi_line_summary group by 1, 2 order by 1, 2")
+              q("completed men's singles, Pinnacle LINE close (any non-match-winner market, close_reliable)",
+                "with f as (select fixture_id, category_name, coalesce(true_start, scheduled_start) st from oddspapi_fixtures "
+                "where category_name in ('ATP', 'Challenger') and player1 not like '%/%' and player2 not like '%/%' "
+                "and coalesce(true_start, scheduled_start) >= '2026-09-15' and coalesce(true_start, scheduled_start) < now() - interval '4 hours') "
+                "select category_name, case when st < '2026-10-24' then 'before 24 Oct' else 'from 24 Oct' end win, count(*) fixtures, "
+                "count(*) filter (where exists (select 1 from oddspapi_line_summary s where s.fixture_id = f.fixture_id "
+                "and s.book ilike 'pinnacle%' and s.close_reliable and s.line is not null)) with_pinnacle_line_close, "
+                "count(*) filter (where exists (select 1 from oddspapi_line_summary s where s.fixture_id = f.fixture_id "
+                "and s.close_reliable and s.line is not null)) with_any_book_line_close "
+                "from f group by 1, 2 order by 1, 2")
+              q("Pinnacle line closes by market, before 24 Oct", "select s.market, count(distinct s.fixture_id) fixtures "
+                "from oddspapi_line_summary s join oddspapi_fixtures f using (fixture_id) where s.book ilike 'pinnacle%' and s.close_reliable "
+                "and s.line is not null and coalesce(f.true_start, f.scheduled_start) >= '2026-09-15' and coalesce(f.true_start, f.scheduled_start) < '2026-10-24' "
+                "group by 1 order by 2 desc")
+              q("bet105 line_prices_current by start date", "select start_ts::date d, count(distinct event_key) events, "
+                "count(distinct event_key) filter (where status = 'started') started_events, "
+                "count(distinct event_key) filter (where close_price is not null) events_with_a_close, "
+                "count(*) filter (where close_price is not null) keys_with_a_close from line_prices_current group by 1 order by 1")
+              q("line_price_ticks span", "select min(seen_at) first_tick, max(seen_at) last_tick, count(*) ticks, count(distinct event_key) events from line_price_ticks")
           if act == "status":
               sk = os.environ["SUPABASE_SECRET_KEY"]
               st, r = call(f"{url}/rest/v1/kibl_now_price?kind=eq.heartbeat&select=written_at,note", key=sk)
