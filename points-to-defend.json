@@ -1,11 +1,11 @@
 {
  "schemaVersion": 1,
- "generatedAt": "2026-10-25T19:55:13.219Z",
- "asOf": "2026-10-25",
+ "generatedAt": "2026-10-26T11:30:56.813Z",
+ "asOf": "2026-10-26",
  "sources": {
   "fixtures": "api-tennis get_fixtures (event_type_key 265), per prior edition",
   "playerIndex": {
-   "fetchedAt": "2026-10-25T19:18:01.174Z",
+   "fetchedAt": "2026-10-26T10:46:32.127Z",
    "source": "api-tennis get_standings (ATP)"
   },
   "draws": {
@@ -13,7 +13,7 @@
   },
   "entryLists": {
    "snapshots": 1,
-   "latestGeneratedAt": "2026-10-21T01:10:59Z"
+   "latestGeneratedAt": "2026-10-26T00:55:56Z"
   },
   "pointsTable": "2026 ATP Official Rulebook §9.03 G.5 (Singles Point table), p.272-273"
  },
@@ -8337,8 +8337,7 @@
    ],
    "sources": [
     "calendar",
-    "draws",
-    "entry"
+    "draws"
    ]
   },
   "vienna-2026": {
@@ -9443,8 +9442,7 @@
    ],
    "sources": [
     "calendar",
-    "draws",
-    "entry"
+    "draws"
    ]
   },
   "paris-2026": {
@@ -9524,7 +9522,7 @@
      "listSections": [
       "Main Draw"
      ],
-     "listLastSeen": "2026-10-21T01:10:59Z"
+     "listLastSeen": "2026-10-26T00:55:56Z"
     },
     {
      "order": 3,
@@ -9551,7 +9549,7 @@
      "listSections": [
       "Main Draw"
      ],
-     "listLastSeen": "2026-10-21T01:10:59Z"
+     "listLastSeen": "2026-10-26T00:55:56Z"
     },
     {
      "order": 4,
@@ -9578,7 +9576,7 @@
      "listSections": [
       "Main Draw"
      ],
-     "listLastSeen": "2026-10-21T01:10:59Z"
+     "listLastSeen": "2026-10-26T00:55:56Z"
     },
     {
      "order": 5,
@@ -9605,7 +9603,7 @@
      "listSections": [
       "Main Draw"
      ],
-     "listLastSeen": "2026-10-21T01:10:59Z"
+     "listLastSeen": "2026-10-26T00:55:56Z"
     },
     {
      "order": 6,
@@ -9632,7 +9630,7 @@
      "listSections": [
       "Main Draw"
      ],
-     "listLastSeen": "2026-10-21T01:10:59Z"
+     "listLastSeen": "2026-10-26T00:55:56Z"
     },
     {
      "order": 7,
@@ -9659,7 +9657,7 @@
      "listSections": [
       "Main Draw"
      ],
-     "listLastSeen": "2026-10-21T01:10:59Z"
+     "listLastSeen": "2026-10-26T00:55:56Z"
     },
     {
      "order": 8,
@@ -9686,7 +9684,7 @@
      "listSections": [
       "Main Draw"
      ],
-     "listLastSeen": "2026-10-21T01:10:59Z"
+     "listLastSeen": "2026-10-26T00:55:56Z"
     },
     {
      "order": 9,
@@ -9713,7 +9711,7 @@
      "listSections": [
       "Main Draw"
      ],
-     "listLastSeen": "2026-10-21T01:10:59Z"
+     "listLastSeen": "2026-10-26T00:55:56Z"
     },
     {
      "order": 10,
@@ -9740,7 +9738,7 @@
      "listSections": [
       "Main Draw"
      ],
-     "listLastSeen": "2026-10-21T01:10:59Z"
+     "listLastSeen": "2026-10-26T00:55:56Z"
     },
     {
      "order": 11,
@@ -9767,7 +9765,7 @@
      "listSections": [
       "Main Draw"
      ],
-     "listLastSeen": "2026-10-21T01:10:59Z"
+     "listLastSeen": "2026-10-26T00:55:56Z"
     },
     {
      "order": 12,
@@ -9794,7 +9792,7 @@
      "listSections": [
       "Main Draw"
      ],
-     "listLastSeen": "2026-10-21T01:10:59Z"
+     "listLastSeen": "2026-10-26T00:55:56Z"
     },
     {
      "order": 13,
@@ -9821,7 +9819,7 @@
      "listSections": [
       "Main Draw"
      ],
-     "listLastSeen": "2026-10-21T01:10:59Z"
+     "listLastSeen": "2026-10-26T00:55:56Z"
     },
     {
      "order": 14,
@@ -9848,7 +9846,7 @@
      "listSections": [
       "Main Draw"
      ],
-     "listLastSeen": "2026-10-21T01:10:59Z"
+     "listLastSeen": "2026-10-26T00:55:56Z"
     },
     {
      "order": 15,
@@ -9875,7 +9873,7 @@
      "listSections": [
       "Qualifying"
      ],
-     "listLastSeen": "2026-10-21T01:10:59Z"
+     "listLastSeen": "2026-10-26T00:55:56Z"
     },
     {
      "order": 16,
@@ -9950,7 +9948,7 @@
      "listSections": [
       "Main Draw"
      ],
-     "listLastSeen": "2026-10-21T01:10:59Z"
+     "listLastSeen": "2026-10-26T00:55:56Z"
     },
     {
      "order": 19,
@@ -9977,7 +9975,7 @@
      "listSections": [
       "Main Draw"
      ],
-     "listLastSeen": "2026-10-21T01:10:59Z"
+     "listLastSeen": "2026-10-26T00:55:56Z"
     },
     {
      "order": 20,
@@ -10004,7 +10002,7 @@
      "listSections": [
       "Main Draw"
      ],
-     "listLastSeen": "2026-10-21T01:10:59Z"
+     "listLastSeen": "2026-10-26T00:55:56Z"
     },
     {
      "order": 21,
@@ -10031,7 +10029,7 @@
      "listSections": [
       "Main Draw"
      ],
-     "listLastSeen": "2026-10-21T01:10:59Z"
+     "listLastSeen": "2026-10-26T00:55:56Z"
     },
     {
      "order": 22,
@@ -10058,7 +10056,7 @@
      "listSections": [
       "Qualifying"
      ],
-     "listLastSeen": "2026-10-21T01:10:59Z"
+     "listLastSeen": "2026-10-26T00:55:56Z"
     },
     {
      "order": 23,
@@ -10085,7 +10083,7 @@
      "listSections": [
       "Main Draw"
      ],
-     "listLastSeen": "2026-10-21T01:10:59Z"
+     "listLastSeen": "2026-10-26T00:55:56Z"
     },
     {
      "order": 24,
@@ -10135,7 +10133,7 @@
      "listSections": [
       "Qualifying"
      ],
-     "listLastSeen": "2026-10-21T01:10:59Z"
+     "listLastSeen": "2026-10-26T00:55:56Z"
     },
     {
      "order": 26,
@@ -10404,7 +10402,7 @@
      "listSections": [
       "Main Draw"
      ],
-     "listLastSeen": "2026-10-21T01:10:59Z"
+     "listLastSeen": "2026-10-26T00:55:56Z"
     },
     {
      "order": 37,
@@ -10431,7 +10429,7 @@
      "listSections": [
       "Qualifying"
      ],
-     "listLastSeen": "2026-10-21T01:10:59Z"
+     "listLastSeen": "2026-10-26T00:55:56Z"
     },
     {
      "order": 38,
@@ -10506,7 +10504,7 @@
      "listSections": [
       "Main Draw"
      ],
-     "listLastSeen": "2026-10-21T01:10:59Z"
+     "listLastSeen": "2026-10-26T00:55:56Z"
     },
     {
      "order": 41,
@@ -10533,7 +10531,7 @@
      "listSections": [
       "Main Draw"
      ],
-     "listLastSeen": "2026-10-21T01:10:59Z"
+     "listLastSeen": "2026-10-26T00:55:56Z"
     },
     {
      "order": 42,
@@ -10560,7 +10558,7 @@
      "listSections": [
       "Main Draw"
      ],
-     "listLastSeen": "2026-10-21T01:10:59Z"
+     "listLastSeen": "2026-10-26T00:55:56Z"
     },
     {
      "order": 43,
@@ -10587,7 +10585,7 @@
      "listSections": [
       "Main Draw"
      ],
-     "listLastSeen": "2026-10-21T01:10:59Z"
+     "listLastSeen": "2026-10-26T00:55:56Z"
     },
     {
      "order": 44,
@@ -10616,7 +10614,7 @@
      "listSections": [
       "Main Draw"
      ],
-     "listLastSeen": "2026-10-21T01:10:59Z"
+     "listLastSeen": "2026-10-26T00:55:56Z"
     },
     {
      "order": 45,
@@ -10645,7 +10643,7 @@
      "listSections": [
       "Main Draw"
      ],
-     "listLastSeen": "2026-10-21T01:10:59Z"
+     "listLastSeen": "2026-10-26T00:55:56Z"
     },
     {
      "order": 46,
@@ -10672,7 +10670,7 @@
      "listSections": [
       "Main Draw"
      ],
-     "listLastSeen": "2026-10-21T01:10:59Z"
+     "listLastSeen": "2026-10-26T00:55:56Z"
     },
     {
      "order": 47,
@@ -10699,7 +10697,7 @@
      "listSections": [
       "Main Draw"
      ],
-     "listLastSeen": "2026-10-21T01:10:59Z"
+     "listLastSeen": "2026-10-26T00:55:56Z"
     },
     {
      "order": 48,
@@ -10727,7 +10725,7 @@
       "Qualifying",
       "Alternates & Reserves"
      ],
-     "listLastSeen": "2026-10-21T01:10:59Z"
+     "listLastSeen": "2026-10-26T00:55:56Z"
     },
     {
      "order": 49,
@@ -10755,7 +10753,7 @@
       "Qualifying",
       "Alternates & Reserves"
      ],
-     "listLastSeen": "2026-10-21T01:10:59Z"
+     "listLastSeen": "2026-10-26T00:55:56Z"
     },
     {
      "order": 50,
@@ -10783,7 +10781,7 @@
       "Qualifying",
       "Alternates & Reserves"
      ],
-     "listLastSeen": "2026-10-21T01:10:59Z"
+     "listLastSeen": "2026-10-26T00:55:56Z"
     },
     {
      "order": 51,
@@ -10810,7 +10808,7 @@
      "listSections": [
       "Qualifying"
      ],
-     "listLastSeen": "2026-10-21T01:10:59Z"
+     "listLastSeen": "2026-10-26T00:55:56Z"
     },
     {
      "order": 52,
@@ -10837,7 +10835,7 @@
      "listSections": [
       "Qualifying"
      ],
-     "listLastSeen": "2026-10-21T01:10:59Z"
+     "listLastSeen": "2026-10-26T00:55:56Z"
     },
     {
      "order": 53,
@@ -11060,7 +11058,7 @@
      "listSections": [
       "Main Draw"
      ],
-     "listLastSeen": "2026-10-21T01:10:59Z"
+     "listLastSeen": "2026-10-26T00:55:56Z"
     },
     {
      "playerKey": "1925",
@@ -11089,7 +11087,7 @@
       "Qualifying",
       "Alternates & Reserves"
      ],
-     "listLastSeen": "2026-10-21T01:10:59Z"
+     "listLastSeen": "2026-10-26T00:55:56Z"
     },
     {
      "playerKey": "1066",
@@ -11118,7 +11116,7 @@
       "Qualifying",
       "Alternates & Reserves"
      ],
-     "listLastSeen": "2026-10-21T01:10:59Z"
+     "listLastSeen": "2026-10-26T00:55:56Z"
     },
     {
      "playerKey": "1083",
@@ -11146,7 +11144,7 @@
      "listSections": [
       "Qualifying"
      ],
-     "listLastSeen": "2026-10-21T01:10:59Z"
+     "listLastSeen": "2026-10-26T00:55:56Z"
     },
     {
      "playerKey": "2112",
@@ -11526,9 +11524,12 @@
      "dropDate": "2026-10-19",
      "byeCorrected": false,
      "flags": [],
-     "status": "Not entered",
-     "statusBasis": "not-on-entry-list",
-     "statusInferred": false
+     "status": "Entered",
+     "statusBasis": "entry-list-draw-not-released",
+     "statusInferred": false,
+     "listSections": [
+      "Main Draw"
+     ]
     },
     {
      "order": 5,
@@ -11641,9 +11642,12 @@
      "dropDate": "2026-10-19",
      "byeCorrected": false,
      "flags": [],
-     "status": "Not entered",
-     "statusBasis": "not-on-entry-list",
-     "statusInferred": false
+     "status": "Entered",
+     "statusBasis": "entry-list-draw-not-released",
+     "statusInferred": false,
+     "listSections": [
+      "Main Draw"
+     ]
     },
     {
      "order": 10,
@@ -11664,9 +11668,12 @@
      "dropDate": "2026-10-19",
      "byeCorrected": false,
      "flags": [],
-     "status": "Not entered",
-     "statusBasis": "not-on-entry-list",
-     "statusInferred": false
+     "status": "Entered",
+     "statusBasis": "entry-list-draw-not-released",
+     "statusInferred": false,
+     "listSections": [
+      "Qualifying"
+     ]
     },
     {
      "order": 11,
@@ -12021,9 +12028,12 @@
      "dropDate": "2026-10-19",
      "byeCorrected": false,
      "flags": [],
-     "status": "Not entered",
-     "statusBasis": "not-on-entry-list",
-     "statusInferred": false
+     "status": "Entered",
+     "statusBasis": "entry-list-draw-not-released",
+     "statusInferred": false,
+     "listSections": [
+      "Qualifying"
+     ]
     },
     {
      "playerKey": "401",
@@ -15722,63 +15732,63 @@
      "Alternates & Reserves"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-21T01:10:59Z"
+    "lastSeen": "2026-10-26T00:55:56Z"
    },
    "372": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-21T01:10:59Z"
+    "lastSeen": "2026-10-26T00:55:56Z"
    },
    "427": {
     "sections": [
      "Qualifying"
     ],
     "firstSeen": "2026-10-16T23:00:40Z",
-    "lastSeen": "2026-10-21T01:10:59Z"
+    "lastSeen": "2026-10-26T00:55:56Z"
    },
    "430": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-21T01:10:59Z"
+    "lastSeen": "2026-10-26T00:55:56Z"
    },
    "431": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-21T01:10:59Z"
+    "lastSeen": "2026-10-26T00:55:56Z"
    },
    "434": {
     "sections": [
      "Qualifying"
     ],
     "firstSeen": "2026-10-16T23:00:40Z",
-    "lastSeen": "2026-10-21T01:10:59Z"
+    "lastSeen": "2026-10-26T00:55:56Z"
    },
    "435": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-21T01:10:59Z"
+    "lastSeen": "2026-10-26T00:55:56Z"
    },
    "437": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-21T01:10:59Z"
+    "lastSeen": "2026-10-26T00:55:56Z"
    },
    "824": {
     "sections": [
      "Qualifying"
     ],
     "firstSeen": "2026-10-16T23:00:40Z",
-    "lastSeen": "2026-10-21T01:10:59Z"
+    "lastSeen": "2026-10-26T00:55:56Z"
    },
    "825": {
     "sections": [
@@ -15786,14 +15796,14 @@
      "Alternates & Reserves"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-21T01:10:59Z"
+    "lastSeen": "2026-10-26T00:55:56Z"
    },
    "902": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-21T01:10:59Z"
+    "lastSeen": "2026-10-26T00:55:56Z"
    },
    "949": {
     "sections": [
@@ -15801,14 +15811,14 @@
      "Alternates & Reserves"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-21T01:10:59Z"
+    "lastSeen": "2026-10-26T00:55:56Z"
    },
    "1064": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-21T01:10:59Z"
+    "lastSeen": "2026-10-26T00:55:56Z"
    },
    "1066": {
     "sections": [
@@ -15816,28 +15826,28 @@
      "Alternates & Reserves"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-21T01:10:59Z"
+    "lastSeen": "2026-10-26T00:55:56Z"
    },
    "1083": {
     "sections": [
      "Qualifying"
     ],
     "firstSeen": "2026-10-16T23:00:40Z",
-    "lastSeen": "2026-10-21T01:10:59Z"
+    "lastSeen": "2026-10-26T00:55:56Z"
    },
    "1093": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-21T01:10:59Z"
+    "lastSeen": "2026-10-26T00:55:56Z"
    },
    "1099": {
     "sections": [
      "Qualifying"
     ],
     "firstSeen": "2026-10-16T23:00:40Z",
-    "lastSeen": "2026-10-21T01:10:59Z"
+    "lastSeen": "2026-10-26T00:55:56Z"
    },
    "1101": {
     "sections": [
@@ -15845,105 +15855,105 @@
      "Alternates & Reserves"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-21T01:10:59Z"
+    "lastSeen": "2026-10-26T00:55:56Z"
    },
    "1103": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-21T01:10:59Z"
+    "lastSeen": "2026-10-26T00:55:56Z"
    },
    "1104": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-21T01:10:59Z"
+    "lastSeen": "2026-10-26T00:55:56Z"
    },
    "1105": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-21T01:10:59Z"
+    "lastSeen": "2026-10-26T00:55:56Z"
    },
    "1106": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-21T01:10:59Z"
+    "lastSeen": "2026-10-26T00:55:56Z"
    },
    "1192": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-21T01:10:59Z"
+    "lastSeen": "2026-10-26T00:55:56Z"
    },
    "1759": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-21T01:10:59Z"
+    "lastSeen": "2026-10-26T00:55:56Z"
    },
    "1764": {
     "sections": [
      "Qualifying"
     ],
     "firstSeen": "2026-10-16T23:00:40Z",
-    "lastSeen": "2026-10-21T01:10:59Z"
+    "lastSeen": "2026-10-26T00:55:56Z"
    },
    "1852": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-21T01:10:59Z"
+    "lastSeen": "2026-10-26T00:55:56Z"
    },
    "1894": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-21T01:10:59Z"
+    "lastSeen": "2026-10-26T00:55:56Z"
    },
    "1895": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-21T01:10:59Z"
+    "lastSeen": "2026-10-26T00:55:56Z"
    },
    "1900": {
     "sections": [
      "Qualifying"
     ],
     "firstSeen": "2026-10-16T23:00:40Z",
-    "lastSeen": "2026-10-21T01:10:59Z"
+    "lastSeen": "2026-10-26T00:55:56Z"
    },
    "1902": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-21T01:10:59Z"
+    "lastSeen": "2026-10-26T00:55:56Z"
    },
    "1905": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-21T01:10:59Z"
+    "lastSeen": "2026-10-26T00:55:56Z"
    },
    "1906": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-21T01:10:59Z"
+    "lastSeen": "2026-10-26T00:55:56Z"
    },
    "1925": {
     "sections": [
@@ -15951,21 +15961,21 @@
      "Alternates & Reserves"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-21T01:10:59Z"
+    "lastSeen": "2026-10-26T00:55:56Z"
    },
    "1980": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-21T01:10:59Z"
+    "lastSeen": "2026-10-26T00:55:56Z"
    },
    "2073": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-21T01:10:59Z"
+    "lastSeen": "2026-10-26T00:55:56Z"
    },
    "2083": {
     "sections": [
@@ -15973,56 +15983,56 @@
      "Alternates & Reserves"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-21T01:10:59Z"
+    "lastSeen": "2026-10-26T00:55:56Z"
    },
    "2382": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-21T01:10:59Z"
+    "lastSeen": "2026-10-26T00:55:56Z"
    },
    "2674": {
     "sections": [
      "Qualifying"
     ],
     "firstSeen": "2026-10-16T23:00:40Z",
-    "lastSeen": "2026-10-21T01:10:59Z"
+    "lastSeen": "2026-10-26T00:55:56Z"
    },
    "2831": {
     "sections": [
      "Qualifying"
     ],
     "firstSeen": "2026-10-16T23:00:40Z",
-    "lastSeen": "2026-10-21T01:10:59Z"
+    "lastSeen": "2026-10-26T00:55:56Z"
    },
    "2832": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-21T01:10:59Z"
+    "lastSeen": "2026-10-26T00:55:56Z"
    },
    "2838": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-21T01:10:59Z"
+    "lastSeen": "2026-10-26T00:55:56Z"
    },
    "2841": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-21T01:10:59Z"
+    "lastSeen": "2026-10-26T00:55:56Z"
    },
    "2842": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-21T01:10:59Z"
+    "lastSeen": "2026-10-26T00:55:56Z"
    },
    "2844": {
     "sections": [
@@ -16030,261 +16040,373 @@
      "Alternates & Reserves"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-21T01:10:59Z"
+    "lastSeen": "2026-10-26T00:55:56Z"
    },
    "2846": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-21T01:10:59Z"
+    "lastSeen": "2026-10-26T00:55:56Z"
    },
    "2847": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-21T01:10:59Z"
+    "lastSeen": "2026-10-26T00:55:56Z"
    },
    "2848": {
     "sections": [
      "Qualifying"
     ],
     "firstSeen": "2026-10-16T23:00:40Z",
-    "lastSeen": "2026-10-21T01:10:59Z"
+    "lastSeen": "2026-10-26T00:55:56Z"
    },
    "2849": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-21T01:10:59Z"
+    "lastSeen": "2026-10-26T00:55:56Z"
    },
    "2959": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-21T01:10:59Z"
+    "lastSeen": "2026-10-26T00:55:56Z"
    },
    "2972": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-21T01:10:59Z"
+    "lastSeen": "2026-10-26T00:55:56Z"
    },
    "2973": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-21T01:10:59Z"
+    "lastSeen": "2026-10-26T00:55:56Z"
    },
    "2982": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-21T01:10:59Z"
+    "lastSeen": "2026-10-26T00:55:56Z"
    },
    "8174": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-21T01:10:59Z"
+    "lastSeen": "2026-10-26T00:55:56Z"
    },
    "8781": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-21T01:10:59Z"
+    "lastSeen": "2026-10-26T00:55:56Z"
    },
    "8926": {
     "sections": [
      "Qualifying"
     ],
     "firstSeen": "2026-10-16T23:00:40Z",
-    "lastSeen": "2026-10-21T01:10:59Z"
+    "lastSeen": "2026-10-26T00:55:56Z"
    },
    "9210": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-16T23:00:40Z",
-    "lastSeen": "2026-10-21T01:10:59Z"
+    "lastSeen": "2026-10-26T00:55:56Z"
    },
    "9514": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-21T01:10:59Z"
+    "lastSeen": "2026-10-26T00:55:56Z"
    },
    "10148": {
     "sections": [
      "Qualifying"
     ],
     "firstSeen": "2026-10-16T23:00:40Z",
-    "lastSeen": "2026-10-21T01:10:59Z"
+    "lastSeen": "2026-10-26T00:55:56Z"
    },
    "10520": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-21T01:10:59Z"
+    "lastSeen": "2026-10-26T00:55:56Z"
    },
    "10884": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-21T01:10:59Z"
+    "lastSeen": "2026-10-26T00:55:56Z"
    },
    "39913": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-21T01:10:59Z"
+    "lastSeen": "2026-10-26T00:55:56Z"
    },
    "40058": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-21T01:10:59Z"
+    "lastSeen": "2026-10-26T00:55:56Z"
    },
    "50323": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-21T01:10:59Z"
+    "lastSeen": "2026-10-26T00:55:56Z"
    }
   },
   "stockholm-2026": {
+   "358": {
+    "sections": [
+     "Qualifying"
+    ],
+    "firstSeen": "2026-10-26T00:55:56Z",
+    "lastSeen": "2026-10-26T00:55:56Z"
+   },
+   "427": {
+    "sections": [
+     "Qualifying"
+    ],
+    "firstSeen": "2026-10-26T00:55:56Z",
+    "lastSeen": "2026-10-26T00:55:56Z"
+   },
    "430": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-21T01:10:59Z",
-    "lastSeen": "2026-10-21T01:10:59Z"
+    "lastSeen": "2026-10-26T00:55:56Z"
    },
    "431": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-21T01:10:59Z",
-    "lastSeen": "2026-10-21T01:10:59Z"
+    "lastSeen": "2026-10-26T00:55:56Z"
+   },
+   "437": {
+    "sections": [
+     "Main Draw"
+    ],
+    "firstSeen": "2026-10-26T00:55:56Z",
+    "lastSeen": "2026-10-26T00:55:56Z"
+   },
+   "824": {
+    "sections": [
+     "Qualifying"
+    ],
+    "firstSeen": "2026-10-26T00:55:56Z",
+    "lastSeen": "2026-10-26T00:55:56Z"
+   },
+   "825": {
+    "sections": [
+     "Qualifying"
+    ],
+    "firstSeen": "2026-10-26T00:55:56Z",
+    "lastSeen": "2026-10-26T00:55:56Z"
+   },
+   "949": {
+    "sections": [
+     "Qualifying"
+    ],
+    "firstSeen": "2026-10-26T00:55:56Z",
+    "lastSeen": "2026-10-26T00:55:56Z"
    },
    "1064": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-21T01:10:59Z",
-    "lastSeen": "2026-10-21T01:10:59Z"
+    "lastSeen": "2026-10-26T00:55:56Z"
+   },
+   "1066": {
+    "sections": [
+     "Qualifying"
+    ],
+    "firstSeen": "2026-10-26T00:55:56Z",
+    "lastSeen": "2026-10-26T00:55:56Z"
+   },
+   "1101": {
+    "sections": [
+     "Alternates & Reserves"
+    ],
+    "firstSeen": "2026-10-26T00:55:56Z",
+    "lastSeen": "2026-10-26T00:55:56Z"
    },
    "1103": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-21T01:10:59Z",
-    "lastSeen": "2026-10-21T01:10:59Z"
+    "lastSeen": "2026-10-26T00:55:56Z"
    },
    "1104": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-21T01:10:59Z",
-    "lastSeen": "2026-10-21T01:10:59Z"
+    "lastSeen": "2026-10-26T00:55:56Z"
    },
    "1105": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-21T01:10:59Z",
-    "lastSeen": "2026-10-21T01:10:59Z"
+    "lastSeen": "2026-10-26T00:55:56Z"
+   },
+   "1764": {
+    "sections": [
+     "Qualifying"
+    ],
+    "firstSeen": "2026-10-26T00:55:56Z",
+    "lastSeen": "2026-10-26T00:55:56Z"
    },
    "1852": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-21T01:10:59Z",
-    "lastSeen": "2026-10-21T01:10:59Z"
+    "lastSeen": "2026-10-26T00:55:56Z"
    },
    "1895": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-21T01:10:59Z",
-    "lastSeen": "2026-10-21T01:10:59Z"
+    "lastSeen": "2026-10-26T00:55:56Z"
    },
    "1902": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-21T01:10:59Z",
-    "lastSeen": "2026-10-21T01:10:59Z"
+    "lastSeen": "2026-10-26T00:55:56Z"
+   },
+   "1906": {
+    "sections": [
+     "Qualifying"
+    ],
+    "firstSeen": "2026-10-26T00:55:56Z",
+    "lastSeen": "2026-10-26T00:55:56Z"
+   },
+   "1925": {
+    "sections": [
+     "Qualifying"
+    ],
+    "firstSeen": "2026-10-26T00:55:56Z",
+    "lastSeen": "2026-10-26T00:55:56Z"
+   },
+   "2083": {
+    "sections": [
+     "Alternates & Reserves"
+    ],
+    "firstSeen": "2026-10-26T00:55:56Z",
+    "lastSeen": "2026-10-26T00:55:56Z"
+   },
+   "2831": {
+    "sections": [
+     "Qualifying"
+    ],
+    "firstSeen": "2026-10-26T00:55:56Z",
+    "lastSeen": "2026-10-26T00:55:56Z"
    },
    "2832": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-21T01:10:59Z",
-    "lastSeen": "2026-10-21T01:10:59Z"
+    "lastSeen": "2026-10-26T00:55:56Z"
    },
    "2842": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-21T01:10:59Z",
-    "lastSeen": "2026-10-21T01:10:59Z"
+    "lastSeen": "2026-10-26T00:55:56Z"
+   },
+   "2844": {
+    "sections": [
+     "Main Draw"
+    ],
+    "firstSeen": "2026-10-26T00:55:56Z",
+    "lastSeen": "2026-10-26T00:55:56Z"
+   },
+   "2848": {
+    "sections": [
+     "Qualifying"
+    ],
+    "firstSeen": "2026-10-26T00:55:56Z",
+    "lastSeen": "2026-10-26T00:55:56Z"
    },
    "2972": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-21T01:10:59Z",
-    "lastSeen": "2026-10-21T01:10:59Z"
+    "lastSeen": "2026-10-26T00:55:56Z"
    },
    "2982": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-21T01:10:59Z",
-    "lastSeen": "2026-10-21T01:10:59Z"
+    "lastSeen": "2026-10-26T00:55:56Z"
    },
    "8174": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-21T01:10:59Z",
-    "lastSeen": "2026-10-21T01:10:59Z"
+    "lastSeen": "2026-10-26T00:55:56Z"
    },
    "8781": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-21T01:10:59Z",
-    "lastSeen": "2026-10-21T01:10:59Z"
+    "lastSeen": "2026-10-26T00:55:56Z"
+   },
+   "10148": {
+    "sections": [
+     "Qualifying"
+    ],
+    "firstSeen": "2026-10-26T00:55:56Z",
+    "lastSeen": "2026-10-26T00:55:56Z"
    },
    "10884": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-21T01:10:59Z",
-    "lastSeen": "2026-10-21T01:10:59Z"
+    "lastSeen": "2026-10-26T00:55:56Z"
    },
    "39913": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-21T01:10:59Z",
-    "lastSeen": "2026-10-21T01:10:59Z"
+    "lastSeen": "2026-10-26T00:55:56Z"
    }
   }
  }
