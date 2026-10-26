@@ -507,6 +507,70 @@ def src_mutants(*pairs):
     return mk
 
 
+def audit_suite(M):
+    """The 2026-10-26 report-only audit: the start − 10 verdicts, the Bet365-row classes, the Database row reader, the
+    read-only path (a snapshot GET passes the guard, nothing else is added), and audit() end to end on fakes."""
+    P = M.P
+    out, bad = [], []
+    def check(name, cond):
+        (out if cond else bad).append(name)
+    snap = {'event_key': 7, 'cut_ts': '2026-09-16T11:50:00+00:00', 'price_ts': '2026-09-16T11:40:00+00:00', 'start_ts': '2026-09-16T12:00:00+00:00'}
+    fl = lambda lo, up, g=120: {'last_not_live_seen_at': lo, 'first_live_seen_at': up, 'gap_seconds': g}
+    v1, i1 = M.classify_od10({}, snap, fl('2026-09-16T11:55:00Z', '2026-09-16T11:57:00Z'))
+    v2, i2 = M.classify_od10({}, snap, fl('2026-09-16T11:45:00Z', '2026-09-16T11:47:00Z'))
+    v3, _ = M.classify_od10({}, snap, None)
+    v4, _ = M.classify_od10({}, None, None)
+    check('od10: cut before the flip\'s lower edge -> kept', v1 == 'kept: taken before the live-flip' and i1['cutBeforeLower'] is True)
+    check('od10: cut after the lower edge -> dashed with a live-flip (the price time beside)', v2 == 'dashed: taken at or after the live-flip'
+          and i2['priceBeforeLower'] is True and i2['cutBeforeLower'] is False)
+    check('od10: no live-flip -> dashed; no snapshot row -> named', v3 == 'dashed: no live-flip' and v4 == 'no snapshot row joined')
+    v5, _ = M.classify_od10({}, snap, fl('2026-09-16T11:50:00Z', '2026-09-16T11:52:00Z'))
+    check('od10: a cut AT the lower edge is not before it (dashed)', v5 == 'dashed: taken at or after the live-flip')
+    rc = lambda **k: dict({'close': {'reliable': True}, 'startSource': P.CUT_SOURCE}, **k)
+    check('B rows: a close at our live-flip, reliable -> a Pinnacle close', M.classify_b(rc()) == 'Pinnacle close (verified start)')
+    check('B rows: a start-alone price is not a close', M.classify_b(rc(startSource=P.NO_FLIP_SOURCE)) == 'start-alone price only (held back, not a close)')
+    check('B rows: an E fill is not a close', M.classify_b(rc(startSource=P.NO_FLIP_SOURCE, fill={'closeCut': 'trueStart-buffer'})).startswith('E only'))
+    check('B rows: a verified start but not reliable -> dash', M.classify_b(rc(close={'reliable': False})).endswith('(dash)'))
+    db = {'meta': {'tournaments': ['Almaty Open', 'X'], 'rounds': ['1st Round'], 'levels': ['ATP 250']},
+          'rows': [[20251013, 0, 0, 0, 0, 1.44, 2.75, 1, 1], [20260310, 0, 0, 0, 1, 1.6, 2.3, 1, 1], [20260601, 0, 0, 0, 1, 1.5, 2.6, 0, 5]],
+          'retRows': [[20250101, 0, 0, 0, 1, 1.2, 4.0, 1, 1]], 'tieRows': []}
+    nm = {'names': [['Alpha A.', 'Beta B.'], ['Eps E.', 'Zet Z.'], ['Van V.', 'Gau G.']], 'retNames': [['Ret R.', 'Ser S.']], 'tieNames': []}
+    rows = M.db_rows(db, nm)
+    check('db_rows: every set, ISO dates, names and books', [(r['set'], r['date'], r['winner'], r['book']) for r in rows] ==
+          [('db', '2025-10-13', 'Alpha A.', 1), ('db', '2026-03-10', 'Eps E.', 1), ('db', '2026-06-01', 'Van V.', 5), ('ret', '2025-01-01', 'Ret R.', 1)])
+    check('guard: a snapshot read passes; a snapshot write never', M.check_request('GET', '/rest/v1/historical_snapshot?select=id&source=eq.x') is True
+          and _raises(M, lambda: M.check_request('POST', '/rest/v1/historical_snapshot?select=id', body=[{}])))
+    # audit() on fakes: no row reaches the Oddspapi window, so no run(); the od10 row joins its snapshot and a flip
+    seen = []
+    def fake(method, path, body=None, headers=None, timeout=180, raw=False):
+        seen.append((method, path))
+        if path.startswith('/rest/v1/historical_snapshot'):
+            return 200, [{'id': 1, 'event_key': 9, 'match_date': '2026-06-01', 'tournament': 'X', 'winner': 'Van V.', 'loser': 'Gau G.',
+                          'source': M.T.START10_SOURCE, 'cut_ts': '2026-06-01T11:50:00+00:00', 'price_ts': '2026-06-01T11:49:00+00:00', 'supersedes': None}], {}
+        if path.startswith('/rest/v1/live_flip_log'):
+            return 200, [], {}
+        return 200, [], {}
+    P.rest = fake
+    M.site_json = lambda name: db if name == 'database-yield.json' else nm   # the Jan–Apr 2026 Bet365 row stays out of the count
+    import tempfile, contextlib, io
+    d = tempfile.mkdtemp(prefix='afa-')
+    with contextlib.redirect_stdout(io.StringIO()):
+        rep = M.audit(d)
+    check('audit: two Bet365 rows outside Jan–Apr 2026 (the 10 Mar 2026 one is inside, not counted), both outside the Oddspapi window, both dashed', rep['bRows']['n'] == 2
+          and rep['bRows']['byYear']['2025'] == {'n': 2, 'dash': 2})
+    check('audit: the od10 row joined its snapshot, no live-flip -> dashed', rep['od10']['n'] == 1 and rep['od10']['verdicts'] == {'dashed: no live-flip': 1}
+          and rep['od10']['snapshotsJoined'] == 1)
+    check('audit: GET only, through the guard', seen and all(m == 'GET' and M.check_request(m, p_) for m, p_ in seen))
+    return out, bad
+
+
+def _raises(M, fn):
+    try:
+        fn(); return False
+    except M.ReadOnlyRefused:
+        return True
+
+
 def src_mutant(old, new):
     def mk():
         assert SRC.count(old) >= 1, f'mutant anchor gone: {old!r}'
@@ -611,6 +675,11 @@ MUTANTS = [
     ('pinarch: a fill row ranks as a true close (no re-cut)', pin_mutant("    if fill_cut(r):\n        return 0\n", "")),
     ('pinarch: the cut does not travel with the export row', pin_mutant("            out[-1]['closeCut'] = fc\n", "            pass\n")),
     ('pinarch: the feed label ignores the buffer', pin_mutant('        return f"{EARLY_CUT_LABEL} {e[\'bufferMin\']}"', "        return e.get('label')")),
+    ('audit: od10 compares the price time, not the cut', src_mutant("info['cutBeforeLower'] = cut is not None and cut < lo", "info['cutBeforeLower'] = pts is not None and pts < lo")),
+    ('audit: od10 compares the upper edge', src_mutant("return ('kept: taken before the live-flip' if info['cutBeforeLower']", "return ('kept: taken before the live-flip' if info['cutBeforeUpper']")),
+    ('audit: od10 keeps a snapshot with no live-flip', src_mutant("        return 'dashed: no live-flip', info", "        return 'kept: taken before the live-flip', info")),
+    ('audit: a start-alone B price counted as a close', src_mutant("if c and rec.get('startSource') in (P.CUT_SOURCE, P.TRUE_START_SOURCE):", "if c:")),
+    ('audit: the window ignored for B rows', src_mutant("if r['book'] == 1 and not (B365_FROM <= r['dateInt'] <= B365_TO)]", "if r['book'] == 1]")),
     ('pinarch close_at takes inactive entries', patch_mutant('close_at', _close_at_no_active)),
     ('pinarch price floor removed', patch_mutant('_price', lambda P: (lambda p: float(p.get('price'))))),
 ]
@@ -620,7 +689,8 @@ def both(M):
     a, b = suite(M)
     c, d = fill_suite(M)
     e_, f_ = smoke(M)
-    return a + c + e_, b + d + f_
+    g, h = audit_suite(M)
+    return a + c + e_ + g, b + d + f_ + h
 
 
 def main():
