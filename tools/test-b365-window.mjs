@@ -66,10 +66,10 @@ const check = (n, fn) => { try { fn(); pass++; console.log('  PASS  ' + n); } ca
 const R = run();
 const byName = () => (R.db.rows || []).map((r, i) => [String(r[0]), R.names.names[i][0], r[8]]);
 check('the builder ran', () => assert.ok(!R.err, R.err));
-check('a Bet365-only row outside Jan–Apr 2026 is a dash (not a Database row): Almaty 2025 R1, French Open 2026', () => {
+// founder 2026-10-26 ("finish and close" item 2, interim): the Bet365 close shows, marked "B", outside Jan–Apr 2026 too
+check('interim: a Bet365-only row outside Jan–Apr 2026 shows the Bet365 close as "B" (book 1): Almaty 2025 R1, French Open 2026', () => {
   const got = byName();
-  assert.ok(!got.some(([d]) => d === '20251013'), 'Almaty 2025-10-13 must not be priced');
-  assert.ok(!got.some(([d]) => d === '20260525'), 'French Open 2026-05-25 must not be priced');
+  assert.deepEqual(got.filter(([d]) => d === '20251013' || d === '20260525').map(x => x[2]), [1, 1]);
 });
 check('control: Jan–Apr 2026 Bet365 rows stay "B" (book 1), the last day included', () => {
   const got = byName();
@@ -79,19 +79,15 @@ check('control: a Pinnacle row is untouched (book 0)', () => assert.deepEqual(by
 check('control: before 2010 (the era shard) Bet365 still prices — the ruling\'s count does not cover it', () => {
   assert.ok(R.x.xRows.some(r => r[0] === 20081006 && r[8] === 1));
 });
-check('the dash says why: reason "nopin" on the unpriced rows', () => {
-  const u = R.x.uRows.filter(u => u[0] === 20251013 || u[0] === 20260525).map(u => u[3]);
-  assert.deepEqual(u, ['nopin', 'nopin']);
+check('interim: no Bet365-only row is unpriced ("nopin" never emitted)', () => {
+  assert.ok(!R.x.uRows.some(u => u[3] === 'nopin'));
 });
-check('meta.bet365Window names the window and counts the rows it no longer prices, by year', () => {
-  assert.deepEqual(R.db.meta.bet365Window, { from: '2026-01-01', to: '2026-04-30', droppedOutside: { rows: 2, byYear: { 2025: 1, 2026: 1 } } });
+check('meta.bet365Window says the window is off (interim) and drops nothing', () => {
+  assert.deepEqual(R.db.meta.bet365Window, { from: '2026-01-01', to: '2026-04-30', interim: true, droppedOutside: { rows: 0, byYear: {} } });
 });
-check('Favourites (Almaty, past editions): the B row leaves the column — n 1, b365 0 (was n 2, b365 1 with the old rule)', () => {
+check('Favourites (Almaty, past editions): the B row is in the column — n 2, b365 1', () => {
   const p = R.fav.events.Almaty.past.rows[0];
-  assert.deepEqual([p.n, p.b365], [1, 0]);
-});
-check('Favourites (ATP tour, indoor): no B row in 2016–2025', () => {
-  assert.equal(R.fav.baseline.Indoor.rows.reduce((m, r) => Math.max(m, r.b365), 0), 0);
+  assert.deepEqual([p.n, p.b365], [2, 1]);
 });
 const od10Dates = ['20260420', '20260610'];
 check('start − 10: every book-5 row is a dash — no fall-through to Bet365 (in window) or api-tennis', () => {
@@ -109,7 +105,8 @@ check('meta.od10Dropped counts them, and how many had another price it did not f
 check('single price: the master holds no book 5 and none of the dashed matches', () => {
   const c = R.master.meta.cols, bi = c.indexOf('book'), di = c.indexOf('date');
   assert.ok(!R.master.rows.some(r => r[bi] === 5));
-  assert.ok(!R.master.rows.some(r => ['2026-04-20', '2026-06-10', '2025-10-13', '2026-05-25'].includes(r[di])));
+  assert.ok(!R.master.rows.some(r => ['2026-04-20', '2026-06-10'].includes(r[di])));
+  assert.ok(['2025-10-13', '2026-05-25'].every(d => R.master.rows.some(r => r[di] === d && r[bi] === 1)), 'interim: the B rows are in the master as Bet365');
 });
 check('single price: tour-baselines counts only the priced rows (no dashed match in its n)', () => {
   const n = JSON.stringify(R.baselines).match(/"n":\s*(\d+)/);
@@ -141,29 +138,21 @@ return h2hPriceJoin;`)(fhDayNum);
   const one = (date, a, b) => { const v = [{ date, won: true, round: null }]; J(v, { full: a }, { full: b }, dbJ); return v[0]; };
   assert.equal(one('2026-06-10', 'X. Xi', 'O. Omi').price ?? null, null, 'start − 10 match: a dash');
   assert.equal(one('2026-04-20', 'M. Mu', 'N. Nu').price ?? null, null, 'start − 10 match in Jan–Apr with Bet365: a dash');
-  assert.equal(one('2025-10-13', 'A. Alpha', 'B. Beta').price ?? null, null, 'Bet365-only 2025: a dash');
+  assert.equal(one('2025-10-13', 'A. Alpha', 'B. Beta').book, 'B', 'interim: Bet365-only 2025 prices as "B"');
   assert.equal(one('2026-07-01', 'P. Pi', 'R. Rho').book, 'A', 'control: the api-tennis snapshot prices');
-});
-check('the page names the reason', () => {
-  const html = readFileSync(join(root, 'bsp-consult-dashboard.html'), 'utf8');
-  assert.match(html, /nopin: 'No Pinnacle close: only Bet365 priced it, and Bet365 is used for Jan–Apr 2026 only'/);
 });
 console.log(`\ntest-b365-window: ${pass} passed, ${fail} failed`);
 
 // ── mutants (only when not already running one) ────────────────────────────────────────────────────────────────────
 if (!process.env.B365W_ROOT) {
   const MUT = [
-    ['build-database-yield.js', 'no window: Bet365 everywhere (the old rule)', "(season < WINDOW_START || (dB >= B365_FROM && dB <= B365_TO))", 'true'],
-    ['build-database-yield.js', 'the window ends a day early', "const B365_FROM = '2026-01-01', B365_TO = '2026-04-30';", "const B365_FROM = '2026-01-01', B365_TO = '2026-04-29';"],
-    ['build-database-yield.js', 'the ruling applied before 2010 too', '(season < WINDOW_START || (dB', '((dB'],
-    ['build-database-yield.js', 'the dash reason lost', "b365Cut ? 'nopin' : one ? 'one' : 'nobook'", "one ? 'one' : 'nobook'"],
-    ['build-database-yield.js', 'the dropped rows not counted', '      if (b365Cut) { b365Dropped.rows++;', '      if (false) { b365Dropped.rows++;'],
+    ['build-database-yield.js', 'interim off: the Jan–Apr-only window (B rows dashed)', 'const B365_INTERIM = true;', 'const B365_INTERIM = false;'],
+    ['build-database-yield.js', 'the interim not recorded in meta', 'interim: B365_INTERIM, droppedOutside', 'droppedOutside'],
     ['build-database-yield.js', 'start − 10 shown again', "          if (pick === 'od') {", "          if (false) {"],
     ['build-database-yield.js', 'start − 10 falls through to Bet365 / api-tennis', ": od10Cut ? -1 : AP ?", ": AP ?"],
     ['build-database-yield.js', 'start − 10 dash reason lost', "od10Cut ? 'od10' : b365Cut", "b365Cut"],
     ['build-database-yield.js', 'start − 10 rows not counted', "            od10Dropped.rows++;", "            void 0;"],
     ['bsp-consult-dashboard.html', 'the page has no start − 10 reason', "  od10: 'No Pinnacle close: the only Pinnacle price was read 10 min before a recorded start that can run late, so it may be in play' };", ' };'],
-    ['bsp-consult-dashboard.html', 'the page has no reason text', "  nopin: 'No Pinnacle close: only Bet365 priced it, and Bet365 is used for Jan–Apr 2026 only',\n", ''],
   ];
   let caught = 0;
   for (const [f, name, from, to] of MUT) {

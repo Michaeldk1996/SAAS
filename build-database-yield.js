@@ -253,6 +253,10 @@ const bucket = { archive: 0, used: 0, walkover: 0, retired: 0, edge: 0, noPrice:
 const WINDOW_START = 2010;
 // Founder ruling 2026-10-26: the only window where a Bet365 close prices an ATP main-draw Database row ("B").
 const B365_FROM = '2026-01-01', B365_TO = '2026-04-30';
+// Founder 2026-10-26 ("finish and close" item 2, interim): until a Pinnacle close is found, a Bet365-only row shows the real
+// Bet365 close, marked "B", at every date — the Jan–Apr 2026 window is off. A Pinnacle pair (Tennis-Data's or our archive's)
+// still wins per row, so a close that arrives replaces the B on the next build. false = the Jan–Apr-only window again.
+const B365_INTERIM = true;
 const b365Dropped = { rows: 0, byYear: {} };
 // Founder ruling 2026-10-26: the ATP main-draw start − 10 snapshots (book 5) the build no longer shows
 const od10Dropped = { rows: 0, byMonth: {}, hadApiTennisSnapshot: 0, hadBet365: 0 }; // founder TEN-146 ruling (2026-09-04): window starts 2010, fail-closed, no pre-window fallback
@@ -361,10 +365,10 @@ function processLine(c, col, season, fromFeed) {
     }
     const pinIdx = archLabel ? archBookOf(archLabel) : 0;
     if (archLabel && pinIdx == null) { console.error(`archive feed: unknown label ${JSON.stringify(archLabel)}`); process.exit(1); }
-    // Founder ruling 2026-10-26: ATP main draw is Pinnacle only — the Bet365 "B" fallback stays for Jan–Apr 2026 alone (and
-    // the era shard before 2010, not covered by the ruling's count: unchanged, flagged). Elsewhere a Bet365-only row is a dash.
+    // Founder 2026-10-26: Bet365 "B" prices a Bet365-only row at every date while B365_INTERIM holds (until a Pinnacle close is
+    // found); with it off, only Jan–Apr 2026 (and the era shard before 2010) and elsewhere a dash (reason `nopin`).
     const dB = (c[col.date] || '').trim();
-    const b365Ok = (validPrice(B365[0]) && validPrice(B365[1])) && (season < WINDOW_START || (dB >= B365_FROM && dB <= B365_TO));
+    const b365Ok = (validPrice(B365[0]) && validPrice(B365[1])) && (B365_INTERIM || season < WINDOW_START || (dB >= B365_FROM && dB <= B365_TO));
     const b365Cut = !b365Ok && validPrice(B365[0]) && validPrice(B365[1]);
     const bookIdx = (validPrice(P[0]) && validPrice(P[1])) ? pinIdx : od10Cut ? -1 : AP ? (APS === 'od' ? 5 : 2) : b365Ok ? 1 : -1;
     // TEN-402: a retirement passes the SAME filters as a used row, counted in its own buckets (retBucket),
@@ -688,7 +692,7 @@ const TB = baselinesOf(dbList, BOOK_COUNTS);
 const meta = {
   schema: 1,
   // founder ruling 2026-10-26: Bet365 prices an ATP main-draw row only inside this window; the rows it no longer prices
-  bet365Window: { from: B365_FROM, to: B365_TO, droppedOutside: b365Dropped },
+  bet365Window: { from: B365_FROM, to: B365_TO, interim: B365_INTERIM, droppedOutside: b365Dropped },
   od10Dropped,
   generatedFrom: `odds-archive/*.csv (${files[0]}..${files[files.length - 1]})`,
   archiveRows: bucket.archive,

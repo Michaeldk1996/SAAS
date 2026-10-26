@@ -9,10 +9,11 @@ take styling from it, structure from the rules below.
 
 ## Price join — one join, no seam
 - **Test:** every row of `database-yield.json` is priced Pinnacle closing, else Bet365 closing, per match
-  (`build-database-yield.js`, the same `pickBook` as Market edge) — **Bet365 ("B") only for a match dated 1 Jan – 30 Apr
-  2026** (founder ruling 2026-10-26: ATP main draw is Pinnacle only). From 2010 on, a row with only a Bet365 pair outside
-  that window is a dash (unpriced reason `nopin`, counted in `meta.bet365Window.droppedOutside`); the era shard before 2010
-  is not covered by the ruling and keeps its Bet365 prices. **Test:** `tools/test-b365-window.mjs`. Tour = Favourites −1.78% · Underdogs −6.96% on
+  (`build-database-yield.js`, the same `pickBook` as Market edge). **Interim (founder 2026-10-26, "finish and close" item 2,
+  replacing the same day's Jan–Apr-only window):** a Bet365-only row shows the real Bet365 close, marked "B", at every date,
+  until a Pinnacle close is found — a Pinnacle pair (Tennis-Data's or our archive's) wins per row, so an arriving close
+  replaces the B on the next build. Switch: `B365_INTERIM` (false = Bet365 only for 1 Jan – 30 Apr 2026, elsewhere a dash,
+  reason `nopin`, counted in `meta.bet365Window.droppedOutside`). **Test:** `tools/test-b365-window.mjs`. Tour = Favourites −1.78% · Underdogs −6.96% on
   40,972 matches (All −4.37% = the tour-baselines figure), measured 2026-10-07.
 - **Exact price ties behind a flag (founder ruling 2026-10-16: "Keep tied prices. Exclude them only from favourite/underdog
   figures.").** A tie is no favourite and no underdog, so it stays out of `rows` (every Database figure, `tour-baselines.json`,
@@ -42,8 +43,8 @@ take styling from it, structure from the rules below.
   lower levels' start − 10 rows are not covered. Otherwise api-tennis's stored Pinnacle price (`r[8] = 2`, book "A"; hover "Pinnacle snapshot from api-tennis, no timestamp, not a confirmed close",
   `SF_APPROX_HOVER`) — 13 Jan – 12 Apr always (no archive exists). Both count as ONE book in every Database figure,
   "Pinnacle (approx.)" in `meta.bookCounts` (codes 2 + 5), `meta.approx.sources.od` / `.at` name each with its count and
-  hover. Order per row: Tennis-Data Pinnacle > our archive's close > (start − 10 → a dash) > api-tennis > Bet365 (Jan–Apr
-  2026 only) > a dash. **Test:** `tools/test-b365-window.mjs` (every surface: Database, master, tour-baselines, Market edge,
+  hover. Order per row: Tennis-Data Pinnacle > our archive's close > (start − 10 → a dash) > api-tennis > Bet365 (every
+  date while `B365_INTERIM` holds) > a dash. **Test:** `tools/test-b365-window.mjs` (every surface: Database, master, tour-baselines, Market edge,
   Favourites, the page join). The
   footnote, the chart note and the Player split name the snapshot with its count; no feed = nothing changes. *Known:* the
   header sentence ("Pinnacle closing, else Bet365, per match") is unchanged (the 120-character cap) — the footnote carries
