@@ -37,6 +37,7 @@ import line_prices as LP  # noqa: E402
 TABLE_CUR = "line_prices_current"
 TABLE_TICK = "line_price_ticks"
 LEAGUES = (19, 537, 962)          # ATP, Challenger, ITF Men — what we ask Kibl for (the old pull's leagues)
+CLOSE_FRESH_S = 180               # founder 2026-10-26: a close counts only if the worker's last check before the start was <= 180 s old
 COALESCE_S = 2.0                  # a fixture's rows arrive as separate participant rows; recompute once they have landed
 RETRY_S = 10
 MAPPING_EVERY_S = 600             # Kibl fixtures + api-tennis fixtures, re-joined
@@ -73,6 +74,7 @@ class LineEngine:
         self.openers = collections.defaultdict(dict)  # fixture -> slot -> opener row
         self.started = set()                          # fixtures past their Closing point
         self.flip = {}                                # fixture -> when THIS worker saw its first in-play row (seeded)
+        self.last_check = None                        # epoch s of the worker's last heartbeat while connected (the "check")
         self.seeded = set()                           # fixtures a full REST seed has covered (only these are computed)
         self.written = {}                             # row_key -> the row as last written (or read back)
         self.dirty = {}                               # fixture -> monotonic due time
@@ -147,8 +149,17 @@ class LineEngine:
                 if fid in self.seeded:
                     # Seen live, with a full ladder held: the guarded state just before this row IS the close
                     # (founder 2026-10-26: the last price before the start). A start found any other way — the
-                    # api-tennis status at a join, a restart mid-match — captures no close.
-                    self.flip[fid] = iso(datetime.now(timezone.utc))
+                    # api-tennis status at a join, a restart mid-match — captures no close. And only if the worker's
+                    # last check before this start is <= CLOSE_FRESH_S old (founder 2026-10-26, item 6): else no close,
+                    # counted and logged.
+                    t = time.time()
+                    if self.last_check is not None and t - self.last_check <= CLOSE_FRESH_S:
+                        self.flip[fid] = iso(datetime.now(timezone.utc))
+                    else:
+                        self.count["close_stale_check"] += 1
+                        age = None if self.last_check is None else round(t - self.last_check)
+                        self.log(f"lines: fixture {fid} started with the worker's last check {age} s old "
+                                 f"(> {CLOSE_FRESH_S} s or none): no close")
                 self._mark(fid, now_mono)
             return False
         if fid in self.started:
@@ -248,6 +259,10 @@ class LineEngine:
                           "book": row["book"], "price": row["price"], "status": row["status"], "is_opener": bool(is_opener),
                           "max_limit": row["max_limit"], "inserted_on": row["inserted_on"], "seen_at": seen_at})
         upd[k] = new
+
+    def checked(self, t=None):
+        """The worker's heartbeat landed while connected: the line state is confirmed live as of now."""
+        self.last_check = time.time() if t is None else t
 
     def due(self, now_mono, force=False):
         out = [f for f, t in self.dirty.items() if force or t <= now_mono]
@@ -530,3 +545,10 @@ class LineDriver:
             return {"off": self.disabled}
         with self.lock:
             return self.eng.summary()
+
+    def checked(self):
+        """Called by the worker right after a CONNECTED heartbeat (the close-freshness clock)."""
+        if self.disabled:
+            return
+        with self.lock:
+            self.eng.checked()

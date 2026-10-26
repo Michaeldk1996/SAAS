@@ -492,6 +492,9 @@ class _LinesOff:
     def tick(self):
         pass
 
+    def checked(self):
+        pass
+
     def summary(self):
         return {"off": self.why}
 
@@ -658,6 +661,7 @@ def main(env=None, log=print):
                 if t - last_beat >= HEARTBEAT_EVERY_S:
                     write_hb(env, eng.heartbeat(datetime.now(timezone.utc), True,
                                                 dict(where, lines=lines.summary())), log, enabled)
+                    lines.checked()
                     last_beat = t
                 if t - last_prune >= 3600:
                     prune(env, log, enabled)

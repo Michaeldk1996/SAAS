@@ -26,6 +26,7 @@ MUTANTS = {
     'CLOSE_ANY_STATUS': ('            if e["status"] == "ok" and e["price"] is not None:', '            if e["price"] is not None:'),
     'CLOSE_LOST_ON_RESTART': ("        w = self.written.get(k) or {}\n        return {f: w.get(f) for f in CLOSE_FIELDS}",
                               "        return {f: None for f in CLOSE_FIELDS}"),
+    'CLOSE_ANY_AGE': ("                    if self.last_check is not None and t - self.last_check <= CLOSE_FRESH_S:", "                    if True:"),
     'NO_READ_BACK': ("        for r in rows or ():\n            self.written[row_key(r)]", "        for r in ():\n            self.written[row_key(r)]"),
 }
 bad = []

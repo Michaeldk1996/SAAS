@@ -312,6 +312,11 @@ test('hot lines format first: a best-of-3 match whose only meetings are best of 
   assert.ok(!/\d of \d/.test(t.slice(t.indexOf('Hot lines'), t.indexOf('Hot lines') + 400)), 'no line reads a best-of-5 meeting');
   const mixed = build(fixture([[d(1), true, B5, { t: 'Wimbledon' }], [d(2), true, W2]]));
   const mh = text(mixed.slice(mixed.indexOf('fh-h2hot'), mixed.indexOf('One dot per meeting')));
-  assert.ok(mh.includes('1 of 1') && !mh.includes('of 2') && text(mixed).includes('one comparable meeting'),
-    'one Bo3 + one Bo5: one comparable meeting, the Bo5 never counted: ' + mh.slice(0, 200));
+  assert.ok(mh.includes('1 of 1') && text(mixed).includes('one comparable meeting'),
+    'one Bo3 + one Bo5: one comparable meeting: ' + mh.slice(0, 200));
+  const games = mh.slice(0, mh.indexOf('Sets & tiebreaks'));
+  assert.ok(!games.includes('of 2'), 'no games / set-handicap line counts the Bo5 meeting');
+  // founder 2026-10-26 item 8 (reverted until ruled): the set-1 winners count EVERY meeting (mutant: hot: set-1 lines format-locked)
+  assert.match(mh, /Match goes to a deciding set — \d of 1 /, 'the deciding set counts the Bo3 meeting only (mutant: hot: format lock off)');
+  assert.match(mh, /Sinner wins set 1 — 2 of 2/, 'set 1 counts both meetings, Bo5 included: ' + mh.slice(mh.indexOf('Sets & tiebreaks'), mh.indexOf('Sets & tiebreaks') + 160));
 });

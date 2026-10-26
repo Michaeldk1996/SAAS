@@ -82,7 +82,7 @@ const check = (name, cond, detail = '') => {
 // never stubbed: a stub would let this file keep passing while the shipped
 // ladder changed underneath it, and the ladder IS the ruling.
 const FNS = ['_ocsSanePx', 'mxOverround', 'mxIsSuspendedPair', 'mxRealPair',
-             '_ocsOf', 'ocsKeyOf', 'ocsMatchKey', 'ocsNameKey', 'ocsNfd',
+             '_ocsOf', 'ocsKeyOf', 'ocsKeyNear', 'ocsMatchKey', 'ocsNameKey', 'ocsNfd',
              '_isBet365', '_mcBet365Now', 'mxBookIdent', 'mxBookRank',
              '_mcBooksByCoverage', '_mcAnyBookPair', '_mcNowPair',
              '_mcNowSuppressed', 'mxJLevel', 'mxJClose', '_mcCloseOf',

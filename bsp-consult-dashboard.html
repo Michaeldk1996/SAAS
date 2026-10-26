@@ -6512,6 +6512,7 @@ async function fetchMatchesOnce(){
   return JSON.parse(text); // throws on a truncated mid-write read
 }
 
+let _maLinkDone = false;
 async function loadMatches(){
   // TEN-179 item 5 — resolve a #Matches / #Results deep-link BEFORE the data awaits, so
   // the very first paint is already in the right mode. `defer` sets state only; the
@@ -6593,6 +6594,7 @@ async function loadMatches(){
   // on an empty Today for the rest of the session, which is the exact bug this item fixes.
   if (!_mxLandedOnce && matches.length){ _mxLandedOnce = true; updateMatchesHeaderChrome(); mxLandOnNearestDay(); }
   renderMatches();
+  if (!_maLinkDone && matches.length){ _maLinkDone = true; try { if (typeof maApplyLink === 'function') maApplyLink(); } catch (e) { console.warn('match link', e && e.message); } }   // a pasted #match/<id> opens once the board is in
   renderPlayers();
   try { const _h2hP = document.querySelector('.tabpage[data-page="h2h"]'); if (window.H2HPage && _h2hP && _h2hP.classList.contains("active")) window.H2HPage.ensureInit(); } catch (e) {}
   renderTournamentsTab();
@@ -6894,10 +6896,24 @@ function mxRealPair(pair, path, id){
   if (mxIsSuspendedPair(pair.p1, pair.p2, { id: id, book: pair.book, path: path })) return null;
   return pair;
 }
+// Brief 2026-10-26 item 5 · the card-state row for a board card, by its key — or, when the exact key misses, the ONE row
+// for the same pair dated a day either side. The builder re-keys its rows to the board card's date (ten225_names
+// board_key_for, the same +/-1 day rule), but a card-state file published against an earlier board keeps the old date
+// until its next run: measured 7 of 65 board cards missed on the 25 Oct 21:19Z publish (Rune v Halys keyed 27 Oct on a
+// 26 Oct card), 0 of 53 on the next. Two rows within a day (a rematch, a provisional listing) = no row, never a guess.
+function ocsKeyNear(m){
+  const k = ocsKeyOf(m);
+  if (!k || !OCS.byKey) return null;
+  if (OCS.byKey[k]) return k;
+  const [day, a, b] = k.split('|'), t = Date.parse(day + 'T00:00:00Z');
+  if (!isFinite(t)) return null;
+  const near = [-1, 1].map(d => new Date(t + d * 86400000).toISOString().slice(0, 10) + '|' + a + '|' + b).filter(x => OCS.byKey[x]);
+  return near.length === 1 ? near[0] : null;
+}
 function _ocsOf(m){
   if (!m || !OCS.byKey) return null;
   if (m.__ocsGen === OCS.gen) return m.__ocs;
-  const e = OCS.byKey[ocsKeyOf(m) || ''] || null;
+  const e = OCS.byKey[(typeof ocsKeyNear === 'function' ? ocsKeyNear(m) : ocsKeyOf(m)) || ''] || null;
   let out = null;
   if (e && e.sides){
     const k1 = ocsNameKey(m.p1), k2 = ocsNameKey(m.p2);
@@ -13666,7 +13682,7 @@ function fhMtbOf(r){
 // Why a match is not eligible for a line (the dot tooltip).
 function fhIneligibleWhy(r, def){
   if (r.wo) return 'W/O';
-  if (def.bo && r.bo !== def.bo) return r.bo ? 'Bo' + r.bo : 'format unknown';
+  if (def.bo && def.need !== 'set1' && r.bo !== def.bo) return r.bo ? 'Bo' + r.bo : 'format unknown';
   if (r.ret) return 'RET';
   if (def.need === 'games' && !r.sets) return 'no set scores';
   if (def.need === 'games' && r.ng) return 'Next Gen format';   // TEN-437 S1: 4-game sets — no games-based line
@@ -13677,7 +13693,9 @@ function fhIneligibleWhy(r, def){
 }
 function fhEligible(r, def){
   if (r.wo || r.pS == null) return false;
-  if (def.bo && r.bo !== def.bo) return false;   // founder 2026-10-26: only the match's own format counts, on every line
+  // founder 2026-10-26: only the match's own format counts — on every line EXCEPT the set-1 winners, which count every
+  // meeting until the founder rules on that methodology (brief 2026-10-26, item 8: reverted, report only)
+  if (def.bo && def.need !== 'set1' && r.bo !== def.bo) return false;
   if (def.need === 'set1') return !!(r.sets && r.sets.length && (r.sets.length > 1 || !r.ret));
   if (r.ret) return false;
   if (def.need === 'games' && !r.sets) return false;
@@ -19600,6 +19618,7 @@ function aShowTab(tab){
   const btn = document.querySelector(`#aTabs .asidenav-item[data-atab="${tab}"]`);
   const sec = document.querySelector(`.asection[data-asection="${tab}"]`);
   if (!btn || !sec) return;
+  if (_aM && typeof maWriteLink === 'function' && MA_LINK_RE.test(location.hash)) maWriteLink(_aM.id, tab);   // the link follows the tab
   document.querySelectorAll('#aTabs .asidenav-item').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   document.querySelectorAll('.asection').forEach(s => s.classList.remove('active'));
@@ -19636,6 +19655,37 @@ function matchById(id){
   const e = typeof _drawMatchStore !== 'undefined' && _drawMatchStore && _drawMatchStore.matches && _drawMatchStore.matches[id];
   return e && e.match && e.match.finalScore ? e.match : null;
 }
+// Brief 2026-10-26 item 4 · a match card from a pasted URL: #match/<id>[/<tab>]. Opening a card writes its link into the
+// address bar (replaceState: no history entry, no hashchange) so the URL can be copied; closing puts the page's own hash
+// back. A link opens once the board has loaded (the board's row, else the draw store's finished match — matchById); an id
+// the board no longer holds opens nothing.
+const MA_LINK_RE = /^#match\/([^/]+)(?:\/([a-z0-9]+))?$/;
+let _maLinkPrev = null;
+function maLinkOf(id, tab){ return '#match/' + encodeURIComponent(id) + (tab ? '/' + tab : ''); }
+function maWriteLink(id, tab){
+  try {
+    if (!MA_LINK_RE.test(location.hash)) _maLinkPrev = location.hash;
+    const want = maLinkOf(id, tab);
+    if (location.hash !== want) history.replaceState(null, '', location.pathname + location.search + want);
+  } catch (_) { /* file:// — best-effort, never fatal */ }
+}
+function maClearLink(){
+  try {
+    if (MA_LINK_RE.test(location.hash)) history.replaceState(null, '', location.pathname + location.search + (_maLinkPrev || ''));
+  } catch (_) { /* best-effort */ }
+  _maLinkPrev = null;
+}
+function maApplyLink(){
+  const mm = MA_LINK_RE.exec(location.hash || '');
+  if (!mm) return false;
+  const id = decodeURIComponent(mm[1]), tab = mm[2] && A_TAB_BUILD[mm[2]] ? mm[2] : undefined;
+  if (!matchById(id)) return false;
+  const open = document.getElementById('analysisModal');
+  if (open && open.classList.contains('open') && _aM && _aM.id === id) return true;
+  openAnalysisModal(id, tab);
+  return true;
+}
+window.addEventListener('hashchange', maApplyLink);
 function openAnalysisModal(matchId, tab){
   const m = matchById(matchId);
   if (!m) return;
@@ -19713,6 +19763,7 @@ function openAnalysisModal(matchId, tab){
   maApplyTheme();
   document.getElementById('analysisModal').classList.add('open');
   aShowTab(first);
+  if (typeof maWriteLink === 'function') maWriteLink(m.id, first);
   if (typeof teTrack === 'function') teTrack('view_match_analysis', { match_id: matchId, completed: !!m.finalScore });
 }
 
@@ -19749,7 +19800,7 @@ function printAnalysisReport(){
 
 // Closing leaves no layer behind: the stats sheet and any Market edge pop-up go too (a hidden pop-up would keep
 // answering Esc anywhere on the site — review 2026-09-28).
-function closeAnalysisModal(){ if (globalThis.SfNav) SfNav.noteModalClosed(sfAnalysisModalState()); document.getElementById('analysisModal').classList.remove('open'); if (typeof fhCloseSheet === 'function') fhCloseSheet(); if (typeof trCloseRoi === 'function') trCloseRoi(); const mp = document.getElementById('mePop'); if (mp) mp.innerHTML = ''; const op = document.getElementById('ovPop'); if (op) op.innerHTML = ''; if (typeof _ov === 'object' && _ov){ _ov.cell = null; _ov._popKey = null; } }
+function closeAnalysisModal(){ if (typeof maClearLink === 'function') maClearLink(); if (globalThis.SfNav) SfNav.noteModalClosed(sfAnalysisModalState()); document.getElementById('analysisModal').classList.remove('open'); if (typeof fhCloseSheet === 'function') fhCloseSheet(); if (typeof trCloseRoi === 'function') trCloseRoi(); const mp = document.getElementById('mePop'); if (mp) mp.innerHTML = ''; const op = document.getElementById('ovPop'); if (op) op.innerHTML = ''; if (typeof _ov === 'object' && _ov){ _ov.cell = null; _ov._popKey = null; } }
 function setActiveButton(groupEl, clickedBtn){
   groupEl.querySelectorAll('button').forEach(b => b.classList.remove('active'));
   clickedBtn.classList.add('active');

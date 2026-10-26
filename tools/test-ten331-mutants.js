@@ -23,7 +23,8 @@ const MUTANTS = [
   ['hot lines: a line with fewer than 3 eligible meetings appears', "  }).filter(x => x.n >= min);", "  }).filter(x => x.n > 0);"],
   // founder 2026-10-26 · Hot lines from one meeting, format first (test-ten331-h2h.mjs, the two named checks)
   ['hot: results mode off', "  const results = N < FH_HOT_MIN_ELIGIBLE;", "  const results = false;"],
-  ['hot: format lock off', "  if (def.bo && r.bo !== def.bo) return false;   // founder 2026-10-26", "  if (false) return false;   // founder 2026-10-26"],
+  ['hot: format lock off', "  if (def.bo && def.need !== 'set1' && r.bo !== def.bo) return false;", "  if (false) return false;"],
+  ['hot: set-1 lines format-locked', "  if (def.bo && def.need !== 'set1' && r.bo !== def.bo) return false;", "  if (def.bo && r.bo !== def.bo) return false;"],
   ['hot lines: Rate ignores the gate (a % on n 3)', "if (maGate(n).mode === 'nopct') return `<span class=\"fh-hl-rate\" data-ma-gate=\"nopct\"", "if (false) return `<span class=\"fh-hl-rate\" data-ma-gate=\"nopct\""],
   ['hot lines: column dots coloured by surface', "background:${r.surface && r.surface === opts.today ? 'var(--text)' : 'color-mix(in srgb, var(--text) 22%, transparent)'};", "background:${r.surface === 'Clay' ? 'var(--viz-clay)' : 'var(--viz-hard)'};"],
   ['hot lines: the surface map coloured again', "const FH_SURF = { Hard: 'var(--text-soft)', Clay: 'var(--text-soft)', Grass: 'var(--text-soft)' };", "const FH_SURF = { Hard: 'var(--text-soft)', Clay: 'var(--amber)', Grass: 'var(--text-soft)' };"],

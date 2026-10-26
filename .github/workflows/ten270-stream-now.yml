@@ -371,6 +371,32 @@ jobs:
                 "count(distinct event_key) filter (where status = 'started') started_events, "
                 "count(distinct event_key) filter (where close_price is not null) events_with_a_close, "
                 "count(*) filter (where close_price is not null) keys_with_a_close from line_prices_current group by 1 order by 1")
+              # Brief 2026-10-26 item 6: closes since the 01:05Z capture began, and how many fall within 180 s of a
+              # recorded not-consuming gap (kibl_now_gaps) — the ones the freshness rule now dashes. seen_at of a
+              # started row ~ the flip (+ the 2 s coalesce).
+              q("bet105 closes since 2026-10-26 01:05Z vs the 180 s freshness rule",
+                "with c as (select event_key, min(seen_at) flip from line_prices_current where status = 'started' "
+                "and seen_at >= '2026-10-26T01:05:00Z' group by 1), k as (select event_key, count(*) filter (where close_src = 'live-flip') closes "
+                "from line_prices_current group by 1) select count(*) started_events, count(*) filter (where k.closes > 0) with_closes, "
+                "count(*) filter (where k.closes > 0 and exists (select 1 from kibl_now_gaps g where g.gap_to >= c.flip - interval '182 seconds' "
+                "and g.gap_from <= c.flip)) closes_near_a_gap, (select count(*) from kibl_now_gaps where gap_to >= '2026-10-26T01:05:00Z') gaps_since "
+                "from c left join k using (event_key)")
+              # Brief 2026-10-26 item 7: why a finished match has no start (Musetti v Fritz, Lyon F, 25 Oct), and how many
+              # completed matches since 24 Oct share the gap. The ladder: oddspapi true_start, else live_flip_log, else none.
+              q("oddspapi fixtures for Musetti / Fritz / Struff / Griekspoor, 24-26 Oct",
+                "select fixture_id, category_name, player1, player2, scheduled_start, true_start, status from oddspapi_fixtures "
+                "where scheduled_start >= '2026-10-24' and scheduled_start < '2026-10-27' and (player1 ilike any (array['%musetti%','%struff%']) "
+                "or player2 ilike any (array['%musetti%','%struff%'])) order by scheduled_start")
+              q("live_flip_log for those events (api-tennis 12174011 Musetti v Fritz, plus Struff v Griekspoor by name)",
+                "select event_key, first_live_seen_at, last_not_live_seen_at, gap_seconds, poller, event_date, event_time, first_player, second_player "
+                "from live_flip_log where event_key = '12174011' or (event_date >= '2026-10-24' and (first_player ilike any (array['%musetti%','%struff%']) "
+                "or second_player ilike any (array['%musetti%','%struff%']))) order by event_date")
+              q("live_flip_log rows per day since 24 Oct (ATP singles) and the recorder's last tick",
+                "select event_date, count(*) from live_flip_log where event_date >= '2026-10-24' and event_type_type = 'Atp Singles' group by 1 order by 1")
+              q("live_flip_stats", "select * from live_flip_stats")
+              q("odds_card_state selected rows dated 24-25 Oct (all finished) by start source",
+                "select substr(match_key, 1, 10) d, start_ts_source, count(distinct match_key) matches from odds_card_state "
+                "where is_selected and match_key >= '2026-10-24' and match_key < '2026-10-26' group by 1, 2 order by 1, 2")
               q("line_price_ticks span", "select min(seen_at) first_tick, max(seen_at) last_tick, count(*) ticks, count(distinct event_key) events from line_price_ticks")
           if act == "status":
               sk = os.environ["SUPABASE_SECRET_KEY"]

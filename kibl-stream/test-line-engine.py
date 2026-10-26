@@ -10,6 +10,7 @@ Each check names the mutation that turns it red; tools/test-line-engine-mutants.
   7  a failed write retries from the NEWEST rows and leaves the written state alone             (mutant FORGET_ON_FAIL)
   8  restart: rows read back are not re-ticked; a line gone since is withdrawn                  (mutant NO_READ_BACK)
   9  isolation: a bad row or a failing store never raises into the Now loop
+ 13  close freshness: the worker's last check before the start <= 180 s, else no close, counted (mutant CLOSE_ANY_AGE)
  12  the close: a start seen live closes each ok key on its last pre-match price; a dashed pair, a start found at the join
       and the in-play price give none; a restart keeps the close it read back   (mutants CLOSE_ANY_START, CLOSE_ANY_STATUS,
       CLOSE_LOST_ON_RESTART)
@@ -18,6 +19,7 @@ Each check names the mutation that turns it red; tools/test-line-engine-mutants.
 """
 import importlib.util
 import json
+import time
 import os
 import sys
 
@@ -78,6 +80,7 @@ class Store:
 def eng(write=True, seed=True):
     e = LE.LineEngine(171, write=write, log=lambda *_: None)
     e.load_written([])
+    e.checked()                                   # the worker's heartbeat just landed (the close-freshness clock)
     e.set_mapping(KFX, AT, now_mono=0)
     if seed:
         for r in SEED:
@@ -254,6 +257,7 @@ check('a start found at a join (api-tennis already live, no in-play row seen) ca
       [(r['status'], r['close_price']) for r in cur(s2).values()][:3])
 back = [dict(r) for r in s1.rows('line_prices_current')]
 e3 = LE.LineEngine(171, write=True, log=lambda *_: None)
+e3.checked()
 e3.load_written(json.loads(json.dumps(back, default=str)))
 e3.set_mapping(KFX, AT, now_mono=0)
 for r in SEED:
@@ -274,6 +278,25 @@ e4.flush(s4, now_mono=100)
 check('a start seen before any full seed captures no close (a partial ladder is no close)',
       all(r['close_price'] is None for r in cur(s4).values()) and 771905 not in e4.flip, list(cur(s4).values())[:1])
 
+print('13 close freshness (founder 2026-10-26, item 6: the last check before the start within 180 s)')
+for age, want in ((179, True), (181, False)):
+    e5, s5 = eng(), Store()
+    e5.flush(s5, now_mono=100)
+    e5.last_check = time.time() - age
+    e5.accept(row(2, 1, 2, -2.5, 1.70, live=True, ins='2026-10-25T13:05:00Z'), now_mono=200)
+    s5 = Store()
+    e5.flush(s5, now_mono=300)
+    c5 = cur(s5).get(('gh', '1093', -2.5)) or {}
+    check(f'last check {age} s before the start: ' + ('a close' if want else 'no close, counted'),
+          (c5.get('close_price') is not None) == want and (e5.count['close_stale_check'] == (0 if want else 1)), (c5.get('close_price'), dict(e5.count)))
+e6 = LE.LineEngine(171, write=True, log=lambda *_: None)
+e6.load_written([]); e6.set_mapping(KFX, AT, now_mono=0)
+for r in SEED:
+    e6.accept(r, now_mono=0)
+e6.seeded.add(771905)
+e6.accept(row(2, 1, 2, -2.5, 1.70, live=True, ins='2026-10-25T13:05:00Z'), now_mono=200)
+check('no check ever made (a worker that never beat): no close', 771905 not in e6.flip and e6.count['close_stale_check'] == 1)
+
 print('11 the worker hooks')
 import now_worker as W  # noqa: E402
 src = open(os.path.join(HERE, 'now_worker.py')).read()
@@ -285,8 +308,9 @@ import re  # noqa: E402
 hooks = collections_counter = {}
 for h in re.findall(r'\blines\.(\w+)\(', src):
     hooks[h] = hooks.get(h, 0) + 1
-check('the loop touches lines through exactly these hooks: accept x1, tick x1, request_seed x1, summary x2 (heartbeats)',
-      hooks == {'accept': 1, 'tick': 1, 'request_seed': 1, 'summary': 2}, hooks)
+check('the loop touches lines through exactly these hooks: accept x1, tick x1, request_seed x1, summary x2 (heartbeats), '
+      'checked x1 (after the connected heartbeat)', hooks == {'accept': 1, 'tick': 1, 'request_seed': 1, 'summary': 2, 'checked': 1}, hooks)
+check('checked() follows the CONNECTED heartbeat only', 'dict(where, lines=lines.summary())), log, enabled)\n                    lines.checked()' in src)
 off = W._LinesOff('x')
 check('the stand-in is a no-op on every hook', off.accept({}) is None and off.tick() is None and off.request_seed() is None
       and off.summary() == {'off': 'x'})
