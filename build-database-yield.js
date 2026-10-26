@@ -250,7 +250,10 @@ const retBucket = { priced: 0, noPrice: 0, tie: 0, overround: 0, preWindow: 0, e
 // able to say how many rows were voided, and a number hidden inside another
 // number is exactly what the footnote was criticised for.
 const bucket = { archive: 0, used: 0, walkover: 0, retired: 0, edge: 0, noPrice: 0, tie: 0, overround: 0, preWindow: 0 };
-const WINDOW_START = 2010; // founder TEN-146 ruling (2026-09-04): window starts 2010, fail-closed, no pre-window fallback
+const WINDOW_START = 2010;
+// Founder ruling 2026-10-26: the only window where a Bet365 close prices an ATP main-draw Database row ("B").
+const B365_FROM = '2026-01-01', B365_TO = '2026-04-30';
+const b365Dropped = { rows: 0, byYear: {} }; // founder TEN-146 ruling (2026-09-04): window starts 2010, fail-closed, no pre-window fallback
 const bookCount = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 9: 0 };
 let dateMin = '99999999', dateMax = '00000000';
 // TEN-262: the latest archive date with a valid Pinnacle pair, read BEFORE any exclusion.
@@ -346,7 +349,12 @@ function processLine(c, col, season, fromFeed) {
     }
     const pinIdx = archLabel ? archBookOf(archLabel) : 0;
     if (archLabel && pinIdx == null) { console.error(`archive feed: unknown label ${JSON.stringify(archLabel)}`); process.exit(1); }
-    const bookIdx = (validPrice(P[0]) && validPrice(P[1])) ? pinIdx : AP ? (APS === 'od' ? 5 : 2) : (validPrice(B365[0]) && validPrice(B365[1])) ? 1 : -1;
+    // Founder ruling 2026-10-26: ATP main draw is Pinnacle only — the Bet365 "B" fallback stays for Jan–Apr 2026 alone (and
+    // the era shard before 2010, not covered by the ruling's count: unchanged, flagged). Elsewhere a Bet365-only row is a dash.
+    const dB = (c[col.date] || '').trim();
+    const b365Ok = (validPrice(B365[0]) && validPrice(B365[1])) && (season < WINDOW_START || (dB >= B365_FROM && dB <= B365_TO));
+    const b365Cut = !b365Ok && validPrice(B365[0]) && validPrice(B365[1]);
+    const bookIdx = (validPrice(P[0]) && validPrice(P[1])) ? pinIdx : AP ? (APS === 'od' ? 5 : 2) : b365Ok ? 1 : -1;
     // TEN-402: a retirement passes the SAME filters as a used row, counted in its own buckets (retBucket),
     // so the Database's reconciliation (each archive row in exactly one bucket) is untouched.
     const B_ = behindFlag ? retBucket : bucket;
@@ -356,7 +364,8 @@ function processLine(c, col, season, fromFeed) {
       // "one side only", none at all "no bookmaker priced it" (read by the price join's dash hover; never a Database figure)
       const dU = parseInt((c[col.date] || '').trim().replace(/-/g, ''), 10);
       const one = [P[0], P[1], B365[0], B365[1], num(c[col.psw]), num(c[col.psl]), num(c[col.b365w]), num(c[col.b365l])].some(validPrice);
-      if (Number.isFinite(dU)) uRaw.push([dU, (c[col.winner] || '').trim(), (c[col.loser] || '').trim(), one ? 'one' : 'nobook']);
+      if (b365Cut) { b365Dropped.rows++; b365Dropped.byYear[dB.slice(0, 4)] = (b365Dropped.byYear[dB.slice(0, 4)] || 0) + 1; }
+      if (Number.isFinite(dU)) uRaw.push([dU, (c[col.winner] || '').trim(), (c[col.loser] || '').trim(), b365Cut ? 'nopin' : one ? 'one' : 'nobook']);
       return;
     }
     const [pw, pl] = isPinIdx(bookIdx) || bookIdx === EARLY_BOOK ? P : isApproxIdx(bookIdx) ? AP : B365;
@@ -666,6 +675,8 @@ const TB = baselinesOf(dbList, BOOK_COUNTS);
 // --- write artefacts --------------------------------------------------------
 const meta = {
   schema: 1,
+  // founder ruling 2026-10-26: Bet365 prices an ATP main-draw row only inside this window; the rows it no longer prices
+  bet365Window: { from: B365_FROM, to: B365_TO, droppedOutside: b365Dropped },
   generatedFrom: `odds-archive/*.csv (${files[0]}..${files[files.length - 1]})`,
   archiveRows: bucket.archive,
   used: bucket.used,

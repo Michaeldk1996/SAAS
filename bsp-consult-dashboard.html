@@ -16463,7 +16463,9 @@ function sfDbNoPriceWhy(full, v){
   return hits.length === 1 ? hits[0] : 'none';
 }
 const SF_NOPRICE = { wo: 'Walkover: no ball was played, so no price', nores: 'Not a result: no completed match to price',
-  one: 'One side only: a bookmaker priced one player, not both', nobook: 'No bookmaker priced it', none: 'No source found yet' };
+  one: 'One side only: a bookmaker priced one player, not both', nobook: 'No bookmaker priced it', none: 'No source found yet',
+  // founder ruling 2026-10-26: ATP main draw is Pinnacle only; Bet365 prices a match only in Jan–Apr 2026
+  nopin: 'No Pinnacle close: only Bet365 priced it, and Bet365 is used for Jan–Apr 2026 only' };
 function sfNoPriceReason(r){
   if (r && (r.wo || r.walkover)) return SF_NOPRICE.wo;
   if (r && r.notResult) return SF_NOPRICE.nores;

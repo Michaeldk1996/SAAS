@@ -9,7 +9,10 @@ take styling from it, structure from the rules below.
 
 ## Price join — one join, no seam
 - **Test:** every row of `database-yield.json` is priced Pinnacle closing, else Bet365 closing, per match
-  (`build-database-yield.js`, the same `pickBook` as Market edge). Tour = Favourites −1.78% · Underdogs −6.96% on
+  (`build-database-yield.js`, the same `pickBook` as Market edge) — **Bet365 ("B") only for a match dated 1 Jan – 30 Apr
+  2026** (founder ruling 2026-10-26: ATP main draw is Pinnacle only). From 2010 on, a row with only a Bet365 pair outside
+  that window is a dash (unpriced reason `nopin`, counted in `meta.bet365Window.droppedOutside`); the era shard before 2010
+  is not covered by the ruling and keeps its Bet365 prices. **Test:** `tools/test-b365-window.mjs`. Tour = Favourites −1.78% · Underdogs −6.96% on
   40,972 matches (All −4.37% = the tour-baselines figure), measured 2026-10-07.
 - **Exact price ties behind a flag (founder ruling 2026-10-16: "Keep tied prices. Exclude them only from favourite/underdog
   figures.").** A tie is no favourite and no underdog, so it stays out of `rows` (every Database figure, `tour-baselines.json`,
