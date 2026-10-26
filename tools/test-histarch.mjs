@@ -22,7 +22,7 @@ const ALLOWED = new Set([...MIGRATIONS, 'tools/tdarch.py', 'tools/histarch-guard
   'tools/test-histarch.mjs', 'tools/test-historical-archive-sql.py', 'tools/test-tdarch.py',
   'tools/archive_install.py', 'tools/test-archive-ledger.py',
   // founder 2026-10-26 audit: the fill probe READS the start − 10 snapshots (GET-only guard; scanned for write paths)
-  'tools/archive-fill-probe.py']);   // the install's migration ledger (founder 2026-10-20, item 9): reads only
+  'tools/archive-fill-probe.py', 'tools/test-archive-fill-probe.py']);   // the install's migration ledger (founder 2026-10-20, item 9): reads only
 const isDoc = f => /^\.claude\/rules\/.*\.md$/.test(f) || f === 'CLAUDE.md';
 export function faults(file, text) {
   const t = TABLES.find(n => text.includes(n));

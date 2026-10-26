@@ -253,7 +253,9 @@ const bucket = { archive: 0, used: 0, walkover: 0, retired: 0, edge: 0, noPrice:
 const WINDOW_START = 2010;
 // Founder ruling 2026-10-26: the only window where a Bet365 close prices an ATP main-draw Database row ("B").
 const B365_FROM = '2026-01-01', B365_TO = '2026-04-30';
-const b365Dropped = { rows: 0, byYear: {} }; // founder TEN-146 ruling (2026-09-04): window starts 2010, fail-closed, no pre-window fallback
+const b365Dropped = { rows: 0, byYear: {} };
+// Founder ruling 2026-10-26: the ATP main-draw start − 10 snapshots (book 5) the build no longer shows
+const od10Dropped = { rows: 0, byMonth: {}, hadApiTennisSnapshot: 0, hadBet365: 0 }; // founder TEN-146 ruling (2026-09-04): window starts 2010, fail-closed, no pre-window fallback
 const bookCount = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 9: 0 };
 let dateMin = '99999999', dateMax = '00000000';
 // TEN-262: the latest archive date with a valid Pinnacle pair, read BEFORE any exclusion.
@@ -332,7 +334,7 @@ function processLine(c, col, season, fromFeed) {
         else if (validPrice(ov[0]) && validPrice(ov[1])) { P = [ov[0], ov[1]]; archLabel = ov[2]; feed.overridden++; }
       }
     }
-    let AP = null, APS = null;                                    // Pinnacle (approx.): only where no Pinnacle close exists
+    let AP = null, APS = null, od10Cut = false;                                    // Pinnacle (approx.): only where no Pinnacle close exists
     if (!fromFeed && approxOn) {
       const ak = [(c[col.date] || '').trim(), (c[col.tournament] || '').trim(), (c[col.winner] || '').trim(), (c[col.loser] || '').trim()].join('|');
       const ap = approx.map.get(ak);
@@ -343,7 +345,17 @@ function processLine(c, col, season, fromFeed) {
         else {
           // start - 10 first (founder 2026-10-17), then api-tennis; each only as a two-sided pair
           const pick = ['od', 'at'].find(k => ap[k] && validPrice(ap[k][0]) && validPrice(ap[k][1]));
-          if (pick) { AP = ap[pick]; APS = pick; approx.applied++; approx.appliedBySource[pick]++; }
+          // Founder ruling 2026-10-26: the start − 10 snapshot (book 5) is never shown on the ATP main draw — Oddspapi's
+          // trueStart runs late (p98 70.5 min on ATP), so start − 10 can be in play, and no live-flip exists before 17 Sep to
+          // prove it is not. The match is a DASH (no fall-through to api-tennis or Bet365): counted, its own reason.
+          if (pick === 'od') {
+            od10Cut = true;
+            const atToo = !!(ap.at && validPrice(ap.at[0]) && validPrice(ap.at[1]));
+            const b365Too = validPrice(B365[0]) && validPrice(B365[1]);
+            od10Dropped.rows++; od10Dropped.byMonth[tdKey.slice(0, 7)] = (od10Dropped.byMonth[tdKey.slice(0, 7)] || 0) + 1;
+            if (atToo) od10Dropped.hadApiTennisSnapshot++;
+            if (b365Too) od10Dropped.hadBet365++;
+          } else if (pick) { AP = ap[pick]; APS = pick; approx.applied++; approx.appliedBySource[pick]++; }
         }
       }
     }
@@ -354,7 +366,7 @@ function processLine(c, col, season, fromFeed) {
     const dB = (c[col.date] || '').trim();
     const b365Ok = (validPrice(B365[0]) && validPrice(B365[1])) && (season < WINDOW_START || (dB >= B365_FROM && dB <= B365_TO));
     const b365Cut = !b365Ok && validPrice(B365[0]) && validPrice(B365[1]);
-    const bookIdx = (validPrice(P[0]) && validPrice(P[1])) ? pinIdx : AP ? (APS === 'od' ? 5 : 2) : b365Ok ? 1 : -1;
+    const bookIdx = (validPrice(P[0]) && validPrice(P[1])) ? pinIdx : od10Cut ? -1 : AP ? (APS === 'od' ? 5 : 2) : b365Ok ? 1 : -1;
     // TEN-402: a retirement passes the SAME filters as a used row, counted in its own buckets (retBucket),
     // so the Database's reconciliation (each archive row in exactly one bucket) is untouched.
     const B_ = behindFlag ? retBucket : bucket;
@@ -365,7 +377,7 @@ function processLine(c, col, season, fromFeed) {
       const dU = parseInt((c[col.date] || '').trim().replace(/-/g, ''), 10);
       const one = [P[0], P[1], B365[0], B365[1], num(c[col.psw]), num(c[col.psl]), num(c[col.b365w]), num(c[col.b365l])].some(validPrice);
       if (b365Cut) { b365Dropped.rows++; b365Dropped.byYear[dB.slice(0, 4)] = (b365Dropped.byYear[dB.slice(0, 4)] || 0) + 1; }
-      if (Number.isFinite(dU)) uRaw.push([dU, (c[col.winner] || '').trim(), (c[col.loser] || '').trim(), b365Cut ? 'nopin' : one ? 'one' : 'nobook']);
+      if (Number.isFinite(dU)) uRaw.push([dU, (c[col.winner] || '').trim(), (c[col.loser] || '').trim(), od10Cut ? 'od10' : b365Cut ? 'nopin' : one ? 'one' : 'nobook']);
       return;
     }
     const [pw, pl] = isPinIdx(bookIdx) || bookIdx === EARLY_BOOK ? P : isApproxIdx(bookIdx) ? AP : B365;
@@ -677,6 +689,7 @@ const meta = {
   schema: 1,
   // founder ruling 2026-10-26: Bet365 prices an ATP main-draw row only inside this window; the rows it no longer prices
   bet365Window: { from: B365_FROM, to: B365_TO, droppedOutside: b365Dropped },
+  od10Dropped,
   generatedFrom: `odds-archive/*.csv (${files[0]}..${files[files.length - 1]})`,
   archiveRows: bucket.archive,
   used: bucket.used,

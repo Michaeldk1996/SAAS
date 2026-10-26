@@ -16465,7 +16465,9 @@ function sfDbNoPriceWhy(full, v){
 const SF_NOPRICE = { wo: 'Walkover: no ball was played, so no price', nores: 'Not a result: no completed match to price',
   one: 'One side only: a bookmaker priced one player, not both', nobook: 'No bookmaker priced it', none: 'No source found yet',
   // founder ruling 2026-10-26: ATP main draw is Pinnacle only; Bet365 prices a match only in Jan–Apr 2026
-  nopin: 'No Pinnacle close: only Bet365 priced it, and Bet365 is used for Jan–Apr 2026 only' };
+  nopin: 'No Pinnacle close: only Bet365 priced it, and Bet365 is used for Jan–Apr 2026 only',
+  // founder ruling 2026-10-26: the start − 10 snapshot is not shown — the recorded start runs late, so it can be in play
+  od10: 'No Pinnacle close: the only Pinnacle price was read 10 min before a recorded start that can run late, so it may be in play' };
 function sfNoPriceReason(r){
   if (r && (r.wo || r.walkover)) return SF_NOPRICE.wo;
   if (r && r.notResult) return SF_NOPRICE.nores;

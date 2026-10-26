@@ -35,13 +35,16 @@ take styling from it, structure from the rules below.
 - **Pinnacle (approx.) — books 5 and 2 (founder rulings 2026-10-16, 2026-10-17 item 2).** An ATP main-draw row of 13 Jan –
   16 Sep 2026 with no Tennis-Data Pinnacle pair and no close in our Pinnacle archive is priced on a SNAPSHOT, never a close
   (`pinnacle-approx.csv`, `tools/tdarch.py approx-feed`, from the archive's snapshot table, each row naming its `source`,
-  `cutTs`, `gapToStartS`): first, 13 Apr – 16 Sep only, the Oddspapi Pinnacle archive at Oddspapi's start − 10 min
-  (`r[8] = 5`, source `oddspapi Pinnacle (start − 10)`; the join reads book "A" / src `od10`; hover "Pinnacle (approx.) ·
-  Pinnacle history, taken 10 minutes before the recorded start, not a confirmed close", `SF_OD10_HOVER`); else api-tennis's
-  stored Pinnacle price (`r[8] = 2`, book "A"; hover "Pinnacle snapshot from api-tennis, no timestamp, not a confirmed close",
+  `cutTs`, `gapToStartS`). **The Oddspapi start − 10 snapshot (book 5) is never shown on the ATP main draw** (founder
+  ruling 2026-10-26: Oddspapi's trueStart runs late — ATP p98 70.5 min — so start − 10 can be in play, and no live-flip
+  exists before 17 Sep to prove otherwise): a match whose snapshot is start − 10 is a DASH, with no fall-through to
+  api-tennis or Bet365 (unpriced reason `od10`, counted in `meta.od10Dropped` with how many had another price); the
+  lower levels' start − 10 rows are not covered. Otherwise api-tennis's stored Pinnacle price (`r[8] = 2`, book "A"; hover "Pinnacle snapshot from api-tennis, no timestamp, not a confirmed close",
   `SF_APPROX_HOVER`) — 13 Jan – 12 Apr always (no archive exists). Both count as ONE book in every Database figure,
   "Pinnacle (approx.)" in `meta.bookCounts` (codes 2 + 5), `meta.approx.sources.od` / `.at` name each with its count and
-  hover. Order per row: Tennis-Data Pinnacle > our archive's close > start − 10 > api-tennis > Bet365 > a dash. The
+  hover. Order per row: Tennis-Data Pinnacle > our archive's close > (start − 10 → a dash) > api-tennis > Bet365 (Jan–Apr
+  2026 only) > a dash. **Test:** `tools/test-b365-window.mjs` (every surface: Database, master, tour-baselines, Market edge,
+  Favourites, the page join). The
   footnote, the chart note and the Player split name the snapshot with its count; no feed = nothing changes. *Known:* the
   header sentence ("Pinnacle closing, else Bet365, per match") is unchanged (the 120-character cap) — the footnote carries
   the disclosure. Market edge / Form / H2H tab closes (`FH_BOOK_ORDER`) do not read it. **Test:**
