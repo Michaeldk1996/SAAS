@@ -7856,22 +7856,11 @@
         }
       ]
     },
-    "live": true,
-    "liveStatus": "Set 2",
-    "liveScore": [
-      {
-        "set": 1,
-        "p1": 6,
-        "p2": 4
-      },
-      {
-        "set": 2,
-        "p1": 2,
-        "p2": 1
-      }
-    ],
-    "liveGameScore": "30 - 30",
-    "liveServer": "p1",
+    "live": false,
+    "liveStatus": null,
+    "liveScore": null,
+    "liveGameScore": null,
+    "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1103_c-norrie.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1104_f-cerundolo.jpg",
     "tournamentKey": "1684",
@@ -8996,7 +8985,27 @@
         "seenAt": "2026-10-27T18:34:05.797Z",
         "since": "2026-10-27T16:22:22.699Z"
       }
-    }
+    },
+    "retired": false,
+    "walkover": false,
+    "finalScore": {
+      "display": "6-4, 6-1",
+      "sets": [
+        {
+          "p1": 6,
+          "p2": 4
+        },
+        {
+          "p1": 6,
+          "p2": 1
+        }
+      ],
+      "p1Sets": 2,
+      "p2Sets": 0,
+      "winner": "p1"
+    },
+    "interrupted": false,
+    "partialScore": null
   },
   {
     "id": "upcoming-12173986",
@@ -11988,10 +11997,15 @@
         "set": 2,
         "p1": 3,
         "p2": 6
+      },
+      {
+        "set": 3,
+        "p1": 6,
+        "p2": 5
       }
     ],
-    "liveGameScore": "0 - 0",
-    "liveServer": "p1",
+    "liveGameScore": "30 - 40",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1980_a-zverev.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/39864_m-landaluce.jpg",
     "tournamentKey": "1684",
@@ -13425,7 +13439,10 @@
       "edgeVsPinnacleP1": 0.0146,
       "edgeVsPinnacleP2": -0.0146,
       "ts": "2026-10-27T11:04:20.652Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12174059",
@@ -21648,21 +21665,10 @@
       ]
     },
     "live": true,
-    "liveStatus": "Set 2",
-    "liveScore": [
-      {
-        "set": 1,
-        "p1": 6.4,
-        "p2": 7.7
-      },
-      {
-        "set": 2,
-        "p1": 4,
-        "p2": 5
-      }
-    ],
-    "liveGameScore": "0 - 0",
-    "liveServer": "p1",
+    "liveStatus": "Set 3",
+    "liveScore": null,
+    "liveGameScore": "30 - 40",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/2973_b-shelton.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2978_a-kovacevic.jpg",
     "tournamentKey": "1706",
@@ -23240,7 +23246,10 @@
       "edgeVsPinnacleP1": 0.0974,
       "edgeVsPinnacleP2": -0.0974,
       "ts": "2026-10-27T07:33:52.917Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12173978",
