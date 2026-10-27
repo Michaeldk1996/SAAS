@@ -203,7 +203,7 @@
   function header() {
     var rec = C.record(rows(), S.period, today());
     var seg = Object.keys(C.PERIODS).map(function (k) {
-      return '<button type="button" class="pk-per' + (S.period === k ? ' on' : '') + '" data-act="period" data-k="' + k + '">' + esc(C.PERIODS[k].label) + '</button>';
+      return '<button type="button" class="pk-per' + (S.period === k ? ' on' : '') + '" data-act="period" data-k="' + k + '" title="' + esc(C.PERIODS[k].hover) + '">' + esc(C.PERIODS[k].label) + '</button>';
     }).join('');
     var stats = rec.stats.map(function (s) {
       return '<div class="sfh__stat"><span class="sfh__l">' + esc(s.label) + '</span><span class="sfh__v pk-rv pk-s-' + (s.kind === 'plain' ? 'plain' : s.kind) + '">' + esc(s.value) + '</span></div>';

@@ -12,14 +12,6 @@ import { join, dirname, normalize, extname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
-// a computed colour ("rgb(…)" / "rgba(…)" / "color(srgb r g b / a)") composited over an opaque parent → [r, g, b] 0–255
-function over(css, parent) {
-  let m = /color\(srgb ([\d.]+) ([\d.]+) ([\d.]+)(?: \/ ([\d.]+))?\)/.exec(css || ''), c, a;
-  if (m) { c = [m[1], m[2], m[3]].map(x => +x * 255); a = m[4] == null ? 1 : +m[4]; }
-  else { m = /rgba?\((\d+), (\d+), (\d+)(?:, ([\d.]+))?\)/.exec(css || ''); if (!m) return null; c = [+m[1], +m[2], +m[3]]; a = m[4] == null ? 1 : +m[4]; }
-  return c.map((x, i) => x * a + parent[i] * (1 - a));
-}
-const near = (got, want) => !!got && got.every((x, i) => Math.abs(x - want[i]) <= 1.1);
 
 let pass = 0, fail = 0;
 const check = (name, ok, detail = '') => { if (ok) { pass++; console.log('  PASS ', name); } else { fail++; console.log('  FAIL ', name, detail ? '\n        ' + String(detail).slice(0, 900) : ''); } };
@@ -143,7 +135,7 @@ async function browser() {
     check('1c bets box "Mon 26 · settled · 4 bets", meta 2–1 · 1 void · 4.5% staked', c.box === 'Mon 26 · settled · 4 bets' && c.meta === '2–1 · 1 void · 4.5% staked', c.box + ' | ' + c.meta);
     check('1c caps head row Type · Bet · Price · Stake · Result', c.heads.join('|') === 'Type|Bet|Price|Stake|Result');
     check('1c WON / LOST / VOID chips, P/L beside them', c.res.join('|') === 'WON|LOST|VOID|WON' && c.chips.join('|') === '+0.88% WON|−1% LOST|0% VOID|+1.05% WON', c.chips.join('|'));
-    check('1c lost card = the export\'s #0E1119 (card 72% over the page, ±1/255), lost/void body at 0.78', near(over(c.lostBg, [9, 11, 18]), [14, 17, 25]) && c.lostDim === '0.78' && c.wonDim === '1', JSON.stringify([c.lostBg, over(c.lostBg, [9, 11, 18]), c.lostDim, c.wonDim]));
+    check('1c lost card = --lost-card #0E1119, lost/void body at 0.78', c.lostBg === 'rgb(14, 17, 25)' && c.lostDim === '0.78' && c.wonDim === '1', JSON.stringify([c.lostBg, c.lostDim, c.wonDim]));
     check('1c settled trail = Open · Posted · Close, column 224', c.tl.join('|') === 'Open|Posted|Close' && Math.abs(c.rightCol - 224) < 0.6, JSON.stringify([c.tl, c.rightCol]));
     check('1c set cells coloured per set, tiebreak on the winner\'s cell', c.cells === 'lWlWW' && c.tb === '3,8', c.cells + ' ' + c.tb);
     check('1c retired set: no cell won', c.voidCells === 0);
@@ -183,24 +175,33 @@ async function browser() {
     check('1e sort: a new head sorts descending, the same head flips', so.on === 'CLV ▼' && so.a1.join(' ') === '+1.9% +0.3% −1.8% −11.5%' && so.a2.join(' ') === '−11.5% −1.8% +0.3% +1.9%', JSON.stringify(so));
     check('1e back to picks restores the controls', so.back);
 
-    // controls = the landed Today's Matches shell (computed styles), and a negative control that must break the parity
-    const PAR = `const props = ['backgroundColor','borderTopColor','borderTopWidth','borderRadius','paddingTop','paddingRight','paddingBottom','paddingLeft','fontSize','fontWeight','color','columnGap','fontFamily'];
-      const tg = document.getElementById('tournamentGroup'); let chip = tg && tg.querySelector('.mx-chip:not(.active)');
-      if (!chip && tg) { chip = document.createElement('button'); chip.className = 'mx-chip'; chip.textContent = 'x'; tg.appendChild(chip); }
-      const m = (s) => document.querySelector('[data-page="matches"] ' + s);
-      const pairs = [['tabs track', m('#mxModeToggle'), q('.pk-tabs')], ['tab on', m('#mxModeToggle button.active'), q('.pk-tab.on')], ['tab off', m('#mxModeToggle button:not(.active)'), q('.pk-tab:not(.on)')],
-        ['chevron', m('#dayTabsLeft'), q('.pk-chev')], ['day on', m('#dayTabs button.active'), q('.pk-day.on')], ['day off', m('#dayTabs button[data-day="yesterday"]'), q('.pk-day:not(.on)')],
-        ['search box', m('.mx-searchwrap'), q('.pk-search')], ['tournament pill', chip, q('.pk-tpill')]];
-      const diffs = [];
-      pairs.forEach(([name, x, y]) => { if (!x || !y) { diffs.push(name + ': element missing'); return; }
-        const a = getComputedStyle(x), b = getComputedStyle(y);
-        props.forEach(p => { if (p === 'fontFamily') { if (a[p].split(',')[0] !== b[p].split(',')[0]) diffs.push(name + ' ' + p + ': ' + a[p] + ' ≠ ' + b[p]); } else if (a[p] !== b[p]) diffs.push(name + ' ' + p + ': ' + a[p] + ' ≠ ' + b[p]); }); });
-      return { n: pairs.length, diffs };`;
-    const par = await R(`set({ view: 'cards', tab: 'upcoming', day: S.data.as_of_day }); ${PAR}`);
-    check('controls row = the landed Matches shell (8 controls × 13 computed properties)', par.n === 8 && par.diffs.length === 0, par.diffs.join('\n        '));
-    const ctl = await R(`const st = document.createElement('style'); st.id = 'pk-neg'; st.textContent = '[data-page="picks"] .pk-tab.on{ background:#1B2031 }'; document.head.appendChild(st);
-      const r = (() => { ${PAR} })(); st.remove(); return r;`);
-    check('negative control: the export\'s own segment fill breaks the parity', ctl.diffs.some(x => /tab on backgroundColor/.test(x)), JSON.stringify(ctl.diffs));
+    // controls = the Picks reference (founder ruling 2026-10-27: design wins on every visual — drawn to the export, not
+    // the landed Matches shell). Values read from the reference's inline styles; a negative control must break the check.
+    const REFV = `const want = {
+        'tabs track': ['.pk-tabs', { backgroundColor: 'rgb(23, 27, 40)', borderTopWidth: '0px', borderRadius: '10px', paddingTop: '3px', columnGap: '3px' }],
+        'tab on': ['.pk-tab.on', { backgroundColor: 'rgb(27, 32, 49)', borderTopColor: 'rgba(255, 255, 255, 0.1)', borderRadius: '8px', paddingTop: '7px', paddingLeft: '14px', fontSize: '12.5px', fontWeight: '700' }],
+        'tab off': ['.pk-tab:not(.on)', { backgroundColor: 'rgba(0, 0, 0, 0)', color: 'rgb(163, 170, 190)', fontWeight: '600' }],
+        'chevron': ['.pk-chev', { backgroundColor: 'rgb(23, 27, 40)', borderRadius: '8px', width: '30px', height: '30px', fontSize: '14px', color: 'rgb(163, 170, 190)' }],
+        'day on': ['.pk-day.on', { borderBottomWidth: '2px', paddingTop: '8px', paddingRight: '12px', paddingBottom: '9px', fontSize: '13.5px', fontWeight: '700' }],
+        'day off': ['.pk-day:not(.on)', { color: 'rgb(163, 170, 190)', fontWeight: '600', borderBottomColor: 'rgba(0, 0, 0, 0)' }],
+        'tournament pill': ['.pk-tpill', { backgroundColor: 'rgb(23, 27, 40)', borderTopWidth: '0px', borderRadius: '10px', paddingTop: '9px', paddingLeft: '16px', fontSize: '12.5px', fontWeight: '600', color: 'rgb(163, 170, 190)' }],
+        'search box': ['.pk-search', { backgroundColor: 'rgb(23, 27, 40)', borderTopWidth: '0px', borderRadius: '10px', paddingTop: '10px', paddingLeft: '14px', columnGap: '9px', fontSize: '13px' }] };
+      const diffs = []; let n = 0;
+      for (const [name, [sel, props]] of Object.entries(want)) { const el = q(sel); if (!el) { diffs.push(name + ': missing'); continue; }
+        const c = getComputedStyle(el); for (const [k, v] of Object.entries(props)) { n++; if (c[k] !== v) diffs.push(name + ' ' + k + ': ' + c[k] + ' ≠ ' + v); } }
+      const h1 = q('.pk-tabs').getBoundingClientRect().height, h2 = q('.pk-search').getBoundingClientRect().height;
+      return { n, diffs, h1, h2, fonts: document.fonts.check('12.5px "Hanken Grotesk"') && document.fonts.check('13px "Hanken Grotesk"') };`;
+    await E(`Promise.race([document.fonts.ready, new Promise(r => setTimeout(r, 8000))]).then(() => 1)`);
+    const rv = await R(`set({ view: 'cards', tab: 'upcoming', day: S.data.as_of_day }); ${REFV}`);
+    check(`controls row = the reference's values (${rv.n} computed properties)`, rv.n >= 40 && rv.diffs.length === 0, rv.diffs.join('\n        '));
+    // heights are font metrics: measured on the reference with Hanken Grotesk loaded (tabs track 38.5, search 37)
+    if (!rv.fonts) console.log('  SKIP  controls heights: Hanken Grotesk did not load (no network for Google Fonts) — said out loud, not a pass');
+    else check('controls heights = the reference (tabs track 38.5, search 37)', Math.abs(rv.h1 - 38.5) < 0.6 && Math.abs(rv.h2 - 37) < 0.6, JSON.stringify([rv.h1, rv.h2]));
+    const ctl = await R(`const st = document.createElement('style'); st.id = 'pk-neg'; st.textContent = '[data-page="picks"] .pk-tabs{ background:var(--card); border:1px solid var(--edge-6) } [data-page="picks"] .pk-tab.on{ background:var(--inner) }'; document.head.appendChild(st);
+      const r = (() => { ${REFV} })(); st.remove(); return r;`);
+    check('negative control: the landed Matches shell values break the check', ctl.diffs.some(x => /tabs track backgroundColor/.test(x)) && ctl.diffs.some(x => /tab on backgroundColor/.test(x)), JSON.stringify(ctl.diffs));
+    const hov = await R(`set({}); return qa('.pk-per').map(b => b.title);`);
+    check('period hover: Season = "1 January to today"', hov[2] === '1 January to today' && /30 days/.test(hov[0]) && /90 days/.test(hov[1]), JSON.stringify(hov));
 
     // 1j · mobile 390
     await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 1, mobile: true });
@@ -209,7 +210,7 @@ async function browser() {
         type: qa('.pk-card--m .pk-hd .pk-tag').filter(t => !/pk-chip--/.test(t.className)).length, panel: cs(q('[data-card="p1"] .pk-mpanel'), 'backgroundColor'), w: q('[data-card="p1"]').getBoundingClientRect().width,
         scroll: document.documentElement.scrollWidth };
       set({ tab: 'completed', day: '2026-10-26' }); const st = qa('[data-card="s1"] .pk-tl').map(txt); return { up, st };`);
-    check('1j mobile card: no star, no type tag, inner panel = the export\'s #0D1017 (page 45% over the card, ±1/255)', mo.up.m === 5 && mo.up.star === 0 && mo.up.type === 0 && near(over(mo.up.panel, [16, 19, 29]), [13, 16, 23]), JSON.stringify([mo, over(mo.up.panel, [16, 19, 29])]));
+    check('1j mobile card: no star, no type tag, inner panel = --inner-band #0D1017', mo.up.m === 5 && mo.up.star === 0 && mo.up.type === 0 && mo.up.panel === 'rgb(13, 16, 23)', JSON.stringify(mo));
     check('1j mobile: settled keeps the four-stop trail (Last)', mo.st.join('|') === 'Open|Posted|Last|Close', mo.st.join('|'));
     check('1j mobile: card fits 390 with a 16 px gutter', Math.abs(mo.up.w - 358) < 1, mo.up.w);
     check('1j mobile: no horizontal page scroll at 390', mo.up.scroll <= 390, mo.up.scroll);

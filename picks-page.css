@@ -3,18 +3,15 @@
  * reference's inline style (`Picks LOCKED 2026-10-27.dc.html`), not a convention.
  *
  * Colour comes from tokens.css only (foundation.md, lint-raw-colours): the export's surfaces and inks ARE the tokens
- * (--card, --inner, --selected, --text-soft, --text-label, --pos, --neg, --amber, --bar, --link, --pro, --pro-text);
- * its white ink is --text (CLAUDE.md text tiers); its white washes are color-mix of --text, as the landed Today's
- * Matches score block writes them; its green / red tints are color-mix of --pos / --neg. Three export shades have no
- * token and are reported to the founder (Q4.5 — a new token needs his sight), drawn meanwhile as token mixes:
- *   lost card    = --card at 72% over the page   (the export's lost-card tone to within 1/255)
- *   inner band   = --page at 45% over the card   (ledger head / total, mobile panel; darker than its card, as the
- *                  export draws it — the foundation layer rule says otherwise: flagged)
- *   lost set ink = --text-label                  (the landed Today's Matches Completed grammar, SPEC §5.2)
+ * (--card, --inner, --selected, --text-soft, --text-label, --pos, --neg, --amber, --bar, --link, --pro, --pro-text,
+ * and --lost-card / --inner-band, added from the lock by founder ruling 2026-10-27); the lost-set figure is --viz-tick
+ * (the same hex); its white ink is --text (CLAUDE.md text tiers); its white washes are color-mix of --text; its green /
+ * red tints are color-mix of --pos / --neg.
  *
  * Shared, not forked: the sidebar and the page glow are the app shell's; the page header is the shared 35b header
- * (.sfh); the CONTROLS block mirrors the landed Today's Matches controls (computed styles, 1512 night), because the
- * brief rules the shell is reused as landed — tools/test-picks-page.mjs fails if they drift apart.
+ * (.sfh). The CONTROLS row is drawn to the Picks reference (founder ruling 2026-10-27: design wins on every visual) —
+ * it differs from the landed Today's Matches controls on purpose; aligning Matches is on the handoff list.
+ * tools/test-picks-page.mjs locks these values to the reference.
  * Scoped under [data-page="picks"].
  */
 
@@ -46,27 +43,26 @@
 [data-page="picks"] .pk-settled.is-thin { color: var(--amber); }
 [data-page="picks"] .pk-gt { font-family: var(--font-words); font-size: 13px; color: var(--text-label); }
 
-/* ── 3 · CONTROLS — the landed Today's Matches shell (Matches computed styles at 1512 night: .mx-viewseg,
-   .mx-daytabschevron, .mx-daytabs, .mx-chip, .mx-searchwrap). Keep in step with them; the parity test checks. ── */
+/* ── 3 · CONTROLS — the reference's controls row (founder ruling 2026-10-27: design wins on every visual). ── */
 [data-page="picks"] .pk-row1 { display: inline-flex; align-items: center; gap: 12px; align-self: flex-start; }
-[data-page="picks"] .pk-tabs { font-size: 14px; display: inline-flex; gap: 3px; padding: 3px; border-radius: 10px; background: var(--card); border: 1px solid var(--edge-6); }
+[data-page="picks"] .pk-tabs { display: inline-flex; gap: 3px; padding: 3px; border-radius: 10px; background: var(--inner); }
 [data-page="picks"] .pk-tab { appearance: none; margin: 0; cursor: pointer; padding: 7px 14px; border-radius: 8px; border: 1px solid transparent; background: transparent;
   font-size: 12.5px; font-weight: 600; line-height: normal; color: var(--text-label); }
 [data-page="picks"] .pk-tab:hover { color: var(--text); }
-[data-page="picks"] .pk-tab.on { background: var(--inner); border-color: var(--edge-10); color: var(--text); font-weight: 700; }
+[data-page="picks"] .pk-tab.on { background: var(--selected); border-color: var(--edge-10); color: var(--text); font-weight: 700; }
 [data-page="picks"] .pk-chev { appearance: none; margin: 0; padding: 0; cursor: pointer; width: 30px; height: 30px; border-radius: 8px; border: 0; background: var(--inner);
   display: flex; align-items: center; justify-content: center; font-size: 14px; line-height: normal; color: var(--text-label); flex: none; }
 [data-page="picks"] .pk-chev:hover { color: var(--text); }
 [data-page="picks"] .pk-days { display: flex; align-items: flex-end; gap: 4px; }
-[data-page="picks"] .pk-day { display: flex; gap: 6px; appearance: none; margin: 0; cursor: pointer; background: none; border: 0; border-bottom: 2px solid transparent; border-radius: 0; padding: 8px 12px 9px;
+[data-page="picks"] .pk-day { appearance: none; margin: 0; cursor: pointer; background: none; border: 0; border-bottom: 2px solid transparent; border-radius: 0; padding: 8px 12px 9px;
   font-size: 13.5px; font-weight: 600; line-height: normal; color: var(--text-label); white-space: nowrap; }
 [data-page="picks"] .pk-day:hover { color: var(--text); }
-[data-page="picks"] .pk-day.on { font-weight: 700; color: var(--text); border-color: var(--edge-16); border-bottom-color: var(--text); }
+[data-page="picks"] .pk-day.on { font-weight: 700; color: var(--text); border-bottom-color: var(--text); }
 [data-page="picks"] .pk-row2 { display: flex; align-items: center; gap: 12px; }
 [data-page="picks"] .pk-tdd { position: relative; flex: none; }
-[data-page="picks"] .pk-tpill { appearance: none; margin: 0; cursor: pointer; padding: 9px 16px; border-radius: 10px; border: 1px solid transparent; background: var(--inner);
+[data-page="picks"] .pk-tpill { appearance: none; margin: 0; cursor: pointer; padding: 9px 16px; border-radius: 10px; border: 0; background: var(--inner);
   font-size: 12.5px; font-weight: 600; line-height: normal; color: var(--text-label); white-space: nowrap; }
-[data-page="picks"] .pk-tpill.on { border-color: var(--edge-10); color: var(--text); }
+[data-page="picks"] .pk-tpill.on { box-shadow: inset 0 0 0 1px var(--edge-10); color: var(--text); }
 [data-page="picks"] .pk-tmenu { position: absolute; z-index: 30; top: calc(100% + 6px); left: 0; min-width: 100%; display: flex; flex-direction: column; padding: 4px;
   background: var(--card); border: 1px solid var(--edge-10); border-radius: 10px; box-shadow: var(--shadow-menu); }
 [data-page="picks"] .pk-topt { appearance: none; margin: 0; cursor: pointer; text-align: left; padding: 8px 12px; border: 0; border-radius: 8px; background: transparent;
@@ -74,8 +70,8 @@
 [data-page="picks"] .pk-topt:hover { background: var(--inner); color: var(--text); }
 [data-page="picks"] .pk-topt.on { color: var(--text); }
 [data-page="picks"] .pk-search { flex: 1; min-width: 0; display: flex; align-items: center; gap: 9px; padding: 10px 14px; border-radius: 10px; background: var(--inner);
-  border: 1px solid transparent; color: var(--text-label); font-size: 13px; cursor: text; }
-[data-page="picks"] .pk-search:focus-within { border-color: var(--edge-16); }
+  border: 0; color: var(--text-label); font-size: 13px; cursor: text; }
+[data-page="picks"] .pk-search:focus-within { box-shadow: inset 0 0 0 1px var(--edge-16); }
 [data-page="picks"] .pk-search svg { flex: none; }
 [data-page="picks"] .pk-search input { flex: 1; min-width: 0; padding: 0; margin: 0; background: transparent; border: 0; outline: none; box-shadow: none;
   font-family: var(--font-words); font-size: 13px; line-height: normal; color: var(--text); -webkit-appearance: none; appearance: none; }
@@ -115,7 +111,7 @@
 /* ── 5 · pick card ── */
 [data-page="picks"] .pk-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; gap: 12px; }
 [data-page="picks"] .pk-card { background: var(--card); box-shadow: var(--top-light); border: 1px solid var(--edge-6); border-radius: 14px; overflow: hidden; }
-[data-page="picks"] .pk-card.is-lost { background: color-mix(in srgb, var(--card) 72%, transparent); }
+[data-page="picks"] .pk-card.is-lost { background: var(--lost-card); }
 [data-page="picks"] .pk-card.is-routed { cursor: pointer; }
 [data-page="picks"] .pk-hd { display: flex; align-items: center; gap: 6px 8px; padding: 11px 16px; border-bottom: 1px solid var(--edge-6); white-space: nowrap; }
 [data-page="picks"] .pk-star { cursor: pointer; width: 24px; height: 24px; margin: -4px 0 -4px -6px; border-radius: 7px; display: flex; align-items: center; justify-content: center; flex: none; }
@@ -151,7 +147,7 @@
 [data-page="picks"] .pk-score-rule { width: 1px; height: 20px; background: color-mix(in srgb, var(--text) 8%, transparent); margin: 0 8px; }
 [data-page="picks"] .pk-sets { display: inline-flex; gap: 3px; }
 [data-page="picks"] .pk-set { position: relative; width: 24px; height: 24px; border-radius: 5px; display: flex; align-items: center; justify-content: center; font-family: var(--font-nums);
-  font-size: 13.5px; font-weight: 500; background: color-mix(in srgb, var(--text) 2.5%, transparent); color: var(--text-label); }
+  font-size: 13.5px; font-weight: 500; background: color-mix(in srgb, var(--text) 2.5%, transparent); color: var(--viz-tick); }
 [data-page="picks"] .pk-set.is-won { font-weight: 700; background: color-mix(in srgb, var(--text) 8%, transparent); color: var(--text); }
 [data-page="picks"] .pk-tb { position: absolute; top: 1px; right: 1px; font-size: 8px; line-height: 1; font-weight: 500; color: inherit; }
 [data-page="picks"] .pk-div { align-self: stretch; border-left: 1px solid var(--edge-6); }
@@ -202,7 +198,7 @@
 [data-page="picks"] .pk-ledger { background: var(--card); box-shadow: var(--top-light); border-radius: 12px; overflow: hidden; }
 [data-page="picks"] .pk-lhead, [data-page="picks"] .pk-lr, [data-page="picks"] .pk-lt { display: grid;
   grid-template-columns: 82px minmax(0, 1.7fr) minmax(0, 1.3fr) 66px 66px 74px minmax(0, 1fr) 72px; gap: 0 12px; align-items: center; padding: 0 16px; }
-[data-page="picks"] .pk-lhead { padding: 10px 16px; border-bottom: 1px solid color-mix(in srgb, var(--text) 8%, transparent); background: color-mix(in srgb, var(--page) 45%, transparent); }
+[data-page="picks"] .pk-lhead { padding: 10px 16px; border-bottom: 1px solid color-mix(in srgb, var(--text) 8%, transparent); background: var(--inner-band); }
 [data-page="picks"] .pk-lh { cursor: pointer; user-select: none; display: flex; align-items: center; gap: 5px; justify-content: flex-start; font-family: var(--font-words); font-size: 10.5px;
   font-weight: 700; letter-spacing: 0.10em; text-transform: uppercase; color: var(--text-label); white-space: nowrap; }
 [data-page="picks"] .pk-lh.r { justify-content: flex-end; }
@@ -225,7 +221,7 @@
 [data-page="picks"] .pk-sq.is-l { background: var(--neg); }
 [data-page="picks"] .pk-lrt { font-family: var(--font-nums); font-size: 11.5px; color: var(--text-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 [data-page="picks"] .pk-lpl { font-family: var(--font-nums); font-size: 12.5px; font-weight: 800; }
-[data-page="picks"] .pk-lt { height: 40px; background: color-mix(in srgb, var(--page) 45%, transparent); }
+[data-page="picks"] .pk-lt { height: 40px; background: var(--inner-band); }
 [data-page="picks"] .pk-lt-n { font-size: 12px; color: var(--text-label); }
 [data-page="picks"] .pk-lt-wl { font-family: var(--font-nums); font-size: 12px; color: var(--text-soft); }
 [data-page="picks"] .pk-lt-pl { font-family: var(--font-nums); font-size: 13px; font-weight: 800; }
@@ -245,7 +241,7 @@
 [data-page="picks"] .pk-mplayers { display: flex; flex-direction: column; gap: 2px; padding: 8px 14px 4px; }
 [data-page="picks"] .pk-mplayers .pk-pl { padding: 6px 0 6px 12px; }
 [data-page="picks"] .pk-mplayers .pk-bar { top: 7px; bottom: 7px; }
-[data-page="picks"] .pk-mpanel { margin: 6px 14px 0; padding: 10px 12px; border-radius: 10px; background: color-mix(in srgb, var(--page) 45%, transparent); display: flex; flex-direction: column; gap: 8px; }
+[data-page="picks"] .pk-mpanel { margin: 6px 14px 0; padding: 10px 12px; border-radius: 10px; background: var(--inner-band); display: flex; flex-direction: column; gap: 8px; }
 [data-page="picks"] .pk-note--m { padding: 10px 14px 12px; }
 [data-page="picks"] .pk-foot--m { padding: 10px 14px; }
 [data-page="picks"] .pk-foot--m.is-closed { margin-top: 10px; }

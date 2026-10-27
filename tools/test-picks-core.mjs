@@ -181,7 +181,9 @@ function suite(C) {
   for (const [period, lim] of [['30d', 30], ['90d', 90]]) {
     const rows = settledSyn.filter(p => ages(p) <= lim), rec = C.record(syn, period, sToday);
     const w = rows.filter(p => p.status === 'won').length, l = rows.filter(p => p.status === 'lost').length;
-    const units = rows.reduce((a, p) => a + O.units(p.status, p.posted_price, p.stake), 0), stake = rows.reduce((a, p) => a + p.stake, 0);
+    const units = rows.reduce((a, p) => a + O.units(p.status, p.posted_price, p.stake), 0);
+    // founder ruling 2026-10-27: ROI's denominator is the won + lost stakes only (a void stake is returned)
+    const stake = rows.filter(p => p.status !== 'void').reduce((a, p) => a + p.stake, 0);
     const wc = rows.map(p => O.clv(p.posted_price, p.close_price, p.opp_close_price)).filter(x => x != null);
     eq(`${period} n`, rec.n, rows.length);
     ok(`${period} not thin`, !rec.thin && rows.length >= 20);
@@ -195,6 +197,13 @@ function suite(C) {
   const in30 = settledSyn.filter(p => ages(p) <= 30 && p.status !== 'void');
   ok('thin boundary: 19 settled is thin', C.record(in30.slice(0, 19), '30d', sToday).thin && C.record(in30.slice(0, 19), '30d', sToday).settledText === 'n=19 \u00b7 thin');
   ok('thin boundary: 20 settled is not thin', !C.record(in30.slice(0, 20), '30d', sToday).thin && C.record(in30.slice(0, 20), '30d', sToday).settledText === '20');
+  // the 30 d window holds the void (syn05, stake 1): ROI over won + lost stakes differs from ROI over every stake
+  { const r30s = C.record(syn, '30d', sToday), rows = settledSyn.filter(p => ages(p) <= 30);
+    const pl = rows.reduce((a, p) => a + O.units(p.status, p.posted_price, p.stake), 0);
+    const all = rows.reduce((a, p) => a + p.stake, 0), wl = rows.filter(p => p.status !== 'void').reduce((a, p) => a + p.stake, 0);
+    ok('the 30 d window holds a void (the ROI ruling is exercised)', rows.some(p => p.status === 'void') && all !== wl);
+    near('ROI = Σ pl ÷ Σ won + lost stakes', r30s.roi, pl / wl, 1e-12); }
+  eq('Season hover', C.PERIODS.season.hover, '1 January to today');
   eq('30 d count by hand (ages ≤ 30)', C.record(syn, '30d', sToday).n, 26);
   eq('W–L excludes the void', C.record(syn, '30d', sToday).w + C.record(syn, '30d', sToday).l, 25);
   eq('Season = this calendar year', C.record(syn, 'season', sToday).n, settledSyn.filter(p => p.date.startsWith('2026') && ages(p) >= 0).length);
@@ -251,6 +260,7 @@ const MUTANTS = [
   ['avg CLV over every row', 'var c = clvOf(p); if (c != null) { withC++; clvSum += c; }', 'var c = clvOf(p); withC++; clvSum += c || 0;'],
   ['W–L counts voids', "l = set.filter(function (p) { return p.status === 'lost'; }).length", "l = set.filter(function (p) { return p.status !== 'won'; }).length"],
   ['model % not odds', 'return m == null || !(m > 0) || m > 100 ? null : 1 / (m / 100);', 'return m == null || !(m > 0) || m > 100 ? null : m / 100;'],
+  ['ROI counts void stakes', "if (p.status !== 'void') stake += num(p.stake) || 0;", 'stake += num(p.stake) || 0;'],
   ['set cells per match', 'var won = !retiredSet && isFinite(mine) && isFinite(theirs) && mine > theirs;', "var won = p.status === 'won' ? side === p.selection : side !== p.selection;"],
 ];
 let survived = 0;

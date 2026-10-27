@@ -248,10 +248,13 @@
 
   // ── Record (strip + ledger) ─────────────────────────────────────────────────────────────────────────────────────
   // Settled rows (won · lost · void) whose day is within the period of `today`: 30 d / 90 d = age in days ≤ 30 / 90;
-  // Season = this calendar year (Brussels). W–L excludes voids; Profit Σ pl_pct; ROI Σ pl_pct ÷ Σ stake over the same
-  // rows; Avg CLV over rows with a close. n < 20 → every stat "—" and Settled "n=N · thin".
-  var PERIODS = { '30d': { label: '30 d', title: 'Last 30 d', days: 30 }, '90d': { label: '90 d', title: 'Last 90 d', days: 90 },
-    season: { label: 'Season', title: 'Season', days: null } };
+  // Season = 1 January to today (Brussels; founder ruling 2026-10-27). W–L excludes voids; Profit Σ pl_pct; ROI =
+  // Σ pl_pct ÷ Σ stake over WON + LOST rows only — a void stake is returned, so it is not in the denominator (founder
+  // ruling 2026-10-27); Avg CLV over rows with a close. n < 20 → every stat "—" and Settled "n=N · thin".
+  var PERIODS = {
+    '30d': { label: '30 d', title: 'Last 30 d', days: 30, hover: 'Settled picks from the last 30 days, today included' },
+    '90d': { label: '90 d', title: 'Last 90 d', days: 90, hover: 'Settled picks from the last 90 days, today included' },
+    season: { label: 'Season', title: 'Season', days: null, hover: '1 January to today' } };
   function inPeriod(p, period, today) {
     var age = daysBetween(p.date, today);
     if (age == null || age < 0) return false;
@@ -265,7 +268,7 @@
     var profit = 0, stake = 0, withC = 0, clvSum = 0;
     set.forEach(function (p) {
       var pl = plOf(p); if (pl != null) profit += pl;
-      stake += num(p.stake) || 0;
+      if (p.status !== 'void') stake += num(p.stake) || 0;   // ROI denominator: won + lost only
       var c = clvOf(p); if (c != null) { withC++; clvSum += c; }
     });
     var roi = stake ? profit / stake : null, avgClv = withC ? clvSum / withC : null;
