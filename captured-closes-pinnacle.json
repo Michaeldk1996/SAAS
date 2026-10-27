@@ -1,17 +1,17 @@
 {
- "generatedAt": "2026-10-26T20:03:01.323Z",
+ "generatedAt": "2026-10-27T06:55:42.838Z",
  "source": "matches.json git history: oddsMovement.books.Pinnacle (Oddspapi pinnacle, to 2026-09-02) and oddsMovement.chart.books[\"Pinnacle +30s\"] (Oddspapi pinnacle+30, from 2026-09-23)",
  "rule": "each side = last tick at or before the actual start (Oddspapi trueStart, else the card-state start: Oddspapi or the live-flip lower bound); both sides required; dropped when no unique actual start",
  "scannedThrough": {
-  "commit": "e430600aca980d089c8db62d6a53c2d7dc16cdce",
-  "at": "2026-10-26T19:32:34Z"
+  "commit": "185d29c8e232ea9141801483627d1234fbb8570a",
+  "at": "2026-10-27T06:35:39Z"
  },
- "commitsScanned": 6001,
+ "commitsScanned": 6045,
  "lastRun": {
-  "from": "2026-10-26T13:03:19Z",
-  "snapshots": 27,
-  "added": 7,
-  "replaced": 3,
+  "from": "2026-10-26T19:32:34Z",
+  "snapshots": 45,
+  "added": 0,
+  "replaced": 0,
   "series": 75,
   "kept": 50,
   "bySource": {
@@ -23,12 +23,7 @@
   },
   "dropped": {
    "noStart": 24,
-   "oneSided": 1
-  },
-  "step15Backfill": {
-   "at": "2026-10-27T04:23:42.196Z",
-   "filled": 346,
-   "note": "o1/o2/oAt/winner filled from a --since 2026-09-26 rescan; core fields (p1, p2, at, trueStart) untouched"
+   "ambiguousStart": 1
   }
  },
  "stats": {
@@ -12256,7 +12251,11 @@
    "book": "Pinnacle +30s",
    "round": "ATP Vienna - 1/16-finals",
    "qualifying": false,
-   "event": "ATP Vienna"
+   "event": "ATP Vienna",
+   "o1": 1.54,
+   "o2": 2.67,
+   "oAt": "2026-10-25T11:04:46.211Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12173977,
@@ -12273,7 +12272,11 @@
    "book": "Pinnacle +30s",
    "round": "ATP Vienna - 1/16-finals",
    "qualifying": false,
-   "event": "ATP Vienna"
+   "event": "ATP Vienna",
+   "o1": 1.98,
+   "o2": 1.925,
+   "oAt": "2026-10-25T11:04:07.303Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12173985,
@@ -12290,7 +12293,11 @@
    "book": "Pinnacle +30s",
    "round": "ATP Vienna - 1/16-finals",
    "qualifying": false,
-   "event": "ATP Vienna"
+   "event": "ATP Vienna",
+   "o1": 3.26,
+   "o2": 1.374,
+   "oAt": "2026-10-25T11:02:01.306Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12174055,
@@ -12307,7 +12314,11 @@
    "book": "Pinnacle +30s",
    "round": "ATP Basel - 1/16-finals",
    "qualifying": false,
-   "event": "ATP Basel"
+   "event": "ATP Basel",
+   "o1": 1.819,
+   "o2": 2.07,
+   "oAt": "2026-10-25T11:33:34.530Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12174056,
@@ -12324,7 +12335,11 @@
    "book": "Pinnacle +30s",
    "round": "ATP Basel - 1/16-finals",
    "qualifying": false,
-   "event": "ATP Basel"
+   "event": "ATP Basel",
+   "o1": 3.17,
+   "o2": 1.392,
+   "oAt": "2026-10-25T11:53:06.465Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12174058,
@@ -12341,7 +12356,11 @@
    "book": "Pinnacle +30s",
    "round": "ATP Basel - 1/16-finals",
    "qualifying": false,
-   "event": "ATP Basel"
+   "event": "ATP Basel",
+   "o1": 1.49,
+   "o2": 2.76,
+   "oAt": "2026-10-25T11:48:05.968Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12174267,
