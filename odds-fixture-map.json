@@ -5677,8 +5677,8 @@
     },
     "12174049": {
       "fixtureId": null,
-      "mappedAt": "2026-10-27T03:32:34Z",
-      "missRuns": 15,
+      "mappedAt": "2026-10-27T05:32:37Z",
+      "missRuns": 16,
       "missSince": "2026-10-24T20:31:28Z",
       "orient": null,
       "p1": "A. Davidovich Fokina",
@@ -5712,8 +5712,8 @@
     },
     "12174052": {
       "fixtureId": null,
-      "mappedAt": "2026-10-27T03:32:34Z",
-      "missRuns": 15,
+      "mappedAt": "2026-10-27T05:32:37Z",
+      "missRuns": 16,
       "missSince": "2026-10-24T20:31:28Z",
       "orient": null,
       "p1": "H. Hurkacz",
@@ -5961,22 +5961,11 @@
       "projectedTtlUnitsPerDay": 3.4,
       "runs": 400,
       "spentRuns": 172,
-      "ttlBitRuns": 63,
-      "ttlBitShare": 0.158,
+      "ttlBitRuns": 64,
+      "ttlBitShare": 0.16,
       "ttlHours": 1.0
     },
     "runs": [
-      {
-        "at": "2026-10-08T13:35:02Z",
-        "fixturesUnitsSpent": 1,
-        "hitExpired": 0,
-        "missExpired": 0,
-        "openMisses": 4,
-        "stale": 4,
-        "ttlBit": false,
-        "unmapped": 4,
-        "upcoming": 33
-      },
       {
         "at": "2026-10-08T14:39:30Z",
         "fixturesUnitsSpent": 1,
@@ -10365,9 +10354,20 @@
         "ttlBit": false,
         "unmapped": 0,
         "upcoming": 26
+      },
+      {
+        "at": "2026-10-27T05:32:37Z",
+        "fixturesUnitsSpent": 1,
+        "hitExpired": 0,
+        "missExpired": 2,
+        "openMisses": 2,
+        "stale": 2,
+        "ttlBit": true,
+        "unmapped": 0,
+        "upcoming": 26
       }
     ]
   },
   "schema": "odds-fixture-map/1",
-  "updatedAt": "2026-10-27T03:32:34Z"
+  "updatedAt": "2026-10-27T05:32:37Z"
 }
