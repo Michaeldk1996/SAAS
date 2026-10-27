@@ -52,7 +52,9 @@ async function browser() {
   await new Promise(r => server.listen(0, '127.0.0.1', r));
   const BASE = `http://127.0.0.1:${server.address().port}/`;
   const dir = mkdtempSync(join(tmpdir(), 'picks-ch-'));
-  const ch = spawn(chrome, ['--headless=new', '--remote-debugging-port=0', '--no-first-run', '--disable-gpu', '--no-sandbox',
+  // --hide-scrollbars: Linux Chrome (the code gate) draws a 15 px classic scrollbar that macOS overlays; widths are
+  // checked against the reference's 1512 / 390 frames, which have none (gate run 40485549063: card 656.5 ≠ 664)
+  const ch = spawn(chrome, ['--headless=new', '--remote-debugging-port=0', '--no-first-run', '--disable-gpu', '--no-sandbox', '--hide-scrollbars',
     '--window-size=1512,982', `--user-data-dir=${join(dir, 'u')}`, 'about:blank'], { stdio: ['ignore', 'ignore', 'pipe'] });
   const done = () => { try { ch.kill('SIGKILL'); } catch (e) { /* gone */ } server.close(); try { rmSync(SITE, { recursive: true, force: true }); rmSync(dir, { recursive: true, force: true }); } catch (e) { /* tmp */ } };
   try {
