@@ -1,0 +1,16 @@
+name: probe-ops
+on:
+  push:
+    branches: ['claude/probe-te-queue']
+    paths: [tools/probe-ops/**]
+permissions:
+  contents: read
+jobs:
+  read:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 tools/probe-ops/read.py
+        env:
+          OPS_TOKEN: ${{ secrets.WORKFLOW_PAT }}
