@@ -212,6 +212,8 @@ test('open rail: rows 42, groups 10 apart, radius 26, names + labels shown (both
 // ── C · nav glyphs, element for element (frozen from the design's rendered SVGs) ───────
 const GLYPHS = {
   'Matches': [['path', 'M3 6.5h14M3 10h14M3 13.5h14']],
+  // Picks (founder 2026-10-27): the Picks LOCKED 2026-10-27 reference's PICK_PATH, Analyse group after Matches
+  'Picks': [['path', 'M10 3.5a6.5 6.5 0 100 13 6.5 6.5 0 000-13ZM7.3 10.2l1.9 1.9 3.6-4']],
   'Live': [['path', 'M10 8.5a1.5 1.5 0 100 3 1.5 1.5 0 000-3M6.8 6.8a4.5 4.5 0 000 6.4M13.2 6.8a4.5 4.5 0 010 6.4M4.6 4.6a7.6 7.6 0 000 10.8M15.4 4.6a7.6 7.6 0 010 10.8']],
   'Trading Report': [['path', 'M3.5 15.5 7 10l3 2.5 4-7M13 3.5h3.5V7']],
   // TEN-294: the 12a portal reference carries Dropping Odds between Trading Report and Series
@@ -237,7 +239,7 @@ function glyphProblems(html) {
   if (Object.keys(got).length !== Object.keys(GLYPHS).length) p.push(`nav has ${Object.keys(got).length} items`);
   return p;
 }
-test('C · all 12 nav glyphs are the design paths, element for element', () => {
+test('C · all 13 nav glyphs are the design paths, element for element', () => {
   assert.deepEqual(glyphProblems(DASH), []);
   const mut = {
     liveCircle: DASH.replace('<svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M10 8.5a1.5', '<svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="2.2"/><path d="M10 8.5a1.5'),

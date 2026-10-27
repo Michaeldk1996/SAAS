@@ -21,7 +21,7 @@ const html = readFileSync(join(ROOT, 'bsp-consult-dashboard.html'), 'utf8');
 check('dashboard links picks-page.css', html.includes('<link rel="stylesheet" href="./picks-page.css">'));
 check('dashboard loads picks-core.js before picks-page.js', /<script src="picks-core\.js" defer><\/script>\s*<script src="picks-page\.js" defer><\/script>/.test(html));
 check('a picks tab page exists', html.includes('<div class="tabpage" data-page="picks"><div id="picksRoot"></div></div>'));
-check('no Picks nav button yet (reached by URL only)', !/data-tab="picks"/.test(html));
+check('the Picks rail row sits right after Matches (founder 2026-10-27)', /data-tab="matches"[^\n]*\n\s*<button class="sf-item" data-tab="picks" id="picksTabBtn" aria-label="Picks">/.test(html));
 const pipe = readFileSync(join(ROOT, '.github/workflows/pipeline.yml'), 'utf8'), pub = readFileSync(join(ROOT, 'tools/publish-site.mjs'), 'utf8');
 for (const f of ['picks-core.js', 'picks-page.js', 'picks-page.css']) {
   check(`${f} in all three code deploy lists`, pipe.includes(f) && pub.includes(`'${f}'`) && readFileSync(join(ROOT, 'tools/site-code.sh'), 'utf8').includes(f));
@@ -96,7 +96,11 @@ async function browser() {
     await E(`(() => { window.__pkPlan = null; Object.defineProperty(window, 'sfPlan', { configurable: true, get() { return window.__pkPlan; }, set() {} }); })()`);
 
     check('#picks opens the Picks tab page', await E(`[...document.querySelectorAll('.tabpage.active')].map(p => p.dataset.page).join(',')`) === 'picks');
-    check('no nav row is active on Picks (no nav link yet)', await E(`!document.querySelector('#mainNav button.active') || document.querySelector('#mainNav button.active').dataset.tab !== 'picks'`));
+    check('#picks lights the Picks rail row', await E(`(document.querySelector('#mainNav button.active') || {}).dataset?.tab === 'picks'`));
+    // a click on the rail row from another page opens Picks and writes #picks; a click elsewhere clears it
+    const nav = await E(`(() => { document.querySelector('#mainNav button[data-tab="matches"]').click(); const a = [location.hash, document.querySelector('.tabpage.active').dataset.page];
+      document.querySelector('#mainNav button[data-tab="picks"]').click(); const b = [location.hash, document.querySelector('.tabpage.active').dataset.page]; return { a, b }; })()`);
+    check('rail: Picks row opens Picks with #picks; leaving clears it', nav.a[0] !== '#picks' && nav.a[1] === 'matches' && nav.b[0] === '#picks' && nav.b[1] === 'picks', JSON.stringify(nav));
 
     // 1a · Today with picks (Pro)
     const a = await R(`window.__pkPlan = 'pro'; set({ tab: 'upcoming', day: S.data.as_of_day, view: 'cards', tourn: null, q: '', noteOpen: {} });

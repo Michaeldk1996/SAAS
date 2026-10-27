@@ -29,7 +29,7 @@ drift, the line-chart Model icon. `test-ten286-layout.mjs` locks every closed va
 ## Groups, rows, the selected glow, badges (TEN-403)
 
 **The rule.**
-- Three groups, spacing only (no hairline): **Analyse** = Matches · Live · Trading Report · Dropping Odds · Series;
+- Three groups, spacing only (no hairline): **Analyse** = Matches · Picks · Live · Trading Report · Dropping Odds · Series (Picks: founder 2026-10-27, the Picks reference's position and glyph);
   **Research** = Players · Head to Head · Tournaments · Database; **Insights** = Stennisfy Model · Playing Styles · News.
   Group gap 14px closed / 10px open; rows 4px apart. When open a caps name sits above each group (Hanken 10.5 / 700 /
   0.10em, `--text-label`, padding `0 14px 2px`). account.html carries the same groups with the items it links to.

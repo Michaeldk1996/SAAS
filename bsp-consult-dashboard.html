@@ -2338,6 +2338,7 @@
            feature flag + guards pass, so a flag-OFF build shows no dead item. The Live badge = the Live page's own count
            (LiveFeed payload.live, ATP singles underway); hidden at 0. -->
       <button class="sf-item active" data-tab="matches" aria-label="Matches"><span class="sf-ico"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6.5h14M3 10h14M3 13.5h14"/></svg></span><span class="sf-lbl">Matches</span></button>
+      <button class="sf-item" data-tab="picks" id="picksTabBtn" aria-label="Picks"><span class="sf-ico"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3.5a6.5 6.5 0 100 13 6.5 6.5 0 000-13ZM7.3 10.2l1.9 1.9 3.6-4"/></svg></span><span class="sf-lbl">Picks</span></button>
       <button class="sf-item" data-tab="live" id="liveTabBtn" style="display:none" aria-label="Live"><span class="sf-ico"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M10 8.5a1.5 1.5 0 100 3 1.5 1.5 0 000-3M6.8 6.8a4.5 4.5 0 000 6.4M13.2 6.8a4.5 4.5 0 010 6.4M4.6 4.6a7.6 7.6 0 000 10.8M15.4 4.6a7.6 7.6 0 010 10.8"/></svg><span class="sf-count" id="sfLiveCount" hidden></span></span><span class="sf-lbl">Live</span></button>
       <button class="sf-item" data-tab="trading" id="tradingTabBtn" style="display:none" aria-label="Trading Report"><span class="sf-ico"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 15.5 7 10l3 2.5 4-7M13 3.5h3.5V7"/></svg></span><span class="sf-lbl">Trading Report</span></button>
       <button class="sf-item" data-tab="drops" id="dropsTabBtn" style="display:none" aria-label="Dropping Odds"><span class="sf-ico"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 5.5 8 10l3-2.5 5.5 6M16.5 9.5v4h-4"/></svg></span><span class="sf-lbl">Dropping Odds</span></button>
@@ -2640,7 +2641,7 @@ window.sfPlanLocks(null);   // locked until the account says Edge / Pro: no unlo
 
 <!-- DROPPING ODDS (TEN-294) — rendered entirely by drops-page.js from stennisfy-drops.fly.dev. -->
 <div class="tabpage" data-page="drops"><div id="dropsRoot"></div></div>
-<!-- Picks: reached by #picks only — no nav button until the nav link lands (picks-page.js). -->
+<!-- Picks: the Analyse rail row after Matches (#picksTabBtn) and the #picks deep link (picks-page.js). -->
 <div class="tabpage" data-page="picks"><div id="picksRoot"></div></div>
 
 <!-- SERIES TAB (TEN-168) — current-streak cards; all rendering owned by series.js,
@@ -4900,6 +4901,9 @@ document.getElementById('mainNav').addEventListener('click', e => {
       // and the hash follows the mode (mxWriteHash is called by setMatchesView below).
       // Leaving Matches for any other tab clears the Matches hash so a bookmarked URL
       // never claims to show a board the user has navigated away from.
+    } else if (tab === 'picks') {
+      // Picks keeps its own deep link (#picks), the way Trading Report keeps #trading.
+      if (location.hash !== '#picks') history.replaceState(null, '', location.pathname + location.search + '#picks');
     } else if (location.hash === '#picks') {
       // Picks is reached by #picks; any sidebar click leaves it, so the URL stops claiming it.
       history.replaceState(null, '', location.pathname + location.search);
