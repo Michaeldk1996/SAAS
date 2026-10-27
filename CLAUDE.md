@@ -276,6 +276,9 @@ Replaces "nothing is merged without my approval". You may merge your own PR into
 - the full suite passes in a fresh clone (EXIT=0), `tools/clobber-check.sh` is clear, and the PR has no conflicts;
 - it changes no business or methodology decision (pricing, thresholds, labels, scoring, what data is shown or hidden)
   beyond what was ruled.
+- *Exception (founder standing rule, 2026-10-27):* a **docs-only** diff may land when the only failing check is
+  `tools/test-post-deploy-check.mjs` failing on a blocked `www.gstatic.com` (a cloud container's network policy); say so
+  in the PR and the merge line.
 
 After every merge, tell the founder in one line: the PR number, what it does, and the commit.
 **Ask first** for: anything not approved, a failing or skipped check, deleting or rewriting archive data, or changes to
@@ -300,6 +303,9 @@ change to allow it.
   Also: `tools/test-post-deploy-check.mjs` fails in the TE-prices session's cloud container (its network blocks
   `www.gstatic.com`, the Firebase script), so a full `npm test` there exits 1 and blocks pushes from it (founder one-time
   exception for the docs-only note, 2026-10-26).
+- **Single qualifying rule.** Record per tournament / Tournament tab, event hold rate, Derived lines and the price import decide
+  qualifying by api-tennis flag or 'qualif' text; 446 qualifying matches from 2021–23 filed as main-draw word rounds slip through.
+  Fix: one shared isQualifying() using the h2h-core.js rule everywhere; backfill/verify flags for 2021–23.
 - **`bsp-ceo-bot`.** Another agent commits code to main under this name (e.g. the 30 → 45 timeout, `763c080a`); coordinate
   before touching the files it owns.
 
