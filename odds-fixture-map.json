@@ -5677,8 +5677,8 @@
     },
     "12174049": {
       "fixtureId": null,
-      "mappedAt": "2026-10-26T23:02:23Z",
-      "missRuns": 12,
+      "mappedAt": "2026-10-27T00:02:30Z",
+      "missRuns": 13,
       "missSince": "2026-10-24T20:31:28Z",
       "orient": null,
       "p1": "A. Davidovich Fokina",
@@ -5712,8 +5712,8 @@
     },
     "12174052": {
       "fixtureId": null,
-      "mappedAt": "2026-10-26T23:02:23Z",
-      "missRuns": 12,
+      "mappedAt": "2026-10-27T00:02:30Z",
+      "missRuns": 13,
       "missSince": "2026-10-24T20:31:28Z",
       "orient": null,
       "p1": "H. Hurkacz",
@@ -5939,6 +5939,15 @@
       "p2": "A. De Minaur",
       "startTime": "2026-10-28T10:30:00.000Z",
       "tournamentId": 3103
+    },
+    "12174665": {
+      "fixtureId": "id1200261375837592",
+      "mappedAt": "2026-10-27T00:02:30Z",
+      "orient": "same",
+      "p1": "N. Borges",
+      "p2": "C. Ruud",
+      "startTime": "2026-10-28T11:00:00.000Z",
+      "tournamentId": 2613
     }
   },
   "missAudit": {
@@ -5957,17 +5966,6 @@
       "ttlHours": 1.0
     },
     "runs": [
-      {
-        "at": "2026-10-08T08:32:12Z",
-        "fixturesUnitsSpent": 1,
-        "hitExpired": 0,
-        "missExpired": 0,
-        "openMisses": 0,
-        "stale": 3,
-        "ttlBit": false,
-        "unmapped": 3,
-        "upcoming": 32
-      },
       {
         "at": "2026-10-08T09:32:32Z",
         "fixturesUnitsSpent": 1,
@@ -10356,9 +10354,20 @@
         "ttlBit": false,
         "unmapped": 1,
         "upcoming": 25
+      },
+      {
+        "at": "2026-10-27T00:02:30Z",
+        "fixturesUnitsSpent": 1,
+        "hitExpired": 0,
+        "missExpired": 2,
+        "openMisses": 2,
+        "stale": 3,
+        "ttlBit": false,
+        "unmapped": 1,
+        "upcoming": 26
       }
     ]
   },
   "schema": "odds-fixture-map/1",
-  "updatedAt": "2026-10-26T23:02:23Z"
+  "updatedAt": "2026-10-27T00:02:30Z"
 }
