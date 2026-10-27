@@ -1,0 +1,252 @@
+/* picks-page.css — the Picks page (boards 1a–1e, 1i, 1j), built from the Claude Design export `design_handoff_picks`
+ * (LOCKED 2026-10-27; committed as design-export/picks-handoff/). Every size, weight, gap, radius and grid track is the
+ * reference's inline style (`Picks LOCKED 2026-10-27.dc.html`), not a convention.
+ *
+ * Colour comes from tokens.css only (foundation.md, lint-raw-colours): the export's surfaces and inks ARE the tokens
+ * (--card, --inner, --selected, --text-soft, --text-label, --pos, --neg, --amber, --bar, --link, --pro, --pro-text);
+ * its white ink is --text (CLAUDE.md text tiers); its white washes are color-mix of --text, as the landed Today's
+ * Matches score block writes them; its green / red tints are color-mix of --pos / --neg. Three export shades have no
+ * token and are reported to the founder (Q4.5 — a new token needs his sight), drawn meanwhile as token mixes:
+ *   lost card    = --card at 72% over the page   (the export's lost-card tone to within 1/255)
+ *   inner band   = --page at 45% over the card   (ledger head / total, mobile panel; darker than its card, as the
+ *                  export draws it — the foundation layer rule says otherwise: flagged)
+ *   lost set ink = --text-label                  (the landed Today's Matches Completed grammar, SPEC §5.2)
+ *
+ * Shared, not forked: the sidebar and the page glow are the app shell's; the page header is the shared 35b header
+ * (.sfh); the CONTROLS block mirrors the landed Today's Matches controls (computed styles, 1512 night), because the
+ * brief rules the shell is reused as landed — tools/test-picks-page.mjs fails if they drift apart.
+ * Scoped under [data-page="picks"].
+ */
+
+[data-page="picks"].tabpage.active { display: block; padding: 30px 40px 70px; box-sizing: border-box; line-height: normal; }
+[data-page="picks"] #picksRoot { display: flex; flex-direction: column; gap: 22px; color: var(--text); font-family: var(--font-words); font-size: 16px; line-height: normal; -webkit-font-smoothing: antialiased; }
+[data-page="picks"] #picksRoot *, [data-page="picks"] #picksRoot *::before, [data-page="picks"] #picksRoot *::after { box-sizing: border-box; }
+[data-page="picks"] .pk-mono { font-family: var(--font-nums); }
+[data-page="picks"] button { font-family: inherit; }
+[data-page="picks"] .pk-caps { font-family: var(--font-words); font-size: 10.5px; font-weight: 700; letter-spacing: 0.10em; text-transform: uppercase; color: var(--text-label); }
+[data-page="picks"] .is-blur { filter: blur(5px); user-select: none; }
+[data-page="picks"] .pk-s-pos { color: var(--pos); }
+[data-page="picks"] .pk-s-neg { color: var(--neg); }
+[data-page="picks"] .pk-s-zero { color: var(--text-label); }
+[data-page="picks"] .pk-s-plain { color: var(--text); }
+[data-page="picks"] .pk-link { font-size: 12.5px; font-weight: 700; color: var(--link); white-space: nowrap; cursor: pointer; text-decoration: none; }
+[data-page="picks"] a.pk-link:hover { color: var(--text); text-decoration: underline; }
+[data-page="picks"] .pk-link.is-inert { cursor: default; }
+
+/* ── 2 · header + Record strip: the shared .sfh card; the right side is the export's record strip ── */
+[data-page="picks"] .pk-rec { display: flex; align-items: flex-end; gap: 22px; flex: none; }
+[data-page="picks"] .pk-pers { display: inline-flex; gap: 2px; padding: 3px; border-radius: 9px; background: var(--inner); margin-bottom: 1px; }
+[data-page="picks"] .pk-per { appearance: none; margin: 0; cursor: pointer; padding: 5px 10px; border-radius: 7px; font-size: 11.5px; font-weight: 700; line-height: normal;
+  color: var(--text-label); background: transparent; border: 1px solid transparent; white-space: nowrap; }
+[data-page="picks"] .pk-per.on { color: var(--text); background: var(--selected); border-color: var(--edge-10); }
+[data-page="picks"] .pk-recstats { cursor: pointer; display: flex; gap: 26px; align-items: flex-end; padding: 2px 10px 2px 0; margin-right: -10px; border-radius: 8px; }
+[data-page="picks"] .pk-recstats:hover { background: var(--wash-4); }
+[data-page="picks"] .pk-recstats:focus-visible { outline: none; box-shadow: 0 0 0 1px var(--edge-16); }
+[data-page="picks"] .pk-settled { color: var(--text-label); }
+[data-page="picks"] .pk-settled.is-thin { color: var(--amber); }
+[data-page="picks"] .pk-gt { font-family: var(--font-words); font-size: 13px; color: var(--text-label); }
+
+/* ── 3 · CONTROLS — the landed Today's Matches shell (Matches computed styles at 1512 night: .mx-viewseg,
+   .mx-daytabschevron, .mx-daytabs, .mx-chip, .mx-searchwrap). Keep in step with them; the parity test checks. ── */
+[data-page="picks"] .pk-row1 { display: inline-flex; align-items: center; gap: 12px; align-self: flex-start; }
+[data-page="picks"] .pk-tabs { font-size: 14px; display: inline-flex; gap: 3px; padding: 3px; border-radius: 10px; background: var(--card); border: 1px solid var(--edge-6); }
+[data-page="picks"] .pk-tab { appearance: none; margin: 0; cursor: pointer; padding: 7px 14px; border-radius: 8px; border: 1px solid transparent; background: transparent;
+  font-size: 12.5px; font-weight: 600; line-height: normal; color: var(--text-label); }
+[data-page="picks"] .pk-tab:hover { color: var(--text); }
+[data-page="picks"] .pk-tab.on { background: var(--inner); border-color: var(--edge-10); color: var(--text); font-weight: 700; }
+[data-page="picks"] .pk-chev { appearance: none; margin: 0; padding: 0; cursor: pointer; width: 30px; height: 30px; border-radius: 8px; border: 0; background: var(--inner);
+  display: flex; align-items: center; justify-content: center; font-size: 14px; line-height: normal; color: var(--text-label); flex: none; }
+[data-page="picks"] .pk-chev:hover { color: var(--text); }
+[data-page="picks"] .pk-days { display: flex; align-items: flex-end; gap: 4px; }
+[data-page="picks"] .pk-day { display: flex; gap: 6px; appearance: none; margin: 0; cursor: pointer; background: none; border: 0; border-bottom: 2px solid transparent; border-radius: 0; padding: 8px 12px 9px;
+  font-size: 13.5px; font-weight: 600; line-height: normal; color: var(--text-label); white-space: nowrap; }
+[data-page="picks"] .pk-day:hover { color: var(--text); }
+[data-page="picks"] .pk-day.on { font-weight: 700; color: var(--text); border-color: var(--edge-16); border-bottom-color: var(--text); }
+[data-page="picks"] .pk-row2 { display: flex; align-items: center; gap: 12px; }
+[data-page="picks"] .pk-tdd { position: relative; flex: none; }
+[data-page="picks"] .pk-tpill { appearance: none; margin: 0; cursor: pointer; padding: 9px 16px; border-radius: 10px; border: 1px solid transparent; background: var(--inner);
+  font-size: 12.5px; font-weight: 600; line-height: normal; color: var(--text-label); white-space: nowrap; }
+[data-page="picks"] .pk-tpill.on { border-color: var(--edge-10); color: var(--text); }
+[data-page="picks"] .pk-tmenu { position: absolute; z-index: 30; top: calc(100% + 6px); left: 0; min-width: 100%; display: flex; flex-direction: column; padding: 4px;
+  background: var(--card); border: 1px solid var(--edge-10); border-radius: 10px; box-shadow: var(--shadow-menu); }
+[data-page="picks"] .pk-topt { appearance: none; margin: 0; cursor: pointer; text-align: left; padding: 8px 12px; border: 0; border-radius: 8px; background: transparent;
+  font-size: 12.5px; font-weight: 600; color: var(--text-label); white-space: nowrap; }
+[data-page="picks"] .pk-topt:hover { background: var(--inner); color: var(--text); }
+[data-page="picks"] .pk-topt.on { color: var(--text); }
+[data-page="picks"] .pk-search { flex: 1; min-width: 0; display: flex; align-items: center; gap: 9px; padding: 10px 14px; border-radius: 10px; background: var(--inner);
+  border: 1px solid transparent; color: var(--text-label); font-size: 13px; cursor: text; }
+[data-page="picks"] .pk-search:focus-within { border-color: var(--edge-16); }
+[data-page="picks"] .pk-search svg { flex: none; }
+[data-page="picks"] .pk-search input { flex: 1; min-width: 0; padding: 0; margin: 0; background: transparent; border: 0; outline: none; box-shadow: none;
+  font-family: var(--font-words); font-size: 13px; line-height: normal; color: var(--text); -webkit-appearance: none; appearance: none; }
+[data-page="picks"] .pk-search input::placeholder { color: var(--text-label); }
+[data-page="picks"] .pk-search input::-webkit-search-cancel-button { display: none; }
+
+/* ── atoms: type tag · state chip · PRO chip ── */
+[data-page="picks"] .pk-tag { flex: none; display: inline-flex; align-items: center; gap: 6px; height: 20px; padding: 0 8px; border-radius: 6px; white-space: nowrap;
+  background: var(--inner); border: 1px solid color-mix(in srgb, var(--text) 8%, transparent); font-family: var(--font-nums); font-size: 10px; font-weight: 700; letter-spacing: 0.08em; color: var(--text-soft); }
+[data-page="picks"] .pk-tag--or { background: var(--selected); border-color: color-mix(in srgb, var(--text) 18%, transparent); color: var(--text); }
+[data-page="picks"] .pk-chip--won { background: color-mix(in srgb, var(--pos) 14%, transparent); border-color: color-mix(in srgb, var(--pos) 40%, transparent); color: var(--pos); }
+[data-page="picks"] .pk-chip--lost { background: color-mix(in srgb, var(--neg) 14%, transparent); border-color: color-mix(in srgb, var(--neg) 40%, transparent); color: var(--neg); }
+[data-page="picks"] .pk-chip--void { color: var(--text-label); }
+[data-page="picks"] .pk-pro { font-family: var(--font-nums); font-size: 9px; font-weight: 700; letter-spacing: 0.12em; color: var(--pro-text); border: 1px solid var(--pro); border-radius: 20px; padding: 2px 8px; }
+
+/* ── 4 · bets box ── */
+[data-page="picks"] .pk-box { min-width: 0; background: var(--card); box-shadow: var(--top-light); border: 1px solid var(--edge-6); border-radius: 12px; overflow: hidden; }
+[data-page="picks"] .pk-box-hd { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 16px; border-bottom: 1px solid var(--edge-6); }
+[data-page="picks"] .pk-box-meta { font-size: 12px; color: var(--text-label); white-space: nowrap; }
+[data-page="picks"] .pk-bx-heads { display: grid; grid-template-columns: 92px 360px 56px 44px 64px; gap: 0 12px; align-items: center; height: 28px; padding: 0 16px;
+  border-bottom: 1px solid var(--edge-6); background: transparent; }
+[data-page="picks"] .pk-bx-heads span { font-size: 10px; font-weight: 700; letter-spacing: 0.10em; text-transform: uppercase; color: var(--text-label); }
+[data-page="picks"] .pk-bx-heads .r { text-align: right; }
+[data-page="picks"] .pk-bx-row { display: grid; grid-template-columns: 92px 360px 56px 44px 0px; gap: 0 12px; align-items: center; height: 50px; padding: 0 16px;
+  border-bottom: 1px solid var(--line); }
+[data-page="picks"] .pk-bx-row.is-settled { grid-template-columns: 92px 360px 56px 44px 64px; }
+[data-page="picks"] .pk-bx-row.is-last { border-bottom-color: transparent; }
+[data-page="picks"] .pk-bx-row:hover { background: color-mix(in srgb, var(--text) 3%, transparent); }
+[data-page="picks"] .pk-bx-row > .pk-tag { justify-self: start; }
+[data-page="picks"] .pk-bx-bet { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+[data-page="picks"] .pk-bx-line { font-size: 13.5px; font-weight: 700; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+[data-page="picks"] .pk-bx-sub { font-size: 11.5px; color: var(--text-label); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+[data-page="picks"] .pk-bx-price { text-align: right; font-family: var(--font-nums); font-size: 15px; font-weight: 800; color: var(--text); }
+[data-page="picks"] .pk-bx-stake { text-align: right; font-family: var(--font-nums); font-size: 12px; font-weight: 700; color: var(--text-soft); }
+[data-page="picks"] .pk-bx-res { justify-self: end; display: inline-flex; }
+
+/* ── 5 · pick card ── */
+[data-page="picks"] .pk-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; gap: 12px; }
+[data-page="picks"] .pk-card { background: var(--card); box-shadow: var(--top-light); border: 1px solid var(--edge-6); border-radius: 14px; overflow: hidden; }
+[data-page="picks"] .pk-card.is-lost { background: color-mix(in srgb, var(--card) 72%, transparent); }
+[data-page="picks"] .pk-card.is-routed { cursor: pointer; }
+[data-page="picks"] .pk-hd { display: flex; align-items: center; gap: 6px 8px; padding: 11px 16px; border-bottom: 1px solid var(--edge-6); white-space: nowrap; }
+[data-page="picks"] .pk-star { cursor: pointer; width: 24px; height: 24px; margin: -4px 0 -4px -6px; border-radius: 7px; display: flex; align-items: center; justify-content: center; flex: none; }
+[data-page="picks"] .pk-star:hover { background: var(--inner); }
+[data-page="picks"] .pk-star svg { fill: none; stroke: var(--text-label); }
+[data-page="picks"] .pk-star.is-on svg { fill: var(--text); stroke: var(--text); }
+[data-page="picks"] .pk-surf { flex: none; font-size: 11px; font-weight: 600; color: var(--text-label); }
+[data-page="picks"] .pk-tourn { min-width: 0; overflow: hidden; text-overflow: ellipsis; font-size: 11px; color: var(--text-label); }
+[data-page="picks"] .pk-round { flex: none; font-size: 10.5px; font-family: var(--font-nums); font-weight: 600; color: var(--text-label); background: var(--inner); border-radius: 5px; padding: 2px 6px; }
+[data-page="picks"] .pk-time { flex: none; font-size: 11.5px; font-family: var(--font-nums); color: var(--text-label); }
+[data-page="picks"] .pk-hd-r { margin-left: auto; flex: none; display: inline-flex; align-items: center; gap: 8px; }
+[data-page="picks"] .pk-pl-v { font-family: var(--font-nums); font-size: 12.5px; font-weight: 800; }
+
+[data-page="picks"] .pk-body { display: grid; grid-template-columns: minmax(0, 1fr) 1px 300px; gap: 0 16px; align-items: center; padding: 10px 16px 8px; }
+[data-page="picks"] .pk-body.is-settled { grid-template-columns: minmax(0, 1fr) 1px 224px; }
+[data-page="picks"] .is-dim { opacity: 0.78; }
+[data-page="picks"] .pk-players { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+[data-page="picks"] .pk-pl { position: relative; display: flex; align-items: center; gap: 11px; padding: 5px 0 5px 12px; min-width: 0; }
+[data-page="picks"] .pk-bar { position: absolute; left: 0; top: 6px; bottom: 6px; width: 3px; border-radius: 2px; background: transparent; }
+[data-page="picks"] .pk-bar.is-on { background: var(--bar); }
+[data-page="picks"] .pk-av { width: 30px; height: 30px; flex: none; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10.5px; font-weight: 700;
+  background: var(--inner); color: var(--text-soft); }
+[data-page="picks"] .pk-av.is-loser, [data-page="picks"] .pk-name.is-loser { color: var(--text-label); }
+[data-page="picks"] .pk-pl-n { display: inline-flex; align-items: center; gap: 8px; min-width: 0; flex: 1; }
+[data-page="picks"] .pk-name { font-size: 14px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+[data-page="picks"] .pk-fav { font-size: 10px; font-weight: 700; letter-spacing: 0.10em; color: var(--text-label); background: var(--inner); border-radius: 5px; padding: 2px 6px; flex: none; }
+[data-page="picks"] .pk-line { font-family: var(--font-nums); font-size: 10.5px; font-weight: 700; color: var(--text); background: var(--selected); border: 1px solid var(--edge-10);
+  border-radius: 5px; padding: 2px 6px; flex: none; white-space: nowrap; }
+[data-page="picks"] .pk-score { display: inline-flex; align-items: center; flex: none; }
+[data-page="picks"] .pk-sw { width: 26px; height: 26px; flex: none; display: flex; align-items: center; justify-content: center; border-radius: 6px; font-family: var(--font-nums);
+  font-size: 14px; font-weight: 500; background: color-mix(in srgb, var(--text) 4.5%, transparent); color: var(--text-label); box-shadow: inset 0 0 0 1px transparent; }
+[data-page="picks"] .pk-sw.is-win { font-weight: 700; background: color-mix(in srgb, var(--text) 9%, transparent); color: var(--text); box-shadow: inset 0 0 0 1px var(--edge-10); }
+[data-page="picks"] .pk-score-rule { width: 1px; height: 20px; background: color-mix(in srgb, var(--text) 8%, transparent); margin: 0 8px; }
+[data-page="picks"] .pk-sets { display: inline-flex; gap: 3px; }
+[data-page="picks"] .pk-set { position: relative; width: 24px; height: 24px; border-radius: 5px; display: flex; align-items: center; justify-content: center; font-family: var(--font-nums);
+  font-size: 13.5px; font-weight: 500; background: color-mix(in srgb, var(--text) 2.5%, transparent); color: var(--text-label); }
+[data-page="picks"] .pk-set.is-won { font-weight: 700; background: color-mix(in srgb, var(--text) 8%, transparent); color: var(--text); }
+[data-page="picks"] .pk-tb { position: absolute; top: 1px; right: 1px; font-size: 8px; line-height: 1; font-weight: 500; color: inherit; }
+[data-page="picks"] .pk-div { align-self: stretch; border-left: 1px solid var(--edge-6); }
+
+[data-page="picks"] .pk-right { display: flex; flex-direction: column; gap: 9px; min-width: 0; }
+[data-page="picks"] .pk-bl { display: flex; align-items: baseline; gap: 7px; min-width: 0; white-space: nowrap; }
+[data-page="picks"] .pk-bl-t { font-size: 13.5px; font-weight: 700; color: var(--text); min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+[data-page="picks"] .pk-at { font-size: 12px; color: var(--text-label); }
+[data-page="picks"] .pk-bl-p { font-family: var(--font-nums); font-size: 16px; font-weight: 800; color: var(--text); }
+[data-page="picks"] .pk-bk { font-family: var(--font-nums); font-size: 10.5px; color: var(--text-label); }
+[data-page="picks"] .pk-trail { display: grid; gap: 3px 6px; align-items: center; }
+[data-page="picks"] .pk-trail--3 { grid-template-columns: auto minmax(8px, 1fr) auto minmax(8px, 1fr) auto; }
+[data-page="picks"] .pk-trail--4 { grid-template-columns: auto minmax(8px, 1fr) auto minmax(8px, 1fr) auto minmax(8px, 1fr) auto; }
+[data-page="picks"] .pk-seg { height: 2px; border-radius: 1px; }
+[data-page="picks"] .pk-t-open { font-family: var(--font-nums); font-size: 14px; font-weight: 600; color: var(--text-label); }
+[data-page="picks"] .pk-t-posted { font-family: var(--font-nums); font-size: 14px; font-weight: 700; color: var(--text); }
+[data-page="picks"] .pk-t-now { font-family: var(--font-nums); font-size: 15px; font-weight: 800; color: var(--text); }
+[data-page="picks"] .pk-t-close4 { font-family: var(--font-nums); font-size: 14px; font-weight: 700; color: var(--text); }
+[data-page="picks"] .pk-t-close3 { font-family: var(--font-nums); font-size: 15px; font-weight: 800; color: var(--text); }
+[data-page="picks"] .pk-t-close4.is-none, [data-page="picks"] .pk-t-close3.is-none { color: var(--text-label); }
+[data-page="picks"] .pk-tl { font-family: var(--font-words); font-size: 9.5px; font-weight: 700; letter-spacing: 0.10em; text-transform: uppercase; color: var(--text-label); }
+[data-page="picks"] .pk-meta { display: flex; align-items: baseline; gap: 6px; font-size: 11.5px; color: var(--text-label); white-space: nowrap; }
+[data-page="picks"] .pk-mono12 { font-family: var(--font-nums); font-size: 12px; font-weight: 700; }
+[data-page="picks"] .pk-w { color: var(--text); }
+[data-page="picks"] .pk-b7 { font-weight: 700; }
+[data-page="picks"] .pk-or { display: flex; flex-direction: column; gap: 4px; font-size: 11.5px; color: var(--text-label); white-space: nowrap; }
+[data-page="picks"] .pk-ell { overflow: hidden; text-overflow: ellipsis; }
+
+/* 5.3 analysis — no text until opened */
+[data-page="picks"] .pk-note { padding: 2px 16px 12px; font-size: 13px; line-height: 1.45; color: var(--text-soft); text-wrap: pretty; white-space: pre-line; }
+/* 5.4 footer */
+[data-page="picks"] .pk-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 16px; border-top: 1px solid var(--edge-6); }
+[data-page="picks"] .pk-foot-l { display: inline-flex; align-items: center; gap: 16px; }
+[data-page="picks"] .pk-toggle { cursor: pointer; user-select: none; display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 700; letter-spacing: 0.02em; color: var(--text); }
+[data-page="picks"] .pk-tchev { font-size: 11px; font-weight: 400; color: var(--text-label); display: inline-block; transition: transform .16s; }
+[data-page="picks"] .pk-tchev.is-open { transform: rotate(180deg); }
+[data-page="picks"] .pk-unlock { display: inline-flex; align-items: center; gap: 10px; }
+
+/* ── 6 · empty panel ── */
+[data-page="picks"] .pk-empty { background: var(--card); box-shadow: var(--top-light); border-radius: 12px; padding: 34px 26px; display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; }
+[data-page="picks"] .pk-empty-t { font-size: 14px; font-weight: 700; color: var(--text); }
+[data-page="picks"] .pk-empty-s { font-size: 12.5px; color: var(--text-label); }
+
+/* ── 7 · Record view (ledger) ── */
+[data-page="picks"] .pk-rtop { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+[data-page="picks"] .pk-back { cursor: pointer; font-size: 13px; font-weight: 700; color: var(--link); }
+[data-page="picks"] .pk-rmeta { font-size: 12.5px; color: var(--text-label); }
+[data-page="picks"] .pk-ledger { background: var(--card); box-shadow: var(--top-light); border-radius: 12px; overflow: hidden; }
+[data-page="picks"] .pk-lhead, [data-page="picks"] .pk-lr, [data-page="picks"] .pk-lt { display: grid;
+  grid-template-columns: 82px minmax(0, 1.7fr) minmax(0, 1.3fr) 66px 66px 74px minmax(0, 1fr) 72px; gap: 0 12px; align-items: center; padding: 0 16px; }
+[data-page="picks"] .pk-lhead { padding: 10px 16px; border-bottom: 1px solid color-mix(in srgb, var(--text) 8%, transparent); background: color-mix(in srgb, var(--page) 45%, transparent); }
+[data-page="picks"] .pk-lh { cursor: pointer; user-select: none; display: flex; align-items: center; gap: 5px; justify-content: flex-start; font-family: var(--font-words); font-size: 10.5px;
+  font-weight: 700; letter-spacing: 0.10em; text-transform: uppercase; color: var(--text-label); white-space: nowrap; }
+[data-page="picks"] .pk-lh.r { justify-content: flex-end; }
+[data-page="picks"] .pk-lh.on { color: var(--text); }
+[data-page="picks"] .pk-arrow { font-size: 9px; color: var(--link); }
+[data-page="picks"] .pk-lr { height: 38px; border-bottom: 1px solid var(--line); }
+[data-page="picks"] .pk-lr:hover { background: color-mix(in srgb, var(--text) 3%, transparent); }
+[data-page="picks"] .pk-lr .r, [data-page="picks"] .pk-lt .r { text-align: right; }
+[data-page="picks"] .pk-ld { font-family: var(--font-nums); font-size: 11.5px; color: var(--text-label); white-space: nowrap; }
+[data-page="picks"] .pk-l2 { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+[data-page="picks"] .pk-lm { font-size: 12.5px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+[data-page="picks"] .pk-lp { font-size: 12.5px; font-weight: 700; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+[data-page="picks"] .pk-lsub { font-size: 11px; color: var(--text-label); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+[data-page="picks"] .pk-lpost { font-family: var(--font-nums); font-size: 12.5px; font-weight: 700; color: var(--text); }
+[data-page="picks"] .pk-lclose { font-family: var(--font-nums); font-size: 12.5px; font-weight: 600; color: var(--text-soft); }
+[data-page="picks"] .pk-lclv { font-family: var(--font-nums); font-size: 12px; font-weight: 700; }
+[data-page="picks"] .pk-lres { display: flex; align-items: center; gap: 8px; min-width: 0; }
+[data-page="picks"] .pk-sq { width: 8px; height: 8px; border-radius: 2px; flex: none; background: var(--text-label); }
+[data-page="picks"] .pk-sq.is-w { background: var(--pos); }
+[data-page="picks"] .pk-sq.is-l { background: var(--neg); }
+[data-page="picks"] .pk-lrt { font-family: var(--font-nums); font-size: 11.5px; color: var(--text-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+[data-page="picks"] .pk-lpl { font-family: var(--font-nums); font-size: 12.5px; font-weight: 800; }
+[data-page="picks"] .pk-lt { height: 40px; background: color-mix(in srgb, var(--page) 45%, transparent); }
+[data-page="picks"] .pk-lt-n { font-size: 12px; color: var(--text-label); }
+[data-page="picks"] .pk-lt-wl { font-family: var(--font-nums); font-size: 12px; color: var(--text-soft); }
+[data-page="picks"] .pk-lt-pl { font-family: var(--font-nums); font-size: 13px; font-weight: 800; }
+
+/* ── 9 · mobile card (390; the page gutter is 16px under 640) ── */
+@media (max-width: 640px) {
+  [data-page="picks"].tabpage.active { padding: 16px; }
+  [data-page="picks"] .pk-grid { grid-template-columns: minmax(0, 1fr); }
+  [data-page="picks"] .pk-head { flex-wrap: wrap; }
+  [data-page="picks"] .pk-rec { flex: 1 1 100%; min-width: 0; flex-wrap: wrap; gap: 12px; }
+  [data-page="picks"] .pk-recstats { flex: 1 1 100%; min-width: 0; flex-wrap: wrap; gap: 12px 24px; margin-right: 0; }
+  [data-page="picks"] .pk-row1 { flex-wrap: wrap; }
+  [data-page="picks"] .pk-box { overflow-x: auto; }
+  [data-page="picks"] .pk-ledger { overflow-x: auto; }
+}
+[data-page="picks"] .pk-hd--m { padding: 11px 14px; }
+[data-page="picks"] .pk-mplayers { display: flex; flex-direction: column; gap: 2px; padding: 8px 14px 4px; }
+[data-page="picks"] .pk-mplayers .pk-pl { padding: 6px 0 6px 12px; }
+[data-page="picks"] .pk-mplayers .pk-bar { top: 7px; bottom: 7px; }
+[data-page="picks"] .pk-mpanel { margin: 6px 14px 0; padding: 10px 12px; border-radius: 10px; background: color-mix(in srgb, var(--page) 45%, transparent); display: flex; flex-direction: column; gap: 8px; }
+[data-page="picks"] .pk-note--m { padding: 10px 14px 12px; }
+[data-page="picks"] .pk-foot--m { padding: 10px 14px; }
+[data-page="picks"] .pk-foot--m.is-closed { margin-top: 10px; }
+[data-page="picks"] .pk-foot--m .pk-foot-l { gap: 14px; }

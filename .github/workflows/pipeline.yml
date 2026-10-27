@@ -1215,6 +1215,10 @@ jobs:
           # TEN-294 Dropping Odds page: module + stylesheet. Its data is NOT a site file - the page
           # reads stennisfy-drops.fly.dev - so there is no JSON to copy. Asserted below.
           cp drops-page.js drops-page.css _site/ 2>/dev/null || true
+          # Picks page (read-only): module, figures and stylesheet (code), and its static picks.json (committed data,
+          # published with the site data like series.json). All four asserted below.
+          cp picks-core.js picks-page.js picks-page.css _site/
+          cp picks.json _site/
           cp series.json _site/ 2>/dev/null || true
           cp trading-splits-index.json _site/ 2>/dev/null || true
           cp -r trading-splits _site/ 2>/dev/null || true
@@ -1285,6 +1289,7 @@ jobs:
                    match-stat-event-coverage.json \
                    series.js series.css tokens.css theme.js \
                    drops-page.js drops-page.css \
+                   picks-core.js picks-page.js picks-page.css picks.json \
                    assets/logo-dark-transparent.png assets/ring-transparent.png \
                    assets/brand/google-g.svg assets/brand/apple-white.png assets/brand/app-store-badge.svg assets/brand/google-play-badge.png; do
             [ -s "_site/$f" ] || { echo "MISSING from _site: $f"; exit 1; }

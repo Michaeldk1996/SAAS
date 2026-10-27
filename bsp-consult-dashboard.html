@@ -25,6 +25,8 @@
 <link rel="stylesheet" href="./series.css">
 <!-- TEN-294 Dropping Odds page (export design_handoff_dropping_odds). Scoped under [data-page="drops"]. -->
 <link rel="stylesheet" href="./drops-page.css">
+<!-- Picks page, read-only (export design_handoff_picks, LOCKED 2026-10-27). Scoped under [data-page="picks"]. -->
+<link rel="stylesheet" href="./picks-page.css">
 <style>
   :root{
     --panel: var(--card);
@@ -2638,6 +2640,8 @@ window.sfPlanLocks(null);   // locked until the account says Edge / Pro: no unlo
 
 <!-- DROPPING ODDS (TEN-294) — rendered entirely by drops-page.js from stennisfy-drops.fly.dev. -->
 <div class="tabpage" data-page="drops"><div id="dropsRoot"></div></div>
+<!-- Picks: reached by #picks only — no nav button until the nav link lands (picks-page.js). -->
+<div class="tabpage" data-page="picks"><div id="picksRoot"></div></div>
 
 <!-- SERIES TAB (TEN-168) — current-streak cards; all rendering owned by series.js,
      gated on FEATURE_SERIES. Styling is in series.css ([data-page="series"] .sr-*). -->
@@ -4831,6 +4835,8 @@ function sfSetTabLoops(tab){
   if (window.SeriesPage) window.SeriesPage.setActive(tab === 'series');
   // TEN-294: Dropping Odds polls its endpoint only while shown. No-op unless drops-page.js loaded.
   if (window.DropsPage) window.DropsPage.setActive(tab === 'drops');
+  // Picks (read-only): renders from picks.json on entry. No poll loop.
+  if (window.PicksPage) window.PicksPage.setActive(tab === 'picks');
 }
 // Return to a tab exactly as it was left: no per-tab reset (a sidebar click re-opens Matches on Upcoming/today and
 // Players on the list; a return must not). The hash is put back with replaceState — no history entry, no hashchange.
@@ -4894,6 +4900,9 @@ document.getElementById('mainNav').addEventListener('click', e => {
       // and the hash follows the mode (mxWriteHash is called by setMatchesView below).
       // Leaving Matches for any other tab clears the Matches hash so a bookmarked URL
       // never claims to show a board the user has navigated away from.
+    } else if (location.hash === '#picks') {
+      // Picks is reached by #picks; any sidebar click leaves it, so the URL stops claiming it.
+      history.replaceState(null, '', location.pathname + location.search);
     } else if (location.hash === '#trading' || MX_HASH_RE.test(location.hash)) {
       history.replaceState(null, '', location.pathname + location.search);
     }
@@ -34819,6 +34828,8 @@ window.DatabaseTab = (function(){
 <script src="draw-view.js"></script>
 <!-- TEN-294 Dropping Odds. FEATURE_DROPS (default ON; ?drops=0 or localStorage stennisfy.flags.drops=0 = off) is read inside the file. -->
 <script src="drops-page.js" defer></script>
+<script src="picks-core.js" defer></script>
+<script src="picks-page.js" defer></script>
 
 <!-- TEN-150 / TEN-242: Entry Lists feature flag. The nav button it used to reveal
      is GONE (item 1.1) - entry lists are the middle SECTION of Tournaments now, and
