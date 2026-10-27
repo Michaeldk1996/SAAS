@@ -185,11 +185,24 @@ test('Streak on court: the top Series card, "+N more on court today" by player, 
   // a failed series.json load is not the empty state: the tile stays on Loading and the next render asks again
   const E = new Function(`
     const state = { day: 'today' }; const window = { SeriesPage: { onCourt: () => Promise.resolve(null) } };
-    const document = { querySelector: () => null }; const _mxStreak = { day: null, rows: null, pending: null };
+    const document = { querySelector: () => null }; const _mxStreak = { day: null, rows: null, pending: null, at: 0, emptyTries: 0 };
     ${slice('mxStreakEnsure')} mxStreakEnsure('today'); return _mxStreak.pending.then(() => _mxStreak);`)();
+  // an EMPTY first answer is asked again (live 2026-10-27: the boot answer was empty while the slate held 19 streaks)
+  const answers = [[], [{ key: '1' }]];
+  const F = new Function('answers', `
+    const state = { day: 'today', view: 'upcoming' }; const timers = [];
+    const window = { SeriesPage: { onCourt: () => Promise.resolve(answers.shift()) } };
+    const setTimeout = fn => timers.push(fn);
+    const document = { querySelector: () => null }; const _mxStreak = { day: null, rows: null, pending: null, at: 0, emptyTries: 0 };
+    ${slice('mxStreakEnsure')}
+    mxStreakEnsure('today');
+    return _mxStreak.pending.then(() => { const first = _mxStreak.rows.length; timers.shift()(); return _mxStreak.pending.then(() => [first, _mxStreak.rows.length]); });`);
   return E.then(st => {
     assert.equal(st.rows, null, 'no rows → not "No streaks on court today"');
     assert.equal(st.day, null, 'cleared so the next render retries');
+    return F(answers);
+  }).then(([first, second]) => {
+    assert.deepEqual([first, second], [0, 1], 'the empty answer was re-asked and the real one replaced it');
   }).then(() => {
   const series = readFileSync(join(HERE, 'series.js'), 'utf8');
   assert.match(series, /var f = Object\.assign\(\{\}, DEFAULTS\);/, 'the Series page defaults, not the member’s filters');

@@ -9480,17 +9480,26 @@ function mxMarketRead30(){
     title: `Open = Pinnacle first price (Oddspapi) · close = Pinnacle within 60 min · ${_mxMr30.from} – ${_mxMr30.to} · ${_mxMr30.moved} of ${_mxMr30.n} matches moved ${MX_MOVE_MIN.toFixed(0)}%+` } : null;
 }
 // README §1.2 Streak on court: the Series page's list for this slate (SeriesPage.onCourt), never recomputed here.
-const _mxStreak = { day: null, rows: null, pending: null };
+// The answer is re-asked once a minute (the slate moves: a started match leaves it), and an EMPTY answer is re-asked
+// after 10 s up to 6 times — live read 2026-10-27: the first answer at boot came back empty while the slate held 19
+// streaks (the same call a moment later returned them), so one early empty answer must not stand as the empty state.
+const _mxStreak = { day: null, rows: null, pending: null, at: 0, emptyTries: 0 };
 function mxStreakEnsure(day){
-  if (_mxStreak.day === day && (_mxStreak.rows || _mxStreak.pending)) return;
-  _mxStreak.day = day; _mxStreak.rows = null;
+  const fresh = Date.now() - _mxStreak.at < 60000;
+  if (_mxStreak.day === day && (_mxStreak.pending || (_mxStreak.rows && fresh))) return;
+  if (_mxStreak.day !== day) { _mxStreak.rows = null; _mxStreak.emptyTries = 0; }
+  _mxStreak.day = day;
   if (!window.SeriesPage || typeof window.SeriesPage.onCourt !== 'function') { _mxStreak.rows = []; return; }
   const p = _mxStreak.pending = Promise.resolve(window.SeriesPage.onCourt(day)).catch(() => null).then(rows => {
     if (_mxStreak.pending !== p) return;
     _mxStreak.pending = null;
     // series.json did not load: that is not "no streaks". Keep the tile on Loading and ask again on the next render.
     if (!Array.isArray(rows)) { _mxStreak.day = null; return; }
-    _mxStreak.rows = rows;
+    _mxStreak.rows = rows; _mxStreak.at = Date.now();
+    if (!rows.length && _mxStreak.emptyTries < 6) {
+      _mxStreak.emptyTries++; _mxStreak.at = 0;
+      setTimeout(() => { if (state.day === day && state.view !== 'completed') mxStreakEnsure(day); }, 10000);
+    }
     const el = document.querySelector('[data-mxtile="streak"]');
     if (el) el.outerHTML = mxStreakTileHtml();
   });
