@@ -16,7 +16,7 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: install | import | derive | derive-held | pull-backlog | backup | restore-check | daily
+        description: install | import | derive | derive-held | pull-backlog | backup | restore-check | false-starts-report | daily
         required: true
         default: daily
       days:
@@ -127,6 +127,11 @@ jobs:
           set -euo pipefail
           python3 tools/pinarch.py backup
           python3 tools/pinarch.py counts --record backup
+      - name: false-starts-report — 0-0 live flags since 24 Oct and the closes cut on them (READ-ONLY)
+        if: env.MODE == 'false-starts-report'
+        run: |
+          set -euo pipefail
+          python3 tools/pinarch.py false-starts-report --since 2026-10-24
       - name: restore-check — rebuild every row from the backups (no write)
         if: env.MODE == 'restore-check'
         env:
