@@ -1,11 +1,11 @@
 {
  "schemaVersion": 1,
- "generatedAt": "2026-10-26T21:49:07.454Z",
- "asOf": "2026-10-26",
+ "generatedAt": "2026-10-27T10:55:28.535Z",
+ "asOf": "2026-10-27",
  "sources": {
   "fixtures": "api-tennis get_fixtures (event_type_key 265), per prior edition",
   "playerIndex": {
-   "fetchedAt": "2026-10-26T21:28:14.772Z",
+   "fetchedAt": "2026-10-27T09:43:28.422Z",
    "source": "api-tennis get_standings (ATP)"
   },
   "draws": {
@@ -13,7 +13,7 @@
   },
   "entryLists": {
    "snapshots": 1,
-   "latestGeneratedAt": "2026-10-26T00:55:56Z"
+   "latestGeneratedAt": "2026-10-27T01:46:24Z"
   },
   "pointsTable": "2026 ATP Official Rulebook §9.03 G.5 (Singles Point table), p.272-273"
  },
@@ -143,7 +143,7 @@
      "name": "Alex De Minaur",
      "apiName": "A. De Minaur",
      "country": "Australia",
-     "rank": 8,
+     "rank": 10,
      "result": "SF",
      "resultBadge": "SF",
      "qualRound": null,
@@ -235,7 +235,7 @@
      "name": "Fabian Marozsan",
      "apiName": "F. Marozsan",
      "country": "Hungary",
-     "rank": 64,
+     "rank": 63,
      "result": "QF",
      "resultBadge": "QF",
      "qualRound": null,
@@ -258,7 +258,7 @@
      "name": "Adrian Mannarino",
      "apiName": "A. Mannarino",
      "country": "France",
-     "rank": 79,
+     "rank": 73,
      "result": "R16",
      "resultBadge": "R16 | Q",
      "qualRound": null,
@@ -283,7 +283,7 @@
      "name": "Terence Atmane",
      "apiName": "T. Atmane",
      "country": "France",
-     "rank": 98,
+     "rank": 90,
      "result": "R16",
      "resultBadge": "R16 | Q",
      "qualRound": null,
@@ -356,7 +356,7 @@
      "name": "Alejandro Davidovich Fokina",
      "apiName": "A. Davidovich Fokina",
      "country": "Spain",
-     "rank": 13,
+     "rank": 15,
      "result": "R16",
      "resultBadge": "R16",
      "qualRound": null,
@@ -405,7 +405,7 @@
      "name": "Corentin Moutet",
      "apiName": "C. Moutet",
      "country": "France",
-     "rank": 94,
+     "rank": 103,
      "result": "R16",
      "resultBadge": "R16",
      "qualRound": null,
@@ -428,7 +428,7 @@
      "name": "Alexandre Muller",
      "apiName": "A. Muller",
      "country": "France",
-     "rank": 131,
+     "rank": 130,
      "result": "R16",
      "resultBadge": "R16",
      "qualRound": null,
@@ -451,7 +451,7 @@
      "name": "David Goffin",
      "apiName": "D. Goffin",
      "country": "Belgium",
-     "rank": 657,
+     "rank": 591,
      "result": "R32",
      "resultBadge": "R32 | Q",
      "qualRound": null,
@@ -476,7 +476,7 @@
      "name": "Botic Van De Zandschulp",
      "apiName": "B. Van De Zandschulp",
      "country": "Netherlands",
-     "rank": 38,
+     "rank": 37,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q2",
@@ -499,7 +499,7 @@
      "name": "Quentin Halys",
      "apiName": "Q. Halys",
      "country": "France",
-     "rank": 46,
+     "rank": 45,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q2",
@@ -542,10 +542,10 @@
    ],
    "zeroRows": [
     {
-     "playerKey": "1895",
-     "name": "Alexander Bublik",
-     "apiName": "A. Bublik",
-     "country": "Kazakhstan",
+     "playerKey": "1104",
+     "name": "Francisco Cerundolo",
+     "apiName": "F. Cerundolo",
+     "country": "Argentina",
      "rank": 19,
      "result": "R32",
      "resultBadge": "R32",
@@ -564,11 +564,11 @@
      "statusInferred": false
     },
     {
-     "playerKey": "1104",
-     "name": "Francisco Cerundolo",
-     "apiName": "F. Cerundolo",
-     "country": "Argentina",
-     "rank": 21,
+     "playerKey": "1895",
+     "name": "Alexander Bublik",
+     "apiName": "A. Bublik",
+     "country": "Kazakhstan",
+     "rank": 20,
      "result": "R32",
      "resultBadge": "R32",
      "qualRound": null,
@@ -612,7 +612,7 @@
      "name": "Karen Khachanov",
      "apiName": "K. Khachanov",
      "country": "World",
-     "rank": 25,
+     "rank": 24,
      "result": "R32",
      "resultBadge": "R32",
      "qualRound": null,
@@ -634,29 +634,7 @@
      "name": "Cameron Norrie",
      "apiName": "C. Norrie",
      "country": "United Kingdom",
-     "rank": 40,
-     "result": "R32",
-     "resultBadge": "R32",
-     "qualRound": null,
-     "qualified": false,
-     "ll": false,
-     "mainPoints": 0,
-     "qualifyingPoints": 0,
-     "points": 0,
-     "pointsComplete": true,
-     "dropDate": "2026-10-05",
-     "byeCorrected": false,
-     "flags": [],
-     "status": null,
-     "statusBasis": "draw-not-held",
-     "statusInferred": false
-    },
-    {
-     "playerKey": "2848",
-     "name": "Miomir Kecmanovic",
-     "apiName": "M. Kecmanovic",
-     "country": "Serbia",
-     "rank": 57,
+     "rank": 41,
      "result": "R32",
      "resultBadge": "R32",
      "qualRound": null,
@@ -678,7 +656,29 @@
      "name": "Tallon Griekspoor",
      "apiName": "T. Griekspoor",
      "country": "Netherlands",
-     "rank": 60,
+     "rank": 50,
+     "result": "R32",
+     "resultBadge": "R32",
+     "qualRound": null,
+     "qualified": false,
+     "ll": false,
+     "mainPoints": 0,
+     "qualifyingPoints": 0,
+     "points": 0,
+     "pointsComplete": true,
+     "dropDate": "2026-10-05",
+     "byeCorrected": false,
+     "flags": [],
+     "status": null,
+     "statusBasis": "draw-not-held",
+     "statusInferred": false
+    },
+    {
+     "playerKey": "2848",
+     "name": "Miomir Kecmanovic",
+     "apiName": "M. Kecmanovic",
+     "country": "Serbia",
+     "rank": 58,
      "result": "R32",
      "resultBadge": "R32",
      "qualRound": null,
@@ -718,33 +718,11 @@
      "statusInferred": false
     },
     {
-     "playerKey": "2167",
-     "name": "Marin Cilic",
-     "apiName": "M. Cilic",
-     "country": "Croatia",
-     "rank": 84,
-     "result": "R32",
-     "resultBadge": "R32",
-     "qualRound": null,
-     "qualified": false,
-     "ll": false,
-     "mainPoints": 0,
-     "qualifyingPoints": 0,
-     "points": 0,
-     "pointsComplete": true,
-     "dropDate": "2026-10-05",
-     "byeCorrected": false,
-     "flags": [],
-     "status": null,
-     "statusBasis": "draw-not-held",
-     "statusInferred": false
-    },
-    {
      "playerKey": "2843",
      "name": "Lorenzo Sonego",
      "apiName": "L. Sonego",
      "country": "Italy",
-     "rank": 89,
+     "rank": 91,
      "result": "R32",
      "resultBadge": "R32",
      "qualRound": null,
@@ -766,7 +744,29 @@
      "name": "Yunchaokete Bu",
      "apiName": "Y. Bu",
      "country": "China",
-     "rank": 91,
+     "rank": 92,
+     "result": "R32",
+     "resultBadge": "R32",
+     "qualRound": null,
+     "qualified": false,
+     "ll": false,
+     "mainPoints": 0,
+     "qualifyingPoints": 0,
+     "points": 0,
+     "pointsComplete": true,
+     "dropDate": "2026-10-05",
+     "byeCorrected": false,
+     "flags": [],
+     "status": null,
+     "statusBasis": "draw-not-held",
+     "statusInferred": false
+    },
+    {
+     "playerKey": "2167",
+     "name": "Marin Cilic",
+     "apiName": "M. Cilic",
+     "country": "Croatia",
+     "rank": 96,
      "result": "R32",
      "resultBadge": "R32",
      "qualRound": null,
@@ -788,7 +788,7 @@
      "name": "Benjamin Bonzi",
      "apiName": "B. Bonzi",
      "country": "France",
-     "rank": 100,
+     "rank": 99,
      "result": "R32",
      "resultBadge": "R32",
      "qualRound": null,
@@ -810,7 +810,7 @@
      "name": "Giovanni Mpetshi Perricard",
      "apiName": "G. Mpetshi Perricard",
      "country": "France",
-     "rank": 145,
+     "rank": 148,
      "result": "R32",
      "resultBadge": "R32",
      "qualRound": null,
@@ -832,7 +832,7 @@
      "name": "Zhizhen Zhang",
      "apiName": "Z. Zhang",
      "country": "China",
-     "rank": 170,
+     "rank": 166,
      "result": "R32",
      "resultBadge": "R32",
      "qualRound": null,
@@ -854,7 +854,7 @@
      "name": "Juncheng Shang",
      "apiName": "J. Shang",
      "country": "China",
-     "rank": 248,
+     "rank": 250,
      "result": "R32",
      "resultBadge": "R32",
      "qualRound": null,
@@ -876,7 +876,7 @@
      "name": "Coleman Wong Chak Lam",
      "apiName": "C. Wong",
      "country": "Hong Kong",
-     "rank": 92,
+     "rank": 87,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q1",
@@ -900,7 +900,7 @@
      "name": "Christopher O'Connell",
      "apiName": "C. O'Connell",
      "country": "Australia",
-     "rank": 117,
+     "rank": 118,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q1",
@@ -924,7 +924,7 @@
      "name": "Nishesh Basavareddy",
      "apiName": "N. Basavareddy",
      "country": "USA",
-     "rank": 134,
+     "rank": 131,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q1",
@@ -948,7 +948,7 @@
      "name": "Tristan Schoolkate",
      "apiName": "T. Schoolkate",
      "country": "Australia",
-     "rank": 169,
+     "rank": 141,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q1",
@@ -972,7 +972,7 @@
      "name": "Yi Zhou",
      "apiName": "Y. Zhou",
      "country": "China",
-     "rank": 280,
+     "rank": 256,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q1",
@@ -996,7 +996,7 @@
      "name": "Fajing Sun",
      "apiName": "F. Sun",
      "country": "China",
-     "rank": 296,
+     "rank": 292,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q1",
@@ -1020,7 +1020,7 @@
      "name": "Andrea Vavassori",
      "apiName": "A. Vavassori",
      "country": "Italy",
-     "rank": 593,
+     "rank": 597,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q1",
@@ -1044,7 +1044,7 @@
      "name": "Aoran Wang",
      "apiName": "A. Wang",
      "country": "China",
-     "rank": 1219,
+     "rank": 1576,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q1",
@@ -1130,7 +1130,7 @@
      "name": "Taylor Fritz",
      "apiName": "T. Fritz",
      "country": "USA",
-     "rank": 14,
+     "rank": 13,
      "result": "F",
      "resultBadge": "F",
      "qualRound": null,
@@ -1153,7 +1153,7 @@
      "name": "Casper Ruud",
      "apiName": "C. Ruud",
      "country": "Norway",
-     "rank": 24,
+     "rank": 25,
      "result": "SF",
      "resultBadge": "SF",
      "qualRound": null,
@@ -1176,7 +1176,7 @@
      "name": "Jenson Brooksby",
      "apiName": "J. Brooksby",
      "country": "USA",
-     "rank": 99,
+     "rank": 94,
      "result": "SF",
      "resultBadge": "SF",
      "qualRound": null,
@@ -1270,7 +1270,7 @@
      "name": "Holger Rune",
      "apiName": "H. Rune",
      "country": "Denmark",
-     "rank": 1205,
+     "rank": 1202,
      "result": "QF",
      "resultBadge": "QF",
      "qualRound": null,
@@ -1293,7 +1293,7 @@
      "name": "Ethan Quinn",
      "apiName": "E. Quinn",
      "country": "USA",
-     "rank": 63,
+     "rank": 62,
      "result": "R16",
      "resultBadge": "R16 | Q",
      "qualRound": null,
@@ -1318,7 +1318,7 @@
      "name": "Sho Shimabukuro",
      "apiName": "S. Shimabukuro",
      "country": "Japan",
-     "rank": 109,
+     "rank": 106,
      "result": "R16",
      "resultBadge": "R16 | Q",
      "qualRound": null,
@@ -1343,7 +1343,7 @@
      "name": "Marton Fucsovics",
      "apiName": "M. Fucsovics",
      "country": "Hungary",
-     "rank": 141,
+     "rank": 143,
      "result": "R16",
      "resultBadge": "R16 | Q",
      "qualRound": null,
@@ -1391,7 +1391,7 @@
      "name": "Zizou Bergs",
      "apiName": "Z. Bergs",
      "country": "Belgium",
-     "rank": 41,
+     "rank": 39,
      "result": "R16",
      "resultBadge": "R16",
      "qualRound": null,
@@ -1414,7 +1414,7 @@
      "name": "Matteo Berrettini",
      "apiName": "M. Berrettini",
      "country": "Italy",
-     "rank": 43,
+     "rank": 48,
      "result": "R16",
      "resultBadge": "R16",
      "qualRound": null,
@@ -1437,7 +1437,7 @@
      "name": "Nuno Borges",
      "apiName": "N. Borges",
      "country": "Portugal",
-     "rank": 52,
+     "rank": 53,
      "result": "R16",
      "resultBadge": "R16",
      "qualRound": null,
@@ -1460,7 +1460,7 @@
      "name": "Daniel Altmaier",
      "apiName": "D. Altmaier",
      "country": "Germany",
-     "rank": 65,
+     "rank": 60,
      "result": "R16",
      "resultBadge": "R16",
      "qualRound": null,
@@ -1506,7 +1506,7 @@
      "name": "Manuel Cerundolo Juan",
      "apiName": "J. M. Cerundolo",
      "country": "Argentina",
-     "rank": 53,
+     "rank": 54,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q2",
@@ -1529,7 +1529,7 @@
      "name": "Mattia Bellucci",
      "apiName": "M. Bellucci",
      "country": "Italy",
-     "rank": 68,
+     "rank": 66,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q2",
@@ -1552,7 +1552,7 @@
      "name": "Rei Sakamoto",
      "apiName": "R. Sakamoto",
      "country": "Japan",
-     "rank": 124,
+     "rank": 125,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q2",
@@ -1598,29 +1598,7 @@
      "name": "Alejandro Tabilo",
      "apiName": "A. Tabilo",
      "country": "Chile",
-     "rank": 31,
-     "result": "R32",
-     "resultBadge": "R32",
-     "qualRound": null,
-     "qualified": false,
-     "ll": false,
-     "mainPoints": 0,
-     "qualifyingPoints": 0,
-     "points": 0,
-     "pointsComplete": true,
-     "dropDate": "2026-10-05",
-     "byeCorrected": false,
-     "flags": [],
-     "status": null,
-     "statusBasis": "draw-not-held",
-     "statusInferred": false
-    },
-    {
-     "playerKey": "1105",
-     "name": "Ugo Humbert",
-     "apiName": "U. Humbert",
-     "country": "France",
-     "rank": 35,
+     "rank": 30,
      "result": "R32",
      "resultBadge": "R32",
      "qualRound": null,
@@ -1642,7 +1620,7 @@
      "name": "Alex Michelsen",
      "apiName": "A. Michelsen",
      "country": "USA",
-     "rank": 37,
+     "rank": 34,
      "result": "R32",
      "resultBadge": "R32",
      "qualRound": null,
@@ -1660,11 +1638,11 @@
      "statusInferred": false
     },
     {
-     "playerKey": "431",
-     "name": "Denis Shapovalov",
-     "apiName": "D. Shapovalov",
-     "country": "Canada",
-     "rank": 47,
+     "playerKey": "1105",
+     "name": "Ugo Humbert",
+     "apiName": "U. Humbert",
+     "country": "France",
+     "rank": 38,
      "result": "R32",
      "resultBadge": "R32",
      "qualRound": null,
@@ -1704,11 +1682,33 @@
      "statusInferred": false
     },
     {
+     "playerKey": "431",
+     "name": "Denis Shapovalov",
+     "apiName": "D. Shapovalov",
+     "country": "Canada",
+     "rank": 52,
+     "result": "R32",
+     "resultBadge": "R32",
+     "qualRound": null,
+     "qualified": false,
+     "ll": false,
+     "mainPoints": 0,
+     "qualifyingPoints": 0,
+     "points": 0,
+     "pointsComplete": true,
+     "dropDate": "2026-10-05",
+     "byeCorrected": false,
+     "flags": [],
+     "status": null,
+     "statusBasis": "draw-not-held",
+     "statusInferred": false
+    },
+    {
      "playerKey": "2083",
      "name": "Jaume Munar",
      "apiName": "J. Munar",
      "country": "Spain",
-     "rank": 51,
+     "rank": 65,
      "result": "R32",
      "resultBadge": "R32",
      "qualRound": null,
@@ -1730,7 +1730,7 @@
      "name": "Tomas Machac",
      "apiName": "T. Machac",
      "country": "Czech Republic",
-     "rank": 72,
+     "rank": 71,
      "result": "R32",
      "resultBadge": "R32",
      "qualRound": null,
@@ -1752,7 +1752,7 @@
      "name": "Hamad Medjedovic",
      "apiName": "H. Medjedovic",
      "country": "Serbia",
-     "rank": 76,
+     "rank": 78,
      "result": "R32",
      "resultBadge": "R32",
      "qualRound": null,
@@ -1858,11 +1858,11 @@
      "statusInferred": false
     },
     {
-     "playerKey": "1972",
-     "name": "Yoshihito Nishioka",
-     "apiName": "Y. Nishioka",
+     "playerKey": "1097",
+     "name": "Yosuke Watanuki",
+     "apiName": "Y. Watanuki",
      "country": "Japan",
-     "rank": 267,
+     "rank": 374,
      "result": "R32",
      "resultBadge": "R32",
      "qualRound": null,
@@ -1880,11 +1880,11 @@
      "statusInferred": false
     },
     {
-     "playerKey": "1097",
-     "name": "Yosuke Watanuki",
-     "apiName": "Y. Watanuki",
+     "playerKey": "1972",
+     "name": "Yoshihito Nishioka",
+     "apiName": "Y. Nishioka",
      "country": "Japan",
-     "rank": 375,
+     "rank": 381,
      "result": "R32",
      "resultBadge": "R32",
      "qualRound": null,
@@ -1906,7 +1906,7 @@
      "name": "Jordan Thompson",
      "apiName": "J. Thompson",
      "country": "Australia",
-     "rank": 539,
+     "rank": 604,
      "result": "R32",
      "resultBadge": "R32",
      "qualRound": null,
@@ -1928,7 +1928,7 @@
      "name": "Mariano Navone",
      "apiName": "M. Navone",
      "country": "Argentina",
-     "rank": 45,
+     "rank": 43,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q1",
@@ -1952,7 +1952,7 @@
      "name": "Aleksandar Kovacevic",
      "apiName": "A. Kovacevic",
      "country": "USA",
-     "rank": 82,
+     "rank": 84,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q1",
@@ -1976,7 +1976,7 @@
      "name": "Adam Walton",
      "apiName": "A. Walton",
      "country": "Australia",
-     "rank": 97,
+     "rank": 98,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q1",
@@ -2000,7 +2000,7 @@
      "name": "Rio Noguchi",
      "apiName": "R. Noguchi",
      "country": "Japan",
-     "rank": 215,
+     "rank": 214,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q1",
@@ -2048,31 +2048,7 @@
      "name": "Yuta Shimizu",
      "apiName": "Y. Shimizu",
      "country": "Japan",
-     "rank": 376,
-     "result": "Q",
-     "resultBadge": "Q",
-     "qualRound": "Q1",
-     "qualified": false,
-     "ll": false,
-     "mainPoints": null,
-     "qualifyingPoints": 0,
-     "points": 0,
-     "pointsComplete": true,
-     "dropDate": "2026-10-05",
-     "byeCorrected": false,
-     "flags": [
-      "qual-early-zero"
-     ],
-     "status": null,
-     "statusBasis": "draw-not-held",
-     "statusInferred": false
-    },
-    {
-     "playerKey": "594",
-     "name": "Filip Misolic",
-     "apiName": "F. Misolic",
-     "country": "Austria",
-     "rank": 495,
+     "rank": 404,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q1",
@@ -2096,7 +2072,31 @@
      "name": "Yasutaka Uchiyama",
      "apiName": "Y. Uchiyama",
      "country": "Japan",
-     "rank": 525,
+     "rank": 527,
+     "result": "Q",
+     "resultBadge": "Q",
+     "qualRound": "Q1",
+     "qualified": false,
+     "ll": false,
+     "mainPoints": null,
+     "qualifyingPoints": 0,
+     "points": 0,
+     "pointsComplete": true,
+     "dropDate": "2026-10-05",
+     "byeCorrected": false,
+     "flags": [
+      "qual-early-zero"
+     ],
+     "status": null,
+     "statusBasis": "draw-not-held",
+     "statusInferred": false
+    },
+    {
+     "playerKey": "594",
+     "name": "Filip Misolic",
+     "apiName": "F. Misolic",
+     "country": "Austria",
+     "rank": 688,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q1",
@@ -2159,7 +2159,7 @@
      "name": "Valentin Vacherot",
      "apiName": "V. Vacherot",
      "country": "Monaco",
-     "rank": 32,
+     "rank": 31,
      "result": "Won",
      "resultBadge": "Won | Q",
      "qualRound": null,
@@ -2276,7 +2276,7 @@
      "name": "Alex De Minaur",
      "apiName": "A. De Minaur",
      "country": "Australia",
-     "rank": 8,
+     "rank": 10,
      "result": "QF",
      "resultBadge": "QF",
      "qualRound": null,
@@ -2299,7 +2299,7 @@
      "name": "Zizou Bergs",
      "apiName": "Z. Bergs",
      "country": "Belgium",
-     "rank": 41,
+     "rank": 39,
      "result": "QF",
      "resultBadge": "QF",
      "qualRound": null,
@@ -2322,7 +2322,7 @@
      "name": "Holger Rune",
      "apiName": "H. Rune",
      "country": "Denmark",
-     "rank": 1205,
+     "rank": 1202,
      "result": "QF",
      "resultBadge": "QF",
      "qualRound": null,
@@ -2368,7 +2368,7 @@
      "name": "Jiri Lehecka",
      "apiName": "J. Lehecka",
      "country": "Czech Republic",
-     "rank": 20,
+     "rank": 21,
      "result": "R16",
      "resultBadge": "R16",
      "qualRound": null,
@@ -2410,11 +2410,11 @@
     },
     {
      "order": 12,
-     "playerKey": "2083",
-     "name": "Jaume Munar",
-     "apiName": "J. Munar",
-     "country": "Spain",
-     "rank": 51,
+     "playerKey": "427",
+     "name": "Tallon Griekspoor",
+     "apiName": "T. Griekspoor",
+     "country": "Netherlands",
+     "rank": 50,
      "result": "R16",
      "resultBadge": "R16",
      "qualRound": null,
@@ -2437,7 +2437,7 @@
      "name": "Nuno Borges",
      "apiName": "N. Borges",
      "country": "Portugal",
-     "rank": 52,
+     "rank": 53,
      "result": "R16",
      "resultBadge": "R16",
      "qualRound": null,
@@ -2456,11 +2456,11 @@
     },
     {
      "order": 14,
-     "playerKey": "427",
-     "name": "Tallon Griekspoor",
-     "apiName": "T. Griekspoor",
-     "country": "Netherlands",
-     "rank": 60,
+     "playerKey": "2083",
+     "name": "Jaume Munar",
+     "apiName": "J. Munar",
+     "country": "Spain",
+     "rank": 65,
      "result": "R16",
      "resultBadge": "R16",
      "qualRound": null,
@@ -2483,7 +2483,7 @@
      "name": "Giovanni Mpetshi Perricard",
      "apiName": "G. Mpetshi Perricard",
      "country": "France",
-     "rank": 145,
+     "rank": 148,
      "result": "R16",
      "resultBadge": "R16",
      "qualRound": null,
@@ -2554,7 +2554,7 @@
      "name": "Yoshihito Nishioka",
      "apiName": "Y. Nishioka",
      "country": "Japan",
-     "rank": 267,
+     "rank": 381,
      "result": "R32",
      "resultBadge": "R32 | Q",
      "qualRound": null,
@@ -2621,10 +2621,10 @@
     },
     {
      "order": 21,
-     "playerKey": "2842",
-     "name": "Alejandro Davidovich Fokina",
-     "apiName": "A. Davidovich Fokina",
-     "country": "Spain",
+     "playerKey": "2832",
+     "name": "Taylor Fritz",
+     "apiName": "T. Fritz",
+     "country": "USA",
      "rank": 13,
      "result": "R32",
      "resultBadge": "R32",
@@ -2644,11 +2644,11 @@
     },
     {
      "order": 22,
-     "playerKey": "2832",
-     "name": "Taylor Fritz",
-     "apiName": "T. Fritz",
-     "country": "USA",
-     "rank": 14,
+     "playerKey": "2842",
+     "name": "Alejandro Davidovich Fokina",
+     "apiName": "A. Davidovich Fokina",
+     "country": "Spain",
+     "rank": 15,
      "result": "R32",
      "resultBadge": "R32",
      "qualRound": null,
@@ -2671,7 +2671,7 @@
      "name": "Francisco Cerundolo",
      "apiName": "F. Cerundolo",
      "country": "Argentina",
-     "rank": 21,
+     "rank": 19,
      "result": "R32",
      "resultBadge": "R32",
      "qualRound": null,
@@ -2717,7 +2717,7 @@
      "name": "Ugo Humbert",
      "apiName": "U. Humbert",
      "country": "France",
-     "rank": 35,
+     "rank": 38,
      "result": "R32",
      "resultBadge": "R32",
      "qualRound": null,
@@ -2740,7 +2740,7 @@
      "name": "Cameron Norrie",
      "apiName": "C. Norrie",
      "country": "United Kingdom",
-     "rank": 40,
+     "rank": 41,
      "result": "R32",
      "resultBadge": "R32",
      "qualRound": null,
@@ -2763,7 +2763,7 @@
      "name": "Denis Shapovalov",
      "apiName": "D. Shapovalov",
      "country": "Canada",
-     "rank": 47,
+     "rank": 52,
      "result": "R32",
      "resultBadge": "R32",
      "qualRound": null,
@@ -2786,7 +2786,7 @@
      "name": "Tomas Machac",
      "apiName": "T. Machac",
      "country": "Czech Republic",
-     "rank": 72,
+     "rank": 71,
      "result": "R32",
      "resultBadge": "R32",
      "qualRound": null,
@@ -2809,7 +2809,7 @@
      "name": "Kamil Majchrzak",
      "apiName": "K. Majchrzak",
      "country": "Poland",
-     "rank": 78,
+     "rank": 82,
      "result": "R32",
      "resultBadge": "R32",
      "qualRound": null,
@@ -2855,7 +2855,7 @@
      "name": "Juncheng Shang",
      "apiName": "J. Shang",
      "country": "China",
-     "rank": 248,
+     "rank": 250,
      "result": "R32",
      "resultBadge": "R32",
      "qualRound": null,
@@ -2878,7 +2878,7 @@
      "name": "David Goffin",
      "apiName": "D. Goffin",
      "country": "Belgium",
-     "rank": 657,
+     "rank": 591,
      "result": "R32",
      "resultBadge": "R32",
      "qualRound": null,
@@ -2901,7 +2901,7 @@
      "name": "Alejandro Tabilo",
      "apiName": "A. Tabilo",
      "country": "Chile",
-     "rank": 31,
+     "rank": 30,
      "result": "R64",
      "resultBadge": "R64 | Q",
      "qualRound": null,
@@ -2926,7 +2926,7 @@
      "name": "Valentin Royer",
      "apiName": "V. Royer",
      "country": "France",
-     "rank": 110,
+     "rank": 117,
      "result": "R64",
      "resultBadge": "R64 | Q",
      "qualRound": null,
@@ -2951,7 +2951,7 @@
      "name": "Dalibor Svrcina",
      "apiName": "D. Svrcina",
      "country": "Czech Republic",
-     "rank": 119,
+     "rank": 120,
      "result": "R64",
      "resultBadge": "R64 | Q",
      "qualRound": null,
@@ -2999,7 +2999,7 @@
      "name": "Quentin Halys",
      "apiName": "Q. Halys",
      "country": "France",
-     "rank": 46,
+     "rank": 45,
      "result": "R64",
      "resultBadge": "R64",
      "qualRound": null,
@@ -3041,11 +3041,11 @@
     },
     {
      "order": 39,
-     "playerKey": "10148",
-     "name": "Fabian Marozsan",
-     "apiName": "F. Marozsan",
-     "country": "Hungary",
-     "rank": 64,
+     "playerKey": "1099",
+     "name": "Daniel Altmaier",
+     "apiName": "D. Altmaier",
+     "country": "Germany",
+     "rank": 60,
      "result": "R64",
      "resultBadge": "R64",
      "qualRound": null,
@@ -3064,11 +3064,11 @@
     },
     {
      "order": 40,
-     "playerKey": "1099",
-     "name": "Daniel Altmaier",
-     "apiName": "D. Altmaier",
-     "country": "Germany",
-     "rank": 65,
+     "playerKey": "10148",
+     "name": "Fabian Marozsan",
+     "apiName": "F. Marozsan",
+     "country": "Hungary",
+     "rank": 63,
      "result": "R64",
      "resultBadge": "R64",
      "qualRound": null,
@@ -3091,7 +3091,7 @@
      "name": "Mattia Bellucci",
      "apiName": "M. Bellucci",
      "country": "Italy",
-     "rank": 68,
+     "rank": 66,
      "result": "R64",
      "resultBadge": "R64",
      "qualRound": null,
@@ -3110,6 +3110,29 @@
     },
     {
      "order": 42,
+     "playerKey": "438",
+     "name": "Adrian Mannarino",
+     "apiName": "A. Mannarino",
+     "country": "France",
+     "rank": 73,
+     "result": "R64",
+     "resultBadge": "R64",
+     "qualRound": null,
+     "qualified": false,
+     "ll": false,
+     "mainPoints": 30,
+     "qualifyingPoints": 0,
+     "points": 30,
+     "pointsComplete": true,
+     "dropDate": "2026-10-12",
+     "byeCorrected": false,
+     "flags": [],
+     "status": null,
+     "statusBasis": "draw-not-held",
+     "statusInferred": false
+    },
+    {
+     "order": 43,
      "playerKey": "401",
      "name": "Camilo Ugo Carabelli",
      "apiName": "C. Ugo Carabelli",
@@ -3132,35 +3155,12 @@
      "statusInferred": false
     },
     {
-     "order": 43,
-     "playerKey": "438",
-     "name": "Adrian Mannarino",
-     "apiName": "A. Mannarino",
-     "country": "France",
-     "rank": 79,
-     "result": "R64",
-     "resultBadge": "R64",
-     "qualRound": null,
-     "qualified": false,
-     "ll": false,
-     "mainPoints": 30,
-     "qualifyingPoints": 0,
-     "points": 30,
-     "pointsComplete": true,
-     "dropDate": "2026-10-12",
-     "byeCorrected": false,
-     "flags": [],
-     "status": null,
-     "statusBasis": "draw-not-held",
-     "statusInferred": false
-    },
-    {
      "order": 44,
-     "playerKey": "2167",
-     "name": "Marin Cilic",
-     "apiName": "M. Cilic",
-     "country": "Croatia",
-     "rank": 84,
+     "playerKey": "796",
+     "name": "Yunchaokete Bu",
+     "apiName": "Y. Bu",
+     "country": "China",
+     "rank": 92,
      "result": "R64",
      "resultBadge": "R64",
      "qualRound": null,
@@ -3179,11 +3179,11 @@
     },
     {
      "order": 45,
-     "playerKey": "796",
-     "name": "Yunchaokete Bu",
-     "apiName": "Y. Bu",
-     "country": "China",
-     "rank": 91,
+     "playerKey": "2169",
+     "name": "Jenson Brooksby",
+     "apiName": "J. Brooksby",
+     "country": "USA",
+     "rank": 94,
      "result": "R64",
      "resultBadge": "R64",
      "qualRound": null,
@@ -3202,11 +3202,11 @@
     },
     {
      "order": 46,
-     "playerKey": "2169",
-     "name": "Jenson Brooksby",
-     "apiName": "J. Brooksby",
-     "country": "USA",
-     "rank": 99,
+     "playerKey": "2167",
+     "name": "Marin Cilic",
+     "apiName": "M. Cilic",
+     "country": "Croatia",
+     "rank": 96,
      "result": "R64",
      "resultBadge": "R64",
      "qualRound": null,
@@ -3229,7 +3229,7 @@
      "name": "Benjamin Bonzi",
      "apiName": "B. Bonzi",
      "country": "France",
-     "rank": 100,
+     "rank": 99,
      "result": "R64",
      "resultBadge": "R64",
      "qualRound": null,
@@ -3252,7 +3252,7 @@
      "name": "Christopher O'Connell",
      "apiName": "C. O'Connell",
      "country": "Australia",
-     "rank": 117,
+     "rank": 118,
      "result": "R64",
      "resultBadge": "R64",
      "qualRound": null,
@@ -3275,7 +3275,7 @@
      "name": "Francisco Comesana",
      "apiName": "F. Comesana",
      "country": "Argentina",
-     "rank": 130,
+     "rank": 128,
      "result": "R64",
      "resultBadge": "R64",
      "qualRound": null,
@@ -3344,7 +3344,7 @@
      "name": "Jordan Thompson",
      "apiName": "J. Thompson",
      "country": "Australia",
-     "rank": 539,
+     "rank": 604,
      "result": "R64",
      "resultBadge": "R64",
      "qualRound": null,
@@ -3363,11 +3363,11 @@
     },
     {
      "order": 53,
-     "playerKey": "37897",
-     "name": "Rei Sakamoto",
-     "apiName": "R. Sakamoto",
-     "country": "Japan",
-     "rank": 124,
+     "playerKey": "424",
+     "name": "Nikoloz Basilashvili",
+     "apiName": "N. Basilashvili",
+     "country": "Georgia",
+     "rank": 95,
      "result": "R128",
      "resultBadge": "R128 | Q",
      "qualRound": null,
@@ -3388,11 +3388,11 @@
     },
     {
      "order": 54,
-     "playerKey": "424",
-     "name": "Nikoloz Basilashvili",
-     "apiName": "N. Basilashvili",
-     "country": "Georgia",
-     "rank": 128,
+     "playerKey": "37897",
+     "name": "Rei Sakamoto",
+     "apiName": "R. Sakamoto",
+     "country": "Japan",
+     "rank": 125,
      "result": "R128",
      "resultBadge": "R128 | Q",
      "qualRound": null,
@@ -3417,7 +3417,7 @@
      "name": "Tristan Schoolkate",
      "apiName": "T. Schoolkate",
      "country": "Australia",
-     "rank": 169,
+     "rank": 141,
      "result": "R128",
      "resultBadge": "R128 | Q",
      "qualRound": null,
@@ -3442,7 +3442,7 @@
      "name": "August Holmgren",
      "apiName": "A. Holmgren",
      "country": "Denmark",
-     "rank": 258,
+     "rank": 271,
      "result": "R128",
      "resultBadge": "R128 | Q",
      "qualRound": null,
@@ -3467,7 +3467,7 @@
      "name": "Ugo Blanchet",
      "apiName": "U. Blanchet",
      "country": "France",
-     "rank": 344,
+     "rank": 345,
      "result": "R128",
      "resultBadge": "R128 | Q",
      "qualRound": null,
@@ -3642,7 +3642,7 @@
      "name": "Alexander Bublik",
      "apiName": "A. Bublik",
      "country": "Kazakhstan",
-     "rank": 19,
+     "rank": 20,
      "result": "R128",
      "resultBadge": "R128",
      "qualRound": null,
@@ -3688,10 +3688,10 @@
     },
     {
      "order": 66,
-     "playerKey": "430",
-     "name": "Casper Ruud",
-     "apiName": "C. Ruud",
-     "country": "Norway",
+     "playerKey": "435",
+     "name": "Karen Khachanov",
+     "apiName": "K. Khachanov",
+     "country": "World",
      "rank": 24,
      "result": "R128",
      "resultBadge": "R128",
@@ -3713,10 +3713,10 @@
     },
     {
      "order": 67,
-     "playerKey": "435",
-     "name": "Karen Khachanov",
-     "apiName": "K. Khachanov",
-     "country": "World",
+     "playerKey": "430",
+     "name": "Casper Ruud",
+     "apiName": "C. Ruud",
+     "country": "Norway",
      "rank": 25,
      "result": "R128",
      "resultBadge": "R128",
@@ -3742,7 +3742,7 @@
      "name": "Alex Michelsen",
      "apiName": "A. Michelsen",
      "country": "USA",
-     "rank": 37,
+     "rank": 34,
      "result": "R128",
      "resultBadge": "R128",
      "qualRound": null,
@@ -3767,7 +3767,7 @@
      "name": "Botic Van De Zandschulp",
      "apiName": "B. Van De Zandschulp",
      "country": "Netherlands",
-     "rank": 38,
+     "rank": 37,
      "result": "R128",
      "resultBadge": "R128",
      "qualRound": null,
@@ -3786,10 +3786,10 @@
     },
     {
      "order": 70,
-     "playerKey": "2844",
-     "name": "Matteo Berrettini",
-     "apiName": "M. Berrettini",
-     "country": "Italy",
+     "playerKey": "949",
+     "name": "Mariano Navone",
+     "apiName": "M. Navone",
+     "country": "Argentina",
      "rank": 43,
      "result": "R128",
      "resultBadge": "R128",
@@ -3809,11 +3809,11 @@
     },
     {
      "order": 71,
-     "playerKey": "949",
-     "name": "Mariano Navone",
-     "apiName": "M. Navone",
-     "country": "Argentina",
-     "rank": 45,
+     "playerKey": "2844",
+     "name": "Matteo Berrettini",
+     "apiName": "M. Berrettini",
+     "country": "Italy",
+     "rank": 48,
      "result": "R128",
      "resultBadge": "R128",
      "qualRound": null,
@@ -3836,7 +3836,7 @@
      "name": "Manuel Cerundolo Juan",
      "apiName": "J. M. Cerundolo",
      "country": "Argentina",
-     "rank": 53,
+     "rank": 54,
      "result": "R128",
      "resultBadge": "R128",
      "qualRound": null,
@@ -3859,7 +3859,7 @@
      "name": "Miomir Kecmanovic",
      "apiName": "M. Kecmanovic",
      "country": "Serbia",
-     "rank": 57,
+     "rank": 58,
      "result": "R128",
      "resultBadge": "R128",
      "qualRound": null,
@@ -3882,7 +3882,7 @@
      "name": "Ethan Quinn",
      "apiName": "E. Quinn",
      "country": "USA",
-     "rank": 63,
+     "rank": 62,
      "result": "R128",
      "resultBadge": "R128",
      "qualRound": null,
@@ -3905,7 +3905,7 @@
      "name": "Hamad Medjedovic",
      "apiName": "H. Medjedovic",
      "country": "Serbia",
-     "rank": 76,
+     "rank": 78,
      "result": "R128",
      "resultBadge": "R128",
      "qualRound": null,
@@ -3947,11 +3947,11 @@
     },
     {
      "order": 77,
-     "playerKey": "2978",
-     "name": "Aleksandar Kovacevic",
-     "apiName": "A. Kovacevic",
-     "country": "USA",
-     "rank": 82,
+     "playerKey": "1079",
+     "name": "Damir Dzumhur",
+     "apiName": "D. Dzumhur",
+     "country": "Bosnia and Herzegovina",
+     "rank": 83,
      "result": "R128",
      "resultBadge": "R128",
      "qualRound": null,
@@ -3970,11 +3970,11 @@
     },
     {
      "order": 78,
-     "playerKey": "1079",
-     "name": "Damir Dzumhur",
-     "apiName": "D. Dzumhur",
-     "country": "Bosnia and Herzegovina",
-     "rank": 83,
+     "playerKey": "2978",
+     "name": "Aleksandar Kovacevic",
+     "apiName": "A. Kovacevic",
+     "country": "USA",
+     "rank": 84,
      "result": "R128",
      "resultBadge": "R128",
      "qualRound": null,
@@ -4016,11 +4016,11 @@
     },
     {
      "order": 80,
-     "playerKey": "2843",
-     "name": "Lorenzo Sonego",
-     "apiName": "L. Sonego",
-     "country": "Italy",
-     "rank": 89,
+     "playerKey": "13091",
+     "name": "Terence Atmane",
+     "apiName": "T. Atmane",
+     "country": "France",
+     "rank": 90,
      "result": "R128",
      "resultBadge": "R128",
      "qualRound": null,
@@ -4039,11 +4039,57 @@
     },
     {
      "order": 81,
+     "playerKey": "2843",
+     "name": "Lorenzo Sonego",
+     "apiName": "L. Sonego",
+     "country": "Italy",
+     "rank": 91,
+     "result": "R128",
+     "resultBadge": "R128",
+     "qualRound": null,
+     "qualified": false,
+     "ll": false,
+     "mainPoints": 10,
+     "qualifyingPoints": 0,
+     "points": 10,
+     "pointsComplete": true,
+     "dropDate": "2026-10-12",
+     "byeCorrected": false,
+     "flags": [],
+     "status": null,
+     "statusBasis": "draw-not-held",
+     "statusInferred": false
+    },
+    {
+     "order": 82,
+     "playerKey": "10070",
+     "name": "Adam Walton",
+     "apiName": "A. Walton",
+     "country": "Australia",
+     "rank": 98,
+     "result": "R128",
+     "resultBadge": "R128",
+     "qualRound": null,
+     "qualified": false,
+     "ll": false,
+     "mainPoints": 10,
+     "qualifyingPoints": 0,
+     "points": 10,
+     "pointsComplete": true,
+     "dropDate": "2026-10-12",
+     "byeCorrected": false,
+     "flags": [],
+     "status": null,
+     "statusBasis": "draw-not-held",
+     "statusInferred": false
+    },
+    {
+     "order": 83,
      "playerKey": "2674",
      "name": "Corentin Moutet",
      "apiName": "C. Moutet",
      "country": "France",
-     "rank": 94,
+     "rank": 103,
      "result": "R128",
      "resultBadge": "R128",
      "qualRound": null,
@@ -4063,58 +4109,12 @@
      "statusInferred": false
     },
     {
-     "order": 82,
-     "playerKey": "10070",
-     "name": "Adam Walton",
-     "apiName": "A. Walton",
-     "country": "Australia",
-     "rank": 97,
-     "result": "R128",
-     "resultBadge": "R128",
-     "qualRound": null,
-     "qualified": false,
-     "ll": false,
-     "mainPoints": 10,
-     "qualifyingPoints": 0,
-     "points": 10,
-     "pointsComplete": true,
-     "dropDate": "2026-10-12",
-     "byeCorrected": false,
-     "flags": [],
-     "status": null,
-     "statusBasis": "draw-not-held",
-     "statusInferred": false
-    },
-    {
-     "order": 83,
-     "playerKey": "13091",
-     "name": "Terence Atmane",
-     "apiName": "T. Atmane",
-     "country": "France",
-     "rank": 98,
-     "result": "R128",
-     "resultBadge": "R128",
-     "qualRound": null,
-     "qualified": false,
-     "ll": false,
-     "mainPoints": 10,
-     "qualifyingPoints": 0,
-     "points": 10,
-     "pointsComplete": true,
-     "dropDate": "2026-10-12",
-     "byeCorrected": false,
-     "flags": [],
-     "status": null,
-     "statusBasis": "draw-not-held",
-     "statusInferred": false
-    },
-    {
      "order": 84,
      "playerKey": "1849",
      "name": "Yibing Wu",
      "apiName": "Y. Wu",
      "country": "China",
-     "rank": 106,
+     "rank": 107,
      "result": "R128",
      "resultBadge": "R128",
      "qualRound": null,
@@ -4137,7 +4137,7 @@
      "name": "Alexander Shevchenko",
      "apiName": "A. Shevchenko",
      "country": "Kazakhstan",
-     "rank": 108,
+     "rank": 109,
      "result": "R128",
      "resultBadge": "R128",
      "qualRound": null,
@@ -4210,7 +4210,7 @@
      "name": "Pedro Martinez",
      "apiName": "P. Martinez",
      "country": "Spain",
-     "rank": 125,
+     "rank": 126,
      "result": "R128",
      "resultBadge": "R128",
      "qualRound": null,
@@ -4233,7 +4233,7 @@
      "name": "Alexandre Muller",
      "apiName": "A. Muller",
      "country": "France",
-     "rank": 131,
+     "rank": 130,
      "result": "R128",
      "resultBadge": "R128",
      "qualRound": null,
@@ -4275,11 +4275,11 @@
     },
     {
      "order": 91,
-     "playerKey": "2168",
-     "name": "Stan Wawrinka",
-     "apiName": "S. Wawrinka",
-     "country": "Switzerland",
-     "rank": 140,
+     "playerKey": "2833",
+     "name": "Marton Fucsovics",
+     "apiName": "M. Fucsovics",
+     "country": "Hungary",
+     "rank": 143,
      "result": "R128",
      "resultBadge": "R128",
      "qualRound": null,
@@ -4298,11 +4298,11 @@
     },
     {
      "order": 92,
-     "playerKey": "2833",
-     "name": "Marton Fucsovics",
-     "apiName": "M. Fucsovics",
-     "country": "Hungary",
-     "rank": 141,
+     "playerKey": "2168",
+     "name": "Stan Wawrinka",
+     "apiName": "S. Wawrinka",
+     "country": "Switzerland",
+     "rank": 151,
      "result": "R128",
      "resultBadge": "R128",
      "qualRound": null,
@@ -4321,11 +4321,11 @@
     },
     {
      "order": 93,
-     "playerKey": "422",
-     "name": "Reilly Opelka",
-     "apiName": "R. Opelka",
-     "country": "USA",
-     "rank": 165,
+     "playerKey": "590",
+     "name": "Zhizhen Zhang",
+     "apiName": "Z. Zhang",
+     "country": "China",
+     "rank": 166,
      "result": "R128",
      "resultBadge": "R128",
      "qualRound": null,
@@ -4344,34 +4344,11 @@
     },
     {
      "order": 94,
-     "playerKey": "590",
-     "name": "Zhizhen Zhang",
-     "apiName": "Z. Zhang",
-     "country": "China",
-     "rank": 170,
-     "result": "R128",
-     "resultBadge": "R128",
-     "qualRound": null,
-     "qualified": false,
-     "ll": false,
-     "mainPoints": 10,
-     "qualifyingPoints": 0,
-     "points": 10,
-     "pointsComplete": true,
-     "dropDate": "2026-10-12",
-     "byeCorrected": false,
-     "flags": [],
-     "status": null,
-     "statusBasis": "draw-not-held",
-     "statusInferred": false
-    },
-    {
-     "order": 95,
      "playerKey": "2839",
      "name": "Mackenzie McDonald",
      "apiName": "M. McDonald",
      "country": "USA",
-     "rank": 229,
+     "rank": 238,
      "result": "R128",
      "resultBadge": "R128",
      "qualRound": null,
@@ -4392,12 +4369,35 @@
      "statusInferred": false
     },
     {
+     "order": 95,
+     "playerKey": "422",
+     "name": "Reilly Opelka",
+     "apiName": "R. Opelka",
+     "country": "USA",
+     "rank": 246,
+     "result": "R128",
+     "resultBadge": "R128",
+     "qualRound": null,
+     "qualified": false,
+     "ll": false,
+     "mainPoints": 10,
+     "qualifyingPoints": 0,
+     "points": 10,
+     "pointsComplete": true,
+     "dropDate": "2026-10-12",
+     "byeCorrected": false,
+     "flags": [],
+     "status": null,
+     "statusBasis": "draw-not-held",
+     "statusInferred": false
+    },
+    {
      "order": 96,
      "playerKey": "39862",
      "name": "Yi Zhou",
      "apiName": "Y. Zhou",
      "country": "China",
-     "rank": 280,
+     "rank": 256,
      "result": "R128",
      "resultBadge": "R128",
      "qualRound": null,
@@ -4420,7 +4420,7 @@
      "name": "Rinky Hijikata",
      "apiName": "R. Hijikata",
      "country": "Australia",
-     "rank": 86,
+     "rank": 85,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q2",
@@ -4439,11 +4439,11 @@
     },
     {
      "order": 98,
-     "playerKey": "2983",
-     "name": "Eliot Spizzirri",
-     "apiName": "E. Spizzirri",
-     "country": "USA",
-     "rank": 176,
+     "playerKey": "818",
+     "name": "Gauthier Onclin",
+     "apiName": "G. Onclin",
+     "country": "Belgium",
+     "rank": 173,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q2",
@@ -4462,11 +4462,11 @@
     },
     {
      "order": 99,
-     "playerKey": "818",
-     "name": "Gauthier Onclin",
-     "apiName": "G. Onclin",
-     "country": "Belgium",
-     "rank": 178,
+     "playerKey": "3696",
+     "name": "Liam Draxl",
+     "apiName": "L. Draxl",
+     "country": "Canada",
+     "rank": 194,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q2",
@@ -4485,11 +4485,11 @@
     },
     {
      "order": 100,
-     "playerKey": "3696",
-     "name": "Liam Draxl",
-     "apiName": "L. Draxl",
-     "country": "Canada",
-     "rank": 197,
+     "playerKey": "2983",
+     "name": "Eliot Spizzirri",
+     "apiName": "E. Spizzirri",
+     "country": "USA",
+     "rank": 206,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q2",
@@ -4512,7 +4512,7 @@
      "name": "Harold Mayot",
      "apiName": "H. Mayot",
      "country": "France",
-     "rank": 202,
+     "rank": 233,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q2",
@@ -4535,7 +4535,7 @@
      "name": "Billy Harris",
      "apiName": "B. Harris",
      "country": "United Kingdom",
-     "rank": 249,
+     "rank": 252,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q2",
@@ -4558,7 +4558,7 @@
      "name": "Yosuke Watanuki",
      "apiName": "Y. Watanuki",
      "country": "Japan",
-     "rank": 375,
+     "rank": 374,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q2",
@@ -4581,7 +4581,7 @@
      "name": "Beibit Zhukayev",
      "apiName": "B. Zhukayev",
      "country": "Kazakhstan",
-     "rank": 526,
+     "rank": 528,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q2",
@@ -4604,7 +4604,7 @@
      "name": "Jason Kubler",
      "apiName": "J. Kubler",
      "country": "Australia",
-     "rank": 564,
+     "rank": 567,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q2",
@@ -4647,11 +4647,11 @@
    ],
    "zeroRows": [
     {
-     "playerKey": "8926",
-     "name": "Titouan Droguet",
-     "apiName": "T. Droguet",
-     "country": "France",
-     "rank": 69,
+     "playerKey": "1900",
+     "name": "James Duckworth",
+     "apiName": "J. Duckworth",
+     "country": "Australia",
+     "rank": 68,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q1",
@@ -4671,11 +4671,11 @@
      "statusInferred": false
     },
     {
-     "playerKey": "1900",
-     "name": "James Duckworth",
-     "apiName": "J. Duckworth",
-     "country": "Australia",
-     "rank": 73,
+     "playerKey": "8926",
+     "name": "Titouan Droguet",
+     "apiName": "T. Droguet",
+     "country": "France",
+     "rank": 72,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q1",
@@ -4699,7 +4699,7 @@
      "name": "Kyrian Jacquet",
      "apiName": "K. Jacquet",
      "country": "France",
-     "rank": 85,
+     "rank": 79,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q1",
@@ -4723,7 +4723,7 @@
      "name": "Coleman Wong Chak Lam",
      "apiName": "C. Wong",
      "country": "Hong Kong",
-     "rank": 92,
+     "rank": 87,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q1",
@@ -4771,7 +4771,7 @@
      "name": "Nishesh Basavareddy",
      "apiName": "N. Basavareddy",
      "country": "USA",
-     "rank": 134,
+     "rank": 131,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q1",
@@ -4795,7 +4795,7 @@
      "name": "Taro Daniel",
      "apiName": "T. Daniel",
      "country": "Japan",
-     "rank": 179,
+     "rank": 177,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q1",
@@ -4819,7 +4819,7 @@
      "name": "Bernard Tomic",
      "apiName": "B. Tomic",
      "country": "Australia",
-     "rank": 180,
+     "rank": 179,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q1",
@@ -4843,7 +4843,7 @@
      "name": "Tristan Boyer",
      "apiName": "T. Boyer",
      "country": "USA",
-     "rank": 200,
+     "rank": 195,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q1",
@@ -4867,7 +4867,7 @@
      "name": "Rio Noguchi",
      "apiName": "R. Noguchi",
      "country": "Japan",
-     "rank": 215,
+     "rank": 214,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q1",
@@ -4891,7 +4891,7 @@
      "name": "Hsin Tseng Chun",
      "apiName": "C. H. Tseng",
      "country": "Taiwan",
-     "rank": 217,
+     "rank": 216,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q1",
@@ -4939,7 +4939,7 @@
      "name": "James McCabe",
      "apiName": "J. McCabe",
      "country": "Australia",
-     "rank": 247,
+     "rank": 255,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q1",
@@ -4963,7 +4963,7 @@
      "name": "Stefano Napolitano",
      "apiName": "S. Napolitano",
      "country": "Italy",
-     "rank": 273,
+     "rank": 276,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q1",
@@ -4987,7 +4987,7 @@
      "name": "Marc-Andrea Huesler",
      "apiName": "M. Huesler",
      "country": "Switzerland",
-     "rank": 277,
+     "rank": 281,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q1",
@@ -5011,7 +5011,7 @@
      "name": "Fajing Sun",
      "apiName": "F. Sun",
      "country": "China",
-     "rank": 296,
+     "rank": 292,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q1",
@@ -5035,7 +5035,7 @@
      "name": "Omar Jasika",
      "apiName": "O. Jasika",
      "country": "Australia",
-     "rank": 388,
+     "rank": 386,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q1",
@@ -5059,7 +5059,7 @@
      "name": "Jie Cui",
      "apiName": "J. Cui",
      "country": "China",
-     "rank": 448,
+     "rank": 393,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q1",
@@ -5083,7 +5083,7 @@
      "name": "Filip Misolic",
      "apiName": "F. Misolic",
      "country": "Austria",
-     "rank": 495,
+     "rank": 688,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q1",
@@ -5107,7 +5107,7 @@
      "name": "Giulio Zeppieri",
      "apiName": "G. Zeppieri",
      "country": "Italy",
-     "rank": 605,
+     "rank": 697,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q1",
@@ -5131,7 +5131,7 @@
      "name": "Rigele Te",
      "apiName": "R. Te",
      "country": "China",
-     "rank": 734,
+     "rank": 739,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q1",
@@ -5155,7 +5155,7 @@
      "name": "Linang Xiao",
      "apiName": "L. Xiao",
      "country": "China",
-     "rank": 1064,
+     "rank": 1063,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q1",
@@ -5179,7 +5179,7 @@
      "name": "Brandon Holt",
      "apiName": "B. Holt",
      "country": "USA",
-     "rank": 1287,
+     "rank": 1281,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q1",
@@ -5291,7 +5291,7 @@
      "name": "Corentin Moutet",
      "apiName": "C. Moutet",
      "country": "France",
-     "rank": 94,
+     "rank": 103,
      "result": "F",
      "resultBadge": "F",
      "qualRound": null,
@@ -5317,7 +5317,7 @@
      "name": "James Duckworth",
      "apiName": "J. Duckworth",
      "country": "Australia",
-     "rank": 73,
+     "rank": 68,
      "result": "SF",
      "resultBadge": "SF | Q",
      "qualRound": null,
@@ -5344,7 +5344,7 @@
      "name": "Alex Michelsen",
      "apiName": "A. Michelsen",
      "country": "USA",
-     "rank": 37,
+     "rank": 34,
      "result": "SF",
      "resultBadge": "SF",
      "qualRound": null,
@@ -5396,7 +5396,7 @@
      "name": "Jan-Lennard Struff",
      "apiName": "J-L. Struff",
      "country": "Germany",
-     "rank": 58,
+     "rank": 47,
      "result": "QF",
      "resultBadge": "QF",
      "qualRound": null,
@@ -5422,7 +5422,7 @@
      "name": "Fabian Marozsan",
      "apiName": "F. Marozsan",
      "country": "Hungary",
-     "rank": 64,
+     "rank": 63,
      "result": "QF",
      "resultBadge": "QF",
      "qualRound": null,
@@ -5501,7 +5501,7 @@
      "name": "Rinky Hijikata",
      "apiName": "R. Hijikata",
      "country": "Australia",
-     "rank": 86,
+     "rank": 85,
      "result": "R16",
      "resultBadge": "R16",
      "qualRound": null,
@@ -5529,7 +5529,7 @@
      "name": "Adam Walton",
      "apiName": "A. Walton",
      "country": "Australia",
-     "rank": 97,
+     "rank": 98,
      "result": "R16",
      "resultBadge": "R16",
      "qualRound": null,
@@ -5554,7 +5554,7 @@
      "name": "Alexander Shevchenko",
      "apiName": "A. Shevchenko",
      "country": "Kazakhstan",
-     "rank": 108,
+     "rank": 109,
      "result": "R16",
      "resultBadge": "R16",
      "qualRound": null,
@@ -5629,7 +5629,7 @@
      "name": "Bernard Tomic",
      "apiName": "B. Tomic",
      "country": "Australia",
-     "rank": 180,
+     "rank": 179,
      "result": "R32",
      "resultBadge": "R32 | Q",
      "qualRound": null,
@@ -5679,7 +5679,7 @@
      "name": "Ugo Blanchet",
      "apiName": "U. Blanchet",
      "country": "France",
-     "rank": 344,
+     "rank": 345,
      "result": "R32",
      "resultBadge": "R32 | Q",
      "qualRound": null,
@@ -5707,7 +5707,7 @@
      "name": "Titouan Droguet",
      "apiName": "T. Droguet",
      "country": "France",
-     "rank": 69,
+     "rank": 72,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q2",
@@ -5733,7 +5733,7 @@
      "name": "Marc-Andrea Huesler",
      "apiName": "M. Huesler",
      "country": "Switzerland",
-     "rank": 277,
+     "rank": 281,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q2",
@@ -5756,7 +5756,7 @@
      "name": "Mikhail Kukushkin",
      "apiName": "M. Kukushkin",
      "country": "Kazakhstan",
-     "rank": 389,
+     "rank": 341,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q2",
@@ -5808,7 +5808,7 @@
      "name": "Karen Khachanov",
      "apiName": "K. Khachanov",
      "country": "World",
-     "rank": 25,
+     "rank": 24,
      "result": "R32",
      "resultBadge": "R32",
      "qualRound": null,
@@ -5834,7 +5834,7 @@
      "name": "Hamad Medjedovic",
      "apiName": "H. Medjedovic",
      "country": "Serbia",
-     "rank": 76,
+     "rank": 78,
      "result": "R32",
      "resultBadge": "R32",
      "qualRound": null,
@@ -5881,7 +5881,7 @@
      "name": "Tristan Schoolkate",
      "apiName": "T. Schoolkate",
      "country": "Australia",
-     "rank": 169,
+     "rank": 141,
      "result": "R32",
      "resultBadge": "R32",
      "qualRound": null,
@@ -5903,7 +5903,7 @@
      "name": "Timofey Skatov",
      "apiName": "T. Skatov",
      "country": "Kazakhstan",
-     "rank": 201,
+     "rank": 200,
      "result": "R32",
      "resultBadge": "R32",
      "qualRound": null,
@@ -5927,7 +5927,7 @@
      "name": "Mackenzie McDonald",
      "apiName": "M. McDonald",
      "country": "USA",
-     "rank": 229,
+     "rank": 238,
      "result": "R32",
      "resultBadge": "R32",
      "qualRound": null,
@@ -5993,7 +5993,7 @@
      "name": "Beibit Zhukayev",
      "apiName": "B. Zhukayev",
      "country": "Kazakhstan",
-     "rank": 526,
+     "rank": 528,
      "result": "R32",
      "resultBadge": "R32",
      "qualRound": null,
@@ -6017,7 +6017,7 @@
      "name": "Amir Omarkhanov",
      "apiName": "A. Omarkhanov",
      "country": "Kazakhstan",
-     "rank": 615,
+     "rank": 622,
      "result": "R32",
      "resultBadge": "R32",
      "qualRound": null,
@@ -6041,7 +6041,7 @@
      "name": "Ilia Simakin",
      "apiName": "I. Simakin",
      "country": "World",
-     "rank": 143,
+     "rank": 146,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q1",
@@ -6067,7 +6067,7 @@
      "name": "Taro Daniel",
      "apiName": "T. Daniel",
      "country": "Japan",
-     "rank": 179,
+     "rank": 177,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q1",
@@ -6093,7 +6093,7 @@
      "name": "Liam Draxl",
      "apiName": "L. Draxl",
      "country": "Canada",
-     "rank": 197,
+     "rank": 194,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q1",
@@ -6117,7 +6117,7 @@
      "name": "Billy Harris",
      "apiName": "B. Harris",
      "country": "United Kingdom",
-     "rank": 249,
+     "rank": 252,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q1",
@@ -6141,7 +6141,7 @@
      "name": "August Holmgren",
      "apiName": "A. Holmgren",
      "country": "Denmark",
-     "rank": 258,
+     "rank": 271,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q1",
@@ -6165,7 +6165,7 @@
      "name": "Denis Yevseyev",
      "apiName": "D. Yevseyev",
      "country": "Kazakhstan",
-     "rank": 470,
+     "rank": 471,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q1",
@@ -6189,7 +6189,7 @@
      "name": "Saba Purtseladze",
      "apiName": "S. Purtseladze",
      "country": "Georgia",
-     "rank": 575,
+     "rank": 571,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q1",
@@ -6304,7 +6304,7 @@
      "name": "Jiri Lehecka",
      "apiName": "J. Lehecka",
      "country": "Czech Republic",
-     "rank": 20,
+     "rank": 21,
      "result": "F",
      "resultBadge": "F",
      "qualRound": null,
@@ -6354,7 +6354,7 @@
      "name": "Giovanni Mpetshi Perricard",
      "apiName": "G. Mpetshi Perricard",
      "country": "France",
-     "rank": 145,
+     "rank": 148,
      "result": "SF",
      "resultBadge": "SF",
      "qualRound": null,
@@ -6379,7 +6379,7 @@
      "name": "Eliot Spizzirri",
      "apiName": "E. Spizzirri",
      "country": "USA",
-     "rank": 176,
+     "rank": 206,
      "result": "QF",
      "resultBadge": "QF | Q",
      "qualRound": null,
@@ -6404,7 +6404,7 @@
      "name": "Alejandro Davidovich Fokina",
      "apiName": "A. Davidovich Fokina",
      "country": "Spain",
-     "rank": 13,
+     "rank": 15,
      "result": "QF",
      "resultBadge": "QF",
      "qualRound": null,
@@ -6457,7 +6457,7 @@
      "name": "Benjamin Bonzi",
      "apiName": "B. Bonzi",
      "country": "France",
-     "rank": 100,
+     "rank": 99,
      "result": "QF",
      "resultBadge": "QF",
      "qualRound": null,
@@ -6510,7 +6510,7 @@
      "name": "Nikoloz Basilashvili",
      "apiName": "N. Basilashvili",
      "country": "Georgia",
-     "rank": 128,
+     "rank": 95,
      "result": "R16",
      "resultBadge": "R16 | Q",
      "qualRound": null,
@@ -6538,7 +6538,7 @@
      "name": "Arnaud Bailly Gilles",
      "apiName": "G. A. Bailly",
      "country": "Belgium",
-     "rank": 408,
+     "rank": 411,
      "result": "R16",
      "resultBadge": "R16 | Q",
      "qualRound": null,
@@ -6565,7 +6565,7 @@
      "name": "Botic Van De Zandschulp",
      "apiName": "B. Van De Zandschulp",
      "country": "Netherlands",
-     "rank": 38,
+     "rank": 37,
      "result": "R16",
      "resultBadge": "R16",
      "qualRound": null,
@@ -6640,7 +6640,7 @@
      "name": "Valentin Royer",
      "apiName": "V. Royer",
      "country": "France",
-     "rank": 110,
+     "rank": 117,
      "result": "R16",
      "resultBadge": "R16",
      "qualRound": null,
@@ -6672,7 +6672,7 @@
      "name": "Francisco Comesana",
      "apiName": "F. Comesana",
      "country": "Argentina",
-     "rank": 130,
+     "rank": 128,
      "result": "R16",
      "resultBadge": "R16",
      "qualRound": null,
@@ -6720,7 +6720,7 @@
      "name": "Pierre-Hugues Herbert",
      "apiName": "P. Herbert",
      "country": "France",
-     "rank": 290,
+     "rank": 249,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q2",
@@ -6766,28 +6766,6 @@
    ],
    "zeroRows": [
     {
-     "playerKey": "40058",
-     "name": "Joao Fonseca",
-     "apiName": "J. Fonseca",
-     "country": "Brazil",
-     "rank": 28,
-     "result": "R32",
-     "resultBadge": "R32",
-     "qualRound": null,
-     "qualified": false,
-     "ll": false,
-     "mainPoints": 0,
-     "qualifyingPoints": 0,
-     "points": 0,
-     "pointsComplete": true,
-     "dropDate": "2026-10-19",
-     "byeCorrected": false,
-     "flags": [],
-     "status": "Not entered",
-     "statusBasis": "not-on-entry-list",
-     "statusInferred": false
-    },
-    {
      "playerKey": "1192",
      "name": "Matteo Arnaldi",
      "apiName": "M. Arnaldi",
@@ -6817,7 +6795,7 @@
      "name": "Zizou Bergs",
      "apiName": "Z. Bergs",
      "country": "Belgium",
-     "rank": 41,
+     "rank": 39,
      "result": "R32",
      "resultBadge": "R32",
      "qualRound": null,
@@ -6837,11 +6815,33 @@
      "drawEntry": null
     },
     {
+     "playerKey": "40058",
+     "name": "Joao Fonseca",
+     "apiName": "J. Fonseca",
+     "country": "Brazil",
+     "rank": 40,
+     "result": "R32",
+     "resultBadge": "R32",
+     "qualRound": null,
+     "qualified": false,
+     "ll": false,
+     "mainPoints": 0,
+     "qualifyingPoints": 0,
+     "points": 0,
+     "pointsComplete": true,
+     "dropDate": "2026-10-19",
+     "byeCorrected": false,
+     "flags": [],
+     "status": "Not entered",
+     "statusBasis": "not-on-entry-list",
+     "statusInferred": false
+    },
+    {
      "playerKey": "1925",
      "name": "Quentin Halys",
      "apiName": "Q. Halys",
      "country": "France",
-     "rank": 46,
+     "rank": 45,
      "result": "R32",
      "resultBadge": "R32",
      "qualRound": null,
@@ -6892,7 +6892,7 @@
      "name": "Daniel Altmaier",
      "apiName": "D. Altmaier",
      "country": "Germany",
-     "rank": 65,
+     "rank": 60,
      "result": "R32",
      "resultBadge": "R32",
      "qualRound": null,
@@ -6922,7 +6922,7 @@
      "name": "Mattia Bellucci",
      "apiName": "M. Bellucci",
      "country": "Italy",
-     "rank": 68,
+     "rank": 66,
      "result": "R32",
      "resultBadge": "R32",
      "qualRound": null,
@@ -6947,7 +6947,7 @@
      "name": "Pedro Martinez",
      "apiName": "P. Martinez",
      "country": "Spain",
-     "rank": 125,
+     "rank": 126,
      "result": "R32",
      "resultBadge": "R32",
      "qualRound": null,
@@ -6969,7 +6969,7 @@
      "name": "Federico Cina",
      "apiName": "F. Cina",
      "country": "Italy",
-     "rank": 135,
+     "rank": 142,
      "result": "R32",
      "resultBadge": "R32",
      "qualRound": null,
@@ -6993,7 +6993,7 @@
      "name": "Reilly Opelka",
      "apiName": "R. Opelka",
      "country": "USA",
-     "rank": 165,
+     "rank": 246,
      "result": "R32",
      "resultBadge": "R32",
      "qualRound": null,
@@ -7015,7 +7015,7 @@
      "name": "David Goffin",
      "apiName": "D. Goffin",
      "country": "Belgium",
-     "rank": 657,
+     "rank": 591,
      "result": "R32",
      "resultBadge": "R32",
      "qualRound": null,
@@ -7039,7 +7039,7 @@
      "name": "Emil Ruusuvuori",
      "apiName": "E. Ruusuvuori",
      "country": "Finland",
-     "rank": 1078,
+     "rank": 1281,
      "result": "R32",
      "resultBadge": "R32",
      "qualRound": null,
@@ -7085,7 +7085,7 @@
      "name": "Jaime Faria",
      "apiName": "J. Faria",
      "country": "Portugal",
-     "rank": 56,
+     "rank": 57,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q1",
@@ -7115,7 +7115,7 @@
      "name": "Marco Trungelliti",
      "apiName": "M. Trungelliti",
      "country": "Argentina",
-     "rank": 90,
+     "rank": 89,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q1",
@@ -7139,7 +7139,7 @@
      "name": "Zsombor Piros",
      "apiName": "Z. Piros",
      "country": "Hungary",
-     "rank": 103,
+     "rank": 104,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q1",
@@ -7190,7 +7190,7 @@
      "name": "Gauthier Onclin",
      "apiName": "G. Onclin",
      "country": "Belgium",
-     "rank": 178,
+     "rank": 173,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q1",
@@ -7216,7 +7216,7 @@
      "name": "Calvin Hemery",
      "apiName": "C. Hemery",
      "country": "France",
-     "rank": 276,
+     "rank": 279,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q1",
@@ -7240,7 +7240,7 @@
      "name": "Alessio Basile",
      "apiName": "A. Basile",
      "country": "Belgium",
-     "rank": 1359,
+     "rank": 1358,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q1",
@@ -7333,7 +7333,7 @@
      "name": "Joao Fonseca",
      "apiName": "J. Fonseca",
      "country": "Brazil",
-     "rank": 28,
+     "rank": 40,
      "result": "Won",
      "resultBadge": "Won",
      "qualRound": null,
@@ -7360,7 +7360,7 @@
      "name": "Alejandro Davidovich Fokina",
      "apiName": "A. Davidovich Fokina",
      "country": "Spain",
-     "rank": 13,
+     "rank": 15,
      "result": "F",
      "resultBadge": "F",
      "qualRound": null,
@@ -7385,7 +7385,7 @@
      "name": "Ugo Humbert",
      "apiName": "U. Humbert",
      "country": "France",
-     "rank": 35,
+     "rank": 38,
      "result": "SF",
      "resultBadge": "SF",
      "qualRound": null,
@@ -7410,7 +7410,7 @@
      "name": "Jaume Munar",
      "apiName": "J. Munar",
      "country": "Spain",
-     "rank": 51,
+     "rank": 65,
      "result": "SF",
      "resultBadge": "SF",
      "qualRound": null,
@@ -7437,7 +7437,7 @@
      "name": "Reilly Opelka",
      "apiName": "R. Opelka",
      "country": "USA",
-     "rank": 165,
+     "rank": 246,
      "result": "QF",
      "resultBadge": "QF | Q",
      "qualRound": null,
@@ -7489,7 +7489,7 @@
      "name": "Casper Ruud",
      "apiName": "C. Ruud",
      "country": "Norway",
-     "rank": 24,
+     "rank": 25,
      "result": "QF",
      "resultBadge": "QF",
      "qualRound": null,
@@ -7514,7 +7514,7 @@
      "name": "Denis Shapovalov",
      "apiName": "D. Shapovalov",
      "country": "Canada",
-     "rank": 47,
+     "rank": 52,
      "result": "QF",
      "resultBadge": "QF",
      "qualRound": null,
@@ -7539,7 +7539,7 @@
      "name": "Marin Cilic",
      "apiName": "M. Cilic",
      "country": "Croatia",
-     "rank": 84,
+     "rank": 96,
      "result": "R16",
      "resultBadge": "R16 | Q",
      "qualRound": null,
@@ -7589,7 +7589,7 @@
      "name": "Taylor Fritz",
      "apiName": "T. Fritz",
      "country": "USA",
-     "rank": 14,
+     "rank": 13,
      "result": "R16",
      "resultBadge": "R16",
      "qualRound": null,
@@ -7640,7 +7640,7 @@
      "name": "Botic Van De Zandschulp",
      "apiName": "B. Van De Zandschulp",
      "country": "Netherlands",
-     "rank": 38,
+     "rank": 37,
      "result": "R16",
      "resultBadge": "R16",
      "qualRound": null,
@@ -7668,7 +7668,7 @@
      "name": "Jenson Brooksby",
      "apiName": "J. Brooksby",
      "country": "USA",
-     "rank": 99,
+     "rank": 94,
      "result": "R16",
      "resultBadge": "R16",
      "qualRound": null,
@@ -7691,7 +7691,7 @@
      "name": "Valentin Royer",
      "apiName": "V. Royer",
      "country": "France",
-     "rank": 110,
+     "rank": 117,
      "result": "R16",
      "resultBadge": "R16",
      "qualRound": null,
@@ -7717,7 +7717,7 @@
      "name": "Stan Wawrinka",
      "apiName": "S. Wawrinka",
      "country": "Switzerland",
-     "rank": 140,
+     "rank": 151,
      "result": "R16",
      "resultBadge": "R16",
      "qualRound": null,
@@ -7742,7 +7742,7 @@
      "name": "Kamil Majchrzak",
      "apiName": "K. Majchrzak",
      "country": "Poland",
-     "rank": 78,
+     "rank": 82,
      "result": "R32",
      "resultBadge": "R32 | Q",
      "qualRound": null,
@@ -7771,7 +7771,7 @@
      "name": "Remy Bertola",
      "apiName": "R. Bertola",
      "country": "Switzerland",
-     "rank": 219,
+     "rank": 236,
      "result": "R32",
      "resultBadge": "R32 | Q",
      "qualRound": null,
@@ -7798,7 +7798,7 @@
      "name": "Quentin Halys",
      "apiName": "Q. Halys",
      "country": "France",
-     "rank": 46,
+     "rank": 45,
      "result": "R32",
      "resultBadge": "R32",
      "qualRound": null,
@@ -7826,7 +7826,7 @@
      "name": "David Goffin",
      "apiName": "D. Goffin",
      "country": "Belgium",
-     "rank": 657,
+     "rank": 591,
      "result": "R32",
      "resultBadge": "R32",
      "qualRound": null,
@@ -7853,7 +7853,7 @@
      "name": "Jiri Lehecka",
      "apiName": "J. Lehecka",
      "country": "Czech Republic",
-     "rank": 20,
+     "rank": 21,
      "result": "R32",
      "resultBadge": "R32",
      "qualRound": null,
@@ -7877,7 +7877,7 @@
      "name": "Valentin Vacherot",
      "apiName": "V. Vacherot",
      "country": "Monaco",
-     "rank": 32,
+     "rank": 31,
      "result": "R32",
      "resultBadge": "R32",
      "qualRound": null,
@@ -7951,7 +7951,7 @@
      "name": "Miomir Kecmanovic",
      "apiName": "M. Kecmanovic",
      "country": "Serbia",
-     "rank": 57,
+     "rank": 58,
      "result": "R32",
      "resultBadge": "R32",
      "qualRound": null,
@@ -8021,7 +8021,7 @@
      "name": "Lorenzo Sonego",
      "apiName": "L. Sonego",
      "country": "Italy",
-     "rank": 89,
+     "rank": 91,
      "result": "R32",
      "resultBadge": "R32",
      "qualRound": null,
@@ -8046,7 +8046,7 @@
      "name": "Alexandre Muller",
      "apiName": "A. Muller",
      "country": "France",
-     "rank": 131,
+     "rank": 130,
      "result": "R32",
      "resultBadge": "R32",
      "qualRound": null,
@@ -8068,7 +8068,7 @@
      "name": "Giovanni Mpetshi Perricard",
      "apiName": "G. Mpetshi Perricard",
      "country": "France",
-     "rank": 145,
+     "rank": 148,
      "result": "R32",
      "resultBadge": "R32",
      "qualRound": null,
@@ -8114,7 +8114,7 @@
      "name": "Henry Bernet",
      "apiName": "H. Bernet",
      "country": "Switzerland",
-     "rank": 364,
+     "rank": 361,
      "result": "R32",
      "resultBadge": "R32",
      "qualRound": null,
@@ -8138,7 +8138,7 @@
      "name": "Mattia Bellucci",
      "apiName": "M. Bellucci",
      "country": "Italy",
-     "rank": 68,
+     "rank": 66,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q1",
@@ -8162,7 +8162,7 @@
      "name": "Adrian Mannarino",
      "apiName": "A. Mannarino",
      "country": "France",
-     "rank": 79,
+     "rank": 73,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q1",
@@ -8189,7 +8189,7 @@
      "name": "Adam Walton",
      "apiName": "A. Walton",
      "country": "Australia",
-     "rank": 97,
+     "rank": 98,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q1",
@@ -8213,7 +8213,7 @@
      "name": "Alexander Shevchenko",
      "apiName": "A. Shevchenko",
      "country": "Kazakhstan",
-     "rank": 108,
+     "rank": 109,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q1",
@@ -8237,7 +8237,7 @@
      "name": "Pedro Martinez",
      "apiName": "P. Martinez",
      "country": "Spain",
-     "rank": 125,
+     "rank": 126,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q1",
@@ -8261,7 +8261,7 @@
      "name": "Francisco Comesana",
      "apiName": "F. Comesana",
      "country": "Argentina",
-     "rank": 130,
+     "rank": 128,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q1",
@@ -8285,7 +8285,7 @@
      "name": "Mika Brunold",
      "apiName": "M. Brunold",
      "country": "Switzerland",
-     "rank": 195,
+     "rank": 191,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q1",
@@ -8311,7 +8311,7 @@
      "name": "Marc-Andrea Huesler",
      "apiName": "M. Huesler",
      "country": "Switzerland",
-     "rank": 277,
+     "rank": 281,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q1",
@@ -8427,7 +8427,7 @@
      "name": "Alex De Minaur",
      "apiName": "A. De Minaur",
      "country": "Australia",
-     "rank": 8,
+     "rank": 10,
      "result": "SF",
      "resultBadge": "SF",
      "qualRound": null,
@@ -8477,7 +8477,7 @@
      "name": "Alexander Bublik",
      "apiName": "A. Bublik",
      "country": "Kazakhstan",
-     "rank": 19,
+     "rank": 20,
      "result": "QF",
      "resultBadge": "QF",
      "qualRound": null,
@@ -8500,7 +8500,7 @@
      "name": "Matteo Berrettini",
      "apiName": "M. Berrettini",
      "country": "Italy",
-     "rank": 43,
+     "rank": 48,
      "result": "QF",
      "resultBadge": "QF",
      "qualRound": null,
@@ -8525,7 +8525,7 @@
      "name": "Tallon Griekspoor",
      "apiName": "T. Griekspoor",
      "country": "Netherlands",
-     "rank": 60,
+     "rank": 50,
      "result": "QF",
      "resultBadge": "QF",
      "qualRound": null,
@@ -8550,7 +8550,7 @@
      "name": "Corentin Moutet",
      "apiName": "C. Moutet",
      "country": "France",
-     "rank": 94,
+     "rank": 103,
      "result": "QF",
      "resultBadge": "QF",
      "qualRound": null,
@@ -8677,7 +8677,7 @@
      "name": "Francisco Cerundolo",
      "apiName": "F. Cerundolo",
      "country": "Argentina",
-     "rank": 21,
+     "rank": 19,
      "result": "R16",
      "resultBadge": "R16",
      "qualRound": null,
@@ -8727,7 +8727,7 @@
      "name": "Cameron Norrie",
      "apiName": "C. Norrie",
      "country": "United Kingdom",
-     "rank": 40,
+     "rank": 41,
      "result": "R16",
      "resultBadge": "R16",
      "qualRound": null,
@@ -8752,7 +8752,7 @@
      "name": "Filip Misolic",
      "apiName": "F. Misolic",
      "country": "Austria",
-     "rank": 495,
+     "rank": 688,
      "result": "R16",
      "resultBadge": "R16",
      "qualRound": null,
@@ -8771,34 +8771,6 @@
     },
     {
      "order": 17,
-     "playerKey": "2978",
-     "name": "Aleksandar Kovacevic",
-     "apiName": "A. Kovacevic",
-     "country": "USA",
-     "rank": 82,
-     "result": "R32",
-     "resultBadge": "R32 | Q",
-     "qualRound": null,
-     "qualified": true,
-     "ll": false,
-     "mainPoints": 0,
-     "qualifyingPoints": 25,
-     "points": 25,
-     "pointsComplete": true,
-     "dropDate": "2026-10-26",
-     "byeCorrected": false,
-     "flags": [
-      "qualifier-bonus"
-     ],
-     "status": "Not entered",
-     "statusBasis": "not-on-entry-list",
-     "statusInferred": false,
-     "playingElsewhere": [
-      "Basel"
-     ]
-    },
-    {
-     "order": 18,
      "playerKey": "1079",
      "name": "Damir Dzumhur",
      "apiName": "D. Dzumhur",
@@ -8823,12 +8795,40 @@
      "statusInferred": false
     },
     {
+     "order": 18,
+     "playerKey": "2978",
+     "name": "Aleksandar Kovacevic",
+     "apiName": "A. Kovacevic",
+     "country": "USA",
+     "rank": 84,
+     "result": "R32",
+     "resultBadge": "R32 | Q",
+     "qualRound": null,
+     "qualified": true,
+     "ll": false,
+     "mainPoints": 0,
+     "qualifyingPoints": 25,
+     "points": 25,
+     "pointsComplete": true,
+     "dropDate": "2026-10-26",
+     "byeCorrected": false,
+     "flags": [
+      "qualifier-bonus"
+     ],
+     "status": "Not entered",
+     "statusBasis": "not-on-entry-list",
+     "statusInferred": false,
+     "playingElsewhere": [
+      "Basel"
+     ]
+    },
+    {
      "order": 19,
      "playerKey": "12951",
      "name": "Jacob Fearnley",
      "apiName": "J. Fearnley",
      "country": "United Kingdom",
-     "rank": 87,
+     "rank": 86,
      "result": "R32",
      "resultBadge": "R32 | Q",
      "qualRound": null,
@@ -8855,7 +8855,7 @@
      "name": "Ethan Quinn",
      "apiName": "E. Quinn",
      "country": "USA",
-     "rank": 63,
+     "rank": 62,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q2",
@@ -8878,7 +8878,7 @@
      "name": "Tristan Schoolkate",
      "apiName": "T. Schoolkate",
      "country": "Australia",
-     "rank": 169,
+     "rank": 141,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q2",
@@ -8901,7 +8901,7 @@
      "name": "Mackenzie McDonald",
      "apiName": "M. McDonald",
      "country": "USA",
-     "rank": 229,
+     "rank": 238,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q2",
@@ -8924,7 +8924,7 @@
      "name": "Hamad Medjedovic",
      "apiName": "H. Medjedovic",
      "country": "Serbia",
-     "rank": 76,
+     "rank": 78,
      "result": "R32",
      "resultBadge": "R32",
      "qualRound": null,
@@ -9001,7 +9001,7 @@
      "name": "Karen Khachanov",
      "apiName": "K. Khachanov",
      "country": "World",
-     "rank": 25,
+     "rank": 24,
      "result": "R32",
      "resultBadge": "R32",
      "qualRound": null,
@@ -9025,7 +9025,7 @@
      "name": "Alejandro Tabilo",
      "apiName": "A. Tabilo",
      "country": "Chile",
-     "rank": 31,
+     "rank": 30,
      "result": "R32",
      "resultBadge": "R32",
      "qualRound": null,
@@ -9050,7 +9050,7 @@
      "name": "Alex Michelsen",
      "apiName": "A. Michelsen",
      "country": "USA",
-     "rank": 37,
+     "rank": 34,
      "result": "R32",
      "resultBadge": "R32",
      "qualRound": null,
@@ -9075,7 +9075,7 @@
      "name": "Nuno Borges",
      "apiName": "N. Borges",
      "country": "Portugal",
-     "rank": 52,
+     "rank": 53,
      "result": "R32",
      "resultBadge": "R32",
      "qualRound": null,
@@ -9103,7 +9103,7 @@
      "name": "Daniel Altmaier",
      "apiName": "D. Altmaier",
      "country": "Germany",
-     "rank": 65,
+     "rank": 60,
      "result": "R32",
      "resultBadge": "R32",
      "qualRound": null,
@@ -9128,7 +9128,7 @@
      "name": "Tomas Machac",
      "apiName": "T. Machac",
      "country": "Czech Republic",
-     "rank": 72,
+     "rank": 71,
      "result": "R32",
      "resultBadge": "R32",
      "qualRound": null,
@@ -9174,7 +9174,7 @@
      "name": "Alexei Popyrin",
      "apiName": "A. Popyrin",
      "country": "Australia",
-     "rank": 126,
+     "rank": 127,
      "result": "R32",
      "resultBadge": "R32",
      "qualRound": null,
@@ -9220,7 +9220,7 @@
      "name": "Nicolai Budkov Kjaer",
      "apiName": "N. Budkov Kjaer",
      "country": "Norway",
-     "rank": 187,
+     "rank": 180,
      "result": "R32",
      "resultBadge": "R32",
      "qualRound": null,
@@ -9242,7 +9242,7 @@
      "name": "Vit Kopriva",
      "apiName": "V. Kopriva",
      "country": "Czech Republic",
-     "rank": 66,
+     "rank": 64,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q1",
@@ -9268,7 +9268,7 @@
      "name": "Terence Atmane",
      "apiName": "T. Atmane",
      "country": "France",
-     "rank": 98,
+     "rank": 90,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q1",
@@ -9340,7 +9340,7 @@
      "name": "Dalibor Svrcina",
      "apiName": "D. Svrcina",
      "country": "Czech Republic",
-     "rank": 119,
+     "rank": 120,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q1",
@@ -9390,7 +9390,7 @@
      "name": "Josef Schwaerzler Joel",
      "apiName": "J. J. Schwaerzler",
      "country": "Austria",
-     "rank": 173,
+     "rank": 172,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q1",
@@ -9416,7 +9416,7 @@
      "name": "Lukas Klein",
      "apiName": "L. Klein",
      "country": "Slovakia",
-     "rank": 828,
+     "rank": 833,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q1",
@@ -9522,7 +9522,7 @@
      "listSections": [
       "Main Draw"
      ],
-     "listLastSeen": "2026-10-26T00:55:56Z"
+     "listLastSeen": "2026-10-27T01:46:24Z"
     },
     {
      "order": 3,
@@ -9549,7 +9549,7 @@
      "listSections": [
       "Main Draw"
      ],
-     "listLastSeen": "2026-10-26T00:55:56Z"
+     "listLastSeen": "2026-10-27T01:46:24Z"
     },
     {
      "order": 4,
@@ -9557,7 +9557,7 @@
      "name": "Alexander Bublik",
      "apiName": "A. Bublik",
      "country": "Kazakhstan",
-     "rank": 19,
+     "rank": 20,
      "result": "SF",
      "resultBadge": "SF",
      "qualRound": null,
@@ -9576,7 +9576,7 @@
      "listSections": [
       "Main Draw"
      ],
-     "listLastSeen": "2026-10-26T00:55:56Z"
+     "listLastSeen": "2026-10-27T01:46:24Z"
     },
     {
      "order": 5,
@@ -9603,7 +9603,7 @@
      "listSections": [
       "Main Draw"
      ],
-     "listLastSeen": "2026-10-26T00:55:56Z"
+     "listLastSeen": "2026-10-27T01:46:24Z"
     },
     {
      "order": 6,
@@ -9630,7 +9630,7 @@
      "listSections": [
       "Main Draw"
      ],
-     "listLastSeen": "2026-10-26T00:55:56Z"
+     "listLastSeen": "2026-10-27T01:46:24Z"
     },
     {
      "order": 7,
@@ -9638,7 +9638,7 @@
      "name": "Alex De Minaur",
      "apiName": "A. De Minaur",
      "country": "Australia",
-     "rank": 8,
+     "rank": 10,
      "result": "QF",
      "resultBadge": "QF",
      "qualRound": null,
@@ -9657,7 +9657,7 @@
      "listSections": [
       "Main Draw"
      ],
-     "listLastSeen": "2026-10-26T00:55:56Z"
+     "listLastSeen": "2026-10-27T01:46:24Z"
     },
     {
      "order": 8,
@@ -9665,7 +9665,7 @@
      "name": "Valentin Vacherot",
      "apiName": "V. Vacherot",
      "country": "Monaco",
-     "rank": 32,
+     "rank": 31,
      "result": "QF",
      "resultBadge": "QF",
      "qualRound": null,
@@ -9684,14 +9684,14 @@
      "listSections": [
       "Main Draw"
      ],
-     "listLastSeen": "2026-10-26T00:55:56Z"
+     "listLastSeen": "2026-10-27T01:46:24Z"
     },
     {
      "order": 9,
-     "playerKey": "2842",
-     "name": "Alejandro Davidovich Fokina",
-     "apiName": "A. Davidovich Fokina",
-     "country": "Spain",
+     "playerKey": "2832",
+     "name": "Taylor Fritz",
+     "apiName": "T. Fritz",
+     "country": "USA",
      "rank": 13,
      "result": "R16",
      "resultBadge": "R16",
@@ -9711,15 +9711,15 @@
      "listSections": [
       "Main Draw"
      ],
-     "listLastSeen": "2026-10-26T00:55:56Z"
+     "listLastSeen": "2026-10-27T01:46:24Z"
     },
     {
      "order": 10,
-     "playerKey": "2832",
-     "name": "Taylor Fritz",
-     "apiName": "T. Fritz",
-     "country": "USA",
-     "rank": 14,
+     "playerKey": "2842",
+     "name": "Alejandro Davidovich Fokina",
+     "apiName": "A. Davidovich Fokina",
+     "country": "Spain",
+     "rank": 15,
      "result": "R16",
      "resultBadge": "R16",
      "qualRound": null,
@@ -9738,7 +9738,7 @@
      "listSections": [
       "Main Draw"
      ],
-     "listLastSeen": "2026-10-26T00:55:56Z"
+     "listLastSeen": "2026-10-27T01:46:24Z"
     },
     {
      "order": 11,
@@ -9746,7 +9746,7 @@
      "name": "Francisco Cerundolo",
      "apiName": "F. Cerundolo",
      "country": "Argentina",
-     "rank": 21,
+     "rank": 19,
      "result": "R16",
      "resultBadge": "R16",
      "qualRound": null,
@@ -9765,7 +9765,7 @@
      "listSections": [
       "Main Draw"
      ],
-     "listLastSeen": "2026-10-26T00:55:56Z"
+     "listLastSeen": "2026-10-27T01:46:24Z"
     },
     {
      "order": 12,
@@ -9792,7 +9792,7 @@
      "listSections": [
       "Main Draw"
      ],
-     "listLastSeen": "2026-10-26T00:55:56Z"
+     "listLastSeen": "2026-10-27T01:46:24Z"
     },
     {
      "order": 13,
@@ -9800,7 +9800,7 @@
      "name": "Karen Khachanov",
      "apiName": "K. Khachanov",
      "country": "World",
-     "rank": 25,
+     "rank": 24,
      "result": "R16",
      "resultBadge": "R16",
      "qualRound": null,
@@ -9819,7 +9819,7 @@
      "listSections": [
       "Main Draw"
      ],
-     "listLastSeen": "2026-10-26T00:55:56Z"
+     "listLastSeen": "2026-10-27T01:46:24Z"
     },
     {
      "order": 14,
@@ -9827,7 +9827,7 @@
      "name": "Cameron Norrie",
      "apiName": "C. Norrie",
      "country": "United Kingdom",
-     "rank": 40,
+     "rank": 41,
      "result": "R16",
      "resultBadge": "R16",
      "qualRound": null,
@@ -9846,7 +9846,7 @@
      "listSections": [
       "Main Draw"
      ],
-     "listLastSeen": "2026-10-26T00:55:56Z"
+     "listLastSeen": "2026-10-27T01:46:24Z"
     },
     {
      "order": 15,
@@ -9854,7 +9854,7 @@
      "name": "Daniel Altmaier",
      "apiName": "D. Altmaier",
      "country": "Germany",
-     "rank": 65,
+     "rank": 60,
      "result": "R16",
      "resultBadge": "R16",
      "qualRound": null,
@@ -9873,7 +9873,7 @@
      "listSections": [
       "Qualifying"
      ],
-     "listLastSeen": "2026-10-26T00:55:56Z"
+     "listLastSeen": "2026-10-27T01:46:24Z"
     },
     {
      "order": 16,
@@ -9881,7 +9881,7 @@
      "name": "Lorenzo Sonego",
      "apiName": "L. Sonego",
      "country": "Italy",
-     "rank": 89,
+     "rank": 91,
      "result": "R16",
      "resultBadge": "R16",
      "qualRound": null,
@@ -9948,7 +9948,7 @@
      "listSections": [
       "Main Draw"
      ],
-     "listLastSeen": "2026-10-26T00:55:56Z"
+     "listLastSeen": "2026-10-27T01:46:24Z"
     },
     {
      "order": 19,
@@ -9975,15 +9975,15 @@
      "listSections": [
       "Main Draw"
      ],
-     "listLastSeen": "2026-10-26T00:55:56Z"
+     "listLastSeen": "2026-10-27T01:46:24Z"
     },
     {
      "order": 20,
-     "playerKey": "40058",
-     "name": "Joao Fonseca",
-     "apiName": "J. Fonseca",
-     "country": "Brazil",
-     "rank": 28,
+     "playerKey": "1064",
+     "name": "Zizou Bergs",
+     "apiName": "Z. Bergs",
+     "country": "Belgium",
+     "rank": 39,
      "result": "R32",
      "resultBadge": "R32",
      "qualRound": null,
@@ -10002,15 +10002,15 @@
      "listSections": [
       "Main Draw"
      ],
-     "listLastSeen": "2026-10-26T00:55:56Z"
+     "listLastSeen": "2026-10-27T01:46:24Z"
     },
     {
      "order": 21,
-     "playerKey": "1064",
-     "name": "Zizou Bergs",
-     "apiName": "Z. Bergs",
-     "country": "Belgium",
-     "rank": 41,
+     "playerKey": "40058",
+     "name": "Joao Fonseca",
+     "apiName": "J. Fonseca",
+     "country": "Brazil",
+     "rank": 40,
      "result": "R32",
      "resultBadge": "R32",
      "qualRound": null,
@@ -10037,7 +10037,7 @@
      "name": "Miomir Kecmanovic",
      "apiName": "M. Kecmanovic",
      "country": "Serbia",
-     "rank": 57,
+     "rank": 58,
      "result": "R32",
      "resultBadge": "R32",
      "qualRound": null,
@@ -10056,7 +10056,7 @@
      "listSections": [
       "Qualifying"
      ],
-     "listLastSeen": "2026-10-26T00:55:56Z"
+     "listLastSeen": "2026-10-27T01:46:24Z"
     },
     {
      "order": 23,
@@ -10083,7 +10083,7 @@
      "listSections": [
       "Main Draw"
      ],
-     "listLastSeen": "2026-10-26T00:55:56Z"
+     "listLastSeen": "2026-10-27T01:46:24Z"
     },
     {
      "order": 24,
@@ -10114,7 +10114,7 @@
      "name": "Corentin Moutet",
      "apiName": "C. Moutet",
      "country": "France",
-     "rank": 94,
+     "rank": 103,
      "result": "R32",
      "resultBadge": "R32",
      "qualRound": null,
@@ -10133,7 +10133,7 @@
      "listSections": [
       "Qualifying"
      ],
-     "listLastSeen": "2026-10-26T00:55:56Z"
+     "listLastSeen": "2026-10-27T01:46:24Z"
     },
     {
      "order": 26,
@@ -10141,7 +10141,7 @@
      "name": "Grigor Dimitrov",
      "apiName": "G. Dimitrov",
      "country": "Bulgaria",
-     "rank": 123,
+     "rank": 124,
      "result": "R32",
      "resultBadge": "R32",
      "qualRound": null,
@@ -10164,7 +10164,7 @@
      "name": "Alexandre Muller",
      "apiName": "A. Muller",
      "country": "France",
-     "rank": 131,
+     "rank": 130,
      "result": "R32",
      "resultBadge": "R32",
      "qualRound": null,
@@ -10258,7 +10258,7 @@
      "name": "Ethan Quinn",
      "apiName": "E. Quinn",
      "country": "USA",
-     "rank": 63,
+     "rank": 62,
      "result": "R64",
      "resultBadge": "R64 | Q",
      "qualRound": null,
@@ -10333,7 +10333,7 @@
      "name": "Jacob Fearnley",
      "apiName": "J. Fearnley",
      "country": "United Kingdom",
-     "rank": 87,
+     "rank": 86,
      "result": "R64",
      "resultBadge": "R64 | Q",
      "qualRound": null,
@@ -10358,7 +10358,7 @@
      "name": "Francisco Comesana",
      "apiName": "F. Comesana",
      "country": "Argentina",
-     "rank": 130,
+     "rank": 128,
      "result": "R64",
      "resultBadge": "R64 | Q",
      "qualRound": null,
@@ -10383,7 +10383,7 @@
      "name": "Botic Van De Zandschulp",
      "apiName": "B. Van De Zandschulp",
      "country": "Netherlands",
-     "rank": 38,
+     "rank": 37,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q2",
@@ -10402,7 +10402,7 @@
      "listSections": [
       "Main Draw"
      ],
-     "listLastSeen": "2026-10-26T00:55:56Z"
+     "listLastSeen": "2026-10-27T01:46:24Z"
     },
     {
      "order": 37,
@@ -10429,7 +10429,7 @@
      "listSections": [
       "Qualifying"
      ],
-     "listLastSeen": "2026-10-26T00:55:56Z"
+     "listLastSeen": "2026-10-27T01:46:24Z"
     },
     {
      "order": 38,
@@ -10460,7 +10460,7 @@
      "name": "David Goffin",
      "apiName": "D. Goffin",
      "country": "Belgium",
-     "rank": 657,
+     "rank": 591,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q2",
@@ -10504,7 +10504,7 @@
      "listSections": [
       "Main Draw"
      ],
-     "listLastSeen": "2026-10-26T00:55:56Z"
+     "listLastSeen": "2026-10-27T01:46:24Z"
     },
     {
      "order": 41,
@@ -10531,7 +10531,7 @@
      "listSections": [
       "Main Draw"
      ],
-     "listLastSeen": "2026-10-26T00:55:56Z"
+     "listLastSeen": "2026-10-27T01:46:24Z"
     },
     {
      "order": 42,
@@ -10539,7 +10539,7 @@
      "name": "Jiri Lehecka",
      "apiName": "J. Lehecka",
      "country": "Czech Republic",
-     "rank": 20,
+     "rank": 21,
      "result": "R64",
      "resultBadge": "R64",
      "qualRound": null,
@@ -10558,7 +10558,7 @@
      "listSections": [
       "Main Draw"
      ],
-     "listLastSeen": "2026-10-26T00:55:56Z"
+     "listLastSeen": "2026-10-27T01:46:24Z"
     },
     {
      "order": 43,
@@ -10585,7 +10585,7 @@
      "listSections": [
       "Main Draw"
      ],
-     "listLastSeen": "2026-10-26T00:55:56Z"
+     "listLastSeen": "2026-10-27T01:46:24Z"
     },
     {
      "order": 44,
@@ -10593,7 +10593,7 @@
      "name": "Casper Ruud",
      "apiName": "C. Ruud",
      "country": "Norway",
-     "rank": 24,
+     "rank": 25,
      "result": "R64",
      "resultBadge": "R64",
      "qualRound": null,
@@ -10614,7 +10614,7 @@
      "listSections": [
       "Main Draw"
      ],
-     "listLastSeen": "2026-10-26T00:55:56Z"
+     "listLastSeen": "2026-10-27T01:46:24Z"
     },
     {
      "order": 45,
@@ -10643,7 +10643,7 @@
      "listSections": [
       "Main Draw"
      ],
-     "listLastSeen": "2026-10-26T00:55:56Z"
+     "listLastSeen": "2026-10-27T01:46:24Z"
     },
     {
      "order": 46,
@@ -10651,7 +10651,7 @@
      "name": "Alex Michelsen",
      "apiName": "A. Michelsen",
      "country": "USA",
-     "rank": 37,
+     "rank": 34,
      "result": "R64",
      "resultBadge": "R64",
      "qualRound": null,
@@ -10670,37 +10670,10 @@
      "listSections": [
       "Main Draw"
      ],
-     "listLastSeen": "2026-10-26T00:55:56Z"
+     "listLastSeen": "2026-10-27T01:46:24Z"
     },
     {
      "order": 47,
-     "playerKey": "431",
-     "name": "Denis Shapovalov",
-     "apiName": "D. Shapovalov",
-     "country": "Canada",
-     "rank": 47,
-     "result": "R64",
-     "resultBadge": "R64",
-     "qualRound": null,
-     "qualified": false,
-     "ll": false,
-     "mainPoints": 10,
-     "qualifyingPoints": 0,
-     "points": 10,
-     "pointsComplete": true,
-     "dropDate": "2026-11-02",
-     "byeCorrected": false,
-     "flags": [],
-     "status": "Withdrew",
-     "statusBasis": "entry-list-not-in-draw",
-     "statusInferred": true,
-     "listSections": [
-      "Main Draw"
-     ],
-     "listLastSeen": "2026-10-26T00:55:56Z"
-    },
-    {
-     "order": 48,
      "playerKey": "1101",
      "name": "Sebastian Baez",
      "apiName": "S. Baez",
@@ -10725,15 +10698,15 @@
       "Qualifying",
       "Alternates & Reserves"
      ],
-     "listLastSeen": "2026-10-26T00:55:56Z"
+     "listLastSeen": "2026-10-27T01:46:24Z"
     },
     {
-     "order": 49,
-     "playerKey": "2083",
-     "name": "Jaume Munar",
-     "apiName": "J. Munar",
-     "country": "Spain",
-     "rank": 51,
+     "order": 48,
+     "playerKey": "427",
+     "name": "Tallon Griekspoor",
+     "apiName": "T. Griekspoor",
+     "country": "Netherlands",
+     "rank": 50,
      "result": "R64",
      "resultBadge": "R64",
      "qualRound": null,
@@ -10750,17 +10723,16 @@
      "statusBasis": "entry-list-not-in-draw",
      "statusInferred": true,
      "listSections": [
-      "Qualifying",
-      "Alternates & Reserves"
+      "Qualifying"
      ],
-     "listLastSeen": "2026-10-26T00:55:56Z"
+     "listLastSeen": "2026-10-27T01:46:24Z"
     },
     {
-     "order": 50,
-     "playerKey": "358",
-     "name": "Nuno Borges",
-     "apiName": "N. Borges",
-     "country": "Portugal",
+     "order": 49,
+     "playerKey": "431",
+     "name": "Denis Shapovalov",
+     "apiName": "D. Shapovalov",
+     "country": "Canada",
      "rank": 52,
      "result": "R64",
      "resultBadge": "R64",
@@ -10778,18 +10750,17 @@
      "statusBasis": "entry-list-not-in-draw",
      "statusInferred": true,
      "listSections": [
-      "Qualifying",
-      "Alternates & Reserves"
+      "Main Draw"
      ],
-     "listLastSeen": "2026-10-26T00:55:56Z"
+     "listLastSeen": "2026-10-27T01:46:24Z"
     },
     {
-     "order": 51,
-     "playerKey": "427",
-     "name": "Tallon Griekspoor",
-     "apiName": "T. Griekspoor",
-     "country": "Netherlands",
-     "rank": 60,
+     "order": 50,
+     "playerKey": "358",
+     "name": "Nuno Borges",
+     "apiName": "N. Borges",
+     "country": "Portugal",
+     "rank": 53,
      "result": "R64",
      "resultBadge": "R64",
      "qualRound": null,
@@ -10806,17 +10777,18 @@
      "statusBasis": "entry-list-not-in-draw",
      "statusInferred": true,
      "listSections": [
-      "Qualifying"
+      "Qualifying",
+      "Alternates & Reserves"
      ],
-     "listLastSeen": "2026-10-26T00:55:56Z"
+     "listLastSeen": "2026-10-27T01:46:24Z"
     },
     {
-     "order": 52,
+     "order": 51,
      "playerKey": "10148",
      "name": "Fabian Marozsan",
      "apiName": "F. Marozsan",
      "country": "Hungary",
-     "rank": 64,
+     "rank": 63,
      "result": "R64",
      "resultBadge": "R64",
      "qualRound": null,
@@ -10835,7 +10807,35 @@
      "listSections": [
       "Qualifying"
      ],
-     "listLastSeen": "2026-10-26T00:55:56Z"
+     "listLastSeen": "2026-10-27T01:46:24Z"
+    },
+    {
+     "order": 52,
+     "playerKey": "2083",
+     "name": "Jaume Munar",
+     "apiName": "J. Munar",
+     "country": "Spain",
+     "rank": 65,
+     "result": "R64",
+     "resultBadge": "R64",
+     "qualRound": null,
+     "qualified": false,
+     "ll": false,
+     "mainPoints": 10,
+     "qualifyingPoints": 0,
+     "points": 10,
+     "pointsComplete": true,
+     "dropDate": "2026-11-02",
+     "byeCorrected": false,
+     "flags": [],
+     "status": "Withdrew",
+     "statusBasis": "entry-list-not-in-draw",
+     "statusInferred": true,
+     "listSections": [
+      "Qualifying",
+      "Alternates & Reserves"
+     ],
+     "listLastSeen": "2026-10-27T01:46:24Z"
     },
     {
      "order": 53,
@@ -10843,7 +10843,7 @@
      "name": "Tomas Machac",
      "apiName": "T. Machac",
      "country": "Czech Republic",
-     "rank": 72,
+     "rank": 71,
      "result": "R64",
      "resultBadge": "R64",
      "qualRound": null,
@@ -10866,7 +10866,7 @@
      "name": "Aleksandar Kovacevic",
      "apiName": "A. Kovacevic",
      "country": "USA",
-     "rank": 82,
+     "rank": 84,
      "result": "R64",
      "resultBadge": "R64",
      "qualRound": null,
@@ -10915,7 +10915,7 @@
      "name": "Terence Atmane",
      "apiName": "T. Atmane",
      "country": "France",
-     "rank": 98,
+     "rank": 90,
      "result": "R64",
      "resultBadge": "R64",
      "qualRound": null,
@@ -10938,7 +10938,7 @@
      "name": "Valentin Royer",
      "apiName": "V. Royer",
      "country": "France",
-     "rank": 110,
+     "rank": 117,
      "result": "R64",
      "resultBadge": "R64",
      "qualRound": null,
@@ -10964,7 +10964,7 @@
      "name": "Alexei Popyrin",
      "apiName": "A. Popyrin",
      "country": "Australia",
-     "rank": 126,
+     "rank": 127,
      "result": "R64",
      "resultBadge": "R64",
      "qualRound": null,
@@ -10987,7 +10987,7 @@
      "name": "Giovanni Mpetshi Perricard",
      "apiName": "G. Mpetshi Perricard",
      "country": "France",
-     "rank": 145,
+     "rank": 148,
      "result": "R64",
      "resultBadge": "R64",
      "qualRound": null,
@@ -11010,7 +11010,7 @@
      "name": "Reilly Opelka",
      "apiName": "R. Opelka",
      "country": "USA",
-     "rank": 165,
+     "rank": 246,
      "result": "R64",
      "resultBadge": "R64",
      "qualRound": null,
@@ -11058,12 +11058,41 @@
      "listSections": [
       "Main Draw"
      ],
-     "listLastSeen": "2026-10-26T00:55:56Z"
+     "listLastSeen": "2026-10-27T01:46:24Z"
     },
     {
      "playerKey": "1925",
      "name": "Quentin Halys",
      "apiName": "Q. Halys",
+     "country": "France",
+     "rank": 45,
+     "result": "Q",
+     "resultBadge": "Q",
+     "qualRound": "Q1",
+     "qualified": false,
+     "ll": false,
+     "mainPoints": null,
+     "qualifyingPoints": 0,
+     "points": 0,
+     "pointsComplete": true,
+     "dropDate": "2026-11-02",
+     "byeCorrected": false,
+     "flags": [
+      "qual-early-zero"
+     ],
+     "status": "Withdrew",
+     "statusBasis": "entry-list-not-in-draw",
+     "statusInferred": true,
+     "listSections": [
+      "Qualifying",
+      "Alternates & Reserves"
+     ],
+     "listLastSeen": "2026-10-27T01:46:24Z"
+    },
+    {
+     "playerKey": "1066",
+     "name": "Luca van Assche",
+     "apiName": "L. van Assche",
      "country": "France",
      "rank": 46,
      "result": "Q",
@@ -11085,45 +11114,17 @@
      "statusInferred": true,
      "listSections": [
       "Qualifying",
-      "Alternates & Reserves"
+      "Alternates & Reserves",
+      "Main Draw"
      ],
-     "listLastSeen": "2026-10-26T00:55:56Z"
-    },
-    {
-     "playerKey": "1066",
-     "name": "Luca van Assche",
-     "apiName": "L. van Assche",
-     "country": "France",
-     "rank": 48,
-     "result": "Q",
-     "resultBadge": "Q",
-     "qualRound": "Q1",
-     "qualified": false,
-     "ll": false,
-     "mainPoints": null,
-     "qualifyingPoints": 0,
-     "points": 0,
-     "pointsComplete": true,
-     "dropDate": "2026-11-02",
-     "byeCorrected": false,
-     "flags": [
-      "qual-early-zero"
-     ],
-     "status": "Withdrew",
-     "statusBasis": "entry-list-not-in-draw",
-     "statusInferred": true,
-     "listSections": [
-      "Qualifying",
-      "Alternates & Reserves"
-     ],
-     "listLastSeen": "2026-10-26T00:55:56Z"
+     "listLastSeen": "2026-10-27T01:46:24Z"
     },
     {
      "playerKey": "1083",
      "name": "Vit Kopriva",
      "apiName": "V. Kopriva",
      "country": "Czech Republic",
-     "rank": 66,
+     "rank": 64,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q1",
@@ -11144,62 +11145,14 @@
      "listSections": [
       "Qualifying"
      ],
-     "listLastSeen": "2026-10-26T00:55:56Z"
+     "listLastSeen": "2026-10-27T01:46:24Z"
     },
     {
      "playerKey": "2112",
      "name": "Mattia Bellucci",
      "apiName": "M. Bellucci",
      "country": "Italy",
-     "rank": 68,
-     "result": "Q",
-     "resultBadge": "Q",
-     "qualRound": "Q1",
-     "qualified": false,
-     "ll": false,
-     "mainPoints": null,
-     "qualifyingPoints": 0,
-     "points": 0,
-     "pointsComplete": true,
-     "dropDate": "2026-11-02",
-     "byeCorrected": false,
-     "flags": [
-      "qual-early-zero"
-     ],
-     "status": "Not entered",
-     "statusBasis": "not-on-entry-list",
-     "statusInferred": false
-    },
-    {
-     "playerKey": "2677",
-     "name": "Hamad Medjedovic",
-     "apiName": "H. Medjedovic",
-     "country": "Serbia",
-     "rank": 76,
-     "result": "Q",
-     "resultBadge": "Q",
-     "qualRound": "Q1",
-     "qualified": false,
-     "ll": false,
-     "mainPoints": null,
-     "qualifyingPoints": 0,
-     "points": 0,
-     "pointsComplete": true,
-     "dropDate": "2026-11-02",
-     "byeCorrected": false,
-     "flags": [
-      "qual-early-zero"
-     ],
-     "status": "Not entered",
-     "statusBasis": "not-on-entry-list",
-     "statusInferred": false
-    },
-    {
-     "playerKey": "1096",
-     "name": "Kamil Majchrzak",
-     "apiName": "K. Majchrzak",
-     "country": "Poland",
-     "rank": 78,
+     "rank": 66,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q1",
@@ -11223,7 +11176,31 @@
      "name": "Adrian Mannarino",
      "apiName": "A. Mannarino",
      "country": "France",
-     "rank": 79,
+     "rank": 73,
+     "result": "Q",
+     "resultBadge": "Q",
+     "qualRound": "Q1",
+     "qualified": false,
+     "ll": false,
+     "mainPoints": null,
+     "qualifyingPoints": 0,
+     "points": 0,
+     "pointsComplete": true,
+     "dropDate": "2026-11-02",
+     "byeCorrected": false,
+     "flags": [
+      "qual-early-zero"
+     ],
+     "status": "Not entered",
+     "statusBasis": "not-on-entry-list",
+     "statusInferred": false
+    },
+    {
+     "playerKey": "2677",
+     "name": "Hamad Medjedovic",
+     "apiName": "H. Medjedovic",
+     "country": "Serbia",
+     "rank": 78,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q1",
@@ -11247,7 +11224,7 @@
      "name": "Kyrian Jacquet",
      "apiName": "K. Jacquet",
      "country": "France",
-     "rank": 85,
+     "rank": 79,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q1",
@@ -11267,11 +11244,11 @@
      "statusInferred": false
     },
     {
-     "playerKey": "10070",
-     "name": "Adam Walton",
-     "apiName": "A. Walton",
-     "country": "Australia",
-     "rank": 97,
+     "playerKey": "1096",
+     "name": "Kamil Majchrzak",
+     "apiName": "K. Majchrzak",
+     "country": "Poland",
+     "rank": 82,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q1",
@@ -11295,7 +11272,31 @@
      "name": "Jenson Brooksby",
      "apiName": "J. Brooksby",
      "country": "USA",
-     "rank": 99,
+     "rank": 94,
+     "result": "Q",
+     "resultBadge": "Q",
+     "qualRound": "Q1",
+     "qualified": false,
+     "ll": false,
+     "mainPoints": null,
+     "qualifyingPoints": 0,
+     "points": 0,
+     "pointsComplete": true,
+     "dropDate": "2026-11-02",
+     "byeCorrected": false,
+     "flags": [
+      "qual-early-zero"
+     ],
+     "status": "Not entered",
+     "statusBasis": "not-on-entry-list",
+     "statusInferred": false
+    },
+    {
+     "playerKey": "10070",
+     "name": "Adam Walton",
+     "apiName": "A. Walton",
+     "country": "Australia",
+     "rank": 98,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q1",
@@ -11319,7 +11320,7 @@
      "name": "Pedro Martinez",
      "apiName": "P. Martinez",
      "country": "Spain",
-     "rank": 125,
+     "rank": 126,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q1",
@@ -11343,7 +11344,7 @@
      "name": "Pierre-Hugues Herbert",
      "apiName": "P. Herbert",
      "country": "France",
-     "rank": 290,
+     "rank": 249,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q1",
@@ -11367,7 +11368,7 @@
      "name": "Ugo Blanchet",
      "apiName": "U. Blanchet",
      "country": "France",
-     "rank": 344,
+     "rank": 345,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q1",
@@ -11433,7 +11434,7 @@
      "name": "Casper Ruud",
      "apiName": "C. Ruud",
      "country": "Norway",
-     "rank": 24,
+     "rank": 25,
      "result": "Won",
      "resultBadge": "Won",
      "qualRound": null,
@@ -11459,7 +11460,7 @@
      "name": "Ugo Humbert",
      "apiName": "U. Humbert",
      "country": "France",
-     "rank": 35,
+     "rank": 38,
      "result": "F",
      "resultBadge": "F",
      "qualRound": null,
@@ -11485,7 +11486,7 @@
      "name": "Denis Shapovalov",
      "apiName": "D. Shapovalov",
      "country": "Canada",
-     "rank": 47,
+     "rank": 52,
      "result": "SF",
      "resultBadge": "SF",
      "qualRound": null,
@@ -11511,7 +11512,7 @@
      "name": "Holger Rune",
      "apiName": "H. Rune",
      "country": "Denmark",
-     "rank": 1205,
+     "rank": 1202,
      "result": "SF",
      "resultBadge": "SF",
      "qualRound": null,
@@ -11583,7 +11584,7 @@
      "name": "Lorenzo Sonego",
      "apiName": "L. Sonego",
      "country": "Italy",
-     "rank": 89,
+     "rank": 91,
      "result": "QF",
      "resultBadge": "QF",
      "qualRound": null,
@@ -11606,7 +11607,7 @@
      "name": "Elias Ymer",
      "apiName": "E. Ymer",
      "country": "Sweden",
-     "rank": 228,
+     "rank": 227,
      "result": "QF",
      "resultBadge": "QF",
      "qualRound": null,
@@ -11629,7 +11630,7 @@
      "name": "Matteo Berrettini",
      "apiName": "M. Berrettini",
      "country": "Italy",
-     "rank": 43,
+     "rank": 48,
      "result": "R16",
      "resultBadge": "R16",
      "qualRound": null,
@@ -11655,7 +11656,7 @@
      "name": "Miomir Kecmanovic",
      "apiName": "M. Kecmanovic",
      "country": "Serbia",
-     "rank": 57,
+     "rank": 58,
      "result": "R16",
      "resultBadge": "R16",
      "qualRound": null,
@@ -11681,7 +11682,7 @@
      "name": "Kamil Majchrzak",
      "apiName": "K. Majchrzak",
      "country": "Poland",
-     "rank": 78,
+     "rank": 82,
      "result": "R16",
      "resultBadge": "R16",
      "qualRound": null,
@@ -11704,29 +11705,6 @@
      "name": "Aleksandar Kovacevic",
      "apiName": "A. Kovacevic",
      "country": "USA",
-     "rank": 82,
-     "result": "R16",
-     "resultBadge": "R16",
-     "qualRound": null,
-     "qualified": false,
-     "ll": false,
-     "mainPoints": 25,
-     "qualifyingPoints": 0,
-     "points": 25,
-     "pointsComplete": true,
-     "dropDate": "2026-10-19",
-     "byeCorrected": false,
-     "flags": [],
-     "status": "Not entered",
-     "statusBasis": "not-on-entry-list",
-     "statusInferred": false
-    },
-    {
-     "order": 13,
-     "playerKey": "2167",
-     "name": "Marin Cilic",
-     "apiName": "M. Cilic",
-     "country": "Croatia",
      "rank": 84,
      "result": "R16",
      "resultBadge": "R16",
@@ -11745,12 +11723,35 @@
      "statusInferred": false
     },
     {
-     "order": 14,
+     "order": 13,
      "playerKey": "12951",
      "name": "Jacob Fearnley",
      "apiName": "J. Fearnley",
      "country": "United Kingdom",
-     "rank": 87,
+     "rank": 86,
+     "result": "R16",
+     "resultBadge": "R16",
+     "qualRound": null,
+     "qualified": false,
+     "ll": false,
+     "mainPoints": 25,
+     "qualifyingPoints": 0,
+     "points": 25,
+     "pointsComplete": true,
+     "dropDate": "2026-10-19",
+     "byeCorrected": false,
+     "flags": [],
+     "status": "Not entered",
+     "statusBasis": "not-on-entry-list",
+     "statusInferred": false
+    },
+    {
+     "order": 14,
+     "playerKey": "2167",
+     "name": "Marin Cilic",
+     "apiName": "M. Cilic",
+     "country": "Croatia",
+     "rank": 96,
      "result": "R16",
      "resultBadge": "R16",
      "qualRound": null,
@@ -11773,7 +11774,7 @@
      "name": "Marton Fucsovics",
      "apiName": "M. Fucsovics",
      "country": "Hungary",
-     "rank": 141,
+     "rank": 143,
      "result": "R16",
      "resultBadge": "R16",
      "qualRound": null,
@@ -11796,7 +11797,7 @@
      "name": "Leo Borg",
      "apiName": "L. Borg",
      "country": "Sweden",
-     "rank": 617,
+     "rank": 602,
      "result": "R16",
      "resultBadge": "R16",
      "qualRound": null,
@@ -11819,7 +11820,7 @@
      "name": "Arthur Fery",
      "apiName": "A. Fery",
      "country": "United Kingdom",
-     "rank": 34,
+     "rank": 35,
      "result": "R32",
      "resultBadge": "R32 | Q",
      "qualRound": null,
@@ -11847,7 +11848,7 @@
      "name": "Mark Lajal",
      "apiName": "M. Lajal",
      "country": "Estonia",
-     "rank": 150,
+     "rank": 154,
      "result": "R32",
      "resultBadge": "R32 | Q",
      "qualRound": null,
@@ -11872,7 +11873,7 @@
      "name": "Filip Misolic",
      "apiName": "F. Misolic",
      "country": "Austria",
-     "rank": 495,
+     "rank": 688,
      "result": "R32",
      "resultBadge": "R32 | Q",
      "qualRound": null,
@@ -11897,7 +11898,7 @@
      "name": "Giulio Zeppieri",
      "apiName": "G. Zeppieri",
      "country": "Italy",
-     "rank": 605,
+     "rank": 697,
      "result": "R32",
      "resultBadge": "R32 | Q",
      "qualRound": null,
@@ -11922,7 +11923,7 @@
      "name": "Ethan Quinn",
      "apiName": "E. Quinn",
      "country": "USA",
-     "rank": 63,
+     "rank": 62,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q2",
@@ -11945,7 +11946,7 @@
      "name": "Jay Clarke",
      "apiName": "J. Clarke",
      "country": "United Kingdom",
-     "rank": 238,
+     "rank": 239,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q2",
@@ -11991,7 +11992,7 @@
      "name": "Patrick Zahraj",
      "apiName": "P. Zahraj",
      "country": "Germany",
-     "rank": 524,
+     "rank": 523,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q2",
@@ -12015,7 +12016,7 @@
      "name": "Tallon Griekspoor",
      "apiName": "T. Griekspoor",
      "country": "Netherlands",
-     "rank": 60,
+     "rank": 50,
      "result": "R32",
      "resultBadge": "R32",
      "qualRound": null,
@@ -12106,7 +12107,7 @@
      "name": "Alexei Popyrin",
      "apiName": "A. Popyrin",
      "country": "Australia",
-     "rank": 126,
+     "rank": 127,
      "result": "R32",
      "resultBadge": "R32",
      "qualRound": null,
@@ -12128,7 +12129,7 @@
      "name": "Alexandre Muller",
      "apiName": "A. Muller",
      "country": "France",
-     "rank": 131,
+     "rank": 130,
      "result": "R32",
      "resultBadge": "R32",
      "qualRound": null,
@@ -12150,7 +12151,7 @@
      "name": "Nicolai Budkov Kjaer",
      "apiName": "N. Budkov Kjaer",
      "country": "Norway",
-     "rank": 187,
+     "rank": 180,
      "result": "R32",
      "resultBadge": "R32",
      "qualRound": null,
@@ -12194,7 +12195,7 @@
      "name": "Ignacio Buse",
      "apiName": "I. Buse",
      "country": "Peru",
-     "rank": 33,
+     "rank": 32,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q1",
@@ -12218,7 +12219,7 @@
      "name": "Dino Prizmic",
      "apiName": "D. Prizmic",
      "country": "Croatia",
-     "rank": 95,
+     "rank": 93,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q1",
@@ -12242,7 +12243,7 @@
      "name": "Rei Sakamoto",
      "apiName": "R. Sakamoto",
      "country": "Japan",
-     "rank": 124,
+     "rank": 125,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q1",
@@ -12266,7 +12267,7 @@
      "name": "Vitaliy Sachko",
      "apiName": "V. Sachko",
      "country": "Ukraine",
-     "rank": 175,
+     "rank": 170,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q1",
@@ -12314,7 +12315,7 @@
      "name": "William Rejchtman Vinciguerra",
      "apiName": "W. Rejchtman Vinciguerra",
      "country": "Sweden",
-     "rank": 839,
+     "rank": 763,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q1",
@@ -12338,7 +12339,7 @@
      "name": "Nikola Slavic",
      "apiName": "N. Slavic",
      "country": "Sweden",
-     "rank": 903,
+     "rank": 863,
      "result": "Q",
      "resultBadge": "Q",
      "qualRound": "Q1",
@@ -15732,63 +15733,63 @@
      "Alternates & Reserves"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    },
    "372": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    },
    "427": {
     "sections": [
      "Qualifying"
     ],
     "firstSeen": "2026-10-16T23:00:40Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    },
    "430": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    },
    "431": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    },
    "434": {
     "sections": [
      "Qualifying"
     ],
     "firstSeen": "2026-10-16T23:00:40Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    },
    "435": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    },
    "437": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    },
    "824": {
     "sections": [
      "Qualifying"
     ],
     "firstSeen": "2026-10-16T23:00:40Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    },
    "825": {
     "sections": [
@@ -15796,14 +15797,14 @@
      "Alternates & Reserves"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    },
    "902": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    },
    "949": {
     "sections": [
@@ -15811,43 +15812,44 @@
      "Alternates & Reserves"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    },
    "1064": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    },
    "1066": {
     "sections": [
      "Qualifying",
-     "Alternates & Reserves"
+     "Alternates & Reserves",
+     "Main Draw"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    },
    "1083": {
     "sections": [
      "Qualifying"
     ],
     "firstSeen": "2026-10-16T23:00:40Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    },
    "1093": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    },
    "1099": {
     "sections": [
      "Qualifying"
     ],
     "firstSeen": "2026-10-16T23:00:40Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    },
    "1101": {
     "sections": [
@@ -15855,105 +15857,105 @@
      "Alternates & Reserves"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    },
    "1103": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    },
    "1104": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    },
    "1105": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    },
    "1106": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    },
    "1192": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    },
    "1759": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    },
    "1764": {
     "sections": [
      "Qualifying"
     ],
     "firstSeen": "2026-10-16T23:00:40Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    },
    "1852": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    },
    "1894": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    },
    "1895": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    },
    "1900": {
     "sections": [
      "Qualifying"
     ],
     "firstSeen": "2026-10-16T23:00:40Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    },
    "1902": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    },
    "1905": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    },
    "1906": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    },
    "1925": {
     "sections": [
@@ -15961,21 +15963,21 @@
      "Alternates & Reserves"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    },
    "1980": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    },
    "2073": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    },
    "2083": {
     "sections": [
@@ -15983,56 +15985,56 @@
      "Alternates & Reserves"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    },
    "2382": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    },
    "2674": {
     "sections": [
      "Qualifying"
     ],
     "firstSeen": "2026-10-16T23:00:40Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    },
    "2831": {
     "sections": [
      "Qualifying"
     ],
     "firstSeen": "2026-10-16T23:00:40Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    },
    "2832": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    },
    "2838": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    },
    "2841": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    },
    "2842": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    },
    "2844": {
     "sections": [
@@ -16040,126 +16042,126 @@
      "Alternates & Reserves"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    },
    "2846": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    },
    "2847": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    },
    "2848": {
     "sections": [
      "Qualifying"
     ],
     "firstSeen": "2026-10-16T23:00:40Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    },
    "2849": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    },
    "2959": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    },
    "2972": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    },
    "2973": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    },
    "2982": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    },
    "8174": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    },
    "8781": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    },
    "8926": {
     "sections": [
      "Qualifying"
     ],
     "firstSeen": "2026-10-16T23:00:40Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    },
    "9210": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-16T23:00:40Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    },
    "9514": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    },
    "10148": {
     "sections": [
      "Qualifying"
     ],
     "firstSeen": "2026-10-16T23:00:40Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    },
    "10520": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    },
    "10884": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    },
    "39913": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    },
    "40058": {
     "sections": [
@@ -16173,7 +16175,7 @@
      "Main Draw"
     ],
     "firstSeen": "2026-10-14T23:00:13Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    }
   },
   "stockholm-2026": {
@@ -16182,231 +16184,231 @@
      "Qualifying"
     ],
     "firstSeen": "2026-10-26T00:55:56Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    },
    "427": {
     "sections": [
      "Qualifying"
     ],
     "firstSeen": "2026-10-26T00:55:56Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    },
    "430": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-21T01:10:59Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    },
    "431": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-21T01:10:59Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    },
    "437": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-26T00:55:56Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    },
    "824": {
     "sections": [
      "Qualifying"
     ],
     "firstSeen": "2026-10-26T00:55:56Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    },
    "825": {
     "sections": [
      "Qualifying"
     ],
     "firstSeen": "2026-10-26T00:55:56Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    },
    "949": {
     "sections": [
      "Qualifying"
     ],
     "firstSeen": "2026-10-26T00:55:56Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    },
    "1064": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-21T01:10:59Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    },
    "1066": {
     "sections": [
      "Qualifying"
     ],
     "firstSeen": "2026-10-26T00:55:56Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    },
    "1101": {
     "sections": [
      "Alternates & Reserves"
     ],
     "firstSeen": "2026-10-26T00:55:56Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    },
    "1103": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-21T01:10:59Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    },
    "1104": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-21T01:10:59Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    },
    "1105": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-21T01:10:59Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    },
    "1764": {
     "sections": [
      "Qualifying"
     ],
     "firstSeen": "2026-10-26T00:55:56Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    },
    "1852": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-21T01:10:59Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    },
    "1895": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-21T01:10:59Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    },
    "1902": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-21T01:10:59Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    },
    "1906": {
     "sections": [
      "Qualifying"
     ],
     "firstSeen": "2026-10-26T00:55:56Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    },
    "1925": {
     "sections": [
      "Qualifying"
     ],
     "firstSeen": "2026-10-26T00:55:56Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    },
    "2083": {
     "sections": [
      "Alternates & Reserves"
     ],
     "firstSeen": "2026-10-26T00:55:56Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    },
    "2831": {
     "sections": [
      "Qualifying"
     ],
     "firstSeen": "2026-10-26T00:55:56Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    },
    "2832": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-21T01:10:59Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    },
    "2842": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-21T01:10:59Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    },
    "2844": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-26T00:55:56Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    },
    "2848": {
     "sections": [
      "Qualifying"
     ],
     "firstSeen": "2026-10-26T00:55:56Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    },
    "2972": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-21T01:10:59Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    },
    "2982": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-21T01:10:59Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    },
    "8174": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-21T01:10:59Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    },
    "8781": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-21T01:10:59Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    },
    "10148": {
     "sections": [
      "Qualifying"
     ],
     "firstSeen": "2026-10-26T00:55:56Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    },
    "10884": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-21T01:10:59Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    },
    "39913": {
     "sections": [
      "Main Draw"
     ],
     "firstSeen": "2026-10-21T01:10:59Z",
-    "lastSeen": "2026-10-26T00:55:56Z"
+    "lastSeen": "2026-10-27T01:46:24Z"
    }
   }
  }
