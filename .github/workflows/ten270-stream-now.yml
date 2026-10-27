@@ -27,7 +27,7 @@ on:
   workflow_dispatch:
     inputs:
       action:
-        description: 'schema | lines-schema | lines-coverage | lines-clear-false-closes | lines-unmatched | verify | deploy-worker | status | logs | realtime-config | usage | unpublish-price | heartbeat-check'
+        description: 'schema | lines-schema | lines-coverage | lines-close-lag | lines-clear-false-closes | lines-unmatched | verify | deploy-worker | status | logs | realtime-config | usage | unpublish-price | heartbeat-check'
         required: true
         default: 'status'
       max_events:
@@ -355,6 +355,24 @@ jobs:
               print(f"update: HTTP {st} {r[:200]}")
               st, r = sql("select count(*) n from line_prices_current where close_price is not null")
               print(f"close rows left (all events): HTTP {st} {r}")
+          if act == "lines-close-lag":
+              # READ-ONLY (brief 2026-10-27 "False 0-0 starts", item 4). bet105 closes since the played() fix (72b50b046,
+              # live 13:05Z 26 Oct): per event, its match-winner close tick (close_at = Kibl INSERT time, the later of the
+              # two sides) against the first time this worker saw play (the first 'started' tick's seen_at — an upper
+              # bound on the first point: the api-tennis poll runs every 60 s). Median and max over events.
+              st, r = sql("with c as (select event_key, max(close_at) close_at, min(close_src) src from line_prices_current "
+                          "where market = 'ml' and close_price is not null and close_at is not null group by 1), "
+                          "p as (select event_key, min(seen_at) play_seen from line_price_ticks where status = 'started' "
+                          "and seen_at >= '2026-10-26T13:05:00Z' group by 1), "
+                          "j as (select c.event_key, c.src, c.close_at, p.play_seen, extract(epoch from p.play_seen - c.close_at) lag_s "
+                          "from c join p using (event_key)) "
+                          "select count(*) n, count(*) filter (where lag_s < 0) negative, "
+                          "percentile_cont(0.5) within group (order by lag_s) median_s, max(lag_s) max_s, min(lag_s) min_s, "
+                          "(select count(*) from c) ml_closes_total, (select count(*) from p) started_since_fix, "
+                          "(select json_agg(j order by lag_s desc) from (select * from j order by lag_s desc limit 8) j) top "
+                          "from j")
+              print(f"== close tick -> play first seen (HTTP {st})")
+              print("   ", r[:4000])
           if act == "lines-coverage":
               # READ-ONLY (founder brief 2026-10-26, "report, don't resolve"): line closes for completed matches —
               # bet105 (line_prices_current, since 24 Oct) and Pinnacle (oddspapi_line_summary, since mid-Sep).
