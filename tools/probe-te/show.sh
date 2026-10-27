@@ -11,13 +11,15 @@ for v in (rows.values() if isinstance(rows, dict) else rows):
     if isinstance(v, dict) and v.get('hasProfile'): p = norm(v['name']).split(); idx.setdefault((p[-1], p[0][0]), []).append(v)
 out = []
 for r, nm in zip(x['xRows'], x['xNames']):
-    if r[8] != 8 or not str(r[0]).startswith('2024') or r[1] != 'Challenger Qualifying': continue
+    if r[8] != 8 or not str(r[0]).startswith('2024') or r[1] != 'Challenger Qualifying' or 'l' not in ''.join(r[9:]): continue
     w, l = nm; ws = norm(w).replace('.', '').split(); ls = norm(l).replace('.', '').split()
     c = idx.get((ws[0], ws[-1][0])) if len(ws) > 1 else None
     if c and len(c) == 1: d = str(r[0]); out.append((c[0]['key'], f'{d[:4]}-{d[4:6]}', ls[0].capitalize(), w, l, r[4], r[5], r[6], d))
 print(len(out)); [print('|'.join(map(str, o))) for o in out[:5]]
 PY
-cat pick.txt; L=$(sed -n 2p pick.txt); KEY=$(echo "$L" | cut -d'|' -f1); MON=$(echo "$L" | cut -d'|' -f2); OPP=$(echo "$L" | cut -d'|' -f3)
-CHROME_BIN=google-chrome timeout 900 node tools/price-consistency.mjs --base "$SITE" --only "$KEY" --pick "$KEY|$MON|$OPP" > pc.log 2>&1; echo "exit $?"; grep -E '^SHOW|### price-consistency' pc.log | head -4
-CHROME_BIN=google-chrome timeout 2400 node tools/probe-te/pc-dump.mjs --base "$SITE" --coverage-out cov.json > dump.log 2>&1; echo "dump exit $?"; tail -2 dump.log | cut -c1-300
-python3 tools/probe-te/nf.py cov.json mis446.json
+cat pick.txt
+tail -n +2 pick.txt | head -5 | while IFS='|' read -r KEY MON OPP REST; do
+  curl -sfS -m 30 "$SITE/career-history/$KEY.json" -o /dev/null || { echo "no shard $KEY"; continue; }
+  CHROME_BIN=google-chrome timeout 900 node tools/price-consistency.mjs --base "$SITE" --only "$KEY" --pick "$KEY|$MON|$OPP" > pc.log 2>&1; echo "exit $? key $KEY"
+  grep -E '^SHOW' pc.log | head -2; grep -q '^SHOW' pc.log && break
+done
