@@ -16,7 +16,7 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: install | import | derive | derive-held | pull-backlog | backup | restore-check | false-starts-report | daily
+        description: install | import | derive | derive-held | pull-backlog | backup | restore-check | false-starts-report | false-starts-ticks | daily
         required: true
         default: daily
       days:
@@ -132,6 +132,12 @@ jobs:
         run: |
           set -euo pipefail
           python3 tools/pinarch.py false-starts-report --since 2026-10-24
+
+      - name: false-starts-ticks — Pinnacle entries around the false starts, from stored payloads (READ-ONLY, 0 units)
+        if: env.MODE == 'false-starts-ticks'
+        run: |
+          set -euo pipefail
+          python3 tools/pinarch.py false-starts-ticks
       - name: restore-check — rebuild every row from the backups (no write)
         if: env.MODE == 'restore-check'
         env:

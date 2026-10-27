@@ -1949,6 +1949,42 @@ def cmd_false_starts_report(since='2026-10-24'):
         print('FLIPROW', json.dumps(x, default=str))
 
 
+
+def cmd_false_starts_ticks(keys=(12173697, 12173975, 12174058, 12174272)):
+    """READ-ONLY (founder brief 2026-10-26, "False 0-0 starts", tick check). For each event: its archive closes (with
+    detail), every stored raw payload for their fixtures, and every Pinnacle +30 match-winner entry (active or not) from
+    3 h before the false start to 3 h after it, so the last price before the real first ball can be read off. Also the
+    fixture's oddspapi_fixtures row (trueStart may have arrived since). Spends no Oddspapi units. Writes nothing."""
+    ks = ','.join(map(str, keys))
+    _, rows, _ = rest('GET', f'/rest/v1/{CLOSE}?select=id,event_key,fixture_id,label,start_ts,close_ts,p1,p2,raw_id,detail&event_key=in.({ks})&order=id.asc')
+    for r in rows or []:
+        print('CLOSE', json.dumps(r, default=str))
+    fids = sorted({r['fixture_id'] for r in rows or [] if r.get('fixture_id')})
+    if fids:
+        q = ','.join(f'"{f}"' for f in fids)
+        _, fx, _ = rest('GET', f'/rest/v1/oddspapi_fixtures?select=fixture_id,player1,player2,scheduled_start,true_start&fixture_id=in.({q})')
+        for f in fx or []:
+            print('FIXTURE', json.dumps(f, default=str))
+    for r0 in rows or []:
+        if r0['label'] != ARCHIVE_LABEL:
+            continue
+        start = iso_ms(r0['start_ts'])
+        lo, hi = start - dt.timedelta(hours=3), start + dt.timedelta(hours=3)
+        _, raws, _ = rest('GET', f'/rest/v1/{RAW}?select=id,fixture_id,source,pulled_at,books,payload_gz&fixture_id=eq.{r0["fixture_id"]}&order=id.asc')
+        for raw in raws or []:
+            blob = unhex(raw['payload_gz'])
+            body = json.loads(gzip.decompress(blob) if blob[:2] == b'\x1f\x8b' else blob)
+            ser = mw_series(body)
+            n = sum(len(v) for v in ser.values())
+            print('RAW', json.dumps({'event_key': r0['event_key'], 'raw_id': raw['id'], 'source': raw['source'], 'pulled_at': raw['pulled_at'],
+                                     'books': raw['books'], 'entries': n, 'last': max((p['createdAt'] for v in ser.values() for p in v), default=None)}))
+            for oc in ('121', '122'):
+                for p in ser.get(oc) or []:
+                    t = iso_ms(p['createdAt'])
+                    if lo <= t <= hi:
+                        print('TICK', json.dumps({'event_key': r0['event_key'], 'raw_id': raw['id'], 'oc': oc, 'ts': p['createdAt'],
+                                                  'price': p.get('price'), 'active': p.get('active')}))
+
 if __name__ == '__main__':
     a = sys.argv[1:]
     if not a:
@@ -1981,6 +2017,8 @@ if __name__ == '__main__':
         cmd_td_feed(a[1], a[2])
     elif a[0] == 'false-starts-report':
         cmd_false_starts_report(a[a.index('--since') + 1] if '--since' in a else '2026-10-24')
+    elif a[0] == 'false-starts-ticks':
+        cmd_false_starts_ticks()
     elif a[0] == 'restore':
         cmd_restore(a[1], a[a.index('--sql-out') + 1] if '--sql-out' in a else 'restore.sql', '--apply' in a, '--compare' in a)
     else:
