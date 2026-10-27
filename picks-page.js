@@ -285,8 +285,10 @@
     return '<div class="pk-empty"><span class="pk-empty-t">' + esc(e.title) + '</span>' + (e.sub ? '<span class="pk-empty-s">' + esc(e.sub) + '</span>' : '') + '</div>';
   }
 
+  var shownPlan = null;   // the plan the page was last drawn for (see the sfPlanLocks wrap below)
   function render() {
     var el = root(); if (!el) return;
+    shownPlan = window.sfPlan || null;
     if (!S.data) {
       el.innerHTML = S.failed ? header() + emptyPanel({ title: 'Picks could not be loaded.', sub: '' }) : '';
       return;
@@ -370,6 +372,19 @@
       document.querySelectorAll('.tabpage').forEach(function (p) { p.classList.toggle('active', p.dataset.page === 'picks'); });
       setActive(true);
     }
+  }
+  // The plan arrives after first paint: the auth paint calls window.sfPlanLocks(u) on every auth change (the shared
+  // sf-menu block, identical on account.html, so it is wrapped here rather than edited). A plan change re-renders the
+  // page, so a Pro member never sits on a blurred card rendered while the account was still loading (Matches does the
+  // same through renderMatches).
+  if (typeof window.sfPlanLocks === 'function' && !window.sfPlanLocks._picks) {
+    var planLocks = window.sfPlanLocks;
+    window.sfPlanLocks = function () {
+      var r = planLocks.apply(this, arguments);
+      if (active && S.data && (window.sfPlan || null) !== shownPlan) render();
+      return r;
+    };
+    window.sfPlanLocks._picks = true;
   }
   window.PicksPage = { setActive: setActive, render: render, _state: S };
   window.addEventListener('hashchange', applyHash);

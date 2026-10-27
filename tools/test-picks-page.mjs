@@ -84,11 +84,22 @@ async function browser() {
       txt = e => { if (!e) return null; const w = document.createTreeWalker(e, NodeFilter.SHOW_TEXT), out = []; let t; while ((t = w.nextNode())) { const v = t.nodeValue.replace(/\\s+/g, ' ').trim(); if (v) out.push(v); } return out.join(' '); }, cs = (e, p) => e ? getComputedStyle(e)[p] : null;
       const set = (o) => { Object.assign(S, o); PicksPage.render(); }; ${js} })()`);
 
+    // The plan arrives late (the auth paint calls sfPlanLocks on every auth change): a plan change must re-render the page.
+    // One synchronous evaluation, so the real auth paint cannot interleave. (Gate run 40506098717: a late paint reset
+    // window.sfPlan between two steps of this test — the page itself never re-rendered for it.)
+    const pc = await E(`(() => { const blur = () => document.querySelectorAll('#picksRoot .pk-players.is-blur').length;
+      PicksPage._state.tab = 'upcoming'; PicksPage._state.day = PicksPage._state.data.as_of_day; PicksPage._state.view = 'cards';
+      window.sfPlanLocks({ plan: 'free' }); const free = blur(); window.sfPlanLocks({ plan: 'pro' }); const pro = blur();
+      window.sfPlanLocks(null); const out = blur(); return { free, pro, out }; })()`);
+    check('a plan change re-renders: Free → 5 blurred, Pro → 0, signed out → 5', pc.free === 5 && pc.pro === 0 && pc.out === 5, JSON.stringify(pc));
+    // From here every scenario sets its own plan; pin it so a late auth paint cannot change it mid-test.
+    await E(`(() => { window.__pkPlan = null; Object.defineProperty(window, 'sfPlan', { configurable: true, get() { return window.__pkPlan; }, set() {} }); })()`);
+
     check('#picks opens the Picks tab page', await E(`[...document.querySelectorAll('.tabpage.active')].map(p => p.dataset.page).join(',')`) === 'picks');
     check('no nav row is active on Picks (no nav link yet)', await E(`!document.querySelector('#mainNav button.active') || document.querySelector('#mainNav button.active').dataset.tab !== 'picks'`));
 
     // 1a · Today with picks (Pro)
-    const a = await R(`window.sfPlan = 'pro'; set({ tab: 'upcoming', day: S.data.as_of_day, view: 'cards', tourn: null, q: '', noteOpen: {} });
+    const a = await R(`window.__pkPlan = 'pro'; set({ tab: 'upcoming', day: S.data.as_of_day, view: 'cards', tourn: null, q: '', noteOpen: {} });
       return { title: txt(q('.sfh__title')), sub: txt(q('.sfh__sub')), cards: qa('.pk-card').length, box: txt(q('.pk-box-hd .pk-caps')), meta: txt(q('.pk-box-meta')), rows: qa('.pk-bx-row').length,
         blur: qa('.is-blur').length, chip0: txt(q('.pk-card .pk-hd-r .pk-tag')), days: qa('.pk-day').map(txt), on: txt(q('.pk-day.on')), tabs: qa('.pk-tab').map(txt),
         p1trail: txt(q('[data-card="p1"] .pk-trail')), p2label: txt(q('[data-card="p2"] .pk-trail .pk-tl:nth-of-type(3)')), p2tl: qa('[data-card="p2"] .pk-tl').map(txt),
@@ -111,12 +122,12 @@ async function browser() {
     check('1a card is 664 px at 1512', Math.abs(a.cardW - 664) < 0.6, a.cardW);
     check('1a thin record: four dashes, n=4 · thin in amber', a.recVals.slice(0, 4).join('') === '————' && /^n=4 · thin/.test(a.settled) && a.settledC === 'rgb(232, 168, 78)', JSON.stringify([a.recVals, a.settledC]));
 
-    const n = await R(`set({}); q('[data-card="p3"] .pk-toggle').click(); return { note: txt(q('[data-card="p3"] .pk-note')), cue: txt(q('[data-card="p3"] .pk-toggle')),
+    const n = await R(`window.__pkPlan = 'pro'; set({}); q('[data-card="p3"] .pk-toggle').click(); return { note: txt(q('[data-card="p3"] .pk-note')), cue: txt(q('[data-card="p3"] .pk-toggle')),
       ws: cs(q('[data-card="p3"] .pk-note'), 'whiteSpace') };`);
     check('analysis opens with the full note, "Hide analysis"', /^I’m going for Cobolli here\./.test(n.note) && /For me that drop is justified/.test(n.note) && /^Hide analysis/.test(n.cue) && n.ws === 'pre-line', JSON.stringify(n).slice(0, 300));
 
     // 1d · non-Pro
-    const d = await R(`window.sfPlan = 'free'; set({ noteOpen: {} });
+    const d = await R(`window.__pkPlan = 'free'; set({ noteOpen: {} });
       return { blurredCards: qa('.pk-card').filter(c => c.querySelector('.pk-players.is-blur') && c.querySelector('.pk-right.is-blur')).length,
         headBlur: qa('.pk-hd.is-blur, .pk-foot.is-blur, .pk-hd .is-blur').length, unlock: qa('.pk-unlock').map(txt), toggles: qa('.pk-toggle').length,
         boxBlur: qa('.pk-bx-line.is-blur').length + qa('.pk-bx-price.is-blur').length, filter: cs(q('.pk-players.is-blur'), 'filter'), sel: cs(q('.pk-players.is-blur'), 'userSelect') };`);
@@ -155,7 +166,7 @@ async function browser() {
     check('empty: other past day', em.past === 'No bets this day.', em.past);
 
     // tab switch keeps tournament + date
-    const tk = await R(`window.sfPlan = 'pro'; set({ tab: 'upcoming', day: S.data.as_of_day, tourn: null }); q('.pk-tpill').click(); const opts = qa('.pk-topt').map(txt);
+    const tk = await R(`window.__pkPlan = 'pro'; set({ tab: 'upcoming', day: S.data.as_of_day, tourn: null }); q('.pk-tpill').click(); const opts = qa('.pk-topt').map(txt);
       qa('.pk-topt').find(b => txt(b) === 'Vienna Open').click(); const n1 = qa('.pk-card').length; q('.pk-tab:not(.on)').click();
       return { opts, n1, tab: S.tab, tourn: S.tourn, day: S.day, pill: txt(q('.pk-tpill')) };`);
     check('tournament menu lists the day\'s tournaments; Vienna Open filters to 1', tk.opts[0] === 'All tournaments' && tk.opts.includes('Vienna Open') && tk.n1 === 1, JSON.stringify(tk));
@@ -208,7 +219,7 @@ async function browser() {
     // 1j · mobile 390
     await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 1, mobile: true });
     await new Promise(r => setTimeout(r, 300));
-    const mo = await R(`window.sfPlan = 'pro'; set({ tab: 'upcoming', day: S.data.as_of_day, view: 'cards', tourn: null, q: '' }); const up = { m: qa('.pk-card--m').length, star: qa('.pk-card--m .pk-star').length,
+    const mo = await R(`window.__pkPlan = 'pro'; set({ tab: 'upcoming', day: S.data.as_of_day, view: 'cards', tourn: null, q: '' }); const up = { m: qa('.pk-card--m').length, star: qa('.pk-card--m .pk-star').length,
         type: qa('.pk-card--m .pk-hd .pk-tag').filter(t => !/pk-chip--/.test(t.className)).length, panel: cs(q('[data-card="p1"] .pk-mpanel'), 'backgroundColor'), w: q('[data-card="p1"]').getBoundingClientRect().width,
         scroll: document.documentElement.scrollWidth };
       set({ tab: 'completed', day: '2026-10-26' }); const st = qa('[data-card="s1"] .pk-tl').map(txt); return { up, st };`);
