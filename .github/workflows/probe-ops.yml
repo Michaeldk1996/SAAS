@@ -6,11 +6,14 @@ on:
 permissions:
   contents: read
 jobs:
-  read:
+  build-targets:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
-      - run: python3 tools/probe-ops/read.py
+      - uses: actions/setup-node@v4
+        with: { node-version: 24 }
+      - run: bash tools/probe-ops/run.sh
         env:
+          STORE_TOKEN: ${{ secrets.TE_STORE_READ_TOKEN }}
           OPS_TOKEN: ${{ secrets.WORKFLOW_PAT }}
