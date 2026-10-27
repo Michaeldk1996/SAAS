@@ -16,7 +16,7 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: install | import | derive | derive-held | pull-backlog | backup | restore-check | false-starts-report | false-starts-ticks | daily
+        description: install | import | derive | derive-held | pull-backlog | backup | restore-check | false-starts-report | false-starts-ticks | false-starts-recut | daily
         required: true
         default: daily
       days:
@@ -32,7 +32,7 @@ on:
         required: false
         default: '2026-05-01'
       dry_run:
-        description: derive-held — 'yes' counts what it would add and inserts nothing
+        description: derive-held / false-starts-recut — 'yes' counts what it would add and inserts nothing
         required: false
         default: 'yes'
 permissions:
@@ -138,6 +138,21 @@ jobs:
         run: |
           set -euo pipefail
           python3 tools/pinarch.py false-starts-ticks
+
+      - name: false-starts-recut — Berrettini + Vacherot re-cut at Oddspapi trueStart (free history pull; dry run unless 'no')
+        if: env.MODE == 'false-starts-recut'
+        env:
+          ODDSPAPI_KEY: ${{ secrets.ODDSPAPI_KEY }}
+          DRY_RUN: ${{ github.event.inputs.dry_run || 'yes' }}
+        run: |
+          set -euo pipefail
+          # fail closed, as derive-held: only the exact value "no" writes to the permanent archive
+          case "$DRY_RUN" in
+            yes) python3 tools/pinarch.py false-starts-recut ;;
+            no)  python3 tools/pinarch.py false-starts-recut --write
+                 python3 tools/pinarch.py counts --record false-starts-recut ;;
+            *)   echo "dry_run must be exactly 'yes' or 'no' (got '$DRY_RUN') — nothing run" >&2; exit 2 ;;
+          esac
       - name: restore-check — rebuild every row from the backups (no write)
         if: env.MODE == 'restore-check'
         env:

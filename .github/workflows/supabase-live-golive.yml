@@ -83,6 +83,9 @@ jobs:
           # played-start-recorder (founder 2026-10-26): AFTER live_flip_log.sql, which re-creates the old record_live_flips body.
           apply supabase/migrations/20261027090000_live_flip_played.sql
           apply supabase/migrations/20261027090100_record_live_flips_played.sql
+          # False 0-0 starts (founder 2026-10-27): the superseded-start sidecar + live_flip_log_current, AFTER every file that
+          # creates live_flip_log. Idempotent; it never drops anything, so a re-run keeps every superseded row.
+          apply supabase/migrations/20261027120000_live_flip_superseded.sql
           # TEN-107 detail panel (2026-09-01): on-demand point-log store + writer.
           # Idempotent (create table if not exists / create or replace); must run
           # BEFORE the poller deploy below, since the poller calls write_live_pbp().

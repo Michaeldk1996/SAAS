@@ -782,12 +782,73 @@ def _initials_ok(n1, n2, rec):
                    for nm in (n1, n2) if by_key.get(name_key(nm)))
 
 
-def find_start(kibl_fx, odds_index, flip_index=None, use_flip=False):
+FIXTURE_INDEX = os.path.join(HERE, '.ten225-fixture-index.json.gz')
+
+
+def index_true_starts(fx_index):
+    """The committed fixture index (Oddspapi /v4/fixtures) -> {match_key: fixture meta}.
+
+    ── LADDER RUNG I(a') (founder, 2026-10-27, "False 0-0 starts") ─────────────
+    odds.md's start ladder is Oddspapi trueStartTime, then the live-flip lower
+    bound, then dash. Until now the card reached Oddspapi's start only through
+    oddspapi_line_summary, which carries no fixture that started after 25 Oct —
+    so every recent card fell to the flip, and a superseded false flip left its
+    card with no start at all. This rung reads trueStart from the index the
+    line summary itself resolves against, and find_start() hands it to the SAME
+    resolve_start() (L) — one ladder, never a second copy of its rules.
+
+    Keyed exactly like index_oddspapi(): the index's own day (trueStart, else the
+    scheduled DAY — a bucket for candidates, never a start) and both players.
+    DROPS ON AMBIGUITY. Only fixtures with a trueStart are offered: without one
+    this rung has nothing the flip rung does not already give.
+    """
+    by_key, ambiguous, st = {}, set(), collections.Counter()
+    for fid, m in (fx_index or {}).items():
+        if not m.get('trueStart'):
+            st['index_no_true_start'] += 1
+            continue
+        k = mk_of((m.get('trueStart') or m.get('startSched') or '')[:10], m.get('p1'), m.get('p2'))
+        if not k:
+            st['index_unkeyable'] += 1
+            continue
+        if k in by_key:
+            ambiguous.add(k)
+        by_key[k] = dict(m, fixture_id=fid, player1=m.get('p1'), player2=m.get('p2'))
+    for k in ambiguous:
+        by_key.pop(k, None)
+        st['index_ambiguous'] += 1
+    st['index_indexed'] = len(by_key)
+    return by_key, st
+
+
+def load_true_starts(path=FIXTURE_INDEX):
+    """(index, stats, error). A missing or unreadable index is NOT fatal: the rung
+    is simply absent this run and the ladder falls to the flip, as before."""
+    try:
+        fx_index = json.load(gzip.open(path)).get('fixtures') or {}
+    except (OSError, ValueError) as e:
+        return {}, collections.Counter(), f'{type(e).__name__}: {e}'
+    idx, st = index_true_starts(fx_index)
+    return idx, st, None
+
+
+def _flip_for(base, n1, n2, flip_index):
+    """The flip the I(b) rung takes for this fixture: the first candidate day with a flip, if its initials agree."""
+    for d in day_candidates(base):
+        k = mk_of(d, n1, n2)
+        rec = (flip_index or {}).get(k) if k else None
+        if rec:
+            return rec if _initials_ok(n1, n2, rec) else None
+    return None
+
+
+def find_start(kibl_fx, odds_index, flip_index=None, use_flip=False, true_index=None):
     """A Kibl fixture -> a resolved start, or a no-start record.
 
-    Two sources, in the ruled order: the oddspapi pair first (I(a)), then the
-    live-flip lower bound (I(b)) for the fixtures oddspapi does not carry at
-    all. `use_flip` gates the SECOND one because it changes what renders, and
+    Three sources, in the ruled order: the oddspapi pair first (I(a)), then
+    Oddspapi's trueStart from the committed fixture index (I(a'), through
+    resolve_start() with the flip beside it, exactly as the line summary resolves
+    it), then the live-flip lower bound (I(b)) for the fixtures neither carries. `use_flip` gates the SECOND one because it changes what renders, and
     the founder's standing order is to measure first — with it off the flip
     branch still runs and still counts, so a dry run reports exactly how many
     Closes it would recover without recovering any.
@@ -830,7 +891,27 @@ def find_start(kibl_fx, odds_index, flip_index=None, use_flip=False):
                 return None, 'initials_conflict'
             return rec, None
 
-    # ── I(b): no oddspapi pair. Try the live flip. ───────────────────────────
+    # ── I(a'): no pair. Oddspapi's trueStart from the fixture index. ────────
+    for d in day_candidates(base):
+        k = mk_of(d, n1, n2)
+        meta = (true_index or {}).get(k) if k else None
+        if not meta:
+            continue
+        if not _initials_ok(n1, n2, meta):
+            break                       # ruling D: not this fixture — the rung offers nothing; the flip rung decides
+        # the SAME flip the I(b) rung would take (any candidate day, ruling D), so resolve_start's earlier-of rule
+        # always sees it — a flip on a neighbouring day is never silently out-voted by a later trueStart
+        flip = _flip_for(base, n1, n2, flip_index) if use_flip else None
+        ts, src, reject, _c, _cm, gap = L.resolve_start(
+            epoch(meta.get('trueStart')), epoch(meta.get('trueEnd')), epoch(meta.get('startSched')),
+            flip['start_ts'] if flip else None, flip.get('flip_gap_seconds') if flip else None, meta.get('cat'))
+        if ts is None:
+            break                       # gate rejected it (or ITF-uncorroborated): the flip rung decides, as before
+        return {'start_ts': ts, 'start_ts_source': src, 'start_reject_reason': reject,
+                'flip_gap_seconds': gap, 'player1': meta.get('player1'), 'player2': meta.get('player2'),
+                'rung': 'fixture-index'}, None
+
+    # ── I(b): no oddspapi pair, no index start. Try the live flip. ─────────
     for d in day_candidates(base):
         k = mk_of(d, n1, n2)
         rec = (flip_index or {}).get(k) if k else None
@@ -847,7 +928,7 @@ def find_start(kibl_fx, odds_index, flip_index=None, use_flip=False):
 # ------------------------------------------------------------ the build itself
 
 def build_rows(kibl_fixtures, observations, odds_index, as_of,
-               flip_index=None, use_flip=False, stream=None, gaps=()):
+               flip_index=None, use_flip=False, stream=None, gaps=(), true_index=None):
     """kibl_fixtures + kibl_line_observations -> odds_card_state rows.
 
     One row per (fixture, side). `observations` is {fixture_id: [obs, ...]}.
@@ -871,7 +952,9 @@ def build_rows(kibl_fixtures, observations, odds_index, as_of,
             continue
         st['fixtures_with_rows'] += 1
 
-        rec, why = find_start(fx, odds_index, flip_index, use_flip)
+        rec, why = find_start(fx, odds_index, flip_index, use_flip, true_index)
+        if rec and rec.get('rung') == 'fixture-index':
+            st[f'start_rung_index_{rec["start_ts_source"]}'] += 1
         start_ts = rec['start_ts'] if rec else None
         start_src = rec['start_ts_source'] if rec else 'none'
         reject = rec['start_reject_reason'] if rec else None
@@ -2360,7 +2443,7 @@ def main():
     # Read unconditionally so the counters are real on every run. Whether the
     # bound is USED is a separate switch (--use-live-flip), because it changes
     # what renders and the standing order is to report the number first.
-    flip_rows, err = fetch_all(url, key, 'live_flip_log',
+    flip_rows, err = fetch_all(url, key, 'live_flip_log_current',
                                'event_key,first_live_seen_at,'
                                'last_not_live_seen_at,gap_seconds,event_date,'
                                'first_player,second_player',
@@ -2392,8 +2475,13 @@ def main():
     print(f'stream: {len(srows)} bet105 changes on {len(stream)} card sides; worker gaps {len(gaps)} '
           f'({sum(1 for g in gaps if g[2])} lost history)')
 
+    true_index, tst, terr = load_true_starts()
+    if terr:
+        print(f'::warning::fixture index unreadable ({terr}) — rung I(a\') is '
+              f'unavailable this run; starts fall to the live flip only')
+    print(f'fixture-index start rung: {len(true_index)} match keys  {dict(tst)}')
     rows, st, unknown_sides, side_shapes = build_rows(
-        fx, observations, odds_index, as_of, flip_index, a.use_live_flip, stream, gaps)
+        fx, observations, odds_index, as_of, flip_index, a.use_live_flip, stream, gaps, true_index)
     print(f'side_id shapes per priced fixture: {side_shapes}')
     # ⚠️ THIS COUNTED THE WRONG THING UNTIL 2026-09-18. It asked how many
     # fixtures carry side_ids *1 and 2*, and side_id 1 does not exist on this

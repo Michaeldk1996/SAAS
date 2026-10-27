@@ -56,7 +56,7 @@ FLIP_GAP_MAX_S = 300                                      # odds.md: flip gap <=
 SMALL_N = 30                                              # CLAUDE.md rule 13: flag n < 30
 
 # ── the read-only guard ─────────────────────────────────────────────────────────────────────────────────────────────
-READ_TABLES = frozenset({'oddspapi_archive_raw', 'pinnacle_archive_close', 'live_flip_log', 'historical_snapshot'})   # snapshot: --audit only
+READ_TABLES = frozenset({'oddspapi_archive_raw', 'pinnacle_archive_close', 'live_flip_log_current', 'historical_snapshot'})   # snapshot: --audit only
 FORBIDDEN_PARAMS = frozenset({'on_conflict', 'columns'})
 ALLOWED_PREFER = frozenset({'count=exact'})
 
@@ -861,7 +861,7 @@ def audit(out_dir, measure_to=None):
     for i in range(0, len(eks), 150):
         # live_flip_log is keyed by event_key and has no `id`, so select_all's id-paged read does not apply: one GET per
         # batch of <= 150 keys returns <= 150 rows (as tdarch reads it)
-        _, got, _ = P.rest('GET', '/rest/v1/live_flip_log?select=event_key,first_live_seen_at,last_not_live_seen_at,gap_seconds'
+        _, got, _ = P.rest('GET', '/rest/v1/live_flip_log_current?select=event_key,first_live_seen_at,last_not_live_seen_at,gap_seconds'
                            '&event_key=in.(' + ','.join(eks[i:i + 150]) + ')')
         for f in got or []:
             flips[str(f['event_key'])] = f

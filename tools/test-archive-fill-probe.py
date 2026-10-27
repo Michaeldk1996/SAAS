@@ -75,8 +75,8 @@ def suite(M):
     fake.record_count = lambda *a, **k: fake.calls.append(('COUNT',))
     fake.guard_state = lambda *a, **k: fake.calls.append(('RPC',))
     M.install_guard(fake)
-    fake.rest('GET', '/rest/v1/live_flip_log?select=event_key')
-    check('installed guard: a GET reaches the transport', fake.calls == [('GET', '/rest/v1/live_flip_log?select=event_key')])
+    fake.rest('GET', '/rest/v1/live_flip_log_current?select=event_key')
+    check('installed guard: a GET reaches the transport', fake.calls == [('GET', '/rest/v1/live_flip_log_current?select=event_key')])
     check('installed guard: a POST never reaches the transport', raises(lambda: fake.rest('POST', '/rest/v1/pinnacle_archive_close?select=id', body=[{}])) and len(fake.calls) == 1)
     fake.rest = lambda method, path, body=None, headers=None, timeout=180, raw=False: fake.calls.append(('NEW', method)) or (200, [], {})
     M.install_guard(fake)
@@ -441,7 +441,7 @@ def smoke(M):
     rep = go('a')
     check('smoke plan: every request was a guarded GET', seen and all(m == 'GET' and M.check_request(m, p_) for m, p_, _ in seen))
     check('smoke plan: the archive, the live-flip log and the close archive were all read', {p_.split('?')[0] for _, p_, _ in seen} >=
-          {'/rest/v1/oddspapi_archive_raw', '/rest/v1/live_flip_log', '/rest/v1/pinnacle_archive_close'})
+          {'/rest/v1/oddspapi_archive_raw', '/rest/v1/live_flip_log_current', '/rest/v1/pinnacle_archive_close'})
     check('smoke plan: n = 1 (the walkover is out), payload, first captured, reliable close', rep['totals']['n'] == 1 and rep['population']['walkoversExcluded'] == 1
           and rep['totals']['hasPinnacle30Payload'] == 1 and rep['totals']['firstCaptured'] == 1 and rep['totals']['closeReliable'] == 1)
     check('smoke plan: no overlap -> rule stop, no fill row, coverage after = before', rep['rule']['decision'] == 'stop' and rep['diff']['candidates'] == 0

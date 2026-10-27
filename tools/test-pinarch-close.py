@@ -387,5 +387,42 @@ check('derive-held dispatch fails closed: "yes" = --dry-run, only "no" inserts, 
       'case "$DRY_RUN" in' in _dh and 'yes) python3 tools/pinarch.py derive-held --from "$FROM" --to "$TO" --dry-run ;;' in _dh
       and '*)   echo "dry_run must be exactly' in _dh and 'exit 2' in _dh and _dh.count('derive-held --from') == 2
       and "DRY_RUN: ${{ github.event.inputs.dry_run || 'yes' }}" in _dh, _dh[:300])
+
+# ── False 0-0 starts (founder brief 2026-10-27): recut_plan re-cuts an archive close at the gated trueStart ──────────
+# Berrettini shape: the current close (cut at the false 12:18:21 start) = 1.581 / 2.53; api-tennis first player is
+# Oddspapi participant 2 here, so orientation must come from reproducing the current close, never from slot order.
+fbody = {'bookmakers': {'pinnacle+30': {'markets': {'121': {'outcomes': {
+    '121': {'players': {'0': [e('2026-10-26T11:53:16Z', 2.53), e('2026-10-26T12:30:00Z', 2.60), e('2026-10-26T12:35:40Z', 2.70, False)]}},
+    '122': {'players': {'0': [e('2026-10-26T11:53:16Z', 1.581), e('2026-10-26T12:30:00Z', 1.55), e('2026-10-26T12:35:40Z', 1.50, False)]}}}}}}}}
+FS = P.mw_series(json.dumps(fbody).encode())
+fcur = {'id': 3880, 'event_key': 12173975, 'fixture_id': 'idB', 'match_date': '2026-10-26', 'p1_key': 1, 'p2_key': 2, 'p1_name': 'M. Berrettini',
+        'p2_name': 'T. Etcheverry', 'p1': 1.581, 'p2': 2.53, 'label': P.ARCHIVE_LABEL, 'close_ts': '2026-10-26T11:53:16+00:00',
+        'start_ts': '2026-10-26T12:18:21+00:00', 'start_source': P.CUT_SOURCE, 'dedupe_key': 'old', 'detail': {'apiTennis': {'event_key': 12173975}}}
+TS, TE = T('2026-10-26T12:35:29.147Z'), T('2026-10-26T14:06:22.131Z')
+row, rep = P.recut_plan(fcur, FS, TS, TE)
+check('recut: close at trueStart = last active entry before Pinnacle suspended (1.55 / 2.60), oriented by the current close',
+      row and (row['p1'], row['p2']) == (1.55, 2.60) and rep['moved'] and rep['nextEntry']['active'] is False, (row and (row['p1'], row['p2']), rep))
+check('recut: the row is cut at trueStart under the false-start source, and is a verified (exported) close',
+      row and row['start_ts'] == TS.isoformat() and row['start_source'] == P.FALSE_START_SOURCE and P.verified_start(dict(row, label=P.ARCHIVE_LABEL))
+      and not P.held_back(row), row and (row['start_source'], row['start_ts']))
+check('recut: the superseded live-flip is recorded in the row detail', row and row['detail']['startCheck']['supersededLiveFlip']['start'] == fcur['start_ts'])
+add = P.plan_archive_closes([row], [fcur])
+check('recut: plan_archive_closes adds ONE superseding row (current close stays)', len(add) == 1 and add[0]['supersedes'] == 3880, add)
+same = P.mw_series(json.dumps({'bookmakers': {'pinnacle+30': {'markets': {'121': {'outcomes': {
+    '121': {'players': {'0': [e('2026-10-26T11:53:16Z', 2.53)]}}, '122': {'players': {'0': [e('2026-10-26T11:53:16Z', 1.581)]}}}}}}}}).encode())
+row2, rep2 = P.recut_plan(fcur, same, TS, TE)
+check('recut: a price that did not move writes nothing', row2 is None and rep2['moved'] is False and 'stop' not in rep2, rep2)
+other = P.mw_series(json.dumps({'bookmakers': {'pinnacle+30': {'markets': {'121': {'outcomes': {
+    '121': {'players': {'0': [e('2026-10-26T11:53:16Z', 2.40)]}}, '122': {'players': {'0': [e('2026-10-26T11:53:16Z', 1.62)]}}}}}}}}).encode())
+row3, rep3 = P.recut_plan(fcur, other, TS, TE)
+check('recut: a series that does not reproduce the current close at its own cut -> stop, nothing cut', row3 is None and 'does not reproduce' in rep3.get('stop', ''), rep3)
+row4, rep4 = P.recut_plan(fcur, FS, TS, TS + dt.timedelta(hours=7))
+check('recut: a trueStart the gate rejects (end - start > 6 h) -> stop', row4 is None and 'gate' in rep4.get('stop', ''), rep4)
+row5, rep5 = P.recut_plan(fcur, FS, None, TE)
+check('recut: no trueStart -> stop (never the scheduled time)', row5 is None and rep5.get('stop'), rep5)
+check('recut: Echargui is not re-cut (founder 2026-10-27: keep 1.735 / 2.14)', 12174272 not in P.FALSE_START_RECUT and len(P.FALSE_START_RECUT) == 2)
+# mutant: orientation from slot order (participant 1 = api-tennis first player) would give 2.60 / 1.55 — caught above
+_src = open(os.path.join(HERE, 'pinarch.py')).read()
+check('recut workflow: dry run unless exactly "no"', 'yes) python3 tools/pinarch.py false-starts-recut ;;' in open(os.path.join(HERE, '..', '.github/workflows/pinnacle-archive.yml')).read())
 print(f'\ntest-pinarch-close: {passed} passed, {failed} failed')
 sys.exit(1 if failed else 0)

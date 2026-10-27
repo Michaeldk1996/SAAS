@@ -1236,7 +1236,7 @@ def te_flip_starts(eks):
     out = {}
     eks = sorted(set(eks))
     for i in range(0, len(eks), 150):
-        _, got, _ = P.rest('GET', '/rest/v1/live_flip_log?select=event_key,last_not_live_seen_at&event_key=in.(' + ','.join(eks[i:i + 150]) + ')')
+        _, got, _ = P.rest('GET', '/rest/v1/live_flip_log_current?select=event_key,last_not_live_seen_at&event_key=in.(' + ','.join(eks[i:i + 150]) + ')')
         for g in got or []:
             if g.get('last_not_live_seen_at'):
                 out[str(g['event_key'])] = g['last_not_live_seen_at']

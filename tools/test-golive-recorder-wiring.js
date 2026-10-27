@@ -69,3 +69,49 @@ for (const m of ['T_IGNORED', 'CUT_AT_PLAY_SEEN', 'FLAG_IS_START', 'PENDING_KEPT
 assert.match(h, /MUTANT % SURVIVED/);
 assert.match(h, /^rollback;\s*$/m, 'the harness must always roll back');
 console.log('  ok  harness: six named mutants, survivors raise, always rolled back');
+
+// False 0-0 starts (founder 2026-10-27): the go-live can neither drop nor re-create the superseded-start sidecar or the
+// live_flip_log_current view, nor drop live_flip_log columns, nor apply an old reader. Lock: no file it applies does any
+// of that (the sidecar migration itself excepted for its own create-or-replace view); the sidecar migration is applied
+// after every file that creates live_flip_log; and none of the 7 start readers is among the files it applies.
+const SUP = 'supabase/migrations/20261027120000_live_flip_superseded.sql';
+const READERS = ['ten225-kibl-card-state.py', 'tools/pinarch.py', 'ten225-load-line-summary.py', 'tools/ten294-drops-api.sql',
+  'tools/ten299-live-cut.sql', 'tools/tdarch.py', 'tools/archive-fill-probe.py'];
+function supVerdict(wfText, readFile = read) {
+  const applied = [...wfText.matchAll(/^\s*apply\s+(\S+\.sql)\s*$/gm)].map(m => m[1]);
+  const bad = [];
+  for (const f of applied) {
+    const t = readFile(f);
+    if (/\b(drop|truncate)\s+(table|view)?\s*(if\s+exists\s+)?(public\.)?live_flip_log(_superseded|_current)?\b/i.test(t)) bad.push(`${f} drops/truncates a live-flip object`);
+    if (/\btruncate\s+(table\s+)?(public\.)?live_flip_log/i.test(t)) bad.push(`${f} truncates live_flip_log`);
+    if (/alter\s+table\s+(if\s+exists\s+)?(public\.)?live_flip_log(_superseded)?\s+drop\b/i.test(t)) bad.push(`${f} drops a live-flip column`);
+    if (/delete\s+from\s+(public\.)?live_flip_log(_superseded)?\b/i.test(t)) bad.push(`${f} deletes live-flip rows`);
+    if (f !== SUP && /create\s+(or\s+replace\s+)?view\s+(public\.)?live_flip_log_current\b/i.test(t)) bad.push(`${f} re-creates live_flip_log_current`);
+    if (f !== SUP && /create\s+table[^;]*live_flip_log_superseded/i.test(t)) bad.push(`${f} creates live_flip_log_superseded`);
+  }
+  if (bad.length) return bad.join('; ');
+  const at = applied.indexOf(SUP);
+  if (at < 0) return 'the go-live does not apply the superseded-start migration';
+  const creators = applied.map((f, i) => [f, i]).filter(([f]) => /create\s+table\s+if\s+not\s+exists\s+public\.live_flip_log\s*\(/i.test(readFile(f)));
+  if (creators.some(([, i]) => i > at)) return 'a file that creates live_flip_log is applied after the superseded-start migration';
+  const old = applied.filter(f => READERS.includes(f));
+  if (old.length) return `the go-live applies a start reader (${old.join(', ')})`;
+  return null;
+}
+assert.strictEqual(supVerdict(wf), null, `${WF}: ${supVerdict(wf)}`);
+console.log('  ok  the go-live keeps the superseded-start sidecar, its view and the readers');
+// controls: each way the go-live could undo it is refused
+const noSup = wf.replace(/^\s*apply supabase\/migrations\/20261027120000_live_flip_superseded\.sql\s*\n/m, '');
+assert.notStrictEqual(noSup, wf, 'control could not remove the sidecar migration');
+assert.match(String(supVerdict(noSup)), /does not apply the superseded-start migration/);
+const recreatedAfter = wf.replace(/^(\s*apply supabase\/migrations\/20261027120000_live_flip_superseded\.sql\s*\n)/m, '$1          apply supabase/migrations/20260917100000_live_flip_log.sql\n');
+assert.match(String(supVerdict(recreatedAfter)), /applied after the superseded-start migration/);
+const withReader = wf.replace(/^(\s*apply supabase\/migrations\/20261027120000_live_flip_superseded\.sql\s*\n)/m, '$1          apply tools/ten299-live-cut.sql\n');
+assert.match(String(supVerdict(withReader)), /applies a start reader/);
+const dropper = f => (f === 'supabase/migrations/20260917100000_live_flip_log.sql' ? read(f) + '\ndrop view if exists public.live_flip_log_current;\n' : read(f));
+assert.match(String(supVerdict(wf, dropper)), /drops\/truncates a live-flip object/);
+const colDrop = f => (f === 'supabase/migrations/20261027090000_live_flip_played.sql' ? read(f) + '\nalter table public.live_flip_log drop column play_seen_at;\n' : read(f));
+assert.match(String(supVerdict(wf, colDrop)), /drops a live-flip column/);
+const sideDel = f => (f === 'supabase/migrations/20261027090000_live_flip_played.sql' ? read(f) + '\ndelete from public.live_flip_log_superseded;\n' : read(f));
+assert.match(String(supVerdict(wf, sideDel)), /deletes live-flip rows/);
+console.log('  ok  controls: no sidecar / live_flip_log re-created after it / a reader applied / a drop / a column drop / a delete — each refused');

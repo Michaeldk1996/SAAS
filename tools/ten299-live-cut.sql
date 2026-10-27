@@ -53,7 +53,7 @@ returns table(event_key text, live_at timestamptz, p1 text, p2 text, k1 text, k2
 language sql stable set search_path = pg_catalog, pg_temp as $$
   select f.event_key, f.first_live_seen_at,
          f.first_player, f.second_player, drops_live.sk(f.first_player), drops_live.sk(f.second_player)
-    from public.live_flip_log f
+    from public.live_flip_log_current f   -- superseded false starts skipped (20261027120000)
    where f.first_live_seen_at >= p_from
      and coalesce(f.first_player, '') not like '%/%' and coalesce(f.second_player, '') not like '%/%'
 $$;

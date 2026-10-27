@@ -165,7 +165,7 @@ def fetch_flips(url, key, page=1000):
     out, offset = [], 0
     while True:
         got, err = sb('GET',
-                      f'/rest/v1/live_flip_log?select={cols}'
+                      f'/rest/v1/live_flip_log_current?select={cols}'
                       f'&order=event_key.asc&limit={page}&offset={offset}',
                       url, key)
         if got is None:

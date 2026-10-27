@@ -755,6 +755,77 @@ rec4, why4 = K.find_start({'scheduled_start': '2026-09-18T10:00:00Z',
 check('an unkeyable fixture is named as such', rec4 is None and why4 == 'unpairable_name')
 
 
+# ------------------------------------- LADDER I(a'): the fixture-index trueStart
+# Founder, 2026-10-27 ("False 0-0 starts"): an Oddspapi trueStart rung from the
+# committed fixture index, ahead of the live flip (odds.md ladder order), through
+# the line summary's own resolve_start().
+print("\nindex_true_starts / find_start — the I(a') rung")
+B = {'scheduled_start': '2026-10-26T12:30:00Z', 'player1_name': 'Matteo Berrettini',
+     'player2_name': 'Tomas Martin Etcheverry'}
+ixm = {'idB': {'cat': 'ATP', 'trueStart': '2026-10-26T12:35:29.147Z', 'trueEnd': '2026-10-26T14:06:22.131Z',
+               'startSched': '2026-10-26T12:30:00.000Z', 'p1': 'Berrettini, Matteo', 'p2': 'Etcheverry, Tomas Martin'}}
+tix, tst = K.index_true_starts(ixm)
+check('an index fixture with a trueStart indexes under the match key', len(tix) == 1, dict(tst))
+rb, wb = K.find_start(B, {}, {}, use_flip=True, true_index=tix)
+check('Berrettini shape: no pair, the false flip superseded (absent) -> the index '
+      'trueStart is the start, not a dash',
+      rb is not None and rb['start_ts'] == K.epoch('2026-10-26T12:35:29.147Z')
+      and rb['start_ts_source'] == 'oddspapi' and rb.get('rung') == 'fixture-index', (rb, wb))
+rb0, wb0 = K.find_start(B, {}, {}, use_flip=True)
+check('CONTROL (rung absent = the pre-fix build): the same card has no start',
+      rb0 is None and wb0 == 'no_start_anywhere', wb0)
+bflip, _ = K.index_live_flips([flip('2026-10-26', 'Matteo Berrettini', 'Tomas Martin Etcheverry',
+                                    lower='2026-10-26T12:34:50Z', gap=10)])
+rbf, _ = K.find_start(B, {}, bflip, use_flip=True, true_index=tix)
+check('the rung comes AHEAD of the flip: a genuine flip within 5 min keeps the trueStart',
+      rbf['start_ts_source'] == 'oddspapi' and rbf['start_ts'] == K.epoch('2026-10-26T12:35:29.147Z'), rbf)
+eflip, _ = K.index_live_flips([flip('2026-10-26', 'Matteo Berrettini', 'Tomas Martin Etcheverry',
+                                    lower='2026-10-26T12:20:00Z', gap=10)])
+rbe, _ = K.find_start(B, {}, eflip, use_flip=True, true_index=tix)
+check("resolve_start's own earlier-of rule, unchanged: a flip > 5 min earlier wins (one ladder, not two)",
+      rbe['start_ts_source'] == 'api-tennis-live' and rbe['start_ts'] == K.epoch('2026-10-26T12:20:00Z')
+      and rbe['flip_gap_seconds'] == 10, rbe)
+rbx, _ = K.find_start(B, {}, eflip, use_flip=False, true_index=tix)
+check('with the flip gated off, the index start stands alone', rbx['start_ts_source'] == 'oddspapi', rbx)
+bad, _ = K.index_true_starts({'idB': dict(ixm['idB'], trueEnd='2026-10-26T19:40:00Z')})
+rgb, wgb = K.find_start(B, {}, bflip, use_flip=True, true_index=bad)
+check('a trueStart the 6 h gate rejects falls to the flip, never to itself',
+      rgb['start_ts_source'] == 'api-tennis-live', rgb)
+rgn, wgn = K.find_start(B, {}, {}, use_flip=True, true_index=bad)
+check('...and with no flip either, no start (dash), never the scheduled time', rgn is None, (rgn, wgn))
+dflip, _ = K.index_live_flips([flip('2026-10-25', 'Matteo Berrettini', 'Tomas Martin Etcheverry',
+                                    lower='2026-10-25T18:00:00Z', gap=10)])
+rdf, _ = K.find_start(B, {}, dflip, use_flip=True, true_index=tix)
+check('a flip on a NEIGHBOURING day still reaches the earlier-of rule (the 21 h later trueStart never out-votes it)',
+      rdf['start_ts_source'] == 'api-tennis-live' and rdf['start_ts'] == K.epoch('2026-10-25T18:00:00Z'), rdf)
+pidx = {'2026-10-26|berrettini|etcheverry': {'start_ts': 9.0, 'start_ts_source': 'oddspapi',
+                                            'start_reject_reason': None, 'sides': {}, 'player1': 'Berrettini, Matteo',
+                                            'player2': 'Etcheverry, Tomas Martin'}}
+rpp, _ = K.find_start(B, pidx, {}, use_flip=True, true_index=tix)
+check('CONTROL: an oddspapi pair still wins over the index rung', rpp['start_ts'] == 9.0 and not rpp.get('rung'), rpp)
+amb2, ast2 = K.index_true_starts(dict(ixm, idB2=dict(ixm['idB'], trueStart='2026-10-26T15:00:00Z')))
+check('two index fixtures on one match key drop BOTH', len(amb2) == 0 and ast2['index_ambiguous'] == 1, dict(ast2))
+nts, nst2 = K.index_true_starts({'idB': dict(ixm['idB'], trueStart=None)})
+check('an index fixture with no trueStart offers nothing', len(nts) == 0 and nst2['index_no_true_start'] == 1, dict(nst2))
+ric, wic = K.find_start(dict(B, player1_name='Lorenzo Berrettini'), {}, {}, use_flip=True, true_index=tix)
+check('ruling D on the rung: surname matches, initials conflict -> the index offers nothing', ric is None and wic == 'no_start_anywhere', wic)
+lflip, _ = K.index_live_flips([flip('2026-10-26', 'Lorenzo Berrettini', 'Tomas Martin Etcheverry', lower='2026-10-26T12:20:00Z', gap=10)])
+ric2, _ = K.find_start(dict(B, player1_name='Lorenzo Berrettini'), {}, lflip, use_flip=True, true_index=tix)
+check('...and a conflicting index fixture never blocks a flip that matches the card',
+      ric2 is not None and ric2['start_ts_source'] == 'api-tennis-live' and not ric2.get('rung'), ric2)
+xflip, _ = K.index_live_flips([flip('2026-10-26', 'Lorenzo Berrettini', 'Tomas Martin Etcheverry', lower='2026-10-26T12:20:00Z', gap=10)])
+rxf, _ = K.find_start(B, {}, xflip, use_flip=True, true_index=tix)
+check('ruling D for the flip inside the rung: a flip whose initials conflict never displaces the trueStart',
+      rxf['start_ts_source'] == 'oddspapi' and rxf['start_ts'] == K.epoch('2026-10-26T12:35:29.147Z'), rxf)
+_li, _lst, _lerr = K.load_true_starts(os.path.join(os.path.dirname(os.path.abspath(K.__file__)), 'no-such-index.json.gz'))
+check('a missing index is a warning, not a crash: the rung is empty', _li == {} and _lerr, _lerr)
+_ri, _rst, _rerr = K.load_true_starts()
+check('the committed index loads and indexes match keys', _rerr is None and len(_ri) > 0, (_rerr, dict(_rst)))
+_src = open(os.path.join(os.path.dirname(os.path.abspath(K.__file__)), 'ten225-kibl-card-state.py')).read()
+check('main() hands the index to build_rows (a rung never wired is a rung that is not there)',
+      'load_true_starts()' in _src and 'stream, gaps, true_index)' in _src)
+
+
 # ------------------------------------------------------- end-to-end build shape
 print('\nbuild_rows — the assembled row')
 fixtures = [{'fixture_id': 726877, 'scheduled_start': '2026-09-18T12:00:00Z',

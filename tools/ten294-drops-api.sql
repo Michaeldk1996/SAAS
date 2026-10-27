@@ -172,7 +172,7 @@ begin
   ), fl as (
     select f.*, least(drops_api.nk(f.first_player), drops_api.nk(f.second_player)) k1,
                 greatest(drops_api.nk(f.first_player), drops_api.nk(f.second_player)) k2
-      from public.live_flip_log f
+      from public.live_flip_log_current f   -- superseded false starts skipped (20261027120000)
      where f.first_live_seen_at >= v_from - interval '48 hours'
        and coalesce(f.first_player, '') not like '%/%' and coalesce(f.second_player, '') not like '%/%'
   )

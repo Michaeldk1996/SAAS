@@ -661,7 +661,7 @@ def verified_start(r):
     if fill_cut(r):
         return True
     if r.get('label') == ARCHIVE_LABEL:
-        return r.get('start_source') in (CUT_SOURCE, TRUE_START_SOURCE)
+        return r.get('start_source') in (CUT_SOURCE, TRUE_START_SOURCE, FALSE_START_SOURCE)
     if r.get('label') == 'captured':
         return str(r.get('match_date') or '') >= VERIFIED_START_FROM and r.get('start_source') in CAPTURED_VERIFIED_SOURCES
     return False
@@ -823,7 +823,7 @@ FLIP_PAGE = 1000
 
 def flips(since, until=None):
     """ATP + Challenger singles our live poller saw go live: api-tennis event key, names, our live-flip times."""
-    q = (f"/rest/v1/live_flip_log?select=event_key,first_live_seen_at,last_not_live_seen_at,gap_seconds,event_date,first_player,"
+    q = (f"/rest/v1/live_flip_log_current?select=event_key,first_live_seen_at,last_not_live_seen_at,gap_seconds,event_date,first_player,"
          f"second_player,tournament_name,event_type_type&first_live_seen_at=gte.{urllib.parse.quote(since.isoformat())}"
          f"&event_type_type=in.({','.join(urllib.parse.quote(x) for x in LEVELS)})&order=first_live_seen_at.asc,event_key.asc")
     if until:
@@ -856,6 +856,10 @@ def apitennis_day(day, key):
 
 TRUE_START_SOURCE = 'oddspapi trueStart (earlier than our live-flip)'
 NO_FLIP_SOURCE = 'oddspapi trueStart (no live-flip held)'
+# False 0-0 starts (founder brief 2026-10-27): our live-flip for the event was a 0-0 flag before any point was played and
+# is superseded (live_flip_log_superseded); the close is re-cut at Oddspapi's gated trueStart. Verified: the trueStart is
+# the start our own evidence points to (no point played at the flag), written only by cmd_false_starts_recut.
+FALSE_START_SOURCE = 'oddspapi trueStart (our live-flip superseded: false 0-0 start)'
 NO_TRUE_START = 'no Oddspapi trueStart'
 
 
@@ -1985,6 +1989,107 @@ def cmd_false_starts_ticks(keys=(12173697, 12173975, 12174058, 12174272)):
                         print('TICK', json.dumps({'event_key': r0['event_key'], 'raw_id': raw['id'], 'oc': oc, 'ts': p['createdAt'],
                                                   'price': p.get('price'), 'active': p.get('active')}))
 
+
+# founder approval 2026-10-27: Berrettini and Vacherot only (Echargui keeps 1.735 / 2.14; Wong v Zhou and WTA: no write)
+FALSE_START_RECUT = {12173975: 'id1200310375989928', 12174058: 'id1200261375991570'}
+FALSE_START_RECUT_MAX = 4
+
+
+def recut_plan(cur, series, true_start, true_end):
+    """One event's re-cut from a fresh Pinnacle +30 series: (row-or-None, report). `cur` is the event's current archive
+    close (current_closes); its orientation is proven by reproducing its own close at its own cut from this series —
+    if that fails, nothing is cut. The new close is the last active price at or before the gated trueStart (= the last
+    price before Pinnacle suspended at the start); None when the price did not move."""
+    rep = {'eventKey': cur['event_key'], 'currentId': cur['id'], 'current': [float(cur['p1']), float(cur['p2']), cur['close_ts']]}
+    if true_start is None or true_end is None or true_end < true_start or (true_end - true_start).total_seconds() > 6 * 3600:
+        rep['stop'] = 'trueStart missing or rejected by the gate'; return None, rep
+    old, why = close_at(series, iso_ms(cur['start_ts']))
+    if old is None:
+        rep['stop'] = f'cannot reproduce the current close at its own cut ({why})'; return None, rep
+    want = (float(cur['p1']), float(cur['p2']))
+    if (old['121'][0], old['122'][0]) == want:
+        p1_is_121 = True
+    elif (old['122'][0], old['121'][0]) == want:
+        p1_is_121 = False
+    else:
+        rep['stop'] = f'the fresh series does not reproduce the current close at its own cut ({old["121"][0]}/{old["122"][0]})'; return None, rep
+    new, why = close_at(series, true_start)
+    if new is None:
+        rep['stop'] = f'no close at trueStart ({why})'; return None, rep
+    a, b = (new['121'], new['122']) if p1_is_121 else (new['122'], new['121'])
+    after = sorted((p for oc in ('121', '122') for p in series.get(oc) or [] if iso_ms(p['createdAt']) > iso_ms(max(a[1], b[1]))),
+                   key=lambda p: p['createdAt'])
+    rep.update({'trueStart': true_start.isoformat(), 'atTrueStart': [a[0], b[0], max(a[1], b[1])],
+                'nextEntry': ({'ts': after[0]['createdAt'], 'active': after[0].get('active'), 'price': after[0].get('price')} if after else None),
+                'activeBetweenCloseAndTrueStart': sum(1 for p in after if iso_ms(p['createdAt']) <= true_start and p.get('active'))})
+    det = cur.get('detail') or {}
+    if isinstance(det, str):
+        det = json.loads(det)
+    ev = {'event_key': cur['event_key'], 'date': str(cur['match_date']), 'p1Key': cur['p1_key'], 'p2Key': cur['p2_key'],
+          'p1Name': cur.get('p1_name'), 'p2Name': cur.get('p2_name'), 'p1IsParticipant1': p1_is_121, 'cut': true_start,
+          'cutSource': FALSE_START_SOURCE, 'trueStart': true_start, 'liveFlipCut': true_start, 'api': det.get('apiTennis') or {}}
+    row, why = archive_close_row(ev, None, cur['fixture_id'], series)
+    if row is None:
+        rep['stop'] = why; return None, rep
+    row['detail']['startCheck'].update({'oddspapiTrueEnd': true_end.isoformat(), 'supersededLiveFlip': {
+        'start': cur['start_ts'], 'reason': 'false 0-0 start: live flag before any point was played (live_flip_log_superseded)'}})
+    rep['moved'] = (row['p1'], row['p2']) != want
+    return (row if rep['moved'] else None), rep
+
+
+def cmd_false_starts_recut(write=False):
+    """Founder brief 2026-10-27, "False 0-0 starts" item 2: re-pull Pinnacle history (free /v4/historical-odds) for the
+    events in FALSE_START_RECUT and re-cut their close at Oddspapi's gated trueStart (committed fixture index). Dry-run by
+    default: prints old vs new, writes nothing. --write stores the fresh payloads (append) and adds superseding close rows
+    only where the price moved, at most FALSE_START_RECUT_MAX. Any stop on any event -> nothing is written at all."""
+    idx = json.load(gzip.open(os.path.join(ROOT_DIR, FIXTURE_INDEX))).get('fixtures') or {}
+    okey = env('ODDSPAPI_KEY')
+    ks = ','.join(map(str, FALSE_START_RECUT))
+    held = select_all(CLOSE, 'id,event_key,fixture_id,match_date,p1_key,p2_key,p1_name,p2_name,p1,p2,label,source,start_ts,start_source,close_ts,'
+                      'dedupe_key,supersedes,detail', f'event_key=in.({ks})')
+    cur = current_closes([r for r in held if not held_back(r)])
+    plans, raws, reps, counts = [], [], [], {'waitS': 0, 'http429': 0}
+    for ek, fid in FALSE_START_RECUT.items():
+        c = cur.get(ek)
+        if c is None or c.get('fixture_id') != fid:
+            reps.append({'eventKey': ek, 'stop': f'no current archive close on fixture {fid}'}); continue
+        fx = idx.get(fid) or {}
+        body, err = hist_get(fid, okey, counts)
+        if body is None:
+            reps.append({'eventKey': ek, 'stop': f'history pull failed ({err})'}); continue
+        gz, raw_body, sha = payload_parts(body)
+        row, rep = recut_plan(c, mw_series(raw_body), iso_ms(fx.get('trueStart')), iso_ms(fx.get('trueEnd')))
+        reps.append(rep)
+        raws.append({'fixture_id': fid, 'source': 'oddspapi /v4/historical-odds', 'pulled_at': dt.datetime.now(dt.timezone.utc).isoformat(),
+                     'books': books_of(raw_body), 'payload_gz': hexbytes(gz), 'payload_sha256': sha, 'body_bytes': len(raw_body),
+                     'meta': {'eventKey': ek, 'trigger': 'false-start-recut', 'cut': fx.get('trueStart'), 'book': HIST_BOOK}})
+        if row:
+            plans.append(row)
+    stops = [r for r in reps if r.get('stop')]
+    add = plan_archive_closes(plans, held) if not stops else []
+    out = {'write': write, 'events': len(FALSE_START_RECUT), 'stops': len(stops), 'moved': len(plans), 'toAdd': len(add),
+           'corrections': [{'eventKey': r['event_key'], 'supersedes': r.get('supersedes'), 'new': [r['p1'], r['p2'], r['close_ts']]} for r in add],
+           'events_detail': reps, 'http429': counts['http429']}
+    if len(add) > FALSE_START_RECUT_MAX:
+        out['refused'] = f'{len(add)} rows exceeds the approved maximum {FALSE_START_RECUT_MAX}'
+    elif write and not stops:
+        rid = {}
+        for r in raws:
+            got = insert(RAW, [r], 'fixture_id,payload_sha256')
+            if not got:                                     # the same payload is already held: cite that row
+                _, same, _ = rest('GET', f'/rest/v1/{RAW}?select=id&fixture_id=eq.{r["fixture_id"]}&payload_sha256=eq.{r["payload_sha256"]}')
+                got = [x['id'] for x in same or []]
+            rid[r['fixture_id']] = got[0] if got else None
+        for r in add:
+            r['raw_id'] = rid.get(r['fixture_id'])
+        if any(rid.get(r['fixture_id']) is None for r in add):
+            out['refused'] = 'a fresh payload could not be stored or found: no close written'
+            print('### false-starts-recut', json.dumps(out, default=str)); return out
+        out['rawHeld'] = sum(1 for v in rid.values() if v)
+        out['closeIds'] = insert(CLOSE, add, 'dedupe_key') if add else []
+    print('### false-starts-recut', json.dumps(out, default=str))
+    return out
+
 if __name__ == '__main__':
     a = sys.argv[1:]
     if not a:
@@ -2019,6 +2124,8 @@ if __name__ == '__main__':
         cmd_false_starts_report(a[a.index('--since') + 1] if '--since' in a else '2026-10-24')
     elif a[0] == 'false-starts-ticks':
         cmd_false_starts_ticks()
+    elif a[0] == 'false-starts-recut':
+        cmd_false_starts_recut('--write' in a)
     elif a[0] == 'restore':
         cmd_restore(a[1], a[a.index('--sql-out') + 1] if '--sql-out' in a else 'restore.sql', '--apply' in a, '--compare' in a)
     else:

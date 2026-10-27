@@ -27,9 +27,9 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: 'install (apply + harness + wire) or report (48h gap report)'
+        description: 'install (apply + harness + wire), report (48h gap report), or supersede (false 0-0 starts, founder 2026-10-27)'
         type: choice
-        options: [install, report]
+        options: [install, report, supersede]
         default: install
   schedule:
     # Hourly read-back. The 48h median-gap report is just this, read after the
@@ -112,6 +112,21 @@ jobs:
           fi
           SH
           chmod +x runsql.sh
+
+      # -------------------------------------------------------------- supersede
+      # False 0-0 starts (founder 2026-10-27, approved: 3 rows, with reason). The sidecar + live_flip_log_current
+      # (idempotent), then the 3 superseding rows. No live_flip_log row is edited or deleted; the counts print.
+      - name: supersede — the false-start sidecar, then the 3 superseding rows
+        if: ${{ env.MODE == 'supersede' }}
+        run: |
+          set -euo pipefail
+          {
+            echo '## supersede — false 0-0 starts'
+            echo '```json'
+            ./runsql.sh supabase/migrations/20261027120000_live_flip_superseded.sql | jq -c .
+            ./runsql.sh tools/false-starts-supersede.sql | jq -c .
+            echo '```'
+          } | tee -a "$GITHUB_STEP_SUMMARY"
 
       # ---------------------------------------------------------------- install
       - name: 1of4 — apply the additive migration (tables + record_live_flips)

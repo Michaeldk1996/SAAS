@@ -1351,7 +1351,7 @@ test('status: the service serves ONLY enriched rows; the SQL hands over sighting
   assert.equal(WINDOW_HOURS, 72, 'card 518c56f0 Q4');
   assert.match(read('stennisfy-drops/server.mjs'), /drops_api\.snapshot\(\$1\) as j', \[WINDOW_HOURS\]/);
   const sql = read('tools/ten294-drops-api.sql').replace(/--.*$/gm, '');
-  assert.match(sql, /from public\.live_flip_log f/);
+  assert.match(sql, /from public\.live_flip_log_current f/);   // superseded false starts skipped (2026-10-27)
   assert.match(sql, /from fl join rk on rk\.k1 = fl\.k1 and rk\.k2 = fl\.k2/, 'only sightings for a pair that has a row');
   assert.match(sql, /not like '%\/%'/, 'singles only');
   assert.match(sql, /from public\.live_snapshot s where s\.id = 1/);
