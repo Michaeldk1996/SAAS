@@ -475,6 +475,43 @@ def close_of(obs_list, start_ts):
     return max(cur, key=lambda o: (min(seen_at(o), start_ts), epoch(o['inserted_on'])))
 
 
+# ── STALE CLOSES (founder 2026-10-27) — the bet105 close is cut from the STREAM ────────────────────────────────────
+# Measured 13–26 Oct, 109 board matches: the sweep (the only writer of kibl_line_observations) saw 93 of them not at all
+# in the last hour before the start, so 89 closes sat > 60 min out (median 161 min). The Fly kibl-stream worker records
+# every bet105 price CHANGE in kibl_now_history up to the start (last change a median 13 min out, 100 of 109 carried).
+# A push feed sends nothing while a price stands, so the last change IS the price at the off as long as the worker was
+# listening the whole time. Founder ruling: cut the close from the stream's last change before the start; the sweep is
+# the fallback for a match the stream does not carry; a suspension after the last price is no close (a dash).
+#
+# WORKER GAP, defined (founder asked for it explicitly): a `kibl_now_gaps` row with lost_history = TRUE — the worker was
+# away longer than the 120 s queue TTL, so price messages may have been dropped — that overlaps (last change, start).
+# A restart that came back inside the TTL (lost_history = FALSE; every one of the 6 on 20–26 Oct was 13–47 s) lost
+# nothing — the queue replayed it — and is NOT a gap. With no gap the close is stamped the start itself (held to the
+# off, lag 0); with one it is stamped the gap's start, the last moment we provably knew the price, and the ordinary
+# 60-minute judge decides.
+def stream_close(series, start_ts, gaps):
+    """(price, close_epoch, change_epoch) from one side's stream series, or None.
+
+    `series` = [(kibl_inserted_on epoch, price)], `gaps` = [(from, to, lost_history)] epochs.
+    """
+    if start_ts is None or not series:
+        return None
+    pre = [(t, p) for t, p in series if t is not None and t < start_ts and p is not None and p >= MIN_REAL_PRICE]
+    if not pre:
+        return None
+    t, p = max(pre, key=lambda x: x[0])
+    hole = [g_from for g_from, g_to, lost in gaps if lost and g_to > t and g_from < start_ts]
+    return p, (max(t, min(hole)) if hole else start_ts), t
+
+
+def suspended_after(obs_list, change_ts, start_ts):
+    """True when the sweep saw Bet105's 0.000 suspension marker after the close's price and before the start."""
+    if change_ts is None or start_ts is None:
+        return False
+    return any(real_price(o) is None and epoch(o.get('inserted_on')) is not None
+               and change_ts < epoch(o['inserted_on']) < start_ts for o in obs_list)
+
+
 def close_time(obs, start_ts):
     """The Close's timestamp: when we last saw it listed, capped at the off.
 
@@ -810,11 +847,14 @@ def find_start(kibl_fx, odds_index, flip_index=None, use_flip=False):
 # ------------------------------------------------------------ the build itself
 
 def build_rows(kibl_fixtures, observations, odds_index, as_of,
-               flip_index=None, use_flip=False):
+               flip_index=None, use_flip=False, stream=None, gaps=()):
     """kibl_fixtures + kibl_line_observations -> odds_card_state rows.
 
     One row per (fixture, side). `observations` is {fixture_id: [obs, ...]}.
+    `stream` is {(card_key, side_key): [(kibl_inserted_on epoch, price)]} from kibl_now_history and `gaps` the
+    kibl_now_gaps rows as (from, to, lost_history) epochs — see stream_close().
     """
+    stream = stream or {}
     rows, st = [], collections.Counter()
     unknown_sides = collections.defaultdict(list)
     # Ladder I(b) ruling D: the live-flip recovery, split by league, plus the
@@ -918,7 +958,21 @@ def build_rows(kibl_fixtures, observations, odds_index, as_of,
             else:
                 st['now_ok'] += 1
 
-            close_obs = close_of(lst, start_ts)
+            # Stale closes (founder 2026-10-27): the stream's last change first; the sweep only for a match the stream
+            # does not carry (no stream row on this card side at all).
+            sk = name_key(fx.get('player1_name') if str(side) == '1' else fx.get('player2_name'))
+            sser = stream.get((fx.get('match_key'), sk)) if sk else None
+            _sc = stream_close(sser, start_ts, gaps) if sser else None
+            if sser:
+                st['close_basis_stream'] += 1
+                close_obs = ({'price_decimal': _sc[0], 'inserted_on': iso(_sc[2])} if _sc else None)
+            else:
+                st['close_basis_sweep_fallback'] += 1
+                close_obs = close_of(lst, start_ts)
+            _chg = (_sc[2] if _sc else epoch(close_obs['inserted_on'])) if close_obs else None
+            if close_obs is not None and suspended_after(lst, _chg, start_ts):
+                st['close_dash_suspended_after_last_price'] += 1
+                close_obs, _sc = None, None
             # ITEM 1(b) CONTROL — what the pre-fix build would have picked on
             # this same series. Compared on the ROW, not the price: two
             # different rows can carry the same number, and counting a price
@@ -935,7 +989,7 @@ def build_rows(kibl_fixtures, observations, odds_index, as_of,
                 st['close_still_lost_all_markers'] += 1
             # TEN-253 Fix 1: timed on OUR last sighting, capped at the off —
             # not on Kibl's first-saved insert. See close_of() / close_time().
-            _ct = close_time(close_obs, start_ts)
+            _ct = _sc[1] if _sc else close_time(close_obs, start_ts)
             close_ts = iso(_ct) if _ct is not None else None
             reliable, lag = judge_close_live(start_ts, _ct, start_src, flip_gap)
             # FIX 1 CONTROL ARM — what the inserted_on rule would have said on
@@ -2321,8 +2375,25 @@ def main():
     print(f'live-flip index: {len(flip_index)} match keys from '
           f'{len(flip_rows)} flip rows  {dict(fst)}')
 
+    # Stale closes (founder 2026-10-27): the stream's bet105 changes + the worker gaps. A read failure is NOT fatal —
+    # every card then falls back to the sweep, exactly the pre-change behaviour, and the run says so.
+    cutoff = iso(as_of - a.days_back * 86400)
+    srows, err = fetch_all(url, key, 'kibl_now_history', 'card_key,side_key,price,kibl_inserted_on',
+                           extra=f'&feed_source_id=eq.{VERIFIED_FEED_SOURCE_ID}&kibl_inserted_on=gte.{cutoff}',
+                           order='id.asc')
+    grows, gerr = fetch_all(url, key, 'kibl_now_gaps', 'gap_from,gap_to,lost_history', order='id.asc')
+    if err or gerr:
+        print(f'::warning::reading the stream failed ({err or gerr}) — bet105 closes fall back to the sweep this run')
+        srows, grows = [], []
+    stream = collections.defaultdict(list)
+    for r in srows:
+        stream[(r.get('card_key'), r.get('side_key'))].append((epoch(r.get('kibl_inserted_on')), _px_real(r.get('price'))))
+    gaps = [(epoch(g['gap_from']), epoch(g['gap_to']), bool(g.get('lost_history'))) for g in grows]
+    print(f'stream: {len(srows)} bet105 changes on {len(stream)} card sides; worker gaps {len(gaps)} '
+          f'({sum(1 for g in gaps if g[2])} lost history)')
+
     rows, st, unknown_sides, side_shapes = build_rows(
-        fx, observations, odds_index, as_of, flip_index, a.use_live_flip)
+        fx, observations, odds_index, as_of, flip_index, a.use_live_flip, stream, gaps)
     print(f'side_id shapes per priced fixture: {side_shapes}')
     # ⚠️ THIS COUNTED THE WRONG THING UNTIL 2026-09-18. It asked how many
     # fixtures carry side_ids *1 and 2*, and side_id 1 does not exist on this

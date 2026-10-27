@@ -881,6 +881,50 @@ _b, _, _, _ = K.build_rows(_fx, {77: []}, _ix, K.epoch(T % (13, 0)))
 check('no close -> close_within_60 is NULL, never a False standing in for absent',
       all(r.get('close_within_60') is None for r in _b))
 
+print('\nStale closes (founder 2026-10-27) — the bet105 close is cut from the stream')
+# Board 13–26 Oct: the sweep last saw a price a median 161 min before the start; the stream changed 13 min out.
+_E = K.epoch
+_st = {('2026-09-18|alcaraz|zverev', 'alcaraz'): [(_E(T % (8, 0)), 1.55), (_E(T % (11, 47)), 1.48)],
+       ('2026-09-18|alcaraz|zverev', 'zverev'): [(_E(T % (8, 0)), 2.50), (_E(T % (11, 47)), 2.70)]}
+def _sb(gaps=(), obs_=None, stream=_st):
+    return K.build_rows(_fx, obs_ or _old_obs, _ix, _E(T % (13, 0)), stream=stream, gaps=gaps)
+_b, _bst, _, _ = _sb()
+check('STREAM: the last change before the start is the close (1.48 / 2.70, not the sweep\'s 1.50 / 2.60)',
+      sorted(r['close_price'] for r in _b) == [1.48, 2.70], [r['close_price'] for r in _b])
+check('STREAM: no worker gap -> held to the off: stamped the start, within-60 TRUE (the sweep alone said FALSE above)',
+      all(r['close_within_60'] is True and r['close_ts'] == K.iso(S0) for r in _b), [(r['close_ts'], r['close_within_60']) for r in _b])
+check('...counted as the stream basis on both sides', _bst['close_basis_stream'] == 2, dict(_bst))
+# WORKER GAP = a kibl_now_gaps row with lost_history TRUE (> the 120 s queue TTL) between the last change and the start.
+_restart = [(_E(T % (11, 52)), _E(T % (11, 52)) + 47, False)]
+_b, _, _, _ = _sb(_restart)
+check('GAP RULE: a 47 s restart that lost nothing (lost_history FALSE) is NOT a gap — still held to the off',
+      all(r['close_within_60'] is True and r['close_ts'] == K.iso(S0) for r in _b))
+_b, _, _, _ = _sb([(_E(T % (11, 50)), _E(T % (11, 58)), True)])
+check('GAP RULE: a lost-history gap from 11:50 stamps the close 11:50 (lag 10 min, within 60)',
+      all(r['close_ts'] == K.iso(_E(T % (11, 50))) and r['close_within_60'] is True for r in _b), [r['close_ts'] for r in _b])
+_early = {k: [(_E(T % (10, 0)), v[0][1])] for k, v in _st.items()}   # last change 10:00
+_b, _, _, _ = _sb([(_E(T % (10, 30)), _E(T % (11, 58)), True)], stream=_early)
+check('GAP RULE: last change 10:00, lost-history gap from 10:30 -> lag 90 min -> within-60 FALSE (shown, never in a figure)',
+      all(r['close_within_60'] is False and r['close_price'] is not None for r in _b))
+check('GAP RULE: a gap that closed BEFORE the last change does not count',
+      K.stream_close([(_E(T % (11, 47)), 1.48)], S0, [(_E(T % (9, 0)), _E(T % (10, 0)), True)])[1] == S0)
+# SUSPENSION: Bet105's 0.000 marker after the last price -> no close (a dash), never the pre-suspension price.
+_susp = {77: _old_obs[77] + [cur(0.0, T % (11, 55), T % (11, 56), side_id=2, fixture_participant_id=1),
+                             cur(0.0, T % (11, 55), T % (11, 56), side_id=3, fixture_participant_id=2)]}
+_b, _bst, _, _ = _sb(obs_=_susp)
+check('SUSPENSION: a 0.000 marker after the last price -> no close, NULL flag (Altmaier v Cerundolo 26 Oct)',
+      all(r['close_price'] is None and r['close_within_60'] is None for r in _b), [r['close_price'] for r in _b])
+check('...counted', _bst['close_dash_suspended_after_last_price'] == 2, dict(_bst))
+_b, _bst, _, _ = _sb(obs_=_susp, stream={})
+check('SUSPENSION on the sweep fallback too: the pre-suspension 1.50 is not a close',
+      all(r['close_price'] is None for r in _b), [r['close_price'] for r in _b])
+# FALLBACK: a card the stream does not carry keeps the sweep cut, unchanged.
+_b, _bst, _, _ = _sb(stream={('2026-09-18|other|card', 'other'): [(_E(T % (11, 47)), 1.48)]})
+check('FALLBACK: no stream row on this card -> the sweep close (1.50 / 2.60, flagged FALSE as before)',
+      sorted(r['close_price'] for r in _b) == [1.50, 2.60] and all(r['close_within_60'] is False for r in _b)
+      and _bst['close_basis_sweep_fallback'] == 2, ([r['close_price'] for r in _b], dict(_bst)))
+check('STREAM: a change AFTER the start never competes', K.stream_close([(_E(T % (12, 5)), 1.3)], S0, []) is None)
+
 print('\nTEN-253 Fix 2 — the whole-card switch')
 
 
