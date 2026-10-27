@@ -2,8 +2,8 @@
   "schemaVersion": 2,
   "source": "ticktocktennis",
   "sourceUrl": "https://entries.ticktocktennis.com/atp",
-  "generatedAt": "2026-10-26T00:55:56Z",
-  "fetchedAt": "2026-10-26T00:55:56Z",
+  "generatedAt": "2026-10-27T01:46:24Z",
+  "fetchedAt": "2026-10-27T01:46:24Z",
   "fetchStatus": "ok",
   "fetchError": null,
   "sourcePublished": "2026-10-25T20:50:00Z",
@@ -26,7 +26,7 @@
       "status": "active",
       "counts": {
         "MD": 45,
-        "Q": 23,
+        "Q": 22,
         "ALT": 0
       },
       "sections": [
@@ -250,14 +250,6 @@
               "playerKey": "39913"
             },
             {
-              "name": "João Fonseca",
-              "rank": 29,
-              "country": "BRA",
-              "status": "DA",
-              "seed": null,
-              "playerKey": "40058"
-            },
-            {
               "name": "Alejandro Tabilo",
               "rank": 30,
               "country": "CHI",
@@ -386,6 +378,14 @@
               "playerKey": "437"
             },
             {
+              "name": "Luca Van Assche",
+              "rank": 45,
+              "country": "FRA",
+              "status": "DA",
+              "seed": null,
+              "playerKey": "1066"
+            },
+            {
               "name": "Arthur Géa",
               "rank": 56,
               "country": "FRA",
@@ -398,14 +398,6 @@
         {
           "title": "Qualifying",
           "players": [
-            {
-              "name": "Luca Van Assche",
-              "rank": 45,
-              "country": "FRA",
-              "status": "Q",
-              "seed": null,
-              "playerKey": "1066"
-            },
             {
               "name": "Matteo Berrettini",
               "rank": 46,
@@ -2944,7 +2936,7 @@
       "status": "active",
       "counts": {
         "MD": 18,
-        "Q": 55,
+        "Q": 56,
         "ALT": 25
       },
       "sections": [
@@ -3269,14 +3261,6 @@
               "playerKey": null
             },
             {
-              "name": "Kuzey Cekirge",
-              "rank": 1540,
-              "country": "TUR",
-              "status": "Q",
-              "seed": null,
-              "playerKey": null
-            },
-            {
               "name": "Maxi Carrascosa Diaz",
               "rank": 1566,
               "country": "ESP",
@@ -3539,17 +3523,12 @@
               "status": "Q",
               "seed": null,
               "playerKey": null
-            }
-          ]
-        },
-        {
-          "title": "Alternates & Reserves",
-          "players": [
+            },
             {
               "name": "Keanu Elias Immler",
               "rank": null,
               "country": "AUT",
-              "status": "ALT",
+              "status": "Q",
               "seed": null,
               "playerKey": null
             },
@@ -3557,10 +3536,15 @@
               "name": "Alvaro De Miguel Montero",
               "rank": null,
               "country": "ESP",
-              "status": "ALT",
+              "status": "Q",
               "seed": null,
               "playerKey": null
-            },
+            }
+          ]
+        },
+        {
+          "title": "Alternates & Reserves",
+          "players": [
             {
               "name": "Pascal Tylek",
               "rank": null,
@@ -3589,14 +3573,6 @@
               "name": "Asim Hashem",
               "rank": null,
               "country": "USA",
-              "status": "ALT",
-              "seed": null,
-              "playerKey": null
-            },
-            {
-              "name": "Amadatus Admiraal",
-              "rank": null,
-              "country": "NED",
               "status": "ALT",
               "seed": null,
               "playerKey": null
@@ -3730,17 +3706,41 @@
               "playerKey": null
             },
             {
-              "name": "Adrian Oltean Achacollo",
+              "name": "Jacob Cairncross",
               "rank": null,
-              "country": "ESP",
+              "country": "AUS",
               "status": "ALT",
               "seed": null,
               "playerKey": null
             },
             {
-              "name": "Jacob Cairncross",
+              "name": "Armin Trklja",
               "rank": null,
-              "country": "AUS",
+              "country": "GER",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Finn Hopfe",
+              "rank": null,
+              "country": "GER",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Kalomm Panzo",
+              "rank": null,
+              "country": "FRA",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Andrea Casella",
+              "rank": null,
+              "country": "ITA",
               "status": "ALT",
               "seed": null,
               "playerKey": null
@@ -3765,7 +3765,7 @@
       "status": "active",
       "counts": {
         "MD": 18,
-        "Q": 25,
+        "Q": 27,
         "ALT": 25
       },
       "sections": [
@@ -4120,17 +4120,12 @@
               "status": "Q",
               "seed": null,
               "playerKey": null
-            }
-          ]
-        },
-        {
-          "title": "Alternates & Reserves",
-          "players": [
+            },
             {
               "name": "Agustin Salazar",
               "rank": 1772,
               "country": "MEX",
-              "status": "ALT",
+              "status": "Q",
               "seed": null,
               "playerKey": null
             },
@@ -4138,10 +4133,15 @@
               "name": "Luis Jose Nakamine",
               "rank": 1817,
               "country": "PER",
-              "status": "ALT",
+              "status": "Q",
               "seed": null,
               "playerKey": null
-            },
+            }
+          ]
+        },
+        {
+          "title": "Alternates & Reserves",
+          "players": [
             {
               "name": "Hiroki Sakagawa",
               "rank": 1849,
@@ -4154,14 +4154,6 @@
               "name": "Leonardo Cattaneo",
               "rank": 1849,
               "country": "ITA",
-              "status": "ALT",
-              "seed": null,
-              "playerKey": null
-            },
-            {
-              "name": "Emanuel Ivanisevic",
-              "rank": 1908,
-              "country": "CRO",
               "status": "ALT",
               "seed": null,
               "playerKey": null
@@ -4202,14 +4194,6 @@
               "name": "Rafael Ymer",
               "rank": 2093,
               "country": "SWE",
-              "status": "ALT",
-              "seed": null,
-              "playerKey": null
-            },
-            {
-              "name": "Tomas Tischner",
-              "rank": 2093,
-              "country": "ARG",
               "status": "ALT",
               "seed": null,
               "playerKey": null
@@ -4325,6 +4309,38 @@
               "status": "ALT",
               "seed": null,
               "playerKey": null
+            },
+            {
+              "name": "Antreas Djakouris",
+              "rank": null,
+              "country": "CYP",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Gabriel Gomez",
+              "rank": null,
+              "country": "FRA",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Xavier Ferrer Mateo",
+              "rank": null,
+              "country": "ESP",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Ilya Maltsev",
+              "rank": null,
+              "country": "RUS",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
             }
           ]
         }
@@ -4346,7 +4362,7 @@
       "status": "active",
       "counts": {
         "MD": 16,
-        "Q": 26,
+        "Q": 27,
         "ALT": 25
       },
       "sections": [
@@ -4389,14 +4405,6 @@
               "name": "Maxwell McKennon",
               "rank": 673,
               "country": "USA",
-              "status": "DA",
-              "seed": null,
-              "playerKey": null
-            },
-            {
-              "name": "Daniel Salazar",
-              "rank": 693,
-              "country": "COL",
               "status": "DA",
               "seed": null,
               "playerKey": null
@@ -4480,20 +4488,20 @@
               "status": "DA",
               "seed": null,
               "playerKey": null
+            },
+            {
+              "name": "Oswaldo Alejandro Reyes Tirado",
+              "rank": 1350,
+              "country": "MEX",
+              "status": "DA",
+              "seed": null,
+              "playerKey": null
             }
           ]
         },
         {
           "title": "Qualifying",
           "players": [
-            {
-              "name": "Oswaldo Alejandro Reyes Tirado",
-              "rank": 1350,
-              "country": "MEX",
-              "status": "Q",
-              "seed": null,
-              "playerKey": null
-            },
             {
               "name": "Artem Alekseychuk",
               "rank": 1401,
@@ -4693,17 +4701,12 @@
               "status": "Q",
               "seed": null,
               "playerKey": null
-            }
-          ]
-        },
-        {
-          "title": "Alternates & Reserves",
-          "players": [
+            },
             {
               "name": "Jesus Martinez Miranda",
               "rank": null,
               "country": "MEX",
-              "status": "ALT",
+              "status": "Q",
               "seed": null,
               "playerKey": null
             },
@@ -4711,10 +4714,15 @@
               "name": "Zachery Foster",
               "rank": null,
               "country": "USA",
-              "status": "ALT",
+              "status": "Q",
               "seed": null,
               "playerKey": null
-            },
+            }
+          ]
+        },
+        {
+          "title": "Alternates & Reserves",
+          "players": [
             {
               "name": "Maxwell Benson",
               "rank": null,
@@ -4820,14 +4828,6 @@
               "playerKey": null
             },
             {
-              "name": "Joel Angel Lucero",
-              "rank": null,
-              "country": "ARG",
-              "status": "ALT",
-              "seed": null,
-              "playerKey": null
-            },
-            {
               "name": "Carlo Arena Fava",
               "rank": null,
               "country": "MEX",
@@ -4895,6 +4895,30 @@
               "name": "Reita Yamanaka",
               "rank": null,
               "country": "JPN",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Kevin Manuel Jorquera",
+              "rank": null,
+              "country": "ITA",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Ulad Dalbusin",
+              "rank": null,
+              "country": "BLR",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Pedro Vargas",
+              "rank": null,
+              "country": "USA",
               "status": "ALT",
               "seed": null,
               "playerKey": null
@@ -5204,14 +5228,6 @@
               "playerKey": null
             },
             {
-              "name": "George Lazarov",
-              "rank": 888,
-              "country": "BUL",
-              "status": "Q",
-              "seed": null,
-              "playerKey": null
-            },
-            {
               "name": "Ryotaro Taguchi",
               "rank": 900,
               "country": "JPN",
@@ -5270,14 +5286,6 @@
             {
               "name": "Matthew Thomson",
               "rank": 981,
-              "country": "USA",
-              "status": "Q",
-              "seed": null,
-              "playerKey": null
-            },
-            {
-              "name": "Michael Savano",
-              "rank": 1001,
               "country": "USA",
               "status": "Q",
               "seed": null,
@@ -5412,14 +5420,6 @@
               "playerKey": null
             },
             {
-              "name": "Didrik Liljekvist",
-              "rank": 1613,
-              "country": "SWE",
-              "status": "Q",
-              "seed": null,
-              "playerKey": null
-            },
-            {
               "name": "Dan Brand",
               "rank": 1630,
               "country": "ISR",
@@ -5439,14 +5439,6 @@
               "name": "Evangelos Kypriotis",
               "rank": 1698,
               "country": "GRE",
-              "status": "Q",
-              "seed": null,
-              "playerKey": null
-            },
-            {
-              "name": "Vadym Konovchuk",
-              "rank": 1710,
-              "country": "UKR",
               "status": "Q",
               "seed": null,
               "playerKey": null
@@ -5514,17 +5506,12 @@
               "status": "Q",
               "seed": null,
               "playerKey": null
-            }
-          ]
-        },
-        {
-          "title": "Alternates & Reserves",
-          "players": [
+            },
             {
               "name": "Michael Wright",
               "rank": null,
               "country": "IRL",
-              "status": "ALT",
+              "status": "Q",
               "seed": null,
               "playerKey": null
             },
@@ -5532,7 +5519,7 @@
               "name": "Henri Haupt",
               "rank": null,
               "country": "GER",
-              "status": "ALT",
+              "status": "Q",
               "seed": null,
               "playerKey": null
             },
@@ -5540,7 +5527,7 @@
               "name": "Zen David Uehling",
               "rank": null,
               "country": "USA",
-              "status": "ALT",
+              "status": "Q",
               "seed": null,
               "playerKey": null
             },
@@ -5548,22 +5535,19 @@
               "name": "Ori Hillel",
               "rank": null,
               "country": "ISR",
-              "status": "ALT",
+              "status": "Q",
               "seed": null,
               "playerKey": null
-            },
+            }
+          ]
+        },
+        {
+          "title": "Alternates & Reserves",
+          "players": [
             {
               "name": "Julian DeSousa",
               "rank": null,
               "country": "NED",
-              "status": "ALT",
-              "seed": null,
-              "playerKey": null
-            },
-            {
-              "name": "Yanis Peterhans",
-              "rank": null,
-              "country": "SUI",
               "status": "ALT",
               "seed": null,
               "playerKey": null
@@ -5596,14 +5580,6 @@
               "name": "Thomas Linley",
               "rank": null,
               "country": "GBR",
-              "status": "ALT",
-              "seed": null,
-              "playerKey": null
-            },
-            {
-              "name": "Amadatus Admiraal",
-              "rank": null,
-              "country": "NED",
               "status": "ALT",
               "seed": null,
               "playerKey": null
@@ -5716,6 +5692,54 @@
               "name": "Dawid Lewandowski",
               "rank": null,
               "country": "POL",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Igor Ferreira De Souza",
+              "rank": null,
+              "country": "BRA",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "James McKenzie",
+              "rank": null,
+              "country": "AUS",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Guillem Busquets Brau",
+              "rank": null,
+              "country": "ESP",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Nikolaos Chatziavraam",
+              "rank": null,
+              "country": "GRE",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Paulo Knippling",
+              "rank": null,
+              "country": "GER",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Akshaj Subramanian",
+              "rank": null,
+              "country": "IND",
               "status": "ALT",
               "seed": null,
               "playerKey": null
@@ -6296,8 +6320,8 @@
       "sourcePublished": "2026-10-25T20:50:00Z",
       "status": "active",
       "counts": {
-        "MD": 15,
-        "Q": 25,
+        "MD": 13,
+        "Q": 26,
         "ALT": 25
       },
       "sections": [
@@ -6353,14 +6377,6 @@
               "playerKey": null
             },
             {
-              "name": "Matthew Forbes",
-              "rank": 764,
-              "country": "USA",
-              "status": "DA",
-              "seed": null,
-              "playerKey": null
-            },
-            {
               "name": "Abel Forger",
               "rank": 786,
               "country": "NED",
@@ -6404,14 +6420,6 @@
               "name": "Axel Nefve",
               "rank": 967,
               "country": "USA",
-              "status": "DA",
-              "seed": null,
-              "playerKey": null
-            },
-            {
-              "name": "Fanming Meng",
-              "rank": 985,
-              "country": "CHN",
               "status": "DA",
               "seed": null,
               "playerKey": null
@@ -6628,20 +6636,20 @@
               "status": "Q",
               "seed": null,
               "playerKey": null
+            },
+            {
+              "name": "Loren Thomas Byers",
+              "rank": 1592,
+              "country": "USA",
+              "status": "Q",
+              "seed": null,
+              "playerKey": null
             }
           ]
         },
         {
           "title": "Alternates & Reserves",
           "players": [
-            {
-              "name": "Loren Thomas Byers",
-              "rank": 1592,
-              "country": "USA",
-              "status": "ALT",
-              "seed": null,
-              "playerKey": null
-            },
             {
               "name": "Oliver Sanders",
               "rank": 1613,
@@ -6830,6 +6838,14 @@
               "name": "Xavier Ferrer Mateo",
               "rank": null,
               "country": "ESP",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Rafael Candelas Ruiz",
+              "rank": null,
+              "country": "MEX",
               "status": "ALT",
               "seed": null,
               "playerKey": null
@@ -7099,14 +7115,6 @@
               "playerKey": null
             },
             {
-              "name": "Jayson Blando",
-              "rank": 1922,
-              "country": "USA",
-              "status": "Q",
-              "seed": null,
-              "playerKey": null
-            },
-            {
               "name": "Ilya Ignatov",
               "rank": 2007,
               "country": "UZB",
@@ -7209,28 +7217,20 @@
               "status": "Q",
               "seed": null,
               "playerKey": null
+            },
+            {
+              "name": "Artem Markelov",
+              "rank": null,
+              "country": "RUS",
+              "status": "Q",
+              "seed": null,
+              "playerKey": null
             }
           ]
         },
         {
           "title": "Alternates & Reserves",
           "players": [
-            {
-              "name": "Alexander Chepik",
-              "rank": null,
-              "country": "RUS",
-              "status": "ALT",
-              "seed": null,
-              "playerKey": null
-            },
-            {
-              "name": "Artem Markelov",
-              "rank": null,
-              "country": "RUS",
-              "status": "ALT",
-              "seed": null,
-              "playerKey": null
-            },
             {
               "name": "Ilyos Abrorov",
               "rank": null,
@@ -7336,14 +7336,6 @@
               "playerKey": null
             },
             {
-              "name": "Lucas Goncalves Franca",
-              "rank": null,
-              "country": "BRA",
-              "status": "ALT",
-              "seed": null,
-              "playerKey": null
-            },
-            {
               "name": "Ayush Sharma",
               "rank": null,
               "country": "IND",
@@ -7355,14 +7347,6 @@
               "name": "Maximilian Linden",
               "rank": null,
               "country": "SWE",
-              "status": "ALT",
-              "seed": null,
-              "playerKey": null
-            },
-            {
-              "name": "Ivan Matveev",
-              "rank": null,
-              "country": "RUS",
               "status": "ALT",
               "seed": null,
               "playerKey": null
@@ -7409,6 +7393,38 @@
             },
             {
               "name": "Suhas Soma",
+              "rank": null,
+              "country": "IND",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Gagan Rakesh Vimal",
+              "rank": null,
+              "country": "IND",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Sarthak Gulati",
+              "rank": null,
+              "country": "IND",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Paritosh Pawar",
+              "rank": null,
+              "country": "IND",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Pranav Gadgil",
               "rank": null,
               "country": "IND",
               "status": "ALT",
@@ -7837,14 +7853,6 @@
               "playerKey": null
             },
             {
-              "name": "Juan Ignacio Centurion Delvalle",
-              "rank": null,
-              "country": "ARG",
-              "status": "ALT",
-              "seed": null,
-              "playerKey": null
-            },
-            {
               "name": "Joao Cunha Cunha",
               "rank": null,
               "country": "BRA",
@@ -7886,14 +7894,6 @@
             },
             {
               "name": "Filipe Bullamah",
-              "rank": null,
-              "country": "BRA",
-              "status": "ALT",
-              "seed": null,
-              "playerKey": null
-            },
-            {
-              "name": "Jose Nilson Maciel Neto",
               "rank": null,
               "country": "BRA",
               "status": "ALT",
@@ -8003,6 +8003,22 @@
               "status": "ALT",
               "seed": null,
               "playerKey": null
+            },
+            {
+              "name": "Thiago Horacio Messa",
+              "rank": null,
+              "country": "ARG",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Miguel Daiha",
+              "rank": null,
+              "country": "BRA",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
             }
           ]
         }
@@ -8024,7 +8040,7 @@
       "status": "active",
       "counts": {
         "MD": 18,
-        "Q": 26,
+        "Q": 25,
         "ALT": 25
       },
       "sections": [
@@ -8229,14 +8245,6 @@
               "playerKey": null
             },
             {
-              "name": "Tomas Luna",
-              "rank": null,
-              "country": "ARG",
-              "status": "Q",
-              "seed": null,
-              "playerKey": null
-            },
-            {
               "name": "Kian Vakili",
               "rank": null,
               "country": "USA",
@@ -8381,9 +8389,9 @@
               "playerKey": null
             },
             {
-              "name": "Chad Valdes",
+              "name": "William Robinson",
               "rank": null,
-              "country": "PAN",
+              "country": "USA",
               "status": "Q",
               "seed": null,
               "playerKey": null
@@ -8393,14 +8401,6 @@
         {
           "title": "Alternates & Reserves",
           "players": [
-            {
-              "name": "William Robinson",
-              "rank": null,
-              "country": "USA",
-              "status": "ALT",
-              "seed": null,
-              "playerKey": null
-            },
             {
               "name": "Colin Cerminara",
               "rank": null,
@@ -8437,14 +8437,6 @@
               "name": "Arthur Vusberg Manzano Oliani",
               "rank": null,
               "country": "BRA",
-              "status": "ALT",
-              "seed": null,
-              "playerKey": null
-            },
-            {
-              "name": "Gabriel Miller",
-              "rank": null,
-              "country": "CAN",
               "status": "ALT",
               "seed": null,
               "playerKey": null
@@ -8538,14 +8530,6 @@
               "playerKey": null
             },
             {
-              "name": "Zhora Chetverukhin",
-              "rank": null,
-              "country": "USA",
-              "status": "ALT",
-              "seed": null,
-              "playerKey": null
-            },
-            {
               "name": "Sibi Junior Soumahoro",
               "rank": null,
               "country": "CIV",
@@ -8592,6 +8576,30 @@
               "status": "ALT",
               "seed": null,
               "playerKey": null
+            },
+            {
+              "name": "Dennis Marjanov",
+              "rank": null,
+              "country": "GBR",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Norbert Zielinski",
+              "rank": null,
+              "country": "AUS",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Noah Dubitzky",
+              "rank": null,
+              "country": "USA",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
             }
           ]
         }
@@ -8613,7 +8621,7 @@
       "status": "active",
       "counts": {
         "MD": 18,
-        "Q": 55,
+        "Q": 56,
         "ALT": 25
       },
       "sections": [
@@ -9034,14 +9042,6 @@
               "playerKey": null
             },
             {
-              "name": "Davide Ciaschetti",
-              "rank": null,
-              "country": "ITA",
-              "status": "Q",
-              "seed": null,
-              "playerKey": null
-            },
-            {
               "name": "Daniil Varaksa",
               "rank": null,
               "country": "BLR",
@@ -9138,22 +9138,6 @@
               "playerKey": null
             },
             {
-              "name": "Charlie Pycroft",
-              "rank": null,
-              "country": "GBR",
-              "status": "Q",
-              "seed": null,
-              "playerKey": null
-            },
-            {
-              "name": "Deni Hadzialijagic",
-              "rank": null,
-              "country": "GER",
-              "status": "Q",
-              "seed": null,
-              "playerKey": null
-            },
-            {
               "name": "Darsh Agarwal",
               "rank": null,
               "country": "IND",
@@ -9208,17 +9192,12 @@
               "status": "Q",
               "seed": null,
               "playerKey": null
-            }
-          ]
-        },
-        {
-          "title": "Alternates & Reserves",
-          "players": [
+            },
             {
               "name": "Ilya Mosolkin",
               "rank": null,
               "country": "RUS",
-              "status": "ALT",
+              "status": "Q",
               "seed": null,
               "playerKey": null
             },
@@ -9226,7 +9205,7 @@
               "name": "Mathys Braun",
               "rank": null,
               "country": "MDA",
-              "status": "ALT",
+              "status": "Q",
               "seed": null,
               "playerKey": null
             },
@@ -9234,7 +9213,7 @@
               "name": "Jost Pecovnik",
               "rank": null,
               "country": "SLO",
-              "status": "ALT",
+              "status": "Q",
               "seed": null,
               "playerKey": null
             },
@@ -9242,10 +9221,15 @@
               "name": "Mats Egbring",
               "rank": null,
               "country": "GER",
-              "status": "ALT",
+              "status": "Q",
               "seed": null,
               "playerKey": null
-            },
+            }
+          ]
+        },
+        {
+          "title": "Alternates & Reserves",
+          "players": [
             {
               "name": "Max Geissinger",
               "rank": null,
@@ -9266,14 +9250,6 @@
               "name": "Mark Griaziutin Tverskoj",
               "rank": null,
               "country": "LTU",
-              "status": "ALT",
-              "seed": null,
-              "playerKey": null
-            },
-            {
-              "name": "Boris Stojanovic",
-              "rank": null,
-              "country": "SRB",
               "status": "ALT",
               "seed": null,
               "playerKey": null
@@ -9311,25 +9287,9 @@
               "playerKey": null
             },
             {
-              "name": "Henry De Keulenaer",
-              "rank": null,
-              "country": "BEL",
-              "status": "ALT",
-              "seed": null,
-              "playerKey": null
-            },
-            {
               "name": "Jules Alias",
               "rank": null,
               "country": "FRA",
-              "status": "ALT",
-              "seed": null,
-              "playerKey": null
-            },
-            {
-              "name": "David Munoz Molina",
-              "rank": null,
-              "country": "ESP",
               "status": "ALT",
               "seed": null,
               "playerKey": null
@@ -9413,6 +9373,62 @@
               "status": "ALT",
               "seed": null,
               "playerKey": null
+            },
+            {
+              "name": "Nikita Gribyakin",
+              "rank": null,
+              "country": "EST",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Federico Pugliese",
+              "rank": null,
+              "country": "ITA",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Oliwer Wierzbicki",
+              "rank": null,
+              "country": "POL",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Edoardo Lovat",
+              "rank": null,
+              "country": "SUI",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Jasa Pecovnik",
+              "rank": null,
+              "country": "SLO",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Maximilian Linden",
+              "rank": null,
+              "country": "SWE",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Tudor Alexandru Zecheru",
+              "rank": null,
+              "country": "ROU",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
             }
           ]
         }
@@ -9433,8 +9449,8 @@
       "sourcePublished": "2026-10-25T20:50:00Z",
       "status": "active",
       "counts": {
-        "MD": 17,
-        "Q": 56,
+        "MD": 18,
+        "Q": 55,
         "ALT": 25
       },
       "sections": [
@@ -9576,20 +9592,20 @@
               "status": "DA",
               "seed": null,
               "playerKey": null
+            },
+            {
+              "name": "Seongchan Hong",
+              "rank": 1088,
+              "country": "KOR",
+              "status": "DA",
+              "seed": null,
+              "playerKey": null
             }
           ]
         },
         {
           "title": "Qualifying",
           "players": [
-            {
-              "name": "Seongchan Hong",
-              "rank": 1088,
-              "country": "KOR",
-              "status": "Q",
-              "seed": null,
-              "playerKey": null
-            },
             {
               "name": "Zhao Zhao",
               "rank": 1114,
@@ -9863,14 +9879,6 @@
               "playerKey": null
             },
             {
-              "name": "Haruto Ishikawa",
-              "rank": null,
-              "country": "JPN",
-              "status": "Q",
-              "seed": null,
-              "playerKey": null
-            },
-            {
               "name": "Xin Zhou",
               "rank": null,
               "country": "CHN",
@@ -9928,14 +9936,6 @@
             },
             {
               "name": "Xinyuan Xie",
-              "rank": null,
-              "country": "CHN",
-              "status": "Q",
-              "seed": null,
-              "playerKey": null
-            },
-            {
-              "name": "Xiuyuan Ye",
               "rank": null,
               "country": "CHN",
               "status": "Q",
@@ -10029,17 +10029,12 @@
               "status": "Q",
               "seed": null,
               "playerKey": null
-            }
-          ]
-        },
-        {
-          "title": "Alternates & Reserves",
-          "players": [
+            },
             {
               "name": "Zolbadar Urnukh",
               "rank": null,
               "country": "MGL",
-              "status": "ALT",
+              "status": "Q",
               "seed": null,
               "playerKey": null
             },
@@ -10047,30 +10042,19 @@
               "name": "Jungwon Park",
               "rank": null,
               "country": "KOR",
-              "status": "ALT",
+              "status": "Q",
               "seed": null,
               "playerKey": null
-            },
+            }
+          ]
+        },
+        {
+          "title": "Alternates & Reserves",
+          "players": [
             {
               "name": "Daniil Savelev",
               "rank": null,
               "country": "RUS",
-              "status": "ALT",
-              "seed": null,
-              "playerKey": null
-            },
-            {
-              "name": "Artem Markelov",
-              "rank": null,
-              "country": "RUS",
-              "status": "ALT",
-              "seed": null,
-              "playerKey": null
-            },
-            {
-              "name": "Jay Lin Gibson",
-              "rank": null,
-              "country": "CAN",
               "status": "ALT",
               "seed": null,
               "playerKey": null
@@ -10234,6 +10218,38 @@
               "status": "ALT",
               "seed": null,
               "playerKey": null
+            },
+            {
+              "name": "Yan Lang Chen",
+              "rank": null,
+              "country": "CHN",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Farzan Amiri",
+              "rank": null,
+              "country": "USA",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Muyou Zou",
+              "rank": null,
+              "country": "CHN",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Kenta Nakamura",
+              "rank": null,
+              "country": "JPN",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
             }
           ]
         }
@@ -10255,7 +10271,7 @@
       "status": "active",
       "counts": {
         "MD": 16,
-        "Q": 56,
+        "Q": 54,
         "ALT": 25
       },
       "sections": [
@@ -10447,14 +10463,6 @@
               "name": "Yassine Smiej",
               "rank": 1152,
               "country": "MAR",
-              "status": "Q",
-              "seed": null,
-              "playerKey": null
-            },
-            {
-              "name": "Lorenzo Sciahbasi",
-              "rank": 1155,
-              "country": "ITA",
               "status": "Q",
               "seed": null,
               "playerKey": null
@@ -10660,14 +10668,6 @@
               "playerKey": null
             },
             {
-              "name": "Makar Elesin",
-              "rank": 2219,
-              "country": "RUS",
-              "status": "Q",
-              "seed": null,
-              "playerKey": null
-            },
-            {
               "name": "Jack Karlsson Wistrand",
               "rank": 2302,
               "country": "SWE",
@@ -10780,22 +10780,6 @@
               "playerKey": null
             },
             {
-              "name": "Malek El-Qurneh",
-              "rank": null,
-              "country": "JOR",
-              "status": "Q",
-              "seed": null,
-              "playerKey": null
-            },
-            {
-              "name": "Saud Alhogbani",
-              "rank": null,
-              "country": "KSA",
-              "status": "Q",
-              "seed": null,
-              "playerKey": null
-            },
-            {
               "name": "Darwin Andres Macias Elizalde",
               "rank": null,
               "country": "ECU",
@@ -10842,17 +10826,12 @@
               "status": "Q",
               "seed": null,
               "playerKey": null
-            }
-          ]
-        },
-        {
-          "title": "Alternates & Reserves",
-          "players": [
+            },
             {
               "name": "Phillipp-Maximilian Huebert",
               "rank": null,
               "country": "GER",
-              "status": "ALT",
+              "status": "Q",
               "seed": null,
               "playerKey": null
             },
@@ -10860,10 +10839,15 @@
               "name": "Carlo Rosellini",
               "rank": null,
               "country": "ITA",
-              "status": "ALT",
+              "status": "Q",
               "seed": null,
               "playerKey": null
-            },
+            }
+          ]
+        },
+        {
+          "title": "Alternates & Reserves",
+          "players": [
             {
               "name": "Raul Clarijs",
               "rank": null,
@@ -10897,14 +10881,6 @@
               "playerKey": null
             },
             {
-              "name": "Boris Stojanovic",
-              "rank": null,
-              "country": "SRB",
-              "status": "ALT",
-              "seed": null,
-              "playerKey": null
-            },
-            {
               "name": "Noe Boulnoix",
               "rank": null,
               "country": "SUI",
@@ -10929,25 +10905,9 @@
               "playerKey": null
             },
             {
-              "name": "Henry De Keulenaer",
-              "rank": null,
-              "country": "BEL",
-              "status": "ALT",
-              "seed": null,
-              "playerKey": null
-            },
-            {
               "name": "Christian Doel",
               "rank": null,
               "country": "GBR",
-              "status": "ALT",
-              "seed": null,
-              "playerKey": null
-            },
-            {
-              "name": "Elias Barth",
-              "rank": null,
-              "country": "GER",
               "status": "ALT",
               "seed": null,
               "playerKey": null
@@ -10977,22 +10937,6 @@
               "playerKey": null
             },
             {
-              "name": "Stanislav Kosev",
-              "rank": null,
-              "country": "BUL",
-              "status": "ALT",
-              "seed": null,
-              "playerKey": null
-            },
-            {
-              "name": "David Munoz Molina",
-              "rank": null,
-              "country": "ESP",
-              "status": "ALT",
-              "seed": null,
-              "playerKey": null
-            },
-            {
               "name": "Henrik Bergen",
               "rank": null,
               "country": "GER",
@@ -11004,14 +10948,6 @@
               "name": "Zeph Davis",
               "rank": null,
               "country": "GBR",
-              "status": "ALT",
-              "seed": null,
-              "playerKey": null
-            },
-            {
-              "name": "Lucas Goncalves Franca",
-              "rank": null,
-              "country": "BRA",
               "status": "ALT",
               "seed": null,
               "playerKey": null
@@ -11033,7 +10969,47 @@
               "playerKey": null
             },
             {
-              "name": "Adam Dabrowski",
+              "name": "Paul Popoaca",
+              "rank": null,
+              "country": "ROU",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Elliot Moberg",
+              "rank": null,
+              "country": "SWE",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Kostiantyn Aksonov",
+              "rank": null,
+              "country": "UKR",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Nikita Gribyakin",
+              "rank": null,
+              "country": "EST",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Federico Pugliese",
+              "rank": null,
+              "country": "ITA",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Oliwer Wierzbicki",
               "rank": null,
               "country": "POL",
               "status": "ALT",
@@ -11041,9 +11017,33 @@
               "playerKey": null
             },
             {
-              "name": "Paul Popoaca",
+              "name": "Edoardo Lovat",
               "rank": null,
-              "country": "ROU",
+              "country": "SUI",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Finn Lester",
+              "rank": null,
+              "country": "GBR",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Wiktor Sasko",
+              "rank": null,
+              "country": "POL",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Maximilian Linden",
+              "rank": null,
+              "country": "SWE",
               "status": "ALT",
               "seed": null,
               "playerKey": null
@@ -11067,7 +11067,7 @@
       "sourcePublished": "2026-10-25T20:50:00Z",
       "status": "active",
       "counts": {
-        "MD": 16,
+        "MD": 15,
         "Q": 41,
         "ALT": 25
       },
@@ -11095,14 +11095,6 @@
               "name": "Adrian Oetzbach",
               "rank": 554,
               "country": "GER",
-              "status": "DA",
-              "seed": null,
-              "playerKey": null
-            },
-            {
-              "name": "Kirill Kivattsev",
-              "rank": 588,
-              "country": "RUS",
               "status": "DA",
               "seed": null,
               "playerKey": null
@@ -11313,14 +11305,6 @@
               "playerKey": null
             },
             {
-              "name": "Peter Buldorini",
-              "rank": 1169,
-              "country": "IRL",
-              "status": "Q",
-              "seed": null,
-              "playerKey": null
-            },
-            {
               "name": "Alessandro Battiston",
               "rank": 1238,
               "country": "ITA",
@@ -11497,14 +11481,6 @@
               "playerKey": null
             },
             {
-              "name": "Edoardo Betti",
-              "rank": null,
-              "country": "ITA",
-              "status": "Q",
-              "seed": null,
-              "playerKey": null
-            },
-            {
               "name": "Andrea Brignacca",
               "rank": null,
               "country": "ITA",
@@ -11535,17 +11511,12 @@
               "status": "Q",
               "seed": null,
               "playerKey": null
-            }
-          ]
-        },
-        {
-          "title": "Alternates & Reserves",
-          "players": [
+            },
             {
               "name": "Yanis Peterhans",
               "rank": null,
               "country": "SUI",
-              "status": "ALT",
+              "status": "Q",
               "seed": null,
               "playerKey": null
             },
@@ -11553,20 +11524,17 @@
               "name": "Fabio Varsalona",
               "rank": null,
               "country": "ITA",
-              "status": "ALT",
+              "status": "Q",
               "seed": null,
               "playerKey": null
-            },
+            }
+          ]
+        },
+        {
+          "title": "Alternates & Reserves",
+          "players": [
             {
               "name": "Fabrizio Karol Pio Osti",
-              "rank": null,
-              "country": "ITA",
-              "status": "ALT",
-              "seed": null,
-              "playerKey": null
-            },
-            {
-              "name": "Filippo Valdetara",
               "rank": null,
               "country": "ITA",
               "status": "ALT",
@@ -11740,6 +11708,30 @@
               "status": "ALT",
               "seed": null,
               "playerKey": null
+            },
+            {
+              "name": "Alessandro Barbieri",
+              "rank": null,
+              "country": "ITA",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Andre Meinertz",
+              "rank": null,
+              "country": "DEN",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Florian Doleys",
+              "rank": null,
+              "country": "AUT",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
             }
           ]
         }
@@ -11761,7 +11753,7 @@
       "status": "active",
       "counts": {
         "MD": 17,
-        "Q": 55,
+        "Q": 52,
         "ALT": 25
       },
       "sections": [
@@ -12126,14 +12118,6 @@
               "playerKey": null
             },
             {
-              "name": "Kaya Arinc",
-              "rank": null,
-              "country": "TUR",
-              "status": "Q",
-              "seed": null,
-              "playerKey": null
-            },
-            {
               "name": "Gabriele Maria Piano",
               "rank": null,
               "country": "ITA",
@@ -12246,25 +12230,9 @@
               "playerKey": null
             },
             {
-              "name": "Matis Roche",
-              "rank": null,
-              "country": "FRA",
-              "status": "Q",
-              "seed": null,
-              "playerKey": null
-            },
-            {
               "name": "Vedant Gundu",
               "rank": null,
               "country": "IND",
-              "status": "Q",
-              "seed": null,
-              "playerKey": null
-            },
-            {
-              "name": "Paolo Gabriele Marino",
-              "rank": null,
-              "country": "ITA",
               "status": "Q",
               "seed": null,
               "playerKey": null
@@ -12302,25 +12270,9 @@
               "playerKey": null
             },
             {
-              "name": "Eduard Gabriel Coreisa",
-              "rank": null,
-              "country": "ROU",
-              "status": "Q",
-              "seed": null,
-              "playerKey": null
-            },
-            {
               "name": "Ayman Rafiq",
               "rank": null,
               "country": "FRA",
-              "status": "Q",
-              "seed": null,
-              "playerKey": null
-            },
-            {
-              "name": "Davit Poghosyan",
-              "rank": null,
-              "country": "ARM",
               "status": "Q",
               "seed": null,
               "playerKey": null
@@ -12348,17 +12300,12 @@
               "status": "Q",
               "seed": null,
               "playerKey": null
-            }
-          ]
-        },
-        {
-          "title": "Alternates & Reserves",
-          "players": [
+            },
             {
               "name": "Loris Gander",
               "rank": null,
               "country": "SUI",
-              "status": "ALT",
+              "status": "Q",
               "seed": null,
               "playerKey": null
             },
@@ -12366,10 +12313,15 @@
               "name": "Rares Ioan Poiana",
               "rank": null,
               "country": "ROU",
-              "status": "ALT",
+              "status": "Q",
               "seed": null,
               "playerKey": null
-            },
+            }
+          ]
+        },
+        {
+          "title": "Alternates & Reserves",
+          "players": [
             {
               "name": "Gil Brahier",
               "rank": null,
@@ -12422,22 +12374,6 @@
               "name": "Harrison Mcelnea",
               "rank": null,
               "country": "GBR",
-              "status": "ALT",
-              "seed": null,
-              "playerKey": null
-            },
-            {
-              "name": "Phillipp-Maximilian Huebert",
-              "rank": null,
-              "country": "GER",
-              "status": "ALT",
-              "seed": null,
-              "playerKey": null
-            },
-            {
-              "name": "Ivan Salenko",
-              "rank": null,
-              "country": "UKR",
               "status": "ALT",
               "seed": null,
               "playerKey": null
@@ -12507,14 +12443,6 @@
               "playerKey": null
             },
             {
-              "name": "Boris Stojanovic",
-              "rank": null,
-              "country": "SRB",
-              "status": "ALT",
-              "seed": null,
-              "playerKey": null
-            },
-            {
               "name": "Noe Boulnoix",
               "rank": null,
               "country": "SUI",
@@ -12550,6 +12478,46 @@
               "name": "Erik Adrian Neacsa",
               "rank": null,
               "country": "ROU",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Christian Doel",
+              "rank": null,
+              "country": "GBR",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Elias Barth",
+              "rank": null,
+              "country": "GER",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Kirill Korolenko",
+              "rank": null,
+              "country": "RUS",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "David Munoz Molina",
+              "rank": null,
+              "country": "ESP",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Mustafa Kaan Kose",
+              "rank": null,
+              "country": "TUR",
               "status": "ALT",
               "seed": null,
               "playerKey": null
@@ -14955,14 +14923,6 @@
               "playerKey": "1070"
             },
             {
-              "name": "Paul Inchauspe",
-              "rank": 583,
-              "country": "FRA",
-              "status": "DA",
-              "seed": null,
-              "playerKey": null
-            },
-            {
               "name": "Robin Catry",
               "rank": 586,
               "country": "FRA",
@@ -14977,20 +14937,20 @@
               "status": "DA",
               "seed": null,
               "playerKey": null
+            },
+            {
+              "name": "Andreja Petrovic",
+              "rank": 604,
+              "country": "NOR",
+              "status": "DA",
+              "seed": null,
+              "playerKey": null
             }
           ]
         },
         {
           "title": "Qualifying",
           "players": [
-            {
-              "name": "Andreja Petrovic",
-              "rank": 604,
-              "country": "NOR",
-              "status": "Q",
-              "seed": null,
-              "playerKey": null
-            },
             {
               "name": "Yaroslav Demin",
               "rank": 614,
@@ -15016,14 +14976,6 @@
               "playerKey": null
             },
             {
-              "name": "Taha Baadi",
-              "rank": 651,
-              "country": "MAR",
-              "status": "Q",
-              "seed": null,
-              "playerKey": null
-            },
-            {
               "name": "Oliver Bonding",
               "rank": 658,
               "country": "GBR",
@@ -15034,14 +14986,6 @@
             {
               "name": "Alex Rybakov",
               "rank": 696,
-              "country": "USA",
-              "status": "Q",
-              "seed": null,
-              "playerKey": null
-            },
-            {
-              "name": "Bruno Kuzuhara",
-              "rank": 700,
               "country": "USA",
               "status": "Q",
               "seed": null,
@@ -15120,14 +15064,6 @@
               "playerKey": null
             },
             {
-              "name": "Felix Corwin",
-              "rank": 847,
-              "country": "USA",
-              "status": "Q",
-              "seed": null,
-              "playerKey": null
-            },
-            {
               "name": "Benjamin Willwerth",
               "rank": 848,
               "country": "USA",
@@ -15198,17 +15134,12 @@
               "status": "Q",
               "seed": null,
               "playerKey": null
-            }
-          ]
-        },
-        {
-          "title": "Alternates & Reserves",
-          "players": [
+            },
             {
               "name": "Zsombor Velcz",
               "rank": 911,
               "country": "HUN",
-              "status": "ALT",
+              "status": "Q",
               "seed": null,
               "playerKey": null
             },
@@ -15216,7 +15147,7 @@
               "name": "Ryan Fishback",
               "rank": 918,
               "country": "USA",
-              "status": "ALT",
+              "status": "Q",
               "seed": null,
               "playerKey": null
             },
@@ -15224,7 +15155,7 @@
               "name": "Finn Murgett",
               "rank": 921,
               "country": "GBR",
-              "status": "ALT",
+              "status": "Q",
               "seed": null,
               "playerKey": null
             },
@@ -15232,10 +15163,15 @@
               "name": "Ronald Hohmann",
               "rank": 931,
               "country": "USA",
-              "status": "ALT",
+              "status": "Q",
               "seed": null,
               "playerKey": null
-            },
+            }
+          ]
+        },
+        {
+          "title": "Alternates & Reserves",
+          "players": [
             {
               "name": "Aryan Shah",
               "rank": 932,
@@ -15357,14 +15293,6 @@
               "playerKey": null
             },
             {
-              "name": "Kacper Szymkowiak",
-              "rank": 1108,
-              "country": "POL",
-              "status": "ALT",
-              "seed": null,
-              "playerKey": null
-            },
-            {
               "name": "Jonas Eriksson Ziverts",
               "rank": 1112,
               "country": "SWE",
@@ -15403,6 +15331,46 @@
               "status": "ALT",
               "seed": null,
               "playerKey": "71261"
+            },
+            {
+              "name": "Liam Krall",
+              "rank": 1220,
+              "country": "USA",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Reece Falck",
+              "rank": 1231,
+              "country": "NZL",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Joshua Peck",
+              "rank": 1235,
+              "country": "CAN",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Noah Johnston",
+              "rank": 1252,
+              "country": "USA",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Viktor Markov",
+              "rank": 1258,
+              "country": "BUL",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
             }
           ]
         }
@@ -15512,14 +15480,6 @@
               "playerKey": null
             },
             {
-              "name": "Arthur Weber",
-              "rank": 403,
-              "country": "FRA",
-              "status": "DA",
-              "seed": null,
-              "playerKey": null
-            },
-            {
               "name": "Izan Almazan Valiente",
               "rank": 409,
               "country": "ESP",
@@ -15574,20 +15534,20 @@
               "status": "DA",
               "seed": null,
               "playerKey": "574"
+            },
+            {
+              "name": "Leonardo Rossi",
+              "rank": 528,
+              "country": "ITA",
+              "status": "DA",
+              "seed": null,
+              "playerKey": null
             }
           ]
         },
         {
           "title": "Qualifying",
           "players": [
-            {
-              "name": "Leonardo Rossi",
-              "rank": 528,
-              "country": "ITA",
-              "status": "Q",
-              "seed": null,
-              "playerKey": null
-            },
             {
               "name": "Alexander Weis",
               "rank": 529,
@@ -15656,14 +15616,6 @@
               "name": "Federico Iannaccone",
               "rank": 579,
               "country": "ITA",
-              "status": "Q",
-              "seed": null,
-              "playerKey": null
-            },
-            {
-              "name": "Martin Van Der Meerschen",
-              "rank": 585,
-              "country": "BEL",
               "status": "Q",
               "seed": null,
               "playerKey": null
@@ -15813,14 +15765,6 @@
               "playerKey": null
             },
             {
-              "name": "Michael Agwi",
-              "rank": 726,
-              "country": "IRL",
-              "status": "Q",
-              "seed": null,
-              "playerKey": null
-            },
-            {
               "name": "Manuel Plunger",
               "rank": 733,
               "country": "ITA",
@@ -15877,14 +15821,6 @@
               "playerKey": null
             },
             {
-              "name": "Fryderyk Lechno-Wasiutynski",
-              "rank": 784,
-              "country": "POL",
-              "status": "Q",
-              "seed": null,
-              "playerKey": null
-            },
-            {
               "name": "Lorenzo Rottoli",
               "rank": 791,
               "country": "ITA",
@@ -15907,17 +15843,12 @@
               "status": "Q",
               "seed": null,
               "playerKey": null
-            }
-          ]
-        },
-        {
-          "title": "Alternates & Reserves",
-          "players": [
+            },
             {
               "name": "Gian Luca Tanner",
               "rank": 830,
               "country": "SUI",
-              "status": "ALT",
+              "status": "Q",
               "seed": null,
               "playerKey": null
             },
@@ -15925,7 +15856,7 @@
               "name": "Giannicola Misasi",
               "rank": 841,
               "country": "ITA",
-              "status": "ALT",
+              "status": "Q",
               "seed": null,
               "playerKey": null
             },
@@ -15933,7 +15864,7 @@
               "name": "Jacopo Berrettini",
               "rank": 842,
               "country": "ITA",
-              "status": "ALT",
+              "status": "Q",
               "seed": null,
               "playerKey": null
             },
@@ -15941,10 +15872,15 @@
               "name": "Matteo Sciahbasi",
               "rank": 872,
               "country": "ITA",
-              "status": "ALT",
+              "status": "Q",
               "seed": null,
               "playerKey": null
-            },
+            }
+          ]
+        },
+        {
+          "title": "Alternates & Reserves",
+          "players": [
             {
               "name": "Lorenzo Comino",
               "rank": 899,
@@ -16050,14 +15986,6 @@
               "playerKey": null
             },
             {
-              "name": "Liam Gavrielides",
-              "rank": 1018,
-              "country": "GER",
-              "status": "ALT",
-              "seed": null,
-              "playerKey": null
-            },
-            {
               "name": "Francesco Ferrari",
               "rank": 1022,
               "country": "ITA",
@@ -16074,25 +16002,9 @@
               "playerKey": null
             },
             {
-              "name": "Tobia Costanzo Baragiola Mordini",
-              "rank": 1054,
-              "country": "ITA",
-              "status": "ALT",
-              "seed": null,
-              "playerKey": null
-            },
-            {
               "name": "Maximilian Figl",
               "rank": 1056,
               "country": "ITA",
-              "status": "ALT",
-              "seed": null,
-              "playerKey": null
-            },
-            {
-              "name": "Mathys Domenc",
-              "rank": 1062,
-              "country": "FRA",
               "status": "ALT",
               "seed": null,
               "playerKey": null
@@ -16108,6 +16020,62 @@
             {
               "name": "Filippo Mazzola",
               "rank": 1068,
+              "country": "ITA",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Nicolas Garcia Longo",
+              "rank": 1070,
+              "country": "ARG",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Niccolo Ciavarella",
+              "rank": 1071,
+              "country": "ITA",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Benjamin Lock",
+              "rank": 1075,
+              "country": "ZIM",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Lorenzo Berto",
+              "rank": 1086,
+              "country": "ITA",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Sebastiano Cocola",
+              "rank": 1091,
+              "country": "ITA",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Giacomo Crisostomo",
+              "rank": 1119,
+              "country": "ITA",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Leonardo Primucci",
+              "rank": 1148,
               "country": "ITA",
               "status": "ALT",
               "seed": null,
@@ -16147,14 +16115,6 @@
               "status": "DA",
               "seed": null,
               "playerKey": null
-            },
-            {
-              "name": "Max Wiskandt",
-              "rank": 378,
-              "country": "GER",
-              "status": "DA",
-              "seed": null,
-              "playerKey": "9110"
             },
             {
               "name": "Louis Wessels",
@@ -16275,28 +16235,20 @@
               "status": "DA",
               "seed": null,
               "playerKey": "35790"
+            },
+            {
+              "name": "Robin Catry",
+              "rank": 586,
+              "country": "FRA",
+              "status": "DA",
+              "seed": null,
+              "playerKey": null
             }
           ]
         },
         {
           "title": "Qualifying",
           "players": [
-            {
-              "name": "Paul Inchauspe",
-              "rank": 583,
-              "country": "FRA",
-              "status": "Q",
-              "seed": null,
-              "playerKey": null
-            },
-            {
-              "name": "Robin Catry",
-              "rank": 586,
-              "country": "FRA",
-              "status": "Q",
-              "seed": null,
-              "playerKey": null
-            },
             {
               "name": "Hunter Heck",
               "rank": 595,
@@ -16365,14 +16317,6 @@
               "name": "Oliver Bonding",
               "rank": 658,
               "country": "GBR",
-              "status": "Q",
-              "seed": null,
-              "playerKey": null
-            },
-            {
-              "name": "Bruno Kuzuhara",
-              "rank": 700,
-              "country": "USA",
               "status": "Q",
               "seed": null,
               "playerKey": null
@@ -16496,17 +16440,12 @@
               "status": "Q",
               "seed": null,
               "playerKey": null
-            }
-          ]
-        },
-        {
-          "title": "Alternates & Reserves",
-          "players": [
+            },
             {
               "name": "Felix Corwin",
               "rank": 847,
               "country": "USA",
-              "status": "ALT",
+              "status": "Q",
               "seed": null,
               "playerKey": null
             },
@@ -16514,7 +16453,7 @@
               "name": "Benjamin Willwerth",
               "rank": 848,
               "country": "USA",
-              "status": "ALT",
+              "status": "Q",
               "seed": null,
               "playerKey": "73862"
             },
@@ -16522,10 +16461,15 @@
               "name": "Markus Molder",
               "rank": 868,
               "country": "EST",
-              "status": "ALT",
+              "status": "Q",
               "seed": null,
               "playerKey": null
-            },
+            }
+          ]
+        },
+        {
+          "title": "Alternates & Reserves",
+          "players": [
             {
               "name": "Aditya Balsekar",
               "rank": 880,
@@ -16623,14 +16567,6 @@
               "playerKey": null
             },
             {
-              "name": "Kriish Tyagi",
-              "rank": 925,
-              "country": "IND",
-              "status": "ALT",
-              "seed": null,
-              "playerKey": null
-            },
-            {
               "name": "Ronald Hohmann",
               "rank": 931,
               "country": "USA",
@@ -16698,6 +16634,38 @@
               "name": "Preston Brown",
               "rank": 1006,
               "country": "USA",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Aristotelis Thanos",
+              "rank": 1034,
+              "country": "GRE",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "William Jansen",
+              "rank": 1035,
+              "country": "GBR",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Segundo Goity Zapico",
+              "rank": 1040,
+              "country": "ARG",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Nikola Djosic",
+              "rank": 1045,
+              "country": "SUI",
               "status": "ALT",
               "seed": null,
               "playerKey": null
@@ -16834,14 +16802,6 @@
               "playerKey": "7006"
             },
             {
-              "name": "Sander Jong",
-              "rank": 451,
-              "country": "NED",
-              "status": "DA",
-              "seed": null,
-              "playerKey": null
-            },
-            {
               "name": "Ivan Ivanov",
               "rank": 457,
               "country": "BUL",
@@ -16872,20 +16832,20 @@
               "status": "DA",
               "seed": null,
               "playerKey": "765"
+            },
+            {
+              "name": "Constantin Bittoun Kouzmine",
+              "rank": 490,
+              "country": "FRA",
+              "status": "DA",
+              "seed": null,
+              "playerKey": null
             }
           ]
         },
         {
           "title": "Qualifying",
           "players": [
-            {
-              "name": "Constantin Bittoun Kouzmine",
-              "rank": 490,
-              "country": "FRA",
-              "status": "Q",
-              "seed": null,
-              "playerKey": null
-            },
             {
               "name": "Vladyslav Orlov",
               "rank": 498,
@@ -17093,20 +17053,20 @@
               "status": "Q",
               "seed": null,
               "playerKey": null
+            },
+            {
+              "name": "Michael Agwi",
+              "rank": 726,
+              "country": "IRL",
+              "status": "Q",
+              "seed": null,
+              "playerKey": null
             }
           ]
         },
         {
           "title": "Alternates & Reserves",
           "players": [
-            {
-              "name": "Michael Agwi",
-              "rank": 726,
-              "country": "IRL",
-              "status": "ALT",
-              "seed": null,
-              "playerKey": null
-            },
             {
               "name": "Nico Hipfl",
               "rank": 737,
@@ -17295,6 +17255,14 @@
               "name": "Pablo Perez Ramos",
               "rank": 912,
               "country": "ESP",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Lars Goran Verwerft",
+              "rank": 917,
+              "country": "BEL",
               "status": "ALT",
               "seed": null,
               "playerKey": null
@@ -17668,14 +17636,6 @@
               "playerKey": null
             },
             {
-              "name": "Julian Cundom",
-              "rank": 938,
-              "country": "ARG",
-              "status": "Q",
-              "seed": null,
-              "playerKey": null
-            },
-            {
               "name": "Joao Victor Couto Loureiro",
               "rank": 968,
               "country": "BRA",
@@ -17690,6 +17650,14 @@
               "status": "Q",
               "seed": null,
               "playerKey": null
+            },
+            {
+              "name": "Pavlos Tsitsipas",
+              "rank": 1004,
+              "country": "GRE",
+              "status": "Q",
+              "seed": null,
+              "playerKey": null
             }
           ]
         },
@@ -17697,25 +17665,9 @@
           "title": "Alternates & Reserves",
           "players": [
             {
-              "name": "Pavlos Tsitsipas",
-              "rank": 1004,
-              "country": "GRE",
-              "status": "ALT",
-              "seed": null,
-              "playerKey": null
-            },
-            {
               "name": "Preston Brown",
               "rank": 1006,
               "country": "USA",
-              "status": "ALT",
-              "seed": null,
-              "playerKey": null
-            },
-            {
-              "name": "Antoni Fabre",
-              "rank": 1024,
-              "country": "FRA",
               "status": "ALT",
               "seed": null,
               "playerKey": null
@@ -17761,25 +17713,9 @@
               "playerKey": null
             },
             {
-              "name": "Mateo Del Pino",
-              "rank": 1098,
-              "country": "ARG",
-              "status": "ALT",
-              "seed": null,
-              "playerKey": null
-            },
-            {
               "name": "Enzo Lima",
               "rank": 1100,
               "country": "BRA",
-              "status": "ALT",
-              "seed": null,
-              "playerKey": null
-            },
-            {
-              "name": "Kacper Szymkowiak",
-              "rank": 1108,
-              "country": "POL",
               "status": "ALT",
               "seed": null,
               "playerKey": null
@@ -17892,6 +17828,38 @@
               "name": "Breno Braga",
               "rank": 1495,
               "country": "BRA",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Manuel Mouilleron Salvo",
+              "rank": 1498,
+              "country": "ARG",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Henrique Ortenblad Nogueira",
+              "rank": 1543,
+              "country": "BRA",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Giovanni Branchetti",
+              "rank": 1651,
+              "country": "ARG",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Diego Ortiz Gamonal",
+              "rank": 1664,
+              "country": "CHI",
               "status": "ALT",
               "seed": null,
               "playerKey": null
@@ -18028,16 +17996,16 @@
               "playerKey": null
             },
             {
-              "name": "Jacob Bradshaw",
-              "rank": 694,
-              "country": "AUS",
-              "status": "DA",
-              "seed": null,
-              "playerKey": "37971"
-            },
-            {
               "name": "Shinji Hazawa",
               "rank": 708,
+              "country": "JPN",
+              "status": "DA",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Yusuke Takahashi",
+              "rank": 714,
               "country": "JPN",
               "status": "DA",
               "seed": null,
@@ -18048,14 +18016,6 @@
         {
           "title": "Qualifying",
           "players": [
-            {
-              "name": "Yusuke Takahashi",
-              "rank": 714,
-              "country": "JPN",
-              "status": "Q",
-              "seed": null,
-              "playerKey": null
-            },
             {
               "name": "Samir Hamza Reguig",
               "rank": 723,
@@ -18100,14 +18060,6 @@
               "name": "Uisung Park",
               "rank": 753,
               "country": "KOR",
-              "status": "Q",
-              "seed": null,
-              "playerKey": null
-            },
-            {
-              "name": "Yuta Kawahashi",
-              "rank": 758,
-              "country": "JPN",
               "status": "Q",
               "seed": null,
               "playerKey": null
@@ -18188,14 +18140,6 @@
               "name": "Adhithya Ganesan",
               "rank": 886,
               "country": "USA",
-              "status": "Q",
-              "seed": null,
-              "playerKey": null
-            },
-            {
-              "name": "Sora Fukuda",
-              "rank": 891,
-              "country": "JPN",
               "status": "Q",
               "seed": null,
               "playerKey": null
@@ -18300,14 +18244,6 @@
               "name": "Andrea Fiorentini",
               "rank": 955,
               "country": "ITA",
-              "status": "Q",
-              "seed": null,
-              "playerKey": null
-            },
-            {
-              "name": "Markus Malaszszak",
-              "rank": 978,
-              "country": "THA",
               "status": "Q",
               "seed": null,
               "playerKey": null
@@ -18495,17 +18431,12 @@
               "status": "Q",
               "seed": null,
               "playerKey": null
-            }
-          ]
-        },
-        {
-          "title": "Alternates & Reserves",
-          "players": [
+            },
             {
               "name": "Tanguy Genier",
               "rank": 1256,
               "country": "SUI",
-              "status": "ALT",
+              "status": "Q",
               "seed": null,
               "playerKey": null
             },
@@ -18513,7 +18444,7 @@
               "name": "Jan Hrazdil",
               "rank": 1278,
               "country": "CZE",
-              "status": "ALT",
+              "status": "Q",
               "seed": null,
               "playerKey": null
             },
@@ -18529,10 +18460,15 @@
               "name": "Tomas Lanik",
               "rank": 1363,
               "country": "SVK",
-              "status": "ALT",
+              "status": "Q",
               "seed": null,
               "playerKey": null
-            },
+            }
+          ]
+        },
+        {
+          "title": "Alternates & Reserves",
+          "players": [
             {
               "name": "Arjun Mehrotra",
               "rank": 1366,
@@ -18696,6 +18632,38 @@
             {
               "name": "Elias Julian Werner",
               "rank": 1701,
+              "country": "GER",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Dorian Tremblay",
+              "rank": 1710,
+              "country": "FRA",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Ha Minh Duc Vu",
+              "rank": 1713,
+              "country": "VIE",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Jim Hendrikx",
+              "rank": 1716,
+              "country": "NED",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Noah Thurner",
+              "rank": 1726,
               "country": "GER",
               "status": "ALT",
               "seed": null,
@@ -18884,14 +18852,6 @@
               "status": "Q",
               "seed": null,
               "playerKey": null
-            },
-            {
-              "name": "Jacob Bradshaw",
-              "rank": 694,
-              "country": "AUS",
-              "status": "Q",
-              "seed": null,
-              "playerKey": "37971"
             },
             {
               "name": "Stefano D'Agostino",
@@ -19300,20 +19260,20 @@
               "status": "Q",
               "seed": null,
               "playerKey": null
+            },
+            {
+              "name": "Adrien Burdet",
+              "rank": 1154,
+              "country": "SUI",
+              "status": "Q",
+              "seed": null,
+              "playerKey": null
             }
           ]
         },
         {
           "title": "Alternates & Reserves",
           "players": [
-            {
-              "name": "Adrien Burdet",
-              "rank": 1154,
-              "country": "SUI",
-              "status": "ALT",
-              "seed": null,
-              "playerKey": null
-            },
             {
               "name": "Samuele Seghetti",
               "rank": 1156,
@@ -19505,6 +19465,14 @@
               "status": "ALT",
               "seed": null,
               "playerKey": null
+            },
+            {
+              "name": "Alexis Gautier",
+              "rank": 1335,
+              "country": "FRA",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
             }
           ]
         }
@@ -19582,14 +19550,6 @@
               "playerKey": null
             },
             {
-              "name": "Jacob Bradshaw",
-              "rank": 694,
-              "country": "AUS",
-              "status": "DA",
-              "seed": null,
-              "playerKey": "37971"
-            },
-            {
               "name": "Yusuke Takahashi",
               "rank": 714,
               "country": "JPN",
@@ -19652,20 +19612,20 @@
               "status": "DA",
               "seed": null,
               "playerKey": null
+            },
+            {
+              "name": "Tianhui Zhang",
+              "rank": 788,
+              "country": "CHN",
+              "status": "DA",
+              "seed": null,
+              "playerKey": null
             }
           ]
         },
         {
           "title": "Qualifying",
           "players": [
-            {
-              "name": "Tianhui Zhang",
-              "rank": 788,
-              "country": "CHN",
-              "status": "Q",
-              "seed": null,
-              "playerKey": null
-            },
             {
               "name": "Yuki Mochizuki",
               "rank": 790,
@@ -19798,14 +19758,6 @@
               "name": "Egor Agafonov",
               "rank": 1021,
               "country": "RUS",
-              "status": "Q",
-              "seed": null,
-              "playerKey": null
-            },
-            {
-              "name": "Fons Van Sambeek",
-              "rank": 1023,
-              "country": "NED",
               "status": "Q",
               "seed": null,
               "playerKey": null
@@ -20105,17 +20057,12 @@
               "status": "Q",
               "seed": null,
               "playerKey": null
-            }
-          ]
-        },
-        {
-          "title": "Alternates & Reserves",
-          "players": [
+            },
             {
               "name": "Xing Dao Chen",
               "rank": 1599,
               "country": "CHN",
-              "status": "ALT",
+              "status": "Q",
               "seed": null,
               "playerKey": null
             },
@@ -20123,10 +20070,15 @@
               "name": "Kangyuan Shi",
               "rank": 1601,
               "country": "CHN",
-              "status": "ALT",
+              "status": "Q",
               "seed": null,
               "playerKey": null
-            },
+            }
+          ]
+        },
+        {
+          "title": "Alternates & Reserves",
+          "players": [
             {
               "name": "Zijiang Yang",
               "rank": 1641,
@@ -20288,14 +20240,6 @@
               "playerKey": null
             },
             {
-              "name": "Chikaya Sato",
-              "rank": 1994,
-              "country": "JPN",
-              "status": "ALT",
-              "seed": null,
-              "playerKey": null
-            },
-            {
               "name": "Zichen Shao",
               "rank": 1994,
               "country": "CHN",
@@ -20307,6 +20251,30 @@
               "name": "Liangxuan Liu",
               "rank": 1994,
               "country": "CHN",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Mikhail Tsapenko",
+              "rank": 1994,
+              "country": "RUS",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Hong-Lin Fu",
+              "rank": 1994,
+              "country": "TWN",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Natsuki Yamamoto",
+              "rank": 2078,
+              "country": "JPN",
               "status": "ALT",
               "seed": null,
               "playerKey": null
@@ -20464,7 +20432,7 @@
           "title": "Qualifying",
           "players": [
             {
-              "name": "Santiago De la fuente",
+              "name": "Santiago De La Fuente",
               "rank": 712,
               "country": "ARG",
               "status": "Q",
@@ -20536,33 +20504,9 @@
               "playerKey": null
             },
             {
-              "name": "Julian Cundom",
-              "rank": 938,
-              "country": "ARG",
-              "status": "Q",
-              "seed": null,
-              "playerKey": null
-            },
-            {
-              "name": "Gabriele Crivellaro",
-              "rank": 977,
-              "country": "ITA",
-              "status": "Q",
-              "seed": null,
-              "playerKey": null
-            },
-            {
               "name": "Federico Aguilar Cardozo",
               "rank": 1016,
               "country": "URU",
-              "status": "Q",
-              "seed": null,
-              "playerKey": null
-            },
-            {
-              "name": "Antoni Fabre",
-              "rank": 1024,
-              "country": "FRA",
               "status": "Q",
               "seed": null,
               "playerKey": null
@@ -20667,14 +20611,6 @@
               "name": "Daniel Verbeek",
               "rank": 1229,
               "country": "NED",
-              "status": "Q",
-              "seed": null,
-              "playerKey": null
-            },
-            {
-              "name": "Santiago Giamichelle",
-              "rank": 1257,
-              "country": "ARG",
               "status": "Q",
               "seed": null,
               "playerKey": null
@@ -20790,17 +20726,12 @@
               "status": "Q",
               "seed": null,
               "playerKey": null
-            }
-          ]
-        },
-        {
-          "title": "Alternates & Reserves",
-          "players": [
+            },
             {
               "name": "Elias Julian Werner",
               "rank": 1701,
               "country": "GER",
-              "status": "ALT",
+              "status": "Q",
               "seed": null,
               "playerKey": null
             },
@@ -20808,7 +20739,7 @@
               "name": "Alessio Vasquez",
               "rank": 1728,
               "country": "GER",
-              "status": "ALT",
+              "status": "Q",
               "seed": null,
               "playerKey": null
             },
@@ -20816,7 +20747,7 @@
               "name": "Valentin Guadagno",
               "rank": 1780,
               "country": "ARG",
-              "status": "ALT",
+              "status": "Q",
               "seed": null,
               "playerKey": null
             },
@@ -20824,22 +20755,19 @@
               "name": "Lautaro Rocha",
               "rank": 1809,
               "country": "ARG",
-              "status": "ALT",
+              "status": "Q",
               "seed": null,
               "playerKey": null
-            },
+            }
+          ]
+        },
+        {
+          "title": "Alternates & Reserves",
+          "players": [
             {
               "name": "Tobia Grandinetti",
               "rank": 1869,
               "country": "ARG",
-              "status": "ALT",
-              "seed": null,
-              "playerKey": null
-            },
-            {
-              "name": "Henry Best",
-              "rank": 1869,
-              "country": "GBR",
               "status": "ALT",
               "seed": null,
               "playerKey": null
@@ -20992,6 +20920,46 @@
               "name": "Leonardo Iemmi",
               "rank": null,
               "country": "ITA",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Ian Vertberger",
+              "rank": null,
+              "country": "ARG",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Santiago Pedro Franchini",
+              "rank": null,
+              "country": "ARG",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Jackson Pereira Xavier",
+              "rank": null,
+              "country": "BRA",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Tomas Luna",
+              "rank": null,
+              "country": "ARG",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Rodrigo Varillas",
+              "rank": null,
+              "country": "PER",
               "status": "ALT",
               "seed": null,
               "playerKey": null
@@ -21157,14 +21125,6 @@
               "playerKey": null
             },
             {
-              "name": "Jacob Bradshaw",
-              "rank": 694,
-              "country": "AUS",
-              "status": "Q",
-              "seed": null,
-              "playerKey": "37971"
-            },
-            {
               "name": "Shinji Hazawa",
               "rank": 708,
               "country": "JPN",
@@ -21248,14 +21208,6 @@
               "name": "Uisung Park",
               "rank": 753,
               "country": "KOR",
-              "status": "Q",
-              "seed": null,
-              "playerKey": null
-            },
-            {
-              "name": "Yuta Kawahashi",
-              "rank": 758,
-              "country": "JPN",
               "status": "Q",
               "seed": null,
               "playerKey": null
@@ -21347,17 +21299,12 @@
               "status": "Q",
               "seed": null,
               "playerKey": null
-            }
-          ]
-        },
-        {
-          "title": "Alternates & Reserves",
-          "players": [
+            },
             {
               "name": "Aditya Balsekar",
               "rank": 880,
               "country": "IND",
-              "status": "ALT",
+              "status": "Q",
               "seed": null,
               "playerKey": null
             },
@@ -21365,18 +21312,15 @@
               "name": "Adhithya Ganesan",
               "rank": 886,
               "country": "USA",
-              "status": "ALT",
+              "status": "Q",
               "seed": null,
               "playerKey": null
-            },
-            {
-              "name": "Sora Fukuda",
-              "rank": 891,
-              "country": "JPN",
-              "status": "ALT",
-              "seed": null,
-              "playerKey": null
-            },
+            }
+          ]
+        },
+        {
+          "title": "Alternates & Reserves",
+          "players": [
             {
               "name": "Yuta Kikuchi",
               "rank": 900,
@@ -21546,9 +21490,33 @@
               "playerKey": null
             },
             {
-              "name": "Linang Xiao",
-              "rank": 1064,
-              "country": "CHN",
+              "name": "Seongchan Hong",
+              "rank": 1077,
+              "country": "KOR",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Thantub Suksumrarn",
+              "rank": 1089,
+              "country": "THA",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Chen Dong",
+              "rank": 1092,
+              "country": "AUS",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Lorenzo Lorusso",
+              "rank": 1099,
+              "country": "ITA",
               "status": "ALT",
               "seed": null,
               "playerKey": null
@@ -21653,14 +21621,6 @@
               "playerKey": null
             },
             {
-              "name": "Bruno Kuzuhara",
-              "rank": 700,
-              "country": "USA",
-              "status": "DA",
-              "seed": null,
-              "playerKey": null
-            },
-            {
               "name": "Dragos Cazacu",
               "rank": 715,
               "country": "ROU",
@@ -21699,20 +21659,20 @@
               "status": "DA",
               "seed": null,
               "playerKey": null
+            },
+            {
+              "name": "Charles Bertimon",
+              "rank": 802,
+              "country": "FRA",
+              "status": "DA",
+              "seed": null,
+              "playerKey": null
             }
           ]
         },
         {
           "title": "Qualifying",
           "players": [
-            {
-              "name": "Charles Bertimon",
-              "rank": 802,
-              "country": "FRA",
-              "status": "Q",
-              "seed": null,
-              "playerKey": null
-            },
             {
               "name": "Johan Alexander Rodriguez",
               "rank": 810,
@@ -21794,14 +21754,6 @@
               "playerKey": null
             },
             {
-              "name": "Kriish Tyagi",
-              "rank": 925,
-              "country": "IND",
-              "status": "Q",
-              "seed": null,
-              "playerKey": null
-            },
-            {
               "name": "Ronald Hohmann",
               "rank": 931,
               "country": "USA",
@@ -21821,22 +21773,6 @@
               "name": "Justin Roberts",
               "rank": 965,
               "country": "BAH",
-              "status": "Q",
-              "seed": null,
-              "playerKey": null
-            },
-            {
-              "name": "Mwendwa Mbithi",
-              "rank": 976,
-              "country": "USA",
-              "status": "Q",
-              "seed": null,
-              "playerKey": null
-            },
-            {
-              "name": "Fanming Meng",
-              "rank": 981,
-              "country": "CHN",
               "status": "Q",
               "seed": null,
               "playerKey": null
@@ -21912,17 +21848,12 @@
               "status": "Q",
               "seed": null,
               "playerKey": null
-            }
-          ]
-        },
-        {
-          "title": "Alternates & Reserves",
-          "players": [
+            },
             {
               "name": "Joao Vitor Goncalves Ceolin",
               "rank": 1049,
               "country": "BRA",
-              "status": "ALT",
+              "status": "Q",
               "seed": null,
               "playerKey": null
             },
@@ -21930,7 +21861,7 @@
               "name": "Johan Oscar Lien",
               "rank": 1069,
               "country": "NOR",
-              "status": "ALT",
+              "status": "Q",
               "seed": null,
               "playerKey": null
             },
@@ -21938,7 +21869,7 @@
               "name": "Asahi Harazaki",
               "rank": 1080,
               "country": "JPN",
-              "status": "ALT",
+              "status": "Q",
               "seed": null,
               "playerKey": null
             },
@@ -21946,10 +21877,15 @@
               "name": "Lachlan McFadzean",
               "rank": 1115,
               "country": "AUS",
-              "status": "ALT",
+              "status": "Q",
               "seed": null,
               "playerKey": null
-            },
+            }
+          ]
+        },
+        {
+          "title": "Alternates & Reserves",
+          "players": [
             {
               "name": "Ilyas Milad Fahim",
               "rank": 1125,
@@ -22031,14 +21967,6 @@
               "playerKey": null
             },
             {
-              "name": "Erik Schiessl",
-              "rank": 1237,
-              "country": "GER",
-              "status": "ALT",
-              "seed": null,
-              "playerKey": null
-            },
-            {
               "name": "Sean Daryabeigi",
               "rank": 1242,
               "country": "USA",
@@ -22114,6 +22042,46 @@
               "name": "Ashton McLeod",
               "rank": 1311,
               "country": "AUS",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Mitchell Sheldon",
+              "rank": 1326,
+              "country": "USA",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Jerrid Gaines Jr",
+              "rank": 1346,
+              "country": "USA",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "William Mirarchi",
+              "rank": 1348,
+              "country": "ITA",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Drew Van Orderlain",
+              "rank": 1359,
+              "country": "USA",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Nikolas Stoot",
+              "rank": 1359,
+              "country": "USA",
               "status": "ALT",
               "seed": null,
               "playerKey": null
@@ -22351,14 +22319,6 @@
               "playerKey": null
             },
             {
-              "name": "Michael Agwi",
-              "rank": 726,
-              "country": "IRL",
-              "status": "Q",
-              "seed": null,
-              "playerKey": null
-            },
-            {
               "name": "Gabriele Maria Noce",
               "rank": 745,
               "country": "ITA",
@@ -22471,14 +22431,6 @@
               "playerKey": null
             },
             {
-              "name": "Sora Fukuda",
-              "rank": 891,
-              "country": "JPN",
-              "status": "Q",
-              "seed": null,
-              "playerKey": null
-            },
-            {
               "name": "Lorenzo Comino",
               "rank": 899,
               "country": "ITA",
@@ -22527,14 +22479,6 @@
               "playerKey": null
             },
             {
-              "name": "Luka Talan Lopatic",
-              "rank": 987,
-              "country": "SLO",
-              "status": "Q",
-              "seed": null,
-              "playerKey": null
-            },
-            {
               "name": "Nicolas Parizzia",
               "rank": 988,
               "country": "SUI",
@@ -22570,14 +22514,6 @@
               "name": "Ivan Nedelko",
               "rank": 1015,
               "country": "RUS",
-              "status": "Q",
-              "seed": null,
-              "playerKey": null
-            },
-            {
-              "name": "Liam Gavrielides",
-              "rank": 1018,
-              "country": "GER",
               "status": "Q",
               "seed": null,
               "playerKey": null
@@ -22717,17 +22653,12 @@
               "status": "Q",
               "seed": null,
               "playerKey": null
-            }
-          ]
-        },
-        {
-          "title": "Alternates & Reserves",
-          "players": [
+            },
             {
               "name": "Niccolo Catini",
               "rank": 1173,
               "country": "ITA",
-              "status": "ALT",
+              "status": "Q",
               "seed": null,
               "playerKey": null
             },
@@ -22735,7 +22666,7 @@
               "name": "Heorhii Shylov",
               "rank": 1185,
               "country": "UKR",
-              "status": "ALT",
+              "status": "Q",
               "seed": null,
               "playerKey": null
             },
@@ -22743,7 +22674,7 @@
               "name": "Alessandro Battiston",
               "rank": 1192,
               "country": "ITA",
-              "status": "ALT",
+              "status": "Q",
               "seed": null,
               "playerKey": null
             },
@@ -22751,10 +22682,15 @@
               "name": "Alexander Wagner",
               "rank": 1195,
               "country": "AUT",
-              "status": "ALT",
+              "status": "Q",
               "seed": null,
               "playerKey": null
-            },
+            }
+          ]
+        },
+        {
+          "title": "Alternates & Reserves",
+          "players": [
             {
               "name": "Tymur Bieldiugin",
               "rank": 1197,
@@ -22823,14 +22759,6 @@
               "name": "Mattia Nannelli",
               "rank": 1250,
               "country": "ITA",
-              "status": "ALT",
-              "seed": null,
-              "playerKey": null
-            },
-            {
-              "name": "Mohamed Ali Abibsi",
-              "rank": 1270,
-              "country": "ALG",
               "status": "ALT",
               "seed": null,
               "playerKey": null
@@ -22919,6 +22847,46 @@
               "name": "Ivan Biletic",
               "rank": 1416,
               "country": "BIH",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Edouard Villoslada",
+              "rank": 1421,
+              "country": "FRA",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Carlos Giraldi",
+              "rank": 1422,
+              "country": "ESP",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Aleksandar Tolev",
+              "rank": 1435,
+              "country": "BUL",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Facundo Yunis",
+              "rank": 1453,
+              "country": "SUI",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Ruben Hartig",
+              "rank": 1456,
+              "country": "GER",
               "status": "ALT",
               "seed": null,
               "playerKey": null
@@ -23063,26 +23031,18 @@
               "playerKey": "1863"
             },
             {
-              "name": "Jacob Bradshaw",
-              "rank": 694,
-              "country": "AUS",
+              "name": "Kristijan Juhas",
+              "rank": 705,
+              "country": "SRB",
               "status": "DA",
               "seed": null,
-              "playerKey": "37971"
+              "playerKey": null
             }
           ]
         },
         {
           "title": "Qualifying",
           "players": [
-            {
-              "name": "Kristijan Juhas",
-              "rank": 705,
-              "country": "SRB",
-              "status": "Q",
-              "seed": null,
-              "playerKey": null
-            },
             {
               "name": "Yurii Dzhavakian",
               "rank": 716,
@@ -23522,20 +23482,20 @@
               "status": "Q",
               "seed": null,
               "playerKey": null
+            },
+            {
+              "name": "Adrien Burdet",
+              "rank": 1154,
+              "country": "SUI",
+              "status": "Q",
+              "seed": null,
+              "playerKey": null
             }
           ]
         },
         {
           "title": "Alternates & Reserves",
           "players": [
-            {
-              "name": "Adrien Burdet",
-              "rank": 1154,
-              "country": "SUI",
-              "status": "ALT",
-              "seed": null,
-              "playerKey": null
-            },
             {
               "name": "Samuele Seghetti",
               "rank": 1156,
@@ -23601,14 +23561,6 @@
               "playerKey": null
             },
             {
-              "name": "Ewen Lumsden",
-              "rank": 1189,
-              "country": "GBR",
-              "status": "ALT",
-              "seed": null,
-              "playerKey": null
-            },
-            {
               "name": "Alessandro Battiston",
               "rank": 1192,
               "country": "ITA",
@@ -23641,25 +23593,9 @@
               "playerKey": null
             },
             {
-              "name": "Mohamed Ali Abibsi",
-              "rank": 1270,
-              "country": "ALG",
-              "status": "ALT",
-              "seed": null,
-              "playerKey": null
-            },
-            {
               "name": "Andrea Bacaloni",
               "rank": 1275,
               "country": "ITA",
-              "status": "ALT",
-              "seed": null,
-              "playerKey": null
-            },
-            {
-              "name": "Boris Butulija",
-              "rank": 1276,
-              "country": "SRB",
               "status": "ALT",
               "seed": null,
               "playerKey": null
@@ -23724,6 +23660,38 @@
               "name": "Dmitry Dolzhenkov",
               "rank": 1340,
               "country": "RUS",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Achilles Belkovics",
+              "rank": 1348,
+              "country": "HUN",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Nicola Senn",
+              "rank": 1356,
+              "country": "SUI",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Tomas Lanik",
+              "rank": 1363,
+              "country": "SVK",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Sebastian Grundtvig Jorgensen",
+              "rank": 1407,
+              "country": "DEN",
               "status": "ALT",
               "seed": null,
               "playerKey": null
@@ -23873,14 +23841,6 @@
           "title": "Qualifying",
           "players": [
             {
-              "name": "Daniel Salazar",
-              "rank": 691,
-              "country": "COL",
-              "status": "Q",
-              "seed": null,
-              "playerKey": null
-            },
-            {
               "name": "Ryan Dickerson",
               "rank": 697,
               "country": "USA",
@@ -23908,14 +23868,6 @@
               "name": "Samir Hamza Reguig",
               "rank": 723,
               "country": "ALG",
-              "status": "Q",
-              "seed": null,
-              "playerKey": null
-            },
-            {
-              "name": "Manuel Plunger",
-              "rank": 733,
-              "country": "ITA",
               "status": "Q",
               "seed": null,
               "playerKey": null
@@ -24049,14 +24001,6 @@
               "playerKey": null
             },
             {
-              "name": "Kacper Szymkowiak",
-              "rank": 1108,
-              "country": "POL",
-              "status": "Q",
-              "seed": null,
-              "playerKey": null
-            },
-            {
               "name": "Edoardo Cherie Ligniere",
               "rank": 1118,
               "country": "ITA",
@@ -24079,33 +24023,12 @@
               "status": "Q",
               "seed": null,
               "playerKey": null
-            }
-          ]
-        },
-        {
-          "title": "Alternates & Reserves",
-          "players": [
-            {
-              "name": "Liam Krall",
-              "rank": 1220,
-              "country": "USA",
-              "status": "ALT",
-              "seed": null,
-              "playerKey": null
-            },
-            {
-              "name": "Jacob Brumm",
-              "rank": 1222,
-              "country": "USA",
-              "status": "ALT",
-              "seed": null,
-              "playerKey": null
             },
             {
               "name": "Tanguy Genier",
               "rank": 1256,
               "country": "SUI",
-              "status": "ALT",
+              "status": "Q",
               "seed": null,
               "playerKey": null
             },
@@ -24113,7 +24036,7 @@
               "name": "Blu Baker",
               "rank": 1265,
               "country": "GBR",
-              "status": "ALT",
+              "status": "Q",
               "seed": null,
               "playerKey": null
             },
@@ -24121,10 +24044,15 @@
               "name": "Elijah Strode",
               "rank": 1281,
               "country": "USA",
-              "status": "ALT",
+              "status": "Q",
               "seed": null,
               "playerKey": null
-            },
+            }
+          ]
+        },
+        {
+          "title": "Alternates & Reserves",
+          "players": [
             {
               "name": "Mauricio Echazu",
               "rank": 1350,
@@ -24214,14 +24142,6 @@
               "playerKey": null
             },
             {
-              "name": "Yannic Nittmann",
-              "rank": 1641,
-              "country": "GER",
-              "status": "ALT",
-              "seed": null,
-              "playerKey": null
-            },
-            {
               "name": "Patricio Alvarado",
               "rank": 1641,
               "country": "ECU",
@@ -24262,14 +24182,6 @@
               "playerKey": null
             },
             {
-              "name": "Valentin Guadagno",
-              "rank": 1780,
-              "country": "ARG",
-              "status": "ALT",
-              "seed": null,
-              "playerKey": null
-            },
-            {
               "name": "Marco Alvarez",
               "rank": 1836,
               "country": "MEX",
@@ -24281,6 +24193,62 @@
               "name": "Alan Sau Franco",
               "rank": 1879,
               "country": "MEX",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Frazier Rengifo",
+              "rank": 1884,
+              "country": "COL",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Jeffrey Fradkin",
+              "rank": 1899,
+              "country": "USA",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Mauricio Schtulmann Gasca",
+              "rank": 1909,
+              "country": "MEX",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Loic Namigandet Tenguere",
+              "rank": 1994,
+              "country": "FRA",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Romain Gales",
+              "rank": 1994,
+              "country": "FRA",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Finn Willman",
+              "rank": 1994,
+              "country": "NZL",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Miles Clark",
+              "rank": 2078,
+              "country": "USA",
               "status": "ALT",
               "seed": null,
               "playerKey": null
@@ -24502,14 +24470,6 @@
               "playerKey": null
             },
             {
-              "name": "Michael Agwi",
-              "rank": 726,
-              "country": "IRL",
-              "status": "Q",
-              "seed": null,
-              "playerKey": null
-            },
-            {
               "name": "Gabriele Maria Noce",
               "rank": 745,
               "country": "ITA",
@@ -24529,14 +24489,6 @@
               "name": "Carles Cordoba",
               "rank": 780,
               "country": "ESP",
-              "status": "Q",
-              "seed": null,
-              "playerKey": null
-            },
-            {
-              "name": "Fryderyk Lechno-Wasiutynski",
-              "rank": 784,
-              "country": "POL",
               "status": "Q",
               "seed": null,
               "playerKey": null
@@ -24625,14 +24577,6 @@
               "name": "Jeffrey Von Der Schulenburg",
               "rank": 959,
               "country": "SUI",
-              "status": "Q",
-              "seed": null,
-              "playerKey": null
-            },
-            {
-              "name": "Luka Talan Lopatic",
-              "rank": 987,
-              "country": "SLO",
               "status": "Q",
               "seed": null,
               "playerKey": null
@@ -24878,31 +24822,10 @@
               "playerKey": null
             },
             {
-              "name": "Aoran Wang",
-              "rank": 1219,
-              "country": "CHN",
-              "status": "Q",
-              "seed": null,
-              "playerKey": "2225"
-            }
-          ]
-        },
-        {
-          "title": "Alternates & Reserves",
-          "players": [
-            {
               "name": "Daniel Verbeek",
               "rank": 1229,
               "country": "NED",
-              "status": "ALT",
-              "seed": null,
-              "playerKey": null
-            },
-            {
-              "name": "Noah Karma",
-              "rank": 1262,
-              "country": "SUI",
-              "status": "ALT",
+              "status": "Q",
               "seed": null,
               "playerKey": null
             },
@@ -24910,7 +24833,7 @@
               "name": "Andrea Bacaloni",
               "rank": 1275,
               "country": "ITA",
-              "status": "ALT",
+              "status": "Q",
               "seed": null,
               "playerKey": null
             },
@@ -24918,7 +24841,7 @@
               "name": "Xavi Palomar",
               "rank": 1277,
               "country": "ESP",
-              "status": "ALT",
+              "status": "Q",
               "seed": null,
               "playerKey": null
             },
@@ -24926,10 +24849,15 @@
               "name": "Benoit Torcq",
               "rank": 1313,
               "country": "BEL",
-              "status": "ALT",
+              "status": "Q",
               "seed": null,
               "playerKey": null
-            },
+            }
+          ]
+        },
+        {
+          "title": "Alternates & Reserves",
+          "players": [
             {
               "name": "Matteo Fondriest",
               "rank": 1320,
@@ -25083,9 +25011,49 @@
               "playerKey": null
             },
             {
-              "name": "Giammarco Gandolfi",
-              "rank": 1478,
+              "name": "Vito Dell'elba",
+              "rank": 1489,
               "country": "ITA",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Sergio Planella Hernandez",
+              "rank": 1489,
+              "country": "ESP",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Pablo Aunion Duran",
+              "rank": 1497,
+              "country": "ESP",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Edison Ambarzumjan",
+              "rank": 1499,
+              "country": "GER",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Bruno Pujol Navarro",
+              "rank": 1522,
+              "country": "ESP",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Reiya Komagata",
+              "rank": 1553,
+              "country": "JPN",
               "status": "ALT",
               "seed": null,
               "playerKey": null
@@ -25299,14 +25267,6 @@
               "playerKey": null
             },
             {
-              "name": "Jacob Bradshaw",
-              "rank": 694,
-              "country": "AUS",
-              "status": "Q",
-              "seed": null,
-              "playerKey": "37971"
-            },
-            {
               "name": "Stefano D'Agostino",
               "rank": 695,
               "country": "ITA",
@@ -25342,14 +25302,6 @@
               "name": "Samir Hamza Reguig",
               "rank": 723,
               "country": "ALG",
-              "status": "Q",
-              "seed": null,
-              "playerKey": null
-            },
-            {
-              "name": "Michael Agwi",
-              "rank": 726,
-              "country": "IRL",
               "status": "Q",
               "seed": null,
               "playerKey": null
@@ -25569,17 +25521,12 @@
               "status": "Q",
               "seed": null,
               "playerKey": null
-            }
-          ]
-        },
-        {
-          "title": "Alternates & Reserves",
-          "players": [
+            },
             {
               "name": "Ryotaro Taguchi",
               "rank": 892,
               "country": "JPN",
-              "status": "ALT",
+              "status": "Q",
               "seed": null,
               "playerKey": null
             },
@@ -25587,10 +25534,15 @@
               "name": "Marcus Walters",
               "rank": 902,
               "country": "GBR",
-              "status": "ALT",
+              "status": "Q",
               "seed": null,
               "playerKey": null
-            },
+            }
+          ]
+        },
+        {
+          "title": "Alternates & Reserves",
+          "players": [
             {
               "name": "Zsombor Velcz",
               "rank": 911,
@@ -25771,6 +25723,22 @@
               "name": "Jonas Gundacker",
               "rank": 1039,
               "country": "AUT",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Jiri Cizek",
+              "rank": 1047,
+              "country": "CZE",
+              "status": "ALT",
+              "seed": null,
+              "playerKey": null
+            },
+            {
+              "name": "Filip Krolo",
+              "rank": 1058,
+              "country": "GER",
               "status": "ALT",
               "seed": null,
               "playerKey": null
