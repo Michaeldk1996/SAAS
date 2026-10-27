@@ -56,7 +56,7 @@ FLIP_GAP_MAX_S = 300                                      # odds.md: flip gap <=
 SMALL_N = 30                                              # CLAUDE.md rule 13: flag n < 30
 
 # ── the read-only guard ─────────────────────────────────────────────────────────────────────────────────────────────
-READ_TABLES = frozenset({'oddspapi_archive_raw', 'pinnacle_archive_close', 'live_flip_log'})
+READ_TABLES = frozenset({'oddspapi_archive_raw', 'pinnacle_archive_close', 'live_flip_log', 'historical_snapshot'})   # snapshot: --audit only
 FORBIDDEN_PARAMS = frozenset({'on_conflict', 'columns'})
 ALLOWED_PREFER = frozenset({'count=exact'})
 
@@ -761,6 +761,144 @@ def run(out_dir, frm, to, td_path=None, measure_to=None, write=False, digest_in=
     return rep
 
 
+# ── audit (founder rulings 2026-10-26, REPORT ONLY): the Bet365 rows outside Jan–Apr 2026 and the start − 10 rows ──────────
+SITE = 'https://michaeldk1996.github.io/SAAS'
+B365_FROM, B365_TO = 20260101, 20260430
+ODDSPAPI_FROM = '2026-03-21'        # the oldest Oddspapi fixture we hold (.ten225-fixture-index.json.gz): no history before it
+
+
+def site_json(name):
+    import urllib.request
+    with urllib.request.urlopen(urllib.request.Request(f'{SITE}/{name}', headers={'User-Agent': 'stennisfy-fill-audit'}), timeout=120) as r:
+        return json.loads(r.read())
+
+
+def db_rows(db, names):
+    """Every Database row with its set, ISO date, tournament, round and names (rows + retRows + tieRows)."""
+    m, out = db['meta'], []
+    for setn, rk, nk in (('db', 'rows', 'names'), ('ret', 'retRows', 'retNames'), ('tie', 'tieRows', 'tieNames')):
+        for i, r in enumerate(db.get(rk) or []):
+            nm = (names.get(nk) or [])[i] if i < len(names.get(nk) or []) else [None, None]
+            d = str(r[0])
+            out.append({'set': setn, 'dateInt': r[0], 'date': f'{d[:4]}-{d[4:6]}-{d[6:]}', 'book': r[8], 'tournament': m['tournaments'][r[4]],
+                        'round': m['rounds'][r[3]], 'winner': nm[0], 'loser': nm[1], 'fav': r[5], 'dog': r[6], 'favWon': r[7]})
+    return out
+
+
+def classify_od10(row, snap, flip):
+    """Founder ruling 2026-10-26 on a start − 10 snapshot: with our live-flip, kept only if taken before it; no live-flip,
+    dashed. 'Taken' = the snapshot's od10 cut (cut_ts = Oddspapi trueStart − 10 min: the instant the price was read off the
+    series), compared with the flip's LOWER edge (last_not_live_seen_at: the latest instant we saw it NOT live). The price's
+    own time (price_ts) and the upper edge are reported beside. The scheduled start is never used."""
+    if snap is None:
+        return 'no snapshot row joined', {}
+    cut, pts = P.iso_ms(snap.get('cut_ts')), P.iso_ms(snap.get('price_ts'))
+    lo, up = P.iso_ms((flip or {}).get('last_not_live_seen_at')), P.iso_ms((flip or {}).get('first_live_seen_at'))
+    info = {'eventKey': str(snap.get('event_key')), 'cutTs': snap.get('cut_ts'), 'priceTs': snap.get('price_ts'), 'startTs': snap.get('start_ts'),
+            'flipLower': (flip or {}).get('last_not_live_seen_at'), 'flipUpper': (flip or {}).get('first_live_seen_at'), 'gapS': (flip or {}).get('gap_seconds')}
+    if lo is None:
+        return 'dashed: no live-flip', info
+    info['cutBeforeLower'] = cut is not None and cut < lo
+    info['priceBeforeLower'] = pts is not None and pts < lo
+    info['cutBeforeUpper'] = cut is not None and up is not None and cut < up
+    return ('kept: taken before the live-flip' if info['cutBeforeLower'] else 'dashed: taken at or after the live-flip'), info
+
+
+def classify_b(rec):
+    """One Bet365 row's Oddspapi Pinnacle +30 outcome (run()'s record): a TRUE close needs a verified start (our live-flip,
+    or the earlier-of rule) and close_reliable; a start-alone cut is not a close (held back); an E fill is not a close."""
+    c = rec.get('close')
+    if c and rec.get('startSource') in (P.CUT_SOURCE, P.TRUE_START_SOURCE):
+        return 'Pinnacle close (verified start)' if c.get('reliable') else 'Pinnacle price at a verified start, not reliable (dash)'
+    if (rec.get('fill') or {}).get('closeCut'):
+        return 'E only: early-cut Pinnacle price, not a close'
+    if c:
+        return 'start-alone price only (held back, not a close)'
+    return 'no Pinnacle price: ' + str(dash_reason(rec, {}, frozenset()))
+
+
+def audit(out_dir, measure_to=None):
+    import tempfile
+    install_guard(P)
+    memo_load(P)
+    os.makedirs(out_dir, exist_ok=True)
+    db, names = site_json('database-yield.json'), site_json('database-yield-players.json')
+    allr = db_rows(db, names)
+    # (1) the Bet365 rows outside Jan–Apr 2026
+    brows = [r for r in allr if r['book'] == 1 and not (B365_FROM <= r['dateInt'] <= B365_TO)]
+    in_win = [r for r in brows if r['date'] >= ODDSPAPI_FROM]
+    out_b = {}
+    for r in brows:
+        if r['date'] < ODDSPAPI_FROM:
+            out_b[(r['date'], r['winner'], r['loser'])] = {'oddspapi': 'outside the Oddspapi history window (none held before ' + ODDSPAPI_FROM + ')'}
+    recs = []
+    if in_win:
+        td = os.path.join(tempfile.mkdtemp(prefix='fill-audit-'), 'td.csv')
+        with open(td, 'w', newline='') as fh:
+            w = csv.DictWriter(fh, fieldnames=['date', 'tournament', 'round', 'winner', 'loser', 'comment', 'psw', 'psl'])
+            w.writeheader()
+            for r in in_win:
+                w.writerow({'date': r['date'], 'tournament': r['tournament'], 'round': r['round'], 'winner': r['winner'], 'loser': r['loser'],
+                            'comment': 'Retired' if r['set'] == 'ret' else 'Completed', 'psw': '', 'psl': ''})
+        import contextlib, io
+        with contextlib.redirect_stdout(io.StringIO()):
+            run(os.path.join(out_dir, 'b-rows-oddspapi'), min(r['date'] for r in in_win), max(r['date'] for r in in_win), td_path=td, measure_to=measure_to)
+        recs = json.load(open(os.path.join(out_dir, 'b-rows-oddspapi', 'archive-fill-matches.json')))
+        for x in recs:
+            out_b[(x['date'], x['winner'], x['loser'])] = {'oddspapi': classify_b(x), 'record': x}
+    b_list = [dict(r, **out_b.get((r['date'], r['winner'], r['loser']), {'oddspapi': 'not evaluated'})) for r in brows]
+    byyear = collections.defaultdict(collections.Counter)
+    for r in b_list:
+        byyear[r['date'][:4]]['n'] += 1
+        byyear[r['date'][:4]]['close' if r['oddspapi'] == 'Pinnacle close (verified start)' else 'dash'] += 1
+    # (2) the start − 10 rows (book 5)
+    od = [r for r in allr if r['book'] == 5]
+    snaps = T.current_snapshots(P.select_all(T.SNAP, 'id,event_key,match_date,tournament,winner,loser,source,cut_ts,price_ts,start_ts,start_source,supersedes',
+                                             'source=eq.' + urllib.parse.quote(T.START10_SOURCE, safe='')))
+    by_key = {(str(x['match_date']), x['tournament'], x['winner'], x['loser']): x for x in snaps}
+    eks = sorted({str(by_key[k]['event_key']) for k in ((r['date'], r['tournament'], r['winner'], r['loser']) for r in od) if k in by_key})
+    flips = {}
+    for i in range(0, len(eks), 150):
+        # live_flip_log is keyed by event_key and has no `id`, so select_all's id-paged read does not apply: one GET per
+        # batch of <= 150 keys returns <= 150 rows (as tdarch reads it)
+        _, got, _ = P.rest('GET', '/rest/v1/live_flip_log?select=event_key,first_live_seen_at,last_not_live_seen_at,gap_seconds'
+                           '&event_key=in.(' + ','.join(eks[i:i + 150]) + ')')
+        for f in got or []:
+            flips[str(f['event_key'])] = f
+    od_out = []
+    for r in od:
+        sn = by_key.get((r['date'], r['tournament'], r['winner'], r['loser']))
+        verdict, info = classify_od10(r, sn, flips.get(str((sn or {}).get('event_key'))))
+        od_out.append(dict(r, verdict=verdict, **info))
+    vc = collections.Counter(x['verdict'] for x in od_out)
+    vm = collections.defaultdict(collections.Counter)
+    for x in od_out:
+        vm[x['date'][:7]][x['verdict']] += 1
+        vm[x['date'][:7]]['n'] += 1
+    rep = {'generatedAt': dt.datetime.now(dt.timezone.utc).isoformat(timespec='seconds'), 'commit': os.environ.get('GITHUB_SHA') or 'local',
+           'readOnly': 'every Supabase request passed check_request (GET-only allow-list); the site files are public GETs; nothing written',
+           'siteDatabase': {'dateRange': db['meta'].get('dateRange'), 'rows': len(allr)},
+           'bRows': {'n': len(brows), 'byYear': {y: dict(c) for y, c in sorted(byyear.items())},
+                     'oddspapi': dict(collections.Counter(r['oddspapi'] for r in b_list)),
+                     'tennisExplorer': 'not read here: the TE store (stennisfy-te-store, private) holds no ATP main-draw rows (levels atp-q, '
+                                       'atp-x, ch, ch-q) — and a TE price is a last pre-match snapshot, never a close (tdarch TE_HOVER)'},
+           'od10': {'n': len(od), 'verdicts': dict(vc), 'byMonth': {m: dict(c) for m, c in sorted(vm.items())},
+                    'timestamp': 'cut_ts (Oddspapi trueStart − 10 min, the od10 cut) vs the live-flip LOWER edge; price_ts and the upper edge beside',
+                    'flipsFound': len(flips), 'snapshotsJoined': sum(1 for x in od_out if x.get('eventKey'))}}
+    json.dump(rep, open(os.path.join(out_dir, 'fill-audit.json'), 'w'), indent=1, default=str)
+    json.dump(b_list, open(os.path.join(out_dir, 'fill-audit-b-rows.json'), 'w'), indent=1, default=str)
+    json.dump(od_out, open(os.path.join(out_dir, 'fill-audit-od10-rows.json'), 'w'), indent=1, default=str)
+    md = ['# Fill audit (read-only)', '', f"Commit {rep['commit']}, {rep['generatedAt']}. Nothing was written.", '',
+          f"## Bet365 rows outside Jan–Apr 2026: n = {rep['bRows']['n']}", '', '| year | n | Pinnacle close | stays dashed |', '|---|---|---|---|'] + [
+          f"| {y} | {c['n']}{' ⚑' if c['n'] < SMALL_N else ''} | {c.get('close', 0)}/{c['n']} | {c.get('dash', 0)}/{c['n']} |" for y, c in sorted(byyear.items())] + [
+          '', '```json', json.dumps(rep['bRows']['oddspapi'], indent=1), '```', '', 'Tennis Explorer: ' + rep['bRows']['tennisExplorer'], '',
+          f"## Start − 10 rows (book 5): n = {len(od)}", '', 'Timestamp: ' + rep['od10']['timestamp'], '', '```json',
+          json.dumps({'verdicts': rep['od10']['verdicts'], 'byMonth': rep['od10']['byMonth']}, indent=1), '```']
+    open(os.path.join(out_dir, 'fill-audit.md'), 'w').write('\n'.join(md) + '\n')
+    print('\n'.join(md))
+    return rep
+
+
 def main(argv=None):
     a = argparse.ArgumentParser()
     a.add_argument('--out', required=True)
@@ -769,10 +907,15 @@ def main(argv=None):
     a.add_argument('--measure-to', default=None, help='last live-flip day measured (UTC, inclusive); default today')
     a.add_argument('--write', choices=('true', 'false'), default='false')
     a.add_argument('--plan-digest', default='')
+    a.add_argument('--audit', action='store_true', help='report only: the Bet365 rows outside Jan–Apr 2026 and the start − 10 rows')
     o = a.parse_args(argv)
     for d in (o.frm, o.to) + ((o.measure_to,) if o.measure_to else ()):
         dt.date.fromisoformat(d)
     o.measure_to = o.measure_to or (dt.datetime.now(dt.timezone.utc).date() - dt.timedelta(days=1)).isoformat()   # whole days only
+    if o.audit:
+        if o.write == 'true':
+            P.die('--audit is report-only: it never writes')
+        return audit(o.out, measure_to=o.measure_to)
     if o.write == 'true' and not re.fullmatch(r'[0-9a-f]{64}', o.plan_digest or ''):
         P.die('--write true needs --plan-digest (the 64-hex digest the plan run reported)')
     run(o.out, o.frm, o.to, measure_to=o.measure_to, write=o.write == 'true', digest_in=o.plan_digest or None)

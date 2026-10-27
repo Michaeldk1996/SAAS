@@ -42,6 +42,10 @@ on:
         description: write=true only — the 64-hex plan digest from the archive-fill-plan artifact
         required: false
         default: ''
+      audit:
+        description: "'true' = the 2026-10-26 report-only audit (Bet365 rows outside Jan–Apr 2026 + the start − 10 rows); never writes"
+        required: false
+        default: 'false'
 permissions:
   contents: read
 concurrency:
@@ -70,10 +74,18 @@ jobs:
           MEASURE_TO: ${{ github.event.inputs.measure_to }}
           WRITE: ${{ github.event.inputs.write || 'false' }}
           PLAN_DIGEST: ${{ github.event.inputs.plan_digest }}
+          AUDIT: ${{ github.event.inputs.audit || 'false' }}
         run: |
           set -euo pipefail
           MT=()
           if [ -n "$MEASURE_TO" ]; then MT=(--measure-to "$MEASURE_TO"); fi
+          case "$AUDIT" in
+            true)  if [ "$WRITE" != "false" ]; then echo "audit is report-only: write must be 'false'" >&2; exit 2; fi
+                   python3 -B tools/archive-fill-probe.py --out archive-fill --audit "${MT[@]}"
+                   cat archive-fill/fill-audit.md >> "$GITHUB_STEP_SUMMARY"; exit 0 ;;
+            false) ;;
+            *)     echo "audit must be exactly 'true' or 'false' (got '$AUDIT') — nothing run" >&2; exit 2 ;;
+          esac
           # fail closed: only the exact value "true" writes; anything but "true" / "false" runs nothing
           case "$WRITE" in
             false) python3 -B tools/archive-fill-probe.py --out archive-fill --from "$FROM" --to "$TO" "${MT[@]}" ;;
@@ -81,8 +93,16 @@ jobs:
             *)     echo "write must be exactly 'true' or 'false' (got '$WRITE') — nothing run" >&2; exit 2 ;;
           esac
           cat archive-fill/archive-fill-probe.md >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload the audit
+        if: always() && github.event.inputs.audit == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: fill-audit
+          path: archive-fill/
+          retention-days: 30
+          if-no-files-found: warn
       - name: Upload the plan
-        if: always() && github.event.inputs.write != 'true'
+        if: always() && github.event.inputs.write != 'true' && github.event.inputs.audit != 'true'
         uses: actions/upload-artifact@v4
         with:
           name: archive-fill-plan

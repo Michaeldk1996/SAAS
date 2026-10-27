@@ -27,7 +27,7 @@ on:
   workflow_dispatch:
     inputs:
       action:
-        description: 'schema | lines-schema | verify | deploy-worker | status | logs | realtime-config | usage | unpublish-price | heartbeat-check'
+        description: 'schema | lines-schema | lines-coverage | lines-close-lag | lines-clear-false-closes | lines-unmatched | verify | deploy-worker | status | logs | realtime-config | usage | unpublish-price | heartbeat-check'
         required: true
         default: 'status'
       max_events:
@@ -340,6 +340,97 @@ jobs:
                       n_p = -1
                   print(f"[publishable] UPDATE line_prices_current (a real row) -> HTTP {st}, {n_p} row(s)  (want 401/403, or 0 rows)")
                   if n_p != 0: bad.append(f"publishable key could UPDATE line prices ({st}, {n_p})")
+          if act == "lines-clear-false-closes":
+              # ONE-OFF CORRECTION (2026-10-26). The build live from 10:10Z to 13:05Z took api-tennis's live flag as a
+              # start without checking play (fixed in 72b50b046: line_engine.played). Every close it wrote is
+              # untrusted: 12173975, 12174058, 12174272 were flagged live at 0-0 hours before play (12:19Z), 12174267's
+              # start (12:30Z) was never checked. Null their close fields — our own table, these four events, that
+              # capture route, before the fix — so the page dashes "no close on record" instead of a wrong close.
+              # Ticks are untouched (a close is not a tick). Idempotent; prints the rows before and after.
+              where = ("event_key in (12173975, 12174058, 12174272, 12174267) and close_src in ('api-tennis-live', "
+                       "'api-tennis-fixtures') and seen_at < '2026-10-26T13:05:00Z'")
+              st, r = sql(f"select count(*) n from line_prices_current where {where} and close_price is not null")
+              print(f"before: HTTP {st} {r}")
+              st, r = sql(f"update line_prices_current set close_price = null, close_implied = null, close_at = null, close_src = null where {where}")
+              print(f"update: HTTP {st} {r[:200]}")
+              st, r = sql("select count(*) n from line_prices_current where close_price is not null")
+              print(f"close rows left (all events): HTTP {st} {r}")
+          if act == "lines-close-lag":
+              # READ-ONLY (brief 2026-10-27 "False 0-0 starts", item 4). bet105 closes since the played() fix (72b50b046,
+              # live 13:05Z 26 Oct): per event, its match-winner close tick (close_at = Kibl INSERT time, the later of the
+              # two sides) against the first time this worker saw play (the first 'started' tick's seen_at — an upper
+              # bound on the first point: the api-tennis poll runs every 60 s). Median and max over events.
+              st, r = sql("with c as (select event_key, max(close_at) close_at, min(close_src) src from line_prices_current "
+                          "where market = 'ml' and close_price is not null and close_at is not null group by 1), "
+                          "p as (select event_key, min(seen_at) play_seen from line_price_ticks where status = 'started' "
+                          "and seen_at >= '2026-10-26T13:05:00Z' group by 1), "
+                          "j as (select c.event_key, c.src, c.close_at, p.play_seen, extract(epoch from p.play_seen - c.close_at) lag_s "
+                          "from c join p using (event_key)) "
+                          "select count(*) n, count(*) filter (where lag_s < 0) negative, "
+                          "percentile_cont(0.5) within group (order by lag_s) median_s, max(lag_s) max_s, min(lag_s) min_s, "
+                          "(select count(*) from c) ml_closes_total, (select count(*) from p) started_since_fix, "
+                          "(select json_agg(j order by lag_s desc) from (select * from j order by lag_s desc limit 8) j) top "
+                          "from j")
+              print(f"== close tick -> play first seen (HTTP {st})")
+              print("   ", r[:4000])
+          if act == "lines-coverage":
+              # READ-ONLY (founder brief 2026-10-26, "report, don't resolve"): line closes for completed matches —
+              # bet105 (line_prices_current, since 24 Oct) and Pinnacle (oddspapi_line_summary, since mid-Sep).
+              def q(label, text):
+                  st, r = sql(text)
+                  print(f"== {label} (HTTP {st})")
+                  try:
+                      for row in json.loads(r): print("   ", json.dumps(row, default=str))
+                  except ValueError:
+                      print("   ", r[:400])
+              q("oddspapi_line_summary: book x market", "select book, market, count(distinct fixture_id) fixtures, "
+                "count(*) filter (where close_reliable) reliable_closes, min(start_ts)::date first_start, max(start_ts)::date last_start "
+                "from oddspapi_line_summary group by 1, 2 order by 1, 2")
+              q("completed men's singles, Pinnacle LINE close (any non-match-winner market, close_reliable)",
+                "with f as (select fixture_id, category_name, coalesce(true_start, scheduled_start) st from oddspapi_fixtures "
+                "where category_name in ('ATP', 'Challenger') and player1 not like '%/%' and player2 not like '%/%' "
+                "and coalesce(true_start, scheduled_start) >= '2026-09-15' and coalesce(true_start, scheduled_start) < now() - interval '4 hours') "
+                "select category_name, case when st < '2026-10-24' then 'before 24 Oct' else 'from 24 Oct' end win, count(*) fixtures, "
+                "count(*) filter (where exists (select 1 from oddspapi_line_summary s where s.fixture_id = f.fixture_id "
+                "and s.book ilike 'pinnacle%' and s.close_reliable and s.line is not null)) with_pinnacle_line_close, "
+                "count(*) filter (where exists (select 1 from oddspapi_line_summary s where s.fixture_id = f.fixture_id "
+                "and s.close_reliable and s.line is not null)) with_any_book_line_close "
+                "from f group by 1, 2 order by 1, 2")
+              q("Pinnacle line closes by market, before 24 Oct", "select s.market, count(distinct s.fixture_id) fixtures "
+                "from oddspapi_line_summary s join oddspapi_fixtures f using (fixture_id) where s.book ilike 'pinnacle%' and s.close_reliable "
+                "and s.line is not null and coalesce(f.true_start, f.scheduled_start) >= '2026-09-15' and coalesce(f.true_start, f.scheduled_start) < '2026-10-24' "
+                "group by 1 order by 2 desc")
+              q("bet105 line_prices_current by start date", "select start_ts::date d, count(distinct event_key) events, "
+                "count(distinct event_key) filter (where status = 'started') started_events, "
+                "count(distinct event_key) filter (where close_price is not null) events_with_a_close, "
+                "count(*) filter (where close_price is not null) keys_with_a_close from line_prices_current group by 1 order by 1")
+              # Brief 2026-10-26 item 6: closes since the 01:05Z capture began, and how many fall within 180 s of a
+              # recorded not-consuming gap (kibl_now_gaps) — the ones the freshness rule now dashes. seen_at of a
+              # started row ~ the flip (+ the 2 s coalesce).
+              q("bet105 closes since 2026-10-26 01:05Z vs the 180 s freshness rule",
+                "with c as (select event_key, min(seen_at) flip from line_prices_current where status = 'started' "
+                "and seen_at >= '2026-10-26T01:05:00Z' group by 1), k as (select event_key, count(*) filter (where close_src = 'live-flip') closes "
+                "from line_prices_current group by 1) select count(*) started_events, count(*) filter (where k.closes > 0) with_closes, "
+                "count(*) filter (where k.closes > 0 and exists (select 1 from kibl_now_gaps g where g.gap_to >= c.flip - interval '182 seconds' "
+                "and g.gap_from <= c.flip)) closes_near_a_gap, (select count(*) from kibl_now_gaps where gap_to >= '2026-10-26T01:05:00Z') gaps_since "
+                "from c left join k using (event_key)")
+              # Brief 2026-10-26 item 7: why a finished match has no start (Musetti v Fritz, Lyon F, 25 Oct), and how many
+              # completed matches since 24 Oct share the gap. The ladder: oddspapi true_start, else live_flip_log, else none.
+              q("oddspapi fixtures for Musetti / Fritz / Struff / Griekspoor, 24-26 Oct",
+                "select fixture_id, category_name, player1, player2, scheduled_start, true_start, status from oddspapi_fixtures "
+                "where scheduled_start >= '2026-10-24' and scheduled_start < '2026-10-27' and (player1 ilike any (array['%musetti%','%struff%']) "
+                "or player2 ilike any (array['%musetti%','%struff%'])) order by scheduled_start")
+              q("live_flip_log for those events (api-tennis 12174011 Musetti v Fritz, plus Struff v Griekspoor by name)",
+                "select event_key, first_live_seen_at, last_not_live_seen_at, gap_seconds, poller, event_date, event_time, first_player, second_player "
+                "from live_flip_log where event_key = '12174011' or (event_date >= '2026-10-24' and (first_player ilike any (array['%musetti%','%struff%']) "
+                "or second_player ilike any (array['%musetti%','%struff%']))) order by event_date")
+              q("live_flip_log rows per day since 24 Oct (ATP singles) and the recorder's last tick",
+                "select event_date, count(*) from live_flip_log where event_date >= '2026-10-24' and event_type_type = 'Atp Singles' group by 1 order by 1")
+              q("live_flip_stats", "select * from live_flip_stats")
+              q("odds_card_state selected rows dated 24-25 Oct (all finished) by start source",
+                "select substr(match_key, 1, 10) d, start_ts_source, count(distinct match_key) matches from odds_card_state "
+                "where is_selected and match_key >= '2026-10-24' and match_key < '2026-10-26' group by 1, 2 order by 1, 2")
+              q("line_price_ticks span", "select min(seen_at) first_tick, max(seen_at) last_tick, count(*) ticks, count(distinct event_key) events from line_price_ticks")
           if act == "status":
               sk = os.environ["SUPABASE_SECRET_KEY"]
               st, r = call(f"{url}/rest/v1/kibl_now_price?kind=eq.heartbeat&select=written_at,note", key=sk)
@@ -657,6 +748,35 @@ jobs:
                   print(f"      client heartbeats: - (heartbeat interval {'unread' if not hb_s else hb_s}; connected time {fmt(lo_min)})")
           if bad:
               print("::error::" + "; ".join(bad)); sys.exit(1)
+          PY
+
+      # READ-ONLY (founder brief 2026-10-26): the Kibl fixtures the line-price worker cannot join to api-tennis, each
+      # with its Kibl names, the api-tennis candidates and the reason — the worker's own join (line_prices.join_fixtures)
+      # over the same windows (kibl-stream/line_engine.py fetch_kibl_fixtures / fetch_at_fixtures). Prints names only.
+      - name: Lines — unmatched Kibl fixtures
+        if: inputs.action == 'lines-unmatched'
+        env:
+          KIBL_USERNAME: ${{ secrets.KIBL_USERNAME }}
+          KIBL_PASSWORD: ${{ secrets.KIBL_PASSWORD }}
+          API_TENNIS_KEY: ${{ secrets.API_TENNIS_KEY }}
+        run: |
+          python3 - <<'PY'
+          import json, os, sys
+          from datetime import datetime, timezone
+          sys.path.insert(0, '.'); sys.path.insert(0, 'kibl-stream')
+          import line_prices as LP, line_engine as LE
+          from kibl_client import KiblClient
+          now = datetime.now(timezone.utc)
+          kfx = LE.fetch_kibl_fixtures(KiblClient(verbose=False), now)
+          at = LE.fetch_at_fixtures(os.environ['API_TENNIS_KEY'], now)
+          mapping, st = LP.join_fixtures(kfx, at)
+          un = st.pop('unmatched_list', [])
+          print(f"Kibl fixtures {len(kfx)}, matched {len(mapping)}, counts {dict(st)}")
+          lg = {f.get('fixture_id'): f.get('league_id') for f in kfx}
+          for u in un:
+              print(json.dumps({'kibl': u.get('kibl'), 'league': u.get('league') or lg.get(u.get('kibl')), 'start': u.get('start'),
+                                'kibl_players': u.get('players') or u.get('name'), 'reason': u.get('reason'),
+                                'api_tennis_candidates': u.get('candidates')}, ensure_ascii=False))
           PY
 
       - name: Install flyctl

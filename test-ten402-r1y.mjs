@@ -54,6 +54,7 @@ const CARD = new Function('E', `
   const state = {}; const bindH = () => 0; const setState = () => {};
   function sectionHead(t) { return '<h3>' + t + '</h3>'; } function h2hSeg() { return ''; } function fhEnsureStyles() {}
   function fhScoreLines() { return { scored: [], covMap: {} }; } function fhH2hLineDefs() { return []; }
+  function fhHotModel() { return { mode: 'none', N: 0, note: 'No meetings', sc: { scored: [], covMap: {} } }; } function fhHotSub(H, b) { return b; }
   function fhHotLinesTable() { return null; } function fhHotMoreHtml() { return ''; }
   ${constLine('FH_B365_HOVER')}${constLine('MA_ROW_COLS')}${constLine('MA_ROW_GAP')}${constLine('MA_ROW_COLS_H2H')}${constLine('MA_ROW_GAP_H2H')}${constLine('H2H_HOT_FOOT')}${constLine('H2H_PX_NOTE')}
   ${['escapeHtml', 'maMatchRowsHtml', 'fhSetTxt', 'fhH2hSetScores', 'fhDDMM', 'fhOdd', 'h2hTug', 'h2hPriceTitle', 'h2hPxNote', 'h2hCard'].map(slice).join('\n')}

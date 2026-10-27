@@ -251,7 +251,7 @@ while [ "$STOPPING" -eq 0 ]; do
   # in-job marker (survives `git reset --hard`) and the committed quota history
   # (survives a new runner). It never cancels the leg — it defers it, so METERED_DUE
   # stays armed and the refresh lands as soon as the hour is genuinely up.
-  if [ "$METERED_DUE" -eq 1 ]; then
+  if false; then  # bet365 NOW leg off (founder 2026-10-27): oddspapi 403s bet365 and still bills
     python3 metered-spend-guard.py
     GRC=$?
     # ONLY rc 10 means SKIP. Every other non-zero — 127 (no python3), 2 (the script is

@@ -545,8 +545,8 @@
     };
   }
 
-  function passesFilters(c, skipType) {
-    var p = c.player, st = c.streak, f = _filters, s = c.slot;
+  function passesFilters(c, skipType, filters) {
+    var p = c.player, st = c.streak, f = filters || _filters, s = c.slot;
     if (!s) return false;                                        // not on the Today / Tomorrow slate
     if (!st || c.suppressed) return false;                       // under its floor as of the next start, or a subset run
     if (p.tier !== 'tour' && p.tier !== 'chal') return false;    // Level is ATP / Challenger only (never ITF)
@@ -564,8 +564,8 @@
     return true;
   }
 
-  function sortCards(arr) {
-    if (_filters.sort === 'soonest') {
+  function sortCards(arr, filters) {
+    if ((filters || _filters).sort === 'soonest') {
       // The real start instant (cardStartMs), not a display string; an unknown start sorts last.
       arr.sort(function (a, b) {
         var ka = a.slot && a.slot.startMs != null ? a.slot.startMs : Infinity;
@@ -1117,8 +1117,69 @@
     else show();
   })();
 
+  // ─── Today's Matches "Streak on court" (step 15, README §1.2) ─────────────────────────────────────────────────
+  // The Series list as the page builds it under its DEFAULTS (gating, floors, the 75-day rule, the outcome
+  // de-duplication and the Longest ordering), cut to the cards whose next match is on `day`'s slate and not yet
+  // started. Loads series.json quietly (no render) when the page has not been opened; the board is the dashboard's own.
+  var _quietP = null;
+  function loadQuiet() {
+    if (_data) return Promise.resolve(true);
+    if (!_quietP) _quietP = getJSON(DATA_URL).then(function (d) {
+      if (!_data) { _data = d; _cards = null; _loadedAt = Date.now(); }
+      return true;
+    }, function (e) { _quietP = null; console.warn('[series] quiet load failed:', e.message); return false; });
+    return _quietP;
+  }
+  function tileClaim(st) {
+    var w = st.direction === 'win';
+    if (st.type === 'all') return w ? 'wins in a row' : 'losses in a row';
+    if (st.type === 'surface') return (w ? 'wins' : 'losses') + ' in a row on ' + cap(st.subtype);
+    if (st.type === 'style') return (w ? 'wins' : 'losses') + ' in a row vs ' + (ARCH_LABEL[st.subtype] || st.subtype);
+    var c = claimOf(st);   // the Series card's own claim, read on after the count: "Won the opening set" → "won the opening set"
+    return c ? c.charAt(0).toLowerCase() + c.slice(1) : c;
+  }
+  function onCourt(day) {
+    return loadQuiet().then(function (ok) {
+      if (!ok || !_data) return null;
+      if (!_cards) _cards = flatten(_data);
+      reslot();
+      var f = Object.assign({}, DEFAULTS);
+      var view = sortCards(_cards.filter(function (c) { return c.slot && c.slot.day === day && passesFilters(c, false, f); }), f);
+      return view.map(function (c) {
+        var bm = boardMatchOf(c.player);
+        return { card: c, count: c.streak.count, claim: tileClaim(c.streak),
+                 name: displayName(c.player.key, c.player.name), key: c.player.key != null ? String(c.player.key) : String(c.player.name),
+                 opp: c.slot.opp, event: c.slot.event, matchId: bm ? bm.id : null };
+      });
+    });
+  }
+  // Open the Series page on that streak's card (its pop-up). The card is looked up in the rendered view; when the
+  // member's own filters hide it, they go back to the defaults first so the card exists to open.
+  function openStreak(card) {
+    var btn = document.getElementById('seriesTabBtn');
+    if (btn) btn.click();
+    // Same player, same run (a refetch on the page show rebuilds the card objects, so identity is by value).
+    var same = function (a) {
+      var x = a.streak, y = card.streak;
+      return a.player && card.player && String(a.player.key) === String(card.player.key) && x && y
+        && x.type === y.type && x.subtype === y.subtype && x.line === y.line && x.over === y.over
+        && x.direction === y.direction && x.count === y.count;
+    };
+    var find = function () { if (!_view) return -1; for (var k = 0; k < _view.length; k++) if (same(_view[k])) return k; return -1; };
+    var tries = 0, reset = false;
+    var go = function () {
+      if (!_data || _fetching) { if (++tries < 60) setTimeout(go, 250); return; }
+      var i = find();
+      if (i < 0 && !reset) { reset = true; clearFilters(); i = find(); }
+      if (i >= 0) openOverlay(String(i));
+    };
+    setTimeout(go, 0);
+  }
+
   window.SeriesPage = {
     setActive: setActive,
+    onCourt: onCourt,
+    openStreak: openStreak,
     // read-only hooks for the test harness and the DoD probes (no behaviour)
     _view: function () { return _view; },
     _popupHtml: function (i) { return _view && _view[i] ? popupHtml(_view[i]) : null; },

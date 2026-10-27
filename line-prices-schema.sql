@@ -36,6 +36,13 @@ create table if not exists public.line_prices_current (
   alt_id       integer,
   constraint line_prices_current_key unique nulls not distinct (event_key, market, side, line, book)
 );
+-- The close (founder 2026-10-26): written once, when the worker sees a fixture's first in-play row with its full ladder
+-- held — the key's last guarded pre-match price. Null when the pair was dashed at the start, or the start was learnt any
+-- other way (a join, a restart): never inferred.
+alter table public.line_prices_current add column if not exists close_price   numeric;
+alter table public.line_prices_current add column if not exists close_implied numeric;
+alter table public.line_prices_current add column if not exists close_at      timestamptz;   -- Kibl insert time of that price
+alter table public.line_prices_current add column if not exists close_src     text;          -- 'live-flip'
 create table if not exists public.line_price_ticks (
   id           bigint generated always as identity primary key,
   event_key    bigint      not null,

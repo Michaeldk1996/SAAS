@@ -203,7 +203,7 @@ test('TEN-403 R1: the sort ranks on the shown move — +4.7% (shows 1.28→1.34)
 // The tile's own code, cut out of renderMatches and run: it must name a leg of the match the sort puts first.
 const tileApi = src => {
   const body = slice('renderMatches', src);
-  const a = body.indexOf('    let bmv = null, bmvPairs = 0;'), b = body.indexOf('    // TEN-377 review item 8');
+  const a = body.indexOf('    let bmv = null, bmvPairs = 0;'), b = body.indexOf('    const driftOn = state.sort === ');
   assert.ok(a > 0 && b > a, 'tile block not found');
   return daySlate => new Function('daySlate', `
     const MOVE_NONE = -1, MOVE_UNPRICED = -2;
@@ -237,7 +237,7 @@ test('TEN-403 R1: the tile names a leg of the match the sort puts first (shown f
 // ── part 3 · the 39b tiles ───────────────────────────────────────────────────────────────
 test('tiles: Biggest market move is a toggle with the hint swap; edge 7% → hover 16% → on 24%', () => {
   const body = slice('renderMatches');
-  assert.match(body, /\$\{driftOn \? 'Showing open → now · biggest first' : 'Show open → now'\}/);
+  assert.match(body, /tileHead\('Biggest market move', driftOn \? 'Showing open → now · biggest first' : 'Show open → now'\)/);
   assert.match(body, /<div class="mc-story-strip mc-story-strip--up">/);
   assert.match(body, /<span class="mc-story__open">\$\{mxOddsTxt\(bmv\.o\)\}<\/span><span class="mc-story__arr">→<\/span><span class="mc-story__now">\$\{mxOddsTxt\(bmv\.c\)\}<\/span><span class="mc-story__pct \$\{bmv\.d\.dir\}">/);
   assert.match(body, /\$\{bmvPairs \? 'No market moves' : 'No opening prices on file'\}/);
@@ -479,7 +479,7 @@ test('TEN-403 R1: board prices print 2 dp (1.092 → 1.09), in the move-view cel
   assert.notDeepEqual(cells(three.mcDriftCell(1.092, 1.114, false, { paired: true }))[0], ['mc-drifted__open', '', '1.09']);
 });
 
-test('TEN-403 R1 nit: the Upcoming sort reads "Sort: Move" while the move view is on (key stays drift); mutant caught', () => {
+test('step 15 §3: the Upcoming sort reads "Sort: Biggest move" while the move view is on (key stays drift); mutant caught', () => {
   const run = (src, sort) => new Function(`
     const state = { sort: ${JSON.stringify(sort)} };
     const els = { sortMenu: { innerHTML: '' }, sortBtnLabel: { textContent: '' } };
@@ -488,10 +488,11 @@ test('TEN-403 R1 nit: the Upcoming sort reads "Sort: Move" while the move view i
     ${slice('syncSortDropdown', src)}
     syncSortDropdown(false);
     return els.sortBtnLabel.textContent;`)();
-  assert.equal(run(html, 'drift'), 'Move');
+  assert.equal(run(html, 'drift'), 'Biggest move');   // README §3 (supersedes the TEN-403 R1 "Move" nit)
   assert.equal(run(html, 'time'), 'Time');
   assert.match(html, /<span class="mx-sortbtn__pre">Sort:<\/span> <span id="sortBtnLabel">Time<\/span>/, 'the "Sort:" prefix is the control\'s');
-  assert.notEqual(run(html.replace("['drift','Move',false]", "['drift','Drift',false]"), 'drift'), 'Move');
+  for (const k of ['tight', 'short']) assert.notEqual(run(html, k), 'Time', `${k} is an Upcoming option`);
+  assert.notEqual(run(html.replace("['drift','Biggest move',false]", "['drift','Drift',false]"), 'drift'), 'Biggest move');
 });
 
 test('R1 review: plan locks start locked, skip a failed profile read, and never grey the selected page icon (both pages)', () => {

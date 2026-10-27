@@ -22,6 +22,14 @@ MUTANTS = {
     'DRY_WRITES': ("        if not self.write:\n            self.count[\"would_write_current\"]",
                    "        if False:\n            self.count[\"would_write_current\"]"),
     'FORGET_ON_FAIL': ("            self.write_ok = False\n", "            self.write_ok = False\n            self.written.update(upd)\n"),
+    'CLOSE_ANY_START': ("        if fid not in self.seeded:\n            self.count[\"close_not_seeded\"] += 1", "        if False:\n            self.count[\"close_not_seeded\"] += 1"),
+    'CLOSE_ANY_STATUS': ('            if e["status"] == "ok" and e["price"] is not None:', '            if e["price"] is not None:'),
+    'CLOSE_LOST_ON_RESTART': ("        w = self.written.get(k) or {}\n        return {f: w.get(f) for f in CLOSE_FIELDS}",
+                              "        return {f: None for f in CLOSE_FIELDS}"),
+    'CLOSE_ANY_AGE': ("        elif self.last_check is not None and t - self.last_check <= CLOSE_FRESH_S:", "        elif True:"),
+    'CLOSE_LOSES_SUSPENDED': ('            if e["status"] == "suspended" and lo:', '            if False:'),
+    'LIVE_FLAG_IS_START': ('    st = str(f.get("event_status") or "").strip().lower()\n    if st in FINISHED:', '    st = str(f.get("event_status") or "").strip().lower()\n    if st:'),
+    'CLOSE_KEPT_WHEN_NOT_STARTED': ('            row.update(self._close_of(fid, k, e) if started else {f: None for f in CLOSE_FIELDS})', '            row.update(self._close_of(fid, k, e))'),
     'NO_READ_BACK': ("        for r in rows or ():\n            self.written[row_key(r)]", "        for r in ():\n            self.written[row_key(r)]"),
 }
 bad = []

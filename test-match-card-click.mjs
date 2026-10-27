@@ -77,10 +77,12 @@ function harness(){
     document: { getElementById: id => { assert.equal(id, 'matchlist'); return { addEventListener: (t, f) => { listeners[t] = f; } }; } },
     window: { getSelection: () => ({ isCollapsed: !selection, toString: () => selection }) },
     openAnalysisModal: (...a) => opens.push(a),
-    String,
+    // step 15: the landing tab reads the match (result, walkover / retirement, box score)
+    matchById: id => MATCHES[id] || null,
+    String, Object,
   };
   vm.createContext(ctx);
-  vm.runInContext([fnSrc('mxOpenCompletedCard'), fnSrc('mxOpenCard'), fnSrc('mxCardClickInert'),
+  vm.runInContext([fnSrc('mxHasBoxScore'), fnSrc('mxLandingTab'), fnSrc('mxOpenCompletedCard'), fnSrc('mxOpenCard'), fnSrc('mxCardClickInert'),
                    listenerSrc('click'), listenerSrc('keydown')].join('\n'), ctx);
   const ev = (target, extra = {}) => ({ target, preventDefault(){ this.dp = true; }, ...extra });
   return {
@@ -92,23 +94,36 @@ function harness(){
 }
 
 const UP = card('u1', false), UP2 = card('u2', false), DONE = card('c1', true);
+const BOX = { p1: { 'Service:Aces': 3 }, p2: { 'Service:Aces': 1 } };
+const MATCHES = {
+  u1: { id: 'u1' }, u2: { id: 'u2' },
+  c1: { id: 'c1', finalScore: { winner: 'p1' }, matchStats: BOX },
+  wo: { id: 'wo', finalScore: { winner: 'p1' }, walkover: true },
+  retNo: { id: 'retNo', finalScore: { winner: 'p2' }, retired: true, matchStats: { p1: {}, p2: {} } },
+  retBox: { id: 'retBox', finalScore: { winner: 'p2' }, retired: true, matchStats: BOX },
+};
 
-test('Upcoming: a click on the card body opens the analysis exactly as "See full analysis" does', () => {
+test('Upcoming: a click on the card body opens the analysis on Key factors, as "See full analysis" does (step 15)', () => {
   const h = harness();
   h.click(find(UP, '.mc-tourn'));
-  assert.deepEqual(h.opens, [['u1']]);
-  // the link's own call, from the template
-  assert.ok(SRC.includes(`<a class="mc-analysis" onclick="openAnalysisModal('\${m.id}')">See full analysis →</a>`));
+  assert.deepEqual(h.opens, [['u1', 'key']]);
+  // the link's own call, from the template: the same landing as the card
+  assert.ok(SRC.includes(`<a class="mc-analysis" onclick="mxOpenCard(this.closest('.match-card'))">See full analysis →</a>`));
 });
 test('Upcoming: a click on the price and on the players block opens it too', () => {
   const h = harness();
   h.click(find(UP, '.mc-odds')); h.click(find(UP, '.mc-players'));
-  assert.deepEqual(h.opens, [['u1'], ['u1']]);
+  assert.deepEqual(h.opens, [['u1', 'key'], ['u1', 'key']]);
 });
-test('Completed: a card click opens on Key factors (founder 2026-10-22, replaces TEN-179 Match Stats)', () => {
+test('Completed: a card click opens on Match stats (step 15, founder 2026-10-27, replaces the 2026-10-22 Key factors landing)', () => {
   const h = harness();
   h.click(find(DONE, '.mc-players'));
-  assert.deepEqual(h.opens, [['c1', 'key']]);
+  assert.deepEqual(h.opens, [['c1', 'matchstats']]);
+});
+test('Completed: a walkover, or a retirement with no box score, lands on Key factors — never an empty Match stats', () => {
+  const h = harness();
+  for (const id of ['wo', 'retNo', 'retBox']) h.click(find(card(id, true), '.mc-players'));
+  assert.deepEqual(h.opens, [['wo', 'key'], ['retNo', 'key'], ['retBox', 'matchstats']]);
 });
 test('source: each card handler is defined once (a re-run patch once doubled mxOpenCard)', () => {
   for (const f of ['mxOpenCard', 'mxOpenCompletedCard', 'mxCardClickInert']) assert.equal(SRC.split('function ' + f + '(').length - 1, 1, f);
@@ -116,7 +131,7 @@ test('source: each card handler is defined once (a re-run patch once doubled mxO
 test('two cards: each click opens its own match', () => {
   const h = harness();
   h.click(find(UP2, '.mc-odds')); h.click(find(UP, '.mc-odds'));
-  assert.deepEqual(h.opens, [['u2'], ['u1']]);
+  assert.deepEqual(h.opens, [['u2', 'key'], ['u1', 'key']]);
 });
 test('star (button and its svg) never opens the card', () => {
   const h = harness();
@@ -143,12 +158,12 @@ test('a drag-selection is not a click; a collapsed one is', () => {
   h.select('1.85'); h.click(find(UP, '.mc-odds'));
   assert.deepEqual(h.opens, []);
   h.select(''); h.click(find(UP, '.mc-odds'));
-  assert.deepEqual(h.opens, [['u1']]);
+  assert.deepEqual(h.opens, [['u1', 'key']]);
 });
 test('keyboard: Enter on the focused card opens it; Enter on a control inside does not', () => {
   const h = harness();
   h.key(UP, 'Enter'); h.key(DONE, 'Enter'); h.key(find(UP, '.mc-star'), 'Enter'); h.key(UP, 'a');
-  assert.deepEqual(h.opens, [['u1'], ['c1', 'key']]);
+  assert.deepEqual(h.opens, [['u1', 'key'], ['c1', 'matchstats']]);
 });
 test('template: every card is focusable with a button role and a label (not Completed only)', () => {
   assert.ok(SRC.includes(`data-ek="\${eventKeyOfMatch(m)}" role="button" tabindex="0" aria-label="Match analysis — \${psEsc(m.p1)} v \${psEsc(m.p2)}">`));

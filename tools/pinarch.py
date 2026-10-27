@@ -1888,6 +1888,103 @@ def cmd_counts(record=None):
     return g
 
 
+def cmd_false_starts_report(since='2026-10-24'):
+    """READ-ONLY (founder brief 2026-10-26, "False 0-0 starts"). Every live_flip_log row since `since` beside Oddspapi's
+    trueStartTime (oddspapi_fixtures, both surnames within 36 h, exactly one candidate), flagging a logged start more than
+    300 s before the true one; then every archive close on the flagged events (and the 3 known 26 Oct keys). Writes nothing."""
+    sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
+    from ten225_names import name_key
+    def get_all(path):
+        out, off = [], 0
+        while True:
+            _, got, _ = rest('GET', path + f'&limit=1000&offset={off}')
+            out += got or []
+            if not got or len(got) < 1000:
+                return out
+            off += 1000
+    flips = get_all(f'/rest/v1/live_flip_log?select=event_key,first_live_seen_at,last_not_live_seen_at,gap_seconds,event_date,'
+                    f'first_player,second_player,tournament_name,event_type_type&first_live_seen_at=gte.{since}&order=first_live_seen_at.asc')
+    fx = get_all(f'/rest/v1/oddspapi_fixtures?select=fixture_id,player1,player2,scheduled_start,true_start,category_name'
+                 f'&scheduled_start=gte.{since}&order=scheduled_start.asc')
+    def ts(v):
+        try:
+            return dt.datetime.fromisoformat(str(v).replace('Z', '+00:00').replace(' ', 'T'))
+        except ValueError:
+            return None
+    def pair(a, b):
+        ka, kb = name_key(a or ''), name_key(b or '')
+        return frozenset((ka, kb)) if ka and kb and ka != kb else None
+    byp = collections.defaultdict(list)
+    for f in fx:
+        k = pair(f.get('player1'), f.get('player2'))
+        if k:
+            byp[k].append(f)
+    st = collections.Counter(); flagged = []
+    print(f'live_flip_log rows since {since}: {len(flips)}; oddspapi fixtures since then: {len(fx)}')
+    for r in flips:
+        k = pair(r.get('first_player'), r.get('second_player')); fl = ts(r['first_live_seen_at'])
+        c = [f for f in byp.get(k, []) if fl and ts(f['scheduled_start']) and abs((ts(f['scheduled_start']) - fl).total_seconds()) <= 36 * 3600]
+        if len(c) != 1:
+            st['no_or_ambiguous_oddspapi_fixture'] += 1; continue
+        tst = ts(c[0].get('true_start'))
+        if tst is None:
+            st['oddspapi_no_true_start'] += 1; continue
+        d = (tst - fl).total_seconds()
+        st['early_gt_300s' if d > 300 else 'within_300s_or_later'] += 1
+        if d > 300:
+            flagged.append((r, c[0], d))
+    print('verdicts:', dict(st))
+    for r, f, d in flagged:
+        print('FLAGGED', json.dumps({'event_key': r['event_key'], 'match': f"{r['first_player']} v {r['second_player']}", 'level': r['event_type_type'],
+                                     'tournament': r['tournament_name'], 'logged_start': r['first_live_seen_at'], 'true_start': f['true_start'],
+                                     'early_by_min': round(d / 60, 1), 'oddspapi_fixture': f['fixture_id']}))
+    keys = sorted({int(r['event_key']) for r, _, _ in flagged} | {12173975, 12174058, 12174272})
+    rows = get_all('/rest/v1/pinnacle_archive_close?select=id,event_key,label,source,start_source,start_ts,close_ts,gap_to_start_s,p1,p2,p1_name,p2_name,'
+                   f'supersedes,inserted_at&event_key=in.({",".join(map(str, keys))})&order=id.asc')
+    print(f'archive closes on {len(keys)} event(s): {len(rows)}')
+    for x in rows:
+        print('ARCHIVE', json.dumps(x, default=str))
+    known = get_all(f'/rest/v1/live_flip_log?select=event_key,first_live_seen_at,last_not_live_seen_at,first_player,second_player&event_key=in.({",".join(map(str, keys))})')
+    for x in known:
+        print('FLIPROW', json.dumps(x, default=str))
+
+
+
+def cmd_false_starts_ticks(keys=(12173697, 12173975, 12174058, 12174272)):
+    """READ-ONLY (founder brief 2026-10-26, "False 0-0 starts", tick check). For each event: its archive closes (with
+    detail), every stored raw payload for their fixtures, and every Pinnacle +30 match-winner entry (active or not) from
+    3 h before the false start to 3 h after it, so the last price before the real first ball can be read off. Also the
+    fixture's oddspapi_fixtures row (trueStart may have arrived since). Spends no Oddspapi units. Writes nothing."""
+    ks = ','.join(map(str, keys))
+    _, rows, _ = rest('GET', f'/rest/v1/{CLOSE}?select=id,event_key,fixture_id,label,start_ts,close_ts,p1,p2,raw_id,detail&event_key=in.({ks})&order=id.asc')
+    for r in rows or []:
+        print('CLOSE', json.dumps(r, default=str))
+    fids = sorted({r['fixture_id'] for r in rows or [] if r.get('fixture_id')})
+    if fids:
+        q = ','.join(f'"{f}"' for f in fids)
+        _, fx, _ = rest('GET', f'/rest/v1/oddspapi_fixtures?select=fixture_id,player1,player2,scheduled_start,true_start&fixture_id=in.({q})')
+        for f in fx or []:
+            print('FIXTURE', json.dumps(f, default=str))
+    for r0 in rows or []:
+        if r0['label'] != ARCHIVE_LABEL:
+            continue
+        start = iso_ms(r0['start_ts'])
+        lo, hi = start - dt.timedelta(hours=3), start + dt.timedelta(hours=3)
+        _, raws, _ = rest('GET', f'/rest/v1/{RAW}?select=id,fixture_id,source,pulled_at,books,payload_gz&fixture_id=eq.{r0["fixture_id"]}&order=id.asc')
+        for raw in raws or []:
+            blob = unhex(raw['payload_gz'])
+            body = json.loads(gzip.decompress(blob) if blob[:2] == b'\x1f\x8b' else blob)
+            ser = mw_series(body)
+            n = sum(len(v) for v in ser.values())
+            print('RAW', json.dumps({'event_key': r0['event_key'], 'raw_id': raw['id'], 'source': raw['source'], 'pulled_at': raw['pulled_at'],
+                                     'books': raw['books'], 'entries': n, 'last': max((p['createdAt'] for v in ser.values() for p in v), default=None)}))
+            for oc in ('121', '122'):
+                for p in ser.get(oc) or []:
+                    t = iso_ms(p['createdAt'])
+                    if lo <= t <= hi:
+                        print('TICK', json.dumps({'event_key': r0['event_key'], 'raw_id': raw['id'], 'oc': oc, 'ts': p['createdAt'],
+                                                  'price': p.get('price'), 'active': p.get('active')}))
+
 if __name__ == '__main__':
     a = sys.argv[1:]
     if not a:
@@ -1918,6 +2015,10 @@ if __name__ == '__main__':
         cmd_export(a[1])
     elif a[0] == 'td-feed':
         cmd_td_feed(a[1], a[2])
+    elif a[0] == 'false-starts-report':
+        cmd_false_starts_report(a[a.index('--since') + 1] if '--since' in a else '2026-10-24')
+    elif a[0] == 'false-starts-ticks':
+        cmd_false_starts_ticks()
     elif a[0] == 'restore':
         cmd_restore(a[1], a[a.index('--sql-out') + 1] if '--sql-out' in a else 'restore.sql', '--apply' in a, '--compare' in a)
     else:

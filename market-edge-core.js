@@ -187,19 +187,23 @@
     const tb = (r) => r.sets.some((x) => Math.max(x[0], x[1]) === 7 && Math.min(x[0], x[1]) === 6);
     const s1 = (r) => r.sets[0][0] > r.sets[0][1];
     const sur = surname ? surname + ' ' : '';
+    // Third element: the bet105 market each line IS, for its price in the match card (founder 2026-10-26; line-prices.js):
+    // mk, the line from THIS player's side (who: 'self'), or a side for a total. Wins 2–0 = −1.5 sets, Wins a set = +1.5
+    // sets. Tiebreak in match has no bet105 market (no price, a dash).
+    const ml = { mk: 'ml', who: 'self', line: null }, ml1 = { mk: 'ml1', who: 'self', line: null }, o225 = { mk: 'tg', side: 'over', line: 22.5 };
     return fav
-      ? [['Wins match', (r) => !!r.won], ['Wins set 1', s1], ['Wins 2–0', (r) => !!r.won && r.sets.length === 2],
-        [sur + '−3.5 games', (r) => gd(r) >= 4], ['Over 22.5 games', (r) => tg(r) > 22.5], ['Tiebreak in match', tb]]
-      : [['Wins match', (r) => !!r.won], ['Wins set 1', s1], ['Wins a set', (r) => r.sets.some((x) => x[0] > x[1])],
-        [sur + '+3.5 games', (r) => gd(r) >= -3], ['Over 22.5 games', (r) => tg(r) > 22.5], ['Tiebreak in match', tb]];
+      ? [['Wins match', (r) => !!r.won, ml], ['Wins set 1', s1, ml1], ['Wins 2–0', (r) => !!r.won && r.sets.length === 2, { mk: 'sh', who: 'self', line: -1.5 }],
+        [sur + '−3.5 games', (r) => gd(r) >= 4, { mk: 'gh', who: 'self', line: -3.5 }], ['Over 22.5 games', (r) => tg(r) > 22.5, o225], ['Tiebreak in match', tb, null]]
+      : [['Wins match', (r) => !!r.won, ml], ['Wins set 1', s1, ml1], ['Wins a set', (r) => r.sets.some((x) => x[0] > x[1]), { mk: 'sh', who: 'self', line: 1.5 }],
+        [sur + '+3.5 games', (r) => gd(r) >= -3, { mk: 'gh', who: 'self', line: 3.5 }], ['Over 22.5 games', (r) => tg(r) > 22.5, o225], ['Tiebreak in match', tb, null]];
   }
   function lineModel(bo3, tb, todayPrice, surname, floor) {
     const inBand = tb >= 0 ? bo3.filter((r) => bandOf(r.price) === tb) : [];
     const defs = lineDefs(isFavPrice(todayPrice), surname);
-    const rows = defs.map(([label, fn], li) => {
+    const rows = defs.map(([label, fn, px], li) => {
       const aC = bo3.filter(fn).length, bC = inBand.filter(fn).length;
       const aOk = bo3.length > 0 && bo3.length >= floor, bOk = inBand.length > 0 && inBand.length >= floor;
-      return { li, label, fn, aC, aN: bo3.length, bC, bN: inBand.length,
+      return { li, label, fn, px: px || null, aC, aN: bo3.length, bC, bN: inBand.length,
         aPct: aOk ? Math.round(aC / bo3.length * 100) : null, bPct: bOk ? Math.round(bC / inBand.length * 100) : null };
     });
     // the two most covered lines in today's band (by in-band rate), ties keep line order

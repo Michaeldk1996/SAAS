@@ -1,0 +1,40 @@
+name: Live-flip recorder failure alert
+
+# Founder brief 2026-10-26 (live-flip-recorder, item 2). workflow_run fires on EVERY completion of the watched workflow,
+# including cancelled and timed-out runs. ten225-live-flip.yml failed on every run from 19 Sep to 26 Oct with nobody
+# told. The decision (any conclusion but success / skipped / neutral; first failure after a pass, then once per UTC day)
+# is in tools/live-flip-fail-alert.mjs, tested by tools/test-live-flip-fail-alert.mjs.
+on:
+  workflow_run:
+    workflows: ['TEN-225 live-flip recorder']
+    types: [completed]
+  # A live test: replays the real alert for a named past run, prefixed "TEST — no action needed", so the ops chat's
+  # wiring can be proven without failing anything.
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: 'A past ten225-live-flip run id to replay as a TEST alert'
+        required: true
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  alert:
+    if: github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion != 'success' && github.event.workflow_run.conclusion != 'skipped')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with: { sparse-checkout: tools, fetch-depth: 1 }
+      - uses: actions/setup-node@v4
+        with: { node-version: '24' }
+      - name: Alert — live-flip recorder check did not succeed (Telegram)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ github.event.workflow_run.id || inputs.run_id }}
+          ALERT_TEST: ${{ github.event_name == 'workflow_dispatch' && '1' || '' }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: node tools/live-flip-fail-alert.mjs

@@ -92,7 +92,7 @@ const text = h => h.replace(/<[^>]*>/g, ' ').replace(/&nbsp;/g, ' ').replace(/&#
 const vis = h => text(h.replace(/<span class="elotip-pop"[\s\S]*?<\/span><\/span>/g, ''));   // what shows without hovering
 const CP = 'Counterpuncher', AB = 'Attacking Baseliner';
 function matrix(){ return { minSampleN: 20, matrix: { [CP]: { [AB]: { pct: 43, n: 3100 } }, [AB]: { [CP]: { pct: 57, n: 3100 } }, [CP + 'x']: {} } }; }
-function match(over){ return Object.assign({ id: 'past-777', p1: 'J. Sinner', p2: 'C. Alcaraz', p1Key: '1', p2Key: '2', surface: 'hard', date: '2026-09-20', tour: 'ATP Basel' }, over || {}); }
+function match(over){ return Object.assign({ id: 'past-777', p1: 'J. Sinner', p2: 'C. Alcaraz', p1Key: '1', p2Key: '2', surface: 'hard', date: '2026-09-20', tour: 'ATP Basel', tourBadge: 'ATP' }, over || {}); }
 function setup(){ S.matrix = matrix(); S.dna = { byKey: {}, meta: {} }; S.hold = undefined; S.market = null; S.news = null; S.model = { matches: {} }; S.reset();
   for (const o of [S.STY, S.playerProfiles]) for (const k of Object.keys(o)) delete o[k]; }
 const head = h => text(h.slice(0, h.indexOf('</div>')));   // a box's one-line header
@@ -370,11 +370,24 @@ test('Head to head: Sets won / Tiebreaks / Deciding sets = the H2H tab\'s tallie
   assert.match(h, /class="kf-h2h-hot" style="[^"]*background:var\(--card\); border:1px solid var\(--edge-6\);/);
   assert.doesNotMatch(h, /var\(--inner\)/, 'never --inner');
 });
+// Founder 2026-10-26 · the card's Hot lines from ONE comparable meeting: counts, never a rate or a pick; a best-of-3 match
+// whose meetings are all best of 5 says so. Mutations: 'hot: results mode off', 'hot: format lock off' (tools/test-ten331-mutants.js).
+test('Head to head: 1 comparable meeting → each line "c of 1", no %, no pick; only Bo5 meetings → "No best-of-3 meetings"', () => {
+  setup();
+  const one = [mt('2024-01-01', true, { result: '2 - 0' })]; one[0].eventKey = 950;
+  const h = S.kfH2HCard(h2hMatch(one, { _fhCh: [[{ eventKey: 950, sets: [{ p: 6, o: 3 }, { p: 6, o: 2 }], retired: false, walkover: false }], []] }));
+  const hot = text(h.slice(h.indexOf('>Hot lines<')));
+  assert.match(hot, /1 of 1/, 'a line reads 1 of 1: ' + hot.slice(0, 160));
+  assert.doesNotMatch(hot, /\d%/, 'no percentage');
+  const b5 = [mt('2024-07-01', true, { result: '3 - 0', tournament: 'Wimbledon' })]; b5[0].eventKey = 951;
+  const t5 = text(S.kfH2HCard(h2hMatch(b5, { _fhCh: [[{ eventKey: 951, sets: [{ p: 6, o: 3 }, { p: 6, o: 2 }, { p: 6, o: 4 }], retired: false, walkover: false }], []] })));
+  assert.match(t5, /Hot lines No best-of-3 meetings$/);
+});
 // The empty state: 0 meetings is a genuine zero; every tally is absent ("—"). Mutation: the dashes replaced by 0s.
 test('Head to head: 0 meetings → 0 and 0, every tally "—", the hot lines say why; loading → the loading line', () => {
   setup();
   const t = text(S.kfH2HCard(h2hMatch([])));
-  assert.match(t, /^Head to head No meeting on record › J\. Sinner C\. Alcaraz 0 No meeting on record 0 — Sets won — — Tiebreaks — — Deciding sets — — On hard — Hot lines Not enough meetings to rank lines \(n=0\)$/);
+  assert.match(t, /^Head to head No meeting on record › J\. Sinner C\. Alcaraz 0 No meeting on record 0 — Sets won — — Tiebreaks — — Deciding sets — — On hard — Hot lines No best-of-3 meetings$/);
   assert.match(text(S.kfH2HCard(match())), /Loading head-to-head…/);
 });
 

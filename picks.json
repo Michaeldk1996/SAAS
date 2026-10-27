@@ -1,0 +1,441 @@
+{
+  "_note": "DEMO picks from the Picks design package (design-export/picks-handoff/demo-data.json), converted by tools/build-picks-fixture.mjs. Not real picks: players, prices, results and times are the design's demo values. clv and pl_pct are computed (picks-core.js), and the page recomputes them on read.",
+  "fixture": true,
+  "as_of_day": "2026-10-27",
+  "picks": [
+    {
+      "id": "p1",
+      "kind": "match",
+      "event": null,
+      "market_text": null,
+      "settles_at": null,
+      "date": "2026-10-27",
+      "tournament": "Vienna Open",
+      "round": "R32",
+      "scheduled_at": "2026-10-27T20:30:00+01:00",
+      "surface": "Hard",
+      "player_a": {
+        "id": null,
+        "name": "M. Berrettini",
+        "initials": "MB"
+      },
+      "player_b": {
+        "id": null,
+        "name": "T. M. Etcheverry",
+        "initials": "TE"
+      },
+      "selection": "a",
+      "market": "Match winner",
+      "line": null,
+      "open_price": 1.95,
+      "posted_price": 2.02,
+      "posted_at": "2026-10-27T09:41:00+01:00",
+      "now_price": 2.1,
+      "opp_now_price": 1.78,
+      "close_price": null,
+      "opp_close_price": null,
+      "stake": 1,
+      "note": "Berrettini’s first-serve numbers indoors are the best in the draw and Etcheverry hasn’t won a match on a fast hard court since Toronto. 2.02 is too big.",
+      "model_pct": 58,
+      "status": "posted",
+      "void_reason": null,
+      "result": null,
+      "edited_at": null,
+      "frozen_at": "2026-10-27T09:51:00+01:00",
+      "clv": null,
+      "pl_pct": null
+    },
+    {
+      "id": "p2",
+      "kind": "match",
+      "event": null,
+      "market_text": null,
+      "settles_at": null,
+      "date": "2026-10-27",
+      "tournament": "Swiss Indoors",
+      "round": "R32",
+      "scheduled_at": "2026-10-27T14:00:00+01:00",
+      "surface": "Hard",
+      "player_a": {
+        "id": null,
+        "name": "H. Rune",
+        "initials": "HR"
+      },
+      "player_b": {
+        "id": null,
+        "name": "A. Bublik",
+        "initials": "AB"
+      },
+      "selection": "a",
+      "market": "Match winner",
+      "line": null,
+      "open_price": 1.72,
+      "posted_price": 1.85,
+      "posted_at": "2026-10-27T09:52:00+01:00",
+      "now_price": 1.8,
+      "opp_now_price": 2.05,
+      "close_price": 1.78,
+      "opp_close_price": 2.15,
+      "stake": 1.5,
+      "note": "Rune has won four in a row and Bublik’s second-serve points won in Basel sit under 45%. 1.85 on the streak is the price.",
+      "model_pct": 56,
+      "status": "live",
+      "void_reason": null,
+      "result": null,
+      "edited_at": null,
+      "frozen_at": "2026-10-27T10:02:00+01:00",
+      "clv": 0.012087,
+      "pl_pct": null
+    },
+    {
+      "id": "o1",
+      "kind": "outright",
+      "event": "Nitto ATP Finals · Turin",
+      "market_text": "To win the tournament",
+      "settles_at": "2026-11-16",
+      "date": "2026-10-27",
+      "tournament": null,
+      "round": null,
+      "scheduled_at": null,
+      "surface": null,
+      "player_a": {
+        "id": null,
+        "name": "J. Sinner",
+        "initials": "JS"
+      },
+      "player_b": null,
+      "selection": "a",
+      "market": "Outright",
+      "line": null,
+      "open_price": 3.25,
+      "posted_price": 3.5,
+      "posted_at": "2026-10-27T08:50:00+01:00",
+      "now_price": 3.4,
+      "opp_now_price": null,
+      "close_price": null,
+      "opp_close_price": null,
+      "stake": 0.5,
+      "note": "Indoor hard, best-of-three, round robin: the format where Sinner’s floor matters most. 3.50 prices him behind Alcaraz on a surface where their head-to-head flips.",
+      "model_pct": null,
+      "status": "posted",
+      "void_reason": null,
+      "result": null,
+      "edited_at": null,
+      "frozen_at": "2026-10-27T09:00:00+01:00",
+      "clv": null,
+      "pl_pct": null
+    },
+    {
+      "id": "o2",
+      "kind": "outright",
+      "event": "ATP Race · year-end",
+      "market_text": "To qualify for the Nitto ATP Finals",
+      "settles_at": "2026-11-16",
+      "date": "2026-10-27",
+      "tournament": null,
+      "round": null,
+      "scheduled_at": null,
+      "surface": null,
+      "player_a": {
+        "id": null,
+        "name": "F. Cobolli",
+        "initials": "FC"
+      },
+      "player_b": null,
+      "selection": "a",
+      "market": "Outright",
+      "line": null,
+      "open_price": 2.6,
+      "posted_price": 2.75,
+      "posted_at": "2026-10-27T09:05:00+01:00",
+      "now_price": 2.5,
+      "opp_now_price": null,
+      "close_price": null,
+      "opp_close_price": null,
+      "stake": 1,
+      "note": "Two 500s and a Masters left, Cobolli 8th in the Race with a soft draw path in Vienna. The market still prices him as a long shot.",
+      "model_pct": null,
+      "status": "posted",
+      "void_reason": null,
+      "result": null,
+      "edited_at": null,
+      "frozen_at": "2026-10-27T09:15:00+01:00",
+      "clv": null,
+      "pl_pct": null
+    },
+    {
+      "id": "p3",
+      "kind": "match",
+      "event": null,
+      "market_text": null,
+      "settles_at": null,
+      "date": "2026-10-27",
+      "tournament": "Lyon Open",
+      "round": "SF",
+      "scheduled_at": "2026-10-27T16:00:00+01:00",
+      "surface": "Clay",
+      "player_a": {
+        "id": null,
+        "name": "L. Musetti",
+        "initials": "LM"
+      },
+      "player_b": {
+        "id": null,
+        "name": "F. Cobolli",
+        "initials": "FC"
+      },
+      "selection": "b",
+      "market": "Match winner",
+      "line": null,
+      "open_price": 2.4,
+      "posted_price": 2.1,
+      "posted_at": "2026-10-27T09:58:00+01:00",
+      "now_price": 1.8,
+      "opp_now_price": 2,
+      "close_price": null,
+      "opp_close_price": null,
+      "stake": 1,
+      "note": "I’m going for Cobolli here. The main reasons are the match-up, the conditions, the turnaround and the momentum.\n\nLet’s start with Musetti’s situation. He played a long 3h35 match against Van Assche and now has a very short turnaround. All the other semifinals this week are played later in the afternoon or evening. The only early one is here in Lyon at 4 PM, literally 15 hours after that match. The back-to-back is really not easy and his game depends heavily on his physical condition, so I’m curious to see how he has recovered but I don’t expect Musetti to be at 100%. That match took a lot out of him. Musetti took multiple MTOs in the third set for leg cramps, and both he and Van Assche were struggling physically late on.\n\nThe court in Lyon is extremely slow, and Van Assche’s movement caused Musetti real problems for much of the match. Musetti had a lot of difficulty hitting through him. In these conditions, court coverage is key, and it will be even tougher for him against Cobolli — not exactly the ideal guy to face on a back-to-back.\n\nMusetti also still hasn’t played much this year because of a lot of injuries. We’re only at an ATP 250, where Cobolli needs points to qualify for the Nitto ATP Finals, while Musetti doesn’t have much left to play for this year. With Vienna/Basel and Paris coming up, why risk an injury when you’ve had a good tournament and can take that confidence into the next weeks? These are just assumptions, but it looks the most logical to me that Cobolli has an edge here.\n\nCobolli, on the other side, is a real momentum player. I was waiting for a good confirmation, and we got it against Nakashima (and tbh I didn’t think he’d be consistent enough to beat Nakashima yesterday). He was far too solid in the rallies, hit his forehand well with 20 winners from that wing, and won 16/19 points at the net. He dominated all the extended rallies and that’s a real confirmation for me before he faces Musetti.\n\nCobolli as an underdog has been one of the most profitable takes for us this year. If you had blindly backed him as an underdog this season, you would be in decent profit. That comes from his profile: a low floor and a high ceiling, and the bookmakers tend to underestimate him. He’s a player you need to catch at the right moment and I feel that moment is now.\n\nThe H2H is 2–0 for Musetti, but I don’t give it much weight. One match was an exhibition six years ago. The other was at the US Open last year, where we were on Musetti. I remember Cobolli holding really well in the first set before collapsing, as he was sick and had to retire.\n\nAll in all, I like the setup. Musetti has a very short turnaround and limited match play this year, and the courts are very slow. With the importance of court coverage and the level Cobolli showed against Nakashima, I’m happy to back him. The market opened at 2.40, and there’s been a huge (over)reaction on Cobolli, who is now at 1.80. For me that drop is justified, and I’m happy to have taken him at this price.",
+      "model_pct": 46,
+      "status": "posted",
+      "void_reason": null,
+      "result": null,
+      "edited_at": null,
+      "frozen_at": "2026-10-27T10:08:00+01:00",
+      "clv": null,
+      "pl_pct": null
+    },
+    {
+      "id": "s1",
+      "kind": "match",
+      "event": null,
+      "market_text": null,
+      "settles_at": null,
+      "date": "2026-10-26",
+      "tournament": "Vienna Open",
+      "round": "R32",
+      "scheduled_at": "2026-10-26T13:00:00+01:00",
+      "surface": "Hard",
+      "player_a": {
+        "id": null,
+        "name": "F. Cerundolo",
+        "initials": "FC"
+      },
+      "player_b": {
+        "id": null,
+        "name": "D. Altmaier",
+        "initials": "DA"
+      },
+      "selection": "a",
+      "market": "Match winner",
+      "line": null,
+      "open_price": 1.8,
+      "posted_price": 1.88,
+      "posted_at": "2026-10-26T09:12:00+01:00",
+      "now_price": 1.82,
+      "opp_now_price": 2.02,
+      "close_price": 1.79,
+      "opp_close_price": 2.12,
+      "stake": 1,
+      "note": "Altmaier’s return game has not broken a top-30 server indoors this year; Cerundolo holds and takes the tiebreaks.",
+      "model_pct": 60,
+      "status": "won",
+      "void_reason": null,
+      "result": {
+        "sets": [
+          {
+            "a": "6",
+            "b": "4"
+          },
+          {
+            "a": "7",
+            "b": "6",
+            "tb": "5",
+            "tb_side": "a"
+          }
+        ],
+        "retired": false
+      },
+      "edited_at": null,
+      "frozen_at": "2026-10-26T09:22:00+01:00",
+      "clv": 0.019335,
+      "pl_pct": 0.88
+    },
+    {
+      "id": "s2",
+      "kind": "match",
+      "event": null,
+      "market_text": null,
+      "settles_at": null,
+      "date": "2026-10-26",
+      "tournament": "Swiss Indoors",
+      "round": "R32",
+      "scheduled_at": "2026-10-26T16:30:00+01:00",
+      "surface": "Hard",
+      "player_a": {
+        "id": null,
+        "name": "A. Bublik",
+        "initials": "AB"
+      },
+      "player_b": {
+        "id": null,
+        "name": "C. Moutet",
+        "initials": "CM"
+      },
+      "selection": "b",
+      "market": "Match winner",
+      "line": null,
+      "open_price": 2.3,
+      "posted_price": 2.4,
+      "posted_at": "2026-10-26T10:20:00+01:00",
+      "now_price": 2.55,
+      "opp_now_price": 1.52,
+      "close_price": 2.6,
+      "opp_close_price": 1.52,
+      "stake": 1,
+      "note": "Moutet has taken a set off Bublik in all three meetings and Bublik is 2–5 in deciders this season. The 2.40 covers the variance.",
+      "model_pct": 41,
+      "status": "lost",
+      "void_reason": null,
+      "result": {
+        "sets": [
+          {
+            "a": "6",
+            "b": "3"
+          },
+          {
+            "a": "7",
+            "b": "6",
+            "tb": "4",
+            "tb_side": "a"
+          }
+        ],
+        "retired": false
+      },
+      "edited_at": null,
+      "frozen_at": "2026-10-26T10:30:00+01:00",
+      "clv": -0.114563,
+      "pl_pct": -1
+    },
+    {
+      "id": "s3",
+      "kind": "match",
+      "event": null,
+      "market_text": null,
+      "settles_at": null,
+      "date": "2026-10-26",
+      "tournament": "Vienna Open",
+      "round": "R32",
+      "scheduled_at": "2026-10-26T19:00:00+01:00",
+      "surface": "Hard",
+      "player_a": {
+        "id": null,
+        "name": "J. Lehecka",
+        "initials": "JL"
+      },
+      "player_b": {
+        "id": null,
+        "name": "B. Shelton",
+        "initials": "BS"
+      },
+      "selection": "a",
+      "market": "Match winner",
+      "line": null,
+      "open_price": 2.05,
+      "posted_price": 2.1,
+      "posted_at": "2026-10-26T11:02:00+01:00",
+      "now_price": 2.08,
+      "opp_now_price": 1.8,
+      "close_price": 2.05,
+      "opp_close_price": 1.8,
+      "stake": 1,
+      "note": "Shelton’s first-serve percentage drops under lights and Lehecka returns better than anyone left in the half.",
+      "model_pct": 49,
+      "status": "void",
+      "void_reason": null,
+      "result": {
+        "sets": [
+          {
+            "a": "2",
+            "b": "3"
+          }
+        ],
+        "retired": true
+      },
+      "edited_at": null,
+      "frozen_at": "2026-10-26T11:12:00+01:00",
+      "clv": -0.018182,
+      "pl_pct": 0
+    },
+    {
+      "id": "s4",
+      "kind": "match",
+      "event": null,
+      "market_text": null,
+      "settles_at": null,
+      "date": "2026-10-26",
+      "tournament": "Davis Cup Final 8",
+      "round": "SF",
+      "scheduled_at": "2026-10-26T17:00:00+01:00",
+      "surface": "Hard",
+      "player_a": {
+        "id": null,
+        "name": "A. De Minaur",
+        "initials": "AD"
+      },
+      "player_b": {
+        "id": null,
+        "name": "J. Mensik",
+        "initials": "JM"
+      },
+      "selection": "a",
+      "market": "Match winner",
+      "line": null,
+      "open_price": 1.62,
+      "posted_price": 1.7,
+      "posted_at": "2026-10-26T09:48:00+01:00",
+      "now_price": 1.66,
+      "opp_now_price": 2.28,
+      "close_price": 1.64,
+      "opp_close_price": 2.36,
+      "stake": 1.5,
+      "note": "Five-set format this weekend. De Minaur’s return holds up over distance and Mensik has lost all four of his five-setters this year.",
+      "model_pct": 63,
+      "status": "won",
+      "void_reason": null,
+      "result": {
+        "sets": [
+          {
+            "a": "4",
+            "b": "6"
+          },
+          {
+            "a": "7",
+            "b": "6",
+            "tb": "3",
+            "tb_side": "a"
+          },
+          {
+            "a": "3",
+            "b": "6"
+          },
+          {
+            "a": "6",
+            "b": "2"
+          },
+          {
+            "a": "7",
+            "b": "6",
+            "tb": "8",
+            "tb_side": "a"
+          }
+        ],
+        "retired": false
+      },
+      "edited_at": null,
+      "frozen_at": "2026-10-26T09:58:00+01:00",
+      "clv": 0.003,
+      "pl_pct": 1.05
+    }
+  ]
+}

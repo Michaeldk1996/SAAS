@@ -30,12 +30,13 @@
   var STALE_MIN = 3;
   var REFETCH_MS = 60000;
   var BOOK = 'bet105';
-  var COLS = 'market,side,line,price,implied,status,open_price,open_ts,max_limit,inserted_on';
+  var COLS = 'market,side,line,price,implied,status,open_price,open_ts,max_limit,inserted_on,close_price,close_implied,close_at';
   var REASON = {
     not_offered: 'not offered', suspended: 'suspended', one_sided: 'one side only', not_a_pair: 'sides do not pair',
     incoherent: 'sides do not add up', ladder: 'out of line with its ladder', guard_d: 'shorter than his match price',
     guard_d_no_match_winner: 'no match price to check against', started: 'started', stale: 'stale',
-    no_event: 'no bet105 match', no_match: 'no upcoming match', no_market: 'no bet105 market', unavailable: 'unavailable'
+    no_event: 'no bet105 match', no_match: 'no upcoming match', no_market: 'no bet105 market', unavailable: 'unavailable',
+    no_close: 'no close on record'
   };
   var cache = {}, inflight = {}, hb = { at: 0, row: null, p: null };
   function now() { return Date.now(); }
@@ -70,7 +71,8 @@
       cache[ek] = { at: now(), rows: Array.isArray(got[0]) ? got[0].map(function (r) {
         return { market: r.market, side: r.side, line: r.line == null ? null : +r.line, price: r.price == null ? null : +r.price,
           implied: r.implied == null ? null : +r.implied, status: r.status, open: r.open_price == null ? null : +r.open_price,
-          openTs: r.open_ts, maxLimit: r.max_limit == null ? null : +r.max_limit, insertedOn: r.inserted_on };
+          openTs: r.open_ts, maxLimit: r.max_limit == null ? null : +r.max_limit, insertedOn: r.inserted_on,
+          close: r.close_price == null ? null : +r.close_price, closeImplied: r.close_implied == null ? null : +r.close_implied, closeAt: r.close_at || null };
       }) : null, hb: got[1] };
       delete inflight[ek];
       return cache[ek];
@@ -104,8 +106,14 @@
       .sort(function (a, b) { return (a.line == null ? 0 : a.line) - (b.line == null ? 0 : b.line); });
     var fr = freshness(ev.hb);
     var extra = { ladder: ladder, seenAt: fr.seenAt, ageMin: fr.ageMin };
-    if (opts.started) return dash('started', extra);
     var hit = ladder.filter(function (r) { return same(r.line, signedLine); })[0];
+    // Founder 2026-10-26: a started or completed match shows the line's CLOSE (the last bet105 price before the start,
+    // captured by the worker at the live flip), labelled as the close — never a current price, never another line's.
+    if (opts.started || (hit && hit.status === 'started')) {
+      if (hit && hit.close != null && hit.close >= 1.01 && hit.closeImplied != null)
+        return Object.assign({}, base, { ladder: ladder, state: 'close', price: hit.close, implied: hit.closeImplied, closeAt: hit.closeAt, open: hit.open, openTs: hit.openTs });
+      return dash(hit ? 'no_close' : 'started', extra);
+    }
     if (!(fr.ageMs != null && fr.ageMs <= STALE_MIN * 60000)) return dash('stale', Object.assign(extra, hit && hit.status === 'ok' ? { lastPrice: hit.price, lastImplied: hit.implied } : {}));
     if (!hit) return dash('not_offered', extra);
     if (hit.status !== 'ok' || hit.price == null || !(hit.price >= 1.01) || hit.implied == null) return dash(hit.status === 'ok' ? 'suspended' : hit.status, extra);
@@ -128,6 +136,7 @@
   /** The face: "2.06 · 46% · 0m" when priced (the price's age, founder 2026-10-25), "— stale 5m" past STALE_MIN,
    *  "—" otherwise. */
   function faceText(r) {
+    if (r && r.state === 'close') return 'Close ' + fmtOdd(r.price) + ' · ' + Math.round(r.implied * 100) + '%';
     if (r && r.state === 'ok') return fmtOdd(r.price) + ' · ' + Math.round(r.implied * 100) + '%' + (r.ageMin != null ? ' · ' + r.ageMin + 'm' : '');
     if (r && r.reason === 'stale' && r.ageMin != null) return '— stale ' + r.ageMin + 'm';
     return '—';
@@ -135,6 +144,7 @@
   /** The face in two lines, so a narrow cell never overflows: { main: '2.06 · 46%' | '— stale' | '—', age: '34m ago' | null }. */
   function faceParts(r) {
     var age = r && r.ageMin != null && (r.state === 'ok' || r.reason === 'stale') ? r.ageMin + 'm ago' : null;
+    if (r && r.state === 'close') return { main: fmtOdd(r.price) + ' · ' + Math.round(r.implied * 100) + '%', age: 'close' };
     if (r && r.state === 'ok') return { main: fmtOdd(r.price) + ' · ' + Math.round(r.implied * 100) + '%', age: age };
     if (r && r.reason === 'stale') return { main: '— stale', age: age };
     return { main: '—', age: null };
@@ -144,7 +154,11 @@
   function hoverLines(r, label) {
     if (!r || r.state === 'loading') return [];
     var L = ['bet105 · ' + (label || (r.market + ' ' + fmtLine(r.line)))];
-    if (r.state === 'ok') {
+    if (r.state === 'close') {
+      L.push('Close ' + fmtOdd(r.price) + ' · ' + Math.round(r.implied * 100) + '% (margin removed)');
+      L.push('The last bet105 price before the start' + (r.closeAt ? ' · Kibl insert ' + hm(r.closeAt) : ''));
+      L.push('Opened ' + (r.open != null ? fmtOdd(r.open) + (r.openTs ? ' at ' + hm(r.openTs) : '') : '—'));
+    } else if (r.state === 'ok') {
       L.push('Price ' + fmtOdd(r.price) + ' · ' + Math.round(r.implied * 100) + '% (margin removed)');
       L.push('Opened ' + (r.open != null ? fmtOdd(r.open) + (r.openTs ? ' at ' + hm(r.openTs) : '') : '—'));
       L.push(ageText(r) + ' · Kibl insert ' + hm(r.insertedOn));
@@ -155,6 +169,7 @@
       if (r.reason === 'stale') L.push(r.ageMin != null ? ageText(r) : 'bet105 stream not confirmed live' + (r.seenAt ? ' (last heartbeat ' + hm(r.seenAt) + ')' : ''));
       else if (r.ageMin != null) L.push(ageText(r));
     }
+    if (r.state === 'close') return L;
     var offered = (r.ladder || []).filter(function (x) { return x.status === 'ok' && x.price != null; });
     if (offered.length && r.market !== 'ml' && r.market !== 'ml1')
       L.push('Offered: ' + offered.map(function (x) { return fmtLine(x.line) + ' ' + fmtOdd(x.price); }).join(' · '));

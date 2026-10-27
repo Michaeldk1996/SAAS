@@ -46,7 +46,7 @@ const helperSrc = () => {
 };
 
 // The registry, the one-name table and the page helpers, as shipped.
-const BASE = [arrSrc('TOURNAMENT_CATALOG'), objSrc('COURT_CONDITIONS'), fnSrc('courtSpeedCategory'), fnSrc('tourxConditionRegistry'),
+const BASE = [arrSrc('TOURNAMENT_CATALOG'), objSrc('COURT_CONDITIONS'), fnSrc('courtSpeedCategory'), fnSrc('tourxConditionRegistry'), fnSrc('tourxOverviewEvents'),
   objSrc('SF_EVENT_NAMES'), objSrc('SF_EVENT_ALIAS'), objSrc('SF_EVENT_LITERAL'), 'let _sfEventIx = null;', fnSrc('ppCleanTournamentName'), fnSrc('fhTournClean'),
   fnSrc('sfEventKey'), fnSrc('sfEventName'), helperSrc()].join('\n');
 const make = (extra, ret, env) => new Function('window', ...Object.keys(env || {}), BASE + '\n' + (extra || '') + '\nreturn ' + ret + ';')({ TournamentIdentity: TI }, ...Object.values(env || {}));
@@ -92,8 +92,8 @@ const rows = h => [...h.matchAll(/class="tourx-ovrow[^"]*" onclick="tourxSelectC
 
 test('r2.2 the rail prints the one name on every row and keeps the KEY in its click (state = data key)', () => {
   const r = rows(railFor(''));
-  // round 2 (founder 2026-10-25): every catalog event is listed (75 entries; French Open and Roland Garros are one event)
-  assert.equal(r.length, 74);
+  // founder 2026-10-26: the pre-round-2 rail (64 rated events) + the two listUnrated events, Brussels and Lyon (France)
+  assert.equal(r.length, 66);
   assert.ok(r.some(x => x.key === 'Brussels') && r.some(x => x.key === 'Lyon (France)'), 'the unrated 2026 events are listed');
   assert.equal(r.filter(x => x.name === 'Roland Garros').length, 1, 'one event, one row');
   for (const x of r) assert.equal(x.name, P.tourxEventName(x.key), x.key);
@@ -110,7 +110,7 @@ test('r2.2 search: "Cincinnati Open" and "Cincinnati" both find it; the city, th
   assert.deepEqual(find('Cincinnati Open'), ['Cincinnati Open']);
   assert.deepEqual(find('cincinnati'), ['Cincinnati Open']);
   assert.deepEqual(find('Turin'), ['ATP Finals']);
-  assert.deepEqual(find('ATP Finals'), ['ATP Finals', 'Next Gen ATP Finals'], 'round 2: Jeddah (Next Gen) is listed too');
+  assert.deepEqual(find('ATP Finals'), ['ATP Finals']);
   assert.deepEqual(find('china open'), ['China Open']);
   assert.deepEqual(find('Beijing'), ['China Open']);
   assert.deepEqual(find('Monte-Carlo'), ['Monte-Carlo Masters']);
@@ -329,11 +329,11 @@ test('r3.3 Matches board: the card head, the story strip and the chips print the
   assert.equal(B(''), '');
   assert.equal(B(undefined), '');
   const rm = fnSrc('renderMatches');
-  assert.match(rm, /<span class="mc-tourn">\$\{mxEventName\(m\.tour\)\}<\/span>/);
+  assert.match(rm, /<span class="mc-tourn"\$\{mxTierTitle\(m\) \? ` title="\$\{psEsc\(mxTierTitle\(m\)\)\}"` : ''\}>\$\{mxEventName\(m\.tour\)\}<\/span>/, 'step 15: the tier rides on the name\'s hover');
   assert.doesNotMatch(rm, /tierSuffix/, 'TEN-407: no level suffix after the name ("Shanghai Masters", not "· ATP 1000")');
   assert.equal((rm.match(/\$\{bmv\.tour \? ' · ' \+ mxEventName\(bmv\.tour\) : ''\}/g) || []).length, 2);
-  assert.match(rm, /\$\{sp\.tour \? ' · ' \+ mxEventName\(sp\.tour\) : ''\}/);
-  assert.match(rm, /<div class="mc-story__ctx">\$\{\[\[mxEventName\(m\.tour\), roundBadgeText/);
+  // step 15: Shortest price / Tightest match are gone; the Upsets tile prints the one name
+  assert.match(rm, /<div class="mc-story__ctx">\$\{\[mxEventName\(u0\.m\.tour\), roundBadgeText/);
   assert.doesNotMatch(rm, /\$\{m\.tour\}/, 'control: no raw m.tour printed in the board');
   // the chips, executed: printed name in the label, the data name in data-tournament (the filter reads it)
   const group = { innerHTML: '' };

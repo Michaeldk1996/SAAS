@@ -4,6 +4,10 @@
     "event_time is never used as a start time, anywhere, at any level, even
      labelled. Confirmed."
 
+FOUNDER RULING 2026-10-26 (one rule for every site): the scheduled time may be used ONLY in the
+conservative direction -- to reject a price or stop collecting / showing. It may NEVER create a start
+time, cut a close, or label anything as a start.
+
 WHY A TRIPWIRE AND NOT A BAN
 ---------------------------
 `event_time` is not forbidden outright -- it legitimately drives a displayed
@@ -60,6 +64,7 @@ ALLOWED = {
         "rows.push({ ...rows[1], event_key: '909999', event_date: '2026-09-21', event_time: '09:00', first_player_key: String(SLATE_KEYS[2]), event_first_player: 'P. Player' + SLATE_KEYS[2], second_player_key: '5002', event_second_player: 'P. Player5002' });",
     },
     'refresh-scores.py': {
+        "# api-tennis event_date/event_time (a card's date/time without startTs) is the",  # comment: the Berlin zone of a card date/time; not a start (pinned 2026-10-26)
         # day/slot bookkeeping for the score patch, never a start instant
         "d, t = f.get('event_date'), f.get('event_time')",
     },
@@ -75,24 +80,130 @@ ALLOWED = {
         "return (String(a.event_date || '') + ' ' + String(a.event_time || '')).localeCompare(String(b.event_date || '') + ' ' + String(b.event_time || ''));",
     },
     'bsp-pipeline.js': {
+        "// TEN-308: computeDay's input for an api-tennis fixture. event_date + event_time is the Berlin",  # comment: computeDay's day bucket input; not a start (pinned 2026-10-26)
+        'date: f.event_date || null, time: f.event_time || null,',  # the feed row's displayed clock (time field) (pinned 2026-10-26)
+        "const ka = `${a.event_date || ''} ${a.event_time || ''}`, kb = `${b.event_date || ''} ${b.event_time || ''}`;",  # sort key for the played list (pinned 2026-10-26)
+        'time: f.event_time || null,',  # the feed row's displayed clock (time field) (pinned 2026-10-26)
+        '// TEN-304: the hour is looked up at the real start instant — event_time is the Europe/Berlin',  # comment: which forecast hour the weather lookup reads; not an odds/close start (pinned 2026-10-26)
+        'const pastMatchDateTime = weatherStartIso(fixture.event_date, fixture.event_time);',  # weather-hour lookup (which forecast hour); not an odds/close start (pinned 2026-10-26)
+        'const weatherStart = weatherStartIso(fixture.event_date, fixture.event_time);',  # weather-hour lookup (which forecast hour); not an odds/close start (pinned 2026-10-26)
+        "const d = String(f.event_date || '') + ' ' + String(f.event_time || '');",  # recency key for picking the latest spelling of a name (pinned 2026-10-26)
         "time: fixture.event_time || null,",                                # displayed clock
-        "const pastMatchDateTime = `${fixture.event_date}T${(fixture.event_time || '12:00')}:00Z`;",
         "// Combine event_date + event_time so computeDay() gets a real datetime.",
         "const commence = apiTennisCommence(fixture.event_date, fixture.event_time);",   # TEN-308: Berlin wall -> instant for the day bucket
     },
     'build-series.js': {
+        "const startMs = berlinWallMs(String(fx.event_date || ''), String(fx.event_time || ''));",  # slate-day bucket (today / tomorrow) (pinned 2026-10-26)
+        "const a = berlinWallMs(d, String(fx.event_time || '')), s = slateStartMs(ctx);",  # ordering: did this fixture come before the slate match (already-played filter) (pinned 2026-10-26)
         "time: String(fx.event_time || ''),",                               # displayed clock
     },
     # series.js: TEN-427 deleted its event_time sort note — Soonest sorts the board's start instant (cardStartMs).
     'bsp-consult-dashboard.html': {
         "// Records without a startTs carry `event_time` in the feed's ACCOUNT zone, which",
-        "// (event_time is the match START only) — with nothing real to show it added no",
+        # 2026-10-26: the "(event_time is the match START only)" comment was removed by TEN-314 (0f18fc2ec); pin dropped
     },
     'supabase/migrations/20260917100000_live_flip_log.sql': {
         # stored as provenance on live_flip_log; nothing reads it as a time
         "event_time            text,                        -- SCHEDULED. Recorded for",
         "event_date, event_time, first_player, second_player,",   # insert column list
         "fix ->> 'event_time',",
+    },
+    'test-ten294-drops.mjs': {  # pinned 2026-10-26 (live-flip-recorder)
+        "const fx = [{ event_key: 12165854, event_status: 'Finished', event_live: '0', event_date: '2026-09-26', event_time: '06:55', utc: true, event_first_player: 'M. Damm', event_second_player: 'H. Hurkacz' }];",  # test fixture / assertion; never a start in shipped code
+        "const fxs = [{ event_key: 12165854, event_status: 'Finished', event_live: '0', event_date: '2026-09-26', event_time: '06:55', utc: true, event_first_player: 'M. Damm', event_second_player: 'H. Hurkacz' }];",  # test fixture / assertion; never a start in shipped code
+        "const fx = [{ event_key: 5, event_status: 'Set 1', event_live: '1', event_date: '2026-09-26', event_time: '12:00', utc: true, event_first_player: 'A. Boutleux', event_second_player: 'M. Seifert' }];",  # test fixture / assertion; never a start in shipped code
+        "const idx = STATUS.indexFixtures([{ event_key: 1, event_first_player: 'M. Damm', event_second_player: 'H. Hurkacz', event_date: '2026-09-26', event_time: '06:55', utc: true }]);",  # test fixture / assertion; never a start in shipped code
+        "assert.doesNotMatch(code, /event_time/, 'the sighting join never reads the scheduled time (TEN-225 ruling 1, founder 2026-10-26)');",  # test fixture / assertion; never a start in shipped code
+    },
+    'player-profile-v2.js': {  # pinned 2026-10-26 (live-flip-recorder)
+        '// gives `event_time` (a START time) and nothing else, and neither shard',  # comment: why match duration is dashed; not code
+    },
+    'test-ten308-berlin-time.py': {  # pinned 2026-10-26 (live-flip-recorder)
+        '"""TEN-308 — the Python api-tennis sites read event_date/event_time as the Europe/Berlin',  # test fixture / assertion; never a start in shipped code
+        "lambda d=d, t=t, want=want: eq(iso_ms(RS._fixture_ms({'event_date': d, 'event_time': t})), want))",  # test fixture / assertion; never a start in shipped code
+    },
+    'berlin-time.js': {  # pinned 2026-10-26 (live-flip-recorder)
+        "// TEN-308: the ONE reader for an api-tennis `event_date` + `event_time` (the card's `date` +",  # header comment of the Berlin-wall reader (day bucket / displayed clock); not a start
+    },
+    'test-ten427-series.mjs': {  # pinned 2026-10-26 (live-flip-recorder)
+        "event_first_player: 'A. One', event_second_player: 'Opp ' + k, event_winner: won ? 'First Player' : 'Second Player', event_date: date, event_time: time,",  # test fixture / assertion; never a start in shipped code
+        "const ctxOf = f => ({ date: f.event_date, time: f.event_time, eventKey: f.event_key, surface: 'hard', bestOf: 3, opponentArch: null, played: true });",  # test fixture / assertion; never a start in shipped code
+        "event_first_player: 'A. One', event_second_player: 'Opp ' + k, event_winner: won ? 'First Player' : 'Second Player', event_date: date, event_time: '12:00',",  # test fixture / assertion; never a start in shipped code
+    },
+    'test-line-prices.py': {  # pinned 2026-10-26 (live-flip-recorder)
+        "return [{'event_key': 12173801, 'event_date': '2026-10-24', 'event_time': '13:00', 'event_type_type': 'Atp Singles',",  # test fixture / assertion; never a start in shipped code
+        "af = [{'event_key': 5, 'event_date': '2026-10-25', 'event_time': '10:00', 'event_type_type': 'Itf Men Singles',",  # test fixture / assertion; never a start in shipped code
+    },
+    'tools/test-ten304-weather-hour.js': {  # pinned 2026-10-26 (live-flip-recorder)
+        '// api-tennis event_date + event_time is the scheduled start on the Europe/Berlin',  # test fixture / assertion; never a start in shipped code
+    },
+    'tools/test-tdarch.py': {  # pinned 2026-10-26 (live-flip-recorder)
+        "bd10 = {'2026-05-20': [{'event_key': 50, 'event_first_player': 'T. Theta', 'event_second_player': 'E. Eta', 'event_date': '2026-05-20', 'event_time': '12:00'}]}",  # test fixture / assertion; never a start in shipped code
+        "G = lambda ek, d, tm=None: dict(F(ek, 'Challenger Men Singles', d=d), **({'event_time': tm} if tm else {}))",  # test fixture / assertion; never a start in shipped code
+    },
+    'tools/test-ten308-berlin-time.js': {  # pinned 2026-10-26 (live-flip-recorder)
+        '// TEN-308 — api-tennis event_date/event_time is the Europe/Berlin wall clock',  # test fixture / assertion; never a start in shipped code
+        "assert.ok(/const commence = apiTennisCommence\\(fixture\\.event_date, fixture\\.event_time/.test(body), 'commence is not converted');",  # test fixture / assertion; never a start in shipped code
+        "assert.strictEqual(S.slateDayOf({ event_date: '2026-10-26', event_time: '00:30' }, '2026-10-25', '2026-10-26'), 'today'));",  # test fixture / assertion; never a start in shipped code
+        "assert.strictEqual(S.slateDayOf({ event_date: '2026-10-25', event_time: '01:30' }, '2026-10-24', '2026-10-25'), 'today'));",  # test fixture / assertion; never a start in shipped code
+        "assert.strictEqual(S.slateDayOf({ event_date: '2026-10-24', event_time: '14:00' }, '2026-10-24', '2026-10-25'), 'today');",  # test fixture / assertion; never a start in shipped code
+        "assert.strictEqual(S.slateDayOf({ event_date: '2026-10-26', event_time: '14:00' }, '2026-10-25', '2026-10-26'), 'tomorrow');",  # test fixture / assertion; never a start in shipped code
+        "assert.strictEqual(S.slateDayOf({ event_date: '2026-10-26', event_time: '' }, '2026-10-25', '2026-10-26'), 'tomorrow'));",  # test fixture / assertion; never a start in shipped code
+    },
+    'tools/test-ten421-mutants.js': {  # pinned 2026-10-26 (live-flip-recorder)
+        '[\'js\', \'R3: live row time from the feed, not the card\', "      startClock: slate ? startClockOf(slate) : startClockOf({ date: f.event_date, time: f.event_time }),", "      startClock: startClockOf({ date: f.event_date, time: f.event_time }),"],',  # test fixture / assertion; never a start in shipped code
+    },
+    'tools/test-partial-fetch.js': {  # pinned 2026-10-26 (live-flip-recorder)
+        "const fx = (k, date, round, w = 'First Player') => ({ event_key: k, event_date: date, event_time: '10:00', event_status: 'Finished', event_winner: w, event_qualification: 'False',",  # test fixture / assertion; never a start in shipped code
+    },
+    'tools/test-pinarch-close.py': {  # pinned 2026-10-26 (live-flip-recorder)
+        "atf = [{'event_key': 12112000, 'event_date': '2026-04-20', 'event_time': '10:00', 'event_first_player': 'A. Rinderknech', 'event_second_player': 'T. Paul',",  # test fixture / assertion; never a start in shipped code
+        "{'event_key': 12112001, 'event_date': '2026-04-20', 'event_time': '12:00', 'event_first_player': 'B. Bonzi', 'event_second_player': 'C. Moutet',",  # test fixture / assertion; never a start in shipped code
+        "{'event_key': 12112002, 'event_date': '2026-04-20', 'event_time': '13:00', 'event_first_player': 'D. Altmaier', 'event_second_player': 'E. Hanfmann',",  # test fixture / assertion; never a start in shipped code
+        "{'event_key': 12112003, 'event_date': '2026-04-20', 'event_time': '14:00', 'event_first_player': 'F. Fritz', 'event_second_player': 'G. Gaston',",  # test fixture / assertion; never a start in shipped code
+        "{'event_key': 12112004, 'event_date': '2026-04-20', 'event_time': '15:00', 'event_first_player': 'H. Hurkacz', 'event_second_player': 'I. Ivashka',",  # test fixture / assertion; never a start in shipped code
+        "{'event_key': 12112005, 'event_date': '2026-04-12', 'event_time': '15:00', 'event_first_player': 'J. Jarry', 'event_second_player': 'K. Kecmanovic',",  # test fixture / assertion; never a start in shipped code
+        "twin = [dict(atf[0], event_key=12112099, event_time='11:00')]",  # test fixture / assertion; never a start in shipped code
+    },
+    'tools/pinarch.py': {  # pinned 2026-10-26 (live-flip-recorder)
+        "d, t = f.get('event_date'), f.get('event_time')",  # join window only: the date-range filter and candidate pairing (founder 2026-10-26); no stored start
+    },
+    'tools/ten294-drops-api.sql': {  # pinned 2026-10-26 (live-flip-recorder)
+        "'date', fl.event_date, 'time', fl.event_time,",  # provenance field passed through in the drops API flips payload; status.mjs uses it as a join window only
+    },
+    'tools/test-wue-sheet.js': {  # pinned 2026-10-26 (live-flip-recorder)
+        "const fx = (ek, date, time, status, stats) => ({ event_key: ek, event_date: date, event_time: time, event_status: status, event_winner: 'First Player',",  # test fixture / assertion; never a start in shipped code
+    },
+    'tools/test-ten371-name-spine.js': {  # pinned 2026-10-26 (live-flip-recorder)
+        "const BU_FIXTURE = { event_key: 12167394, event_date: '2026-10-02', event_time: '10:00',",  # test fixture / assertion; never a start in shipped code
+        "event_key: 12166537, event_date: '2026-10-01', event_time: '09:50',",  # test fixture / assertion; never a start in shipped code
+    },
+    'kibl-stream/test-line-engine.py': {  # pinned 2026-10-26 (live-flip-recorder)
+        "AT = [{'event_key': 12173801, 'event_date': '2026-10-25', 'event_time': '13:00', 'event_type_type': 'Atp Singles',",  # test fixture / assertion; never a start in shipped code
+    },
+    'kibl-stream/card_join.py': {  # pinned 2026-10-26 (live-flip-recorder)
+        '# api-tennis event_date/event_time is the Europe/Berlin wall clock: CEST (+2) until 25 Oct 2026,',  # comment: the Berlin zone of the card pool / join window; not a start
+    },
+    'stennisfy-drops/status.mjs': {  # pinned 2026-10-26 (live-flip-recorder)
+        'const c = classifyFixture(fresh || fx), apiStart = apiStartMs(fx.event_date, fx.event_time, fx.utc);',  # stops the drops feed at the passed scheduled time; founder ruling 2026-10-26: the scheduled time used ONLY in the conservative direction (reject / stop), never to create, cut or label a start
+        '(st == null || Math.abs(apiStartMs(f.event_date, f.event_time, f.utc) - st) < JOIN_WINDOW_MS));',  # join window (24 h) pairing a vendor row with its api-tennis fixture
+        'event_date: f.event_date, event_time: f.event_time, event_first_player: f.event_first_player, event_second_player: f.event_second_player, utc: true });',  # slim fixture payload passthrough; the field is not read as a time here
+    },
+    'supabase/functions/live-poller/finals.ts': {  # pinned 2026-10-26 (live-flip-recorder)
+        '"first_player_key", "event_second_player", "second_player_key", "event_date", "event_time", "tournament_name",',  # field kept in the stored fixture summary (live_pbp final); never read as a time
+    },
+    'tools/tdarch.py': {
+        "d, t = str(f.get('event_date') or ''), str(f.get('event_time') or '')",  # TE in-play rule rejects prices after it; founder ruling 2026-10-26: the scheduled time used ONLY in the conservative direction (reject / stop), never to create, cut or label a start
+    },
+    'line_prices.py': {
+        "d, t = f.get('event_date'), f.get('event_time')",  # at_start_ts: ±36 h join window, a label, date grouping; never cuts a close (checked 2026-10-26)
+    },
+    'supabase/migrations/20261027090000_live_flip_played.sql': {
+        'event_time            text,                    -- SCHEDULED; provenance only, never read as a time (TEN-225 ruling 1)',  # provenance copied through live_flip_pending into live_flip_log; nothing reads it as a time (played-start-recorder, 2026-10-26)
+        'event_date, event_time, first_player, second_player, tournament_name, event_type_type',  # provenance copied through live_flip_pending into live_flip_log; nothing reads it as a time (played-start-recorder, 2026-10-26)
+        "fix ->> 'event_date', fix ->> 'event_time', fix ->> 'event_first_player', fix ->> 'event_second_player',",  # provenance copied through live_flip_pending into live_flip_log; nothing reads it as a time (played-start-recorder, 2026-10-26)
+        'event_date, event_time, first_player, second_player, tournament_name, event_type_type, play_seen_at',  # provenance copied through live_flip_pending into live_flip_log; nothing reads it as a time (played-start-recorder, 2026-10-26)
+        'event_date, event_time, first_player, second_player, tournament_name, event_type_type, _now',  # provenance copied through live_flip_pending into live_flip_log; nothing reads it as a time (played-start-recorder, 2026-10-26)
     },
 }
 

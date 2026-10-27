@@ -2267,3 +2267,23 @@ SF, 6-2 3-0 ret.); the set scores are already from the player's side, so the cor
 - **Measured on deployed code:** the heartbeat is 3.7–60.2 s old at read (median 30.5 s, n=60), and 98% of cells read "0m ago".
 - **Stale threshold.** It was 60 min on the old route, a figure set by publish lag. The founder set it to the Now's own 180 s live rule. A 60-minute rule on the stream would keep showing a price for an hour after the worker went quiet.
 
+
+## Line prices belong to the match; closes; H2H Hot lines from one meeting (2026-10-26)
+
+- **Placement:** a line price is a property of one match, so it shows only inside the match card: the H2H tab, the Key factors H2H card, and Market edge → Derived lines. The profile's Derived lines priced the player's next match, which was a different object from the row's record. The standalone Head-to-head page is tied to no match.
+- **Close:** the worker writes it once, at the live flip it observes itself. It is the guarded pre-start verdict, so a pair suspended at the start shows no close. A start learnt any other way (an api-tennis join, a restart) gets no close, rather than one inferred from a stale state. bet105 closes therefore exist from the deploy onwards. Earlier completed matches dash, pending the founder's call on the Pinnacle line close.
+- **Hot lines:** with fewer than 3 comparable meetings a rate or ranking is noise, so those rows show raw results. "Comparable" means the same format on every line, which closes a gap where set-based lines counted best-of-5 meetings for a best-of-3 match.
+
+## Live-flip recorder restored; the scheduled time is conservative-only (2026-10-26)
+
+- **Why recording stopped:** the 24 Oct 06:47:50Z run of `supabase-live-golive.yml` re-applied `poller_rpc.sql`, which re-creates `write_snapshot` without the `record_live_flips` call. `live_flip_log` got no rows until the wiring was re-applied on 26 Oct about 09:37Z. The go-live now applies the recorder migrations after `poller_rpc.sql`, and `tools/test-golive-recorder-wiring.js` keeps that order.
+- **Why nobody saw it:** the event_time guard ran only inside `ten225-live-flip.yml`, which failed on every run from 19 Sep, and that workflow had no alert. The guard is now in `npm test`, and `live-flip-fail-alert.yml` alerts on the first failure after a pass, then once per UTC day. It is once a day because the workflow runs hourly.
+- **One rule for the scheduled time:** rejecting or stopping is the safe direction. A price recorded after the scheduled time may be in-play, so dropping it never shows a wrong number. Creating a start, cutting a close or labelling a start from the scheduled time would show one: the scheduled time is earlier than the real start 42% of the time, and lands inside the match otherwise (TEN-225). In the TE import, a row with no start of any kind is therefore not stored, rather than kept unchecked.
+
+## A live flag is not a start until play is seen (2026-10-27)
+
+- **What happened:** on 2026-10-26 at 12:18:31Z, api-tennis flagged three matches live ("Set 1", 0-0, no server, no point). Vacherot v Navone was still 0-0 in set 1 at about 13:35Z. The recorder logged each flag as a start, and `pinarch.py pull` cut three Pinnacle closes at it four minutes later (archive ids 3876–3878, `oddspapi-postmatch.yml` run 40321977281).
+- **Why the bound stays on the flag side:** even the first point moves the price, so a close cut after it is an in-play price. The play-seen time can only be later than the first ball, so it is never the cut. The poll before the flag still is, provided play follows quickly. If play comes later than T, the flag time can't be trusted either way, so the row carries no bound and the reader dashes.
+- **Why a pending table and not reader changes:** all five readers of `live_flip_log` already skip a row with no lower bound. Holding flags back upstream means none of them needed to change.
+- **Why T = 300 s:** it is a starting value. `play_seen_at` measures the real delay from flag to first play, and the founder sets T from that measurement.
+- **Same-tick play gets no bound (2026-10-27):** if play is already on the board when the match is first listed live, the poll before only proves the match wasn't listed, not that no ball had been struck. So the row is written with no lower bound. This was 2 of the first 4 promoted rows on 27 Oct.

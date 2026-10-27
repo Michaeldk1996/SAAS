@@ -437,6 +437,8 @@ Start-time ladder:
 2. live-flip lower bound (last poll where the match was not yet live)
 3. dash
 
+**A live flag is a start only once play is seen** (founder ruling 2026-10-26, played-start-recorder). A close is a price from before the first ball: an early close is acceptable, a late one never is. **Test:** a `live_flip_log` row exists only after the board showed play (`match_played()`, the same rule as the line-price worker's `played()`: a game score, a set score above 0-0, a point, or finished). When play is seen within **T = 300 s** of the flag, the lower bound is the poll before the flag, never the play-seen time. When it is seen later, or is **already on the board at the first sighting**, the row has **no lower bound**, so no close is cut (dash; founder 2026-10-27: the poll before only proves the match was not listed live, not that no ball had been struck). A flag that leaves the live board before play is dropped. Every row carries `play_seen_at`, the measurement T is set from. Harness: `test-live-flip-played.sql` (named mutants).
+
 **Never the scheduled time** — it lands after the real start 58% of the time (p95 11 min), and matches often start *early* (median 11 min, one case 14 hours).
 
 Reject `trueStartTime` when `end − start > 6h` or `end < start`.
@@ -462,6 +464,9 @@ One-sided close = dash on both sides.
 - **Guards before write:** the four guards run on a fixture's whole ladder before any row is written.
 - **Stale (founder 2026-10-25):** a price is current only while the worker's last heartbeat is **≤ 180 s** old (`STALE_MIN = 3`, the same rule the match-winner Now uses), the worker reports line writes on and landing, and the broker is connected. Past that, the face dashes `— stale` and the last price moves to the hover. **Test:** at 181 s it dashes, judged in milliseconds, not on the rounded minute label.
 - **Age on screen:** every priced cell shows minutes since that heartbeat ("0m ago").
+- **Where (founder 2026-10-26):** a line price belongs to a match. It shows only in the match card — the H2H tab's Hot lines, the Key factors H2H card, and Market edge → Derived lines (both players). Never on the player profile, never on the standalone Head-to-head page. **Test:** `test-line-prices.mjs` 7.
+- **Completed / started match (founder 2026-10-26):** the line's **close** — the last guarded pre-match price, captured once by the worker when it sees the first in-play row with the fixture's full ladder held (`close_src = 'live-flip'`) — labelled "Close", never an age. A pair dashed at the start, a start learnt at a join or a restart, or no close on record = a dash. **Test:** `kibl-stream/test-line-engine.py` 12, `test-line-prices.mjs` 9.
+- **Before the worker's closes (open, report only):** completed matches before the live-flip capture show a dash. Whether to show the Pinnacle line close (`oddspapi_line_summary`) labelled with its book is the founder's call.
 
 ---
 

@@ -66,7 +66,8 @@ function fixture(specs, extra) {
       result: o.wo ? '0 - 0' : pS + ' - ' + (done.length - pS), won, retired: !!o.ret, walkover: !!o.wo, qualifying: false, tier: 'atp', eventKey: ek,
       sets: o.wo ? [] : sets.map(s => { const r = { p: s[0], o: s[1] }; if (s[2] != null) { if (s[0] < s[1]) r.pTb = s[2]; else r.oTb = s[2]; } return r; }) });
   }
-  return Object.assign({ id: 'fx-h2h-' + String.fromCharCode(97 + (EK % 26)), p1: 'J. Sinner', p2: 'C. Alcaraz', p1Key: '1', p2Key: '2', surface: 'hard', date: '2026-09-01',
+  // a board match always carries its tour and badge — the Hot lines read the match's format from them (founder 2026-10-26)
+  return Object.assign({ id: 'fx-h2h-' + String.fromCharCode(97 + (EK % 26)), p1: 'J. Sinner', p2: 'C. Alcaraz', p1Key: '1', p2Key: '2', surface: 'hard', date: '2026-09-01', tour: 'ATP Basel', tourBadge: 'ATP',
     h2h: { matches: list }, p1RecentFormMatches: form, p2RecentFormMatches: [], _fhH2hData: true,
     // TEN-437 D1: each word-round meeting's event has its first main-draw round on file (p1 v a third player, same day)
     _fhCh: [form.map(x => Object.assign({}, x, { level: 'atp' })).concat([{ date: '2019-01-01', level: 'atp' }],
@@ -151,8 +152,9 @@ test('Today with no Pinnacle / Bet365 price: a dash with its reason; the section
   assert.match(block(), /#aSectionH2H\{ color:var\(--text\); \}/, 'uncoloured text takes the foundation ink token (re-themes Night / Day)');
 });
 // Mutations 'hot lines: appear under 3', 'hot lines: Rate ignores the gate', 'hot lines: column dots coloured by surface'
-test('hot lines: ≥ 3 meetings to appear; a 3-of-3 line prints no rate (D2); white column-head dot = today\'s surface', () => {
-  assert.ok(text(build(nMeet(2, () => true))).includes('Not enough meetings to rank lines (n=2)'));
+test('hot lines: ≥ 3 meetings to rank; a 3-of-3 line prints no rate (D2); white column-head dot = today\'s surface', () => {
+  // founder 2026-10-26: 2 comparable meetings show results (below), never "not enough"
+  assert.ok(!text(build(nMeet(2, () => true))).includes('Not enough meetings'));
   const h = build(nMeet(3, () => true));
   assert.ok(h.includes('3 of 3'), 'a line appears at 3');
   // one retirement: the Bo3-completed lines have 2 eligible meetings and never appear, even under "Show all lines"
@@ -277,9 +279,44 @@ test('TEN-380: section titles outside the cards, white tug, Breakdown header + p
 // TEN-380: a single meeting keeps the full layout with its n=1 chips; 0 meetings = the empty-state card on panel edges.
 test('TEN-380: the 1-meeting and 0-meeting states', () => {
   const one = build(nMeet(1, () => true));
-  assert.ok(text(one).includes('Small sample · n=1') && text(one).includes('Not enough meetings to rank lines (n=1)'));
+  assert.ok(text(one).includes('Small sample · n=1') && text(one).includes('1 of 1'), 'one meeting: its results (founder 2026-10-26)');
   assert.match(text(one), /Meetings .* 1 on record · Sinner leads 1–0/);
   const zero = build(fixture([]));
   assert.match(zero, /border:1px solid var\(--edge-6\); border-radius:16px;/);
   assert.ok(!/border:1px solid var\(--line\); border-radius:12px/.test(zero), 'the two style tiles on --edge-6');
+});
+
+// Founder ruling 2026-10-26 · Hot lines from ONE meeting, format first. Mutations named per check (tools/test-ten331-mutants.js):
+//   'hot: results mode off' (1–2 meetings ranked/rated as before), 'hot: format lock off' (other-format meetings count).
+test('hot lines from 1 meeting: 1–2 comparable meetings show counts, never a rate or a ranking (mutant: hot: results mode off)', () => {
+  for (const k of [1, 2]) {
+    const h = build(nMeet(k, () => true), { allLines: false });
+    const t = text(h);
+    assert.ok(t.includes(k + ' of ' + k), k + ' meeting(s): each line reads "' + k + ' of ' + k + '"');
+    const hot = h.slice(h.indexOf('fh-h2hot'), h.indexOf('One dot per meeting'));
+    assert.ok(hot.length > 100 && !/\d%/.test(text(hot)), k + ': no percentage anywhere in Hot lines');
+    assert.ok(!h.includes('Most covered') && !h.includes('fh-hl-top'), k + ': nothing is ranked');
+    assert.ok(!t.includes('Best-covered'), k + ': no "best-covered" wording');
+    assert.match(h, /data-hl-results="1"/, k + ': the rate cell is the results-only dash');
+    assert.ok(t.includes('too few to rate or rank'), k + ': the subtitle says why');
+  }
+  const three = build(nMeet(3, () => true));
+  assert.ok(three.includes('Most covered') && text(three).includes('Best-covered'), 'control: 3 meetings rank as before');
+});
+test('hot lines format first: a best-of-3 match whose only meetings are best of 5 has 0 comparable meetings (mutant: hot: format lock off)', () => {
+  const B5 = [[6, 3], [6, 4], [6, 2]];
+  const slam = fixture([[d(1), true, B5, { t: 'Wimbledon' }], [d(2), false, [[3, 6], [4, 6], [2, 6]], { t: 'Australian Open' }]]);
+  const t = text(build(slam));
+  assert.ok(t.includes('No best-of-3 meetings'), 'the plain note: ' + t.slice(t.indexOf('Hot lines'), t.indexOf('Hot lines') + 120));
+  assert.ok(!t.includes('Best-covered') && t.includes('Only best-of-3 meetings count'), 'no "best-covered" wording over an empty table');
+  assert.ok(!/\d of \d/.test(t.slice(t.indexOf('Hot lines'), t.indexOf('Hot lines') + 400)), 'no line reads a best-of-5 meeting');
+  const mixed = build(fixture([[d(1), true, B5, { t: 'Wimbledon' }], [d(2), true, W2]]));
+  const mh = text(mixed.slice(mixed.indexOf('fh-h2hot'), mixed.indexOf('One dot per meeting')));
+  assert.ok(mh.includes('1 of 1') && text(mixed).includes('one comparable meeting'),
+    'one Bo3 + one Bo5: one comparable meeting: ' + mh.slice(0, 200));
+  const games = mh.slice(0, mh.indexOf('Sets & tiebreaks'));
+  assert.ok(!games.includes('of 2'), 'no games / set-handicap line counts the Bo5 meeting');
+  // founder 2026-10-26 item 8 (reverted until ruled): the set-1 winners count EVERY meeting (mutant: hot: set-1 lines format-locked)
+  assert.match(mh, /Match goes to a deciding set (— )*\d of 1 /, 'the deciding set counts the Bo3 meeting only (mutant: hot: format lock off)');
+  assert.match(mh, /Sinner wins set 1 (— )*2 of 2/, 'set 1 counts both meetings, Bo5 included: ' + mh.slice(mh.indexOf('Sets & tiebreaks'), mh.indexOf('Sets & tiebreaks') + 160));
 });

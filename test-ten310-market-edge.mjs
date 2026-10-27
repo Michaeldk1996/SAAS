@@ -45,7 +45,9 @@ function lineRow(html, key) {
   const c = chunk(html, 'data-me-line', key); if (!c) return null;
   const t = texts(c.slice(c.indexOf('>') + 1));
   const cell = (s) => { const m = /^(\d+)\/(\d+) · (\d+)%$/.exec(s); const d = /^— · n=(\d+)$/.exec(s); return m ? { c: +m[1], n: +m[2], pct: +m[3] } : d ? { c: null, n: +d[1], pct: null } : null; };
-  return { label: t[0], all: cell(t[1]), band: cell(t[2]), diff: t[3] || '' };
+  // founder 2026-10-26: a Price column after Line (me-pxcol) — a single dash in this harness, which loads no line prices
+  const o = c.includes('class="me-pxcol"') ? 1 : 0;
+  return { label: t[0], price: o ? t[1] : null, all: cell(t[1 + o]), band: cell(t[2 + o]), diff: t[3 + o] || '' };
 }
 function legend(html) {
   html = html.slice(html.indexOf('Profit at 1u flat'));   // the chart card's legend (the band card's headers say "N priced" too)

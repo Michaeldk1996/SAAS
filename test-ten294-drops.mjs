@@ -1533,9 +1533,8 @@ test('TEN-299: both bots drop every tick at or after the live start, in one guar
     // the scan evaluates nothing at or after a match's cut (review of 43f06494: the 10-min window / late-recorded tick)
     assert.match(code, new RegExp('where known_at <= e and at <= e and at > e - p_window\\s+and not exists \\(select 1 from pg_temp\\.' + ct + ' x where x\\.' + key + ' = ' + tbl + '\\.' + key + ' and x\\.cut_at <= e\\)'), tbl + ' scan');
   }
-  // an odd sighting date/time never throws (it would stop both bots); empty surname keys never join
-  assert.match(code, /case when f\.event_date ~ '\^\\d\{4\}-\\d\\d-\\d\\d\$'/);
-  assert.match(code, /case when f\.event_time ~ '\^\\d\\d:\\d\\d\$' then f\.event_time else '00:00' end/);
+  // empty surname keys never join
+  assert.doesNotMatch(code, /event_time/, 'the sighting join never reads the scheduled time (TEN-225 ruling 1, founder 2026-10-26)');
   assert.equal((code.match(/where ev\.h <> '' and ev\.a <> '' and drops_live\.ini_ok/g) || []).length, 4, 'all four join legs');
   // the bots' own filters are untouched (the live definitions + the delete)
   assert.match(code, /coalesce\(t\.event_status, e\.status\) = 'pending'/);
@@ -1543,9 +1542,8 @@ test('TEN-299: both bots drop every tick at or after the live start, in one guar
   // the join mirrors status.mjs: surname key, given-name initials, 24 h, exactly one (else the scheduled start)
   assert.match(code, /'\\s\+\(jr\|sr\|ii\|iii\|iv\)\\\.\?\$'/, 'Jr / Sr / II suffix dropped');
   assert.match(code, /normalize\(/, 'accents stripped');
-  assert.match(code, /abs\(extract\(epoch from fl\.sched - ev\.start_at\)\) < 86400/);
+  assert.match(code, /abs\(extract\(epoch from fl\.live_at - ev\.start_at\)\) < 86400/, 'the 24 h window is measured from the live sighting');
   assert.match(code, /case when cardinality\(p_keys\) = 1 then p_live\[1\] else p_start end/);
-  assert.match(code, /at time zone 'Europe\/Berlin'/, 'the sighting\'s scheduled time is the API default zone');
   // installed from the drops workflow, measured before and after with the bots' real scan (backtest mode only)
   const steps = JSON.parse(read('tools/ten294-steps-install.json')).map((s) => s.name);
   for (const n of ['ten299_base_287', 'ten299_base_280', 'install_live_cut', 'ten299_cut_287', 'ten299_cut_280', 'ten299_summary']) assert.ok(steps.includes(n), n);

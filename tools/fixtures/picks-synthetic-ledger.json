@@ -1,0 +1,1710 @@
+{
+ "_note": "SYNTHETIC test ledger for tools/test-picks-core.mjs only. Invented values: never served to the page, never a pick.",
+ "as_of_day": "2026-10-27",
+ "picks": [
+  {
+   "id": "syn01",
+   "kind": "match",
+   "event": null,
+   "market_text": null,
+   "settles_at": null,
+   "date": "2026-10-26",
+   "tournament": "Synthetic Open",
+   "round": "R32",
+   "scheduled_at": "2026-10-26T14:00:00+01:00",
+   "surface": "Hard",
+   "player_a": {
+    "id": null,
+    "name": "A. Testone",
+    "initials": "AT"
+   },
+   "player_b": {
+    "id": null,
+    "name": "B. Testtwo",
+    "initials": "BT"
+   },
+   "selection": "a",
+   "market": "Match winner",
+   "line": null,
+   "open_price": null,
+   "posted_price": 1.85,
+   "posted_at": "2026-10-26T09:00:00+01:00",
+   "now_price": null,
+   "opp_now_price": null,
+   "close_price": 1.78,
+   "opp_close_price": 2.15,
+   "stake": 1,
+   "note": "Synthetic test row.",
+   "model_pct": null,
+   "status": "won",
+   "void_reason": null,
+   "result": {
+    "sets": [
+     {
+      "a": "6",
+      "b": "4"
+     },
+     {
+      "a": "6",
+      "b": "3"
+     }
+    ],
+    "retired": false
+   },
+   "edited_at": null,
+   "frozen_at": null
+  },
+  {
+   "id": "syn02",
+   "kind": "match",
+   "event": null,
+   "market_text": null,
+   "settles_at": null,
+   "date": "2026-10-26",
+   "tournament": "Synthetic Open",
+   "round": "R16",
+   "scheduled_at": "2026-10-26T14:00:00+01:00",
+   "surface": "Hard",
+   "player_a": {
+    "id": null,
+    "name": "B. Testtwo",
+    "initials": "BT"
+   },
+   "player_b": {
+    "id": null,
+    "name": "C. Testthree",
+    "initials": "CT"
+   },
+   "selection": "b",
+   "market": "Games handicap",
+   "line": "+2.5",
+   "open_price": null,
+   "posted_price": 1.9,
+   "posted_at": "2026-10-26T09:00:00+01:00",
+   "now_price": null,
+   "opp_now_price": null,
+   "close_price": 1.84,
+   "opp_close_price": 2.02,
+   "stake": 1,
+   "note": "Synthetic test row.",
+   "model_pct": null,
+   "status": "lost",
+   "void_reason": null,
+   "result": {
+    "sets": [
+     {
+      "a": "6",
+      "b": "2"
+     },
+     {
+      "a": "6",
+      "b": "1"
+     }
+    ],
+    "retired": false
+   },
+   "edited_at": null,
+   "frozen_at": null
+  },
+  {
+   "id": "syn03",
+   "kind": "match",
+   "event": null,
+   "market_text": null,
+   "settles_at": null,
+   "date": "2026-10-25",
+   "tournament": "Synthetic Open",
+   "round": "QF",
+   "scheduled_at": "2026-10-25T14:00:00+01:00",
+   "surface": "Hard",
+   "player_a": {
+    "id": null,
+    "name": "C. Testthree",
+    "initials": "CT"
+   },
+   "player_b": {
+    "id": null,
+    "name": "D. Testfour",
+    "initials": "DF"
+   },
+   "selection": "a",
+   "market": "Total games",
+   "line": "Over 22.5",
+   "open_price": null,
+   "posted_price": 1.95,
+   "posted_at": "2026-10-25T09:00:00+01:00",
+   "now_price": null,
+   "opp_now_price": null,
+   "close_price": 1.88,
+   "opp_close_price": 1.96,
+   "stake": 0.5,
+   "note": "Synthetic test row.",
+   "model_pct": null,
+   "status": "won",
+   "void_reason": null,
+   "result": {
+    "sets": [
+     {
+      "a": "7",
+      "b": "6",
+      "tb": "5",
+      "tb_side": "a"
+     },
+     {
+      "a": "4",
+      "b": "6"
+     },
+     {
+      "a": "6",
+      "b": "4"
+     }
+    ],
+    "retired": false
+   },
+   "edited_at": null,
+   "frozen_at": null
+  },
+  {
+   "id": "syn04",
+   "kind": "match",
+   "event": null,
+   "market_text": null,
+   "settles_at": null,
+   "date": "2026-10-25",
+   "tournament": "Synthetic Open",
+   "round": "SF",
+   "scheduled_at": "2026-10-25T14:00:00+01:00",
+   "surface": "Hard",
+   "player_a": {
+    "id": null,
+    "name": "D. Testfour",
+    "initials": "DF"
+   },
+   "player_b": {
+    "id": null,
+    "name": "E. Testfive",
+    "initials": "ET"
+   },
+   "selection": "b",
+   "market": "Match winner",
+   "line": null,
+   "open_price": null,
+   "posted_price": 2.4,
+   "posted_at": "2026-10-25T09:00:00+01:00",
+   "now_price": null,
+   "opp_now_price": null,
+   "close_price": 2.6,
+   "opp_close_price": 1.52,
+   "stake": 1,
+   "note": "Synthetic test row.",
+   "model_pct": null,
+   "status": "lost",
+   "void_reason": null,
+   "result": {
+    "sets": [
+     {
+      "a": "6",
+      "b": "3"
+     },
+     {
+      "a": "7",
+      "b": "6",
+      "tb": "4",
+      "tb_side": "a"
+     }
+    ],
+    "retired": false
+   },
+   "edited_at": null,
+   "frozen_at": null
+  },
+  {
+   "id": "syn05",
+   "kind": "match",
+   "event": null,
+   "market_text": null,
+   "settles_at": null,
+   "date": "2026-10-24",
+   "tournament": "Synthetic Open",
+   "round": "R32",
+   "scheduled_at": "2026-10-24T14:00:00+01:00",
+   "surface": "Hard",
+   "player_a": {
+    "id": null,
+    "name": "E. Testfive",
+    "initials": "ET"
+   },
+   "player_b": {
+    "id": null,
+    "name": "F. Testsix",
+    "initials": "FS"
+   },
+   "selection": "a",
+   "market": "Match winner",
+   "line": null,
+   "open_price": null,
+   "posted_price": 2.1,
+   "posted_at": "2026-10-24T09:00:00+01:00",
+   "now_price": null,
+   "opp_now_price": null,
+   "close_price": 2.05,
+   "opp_close_price": 1.8,
+   "stake": 1,
+   "note": "Synthetic test row.",
+   "model_pct": null,
+   "status": "void",
+   "void_reason": "Retired before set 1 completed (Pinnacle rule)",
+   "result": {
+    "sets": [
+     {
+      "a": "2",
+      "b": "3"
+     }
+    ],
+    "retired": true
+   },
+   "edited_at": null,
+   "frozen_at": null
+  },
+  {
+   "id": "syn06",
+   "kind": "match",
+   "event": null,
+   "market_text": null,
+   "settles_at": null,
+   "date": "2026-10-24",
+   "tournament": "Synthetic Open",
+   "round": "R16",
+   "scheduled_at": "2026-10-24T14:00:00+01:00",
+   "surface": "Hard",
+   "player_a": {
+    "id": null,
+    "name": "F. Testsix",
+    "initials": "FS"
+   },
+   "player_b": {
+    "id": null,
+    "name": "A. Testone",
+    "initials": "AT"
+   },
+   "selection": "a",
+   "market": "Match winner",
+   "line": null,
+   "open_price": null,
+   "posted_price": 1.7,
+   "posted_at": "2026-10-24T09:00:00+01:00",
+   "now_price": null,
+   "opp_now_price": null,
+   "close_price": null,
+   "opp_close_price": null,
+   "stake": 1.5,
+   "note": "Synthetic test row.",
+   "model_pct": null,
+   "status": "won",
+   "void_reason": null,
+   "result": {
+    "sets": [
+     {
+      "a": "6",
+      "b": "4"
+     },
+     {
+      "a": "3",
+      "b": "6"
+     },
+     {
+      "a": "6",
+      "b": "2"
+     }
+    ],
+    "retired": false
+   },
+   "edited_at": null,
+   "frozen_at": null
+  },
+  {
+   "id": "syn07",
+   "kind": "match",
+   "event": null,
+   "market_text": null,
+   "settles_at": null,
+   "date": "2026-10-23",
+   "tournament": "Synthetic Open",
+   "round": "QF",
+   "scheduled_at": "2026-10-23T14:00:00+01:00",
+   "surface": "Hard",
+   "player_a": {
+    "id": null,
+    "name": "A. Testone",
+    "initials": "AT"
+   },
+   "player_b": {
+    "id": null,
+    "name": "B. Testtwo",
+    "initials": "BT"
+   },
+   "selection": "a",
+   "market": "Games handicap",
+   "line": "−3.5",
+   "open_price": null,
+   "posted_price": 2.05,
+   "posted_at": "2026-10-23T09:00:00+01:00",
+   "now_price": null,
+   "opp_now_price": null,
+   "close_price": 1.98,
+   "opp_close_price": 1.9,
+   "stake": 1,
+   "note": "Synthetic test row.",
+   "model_pct": null,
+   "status": "won",
+   "void_reason": null,
+   "result": {
+    "sets": [
+     {
+      "a": "6",
+      "b": "2"
+     },
+     {
+      "a": "6",
+      "b": "3"
+     }
+    ],
+    "retired": false
+   },
+   "edited_at": null,
+   "frozen_at": null
+  },
+  {
+   "id": "syn08",
+   "kind": "match",
+   "event": null,
+   "market_text": null,
+   "settles_at": null,
+   "date": "2026-10-23",
+   "tournament": "Synthetic Open",
+   "round": "SF",
+   "scheduled_at": "2026-10-23T14:00:00+01:00",
+   "surface": "Hard",
+   "player_a": {
+    "id": null,
+    "name": "B. Testtwo",
+    "initials": "BT"
+   },
+   "player_b": {
+    "id": null,
+    "name": "C. Testthree",
+    "initials": "CT"
+   },
+   "selection": "b",
+   "market": "Total games",
+   "line": "Under 21.5",
+   "open_price": null,
+   "posted_price": 1.88,
+   "posted_at": "2026-10-23T09:00:00+01:00",
+   "now_price": null,
+   "opp_now_price": null,
+   "close_price": 1.92,
+   "opp_close_price": 1.92,
+   "stake": 1,
+   "note": "Synthetic test row.",
+   "model_pct": null,
+   "status": "lost",
+   "void_reason": null,
+   "result": {
+    "sets": [
+     {
+      "a": "7",
+      "b": "6",
+      "tb": "3",
+      "tb_side": "a"
+     },
+     {
+      "a": "7",
+      "b": "5"
+     }
+    ],
+    "retired": false
+   },
+   "edited_at": null,
+   "frozen_at": null
+  },
+  {
+   "id": "syn09",
+   "kind": "match",
+   "event": null,
+   "market_text": null,
+   "settles_at": null,
+   "date": "2026-10-22",
+   "tournament": "Synthetic Open",
+   "round": "R32",
+   "scheduled_at": "2026-10-22T14:00:00+01:00",
+   "surface": "Hard",
+   "player_a": {
+    "id": null,
+    "name": "C. Testthree",
+    "initials": "CT"
+   },
+   "player_b": {
+    "id": null,
+    "name": "D. Testfour",
+    "initials": "DF"
+   },
+   "selection": "a",
+   "market": "Match winner",
+   "line": null,
+   "open_price": null,
+   "posted_price": 1.62,
+   "posted_at": "2026-10-22T09:00:00+01:00",
+   "now_price": null,
+   "opp_now_price": null,
+   "close_price": 1.64,
+   "opp_close_price": 2.36,
+   "stake": 2,
+   "note": "Synthetic test row.",
+   "model_pct": null,
+   "status": "won",
+   "void_reason": null,
+   "result": {
+    "sets": [
+     {
+      "a": "4",
+      "b": "6"
+     },
+     {
+      "a": "7",
+      "b": "6",
+      "tb": "3",
+      "tb_side": "a"
+     },
+     {
+      "a": "6",
+      "b": "2"
+     }
+    ],
+    "retired": false
+   },
+   "edited_at": null,
+   "frozen_at": null
+  },
+  {
+   "id": "syn10",
+   "kind": "match",
+   "event": null,
+   "market_text": null,
+   "settles_at": null,
+   "date": "2026-10-21",
+   "tournament": "Synthetic Open",
+   "round": "R16",
+   "scheduled_at": "2026-10-21T14:00:00+01:00",
+   "surface": "Hard",
+   "player_a": {
+    "id": null,
+    "name": "D. Testfour",
+    "initials": "DF"
+   },
+   "player_b": {
+    "id": null,
+    "name": "E. Testfive",
+    "initials": "ET"
+   },
+   "selection": "b",
+   "market": "Match winner",
+   "line": null,
+   "open_price": null,
+   "posted_price": 3.1,
+   "posted_at": "2026-10-21T09:00:00+01:00",
+   "now_price": null,
+   "opp_now_price": null,
+   "close_price": 2.9,
+   "opp_close_price": 1.45,
+   "stake": 0.5,
+   "note": "Synthetic test row.",
+   "model_pct": null,
+   "status": "lost",
+   "void_reason": null,
+   "result": {
+    "sets": [
+     {
+      "a": "6",
+      "b": "1"
+     },
+     {
+      "a": "6",
+      "b": "4"
+     }
+    ],
+    "retired": false
+   },
+   "edited_at": null,
+   "frozen_at": null
+  },
+  {
+   "id": "syn11",
+   "kind": "match",
+   "event": null,
+   "market_text": null,
+   "settles_at": null,
+   "date": "2026-10-20",
+   "tournament": "Synthetic Open",
+   "round": "QF",
+   "scheduled_at": "2026-10-20T14:00:00+01:00",
+   "surface": "Hard",
+   "player_a": {
+    "id": null,
+    "name": "E. Testfive",
+    "initials": "ET"
+   },
+   "player_b": {
+    "id": null,
+    "name": "F. Testsix",
+    "initials": "FS"
+   },
+   "selection": "a",
+   "market": "Match winner",
+   "line": null,
+   "open_price": null,
+   "posted_price": 1.55,
+   "posted_at": "2026-10-20T09:00:00+01:00",
+   "now_price": null,
+   "opp_now_price": null,
+   "close_price": 1.5,
+   "opp_close_price": 2.7,
+   "stake": 1,
+   "note": "Synthetic test row.",
+   "model_pct": null,
+   "status": "won",
+   "void_reason": null,
+   "result": {
+    "sets": [
+     {
+      "a": "6",
+      "b": "3"
+     },
+     {
+      "a": "6",
+      "b": "4"
+     }
+    ],
+    "retired": false
+   },
+   "edited_at": null,
+   "frozen_at": null
+  },
+  {
+   "id": "syn12",
+   "kind": "match",
+   "event": null,
+   "market_text": null,
+   "settles_at": null,
+   "date": "2026-10-19",
+   "tournament": "Synthetic Open",
+   "round": "SF",
+   "scheduled_at": "2026-10-19T14:00:00+01:00",
+   "surface": "Hard",
+   "player_a": {
+    "id": null,
+    "name": "F. Testsix",
+    "initials": "FS"
+   },
+   "player_b": {
+    "id": null,
+    "name": "A. Testone",
+    "initials": "AT"
+   },
+   "selection": "b",
+   "market": "Games handicap",
+   "line": "+3.5",
+   "open_price": null,
+   "posted_price": 1.8,
+   "posted_at": "2026-10-19T09:00:00+01:00",
+   "now_price": null,
+   "opp_now_price": null,
+   "close_price": null,
+   "opp_close_price": 1.95,
+   "stake": 1,
+   "note": "Synthetic test row.",
+   "model_pct": null,
+   "status": "won",
+   "void_reason": null,
+   "result": {
+    "sets": [
+     {
+      "a": "6",
+      "b": "7",
+      "tb": "4",
+      "tb_side": "b"
+     },
+     {
+      "a": "6",
+      "b": "4"
+     },
+     {
+      "a": "4",
+      "b": "6"
+     }
+    ],
+    "retired": false
+   },
+   "edited_at": null,
+   "frozen_at": null
+  },
+  {
+   "id": "syn13",
+   "kind": "match",
+   "event": null,
+   "market_text": null,
+   "settles_at": null,
+   "date": "2026-10-18",
+   "tournament": "Synthetic Open",
+   "round": "R32",
+   "scheduled_at": "2026-10-18T14:00:00+01:00",
+   "surface": "Hard",
+   "player_a": {
+    "id": null,
+    "name": "A. Testone",
+    "initials": "AT"
+   },
+   "player_b": {
+    "id": null,
+    "name": "B. Testtwo",
+    "initials": "BT"
+   },
+   "selection": "a",
+   "market": "Total games",
+   "line": "Over 21.5",
+   "open_price": null,
+   "posted_price": 1.75,
+   "posted_at": "2026-10-18T09:00:00+01:00",
+   "now_price": null,
+   "opp_now_price": null,
+   "close_price": 1.7,
+   "opp_close_price": 2.15,
+   "stake": 1,
+   "note": "Synthetic test row.",
+   "model_pct": null,
+   "status": "lost",
+   "void_reason": null,
+   "result": {
+    "sets": [
+     {
+      "a": "6",
+      "b": "1"
+     },
+     {
+      "a": "6",
+      "b": "2"
+     }
+    ],
+    "retired": false
+   },
+   "edited_at": null,
+   "frozen_at": null
+  },
+  {
+   "id": "syn14",
+   "kind": "match",
+   "event": null,
+   "market_text": null,
+   "settles_at": null,
+   "date": "2026-10-17",
+   "tournament": "Synthetic Open",
+   "round": "R16",
+   "scheduled_at": "2026-10-17T14:00:00+01:00",
+   "surface": "Hard",
+   "player_a": {
+    "id": null,
+    "name": "B. Testtwo",
+    "initials": "BT"
+   },
+   "player_b": {
+    "id": null,
+    "name": "C. Testthree",
+    "initials": "CT"
+   },
+   "selection": "a",
+   "market": "Match winner",
+   "line": null,
+   "open_price": null,
+   "posted_price": 2.25,
+   "posted_at": "2026-10-17T09:00:00+01:00",
+   "now_price": null,
+   "opp_now_price": null,
+   "close_price": 2.3,
+   "opp_close_price": 1.66,
+   "stake": 1,
+   "note": "Synthetic test row.",
+   "model_pct": null,
+   "status": "lost",
+   "void_reason": null,
+   "result": {
+    "sets": [
+     {
+      "a": "3",
+      "b": "6"
+     },
+     {
+      "a": "4",
+      "b": "6"
+     }
+    ],
+    "retired": false
+   },
+   "edited_at": null,
+   "frozen_at": null
+  },
+  {
+   "id": "syn15",
+   "kind": "match",
+   "event": null,
+   "market_text": null,
+   "settles_at": null,
+   "date": "2026-10-16",
+   "tournament": "Synthetic Open",
+   "round": "QF",
+   "scheduled_at": "2026-10-16T14:00:00+01:00",
+   "surface": "Hard",
+   "player_a": {
+    "id": null,
+    "name": "C. Testthree",
+    "initials": "CT"
+   },
+   "player_b": {
+    "id": null,
+    "name": "D. Testfour",
+    "initials": "DF"
+   },
+   "selection": "b",
+   "market": "Match winner",
+   "line": null,
+   "open_price": null,
+   "posted_price": 1.95,
+   "posted_at": "2026-10-16T09:00:00+01:00",
+   "now_price": null,
+   "opp_now_price": null,
+   "close_price": 1.85,
+   "opp_close_price": 2.0,
+   "stake": 1.5,
+   "note": "Synthetic test row.",
+   "model_pct": null,
+   "status": "won",
+   "void_reason": null,
+   "result": {
+    "sets": [
+     {
+      "a": "4",
+      "b": "6"
+     },
+     {
+      "a": "6",
+      "b": "7",
+      "tb": "5",
+      "tb_side": "b"
+     }
+    ],
+    "retired": false
+   },
+   "edited_at": null,
+   "frozen_at": null
+  },
+  {
+   "id": "syn16",
+   "kind": "match",
+   "event": null,
+   "market_text": null,
+   "settles_at": null,
+   "date": "2026-10-15",
+   "tournament": "Synthetic Open",
+   "round": "SF",
+   "scheduled_at": "2026-10-15T14:00:00+01:00",
+   "surface": "Hard",
+   "player_a": {
+    "id": null,
+    "name": "D. Testfour",
+    "initials": "DF"
+   },
+   "player_b": {
+    "id": null,
+    "name": "E. Testfive",
+    "initials": "ET"
+   },
+   "selection": "a",
+   "market": "Match winner",
+   "line": null,
+   "open_price": null,
+   "posted_price": 1.4,
+   "posted_at": "2026-10-15T09:00:00+01:00",
+   "now_price": null,
+   "opp_now_price": null,
+   "close_price": 1.38,
+   "opp_close_price": 3.2,
+   "stake": 2,
+   "note": "Synthetic test row.",
+   "model_pct": null,
+   "status": "won",
+   "void_reason": null,
+   "result": {
+    "sets": [
+     {
+      "a": "6",
+      "b": "2"
+     },
+     {
+      "a": "6",
+      "b": "2"
+     }
+    ],
+    "retired": false
+   },
+   "edited_at": null,
+   "frozen_at": null
+  },
+  {
+   "id": "syn17",
+   "kind": "match",
+   "event": null,
+   "market_text": null,
+   "settles_at": null,
+   "date": "2026-10-14",
+   "tournament": "Synthetic Open",
+   "round": "R32",
+   "scheduled_at": "2026-10-14T14:00:00+01:00",
+   "surface": "Hard",
+   "player_a": {
+    "id": null,
+    "name": "E. Testfive",
+    "initials": "ET"
+   },
+   "player_b": {
+    "id": null,
+    "name": "F. Testsix",
+    "initials": "FS"
+   },
+   "selection": "a",
+   "market": "Games handicap",
+   "line": "−2.5",
+   "open_price": null,
+   "posted_price": 1.92,
+   "posted_at": "2026-10-14T09:00:00+01:00",
+   "now_price": null,
+   "opp_now_price": null,
+   "close_price": 1.95,
+   "opp_close_price": 1.88,
+   "stake": 1,
+   "note": "Synthetic test row.",
+   "model_pct": null,
+   "status": "lost",
+   "void_reason": null,
+   "result": {
+    "sets": [
+     {
+      "a": "6",
+      "b": "4"
+     },
+     {
+      "a": "5",
+      "b": "7"
+     },
+     {
+      "a": "4",
+      "b": "6"
+     }
+    ],
+    "retired": false
+   },
+   "edited_at": null,
+   "frozen_at": null
+  },
+  {
+   "id": "syn18",
+   "kind": "match",
+   "event": null,
+   "market_text": null,
+   "settles_at": null,
+   "date": "2026-10-13",
+   "tournament": "Synthetic Open",
+   "round": "R16",
+   "scheduled_at": "2026-10-13T14:00:00+01:00",
+   "surface": "Hard",
+   "player_a": {
+    "id": null,
+    "name": "F. Testsix",
+    "initials": "FS"
+   },
+   "player_b": {
+    "id": null,
+    "name": "A. Testone",
+    "initials": "AT"
+   },
+   "selection": "a",
+   "market": "Match winner",
+   "line": null,
+   "open_price": null,
+   "posted_price": 2.6,
+   "posted_at": "2026-10-13T09:00:00+01:00",
+   "now_price": null,
+   "opp_now_price": null,
+   "close_price": 2.45,
+   "opp_close_price": 1.58,
+   "stake": 0.5,
+   "note": "Synthetic test row.",
+   "model_pct": null,
+   "status": "won",
+   "void_reason": null,
+   "result": {
+    "sets": [
+     {
+      "a": "7",
+      "b": "6",
+      "tb": "2",
+      "tb_side": "a"
+     },
+     {
+      "a": "6",
+      "b": "4"
+     }
+    ],
+    "retired": false
+   },
+   "edited_at": null,
+   "frozen_at": null
+  },
+  {
+   "id": "syn19",
+   "kind": "match",
+   "event": null,
+   "market_text": null,
+   "settles_at": null,
+   "date": "2026-10-12",
+   "tournament": "Synthetic Open",
+   "round": "QF",
+   "scheduled_at": "2026-10-12T14:00:00+01:00",
+   "surface": "Hard",
+   "player_a": {
+    "id": null,
+    "name": "A. Testone",
+    "initials": "AT"
+   },
+   "player_b": {
+    "id": null,
+    "name": "B. Testtwo",
+    "initials": "BT"
+   },
+   "selection": "b",
+   "market": "Total games",
+   "line": "Under 22.5",
+   "open_price": null,
+   "posted_price": 1.83,
+   "posted_at": "2026-10-12T09:00:00+01:00",
+   "now_price": null,
+   "opp_now_price": null,
+   "close_price": 1.8,
+   "opp_close_price": 2.04,
+   "stake": 1,
+   "note": "Synthetic test row.",
+   "model_pct": null,
+   "status": "won",
+   "void_reason": null,
+   "result": {
+    "sets": [
+     {
+      "a": "6",
+      "b": "3"
+     },
+     {
+      "a": "6",
+      "b": "2"
+     }
+    ],
+    "retired": false
+   },
+   "edited_at": null,
+   "frozen_at": null
+  },
+  {
+   "id": "syn20",
+   "kind": "match",
+   "event": null,
+   "market_text": null,
+   "settles_at": null,
+   "date": "2026-10-11",
+   "tournament": "Synthetic Open",
+   "round": "SF",
+   "scheduled_at": "2026-10-11T14:00:00+01:00",
+   "surface": "Hard",
+   "player_a": {
+    "id": null,
+    "name": "B. Testtwo",
+    "initials": "BT"
+   },
+   "player_b": {
+    "id": null,
+    "name": "C. Testthree",
+    "initials": "CT"
+   },
+   "selection": "b",
+   "market": "Match winner",
+   "line": null,
+   "open_price": null,
+   "posted_price": 1.72,
+   "posted_at": "2026-10-11T09:00:00+01:00",
+   "now_price": null,
+   "opp_now_price": null,
+   "close_price": 1.75,
+   "opp_close_price": 2.18,
+   "stake": 1,
+   "note": "Synthetic test row.",
+   "model_pct": null,
+   "status": "lost",
+   "void_reason": null,
+   "result": {
+    "sets": [
+     {
+      "a": "6",
+      "b": "4"
+     },
+     {
+      "a": "6",
+      "b": "4"
+     }
+    ],
+    "retired": false
+   },
+   "edited_at": null,
+   "frozen_at": null
+  },
+  {
+   "id": "syn21",
+   "kind": "match",
+   "event": null,
+   "market_text": null,
+   "settles_at": null,
+   "date": "2026-10-09",
+   "tournament": "Synthetic Open",
+   "round": "R32",
+   "scheduled_at": "2026-10-09T14:00:00+01:00",
+   "surface": "Hard",
+   "player_a": {
+    "id": null,
+    "name": "C. Testthree",
+    "initials": "CT"
+   },
+   "player_b": {
+    "id": null,
+    "name": "D. Testfour",
+    "initials": "DF"
+   },
+   "selection": "a",
+   "market": "Match winner",
+   "line": null,
+   "open_price": null,
+   "posted_price": 2.0,
+   "posted_at": "2026-10-09T09:00:00+01:00",
+   "now_price": null,
+   "opp_now_price": null,
+   "close_price": 1.9,
+   "opp_close_price": 1.95,
+   "stake": 1,
+   "note": "Synthetic test row.",
+   "model_pct": null,
+   "status": "won",
+   "void_reason": null,
+   "result": {
+    "sets": [
+     {
+      "a": "6",
+      "b": "4"
+     },
+     {
+      "a": "6",
+      "b": "4"
+     }
+    ],
+    "retired": false
+   },
+   "edited_at": null,
+   "frozen_at": null
+  },
+  {
+   "id": "syn22",
+   "kind": "match",
+   "event": null,
+   "market_text": null,
+   "settles_at": null,
+   "date": "2026-10-07",
+   "tournament": "Synthetic Open",
+   "round": "R16",
+   "scheduled_at": "2026-10-07T14:00:00+01:00",
+   "surface": "Hard",
+   "player_a": {
+    "id": null,
+    "name": "D. Testfour",
+    "initials": "DF"
+   },
+   "player_b": {
+    "id": null,
+    "name": "E. Testfive",
+    "initials": "ET"
+   },
+   "selection": "a",
+   "market": "Match winner",
+   "line": null,
+   "open_price": null,
+   "posted_price": 1.66,
+   "posted_at": "2026-10-07T09:00:00+01:00",
+   "now_price": null,
+   "opp_now_price": null,
+   "close_price": null,
+   "opp_close_price": null,
+   "stake": 1,
+   "note": "Synthetic test row.",
+   "model_pct": null,
+   "status": "lost",
+   "void_reason": null,
+   "result": {
+    "sets": [
+     {
+      "a": "4",
+      "b": "6"
+     },
+     {
+      "a": "2",
+      "b": "6"
+     }
+    ],
+    "retired": false
+   },
+   "edited_at": null,
+   "frozen_at": null
+  },
+  {
+   "id": "syn23",
+   "kind": "match",
+   "event": null,
+   "market_text": null,
+   "settles_at": null,
+   "date": "2026-10-05",
+   "tournament": "Synthetic Open",
+   "round": "QF",
+   "scheduled_at": "2026-10-05T14:00:00+01:00",
+   "surface": "Hard",
+   "player_a": {
+    "id": null,
+    "name": "E. Testfive",
+    "initials": "ET"
+   },
+   "player_b": {
+    "id": null,
+    "name": "F. Testsix",
+    "initials": "FS"
+   },
+   "selection": "b",
+   "market": "Match winner",
+   "line": null,
+   "open_price": null,
+   "posted_price": 2.2,
+   "posted_at": "2026-10-05T09:00:00+01:00",
+   "now_price": null,
+   "opp_now_price": null,
+   "close_price": 2.1,
+   "opp_close_price": 1.75,
+   "stake": 1,
+   "note": "Synthetic test row.",
+   "model_pct": null,
+   "status": "won",
+   "void_reason": null,
+   "result": {
+    "sets": [
+     {
+      "a": "3",
+      "b": "6"
+     },
+     {
+      "a": "6",
+      "b": "4"
+     },
+     {
+      "a": "6",
+      "b": "7",
+      "tb": "6",
+      "tb_side": "b"
+     }
+    ],
+    "retired": false
+   },
+   "edited_at": null,
+   "frozen_at": null
+  },
+  {
+   "id": "syn24",
+   "kind": "match",
+   "event": null,
+   "market_text": null,
+   "settles_at": null,
+   "date": "2026-10-02",
+   "tournament": "Synthetic Open",
+   "round": "SF",
+   "scheduled_at": "2026-10-02T14:00:00+01:00",
+   "surface": "Hard",
+   "player_a": {
+    "id": null,
+    "name": "F. Testsix",
+    "initials": "FS"
+   },
+   "player_b": {
+    "id": null,
+    "name": "A. Testone",
+    "initials": "AT"
+   },
+   "selection": "a",
+   "market": "Games handicap",
+   "line": "+1.5",
+   "open_price": null,
+   "posted_price": 1.86,
+   "posted_at": "2026-10-02T09:00:00+01:00",
+   "now_price": null,
+   "opp_now_price": null,
+   "close_price": 1.9,
+   "opp_close_price": 1.96,
+   "stake": 1,
+   "note": "Synthetic test row.",
+   "model_pct": null,
+   "status": "won",
+   "void_reason": null,
+   "result": {
+    "sets": [
+     {
+      "a": "4",
+      "b": "6"
+     },
+     {
+      "a": "6",
+      "b": "3"
+     },
+     {
+      "a": "6",
+      "b": "4"
+     }
+    ],
+    "retired": false
+   },
+   "edited_at": null,
+   "frozen_at": null
+  },
+  {
+   "id": "syn25",
+   "kind": "match",
+   "event": null,
+   "market_text": null,
+   "settles_at": null,
+   "date": "2026-09-28",
+   "tournament": "Synthetic Open",
+   "round": "R32",
+   "scheduled_at": "2026-09-28T14:00:00+01:00",
+   "surface": "Hard",
+   "player_a": {
+    "id": null,
+    "name": "A. Testone",
+    "initials": "AT"
+   },
+   "player_b": {
+    "id": null,
+    "name": "B. Testtwo",
+    "initials": "BT"
+   },
+   "selection": "a",
+   "market": "Match winner",
+   "line": null,
+   "open_price": null,
+   "posted_price": 1.9,
+   "posted_at": "2026-09-28T09:00:00+01:00",
+   "now_price": null,
+   "opp_now_price": null,
+   "close_price": 1.8,
+   "opp_close_price": 2.06,
+   "stake": 1,
+   "note": "Synthetic test row.",
+   "model_pct": null,
+   "status": "won",
+   "void_reason": null,
+   "result": {
+    "sets": [
+     {
+      "a": "6",
+      "b": "4"
+     },
+     {
+      "a": "6",
+      "b": "4"
+     }
+    ],
+    "retired": false
+   },
+   "edited_at": null,
+   "frozen_at": null
+  },
+  {
+   "id": "syn26",
+   "kind": "match",
+   "event": null,
+   "market_text": null,
+   "settles_at": null,
+   "date": "2026-09-27",
+   "tournament": "Synthetic Open",
+   "round": "R16",
+   "scheduled_at": "2026-09-27T14:00:00+01:00",
+   "surface": "Hard",
+   "player_a": {
+    "id": null,
+    "name": "B. Testtwo",
+    "initials": "BT"
+   },
+   "player_b": {
+    "id": null,
+    "name": "C. Testthree",
+    "initials": "CT"
+   },
+   "selection": "b",
+   "market": "Match winner",
+   "line": null,
+   "open_price": null,
+   "posted_price": 2.5,
+   "posted_at": "2026-09-27T09:00:00+01:00",
+   "now_price": null,
+   "opp_now_price": null,
+   "close_price": 2.7,
+   "opp_close_price": 1.5,
+   "stake": 1,
+   "note": "Synthetic test row.",
+   "model_pct": null,
+   "status": "lost",
+   "void_reason": null,
+   "result": {
+    "sets": [
+     {
+      "a": "6",
+      "b": "3"
+     },
+     {
+      "a": "6",
+      "b": "3"
+     }
+    ],
+    "retired": false
+   },
+   "edited_at": null,
+   "frozen_at": null
+  },
+  {
+   "id": "syn27",
+   "kind": "match",
+   "event": null,
+   "market_text": null,
+   "settles_at": null,
+   "date": "2026-09-26",
+   "tournament": "Synthetic Open",
+   "round": "QF",
+   "scheduled_at": "2026-09-26T14:00:00+01:00",
+   "surface": "Hard",
+   "player_a": {
+    "id": null,
+    "name": "C. Testthree",
+    "initials": "CT"
+   },
+   "player_b": {
+    "id": null,
+    "name": "D. Testfour",
+    "initials": "DF"
+   },
+   "selection": "a",
+   "market": "Match winner",
+   "line": null,
+   "open_price": null,
+   "posted_price": 1.8,
+   "posted_at": "2026-09-26T09:00:00+01:00",
+   "now_price": null,
+   "opp_now_price": null,
+   "close_price": 1.75,
+   "opp_close_price": 2.1,
+   "stake": 1,
+   "note": "Synthetic test row.",
+   "model_pct": null,
+   "status": "won",
+   "void_reason": null,
+   "result": {
+    "sets": [
+     {
+      "a": "6",
+      "b": "3"
+     },
+     {
+      "a": "6",
+      "b": "3"
+     }
+    ],
+    "retired": false
+   },
+   "edited_at": null,
+   "frozen_at": null
+  },
+  {
+   "id": "syn28",
+   "kind": "match",
+   "event": null,
+   "market_text": null,
+   "settles_at": null,
+   "date": "2026-09-12",
+   "tournament": "Synthetic Open",
+   "round": "SF",
+   "scheduled_at": "2026-09-12T14:00:00+01:00",
+   "surface": "Hard",
+   "player_a": {
+    "id": null,
+    "name": "D. Testfour",
+    "initials": "DF"
+   },
+   "player_b": {
+    "id": null,
+    "name": "E. Testfive",
+    "initials": "ET"
+   },
+   "selection": "a",
+   "market": "Total games",
+   "line": "Over 23.5",
+   "open_price": null,
+   "posted_price": 2.05,
+   "posted_at": "2026-09-12T09:00:00+01:00",
+   "now_price": null,
+   "opp_now_price": null,
+   "close_price": 2.0,
+   "opp_close_price": 1.82,
+   "stake": 1,
+   "note": "Synthetic test row.",
+   "model_pct": null,
+   "status": "lost",
+   "void_reason": null,
+   "result": {
+    "sets": [
+     {
+      "a": "6",
+      "b": "1"
+     },
+     {
+      "a": "6",
+      "b": "0"
+     }
+    ],
+    "retired": false
+   },
+   "edited_at": null,
+   "frozen_at": null
+  },
+  {
+   "id": "syn29",
+   "kind": "match",
+   "event": null,
+   "market_text": null,
+   "settles_at": null,
+   "date": "2026-08-28",
+   "tournament": "Synthetic Open",
+   "round": "R32",
+   "scheduled_at": "2026-08-28T14:00:00+01:00",
+   "surface": "Hard",
+   "player_a": {
+    "id": null,
+    "name": "E. Testfive",
+    "initials": "ET"
+   },
+   "player_b": {
+    "id": null,
+    "name": "F. Testsix",
+    "initials": "FS"
+   },
+   "selection": "a",
+   "market": "Match winner",
+   "line": null,
+   "open_price": null,
+   "posted_price": 1.5,
+   "posted_at": "2026-08-28T09:00:00+01:00",
+   "now_price": null,
+   "opp_now_price": null,
+   "close_price": 1.45,
+   "opp_close_price": 2.85,
+   "stake": 2,
+   "note": "Synthetic test row.",
+   "model_pct": null,
+   "status": "won",
+   "void_reason": null,
+   "result": {
+    "sets": [
+     {
+      "a": "6",
+      "b": "2"
+     },
+     {
+      "a": "6",
+      "b": "2"
+     }
+    ],
+    "retired": false
+   },
+   "edited_at": null,
+   "frozen_at": null
+  },
+  {
+   "id": "syn30",
+   "kind": "match",
+   "event": null,
+   "market_text": null,
+   "settles_at": null,
+   "date": "2026-07-29",
+   "tournament": "Synthetic Open",
+   "round": "R16",
+   "scheduled_at": "2026-07-29T14:00:00+01:00",
+   "surface": "Hard",
+   "player_a": {
+    "id": null,
+    "name": "F. Testsix",
+    "initials": "FS"
+   },
+   "player_b": {
+    "id": null,
+    "name": "A. Testone",
+    "initials": "AT"
+   },
+   "selection": "b",
+   "market": "Match winner",
+   "line": null,
+   "open_price": null,
+   "posted_price": 2.3,
+   "posted_at": "2026-07-29T09:00:00+01:00",
+   "now_price": null,
+   "opp_now_price": null,
+   "close_price": 2.2,
+   "opp_close_price": 1.7,
+   "stake": 1,
+   "note": "Synthetic test row.",
+   "model_pct": null,
+   "status": "lost",
+   "void_reason": null,
+   "result": {
+    "sets": [
+     {
+      "a": "6",
+      "b": "4"
+     },
+     {
+      "a": "6",
+      "b": "4"
+     }
+    ],
+    "retired": false
+   },
+   "edited_at": null,
+   "frozen_at": null
+  },
+  {
+   "id": "syn31",
+   "kind": "match",
+   "event": null,
+   "market_text": null,
+   "settles_at": null,
+   "date": "2026-07-28",
+   "tournament": "Synthetic Open",
+   "round": "QF",
+   "scheduled_at": "2026-07-28T14:00:00+01:00",
+   "surface": "Hard",
+   "player_a": {
+    "id": null,
+    "name": "A. Testone",
+    "initials": "AT"
+   },
+   "player_b": {
+    "id": null,
+    "name": "B. Testtwo",
+    "initials": "BT"
+   },
+   "selection": "a",
+   "market": "Match winner",
+   "line": null,
+   "open_price": null,
+   "posted_price": 1.95,
+   "posted_at": "2026-07-28T09:00:00+01:00",
+   "now_price": null,
+   "opp_now_price": null,
+   "close_price": 1.9,
+   "opp_close_price": 1.92,
+   "stake": 1,
+   "note": "Synthetic test row.",
+   "model_pct": null,
+   "status": "won",
+   "void_reason": null,
+   "result": {
+    "sets": [
+     {
+      "a": "6",
+      "b": "4"
+     },
+     {
+      "a": "6",
+      "b": "4"
+     }
+    ],
+    "retired": false
+   },
+   "edited_at": null,
+   "frozen_at": null
+  },
+  {
+   "id": "syn32",
+   "kind": "match",
+   "event": null,
+   "market_text": null,
+   "settles_at": null,
+   "date": "2025-12-31",
+   "tournament": "Synthetic Open",
+   "round": "SF",
+   "scheduled_at": "2025-12-31T14:00:00+01:00",
+   "surface": "Hard",
+   "player_a": {
+    "id": null,
+    "name": "B. Testtwo",
+    "initials": "BT"
+   },
+   "player_b": {
+    "id": null,
+    "name": "C. Testthree",
+    "initials": "CT"
+   },
+   "selection": "a",
+   "market": "Match winner",
+   "line": null,
+   "open_price": null,
+   "posted_price": 1.7,
+   "posted_at": "2025-12-31T09:00:00+01:00",
+   "now_price": null,
+   "opp_now_price": null,
+   "close_price": 1.65,
+   "opp_close_price": 2.25,
+   "stake": 1,
+   "note": "Synthetic test row.",
+   "model_pct": null,
+   "status": "won",
+   "void_reason": null,
+   "result": {
+    "sets": [
+     {
+      "a": "6",
+      "b": "4"
+     },
+     {
+      "a": "6",
+      "b": "4"
+     }
+    ],
+    "retired": false
+   },
+   "edited_at": null,
+   "frozen_at": null
+  }
+ ]
+}

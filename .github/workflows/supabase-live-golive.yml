@@ -75,6 +75,14 @@ jobs:
           }
           apply supabase/migrations/20260829021135_live_snapshot.sql
           apply supabase/migrations/20260829021600_poller_rpc.sql
+          # TEN-225 live-flip recorder. poller_rpc.sql above re-creates write_snapshot WITHOUT the recorder call, so the
+          # recorder migrations must follow it here or every go-live silently stops start recording (it did: the
+          # 2026-10-24 06:47:50Z run left live_flip_log empty for two days). Both idempotent (if not exists / or replace).
+          apply supabase/migrations/20260917100000_live_flip_log.sql
+          apply supabase/migrations/20260917100100_write_snapshot_flip.sql
+          # played-start-recorder (founder 2026-10-26): AFTER live_flip_log.sql, which re-creates the old record_live_flips body.
+          apply supabase/migrations/20261027090000_live_flip_played.sql
+          apply supabase/migrations/20261027090100_record_live_flips_played.sql
           # TEN-107 detail panel (2026-09-01): on-demand point-log store + writer.
           # Idempotent (create table if not exists / create or replace); must run
           # BEFORE the poller deploy below, since the poller calls write_live_pbp().

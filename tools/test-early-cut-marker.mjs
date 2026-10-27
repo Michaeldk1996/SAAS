@@ -66,7 +66,7 @@ function build(feed) {
   mkdirSync(join(d, 'odds-archive'));
   writeFileSync(join(d, 'odds-archive', '2026.csv'), [TD_HEAD,
     '2026-06-01,X Open,ATP250,Outdoor,Hard,1st Round,3,Alpha A.,Beta B.,10,20,Completed,1.5,2.5,,,,,,,file',
-    '2026-06-02,X Open,ATP250,Outdoor,Hard,1st Round,3,Alpha A.,Gamma G.,10,30,Completed,1.4,2.8,,,,,,,file',
+    '2026-04-02,X Open,ATP250,Outdoor,Hard,1st Round,3,Alpha A.,Gamma G.,10,30,Completed,1.4,2.8,,,,,,,file',   // Bet365 only, inside Jan–Apr 2026 (founder 2026-10-26)
     '2026-06-03,X Open,ATP250,Outdoor,Hard,2nd Round,3,Alpha A.,Delta D.,10,40,Completed,1.25,3.9,,,,,,,file'].join('\n') + '\n');
   writeFileSync(join(d, 'feed.csv'), [feed.cols.join(','), ...feed.feed.map(r => feed.cols.map(k => r[k] ?? '').join(','))].join('\n') + '\n');
   const r = spawnSync(process.execPath, ['build-database-yield.js'], { cwd: d, encoding: 'utf8', env: { ...process.env, DB_YIELD_FEED: join(d, 'feed.csv') } });
@@ -78,7 +78,7 @@ function build(feed) {
 const B1 = build(F1);
 check('builder: the early-cut rows are book 9 (Database rows), the Bet365-only row stays book 1', () => {
   assert.equal(B1.status, 0, B1.err);
-  assert.deepEqual(B1.db.rows.map(r => [r[0], r[8]]), [[20260601, 9], [20260602, 1], [20260603, 9]]);
+  assert.deepEqual(B1.db.rows.map(r => [r[0], r[8]]), [[20260601, 9], [20260402, 1], [20260603, 9]]);
 });
 check('builder: meta.earlyCut names book 9, the 71 min, the mark and the founder\'s exact tooltip', () => {
   assert.deepEqual([B1.db.meta.earlyCut.book, B1.db.meta.earlyCut.minutes, B1.db.meta.earlyCut.mark, B1.db.meta.earlyCut.hover], [9, 71, 'E', HOVER]);
@@ -118,7 +118,7 @@ check('join: the early-cut meeting = Pinnacle (approx.) "A", source "early", the
   assert.deepEqual([v.price, v.oppPrice, v.book, v.src, v.srcLabel], [1.62, 2.35, 'A', 'early', HOVER]);
 });
 check('render: the early cut draws "E" with the founder\'s tooltip; Bet365 still "B" (control); a start − 10 snapshot no mark (control)', () => {
-  const e = view('2026-06-01', 'B. Beta'), b = view('2026-06-02', 'G. Gamma');
+  const e = view('2026-06-01', 'B. Beta'), b = view('2026-04-02', 'G. Gamma');
   assert.equal(UI.fhPxMark(e), 'E'); assert.equal(UI.fhSrcTitle(e), HOVER);
   assert.equal(b.book, 'B'); assert.equal(UI.fhPxMark(b), 'B');
   assert.equal(UI.fhPxMark({ price: 1.5, book: 'A', src: 'od10' }), '');

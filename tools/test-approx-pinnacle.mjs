@@ -244,11 +244,13 @@ check('builder: the Pinnacle count includes our archive\'s closes (no figure mov
   MB.bookCounts.Pinnacle === 3 && MB.archiveFeed.rowsByLabel['from Pinnacle history'] === 1 && MB.archiveFeed.rowsByLabel.captured === 1, JSON.stringify(MB.bookCounts));
 check('builder: no Pinnacle close → the snapshot, book 2', JSON.stringify(R['Snap S.']) === JSON.stringify([2, 1.45, 2.75]), R['Snap S.']);
 check('builder: no snapshot → Bet365 stays the fallback', JSON.stringify(R['Bet B.']) === JSON.stringify([1, 1.5, 2.6]), R['Bet B.']);
-// founder ruling 2026-10-17 item 2: 13 Apr – 16 Sep, the Oddspapi archive at start − 10 first (book 5), api-tennis next (2)
-check('builder: start − 10 before api-tennis (book 5, at its own price)', JSON.stringify(R['Ten T.']) === JSON.stringify([5, 1.43, 2.88]), R['Ten T.']);
+// founder ruling 2026-10-26 (supersedes 2026-10-17 item 2 for the ATP main draw): a start − 10 snapshot is never shown —
+// the match is a DASH, with no fall-through to api-tennis or Bet365 (tools/test-b365-window.mjs carries the full rule)
+check('builder: a start − 10 row is a dash, never book 5 and never the api-tennis snapshot beside it', R['Ten T.'] === undefined, R['Ten T.']);
 check('builder: no start − 10 pair → the api-tennis snapshot (book 2)', JSON.stringify(R['Ate A.']) === JSON.stringify([2, 1.6, 2.3]), R['Ate A.']);
 check('builder: both snapshot sources count as Pinnacle (approx.), each named with its hover and count in meta',
-  MB.bookCounts['Pinnacle (approx.)'] === 3 && MB.approx.sources.od.used === 1 && MB.approx.sources.at.used === 2 && MB.approx.sources.od.hover === OD10,
+  MB.bookCounts['Pinnacle (approx.)'] === 2 && MB.approx.sources.od.used === 0 && MB.approx.sources.at.used === 2 && MB.approx.sources.od.hover === OD10
+  && MB.od10Dropped && MB.od10Dropped.rows === 1,
   JSON.stringify({ bc: MB.bookCounts, s: MB.approx && MB.approx.sources }));
 const agg5 = new Function(`function median(a){ return a.length ? a[a.length >> 1] : null; }\n${fn(html, 'agg')}\nreturn agg;`)();
 const a5 = agg5([{ p: 1.5, w: 1, b: 2 }, { p: 1.6, w: 0, b: 5 }]);

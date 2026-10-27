@@ -169,8 +169,9 @@ no day work, checks or screenshots on this page until the founder reopens it.
   item 2" (the real opener, `fhStateFor`, `fhOpenSheet`).
 - **Hot lines "Show all lines (N)"**: N = the lines that clear the eligibility gate (≥ `FH_HOT_MIN_ELIGIBLE` meetings) in
   the CURRENT scope — the shared component's count of lines, not meetings. Sinner–Alcaraz shows 12 on All (17
-  meetings) and on Clay (5) because all 12 line definitions clear the gate in both; Grass (2) shows "Not enough
-  meetings". Unchanged by design.
+  meetings) and on Clay (5) because all 12 line definitions clear the gate in both. Founder 2026-10-26: below 3
+  meetings (Grass, 2) the lines show their results ("c of 2", no rate, no ranking, no toggle) — `modal-form-h2h.md` a0.
+  No line prices on this page (it is tied to no match).
 
 ## Founder round 1 (2026-10-09) — fixes 1, 2, 5, 6 (builder X)
 - **Tournament "Last played" = the player's OWN last row in that event's ledger** (`trLastPlayed`): the newest edition
