@@ -162,6 +162,36 @@ check('trueStart beats a later card-state start: the +4 min tick is in-play', c.
   check('every committed row is two-sided and >= 1.01', held.rows.every((r) => r.p1 >= 1.01 && r.p2 >= 1.01 && r.p1Key && r.p2Key));
 }
 
+// ---- step 15 (founder 2026-10-27): open + result on the row, and the Market read 30-day line ----------------
+{
+  const B = require(path.join(REPO, 'build-captured-pinnacle.js'));
+  const o = { p1: 'A', p2: 'B', p1Key: 1, p2Key: 2, date: '2026-10-20', winner: 'p2', series: { 'Pinnacle +30s': {
+    p1: new Map([[at(-300), 1.9], [at(-200), 1.0], [at(-20), 2.05], [at(5), 2.5]]), p2: new Map([[at(-300), 1.95], [at(-20), 1.8]]) } } };
+  const r = B.deriveRow('9', o, { ms: T, source: 'oddspapi' }, T + 864e5).row;
+  check('open = the first real tick at or before the start (a sub-1.01 tick is not one)', r.o1 === 1.9 && r.o2 === 1.95 && r.oAt === at(-300), JSON.stringify(r));
+  check('close unchanged; winner rides on the row', r.p1 === 2.05 && r.p2 === 1.8 && r.winner === 'p2');
+  const held = [{ eventKey: 9, book: 'Pinnacle +30s', date: '2026-10-20', p1: 2.05, p2: 1.8, at: r.at, trueStart: r.trueStart }];
+  const m = B.mergeRows(held, [r]);
+  check('a held row gains the open and result it lacks, core untouched', m.filled === 1 && m.replaced === 0 && m.rows[0].o1 === 1.9 && m.rows[0].winner === 'p2' && m.rows[0].p1 === 2.05);
+  const now = Date.parse('2026-10-27T12:00:00Z');
+  const row = (k, date, o1, o2, c1, c2, w, lagMin, ev) => ({ eventKey: k, date, o1, o2, p1: c1, p2: c2, winner: w, at: at(-lagMin), trueStart: at(0), event: ev || 'ATP Vienna' });
+  const rows = [
+    row(1, '2026-10-26', 2.0, 1.8, 1.8, 2.0, 'p1', 10),          // moved to p1, p1 won → right
+    row(2, '2026-10-26', 1.5, 2.6, 1.4, 2.9, 'p2', 10),          // moved to p1, p2 won → wrong
+    row(3, '2026-10-26', 1.5, 2.6, 1.49, 2.62, 'p1', 10),        // under 2% → not moved
+    row(4, '2026-10-26', 2.0, 1.8, 1.8, 2.0, 'p1', 90),          // close 90 min old → excluded
+    row(5, '2026-10-26', null, null, 1.8, 2.0, 'p1', 10),        // no open → excluded
+    row(6, '2026-09-01', 2.0, 1.8, 1.8, 2.0, 'p1', 10),          // outside 30 days
+    row(7, '2026-10-26', 2.0, 1.8, 1.8, 2.0, 'p1', 10, 'ATP Davis Cup - World Group'),
+    row(8, '2026-10-26', 2.0, 1.8, 1.8, 2.0, null, 10),          // no result yet
+  ];
+  const mr = B.marketRead30(rows, now);
+  check('30-day line: won of moved, 2% minimum, Pinnacle within-60, window + Davis Cup out',
+    mr.won === 1 && mr.moved === 2 && mr.n === 3 && mr.rows === 6 && mr.excluded.noClose60 === 1 && mr.excluded.noOpen === 1 && mr.excluded.noResult === 1 && mr.from === '2026-09-28',
+    JSON.stringify(mr));
+  check('the 2% minimum is the founder ruling', B.movePct(1.5, 1.49) === -0.7 && mr.minMovePct === 2);
+}
+
 // ---- control: the start cut removed must be caught -----------------------------------
 {
   const src = fs.readFileSync(REAL, 'utf8');

@@ -24,6 +24,11 @@
   "dropped": {
    "noStart": 24,
    "oneSided": 1
+  },
+  "step15Backfill": {
+   "at": "2026-10-27T04:23:42.196Z",
+   "filled": 346,
+   "note": "o1/o2/oAt/winner filled from a --since 2026-09-26 rescan; core fields (p1, p2, at, trueStart) untouched"
   }
  },
  "stats": {
@@ -5617,7 +5622,11 @@
    "at": "2026-09-23T03:27:27.149Z",
    "trueStart": "2026-09-23T05:03:03.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 2.23,
+   "o2": 1.735,
+   "oAt": "2026-09-22T09:08:37.202Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12164724,
@@ -5631,7 +5640,11 @@
    "at": "2026-09-23T06:09:40.672Z",
    "trueStart": "2026-09-23T07:10:09.000Z",
    "startSource": "oddspapi",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.012,
+   "o2": 37.87,
+   "oAt": "2026-09-22T18:26:38.231Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12164731,
@@ -5645,7 +5658,11 @@
    "at": "2026-09-23T10:03:31.417Z",
    "trueStart": "2026-09-23T11:24:04.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.909,
+   "o2": 1.961,
+   "oAt": "2026-09-22T09:59:55.585Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12164733,
@@ -5659,7 +5676,11 @@
    "at": "2026-09-23T07:59:36.628Z",
    "trueStart": "2026-09-23T08:14:57.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.917,
+   "o2": 1.952,
+   "oAt": "2026-09-22T09:46:26.578Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12164722,
@@ -5673,7 +5694,11 @@
    "at": "2026-09-24T04:43:09.800Z",
    "trueStart": "2026-09-24T04:47:59.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 2.22,
+   "o2": 1.719,
+   "oAt": "2026-09-22T09:14:08.644Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12164723,
@@ -5687,7 +5712,11 @@
    "at": "2026-09-24T03:46:19.145Z",
    "trueStart": "2026-09-24T04:47:59.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 2.35,
+   "o2": 1.641,
+   "oAt": "2026-09-22T09:14:52.645Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12164725,
@@ -5701,7 +5730,11 @@
    "at": "2026-09-24T03:02:32.199Z",
    "trueStart": "2026-09-24T08:47:59.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.427,
+   "o2": 3,
+   "oAt": "2026-09-22T09:12:00.443Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12164726,
@@ -5715,7 +5748,11 @@
    "at": "2026-09-24T10:42:23.355Z",
    "trueStart": "2026-09-24T10:45:00.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 6.46,
+   "o2": 1.134,
+   "oAt": "2026-09-22T09:13:20.980Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12164727,
@@ -5729,7 +5766,11 @@
    "at": "2026-09-24T03:47:28.521Z",
    "trueStart": "2026-09-24T08:32:08.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 2.25,
+   "o2": 1.699,
+   "oAt": "2026-09-22T09:22:14.844Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12164728,
@@ -5743,7 +5784,11 @@
    "at": "2026-09-24T08:10:53.238Z",
    "trueStart": "2026-09-24T08:21:07.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 2.51,
+   "o2": 1.574,
+   "oAt": "2026-09-22T09:21:24.543Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12164730,
@@ -5757,7 +5802,11 @@
    "at": "2026-09-24T05:32:35.886Z",
    "trueStart": "2026-09-24T05:36:03.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 2.2,
+   "o2": 1.729,
+   "oAt": "2026-09-22T10:17:22.077Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12164732,
@@ -5771,7 +5820,11 @@
    "at": "2026-09-24T04:24:04.433Z",
    "trueStart": "2026-09-24T05:06:01.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.961,
+   "o2": 1.909,
+   "oAt": "2026-09-22T10:08:53.080Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12164734,
@@ -5785,7 +5838,11 @@
    "at": "2026-09-24T12:46:43.570Z",
    "trueStart": "2026-09-24T13:08:03.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 2.48,
+   "o2": 1.584,
+   "oAt": "2026-09-22T09:21:06.888Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12165514,
@@ -5799,7 +5856,11 @@
    "at": "2026-09-24T08:43:03.190Z",
    "trueStart": "2026-09-24T08:47:59.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.39,
+   "o2": 3.18,
+   "oAt": "2026-09-23T11:23:48.183Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12165515,
@@ -5813,7 +5874,11 @@
    "at": "2026-09-24T08:37:26.976Z",
    "trueStart": "2026-09-24T09:08:01.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.74,
+   "o2": 2.17,
+   "oAt": "2026-09-23T11:27:34.428Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12165516,
@@ -5841,7 +5906,11 @@
    "at": "2026-09-24T10:10:08.224Z",
    "trueStart": "2026-09-24T10:31:59.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.653,
+   "o2": 2.38,
+   "oAt": "2026-09-23T11:43:18.539Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12165518,
@@ -5855,7 +5924,11 @@
    "at": "2026-09-24T05:05:33.520Z",
    "trueStart": "2026-09-24T05:06:01.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 2.72,
+   "o2": 1.502,
+   "oAt": "2026-09-23T11:18:47.084Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12165519,
@@ -5869,7 +5942,11 @@
    "at": "2026-09-24T07:11:42.559Z",
    "trueStart": "2026-09-24T07:12:02.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 2.51,
+   "o2": 1.598,
+   "oAt": "2026-09-23T11:19:03.556Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12165520,
@@ -5883,7 +5960,11 @@
    "at": "2026-09-24T04:18:07.580Z",
    "trueStart": "2026-09-24T06:50:59.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.256,
+   "o2": 4.38,
+   "oAt": "2026-09-23T11:19:40.719Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12165521,
@@ -5897,7 +5978,11 @@
    "at": "2026-09-24T07:53:39.120Z",
    "trueStart": "2026-09-24T10:06:06.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 5.27,
+   "o2": 1.185,
+   "oAt": "2026-09-23T11:41:48.673Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12165553,
@@ -5911,7 +5996,11 @@
    "at": "2026-09-25T05:15:00.747Z",
    "trueStart": "2026-09-25T05:20:57.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 2.44,
+   "o2": 1.602,
+   "oAt": "2026-09-23T17:31:10.110Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12165806,
@@ -5925,7 +6014,11 @@
    "at": "2026-09-25T11:59:08.976Z",
    "trueStart": "2026-09-25T12:03:05.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.523,
+   "o2": 2.65,
+   "oAt": "2026-09-24T12:28:13.578Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12165810,
@@ -5939,7 +6032,11 @@
    "at": "2026-09-25T05:11:20.493Z",
    "trueStart": "2026-09-25T05:12:06.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.74,
+   "o2": 2.18,
+   "oAt": "2026-09-24T12:22:54.048Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12165811,
@@ -5953,7 +6050,11 @@
    "at": "2026-09-25T04:44:16.399Z",
    "trueStart": "2026-09-25T04:48:04.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 4.39,
+   "o2": 1.24,
+   "oAt": "2026-09-24T12:28:13.578Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12165812,
@@ -5967,7 +6068,11 @@
    "at": "2026-09-25T06:30:11.707Z",
    "trueStart": "2026-09-25T07:20:58.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.495,
+   "o2": 2.74,
+   "oAt": "2026-09-24T12:09:04.259Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12165814,
@@ -5981,7 +6086,11 @@
    "at": "2026-09-25T08:32:05.291Z",
    "trueStart": "2026-09-25T10:18:04.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 3.83,
+   "o2": 1.31,
+   "oAt": "2026-09-24T13:24:17.792Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12165825,
@@ -5995,7 +6104,11 @@
    "at": "2026-09-25T08:31:33.964Z",
    "trueStart": "2026-09-25T08:39:05.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 3.05,
+   "o2": 1.434,
+   "oAt": "2026-09-24T13:31:59.415Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12165827,
@@ -6009,7 +6122,11 @@
    "at": "2026-09-25T04:06:08.824Z",
    "trueStart": "2026-09-25T06:27:03.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.552,
+   "o2": 2.57,
+   "oAt": "2026-09-24T13:44:08.254Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12165828,
@@ -6065,7 +6182,11 @@
    "at": "2026-09-26T06:40:19.645Z",
    "trueStart": "2026-09-26T11:15:58.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.205,
+   "o2": 4.9,
+   "oAt": "2026-09-23T17:31:30.430Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12165823,
@@ -6079,7 +6200,11 @@
    "at": "2026-09-26T06:06:36.704Z",
    "trueStart": "2026-09-26T08:03:01.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 2.1,
+   "o2": 1.793,
+   "oAt": "2026-09-24T17:32:08.470Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12165826,
@@ -6093,7 +6218,11 @@
    "at": "2026-09-26T05:37:15.310Z",
    "trueStart": "2026-09-26T06:27:02.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.666,
+   "o2": 2.36,
+   "oAt": "2026-09-24T13:34:01.405Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12165847,
@@ -6107,7 +6236,11 @@
    "at": "2026-09-26T07:47:47.383Z",
    "trueStart": "2026-09-26T08:54:05.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.813,
+   "o2": 2.08,
+   "oAt": "2026-09-24T17:34:01.258Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12165848,
@@ -6121,7 +6254,11 @@
    "at": "2026-09-26T05:17:59.424Z",
    "trueStart": "2026-09-26T05:18:06.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 2.009,
+   "o2": 1.862,
+   "oAt": "2026-09-24T17:31:31.441Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12165854,
@@ -6149,7 +6286,11 @@
    "at": "2026-09-26T02:40:03.283Z",
    "trueStart": "2026-09-26T04:51:04.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 2.5,
+   "o2": 1.578,
+   "oAt": "2026-09-25T08:21:18.923Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12165986,
@@ -6163,7 +6304,11 @@
    "at": "2026-09-27T07:32:03.782Z",
    "trueStart": "2026-09-27T08:36:04.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 3.32,
+   "o2": 1.373,
+   "oAt": "2026-09-25T15:15:11.298Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12166000,
@@ -6177,7 +6322,11 @@
    "at": "2026-09-27T04:35:27.748Z",
    "trueStart": "2026-09-27T04:51:03.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.675,
+   "o2": 2.31,
+   "oAt": "2026-09-25T16:47:00.174Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12166007,
@@ -6191,7 +6340,11 @@
    "at": "2026-09-26T23:18:39.737Z",
    "trueStart": "2026-09-27T05:24:05.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.735,
+   "o2": 2.23,
+   "oAt": "2026-09-25T15:17:23.479Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12166049,
@@ -6205,7 +6358,11 @@
    "at": "2026-09-27T05:40:16.571Z",
    "trueStart": "2026-09-27T07:41:59.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 4.7,
+   "o2": 1.232,
+   "oAt": "2026-09-25T18:07:36.404Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12166114,
@@ -6219,7 +6376,11 @@
    "at": "2026-09-27T03:02:36.422Z",
    "trueStart": "2026-09-27T06:56:03.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 3.93,
+   "o2": 1.29,
+   "oAt": "2026-09-26T12:34:40.559Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12166122,
@@ -6233,7 +6394,11 @@
    "at": "2026-09-27T11:14:11.720Z",
    "trueStart": "2026-09-27T11:26:58.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 3.25,
+   "o2": 1.387,
+   "oAt": "2026-09-26T12:34:22.152Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12166123,
@@ -6247,7 +6412,11 @@
    "at": "2026-09-27T10:43:47.376Z",
    "trueStart": "2026-09-27T10:54:06.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.862,
+   "o2": 2.029,
+   "oAt": "2026-09-26T17:49:17.716Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12166157,
@@ -6261,7 +6430,11 @@
    "at": "2026-09-27T08:07:12.210Z",
    "trueStart": "2026-09-27T12:24:04.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.253,
+   "o2": 4.32,
+   "oAt": "2026-09-26T18:44:14.257Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12166292,
@@ -6275,7 +6448,11 @@
    "at": "2026-09-28T08:30:45.702Z",
    "trueStart": "2026-09-28T08:54:06.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 3.5,
+   "o2": 1.344,
+   "oAt": "2026-09-27T15:17:51.616Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12166334,
@@ -6289,7 +6466,11 @@
    "at": "2026-09-28T08:41:56.324Z",
    "trueStart": "2026-09-28T09:20:58.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 3.41,
+   "o2": 1.358,
+   "oAt": "2026-09-27T15:19:44.025Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12166335,
@@ -6303,7 +6484,11 @@
    "at": "2026-09-28T01:34:06.722Z",
    "trueStart": "2026-09-28T01:54:04.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.421,
+   "o2": 2.94,
+   "oAt": "2026-09-27T23:59:43.155Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12166336,
@@ -6317,7 +6502,11 @@
    "at": "2026-09-28T01:16:45.871Z",
    "trueStart": "2026-09-28T03:21:01.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.552,
+   "o2": 2.51,
+   "oAt": "2026-09-27T23:59:43.155Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12166337,
@@ -6331,7 +6520,11 @@
    "at": "2026-09-28T01:35:40.186Z",
    "trueStart": "2026-09-28T01:54:04.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.055,
+   "o2": 10.1,
+   "oAt": "2026-09-27T23:59:43.155Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12166338,
@@ -6359,7 +6552,11 @@
    "at": "2026-09-28T05:56:38.090Z",
    "trueStart": "2026-09-28T05:56:59.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.561,
+   "o2": 2.49,
+   "oAt": "2026-09-27T23:59:43.155Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12166340,
@@ -6373,7 +6570,11 @@
    "at": "2026-09-27T23:59:43.155Z",
    "trueStart": "2026-09-28T08:45:06.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 2.25,
+   "o2": 1.671,
+   "oAt": "2026-09-27T23:59:43.155Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12166342,
@@ -6387,7 +6588,11 @@
    "at": "2026-09-28T06:16:12.897Z",
    "trueStart": "2026-09-28T06:39:03.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 2.96,
+   "o2": 1.416,
+   "oAt": "2026-09-27T23:59:43.155Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12166371,
@@ -6401,7 +6606,11 @@
    "at": "2026-09-28T02:44:09.884Z",
    "trueStart": "2026-09-28T02:53:59.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.763,
+   "o2": 2.11,
+   "oAt": "2026-09-28T00:44:44.108Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12166372,
@@ -6415,7 +6624,10 @@
    "at": "2026-09-28T02:43:50.546Z",
    "trueStart": "2026-09-28T03:21:01.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 8.34,
+   "o2": 1.075,
+   "oAt": "2026-09-27T23:59:43.155Z"
   },
   {
    "eventKey": 12166373,
@@ -6429,7 +6641,11 @@
    "at": "2026-09-28T04:58:22.730Z",
    "trueStart": "2026-09-28T05:02:11.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.465,
+   "o2": 2.77,
+   "oAt": "2026-09-27T23:59:43.155Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12166374,
@@ -6443,7 +6659,11 @@
    "at": "2026-09-28T05:44:46.572Z",
    "trueStart": "2026-09-28T06:27:02.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.704,
+   "o2": 2.19,
+   "oAt": "2026-09-27T23:59:43.155Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12166375,
@@ -6457,7 +6677,11 @@
    "at": "2026-09-28T05:04:58.051Z",
    "trueStart": "2026-09-28T09:26:58.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 3.64,
+   "o2": 1.301,
+   "oAt": "2026-09-27T23:59:43.155Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12166376,
@@ -6471,7 +6695,11 @@
    "at": "2026-09-28T05:49:01.969Z",
    "trueStart": "2026-09-28T09:56:02.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 3.25,
+   "o2": 1.358,
+   "oAt": "2026-09-28T02:29:46.052Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12166377,
@@ -6485,7 +6713,11 @@
    "at": "2026-09-28T05:50:03.340Z",
    "trueStart": "2026-09-28T10:36:06.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.584,
+   "o2": 2.43,
+   "oAt": "2026-09-27T23:59:43.155Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12166378,
@@ -6499,7 +6731,11 @@
    "at": "2026-09-28T07:33:56.579Z",
    "trueStart": "2026-09-28T10:06:02.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.606,
+   "o2": 2.38,
+   "oAt": "2026-09-27T23:59:43.155Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12166379,
@@ -6513,7 +6749,11 @@
    "at": "2026-09-28T10:39:00.283Z",
    "trueStart": "2026-09-28T11:15:07.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.714,
+   "o2": 2.27,
+   "oAt": "2026-09-27T16:24:49.703Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12166418,
@@ -6527,7 +6767,11 @@
    "at": "2026-09-28T11:14:43.911Z",
    "trueStart": "2026-09-28T11:24:06.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.4,
+   "o2": 3.22,
+   "oAt": "2026-09-27T16:23:59.610Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12166488,
@@ -6541,7 +6785,11 @@
    "at": "2026-09-29T01:10:48.017Z",
    "trueStart": "2026-09-29T01:56:51.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.327,
+   "o2": 3.45,
+   "oAt": "2026-09-28T14:27:07.572Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12166523,
@@ -6555,7 +6803,11 @@
    "at": "2026-09-29T01:31:38.882Z",
    "trueStart": "2026-09-29T02:50:56.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 2.18,
+   "o2": 1.769,
+   "oAt": "2026-09-28T12:28:59.667Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12166565,
@@ -6569,7 +6821,11 @@
    "at": "2026-09-29T01:23:13.686Z",
    "trueStart": "2026-09-29T02:50:56.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.591,
+   "o2": 2.41,
+   "oAt": "2026-09-28T14:29:45.276Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12166584,
@@ -6583,7 +6839,11 @@
    "at": "2026-09-29T00:32:11.195Z",
    "trueStart": "2026-09-29T03:51:00.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.917,
+   "o2": 1.917,
+   "oAt": "2026-09-28T14:18:34.142Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12166616,
@@ -6597,7 +6857,11 @@
    "at": "2026-09-29T03:17:36.100Z",
    "trueStart": "2026-09-29T03:24:06.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.27,
+   "o2": 3.91,
+   "oAt": "2026-09-28T14:31:35.838Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12166630,
@@ -6611,7 +6875,11 @@
    "at": "2026-09-29T03:01:51.504Z",
    "trueStart": "2026-09-29T05:57:03.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 2.35,
+   "o2": 1.621,
+   "oAt": "2026-09-28T15:35:32.778Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12166631,
@@ -6625,7 +6893,11 @@
    "at": "2026-09-29T04:07:04.289Z",
    "trueStart": "2026-09-29T04:36:04.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.175,
+   "o2": 5.78,
+   "oAt": "2026-09-28T14:34:00.656Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12166661,
@@ -6639,7 +6911,11 @@
    "at": "2026-09-29T10:41:07.692Z",
    "trueStart": "2026-09-29T10:48:04.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.657,
+   "o2": 2.34,
+   "oAt": "2026-09-28T17:24:00.310Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12166662,
@@ -6653,7 +6929,11 @@
    "at": "2026-09-29T11:03:35.032Z",
    "trueStart": "2026-09-29T11:21:04.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.531,
+   "o2": 2.66,
+   "oAt": "2026-09-28T17:20:57.858Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12166490,
@@ -6667,7 +6947,11 @@
    "at": "2026-09-30T07:33:40.812Z",
    "trueStart": "2026-09-30T08:54:03.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 2.05,
+   "o2": 1.833,
+   "oAt": "2026-09-29T07:43:18.463Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12166493,
@@ -6695,7 +6979,11 @@
    "at": "2026-09-30T00:45:45.597Z",
    "trueStart": "2026-09-30T04:21:02.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 3.64,
+   "o2": 1.334,
+   "oAt": "2026-09-29T07:52:04.411Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12166500,
@@ -6709,7 +6997,11 @@
    "at": "2026-09-30T00:09:54.555Z",
    "trueStart": "2026-09-30T01:54:03.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 2.16,
+   "o2": 1.751,
+   "oAt": "2026-09-29T07:43:47.455Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12166526,
@@ -6723,7 +7015,11 @@
    "at": "2026-09-30T10:10:04.163Z",
    "trueStart": "2026-09-30T11:03:04.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 3.09,
+   "o2": 1.406,
+   "oAt": "2026-09-29T04:36:52.041Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12166529,
@@ -6737,7 +7033,11 @@
    "at": "2026-09-30T06:11:47.635Z",
    "trueStart": "2026-09-30T07:21:03.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 2.3,
+   "o2": 1.671,
+   "oAt": "2026-09-29T07:41:40.704Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12166532,
@@ -6751,7 +7051,11 @@
    "at": "2026-09-30T00:48:06.213Z",
    "trueStart": "2026-09-30T03:03:00.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 2.39,
+   "o2": 1.625,
+   "oAt": "2026-09-29T04:42:22.677Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12166535,
@@ -6765,7 +7069,11 @@
    "at": "2026-09-30T04:25:22.618Z",
    "trueStart": "2026-09-30T05:48:03.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 2.37,
+   "o2": 1.632,
+   "oAt": "2026-09-29T05:07:59.214Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12166948,
@@ -6779,7 +7087,11 @@
    "at": "2026-09-30T07:54:47.073Z",
    "trueStart": "2026-09-30T09:54:06.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 3.33,
+   "o2": 1.363,
+   "oAt": "2026-09-29T12:10:55.597Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12166950,
@@ -6793,7 +7105,11 @@
    "at": "2026-09-29T23:44:01.588Z",
    "trueStart": "2026-09-30T06:50:57.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.14,
+   "o2": 6.83,
+   "oAt": "2026-09-29T12:11:33.353Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12166489,
@@ -6807,7 +7123,11 @@
    "at": "2026-10-01T02:28:41.724Z",
    "trueStart": "2026-10-01T06:57:03.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.154,
+   "o2": 5.84,
+   "oAt": "2026-09-29T07:54:38.516Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12166491,
@@ -6821,7 +7141,11 @@
    "at": "2026-10-01T01:39:28.095Z",
    "trueStart": "2026-10-01T01:54:03.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 3.54,
+   "o2": 1.33,
+   "oAt": "2026-09-29T07:44:11.772Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12166492,
@@ -6835,7 +7159,11 @@
    "at": "2026-10-01T01:35:30.858Z",
    "trueStart": "2026-10-01T09:24:08.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.689,
+   "o2": 2.31,
+   "oAt": "2026-09-29T07:53:54.702Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12166495,
@@ -6849,7 +7177,11 @@
    "at": "2026-10-01T01:38:26.220Z",
    "trueStart": "2026-10-01T01:54:03.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.414,
+   "o2": 3.05,
+   "oAt": "2026-09-29T08:00:10.395Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12166496,
@@ -6863,7 +7195,11 @@
    "at": "2026-10-01T03:33:45.981Z",
    "trueStart": "2026-10-01T05:14:49.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 4.75,
+   "o2": 1.215,
+   "oAt": "2026-09-29T07:46:19.042Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12166497,
@@ -6877,7 +7213,11 @@
    "at": "2026-10-01T03:21:20.573Z",
    "trueStart": "2026-10-01T04:06:06.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.543,
+   "o2": 2.59,
+   "oAt": "2026-09-29T07:47:10.248Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12166498,
@@ -6891,7 +7231,11 @@
    "at": "2026-10-01T01:43:54.734Z",
    "trueStart": "2026-10-01T07:36:04.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.242,
+   "o2": 4.37,
+   "oAt": "2026-09-29T07:47:28.398Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12166527,
@@ -6905,7 +7249,11 @@
    "at": "2026-10-01T03:51:48.483Z",
    "trueStart": "2026-10-01T12:27:05.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 2.33,
+   "o2": 1.653,
+   "oAt": "2026-09-29T04:23:56.699Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12166528,
@@ -6919,7 +7267,11 @@
    "at": "2026-10-01T02:20:08.141Z",
    "trueStart": "2026-10-01T05:27:00.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 2.16,
+   "o2": 1.751,
+   "oAt": "2026-09-29T04:14:08.892Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12166530,
@@ -6933,7 +7285,11 @@
    "at": "2026-10-01T02:40:57.531Z",
    "trueStart": "2026-10-01T02:51:05.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.215,
+   "o2": 4.75,
+   "oAt": "2026-09-29T04:32:55.072Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12166531,
@@ -6947,7 +7303,11 @@
    "at": "2026-10-01T01:31:04.207Z",
    "trueStart": "2026-10-01T09:12:07.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 2.88,
+   "o2": 1.476,
+   "oAt": "2026-09-29T04:11:59.332Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12166533,
@@ -6961,7 +7321,11 @@
    "at": "2026-10-01T03:55:38.154Z",
    "trueStart": "2026-10-01T06:05:59.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 2.16,
+   "o2": 1.751,
+   "oAt": "2026-09-29T04:37:53.163Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12166534,
@@ -6975,7 +7339,11 @@
    "at": "2026-10-01T03:21:48.456Z",
    "trueStart": "2026-10-01T07:42:04.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.74,
+   "o2": 2.17,
+   "oAt": "2026-09-29T04:45:46.566Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12166536,
@@ -6989,7 +7357,11 @@
    "at": "2026-10-01T00:16:34.843Z",
    "trueStart": "2026-10-01T11:12:07.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.662,
+   "o2": 2.31,
+   "oAt": "2026-09-29T04:16:34.843Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12166537,
@@ -7003,7 +7375,11 @@
    "at": "2026-10-01T03:14:14.365Z",
    "trueStart": "2026-10-01T07:50:58.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.119,
+   "o2": 6.99,
+   "oAt": "2026-09-29T04:15:08.318Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12166949,
@@ -7017,7 +7393,11 @@
    "at": "2026-10-01T03:21:48.129Z",
    "trueStart": "2026-10-01T03:32:00.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 3.34,
+   "o2": 1.362,
+   "oAt": "2026-09-29T12:02:29.850Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12166951,
@@ -7031,7 +7411,11 @@
    "at": "2026-10-01T01:41:11.433Z",
    "trueStart": "2026-10-01T01:54:03.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.236,
+   "o2": 4.45,
+   "oAt": "2026-09-30T08:34:34.002Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12166954,
@@ -7059,7 +7443,11 @@
    "at": "2026-10-01T01:46:48.552Z",
    "trueStart": "2026-10-01T04:30:00.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 2.17,
+   "o2": 1.746,
+   "oAt": "2026-09-29T17:19:17.016Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12167327,
@@ -7073,7 +7461,11 @@
    "at": "2026-10-01T01:38:39.191Z",
    "trueStart": "2026-10-01T01:54:03.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.84,
+   "o2": 2.04,
+   "oAt": "2026-09-30T11:31:46.245Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12166953,
@@ -7087,7 +7479,11 @@
    "at": "2026-10-01T19:40:50.214Z",
    "trueStart": "2026-10-02T07:03:05.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.248,
+   "o2": 4.29,
+   "oAt": "2026-09-29T17:18:41.429Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12167394,
@@ -7101,7 +7497,11 @@
    "at": "2026-10-02T12:14:33.462Z",
    "trueStart": "2026-10-02T12:27:03.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 4.46,
+   "o2": 1.25,
+   "oAt": "2026-09-30T16:15:12.185Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12167612,
@@ -7115,7 +7515,11 @@
    "at": "2026-10-01T19:47:28.558Z",
    "trueStart": "2026-10-02T04:54:00.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 4.35,
+   "o2": 1.251,
+   "oAt": "2026-10-01T08:45:22.151Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12167613,
@@ -7129,7 +7533,11 @@
    "at": "2026-10-02T06:29:28.307Z",
    "trueStart": "2026-10-02T07:54:06.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 2.31,
+   "o2": 1.68,
+   "oAt": "2026-10-01T10:27:40.259Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12167614,
@@ -7143,7 +7551,11 @@
    "at": "2026-10-01T17:39:17.689Z",
    "trueStart": "2026-10-02T01:53:59.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.636,
+   "o2": 2.39,
+   "oAt": "2026-10-01T08:46:50.795Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12167616,
@@ -7157,7 +7569,11 @@
    "at": "2026-10-01T20:01:16.693Z",
    "trueStart": "2026-10-02T03:21:02.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 2.37,
+   "o2": 1.649,
+   "oAt": "2026-10-01T08:47:23.936Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12167623,
@@ -7171,7 +7587,11 @@
    "at": "2026-10-02T09:05:23.928Z",
    "trueStart": "2026-10-02T09:38:58.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.434,
+   "o2": 3.05,
+   "oAt": "2026-10-01T10:32:37.821Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12167690,
@@ -7185,7 +7605,11 @@
    "at": "2026-10-02T08:41:49.508Z",
    "trueStart": "2026-10-02T11:24:03.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.636,
+   "o2": 2.39,
+   "oAt": "2026-10-01T15:19:10.227Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12167622,
@@ -7199,7 +7623,11 @@
    "at": "2026-10-03T02:49:49.431Z",
    "trueStart": "2026-10-03T02:54:06.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.298,
+   "o2": 3.86,
+   "oAt": "2026-10-01T09:26:05.715Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12167628,
@@ -7213,7 +7641,11 @@
    "at": "2026-10-03T07:05:28.829Z",
    "trueStart": "2026-10-03T09:03:04.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 2.48,
+   "o2": 1.595,
+   "oAt": "2026-10-01T11:25:46.064Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12167643,
@@ -7227,7 +7659,11 @@
    "at": "2026-10-03T03:03:29.766Z",
    "trueStart": "2026-10-03T04:31:59.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.034,
+   "o2": 16.07,
+   "oAt": "2026-10-01T15:07:01.625Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12167644,
@@ -7241,7 +7677,11 @@
    "at": "2026-10-02T23:49:22.783Z",
    "trueStart": "2026-10-03T01:54:02.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.699,
+   "o2": 2.27,
+   "oAt": "2026-10-01T13:08:27.856Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12167647,
@@ -7255,7 +7695,11 @@
    "at": "2026-10-03T10:02:44.962Z",
    "trueStart": "2026-10-03T11:03:04.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.09,
+   "o2": 8.25,
+   "oAt": "2026-10-01T13:10:07.918Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12167678,
@@ -7269,7 +7713,11 @@
    "at": "2026-10-03T04:43:05.430Z",
    "trueStart": "2026-10-03T05:35:58.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.666,
+   "o2": 2.36,
+   "oAt": "2026-10-01T17:39:09.708Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12167724,
@@ -7283,7 +7731,11 @@
    "at": "2026-10-03T08:42:09.704Z",
    "trueStart": "2026-10-03T12:06:06.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 2.48,
+   "o2": 1.598,
+   "oAt": "2026-10-01T17:39:49.177Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12167817,
@@ -7297,7 +7749,11 @@
    "at": "2026-10-03T05:48:23.274Z",
    "trueStart": "2026-10-03T10:02:57.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.178,
+   "o2": 5.56,
+   "oAt": "2026-10-02T11:44:21.300Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12167840,
@@ -7311,7 +7767,11 @@
    "at": "2026-10-03T22:35:24.239Z",
    "trueStart": "2026-10-04T01:51:02.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.558,
+   "o2": 2.58,
+   "oAt": "2026-10-02T15:35:28.805Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12167861,
@@ -7325,7 +7785,11 @@
    "at": "2026-10-04T06:15:03.029Z",
    "trueStart": "2026-10-04T06:51:03.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 4.15,
+   "o2": 1.276,
+   "oAt": "2026-10-02T15:35:49.881Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12167891,
@@ -7339,7 +7803,11 @@
    "at": "2026-10-04T04:01:36.123Z",
    "trueStart": "2026-10-04T04:57:06.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 2.16,
+   "o2": 1.769,
+   "oAt": "2026-10-02T18:11:12.111Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12167945,
@@ -7353,7 +7821,11 @@
    "at": "2026-10-04T02:57:00.700Z",
    "trueStart": "2026-10-04T04:03:05.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.097,
+   "o2": 9.09,
+   "oAt": "2026-10-03T09:22:31.824Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12167947,
@@ -7367,7 +7839,11 @@
    "at": "2026-10-04T05:05:27.403Z",
    "trueStart": "2026-10-04T06:51:03.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.746,
+   "o2": 2.21,
+   "oAt": "2026-10-03T10:18:03.053Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12167957,
@@ -7381,7 +7857,11 @@
    "at": "2026-10-04T10:22:15.381Z",
    "trueStart": "2026-10-04T10:51:02.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.429,
+   "o2": 3.08,
+   "oAt": "2026-10-03T14:27:39.744Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12167991,
@@ -7395,7 +7875,11 @@
    "at": "2026-10-04T05:29:58.906Z",
    "trueStart": "2026-10-04T08:24:04.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.392,
+   "o2": 3.21,
+   "oAt": "2026-10-03T15:03:23.573Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12168110,
@@ -7409,7 +7893,11 @@
    "at": "2026-10-05T01:57:26.788Z",
    "trueStart": "2026-10-05T07:06:07.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.09,
+   "o2": 8.24,
+   "oAt": "2026-10-04T07:49:51.816Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12168148,
@@ -7423,7 +7911,11 @@
    "at": "2026-10-05T06:01:03.970Z",
    "trueStart": "2026-10-05T09:11:58.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.757,
+   "o2": 2.18,
+   "oAt": "2026-10-04T11:18:44.761Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12168149,
@@ -7437,7 +7929,11 @@
    "at": "2026-10-05T00:31:00.236Z",
    "trueStart": "2026-10-05T04:03:05.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.666,
+   "o2": 2.36,
+   "oAt": "2026-10-04T16:19:12.689Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12168150,
@@ -7451,7 +7947,11 @@
    "at": "2026-10-05T03:33:26.590Z",
    "trueStart": "2026-10-05T04:03:05.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.675,
+   "o2": 2.24,
+   "oAt": "2026-10-04T16:03:49.726Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12168152,
@@ -7465,7 +7965,11 @@
    "at": "2026-10-05T00:31:38.388Z",
    "trueStart": "2026-10-05T04:03:05.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.161,
+   "o2": 6.16,
+   "oAt": "2026-10-04T16:17:06.174Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12168153,
@@ -7479,7 +7983,11 @@
    "at": "2026-10-05T02:32:47.548Z",
    "trueStart": "2026-10-05T04:03:05.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.209,
+   "o2": 4.62,
+   "oAt": "2026-10-04T16:00:04.966Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12168155,
@@ -7493,7 +8001,11 @@
    "at": "2026-10-05T04:24:23.690Z",
    "trueStart": "2026-10-05T06:18:04.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.373,
+   "o2": 3.17,
+   "oAt": "2026-10-04T16:29:34.202Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12168156,
@@ -7507,7 +8019,11 @@
    "at": "2026-10-05T02:31:59.849Z",
    "trueStart": "2026-10-05T06:18:04.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 3.22,
+   "o2": 1.4,
+   "oAt": "2026-10-04T16:26:40.501Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12168158,
@@ -7521,7 +8037,11 @@
    "at": "2026-10-05T02:30:57.934Z",
    "trueStart": "2026-10-05T05:24:03.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.632,
+   "o2": 2.32,
+   "oAt": "2026-10-04T16:25:57.547Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12168159,
@@ -7535,7 +8055,11 @@
    "at": "2026-10-05T02:31:59.849Z",
    "trueStart": "2026-10-05T06:54:04.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.043,
+   "o2": 11.72,
+   "oAt": "2026-10-04T16:25:25.796Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12168160,
@@ -7549,7 +8073,11 @@
    "at": "2026-10-05T04:10:27.289Z",
    "trueStart": "2026-10-05T06:21:04.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.146,
+   "o2": 5.75,
+   "oAt": "2026-10-04T16:28:27.486Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12168161,
@@ -7563,7 +8091,11 @@
    "at": "2026-10-05T05:40:31.972Z",
    "trueStart": "2026-10-05T09:21:00.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 3.32,
+   "o2": 1.347,
+   "oAt": "2026-10-04T17:05:00.036Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12168162,
@@ -7591,7 +8123,11 @@
    "at": "2026-10-05T04:32:06.815Z",
    "trueStart": "2026-10-05T07:11:59.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 3.64,
+   "o2": 1.301,
+   "oAt": "2026-10-04T17:13:02.134Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12168167,
@@ -7605,7 +8141,11 @@
    "at": "2026-10-05T06:37:32.554Z",
    "trueStart": "2026-10-05T10:27:05.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.128,
+   "o2": 6.26,
+   "oAt": "2026-10-04T17:24:41.541Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12168168,
@@ -7619,7 +8159,11 @@
    "at": "2026-10-05T07:02:56.591Z",
    "trueStart": "2026-10-05T10:54:02.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 5.75,
+   "o2": 1.146,
+   "oAt": "2026-10-04T17:15:26.657Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12168169,
@@ -7633,7 +8177,11 @@
    "at": "2026-10-04T21:37:26.591Z",
    "trueStart": "2026-10-05T11:15:03.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 5.62,
+   "o2": 1.151,
+   "oAt": "2026-10-04T17:22:38.511Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12168170,
@@ -7647,7 +8195,11 @@
    "at": "2026-10-05T07:05:06.871Z",
    "trueStart": "2026-10-05T09:50:58.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 2.8,
+   "o2": 1.456,
+   "oAt": "2026-10-04T17:25:58.654Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12168171,
@@ -7661,7 +8213,11 @@
    "at": "2026-10-05T05:45:22.938Z",
    "trueStart": "2026-10-05T09:03:07.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 2.62,
+   "o2": 1.51,
+   "oAt": "2026-10-04T17:19:51.734Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12168172,
@@ -7675,7 +8231,11 @@
    "at": "2026-10-05T07:10:33.034Z",
    "trueStart": "2026-10-05T12:57:04.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.219,
+   "o2": 4.9,
+   "oAt": "2026-10-04T17:18:17.415Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12168186,
@@ -7689,7 +8249,11 @@
    "at": "2026-10-05T09:59:35.852Z",
    "trueStart": "2026-10-05T10:03:02.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.555,
+   "o2": 2.62,
+   "oAt": "2026-10-04T13:00:09.212Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12168226,
@@ -7703,7 +8267,10 @@
    "at": "2026-10-05T10:40:37.648Z",
    "trueStart": "2026-10-05T10:51:00.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 2.2,
+   "o2": 1.74,
+   "oAt": "2026-10-04T16:10:41.589Z"
   },
   {
    "eventKey": 12168433,
@@ -7717,7 +8284,11 @@
    "at": "2026-10-06T09:48:29.197Z",
    "trueStart": "2026-10-06T10:48:05.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.588,
+   "o2": 2.53,
+   "oAt": "2026-10-06T09:48:29.197Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12168281,
@@ -7731,7 +8302,11 @@
    "at": "2026-10-07T09:43:55.019Z",
    "trueStart": "2026-10-07T12:03:08.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.578,
+   "o2": 2.5,
+   "oAt": "2026-10-06T20:52:30.999Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12168282,
@@ -7745,7 +8320,11 @@
    "at": "2026-10-07T03:32:59.102Z",
    "trueStart": "2026-10-07T03:48:02.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.581,
+   "o2": 2.49,
+   "oAt": "2026-10-06T20:52:30.999Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12168284,
@@ -7759,7 +8338,11 @@
    "at": "2026-10-07T02:31:20.530Z",
    "trueStart": "2026-10-07T06:21:06.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 2.6,
+   "o2": 1.54,
+   "oAt": "2026-10-06T20:52:30.999Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12168287,
@@ -7773,7 +8356,11 @@
    "at": "2026-10-07T03:32:59.102Z",
    "trueStart": "2026-10-07T03:48:02.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 2.76,
+   "o2": 1.487,
+   "oAt": "2026-10-06T20:52:30.999Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12168293,
@@ -7787,7 +8374,11 @@
    "at": "2026-10-07T06:01:38.931Z",
    "trueStart": "2026-10-07T13:03:03.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.471,
+   "o2": 2.82,
+   "oAt": "2026-10-06T20:42:09.070Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12168294,
@@ -7801,7 +8392,11 @@
    "at": "2026-10-07T00:35:06.331Z",
    "trueStart": "2026-10-07T03:48:02.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 3.02,
+   "o2": 1.421,
+   "oAt": "2026-10-06T20:52:30.999Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12168299,
@@ -7815,7 +8410,11 @@
    "at": "2026-10-07T02:30:32.746Z",
    "trueStart": "2026-10-07T06:32:27.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 3,
+   "o2": 1.429,
+   "oAt": "2026-10-06T20:49:46.421Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12168869,
@@ -7829,7 +8428,11 @@
    "at": "2026-10-07T03:55:49.852Z",
    "trueStart": "2026-10-07T05:36:04.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 2.08,
+   "o2": 1.813,
+   "oAt": "2026-10-06T20:52:30.999Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12168870,
@@ -7843,7 +8446,11 @@
    "at": "2026-10-07T04:26:47.991Z",
    "trueStart": "2026-10-07T05:54:04.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.632,
+   "o2": 2.38,
+   "oAt": "2026-10-06T20:51:26.814Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12168872,
@@ -7857,7 +8464,11 @@
    "at": "2026-10-07T04:35:08.982Z",
    "trueStart": "2026-10-07T06:56:59.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 2.82,
+   "o2": 1.471,
+   "oAt": "2026-10-06T20:52:30.999Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12168873,
@@ -7871,7 +8482,11 @@
    "at": "2026-10-07T06:56:24.609Z",
    "trueStart": "2026-10-07T08:03:05.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 3.48,
+   "o2": 1.338,
+   "oAt": "2026-10-06T20:52:30.999Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12168874,
@@ -7885,7 +8500,11 @@
    "at": "2026-10-07T06:49:29.061Z",
    "trueStart": "2026-10-07T08:44:59.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.763,
+   "o2": 2.14,
+   "oAt": "2026-10-06T20:49:06.988Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12168875,
@@ -7899,7 +8518,11 @@
    "at": "2026-10-07T09:42:23.765Z",
    "trueStart": "2026-10-07T09:51:05.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.862,
+   "o2": 2.02,
+   "oAt": "2026-10-06T20:52:30.999Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12168280,
@@ -7913,7 +8536,11 @@
    "at": "2026-10-08T03:23:41.492Z",
    "trueStart": "2026-10-08T03:51:04.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.303,
+   "o2": 3.75,
+   "oAt": "2026-10-06T22:07:32.650Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12168283,
@@ -7927,7 +8554,11 @@
    "at": "2026-10-08T01:27:34.247Z",
    "trueStart": "2026-10-08T07:03:02.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 2.16,
+   "o2": 1.751,
+   "oAt": "2026-10-06T22:07:32.650Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12168285,
@@ -7941,7 +8572,11 @@
    "at": "2026-10-08T02:29:33.874Z",
    "trueStart": "2026-10-08T05:33:04.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.456,
+   "o2": 2.88,
+   "oAt": "2026-10-06T22:02:45.212Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12168286,
@@ -7955,7 +8590,11 @@
    "at": "2026-10-08T08:27:38.754Z",
    "trueStart": "2026-10-08T11:15:06.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 3.2,
+   "o2": 1.386,
+   "oAt": "2026-10-06T22:07:32.650Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12168288,
@@ -7969,7 +8608,11 @@
    "at": "2026-10-08T07:17:18.096Z",
    "trueStart": "2026-10-08T09:18:05.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.884,
+   "o2": 1.98,
+   "oAt": "2026-10-06T22:07:32.650Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12168289,
@@ -7983,7 +8626,11 @@
    "at": "2026-10-08T01:25:52.526Z",
    "trueStart": "2026-10-08T07:21:03.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.833,
+   "o2": 2.05,
+   "oAt": "2026-10-06T22:07:32.650Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12168290,
@@ -7997,7 +8644,11 @@
    "at": "2026-10-08T01:31:45.168Z",
    "trueStart": "2026-10-08T03:51:04.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.584,
+   "o2": 2.48,
+   "oAt": "2026-10-06T22:07:32.650Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12168291,
@@ -8011,7 +8662,11 @@
    "at": "2026-10-07T21:01:52.501Z",
    "trueStart": "2026-10-08T06:08:07.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.781,
+   "o2": 2.12,
+   "oAt": "2026-10-06T22:07:32.650Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12168295,
@@ -8025,7 +8680,11 @@
    "at": "2026-10-08T02:45:09.489Z",
    "trueStart": "2026-10-08T06:03:06.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.699,
+   "o2": 2.24,
+   "oAt": "2026-10-06T22:07:32.650Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12168297,
@@ -8039,7 +8698,11 @@
    "at": "2026-10-08T09:51:39.016Z",
    "trueStart": "2026-10-08T09:54:08.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 2.38,
+   "o2": 1.628,
+   "oAt": "2026-10-06T22:07:32.650Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12168878,
@@ -8053,7 +8716,11 @@
    "at": "2026-10-07T23:58:31.034Z",
    "trueStart": "2026-10-08T08:03:07.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.476,
+   "o2": 2.8,
+   "oAt": "2026-10-06T20:46:40.853Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12168879,
@@ -8067,7 +8734,11 @@
    "at": "2026-10-08T02:33:30.311Z",
    "trueStart": "2026-10-08T03:51:04.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 8.65,
+   "o2": 1.079,
+   "oAt": "2026-10-06T20:52:30.999Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12168880,
@@ -8081,7 +8752,11 @@
    "at": "2026-10-08T03:30:27.632Z",
    "trueStart": "2026-10-08T03:51:04.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 2.89,
+   "o2": 1.452,
+   "oAt": "2026-10-06T20:52:30.999Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12168881,
@@ -8095,7 +8770,11 @@
    "at": "2026-10-08T10:55:22.514Z",
    "trueStart": "2026-10-08T11:57:00.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.578,
+   "o2": 2.5,
+   "oAt": "2026-10-06T22:50:07.373Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12168882,
@@ -8109,7 +8788,11 @@
    "at": "2026-10-08T04:52:25.561Z",
    "trueStart": "2026-10-08T05:51:05.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 2.81,
+   "o2": 1.473,
+   "oAt": "2026-10-06T20:43:50.920Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12168883,
@@ -8123,7 +8806,11 @@
    "at": "2026-10-08T01:32:53.289Z",
    "trueStart": "2026-10-08T04:02:55.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 2.96,
+   "o2": 1.436,
+   "oAt": "2026-10-06T20:52:30.999Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12169121,
@@ -8137,7 +8824,11 @@
    "at": "2026-10-09T07:12:12.690Z",
    "trueStart": "2026-10-09T09:24:02.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 3.47,
+   "o2": 1.34,
+   "oAt": "2026-10-07T18:08:00.162Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12169126,
@@ -8151,7 +8842,11 @@
    "at": "2026-10-09T03:46:00.391Z",
    "trueStart": "2026-10-09T05:39:00.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 2.28,
+   "o2": 1.68,
+   "oAt": "2026-10-07T18:08:00.162Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12169127,
@@ -8165,7 +8860,11 @@
    "at": "2026-10-09T03:07:54.583Z",
    "trueStart": "2026-10-09T03:51:00.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.787,
+   "o2": 2.11,
+   "oAt": "2026-10-07T18:08:00.162Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12169128,
@@ -8179,7 +8878,11 @@
    "at": "2026-10-09T03:04:39.021Z",
    "trueStart": "2026-10-09T03:47:59.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 2.95,
+   "o2": 1.438,
+   "oAt": "2026-10-07T18:08:00.162Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12169133,
@@ -8193,7 +8896,11 @@
    "at": "2026-10-09T03:10:04.468Z",
    "trueStart": "2026-10-09T03:51:00.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 3.24,
+   "o2": 1.378,
+   "oAt": "2026-10-07T18:08:00.162Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12169135,
@@ -8207,7 +8914,11 @@
    "at": "2026-10-09T07:10:18.570Z",
    "trueStart": "2026-10-09T11:40:06.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.602,
+   "o2": 2.44,
+   "oAt": "2026-10-07T17:52:59.828Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12169185,
@@ -8221,7 +8932,11 @@
    "at": "2026-10-09T06:56:17.974Z",
    "trueStart": "2026-10-09T08:47:58.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.943,
+   "o2": 1.925,
+   "oAt": "2026-10-07T17:52:59.828Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12169186,
@@ -8235,7 +8950,11 @@
    "at": "2026-10-09T02:59:32.836Z",
    "trueStart": "2026-10-09T06:48:06.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 3.06,
+   "o2": 1.414,
+   "oAt": "2026-10-07T18:08:00.162Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12169210,
@@ -8249,7 +8968,11 @@
    "at": "2026-10-09T03:54:07.258Z",
    "trueStart": "2026-10-09T06:00:22.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 2.31,
+   "o2": 1.662,
+   "oAt": "2026-10-07T18:08:00.162Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12169238,
@@ -8263,7 +8986,11 @@
    "at": "2026-10-09T04:53:51.627Z",
    "trueStart": "2026-10-09T06:15:04.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.075,
+   "o2": 8.98,
+   "oAt": "2026-10-07T18:08:00.162Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12169254,
@@ -8277,7 +9004,11 @@
    "at": "2026-10-09T09:33:08.512Z",
    "trueStart": "2026-10-09T11:42:06.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 6.41,
+   "o2": 1.135,
+   "oAt": "2026-10-07T17:52:59.828Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12169275,
@@ -8291,7 +9022,11 @@
    "at": "2026-10-09T04:36:08.492Z",
    "trueStart": "2026-10-09T08:32:06.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.354,
+   "o2": 3.38,
+   "oAt": "2026-10-08T08:06:37.928Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12169329,
@@ -8305,7 +9040,11 @@
    "at": "2026-10-09T03:08:44.825Z",
    "trueStart": "2026-10-09T03:51:00.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.122,
+   "o2": 6.69,
+   "oAt": "2026-10-08T08:07:18.811Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12169482,
@@ -8319,7 +9058,11 @@
    "at": "2026-10-09T02:57:42.120Z",
    "trueStart": "2026-10-09T07:54:03.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.425,
+   "o2": 3.01,
+   "oAt": "2026-10-08T09:53:20.269Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12169488,
@@ -8333,7 +9076,11 @@
    "at": "2026-10-09T01:38:51.354Z",
    "trueStart": "2026-10-09T09:54:05.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.51,
+   "o2": 2.69,
+   "oAt": "2026-10-08T09:05:02.296Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12169478,
@@ -8347,7 +9094,11 @@
    "at": "2026-10-10T07:35:43.307Z",
    "trueStart": "2026-10-10T10:18:07.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 2.94,
+   "o2": 1.44,
+   "oAt": "2026-10-08T09:53:20.269Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12169483,
@@ -8361,7 +9112,11 @@
    "at": "2026-10-10T05:51:36.847Z",
    "trueStart": "2026-10-10T08:35:58.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.084,
+   "o2": 8.36,
+   "oAt": "2026-10-08T08:38:18.791Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12169484,
@@ -8375,7 +9130,11 @@
    "at": "2026-10-10T03:21:15.046Z",
    "trueStart": "2026-10-10T03:47:59.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.348,
+   "o2": 3.42,
+   "oAt": "2026-10-08T09:57:03.498Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12169487,
@@ -8389,7 +9148,11 @@
    "at": "2026-10-10T04:16:51.428Z",
    "trueStart": "2026-10-10T06:12:04.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 5.05,
+   "o2": 1.197,
+   "oAt": "2026-10-08T09:17:08.909Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12169489,
@@ -8403,7 +9166,11 @@
    "at": "2026-10-10T03:50:59.356Z",
    "trueStart": "2026-10-10T03:54:00.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 11.64,
+   "o2": 1.062,
+   "oAt": "2026-10-08T16:12:56.150Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12169493,
@@ -8417,7 +9184,11 @@
    "at": "2026-10-10T03:29:05.975Z",
    "trueStart": "2026-10-10T03:44:59.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 3.13,
+   "o2": 1.398,
+   "oAt": "2026-10-08T11:26:12.013Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12169495,
@@ -8431,7 +9202,11 @@
    "at": "2026-10-10T05:59:43.819Z",
    "trueStart": "2026-10-10T09:39:04.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.336,
+   "o2": 3.5,
+   "oAt": "2026-10-08T10:49:20.449Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12169503,
@@ -8445,7 +9220,11 @@
    "at": "2026-10-10T10:33:48.720Z",
    "trueStart": "2026-10-10T12:45:03.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 3.67,
+   "o2": 1.313,
+   "oAt": "2026-10-08T17:38:12.762Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12169504,
@@ -8459,7 +9238,11 @@
    "at": "2026-10-10T04:58:06.223Z",
    "trueStart": "2026-10-10T06:21:05.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.621,
+   "o2": 2.4,
+   "oAt": "2026-10-08T12:08:22.889Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12169534,
@@ -8473,7 +9256,11 @@
    "at": "2026-10-10T04:48:10.854Z",
    "trueStart": "2026-10-10T07:24:01.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 2.24,
+   "o2": 1.704,
+   "oAt": "2026-10-08T15:31:35.982Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12169535,
@@ -8487,7 +9274,11 @@
    "at": "2026-10-10T10:03:49.910Z",
    "trueStart": "2026-10-10T11:15:04.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 14.96,
+   "o2": 1.034,
+   "oAt": "2026-10-08T12:05:46.525Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12169536,
@@ -8501,7 +9292,11 @@
    "at": "2026-10-10T03:57:49.962Z",
    "trueStart": "2026-10-10T04:14:32.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.173,
+   "o2": 5.82,
+   "oAt": "2026-10-08T13:45:22.962Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12169537,
@@ -8515,7 +9310,11 @@
    "at": "2026-10-10T06:58:19.514Z",
    "trueStart": "2026-10-10T11:42:05.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 2.58,
+   "o2": 1.571,
+   "oAt": "2026-10-08T13:47:22.404Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12169556,
@@ -8529,7 +9328,11 @@
    "at": "2026-10-10T07:20:45.937Z",
    "trueStart": "2026-10-10T11:51:08.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 2.53,
+   "o2": 1.564,
+   "oAt": "2026-10-08T15:08:26.964Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12169561,
@@ -8543,7 +9346,11 @@
    "at": "2026-10-10T02:19:54.432Z",
    "trueStart": "2026-10-10T05:32:00.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 2.15,
+   "o2": 1.757,
+   "oAt": "2026-10-08T17:23:29.661Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12169690,
@@ -8557,7 +9364,11 @@
    "at": "2026-10-11T04:55:15.759Z",
    "trueStart": "2026-10-11T05:47:57.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.418,
+   "o2": 3.09,
+   "oAt": "2026-10-09T18:39:44.263Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12169697,
@@ -8571,7 +9382,11 @@
    "at": "2026-10-11T09:23:11.916Z",
    "trueStart": "2026-10-11T09:51:02.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.148,
+   "o2": 6.37,
+   "oAt": "2026-10-10T06:54:57.532Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12169719,
@@ -8585,7 +9400,11 @@
    "at": "2026-10-11T12:47:22.315Z",
    "trueStart": "2026-10-11T12:47:59.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.934,
+   "o2": 1.97,
+   "oAt": "2026-10-10T06:51:35.001Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12169731,
@@ -8599,7 +9418,11 @@
    "at": "2026-10-11T03:41:10.588Z",
    "trueStart": "2026-10-11T03:54:06.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.342,
+   "o2": 3.52,
+   "oAt": "2026-10-10T06:54:57.532Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12169747,
@@ -8613,7 +9436,11 @@
    "at": "2026-10-11T08:57:41.328Z",
    "trueStart": "2026-10-11T09:51:02.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 2.33,
+   "o2": 1.666,
+   "oAt": "2026-10-10T07:09:57.764Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12169816,
@@ -8627,7 +9454,11 @@
    "at": "2026-10-12T04:18:14.981Z",
    "trueStart": "2026-10-12T06:03:03.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.751,
+   "o2": 2.18,
+   "oAt": "2026-10-10T21:54:42.928Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12169842,
@@ -8641,7 +9472,11 @@
    "at": "2026-10-11T09:44:00.980Z",
    "trueStart": "2026-10-12T03:53:58.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 3.74,
+   "o2": 1.313,
+   "oAt": "2026-10-10T21:54:42.928Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12169843,
@@ -8655,7 +9490,11 @@
    "at": "2026-10-12T09:05:04.446Z",
    "trueStart": "2026-10-12T09:06:01.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.172,
+   "o2": 5.7,
+   "oAt": "2026-10-10T21:54:42.928Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12169844,
@@ -8669,7 +9508,11 @@
    "at": "2026-10-12T03:04:49.454Z",
    "trueStart": "2026-10-12T03:53:58.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.709,
+   "o2": 2.26,
+   "oAt": "2026-10-10T21:54:42.928Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12169853,
@@ -8683,7 +9526,11 @@
    "at": "2026-10-12T00:07:00.531Z",
    "trueStart": "2026-10-12T06:18:04.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 2.44,
+   "o2": 1.613,
+   "oAt": "2026-10-10T21:54:42.928Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12169897,
@@ -8697,7 +9544,11 @@
    "at": "2026-10-12T09:42:11.734Z",
    "trueStart": "2026-10-12T09:54:06.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 10.84,
+   "o2": 1.06,
+   "oAt": "2026-10-10T21:54:42.928Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12169898,
@@ -8711,7 +9562,11 @@
    "at": "2026-10-12T09:13:57.157Z",
    "trueStart": "2026-10-12T10:48:02.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.241,
+   "o2": 4.47,
+   "oAt": "2026-10-10T21:54:42.928Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12169899,
@@ -8725,7 +9580,11 @@
    "at": "2026-10-12T11:47:32.283Z",
    "trueStart": "2026-10-12T12:24:02.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.694,
+   "o2": 2.28,
+   "oAt": "2026-10-10T21:54:42.928Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12170076,
@@ -8739,7 +9598,11 @@
    "at": "2026-10-13T03:06:49.674Z",
    "trueStart": "2026-10-13T03:50:59.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.714,
+   "o2": 2.24,
+   "oAt": "2026-10-12T03:25:16.138Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12170088,
@@ -8753,7 +9616,11 @@
    "at": "2026-10-13T03:27:10.223Z",
    "trueStart": "2026-10-13T05:45:07.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 2.6,
+   "o2": 1.552,
+   "oAt": "2026-10-12T03:25:16.138Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12170167,
@@ -8767,7 +9634,11 @@
    "at": "2026-10-13T08:39:22.342Z",
    "trueStart": "2026-10-13T09:48:02.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.318,
+   "o2": 3.69,
+   "oAt": "2026-10-12T03:25:16.138Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12170211,
@@ -8781,7 +9652,11 @@
    "at": "2026-10-13T08:22:53.369Z",
    "trueStart": "2026-10-13T12:53:59.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.869,
+   "o2": 2.02,
+   "oAt": "2026-10-12T03:25:16.138Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12170243,
@@ -8795,7 +9670,11 @@
    "at": "2026-10-14T05:52:53.991Z",
    "trueStart": "2026-10-14T06:48:04.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 2.21,
+   "o2": 1.735,
+   "oAt": "2026-10-12T17:10:31.479Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12170285,
@@ -8809,7 +9688,11 @@
    "at": "2026-10-14T09:13:53.556Z",
    "trueStart": "2026-10-14T09:51:03.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.45,
+   "o2": 2.99,
+   "oAt": "2026-10-12T17:50:37.514Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12170368,
@@ -8823,7 +9706,11 @@
    "at": "2026-10-14T09:24:09.078Z",
    "trueStart": "2026-10-14T11:48:04.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.476,
+   "o2": 2.84,
+   "oAt": "2026-10-12T17:10:31.479Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12170369,
@@ -8837,7 +9724,11 @@
    "at": "2026-10-13T23:19:00.411Z",
    "trueStart": "2026-10-14T03:57:01.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 2.61,
+   "o2": 1.549,
+   "oAt": "2026-10-12T17:10:31.479Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12170795,
@@ -8851,7 +9742,11 @@
    "at": "2026-10-15T09:52:29.748Z",
    "trueStart": "2026-10-15T09:54:02.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.465,
+   "o2": 2.89,
+   "oAt": "2026-10-13T17:18:06.104Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12170856,
@@ -8865,7 +9760,11 @@
    "at": "2026-10-15T05:49:49.487Z",
    "trueStart": "2026-10-15T06:23:59.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 2.11,
+   "o2": 1.8,
+   "oAt": "2026-10-14T00:44:49.712Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12171133,
@@ -8879,7 +9778,11 @@
    "at": "2026-10-16T04:52:14.579Z",
    "trueStart": "2026-10-16T06:30:04.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.826,
+   "o2": 2.08,
+   "oAt": "2026-10-14T11:40:14.655Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12171245,
@@ -8893,7 +9796,11 @@
    "at": "2026-10-16T08:53:21.392Z",
    "trueStart": "2026-10-16T10:03:00.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.555,
+   "o2": 2.59,
+   "oAt": "2026-10-14T16:10:11.773Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12171477,
@@ -8907,7 +9814,11 @@
    "at": "2026-10-17T05:01:21.055Z",
    "trueStart": "2026-10-17T08:30:05.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.289,
+   "o2": 3.94,
+   "oAt": "2026-10-15T13:43:18.155Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12171698,
@@ -8921,7 +9832,11 @@
    "at": "2026-10-17T10:57:23.632Z",
    "trueStart": "2026-10-17T11:03:06.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 2.7,
+   "o2": 1.52,
+   "oAt": "2026-10-16T13:51:02.164Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12171767,
@@ -8935,7 +9850,11 @@
    "at": "2026-10-17T09:44:10.272Z",
    "trueStart": "2026-10-17T10:24:03.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 2.38,
+   "o2": 1.606,
+   "oAt": "2026-10-16T21:10:19.731Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12171768,
@@ -8949,7 +9868,11 @@
    "at": "2026-10-17T08:49:26.270Z",
    "trueStart": "2026-10-17T10:24:03.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.99,
+   "o2": 1.847,
+   "oAt": "2026-10-16T21:06:32.782Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12171769,
@@ -8963,7 +9886,11 @@
    "at": "2026-10-17T11:28:22.460Z",
    "trueStart": "2026-10-17T13:02:57.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.164,
+   "o2": 5.45,
+   "oAt": "2026-10-16T21:11:33.735Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12171770,
@@ -8977,7 +9904,11 @@
    "at": "2026-10-17T11:55:28.893Z",
    "trueStart": "2026-10-17T12:27:04.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.641,
+   "o2": 2.31,
+   "oAt": "2026-10-16T21:14:09.348Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12171771,
@@ -8991,7 +9922,11 @@
    "at": "2026-10-17T12:35:58.367Z",
    "trueStart": "2026-10-17T14:50:57.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.564,
+   "o2": 2.48,
+   "oAt": "2026-10-17T07:41:58.343Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12171772,
@@ -9005,7 +9940,11 @@
    "at": "2026-10-17T11:43:06.030Z",
    "trueStart": "2026-10-17T14:33:06.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 2.5,
+   "o2": 1.555,
+   "oAt": "2026-10-17T07:41:39.226Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12171773,
@@ -9019,7 +9958,11 @@
    "at": "2026-10-17T12:22:46.498Z",
    "trueStart": "2026-10-17T16:53:59.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 1.139,
+   "o2": 5.95,
+   "oAt": "2026-10-17T07:49:05.826Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12171774,
@@ -9033,7 +9976,11 @@
    "at": "2026-10-17T13:13:08.465Z",
    "trueStart": "2026-10-17T16:27:06.000Z",
    "startSource": "api-tennis-live",
-   "book": "Pinnacle +30s"
+   "book": "Pinnacle +30s",
+   "o1": 2.24,
+   "o2": 1.675,
+   "oAt": "2026-10-17T07:44:47.095Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12171878,
@@ -9050,7 +9997,11 @@
    "book": "Pinnacle +30s",
    "round": null,
    "qualifying": null,
-   "event": "ATP Almaty"
+   "event": "ATP Almaty",
+   "o1": 2,
+   "o2": 1.84,
+   "oAt": "2026-10-17T13:40:52.738Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12171879,
@@ -9067,7 +10018,11 @@
    "book": "Pinnacle +30s",
    "round": null,
    "qualifying": null,
-   "event": "ATP Almaty"
+   "event": "ATP Almaty",
+   "o1": 2.07,
+   "o2": 1.787,
+   "oAt": "2026-10-17T13:54:37.323Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12171959,
@@ -9084,7 +10039,11 @@
    "book": "Pinnacle +30s",
    "round": "ATP Shanghai - Final",
    "qualifying": false,
-   "event": "ATP Shanghai"
+   "event": "ATP Shanghai",
+   "o1": 2.19,
+   "o2": 1.751,
+   "oAt": "2026-10-17T14:10:53.296Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12171966,
@@ -9101,7 +10060,11 @@
    "book": "Pinnacle +30s",
    "round": null,
    "qualifying": null,
-   "event": "ATP Almaty"
+   "event": "ATP Almaty",
+   "o1": 1.555,
+   "o2": 2.62,
+   "oAt": "2026-10-17T20:00:13.804Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12171971,
@@ -9118,7 +10081,11 @@
    "book": "Pinnacle +30s",
    "round": null,
    "qualifying": null,
-   "event": "ATP Brussels"
+   "event": "ATP Brussels",
+   "o1": 2.81,
+   "o2": 1.454,
+   "oAt": "2026-10-17T18:54:17.552Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12171972,
@@ -9135,7 +10102,11 @@
    "book": "Pinnacle +30s",
    "round": null,
    "qualifying": null,
-   "event": "ATP Brussels"
+   "event": "ATP Brussels",
+   "o1": 1.344,
+   "o2": 3.34,
+   "oAt": "2026-10-17T18:07:34.759Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12171884,
@@ -9152,7 +10123,11 @@
    "book": "Pinnacle +30s",
    "round": "ATP Almaty - 1/16-finals",
    "qualifying": false,
-   "event": "ATP Almaty"
+   "event": "ATP Almaty",
+   "o1": 1.518,
+   "o2": 2.67,
+   "oAt": "2026-10-18T09:32:52.638Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12171885,
@@ -9169,7 +10144,11 @@
    "book": "Pinnacle +30s",
    "round": "ATP Almaty - 1/16-finals",
    "qualifying": false,
-   "event": "ATP Almaty"
+   "event": "ATP Almaty",
+   "o1": 1.476,
+   "o2": 2.8,
+   "oAt": "2026-10-18T09:33:15.118Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12171888,
@@ -9186,7 +10165,11 @@
    "book": "Pinnacle +30s",
    "round": "ATP Almaty - 1/16-finals",
    "qualifying": false,
-   "event": "ATP Almaty"
+   "event": "ATP Almaty",
+   "o1": 1.333,
+   "o2": 3.64,
+   "oAt": "2026-10-18T10:01:36.917Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12172009,
@@ -9203,7 +10186,11 @@
    "book": "Pinnacle +30s",
    "round": "ATP Lyon - 1/16-finals",
    "qualifying": false,
-   "event": "ATP Lyon"
+   "event": "ATP Lyon",
+   "o1": 3.5,
+   "o2": 1.335,
+   "oAt": "2026-10-18T11:48:03.172Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12172011,
@@ -9220,7 +10207,11 @@
    "book": "Pinnacle +30s",
    "round": "ATP Lyon - 1/16-finals",
    "qualifying": false,
-   "event": "ATP Lyon"
+   "event": "ATP Lyon",
+   "o1": 1.574,
+   "o2": 2.51,
+   "oAt": "2026-10-18T11:57:34.402Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12172014,
@@ -9237,7 +10228,11 @@
    "book": "Pinnacle +30s",
    "round": "ATP Lyon - 1/16-finals",
    "qualifying": false,
-   "event": "ATP Lyon"
+   "event": "ATP Lyon",
+   "o1": 1.571,
+   "o2": 2.51,
+   "oAt": "2026-10-18T12:02:41.319Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12172160,
@@ -9254,7 +10249,11 @@
    "book": "Pinnacle +30s",
    "round": "ATP Almaty - 1/16-finals",
    "qualifying": false,
-   "event": "ATP Almaty"
+   "event": "ATP Almaty",
+   "o1": 1.99,
+   "o2": 1.877,
+   "oAt": "2026-10-18T17:22:01.686Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12172161,
@@ -9271,7 +10270,11 @@
    "book": "Pinnacle +30s",
    "round": "ATP Almaty - 1/16-finals",
    "qualifying": false,
-   "event": "ATP Almaty"
+   "event": "ATP Almaty",
+   "o1": 3.17,
+   "o2": 1.392,
+   "oAt": "2026-10-18T17:27:21.289Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12172162,
@@ -9288,7 +10291,11 @@
    "book": "Pinnacle +30s",
    "round": null,
    "qualifying": false,
-   "event": "ATP Lyon (France) - Qualification"
+   "event": "ATP Lyon (France) - Qualification",
+   "o1": 1.561,
+   "o2": 2.48,
+   "oAt": "2026-10-18T20:03:22.698Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12172165,
@@ -9305,7 +10312,11 @@
    "book": "Pinnacle +30s",
    "round": null,
    "qualifying": false,
-   "event": "ATP Lyon (France) - Qualification"
+   "event": "ATP Lyon (France) - Qualification",
+   "o1": 2.38,
+   "o2": 1.606,
+   "oAt": "2026-10-18T20:06:29.179Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12172185,
@@ -9322,7 +10333,11 @@
    "book": "Pinnacle +30s",
    "round": "ATP Brussels - 1/16-finals",
    "qualifying": false,
-   "event": "ATP Brussels"
+   "event": "ATP Brussels",
+   "o1": 3.99,
+   "o2": 1.277,
+   "oAt": "2026-10-18T23:26:49.477Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12172186,
@@ -9339,7 +10354,11 @@
    "book": "Pinnacle +30s",
    "round": "ATP Brussels - 1/16-finals",
    "qualifying": false,
-   "event": "ATP Brussels"
+   "event": "ATP Brussels",
+   "o1": 1.751,
+   "o2": 2.16,
+   "oAt": "2026-10-18T23:28:28.658Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12172187,
@@ -9356,7 +10375,11 @@
    "book": "Pinnacle +30s",
    "round": "ATP Brussels - 1/16-finals",
    "qualifying": false,
-   "event": "ATP Brussels"
+   "event": "ATP Brussels",
+   "o1": 6.02,
+   "o2": 1.166,
+   "oAt": "2026-10-18T23:28:50.710Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12172188,
@@ -9373,7 +10396,11 @@
    "book": "Pinnacle +30s",
    "round": null,
    "qualifying": false,
-   "event": "ATP Lyon (France) - Qualification"
+   "event": "ATP Lyon (France) - Qualification",
+   "o1": 2.08,
+   "o2": 1.781,
+   "oAt": "2026-10-18T20:10:41.005Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12171789,
@@ -9390,7 +10417,11 @@
    "book": "Pinnacle +30s",
    "round": "ATP Brussels - 1/16-finals",
    "qualifying": false,
-   "event": "ATP Brussels"
+   "event": "ATP Brussels",
+   "o1": 1.518,
+   "o2": 2.67,
+   "oAt": "2026-10-18T10:18:03.377Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12171790,
@@ -9407,7 +10438,11 @@
    "book": "Pinnacle +30s",
    "round": "ATP Brussels - 1/16-finals",
    "qualifying": false,
-   "event": "ATP Brussels"
+   "event": "ATP Brussels",
+   "o1": 1.25,
+   "o2": 4.46,
+   "oAt": "2026-10-18T10:50:32.257Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12171791,
@@ -9424,7 +10459,11 @@
    "book": "Pinnacle +30s",
    "round": "ATP Brussels - 1/16-finals",
    "qualifying": false,
-   "event": "ATP Brussels"
+   "event": "ATP Brussels",
+   "o1": 1.662,
+   "o2": 2.31,
+   "oAt": "2026-10-18T10:18:54.528Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12171794,
@@ -9441,7 +10480,11 @@
    "book": "Pinnacle +30s",
    "round": "ATP Brussels - 1/16-finals",
    "qualifying": false,
-   "event": "ATP Brussels"
+   "event": "ATP Brussels",
+   "o1": 2.84,
+   "o2": 1.467,
+   "oAt": "2026-10-18T10:59:54.806Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12171795,
@@ -9458,7 +10501,11 @@
    "book": "Pinnacle +30s",
    "round": "ATP Brussels - 1/16-finals",
    "qualifying": false,
-   "event": "ATP Brussels"
+   "event": "ATP Brussels",
+   "o1": 1.602,
+   "o2": 2.44,
+   "oAt": "2026-10-18T11:04:55.876Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12171882,
@@ -9475,7 +10522,11 @@
    "book": "Pinnacle +30s",
    "round": "ATP Almaty - 1/16-finals",
    "qualifying": false,
-   "event": "ATP Almaty"
+   "event": "ATP Almaty",
+   "o1": 1.99,
+   "o2": 1.877,
+   "oAt": "2026-10-18T09:31:35.071Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12171886,
@@ -9492,7 +10543,11 @@
    "book": "Pinnacle +30s",
    "round": "ATP Almaty - 1/16-finals",
    "qualifying": false,
-   "event": "ATP Almaty"
+   "event": "ATP Almaty",
+   "o1": 1.245,
+   "o2": 4.33,
+   "oAt": "2026-10-18T09:38:01.958Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12171889,
@@ -9509,7 +10564,11 @@
    "book": "Pinnacle +30s",
    "round": "ATP Almaty - 1/16-finals",
    "qualifying": false,
-   "event": "ATP Almaty"
+   "event": "ATP Almaty",
+   "o1": 1.333,
+   "o2": 3.64,
+   "oAt": "2026-10-18T09:56:45.364Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12172008,
@@ -9526,7 +10585,11 @@
    "book": "Pinnacle +30s",
    "round": "ATP Lyon - 1/16-finals",
    "qualifying": false,
-   "event": "ATP Lyon"
+   "event": "ATP Lyon",
+   "o1": 2.76,
+   "o2": 1.487,
+   "oAt": "2026-10-18T11:47:09.783Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12172010,
@@ -9543,7 +10606,11 @@
    "book": "Pinnacle +30s",
    "round": "ATP Lyon - 1/16-finals",
    "qualifying": false,
-   "event": "ATP Lyon"
+   "event": "ATP Lyon",
+   "o1": 2.5,
+   "o2": 1.578,
+   "oAt": "2026-10-18T11:49:33.535Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12172012,
@@ -9560,7 +10627,11 @@
    "book": "Pinnacle +30s",
    "round": "ATP Lyon - 1/16-finals",
    "qualifying": false,
-   "event": "ATP Lyon"
+   "event": "ATP Lyon",
+   "o1": 1.473,
+   "o2": 2.81,
+   "oAt": "2026-10-18T12:02:13.392Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12172013,
@@ -9577,7 +10648,11 @@
    "book": "Pinnacle +30s",
    "round": "ATP Lyon - 1/16-finals",
    "qualifying": false,
-   "event": "ATP Lyon"
+   "event": "ATP Lyon",
+   "o1": 3.26,
+   "o2": 1.374,
+   "oAt": "2026-10-18T12:03:04.496Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12172163,
@@ -9594,7 +10669,11 @@
    "book": "Pinnacle +30s",
    "round": "ATP Almaty - 1/16-finals",
    "qualifying": false,
-   "event": "ATP Almaty"
+   "event": "ATP Almaty",
+   "o1": 3.24,
+   "o2": 1.378,
+   "oAt": "2026-10-19T09:47:50.030Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12172164,
@@ -9611,7 +10690,11 @@
    "book": "Pinnacle +30s",
    "round": "ATP Almaty - 1/16-finals",
    "qualifying": false,
-   "event": "ATP Almaty"
+   "event": "ATP Almaty",
+   "o1": 6.18,
+   "o2": 1.142,
+   "oAt": "2026-10-19T09:56:56.166Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12172182,
@@ -9628,7 +10711,11 @@
    "book": "Pinnacle +30s",
    "round": "ATP Brussels - 1/16-finals",
    "qualifying": false,
-   "event": "ATP Brussels"
+   "event": "ATP Brussels",
+   "o1": 1.68,
+   "o2": 2.28,
+   "oAt": "2026-10-19T17:01:14.831Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12172184,
@@ -9645,7 +10732,11 @@
    "book": "Pinnacle +30s",
    "round": "ATP Brussels - 1/16-finals",
    "qualifying": false,
-   "event": "ATP Brussels"
+   "event": "ATP Brussels",
+   "o1": 1.505,
+   "o2": 2.78,
+   "oAt": "2026-10-19T16:58:29.791Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12172385,
@@ -9662,7 +10753,11 @@
    "book": "Pinnacle +30s",
    "round": "ATP Lyon - 1/16-finals",
    "qualifying": false,
-   "event": "ATP Lyon"
+   "event": "ATP Lyon",
+   "o1": 1.819,
+   "o2": 2.07,
+   "oAt": "2026-10-19T17:07:50.083Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12172386,
@@ -9679,7 +10774,11 @@
    "book": "Pinnacle +30s",
    "round": "ATP Lyon - 1/16-finals",
    "qualifying": false,
-   "event": "ATP Lyon"
+   "event": "ATP Lyon",
+   "o1": 1.5,
+   "o2": 2.73,
+   "oAt": "2026-10-19T17:10:14.486Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12172387,
@@ -9696,7 +10795,11 @@
    "book": "Pinnacle +30s",
    "round": "ATP Lyon - 1/16-finals",
    "qualifying": false,
-   "event": "ATP Lyon"
+   "event": "ATP Lyon",
+   "o1": 1.543,
+   "o2": 2.59,
+   "oAt": "2026-10-19T17:10:42.992Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12172388,
@@ -9713,7 +10816,11 @@
    "book": "Pinnacle +30s",
    "round": "ATP Lyon - 1/16-finals",
    "qualifying": false,
-   "event": "ATP Lyon"
+   "event": "ATP Lyon",
+   "o1": 1.694,
+   "o2": 2.25,
+   "oAt": "2026-10-19T17:11:22.620Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12171792,
@@ -9747,7 +10854,11 @@
    "book": "Pinnacle +30s",
    "round": "ATP Almaty - 1/16-finals",
    "qualifying": false,
-   "event": "ATP Almaty"
+   "event": "ATP Almaty",
+   "o1": 1.917,
+   "o2": 1.952,
+   "oAt": "2026-10-18T15:14:36.254Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12171887,
@@ -9764,7 +10875,11 @@
    "book": "Pinnacle +30s",
    "round": "ATP Almaty - 1/16-finals",
    "qualifying": false,
-   "event": "ATP Almaty"
+   "event": "ATP Almaty",
+   "o1": 35.5,
+   "o2": 1.012,
+   "oAt": "2026-10-20T10:47:53.334Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12172015,
@@ -9798,7 +10913,11 @@
    "book": "Pinnacle +30s",
    "round": "ATP Brussels - 1/16-finals",
    "qualifying": false,
-   "event": "ATP Brussels"
+   "event": "ATP Brussels",
+   "o1": 2.76,
+   "o2": 1.487,
+   "oAt": "2026-10-19T17:03:48.847Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12172316,
@@ -9815,7 +10934,11 @@
    "book": "Pinnacle +30s",
    "round": "ATP Almaty - 1/8-finals",
    "qualifying": false,
-   "event": "ATP Almaty"
+   "event": "ATP Almaty",
+   "o1": 2.1,
+   "o2": 1.793,
+   "oAt": "2026-10-20T08:17:09.135Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12172317,
@@ -9832,7 +10955,11 @@
    "book": "Pinnacle +30s",
    "round": "ATP Almaty - 1/8-finals",
    "qualifying": false,
-   "event": "ATP Almaty"
+   "event": "ATP Almaty",
+   "o1": 3.44,
+   "o2": 1.363,
+   "oAt": "2026-10-20T08:22:05.745Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12172375,
@@ -9849,7 +10976,11 @@
    "book": "Pinnacle +30s",
    "round": "ATP Almaty - 1/8-finals",
    "qualifying": false,
-   "event": "ATP Almaty"
+   "event": "ATP Almaty",
+   "o1": 2.59,
+   "o2": 1.543,
+   "oAt": "2026-10-20T08:24:43.576Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12172384,
@@ -9866,7 +10997,11 @@
    "book": "Pinnacle +30s",
    "round": "ATP Brussels - 1/8-finals",
    "qualifying": false,
-   "event": "ATP Brussels"
+   "event": "ATP Brussels",
+   "o1": 3.01,
+   "o2": 1.425,
+   "oAt": "2026-10-20T13:49:50.145Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12172581,
@@ -9883,7 +11018,11 @@
    "book": "Pinnacle +30s",
    "round": "ATP Lyon - 1/8-finals",
    "qualifying": false,
-   "event": "ATP Lyon"
+   "event": "ATP Lyon",
+   "o1": 3.82,
+   "o2": 1.294,
+   "oAt": "2026-10-20T13:51:38.163Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12172807,
@@ -9900,7 +11039,11 @@
    "book": "Pinnacle +30s",
    "round": "ATP Almaty - 1/8-finals",
    "qualifying": false,
-   "event": "ATP Almaty"
+   "event": "ATP Almaty",
+   "o1": 1.057,
+   "o2": 10.83,
+   "oAt": "2026-10-20T17:20:16.664Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12172819,
@@ -9917,7 +11060,11 @@
    "book": "Pinnacle +30s",
    "round": "ATP Brussels - 1/8-finals",
    "qualifying": false,
-   "event": "ATP Brussels"
+   "event": "ATP Brussels",
+   "o1": 2.31,
+   "o2": 1.666,
+   "oAt": "2026-10-20T18:02:36.796Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12172858,
@@ -9934,7 +11081,11 @@
    "book": "Pinnacle +30s",
    "round": "ATP Brussels - 1/8-finals",
    "qualifying": false,
-   "event": "ATP Brussels"
+   "event": "ATP Brussels",
+   "o1": 4.019,
+   "o2": 1.273,
+   "oAt": "2026-10-20T17:59:15.936Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12172931,
@@ -9951,7 +11102,11 @@
    "book": "Pinnacle +30s",
    "round": "ATP Brussels - 1/8-finals",
    "qualifying": false,
-   "event": "ATP Brussels"
+   "event": "ATP Brussels",
+   "o1": 1.934,
+   "o2": 1.934,
+   "oAt": "2026-10-20T22:13:49.278Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12172932,
@@ -9968,7 +11123,11 @@
    "book": "Pinnacle +30s",
    "round": "ATP Lyon - 1/8-finals",
    "qualifying": false,
-   "event": "ATP Lyon"
+   "event": "ATP Lyon",
+   "o1": 1.478,
+   "o2": 2.79,
+   "oAt": "2026-10-21T02:11:21.540Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12173013,
@@ -9985,7 +11144,11 @@
    "book": "Pinnacle +30s",
    "round": "ATP Lyon - 1/8-finals",
    "qualifying": false,
-   "event": "ATP Lyon"
+   "event": "ATP Lyon",
+   "o1": 3.46,
+   "o2": 1.342,
+   "oAt": "2026-10-21T08:06:57.697Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12172778,
@@ -10002,7 +11165,11 @@
    "book": "Pinnacle +30s",
    "round": "ATP Almaty - 1/8-finals",
    "qualifying": false,
-   "event": "ATP Almaty"
+   "event": "ATP Almaty",
+   "o1": 1.061,
+   "o2": 10.31,
+   "oAt": "2026-10-20T12:20:18.929Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12172820,
@@ -10019,7 +11186,11 @@
    "book": "Pinnacle +30s",
    "round": "ATP Lyon - 1/8-finals",
    "qualifying": false,
-   "event": "ATP Lyon"
+   "event": "ATP Lyon",
+   "o1": 5.8,
+   "o2": 1.156,
+   "oAt": "2026-10-20T17:57:00.018Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12172896,
@@ -10036,7 +11207,10 @@
    "book": "Pinnacle +30s",
    "round": "ATP Almaty - 1/8-finals",
    "qualifying": false,
-   "event": "ATP Almaty"
+   "event": "ATP Almaty",
+   "o1": 1.434,
+   "o2": 2.97,
+   "oAt": "2026-10-20T17:23:17.473Z"
   },
   {
    "eventKey": 12172974,
@@ -10053,7 +11227,11 @@
    "book": "Pinnacle +30s",
    "round": "ATP Lyon - 1/8-finals",
    "qualifying": false,
-   "event": "ATP Lyon"
+   "event": "ATP Lyon",
+   "o1": 1.9,
+   "o2": 1.97,
+   "oAt": "2026-10-21T11:03:49.892Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12173006,
@@ -10070,7 +11248,11 @@
    "book": "Pinnacle +30s",
    "round": "ATP Lyon - 1/8-finals",
    "qualifying": false,
-   "event": "ATP Lyon"
+   "event": "ATP Lyon",
+   "o1": 1.628,
+   "o2": 2.38,
+   "oAt": "2026-10-21T11:14:14.664Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12173089,
@@ -10087,7 +11269,11 @@
    "book": "Pinnacle +30s",
    "round": "ATP Brussels - 1/8-finals",
    "qualifying": false,
-   "event": "ATP Brussels"
+   "event": "ATP Brussels",
+   "o1": 3.76,
+   "o2": 1.302,
+   "oAt": "2026-10-21T10:57:02.664Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12173106,
@@ -10104,7 +11290,11 @@
    "book": "Pinnacle +30s",
    "round": "ATP Lyon - 1/8-finals",
    "qualifying": false,
-   "event": "ATP Lyon"
+   "event": "ATP Lyon",
+   "o1": 2.93,
+   "o2": 1.465,
+   "oAt": "2026-10-21T11:17:38.585Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12173186,
@@ -10121,7 +11311,11 @@
    "book": "Pinnacle +30s",
    "round": "ATP Almaty - 1/8-finals",
    "qualifying": false,
-   "event": "ATP Almaty"
+   "event": "ATP Almaty",
+   "o1": 2.56,
+   "o2": 1.578,
+   "oAt": "2026-10-21T10:54:33.328Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12173187,
@@ -10138,7 +11332,11 @@
    "book": "Pinnacle +30s",
    "round": "ATP Almaty - 1/8-finals",
    "qualifying": false,
-   "event": "ATP Almaty"
+   "event": "ATP Almaty",
+   "o1": 2.92,
+   "o2": 1.446,
+   "oAt": "2026-10-21T11:09:18.543Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12173221,
@@ -10155,7 +11353,11 @@
    "book": "Pinnacle +30s",
    "round": "ATP Brussels - 1/8-finals",
    "qualifying": false,
-   "event": "ATP Brussels"
+   "event": "ATP Brussels",
+   "o1": 4.31,
+   "o2": 1.246,
+   "oAt": "2026-10-21T16:46:42.108Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12173288,
@@ -10172,7 +11374,11 @@
    "book": "Pinnacle +30s",
    "round": "ATP Lyon - 1/8-finals",
    "qualifying": false,
-   "event": "ATP Lyon"
+   "event": "ATP Lyon",
+   "o1": 1.375,
+   "o2": 3.25,
+   "oAt": "2026-10-21T17:48:50.039Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12173394,
@@ -10189,7 +11395,11 @@
    "book": "Pinnacle +30s",
    "round": "ATP Brussels - 1/8-finals",
    "qualifying": false,
-   "event": "ATP Brussels"
+   "event": "ATP Brussels",
+   "o1": 9.19,
+   "o2": 1.072,
+   "oAt": "2026-10-22T01:27:24.590Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12173254,
@@ -10206,7 +11416,11 @@
    "book": "Pinnacle +30s",
    "round": "ATP Almaty - Quarter-finals",
    "qualifying": false,
-   "event": "ATP Almaty"
+   "event": "ATP Almaty",
+   "o1": 1.925,
+   "o2": 1.961,
+   "oAt": "2026-10-22T01:20:43.853Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12173359,
@@ -10223,7 +11437,11 @@
    "book": "Pinnacle +30s",
    "round": "ATP Brussels - Quarter-finals",
    "qualifying": false,
-   "event": "ATP Brussels"
+   "event": "ATP Brussels",
+   "o1": 2.54,
+   "o2": 1.571,
+   "oAt": "2026-10-22T08:34:31.180Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12173374,
@@ -10240,7 +11458,11 @@
    "book": "Pinnacle +30s",
    "round": "ATP Almaty - Quarter-finals",
    "qualifying": false,
-   "event": "ATP Almaty"
+   "event": "ATP Almaty",
+   "o1": 1.273,
+   "o2": 4.18,
+   "oAt": "2026-10-22T01:21:12.033Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12173428,
@@ -10257,7 +11479,11 @@
    "book": "Pinnacle +30s",
    "round": "ATP Lyon - Quarter-finals",
    "qualifying": false,
-   "event": "ATP Lyon"
+   "event": "ATP Lyon",
+   "o1": 3.82,
+   "o2": 1.303,
+   "oAt": "2026-10-22T08:33:31.490Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12173537,
@@ -10274,7 +11500,11 @@
    "book": "Pinnacle +30s",
    "round": "ATP Brussels - Quarter-finals",
    "qualifying": false,
-   "event": "ATP Brussels"
+   "event": "ATP Brussels",
+   "o1": 3.36,
+   "o2": 1.366,
+   "oAt": "2026-10-22T17:03:21.779Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12173548,
@@ -10291,7 +11521,11 @@
    "book": "Pinnacle +30s",
    "round": "ATP Almaty - Quarter-finals",
    "qualifying": false,
-   "event": "ATP Almaty"
+   "event": "ATP Almaty",
+   "o1": 1.2,
+   "o2": 5.1,
+   "oAt": "2026-10-22T15:54:30.374Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12173572,
@@ -10308,7 +11542,11 @@
    "book": "Pinnacle +30s",
    "round": "ATP Almaty - Quarter-finals",
    "qualifying": false,
-   "event": "ATP Almaty"
+   "event": "ATP Almaty",
+   "o1": 1.826,
+   "o2": 2.08,
+   "oAt": "2026-10-22T16:59:07.687Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12173573,
@@ -10325,7 +11563,11 @@
    "book": "Pinnacle +30s",
    "round": "ATP Brussels - Quarter-finals",
    "qualifying": false,
-   "event": "ATP Brussels"
+   "event": "ATP Brussels",
+   "o1": 1.434,
+   "o2": 3.05,
+   "oAt": "2026-10-22T18:13:15.920Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12173574,
@@ -10342,7 +11584,11 @@
    "book": "Pinnacle +30s",
    "round": "ATP Lyon - Quarter-finals",
    "qualifying": false,
-   "event": "ATP Lyon"
+   "event": "ATP Lyon",
+   "o1": 3.24,
+   "o2": 1.396,
+   "oAt": "2026-10-22T17:35:04.831Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12173593,
@@ -10359,7 +11605,11 @@
    "book": "Pinnacle +30s",
    "round": "ATP Lyon - Quarter-finals",
    "qualifying": false,
-   "event": "ATP Lyon"
+   "event": "ATP Lyon",
+   "o1": 5.99,
+   "o2": 1.155,
+   "oAt": "2026-10-22T18:14:17.755Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12173612,
@@ -10376,7 +11626,11 @@
    "book": "Pinnacle +30s",
    "round": "ATP Brussels - Quarter-finals",
    "qualifying": false,
-   "event": "ATP Brussels"
+   "event": "ATP Brussels",
+   "o1": 2.85,
+   "o2": 1.473,
+   "oAt": "2026-10-22T18:25:30.938Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12173645,
@@ -10393,7 +11647,11 @@
    "book": "Pinnacle +30s",
    "round": "ATP Lyon - Quarter-finals",
    "qualifying": false,
-   "event": "ATP Lyon"
+   "event": "ATP Lyon",
+   "o1": 3.16,
+   "o2": 1.413,
+   "oAt": "2026-10-22T23:08:06.477Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12173727,
@@ -10410,7 +11668,11 @@
    "book": "Pinnacle +30s",
    "round": "ATP Almaty - Semi-finals",
    "qualifying": false,
-   "event": "ATP Almaty"
+   "event": "ATP Almaty",
+   "o1": 3.28,
+   "o2": 1.38,
+   "oAt": "2026-10-23T14:47:26.615Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12173801,
@@ -10427,7 +11689,11 @@
    "book": "Pinnacle +30s",
    "round": "ATP Almaty - Semi-finals",
    "qualifying": false,
-   "event": "ATP Almaty"
+   "event": "ATP Almaty",
+   "o1": 1.485,
+   "o2": 2.81,
+   "oAt": "2026-10-23T19:16:09.433Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12173802,
@@ -10444,7 +11710,11 @@
    "book": "Pinnacle +30s",
    "round": "ATP Brussels - Semi-finals",
    "qualifying": false,
-   "event": "ATP Brussels"
+   "event": "ATP Brussels",
+   "o1": 1.598,
+   "o2": 2.48,
+   "oAt": "2026-10-23T17:44:50.066Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12173803,
@@ -10461,7 +11731,11 @@
    "book": "Pinnacle +30s",
    "round": "ATP Lyon - Semi-finals",
    "qualifying": false,
-   "event": "ATP Lyon"
+   "event": "ATP Lyon",
+   "o1": 2.6,
+   "o2": 1.549,
+   "oAt": "2026-10-23T17:52:00.696Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12173808,
@@ -10478,7 +11752,11 @@
    "book": "Pinnacle +30s",
    "round": null,
    "qualifying": false,
-   "event": "ATP Basel"
+   "event": "ATP Basel",
+   "o1": 2.3,
+   "o2": 1.645,
+   "oAt": "2026-10-24T02:48:05.550Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12173809,
@@ -10495,7 +11773,11 @@
    "book": "Pinnacle +30s",
    "round": null,
    "qualifying": false,
-   "event": "ATP Basel"
+   "event": "ATP Basel",
+   "o1": 1.598,
+   "o2": 2.4,
+   "oAt": "2026-10-24T02:46:16.913Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12173810,
@@ -10512,7 +11794,11 @@
    "book": "Pinnacle +30s",
    "round": null,
    "qualifying": false,
-   "event": "ATP Basel"
+   "event": "ATP Basel",
+   "o1": 2.25,
+   "o2": 1.671,
+   "oAt": "2026-10-24T02:49:03.296Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12173811,
@@ -10529,7 +11815,11 @@
    "book": "Pinnacle +30s",
    "round": null,
    "qualifying": false,
-   "event": "ATP Basel"
+   "event": "ATP Basel",
+   "o1": 1.719,
+   "o2": 2.17,
+   "oAt": "2026-10-24T02:46:06.666Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12173812,
@@ -10546,7 +11836,11 @@
    "book": "Pinnacle +30s",
    "round": null,
    "qualifying": false,
-   "event": "ATP Basel"
+   "event": "ATP Basel",
+   "o1": 2.05,
+   "o2": 1.8,
+   "oAt": "2026-10-24T02:50:59.885Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12173813,
@@ -10563,7 +11857,11 @@
    "book": "Pinnacle +30s",
    "round": null,
    "qualifying": false,
-   "event": "ATP Basel"
+   "event": "ATP Basel",
+   "o1": 2.16,
+   "o2": 1.724,
+   "oAt": "2026-10-24T02:46:06.351Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12173814,
@@ -10580,7 +11878,11 @@
    "book": "Pinnacle +30s",
    "round": null,
    "qualifying": false,
-   "event": "ATP Basel"
+   "event": "ATP Basel",
+   "o1": 1.591,
+   "o2": 2.41,
+   "oAt": "2026-10-24T02:51:18.433Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12173815,
@@ -10597,7 +11899,11 @@
    "book": "Pinnacle +30s",
    "round": null,
    "qualifying": false,
-   "event": "ATP Vienna"
+   "event": "ATP Vienna",
+   "o1": 1.507,
+   "o2": 2.64,
+   "oAt": "2026-10-24T02:41:45.939Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12173816,
@@ -10614,7 +11920,11 @@
    "book": "Pinnacle +30s",
    "round": null,
    "qualifying": false,
-   "event": "ATP Vienna"
+   "event": "ATP Vienna",
+   "o1": 1.813,
+   "o2": 2.04,
+   "oAt": "2026-10-24T02:55:08.764Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12173817,
@@ -10631,7 +11941,11 @@
    "book": "Pinnacle +30s",
    "round": null,
    "qualifying": false,
-   "event": "ATP Vienna"
+   "event": "ATP Vienna",
+   "o1": 1.952,
+   "o2": 1.884,
+   "oAt": "2026-10-24T02:53:06.191Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12173818,
@@ -10648,7 +11962,11 @@
    "book": "Pinnacle +30s",
    "round": null,
    "qualifying": false,
-   "event": "ATP Vienna"
+   "event": "ATP Vienna",
+   "o1": 3.35,
+   "o2": 1.342,
+   "oAt": "2026-10-24T02:51:18.433Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12173819,
@@ -10665,7 +11983,11 @@
    "book": "Pinnacle +30s",
    "round": null,
    "qualifying": false,
-   "event": "ATP Vienna"
+   "event": "ATP Vienna",
+   "o1": 2.15,
+   "o2": 1.729,
+   "oAt": "2026-10-24T02:50:59.885Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12173820,
@@ -10682,7 +12004,11 @@
    "book": "Pinnacle +30s",
    "round": null,
    "qualifying": false,
-   "event": "ATP Vienna"
+   "event": "ATP Vienna",
+   "o1": 1.179,
+   "o2": 5.14,
+   "oAt": "2026-10-24T02:55:08.764Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12173821,
@@ -10699,7 +12025,11 @@
    "book": "Pinnacle +30s",
    "round": null,
    "qualifying": false,
-   "event": "ATP Vienna"
+   "event": "ATP Vienna",
+   "o1": 2.25,
+   "o2": 1.671,
+   "oAt": "2026-10-24T07:52:45.399Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12173822,
@@ -10716,7 +12046,11 @@
    "book": "Pinnacle +30s",
    "round": null,
    "qualifying": false,
-   "event": "ATP Vienna"
+   "event": "ATP Vienna",
+   "o1": 1.684,
+   "o2": 2.22,
+   "oAt": "2026-10-24T07:58:15.773Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12173840,
@@ -10733,7 +12067,11 @@
    "book": "Pinnacle +30s",
    "round": "ATP Brussels - Semi-finals",
    "qualifying": false,
-   "event": "ATP Brussels"
+   "event": "ATP Brussels",
+   "o1": 1.196,
+   "o2": 5.18,
+   "oAt": "2026-10-23T21:50:12.606Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12173863,
@@ -10750,7 +12088,11 @@
    "book": "Pinnacle +30s",
    "round": "ATP Lyon - Semi-finals",
    "qualifying": false,
-   "event": "ATP Lyon"
+   "event": "ATP Lyon",
+   "o1": 2.65,
+   "o2": 1.534,
+   "oAt": "2026-10-24T01:00:51.894Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12173904,
@@ -10767,7 +12109,11 @@
    "book": "Pinnacle +30s",
    "round": null,
    "qualifying": false,
-   "event": "ATP Basel"
+   "event": "ATP Basel",
+   "o1": 1.375,
+   "o2": 3.16,
+   "oAt": "2026-10-24T10:55:18.136Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12173999,
@@ -10784,7 +12130,11 @@
    "book": "Pinnacle +30s",
    "round": "ATP Almaty - Final",
    "qualifying": false,
-   "event": "ATP Almaty"
+   "event": "ATP Almaty",
+   "o1": 1.196,
+   "o2": 5.19,
+   "oAt": "2026-10-24T15:49:28.294Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12174011,
@@ -10801,7 +12151,11 @@
    "book": "Pinnacle +30s",
    "round": "ATP Lyon - Final",
    "qualifying": false,
-   "event": "ATP Lyon"
+   "event": "ATP Lyon",
+   "o1": 2.79,
+   "o2": 1.49,
+   "oAt": "2026-10-24T18:47:27.574Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12174013,
@@ -10818,7 +12172,11 @@
    "book": "Pinnacle +30s",
    "round": null,
    "qualifying": false,
-   "event": "ATP Vienna"
+   "event": "ATP Vienna",
+   "o1": 3.22,
+   "o2": 1.4,
+   "oAt": "2026-10-24T18:04:09.401Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12174014,
@@ -10835,7 +12193,11 @@
    "book": "Pinnacle +30s",
    "round": null,
    "qualifying": false,
-   "event": "ATP Vienna"
+   "event": "ATP Vienna",
+   "o1": 2.08,
+   "o2": 1.781,
+   "oAt": "2026-10-24T18:03:14.091Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12174071,
@@ -10852,7 +12214,11 @@
    "book": "Pinnacle +30s",
    "round": "ATP Brussels - Final",
    "qualifying": false,
-   "event": "ATP Brussels"
+   "event": "ATP Brussels",
+   "o1": 2.04,
+   "o2": 1.862,
+   "oAt": "2026-10-24T23:40:30.970Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12174072,
@@ -10869,7 +12235,11 @@
    "book": "Pinnacle +30s",
    "round": null,
    "qualifying": false,
-   "event": "ATP Vienna"
+   "event": "ATP Vienna",
+   "o1": 1.653,
+   "o2": 2.28,
+   "oAt": "2026-10-25T00:32:33.959Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12173975,
@@ -10988,7 +12358,11 @@
    "book": "Pinnacle +30s",
    "round": "ATP Basel - 1/16-finals",
    "qualifying": false,
-   "event": "ATP Basel"
+   "event": "ATP Basel",
+   "o1": 3.23,
+   "o2": 1.38,
+   "oAt": "2026-10-25T21:42:59.433Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12174269,
@@ -11005,7 +12379,11 @@
    "book": "Pinnacle +30s",
    "round": "ATP Vienna - 1/16-finals",
    "qualifying": false,
-   "event": "ATP Vienna"
+   "event": "ATP Vienna",
+   "o1": 3.06,
+   "o2": 1.414,
+   "oAt": "2026-10-25T23:30:57.502Z",
+   "winner": "p2"
   },
   {
    "eventKey": 12174270,
@@ -11022,7 +12400,11 @@
    "book": "Pinnacle +30s",
    "round": "ATP Vienna - 1/16-finals",
    "qualifying": false,
-   "event": "ATP Vienna"
+   "event": "ATP Vienna",
+   "o1": 1.952,
+   "o2": 1.952,
+   "oAt": "2026-10-26T08:06:58.530Z",
+   "winner": "p1"
   },
   {
    "eventKey": 12174271,
@@ -11039,7 +12421,11 @@
    "book": "Pinnacle +30s",
    "round": "ATP Vienna - 1/16-finals",
    "qualifying": false,
-   "event": "ATP Vienna"
+   "event": "ATP Vienna",
+   "o1": 1.12,
+   "o2": 6.75,
+   "oAt": "2026-10-26T08:06:13.239Z",
+   "winner": "p1"
   }
  ]
 }

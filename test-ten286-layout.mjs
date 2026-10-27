@@ -116,11 +116,11 @@ const SPEC = [
   [`${M} .mx-searchwrap`, 'padding', '10px 14px'], [`${M} .mx-searchwrap`, 'gap', '9px'], [`${M} .mx-sortbtn`, 'padding', '10px 15px'],
   [`${M} #matchlist`, 'align-items', 'start'],   // founder TEN-377 (replaces TEN-270 stretch): README §1 / reference
   [`${M} .match-card .mc-head`, 'padding', '11px 16px'], [`${M} .match-card .mc-round`, 'padding', '2px 6px'],
-  [`${M} .match-card .mc-round`, 'font-size', '10.5px'], [`${M} .match-card .mc-colhead-inline`, 'grid-template-columns', '1px 104px 96px'],
+  [`${M} .match-card .mc-round`, 'font-size', '10.5px'], [`${M} .match-card .mc-colhead-inline`, 'grid-template-columns', '75px 68px'],   // step 15 §2: reference OV1 Matches card
   [`${M} .match-card .mc-colhead-inline .lbl`, 'font-size', '10.5px'], [`${M} .match-card .mc-colhead-inline .lbl`, 'letter-spacing', '0.10em'],   // caps label
-  [`${M} .mc-players.up .mc-row`, 'grid-template-columns', 'minmax(0,1fr) 1px 104px 96px'], [`${M} .mc-players.up .mc-row`, 'padding', '11px 16px'],
+  [`${M} .mc-players.up .mc-row`, 'grid-template-columns', 'minmax(0,1fr) 1px 75px 68px'], [`${M} .mc-players.up .mc-row`, 'padding', '11px 16px'],
   [`${M} .match-card .mc-name`, 'font-size', '14px'], [`${M} .match-card .mc-odds`, 'font-size', '19px'], [`${M} .match-card .mc-odds`, 'font-weight', '800'],
-  [`${M} .match-card .mc-form__track`, 'width', '52px'], [`${M} .match-card .mc-form__track`, 'height', '6px'], [`${M} .match-card .mc-form`, 'gap', '9px'],
+  [`${M} .match-card .mc-form__track`, 'width', '40px'], [`${M} .match-card .mc-form__track`, 'height', '6px'], [`${M} .match-card .mc-form`, 'gap', '5px'],
   [`${M} .match-card .mc-foot`, 'padding', '10px 16px'], [`${M} .match-card .mc-foot`, 'gap', '12px'],
   [`${M} .match-card .mc-msig`, 'letter-spacing', '0.02em'],   // TEN-377: reference 0.25px at 12.5px [`${M} .match-card .mc-msig .chev`, 'font-size', '11px'],
   [`${M} .match-card.sig-open .mc-msig .chev`, 'transform', 'rotate(180deg)'],
@@ -148,8 +148,8 @@ test('spec lock kills its mutants', () => {
     sidebar252: DASH.replace('bottom:0; width:92px; box-sizing:border-box; display:flex;', 'bottom:0; width:252px; box-sizing:border-box; display:flex;'),
     tileBack: DASH.replace('</body>', '<style>.sf-item.active{ background:var(--selected); }</style></body>'),
     blueGlow: DASH.replace('color-mix(in srgb, var(--text) 13%, transparent) 0%', 'color-mix(in srgb, var(--bar) 13%, transparent) 0%'),
-    rowGrid: DASH.replace('grid-template-columns:minmax(0,1fr) 1px 104px 96px;', 'grid-template-columns:minmax(0,1fr) 104px 96px;'),
-    formBarLong: DASH.replace('.mc-form__track{ width:52px;', '.mc-form__track{ width:78px;'),
+    rowGrid: DASH.replace('grid-template-columns:minmax(0,1fr) 1px 75px 68px;', 'grid-template-columns:minmax(0,1fr) 75px 68px;'),
+    formBarLong: DASH.replace('.mc-form__track{ width:40px;', '.mc-form__track{ width:78px;'),
     laterOverride: DASH.replace('</body>', `<style>${M} .match-card .mc-foot{ padding:14px 20px; }</style></body>`),
     upgradeHollow: DASH.replace('</body>', '<style>.sf-upgrade{ background:none; }</style></body>'),
   };

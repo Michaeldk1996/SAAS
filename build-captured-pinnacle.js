@@ -41,6 +41,7 @@ const { execFileSync } = require('child_process');
 
 const ROOT = __dirname;
 const OUT = path.join(ROOT, 'captured-closes-pinnacle.json');
+const MR_OUT = path.join(ROOT, 'market-read-30d.json');   // Step 15: the Market read 30-day line (published, not committed)
 const SERIES = [['Pinnacle', (om) => om.books && om.books.Pinnacle],
   ['Pinnacle +30s', (om) => om.chart && om.chart.books && om.chart.books['Pinnacle +30s']]];
 const START_CATS = new Set(['ATP', 'Davis Cup']);
@@ -66,6 +67,18 @@ function lastAtOrBefore(ticks, cutMs) {
   return best;
 }
 
+/** One side's open: the first real tick (>= 1.01) at or before `cutMs`. [ms, price] | null. */
+function firstAtOrBefore(ticks, cutMs) {
+  let best = null;
+  for (const t of ticks || []) {
+    if (!Array.isArray(t)) continue;
+    const ms = toMs(t[0]), p = Number(t[1]);
+    if (ms == null || ms > cutMs || !(p >= 1.01)) continue;
+    if (!best || ms < best[0]) best = [ms, p];
+  }
+  return best;
+}
+
 /** Fold one matches.json snapshot into `ev` (eventKey -> identity + per-label tick maps). */
 function absorb(ev, matches) {
   for (const m of matches || []) {
@@ -81,6 +94,9 @@ function absorb(ev, matches) {
       if (m.tournamentRound != null) o.round = m.tournamentRound;
       if (typeof m.qualifying === 'boolean') o.qualifying = m.qualifying;
       if (m.tour) o.event = m.tour;
+      // Step 15 (founder 2026-10-27): the result rides on the row too, for the Market read 30-day line.
+      const fs0 = m.finalScore;
+      if (fs0 && (fs0.winner === 'p1' || fs0.winner === 'p2')) o.winner = fs0.winner;
       const t = o.series[label] || (o.series[label] = { p1: new Map(), p2: new Map() });
       for (const side of ['p1', 'p2']) for (const x of s[side] || []) if (Array.isArray(x) && x[0] != null) t[side].set(String(x[0]), Number(x[1]));
     }
@@ -152,18 +168,29 @@ function deriveRow(ek, o, start, nowMs) {
     if (!best || at > best.atMs) best = { label, a, b, atMs: at };
   }
   if (!best) return { reason };
+  // Step 15: the same series' FIRST real tick per side (at or before the start) = the open, for the Market read
+  // 30-day line (founder 2026-10-27: "Open = Pinnacle first price (Oddspapi)").
+  const t = o.series[best.label];
+  const fa = firstAtOrBefore([...t.p1], start.ms), fb = firstAtOrBefore([...t.p2], start.ms);
   return { row: { eventKey: Number(ek), date: o.date, p1Key: o.p1Key, p2Key: o.p2Key, p1Name: o.p1, p2Name: o.p2,
     p1: best.a[1], p2: best.b[1], at: iso(best.atMs), trueStart: iso(start.ms), startSource: start.source, book: best.label,
-    round: o.round != null ? o.round : null, qualifying: typeof o.qualifying === 'boolean' ? o.qualifying : null, event: o.event || null } };
+    round: o.round != null ? o.round : null, qualifying: typeof o.qualifying === 'boolean' ? o.qualifying : null, event: o.event || null,
+    o1: fa ? fa[1] : null, o2: fb ? fb[1] : null, oAt: fa && fb ? iso(Math.min(fa[0], fb[0])) : null, winner: o.winner || null } };
 }
 
 /** Merge fresh rows into held ones (see header). Returns { rows, added, replaced }. */
 function mergeRows(held, fresh) {
   const by = new Map((held || []).map((r) => [String(r.eventKey), r]));
-  let added = 0, replaced = 0;
+  let added = 0, replaced = 0, filled = 0;
   for (const r of fresh) {
     const h = by.get(String(r.eventKey));
     if (!h) { by.set(String(r.eventKey), r); added++; continue; }
+    // Step 15: a held row gains the open / result fields it lacks (same book only — the open is that book's first tick).
+    if (h.book === r.book) {
+      let f = false;
+      for (const k of ['o1', 'o2', 'oAt', 'winner']) if (h[k] == null && r[k] != null) { h[k] = r[k]; f = true; }
+      if (f) filled++;
+    }
     // A STRICTER (earlier) start always wins, even with an earlier close: the held row may hold a
     // tick that the better start shows was in-play. Same start: a later pre-start tick wins.
     const rs = Date.parse(r.trueStart), hs = Date.parse(h.trueStart);
@@ -172,7 +199,7 @@ function mergeRows(held, fresh) {
     if ((stricter || later) && (r.p1 !== h.p1 || r.p2 !== h.p2 || r.at !== h.at || r.trueStart !== h.trueStart)) { by.set(String(r.eventKey), r); replaced++; }
   }
   const rows = [...by.values()].sort((x, y) => (x.date < y.date ? -1 : x.date > y.date ? 1 : x.eventKey - y.eventKey));
-  return { rows, added, replaced };
+  return { rows, added, replaced, filled };
 }
 
 /** The committed matches.json snapshots to scan: every commit since `since` that touched it,
@@ -186,7 +213,8 @@ function snapshots(root, since) {
   return { commits, head, show: (h) => { try { const M = JSON.parse(git('show', `${h}:matches.json`)); return Array.isArray(M) ? M : (M.matches || []); } catch (e) { return null; } } };
 }
 
-function build({ root = ROOT, out = OUT, since = null, nowMs = Date.now() } = {}) {
+function build({ root = ROOT, out = OUT, since = null, nowMs = Date.now(), mrOut } = {}) {
+  if (mrOut === undefined) mrOut = out === OUT ? MR_OUT : null;   // a test's own --out never writes the site file
   const held = readJson(out, null) || {};
   const from = since || (held.scannedThrough && held.scannedThrough.at) || '2026-09-01T00:00:00Z';
   const snap = snapshots(root, from);
@@ -208,7 +236,7 @@ function build({ root = ROOT, out = OUT, since = null, nowMs = Date.now() } = {}
     stats.bySource[r.row.startSource] = (stats.bySource[r.row.startSource] || 0) + 1;
     stats.byBook[r.row.book] = (stats.byBook[r.row.book] || 0) + 1;
   }
-  const { rows, added, replaced } = mergeRows(held.rows, fresh);
+  const { rows, added, replaced, filled } = mergeRows(held.rows, fresh);
   const doc = {
     generatedAt: iso(nowMs),
     source: 'matches.json git history: oddsMovement.books.Pinnacle (Oddspapi pinnacle, to 2026-09-02) and oddsMovement.chart.books["Pinnacle +30s"] (Oddspapi pinnacle+30, from 2026-09-23)',
@@ -224,18 +252,61 @@ function build({ root = ROOT, out = OUT, since = null, nowMs = Date.now() } = {}
   // Rewritten only when a row changes, so an idle run commits nothing back (the pipeline's
   // commit-back is only-if-changed). The next run then re-scans from the held scannedThrough,
   // which a depth-100 CI clone bounds.
-  const wrote = added + replaced > 0 || !fs.existsSync(out);
+  const wrote = added + replaced + filled > 0 || !fs.existsSync(out);
   if (wrote) {
     fs.writeFileSync(out + '.tmp', JSON.stringify(doc, null, 1));
     fs.renameSync(out + '.tmp', out);
   }
-  return { rows: rows.length, added, replaced, snapshots: scanned, stats, wrote };
+  // The Market read 30-day line (site only, never committed): written every run, atomically.
+  const mr = marketRead30(rows, nowMs);
+  if (mrOut) {
+    fs.writeFileSync(mrOut + '.tmp', JSON.stringify(mr, null, 1));
+    fs.renameSync(mrOut + '.tmp', mrOut);
+  }
+  return { rows: rows.length, added, replaced, filled, snapshots: scanned, stats, wrote, marketRead: mr };
 }
 
-module.exports = { build, lastAtOrBefore, absorb, actualStart, deriveRow, mergeRows, oddspapiStarts };
+// ── Step 15 (founder 2026-10-27) — Today's Matches "Market read" 30-day line ────────────────────────────────────
+// Of the captured ATP matches dated in the last 30 days with a Pinnacle open (the series' first tick), a Pinnacle close
+// within 60 min of the actual start and a result: how many moved open → close by MOVE_MIN or more (the larger of the
+// two sides' moves on the printed two-decimal prices, as the page's mxMovePct), and in how many of those the player the
+// price shortened on won. Counts only. Davis Cup is out (a team tie, not the board's singles).
+const MOVE_MIN = 2.0;   // founder 2026-10-27: 2%
+const CLOSE_W60_MS = 60 * 60e3;
+function movePct(o, c) {
+  const o2 = Math.round(Number(Number(o).toFixed(2)) * 100), c2 = Math.round(Number(Number(c).toFixed(2)) * 100);
+  if (!(o2 > 0) || !(c2 > 0)) return null;
+  const r = (c2 - o2) * 1000 / o2;
+  return Math.sign(r) * Math.round(Math.abs(r)) / 10;
+}
+function marketRead30(rows, nowMs) {
+  const to = iso(nowMs).slice(0, 10), from = iso(nowMs - 29 * 864e5).slice(0, 10);
+  const ex = { noOpen: 0, noClose60: 0, noResult: 0 };
+  let n = 0, moved = 0, won = 0, inWindow = 0;
+  for (const r of rows || []) {
+    if (!r || !r.date || r.date < from || r.date > to) continue;
+    if (/davis cup/i.test(String(r.event || ''))) continue;
+    inWindow++;
+    if (!(r.o1 >= 1.01 && r.o2 >= 1.01)) { ex.noOpen++; continue; }
+    const at = Date.parse(r.at), st = Date.parse(r.trueStart);
+    if (!Number.isFinite(at) || !Number.isFinite(st) || st - at > CLOSE_W60_MS) { ex.noClose60++; continue; }
+    if (r.winner !== 'p1' && r.winner !== 'p2') { ex.noResult++; continue; }
+    n++;
+    const d1 = movePct(r.o1, r.p1), d2 = movePct(r.o2, r.p2);
+    if (d1 == null || d2 == null || d1 === d2 || Math.max(Math.abs(d1), Math.abs(d2)) < MOVE_MIN) continue;
+    moved++;
+    if ((d1 < d2 ? 'p1' : 'p2') === r.winner) won++;
+  }
+  return { generatedAt: iso(nowMs), from, to, rows: inWindow, n, moved, won, excluded: ex, minMovePct: MOVE_MIN,
+    rule: 'Pinnacle open (first Oddspapi tick) → Pinnacle close (last tick at or before the actual start, within 60 min); moved = larger side move >= 2% on two-decimal prices; right = the shortened side won' };
+}
+
+module.exports = { build, lastAtOrBefore, firstAtOrBefore, absorb, actualStart, deriveRow, mergeRows, oddspapiStarts, marketRead30, movePct };
 if (require.main === module) {
   const arg = (n) => { const i = process.argv.indexOf(n); return i > 0 ? process.argv[i + 1] : null; };
-  const r = build({ since: arg('--since'), out: arg('--out') || OUT });
-  console.log(`captured-pinnacle: ${r.rows} rows (+${r.added} new, ${r.replaced} replaced${r.wrote ? '' : ', file unchanged'}) from ${r.snapshots} snapshot(s); ` +
+  const r = build({ since: arg('--since'), out: arg('--out') || OUT, mrOut: arg('--mr-out') || MR_OUT });
+  const mr = r.marketRead;
+  console.log(`market-read-30d: ${mr.won} of ${mr.moved} moved (${mr.n} of ${mr.rows} rows usable ${mr.from}..${mr.to}; excluded ${JSON.stringify(mr.excluded)})`);
+  console.log(`captured-pinnacle: ${r.rows} rows (+${r.added} new, ${r.replaced} replaced, ${r.filled} filled${r.wrote ? '' : ', file unchanged'}) from ${r.snapshots} snapshot(s); ` +
     `this run kept ${r.stats.kept} of ${r.stats.series} series ${JSON.stringify(r.stats.bySource)} ${JSON.stringify(r.stats.byBook)}; dropped ${JSON.stringify(r.stats.dropped)}`);
 }

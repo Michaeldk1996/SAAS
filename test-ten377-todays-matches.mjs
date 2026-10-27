@@ -40,10 +40,11 @@ const A = new Function(`
   const _mcNowPair = m => m.__pair || null;
   const _ocsOf = m => m.__ocs || null;
   const _mcCardCloseDerivedOf = (m, who) => (m.__pin ? m.__pin[who] : null);
+  const _mcPinClose = m => m.__pin || null, mxPinCloseAgeMin = (m, who) => (m.__age == null ? 5 : m.__age);
   ${slice('mxOddsTxt')} ${slice('mcTitleAttr')} ${slice('oddsPctDelta')} ${slice('mxMovePct')} ${slice('mxBookLabel')}
   ${slice('mcTiebreaks')} ${slice('mcSetIsWon')} ${slice('mcSetCluster')} ${slice('mcTermCell')} ${slice('mcJourney')}
-  ${slice('mcUpsetRows')} ${slice('mcBoardBooks')}
-  return { mcSetCluster, mcTermCell, mcJourney, mcUpsetRows, mcBoardBooks };
+  ${slice('mxPinCloseW60')} ${slice('mxUpsetOf')} ${slice('mxUpsets')} ${slice('mcBoardBooks')}
+  return { mcSetCluster, mcTermCell, mcJourney, mxUpsets, mcBoardBooks };
 `)();
 
 // ── README §7 "7a": sets-won tile · divider · one cell per set, tie-break in the corner ──
@@ -93,13 +94,17 @@ test('header stats: Books counts distinct bookmakers once per label (Pncl = Pinn
   assert.equal(A.mcBoardBooks([]), 0, 'an empty board is a real 0');
 });
 
-test('header stats: Upsets = the same rule as the Upsets tile (winner closed longer, card-book within-60 closes)', () => {
-  const m = (w, p1, p2) => ({ p1: 'A', p2: 'B', finalScore: { winner: w }, __pin: { p1, p2 } });
-  const rows = A.mcUpsetRows([m('p1', 3.95, 1.26), m('p1', 1.38, 3.30), m('p2', 1.5, null), { p1: 'X' }]);
-  assert.equal(rows.length, 1);
-  assert.deepEqual(rows[0], { winner: 'A', loser: 'B', price: 3.95 });
+test('header stats: Upsets = the same rule as the Upsets tile (step 15: the favourite at the Pinnacle close lost, within-60 legs)', () => {
+  const m = (w, p1, p2, age) => ({ p1: 'A', p2: 'B', finalScore: { winner: w }, __pin: p1 == null ? null : { p1, p2 }, __age: age });
+  const u = A.mxUpsets([m('p1', 3.95, 1.26), m('p1', 1.38, 3.30), m('p2', 1.5, 2.5, 90), m('p2', 2.1, 1.9), { p1: 'X' }]);
+  assert.equal(u.n, 3, 'three priced favourites (the 90-min-old close is not a figure, the unplayed card has none)');
+  assert.equal(u.favWon, 2);
+  assert.deepEqual(u.list.map(r => [r.winner, r.close]), [['A', 3.95]], 'only the favourite that lost');
+  const two = A.mxUpsets([m('p1', 3.95, 1.26), m('p2', 1.3, 4.4)]);
+  assert.deepEqual(two.list.map(r => r.close), [4.4, 3.95], 'longest winning close first');
   const tile = slice('renderMatches');
-  assert.match(tile, /const upsetRows = mcUpsetRows\(filtered\);/, 'the tile reads the one shared rule');
+  assert.match(tile, /const up = mxUpsets\(filtered\)/, 'the tile reads the one shared rule');
+  assert.match(slice('mcRenderHeaderStats'), /\['Upsets', mxUpsets\(shown\)\.list\.length\]/, 'the header reads it too');
   assert.match(tile, /mcRenderHeaderStats\(filtered\);\n  if \(filtered\.length === 0\)/, 'stats render before the empty-board return');
 });
 
@@ -182,8 +187,9 @@ test('header stats render: Upcoming and Completed labels, counts, Updated HH:MM,
     const mxOddsUpdatedAt = () => up;
     const _mcNowPair = m => m.__pair || null; const _ocsOf = () => null;
     const _mcCardCloseDerivedOf = (m, who) => (m.__pin ? m.__pin[who] : null);
+    const _mcPinClose = m => m.__pin || null, mxPinCloseAgeMin = () => 5;
     ${MX_BOOK_LABELS_SRC}
-    ${slice('mxBookLabel')} ${slice('mcUpsetRows')} ${slice('mcBoardBooks')} ${slice('mcRenderHeaderStats')}
+    ${slice('mxBookLabel')} ${slice('mxPinCloseW60')} ${slice('mxUpsetOf')} ${slice('mxUpsets')} ${slice('mcBoardBooks')} ${slice('mcRenderHeaderStats')}
     mcRenderHeaderStats(list); return el.innerHTML;`)(list, view, up, tz);
   const vals = h => [...h.matchAll(/sfh__l">([^<]*)<\/span><span class="sfh__v[^"]*">([^<]*)</g)].map(x => x[1] + '=' + x[2]);
   const up = [{ tour: 'ATP Tokyo', bookNow: { Pncl: {} } }, { tour: 'ATP Beijing', bookOpens: { Pinnacle: {}, Betano: {} } }];
@@ -195,29 +201,56 @@ test('header stats render: Upcoming and Completed labels, counts, Updated HH:MM,
 
 // ── founder review ba49d5fc (2026-10-03) items 4–9 ──
 test('review 4/8: Completed and Upcoming always draw three tiles; an empty tile says so in one grey line; no provenance line', () => {
-  const body = slice('renderMatches');
-  for (const t of ['No market moves', 'No upsets', 'Not enough pick history yet', 'No prices yet'])
+  const body = slice('renderMatches') + slice('mxStreakTileHtml') + slice('mxBetsTileHtml');
+  for (const t of ['No market moves', 'No upsets', 'No streaks on court today', 'No bets posted yet today'])
     assert.ok(body.includes(t), `empty line "${t}"`);
   assert.doesNotMatch(body, /mc-story__faint|mcMoveBookLabel|The rolling record shows/);
   assert.doesNotMatch(body, /sp\.book \? ' · ' \+ sp\.book/, 'no "· book" suffix');
   assert.match(body, /const stripHtml = `<div class="mc-story-strip">\$\{panels\.join\(''\)\}<\/div>`;/, 'Completed strip is unconditional');
 });
-test('review 5: the Market Signal drawer draws only rows with data, only groups with rows, no explainer', () => {
-  const S = new Function(`${MX_BOOK_LABELS_SRC} ${slice('mxBookLabel')} ${slice('mcSigPanel')}; return mcSigPanel;`)();
-  const up = S({ p1: 'A. Rublev', p2: 'R. Safiullin', odds: { p1: 1.69, p2: 2.27, bookmaker: 'Betano' } });
-  assert.match(up, /Sharp estimates/);
-  assert.doesNotMatch(up, /Market money|Stennisfy|Polymarket|Kalshi|—|never invented|mc-sig-note/);
-  assert.equal((up.match(/class="mc-sig-row"/g) || []).length, 1);
-  // TEN-384 item 6: the row names the book in the house style, through the real map.
-  for (const [raw, shown] of [['Pncl', 'Pinnacle'], ['WilliamHill', 'William Hill'], ['Bet365', 'bet365'], ['1xBet', '1xBet'], ['Betano', 'Betano']]) {
-    const h = S({ p1: 'A', p2: 'B', odds: { p1: 1.5, p2: 2.6, bookmaker: raw } });
-    assert.match(h, new RegExp('mc-sig-dotm"></span>' + shown.replace('.', '\\.') + '</span>'), `${raw} -> ${shown}`);
-  }
-  const none = S({ p1: 'A', p2: 'B', odds: null });
-  assert.match(none, /No market signal for this match yet/);
-  assert.doesNotMatch(none, /Sharp estimates|mc-sig-row/);
-  const done = S({ p1: 'A', p2: 'B', odds: { p1: 1.5, p2: 2.6, bookmaker: '1xBet' }, finalScore: {} });
-  assert.doesNotMatch(done, /grouplabel|Liquidity/, 'Completed: one flat list');
+test('step 15 §4–§5: Market Signal = ONE grid, six rows in order, a dash row for every missing source, nothing constant', () => {
+  const S = (opts = {}) => new Function('opts', `
+    const window = { sfPlan: opts.plan || null };
+    const eloRatings = opts.elo === undefined ? { taLastUpdate: '2026-10-26', elo: {
+      'rublev|a': { all: { rating: 2000 }, hard: { rating: 1950 } }, 'safiullin|r': { all: { rating: 1900 }, hard: { rating: null } } } } : opts.elo;
+    const _ocsOf = m => m.__ocs || null, _mcPinClose = m => m.__pin || null, mxPinCloseAgeMin = () => 12;
+    const mxJClose = (m, who) => (m.__j ? m.__j[who] : null), cardStartMs = m => m.__start, newsTz = () => 'UTC';
+    ${slice('psEsc')} ${slice('psEloNorm')} ${slice('mxOddsTxt')} ${slice('mxSurname')} ${slice('mxIsPro')}
+    ${slice('mcSigReady')} ${slice('mcSigPanel')} ${slice('mcSigPair')} ${slice('mcSigImp')} ${slice('mcSigFirst')} ${slice('mcSigClock')}
+    ${slice('mcSigEloRec')} ${slice('mcSigEloP')} ${slice('mcSigFair')} ${slice('mcSigElo')} ${slice('mcSigEloTitle')} ${slice('mcSigModelP')} ${slice('mcSigBody')}
+    return { mcSigPanel, mcSigBody };`)(opts);
+  const names = h => [...h.matchAll(/mc-sg-name">([^<]*)</g)].map(x => x[1]);
+  const up = { id: 'u1', p1: 'A. Rublev', p2: 'R. Safiullin', surface: 'hard', _oddsLoaded: true,
+    pinnacleOpen: { p1: 1.6, p2: 2.44 }, bookOpens: { bet365: { p1: 1.57, p2: 2.37, seenAt: '2026-10-26T10:00:00Z' } },
+    oddsMovement: { chart: { books: { Bet105: { p1: [['2026-10-25T10:00:00Z', 1.64]], p2: [['2026-10-25T10:00:00Z', 2.33]] } } } },
+    valueSnapshot: { fairP1: 0.65, fairP2: 0.35, ts: '2026-10-26T01:00:00Z' } };
+  const free = S().mcSigBody(up);
+  assert.deepEqual(names(free), ['Pinnacle', 'Bet105', 'Bet365', 'Elo Overall', 'Elo Hard', 'Stennisfy Model']);
+  assert.doesNotMatch(free, /Polymarket|Kalshi|Betfair|Consensus|Liquidity|Says| vs |agree/i, 'removed rows and sections');
+  assert.match(free, /mc-sg-oa">1\.60<\/span><span class="mc-sg-pa">60%<\/span>/, 'open odds A, then the margin-removed implied %');
+  assert.match(free, /mc-sg-ob">2\.44</);
+  assert.equal((free.match(/class="mc-sg-row dash"/g) || []).length, 1, 'Elo Hard: no surface rating for Safiullin → dash row, kept');
+  assert.match(free, /title="Tennis Abstract weekly scrape · hElo · as of 2026-10-26 · win % → fair odds · no hard rating"/);
+  assert.match(free, /mc-sg-oa is-blur">1\.54</, 'Model → fair odds 1/p, blurred for a non-Pro member');
+  assert.doesNotMatch(S({ plan: 'pro' }).mcSigBody(up), /is-blur/, 'Pro sees it');
+  const bare = S({ elo: { elo: {} } }).mcSigBody({ id: 'u2', p1: 'A', p2: 'B', surface: 'clay', _oddsLoaded: true });
+  assert.equal((bare.match(/class="mc-sg-row dash"/g) || []).length, 6, 'no source → six dash rows, never a zero');
+  assert.doesNotMatch(bare, />0\.00<|>0%</);
+  assert.match(S().mcSigPanel({ id: 'u3', p1: 'A', p2: 'B' }), /Loading…/, 'not drawn before its sources load');
+  // Completed (option 1a): what each source had on the WINNER; BEST per group; Elo has no stored snapshot → dash rows
+  const done = { id: 'c1', p1: 'M. Berrettini', p2: 'T. M. Etcheverry', surface: 'hard', finalScore: { winner: 'p1' }, __start: Date.parse('2026-10-26T12:00:00Z'),
+    __pin: { p1: 1.58, p2: 2.6, source: 'Oddspapi' }, __ocs: { book: 'bet105', p1: { close: 1.575 }, p2: { close: 2.51 } }, __j: { p1: 1.53, p2: 2.5 },
+    valueSnapshot: { fairP1: 0.64, fairP2: 0.36, ts: '2026-10-26T01:00:00Z' } };
+  const d = S().mcSigBody(done);
+  assert.match(d, /Price on Berrettini/);
+  assert.deepEqual(names(d), ['Pinnacle', 'Bet105', 'Bet365', 'Elo Overall', 'Elo Hard', 'Stennisfy Model']);
+  assert.equal((d.match(/mc-sg-best">BEST/g) || []).length, 2, 'one BEST among the books, one among the estimates');
+  assert.match(d, /Pinnacle<\/span><span class="mc-sg-best">BEST/, 'highest odds on the winner');
+  assert.match(d, /Stennisfy Model<\/span><span class="mc-sg-best">BEST/, 'the only estimate with a value');
+  assert.equal((d.match(/class="mc-sg-row dash"/g) || []).length, 2, 'Elo Overall + Elo Hard: no pre-match snapshot stored');
+  assert.doesNotMatch(d, /is-blur/, 'not blurred on Completed');
+  const late = S().mcSigBody(Object.assign({}, done, { valueSnapshot: { fairP1: 0.6, fairP2: 0.4, ts: '2026-10-26T13:00:00Z' } }));
+  assert.equal((late.match(/class="mc-sg-row dash"/g) || []).length, 3, 'a model read frozen after the start is not a pre-match snapshot');
 });
 test('review 6/7/9: grid start; white caret in the reference font stack; one chip row with All first on both views', () => {
   assert.match(lastRule(`${M} .match-card .mc-msig .chev`), /font-family:'Hanken Grotesk', sans-serif;[^}]*color:var\(--text\)/);
@@ -234,6 +267,6 @@ test('stats paths read _mcCardCloseDerivedOf (within-60), never the display clos
   assert.match(slice('moveScore'), /const c1 = _mcCardCloseOf\(m, 'p1'\), c2 = _mcCardCloseOf\(m, 'p2'\);/, 'Biggest-move sort = the card\'s close');
   assert.match(slice('_mcOddsLanded'), /_mcCardCloseDerivedOf\(m, 'p1'\) != null \|\| _mcCardCloseDerivedOf\(m, 'p2'\) != null/);
   assert.match(slice('syncSortDropdown'), /const moveLanded = [\s\S]*?_mcCardCloseOf\(m, 'p1'\) != null \|\| _mcCardCloseOf\(m, 'p2'\) != null/);
-  for (const fn of ['upsetScore', 'closingScore', 'marketWrongScore', 'mcUpsetRows', '_mcOddsLanded'])
+  for (const fn of ['upsetScore', 'closingScore', 'marketWrongScore', 'mxJourney', '_mcOddsLanded'])
     assert.doesNotMatch(slice(fn), /_mcCardCloseOf\(|_mcCloseOf\(|_mcPinClose/, `${fn} never reads a display close`);
 });

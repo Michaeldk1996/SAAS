@@ -329,11 +329,11 @@ test('r3.3 Matches board: the card head, the story strip and the chips print the
   assert.equal(B(''), '');
   assert.equal(B(undefined), '');
   const rm = fnSrc('renderMatches');
-  assert.match(rm, /<span class="mc-tourn">\$\{mxEventName\(m\.tour\)\}<\/span>/);
+  assert.match(rm, /<span class="mc-tourn"\$\{mxTierTitle\(m\) \? ` title="\$\{psEsc\(mxTierTitle\(m\)\)\}"` : ''\}>\$\{mxEventName\(m\.tour\)\}<\/span>/, 'step 15: the tier rides on the name\'s hover');
   assert.doesNotMatch(rm, /tierSuffix/, 'TEN-407: no level suffix after the name ("Shanghai Masters", not "· ATP 1000")');
   assert.equal((rm.match(/\$\{bmv\.tour \? ' · ' \+ mxEventName\(bmv\.tour\) : ''\}/g) || []).length, 2);
-  assert.match(rm, /\$\{sp\.tour \? ' · ' \+ mxEventName\(sp\.tour\) : ''\}/);
-  assert.match(rm, /<div class="mc-story__ctx">\$\{\[\[mxEventName\(m\.tour\), roundBadgeText/);
+  // step 15: Shortest price / Tightest match are gone; the Upsets tile prints the one name
+  assert.match(rm, /<div class="mc-story__ctx">\$\{\[mxEventName\(u0\.m\.tour\), roundBadgeText/);
   assert.doesNotMatch(rm, /\$\{m\.tour\}/, 'control: no raw m.tour printed in the board');
   // the chips, executed: printed name in the label, the data name in data-tournament (the filter reads it)
   const group = { innerHTML: '' };

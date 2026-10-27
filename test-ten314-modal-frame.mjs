@@ -282,8 +282,8 @@ test('a named tab opens directly: nothing else is built first', async () => {
   const { api, log } = modalVM();
   api.openAnalysisModal('a', 'matchstats'); await flush();
   assert.deepEqual([...new Set(log.filter(x => x.startsWith('build:')))], ['build:matchstats']);
-  // the completed card's landing (Key factors, founder 2026-10-22) goes through the same tab argument
-  assert.ok(slice('mxOpenCompletedCard').includes("openAnalysisModal(id, 'key');") && !slice('mxOpenCompletedCard').includes('aGoTab('));
+  // the completed card's landing (Match stats, else Key factors — step 15, founder 2026-10-27) goes through the same tab argument
+  assert.ok(slice('mxOpenCompletedCard').includes("openAnalysisModal(id, mxLandingTab(matchById(id)));") && !slice('mxOpenCompletedCard').includes('aGoTab('));
 });
 
 // Mutation: drop `return` from the h2h or form builder (live 2026-09-28: the report printed H2H's loading line, 21 chars).
