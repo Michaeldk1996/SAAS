@@ -101,6 +101,16 @@ if not pg.available():
     print(f'SKIP  Part 2 (real Postgres): {pg.why} — NOT A PASS (the code gate runs it)')
 else:
     q = pg.q
+
+    def qfile(path, role):
+        """Run a SQL FILE as written (newlines kept — its `--` comments end at the line, never swallow the rest) and
+        return every statement's rows, one per line: `psql -c` would print only the last statement's."""
+        with tempfile.NamedTemporaryFile('w', suffix='.sql', delete=False) as t:
+            t.write(f'set role {role};\n' + open(path).read())
+        p = subprocess.run([pg.psql, '-h', pg.tmp, '-p', pg.port, '-U', 'postgres', '-d', 'postgres', '-q', '-t', '-A', '-v', 'ON_ERROR_STOP=1',
+                            '-f', t.name], capture_output=True, text=True)
+        os.unlink(t.name)
+        return p.returncode, '\n'.join(x for x in p.stdout.splitlines() if x.strip()) or p.stderr.strip()
     try:
         pg.roles()
         # the live table exactly as far as these files need it (columns the readers and the data file read)
@@ -121,10 +131,10 @@ else:
         check('fixture rows', rc == 0, out)
         rc, out = q("select count(*) from public.live_flip_log_current", 'service_role')
         check('view holds every row before any supersede', out == '4', out)
-        rc, out = q(open(DATA).read().replace('\n', ' '), 'service_role')
+        rc, out = qfile(DATA, 'service_role')
         check('data file: 3 wanted, 2 still the false start, 2 inserted; after: 2 superseded, 4 rows, 2 current',
               rc == 0 and out.split('\n') == ['3|2|2|0|4', '2|4|2'], out)
-        rc, out = q(open(DATA).read().replace('\n', ' '), 'service_role')
+        rc, out = qfile(DATA, 'service_role')
         check('data file re-run adds nothing', rc == 0 and out.split('\n') == ['3|2|0|2|4', '2|4|2'], out)
         rc, out = q("select string_agg(event_key, ',' order by event_key) from public.live_flip_log_current", 'service_role')
         check('view skips the superseded keys and keeps the rest', out == '12174272,99', out)
