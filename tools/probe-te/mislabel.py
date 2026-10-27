@@ -20,7 +20,7 @@ from datetime import date
 dn = lambda s: date.fromisoformat(str(s)[:10]).toordinal()
 def at(rows, x):
     d0 = dn(x['date']); return [r for r in rows if r.get('tournament') == x.get('tournament') and -16 <= dn(r['date']) - d0 <= 5]
-seen = {}; c = collections.Counter(); ex_ = collections.defaultdict(list); flagged = collections.Counter()
+MIS = []; seen = {}; c = collections.Counter(); ex_ = collections.defaultdict(list); flagged = collections.Counter()
 for k, rows in H.items():
     for x in rows:
         d = str(x.get('date') or '')
@@ -37,10 +37,12 @@ for k, rows in H.items():
         if frac and any(dn(r['date']) <= d0 for r in frac):
             seen[ek] = 'main'; continue
         why = 'before first main-draw round' if frac else 'no main-draw round at the event'
-        seen[ek] = why; c[(d[:4], why, 'opp shard' if opp else 'one side')] += 1
+        seen[ek] = why; MIS.append(str(x.get('eventKey'))) if x.get('eventKey') else None; c[(d[:4], why, 'opp shard' if opp else 'one side')] += 1
         if x.get('qualifying') is False: flagged[d[:4]] += 1
         if len(ex_[d[:4]]) < 3: ex_[d[:4]].append(f"{d} {x.get('tournament')} {x.get('round')} v {x.get('opponent')}")
 print(f'shards {len(H)} of {len(keys)} (failed {failed}); word-round ATP rows 2021-26 checked {len(seen)}; read as main draw {sum(1 for v in seen.values() if v == "main")}')
 for y in ('2021', '2022', '2023', '2024', '2025', '2026'):
     t = sum(v for k2, v in c.items() if k2[0] == y)
     print(y, 'qualifying filed as main draw:', t, {f'{k2[1]} ({k2[2]})': v for k2, v in c.items() if k2[0] == y}, '· carrying event_qualification=false:', flagged[y], '· e.g.', ex_[y])
+
+json.dump(MIS, open('mis446.json', 'w')); print('mis keys', len(MIS))
