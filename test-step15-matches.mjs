@@ -182,8 +182,18 @@ test('Streak on court: the top Series card, "+N more on court today" by player, 
   assert.match(h, /\+1 more on court today/, 'Rune counts once');
   assert.match(T([]), /No streaks on court today[\s\S]*Streaks come from the Series page · 75-day rule/);
   assert.match(T(rows, 'tomorrow'), /Loading streaks/, 'another day’s answer is never shown');
+  // a failed series.json load is not the empty state: the tile stays on Loading and the next render asks again
+  const E = new Function(`
+    const state = { day: 'today' }; const window = { SeriesPage: { onCourt: () => Promise.resolve(null) } };
+    const document = { querySelector: () => null }; const _mxStreak = { day: null, rows: null, pending: null };
+    ${slice('mxStreakEnsure')} mxStreakEnsure('today'); return _mxStreak.pending.then(() => _mxStreak);`)();
+  return E.then(st => {
+    assert.equal(st.rows, null, 'no rows → not "No streaks on court today"');
+    assert.equal(st.day, null, 'cleared so the next render retries');
+  }).then(() => {
   const series = readFileSync(join(HERE, 'series.js'), 'utf8');
   assert.match(series, /var f = Object\.assign\(\{\}, DEFAULTS\);/, 'the Series page defaults, not the member’s filters');
   assert.match(series, /passesFilters\(c, false, f\)/);
   assert.match(series, /onCourt: onCourt,\n    openStreak: openStreak,/);
+  });
 });

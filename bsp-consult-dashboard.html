@@ -9487,7 +9487,10 @@ function mxStreakEnsure(day){
   if (!window.SeriesPage || typeof window.SeriesPage.onCourt !== 'function') { _mxStreak.rows = []; return; }
   const p = _mxStreak.pending = Promise.resolve(window.SeriesPage.onCourt(day)).catch(() => null).then(rows => {
     if (_mxStreak.pending !== p) return;
-    _mxStreak.pending = null; _mxStreak.rows = Array.isArray(rows) ? rows : [];
+    _mxStreak.pending = null;
+    // series.json did not load: that is not "no streaks". Keep the tile on Loading and ask again on the next render.
+    if (!Array.isArray(rows)) { _mxStreak.day = null; return; }
+    _mxStreak.rows = rows;
     const el = document.querySelector('[data-mxtile="streak"]');
     if (el) el.outerHTML = mxStreakTileHtml();
   });
