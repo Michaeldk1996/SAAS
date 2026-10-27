@@ -7665,11 +7665,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 0,
+        "p2": 1
+      }
+    ],
+    "liveGameScore": "0 - 0",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/435_k-khachanov.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2382_c-alcaraz.jpg",
     "tournamentKey": "1684",
@@ -8655,7 +8661,10 @@
       "edgeVsPinnacleP1": -0.0482,
       "edgeVsPinnacleP2": 0.0482,
       "ts": "2026-10-27T01:31:40.064Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12173982",
@@ -15945,17 +15954,11 @@
         }
       ]
     },
-    "live": true,
-    "liveStatus": "Set 1",
-    "liveScore": [
-      {
-        "set": 1,
-        "p1": 5,
-        "p2": 4
-      }
-    ],
-    "liveGameScore": "0 - 0",
-    "liveServer": "p1",
+    "live": false,
+    "liveStatus": null,
+    "liveScore": null,
+    "liveGameScore": null,
+    "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1894_t-paul.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2847_a-rublev.jpg",
     "tournamentKey": "1684",
@@ -17317,7 +17320,27 @@
       "edgeVsPinnacleP1": -0.0097,
       "edgeVsPinnacleP2": 0.0097,
       "ts": "2026-10-26T12:15:58.130Z"
-    }
+    },
+    "retired": false,
+    "walkover": false,
+    "finalScore": {
+      "display": "7-5, 6-2",
+      "sets": [
+        {
+          "p1": 7,
+          "p2": 5
+        },
+        {
+          "p1": 6,
+          "p2": 2
+        }
+      ],
+      "p1Sets": 2,
+      "p2Sets": 0,
+      "winner": "p1"
+    },
+    "interrupted": false,
+    "partialScore": null
   },
   {
     "id": "upcoming-12173986",
@@ -24223,16 +24246,10 @@
       ]
     },
     "live": true,
-    "liveStatus": "Set 1",
-    "liveScore": [
-      {
-        "set": 1,
-        "p1": 1,
-        "p2": 1
-      }
-    ],
-    "liveGameScore": "0 - 0",
-    "liveServer": "p1",
+    "liveStatus": "Set 2",
+    "liveScore": null,
+    "liveGameScore": "15 - 30",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1304_j-kym.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1902_a-rinderknech.jpg",
     "tournamentKey": "1706",
@@ -26718,7 +26735,10 @@
       "edgeVsPinnacleP1": -0.1087,
       "edgeVsPinnacleP2": 0.1087,
       "ts": "2026-10-26T13:16:01.632Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12174054",
@@ -33675,17 +33695,11 @@
         }
       ]
     },
-    "live": true,
-    "liveStatus": "Set 1",
-    "liveScore": [
-      {
-        "set": 1,
-        "p1": 2,
-        "p2": 2
-      }
-    ],
-    "liveGameScore": "0 - 0",
-    "liveServer": "p1",
+    "live": false,
+    "liveStatus": null,
+    "liveScore": null,
+    "liveGameScore": null,
+    "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/2982_a-tabilo.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/50323_r-jodar.jpg",
     "tournamentKey": "1706",
@@ -34775,7 +34789,27 @@
       "edgeVsPinnacleP1": -0.0151,
       "edgeVsPinnacleP2": 0.0151,
       "ts": "2026-10-27T01:31:40.064Z"
-    }
+    },
+    "retired": false,
+    "walkover": false,
+    "finalScore": {
+      "display": "4-6, 2-6",
+      "sets": [
+        {
+          "p1": 4,
+          "p2": 6
+        },
+        {
+          "p1": 2,
+          "p2": 6
+        }
+      ],
+      "p1Sets": 0,
+      "p2Sets": 2,
+      "winner": "p2"
+    },
+    "interrupted": false,
+    "partialScore": null
   },
   {
     "id": "upcoming-12174059",
@@ -47757,11 +47791,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 0,
+        "p2": 3
+      }
+    ],
+    "liveGameScore": "0 - 0",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/438_a-mannarino.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/9514_i-buse.jpg",
     "tournamentKey": "1684",
@@ -49322,7 +49362,10 @@
         "seenAt": "2026-10-27T13:32:27.580Z",
         "since": "2026-10-27T11:34:21.500Z"
       }
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12174303",
