@@ -13,6 +13,7 @@
 --   S4 flag, drop off the board, flag again, play -> the bound is the poll before the 2nd flag   PENDING_KEPT_ON_DROP
 --   S5 play_seen_at is recorded on every promoted row (the shadow measurement)              NO_PLAY_SEEN_AT
 --   S6 match_played(): false-live fixture is not play; each evidence kind is; junk score is not   (direct checks)
+--   S7 play already on the board at the first sighting -> row with NO lower bound (founder 2026-10-27)   SAME_TICK_KEEPS_BOUND
 begin;
 
 create function pg_temp.lfp_scen(fn text) returns text language plpgsql as $s$
@@ -70,6 +71,15 @@ begin
   if r is null or r.last_not_live_seen_at is distinct from t0 + interval '19 minutes 50 seconds' then
     return format('S4: the cut is %s, expected the poll before the SECOND flag', coalesce(r.last_not_live_seen_at::text, 'no row')); end if;
 
+  -- S7: first sighting already shows play -> written at once, with no lower bound
+  b_play := jsonb_build_object('matches', jsonb_build_array(played || '{"event_key":"TEST-P7"}'));
+  execute call into n using b_play, e, t0, t0 + interval '10 seconds';
+  select * into r from public.live_flip_log where event_key = 'TEST-P7';
+  if r is null then return 'S7: a first sighting with play wrote no row'; end if;
+  if r.last_not_live_seen_at is not null or r.gap_seconds is not null then
+    return format('S7: play on the board at the first sighting kept a lower bound (%s) — the first ball may precede it', r.last_not_live_seen_at); end if;
+  if r.play_seen_at is distinct from t0 + interval '10 seconds' then return 'S7: play_seen_at is not the first-sighting tick'; end if;
+
   -- S3 again, the plainest form: one false-live tick is pending, not logged
   b_flag := jsonb_build_object('matches', jsonb_build_array(falselive || '{"event_key":"TEST-P3"}'));
   execute call into n using b_flag, e, t0, t0 + interval '10 seconds';
@@ -105,7 +115,8 @@ begin
       ('CUT_AT_PLAY_SEEN',     'case when in_time then last_not_live_seen_at end', 'case when in_time then _now end'),
       ('FLAG_IS_START',        'where public.match_played(cur.fix)',               'where true'),
       ('PENDING_KEPT_ON_DROP', 'delete from public.live_flip_pending p where not exists', 'delete from public.live_flip_pending p where false and not exists'),
-      ('NO_PLAY_SEEN_AT',      'event_type_type, _now',                            'event_type_type, null')
+      ('NO_PLAY_SEEN_AT',      'event_type_type, _now',                            'event_type_type, null'),
+      ('SAME_TICK_KEEPS_BOUND', 'p.first_live_seen_at < _now and ',              '')
     ) v(name, anchor, repl)
   loop
     if position(m.anchor in base) = 0 then raise exception 'mutant % has lost its anchor — re-anchor it, never drop it', m.name; end if;

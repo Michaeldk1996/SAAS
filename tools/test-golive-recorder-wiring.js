@@ -64,8 +64,8 @@ assert.ok(at('20261027090000_live_flip_played.sql') > 0 && at('test-live-flip-pl
 console.log('  ok  install order: additive -> played harness -> switch');
 // the harness keeps every named mutant (a removed mutant is a retired test)
 const h = fs.readFileSync(path.join(ROOT, 'test-live-flip-played.sql'), 'utf8');
-for (const m of ['T_IGNORED', 'CUT_AT_PLAY_SEEN', 'FLAG_IS_START', 'PENDING_KEPT_ON_DROP', 'NO_PLAY_SEEN_AT'])
+for (const m of ['T_IGNORED', 'CUT_AT_PLAY_SEEN', 'FLAG_IS_START', 'PENDING_KEPT_ON_DROP', 'NO_PLAY_SEEN_AT', 'SAME_TICK_KEEPS_BOUND'])
   assert.ok(new RegExp("\\('" + m + "',").test(h), 'harness mutant ' + m + ' is missing');
 assert.match(h, /MUTANT % SURVIVED/);
 assert.match(h, /^rollback;\s*$/m, 'the harness must always roll back');
-console.log('  ok  harness: five named mutants, survivors raise, always rolled back');
+console.log('  ok  harness: six named mutants, survivors raise, always rolled back');

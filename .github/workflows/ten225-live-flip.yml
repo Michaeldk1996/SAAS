@@ -158,7 +158,7 @@ jobs:
             echo '## 3/4 — record_live_flips harness'
             echo '```json'
             ./runsql.sh test-live-flip-log.sql | jq -c .
-            # the played rule: S1-S6 + five named mutants, each must die (test-live-flip-played.sql)
+            # the played rule: S1-S7 + six named mutants, each must die (test-live-flip-played.sql)
             ./runsql.sh test-live-flip-played.sql | jq -c .
             echo '```'
             echo 'All assertions passed (any RAISE would have failed this step).'

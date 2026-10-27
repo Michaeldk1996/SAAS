@@ -12,6 +12,8 @@
 --     the last poll before the flag, never the time play was seen;
 --   * play seen later than T -> live_flip_log with last_not_live_seen_at and gap_seconds EMPTY, so no reader cuts a
 --     close at it (every reader skips a row with no lower bound);
+--   * play ALREADY on the board at the first sighting -> also no lower bound (founder 2026-10-27): the poll before
+--     only proves the match was not listed live, not that no ball had been struck;
 --   * the match leaves the live board before play -> the pending row is deleted (a later flag starts fresh).
 -- Every promoted row carries play_seen_at (the shadow measurement of flag -> first play that T will be set from).
 --
@@ -144,7 +146,9 @@ begin
       from jsonb_array_elements(coalesce(_board -> 'matches', '[]'::jsonb)) fix
      where coalesce(fix ->> 'event_key', '') <> ''
   ), ready as (
-    select p.*, (extract(epoch from (_now - p.first_live_seen_at)) <= _t_seconds) as in_time
+    -- in_time: play seen AFTER the flag tick and within T. Play already on the board at the first sighting (the
+    -- flag tick itself) is not in time: the first ball may precede the poll before it (founder 2026-10-27).
+    select p.*, (p.first_live_seen_at < _now and extract(epoch from (_now - p.first_live_seen_at)) <= _t_seconds) as in_time
       from public.live_flip_pending p
       join cur on cur.k = p.event_key
      where public.match_played(cur.fix)
