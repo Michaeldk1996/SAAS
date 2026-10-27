@@ -38,7 +38,7 @@ for r in rows:
     if len(cur) >= 2700: nf_batches.append(cur); cur = []
 if cur: nf_batches.append(cur)
 # ---- pre-sample ----
-names = {k: (v or {}).get('name') for k, v in get('career-history-index.json').get('players', {}).items()}
+names = {str(p.get('key')): p.get('name') for p in (get('player-index.json').get('players') or []) if isinstance(p, dict)}
 ix = get('career-record-index.json').get('players', {})
 low = {}
 our = lambda te: (lambda t: f"{t.pop()} {' '.join(t)}" if len(t) > 1 and t[-1].endswith('.') else ' '.join(t))(str(te or '').split())
