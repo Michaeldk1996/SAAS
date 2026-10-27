@@ -437,6 +437,8 @@ Start-time ladder:
 2. live-flip lower bound (last poll where the match was not yet live)
 3. dash
 
+**A live flag is a start only once play is seen** (founder ruling 2026-10-26, played-start-recorder). A close is a price from before the first ball: an early close is acceptable, a late one never is. **Test:** a `live_flip_log` row exists only after the board showed play (`match_played()`, the same rule as the line-price worker's `played()`: a game score, a set score above 0-0, a point, or finished). When play is seen within **T = 300 s** of the flag, the lower bound is the poll before the flag, never the play-seen time. When it is seen later, the row has **no lower bound**, so no close is cut (dash). A flag that leaves the live board before play is dropped. Every row carries `play_seen_at`, the measurement T is set from. Harness: `test-live-flip-played.sql` (named mutants).
+
 **Never the scheduled time** — it lands after the real start 58% of the time (p95 11 min), and matches often start *early* (median 11 min, one case 14 hours).
 
 Reject `trueStartTime` when `end − start > 6h` or `end < start`.

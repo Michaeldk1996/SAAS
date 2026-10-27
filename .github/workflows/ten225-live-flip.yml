@@ -122,6 +122,9 @@ jobs:
             echo '## 1/4 — additive migration'
             echo '```json'
             ./runsql.sh supabase/migrations/20260917100000_live_flip_log.sql | jq -c .
+            # played-start-recorder (founder 2026-10-26): additive — live_flip_pending, match_played(),
+            # record_live_flips_played(), live_flip_log.play_seen_at. The live recorder is NOT switched here (step 4).
+            ./runsql.sh supabase/migrations/20261027090000_live_flip_played.sql | jq -c .
             echo '```'
           } | tee -a "$GITHUB_STEP_SUMMARY"
 
@@ -136,13 +139,13 @@ jobs:
                    WHERE p.schemaname='public' AND p.tablename=c.relname) AS policies
             FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
            WHERE n.nspname='public'
-             AND c.relname IN ('live_flip_log','live_flip_stats')
+             AND c.relname IN ('live_flip_log','live_flip_stats','live_flip_pending')
            ORDER BY 1;
           SQL
           body=$(./runsql.sh /tmp/rls.sql)
           { echo '## 2/4 — RLS posture'; echo '```json'; printf '%s\n' "$body" | jq .; echo '```'; } \
             | tee -a "$GITHUB_STEP_SUMMARY"
-          printf '%s\n' "$body" | jq -e 'type=="array" and length==2
+          printf '%s\n' "$body" | jq -e 'type=="array" and length==3
             and all(.[]; .rls_enabled == true and (.policies|tonumber) == 0)' >/dev/null \
             || { echo "::error::RLS is not on with zero policies on both tables"; exit 1; }
 
@@ -155,6 +158,8 @@ jobs:
             echo '## 3/4 — record_live_flips harness'
             echo '```json'
             ./runsql.sh test-live-flip-log.sql | jq -c .
+            # the played rule: S1-S6 + five named mutants, each must die (test-live-flip-played.sql)
+            ./runsql.sh test-live-flip-played.sql | jq -c .
             echo '```'
             echo 'All assertions passed (any RAISE would have failed this step).'
           } | tee -a "$GITHUB_STEP_SUMMARY"
@@ -167,6 +172,8 @@ jobs:
             echo '## 4/4 — write_snapshot now calls the recorder'
             echo '```json'
             ./runsql.sh supabase/migrations/20260917100100_write_snapshot_flip.sql | jq -c .
+            # and only now: record_live_flips hands every tick to the played recorder (T = 300 s)
+            ./runsql.sh supabase/migrations/20261027090100_record_live_flips_played.sql | jq -c .
             echo '```'
           } | tee -a "$GITHUB_STEP_SUMMARY"
 
@@ -264,3 +271,34 @@ jobs:
           body=$(./runsql.sh /tmp/recent.sql)
           { echo '## Twenty most recent flips'; echo '```json'; printf '%s\n' "$body" | jq .; echo '```'; } \
             | tee -a "$GITHUB_STEP_SUMMARY"
+
+      # played-start-recorder (founder 2026-10-26) — the shadow measurement T is set from: flag -> first play, on every
+      # row the played recorder wrote (play_seen_at), plus what is waiting now and how many came in after T (no bound).
+      - name: Played-start shadow measurement — flag to first play
+        if: ${{ always() }}
+        run: |
+          set -euo pipefail
+          cat > /tmp/play.sql <<'SQL'
+          WITH d AS (
+            SELECT coalesce(event_type_type, 'unknown') AS level,
+                   extract(epoch FROM (play_seen_at - first_live_seen_at)) AS delay_s,
+                   last_not_live_seen_at IS NULL AS no_bound
+              FROM live_flip_log WHERE play_seen_at IS NOT NULL
+          )
+          SELECT 'ALL' AS level, count(*) AS rows, count(*) FILTER (WHERE no_bound) AS after_t_no_bound,
+                 round(percentile_cont(0.5)  WITHIN GROUP (ORDER BY delay_s)::numeric, 1) AS median_delay_s,
+                 round(percentile_cont(0.98) WITHIN GROUP (ORDER BY delay_s)::numeric, 1) AS p98_delay_s,
+                 round(max(delay_s)::numeric, 1) AS max_delay_s,
+                 (SELECT count(*) FROM live_flip_pending) AS pending_now
+            FROM d
+          UNION ALL
+          SELECT level, count(*), count(*) FILTER (WHERE no_bound),
+                 round(percentile_cont(0.5)  WITHIN GROUP (ORDER BY delay_s)::numeric, 1),
+                 round(percentile_cont(0.98) WITHIN GROUP (ORDER BY delay_s)::numeric, 1),
+                 round(max(delay_s)::numeric, 1), NULL
+            FROM d GROUP BY level
+          ORDER BY 2 DESC;
+          SQL
+          body=$(./runsql.sh /tmp/play.sql)
+          { echo '## Played-start shadow measurement (flag -> first play; T = 300 s)'
+            echo '```json'; printf '%s\n' "$body" | jq .; echo '```'; } | tee -a "$GITHUB_STEP_SUMMARY"

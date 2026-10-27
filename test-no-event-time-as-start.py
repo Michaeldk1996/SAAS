@@ -198,6 +198,13 @@ ALLOWED = {
     'line_prices.py': {
         "d, t = f.get('event_date'), f.get('event_time')",  # at_start_ts: ±36 h join window, a label, date grouping; never cuts a close (checked 2026-10-26)
     },
+    'supabase/migrations/20261027090000_live_flip_played.sql': {
+        'event_time            text,                    -- SCHEDULED; provenance only, never read as a time (TEN-225 ruling 1)',  # provenance copied through live_flip_pending into live_flip_log; nothing reads it as a time (played-start-recorder, 2026-10-26)
+        'event_date, event_time, first_player, second_player, tournament_name, event_type_type',  # provenance copied through live_flip_pending into live_flip_log; nothing reads it as a time (played-start-recorder, 2026-10-26)
+        "fix ->> 'event_date', fix ->> 'event_time', fix ->> 'event_first_player', fix ->> 'event_second_player',",  # provenance copied through live_flip_pending into live_flip_log; nothing reads it as a time (played-start-recorder, 2026-10-26)
+        'event_date, event_time, first_player, second_player, tournament_name, event_type_type, play_seen_at',  # provenance copied through live_flip_pending into live_flip_log; nothing reads it as a time (played-start-recorder, 2026-10-26)
+        'event_date, event_time, first_player, second_player, tournament_name, event_type_type, _now',  # provenance copied through live_flip_pending into live_flip_log; nothing reads it as a time (played-start-recorder, 2026-10-26)
+    },
 }
 
 
