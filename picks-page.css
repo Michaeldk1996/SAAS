@@ -375,6 +375,8 @@
   background: var(--selected); border: 1px solid color-mix(in srgb, var(--text) 12%, transparent); font-family: var(--font-words); font-size: 12px; font-weight: 700; color: var(--text); white-space: nowrap; }
 .pk-plus:hover { border-color: color-mix(in srgb, var(--text) 28%, transparent); }
 .pk-plus__p { font-family: var(--font-nums); font-size: 13px; }
+/* the Picks page's own "+ Post a pick" (admin): the card button, at the search row's height */
+[data-page="picks"] .pk-post { flex: none; height: 40px; padding: 0 14px; border-radius: 10px; }
 
 /* the new-pick dot on the rail's Picks icon · the admin badge on the rail avatar (board 1k; picks-shell.js paints them) */
 #mainNav .sf-ico .pk-dot { position: absolute; top: -4px; right: -5px; width: 9px; height: 9px; border-radius: 50%; background: var(--bar); box-shadow: 0 0 0 2px var(--sidebar); pointer-events: none; }

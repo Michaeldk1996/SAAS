@@ -8,6 +8,9 @@ and the "Bets today" tile. Design source: `design-export/picks-handoff/` (LOCKED
 
 - **Admin** = the founder's uid, the same allowlist as `isAdmin()` in `firestore.rules` and `isBspAdmin()` (admin-config.js).
   Only the admin posts, edits within 10 minutes (note and stake only), voids with a reason.
+- **The admin posts from the Picks page too** (founder 2026-10-28; the design draws "+ Pick" on match cards only): a
+  "+ Post a pick" button, last in the search row, admin only by the store's role, opens the drawer on its match search.
+  **Test:** `tools/test-picks-page.mjs` "+ Post a pick" (a member sees no button; mutant: drawn for everyone).
 - **The admin bypasses Pro gating everywhere on the site** (founder 2026-10-28), by the same uid rule.
   - `mxIsPro()` covers the Bets today tile, the Stennisfy Model row blur and the tile click.
   - `sfPlanLocks` covers the rail lock on Trading Report and Stennisfy Model, on both pages. `account.html` loads `admin-config.js` for this.

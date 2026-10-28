@@ -283,7 +283,15 @@
       + '<button type="button" class="pk-chev" data-act="next" aria-label="Next day">›</button></div>'
       + '<div class="pk-row2"><span class="pk-tdd"><button type="button" class="pk-tpill' + (S.tourn ? ' on' : '') + '" data-act="tourn" aria-haspopup="listbox">' + esc(S.tourn || 'All tournaments') + '</button>' + menu + '</span>'
       + '<label class="pk-search"><svg width="15" height="15" viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="9" cy="9" r="6" stroke="currentColor" stroke-width="1.6"></circle><path d="M13.5 13.5 17 17" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path></svg>'
-      + '<input type="search" id="pkSearch" placeholder="Search for a player…" value="' + esc(S.q) + '" autocomplete="off"></label></div>';
+      + '<input type="search" id="pkSearch" placeholder="Search for a player…" value="' + esc(S.q) + '" autocomplete="off"></label>' + postBtn() + '</div>';
+  }
+
+  // Founder 2026-10-28: the admin posts from the Picks page too (the design draws "+ Pick" on match cards only) — the
+  // same button as the card's, opening the same drawer with no match, so the drawer starts on its match search.
+  // Admin only, by the store's role (not isAdmin(), which a demo fixture turns off for editing its fake rows).
+  function postBtn() {
+    if (!(window.PicksStore && PicksStore.isAdmin())) return '';
+    return '<button type="button" class="pk-plus pk-post" data-act="post" title="Post a pick"><span class="pk-plus__p">+</span>Post a pick</button>';
   }
 
   // ── Record view (SPEC §7) ──────────────────────────────────────────────────────────────────────────────────────
@@ -370,6 +378,7 @@
     else if (act === 'sort') S.sort = C.nextSort(S.sort, k);
     else if (act === 'tourn') S.tournOpen = !S.tournOpen;
     else if (act === 'tsel') { S.tourn = k || null; S.tournOpen = false; }
+    else if (act === 'post') { if (window.PicksDrawer) PicksDrawer.openNew(); return; }
     else if (act === 'edit') { if (window.PicksDrawer) PicksDrawer.openEdit(rows().find(function (x) { return x.id === id; })); return; }
     if (!S.fixture && S.byDay[S.day] == null) { load(); return; }   // a day not read yet
     render();

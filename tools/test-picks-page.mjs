@@ -240,6 +240,16 @@ async function browser() {
     check('"+ Pick" is not drawn for a non-admin', await E(`(window.isBspAdmin = () => false, pkPlusHtml(window.__pkMatch)) === ''`));
     const plus = await E(`(() => { window.isBspAdmin = () => true; return { up: pkPlusHtml(window.__pkMatch), done: pkPlusHtml(Object.assign({}, window.__pkMatch, { finalScore: { winner: 'p1' } })) }; })()`);
     check('"+ Pick" for the admin on an upcoming match only', /class="pk-plus"/.test(plus.up) && />\+<\/span>Pick</.test(plus.up) && plus.done === '', JSON.stringify(plus));
+    // founder 2026-10-28: the admin posts from the Picks page itself — "+ Post a pick" in the search row, admin only,
+    // opening the drawer on its match search (no match pre-filled). Mutant: the button drawn for every member.
+    const pp = await R(`const was = PicksStore.isAdmin; set({ view: 'cards', tab: 'upcoming', day: S.fixture.as_of_day });
+      PicksStore.isAdmin = () => false; PicksPage.render(); const out = { member: qa('.pk-post').length };
+      PicksStore.isAdmin = () => true; PicksPage.render(); const b = q('.pk-row2 .pk-post'); out.admin = b ? txt(b) : null;
+      out.last = b === q('.pk-row2').lastElementChild; if (b) b.click(); const ov = document.getElementById('pkdOv');
+      out.title = ov && ov.querySelector('.pkd-title') ? ov.querySelector('.pkd-title').textContent.trim() : null; out.search = !!(ov && ov.querySelector('#pkdQ'));
+      if (window.PicksDrawer) PicksDrawer.close(); PicksStore.isAdmin = was; PicksPage.render(); return out;`);
+    check('"+ Post a pick" on the Picks page: admin only, last in the search row, opens the drawer on its match search',
+      pp.member === 0 && pp.admin === '+ Post a pick' && pp.last && pp.title === 'Post a pick' && pp.search, JSON.stringify(pp));
     const d1 = await DR(`PicksDrawer.openNew(window.__pkMatch); const a = { title: txt(q('.pkd-title')), meta: txt(q('.pkd-meta')), sels: qa('.pkd-selrow').length, on: txt(q('.pkd-selrow.on .pkd-seln')),
         typed: !!q('#pkdPrice'), manual: txt(q('.pkd-manual')), postOff: dis('[data-pkd="post"]') };
       type('#pkdPrice', '2.10'); type('#pkdStake', '1'); type('#pkdNote', 'Indoor serve edge.');
