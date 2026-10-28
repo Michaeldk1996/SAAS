@@ -56,6 +56,22 @@ HEARTBEAT_KEY = "_heartbeat.json.gz"
 HEARTBEAT_MAX_AGE_H = 24.0
 INSERT_CHUNK = 500
 
+# card-job-lock (founder ruling 2026-10-28): a sweep write that times out is
+# retried — at most 3 retries with backoff, each retry on half the rows so every
+# statement is shorter — and a write still failing after the third retry is
+# reported loudly (Telegram + ::error::). Inserts take ROW EXCLUSIVE only; the
+# retry path issues no DDL and no LOCK TABLE. 57014 failed 2 of 35 chunks on
+# run 40650070903 (07:26Z 28 Oct): 1,000 rows of an unrefetchable feed lost.
+WRITE_RETRIES = 3
+WRITE_BACKOFF_S = (10, 30, 60)
+WRITE_HTTP_TIMEOUT_S = 90
+WRITE_RETRY_HTTP = (408, 500, 502, 503, 504, 520, 522, 524, 544)
+WRITE_FAILURES = []   # (what, rows, last error) for writes that exhausted their retries
+# Total backoff one sweep may spend: a database that is down for good must not
+# hold the job for hours (each failing chunk halves into up to 7 waits).
+WRITE_RETRY_BUDGET_S = 600
+_RETRY_SLEPT = [0]
+
 
 def die(msg):
     print(f"::error::{msg}")
@@ -99,6 +115,88 @@ def sb_request(method, path, url, key, body=None, headers=None, timeout=180):
         return None, (e.code, e.read()[:400].decode("utf-8", "replace"))
     except Exception as e:  # noqa: BLE001
         return None, (None, str(e))
+
+
+def write_retryable(err):
+    """A statement timeout, a lock wait or a dropped connection — never an SQL error."""
+    if not err:
+        return False
+    code, text = err
+    text = str(text or "")
+    if any(c in text for c in ("57014", "55P03", "40P01")):
+        return True
+    return code is None or code in WRITE_RETRY_HTTP
+
+
+def sb_write(path, url, key, rows, headers, what, sleep=time.sleep, _req=None, _try=0):
+    """POST `rows`, retrying a timeout on halves. -> (got, err).
+
+    got is the combined representation (a list) when every part landed, else
+    None with the last error. A part that still fails after WRITE_RETRIES
+    retries is recorded in WRITE_FAILURES; the parts that landed stay landed
+    (the writes are idempotent upserts, so a retried part never doubles a row).
+    """
+    req = _req or sb_request
+    got, err = req("POST", path, url, key, body=rows, headers=headers,
+                   timeout=WRITE_HTTP_TIMEOUT_S)
+    if got is not None or not err:
+        return (got if isinstance(got, list) else []), None
+    wait = WRITE_BACKOFF_S[min(_try, len(WRITE_BACKOFF_S) - 1)]
+    over_budget = _RETRY_SLEPT[0] + wait > WRITE_RETRY_BUDGET_S
+    if not write_retryable(err) or _try >= WRITE_RETRIES or over_budget:
+        if write_retryable(err):
+            WRITE_FAILURES.append((what, len(rows), err))
+            why = (f"the sweep's {WRITE_RETRY_BUDGET_S}s retry budget is spent"
+                   if over_budget and _try < WRITE_RETRIES else f"{WRITE_RETRIES} retries")
+            print(f"::error::{what}: {len(rows)} rows still failing after {why}: {err}")
+        return None, err
+    _RETRY_SLEPT[0] += wait
+    print(f"::warning::{what}: {len(rows)} rows failed ({str(err)[:160]}); "
+          f"retry {_try + 1}/{WRITE_RETRIES} in {wait}s")
+    sleep(wait)
+    halves = [rows[:len(rows) // 2], rows[len(rows) // 2:]] if len(rows) > 1 else [rows]
+    out, last = [], None
+    for part in halves:
+        if not part:
+            continue
+        g, e = sb_write(path, url, key, part, headers, what, sleep, req, _try + 1)
+        if g is None:
+            last = e
+        else:
+            out.extend(g)
+    return (None, last) if last else (out, None)
+
+
+def alert_write_failures(sweep_id, send=None):
+    """One Telegram for a sweep whose writes still failed after the retries."""
+    _RETRY_SLEPT[0] = 0       # the budget is per sweep
+    if not WRITE_FAILURES:
+        return None
+    n = sum(r for _, r, _ in WRITE_FAILURES)
+    first, parts = WRITE_FAILURES[0][2], len(WRITE_FAILURES)
+    WRITE_FAILURES.clear()   # one alert per sweep (a backfill runs one sweep per day)
+    text = (f"Kibl archive sweep {sweep_id}: {n} rows could not be written after "
+            f"{WRITE_RETRIES} retries ({parts} parts; first error "
+            f"{str(first)[:200]}). Kibl has no history: these prices are lost.")
+    tok = (os.environ.get("TELEGRAM_BOT_TOKEN") or "").strip()
+    chat = (os.environ.get("TELEGRAM_CHAT_ID") or "").strip()
+    if not tok or not chat:
+        print(f"::error::write-failure alert NOT sent (no Telegram secrets): {text}")
+        return text
+    try:
+        if send:
+            send(tok, chat, text)
+        else:
+            req = urllib.request.Request(
+                f"https://api.telegram.org/bot{tok}/sendMessage",
+                data=json.dumps({"chat_id": chat, "text": text}).encode(),
+                headers={"Content-Type": "application/json"}, method="POST")
+            with urllib.request.urlopen(req, timeout=20) as r:
+                r.read()
+        print("write-failure alert sent to Telegram")
+    except Exception as e:  # noqa: BLE001
+        print(f"::error::write-failure alert NOT sent ({e}): {text}")
+    return text
 
 
 def sb_count(url, key, table, query=""):
@@ -316,10 +414,10 @@ def upsert_fixtures(url, key, rows):
              "player2_name", "match_key", "last_seen_at", "last_sweep_id")
     for i in range(0, len(rows), INSERT_CHUNK):
         chunk = rows[i:i + INSERT_CHUNK]
-        got, err = sb_request(
-            "POST", f"/rest/v1/{TABLE_FIXTURES}?on_conflict=fixture_id", url, key,
-            body=chunk,
-            headers={"Prefer": "resolution=ignore-duplicates,return=representation"})
+        got, err = sb_write(
+            f"/rest/v1/{TABLE_FIXTURES}?on_conflict=fixture_id", url, key, chunk,
+            {"Prefer": "resolution=ignore-duplicates,return=representation"},
+            f"fixture insert chunk {i // INSERT_CHUNK}")
         if got is None:
             failed += len(chunk)
             print(f"::warning::fixture insert chunk {i // INSERT_CHUNK} failed: {err}")
@@ -329,9 +427,10 @@ def upsert_fixtures(url, key, rows):
         # fixture can be rescheduled or renamed and the newest statement wins;
         # first_seen_at / first_sweep_id are simply not in the payload.
         moved = [{k: r[k] for k in MOVES if k in r} for r in chunk]
-        _, err2 = sb_request(
-            "POST", f"/rest/v1/{TABLE_FIXTURES}?on_conflict=fixture_id", url, key,
-            body=moved, headers={"Prefer": "resolution=merge-duplicates"})
+        _, err2 = sb_write(
+            f"/rest/v1/{TABLE_FIXTURES}?on_conflict=fixture_id", url, key, moved,
+            {"Prefer": "resolution=merge-duplicates"},
+            f"fixture refresh chunk {i // INSERT_CHUNK}")
         if err2:
             # A failed refresh is NOT cosmetic: it means a rescheduled fixture
             # keeps its old start and a renamed one keeps its old players, on a
@@ -375,19 +474,20 @@ def insert_rows(url, key, rows):
     failed = 0
     for i in range(0, len(rows), INSERT_CHUNK):
         chunk = rows[i:i + INSERT_CHUNK]
-        got, err = sb_request(
-            "POST", f"/rest/v1/{TABLE_OBS}?on_conflict=row_key", url, key,
-            body=chunk,
-            headers={"Prefer": "resolution=ignore-duplicates,return=representation"})
+        got, err = sb_write(
+            f"/rest/v1/{TABLE_OBS}?on_conflict=row_key", url, key, chunk,
+            {"Prefer": "resolution=ignore-duplicates,return=representation"},
+            f"insert chunk {i // INSERT_CHUNK}")
         if got is None:
             failed += len(chunk)
             print(f"::warning::insert chunk {i // INSERT_CHUNK} failed: {err}")
             continue
         new += len(got) if isinstance(got, list) else 0
         seen = [{k: r[k] for k in OBS_REFRESH_COLS if k in r} for r in chunk]
-        _, err2 = sb_request(
-            "POST", f"/rest/v1/{TABLE_OBS}?on_conflict=row_key", url, key,
-            body=seen, headers={"Prefer": "resolution=merge-duplicates"})
+        _, err2 = sb_write(
+            f"/rest/v1/{TABLE_OBS}?on_conflict=row_key", url, key, seen,
+            {"Prefer": "resolution=merge-duplicates"},
+            f"last_seen_at refresh chunk {i // INSERT_CHUNK}")
         if err2:
             failed += len(chunk)
             print(f"::warning::last_seen_at refresh chunk {i // INSERT_CHUNK} "
@@ -937,6 +1037,7 @@ def run_window(c, url, key, started, win_start, win_end, betting_type_id,
         print("::warning::could not write the heartbeat object")
 
     print(json.dumps(sweep_row, indent=1))
+    alert_write_failures(sweep_id)
     # A sweep that captured nothing must not report green: the whole point of the
     # job is that a missed sweep is unrecoverable, so silence is the failure.
     # A BACKFILL day outside the reachable window is a different thing — zero

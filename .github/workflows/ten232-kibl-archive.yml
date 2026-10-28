@@ -132,6 +132,7 @@ jobs:
           python3 -B test-ten232-breaker.py
           python3 -B test-ten232-schema-gate.py
           python3 -B test-ten232-obs-read.py
+          python3 -B test-ten232-sweep-write.py
           python3 -B test-ten225-kibl-card-state.py
           python3 -B test-ten270-cardstate-egress.py
           python3 -B test-ten225-orientation.py
@@ -197,6 +198,10 @@ jobs:
           KIBL_PASSWORD: ${{ secrets.KIBL_PASSWORD }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          # A write still timing out after its 3 retries alerts the ops chat
+          # (card-job-lock, founder 2026-10-28).
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
           # The gate applies to every AUTOMATIC firing — the schedule, and the
           # pg_cron pinger that dispatches with cadence_gate=true. A hand
