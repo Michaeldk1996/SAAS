@@ -19,6 +19,21 @@
 -- RLS on with ZERO policies: the service key bypasses RLS, everything else is
 -- denied. This is odds data under a partner grant, not public data.
 
+-- LOCK ORDER (card-job-lock, 2026-10-28; found by the card-state builder deadlock session). This file runs as one
+-- transaction and ALTERs both tables, holding ACCESS EXCLUSIVE on each until commit. The 30-second readers (pg_cron
+-- ten280-bet105-drop-bot through ten280_bot.load_ticks, and drops_api.snapshot) lock kibl_fixtures FIRST and
+-- kibl_line_observations second; the ALTERs below took them the other way round, which is what made 27 Oct's waits
+-- deadlocks (40P01). Taking both up front, in the readers' order, turns a deadlock into a plain wait that the gate's
+-- lock_timeout bounds (ten232-schema-gate.py). Skipped on a first deploy, when there is nothing to lock yet.
+do $lock$
+begin
+  if to_regclass('public.kibl_fixtures') is not null
+     and to_regclass('public.kibl_line_observations') is not null then
+    lock table public.kibl_fixtures, public.kibl_line_observations in access exclusive mode;
+  end if;
+end
+$lock$;
+
 create table if not exists public.kibl_line_observations (
     -- Dedupe key. Kibl puts a uuid on InfoMarketParticipant; when it is present
     -- it is the key, and when it is absent we hash the natural key instead so a

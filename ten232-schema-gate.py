@@ -43,16 +43,20 @@ RETRY_CODES = ("55P03", "40P01", "57014")      # lock_not_available, deadlock, s
 RETRY_HTTP = (500, 502, 503, 504, 520, 522, 524, 544)
 
 # Bootstrap. The version table is new with this change, so the first run finds
-# no row for either file. Both files are byte-identical to the ones the last
-# successful runs applied (27 Oct 07:33Z run 40467880224 at 650ff1ee6 and
-# 22:40Z run 40596583235 at c5e8d9c8d; neither file has changed since
-# 25 Sep). A missing row whose file still has exactly this sha is therefore
-# already live: record it without re-applying, so the first run after the fix
-# does not walk straight back into the lock it exists to avoid. Any OTHER sha
-# with no row is applied normally. Used only while the row is missing.
+# no row for either file. VERIFIED LIVE on 2026-10-28 (read-only probe run
+# 40618470203: each file applied into a scratch schema inside a transaction that
+# always rolled back, its catalog diffed against public): every column, default,
+# constraint, index, RLS flag, function and trigger both files declare is live.
+# Live additionally has kibl_sweeps_started_idx, which no file declares or drops.
+# ten225-card-state-schema.sql is byte-identical to that probe. ten232-kibl-schema.sql
+# differs from it only by the up-front LOCK TABLE preamble added with this change,
+# which declares nothing. A missing row whose file has exactly this sha is
+# therefore already live: record it without re-applying, so the first run after
+# the fix does not walk straight back into the lock it exists to avoid. Any OTHER
+# sha with no row is applied normally. Used only while the row is missing.
 ALREADY_LIVE = {
     "ten232-kibl-schema.sql":
-        "a4851a5536f498b08469aac96772d8c868876c501094dfd7800283e13eb02f22",
+        "3edc5994a279b0e0f7cd85f901b9f974934202ba6152f7c16cdcbe9eb22fb18e",
     "ten225-card-state-schema.sql":
         "8f01429cbad3eb950da30f08064419bf877da0c259853f53146e8a62188041a6",
 }

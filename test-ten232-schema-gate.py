@@ -150,6 +150,12 @@ wf = open(os.path.join(HERE, ".github/workflows/ten232-kibl-archive.yml")).read(
 for f in ("ten232-kibl-schema.sql", "ten225-card-state-schema.sql"):
     check(f"{f} is applied only through the gate  [control: the pre-fix workflow piped it to curl]",
           f"python3 -B ten232-schema-gate.py {f}" in wf and not re.search(rf"jq -Rs[^\n]*{re.escape(f)}", wf))
+kibl = open(os.path.join(HERE, "ten232-kibl-schema.sql")).read()
+lk = re.search(r"lock table public\.kibl_fixtures, public\.kibl_line_observations in access exclusive mode", kibl)
+first_alter = kibl.find("alter table public.kibl_line_observations")
+check("the Kibl schema locks kibl_fixtures THEN kibl_line_observations (the readers' order) before any ALTER  "
+      "[control: the pre-fix file ALTERs kibl_line_observations first]",
+      bool(lk) and 0 <= lk.start() < first_alter)
 check("the workflow's offline tests run this file", "python3 -B test-ten232-schema-gate.py" in wf)
 pkg = json.load(open(os.path.join(HERE, "package.json")))["scripts"]["test"]
 check("npm test runs this file and the breaker tests",
