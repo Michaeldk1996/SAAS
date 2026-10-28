@@ -254,6 +254,77 @@
   // ── calendar heat (README §5): a settled day's cell alpha from its P/L in % of bankroll ──────────────────────────
   function heatAlpha(plPct) { return Math.min(1, 0.3 + Math.abs(plPct) / 3 * 0.7); }
 
+  // ── calendar (README §5): 26 weeks of days, a months table, a month pop-up ─────────────────────────────────────
+  function dayKey(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+  // The ROI bar: fill from the centre, clipped at ±40% → 50% of the track each side; no ROI → no bar.
+  function roiBar(roi) {
+    if (roi === null || roi === undefined) return { left: '50%', width: '0%', kind: 'lab' };
+    var w = Math.min(Math.abs(roi), 0.4) / 0.4 * 50;
+    return { left: (roi >= 0 ? 50 : 50 - w) + '%', width: w + '%', kind: roi >= 0 ? 'pos' : 'neg' };
+  }
+  function dayRow(b) {
+    var r = b.res;
+    return { text: b.text, meta: (b.tour || DASH) + ' · ' + (b.market || DASH) + ' · @ ' + b.odds.toFixed(2) + ' · ' + b.stake + '%',
+      res: r ? r.toUpperCase() : 'PENDING', resKind: r === 'won' ? 'pos' : r === 'lost' ? 'neg' : r === 'void' ? 'lab' : 'link2',
+      pl: r ? sgn(pl(b)) : DASH, plKind: r ? kind(pl(b)) : 'lab' };
+  }
+  // 26 columns (Mon → Sun) ending on `today`'s week. A cell: no bets 4% white · future transparent · pending only blue
+  // with "·" · settled → green / red at heatAlpha(|P/L %|), flat 12% white; the figure is the day's P/L in € on a
+  // 10,000 € bankroll (P/L % × 100). The footer counts this season's days (1 January of `today`'s year →).
+  function heatGrid(all, today) {
+    var byDay = {};
+    all.forEach(function (b) {
+      var k = dayKey(b.date), o = byDay[k] = byDay[k] || { pl: 0, n: 0, pend: 0, w: 0, l: 0, bets: [] };
+      o.bets.push(b); if (isSettled(b)) { o.pl += pl(b); o.n++; if (b.res === 'won') o.w++; else if (b.res === 'lost') o.l++; } else o.pend++;
+    });
+    var mon = addDays(today, -((today.getDay() + 6) % 7)), start = addDays(mon, -25 * 7), cells = [], months = [], pm = -1;
+    for (var w = 0; w < 26; w++) {
+      for (var d = 0; d < 7; d++) {
+        var date = addDays(start, w * 7 + d), k = dayKey(date), v = byDay[k], future = date > today;
+        if (d === 0 && date.getMonth() !== pm) { pm = date.getMonth(); months.push({ left: (w * 32) + 'px', label: MON[pm] }); }
+        var tone = 'none', alpha = null, fig = '';
+        if (future) tone = 'future';
+        else if (v && (v.n || v.pend)) {
+          if (v.pend && !v.n) { tone = 'pend'; fig = '·'; }
+          else {
+            tone = v.pl > 0 ? 'pos' : v.pl < 0 ? 'neg' : 'flat'; alpha = tone === 'flat' ? null : +heatAlpha(v.pl).toFixed(2);
+            var eur = Math.round(v.pl * 100); fig = (eur > 0 ? '+' : eur < 0 ? MINUS : '') + Math.abs(eur);
+          }
+        }
+        var has = !!(v && v.bets.length);
+        cells.push({ key: k, w: w, d: d, tone: tone, alpha: alpha, fig: fig, has: has, flip: w > 14,
+          title: DN[d] + ' ' + fmtD(date), t: has ? '' : DN[d] + ' ' + fmtD(date) + ' · no bets',
+          sub: has ? v.n + ' settled' + (v.pend ? ' · ' + v.pend + ' pending' : '') + ' · ' + v.w + EN + v.l + ' · ' + sgn(v.pl) + ' = ' + (Math.round(v.pl * 100) > 0 ? '+' : Math.round(v.pl * 100) < 0 ? MINUS : '') + Math.abs(Math.round(v.pl * 100)) + ' €' : '',
+          rows: has ? v.bets.map(dayRow) : [] });
+      }
+    }
+    var y = today.getFullYear(), season = Object.keys(byDay).filter(function (k) { return +k.slice(0, 4) === y; }).map(function (k) { return byDay[k]; });
+    var daysWith = season.filter(function (v) { return v.n; }).length, green = season.filter(function (v) { return v.n && v.pl > 0; }).length;
+    return { cells: cells, months: months, days: DN, meta: daysWith + ' betting days this season · ' + green + ' finished up · ' + (daysWith - green) + ' down or flat' };
+  }
+  // The months table: this season's months with a settled bet, newest first ("October 2026", n settled, ROI bar, P/L).
+  function monthsTable(all, today) {
+    var g = {}, y = today.getFullYear();
+    all.forEach(function (b) { if (!isSettled(b) || b.date.getFullYear() !== y) return; var k = ym(b.date); (g[k] = g[k] || []).push(b); });
+    return Object.keys(g).map(Number).sort(function (a, b) { return b - a; }).map(function (k) {
+      var st = stats(g[k]); return { key: k, name: ymName(k), n: st.n, pl: sgn(st.profit), plKind: kind(st.profit), bar: roiBar(st.roi), bets: g[k] };
+    });
+  }
+  // The month pop-up: its settled bets newest first, four tiles, the full-bleed table.
+  function monthPop(k, bets, today) {
+    var list = bets.slice().sort(function (a, b) { return b.date - a.date || b.id - a.id; }), st = stats(list);
+    return { title: ymName(k), sub: st.n + ' settled bets · ' + st.w + EN + st.l + (st.v ? EN + st.v + ' void' : '') + ' · ' + st.staked.toFixed(1) + '% staked',
+      stats: [{ l: 'P/L', v: sgn(st.profit), kind: kind(st.profit) }, { l: 'ROI', v: sgn(st.roi === null ? null : st.roi * 100), kind: st.roi === null ? 'lab' : kind(st.roi) },
+        { l: 'Win rate', v: st.w + st.l ? Math.round(100 * st.w / (st.w + st.l)) + '%' : DASH, kind: st.w + st.l ? 'ink' : 'lab' },
+        { l: 'Avg CLV', v: st.clv === null ? DASH : sgn(st.clv * 100), kind: kind(st.clv) }],
+      rows: list.map(function (b) {
+        var c = clv(b);
+        return { date: fmtDY(b.date, today), resKind: b.res === 'won' ? 'pos' : b.res === 'lost' ? 'neg' : 'lab', text: b.text, meta: betMeta(b).split(' · ').slice(0, 3).join(' · '),
+          market: b.market ? b.market + (b.line ? ' ' + b.line : '') : DASH, odds: b.odds.toFixed(2), close: b.close ? b.close.toFixed(2) : DASH,
+          clv: c === null ? DASH : sgn(c * 100), clvKind: kind(c), stake: b.stake.toFixed(1) + '%', res: b.res.toUpperCase(), pl: sgn(pl(b)), plKind: kind(pl(b)) };
+      }) };
+  }
+
   // ── period + filters ────────────────────────────────────────────────────────────────────────────────────────────
   function addDays(d, n) { var x = new Date(d.getFullYear(), d.getMonth(), d.getDate()); x.setDate(x.getDate() + n); return x; }
   function parseDay(s) { var p = String(s).split('-').map(Number); return new Date(p[0], p[1] - 1, p[2]); }
@@ -358,6 +429,7 @@
     DASH: DASH, MINUS: MINUS, EN: EN, MIN_SAMPLE: MIN_SAMPLE, MIN_FLOOR: MIN_FLOOR, LEVEL: LEVEL, LEVEL_KEYS: LEVEL_KEYS, SURFACES: SURFACES, BANDS: BANDS,
     DAYS: DAYS, DN: DN, MON: MON, MONTHS: MONTHS, DIMS: DIMS, PERIODS: PERIODS, MARKETS: MARKETS, BOOKS: BOOKS, TYPES: TYPES, PLANS: PLANS, YOUR_STAKES: YOUR_STAKES,
     LEDGER_ROWS: LEDGER_ROWS,
+    heatGrid: heatGrid, monthsTable: monthsTable, monthPop: monthPop, roiBar: roiBar, dayKey: dayKey,
     heroTiles: heroTiles, heroCurve: heroCurve, filterMenu: filterMenu, nFilters: nFilters, filtersLabel: filtersLabel, filtersFoot: filtersFoot,
     sgn: sgn, kind: kind, fmtD: fmtD, fmtDY: fmtDY, ym: ym, ymLabel: ymLabel, ymName: ymName, dow: dow, isSettled: isSettled, pl: pl, clv: clv, stats: stats, cumulative: cumulative, heroFigures: heroFigures,
     band: band, key: key, group: group, minN: minN, segments: segments, discipline: discipline,

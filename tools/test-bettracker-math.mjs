@@ -218,6 +218,28 @@ function run(M) {
   eq('header meta with a custom range across years', M.headMeta(main, list, perList, 'custom', M.periodWindow('custom', { from: '2025-11-01', to: '2026-06-30' }, today), { from: '2025-11-01', to: '2026-06-30' }, 2, today).split(' · ').slice(-2).join(' · '),
     '1 Nov 2025 → 30 Jun shown · 2 filters on, ' + list.length + ' of ' + perList.length + ' bets');
 
+  // ── 10 · T3 calendar: heat grid, months table, month pop-up (READ off the reference's Results view) ──
+  const HG = M.heatGrid(main, today);
+  eq('heat meta (READ)', HG.meta, '103 betting days this season · 57 finished up · 46 down or flat');
+  eq('heat: 26 weeks × 7 days', HG.cells.length, 182);
+  eq('heat: first column = the Monday 25 weeks before this week (27 Oct → 26 Oct → 4 May)', [HG.cells[0].key, HG.cells[0].d], ['2026-05-04', 0]);
+  eq('heat: the last column is this week, today is cell 25 × 7 + 1', [HG.cells[25 * 7 + 1].key, HG.cells[25 * 7].key, HG.cells[181].key], ['2026-10-27', '2026-10-26', '2026-11-01']);
+  eq('heat: month labels at week × 32px', HG.months.map(m => m.label + '@' + m.left), ['May@0px', 'Jun@128px', 'Jul@288px', 'Aug@416px', 'Sep@576px', 'Oct@704px']);
+  eq('heat: today holds only pending bets → blue "·"', [HG.cells[176].tone, HG.cells[176].fig], ['pend', '·']);
+  eq('heat: days after today are future (transparent)', HG.cells.slice(177).map(c => c.tone), ['future', 'future', 'future', 'future', 'future']);
+  const dayBets = main.filter(b => M.dayKey(b.date) === '2026-10-26'), dpl = dayBets.reduce((x, b) => x + M.pl(b), 0);
+  eq('heat: a settled day = its P/L in € (×100), alpha = heatAlpha', [HG.cells[175].fig, HG.cells[175].alpha], [(Math.round(dpl * 100) > 0 ? '+' : '−') + Math.abs(Math.round(dpl * 100)), +M.heatAlpha(dpl).toFixed(2)]);
+  eq('heat: the pop-up flips side after week 14', [HG.cells[14 * 7].flip, HG.cells[15 * 7].flip], [false, true]);
+  const MT = M.monthsTable(main, today);
+  eq('months table (READ: name · settled n · P/L)', MT.map(m => [m.name, m.n, m.pl]), [['October 2026', 16, '+3.6%'], ['September 2026', 36, '+9.9%'], ['August 2026', 32, '+3.0%'], ['July 2026', 23, '+6.4%'], ['June 2026', 30, '+1.7%'], ['May 2026', 27, '−3.9%'], ['April 2026', 6, '−4.4%']]);
+  eq('ROI bar: +20% fills half its side, −60% clips at 50%', [M.roiBar(0.2), M.roiBar(-0.6)], [{ left: '50%', width: '25%', kind: 'pos' }, { left: '0%', width: '50%', kind: 'neg' }]);
+  eq('ROI bar: no ROI, no bar', M.roiBar(null).width, '0%');
+  const MP = M.monthPop(MT[0].key, MT[0].bets, today);
+  eq('month pop-up title + tile labels', [MP.title, MP.stats.map(x => x.l)], ['October 2026', ['P/L', 'ROI', 'Win rate', 'Avg CLV']]);
+  ok('month pop-up sub "16 settled bets · W–L · x% staked"', /^16 settled bets · \d+–\d+ · \d+\.\d% staked$/.test(MP.sub));
+  eq('month pop-up: rows newest first, every one settled', [MP.rows.length, MP.rows[0].date], [16, '26 Oct']);
+  eq('heat: last year\'s days are not this season', M.heatGrid([{ id: 1, date: new Date(2025, 11, 30), odds: 2, stake: 1, res: 'won' }], new Date(2026, 0, 5)).meta, '0 betting days this season · 0 finished up · 0 down or flat');
+
   // ── 7 · heat alpha ──
   near('heat alpha at 0', M.heatAlpha(0), 0.3); near('heat alpha at 1.5%', M.heatAlpha(-1.5), 0.65); near('heat alpha saturates at 3%', M.heatAlpha(3), 1); near('… and stays 1', M.heatAlpha(7), 1);
 
@@ -263,6 +285,9 @@ console.log(fails.length ? `bettracker-math: ${fails.length} failure(s)` : 'bett
 
 // ── mutants: every one must turn the suite red ──
 const MUTANTS = [
+  ['heat grid starts this week', 'start = addDays(mon, -25 * 7)', 'start = addDays(mon, -26 * 7)'],
+  ['heat counts every year', 'return +k.slice(0, 4) === y;', 'return true;'],
+  ['ROI bar unclipped', 'var w = Math.min(Math.abs(roi), 0.4) / 0.4 * 50;', 'var w = Math.abs(roi) / 0.4 * 50;'],
   ['filter count ignores the other groups', "var n = filterCount(perList, F, d[0], o);", "var n = perList.filter(function (b) { return key(b, d[0]) === o; }).length;"],
   ['Avg CLV sub says 0 of 0', "S.clvN ? 'beat the close ' + S.beat + ' of ' + S.clvN : 'no closing prices'", "'beat the close ' + S.beat + ' of ' + S.clvN"],
   ['curve labels every month on a long ledger', 'var byYear = Object.keys(months).length > 14,', 'var byYear = false,'],

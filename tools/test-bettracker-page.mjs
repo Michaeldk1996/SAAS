@@ -87,7 +87,7 @@ async function browser() {
       await send('Page.navigate', { url: BASE + 'bsp-consult-dashboard.html?load=' + (++loads) + '#tracker' });
       const t0 = Date.now();
       while (!(await E(`!window.__btOld && !!(window.TrackerPage && document.querySelector('#trackerRoot .bt-col'))`).catch(() => false))) {
-        if (Date.now() - t0 > 60000) throw new Error('the Bet Tracker page never loaded');
+        if (Date.now() - t0 > 60000) throw new Error('the Bet Tracker page never loaded' + (errors.length ? ' · page errors: ' + errors.join(' | ') : ''));
         await new Promise(r => setTimeout(r, 300));
       }
     };
@@ -228,6 +228,28 @@ async function browser() {
     check('Reset filters clears the filters and the period back to Season', (await T('.bt-trig[data-k="filters"]')).startsWith('Filters') && !(await T('.bt-trig[data-k="filters"]')).includes('·') && (await T('.bt-trig[data-k="period"]')).startsWith('Season'));
     await click('.bt-trig[data-k="filters"]');
     check('the View segment: Results is on', (await T('.bt-view.on')).startsWith('Results'));
+
+    // ── T3 · Calendar: today's cell, hover pop-up, pin, months table, month pop-up ──
+    const ckey = await E(`(function(){ var d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); })()`);
+    check('calendar: 182 day cells (26 weeks)', (await E(`document.querySelectorAll('.bt-hgrid .bt-hc').length`)) === 182);
+    check('calendar: today = −0.4% → "−40" € on a 10,000 € bankroll, red', JSON.stringify(await E(`(function(){ var c=document.querySelector('.bt-hc[data-k="${ckey}"]'); return [c.firstChild.textContent, c.classList.contains('is-neg')]; })()`)) === JSON.stringify(['−40', true]));
+    check('calendar: the pop-up is hidden until hover', (await E(`getComputedStyle(document.querySelector('.bt-hc[data-k="${ckey}"] .bt-hpop')).display`)) === 'none');
+    check('calendar: the pop-up title + "3 settled · 1–1 · −0.4% = −40 €"', (await T(`.bt-hc[data-k="${ckey}"] .bt-hpop-s`)) === '3 settled · 1–1 · −0.4% = −40 €', await T(`.bt-hc[data-k="${ckey}"] .bt-hpop-s`));
+    await click(`.bt-hc[data-k="${ckey}"]`);
+    check('calendar: click pins the record box with the three bets and a white ring', (await E(`document.querySelectorAll('.bt-hrec .bt-hrec-r').length`)) === 3 && (await E(`getComputedStyle(document.querySelector('.bt-hc.is-sel')).boxShadow`)).includes('0px 0px 0px 2px'));
+    await click('.bt-hrec-x');
+    check('calendar: Close clears the pin', !(await E(`!!document.querySelector('.bt-hrec')`)));
+    check('months table: this month, 3 settled, −0.4%', JSON.stringify(await E(`[...document.querySelectorAll('.bt-mrowt')].map(r=>[r.querySelector('.bt-mn').textContent, r.querySelector('.bt-mpl').textContent])`)) === JSON.stringify([['3', '−0.4%']]));
+    await click('.bt-mrowt');
+    check('month pop-up: four tiles P/L · ROI · Win rate · Avg CLV and three rows', JSON.stringify(await E(`[...document.querySelectorAll('.bt-mpop-tile .bt-caps')].map(e=>e.textContent)`)) === JSON.stringify(['P/L', 'ROI', 'Win rate', 'Avg CLV']) && (await E(`document.querySelectorAll('.bt-mpop-row').length`)) === 3);
+    check('month pop-up: sub "3 settled bets · 1–1–1 void · 3.0% staked"', (await T('.bt-mpop-s')) === '3 settled bets · 1–1–1 void · 3.0% staked', await T('.bt-mpop-s'));
+    check('month pop-up: a fixed overlay over the page', (await E(`getComputedStyle(document.querySelector('.bt-mpop')).position`)) === 'fixed');
+    await click('.bt-mpop-tile');
+    check('month pop-up: a click inside stays open', await E(`!!document.querySelector('.bt-mpop')`));
+    await click('.bt-mpop');
+    check('month pop-up: a click outside closes it', !(await E(`!!document.querySelector('.bt-mpop')`)));
+    await click('.bt-mrowt'); await click('.bt-mpop-x');
+    check('month pop-up: ✕ closes it', !(await E(`!!document.querySelector('.bt-mpop')`)));
 
     // ── reload: everything is still there ──
     await open();

@@ -18,7 +18,7 @@
 
   var NOF = function () { return { level: [], odds: [], surface: [], market: [] }; };
   var S = { bank: null, view: 'results', lf: 'all', month: null, logOpen: false, form: JSON.parse(JSON.stringify(FORM0)), banks: [], raw: [], importMsg: '',
-    period: 'season', range: null, filters: NOF(), menu: null };
+    period: 'season', range: null, filters: NOF(), menu: null, openDay: null, openMonth: null };
   // The Bet-Analytix import (T1b): admin only — the control is not in the design (reported); the console path is
   // TrackerPage.importText(csvText). The file is read in this browser and goes nowhere else.
   function isAdmin() { return typeof window.isBspAdmin === 'function' && !!window.isBspAdmin(); }
@@ -194,6 +194,55 @@
       + '<div class="bt-foot"><span>' + esc(M.ledgerFoot(filt.length)) + '</span><span class="bt-export" title="Export is on the handoff list">Export CSV →</span></div></div></div>';
   }
 
+  // ── 5 · Calendar (README §5): 26-week heat grid + pinned record · months table · month pop-up ─────────────────
+  function tint(kindName, pct) { return 'background:color-mix(in srgb, var(--' + kindName + ') ' + pct + '%, transparent)'; }
+  function dayRows(rows, cls) {
+    return rows.map(function (r) {
+      return '<span class="' + cls + '"><span class="bt-dr-t"><span class="bt-dr-text">' + esc(r.text) + '</span><span class="bt-dr-meta">' + esc(r.meta) + '</span></span>'
+        + '<span class="bt-dr-res bt-' + r.resKind + '">' + esc(r.res) + '</span><span class="bt-dr-pl bt-' + r.plKind + '">' + esc(r.pl) + '</span></span>';
+    }).join('');
+  }
+  function calendar(ctx) {
+    var H = M.heatGrid(ctx.all, ctx.today), open = null;
+    var cells = H.cells.map(function (c) {
+      var sel = S.openDay === c.key && c.has; if (sel) open = c;
+      var style = c.tone === 'pos' || c.tone === 'neg' ? tint(c.tone, Math.round(c.alpha * 100)) : '';
+      var pop = c.has ? '<span class="bt-hpop' + (c.flip ? ' is-flip' : '') + '"><span class="bt-hpop-h"><span class="bt-hpop-t">' + esc(c.title) + '</span><span class="bt-hpop-s">' + esc(c.sub) + '</span></span>'
+        + dayRows(c.rows, 'bt-hpop-r') + '<span class="bt-hpop-f">Click the day to pin it</span></span>' : '';
+      return '<span class="bt-hc is-' + c.tone + (c.has ? ' has' : '') + (sel ? ' is-sel' : '') + '"' + (c.has ? ' data-act="day" data-k="' + c.key + '"' : ' title="' + esc(c.t) + '"')
+        + (style ? ' style="' + style + '"' : '') + '>' + esc(c.fig) + pop + '</span>';
+    }).join('');
+    var rec = open ? '<div class="bt-hrec"><div class="bt-hrec-h"><span class="bt-hrec-hl"><span class="bt-hrec-t">' + esc(open.title) + '</span><span class="bt-hrec-s">' + esc(open.sub) + '</span></span>'
+      + '<span class="bt-hrec-x" data-act="dayclose">Close</span></div>' + dayRows(open.rows, 'bt-hrec-r') + '</div>' : '';
+    var heat = '<div class="bt-card bt-heat"><div class="bt-hmonths">' + H.months.map(function (m) { return '<span style="left:' + m.left + '">' + esc(m.label) + '</span>'; }).join('') + '</div>'
+      + '<div class="bt-hbody"><div class="bt-hdays">' + H.days.map(function (d) { return '<span>' + d + '</span>'; }).join('') + '</div><div class="bt-hgrid">' + cells + '</div></div>' + rec
+      + '<div class="bt-hfoot"><span>' + esc(H.meta) + '</span><span class="bt-legend"><span>loss</span><span class="bt-sw" style="' + tint('neg', 85) + '"></span><span class="bt-sw" style="' + tint('neg', 35) + '"></span>'
+      + '<span class="bt-sw is-flat"></span><span class="bt-sw" style="' + tint('pos', 35) + '"></span><span class="bt-sw" style="' + tint('pos', 85) + '"></span><span>win · figure = € that day</span></span></div></div>';
+    var MT = M.monthsTable(ctx.all, ctx.today);
+    var months = '<div class="bt-card bt-mtab"><div class="bt-mgrid bt-mhead"><span class="bt-caps10">Month</span><span class="bt-caps10 bt-r">Bets</span><span class="bt-caps10 bt-c">ROI</span><span class="bt-caps10 bt-r">P/L</span></div>'
+      + MT.map(function (m) {
+        return '<div class="bt-mgrid bt-mrowt' + (S.openMonth === m.key ? ' is-open' : '') + '" data-act="openmonth" data-k="' + m.key + '"><span class="bt-mname">' + esc(m.name) + '</span><span class="bt-mn">' + m.n + '</span>'
+          + '<span class="bt-roibar"><span class="bt-roitick"></span><span class="bt-roifill bt-bg-' + m.bar.kind + '" style="left:' + m.bar.left + ';width:' + m.bar.width + '"></span></span><span class="bt-mpl bt-' + m.plKind + '">' + esc(m.pl) + '</span></div>';
+      }).join('') + '</div>';
+    var om = MT.find(function (m) { return m.key === S.openMonth; }), pop = '';
+    if (om) {
+      var P = M.monthPop(om.key, om.bets, ctx.today);
+      pop = '<div class="bt-mpop" data-act="monthclose"><div class="bt-mpop-sheet" data-stop="1"><div class="bt-mpop-h"><div class="bt-mpop-hl"><span class="bt-mpop-t">' + esc(P.title) + '</span><span class="bt-mpop-s">' + esc(P.sub) + '</span></div>'
+        + '<span class="bt-mpop-x" data-act="monthclose">✕</span></div><div class="bt-mpop-stats">' + P.stats.map(function (x) {
+          return '<div class="bt-mpop-tile"><span class="bt-caps">' + esc(x.l) + '</span><span class="bt-mpop-v bt-' + x.kind + '">' + esc(x.v) + '</span></div>';
+        }).join('') + '</div><div class="bt-mpop-table"><div class="bt-mpgrid bt-mpop-head">' + ['Date', '', 'Bet', 'Market', 'Price', 'Close', 'CLV', 'Stake', 'Result', 'P/L'].map(function (h, i) {
+          return '<span class="bt-caps' + (i >= 4 ? ' bt-r' : '') + '">' + h + '</span>'; }).join('') + '</div>'
+        + P.rows.map(function (r) {
+          return '<div class="bt-mpop-rw"><div class="bt-mpgrid bt-mpop-row"><span class="bt-mp-date">' + esc(r.date) + '</span><span class="bt-mp-sq bt-bg-' + r.resKind + '"></span>'
+            + '<span class="bt-mp-bet"><span class="bt-mp-text">' + esc(r.text) + '</span><span class="bt-mp-meta">' + esc(r.meta) + '</span></span><span class="bt-mp-market">' + esc(r.market) + '</span>'
+            + '<span class="bt-mp-odds">' + r.odds + '</span><span class="bt-mp-close">' + r.close + '</span><span class="bt-mp-clv bt-' + r.clvKind + '">' + esc(r.clv) + '</span><span class="bt-mp-stake">' + r.stake + '</span>'
+            + '<span class="bt-mp-res bt-' + r.resKind + '">' + r.res + '</span><span class="bt-mp-pl bt-' + r.plKind + '">' + esc(r.pl) + '</span></div></div>';
+        }).join('') + '</div><div class="bt-mpop-foot">Settled bets only · P/L and stake in % of bankroll · CLV = your price ÷ closing price − 1 · click outside to close</div></div></div>';
+    }
+    return '<div class="bt-cal"><div class="bt-headrow"><span class="bt-h16">Calendar</span><span class="bt-sub125">Last 26 weeks, one cell a day · the figure is that day\'s result in € on a 10,000 € bankroll · hover a day for its bets, click to pin the record. Months on the right over the whole season — click one for its full record.</span></div>'
+      + '<div class="bt-calgrid">' + heat + months + '</div></div>' + pop;
+  }
+
   function render() {
     var el = root(); if (!el) return;
     var cur = S.banks.find(function (b) { return b.id === S.bank; }) || S.banks[0];
@@ -202,7 +251,7 @@
     if (!S.range) S.range = { from: all.length ? dayKey(all[0].date) : dayKey(new Date(today.getFullYear(), 0, 1)), to: dayKey(today) };
     var win = M.periodWindow(S.period, S.range, today), perList = M.inPeriod(all, win), list = M.applyFilters(perList, S.filters);
     var ctx = { all: all, list: list, perList: perList, win: win, today: today, per: S.period, range: S.range, nF: M.nFilters(S.filters) };
-    var view = S.view === 'results' ? ledger(list) : '<div class="bt-card bt-frame">' + DASH + '</div>';
+    var view = S.view === 'results' ? ledger(list) + calendar(ctx) : '<div class="bt-card bt-frame">' + DASH + '</div>';
     el.innerHTML = '<section class="bt-sec"><div class="bt-col"><div class="bt-stack">'
       + bankrolls() + header(cur, all, ctx) + (S.logOpen ? logPanel(cur) : '') + hero(ctx) + view + '</div></div></section>';
   }
@@ -228,8 +277,10 @@
   }
   function onClick(e) {
     var t = e.target.closest('[data-act]'); if (!t || !root().contains(t)) return;
+    // the month pop-up: a click inside the sheet is not a click on the overlay
+    if (t.dataset.act === 'monthclose' && t.classList.contains('bt-mpop') && e.target.closest('[data-stop]')) return;
     var a = t.dataset.act, id = t.dataset.id;
-    if (a === 'bank') { S.bank = id; S.month = null; S.filters = NOF(); S.range = null; render(); }
+    if (a === 'bank') { S.bank = id; S.month = null; S.filters = NOF(); S.range = null; S.openDay = null; S.openMonth = null; render(); }
     else if (a === 'archive') {
       e.stopPropagation();
       var bk = S.banks.find(function (b) { return b.id === id; }); store.saveBank(Object.assign({}, bk, { archived: true }));
@@ -239,6 +290,10 @@
     else if (a === 'restore') { var rb = S.banks.find(function (b) { return b.id === id; }); store.saveBank(Object.assign({}, rb, { archived: false })); load(); render(); }
     else if (a === 'delete') { if (store.deleteBank(id).ok) { load(); render(); } }
     else if (a === 'addbank') { var nid = 'b' + Date.now(); store.saveBank({ id: nid, name: 'New bankroll ' + (S.banks.length + 1), archived: false }); S.bank = nid; S.month = null; S.filters = NOF(); S.range = null; load(); render(); }
+    else if (a === 'day') { S.openDay = S.openDay === t.dataset.k ? null : t.dataset.k; render(); }
+    else if (a === 'dayclose') { S.openDay = null; render(); }
+    else if (a === 'openmonth') { S.openMonth = +t.dataset.k; render(); }
+    else if (a === 'monthclose') { S.openMonth = null; render(); }
     else if (a === 'menu') { S.menu = S.menu === t.dataset.k ? null : t.dataset.k; render(); }
     else if (a === 'period') { S.period = t.dataset.k; if (S.period !== 'custom') S.menu = null; S.month = null; render(); }
     else if (a === 'filter') {
