@@ -177,6 +177,10 @@ class FakePG:
             elif op in ('gt', 'gte'):
                 rows = [r for r in rows if key(r) is not None and
                         (key(r) > val if op == 'gt' else key(r) >= val)]
+            elif op == 'in' and k not in TS_COLS:
+                # card-job-lock: the builder reads kibl_line_observations by fixture_id=in.(...) batches
+                want = set(val.strip('()').split(','))
+                rows = [r for r in rows if key(r) in want]
             else:
                 raise AssertionError(f'fake PostgREST: unsupported filter {k}={v}')
         return rows
