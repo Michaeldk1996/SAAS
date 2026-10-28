@@ -1,0 +1,72 @@
+name: TEN-225 line summary (same day)
+
+# Founder brief 2026-10-28 (line-summary capture). The daily load (ten225-line-summary.yml) reads the oddspapi-raw
+# bucket, which the archive fills 24 h after a match at the earliest, so a games-handicap / total-games close reached
+# oddspapi_line_summary 1.5-2 days after the match. This job loads, every hour, the Pinnacle +30 payloads the
+# post-start pull (tools/pinarch.py `pull`, oddspapi-postmatch.yml) already stored minutes after each ATP / Challenger
+# start. ZERO Oddspapi calls: it only reads the Pinnacle archive's raw table (tools/line_summary_archive.py, GET only).
+# Same summariser, same start rule, same object-state table as the daily load; a bucket object always wins.
+#
+# The gate: red when the newest Pinnacle +30 line row started more than 36 h ago. An hour with no new start captures
+# nothing and is not a failure here — the daily load's gate is the one that fails a run that captured zero rows.
+# Every non-success conclusion alerts (line-summary-fail-alert.yml watches this workflow too).
+
+on:
+  workflow_dispatch:
+    inputs:
+      raw_days:
+        description: 'How far back to look, by pull time (days)'
+        default: '2'
+  schedule:
+    - cron: '40 * * * *'
+
+concurrency:
+  group: ten225-line-summary-live
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  load:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Preconditions
+        run: |
+          set -euo pipefail
+          for v in SUPABASE_URL SUPABASE_SECRET_KEY; do
+            [ -n "${!v:-}" ] || { echo "::error::missing repository secret $v"; exit 1; }
+          done
+
+      - name: Offline harness
+        run: |
+          set -euo pipefail
+          python3 -B test-ten225-load-line-summary.py >/dev/null
+          python3 -B tools/test-line-summary-live.py
+
+      - name: Load the post-start payloads
+        env:
+          RAW_DAYS: ${{ inputs.raw_days || '2' }}
+        run: |
+          # pipefail is load-bearing: the exit status of `{ ...; } | tee` is otherwise tee's.
+          set -euo pipefail
+          { echo '## Line summary — same-day load'; echo '```'
+            python3 -u ten225-load-line-summary.py --raw --raw-days "$RAW_DAYS" --deadline-min 12
+            echo '```'; } | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Fail-closed gate (newest row age)
+        run: |
+          set -euo pipefail
+          { echo '## Line-summary gate'; echo '```'; python3 -B tools/line-summary-gate.py --min-rows 0 --max-age-h 36; echo '```'; } \
+            | tee -a "$GITHUB_STEP_SUMMARY"

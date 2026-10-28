@@ -55,10 +55,13 @@ ok(cli.status === 0 && SENT.length === 1 && SENT[0].chat_id === 'c' && /CANCELLE
   '4. end to end: the CLI posts exactly one Telegram message for a cancelled run', `${cli.status} ${SENT.length} ${cli.stdout}`);
 
 const wf = readFileSync(join(ROOT, '.github/workflows/line-summary-fail-alert.yml'), 'utf8');
-const watched = /^name:\s*(.+)$/m.exec(readFileSync(join(ROOT, '.github/workflows/ten225-line-summary.yml'), 'utf8'))[1].trim().replace(/^['"]|['"]$/g, '');
-const listens = /workflows:\s*\[\s*'([^']+)'\s*\]/.exec(wf);
-ok(listens && listens[1] === watched && /types:\s*\[\s*completed\s*\]/.test(wf),
-  `5. wiring: workflow_run completed of "${watched}" (exact name; a wrong name never fires)`, listens && listens[1]);
+// both loads (founder brief 2026-10-28 added the hourly same-day load): every name must be EXACT — a wrong one never fires
+const nameOf = f => /^name:\s*(.+)$/m.exec(readFileSync(join(ROOT, '.github/workflows', f), 'utf8'))[1].trim().replace(/^['"]|['"]$/g, '');
+const watched = ['ten225-line-summary.yml', 'ten225-line-summary-live.yml'].map(nameOf);
+const lm = /workflows:\s*\[([^\]]*)\]/.exec(wf);
+const listens = lm ? [...lm[1].matchAll(/'([^']+)'/g)].map(m => m[1]) : [];
+ok(watched.every(w => listens.includes(w)) && listens.length === watched.length && /types:\s*\[\s*completed\s*\]/.test(wf),
+  `5. wiring: workflow_run completed of ${watched.map(w => `"${w}"`).join(' and ')} (exact names; a wrong name never fires)`, listens.join(' | '));
 ok(/github\.event\.workflow_run\.conclusion != 'success'/.test(wf) && !/conclusion != 'cancelled'/.test(wf) && /node tools\/line-summary-fail-alert\.mjs/.test(wf),
   '   the job condition lets cancelled through and runs the tested script');
 ok(/workflow_dispatch:/.test(wf) && /ALERT_TEST: \$\{\{ github\.event_name == 'workflow_dispatch' && '1' \|\| '' \}\}/.test(wf),

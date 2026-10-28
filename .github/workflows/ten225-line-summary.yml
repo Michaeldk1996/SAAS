@@ -39,6 +39,10 @@ on:
         description: 'Load oddspapi_fixtures from the 180d sweep index'
         type: boolean
         default: true
+      raw:
+        description: 'Load the post-start Pinnacle +30 payloads the Pinnacle archive holds (same-day capture)'
+        type: boolean
+        default: true
   schedule:
     # 06:25 UTC, an hour after the raw archive's 05:25 start, so each night's
     # newly archived fixtures land in the summary the same night.
@@ -160,11 +164,12 @@ jobs:
           set -euo pipefail
           ARGS=""
           if [ "${{ github.event_name }}" = "schedule" ]; then
-            ARGS="--fixtures --history --bucket"
+            ARGS="--fixtures --history --bucket --raw"
           else
             [ "${{ inputs.fixtures }}" = "true" ] && ARGS="$ARGS --fixtures"
             [ "${{ inputs.history }}"  = "true" ] && ARGS="$ARGS --history"
             [ "${{ inputs.bucket }}"   = "true" ] && ARGS="$ARGS --bucket"
+            [ "${{ inputs.raw }}"      = "true" ] && ARGS="$ARGS --raw"
           fi
           [ -n "$ARGS" ] || { echo "::error::no source selected"; exit 1; }
           {
@@ -373,6 +378,15 @@ jobs:
             and (.[0].now_on_started|tonumber) == 0
             and (.[0].now_with_resolved_start|tonumber) == 0' >/dev/null \
             || { echo "::error::a Now is sitting on a fixture that has already started, or the check examined no rows"; exit 1; }
+
+      # Founder brief 2026-10-28, item 4: a run that captured nothing, or a store whose newest Pinnacle +30 line row
+      # started more than 36 h ago, is a failed run (red, and line-summary-fail-alert.yml sends the Telegram). Last on
+      # purpose, so a red gate never skips the odds_card_state fill above.
+      - name: Fail-closed gate (rows captured, newest row age)
+        run: |
+          set -euo pipefail
+          { echo '## Line-summary gate'; echo '```'; python3 -B tools/line-summary-gate.py --min-rows 1 --max-age-h 36; echo '```'; } \
+            | tee -a "$GITHUB_STEP_SUMMARY"
 
       - name: Upload the load artifact
         if: ${{ always() }}

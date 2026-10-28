@@ -48,6 +48,7 @@ import argparse
 import collections
 import gzip
 import hashlib
+import importlib.util
 import json
 import os
 import statistics
@@ -526,6 +527,29 @@ def iso(ep):
     if ep is None:
         return None
     return datetime.fromtimestamp(ep, timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
+
+
+def load_archive_reader():
+    """tools/line_summary_archive.py — the GET-only reader of the post-start Pinnacle +30 payloads (founder brief
+    2026-10-28). Kept in its own file so the archive guard can scan it for write paths on its own."""
+    spec = importlib.util.spec_from_file_location('line_summary_archive',
+                                                  os.path.join(HERE, 'tools', 'line_summary_archive.py'))
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def raw_flip(fid, ek, flips, flips_by_ek):
+    """The flip a post-start payload is cut at: the name-paired one (pair_flips, the rule every path uses) first,
+    else the live_flip_log row of the event key the post-start pull itself joined the payload to (its meta). Today's
+    fixtures are not in the 180d index yet (it is swept once a day), so name pairing cannot reach them."""
+    if fid in flips:
+        return {fid: flips[fid]}
+    try:
+        f = flips_by_ek.get(int(ek))
+    except (TypeError, ValueError):
+        f = None
+    return {fid: f} if f else {}
 
 
 def load_catalogue():
@@ -1042,6 +1066,11 @@ def main():
                     help='load the oddspapi-raw bucket (all four families)')
     ap.add_argument('--fixtures', action='store_true',
                     help='load oddspapi_fixtures from the 180d sweep index')
+    ap.add_argument('--raw', action='store_true',
+                    help='load the post-start Pinnacle +30 payloads the Pinnacle archive already holds '
+                         '(founder brief 2026-10-28: same-day capture; zero Oddspapi calls)')
+    ap.add_argument('--raw-days', type=float, default=10.0,
+                    help='how far back --raw looks, by pull time (days)')
     ap.add_argument('--dry-run', action='store_true',
                     help='summarise and report, write nothing')
     ap.add_argument('--limit', type=int, default=0,
@@ -1056,8 +1085,8 @@ def main():
                     help='parallel bucket downloads')
     a = ap.parse_args()
     t0 = time.monotonic()
-    if not (a.history or a.bucket or a.fixtures):
-        a.history = a.bucket = a.fixtures = True
+    if not (a.history or a.bucket or a.fixtures or a.raw):
+        a.history = a.bucket = a.fixtures = a.raw = True
 
     catalogue = load_catalogue()
     if catalogue is None:
@@ -1139,7 +1168,7 @@ def main():
               'back to the early-start limb alone, which misses 70.6% of the '
               'impossible rows. Re-run ten225-fixture-index.py.')
 
-    flips, flip_st = {}, collections.Counter()
+    flips, flip_st, flips_by_ek = {}, collections.Counter(), {}
     if a.dry_run:
         print('flips: SKIPPED in --dry-run (live_flip_log needs the Supabase '
               'key) — no api-tennis-live fallback in this run.')
@@ -1150,6 +1179,11 @@ def main():
                   f'api-tennis-live fallback is NOT applied in this run.')
         else:
             flips, flip_st = pair_flips(fx_index, flip_rows)
+            for r in flip_rows:
+                lnl = epoch(r.get('last_not_live_seen_at'))
+                if lnl is not None and r.get('event_key') is not None:
+                    gap = r.get('gap_seconds')
+                    flips_by_ek[int(r['event_key'])] = (lnl, None if gap is None else float(gap))
             print(f'live_flip_log: {len(flip_rows)} flips, '
                   f'{flip_st["paired"]} paired to an oddspapi fixture '
                   f'({flip_st["paired"]/max(len(flip_rows),1):.1%}); '
@@ -1319,6 +1353,98 @@ def main():
                 'reliableClose': rel, 'byFamily': dict(fam), 'stats': dict(bst)}
             report_rows.extend(brows)
 
+    # ------------------------------------------------- post-start payloads
+    # Founder brief 2026-10-28: the bucket is filled 24 h after a match at the earliest, so a line close reached the
+    # store 1.5-2 days late. The post-start pull already holds the same Pinnacle +30 payload minutes after the start.
+    # Same summarise_payload, same start rule, same state table (object_path archive-raw/<row id>). The BUCKET WINS:
+    # a fixture a bucket object already loaded is never overwritten from here, and a bucket object loaded later
+    # overwrites these rows (same conflict key).
+    raw_remaining = 0
+    if a.raw:
+        if a.dry_run:
+            print('\npost-start payloads: SKIPPED in --dry-run (they need the Supabase key).')
+        else:
+            AR = load_archive_reader()
+            get = lambda path: sb_json(path, url, key)
+            since = iso(time.time() - a.raw_days * 86400)
+            latest, rerr = AR.list_payloads(get, since)
+            if latest is None:
+                print(f'::error::post-start payloads unreadable ({rerr}) — no raw load this run.')
+                return 1
+            state, serr = fetch_object_state(url, key)
+            if state is None:
+                print(f'::error::{OBJECT_STATE_TABLE} unreadable ({serr}) — no raw load this run.')
+                return 1
+            in_bucket = {v.get('fixture_id') for p_, v in state.items()
+                         if not p_.startswith(AR.PATH_PREFIX)}
+            cat_digest = catalogue_digest(catalogue)
+            todo, rwhy = [], collections.Counter()
+            for fid, r in sorted(latest.items(), key=lambda kv: kv[1]['id']):
+                if fid in in_bucket:
+                    rwhy['bucket_owns'] += 1
+                    continue
+                ek = (r.get('meta') or {}).get('eventKey')
+                start = start_for(fid, fx_index.get(fid) or {}, raw_flip(fid, ek, flips, flips_by_ek))
+                path = f"{AR.PATH_PREFIX}{r['id']}"
+                fp = object_fingerprint(path, r.get('pulled_at'), start, cat_digest)
+                prev = state.get(path)
+                if not a.full and prev is not None and prev.get('fingerprint') == fp:
+                    rwhy['unchanged'] += 1
+                    continue
+                rwhy['new' if prev is None else 'inputs_changed'] += 1
+                todo.append((path, fid, r, start, fp))
+            print(f'\npost-start payloads ({AR.BOOK}, pulled since {since}): {len(latest)} fixtures; '
+                  f'{len(todo)} to load {dict(rwhy)}', flush=True)
+            rrows, rst, rcorr = [], collections.Counter(), []
+            r_unread = r_done = 0
+            r_unread_why = collections.Counter()
+            for ci in range(0, len(todo), CHUNK_OBJECTS):
+                if time.monotonic() - t0 > a.deadline_min * 60.0:
+                    break
+                chunk = todo[ci:ci + CHUNK_OBJECTS]
+                with ThreadPoolExecutor(max_workers=max(1, a.workers)) as ex:
+                    got = list(ex.map(lambda c: AR.fetch_payload(get, c[2]['id']), chunk))
+                crows, cstate = [], []
+                for (path, fid, r, start, fp), (payload, err) in zip(chunk, got):
+                    if payload is None:
+                        r_unread += 1
+                        r_unread_why[str(err)[:80]] += 1
+                        continue
+                    rows_, st_ = summarise_payload(payload, fid, start, epoch(r.get('pulled_at')), catalogue)
+                    rst.update(st_)
+                    crows.extend(rows_)
+                    cstate.append({'object_path': path, 'fixture_id': fid,
+                                   'object_created_at': r.get('pulled_at'), 'fingerprint': fp,
+                                   'loader_version': LOADER_VERSION, 'rows': len(rows_),
+                                   'row_keys': sorted({row_key_str(x) for x in rows_}),
+                                   'loaded_at': result['generatedAt']})
+                existing, err = fetch_existing(url, key, crows) if crows else ({}, None)
+                rcorr.append(None if existing is None else count_close_corrections(existing, crows))
+                if crows:
+                    sent, err = upsert(url, key, 'oddspapi_line_summary', crows, ','.join(CORRECTION_KEY))
+                    if err:
+                        print(f'::error::post-start chunk: upserted {sent}/{len(crows)} rows — FAILED {err}')
+                        return 1
+                sent, err = upsert(url, key, OBJECT_STATE_TABLE, cstate, 'object_path')
+                if err:
+                    print(f'::error::object state upsert failed ({err}) after the chunk\'s rows landed.')
+                    return 1
+                r_done += len(chunk)
+                rrows.extend(crows)
+            raw_remaining = len(todo) - r_done
+            rel = sum(1 for x in rrows if x['close_reliable'])
+            fam = collections.Counter(x['market'] for x in rrows)
+            print(f'  {len(rrows)} rows from {r_done - r_unread} payloads ({raw_remaining} left for the next run, '
+                  f'{r_unread} unreadable); {rel} reliable close; {dict(rst)}')
+            for k, v in fam.most_common():
+                print(f'    {k:<16} {v:>7} rows')
+            bucket_corrections = list(bucket_corrections or []) + rcorr
+            result['raw'] = {'fixtures': len(latest), 'pending': len(todo), 'pendingWhy': dict(rwhy),
+                             'loaded': r_done, 'remaining': raw_remaining, 'rows': len(rrows),
+                             'unreadable': r_unread, 'unreadWhy': dict(r_unread_why),
+                             'reliableClose': rel, 'byFamily': dict(fam), 'stats': dict(rst)}
+            report_rows.extend(rrows)
+
     # History rows go out after the bucket, minus every key a bucket object owns.
     if hist_rows:
         if bucket_keys is not None:
@@ -1484,6 +1610,9 @@ def main():
             json.dump(result, open(OUT, 'w'), indent=1)
             return 1
 
+    # The fail-closed gate (tools/line-summary-gate.py) reads this: rows captured THIS run from a payload (bucket or
+    # post-start), never the bet365-history rows, which are re-sent unchanged on every run.
+    result['captureRows'] = (result.get('bucket', {}).get('rows') or 0) + (result.get('raw', {}).get('rows') or 0)
     result['elapsedMinutes'] = round((time.monotonic() - t0) / 60, 2)
     json.dump(result, open(OUT, 'w'), indent=1)
     print(f'wrote {OUT} ({result["elapsedMinutes"]} min)')
@@ -1493,6 +1622,15 @@ def main():
         # loaded: 3,425 unread objects sat under green runs on 2026-10-24.
         print(f"::error::{unread} bucket object(s) unreadable "
               f"{result['bucket'].get('unreadWhy')} — no state row, they retry next run.")
+        return 1
+    r_unread = result.get('raw', {}).get('unreadable')
+    if r_unread:
+        print(f"::error::{r_unread} post-start payload(s) unreadable {result['raw'].get('unreadWhy')} — "
+              f"no state row, they retry next run.")
+        return 1
+    if raw_remaining:
+        print(f'::error::post-start load stopped at the {a.deadline_min:g}-minute deadline with '
+              f'{raw_remaining} payload(s) still to load; they load next run.')
         return 1
     if remaining:
         # Committed chunks stay; the rest load next run. Red on purpose: a load
