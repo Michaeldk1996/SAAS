@@ -1144,7 +1144,10 @@
       if (!_cards) _cards = flatten(_data);
       reslot();
       var f = Object.assign({}, DEFAULTS);
-      var view = sortCards(_cards.filter(function (c) { return c.slot && c.slot.day === day && passesFilters(c, false, f); }), f);
+      // Only a player with a card on this slate (founder 2026-10-28): the slot must be a Today's Matches board card
+      // (joined by event key), never a series-only fixture — the board is ATP, so a Challenger streak (Kasnikowski,
+      // Sioux Falls) has no card to point at and never heads the tile or counts in "+N more".
+      var view = sortCards(_cards.filter(function (c) { return c.slot && c.slot.board && c.slot.day === day && passesFilters(c, false, f); }), f);
       return view.map(function (c) {
         var bm = boardMatchOf(c.player);
         return { card: c, count: c.streak.count, claim: tileClaim(c.streak),

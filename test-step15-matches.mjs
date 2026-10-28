@@ -207,6 +207,8 @@ test('Streak on court: the top Series card, "+N more on court today" by player, 
   const series = readFileSync(join(HERE, 'series.js'), 'utf8');
   assert.match(series, /var f = Object\.assign\(\{\}, DEFAULTS\);/, 'the Series page defaults, not the member’s filters');
   assert.match(series, /passesFilters\(c, false, f\)/);
+  // founder 2026-10-28: only players with a card on the board (ATP) — a series-only fixture never counts
+  assert.match(series, /return c\.slot && c\.slot\.board && c\.slot\.day === day && passesFilters\(c, false, f\);/);
   assert.match(series, /onCourt: onCourt,\n    openStreak: openStreak,/);
   });
 });
