@@ -111,7 +111,12 @@ async function browser() {
     check('no placeholder numbers: the empty ledger body is a dash', (await T('.bt-tr .bt-empty')) === '—');
     check('View segment renders Results · Insights · Staking', JSON.stringify(await E(`[...document.querySelectorAll('.bt-view')].map(e=>e.textContent)`)) === '["Results","Insights","Staking"]');
     await click('.bt-view[data-k="insights"]');
-    check('Insights = the card frame with a single dash', (await T('.bt-frame')) === '—' && await E(`!document.querySelector('.bt-ledger')`));
+    check('Insights (new member): three verdict cards with their empty sentences, no numbers', JSON.stringify(await E(`[...document.querySelectorAll('.bt-vcard')].map(c=>[c.querySelector('.bt-vpl').textContent, c.querySelector('.bt-vtitle').textContent])`))
+      === JSON.stringify([['—', 'No segment with 15+ bets is clearly profitable yet.'], ['—', 'No losing segment with 15+ bets in this period.'], ['—', 'Nothing under the sample floor is trending wrong.']]) && await E(`!document.querySelector('.bt-ledger')`));
+    check('Insights (new member): the Closing-line dial reads — over "0 of 0 priced bets", no verdict', JSON.stringify(await E(`(function(){ var d=document.querySelector('.bt-dial'); return [d.querySelector('.bt-dial-fig').textContent, d.querySelector('.bt-dial-v').textContent, d.querySelector('.bt-dial-s').textContent]; })()`))
+      === JSON.stringify(['—', '—', '0 of 0 priced bets beat the close · target 55%+']));
+    check('Insights (new member): every dial is a dash or EARLY · n=0 — no judgement on no data', JSON.stringify(await E(`[...document.querySelectorAll('.bt-dial-v')].map(e=>e.textContent)`)) === JSON.stringify(['—', '—', 'EARLY · n=0']));
+    check('Insights (new member): "0 of 0 checks need work · 0 bets · 3 not judged yet", not green', (await T('.bt-discsum')) === '0 of 0 checks need work · 0 bets · 3 not judged yet' && (await E(`document.querySelector('.bt-discsum-n').classList.contains('bt-lab')`)));
     await click('.bt-view[data-k="staking"]');
     check('Staking = the card frame with a single dash', (await T('.bt-frame')) === '—');
     await click('.bt-view[data-k="results"]');
@@ -251,6 +256,19 @@ async function browser() {
     await click('.bt-mrowt'); await click('.bt-mpop-x');
     check('month pop-up: ✕ closes it', !(await E(`!!document.querySelector('.bt-mpop')`)));
 
+    // ── T4 · Insights: the cut menu (8 cuts with counts), a cut in natural order, the total row, three dials ──
+    await click('.bt-view[data-k="insights"]');
+    check('insights: three verdict cards', (await E(`document.querySelectorAll('.bt-vcard').length`)) === 3);
+    await click('.bt-trig[data-k="dim"]');
+    check('breakdown: the cut menu lists the eight cuts', JSON.stringify(await E(`[...document.querySelectorAll('.bt-menu-dim .bt-mrow')].map(e=>e.firstChild.firstChild.textContent)`)) === JSON.stringify(['Market', 'Surface', 'Odds band', 'Level', 'Bookmaker', 'Timing', 'Situation', 'Weekday']));
+    await click('.bt-mrow[data-k="odds"]');
+    check('breakdown: Odds band rows in band order, head "Odds taken", total "All · odds band"', (await T('.bt-bhead .bt-caps10')) === 'Odds taken' && (await T('.bt-btot-l')) === 'All · odds band'
+      && await E(`(function(){ var B=${JSON.stringify(['1.10 – 1.35','1.36 – 1.60','1.61 – 1.90','1.91 – 2.20','2.21 – 2.60','2.61 – 3.20','3.21 and up'])}; var n=[...document.querySelectorAll('.bt-brow .bt-bname')].map(e=>e.textContent); return n.length>0 && n.every((x,i)=>i===0||B.indexOf(x)>B.indexOf(n[i-1])); })()`));
+    check('breakdown: the total row counts the settled bets', (await T('.bt-btot-n')) === '3');
+    check('discipline: three dials with the README labels', JSON.stringify(await E(`[...document.querySelectorAll('.bt-dial-l')].map(e=>e.textContent)`)) === JSON.stringify(['Closing line', 'Stake after a loss', 'Third bet after two losses']));
+    check('discipline: closing line judged on 1 priced bet', (await E(`document.querySelector('.bt-dial-s').textContent`)) === '1 of 1 priced bets beat the close · target 55%+');
+    await click('.bt-view[data-k="results"]');
+
     // ── reload: everything is still there ──
     await open();
     check('reload: three bets', await E(`document.querySelectorAll('.bt-tr[data-bet]').length === 3`));
@@ -285,6 +303,12 @@ async function browser() {
     check('import: no "undefined" anywhere on the page', !(await E(`document.getElementById('trackerRoot').textContent.includes('undefined')`)));
     check('import: a second import is refused and says so', (await E(`TrackerPage.importText(${JSON.stringify(csv)}).reason`)) === 'already-imported' && (await T('.bt-importmsg')).startsWith('Import refused'));
     check('import: no Import CSV control for a non-admin', !(await E(`!!document.querySelector('.bt-import')`)));
+    check('import: Avg CLV tile reads — over "no closing prices"', JSON.stringify(await E(`(function(){ var t=[...document.querySelectorAll('.bt-htile')][3]; return [t.querySelector('.bt-htile-fig').textContent, t.querySelector('.bt-htile-sub').textContent]; })()`)) === JSON.stringify(['—', 'no closing prices']));
+    await click('.bt-view[data-k="insights"]');
+    check('import: Closing-line dial — with "0 of 0 priced bets", never a verdict', JSON.stringify(await E(`(function(){ var d=document.querySelector('.bt-dial'); return [d.querySelector('.bt-dial-fig').textContent, d.querySelector('.bt-dial-v').textContent, d.querySelector('.bt-dial-s').textContent]; })()`))
+      === JSON.stringify(['—', '—', '0 of 0 priced bets beat the close · target 55%+']));
+    check('import: no "undefined" in Insights', !(await E(`document.getElementById('trackerRoot').textContent.includes('undefined')`)));
+    await click('.bt-view[data-k="results"]');
     await E(`sessionStorage.clear()`); await open(); await click('.bt-bank[data-id="bet-analytix"]');
     check('new session: imported results stay unlocked', await E(`document.querySelectorAll('.bt-tr[data-bet] .bt-undo').length === 9 && !document.querySelector('.bt-tr[data-bet] .bt-seal')`));
     check('removeImport wipes it in one call', (await E(`TrackerPage.removeImport().removed`)) === 10);

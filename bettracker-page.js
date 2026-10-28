@@ -18,7 +18,7 @@
 
   var NOF = function () { return { level: [], odds: [], surface: [], market: [] }; };
   var S = { bank: null, view: 'results', lf: 'all', month: null, logOpen: false, form: JSON.parse(JSON.stringify(FORM0)), banks: [], raw: [], importMsg: '',
-    period: 'season', range: null, filters: NOF(), menu: null, openDay: null, openMonth: null };
+    period: 'season', range: null, filters: NOF(), menu: null, openDay: null, openMonth: null, dim: 'market' };
   // The Bet-Analytix import (T1b): admin only — the control is not in the design (reported); the console path is
   // TrackerPage.importText(csvText). The file is read in this browser and goes nowhere else.
   function isAdmin() { return typeof window.isBspAdmin === 'function' && !!window.isBspAdmin(); }
@@ -243,6 +243,51 @@
       + '<div class="bt-calgrid">' + heat + months + '</div></div>' + pop;
   }
 
+  // ── 6 · Insights (README §6): verdict cards · Breakdown · Discipline ────────────────────────────────────────────
+  var TONE_VAR = { pos: 'pos', neg: 'neg', amber: 'amber' };
+  function insights(ctx) {
+    var V = M.verdicts(ctx.list, M.MIN_SAMPLE), B = M.breakdown(ctx.list, S.dim), D = M.disciplineView(ctx.list, M.MIN_SAMPLE, M.PERIODS[S.period]);
+    var cards = V.map(function (v) {
+      var col = 'var(--' + TONE_VAR[v.tone] + ')';
+      return '<div class="bt-card bt-vcard"><svg class="bt-vspark" viewBox="0 0 380 70" preserveAspectRatio="none">' + (v.path ? '<path d="' + v.area + '" style="fill:color-mix(in srgb, ' + col + ' 35%, transparent)"></path>'
+        + '<path d="' + v.path + '" fill="none" style="stroke:' + col + '" stroke-width="1.5"></path>' : '') + '</svg>'
+        + '<div class="bt-vhead"><span class="bt-caps bt-' + v.tone + '">' + esc(v.kind) + '</span><span class="bt-vseg">' + esc(v.seg) + '</span></div>'
+        + '<span class="bt-vpl bt-' + v.plKind + '">' + esc(v.pl) + '</span><span class="bt-vtitle">' + esc(v.title) + '</span>'
+        + '<div class="bt-vfigs">' + v.figs.map(function (f) { return '<span class="bt-vfig"><span class="bt-caps10">' + esc(f.l) + '</span><span class="bt-vfig-v bt-' + f.kind + '">' + esc(f.v) + '</span></span>'; }).join('') + '</div>'
+        + '<span class="bt-vspacer"></span></div>';
+    }).join('');
+    var dimOn = S.menu === 'dim';
+    var dmenu = dimOn ? '<div class="bt-menu bt-menu-dim">' + B.menu.map(function (m) {
+      return '<span class="bt-mrow' + (m.on ? ' on' : '') + '" data-act="dim" data-k="' + m.key + '"><span>' + esc(m.label) + '<span class="bt-mrow-n bt-dimn">' + m.count + '</span></span><span class="bt-tick">' + (m.on ? '✓' : '') + '</span></span>';
+    }).join('') + '</div>' : '';
+    var heads = '<span></span><span class="bt-caps10">' + esc(B.head) + '</span><span class="bt-caps10 bt-r">Bets</span><span class="bt-caps10 bt-r">W–L</span><span class="bt-caps10 bt-c">ROI · −40 ‥ +40</span>'
+      + '<span class="bt-caps10 bt-r">ROI</span><span class="bt-caps10 bt-r">CLV</span><span class="bt-caps10 bt-r">P/L</span>';
+    var rows = B.rows.map(function (r) {
+      return '<div class="bt-bgrid bt-brow"><span class="bt-bmark bt-bg-' + r.bar.kind + '"></span><span class="bt-bname">' + esc(r.name) + '</span><span class="bt-bn">' + r.n + '</span><span class="bt-bwl">' + esc(r.wl) + '</span>'
+        + '<span class="bt-roibar"><span class="bt-roitick"></span><span class="bt-roifill bt-bg-' + r.bar.kind + '" style="left:' + r.bar.left + ';width:' + r.bar.width + '"></span></span>'
+        + '<span class="bt-broi bt-' + r.roiKind + '">' + esc(r.roi) + '</span><span class="bt-bclv bt-' + r.clvKind + '">' + esc(r.clv) + '</span><span class="bt-bpl bt-' + r.plKind + '">' + esc(r.pl) + '</span></div>';
+    }).join('');
+    var T = B.tot;
+    var box = '<div class="bt-card bt-bdbox"><div class="bt-bdhead"><span class="bt-bdhl"><span class="bt-bdtitle">Breakdown</span><span class="bt-bdby">by</span><span class="bt-rel">'
+      + '<span class="bt-trig' + (dimOn ? ' on' : '') + '" data-act="menu" data-k="dim">' + esc(B.label) + CARET + '</span>' + dmenu + '</span></span>'
+      + '<span class="bt-bdsum"><span>' + T.n + ' bets · ' + esc(T.wl) + '</span><span>ROI <span class="bt-bdsum-roi bt-' + T.roiKind + '">' + esc(T.roi) + '</span></span><span>P/L <span class="bt-bdsum-pl bt-' + T.plKind + '">' + esc(T.pl) + '</span></span></span></div>'
+      + '<div class="bt-bgrid bt-bhead">' + heads + '</div>' + rows
+      + '<div class="bt-bgrid bt-btot"><span></span><span class="bt-btot-l">' + esc(B.totLabel) + '</span><span class="bt-btot-n">' + T.n + '</span><span class="bt-bwl">' + esc(T.wl) + '</span><span></span>'
+      + '<span class="bt-broi bt-' + T.roiKind + '">' + esc(T.roi) + '</span><span class="bt-bclv bt-' + T.clvKind + '">' + esc(T.clv) + '</span><span class="bt-bpl bt-' + T.plKind + '">' + esc(T.pl) + '</span></div>'
+      + '<div class="bt-bdfoot">' + esc(B.foot) + '</div></div>';
+    var dials = D.checks.map(function (c) {
+      var col = 'var(--' + (c.tone === 'lab' ? 'text-label' : c.tone) + ')';
+      return '<div class="bt-dial" title="' + esc(c.body) + '"><div class="bt-dial-g"><svg viewBox="0 0 200 110" width="110" height="61"><path class="bt-dial-track" d="M20 100 A80 80 0 0 1 180 100"></path>'
+        + (c.zone ? '<path class="bt-dial-zone" d="' + c.zone + '"></path>' : '') + '<path class="bt-dial-arc" d="' + c.arc + '" style="stroke:' + col + '"></path></svg><span class="bt-dial-fig">' + esc(c.fig) + '</span></div>'
+        + '<div class="bt-dial-t"><span class="bt-dial-l">' + esc(c.label) + '</span><span class="bt-dial-v" style="color:' + col + '">' + esc(c.verdict) + '</span><span class="bt-dial-s">' + esc(c.short) + '</span></div></div>';
+    }).join('');
+    return '<div class="bt-ins"><div class="bt-headrow"><span class="bt-h16">Where it works · where it leaks</span><span class="bt-sub125">' + esc(B.meta) + '</span></div>'
+      + '<div class="bt-vcards">' + cards + '</div>' + box + '</div>'
+      + '<div class="bt-disc"><div class="bt-headrow"><span class="bt-h16">Discipline</span><span class="bt-sub125">Skill shows in the closing line and the stakes long before it shows in the P/L.</span></div>'
+      + '<div class="bt-card bt-discbox"><div class="bt-dischead"><span class="bt-caps">' + esc(D.head) + '</span><span class="bt-discsum"><span class="bt-discsum-n bt-' + D.sumKind + '">' + esc(D.sum) + '</span> ' + esc(D.sumTxt) + '</span></div>'
+      + '<div class="bt-dials">' + dials + '</div></div></div>';
+  }
+
   function render() {
     var el = root(); if (!el) return;
     var cur = S.banks.find(function (b) { return b.id === S.bank; }) || S.banks[0];
@@ -251,7 +296,7 @@
     if (!S.range) S.range = { from: all.length ? dayKey(all[0].date) : dayKey(new Date(today.getFullYear(), 0, 1)), to: dayKey(today) };
     var win = M.periodWindow(S.period, S.range, today), perList = M.inPeriod(all, win), list = M.applyFilters(perList, S.filters);
     var ctx = { all: all, list: list, perList: perList, win: win, today: today, per: S.period, range: S.range, nF: M.nFilters(S.filters) };
-    var view = S.view === 'results' ? ledger(list) + calendar(ctx) : '<div class="bt-card bt-frame">' + DASH + '</div>';
+    var view = S.view === 'results' ? ledger(list) + calendar(ctx) : S.view === 'insights' ? insights(ctx) : '<div class="bt-card bt-frame">' + DASH + '</div>';
     el.innerHTML = '<section class="bt-sec"><div class="bt-col"><div class="bt-stack">'
       + bankrolls() + header(cur, all, ctx) + (S.logOpen ? logPanel(cur) : '') + hero(ctx) + view + '</div></div></section>';
   }
@@ -290,6 +335,7 @@
     else if (a === 'restore') { var rb = S.banks.find(function (b) { return b.id === id; }); store.saveBank(Object.assign({}, rb, { archived: false })); load(); render(); }
     else if (a === 'delete') { if (store.deleteBank(id).ok) { load(); render(); } }
     else if (a === 'addbank') { var nid = 'b' + Date.now(); store.saveBank({ id: nid, name: 'New bankroll ' + (S.banks.length + 1), archived: false }); S.bank = nid; S.month = null; S.filters = NOF(); S.range = null; load(); render(); }
+    else if (a === 'dim') { S.dim = t.dataset.k; S.menu = null; render(); }
     else if (a === 'day') { S.openDay = S.openDay === t.dataset.k ? null : t.dataset.k; render(); }
     else if (a === 'dayclose') { S.openDay = null; render(); }
     else if (a === 'openmonth') { S.openMonth = +t.dataset.k; render(); }

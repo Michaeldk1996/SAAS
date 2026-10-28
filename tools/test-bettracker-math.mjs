@@ -240,6 +240,40 @@ function run(M) {
   eq('month pop-up: rows newest first, every one settled', [MP.rows.length, MP.rows[0].date], [16, '26 Oct']);
   eq('heat: last year\'s days are not this season', M.heatGrid([{ id: 1, date: new Date(2025, 11, 30), odds: 2, stake: 1, res: 'won' }], new Date(2026, 0, 5)).meta, '0 betting days this season · 0 finished up · 0 down or flat');
 
+  {
+  // ── 11 · T4 verdicts: segment eligibility, blind-spot selection, the three discipline thresholds (each flips) ──
+  let nid = 1000;
+  const mkb = (n, o) => Array.from({ length: n }, (_, i) => Object.assign({ id: nid++, date: new Date(2026, 5, 1 + (i % 28)), odds: 2, stake: 1, res: 'won', market: 'Match winner', surface: 'Hard', level: '500', timing: 'pre', tilt: false, book: 'bet105', close: null }, typeof o === 'function' ? o(i) : o));
+  // a Clay segment of 15: 10 won, 5 lost at 2.00 → +5 profit, ROI +33% → an edge; at 14 it is not eligible
+  const clay15 = mkb(15, i => ({ surface: 'Clay', market: 'Total sets', res: i < 10 ? 'won' : 'lost' })), base = mkb(20, i => ({ res: i % 2 ? 'won' : 'lost', odds: 1.9 }));
+  eq('eligibility: 15 bets on Clay is an edge', M.segments(clay15.concat(base), 15).strengths.map(g => g.name).includes('Clay'), true);
+  eq('eligibility: 14 is not (flips)', M.segments(clay15.slice(1).concat(base), 15).strengths.map(g => g.name).includes('Clay'), false);
+  const thin = mkb(15, i => ({ surface: 'Grass', market: 'Total sets', odds: 1.5, res: i < 11 ? 'won' : 'lost' }));   // +5.5 −4 = +1.5 → ROI 10%
+  const lean = mkb(100, i => ({ surface: 'Grass', market: 'Total sets', odds: 2, res: i < 51 ? 'won' : 'lost' }));   // +2 profit, ROI 2% → under the 3% floor
+  eq('eligibility: profit > 0 and ROI > 3% (Grass +10%) …', M.segments(thin.concat(base), 15).strengths.some(g => g.name === 'Grass'), true);
+  eq('… flips at ROI 2% (profit still > 0)', M.segments(lean.concat(base), 15).strengths.some(g => g.name === 'Grass'), false);
+  eq('"Normal rhythm" is never a segment', M.segments(base, 15).strengths.concat(M.segments(base, 15).leaks).some(g => g.name === 'Normal rhythm'), false);
+  eq('Bookmaker is never an edge or a leak', M.segments(mkb(30, { book: 'Pinnacle', res: 'won' }), 15).strengths.some(g => g.dim === 'book'), false);
+  // blind spot: the worst P/L segment with 5 ≤ n < 15 and ROI < 0
+  const bs = base.concat(mkb(6, { surface: 'Grass', odds: 1.9, res: 'lost' }), mkb(8, i => ({ surface: 'Clay', odds: 1.9, res: i < 3 ? 'won' : 'lost' })));
+  eq('blind spot: the worst-P/L thin losing segment (Grass −6 beats Clay −2)', [M.segments(bs, 15).blind.name, M.segments(bs, 15).blind.s.n], ['Grass', 6]);
+  eq('blind spot: 4 bets is under the floor of 5 (flips to Clay)', M.segments(base.concat(mkb(4, { surface: 'Grass', odds: 1.9, res: 'lost' }), mkb(8, i => ({ surface: 'Clay', odds: 1.9, res: i < 3 ? 'won' : 'lost' }))), 15).blind.name, 'Clay');
+  eq('blind spot: a weekday is never one', M.segments(mkb(6, { res: 'lost', date: new Date(2026, 5, 6) }).concat(mkb(30, { res: 'won', date: new Date(2026, 5, 2) })), 15).blind === null || M.segments(mkb(6, { res: 'lost', date: new Date(2026, 5, 6) }).concat(mkb(30, { res: 'won', date: new Date(2026, 5, 2) })), 15).blind.dim !== 'dow', true);
+  // 1 · closing line: ≥55% REAL EDGE · 48–54 COIN FLIP · else PAYING TOO MUCH
+  const beat = k => mkb(100, i => ({ close: i < k ? 1.9 : 2.1 }));
+  eq('closing line 55% → REAL EDGE; 54% → COIN FLIP; 48% → COIN FLIP; 47% → PAYING TOO MUCH', [55, 54, 48, 47].map(k => M.discipline(beat(k), 15).checks[0].verdict), ['REAL EDGE', 'COIN FLIP', 'COIN FLIP', 'PAYING TOO MUCH']);
+  // 2 · stake after a loss ÷ after a win: > 1.15 CHASING · < 0.85 SHRINKING · else STEADY
+  const alt = r => mkb(40, i => ({ res: i % 2 ? 'lost' : 'won', stake: i % 2 ? 1 : (i === 0 ? 1 : r) }));   // a win follows every loss: stake r; a loss follows every win: stake 1
+  eq('stake ratio ×1.16 CHASING · ×1.14 STEADY · ×0.86 STEADY · ×0.84 SHRINKING', [1.16, 1.14, 0.86, 0.84].map(r => M.discipline(alt(r), 15).checks[1].verdict), ['CHASING', 'STEADY', 'STEADY', 'SHRINKING']);
+  // 3 · third bet after two losses: n < 15 EARLY · ROI < −5% TILT · else UNDER CONTROL
+  const tiltB = (n, won) => mkb(n, i => ({ tilt: true, odds: 2, res: i < won ? 'won' : 'lost' })).concat(base);
+  eq('tilt 15 bets ROI −6.7% → TILT · ROI 0% → UNDER CONTROL · 14 bets → EARLY · n=14', [M.discipline(tiltB(15, 7), 15).checks[2].verdict, M.discipline(tiltB(16, 8), 15).checks[2].verdict, M.discipline(tiltB(14, 0), 15).checks[2].verdict], ['TILT', 'UNDER CONTROL', 'EARLY · n=14']);
+  eq('no data is never judged: closing line —, stake ratio —', [M.discipline([], 15).checks[0].verdict, M.discipline([], 15).checks[1].verdict, M.discipline([], 15).judged], [DASH, DASH, 0]);
+  const dv = M.disciplineView(mkb(3, { close: null }), 15, 'Season');
+  eq('discipline view with no closes: "0 of 0 priced bets beat the close · target 55%+", sum grey', [dv.checks[0].short, dv.sumKind], ['0 of 0 priced bets beat the close · target 55%+', 'lab']);
+  eq('breakdown: a bet with no value for the cut is in no row (counted in left)', [M.breakdown(mkb(4, i => ({ level: i < 1 ? '' : '500' })), 'level').rows.map(r => [r.name, r.n]), M.breakdown(mkb(4, i => ({ level: i < 1 ? '' : '500' })), 'level').left], [[['ATP 500', 3]], 1]);
+  }
+
   // ── 7 · heat alpha ──
   near('heat alpha at 0', M.heatAlpha(0), 0.3); near('heat alpha at 1.5%', M.heatAlpha(-1.5), 0.65); near('heat alpha saturates at 3%', M.heatAlpha(3), 1); near('… and stays 1', M.heatAlpha(7), 1);
 
@@ -285,6 +319,12 @@ console.log(fails.length ? `bettracker-math: ${fails.length} failure(s)` : 'bett
 
 // ── mutants: every one must turn the suite red ──
 const MUTANTS = [
+  ['blind spot floor 4', 'if (g.s.n < m && g.s.n >= MIN_FLOOR && g.name', 'if (g.s.n < m && g.s.n >= 4 && g.name'],
+  ['strength ROI floor 0', 'return g.s.profit > 0 && g.s.roi > 0.03;', 'return g.s.profit > 0 && g.s.roi > 0;'],
+  ['coin flip from 50', "beatPct >= 48 ? 'COIN FLIP'", "beatPct >= 50 ? 'COIN FLIP'"],
+  ['chasing from ×1.10', "ratio > 1.15 ? 'CHASING'", "ratio > 1.10 ? 'CHASING'"],
+  ['tilt from −10%', "st.roi < -0.05 ? 'TILT'", "st.roi < -0.10 ? 'TILT'"],
+  ['blank key counted', 'var k = key(b, dim); if (k === null) return;', 'var k = key(b, dim);'],
   ['heat grid starts this week', 'start = addDays(mon, -25 * 7)', 'start = addDays(mon, -26 * 7)'],
   ['heat counts every year', 'return +k.slice(0, 4) === y;', 'return true;'],
   ['ROI bar unclipped', 'var w = Math.min(Math.abs(roi), 0.4) / 0.4 * 50;', 'var w = Math.abs(roi) / 0.4 * 50;'],
