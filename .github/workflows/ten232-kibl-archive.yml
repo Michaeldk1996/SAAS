@@ -131,6 +131,7 @@ jobs:
           python3 -B test-ten232-bet105-capability.py
           python3 -B test-ten232-breaker.py
           python3 -B test-ten232-schema-gate.py
+          python3 -B test-ten232-obs-read.py
           python3 -B test-ten225-kibl-card-state.py
           python3 -B test-ten270-cardstate-egress.py
           python3 -B test-ten225-orientation.py

@@ -2318,6 +2318,50 @@ def fetch_all(url, key, table, cols, extra='', order='fixture_id.asc'):
         offset += PAGE
 
 
+FIXTURE_BATCH = 100          # fixture ids per request: ~800 chars of URL, well inside PostgREST's limit
+READ_RETRIES = 3             # a page that times out is asked again, then fails loudly
+
+
+def fetch_by_fixtures(url, key, table, cols, extra, fixture_ids, order='fixture_id.asc',
+                      _sb=None, sleep=time.sleep):
+    """Page a fixture-keyed table in batches of fixture ids (card-job-lock, 2026-10-28).
+
+    fetch_all() on kibl_line_observations — every market, filtered down to match
+    winner with OFFSET paging — made Postgres re-walk the table for each page while
+    the 30-second bots read it too, and the card-state step timed out (57014) on
+    27 Sep, 4-26 Oct and 28 Oct 01:42Z / 03:49Z with only ~40k rows to return. A
+    `fixture_id=in.(...)` batch walks the (fixture_id, market_type_id, ...) index
+    instead. Ids go in ascending and each request is ordered fixture_id first, so the
+    concatenation keeps fetch_all's order. Rows of a fixture missing from
+    `fixture_ids` are not read; the builder never uses them (build_rows iterates the
+    fixtures). Same return shape as fetch_all: (rows, err)."""
+    call = _sb or sb
+    ids = sorted({int(i) for i in fixture_ids if i is not None})
+    out = []
+    for b in range(0, len(ids), FIXTURE_BATCH):
+        inlist = ','.join(str(i) for i in ids[b:b + FIXTURE_BATCH])
+        offset = 0
+        while True:
+            path = (f'/rest/v1/{table}?select={cols}&fixture_id=in.({inlist}){extra}'
+                    f'&order={order}&limit={PAGE}&offset={offset}')
+            for attempt in range(1, READ_RETRIES + 1):
+                got, err = call('GET', path, url, key)
+                if got is not None:
+                    break
+                if attempt < READ_RETRIES:
+                    print(f'{table}: batch {b // FIXTURE_BATCH + 1} page at offset {offset} failed '
+                          f'({str(err)[:120]}); retry {attempt}/{READ_RETRIES - 1}')
+                    sleep(5 * attempt)
+            if got is None:
+                return out, err
+            rows = json.loads(got.decode('utf-8'))
+            out.extend(rows)
+            if len(rows) < PAGE:
+                break
+            offset += PAGE
+    return out, None
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--dry-run', action='store_true')
@@ -2352,7 +2396,7 @@ def main():
               'fixtures yet. Refusing to report a clean zero as coverage.')
         return 1
 
-    obs_rows, err = fetch_all(
+    obs_rows, err = fetch_by_fixtures(
         url, key, 'kibl_line_observations',
         OBS_COLUMNS,
         f'&market_type_id=eq.{MARKET_TYPE_ID}&segment_id=eq.{SEGMENT_ID}'
@@ -2365,6 +2409,7 @@ def main():
         # opening price aged past the cutoff, which is the one row the whole
         # source exists to carry.
         f'&observed_at=gte.{iso(as_of - a.days_back * 86400)}',
+        [f.get('fixture_id') for f in fx],
         order='fixture_id.asc,inserted_on.asc')
     if err:
         print(f'::error::reading kibl_line_observations failed ({err})')
@@ -2392,12 +2437,13 @@ def main():
     # or "a new book was activated" looks exactly like "nothing happened". This
     # is the line that turns the day Bet105 lands from a silent relabel into a
     # number in the job summary.
-    excluded, err_x = fetch_all(
+    excluded, err_x = fetch_by_fixtures(
         url, key, 'kibl_line_observations', 'fixture_id,feed_source_id',
         f'&market_type_id=eq.{MARKET_TYPE_ID}&segment_id=eq.{SEGMENT_ID}'
         f'&betting_type_id=eq.{BETTING_TYPE_ID}'
         f'&observed_at=gte.{iso(as_of - a.days_back * 86400)}'
-        f'&feed_source_id=neq.{VERIFIED_FEED_SOURCE_ID}')
+        f'&feed_source_id=neq.{VERIFIED_FEED_SOURCE_ID}',
+        [f.get('fixture_id') for f in fx])
     n_excluded = len(excluded or [])
     if err_x:
         print(f'::warning::could not count unverified-book rows ({err_x})')
