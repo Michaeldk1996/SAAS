@@ -1,18 +1,18 @@
 {
- "generatedAt": "2026-10-28T12:07:24.105Z",
+ "generatedAt": "2026-10-28T12:41:04.889Z",
  "source": "matches.json git history: oddsMovement.books.Pinnacle (Oddspapi pinnacle, to 2026-09-02) and oddsMovement.chart.books[\"Pinnacle +30s\"] (Oddspapi pinnacle+30, from 2026-09-23)",
  "rule": "each side = last tick at or before the actual start (Oddspapi trueStart, else the card-state start: Oddspapi or the live-flip lower bound); both sides required; dropped when no unique actual start",
  "scannedThrough": {
-  "commit": "c4c39f36827c42540004b1a0755ece83564f00c5",
-  "at": "2026-10-28T11:45:27Z"
+  "commit": "b2b3441821e67392ef405f6befb3d6d8fcdc929d",
+  "at": "2026-10-28T12:07:10Z"
  },
- "commitsScanned": 6133,
+ "commitsScanned": 6131,
  "lastRun": {
   "from": "2026-10-27T23:01:07Z",
-  "snapshots": 46,
+  "snapshots": 44,
   "added": 13,
   "replaced": 0,
-  "series": 47,
+  "series": 52,
   "kept": 29,
   "bySource": {
    "oddspapi": 21,
@@ -22,7 +22,7 @@
    "Pinnacle +30s": 29
   },
   "dropped": {
-   "noStart": 17,
+   "noStart": 22,
    "ambiguousStart": 1
   }
  },
