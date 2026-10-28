@@ -1408,7 +1408,7 @@ for _forbidden in ('observed_at', 'price_decimal', 'inserted_on', 'is_opener', '
 # constant: a payload that never leaves the process would satisfy every
 # assertion above and advance no clock at all.
 _calls = []
-def _fake_sb(method, path, url, key, body=None, headers=None):
+def _fake_sb(method, path, url, key, body=None, headers=None, timeout=None):
     _calls.append({'method': method, 'path': path, 'body': body,
                    'prefer': (headers or {}).get('Prefer', '')})
     return ([] if 'ignore-duplicates' in (headers or {}).get('Prefer', '') else None), None
@@ -1430,11 +1430,11 @@ check('pass 2 actually carries a last_seen_at value',
 # A silent pass-2 failure is the exact defect the ruling exists to remove, so it
 # must be counted, not logged past.
 _calls2 = []
-def _fail_pass2(method, path, url, key, body=None, headers=None):
+def _fail_pass2(method, path, url, key, body=None, headers=None, timeout=None):
     pref = (headers or {}).get('Prefer', '')
     _calls2.append(pref)
     if 'merge-duplicates' in pref:
-        return None, '23502 null value in column "observed_at"'
+        return None, (400, '23502 null value in column "observed_at"')
     return [], None
 A.sb_request = _fail_pass2
 _n2, _f2 = A.insert_rows('u', 'k', [dict(_sum, row_key='nk_b', state='current')])

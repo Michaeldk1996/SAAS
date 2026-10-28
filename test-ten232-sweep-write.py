@@ -139,6 +139,10 @@ check('the Sweep step gets the Telegram secrets', 'TELEGRAM_BOT_TOKEN' in sweep_
 pkg = json.load(open(os.path.join(HERE, 'package.json')))['scripts']['test']
 check('wired into npm test and the workflow offline tests',
       'test-ten232-sweep-write.py' in pkg and 'python3 -B test-ten232-sweep-write.py' in wf)
+offline = wf[wf.index('- name: Offline tests'):wf.index('- name: Apply the schema')]
+missing = [t for t in re.findall(r'python3 -B (test-[\w-]+\.py)', offline) if t not in pkg]
+check('every offline test the workflow runs is in npm test  [control: 14:14Z 28 Oct, '
+      'test-ten225-kibl-card-state.py ran only in the workflow and failed there]', not missing, missing)
 
 print()
 if FAILS:
