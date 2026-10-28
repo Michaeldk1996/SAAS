@@ -323,7 +323,8 @@ const result = await E(`(async () => {
 
 ch.kill('SIGKILL'); if (!LIVE) server.close();
 for (const r of result.shown || []) console.log('SHOW ' + JSON.stringify(r));
-const failN = Object.values(result.fail).reduce((a, b) => a + b, 0);
+// each failure is counted under its page (tab / form / me / cap / h2h / threw) AND under its class by note(): sum the pages only
+const failN = ['tab', 'form', 'me', 'cap', 'h2h', 'threw'].reduce((a, k) => a + (result.fail[k] || 0), 0);
 console.log(`### price-consistency ${JSON.stringify({ lag: LAG, players: result.players, playersChecked: result.playersChecked, matches: result.matches, dbHeld: result.dbHeld,
   notHeld: result.notHeld, checked: result.checked, failures: result.fail, reported: result.report, byYear: result.byYear, byLevel: result.byLevel })}`);
 if (FOCUS.length) { const f = Object.assign({}, result.focus); delete f.seen; console.log(`### focus ${JSON.stringify(f)}`); }

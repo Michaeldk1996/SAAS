@@ -567,6 +567,18 @@ function main() {
   Object.keys(tour.level).forEach((L) => { tourByLevel[L] = summarise(tour.level[L]); });
 
   if (!fs.existsSync(OUT_DIR)) fs.mkdirSync(OUT_DIR, { recursive: true });
+  // Founder 2026-10-28 (one price per match): every shard on disk is rewritten every run. A player whose every master
+  // row left (a later ruling dashed it: the 26 Oct start - 10 dash) gets an empty shard, never his last build's rows —
+  // the committed floor kept K. Feldbausch's three Bet365 prices on Market edge while every other page read a dash.
+  stats.emptied = 0;
+  for (const f of fs.readdirSync(OUT_DIR)) {
+    const m = /^(\d+)\.json$/.exec(f);
+    if (!m || perPlayer.has(m[1])) continue;
+    let nm = null;
+    try { nm = JSON.parse(fs.readFileSync(path.join(OUT_DIR, f), 'utf8')).name || null; } catch (e) { /* unreadable: still emptied */ }
+    perPlayer.set(m[1], { name: nm, sides: [] });
+    stats.emptied += 1;
+  }
 
   const index = {};
   let shipped = 0;
@@ -692,6 +704,7 @@ function main() {
   log(`tour baseline (${PRICE_BASIS}): ${tourSummary.n} priced sides, yield ${tourSummary.yield}%, `
     + `book mix ${tourSummary.book.pinnacle} Pinnacle / ${tourSummary.book.bet365} Bet365-archive`);
   log(`shards written: ${shipped}`);
+  log(`shards emptied (no master row this run): ${stats.emptied}`);
   if (qPath) console.log(`market-edge: ${stats.quarantined} player-side(s) left out by the publish quarantine (${qz.length} match(es), ${qPath})`);
   return 0;
 }
