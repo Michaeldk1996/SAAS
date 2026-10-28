@@ -13698,6 +13698,9 @@ const SF_TE_HOVER = 'Tennis Explorer, last pre-match price, not a confirmed clos
 // the founder's tooltip naming the build's X (database-yield.json meta.earlyCut.hover). Before the Database join answers
 // (a Market edge shard row), the same words without a number — never a guessed X.
 const SF_EARLY_HOVER_NO_X = "Early Pinnacle price — taken before Oddspapi's recorded start. True closing price unavailable.";
+// Founder 2026-10-28 (one price, one label): a Market edge / profile row carries no X of its own; once the Database join has
+// answered, it reads the build's hover (meta.earlyCut.hover), so every page prints the same words for the same match.
+function sfEarlyHover(){ const j = typeof _sfDbJoin !== 'undefined' ? _sfDbJoin : null; return (j && j.meta && j.meta.earlyCut && j.meta.earlyCut.hover) || SF_EARLY_HOVER_NO_X; }
 function fhPxMark(r){ return r && r.price != null ? (r.book === 'B' ? 'B' : r.book === 'A' && r.src === 'early' ? 'E' : '') : ''; }
 // the words after "Pinnacle (approx.) · " for every 'A' row: start − 10, Tennis Explorer, else api-tennis
 function sfApproxHover(r){ return r && r.src === 'od10' ? SF_OD10_HOVER : r && r.src === 'te' ? SF_TE_HOVER : SF_APPROX_HOVER; }
@@ -13798,7 +13801,7 @@ function fhTodayPair(m){
 }
 // "B365" tag (the old ELO tag's style) on any row priced from Bet365.
 // Row tooltip: which book and which source priced this row.
-function fhSrcTitle(r){ return r && r.book === 'A' && r.src === 'early' ? (r.srcLabel || SF_EARLY_HOVER_NO_X) : r && r.book === 'A' ? `${FH_BOOK.A} · ${r.src === 'od10' ? SF_OD10_HOVER : r.src === 'te' ? SF_TE_HOVER : SF_APPROX_HOVER}` : fhB365Approx(r) ? (r.src === 'atb' ? FH_B365_AT_HOVER : FH_B365_APPROX_HOVER) : r && r.book ? `${FH_BOOK[r.book]} close · ${r.srcLabel || FH_SRC[r.src] || ''}` : typeof sfNoPriceReason === 'function' ? sfNoPriceReason(r) : 'No source found yet'; }
+function fhSrcTitle(r){ return r && r.book === 'A' && r.src === 'early' ? (r.srcLabel || sfEarlyHover()) : r && r.book === 'A' ? `${FH_BOOK.A} · ${r.src === 'od10' ? SF_OD10_HOVER : r.src === 'te' ? SF_TE_HOVER : SF_APPROX_HOVER}` : fhB365Approx(r) ? (r.src === 'atb' ? FH_B365_AT_HOVER : FH_B365_APPROX_HOVER) : r && r.book ? `${FH_BOOK[r.book]} close · ${r.srcLabel || FH_SRC[r.src] || ''}` : typeof sfNoPriceReason === 'function' ? sfNoPriceReason(r) : 'No source found yet'; }
 // TEN-437 (founder 2026-10-16): a Bet365-priced H2H meeting keeps its close, its "B" marker, and this hover — on the
 // Match analysis H2H tab and the H2H page — until a Pinnacle source is found. H2H only: Form and every other surface keep
 // fhSrcTitle's source label.

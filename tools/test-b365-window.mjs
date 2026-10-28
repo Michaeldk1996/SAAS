@@ -54,9 +54,14 @@ function run() {
     const baselines = JSON.parse(readFileSync(join(d, 'tour-baselines.json'), 'utf8'));
     // Market edge: the real builder over the same master (founder 2026-10-17: it prices from the master, never the CSVs)
     mkdirSync(join(d, 'market-edge'));
+    // founder 2026-10-28: the shards a LAST build left (the committed floor) — Xi's start − 10 match still Bet365-priced, and a
+    // player with no master row at all; the real builder must rewrite both (the 14 Market edge prices the Database dashed)
+    const stale = (name, date) => JSON.stringify({ name, headline: { n: 1 }, matches: [{ date, event: 'Old Open', opp: 'Old O.', won: true, price: 1.9, oppPrice: 1.9, book: 'bet365-archive', inBasis: true }] });
+    writeFileSync(join(d, 'market-edge', '1.json'), stale('X. Xi', '2026-06-10'));
+    writeFileSync(join(d, 'market-edge', '9.json'), stale('Q. Stale', '2026-07-21'));
     writeFileSync(join(d, 'player-profiles.json'), JSON.stringify({ players: { 1: { name: 'X. Xi' }, 2: { name: 'M. Mu' }, 3: { name: 'P. Pi' } } }));
     const me = spawnSync(process.execPath, ['build-market-edge.js', '--quiet'], { cwd: d, encoding: 'utf8' });
-    const meOut = me.status === 0 ? Object.fromEntries(['1', '2', '3'].map(k => { try { return [k, JSON.parse(readFileSync(join(d, 'market-edge', k + '.json'), 'utf8'))]; } catch { return [k, null]; } })) : { err: me.stderr.slice(-300) };
+    const meOut = me.status === 0 ? Object.fromEntries(['1', '2', '3', '9'].map(k => { try { return [k, JSON.parse(readFileSync(join(d, 'market-edge', k + '.json'), 'utf8'))]; } catch { return [k, null]; } })) : { err: me.stderr.slice(-300) };
     return { db, names, x, master, fav, baselines, me: meOut };
   } finally { rmSync(d, { recursive: true, force: true }); }
 }
@@ -119,6 +124,13 @@ check('single price: Market edge (the real builder) holds no price for the dashe
   assert.equal(has('2', '2026-04-20'), false, 'Mu v Nu (start − 10) is a dash in Market edge');
   assert.equal(has('3', '2026-07-01'), true, 'control: Pi v Rho (api-tennis approx.) still prices in Market edge');
 });
+check('one price: a shard the last build left is rewritten — a player whose rows all left the master gets an empty shard, never his old price', () => {
+  assert.ok(!R.me.err, R.me.err);
+  assert.ok(R.me['9'], 'the stale shard of a player with no master row is still there (rewritten, not deleted)');
+  assert.equal(R.me['9'].name, 'Q. Stale', 'its name is kept (the roster reads it)');
+  assert.deepEqual((R.me['9'].matches || []).filter(m => m.price != null), [], 'no price left in it');
+  assert.equal(((R.me['1'] && R.me['1'].matches) || []).some(m => m.price != null), false, 'Xi: the stale Bet365 row is gone');
+});
 check('single price: the Tournament cards and every page join read the same database-yield rows (one source)', () => {
   assert.match(readFileSync(join(root, 'build-tournament-market.js'), 'utf8'), /const YIELD = path\.join\(ROOT, 'database-yield\.json'\);/);
   const html = readFileSync(join(root, 'bsp-consult-dashboard.html'), 'utf8');
@@ -152,6 +164,7 @@ if (!process.env.B365W_ROOT) {
     ['build-database-yield.js', 'start − 10 falls through to Bet365 / api-tennis', ": od10Cut ? -1 : AP ?", ": AP ?"],
     ['build-database-yield.js', 'start − 10 dash reason lost', "od10Cut ? 'od10' : b365Cut", "b365Cut"],
     ['build-database-yield.js', 'start − 10 rows not counted', "            od10Dropped.rows++;", "            void 0;"],
+    ['build-market-edge.js', 'a shard the last build left is kept (no rewrite)', "    if (!m || perPlayer.has(m[1])) continue;", "    continue;"],
     ['bsp-consult-dashboard.html', 'the page has no start − 10 reason', "  od10: 'No Pinnacle close: the only Pinnacle price was read 10 min before a recorded start that can run late, so it may be in play' };", ' };'],
   ];
   let caught = 0;

@@ -109,7 +109,7 @@ const dbPriceJoinRows = new Function(`${slice('dbPriceJoinRows')}\nreturn dbPric
 const UI = new Function(`const escapeHtml = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 ${['FH_MONO', 'FH_DASHC', 'FH_BOOK', 'SF_APPROX_HOVER', 'SF_OD10_HOVER', 'SF_TE_HOVER', 'SF_EARLY_HOVER_NO_X', 'FH_SRC', 'FH_B365_APPROX_HOVER', 'FH_B365_AT_HOVER'].map(constLine).join('\n')}
 const FH_DASH = 'var(--text-label)';
-${['fhEsc', 'fhPxMark', 'fhB365Approx', 'fhSrcTitle', 'fhPriceCell'].map(slice).join('\n')}
+${['fhEsc', 'sfEarlyHover', 'fhPxMark', 'fhB365Approx', 'fhSrcTitle', 'fhPriceCell'].map(slice).join('\n')}
 return { fhPxMark, fhSrcTitle, fhPriceCell };`)();
 const J = B1.status === 0 ? dbPriceJoinRows(B1.db, B1.names) : null;
 const view = (date, opp) => { const v = [{ date, won: true, round: null }]; priceJoin(v, { full: 'A. Alpha' }, { full: opp }, J); return v[0]; };
@@ -129,6 +129,13 @@ check('render: the early cut draws "E" with the founder\'s tooltip; Bet365 still
 });
 check('render: before the join answers, the tooltip never guesses an X', () => {
   assert.equal(UI.fhSrcTitle({ price: 1.6, book: 'A', src: 'early' }), "Early Pinnacle price — taken before Oddspapi's recorded start. True closing price unavailable.");
+});
+check('one label (founder 2026-10-28): a Market edge / profile early-cut row (no label of its own) reads the join\'s words once the join answered', () => {
+  const me = { price: 1.62, oppPrice: 2.35, book: 'A', src: 'early' };   // meWinnerRows: srcLabel undefined, the shard has no X
+  globalThis._sfDbJoin = J;
+  try { assert.equal(UI.fhSrcTitle(me), HOVER, 'Market edge prints the Database\'s hover'); assert.equal(UI.fhSrcTitle(me), UI.fhSrcTitle(view('2026-06-01', 'B. Beta'))); }
+  finally { delete globalThis._sfDbJoin; }
+  assert.equal(UI.fhSrcTitle(me), "Early Pinnacle price — taken before Oddspapi's recorded start. True closing price unavailable.", 'control: before the join, no guessed X');
 });
 check('every "B" marker site now draws through fhPxMark (Form, H2H tab, Tournament, Head to Head page, price cell)', () => {
   const old = html.match(/hMark: r\.price != null && r\.book === 'B' \? 'B' : ''/g) || [];

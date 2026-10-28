@@ -93,6 +93,8 @@ else {
     writeFileSync(join(site, 'market-edge', K + '.json'), shard(1.05));
     r = run();
     check('2 · control: a Market edge shard with another price → exit 1', r.status === 1 && /Market edge shard ≠ Database/.test(r.stdout), (r.stdout || '') + (r.stderr || ''));
+    // founder 2026-10-28: one failing surface is counted once (note() also counts it under its class: the total read 2)
+    check('2 · the total names ONE failing surface, not two', /: 1 surface\(s\) show/.test(r.stderr || ''), r.stderr || '');
     writeFileSync(join(site, 'market-edge', K + '.json'), shard(1.02));
 
     // 3 · founder ruling 2026-10-17 (ruling 3): a master-class match the join does NOT hold (AO 2025 R2, absent from the
@@ -110,6 +112,7 @@ else {
       ['2025-01-15', 'Nobody Q.', 1, 1.04, 15.0, null, null, 0, '401']], cap: [] }));
     r = run();
     check('3 · control: Market edge prices a match the join does not hold (own price path) → exit 1', r.status === 1 && /does not hold \(own price path\)/.test(r.stdout), (r.stdout || '') + (r.stderr || ''));
+    check('3 · the total names ONE failing surface, not two', /: 1 surface\(s\) show/.test(r.stderr || ''), r.stderr || '');
     writeFileSync(join(site, 'career-history', K + '.json'), JSON.stringify({ matches: [two[0]] }));
     writeFileSync(join(site, 'market-edge', K + '.json'), shard(1.02));
     writeFileSync(join(site, 'match-closes', K + '.json'), closes([]));
