@@ -1,0 +1,21 @@
+name: probe-final
+on:
+  push:
+    branches: ['claude/probe-te-queue']
+    paths: [tools/probe-final/**]
+permissions:
+  contents: read
+jobs:
+  final:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 24 }
+      - run: bash tools/probe-final/final.sh
+        env:
+          STORE_TOKEN: ${{ secrets.TE_STORE_READ_TOKEN }}
+          OPS_TOKEN: ${{ secrets.WORKFLOW_PAT }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
