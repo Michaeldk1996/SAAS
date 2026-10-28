@@ -24,6 +24,7 @@ import json
 import os
 import re
 import sys
+import time
 import urllib.error
 import urllib.request
 
@@ -53,13 +54,24 @@ def project_ref(url):
     return m.group(1)
 
 
-def run_sql(ref, token, query, what, soft=False):
+# card-job-lock: the breaker's unschedule died on 27 Oct 19:02Z with "HTTP 544
+# Connection terminated due to connection timeout" — the Management API could
+# not get a connection while the schema apply was still holding the database.
+# A gateway or connection failure says nothing about the SQL, so it is retried.
+RETRY_HTTP = (500, 502, 503, 504, 520, 522, 524, 544)
+BACKOFF_S = (10, 30, 60)
+
+
+def run_sql(ref, token, query, what, soft=False, attempts=1, sleep=time.sleep):
     """soft=True: a failure is reported and returns None instead of exiting.
 
     Used only for the diagnostic reads (pg_cron keeps run history in a table
     whose presence depends on the extension version). A diagnostic that cannot
     run must not fail an install that succeeded — but it must say so out loud
     rather than print an empty section that reads like "nothing wrong".
+
+    attempts>1 retries a gateway / connection failure (RETRY_HTTP, or no
+    response at all); an SQL error is answered at once.
     """
     req = urllib.request.Request(
         f"{MGMT}/v1/projects/{ref}/database/query",
@@ -69,20 +81,47 @@ def run_sql(ref, token, query, what, soft=False):
                  "User-Agent": "ten232-kibl-sweep-cron/1.0"},
         method="POST",
     )
-    try:
-        with urllib.request.urlopen(req, timeout=90) as r:
-            return json.loads(r.read().decode() or "[]")
-    except urllib.error.HTTPError as e:
-        msg = f"{what}: HTTP {e.code} {e.read().decode()[:400]}"
+    for i in range(1, attempts + 1):
+        try:
+            with urllib.request.urlopen(req, timeout=90) as r:
+                return json.loads(r.read().decode() or "[]")
+        except urllib.error.HTTPError as e:
+            msg = f"{what}: HTTP {e.code} {e.read().decode()[:400]}"
+            retry = e.code in RETRY_HTTP
+        except Exception as e:                                # noqa: BLE001
+            msg = f"{what}: {e}"
+            retry = True
+        if retry and i < attempts:
+            wait = BACKOFF_S[min(i - 1, len(BACKOFF_S) - 1)]
+            print(f"{msg} — attempt {i}/{attempts}, retrying in {wait}s")
+            sleep(wait)
+            continue
         if soft:
             print(f"::warning::{msg}")
             return None
         die(msg)
-    except Exception as e:                                    # noqa: BLE001
-        if soft:
-            print(f"::warning::{what}: {e}")
-            return None
-        die(f"{what}: {e}")
+
+
+def trip_breaker(ref, token, sleep=time.sleep):
+    """Unschedule the pinger and prove it is gone. Returns the line to print.
+
+    Unschedules by jobid from cron.job, so an absent job is an empty result and
+    not an exception swallowed inside a DO block: the log says which it was.
+    """
+    gone = run_sql(ref, token, f"""
+      select j.jobname, cron.unschedule(j.jobid) as unscheduled
+        from cron.job j where j.jobname = {sql_lit(JOB)};
+    """, "breaker unschedule", attempts=4, sleep=sleep)
+    left = run_sql(ref, token, f"""
+      select count(*)::int as n from cron.job where jobname = {sql_lit(JOB)};
+    """, "breaker read-back", attempts=4, sleep=sleep)
+    if left and left[0].get("n"):
+        die(f"breaker: `{JOB}` is still in cron.job after unschedule")
+    if gone:
+        return (f"circuit breaker TRIPPED — `{JOB}` unscheduled after "
+                f"{BREAKER_N} consecutive failing runs (read back: gone).")
+    return (f"circuit breaker TRIPPED — `{JOB}` was already unscheduled "
+            f"(read back: not in cron.job); nothing to stop.")
 
 
 def rest_get(url, key, path):
@@ -196,14 +235,9 @@ def main():
         if not tripped:
             print("breaker: not tripped; the pinger stays scheduled.")
             return 0
-        run_sql(ref, token, f"""
-        do $$ begin perform cron.unschedule({sql_lit(JOB)});
-              exception when others then null; end $$;
-        """, "breaker unschedule")
-        print("::error::circuit breaker TRIPPED — the Kibl sweep pinger has been "
-              "unscheduled after 3 consecutive failing runs. The archive is NOT "
-              "capturing. Fix the cause, then re-run this workflow with "
-              "action=install.")
+        print("::error::" + trip_breaker(ref, token) +
+              " The archive now runs only on GitHub's throttled schedule. Fix "
+              "the cause, then run ten232-kibl-sweep-cron.yml with action=install.")
         # Exit non-zero: a tripped breaker is an outage, and a green run here
         # would be the fail-open this repo has been bitten by before.
         sys.exit(1)

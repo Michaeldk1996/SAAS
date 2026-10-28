@@ -130,6 +130,7 @@ jobs:
           python3 -B test-ten232-report.py
           python3 -B test-ten232-bet105-capability.py
           python3 -B test-ten232-breaker.py
+          python3 -B test-ten232-schema-gate.py
           python3 -B test-ten225-kibl-card-state.py
           python3 -B test-ten270-cardstate-egress.py
           python3 -B test-ten225-orientation.py
@@ -145,16 +146,12 @@ jobs:
           [ -n "$REF" ] && [ "$REF" != "$SUPABASE_URL" ] \
             || { echo "::error::could not derive project ref from SUPABASE_URL"; exit 1; }
           echo "PROJECT_REF=$REF" >> "$GITHUB_ENV"
-          resp=$(jq -Rs '{query: .}' ten232-kibl-schema.sql | curl -sS -w $'\n%{http_code}' -X POST \
-            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
-            -H "Content-Type: application/json" \
-            --data @- "$MGMT/v1/projects/$REF/database/query")
-          code=$(printf '%s' "$resp" | tail -n1)
-          body=$(printf '%s' "$resp" | sed '$d')
-          if [ "$code" != "200" ] && [ "$code" != "201" ]; then
-            echo "::error::schema apply failed ($code): $body"; exit 1
-          fi
-          echo 'schema applied (idempotent).'
+          # card-job-lock: applied only when the file's sha differs from the one
+          # recorded in schema_apply_versions. Re-applying an unchanged file every
+          # run took ACCESS EXCLUSIVE locks the bots' reads deadlocked against
+          # (40P01 / 57014 from 27 Oct 13:31Z). A changed file is applied with a
+          # short lock_timeout and retried — see ten232-schema-gate.py.
+          python3 -B ten232-schema-gate.py ten232-kibl-schema.sql
 
       # Proves the posture rather than asserting it: RLS on, zero policies. This
       # is odds data under a partner grant, not public data.
@@ -284,15 +281,8 @@ jobs:
           API_TENNIS_KEY: ${{ secrets.API_TENNIS_KEY }}
         run: |
           set -euo pipefail
-          resp=$(jq -Rs '{query: .}' ten225-card-state-schema.sql | curl -sS -w $'\n%{http_code}' -X POST \
-            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
-            -H "Content-Type: application/json" \
-            --data @- "$MGMT/v1/projects/$PROJECT_REF/database/query")
-          code=$(printf '%s' "$resp" | tail -n1)
-          if [ "$code" != "200" ] && [ "$code" != "201" ]; then
-            echo "::error::card-state schema apply failed ($code): $(printf '%s' "$resp" | sed '$d')"; exit 1
-          fi
-          echo 'card-state schema applied (idempotent).'
+          # card-job-lock: same version gate as "Apply the schema".
+          python3 -B ten232-schema-gate.py ten225-card-state-schema.sql
           set -o pipefail
           # --use-live-flip: LADDER I(b), SWITCHED ON by founder item B
           # 2026-09-19 ("Ladder I(b): GO"). A Kibl fixture oddspapi does not

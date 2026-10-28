@@ -18,10 +18,12 @@ spec.loader.exec_module(sc)
 FAILS = []
 
 
-def check(label, ok):
+def check(label, ok, detail=""):
     print(f"  {'ok  ' if ok else 'FAIL'} {label}")
     if not ok:
         FAILS.append(label)
+        if detail:
+            print(f"       {detail}")
 
 
 def with_runs(runs, token="t", me=""):
@@ -89,6 +91,62 @@ check("its vault secret is its own", sc.SECRET_NAME != sc.FOREIGN_SECRET)
 check("the threshold is 3", sc.BREAKER_N == 3)
 check("it dispatches the archive workflow", sc.WF == "ten232-kibl-archive.yml")
 check("at the 5-minute floor the standing rules set", sc.SCHEDULE == "*/5 * * * *")
+
+print("6. the unschedule survives a dropped connection (27 Oct 19:02Z: HTTP 544)")
+import io
+import json
+import urllib.error
+
+
+class FakeResp(io.BytesIO):
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *a):
+        return False
+
+
+def fake_api(answers):
+    """urlopen stand-in: pops one answer per call — an int is an HTTP error code, a list is a JSON result."""
+    sent = []
+
+    def urlopen(req, timeout=None):
+        sent.append(json.loads(req.data.decode())["query"])
+        a = answers.pop(0)
+        if isinstance(a, int):
+            raise urllib.error.HTTPError(req.full_url, a, "x", {}, io.BytesIO(
+                b'{"message":"Failed to run sql query: Connection terminated due to connection timeout"}'))
+        return FakeResp(json.dumps(a).encode())
+    return urlopen, sent
+
+
+def trip(answers):
+    real = sc.urllib.request.urlopen
+    sc.urllib.request.urlopen, sent = fake_api(answers)
+    sleeps = []
+    try:
+        try:
+            return sc.trip_breaker("ref", "tok", sleep=sleeps.append), sleeps, sent
+        except SystemExit:
+            return None, sleeps, sent
+    finally:
+        sc.urllib.request.urlopen = real
+
+
+msg, sleeps, sent = trip([544, 544, [{"jobname": sc.JOB, "unscheduled": True}], [{"n": 0}]])
+check("two 544s then success → unscheduled, and says so  [mutant: attempts=1]",
+      msg is not None and "unscheduled after" in msg and len(sleeps) == 2, f"{msg} {sleeps}")
+check("it unschedules by jobid from cron.job, by its own name only",
+      "cron.unschedule(j.jobid)" in sent[-2] and f"'{sc.JOB}'" in sent[-2] and sc.FOREIGN_JOB not in sent[-2])
+msg, sleeps, sent = trip([[], [{"n": 0}]])
+check("an already-absent pinger says 'already unscheduled' (no swallowed exception)",
+      msg is not None and "already unscheduled" in msg, msg)
+msg, sleeps, sent = trip([[{"jobname": sc.JOB, "unscheduled": True}], [{"n": 1}]])
+check("a job still present on read-back fails loudly", msg is None)
+msg, sleeps, sent = trip([400])
+check("an SQL error (400) is not retried", msg is None and sleeps == [], sleeps)
+msg, sleeps, sent = trip([544, 544, 544, 544])
+check("four 544s in a row give up loudly (non-zero), after 3 waits", msg is None and len(sleeps) == 3, sleeps)
 
 print()
 if FAILS:

@@ -1,0 +1,39 @@
+name: Card job failure alert
+
+# card-job-lock (2026-10-28). workflow_run fires on EVERY completion of the watched workflow, including cancelled and
+# timed-out runs. ten232-kibl-archive.yml (the card job behind odds-card-state.json) failed on every run from
+# 27 Oct 13:31Z with nobody told. The decision (any conclusion but success / skipped / neutral; first failure after a
+# pass, then once per UTC day) is in tools/card-job-fail-alert.mjs, tested by tools/test-card-job-fail-alert.mjs.
+on:
+  workflow_run:
+    workflows: ['TEN-232 kibl archive']
+    types: [completed]
+  # A live test: replays the real alert for a named past run, prefixed "TEST — no action needed".
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: 'A past ten232-kibl-archive run id to replay as a TEST alert'
+        required: true
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  alert:
+    if: github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion != 'success' && github.event.workflow_run.conclusion != 'skipped')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with: { sparse-checkout: tools, fetch-depth: 1 }
+      - uses: actions/setup-node@v4
+        with: { node-version: '24' }
+      - name: Alert — card job did not succeed (Telegram)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ github.event.workflow_run.id || inputs.run_id }}
+          ALERT_TEST: ${{ github.event_name == 'workflow_dispatch' && '1' || '' }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: node tools/card-job-fail-alert.mjs
