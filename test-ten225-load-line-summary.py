@@ -237,6 +237,41 @@ check('unreliable close -> last_pre_start_tick_ts survives',
 check('unreliable close -> close_lag_minutes survives',
       r4['close_lag_minutes'] is not None)
 
+# Founder ruling 2026-10-28 (close-rule corrections item 2): a Pinnacle match-winner
+# close is stamped at our last confirmed sighting (a capture read before the start that
+# saw the same two prices), so a tick 90 min old, re-read 12 min before the start, is a
+# within-60 close. bet365, a read after the start, other prices: the tick clock.
+def pin_payload(t1, t2, book='pinnacle+30'):
+    return {'fixtureId': 'idTEST', 'bookmakers': {book: {'markets': {'121': {'outcomes': {
+        '121': {'players': {'0': t1}}, '122': {'players': {'0': t2}}}}}}}}
+PP = pin_payload([tick(-9000, 1.80), tick(-5400, 1.70)], [tick(-9000, 2.05), tick(-5400, 2.20)])
+SEEN = {'seen': START - 12 * 60, 'prices': [1.70, 2.20]}
+rs, sts = L.summarise_payload(PP, 'idTEST', OD(START), START + DAY, CAT, SEEN)
+check('item 2: a sighted Pinnacle close is within 60 (aged 12 min, not 90)',
+      all(r['close_reliable'] and abs(r['close_lag_minutes'] - 12) < 1e-6 for r in rs) and len(rs) == 2,
+      str([(r['close_reliable'], r['close_lag_minutes']) for r in rs]))
+check('item 2: close_ts = the sighting, last_pre_start_tick_ts = the tick',
+      all(r['close_ts'] == L.iso(START - 720) and r['last_pre_start_tick_ts'] == L.iso(START - 5400) for r in rs))
+r0, _ = L.summarise_payload(PP, 'idTEST', OD(START), START + DAY, CAT, None)
+check('item 2: no sighting -> the tick clock (90 min: not within 60)', all(not r['close_reliable'] for r in r0))
+r1, _ = L.summarise_payload(PP, 'idTEST', OD(START), START + DAY, CAT, {'seen': START + 60, 'prices': [1.70, 2.20]})
+check('item 2: a read after the start is never a sighting', all(not r['close_reliable'] for r in r1))
+r2, _ = L.summarise_payload(PP, 'idTEST', OD(START), START + DAY, CAT, {'seen': START - 720, 'prices': [1.71, 2.20]})
+check('item 2: a sighting of other prices is not this close', all(not r['close_reliable'] for r in r2))
+r3, _ = L.summarise_payload(pin_payload([tick(-9000, 1.80), tick(-5400, 1.70)], [tick(-9000, 2.05), tick(-5400, 2.20)], 'bet365'),
+                            'idTEST', OD(START), START + DAY, CAT, SEEN)
+check('item 2: only Pinnacle is stamped (bet365 keeps its tick clock)', all(not r['close_reliable'] for r in r3))
+check('item 2: a sighting changes the fingerprint; no sighting keeps the old one',
+      L.object_fingerprint('p', 'c', OD(START), 'd', SEEN) != L.object_fingerprint('p', 'c', OD(START), 'd')
+      and L.object_fingerprint('p', 'c', OD(START), 'd', None) == L.object_fingerprint('p', 'c', OD(START), 'd'))
+_src = open(L.__file__).read()
+_mut = _src.replace("if not seen or start_ts is None or not (seen['seen'] < start_ts):", "if not seen or start_ts is None:")
+check('CONTROL: mutant anchor present', _mut != _src)
+_M = types.ModuleType('ls_mutant'); _M.__file__ = L.__file__
+exec(compile(_mut, L.__file__, 'exec'), _M.__dict__)
+_rm, _ = _M.summarise_payload(PP, 'idTEST', OD(START), START + DAY, CAT, {'seen': START + 60, 'prices': [1.70, 2.20]})
+check('CONTROL: a post-start read accepted is caught (the mutant stamps it)', any(r['close_reliable'] for r in _rm))
+
 # No trueStartTime (40.15% of the sweep): Open only, never the scheduled time.
 rows5, st5 = L.summarise_payload(payload(mk('121', '121',
                                  [tick(-7200, 1.50), tick(+600, 1.10)])),
@@ -460,7 +495,16 @@ check('no trueStart but a flip -> the flip bound',
 # --- item 2: the cross-check
 near = L.resolve_start(TRUE, TRUE + H, SCHED, TRUE - 180.0, 10.0)   # 3 min apart
 check('3 minutes apart is NOT flagged', near[3] is False and near[4] is None)
-check('3 minutes apart keeps the oddswapi start', near[0] == TRUE)
+# Founder ruling 2026-10-28 (close-rule corrections item 1): the EARLIER clock
+# wins inside the 5-min band too. The pre-ruling code kept trueStart here.
+check('3 minutes apart, flip earlier -> the FLIP is the cutoff (earlier-of)',
+      near[0] == TRUE - 180.0 and near[1] == 'api-tennis-live', f'got {near[:2]}')
+check('3 minutes apart, flip earlier -> carries the flip gap', near[5] == 10.0)
+near_l = L.resolve_start(TRUE, TRUE + H, SCHED, TRUE + 180.0, 10.0)
+check('3 minutes apart, flip LATER -> trueStart stands, unflagged',
+      near_l[:2] == (TRUE, 'oddspapi') and near_l[3] is False)
+near_s = L.resolve_start(TRUE, TRUE + H, SCHED, TRUE - 1.0, 10.0)
+check('1 second apart, flip earlier -> the flip', near_s[0] == TRUE - 1.0)
 
 # flip EARLIER by 20 min -> the flip wins and the row is flagged
 fe = L.resolve_start(TRUE, TRUE + H, SCHED, TRUE - 20 * 60, 10.0)
@@ -483,8 +527,8 @@ check('conflict_minutes is negative when oddspapi is earlier',
 for a_, b_ in ((TRUE, TRUE - 20 * 60), (TRUE, TRUE + 20 * 60),
                (TRUE, TRUE - 3 * 60)):
     got = L.resolve_start(a_, a_ + H, SCHED, b_, 10.0)[0]
-    check(f'cutoff <= both candidates ({int((a_-b_)/60)} min apart)',
-          got <= a_ + 1e-9 and got <= max(a_, b_) + 1e-9, f'got {got}')
+    check(f'cutoff = the earlier candidate ({int((a_-b_)/60)} min apart)',
+          abs(got - min(a_, b_)) < 1e-9, f'got {got}')
 
 # --- ruling 2026-09-17T10:45Z item 3: the ITF corroboration rule
 # "because ITF has no trueEnd and the gate only runs the weak limb there, for ITF

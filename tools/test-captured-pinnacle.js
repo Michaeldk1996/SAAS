@@ -192,6 +192,71 @@ check('trueStart beats a later card-state start: the +4 min tick is in-play', c.
   check('the 2% minimum is the founder ruling', B.movePct(1.5, 1.49) === -0.7 && mr.minMovePct === 2);
 }
 
+// ---- founder ruling 2026-10-28 (close-rule corrections items 2 + 3) -----------------------------------------
+// Item 2: the close is stamped at our last confirmed sighting — a capture read (chart meta checkedAt) at or after the
+// close tick and strictly before the start; age = start − seenAt. Item 3: "moved" = the shortening side fell >= 2%.
+function closeRuleCases(builderPath) {
+  delete require.cache[require.resolve(builderPath)];
+  const B = require(builderPath);
+  const res = {};
+  // A close ticked 90 min before the start, re-confirmed by reads at −75, −30 and −12; a read at +3 is after the start.
+  const snap = (ck) => [card(31, 'L. Harris', 'A. Kovacevic', 10, 20,
+    { chart: { books: { 'Pinnacle +30s': { p1: [[at(-200), 1.80], [at(-90), 1.70]], p2: [[at(-200), 2.05], [at(-90), 2.20]] } },
+               meta: { 'Pinnacle +30s': { checkedAt: ck } } } })];
+  const dir = repoWith([snap(at(-75)), snap(at(-30)), snap(at(-12)), snap(at(3))], { cardState: flip(at(0)) });
+  res.row = run(builderPath, dir).row(31);
+  // Reads only BEFORE the tick: no sighting, the tick is the clock.
+  res.noSee = B.deriveRow('32', { p1Key: 1, p2Key: 2, date: '2026-09-27', seen: { 'Pinnacle +30s': new Set([T - 100 * 60e3]) },
+    series: { 'Pinnacle +30s': { p1: new Map([[at(-90), 1.7]]), p2: new Map([[at(-90), 2.2]]) } } }, { ms: T, source: 'oddspapi' }, T + 864e5).row;
+  const now = Date.parse('2026-10-27T12:00:00Z');
+  const r = (k, o1, o2, c1, c2, w, lag, seenLag) => Object.assign({ eventKey: k, date: '2026-10-26', o1, o2, p1: c1, p2: c2, winner: w,
+    at: at(-lag), trueStart: at(0), event: 'ATP Vienna' }, seenLag != null ? { seenAt: at(-seenLag) } : {});
+  res.mr = B.marketRead30([
+    r(1, 2.0, 1.8, 1.8, 2.0, 'p1', 95, 12),     // tick 95 min old, seen 12 min before: within 60 by the sighting
+    r(2, 2.0, 1.8, 1.8, 2.0, 'p1', 95),         // no sighting: 95 min old → out
+    r(3, 3.36, 1.366, 3.49, 1.355, 'p1', 10),   // Griekspoor v Lehecka shape: p1 drifted +3.9%, p2 shortened −0.8% → not moved
+    r(4, 1.5, 2.6, 1.47, 2.62, 'p2', 10),       // p1 shortened −2.0% exactly → moved, the market was wrong
+  ], now);
+  res.side = [B.shorteningSide(3.9, -0.8), B.shorteningSide(-2.0, 0.8), B.shorteningSide(-1.9, -2.1), B.shorteningSide(2.5, 3.0)];
+  // The back-fill fills only a held row with the same tick and prices, and only a sighting before its own start.
+  const held = [{ eventKey: 41, at: at(-90), p1: 1.7, p2: 2.2, trueStart: at(0) }, { eventKey: 42, at: at(-90), p1: 1.7, p2: 2.2, trueStart: at(0) },
+    { eventKey: 43, at: at(-90), p1: 1.7, p2: 2.2, trueStart: at(0) }];
+  res.bfN = B.applySeenBackfill(held, { 41: { at: at(-90), p1: 1.7, p2: 2.2, seenAt: at(-12) }, 42: { at: at(-90), p1: 1.71, p2: 2.2, seenAt: at(-12) },
+    43: { at: at(-90), p1: 1.7, p2: 2.2, seenAt: at(2) } });
+  res.bf = held;
+  return res;
+}
+{
+  const k = closeRuleCases(REAL);
+  check('item 2: seenAt = the last capture read before the start (−12), never the +3 read after it',
+    k.row && k.row.seenAt === at(-12) && k.row.at === at(-90) && k.row.p1 === 1.70, JSON.stringify(k.row));
+  check('item 2: a read before the tick is no sighting (no seenAt)', k.noSee && !('seenAt' in k.noSee), JSON.stringify(k.noSee));
+  check('item 2: the 30-day line ages a close from its sighting (95-min tick seen at −12 counts; unseen one is out)',
+    k.mr.n === 3 && k.mr.excluded.noClose60 === 1, JSON.stringify(k.mr));
+  check('item 3: a drift on the other side never makes a match "moved" (row 3); −2.0% on the shortening side does (row 4)',
+    k.mr.moved === 2 && k.mr.won === 1, JSON.stringify(k.mr));
+  check('item 3: shorteningSide', JSON.stringify(k.side) === JSON.stringify([null, 'p1', 'p2', null]), JSON.stringify(k.side));
+  check('item 2 back-fill: same tick + prices + pre-start sighting only', k.bfN === 1 && k.bf[0].seenAt === at(-12) && !k.bf[1].seenAt && !k.bf[2].seenAt);
+  const bfFile = JSON.parse(fs.readFileSync(path.join(REPO, 'captured-pinnacle-seen-backfill.json'), 'utf8'));
+  const heldNow = new Map(JSON.parse(fs.readFileSync(path.join(REPO, 'captured-closes-pinnacle.json'), 'utf8')).rows.map((x) => [String(x.eventKey), x]));
+  check('the committed back-fill: every sighting is at or after its tick and before its start',
+    Object.entries(bfFile.rows).every(([ek, v]) => { const h = heldNow.get(ek); return !h || (Date.parse(v.seenAt) >= Date.parse(v.at) && Date.parse(v.seenAt) < Date.parse(h.trueStart)); })
+    && Object.keys(bfFile.rows).length > 0);
+  // Controls: each pre-ruling behaviour, restored, must turn a check red.
+  const src = fs.readFileSync(REAL, 'utf8');
+  const mutants = [
+    ['the tick clock (no sighting)', "const at = Date.parse(r.seenAt || r.at), st", "const at = Date.parse(r.at), st", (m) => m.mr.n === 3],
+    ['the larger-side 2% rule', "return d < 0 && -d >= MOVE_MIN ? side : null;", "return Math.max(Math.abs(d1), Math.abs(d2)) >= MOVE_MIN ? side : null;", (m) => m.mr.moved === 2],
+    ['a post-start read as a sighting', "ms >= tickMs && ms < startMs", "ms >= tickMs", (m) => m.row && m.row.seenAt === at(-12)],
+  ];
+  for (const [name, a, b, ok] of mutants) {
+    if (src.split(a).length !== 2) { check(`mutant anchor found: ${name}`, false); continue; }
+    const mut = path.join(REPO, '.close-rules-mutant-build-captured-pinnacle.js');
+    fs.writeFileSync(mut, src.replace(a, b));
+    try { check(`CONTROL: ${name} is caught`, !ok(closeRuleCases(mut))); } finally { fs.rmSync(mut, { force: true }); }
+  }
+}
+
 // ---- control: the start cut removed must be caught -----------------------------------
 {
   const src = fs.readFileSync(REAL, 'utf8');

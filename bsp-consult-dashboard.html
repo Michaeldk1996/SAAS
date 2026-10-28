@@ -7516,13 +7516,15 @@ function _mcPinClose(m){
   return c;
 }
 function _mcPinCloseOf(m, who){ const c = _mcPinClose(m); return c ? (c[who] ?? null) : null; }
-// A leg's age in ms: from its last price change to `ageRefTs` — the actual start, else the
-// LATEST scheduled start (the pipeline cuts at the earliest; aging to it would call a close
+// A leg's age in ms: from our last confirmed sighting of the close (`seenAt`, a capture read before the start —
+// founder ruling 2026-10-28, close-rule corrections item 2), else its last price change, to `ageRefTs` — the actual
+// start, else the LATEST scheduled start (the pipeline cuts at the earliest; aging to it would call a close
 // fresh that is hours old when the order of play moved). null when unknown, never a guess.
 function mxPinCloseAgeMs(m, who){
   const c = _mcPinClose(m);
   if (!c) return null;
-  const t = Date.parse(c[who + 'At'] || ''), st = Date.parse(c.ageRefTs || c.startTs || '');
+  const tick = Date.parse(c[who + 'At'] || ''), seen = Date.parse(c.seenAt || '');
+  const t = Number.isFinite(seen) && seen >= tick ? seen : tick, st = Date.parse(c.ageRefTs || c.startTs || '');
   if (!Number.isFinite(t) || !Number.isFinite(st) || st < t) return null;
   return st - t;
 }
@@ -9407,7 +9409,8 @@ function mxToggleDriftSort(keepFocus){
 
 // ── Step 15 (founder 2026-10-27) — insight tiles, sorts and Market Signal shared helpers ───────────────────────────
 // Minimum open → close move for a match to count as "moved" (Market read, Market got it wrong): founder ruling
-// 2026-10-27, 2%. Measured on the printed two-decimal prices (mxMovePct), either side.
+// 2026-10-27, 2%. Measured on the printed two-decimal prices (mxMovePct), on the SHORTENING side only (founder ruling
+// 2026-10-28, close-rule corrections item 3): a drift on the other side never qualifies a match.
 const MX_MOVE_MIN = 2.0;
 function mxSurname(name){
   const t = String(name || '').trim().split(/\s+/).filter(Boolean);
@@ -9453,7 +9456,8 @@ function mxJourneyOf(o1, o2, c1, c2){
   if (!d1 || !d2) return null;
   const mag = Math.max(Math.abs(d1.v), Math.abs(d2.v));
   const toward = d1.v < d2.v ? 'p1' : d2.v < d1.v ? 'p2' : null;   // the side whose price fell the most
-  return { o1, o2, c1, c2, d1, d2, mag, moved: mag >= MX_MOVE_MIN && toward != null, toward };
+  const fell = toward === 'p1' ? d1.v : toward === 'p2' ? d2.v : 0;  // that side's own move, negative when it shortened
+  return { o1, o2, c1, c2, d1, d2, mag, moved: toward != null && fell < 0 && -fell >= MX_MOVE_MIN, toward };
 }
 // The Pinnacle +30s first real tick per side (Oddspapi; the chart series is already cut at the actual start) —
 // the open the 30-day line uses. null until the odds shard is in, or without a two-sided first price.

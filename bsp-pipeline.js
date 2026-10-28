@@ -4881,6 +4881,32 @@ function pinnacleCloseOf(m, startMs, startBasis, ageRefMs) {
   }
   return null;
 }
+// Founder ruling 2026-10-28 (close-rule corrections item 2): a Pinnacle close is stamped at our last CONFIRMED
+// SIGHTING — a 15-minute capture read (chart meta checkedAt) at or after both legs' last tick and strictly before the
+// start; the age is measured from it, not from the book's last tick. Candidates: this run's checkedAt, the prior run's
+// pin (same prices), and the captured-closes row of the same event and prices (build-captured-pinnacle.js reads every
+// matches.json snapshot, so it holds the pre-start reads a finished card's latest snapshot no longer shows).
+// Returns an ISO string or null (null = the ticks are the clock).
+function pinCloseSeenAt(pc, startMs, cands) {
+  if (!pc || !Number.isFinite(startMs)) return null;
+  const tick = Math.max(Date.parse(pc.p1At), Date.parse(pc.p2At));
+  if (!Number.isFinite(tick)) return null;
+  let best = null;
+  for (const c of cands || []) {
+    if (!c || c.ts == null) continue;
+    if (c.p1 != null && (c.p1 !== pc.p1 || c.p2 !== pc.p2)) continue;
+    const t = Date.parse(c.ts);
+    if (Number.isFinite(t) && t >= tick && t < startMs && (best == null || t > best)) best = t;
+  }
+  return best == null ? null : new Date(best).toISOString();
+}
+function capturedSeenByEvent(file = 'captured-closes-pinnacle.json') {
+  const by = new Map();
+  try {
+    for (const r of (JSON.parse(fs.readFileSync(file, 'utf8')).rows || [])) if (r && r.seenAt) by.set(String(r.eventKey), r);
+  } catch (e) { /* absent -> this run's reads and the prior pin only */ }
+  return by;
+}
 // The card's scheduled wall clock is the api-tennis account zone, Europe/Berlin (DST-aware):
 // berlinWallMs (berlin-time.js, TEN-308) — the page's cardStartMs and build-chart-books.py's
 // _scheduled_start read it the same way.
@@ -7599,7 +7625,8 @@ async function runPipeline() {
   // invents one.
   {
     const pcSrc = { 'Pinnacle +30s (Oddspapi)': 0, 'Pinnacle (api-tennis)': 0 };
-    let pcDash = 0, pcCarried = 0, pcActual = 0;
+    let pcDash = 0, pcCarried = 0, pcActual = 0, pcSeen = 0;
+    const capSeen = capturedSeenByEvent();
     for (const m of matches) {
       if (!m.finalScore) { if ('pinClose' in m) delete m.pinClose; continue; }
       const carried = priorOdds.get(`id:${m.id}`)
@@ -7611,13 +7638,24 @@ async function runPipeline() {
       // No chart this run, or a re-read with no pre-start pair: a proven prior pin stands — never
       // erased by a thinner read — but only while it is still before today's cut.
       if (!pc && pinCloseStillPreStart(prior, st.ms)) { pc = prior; pcCarried++; }
+      if (pc) {
+        const meta = m.oddsMovement && m.oddsMovement.chart && m.oddsMovement.chart.meta;
+        const ck = meta && meta['Pinnacle +30s'] && meta['Pinnacle +30s'].checkedAt;
+        const cap = capSeen.get(String(m.id || '').replace(/^[a-z]+-/, ''));
+        const seen = pinCloseSeenAt(pc, st.ms, [
+          pc.source === 'Pinnacle +30s (Oddspapi)' ? { ts: ck } : null,
+          prior && { ts: prior.seenAt, p1: prior.p1, p2: prior.p2 },
+          cap && { ts: cap.seenAt, p1: cap.p1, p2: cap.p2 },
+          pc.seenAt ? { ts: pc.seenAt } : null]);
+        if (seen) { pc = Object.assign({}, pc, { seenAt: seen }); pcSeen++; } else if (pc.seenAt) { pc = Object.assign({}, pc); delete pc.seenAt; }
+      }
       if (pc) { m.pinClose = pc; pcSrc[pc.source] = (pcSrc[pc.source] || 0) + 1; if (pc.startBasis === 'actual') pcActual++; }
       else { delete m.pinClose; pcDash++; }
     }
     const fin = matches.filter(m => m.finalScore).length;
     console.log(`Pinnacle board close (TEN-295) over ${fin} finished card(s): `
       + Object.entries(pcSrc).map(([k, v]) => `${v} ${k}`).join(' / ')
-      + ` / ${pcDash} dash (${pcCarried} carried from the prior run; ${pcActual} cut at the card-state actual start).`);
+      + ` / ${pcDash} dash (${pcCarried} carried from the prior run; ${pcActual} cut at the card-state actual start; ${pcSeen} stamped at our last sighting).`);
   }
   console.log(`Odds snapshots — opening: ${openDerived} derived / ${openPreserved} preserved / ${openFromArchive} re-pinned earlier from the bet365 archive; closing (completed only): ${closeDerived} derived / ${closePreserved} preserved / ${closeHealed} healed (cross-book/in-play/superseded pin replaced) / ${closeDashed} dashed (no proven pre-first-ball reference).`);
   console.log(`bet365 NOW (upcoming only, TEN-179 item 1) — ${nowFromLive} kept from the hourly metered read / ${nowPinned} derived from the 3-hourly series / ${nowCarried} carried forward; ${crossBookDropped} upcoming match(es) dropped a cross-book open rather than fall back to another book.`);

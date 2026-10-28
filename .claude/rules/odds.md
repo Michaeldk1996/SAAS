@@ -433,14 +433,64 @@ closes, odds performance and started-evidence.
   nothing is listed in the coverage report (per month, per event) until a Pinnacle close replaces it.
 - **TML** (Tennis Abstract match files) is used for match, date and score checks only — it carries no odds.
 
-**The board close = Pinnacle's closing price** (founder 2026-09-27, TEN-295 comment 054dc038 item 1; `bsp-pipeline.js` `pinnacleCloseOf` → `m.pinClose`; page `_mcPinClose*`). Source **Pinnacle +30s (Oddspapi)**, else **Pinnacle (api-tennis)** — both legs from ONE source, read from the chart series (`oddsMovement.chart.books`, stored keys `Pinnacle +30s` / `Pinnacle (api-tennis)`); per leg the last real price (≥ 1.01) **strictly before** the start. Start = the card state's actual `startTs`; only where none exists, the **earliest** scheduled start (`m.startTs`, the Oddspapi fixture start, the card's Europe/Berlin clock — schedules disagree when an order of play moves, and a later cut can take an in-play price). Neither source with a pre-start pair → **dash**. Never another book, never an estimate. Finished cards only; a run without the series carries the prior `pinClose`. The model never reads it (`runModel` byte-identical with and without, 54 of 54 cards, 27 Sep). Tests: Harris v Kovacevic (actual 10:31:59Z) → Pinnacle +30s 1.534 / 2.65 (10:10:08Z), never the 10:32:14Z tick, never Bet105's 1.526 / 2.64; Oddspapi missing a leg → the api-tennis pair; neither → null. Since TEN-377 it feeds no card figure (the card book's close does); its own age is judged on each leg's **last price change** (the series records changes only) against `ageRefTs` — the actual start, else the **latest** schedule (cut at the earliest, aged to the latest: Wong v Vallejo, schedules 11:30Z / 13:40Z, is 144 min old, never "14 min"); exact to the millisecond. A prior `pinClose` is carried when a run has no series or no pre-start pair, only while both legs are still before that run's cut. **Staleness beyond that is the founder's pending call** (27 Sep: 18 of 37 actual-start closes' older leg last moved > 30 min before the start, 14 > 60; all 9 scheduled-start closes > 30 min to the latest schedule, 5 > 60).
+**The board close = Pinnacle's closing price** (founder 2026-09-27, TEN-295 comment 054dc038 item 1; `bsp-pipeline.js` `pinnacleCloseOf` → `m.pinClose`; page `_mcPinClose*`). Source **Pinnacle +30s (Oddspapi)**, else **Pinnacle (api-tennis)** — both legs from ONE source, read from the chart series (`oddsMovement.chart.books`, stored keys `Pinnacle +30s` / `Pinnacle (api-tennis)`); per leg the last real price (≥ 1.01) **strictly before** the start. Start = the card state's actual `startTs`; only where none exists, the **earliest** scheduled start (`m.startTs`, the Oddspapi fixture start, the card's Europe/Berlin clock — schedules disagree when an order of play moves, and a later cut can take an in-play price). Neither source with a pre-start pair → **dash**. Never another book, never an estimate. Finished cards only; a run without the series carries the prior `pinClose`. The model never reads it (`runModel` byte-identical with and without, 54 of 54 cards, 27 Sep). Tests: Harris v Kovacevic (actual 10:31:59Z) → Pinnacle +30s 1.534 / 2.65 (10:10:08Z), never the 10:32:14Z tick, never Bet105's 1.526 / 2.64; Oddspapi missing a leg → the api-tennis pair; neither → null. Since TEN-377 it feeds no card figure (the card book's close does); its own age is judged from our **last confirmed sighting** (`seenAt`, below), else each leg's **last price change**
+(the series records changes only), against `ageRefTs` — the actual start, else the **latest** schedule (cut at the earliest, aged to the latest: Wong v Vallejo, schedules 11:30Z / 13:40Z, is 144 min old, never "14 min"); exact to the millisecond. A prior `pinClose` is carried when a run has no series or no pre-start pair, only while both legs are still before that run's cut. **Staleness beyond that is the founder's pending call** (27 Sep: 18 of 37 actual-start closes' older leg last moved > 30 min before the start, 14 > 60; all 9 scheduled-start closes > 30 min to the latest schedule, 5 > 60).
+
+**A Pinnacle close is stamped at our last confirmed sighting** (founder ruling 2026-10-28, close-rule corrections item
+2). The 15-minute capture (`refresh-odds-history.py`) reads the fixture's full Oddspapi `pinnacle+30` history on every
+pass and records the read as the chart meta `checkedAt`; a read that shows no newer tick confirms the price still stood
+then. So a close's clock = the latest read **at or after its later leg's tick and strictly before the start** (a read
+after the start is never a sighting — it would put every close at the start), else the tick. Close age = start − that
+clock; the within-60 test reads it. The tick itself (`at`, `p1At` / `p2At`, `last_pre_start_tick_ts`) is kept unchanged.
+- **Where:** `build-captured-pinnacle.js` writes `seenAt` on each captured row (from every `matches.json` snapshot;
+  a one-time back-fill of the rows already held, `captured-pinnacle-seen-backfill.json`, measured over the full history);
+  the board close (`pinCloseSeenAt` → `m.pinClose.seenAt`; page `mxPinCloseAgeMs`) takes this run's read, the prior pin
+  or the captured row of the same event **and prices**; the line summary stamps a Pinnacle match-winner close
+  (`close_ts` = the sighting) when both sides' last pre-start ticks are the sighted pair (`match_winner_sighting`, joined
+  through `odds-fixture-map.json`), and the card state inherits it. The 30-day Market read ages from `seenAt`.
+- **The Pinnacle archive is not touched:** its captured-close dedupe key is the tick and the prices, so `seenAt` adds no
+  row and no correction.
+- **Exception — Pinnacle closes off the board keep the tick clock.** **Why:** our capture reads only the board's cards, so
+  a Pinnacle card-book close of a match the board never carried has no read of ours to confirm it; stamping it at the
+  start, or anywhere after its tick, would claim a sighting that never happened. It stays aged from its last tick (and
+  dashed for numbers when that is over 60 min).
+- **Test:** `tools/test-captured-pinnacle.js` (−12 min read stamps a 90-min-old tick; a +3 min read never; the 30-day line
+  counts it), `test-ten295-odds-chart.mjs` (`pinCloseSeenAt`), `test-ten225-load-line-summary.py` (stamp, bet365 not,
+  other prices not, fingerprint), `test-step15-matches.mjs` (page age); each with a control that restores the tick clock
+  or accepts a post-start read. Measured 13–26 Oct: captured closes within 60 min 74 → 112 of 140; board closes 64 → 87
+  of 104; none lost.
+
+**"Moved" is measured on the shortening side only** (founder ruling 2026-10-28, close-rule corrections item 3; refines
+the 2026-10-27 2% minimum): a match moved open → close when the side whose price fell (the larger fall when both did)
+fell by **2% or more** on the printed two-decimal prices (`mxMovePct`). A drift on the other side never qualifies a
+match, however large. One rule on the Market read day tile (`mxMarketRead` → `mxJourneyOf`), the 30-day line
+(`build-captured-pinnacle.js` `shorteningSide`) and the *Market got it wrong* sort (`mxWrongSortKey`). **Test:**
+Griekspoor v Lehecka shape 3.36 / 1.366 → 3.49 / 1.355 (p1 +3.9%, p2 −0.8%) is not moved; −2.0% exactly is
+(`test-step15-matches.mjs`, `tools/test-captured-pinnacle.js`; the larger-side rule fails both). Measured 13–26 Oct:
+30-day basis moved 66 → 56 of 74; *Market got it wrong* 84 → 71 of 108; none gain.
 
 **`matches.json`'s bet365 close** (`m.closingOdds`, `bsp-pipeline.js` `closeCutMs`; TEN-124 / TEN-179; founder 2026-09-26 card f8b311c9) is cut at, most proven first: the card state's ACTUAL start (`odds-card-state.json` `startTs`, keyed by the card-state key — the pipeline's `ocsMatchKey` is the page's, character for character), `m.startTs`, the joined Oddspapi fixture's UTC start, the in-play onset − 1 ms; else a dash. A carried close later than the cut, or from another book, is re-derived (self-heals). When the cut IS the card state's actual start, a carried close is also re-derived when the series re-read at that cut gives a different close (`keepCarriedClose`; founder 2026-09-27, TEN-295 comment 054dc038 item 2); on a fallback cut (no card-state start that run) a pre-cut carried close stands, because a later tick before a scheduled cut can be in-play. A re-read with no close never erases a proven one. Tests: Harris v Kovacevic (actual start 10:31:59Z, schedule 10:35Z) closes at the last bet365 prices before 10:31:59Z — 1.47 / 2.62 — never the 10:32:14Z in-play 1.50; Shang v Mannarino (actual 08:47:59Z) closes 1.44 / 2.75 (08:45:19Z), never the 1.37 / 3.00 carried from the 08:45:00Z scheduled cut; Sun v Safiullin (actual 10:06:06Z) 4.50 / 1.20 (10:05:33Z), never 4.50 / 1.17. It is no longer the completed card's Close (that is the Pinnacle board close above); it survives as the underway "last price before the off" fallback where no card-state row exists, and in `trading-report.js`.
 
-Start-time ladder:
-1. oddspapi `trueStartTime`
-2. live-flip lower bound (last poll where the match was not yet live)
-3. dash
+Start-time ladder — **the earlier of the two clocks** (founder ruling 2026-10-28, close-rule corrections item 1;
+replaces "Oddspapi first, the live flip only when they disagree by more than 5 min"):
+1. Oddspapi `trueStartTime` (after the gate below) and our live-flip lower bound (last poll where the match was not yet
+   live) both held → **the earlier one**, whatever the gap between them (the start-conflict flag still marks > 5 min);
+2. only one held → that one;
+3. neither → dash. A Kibl `scheduled_start` is a listing, never a start, and is never used.
+`resolve_start` (`ten225-load-line-summary.py`) is the one rule — the line summary and the card-state builder read it,
+so every Bet105 and Pinnacle close is cut there; the captured Pinnacle closes (`build-captured-pinnacle.js`
+`actualStart`) apply the same earlier-of. **Test:** a flip 3 min (or 1 s) before trueStart is the cut; a flip after it
+leaves trueStart (`test-ten225-load-line-summary.py`, `test-ten225-kibl-card-state.py`; the pre-ruling rule fails both).
+Measured 13–26 Oct: 274 of 2,836 card-state match × book starts move earlier (median 3.3 min, max 9.1); 6 of 18 Bet105
+stream closes change price, each to a tick recorded before the new start (Cerundolo v Navone 20 Oct: 2.22 / 1.709 at
+09:35:53.8Z, flip 09:36:04.9Z — the old 2.31 / 1.667 was ticked at 09:36:20.9Z, after it).
+- **Exception — ITF keeps its corroboration rule** (founder ruling 2026-09-17T10:45Z item 3, kept 2026-10-28):
+  an in-scope ITF fixture's cut must agree with the live flip — trueStart missing or more than 5 min from the flip → the
+  flip, **even when the flip is later**; no flip → dash. **Why:** ITF has no `trueEndTime`, so the 6-hour gate runs only
+  its weak limb there and an ITF trueStart is the least trustworthy clock we hold; the flip is an OBSERVATION that the
+  match was not live, so every tick at or before it is pre-start by construction. Earlier-of would let an unchecked ITF
+  trueStart win. No ITF match is on the board (13–26 Oct: 0 affected). **Test:** `test-ten225-load-line-summary.py`
+  "ITF: flip 20 min LATER than trueStart -> the FLIP is the cutoff".
 
 **A live flag is a start only once play is seen** (founder ruling 2026-10-26, played-start-recorder). A close is a price from before the first ball: an early close is acceptable, a late one never is. **Test:** a `live_flip_log` row exists only after the board showed play (`match_played()`, the same rule as the line-price worker's `played()`: a game score, a set score above 0-0, a point, or finished). When play is seen within **T = 300 s** of the flag, the lower bound is the poll before the flag, never the play-seen time. When it is seen later, or is **already on the board at the first sighting**, the row has **no lower bound**, so no close is cut (dash; founder 2026-10-27: the poll before only proves the match was not listed live, not that no ball had been struck). A flag that leaves the live board before play is dropped. Every row carries `play_seen_at`, the measurement T is set from. Harness: `test-live-flip-played.sql` (named mutants).
 

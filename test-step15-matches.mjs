@@ -225,3 +225,38 @@ test('Streak on court: the top Series card, "+N more on court today" by player, 
   assert.match(series, /onCourt: onCourt,\n    openStreak: openStreak,/);
   });
 });
+
+// ── Founder ruling 2026-10-28 (close-rule corrections items 2 + 3) ──
+test('item 3: "moved" = the shortening side fell 2%+; a drift on the other side never qualifies (day tile + Market got it wrong)', () => {
+  const OLD = "moved: toward != null && fell < 0 && -fell >= MX_MOVE_MIN, toward };";
+  assert.ok(html.includes(OLD), 'the ruled rule is in the page');
+  const J = src => new Function(`${/const MX_MOVE_MIN = [\d.]+;/.exec(src)[0]} ${slice('mxMovePct', src)} ${slice('mxJourneyOf', src)} return mxJourneyOf;`)();
+  const j = J(html);
+  // Griekspoor v Lehecka, 23 Oct: 3.36/1.366 → 3.49/1.355 — p1 drifted +3.9%, p2 shortened −0.8%.
+  assert.equal(j(3.36, 1.366, 3.49, 1.355).moved, false, 'a 3.9% drift with a 0.8% shortening is not a move');
+  assert.equal(j(1.5, 2.6, 1.47, 2.62).moved, true, 'exactly −2.0% on the shortening side is a move');
+  assert.equal(j(1.5, 2.6, 1.48, 2.62).moved, false, '−1.3% is not');
+  assert.equal(j(1.5, 2.6, 1.6, 2.9).moved, false, 'both sides drifted: nothing shortened, not a move');
+  // Market got it wrong reads the same flag: the drift shape with p1 winning is no longer "wrong first".
+  const run = sortApi();
+  const L = [done('drift', 1, 'p1', { p1: 3.36, p2: 1.366 }, { p1: 3.49, p2: 1.355 }, null),
+             done('real', 2, 'p2', { p1: 1.5, p2: 2.6 }, { p1: 1.47, p2: 2.62 }, null)];
+  assert.deepEqual(run(L, 'marketwrong'), ['real', 'drift']);
+  // CONTROL: the pre-ruling rule (the larger move on either side) counts the drift.
+  const mut = html.replace(OLD, 'moved: mag >= MX_MOVE_MIN && toward != null, toward };');
+  assert.notEqual(mut, html);
+  assert.equal(J(mut)(3.36, 1.366, 3.49, 1.355).moved, true, 'the old rule is caught by this test');
+  assert.deepEqual(sortApi(mut)(L, 'marketwrong'), ['drift', 'real']);
+});
+
+test('item 2: the Pinnacle close age runs from our last sighting (seenAt), else the leg tick; never from a sighting before the tick', () => {
+  const A = src => new Function('c', `const _mcPinClose = () => c; ${slice('mxPinCloseAgeMs', src)} ${slice('mxPinCloseAgeMin', src)} return w => mxPinCloseAgeMin({}, w);`);
+  const c = { p1At: '2026-10-20T10:00:00Z', p2At: '2026-10-20T09:30:00Z', seenAt: '2026-10-20T11:20:00Z', ageRefTs: '2026-10-20T11:31:00Z' };
+  assert.deepEqual([A(html)(c)('p1'), A(html)(c)('p2')], [11, 11], 'both legs aged from the 11:20 read');
+  assert.deepEqual([A(html)(Object.assign({}, c, { seenAt: null }))('p1'), A(html)(Object.assign({}, c, { seenAt: null }))('p2')], [91, 121], 'no sighting: the ticks');
+  assert.equal(A(html)(Object.assign({}, c, { seenAt: '2026-10-20T09:45:00Z' }))('p1'), 91, 'a sighting before a leg tick does not age that leg');
+  // CONTROL: the tick clock (pre-ruling) is caught.
+  const mut = html.replace("const t = Number.isFinite(seen) && seen >= tick ? seen : tick,", "const t = tick,");
+  assert.notEqual(mut, html);
+  assert.equal(A(mut)(c)('p1'), 91);
+});

@@ -450,10 +450,14 @@ def catalogue_digest(catalogue):
     return hashlib.sha1(json.dumps(catalogue, sort_keys=True).encode()).hexdigest()[:16]
 
 
-def object_fingerprint(path, created, start, cat_digest):
-    """What the object's rows depend on besides its (immutable) payload."""
-    s = json.dumps([LOADER_VERSION, cat_digest, path, created, list(start)],
-                   sort_keys=True, default=str)
+def object_fingerprint(path, created, start, cat_digest, seen=None):
+    """What the object's rows depend on besides its (immutable) payload. A fixture
+    with a confirmed sighting (founder ruling 2026-10-28) adds it, so a new sighting
+    reloads that object; a fixture without one keeps its old fingerprint."""
+    parts = [LOADER_VERSION, cat_digest, path, created, list(start)]
+    if seen:
+        parts.append(['seen', seen.get('seen'), sorted(seen.get('prices') or [])])
+    s = json.dumps(parts, sort_keys=True, default=str)
     return hashlib.sha1(s.encode()).hexdigest()
 
 
@@ -483,7 +487,7 @@ def plan_objects(objects, state, fx_index, flips, cat_digest, full=False):
     pending, unchanged, why = [], [], collections.Counter()
     for path, fid, created in objects:
         start = start_for(fid, fx_index.get(fid) or {}, flips)
-        fp = object_fingerprint(path, created, start, cat_digest)
+        fp = object_fingerprint(path, created, start, cat_digest, SEEN_INDEX.get(fid))
         prev = state.get(path)
         if full:
             why['full_reload'] += 1
@@ -673,14 +677,17 @@ def resolve_start(true_start, true_end, sched, flip_ts, flip_gap, level=None):
             return flip_ts, 'api-tennis-live', reason, False, None, flip_gap
         return None, 'none', reason, False, None, None
 
-    # Both exist -> cross-check.
+    # Both exist -> the EARLIER of the two, always (founder ruling 2026-10-28,
+    # close-rule corrections item 1; replaces "Oddspapi first, the flip only
+    # when they disagree by more than 5 min"). Within 5 min the earlier clock
+    # still wins; the conflict flag keeps its 5-min meaning.
     if flip_ts is not None:
         diff_min = (ts - flip_ts) / 60.0
-        if abs(diff_min) > CONFLICT_MIN:
-            if flip_ts < ts:
-                return (flip_ts, 'api-tennis-live', reason, True,
-                        round(diff_min, 3), flip_gap)
-            return ts, 'oddspapi', reason, True, round(diff_min, 3), None
+        conflict = abs(diff_min) > CONFLICT_MIN
+        cm = round(diff_min, 3) if conflict else None
+        if flip_ts < ts:
+            return flip_ts, 'api-tennis-live', reason, conflict, cm, flip_gap
+        return ts, 'oddspapi', reason, conflict, cm, None
 
     return ts, 'oddspapi', reason, False, None, None
 
@@ -846,7 +853,65 @@ def judge_close(start_ts, close_ts, archived_at, start_src='oddspapi',
     return reliable, lag_min
 
 
-def summarise_payload(payload, fixture_id, start, archived_at, catalogue):
+# Founder ruling 2026-10-28 (close-rule corrections item 2): a Pinnacle close is stamped
+# at our last CONFIRMED SIGHTING — a 15-minute capture read before the start that saw no
+# newer tick — and its age is measured from it. Our capture reads board cards only, so the
+# sightings come from build-captured-pinnacle.js (captured-closes-pinnacle.json `seenAt`,
+# card orientation) joined to the Oddspapi fixture through the odds loop's map
+# (odds-fixture-map.json eventKey -> fixtureId). A fixture with no sighting keeps the
+# tick clock (off-board Pinnacle cards: never read by our capture). fixtureId ->
+# {'seen': epoch, 'prices': [p1, p2]}.
+SEEN_INDEX = {}
+CAPTURED_FILE = os.path.join(HERE, 'captured-closes-pinnacle.json')
+FIXTURE_MAP_FILE = os.path.join(HERE, 'odds-fixture-map.json')
+PIN_BOOKS = ('pinnacle',)
+
+
+def load_seen_index(captured=CAPTURED_FILE, fmap=FIXTURE_MAP_FILE):
+    try:
+        rows = (json.load(open(captured)) or {}).get('rows') or []
+        by = ((json.load(open(fmap)) or {}).get('byKey')) or {}
+    except (OSError, ValueError):
+        return {}
+    out = {}
+    for r in rows:
+        t = epoch(r.get('seenAt'))
+        m = by.get(str(r.get('eventKey'))) or {}
+        if t is None or not m.get('fixtureId') or r.get('p1') is None or r.get('p2') is None:
+            continue
+        out[m['fixtureId']] = {'seen': t, 'prices': [float(r['p1']), float(r['p2'])]}
+    return out
+
+
+def match_winner_sighting(payload, catalogue, start_ts, seen):
+    """The sighting that stamps this fixture's Pinnacle match-winner close, or None.
+    It counts only when both sides' last pre-start ticks are exactly the sighted pair
+    (orientation-free: the same two prices), the sighting is at or after the later tick,
+    and strictly before the start — a read after the start is never a sighting."""
+    if not seen or start_ts is None or not (seen['seen'] < start_ts):
+        return None
+    for book, blk in ((payload or {}).get('bookmakers') or {}).items():
+        if not str(book).lower().startswith(PIN_BOOKS) or not isinstance(blk, dict):
+            continue
+        last = []
+        for mid, m in (blk.get('markets') or {}).items():
+            meta = catalogue.get(str(mid)) or {}
+            if KEEP_FAMILIES.get(meta.get('name')) != 'match winner' or not isinstance(m, dict):
+                continue
+            for oid, oc in (m.get('outcomes') or {}).items():
+                for plist in ((oc or {}).get('players') or {}).values():
+                    pre = [(epoch(p.get('createdAt')), float(p['price'])) for p in (plist or [])
+                           if p.get('price') is not None and epoch(p.get('createdAt')) is not None
+                           and epoch(p.get('createdAt')) <= start_ts]
+                    if pre:
+                        last.append(max(pre))
+        if len(last) == 2 and sorted(x[1] for x in last) == sorted(seen['prices']) \
+                and seen['seen'] >= max(x[0] for x in last):
+            return seen['seen']
+    return None
+
+
+def summarise_payload(payload, fixture_id, start, archived_at, catalogue, seen=None):
     """One raw /v4/historical-odds payload -> summary rows at the ruled grain.
 
     `start` is the 6-tuple resolve_start() returns. It is resolved ONCE per
@@ -859,6 +924,7 @@ def summarise_payload(payload, fixture_id, start, archived_at, catalogue):
     start_ts, start_src, reason, conflict, conflict_min, flip_gap = start
     rows = []
     st = collections.Counter()
+    sight = match_winner_sighting(payload, catalogue, start_ts, seen)
     for book, blk in ((payload or {}).get('bookmakers') or {}).items():
         if not isinstance(blk, dict):
             continue
@@ -922,6 +988,11 @@ def summarise_payload(payload, fixture_id, start, archived_at, catalogue):
                         continue
 
                     close_ts, close_price = pre[-1][0], pre[-1][1]
+                    tick_ts = close_ts
+                    if (sight is not None and fam == 'match winner'
+                            and str(book).lower().startswith(PIN_BOOKS)):
+                        close_ts = sight          # stamped at our last confirmed sighting
+                        st['close_stamped_at_sighting'] += 1
                     reliable, lag = judge_close(start_ts, close_ts, archived_at,
                                                 start_src, flip_gap)
                     rows.append(_row(
@@ -929,7 +1000,7 @@ def summarise_payload(payload, fixture_id, start, archived_at, catalogue):
                         open_price, open_ts,
                         close_price if reliable else None,
                         close_ts if reliable else None,
-                        lag, len(pre), ticks[0][0], close_ts,
+                        lag, len(pre), ticks[0][0], tick_ts,
                         start_ts, start_src, 'oddspapi-raw', archived_at, reliable,
                         reject_reason=reason, conflict=conflict,
                         conflict_min=conflict_min, flip_gap=flip_gap,
@@ -1095,6 +1166,10 @@ def main():
               f'can be resolved.')
         return 1
     print(f'tennis markets catalogue: {len(catalogue)} ids (0 metered units)')
+    SEEN_INDEX.clear()
+    SEEN_INDEX.update(load_seen_index())
+    print(f'Pinnacle close sightings (captured-closes-pinnacle.json seenAt x odds-fixture-map.json): '
+          f'{len(SEEN_INDEX)} fixture(s); the rest keep the tick clock')
 
     url, key = ('', '')
     if not a.dry_run:
@@ -1287,7 +1362,8 @@ def main():
                         continue
                     if not fx_index.get(fid):
                         unindexed += 1
-                    r, s = summarise_payload(payload, fid, start, epoch(created), catalogue)
+                    r, s = summarise_payload(payload, fid, start, epoch(created), catalogue,
+                                             SEEN_INDEX.get(fid))
                     bst.update(s)
                     if not r:
                         norow += 1
@@ -1387,7 +1463,7 @@ def main():
                 ek = (r.get('meta') or {}).get('eventKey')
                 start = start_for(fid, fx_index.get(fid) or {}, raw_flip(fid, ek, flips, flips_by_ek))
                 path = f"{AR.PATH_PREFIX}{r['id']}"
-                fp = object_fingerprint(path, r.get('pulled_at'), start, cat_digest)
+                fp = object_fingerprint(path, r.get('pulled_at'), start, cat_digest, SEEN_INDEX.get(fid))
                 prev = state.get(path)
                 if not a.full and prev is not None and prev.get('fingerprint') == fp:
                     rwhy['unchanged'] += 1
@@ -1411,7 +1487,8 @@ def main():
                         r_unread += 1
                         r_unread_why[str(err)[:80]] += 1
                         continue
-                    rows_, st_ = summarise_payload(payload, fid, start, epoch(r.get('pulled_at')), catalogue)
+                    rows_, st_ = summarise_payload(payload, fid, start, epoch(r.get('pulled_at')), catalogue,
+                                                   SEEN_INDEX.get(fid))
                     rst.update(st_)
                     crows.extend(rows_)
                     cstate.append({'object_path': path, 'fixture_id': fid,

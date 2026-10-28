@@ -44,6 +44,13 @@ const OUT = path.join(ROOT, 'captured-closes-pinnacle.json');
 const MR_OUT = path.join(ROOT, 'market-read-30d.json');   // Step 15: the Market read 30-day line (published, not committed)
 const SERIES = [['Pinnacle', (om) => om.books && om.books.Pinnacle],
   ['Pinnacle +30s', (om) => om.chart && om.chart.books && om.chart.books['Pinnacle +30s']]];
+// Founder ruling 2026-10-28 (close-rule corrections item 2): the 15-minute capture confirms the price on every read.
+// A read is the chart meta's `checkedAt` (refresh-odds-history.py writes it per fixture read, never later than the
+// card start, only forward). Each snapshot carries the latest one, so the git history holds every read we made.
+const SIGHTED = { 'Pinnacle +30s': (om) => om.chart && om.chart.meta && om.chart.meta['Pinnacle +30s'] && om.chart.meta['Pinnacle +30s'].checkedAt };
+// One-time back-fill (2026-10-28): the sightings of rows already held when the rule landed, measured over the full
+// matches.json history (a CI clone holds 100 commits). eventKey -> seenAt. Applied to held rows that lack one.
+const SEEN_BACKFILL = path.join(ROOT, 'captured-pinnacle-seen-backfill.json');
 const START_CATS = new Set(['ATP', 'Davis Cup']);
 const STALE_MS = 7 * 864e5;
 const MAX_MATCH_MS = 6 * 3600e3;
@@ -99,6 +106,8 @@ function absorb(ev, matches) {
       if (fs0 && (fs0.winner === 'p1' || fs0.winner === 'p2')) o.winner = fs0.winner;
       const t = o.series[label] || (o.series[label] = { p1: new Map(), p2: new Map() });
       for (const side of ['p1', 'p2']) for (const x of s[side] || []) if (Array.isArray(x) && x[0] != null) t[side].set(String(x[0]), Number(x[1]));
+      const ck = SIGHTED[label] && toMs(SIGHTED[label](om));
+      if (ck != null) (o.seen || (o.seen = {}))[label] = (o.seen[label] || new Set()).add(ck);
     }
   }
 }
@@ -153,6 +162,16 @@ function actualStart(o, trueStarts, cardState) {
   return { reason: c ? 'rejectedStart' : 'noStart' };
 }
 
+/** The last confirmed sighting of a close: the latest capture read at or after the later close tick and strictly
+ *  BEFORE the start (a read after the start is never a sighting — it would put every close at the start). The read
+ *  returns the series' full change history, so a read with no newer tick confirms the price stood at that moment.
+ *  ms | null (null = no read after the tick: the tick itself is the clock). */
+function lastSighting(reads, tickMs, startMs) {
+  let best = null;
+  for (const ms of reads || []) if (ms >= tickMs && ms < startMs && (best == null || ms > best)) best = ms;
+  return best;
+}
+
 /** Derive a row for one event, or a drop reason. The book whose close is latest wins; a
  *  match is never priced from two books. */
 function deriveRow(ek, o, start, nowMs) {
@@ -172,10 +191,12 @@ function deriveRow(ek, o, start, nowMs) {
   // 30-day line (founder 2026-10-27: "Open = Pinnacle first price (Oddspapi)").
   const t = o.series[best.label];
   const fa = firstAtOrBefore([...t.p1], start.ms), fb = firstAtOrBefore([...t.p2], start.ms);
+  const seen = lastSighting(o.seen && o.seen[best.label], best.atMs, start.ms);
   return { row: { eventKey: Number(ek), date: o.date, p1Key: o.p1Key, p2Key: o.p2Key, p1Name: o.p1, p2Name: o.p2,
     p1: best.a[1], p2: best.b[1], at: iso(best.atMs), trueStart: iso(start.ms), startSource: start.source, book: best.label,
     round: o.round != null ? o.round : null, qualifying: typeof o.qualifying === 'boolean' ? o.qualifying : null, event: o.event || null,
-    o1: fa ? fa[1] : null, o2: fb ? fb[1] : null, oAt: fa && fb ? iso(Math.min(fa[0], fb[0])) : null, winner: o.winner || null } };
+    o1: fa ? fa[1] : null, o2: fb ? fb[1] : null, oAt: fa && fb ? iso(Math.min(fa[0], fb[0])) : null, winner: o.winner || null,
+    ...(seen != null ? { seenAt: iso(seen) } : {}) } };
 }
 
 /** Merge fresh rows into held ones (see header). Returns { rows, added, replaced }. */
@@ -189,6 +210,9 @@ function mergeRows(held, fresh) {
     if (h.book === r.book) {
       let f = false;
       for (const k of ['o1', 'o2', 'oAt', 'winner']) if (h[k] == null && r[k] != null) { h[k] = r[k]; f = true; }
+      // A later confirmed sighting of the SAME close (same tick, prices and start) moves the clock forward, never back.
+      if (r.seenAt && h.at === r.at && h.p1 === r.p1 && h.p2 === r.p2 && h.trueStart === r.trueStart
+          && (!h.seenAt || Date.parse(r.seenAt) > Date.parse(h.seenAt))) { h.seenAt = r.seenAt; f = true; }
       if (f) filled++;
     }
     // A STRICTER (earlier) start always wins, even with an earlier close: the held row may hold a
@@ -200,6 +224,20 @@ function mergeRows(held, fresh) {
   }
   const rows = [...by.values()].sort((x, y) => (x.date < y.date ? -1 : x.date > y.date ? 1 : x.eventKey - y.eventKey));
   return { rows, added, replaced, filled };
+}
+
+/** The back-fill: a held row without a sighting takes the measured one, only when it is a sighting of THIS row's close
+ *  (at or after its tick, before its start). Returns how many rows it filled. */
+function applySeenBackfill(rows, bf) {
+  let n = 0;
+  for (const r of rows || []) {
+    const v = bf && bf[String(r.eventKey)];
+    if (!v || r.seenAt) continue;
+    const s = Date.parse(v.seenAt), at = Date.parse(r.at), st = Date.parse(r.trueStart);
+    if (!(s >= at && s < st) || v.at !== r.at || v.p1 !== r.p1 || v.p2 !== r.p2) continue;
+    r.seenAt = v.seenAt; n++;
+  }
+  return n;
 }
 
 /** The committed matches.json snapshots to scan: every commit since `since` that touched it,
@@ -236,14 +274,17 @@ function build({ root = ROOT, out = OUT, since = null, nowMs = Date.now(), mrOut
     stats.bySource[r.row.startSource] = (stats.bySource[r.row.startSource] || 0) + 1;
     stats.byBook[r.row.book] = (stats.byBook[r.row.book] || 0) + 1;
   }
-  const { rows, added, replaced, filled } = mergeRows(held.rows, fresh);
+  const merged = mergeRows(held.rows, fresh);
+  const { rows, added, replaced } = merged;
+  const bfFilled = applySeenBackfill(rows, (readJson(path.join(root, path.basename(SEEN_BACKFILL)), null) || {}).rows);
+  const filled = merged.filled + bfFilled;
   const doc = {
     generatedAt: iso(nowMs),
     source: 'matches.json git history: oddsMovement.books.Pinnacle (Oddspapi pinnacle, to 2026-09-02) and oddsMovement.chart.books["Pinnacle +30s"] (Oddspapi pinnacle+30, from 2026-09-23)',
-    rule: 'each side = last tick at or before the actual start (Oddspapi trueStart, else the card-state start: Oddspapi or the live-flip lower bound); both sides required; dropped when no unique actual start',
+    rule: 'each side = last tick at or before the actual start (the earlier of Oddspapi trueStart and the card-state start: Oddspapi or the live-flip lower bound); both sides required; dropped when no unique actual start. seenAt = our last capture read before the start that confirmed the close (founder 2026-10-28); age = start - (seenAt or at)',
     scannedThrough: last || held.scannedThrough || null,
     commitsScanned: (held.commitsScanned || 0) + snap.commits.length,
-    lastRun: { from, snapshots: scanned, added, replaced, ...stats },
+    lastRun: { from, snapshots: scanned, added, replaced, seenBackfilled: bfFilled, ...stats },
     stats: held.stats,
     // One-time backfills (TEN-346: 3–22 Sep from Oddspapi pinnacle+30 history) — their record survives every run.
     ...(held.backfills ? { backfills: held.backfills } : {}),
@@ -268,9 +309,9 @@ function build({ root = ROOT, out = OUT, since = null, nowMs = Date.now(), mrOut
 
 // ── Step 15 (founder 2026-10-27) — Today's Matches "Market read" 30-day line ────────────────────────────────────
 // Of the captured ATP matches dated in the last 30 days with a Pinnacle open (the series' first tick), a Pinnacle close
-// within 60 min of the actual start and a result: how many moved open → close by MOVE_MIN or more (the larger of the
-// two sides' moves on the printed two-decimal prices, as the page's mxMovePct), and in how many of those the player the
-// price shortened on won. Counts only. Davis Cup is out (a team tie, not the board's singles).
+// within 60 min of the actual start (aged from our last sighting) and a result: how many moved open → close — the
+// shortening side fell by MOVE_MIN or more on the printed two-decimal prices, as the page's mxMovePct (founder
+// 2026-10-28) — and in how many of those the player the price shortened on won. Counts only. Davis Cup is out (a team tie, not the board's singles).
 const MOVE_MIN = 2.0;   // founder 2026-10-27: 2%
 const CLOSE_W60_MS = 60 * 60e3;
 function movePct(o, c) {
@@ -278,6 +319,14 @@ function movePct(o, c) {
   if (!(o2 > 0) || !(c2 > 0)) return null;
   const r = (c2 - o2) * 1000 / o2;
   return Math.sign(r) * Math.round(Math.abs(r)) / 10;
+}
+// Founder ruling 2026-10-28 (close-rule corrections item 3): "moved" is measured on the SHORTENING side only. The side
+// whose price fell (the larger fall when both did) must have fallen by MOVE_MIN or more; a drift on the other side never
+// qualifies a match. 'p1' | 'p2' | null. The page's mxJourneyOf applies the same rule.
+function shorteningSide(d1, d2) {
+  if (d1 == null || d2 == null || d1 === d2) return null;
+  const side = d1 < d2 ? 'p1' : 'p2', d = Math.min(d1, d2);
+  return d < 0 && -d >= MOVE_MIN ? side : null;
 }
 function marketRead30(rows, nowMs) {
   const to = iso(nowMs).slice(0, 10), from = iso(nowMs - 29 * 864e5).slice(0, 10);
@@ -288,20 +337,22 @@ function marketRead30(rows, nowMs) {
     if (/davis cup/i.test(String(r.event || ''))) continue;
     inWindow++;
     if (!(r.o1 >= 1.01 && r.o2 >= 1.01)) { ex.noOpen++; continue; }
-    const at = Date.parse(r.at), st = Date.parse(r.trueStart);
+    const at = Date.parse(r.seenAt || r.at), st = Date.parse(r.trueStart);   // founder 2026-10-28: aged from the last sighting
     if (!Number.isFinite(at) || !Number.isFinite(st) || st - at > CLOSE_W60_MS) { ex.noClose60++; continue; }
     if (r.winner !== 'p1' && r.winner !== 'p2') { ex.noResult++; continue; }
     n++;
     const d1 = movePct(r.o1, r.p1), d2 = movePct(r.o2, r.p2);
-    if (d1 == null || d2 == null || d1 === d2 || Math.max(Math.abs(d1), Math.abs(d2)) < MOVE_MIN) continue;
+    const toward = shorteningSide(d1, d2);
+    if (!toward) continue;
     moved++;
-    if ((d1 < d2 ? 'p1' : 'p2') === r.winner) won++;
+    if (toward === r.winner) won++;
   }
   return { generatedAt: iso(nowMs), from, to, rows: inWindow, n, moved, won, excluded: ex, minMovePct: MOVE_MIN,
-    rule: 'Pinnacle open (first Oddspapi tick) → Pinnacle close (last tick at or before the actual start, within 60 min); moved = larger side move >= 2% on two-decimal prices; right = the shortened side won' };
+    rule: 'Pinnacle open (first Oddspapi tick) → Pinnacle close (last tick at or before the actual start, within 60 min); close aged from our last capture read before the start; moved = the shortening side fell >= 2% on two-decimal prices (a drift never counts); right = the shortened side won' };
 }
 
-module.exports = { build, lastAtOrBefore, firstAtOrBefore, absorb, actualStart, deriveRow, mergeRows, oddspapiStarts, marketRead30, movePct };
+module.exports = { build, lastAtOrBefore, firstAtOrBefore, absorb, actualStart, deriveRow, mergeRows, oddspapiStarts, marketRead30, movePct,
+  lastSighting, applySeenBackfill, shorteningSide };
 if (require.main === module) {
   const arg = (n) => { const i = process.argv.indexOf(n); return i > 0 ? process.argv[i + 1] : null; };
   const r = build({ since: arg('--since'), out: arg('--out') || OUT, mrOut: arg('--mr-out') || MR_OUT });

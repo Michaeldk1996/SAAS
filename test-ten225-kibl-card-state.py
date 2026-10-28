@@ -777,12 +777,20 @@ check('CONTROL (rung absent = the pre-fix build): the same card has no start',
 bflip, _ = K.index_live_flips([flip('2026-10-26', 'Matteo Berrettini', 'Tomas Martin Etcheverry',
                                     lower='2026-10-26T12:34:50Z', gap=10)])
 rbf, _ = K.find_start(B, {}, bflip, use_flip=True, true_index=tix)
-check('the rung comes AHEAD of the flip: a genuine flip within 5 min keeps the trueStart',
-      rbf['start_ts_source'] == 'oddspapi' and rbf['start_ts'] == K.epoch('2026-10-26T12:35:29.147Z'), rbf)
+# Founder ruling 2026-10-28 (close-rule corrections item 1): earlier-of inside
+# 5 min too. The flip 39 s before trueStart is the cut; the pre-ruling build kept
+# the trueStart.
+check('earlier-of: a flip 39 s before the index trueStart is the cut',
+      rbf['start_ts_source'] == 'api-tennis-live' and rbf['start_ts'] == K.epoch('2026-10-26T12:34:50Z'), rbf)
+lflip, _ = K.index_live_flips([flip('2026-10-26', 'Matteo Berrettini', 'Tomas Martin Etcheverry',
+                                    lower='2026-10-26T12:37:00Z', gap=10)])
+rbl, _ = K.find_start(B, {}, lflip, use_flip=True, true_index=tix)
+check('earlier-of: a flip after the index trueStart leaves the trueStart',
+      rbl['start_ts_source'] == 'oddspapi' and rbl['start_ts'] == K.epoch('2026-10-26T12:35:29.147Z'), rbl)
 eflip, _ = K.index_live_flips([flip('2026-10-26', 'Matteo Berrettini', 'Tomas Martin Etcheverry',
                                     lower='2026-10-26T12:20:00Z', gap=10)])
 rbe, _ = K.find_start(B, {}, eflip, use_flip=True, true_index=tix)
-check("resolve_start's own earlier-of rule, unchanged: a flip > 5 min earlier wins (one ladder, not two)",
+check("resolve_start's earlier-of rule: a flip > 5 min earlier wins (one ladder, not two)",
       rbe['start_ts_source'] == 'api-tennis-live' and rbe['start_ts'] == K.epoch('2026-10-26T12:20:00Z')
       and rbe['flip_gap_seconds'] == 10, rbe)
 rbx, _ = K.find_start(B, {}, eflip, use_flip=False, true_index=tix)

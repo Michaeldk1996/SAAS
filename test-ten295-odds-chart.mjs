@@ -380,3 +380,24 @@ test('pipeline: the carry-forward counts a chart-only match as having movement',
   assert.equal(!!hasMovement({ oddsMovement: { chart: { books: {} } } }), false);
   assert.equal(!!hasMovement({ oddsMovement: { chart: { books: {}, meta: { Bet105: {} } } } }), true, 'verdicts survive a rebuild');
 });
+
+// Founder ruling 2026-10-28 (close-rule corrections item 2): the board close is stamped at our last confirmed sighting.
+test('pipeline: pinCloseSeenAt = the latest read at/after both ticks and before the start, same prices only', () => {
+  const S = src => new Function(`${slice('pinCloseSeenAt', src)} return pinCloseSeenAt;`)();
+  const f = S(pipe), T = s => Date.parse(s);
+  const pc = { p1: 1.534, p2: 2.65, p1At: '2026-09-24T10:10:08Z', p2At: '2026-09-24T09:40:00Z' };
+  const st = T('2026-09-24T10:31:59Z');
+  assert.equal(f(pc, st, [{ ts: '2026-09-24T10:25:00Z' }, { ts: '2026-09-24T10:00:00Z' }]), '2026-09-24T10:25:00.000Z', 'the latest pre-start read');
+  assert.equal(f(pc, st, [{ ts: '2026-09-24T10:32:00Z' }]), null, 'a read after the start is never a sighting');
+  assert.equal(f(pc, st, [{ ts: '2026-09-24T10:05:00Z' }]), null, 'a read before the later tick confirms nothing new');
+  assert.equal(f(pc, st, [{ ts: '2026-09-24T10:25:00Z', p1: 1.55, p2: 2.6 }]), null, 'a sighting of other prices is not this close');
+  assert.equal(f(pc, st, [{ ts: '2026-09-24T10:25:00Z', p1: 1.534, p2: 2.65 }]), '2026-09-24T10:25:00.000Z');
+  assert.equal(f(pc, NaN, [{ ts: '2026-09-24T10:25:00Z' }]), null, 'no start, no sighting');
+  // Wired into the board loop, with the captured file's sightings and the prior pin as candidates.
+  assert.ok(pipe.includes('const capSeen = capturedSeenByEvent();'));
+  assert.ok(pipe.includes("cap && { ts: cap.seenAt, p1: cap.p1, p2: cap.p2 },"));
+  // CONTROL: a post-start read accepted (the cap dropped) is caught.
+  const mut = pipe.replace('t >= tick && t < startMs &&', 't >= tick &&');
+  assert.notEqual(mut, pipe);
+  assert.equal(S(mut)(pc, st, [{ ts: '2026-09-24T10:32:00Z' }]), '2026-09-24T10:32:00.000Z');
+});
