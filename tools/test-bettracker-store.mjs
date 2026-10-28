@@ -83,6 +83,8 @@ function run(api) {
   fresh.saveBank({ id: 'b1', name: 'Bankroll 1', archived: true });
   eq('a bankroll holding a locked result is never deleted', fresh.deleteBank('b1').reason, 'locked');
   eq('bankroll createdAt is kept on save', fresh.listBanks()[0].createdAt, banks[0].createdAt);
+  fresh.saveBank({ id: 'b1', name: 'Bankroll 1', archived: true, plan: 'Flat 2%' });
+  eq('T5: a bankroll keeps its applied plan; null clears it', [fresh.listBanks()[0].plan, (fresh.saveBank({ id: 'b1', name: 'Bankroll 1', archived: true, plan: null }), fresh.listBanks()[0].plan)], ['Flat 2%', null]);
   ok('nextId is unique and rising', fresh.nextId() > 4);
 
   // a newer schema is never overwritten

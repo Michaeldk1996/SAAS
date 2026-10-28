@@ -18,7 +18,9 @@
 
   var NOF = function () { return { level: [], odds: [], surface: [], market: [] }; };
   var S = { bank: null, view: 'results', lf: 'all', month: null, logOpen: false, form: JSON.parse(JSON.stringify(FORM0)), banks: [], raw: [], importMsg: '',
-    period: 'season', range: null, filters: NOF(), menu: null, openDay: null, openMonth: null, dim: 'market' };
+    period: 'season', range: null, filters: NOF(), menu: null, openDay: null, openMonth: null, dim: 'market', vsPlan: null };
+  function curBank() { return S.banks.find(function (b) { return b.id === S.bank; }) || S.banks[0]; }
+  function appliedPlan() { var b = curBank(); return b && b.plan && M.plan(b.plan) ? b.plan : null; }
   // The Bet-Analytix import (T1b): admin only — the control is not in the design (reported); the console path is
   // TrackerPage.importText(csvText). The file is read in this browser and goes nowhere else.
   function isAdmin() { return typeof window.isBspAdmin === 'function' && !!window.isBspAdmin(); }
@@ -100,9 +102,20 @@
       + '<div class="bt-row2">' + field('Market', '<select class="bt-in" data-f="market">' + options(M.MARKETS.concat('Other — type it'), f.market, M.MARKETS.concat('Other')) + '</select>')
       + field('Bookmaker', '<select class="bt-in" data-f="book">' + options(M.BOOKS.concat('Other — type it'), f.book, M.BOOKS.concat('Other')) + '</select>') + '</div>'
       + '<div class="bt-row3"><div class="bt-field"><span class="bt-caps10">' + (f.type === 'Single' ? 'Odds' : 'Combined odds') + '</span><span class="bt-odds' + (c.legsOk ? ' is-ok' : '') + '" id="btOdds">' + esc(c.oddsText) + '</span></div>'
-      + field('Stake · %', '<input class="bt-in bt-mono" data-f="stake" value="' + esc(f.stake) + '" placeholder="1.0">')
+      + field('Stake · %', '<input class="bt-in bt-mono" data-f="stake" value="' + esc(f.stake) + '" placeholder="1.0">' + planHint())
       + '<span class="bt-post' + (c.valid ? ' is-ok' : '') + '" id="btPost" data-act="post">Post bet</span></div>'
       + other + '<span class="bt-hint' + (c.valid ? ' is-ok' : '') + '" id="btHint">' + esc(c.hint) + '</span></div>';
+  }
+  // The stake hint once a plan is applied: "{plan} says x.xx%" + Use, or "{plan} needs the odds first".
+  function planStakeNow() {
+    var ap = appliedPlan(); if (!ap) return null;
+    var settled = betsOf(S.bank).filter(M.isSettled).sort(function (a, b) { return a.date - b.date || a.id - b.id; });
+    return M.planStake(ap, settled, M.combinedOdds(S.form.legs));
+  }
+  function planHint() {
+    var ap = appliedPlan(); if (!ap) return '';
+    var ps = planStakeNow();
+    return '<span class="bt-planhint" id="btPlanHint">' + (ps !== null ? esc(ap) + ' says ' + ps.toFixed(2) + '%<span class="bt-use" data-act="useplan">Use</span>' : esc(ap) + ' needs the odds first') + '</span>';
   }
   // ── 4 · hero (README §4): headline · Period · Filters · View · curve · seven tiles ──────────────────────────────
   var CARET = '<span class="bt-caret">▼</span>';
@@ -143,7 +156,7 @@
       + '<span class="bt-rel"><span class="bt-trig' + (perOn ? ' on' : '') + '" data-act="menu" data-k="period">' + esc(M.PERIODS[S.period]) + CARET + '</span>' + pmenu + '</span>'
       + '<span class="bt-rel"><span class="bt-trig' + (fOn ? ' on' : '') + '" data-act="menu" data-k="filters">' + SLIDERS + esc(M.filtersLabel(S.filters)) + CARET + '</span>' + fmenu + '</span>'
       + '<span class="bt-views">' + v('results', 'Results') + v('insights', 'Insights', '<span class="bt-view-badge bt-' + D.badgeTone + '">' + esc(D.badge) + '</span>')
-      + v('staking', 'Staking', S.appliedPlan ? '<span class="bt-plandot"></span>' : '') + '</span></div></div>'
+      + v('staking', 'Staking', appliedPlan() ? '<span class="bt-plandot"></span>' : '') + '</span></div></div>'
       + '<div class="bt-curve">' + svg + labels + '</div>'
       + '<div class="bt-ddrow"><span>○ red = deepest drawdown</span><span>' + esc(HC.ddNote) + '</span></div>'
       + '<div class="bt-htiles">' + tiles + '</div></div>';
@@ -288,6 +301,35 @@
       + '<div class="bt-dials">' + dials + '</div></div></div>';
   }
 
+  // ── 7 · Staking (README §7): plan chips · your stakes vs a plan · deltas · explainers · Apply / Remove ────────────
+  function staking(ctx) {
+    var cur = curBank(), ap = appliedPlan(), Z = M.stakingView(ctx.list, S.vsPlan || M.DEFAULT_PLAN), on = ap === Z.other;
+    var sw = function (k) { return 'background:var(--' + k + ')'; };
+    var chips = Z.plans.map(function (p) {
+      return '<span class="bt-pchip' + (p.on ? ' on' : '') + '" data-act="vsplan" data-k="' + esc(p.name) + '" title="' + esc(p.how) + '"><span class="bt-pchip-sw" style="' + sw(p.sw) + '"></span>' + esc(p.name) + '</span>';
+    }).join('');
+    var applied = ap ? '<span class="bt-applied">' + esc(ap + ' is on for ' + cur.name + ' · the next bet you log is pre-sized') + '</span><span class="bt-remove" data-act="removeplan">Remove</span>' : '';
+    var ticks = Z.yTicks.map(function (t) { return '<line class="bt-yt' + (t.zero ? ' is-zero' : '') + '" x1="36" x2="1256" y1="' + t.y + '" y2="' + t.y + '"></line>'; }).join('');
+    var svg = '<svg class="bt-sim-svg" viewBox="0 0 1256 226" width="100%" height="226" preserveAspectRatio="none">' + ticks
+      + (Z.n ? '<path d="' + Z.area + '" style="fill:color-mix(in srgb, var(--' + Z.areaKind + ') 8%, transparent)"></path><path class="bt-simyou" d="' + Z.yourPath + '"></path>'
+        + '<path class="bt-simplan" d="' + Z.otherPath + '" style="stroke:var(--' + Z.otherSw + ')"></path>' : '') + '</svg>'
+      + Z.yTicks.map(function (t) { return '<span class="bt-simlab" style="top:' + t.top + '">' + esc(t.label) + '</span>'; }).join('');
+    var deltas = Z.deltas.map(function (d) {
+      return '<div class="bt-delta"><span class="bt-caps">' + esc(d.l) + '</span><span class="bt-delta-r"><span class="bt-delta-a">' + esc(d.a) + '</span><span class="bt-delta-arr">→</span>'
+        + '<span class="bt-delta-b">' + esc(d.b) + '</span><span class="bt-delta-d bt-' + d.kind + '">' + esc(d.d) + '</span></span></div>';
+    }).join('');
+    return '<div class="bt-stk"><div class="bt-stk-top"><div class="bt-stk-hrow"><span class="bt-stk-hl"><span class="bt-h16 bt-nowrap">Staking strategy</span><span class="bt-sub125">Same bets and results, only the stake changes · pick a plan, read it against your stakes, apply it to this bankroll.</span></span>'
+      + '<span class="bt-stk-hr">' + applied + '<span class="bt-apply' + (on ? ' is-on' : '') + '" data-act="applyplan">' + esc(on ? 'Applied to ' + cur.name : 'Apply ' + Z.other + ' to this bankroll') + '</span></span></div>'
+      + '<div class="bt-pchips">' + chips + '</div></div>'
+      + '<div class="bt-card bt-simcard"><div class="bt-simhead"><span class="bt-simtitle"><span class="bt-simkey" style="' + sw('tracker-ring') + '"></span>Your stakes<span class="bt-simvs">vs</span>'
+      + '<span class="bt-simkey" style="' + sw(Z.otherSw) + '"></span>' + esc(Z.other) + '<span class="bt-simsub">· ' + esc(Z.otherSub) + '</span></span><span class="bt-simmeta">' + esc(Z.meta + ' · shaded = the gap · ' + Z.gapTxt) + '</span></div>'
+      + '<div class="bt-simchart">' + svg + '</div><div class="bt-deltas">' + deltas + '</div>'
+      + '<div class="bt-expl"><div class="bt-ex"><span class="bt-caps bt-ex-h"><span class="bt-ex-sw" style="' + sw('tracker-ring') + '"></span>Your stakes</span><span class="bt-ex-t">' + esc(Z.yourHow) + '</span></div>'
+      + '<div class="bt-ex"><span class="bt-caps bt-ex-h"><span class="bt-ex-sw" style="' + sw(Z.otherSw) + '"></span>' + esc(Z.other) + '</span><span class="bt-ex-t">' + esc(Z.otherHow) + '</span><span class="bt-ex-w">' + esc(Z.otherWhen) + '</span></div>'
+      + '<div class="bt-ex"><span class="bt-caps">The difference</span><span class="bt-ex-t">' + esc(Z.n ? Z.diffTxt : DASH) + '</span></div></div>'
+      + '<div class="bt-simnote">' + esc(Z.note) + '</div></div></div>';
+  }
+
   function render() {
     var el = root(); if (!el) return;
     var cur = S.banks.find(function (b) { return b.id === S.bank; }) || S.banks[0];
@@ -296,7 +338,7 @@
     if (!S.range) S.range = { from: all.length ? dayKey(all[0].date) : dayKey(new Date(today.getFullYear(), 0, 1)), to: dayKey(today) };
     var win = M.periodWindow(S.period, S.range, today), perList = M.inPeriod(all, win), list = M.applyFilters(perList, S.filters);
     var ctx = { all: all, list: list, perList: perList, win: win, today: today, per: S.period, range: S.range, nF: M.nFilters(S.filters) };
-    var view = S.view === 'results' ? ledger(list) + calendar(ctx) : S.view === 'insights' ? insights(ctx) : '<div class="bt-card bt-frame">' + DASH + '</div>';
+    var view = S.view === 'results' ? ledger(list) + calendar(ctx) : S.view === 'insights' ? insights(ctx) : staking(ctx);
     el.innerHTML = '<section class="bt-sec"><div class="bt-col"><div class="bt-stack">'
       + bankrolls() + header(cur, all, ctx) + (S.logOpen ? logPanel(cur) : '') + hero(ctx) + view + '</div></div></section>';
   }
@@ -307,6 +349,7 @@
     if (p) p.classList.toggle('is-ok', c.valid);
     if (h) { h.textContent = c.hint; h.classList.toggle('is-ok', c.valid); }
     if (n) n.textContent = M.legsNote(S.form);
+    var ph = document.getElementById('btPlanHint'); if (ph) ph.outerHTML = planHint();
   }
 
   // ── actions: every write goes through the store, then the page re-reads it ─────────────────────────────────────
@@ -325,7 +368,7 @@
     // the month pop-up: a click inside the sheet is not a click on the overlay
     if (t.dataset.act === 'monthclose' && t.classList.contains('bt-mpop') && e.target.closest('[data-stop]')) return;
     var a = t.dataset.act, id = t.dataset.id;
-    if (a === 'bank') { S.bank = id; S.month = null; S.filters = NOF(); S.range = null; S.openDay = null; S.openMonth = null; render(); }
+    if (a === 'bank') { S.bank = id; S.month = null; S.filters = NOF(); S.range = null; S.openDay = null; S.openMonth = null; S.vsPlan = null; render(); }
     else if (a === 'archive') {
       e.stopPropagation();
       var bk = S.banks.find(function (b) { return b.id === id; }); store.saveBank(Object.assign({}, bk, { archived: true }));
@@ -335,6 +378,10 @@
     else if (a === 'restore') { var rb = S.banks.find(function (b) { return b.id === id; }); store.saveBank(Object.assign({}, rb, { archived: false })); load(); render(); }
     else if (a === 'delete') { if (store.deleteBank(id).ok) { load(); render(); } }
     else if (a === 'addbank') { var nid = 'b' + Date.now(); store.saveBank({ id: nid, name: 'New bankroll ' + (S.banks.length + 1), archived: false }); S.bank = nid; S.month = null; S.filters = NOF(); S.range = null; load(); render(); }
+    else if (a === 'vsplan') { S.vsPlan = t.dataset.k; render(); }
+    else if (a === 'applyplan') { var cb = curBank(); store.saveBank(Object.assign({}, cb, { plan: S.vsPlan || M.DEFAULT_PLAN })); load(); render(); }
+    else if (a === 'removeplan') { var cb2 = curBank(); store.saveBank(Object.assign({}, cb2, { plan: null })); load(); render(); }
+    else if (a === 'useplan') { var ps = planStakeNow(); if (ps !== null) { S.form = Object.assign({}, S.form, { stake: ps.toFixed(2) }); render(); } }
     else if (a === 'dim') { S.dim = t.dataset.k; S.menu = null; render(); }
     else if (a === 'day') { S.openDay = S.openDay === t.dataset.k ? null : t.dataset.k; render(); }
     else if (a === 'dayclose') { S.openDay = null; render(); }

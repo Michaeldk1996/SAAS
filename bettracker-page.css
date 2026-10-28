@@ -375,3 +375,50 @@
 [data-page="tracker"] .bt-dial-l { font-size: 13px; font-weight: 700; color: var(--tracker-ink); }
 [data-page="tracker"] .bt-dial-v { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; }
 [data-page="tracker"] .bt-dial-s { font-size: 11.5px; color: var(--text-label); line-height: 1.4; text-wrap: pretty; }
+
+/* ── 7 · Staking (T5): plan chips · your stakes vs a plan · deltas · explainers · Apply / Remove (template 380–410) ── */
+[data-page="tracker"] .bt-stk { display: flex; flex-direction: column; gap: 12px; }
+[data-page="tracker"] .bt-stk-top { display: flex; flex-direction: column; gap: 10px; }
+[data-page="tracker"] .bt-stk-hrow { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+[data-page="tracker"] .bt-stk-hl { display: flex; align-items: baseline; gap: 12px; }
+[data-page="tracker"] .bt-stk-hl .bt-h16 { flex: none; }
+[data-page="tracker"] .bt-stk-hr { display: flex; align-items: center; gap: 10px; flex: none; }
+[data-page="tracker"] .bt-applied { font-size: 11.5px; color: var(--text-label); }
+[data-page="tracker"] .bt-remove { cursor: pointer; font-size: 11.5px; font-weight: 600; color: var(--tracker-link-2); }
+[data-page="tracker"] .bt-apply { cursor: pointer; height: 30px; padding: 0 14px; display: inline-flex; align-items: center; gap: 7px; border-radius: 9px; font-size: 12.5px; font-weight: 700;
+  background: var(--tracker-ring); color: var(--tracker-ink); border: 1px solid transparent; white-space: nowrap; }
+[data-page="tracker"] .bt-apply.is-on { background: var(--tracker-pill); color: var(--text-label); border-color: color-mix(in srgb, var(--tracker-ink) 10%, transparent); }
+[data-page="tracker"] .bt-pchips { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+[data-page="tracker"] .bt-pchip { cursor: pointer; display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 7px; font-size: 12px; font-weight: 600; background: transparent;
+  color: var(--text-label); border: 1px solid color-mix(in srgb, var(--tracker-ink) 6%, transparent); white-space: nowrap; }
+[data-page="tracker"] .bt-pchip.on { background: var(--tracker-seg); color: var(--tracker-ink); border-color: color-mix(in srgb, var(--tracker-ink) 20%, transparent); }
+[data-page="tracker"] .bt-pchip-sw { width: 8px; height: 8px; border-radius: 2px; }
+[data-page="tracker"] .bt-simcard { overflow: hidden; }
+[data-page="tracker"] .bt-simhead { display: flex; align-items: center; justify-content: space-between; padding: 12px 18px; border-bottom: 1px solid color-mix(in srgb, var(--tracker-ink) 5%, transparent); }
+[data-page="tracker"] .bt-simtitle { display: flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 700; color: var(--tracker-ink); }
+[data-page="tracker"] .bt-simkey { width: 12px; height: 3px; }
+[data-page="tracker"] .bt-simvs { font-size: 12px; color: var(--text-label); font-weight: 600; }
+[data-page="tracker"] .bt-simsub { font-size: 11.5px; color: var(--text-label); font-weight: 500; margin-left: 4px; }
+[data-page="tracker"] .bt-simmeta { font-size: 11.5px; color: var(--text-label); }
+[data-page="tracker"] .bt-simchart { position: relative; width: 100%; height: 250px; padding: 14px 18px 10px; }
+[data-page="tracker"] .bt-sim-svg { display: block; overflow: visible; }
+[data-page="tracker"] .bt-simyou { fill: none; stroke: var(--tracker-ring); stroke-width: 2.2; stroke-linejoin: round; stroke-linecap: round; }
+[data-page="tracker"] .bt-simplan { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+[data-page="tracker"] .bt-simlab { position: absolute; left: 18px; width: 30px; text-align: right; font-family: var(--font-nums); font-size: 10px; line-height: 1; color: var(--text-label); white-space: nowrap; }
+[data-page="tracker"] .bt-deltas { display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1px solid color-mix(in srgb, var(--tracker-ink) 5%, transparent); }
+[data-page="tracker"] .bt-delta { display: flex; flex-direction: column; gap: 4px; padding: 12px 18px; border-right: 1px solid color-mix(in srgb, var(--tracker-ink) 5%, transparent); }
+[data-page="tracker"] .bt-delta-r { display: flex; align-items: baseline; gap: 8px; }
+[data-page="tracker"] .bt-delta-a { font-family: var(--font-nums); font-size: 13px; color: var(--text-label); }
+[data-page="tracker"] .bt-delta-arr { font-size: 11px; color: var(--text-label); }
+[data-page="tracker"] .bt-delta-b { font-family: var(--font-nums); font-size: 16px; font-weight: 800; color: var(--tracker-ink); }
+[data-page="tracker"] .bt-delta-d { font-family: var(--font-nums); font-size: 12px; font-weight: 700; }
+[data-page="tracker"] .bt-expl { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr); border-top: 1px solid color-mix(in srgb, var(--tracker-ink) 5%, transparent); }
+[data-page="tracker"] .bt-ex { display: flex; flex-direction: column; gap: 5px; padding: 12px 18px; border-right: 1px solid color-mix(in srgb, var(--tracker-ink) 5%, transparent); }
+[data-page="tracker"] .bt-ex:last-child { border-right: 0; }
+[data-page="tracker"] .bt-ex-h { display: flex; align-items: center; gap: 8px; }
+[data-page="tracker"] .bt-ex-sw { width: 8px; height: 8px; border-radius: 2px; }
+[data-page="tracker"] .bt-ex-t { font-size: 12px; line-height: 1.45; color: var(--text); text-wrap: pretty; }
+[data-page="tracker"] .bt-ex-w { font-size: 11.5px; line-height: 1.45; color: var(--text-label); text-wrap: pretty; }
+[data-page="tracker"] .bt-simnote { padding: 10px 18px 12px; font-size: 11.5px; line-height: 1.45; color: var(--text-label); text-wrap: pretty; border-top: 1px solid color-mix(in srgb, var(--tracker-ink) 5%, transparent); }
+[data-page="tracker"] .bt-planhint { display: flex; align-items: center; gap: 6px; font-size: 10.5px; color: var(--text-label); white-space: nowrap; }
+[data-page="tracker"] .bt-use { cursor: pointer; font-weight: 700; color: var(--tracker-link-2); }

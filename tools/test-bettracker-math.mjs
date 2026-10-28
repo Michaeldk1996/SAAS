@@ -274,6 +274,33 @@ function run(M) {
   eq('breakdown: a bet with no value for the cut is in no row (counted in left)', [M.breakdown(mkb(4, i => ({ level: i < 1 ? '' : '500' })), 'level').rows.map(r => [r.name, r.n]), M.breakdown(mkb(4, i => ({ level: i < 1 ? '' : '500' })), 'level').left], [[['ATP 500', 3]], 1]);
   }
 
+  // ── 12 · T5 staking: every plan on a hand-computed 5-bet case (won 2.00 · lost 1.50 · won 1.15 · lost 3.00 no close · void 2.50) ──
+  {
+    const d5 = new Date(2026, 6, 1);
+    const B5 = [{ id: 1, date: d5, odds: 2.00, stake: 1, res: 'won', close: 1.90 }, { id: 2, date: d5, odds: 1.50, stake: 2, res: 'lost', close: 1.60 },
+      { id: 3, date: d5, odds: 1.15, stake: 1, res: 'won', close: 1.10 }, { id: 4, date: d5, odds: 3.00, stake: 0.5, res: 'lost', close: null }, { id: 5, date: d5, odds: 2.50, stake: 1, res: 'void', close: 2.40 }];
+    const hand = {
+      'Your stakes': { sts: [1, 2, 1, 0.5, 1], end: 1 - 2 + 0.15 - 0.5 },
+      'Flat 1%': { sts: [1, 1, 1, 1, 1], end: 1 - 1 + 0.15 - 1, dd: 1.85 },
+      'Flat 2%': { sts: [2, 2, 2, 2, 2], end: 2 - 2 + 0.3 - 2, dd: 3.7 },
+      'Compounding 1%': { sts: [1, 1.01, 0.9999, 1.00139985, 0.9913858515], end: 1 - 1.01 + 0.9999 * 0.15 - 1.00139985 },
+      'To win 1%': { sts: [1, 2, 5, 0.5, 1 / 1.5], end: 1 - 2 + 5 * 0.15 - 0.5 },   // 1 ÷ 0.15 = 6.67 → the 5% cap
+      '¼ Kelly on CLV': { sts: [25 * (2 / 1.9 - 1), 0, 3, 0, 25 * (2.5 / 2.4 - 1) / 1.5], end: 25 * (2 / 1.9 - 1) + 3 * 0.15 },   // no close / CLV ≤ 0 → 0; 7.58 → the 3% cap
+      'Double after a loss': { sts: [1, 1, 2, 1, 2], end: 1 - 1 + 2 * 0.15 - 1 }
+    };
+    for (const [name, h] of Object.entries(hand)) {
+      const r = M.simulate(B5, name);
+      ok(`${name}: stakes ${h.sts.map(x => x.toFixed(4)).join(', ')}`, r.sts.length === 5 && r.sts.every((x, i) => Math.abs(x - h.sts[i]) < 1e-9));
+      near(`${name}: end ${h.end.toFixed(4)}%`, r.end, h.end, 1e-9);
+      if (h.dd !== undefined) near(`${name}: drawdown ${h.dd}%`, r.dd, h.dd, 1e-9);
+    }
+    ok('¼ Kelly: the explainer says how many bets it skipped (no close or CLV ≤ 0)', M.stakingView(B5, '¼ Kelly on CLV').diffTxt.includes('skipping 2 of 5 bets'));
+    ok('¼ Kelly with no closes at all: the plan stakes nothing, skips every bet, average "—"', /the plan —\. .*|, skipping 5 of 5 bets/.test(M.stakingView(B5.map(b => Object.assign({}, b, { close: null })), '¼ Kelly on CLV').diffTxt)
+      && M.stakingView(B5.map(b => Object.assign({}, b, { close: null })), '¼ Kelly on CLV').diffTxt.includes('the plan —, skipping 5 of 5 bets'));
+    eq('staking view defaults to Compounding 1%', M.stakingView(B5, 'nonsense').other, 'Compounding 1%');
+    eq('plan stake hint: Flat 2% · To win 1% at 1.50 · Double after a loss after a loss', [M.planStake('Flat 2%', B5, 2), M.planStake('To win 1%', B5, 1.5), M.planStake('Double after a loss', B5.slice(0, 4), 2)], [2, 2, 1]);
+  }
+
   // ── 7 · heat alpha ──
   near('heat alpha at 0', M.heatAlpha(0), 0.3); near('heat alpha at 1.5%', M.heatAlpha(-1.5), 0.65); near('heat alpha saturates at 3%', M.heatAlpha(3), 1); near('… and stays 1', M.heatAlpha(7), 1);
 
@@ -319,6 +346,10 @@ console.log(fails.length ? `bettracker-math: ${fails.length} failure(s)` : 'bett
 
 // ── mutants: every one must turn the suite red ──
 const MUTANTS = [
+  ['To win cap 4', 'return Math.min(5, 1 / (b.odds - 1)); },', 'return Math.min(4, 1 / (b.odds - 1)); },'],
+  ['Kelly cap 4', 'return Math.min(3, 25 * c / (b.odds - 1)); },', 'return Math.min(4, 25 * c / (b.odds - 1)); },'],
+  ['Kelly skips nothing', "if (c === null || c <= 0) return 0;", "if (c === null) return 0;"],
+  ['double never resets', "prev.res === 'lost' ? Math.min(8, prev.st * 2) : 1; },", "prev.res === 'lost' ? Math.min(8, prev.st * 2) : prev.st; },"],
   ['blind spot floor 4', 'if (g.s.n < m && g.s.n >= MIN_FLOOR && g.name', 'if (g.s.n < m && g.s.n >= 4 && g.name'],
   ['strength ROI floor 0', 'return g.s.profit > 0 && g.s.roi > 0.03;', 'return g.s.profit > 0 && g.s.roi > 0;'],
   ['coin flip from 50', "beatPct >= 48 ? 'COIN FLIP'", "beatPct >= 50 ? 'COIN FLIP'"],

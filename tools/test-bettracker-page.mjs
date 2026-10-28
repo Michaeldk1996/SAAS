@@ -118,7 +118,9 @@ async function browser() {
     check('Insights (new member): every dial is a dash or EARLY · n=0 — no judgement on no data', JSON.stringify(await E(`[...document.querySelectorAll('.bt-dial-v')].map(e=>e.textContent)`)) === JSON.stringify(['—', '—', 'EARLY · n=0']));
     check('Insights (new member): "0 of 0 checks need work · 0 bets · 3 not judged yet", not green', (await T('.bt-discsum')) === '0 of 0 checks need work · 0 bets · 3 not judged yet' && (await E(`document.querySelector('.bt-discsum-n').classList.contains('bt-lab')`)));
     await click('.bt-view[data-k="staking"]');
-    check('Staking = the card frame with a single dash', (await T('.bt-frame')) === '—');
+    check('Staking (new member): six plan chips, Compounding 1% picked, "0 bets", the difference a dash', JSON.stringify(await E(`[...document.querySelectorAll('.bt-pchip')].map(e=>e.textContent)`))
+      === JSON.stringify(['Flat 1%', 'Flat 2%', 'Compounding 1%', 'To win 1%', '¼ Kelly on CLV', 'Double after a loss']) && (await T('.bt-pchip.on')) === 'Compounding 1%'
+      && (await T('.bt-simmeta')).startsWith('0 bets · cumulative % of the starting bankroll') && (await E(`[...document.querySelectorAll('.bt-ex-t')][2].textContent`)) === '—');
     await click('.bt-view[data-k="results"]');
 
     // ── the reference's measured values (inline styles of Bet Tracker Page.dc.html) ──
@@ -269,6 +271,23 @@ async function browser() {
     check('discipline: closing line judged on 1 priced bet', (await E(`document.querySelector('.bt-dial-s').textContent`)) === '1 of 1 priced bets beat the close · target 55%+');
     await click('.bt-view[data-k="results"]');
 
+    // ── T5 · Staking: pick a plan, Apply → the Log-a-bet hint + Use, Remove ──
+    await click('.bt-view[data-k="staking"]');
+    await click('.bt-pchip[data-k="Flat 2%"]');
+    check('staking: picking Flat 2% puts it on the chart and the Apply button', (await T('.bt-pchip.on')) === 'Flat 2%' && (await T('.bt-apply')) === 'Apply Flat 2% to this bankroll');
+    await click('.bt-apply');
+    check('staking: Apply → "Applied to Bankroll 1" + the applied line + Remove', (await T('.bt-apply')) === 'Applied to Bankroll 1' && (await T('.bt-applied')) === 'Flat 2% is on for Bankroll 1 · the next bet you log is pre-sized' && await E(`!!document.querySelector('.bt-remove')`));
+    check('staking: the View segment shows the green dot', await E(`!!document.querySelector('.bt-view[data-k="staking"] .bt-plandot')`));
+    await click('.bt-logbtn');
+    check('log a bet: the stake hint "Flat 2% says 2.00%" + Use', (await T('#btPlanHint')) === 'Flat 2% says 2.00%Use');
+    await click('.bt-use');
+    check('log a bet: Use fills the stake', (await E(`document.querySelector('[data-f="stake"]').value`)) === '2.00');
+    await click('.bt-logbtn');
+    await click('.bt-remove');
+    check('staking: Remove clears the plan', !(await E(`!!document.querySelector('.bt-plandot')`)) && !(await E(`!!document.querySelector('.bt-remove')`)));
+    await click('.bt-pchip[data-k="Flat 1%"]'); await click('.bt-apply');
+    await click('.bt-view[data-k="results"]');
+
     // ── reload: everything is still there ──
     await open();
     check('reload: three bets', await E(`document.querySelectorAll('.bt-tr[data-bet]').length === 3`));
@@ -277,6 +296,7 @@ async function browser() {
     check('reload: the Close and its CLV survive', await E(`(function(){ var r = ${rowSel('J. Sinner to win + C. Alcaraz to win')}; return r.querySelector('.bt-closein').value === '1.50' && r.querySelector('.bt-clv').textContent === '+4.0%'; })()`));
     check('reload: chips WON / LOST / VOID', JSON.stringify(await E(`[...document.querySelectorAll('.bt-chip')].map(e=>e.textContent)`)) === '["VOID","LOST","WON"]');
     check('reload: bankroll card 3 settled', (await T('.bt-bank-meta')) === '3 settled');
+    check('reload: the applied plan (Flat 1%) is still on for Bankroll 1', await E(`!!document.querySelector('.bt-view[data-k="staking"] .bt-plandot')`));
 
     // ── 1180 px: the same reference values ──
     await size(1180); await open();
