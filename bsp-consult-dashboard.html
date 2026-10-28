@@ -2444,6 +2444,8 @@ window.sfPlanLocks = function (u) {
   window.sfPlan = (u && u.plan) || null;   // Step 15: Pro unblurs Bets today and the Stennisfy Model row
   if (was !== window.sfPlan && typeof renderMatches === 'function' && typeof matchesLoadedOnce !== 'undefined' && matchesLoadedOnce) renderMatches();
   var open = !!u && (u.plan === 'edge' || u.plan === 'pro');
+  // founder 2026-10-28: the admin (ADMIN_CONFIG uids — the same rule as firestore.rules isAdmin) bypasses Pro gating everywhere
+  if (!open && u && window.ADMIN_CONFIG && (window.ADMIN_CONFIG.ADMIN_UIDS || []).indexOf(u.uid) >= 0) open = true;
   ['trading', 'edge'].forEach(function (t) { window.sfNavLock(t, !open); });
 };
 window.sfPlanLocks(null);   // locked until the account says Edge / Pro: no unlocked flash before sign-in resolves
@@ -9399,7 +9401,8 @@ function mxSurname(name){
   return t.join(' ');
 }
 // Pro = the signed-in member's plan (sfPlanLocks is told on every auth change). Signed out / Free / Edge = not Pro.
-function mxIsPro(){ return window.sfPlan === 'pro'; }
+// founder 2026-10-28: the admin (isBspAdmin — the founder's uid, the same rule as firestore.rules) bypasses Pro gating everywhere
+function mxIsPro(){ return window.sfPlan === 'pro' || (typeof isBspAdmin === 'function' && !!isBspAdmin()); }
 // Pinnacle close as a NUMBER may use it: both legs present and each last moved within 60 min of the start
 // (TEN-253 ruling 2 — displayed older closes never feed a figure). null otherwise.
 function mxPinCloseW60(m){
@@ -9550,7 +9553,7 @@ function mxBetsEnsure(){
 // a new pick, a role change (sign-in) → read again
 window.mxBetsRefresh = function () { _mxPicks = null; _mxPicksP = null; mxBetsEnsure(); };
 function mxBetsTileHtml(){
-  const pro = mxIsPro() || (typeof isBspAdmin === 'function' && isBspAdmin());
+  const pro = mxIsPro();
   const picks = _mxPicks || [];
   const listed = picks.filter(p => p.kind !== 'outright');
   const cue = `<span class="mc-story__bethead">${pro ? '' : '<span class="mc-story__pro">PRO</span>'}<span class="mc-story__hint${pro ? '' : ' mc-story__hint--cta'}">${pro ? 'Open picks →' : 'Unlock today’s picks →'}</span></span>`;
@@ -20147,7 +20150,7 @@ function mxTileGo(box, keepFocus){
     return;
   }
   // Free: the plan page; Pro / admin: the Picks page (Task 3)
-  if (k === 'bets') { if (!mxIsPro() && !(typeof isBspAdmin === 'function' && isBspAdmin())) location.href = 'account.html'; else { const b = document.getElementById('picksTabBtn'); if (b) b.click(); } }
+  if (k === 'bets') { if (!mxIsPro()) location.href = 'account.html'; else { const b = document.getElementById('picksTabBtn'); if (b) b.click(); } }
 }
 document.getElementById('mcSummaryStrip').addEventListener('click', e => {
   mxTileGo(e.target.closest('[data-mxsummary]'), false);

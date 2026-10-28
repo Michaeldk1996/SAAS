@@ -8,6 +8,10 @@ and the "Bets today" tile. Design source: `design-export/picks-handoff/` (LOCKED
 
 - **Admin** = the founder's uid, the same allowlist as `isAdmin()` in `firestore.rules` and `isBspAdmin()` (admin-config.js).
   Only the admin posts, edits within 10 minutes (note and stake only), voids with a reason.
+- **The admin bypasses Pro gating everywhere on the site** (founder 2026-10-28), by the same uid rule.
+  - `mxIsPro()` covers the Bets today tile, the Stennisfy Model row blur and the tile click.
+  - `sfPlanLocks` covers the rail lock on Trading Report and Stennisfy Model, on both pages. `account.html` loads `admin-config.js` for this.
+  - **Test:** a free-plan admin is never blurred or locked; another free uid is. `test-ten286-layout.mjs` has 3 mutants for this; `test-step15-matches.mjs` covers the tile.
 - **Pro** = `users/{uid}.plan === 'pro'`, written only by the Whop webhook.
   - A client can never write `plan`: `firestore.rules` refuses it, and `auth.js` no longer sends it.
 - **Test:** no "view as" toggle exists anywhere. Viewing another role means signing in as that account.
@@ -37,8 +41,13 @@ and the "Bets today" tile. Design source: `design-export/picks-handoff/` (LOCKED
   - Join on player ids or the event key, never on surnames.
   - **The match-winner close** is used only when both legs moved within 60 min of the start (TEN-253 ruling 2).
   - **Line markets have no close yet:** the line-summary start cut is unconfirmed (handoff), so their CLV is a dash.
-  - **Not auto-settled, held and logged:** outrights; games markets on a retirement after set 1; typed markets.
-- **Test:** `tools/test-picks-updater.mjs` (23 checks, 8 mutants).
+  - **A push on a whole-number line** (handicap +2, Over 23) is **void** (founder 2026-10-28): P/L 0%, excluded from W–L and from the ROI denominator, like any void.
+  - **A retirement after set 1 on a handicap / totals line** is **void**, unless the line was already decided before the retirement; then it settles on that result (founder 2026-10-28).
+    - A total is decided once the games played pass the line.
+    - A handicap is never decided while games remain.
+    - A retirement before set 1 completes is void (Pinnacle rule, `settlement.js`).
+  - **Not auto-settled, held and logged:** outrights; typed markets.
+- **Test:** `tools/test-picks-updater.mjs` (28 checks, 11 mutants; one mutant each for the push and retirement rulings).
 
 ## Figures
 

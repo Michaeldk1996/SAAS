@@ -14,8 +14,8 @@
 //
 // Not settled automatically (left as they are, counted in the log — a ruling is needed, never a guess):
 //   - outrights (no event result feed here);
-//   - a Games handicap / Total games pick on a retirement that stands under the Pinnacle rule (settlement.js covers the
-//     match result; the games markets' rule after a completed first set is not ruled);
+// (Rulings 2026-10-28: a push on a whole-number line is void; a games market on a retirement after set 1 is void unless
+//  the line was already decided — see settle().)
 //   - a typed ("Other") market.
 // Line closes (Games handicap / Total games) stay a dash: oddspapi_line_summary's start-time cut is not yet confirmed to
 // match the match-winner close (handoff list) — so their CLV is a dash, never an approximation.
@@ -86,9 +86,18 @@ export function settle(p, m, aIs) {
   if (ret === 'void' || ret === 'no-sets') return { status: 'void', result: res };
   const code = MKT[p.market];
   if (code === 'ml') { if (winA == null) return { hold: 'no winner' }; return { status: (winA === (p.selection !== 'b')) ? 'won' : 'lost', result: res }; }
-  if (ret === 'stands') return { hold: 'retirement after set 1: the games markets need a ruling', result: res };
   const ga = res.sets.reduce((t, s) => t + (+s.a), 0), gb = res.sets.reduce((t, s) => t + (+s.b), 0);
   const L = parseLine(p.market, p.line); if (!L) return { hold: 'unreadable line' };
+  // founder ruling 2026-10-28 (2): a retirement after set 1 on a handicap / totals line is VOID, unless the line was
+  // already decided before the retirement — then it settles on that result. A total is decided once the games played
+  // pass the line (Over 22.5 with 23 played: Over won, Under lost); short of it, more games could still come → void.
+  // A games handicap is never decided while games remain to be played (either side can still win games) → void.
+  if (ret === 'stands') {
+    if (code === 'tg' && ga + gb > L.line) return { status: L.side === 'over' ? 'won' : 'lost', result: res };
+    return { status: 'void', result: res };
+  }
+  // founder ruling 2026-10-28 (1): a push on a whole-number line is VOID (P/L 0%, out of W–L and of the ROI denominator,
+  // like any void — picks-core.js record()).
   if (code === 'gh') { const mine = p.selection === 'b' ? gb : ga, theirs = p.selection === 'b' ? ga : gb, x = mine + L.line - theirs;
     return x === 0 ? { status: 'void', result: res } : { status: x > 0 ? 'won' : 'lost', result: res }; }
   if (code === 'tg') { const tot = ga + gb; if (tot === L.line) return { status: 'void', result: res };

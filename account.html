@@ -420,6 +420,8 @@ window.sfNavLock = function (tab, on) {
 window.sfPlanLocks = function (u) {
   if (u && u.profileLoadFailed) return;   // a failed profile read is not the plan: keep the current state
   var open = !!u && (u.plan === 'edge' || u.plan === 'pro');
+  // founder 2026-10-28: the admin (ADMIN_CONFIG uids — the same rule as firestore.rules isAdmin) bypasses Pro gating everywhere
+  if (!open && u && window.ADMIN_CONFIG && (window.ADMIN_CONFIG.ADMIN_UIDS || []).indexOf(u.uid) >= 0) open = true;
   ['trading', 'edge'].forEach(function (t) { window.sfNavLock(t, !open); });
 };
 window.sfPlanLocks(null);   // locked until the account says Edge / Pro: no unlocked flash before sign-in resolves
@@ -590,6 +592,8 @@ window.sfPlanLocks(null);   // locked until the account says Edge / Pro: no unlo
 
 <div id="toast"></div>
 
+<!-- the admin uid list (admin-config.js): the rail's Pro lock lets the admin through (founder 2026-10-28) -->
+<script src="admin-config.js"></script>
 <script src="auth.js"></script>
 <script>
 (function(){

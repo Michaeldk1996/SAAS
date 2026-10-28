@@ -148,10 +148,10 @@ test('Elo rows: P(A) = 1/(1+10^((Rb−Ra)/400)), fair odds 1/P to 2 dp, no margi
 test('Bets today: count unblurred; tournament + round readable, selection + price blurred in ONE span unless Pro; empty → "No bets posted yet today"', () => {
   // Task 3 (founder 2026-10-27): the tile reads today's open picks from the picks store (picks-store.js). A non-Pro member
   // gets teasers (no selection, no price), so the blurred span is drawn over a placeholder — never the real pick.
-  const B = (picks, plan) => new Function('picks', 'plan', `
-    const window = { sfPlan: plan }; let _mxPicks = picks;
+  const B = (picks, plan, admin) => new Function('picks', 'plan', 'admin', `
+    const window = { sfPlan: plan }; let _mxPicks = picks; const isBspAdmin = () => !!admin;
     const PicksCore = { surname: n => String(n || '').split(' ').slice(1).join(' ') };
-    ${slice('psEsc')} ${slice('mxOddsTxt')} ${slice('mxIsPro')} ${slice('mxBetsTileHtml')} return mxBetsTileHtml();`)(picks, plan);
+    ${slice('psEsc')} ${slice('mxOddsTxt')} ${slice('mxIsPro')} ${slice('mxBetsTileHtml')} return mxBetsTileHtml();`)(picks, plan, admin);
   const real = [{ kind: 'match', tournament: 'Vienna Open', round: 'R32', selection: 'a', player_a: { name: 'M. Berrettini' }, player_b: { name: 'T. M. Etcheverry' }, posted_price: 2.02, status: 'posted' },
                 { kind: 'match', tournament: 'Swiss Indoors', round: 'R32', selection: 'b', player_a: { name: 'A. Bublik' }, player_b: { name: 'H. Rune' }, posted_price: 1.85, status: 'live' },
                 { kind: 'outright', event: 'Nitto ATP Finals · Turin', selection: 'a', player_a: { name: 'J. Sinner' }, posted_price: 3.5, status: 'posted' }];
@@ -169,6 +169,13 @@ test('Bets today: count unblurred; tournament + round readable, selection + pric
   assert.doesNotMatch(pro, /mc-story__pro/, 'Pro: no PRO chip');
   assert.match(pro, /betpick">Berrettini<\/span><span class="mc-story__betpx">2\.02</);
   assert.match(pro, /betpick">Rune</, 'the picked side (b)');
+  // founder 2026-10-28: the admin bypasses Pro gating everywhere — on a Free plan the tile is unblurred, "Open picks →"
+  const adm = B(real, 'free', true);
+  assert.doesNotMatch(adm, /is-blur/); assert.match(adm, /Open picks →/); assert.match(adm, /betpick">Berrettini</);
+  const mxIsPro = new Function('window', 'isBspAdmin', `${slice('mxIsPro')} return mxIsPro();`);
+  assert.equal(mxIsPro({ sfPlan: 'free' }, () => true), true, 'mxIsPro: the admin on Free');
+  assert.equal(mxIsPro({ sfPlan: 'free' }, () => false), false, 'mxIsPro: a Free member');
+  assert.equal(mxIsPro({ sfPlan: 'pro' }, () => false), true, 'mxIsPro: a Pro member');
   assert.match(B([], null), /mc-story__now">—<\/span>[\s\S]*No bets posted yet today/);
   assert.match(B([real[0]], null), /bet today</, 'singular');
 });

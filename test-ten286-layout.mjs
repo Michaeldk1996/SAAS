@@ -443,6 +443,13 @@ function lockProblems(html, page) {
     L.window.sfPlanLocks(u);
     if (JSON.stringify(L.locked()) !== JSON.stringify(exp)) p.push(`${JSON.stringify(u)} → ${JSON.stringify(L.locked())}`);
   }
+  // founder 2026-10-28: the admin (ADMIN_CONFIG uid) bypasses the Pro lock on any plan; another uid on Free stays locked
+  L.window.ADMIN_CONFIG = { ADMIN_UIDS: ['adm-uid'] };
+  for (const [u, exp] of [[{ uid: 'adm-uid', plan: 'free' }, []], [{ uid: 'other', plan: 'free' }, want], [null, want]]) {
+    L.window.sfPlanLocks(u);
+    if (JSON.stringify(L.locked()) !== JSON.stringify(exp)) p.push(`admin rule: ${JSON.stringify(u)} → ${JSON.stringify(L.locked())}`);
+  }
+  if (page === 'acct' && !/<script src="admin-config\.js"><\/script>/.test(html)) p.push('account.html does not load the admin uid list');
   // the paint path wires it, so it follows sign-in / sign-out live
   if (page === 'dash' && !/function paintAcct\(u\)\{\n    if \(window\.sfPlanLocks\) window\.sfPlanLocks\(u\);/.test(html)) p.push('paintAcct does not paint the locks');
   if (page === 'acct' && !/function paintChip\(\)\{\n    if \(window\.sfPlanLocks\) window\.sfPlanLocks\(user\);/.test(html)) p.push('paintChip does not paint the locks');
@@ -450,7 +457,7 @@ function lockProblems(html, page) {
   if (/is-locked'\)\)\s*(return|e\.preventDefault)|classList\.contains\('is-locked'\)/.test(html)) p.push('a locked row gates navigation');
   return p;
 }
-test('Pro lock: Free / signed out lock Trading Report + Model, Edge / Pro unlock; wired from the paint path; never gates a click', () => {
+test('Pro lock: Free / signed out lock Trading Report + Model, Edge / Pro / the admin unlock; wired from the paint path; never gates a click', () => {
   assert.deepEqual(lockProblems(DASH, 'dash'), []); assert.deepEqual(lockProblems(ACCT, 'acct'), []);
   const mut = {
     proOnly: [DASH.replace("var open = !!u && (u.plan === 'edge' || u.plan === 'pro');", "var open = !!u && u.plan === 'pro';"), 'dash'],
@@ -459,6 +466,9 @@ test('Pro lock: Free / signed out lock Trading Report + Model, Edge / Pro unlock
     notWired: [DASH.replace('    if (window.sfPlanLocks) window.sfPlanLocks(u);', ''), 'dash'],
     acctNotWired: [ACCT.replace('    if (window.sfPlanLocks) window.sfPlanLocks(user);', ''), 'acct'],
     acctLookup: [ACCT.replace(`, .sf-nav a.sf-item[href$="#' + tab + '"]'`, `'`), 'acct'],
+    adminLocked: [DASH.replace("  if (!open && u && window.ADMIN_CONFIG && (window.ADMIN_CONFIG.ADMIN_UIDS || []).indexOf(u.uid) >= 0) open = true;\n", ''), 'dash'],
+    acctAdminLocked: [ACCT.replace("  if (!open && u && window.ADMIN_CONFIG && (window.ADMIN_CONFIG.ADMIN_UIDS || []).indexOf(u.uid) >= 0) open = true;\n", ''), 'acct'],
+    acctNoAdminList: [ACCT.replace('<script src="admin-config.js"></script>\n', ''), 'acct'],
     gated: [DASH.replace("window.sfAcctMenu = set;", "window.sfAcctMenu = set; document.addEventListener('click', function (e) { if (e.target.closest('.sf-item').classList.contains('is-locked')) e.preventDefault(); });"), 'dash'],
   };
   for (const [name, [html, page]] of Object.entries(mut)) {

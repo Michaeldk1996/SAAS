@@ -80,9 +80,21 @@ function suite(U) {
   eq('totals Under 22.5 with 23 games → lost', r.patch.status, 'lost');
   r = run(Object.assign({}, tg, { status: 'posted' }), m0());
   eq('totals: Over / Under rows', [r.patch.open_price, r.patch.now_price, r.patch.opp_now_price], [1.85, 1.90, 1.90]);
-  // a games market on a retirement after set 1: held, never guessed
+  // ruling 2 (2026-10-28): a games market on a retirement after set 1 is void unless the line was already decided
   r = run(gh, m0(final([{ p1: 6, p2: 4 }, { p1: 2, p2: 1 }], 'p1', '6-4, 2-1 ret.', { retired: true })));
-  eq('handicap, retired after set 1: held (a ruling is needed): no status write, logged', [r.patch && r.patch.status, r.log.length], [undefined, 1]);
+  eq('handicap, retired after set 1 → void (a handicap is never decided while games remain), P/L 0', [r.patch.status, r.patch.pl_pct], ['void', 0]);
+  const tgRet = Object.assign({}, tg, { line: 'Over 22.5' });
+  r = run(tgRet, m0(final([{ p1: 7, p2: 6 }, { p1: 6, p2: 4 }, { p1: 0, p2: 1 }], 'p1', '7-6(4), 6-4, 0-1 ret.', { retired: true })));
+  eq('Over 22.5, retired after set 1 with 24 games played → decided: won', r.patch.status, 'won');
+  r = run(Object.assign({}, tgRet, { line: 'Under 22.5' }), m0(final([{ p1: 7, p2: 6 }, { p1: 6, p2: 4 }, { p1: 0, p2: 1 }], 'p1', '7-6(4), 6-4, 0-1 ret.', { retired: true })));
+  eq('Under 22.5, same retirement → decided: lost', r.patch.status, 'lost');
+  r = run(tgRet, m0(final([{ p1: 6, p2: 4 }, { p1: 3, p2: 2 }], 'p1', '6-4, 3-2 ret.', { retired: true })));
+  eq('Over 22.5, retired after set 1 with 15 games → not decided: void', [r.patch.status, r.patch.pl_pct], ['void', 0]);
+  // ruling 1 (2026-10-28): a push on a whole-number line is void
+  r = run(Object.assign({}, gh, { line: '+2' }), m0(final([{ p1: 6, p2: 4 }, { p1: 4, p2: 6 }, { p1: 4, p2: 6 }], 'p2', '6-4, 4-6, 4-6')));
+  eq('handicap +2 with 14 v 16 games → push → void, P/L 0', [r.patch.status, r.patch.pl_pct], ['void', 0]);
+  r = run(Object.assign({}, tg, { line: 'Over 23' }), m0(final([{ p1: 6, p2: 4 }, { p1: 7, p2: 6 }], 'p1', '6-4, 7-6(3)')));
+  eq('Over 23 with 23 games → push → void', r.patch.status, 'void');
   // no line close for games markets (the cut is not confirmed): CLV dash
   r = run(Object.assign({}, gh, { line: '+2.5', selection: 'a' }), m0(final([{ p1: 6, p2: 4 }, { p1: 4, p2: 6 }, { p1: 4, p2: 6 }], 'p2', '6-4, 4-6, 4-6', { pinClose: close() })));
   eq('handicap: the match-winner close is never used as a line close', [r.patch.close_price, r.patch.clv], [undefined, null]);
@@ -106,7 +118,10 @@ const MUTANTS = [
   ['Now keeps moving after the start', "if (!started && p.status === 'posted') {", "if (p.status === 'posted' || p.status === 'live') {"],
   ['joined on surnames', "if (a == null || b == null) return null;\n  if (String(m.p1Key)", "if (a == null || b == null) return C.surname(p.player_a.name) === C.surname(m.p1) ? 'p1' : 'p2';\n  if (String(m.p1Key)"],
   ['retirement settles on the result', "if (ret === 'void' || ret === 'no-sets') return { status: 'void', result: res };", ''],
-  ['games markets settle after a standing retirement', "if (ret === 'stands') return { hold: 'retirement after set 1: the games markets need a ruling', result: res };", ''],
+  ['a retirement after set 1 settles the games markets on the score (ruling 2 off)', "  if (ret === 'stands') {\n    if (code === 'tg' && ga + gb > L.line) return { status: L.side === 'over' ? 'won' : 'lost', result: res };\n    return { status: 'void', result: res };\n  }", ''],
+  ['a decided total is voided (ruling 2 exception off)', "if (code === 'tg' && ga + gb > L.line) return { status: L.side === 'over' ? 'won' : 'lost', result: res };", ''],
+  ['a handicap push settles as lost (ruling 1 off)', "return x === 0 ? { status: 'void', result: res } :", "return x === 0 ? { status: 'lost', result: res } :"],
+  ['a totals push settles as won (ruling 1 off)', "if (tot === L.line) return { status: 'void', result: res };", "if (tot === L.line) return { status: 'won', result: res };"],
   ['handicap line ignored', 'x = mine + L.line - theirs;', 'x = mine - theirs;'],
   ['match close used for lines', "if (m && aIs && S && S.code === 'ml') {", 'if (m && aIs && S) {'],
   ['open overwritten', "if (p.open_price == null && me &&", 'if (me &&'],
