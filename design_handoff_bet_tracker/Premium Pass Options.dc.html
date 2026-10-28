@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&amp;family=IBM+Plex+Mono:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+<style>
+  *{ box-sizing:border-box; }
+  body{ margin:0; background:#05060A; -webkit-font-smoothing:antialiased; font-family:'Hanken Grotesk',sans-serif; color:#FFFFFF; }
+  a{ color:#6A9AF8; text-decoration:none; } a:hover{ color:#FFFFFF; text-decoration:underline; }
+</style>
+</helmet>
+<section style="display:flex; flex-direction:column; gap:18px; padding:32px 40px 60px; width:max-content; min-width:100%; min-height:100vh; background:#05060A;">
+  <div style="display:flex; flex-direction:column; gap:4px;">
+    <span style="font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">Turn 1 · Premium pass</span>
+    <span style="font-size:13px; color:#A3AABE;">Same page five times, layout untouched — only the tones move, and every off-token colour is folded into the site set. Each lives as its own file (Bet Tracker Page 1a–1e).</span>
+  </div>
+  <div style="display:flex; gap:40px; align-items:flex-start;">
+    <div id="1a" style="width:1420px; flex:none; display:flex; flex-direction:column; gap:10px;">
+      <div style="display:flex; align-items:center; gap:10px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:800; color:#05060A; background:#FFFFFF; border-radius:5px; padding:2px 6px;">1a</span><span style="font-size:13px; font-weight:700;">Strict site tokens</span><span style="font-size:12px; color:#A3AABE;">Log-a-bet button → Ring blue #007AFF · footers → inner #0C0E16 · one hairline 7% everywhere · labels one grey</span></div>
+      <div style="border:1px solid rgba(255,255,255,0.10); border-radius:14px; overflow:hidden;"><dc-import name="Bet Tracker Page 1a" hint-size="1420px,2400px"></dc-import></div>
+    </div>
+    <div id="1b" style="width:1420px; flex:none; display:flex; flex-direction:column; gap:10px;">
+      <div style="display:flex; align-items:center; gap:10px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:800; color:#05060A; background:#FFFFFF; border-radius:5px; padding:2px 6px;">1b</span><span style="font-size:13px; font-weight:700;">Quiet ink</span><span style="font-size:12px; color:#A3AABE;">cards one step deeper (#0E1019), tiles #0A0D14, hairlines 5% · body text #E7E9EE, figures stay white · calmer, more recessed</span></div>
+      <div style="border:1px solid rgba(255,255,255,0.10); border-radius:14px; overflow:hidden;"><dc-import name="Bet Tracker Page 1b" hint-size="1420px,2400px"></dc-import></div>
+    </div>
+    <div id="1c" style="width:1420px; flex:none; display:flex; flex-direction:column; gap:10px;">
+      <div style="display:flex; align-items:center; gap:10px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:800; color:#05060A; background:#FFFFFF; border-radius:5px; padding:2px 6px;">1c</span><span style="font-size:13px; font-weight:700;">Blue-led</span><span style="font-size:12px; color:#A3AABE;">Ring blue carries selection: active segments + pending rows on a blue wash, links one blue #5B9BFF, plan lines in the blue family · green / red only for signed money</span></div>
+      <div style="border:1px solid rgba(255,255,255,0.10); border-radius:14px; overflow:hidden;"><dc-import name="Bet Tracker Page 1c" hint-size="1420px,2400px"></dc-import></div>
+    </div>
+    <div id="1d" style="width:1420px; flex:none; display:flex; flex-direction:column; gap:10px;">
+      <div style="display:flex; align-items:center; gap:10px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:800; color:#05060A; background:#FFFFFF; border-radius:5px; padding:2px 6px;">1d</span><span style="font-size:13px; font-weight:700;">Hairline, no fills</span><span style="font-size:12px; color:#A3AABE;">inner tiles lose their fill and keep a 9% ring on the card · selected = the Database rail tone #131623 · no top sheen · flattest, most editorial</span></div>
+      <div style="border:1px solid rgba(255,255,255,0.10); border-radius:14px; overflow:hidden;"><dc-import name="Bet Tracker Page 1d" hint-size="1420px,2400px"></dc-import></div>
+    </div>
+    <div id="1e" style="width:1420px; flex:none; display:flex; flex-direction:column; gap:10px;">
+      <div style="display:flex; align-items:center; gap:10px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:800; color:#05060A; background:#FFFFFF; border-radius:5px; padding:2px 6px;">1e</span><span style="font-size:13px; font-weight:700;">Deep contrast</span><span style="font-size:12px; color:#A3AABE;">cards #0C0E16 on the page, tiles #0A0D14, rings 9–11% · muted text lifted to #C6CCDB, secondary figures white · crispest at a glance</span></div>
+      <div style="border:1px solid rgba(255,255,255,0.10); border-radius:14px; overflow:hidden;"><dc-import name="Bet Tracker Page 1e" hint-size="1420px,2400px"></dc-import></div>
+    </div>
+  </div>
+</section>
+</x-dc>
+</body>
+</html>

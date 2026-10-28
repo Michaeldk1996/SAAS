@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&amp;family=IBM+Plex+Mono:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+<style>
+  *{ box-sizing:border-box; }
+  body{ margin:0; background:#05060A; -webkit-font-smoothing:antialiased; font-family:'Hanken Grotesk',sans-serif; }
+  a{ color:#6A9AF8; text-decoration:none; } a:hover{ color:#FFFFFF; text-decoration:underline; }
+</style>
+</helmet>
+<section style="display:flex; flex-direction:column; gap:40px; padding:40px; background:#05060A; min-height:100vh; width:max-content; font-family:'Hanken Grotesk',sans-serif; color:#FFFFFF;">
+  <div style="display:flex; flex-direction:column; gap:8px; max-width:1340px;">
+    <span style="font-size:22px; font-weight:800; color:#EBF1F2;">Breakdown box · five ways</span>
+    <span style="font-size:15px; line-height:1.5; color:#9BB0DA; text-wrap:pretty;">The box under the verdict cards: Market · Surface · Odds band · Level · Bookmaker · Timing · Situation · Weekday. Same demo season (170 settled). Width 1340 = the page column. Every row keeps its count; ROI bars clipped at ±40%.</span>
+  </div>
+
+  <!-- 1a -->
+  <div id="1a" style="display:flex; flex-direction:column; gap:12px; width:1340px;">
+    <div style="display:flex; align-items:baseline; gap:12px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:14px; font-weight:700; color:#0B0C13; background:#EBF1F2; border-radius:7px; padding:4px 10px;">1a</span><span style="font-size:18px; font-weight:800; color:#EBF1F2;">Side rail</span><span style="font-size:13px; color:#9BB0DA;">The eight cuts become a left rail of rows, each with its own tiny signal (best segment's P/L), so the rail already tells you where to look. Selected cut lifted, table on the right with the hairline ledger grammar.</span></div>
+    <div style="background:#10131D; box-shadow:inset 0 1px 0 rgba(143,170,255,0.05); border:1px solid rgba(255,255,255,0.06); border-radius:12px; overflow:hidden; display:grid; grid-template-columns:232px minmax(0,1fr);">
+      <div style="border-right:1px solid rgba(255,255,255,0.06); padding:8px; display:flex; flex-direction:column; gap:2px;">
+        <span style="font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE; padding:6px 10px 8px;">Cut the season by</span>
+        <sc-for list="{{ rail }}" as="d" hint-placeholder-count="8">
+          <div style="display:grid; grid-template-columns:minmax(0,1fr) auto; gap:0 10px; align-items:center; height:40px; padding:0 10px; border-radius:8px; background:{{ d.bg }}; border:1px solid {{ d.bd }}; cursor:pointer;">
+            <span style="display:flex; flex-direction:column; gap:1px; min-width:0;"><span style="font-size:13px; font-weight:{{ d.fw }}; color:{{ d.c }};">{{ d.label }}</span><span style="font-size:10.5px; color:#A3AABE; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ d.sub }}</span></span>
+            <span style="font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:800; color:{{ d.sigC }};">{{ d.sig }}</span>
+          </div>
+        </sc-for>
+      </div>
+      <div style="display:flex; flex-direction:column;">
+        <div style="display:grid; grid-template-columns:minmax(0,1.2fr) 60px 80px minmax(200px,1fr) 80px 70px 80px; gap:0 10px; align-items:center; height:36px; padding:0 18px; border-bottom:1px solid rgba(255,255,255,0.06); background:#0D1017;">
+          <span style="font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">Surface · 4 segments</span><span style="text-align:right; font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">Bets</span><span style="text-align:right; font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">W–L</span><span style="text-align:center; font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">ROI · −40 ‥ +40</span><span style="text-align:right; font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">ROI</span><span style="text-align:right; font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">CLV</span><span style="text-align:right; font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">P/L</span>
+        </div>
+        <sc-for list="{{ rows }}" as="r" hint-placeholder-count="4">
+          <div style="display:grid; grid-template-columns:minmax(0,1.2fr) 60px 80px minmax(200px,1fr) 80px 70px 80px; gap:0 10px; align-items:center; height:44px; padding:0 18px; border-bottom:1px solid rgba(255,255,255,0.05);" style-hover="background:rgba(255,255,255,0.03);">
+            <span style="font-size:13px; font-weight:600; color:#FFFFFF;">{{ r.name }}</span><span style="text-align:right; font-family:'IBM Plex Mono',monospace; font-size:12.5px; font-weight:600; color:#DDE0EA;">{{ r.n }}</span><span style="text-align:right; font-family:'IBM Plex Mono',monospace; font-size:12.5px; color:#A3AABE;">{{ r.wl }}</span>
+            <span style="position:relative; height:8px; background:rgba(255,255,255,0.05); border-radius:2px;"><span style="position:absolute; left:50%; top:-3px; bottom:-3px; width:1px; background:rgba(255,255,255,0.18);"></span><span style="position:absolute; top:0; bottom:0; left:{{ r.barL }}; width:{{ r.barW }}; background:{{ r.barC }}; border-radius:2px;"></span></span>
+            <span style="text-align:right; font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:800; color:{{ r.roiC }};">{{ r.roi }}</span><span style="text-align:right; font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; color:{{ r.clvC }};">{{ r.clv }}</span><span style="text-align:right; font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:800; color:{{ r.plC }};">{{ r.pl }}</span>
+          </div>
+        </sc-for>
+        <div style="margin-top:auto; padding:10px 18px 12px; font-size:11.5px; color:#A3AABE;">ROI bar clipped at ±40% · CLV = your price ÷ closing price − 1 · P/L in % of bankroll</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 1b -->
+  <div id="1b" style="display:flex; flex-direction:column; gap:12px; width:1340px;">
+    <div style="display:flex; align-items:baseline; gap:12px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:14px; font-weight:700; color:#0B0C13; background:#EBF1F2; border-radius:7px; padding:4px 10px;">1b</span><span style="font-size:18px; font-weight:800; color:#EBF1F2;">Segmented tabs with a bottom line</span><span style="font-size:13px; color:#9BB0DA;">The chips become a proper tab row flush with the card top: 13px labels, segment count in mono beside each, the active tab underlined in white. Table head drops the dark band and sits on a hairline — the whole box reads one tone.</span></div>
+    <div style="background:#10131D; box-shadow:inset 0 1px 0 rgba(143,170,255,0.05); border:1px solid rgba(255,255,255,0.06); border-radius:12px; overflow:hidden;">
+      <div style="display:flex; align-items:stretch; padding:0 18px; border-bottom:1px solid rgba(255,255,255,0.08);">
+        <sc-for list="{{ tabs }}" as="d" hint-placeholder-count="8">
+          <span style="display:inline-flex; align-items:center; gap:7px; height:46px; padding:0 14px; margin-bottom:-1px; border-bottom:2px solid {{ d.ul }}; font-size:13px; font-weight:{{ d.fw }}; color:{{ d.c }}; cursor:pointer; white-space:nowrap;">{{ d.label }}<span style="font-family:'IBM Plex Mono',monospace; font-size:10.5px; font-weight:600; color:#A3AABE;">{{ d.count }}</span></span>
+        </sc-for>
+      </div>
+      <div style="display:grid; grid-template-columns:minmax(0,1.2fr) 60px 80px minmax(200px,1fr) 80px 70px 80px; gap:0 10px; align-items:center; height:34px; padding:0 18px; border-bottom:1px solid rgba(255,255,255,0.06);">
+        <span style="font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">Surface</span><span style="text-align:right; font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">Bets</span><span style="text-align:right; font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">W–L</span><span style="text-align:center; font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">ROI · −40 ‥ +40</span><span style="text-align:right; font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">ROI</span><span style="text-align:right; font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">CLV</span><span style="text-align:right; font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">P/L</span>
+      </div>
+      <sc-for list="{{ rows }}" as="r" hint-placeholder-count="4">
+        <div style="display:grid; grid-template-columns:minmax(0,1.2fr) 60px 80px minmax(200px,1fr) 80px 70px 80px; gap:0 10px; align-items:center; height:44px; padding:0 18px; border-bottom:1px solid rgba(255,255,255,0.05);" style-hover="background:rgba(255,255,255,0.03);">
+          <span style="font-size:13px; font-weight:600; color:#FFFFFF;">{{ r.name }}</span><span style="text-align:right; font-family:'IBM Plex Mono',monospace; font-size:12.5px; font-weight:600; color:#DDE0EA;">{{ r.n }}</span><span style="text-align:right; font-family:'IBM Plex Mono',monospace; font-size:12.5px; color:#A3AABE;">{{ r.wl }}</span>
+          <span style="position:relative; height:8px; background:rgba(255,255,255,0.05); border-radius:2px;"><span style="position:absolute; left:50%; top:-3px; bottom:-3px; width:1px; background:rgba(255,255,255,0.18);"></span><span style="position:absolute; top:0; bottom:0; left:{{ r.barL }}; width:{{ r.barW }}; background:{{ r.barC }}; border-radius:2px;"></span></span>
+          <span style="text-align:right; font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:800; color:{{ r.roiC }};">{{ r.roi }}</span><span style="text-align:right; font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; color:{{ r.clvC }};">{{ r.clv }}</span><span style="text-align:right; font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:800; color:{{ r.plC }};">{{ r.pl }}</span>
+        </div>
+      </sc-for>
+      <div style="padding:10px 18px 12px; font-size:11.5px; color:#A3AABE;">ROI bar clipped at ±40% · CLV = your price ÷ closing price − 1 · P/L in % of bankroll</div>
+    </div>
+  </div>
+
+  <!-- 1c -->
+  <div id="1c" style="display:flex; flex-direction:column; gap:12px; width:1340px;">
+    <div style="display:flex; align-items:baseline; gap:12px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:14px; font-weight:700; color:#0B0C13; background:#EBF1F2; border-radius:7px; padding:4px 10px;">1c</span><span style="font-size:18px; font-weight:800; color:#EBF1F2;">Every cut at once, eight columns</span><span style="font-size:13px; color:#9BB0DA;">No switching: eight narrow columns, one per cut, each listing its segments as compact rows (name · P/L, bar under) sorted by P/L. Click any segment for the full row. You scan the whole season in one look.</span></div>
+    <div style="background:#10131D; box-shadow:inset 0 1px 0 rgba(143,170,255,0.05); border:1px solid rgba(255,255,255,0.06); border-radius:12px; overflow:hidden;">
+      <div style="display:flex; align-items:center; justify-content:space-between; padding:12px 18px; border-bottom:1px solid rgba(255,255,255,0.06);"><span style="font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">Every cut · P/L in % of bankroll · bar = ROI</span><span style="font-size:11.5px; color:#A3AABE;">170 settled bets · segments under 8 bets greyed</span></div>
+      <div style="display:grid; grid-template-columns:repeat(8,minmax(0,1fr));">
+        <sc-for list="{{ cols }}" as="c" hint-placeholder-count="8">
+          <div style="border-right:1px solid rgba(255,255,255,0.06); display:flex; flex-direction:column;">
+            <span style="font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#DDE0EA; padding:10px 12px 8px; border-bottom:1px solid rgba(255,255,255,0.06);">{{ c.label }}</span>
+            <sc-for list="{{ c.items }}" as="s" hint-placeholder-count="4">
+              <div style="display:flex; flex-direction:column; gap:4px; padding:9px 12px; border-bottom:1px solid rgba(255,255,255,0.04); cursor:pointer;" style-hover="background:rgba(255,255,255,0.03);">
+                <span style="display:flex; justify-content:space-between; align-items:baseline; gap:6px; min-width:0;"><span style="font-size:12px; font-weight:600; color:{{ s.c }}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ s.name }}</span><span style="font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:800; color:{{ s.plC }}; flex:none;">{{ s.pl }}</span></span>
+                <span style="display:flex; justify-content:space-between; align-items:center; gap:8px;"><span style="position:relative; flex:1; height:4px; background:rgba(255,255,255,0.05); border-radius:2px;"><span style="position:absolute; left:50%; top:-2px; bottom:-2px; width:1px; background:rgba(255,255,255,0.14);"></span><span style="position:absolute; top:0; bottom:0; left:{{ s.barL }}; width:{{ s.barW }}; background:{{ s.barC }}; border-radius:2px;"></span></span><span style="font-family:'IBM Plex Mono',monospace; font-size:10px; color:#A3AABE; flex:none;">{{ s.n }}</span></span>
+              </div>
+            </sc-for>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+
+  <!-- 1d -->
+  <div id="1d" style="display:flex; flex-direction:column; gap:12px; width:1340px;">
+    <div style="display:flex; align-items:baseline; gap:12px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:14px; font-weight:700; color:#0B0C13; background:#EBF1F2; border-radius:7px; padding:4px 10px;">1d</span><span style="font-size:18px; font-weight:800; color:#EBF1F2;">Segmented control + ranked bars</span><span style="font-size:13px; color:#9BB0DA;">The cut picker as one inset segmented control (the site's selected tone inside a 2px well). The table loses its grid: each segment is a horizontal P/L bar from zero with the number at its tip and the sample muted beneath — a chart, not a sheet.</span></div>
+    <div style="background:#10131D; box-shadow:inset 0 1px 0 rgba(143,170,255,0.05); border:1px solid rgba(255,255,255,0.06); border-radius:12px; padding:14px 18px 16px; display:flex; flex-direction:column; gap:16px;">
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:16px;">
+        <div style="display:inline-flex; padding:3px; border-radius:10px; background:#0A0C13; border:1px solid rgba(255,255,255,0.06);">
+          <sc-for list="{{ segc }}" as="d" hint-placeholder-count="8"><span style="height:30px; padding:0 14px; display:inline-flex; align-items:center; border-radius:8px; font-size:12.5px; font-weight:{{ d.fw }}; background:{{ d.bg }}; color:{{ d.c }}; box-shadow:{{ d.sh }}; cursor:pointer; white-space:nowrap;">{{ d.label }}</span></sc-for>
+        </div>
+        <span style="font-size:11.5px; color:#A3AABE; white-space:nowrap;">P/L · % of bankroll · 170 bets</span>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:10px;">
+        <sc-for list="{{ ranked }}" as="r" hint-placeholder-count="4">
+          <div style="display:grid; grid-template-columns:150px minmax(0,1fr); gap:0 16px; align-items:center;">
+            <span style="display:flex; flex-direction:column; gap:1px;"><span style="font-size:13px; font-weight:600; color:#FFFFFF;">{{ r.name }}</span><span style="font-size:10.5px; color:#A3AABE;">{{ r.n }} bets · {{ r.wl }}</span></span>
+            <span style="position:relative; height:26px;"><span style="position:absolute; left:50%; top:-4px; bottom:-4px; width:1px; background:rgba(255,255,255,0.22);"></span><span style="position:absolute; top:4px; bottom:4px; left:{{ r.bl }}; width:{{ r.bw }}; background:{{ r.bc }}; border-radius:3px;"></span><span style="position:absolute; top:0; bottom:0; left:{{ r.tl }}; display:flex; align-items:center; gap:10px; white-space:nowrap; transform:{{ r.tt }};"><span style="font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:800; color:{{ r.plC }};">{{ r.pl }}</span><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#A3AABE;">ROI {{ r.roi }} · CLV {{ r.clv }}</span></span></span>
+          </div>
+        </sc-for>
+      </div>
+      <div style="display:flex; justify-content:space-between; font-family:'IBM Plex Mono',monospace; font-size:10px; color:#A3AABE; padding-left:166px;"><span>−8%</span><span>0</span><span>+8%</span></div>
+    </div>
+  </div>
+
+  <!-- 1e -->
+  <div id="1e" style="display:flex; flex-direction:column; gap:12px; width:1340px;">
+    <div style="display:flex; align-items:baseline; gap:12px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:14px; font-weight:700; color:#0B0C13; background:#EBF1F2; border-radius:7px; padding:4px 10px;">1e</span><span style="font-size:18px; font-weight:800; color:#EBF1F2;">Titled head with the cut as a menu</span><span style="font-size:13px; color:#9BB0DA;">The box gets a proper title row — "Breakdown · by Surface" with the cut as a site-menu trigger (same chrome as Period / Filters above) and the total line on the right. Rows get a 4px colour mark and a total row at the foot. Calm, matches the hero.</span></div>
+    <div style="background:#10131D; box-shadow:inset 0 1px 0 rgba(143,170,255,0.05); border:1px solid rgba(255,255,255,0.06); border-radius:12px; overflow:hidden;">
+      <div style="display:flex; align-items:center; justify-content:space-between; padding:12px 18px; border-bottom:1px solid rgba(255,255,255,0.06);">
+        <span style="display:flex; align-items:center; gap:12px;"><span style="font-size:14px; font-weight:800; color:#FFFFFF;">Breakdown</span><span style="font-size:12px; color:#A3AABE;">by</span><span style="display:inline-flex; align-items:center; gap:8px; height:30px; padding:0 12px; border-radius:9px; background:#0C0E16; border:1px solid rgba(255,255,255,0.10); font-size:12.5px; font-weight:700; color:#e7e9ee; cursor:pointer;">Surface<span style="font-size:9px; color:#8b96b5;">▼</span></span></span>
+        <span style="display:flex; align-items:baseline; gap:14px; font-size:11.5px; color:#A3AABE;"><span>170 bets · 94–76</span><span>ROI <span style="font-family:'IBM Plex Mono',monospace; font-weight:700; color:#5CCB84;">+8.7%</span></span><span>P/L <span style="font-family:'IBM Plex Mono',monospace; font-weight:800; color:#5CCB84;">+18.6%</span></span></span>
+      </div>
+      <div style="display:grid; grid-template-columns:4px minmax(0,1.2fr) 60px 80px minmax(200px,1fr) 80px 70px 80px; gap:0 12px; align-items:center; height:30px; padding:0 18px; border-bottom:1px solid rgba(255,255,255,0.06);">
+        <span></span><span style="font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">Segment</span><span style="text-align:right; font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">Bets</span><span style="text-align:right; font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">W–L</span><span style="text-align:center; font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">ROI · −40 ‥ +40</span><span style="text-align:right; font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">ROI</span><span style="text-align:right; font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">CLV</span><span style="text-align:right; font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">P/L</span>
+      </div>
+      <sc-for list="{{ rows }}" as="r" hint-placeholder-count="4">
+        <div style="display:grid; grid-template-columns:4px minmax(0,1.2fr) 60px 80px minmax(200px,1fr) 80px 70px 80px; gap:0 12px; align-items:center; height:46px; padding:0 18px; border-bottom:1px solid rgba(255,255,255,0.05);" style-hover="background:rgba(255,255,255,0.03);">
+          <span style="width:4px; height:22px; border-radius:2px; background:{{ r.barC }};"></span>
+          <span style="font-size:13.5px; font-weight:700; color:#FFFFFF;">{{ r.name }}</span><span style="text-align:right; font-family:'IBM Plex Mono',monospace; font-size:12.5px; font-weight:600; color:#DDE0EA;">{{ r.n }}</span><span style="text-align:right; font-family:'IBM Plex Mono',monospace; font-size:12.5px; color:#A3AABE;">{{ r.wl }}</span>
+          <span style="position:relative; height:8px; background:rgba(255,255,255,0.05); border-radius:2px;"><span style="position:absolute; left:50%; top:-3px; bottom:-3px; width:1px; background:rgba(255,255,255,0.18);"></span><span style="position:absolute; top:0; bottom:0; left:{{ r.barL }}; width:{{ r.barW }}; background:{{ r.barC }}; border-radius:2px;"></span></span>
+          <span style="text-align:right; font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:800; color:{{ r.roiC }};">{{ r.roi }}</span><span style="text-align:right; font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; color:{{ r.clvC }};">{{ r.clv }}</span><span style="text-align:right; font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:800; color:{{ r.plC }};">{{ r.pl }}</span>
+        </div>
+      </sc-for>
+      <div style="display:grid; grid-template-columns:4px minmax(0,1.2fr) 60px 80px minmax(200px,1fr) 80px 70px 80px; gap:0 12px; align-items:center; height:40px; padding:0 18px; background:#0D1017;">
+        <span></span><span style="font-size:11px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:#A3AABE;">All surfaces</span><span style="text-align:right; font-family:'IBM Plex Mono',monospace; font-size:12.5px; font-weight:700; color:#FFFFFF;">170</span><span style="text-align:right; font-family:'IBM Plex Mono',monospace; font-size:12.5px; color:#A3AABE;">94–76</span><span></span><span style="text-align:right; font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:800; color:#5CCB84;">+8.7%</span><span style="text-align:right; font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; color:#5CCB84;">+1.4%</span><span style="text-align:right; font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:800; color:#5CCB84;">+18.6%</span>
+      </div>
+    </div>
+  </div>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals(){
+    const G='#5CCB84',Rd='#E06266',W='#FFFFFF',lab='#A3AABE';
+    const sgn=(x,d=1)=>(x>0?'+':x<0?'−':'')+Math.abs(x).toFixed(d)+'%'; const col=x=>x>0?G:x<0?Rd:'#DDE0EA';
+    const bar=roi=>{ const w=Math.min(Math.abs(roi),40)/40*50; return {barL:(roi>=0?50:50-w)+'%', barW:w+'%', barC:roi>=0?G:Rd}; };
+    const SURF=[['Hard',76,'44–32',3.8,1.1,3.7],['Indoor hard',31,'19–12',11.6,2.4,3.6],['Clay',48,'24–24',-7.9,-1.8,-4.9],['Grass',15,'7–8',2.1,0.3,0.4]];
+    const rows=SURF.map(([name,n,wl,roi,clv,pl])=>Object.assign({name,n:String(n),wl,roi:sgn(roi),roiC:col(roi),clv:sgn(clv),clvC:col(clv),pl:sgn(pl),plC:col(pl)},bar(roi)));
+    const DIMS=[['Market','3 markets',6.8,'Total games'],['Surface','4 surfaces',3.7,'Hard'],['Odds band','7 bands',2.7,'1.61–1.90'],['Level','5 levels',2.9,'Grand Slam'],['Bookmaker','4 books',4.1,'bet105'],['Timing','2 · pre-match / live',8.4,'Pre-match'],['Situation','3 situations',-2.9,'After two losses'],['Weekday','7 days',3.2,'Saturday']];
+    const sel='Surface';
+    const rail=DIMS.map(([label,sub,sig,best])=>({label,sub:best+' leads',sig:sgn(sig),sigC:col(sig),fw:label===sel?800:600,c:label===sel?W:'#DDE0EA',bg:label===sel?'#1B2031':'transparent',bd:label===sel?'rgba(255,255,255,0.16)':'transparent'}));
+    const tabs=DIMS.map(([label,sub])=>({label,count:sub.split(' ')[0],fw:label===sel?800:600,c:label===sel?W:lab,ul:label===sel?W:'transparent'}));
+    const segc=DIMS.map(([label])=>({label,fw:label===sel?700:600,bg:label===sel?'#1B2031':'transparent',c:label===sel?W:lab,sh:label===sel?'inset 0 0 0 1px rgba(255,255,255,0.16)':'none'}));
+    const COLS=[['Market',[['Total games',48,6.8,14.2],['Match winner',74,2.9,2.4],['Games handicap',48,-3.0,-6.2]]],['Surface',[['Hard',76,3.7,3.8],['Indoor hard',31,3.6,11.6],['Grass',15,0.4,2.1],['Clay',48,-4.9,-7.9]]],['Odds band',[['1.61–1.90',44,2.7,6.1],['1.36–1.60',40,2.3,5.6],['1.10–1.35',18,0.2,1.2],['1.91–2.20',30,0.3,0.9],['2.21–2.60',20,-0.9,-4.4],['3.21+',6,-0.6,-9.0],['2.61–3.20',12,-2.2,-18.4]]],['Level',[['Grand Slam',27,2.9,9.8],['ATP 500',38,1.4,3.6],['Masters 1000',52,1.0,1.9],['ATP 250',41,0.5,1.2],['Challenger',12,-2.3,-9.5]]],['Bookmaker',[['bet105',88,4.1,4.7],['Pinnacle',44,2.6,5.9],['bet365',30,0.8,2.7],['Other',8,-0.4,-5.0]]],['Timing',[['Pre-match',141,8.4,4.9],['Live',29,-1.4,-3.1]]],['Situation',[['Normal rhythm',139,10.3,7.4],['First bet of the day',91,5.2,5.7],['After two losses',14,-2.9,-12.4]]],['Weekday',[['Saturday',31,3.2,10.3],['Friday',28,1.9,6.8],['Sunday',29,1.4,4.8],['Wednesday',22,0.6,2.7],['Tuesday',21,0.1,0.5],['Thursday',20,-0.9,-4.5],['Monday',19,-1.7,-8.9]]]];
+    const cols=COLS.map(([label,items])=>({label,items:items.map(([name,n,pl,roi])=>{ const thin=n<8; return Object.assign({name,n:String(n),pl:thin?'—':sgn(pl),plC:thin?lab:col(pl),c:thin?lab:W},thin?{barL:'50%',barW:'0',barC:'transparent'}:bar(roi)); })}));
+    const ranked=SURF.slice().sort((a,b)=>b[5]-a[5]).map(([name,n,wl,roi,clv,pl])=>{ const w=Math.abs(pl)/8*50; const tipPct=pl>=0?50+w:50-w; return {name,n:String(n),wl,pl:sgn(pl),plC:col(pl),roi:sgn(roi),clv:sgn(clv),bl:(pl>=0?50:50-w)+'%',bw:w+'%',bc:pl>=0?G:Rd,tl:(pl>=0?tipPct+1.2:tipPct-1.2)+'%',tt:pl>=0?'none':'translateX(-100%)'}; });
+    return { rows, rail, tabs, segc, cols, ranked };
+  }
+}
+</script>
+</body>
+</html>

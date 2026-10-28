@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&amp;family=IBM+Plex+Mono:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+<style>
+  *{ box-sizing:border-box; }
+  body{ margin:0; background:#05060A; -webkit-font-smoothing:antialiased; font-family:'Hanken Grotesk',sans-serif; color:#FFFFFF; }
+  a{ color:#6A9AF8; text-decoration:none; } a:hover{ color:#FFFFFF; text-decoration:underline; }
+</style>
+</helmet>
+<section style="display:flex; flex-direction:column; gap:18px; padding:32px 40px 60px; width:max-content; min-width:100%; min-height:100vh; background:#05060A;">
+  <div style="display:flex; flex-direction:column; gap:4px;">
+    <span style="font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">Turn 1 · Certified mark</span>
+    <span style="font-size:13px; color:#A3AABE;">Header badge + the locked-row mark, same treatment in both places. <a href="#1a">1a</a> is the live one.</span>
+  </div>
+  <div style="display:flex; flex-wrap:wrap; gap:18px; align-items:flex-start;">
+
+    <div id="1a" style="width:560px; display:flex; flex-direction:column; gap:10px;">
+      <div style="display:flex; align-items:center; gap:10px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:800; color:#05060A; background:#FFFFFF; border-radius:5px; padding:2px 6px;">1a</span><span style="font-size:13px; font-weight:700;">Blue disc + tick</span><span style="font-size:12px; color:#A3AABE;">current · the Verified grammar everyone reads</span></div>
+      <div style="background:#10131D; box-shadow:inset 0 1px 0 rgba(143,170,255,0.05); border:1px solid rgba(255,255,255,0.06); border-radius:12px; padding:20px 22px; display:flex; flex-direction:column; gap:18px;">
+        <span style="display:flex; align-items:center; gap:12px;"><span style="font-size:26px; font-weight:800; line-height:1.1;">Tennis 2026</span><span style="display:inline-flex; align-items:center; gap:6px; height:24px; padding:0 10px; border-radius:7px; background:rgba(0,122,255,0.12); border:1px solid rgba(0,122,255,0.35); color:#6A9AF8; font-size:11.5px; font-weight:700; white-space:nowrap;"><span style="width:14px; height:14px; border-radius:50%; background:#007AFF; display:inline-flex; align-items:center; justify-content:center;"><svg viewBox="0 0 24 24" width="9" height="9" fill="none" stroke="#FFFFFF" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"></path></svg></span>Certified · 41 of 44 results locked</span></span>
+        <div style="display:grid; grid-template-columns:minmax(0,1fr) 70px 110px 70px; gap:12px; align-items:center; padding:12px 0 0; border-top:1px solid rgba(255,255,255,0.06); font-size:13px;">
+          <span style="display:flex; flex-direction:column; gap:2px;"><span style="font-weight:700;">A. de Minaur to win</span><span style="font-size:12px; color:#A3AABE;">Vienna · ATP 500 · Hard</span></span>
+          <span style="text-align:right; font-family:'IBM Plex Mono',monospace; font-size:14px; font-weight:800;">1.68</span>
+          <span style="display:flex; justify-content:flex-end; align-items:center; gap:6px;"><span style="display:inline-flex; align-items:center; height:20px; padding:0 8px; border-radius:6px; background:rgba(92,203,132,0.12); border:1px solid rgba(92,203,132,0.35); font-family:'IBM Plex Mono',monospace; font-size:10px; font-weight:700; letter-spacing:0.08em; color:#5CCB84;">WON</span><span style="width:15px; height:15px; border-radius:50%; background:#007AFF; display:inline-flex; align-items:center; justify-content:center; flex:none;"><svg viewBox="0 0 24 24" width="9" height="9" fill="none" stroke="#FFFFFF" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"></path></svg></span></span>
+          <span style="text-align:right; font-family:'IBM Plex Mono',monospace; font-size:14px; font-weight:800; color:#5CCB84;">+1.36%</span>
+        </div>
+      </div>
+    </div>
+
+    <div id="1b" style="width:560px; display:flex; flex-direction:column; gap:10px;">
+      <div style="display:flex; align-items:center; gap:10px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:800; color:#05060A; background:#FFFFFF; border-radius:5px; padding:2px 6px;">1b</span><span style="font-size:13px; font-weight:700;">Rosette seal</span><span style="font-size:12px; color:#A3AABE;">scalloped edge · reads "official stamp", not just a tick</span></div>
+      <div style="background:#10131D; box-shadow:inset 0 1px 0 rgba(143,170,255,0.05); border:1px solid rgba(255,255,255,0.06); border-radius:12px; padding:20px 22px; display:flex; flex-direction:column; gap:18px;">
+        <span style="display:flex; align-items:center; gap:12px;"><span style="font-size:26px; font-weight:800; line-height:1.1;">Tennis 2026</span><span style="display:inline-flex; align-items:center; gap:6px; height:24px; padding:0 10px 0 8px; border-radius:7px; background:rgba(0,122,255,0.12); border:1px solid rgba(0,122,255,0.35); color:#6A9AF8; font-size:11.5px; font-weight:700; white-space:nowrap;"><span style="width:16px; height:16px; background:#007AFF; display:inline-flex; align-items:center; justify-content:center; clip-path:polygon(100% 50%, 89.6% 60.6%, 93.3% 75%, 79% 79%, 75% 93.3%, 60.6% 89.6%, 50% 100%, 39.4% 89.6%, 25% 93.3%, 21% 79%, 6.7% 75%, 10.4% 60.6%, 0% 50%, 10.4% 39.4%, 6.7% 25%, 21% 21%, 25% 6.7%, 39.4% 10.4%, 50% 0%, 60.6% 10.4%, 75% 6.7%, 79% 21%, 93.3% 25%, 89.6% 39.4%);"><svg viewBox="0 0 24 24" width="9" height="9" fill="none" stroke="#FFFFFF" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"></path></svg></span>Certified · 41 of 44 results locked</span></span>
+        <div style="display:grid; grid-template-columns:minmax(0,1fr) 70px 110px 70px; gap:12px; align-items:center; padding:12px 0 0; border-top:1px solid rgba(255,255,255,0.06); font-size:13px;">
+          <span style="display:flex; flex-direction:column; gap:2px;"><span style="font-weight:700;">A. de Minaur to win</span><span style="font-size:12px; color:#A3AABE;">Vienna · ATP 500 · Hard</span></span>
+          <span style="text-align:right; font-family:'IBM Plex Mono',monospace; font-size:14px; font-weight:800;">1.68</span>
+          <span style="display:flex; justify-content:flex-end; align-items:center; gap:6px;"><span style="display:inline-flex; align-items:center; height:20px; padding:0 8px; border-radius:6px; background:rgba(92,203,132,0.12); border:1px solid rgba(92,203,132,0.35); font-family:'IBM Plex Mono',monospace; font-size:10px; font-weight:700; letter-spacing:0.08em; color:#5CCB84;">WON</span><span style="width:17px; height:17px; background:#007AFF; display:inline-flex; align-items:center; justify-content:center; flex:none; clip-path:polygon(100% 50%, 89.6% 60.6%, 93.3% 75%, 79% 79%, 75% 93.3%, 60.6% 89.6%, 50% 100%, 39.4% 89.6%, 25% 93.3%, 21% 79%, 6.7% 75%, 10.4% 60.6%, 0% 50%, 10.4% 39.4%, 6.7% 25%, 21% 21%, 25% 6.7%, 39.4% 10.4%, 50% 0%, 60.6% 10.4%, 75% 6.7%, 79% 21%, 93.3% 25%, 89.6% 39.4%);"><svg viewBox="0 0 24 24" width="9" height="9" fill="none" stroke="#FFFFFF" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"></path></svg></span></span>
+          <span style="text-align:right; font-family:'IBM Plex Mono',monospace; font-size:14px; font-weight:800; color:#5CCB84;">+1.36%</span>
+        </div>
+      </div>
+    </div>
+
+    <div id="1c" style="width:560px; display:flex; flex-direction:column; gap:10px;">
+      <div style="display:flex; align-items:center; gap:10px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:800; color:#05060A; background:#FFFFFF; border-radius:5px; padding:2px 6px;">1c</span><span style="font-size:13px; font-weight:700;">Shield + tick</span><span style="font-size:12px; color:#A3AABE;">"protected" · outline in the badge, filled on the row</span></div>
+      <div style="background:#10131D; box-shadow:inset 0 1px 0 rgba(143,170,255,0.05); border:1px solid rgba(255,255,255,0.06); border-radius:12px; padding:20px 22px; display:flex; flex-direction:column; gap:18px;">
+        <span style="display:flex; align-items:center; gap:12px;"><span style="font-size:26px; font-weight:800; line-height:1.1;">Tennis 2026</span><span style="display:inline-flex; align-items:center; gap:6px; height:24px; padding:0 10px 0 8px; border-radius:7px; background:rgba(0,122,255,0.12); border:1px solid rgba(0,122,255,0.35); color:#6A9AF8; font-size:11.5px; font-weight:700; white-space:nowrap;"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#6A9AF8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.5l7.5 3v6c0 4.8-3.2 8.8-7.5 10.5C7.7 20.3 4.5 16.3 4.5 11.5v-6z"></path><path d="M8.5 12l2.5 2.5 4.5-5"></path></svg>Certified · 41 of 44 results locked</span></span>
+        <div style="display:grid; grid-template-columns:minmax(0,1fr) 70px 110px 70px; gap:12px; align-items:center; padding:12px 0 0; border-top:1px solid rgba(255,255,255,0.06); font-size:13px;">
+          <span style="display:flex; flex-direction:column; gap:2px;"><span style="font-weight:700;">A. de Minaur to win</span><span style="font-size:12px; color:#A3AABE;">Vienna · ATP 500 · Hard</span></span>
+          <span style="text-align:right; font-family:'IBM Plex Mono',monospace; font-size:14px; font-weight:800;">1.68</span>
+          <span style="display:flex; justify-content:flex-end; align-items:center; gap:6px;"><span style="display:inline-flex; align-items:center; height:20px; padding:0 8px; border-radius:6px; background:rgba(92,203,132,0.12); border:1px solid rgba(92,203,132,0.35); font-family:'IBM Plex Mono',monospace; font-size:10px; font-weight:700; letter-spacing:0.08em; color:#5CCB84;">WON</span><svg viewBox="0 0 24 24" width="16" height="16" style="flex:none;" fill="#007AFF" stroke="#FFFFFF" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.5l7.5 3v6c0 4.8-3.2 8.8-7.5 10.5C7.7 20.3 4.5 16.3 4.5 11.5v-6z" stroke="none"></path><path d="M8.5 12l2.5 2.5 4.5-5"></path></svg></span>
+          <span style="text-align:right; font-family:'IBM Plex Mono',monospace; font-size:14px; font-weight:800; color:#5CCB84;">+1.36%</span>
+        </div>
+      </div>
+    </div>
+
+    <div id="1d" style="width:560px; display:flex; flex-direction:column; gap:10px;">
+      <div style="display:flex; align-items:center; gap:10px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:800; color:#05060A; background:#FFFFFF; border-radius:5px; padding:2px 6px;">1d</span><span style="font-size:13px; font-weight:700;">Padlock</span><span style="font-size:12px; color:#A3AABE;">literal "locked" · matches the Lock button it replaces</span></div>
+      <div style="background:#10131D; box-shadow:inset 0 1px 0 rgba(143,170,255,0.05); border:1px solid rgba(255,255,255,0.06); border-radius:12px; padding:20px 22px; display:flex; flex-direction:column; gap:18px;">
+        <span style="display:flex; align-items:center; gap:12px;"><span style="font-size:26px; font-weight:800; line-height:1.1;">Tennis 2026</span><span style="display:inline-flex; align-items:center; gap:6px; height:24px; padding:0 10px 0 8px; border-radius:7px; background:rgba(0,122,255,0.12); border:1px solid rgba(0,122,255,0.35); color:#6A9AF8; font-size:11.5px; font-weight:700; white-space:nowrap;"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="#6A9AF8" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="10.5" width="15" height="11" rx="2.5"></rect><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"></path></svg>Certified · 41 of 44 results locked</span></span>
+        <div style="display:grid; grid-template-columns:minmax(0,1fr) 70px 110px 70px; gap:12px; align-items:center; padding:12px 0 0; border-top:1px solid rgba(255,255,255,0.06); font-size:13px;">
+          <span style="display:flex; flex-direction:column; gap:2px;"><span style="font-weight:700;">A. de Minaur to win</span><span style="font-size:12px; color:#A3AABE;">Vienna · ATP 500 · Hard</span></span>
+          <span style="text-align:right; font-family:'IBM Plex Mono',monospace; font-size:14px; font-weight:800;">1.68</span>
+          <span style="display:flex; justify-content:flex-end; align-items:center; gap:6px;"><span style="display:inline-flex; align-items:center; height:20px; padding:0 8px; border-radius:6px; background:rgba(92,203,132,0.12); border:1px solid rgba(92,203,132,0.35); font-family:'IBM Plex Mono',monospace; font-size:10px; font-weight:700; letter-spacing:0.08em; color:#5CCB84;">WON</span><span style="width:20px; height:20px; border-radius:6px; background:rgba(0,122,255,0.14); border:1px solid rgba(0,122,255,0.45); display:inline-flex; align-items:center; justify-content:center; flex:none;"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="#6A9AF8" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="10.5" width="15" height="11" rx="2.5"></rect><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"></path></svg></span></span>
+          <span style="text-align:right; font-family:'IBM Plex Mono',monospace; font-size:14px; font-weight:800; color:#5CCB84;">+1.36%</span>
+        </div>
+      </div>
+    </div>
+
+    <div id="1e" style="width:560px; display:flex; flex-direction:column; gap:10px;">
+      <div style="display:flex; align-items:center; gap:10px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:800; color:#05060A; background:#FFFFFF; border-radius:5px; padding:2px 6px;">1e</span><span style="font-size:13px; font-weight:700;">Type only</span><span style="font-size:12px; color:#A3AABE;">no icon · mono caps tag, same chip grammar as WON / LOST</span></div>
+      <div style="background:#10131D; box-shadow:inset 0 1px 0 rgba(143,170,255,0.05); border:1px solid rgba(255,255,255,0.06); border-radius:12px; padding:20px 22px; display:flex; flex-direction:column; gap:18px;">
+        <span style="display:flex; align-items:center; gap:12px;"><span style="font-size:26px; font-weight:800; line-height:1.1;">Tennis 2026</span><span style="display:inline-flex; align-items:center; gap:8px; height:24px; padding:0 10px; border-radius:7px; background:rgba(0,122,255,0.12); border:1px solid rgba(0,122,255,0.35); color:#6A9AF8; font-size:11.5px; font-weight:700; white-space:nowrap;"><span style="font-family:'IBM Plex Mono',monospace; font-size:10px; font-weight:800; letter-spacing:0.12em; color:#FFFFFF; background:#007AFF; border-radius:4px; padding:1px 5px; line-height:14px;">CERTIFIED</span>41 of 44 results locked</span></span>
+        <div style="display:grid; grid-template-columns:minmax(0,1fr) 70px 130px 70px; gap:12px; align-items:center; padding:12px 0 0; border-top:1px solid rgba(255,255,255,0.06); font-size:13px;">
+          <span style="display:flex; flex-direction:column; gap:2px;"><span style="font-weight:700;">A. de Minaur to win</span><span style="font-size:12px; color:#A3AABE;">Vienna · ATP 500 · Hard</span></span>
+          <span style="text-align:right; font-family:'IBM Plex Mono',monospace; font-size:14px; font-weight:800;">1.68</span>
+          <span style="display:flex; justify-content:flex-end; align-items:center; gap:6px;"><span style="display:inline-flex; align-items:center; height:20px; padding:0 8px; border-radius:6px; background:rgba(92,203,132,0.12); border:1px solid rgba(92,203,132,0.35); font-family:'IBM Plex Mono',monospace; font-size:10px; font-weight:700; letter-spacing:0.08em; color:#5CCB84;">WON</span><span style="display:inline-flex; align-items:center; height:20px; padding:0 7px; border-radius:6px; background:#007AFF; font-family:'IBM Plex Mono',monospace; font-size:9.5px; font-weight:800; letter-spacing:0.10em; color:#FFFFFF; flex:none;">LOCKED</span></span>
+          <span style="text-align:right; font-family:'IBM Plex Mono',monospace; font-size:14px; font-weight:800; color:#5CCB84;">+1.36%</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+</x-dc>
+</body>
+</html>

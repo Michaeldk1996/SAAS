@@ -27,6 +27,8 @@
 <link rel="stylesheet" href="./drops-page.css">
 <!-- Picks page, read-only (export design_handoff_picks, LOCKED 2026-10-27). Scoped under [data-page="picks"]. -->
 <link rel="stylesheet" href="./picks-page.css">
+<!-- Bet Tracker (export design_handoff_bet_tracker, LOCKED 2026-10-28). Night only; scoped under [data-page="tracker"]. -->
+<link rel="stylesheet" href="./bettracker-page.css">
 <style>
   :root{
     --panel: var(--card);
@@ -2338,7 +2340,6 @@
            feature flag + guards pass, so a flag-OFF build shows no dead item. The Live badge = the Live page's own count
            (LiveFeed payload.live, ATP singles underway); hidden at 0. -->
       <button class="sf-item active" data-tab="matches" aria-label="Matches"><span class="sf-ico"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6.5h14M3 10h14M3 13.5h14"/></svg></span><span class="sf-lbl">Matches</span></button>
-      <button class="sf-item" data-tab="picks" id="picksTabBtn" aria-label="Picks"><span class="sf-ico"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3.5a6.5 6.5 0 100 13 6.5 6.5 0 000-13ZM7.3 10.2l1.9 1.9 3.6-4"/></svg></span><span class="sf-lbl">Picks</span></button>
       <button class="sf-item" data-tab="live" id="liveTabBtn" style="display:none" aria-label="Live"><span class="sf-ico"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M10 8.5a1.5 1.5 0 100 3 1.5 1.5 0 000-3M6.8 6.8a4.5 4.5 0 000 6.4M13.2 6.8a4.5 4.5 0 010 6.4M4.6 4.6a7.6 7.6 0 000 10.8M15.4 4.6a7.6 7.6 0 010 10.8"/></svg><span class="sf-count" id="sfLiveCount" hidden></span></span><span class="sf-lbl">Live</span></button>
       <button class="sf-item" data-tab="trading" id="tradingTabBtn" style="display:none" aria-label="Trading Report"><span class="sf-ico"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 15.5 7 10l3 2.5 4-7M13 3.5h3.5V7"/></svg></span><span class="sf-lbl">Trading Report</span></button>
       <button class="sf-item" data-tab="drops" id="dropsTabBtn" style="display:none" aria-label="Dropping Odds"><span class="sf-ico"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 5.5 8 10l3-2.5 5.5 6M16.5 9.5v4h-4"/></svg></span><span class="sf-lbl">Dropping Odds</span></button>
@@ -2360,6 +2361,12 @@
       <button class="sf-item" data-tab="edge" aria-label="Stennisfy Model"><span class="sf-ico"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3l1.9 3.9 4.3.6-3.1 3 .7 4.3L10 16.8 6.3 18.8l.7-4.3-3.1-3 4.3-.6z"/></svg></span><span class="sf-lbl">Stennisfy Model</span></button>
       <button class="sf-item" data-tab="styles" aria-label="Playing Styles"><span class="sf-ico"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15V9M8 15V5M12 15v-4M16 15V7"/></svg></span><span class="sf-lbl">Playing Styles</span></button>
       <button class="sf-item" data-tab="news" aria-label="News"><span class="sf-ico"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h9v10H4zM13 8h3v5.5a1.5 1.5 0 01-3 0zM6 8h5M6 11h5"/></svg></span><span class="sf-lbl">News</span></button>
+    </div>
+    <div class="sf-group" role="group" aria-label="Betting">
+      <div class="sf-glabel">Betting</div>
+      <!-- Betting (export design_handoff_bet_tracker, LOCKED 2026-10-28): Picks moved here from Analyse (founder 2026-10-28) · Bet Tracker. -->
+      <button class="sf-item" data-tab="picks" id="picksTabBtn" aria-label="Picks"><span class="sf-ico"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3.5a6.5 6.5 0 100 13 6.5 6.5 0 000-13ZM7.3 10.2l1.9 1.9 3.6-4"/></svg></span><span class="sf-lbl">Picks</span></button>
+      <button class="sf-item" data-tab="tracker" id="trackerTabBtn" aria-label="Bet Tracker" data-short="Tracker"><span class="sf-ico"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 5.5h13v9h-13zM3.5 9h13M6.5 12h3M13 5.5v9"/></svg></span><span class="sf-lbl">Bet Tracker</span></button>
     </div>
   </nav>
   <div class="sf-foot">
@@ -2643,8 +2650,10 @@ window.sfPlanLocks(null);   // locked until the account says Edge / Pro: no unlo
 
 <!-- DROPPING ODDS (TEN-294) — rendered entirely by drops-page.js from stennisfy-drops.fly.dev. -->
 <div class="tabpage" data-page="drops"><div id="dropsRoot"></div></div>
-<!-- Picks: the Analyse rail row after Matches (#picksTabBtn) and the #picks deep link (picks-page.js). -->
+<!-- Picks: the Betting rail row (#picksTabBtn) and the #picks deep link (picks-page.js). -->
 <div class="tabpage" data-page="picks"><div id="picksRoot"></div></div>
+<!-- Bet Tracker: the Betting rail row (#trackerTabBtn) and the #tracker deep link (bettracker-page.js). -->
+<div class="tabpage" data-page="tracker"><div id="trackerRoot"></div></div>
 
 <!-- SERIES TAB (TEN-168) — current-streak cards; all rendering owned by series.js,
      gated on FEATURE_SERIES. Styling is in series.css ([data-page="series"] .sr-*). -->
@@ -4840,6 +4849,8 @@ function sfSetTabLoops(tab){
   if (window.DropsPage) window.DropsPage.setActive(tab === 'drops');
   // Picks (read-only): renders from picks.json on entry. No poll loop.
   if (window.PicksPage) window.PicksPage.setActive(tab === 'picks');
+  // Bet Tracker: renders from the member's own store (bettracker-store.js) on entry. No poll loop.
+  if (window.TrackerPage) window.TrackerPage.setActive(tab === 'tracker');
 }
 // Return to a tab exactly as it was left: no per-tab reset (a sidebar click re-opens Matches on Upcoming/today and
 // Players on the list; a return must not). The hash is put back with replaceState — no history entry, no hashchange.
@@ -4906,8 +4917,11 @@ document.getElementById('mainNav').addEventListener('click', e => {
     } else if (tab === 'picks') {
       // Picks keeps its own deep link (#picks), the way Trading Report keeps #trading.
       if (location.hash !== '#picks') history.replaceState(null, '', location.pathname + location.search + '#picks');
-    } else if (location.hash === '#picks') {
-      // Picks is reached by #picks; any sidebar click leaves it, so the URL stops claiming it.
+    } else if (tab === 'tracker') {
+      // Bet Tracker keeps its own deep link (#tracker), the way Picks keeps #picks.
+      if (location.hash !== '#tracker') history.replaceState(null, '', location.pathname + location.search + '#tracker');
+    } else if (location.hash === '#picks' || location.hash === '#tracker') {
+      // Picks / Bet Tracker are reached by #picks / #tracker; any sidebar click leaves them, so the URL stops claiming them.
       history.replaceState(null, '', location.pathname + location.search);
     } else if (location.hash === '#trading' || MX_HASH_RE.test(location.hash)) {
       history.replaceState(null, '', location.pathname + location.search);
@@ -34854,6 +34868,9 @@ window.DatabaseTab = (function(){
 <script src="picks-page.js" defer></script>
 <script src="picks-drawer.js" defer></script>
 <script src="picks-shell.js" defer></script>
+<script src="bettracker-math.js" defer></script>
+<script src="bettracker-store.js" defer></script>
+<script src="bettracker-page.js" defer></script>
 
 <!-- TEN-150 / TEN-242: Entry Lists feature flag. The nav button it used to reveal
      is GONE (item 1.1) - entry lists are the middle SECTION of Tournaments now, and

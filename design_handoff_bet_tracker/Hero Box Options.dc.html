@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&amp;family=IBM+Plex+Mono:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+<style>
+  *{ box-sizing:border-box; }
+  body{ margin:0; background:#05060A; -webkit-font-smoothing:antialiased; font-family:'Hanken Grotesk',sans-serif; }
+  a{ color:#6A9AF8; text-decoration:none; } a:hover{ color:#FFFFFF; text-decoration:underline; }
+</style>
+</helmet>
+<section style="display:flex; flex-direction:column; gap:28px; padding:40px; background:#05060A; min-height:100vh; width:max-content; font-family:'Hanken Grotesk',sans-serif; color:#FFFFFF;">
+  <div style="display:flex; flex-direction:column; gap:8px; max-width:1276px;">
+    <span style="font-size:22px; font-weight:800; color:#EBF1F2;">Profit · % of bankroll + curve · five premium treatments</span>
+    <span style="font-size:15px; line-height:1.5; color:#9BB0DA; text-wrap:pretty;">Same numbers in all five (season, 214 settled, +18.6%). The period and Filters triggers from 1a stay in every version. Night tokens only.</span>
+  </div>
+
+  <!-- 1a headline first -->
+  <div id="1a" style="display:flex; flex-direction:column; gap:12px; width:1276px;">
+    <div style="display:flex; align-items:baseline; gap:12px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:14px; font-weight:700; color:#0B0C13; background:#EBF1F2; border-radius:7px; padding:4px 10px;">1a</span><span style="font-size:18px; font-weight:800; color:#EBF1F2;">Headline first</span><span style="font-size:13px; color:#9BB0DA;">The profit figure leads at 48px with its sentence; the curve runs full width underneath; the six stats become one row of number tiles. Editorial, reads top-down.</span></div>
+    <div style="background:#10131D; box-shadow:inset 0 1px 0 rgba(143,170,255,0.05); border:1px solid rgba(255,255,255,0.06); border-radius:12px; padding:22px 24px 18px; display:flex; flex-direction:column; gap:16px;">
+      <div style="display:flex; align-items:flex-end; justify-content:space-between; gap:24px;">
+        <div style="display:flex; flex-direction:column; gap:6px;">
+          <span style="font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">Profit · % of bankroll · season</span>
+          <span style="display:flex; align-items:baseline; gap:14px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:48px; font-weight:800; line-height:1; color:#5CCB84; letter-spacing:-0.02em;">+18.6%</span><span style="font-size:14px; color:#DDE0EA;">on <span style="font-family:'IBM Plex Mono',monospace; font-weight:700;">214</span> settled bets · <span style="font-family:'IBM Plex Mono',monospace; font-weight:700;">231.5%</span> staked in total</span></span>
+        </div>
+        <div style="display:flex; align-items:center; gap:6px;">
+          <span style="display:inline-flex; align-items:center; gap:7px; height:30px; padding:0 12px; border-radius:9px; background:#0C0E16; border:1px solid rgba(255,255,255,0.08); font-size:12.5px; font-weight:600; color:#c6ccdb;">Season<span style="font-size:9px; color:#8b96b5;">▼</span></span>
+          <span style="display:inline-flex; align-items:center; gap:7px; height:30px; padding:0 12px; border-radius:9px; background:#0C0E16; border:1px solid rgba(255,255,255,0.08); font-size:12.5px; font-weight:600; color:#c6ccdb;"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h10M18 7h2M4 17h4M12 17h8M14 5v4M8 15v4"></path></svg>Filters<span style="font-size:9px; color:#8b96b5;">▼</span></span>
+        </div>
+      </div>
+      <div style="position:relative; width:1228px; height:262px;">
+        <svg viewBox="0 0 1228 240" width="1228" height="240" style="display:block; overflow:visible;">
+          <defs><linearGradient id="hgA" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#007AFF" stop-opacity="0.22"></stop><stop offset="1" stop-color="#007AFF" stop-opacity="0"></stop></linearGradient></defs>
+          <sc-for list="{{ wide.ticks }}" as="t" hint-placeholder-count="5"><line x1="44" x2="1224" y1="{{ t.y }}" y2="{{ t.y }}" stroke="{{ t.stroke }}" stroke-width="1" stroke-dasharray="{{ t.dash }}"></line></sc-for>
+          <path d="{{ wide.area }}" fill="url(#hgA)"></path><path d="{{ wide.path }}" fill="none" stroke="#007AFF" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"></path>
+          <circle cx="{{ wide.lastX }}" cy="{{ wide.lastY }}" r="4" fill="#FFFFFF"></circle>
+        </svg>
+        <sc-for list="{{ wide.ticks }}" as="t" hint-placeholder-count="5"><span style="position:absolute; left:0; width:36px; top:{{ t.top }}; text-align:right; font-family:'IBM Plex Mono',monospace; font-size:10px; line-height:1; color:#A3AABE;">{{ t.label }}</span></sc-for>
+        <sc-for list="{{ wide.months }}" as="m" hint-placeholder-count="6"><span style="position:absolute; left:{{ m.left }}; top:246px; font-size:10.5px; line-height:1; color:#A3AABE;">{{ m.label }}</span></sc-for>
+      </div>
+      <div style="display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:8px; border-top:1px solid rgba(255,255,255,0.06); padding-top:14px;">
+        <sc-for list="{{ stats }}" as="s" hint-placeholder-count="6"><div style="display:flex; flex-direction:column; gap:4px; padding:10px 14px; background:#0C0E16; border:1px solid rgba(255,255,255,0.06); border-radius:9px;"><span style="font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">{{ s.l }}</span><span style="font-family:'IBM Plex Mono',monospace; font-size:18px; font-weight:800; color:{{ s.c }};">{{ s.v }}</span><span style="font-size:11px; color:#A3AABE;">{{ s.s }}</span></div></sc-for>
+      </div>
+    </div>
+  </div>
+
+  <!-- 1b annotated -->
+  <div id="1b" style="display:flex; flex-direction:column; gap:12px; width:1276px;">
+    <div style="display:flex; align-items:baseline; gap:12px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:14px; font-weight:700; color:#0B0C13; background:#EBF1F2; border-radius:7px; padding:4px 10px;">1b</span><span style="font-size:18px; font-weight:800; color:#EBF1F2;">Annotated curve</span><span style="font-size:13px; color:#9BB0DA;">Current split kept, but the curve tells the story itself: peak, deepest drawdown and the live value are labelled on the chart; the stats column gets bigger figures and no sub-lines.</span></div>
+    <div style="background:#10131D; box-shadow:inset 0 1px 0 rgba(143,170,255,0.05); border:1px solid rgba(255,255,255,0.06); border-radius:12px; display:grid; grid-template-columns:272px minmax(0,1fr);">
+      <div style="display:flex; flex-direction:column; border-right:1px solid rgba(255,255,255,0.06);">
+        <div style="display:flex; flex-direction:column; gap:6px; padding:20px 20px 18px; border-bottom:1px solid rgba(255,255,255,0.06);"><span style="font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">Profit · % of bankroll</span><span style="font-family:'IBM Plex Mono',monospace; font-size:40px; font-weight:800; line-height:1; color:#5CCB84; letter-spacing:-0.02em;">+18.6%</span><span style="font-size:12px; color:#A3AABE;">214 settled · 231.5% staked</span></div>
+        <sc-for list="{{ stats }}" as="s" hint-placeholder-count="6"><div style="display:flex; align-items:center; justify-content:space-between; gap:10px; padding:12px 20px; border-bottom:1px solid rgba(255,255,255,0.05);"><span style="font-size:12.5px; font-weight:600; color:#DDE0EA;">{{ s.l }}</span><span style="font-family:'IBM Plex Mono',monospace; font-size:17px; font-weight:800; color:{{ s.c }};">{{ s.v }}</span></div></sc-for>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:6px; padding:12px 20px 12px; min-width:0;">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;"><span style="font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">Bankroll curve · cumulative %</span><div style="display:flex; gap:6px;"><span style="display:inline-flex; align-items:center; gap:7px; height:30px; padding:0 12px; border-radius:9px; background:#0C0E16; border:1px solid rgba(255,255,255,0.08); font-size:12.5px; font-weight:600; color:#c6ccdb;">Season<span style="font-size:9px; color:#8b96b5;">▼</span></span><span style="display:inline-flex; align-items:center; gap:7px; height:30px; padding:0 12px; border-radius:9px; background:#0C0E16; border:1px solid rgba(255,255,255,0.08); font-size:12.5px; font-weight:600; color:#c6ccdb;">Filters<span style="font-size:9px; color:#8b96b5;">▼</span></span></div></div>
+        <div style="position:relative; width:960px; height:262px;">
+          <svg viewBox="0 0 960 240" width="960" height="240" style="display:block; overflow:visible;">
+            <defs><linearGradient id="hgB" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#007AFF" stop-opacity="0.22"></stop><stop offset="1" stop-color="#007AFF" stop-opacity="0"></stop></linearGradient></defs>
+            <sc-for list="{{ mid.ticks }}" as="t" hint-placeholder-count="5"><line x1="44" x2="956" y1="{{ t.y }}" y2="{{ t.y }}" stroke="{{ t.stroke }}" stroke-width="1" stroke-dasharray="{{ t.dash }}"></line></sc-for>
+            <path d="{{ mid.area }}" fill="url(#hgB)"></path><path d="{{ mid.path }}" fill="none" stroke="#007AFF" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"></path>
+            <line x1="{{ mid.ddX }}" x2="{{ mid.ddX }}" y1="{{ mid.peakY }}" y2="{{ mid.ddY }}" stroke="#E06266" stroke-width="1" stroke-dasharray="2 3"></line>
+            <circle cx="{{ mid.peakX }}" cy="{{ mid.peakY }}" r="3.5" fill="#10131D" stroke="#5CCB84" stroke-width="2"></circle>
+            <circle cx="{{ mid.ddX }}" cy="{{ mid.ddY }}" r="3.5" fill="#10131D" stroke="#E06266" stroke-width="2"></circle>
+            <circle cx="{{ mid.lastX }}" cy="{{ mid.lastY }}" r="4" fill="#FFFFFF"></circle>
+          </svg>
+          <sc-for list="{{ mid.ticks }}" as="t" hint-placeholder-count="5"><span style="position:absolute; left:0; width:36px; top:{{ t.top }}; text-align:right; font-family:'IBM Plex Mono',monospace; font-size:10px; line-height:1; color:#A3AABE;">{{ t.label }}</span></sc-for>
+          <sc-for list="{{ mid.months }}" as="m" hint-placeholder-count="6"><span style="position:absolute; left:{{ m.left }}; top:246px; font-size:10.5px; line-height:1; color:#A3AABE;">{{ m.label }}</span></sc-for>
+          <span style="position:absolute; left:{{ mid.peakLX }}; top:{{ mid.peakLY }}; transform:translate(-50%,-100%); font-family:'IBM Plex Mono',monospace; font-size:10.5px; font-weight:700; color:#5CCB84; white-space:nowrap;">peak +21.2% · 3 Oct</span>
+          <span style="position:absolute; left:{{ mid.ddLX }}; top:{{ mid.ddLY }}; transform:translate(-50%,0); font-family:'IBM Plex Mono',monospace; font-size:10.5px; font-weight:700; color:#E06266; white-space:nowrap;">−6.8% drawdown</span>
+          <span style="position:absolute; left:{{ mid.lastLX }}; top:{{ mid.lastLY }}; transform:translate(0,-50%); height:22px; padding:0 8px; display:inline-flex; align-items:center; border-radius:6px; background:#FFFFFF; color:#0B0C13; font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:800; white-space:nowrap;">+18.6%</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 1c ledger right -->
+  <div id="1c" style="display:flex; flex-direction:column; gap:12px; width:1276px;">
+    <div style="display:flex; align-items:baseline; gap:12px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:14px; font-weight:700; color:#0B0C13; background:#EBF1F2; border-radius:7px; padding:4px 10px;">1c</span><span style="font-size:18px; font-weight:800; color:#EBF1F2;">Dark well, ledger on the right</span><span style="font-size:13px; color:#9BB0DA;">The box becomes a deep well (#0C0E16); the curve sits in its own lifted card on the left with a soft glow under the line; the stats read as a right-hand ledger with hairlines, the profit figure on top with a faint green halo.</span></div>
+    <div style="background:#0C0E16; border:1px solid rgba(255,255,255,0.07); border-radius:14px; padding:14px; display:grid; grid-template-columns:minmax(0,1fr) 300px; gap:14px;">
+      <div style="background:#10131D; box-shadow:inset 0 1px 0 rgba(143,170,255,0.06), 0 10px 30px rgba(0,0,0,0.35); border:1px solid rgba(255,255,255,0.06); border-radius:12px; padding:14px 18px 12px; display:flex; flex-direction:column; gap:8px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;"><span style="font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">Bankroll curve · cumulative %</span><div style="display:flex; gap:6px;"><span style="display:inline-flex; align-items:center; gap:7px; height:30px; padding:0 12px; border-radius:9px; background:#0C0E16; border:1px solid rgba(255,255,255,0.08); font-size:12.5px; font-weight:600; color:#c6ccdb;">Season<span style="font-size:9px; color:#8b96b5;">▼</span></span><span style="display:inline-flex; align-items:center; gap:7px; height:30px; padding:0 12px; border-radius:9px; background:#0C0E16; border:1px solid rgba(255,255,255,0.08); font-size:12.5px; font-weight:600; color:#c6ccdb;">Filters<span style="font-size:9px; color:#8b96b5;">▼</span></span></div></div>
+        <div style="position:relative; width:896px; height:268px;">
+          <svg viewBox="0 0 896 246" width="896" height="246" style="display:block; overflow:visible;">
+            <defs><linearGradient id="hgC" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#007AFF" stop-opacity="0.28"></stop><stop offset="1" stop-color="#007AFF" stop-opacity="0"></stop></linearGradient><filter id="glowC" x="-10%" y="-50%" width="120%" height="200%"><feGaussianBlur stdDeviation="6"></feGaussianBlur></filter></defs>
+            <sc-for list="{{ well.ticks }}" as="t" hint-placeholder-count="5"><line x1="44" x2="892" y1="{{ t.y }}" y2="{{ t.y }}" stroke="{{ t.stroke }}" stroke-width="1" stroke-dasharray="{{ t.dash }}"></line></sc-for>
+            <path d="{{ well.area }}" fill="url(#hgC)"></path>
+            <path d="{{ well.path }}" fill="none" stroke="#007AFF" stroke-width="6" stroke-opacity="0.35" filter="url(#glowC)" stroke-linejoin="round"></path>
+            <path d="{{ well.path }}" fill="none" stroke="#5B9BFF" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"></path>
+            <circle cx="{{ well.lastX }}" cy="{{ well.lastY }}" r="4" fill="#FFFFFF"></circle>
+          </svg>
+          <sc-for list="{{ well.ticks }}" as="t" hint-placeholder-count="5"><span style="position:absolute; left:0; width:36px; top:{{ t.top }}; text-align:right; font-family:'IBM Plex Mono',monospace; font-size:10px; line-height:1; color:#A3AABE;">{{ t.label }}</span></sc-for>
+          <sc-for list="{{ well.months }}" as="m" hint-placeholder-count="6"><span style="position:absolute; left:{{ m.left }}; top:252px; font-size:10.5px; line-height:1; color:#A3AABE;">{{ m.label }}</span></sc-for>
+        </div>
+      </div>
+      <div style="display:flex; flex-direction:column; padding:6px 4px 0;">
+        <div style="position:relative; display:flex; flex-direction:column; gap:6px; padding:12px 14px 18px; border-bottom:1px solid rgba(255,255,255,0.06); overflow:hidden;">
+          <span style="position:absolute; left:-20px; top:-30px; width:220px; height:120px; border-radius:50%; background:radial-gradient(closest-side, rgba(92,203,132,0.18), rgba(92,203,132,0));"></span>
+          <span style="font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">Profit · % of bankroll</span>
+          <span style="font-family:'IBM Plex Mono',monospace; font-size:42px; font-weight:800; line-height:1; color:#5CCB84; letter-spacing:-0.02em;">+18.6%</span>
+          <span style="font-size:12px; color:#A3AABE;">214 settled · 231.5% staked in total</span>
+        </div>
+        <sc-for list="{{ stats }}" as="s" hint-placeholder-count="6"><div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; padding:11px 14px; border-bottom:1px solid rgba(255,255,255,0.05);"><span style="display:flex; flex-direction:column; gap:1px;"><span style="font-size:12.5px; font-weight:600; color:#DDE0EA;">{{ s.l }}</span><span style="font-size:11px; color:#A3AABE;">{{ s.s }}</span></span><span style="font-family:'IBM Plex Mono',monospace; font-size:16px; font-weight:800; color:{{ s.c }};">{{ s.v }}</span></div></sc-for>
+      </div>
+    </div>
+  </div>
+
+  <!-- 1d quiet -->
+  <div id="1d" style="display:flex; flex-direction:column; gap:12px; width:1276px;">
+    <div style="display:flex; align-items:baseline; gap:12px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:14px; font-weight:700; color:#0B0C13; background:#EBF1F2; border-radius:7px; padding:4px 10px;">1d</span><span style="font-size:18px; font-weight:800; color:#EBF1F2;">Quiet, hairlines only</span><span style="font-size:13px; color:#9BB0DA;">No tiles, no column: one ribbon with the figure inline, the curve with a thin line and no fill, the stats as a single sentence-row of figures under a hairline. The least chrome of the five.</span></div>
+    <div style="background:#10131D; box-shadow:inset 0 1px 0 rgba(143,170,255,0.05); border:1px solid rgba(255,255,255,0.06); border-radius:12px; padding:18px 24px 16px; display:flex; flex-direction:column; gap:12px;">
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:24px;">
+        <span style="display:flex; align-items:baseline; gap:12px;"><span style="font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">Profit · % of bankroll</span><span style="font-family:'IBM Plex Mono',monospace; font-size:28px; font-weight:800; line-height:1; color:#5CCB84;">+18.6%</span><span style="font-size:12.5px; color:#A3AABE;">214 settled · season</span></span>
+        <div style="display:flex; gap:6px;"><span style="display:inline-flex; align-items:center; gap:7px; height:30px; padding:0 12px; border-radius:9px; background:#0C0E16; border:1px solid rgba(255,255,255,0.08); font-size:12.5px; font-weight:600; color:#c6ccdb;">Season<span style="font-size:9px; color:#8b96b5;">▼</span></span><span style="display:inline-flex; align-items:center; gap:7px; height:30px; padding:0 12px; border-radius:9px; background:#0C0E16; border:1px solid rgba(255,255,255,0.08); font-size:12.5px; font-weight:600; color:#c6ccdb;">Filters<span style="font-size:9px; color:#8b96b5;">▼</span></span></div>
+      </div>
+      <div style="position:relative; width:1228px; height:240px;">
+        <svg viewBox="0 0 1228 220" width="1228" height="220" style="display:block; overflow:visible;">
+          <sc-for list="{{ quiet.ticks }}" as="t" hint-placeholder-count="5"><line x1="44" x2="1224" y1="{{ t.y }}" y2="{{ t.y }}" stroke="{{ t.stroke }}" stroke-width="1" stroke-dasharray="{{ t.dash }}"></line></sc-for>
+          <path d="{{ quiet.path }}" fill="none" stroke="#E7E9EE" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"></path>
+          <circle cx="{{ quiet.lastX }}" cy="{{ quiet.lastY }}" r="3.5" fill="#007AFF"></circle>
+        </svg>
+        <sc-for list="{{ quiet.ticks }}" as="t" hint-placeholder-count="5"><span style="position:absolute; left:0; width:36px; top:{{ t.top }}; text-align:right; font-family:'IBM Plex Mono',monospace; font-size:10px; line-height:1; color:#A3AABE;">{{ t.label }}</span></sc-for>
+        <sc-for list="{{ quiet.months }}" as="m" hint-placeholder-count="6"><span style="position:absolute; left:{{ m.left }}; top:226px; font-size:10.5px; line-height:1; color:#A3AABE;">{{ m.label }}</span></sc-for>
+      </div>
+      <div style="display:flex; align-items:baseline; gap:28px; border-top:1px solid rgba(255,255,255,0.06); padding-top:12px;">
+        <sc-for list="{{ stats }}" as="s" hint-placeholder-count="6"><span style="display:flex; align-items:baseline; gap:8px;"><span style="font-size:11.5px; color:#A3AABE;">{{ s.l }}</span><span style="font-family:'IBM Plex Mono',monospace; font-size:14px; font-weight:800; color:{{ s.c }};">{{ s.v }}</span></span></sc-for>
+      </div>
+    </div>
+  </div>
+
+  <!-- 1e dual axis + sparkbars -->
+  <div id="1e" style="display:flex; flex-direction:column; gap:12px; width:1276px;">
+    <div style="display:flex; align-items:baseline; gap:12px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:14px; font-weight:700; color:#0B0C13; background:#EBF1F2; border-radius:7px; padding:4px 10px;">1e</span><span style="font-size:18px; font-weight:800; color:#EBF1F2;">Dual axis + stat bars</span><span style="font-size:13px; color:#9BB0DA;">Curve keeps the % axis on the left and gains the bankroll in € on the right (10,000 € start); each stat on the left carries a small bar against its own scale (ROI vs 0, win rate 0–100, CLV vs 0, drawdown vs profit), so the column reads at a glance.</span></div>
+    <div style="background:#10131D; box-shadow:inset 0 1px 0 rgba(143,170,255,0.05); border:1px solid rgba(255,255,255,0.06); border-radius:12px; display:grid; grid-template-columns:300px minmax(0,1fr);">
+      <div style="display:flex; flex-direction:column; border-right:1px solid rgba(255,255,255,0.06);">
+        <div style="display:flex; flex-direction:column; gap:6px; padding:20px 20px 16px; border-bottom:1px solid rgba(255,255,255,0.06);"><span style="font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">Profit · % of bankroll</span><span style="display:flex; align-items:baseline; gap:10px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:38px; font-weight:800; line-height:1; color:#5CCB84; letter-spacing:-0.02em;">+18.6%</span><span style="font-family:'IBM Plex Mono',monospace; font-size:14px; font-weight:700; color:#A3AABE;">+1,860 €</span></span><span style="font-size:12px; color:#A3AABE;">214 settled · 231.5% staked · 10,000 € start</span></div>
+        <sc-for list="{{ bars }}" as="s" hint-placeholder-count="6"><div style="display:flex; flex-direction:column; gap:6px; padding:10px 20px 11px; border-bottom:1px solid rgba(255,255,255,0.05);"><div style="display:flex; align-items:baseline; justify-content:space-between;"><span style="font-size:12.5px; font-weight:600; color:#DDE0EA;">{{ s.l }}</span><span style="font-family:'IBM Plex Mono',monospace; font-size:15px; font-weight:800; color:{{ s.c }};">{{ s.v }}</span></div><div style="position:relative; height:4px; background:rgba(255,255,255,0.05); border-radius:2px;"><span style="position:absolute; left:{{ s.zero }}; top:-3px; bottom:-3px; width:1px; background:rgba(255,255,255,0.18);"></span><span style="position:absolute; top:0; bottom:0; left:{{ s.left }}; width:{{ s.w }}; background:{{ s.bc }}; border-radius:2px;"></span></div></div></sc-for>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:6px; padding:12px 20px 12px; min-width:0;">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;"><span style="font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">Bankroll curve · % left · € right</span><div style="display:flex; gap:6px;"><span style="display:inline-flex; align-items:center; gap:7px; height:30px; padding:0 12px; border-radius:9px; background:#0C0E16; border:1px solid rgba(255,255,255,0.08); font-size:12.5px; font-weight:600; color:#c6ccdb;">Season<span style="font-size:9px; color:#8b96b5;">▼</span></span><span style="display:inline-flex; align-items:center; gap:7px; height:30px; padding:0 12px; border-radius:9px; background:#0C0E16; border:1px solid rgba(255,255,255,0.08); font-size:12.5px; font-weight:600; color:#c6ccdb;">Filters<span style="font-size:9px; color:#8b96b5;">▼</span></span></div></div>
+        <div style="position:relative; width:932px; height:290px;">
+          <svg viewBox="0 0 932 268" width="932" height="268" style="display:block; overflow:visible;">
+            <defs><linearGradient id="hgE" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#007AFF" stop-opacity="0.22"></stop><stop offset="1" stop-color="#007AFF" stop-opacity="0"></stop></linearGradient></defs>
+            <sc-for list="{{ dual.ticks }}" as="t" hint-placeholder-count="5"><line x1="44" x2="876" y1="{{ t.y }}" y2="{{ t.y }}" stroke="{{ t.stroke }}" stroke-width="1" stroke-dasharray="{{ t.dash }}"></line></sc-for>
+            <path d="{{ dual.area }}" fill="url(#hgE)"></path><path d="{{ dual.path }}" fill="none" stroke="#007AFF" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"></path>
+            <circle cx="{{ dual.lastX }}" cy="{{ dual.lastY }}" r="4" fill="#FFFFFF"></circle>
+          </svg>
+          <sc-for list="{{ dual.ticks }}" as="t" hint-placeholder-count="5"><span style="position:absolute; left:0; width:36px; top:{{ t.top }}; text-align:right; font-family:'IBM Plex Mono',monospace; font-size:10px; line-height:1; color:#A3AABE;">{{ t.label }}</span><span style="position:absolute; left:884px; width:48px; top:{{ t.top }}; font-family:'IBM Plex Mono',monospace; font-size:10px; line-height:1; color:#A3AABE;">{{ t.eur }}</span></sc-for>
+          <sc-for list="{{ dual.months }}" as="m" hint-placeholder-count="6"><span style="position:absolute; left:{{ m.left }}; top:274px; font-size:10.5px; line-height:1; color:#A3AABE;">{{ m.label }}</span></sc-for>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals(){
+    let s=11; const R=()=>{ s=(s*16807)%2147483647; return s/2147483647; };
+    const pts=[0]; let c=0; for(let i=0;i<214;i++){ c+= R()<.56? 0.9+R()*1.3 : -(0.9+R()*0.9); if(i>150&&i<170) c-=0.15; pts.push(c); }
+    const end=pts[pts.length-1]; const k=18.6/end; for(let i=0;i<pts.length;i++) pts[i]*=k;
+    let peak=-1e9,peakI=0,dd=0,ddI=0,pk=-1e9,pkI=0; pts.forEach((v,i)=>{ if(v>pk){pk=v;pkI=i;} if(pk-v>dd){dd=pk-v;ddI=i;peak=pk;peakI=pkI;} });
+    const months=['Apr','May','Jun','Jul','Aug','Sep','Oct'];
+    const build=(W,H,L,Rr,Tt,Bb,eur)=>{
+      const mn=Math.min(0,...pts), mx=Math.max(0,...pts), span=(mx-mn)||1;
+      const X=i=>L+(Rr-L)*i/(pts.length-1), Y=v=>Tt+(Bb-Tt)*(mx-v)/span;
+      const path=pts.map((v,i)=>(i?'L':'M')+X(i).toFixed(1)+' '+Y(v).toFixed(1)).join(' ');
+      const area=path+` L${Rr} ${Y(0).toFixed(1)} L${L} ${Y(0).toFixed(1)} Z`;
+      const ticks=[]; for(let v=Math.ceil(mn/5)*5; v<=mx; v+=5) ticks.push({y:Y(v).toFixed(1), top:(Y(v)-5).toFixed(1)+'px', label:(v>0?'+':'')+v+'%', eur:(10000+v*100).toLocaleString('en-GB')+' €', stroke:v===0?'rgba(255,255,255,0.22)':'rgba(255,255,255,0.08)', dash:v===0?'0':'3 4'});
+      const ms=months.map((m,i)=>({label:m, left:X(Math.round(i*(pts.length-1)/months.length)).toFixed(1)+'px'}));
+      return {path, area, ticks, months:ms, lastX:X(pts.length-1).toFixed(1), lastY:Y(end*k).toFixed(1), peakX:X(peakI).toFixed(1), peakY:Y(peak).toFixed(1), ddX:X(ddI).toFixed(1), ddY:Y(pts[ddI]).toFixed(1),
+        peakLX:X(peakI).toFixed(1)+'px', peakLY:(Y(peak)-10).toFixed(1)+'px', ddLX:X(ddI).toFixed(1)+'px', ddLY:(Y(pts[ddI])+10).toFixed(1)+'px', lastLX:(X(pts.length-1)+10).toFixed(1)+'px', lastLY:Y(end*k).toFixed(1)+'px'};
+    };
+    const wide=build(1228,240,44,1224,12,222); const mid=build(960,240,44,956,22,222); const well=build(896,246,44,892,12,228); const quiet=build(1228,220,44,1224,10,204); const dual=build(932,268,44,876,12,250);
+    const G='#5CCB84',Rd='#E06266',W='#FFFFFF';
+    const stats=[{l:'ROI',s:'profit ÷ total staked',v:'+8.0%',c:G},{l:'Record',s:'214 settled · 2 void',v:'121–91',c:W},{l:'Win rate',s:'won ÷ (won + lost)',v:'57%',c:W},{l:'Avg CLV',s:'beat the close 128 of 206',v:'+2.4%',c:G},{l:'Max drawdown',s:'peak to trough',v:'−6.8%',c:Rd},{l:'Best run',s:'consecutive wins',v:'9 won',c:W}];
+    const bars=[{l:'ROI',v:'+8.0%',c:G,zero:'50%',left:'50%',w:'20%',bc:G},{l:'Win rate',v:'57%',c:W,zero:'50%',left:'0%',w:'57%',bc:'#007AFF'},{l:'Avg CLV',v:'+2.4%',c:G,zero:'50%',left:'50%',w:'12%',bc:G},{l:'Beat the close',v:'62%',c:W,zero:'50%',left:'0%',w:'62%',bc:'#007AFF'},{l:'Max drawdown',v:'−6.8%',c:Rd,zero:'50%',left:'32%',w:'18%',bc:Rd},{l:'Best run · worst run',v:'9 · 5',c:W,zero:'50%',left:'32%',w:'50%',bc:'rgba(255,255,255,0.35)'}];
+    return { wide, mid, well, quiet, dual, stats, bars };
+  }
+}
+</script>
+</body>
+</html>

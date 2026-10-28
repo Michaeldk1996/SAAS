@@ -29,10 +29,12 @@ drift, the line-chart Model icon. `test-ten286-layout.mjs` locks every closed va
 ## Groups, rows, the selected glow, badges (TEN-403)
 
 **The rule.**
-- Three groups, spacing only (no hairline): **Analyse** = Matches · Picks · Live · Trading Report · Dropping Odds · Series (Picks: founder 2026-10-27, the Picks reference's position and glyph);
-  **Research** = Players · Head to Head · Tournaments · Database; **Insights** = Stennisfy Model · Playing Styles · News.
+- Four groups, spacing only (no hairline): **Analyse** = Matches · Live · Trading Report · Dropping Odds · Series;
+  **Research** = Players · Head to Head · Tournaments · Database; **Insights** = Stennisfy Model · Playing Styles · News;
+  **Betting** = Picks · Bet Tracker (founder 2026-10-28, Bet Tracker T1: Picks moved out of Analyse; Bet Tracker = the
+  `design_handoff_bet_tracker` glyph, short label "Tracker" kept as `data-short`, no compact-rail slot shows it yet).
   Group gap 14px closed / 10px open; rows 4px apart. When open a caps name sits above each group (Hanken 10.5 / 700 /
-  0.10em, `--text-label`, padding `0 14px 2px`). account.html carries the same groups with the items it links to.
+  0.10em, `--text-label`, padding `0 14px 2px`). account.html carries the same groups with the items it links to (no Betting group: it links neither page).
 - Rows: height 48 closed / 42 open, padding `0 13px` inside a 1.5px transparent border, radius 14, gap 13. Icon 20px,
   stroke 1.6: active `--text`, idle `--text-label`, Pro-locked `--nav-locked`. Open adds the label (13.5/600): active
   white, idle `--text-label`. Hover (not the active row) = `--inner`.

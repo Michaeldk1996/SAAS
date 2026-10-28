@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&amp;family=IBM+Plex+Mono:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+<style>
+  *{ box-sizing:border-box; }
+  body{ margin:0; background:#05060A; -webkit-font-smoothing:antialiased; font-family:'Hanken Grotesk',sans-serif; }
+  a{ color:#6A9AF8; text-decoration:none; } a:hover{ color:#FFFFFF; text-decoration:underline; }
+</style>
+</helmet>
+<section style="display:flex; flex-direction:column; gap:28px; padding:40px; background:#05060A; min-height:100vh; width:max-content; font-family:'Hanken Grotesk',sans-serif; color:#FFFFFF;">
+  <div style="display:flex; flex-direction:column; gap:8px; max-width:1276px;">
+    <span style="font-size:22px; font-weight:800; color:#EBF1F2;">Filters box · five refinements</span>
+    <span style="font-size:15px; line-height:1.5; color:#9BB0DA; text-wrap:pretty;">Same state in all five: ATP 250 selected, 47 of 214 bets kept, every other count already adjusted to that choice (so Challenger and 3.21 and up read 0). Width 1276 = the page card's inner width. Pick one and it goes into the Bet Tracker page.</span>
+  </div>
+
+  <!-- 1a -->
+  <div id="1a" style="display:flex; flex-direction:column; gap:12px; width:1276px;">
+    <div style="display:flex; align-items:baseline; gap:12px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:14px; font-weight:700; color:#0B0C13; background:#EBF1F2; border-radius:7px; padding:4px 10px;">1a</span><span style="font-size:18px; font-weight:800; color:#EBF1F2;">One strip</span><span style="font-size:13px; color:#9BB0DA;">No card. Four pills summarise each dimension; the open one unfolds its options underneath. Active choices are removable tags on the right.</span></div>
+    <div style="display:flex; flex-direction:column; border-top:1px solid rgba(255,255,255,0.06); border-bottom:1px solid rgba(255,255,255,0.06); padding:12px 0;">
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
+        <div style="display:flex; align-items:center; gap:6px;">
+          <sc-for list="{{ pills }}" as="p" hint-placeholder-count="4">
+            <span style="display:inline-flex; align-items:center; gap:7px; height:30px; padding:0 12px; border-radius:8px; background:{{ p.bg }}; border:1px solid {{ p.bd }}; font-size:12.5px; font-weight:700; color:{{ p.c }}; white-space:nowrap;">{{ p.label }}<span style="font-weight:600; color:{{ p.vc }};">{{ p.value }}</span><span style="font-size:10px; color:#A3AABE;">▾</span></span>
+          </sc-for>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span style="font-size:11.5px; color:#A3AABE;">47 of 214 bets</span>
+          <span style="display:inline-flex; align-items:center; gap:6px; height:26px; padding:0 6px 0 10px; border-radius:7px; background:rgba(0,122,255,0.12); border:1px solid rgba(0,122,255,0.35); font-size:12px; font-weight:700; color:#FFFFFF;">ATP 250<span style="width:16px; height:16px; border-radius:4px; display:inline-flex; align-items:center; justify-content:center; font-size:12px; color:#6A9AF8;">×</span></span>
+          <span style="font-size:12px; font-weight:700; color:#6A9AF8;">Clear</span>
+        </div>
+      </div>
+      <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-top:10px; padding-left:2px;">
+        <sc-for list="{{ level }}" as="o" hint-placeholder-count="6">
+          <span style="display:inline-flex; align-items:center; gap:7px; height:28px; padding:0 11px; border-radius:7px; background:{{ o.bg }}; border:1px solid {{ o.bd }}; font-size:12.5px; font-weight:600; color:{{ o.c }}; white-space:nowrap;">{{ o.name }}<span style="font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:{{ o.nc }};">{{ o.n }}</span></span>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+
+  <!-- 1b -->
+  <div id="1b" style="display:flex; flex-direction:column; gap:12px; width:1276px;">
+    <div style="display:flex; align-items:baseline; gap:12px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:14px; font-weight:700; color:#0B0C13; background:#EBF1F2; border-radius:7px; padding:4px 10px;">1b</span><span style="font-size:18px; font-weight:800; color:#EBF1F2;">Rail + panel</span><span style="font-size:13px; color:#9BB0DA;">Dimension tabs on the left with their active count; the panel shows one dimension at a time, options as rows with a count bar.</span></div>
+    <div style="display:grid; grid-template-columns:200px minmax(0,1fr); background:#10131D; box-shadow:inset 0 1px 0 rgba(143,170,255,0.05); border:1px solid rgba(255,255,255,0.06); border-radius:12px; overflow:hidden;">
+      <div style="display:flex; flex-direction:column; border-right:1px solid rgba(255,255,255,0.06); padding:8px;">
+        <span style="font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE; padding:6px 10px 8px;">Filters</span>
+        <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="4">
+          <span style="display:flex; align-items:center; justify-content:space-between; height:34px; padding:0 10px; border-radius:8px; background:{{ t.bg }}; font-size:13px; font-weight:700; color:{{ t.c }};">{{ t.label }}<span style="font-family:'IBM Plex Mono',monospace; font-size:10.5px; font-weight:700; color:{{ t.bc }}; background:{{ t.bbg }}; border-radius:5px; padding:2px 6px;">{{ t.badge }}</span></span>
+        </sc-for>
+        <span style="margin-top:auto; padding:10px 10px 4px; font-size:11.5px; color:#A3AABE;">47 of 214 bets · <span style="font-weight:700; color:#6A9AF8;">Clear</span></span>
+      </div>
+      <div style="display:flex; flex-direction:column; padding:8px 8px 10px;">
+        <div style="display:grid; grid-template-columns:minmax(0,1fr) 220px 44px; gap:0 12px; align-items:center; height:28px; padding:0 10px;"><span style="font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">Level · pick any</span><span style="font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">Share of the kept bets</span><span style="text-align:right; font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">Bets</span></div>
+        <sc-for list="{{ level }}" as="o" hint-placeholder-count="6">
+          <div style="display:grid; grid-template-columns:minmax(0,1fr) 220px 44px; gap:0 12px; align-items:center; height:36px; padding:0 10px; border-radius:8px; background:{{ o.rowBg }};">
+            <span style="display:flex; align-items:center; gap:10px;"><span style="width:14px; height:14px; border-radius:4px; border:1.5px solid {{ o.boxBd }}; background:{{ o.boxBg }}; display:inline-flex; align-items:center; justify-content:center; font-size:9px; color:#FFFFFF;">{{ o.tick }}</span><span style="font-size:13px; font-weight:600; color:{{ o.c }};">{{ o.name }}</span></span>
+            <span style="position:relative; height:6px; background:rgba(255,255,255,0.05); border-radius:2px;"><span style="position:absolute; left:0; top:0; bottom:0; width:{{ o.w }}; background:{{ o.barC }}; border-radius:2px;"></span></span>
+            <span style="text-align:right; font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:700; color:{{ o.nc }};">{{ o.n }}</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+
+  <!-- 1c -->
+  <div id="1c" style="display:flex; flex-direction:column; gap:12px; width:1276px;">
+    <div style="display:flex; align-items:baseline; gap:12px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:14px; font-weight:700; color:#0B0C13; background:#EBF1F2; border-radius:7px; padding:4px 10px;">1c</span><span style="font-size:18px; font-weight:800; color:#EBF1F2;">Four columns</span><span style="font-size:13px; color:#9BB0DA;">Every dimension open at once, options as ledger rows with the count right-aligned. Nothing to unfold; the whole state is visible.</span></div>
+    <div style="display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); background:#10131D; box-shadow:inset 0 1px 0 rgba(143,170,255,0.05); border:1px solid rgba(255,255,255,0.06); border-radius:12px; overflow:hidden;">
+      <sc-for list="{{ cols }}" as="col" hint-placeholder-count="4">
+        <div style="display:flex; flex-direction:column; border-right:1px solid rgba(255,255,255,0.06);">
+          <div style="display:flex; align-items:center; justify-content:space-between; height:30px; padding:0 14px; background:#0D1017; border-bottom:1px solid rgba(255,255,255,0.06);"><span style="font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">{{ col.label }}</span><span style="font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:{{ col.sc }};">{{ col.state }}</span></div>
+          <sc-for list="{{ col.opts }}" as="o" hint-placeholder-count="4">
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; height:32px; padding:0 14px; border-bottom:1px solid rgba(255,255,255,0.04); background:{{ o.rowBg }};">
+              <span style="display:flex; align-items:center; gap:9px; min-width:0;"><span style="width:12px; height:12px; border-radius:3px; border:1.5px solid {{ o.boxBd }}; background:{{ o.boxBg }}; flex:none;"></span><span style="font-size:12.5px; font-weight:600; color:{{ o.c }}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ o.name }}</span></span>
+              <span style="font-family:'IBM Plex Mono',monospace; font-size:11.5px; font-weight:600; color:{{ o.nc }};">{{ o.n }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </sc-for>
+      <div style="grid-column:span 4; display:flex; align-items:center; justify-content:space-between; padding:9px 14px; font-size:11.5px; color:#A3AABE; border-top:1px solid rgba(255,255,255,0.06);"><span>47 of 214 bets kept · counts show what each row would leave given the other columns</span><span style="font-weight:700; color:#6A9AF8;">Clear all</span></div>
+    </div>
+  </div>
+
+  <!-- 1d -->
+  <div id="1d" style="display:flex; flex-direction:column; gap:12px; width:1276px;">
+    <div style="display:flex; align-items:baseline; gap:12px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:14px; font-weight:700; color:#0B0C13; background:#EBF1F2; border-radius:7px; padding:4px 10px;">1d</span><span style="font-size:18px; font-weight:800; color:#EBF1F2;">Chips with a count bar</span><span style="font-size:13px; color:#9BB0DA;">The current layout, refined: each chip carries a thin bar for its share, the selected chip takes the blue ring, zero-count chips fade, the summary becomes the row head.</span></div>
+    <div style="background:#10131D; box-shadow:inset 0 1px 0 rgba(143,170,255,0.05); border:1px solid rgba(255,255,255,0.06); border-radius:12px; padding:12px 16px 14px; display:flex; flex-direction:column; gap:10px;">
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;"><span style="display:flex; align-items:baseline; gap:10px;"><span style="font-size:13px; font-weight:800; color:#FFFFFF;">47 of 214 bets</span><span style="font-size:11.5px; color:#A3AABE;">1 filter on · every figure on the page follows</span></span><span style="display:inline-flex; align-items:center; height:24px; padding:0 10px; border-radius:7px; border:1px solid rgba(255,255,255,0.12); font-size:11.5px; font-weight:700; color:#A3AABE;">Clear</span></div>
+      <sc-for list="{{ cols }}" as="col" hint-placeholder-count="4">
+        <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+          <span style="width:78px; flex:none; font-size:11px; color:#A3AABE;">{{ col.label }}</span>
+          <sc-for list="{{ col.opts }}" as="o" hint-placeholder-count="4">
+            <span style="display:inline-flex; flex-direction:column; gap:4px; padding:5px 10px 5px; border-radius:7px; background:{{ o.bg }}; border:1px solid {{ o.bd2 }}; opacity:{{ o.op }}; min-width:72px;">
+              <span style="display:flex; align-items:center; justify-content:space-between; gap:10px;"><span style="font-size:12px; font-weight:600; color:{{ o.c }}; white-space:nowrap;">{{ o.name }}</span><span style="font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:{{ o.nc }};">{{ o.n }}</span></span>
+              <span style="height:2px; background:rgba(255,255,255,0.06); border-radius:1px; position:relative;"><span style="position:absolute; left:0; top:0; bottom:0; width:{{ o.w }}; background:{{ o.barC }}; border-radius:1px;"></span></span>
+            </span>
+          </sc-for>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+
+  <!-- 1e -->
+  <div id="1e" style="display:flex; flex-direction:column; gap:12px; width:1276px;">
+    <div style="display:flex; align-items:baseline; gap:12px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:14px; font-weight:700; color:#0B0C13; background:#EBF1F2; border-radius:7px; padding:4px 10px;">1e</span><span style="font-size:18px; font-weight:800; color:#EBF1F2;">Text only</span><span style="font-size:13px; color:#9BB0DA;">No chips, no card. Options are words on a hairline row; the selected one is white with a blue dot, zero-count ones fade. Quietest of the five.</span></div>
+    <div style="display:flex; flex-direction:column;">
+      <sc-for list="{{ cols }}" as="col" hint-placeholder-count="4">
+        <div style="display:flex; align-items:baseline; gap:18px; padding:10px 4px; border-bottom:1px solid rgba(255,255,255,0.06);">
+          <span style="width:78px; flex:none; font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">{{ col.label }}</span>
+          <div style="display:flex; align-items:baseline; gap:18px; flex-wrap:wrap;">
+            <sc-for list="{{ col.opts }}" as="o" hint-placeholder-count="4">
+              <span style="display:inline-flex; align-items:baseline; gap:6px; opacity:{{ o.op }};"><sc-if value="{{ o.on }}" hint-placeholder-val="{{ false }}"><span style="width:6px; height:6px; border-radius:50%; background:#007AFF; align-self:center;"></span></sc-if><span style="font-size:13px; font-weight:{{ o.fw }}; color:{{ o.c }}; white-space:nowrap;">{{ o.name }}</span><span style="font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:{{ o.nc }};">{{ o.n }}</span></span>
+            </sc-for>
+          </div>
+        </div>
+      </sc-for>
+      <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 4px; font-size:11.5px; color:#A3AABE;"><span>47 of 214 bets · ATP 250</span><span style="font-weight:700; color:#6A9AF8;">Clear</span></div>
+    </div>
+  </div>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals(){
+    const lab='#A3AABE', W='#FFFFFF', soft='#DDE0EA';
+    const mk=(rows,sel,total)=>rows.map(([name,n])=>{ const on=name===sel, zero=n===0; return { name, n:String(n), on, w:(n/total*100).toFixed(0)+'%',
+      bg:on?'rgba(0,122,255,0.12)':'transparent', bd:on?'rgba(0,122,255,0.45)':'rgba(255,255,255,0.08)', bd2:on?'rgba(0,122,255,0.45)':'rgba(255,255,255,0.07)',
+      c:on?W:zero?lab:soft, nc:on?'#6A9AF8':lab, op:zero?'0.45':'1', fw:on?'700':'500', tick:on?'✓':'', boxBd:on?'#007AFF':'rgba(255,255,255,0.22)', boxBg:on?'#007AFF':'transparent',
+      rowBg:on?'rgba(0,122,255,0.08)':'transparent', barC:on?'#007AFF':'rgba(255,255,255,0.22)' }; });
+    const level=mk([['Grand Slam',31],['Masters 1000',42],['ATP 500',38],['ATP 250',47],['Davis Cup',6],['Challenger',0]],'ATP 250',214);
+    const odds=mk([['1.10 – 1.35',9],['1.36 – 1.60',14],['1.61 – 1.90',11],['1.91 – 2.20',7],['2.21 – 2.60',4],['2.61 – 3.20',2],['3.21 and up',0]],null,47);
+    const surface=mk([['Hard',22],['Indoor hard',9],['Clay',13],['Grass',3]],null,47);
+    const market=mk([['Match winner',26],['Games handicap',12],['Total games',9]],null,47);
+    const cols=[{label:'Level',opts:level,state:'ATP 250',sc:'#6A9AF8'},{label:'Odds band',opts:odds,state:'any',sc:lab},{label:'Surface',opts:surface,state:'any',sc:lab},{label:'Market',opts:market,state:'any',sc:lab}];
+    const pills=[{label:'Level',value:'ATP 250',bg:'rgba(0,122,255,0.12)',bd:'rgba(0,122,255,0.45)',c:W,vc:'#6A9AF8'},{label:'Odds band',value:'any',bg:'#0C0E16',bd:'rgba(255,255,255,0.08)',c:soft,vc:lab},{label:'Surface',value:'any',bg:'#0C0E16',bd:'rgba(255,255,255,0.08)',c:soft,vc:lab},{label:'Market',value:'any',bg:'#0C0E16',bd:'rgba(255,255,255,0.08)',c:soft,vc:lab}];
+    const tabs=[{label:'Level',badge:'1',bg:'#1B2031',c:W,bc:W,bbg:'#007AFF'},{label:'Odds band',badge:'any',bg:'transparent',c:soft,bc:lab,bbg:'rgba(255,255,255,0.06)'},{label:'Surface',badge:'any',bg:'transparent',c:soft,bc:lab,bbg:'rgba(255,255,255,0.06)'},{label:'Market',badge:'any',bg:'transparent',c:soft,bc:lab,bbg:'rgba(255,255,255,0.06)'}];
+    return { level, odds, surface, market, cols, pills, tabs };
+  }
+}
+</script>
+</body>
+</html>

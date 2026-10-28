@@ -22,7 +22,7 @@ check('dashboard links picks-page.css', html.includes('<link rel="stylesheet" hr
 check('dashboard loads picks-core → picks-store → picks-page → picks-drawer → picks-shell, in that order',
   ['picks-core.js', 'picks-store.js', 'picks-page.js', 'picks-drawer.js', 'picks-shell.js'].map(f => html.indexOf('<script src="' + f + '" defer></script>')).every((x, i, a) => x > 0 && (i === 0 || x > a[i - 1])));
 check('a picks tab page exists', html.includes('<div class="tabpage" data-page="picks"><div id="picksRoot"></div></div>'));
-check('the Picks rail row sits right after Matches (founder 2026-10-27)', /data-tab="matches"[^\n]*\n\s*<button class="sf-item" data-tab="picks" id="picksTabBtn" aria-label="Picks">/.test(html));
+check('the Picks rail row opens the Betting group (founder 2026-10-28: moved from Analyse)', /<div class="sf-glabel">Betting<\/div>\n(?:\s*<!--[^\n]*-->\n)?\s*<button class="sf-item" data-tab="picks" id="picksTabBtn" aria-label="Picks">/.test(html));
 const pipe = readFileSync(join(ROOT, '.github/workflows/pipeline.yml'), 'utf8'), pub = readFileSync(join(ROOT, 'tools/publish-site.mjs'), 'utf8');
 for (const f of ['picks-core.js', 'picks-store.js', 'picks-page.js', 'picks-drawer.js', 'picks-shell.js', 'picks-page.css']) {
   check(`${f} in all three code deploy lists`, pipe.includes(f) && pub.includes(`'${f}'`) && readFileSync(join(ROOT, 'tools/site-code.sh'), 'utf8').includes(f));

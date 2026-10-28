@@ -1218,6 +1218,7 @@ jobs:
           # Picks page: figures, store, page, Post-a-pick drawer, the shell hooks and the stylesheet. Picks themselves live in
           # Firestore (firestore.rules) — no picks file is published. Asserted below.
           cp picks-core.js picks-store.js picks-page.js picks-drawer.js picks-shell.js picks-page.css _site/
+          cp bettracker-math.js bettracker-store.js bettracker-page.js bettracker-page.css _site/
           cp series.json _site/ 2>/dev/null || true
           cp trading-splits-index.json _site/ 2>/dev/null || true
           cp -r trading-splits _site/ 2>/dev/null || true
@@ -1289,6 +1290,7 @@ jobs:
                    series.js series.css tokens.css theme.js \
                    drops-page.js drops-page.css \
                    picks-core.js picks-store.js picks-page.js picks-drawer.js picks-shell.js picks-page.css \
+                   bettracker-math.js bettracker-store.js bettracker-page.js bettracker-page.css \
                    assets/logo-dark-transparent.png assets/ring-transparent.png \
                    assets/brand/google-g.svg assets/brand/apple-white.png assets/brand/app-store-badge.svg assets/brand/google-play-badge.png; do
             [ -s "_site/$f" ] || { echo "MISSING from _site: $f"; exit 1; }

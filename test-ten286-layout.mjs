@@ -159,10 +159,12 @@ test('spec lock kills its mutants', () => {
 // ── rulings (TEN-403, SUPERSEDE TEN-286's "no ANALYSE label" and "no menu"): three groups Analyse / Research / Insights,
 //    in that order, each with its caps name; the foot is the avatar only and it opens the avatar menu, which holds the
 //    theme switch, Upgrade to Pro, Account settings (→ account.html) and Sign out (#acctSignout) — nothing else sits at the foot.
-function shellRulings(html) {
+// Betting (founder 2026-10-28, Bet Tracker T1): the dashboard adds a fourth group Picks · Bet Tracker after Insights;
+//    account.html links neither page, so it keeps the three.
+function shellRulings(html, want = ['Analyse', 'Research', 'Insights', 'Betting']) {
   const p = [];
   const groups = [...html.matchAll(/<div class="sf-group" role="group" aria-label="([^"]+)">\s*<div class="sf-glabel">([^<]+)<\/div>/g)].map(m => m[2]);
-  if (JSON.stringify(groups) !== JSON.stringify(['Analyse', 'Research', 'Insights'])) p.push(`groups ${JSON.stringify(groups)}`);
+  if (JSON.stringify(groups) !== JSON.stringify(want)) p.push(`groups ${JSON.stringify(groups)}`);
   if (/sf-navlabel|<hr|sf-sep/.test(html.slice(html.indexOf('<nav class="sf-nav"'), html.indexOf('</nav>')))) p.push('a hairline / separator between groups');
   const row = /<a class="sf-userchip" id="acctMain" href="([^"]+)"[^>]*aria-haspopup="menu"[^>]*aria-controls="sfMenu"/.exec(html);
   if (!row || row[1] !== 'account.html') p.push(`avatar row ${row && row[1]}`);
@@ -177,8 +179,10 @@ function shellRulings(html) {
   if ((html.match(/<div data-sf-theme-switch>/g) || []).length !== 1) p.push('the theme switch is mounted more than once');
   return p;
 }
-test('rulings: Analyse / Research / Insights groups; the avatar opens the menu (theme, Upgrade, Account settings, Sign out) — both pages', () => {
-  assert.deepEqual(shellRulings(DASH), []); assert.deepEqual(shellRulings(ACCT), []);
+const ACCT_GROUPS = ['Analyse', 'Research', 'Insights'];
+test('rulings: Analyse / Research / Insights / Betting groups (account.html: the first three); the avatar opens the menu (theme, Upgrade, Account settings, Sign out) — both pages', () => {
+  assert.deepEqual(shellRulings(DASH), []); assert.deepEqual(shellRulings(ACCT, ACCT_GROUPS), []);
+  assert.notDeepEqual(shellRulings(DASH.replace('<div class="sf-glabel">Betting</div>', '')), [], 'mutant survived: bettingLost');
   const mut = {
     groupLost: DASH.replace('<div class="sf-glabel">Research</div>', ''),
     switchBackAtFoot: DASH.replace('<div class="sf-foot">', '<div class="sf-foot">\n    <div data-sf-theme-switch></div>'),
@@ -186,7 +190,7 @@ test('rulings: Analyse / Research / Insights groups; the avatar opens the menu (
     noSignout: ACCT.replace('id="acctSignout"', 'id="acctSignoutX"'),
     noMenu: DASH.replace(' aria-haspopup="menu"', ''),
   };
-  for (const [name, html] of Object.entries(mut)) { assert.notEqual(html, name.startsWith('rowTo') || name === 'noSignout' ? ACCT : DASH, `mutant ${name} must apply`); assert.notDeepEqual(shellRulings(html), [], `mutant survived: ${name}`); }
+  for (const [name, html] of Object.entries(mut)) { assert.notEqual(html, name.startsWith('rowTo') || name === 'noSignout' ? ACCT : DASH, `mutant ${name} must apply`); assert.notDeepEqual(shellRulings(html, name.startsWith('rowTo') || name === 'noSignout' ? ACCT_GROUPS : undefined), [], `mutant survived: ${name}`); }
 });
 
 // open state (desktop @media min-width:901px; hover or keyboard focus): rows 42, groups 10 apart, pill radius 26, caps group
@@ -212,7 +216,7 @@ test('open rail: rows 42, groups 10 apart, radius 26, names + labels shown (both
 // ── C · nav glyphs, element for element (frozen from the design's rendered SVGs) ───────
 const GLYPHS = {
   'Matches': [['path', 'M3 6.5h14M3 10h14M3 13.5h14']],
-  // Picks (founder 2026-10-27): the Picks LOCKED 2026-10-27 reference's PICK_PATH, Analyse group after Matches
+  // Picks (founder 2026-10-27): the Picks LOCKED 2026-10-27 reference's PICK_PATH; since 2026-10-28 in the Betting group
   'Picks': [['path', 'M10 3.5a6.5 6.5 0 100 13 6.5 6.5 0 000-13ZM7.3 10.2l1.9 1.9 3.6-4']],
   'Live': [['path', 'M10 8.5a1.5 1.5 0 100 3 1.5 1.5 0 000-3M6.8 6.8a4.5 4.5 0 000 6.4M13.2 6.8a4.5 4.5 0 010 6.4M4.6 4.6a7.6 7.6 0 000 10.8M15.4 4.6a7.6 7.6 0 010 10.8']],
   'Trading Report': [['path', 'M3.5 15.5 7 10l3 2.5 4-7M13 3.5h3.5V7']],
@@ -226,6 +230,8 @@ const GLYPHS = {
   'Stennisfy Model': [['path', 'M10 3l1.9 3.9 4.3.6-3.1 3 .7 4.3L10 16.8 6.3 18.8l.7-4.3-3.1-3 4.3-.6z']],
   'Playing Styles': [['path', 'M4 15V9M8 15V5M12 15v-4M16 15V7']],
   'News': [['path', 'M4 5h9v10H4zM13 8h3v5.5a1.5 1.5 0 01-3 0zM6 8h5M6 11h5']],
+  // Bet Tracker (design_handoff_bet_tracker, LOCKED 2026-10-28): Betting group after Picks
+  'Bet Tracker': [['path', 'M3.5 5.5h13v9h-13zM3.5 9h13M6.5 12h3M13 5.5v9']],
 };
 function glyphProblems(html) {
   const nav = html.slice(html.indexOf('<nav class="sf-nav" id="mainNav">'), html.indexOf('</nav>', html.indexOf('<nav class="sf-nav" id="mainNav">')));
@@ -239,7 +245,7 @@ function glyphProblems(html) {
   if (Object.keys(got).length !== Object.keys(GLYPHS).length) p.push(`nav has ${Object.keys(got).length} items`);
   return p;
 }
-test('C · all 13 nav glyphs are the design paths, element for element', () => {
+test('C · all 14 nav glyphs are the design paths, element for element', () => {
   assert.deepEqual(glyphProblems(DASH), []);
   const mut = {
     liveCircle: DASH.replace('<svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M10 8.5a1.5', '<svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="2.2"/><path d="M10 8.5a1.5'),

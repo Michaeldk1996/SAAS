@@ -47,6 +47,24 @@
   --badge-fill:  #FFFFFF;   /* the admin badge disc on the rail avatar (Picks lock, board 1k) */
   --badge-ink:   #0B0C13;   /* its shield stroke (Picks lock) */
 
+  /* Bet Tracker page — exact hex from design_handoff_bet_tracker (LOCKED 2026-10-28, README §Design tokens, Quiet ink
+     pass). A night-only page: the same value in Day, never routed through the theme engine. Inks / meaning colours it
+     shares with the site are the site tokens (--text, --text-label, --link, --pos, --neg, --amber). */
+  --tracker-page:       #05060A;   /* page + host */
+  --tracker-card:       #0E1019;   /* card */
+  --tracker-inner:      #0A0D14;   /* inner tile, table head band, inputs, idle month chip */
+  --tracker-menu:       #0C0E16;   /* menu pop, modal sheet, view-segment track */
+  --tracker-pill:       #131623;   /* selected pill: menus, month chips, triggers; the disabled Post button */
+  --tracker-seg:        #1B2031;   /* selected segment: Type / Placed / ledger filter / view, plan chips */
+  --tracker-ink:        #FFFFFF;   /* primary ink (README "Primary #FFFFFF"); its alpha washes are color-mix of it */
+  --tracker-pill-text:  #C6CCDB;   /* idle pill / chip text */
+  --tracker-ring:       #007AFF;   /* ring blue: curve, your-stakes line, Log-a-bet / Post / Apply buttons, the seal */
+  --tracker-ring-hover: #3A60E8;   /* ring-blue button hover */
+  --tracker-link-2:     #5B9BFF;   /* menu footer links (Reset filters, Remove, Use, Close) */
+  --tracker-plan-flat1: #8FB8FF;   /* staking plan swatch · Flat 1% */
+  --tracker-plan-flat2: #C9DDFF;   /* staking plan swatch · Flat 2% */
+  --tracker-top-light:  inset 0 1px 0 rgba(143, 170, 255, 0.03);   /* every Bet Tracker card */
+
   /* Meaning colours — same in night and day */
   --bar:         #007AFF;                  /* every data bar (lead / selected) */
   --bar-2:       rgba(0, 122, 255, 0.45);  /* second-tier bar (trailing player, other rows) */

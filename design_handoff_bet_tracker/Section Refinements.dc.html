@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&amp;family=IBM+Plex+Mono:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+<style>
+  *{ box-sizing:border-box; }
+  body{ margin:0; background:#05060A; -webkit-font-smoothing:antialiased; font-family:'Hanken Grotesk',sans-serif; }
+  a{ color:#6A9AF8; text-decoration:none; } a:hover{ color:#FFFFFF; text-decoration:underline; }
+</style>
+</helmet>
+<section style="display:flex; flex-direction:column; gap:40px; padding:40px; background:#05060A; min-height:100vh; width:max-content; font-family:'Hanken Grotesk',sans-serif; color:#FFFFFF;">
+  <div style="display:flex; flex-direction:column; gap:8px; max-width:1292px;">
+    <span style="font-size:22px; font-weight:800; color:#EBF1F2;">Refinements · five ways each</span>
+    <span style="font-size:15px; line-height:1.5; color:#9BB0DA; text-wrap:pretty;">4a–4e refine <a href="Section Options.dc.html#1e">1e</a> Three verdict cards. 5a–5e refine <a href="Section Options.dc.html#2a">2a</a> Three dials. 6a–6e refine <a href="Section Options.dc.html#3e">3e</a> You vs one plan. Same season (214 settled, +18.6%), same chrome. Width 1292 = the page box.</span>
+  </div>
+
+  <!-- ===== 4 · VERDICT CARDS ===== -->
+  <div style="display:flex; flex-direction:column; gap:28px;">
+    <span style="font-size:16px; font-weight:800; letter-spacing:0.02em; color:#9BB0DA;">4 · Where it works · where it leaks — verdict cards refined</span>
+
+    <div id="4a" style="display:flex; flex-direction:column; gap:12px; width:1292px;">
+      <div style="display:flex; align-items:baseline; gap:12px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:14px; font-weight:700; color:#0B0C13; background:#EBF1F2; border-radius:7px; padding:4px 10px;">4a</span><span style="font-size:18px; font-weight:800; color:#EBF1F2;">Figure first, curve as background</span><span style="font-size:13px; color:#9BB0DA;">The P/L figure leads at 34px with the verdict sentence under it; the segment's curve runs faintly behind the card foot so the card reads as a number, not a chart. Record · ROI · CLV on one hairline row.</span></div>
+      <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:12px;">
+        <sc-for list="{{ verdicts }}" as="v" hint-placeholder-count="3">
+          <div style="position:relative; overflow:hidden; background:#10131D; box-shadow:inset 0 1px 0 rgba(143,170,255,0.05); border:1px solid rgba(255,255,255,0.06); border-radius:12px; padding:16px 18px 14px; display:flex; flex-direction:column; gap:8px;">
+            <svg viewBox="0 0 380 70" preserveAspectRatio="none" style="position:absolute; left:0; right:0; bottom:0; width:100%; height:84px; opacity:0.35; display:block;"><path d="{{ v.area }}" fill="{{ v.fill }}"></path><path d="{{ v.path }}" fill="none" stroke="{{ v.sc }}" stroke-width="1.5"></path></svg>
+            <div style="display:flex; align-items:center; justify-content:space-between;"><span style="font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:{{ v.lc }};">{{ v.kind }}</span><span style="font-size:11px; color:#A3AABE;">{{ v.seg }} · {{ v.dim }}</span></div>
+            <span style="font-family:'IBM Plex Mono',monospace; font-size:34px; font-weight:800; line-height:1; color:{{ v.plC }};">{{ v.pl }}</span>
+            <span style="font-size:15px; font-weight:700; color:#FFFFFF; line-height:1.3; text-wrap:pretty; position:relative;">{{ v.title }}</span>
+            <div style="display:flex; gap:16px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.06); position:relative;"><sc-for list="{{ v.figs }}" as="f" hint-placeholder-count="3"><span style="display:flex; align-items:baseline; gap:6px;"><span style="font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">{{ f.l }}</span><span style="font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:700; color:{{ f.c }};">{{ f.v }}</span></span></sc-for></div>
+            <span style="height:48px;"></span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+    <div id="4b" style="display:flex; flex-direction:column; gap:12px; width:1292px;">
+      <div style="display:flex; align-items:baseline; gap:12px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:14px; font-weight:700; color:#0B0C13; background:#EBF1F2; border-radius:7px; padding:4px 10px;">4b</span><span style="font-size:18px; font-weight:800; color:#EBF1F2;">Verdict + evidence rows</span><span style="font-size:13px; color:#9BB0DA;">No curve. Each card states the verdict, then three evidence rows — P/L, record, CLV — as small bars against the season average with the segment's value beside. The proof is the comparison, not the shape.</span></div>
+      <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:12px;">
+        <sc-for list="{{ verdicts }}" as="v" hint-placeholder-count="3">
+          <div style="background:#10131D; box-shadow:inset 0 1px 0 rgba(143,170,255,0.05); border:1px solid rgba(255,255,255,0.06); border-radius:12px; padding:16px 18px 14px; display:flex; flex-direction:column; gap:12px;">
+            <div style="display:flex; align-items:center; justify-content:space-between;"><span style="font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:{{ v.lc }};">{{ v.kind }}</span><span style="font-size:11px; color:#A3AABE;">{{ v.n }} bets</span></div>
+            <span style="font-size:17px; font-weight:800; color:#FFFFFF; line-height:1.25; text-wrap:pretty;">{{ v.title }}</span>
+            <div style="display:flex; flex-direction:column; gap:8px;">
+              <sc-for list="{{ v.ev }}" as="e" hint-placeholder-count="3"><div style="display:grid; grid-template-columns:70px minmax(0,1fr) 64px; gap:0 10px; align-items:center;"><span style="font-size:10.5px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:#A3AABE;">{{ e.l }}</span><span style="position:relative; height:8px; background:rgba(255,255,255,0.05); border-radius:2px;"><span style="position:absolute; left:{{ e.avg }}; top:-4px; bottom:-4px; width:2px; background:rgba(255,255,255,0.45);"></span><span style="position:absolute; top:0; bottom:0; left:{{ e.bl }}; width:{{ e.bw }}; background:{{ e.c }}; border-radius:2px;"></span></span><span style="text-align:right; font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:800; color:{{ e.c }};">{{ e.v }}</span></div></sc-for>
+            </div>
+            <span style="font-size:11px; color:#A3AABE;">white tick = your season average on that measure</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+    <div id="4c" style="display:flex; flex-direction:column; gap:12px; width:1292px;">
+      <div style="display:flex; align-items:baseline; gap:12px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:14px; font-weight:700; color:#0B0C13; background:#EBF1F2; border-radius:7px; padding:4px 10px;">4c</span><span style="font-size:18px; font-weight:800; color:#EBF1F2;">Lead card + two supporting</span><span style="font-size:13px; color:#9BB0DA;">Unequal weight: the leak takes the wide card with its curve and full reasoning, because that is the thing to act on; edge and blind spot sit stacked on the right as compact rows. One lesson per visit.</span></div>
+      <div style="display:grid; grid-template-columns:minmax(0,2fr) minmax(0,1fr); gap:12px;">
+        <div style="background:#10131D; box-shadow:inset 0 1px 0 rgba(143,170,255,0.05); border:1px solid rgba(224,98,102,0.28); border-radius:12px; padding:18px 20px 16px; display:grid; grid-template-columns:minmax(0,1fr) 300px; gap:20px; align-items:start;">
+          <div style="display:flex; flex-direction:column; gap:10px;">
+            <span style="font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#E06266;">Your leak · act on this</span>
+            <span style="font-size:22px; font-weight:800; color:#FFFFFF; line-height:1.2; text-wrap:pretty;">Clay is costing you half your profit.</span>
+            <span style="font-size:13px; line-height:1.55; color:#A3AABE; text-wrap:pretty;">62 bets on clay, 31–31, P/L <span style="font-family:'IBM Plex Mono',monospace; font-weight:700; color:#E06266;">−4.9%</span> of bankroll. The close went against you on 36 of them — negative CLV says this is not variance. Inside clay the leak is the long prices: 2.61 and up ran <span style="font-family:'IBM Plex Mono',monospace; font-weight:700; color:#E06266;">−18%</span> ROI on 19 bets.</span>
+            <div style="display:flex; gap:16px; padding-top:10px; border-top:1px solid rgba(255,255,255,0.06);"><sc-for list="{{ leadFigs }}" as="f" hint-placeholder-count="4"><span style="display:flex; flex-direction:column; gap:2px;"><span style="font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">{{ f.l }}</span><span style="font-family:'IBM Plex Mono',monospace; font-size:16px; font-weight:800; color:{{ f.c }};">{{ f.v }}</span></span></sc-for></div>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:6px;"><span style="font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">Clay · cumulative % of bankroll</span><svg viewBox="0 0 300 120" width="300" height="120" style="display:block;"><line x1="0" x2="300" y1="{{ leadZero }}" y2="{{ leadZero }}" stroke="rgba(255,255,255,0.14)" stroke-width="1"></line><path d="{{ leadPath }}" fill="none" stroke="#E06266" stroke-width="2" stroke-linejoin="round"></path></svg></div>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:12px;">
+          <sc-for list="{{ sideCards }}" as="v" hint-placeholder-count="2">
+            <div style="flex:1; background:#10131D; box-shadow:inset 0 1px 0 rgba(143,170,255,0.05); border:1px solid rgba(255,255,255,0.06); border-radius:12px; padding:14px 16px; display:grid; grid-template-columns:minmax(0,1fr) auto; gap:4px 14px; align-items:center;">
+              <span style="font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:{{ v.lc }};">{{ v.kind }}</span>
+              <span style="grid-row:span 2; font-family:'IBM Plex Mono',monospace; font-size:24px; font-weight:800; color:{{ v.plC }};">{{ v.pl }}</span>
+              <span style="font-size:14px; font-weight:700; color:#FFFFFF; line-height:1.3; text-wrap:pretty;">{{ v.title }}</span>
+              <span style="grid-column:span 2; font-size:11.5px; color:#A3AABE;">{{ v.meta }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+
+    <div id="4d" style="display:flex; flex-direction:column; gap:12px; width:1292px;">
+      <div style="display:flex; align-items:baseline; gap:12px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:14px; font-weight:700; color:#0B0C13; background:#EBF1F2; border-radius:7px; padding:4px 10px;">4d</span><span style="font-size:18px; font-weight:800; color:#EBF1F2;">Cards with the "without it" line</span><span style="font-size:13px; color:#9BB0DA;">Each card ends in a counterfactual: season with this segment vs without, as two short bars. Turns a verdict into a decision — "drop clay → +23.5%" — and makes the three cards comparable on one axis.</span></div>
+      <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:12px;">
+        <sc-for list="{{ verdicts }}" as="v" hint-placeholder-count="3">
+          <div style="background:#10131D; box-shadow:inset 0 1px 0 rgba(143,170,255,0.05); border:1px solid rgba(255,255,255,0.06); border-radius:12px; padding:16px 18px 14px; display:flex; flex-direction:column; gap:10px;">
+            <div style="display:flex; align-items:center; justify-content:space-between;"><span style="font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:{{ v.lc }};">{{ v.kind }}</span><span style="font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:800; color:{{ v.plC }};">{{ v.pl }}</span></div>
+            <span style="font-size:17px; font-weight:800; color:#FFFFFF; line-height:1.25; text-wrap:pretty;">{{ v.title }}</span>
+            <span style="font-size:12px; line-height:1.5; color:#A3AABE; text-wrap:pretty;">{{ v.body }}</span>
+            <div style="display:flex; flex-direction:column; gap:6px; padding-top:10px; border-top:1px solid rgba(255,255,255,0.06);">
+              <span style="font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">Season with · without</span>
+              <div style="display:grid; grid-template-columns:52px minmax(0,1fr) 58px; gap:0 10px; align-items:center;"><span style="font-size:11px; color:#A3AABE;">with</span><span style="height:8px; background:rgba(255,255,255,0.05); border-radius:2px; position:relative;"><span style="position:absolute; left:0; top:0; bottom:0; width:{{ v.withW }}; background:rgba(255,255,255,0.35); border-radius:2px;"></span></span><span style="text-align:right; font-family:'IBM Plex Mono',monospace; font-size:12px; color:#DDE0EA;">+18.6%</span></div>
+              <div style="display:grid; grid-template-columns:52px minmax(0,1fr) 58px; gap:0 10px; align-items:center;"><span style="font-size:11px; color:#A3AABE;">without</span><span style="height:8px; background:rgba(255,255,255,0.05); border-radius:2px; position:relative;"><span style="position:absolute; left:0; top:0; bottom:0; width:{{ v.woW }}; background:{{ v.woC }}; border-radius:2px;"></span></span><span style="text-align:right; font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:800; color:{{ v.woC }};">{{ v.wo }}</span></div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+    <div id="4e" style="display:flex; flex-direction:column; gap:12px; width:1292px;">
+      <div style="display:flex; align-items:baseline; gap:12px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:14px; font-weight:700; color:#0B0C13; background:#EBF1F2; border-radius:7px; padding:4px 10px;">4e</span><span style="font-size:18px; font-weight:800; color:#EBF1F2;">One box, three columns, shared scale</span><span style="font-size:13px; color:#9BB0DA;">The three verdicts in one card separated by hairlines, their curves drawn on the same y-axis so the leak visibly dwarfs the blind spot. Verdict word as a chip, sentence under; "Every cut →" in the head.</span></div>
+      <div style="background:#10131D; box-shadow:inset 0 1px 0 rgba(143,170,255,0.05); border:1px solid rgba(255,255,255,0.06); border-radius:12px; overflow:hidden;">
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:12px 18px; border-bottom:1px solid rgba(255,255,255,0.06);"><span style="font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">Season read · segments with 15+ bets · % of bankroll</span><span style="font-size:12px; font-weight:700; color:#6A9AF8;">Every cut →</span></div>
+        <div style="display:grid; grid-template-columns:repeat(3,1fr);">
+          <sc-for list="{{ verdicts }}" as="v" hint-placeholder-count="3">
+            <div style="padding:16px 18px 14px; border-right:1px solid rgba(255,255,255,0.06); display:flex; flex-direction:column; gap:10px;">
+              <div style="display:flex; align-items:center; gap:8px;"><span style="height:22px; padding:0 9px; display:inline-flex; align-items:center; border-radius:6px; background:{{ v.chipBg }}; border:1px solid {{ v.chipBd }}; font-size:10.5px; font-weight:700; letter-spacing:0.06em; color:{{ v.lc }};">{{ v.kindU }}</span><span style="font-size:13px; font-weight:700; color:#FFFFFF;">{{ v.seg }}</span><span style="font-size:11px; color:#A3AABE;">{{ v.n }} bets · {{ v.wl }}</span></div>
+              <svg viewBox="0 0 380 90" width="100%" height="90" style="display:block;"><line x1="0" x2="380" y1="{{ sharedZero }}" y2="{{ sharedZero }}" stroke="rgba(255,255,255,0.14)" stroke-width="1"></line><path d="{{ v.sharedPath }}" fill="none" stroke="{{ v.sc }}" stroke-width="2" stroke-linejoin="round"></path><text x="378" y="{{ v.sharedEndY }}" text-anchor="end" font-family="IBM Plex Mono" font-size="12" font-weight="800" fill="{{ v.plC }}">{{ v.pl }}</text></svg>
+              <span style="font-size:13px; line-height:1.5; color:#DDE0EA; text-wrap:pretty;">{{ v.body }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 5 · DIALS ===== -->
+  <div style="display:flex; flex-direction:column; gap:28px;">
+    <span style="font-size:16px; font-weight:800; letter-spacing:0.02em; color:#9BB0DA;">5 · Discipline — dials refined</span>
+
+    <div id="5a" style="display:flex; flex-direction:column; gap:12px; width:1292px;">
+      <div style="display:flex; align-items:baseline; gap:12px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:14px; font-weight:700; color:#0B0C13; background:#EBF1F2; border-radius:7px; padding:4px 10px;">5a</span><span style="font-size:18px; font-weight:800; color:#EBF1F2;">Thin arc, figure inside</span><span style="font-size:13px; color:#9BB0DA;">The 12px gauge becomes a 5px arc with the target zone as a brighter segment of the track; the figure sits inside the arc at 36px, the verdict beneath it, and the sample line goes to the foot. Less instrument, more number.</span></div>
+      <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:12px;">
+        <sc-for list="{{ dials }}" as="d" hint-placeholder-count="3">
+          <div style="background:#10131D; box-shadow:inset 0 1px 0 rgba(143,170,255,0.05); border:1px solid rgba(255,255,255,0.06); border-radius:12px; padding:16px 18px 14px; display:flex; flex-direction:column; align-items:center; gap:4px;">
+            <span style="align-self:flex-start; font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">{{ d.label }}</span>
+            <div style="position:relative; width:220px; height:120px;">
+              <svg viewBox="0 0 200 110" width="220" height="121" style="display:block;"><path d="M20 100 A80 80 0 0 1 180 100" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="5" stroke-linecap="round"></path><path d="{{ d.zone }}" fill="none" stroke="rgba(255,255,255,0.22)" stroke-width="5"></path><path d="{{ d.arc }}" fill="none" stroke="{{ d.c }}" stroke-width="5" stroke-linecap="round"></path><circle cx="{{ d.nx }}" cy="{{ d.ny }}" r="4" fill="#FFFFFF"></circle></svg>
+              <span style="position:absolute; left:0; right:0; bottom:8px; display:flex; flex-direction:column; align-items:center; gap:2px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:36px; font-weight:800; line-height:1; color:#FFFFFF;">{{ d.fig }}</span><span style="font-size:11px; font-weight:700; letter-spacing:0.08em; color:{{ d.c }};">{{ d.verdict }}</span></span>
+            </div>
+            <span style="font-size:12px; line-height:1.5; color:#A3AABE; text-align:center; text-wrap:pretty;">{{ d.body }}</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+    <div id="5b" style="display:flex; flex-direction:column; gap:12px; width:1292px;">
+      <div style="display:flex; align-items:baseline; gap:12px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:14px; font-weight:700; color:#0B0C13; background:#EBF1F2; border-radius:7px; padding:4px 10px;">5b</span><span style="font-size:18px; font-weight:800; color:#EBF1F2;">Linear gauge</span><span style="font-size:13px; color:#9BB0DA;">The arc straightened into a horizontal scale: target zone shaded, the scale's ends labelled, a marker at your value. Same meaning as a dial, honest about being a scale, and it leaves room for a sentence beside it.</span></div>
+      <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:12px;">
+        <sc-for list="{{ dials }}" as="d" hint-placeholder-count="3">
+          <div style="background:#10131D; box-shadow:inset 0 1px 0 rgba(143,170,255,0.05); border:1px solid rgba(255,255,255,0.06); border-radius:12px; padding:16px 18px 14px; display:flex; flex-direction:column; gap:12px;">
+            <div style="display:flex; align-items:center; justify-content:space-between;"><span style="font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">{{ d.label }}</span><span style="font-size:11px; font-weight:700; letter-spacing:0.08em; color:{{ d.c }};">{{ d.verdict }}</span></div>
+            <span style="font-family:'IBM Plex Mono',monospace; font-size:30px; font-weight:800; line-height:1; color:#FFFFFF;">{{ d.fig }}</span>
+            <div style="position:relative; height:34px; margin-top:4px;">
+              <span style="position:absolute; left:0; right:0; top:6px; height:6px; background:rgba(255,255,255,0.06); border-radius:3px;"></span>
+              <span style="position:absolute; left:{{ d.zL }}; width:{{ d.zW }}; top:6px; height:6px; background:rgba(92,203,132,0.30); border-radius:3px;"></span>
+              <span style="position:absolute; left:{{ d.pos }}; top:0; width:3px; height:18px; transform:translateX(-50%); background:{{ d.c }}; border-radius:2px;"></span>
+              <span style="position:absolute; left:0; top:22px; font-family:'IBM Plex Mono',monospace; font-size:10px; color:#A3AABE;">{{ d.lo }}</span>
+              <span style="position:absolute; left:{{ d.zMid }}; top:22px; transform:translateX(-50%); font-size:10px; color:#A3AABE; white-space:nowrap;">{{ d.zoneL }}</span>
+              <span style="position:absolute; right:0; top:22px; font-family:'IBM Plex Mono',monospace; font-size:10px; color:#A3AABE;">{{ d.hi }}</span>
+            </div>
+            <span style="font-size:12px; line-height:1.5; color:#A3AABE; text-wrap:pretty;">{{ d.body }}</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+    <div id="5c" style="display:flex; flex-direction:column; gap:12px; width:1292px;">
+      <div style="display:flex; align-items:baseline; gap:12px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:14px; font-weight:700; color:#0B0C13; background:#EBF1F2; border-radius:7px; padding:4px 10px;">5c</span><span style="font-size:18px; font-weight:800; color:#EBF1F2;">Dial + trend spark</span><span style="font-size:13px; color:#9BB0DA;">Small dial on the left of each card for the season value, a rolling-30 sparkline on the right with the target as a dashed line. Where you stand and which way you are moving, in one card.</span></div>
+      <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:12px;">
+        <sc-for list="{{ dials }}" as="d" hint-placeholder-count="3">
+          <div style="background:#10131D; box-shadow:inset 0 1px 0 rgba(143,170,255,0.05); border:1px solid rgba(255,255,255,0.06); border-radius:12px; padding:14px 18px 12px; display:flex; flex-direction:column; gap:8px;">
+            <div style="display:flex; align-items:center; justify-content:space-between;"><span style="font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">{{ d.label }}</span><span style="font-size:11px; font-weight:700; letter-spacing:0.08em; color:{{ d.c }};">{{ d.verdict }}</span></div>
+            <div style="display:grid; grid-template-columns:120px minmax(0,1fr); gap:14px; align-items:end;">
+              <div style="position:relative; width:120px; height:66px;"><svg viewBox="0 0 200 110" width="120" height="66" style="display:block;"><path d="M20 100 A80 80 0 0 1 180 100" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="9" stroke-linecap="round"></path><path d="{{ d.zone }}" fill="none" stroke="rgba(255,255,255,0.20)" stroke-width="9"></path><path d="{{ d.arc }}" fill="none" stroke="{{ d.c }}" stroke-width="9" stroke-linecap="round"></path></svg><span style="position:absolute; left:0; right:0; bottom:0; text-align:center; font-family:'IBM Plex Mono',monospace; font-size:20px; font-weight:800; line-height:1; color:#FFFFFF;">{{ d.fig }}</span></div>
+              <div style="display:flex; flex-direction:column; gap:4px;"><span style="display:flex; justify-content:space-between; font-size:10px; color:#A3AABE;"><span>rolling 30 bets</span><span style="font-family:'IBM Plex Mono',monospace; color:{{ d.c }}; font-weight:700;">{{ d.lastV }}</span></span><svg viewBox="0 0 240 44" width="100%" height="44" style="display:block;"><line x1="0" x2="240" y1="{{ d.tY }}" y2="{{ d.tY }}" stroke="rgba(255,255,255,0.22)" stroke-width="1" stroke-dasharray="3 4"></line><path d="{{ d.spark }}" fill="none" stroke="{{ d.c }}" stroke-width="1.8" stroke-linejoin="round"></path><circle cx="238" cy="{{ d.lastY }}" r="3" fill="#FFFFFF"></circle></svg></div>
+            </div>
+            <span style="font-size:12px; line-height:1.5; color:#A3AABE; text-wrap:pretty;">{{ d.body }}</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+    <div id="5d" style="display:flex; flex-direction:column; gap:12px; width:1292px;">
+      <div style="display:flex; align-items:baseline; gap:12px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:14px; font-weight:700; color:#0B0C13; background:#EBF1F2; border-radius:7px; padding:4px 10px;">5d</span><span style="font-size:18px; font-weight:800; color:#EBF1F2;">Full ring, count inside</span><span style="font-size:13px; color:#9BB0DA;">A closed ring instead of a half arc — fill = your share, the target marked as a tick on the ring, the raw count (128 of 206) inside instead of the percent. The percent and verdict move beside the ring.</span></div>
+      <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:12px;">
+        <sc-for list="{{ dials }}" as="d" hint-placeholder-count="3">
+          <div style="background:#10131D; box-shadow:inset 0 1px 0 rgba(143,170,255,0.05); border:1px solid rgba(255,255,255,0.06); border-radius:12px; padding:16px 18px 14px; display:grid; grid-template-columns:96px minmax(0,1fr); gap:16px; align-items:center;">
+            <div style="position:relative; width:96px; height:96px;"><svg viewBox="0 0 96 96" width="96" height="96" style="display:block; transform:rotate(-90deg);"><circle cx="48" cy="48" r="41" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="7"></circle><circle cx="48" cy="48" r="41" fill="none" stroke="{{ d.c }}" stroke-width="7" stroke-dasharray="{{ d.dash }}" stroke-linecap="round"></circle><line x1="48" y1="2" x2="48" y2="12" stroke="#FFFFFF" stroke-width="2" transform="rotate({{ d.tickDeg }} 48 48)"></line></svg><span style="position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:15px; font-weight:800; line-height:1; color:#FFFFFF;">{{ d.cnt }}</span><span style="font-size:9.5px; color:#A3AABE;">{{ d.cntSub }}</span></span></div>
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <span style="font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">{{ d.label }}</span>
+              <span style="display:flex; align-items:baseline; gap:10px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:26px; font-weight:800; line-height:1; color:#FFFFFF;">{{ d.fig }}</span><span style="font-size:11px; font-weight:700; letter-spacing:0.08em; color:{{ d.c }};">{{ d.verdict }}</span></span>
+              <span style="font-size:12px; line-height:1.5; color:#A3AABE; text-wrap:pretty;">{{ d.short }}</span>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+    <div id="5e" style="display:flex; flex-direction:column; gap:12px; width:1292px;">
+      <div style="display:flex; align-items:baseline; gap:12px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:14px; font-weight:700; color:#0B0C13; background:#EBF1F2; border-radius:7px; padding:4px 10px;">5e</span><span style="font-size:18px; font-weight:800; color:#EBF1F2;">Three dials in one strip</span><span style="font-size:13px; color:#9BB0DA;">One card, three dial columns on hairlines, each with a one-line caption only. Overall verdict and the sample in the card head ("2 of 3 checks need work · 214 bets"). Compact; detail opens on click.</span></div>
+      <div style="background:#10131D; box-shadow:inset 0 1px 0 rgba(143,170,255,0.05); border:1px solid rgba(255,255,255,0.06); border-radius:12px; overflow:hidden;">
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:12px 18px; border-bottom:1px solid rgba(255,255,255,0.06);"><span style="font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">Discipline · season</span><span style="font-size:12px; color:#DDE0EA;"><span style="font-family:'IBM Plex Mono',monospace; font-weight:700; color:#E06266;">2 of 3</span> checks need work · 214 bets</span></div>
+        <div style="display:grid; grid-template-columns:repeat(3,1fr);">
+          <sc-for list="{{ dials }}" as="d" hint-placeholder-count="3">
+            <div style="padding:14px 18px 14px; border-right:1px solid rgba(255,255,255,0.06); display:grid; grid-template-columns:110px minmax(0,1fr); gap:14px; align-items:center;">
+              <div style="position:relative; width:110px; height:62px;"><svg viewBox="0 0 200 110" width="110" height="61" style="display:block;"><path d="M20 100 A80 80 0 0 1 180 100" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="10" stroke-linecap="round"></path><path d="{{ d.zone }}" fill="none" stroke="rgba(255,255,255,0.20)" stroke-width="10"></path><path d="{{ d.arc }}" fill="none" stroke="{{ d.c }}" stroke-width="10" stroke-linecap="round"></path></svg><span style="position:absolute; left:0; right:0; bottom:0; text-align:center; font-family:'IBM Plex Mono',monospace; font-size:19px; font-weight:800; line-height:1; color:#FFFFFF;">{{ d.fig }}</span></div>
+              <div style="display:flex; flex-direction:column; gap:3px;"><span style="font-size:13px; font-weight:700; color:#FFFFFF;">{{ d.label }}</span><span style="font-size:11px; font-weight:700; letter-spacing:0.08em; color:{{ d.c }};">{{ d.verdict }}</span><span style="font-size:11.5px; color:#A3AABE; line-height:1.4;">{{ d.short }}</span></div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 6 · YOU VS ONE PLAN ===== -->
+  <div style="display:flex; flex-direction:column; gap:28px;">
+    <span style="font-size:16px; font-weight:800; letter-spacing:0.02em; color:#9BB0DA;">6 · Staking replay — you vs one plan refined</span>
+
+    <div id="6a" style="display:flex; flex-direction:column; gap:12px; width:1292px;">
+      <div style="display:flex; align-items:baseline; gap:12px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:14px; font-weight:700; color:#0B0C13; background:#EBF1F2; border-radius:7px; padding:4px 10px;">6a</span><span style="font-size:18px; font-weight:800; color:#EBF1F2;">Difference line</span><span style="font-size:13px; color:#9BB0DA;">Instead of two curves, one: plan minus you, filled green above zero and red below. Shows exactly when the plan would have pulled ahead and by how much; the two originals drawn faintly behind for bearings.</span></div>
+      <div style="background:#10131D; box-shadow:inset 0 1px 0 rgba(143,170,255,0.05); border:1px solid rgba(255,255,255,0.06); border-radius:12px; overflow:hidden;">
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:12px 18px; border-bottom:1px solid rgba(255,255,255,0.06);"><span style="display:flex; align-items:center; gap:10px; font-size:13px; font-weight:700; color:#FFFFFF;"><span style="width:12px; height:3px; background:#5CCB84;"></span>Compounding 1%<span style="font-size:12px; color:#A3AABE; font-weight:600;">minus</span><span style="width:12px; height:3px; background:#007AFF;"></span>Your stakes</span><div style="display:flex; gap:6px;"><sc-for list="{{ vsChips }}" as="p" hint-placeholder-count="6"><span style="padding:4px 10px; border-radius:7px; font-size:12px; font-weight:600; background:{{ p.bg }}; color:{{ p.c }}; border:1px solid {{ p.bd }};">{{ p.name }}</span></sc-for></div></div>
+        <div style="position:relative; width:1292px; height:230px; padding:14px 18px 10px;"><svg viewBox="0 0 1256 206" width="1256" height="206" style="display:block; overflow:visible;"><sc-for list="{{ dTicks }}" as="t" hint-placeholder-count="5"><line x1="36" x2="1256" y1="{{ t.y }}" y2="{{ t.y }}" stroke="{{ t.stroke }}" stroke-width="1" stroke-dasharray="{{ t.dash }}"></line></sc-for><path d="{{ dPos }}" fill="rgba(92,203,132,0.28)"></path><path d="{{ dNeg }}" fill="rgba(224,98,102,0.28)"></path><path d="{{ dLine }}" fill="none" stroke="#DDE0EA" stroke-width="1.8" stroke-linejoin="round"></path></svg><sc-for list="{{ dTicks }}" as="t" hint-placeholder-count="5"><span style="position:absolute; left:18px; width:30px; top:{{ t.top }}; text-align:right; font-family:'IBM Plex Mono',monospace; font-size:10px; line-height:1; color:#A3AABE;">{{ t.label }}</span></sc-for><span style="position:absolute; right:18px; top:14px; font-size:11px; color:#A3AABE;">above zero = the plan would be ahead</span></div>
+        <div style="display:grid; grid-template-columns:repeat(4,1fr); border-top:1px solid rgba(255,255,255,0.06);">
+          <sc-for list="{{ vsDeltas }}" as="d" hint-placeholder-count="4"><div style="display:flex; flex-direction:column; gap:4px; padding:12px 18px; border-right:1px solid rgba(255,255,255,0.06);"><span style="font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">{{ d.l }}</span><span style="display:flex; align-items:baseline; gap:8px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:13px; color:#A3AABE;">{{ d.a }}</span><span style="font-size:11px; color:#A3AABE;">→</span><span style="font-family:'IBM Plex Mono',monospace; font-size:16px; font-weight:800; color:#FFFFFF;">{{ d.b }}</span><span style="font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:700; color:{{ d.c }};">{{ d.d }}</span></span></div></sc-for>
+        </div>
+      </div>
+    </div>
+
+    <div id="6b" style="display:flex; flex-direction:column; gap:12px; width:1292px;">
+      <div style="display:flex; align-items:baseline; gap:12px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:14px; font-weight:700; color:#0B0C13; background:#EBF1F2; border-radius:7px; padding:4px 10px;">6b</span><span style="font-size:18px; font-weight:800; color:#EBF1F2;">Chart left, verdict column right</span><span style="font-size:13px; color:#9BB0DA;">The two-line chart keeps 60% of the width; the delta strip becomes a right-hand column of stacked rows with the plan's value large and yours small beneath, plus a one-line verdict on top. Reads top-to-bottom like the hero tiles.</span></div>
+      <div style="background:#10131D; box-shadow:inset 0 1px 0 rgba(143,170,255,0.05); border:1px solid rgba(255,255,255,0.06); border-radius:12px; overflow:hidden; display:grid; grid-template-columns:minmax(0,1fr) 320px;">
+        <div style="display:flex; flex-direction:column; border-right:1px solid rgba(255,255,255,0.06);">
+          <div style="display:flex; align-items:center; justify-content:space-between; padding:12px 18px; border-bottom:1px solid rgba(255,255,255,0.06);"><span style="display:flex; align-items:center; gap:10px; font-size:13px; font-weight:700; color:#FFFFFF;"><span style="width:12px; height:3px; background:#007AFF;"></span>Your stakes<span style="font-size:12px; color:#A3AABE; font-weight:600;">vs</span><span style="width:12px; height:3px; background:#5CCB84;"></span>Compounding 1%</span><span style="display:inline-flex; align-items:center; gap:7px; height:28px; padding:0 11px; border-radius:9px; background:#0C0E16; border:1px solid rgba(255,255,255,0.08); font-size:12.5px; font-weight:600; color:#e7e9ee;">Compounding 1%<span style="font-size:9px; color:#8b96b5;">▼</span></span></div>
+          <div style="position:relative; width:970px; height:250px; padding:14px 18px 10px;"><svg viewBox="0 0 934 226" width="934" height="226" style="display:block; overflow:visible;"><sc-for list="{{ nTicks }}" as="t" hint-placeholder-count="5"><line x1="36" x2="934" y1="{{ t.y }}" y2="{{ t.y }}" stroke="{{ t.stroke }}" stroke-width="1" stroke-dasharray="{{ t.dash }}"></line></sc-for><path d="{{ nArea }}" fill="rgba(92,203,132,0.08)"></path><path d="{{ nYour }}" fill="none" stroke="#007AFF" stroke-width="2.2" stroke-linejoin="round"></path><path d="{{ nOther }}" fill="none" stroke="#5CCB84" stroke-width="2" stroke-linejoin="round"></path></svg><sc-for list="{{ nTicks }}" as="t" hint-placeholder-count="5"><span style="position:absolute; left:18px; width:30px; top:{{ t.top }}; text-align:right; font-family:'IBM Plex Mono',monospace; font-size:10px; line-height:1; color:#A3AABE;">{{ t.label }}</span></sc-for></div>
+        </div>
+        <div style="display:flex; flex-direction:column;">
+          <div style="padding:14px 18px 12px; border-bottom:1px solid rgba(255,255,255,0.06); display:flex; flex-direction:column; gap:3px;"><span style="font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">Verdict</span><span style="font-size:14px; font-weight:700; color:#FFFFFF; line-height:1.35; text-wrap:pretty;">Slightly less profit, a third less pain.</span></div>
+          <sc-for list="{{ vsDeltas }}" as="d" hint-placeholder-count="4"><div style="display:grid; grid-template-columns:minmax(0,1fr) auto; gap:0 12px; align-items:center; padding:10px 18px; border-bottom:1px solid rgba(255,255,255,0.05);"><span style="display:flex; flex-direction:column; gap:2px;"><span style="font-size:12px; font-weight:600; color:#DDE0EA;">{{ d.l }}</span><span style="font-size:10.5px; color:#A3AABE;">you <span style="font-family:'IBM Plex Mono',monospace;">{{ d.a }}</span></span></span><span style="display:flex; align-items:baseline; gap:8px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:17px; font-weight:800; color:#FFFFFF;">{{ d.b }}</span><span style="font-family:'IBM Plex Mono',monospace; font-size:11.5px; font-weight:700; color:{{ d.c }};">{{ d.d }}</span></span></div></sc-for>
+        </div>
+      </div>
+    </div>
+
+    <div id="6c" style="display:flex; flex-direction:column; gap:12px; width:1292px;">
+      <div style="display:flex; align-items:baseline; gap:12px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:14px; font-weight:700; color:#0B0C13; background:#EBF1F2; border-radius:7px; padding:4px 10px;">6c</span><span style="font-size:18px; font-weight:800; color:#EBF1F2;">Plan picker as a ranked list</span><span style="font-size:13px; color:#9BB0DA;">The chips become a left column listing every plan with its end figure, your stakes pinned at the top; the selected row is lifted. Picking a plan and seeing how it ranks happen in the same gesture.</span></div>
+      <div style="background:#10131D; box-shadow:inset 0 1px 0 rgba(143,170,255,0.05); border:1px solid rgba(255,255,255,0.06); border-radius:12px; overflow:hidden; display:grid; grid-template-columns:260px minmax(0,1fr);">
+        <div style="display:flex; flex-direction:column; border-right:1px solid rgba(255,255,255,0.06);">
+          <div style="height:46px; display:flex; align-items:center; padding:0 16px; border-bottom:1px solid rgba(255,255,255,0.06);"><span style="font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">Compare with</span></div>
+          <sc-for list="{{ pickRows }}" as="p" hint-placeholder-count="7"><div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin:3px 8px 0; height:40px; padding:0 10px; border-radius:8px; background:{{ p.bg }}; border:1px solid {{ p.bd }};"><span style="display:flex; align-items:center; gap:8px; font-size:12.5px; font-weight:{{ p.fw }}; color:{{ p.c }};"><span style="width:8px; height:8px; border-radius:2px; background:{{ p.color }};"></span>{{ p.name }}</span><span style="font-family:'IBM Plex Mono',monospace; font-size:12.5px; font-weight:800; color:{{ p.endC }};">{{ p.end }}</span></div></sc-for>
+          <span style="height:8px;"></span>
+        </div>
+        <div style="display:flex; flex-direction:column;">
+          <div style="height:46px; display:flex; align-items:center; justify-content:space-between; padding:0 18px; border-bottom:1px solid rgba(255,255,255,0.06);"><span style="display:flex; align-items:center; gap:10px; font-size:13px; font-weight:700; color:#FFFFFF;"><span style="width:12px; height:3px; background:#007AFF;"></span>Your stakes<span style="font-size:12px; color:#A3AABE; font-weight:600;">vs</span><span style="width:12px; height:3px; background:#5CCB84;"></span>Compounding 1%</span><span style="font-size:11px; color:#A3AABE;">cumulative % of bankroll · 214 bets</span></div>
+          <div style="position:relative; width:1030px; height:250px; padding:14px 18px 10px;"><svg viewBox="0 0 994 226" width="994" height="226" style="display:block; overflow:visible;"><sc-for list="{{ mTicks }}" as="t" hint-placeholder-count="5"><line x1="36" x2="994" y1="{{ t.y }}" y2="{{ t.y }}" stroke="{{ t.stroke }}" stroke-width="1" stroke-dasharray="{{ t.dash }}"></line></sc-for><path d="{{ mArea }}" fill="rgba(92,203,132,0.08)"></path><path d="{{ mYour }}" fill="none" stroke="#007AFF" stroke-width="2.2" stroke-linejoin="round"></path><path d="{{ mOther }}" fill="none" stroke="#5CCB84" stroke-width="2" stroke-linejoin="round"></path></svg><sc-for list="{{ mTicks }}" as="t" hint-placeholder-count="5"><span style="position:absolute; left:18px; width:30px; top:{{ t.top }}; text-align:right; font-family:'IBM Plex Mono',monospace; font-size:10px; line-height:1; color:#A3AABE;">{{ t.label }}</span></sc-for></div>
+          <div style="display:grid; grid-template-columns:repeat(4,1fr); border-top:1px solid rgba(255,255,255,0.06);">
+            <sc-for list="{{ vsDeltas }}" as="d" hint-placeholder-count="4"><div style="display:flex; flex-direction:column; gap:4px; padding:12px 18px; border-right:1px solid rgba(255,255,255,0.06);"><span style="font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">{{ d.l }}</span><span style="display:flex; align-items:baseline; gap:8px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:13px; color:#A3AABE;">{{ d.a }}</span><span style="font-size:11px; color:#A3AABE;">→</span><span style="font-family:'IBM Plex Mono',monospace; font-size:16px; font-weight:800; color:#FFFFFF;">{{ d.b }}</span><span style="font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:700; color:{{ d.c }};">{{ d.d }}</span></span></div></sc-for>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="6d" style="display:flex; flex-direction:column; gap:12px; width:1292px;">
+      <div style="display:flex; align-items:baseline; gap:12px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:14px; font-weight:700; color:#0B0C13; background:#EBF1F2; border-radius:7px; padding:4px 10px;">6d</span><span style="font-size:18px; font-weight:800; color:#EBF1F2;">Monthly bars, paired</span><span style="font-size:13px; color:#9BB0DA;">No curve at all: month by month, two bars — your result and the plan's — side by side. Drawdown and streaks become visible as runs of red months; the delta strip stays. Easier to read than two crossing lines.</span></div>
+      <div style="background:#10131D; box-shadow:inset 0 1px 0 rgba(143,170,255,0.05); border:1px solid rgba(255,255,255,0.06); border-radius:12px; overflow:hidden;">
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:12px 18px; border-bottom:1px solid rgba(255,255,255,0.06);"><span style="display:flex; align-items:center; gap:10px; font-size:13px; font-weight:700; color:#FFFFFF;"><span style="width:10px; height:10px; border-radius:2px; background:#007AFF;"></span>Your stakes<span style="font-size:12px; color:#A3AABE; font-weight:600;">vs</span><span style="width:10px; height:10px; border-radius:2px; background:#5CCB84;"></span>Compounding 1%<span style="font-size:11px; color:#A3AABE; font-weight:500; margin-left:6px;">· monthly P/L · % of bankroll</span></span><div style="display:flex; gap:6px;"><sc-for list="{{ vsChips }}" as="p" hint-placeholder-count="6"><span style="padding:4px 10px; border-radius:7px; font-size:12px; font-weight:600; background:{{ p.bg }}; color:{{ p.c }}; border:1px solid {{ p.bd }};">{{ p.name }}</span></sc-for></div></div>
+        <div style="display:grid; grid-template-columns:repeat(10,1fr); gap:8px; padding:18px 18px 10px; align-items:end;">
+          <sc-for list="{{ months }}" as="m" hint-placeholder-count="10">
+            <div style="display:flex; flex-direction:column; gap:6px;">
+              <div style="position:relative; height:150px;"><span style="position:absolute; left:0; right:0; top:{{ monthZero }}; height:1px; background:rgba(255,255,255,0.22);"></span><span style="position:absolute; left:14%; width:32%; top:{{ m.yT }}; height:{{ m.yH }}; background:#007AFF; border-radius:2px; opacity:{{ m.yO }};"></span><span style="position:absolute; left:54%; width:32%; top:{{ m.pT }}; height:{{ m.pH }}; background:#5CCB84; border-radius:2px; opacity:{{ m.pO }};"></span></div>
+              <span style="display:flex; justify-content:space-between; align-items:baseline;"><span style="font-size:11px; font-weight:700; color:#DDE0EA;">{{ m.l }}</span><span style="font-family:'IBM Plex Mono',monospace; font-size:10px; color:{{ m.dC }};">{{ m.d }}</span></span>
+            </div>
+          </sc-for>
+        </div>
+        <div style="display:grid; grid-template-columns:repeat(4,1fr); border-top:1px solid rgba(255,255,255,0.06);">
+          <sc-for list="{{ vsDeltas }}" as="d" hint-placeholder-count="4"><div style="display:flex; flex-direction:column; gap:4px; padding:12px 18px; border-right:1px solid rgba(255,255,255,0.06);"><span style="font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">{{ d.l }}</span><span style="display:flex; align-items:baseline; gap:8px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:13px; color:#A3AABE;">{{ d.a }}</span><span style="font-size:11px; color:#A3AABE;">→</span><span style="font-family:'IBM Plex Mono',monospace; font-size:16px; font-weight:800; color:#FFFFFF;">{{ d.b }}</span><span style="font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:700; color:{{ d.c }};">{{ d.d }}</span></span></div></sc-for>
+        </div>
+      </div>
+    </div>
+
+    <div id="6e" style="display:flex; flex-direction:column; gap:12px; width:1292px;">
+      <div style="display:flex; align-items:baseline; gap:12px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:14px; font-weight:700; color:#0B0C13; background:#EBF1F2; border-radius:7px; padding:4px 10px;">6e</span><span style="font-size:18px; font-weight:800; color:#EBF1F2;">Headline delta + annotated chart</span><span style="font-size:13px; color:#9BB0DA;">The answer comes first as a sentence in the head — "Compounding 1% would have ended 2.2% lower with a shallower worst stretch" — and the chart carries two callouts at the moments that matter: the deepest drawdown and the widest gap. Delta strip trimmed to End · Max drawdown.</span></div>
+      <div style="background:#10131D; box-shadow:inset 0 1px 0 rgba(143,170,255,0.05); border:1px solid rgba(255,255,255,0.06); border-radius:12px; overflow:hidden;">
+        <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:24px; padding:14px 18px; border-bottom:1px solid rgba(255,255,255,0.06);">
+          <div style="display:flex; flex-direction:column; gap:4px;"><span style="display:flex; align-items:center; gap:10px; font-size:11px; font-weight:700; letter-spacing:0.08em; color:#A3AABE;"><span style="width:12px; height:3px; background:#007AFF;"></span>YOUR STAKES<span style="font-weight:600;">vs</span><span style="width:12px; height:3px; background:#5CCB84;"></span>COMPOUNDING 1%</span><span style="font-size:17px; font-weight:800; color:#FFFFFF; line-height:1.3; text-wrap:pretty;">Compounding 1% would have ended <span style="font-family:'IBM Plex Mono',monospace; color:#E06266;">2.2%</span> lower, with a worst stretch <span style="font-family:'IBM Plex Mono',monospace; color:#5CCB84;">1.2%</span> shallower and no single loss over <span style="font-family:'IBM Plex Mono',monospace; color:#5CCB84;">1.1%</span>.</span></div>
+          <div style="display:flex; gap:6px; flex:none; padding-top:2px;"><sc-for list="{{ vsChips }}" as="p" hint-placeholder-count="6"><span style="padding:4px 10px; border-radius:7px; font-size:12px; font-weight:600; background:{{ p.bg }}; color:{{ p.c }}; border:1px solid {{ p.bd }};">{{ p.name }}</span></sc-for></div>
+        </div>
+        <div style="position:relative; width:1292px; height:250px; padding:14px 18px 10px;">
+          <svg viewBox="0 0 1256 226" width="1256" height="226" style="display:block; overflow:visible;"><sc-for list="{{ vsTicks }}" as="t" hint-placeholder-count="5"><line x1="36" x2="1256" y1="{{ t.y }}" y2="{{ t.y }}" stroke="{{ t.stroke }}" stroke-width="1" stroke-dasharray="{{ t.dash }}"></line></sc-for><path d="{{ vsArea }}" fill="rgba(92,203,132,0.08)"></path><path d="{{ vsYour }}" fill="none" stroke="#007AFF" stroke-width="2.2" stroke-linejoin="round"></path><path d="{{ vsOther }}" fill="none" stroke="#5CCB84" stroke-width="2" stroke-linejoin="round"></path><line x1="{{ ddX }}" x2="{{ ddX }}" y1="{{ ddY1 }}" y2="{{ ddY2 }}" stroke="#E06266" stroke-width="1.5"></line><circle cx="{{ ddX }}" cy="{{ ddY1 }}" r="3.5" fill="#E06266"></circle><line x1="{{ gapX }}" x2="{{ gapX }}" y1="{{ gapY1 }}" y2="{{ gapY2 }}" stroke="rgba(255,255,255,0.5)" stroke-width="1" stroke-dasharray="2 3"></line></svg>
+          <sc-for list="{{ vsTicks }}" as="t" hint-placeholder-count="5"><span style="position:absolute; left:18px; width:30px; top:{{ t.topV }}; text-align:right; font-family:'IBM Plex Mono',monospace; font-size:10px; line-height:1; color:#A3AABE;">{{ t.label }}</span></sc-for>
+          <span style="position:absolute; left:{{ ddLx }}; top:{{ ddLy }}; display:flex; flex-direction:column; gap:1px; padding:5px 8px; background:#0C0E16; border:1px solid rgba(224,98,102,0.4); border-radius:6px; white-space:nowrap;"><span style="font-size:9.5px; font-weight:700; letter-spacing:0.08em; color:#E06266;">YOUR DEEPEST DRAWDOWN</span><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:700; color:#FFFFFF;">−6.8% · 14 Jun · plan at −5.6%</span></span>
+          <span style="position:absolute; left:{{ gapLx }}; top:{{ gapLy }}; display:flex; flex-direction:column; gap:1px; padding:5px 8px; background:#0C0E16; border:1px solid rgba(255,255,255,0.14); border-radius:6px; white-space:nowrap;"><span style="font-size:9.5px; font-weight:700; letter-spacing:0.08em; color:#A3AABE;">WIDEST GAP</span><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:700; color:#FFFFFF;">{{ gapV }} · plan ahead</span></span>
+        </div>
+        <div style="display:grid; grid-template-columns:repeat(2,1fr); border-top:1px solid rgba(255,255,255,0.06);">
+          <sc-for list="{{ vsDeltas2 }}" as="d" hint-placeholder-count="2"><div style="display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 18px; border-right:1px solid rgba(255,255,255,0.06);"><span style="font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">{{ d.l }}</span><span style="display:flex; align-items:baseline; gap:8px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:13px; color:#A3AABE;">{{ d.a }}</span><span style="font-size:11px; color:#A3AABE;">→</span><span style="font-family:'IBM Plex Mono',monospace; font-size:16px; font-weight:800; color:#FFFFFF;">{{ d.b }}</span><span style="font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:700; color:{{ d.c }};">{{ d.d }}</span></span></div></sc-for>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals(){
+    const G='#5CCB84',Rd='#E06266',W='#FFFFFF',lab='#A3AABE',Bl='#007AFF',Am='#E8A84E';
+    const sgn=(x,d=1,u='%')=>(x>0?'+':x<0?'−':'')+Math.abs(x).toFixed(d)+u; const col=x=>x>0?G:x<0?Rd:'#DDE0EA';
+    let s=23; const R=()=>{ s=(s*16807)%2147483647; return s/2147483647; };
+    const series=(n,end,vol)=>{ const a=[0]; let c=0; for(let i=0;i<n;i++){ c+=(R()-0.47)*vol; a.push(c); } const last=a[n]; const amp=Math.max(...a.map(Math.abs))||1; const k=Math.abs(last)>0.35*amp? end/last : end/(Math.sign(last)||1)/(0.35*amp); return a.map(v=>v*k); };
+    const pathOf=(a,w,Y)=>a.map((v,i)=>(i?'L':'M')+(i*w/(a.length-1)).toFixed(1)+' '+Y(v).toFixed(1)).join(' ');
+    // --- 4 verdicts
+    const spark=(end,vol)=>{ const a=series(40,end,vol); const mn=Math.min(0,...a),mx=Math.max(0,...a),sp=(mx-mn)||1; const Y=v=>4+62*(mx-v)/sp; return {a,path:pathOf(a,380,Y),zero:Y(0).toFixed(1),area:pathOf(a,380,Y)+' L380 70 L0 70 Z'}; };
+    const v1=spark(6.8,1.2),v2=spark(-4.9,1.4),v3=spark(1.1,1.6);
+    const smn=-6,smx=8; const SY=v=>6+78*(smx-v)/(smx-smn);
+    const chipOf=c=>({chipBg:c===G?'rgba(92,203,132,0.14)':c===Rd?'rgba(224,98,102,0.14)':'rgba(232,168,78,0.14)',chipBd:c===G?'rgba(92,203,132,0.4)':c===Rd?'rgba(224,98,102,0.4)':'rgba(232,168,78,0.4)'});
+    const ev=(pl,roi,clv)=>{ const bar=(x,max)=>{ const w=Math.min(Math.abs(x),max)/max*50; return {bl:(x>=0?50:50-w)+'%',bw:w+'%'}; }; return [Object.assign({l:'P/L',v:sgn(pl),c:col(pl),avg:(50+18.6/12*50/7*2).toFixed(0)+'%'},bar(pl,8)),Object.assign({l:'ROI',v:sgn(roi),c:col(roi),avg:(50+8.7/20*50).toFixed(0)+'%'},bar(roi,20)),Object.assign({l:'CLV',v:sgn(clv),c:col(clv),avg:(50+1.4/4*50).toFixed(0)+'%'},bar(clv,4))]; };
+    const V=[{kind:'Your edge',kindU:'EDGE',lc:G,sc:G,fill:'rgba(92,203,132,0.35)',seg:'Total games',dim:'Market',n:'48',wl:'29–19',pl:6.8,roi:14.2,clv:3.1,sp:v1,title:'Totals are where you beat the market.',body:'48 Total games bets, 29–19. The close moved your way on 34 of them — the market agrees you see these lines early.',wo:11.8},{kind:'Your leak',kindU:'LEAK',lc:Rd,sc:Rd,fill:'rgba(224,98,102,0.35)',seg:'Clay',dim:'Surface',n:'62',wl:'31–31',pl:-4.9,roi:-7.9,clv:-1.8,sp:v2,title:'Clay is costing you half your profit.',body:'62 bets on clay, 31–31, and the close went against you more often than not. Negative CLV says this is not variance.',wo:23.5},{kind:'Blind spot',kindU:'BLIND SPOT',lc:Am,sc:Am,fill:'rgba(232,168,78,0.35)',seg:'Live',dim:'Timing',n:'43',wl:'23–20',pl:-1.4,roi:-3.1,clv:-0.4,sp:v3,title:'Live bets: too few to call, trending wrong.',body:'Not yet a verdict. If the next 40 look like these, treat live the way you treat clay.',wo:20.0}];
+    const verdicts=V.map(v=>{ const a=v.sp.a; const sa=a.map(x=>x*(v.pl/(a[a.length-1]||1))); return Object.assign({},v,chipOf(v.lc),{pl:sgn(v.pl),plC:col(v.pl),path:v.sp.path,zero:v.sp.zero,area:v.sp.area,figs:[{l:'Record',v:v.wl,c:W},{l:'ROI',v:sgn(v.roi),c:col(v.roi)},{l:'CLV',v:sgn(v.clv),c:col(v.clv)}],ev:ev(v.pl,v.roi,v.clv),withW:(18.6/35*100).toFixed(0)+'%',woW:(v.wo/35*100).toFixed(0)+'%',wo:sgn(v.wo),woC:v.wo>18.6?G:Rd,sharedPath:pathOf(sa,370,SY),sharedEndY:(SY(v.pl)-6).toFixed(1)}); });
+    const sharedZero=SY(0).toFixed(1);
+    const lead=series(60,-4.9,1.4); const lmn=Math.min(0,...lead),lmx=Math.max(0,...lead); const LY=v=>6+108*(lmx-v)/((lmx-lmn)||1);
+    const leadPath=pathOf(lead,300,LY), leadZero=LY(0).toFixed(1);
+    const leadFigs=[{l:'P/L',v:'−4.9%',c:Rd},{l:'ROI',v:'−7.9%',c:Rd},{l:'CLV',v:'−1.8%',c:Rd},{l:'Without clay',v:'+23.5%',c:G}];
+    const sideCards=[Object.assign({},verdicts[0],{meta:'48 bets · 29–19 · ROI +14.2% · CLV +3.1%'}),Object.assign({},verdicts[2],{meta:'43 bets · 23–20 · ROI −3.1% · EARLY · n=43'})];
+    // --- 5 dials
+    const arc=(t)=>{ const a=Math.PI*(1-t); const x=100+80*Math.cos(a), y=100-80*Math.sin(a); return {x,y,d:`M20 100 A80 80 0 0 1 ${x.toFixed(1)} ${y.toFixed(1)}`}; };
+    const zone=(a,b)=>{ const p=Math.PI*(1-a), q=Math.PI*(1-b); return `M${(100+80*Math.cos(p)).toFixed(1)} ${(100-80*Math.sin(p)).toFixed(1)} A80 80 0 0 1 ${(100+80*Math.cos(q)).toFixed(1)} ${(100-80*Math.sin(q)).toFixed(1)}`; };
+    const walk=(start,end,n,vol)=>{ const a=[]; for(let i=0;i<n;i++) a.push(start+(end-start)*i/(n-1)+(R()-0.5)*vol); return a; };
+    const sp=(vals,lo,hi,tgt)=>{ const Y=v=>4+36*(hi-v)/(hi-lo); return {spark:pathOf(vals,240,Y),tY:Y(tgt).toFixed(1),lastY:Y(vals[vals.length-1]).toFixed(1)}; };
+    const D=[{label:'Closing line',t:.62,z:[.55,1],fig:'62%',c:G,verdict:'REAL EDGE',body:'128 of 206 priced bets closed shorter than you took them. Target: above 55%.',short:'128 of 206 priced bets beat the close.',lo:'0%',hi:'100%',zoneL:'target 55%+',cnt:'128 / 206',cntSub:'beat the close',fill:.62,tick:.55,walk:walk(.52,.64,40,.08),rng:[.3,.8],tg:.55,lastV:'64%'},{label:'Stake after a loss',t:.6,z:[.4,.55],fig:'×1.21',c:Rd,verdict:'CHASING',body:'1.27% after a loss vs 1.05% after a win. Target: ×0.85 – ×1.15.',short:'1.27% after a loss vs 1.05% after a win.',lo:'×0.5',hi:'×2.0',zoneL:'×0.85 – ×1.15',cnt:'91 / 212',cntSub:'bets after a loss',fill:.6,tick:.5,walk:walk(1.05,1.14,40,.12),rng:[.7,1.5],tg:1,lastV:'×1.14'},{label:'Third bet after two losses',t:.3,z:[.5,1],fig:'−12.4%',c:Rd,verdict:'TILT',body:'23 bets, ROI −12.4% against +9.1% for the rest. Target: no worse than the rest.',short:'23 bets at −12.4% ROI; the rest run +9.1%.',lo:'−30%',hi:'+30%',zoneL:'rest +9.1%',cnt:'23 / 214',cntSub:'tilt bets',fill:.3,tick:.65,walk:walk(.42,.3,40,.1),rng:[0,1],tg:.65,lastV:'−10%'}];
+    const C=2*Math.PI*41;
+    const dials=D.map(d=>{ const a=arc(d.t); return Object.assign({},d,sp(d.walk,d.rng[0],d.rng[1],d.tg),{arc:a.d,nx:a.x.toFixed(1),ny:a.y.toFixed(1),zone:zone(d.z[0],d.z[1]),zL:(d.z[0]*100)+'%',zW:((d.z[1]-d.z[0])*100)+'%',zMid:((d.z[0]+d.z[1])/2*100)+'%',pos:(d.t*100)+'%',dash:(C*d.fill).toFixed(1)+' '+(C*(1-d.fill)).toFixed(1),tickDeg:(d.tick*360).toFixed(0)}); });
+    // --- 6 staking
+    const PL=[['Your stakes',Bl,18.6,6.8,1.6],['Flat 1%',lab,14.9,5.1,1.3],['Flat 2%','#E7E9EE',29.8,10.2,2.6],['Compounding 1%',G,16.4,5.6,1.4],['To win 1%',Am,9.7,7.9,1.5],['¼ Kelly on CLV','#B48BF7',31.2,4.4,1.9],['Double after a loss',Rd,22.1,19.5,3.4]];
+    const plansRaw=PL.map(([name,color,end,dd,vol])=>{ const a=series(214,end,vol); let pk=-1e9,mdd=0; a.forEach(v=>{ if(v>pk)pk=v; if(pk-v>mdd)mdd=pk-v; }); const f=mdd>dd?dd/mdd:1; const arr=a.map((v,i)=>i===a.length-1?end:Math.max(-dd-1,Math.min(end+dd+4,v*f+(end-end*f)*i/214))); return {name,color,end,dd,arr}; });
+    const yours=plansRaw[0].arr, comp=plansRaw[3].arr;
+    const vsChips=['Flat 1%','Flat 2%','Compounding 1%','To win 1%','¼ Kelly on CLV','Double after a loss'].map(name=>({name,bg:name==='Compounding 1%'?'#1B2031':'transparent',c:name==='Compounding 1%'?W:lab,bd:name==='Compounding 1%'?'rgba(255,255,255,0.20)':'rgba(255,255,255,0.08)'}));
+    const vsDeltas=[{l:'End',a:'+18.6%',b:'+16.4%',d:'−2.2',c:Rd},{l:'Max drawdown',a:'−6.8%',b:'−5.6%',d:'+1.2',c:G},{l:'Worst month',a:'−4.1%',b:'−3.3%',d:'+0.8',c:G},{l:'Biggest single loss',a:'−3.0%',b:'−1.1%',d:'+1.9',c:G}];
+    const vsDeltas2=vsDeltas.slice(0,2);
+    const twoLine=(w,h,top)=>{ const vmn=Math.min(0,...yours,...comp), vmx=Math.max(...yours,...comp), vsp=(vmx-vmn)||1; const Y=v=>6+(h-12)*(vmx-v)/vsp; const X=j=>36+j*(w-36)/214; const your=yours.map((v,j)=>(j?'L':'M')+X(j).toFixed(1)+' '+Y(v).toFixed(1)).join(' '), other=comp.map((v,j)=>(j?'L':'M')+X(j).toFixed(1)+' '+Y(v).toFixed(1)).join(' '); const area=your+' '+comp.slice().reverse().map((v,j)=>'L'+X(214-j).toFixed(1)+' '+Y(v).toFixed(1)).join(' ')+' Z'; const ticks=[]; const st=vsp>30?10:5; for(let v=Math.ceil(vmn/st)*st;v<=vmx;v+=st){ ticks.push({y:Y(v).toFixed(1),top:(top+Y(v)-5).toFixed(1)+'px',topV:(top+Y(v)-5).toFixed(1)+'px',label:(v>0?'+':'')+v+'%',stroke:v===0?'rgba(255,255,255,0.22)':'rgba(255,255,255,0.07)',dash:v===0?'0':'3 4'}); } return {your,other,area,ticks,X,Y}; };
+    const big=twoLine(1256,226,14), nar=twoLine(934,226,14), mid=twoLine(994,226,14);
+    // 6a difference
+    const diff=comp.map((v,i)=>v-yours[i]); const dmn=Math.min(0,...diff),dmx=Math.max(0,...diff),dsp=(dmx-dmn)||1; const DY=v=>6+194*(dmx-v)/dsp; const DX=j=>36+j*1220/214;
+    const dLine=diff.map((v,j)=>(j?'L':'M')+DX(j).toFixed(1)+' '+DY(v).toFixed(1)).join(' ');
+    const dPos=diff.map((v,j)=>(j?'L':'M')+DX(j).toFixed(1)+' '+DY(Math.max(0,v)).toFixed(1)).join(' ')+` L${DX(214).toFixed(1)} ${DY(0).toFixed(1)} L36 ${DY(0).toFixed(1)} Z`;
+    const dNeg=diff.map((v,j)=>(j?'L':'M')+DX(j).toFixed(1)+' '+DY(Math.min(0,v)).toFixed(1)).join(' ')+` L${DX(214).toFixed(1)} ${DY(0).toFixed(1)} L36 ${DY(0).toFixed(1)} Z`;
+    const dTicks=[]; const dst=dsp>12?4:2; for(let v=Math.ceil(dmn/dst)*dst;v<=dmx;v+=dst){ dTicks.push({y:DY(v).toFixed(1),top:(14+DY(v)-5).toFixed(1)+'px',label:(v>0?'+':'')+v+'%',stroke:v===0?'rgba(255,255,255,0.22)':'rgba(255,255,255,0.07)',dash:v===0?'0':'3 4'}); }
+    // 6c pick rows
+    const pickRows=plansRaw.map((p,i)=>{ const sel=p.name==='Compounding 1%'; return {name:p.name,color:p.color,end:sgn(p.end),endC:col(p.end),fw:i===0?800:600,c:i===0||sel?W:'#DDE0EA',bg:sel?'#1B2031':'transparent',bd:sel?'rgba(255,255,255,0.16)':'transparent'}; });
+    // 6d months
+    const ML=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct']; const per=a=>{ const out=[]; for(let m=0;m<10;m++){ const i0=Math.round(m*214/10), i1=Math.round((m+1)*214/10); out.push(a[i1]-a[i0]); } return out; };
+    const my=per(yours), mp=per(comp); const mmax=Math.max(...my.map(Math.abs),...mp.map(Math.abs))||1; const MY=v=>75-v/mmax*70;
+    const months=ML.map((l,i)=>{ const y=my[i],p=mp[i],d=p-y; return {l,yT:Math.min(MY(y),75).toFixed(1)+'px',yH:Math.abs(MY(y)-75).toFixed(1)+'px',yO:y>=0?'1':'0.55',pT:Math.min(MY(p),75).toFixed(1)+'px',pH:Math.abs(MY(p)-75).toFixed(1)+'px',pO:p>=0?'1':'0.55',d:sgn(d),dC:col(d)}; });
+    // 6e callouts
+    let pk=-1e9,ddI=0,mdd=0; yours.forEach((v,i)=>{ if(v>pk)pk=v; if(pk-v>mdd){ mdd=pk-v; ddI=i; } });
+    let gapI=0,gap=-1e9; diff.forEach((v,i)=>{ if(v>gap){ gap=v; gapI=i; } });
+    const ddX=big.X(ddI).toFixed(1), ddY1=big.Y(yours[ddI]).toFixed(1), ddY2=big.Y(comp[ddI]).toFixed(1);
+    const gapX=big.X(gapI).toFixed(1), gapY1=big.Y(yours[gapI]).toFixed(1), gapY2=big.Y(comp[gapI]).toFixed(1);
+    const ddLx=(18+big.X(ddI)+10)+'px', ddLy=(14+Math.max(big.Y(yours[ddI]),big.Y(comp[ddI]))+8)+'px';
+    const gapLx=(18+big.X(gapI)-(gapI>150?150:-10))+'px', gapLy=(14+Math.min(big.Y(yours[gapI]),big.Y(comp[gapI]))-44)+'px';
+    return { verdicts, sharedZero, leadPath, leadZero, leadFigs, sideCards, dials, vsChips, vsDeltas, vsDeltas2,
+      vsYour:big.your, vsOther:big.other, vsArea:big.area, vsTicks:big.ticks,
+      nYour:nar.your, nOther:nar.other, nArea:nar.area, nTicks:nar.ticks,
+      mYour:mid.your, mOther:mid.other, mArea:mid.area, mTicks:mid.ticks,
+      dLine, dPos, dNeg, dTicks, pickRows, months, monthZero:'75px',
+      ddX, ddY1, ddY2, gapX, gapY1, gapY2, ddLx, ddLy, gapLx, gapLy, gapV:sgn(gap) };
+  }
+}
+</script>
+</body>
+</html>
