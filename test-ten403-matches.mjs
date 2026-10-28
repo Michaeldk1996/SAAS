@@ -410,8 +410,11 @@ test('the account accepts the field: auth.js updateProfile + publicUser carry fa
   assert.deepEqual(cleanMatchKeys(['1', '1', '', 5, null, 'x'.repeat(65), '2']), ['1', '2']);
   assert.deepEqual(cleanMatchKeys('nope'), []);
   assert.equal(cleanMatchKeys(Array.from({ length: 600 }, (_, i) => 'k' + i)).length, 500);
-  // firestore.rules: own-doc read/write, no field whitelist to extend
-  assert.match(readFileSync(join(HERE, 'firestore.rules'), 'utf8'), /match \/users\/\{uid\} \{\s*allow read, write: if request\.auth != null && request\.auth\.uid == uid;/);
+  // firestore.rules: own-doc read, and own-doc update of any field but `plan` (Picks Task 2, founder 2026-10-27: plan is
+  // written only by the Whop webhook) — so favouriteMatches still saves with no field whitelist to extend
+  const rules = readFileSync(join(HERE, 'firestore.rules'), 'utf8');
+  assert.match(rules, /match \/users\/\{uid\} \{\s*allow read, delete: if request\.auth != null && request\.auth\.uid == uid;/);
+  assert.match(rules, /allow update: if request\.auth != null && request\.auth\.uid == uid\s*&& !request\.resource\.data\.diff\(resource\.data\)\.affectedKeys\(\)\.hasAny\(\['plan'\]\);/);
 });
 
 // ── Review fold-in (clean-context review, 2026-10-09): the wiring the helper tests above did not reach ─────────────
