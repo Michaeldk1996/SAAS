@@ -1,0 +1,18 @@
+name: probe flip lag (throwaway, read-only)
+on:
+  workflow_dispatch:
+jobs:
+  p:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          REF=$(printf '%s' "$SUPABASE_URL" | sed -E 's#https?://([^./]+)\.supabase\.co/?.*#\1#')
+          q() { jq -Rs '{query: .}' "$1" | curl -sS -X POST -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" -H "Content-Type: application/json" --data @- "https://api.supabase.com/v1/projects/$REF/database/query"; echo; }
+          for f in q5 q4 q1 q2; do echo "### $f"; q probe/$f.sql | jq -c '.[]?' || echo failed; done
+          for i in $(seq 1 100); do echo "### q3 sample $i"; q probe/q3.sql | jq -c '.[]?' || echo failed; sleep 12; done
+          exit 0
