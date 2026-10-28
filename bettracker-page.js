@@ -16,7 +16,9 @@
   var SEAL_SVG = '<svg viewBox="0 0 24 24" width="7" height="7" fill="none" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"></path></svg>';
   var FORM0 = { legs: [{ text: '', odds: '' }], tour: '', market: 'Match winner', marketOther: '', level: '500', surface: 'Indoor hard', book: 'bet105', bookOther: '', stake: '', timing: 'pre', type: 'Single' };
 
-  var S = { bank: null, view: 'results', lf: 'all', month: null, logOpen: false, form: JSON.parse(JSON.stringify(FORM0)), banks: [], raw: [], importMsg: '' };
+  var NOF = function () { return { level: [], odds: [], surface: [], market: [] }; };
+  var S = { bank: null, view: 'results', lf: 'all', month: null, logOpen: false, form: JSON.parse(JSON.stringify(FORM0)), banks: [], raw: [], importMsg: '',
+    period: 'season', range: null, filters: NOF(), menu: null };
   // The Bet-Analytix import (T1b): admin only — the control is not in the design (reported); the console path is
   // TrackerPage.importText(csvText). The file is read in this browser and goes nowhere else.
   function isAdmin() { return typeof window.isBspAdmin === 'function' && !!window.isBspAdmin(); }
@@ -102,12 +104,49 @@
       + '<span class="bt-post' + (c.valid ? ' is-ok' : '') + '" id="btPost" data-act="post">Post bet</span></div>'
       + other + '<span class="bt-hint' + (c.valid ? ' is-ok' : '') + '" id="btHint">' + esc(c.hint) + '</span></div>';
   }
-  function heroFrame(list) {
-    var D = M.discipline(list, M.MIN_SAMPLE);
+  // ── 4 · hero (README §4): headline · Period · Filters · View · curve · seven tiles ──────────────────────────────
+  var CARET = '<span class="bt-caret">▼</span>';
+  var SLIDERS = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h10M18 7h2M4 17h4M12 17h8M14 5v4M8 15v4"></path></svg>';
+  function mrow(act, attrs, label, on, n, zero) {
+    return '<span class="bt-mrow' + (on ? ' on' : '') + (zero ? ' is-zero' : '') + '" data-act="' + act + '"' + attrs + '>' + label
+      + (n == null ? '<span class="bt-tick">' + (on ? '✓' : '') + '</span>' : '<span class="bt-mrow-r"><span class="bt-mrow-n">' + n + '</span><span class="bt-tick">' + (on ? '✓' : '') + '</span></span>') + '</span>';
+  }
+  function hero(ctx) {
+    var HT = M.heroTiles(M.stats(ctx.list)), HC = M.heroCurve(ctx.list, ctx.today), D = M.discipline(ctx.list, M.MIN_SAMPLE);
+    var perOn = S.menu === 'period' || S.period !== 'season', fOn = S.menu === 'filters' || ctx.nF > 0;
+    var periods = Object.keys(M.PERIODS).map(function (k) { return mrow('period', ' data-k="' + k + '"', M.PERIODS[k], S.period === k); }).join('');
+    var custom = S.period === 'custom' ? '<div class="bt-custom"><input type="date" class="bt-date-in" data-f="rangefrom" value="' + esc(ctx.range.from) + '">'
+      + '<input type="date" class="bt-date-in" data-f="rangeto" value="' + esc(ctx.range.to) + '"></div>' : '';
+    var pmenu = S.menu === 'period' ? '<div class="bt-menu bt-menu-period">' + periods + custom + '</div>' : '';
+    var groups = M.filterMenu(ctx.all, ctx.perList, S.filters).map(function (g) {
+      return '<div class="bt-fgroup"><span class="bt-fgroup-l">' + esc(g.label) + '</span>' + g.opts.map(function (o) {
+        return mrow('filter', ' data-k="' + g.key + '" data-v="' + esc(o.label) + '"', esc(o.label), o.on, o.n, o.zero);
+      }).join('') + '</div>';
+    }).join('');
+    var fmenu = S.menu === 'filters' ? '<div class="bt-menu bt-menu-filters">' + groups + '<div class="bt-mfoot"><span>' + esc(M.filtersFoot(ctx.list, ctx.perList))
+      + '</span><span class="bt-reset" data-act="resetfilters">Reset filters</span></div></div>' : '';
     var v = function (k, label, extra) { return '<span class="bt-view' + (S.view === k ? ' on' : '') + '" data-act="view" data-k="' + k + '">' + label + (extra || '') + '</span>'; };
-    return '<div class="bt-card bt-hero"><div class="bt-hero-top"><div></div><div class="bt-hero-r"><span class="bt-views">'
-      + v('results', 'Results') + v('insights', 'Insights', '<span class="bt-view-badge bt-' + D.badgeTone + '">' + esc(D.badge) + '</span>') + v('staking', 'Staking')
-      + '</span></div></div></div>';
+    var yl = HC.yTicks.map(function (t) { return '<line class="bt-yt' + (t.zero ? ' is-zero' : '') + '" x1="44" x2="1288" y1="' + t.y + '" y2="' + t.y + '"></line>'; }).join('');
+    var svg = '<svg class="bt-curve-svg" viewBox="0 0 1292 240" width="100%" height="240" preserveAspectRatio="none"><defs><linearGradient id="btHgA" x1="0" y1="0" x2="0" y2="1">'
+      + '<stop offset="0" class="bt-stop0"></stop><stop offset="1" class="bt-stop1"></stop></linearGradient></defs>' + yl
+      + (HC.path ? '<path class="bt-area" d="' + HC.area + '" fill="url(#btHgA)"></path><path class="bt-line" d="' + HC.path + '"></path>' : '')
+      + (HC.ddX !== null ? '<circle class="bt-ddpt" cx="' + HC.ddX + '" cy="' + HC.ddY + '" r="3.5"></circle>' : '')
+      + (HC.hasLast ? '<circle class="bt-lastpt" cx="' + HC.lastX + '" cy="' + HC.lastY + '" r="4"></circle>' : '') + '</svg>';
+    var labels = HC.yTicks.map(function (t) { return '<span class="bt-ylab" style="top:' + t.top + '">' + esc(t.label) + '</span>'; }).join('')
+      + HC.xTicks.map(function (t) { return '<span class="bt-xlab" style="left:' + t.left + '">' + esc(t.label) + '</span>'; }).join('');
+    var tiles = HT.rows.map(function (r) {
+      return '<div class="bt-htile"><span class="bt-caps bt-nowrap">' + esc(r.label) + '</span><span class="bt-htile-fig bt-' + r.kind + '">' + esc(r.value) + '</span><span class="bt-htile-sub">' + esc(r.sub) + '</span></div>';
+    }).join('');
+    return '<div class="bt-card bt-hero"><div class="bt-hero-top"><div class="bt-hero-l"><span class="bt-caps">Profit · % of bankroll</span>'
+      + '<span class="bt-profitrow"><span class="bt-profit bt-' + HT.profitKind + '">' + esc(HT.profit) + '</span><span class="bt-profitsub">' + esc(HT.profitSub) + '</span></span></div>'
+      + '<div class="bt-hero-r"><span class="bt-curvemeta">' + esc(HC.meta) + '</span>'
+      + '<span class="bt-rel"><span class="bt-trig' + (perOn ? ' on' : '') + '" data-act="menu" data-k="period">' + esc(M.PERIODS[S.period]) + CARET + '</span>' + pmenu + '</span>'
+      + '<span class="bt-rel"><span class="bt-trig' + (fOn ? ' on' : '') + '" data-act="menu" data-k="filters">' + SLIDERS + esc(M.filtersLabel(S.filters)) + CARET + '</span>' + fmenu + '</span>'
+      + '<span class="bt-views">' + v('results', 'Results') + v('insights', 'Insights', '<span class="bt-view-badge bt-' + D.badgeTone + '">' + esc(D.badge) + '</span>')
+      + v('staking', 'Staking', S.appliedPlan ? '<span class="bt-plandot"></span>' : '') + '</span></div></div>'
+      + '<div class="bt-curve">' + svg + labels + '</div>'
+      + '<div class="bt-ddrow"><span>○ red = deepest drawdown</span><span>' + esc(HC.ddNote) + '</span></div>'
+      + '<div class="bt-htiles">' + tiles + '</div></div>';
   }
   function closeCell(b) {
     var editable = M.isSettled(b) && !M.isLocked(b);
@@ -158,12 +197,14 @@
   function render() {
     var el = root(); if (!el) return;
     var cur = S.banks.find(function (b) { return b.id === S.bank; }) || S.banks[0];
-    var all = betsOf(cur.id), today = todayDate(), win = M.periodWindow('season', {}, today);
-    var perList = M.inPeriod(all, win), list = perList;   // T1: period Season, no filters (the hero's triggers are a later task)
-    var ctx = { list: list, perList: perList, win: win, today: today, per: 'season', range: {}, nF: 0 };
+    var all = betsOf(cur.id), today = todayDate();
+    // Custom range: opens on the bankroll's first bet → today (the reference hard-codes its demo season's dates)
+    if (!S.range) S.range = { from: all.length ? dayKey(all[0].date) : dayKey(new Date(today.getFullYear(), 0, 1)), to: dayKey(today) };
+    var win = M.periodWindow(S.period, S.range, today), perList = M.inPeriod(all, win), list = M.applyFilters(perList, S.filters);
+    var ctx = { all: all, list: list, perList: perList, win: win, today: today, per: S.period, range: S.range, nF: M.nFilters(S.filters) };
     var view = S.view === 'results' ? ledger(list) : '<div class="bt-card bt-frame">' + DASH + '</div>';
     el.innerHTML = '<section class="bt-sec"><div class="bt-col"><div class="bt-stack">'
-      + bankrolls() + header(cur, all, ctx) + (S.logOpen ? logPanel(cur) : '') + heroFrame(list) + view + '</div></div></section>';
+      + bankrolls() + header(cur, all, ctx) + (S.logOpen ? logPanel(cur) : '') + hero(ctx) + view + '</div></div></section>';
   }
   // live form figures without a re-render (keeps the caret in the field being typed in)
   function refreshLog() {
@@ -188,7 +229,7 @@
   function onClick(e) {
     var t = e.target.closest('[data-act]'); if (!t || !root().contains(t)) return;
     var a = t.dataset.act, id = t.dataset.id;
-    if (a === 'bank') { S.bank = id; S.month = null; render(); }
+    if (a === 'bank') { S.bank = id; S.month = null; S.filters = NOF(); S.range = null; render(); }
     else if (a === 'archive') {
       e.stopPropagation();
       var bk = S.banks.find(function (b) { return b.id === id; }); store.saveBank(Object.assign({}, bk, { archived: true }));
@@ -197,7 +238,14 @@
     }
     else if (a === 'restore') { var rb = S.banks.find(function (b) { return b.id === id; }); store.saveBank(Object.assign({}, rb, { archived: false })); load(); render(); }
     else if (a === 'delete') { if (store.deleteBank(id).ok) { load(); render(); } }
-    else if (a === 'addbank') { var nid = 'b' + Date.now(); store.saveBank({ id: nid, name: 'New bankroll ' + (S.banks.length + 1), archived: false }); S.bank = nid; S.month = null; load(); render(); }
+    else if (a === 'addbank') { var nid = 'b' + Date.now(); store.saveBank({ id: nid, name: 'New bankroll ' + (S.banks.length + 1), archived: false }); S.bank = nid; S.month = null; S.filters = NOF(); S.range = null; load(); render(); }
+    else if (a === 'menu') { S.menu = S.menu === t.dataset.k ? null : t.dataset.k; render(); }
+    else if (a === 'period') { S.period = t.dataset.k; if (S.period !== 'custom') S.menu = null; S.month = null; render(); }
+    else if (a === 'filter') {
+      var fk = t.dataset.k, fv = t.dataset.v, cur2 = S.filters[fk], nf = Object.assign({}, S.filters);
+      nf[fk] = cur2.indexOf(fv) >= 0 ? cur2.filter(function (x) { return x !== fv; }) : cur2.concat(fv); S.filters = nf; render();
+    }
+    else if (a === 'resetfilters') { S.filters = NOF(); S.period = 'season'; render(); }
     else if (a === 'logtoggle') { S.logOpen = !S.logOpen; render(); }
     else if (a === 'seg') {
       var k = t.dataset.k, v = t.dataset.v; S.form = Object.assign({}, S.form); S.form[k] = v;
@@ -230,6 +278,7 @@
   }
   function onInput(e) {
     var t = e.target, f = t.dataset && t.dataset.f; if (!f || f === 'close' || !root().contains(t)) return;
+    if (f === 'rangefrom' || f === 'rangeto') { if (e.type === 'change' && t.value) { S.range = Object.assign({}, S.range); S.range[f === 'rangefrom' ? 'from' : 'to'] = t.value; render(); } return; }
     if (f === 'legtext' || f === 'legodds') {
       var i = +t.dataset.i, key = f === 'legtext' ? 'text' : 'odds';
       S.form = Object.assign({}, S.form, { legs: S.form.legs.map(function (lg, j) { return j === i ? Object.assign({}, lg, (function () { var o = {}; o[key] = t.value; return o; })()) : lg; }) });
@@ -264,6 +313,7 @@
     if (typeof sfActivateTabRaw === 'function') sfActivateTabRaw('tracker', '#tracker');   // eslint-disable-line no-undef
     else { document.querySelectorAll('.tabpage').forEach(function (p) { p.classList.toggle('active', p.dataset.page === 'tracker'); }); setActive(true); }
   }
+  // Settling or undoing re-renders the whole page (saveRaw → render), so the hero recomputes at once.
   window.TrackerPage = { setActive: setActive, render: render, _state: S, importText: importText,
     removeImport: function () { var w = store.removeImport('bet-analytix', 'bet-analytix'); load(); render(); return w; } };
   applyHash();

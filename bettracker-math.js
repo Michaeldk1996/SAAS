@@ -95,6 +95,67 @@
     };
   }
 
+  // ── the hero (README §4): the seven tiles and the profit headline, as the page prints them ──────────────────────
+  // Avg CLV with no close in the period: "—" over "no closing prices" (T2 brief — never "0 of 0").
+  function heroTiles(S) {
+    var F = heroFigures(S);
+    return {
+      profit: F.profit, profitKind: S.n ? kind(S.profit) : 'lab', profitSub: S.n + ' settled · ' + S.staked.toFixed(1) + '% staked in total',
+      rows: [
+        { label: 'ROI', sub: 'profit ÷ total staked', value: F.roi, kind: S.roi === null ? 'lab' : kind(S.roi) },
+        { label: 'Record', sub: S.n + ' settled · ' + S.v + ' void', value: F.record, kind: 'ink' },
+        { label: 'Win rate', sub: 'won ÷ (won + lost)', value: F.winRate, kind: S.winRate === null ? 'lab' : 'ink' },
+        { label: 'Avg CLV', sub: S.clvN ? 'beat the close ' + S.beat + ' of ' + S.clvN : 'no closing prices', value: F.avgClv, kind: kind(S.clv) },
+        { label: 'Max drawdown', sub: 'peak to trough, % of bankroll', value: F.maxDrawdown, kind: S.dd ? 'neg' : 'lab' },
+        { label: 'Best run', sub: 'consecutive wins', value: F.bestRun, kind: S.best ? 'ink' : 'lab' },
+        { label: 'Worst run', sub: 'consecutive losses', value: F.worstRun, kind: S.worst ? 'ink' : 'lab' }
+      ]
+    };
+  }
+  // The curve (README §4): viewBox 0 0 1292 240, plot x 44→1288, y 12→222; y ticks every 1 / 2 / 5 / 10 % by span,
+  // the zero line solid; x labels at the first bet of each month — or, past 14 months, of each year (a multi-season
+  // import would overlap one label a month); the deepest drawdown point and the last point.
+  function heroCurve(list, today) {
+    var settled = list.filter(isSettled), S = stats(settled), pts = [0], cum = 0;
+    settled.forEach(function (b) { cum += pl(b); pts.push(cum); });
+    var L = 44, R = 1288, T = 12, B = 222, mn = Math.min.apply(null, pts.concat(0)), mx = Math.max.apply(null, pts.concat(0)), span = (mx - mn) || 1;
+    var X = function (i) { return L + (R - L) * i / Math.max(1, pts.length - 1); }, Y = function (v) { return T + (B - T) * (mx - v) / span; };
+    var path = pts.map(function (v, i) { return (i ? 'L' : 'M') + X(i).toFixed(1) + ' ' + Y(v).toFixed(1); }).join(' ');
+    var area = path + ' L' + R + ' ' + Y(0).toFixed(1) + ' L' + L + ' ' + Y(0).toFixed(1) + ' Z';
+    var step = span > 40 ? 10 : span > 16 ? 5 : span > 8 ? 2 : 1, yTicks = [];
+    for (var v = Math.ceil(mn / step) * step; v <= mx + 1e-9; v += step) {
+      var vv = Math.round(v * 1e6) / 1e6;
+      yTicks.push({ y: Y(vv).toFixed(1), top: (Y(vv) - 5).toFixed(1) + 'px', label: (vv > 0 ? '+' : vv < 0 ? MINUS : '') + Math.abs(vv) + '%', zero: vv === 0 });
+    }
+    var months = {}; settled.forEach(function (b) { months[ym(b.date)] = 1; });
+    var byYear = Object.keys(months).length > 14, xTicks = [], last = null;
+    settled.forEach(function (b, i) {
+      var k = byYear ? b.date.getFullYear() : ym(b.date);
+      if (k !== last) { last = k; xTicks.push({ left: (X(i + 1) / 1292 * 100).toFixed(2) + '%', label: byYear ? String(k) : MON[b.date.getMonth()] }); }
+    });
+    var ddI = S.ddIdx + 1;
+    return { n: settled.length, path: settled.length ? path : '', area: settled.length ? area : '', yTicks: yTicks, xTicks: xTicks,
+      lastX: X(pts.length - 1).toFixed(1), lastY: Y(pts[pts.length - 1]).toFixed(1), hasLast: settled.length > 0,
+      ddX: ddI > 0 ? X(ddI).toFixed(1) : null, ddY: ddI > 0 ? Y(pts[ddI]).toFixed(1) : null,
+      meta: settled.length + ' bets · peak ' + (settled.length ? sgn(mx) : DASH) + ' · now ' + (settled.length ? sgn(cum) : DASH),
+      ddNote: S.ddIdx >= 0 ? 'deepest drawdown ' + MINUS + S.dd.toFixed(1) + '% on ' + fmtDY(settled[S.ddIdx].date, today) : '' };
+  }
+  // The Filters menu (README §4): Level · Odds band · Surface · Market, each row's count cross-adjusted over the period.
+  var FILTER_MARKETS = ['Match winner', 'Games handicap', 'Total games'];
+  function filterMenu(all, perList, F) {
+    var markets = FILTER_MARKETS.concat(all.map(function (b) { return b.market; }).filter(function (m, i, a) { return m && a.indexOf(m) === i && FILTER_MARKETS.indexOf(m) < 0; }));
+    var defs = [['level', 'Level', LEVEL_KEYS.map(function (k) { return LEVEL[k]; })], ['odds', 'Odds band', BANDS], ['surface', 'Surface', SURFACES], ['market', 'Market', markets]];
+    return defs.map(function (d) {
+      return { key: d[0], label: d[1], opts: d[2].map(function (o) { var n = filterCount(perList, F, d[0], o); return { label: o, n: n, on: F[d[0]].indexOf(o) >= 0, zero: n === 0 }; }) };
+    });
+  }
+  function nFilters(F) { return F.level.length + F.odds.length + F.surface.length + F.market.length; }
+  function filtersLabel(F) {
+    var sel = [].concat(F.level, F.odds, F.surface, F.market);
+    return sel.length ? 'Filters · ' + (sel.length > 2 ? sel.slice(0, 2).join(' · ') + ' · +' + (sel.length - 2) : sel.join(' · ')) : 'Filters';
+  }
+  function filtersFoot(list, perList) { return list.length + ' of ' + perList.length + ' bets in the period · a count is what that row would leave given the others'; }
+
   // ── segments ────────────────────────────────────────────────────────────────────────────────────────────────────
   function band(o) { return o <= 1.35 ? BANDS[0] : o <= 1.6 ? BANDS[1] : o <= 1.9 ? BANDS[2] : o <= 2.2 ? BANDS[3] : o <= 2.6 ? BANDS[4] : o <= 3.2 ? BANDS[5] : BANDS[6]; }
   // A blank field (an imported row the token table did not fill) has no key: it is in no group of that cut and never
@@ -297,6 +358,7 @@
     DASH: DASH, MINUS: MINUS, EN: EN, MIN_SAMPLE: MIN_SAMPLE, MIN_FLOOR: MIN_FLOOR, LEVEL: LEVEL, LEVEL_KEYS: LEVEL_KEYS, SURFACES: SURFACES, BANDS: BANDS,
     DAYS: DAYS, DN: DN, MON: MON, MONTHS: MONTHS, DIMS: DIMS, PERIODS: PERIODS, MARKETS: MARKETS, BOOKS: BOOKS, TYPES: TYPES, PLANS: PLANS, YOUR_STAKES: YOUR_STAKES,
     LEDGER_ROWS: LEDGER_ROWS,
+    heroTiles: heroTiles, heroCurve: heroCurve, filterMenu: filterMenu, nFilters: nFilters, filtersLabel: filtersLabel, filtersFoot: filtersFoot,
     sgn: sgn, kind: kind, fmtD: fmtD, fmtDY: fmtDY, ym: ym, ymLabel: ymLabel, ymName: ymName, dow: dow, isSettled: isSettled, pl: pl, clv: clv, stats: stats, cumulative: cumulative, heroFigures: heroFigures,
     band: band, key: key, group: group, minN: minN, segments: segments, discipline: discipline,
     plan: plan, simulate: simulate, planStake: planStake, heatAlpha: heatAlpha,

@@ -186,6 +186,38 @@ function run(M) {
   near('Your stakes replay = the logged P/L', M.simulate(list.filter(M.isSettled), 'Your stakes').end, S.profit, 1e-9);
   eq('planStake: To win 1% needs the odds first', M.planStake('To win 1%', [], NaN), null);
 
+  // ── 9 · T2 hero: tiles, curve, the Filters menu (cross-adjusted, against an independent recount) ──
+  const HT = M.heroTiles(S), HC = M.heroCurve(list, today);
+  eq('hero tile labels', HT.rows.map(r => r.label), ['ROI', 'Record', 'Win rate', 'Avg CLV', 'Max drawdown', 'Best run', 'Worst run']);
+  eq('hero tile values', HT.rows.map(r => r.value), [READ.roi, READ.record, READ.winRate, READ.avgClv, READ.maxDrawdown, READ.bestRun, READ.worstRun]);
+  eq('hero tile subs', HT.rows.map(r => r.sub), ['profit ÷ total staked', READ.recordSub, 'won ÷ (won + lost)', READ.beat, 'peak to trough, % of bankroll', 'consecutive wins', 'consecutive losses']);
+  eq('hero profit + sub', [HT.profit, HT.profitSub], [READ.profit, READ.profitSub]);
+  eq('curve meta (model)', HC.meta, READ.curveMeta);
+  eq('curve drawdown note (model)', HC.ddNote, READ.ddNote);
+  eq('curve: 170 points + the origin, M first', [HC.path.split(/[ML]/).length - 1, HC.path[0]], [171, 'M']);
+  ok('curve: the zero tick is solid and present', HC.yTicks.some(t => t.zero));
+  eq('curve: y step 5 on a ~30% span, labels signed', HC.yTicks.map(t => t.label), ['−10%', '−5%', '0%', '+5%', '+10%', '+15%']);
+  eq('curve: one x label per month of the season', HC.xTicks.map(t => t.label), ['Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct']);
+  eq('curve: nothing settled → no line, meta dashes', [M.heroCurve([], today).path, M.heroCurve([], today).meta], ['', '0 bets · peak — · now —']);
+  eq('Avg CLV tile with no closes: — over "no closing prices"', M.heroTiles(M.stats(V)).rows[3], { label: 'Avg CLV', sub: 'no closing prices', value: DASH, kind: 'lab' });
+  const longYears = []; for (let y = 2022; y <= 2025; y++) for (let m = 0; m < 12; m++) longYears.push({ id: y * 100 + m, date: new Date(y, m, 5), odds: 2, stake: 1, res: 'won' });
+  eq('curve: a multi-season ledger labels one tick a year', M.heroCurve(longYears, today).xTicks.map(t => t.label), ['2022', '2023', '2024', '2025']);
+  const F2 = { level: ['ATP 500', 'Masters 1000'], odds: ['1.61 – 1.90'], surface: [], market: ['Match winner'] };
+  const menu = M.filterMenu(main, perList, F2);
+  const pass = (b, except) => (except === 'level' || !F2.level.length || F2.level.includes(M.LEVEL[b.level])) && (except === 'odds' || !F2.odds.length || F2.odds.includes(M.band(b.odds)))
+    && (except === 'surface' || !F2.surface.length || F2.surface.includes(b.surface)) && (except === 'market' || !F2.market.length || F2.market.includes(b.market));
+  const want = g => g.opts.map(o => perList.filter(b => pass(b, g.key) && (g.key === 'level' ? M.LEVEL[b.level] : g.key === 'odds' ? M.band(b.odds) : b[g.key]) === o.label).length);
+  eq('filter menu: groups', menu.map(g => g.label), ['Level', 'Odds band', 'Surface', 'Market']);
+  eq('filter menu: every count = the bets that row would leave given the other groups', menu.map(g => g.opts.map(o => o.n)), menu.map(want));
+  ok('filter menu: a selected row is on, a zero row is grey', menu[0].opts.find(o => o.label === 'ATP 500').on && menu.every(g => g.opts.every(o => o.zero === (o.n === 0))));
+  eq('filters label: two + "+N"', M.filtersLabel(F2), 'Filters · ATP 500 · Masters 1000 · +2');
+  eq('filters label: none', M.filtersLabel({ level: [], odds: [], surface: [], market: [] }), 'Filters');
+  eq('filters foot', M.filtersFoot(M.applyFilters(perList, F2), perList), M.applyFilters(perList, F2).length + ' of 172 bets in the period · a count is what that row would leave given the others');
+  eq('Last 30 days over the seed = the bets dated 27 Sep → 27 Oct', M.inPeriod(main, M.periodWindow('30d', {}, today)).length, main.filter(b => b.date >= new Date(2026, 8, 27)).length);
+  eq('Last 90 days over the seed = the bets dated 29 Jul → 27 Oct', M.inPeriod(main, M.periodWindow('90d', {}, today)).length, main.filter(b => b.date >= new Date(2026, 6, 29)).length);
+  eq('header meta with a custom range across years', M.headMeta(main, list, perList, 'custom', M.periodWindow('custom', { from: '2025-11-01', to: '2026-06-30' }, today), { from: '2025-11-01', to: '2026-06-30' }, 2, today).split(' · ').slice(-2).join(' · '),
+    '1 Nov 2025 → 30 Jun shown · 2 filters on, ' + list.length + ' of ' + perList.length + ' bets');
+
   // ── 7 · heat alpha ──
   near('heat alpha at 0', M.heatAlpha(0), 0.3); near('heat alpha at 1.5%', M.heatAlpha(-1.5), 0.65); near('heat alpha saturates at 3%', M.heatAlpha(3), 1); near('… and stays 1', M.heatAlpha(7), 1);
 
@@ -231,6 +263,9 @@ console.log(fails.length ? `bettracker-math: ${fails.length} failure(s)` : 'bett
 
 // ── mutants: every one must turn the suite red ──
 const MUTANTS = [
+  ['filter count ignores the other groups', "var n = filterCount(perList, F, d[0], o);", "var n = perList.filter(function (b) { return key(b, d[0]) === o; }).length;"],
+  ['Avg CLV sub says 0 of 0', "S.clvN ? 'beat the close ' + S.beat + ' of ' + S.clvN : 'no closing prices'", "'beat the close ' + S.beat + ' of ' + S.clvN"],
+  ['curve labels every month on a long ledger', 'var byYear = Object.keys(months).length > 14,', 'var byYear = false,'],
   ['void stake re-enters the ROI denominator', 'roi: stakedWL ? profit / stakedWL : null', 'roi: staked ? profit / staked : null'],
   ['minSample default 14', 'var MIN_SAMPLE = 15', 'var MIN_SAMPLE = 14'],
   ['eligibility n > minSample', 'if (g.s.n >= m && g.name', 'if (g.s.n > m && g.name'],

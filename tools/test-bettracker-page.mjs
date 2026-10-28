@@ -203,6 +203,32 @@ async function browser() {
     check('ledger filter Won: 1 of 3', (await T('.bt-sub125')).startsWith('1 of 3 bets in the period'));
     await click('.bt-lf[data-k="all"]');
 
+    // ── T2 · the hero: tiles, Period, Filters, View (three bets: WON 2.10 × 1 · LOST 1.5 · VOID; one close) ──
+    check('hero: seven tiles in order', JSON.stringify(await E(`[...document.querySelectorAll('.bt-htile .bt-caps')].map(e=>e.textContent)`)) === JSON.stringify(['ROI', 'Record', 'Win rate', 'Avg CLV', 'Max drawdown', 'Best run', 'Worst run']));
+    check('hero: Record 1–1 over "3 settled · 1 void"', JSON.stringify(await E(`(function(){ var t=[...document.querySelectorAll('.bt-htile')][1]; return [t.querySelector('.bt-htile-fig').textContent, t.querySelector('.bt-htile-sub').textContent]; })()`)) === JSON.stringify(['1–1', '3 settled · 1 void']));
+    check('hero: Avg CLV "beat the close 1 of 1"', (await E(`[...document.querySelectorAll('.bt-htile')][3].querySelector('.bt-htile-sub').textContent`)) === 'beat the close 1 of 1');
+    check('hero: profit = ledger P/L sum, sign-coloured', (await T('.bt-profit')) === '−0.4%' && (await E(`document.querySelector('.bt-profit').classList.contains('bt-neg')`)), await T('.bt-profit'));
+    check('hero: curve meta "3 bets · peak … · now −0.4%"', /^3 bets · peak .+ · now −0\.4%$/.test(await T('.bt-curvemeta')), await T('.bt-curvemeta'));
+    check('hero: curve path, the last point and the ticks are drawn', await E(`!!document.querySelector('.bt-curve .bt-line') && !!document.querySelector('.bt-lastpt') && document.querySelectorAll('.bt-yt').length > 1`));
+    await click('.bt-trig[data-k="period"]');
+    check('period menu: four options', JSON.stringify(await E(`[...document.querySelectorAll('.bt-menu-period .bt-mrow')].map(e=>e.firstChild.textContent)`)) === JSON.stringify(['Last 30 days', 'Last 90 days', 'Season', 'Custom range']));
+    await click('.bt-mrow[data-k="custom"]');
+    check('period menu: Custom range reveals two date inputs and stays open', await E(`document.querySelectorAll('.bt-menu-period .bt-date-in[type="date"]').length === 2`));
+    await click('.bt-mrow[data-k="30d"]');
+    check('period: a non-custom pick closes the menu and lights the trigger', !(await E(`!!document.querySelector('.bt-menu-period')`)) && (await T('.bt-trig[data-k="period"]')).startsWith('Last 30 days') && (await E(`document.querySelector('.bt-trig[data-k="period"]').classList.contains('on')`)));
+    check('period: the header names it', (await T('.bt-headmeta')).includes('last 30 days shown'));
+    await click('.bt-trig[data-k="filters"]');
+    check('filters menu: Level · Odds band · Surface · Market', JSON.stringify(await E(`[...document.querySelectorAll('.bt-fgroup-l')].map(e=>e.textContent)`)) === JSON.stringify(['Level', 'Odds band', 'Surface', 'Market']));
+    check('filters menu: ATP 500 counts all three bets', (await E(`document.querySelector('.bt-mrow[data-k="level"][data-v="ATP 500"] .bt-mrow-n').textContent`)) === '3');
+    await click('.bt-mrow[data-k="surface"][data-v="Clay"]');
+    check('filters: a zero row stays pickable and the label names it', (await T('.bt-trig[data-k="filters"]')).startsWith('Filters · Clay'));
+    check('filters: counts are cross-adjusted (ATP 500 given Clay = 0, Clay given nothing else = 0)', (await E(`document.querySelector('.bt-mrow[data-k="level"][data-v="ATP 500"] .bt-mrow-n').textContent`)) === '0');
+    check('filters: the header says "1 filter on, 0 of 3 bets"', (await T('.bt-headmeta')).endsWith('1 filter on, 0 of 3 bets'), await T('.bt-headmeta'));
+    await click('.bt-reset');
+    check('Reset filters clears the filters and the period back to Season', (await T('.bt-trig[data-k="filters"]')).startsWith('Filters') && !(await T('.bt-trig[data-k="filters"]')).includes('·') && (await T('.bt-trig[data-k="period"]')).startsWith('Season'));
+    await click('.bt-trig[data-k="filters"]');
+    check('the View segment: Results is on', (await T('.bt-view.on')).startsWith('Results'));
+
     // ── reload: everything is still there ──
     await open();
     check('reload: three bets', await E(`document.querySelectorAll('.bt-tr[data-bet]').length === 3`));
