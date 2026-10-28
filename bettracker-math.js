@@ -341,14 +341,17 @@
     var gap = oL.arr.map(function (x, i) { return x - yL.arr[i]; }), gMax = Math.max.apply(null, gap), gMin = Math.min.apply(null, gap);
     var st = function (a) { return { avg: avg(a), lo: a.length ? Math.min.apply(null, a) : 0, hi: a.length ? Math.max.apply(null, a) : 0 }; };
     var y = st(yL.sts), o = st(oL.sts.filter(function (x) { return x > 0; })), skipped = oL.sts.filter(function (x) { return x === 0; }).length, ahead = oL.end - yL.end;
+    // A plan that places no bet (¼ Kelly with no closing prices) has no result: every plan figure is a dash, never 0.0%.
+    var none = !oL.sts.some(function (x) { return x > 0; });
+    if (none) dRow = function (l, a) { return { l: l, a: sgn(a), b: DASH, d: DASH, kind: 'lab' }; };
     return { n: settled.length, other: other, otherSub: oP.sub, otherSw: oP.sw, yourHow: YOUR_STAKES.how, otherHow: oP.how, otherWhen: oP.when, skipped: skipped,
-      yTicks: ticks, yourPath: toPath(yL.arr), otherPath: toPath(oL.arr), area: area, areaKind: oL.end >= yL.end ? 'pos' : 'neg',
+      yTicks: ticks, yourPath: toPath(yL.arr), otherPath: none ? '' : toPath(oL.arr), area: none ? '' : area, areaKind: oL.end >= yL.end ? 'pos' : 'neg', none: none,
       meta: settled.length + ' bets · cumulative % of the starting bankroll',
-      gapTxt: 'plan ahead by up to ' + gMax.toFixed(1) + '%, behind by up to ' + Math.abs(gMin).toFixed(1) + '%',
+      gapTxt: none ? 'plan ahead by up to ' + DASH + ', behind by up to ' + DASH : 'plan ahead by up to ' + gMax.toFixed(1) + '%, behind by up to ' + Math.abs(gMin).toFixed(1) + '%',
       deltas: [dRow('End', yL.end, oL.end), dRow('Max drawdown', -yL.dd, -oL.dd), dRow('Worst month', worstMonth(yL.arr), worstMonth(oL.arr)), dRow('Biggest single loss', bigLoss(yL.arr), bigLoss(oL.arr))],
       diffTxt: 'You averaged ' + y.avg.toFixed(2) + '% a bet (' + y.lo.toFixed(1) + '–' + y.hi.toFixed(1) + '%), the plan ' + (oL.sts.some(function (x) { return x > 0; }) ? o.avg.toFixed(2) + '% (' + o.lo.toFixed(1) + '–' + o.hi.toFixed(1) + '%)' : DASH)
-        + (skipped ? ', skipping ' + skipped + ' of ' + settled.length + ' bets' : '') + '. Same results: ' + (ahead >= 0 ? '+' : MINUS) + Math.abs(ahead).toFixed(1) + '% at the end, drawdown '
-        + Math.abs(oL.dd - yL.dd).toFixed(1) + '% ' + (oL.dd <= yL.dd ? 'shallower' : 'deeper') + '.',
+        + (skipped ? ', skipping ' + skipped + ' of ' + settled.length + ' bets' : '') + '. Same results: ' + (none ? DASH + ' at the end, drawdown ' + DASH + '.' : (ahead >= 0 ? '+' : MINUS) + Math.abs(ahead).toFixed(1) + '% at the end, drawdown '
+        + Math.abs(oL.dd - yL.dd).toFixed(1) + '% ' + (oL.dd <= yL.dd ? 'shallower' : 'deeper') + '.'),
       note: 'Same bets and results, only the stake changes. A plan is judged on the whole season, not the end figure alone: read End together with Max drawdown and Biggest single loss. The Kelly line uses the closing price you did not know at the time — a ceiling, not a plan.',
       plans: PLANS.map(function (p) { return { name: p.name, how: p.how, sw: p.sw, on: p.name === other }; }) };
   }

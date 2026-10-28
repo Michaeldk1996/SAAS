@@ -297,6 +297,10 @@ function run(M) {
     ok('¼ Kelly: the explainer says how many bets it skipped (no close or CLV ≤ 0)', M.stakingView(B5, '¼ Kelly on CLV').diffTxt.includes('skipping 2 of 5 bets'));
     ok('¼ Kelly with no closes at all: the plan stakes nothing, skips every bet, average "—"', /the plan —\. .*|, skipping 5 of 5 bets/.test(M.stakingView(B5.map(b => Object.assign({}, b, { close: null })), '¼ Kelly on CLV').diffTxt)
       && M.stakingView(B5.map(b => Object.assign({}, b, { close: null })), '¼ Kelly on CLV').diffTxt.includes('the plan —, skipping 5 of 5 bets'));
+    { const Z = M.stakingView(B5.map(b => Object.assign({}, b, { close: null })), '¼ Kelly on CLV');
+      eq('¼ Kelly that places no bet: every plan figure and delta is a dash, never 0.0%', Z.deltas.map(d => [d.b, d.d, d.kind]), [['—', '—', 'lab'], ['—', '—', 'lab'], ['—', '—', 'lab'], ['—', '—', 'lab']]);
+      ok('¼ Kelly that places no bet: no plan line, no gap area, gap and result text are dashes', Z.otherPath === '' && Z.area === '' && Z.gapTxt === 'plan ahead by up to —, behind by up to —' && Z.diffTxt.endsWith('Same results: — at the end, drawdown —.'));
+      ok('a plan that stakes: real figures still print', M.stakingView(B5, 'Flat 1%').deltas.every(d => d.b !== '—') && M.stakingView(B5, 'Flat 1%').otherPath !== ''); }
     eq('staking view defaults to Compounding 1%', M.stakingView(B5, 'nonsense').other, 'Compounding 1%');
     eq('plan stake hint: Flat 2% · To win 1% at 1.50 · Double after a loss after a loss', [M.planStake('Flat 2%', B5, 2), M.planStake('To win 1%', B5, 1.5), M.planStake('Double after a loss', B5.slice(0, 4), 2)], [2, 2, 1]);
   }
@@ -346,6 +350,7 @@ console.log(fails.length ? `bettracker-math: ${fails.length} failure(s)` : 'bett
 
 // ── mutants: every one must turn the suite red ──
 const MUTANTS = [
+  ['no-bet plan prints zeros', "var none = !oL.sts.some(function (x) { return x > 0; });", 'var none = false;'],
   ['To win cap 4', 'return Math.min(5, 1 / (b.odds - 1)); },', 'return Math.min(4, 1 / (b.odds - 1)); },'],
   ['Kelly cap 4', 'return Math.min(3, 25 * c / (b.odds - 1)); },', 'return Math.min(4, 25 * c / (b.odds - 1)); },'],
   ['Kelly skips nothing', "if (c === null || c <= 0) return 0;", "if (c === null) return 0;"],
