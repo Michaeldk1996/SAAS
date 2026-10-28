@@ -41,6 +41,11 @@
      rule; on the Claude Design handoff list. */
   --lost-card:   #0E1119;   /* a LOST pick card's fill */
   --inner-band:  #0D1017;   /* inner band: Record ledger head + total, the mobile card's trail panel */
+  --drawer-backdrop: rgba(5, 6, 10, 0.55);   /* the Post-a-pick drawer's page dim (Picks lock, SPEC §8) */
+  --shadow-drawer: -24px 0 60px rgba(0, 0, 0, 0.5), inset 1px 0 0 rgba(255, 255, 255, 0.06);   /* the right drawer (Picks lock) */
+  --pro-hover:   #3A5EE6;   /* the --pro primary button on hover (Picks lock) */
+  --badge-fill:  #FFFFFF;   /* the admin badge disc on the rail avatar (Picks lock, board 1k) */
+  --badge-ink:   #0B0C13;   /* its shield stroke (Picks lock) */
 
   /* Meaning colours — same in night and day */
   --bar:         #007AFF;                  /* every data bar (lead / selected) */

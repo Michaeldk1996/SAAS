@@ -37,4 +37,4 @@ cp trading-report.js "$SITE/" 2>/dev/null || true
 cp series.js series.css "$SITE/" 2>/dev/null || true
 cp tokens.css theme.js "$SITE/"
 cp drops-page.js drops-page.css "$SITE/" 2>/dev/null || true
-cp picks-core.js picks-page.js picks-page.css "$SITE/"
+cp picks-core.js picks-store.js picks-page.js picks-drawer.js picks-shell.js picks-page.css "$SITE/"

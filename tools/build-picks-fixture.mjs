@@ -1,5 +1,6 @@
 #!/usr/bin/env node
-// Builds picks.json (the Picks page's static data) from the design package's demo rows,
+// Builds tools/fixtures/picks-demo.json (the Picks tests' and screenshot harness's fixture — never served; real picks
+// live in Firestore since Task 2) from the design package's demo rows,
 // design-export/picks-handoff/demo-data.json, in the README "picks.json — one row per pick" shape.
 //
 // The rows are DEMO (the package says so: "Prices, players, results and times are demo"). The file says so too
@@ -22,7 +23,7 @@ const require = createRequire(import.meta.url);
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
 const core = require(path.join(ROOT, 'picks-core.js'));
 const SRC = path.join(ROOT, 'design-export/picks-handoff/demo-data.json');
-const OUT = path.join(ROOT, 'picks.json');
+const OUT = path.join(ROOT, 'tools/fixtures/picks-demo.json');   // test / screenshot fixture only (never served)
 
 // Europe/Brussels' UTC offset in minutes at a civil date-time (two passes: DST edges resolve to the later reading)
 function brusselsOffsetMin(day, hm) {
@@ -103,11 +104,11 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   const text = JSON.stringify(build(), null, 2) + '\n';
   if (process.argv.includes('--check')) {
     const cur = fs.existsSync(OUT) ? fs.readFileSync(OUT, 'utf8') : '';
-    if (cur !== text) { console.error('picks.json is not the build of demo-data.json — run node tools/build-picks-fixture.mjs'); process.exit(1); }
-    console.log('picks.json matches its build');
+    if (cur !== text) { console.error('tools/fixtures/picks-demo.json is not the build of demo-data.json — run node tools/build-picks-fixture.mjs'); process.exit(1); }
+    console.log('picks-demo.json matches its build');
   } else {
     const tmp = OUT + '.tmp';
     fs.writeFileSync(tmp, text); fs.renameSync(tmp, OUT);
-    console.log(`wrote picks.json (${build().picks.length} rows)`);
+    console.log(`wrote tools/fixtures/picks-demo.json (${build().picks.length} rows)`);
   }
 }

@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 // Picks page (read-only) in a real headless Chrome, on the site's CODE set (tools/site-code.sh → a temp dir, so a file
 // missing from the deploy list fails here too): #picks route, boards 1a / 1b / 1c / 1d / 1e / 1i / 1j states from
-// picks.json, gating, the analysis toggle, the Record view, the four empty strings, tab switch keeping tournament + date,
+// the demo fixture (tools/fixtures/picks-demo.json, injected — real picks live in Firestore), gating, the analysis toggle, the Record view, the four empty strings, tab switch keeping tournament + date,
 // the mobile card, and the controls row = the landed Today's Matches shell (computed-style parity, with a negative
 // control that must break it). No Chrome (CHROME_BIN unset and none found) → a loud SKIP, never a pass.
 import { spawn, execFileSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, existsSync, statSync, rmSync, copyFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, existsSync, statSync, rmSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
 import { join, dirname, normalize, extname } from 'node:path';
@@ -19,15 +19,17 @@ const check = (name, ok, detail = '') => { if (ok) { pass++; console.log('  PASS
 // ── wiring, no browser ──
 const html = readFileSync(join(ROOT, 'bsp-consult-dashboard.html'), 'utf8');
 check('dashboard links picks-page.css', html.includes('<link rel="stylesheet" href="./picks-page.css">'));
-check('dashboard loads picks-core.js before picks-page.js', /<script src="picks-core\.js" defer><\/script>\s*<script src="picks-page\.js" defer><\/script>/.test(html));
+check('dashboard loads picks-core → picks-store → picks-page → picks-drawer → picks-shell, in that order',
+  ['picks-core.js', 'picks-store.js', 'picks-page.js', 'picks-drawer.js', 'picks-shell.js'].map(f => html.indexOf('<script src="' + f + '" defer></script>')).every((x, i, a) => x > 0 && (i === 0 || x > a[i - 1])));
 check('a picks tab page exists', html.includes('<div class="tabpage" data-page="picks"><div id="picksRoot"></div></div>'));
 check('the Picks rail row sits right after Matches (founder 2026-10-27)', /data-tab="matches"[^\n]*\n\s*<button class="sf-item" data-tab="picks" id="picksTabBtn" aria-label="Picks">/.test(html));
 const pipe = readFileSync(join(ROOT, '.github/workflows/pipeline.yml'), 'utf8'), pub = readFileSync(join(ROOT, 'tools/publish-site.mjs'), 'utf8');
-for (const f of ['picks-core.js', 'picks-page.js', 'picks-page.css']) {
+for (const f of ['picks-core.js', 'picks-store.js', 'picks-page.js', 'picks-drawer.js', 'picks-shell.js', 'picks-page.css']) {
   check(`${f} in all three code deploy lists`, pipe.includes(f) && pub.includes(`'${f}'`) && readFileSync(join(ROOT, 'tools/site-code.sh'), 'utf8').includes(f));
 }
-// picks.json is committed DATA: the pipeline publishes it with the site data (like series.json), not the code overlay
-check('picks.json copied and asserted by pipeline.yml', /^\s+cp picks\.json _site\/$/m.test(pipe) && /picks-page\.css picks\.json \\$/m.test(pipe));
+// Task 2: picks live in Firestore behind firestore.rules — no picks file is published (the demo rows are a test fixture)
+check('no picks file is published (no picks.json in any deploy list)', !/picks\.json/.test(pipe + pub + readFileSync(join(ROOT, 'tools/site-code.sh'), 'utf8')) && !existsSync(join(ROOT, 'picks.json')));
+check('the store is read before the page script (picks-store.js precedes picks-page.js)', html.indexOf('src="picks-store.js"') > 0 && html.indexOf('src="picks-store.js"') < html.indexOf('src="picks-page.js"'));
 check('the synthetic ledger is in no deploy list', !/picks-synthetic-ledger/.test(pipe + pub + readFileSync(join(ROOT, 'tools/site-code.sh'), 'utf8')));
 
 const chrome = process.env.CHROME_BIN || ['/opt/pw-browsers/chromium', '/usr/bin/google-chrome', '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'].find(existsSync);
@@ -41,7 +43,7 @@ process.exit(fail ? 1 : 0);
 async function browser() {
   const SITE = mkdtempSync(join(tmpdir(), 'picks-site-'));
   execFileSync('bash', [join(ROOT, 'tools/site-code.sh'), ROOT, SITE]);
-  copyFileSync(join(ROOT, 'picks.json'), join(SITE, 'picks.json'));   // the data the pipeline publishes beside the code
+  const FIXTURE = readFileSync(join(ROOT, 'tools/fixtures/picks-demo.json'), 'utf8');   // injected: the store is not reachable here
   const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.json': 'application/json', '.css': 'text/css', '.png': 'image/png', '.svg': 'image/svg+xml' };
   const server = createServer((req, res) => {
     const u = decodeURIComponent(new URL(req.url, 'http://x').pathname);
@@ -76,10 +78,12 @@ async function browser() {
     await send('Emulation.setDeviceMetricsOverride', { width: 1512, height: 982, deviceScaleFactor: 1, mobile: false });
     await send('Page.navigate', { url: BASE + 'bsp-consult-dashboard.html#picks' });
     const t0 = Date.now();
-    while (!(await E(`!!(window.PicksPage && document.querySelector('#picksRoot .pk-head'))`).catch(() => false))) {
-      if (Date.now() - t0 > 60000) throw new Error('the Picks page never rendered');
+    while (!(await E(`!!window.PicksPage`).catch(() => false))) {
+      if (Date.now() - t0 > 60000) throw new Error('the Picks page never loaded');
       await new Promise(r => setTimeout(r, 300));
     }
+    check('signed out, the store yields nothing: no card, no picks file fetched', await E(`document.querySelectorAll('#picksRoot .pk-card').length === 0`));
+    await E(`PicksPage._inject(${FIXTURE})`);
     const R = (js) => E(`(() => { const S = PicksPage._state, q = s => document.querySelector('#picksRoot ' + s), qa = s => [...document.querySelectorAll('#picksRoot ' + s)],
       txt = e => { if (!e) return null; const w = document.createTreeWalker(e, NodeFilter.SHOW_TEXT), out = []; let t; while ((t = w.nextNode())) { const v = t.nodeValue.replace(/\\s+/g, ' ').trim(); if (v) out.push(v); } return out.join(' '); }, cs = (e, p) => e ? getComputedStyle(e)[p] : null;
       const set = (o) => { Object.assign(S, o); PicksPage.render(); }; ${js} })()`);
@@ -88,7 +92,7 @@ async function browser() {
     // One synchronous evaluation, so the real auth paint cannot interleave. (Gate run 40506098717: a late paint reset
     // window.sfPlan between two steps of this test — the page itself never re-rendered for it.)
     const pc = await E(`(() => { const blur = () => document.querySelectorAll('#picksRoot .pk-players.is-blur').length;
-      PicksPage._state.tab = 'upcoming'; PicksPage._state.day = PicksPage._state.data.as_of_day; PicksPage._state.view = 'cards';
+      PicksPage._state.tab = 'upcoming'; PicksPage._state.day = PicksPage._state.fixture.as_of_day; PicksPage._state.view = 'cards';
       window.sfPlanLocks({ plan: 'free' }); const free = blur(); window.sfPlanLocks({ plan: 'pro' }); const pro = blur();
       window.sfPlanLocks(null); const out = blur(); return { free, pro, out }; })()`);
     check('a plan change re-renders: Free → 5 blurred, Pro → 0, signed out → 5', pc.free === 5 && pc.pro === 0 && pc.out === 5, JSON.stringify(pc));
@@ -103,7 +107,7 @@ async function browser() {
     check('rail: Picks row opens Picks with #picks; leaving clears it', nav.a[0] !== '#picks' && nav.a[1] === 'matches' && nav.b[0] === '#picks' && nav.b[1] === 'picks', JSON.stringify(nav));
 
     // 1a · Today with picks (Pro)
-    const a = await R(`window.__pkPlan = 'pro'; set({ tab: 'upcoming', day: S.data.as_of_day, view: 'cards', tourn: null, q: '', noteOpen: {} });
+    const a = await R(`window.__pkPlan = 'pro'; set({ tab: 'upcoming', day: S.fixture.as_of_day, view: 'cards', tourn: null, q: '', noteOpen: {} });
       return { title: txt(q('.sfh__title')), sub: txt(q('.sfh__sub')), cards: qa('.pk-card').length, box: txt(q('.pk-box-hd .pk-caps')), meta: txt(q('.pk-box-meta')), rows: qa('.pk-bx-row').length,
         blur: qa('.is-blur').length, chip0: txt(q('.pk-card .pk-hd-r .pk-tag')), days: qa('.pk-day').map(txt), on: txt(q('.pk-day.on')), tabs: qa('.pk-tab').map(txt),
         p1trail: txt(q('[data-card="p1"] .pk-trail')), p2label: txt(q('[data-card="p2"] .pk-trail .pk-tl:nth-of-type(3)')), p2tl: qa('[data-card="p2"] .pk-tl').map(txt),
@@ -159,9 +163,9 @@ async function browser() {
     check('1c settled weights: winner 800, loser 600', c.s2win === '800' && c.s2loser === '600', c.s2win + '/' + c.s2loser);
 
     // the four empty strings (1b manufactured: Today with no picks)
-    const em = await R(`const out = {}; const keep = S.data.picks;
-      set({ tab: 'upcoming', day: S.data.as_of_day }); S.data.picks = []; PicksPage.render(); out.today = [txt(q('.pk-empty')), qa('.pk-unlock').length, qa('.pk-box').length];
-      S.data.picks = keep; set({ tab: 'completed', day: S.data.as_of_day }); out.done = txt(q('.pk-empty'));
+    const em = await R(`const out = {}; const keep = S.fixture.picks;
+      set({ tab: 'upcoming', day: S.fixture.as_of_day }); S.fixture.picks = []; PicksPage.render(); out.today = [txt(q('.pk-empty')), qa('.pk-unlock').length, qa('.pk-box').length];
+      S.fixture.picks = keep; set({ tab: 'completed', day: S.fixture.as_of_day }); out.done = txt(q('.pk-empty'));
       set({ tab: 'upcoming', day: '2026-10-28' }); out.future = txt(q('.pk-empty'));
       set({ tab: 'completed', day: '2026-10-25' }); out.past = txt(q('.pk-empty')); return out;`);
     check('1b empty today: only "No bets posted yet today", no upsell, no box', em.today[0] === 'No bets posted yet today' && em.today[1] === 0 && em.today[2] === 0, JSON.stringify(em.today));
@@ -170,7 +174,7 @@ async function browser() {
     check('empty: other past day', em.past === 'No bets this day.', em.past);
 
     // tab switch keeps tournament + date
-    const tk = await R(`window.__pkPlan = 'pro'; set({ tab: 'upcoming', day: S.data.as_of_day, tourn: null }); q('.pk-tpill').click(); const opts = qa('.pk-topt').map(txt);
+    const tk = await R(`window.__pkPlan = 'pro'; set({ tab: 'upcoming', day: S.fixture.as_of_day, tourn: null }); q('.pk-tpill').click(); const opts = qa('.pk-topt').map(txt);
       qa('.pk-topt').find(b => txt(b) === 'Vienna Open').click(); const n1 = qa('.pk-card').length; q('.pk-tab:not(.on)').click();
       return { opts, n1, tab: S.tab, tourn: S.tourn, day: S.day, pill: txt(q('.pk-tpill')) };`);
     check('tournament menu lists the day\'s tournaments; Vienna Open filters to 1', tk.opts[0] === 'All tournaments' && tk.opts.includes('Vienna Open') && tk.n1 === 1, JSON.stringify(tk));
@@ -209,7 +213,7 @@ async function browser() {
       const h1 = q('.pk-tabs').getBoundingClientRect().height, h2 = q('.pk-search').getBoundingClientRect().height;
       return { n, diffs, h1, h2, fonts: document.fonts.check('12.5px "Hanken Grotesk"') && document.fonts.check('13px "Hanken Grotesk"') };`;
     await E(`Promise.race([document.fonts.ready, new Promise(r => setTimeout(r, 8000))]).then(() => 1)`);
-    const rv = await R(`set({ view: 'cards', tab: 'upcoming', day: S.data.as_of_day }); ${REFV}`);
+    const rv = await R(`set({ view: 'cards', tab: 'upcoming', day: S.fixture.as_of_day }); ${REFV}`);
     check(`controls row = the reference's values (${rv.n} computed properties)`, rv.n >= 40 && rv.diffs.length === 0, rv.diffs.join('\n        '));
     // heights are font metrics: measured on the reference with Hanken Grotesk loaded (tabs track 38.5, search 37)
     if (!rv.fonts) console.log('  SKIP  controls heights: Hanken Grotesk did not load (no network for Google Fonts) — said out loud, not a pass');
@@ -220,10 +224,71 @@ async function browser() {
     const hov = await R(`set({}); return qa('.pk-per').map(b => b.title);`);
     check('period hover: Season = "1 January to today"', hov[2] === '1 January to today' && /30 days/.test(hov[0]) && /90 days/.test(hov[1]), JSON.stringify(hov));
 
+    // ── Task 2: the Post-a-pick drawer (admin) and "+ Pick" (board 1k). The store's writes are stubbed: nothing reaches Firestore.
+    const DR = (js) => E(`(() => { const q = s => document.querySelector('#pkdOv ' + s), qa = s => [...document.querySelectorAll('#pkdOv ' + s)],
+      txt = e => { if (!e) return null; const w = document.createTreeWalker(e, NodeFilter.SHOW_TEXT), out = []; let t; while ((t = w.nextNode())) { const v = t.nodeValue.replace(/\\s+/g, ' ').trim(); if (v) out.push(v); } return out.join(' '); },
+      type = (sel, v) => { const el = q(sel); el.value = v; el.dispatchEvent(new Event('input', { bubbles: true })); },
+      click = sel => q(sel).click(), dis = sel => q(sel).getAttribute('aria-disabled') === 'true'; ${js} })()`);
+    await E(`(() => { const t = Date.now() + 3 * 3600e3;
+      window.__pkMatch = { id: 'upcoming-999001', date: new Date(t).toISOString().slice(0, 10), time: '20:30', startTs: new Date(t).toISOString(), p1: 'M. Berrettini', p2: 'T. M. Etcheverry',
+        p1Key: 111, p2Key: 222, tour: 'ATP Vienna', tournamentRound: 'ATP Vienna - 1/16-finals', surface: 'hard', valueSnapshot: { fairP1: 0.58, fairP2: 0.42, ts: new Date().toISOString() } };
+      matches.push(window.__pkMatch); window.__pkAdminWas = window.isBspAdmin; window.__pkCalls = [];
+      PicksStore.post = (pick, opts) => { window.__pkCalls.push(['post', pick, opts]); return Promise.resolve('id1'); };
+      PicksStore.edit = (id, patch) => { window.__pkCalls.push(['edit', id, patch]); return Promise.resolve(); };
+      PicksStore.voidPick = (id, why) => { window.__pkCalls.push(['void', id, why]); return Promise.resolve(); };
+      PicksPage.reload = () => Promise.resolve(); })()`);
+    check('"+ Pick" is not drawn for a non-admin', await E(`(window.isBspAdmin = () => false, pkPlusHtml(window.__pkMatch)) === ''`));
+    const plus = await E(`(() => { window.isBspAdmin = () => true; return { up: pkPlusHtml(window.__pkMatch), done: pkPlusHtml(Object.assign({}, window.__pkMatch, { finalScore: { winner: 'p1' } })) }; })()`);
+    check('"+ Pick" for the admin on an upcoming match only', /class="pk-plus"/.test(plus.up) && />\+<\/span>Pick</.test(plus.up) && plus.done === '', JSON.stringify(plus));
+    const d1 = await DR(`PicksDrawer.openNew(window.__pkMatch); const a = { title: txt(q('.pkd-title')), meta: txt(q('.pkd-meta')), sels: qa('.pkd-selrow').length, on: txt(q('.pkd-selrow.on .pkd-seln')),
+        typed: !!q('#pkdPrice'), manual: txt(q('.pkd-manual')), postOff: dis('[data-pkd="post"]') };
+      type('#pkdPrice', '2.10'); type('#pkdStake', '1'); type('#pkdNote', 'Indoor serve edge.');
+      a.hint = txt(q('.pkd-shint')); a.postOn = !dis('[data-pkd="post"]'); a.sum = txt(q('.pkd-sum-t')); a.pick = PicksDrawer._buildPick(); return a;`);
+    check('1f drawer opens on the match: title, meta, two selection rows, the first player selected', d1.title === 'Post a pick' && /Hard Vienna Open R32/.test(d1.meta) && d1.sels === 2 && d1.on === 'M. Berrettini', JSON.stringify(d1).slice(0, 400));
+    check('1f2 no feed price → a typed price tagged MANUAL; Post off until it is valid', d1.typed && d1.manual === 'MANUAL' && d1.postOff, JSON.stringify(d1).slice(0, 300));
+    check('stake helper: "Wins → +1.1% · loses → −1% · at 2.10"; Post on', d1.hint === 'Wins → +1.1% · loses → −1% · at 2.10' && d1.postOn, d1.hint);
+    check('"You post" summary', d1.sum === 'M. Berrettini to win @ 2.10 bet105 · 1%', d1.sum);
+    const pk = d1.pick;
+    check('the posted pick carries the match identity read from the board (event key + both player ids)', pk.kind === 'match' && pk.match_id === 999001 && pk.player_a.id === 111 && pk.player_b.id === 222
+      && pk.player_a.name === 'M. Berrettini' && pk.tournament === 'Vienna Open' && pk.round === 'R32' && pk.surface === 'Hard' && /T/.test(pk.scheduled_at), JSON.stringify(pk));
+    check('...the founder\'s fields only: selection, market, price (manual), stake, note; model % from the board snapshot', pk.selection === 'a' && pk.market === 'Match winner' && pk.line === null
+      && pk.price_source === 'manual' && pk.posted_price === 2.1 && pk.stake === 1 && pk.note === 'Indoor serve edge.' && pk.model_pct === 58, JSON.stringify(pk));
+    check('...no computed field leaves the browser (open / now / close / CLV / P/L / status / result)', ['open_price', 'now_price', 'opp_now_price', 'close_price', 'opp_close_price', 'clv', 'pl_pct', 'status', 'result', 'posted_at'].every(k => !(k in pk)), Object.keys(pk).join(','));
+    const d2 = await DR(`click('[data-pkd="post"]'); return new Promise(r => setTimeout(() => r({ calls: window.__pkCalls.map(c => [c[0], c[2]]), open: PicksDrawer.isOpen() }), 50));`);
+    check('Post pick → PicksStore.post(pick, not a draft) → the drawer closes', d2.calls.length === 1 && d2.calls[0][0] === 'post' && d2.calls[0][1].draft === false && !d2.open, JSON.stringify(d2));
+    const d3 = await DR(`PicksDrawer.openNew(window.__pkMatch); type('#pkdStake', '12'); const bad = { hint: txt(q('.pkd-shint')), off: dis('[data-pkd="post"]') };
+      [...document.querySelectorAll('#pkdOv [data-pkd="market"]')].find(b => b.textContent === 'Outright').click();
+      const o = { sels: qa('.pkd-selrow').length, inputs: qa('.pkd-or input').length };
+      type('#pkdStake', '2'); type('#pkdPrice', '3.50'); o.offNoEvent = dis('[data-pkd="post"]');
+      type('#pkdOrEvent', 'Nitto ATP Finals · Turin'); type('#pkdOrSel', 'J. Sinner'); type('#pkdOrSettles', '16 Nov'); type('#pkdOrMarket', 'To win the tournament');
+      o.on = !dis('[data-pkd="post"]'); o.pick = PicksDrawer._buildPick(); PicksDrawer.close(); return { bad, o };`);
+    check('stake outside 0.1–10 → "Stake is % of bankroll, 0.1 to 10", Post off', d3.bad.hint === 'Stake is % of bankroll, 0.1 to 10' && d3.bad.off, JSON.stringify(d3.bad));
+    check('1f3 Outright: no match, no players; four typed fields; Post only with event + selection', d3.o.sels === 0 && d3.o.inputs === 4 && d3.o.offNoEvent && d3.o.on, JSON.stringify(d3.o).slice(0, 300));
+    check('1f3 outright pick: event, what wins, settles 16 Nov, typed price', d3.o.pick.kind === 'outright' && d3.o.pick.event === 'Nitto ATP Finals · Turin' && d3.o.pick.market_text === 'To win the tournament'
+      && /^\d{4}-11-16$/.test(d3.o.pick.settles_at) && d3.o.pick.posted_price === 3.5 && d3.o.pick.player_b === null && d3.o.pick.price_source === 'manual', JSON.stringify(d3.o.pick));
+    const d4 = await DR(`const p = { id: 'pk1', kind: 'match', status: 'posted', posted_at: new Date(Date.now() - 3 * 60000).toISOString(), posted_price: 2.02, stake: 1, note: 'n', book: 'bet105',
+        selection: 'a', market: 'Match winner', line: null, tournament: 'Vienna Open', round: 'R32', surface: 'Hard', scheduled_at: new Date(Date.now() + 3600e3).toISOString(),
+        player_a: { name: 'M. Berrettini', initials: 'MB' }, player_b: { name: 'T. M. Etcheverry', initials: 'TE' } };
+      PicksDrawer.openEdit(p); const e = { title: txt(q('.pkd-title')), ban: txt(q('.pkd-ban')), lock: txt(q('.pkd-sec .pkd-caps')), selOff: !!q('.pkd-sec.pkd-off .pkd-selrow') };
+      type('#pkdStake', '1.5'); click('[data-pkd="save"]');
+      return new Promise(r => setTimeout(() => { const c = window.__pkCalls.slice(-1)[0]; PicksDrawer.openEdit(p); click('[data-pkd="voidask"]'); e.voidOff = dis('[data-pkd="dovoid"]');
+        type('#pkdVoid', 'Wrong line posted'); click('[data-pkd="dovoid"]');
+        setTimeout(() => r({ e, save: c, v: window.__pkCalls.slice(-1)[0] }), 50); }, 50));`);
+    check('1g edit: "Edit pick", banner "editable for 7 more minutes · note and stake only", selection locked', d4.e.title === 'Edit pick' && /editable for 7 more minutes · note and stake only/.test(d4.e.ban) && d4.e.selOff, JSON.stringify(d4.e));
+    check('1g Save changes → PicksStore.edit(id, { stake, note }) only', d4.save[0] === 'edit' && d4.save[1] === 'pk1' && JSON.stringify(Object.keys(d4.save[2]).sort()) === '["note","stake"]' && d4.save[2].stake === 1.5, JSON.stringify(d4.save));
+    check('1g Void pick… needs a reason → PicksStore.voidPick(id, reason)', d4.e.voidOff && d4.v[0] === 'void' && d4.v[1] === 'pk1' && d4.v[2] === 'Wrong line posted', JSON.stringify(d4.v));
+    const d5 = await DR(`PicksDrawer.openEdit({ id: 'pk2', kind: 'match', status: 'posted', posted_at: new Date(Date.now() - 20 * 60000).toISOString(), posted_price: 2.02, stake: 1, note: 'n',
+        selection: 'a', market: 'Match winner', player_a: { name: 'A' }, player_b: { name: 'B' } });
+      const f = { title: txt(q('.pkd-title')), line: txt(q('.pkd-frozen')), stakeOff: q('#pkdStake').disabled, save: !!q('[data-pkd="save"]') };
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); f.escClosed = !PicksDrawer.isOpen(); return f;`);
+    check('1h frozen after 10 min: "Pick · frozen", nothing can change, no Save', d5.title === 'Pick · frozen' && /nothing can change/.test(d5.line) && d5.stakeOff && !d5.save, JSON.stringify(d5));
+    check('Esc closes the drawer (the one Esc handler)', d5.escClosed, JSON.stringify(d5));
+    await E(`(() => { window.isBspAdmin = window.__pkAdminWas; matches.splice(matches.indexOf(window.__pkMatch), 1); })()`);
+
     // 1j · mobile 390
     await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 1, mobile: true });
     await new Promise(r => setTimeout(r, 300));
-    const mo = await R(`window.__pkPlan = 'pro'; set({ tab: 'upcoming', day: S.data.as_of_day, view: 'cards', tourn: null, q: '' }); const up = { m: qa('.pk-card--m').length, star: qa('.pk-card--m .pk-star').length,
+    const mo = await R(`window.__pkPlan = 'pro'; set({ tab: 'upcoming', day: S.fixture.as_of_day, view: 'cards', tourn: null, q: '' }); const up = { m: qa('.pk-card--m').length, star: qa('.pk-card--m .pk-star').length,
         type: qa('.pk-card--m .pk-hd .pk-tag').filter(t => !/pk-chip--/.test(t.className)).length, panel: cs(q('[data-card="p1"] .pk-mpanel'), 'backgroundColor'), w: q('[data-card="p1"]').getBoundingClientRect().width,
         scroll: document.documentElement.scrollWidth };
       set({ tab: 'completed', day: '2026-10-26' }); const st = qa('[data-card="s1"] .pk-tl').map(txt); return { up, st };`);

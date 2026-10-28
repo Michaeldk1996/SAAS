@@ -1215,10 +1215,9 @@ jobs:
           # TEN-294 Dropping Odds page: module + stylesheet. Its data is NOT a site file - the page
           # reads stennisfy-drops.fly.dev - so there is no JSON to copy. Asserted below.
           cp drops-page.js drops-page.css _site/ 2>/dev/null || true
-          # Picks page (read-only): module, figures and stylesheet (code), and its static picks.json (committed data,
-          # published with the site data like series.json). All four asserted below.
-          cp picks-core.js picks-page.js picks-page.css _site/
-          cp picks.json _site/
+          # Picks page: figures, store, page, Post-a-pick drawer, the shell hooks and the stylesheet. Picks themselves live in
+          # Firestore (firestore.rules) — no picks file is published. Asserted below.
+          cp picks-core.js picks-store.js picks-page.js picks-drawer.js picks-shell.js picks-page.css _site/
           cp series.json _site/ 2>/dev/null || true
           cp trading-splits-index.json _site/ 2>/dev/null || true
           cp -r trading-splits _site/ 2>/dev/null || true
@@ -1289,7 +1288,7 @@ jobs:
                    match-stat-event-coverage.json \
                    series.js series.css tokens.css theme.js \
                    drops-page.js drops-page.css \
-                   picks-core.js picks-page.js picks-page.css picks.json \
+                   picks-core.js picks-store.js picks-page.js picks-drawer.js picks-shell.js picks-page.css \
                    assets/logo-dark-transparent.png assets/ring-transparent.png \
                    assets/brand/google-g.svg assets/brand/apple-white.png assets/brand/app-store-badge.svg assets/brand/google-play-badge.png; do
             [ -s "_site/$f" ] || { echo "MISSING from _site: $f"; exit 1; }
@@ -1835,6 +1834,26 @@ jobs:
           node tools/step-check.mjs --step "build-admin-log.js" --rc "$rc" --exists admin-log.json
           rc=0; node push-admin-log-to-firestore.js || rc=$?
           node tools/step-check.mjs --step "push-admin-log-to-firestore.js" --rc "$rc"
+      # Picks (Task 2, founder 2026-10-27): the server side of every pick figure — Open / Now / Close / status / result /
+      # CLV / P/L — written to Firestore with the Admin SDK (tools/picks-updater.mjs; firestore.rules keep every client out
+      # of those fields). Reads this run's matches.json and bet105 line_prices_current. Best-effort by ruling (F5): a
+      # failure is reported by step-check and never blocks the publish. The key file lives only for this step.
+      - name: Picks — fill Open / Now / Close / results (best-effort)
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+        run: |
+          rc=0
+          if [ -n "$FIREBASE_SERVICE_ACCOUNT" ]; then
+            printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$RUNNER_TEMP/firebase-sa.json"
+            npm install --no-save --no-audit --no-fund firebase-admin@12 > /dev/null 2>&1 || rc=$?
+            GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/firebase-sa.json" node tools/picks-updater.mjs || rc=$?
+            rm -f "$RUNNER_TEMP/firebase-sa.json"
+          else
+            echo "picks-updater: SKIP — FIREBASE_SERVICE_ACCOUNT is not set (said out loud, not a pass)"
+          fi
+          node tools/step-check.mjs --step "tools/picks-updater.mjs" --rc "$rc"
       - name: Commit admin log (only if changed)
         env:
           # a stale-base run (split-build guard) re-merges onto main instead of failing: build-admin-log.js folds this

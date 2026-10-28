@@ -146,25 +146,31 @@ test('Elo rows: P(A) = 1/(1+10^((Rb−Ra)/400)), fair odds 1/P to 2 dp, no margi
 });
 
 test('Bets today: count unblurred; tournament + round readable, selection + price blurred in ONE span unless Pro; empty → "No bets posted yet today"', () => {
+  // Task 3 (founder 2026-10-27): the tile reads today's open picks from the picks store (picks-store.js). A non-Pro member
+  // gets teasers (no selection, no price), so the blurred span is drawn over a placeholder — never the real pick.
   const B = (picks, plan) => new Function('picks', 'plan', `
     const window = { sfPlan: plan }; let _mxPicks = picks;
-    const mxEventName = t => t, roundBadgeText = r => r;
+    const PicksCore = { surname: n => String(n || '').split(' ').slice(1).join(' ') };
     ${slice('psEsc')} ${slice('mxOddsTxt')} ${slice('mxIsPro')} ${slice('mxBetsTileHtml')} return mxBetsTileHtml();`)(picks, plan);
-  const d = new Date(), today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-  const picks = [{ date: today, tournament: 'Vienna Open', round: 'R32', selection: 'Berrettini', price: 1.57 },
-                 { date: today, tournament: 'Swiss Indoors', round: 'R32', selection: 'Rune', price: 1.85 },
-                 { date: '2000-01-01', tournament: 'Old', round: 'F', selection: 'X', price: 2 }];
-  const free = B(picks, null);
-  assert.match(free, /mc-story__now">2<\/span><span class="mc-story__name">bets today/);
-  assert.equal((free.match(/mc-story__betsel is-blur"/g) || []).length, 2, 'one blurred span per pick (selection + price together)');
+  const real = [{ kind: 'match', tournament: 'Vienna Open', round: 'R32', selection: 'a', player_a: { name: 'M. Berrettini' }, player_b: { name: 'T. M. Etcheverry' }, posted_price: 2.02, status: 'posted' },
+                { kind: 'match', tournament: 'Swiss Indoors', round: 'R32', selection: 'b', player_a: { name: 'A. Bublik' }, player_b: { name: 'H. Rune' }, posted_price: 1.85, status: 'live' },
+                { kind: 'outright', event: 'Nitto ATP Finals · Turin', selection: 'a', player_a: { name: 'J. Sinner' }, posted_price: 3.5, status: 'posted' }];
+  const teasers = real.map(p => Object.assign({}, p, { _teaser: true, player_a: null, player_b: null, posted_price: null }));
+  const free = B(teasers, null);
+  assert.match(free, /mc-story__now">3<\/span><span class="mc-story__name">bets today/, 'the count includes the outright');
+  assert.equal((free.match(/mc-story__betsel is-blur"/g) || []).length, 2, 'one blurred span per match pick (outrights are not listed)');
   assert.match(free, /mc-story__betmeta">Vienna Open R32</);
   assert.match(free, /PRO<\/span><span class="mc-story__hint mc-story__hint--cta">Unlock today’s picks →/);
+  assert.doesNotMatch(free, /Berrettini|Rune|2\.02|1\.85/, 'a non-Pro tile never holds the real selection or price');
   assert.doesNotMatch(free, /\d\d:\d\d/, 'no time');
-  const pro = B(picks, 'pro');
+  const pro = B(real, 'pro');
   assert.doesNotMatch(pro, /is-blur/);
   assert.match(pro, /Open picks →/);
+  assert.doesNotMatch(pro, /mc-story__pro/, 'Pro: no PRO chip');
+  assert.match(pro, /betpick">Berrettini<\/span><span class="mc-story__betpx">2\.02</);
+  assert.match(pro, /betpick">Rune</, 'the picked side (b)');
   assert.match(B([], null), /mc-story__now">—<\/span>[\s\S]*No bets posted yet today/);
-  assert.match(B([picks[0]], null), /bet today</, 'singular');
+  assert.match(B([real[0]], null), /bet today</, 'singular');
 });
 
 test('Streak on court: the top Series card, "+N more on court today" by player, the empty state; Series is asked with its defaults', () => {

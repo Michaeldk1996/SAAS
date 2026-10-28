@@ -9532,28 +9532,38 @@ function mxStreakTileHtml(){
   }
   return `<div class="mc-story mc-story--click mc-story--nav" data-mxtile="streak" data-mxsummary="streak" role="button" tabindex="0">${head}${body}</div>`;
 }
-// README §1.3 Bets today (option 2c): picks.json, pipeline-owned. Handoff: the blur is visual only until auth ships, so
-// no real picks belong in picks.json before access control exists.
+// README §1.3 Bets today (option 2c) — Task 3: today's picks from the picks store (picks-store.js, access by
+// firestore.rules). Pro / admin read the real picks; any other member reads the teasers (no selection, no price), so the
+// blurred span is drawn over a placeholder and the real pick never reaches a non-Pro browser. Outrights are counted but
+// not listed (board 1k).
 let _mxPicks = null, _mxPicksP = null;
 function mxBetsEnsure(){
-  if (_mxPicksP) return;
-  _mxPicksP = fetch('./picks.json', { cache: 'no-cache' }).then(r => r.ok ? r.json() : null).catch(() => null).then(d => {
-    const arr = Array.isArray(d) ? d : (d && Array.isArray(d.picks) ? d.picks : []);
-    _mxPicks = arr.filter(p => p && p.date && p.selection && p.price > 0);
-    const el = document.querySelector('[data-mxtile="bets"]');
-    if (el) el.outerHTML = mxBetsTileHtml();
-  });
+  if (_mxPicksP || !window.PicksStore || !window.PicksCore) return;
+  const day = PicksCore.brusselsDay(new Date().toISOString());
+  _mxPicksP = PicksStore.loadDay(day).then(r => r.rows.filter(p => p.status === 'posted' || p.status === 'live'))
+    .catch(() => []).then(rows => {
+      _mxPicks = rows;
+      const el = document.querySelector('[data-mxtile="bets"]');
+      if (el) el.outerHTML = mxBetsTileHtml();
+    });
 }
+// a new pick, a role change (sign-in) → read again
+window.mxBetsRefresh = function () { _mxPicks = null; _mxPicksP = null; mxBetsEnsure(); };
 function mxBetsTileHtml(){
-  const pro = mxIsPro();
-  const today = (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; })();
-  const picks = (_mxPicks || []).filter(p => String(p.date) === today);
-  const cue = `<span class="mc-story__bethead"><span class="mc-story__pro">PRO</span><span class="mc-story__hint${pro ? '' : ' mc-story__hint--cta'}">${pro ? 'Open picks →' : 'Unlock today’s picks →'}</span></span>`;
+  const pro = mxIsPro() || (typeof isBspAdmin === 'function' && isBspAdmin());
+  const picks = _mxPicks || [];
+  const listed = picks.filter(p => p.kind !== 'outright');
+  const cue = `<span class="mc-story__bethead">${pro ? '' : '<span class="mc-story__pro">PRO</span>'}<span class="mc-story__hint${pro ? '' : ' mc-story__hint--cta'}">${pro ? 'Open picks →' : 'Unlock today’s picks →'}</span></span>`;
   const head = `<div class="mc-story__top"><span class="mc-story__lbl">Bets today</span>${cue}</div>`;
   const count = `<div class="mc-story__betcount"><span class="mc-story__now">${picks.length ? picks.length : '—'}</span><span class="mc-story__name">${picks.length === 1 ? 'bet today' : 'bets today'}</span></div>`;
-  const right = picks.length
-    ? `<div class="mc-story__betlist">${picks.map(p => `<div class="mc-story__bet"><span class="mc-story__betmeta">${psEsc([p.tournament ? mxEventName(p.tournament) : '', p.round ? (roundBadgeText(p.round) || p.round) : ''].filter(Boolean).join(' '))}</span>`
-        + `<span class="mc-story__betsel${pro ? '' : ' is-blur'}"${pro ? '' : ' aria-hidden="true"'}><span class="mc-story__betpick">${psEsc(p.selection)}</span><span class="mc-story__betpx">${mxOddsTxt(Number(p.price))}</span></span></div>`).join('')}</div>`
+  const sel = p => {
+    if (p._teaser || !pro) return { name: 'Pick hidden', price: '—' };
+    const pl = p.selection === 'b' ? p.player_b : p.player_a;
+    return { name: PicksCore.surname(pl && pl.name), price: mxOddsTxt(Number(p.posted_price)) };
+  };
+  const right = listed.length
+    ? `<div class="mc-story__betlist">${listed.map(p => { const s = sel(p); return `<div class="mc-story__bet"><span class="mc-story__betmeta">${psEsc([p.tournament || '', p.round || ''].filter(Boolean).join(' '))}</span>`
+        + `<span class="mc-story__betsel${pro ? '' : ' is-blur'}"${pro ? '' : ' aria-hidden="true"'}><span class="mc-story__betpick">${psEsc(s.name)}</span><span class="mc-story__betpx">${psEsc(s.price)}</span></span></div>`; }).join('')}</div>`
     : `<div class="mc-story__betlist mc-story__betlist--empty">${_mxPicks == null ? 'Loading…' : 'No bets posted yet today'}</div>`;
   return `<div class="mc-story mc-story--click mc-story--nav" data-mxtile="bets" data-mxsummary="bets" role="button" tabindex="0">${head}<div class="mc-story__betrow">${count}${right}</div></div>`;
 }
@@ -10140,7 +10150,7 @@ function renderMatches(){
       ${playersHtml}
       <div class="mc-foot">
         <button class="mc-msig mx-msigchip" data-msig="${eventKeyOfMatch(m)}" onclick="toggleSig(this)">Market Signal${isCompleted ? ' · final' : ''} <span class="chev">▾</span></button>
-        <a class="mc-analysis" onclick="mxOpenCard(this.closest('.match-card'))">See full analysis →</a>
+        <span class="pk-footr">${typeof pkPlusHtml === 'function' && !isCompleted ? pkPlusHtml(m) : ''}<a class="mc-analysis" onclick="mxOpenCard(this.closest('.match-card'))">See full analysis →</a></span>
       </div>
       ${mcSigPanel(m)}
     </article>
@@ -20136,7 +20146,8 @@ function mxTileGo(box, keepFocus){
     else { const b = document.getElementById('seriesTabBtn'); if (b) b.click(); }
     return;
   }
-  if (k === 'bets' && !mxIsPro()) location.href = 'account.html';
+  // Free: the plan page; Pro / admin: the Picks page (Task 3)
+  if (k === 'bets') { if (!mxIsPro() && !(typeof isBspAdmin === 'function' && isBspAdmin())) location.href = 'account.html'; else { const b = document.getElementById('picksTabBtn'); if (b) b.click(); } }
 }
 document.getElementById('mcSummaryStrip').addEventListener('click', e => {
   mxTileGo(e.target.closest('[data-mxsummary]'), false);
@@ -34836,7 +34847,10 @@ window.DatabaseTab = (function(){
 <!-- TEN-294 Dropping Odds. FEATURE_DROPS (default ON; ?drops=0 or localStorage stennisfy.flags.drops=0 = off) is read inside the file. -->
 <script src="drops-page.js" defer></script>
 <script src="picks-core.js" defer></script>
+<script src="picks-store.js" defer></script>
 <script src="picks-page.js" defer></script>
+<script src="picks-drawer.js" defer></script>
+<script src="picks-shell.js" defer></script>
 
 <!-- TEN-150 / TEN-242: Entry Lists feature flag. The nav button it used to reveal
      is GONE (item 1.1) - entry lists are the middle SECTION of Tournaments now, and

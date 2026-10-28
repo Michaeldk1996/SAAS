@@ -1,0 +1,47 @@
+name: Firestore rules
+
+# Picks Task 2 (founder 2026-10-27): firestore.rules from the repo, through the Firebase Rules REST API
+# (tools/firestore-rules.mjs). Dispatch only, from main:
+#   diff    print the LIVE rules against the repo's (read-only)
+#   test    evaluate the repo's rules on Google's evaluator against the Picks cases (read-only: nothing is created)
+#   deploy  test, then replace the live rules with the repo's — ONLY on the founder's go-ahead (it changes who can read
+#           and write what, for every member)
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'diff | test | deploy'
+        type: choice
+        options: [diff, test, deploy]
+        default: diff
+
+concurrency:
+  group: firestore-rules
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  rules:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install the Google auth client
+        run: npm install --no-save --no-audit --no-fund google-auth-library@9 > /dev/null
+      - name: Firestore rules — ${{ inputs.mode }}
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          MODE: ${{ inputs.mode }}
+        run: |
+          set -euo pipefail
+          [ -n "$FIREBASE_SERVICE_ACCOUNT" ] || { echo "::error::FIREBASE_SERVICE_ACCOUNT is not set"; exit 1; }
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$RUNNER_TEMP/firebase-sa.json"
+          trap 'rm -f "$RUNNER_TEMP/firebase-sa.json"' EXIT
+          GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/firebase-sa.json" node tools/firestore-rules.mjs "$MODE"

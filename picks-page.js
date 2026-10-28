@@ -1,55 +1,82 @@
-/* picks-page.js — the Picks page, read-only (boards 1a–1e, 1i, 1j of `design_handoff_picks`, LOCKED 2026-10-27).
+/* picks-page.js — the Picks page (boards 1a–1e, 1i, 1j of `design_handoff_picks`, LOCKED 2026-10-27) + the admin's way in
+ * to the Post-a-pick drawer (picks-drawer.js, Task 2).
  *
- * Reads picks.json (static; today the design's demo rows, `fixture: true`) and renders it with the figures from
- * picks-core.js. Nothing here computes a number: every price, CLV, P/L and record figure comes from PicksCore, or is a
- * dash. Values = the export's inline styles (picks-page.css). The page header is the shared 35b header (.sfh); the
- * controls row is the landed Today's Matches shell (picks-page.css "controls" block, locked by
- * tools/test-picks-page.mjs against the Matches page's computed styles).
+ * Reads the picks store (picks-store.js: Firestore `picks` / `picks_public`, access by firestore.rules) and renders it
+ * with the figures from picks-core.js. Nothing here computes a number: every price, CLV, P/L and record figure comes
+ * from PicksCore, or is a dash. Values = the export's inline styles (picks-page.css). The page header is the shared 35b
+ * header (.sfh); the controls row is the Picks reference's (founder ruling 2026-10-27).
  *
- * Reached by URL only (#picks): no nav link yet (Task 3). Not built here (Tasks 2 / 3): the Post-a-pick drawer, "+ Pick",
- * the Bets today tile, the nav dot, the admin badge. Gating is visual only (window.sfPlan === 'pro' → Pro); the demo
- * rows are public in picks.json, so the blur hides nothing that matters until real picks and access control ship.
+ * Roles (founder 2026-10-27: real roles, no preview switch): the admin (isBspAdmin — the founder's uid, the same
+ * allowlist firestore.rules checks) sees everything and edits; a Pro member (window.sfPlan === 'pro') sees today's
+ * picks; any other member gets the teaser of today's picks (blurred over placeholders — the real pick never reaches
+ * the browser) and every settled pick. Tests inject a fixture with PicksPage._inject (tools/fixtures/picks-demo.json).
  */
 (function () {
   'use strict';
   var C = window.PicksCore;
   if (!C) return;
   var DASH = C.DASH, MID = '·';
+  var REFRESH_MS = 60000;   // the store is re-read while the page is open (the pipeline fills Now / Close / results)
 
   var S = {
-    data: null, failed: false, loading: null,
+    fixture: null, byDay: {}, settled: null, failed: false, loading: {}, role: null,
     tab: 'upcoming', day: null, period: '30d', view: 'cards', sort: { key: 'date', dir: -1 },
     tourn: null, tournOpen: false, q: '', noteOpen: {}, stars: {}
   };
 
   function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
-  function fold(s) { return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim(); }
+  function fold(s) { return String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim(); }
   function root() { return document.getElementById('picksRoot'); }
-  function isPro() { return window.sfPlan === 'pro'; }
+  function isAdmin() { return !S.fixture && !!(window.PicksStore && PicksStore.isAdmin()); }
+  function isPro() { return window.sfPlan === 'pro' || isAdmin(); }
   function today() {
-    if (S.data && S.data.fixture && S.data.as_of_day) return S.data.as_of_day;   // a fixture pins its own day
+    if (S.fixture && S.fixture.as_of_day) return S.fixture.as_of_day;   // a fixture pins its own day
     return C.brusselsDay(new Date().toISOString());
   }
-  function rows() { return (S.data && Array.isArray(S.data.picks)) ? S.data.picks : []; }
+  // A teaser row (a non-Pro member's view of today's pick) is drawn over placeholders, blurred: never the real pick.
+  var HIDDEN = { id: null, name: 'Pick hidden', initials: '··' };
+  function shown(p) {
+    if (!p._teaser) return p;
+    return Object.assign({}, p, { player_a: HIDDEN, player_b: p.kind === 'outright' ? null : HIDDEN, market_text: p.kind === 'outright' ? 'Pick hidden' : null });
+  }
+  function rows() {
+    if (S.fixture) return S.fixture.picks || [];
+    var seen = {}, out = [];
+    Object.keys(S.byDay).forEach(function (d) { (S.byDay[d] || []).forEach(function (p) { if (!seen[p.id]) { seen[p.id] = 1; out.push(shown(p)); } }); });
+    (S.settled || []).forEach(function (p) { if (!seen[p.id]) { seen[p.id] = 1; out.push(p); } });
+    return out;
+  }
+  function loaded() { return !!S.fixture || (S.settled != null && S.byDay[S.day] != null); }
   function mobile() { return !!(window.matchMedia && window.matchMedia('(max-width: 640px)').matches); }
 
-  function load() {
-    if (S.loading) return S.loading;
-    S.loading = fetch('./picks.json', { cache: 'no-cache' })
-      .then(function (r) { return r.ok ? r.json() : null; })
-      .catch(function () { return null; })
-      .then(function (d) {
-        S.data = d && Array.isArray(d.picks) ? d : null; S.failed = !S.data;
-        if (!S.day) S.day = today();
-        render();
-      });
-    return S.loading;
+  // the Record's widest window: Season (1 January) or 90 days back, whichever is earlier
+  function settledFrom() { var t = today(), y = t.slice(0, 4) + '-01-01', d90 = C.addDays(t, -90); return y < d90 ? y : d90; }
+  function load(force) {
+    if (S.fixture || !window.PicksStore) { render(); return Promise.resolve(); }
+    if (!S.day) S.day = today();
+    var day = S.day, jobs = [];
+    if (force || S.byDay[day] == null) {
+      if (!S.loading[day]) S.loading[day] = PicksStore.loadDay(day).then(function (r) { S.byDay[day] = r.rows; S.role = r.role; })
+        .catch(function () { S.failed = true; S.byDay[day] = S.byDay[day] || []; }).then(function () { delete S.loading[day]; });
+      jobs.push(S.loading[day]);
+    }
+    if (force || S.settled == null) {
+      if (!S.loading._settled) S.loading._settled = PicksStore.loadSettled(settledFrom()).then(function (r) { S.settled = r; })
+        .catch(function () { S.failed = true; S.settled = S.settled || []; }).then(function () { delete S.loading._settled; });
+      jobs.push(S.loading._settled);
+    }
+    return Promise.all(jobs).then(render);
   }
+  function reload() { S.byDay = {}; S.settled = null; return load(true); }
 
   // ── match routing (SPEC §5.6): a card opens its match only when the board holds exactly that match — joined on BOTH
   // player ids and the day (never on surnames alone). The demo rows carry no player id, so they never route. ──────────
   function boardMatch(p) {
     if (!p || C.isOutright(p) || typeof matchById !== 'function' || typeof matches === 'undefined') return null;   // eslint-disable-line no-undef
+    if (p.match_id != null) {
+      var byKey = (matches || []).filter(function (m) { return m && /-(\d+)$/.test(String(m.id)) && String(m.id).match(/-(\d+)$/)[1] === String(p.match_id); });   // eslint-disable-line no-undef
+      if (byKey.length === 1) return byKey[0];
+    }
     var a = p.player_a && p.player_a.id, b = p.player_b && p.player_b.id;
     if (a == null || b == null) return null;
     var hit = (matches || []).filter(function (m) {   // eslint-disable-line no-undef
@@ -72,7 +99,8 @@
   var STAR = '<svg width="14" height="14" viewBox="0 0 20 20"><path d="M10 2.8l2.2 4.6 5 .7-3.6 3.5.9 5L10 14.2l-4.5 2.4.9-5L2.8 8.1l5-.7z" stroke-width="1.5" stroke-linejoin="round"></path></svg>';
   var PRO = '<span class="pk-pro">PRO</span>';
 
-  function gatedOf(p) { return !isPro() && (p.status === 'posted' || p.status === 'live') && p.date === today(); }
+  // a teaser is always gated; a real open pick of today is gated for a non-Pro view (a fixture renders both states)
+  function gatedOf(p) { return !!p._teaser || (!isPro() && (p.status === 'posted' || p.status === 'live') && p.date === today()); }
 
   function playerRow(p, side, opts) {
     var q = side === 'a' ? p.player_a : p.player_b; if (!q) return '';
@@ -122,11 +150,18 @@
       + '<span class="pk-bl-p">' + C.f2(p.posted_price) + '</span><span class="pk-bk">bet105</span></div>';
   }
   function noteText(p) { return (p.note || '') + (p.status === 'void' ? C.voidTail(p) : ''); }
+  // admin only (board 1i): "Edit · 6 min left" while the 10-minute window is open (note + stake, or void)
+  function editLink(p) {
+    if (!isAdmin() || p.status !== 'posted' || !p.posted_at) return '';
+    var left = Math.ceil((Date.parse(p.posted_at) + 600000 - Date.now()) / 60000);
+    if (!(left > 0)) return '';
+    return '<span class="pk-edit" data-act="edit" data-id="' + esc(p.id) + '" data-stop="1">Edit · ' + left + ' min left</span>';
+  }
   function footHtml(p, gated, open, pad) {
     var left = gated
       ? '<span class="pk-unlock">' + PRO + '<a class="pk-link" href="account.html" data-stop="1">Unlock today’s picks →</a></span>'
-      : (p.note ? '<span class="pk-foot-l"><span class="pk-toggle" data-act="note" data-id="' + esc(p.id) + '">' + (open ? 'Hide analysis' : 'Read the analysis')
-        + ' <span class="pk-tchev' + (open ? ' is-open' : '') + '">▾</span></span></span>' : '<span></span>');
+      : '<span class="pk-foot-l">' + (p.note ? '<span class="pk-toggle" data-act="note" data-id="' + esc(p.id) + '">' + (open ? 'Hide analysis' : 'Read the analysis')
+        + ' <span class="pk-tchev' + (open ? ' is-open' : '') + '">▾</span></span>' : '') + editLink(p) + '</span>';
     var routed = !!boardMatch(p);
     return '<div class="pk-foot' + (pad || '') + '">' + left + '<span class="pk-link pk-openmatch' + (routed ? '' : ' is-inert') + '"'
       + (routed ? ' data-act="open" data-id="' + esc(p.id) + '"' : ' title="This match is not on the board"') + '>Open match →</span></div>';
@@ -289,7 +324,8 @@
   function render() {
     var el = root(); if (!el) return;
     shownPlan = window.sfPlan || null;
-    if (!S.data) {
+    if (!S.day) S.day = today();
+    if (!loaded()) {
       el.innerHTML = S.failed ? header() + emptyPanel({ title: 'Picks could not be loaded.', sub: '' }) : '';
       return;
     }
@@ -334,6 +370,8 @@
     else if (act === 'sort') S.sort = C.nextSort(S.sort, k);
     else if (act === 'tourn') S.tournOpen = !S.tournOpen;
     else if (act === 'tsel') { S.tourn = k || null; S.tournOpen = false; }
+    else if (act === 'edit') { if (window.PicksDrawer) PicksDrawer.openEdit(rows().find(function (x) { return x.id === id; })); return; }
+    if (!S.fixture && S.byDay[S.day] == null) { load(); return; }   // a day not read yet
     render();
   }
   function onKey(e) {
@@ -362,7 +400,9 @@
     active = !!on;
     if (!active) { S.tournOpen = false; return; }
     wire();
-    if (S.data) render(); else load();
+    if (loaded()) render();
+    load(true);
+    if (!S.timer && !S.fixture) S.timer = setInterval(function () { if (active && !document.hidden) load(true); }, REFRESH_MS);
   }
   // #picks — the page's only entry until the nav link lands (Task 3). The tab page is shown without a nav button.
   function applyHash() {
@@ -381,12 +421,14 @@
     var planLocks = window.sfPlanLocks;
     window.sfPlanLocks = function () {
       var r = planLocks.apply(this, arguments);
-      if (active && S.data && (window.sfPlan || null) !== shownPlan) render();
+      if (active && (window.sfPlan || null) !== shownPlan) reload();   // a new plan is a new role: re-read the store
       return r;
     };
     window.sfPlanLocks._picks = true;
   }
-  window.PicksPage = { setActive: setActive, render: render, _state: S };
+  // tests and the screenshot harness inject a fixture (the store is not reachable from a headless clone)
+  function inject(fx) { S.fixture = fx; S.day = null; if (S.timer) { clearInterval(S.timer); S.timer = null; } render(); }
+  window.PicksPage = { setActive: setActive, render: render, reload: reload, _inject: inject, _state: S, _rows: rows };
   window.addEventListener('hashchange', applyHash);
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', applyHash); else applyHash();
 })();

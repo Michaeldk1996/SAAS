@@ -446,7 +446,7 @@
     },
 
     // updateProfile(patch) -> Promise<publicUser>
-    // patch may include name, email, plan, timezone, oddsFormat,
+    // patch may include name, email, timezone, oddsFormat,
     // favouriteBookmakers, favouriteMatches, notifications.
     updateProfile: function (patch) {
       patch = patch || {};
@@ -468,7 +468,7 @@
             chain = chain.then(function () { return user.updateEmail(newEmail); });
           }
         }
-        if (patch.plan === 'free' || patch.plan === 'edge' || patch.plan === 'pro') updates.plan = patch.plan;
+        // `plan` is never written from the browser (firestore.rules, Picks Task 2): only the Whop webhook sets it.
         // Timezone: store IANA ids only (never offsets). '' clears to automatic.
         if (typeof patch.timezone === 'string') {
           if (patch.timezone === '') updates.timezone = '';

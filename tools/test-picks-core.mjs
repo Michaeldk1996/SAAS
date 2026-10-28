@@ -15,7 +15,7 @@ import { fileURLToPath } from 'node:url';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const CORE_SRC = fs.readFileSync(path.join(ROOT, 'picks-core.js'), 'utf8');
 const DEMO = JSON.parse(fs.readFileSync(path.join(ROOT, 'design-export/picks-handoff/demo-data.json'), 'utf8'));
-const SERVED = JSON.parse(fs.readFileSync(path.join(ROOT, 'picks.json'), 'utf8'));
+const SERVED = JSON.parse(fs.readFileSync(path.join(ROOT, 'tools/fixtures/picks-demo.json'), 'utf8'));   // the demo fixture (never served since Task 2)
 const SYN = JSON.parse(fs.readFileSync(path.join(ROOT, 'tools/fixtures/picks-synthetic-ledger.json'), 'utf8'));
 const MINUS = '−', EN = '–', DASH = '—';
 
@@ -43,7 +43,7 @@ function suite(C) {
   const ok = (name, cond) => { n++; if (!cond) fails.push(name); };
 
   const by = Object.fromEntries(SERVED.picks.map(p => [p.id, p]));
-  ok('served picks.json holds the 9 demo rows', SERVED.picks.length === DEMO.today.length + DEMO.settled_sun_26.length && SERVED.picks.length === 9);
+  ok('the demo fixture holds the 9 demo rows', SERVED.picks.length === DEMO.today.length + DEMO.settled_sun_26.length && SERVED.picks.length === 9);
 
   // ── fair / clv (posted × fair(close, opp_close) − 1) ──
   near('fair(1.78, 2.15)', C.fair(1.78, 2.15), 0.5470708);
@@ -241,11 +241,11 @@ const real = suite(load(CORE_SRC));
 console.log(`picks-core: ${real.n - real.fails.length}/${real.n} checks pass`);
 real.fails.forEach(f => console.log('  FAIL ' + f));
 
-// picks.json must be the build of demo-data.json (no hand edits)
+// the demo fixture must be the build of demo-data.json (no hand edits)
 let built = true;
 try { execFileSync(process.execPath, [path.join(ROOT, 'tools/build-picks-fixture.mjs'), '--check'], { stdio: 'pipe' }); }
 catch (e) { built = false; console.log('  FAIL ' + String(e.stdout || '') + String(e.stderr || '')); }
-console.log(built ? 'picks.json: matches its build from demo-data.json' : 'picks.json: DIFFERS from its build');
+console.log(built ? 'picks-demo.json: matches its build from demo-data.json' : 'picks-demo.json: DIFFERS from its build');
 
 // ── mutants: each must turn the suite red ──
 const MUTANTS = [
