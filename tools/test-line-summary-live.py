@@ -12,7 +12,7 @@ Each check names the mutation that turns it red:
   4. an unchanged payload is not fetched again; a newer pull of the same fixture is            mutant: drop the
      fingerprint skip
   5. an unreadable payload turns the run red and gets no state row                             mutant: drop the exit
-  6. a raw row that carries no Pinnacle +30 book is never loaded
+  6. a raw row that carries no Pinnacle +30 book, or a back-fill pull, is never loaded
   7. the gate: an empty run, a store older than 36 h, an unreadable store or a missing report is red; 35 h is not
   8. the loader itself never names the archive table (only the GET-only reader may — the archive guard's allow-list)
 """
@@ -90,14 +90,17 @@ class Fake:
                     r = f.raw[rid]
                     return [{'id': rid, 'payload_gz': r['payload_gz']}], None
                 assert q['source'][0] == 'eq.oddspapi /v4/historical-odds', q
-                rows = sorted(f.raw.values(), key=lambda r: r['id'])
+                trig = q['meta->>trigger'][0]
+                assert trig.startswith('in.(') and trig.endswith(')'), trig
+                ok_t = set(trig[4:-1].split(','))
+                rows = sorted((r for r in f.raw.values() if r['meta'].get('trigger') in ok_t), key=lambda r: r['id'])
                 off, lim = int(q['offset'][0]), int(q['limit'][0])
                 return [{k: r[k] for k in ('id', 'fixture_id', 'pulled_at', 'books', 'meta')} for r in rows[off:off + lim]], None
             if 'oddspapi_line_summary_objects' in path:
                 rows = sorted(f.tables['oddspapi_line_summary_objects'].values(), key=lambda r: r['object_path'])
                 off, lim = int(q['offset'][0]), int(q['limit'][0])
-                return [{k: r.get(k) for k in ('object_path', 'fingerprint', 'row_keys', 'fixture_id')}
-                        for r in rows[off:off + lim]], None
+                cols = q['select'][0].split(',')        # only what the loader asks for, as PostgREST does
+                return [{k: r.get(k) for k in cols} for r in rows[off:off + lim]], None
             return [], None
 
         def upsert(url, key, table, rows, conflict):
@@ -128,9 +131,9 @@ def run(L, fake, td, idx, mutate=None):
     return L.main()
 
 
-def raw_row(rid, fid, ek, books=('pinnacle+30',), pulled=None):
+def raw_row(rid, fid, ek, books=('pinnacle+30',), pulled=None, trigger='post-start'):
     return {'id': rid, 'fixture_id': fid, 'pulled_at': pulled or iso(START + 900), 'books': list(books),
-            'meta': {'eventKey': ek}, 'payload_gz': hexgz(payload(fid))}
+            'meta': {'eventKey': ek, 'trigger': trigger}, 'payload_gz': hexgz(payload(fid))}
 
 
 def rows_of(fake, fid):
@@ -143,12 +146,14 @@ with tempfile.TemporaryDirectory() as td:
     fake.raw[1] = raw_row(1, 'idT', 777)                    # today's match: not in the index
     fake.raw[2] = raw_row(2, 'idB', 778)                    # a fixture the bucket already loaded
     fake.raw[3] = raw_row(3, 'idX', 779, books=('bet365',))  # another book's payload
+    fake.raw[5] = raw_row(5, 'idF', 780, trigger='backfill') # a back-fill pull (weeks after its match)
     fake.flips = [{'event_key': 777, 'last_not_live_seen_at': iso(START - 30), 'gap_seconds': 60,
                    'first_player': 'A. Aa', 'second_player': 'B. Bb', 'event_date': iso(START)[:10]},
                   {'event_key': 778, 'last_not_live_seen_at': iso(START - 30), 'gap_seconds': 60,
                    'first_player': 'C. Cc', 'second_player': 'D. Dd', 'event_date': iso(START)[:10]}]
+    # a bucket object's state row, as the bucket load writes it (the fixture is in the path; no fixture_id needed)
     fake.tables['oddspapi_line_summary_objects'][('2026-10/idB.json.gz',)] = {
-        'object_path': '2026-10/idB.json.gz', 'fixture_id': 'idB', 'fingerprint': 'x', 'row_keys': []}
+        'object_path': '2026-10/idB.json.gz', 'fingerprint': 'x', 'row_keys': []}
 
     print('run 1 — a same-day payload, cut at the event key\'s live flip')
     rc = run(L, fake, td, {})
@@ -164,6 +169,7 @@ with tempfile.TemporaryDirectory() as td:
     check('2. an in-play tick (2.90, after the flip) is never the close', side1 and side1[0]['close_price'] != 2.90)
     check('3. a fixture a bucket object owns is never written from the archive', not rows_of(fake, 'idB'))
     check('6. a payload without Pinnacle +30 is never loaded', not rows_of(fake, 'idX'))
+    check('6. a back-fill pull is never loaded (only post-start / backlog / re-cut pulls)', not rows_of(fake, 'idF'))
     st = fake.tables['oddspapi_line_summary_objects']
     check('run 1 writes a state row for the loaded payload only', ('archive-raw/1',) in st and ('archive-raw/2',) not in st,
           sorted(st))

@@ -17,6 +17,9 @@ TABLE = 'oddspapi_archive_raw'
 SOURCE = 'oddspapi /v4/historical-odds'      # the post-start / backlog pull's rows (never the bucket imports)
 BOOK = 'pinnacle+30'
 PATH_PREFIX = 'archive-raw/'                 # object_path in the loader's object state: archive-raw/<raw row id>
+# The pulls made after a start (post-start, backlog, a false-start re-cut). Never the back-fill (May-Sep fixtures pulled
+# weeks later: the loader's 21-day rule would null every close, and the bucket already carries those fixtures).
+TRIGGERS = ('post-start', 'backlog', 'false-start-recut')
 
 
 def list_payloads(get, since_iso, page=1000):
@@ -25,7 +28,8 @@ def list_payloads(get, since_iso, page=1000):
     out, offset = {}, 0
     while True:
         q = urllib.parse.urlencode({'select': 'id,fixture_id,pulled_at,books,meta', 'source': f'eq.{SOURCE}',
-                                    'pulled_at': f'gte.{since_iso}', 'order': 'id.asc', 'limit': page, 'offset': offset},
+                                    'pulled_at': f'gte.{since_iso}', 'meta->>trigger': 'in.(' + ','.join(TRIGGERS) + ')',
+                                    'order': 'id.asc', 'limit': page, 'offset': offset},
                                    quote_via=urllib.parse.quote)
         rows, err = get(f'/rest/v1/{TABLE}?{q}')
         if rows is None:

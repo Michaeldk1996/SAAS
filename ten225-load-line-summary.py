@@ -464,7 +464,7 @@ def fetch_object_state(url, key, page=1000, _get=None):
     get = _get or (lambda path: sb_json(path, url, key))
     out, offset = {}, 0
     while True:
-        q = urllib.parse.urlencode({'select': 'object_path,fingerprint,row_keys',
+        q = urllib.parse.urlencode({'select': 'object_path,fixture_id,fingerprint,row_keys',
                                     'order': 'object_path.asc',
                                     'limit': page, 'offset': offset})
         got, err = get(f'/rest/v1/{OBJECT_STATE_TABLE}?{q}')
@@ -1375,8 +1375,9 @@ def main():
             if state is None:
                 print(f'::error::{OBJECT_STATE_TABLE} unreadable ({serr}) — no raw load this run.')
                 return 1
-            in_bucket = {v.get('fixture_id') for p_, v in state.items()
-                         if not p_.startswith(AR.PATH_PREFIX)}
+            # A bucket object's path is YYYY-MM/<fixtureId>.json.gz; its state row carries the fixture id too.
+            in_bucket = {v.get('fixture_id') or p_.rsplit('/', 1)[-1][:-len('.json.gz')]
+                         for p_, v in state.items() if not p_.startswith(AR.PATH_PREFIX)}
             cat_digest = catalogue_digest(catalogue)
             todo, rwhy = [], collections.Counter()
             for fid, r in sorted(latest.items(), key=lambda kv: kv[1]['id']):
