@@ -1591,6 +1591,12 @@ jobs:
           # founder ruling 2026-10-18 (item 5): coverage per level, compared with the published report (the alert is sent after the upload)
           node tools/price-coverage-alert.mjs --cur _site/price-coverage.json --baseline-url https://michaeldk1996.github.io/SAAS/price-coverage.json --out .coverage-alert.txt --run-label "pipeline run ${{ github.run_number }}"
 
+      # Founder 2026-10-28: the guard above checks Market edge on 2026 and a 1-in-10 player sample. This report compares
+      # EVERY priced Market edge shard row with its Database row on the site that will publish (report only: the step
+      # summary, a ::warning:: on a difference; it never fails the run and changes no threshold).
+      - name: Market edge vs Database, every shard row (report only)
+        run: node tools/me-db-report.mjs --site _site --out .me-db-report.json || echo "::error title=Market edge vs Database report did not run::me-db-report.mjs exited $? (report only, the run stays green)"
+
       # TEN-178 scope item 2 — the merge-ancestor guard.
       #
       # Two separate jobs, both of which have to be true before anything ships:

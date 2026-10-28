@@ -317,7 +317,12 @@ closes, odds performance and started-evidence.
   **Test:** `tools/price-consistency.mjs` (pipeline.yml, before the site-data upload): over every 2026
   ATP main-draw career match and a 1-in-10 player sample of every year, the page's own functions — the Database join, the
   tab row, the Form tab, the H2H tab (1-in-20 sample), the Market edge shard row — give one `price | other price | hover`
-  per match; a difference is quarantined (below), never a reason to stop the publish. Unit locks: `test-ten332-tournament.mjs` "founder ruling
+  per match; a difference is quarantined (below), never a reason to stop the publish. **Every Market edge row, report only** (founder 2026-10-28): after the guard,
+  `tools/me-db-report.mjs` compares every priced row of every `market-edge/{key}.json` on the site that will publish with
+  its Database row (rows, retRows, tieRows, the era shard: same day, opponent spelling, result → both prices and the book)
+  and writes the count with its denominator to the step summary; a difference is a `::warning::`, never a red run, and no
+  threshold changes. **Test:** `tools/test-me-db-report.mjs` (a stale shard named; book and other price compared; SKIPPED
+  on no priced row; mutants). Unit locks: `test-ten332-tournament.mjs` "founder ruling
   2026-10-17 (item 1)", `tools/test-market-edge-basis.js`.
 - **One match problem never stops the site from updating** (founder ruling 2026-10-18; replaces "a difference fails the
   publish"). When a page would price a match the master does not hold — or prices it differently — the run still

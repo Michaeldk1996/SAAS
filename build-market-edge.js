@@ -710,4 +710,4 @@ function main() {
 }
 
 if (require.main === module) process.exit(main());
-module.exports = { careerFirstSet, firstSetLookup, makeResolver, rosterProfiles, pickBook, pickSide, capPair, summarise, isRetiredComment, PRICE_BANDS, bandFor, PRICE_BASIS, GATE_FULL, GATE_SMALL, emptyAgg, addTo };
+module.exports = { DB_BOOK, careerFirstSet, firstSetLookup, makeResolver, rosterProfiles, pickBook, pickSide, capPair, summarise, isRetiredComment, PRICE_BANDS, bandFor, PRICE_BASIS, GATE_FULL, GATE_SMALL, emptyAgg, addTo };
