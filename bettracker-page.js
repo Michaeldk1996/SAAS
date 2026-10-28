@@ -16,7 +16,10 @@
   var SEAL_SVG = '<svg viewBox="0 0 24 24" width="7" height="7" fill="none" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"></path></svg>';
   var FORM0 = { legs: [{ text: '', odds: '' }], tour: '', market: 'Match winner', marketOther: '', level: '500', surface: 'Indoor hard', book: 'bet105', bookOther: '', stake: '', timing: 'pre', type: 'Single' };
 
-  var S = { bank: null, view: 'results', lf: 'all', month: null, logOpen: false, form: JSON.parse(JSON.stringify(FORM0)), banks: [], raw: [] };
+  var S = { bank: null, view: 'results', lf: 'all', month: null, logOpen: false, form: JSON.parse(JSON.stringify(FORM0)), banks: [], raw: [], importMsg: '' };
+  // The Bet-Analytix import (T1b): admin only — the control is not in the design (reported); the console path is
+  // TrackerPage.importText(csvText). The file is read in this browser and goes nowhere else.
+  function isAdmin() { return typeof window.isBspAdmin === 'function' && !!window.isBspAdmin(); }
   var active = false, wired = false;
 
   function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
@@ -58,8 +61,11 @@
     return '<div class="bt-head"><div class="bt-head-l"><span class="bt-caps">Bet Tracker</span>'
       + '<span class="bt-title"><span class="bt-bankname">' + esc(cur.name) + '</span><span class="bt-cert" title="Every locked result is frozen — it cannot be edited or deleted. The blue seal on a ledger row marks a locked result.">'
       + seal(false) + esc(M.certText(all)) + '</span></span>'
-      + '<span class="bt-headmeta">' + esc(M.headMeta(all, ctx.list, ctx.perList, 'season', ctx.win, {}, 0, ctx.today)) + '</span></div>'
-      + '<div class="bt-head-r"><span class="bt-logbtn" data-act="logtoggle">' + (S.logOpen ? 'Close' : '+ Log a bet') + '</span></div></div>';
+      + '<span class="bt-headmeta">' + esc(M.headMeta(all, ctx.list, ctx.perList, ctx.per, ctx.win, ctx.range, ctx.nF, ctx.today)) + '</span>'
+      + (S.importMsg ? '<span class="bt-importmsg">' + esc(S.importMsg) + '</span>' : '') + '</div>'
+      + '<div class="bt-head-r">' + (isAdmin() ? '<span class="bt-import" data-act="import" title="Admin · import a Bet-Analytix CSV export into its own bankroll">Import CSV</span>'
+        + '<input type="file" accept=".csv,text/csv" class="bt-importfile" id="btImportFile" hidden>' : '')
+      + '<span class="bt-logbtn" data-act="logtoggle">' + (S.logOpen ? 'Close' : '+ Log a bet') + '</span></div></div>';
   }
   function seg(key, pairs) {
     return '<div class="bt-segtrack">' + pairs.map(function (p) {
@@ -133,9 +139,9 @@
     var body = rows.map(function (b) {
       var r = b.res, c = M.clv(b), p = r ? M.pl(b) : null;
       return '<div class="bt-grid bt-tr' + (r ? '' : ' is-pending') + '" data-bet="' + b.id + '">'
-        + '<span class="bt-c-date"><span class="bt-date">' + esc(M.fmtD(b.date)) + '</span><span class="bt-dow">' + M.dow(b.date) + '</span></span>'
+        + '<span class="bt-c-date"><span class="bt-date">' + esc(M.fmtDY(b.date, todayDate())) + '</span><span class="bt-dow">' + M.dow(b.date) + '</span></span>'
         + '<span class="bt-c-bet"><span class="bt-bettext">' + esc(b.text) + '</span><span class="bt-betmeta">' + esc(M.betMeta(b)) + '</span></span>'
-        + '<span class="bt-market">' + esc(b.market + (b.line ? ' ' + b.line : '')) + '</span><span class="bt-book">' + esc(b.book) + '</span>'
+        + '<span class="bt-market">' + esc(b.market ? b.market + (b.line ? ' ' + b.line : '') : DASH) + '</span><span class="bt-book">' + esc(b.book || DASH) + '</span>'
         + '<span class="bt-oddsc">' + b.odds.toFixed(2) + '</span>' + closeCell(b)
         + '<span class="bt-clv bt-' + M.kind(c) + '">' + (c === null ? DASH : esc(M.sgn(c * 100))) + '</span>'
         + '<span class="bt-stake">' + b.stake.toFixed(1) + '%</span>' + lane(b)
@@ -154,7 +160,7 @@
     var cur = S.banks.find(function (b) { return b.id === S.bank; }) || S.banks[0];
     var all = betsOf(cur.id), today = todayDate(), win = M.periodWindow('season', {}, today);
     var perList = M.inPeriod(all, win), list = perList;   // T1: period Season, no filters (the hero's triggers are a later task)
-    var ctx = { list: list, perList: perList, win: win, today: today };
+    var ctx = { list: list, perList: perList, win: win, today: today, per: 'season', range: {}, nF: 0 };
     var view = S.view === 'results' ? ledger(list) : '<div class="bt-card bt-frame">' + DASH + '</div>';
     el.innerHTML = '<section class="bt-sec"><div class="bt-col"><div class="bt-stack">'
       + bankrolls() + header(cur, all, ctx) + (S.logOpen ? logPanel(cur) : '') + heroFrame(list) + view + '</div></div></section>';
@@ -207,6 +213,20 @@
     else if (a === 'settle') saveRaw(+id, { res: t.dataset.v });
     else if (a === 'undo') saveRaw(+id, { res: null });
     else if (a === 'lock') { store.lockBet(+id); load(); render(); }
+    else if (a === 'import') { var fi = document.getElementById('btImportFile'); if (fi) fi.click(); }
+  }
+  function importText(text) {
+    var I = window.BetTrackerImport; if (!I) return { ok: false, reason: 'no-importer' };
+    var w = I.run(text, store, {}), r = w.report || {};
+    S.importMsg = w.ok ? 'Imported ' + w.stored + ' bets into BSP Consult Bet-Analytix · ' + r.settled + ' settled · ' + r.pending + ' pending'
+      : 'Import refused · ' + (w.reason === 'already-imported' ? 'this bankroll already holds the import (TrackerPage.removeImport() wipes it first)' : w.reason === 'file' ? 'the file does not read as a Bet-Analytix export' : w.reason);
+    if (w.ok) { S.bank = w.bankId; S.month = null; }
+    load(); render();
+    return w;
+  }
+  function onFile(e) {
+    var t = e.target; if (!t || t.id !== 'btImportFile' || !t.files || !t.files[0]) return;
+    var fr = new FileReader(); fr.onload = function () { importText(String(fr.result)); }; fr.readAsText(t.files[0]);
   }
   function onInput(e) {
     var t = e.target, f = t.dataset && t.dataset.f; if (!f || f === 'close' || !root().contains(t)) return;
@@ -232,6 +252,7 @@
     el.addEventListener('click', onClick);
     el.addEventListener('input', onInput);
     el.addEventListener('change', onInput);
+    el.addEventListener('change', onFile);
     el.addEventListener('focusout', onBlur);
     el.addEventListener('keydown', onKey);
   }
@@ -243,6 +264,7 @@
     if (typeof sfActivateTabRaw === 'function') sfActivateTabRaw('tracker', '#tracker');   // eslint-disable-line no-undef
     else { document.querySelectorAll('.tabpage').forEach(function (p) { p.classList.toggle('active', p.dataset.page === 'tracker'); }); setActive(true); }
   }
-  window.TrackerPage = { setActive: setActive, render: render, _state: S };
+  window.TrackerPage = { setActive: setActive, render: render, _state: S, importText: importText,
+    removeImport: function () { var w = store.removeImport('bet-analytix', 'bet-analytix'); load(); render(); return w; } };
   applyHash();
 })();

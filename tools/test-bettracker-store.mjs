@@ -90,6 +90,28 @@ function run(api) {
   const ns = api.create({ local: nl, session: storage(), now });
   ns.listBanks(); ns.saveBank({ id: 'x', name: 'x' });
   eq('v2 document untouched', JSON.parse(nl.getItem(api.KEY)), { v: 2, banks: [], bets: [], other: 1 });
+
+  // T1b · the Bet-Analytix import: one write, never auto-locked, wiped in one call, refused while a row is locked
+  const il = storage(), it = storage(), is = api.create({ local: il, session: it, now });
+  is.saveBank({ id: 'ba', name: 'BSP Consult Bet-Analytix', archived: false });
+  const imp = (id, extra) => Object.assign(bet(id, { bank: 'ba', res: 'won', source: 'bet-analytix', stakeEur: 112.5, stake: 1.13 }), extra);
+  eq('import refused without a source', is.importBets('ba', [imp(101)], '').reason, 'invalid');
+  eq('import refused when a row carries another source', is.importBets('ba', [imp(101, { source: 'x' })], 'bet-analytix').reason, 'invalid');
+  eq('import refused when a row is invalid (nothing written)', [is.importBets('ba', [imp(101), imp(102, { odds: 1 })], 'bet-analytix').reason, is.listBets('ba').length], ['invalid', 0]);
+  ok('import three rows in one write', is.importBets('ba', [imp(101), imp(102, { res: 'lost' }), imp(103, { res: null })], 'bet-analytix').n === 3);
+  eq('a second import of the same source is refused', is.importBets('ba', [imp(104)], 'bet-analytix').reason, 'already-imported');
+  const is2 = api.create({ local: il, session: storage(), now });
+  eq('new session: imported results are NOT auto-locked', is2.listBets('ba').map(b => !!b.lockedAt), [false, false, false]);
+  ok('an imported result can be undone in a new session', is2.saveBet(Object.assign(is2.listBets('ba')[0], { res: null })).ok);
+  eq('a save keeps the stored source', is2.listBets('ba')[0].source, 'bet-analytix');
+  ok('a posted bet cannot claim a source', is2.saveBet(bet(105, { bank: 'ba', res: 'won', source: 'bet-analytix' })).ok && !is2.listBets('ba').find(b => b.id === 105).source);
+  eq('…so it auto-locks like any posted result', api.create({ local: il, session: storage(), now }).listBets('ba').find(b => b.id === 105).lockedAt !== null, true);
+  ok('lock one imported row', is2.lockBet(102).ok);
+  eq('removeImport refused while an imported row is locked', is2.removeImport('ba', 'bet-analytix').reason, 'locked');
+  const jl = storage(), js = api.create({ local: jl, session: storage(), now }); js.saveBank({ id: 'ba', name: 'x', archived: false });
+  js.importBets('ba', [imp(201), imp(202)], 'bet-analytix'); js.saveBet(bet(203, { bank: 'ba' }));
+  eq('removeImport wipes the import in one call, keeps the rest', [js.removeImport('ba', 'bet-analytix').removed, js.listBets('ba').map(b => b.id)], [2, [203]]);
+  ok('…and the import can be redone', js.importBets('ba', [imp(201), imp(202)], 'bet-analytix').ok);
   return fails;
 }
 
@@ -100,7 +122,11 @@ console.log(fails.length ? `bettracker-store: ${fails.length} failure(s)` : 'bet
 const MUTANTS = [
   ['saveBet ignores lockedAt', "if (i >= 0 && doc.bets[i].lockedAt) return { ok: false, reason: 'locked' };", ''],
   ['saveBet keeps the caller lockedAt', 'rec.lockedAt = null;', 'rec.lockedAt = rec.lockedAt || null;'],
-  ['history never auto-locks', 'if (b.res && !b.lockedAt && mine.indexOf(b.id) < 0)', 'if (false)'],
+  ['history never auto-locks', 'if (b.res && !b.lockedAt && !b.source && mine.indexOf(b.id) < 0)', 'if (false)'],
+  ['imported rows auto-lock', 'if (b.res && !b.lockedAt && !b.source && mine.indexOf(b.id) < 0)', 'if (b.res && !b.lockedAt && mine.indexOf(b.id) < 0)'],
+  ['removeImport ignores locks', "if (mine.some(function (b) { return b.lockedAt; })) return { ok: false, reason: 'locked'", "if (false) return { ok: false, reason: 'locked'"],
+  ['import twice', "if (doc.bets.some(function (b) { return b.bank === bankId && b.source === source; })) return { ok: false, reason: 'already-imported' };", ''],
+  ['caller sets the source', 'if (i >= 0 && doc.bets[i].source) rec.source = doc.bets[i].source; else delete rec.source;', ''],
   ['session not remembered', 'touch(rec.id);', ''],
   ['delete without archive', "if (!bank.archived) return { ok: false, reason: 'not-archived' };", ''],
   ['delete with locked results', "if (doc.bets.some(function (b) { return b.bank === id && b.lockedAt; })) return { ok: false, reason: 'locked' };", ''],

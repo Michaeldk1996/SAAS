@@ -30,10 +30,12 @@ check('Betting = Picks · Bet Tracker, in that order', /data-tab="picks"[\s\S]*d
 check('Bet Tracker icon = README §Where it lives', betting.includes('<path d="M3.5 5.5h13v9h-13zM3.5 9h13M6.5 12h3M13 5.5v9"/>'));
 check('short label "Tracker" carried on the row', betting.includes('data-short="Tracker"'));
 const pipe = readFileSync(join(ROOT, '.github/workflows/pipeline.yml'), 'utf8'), pub = readFileSync(join(ROOT, 'tools/publish-site.mjs'), 'utf8'), code = readFileSync(join(ROOT, 'tools/site-code.sh'), 'utf8');
-for (const f of ['bettracker-math.js', 'bettracker-store.js', 'bettracker-page.js', 'bettracker-page.css']) {
+for (const f of ['bettracker-math.js', 'bettracker-store.js', 'bettracker-page.js', 'bettracker-page.css', 'bettracker-import.js']) {
   check(`${f} in all three code deploy lists (+ the pipeline's MISSING assert)`, pipe.split(f).length - 1 === 2 && pub.includes(`'${f}'`) && code.includes(f));
 }
 check('no demo bets ship: the seed generator lives in the math test only', !/20261027|Challenger lab|Tennis 2026/.test(readFileSync(join(ROOT, 'bettracker-page.js'), 'utf8') + readFileSync(join(ROOT, 'bettracker-store.js'), 'utf8') + readFileSync(join(ROOT, 'bettracker-math.js'), 'utf8')));
+check('dashboard loads bettracker-import.js after the store', html.indexOf('<script src="bettracker-import.js" defer></script>') > html.indexOf('<script src="bettracker-store.js" defer></script>'));
+check('no member file in the repo: the importer ships no rows (only the synthetic fixture under tools/fixtures)', !/Napoleon Games|Unibet/.test(readFileSync(join(ROOT, 'bettracker-import.js'), 'utf8')));
 check('only the store touches storage', !/localStorage|sessionStorage/.test(readFileSync(join(ROOT, 'bettracker-page.js'), 'utf8') + readFileSync(join(ROOT, 'bettracker-math.js'), 'utf8')));
 check('night only: the page never reads the theme engine', !/sfTheme|data-theme/.test(readFileSync(join(ROOT, 'bettracker-page.js'), 'utf8') + readFileSync(join(ROOT, 'bettracker-page.css'), 'utf8')));
 
@@ -223,6 +225,21 @@ async function browser() {
     await E(`document.documentElement.setAttribute('data-theme', 'day')`);
     const day = await cs('.bt-card', ['background-color']), daySec = await cs('.bt-sec', ['background-color']), dayLf = await cs('.bt-lf.on', ['background-color']);
     check('Day theme leaves the page night-only (card · page · selected segment unchanged)', JSON.stringify([night, nightSec, nightLf]) === JSON.stringify([day, daySec, dayLf]) && day[0] === 'rgb(14, 16, 25)', JSON.stringify({ night, day }));
+    // ── T1b · the Bet-Analytix import, on the synthetic fixture moved to this month (the console path) ──
+    const now = new Date(), ymNow = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-';
+    const csv = readFileSync(join(ROOT, 'tools/fixtures/bettracker-import-sample.csv'), 'utf8').replace(/2026-10-/g, ymNow);
+    check('import: 10 bets stored', (await E(`TrackerPage.importText(${JSON.stringify(csv)}).stored`)) === 10);
+    check('import: its bankroll is selected and named BSP Consult Bet-Analytix', (await T('.bt-bank.is-on .bt-bank-name')) === 'BSP Consult Bet-Analytix');
+    check('import: header "9 settled since 14 Jan 2022 · 0 pending"', (await T('.bt-headmeta')).startsWith('9 settled since 14 Jan 2022 · 0 pending'), await T('.bt-headmeta'));
+    check('import: the report line names the count', (await T('.bt-importmsg')).startsWith('Imported 10 bets into BSP Consult Bet-Analytix'));
+    check('import: every imported result is unlocked (undo + Lock, no seal)', await E(`[...document.querySelectorAll('.bt-tr[data-bet]')].every(r => r.querySelector('.bt-undo') && r.querySelector('.bt-lock') && !r.querySelector('.bt-seal'))`));
+    check('import: a blank market and bookmaker read —', await E(`(function(){ var r = [...document.querySelectorAll('.bt-tr')].find(x => x.querySelector('.bt-bettext') && x.querySelector('.bt-bettext').textContent.startsWith('Two legs')); return r.querySelector('.bt-market').textContent === '—' && r.querySelector('.bt-book').textContent === '—'; })()`));
+    check('import: no "undefined" anywhere on the page', !(await E(`document.getElementById('trackerRoot').textContent.includes('undefined')`)));
+    check('import: a second import is refused and says so', (await E(`TrackerPage.importText(${JSON.stringify(csv)}).reason`)) === 'already-imported' && (await T('.bt-importmsg')).startsWith('Import refused'));
+    check('import: no Import CSV control for a non-admin', !(await E(`!!document.querySelector('.bt-import')`)));
+    await E(`sessionStorage.clear()`); await open(); await click('.bt-bank[data-id="bet-analytix"]');
+    check('new session: imported results stay unlocked', await E(`document.querySelectorAll('.bt-tr[data-bet] .bt-undo').length === 9 && !document.querySelector('.bt-tr[data-bet] .bt-seal')`));
+    check('removeImport wipes it in one call', (await E(`TrackerPage.removeImport().removed`)) === 10);
     check('no page errors', errors.length === 0, errors.join('\n'));
   } catch (e) {
     check('browser run', false, e && e.stack || e);

@@ -46,6 +46,12 @@
   }
   function kind(x) { return x === null || x === undefined || !isFinite(x) ? 'lab' : x > 0 ? 'pos' : x < 0 ? 'neg' : 'zero'; }
   function fmtD(d) { return d.getDate() + ' ' + MON[d.getMonth()]; }
+  // With the year when it is not `today`'s (an imported ledger spans seasons: "14 Jan 2022"; the reference is one season).
+  function fmtDY(d, today) { return fmtD(d) + (today && d.getFullYear() !== today.getFullYear() ? ' ' + d.getFullYear() : ''); }
+  // A calendar month as one number (year × 12 + month): month groups never merge two seasons' Januaries.
+  function ym(d) { return d.getFullYear() * 12 + d.getMonth(); }
+  function ymLabel(k, multiYear) { return MON[k % 12] + (multiYear ? ' ' + Math.floor(k / 12) : ''); }
+  function ymName(k) { return MONTHS[k % 12] + ' ' + Math.floor(k / 12); }
   function dow(d) { return DN[(d.getDay() + 6) % 7]; }
 
   // ── per bet ─────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -91,17 +97,19 @@
 
   // ── segments ────────────────────────────────────────────────────────────────────────────────────────────────────
   function band(o) { return o <= 1.35 ? BANDS[0] : o <= 1.6 ? BANDS[1] : o <= 1.9 ? BANDS[2] : o <= 2.2 ? BANDS[3] : o <= 2.6 ? BANDS[4] : o <= 3.2 ? BANDS[5] : BANDS[6]; }
+  // A blank field (an imported row the token table did not fill) has no key: it is in no group of that cut and never
+  // passes that cut's filter — never an "Unknown" row (T4 brief: not without the founder's ruling).
   function key(b, dim) {
     if (dim === 'odds') return band(b.odds);
-    if (dim === 'level') return LEVEL[b.level];
+    if (dim === 'level') return LEVEL[b.level] || null;
     if (dim === 'timing') return b.timing === 'live' ? 'Live' : 'Pre-match';
     if (dim === 'situation') return b.tilt ? 'After two losses that day' : 'Normal rhythm';
     if (dim === 'dow') return ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][b.date.getDay()];
-    return b[dim];
+    return b[dim] ? b[dim] : null;
   }
   function group(list, dim) {
     var g = {}, order = [];
-    list.forEach(function (b) { if (!isSettled(b)) return; var k = key(b, dim); if (!g[k]) { g[k] = []; order.push(k); } g[k].push(b); });
+    list.forEach(function (b) { if (!isSettled(b)) return; var k = key(b, dim); if (k === null) return; if (!g[k]) { g[k] = []; order.push(k); } g[k].push(b); });
     return order.map(function (name) { return { name: name, dim: dim, bs: g[name], s: stats(g[name]) }; });
   }
   function minN(minSample) { return Math.max(MIN_FLOOR, minSample == null ? MIN_SAMPLE : minSample); }
@@ -207,13 +215,13 @@
     var s = all.filter(isSettled), n = s.filter(isLocked).length;
     return s.length ? 'Certified · ' + n + ' of ' + s.length + ' results locked' : 'Certified ledger · nothing settled yet';
   }
-  function periodPhrase(per, win, range) {
-    return per === 'season' ? 'whole season' : per === 'custom' ? fmtD(win.from) + ' → ' + fmtD(parseDay(range.to)) : 'last ' + per.replace('d', ' days');
+  function periodPhrase(per, win, range, today) {
+    return per === 'season' ? 'whole season' : per === 'custom' ? fmtDY(win.from, today) + ' → ' + fmtDY(parseDay(range.to), today) : 'last ' + per.replace('d', ' days');
   }
   // `all` = the bankroll's bets, oldest first; `list` = the period + filters; `perList` = the period only.
   function headMeta(all, list, perList, per, win, range, nFilters, today) {
     var first = all.length ? all[0].date : today, pending = list.filter(function (b) { return !isSettled(b); }).length;
-    return all.filter(isSettled).length + ' settled since ' + fmtD(first) + ' · ' + pending + ' pending · stakes in % of bankroll · ' + periodPhrase(per, win, range) + ' shown'
+    return all.filter(isSettled).length + ' settled since ' + fmtDY(first, today) + ' · ' + pending + ' pending · stakes in % of bankroll · ' + periodPhrase(per, win, range, today) + ' shown'
       + (nFilters ? ' · ' + nFilters + ' filter' + (nFilters > 1 ? 's' : '') + ' on, ' + list.length + ' of ' + perList.length + ' bets' : '');
   }
   // Pending first, then date desc, then id desc.
@@ -222,21 +230,24 @@
   }
   function ledgerFilter(sorted, lf, month) {
     return sorted.filter(function (b) {
-      var r = b.res, okR = lf === 'all' || (lf === 'pending' ? !r : r === lf), okM = month === null || month === undefined || b.date.getMonth() === month;
+      var r = b.res, okR = lf === 'all' || (lf === 'pending' ? !r : r === lf), okM = month === null || month === undefined || ym(b.date) === month;
       return okR && okM;
     });
   }
   // The month chips: All + one per month with bets, newest first; P/L over the chip's settled bets, dash when none.
+  // A chip is a calendar month (ym); its label adds the year only when the list spans more than one year.
   function ledgerMonths(list) {
-    var g = {}; list.forEach(function (b) { var k = b.date.getMonth(); (g[k] = g[k] || []).push(b); });
+    var g = {}, years = {}; list.forEach(function (b) { var k = ym(b.date); (g[k] = g[k] || []).push(b); years[b.date.getFullYear()] = 1; });
+    var multi = Object.keys(years).length > 1;
     var chip = function (k, label, arr) { var s = stats(arr); return { month: k, label: label, n: arr.length, pl: s.n ? sgn(s.profit) : DASH, plKind: s.n ? kind(s.profit) : 'lab' }; };
-    return [chip(null, 'All', list)].concat(Object.keys(g).map(Number).sort(function (a, b) { return b - a; }).map(function (k) { return chip(k, MON[k], g[k]); }));
+    return [chip(null, 'All', list)].concat(Object.keys(g).map(Number).sort(function (a, b) { return b - a; }).map(function (k) { return chip(k, ymLabel(k, multi), g[k]); }));
   }
   var LEDGER_ROWS = 14;
   function ledgerMeta(shown, n) { return shown + ' of ' + n + ' bets in the period · pending first · settle a bet and every figure above recomputes'; }
   function ledgerFoot(n) { return 'Showing ' + Math.min(LEDGER_ROWS, n) + ' of ' + n + ' · a result you settle here can be undone until you lock it · a locked result (blue tick) is frozen for good'; }
+  // A field the bet does not carry (an import the token table did not fill) reads as a dash, never "undefined".
   function betMeta(b) {
-    return b.tour + ' · ' + LEVEL[b.level] + ' · ' + b.surface + (b.type && b.type !== 'Single' ? ' · ' + b.type + ' · ' + b.legs + ' legs' : '')
+    return (b.tour || DASH) + ' · ' + (LEVEL[b.level] || DASH) + ' · ' + (b.surface || DASH) + (b.type && b.type !== 'Single' ? ' · ' + b.type + ' · ' + b.legs + ' legs' : '')
       + (b.timing === 'live' ? ' · Live' : '') + (b.tilt ? ' · after two losses' : '');
   }
   // A bankroll card: figures over the bankroll's whole life.
@@ -286,7 +297,7 @@
     DASH: DASH, MINUS: MINUS, EN: EN, MIN_SAMPLE: MIN_SAMPLE, MIN_FLOOR: MIN_FLOOR, LEVEL: LEVEL, LEVEL_KEYS: LEVEL_KEYS, SURFACES: SURFACES, BANDS: BANDS,
     DAYS: DAYS, DN: DN, MON: MON, MONTHS: MONTHS, DIMS: DIMS, PERIODS: PERIODS, MARKETS: MARKETS, BOOKS: BOOKS, TYPES: TYPES, PLANS: PLANS, YOUR_STAKES: YOUR_STAKES,
     LEDGER_ROWS: LEDGER_ROWS,
-    sgn: sgn, kind: kind, fmtD: fmtD, dow: dow, isSettled: isSettled, pl: pl, clv: clv, stats: stats, cumulative: cumulative, heroFigures: heroFigures,
+    sgn: sgn, kind: kind, fmtD: fmtD, fmtDY: fmtDY, ym: ym, ymLabel: ymLabel, ymName: ymName, dow: dow, isSettled: isSettled, pl: pl, clv: clv, stats: stats, cumulative: cumulative, heroFigures: heroFigures,
     band: band, key: key, group: group, minN: minN, segments: segments, discipline: discipline,
     plan: plan, simulate: simulate, planStake: planStake, heatAlpha: heatAlpha,
     addDays: addDays, parseDay: parseDay, periodWindow: periodWindow, inPeriod: inPeriod, passFilters: passFilters, applyFilters: applyFilters, filterCount: filterCount,

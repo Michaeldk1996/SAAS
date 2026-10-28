@@ -2,7 +2,7 @@
  *
  * T1 backs it with the browser's localStorage (one schema-versioned document, `v: 1`); the API is the seam a server
  * table replaces later without touching the page:
- *   listBanks() · saveBank(bank) · deleteBank(id) · listBets(bankId) · saveBet(bet) · lockBet(id) · nextId()
+ *   listBanks() · saveBank(bank) · deleteBank(id) · listBets(bankId) · saveBet(bet) · lockBet(id) · importBets · removeImport · nextId()
  * Bankroll = { id, name, archived, createdAt }. Bet = the README data contract (design_handoff_bet_tracker §Data
  * contract) + createdAt, lockedAt; `date` is the local day 'YYYY-MM-DD'.
  *
@@ -11,7 +11,10 @@
  * Historical results load as locked (README "a bet is locked when it has a result and is either historical (not posted
  * this session) or explicitly locked"): listBets stamps lockedAt on every settled record this browser session did not
  * write. "This session" = the tab session (sessionStorage), so a reload keeps an unlocked result undoable; a new tab
- * does not.
+ * does not. An imported record (`source` set — the Bet-Analytix import, T1b) is never auto-locked: imported rows stay
+ * unlocked until the admin locks them one by one (founder ruling 2026-10-28, R&D: the admin reviews first).
+ * importBets(bankId, bets, source) writes a whole import in one write; removeImport(bankId, source) wipes it in one
+ * call so it can be redone — refused while any of its rows is locked (a locked result is frozen).
  *
  * window.BetTrackerStore = the default instance; BetTrackerStore.create({ local, session, now }) builds one on any
  * Storage-shaped pair (tests: tools/test-bettracker-store.mjs). An unavailable / throwing storage falls back to memory.
@@ -75,7 +78,7 @@
     function listBets(bankId) {
       var doc = read(), mine = touched(), at = null, changed = false;
       doc.bets.forEach(function (b) {
-        if (b.res && !b.lockedAt && mine.indexOf(b.id) < 0) { b.lockedAt = at || (at = stamp()); changed = true; }
+        if (b.res && !b.lockedAt && !b.source && mine.indexOf(b.id) < 0) { b.lockedAt = at || (at = stamp()); changed = true; }
       });
       if (changed) write(doc);
       return copy(doc.bets.filter(function (b) { return bankId == null || b.bank === bankId; })
@@ -92,6 +95,8 @@
       if (i >= 0 && doc.bets[i].lockedAt) return { ok: false, reason: 'locked' };
       if (!doc.banks.some(function (b) { return b.id === bet.bank; })) return { ok: false, reason: 'no-bankroll' };
       var rec = copy(bet); rec.createdAt = i >= 0 ? doc.bets[i].createdAt : stamp(); rec.lockedAt = null; rec.pending = !rec.res;
+      // `source` is the store's, never the caller's: only importBets sets it, and a save keeps the stored one
+      if (i >= 0 && doc.bets[i].source) rec.source = doc.bets[i].source; else delete rec.source;
       if (i >= 0) doc.bets[i] = rec; else doc.bets.push(rec);
       if (!write(doc)) return { ok: false, reason: 'storage' };
       touch(rec.id);
@@ -105,11 +110,34 @@
       b.lockedAt = stamp();
       return write(doc) ? { ok: true, bet: copy(b) } : { ok: false, reason: 'storage' };
     }
+    // A whole import in one write. Every row must be valid, carry this source and be new; nothing is written otherwise.
+    function importBets(bankId, bets, source) {
+      if (!source || !Array.isArray(bets) || !bets.length) return { ok: false, reason: 'invalid' };
+      var doc = read();
+      if (!doc.banks.some(function (b) { return b.id === bankId; })) return { ok: false, reason: 'no-bankroll' };
+      if (doc.bets.some(function (b) { return b.bank === bankId && b.source === source; })) return { ok: false, reason: 'already-imported' };
+      var ids = {}; doc.bets.forEach(function (b) { ids[b.id] = 1; });
+      for (var i = 0; i < bets.length; i++) {
+        var b = bets[i];
+        if (!valid(b) || b.bank !== bankId || b.source !== source || ids[b.id]) return { ok: false, reason: 'invalid', at: i };
+        ids[b.id] = 1;
+      }
+      var at = stamp();
+      bets.forEach(function (b) { var rec = copy(b); rec.createdAt = rec.createdAt || at; rec.lockedAt = null; rec.pending = !rec.res; doc.bets.push(rec); });
+      return write(doc) ? { ok: true, n: bets.length } : { ok: false, reason: 'storage' };
+    }
+    function removeImport(bankId, source) {
+      if (!source) return { ok: false, reason: 'invalid' };
+      var doc = read(), mine = doc.bets.filter(function (b) { return b.bank === bankId && b.source === source; });
+      if (mine.some(function (b) { return b.lockedAt; })) return { ok: false, reason: 'locked', locked: mine.filter(function (b) { return b.lockedAt; }).length };
+      doc.bets = doc.bets.filter(function (b) { return !(b.bank === bankId && b.source === source); });
+      return write(doc) ? { ok: true, removed: mine.length } : { ok: false, reason: 'storage' };
+    }
     function nextId() {
       var doc = read(), max = doc.bets.reduce(function (m, b) { return Math.max(m, b.id); }, 0);
       return Math.max(max + 1, now().getTime());
     }
-    return { V: V, listBanks: listBanks, saveBank: saveBank, deleteBank: deleteBank, listBets: listBets, saveBet: saveBet, lockBet: lockBet, nextId: nextId };
+    return { V: V, listBanks: listBanks, saveBank: saveBank, deleteBank: deleteBank, listBets: listBets, saveBet: saveBet, lockBet: lockBet, importBets: importBets, removeImport: removeImport, nextId: nextId };
   }
 
   var api = { create: create, KEY: KEY, SESSION_KEY: SESSION_KEY, V: V };
