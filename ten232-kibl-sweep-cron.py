@@ -163,7 +163,7 @@ def sweep_gap(url, key):
 BREAKER_N = 3
 
 
-def recent_conclusions(token, limit=10):
+def recent_conclusions(token, limit=30):
     """The last completed archive runs, newest first, as (id, conclusion).
 
     Only COMPLETED runs count. An in-progress run has conclusion null, and
@@ -179,6 +179,29 @@ def recent_conclusions(token, limit=10):
     with urllib.request.urlopen(req, timeout=60) as r:
         runs = json.loads(r.read().decode()).get("workflow_runs", [])
     return [(x["id"], x["conclusion"], x["created_at"]) for x in runs]
+
+
+def run_started(token, run_id):
+    """Did this run start any work? True / False, or None when unreadable.
+
+    Pinger task (founder 2026-10-29): a run GitHub cancelled while it was still
+    queued — the concurrency group keeps one pending run and cancels the older
+    one, routine on a 5-minute pinger with ~10-minute runs — never ran. It is
+    not one of the "3 consecutive non-zero runs". A run counts as started when
+    any job has a step that started. (run_started_at is no evidence: GitHub
+    stamps it on runs cancelled while queued too.)
+    """
+    req = urllib.request.Request(
+        f"https://api.github.com/repos/{REPO}/actions/runs/{run_id}/jobs?per_page=20",
+        headers={"Authorization": f"Bearer {token}",
+                 "Accept": "application/vnd.github+json",
+                 "User-Agent": "ten232-breaker/1.0"})
+    try:
+        with urllib.request.urlopen(req, timeout=60) as r:
+            jobs = json.loads(r.read().decode()).get("jobs", [])
+    except Exception:                                         # noqa: BLE001
+        return None
+    return any(st.get("started_at") for j in jobs for st in (j.get("steps") or []))
 
 
 def breaker_should_trip():
@@ -197,11 +220,30 @@ def breaker_should_trip():
     # need a FOURTH failing run to trip, which is not the rule as written.
     me = (os.environ.get("GITHUB_RUN_ID") or "").strip()
     runs = [r for r in runs if str(r[0]) != me]
+    # Only runs that ran are judged: a cancelled run is checked for whether it
+    # started; one cancelled while queued (or unreadable) is passed over, and
+    # said so. "skipped" never ran either.
+    judged, passed = [], []
+    for r in runs:
+        if r[1] == "skipped":
+            passed.append(f"  - skipped {r[2]} (run {r[0]}): never ran, not judged")
+            continue
+        if r[1] == "cancelled":
+            st = run_started(gh, r[0])
+            if st is not True:
+                why = "cancelled while queued" if st is False else "cancelled, jobs unreadable"
+                passed.append(f"  - {why} {r[2]} (run {r[0]}): not judged")
+                continue
+        judged.append(r)
+        if len(judged) >= BREAKER_N - 1:
+            break
+    runs = judged
     window = [("this run", "failure", "in progress")] + runs[:BREAKER_N - 1]
     if len(window) < BREAKER_N:
         return False, (f"breaker: only {len(window)} runs to judge "
-                       f"(need {BREAKER_N}); not tripping")
-    lines = "\n".join(f"  - {c} {t} (run {i})" for i, c, t in window)
+                       f"(need {BREAKER_N}); not tripping"
+                       + "".join("\n" + x for x in passed))
+    lines = "\n".join([f"  - {c} {t} (run {i})" for i, c, t in window] + passed)
     bad = [c for _, c, _ in window if c != "success"]
     return (len(bad) == BREAKER_N,
             f"breaker: last {BREAKER_N} runs —\n{lines}")

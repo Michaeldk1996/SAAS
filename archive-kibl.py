@@ -42,6 +42,7 @@ import os
 import sys
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 
 from kibl_client import (KiblClient, TENNIS_LEAGUES_MEN, state_of,
@@ -647,7 +648,18 @@ def sweep_floor(minutes_to_next_start):
     return BASELINE_MIN, 'baseline'
 
 
-def should_sweep(minutes_since_last, minutes_to_next_start):
+# Pinger task (founder 2026-10-29): "trigger the card-state builder on
+# live-flip". The builder runs after every sweep, so a relevant flip recorded
+# since the last sweep started makes this firing sweep. The point is the BUILDER
+# — the flip's verified start cuts the card's Close (the earlier-of rule) — not
+# the Kibl prices, which are in-play by then (see item 6 above). The levels are
+# the ones the cards carry: ATP singles (the board) and Challenger men's singles
+# (Kibl). Measured 22-28 Oct: 205 such flips in 162 h, mean 1.27/h, p90 4, max 9.
+LIVE_FLIP_TABLE = "live_flip_log_current"
+LIVE_FLIP_LEVELS = ("Atp Singles", "Challenger Men Singles")
+
+
+def should_sweep(minutes_since_last, minutes_to_next_start, flips_since_last=0):
     """The cadence rule, as a function -> (sweep?, why).
 
     Founder ruling 2026-09-18 item 2: 15-minute baseline, 5-minute from T-60 to
@@ -669,6 +681,8 @@ def should_sweep(minutes_since_last, minutes_to_next_start):
     grace = cadence_grace(floor)
     if minutes_since_last + grace >= floor:
         return True, tier
+    if flips_since_last:
+        return True, 'live-flip'
     return False, (f'too soon: {minutes_since_last:.2f} min since the last '
                    f'sweep, floor is {floor:g} '
                    f'({tier}, {grace:g} min grace)')
@@ -736,6 +750,29 @@ def cadence_inputs(url, key, now):
         if best is not None:
             to_start = best[1]
     return since, to_start
+
+
+def flips_since(url, key, now, minutes_since_last):
+    """Relevant live flips recorded since the last sweep started, or None.
+
+    None = unreadable (or no previous sweep, which sweeps anyway). An unreadable
+    flip table adds no sweep: the cadence rule is unchanged and the next ping
+    reads again.
+    """
+    if minutes_since_last is None:
+        return None
+    since = now - dt.timedelta(minutes=minutes_since_last)
+    levels = ",".join('"' + x + '"' for x in LIVE_FLIP_LEVELS)
+    rows, err = sb_request(
+        "GET",
+        f"/rest/v1/{LIVE_FLIP_TABLE}?select=event_key"
+        f"&recorded_at=gt.{iso(since)}"
+        f"&event_type_type=in.({urllib.parse.quote(levels)})&limit=200",
+        url, key)
+    if err or not isinstance(rows, list):
+        print(f"::warning::cadence: could not read live flips ({err}); no flip trigger this firing")
+        return None
+    return len(rows)
 
 
 def dense_fixture_count(url, key, now):
@@ -809,10 +846,12 @@ def sweep(args):
     started = now_utc()
     if getattr(args, "cadence_gate", False):
         since, to_start = cadence_inputs(url, key, started)
-        go, why = should_sweep(since, to_start)
+        flips = flips_since(url, key, started, since)
+        go, why = should_sweep(since, to_start, flips or 0)
         print(f"cadence: {since if since is None else round(since, 1)} min since "
               f"the last sweep, next start in "
-              f"{to_start if to_start is None else round(to_start, 1)} min -> "
+              f"{to_start if to_start is None else round(to_start, 1)} min, "
+              f"live flips since it: {'—' if flips is None else flips} -> "
               f"{'SWEEP' if go else 'SKIP'} ({why})")
         # Tell the workflow whether this firing did anything, so the downstream
         # card-state step does not re-read the whole card table twelve times an

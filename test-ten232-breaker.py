@@ -26,16 +26,21 @@ def check(label, ok, detail=""):
             print(f"       {detail}")
 
 
-def with_runs(runs, token="t", me=""):
-    """Run the decision against a stubbed run list."""
+def with_runs(runs, token="t", me="", started=None):
+    """Run the decision against a stubbed run list.
+
+    started: {run id: True | False | None} — what run_started() answers for a
+    cancelled run (default True: it ran, then was cancelled).
+    """
     os.environ["GITHUB_TOKEN"] = token
     os.environ["GITHUB_RUN_ID"] = me
-    real = sc.recent_conclusions
+    real, real_st = sc.recent_conclusions, sc.run_started
     sc.recent_conclusions = lambda _t, limit=10: list(runs)
+    sc.run_started = lambda _t, rid: (started or {}).get(rid, True)
     try:
         return sc.breaker_should_trip()
     finally:
-        sc.recent_conclusions = real
+        sc.recent_conclusions, sc.run_started = real, real_st
 
 
 F = ("failure", "2026-09-18T05:00:00Z")
@@ -55,9 +60,26 @@ print("2. it does not trip while anything in the window succeeded")
 check("this run + one failure + one success does not trip",
       with_runs(rl(F, S, F))[0] is False)
 check("this run + two successes does not trip", with_runs(rl(S, S, S))[0] is False)
-# CONTROL: a cancelled or timed-out run is non-zero too and must count.
-check("cancelled counts as a failure",
+# CONTROL: a run that started and was then cancelled, or timed out, is non-zero
+# too and must count.
+check("a started-then-cancelled run counts as a failure",
       with_runs(rl(("cancelled", "t"), ("timed_out", "t")))[0] is True)
+
+print("2b. a run cancelled while QUEUED never ran and is not judged (pinger task, 29 Oct)")
+C = ("cancelled", "2026-10-29T10:00:00Z")
+runs = rl(C, C, S, F)          # newest first: two queued cancellations, then a success
+trip, why = with_runs(runs, started={100: False, 101: False})
+check("this run + two queued cancellations + a success does not trip  "
+      "[mutant: cancelled counted as failure]", trip is False, why)
+check("and the log names the passed-over runs", "cancelled while queued" in why, why)
+trip, why = with_runs(rl(C, F, C, F), started={100: False, 102: False})
+check("queued cancellations are passed over, the real failures behind them still trip",
+      trip is True, why)
+trip, why = with_runs(rl(C, C, S), started={100: None, 101: None})
+check("a cancelled run whose jobs are unreadable is not judged (fails safe)",
+      trip is False and "jobs unreadable" in why, why)
+check("a skipped run is not judged",
+      with_runs(rl(("skipped", "t"), ("skipped", "t"), S))[0] is False)
 
 print("3. it fails safe — an unknown answer keeps capturing")
 check("no token does not trip", with_runs(rl(F, F, F), token="")[0] is False)

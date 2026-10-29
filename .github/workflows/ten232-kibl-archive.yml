@@ -130,6 +130,7 @@ jobs:
           python3 -B test-ten232-report.py
           python3 -B test-ten232-bet105-capability.py
           python3 -B test-ten232-breaker.py
+          python3 -B test-ten232-pinger.py
           python3 -B test-ten232-schema-gate.py
           python3 -B test-ten232-obs-read.py
           python3 -B test-ten232-sweep-write.py
@@ -224,6 +225,28 @@ jobs:
           python3 archive-kibl.py backfill \
             --from-days "${{ inputs.from_days }}" --to-days "${{ inputs.to_days }}"
 
+      # Pinger task (founder 2026-10-29): the card-state builder never runs while
+      # the daily line-summary load (ten225-line-summary.yml) runs — both write
+      # through the Supabase pooler ("too many connections"). Read at the moment
+      # the builder would start; an unreadable run state counts as busy. Busy
+      # skips card state + publish only: the sweep above already ran (Kibl keeps
+      # no history). Automatic firings only (schedule, or the pinger's
+      # cadence_gate=true); a hand dispatch runs as asked. Every decision is
+      # appended to ten232_builder_guard_log; a skip leaves the run green.
+      - name: Builder guard — not while the daily line-summary load runs
+        id: guard
+        if: |
+          (github.event_name == 'schedule' || inputs.cadence_gate == 'true') &&
+          steps.sweep.outputs.swept != 'false'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+        run: |
+          set -euo pipefail
+          python3 -B ten232-schema-gate.py ten232-builder-guard-schema.sql
+          python3 -B ten232-builder-guard.py
+
       # TEN-225 Part 2/3 for the Kibl source. ZERO Kibl calls and zero oddspapi
       # units — a projection of what the archive already holds. Runs after the
       # sweep so a price captured this minute can reach a card in the same run.
@@ -246,7 +269,8 @@ jobs:
         if: |
           inputs.mode == 'cards' ||
           ((github.event_name == 'schedule' || inputs.mode == 'sweep') &&
-           steps.sweep.outputs.swept != 'false')
+           steps.sweep.outputs.swept != 'false' &&
+           steps.guard.outputs.busy != 'true')
         uses: actions/cache/restore@v4
         with:
           path: .cache/ten225-ref-snapshot.json.gz
@@ -258,7 +282,8 @@ jobs:
         if: |
           inputs.mode == 'cards' ||
           ((github.event_name == 'schedule' || inputs.mode == 'sweep') &&
-           steps.sweep.outputs.swept != 'false')
+           steps.sweep.outputs.swept != 'false' &&
+           steps.guard.outputs.busy != 'true')
         uses: actions/cache/restore@v4
         with:
           path: .cache/ten225-card-snapshot.json.gz
@@ -273,7 +298,8 @@ jobs:
         if: |
           inputs.mode == 'cards' ||
           ((github.event_name == 'schedule' || inputs.mode == 'sweep') &&
-           steps.sweep.outputs.swept != 'false')
+           steps.sweep.outputs.swept != 'false' &&
+           steps.guard.outputs.busy != 'true')
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
@@ -365,7 +391,8 @@ jobs:
         if: |
           inputs.mode == 'publish' || inputs.mode == 'cards' ||
           ((github.event_name == 'schedule' || inputs.mode == 'sweep') &&
-           steps.sweep.outputs.swept != 'false')
+           steps.sweep.outputs.swept != 'false' &&
+           steps.guard.outputs.busy != 'true')
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
