@@ -259,27 +259,37 @@ async function browser() {
     await click('.bt-trig[data-k="filters"]');
     check('the View segment: Results is on', (await T('.bt-view.on')).startsWith('Results'));
 
-    // ── T3 · Calendar: today's cell, hover pop-up, pin, months table, month pop-up ──
+    // ── T7 · Calendar (v26 month cards): this month's tile, the open planner, today's day, hover pop-up, month pop-up ──
     const ckey = await E(`(function(){ var d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); })()`);
-    check('calendar: 182 day cells (26 weeks)', (await E(`document.querySelectorAll('.bt-hgrid .bt-hc').length`)) === 182);
-    check('calendar: today = −0.4% → "−40" € on a 10,000 € bankroll, red', JSON.stringify(await E(`(function(){ var c=document.querySelector('.bt-hc[data-k="${ckey}"]'); return [c.firstChild.textContent, c.classList.contains('is-neg')]; })()`)) === JSON.stringify(['−40', true]));
-    check('calendar: the pop-up is hidden until hover', (await E(`getComputedStyle(document.querySelector('.bt-hc[data-k="${ckey}"] .bt-hpop')).display`)) === 'none');
-    check('calendar: the pop-up title + "3 settled · 1–1 · −0.4% = −40 €"', (await T(`.bt-hc[data-k="${ckey}"] .bt-hpop-s`)) === '3 settled · 1–1 · −0.4% = −40 €', await T(`.bt-hc[data-k="${ckey}"] .bt-hpop-s`));
-    await click(`.bt-hc[data-k="${ckey}"]`);
-    check('calendar: click pins the record box with the three bets and a white ring', (await E(`document.querySelectorAll('.bt-hrec .bt-hrec-r').length`)) === 3 && (await E(`getComputedStyle(document.querySelector('.bt-hc.is-sel')).boxShadow`)).includes('0px 0px 0px 2px'));
-    await click('.bt-hrec-x');
-    check('calendar: Close clears the pin', !(await E(`!!document.querySelector('.bt-hrec')`)));
-    check('months table: this month, 3 settled, −0.4%', JSON.stringify(await E(`[...document.querySelectorAll('.bt-mrowt')].map(r=>[r.querySelector('.bt-mn').textContent, r.querySelector('.bt-mpl').textContent])`)) === JSON.stringify([['3', '−0.4%']]));
-    await click('.bt-mrowt');
-    check('month pop-up: four tiles P/L · ROI · Win rate · Avg CLV and three rows', JSON.stringify(await E(`[...document.querySelectorAll('.bt-mpop-tile .bt-caps')].map(e=>e.textContent)`)) === JSON.stringify(['P/L', 'ROI', 'Win rate', 'Avg CLV']) && (await E(`document.querySelectorAll('.bt-mpop-row').length`)) === 3);
+    check('calendar: one month tile (this month), selected, ▴', (await E(`document.querySelectorAll('.bt-mcard').length`)) === 1 && await E(`document.querySelector('.bt-mcard').classList.contains('on') && document.querySelector('.bt-mc-chev').textContent === '▴'`));
+    check('calendar: the tile reads −0.4% and "3 bets · 1–1 · 1 betting days"', JSON.stringify(await E(`[document.querySelector('.bt-mc-pl').textContent, document.querySelector('.bt-mc-sub').textContent]`)) === JSON.stringify(['−0.4%', '3 bets · 1–1 · 1 betting days']));
+    check('calendar: the current month opens by default, its planner shows today −40 € red', JSON.stringify(await E(`(function(){ var c=document.querySelector('.bt-pday[data-day="${ckey}"]'); return c && [c.querySelector('.bt-pday-fig').textContent, c.classList.contains('is-neg'), c.classList.contains('is-today')]; })()`)) === JSON.stringify(['−40', true, true]));
+    check('calendar: today\'s mini cell has the 40% ring', await E(`!!document.querySelector('.bt-mc-c.is-today')`));
+    check('calendar: the day pop-up is hidden until hover', (await E(`getComputedStyle(document.querySelector('.bt-pday[data-day="${ckey}"] .bt-dpop')).display`)) === 'none');
+    await E(`document.querySelector('.bt-pday[data-day="${ckey}"]').dispatchEvent(new MouseEvent('mouseover', {bubbles:true}))`);
+    check('calendar: hover shows it — "3 settled · 1–1" and three rows', (await E(`getComputedStyle(document.querySelector('.bt-pday[data-day="${ckey}"] .bt-dpop')).display`)) === 'flex'
+      && (await T(`.bt-pday[data-day="${ckey}"] .bt-dpop-s`)) === '3 settled · 1–1' && (await E(`document.querySelectorAll('.bt-pday[data-day="${ckey}"] .bt-dpop-r').length`)) === 3, await T(`.bt-pday[data-day="${ckey}"] .bt-dpop-s`));
+    await E(`document.dispatchEvent(new KeyboardEvent('keydown', {key:'Escape', bubbles:true}))`);
+    check('F4: Escape hides the day pop-up', (await E(`getComputedStyle(document.querySelector('.bt-pday[data-day="${ckey}"] .bt-dpop')).display`)) === 'none');
+    check('calendar: stats — P/L −0.4% · Up days "0 of 1" · Best week −40 €', JSON.stringify(await E(`[...document.querySelectorAll('.bt-pst')].map(e=>[e.querySelector('.bt-caps10').textContent, e.querySelector('.bt-pst-v').textContent])`)).includes('["Up days","0 of 1"]')
+      && (await E(`[...document.querySelectorAll('.bt-pst')].find(e=>e.textContent.startsWith('Best week')).querySelector('.bt-pst-v').textContent`)) === '−40 €');
+    await click('.bt-opm-x');
+    check('calendar: Close collapses the planner, the tile goes back to ▾', !(await E(`!!document.querySelector('.bt-opm')`)) && (await T('.bt-mc-chev')) === '▾');
+    await click('.bt-mcard');
+    check('calendar: clicking the tile opens it again', !!(await E(`!!document.querySelector('.bt-opm')`)));
+    await click('.bt-opm-full');
+    check('month pop-up: "Full record →" opens it — four tiles P/L · ROI · Win rate · Avg CLV and three rows', JSON.stringify(await E(`[...document.querySelectorAll('.bt-mpop-tile .bt-caps')].map(e=>e.textContent)`)) === JSON.stringify(['P/L', 'ROI', 'Win rate', 'Avg CLV']) && (await E(`document.querySelectorAll('.bt-mpop-row').length`)) === 3);
     check('month pop-up: sub "3 settled bets · 1–1–1 void · 3.0% staked"', (await T('.bt-mpop-s')) === '3 settled bets · 1–1–1 void · 3.0% staked', await T('.bt-mpop-s'));
     check('month pop-up: a fixed overlay over the page', (await E(`getComputedStyle(document.querySelector('.bt-mpop')).position`)) === 'fixed');
     await click('.bt-mpop-tile');
     check('month pop-up: a click inside stays open', await E(`!!document.querySelector('.bt-mpop')`));
     await click('.bt-mpop');
     check('month pop-up: a click outside closes it', !(await E(`!!document.querySelector('.bt-mpop')`)));
-    await click('.bt-mrowt'); await click('.bt-mpop-x');
+    await click('.bt-opm-full'); await E(`document.dispatchEvent(new KeyboardEvent('keydown', {key:'Escape', bubbles:true}))`);
+    check('F4: Escape closes the month pop-up', !(await E(`!!document.querySelector('.bt-mpop')`)));
+    await click('.bt-opm-full'); await click('.bt-mpop-x');
     check('month pop-up: ✕ closes it', !(await E(`!!document.querySelector('.bt-mpop')`)));
+    check('F5: a ledger meta never starts with " · " and prints no dash for a blank tournament', await E(`[...document.querySelectorAll('.bt-betmeta')].every(e => !/^ ?·/.test(e.textContent) && !/^— ·/.test(e.textContent))`));
 
     // ── T4 · Insights: the cut menu (8 cuts with counts), a cut in natural order, the total row, three dials ──
     await click('.bt-view[data-k="insights"]');

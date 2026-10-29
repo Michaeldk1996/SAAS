@@ -28,7 +28,7 @@ const Component = new Function('DCLogic', HTML.slice(HTML.indexOf('class Compone
 function ref(state) { const c = new Component(); c.props = { minSample: 15 }; c.setState(state); return { c, v: c.renderVals() }; }
 
 const minus = s => String(s).replace(/(^|[\s(=])-(?=\d)/g, '$1−');
-const SECTIONS = new Set(['hero', 'filters', 'hover']);   // T7 adds 'calendar', T8 'insights' + 'staking'
+const SECTIONS = new Set(['hero', 'filters', 'hover', 'calendar']);   // T8 adds 'insights' + 'staking'
 const noF2 = src => src.replace('if (mx > 0 && mx < step) mx = step;', '').replace('if (mn < 0 && mn > -step) mn = -step;', '');
 function run(M, MC) {
   const fails = [];
@@ -92,23 +92,28 @@ function run(M, MC) {
     eq(`${name} · plan chips`, M.stakingView(list, 'Flat 2%').plans.map(p => [p.name, p.how, p.on]), ref(Object.assign({}, st, { vsPlan: 'Flat 2%' })).v.sim.plans.map(p => [p.name, p.how, p.bg === '#1B2031']));
     }
     if (SECTIONS.has('calendar')) {
-    const H = M.heatGrid(bets, today);
-    eq(`${name} · heat cells (figure + tone)`, H.cells.map(x => [x.fig, x.tone, x.alpha]), v.heat.cells.map(x => {
-      const m = /rgba\((\d+),(\d+),(\d+),([\d.]+)\)/.exec(x.bg);
-      return [x.n, x.bg === 'transparent' ? 'future' : x.bg === 'rgba(106,154,248,0.35)' ? 'pend' : x.bg === 'rgba(255,255,255,0.12)' ? 'flat' : x.bg === 'rgba(255,255,255,0.04)' ? 'none' : m && m[1] === '92' ? 'pos' : 'neg',
-        m && (m[1] === '92' || m[1] === '224') ? +m[4] : null];
-    }));
-    eq(`${name} · heat pop-up subs + rows`, H.cells.map(x => [x.title, x.sub, x.rows.map(r => [r.text, r.meta, r.res, r.pl])]),
-      v.heat.cells.map(x => [x.title, minus(x.sub), x.rows.map(r => [r.text, r.meta, r.res, r.pl])]));
-    eq(`${name} · heat months + meta`, [H.months, H.meta], [v.heat.months, v.heat.meta]);
-    const MT = M.monthsTable(bets, today);
-    eq(`${name} · months table`, MT.map(m => [m.name, m.n, m.pl, m.bar.left, m.bar.width]), v.months.map(m => [m.name, m.n, m.pl, m.barL, m.barW]));
-    const k = MT[1] ? MT[1] : MT[0];
-    if (k) {
-      const rp = ref(Object.assign({}, st, { openMonth: k.key % 12 })).v.monthPop, P = M.monthPop(k.key, k.bets, today);
+      // the reference's calendar covers every bet of the bankroll (its one season) — so does this comparison
+      const RGB = { pos: '92,203,132', neg: '224,98,102' };
+      const miniBg = c => c.kind === 'out' ? 'transparent' : c.kind === 'none' ? 'rgba(255,255,255,0.04)' : c.kind === 'pend' ? 'rgba(106,154,248,0.35)' : c.kind === 'flat' ? 'rgba(255,255,255,0.14)' : `rgba(${RGB[c.kind]},${c.alpha})`;
+      const dayBg = c => c.bg === 'out' ? 'transparent' : c.bg === 'pos' ? 'rgba(92,203,132,0.09)' : c.bg === 'neg' ? 'rgba(224,98,102,0.09)' : c.bg === 'flat' ? 'rgba(255,255,255,0.05)' : c.bg === 'pend' ? 'rgba(106,154,248,0.10)' : 'rgba(255,255,255,0.02)';
+      const dtC = k => k === 'out' ? 'rgba(163,170,190,0.3)' : k === 'has' ? '#E7E9EE' : 'rgba(163,170,190,0.7)';
+      const KR = { pos: '#5CCB84', neg: '#E06266', lab: '#A3AABE', link2: '#5B9BFF' };
+      for (const mi of [9, 8, 4]) {
+        const rv = ref(Object.assign({}, st, { calOpen: mi })).v.calendar, CV = M.calendarView(bets, today, 2026 * 12 + mi, null);
+        eq(`${name} · calendar head (meta · sum · P/L)`, [CV.meta, 'Season · ' + CV.sumSub, CV.sumPl, KC[CV.sumKind]], [rv.meta, rv.seasonSub, rv.seasonPl, rv.seasonC]);
+        eq(`${name} · month tiles (name · P/L · sub · ROI · chevron)`, CV.cards.map(c => [c.name, c.pl, KC[c.plKind], c.sub, c.roi, KC[c.roiKind], c.on ? '▴' : '▾']), rv.cards.map(c => [c.name, c.pl, c.plC, c.sub, c.roi, c.roiC, c.chev]));
+        eq(`${name} · mini cells (tint · today ring · title)`, CV.cards.map(c => c.rows.map(r => r.map(x => [miniBg(x), x.today ? '0 0 0 1px rgba(255,255,255,0.4)' : 'none', x.t]))), rv.cards.map(c => c.rows.map(r => r.cells.map(x => [x.bg, x.ring, x.t]))));
+        const O = CV.open, ro = rv.open;
+        eq(`${name} · open month ${mi + 1} head`, O && [O.title, O.sub], ro && [ro.title, ro.sub]);
+        eq(`${name} · open month ${mi + 1} planner days`, O && O.rows.map(r => r.cells.map(c => [c.dt, dtC(c.dtKind), c.fig, KC[c.figKind], dayBg(c), c.today ? 'inset 0 0 0 1px rgba(255,255,255,0.45)' : 'none', c.sub, c.short, c.has ? 'pointer' : 'default', c.right ? '0' : 'auto', c.above ? 'auto' : '100%', c.title])),
+          ro && ro.rows.map(r => r.cells.map(c => [c.dt, c.dtC, c.fig, c.figC, c.bg, c.ring, c.sub, c.short, c.cursor, c.popSideR, c.popTop, c.title])));
+        eq(`${name} · open month ${mi + 1} pop-up rows`, O && O.rows.map(r => r.cells.map(c => c.rows.map(x => [x.text, x.meta, x.res, KR[x.resKind], x.pl, KC[x.plKind]]))), ro && ro.rows.map(r => r.cells.map(c => c.rows.map(x => [x.text, x.meta, x.res, x.resC, x.pl, x.plC]))));
+        eq(`${name} · open month ${mi + 1} week net €`, O && O.rows.map(r => [r.pl, KC[r.plKind], r.n]), ro && ro.rows.map(r => [r.pl, r.plC, r.n]));
+        eq(`${name} · open month ${mi + 1} stats`, O && O.stats.map(x => [x.l, x.v, x.k === 'ink' ? '#FFFFFF' : KC[x.k], x.s]), ro && ro.stats.map(x => [x.l, x.v, x.c, x.s]));
+      }
+      const mp = ref(Object.assign({}, st, { openMonth: 9 })).v.monthPop, oct = bets.filter(b => b.res && M.ym(b.date) === 2026 * 12 + 9), P = M.monthPop(2026 * 12 + 9, oct, today);
       eq(`${name} · month pop-up`, [P.title, P.sub, P.stats.map(x => [x.l, x.v]), P.rows.map(r => [r.date, r.text, r.meta, r.market, r.odds, r.close, r.clv, r.stake, r.res, r.pl])],
-        [rp.title, rp.sub, rp.stats.map(x => [x.l, x.v]), rp.rows.map(r => [r.date, r.text, r.meta, r.market, r.odds, r.close, r.clv, r.stake, r.res, r.pl])]);
-    }
+        [mp.title, mp.sub, mp.stats.map(x => [x.l, x.v]), mp.rows.map(r => [r.date, r.text, r.meta, r.market, r.odds, r.close, r.clv, r.stake, r.res, r.pl])]);
     }
   }
   return fails;
@@ -119,7 +124,7 @@ const fails = run(loadMath(SRC), loadMath(noF2(SRC)));
 for (const f of fails) console.log('  FAIL ', f);
 console.log(fails.length ? `bettracker-parity: ${fails.length} difference(s) from the locked prototype` : `bettracker-parity: every figure matches the locked v26 prototype (7 states · ${[...SECTIONS].join(' · ')})`);
 // control: a deliberately broken copy must differ (a tile's "when" a month early, and the hover's bet meta without the level)
-const bad = SRC.replace("function monYear(d) { return d ? MON[d.getMonth()]", "function monYear(d) { return d ? MON[(d.getMonth() + 11) % 12]").replace("[hb.tour, LEVEL[hb.level] || hb.level].filter(present)", "[hb.tour].filter(present)");
+const bad = SRC.replace("function monYear(d) { return d ? MON[d.getMonth()]", "function monYear(d) { return d ? MON[(d.getMonth() + 11) % 12]").replace("[hb.tour, LEVEL[hb.level] || hb.level].filter(present)", "[hb.tour].filter(present)").replace('a < 2.8 ? 0.55 : 0.9', 'a < 3 ? 0.55 : 0.9');
 const ctl = bad !== SRC && run(loadMath(bad), loadMath(noF2(bad))).length > 0;
-console.log(ctl ? 'control: a broken tile date and hover meta are caught' : '  FAIL  control: a broken copy went unnoticed');
+console.log(ctl ? 'control: a broken tile date, hover meta and calendar tint are caught' : '  FAIL  control: a broken copy went unnoticed');
 process.exit(fails.length || !ctl ? 1 : 0);

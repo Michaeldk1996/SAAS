@@ -394,10 +394,6 @@
       : name === 'Double after a loss' ? (last ? (last.res === 'lost' ? Math.min(8, last.stake * 2) : 1) : 1) : null;
   }
 
-  // ── calendar heat (README §5): a settled day's cell alpha from its P/L in % of bankroll ──────────────────────────
-  function heatAlpha(plPct) { return Math.min(1, 0.3 + Math.abs(plPct) / 3 * 0.7); }
-
-  // ── calendar (README §5): 26 weeks of days, a months table, a month pop-up ─────────────────────────────────────
   function dayKey(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
   // The ROI bar: fill from the centre, clipped at ±40% → 50% of the track each side; no ROI → no bar.
   function roiBar(roi) {
@@ -405,55 +401,84 @@
     var w = Math.min(Math.abs(roi), 0.4) / 0.4 * 50;
     return { left: (roi >= 0 ? 50 : 50 - w) + '%', width: w + '%', kind: roi >= 0 ? 'pos' : 'neg' };
   }
+  // ── calendar · month cards (v26 README 7.4, chosen 2026-10-29) ─────────────────────────────────────────────────
+  // € on a 10,000 € bankroll = P/L % × 100, rounded, true minus, thousands comma.
+  function eur(p) { var e = Math.round(p * 100); return (e > 0 ? '+' : e < 0 ? MINUS : '') + Math.abs(e).toLocaleString('en-US'); }
+  // The mini-calendar tint: three alpha steps on |P/L| in % — under 1.2 → 0.30, under 2.8 → 0.55, else 0.90; zero = flat.
+  function tint(p) { var a = Math.abs(p); return { tone: p > 0 ? 'pos' : p < 0 ? 'neg' : 'flat', alpha: a < 1.2 ? 0.3 : a < 2.8 ? 0.55 : 0.9 }; }
+  function sameDay(a, b) { return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate(); }
   function dayRow(b) {
     var r = b.res;
-    return { text: b.text, meta: (b.tour || DASH) + ' · ' + (b.market || DASH) + ' · @ ' + b.odds.toFixed(2) + ' · ' + b.stake + '%',
+    return { text: b.text, meta: [b.tour, b.market].filter(present).concat('@ ' + b.odds.toFixed(2), b.stake + '%').join(' · '),
       res: r ? r.toUpperCase() : 'PENDING', resKind: r === 'won' ? 'pos' : r === 'lost' ? 'neg' : r === 'void' ? 'lab' : 'link2',
       pl: r ? sgn(pl(b)) : DASH, plKind: r ? kind(pl(b)) : 'lab' };
   }
-  // 26 columns (Mon → Sun) ending on `today`'s week. A cell: no bets 4% white · future transparent · pending only blue
-  // with "·" · settled → green / red at heatAlpha(|P/L %|), flat 12% white; the figure is the day's P/L in € on a
-  // 10,000 € bankroll (P/L % × 100). The footer counts this season's days (1 January of `today`'s year →).
-  function heatGrid(all, today) {
-    var byDay = {};
-    all.forEach(function (b) {
-      var k = dayKey(b.date), o = byDay[k] = byDay[k] || { pl: 0, n: 0, pend: 0, w: 0, l: 0, bets: [] };
-      o.bets.push(b); if (isSettled(b)) { o.pl += pl(b); o.n++; if (b.res === 'won') o.w++; else if (b.res === 'lost') o.l++; } else o.pend++;
+  // `bets` = the bankroll's bets in the shown period (the reference's season ledger; at All time every month a tile).
+  // Month keys are ym() so a multi-year ledger keeps its years apart. openKey = the month whose planner is open (null =
+  // none); hovKey = the day key under the pointer. `phrase` names the span in the meta line ("this season").
+  function calendarView(bets, today, openKey, hovKey, phrase) {
+    var byD = {}, byM = {};
+    bets.forEach(function (b) {
+      var k = dayKey(b.date), r = b.res; (byD[k] = byD[k] || { pl: 0, n: 0, pend: 0, w: 0, l: 0, bets: [] }).bets.push(b);
+      if (r) { byD[k].pl += pl(b); byD[k].n++; if (r === 'won') byD[k].w++; else if (r === 'lost') byD[k].l++; } else byD[k].pend++;
+      var m = ym(b.date); (byM[m] = byM[m] || []).push(b);
     });
-    var mon = addDays(today, -((today.getDay() + 6) % 7)), start = addDays(mon, -25 * 7), cells = [], months = [], pm = -1;
-    for (var w = 0; w < 26; w++) {
-      for (var d = 0; d < 7; d++) {
-        var date = addDays(start, w * 7 + d), k = dayKey(date), v = byDay[k], future = date > today;
-        if (d === 0 && date.getMonth() !== pm) { pm = date.getMonth(); months.push({ left: (w * 32) + 'px', label: MON[pm] }); }
-        var tone = 'none', alpha = null, fig = '';
-        if (future) tone = 'future';
-        else if (v && (v.n || v.pend)) {
-          if (v.pend && !v.n) { tone = 'pend'; fig = '·'; }
-          else {
-            tone = v.pl > 0 ? 'pos' : v.pl < 0 ? 'neg' : 'flat'; alpha = tone === 'flat' ? null : +heatAlpha(v.pl).toFixed(2);
-            var eur = Math.round(v.pl * 100); fig = (eur > 0 ? '+' : eur < 0 ? MINUS : '') + Math.abs(eur);
-          }
+    var keys = Object.keys(byM).map(Number).sort(function (x, y) { return x - y; });
+    var cards = keys.map(function (k) {
+      var y = Math.floor(k / 12), m = k % 12, settled = byM[k].filter(isSettled), s = settled.length ? stats(settled) : { n: 0, w: 0, l: 0, profit: 0, roi: null };
+      var fd = (new Date(y, m, 1).getDay() + 6) % 7, dim = new Date(y, m + 1, 0).getDate(), rows = [], dd = 0;
+      for (var r = 0; r < 6; r++) {
+        var cells = [];
+        for (var c = 0; c < 7; c++) {
+          var idx = r * 7 + c - fd, inM = idx >= 0 && idx < dim, d = new Date(y, m, 1 + idx), v = inM ? byD[dayKey(d)] : null, fut = d > today;
+          if (v && v.n) dd++;
+          var t = v && v.n ? tint(v.pl) : null;
+          cells.push({ kind: !inM || fut ? 'out' : !v ? 'none' : v.pend && !v.n ? 'pend' : t.tone, alpha: t ? t.alpha : null, today: inM && sameDay(d, today),
+            t: inM ? DN[c] + ' ' + fmtDY(d, today) + (v && v.n ? ' · ' + sgn(v.pl) + ' = ' + eur(v.pl) + ' €' : v && v.pend ? ' · ' + v.pend + ' pending' : fut ? '' : ' · no bets') : '' });
         }
-        var has = !!(v && v.bets.length);
-        cells.push({ key: k, w: w, d: d, tone: tone, alpha: alpha, fig: fig, has: has, flip: w > 14,
-          title: DN[d] + ' ' + fmtD(date), t: has ? '' : DN[d] + ' ' + fmtD(date) + ' · no bets',
-          sub: has ? v.n + ' settled' + (v.pend ? ' · ' + v.pend + ' pending' : '') + ' · ' + v.w + EN + v.l + ' · ' + sgn(v.pl) + ' = ' + (Math.round(v.pl * 100) > 0 ? '+' : Math.round(v.pl * 100) < 0 ? MINUS : '') + Math.abs(Math.round(v.pl * 100)) + ' €' : '',
-          rows: has ? v.bets.map(dayRow) : [] });
+        rows.push(cells);
       }
-    }
-    var y = today.getFullYear(), season = Object.keys(byDay).filter(function (k) { return +k.slice(0, 4) === y; }).map(function (k) { return byDay[k]; });
-    var daysWith = season.filter(function (v) { return v.n; }).length, green = season.filter(function (v) { return v.n && v.pl > 0; }).length;
-    return { cells: cells, months: months, days: DN, meta: daysWith + ' betting days this season · ' + green + ' finished up · ' + (daysWith - green) + ' down or flat' };
-  }
-  // The months table: this season's months with a settled bet, newest first ("October 2026", n settled, ROI bar, P/L).
-  function monthsTable(all, today) {
-    var g = {}, y = today.getFullYear();
-    all.forEach(function (b) { if (!isSettled(b) || b.date.getFullYear() !== y) return; var k = ym(b.date); (g[k] = g[k] || []).push(b); });
-    return Object.keys(g).map(Number).sort(function (a, b) { return b - a; }).map(function (k) {
-      var st = stats(g[k]); return { key: k, name: ymName(k), n: st.n, pl: sgn(st.profit), plKind: kind(st.profit), bar: roiBar(st.roi), bets: g[k] };
+      return { key: k, name: MONTHS[m] + ' ' + y, pl: s.n ? sgn(s.profit) : DASH, plKind: s.n ? kind(s.profit) : 'lab', sub: s.n + ' bets · ' + s.w + EN + s.l + ' · ' + dd + ' betting days',
+        roi: s.n ? sgn(s.roi === null ? null : s.roi * 100) : DASH, roiKind: s.n ? kind(s.roi) : 'lab', on: openKey === k, rows: rows };
     });
+    var open = null;
+    if (openKey !== null && byM[openKey]) {
+      var y2 = Math.floor(openKey / 12), m2 = openKey % 12, settled2 = byM[openKey].filter(isSettled), s2 = settled2.length ? stats(settled2) : null;
+      var fd2 = (new Date(y2, m2, 1).getDay() + 6) % 7, dim2 = new Date(y2, m2 + 1, 0).getDate(), rowsN = Math.ceil((fd2 + dim2) / 7), prow = [], dayList = [];
+      for (var r2 = 0; r2 < rowsN; r2++) {
+        var cells2 = [], wpl = 0, wn = 0, any = false;
+        for (var c2 = 0; c2 < 7; c2++) {
+          var idx2 = r2 * 7 + c2 - fd2, inM2 = idx2 >= 0 && idx2 < dim2, d2 = new Date(y2, m2, 1 + idx2), hk = dayKey(d2), v2 = inM2 ? byD[hk] : null, has = !!(v2 && (v2.n || v2.pend)), last = r2 >= rowsN - 2;
+          if (v2 && v2.n) { wpl += v2.pl; wn += v2.n; any = true; dayList.push({ d: d2, c: c2, v: v2 }); }
+          cells2.push({ key: hk, dt: String(d2.getDate()), dtKind: !inM2 ? 'out' : has ? 'has' : 'none', fig: v2 && v2.n ? eur(v2.pl) : v2 && v2.pend ? '·' : '', figKind: v2 && v2.n ? kind(v2.pl) : 'lab',
+            bg: !inM2 ? 'out' : v2 && v2.n ? (v2.pl > 0 ? 'pos' : v2.pl < 0 ? 'neg' : 'flat') : v2 && v2.pend ? 'pend' : 'empty', today: inM2 && sameDay(d2, today), has: has,
+            // W–L counts losses — a void is neither (the reference's w–(n−w) reads a void as a loss; no void on its seed)
+            sub: has ? (v2.n ? v2.n + ' settled' + (v2.pend ? ' · ' + v2.pend + ' pending' : '') + ' · ' + v2.w + EN + v2.l : v2.pend + ' pending') : '',
+            short: has ? (v2.n ? v2.w + EN + v2.l : v2.pend + ' pend.') : '', showPop: has && hovKey === hk, right: c2 > 3, above: last,
+            title: DN[c2] + ' ' + fmtDY(d2, today), rows: has ? v2.bets.map(dayRow) : [] });
+        }
+        prow.push({ cells: cells2, pl: any ? eur(wpl) : DASH, plKind: any ? kind(wpl) : 'lab', n: any ? wn + (wn === 1 ? ' bet' : ' bets') : '', wpl: wpl, any: any });
+      }
+      var bd = dayList.length ? dayList.reduce(function (p, x) { return x.v.pl > p.v.pl ? x : p; }, dayList[0]) : null;
+      var wd = dayList.length ? dayList.reduce(function (p, x) { return x.v.pl < p.v.pl ? x : p; }, dayList[0]) : null;
+      var wks = prow.filter(function (x) { return x.any; }), bw = wks.length ? wks.reduce(function (p, x) { return x.wpl > p.wpl ? x : p; }, wks[0]) : null;
+      var wr = s2 && s2.w + s2.l ? Math.round(100 * s2.w / (s2.w + s2.l)) + '%' : DASH;
+      open = { key: openKey, title: MONTHS[m2] + ' ' + y2, sub: s2 ? s2.n + ' settled bets · ' + s2.w + EN + s2.l + (s2.v ? EN + s2.v + ' void' : '') + ' · ' + dayList.length + ' betting days' : 'No settled bets yet', rows: prow,
+        stats: [
+          { l: 'P/L', v: s2 ? sgn(s2.profit) : DASH, k: s2 ? kind(s2.profit) : 'lab', s: '' },
+          { l: 'ROI', v: s2 ? sgn(s2.roi === null ? null : s2.roi * 100) : DASH, k: s2 ? kind(s2.roi) : 'lab', s: '' },
+          { l: 'Win rate', v: wr, k: 'ink', s: '' },
+          { l: 'Avg CLV', v: s2 && s2.clv !== null ? sgn(s2.clv * 100) : DASH, k: s2 ? kind(s2.clv) : 'lab', s: '' },
+          { l: 'Best day', v: bd ? eur(bd.v.pl) + ' €' : DASH, k: bd ? kind(bd.v.pl) : 'lab', s: bd ? DN[bd.c] + ' ' + fmtDY(bd.d, today) : '' },
+          { l: 'Worst day', v: wd ? eur(wd.v.pl) + ' €' : DASH, k: wd ? kind(wd.v.pl) : 'lab', s: wd ? DN[wd.c] + ' ' + fmtDY(wd.d, today) : '' },
+          { l: 'Best week', v: bw ? eur(bw.wpl) + ' €' : DASH, k: bw ? kind(bw.wpl) : 'lab', s: bw ? bw.n : '' },
+          { l: 'Up days', v: dayList.filter(function (x) { return x.v.pl > 0; }).length + ' of ' + dayList.length, k: 'ink', s: '' }] };
+    }
+    var days = Object.keys(byD).map(function (k) { return byD[k]; }), daysWith = days.filter(function (v) { return v.n; }).length, green = days.filter(function (v) { return v.pl > 0; }).length;
+    var SA = stats(bets.filter(isSettled));
+    return { cards: cards, keys: keys, open: open, meta: daysWith + ' betting days ' + (phrase || 'this season') + ' · ' + green + ' finished up · ' + (daysWith - green) + ' down or flat',
+      sumSub: SA.n + ' bets · ' + SA.w + EN + SA.l, sumPl: sgn(SA.profit), sumKind: kind(SA.profit) };
   }
-  // The month pop-up: its settled bets newest first, four tiles, the full-bleed table.
   function monthPop(k, bets, today) {
     var list = bets.slice().sort(function (a, b) { return b.date - a.date || b.id - a.id; }), st = stats(list);
     return { title: ymName(k), sub: st.n + ' settled bets · ' + st.w + EN + st.l + (st.v ? EN + st.v + ' void' : '') + ' · ' + st.staked.toFixed(1) + '% staked',
@@ -462,7 +487,7 @@
         { l: 'Avg CLV', v: st.clv === null ? DASH : sgn(st.clv * 100), kind: kind(st.clv) }],
       rows: list.map(function (b) {
         var c = clv(b);
-        return { date: fmtDY(b.date, today), resKind: b.res === 'won' ? 'pos' : b.res === 'lost' ? 'neg' : 'lab', text: b.text, meta: betMeta(b).split(' · ').slice(0, 3).join(' · '),
+        return { date: fmtDY(b.date, today), resKind: b.res === 'won' ? 'pos' : b.res === 'lost' ? 'neg' : 'lab', text: b.text, meta: [b.tour, LEVEL[b.level], b.surface].filter(present).join(' · '),
           market: b.market ? b.market + (b.line ? ' ' + b.line : '') : DASH, odds: b.odds.toFixed(2), close: b.close ? b.close.toFixed(2) : DASH,
           clv: c === null ? DASH : sgn(c * 100), clvKind: kind(c), stake: b.stake.toFixed(1) + '%', res: b.res.toUpperCase(), pl: sgn(pl(b)), plKind: kind(pl(b)) };
       }) };
@@ -522,8 +547,9 @@
   function ledgerFoot(n) { return 'Showing ' + Math.min(LEDGER_ROWS, n) + ' of ' + n + ' · a result you settle here can be undone until you lock it · a locked result (blue tick) is frozen for good'; }
   // A field the bet does not carry (an import the token table did not fill) reads as a dash, never "undefined".
   function betMeta(b) {
-    return (b.tour || DASH) + ' · ' + (LEVEL[b.level] || DASH) + ' · ' + (b.surface || DASH) + (b.type && b.type !== 'Single' ? ' · ' + b.type + ' · ' + b.legs + ' legs' : '')
-      + (b.timing === 'live' ? ' · Live' : '') + (b.tilt ? ' · after two losses' : '');
+    // F5: tour · level · surface joins the parts that are there — no leading " · ", no dash for a blank tournament
+    return [b.tour, LEVEL[b.level], b.surface].filter(present).concat(b.type && b.type !== 'Single' ? [b.type, b.legs + ' legs'] : [])
+      .concat(b.timing === 'live' ? ['Live'] : []).concat(b.tilt ? ['after two losses'] : []).join(' · ');
   }
   // A bankroll card: figures over the bankroll's whole life.
   function bankCard(bets) {
@@ -578,11 +604,11 @@
     DAYS: DAYS, DN: DN, MON: MON, MONTHS: MONTHS, DIMS: DIMS, PERIODS: PERIODS, MARKETS: MARKETS, BOOKS: BOOKS, TYPES: TYPES, PLANS: PLANS, YOUR_STAKES: YOUR_STAKES,
     LEDGER_ROWS: LEDGER_ROWS,
     segTitle: segTitle, segCurve: segCurve, verdicts: verdicts, breakdown: breakdown, arcD: arcD, zoneD: zoneD, disciplineView: disciplineView,
-    heatGrid: heatGrid, monthsTable: monthsTable, monthPop: monthPop, roiBar: roiBar, dayKey: dayKey,
+    calendarView: calendarView, tint: tint, eur: eur, dayRow: dayRow, monthPop: monthPop, roiBar: roiBar, dayKey: dayKey,
     heroTiles: heroTiles, heroCurve: heroCurve, filterMenu: filterMenu, nFilters: nFilters, filtersLabel: filtersLabel, filtersFoot: filtersFoot,
     sgn: sgn, kind: kind, fmtD: fmtD, fmtDY: fmtDY, ym: ym, ymLabel: ymLabel, ymName: ymName, dow: dow, isSettled: isSettled, pl: pl, clv: clv, stats: stats, cumulative: cumulative, heroFigures: heroFigures,
     band: band, key: key, group: group, minN: minN, segments: segments, discipline: discipline,
-    plan: plan, simulate: simulate, stakingView: stakingView, DEFAULT_PLAN: DEFAULT_PLAN, planStake: planStake, heatAlpha: heatAlpha,
+    plan: plan, simulate: simulate, stakingView: stakingView, DEFAULT_PLAN: DEFAULT_PLAN, planStake: planStake,
     addDays: addDays, parseDay: parseDay, periodWindow: periodWindow, inPeriod: inPeriod, passFilters: passFilters, applyFilters: applyFilters, filterCount: filterCount,
     isLocked: isLocked, certText: certText, periodPhrase: periodPhrase, headMeta: headMeta, sortLedger: sortLedger, ledgerFilter: ledgerFilter,
     ledgerMonths: ledgerMonths, ledgerMeta: ledgerMeta, ledgerFoot: ledgerFoot, betMeta: betMeta, bankCard: bankCard,

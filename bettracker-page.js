@@ -33,7 +33,7 @@
 
   var NOF = function () { return { level: [], odds: [], surface: [], market: [] }; };
   var S = { bank: null, view: 'results', lf: 'all', month: null, logOpen: false, form: JSON.parse(JSON.stringify(FORM0)), banks: [], raw: [],
-    period: 'season', range: null, filters: NOF(), menu: null, openDay: null, openMonth: null, dim: 'market', vsPlan: null };
+    period: 'season', range: null, filters: NOF(), menu: null, calOpen: undefined, openMonth: null, dim: 'market', vsPlan: null };
   function curBank() { return S.banks.find(function (b) { return b.id === S.bank; }) || S.banks[0]; }
   function appliedPlan() { var b = curBank(); return b && b.plan && M.plan(b.plan) ? b.plan : null; }
   // The Bet-Analytix import (T1b): admin only — the control is not in the design (reported); the console path is
@@ -256,39 +256,55 @@
       + '<div class="bt-foot"><span>' + esc(M.ledgerFoot(filt.length)) + '</span><span class="bt-export" title="Export is on the handoff list">Export CSV →</span></div></div></div>';
   }
 
-  // ── 5 · Calendar (README §5): 26-week heat grid + pinned record · months table · month pop-up ─────────────────
-  function tint(kindName, pct) { return 'background:color-mix(in srgb, var(--' + kindName + ') ' + pct + '%, transparent)'; }
-  function dayRows(rows, cls) {
-    return rows.map(function (r) {
-      return '<span class="' + cls + '"><span class="bt-dr-t"><span class="bt-dr-text">' + esc(r.text) + '</span><span class="bt-dr-meta">' + esc(r.meta) + '</span></span>'
-        + '<span class="bt-dr-res bt-' + r.resKind + '">' + esc(r.res) + '</span><span class="bt-dr-pl bt-' + r.plKind + '">' + esc(r.pl) + '</span></span>';
-    }).join('');
+  // ── 5 · Calendar (v26 README 7.4 "Month cards" + 7.5 month pop-up) ─────────────────────────────────────────────
+  // The month tiles cover the shown period (Season → this season's months; All time → every month). The planner opens
+  // on the current month — or, when it has no bets, on the latest month that does (the reference opens today's month).
+  function calPhrase() { return S.period === 'season' ? 'this season' : S.period === 'all' ? 'since the first bet' : S.period === 'custom' ? 'in the period' : 'in the ' + M.PERIODS[S.period].toLowerCase(); }
+  function calOpenKey(keys, today) {
+    if (S.calOpen !== undefined) return S.calOpen;
+    var cur = M.ym(today); return keys.indexOf(cur) >= 0 ? cur : keys.length ? keys[keys.length - 1] : null;
+  }
+  function dayPop(c) {
+    return '<span class="bt-dpop' + (c.right ? ' is-right' : '') + (c.above ? ' is-above' : '') + '"><span class="bt-dpop-h"><span class="bt-dpop-t">' + esc(c.title) + '</span><span class="bt-dpop-s">' + esc(c.sub) + '</span></span>'
+      + c.rows.map(function (r) {
+        return '<span class="bt-dpop-r"><span class="bt-dpop-l"><span class="bt-dpop-text">' + esc(r.text) + '</span><span class="bt-dpop-meta">' + esc(r.meta) + '</span></span>'
+          + '<span class="bt-dpop-res bt-' + r.resKind + '">' + esc(r.res) + '</span><span class="bt-dpop-pl bt-' + r.plKind + '">' + esc(r.pl) + '</span></span>';
+      }).join('') + '</span>';
   }
   function calendar(ctx) {
-    var H = M.heatGrid(ctx.all, ctx.today), open = null;
-    var cells = H.cells.map(function (c) {
-      var sel = S.openDay === c.key && c.has; if (sel) open = c;
-      var style = c.tone === 'pos' || c.tone === 'neg' ? tint(c.tone, Math.round(c.alpha * 100)) : '';
-      var pop = c.has ? '<span class="bt-hpop' + (c.flip ? ' is-flip' : '') + '"><span class="bt-hpop-h"><span class="bt-hpop-t">' + esc(c.title) + '</span><span class="bt-hpop-s">' + esc(c.sub) + '</span></span>'
-        + dayRows(c.rows, 'bt-hpop-r') + '<span class="bt-hpop-f">Click the day to pin it</span></span>' : '';
-      return '<span class="bt-hc is-' + c.tone + (c.has ? ' has' : '') + (sel ? ' is-sel' : '') + '"' + (c.has ? ' data-act="day" data-k="' + c.key + '"' : ' title="' + esc(c.t) + '"')
-        + (style ? ' style="' + style + '"' : '') + '>' + esc(c.fig) + pop + '</span>';
+    var keys = M.calendarView(ctx.perList, ctx.today, null, null).keys, openKey = calOpenKey(keys, ctx.today);
+    var C = M.calendarView(ctx.perList, ctx.today, openKey, null, calPhrase());
+    var dn = ['M', 'T', 'W', 'T', 'F', 'S', 'S'].map(function (d) { return '<span class="bt-mc-dn">' + d + '</span>'; }).join('');
+    var cards = C.cards.map(function (m) {
+      return '<div class="bt-mcard' + (m.on ? ' on' : '') + '" data-act="calmonth" data-k="' + m.key + '"><div class="bt-mc-cal"><div class="bt-mc-row">' + dn + '</div>'
+        + m.rows.map(function (r) {
+          return '<div class="bt-mc-row">' + r.map(function (c) {
+            var st = c.alpha !== null && (c.kind === 'pos' || c.kind === 'neg') ? ' style="background:color-mix(in srgb, var(--' + c.kind + ') ' + Math.round(c.alpha * 100) + '%, transparent)"' : '';
+            return '<span class="bt-mc-c is-' + c.kind + (c.today ? ' is-today' : '') + '" title="' + esc(c.t) + '"' + st + '></span>';
+          }).join('') + '</div>';
+        }).join('') + '</div><div class="bt-mc-r"><span class="bt-mc-name">' + esc(m.name) + '</span><span class="bt-mc-pl bt-' + m.plKind + '">' + esc(m.pl) + '</span>'
+        + '<span class="bt-mc-sub">' + esc(m.sub) + '</span><span class="bt-mc-foot"><span class="bt-mc-roil">ROI</span><span class="bt-mc-roir"><span class="bt-mc-roi bt-' + m.roiKind + '">' + esc(m.roi) + '</span>'
+        + '<span class="bt-mc-chev">' + (m.on ? '▴' : '▾') + '</span></span></span></div></div>';
     }).join('');
-    var rec = open ? '<div class="bt-hrec"><div class="bt-hrec-h"><span class="bt-hrec-hl"><span class="bt-hrec-t">' + esc(open.title) + '</span><span class="bt-hrec-s">' + esc(open.sub) + '</span></span>'
-      + '<span class="bt-hrec-x" data-act="dayclose">Close</span></div>' + dayRows(open.rows, 'bt-hrec-r') + '</div>' : '';
-    var heat = '<div class="bt-card bt-heat"><div class="bt-hmonths">' + H.months.map(function (m) { return '<span style="left:' + m.left + '">' + esc(m.label) + '</span>'; }).join('') + '</div>'
-      + '<div class="bt-hbody"><div class="bt-hdays">' + H.days.map(function (d) { return '<span>' + d + '</span>'; }).join('') + '</div><div class="bt-hgrid">' + cells + '</div></div>' + rec
-      + '<div class="bt-hfoot"><span>' + esc(H.meta) + '</span><span class="bt-legend"><span>loss</span><span class="bt-sw" style="' + tint('neg', 85) + '"></span><span class="bt-sw" style="' + tint('neg', 35) + '"></span>'
-      + '<span class="bt-sw is-flat"></span><span class="bt-sw" style="' + tint('pos', 35) + '"></span><span class="bt-sw" style="' + tint('pos', 85) + '"></span><span>win · figure = € that day</span></span></div></div>';
-    var MT = M.monthsTable(ctx.all, ctx.today);
-    var months = '<div class="bt-card bt-mtab"><div class="bt-mgrid bt-mhead"><span class="bt-caps10">Month</span><span class="bt-caps10 bt-r">Bets</span><span class="bt-caps10 bt-c">ROI</span><span class="bt-caps10 bt-r">P/L</span></div>'
-      + MT.map(function (m) {
-        return '<div class="bt-mgrid bt-mrowt' + (S.openMonth === m.key ? ' is-open' : '') + '" data-act="openmonth" data-k="' + m.key + '"><span class="bt-mname">' + esc(m.name) + '</span><span class="bt-mn">' + m.n + '</span>'
-          + '<span class="bt-roibar"><span class="bt-roitick"></span><span class="bt-roifill bt-bg-' + m.bar.kind + '" style="left:' + m.bar.left + ';width:' + m.bar.width + '"></span></span><span class="bt-mpl bt-' + m.plKind + '">' + esc(m.pl) + '</span></div>';
-      }).join('') + '</div>';
-    var om = MT.find(function (m) { return m.key === S.openMonth; }), pop = '';
-    if (om) {
-      var P = M.monthPop(om.key, om.bets, ctx.today);
+    var O = C.open, panel = '';
+    if (O) {
+      var head = M.DN.map(function (d) { return '<span class="bt-pl-dn">' + d + '</span>'; }).join('') + '<span class="bt-pl-dn is-week">Week</span>';
+      var rows = O.rows.map(function (r) {
+        return '<div class="bt-pl-row">' + r.cells.map(function (c) {
+          return '<span class="bt-pday is-' + c.bg + (c.today ? ' is-today' : '') + (c.has ? ' has' : '') + '"' + (c.has ? ' data-day="' + c.key + '"' : '') + '><span class="bt-pday-dt is-' + c.dtKind + '">' + esc(c.dt) + '</span>'
+            + '<span class="bt-pday-b"><span class="bt-pday-short">' + esc(c.short) + '</span><span class="bt-pday-fig bt-' + c.figKind + '">' + esc(c.fig) + '</span></span>' + (c.has ? dayPop(c) : '') + '</span>';
+        }).join('') + '<span class="bt-pweek"><span class="bt-pweek-n">' + esc(r.n) + '</span><span class="bt-pweek-pl bt-' + r.plKind + '">' + esc(r.pl) + '</span></span></div>';
+      }).join('');
+      var stats = O.stats.map(function (x) {
+        return '<div class="bt-pst"><span class="bt-caps10">' + esc(x.l) + '</span><span class="bt-pst-v bt-' + x.k + '">' + esc(x.v) + '</span><span class="bt-pst-s">' + esc(x.s) + '</span></div>';
+      }).join('');
+      panel = '<div class="bt-opm"><div class="bt-opm-h"><span class="bt-opm-hl"><span class="bt-opm-t">' + esc(O.title) + '</span><span class="bt-opm-s">' + esc(O.sub) + '</span></span>'
+        + '<span class="bt-opm-hr"><span class="bt-opm-full" data-act="openmonth" data-k="' + O.key + '">Full record →</span><span class="bt-opm-x" data-act="calclose">Close</span></span></div>'
+        + '<div class="bt-opm-body"><div class="bt-planner"><div class="bt-pl-head">' + head + '</div>' + rows + '</div><div class="bt-pstats">' + stats + '</div></div></div>';
+    }
+    var omBets = S.openMonth === null ? [] : ctx.perList.filter(function (b) { return M.isSettled(b) && M.ym(b.date) === S.openMonth; }), pop = '';
+    if (omBets.length) {
+      var P = M.monthPop(S.openMonth, omBets, ctx.today);
       pop = '<div class="bt-mpop" data-act="monthclose"><div class="bt-mpop-sheet" data-stop="1"><div class="bt-mpop-h"><div class="bt-mpop-hl"><span class="bt-mpop-t">' + esc(P.title) + '</span><span class="bt-mpop-s">' + esc(P.sub) + '</span></div>'
         + '<span class="bt-mpop-x" data-act="monthclose">✕</span></div><div class="bt-mpop-stats">' + P.stats.map(function (x) {
           return '<div class="bt-mpop-tile"><span class="bt-caps">' + esc(x.l) + '</span><span class="bt-mpop-v bt-' + x.kind + '">' + esc(x.v) + '</span></div>';
@@ -301,9 +317,14 @@
             + '<span class="bt-mp-res bt-' + r.resKind + '">' + r.res + '</span><span class="bt-mp-pl bt-' + r.plKind + '">' + esc(r.pl) + '</span></div></div>';
         }).join('') + '</div><div class="bt-mpop-foot">Settled bets only · P/L and stake in % of bankroll · CLV = your price ÷ closing price − 1 · click outside to close</div></div></div>';
     }
-    return '<div class="bt-cal"><div class="bt-headrow"><span class="bt-h16">Calendar</span><span class="bt-sub125">Last 26 weeks, one cell a day · the figure is that day\'s result in € on a 10,000 € bankroll · hover a day for its bets, click to pin the record. Months on the right over the whole season — click one for its full record.</span></div>'
-      + '<div class="bt-calgrid">' + heat + months + '</div></div>' + pop;
+    return '<div class="bt-cal"><div class="bt-headrow"><span class="bt-h16">Calendar</span><span class="bt-sub125">One tile a month, one cell a day · click a month for its record · hover a day for the bets we took · day figures in € on a 10,000 € bankroll.</span></div>'
+      + '<div class="bt-card bt-calcard"><div class="bt-calhead"><span class="bt-calmeta">' + esc(C.meta) + '</span><span class="bt-calsum"><span class="bt-calsum-s">' + esc(M.PERIODS[S.period] + ' · ' + C.sumSub) + '</span>'
+      + '<span class="bt-calsum-pl bt-' + C.sumKind + '">' + esc(C.sumPl) + '</span></span></div><div class="bt-mcards">' + cards + '</div>' + panel + '</div></div>' + pop;
   }
+  // a planner day's pop-up is hover-only (the reference's calHov); Escape hides it too (F4)
+  function onDayOver(e) { var d = e.target.closest && e.target.closest('.bt-pday.has'); if (!d || !root().contains(d)) return; if (!d.classList.contains('is-hov')) { clearDayHov(); d.classList.add('is-hov'); } }
+  function onDayOut(e) { var d = e.target.closest && e.target.closest('.bt-pday.has'); if (d && !(e.relatedTarget && d.contains(e.relatedTarget))) d.classList.remove('is-hov'); }
+  function clearDayHov() { var r = root(); if (r) r.querySelectorAll('.bt-pday.is-hov').forEach(function (x) { x.classList.remove('is-hov'); }); }
 
   // ── 6 · Insights (README §6): verdict cards · Breakdown · Discipline ────────────────────────────────────────────
   var TONE_VAR = { pos: 'pos', neg: 'neg', amber: 'amber' };
@@ -418,7 +439,7 @@
     // the month pop-up: a click inside the sheet is not a click on the overlay
     if (t.dataset.act === 'monthclose' && t.classList.contains('bt-mpop') && e.target.closest('[data-stop]')) return;
     var a = t.dataset.act, id = t.dataset.id;
-    if (a === 'bank') { S.bank = id; S.month = null; S.filters = NOF(); S.range = null; S.openDay = null; S.openMonth = null; S.vsPlan = null; render(); }
+    if (a === 'bank') { S.bank = id; S.month = null; S.filters = NOF(); S.range = null; S.calOpen = undefined; S.openMonth = null; S.vsPlan = null; render(); }
     else if (a === 'archive') {
       e.stopPropagation();
       var bk = S.banks.find(function (b) { return b.id === id; }); store.saveBank(Object.assign({}, bk, { archived: true }));
@@ -433,8 +454,8 @@
     else if (a === 'removeplan') { var cb2 = curBank(); store.saveBank(Object.assign({}, cb2, { plan: null })); load(); render(); }
     else if (a === 'useplan') { var ps = planStakeNow(); if (ps !== null) { S.form = Object.assign({}, S.form, { stake: ps.toFixed(2) }); render(); } }
     else if (a === 'dim') { S.dim = t.dataset.k; S.menu = null; render(); }
-    else if (a === 'day') { S.openDay = S.openDay === t.dataset.k ? null : t.dataset.k; render(); }
-    else if (a === 'dayclose') { S.openDay = null; render(); }
+    else if (a === 'calmonth') { var mk = +t.dataset.k; S.calOpen = calOpenKey(M.calendarView(betsOf(S.bank), todayDate(), null, null).keys, todayDate()) === mk ? null : mk; render(); }
+    else if (a === 'calclose') { S.calOpen = null; render(); }
     else if (a === 'openmonth') { S.openMonth = +t.dataset.k; render(); }
     else if (a === 'monthclose') { S.openMonth = null; render(); }
     else if (a === 'menu') { S.menu = S.menu === t.dataset.k ? null : t.dataset.k; render(); }
@@ -500,6 +521,7 @@
   // then the Log-a-bet panel.
   (window.sfEscLayers = window.sfEscLayers || []).push(
     { id: 'bt-menu', z: 90, isOpen: function () { return active && !!S.menu; }, close: function () { S.menu = null; render(); } },
+    { id: 'bt-day-pop', z: 100, isOpen: function () { return active && !!(root() && root().querySelector('.bt-pday.is-hov')); }, close: clearDayHov },
     { id: 'bt-month-pop', z: 74, isOpen: function () { return active && S.openMonth !== null; }, close: function () { S.openMonth = null; render(); } },
     { id: 'bt-mkt-pop', z: 74, isOpen: function () { return active && !!S.openMkt; }, close: function () { S.openMkt = null; render(); } },
     { id: 'bt-log', z: 72, isOpen: function () { return active && S.logOpen; }, close: function () { S.logOpen = false; render(); } });
@@ -512,6 +534,8 @@
     el.addEventListener('focusout', onBlur);
     el.addEventListener('keydown', onKey);
     el.addEventListener('mousemove', onCurveMove);
+    el.addEventListener('mouseover', onDayOver);
+    el.addEventListener('mouseout', onDayOut);
     el.addEventListener('mouseleave', onCurveLeave, true);
   }
 

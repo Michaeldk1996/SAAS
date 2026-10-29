@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Bet Tracker T1 — every README §Formulas function in bettracker-math.js, the three discipline checks, the six staking
-// plans, segment eligibility (minSample = 15) and the heat alpha.
+// plans, segment eligibility (minSample = 15), the calendar's three tint steps and week net €.
 //
 // The seed: the LOCKED reference's demo generator (`design_handoff_bet_tracker/Bet Tracker Page.dc.html`, class Component
 // R() + bets(), seed 20261027) is copied verbatim below. It lives in this test only — production never ships demo bets.
@@ -240,27 +240,44 @@ function run(M) {
   eq('header meta with a custom range across years', M.headMeta(main, list, perList, 'custom', M.periodWindow('custom', { from: '2025-11-01', to: '2026-06-30' }, today), { from: '2025-11-01', to: '2026-06-30' }, 2, today).split(' · ').slice(-2).join(' · '),
     '1 Nov 2025 → 30 Jun shown · 2 filters on, ' + list.length + ' of ' + perList.length + ' bets');
 
-  // ── 10 · T3 calendar: heat grid, months table, month pop-up (READ off the reference's Results view) ──
-  const HG = M.heatGrid(main, today);
-  eq('heat meta (READ)', HG.meta, '103 betting days this season · 57 finished up · 46 down or flat');
-  eq('heat: 26 weeks × 7 days', HG.cells.length, 182);
-  eq('heat: first column = the Monday 25 weeks before this week (27 Oct → 26 Oct → 4 May)', [HG.cells[0].key, HG.cells[0].d], ['2026-05-04', 0]);
-  eq('heat: the last column is this week, today is cell 25 × 7 + 1', [HG.cells[25 * 7 + 1].key, HG.cells[25 * 7].key, HG.cells[181].key], ['2026-10-27', '2026-10-26', '2026-11-01']);
-  eq('heat: month labels at week × 32px', HG.months.map(m => m.label + '@' + m.left), ['May@0px', 'Jun@128px', 'Jul@288px', 'Aug@416px', 'Sep@576px', 'Oct@704px']);
-  eq('heat: today holds only pending bets → blue "·"', [HG.cells[176].tone, HG.cells[176].fig], ['pend', '·']);
-  eq('heat: days after today are future (transparent)', HG.cells.slice(177).map(c => c.tone), ['future', 'future', 'future', 'future', 'future']);
-  const dayBets = main.filter(b => M.dayKey(b.date) === '2026-10-26'), dpl = dayBets.reduce((x, b) => x + M.pl(b), 0);
-  eq('heat: a settled day = its P/L in € (×100), alpha = heatAlpha', [HG.cells[175].fig, HG.cells[175].alpha], [(Math.round(dpl * 100) > 0 ? '+' : '−') + Math.abs(Math.round(dpl * 100)), +M.heatAlpha(dpl).toFixed(2)]);
-  eq('heat: the pop-up flips side after week 14', [HG.cells[14 * 7].flip, HG.cells[15 * 7].flip], [false, true]);
-  const MT = M.monthsTable(main, today);
-  eq('months table (READ: name · settled n · P/L)', MT.map(m => [m.name, m.n, m.pl]), [['October 2026', 16, '+3.6%'], ['September 2026', 36, '+9.9%'], ['August 2026', 32, '+3.0%'], ['July 2026', 23, '+6.4%'], ['June 2026', 30, '+1.7%'], ['May 2026', 27, '−3.9%'], ['April 2026', 6, '−4.4%']]);
+  // ── 10 · T7 calendar (v26 month cards): tiles, open-month planner, week net €, stats, the month pop-up ──
+  { const CV = M.calendarView(main, today, M.ym(today), null);
+    const byM = {}; main.forEach(b => { const k = b.date.getFullYear() * 12 + b.date.getMonth(); (byM[k] = byM[k] || []).push(b); });
+    eq('cards: one per month with bets, ascending', CV.cards.map(c => c.key), Object.keys(byM).map(Number).sort((x, y) => x - y));
+    eq('cards: name "October 2026", P/L = the month\'s settled P/L', [CV.cards[CV.cards.length - 1].name, CV.cards[CV.cards.length - 1].pl], ['October 2026', M.sgn(byM[M.ym(today)].reduce((x, b) => x + M.pl(b), 0))]);
+    eq('cards: six rows of seven mini cells', CV.cards.map(c => [c.rows.length, c.rows[0].length]).every(x => x[0] === 6 && x[1] === 7), true);
+    const O = CV.open, days = {}; byM[M.ym(today)].filter(M.isSettled).forEach(b => { const k = M.dayKey(b.date); days[k] = (days[k] || 0) + M.pl(b); });
+    // week net €: recount each planner row's settled P/L from the bets, independently of calendarView
+    const first = new Date(today.getFullYear(), today.getMonth(), 1), fd = (first.getDay() + 6) % 7;
+    const want = O.rows.map((r, ri) => { let s = 0, any = false; for (let c = 0; c < 7; c++) { const d = new Date(today.getFullYear(), today.getMonth(), 1 + ri * 7 + c - fd); if (d.getMonth() !== today.getMonth()) continue; const k = M.dayKey(d); if (k in days) { s += days[k]; any = true; } } return any ? M.eur(s) : '—'; });
+    eq('week net € = each week\'s settled P/L × 100, recounted', O.rows.map(r => r.pl), want);
+    eq('Best week = the largest week net €', O.stats[6].v, (() => { const v = O.rows.filter(r => r.any).map(r => r.wpl); return M.eur(Math.max(...v)) + ' €'; })());
+    const dvals = Object.values(days);
+    eq('Up days "x of y" over the betting days', O.stats[7].v, dvals.filter(v => v > 0).length + ' of ' + dvals.length);
+    eq('Best day / Worst day carry their € and "Dow d Mon"', [O.stats[4].v, O.stats[5].v, /^(Mon|Tue|Wed|Thu|Fri|Sat|Sun) \d{1,2} [A-Z][a-z]{2}$/.test(O.stats[4].s)], [M.eur(Math.max(...dvals)) + ' €', M.eur(Math.min(...dvals)) + ' €', true]);
+    eq('stat labels', O.stats.map(x => x.l), ['P/L', 'ROI', 'Win rate', 'Avg CLV', 'Best day', 'Worst day', 'Best week', 'Up days']);
+    ok('the open panel starts on Monday: row 0 holds the 1st at its weekday', O.rows[0].cells[fd].dt === '1' && O.rows[0].cells.slice(0, fd).every(c => c.bg === 'out'));
+  }
+  // the three tint steps (|P/L| in %: < 1.2 → 0.30, < 2.8 → 0.55, else 0.90) and the flat day
+  { const vd = [{ id: 1, date: new Date(2026, 9, 2), odds: 2, stake: 1, res: 'won' }, { id: 2, date: new Date(2026, 9, 2), odds: 2, stake: 1, res: 'lost' }, { id: 3, date: new Date(2026, 9, 2), odds: 2, stake: 1, res: 'void' }];
+    const day = M.calendarView(vd, today, 2026 * 12 + 9, null).open.rows.flatMap(r => r.cells).find(c => c.dt === '2' && c.has);
+    eq('a void is neither won nor lost in a day\'s W–L ("1–1", not the reference\'s 1–2)', [day.short, day.sub], ['1–1', '3 settled · 1–1']); }
+  eq('tint: 1.19% → 0.30, 1.2% → 0.55, 2.79% → 0.55, 2.8% → 0.90', [M.tint(1.19).alpha, M.tint(1.2).alpha, M.tint(2.79).alpha, M.tint(2.8).alpha], [0.3, 0.55, 0.55, 0.9]);
+  eq('tint: sign → tone, zero → flat', [M.tint(-2).tone, M.tint(2).tone, M.tint(0).tone, M.tint(-2).alpha], ['neg', 'pos', 'flat', 0.55]);
+  eq('€ on a 10,000 € bankroll: ×100, true minus, thousands comma', [M.eur(1.234), M.eur(-12.3456), M.eur(25.5), M.eur(0)], ['+123', '−1,235', '+2,550', '0']);
+  { const two = [{ id: 1, date: new Date(2025, 9, 3), odds: 2, stake: 1, res: 'won' }, { id: 2, date: new Date(2026, 9, 3), odds: 2, stake: 1, res: 'lost' }];
+    eq('multi-year: October 2025 and October 2026 are two tiles', M.calendarView(two, today, null, null).cards.map(c => [c.name, c.pl]), [['October 2025', '+1.0%'], ['October 2026', '−1.0%']]); }
   eq('ROI bar: +20% fills half its side, −60% clips at 50%', [M.roiBar(0.2), M.roiBar(-0.6)], [{ left: '50%', width: '25%', kind: 'pos' }, { left: '0%', width: '50%', kind: 'neg' }]);
   eq('ROI bar: no ROI, no bar', M.roiBar(null).width, '0%');
-  const MP = M.monthPop(MT[0].key, MT[0].bets, today);
-  eq('month pop-up title + tile labels', [MP.title, MP.stats.map(x => x.l)], ['October 2026', ['P/L', 'ROI', 'Win rate', 'Avg CLV']]);
-  ok('month pop-up sub "16 settled bets · W–L · x% staked"', /^16 settled bets · \d+–\d+ · \d+\.\d% staked$/.test(MP.sub));
-  eq('month pop-up: rows newest first, every one settled', [MP.rows.length, MP.rows[0].date], [16, '26 Oct']);
-  eq('heat: last year\'s days are not this season', M.heatGrid([{ id: 1, date: new Date(2025, 11, 30), odds: 2, stake: 1, res: 'won' }], new Date(2026, 0, 5)).meta, '0 betting days this season · 0 finished up · 0 down or flat');
+  { const oct = main.filter(b => M.isSettled(b) && M.ym(b.date) === M.ym(today)), MP = M.monthPop(M.ym(today), oct, today);
+    eq('month pop-up title + tile labels', [MP.title, MP.stats.map(x => x.l)], ['October 2026', ['P/L', 'ROI', 'Win rate', 'Avg CLV']]);
+    ok('month pop-up sub "N settled bets · W–L · x% staked"', new RegExp('^' + oct.length + ' settled bets · \\d+–\\d+ · \\d+\\.\\d% staked$').test(MP.sub), MP.sub);
+    eq('month pop-up: rows newest first, every one settled', MP.rows.length, oct.length); }
+  // F5: the ledger meta joins the parts that are there
+  eq('F5: a blank tournament starts at the level', M.betMeta({ tour: '', level: '500', surface: 'Hard' }), 'ATP 500 · Hard');
+  eq('F5: a stored "—" tournament is not printed', M.betMeta({ tour: '—', level: '250', surface: '' }), 'ATP 250');
+  eq('F5: nothing there → nothing', M.betMeta({ tour: '', level: null, surface: null }), '');
+  eq('F5: the month pop-up meta joins only what is there', M.monthPop(1, [{ id: 1, date: new Date(2026, 9, 2), tour: '', level: '500', surface: 'Hard', market: 'Match winner', odds: 2, close: null, stake: 1, res: 'won', text: 'x' }], today).rows[0].meta, 'ATP 500 · Hard');
 
   {
   // ── 11 · T4 verdicts: segment eligibility, blind-spot selection, the three discipline thresholds (each flips) ──
@@ -327,8 +344,6 @@ function run(M) {
     eq('plan stake hint: Flat 2% · To win 1% at 1.50 · Double after a loss after a loss', [M.planStake('Flat 2%', B5, 2), M.planStake('To win 1%', B5, 1.5), M.planStake('Double after a loss', B5.slice(0, 4), 2)], [2, 2, 1]);
   }
 
-  // ── 7 · heat alpha ──
-  near('heat alpha at 0', M.heatAlpha(0), 0.3); near('heat alpha at 1.5%', M.heatAlpha(-1.5), 0.65); near('heat alpha saturates at 3%', M.heatAlpha(3), 1); near('… and stays 1', M.heatAlpha(7), 1);
 
   // ── 8 · period windows + filters (AND across groups, OR within, cross-adjusted counts) ──
   eq('Last 30 days from 27 Oct', M.fmtD(M.periodWindow('30d', {}, today).from), '27 Sep');
@@ -376,6 +391,13 @@ console.log(fails.length ? `bettracker-math: ${fails.length} failure(s)` : 'bett
 
 // ── mutants: every one must turn the suite red ──
 const MUTANTS = [
+  ['day W–L reads a void as a loss', "' · ' + v2.w + EN + v2.l :", "' · ' + v2.w + EN + (v2.n - v2.w) :"],
+  ['tint: the 1.2 step inclusive', 'alpha: a < 1.2 ? 0.3 : a < 2.8 ? 0.55 : 0.9', 'alpha: a <= 1.2 ? 0.3 : a < 2.8 ? 0.55 : 0.9'],
+  ['tint: the 2.8 step moved', 'alpha: a < 1.2 ? 0.3 : a < 2.8 ? 0.55 : 0.9', 'alpha: a < 1.2 ? 0.3 : a < 3 ? 0.55 : 0.9'],
+  ['week net counts bets, not P/L', 'wpl += v2.pl; wn += v2.n;', 'wpl += v2.n; wn += v2.n;'],
+  ['calendar keys by month only', 'var m = ym(b.date); (byM[m]', 'var m = b.date.getMonth(); (byM[m]'],
+  ['F5: dash for a blank tournament', 'return [b.tour, LEVEL[b.level], b.surface].filter(present)', 'return [b.tour || DASH, LEVEL[b.level], b.surface].filter(Boolean)'],
+  ['F5: month pop-up meta prints a dash', "meta: [b.tour, LEVEL[b.level], b.surface].filter(present).join(' · '),", "meta: [b.tour || DASH, LEVEL[b.level], b.surface].join(' · '),"],
   ['no-bet plan prints zeros', "var none = !oL.sts.some(function (x) { return x > 0; });", 'var none = false;'],
   ['To win cap 4', 'return Math.min(5, 1 / (b.odds - 1)); },', 'return Math.min(4, 1 / (b.odds - 1)); },'],
   ['Kelly cap 4', 'return Math.min(3, 25 * c / (b.odds - 1)); },', 'return Math.min(4, 25 * c / (b.odds - 1)); },'],
@@ -387,8 +409,6 @@ const MUTANTS = [
   ['chasing from ×1.10', "ratio > 1.15 ? 'CHASING'", "ratio > 1.10 ? 'CHASING'"],
   ['tilt from −10%', "st.roi < -0.05 ? 'TILT'", "st.roi < -0.10 ? 'TILT'"],
   ['blank key counted', 'var k = key(b, dim); if (k === null) return;', 'var k = key(b, dim);'],
-  ['heat grid starts this week', 'start = addDays(mon, -25 * 7)', 'start = addDays(mon, -26 * 7)'],
-  ['heat counts every year', 'return +k.slice(0, 4) === y;', 'return true;'],
   ['ROI bar unclipped', 'var w = Math.min(Math.abs(roi), 0.4) / 0.4 * 50;', 'var w = Math.abs(roi) / 0.4 * 50;'],
   ['filter count ignores the other groups', "var n = filterCount(perList, F, d[0], o);", "var n = perList.filter(function (b) { return key(b, d[0]) === o; }).length;"],
   ['Avg CLV sub says 0 of 0', "S.clvN ? 'beat the close ' + S.beat + ' of ' + S.clvN : 'no closing prices'", "'beat the close ' + S.beat + ' of ' + S.clvN"],
@@ -397,7 +417,6 @@ const MUTANTS = [
   ['void stake re-enters the ROI denominator', 'roi: stakedWL ? profit / stakedWL : null', 'roi: staked ? profit / staked : null'],
   ['minSample default 14', 'var MIN_SAMPLE = 15', 'var MIN_SAMPLE = 14'],
   ['eligibility n > minSample', 'if (g.s.n >= m && g.name', 'if (g.s.n > m && g.name'],
-  ['heat alpha base 0.25', '0.3 + Math.abs(plPct) / 3 * 0.7', '0.25 + Math.abs(plPct) / 3 * 0.7'],
   ['combined odds not rounded', 'return a * o; }, 1).toFixed(2)', 'return a * o; }, 1).toFixed(3)'],
   ['closing line threshold 50', 'beatPct >= 55 ? \'REAL EDGE\'', 'beatPct >= 50 ? \'REAL EDGE\''],
   ['chasing threshold 1.25', 'ratio > 1.15 ? \'CHASING\'', 'ratio > 1.25 ? \'CHASING\''],
