@@ -11,13 +11,28 @@
   'use strict';
   var M = window.BetTrackerMath, store = window.BetTrackerStore;
   if (!M || !store) return;
+  // Dev only: `?seed=20261027` runs the page on the locked prototype's demo ledger (bettracker-seed.js) in a memory store,
+  // today pinned to the prototype's 27 Oct 2026 — for side-by-side screenshots. Nothing is persisted; no nav entry.
+  var SEED = (function () { var m = /[?&]seed=(\d+)/.exec(location.search || ''); return m ? +m[1] : null; })(), seedReady = false;
+  function seedStore(done) {
+    if (seedReady) return done();
+    var s = document.createElement('script'); s.src = 'bettracker-seed.js';
+    s.onload = function () {
+      var mem = function () { var m = {}; return { getItem: function (k) { return Object.prototype.hasOwnProperty.call(m, k) ? m[k] : null; }, setItem: function (k, v) { m[k] = String(v); }, removeItem: function (k) { delete m[k]; } }; };
+      var local = mem(), T = window.BetTrackerSeed.TODAY;
+      local.setItem(window.BetTrackerStore.KEY, JSON.stringify(window.BetTrackerSeed.doc(SEED, window.BetTrackerStore.V)));
+      store = window.BetTrackerStore.create({ local: local, session: mem(), now: function () { return new Date(T[0], T[1], T[2], 12); } });
+      seedReady = true; done();
+    };
+    document.head.appendChild(s);
+  }
   var DASH = M.DASH;
   var CHIP = { won: 'WON', lost: 'LOST', void: 'VOID' };
   var SEAL_SVG = '<svg viewBox="0 0 24 24" width="7" height="7" fill="none" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"></path></svg>';
   var FORM0 = { legs: [{ text: '', odds: '' }], tour: '', market: 'Match winner', marketOther: '', level: '500', surface: 'Indoor hard', book: 'bet105', bookOther: '', stake: '', timing: 'pre', type: 'Single' };
 
   var NOF = function () { return { level: [], odds: [], surface: [], market: [] }; };
-  var S = { bank: null, view: 'results', lf: 'all', month: null, logOpen: false, form: JSON.parse(JSON.stringify(FORM0)), banks: [], raw: [], importMsg: '',
+  var S = { bank: null, view: 'results', lf: 'all', month: null, logOpen: false, form: JSON.parse(JSON.stringify(FORM0)), banks: [], raw: [],
     period: 'season', range: null, filters: NOF(), menu: null, openDay: null, openMonth: null, dim: 'market', vsPlan: null };
   function curBank() { return S.banks.find(function (b) { return b.id === S.bank; }) || S.banks[0]; }
   function appliedPlan() { var b = curBank(); return b && b.plan && M.plan(b.plan) ? b.plan : null; }
@@ -28,7 +43,7 @@
 
   function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
   function root() { return document.getElementById('trackerRoot'); }
-  function todayDate() { var n = new Date(); return new Date(n.getFullYear(), n.getMonth(), n.getDate()); }
+  function todayDate() { if (SEED) { var T = window.BetTrackerSeed.TODAY; return new Date(T[0], T[1], T[2]); } var n = new Date(); return new Date(n.getFullYear(), n.getMonth(), n.getDate()); }
   function dayKey(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
   // a stored record ('YYYY-MM-DD') → the math's bet (a local-midnight Date)
   function asBet(r) { var b = Object.assign({}, r); b.date = M.parseDay(r.date); return b; }
@@ -41,7 +56,7 @@
   }
   function betsOf(bankId) { return S.raw.filter(function (r) { return r.bank === bankId; }).map(asBet); }
 
-  // ── markup (template lines 19–417) ──────────────────────────────────────────────────────────────────────────────
+  // ── markup (v26 template, Bet Tracker Page.dc.html lines 19–489) ─────────────────────────────────────────────────
   function bankrolls() {
     var live = S.banks.filter(function (b) { return !b.archived; }), arch = S.banks.filter(function (b) { return b.archived; });
     var cards = live.map(function (bk) {
@@ -58,18 +73,16 @@
         + '<span class="bt-delete" data-act="delete" data-id="' + esc(bk.id) + '" title="Delete for good — only possible once archived">Delete</span></span>';
     }).join('') + '</div>' : '';
     return '<div class="bt-banks"><div class="bt-headrow"><span class="bt-caps">Bankrolls</span><span class="bt-banks-sub">One ledger each · pick one and the whole page follows · figures over the bankroll\'s whole life</span></div>'
-      + '<div class="bt-strip">' + cards + '<div class="bt-addbank" data-act="addbank"><span class="bt-addbank-plus">+</span><span class="bt-addbank-lbl">Add bankroll</span></div></div>' + archived + '</div>';
+      + '<div class="bt-strip">' + cards + '<div class="bt-addbank" data-act="addbank"><span class="bt-addbank-plus">+</span><span class="bt-addbank-lbl">Add bankroll</span></div></div></div>' + archived;
   }
   function seal(row) { return '<span class="bt-seal' + (row ? ' is-row' : '') + '"' + (row ? ' title="Locked result · certified, cannot be edited"' : '') + '>' + SEAL_SVG + '</span>'; }
-  function header(cur, all, ctx) {
-    return '<div class="bt-head"><div class="bt-head-l"><span class="bt-caps">Bet Tracker</span>'
-      + '<span class="bt-title"><span class="bt-bankname">' + esc(cur.name) + '</span><span class="bt-cert" title="Every locked result is frozen — it cannot be edited or deleted. The blue seal on a ledger row marks a locked result.">'
-      + seal(false) + esc(M.certText(all)) + '</span></span>'
-      + '<span class="bt-headmeta">' + esc(M.headMeta(all, ctx.list, ctx.perList, ctx.per, ctx.win, ctx.range, ctx.nF, ctx.today)) + '</span>'
-      + (S.importMsg ? '<span class="bt-importmsg">' + esc(S.importMsg) + '</span>' : '') + '</div>'
-      + '<div class="bt-head-r">' + (isAdmin() ? '<span class="bt-import" data-act="import" title="Admin · import a Bet-Analytix CSV export into its own bankroll">Import CSV</span>'
+  // F1 (Michael's unlock of README 7.1): the second line is the bankroll name only — no meta sentence, no import banner.
+  function header(cur, all) {
+    return '<div class="bt-head"><div class="bt-head-l"><div class="bt-title"><span class="bt-h1">Bet Tracker</span><span class="bt-cert" title="Every locked result is frozen — it cannot be edited or deleted. The blue seal on a ledger row marks a locked result.">'
+      + seal(false) + esc(M.certText(all)) + '</span></div><div class="bt-headsub"><span class="bt-bankname">' + esc(cur.name) + '</span></div></div>'
+      + (isAdmin() ? '<span class="bt-import" data-act="import" title="Admin · import a Bet-Analytix CSV export into its own bankroll">Import CSV</span>'
         + '<input type="file" accept=".csv,text/csv" class="bt-importfile" id="btImportFile" hidden>' : '')
-      + '<span class="bt-logbtn" data-act="logtoggle">' + (S.logOpen ? 'Close' : '+ Log a bet') + '</span></div></div>';
+      + '<span class="bt-logbtn" data-act="logtoggle">' + (S.logOpen ? 'Close' : '+ Log a bet') + '</span></div>';
   }
   function seg(key, pairs) {
     return '<div class="bt-segtrack">' + pairs.map(function (p) {
@@ -80,31 +93,41 @@
     return list.map(function (label, i) { var v = keys ? keys[i] : label; return '<option value="' + esc(v) + '"' + (v === sel ? ' selected' : '') + '>' + esc(label) + '</option>'; }).join('');
   }
   function field(label, inner) { return '<label class="bt-field"><span class="bt-caps10">' + esc(label) + '</span>' + inner + '</label>'; }
+  function field(label, inner, extra) { return '<label class="bt-field' + (extra || '') + '"><span class="bt-caps10">' + esc(label) + '</span>' + inner + '</label>'; }
+  function ticketHtml() {
+    var T = M.ticket(S.form), c = M.formCheck(S.form);
+    var kv = function (k, v, id) { return '<div class="bt-tk-row"><span class="bt-tk-k">' + k + '</span><span class="bt-tk-v"' + (id ? ' id="' + id + '"' : '') + '>' + esc(v) + '</span></div>'; };
+    return '<span class="bt-tk-top"><span class="bt-caps10">Ticket</span><span class="bt-tk-pend">PENDING</span></span>'
+      + '<div class="bt-tk-sel"><span class="bt-tk-name' + (T.hasSel ? '' : ' is-ph') + '">' + esc(T.sel) + '</span><span class="bt-tk-ctx">' + esc(T.ctx) + '</span></div>'
+      + '<div class="bt-tk-kv">' + kv('Type', T.type) + kv('Market', T.market) + kv('Book', T.book) + kv('Odds', T.odds) + kv('Stake', T.stake) + '</div>'
+      + '<div class="bt-tk-wl"><div class="bt-tk-tile"><span class="bt-caps10">Wins</span><span class="bt-tk-fig bt-' + T.winKind + '">' + esc(T.win) + '</span></div>'
+      + '<div class="bt-tk-tile"><span class="bt-caps10">Loses</span><span class="bt-tk-fig bt-' + T.loseKind + '">' + esc(T.lose) + '</span></div></div>'
+      + '<div class="bt-tk-foot"><span class="bt-post' + (c.valid ? ' is-ok' : '') + '" id="btPost" data-act="post">Post bet</span><span class="bt-tk-note">Posts as pending · settle in the ledger, then lock</span></div>';
+  }
   function logPanel(cur) {
     var f = S.form, c = M.formCheck(f);
     var legs = f.legs.map(function (lg, i) {
-      return '<div class="bt-leg"><span class="bt-caps10">' + (f.type === 'Single' ? 'Bet' : 'Leg ' + (i + 1)) + '</span>'
-        + '<input class="bt-in" data-f="legtext" data-i="' + i + '" value="' + esc(lg.text) + '" placeholder="A. de Minaur to win">'
-        + '<input class="bt-in bt-mono" data-f="legodds" data-i="' + i + '" value="' + esc(lg.odds) + '" placeholder="odds 2.10">'
-        + (f.type === 'Parlay' && f.legs.length > 2 ? '<span class="bt-legx" data-act="rmleg" data-i="' + i + '" title="Remove this leg">×</span>' : '') + '</div>';
+      return '<div class="bt-leg">' + field(f.type === 'Single' ? 'Bet' : 'Leg ' + (i + 1), '<input class="bt-in" data-f="legtext" data-i="' + i + '" value="' + esc(lg.text) + '" placeholder="A. de Minaur to win">')
+        + field('Odds', '<input class="bt-in bt-in-odds" data-f="legodds" data-i="' + i + '" value="' + esc(lg.odds) + '" placeholder="2.10">')
+        + '<span class="bt-legx-slot">' + (f.type === 'Parlay' && f.legs.length > 2 ? '<span class="bt-legx" data-act="rmleg" data-i="' + i + '" title="Remove this leg">×</span>' : '') + '</span></div>';
     }).join('');
-    var other = (f.market === 'Other' || f.book === 'Other') ? '<div class="bt-rowother">'
+    var other = (f.market === 'Other' || f.book === 'Other') ? '<div class="bt-row2">'
       + (f.market === 'Other' ? field('Market · your own', '<input class="bt-in" data-f="marketOther" value="' + esc(f.marketOther) + '" placeholder="e.g. Most aces">') : '')
       + (f.book === 'Other' ? field('Bookmaker · your own', '<input class="bt-in" data-f="bookOther" value="' + esc(f.bookOther) + '" placeholder="your local book">') : '') + '</div>' : '';
-    return '<div class="bt-log"><div class="bt-log-head"><span class="bt-caps">Log a bet · ' + esc(cur.name) + '</span>'
-      + '<div class="bt-log-segs"><span class="bt-seglbl">Type</span>' + seg('type', [['Single', 'Single'], ['Combination', 'Combination'], ['Parlay', 'Parlay']])
-      + '<span class="bt-seglbl is-gap">Placed</span>' + seg('timing', [['pre', 'Pre-match'], ['live', 'Live · in play']]) + '</div></div>'
-      + '<div class="bt-legs">' + legs + (f.type === 'Parlay' ? '<span class="bt-addleg" data-act="addleg">+ Add a leg</span>' : '')
-      + '<span class="bt-legsnote" id="btLegsNote">' + esc(M.legsNote(f)) + '</span></div>'
-      + '<div class="bt-row1">' + field('Tournament', '<input class="bt-in" data-f="tour" value="' + esc(f.tour) + '" placeholder="Vienna">')
+    return '<div class="bt-card bt-log"><div class="bt-log-l"><div class="bt-log-head"><span class="bt-log-title"><span class="bt-log-h">Log a bet</span><span class="bt-log-bank">' + esc(cur.name) + '</span></span>'
+      + '<span class="bt-log-x" data-act="logtoggle">✕</span></div>'
+      + '<div class="bt-log-sec"><span class="bt-caps10">Selection</span><div class="bt-log-segs">' + seg('type', [['Single', 'Single'], ['Combination', 'Combination'], ['Parlay', 'Parlay']])
+      + seg('timing', [['pre', 'Pre-match'], ['live', 'Live · in play']]) + '</div>' + legs
+      + '<div class="bt-legfoot">' + (f.type === 'Parlay' ? '<span class="bt-addleg" data-act="addleg">+ Add a leg</span>' : '') + '<span class="bt-legsnote" id="btLegsNote">' + esc(M.legsNote(f)) + '</span></div></div>'
+      + '<div class="bt-log-sec is-rule"><div class="bt-row1">' + field('Tournament', '<input class="bt-in" data-f="tour" value="' + esc(f.tour) + '" placeholder="Vienna">')
       + field('Level', '<select class="bt-in" data-f="level">' + options(M.LEVEL_KEYS.map(function (k) { return M.LEVEL[k]; }), f.level, M.LEVEL_KEYS) + '</select>')
       + field('Surface', '<select class="bt-in" data-f="surface">' + options(M.SURFACES, f.surface) + '</select>') + '</div>'
       + '<div class="bt-row2">' + field('Market', '<select class="bt-in" data-f="market">' + options(M.MARKETS.concat('Other — type it'), f.market, M.MARKETS.concat('Other')) + '</select>')
-      + field('Bookmaker', '<select class="bt-in" data-f="book">' + options(M.BOOKS.concat('Other — type it'), f.book, M.BOOKS.concat('Other')) + '</select>') + '</div>'
-      + '<div class="bt-row3"><div class="bt-field"><span class="bt-caps10">' + (f.type === 'Single' ? 'Odds' : 'Combined odds') + '</span><span class="bt-odds' + (c.legsOk ? ' is-ok' : '') + '" id="btOdds">' + esc(c.oddsText) + '</span></div>'
-      + field('Stake · %', '<input class="bt-in bt-mono" data-f="stake" value="' + esc(f.stake) + '" placeholder="1.0">' + planHint())
-      + '<span class="bt-post' + (c.valid ? ' is-ok' : '') + '" id="btPost" data-act="post">Post bet</span></div>'
-      + other + '<span class="bt-hint' + (c.valid ? ' is-ok' : '') + '" id="btHint">' + esc(c.hint) + '</span></div>';
+      + field('Bookmaker', '<select class="bt-in" data-f="book">' + options(M.BOOKS.concat('Other — type it'), f.book, M.BOOKS.concat('Other')) + '</select>') + '</div>' + other + '</div>'
+      + '<div class="bt-log-sec is-rule"><div class="bt-row3">' + field('Stake · % of bankroll', '<input class="bt-in bt-in-odds" data-f="stake" value="' + esc(f.stake) + '" placeholder="1.0">', ' is-stake')
+      + '<div class="bt-field"><span class="bt-caps10 bt-nowrap">' + (f.type === 'Single' ? 'Odds' : 'Combined odds') + '</span><span class="bt-odds' + (c.legsOk ? ' is-ok' : '') + '" id="btOdds">' + esc(c.oddsText) + '</span></div>'
+      + '<span class="bt-hint' + (c.valid ? ' is-ok' : '') + '"><span id="btHint">' + esc(c.hint) + '</span>' + planHint() + '</span></div></div></div>'
+      + '<div class="bt-ticket" id="btTicket">' + ticketHtml() + '</div></div>';
   }
   // The stake hint once a plan is applied: "{plan} says x.xx%" + Use, or "{plan} needs the odds first".
   function planStakeNow() {
@@ -124,9 +147,18 @@
     return '<span class="bt-mrow' + (on ? ' on' : '') + (zero ? ' is-zero' : '') + '" data-act="' + act + '"' + attrs + '>' + label
       + (n == null ? '<span class="bt-tick">' + (on ? '✓' : '') + '</span>' : '<span class="bt-mrow-r"><span class="bt-mrow-n">' + n + '</span><span class="bt-tick">' + (on ? '✓' : '') + '</span></span>') + '</span>';
   }
-  function hero(ctx) {
-    var HT = M.heroTiles(M.stats(ctx.list)), HC = M.heroCurve(ctx.list, ctx.today), D = M.discipline(ctx.list, M.MIN_SAMPLE);
-    var perOn = S.menu === 'period' || S.period !== 'season', fOn = S.menu === 'filters' || ctx.nF > 0;
+  // ── 4 · the hero canvas (README 7.1, v26): header · bankrolls · headline · All time / Period / Filters / View · curve · tiles
+  var CARET = '<span class="bt-caret">▼</span>';
+  var SLIDERS = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h10M18 7h2M4 17h4M12 17h8M14 5v4M8 15v4"></path></svg>';
+  function mrow(act, attrs, label, on, n, zero) {
+    return '<span class="bt-mrow' + (on ? ' on' : '') + (zero ? ' is-zero' : '') + '" data-act="' + act + '"' + attrs + '>' + label
+      + (n == null ? '<span class="bt-tick">' + (on ? '✓' : '') + '</span>' : '<span class="bt-mrow-r"><span class="bt-mrow-n">' + n + '</span><span class="bt-tick">' + (on ? '✓' : '') + '</span></span>') + '</span>';
+  }
+  var curveNow = null;   // the drawn curve, for the hover layer (local state, as the reference)
+  function hero(cur, all, ctx) {
+    var HT = M.heroTiles(M.stats(ctx.list), ctx.list), HC = M.heroCurve(ctx.list, ctx.today), D = M.discipline(ctx.list, M.MIN_SAMPLE);
+    curveNow = HC;
+    var perOn = S.menu === 'period' || (S.period !== 'season' && S.period !== 'all'), fOn = S.menu === 'filters' || ctx.nF > 0, allOn = S.period === 'all';
     var periods = Object.keys(M.PERIODS).map(function (k) { return mrow('period', ' data-k="' + k + '"', M.PERIODS[k], S.period === k); }).join('');
     var custom = S.period === 'custom' ? '<div class="bt-custom"><input type="date" class="bt-date-in" data-f="rangefrom" value="' + esc(ctx.range.from) + '">'
       + '<input type="date" class="bt-date-in" data-f="rangeto" value="' + esc(ctx.range.to) + '"></div>' : '';
@@ -148,19 +180,36 @@
     var labels = HC.yTicks.map(function (t) { return '<span class="bt-ylab" style="top:' + t.top + '">' + esc(t.label) + '</span>'; }).join('')
       + HC.xTicks.map(function (t) { return '<span class="bt-xlab" style="left:' + t.left + '">' + esc(t.label) + '</span>'; }).join('');
     var tiles = HT.rows.map(function (r) {
-      return '<div class="bt-htile"><span class="bt-caps bt-nowrap">' + esc(r.label) + '</span><span class="bt-htile-fig bt-' + r.kind + '">' + esc(r.value) + '</span><span class="bt-htile-sub">' + esc(r.sub) + '</span></div>';
+      return '<div class="bt-htile"><span class="bt-caps bt-nowrap">' + esc(r.label) + '</span><span class="bt-htile-v"><span class="bt-htile-fig bt-' + r.kind + '">' + esc(r.value) + '</span><span class="bt-htile-when">' + esc(r.when) + '</span></span><span class="bt-htile-sub">' + esc(r.sub) + '</span></div>';
     }).join('');
-    return '<div class="bt-card bt-hero"><div class="bt-hero-top"><div class="bt-hero-l"><span class="bt-caps">Profit · % of bankroll</span>'
+    return '<div class="bt-card bt-hero">' + header(cur, all) + bankrolls()
+      + '<div class="bt-hero-top"><div class="bt-hero-l"><span class="bt-caps">Profit · % of bankroll</span>'
       + '<span class="bt-profitrow"><span class="bt-profit bt-' + HT.profitKind + '">' + esc(HT.profit) + '</span><span class="bt-profitsub">' + esc(HT.profitSub) + '</span></span></div>'
       + '<div class="bt-hero-r"><span class="bt-curvemeta">' + esc(HC.meta) + '</span>'
+      + '<span class="bt-trig bt-alltime' + (allOn ? ' on' : '') + '" data-act="alltime" title="The whole bankroll — from the first bet to today, no period cut">All time</span>'
       + '<span class="bt-rel"><span class="bt-trig' + (perOn ? ' on' : '') + '" data-act="menu" data-k="period">' + esc(M.PERIODS[S.period]) + CARET + '</span>' + pmenu + '</span>'
       + '<span class="bt-rel"><span class="bt-trig' + (fOn ? ' on' : '') + '" data-act="menu" data-k="filters">' + SLIDERS + esc(M.filtersLabel(S.filters)) + CARET + '</span>' + fmenu + '</span>'
       + '<span class="bt-views">' + v('results', 'Results') + v('insights', 'Insights', '<span class="bt-view-badge bt-' + D.badgeTone + '">' + esc(D.badge) + '</span>')
       + v('staking', 'Staking', appliedPlan() ? '<span class="bt-plandot"></span>' : '') + '</span></div></div>'
-      + '<div class="bt-curve">' + svg + labels + '</div>'
+      + '<div class="bt-curve">' + svg + '<div class="bt-hov" id="btHov"></div><div class="bt-curve-hit" id="btCurveHit"></div>' + labels + '</div>'
       + '<div class="bt-ddrow"><span>○ red = deepest drawdown</span><span>' + esc(HC.ddNote) + '</span></div>'
       + '<div class="bt-htiles">' + tiles + '</div></div>';
   }
+  // The curve hover (v26): a 1 px rule, a ringed dot and the 236 px tooltip — drawn into #btHov, no page re-render.
+  function hoverAt(fx) {
+    var el = document.getElementById('btHov'); if (!el || !curveNow || !curveNow.n) return;
+    var H = M.curveHover(curveNow, fx, todayDate());
+    var tip = '<div class="bt-hov-tip' + (H.flip ? ' is-flip' : '') + '" style="left:' + H.left + '"><div class="bt-hov-h"><span class="bt-hov-date">' + esc(H.date) + '</span><span class="bt-hov-idx">' + esc(H.idx) + '</span></div>'
+      + '<div class="bt-hov-cumrow"><span class="bt-hov-cum bt-' + H.cumKind + '">' + esc(H.cum) + '</span><span class="bt-hov-lbl">bankroll</span></div>'
+      + (H.bet ? '<div class="bt-hov-bet"><div class="bt-hov-betrow"><span class="bt-hov-sq bt-bg-' + H.bet.resKind + '"></span><span class="bt-hov-text">' + esc(H.bet.text) + '</span></div>'
+        + '<span class="bt-hov-meta">' + esc(H.bet.meta) + '</span><div class="bt-hov-plrow"><span class="bt-hov-stake">' + esc(H.bet.stake) + '</span><span class="bt-hov-pl bt-' + H.bet.plKind + '">' + esc(H.bet.pl) + '</span></div></div>' : '') + '</div>';
+    el.innerHTML = '<div class="bt-hov-rule" style="left:' + H.left + '"></div><div class="bt-hov-dot" style="left:' + H.left + '; top:' + H.top + '"></div>' + tip;
+  }
+  function onCurveMove(e) {
+    var hit = e.target; if (!hit || hit.id !== 'btCurveHit') return;
+    var r = hit.getBoundingClientRect(); hoverAt((e.clientX - r.left) / r.width * 1292);
+  }
+  function onCurveLeave(e) { if (e.target && e.target.id === 'btCurveHit') { var el = document.getElementById('btHov'); if (el) el.innerHTML = ''; } }
   function closeCell(b) {
     var editable = M.isSettled(b) && !M.isLocked(b);
     if (!editable) return '<span class="bt-close">' + (b.close ? b.close.toFixed(2) : DASH) + '</span>';
@@ -340,7 +389,7 @@
     var ctx = { all: all, list: list, perList: perList, win: win, today: today, per: S.period, range: S.range, nF: M.nFilters(S.filters) };
     var view = S.view === 'results' ? ledger(list) + calendar(ctx) : S.view === 'insights' ? insights(ctx) : staking(ctx);
     el.innerHTML = '<section class="bt-sec"><div class="bt-col"><div class="bt-stack">'
-      + bankrolls() + header(cur, all, ctx) + (S.logOpen ? logPanel(cur) : '') + hero(ctx) + view + '</div></div></section>';
+      + hero(cur, all, ctx) + (S.logOpen ? logPanel(cur) : '') + view + '</div></div></section>';
   }
   // live form figures without a re-render (keeps the caret in the field being typed in)
   function refreshLog() {
@@ -350,6 +399,7 @@
     if (h) { h.textContent = c.hint; h.classList.toggle('is-ok', c.valid); }
     if (n) n.textContent = M.legsNote(S.form);
     var ph = document.getElementById('btPlanHint'); if (ph) ph.outerHTML = planHint();
+    var tk = document.getElementById('btTicket'); if (tk) tk.innerHTML = ticketHtml();
   }
 
   // ── actions: every write goes through the store, then the page re-reads it ─────────────────────────────────────
@@ -388,6 +438,7 @@
     else if (a === 'openmonth') { S.openMonth = +t.dataset.k; render(); }
     else if (a === 'monthclose') { S.openMonth = null; render(); }
     else if (a === 'menu') { S.menu = S.menu === t.dataset.k ? null : t.dataset.k; render(); }
+    else if (a === 'alltime') { S.period = S.period === 'all' ? 'season' : 'all'; S.menu = null; S.month = null; render(); }
     else if (a === 'period') { S.period = t.dataset.k; if (S.period !== 'custom') S.menu = null; S.month = null; render(); }
     else if (a === 'filter') {
       var fk = t.dataset.k, fv = t.dataset.v, cur2 = S.filters[fk], nf = Object.assign({}, S.filters);
@@ -414,8 +465,7 @@
   function importText(text) {
     var I = window.BetTrackerImport; if (!I) return { ok: false, reason: 'no-importer' };
     var w = I.run(text, store, {}), r = w.report || {};
-    S.importMsg = w.ok ? 'Imported ' + w.stored + ' bets into BSP Consult Bet-Analytix · ' + r.settled + ' settled · ' + r.pending + ' pending'
-      : 'Import refused · ' + (w.reason === 'already-imported' ? 'this bankroll already holds the import (TrackerPage.removeImport() wipes it first)' : w.reason === 'file' ? 'the file does not read as a Bet-Analytix export' : w.reason);
+    // F1: no banner — the import's outcome is the return value (console path) and the bankroll strip itself
     if (w.ok) { S.bank = w.bankId; S.month = null; }
     load(); render();
     return w;
@@ -444,6 +494,15 @@
     saveRaw(id, { close: close });
   }
   function onKey(e) { var t = e.target; if (e.key === 'Enter' && t.dataset && t.dataset.f === 'close') t.blur(); }
+  // F4 (Michael's unlock — the reference has no key handling): Escape closes what is open, through the site's one Escape
+  // handler (esc-nav.js: a page registers its layers, it never binds its own key listener). One press closes one
+  // layer, the topmost first: a menu (Period, Filters, the cut), a planner day's pop-up, the month / market pop-up,
+  // then the Log-a-bet panel.
+  (window.sfEscLayers = window.sfEscLayers || []).push(
+    { id: 'bt-menu', z: 90, isOpen: function () { return active && !!S.menu; }, close: function () { S.menu = null; render(); } },
+    { id: 'bt-month-pop', z: 74, isOpen: function () { return active && S.openMonth !== null; }, close: function () { S.openMonth = null; render(); } },
+    { id: 'bt-mkt-pop', z: 74, isOpen: function () { return active && !!S.openMkt; }, close: function () { S.openMkt = null; render(); } },
+    { id: 'bt-log', z: 72, isOpen: function () { return active && S.logOpen; }, close: function () { S.logOpen = false; render(); } });
   function wire() {
     if (wired) return; var el = root(); if (!el) return; wired = true;
     el.addEventListener('click', onClick);
@@ -452,9 +511,11 @@
     el.addEventListener('change', onFile);
     el.addEventListener('focusout', onBlur);
     el.addEventListener('keydown', onKey);
+    el.addEventListener('mousemove', onCurveMove);
+    el.addEventListener('mouseleave', onCurveLeave, true);
   }
 
-  function setActive(on) { active = !!on; if (!active) return; wire(); load(); render(); }
+  function setActive(on) { active = !!on; if (!active) return; if (SEED && !seedReady) return seedStore(function () { setActive(active); }); wire(); load(); render(); }
   // #tracker — the page's deep link, the way Picks keeps #picks
   function applyHash() {
     if (location.hash !== '#tracker') return;

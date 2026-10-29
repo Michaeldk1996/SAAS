@@ -30,10 +30,11 @@ check('Betting = Picks · Bet Tracker, in that order', /data-tab="picks"[\s\S]*d
 check('Bet Tracker icon = README §Where it lives', betting.includes('<path d="M3.5 5.5h13v9h-13zM3.5 9h13M6.5 12h3M13 5.5v9"/>'));
 check('short label "Tracker" carried on the row', betting.includes('data-short="Tracker"'));
 const pipe = readFileSync(join(ROOT, '.github/workflows/pipeline.yml'), 'utf8'), pub = readFileSync(join(ROOT, 'tools/publish-site.mjs'), 'utf8'), code = readFileSync(join(ROOT, 'tools/site-code.sh'), 'utf8');
-for (const f of ['bettracker-math.js', 'bettracker-store.js', 'bettracker-page.js', 'bettracker-page.css', 'bettracker-import.js']) {
+for (const f of ['bettracker-math.js', 'bettracker-store.js', 'bettracker-page.js', 'bettracker-page.css', 'bettracker-import.js', 'bettracker-seed.js']) {
   check(`${f} in all three code deploy lists (+ the pipeline's MISSING assert)`, pipe.split(f).length - 1 === 2 && pub.includes(`'${f}'`) && code.includes(f));
 }
-check('no demo bets ship: the seed generator lives in the math test only', !/20261027|Challenger lab|Tennis 2026/.test(readFileSync(join(ROOT, 'bettracker-page.js'), 'utf8') + readFileSync(join(ROOT, 'bettracker-store.js'), 'utf8') + readFileSync(join(ROOT, 'bettracker-math.js'), 'utf8')));
+check('no demo bets ship: the prototype\'s seed lives in bettracker-seed.js only, loaded by the page only under ?seed=', !/Challenger lab|Tennis 2026|A\. de Minaur to win'|R0\(/.test(readFileSync(join(ROOT, 'bettracker-page.js'), 'utf8') + readFileSync(join(ROOT, 'bettracker-store.js'), 'utf8') + readFileSync(join(ROOT, 'bettracker-math.js'), 'utf8'))
+  && /var SEED = \(function \(\) \{ var m = \/\[\?&\]seed=/.test(readFileSync(join(ROOT, 'bettracker-page.js'), 'utf8')) && !html.includes('bettracker-seed.js'));
 check('dashboard loads bettracker-import.js after the store', html.indexOf('<script src="bettracker-import.js" defer></script>') > html.indexOf('<script src="bettracker-store.js" defer></script>'));
 check('no member file in the repo: the importer ships no rows (only the synthetic fixture under tools/fixtures)', !/Napoleon Games|Unibet/.test(readFileSync(join(ROOT, 'bettracker-import.js'), 'utf8')));
 check('only the store touches storage', !/localStorage|sessionStorage/.test(readFileSync(join(ROOT, 'bettracker-page.js'), 'utf8') + readFileSync(join(ROOT, 'bettracker-math.js'), 'utf8')));
@@ -128,17 +129,19 @@ async function browser() {
       ['.bt-sec', ['padding-top', 'padding-left', 'padding-bottom', 'background-color'], ['32px', '40px', '60px', 'rgb(5, 6, 10)']],
       ['.bt-col', ['max-width', 'min-width', 'row-gap'], ['1340px', '960px', '16px']],
       ['.bt-stack', ['row-gap'], ['28px']],
-      ['.bt-bank', ['width', 'padding-top', 'padding-left', 'padding-bottom', 'border-radius', 'background-color', 'border-top-color'], ['300px', '14px', '16px', '12px', '12px', 'rgb(14, 16, 25)', 'rgba(0, 122, 255, 0.65)']],
+      ['.bt-bank', ['width', 'padding-top', 'padding-left', 'padding-bottom', 'border-radius', 'background-color', 'border-top-color'], ['300px', '14px', '16px', '12px', '12px', 'rgb(10, 13, 20)', 'rgba(0, 122, 255, 0.65)']],
       ['.bt-bank-name', ['font-size', 'font-weight'], ['14px', '700']],
-      ['.bt-tile', ['background-color', 'border-radius', 'padding-top', 'padding-left'], ['rgb(10, 13, 20)', '8px', '8px', '10px']],
+      ['.bt-tile', ['background-color', 'border-radius', 'padding-top', 'padding-left'], ['rgb(14, 16, 25)', '8px', '8px', '10px']],
       ['.bt-tile-fig', ['font-size', 'font-weight'], ['18px', '800']],
       ['.bt-addbank', ['width', 'border-top-style', 'border-top-color'], ['200px', 'dashed', 'rgba(255, 255, 255, 0.18)']],
-      ['.bt-bankname', ['font-size', 'font-weight'], ['26px', '800']],
+      ['.bt-h1', ['font-size', 'font-weight', 'letter-spacing', 'line-height'], ['24px', '800', '-0.36px', '26.4px']],
+      ['.bt-bankname', ['font-size', 'font-weight', 'color'], ['13px', '700', 'rgb(255, 255, 255)']],
       ['.bt-cert', ['height', 'border-radius', 'background-color', 'border-top-color', 'color', 'font-size', 'font-weight'], ['24px', '7px', 'rgba(0, 122, 255, 0.12)', 'rgba(0, 122, 255, 0.35)', 'rgb(106, 154, 248)', '11.5px', '700']],
       ['.bt-cert .bt-seal', ['width', 'height', 'background-color'], ['12px', '12px', 'rgb(0, 122, 255)']],
-      ['.bt-headmeta', ['font-size', 'color'], ['13px', 'rgb(163, 170, 190)']],
+      ['.bt-headsub', ['font-size', 'color'], ['13px', 'rgb(221, 224, 234)']],
       ['.bt-logbtn', ['height', 'border-radius', 'background-color', 'font-size', 'font-weight'], ['36px', '10px', 'rgb(0, 122, 255)', '13px', '700']],
-      ['.bt-hero', ['padding-top', 'padding-left', 'padding-bottom', 'border-radius', 'background-color'], ['22px', '24px', '18px', '12px', 'rgb(14, 16, 25)']],
+      ['.bt-hero', ['padding-top', 'padding-left', 'padding-bottom', 'border-radius', 'background-color', 'row-gap'], ['22px', '26px', '18px', '12px', 'rgb(14, 16, 25)', '16px']],
+      ['.bt-hero-top', ['border-top-color', 'padding-top'], ['rgba(255, 255, 255, 0.05)', '18px']],
       ['.bt-views', ['height', 'background-color', 'border-radius'], ['30px', 'rgb(12, 14, 22)', '9px']],
       ['.bt-view.on', ['font-size', 'font-weight', 'background-color', 'color'], ['12.5px', '700', 'rgb(27, 32, 49)', 'rgb(255, 255, 255)']],
       ['.bt-h16', ['font-size', 'font-weight'], ['16px', '800']],
@@ -158,17 +161,21 @@ async function browser() {
     // ── Log a Single · a Combination · a 3-leg Parlay ──
     await click('.bt-logbtn');
     check('Log a bet opens · button reads Close', !!(await T('.bt-log')) && (await T('.bt-logbtn')) === 'Close');
-    check('Post bet fills its auto track to the panel edge (reference grid 150px 200px auto)', await E(`Math.abs(document.querySelector('#btPost').getBoundingClientRect().right - document.querySelector('.bt-row3').getBoundingClientRect().right) < 1`));
+    check('Log a bet = two columns, the Ticket 300 px on the right, Post bet 38 px at its foot', (await E(`getComputedStyle(document.querySelector('.bt-log')).gridTemplateColumns.split(' ').pop()`)) === '300px'
+      && (await E(`document.querySelector('.bt-ticket').contains(document.querySelector('#btPost')) && document.querySelector('#btPost').getBoundingClientRect().height`)) === 38);
+    check('Ticket before input: "Your selection" placeholder, every value a dash', (await T('.bt-tk-name')) === 'Your selection' && await E(`[...document.querySelectorAll('.bt-tk-v')].slice(3).every(e=>e.textContent==='—') && [...document.querySelectorAll('.bt-tk-fig')].every(e=>e.textContent==='—')`));
     check('Post bet greyed until valid', await E(`!document.querySelector('#btPost').classList.contains('is-ok')`));
     check('Odds read — until the leg is valid', (await T('#btOdds')) === '—');
     await type('[data-f="legtext"][data-i="0"]', 'A. de Minaur to win'); await type('[data-f="legodds"][data-i="0"]', '2.10');
     await type('[data-f="tour"]', 'Vienna'); await type('[data-f="stake"]', '1');
     check('Single: odds 2.10, Post live', (await T('#btOdds')) === '2.10' && await E(`document.querySelector('#btPost').classList.contains('is-ok')`));
-    check('You post sentence verbatim', (await T('#btHint')) === 'You post: single · A. de Minaur to win · Match winner @ 2.10 · bet105 · 1% of bankroll · pre-match · wins → +1.10% · loses → −1.00%. It lands as pending; settle it in the ledger, then lock it.');
+    check('ready hint verbatim (v26)', (await T('#btHint')) === 'Ready — the ticket on the right is what gets posted.');
+    check('Ticket: the selection, its context and Wins / Loses', (await T('.bt-tk-name')) === 'A. de Minaur to win' && JSON.stringify(await E(`[...document.querySelectorAll('.bt-tk-v')].map(e=>e.textContent)`)) === JSON.stringify(['Single · pre-match', 'Match winner', 'bet105', '2.10', '1.00% of bankroll'])
+      && JSON.stringify(await E(`[...document.querySelectorAll('.bt-tk-fig')].map(e=>e.textContent)`)) === '["+1.10%","−1.00%"]', JSON.stringify(await E(`[...document.querySelectorAll('.bt-tk-v,.bt-tk-fig')].map(e=>e.textContent)`)));
     await click('#btPost');
     check('posting closes the panel and lands a pending row', await E(`!document.querySelector('.bt-log') && document.querySelectorAll('.bt-tr.is-pending').length === 1`));
     await click('.bt-logbtn'); await click('.bt-segitem[data-k="type"][data-v="Combination"]');
-    check('Combination: two leg rows labelled Leg 1 / Leg 2, odds label Combined odds', JSON.stringify(await E(`[...document.querySelectorAll('.bt-leg .bt-caps10')].map(e=>e.textContent)`)) === '["Leg 1","Leg 2"]');
+    check('Combination: two leg rows labelled Leg 1 / Leg 2, odds label Combined odds', JSON.stringify(await E(`[...document.querySelectorAll('.bt-leg .bt-field:first-child .bt-caps10')].map(e=>e.textContent)`)) === '["Leg 1","Leg 2"]');
     check('legs note before odds', (await T('#btLegsNote')) === 'Two legs, one ticket — the odds multiply (e.g. 1.30 × 1.20 = 1.56). All legs must win.');
     await type('[data-f="legtext"][data-i="0"]', 'J. Sinner to win'); await type('[data-f="legodds"][data-i="0"]', '1.30');
     await type('[data-f="legtext"][data-i="1"]', 'C. Alcaraz to win'); await type('[data-f="legodds"][data-i="1"]', '1.20');
@@ -218,19 +225,35 @@ async function browser() {
     check('hero: curve meta "3 bets · peak … · now −0.4%"', /^3 bets · peak .+ · now −0\.4%$/.test(await T('.bt-curvemeta')), await T('.bt-curvemeta'));
     check('hero: curve path, the last point and the ticks are drawn', await E(`!!document.querySelector('.bt-curve .bt-line') && !!document.querySelector('.bt-lastpt') && document.querySelectorAll('.bt-yt').length > 1`));
     await click('.bt-trig[data-k="period"]');
-    check('period menu: four options', JSON.stringify(await E(`[...document.querySelectorAll('.bt-menu-period .bt-mrow')].map(e=>e.firstChild.textContent)`)) === JSON.stringify(['Last 30 days', 'Last 90 days', 'Season', 'Custom range']));
+    check('period menu: five options (v26 adds All time)', JSON.stringify(await E(`[...document.querySelectorAll('.bt-menu-period .bt-mrow')].map(e=>e.firstChild.textContent)`)) === JSON.stringify(['Last 30 days', 'Last 90 days', 'Season', 'All time', 'Custom range']));
     await click('.bt-mrow[data-k="custom"]');
     check('period menu: Custom range reveals two date inputs and stays open', await E(`document.querySelectorAll('.bt-menu-period .bt-date-in[type="date"]').length === 2`));
+    const esc = () => E(`document.dispatchEvent(new KeyboardEvent('keydown', {key:'Escape', bubbles:true}))`);
+    await esc();
+    check('F4: Escape closes the Period menu (custom range kept)', !(await E(`!!document.querySelector('.bt-menu-period')`)) && (await T('.bt-trig[data-k="period"]')).startsWith('Custom range'));
+    await click('.bt-trig[data-k="filters"]'); await esc();
+    check('F4: Escape closes the Filters menu', !(await E(`!!document.querySelector('.bt-menu-filters')`)));
+    await click('.bt-logbtn'); await esc();
+    check('F4: Escape closes the Log-a-bet panel', !(await E(`!!document.querySelector('.bt-log')`)) && (await T('.bt-logbtn')) === '+ Log a bet');
+    await click('.bt-alltime');
+    check('All time: one click lights the pill, the Period trigger goes idle', await E(`document.querySelector('.bt-alltime').classList.contains('on') && !document.querySelector('.bt-trig[data-k="period"]').classList.contains('on')`) && (await T('.bt-trig[data-k="period"]')).startsWith('All time'));
+    await click('.bt-alltime');
+    check('All time: a second click goes back to Season', (await T('.bt-trig[data-k="period"]')).startsWith('Season') && !(await E(`document.querySelector('.bt-alltime').classList.contains('on')`)));
+    { const hov = await E(`(function(){ var h=document.getElementById('btCurveHit'); var r=h.getBoundingClientRect(); h.dispatchEvent(new MouseEvent('mousemove', {bubbles:true, clientX:r.right-2, clientY:r.top+50})); var t=document.querySelector('.bt-hov-tip'); return t ? [t.querySelector('.bt-hov-idx').textContent, t.querySelector('.bt-hov-cum').textContent, !!t.querySelector('.bt-hov-bet'), t.querySelector('.bt-hov-pl') && t.querySelector('.bt-hov-pl').textContent, t.classList.contains('is-flip')] : null; })()`);
+      check('curve hover: the last point — "3 of 3", cumulative, the bet with signed P/L, tooltip flipped left', hov && hov[0] === '3 of 3' && hov[1] === '−0.4%' && hov[2] && /^[+−]?\d/.test(hov[3]) && hov[4], JSON.stringify(hov));
+      await E(`document.getElementById('btCurveHit').dispatchEvent(new MouseEvent('mouseleave', {bubbles:false}))`);
+      check('curve hover: leaving clears it', !(await E(`!!document.querySelector('.bt-hov-tip')`))); }
+    await click('.bt-trig[data-k="period"]');
     await click('.bt-mrow[data-k="30d"]');
     check('period: a non-custom pick closes the menu and lights the trigger', !(await E(`!!document.querySelector('.bt-menu-period')`)) && (await T('.bt-trig[data-k="period"]')).startsWith('Last 30 days') && (await E(`document.querySelector('.bt-trig[data-k="period"]').classList.contains('on')`)));
-    check('period: the header names it', (await T('.bt-headmeta')).includes('last 30 days shown'));
+    check('F1: the header second line is the bankroll name only, whatever the period', (await T('.bt-headsub')) === 'Bankroll 1' && !(await E(`!!document.querySelector('.bt-headmeta')`)));
     await click('.bt-trig[data-k="filters"]');
     check('filters menu: Level · Odds band · Surface · Market', JSON.stringify(await E(`[...document.querySelectorAll('.bt-fgroup-l')].map(e=>e.textContent)`)) === JSON.stringify(['Level', 'Odds band', 'Surface', 'Market']));
     check('filters menu: ATP 500 counts all three bets', (await E(`document.querySelector('.bt-mrow[data-k="level"][data-v="ATP 500"] .bt-mrow-n').textContent`)) === '3');
     await click('.bt-mrow[data-k="surface"][data-v="Clay"]');
     check('filters: a zero row stays pickable and the label names it', (await T('.bt-trig[data-k="filters"]')).startsWith('Filters · Clay'));
     check('filters: counts are cross-adjusted (ATP 500 given Clay = 0, Clay given nothing else = 0)', (await E(`document.querySelector('.bt-mrow[data-k="level"][data-v="ATP 500"] .bt-mrow-n').textContent`)) === '0');
-    check('filters: the header says "1 filter on, 0 of 3 bets"', (await T('.bt-headmeta')).endsWith('1 filter on, 0 of 3 bets'), await T('.bt-headmeta'));
+    check('filters: the menu foot says "0 of 3 bets in the period"', (await T('.bt-mfoot')).startsWith('0 of 3 bets in the period'), await T('.bt-mfoot'));
     await click('.bt-reset');
     check('Reset filters clears the filters and the period back to Season', (await T('.bt-trig[data-k="filters"]')).startsWith('Filters') && !(await T('.bt-trig[data-k="filters"]')).includes('·') && (await T('.bt-trig[data-k="period"]')).startsWith('Season'));
     await click('.bt-trig[data-k="filters"]');
@@ -316,12 +339,11 @@ async function browser() {
     const csv = readFileSync(join(ROOT, 'tools/fixtures/bettracker-import-sample.csv'), 'utf8').replace(/2026-10-/g, ymNow);
     check('import: 10 bets stored', (await E(`TrackerPage.importText(${JSON.stringify(csv)}).stored`)) === 10);
     check('import: its bankroll is selected and named BSP Consult Bet-Analytix', (await T('.bt-bank.is-on .bt-bank-name')) === 'BSP Consult Bet-Analytix');
-    check('import: header "9 settled since 14 Jan 2022 · 0 pending"', (await T('.bt-headmeta')).startsWith('9 settled since 14 Jan 2022 · 0 pending'), await T('.bt-headmeta'));
-    check('import: the report line names the count', (await T('.bt-importmsg')).startsWith('Imported 10 bets into BSP Consult Bet-Analytix'));
+    check('F1: after an import the header is the bankroll name only — no banner, no meta sentence', (await T('.bt-headsub')) === 'BSP Consult Bet-Analytix' && !(await E(`!!document.querySelector('.bt-importmsg')`)));
     check('import: every imported result is unlocked (undo + Lock, no seal)', await E(`[...document.querySelectorAll('.bt-tr[data-bet]')].every(r => r.querySelector('.bt-undo') && r.querySelector('.bt-lock') && !r.querySelector('.bt-seal'))`));
     check('import: a blank market and bookmaker read —', await E(`(function(){ var r = [...document.querySelectorAll('.bt-tr')].find(x => x.querySelector('.bt-bettext') && x.querySelector('.bt-bettext').textContent.startsWith('Two legs')); return r.querySelector('.bt-market').textContent === '—' && r.querySelector('.bt-book').textContent === '—'; })()`));
     check('import: no "undefined" anywhere on the page', !(await E(`document.getElementById('trackerRoot').textContent.includes('undefined')`)));
-    check('import: a second import is refused and says so', (await E(`TrackerPage.importText(${JSON.stringify(csv)}).reason`)) === 'already-imported' && (await T('.bt-importmsg')).startsWith('Import refused'));
+    check('import: a second import is refused and says so', (await E(`TrackerPage.importText(${JSON.stringify(csv)}).reason`)) === 'already-imported' && !(await E(`!!document.querySelector('.bt-importmsg')`)));
     check('import: no Import CSV control for a non-admin', !(await E(`!!document.querySelector('.bt-import')`)));
     check('import: Avg CLV tile reads — over "no closing prices"', JSON.stringify(await E(`(function(){ var t=[...document.querySelectorAll('.bt-htile')][3]; return [t.querySelector('.bt-htile-fig').textContent, t.querySelector('.bt-htile-sub').textContent]; })()`)) === JSON.stringify(['—', 'no closing prices']));
     await click('.bt-view[data-k="insights"]');

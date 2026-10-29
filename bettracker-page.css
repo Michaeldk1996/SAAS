@@ -31,7 +31,7 @@
 [data-page="tracker"] .bt-headrow { display: flex; align-items: baseline; gap: 12px; }
 [data-page="tracker"] .bt-banks-sub { font-size: 12px; color: var(--text-label); }
 [data-page="tracker"] .bt-strip { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 2px; }
-[data-page="tracker"] .bt-bank { cursor: pointer; flex: none; width: 300px; background: var(--tracker-card); box-shadow: var(--tracker-top-light); border: 1px solid color-mix(in srgb, var(--tracker-ink) 5%, transparent);
+[data-page="tracker"] .bt-bank { cursor: pointer; flex: none; width: 300px; background: var(--tracker-inner); border: 1px solid color-mix(in srgb, var(--tracker-ink) 5%, transparent);
   border-radius: 12px; padding: 14px 16px 12px; display: flex; flex-direction: column; gap: 10px; }
 [data-page="tracker"] .bt-bank.is-on { border-color: color-mix(in srgb, var(--tracker-ring) 65%, transparent); }
 [data-page="tracker"] .bt-bank-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
@@ -41,12 +41,12 @@
 [data-page="tracker"] .bt-archive { cursor: pointer; font-size: 10.5px; font-weight: 700; letter-spacing: 0.06em; color: var(--text-label); border: 1px solid color-mix(in srgb, var(--tracker-ink) 10%, transparent); border-radius: 6px; padding: 2px 7px; }
 [data-page="tracker"] .bt-archive:hover { color: var(--tracker-ink); border-color: color-mix(in srgb, var(--tracker-ink) 30%, transparent); }
 [data-page="tracker"] .bt-tiles2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-[data-page="tracker"] .bt-tile { background: var(--tracker-inner); border: 1px solid color-mix(in srgb, var(--tracker-ink) 5%, transparent); border-radius: 8px; padding: 8px 10px; display: flex; flex-direction: column; gap: 3px; }
+[data-page="tracker"] .bt-tile { background: var(--tracker-card); border: 1px solid color-mix(in srgb, var(--tracker-ink) 5%, transparent); border-radius: 8px; padding: 8px 10px; display: flex; flex-direction: column; gap: 3px; }
 [data-page="tracker"] .bt-tile-fig { font-family: var(--font-nums); font-size: 18px; font-weight: 800; }
 [data-page="tracker"] .bt-addbank { cursor: pointer; flex: none; width: 200px; border: 1px dashed color-mix(in srgb, var(--tracker-ink) 18%, transparent); border-radius: 12px; display: flex; flex-direction: column;
   align-items: center; justify-content: center; gap: 6px; color: var(--text-label); }
 [data-page="tracker"] .bt-addbank:hover { border-color: color-mix(in srgb, var(--tracker-ink) 35%, transparent); color: var(--tracker-ink); }
-[data-page="tracker"] .bt-addbank-plus { width: 28px; height: 28px; border-radius: 50%; border: 1.5px solid currentColor; display: flex; align-items: center; justify-content: center; font-size: 18px; line-height: 1; }
+[data-page="tracker"] .bt-addbank-plus { font-size: 18px; font-weight: 300; line-height: 1; }
 [data-page="tracker"] .bt-addbank-lbl { font-size: 13px; font-weight: 700; }
 [data-page="tracker"] .bt-archived { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 [data-page="tracker"] .bt-arch { display: inline-flex; align-items: center; gap: 8px; height: 26px; padding: 0 10px; border-radius: 7px; background: var(--tracker-inner); border: 1px solid color-mix(in srgb, var(--tracker-ink) 6%, transparent); font-size: 12px; color: var(--text); }
@@ -54,58 +54,109 @@
 [data-page="tracker"] .bt-restore { cursor: pointer; font-weight: 700; color: var(--link); }
 [data-page="tracker"] .bt-delete { cursor: pointer; font-weight: 700; color: var(--neg); }
 
-/* ── 2 · header + Certified badge (1b Rosette seal) ── */
-[data-page="tracker"] .bt-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; }
-[data-page="tracker"] .bt-head-l { display: flex; flex-direction: column; gap: 6px; }
+/* ── 2 · the hero canvas (v26 README 7.1, template 24–132): one card — header + Certified badge, bankrolls, headline,
+ * All time / Period / Filters / View, the curve + its hover, seven tiles ── */
+[data-page="tracker"] .bt-hero { padding: 22px 26px 18px; display: flex; flex-direction: column; gap: 16px; }
+[data-page="tracker"] .bt-head { display: flex; align-items: center; justify-content: space-between; gap: 28px; }
+[data-page="tracker"] .bt-head-l { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
 [data-page="tracker"] .bt-title { display: flex; align-items: center; gap: 12px; }
-[data-page="tracker"] .bt-bankname { font-size: 26px; font-weight: 800; color: var(--tracker-ink); line-height: 1.1; }
+[data-page="tracker"] .bt-h1 { font-size: 24px; font-weight: 800; letter-spacing: -0.015em; line-height: 1.1; color: var(--tracker-ink); }
 [data-page="tracker"] .bt-cert { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px; border-radius: 7px; background: color-mix(in srgb, var(--tracker-ring) 12%, transparent);
   border: 1px solid color-mix(in srgb, var(--tracker-ring) 35%, transparent); color: var(--link); font-size: 11.5px; font-weight: 700; white-space: nowrap; }
 [data-page="tracker"] .bt-seal { width: 12px; height: 12px; background: var(--tracker-ring); display: inline-flex; align-items: center; justify-content: center; flex: none;
   clip-path: polygon(100% 50%, 92.5% 59.3%, 93.3% 75%, 81% 81%, 75% 93.3%, 59.3% 92.5%, 50% 100%, 40.7% 92.5%, 25% 93.3%, 19% 81%, 6.7% 75%, 7.5% 59.3%, 0% 50%, 7.5% 40.7%, 6.7% 25%, 19% 19%, 25% 6.7%, 40.7% 7.5%, 50% 0%, 59.3% 7.5%, 75% 6.7%, 81% 19%, 93.3% 25%, 92.5% 40.7%); }
 [data-page="tracker"] .bt-seal.is-row { width: 13px; height: 13px; }
 [data-page="tracker"] .bt-seal svg { display: block; stroke: var(--tracker-ink); }
-[data-page="tracker"] .bt-headmeta { font-size: 13px; color: var(--text-label); }
-[data-page="tracker"] .bt-head-r { display: flex; align-items: center; gap: 10px; }
-[data-page="tracker"] .bt-logbtn { cursor: pointer; display: inline-flex; align-items: center; height: 36px; padding: 0 16px; border-radius: 10px; background: var(--tracker-ring); color: var(--tracker-ink); font-size: 13px; font-weight: 700; white-space: nowrap; }
+[data-page="tracker"] .bt-headsub { font-size: 13px; color: var(--text-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+[data-page="tracker"] .bt-bankname { font-weight: 700; color: var(--tracker-ink); }
+[data-page="tracker"] .bt-logbtn { cursor: pointer; flex: none; display: inline-flex; align-items: center; height: 36px; padding: 0 16px; border-radius: 10px; background: var(--tracker-ring); color: var(--tracker-ink); font-size: 13px; font-weight: 700; white-space: nowrap; }
 [data-page="tracker"] .bt-logbtn:hover { background: var(--tracker-ring-hover); }
+[data-page="tracker"] .bt-hero-top { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; border-top: 1px solid color-mix(in srgb, var(--tracker-ink) 5%, transparent); padding-top: 18px; }
+[data-page="tracker"] .bt-hero-r { display: flex; align-items: center; gap: 6px; }
+[data-page="tracker"] .bt-htile-v { display: flex; align-items: baseline; gap: 7px; min-width: 0; }
+[data-page="tracker"] .bt-htile-when { font-size: 11px; font-weight: 600; color: var(--text-label); white-space: nowrap; }
+[data-page="tracker"] .bt-curve-hit { position: absolute; left: 0; top: 0; width: 100%; height: 240px; cursor: crosshair; }
+[data-page="tracker"] .bt-hov-rule { position: absolute; top: 12px; height: 210px; width: 1px; background: color-mix(in srgb, var(--tracker-ink) 22%, transparent); pointer-events: none; }
+[data-page="tracker"] .bt-hov-dot { position: absolute; width: 10px; height: 10px; margin: -5px 0 0 -5px; border-radius: 50%; background: var(--tracker-ring); border: 2px solid var(--tracker-ink); box-sizing: border-box; pointer-events: none; }
+[data-page="tracker"] .bt-hov-tip { position: absolute; top: 14px; transform: translateX(14px); display: flex; flex-direction: column; gap: 7px; width: 236px; padding: 11px 13px 12px; background: var(--tracker-inner);
+  border: 1px solid color-mix(in srgb, var(--tracker-ink) 10%, transparent); border-radius: 10px; box-shadow: var(--tracker-pop-shadow); pointer-events: none; z-index: 3; }
+[data-page="tracker"] .bt-hov-tip.is-flip { transform: translateX(calc(-100% - 14px)); }
+[data-page="tracker"] .bt-hov-h { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+[data-page="tracker"] .bt-hov-date { font-size: 11px; font-weight: 600; color: var(--text-label); white-space: nowrap; }
+[data-page="tracker"] .bt-hov-idx { font-family: var(--font-nums); font-size: 10px; color: var(--text-label); white-space: nowrap; }
+[data-page="tracker"] .bt-hov-cumrow { display: flex; align-items: baseline; gap: 8px; }
+[data-page="tracker"] .bt-hov-cum { font-family: var(--font-nums); font-size: 20px; font-weight: 800; line-height: 1; }
+[data-page="tracker"] .bt-hov-lbl { font-size: 11px; color: var(--text-label); }
+[data-page="tracker"] .bt-hov-bet { display: flex; flex-direction: column; gap: 3px; padding-top: 7px; border-top: 1px solid color-mix(in srgb, var(--tracker-ink) 8%, transparent); }
+[data-page="tracker"] .bt-hov-betrow { display: flex; align-items: center; gap: 7px; min-width: 0; }
+[data-page="tracker"] .bt-hov-sq { width: 8px; height: 8px; border-radius: 2px; flex: none; }
+[data-page="tracker"] .bt-bg-pos { background: var(--pos); }
+[data-page="tracker"] .bt-bg-neg { background: var(--neg); }
+[data-page="tracker"] .bt-bg-lab { background: var(--text-label); }
+[data-page="tracker"] .bt-hov-text { font-size: 12.5px; font-weight: 700; color: var(--tracker-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+[data-page="tracker"] .bt-hov-meta { font-size: 11px; color: var(--text-label); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+[data-page="tracker"] .bt-hov-plrow { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+[data-page="tracker"] .bt-hov-stake { font-size: 11px; color: var(--text-label); white-space: nowrap; }
+[data-page="tracker"] .bt-hov-pl { font-family: var(--font-nums); font-size: 12.5px; font-weight: 800; white-space: nowrap; }
 
-/* ── 3 · Log a bet ── */
-[data-page="tracker"] .bt-log { background: var(--tracker-card); box-shadow: var(--tracker-top-light); border: 1px solid color-mix(in srgb, var(--tracker-ring) 35%, transparent); border-radius: 12px; padding: 14px 16px 14px; display: flex; flex-direction: column; gap: 12px; }
+/* ── 3 · Log a bet (v26 README 7.2, template 134–193): selection / details / stake on the left, the Ticket on the right ── */
+[data-page="tracker"] .bt-log { display: grid; grid-template-columns: minmax(0,1fr) 300px; overflow: hidden; }
+[data-page="tracker"] .bt-log-l { padding: 18px 20px 20px; display: flex; flex-direction: column; gap: 16px; border-right: 1px solid color-mix(in srgb, var(--tracker-ink) 6%, transparent); min-width: 0; }
 [data-page="tracker"] .bt-log-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-[data-page="tracker"] .bt-log-segs { display: flex; align-items: center; gap: 10px; }
-[data-page="tracker"] .bt-seglbl { font-size: 11px; color: var(--text-label); }
-[data-page="tracker"] .bt-seglbl.is-gap { margin-left: 6px; }
-[data-page="tracker"] .bt-segtrack { display: flex; background: var(--tracker-inner); border: 1px solid color-mix(in srgb, var(--tracker-ink) 6%, transparent); border-radius: 9px; padding: 3px; }
-[data-page="tracker"] .bt-segitem { cursor: pointer; padding: 5px 12px; border-radius: 7px; font-size: 12px; font-weight: 700; background: transparent; color: var(--text-label); white-space: nowrap; }
+[data-page="tracker"] .bt-log-title { display: flex; align-items: baseline; gap: 10px; }
+[data-page="tracker"] .bt-log-h { font-size: 15px; font-weight: 800; color: var(--tracker-ink); }
+[data-page="tracker"] .bt-log-bank { font-size: 12px; color: var(--text-label); }
+[data-page="tracker"] .bt-log-x { cursor: pointer; width: 28px; height: 28px; border-radius: 8px; border: 1px solid color-mix(in srgb, var(--tracker-ink) 12%, transparent); display: flex; align-items: center; justify-content: center; font-size: 12px; color: var(--text-label); }
+[data-page="tracker"] .bt-log-x:hover { color: var(--text); border-color: color-mix(in srgb, var(--tracker-ink) 22%, transparent); }
+[data-page="tracker"] .bt-log-sec { display: flex; flex-direction: column; gap: 10px; }
+[data-page="tracker"] .bt-log-sec.is-rule { padding-top: 16px; border-top: 1px solid color-mix(in srgb, var(--tracker-ink) 6%, transparent); }
+[data-page="tracker"] .bt-log-segs { display: flex; gap: 14px; flex-wrap: wrap; }
+[data-page="tracker"] .bt-segtrack { display: inline-flex; gap: 2px; padding: 3px; background: var(--tracker-inner); border: 1px solid color-mix(in srgb, var(--tracker-ink) 6%, transparent); border-radius: 9px; }
+[data-page="tracker"] .bt-segitem { cursor: pointer; padding: 6px 12px; border-radius: 7px; font-size: 12px; font-weight: 700; background: transparent; color: var(--text-label); white-space: nowrap; }
 [data-page="tracker"] .bt-segitem.on { background: var(--tracker-seg); color: var(--tracker-ink); }
-[data-page="tracker"] .bt-legs { display: flex; flex-direction: column; gap: 6px; }
-[data-page="tracker"] .bt-leg { display: grid; grid-template-columns: 58px minmax(0,1fr) 110px 24px; gap: 10px; align-items: center; }
-[data-page="tracker"] .bt-in { height: 34px; background: var(--tracker-inner); border: 1px solid color-mix(in srgb, var(--tracker-ink) 10%, transparent); border-radius: 8px; color: var(--tracker-ink); padding: 0 10px;
+[data-page="tracker"] .bt-leg { display: grid; grid-template-columns: minmax(0,1fr) 120px 24px; gap: 10px; align-items: end; }
+[data-page="tracker"] .bt-field { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+[data-page="tracker"] .bt-field.is-stake { min-width: auto; }
+[data-page="tracker"] .bt-field.is-stake .bt-caps10 { white-space: nowrap; }
+[data-page="tracker"] .bt-in { height: 36px; background: var(--tracker-inner); border: 1px solid color-mix(in srgb, var(--tracker-ink) 10%, transparent); border-radius: 8px; color: var(--tracker-ink); padding: 0 12px;
   font-family: var(--font-words); font-size: 13px; outline: none; margin: 0; width: 100%; min-width: 0; }
-[data-page="tracker"] select.bt-in { padding: 0 8px; }
-[data-page="tracker"] .bt-in.bt-mono { font-family: var(--font-nums); }
+[data-page="tracker"] select.bt-in { padding: 0 10px; }
+[data-page="tracker"] .bt-in.bt-in-odds { font-family: var(--font-nums); font-weight: 700; }
+[data-page="tracker"] .bt-legx-slot { height: 36px; display: flex; align-items: center; justify-content: center; }
 [data-page="tracker"] .bt-legx { cursor: pointer; width: 24px; height: 24px; border-radius: 6px; border: 1px solid color-mix(in srgb, var(--tracker-ink) 12%, transparent); color: var(--text-label); display: inline-flex; align-items: center; justify-content: center; font-size: 14px; line-height: 1; }
 [data-page="tracker"] .bt-legx:hover { color: var(--tracker-ink); border-color: color-mix(in srgb, var(--tracker-ink) 30%, transparent); }
-[data-page="tracker"] .bt-addleg { cursor: pointer; align-self: flex-start; margin-left: 68px; font-size: 12px; font-weight: 700; color: var(--link); }
-[data-page="tracker"] .bt-legsnote { margin-left: 68px; font-size: 11.5px; color: var(--text-label); }
-[data-page="tracker"] .bt-row1 { display: grid; grid-template-columns: minmax(0,1fr) 150px 150px minmax(0,1.2fr) minmax(0,1.2fr); gap: 10px; }
-[data-page="tracker"] .bt-row2 { display: grid; grid-template-columns: minmax(0,1fr) 150px 110px 110px auto; gap: 10px; align-items: end; }
-[data-page="tracker"] .bt-row3 { display: grid; grid-template-columns: 150px 200px auto; gap: 10px; align-items: end; }
-[data-page="tracker"] .bt-rowother { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-[data-page="tracker"] .bt-field { display: flex; flex-direction: column; gap: 4px; }
-[data-page="tracker"] .bt-odds { height: 34px; display: flex; align-items: center; padding: 0 10px; border-radius: 8px; background: var(--tracker-inner); border: 1px solid color-mix(in srgb, var(--tracker-ink) 5%, transparent);
-  font-family: var(--font-nums); font-size: 14px; font-weight: 800; color: var(--text-label); }
+[data-page="tracker"] .bt-legfoot { display: flex; align-items: baseline; gap: 14px; }
+[data-page="tracker"] .bt-addleg { cursor: pointer; font-size: 12px; font-weight: 700; color: var(--tracker-link-2); white-space: nowrap; }
+[data-page="tracker"] .bt-legsnote { font-size: 11.5px; color: var(--text-label); }
+[data-page="tracker"] .bt-row1 { display: grid; grid-template-columns: minmax(0,1fr) 140px 140px; gap: 10px; }
+[data-page="tracker"] .bt-row2 { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 10px; }
+[data-page="tracker"] .bt-row3 { display: grid; grid-template-columns: 150px 140px minmax(0,1fr); gap: 10px; align-items: end; }
+[data-page="tracker"] .bt-odds { height: 36px; display: flex; align-items: center; padding: 0 12px; border-radius: 8px; background: var(--tracker-inner); border: 1px solid color-mix(in srgb, var(--tracker-ink) 5%, transparent);
+  font-family: var(--font-nums); font-size: 13px; font-weight: 800; color: var(--text-label); }
 [data-page="tracker"] .bt-odds.is-ok { color: var(--tracker-ink); }
-[data-page="tracker"] .bt-post { cursor: pointer; display: inline-flex; align-items: center; height: 34px; padding: 0 18px; border-radius: 8px; background: var(--tracker-pill); color: var(--text-label); font-size: 13px; font-weight: 700; white-space: nowrap; }
-[data-page="tracker"] .bt-post.is-ok { background: var(--tracker-ring); color: var(--tracker-ink); }
-[data-page="tracker"] .bt-hint { font-size: 12px; line-height: 1.45; color: var(--text-label); }
+[data-page="tracker"] .bt-hint { min-height: 36px; display: flex; align-items: center; flex-wrap: wrap; gap: 0 10px; font-size: 11.5px; line-height: 1.4; color: var(--text-label); }
 [data-page="tracker"] .bt-hint.is-ok { color: var(--text); }
+[data-page="tracker"] .bt-ticket { padding: 18px 20px 20px; background: var(--tracker-inner); display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+[data-page="tracker"] .bt-tk-top { display: flex; align-items: center; justify-content: space-between; }
+[data-page="tracker"] .bt-tk-pend { font-family: var(--font-nums); font-size: 10px; font-weight: 700; letter-spacing: 0.10em; color: var(--tracker-link-2); }
+[data-page="tracker"] .bt-tk-sel { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+[data-page="tracker"] .bt-tk-name { font-size: 16px; font-weight: 800; color: var(--tracker-ink); line-height: 1.25; text-wrap: pretty; }
+[data-page="tracker"] .bt-tk-name.is-ph { color: var(--tracker-placeholder); }
+[data-page="tracker"] .bt-tk-ctx { font-size: 12px; color: var(--text-label); }
+[data-page="tracker"] .bt-tk-kv { display: flex; flex-direction: column; border-top: 1px solid color-mix(in srgb, var(--tracker-ink) 8%, transparent); }
+[data-page="tracker"] .bt-tk-row { display: flex; justify-content: space-between; gap: 10px; padding: 9px 0; border-bottom: 1px solid color-mix(in srgb, var(--tracker-ink) 6%, transparent); }
+[data-page="tracker"] .bt-tk-k { font-size: 12px; color: var(--text-label); white-space: nowrap; }
+[data-page="tracker"] .bt-tk-v { font-family: var(--font-nums); font-size: 12px; font-weight: 700; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+[data-page="tracker"] .bt-tk-wl { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+[data-page="tracker"] .bt-tk-tile { padding: 10px 12px; background: var(--tracker-card); border: 1px solid color-mix(in srgb, var(--tracker-ink) 5%, transparent); border-radius: 8px; display: flex; flex-direction: column; gap: 3px; }
+[data-page="tracker"] .bt-tk-fig { font-family: var(--font-nums); font-size: 16px; font-weight: 800; white-space: nowrap; }
+[data-page="tracker"] .bt-tk-foot { margin-top: auto; display: flex; flex-direction: column; gap: 8px; }
+[data-page="tracker"] .bt-post { cursor: pointer; display: flex; align-items: center; justify-content: center; height: 38px; border-radius: 8px; background: var(--tracker-pill); color: var(--text-label); font-size: 13px; font-weight: 700; }
+[data-page="tracker"] .bt-post.is-ok { background: var(--tracker-ring); color: var(--tracker-ink); }
+[data-page="tracker"] .bt-tk-note { font-size: 11px; color: var(--text-label); text-align: center; }
+[data-page="tracker"] .bt-import { cursor: pointer; flex: none; font-size: 12px; font-weight: 700; color: var(--link); white-space: nowrap; }
 
-/* ── 4 · the hero box frame: T1 draws only its View segment (the hero itself is a later task) ── */
-[data-page="tracker"] .bt-hero { padding: 22px 24px 18px; display: flex; flex-direction: column; gap: 16px; }
-[data-page="tracker"] .bt-hero-top { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; }
-[data-page="tracker"] .bt-hero-r { display: flex; align-items: center; gap: 6px; }
+/* ── 4 · the View segment (shared with the T1 frame) ── */
 [data-page="tracker"] .bt-views { display: inline-flex; gap: 2px; padding: 2px; height: 30px; box-sizing: border-box; background: var(--tracker-menu); border: 1px solid color-mix(in srgb, var(--tracker-ink) 10%, transparent); border-radius: 9px; }
 [data-page="tracker"] .bt-view { cursor: pointer; padding: 0 12px; display: flex; align-items: center; gap: 7px; border-radius: 7px; font-size: 12.5px; font-weight: 600; color: var(--text-label); background: transparent; }
 [data-page="tracker"] .bt-view.on { font-weight: 700; color: var(--tracker-ink); background: var(--tracker-seg); }
@@ -171,8 +222,6 @@
 [data-page="tracker"] .bt-export { cursor: pointer; font-weight: 700; color: var(--link); }
 [data-page="tracker"] .bt-empty { color: var(--text-label); }
 /* T1b · admin-only import (not in the design — on the Claude Design list): the Export CSV link's ink */
-[data-page="tracker"] .bt-import { cursor: pointer; font-size: 12px; font-weight: 700; color: var(--link); white-space: nowrap; margin-right: 6px; }
-[data-page="tracker"] .bt-importmsg { font-size: 12px; color: var(--text-label); }
 
 /* ── 4 · hero (T2): headline · Period / Filters triggers + menus · View · curve · seven tiles (template 104–165) ── */
 [data-page="tracker"] .bt-nowrap { white-space: nowrap; }

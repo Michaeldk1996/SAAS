@@ -28,7 +28,7 @@
   var MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
   var DIMS = [['market', 'Market', 'Market'], ['surface', 'Surface', 'Surface'], ['odds', 'Odds band', 'Odds taken'], ['level', 'Level', 'Tournament level'],
     ['book', 'Bookmaker', 'Bookmaker'], ['timing', 'Timing', 'Pre-match / Live'], ['situation', 'Situation', 'Situation'], ['dow', 'Weekday', 'Weekday']];
-  var PERIODS = { '30d': 'Last 30 days', '90d': 'Last 90 days', season: 'Season', custom: 'Custom range' };
+  var PERIODS = { '30d': 'Last 30 days', '90d': 'Last 90 days', season: 'Season', all: 'All time', custom: 'Custom range' };
   var MARKETS = ['Match winner', 'Set winner', 'First set winner', 'Games handicap', 'Sets handicap', 'Total games', 'Total sets',
     'Correct score (sets)', 'Tiebreak in match', 'Player to win a set', 'Outright'];
   var BOOKS = ['bet105', 'Pinnacle', 'bet365', 'Betfair Exchange', 'Betfair Sportsbook', 'Unibet', 'Betway', 'William Hill', '888sport', 'bwin',
@@ -63,17 +63,22 @@
   // The reference's stats(), over the settled bets of `list` in the order given — with the ROI ruling.
   function stats(list) {
     var s = list.filter(isSettled);
-    var profit = 0, staked = 0, stakedWL = 0, w = 0, l = 0, v = 0, clvS = 0, clvN = 0, beat = 0, cum = 0, peak = 0, dd = 0, ddIdx = -1, run = 0, worst = 0, wrun = 0, best = 0;
+    var profit = 0, staked = 0, stakedWL = 0, w = 0, l = 0, v = 0, clvS = 0, clvN = 0, beat = 0, cum = 0, peak = 0, dd = 0, ddIdx = -1, run = 0, worst = 0, wrun = 0, best = 0,
+      bestEnd = null, worstEnd = null, wRuns = [], lRuns = [];
     s.forEach(function (b, i) {
       var r = b.res, p = pl(b);
       profit += p; staked += b.stake;
       if (r === 'won') { w++; stakedWL += b.stake; } else if (r === 'lost') { l++; stakedWL += b.stake; } else v++;
       var c = clv(b); if (c !== null) { clvS += c; clvN++; if (c > 0) beat++; }
       cum += p; if (cum > peak) peak = cum; if (peak - cum > dd) { dd = peak - cum; ddIdx = i; }
-      if (r === 'lost') { run++; if (run > worst) worst = run; wrun = 0; } else if (r === 'won') { run = 0; wrun++; if (wrun > best) best = wrun; }
+      // v26: a run's end date is the bet that set the record; a void leaves both runs as they are
+      if (r === 'lost') { if (wrun > 0) wRuns.push(wrun); run++; if (run > worst) { worst = run; worstEnd = b.date; } wrun = 0; }
+      else if (r === 'won') { if (run > 0) lRuns.push(run); run = 0; wrun++; if (wrun > best) { best = wrun; bestEnd = b.date; } }
     });
+    if (wrun > 0) wRuns.push(wrun); if (run > 0) lRuns.push(run);
     return { n: s.length, profit: profit, staked: staked, stakedWL: stakedWL, roi: stakedWL ? profit / stakedWL : null, w: w, l: l, v: v,
-      clv: clvN ? clvS / clvN : null, clvN: clvN, beat: beat, dd: dd, ddIdx: ddIdx, worst: worst, best: best, winRate: (w + l) ? w / (w + l) : null };
+      clv: clvN ? clvS / clvN : null, clvN: clvN, beat: beat, dd: dd, ddIdx: ddIdx, worst: worst, best: best, bestEnd: bestEnd, worstEnd: worstEnd,
+      avgW: avg(wRuns), avgL: avg(lRuns), wRunsN: wRuns.length, lRunsN: lRuns.length, winRate: (w + l) ? w / (w + l) : null };
   }
 
   // The cumulative % curve over the settled bets (starts at 0): curve meta "N bets · peak +x% · now +y%".
@@ -95,51 +100,77 @@
     };
   }
 
-  // ── the hero (README §4): the seven tiles and the profit headline, as the page prints them ──────────────────────
-  // Avg CLV with no close in the period: "—" over "no closing prices" (T2 brief — never "0 of 0").
-  function heroTiles(S) {
-    var F = heroFigures(S);
+  // ── the hero (README 7.1, v26): the seven tiles and the profit headline, as the page prints them ─────────────────
+  // Avg CLV with no close in the period: "—" over "no closing prices" (never "0 of 0"). Record and Win rate are green above
+  // the break-even win rate at the period's average price (1 ÷ avg odds), red below; Best / Worst run carry the month
+  // the record run ended ("Apr 2026").
+  function monYear(d) { return d ? MON[d.getMonth()] + ' ' + d.getFullYear() : ''; }
+  function heroTiles(S, list) {
+    var F = heroFigures(S), sl = (list || []).filter(isSettled), avgOdds = sl.length ? sl.reduce(function (a, b) { return a + b.odds; }, 0) / sl.length : 0;
+    var beWR = avgOdds ? 1 / avgOdds : 0, wrKind = (S.w + S.l) ? (S.winRate > beWR ? 'pos' : S.winRate < beWR ? 'neg' : 'zero') : 'lab';
     return {
       profit: F.profit, profitKind: S.n ? kind(S.profit) : 'lab', profitSub: S.n + ' settled · ' + S.staked.toFixed(1) + '% staked in total',
       rows: [
-        { label: 'ROI', sub: 'profit ÷ total staked', value: F.roi, kind: S.roi === null ? 'lab' : kind(S.roi) },
-        { label: 'Record', sub: S.n + ' settled · ' + S.v + ' void', value: F.record, kind: 'ink' },
-        { label: 'Win rate', sub: 'won ÷ (won + lost)', value: F.winRate, kind: S.winRate === null ? 'lab' : 'ink' },
-        { label: 'Avg CLV', sub: S.clvN ? 'beat the close ' + S.beat + ' of ' + S.clvN : 'no closing prices', value: F.avgClv, kind: kind(S.clv) },
-        { label: 'Max drawdown', sub: 'peak to trough, % of bankroll', value: F.maxDrawdown, kind: S.dd ? 'neg' : 'lab' },
-        { label: 'Best run', sub: 'consecutive wins', value: F.bestRun, kind: S.best ? 'ink' : 'lab' },
-        { label: 'Worst run', sub: 'consecutive losses', value: F.worstRun, kind: S.worst ? 'ink' : 'lab' }
+        { label: 'ROI', sub: 'profit ÷ total staked', value: F.roi, kind: S.roi === null ? 'lab' : kind(S.roi), when: '' },
+        { label: 'Record', sub: S.n + ' settled · ' + S.v + ' void', value: F.record, kind: wrKind, when: '' },
+        { label: 'Win rate', sub: avgOdds ? 'break-even ' + (beWR * 100).toFixed(0) + '% at avg ' + avgOdds.toFixed(2) : 'won ÷ (won + lost)', value: F.winRate, kind: wrKind, when: '' },
+        { label: 'Avg CLV', sub: S.clvN ? 'beat the close ' + S.beat + ' of ' + S.clvN : 'no closing prices', value: F.avgClv, kind: kind(S.clv), when: '' },
+        { label: 'Max drawdown', sub: 'peak to trough, % of bankroll', value: F.maxDrawdown, kind: S.dd ? 'neg' : 'lab', when: '' },
+        { label: 'Best run', sub: S.wRunsN ? 'avg winning run ' + S.avgW.toFixed(1) + ' · ' + S.wRunsN + ' runs' : 'consecutive wins', value: F.bestRun, kind: S.best ? 'pos' : 'lab', when: monYear(S.bestEnd) },
+        { label: 'Worst run', sub: S.lRunsN ? 'avg losing run ' + S.avgL.toFixed(1) + ' · ' + S.lRunsN + ' runs' : 'consecutive losses', value: F.worstRun, kind: S.worst ? 'neg' : 'lab', when: monYear(S.worstEnd) }
       ]
     };
   }
-  // The curve (README §4): viewBox 0 0 1292 240, plot x 44→1288, y 12→222; y ticks every 1 / 2 / 5 / 10 % by span,
-  // the zero line solid; x labels at the first bet of each month — or, past 14 months, of each year (a multi-season
-  // import would overlap one label a month); the deepest drawdown point and the last point.
+  // The curve (README 7.1): viewBox 0 0 1292 240, plot x 44→1288, y 12→222; y ticks every 1 / 2 / 5 / 10 % by span, the
+  // zero line solid; x labels at the first bet of each month (the reference's — F3 removed the per-year labels); the
+  // deepest drawdown point and the last point. F2 (Michael's unlock): the range runs min(0, lowest) → max(0, highest)
+  // and each side the curve reaches carries a tick — a side shorter than one step is stretched to its first tick.
+  function curveScale(pts) {
+    var mn = Math.min.apply(null, pts.concat(0)), mx = Math.max.apply(null, pts.concat(0));
+    var stepOf = function (sp) { return sp > 40 ? 10 : sp > 16 ? 5 : sp > 8 ? 2 : 1; };
+    for (var k = 0; k < 3; k++) {
+      var step = stepOf((mx - mn) || 1);
+      if (mx > 0 && mx < step) mx = step;
+      if (mn < 0 && mn > -step) mn = -step;
+      if (stepOf((mx - mn) || 1) === step) break;
+    }
+    return { mn: mn, mx: mx, span: (mx - mn) || 1, step: stepOf((mx - mn) || 1) };
+  }
   function heroCurve(list, today) {
     var settled = list.filter(isSettled), S = stats(settled), pts = [0], cum = 0;
     settled.forEach(function (b) { cum += pl(b); pts.push(cum); });
-    var L = 44, R = 1288, T = 12, B = 222, mn = Math.min.apply(null, pts.concat(0)), mx = Math.max.apply(null, pts.concat(0)), span = (mx - mn) || 1;
+    var sc = curveScale(pts), L = 44, R = 1288, T = 12, B = 222, mn = sc.mn, mx = sc.mx, span = sc.span, step = sc.step;
     var X = function (i) { return L + (R - L) * i / Math.max(1, pts.length - 1); }, Y = function (v) { return T + (B - T) * (mx - v) / span; };
     var path = pts.map(function (v, i) { return (i ? 'L' : 'M') + X(i).toFixed(1) + ' ' + Y(v).toFixed(1); }).join(' ');
     var area = path + ' L' + R + ' ' + Y(0).toFixed(1) + ' L' + L + ' ' + Y(0).toFixed(1) + ' Z';
-    var step = span > 40 ? 10 : span > 16 ? 5 : span > 8 ? 2 : 1, yTicks = [];
+    var yTicks = [];
     for (var v = Math.ceil(mn / step) * step; v <= mx + 1e-9; v += step) {
       var vv = Math.round(v * 1e6) / 1e6;
       yTicks.push({ y: Y(vv).toFixed(1), top: (Y(vv) - 5).toFixed(1) + 'px', label: (vv > 0 ? '+' : vv < 0 ? MINUS : '') + Math.abs(vv) + '%', zero: vv === 0 });
     }
-    var months = {}; settled.forEach(function (b) { months[ym(b.date)] = 1; });
-    var byYear = Object.keys(months).length > 14, xTicks = [], last = null;
-    settled.forEach(function (b, i) {
-      var k = byYear ? b.date.getFullYear() : ym(b.date);
-      if (k !== last) { last = k; xTicks.push({ left: (X(i + 1) / 1292 * 100).toFixed(2) + '%', label: byYear ? String(k) : MON[b.date.getMonth()] }); }
-    });
+    var xTicks = [], lastM = -1;
+    settled.forEach(function (b, i) { var m = b.date.getMonth(); if (m !== lastM) { lastM = m; xTicks.push({ left: (X(i + 1) / 1292 * 100).toFixed(2) + '%', label: MON[m] }); } });
     var ddI = S.ddIdx + 1;
     return { n: settled.length, path: settled.length ? path : '', area: settled.length ? area : '', yTicks: yTicks, xTicks: xTicks,
       lastX: X(pts.length - 1).toFixed(1), lastY: Y(pts[pts.length - 1]).toFixed(1), hasLast: settled.length > 0,
       ddX: ddI > 0 ? X(ddI).toFixed(1) : null, ddY: ddI > 0 ? Y(pts[ddI]).toFixed(1) : null,
-      meta: settled.length + ' bets · peak ' + (settled.length ? sgn(mx) : DASH) + ' · now ' + (settled.length ? sgn(cum) : DASH),
-      ddNote: S.ddIdx >= 0 ? 'deepest drawdown ' + MINUS + S.dd.toFixed(1) + '% on ' + fmtDY(settled[S.ddIdx].date, today) : '' };
+      meta: settled.length + ' bets · peak ' + (settled.length ? sgn(Math.max.apply(null, pts)) : DASH) + ' · now ' + (settled.length ? sgn(cum) : DASH),
+      ddNote: S.ddIdx >= 0 ? 'deepest drawdown ' + MINUS + S.dd.toFixed(1) + '% on ' + fmtDY(settled[S.ddIdx].date, today) : '',
+      pts: pts, settled: settled, L: L, R: R, X: X, Y: Y };
   }
+  // Curve hover (v26): the point nearest the pointer's x (fx in viewBox units); point 0 = before the first bet.
+  function curveHover(C, fx, today) {
+    var n = C.pts.length; if (!n) return null;
+    var i = Math.max(0, Math.min(n - 1, Math.round((fx - C.L) / (C.R - C.L) * (n - 1)))), hb = i > 0 ? C.settled[i - 1] : null, hx = C.X(i), pct = hx / 1292 * 100;
+    var r = hb ? hb.res : null, p = hb ? pl(hb) : 0;
+    return { i: i, left: pct.toFixed(2) + '%', top: C.Y(C.pts[i]).toFixed(1) + 'px', flip: pct > 58,
+      date: hb ? fmtDY(hb.date, today) : 'Season start', idx: i + ' of ' + C.settled.length, cum: sgn(C.pts[i]), cumKind: kind(C.pts[i]),
+      bet: hb ? { text: hb.text, meta: [hb.tour, LEVEL[hb.level] || hb.level].filter(present).join(' · ') + ' · @ ' + hb.odds.toFixed(2),
+        stake: 'stake ' + hb.stake.toFixed(1) + '% · ' + (r === 'won' ? 'WON' : r === 'lost' ? 'LOST' : 'VOID'), pl: sgn(p), plKind: kind(p),
+        resKind: r === 'won' ? 'pos' : r === 'lost' ? 'neg' : 'lab' } : null };
+  }
+  // A display part that is really there: not empty, not the dash a blank field was stored as (F5).
+  function present(x) { return x != null && String(x).trim() !== '' && String(x).trim() !== DASH; }
   // The Filters menu (README §4): Level · Odds band · Surface · Market, each row's count cross-adjusted over the period.
   var FILTER_MARKETS = ['Match winner', 'Games handicap', 'Total games'];
   function filterMenu(all, perList, F) {
@@ -442,7 +473,7 @@
   function parseDay(s) { var p = String(s).split('-').map(Number); return new Date(p[0], p[1] - 1, p[2]); }
   // Last 30 / 90 days · Season (1 January →) · Custom (inclusive dates); `today` is a local-midnight Date.
   function periodWindow(per, range, today) {
-    var from = per === '30d' ? addDays(today, -30) : per === '90d' ? addDays(today, -90) : per === 'custom' ? parseDay(range.from) : new Date(today.getFullYear(), 0, 1);
+    var from = per === '30d' ? addDays(today, -30) : per === '90d' ? addDays(today, -90) : per === 'custom' ? parseDay(range.from) : per === 'all' ? new Date(1970, 0, 1) : new Date(today.getFullYear(), 0, 1);
     var to = per === 'custom' ? new Date(parseDay(range.to).getTime() + 86399999) : new Date(2100, 0, 1);
     return { from: from, to: to };
   }
@@ -460,7 +491,7 @@
     return s.length ? 'Certified · ' + n + ' of ' + s.length + ' results locked' : 'Certified ledger · nothing settled yet';
   }
   function periodPhrase(per, win, range, today) {
-    return per === 'season' ? 'whole season' : per === 'custom' ? fmtDY(win.from, today) + ' → ' + fmtDY(parseDay(range.to), today) : 'last ' + per.replace('d', ' days');
+    return per === 'season' ? 'whole season' : per === 'all' ? 'whole bankroll, since the first bet' : per === 'custom' ? fmtDY(win.from, today) + ' → ' + fmtDY(parseDay(range.to), today) : 'last ' + per.replace('d', ' days');
   }
   // `all` = the bankroll's bets, oldest first; `list` = the period + filters; `perList` = the period only.
   function headMeta(all, list, perList, per, win, range, nFilters, today) {
@@ -523,18 +554,23 @@
     var market = form.market === 'Other' ? String(form.marketOther).trim() : form.market, book = form.book === 'Other' ? String(form.bookOther).trim() : form.book;
     var stake = parseFloat(form.stake), valid = ok && stake >= 0.1 && stake <= 10 && market.length > 0 && book.length > 0;
     var text = form.legs.map(function (lg) { return String(lg.text).trim(); }).join(' + ');
-    var hint = valid
-      ? 'You post: ' + form.type.toLowerCase() + ' · ' + text + ' · ' + market + ' @ ' + odds.toFixed(2) + ' · ' + book + ' · ' + stake + '% of bankroll · '
-        + (form.timing === 'live' ? 'live, in play' : 'pre-match') + ' · wins → +' + (stake * (odds - 1)).toFixed(2) + '% · loses → ' + MINUS + stake.toFixed(2)
-        + '%. It lands as pending; settle it in the ledger, then lock it.'
-      : 'Every leg needs its text and odds (1.01 or more); a stake between 0.1 and 10%, a market and a bookmaker are required — type your own when the lists do not have them. Type and Pre-match / Live are stored with the bet.';
+    var hint = valid ? 'Ready — the ticket on the right is what gets posted.' : 'Every leg needs text and odds (1.01+) · stake 0.1 – 10% · a market and a bookmaker.';
     return { valid: valid, legsOk: ok, odds: odds, oddsText: ok ? odds.toFixed(2) : DASH, market: market, book: book, stake: stake, text: text, hint: hint };
+  }
+  // The Ticket (v26 Log a bet, right column): what Post bet will write, field by field; "—" until it is there.
+  function ticket(form) {
+    var c = formCheck(form), st = c.stake > 0 ? c.stake : null;
+    return { sel: c.text || 'Your selection', hasSel: !!c.text, ctx: [String(form.tour).trim() || 'Tournament', LEVEL[form.level] || form.level, form.surface].join(' · '),
+      type: form.type + ' · ' + (form.timing === 'live' ? 'live' : 'pre-match'), market: c.market || DASH, book: c.book || DASH,
+      odds: c.legsOk ? c.odds.toFixed(2) : DASH, stake: st ? st.toFixed(2) + '% of bankroll' : DASH,
+      win: c.valid ? '+' + (c.stake * (c.odds - 1)).toFixed(2) + '%' : DASH, winKind: c.valid ? 'pos' : 'lab',
+      lose: c.valid ? MINUS + c.stake.toFixed(2) + '%' : DASH, loseKind: c.valid ? 'neg' : 'lab' };
   }
   // The pending bet a valid form posts (the reference's onPost): today's date, close null, tilt false.
   function newBet(form, bankId, date, id) {
     var c = formCheck(form); if (!c.valid) return null;
     return { id: id, date: date, tour: String(form.tour).trim() || DASH, level: form.level, surface: form.surface, market: c.market, line: null, book: c.book,
-      odds: c.odds, close: null, stake: c.stake, res: null, timing: form.timing, type: form.type, legs: form.legs.length, text: c.text, bank: bankId, tilt: false, pending: true };
+      odds: c.odds, close: null, fair: null, stake: c.stake, res: null, timing: form.timing, type: form.type, legs: form.legs.length, text: c.text, bank: bankId, tilt: false, pending: true };
   }
 
   var api = {
@@ -550,7 +586,8 @@
     addDays: addDays, parseDay: parseDay, periodWindow: periodWindow, inPeriod: inPeriod, passFilters: passFilters, applyFilters: applyFilters, filterCount: filterCount,
     isLocked: isLocked, certText: certText, periodPhrase: periodPhrase, headMeta: headMeta, sortLedger: sortLedger, ledgerFilter: ledgerFilter,
     ledgerMonths: ledgerMonths, ledgerMeta: ledgerMeta, ledgerFoot: ledgerFoot, betMeta: betMeta, bankCard: bankCard,
-    fitLegs: fitLegs, legsOk: legsOk, combinedOdds: combinedOdds, legsNote: legsNote, formCheck: formCheck, newBet: newBet
+    fitLegs: fitLegs, legsOk: legsOk, combinedOdds: combinedOdds, legsNote: legsNote, formCheck: formCheck, newBet: newBet,
+    curveScale: curveScale, curveHover: curveHover, ticket: ticket, present: present, monYear: monYear
   };
   if (typeof module === 'object' && module.exports) module.exports = api;
   else root.BetTrackerMath = api;

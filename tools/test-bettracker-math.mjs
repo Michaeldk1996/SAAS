@@ -187,10 +187,24 @@ function run(M) {
   eq('planStake: To win 1% needs the odds first', M.planStake('To win 1%', [], NaN), null);
 
   // ── 9 · T2 hero: tiles, curve, the Filters menu (cross-adjusted, against an independent recount) ──
-  const HT = M.heroTiles(S), HC = M.heroCurve(list, today);
+  const HT = M.heroTiles(S, list), HC = M.heroCurve(list, today);
   eq('hero tile labels', HT.rows.map(r => r.label), ['ROI', 'Record', 'Win rate', 'Avg CLV', 'Max drawdown', 'Best run', 'Worst run']);
   eq('hero tile values', HT.rows.map(r => r.value), [READ.roi, READ.record, READ.winRate, READ.avgClv, READ.maxDrawdown, READ.bestRun, READ.worstRun]);
-  eq('hero tile subs', HT.rows.map(r => r.sub), ['profit ÷ total staked', READ.recordSub, 'won ÷ (won + lost)', READ.beat, 'peak to trough, % of bankroll', 'consecutive wins', 'consecutive losses']);
+  { // v26 subs: break-even at the average price, and the average run — recounted here from the bets, not from stats()
+    const sl = list.filter(M.isSettled), avgO = sl.reduce((a, b) => a + b.odds, 0) / sl.length, wR = [], lR = []; let w = 0, l = 0, bestEnd = null, worstEnd = null, best = 0, worst = 0;
+    sl.forEach(b => { if (b.res === 'won') { if (l) lR.push(l); l = 0; w++; if (w > best) { best = w; bestEnd = b.date; } } else if (b.res === 'lost') { if (w) wR.push(w); w = 0; l++; if (l > worst) { worst = l; worstEnd = b.date; } } });
+    if (w) wR.push(w); if (l) lR.push(l); const av = a => a.reduce((x, y) => x + y, 0) / a.length;
+    eq('hero tile subs (v26)', HT.rows.map(r => r.sub), ['profit ÷ total staked', READ.recordSub, 'break-even ' + (100 / avgO).toFixed(0) + '% at avg ' + avgO.toFixed(2), READ.beat, 'peak to trough, % of bankroll',
+      'avg winning run ' + av(wR).toFixed(1) + ' · ' + wR.length + ' runs', 'avg losing run ' + av(lR).toFixed(1) + ' · ' + lR.length + ' runs']);
+    const MY = d => ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()] + ' ' + d.getFullYear();
+    eq('hero tile "when": the month the record run ended, on Best / Worst run only', HT.rows.map(r => r.when), ['', '', '', '', '', MY(bestEnd), MY(worstEnd)]);
+    const wrK = S.winRate > 1 / avgO ? 'pos' : S.winRate < 1 / avgO ? 'neg' : 'zero';
+    eq('hero tile colours (v26): Record + Win rate vs break-even, runs green / red', HT.rows.map(r => r.kind), [M.kind(S.roi), wrK, wrK, M.kind(S.clv), 'neg', 'pos', 'neg']);
+    const be = M.heroTiles(M.stats(seq([['won', 1], ['lost', 1]])), seq([['won', 1], ['lost', 1]]));
+    eq('break-even flip: 1–1 at avg 2.00 = 50% = break-even → neutral', [be.rows[1].kind, be.rows[2].kind, be.rows[2].sub], ['zero', 'zero', 'break-even 50% at avg 2.00']);
+    const be2 = M.heroTiles(M.stats(seq([['won', 1], ['won', 1], ['lost', 1]])), seq([['won', 1], ['won', 1], ['lost', 1]]));
+    eq('break-even flip: 2–1 at avg 2.00 → above → green', [be2.rows[1].kind, be2.rows[2].kind], ['pos', 'pos']);
+  }
   eq('hero profit + sub', [HT.profit, HT.profitSub], [READ.profit, READ.profitSub]);
   eq('curve meta (model)', HC.meta, READ.curveMeta);
   eq('curve drawdown note (model)', HC.ddNote, READ.ddNote);
@@ -199,9 +213,17 @@ function run(M) {
   eq('curve: y step 5 on a ~30% span, labels signed', HC.yTicks.map(t => t.label), ['−10%', '−5%', '0%', '+5%', '+10%', '+15%']);
   eq('curve: one x label per month of the season', HC.xTicks.map(t => t.label), ['Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct']);
   eq('curve: nothing settled → no line, meta dashes', [M.heroCurve([], today).path, M.heroCurve([], today).meta], ['', '0 bets · peak — · now —']);
-  eq('Avg CLV tile with no closes: — over "no closing prices"', M.heroTiles(M.stats(V)).rows[3], { label: 'Avg CLV', sub: 'no closing prices', value: DASH, kind: 'lab' });
+  eq('Avg CLV tile with no closes: — over "no closing prices"', M.heroTiles(M.stats(V)).rows[3], { label: 'Avg CLV', sub: 'no closing prices', value: DASH, kind: 'lab', when: '' });
   const longYears = []; for (let y = 2022; y <= 2025; y++) for (let m = 0; m < 12; m++) longYears.push({ id: y * 100 + m, date: new Date(y, m, 5), odds: 2, stake: 1, res: 'won' });
-  eq('curve: a multi-season ledger labels one tick a year', M.heroCurve(longYears, today).xTicks.map(t => t.label), ['2022', '2023', '2024', '2025']);
+  eq('F3: x labels follow the reference — the first bet of each month, no per-year labels', M.heroCurve(longYears, today).xTicks.map(t => t.label), [].concat(...[0, 1, 2, 3].map(() => ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'])));
+  { // F2: the y range spans min(0, low) → max(0, high), and each side the curve reaches has a tick
+    const up = seq([['lost', 15], ['lost', 15], ['lost', 15], ['won', 48]]);   // −45 … ends +3 (odds 2): step 10, the positive side under one step
+    const labs = M.heroCurve(up, today).yTicks.map(t => t.label);
+    ok('F2: a curve that ends above zero below one step still shows a positive tick', labs.some(l => l.startsWith('+')), JSON.stringify(labs));
+    ok('F2: … and its negative ticks', labs.some(l => l.startsWith('−')), JSON.stringify(labs));
+    const onlyUp = M.heroCurve(seq([['won', 1], ['won', 1]]), today).yTicks.map(t => t.label);
+    ok('F2: a curve that never goes below zero gets no negative tick', !onlyUp.some(l => l.startsWith('−')), JSON.stringify(onlyUp));
+  }
   const F2 = { level: ['ATP 500', 'Masters 1000'], odds: ['1.61 – 1.90'], surface: [], market: ['Match winner'] };
   const menu = M.filterMenu(main, perList, F2);
   const pass = (b, except) => (except === 'level' || !F2.level.length || F2.level.includes(M.LEVEL[b.level])) && (except === 'odds' || !F2.odds.length || F2.odds.includes(M.band(b.odds)))
@@ -324,8 +346,12 @@ function run(M) {
   ok('combined odds dash until every leg is valid', isNaN(M.combinedOdds([{ text: 'a', odds: '1.5' }, { text: '', odds: '1.2' }])));
   ok('a leg below 1.01 is invalid', !M.legsOk(legs(1.009)) && M.legsOk(legs(1.01)));
   const form = { type: 'Single', timing: 'pre', legs: [{ text: 'A. de Minaur to win', odds: '2.10' }], tour: 'Vienna', level: '500', surface: 'Indoor hard', market: 'Match winner', marketOther: '', book: 'bet105', bookOther: '', stake: '1' };
-  eq('You post sentence', M.formCheck(form).hint, 'You post: single · A. de Minaur to win · Match winner @ 2.10 · bet105 · 1% of bankroll · pre-match · wins → +1.10% · loses → −1.00%. It lands as pending; settle it in the ledger, then lock it.');
-  eq('invalid hint', M.formCheck(Object.assign({}, form, { stake: '11' })).hint, 'Every leg needs its text and odds (1.01 or more); a stake between 0.1 and 10%, a market and a bookmaker are required — type your own when the lists do not have them. Type and Pre-match / Live are stored with the bet.');
+  eq('ready hint (v26)', M.formCheck(form).hint, 'Ready — the ticket on the right is what gets posted.');
+  eq('Ticket (v26): selection · context · type · market · book · odds · stake · wins · loses', (t => [t.sel, t.ctx, t.type, t.market, t.book, t.odds, t.stake, t.win, t.lose])(M.ticket(form)),
+    ['A. de Minaur to win', 'Vienna · ATP 500 · Indoor hard', 'Single · pre-match', 'Match winner', 'bet105', '2.10', '1.00% of bankroll', '+1.10%', '−1.00%']);
+  eq('Ticket before input: placeholder + dashes', (t => [t.sel, t.hasSel, t.ctx, t.odds, t.stake, t.win, t.lose])(M.ticket(Object.assign({}, form, { legs: [{ text: '', odds: '' }], tour: '', stake: '' }))),
+    ['Your selection', false, 'Tournament · ATP 500 · Indoor hard', '—', '—', '—', '—']);
+  eq('invalid hint (v26)', M.formCheck(Object.assign({}, form, { stake: '11' })).hint, 'Every leg needs text and odds (1.01+) · stake 0.1 – 10% · a market and a bookmaker.');
   ok('stake 0.1 and 10 are valid, 0.09 and 10.01 are not', M.formCheck(Object.assign({}, form, { stake: '0.1' })).valid && M.formCheck(Object.assign({}, form, { stake: '10' })).valid && !M.formCheck(Object.assign({}, form, { stake: '0.09' })).valid && !M.formCheck(Object.assign({}, form, { stake: '10.01' })).valid);
   ok('Other market needs its typed name', !M.formCheck(Object.assign({}, form, { market: 'Other', marketOther: ' ' })).valid && M.formCheck(Object.assign({}, form, { market: 'Other', marketOther: 'Most aces' })).market === 'Most aces');
   eq('legs note · Single', M.legsNote(form), 'One selection, one price.');
@@ -366,7 +392,8 @@ const MUTANTS = [
   ['ROI bar unclipped', 'var w = Math.min(Math.abs(roi), 0.4) / 0.4 * 50;', 'var w = Math.abs(roi) / 0.4 * 50;'],
   ['filter count ignores the other groups', "var n = filterCount(perList, F, d[0], o);", "var n = perList.filter(function (b) { return key(b, d[0]) === o; }).length;"],
   ['Avg CLV sub says 0 of 0', "S.clvN ? 'beat the close ' + S.beat + ' of ' + S.clvN : 'no closing prices'", "'beat the close ' + S.beat + ' of ' + S.clvN"],
-  ['curve labels every month on a long ledger', 'var byYear = Object.keys(months).length > 14,', 'var byYear = false,'],
+  ['F2 off: a short positive side keeps no tick', 'if (mx > 0 && mx < step) mx = step;', ''],
+  ['tile when: no run end date', 'when: monYear(S.bestEnd) },', "when: '' },"],
   ['void stake re-enters the ROI denominator', 'roi: stakedWL ? profit / stakedWL : null', 'roi: staked ? profit / staked : null'],
   ['minSample default 14', 'var MIN_SAMPLE = 15', 'var MIN_SAMPLE = 14'],
   ['eligibility n > minSample', 'if (g.s.n >= m && g.name', 'if (g.s.n > m && g.name'],

@@ -1,0 +1,1138 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="icon" href="assets/icon-app.png">
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&amp;family=IBM+Plex+Mono:wght@400;500;600;700;800&amp;family=Poppins:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+  *{ box-sizing:border-box; }
+  body{ margin:0; background:#05060A; -webkit-font-smoothing:antialiased; font-family:'Hanken Grotesk',sans-serif; }
+  a{ color:#6A9AF8; text-decoration:none; } a:hover{ color:#FFFFFF; text-decoration:underline; }
+</style>
+</helmet>
+<section style="display:flex; flex-direction:column; gap:24px; padding:40px 40px 0; background:#05060A; width:max-content;">
+  <div style="display:flex; flex-direction:column; gap:8px; max-width:1340px;">
+    <span style="font-size:22px; font-weight:800; color:#EBF1F2;">Turn 2 · the reference bankroll page, rebuilt 1:1</span>
+    <span style="font-size:15px; line-height:1.5; color:#9BB0DA; text-wrap:pretty;">Built at the screenshots' own CSS size (1190 × 760 viewport, Poppins). Same demo ledger as 1a, shown in € on a 10,000 € bankroll so the figures compare like for like. Four frames, one per screen: 2a page · 2b Statistics · 2c Profit calendar · 2d Add bet. The toolbar buttons and Add bet inside any frame switch that frame's drawer; month rows expand; the calendar pages ‹ ›.</span>
+  </div>
+  <div style="display:flex; gap:40px; align-items:flex-start;">
+    <sc-for list="{{ baFrames }}" as="fr" hint-placeholder-count="4">
+      <div id="{{ fr.id }}" style="display:flex; flex-direction:column; gap:12px; flex:none;">
+        <div style="display:flex; align-items:baseline; gap:12px;">
+          <span style="font-family:'IBM Plex Mono',monospace; font-size:14px; font-weight:700; color:#0B0C13; background:#EBF1F2; border-radius:7px; padding:4px 10px;">{{ fr.id }}</span>
+          <span style="font-size:18px; font-weight:800; color:#EBF1F2;">{{ fr.title }}</span>
+        </div>
+        <div style="position:relative; width:1190px; height:760px; display:grid; grid-template-columns:197px minmax(0,1fr); background:#0A0F1E; overflow:hidden; border:1px solid rgba(255,255,255,0.06); font-family:'Poppins',sans-serif; color:#FFFFFF;">
+
+          <!-- sidebar -->
+          <div style="position:relative; background:#0D1426; border-right:1px solid rgba(255,255,255,0.05); padding:14px 14px 0; display:flex; flex-direction:column;">
+            <div style="display:flex; align-items:center; gap:8px; height:28px; padding-left:8px;">
+              <img src="assets/icon-app.png" width="24" height="24" style="border-radius:6px; display:block;" alt="">
+              <span style="font-size:19px; font-weight:500; color:#FFFFFF; letter-spacing:-0.01em;">Stennisfy</span>
+            </div>
+            <sc-for list="{{ baNav }}" as="g" hint-placeholder-count="3">
+              <span style="display:block; margin:14px 0 6px 9px; font-size:11px; font-weight:500; letter-spacing:0.06em; color:#8B93A7; text-transform:uppercase;">{{ g.label }}</span>
+              <sc-for list="{{ g.items }}" as="it" hint-placeholder-count="4">
+                <div style="display:flex; align-items:center; gap:10px; height:31px; padding:0 9px; border-radius:8px; background:{{ it.bg }}; color:{{ it.c }}; cursor:pointer;">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="{{ it.d }}"></path></svg>
+                  <span style="font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex:1;">{{ it.name }}</span>
+                  <sc-if value="{{ it.arr }}" hint-placeholder-val="{{ false }}"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#8B93A7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"></path></svg></sc-if>
+                </div>
+              </sc-for>
+            </sc-for>
+            <div style="position:absolute; left:14px; right:14px; bottom:8px; height:55px; border:1px solid rgba(255,255,255,0.09); border-radius:10px; padding:0 10px; display:flex; align-items:center; gap:10px;">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#C7CDDC" stroke-width="1.6"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="10" r="3"></circle><path d="M6.5 18.5a6 6 0 0111 0"></path></svg>
+              <span style="display:flex; flex-direction:column; gap:1px; flex:1; min-width:0;"><span style="font-size:14px; font-weight:500; color:#FFFFFF;">Michael</span><span style="font-size:12px; color:#8B93A7;">♛ Premium</span></span>
+              <span style="font-size:14px; color:#8B93A7;">⋮</span>
+            </div>
+          </div>
+
+          <!-- content -->
+          <div style="display:flex; flex-direction:column; min-width:0; min-height:0;">
+            <div style="height:50px; flex:none; display:flex; align-items:center; justify-content:space-between; padding:0 12px; border-bottom:1px solid rgba(255,255,255,0.05);">
+              <span style="font-size:19px; font-weight:600; text-transform:uppercase; letter-spacing:0.005em;">Tennis 2026 (10K bankroll)</span>
+              <span onClick="{{ fr.onAdd }}" style="cursor:pointer; display:inline-flex; align-items:center; gap:6px; height:30px; padding:0 12px 0 10px; border-radius:10px; background:linear-gradient(90deg,#5B57F5,#8E5CF7); font-size:13px; font-weight:600; color:#FFFFFF;"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v8M8 12h8"></path></svg>Add bet</span>
+            </div>
+            <div style="height:36px; flex:none; display:flex; align-items:center; justify-content:space-between; padding:0 12px; border-bottom:1px solid rgba(255,255,255,0.05);">
+              <div style="display:flex; gap:5px;">
+                <span onClick="{{ fr.onStats }}" style="cursor:pointer; display:inline-flex; align-items:center; gap:5px; height:24px; padding:0 8px; border-radius:7px; border:1px solid {{ fr.statsBd }}; font-size:12.5px; font-weight:500; color:#D6DBE8;"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4v16h16M7 15l4-5 3 3 5-7"></path></svg>Statistics</span>
+                <span style="cursor:pointer; display:inline-flex; align-items:center; gap:5px; height:24px; padding:0 8px; border-radius:7px; border:1px solid rgba(255,255,255,0.14); font-size:12.5px; font-weight:500; color:#D6DBE8;"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h10M18 7h2M4 17h4M12 17h8M14 5v4M8 15v4"></path></svg>Filters</span>
+                <span onClick="{{ fr.onCal }}" style="cursor:pointer; display:inline-flex; align-items:center; gap:5px; height:24px; padding:0 8px; border-radius:7px; border:1px solid {{ fr.calBd }}; font-size:12.5px; font-weight:500; color:#D6DBE8;"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="4" y="5" width="16" height="15" rx="2"></rect><path d="M4 10h16M8 3v4M16 3v4"></path></svg>Calendar</span>
+              </div>
+              <div style="display:flex; gap:5px;">
+                <span style="cursor:pointer; display:inline-flex; align-items:center; gap:6px; height:24px; padding:0 9px; border-radius:7px; border:1px solid rgba(255,255,255,0.14); font-size:12.5px; font-weight:500; color:#D6DBE8;"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.2 2.2M16.2 16.2l2.2 2.2M5.6 18.4l2.2-2.2M16.2 7.8l2.2-2.2"></path></svg>Bankroll<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"></path></svg></span>
+                <span style="cursor:pointer; display:inline-flex; align-items:center; gap:6px; height:24px; padding:0 9px; border-radius:7px; border:1px solid rgba(255,255,255,0.14); font-size:12.5px; font-weight:500; color:#D6DBE8;"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 6a4 4 0 005 5l-9 9-3-3 9-9zM4 20l1-1"></path></svg>Tools<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"></path></svg></span>
+                <span style="cursor:pointer; display:inline-flex; align-items:center; gap:6px; height:24px; padding:0 9px; border-radius:7px; border:1px solid rgba(255,255,255,0.14); font-size:12.5px; font-weight:500; color:#D6DBE8;"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="12" r="2.5"></circle><circle cx="18" cy="6" r="2.5"></circle><circle cx="18" cy="18" r="2.5"></circle><path d="M8 11l8-4M8 13l8 4"></path></svg>Share<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"></path></svg></span>
+              </div>
+            </div>
+
+            <div style="flex:1; min-height:0; overflow:auto; padding:12px 12px 24px; display:flex; flex-direction:column; gap:11px;">
+              <!-- chart -->
+              <div style="position:relative; height:315px; flex:none; background:#10182C; border-radius:10px; overflow:hidden;">
+                <svg viewBox="0 0 968 315" width="968" height="315" style="display:block; position:absolute; left:0; top:0;">
+                  <defs><linearGradient id="baFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#33D6A6" stop-opacity="0.30"></stop><stop offset="1" stop-color="#33D6A6" stop-opacity="0.03"></stop></linearGradient></defs>
+                  <sc-for list="{{ baChart.ticks }}" as="t" hint-placeholder-count="9">
+                    <line x1="53" x2="958" y1="{{ t.y }}" y2="{{ t.y }}" stroke="rgba(255,255,255,0.06)" stroke-width="1" stroke-dasharray="3 4"></line>
+                  </sc-for>
+                  <path d="{{ baChart.area }}" fill="url(#baFill)"></path>
+                  <path d="{{ baChart.path }}" fill="none" stroke="#33D6A6" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"></path>
+                </svg>
+                <sc-for list="{{ baChart.ticks }}" as="t" hint-placeholder-count="9">
+                  <span style="position:absolute; left:0; width:46px; top:{{ t.top }}; text-align:right; font-size:11px; line-height:1; color:#8B93A7; white-space:nowrap;">{{ t.label }}</span>
+                </sc-for>
+                <span style="position:absolute; top:7px; right:8px; width:24px; height:24px; border-radius:50%; background:rgba(255,255,255,0.10); display:flex; align-items:center; justify-content:center; font-size:14px; color:#FFFFFF; line-height:1; letter-spacing:0.05em;">···</span>
+              </div>
+              <!-- kpis -->
+              <div style="display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:11px; flex:none;">
+                <sc-for list="{{ baKpi }}" as="k" hint-placeholder-count="4">
+                  <div style="position:relative; height:86px; background:#10182C; border-radius:10px; display:flex; flex-direction:column; align-items:center; padding-top:20px; gap:3px;">
+                    <span style="font-size:12.5px; letter-spacing:0.06em; color:#8B93A7;">{{ k.l }}</span>
+                    <span style="font-size:30px; font-weight:600; line-height:1.1; color:{{ k.c }};">{{ k.v }}<span style="font-size:17px;">{{ k.u }}</span></span>
+                    <span style="position:absolute; top:9px; right:10px; width:15px; height:15px; border-radius:50%; border:1.5px solid #8B93A7; color:#8B93A7; font-size:10px; font-weight:600; display:flex; align-items:center; justify-content:center; line-height:1;">?</span>
+                  </div>
+                </sc-for>
+              </div>
+              <!-- months -->
+              <sc-for list="{{ baMonths }}" as="m" hint-placeholder-count="3">
+                <div style="display:flex; flex-direction:column; gap:9px; flex:none;">
+                  <div onClick="{{ m.onClick }}" style="cursor:pointer; height:38px; background:#10182C; border-radius:10px; border:{{ m.bd }}; display:flex; align-items:center; justify-content:space-between; padding:0 4px 0 13px;">
+                    <span style="font-size:17px; font-weight:500; color:{{ m.c }};">{{ m.name }}</span>
+                    <span style="height:20px; padding:0 8px; border-radius:6px; display:inline-flex; align-items:center; font-size:12.5px; font-weight:500; background:{{ m.chipBg }}; color:{{ m.chipC }}; white-space:nowrap;">{{ m.chip }}</span>
+                  </div>
+                  <sc-if value="{{ m.open }}" hint-placeholder-val="{{ false }}">
+                    <sc-for list="{{ m.weeks }}" as="w" hint-placeholder-count="2">
+                      <div style="height:22px; display:flex; align-items:center; justify-content:space-between; padding:0 4px 0 7px;">
+                        <span style="font-size:13px; color:#8B93A7;">{{ w.label }}</span>
+                        <span style="height:20px; padding:0 8px; border-radius:6px; display:inline-flex; align-items:center; font-size:12px; font-weight:500; background:{{ w.chipBg }}; color:{{ w.chipC }};">{{ w.chip }}</span>
+                      </div>
+                      <sc-for list="{{ w.days }}" as="d" hint-placeholder-count="2">
+                        <div style="margin-left:6px; background:#10182C; border-radius:10px; padding:5px 9px 9px; display:flex; flex-direction:column; gap:7px;">
+                          <div style="height:30px; display:flex; align-items:center; justify-content:space-between; padding-left:1px;">
+                            <span style="font-size:15px; font-weight:500;">{{ d.label }}</span>
+                            <span style="height:20px; padding:0 8px; border-radius:6px; display:inline-flex; align-items:center; font-size:12px; font-weight:500; background:{{ d.chipBg }}; color:{{ d.chipC }};">{{ d.chip }}</span>
+                          </div>
+                          <sc-for list="{{ d.rows }}" as="b" hint-placeholder-count="1">
+                            <div style="height:55px; background:#0A0F1E; border-radius:8px; display:grid; grid-template-columns:32px minmax(0,1fr) 95px 85px 95px 64px 18px; align-items:center;">
+                              <span style="text-align:center; color:#C7CDDC; font-size:14px;">⋮</span>
+                              <span style="display:flex; flex-direction:column; gap:4px; min-width:0;">
+                                <span style="align-self:flex-start; font-size:11.5px; font-weight:500; color:#8D93FF; background:#22265C; border-radius:6px; padding:1px 8px; line-height:1.3;">Simple</span>
+                                <span style="display:flex; align-items:center; gap:7px; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"><span style="width:11px; height:11px; border-radius:50%; background:#C8E64A; flex:none;"></span>{{ b.label }}</span>
+                              </span>
+                              <span style="display:flex; flex-direction:column;"><span style="font-size:15px; font-weight:600;">{{ b.odds }}</span><span style="font-size:12px; color:#8B93A7;">Odds</span></span>
+                              <span style="display:flex; flex-direction:column;"><span style="font-size:15px; font-weight:600;">{{ b.stake }}</span><span style="font-size:12px; color:#8B93A7;">Stake</span></span>
+                              <span style="display:flex; flex-direction:column;"><span style="font-size:15px; font-weight:600; color:{{ b.gainC }};">{{ b.gain }}</span><span style="font-size:12px; color:#8B93A7;">Gain</span></span>
+                              <span style="display:flex; flex-direction:column;"><span style="font-size:15px; font-weight:600; color:{{ b.profitC }};">{{ b.profit }}</span><span style="font-size:12px; color:#8B93A7;">Profit</span></span>
+                              <span style="height:55px; border-radius:0 8px 8px 0; background:{{ b.sBg }}; color:{{ b.sC }}; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:500; writing-mode:vertical-rl; transform:rotate(180deg);">{{ b.sl }}</span>
+                            </div>
+                          </sc-for>
+                        </div>
+                      </sc-for>
+                    </sc-for>
+                  </sc-if>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+
+          <!-- overlay + drawers -->
+          <sc-if value="{{ fr.dim }}" hint-placeholder-val="{{ false }}">
+            <div onClick="{{ fr.onClose }}" style="position:absolute; inset:0; background:rgba(6,9,20,0.62);"></div>
+          </sc-if>
+          <sc-if value="{{ fr.isStats }}" hint-placeholder-val="{{ false }}">
+            <div style="position:absolute; top:0; right:0; bottom:0; width:378px; background:#0D1426; border-left:1px solid rgba(255,255,255,0.06); overflow:auto; display:flex; flex-direction:column;">
+              <div style="height:50px; flex:none; display:flex; align-items:center; justify-content:space-between; padding:0 20px 0 19px; border-bottom:1px solid rgba(255,255,255,0.05);"><span style="font-size:17px; font-weight:600;">Statistics</span><span onClick="{{ fr.onClose }}" style="cursor:pointer; font-size:20px; color:#C7CDDC; line-height:1;">×</span></div>
+              <div style="padding:12px 12px 20px;">
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:5.5px 6px;">
+                  <sc-for list="{{ baStats }}" as="s" hint-placeholder-count="12">
+                    <div style="height:29px; background:#121B31; border-radius:6px; padding:0 7px; display:flex; align-items:center; justify-content:space-between; gap:6px;"><span style="font-size:13.5px; color:#C3CAD9; white-space:nowrap;">{{ s.l }}</span><span style="font-size:13.5px; font-weight:600; color:{{ s.c }}; white-space:nowrap;">{{ s.v }}</span></div>
+                  </sc-for>
+                </div>
+                <div style="display:flex; align-items:center; justify-content:space-between; margin:14px 0 8px;"><span style="font-size:14.5px; font-weight:600;">Closing Line Value (CLV)</span><span style="font-size:13px; color:#C3CAD9; display:inline-flex; align-items:center; gap:5px;">Help<span style="width:14px; height:14px; border-radius:50%; border:1.5px solid #C3CAD9; font-size:9px; font-weight:600; display:inline-flex; align-items:center; justify-content:center;">?</span></span></div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:5.5px 6px;">
+                  <sc-for list="{{ baClv }}" as="s" hint-placeholder-count="8">
+                    <div style="height:29px; background:#121B31; border-radius:6px; padding:0 7px; display:flex; align-items:center; justify-content:space-between; gap:6px;"><span style="font-size:13.5px; color:#C3CAD9; white-space:nowrap;">{{ s.l }}</span><span style="font-size:13.5px; font-weight:600; color:{{ s.c }}; white-space:nowrap;">{{ s.v }}</span></div>
+                  </sc-for>
+                </div>
+              </div>
+            </div>
+          </sc-if>
+          <sc-if value="{{ fr.isCal }}" hint-placeholder-val="{{ false }}">
+            <div style="position:absolute; top:0; right:0; bottom:0; width:378px; background:#0D1426; border-left:1px solid rgba(255,255,255,0.06); overflow:auto; display:flex; flex-direction:column;">
+              <div style="height:50px; flex:none; display:flex; align-items:center; justify-content:space-between; padding:0 20px 0 19px; border-bottom:1px solid rgba(255,255,255,0.05);"><span style="font-size:17px; font-weight:600;">Profit calendar</span><span onClick="{{ fr.onClose }}" style="cursor:pointer; font-size:20px; color:#C7CDDC; line-height:1;">×</span></div>
+              <div style="padding:12px 12px 20px; display:flex; flex-direction:column; gap:13px;">
+                <div style="display:flex; align-items:center; gap:6px;">
+                  <span onClick="{{ baCal.onPrev }}" style="cursor:pointer; width:24px; height:24px; border-radius:7px; border:1px solid rgba(255,255,255,0.14); display:flex; align-items:center; justify-content:center;"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"></path></svg></span>
+                  <span style="width:112px; height:24px; border-radius:7px; border:1px solid rgba(255,255,255,0.14); display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:500; white-space:nowrap;">{{ baCal.title }}</span>
+                  <span onClick="{{ baCal.onNext }}" style="cursor:pointer; width:24px; height:24px; border-radius:7px; border:1px solid rgba(255,255,255,0.14); display:flex; align-items:center; justify-content:center;"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"></path></svg></span>
+                  <span style="margin-left:auto; height:24px; padding:0 9px; border-radius:7px; border:1px solid rgba(255,255,255,0.14); display:flex; align-items:center; font-size:13px; font-weight:500;">Today</span>
+                </div>
+                <div style="background:#121B31; border-radius:10px; padding:12px 6px 10px; display:flex; flex-direction:column; gap:8px;">
+                  <div style="display:grid; grid-template-columns:repeat(7,1fr); font-size:12px; color:#8B93A7; text-align:center;"><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span></div>
+                  <div style="display:grid; grid-template-columns:repeat(7,1fr); grid-auto-rows:47px; justify-items:center; align-items:center;">
+                    <sc-for list="{{ baCal.cells }}" as="c" hint-placeholder-count="35">
+                      <span style="width:43px; height:43px; border-radius:7px; background:{{ c.bg }}; border:{{ c.bd }}; display:flex; flex-direction:column; align-items:center; justify-content:center; line-height:1.15;"><span style="font-size:13.5px; color:{{ c.numC }};">{{ c.n }}</span><sc-if value="{{ c.has }}" hint-placeholder-val="{{ false }}"><span style="font-size:13px; font-weight:500; color:{{ c.valC }}; white-space:nowrap;">{{ c.val }}</span></sc-if></span>
+                    </sc-for>
+                  </div>
+                </div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                  <div style="height:55px; background:#121B31; border-radius:10px; padding:9px 10px; display:flex; flex-direction:column; justify-content:center; gap:2px;"><span style="font-size:14px; color:#B6BDCF;">Month profit</span><span style="font-size:16px; font-weight:600; color:{{ baCal.profitC }};">{{ baCal.profit }}</span></div>
+                  <div style="height:55px; background:#121B31; border-radius:10px; padding:9px 10px; display:flex; flex-direction:column; justify-content:center; gap:2px;"><span style="font-size:14px; color:#B6BDCF;">Month bets</span><span style="font-size:16px; font-weight:600; color:#5B8DEF;">{{ baCal.bets }}</span></div>
+                </div>
+              </div>
+            </div>
+          </sc-if>
+          <sc-if value="{{ fr.isAdd }}" hint-placeholder-val="{{ false }}">
+            <div style="position:absolute; top:0; right:0; bottom:0; width:456px; background:#0D1426; border-left:1px solid rgba(255,255,255,0.06); overflow:auto; display:flex; flex-direction:column;">
+              <div style="height:50px; flex:none; display:flex; align-items:center; justify-content:space-between; padding:0 20px 0 19px; border-bottom:1px solid rgba(255,255,255,0.05);"><span style="font-size:17px; font-weight:600;">Add bet</span><span onClick="{{ fr.onClose }}" style="cursor:pointer; font-size:20px; color:#C7CDDC; line-height:1;">×</span></div>
+              <div style="padding:14px 12px 20px; display:flex; flex-direction:column; gap:10px;">
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                  <div style="height:40px; border:1px solid rgba(255,255,255,0.14); border-radius:8px; padding:5px 10px; display:flex; align-items:center; justify-content:space-between;"><span style="display:flex; flex-direction:column; line-height:1.2;"><span style="font-size:12px; color:#9AA3B8;">Date</span><span style="font-size:15px;">27/10/2026</span></span><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#C7CDDC" stroke-width="2"><rect x="4" y="5" width="16" height="15" rx="2"></rect><path d="M4 10h16M8 3v4M16 3v4"></path></svg></div>
+                  <div style="height:40px; border:1px solid rgba(255,255,255,0.14); border-radius:8px; padding:5px 10px; display:flex; align-items:center; justify-content:space-between;"><span style="display:flex; flex-direction:column; line-height:1.2;"><span style="font-size:12px; color:#9AA3B8;">Time</span><span style="font-size:15px;">14:28</span></span><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#C7CDDC" stroke-width="2"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg></div>
+                </div>
+                <div style="height:40px; border:1px solid rgba(255,255,255,0.14); border-radius:8px; padding:5px 10px; display:flex; align-items:center; justify-content:space-between;"><span style="display:flex; flex-direction:column; line-height:1.2;"><span style="font-size:12px; color:#9AA3B8;">Bookmaker</span><span style="font-size:15px; color:#6B7590;">Select</span></span><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#C7CDDC" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 9l4-4 4 4M8 15l4 4 4-4"></path></svg></div>
+                <div style="margin-top:3px; border:1px solid rgba(255,255,255,0.10); border-radius:10px; padding:8px 10px 10px; display:flex; flex-direction:column; gap:10px;">
+                  <span style="display:flex; align-items:center; gap:9px; height:28px; font-size:16px; font-weight:500;"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#C7CDDC" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"></path></svg>Selection 1</span>
+                  <div style="display:grid; grid-template-columns:minmax(0,1fr) 130px; gap:10px;">
+                    <div style="height:40px; border:1px solid rgba(255,255,255,0.14); border-radius:8px; padding:5px 10px; display:flex; flex-direction:column; justify-content:center; line-height:1.1;"><span style="font-size:12px; color:#9AA3B8;">Label of bet</span><span style="font-size:15px; color:#6B7590; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Ex: J. Sinner - C. Alcaraz</span></div>
+                    <div style="height:40px; border:1px solid rgba(255,255,255,0.14); border-radius:8px; padding:5px 10px; display:flex; flex-direction:column; justify-content:center; line-height:1.1;"><span style="font-size:12px; color:#9AA3B8;">Odds</span><span style="font-size:15px; color:#6B7590;">Ex: 1.50</span></div>
+                  </div>
+                  <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                    <div style="height:40px; border:1px solid rgba(255,255,255,0.14); border-radius:8px; padding:5px 10px; display:flex; align-items:center; justify-content:space-between;"><span style="display:flex; flex-direction:column; line-height:1.2;"><span style="font-size:12px; color:#9AA3B8;">Sport</span><span style="font-size:15px; display:flex; align-items:center; gap:7px;"><span style="width:12px; height:12px; border-radius:50%; background:#C8E64A;"></span>Tennis</span></span><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#C7CDDC" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 9l4-4 4 4M8 15l4 4 4-4"></path></svg></div>
+                    <div style="height:40px; border:1px solid rgba(255,255,255,0.14); border-radius:8px; padding:5px 10px; display:flex; align-items:center; justify-content:space-between;"><span style="display:flex; flex-direction:column; line-height:1.2;"><span style="font-size:12px; color:#9AA3B8;">State</span><span style="font-size:15px;">Pending</span></span><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#C7CDDC" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"></path></svg></div>
+                  </div>
+                  <div style="height:24px; border-radius:7px; background:#1A1F57; color:#8D93FF; font-size:13px; font-weight:500; display:flex; align-items:center; justify-content:center; gap:6px;"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"></path></svg>More details</div>
+                </div>
+                <div style="margin-top:3px; height:26px; border:1px solid #4F4FE0; border-radius:8px; color:#9A9CFF; font-size:13px; font-weight:500; display:flex; align-items:center; justify-content:center; gap:7px;"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v8M8 12h8"></path></svg>Add a selection</div>
+                <div style="margin-top:3px; border:1px solid rgba(255,255,255,0.10); border-radius:10px; padding:10px 10px 12px; display:flex; flex-direction:column; gap:10px;">
+                  <div style="display:flex; align-items:center; justify-content:space-between;"><span style="font-size:15px; font-weight:500;">Bet format</span><span style="display:flex; align-items:center; gap:8px; font-size:12px; color:#9AA3B8;">Multiple choice format<span style="width:26px; height:14px; border-radius:7px; background:#2A3350; position:relative;"><span style="position:absolute; left:2px; top:2px; width:10px; height:10px; border-radius:50%; background:#8B93A7;"></span></span></span></div>
+                  <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:10px;">
+                    <span style="height:36px; border-radius:8px; border:1px solid #6C6CF0; background:rgba(91,91,240,0.16); color:#8D93FF; font-size:14px; font-weight:500; display:flex; align-items:center; justify-content:center; gap:8px;"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7h18v4a2 2 0 000 4v4H3v-4a2 2 0 000-4z"></path></svg>Simple</span>
+                    <span style="height:36px; border-radius:8px; border:1px solid rgba(255,255,255,0.14); color:#D6DBE8; font-size:14px; font-weight:500; display:flex; align-items:center; justify-content:center; gap:8px;"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M6 11l6-6 6 6"></path></svg>Back</span>
+                    <span style="height:36px; border-radius:8px; border:1px solid rgba(255,255,255,0.14); color:#D6DBE8; font-size:14px; font-weight:500; display:flex; align-items:center; justify-content:center; gap:8px;"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M6 13l6 6 6-6"></path></svg>Lay</span>
+                  </div>
+                  <span style="font-size:15px; font-weight:500; margin-top:2px;">Stake</span>
+                  <span style="font-size:12.5px; color:#9AA3B8; margin-top:-6px;">Simple bet</span>
+                  <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                    <div style="height:40px; border:1px solid rgba(255,255,255,0.14); border-radius:8px; padding:5px 10px; display:flex; flex-direction:column; justify-content:center; line-height:1.1;"><span style="font-size:12px; color:#9AA3B8;">Stake (€)</span><span style="font-size:15px; color:#6B7590;">Ex: 50</span></div>
+                    <div style="height:40px; border:1px solid rgba(255,255,255,0.14); border-radius:8px; padding:5px 10px; display:flex; flex-direction:column; justify-content:center; line-height:1.1;"><span style="font-size:12px; color:#9AA3B8;">% capital</span><span style="font-size:15px; color:#6B7590;">Ex: 5</span></div>
+                  </div>
+                </div>
+                <div style="margin-top:3px; height:25px; border:1px solid rgba(255,255,255,0.14); border-radius:8px; color:#D6DBE8; font-size:13px; font-weight:500; display:flex; align-items:center; justify-content:center; gap:7px;"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v8M8 12h8"></path></svg>More options</div>
+                <div style="margin-top:5px; height:29px; border-radius:8px; background:linear-gradient(90deg,#5B57F5,#8E5CF7); font-size:14px; font-weight:600; display:flex; align-items:center; justify-content:center;">Add bet</div>
+                <span style="text-align:center; font-size:12px; color:#9AA3B8;">ⓘ Betting limit · 7%</span>
+              </div>
+            </div>
+          </sc-if>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+</section>
+
+<section style="display:flex; flex-direction:column; gap:40px; padding:40px; background:#05060A; min-height:100vh; width:max-content;">
+
+  <div style="display:flex; flex-direction:column; gap:8px; max-width:1340px;">
+    <span style="font-size:22px; font-weight:800; color:#EBF1F2;">Bet Tracker · a member's bankroll, read like a coach</span>
+    <span style="font-size:15px; line-height:1.5; color:#9BB0DA; text-wrap:pretty;">Night · OFFICIAL VERSION 1 shell and tokens. Stakes and profit in % of bankroll, never units or €. Every figure is computed from the demo ledger (≈200 settled bets since April, two pending today — settle them and everything recomputes). Rules: small samples carry their count, nothing without its denominator, a missing close is a dash.</span>
+  </div>
+
+  <div id="1a" style="width:1340px; flex:none; display:flex; flex-direction:column; gap:16px; font-family:'Hanken Grotesk',sans-serif; color:#FFFFFF;">
+    <div style="display:flex; align-items:baseline; gap:12px;">
+      <span style="font-family:'IBM Plex Mono',monospace; font-size:14px; font-weight:700; color:#0B0C13; background:#EBF1F2; border-radius:7px; padding:4px 10px;">1a</span>
+      <span style="font-size:22px; font-weight:800; color:#EBF1F2;">Bankroll page</span>
+      <span style="font-size:14px; color:#9BB0DA;">Bankrolls · filters · curve · where it works and leaks · discipline · staking replay · calendar · certified ledger with settle + lock</span>
+    </div>
+
+    <div style="background:#090B12; border:1px solid rgba(255,255,255,0.05); border-radius:16px; padding:28px 32px 36px; display:flex; flex-direction:column; gap:28px;">
+
+      <!-- 2a · one canvas -->
+      <div style="background:#0E1019; box-shadow:inset 0 1px 0 rgba(143,170,255,0.03); border:1px solid rgba(255,255,255,0.05); border-radius:12px; padding:22px 26px 18px; display:flex; flex-direction:column; gap:16px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:28px;">
+          <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:6px;">
+            <div style="display:flex; align-items:center; gap:12px;"><span style="font-size:24px; font-weight:800; letter-spacing:-0.015em; line-height:1.1; color:#FFFFFF;">Bet Tracker</span><span title="Every locked result is frozen — it cannot be edited or deleted. The blue seal on a ledger row marks a locked result." style="display:inline-flex; align-items:center; gap:6px; height:24px; padding:0 10px; border-radius:7px; background:rgba(0,122,255,0.12); border:1px solid rgba(0,122,255,0.35); color:#6A9AF8; font-size:11.5px; font-weight:700; white-space:nowrap;"><span style="width:12px; height:12px; background:#007AFF; display:inline-flex; align-items:center; justify-content:center; flex:none; clip-path:polygon(100% 50%, 92.5% 59.3%, 93.3% 75%, 81% 81%, 75% 93.3%, 59.3% 92.5%, 50% 100%, 40.7% 92.5%, 25% 93.3%, 19% 81%, 6.7% 75%, 7.5% 59.3%, 0% 50%, 7.5% 40.7%, 6.7% 25%, 19% 19%, 25% 6.7%, 40.7% 7.5%, 50% 0%, 59.3% 7.5%, 75% 6.7%, 81% 19%, 93.3% 25%, 92.5% 40.7%);"><svg viewBox="0 0 24 24" width="7" height="7" fill="none" stroke="#FFFFFF" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"></path></svg></span>{{ certTxt }}</span></div>
+            <div style="font-size:13px; color:#DDE0EA; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"><span style="font-weight:700; color:#FFFFFF;">{{ bankName }}</span> · {{ headMeta }}</div>
+          </div>
+          <span onClick="{{ onLogToggle }}" style="cursor:pointer; flex:none; display:inline-flex; align-items:center; height:36px; padding:0 16px; border-radius:10px; background:#007AFF; color:#FFFFFF; font-size:13px; font-weight:700; white-space:nowrap;" style-hover="background:#3A60E8;">{{ logBtn }}</span>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <div style="display:flex; align-items:baseline; gap:12px;"><span style="font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">Bankrolls</span><span style="font-size:12px; color:#A3AABE;">One ledger each · pick one and the whole page follows · figures over the bankroll's whole life</span></div>
+          <div style="display:flex; gap:12px; overflow-x:auto; padding-bottom:2px;">
+            <sc-for list="{{ banks }}" as="bk" hint-placeholder-count="2">
+              <div onClick="{{ bk.onClick }}" style="cursor:pointer; flex:none; width:300px; background:#0A0D14; border:1px solid {{ bk.bd }}; border-radius:12px; padding:14px 16px 12px; display:flex; flex-direction:column; gap:10px;">
+                <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;"><span style="font-size:14px; font-weight:700; color:#FFFFFF; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ bk.name }}</span><span style="display:flex; align-items:center; gap:8px; flex:none;"><span style="font-size:11px; color:#A3AABE; white-space:nowrap;">{{ bk.meta }}</span><span onClick="{{ bk.onArchive }}" title="Archive this bankroll — its bets stay, it leaves the strip" style="cursor:pointer; font-size:10.5px; font-weight:700; letter-spacing:0.06em; color:#A3AABE; border:1px solid rgba(255,255,255,0.10); border-radius:6px; padding:2px 7px;" style-hover="color:#FFFFFF; border-color:rgba(255,255,255,0.3);">Archive</span></span></div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+                  <div style="background:#0E1019; border:1px solid rgba(255,255,255,0.05); border-radius:8px; padding:8px 10px; display:flex; flex-direction:column; gap:3px;"><span style="font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">ROI</span><span style="font-family:'IBM Plex Mono',monospace; font-size:18px; font-weight:800; color:{{ bk.roiC }};">{{ bk.roi }}</span></div>
+                  <div style="background:#0E1019; border:1px solid rgba(255,255,255,0.05); border-radius:8px; padding:8px 10px; display:flex; flex-direction:column; gap:3px;"><span style="font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">Profit %</span><span style="font-family:'IBM Plex Mono',monospace; font-size:18px; font-weight:800; color:{{ bk.profitC }};">{{ bk.profit }}</span></div>
+                </div>
+              </div>
+            </sc-for>
+            <div onClick="{{ onAddBank }}" style="cursor:pointer; flex:none; width:200px; border:1px dashed rgba(255,255,255,0.18); border-radius:12px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; color:#A3AABE;" style-hover="border-color:rgba(255,255,255,0.35); color:#FFFFFF;"><span style="font-size:18px; font-weight:300; line-height:1;">+</span><span style="font-size:13px; font-weight:700;">Add bankroll</span></div>
+          </div>
+        </div>
+        <sc-if value="{{ hasArchived }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+              <span style="font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">Archived</span>
+              <sc-for list="{{ archived }}" as="a" hint-placeholder-count="1">
+                <span style="display:inline-flex; align-items:center; gap:8px; height:26px; padding:0 10px; border-radius:7px; background:#0A0D14; border:1px solid rgba(255,255,255,0.06); font-size:12px; color:#E7E9EE;">{{ a.name }}<span style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#A3AABE;">{{ a.meta }}</span><span onClick="{{ a.onRestore }}" style="cursor:pointer; font-weight:700; color:#6A9AF8;">Restore</span><span onClick="{{ a.onDelete }}" title="Delete for good — only possible once archived" style="cursor:pointer; font-weight:700; color:#E06266;">Delete</span></span>
+              </sc-for>
+            </div>
+          </sc-if>
+        <div style="display:flex; align-items:flex-end; justify-content:space-between; gap:24px; border-top:1px solid rgba(255,255,255,0.05); padding-top:18px;">
+          <div style="display:flex; flex-direction:column; gap:6px;">
+            <span style="font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">Profit · % of bankroll</span>
+            <span style="display:flex; align-items:baseline; gap:14px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:48px; font-weight:800; line-height:1; letter-spacing:-0.02em; color:{{ hero.profitC }};">{{ hero.profit }}</span><span style="font-size:14px; color:#E7E9EE;">{{ hero.profitSub }}</span></span>
+          </div>
+          <div style="display:flex; align-items:center; gap:6px;">
+              <span style="font-size:11.5px; color:#A3AABE; margin-right:6px;">{{ curve.meta }}</span>
+              <span onClick="{{ onAllTime }}" title="The whole bankroll — from the first bet to today, no period cut" style="cursor:pointer; display:inline-flex; align-items:center; height:30px; padding:0 12px; border-radius:9px; font-size:12.5px; white-space:nowrap; background:{{ allBg }}; border:1px solid {{ allBd }}; color:{{ allC }}; font-weight:{{ allW }};">All time</span>
+              <span style="position:relative;">
+                <span onClick="{{ onTogglePeriod }}" style="cursor:pointer; display:inline-flex; align-items:center; gap:7px; height:30px; padding:0 12px; border-radius:9px; font-size:12.5px; white-space:nowrap; background:{{ periodBg }}; border:1px solid {{ periodBd }}; color:{{ periodC }}; font-weight:{{ periodW }};">{{ periodLabel }}<span style="font-size:9px; color:#A3AABE;">▼</span></span>
+                <sc-if value="{{ periodOpen }}" hint-placeholder-val="{{ false }}">
+                  <div style="position:absolute; top:calc(100% + 6px); right:0; width:220px; display:flex; flex-direction:column; background:#0C0E16; border:1px solid rgba(255,255,255,0.10); border-radius:10px; padding:4px; box-shadow:0 12px 28px rgba(0,0,0,0.45); z-index:30;">
+                    <sc-for list="{{ periods }}" as="P" hint-placeholder-count="4"><span onClick="{{ P.onClick }}" style="cursor:pointer; display:flex; align-items:center; justify-content:space-between; gap:10px; padding:6px 9px; border-radius:7px; font-size:12.5px; font-weight:{{ P.weight }}; color:{{ P.color }}; background:{{ P.rowBg }}; white-space:nowrap;" style-hover="background:#0A0D14;">{{ P.label }}<span style="width:12px; color:#E7E9EE;">{{ P.tick }}</span></span></sc-for>
+                    <sc-if value="{{ isCustom }}" hint-placeholder-val="{{ false }}">
+                      <div style="display:flex; flex-direction:column; gap:6px; padding:8px 5px 5px; border-top:1px solid rgba(255,255,255,0.05); margin-top:4px;"><input type="date" value="{{ range.from }}" onChange="{{ onRange.from }}" style="height:34px; background:#0A0D14; border:1px solid transparent; border-radius:9px; color:#E7E9EE; padding:0 10px; font-family:'IBM Plex Mono',monospace; font-size:12px; outline:none; color-scheme:dark;"><input type="date" value="{{ range.to }}" onChange="{{ onRange.to }}" style="height:34px; background:#0A0D14; border:1px solid transparent; border-radius:9px; color:#E7E9EE; padding:0 10px; font-family:'IBM Plex Mono',monospace; font-size:12px; outline:none; color-scheme:dark;"></div>
+                    </sc-if>
+                  </div>
+                </sc-if>
+              </span>
+              <span style="position:relative;">
+                <span onClick="{{ onToggleFilters }}" style="cursor:pointer; display:inline-flex; align-items:center; gap:7px; height:30px; padding:0 12px; border-radius:9px; font-size:12.5px; white-space:nowrap; background:{{ filtersBg }}; border:1px solid {{ filtersBd }}; color:{{ filtersC }}; font-weight:{{ filtersW }};"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h10M18 7h2M4 17h4M12 17h8M14 5v4M8 15v4"></path></svg>{{ filtersLabel }}<span style="font-size:9px; color:#A3AABE;">▼</span></span>
+                <sc-if value="{{ filtersOpen }}" hint-placeholder-val="{{ false }}">
+                  <div style="position:absolute; top:calc(100% + 6px); right:0; width:560px; display:grid; grid-template-columns:1fr 1fr; gap:0 4px; background:#0C0E16; border:1px solid rgba(255,255,255,0.10); border-radius:10px; padding:4px; box-shadow:0 12px 28px rgba(0,0,0,0.45); z-index:30;">
+                    <sc-for list="{{ filters }}" as="f" hint-placeholder-count="4">
+                      <div style="display:flex; flex-direction:column; padding:4px 0 6px;">
+                        <span style="padding:6px 9px 4px; font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">{{ f.label }}</span>
+                        <sc-for list="{{ f.opts }}" as="P" hint-placeholder-count="4"><span onClick="{{ P.onClick }}" style="cursor:pointer; display:flex; align-items:center; justify-content:space-between; gap:10px; padding:6px 9px; border-radius:7px; font-size:12.5px; font-weight:{{ P.weight }}; color:{{ P.color }}; background:{{ P.rowBg }}; white-space:nowrap;" style-hover="background:#0A0D14;">{{ P.label }}<span style="display:flex; align-items:center; gap:10px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:#A3AABE;">{{ P.n }}</span><span style="width:12px; color:#E7E9EE;">{{ P.tick }}</span></span></span></sc-for>
+                      </div>
+                    </sc-for>
+                    <div style="grid-column:span 2; display:flex; align-items:center; justify-content:space-between; padding:8px 9px 6px; border-top:1px solid rgba(255,255,255,0.05); font-size:12px; color:#A3AABE;"><span>{{ menuFoot }}</span><span onClick="{{ onClearFilters }}" style="cursor:pointer; font-weight:600; color:#5B9BFF;">Reset filters</span></div>
+                  </div>
+                </sc-if>
+              </span>
+              <span style="display:inline-flex; gap:2px; padding:2px; height:30px; box-sizing:border-box; background:#0C0E16; border:1px solid rgba(255,255,255,0.10); border-radius:9px;"><span onClick="{{ onViewResults }}" style="cursor:pointer; padding:0 12px; display:flex; align-items:center; border-radius:7px; font-size:12.5px; font-weight:{{ viewResW }}; color:{{ viewResC }}; background:{{ viewResBg }};">Results</span><span onClick="{{ onViewInsights }}" style="cursor:pointer; padding:0 12px; display:flex; align-items:center; gap:7px; border-radius:7px; font-size:12.5px; font-weight:{{ viewInsW }}; color:{{ viewInsC }}; background:{{ viewInsBg }};">Insights<span style="font-family:'IBM Plex Mono',monospace; font-size:10px; font-weight:700; color:{{ insBadgeC }};">{{ insBadge }}</span></span><span onClick="{{ onViewStaking }}" style="cursor:pointer; padding:0 12px; display:flex; align-items:center; gap:7px; border-radius:7px; font-size:12.5px; font-weight:{{ viewStkW }}; color:{{ viewStkC }}; background:{{ viewStkBg }};">Staking<sc-if value="{{ planApplied }}" hint-placeholder-val="{{ false }}"><span style="width:6px; height:6px; border-radius:50%; background:#5CCB84;"></span></sc-if></span></span>
+            </div>
+        </div>
+        <div style="position:relative; width:100%; height:262px;">
+          <svg viewBox="0 0 1292 240" width="100%" height="240" preserveAspectRatio="none" style="display:block; overflow:visible;">
+            <defs><linearGradient id="hgA" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#007AFF" stop-opacity="0.22"></stop><stop offset="1" stop-color="#007AFF" stop-opacity="0"></stop></linearGradient></defs>
+            <sc-for list="{{ curve.yTicks }}" as="t" hint-placeholder-count="5">
+              <line x1="44" x2="1288" y1="{{ t.y }}" y2="{{ t.y }}" stroke="{{ t.stroke }}" stroke-width="1" stroke-dasharray="{{ t.dash }}"></line>
+            </sc-for>
+            <path d="{{ curve.area }}" fill="url(#hgA)"></path>
+            <path d="{{ curve.path }}" fill="none" stroke="#007AFF" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"></path>
+            <circle cx="{{ curve.ddX }}" cy="{{ curve.ddY }}" r="3.5" fill="#0E1019" stroke="#E06266" stroke-width="2"></circle>
+            <circle cx="{{ curve.lastX }}" cy="{{ curve.lastY }}" r="4" fill="#FFFFFF"></circle>
+          </svg>
+          <sc-if value="{{ curve.hasHov }}" hint-placeholder-val="{{ false }}">
+            <div style="position:absolute; left:{{ curve.hovLeft }}; top:12px; height:210px; width:1px; background:rgba(255,255,255,0.22); pointer-events:none;"></div>
+            <div style="position:absolute; left:{{ curve.hovLeft }}; top:{{ curve.hovTop }}; width:10px; height:10px; margin:-5px 0 0 -5px; border-radius:50%; background:#007AFF; border:2px solid #FFFFFF; box-sizing:border-box; pointer-events:none;"></div>
+            <div style="position:absolute; left:{{ curve.hovLeft }}; top:14px; transform:{{ curve.tipShift }}; display:flex; flex-direction:column; gap:7px; width:236px; padding:11px 13px 12px; background:#0A0D14; border:1px solid rgba(255,255,255,0.10); border-radius:10px; box-shadow:0 12px 32px rgba(0,0,0,0.45); pointer-events:none; z-index:3;">
+              <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;"><span style="font-size:11px; font-weight:600; color:#A3AABE; white-space:nowrap;">{{ curve.hovDate }}</span><span style="font-family:'IBM Plex Mono',monospace; font-size:10px; color:#A3AABE; white-space:nowrap;">{{ curve.hovIdx }}</span></div>
+              <div style="display:flex; align-items:baseline; gap:8px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:20px; font-weight:800; line-height:1; color:{{ curve.hovCumC }};">{{ curve.hovCum }}</span><span style="font-size:11px; color:#A3AABE;">bankroll</span></div>
+              <sc-if value="{{ curve.hovHasBet }}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex; flex-direction:column; gap:3px; padding-top:7px; border-top:1px solid rgba(255,255,255,0.08);">
+                  <div style="display:flex; align-items:center; gap:7px; min-width:0;"><span style="width:8px; height:8px; border-radius:2px; flex:none; background:{{ curve.hovResC }};"></span><span style="font-size:12.5px; font-weight:700; color:#FFFFFF; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ curve.hovBet }}</span></div>
+                  <span style="font-size:11px; color:#A3AABE; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ curve.hovMeta }}</span>
+                  <div style="display:flex; align-items:baseline; justify-content:space-between; gap:8px;"><span style="font-size:11px; color:#A3AABE; white-space:nowrap;">{{ curve.hovStake }}</span><span style="font-family:'IBM Plex Mono',monospace; font-size:12.5px; font-weight:800; color:{{ curve.hovPlC }}; white-space:nowrap;">{{ curve.hovPl }}</span></div>
+                </div>
+              </sc-if>
+            </div>
+          </sc-if>
+          <div onMouseMove="{{ curve.onMove }}" onMouseLeave="{{ curve.onLeave }}" style="position:absolute; left:0; top:0; width:100%; height:240px; cursor:crosshair;"></div>
+          <sc-for list="{{ curve.yTicks }}" as="t" hint-placeholder-count="5">
+            <span style="position:absolute; left:0; width:36px; top:{{ t.top }}; text-align:right; font-family:'IBM Plex Mono',monospace; font-size:10px; line-height:1; color:#A3AABE; white-space:nowrap;">{{ t.label }}</span>
+          </sc-for>
+          <sc-for list="{{ curve.xTicks }}" as="t" hint-placeholder-count="6">
+            <span style="position:absolute; left:{{ t.left }}; top:246px; font-size:10.5px; line-height:1; color:#A3AABE; white-space:nowrap;">{{ t.label }}</span>
+          </sc-for>
+        </div>
+        <div style="display:flex; gap:16px; font-size:11px; color:#A3AABE; margin-top:-6px;"><span>○ red = deepest drawdown</span><span>{{ curve.ddNote }}</span></div>
+        <div style="display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:8px; border-top:1px solid rgba(255,255,255,0.05); padding-top:14px;">
+          <sc-for list="{{ hero.rows }}" as="r" hint-placeholder-count="7">
+            <div style="display:flex; flex-direction:column; gap:4px; padding:10px 14px; background:#0A0D14; border:1px solid rgba(255,255,255,0.05); border-radius:9px; min-width:0;"><span style="font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE; white-space:nowrap;">{{ r.label }}</span><span style="display:flex; align-items:baseline; gap:7px; min-width:0;"><span style="font-family:'IBM Plex Mono',monospace; font-size:18px; font-weight:800; color:{{ r.color }}; white-space:nowrap;">{{ r.value }}</span><span style="font-size:11px; font-weight:600; color:#A3AABE; white-space:nowrap;">{{ r.when }}</span></span><span style="font-size:11px; color:#A3AABE; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ r.sub }}</span></div>
+          </sc-for>
+        </div>
+      </div>
+
+      <!-- log a bet -->
+      <sc-if value="{{ logOpen }}" hint-placeholder-val="{{ false }}">
+        <div style="background:#0E1019; box-shadow:inset 0 1px 0 rgba(143,170,255,0.03); border:1px solid rgba(255,255,255,0.05); border-radius:12px; display:grid; grid-template-columns:minmax(0,1fr) 300px; overflow:hidden;">
+          <div style="padding:18px 20px 20px; display:flex; flex-direction:column; gap:16px; border-right:1px solid rgba(255,255,255,0.06); min-width:0;">
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;"><span style="display:flex; align-items:baseline; gap:10px;"><span style="font-size:15px; font-weight:800; color:#FFFFFF;">Log a bet</span><span style="font-size:12px; color:#A3AABE;">{{ bankName }}</span></span><span onClick="{{ onLogToggle }}" style="cursor:pointer; width:28px; height:28px; border-radius:8px; border:1px solid rgba(255,255,255,0.12); display:flex; align-items:center; justify-content:center; font-size:12px; color:#A3AABE;" style-hover="color:#E7E9EE; border-color:rgba(255,255,255,0.22);">✕</span></div>
+            <div style="display:flex; flex-direction:column; gap:10px;">
+              <span style="font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">Selection</span>
+              <div style="display:flex; gap:14px; flex-wrap:wrap;"><div style="display:inline-flex; gap:2px; padding:3px; background:#0A0D14; border:1px solid rgba(255,255,255,0.06); border-radius:9px;"><sc-for list="{{ types }}" as="t" hint-placeholder-count="3"><span onClick="{{ t.onClick }}" style="cursor:pointer; padding:6px 12px; border-radius:7px; font-size:12px; font-weight:700; background:{{ t.bg }}; color:{{ t.color }}; white-space:nowrap;">{{ t.label }}</span></sc-for></div><div style="display:inline-flex; gap:2px; padding:3px; background:#0A0D14; border:1px solid rgba(255,255,255,0.06); border-radius:9px;"><sc-for list="{{ timings }}" as="t" hint-placeholder-count="2"><span onClick="{{ t.onClick }}" style="cursor:pointer; padding:6px 12px; border-radius:7px; font-size:12px; font-weight:700; background:{{ t.bg }}; color:{{ t.color }}; white-space:nowrap;">{{ t.label }}</span></sc-for></div></div>
+              <sc-for list="{{ legs }}" as="lg" hint-placeholder-count="1">
+                <div style="display:grid; grid-template-columns:minmax(0,1fr) 120px 24px; gap:10px; align-items:end;">
+                  <label style="display:flex; flex-direction:column; gap:5px; min-width:0;"><span style="font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">{{ lg.label }}</span><input value="{{ lg.text }}" onChange="{{ lg.onText }}" placeholder="A. de Minaur to win" style="height:36px; background:#0A0D14; border:1px solid rgba(255,255,255,0.10); border-radius:8px; color:#FFFFFF; padding:0 12px; font-family:'Hanken Grotesk',sans-serif; font-size:13px; outline:none; width:100%; min-width:0;"></label>
+                  <label style="display:flex; flex-direction:column; gap:5px; min-width:0;"><span style="font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">Odds</span><input value="{{ lg.odds }}" onChange="{{ lg.onOdds }}" placeholder="2.10" style="height:36px; background:#0A0D14; border:1px solid rgba(255,255,255,0.10); border-radius:8px; color:#FFFFFF; padding:0 12px; font-family:'IBM Plex Mono',monospace; font-weight:700; font-size:13px; outline:none; width:100%; min-width:0;"></label>
+                  <span style="height:36px; display:flex; align-items:center; justify-content:center;"><sc-if value="{{ lg.canRemove }}" hint-placeholder-val="{{ false }}"><span onClick="{{ lg.onRemove }}" title="Remove this leg" style="cursor:pointer; width:24px; height:24px; border-radius:6px; border:1px solid rgba(255,255,255,0.12); color:#A3AABE; display:inline-flex; align-items:center; justify-content:center; font-size:14px; line-height:1;" style-hover="color:#FFFFFF; border-color:rgba(255,255,255,0.3);">×</span></sc-if></span>
+                </div>
+              </sc-for>
+              <div style="display:flex; align-items:baseline; gap:14px;"><sc-if value="{{ canAddLeg }}" hint-placeholder-val="{{ false }}"><span onClick="{{ onAddLeg }}" style="cursor:pointer; font-size:12px; font-weight:700; color:#5B9BFF; white-space:nowrap;">+ Add a leg</span></sc-if><span style="font-size:11.5px; color:#A3AABE;">{{ legsNote }}</span></div>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:10px; padding-top:16px; border-top:1px solid rgba(255,255,255,0.06);">
+              <div style="display:grid; grid-template-columns:minmax(0,1fr) 140px 140px; gap:10px;">
+                <label style="display:flex; flex-direction:column; gap:5px; min-width:0;"><span style="font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">Tournament</span><input value="{{ form.tour }}" onChange="{{ onForm.tour }}" placeholder="Vienna" style="height:36px; background:#0A0D14; border:1px solid rgba(255,255,255,0.10); border-radius:8px; color:#FFFFFF; padding:0 12px; font-family:'Hanken Grotesk',sans-serif; font-size:13px; outline:none; width:100%; min-width:0;"></label>
+                <label style="display:flex; flex-direction:column; gap:5px; min-width:0;"><span style="font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">Level</span><select value="{{ form.level }}" onChange="{{ onForm.level }}" style="height:36px; background:#0A0D14; border:1px solid rgba(255,255,255,0.10); border-radius:8px; color:#FFFFFF; padding:0 10px; font-family:'Hanken Grotesk',sans-serif; font-size:13px; outline:none; width:100%; min-width:0;"><option value="Slam">Grand Slam</option><option value="1000">Masters 1000</option><option value="500">ATP 500</option><option value="250">ATP 250</option><option value="Cup">Davis Cup</option><option value="Chall">Challenger</option></select></label>
+                <label style="display:flex; flex-direction:column; gap:5px; min-width:0;"><span style="font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">Surface</span><select value="{{ form.surface }}" onChange="{{ onForm.surface }}" style="height:36px; background:#0A0D14; border:1px solid rgba(255,255,255,0.10); border-radius:8px; color:#FFFFFF; padding:0 10px; font-family:'Hanken Grotesk',sans-serif; font-size:13px; outline:none; width:100%; min-width:0;"><option>Hard</option><option>Indoor hard</option><option>Clay</option><option>Grass</option></select></label>
+              </div>
+              <div style="display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:10px;">
+                <label style="display:flex; flex-direction:column; gap:5px; min-width:0;"><span style="font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">Market</span><select value="{{ form.market }}" onChange="{{ onForm.market }}" style="height:36px; background:#0A0D14; border:1px solid rgba(255,255,255,0.10); border-radius:8px; color:#FFFFFF; padding:0 10px; font-family:'Hanken Grotesk',sans-serif; font-size:13px; outline:none; width:100%; min-width:0;"><option>Match winner</option><option>Set winner</option><option>First set winner</option><option>Games handicap</option><option>Sets handicap</option><option>Total games</option><option>Total sets</option><option>Correct score (sets)</option><option>Tiebreak in match</option><option>Player to win a set</option><option>Outright</option><option value="Other">Other — type it</option></select></label>
+                <label style="display:flex; flex-direction:column; gap:5px; min-width:0;"><span style="font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">Bookmaker</span><select value="{{ form.book }}" onChange="{{ onForm.book }}" style="height:36px; background:#0A0D14; border:1px solid rgba(255,255,255,0.10); border-radius:8px; color:#FFFFFF; padding:0 10px; font-family:'Hanken Grotesk',sans-serif; font-size:13px; outline:none; width:100%; min-width:0;"><option>bet105</option><option>Pinnacle</option><option>bet365</option><option>Betfair Exchange</option><option>Betfair Sportsbook</option><option>Unibet</option><option>Betway</option><option>William Hill</option><option>888sport</option><option>bwin</option><option>Ladbrokes</option><option>Betsson</option><option>Stake</option><option>Napoleon</option><option>Circus</option><option>Golden Palace</option><option>Betcenter</option><option>Tipico</option><option>Winamax</option><option>Superbet</option><option>Polymarket</option><option>Kalshi</option><option value="Other">Other — type it</option></select></label>
+              </div>
+              <sc-if value="{{ needOther }}" hint-placeholder-val="{{ false }}">
+                <div style="display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:10px;">
+                  <sc-if value="{{ marketOther }}" hint-placeholder-val="{{ false }}"><label style="display:flex; flex-direction:column; gap:5px; min-width:0;"><span style="font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">Market · your own</span><input value="{{ form.marketOther }}" onChange="{{ onForm.marketOther }}" placeholder="e.g. Most aces" style="height:36px; background:#0A0D14; border:1px solid rgba(255,255,255,0.10); border-radius:8px; color:#FFFFFF; padding:0 12px; font-family:'Hanken Grotesk',sans-serif; font-size:13px; outline:none; width:100%; min-width:0;"></label></sc-if>
+                  <sc-if value="{{ bookOther }}" hint-placeholder-val="{{ false }}"><label style="display:flex; flex-direction:column; gap:5px; min-width:0;"><span style="font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">Bookmaker · your own</span><input value="{{ form.bookOther }}" onChange="{{ onForm.bookOther }}" placeholder="your local book" style="height:36px; background:#0A0D14; border:1px solid rgba(255,255,255,0.10); border-radius:8px; color:#FFFFFF; padding:0 12px; font-family:'Hanken Grotesk',sans-serif; font-size:13px; outline:none; width:100%; min-width:0;"></label></sc-if>
+                </div>
+              </sc-if>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:10px; padding-top:16px; border-top:1px solid rgba(255,255,255,0.06);">
+              <div style="display:grid; grid-template-columns:150px 140px minmax(0,1fr); gap:10px; align-items:end;">
+                <label style="display:flex; flex-direction:column; gap:5px;"><span style="font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE; white-space:nowrap;">Stake · % of bankroll</span><input value="{{ form.stake }}" onChange="{{ onForm.stake }}" placeholder="1.0" style="height:36px; background:#0A0D14; border:1px solid rgba(255,255,255,0.10); border-radius:8px; color:#FFFFFF; padding:0 12px; font-family:'IBM Plex Mono',monospace; font-weight:700; font-size:13px; outline:none; width:100%; min-width:0;"></label>
+                <div style="display:flex; flex-direction:column; gap:5px;"><span style="font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE; white-space:nowrap;">{{ oddsLabel }}</span><span style="height:36px; display:flex; align-items:center; padding:0 12px; border-radius:8px; background:#0A0D14; border:1px solid rgba(255,255,255,0.05); font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:800; color:{{ oddsC }};">{{ oddsTxt }}</span></div>
+                <span style="min-height:36px; display:flex; align-items:center; font-size:11.5px; line-height:1.4; color:{{ logHintC }};">{{ logHint }}</span>
+              </div>
+            </div>
+          </div>
+          <div style="padding:18px 20px 20px; background:#0A0D14; display:flex; flex-direction:column; gap:14px; min-width:0;">
+            <span style="display:flex; align-items:center; justify-content:space-between;"><span style="font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">Ticket</span><span style="font-family:'IBM Plex Mono',monospace; font-size:10px; font-weight:700; letter-spacing:0.10em; color:#5B9BFF;">PENDING</span></span>
+            <div style="display:flex; flex-direction:column; gap:4px; min-width:0;"><span style="font-size:16px; font-weight:800; color:{{ tk.selC }}; line-height:1.25; text-wrap:pretty;">{{ tk.sel }}</span><span style="font-size:12px; color:#A3AABE;">{{ tk.ctx }}</span></div>
+            <div style="display:flex; flex-direction:column; border-top:1px solid rgba(255,255,255,0.08);">
+              <div style="display:flex; justify-content:space-between; gap:10px; padding:9px 0; border-bottom:1px solid rgba(255,255,255,0.06);"><span style="font-size:12px; color:#A3AABE; white-space:nowrap;">Type</span><span style="font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:700; color:#E7E9EE; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ tk.type }}</span></div>
+              <div style="display:flex; justify-content:space-between; gap:10px; padding:9px 0; border-bottom:1px solid rgba(255,255,255,0.06);"><span style="font-size:12px; color:#A3AABE; white-space:nowrap;">Market</span><span style="font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:700; color:#E7E9EE; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ tk.market }}</span></div>
+              <div style="display:flex; justify-content:space-between; gap:10px; padding:9px 0; border-bottom:1px solid rgba(255,255,255,0.06);"><span style="font-size:12px; color:#A3AABE; white-space:nowrap;">Book</span><span style="font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:700; color:#E7E9EE; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ tk.book }}</span></div>
+              <div style="display:flex; justify-content:space-between; gap:10px; padding:9px 0; border-bottom:1px solid rgba(255,255,255,0.06);"><span style="font-size:12px; color:#A3AABE; white-space:nowrap;">Odds</span><span style="font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:700; color:#E7E9EE; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ tk.odds }}</span></div>
+              <div style="display:flex; justify-content:space-between; gap:10px; padding:9px 0; border-bottom:1px solid rgba(255,255,255,0.06);"><span style="font-size:12px; color:#A3AABE; white-space:nowrap;">Stake</span><span style="font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:700; color:#E7E9EE; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ tk.stake }}</span></div>
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+              <div style="padding:10px 12px; background:#0E1019; border:1px solid rgba(255,255,255,0.05); border-radius:8px; display:flex; flex-direction:column; gap:3px;"><span style="font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">Wins</span><span style="font-family:'IBM Plex Mono',monospace; font-size:16px; font-weight:800; color:{{ tk.winC }}; white-space:nowrap;">{{ tk.win }}</span></div>
+              <div style="padding:10px 12px; background:#0E1019; border:1px solid rgba(255,255,255,0.05); border-radius:8px; display:flex; flex-direction:column; gap:3px;"><span style="font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">Loses</span><span style="font-family:'IBM Plex Mono',monospace; font-size:16px; font-weight:800; color:{{ tk.loseC }}; white-space:nowrap;">{{ tk.lose }}</span></div>
+            </div>
+            <div style="margin-top:auto; display:flex; flex-direction:column; gap:8px;"><span onClick="{{ onPost }}" style="cursor:pointer; display:flex; align-items:center; justify-content:center; height:38px; border-radius:8px; background:{{ postBg }}; color:{{ postC }}; font-size:13px; font-weight:700;">Post bet</span><span style="font-size:11px; color:#A3AABE; text-align:center;">Posts as pending · settle in the ledger, then lock</span></div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ viewResults }}" hint-placeholder-val="{{ true }}">
+      <!-- ledger -->
+      <div style="display:flex; flex-direction:column; gap:12px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
+          <div style="display:flex; align-items:baseline; gap:12px;"><span style="font-size:16px; font-weight:800; color:#FFFFFF;">Ledger</span><span style="font-size:12.5px; color:#A3AABE;">{{ ledgerMeta }}</span></div>
+          <div style="display:flex; background:#0E1019; border:1px solid rgba(255,255,255,0.07); border-radius:10px; padding:3px;">
+            <sc-for list="{{ lfs }}" as="f" hint-placeholder-count="4">
+              <span onClick="{{ f.onClick }}" style="cursor:pointer; padding:5px 12px; border-radius:8px; font-size:12px; font-weight:700; background:{{ f.bg }}; color:{{ f.color }}; white-space:nowrap;">{{ f.label }}</span>
+            </sc-for>
+          </div>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <sc-for list="{{ ledgerGroups }}" as="g" hint-placeholder-count="4">
+            <div style="background:#0E1019; box-shadow:inset 0 1px 0 rgba(143,170,255,0.03); border:1px solid {{ g.bd }}; border-radius:12px; overflow:hidden;">
+              <div onClick="{{ g.onToggle }}" style="cursor:pointer; display:flex; align-items:center; justify-content:space-between; gap:12px; height:52px; padding:0 18px;" style-hover="background:rgba(255,255,255,0.02);">
+                <span style="display:flex; align-items:baseline; gap:12px;"><span style="font-size:15px; font-weight:700; color:{{ g.c }};">{{ g.label }}</span><span style="font-size:12px; color:#A3AABE;">{{ g.sub }}</span></span>
+                <span style="display:flex; align-items:center; gap:12px;"><span style="display:inline-flex; align-items:center; height:26px; padding:0 12px; border-radius:7px; background:{{ g.plBg }}; border:1px solid {{ g.plBd }}; font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:800; color:{{ g.plC }};">{{ g.pl }}</span><span style="font-size:10px; color:#A3AABE; width:10px; text-align:center;">{{ g.chev }}</span></span>
+              </div>
+              <sc-if value="{{ g.open }}" hint-placeholder-val="{{ true }}">
+                <div style="border-top:1px solid rgba(255,255,255,0.05);">
+          <div style="display:grid; grid-template-columns:84px minmax(0,1.6fr) minmax(0,1fr) 64px 48px 48px 56px 50px 150px 64px; gap:0 12px; align-items:center; height:28px; padding:0 16px; border-bottom:1px solid rgba(255,255,255,0.05); background:#0A0D14;">
+            <span style="font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">Date</span>
+            <span style="font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">Bet</span>
+            <span style="font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">Market</span>
+            <span style="font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">Book</span>
+            <span style="text-align:right; font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">Odds</span>
+            <span style="text-align:right; font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">Close</span>
+            <span style="text-align:right; font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">CLV</span>
+            <span style="text-align:right; font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">Stake</span>
+            <span style="text-align:right; font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">Result</span>
+            <span style="text-align:right; font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">P/L</span>
+          </div>
+                  <sc-for list="{{ g.weeks }}" as="w" hint-placeholder-count="2">
+                    <div style="display:flex; align-items:center; justify-content:space-between; height:34px; padding:0 18px; background:#0B0D14; border-bottom:1px solid rgba(255,255,255,0.05);"><span style="font-size:12px; font-weight:600; color:#A3AABE;">{{ w.label }}</span><span style="font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:700; color:{{ w.plC }};">{{ w.pl }}</span></div>
+                    <sc-for list="{{ w.days }}" as="d" hint-placeholder-count="2">
+                      <div style="display:flex; align-items:center; justify-content:space-between; height:32px; padding:0 18px; border-bottom:1px solid rgba(255,255,255,0.05);"><span style="font-size:12.5px; font-weight:700; color:#FFFFFF;">{{ d.label }}</span><span style="display:inline-flex; align-items:center; height:22px; padding:0 9px; border-radius:6px; background:{{ d.plBg }}; border:1px solid {{ d.plBd }}; font-family:'IBM Plex Mono',monospace; font-size:11.5px; font-weight:800; color:{{ d.plC }};">{{ d.pl }}</span></div>
+                      <sc-for list="{{ d.rows }}" as="b" hint-placeholder-count="2">
+            <div style="display:grid; grid-template-columns:84px minmax(0,1.6fr) minmax(0,1fr) 64px 48px 48px 56px 50px 150px 64px; gap:0 12px; align-items:center; height:50px; padding:0 16px; border-bottom:1px solid rgba(255,255,255,0.05); background:{{ b.rowBg }};" style-hover="background:rgba(255,255,255,0.03);">
+              <span style="display:flex; flex-direction:column; gap:1px;"><span style="font-size:12.5px; font-weight:600; color:#E7E9EE; white-space:nowrap;">{{ b.date }}</span><span style="font-size:10.5px; color:#A3AABE;">{{ b.dow }}</span></span>
+              <span style="display:flex; flex-direction:column; gap:2px; min-width:0;"><span style="font-size:13.5px; font-weight:700; color:#FFFFFF; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ b.text }}</span><span style="font-size:11.5px; color:#A3AABE; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ b.meta }}</span></span>
+              <span style="font-size:12px; color:#E7E9EE; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ b.market }}</span>
+              <span style="font-size:12px; color:#A3AABE;">{{ b.book }}</span>
+              <span style="text-align:right; font-family:'IBM Plex Mono',monospace; font-size:14px; font-weight:800; color:#FFFFFF;">{{ b.odds }}</span>
+              <span style="text-align:right; font-family:'IBM Plex Mono',monospace; font-size:12.5px; color:#E7E9EE;">{{ b.close }}</span>
+              <span style="text-align:right; font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:700; color:{{ b.clvC }};">{{ b.clv }}</span>
+              <span style="text-align:right; font-family:'IBM Plex Mono',monospace; font-size:12.5px; font-weight:700; color:#E7E9EE;">{{ b.stake }}</span>
+              <sc-if value="{{ b.pending }}" hint-placeholder-val="{{ false }}">
+                <span style="display:flex; justify-content:flex-end; gap:4px;">
+                  <span onClick="{{ b.onWon }}" style="cursor:pointer; height:24px; padding:0 9px; display:inline-flex; align-items:center; border-radius:6px; border:1px solid rgba(92,203,132,0.45); color:#5CCB84; font-family:'IBM Plex Mono',monospace; font-size:10px; font-weight:700; letter-spacing:0.08em;" style-hover="background:rgba(92,203,132,0.14);">WON</span>
+                  <span onClick="{{ b.onLost }}" style="cursor:pointer; height:24px; padding:0 9px; display:inline-flex; align-items:center; border-radius:6px; border:1px solid rgba(224,98,102,0.45); color:#E06266; font-family:'IBM Plex Mono',monospace; font-size:10px; font-weight:700; letter-spacing:0.08em;" style-hover="background:rgba(224,98,102,0.14);">LOST</span>
+                  <span onClick="{{ b.onVoid }}" style="cursor:pointer; height:24px; padding:0 9px; display:inline-flex; align-items:center; border-radius:6px; border:1px solid rgba(255,255,255,0.18); color:#A3AABE; font-family:'IBM Plex Mono',monospace; font-size:10px; font-weight:700; letter-spacing:0.08em;" style-hover="background:rgba(255,255,255,0.05);">VOID</span>
+                </span>
+              </sc-if>
+              <sc-if value="{{ b.settled }}" hint-placeholder-val="{{ true }}">
+                <span style="display:flex; justify-content:flex-end; align-items:center; gap:6px;"><sc-if value="{{ b.canUndo }}" hint-placeholder-val="{{ false }}"><span onClick="{{ b.onUndo }}" style="cursor:pointer; font-size:11px; color:#A3AABE;">undo</span><span onClick="{{ b.onLock }}" title="Lock this result for good — it can never be edited again" style="cursor:pointer; height:22px; padding:0 8px; display:inline-flex; align-items:center; border-radius:6px; border:1px solid rgba(0,122,255,0.5); color:#6A9AF8; font-size:10.5px; font-weight:700; letter-spacing:0.04em;" style-hover="background:rgba(0,122,255,0.14);">Lock</span></sc-if><span style="display:inline-flex; align-items:center; height:20px; padding:0 8px; border-radius:6px; background:{{ b.chipBg }}; border:1px solid {{ b.chipBd }}; font-family:'IBM Plex Mono',monospace; font-size:10px; font-weight:700; letter-spacing:0.08em; color:{{ b.chipC }};">{{ b.chip }}</span><sc-if value="{{ b.locked }}" hint-placeholder-val="{{ true }}"><span title="Locked result · certified, cannot be edited" style="width:13px; height:13px; background:#007AFF; display:inline-flex; align-items:center; justify-content:center; flex:none; clip-path:polygon(100% 50%, 92.5% 59.3%, 93.3% 75%, 81% 81%, 75% 93.3%, 59.3% 92.5%, 50% 100%, 40.7% 92.5%, 25% 93.3%, 19% 81%, 6.7% 75%, 7.5% 59.3%, 0% 50%, 7.5% 40.7%, 6.7% 25%, 19% 19%, 25% 6.7%, 40.7% 7.5%, 50% 0%, 59.3% 7.5%, 75% 6.7%, 81% 19%, 93.3% 25%, 92.5% 40.7%);"><svg viewBox="0 0 24 24" width="7" height="7" fill="none" stroke="#FFFFFF" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"></path></svg></span></sc-if></span>
+              </sc-if>
+              <span style="text-align:right; font-family:'IBM Plex Mono',monospace; font-size:14px; font-weight:800; color:{{ b.plC }};">{{ b.pl }}</span>
+            </div>
+                      </sc-for>
+                    </sc-for>
+                  </sc-for>
+                </div>
+              </sc-if>
+            </div>
+          </sc-for>
+        </div>
+        <div style="background:#0E1019; border:1px solid rgba(255,255,255,0.05); border-radius:12px; overflow:hidden;">
+          <div style="display:flex; justify-content:space-between; padding:10px 16px 12px; font-size:11.5px; color:#A3AABE;"><span>{{ ledgerFoot }}</span><span style="cursor:pointer; font-weight:700; color:#6A9AF8;">Export CSV →</span></div>
+        </div>
+      </div>
+
+      <!-- calendar -->
+      <div style="display:flex; flex-direction:column; gap:12px;">
+        <div style="display:flex; align-items:baseline; gap:12px;"><span style="font-size:16px; font-weight:800; color:#FFFFFF;">Calendar</span><span style="font-size:12.5px; color:#A3AABE;">One tile a month, one cell a day · click a month for its record · hover a day for the bets we took · day figures in € on a 10,000 € bankroll.</span></div>
+        <div style="background:#0E1019; box-shadow:inset 0 1px 0 rgba(143,170,255,0.03); border:1px solid rgba(255,255,255,0.05); border-radius:12px; padding:18px 22px 18px; display:flex; flex-direction:column; gap:14px;">
+          <div style="display:flex; align-items:baseline; justify-content:space-between; gap:12px;"><span style="font-size:12px; color:#A3AABE;">{{ calendar.meta }}</span><span style="display:flex; align-items:baseline; gap:8px; flex:none;"><span style="font-size:12px; color:#A3AABE; white-space:nowrap;">{{ calendar.seasonSub }}</span><span style="font-family:'IBM Plex Mono',monospace; font-size:14px; font-weight:800; color:{{ calendar.seasonC }};">{{ calendar.seasonPl }}</span></span></div>
+          <div style="display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px;">
+            <sc-for list="{{ calendar.cards }}" as="m" hint-placeholder-count="6">
+              <div onClick="{{ m.onClick }}" style="background:{{ m.bg }}; border:1px solid {{ m.bd }}; border-radius:10px; padding:14px 16px 14px; display:flex; gap:18px; cursor:pointer;" style-hover="border-color:rgba(255,255,255,0.14);">
+                <div style="display:flex; flex-direction:column; gap:4px; flex:none;">
+                  <div style="display:grid; grid-template-columns:repeat(7,24px); gap:4px;"><sc-for list="{{ calendar.dn }}" as="d" hint-placeholder-count="7"><span style="font-size:9.5px; font-weight:700; color:#A3AABE; text-align:center; opacity:0.8;">{{ d }}</span></sc-for></div>
+                  <sc-for list="{{ m.rows }}" as="r" hint-placeholder-count="6"><div style="display:grid; grid-template-columns:repeat(7,24px); gap:4px;"><sc-for list="{{ r.cells }}" as="c" hint-placeholder-count="7"><span title="{{ c.t }}" style="height:20px; border-radius:4px; background:{{ c.bg }}; box-shadow:{{ c.ring }};"></span></sc-for></div></sc-for>
+                </div>
+                <div style="display:flex; flex-direction:column; min-width:0; flex:1; padding-top:2px;">
+                  <span style="font-size:13.5px; font-weight:700; color:#FFFFFF;">{{ m.name }}</span>
+                  <span style="font-family:'IBM Plex Mono',monospace; font-size:24px; font-weight:800; letter-spacing:-0.01em; color:{{ m.plC }}; margin-top:6px;">{{ m.pl }}</span>
+                  <span style="font-size:11.5px; color:#A3AABE; margin-top:6px; line-height:1.5;">{{ m.sub }}</span>
+                  <span style="margin-top:auto; display:flex; align-items:baseline; justify-content:space-between; gap:8px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.05);"><span style="font-size:10.5px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:#A3AABE;">ROI</span><span style="display:flex; align-items:baseline; gap:8px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:12.5px; font-weight:700; color:{{ m.roiC }};">{{ m.roi }}</span><span style="font-size:10px; color:#A3AABE;">{{ m.chev }}</span></span></span>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+          <sc-if value="{{ calendar.hasOpen }}" hint-placeholder-val="{{ true }}">
+            <div style="background:#0A0D14; border:1px solid rgba(255,255,255,0.06); border-radius:10px; display:flex; flex-direction:column;">
+              <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 18px; border-bottom:1px solid rgba(255,255,255,0.05);"><span style="display:flex; align-items:baseline; gap:10px;"><span style="font-size:14px; font-weight:800; color:#FFFFFF;">{{ calendar.open.title }}</span><span style="font-size:11.5px; color:#A3AABE;">{{ calendar.open.sub }}</span></span><span style="display:flex; align-items:baseline; gap:16px;"><span onClick="{{ calendar.open.onFull }}" style="cursor:pointer; font-size:11px; font-weight:600; color:#5B9BFF;">Full record →</span><span onClick="{{ calendar.open.onClose }}" style="cursor:pointer; font-size:11px; font-weight:600; color:#A3AABE;">Close</span></span></div>
+              <div style="display:grid; grid-template-columns:minmax(0,1fr) 300px;">
+                <div style="padding:14px 18px 16px; display:flex; flex-direction:column; gap:4px; border-right:1px solid rgba(255,255,255,0.05);">
+                  <div style="display:grid; grid-template-columns:repeat(7,minmax(0,1fr)) 96px; gap:4px; padding-bottom:6px; border-bottom:1px solid rgba(255,255,255,0.06);">
+                    <sc-for list="{{ calendar.open.dn }}" as="d" hint-placeholder-count="7"><span style="font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE; padding-left:10px;">{{ d }}</span></sc-for>
+                    <span style="font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE; text-align:right; padding-right:10px;">Week</span>
+                  </div>
+                  <sc-for list="{{ calendar.open.rows }}" as="r" hint-placeholder-count="5">
+                    <div style="display:grid; grid-template-columns:repeat(7,minmax(0,1fr)) 96px; gap:4px;">
+                      <sc-for list="{{ r.cells }}" as="c" hint-placeholder-count="7">
+                        <span onMouseEnter="{{ c.onEnter }}" onMouseLeave="{{ c.onLeave }}" style="position:relative; height:58px; border-radius:7px; background:{{ c.bg }}; box-shadow:{{ c.ring }}; padding:7px 10px; display:flex; flex-direction:column; justify-content:space-between; cursor:{{ c.cursor }};"><span style="font-size:11px; font-weight:600; color:{{ c.dtC }};">{{ c.dt }}</span><span style="display:flex; align-items:baseline; justify-content:space-between; gap:6px;"><span style="font-size:10px; color:#A3AABE; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ c.short }}</span><span style="font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:700; color:{{ c.figC }}; white-space:nowrap;">{{ c.fig }}</span></span>
+                          <sc-if value="{{ c.showPop }}" hint-placeholder-val="{{ false }}"><span style="position:absolute; z-index:6; top:{{ c.popTop }}; bottom:{{ c.popBot }}; margin-top:{{ c.popMt }}; margin-bottom:{{ c.popMb }}; left:{{ c.popSide }}; right:{{ c.popSideR }}; width:380px; background:#0C0E16; border:1px solid rgba(255,255,255,0.10); border-radius:10px; box-shadow:0 12px 32px rgba(0,0,0,0.45); padding:10px 12px; display:flex; flex-direction:column; gap:8px; pointer-events:none;"><span style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;"><span style="font-size:12.5px; font-weight:700; color:#FFFFFF;">{{ c.title }}</span><span style="font-size:11px; color:#A3AABE; white-space:nowrap;">{{ c.sub }}</span></span><sc-for list="{{ c.rows }}" as="r2" hint-placeholder-count="2"><span style="display:grid; grid-template-columns:minmax(0,1fr) 54px 56px; gap:0 8px; align-items:center;"><span style="display:flex; flex-direction:column; gap:1px; min-width:0;"><span style="font-size:12px; font-weight:600; color:#E7E9EE; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ r2.text }}</span><span style="font-size:10.5px; color:#A3AABE; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ r2.meta }}</span></span><span style="font-size:9.5px; font-weight:700; letter-spacing:0.08em; color:{{ r2.resC }}; text-align:right;">{{ r2.res }}</span><span style="font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:800; color:{{ r2.plC }}; text-align:right; white-space:nowrap;">{{ r2.pl }}</span></span></sc-for></span></sc-if></span>
+                      </sc-for>
+                      <span style="height:58px; border-radius:7px; background:#0E1019; border:1px solid rgba(255,255,255,0.05); padding:7px 10px; display:flex; flex-direction:column; justify-content:space-between; align-items:flex-end;"><span style="font-size:10px; color:#A3AABE;">{{ r.n }}</span><span style="font-family:'IBM Plex Mono',monospace; font-size:14px; font-weight:800; color:{{ r.plC }};">{{ r.pl }}</span></span>
+                    </div>
+                  </sc-for>
+                </div>
+                <div style="padding:14px 16px 16px; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; align-content:start;">
+                  <sc-for list="{{ calendar.open.stats }}" as="s" hint-placeholder-count="8">
+                    <div style="background:#0E1019; border:1px solid rgba(255,255,255,0.05); border-radius:8px; padding:10px 12px; display:flex; flex-direction:column; gap:4px;"><span style="font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">{{ s.l }}</span><span style="font-family:'IBM Plex Mono',monospace; font-size:16px; font-weight:800; color:{{ s.c }};">{{ s.v }}</span><span style="font-size:10.5px; color:#A3AABE; min-height:13px;">{{ s.s }}</span></div>
+                  </sc-for>
+                </div>
+              </div>
+            </div>
+          </sc-if>
+        </div>
+      </div>
+
+      <sc-if value="{{ monthOpen }}" hint-placeholder-val="{{ false }}">
+        <div onClick="{{ monthPop.onClose }}" style="position:fixed; inset:0; z-index:85; background:rgba(3,5,9,0.72); display:flex; align-items:flex-start; justify-content:center; padding:40px 24px; overflow-y:auto;">
+          <div onClick="{{ monthPop.stop }}" style="position:relative; width:100%; max-width:960px; background:#0C0E16; border:1.25px solid rgba(255,255,255,0.06); border-radius:14px; padding:20px 22px 14px; display:flex; flex-direction:column; gap:16px; color:#E7E9EE;">
+            <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:16px;">
+              <div style="display:flex; flex-direction:column; gap:5px; min-width:0;"><span style="font-size:17px; font-weight:800; letter-spacing:-0.01em; color:#FFFFFF;">{{ monthPop.title }}</span><span style="font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:#A3AABE;">{{ monthPop.sub }}</span></div>
+              <span onClick="{{ monthPop.onClose }}" style="width:30px; height:30px; flex:none; border-radius:8px; border:1px solid rgba(255,255,255,0.12); display:flex; align-items:center; justify-content:center; font-size:13px; color:#A3AABE; cursor:pointer;" style-hover="color:#E7E9EE; border-color:rgba(255,255,255,0.22);">✕</span>
+            </div>
+            <div style="display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px;">
+              <sc-for list="{{ monthPop.stats }}" as="st" hint-placeholder-count="4"><div style="background:#0A0D14; border:1px solid rgba(255,255,255,0.05); border-radius:10px; padding:10px 12px; display:flex; flex-direction:column; gap:4px; min-width:0;"><span style="font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">{{ st.l }}</span><span style="font-family:'IBM Plex Mono',monospace; font-size:16px; font-weight:700; color:{{ st.c }}; white-space:nowrap;">{{ st.v }}</span></div></sc-for>
+            </div>
+            <div style="margin:0 -22px;">
+              <div style="display:grid; grid-template-columns:50px 10px minmax(0,1.6fr) minmax(0,1fr) 46px 46px 50px 48px 48px 56px; gap:0 8px; align-items:center; padding:7px 28px 6px; border-top:1px solid rgba(255,255,255,0.05); border-bottom:1px solid rgba(255,255,255,0.09);">
+                <span style="font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">Date</span><span></span><span style="font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">Bet</span><span style="font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">Market</span><span style="font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE; text-align:right;">Price</span><span style="font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE; text-align:right;">Close</span><span style="font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE; text-align:right;">CLV</span><span style="font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE; text-align:right;">Stake</span><span style="font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE; text-align:right;">Result</span><span style="font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE; text-align:right;">P/L</span>
+              </div>
+              <sc-for list="{{ monthPop.rows }}" as="r" hint-placeholder-count="8">
+                <div style="padding:0 22px;"><div style="display:grid; grid-template-columns:50px 10px minmax(0,1.6fr) minmax(0,1fr) 46px 46px 50px 48px 48px 56px; gap:0 8px; align-items:center; padding:7px 6px; border-radius:6px; border-bottom:1px solid rgba(255,255,255,0.03);" style-hover="background:rgba(255,255,255,0.03);">
+                  <span style="font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:#A3AABE;">{{ r.date }}</span>
+                  <span style="width:8px; height:8px; border-radius:2px; background:{{ r.resC }};"></span>
+                  <span style="display:flex; flex-direction:column; gap:1px; min-width:0;"><span style="font-size:12px; font-weight:600; color:#E7E9EE; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ r.text }}</span><span style="font-size:10.5px; color:#A3AABE; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ r.meta }}</span></span>
+                  <span style="font-size:11.5px; color:#A3AABE; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ r.market }}</span>
+                  <span style="font-family:'IBM Plex Mono',monospace; font-size:11.5px; font-weight:700; color:#FFFFFF; text-align:right;">{{ r.odds }}</span>
+                  <span style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#A3AABE; text-align:right;">{{ r.close }}</span>
+                  <span style="font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:700; color:{{ r.clvC }}; text-align:right;">{{ r.clv }}</span>
+                  <span style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#E7E9EE; text-align:right;">{{ r.stake }}</span>
+                  <span style="font-size:9.5px; font-weight:700; letter-spacing:0.08em; color:{{ r.resC }}; text-align:right;">{{ r.res }}</span>
+                  <span style="font-family:'IBM Plex Mono',monospace; font-size:12.5px; font-weight:800; color:{{ r.plC }}; text-align:right;">{{ r.pl }}</span>
+                </div></div>
+              </sc-for>
+            </div>
+            <div style="font-size:11px; color:#A3AABE; padding:0 0 2px;">Settled bets only · P/L and stake in % of bankroll · CLV = your price ÷ closing price − 1 · click outside to close</div>
+          </div>
+        </div>
+      </sc-if>
+
+      </sc-if>
+
+      <sc-if value="{{ viewInsights }}" hint-placeholder-val="{{ false }}">
+      <!-- breakdown + strengths / leaks -->
+      <div style="display:flex; flex-direction:column; gap:12px;">
+        <div style="display:flex; align-items:baseline; gap:12px;"><span style="font-size:16px; font-weight:800; color:#FFFFFF;">Where it works · where it leaks</span><span style="font-size:12.5px; color:#A3AABE;">{{ bdMeta }}</span></div>
+        <div style="display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px;">
+          <sc-for list="{{ verdicts }}" as="v" hint-placeholder-count="3">
+            <div style="position:relative; overflow:hidden; background:#0E1019; box-shadow:inset 0 1px 0 rgba(143,170,255,0.03); border:1px solid rgba(255,255,255,0.05); border-radius:12px; padding:16px 18px 14px; display:flex; flex-direction:column; gap:8px;">
+              <svg viewBox="0 0 380 70" preserveAspectRatio="none" style="position:absolute; left:0; right:0; bottom:0; width:100%; height:84px; opacity:0.35; display:block;"><path d="{{ v.area }}" fill="{{ v.fill }}"></path><path d="{{ v.path }}" fill="none" stroke="{{ v.sc }}" stroke-width="1.5"></path><path d="{{ v.path2 }}" fill="none" stroke="{{ v.sc2 }}" stroke-width="1.5" stroke-dasharray="4 3"></path></svg>
+              <div style="display:flex; align-items:center; justify-content:space-between;"><span style="font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE; color:{{ v.lc }};">{{ v.kind }}</span><span style="font-size:11px; color:#A3AABE;">{{ v.seg }}</span></div>
+              <span style="font-family:'IBM Plex Mono',monospace; font-size:34px; font-weight:800; line-height:1; color:{{ v.plC }};">{{ v.pl }}</span>
+              <span style="font-size:15px; font-weight:700; color:#FFFFFF; line-height:1.3; text-wrap:pretty; position:relative;">{{ v.title }}</span>
+              <sc-if value="{{ v.isPair }}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex; flex-direction:column; gap:6px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.05); position:relative;"><sc-for list="{{ v.rows }}" as="r" hint-placeholder-count="2"><div style="display:grid; grid-template-columns:minmax(0,1fr) auto auto auto; gap:0 10px; align-items:baseline;"><span style="display:flex; align-items:center; gap:7px; min-width:0;"><span style="width:14px; height:0; border-top:2px {{ r.dash }} {{ r.c }}; flex:none;"></span><span style="font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:700; color:#FFFFFF; white-space:nowrap;">{{ r.band }}</span><span style="font-size:11px; color:#A3AABE; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0;">{{ r.n }}</span></span><span style="font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:700; color:#FFFFFF; white-space:nowrap;">{{ r.rec }}</span><span style="font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:700; color:{{ r.roiC }}; white-space:nowrap;">{{ r.roi }}</span><span style="font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:700; color:{{ r.clvC }}; white-space:nowrap;">{{ r.clv }}</span></div></sc-for></div>
+              </sc-if>
+              <sc-if value="{{ v.isSingle }}" hint-placeholder-val="{{ true }}">
+                <div style="display:flex; gap:16px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.05); position:relative;"><sc-for list="{{ v.figs }}" as="f" hint-placeholder-count="3"><span style="display:flex; align-items:baseline; gap:6px;"><span style="font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">{{ f.l }}</span><span style="font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:700; color:{{ f.c }};">{{ f.v }}</span></span></sc-for></div>
+              </sc-if>
+              <span style="height:48px;"></span>
+            </div>
+          </sc-for>
+        </div>
+        <div style="display:grid; grid-template-columns:minmax(0,1fr); gap:12px; align-items:start;">
+          <div style="background:#0E1019; box-shadow:inset 0 1px 0 rgba(143,170,255,0.03); border:1px solid rgba(255,255,255,0.05); border-radius:12px; overflow:hidden;">
+            <div style="display:flex; align-items:center; justify-content:space-between; padding:12px 18px; border-bottom:1px solid rgba(255,255,255,0.05);">
+              <span style="display:flex; align-items:center; gap:12px;"><span style="font-size:14px; font-weight:800; color:#FFFFFF;">Breakdown</span><span style="font-size:12px; color:#A3AABE;">by</span>
+                <span style="position:relative;">
+                  <span onClick="{{ onToggleDim }}" style="cursor:pointer; display:inline-flex; align-items:center; gap:8px; height:30px; padding:0 12px; border-radius:9px; font-size:12.5px; white-space:nowrap; background:{{ dimBg }}; border:1px solid {{ dimBd }}; color:{{ dimC }}; font-weight:{{ dimW }};">{{ dimLabel }}<span style="font-size:9px; color:#A3AABE;">▼</span></span>
+                  <sc-if value="{{ dimOpen }}" hint-placeholder-val="{{ false }}">
+                    <div style="position:absolute; top:calc(100% + 6px); left:0; width:220px; display:flex; flex-direction:column; background:#0C0E16; border:1px solid rgba(255,255,255,0.10); border-radius:10px; padding:4px; box-shadow:0 12px 28px rgba(0,0,0,0.45); z-index:30;">
+                      <sc-for list="{{ dims }}" as="d" hint-placeholder-count="8"><span onClick="{{ d.onClick }}" style="cursor:pointer; display:flex; align-items:center; justify-content:space-between; gap:10px; padding:6px 9px; border-radius:7px; font-size:12.5px; font-weight:{{ d.weight }}; color:{{ d.color }}; background:{{ d.rowBg }}; white-space:nowrap;" style-hover="background:#0A0D14;"><span>{{ d.label }}<span style="font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:#A3AABE; margin-left:8px;">{{ d.count }}</span></span><span style="width:12px; color:#E7E9EE;">{{ d.tick }}</span></span></sc-for>
+                    </div>
+                  </sc-if>
+                </span>
+              </span>
+              <span style="display:flex; align-items:baseline; gap:14px; font-size:11.5px; color:#A3AABE;"><span>{{ bdTotN }} bets · {{ bdTotWL }}</span><span>ROI <span style="font-family:'IBM Plex Mono',monospace; font-weight:700; color:{{ bdTotRoiC }};">{{ bdTotRoi }}</span></span><span>P/L <span style="font-family:'IBM Plex Mono',monospace; font-weight:800; color:{{ bdTotPlC }};">{{ bdTotPl }}</span></span></span>
+            </div>
+            <div style="display:grid; grid-template-columns:4px minmax(0,1.2fr) 60px 80px minmax(200px,1fr) 80px 70px 80px; gap:0 12px; align-items:center; height:30px; padding:0 18px; border-bottom:1px solid rgba(255,255,255,0.05);">
+              <span></span><span style="font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">{{ bdHead }}</span>
+              <span style="text-align:right; font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">Bets</span>
+              <span style="text-align:right; font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">W–L</span>
+              <span style="text-align:center; font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">ROI · −40 ‥ +40</span>
+              <span style="text-align:right; font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">ROI</span>
+              <span style="text-align:right; font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">CLV</span>
+              <span style="text-align:right; font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">P/L</span>
+            </div>
+            <sc-for list="{{ bdRows }}" as="r" hint-placeholder-count="5">
+              <div onClick="{{ r.onClick }}" style="display:grid; grid-template-columns:4px minmax(0,1.2fr) 60px 80px minmax(200px,1fr) 80px 70px 80px; gap:0 12px; align-items:center; height:46px; padding:0 18px; border-bottom:1px solid rgba(255,255,255,0.05); cursor:{{ r.cursor }};" style-hover="background:rgba(255,255,255,0.03);">
+                <span style="width:4px; height:22px; border-radius:2px; background:{{ r.barC }};"></span>
+                <span style="display:flex; align-items:center; gap:8px; min-width:0;"><span style="font-size:13.5px; font-weight:700; color:#FFFFFF; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ r.name }}</span><sc-if value="{{ r.expandable }}" hint-placeholder-val="{{ false }}"><span style="font-size:13px; color:#A3AABE; flex:none; line-height:1;">›</span></sc-if></span>
+                <span style="text-align:right; font-family:'IBM Plex Mono',monospace; font-size:12.5px; font-weight:600; color:#E7E9EE;">{{ r.n }}</span>
+                <span style="text-align:right; font-family:'IBM Plex Mono',monospace; font-size:12.5px; color:#A3AABE;">{{ r.wl }}</span>
+                <span style="position:relative; height:8px; background:rgba(255,255,255,0.05); border-radius:2px;"><span style="position:absolute; left:50%; top:-3px; bottom:-3px; width:1px; background:rgba(255,255,255,0.18);"></span><span style="position:absolute; top:0; bottom:0; left:{{ r.barL }}; width:{{ r.barW }}; background:{{ r.barC }}; border-radius:2px;"></span></span>
+                <span style="text-align:right; font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:800; color:{{ r.roiC }};">{{ r.roi }}</span>
+                <span style="text-align:right; font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; color:{{ r.clvC }};">{{ r.clv }}</span>
+                <span style="text-align:right; font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:800; color:{{ r.plC }};">{{ r.pl }}</span>
+              </div>
+            </sc-for>
+            <div style="display:grid; grid-template-columns:4px minmax(0,1.2fr) 60px 80px minmax(200px,1fr) 80px 70px 80px; gap:0 12px; align-items:center; height:40px; padding:0 18px; background:#0A0D14;">
+              <span></span><span style="font-size:11px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:#A3AABE;">{{ bdTotLabel }}</span><span style="text-align:right; font-family:'IBM Plex Mono',monospace; font-size:12.5px; font-weight:700; color:#FFFFFF;">{{ bdTotN }}</span><span style="text-align:right; font-family:'IBM Plex Mono',monospace; font-size:12.5px; color:#A3AABE;">{{ bdTotWL }}</span><span></span><span style="text-align:right; font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:800; color:{{ bdTotRoiC }};">{{ bdTotRoi }}</span><span style="text-align:right; font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; color:{{ bdTotClvC }};">{{ bdTotClv }}</span><span style="text-align:right; font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:800; color:{{ bdTotPlC }};">{{ bdTotPl }}</span>
+            </div>
+            <div style="padding:9px 18px 10px; font-size:11.5px; color:#A3AABE;">{{ bdFoot }}</div>
+          </div>
+        </div>
+      <sc-if value="{{ mktOpen }}" hint-placeholder-val="{{ false }}">
+        <div onClick="{{ mktPop.onClose }}" style="position:fixed; inset:0; z-index:85; background:rgba(3,5,9,0.72); display:flex; align-items:flex-start; justify-content:center; padding:40px 24px; overflow-y:auto;">
+          <div onClick="{{ mktPop.stop }}" style="position:relative; width:100%; max-width:1000px; background:#0C0E16; border:1.25px solid rgba(255,255,255,0.06); border-radius:14px; padding:20px 22px 16px; display:flex; flex-direction:column; gap:16px; color:#E7E9EE;">
+            <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:16px;">
+              <div style="display:flex; flex-direction:column; gap:5px; min-width:0;"><span style="font-size:17px; font-weight:800; letter-spacing:-0.01em; color:#FFFFFF;">{{ mktPop.title }}</span><span style="font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:#A3AABE;">{{ mktPop.sub }}</span></div>
+              <span onClick="{{ mktPop.onClose }}" style="width:30px; height:30px; flex:none; border-radius:8px; border:1px solid rgba(255,255,255,0.12); display:flex; align-items:center; justify-content:center; font-size:13px; color:#A3AABE; cursor:pointer;" style-hover="color:#E7E9EE; border-color:rgba(255,255,255,0.22);">✕</span>
+            </div>
+            <div style="display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:8px;">
+              <sc-for list="{{ mktPop.stats }}" as="s" hint-placeholder-count="6">
+                <div style="display:flex; flex-direction:column; gap:4px; padding:10px 12px; background:#0A0D14; border:1px solid rgba(255,255,255,0.05); border-radius:10px; min-width:0;"><span style="font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ s.l }}</span><span style="font-family:'IBM Plex Mono',monospace; font-size:16px; font-weight:700; color:{{ s.c }}; white-space:nowrap;">{{ s.v }}</span><span style="font-size:10.5px; color:#A3AABE; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ s.sub }}</span></div>
+              </sc-for>
+            </div>
+            <div style="display:flex; flex-direction:column; background:#0E1019; border:1px solid rgba(255,255,255,0.05); border-radius:12px; overflow:hidden;">
+              <div style="display:grid; grid-template-columns:minmax(0,1.2fr) 60px 80px minmax(160px,1fr) 80px 70px 80px; gap:0 12px; align-items:center; height:34px; padding:0 18px; border-bottom:1px solid rgba(255,255,255,0.08);">
+                <span style="font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">{{ mktPop.subHead }}</span><span style="text-align:right; font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">Bets</span><span style="text-align:right; font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">W–L</span><span style="font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">ROI · bar</span><span style="text-align:right; font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">ROI</span><span style="text-align:right; font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">CLV</span><span style="text-align:right; font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">P/L</span>
+              </div>
+              <sc-for list="{{ mktPop.lines }}" as="x" hint-placeholder-count="4">
+                <div style="display:grid; grid-template-columns:minmax(0,1.2fr) 60px 80px minmax(160px,1fr) 80px 70px 80px; gap:0 12px; align-items:center; height:42px; padding:0 18px; border-bottom:1px solid rgba(255,255,255,0.04);" style-hover="background:rgba(255,255,255,0.03);">
+                  <span style="display:flex; align-items:baseline; gap:8px; min-width:0;"><span style="font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:700; color:#FFFFFF; white-space:nowrap;">{{ x.name }}</span><span style="font-size:11px; color:#A3AABE; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ x.sub }}</span></span>
+                  <span style="text-align:right; font-family:'IBM Plex Mono',monospace; font-size:12.5px; font-weight:600; color:#E7E9EE;">{{ x.n }}</span>
+                  <span style="text-align:right; font-family:'IBM Plex Mono',monospace; font-size:12.5px; color:#A3AABE;">{{ x.wl }}</span>
+                  <span style="position:relative; height:8px; background:rgba(255,255,255,0.05); border-radius:2px;"><span style="position:absolute; left:50%; top:-3px; bottom:-3px; width:1px; background:rgba(255,255,255,0.18);"></span><span style="position:absolute; top:0; bottom:0; left:{{ x.barL }}; width:{{ x.barW }}; background:{{ x.barC }}; border-radius:2px;"></span></span>
+                  <span style="text-align:right; font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:800; color:{{ x.roiC }};">{{ x.roi }}</span>
+                  <span style="text-align:right; font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; color:{{ x.clvC }};">{{ x.clv }}</span>
+                  <span style="text-align:right; font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:800; color:{{ x.plC }};">{{ x.pl }}</span>
+                </div>
+              </sc-for>
+              <div style="padding:9px 18px 10px; font-size:11.5px; color:#A3AABE;">{{ mktPop.foot }}</div>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+      </div>
+
+      <!-- discipline -->
+      <div style="display:flex; flex-direction:column; gap:12px;">
+        <div style="display:flex; align-items:baseline; gap:12px;"><span style="font-size:16px; font-weight:800; color:#FFFFFF;">Discipline</span><span style="font-size:12.5px; color:#A3AABE;">Skill shows in the closing line and the stakes long before it shows in the P/L.</span></div>
+        <div style="background:#0E1019; box-shadow:inset 0 1px 0 rgba(143,170,255,0.03); border:1px solid rgba(255,255,255,0.05); border-radius:12px; overflow:hidden;">
+          <div style="display:flex; align-items:center; justify-content:space-between; padding:12px 18px; border-bottom:1px solid rgba(255,255,255,0.05);"><span style="font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">Discipline · {{ discPeriod }}</span><span style="font-size:12px; color:#E7E9EE;"><span style="font-family:'IBM Plex Mono',monospace; font-weight:700; color:{{ discSumC }};">{{ discSum }}</span> {{ discSumTxt }}</span></div>
+          <div style="display:grid; grid-template-columns:repeat(3,minmax(0,1fr));">
+            <sc-for list="{{ disc }}" as="c" hint-placeholder-count="3">
+              <div title="{{ c.body }}" style="padding:14px 18px 14px; border-right:1px solid rgba(255,255,255,0.05); display:grid; grid-template-columns:110px minmax(0,1fr); gap:14px; align-items:center;">
+                <div style="position:relative; width:110px; height:62px;"><svg viewBox="0 0 200 110" width="110" height="61" style="display:block;"><path d="M20 100 A80 80 0 0 1 180 100" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="10" stroke-linecap="round"></path><path d="{{ c.zone }}" fill="none" stroke="rgba(255,255,255,0.20)" stroke-width="10"></path><path d="{{ c.arc }}" fill="none" stroke="{{ c.verdictC }}" stroke-width="10" stroke-linecap="round"></path></svg><span style="position:absolute; left:0; right:0; bottom:0; text-align:center; font-family:'IBM Plex Mono',monospace; font-size:19px; font-weight:800; line-height:1; color:#FFFFFF;">{{ c.fig }}</span></div>
+                <div style="display:flex; flex-direction:column; gap:3px; min-width:0;"><span style="font-size:13px; font-weight:700; color:#FFFFFF;">{{ c.label }}</span><span style="font-size:11px; font-weight:700; letter-spacing:0.08em; color:{{ c.verdictC }};">{{ c.verdict }}</span><span style="font-size:11.5px; color:#A3AABE; line-height:1.4; text-wrap:pretty;">{{ c.short }}</span></div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+
+      </sc-if>
+
+      <sc-if value="{{ viewStaking }}" hint-placeholder-val="{{ false }}">
+      <!-- staking replay -->
+      <div style="display:flex; flex-direction:column; gap:12px;">
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <div style="display:flex; align-items:baseline; justify-content:space-between; gap:12px;"><span style="display:flex; align-items:baseline; gap:12px;"><span style="font-size:16px; font-weight:800; color:#FFFFFF; white-space:nowrap; flex:none;">Staking strategy</span><span style="font-size:12.5px; color:#A3AABE;">Same bets and results, only the stake changes · pick a plan and read it against your stakes.</span></span></div>
+          <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+            <sc-for list="{{ sim.plans }}" as="p" hint-placeholder-count="6"><span onClick="{{ p.onClick }}" style="cursor:pointer; display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:7px; font-size:12px; font-weight:600; background:{{ p.bg }}; color:{{ p.color }}; border:1px solid {{ p.bd }}; white-space:nowrap;" title="{{ p.how }}"><span style="width:8px; height:8px; border-radius:2px; background:{{ p.sw }};"></span>{{ p.name }}</span></sc-for>
+          </div>
+        </div>
+        <div style="background:#0E1019; box-shadow:inset 0 1px 0 rgba(143,170,255,0.03); border:1px solid rgba(255,255,255,0.05); border-radius:12px; overflow:hidden;">
+          <div style="display:flex; align-items:center; justify-content:space-between; padding:12px 18px; border-bottom:1px solid rgba(255,255,255,0.05);"><span style="display:flex; align-items:center; gap:10px; font-size:13px; font-weight:700; color:#FFFFFF;"><span style="width:12px; height:3px; background:#007AFF;"></span>Your stakes<span style="font-size:12px; color:#A3AABE; font-weight:600;">vs</span><span style="width:12px; height:3px; background:{{ sim.otherColor }};"></span>{{ sim.otherName }}<span style="font-size:11.5px; color:#A3AABE; font-weight:500; margin-left:4px;">· {{ sim.otherSub }}</span></span><span style="font-size:11.5px; color:#A3AABE;">{{ sim.meta }} · shaded = the gap · {{ sim.gapTxt }}</span></div>
+          <div style="position:relative; width:100%; height:250px; padding:14px 18px 10px;">
+            <svg viewBox="0 0 1256 226" width="100%" height="226" preserveAspectRatio="none" style="display:block; overflow:visible;">
+              <sc-for list="{{ sim.yTicks }}" as="t" hint-placeholder-count="5"><line x1="36" x2="1256" y1="{{ t.y }}" y2="{{ t.y }}" stroke="{{ t.stroke }}" stroke-width="1" stroke-dasharray="{{ t.dash }}"></line></sc-for>
+              <path d="{{ sim.area }}" fill="{{ sim.areaFill }}"></path>
+              <path d="{{ sim.yourPath }}" fill="none" stroke="#007AFF" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"></path>
+              <path d="{{ sim.otherPath }}" fill="none" stroke="{{ sim.otherColor }}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"></path>
+            </svg>
+            <sc-for list="{{ sim.yTicks }}" as="t" hint-placeholder-count="5"><span style="position:absolute; left:18px; width:30px; top:{{ t.top }}; text-align:right; font-family:'IBM Plex Mono',monospace; font-size:10px; line-height:1; color:#A3AABE; white-space:nowrap;">{{ t.label }}</span></sc-for>
+          </div>
+          <div style="display:grid; grid-template-columns:repeat(4,1fr); border-top:1px solid rgba(255,255,255,0.05);">
+            <sc-for list="{{ sim.deltas }}" as="d" hint-placeholder-count="4"><div style="display:flex; flex-direction:column; gap:4px; padding:12px 18px; border-right:1px solid rgba(255,255,255,0.05);"><span style="font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">{{ d.l }}</span><span style="display:flex; align-items:baseline; gap:8px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:13px; color:#A3AABE;">{{ d.a }}</span><span style="font-size:11px; color:#A3AABE;">→</span><span style="font-family:'IBM Plex Mono',monospace; font-size:16px; font-weight:800; color:#FFFFFF;">{{ d.b }}</span><span style="font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:700; color:{{ d.c }};">{{ d.d }}</span></span></div></sc-for>
+          </div>
+          <div style="display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1fr); border-top:1px solid rgba(255,255,255,0.05);">
+            <div style="display:flex; flex-direction:column; gap:5px; padding:12px 18px; border-right:1px solid rgba(255,255,255,0.05);"><span style="display:flex; align-items:center; gap:8px; font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;"><span style="width:8px; height:8px; border-radius:2px; background:#007AFF;"></span>Your stakes</span><span style="font-size:12px; line-height:1.45; color:#E7E9EE; text-wrap:pretty;">{{ sim.yourHow }}</span></div>
+            <div style="display:flex; flex-direction:column; gap:5px; padding:12px 18px; border-right:1px solid rgba(255,255,255,0.05);"><span style="display:flex; align-items:center; gap:8px; font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;"><span style="width:8px; height:8px; border-radius:2px; background:{{ sim.otherColor }};"></span>{{ sim.otherName }}</span><span style="font-size:12px; line-height:1.45; color:#E7E9EE; text-wrap:pretty;">{{ sim.otherHow }}</span><span style="font-size:11.5px; line-height:1.45; color:#A3AABE; text-wrap:pretty;">{{ sim.otherWhen }}</span></div>
+            <div style="display:flex; flex-direction:column; gap:5px; padding:12px 18px;"><span style="font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">The difference</span><span style="font-size:12px; line-height:1.45; color:#E7E9EE; text-wrap:pretty;">{{ sim.diffTxt }}</span></div>
+          </div>
+          <div style="padding:10px 18px 12px; font-size:11.5px; line-height:1.45; color:#A3AABE; text-wrap:pretty; border-top:1px solid rgba(255,255,255,0.05);">{{ sim.note }}</div>
+        </div>
+      </div>
+
+      </sc-if>
+
+
+    </div>
+  </div>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;minSample&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:15,&quot;min&quot;:5,&quot;max&quot;:40,&quot;step&quot;:5,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Analysis&quot;}}">
+class Component extends DCLogic {
+  state = { period:'season', dim:'market', adopted:{}, settled:{}, lf:'all', drawers:{}, openMonth:null, calM:9, bank:'main', banks:[{id:'main',name:'Tennis 2026'},{id:'chall',name:'Challenger lab'}], archived:{}, extra:[], locked:{}, logOpen:false, menu:null, range:{from:'2026-04-13',to:'2026-10-27'}, plans:{'Your stakes':true,'Flat 1%':true,'Compounding 1%':true,'¼ Kelly on CLV':true}, filters:{level:[],odds:[],surface:[],market:[]}, form:{legs:[{text:'',odds:''}],tour:'',market:'Match winner',marketOther:'',level:'500',surface:'Indoor hard',book:'bet105',bookOther:'',stake:'',timing:'pre',type:'Single'} };
+  static BANDS = ['1.10 – 1.35','1.36 – 1.60','1.61 – 1.90','1.91 – 2.20','2.21 – 2.60','2.61 – 3.20','3.21 and up'];
+  static DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+  static IC = { wallet:'M3 7h18v12H3z M3 7l2-3h12l2 3 M15 13h3', ticket:'M3 7h18v4a2 2 0 000 4v4H3v-4a2 2 0 000-4z', pie:'M12 3a9 9 0 109 9h-9z M14 2a8 8 0 018 8h-8z', rocket:'M14 4c3 0 6 3 6 6l-8 8-4-4z M8 14l-4-1 3-3 M10 16l1 4 3-3 M5 19l3-3', table:'M3 5h18v14H3z M3 10h18 M3 15h18 M9 5v14 M15 5v14', sliders:'M4 7h10 M18 7h2 M4 17h4 M12 17h8 M14 5v4 M8 15v4', clock:'M12 3a9 9 0 110 18 9 9 0 010-18z M12 8v4l3 2', user:'M12 4a4 4 0 110 8 4 4 0 010-8z M4 20a8 8 0 0116 0', bars:'M4 20v-3 M9 20v-7 M14 20v-11 M19 20V5', calc:'M6 3h12v18H6z M9 7h6 M9 12h.5 M12 12h.5 M15 12h.5 M9 16h.5 M12 16h.5 M15 16h.5' };
+  baVals(){
+    const G='#33D6A6',Rd='#F0617D',Bl='#5B8DEF',W='#FFFFFF',M='#8B93A7',K=100,BANK=10000;
+    const all=this.bets(), res=b=>this.res(b), st=b=>b.stake*K;
+    const gn=b=>{ const r=res(b); return r==='won'?st(b)*b.odds: r==='void'?st(b):0; };
+    const pf=b=>res(b)? gn(b)-st(b) : 0;
+    const E=v=>v.toFixed(2)+'€';
+    const sgnC=v=>v>0?G:v<0?Rd:W;
+    const chip=v=>({t:(v>0?'+':v<0?'-':'')+Math.abs(v).toFixed(2)+' €', bg:v>0?'rgba(51,214,166,0.13)':v<0?'rgba(240,97,125,0.14)':'rgba(255,255,255,0.06)', c:v>0?G:v<0?Rd:'#C3CAD9'});
+    const settled=all.filter(res), pend=all.filter(b=>!res(b));
+    let profit=0,staked=0,w=0,l=0,v=0,cum=0,peak=0,dd=0,ws=0,ls=0,mws=0,mls=0,bigO=0,bigP=0,bigL=0,oddsS=0,maxSt=0; const pts=[0];
+    settled.forEach(b=>{ const r=res(b),p=pf(b),s=st(b); profit+=p; staked+=s; oddsS+=b.odds; if(s>maxSt)maxSt=s; if(p>bigP)bigP=p; if(p<bigL)bigL=p; if(r==='won'){w++; ws++; ls=0; if(b.odds>bigO)bigO=b.odds;} else if(r==='lost'){l++; ls++; ws=0;} else v++; if(ws>mws)mws=ws; if(ls>mls)mls=ls; cum+=p; pts.push(cum); if(cum>peak)peak=cum; if(peak-cum>dd)dd=peak-cum; });
+    const roi=staked?profit/staked:0, prog=profit/BANK;
+    const days=settled.length?Math.max(1,(settled[settled.length-1].date-settled[0].date)/864e5):1;
+    const irr=Math.pow(1+prog,365/days)-1;
+    const pStake=pend.reduce((a,b)=>a+st(b),0), pGain=pend.reduce((a,b)=>a+st(b)*b.odds,0);
+    const wc=settled.filter(b=>b.close); let clvS=0,clvW=0,wS=0,ev=0,pfC=0,below=0,above=0;
+    wc.forEach(b=>{ const c=b.odds/b.close-1; clvS+=c; clvW+=c*st(b); wS+=st(b); ev+=st(b)*c; pfC+=pf(b); if(b.close<b.odds)below++; else if(b.close>b.odds)above++; });
+    const gap=pfC-ev, pct=x=>(x*100).toFixed(2)+'%', T=(l,v,c)=>({l,v,c});
+    const baStats=[T('Bets',String(all.length),Bl),T('Profits',E(profit),sgnC(profit)),T('ROI',pct(roi),sgnC(roi)),T('Progression',pct(prog),sgnC(prog)),T('TWR',pct(prog),sgnC(prog)),T('IRR',pct(irr),sgnC(irr)),T('Success %',pct(w/((w+l)||1)),G),T('Drawdown',E(dd),Rd),T('Starting capital',E(BANK),W),T('Current capital',E(BANK+profit),W),T('Winning bets',String(w),G),T('Losing bets',String(l),Rd),T('Refunded bets',String(v),Bl),T('In progress bets',String(pend.length),W),T('Played stakes',E(staked),W),T('In progress stake',E(pStake),W),T('Pending gains',E(pGain),G),T('Pending profits',E(pGain-pStake),G),T('Deposit',E(0),W),T('Withdrawal',E(0),W),T('Max winning streak',String(mws),G),T('Max loss streak','-'+mls,Rd),T('Average stake',E(staked/(settled.length||1)),W),T('Max stake',E(maxSt),W),T('Average Odds',(oddsS/(settled.length||1)).toFixed(3),W),T('Biggest odds won',bigO.toFixed(3),W),T('Biggest profit',E(bigP),G),T('Biggest loss','-'+E(Math.abs(bigL)),Rd),T('Commissions',E(0),W)];
+    const baClv=[T('Global CLV',pct(clvS/(wc.length||1)),sgnC(clvS)),T('Stake-weighted CLV',pct(wS?clvW/wS:0),sgnC(clvW)),T('Profits',E(pfC),sgnC(pfC)),T('ROI',pct(wS?pfC/wS:0),sgnC(pfC)),T('Profit gap (€)',E(gap),sgnC(gap)),T('Profit gap (%)',pct(wS?gap/wS:0),sgnC(gap)),T('Closing below',String(below),G),T('Closing above',String(above),Rd)];
+    const baKpi=[{l:'BETS',v:String(all.length),u:'',c:Bl},{l:'PROFITS',v:profit.toFixed(2),u:'€',c:sgnC(profit)},{l:'ROI',v:(roi*100).toFixed(2),u:'%',c:sgnC(roi)},{l:'PROGRESSION',v:(prog*100).toFixed(2),u:'%',c:sgnC(prog)}];
+    // chart
+    const mn=Math.min(0,...pts), mx=Math.max(0,...pts); const step=[100,200,250,500,1000,2000,2500,5000].find(s=>(Math.ceil(mx/s)-Math.floor(mn/s))<=8)||5000;
+    const lo=Math.floor(mn/step)*step, hi=Math.ceil(mx/step)*step; const L=53,Rr=958,Tt=19,Bb=293;
+    const X=i=>L+(Rr-L)*i/Math.max(1,pts.length-1), Y=val=>Tt+(Bb-Tt)*(hi-val)/((hi-lo)||1);
+    const ticks=[]; for(let t=lo;t<=hi;t+=step) ticks.push({y:Y(t).toFixed(1), top:(Y(t)-5.5).toFixed(1)+'px', label:t+' €'});
+    const path=pts.map((p,i)=>(i?'L':'M')+X(i).toFixed(1)+' '+Y(p).toFixed(1)).join(' ');
+    const baChart={ticks, path, area:path+` L${Rr} ${Y(lo).toFixed(1)} L${L} ${Y(lo).toFixed(1)} Z`};
+    // months
+    const MN=['January','February','March','April','May','June','July','August','September','October','November','December'], DOW=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    const byM={}; all.forEach(b=>{ const k=b.date.getMonth(); (byM[k]=byM[k]||[]).push(b); });
+    const mkeys=Object.keys(byM).map(Number).sort((a,b)=>b-a);
+    const open=this.state.openMonth===null?mkeys[0]:this.state.openMonth;
+    const isoWeek=d=>{ const x=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())); const dn=x.getUTCDay()||7; x.setUTCDate(x.getUTCDate()+4-dn); const y0=new Date(Date.UTC(x.getUTCFullYear(),0,1)); return Math.ceil(((x-y0)/864e5+1)/7); };
+    const sumP=bs=>bs.reduce((a,b)=>a+pf(b),0);
+    const baMonths=mkeys.map(k=>{ const bs=byM[k], o=k===open, ch=chip(sumP(bs)); const weeks={}; bs.forEach(b=>{ const wn=isoWeek(b.date); (weeks[wn]=weeks[wn]||[]).push(b); });
+      const wk=o?Object.keys(weeks).map(Number).sort((a,b)=>b-a).map(wn=>{ const wb=weeks[wn], wch=chip(sumP(wb)), dz={}; wb.forEach(b=>{ const dn=b.date.getDate(); (dz[dn]=dz[dn]||[]).push(b); });
+        const daysL=Object.keys(dz).map(Number).sort((a,b)=>b-a).map(dn=>{ const db=dz[dn], dch=chip(sumP(db)), d=db[0].date;
+          const rows=db.slice().sort((a,b)=>b.id-a.id).map(b=>{ const r=res(b), p=pf(b); return { label:b.text, odds:b.odds.toFixed(3), stake:E(st(b)), gain:r?E(gn(b)):'—', gainC:r?(r==='won'?G:r==='void'?W:Rd):M, profit:r?(p<0?'-':'')+E(Math.abs(p)):'—', profitC:r?sgnC(p):M, sl:r==='won'?'Won':r==='lost'?'Lost':r==='void'?'Void':'Pending', sBg:r==='won'?'rgba(51,214,166,0.14)':r==='lost'?'rgba(240,97,125,0.16)':'rgba(91,141,239,0.16)', sC:r==='won'?G:r==='lost'?Rd:Bl }; });
+          return {label:DOW[d.getDay()]+' '+String(dn).padStart(2,'0'), chip:dch.t, chipBg:dch.bg, chipC:dch.c, rows}; });
+        return {label:'Week '+wn, chip:wch.t, chipBg:wch.bg, chipC:wch.c, days:daysL}; }):[];
+      return {name:MN[k]+' 2026', open:o, bd:o?'2px solid #5B5FEF':'2px solid transparent', c:o?'#7F86F7':W, chip:ch.t, chipBg:ch.bg, chipC:ch.c, weeks:wk, onClick:()=>this.setState({openMonth:o?-1:k})}; });
+    // calendar
+    const cm=this.state.calM, fd=(new Date(2026,cm,1).getDay()+6)%7, dim=new Date(2026,cm+1,0).getDate(), rowsN=Math.ceil((fd+dim)/7);
+    const byDay={}; all.forEach(b=>{ if(b.date.getMonth()!==cm) return; const k=b.date.getDate(); const o=byDay[k]=byDay[k]||{p:0,n:0}; if(res(b)){ o.p+=pf(b); o.n++; } });
+    const cells=[]; for(let i=0;i<rowsN*7;i++){ const d=new Date(2026,cm,1+i-fd); const other=d.getMonth()!==cm; const vv=!other&&byDay[d.getDate()]; const has=!!(vv&&vv.n); const p=has?vv.p:0;
+      cells.push({n:String(d.getDate()), numC:other?'#4A5470':W, has, bg:has?(p>=0?'rgba(51,214,166,0.12)':'rgba(240,97,125,0.14)'):'transparent', bd:has?(p>=0?'1px solid rgba(51,214,166,0.35)':'1px solid rgba(240,97,125,0.40)'):'1px solid transparent', val:has?(p<0?'-':'')+Math.abs(Math.round(p))+' €':'', valC:p>=0?G:Rd}); }
+    const mBets=byM[cm]||[], mProf=sumP(mBets);
+    const baCal={title:MN[cm]+' 2026', cells, profit:E(mProf), profitC:sgnC(mProf), bets:String(mBets.length), onPrev:()=>this.setState(s=>({calM:Math.max(0,s.calM-1)})), onNext:()=>this.setState(s=>({calM:Math.min(11,s.calM+1)}))};
+    // frames + nav
+    const FR=[['2a','none','Bankroll page'],['2b','stats','Statistics drawer'],['2c','cal','Profit calendar drawer'],['2d','add','Add bet drawer']];
+    const set=(i,k)=>()=>this.setState(s=>{ const d=Object.assign({},s.drawers); const cur=d[i]===undefined?FR[i][1]:d[i]; d[i]=cur===k?'none':k; return {drawers:d}; });
+    const baFrames=FR.map(([id,def,title],i)=>{ const d=this.state.drawers[i]===undefined?def:this.state.drawers[i]; const on=k=>d===k; const bd=k=>on(k)?'#5B5FEF':'rgba(255,255,255,0.14)';
+      return {id,title,isStats:on('stats'),isCal:on('cal'),isAdd:on('add'),dim:d!=='none', statsBd:bd('stats'), calBd:bd('cal'), onStats:set(i,'stats'), onCal:set(i,'cal'), onAdd:set(i,'add'), onClose:set(i,d)}; });
+    const IC=Component.IC;
+    const baNav=[{label:'Management',items:[['Bankrolls','wallet'],['Tennis 2026 (10K bankroll)','ticket',true],['Analyzer','pie'],['Optimizer','rocket'],['Balance sheets','table'],['Configuration','sliders',false,true]]},{label:'Community',items:[['Latest activities','clock'],['My follows','user',false,true]]},{label:'Tools',items:[['Progressive stakes','bars'],['Calculator','calc']]}]
+      .map(g=>({label:g.label, items:g.items.map(([name,ic,act,arr])=>({name, d:IC[ic], c:act?G:'#C7CDDC', bg:act?'rgba(51,214,166,0.10)':'transparent', arr:!!arr}))}));
+    return {baFrames, baNav, baChart, baKpi, baMonths, baStats, baClv, baCal};
+  }
+  static R(seed){ let s=seed>>>0; return ()=>{ s=(s+0x6D2B79F5)>>>0; let t=s; t=Math.imul(t^(t>>>15),t|1); t^=t+Math.imul(t^(t>>>7),t|61); return ((t^(t>>>14))>>>0)/4294967296; }; }
+  static LEVEL = { Slam:'Grand Slam', '1000':'Masters 1000', '500':'ATP 500', '250':'ATP 250', Cup:'Davis Cup', Chall:'Challenger' };
+  static DIMS = [['market','Market','Market'],['surface','Surface','Surface'],['odds','Odds band','Odds taken'],['level','Level','Tournament level'],['book','Bookmaker','Bookmaker'],['timing','Timing','Pre-match / Live'],['situation','Situation','Situation'],['dow','Weekday','Weekday']];
+  allBets(){ return this.bets().concat(this.state.extra); }
+  bets(){
+    if(this._b) return this._b;
+    const R=Component.R(20261027);
+    const N=s=>{ const u=Math.max(R(),1e-9),v=R(); return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v)*s; };
+    const pick=a=>a[Math.floor(R()*a.length)];
+    const T={4:[['Monte-Carlo','1000','Clay'],['Barcelona','500','Clay'],['Munich','500','Clay'],['Madrid','1000','Clay']],5:[['Madrid','1000','Clay'],['Rome','1000','Clay'],['Geneva','250','Clay'],['Roland Garros','Slam','Clay']],6:[['Roland Garros','Slam','Clay'],['Stuttgart','250','Grass'],['Halle','500','Grass'],["Queen's",'500','Grass'],['Wimbledon','Slam','Grass']],7:[['Wimbledon','Slam','Grass'],['Hamburg','500','Clay'],['Gstaad','250','Clay'],['Washington','500','Hard'],['Umag','250','Clay']],8:[['Toronto','1000','Hard'],['Cincinnati','1000','Hard'],['Winston-Salem','250','Hard'],['US Open','Slam','Hard']],9:[['US Open','Slam','Hard'],['Davis Cup','Cup','Indoor hard'],['Chengdu','250','Hard'],['Tokyo','500','Hard'],['Beijing','500','Hard']],10:[['Shanghai','1000','Hard'],['Almaty','250','Indoor hard'],['Stockholm','250','Indoor hard'],['Vienna','500','Indoor hard'],['Basel','500','Indoor hard'],['Brussels','250','Indoor hard']]};
+    const CH=[['Challenger Barletta','Chall','Clay'],['Challenger Heilbronn','Chall','Clay'],['Challenger Ilkley','Chall','Grass'],['Challenger Lexington','Chall','Hard'],['Challenger Cassis','Chall','Hard'],['Challenger Brest','Chall','Hard']];
+    const P=['J. Sinner','C. Alcaraz','A. Zverev','T. Fritz','N. Djokovic','J. Draper','A. de Minaur','L. Musetti','H. Rune','D. Medvedev','C. Ruud','A. Rublev','F. Auger-Aliassime','B. Shelton','T. Paul','F. Cerundolo','A. Bublik','J. Mensik','A. Fils','T. Machac','K. Khachanov','D. Shapovalov','J. Lehecka','U. Humbert','F. Tiafoe','G. Dimitrov','S. Tsitsipas','A. Popyrin','M. Berrettini','L. Tien','J. Fonseca','A. Davidovich Fokina'];
+    const out=[]; let id=1;
+    for(let d=new Date(2026,3,13); d<=new Date(2026,9,26); d.setDate(d.getDate()+1)){
+      const r=R(); const cnt=r<.40?0:r<.70?1:r<.88?2:r<.96?3:4; let lossRun=0;
+      for(let i=0;i<cnt;i++){
+        const m=d.getMonth()+1; const t=R()<.14?pick(CH):pick(T[m]||T[10]);
+        let a=pick(P),b=pick(P); while(b===a) b=pick(P);
+        const mr=R(); const market=mr<.56?'Match winner':mr<.78?'Games handicap':'Total games';
+        const br=R(); const book=br<.55?'bet105':br<.85?'Pinnacle':'bet365';
+        const p = market==='Match winner'? .30+R()*.50 : .44+R()*.12;
+        const fair=1/p; const odds=+(fair*(1+N(.035)+.065)).toFixed(2);
+        const tilt = i>=2 && lossRun>=2;
+        let e=0; if(t[2]==='Clay') e-=.06; if(odds>=2.6) e-=.08; if(market==='Total games') e+=.06; if(t[1]==='Chall') e-=.06; if(t[1]==='Slam') e+=.03; if(book==='bet105') e+=.02; if(book==='bet365') e-=.03; if(tilt) e-=.08;
+        const pT=Math.min(.95,Math.max(.05,p*(1+e)));
+        const close=+((1/pT)*(1+N(.03))).toFixed(2); const fairM=+((1/pT)*(1+N(.04))).toFixed(2);
+        let stake = odds<1.8?1.5:1; if(tilt) stake*=2;
+        const won=R()<pT; lossRun = won?0:lossRun+1;
+        const sel=R()<.5?a:b, opp=sel===a?b:a; let line=null,text;
+        if(market==='Match winner') text=sel+' to win';
+        else if(market==='Games handicap'){ line=(p>.5?'−':'+')+(1+Math.floor(R()*4))+'.5'; text=sel+' '+line+' games'; }
+        else { line=(R()<.5?'Over ':'Under ')+(20+Math.floor(R()*5))+'.5'; text=line+' games · '+sel+' v '+opp; }
+        out.push({id:id++, date:new Date(d), tour:t[0], level:t[1], surface:t[2], market, book, odds, close, fair:fairM, stake, res:won?'won':'lost', tilt, text, line, pending:false, bank:t[1]==='Chall'?'chall':'main', timing:R()<.2?'live':'pre'});
+      }
+    }
+    const today=new Date(2026,9,27);
+    out.push({id:id++, date:today, tour:'Vienna', level:'500', surface:'Indoor hard', market:'Match winner', book:'bet105', odds:2.10, close:null, stake:1, res:null, tilt:false, text:'A. de Minaur to win', line:null, pending:true, bank:'main', timing:'pre'});
+    out.push({id:id++, date:today, tour:'Basel', level:'500', surface:'Indoor hard', market:'Total games', book:'Pinnacle', odds:1.87, close:null, stake:1.5, res:null, tilt:false, text:'Over 22.5 games · B. Shelton v H. Rune', line:'Over 22.5', pending:true, bank:'main', timing:'live'});
+    this._b=out; return out;
+  }
+  res(b){ return this.state.settled[b.id]||b.res; }
+  pl(b){ const r=this.res(b); if(!r||r==='void') return 0; return r==='won'? b.stake*(b.odds-1) : -b.stake; }
+  clv(b){ return b.close? b.odds/b.close-1 : null; }
+  stats(list){
+    const s=list.filter(b=>this.res(b)); let profit=0,staked=0,w=0,l=0,v=0,clvS=0,clvN=0,beat=0,cum=0,peak=0,dd=0,ddIdx=-1,run=0,worst=0,wrun=0,best=0,bestEnd=null,worstEnd=null; const wRuns=[],lRuns=[];
+    s.forEach((b,i)=>{ const r=this.res(b), p=this.pl(b); profit+=p; staked+=b.stake; if(r==='won')w++; else if(r==='lost')l++; else v++; const c=this.clv(b); if(c!==null){ clvS+=c; clvN++; if(c>0)beat++; } cum+=p; if(cum>peak)peak=cum; if(peak-cum>dd){dd=peak-cum; ddIdx=i;} if(r==='lost'){ if(wrun>0)wRuns.push(wrun); run++; if(run>worst){worst=run; worstEnd=b.date;} wrun=0;} else if(r==='won'){ if(run>0)lRuns.push(run); run=0; wrun++; if(wrun>best){best=wrun; bestEnd=b.date;} } }); if(wrun>0)wRuns.push(wrun); if(run>0)lRuns.push(run); const avg=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:0;
+    return {n:s.length,profit,staked,roi:staked?profit/staked:0,w,l,v,clv:clvN?clvS/clvN:null,clvN,beat,dd,ddIdx,worst,best,bestEnd,worstEnd,avgW:avg(wRuns),avgL:avg(lRuns),wRunsN:wRuns.length,lRunsN:lRuns.length,winRate:(w+l)?w/(w+l):0};
+  }
+  key(b,dim){
+    if(dim==='odds'){ const B=Component.BANDS, o=b.odds; return o<=1.35?B[0]:o<=1.6?B[1]:o<=1.9?B[2]:o<=2.2?B[3]:o<=2.6?B[4]:o<=3.2?B[5]:B[6]; }
+    if(dim==='level') return Component.LEVEL[b.level];
+    if(dim==='timing') return b.timing==='live'?'Live':'Pre-match';
+    if(dim==='situation') return b.tilt?'After two losses that day':'Normal rhythm';
+    if(dim==='dow') return ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][b.date.getDay()];
+    return b[dim];
+  }
+  renderVals(){
+    const C={pos:'#5CCB84',neg:'#E06266',zero:'#E7E9EE',lab:'#A3AABE'};
+    const sgn=(x,d=1,u='%')=> x===null||x===undefined? '—' : (x>0?'+':x<0?'−':'')+Math.abs(x).toFixed(d)+u;
+    const col=x=> x===null||x===undefined? C.lab : x>0?C.pos:x<0?C.neg:C.zero;
+    const minN=Math.max(5, this.props.minSample ?? 15);
+    const everything=this.allBets(); const all=everything.filter(b=>b.bank===this.state.bank); const today=new Date(2026,9,27);
+    const per=this.state.period; const rg=this.state.range; const pd=s=>{ const [y,m,d]=s.split('-').map(Number); return new Date(y,m-1,d); };
+    const from = per==='30d'? new Date(2026,8,27) : per==='90d'? new Date(2026,6,29) : per==='custom'? pd(rg.from) : per==='all'? new Date(2000,0,1) : new Date(2026,0,1);
+    const to = per==='custom'? new Date(pd(rg.to).getTime()+86399999) : new Date(2100,0,1);
+    const F=this.state.filters; const perList=all.filter(b=>b.date>=from&&b.date<=to);
+    const passF=(b,except)=>Object.keys(F).every(k=>k===except||!F[k].length||F[k].includes(this.key(b,k)));
+    const list=perList.filter(b=>passF(b,null));
+    const S=this.stats(list);
+    const pillTok=(on,zero)=>({weight:on?700:600, color:on?'#E7E9EE':zero?'rgba(198,204,219,0.4)':'#c6ccdb', bg:on?'#131623':'transparent', bd:on?'rgba(255,255,255,0.16)':'rgba(255,255,255,0.06)', tick:on?'✓':'', rowBg:on?'#0A0D14':'transparent'});
+    const PERL={'30d':'Last 30 days','90d':'Last 90 days','season':'Season','all':'All time','custom':'Custom range'};
+    const periods=Object.keys(PERL).map(k=>Object.assign({label:PERL[k], onClick:()=>this.setState(k==='custom'?{period:k}:{period:k, menu:null})}, pillTok(per===k,false)));
+    const menu=this.state.menu; const onTogglePeriod=()=>this.setState(s=>({menu:s.menu==='period'?null:'period'})); const onToggleFilters=()=>this.setState(s=>({menu:s.menu==='filters'?null:'filters'})); const onToggleDim=()=>this.setState(s=>({menu:s.menu==='dim'?null:'dim'}));
+    const trig=on=>({bg:on?'#131623':'#0A0D14', bd:on?'rgba(255,255,255,0.16)':'rgba(255,255,255,0.06)', c:on?'#E7E9EE':'#c6ccdb', w:on?700:600});
+    const onRange={from:e=>{ const v=e.target.value; if(v) this.setState(s=>({range:Object.assign({},s.range,{from:v})})); }, to:e=>{ const v=e.target.value; if(v) this.setState(s=>({range:Object.assign({},s.range,{to:v})})); }};
+    const firstDate=all.length?all[0].date:today; const fmtD=d=>d.getDate()+' '+['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()];
+    const pendingN=list.filter(b=>!this.res(b)).length;
+    const nF=F.level.length+F.odds.length+F.surface.length+F.market.length;
+    const headMeta=`${all.filter(b=>this.res(b)).length} settled since ${fmtD(firstDate)} · ${pendingN} pending · stakes in % of bankroll · ${per==='season'?'whole season':per==='all'?'whole bankroll, since the first bet':per==='custom'?`${fmtD(from)} → ${fmtD(pd(rg.to))}`:'last '+per.replace('d',' days')} shown${nF?` · ${nF} filter${nF>1?'s':''} on, ${list.length} of ${perList.length} bets`:''}`;
+    // bankrolls
+    const curBank=this.state.banks.find(b=>b.id===this.state.bank)||this.state.banks[0];
+    const live=this.state.banks.filter(b=>!this.state.archived[b.id]);
+    const liveBets=everything.filter(b=>!this.state.archived[b.bank]); const pageStats=[{label:'Bankrolls',value:String(live.length),color:'#FFFFFF'},{label:'Settled',value:String(liveBets.filter(b=>this.res(b)).length),color:'#FFFFFF'},{label:'Pending',value:String(liveBets.filter(b=>!this.res(b)).length),color:'#FFFFFF'}];
+    const bankStats=bk=>this.stats(everything.filter(b=>b.bank===bk.id));
+    const noF={level:[],odds:[],surface:[],market:[]};
+    const banks=live.map(bk=>{ const s=bankStats(bk); const sel=bk.id===this.state.bank; return {sel, selW:sel?700:600, pillBg:sel?'#131623':'#0A0D14', tabBd:sel?'#007AFF':'transparent', nameC:sel?'#FFFFFF':'#C6CCDB', name:bk.name, meta:s.n?`${s.n} settled`:'no bets yet', roi:s.n?sgn(s.roi*100):'—', roiC:s.n?col(s.roi):C.lab, profit:s.n?sgn(s.profit):'—', profitC:s.n?col(s.profit):C.lab, bd:sel?'rgba(0,122,255,0.65)':'rgba(255,255,255,0.05)', onClick:()=>this.setState({bank:bk.id, filters:noF}),
+      onArchive:e=>{ e.stopPropagation(); this.setState(s=>{ const a=Object.assign({},s.archived,{[bk.id]:true}); const rest=s.banks.filter(b=>!a[b.id]); return {archived:a, bank:s.bank===bk.id?(rest[0]?rest[0].id:s.bank):s.bank}; }); } }; });
+    const archived=this.state.banks.filter(b=>this.state.archived[b.id]).map(bk=>{ const s=bankStats(bk); return {name:bk.name, meta:s.n?`${s.n} settled · ${sgn(s.profit)}`:'empty', onRestore:()=>this.setState(s=>{ const a=Object.assign({},s.archived); delete a[bk.id]; return {archived:a}; }), onDelete:()=>this.setState(s=>{ const a=Object.assign({},s.archived); delete a[bk.id]; return {archived:a, banks:s.banks.filter(b=>b.id!==bk.id), extra:s.extra.filter(b=>b.bank!==bk.id)}; })}; });
+    const onAddBank=()=>this.setState(s=>{ const id='b'+Date.now(); return {banks:s.banks.concat({id, name:'New bankroll '+(s.banks.length+1)}), bank:id, filters:noF}; });
+    // certified
+    const isLocked=b=>!!this.res(b)&&(!b.pending||!!this.state.locked[b.id]);
+    const settledAll=all.filter(b=>this.res(b)); const lockedN=settledAll.filter(isLocked).length;
+    const certTxt=settledAll.length?`Certified · ${lockedN} of ${settledAll.length} results locked`:'Certified ledger · nothing settled yet';
+    // filters
+    const marketsAll=['Match winner','Games handicap','Total games'].concat(all.map(b=>b.market).filter((m,i,a)=>a.indexOf(m)===i&&!['Match winner','Games handicap','Total games'].includes(m)));
+    const FDEF=[['level','Level',['Slam','1000','500','250','Cup','Chall'].map(k=>Component.LEVEL[k])],['odds','Odds band',Component.BANDS],['surface','Surface',['Hard','Indoor hard','Clay','Grass']],['market','Market',marketsAll]];
+    const filters=FDEF.map(([k,label,opts])=>({label, opts:opts.map(o=>{ const on=F[k].includes(o); const n=perList.filter(b=>passF(b,k)&&this.key(b,k)===o).length; return Object.assign({label:o, n:String(n)}, pillTok(on,n===0), {onClick:()=>this.setState(s=>{ const f=Object.assign({},s.filters); f[k]= on? f[k].filter(x=>x!==o) : f[k].concat(o); return {filters:f}; })}); })}));
+    const filterTxt=nF?`${nF} on · ${list.length} of ${perList.length} bets in the period`:`${perList.length} bets in the period`;
+    const selNames=[].concat(F.level,F.odds,F.surface,F.market); const filtersLabel=selNames.length?'Filters · '+(selNames.length>2?selNames.slice(0,2).join(' · ')+' · +'+(selNames.length-2):selNames.join(' · ')):'Filters';
+    const tP=trig(menu==='period'||(per!=='season'&&per!=='all')), tF=trig(menu==='filters'||nF>0), tA=trig(per==='all'); const onAllTime=()=>this.setState(s=>({period:s.period==='all'?'season':'all', menu:null}));
+    const onClearFilters=()=>this.setState({filters:{level:[],odds:[],surface:[],market:[]}, period:'season'});
+    // log a bet
+    const form=this.state.form; const onForm={}; ['tour','stake','market','marketOther','level','surface','book','bookOther'].forEach(k=>{ onForm[k]=e=>{ const val=e.target.value; this.setState(s=>({form:Object.assign({},s.form,{[k]:val})})); }; });
+    const fitLegs=(legs,type)=>{ const n= type==='Single'?1 : type==='Combination'?2 : Math.max(2,legs.length); const out=legs.slice(0,n); while(out.length<n) out.push({text:'',odds:''}); return out; };
+    const seg=(key,pairs)=>pairs.map(([k,label])=>({label, bg:form[key]===k?'#1B2031':'transparent', color:form[key]===k?'#FFFFFF':C.lab, onClick:()=>this.setState(s=>{ const f=Object.assign({},s.form,{[key]:k}); if(key==='type') f.legs=fitLegs(s.form.legs,k); return {form:f}; })}));
+    const timings=seg('timing',[['pre','Pre-match'],['live','Live · in play']]);
+    const types=seg('type',[['Single','Single'],['Combination','Combination'],['Parlay','Parlay']]);
+    const setLeg=(i,k)=>e=>{ const val=e.target.value; this.setState(s=>({form:Object.assign({},s.form,{legs:s.form.legs.map((lg,j)=>j===i?Object.assign({},lg,{[k]:val}):lg)})})); };
+    const legs=form.legs.map((lg,i)=>({label:form.type==='Single'?'Bet':'Leg '+(i+1), text:lg.text, odds:lg.odds, onText:setLeg(i,'text'), onOdds:setLeg(i,'odds'), canRemove:form.type==='Parlay'&&form.legs.length>2, onRemove:()=>this.setState(s=>({form:Object.assign({},s.form,{legs:s.form.legs.filter((x,j)=>j!==i)})}))}));
+    const canAddLeg=form.type==='Parlay'; const onAddLeg=()=>this.setState(s=>({form:Object.assign({},s.form,{legs:s.form.legs.concat({text:'',odds:''})})}));
+    const legOdds=form.legs.map(lg=>parseFloat(lg.odds)); const legsOk=form.legs.every((lg,i)=>lg.text.trim().length>0&&legOdds[i]>=1.01);
+    const oddsV=legsOk?+legOdds.reduce((a,o)=>a*o,1).toFixed(2):NaN;
+    const oddsLabel=form.type==='Single'?'Odds':'Combined odds'; const oddsTxt=legsOk?oddsV.toFixed(2):'—'; const oddsC=legsOk?'#FFFFFF':C.lab;
+    const legsNote=form.type==='Single'?'One selection, one price.':form.type==='Combination'?`Two legs, one ticket — the odds multiply${legsOk?`: ${legOdds.map(o=>o.toFixed(2)).join(' × ')} = ${oddsV.toFixed(2)}`:' (e.g. 1.30 × 1.20 = 1.56)'}. All legs must win.`:`Any number of legs, one ticket — the odds multiply${legsOk?`: ${legOdds.map(o=>o.toFixed(2)).join(' × ')} = ${oddsV.toFixed(2)}`:''}. All legs must win.`;
+    const betText=form.legs.map(lg=>lg.text.trim()).join(' + ');
+    const marketOther=form.market==='Other', bookOther=form.book==='Other';
+    const mktFinal=marketOther?form.marketOther.trim():form.market, bookFinal=bookOther?form.bookOther.trim():form.book;
+    const stakeV=parseFloat(form.stake); const valid=legsOk&&stakeV>=0.1&&stakeV<=10&&mktFinal.length>0&&bookFinal.length>0;
+    const logHint=valid?'Ready — the ticket on the right is what gets posted.':'Every leg needs text and odds (1.01+) · stake 0.1 – 10% · a market and a bookmaker.';
+    const onPost=()=>{ if(!valid) return; const nb={id:900000+this.state.extra.length, date:new Date(2026,9,27), tour:form.tour.trim()||'—', level:form.level, surface:form.surface, market:mktFinal, book:bookFinal, odds:oddsV, close:null, stake:stakeV, res:null, tilt:false, text:betText, line:null, pending:true, bank:this.state.bank, timing:form.timing, type:form.type, legs:form.legs.length}; this.setState(s=>({extra:s.extra.concat(nb), logOpen:false, form:Object.assign({},s.form,{legs:fitLegs([],s.form.type),tour:'',stake:'',marketOther:'',bookOther:''})})); };
+    const onLogToggle=()=>this.setState(s=>({logOpen:!s.logOpen}));
+    const tk={ sel:betText||'Your selection', selC:betText?'#FFFFFF':'#5E667C', ctx:[form.tour.trim()||'Tournament', Component.LEVEL[form.level]||form.level, form.surface].join(' · '), type:form.type+' · '+(form.timing==='live'?'live':'pre-match'), market:mktFinal||'—', book:bookFinal||'—', odds:legsOk?oddsV.toFixed(2):'—', stake:stakeV>0?stakeV.toFixed(2)+'% of bankroll':'—', win:valid?'+'+(stakeV*(oddsV-1)).toFixed(2)+'%':'—', winC:valid?C.pos:C.lab, lose:valid?'−'+stakeV.toFixed(2)+'%':'—', loseC:valid?C.neg:C.lab };
+    const ap=this.state.appliedPlan; let planStake=null; if(ap){ const settledAll=all.filter(b=>this.res(b)); const cumNow=settledAll.reduce((a,b)=>a+this.pl(b),0); const last=settledAll[settledAll.length-1]||null; const o=oddsV>1?oddsV:null;
+      planStake= ap==='Flat 1%'?1 : ap==='Flat 2%'?2 : ap==='Compounding 1%'?Math.max(0,1*(1+cumNow/100)) : ap==='To win 1%'?(o?Math.min(5,1/(o-1)):null) : ap==='Double after a loss'?(last?(this.res(last)==='lost'?Math.min(8,last.stake*2):1):1) : null; }
+    const planHint=ap&&planStake!==null, planHintTxt=planHint?`${ap} says ${planStake.toFixed(2)}%`:(ap?`${ap} needs the odds first`:''), onUsePlanStake=()=>{ if(planStake!==null) this.setState(s=>({form:Object.assign({},s.form,{stake:planStake.toFixed(2)})})); };
+    const sl=list.filter(b=>this.res(b)); const avgOdds=sl.length?sl.reduce((a,b)=>a+b.odds,0)/sl.length:0; const beWR=avgOdds?1/avgOdds:0; const wrC=(S.w+S.l)?(S.winRate>beWR?C.pos:S.winRate<beWR?C.neg:C.zero):C.lab; const MY=d=>d?['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()]+' '+d.getFullYear():'';
+    const hero={ profit:sgn(S.profit), profitC:col(S.profit), profitSub:`${S.n} settled · ${S.staked.toFixed(1)}% staked in total`,
+      rows:[
+        {label:'ROI', sub:'profit ÷ total staked', value:sgn(S.roi*100), color:col(S.roi)},
+        {label:'Record', sub:`${S.n} settled · ${S.v} void`, value:`${S.w}–${S.l}`, color:wrC},
+        {label:'Win rate', sub:avgOdds?`break-even ${(beWR*100).toFixed(0)}% at avg ${avgOdds.toFixed(2)}`:'won ÷ (won + lost)', value:(S.w+S.l)?(S.winRate*100).toFixed(0)+'%':'—', color:wrC},
+        {label:'Avg CLV', sub:S.clvN?`beat the close ${S.beat} of ${S.clvN}`:'no closes yet', value:S.clv===null?'—':sgn(S.clv*100), color:col(S.clv)},
+        {label:'Max drawdown', sub:'peak to trough, % of bankroll', value:S.dd?'−'+S.dd.toFixed(1)+'%':'—', color:S.dd?C.neg:C.lab},
+        {label:'Best run', sub:S.wRunsN?`avg winning run ${S.avgW.toFixed(1)} · ${S.wRunsN} runs`:'consecutive wins', value:S.best?S.best+' won':'—', when:MY(S.bestEnd), color:S.best?C.pos:C.lab},
+        {label:'Worst run', sub:S.lRunsN?`avg losing run ${S.avgL.toFixed(1)} · ${S.lRunsN} runs`:'consecutive losses', value:S.worst?S.worst+' lost':'—', when:MY(S.worstEnd), color:S.worst?C.neg:C.lab},
+      ]};
+    // curve
+    const settled=list.filter(b=>this.res(b)); const pts=[0]; let cum=0; settled.forEach(b=>{cum+=this.pl(b); pts.push(cum);});
+    const L=44,Rr=1224,Tt=12,Bb=222; const mn=Math.min(0,...pts), mx=Math.max(0,...pts); const span=(mx-mn)||1;
+    const X=i=>L+(Rr-L)*i/Math.max(1,pts.length-1), Y=v=>Tt+(Bb-Tt)*(mx-v)/span;
+    const path=pts.map((v,i)=>(i?'L':'M')+X(i).toFixed(1)+' '+Y(v).toFixed(1)).join(' ');
+    const area=path+` L${Rr} ${Y(0).toFixed(1)} L${L} ${Y(0).toFixed(1)} Z`;
+    const step=span>40?10:span>16?5:span>8?2:1; const yTicks=[]; for(let v=Math.ceil(mn/step)*step; v<=mx; v+=step) yTicks.push({y:Y(v).toFixed(1), top:(Y(v)-5).toFixed(1)+'px', label:(v>0?'+':'')+v+'%', stroke:v===0?'rgba(255,255,255,0.22)':'rgba(255,255,255,0.06)', dash:v===0?'0':'3 4'});
+    const xTicks=[]; let lastM=-1; settled.forEach((b,i)=>{ const m=b.date.getMonth(); if(m!==lastM){ lastM=m; xTicks.push({left:X(i+1).toFixed(1)+'px', label:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][m]}); } });
+    const hi=this.state.hovI; const hasHov=hi!==null&&hi!==undefined&&hi>=0&&hi<pts.length; const hb=hasHov&&hi>0?settled[hi-1]:null; const hpl=hb?this.pl(hb):0; const hr=hb?this.res(hb):null;
+    const onMove=e=>{ const r=e.currentTarget.getBoundingClientRect(); const fx=(e.clientX-r.left)/r.width*1292; let i=Math.round((fx-L)/(Rr-L)*(pts.length-1)); i=Math.max(0,Math.min(pts.length-1,i)); if(i!==this.state.hovI) this.setState({hovI:i}); };
+    const hovX=hasHov?X(hi):0; const hovPct=hovX/1292*100;
+    const hov={ hasHov, onMove, onLeave:()=>{ if(this.state.hovI!==null) this.setState({hovI:null}); }, hovLeft:hovPct.toFixed(2)+'%', hovTop:hasHov?Y(pts[hi]).toFixed(1)+'px':'0px', tipShift:hovPct>58?'translateX(calc(-100% - 14px))':'translateX(14px)',
+      hovDate:hb?fmtD(hb.date):'Season start', hovIdx:hasHov?(hi?hi+' of '+settled.length:'0 of '+settled.length):'', hovCum:hasHov?sgn(pts[hi]):'', hovCumC:hasHov?col(pts[hi]):'#FFFFFF', hovHasBet:!!hb,
+      hovBet:hb?hb.text:'', hovMeta:hb?`${hb.tour} · ${Component.LEVEL[hb.level]||hb.level} · @ ${hb.odds.toFixed(2)}`:'', hovStake:hb?`stake ${hb.stake.toFixed(1)}% · ${hr==='won'?'WON':hr==='lost'?'LOST':'VOID'}`:'', hovPl:hb?sgn(hpl):'', hovPlC:col(hpl), hovResC:hr==='won'?C.pos:hr==='lost'?C.neg:C.lab };
+    const ddI=S.ddIdx+1; const curve={path, area, yTicks, xTicks, ...hov, lastX:X(pts.length-1).toFixed(1), lastY:Y(pts[pts.length-1]).toFixed(1), ddX:ddI>0?X(ddI).toFixed(1):-20, ddY:ddI>0?Y(pts[ddI]).toFixed(1):-20,
+      meta:`${settled.length} bets · peak ${sgn(mx)} · now ${sgn(cum)}`, ddNote: S.ddIdx>=0?`deepest drawdown −${S.dd.toFixed(1)}% on ${fmtD(settled[S.ddIdx].date)}`:'' };
+    // breakdown
+    const dim=this.state.dim; const dims=Component.DIMS.map(([k,label])=>{ const g={}; list.forEach(b=>{ if(this.res(b)) g[this.key(b,k)]=1; }); return Object.assign({label, count:String(Object.keys(g).length), onClick:()=>this.setState({dim:k, menu:null})}, pillTok(dim===k,false)); });
+    const tD=trig(menu==='dim'); const dimLabel=Component.DIMS.find(x=>x[0]===dim)[1]; const bdTot=this.stats(list.filter(b=>this.res(b)));
+    const group=(lst,d)=>{ const g={}; lst.forEach(b=>{ if(!this.res(b)) return; const k=this.key(b,d); (g[k]=g[k]||[]).push(b); }); return Object.entries(g).map(([name,bs])=>({name, dim:d, bs, s:this.stats(bs)})); };
+    const bar=roi=>{ const w=Math.min(Math.abs(roi),.4)/.4*50; return {barL:(roi>=0?50:50-w)+'%', barW:w+'%', barC:roi>=0?C.pos:C.neg}; };
+    const order= dim==='odds'?Component.BANDS : dim==='dow'?Component.DAYS : null;
+    const openMkt=this.state.openMkt||null;
+    const mktDetail=g=>{ const bs=g.bs.filter(b=>this.res(b)); const s=g.s; const isMW=g.name==='Match winner';
+      const lineKey=b=>{ if(!isMW) return b.line||'—'; return b.odds<1.5?'Under 1.50':b.odds<2?'1.50 – 1.99':b.odds<2.6?'2.00 – 2.59':'2.60 and up'; };
+      const lm={}; bs.forEach(b=>{ const k=lineKey(b); (lm[k]=lm[k]||[]).push(b); });
+      const lineNum=k=>{ const m=k.match(/-?[\d.]+/); return m?parseFloat(m[0].replace('−','-')):0; };
+      const sortL=(a,b)=>{ if(isMW) return lineNum(a)-lineNum(b); const ao=/^Over/.test(a),bo=/^Over/.test(b); if(ao!==bo) return ao?-1:1; return lineNum(a.replace('−','-'))-lineNum(b.replace('−','-')); };
+      const lines=Object.keys(lm).sort(sortL).map(k=>{ const ls=this.stats(lm[k]); const avgO=lm[k].reduce((a,b)=>a+b.odds,0)/lm[k].length; return Object.assign({name:k, sub:`avg @ ${avgO.toFixed(2)}`, n:ls.n, wl:`${ls.w}–${ls.l}`, roi:sgn(ls.roi*100), roiC:col(ls.roi), clv:ls.clv===null?'—':sgn(ls.clv*100), clvC:col(ls.clv), pl:sgn(ls.profit), plC:col(ls.profit)}, bar(ls.roi)); });
+      const bestL=lines.slice().sort((a,b)=>parseFloat(b.pl.replace('−','-'))-parseFloat(a.pl.replace('−','-')))[0], worstL=lines.slice().sort((a,b)=>parseFloat(a.pl.replace('−','-'))-parseFloat(b.pl.replace('−','-')))[0];
+      const avgOdds=bs.length?bs.reduce((a,b)=>a+b.odds,0)/bs.length:0, avgStake=bs.length?s.staked/bs.length:0, wr=s.w+s.l?Math.round(100*s.w/(s.w+s.l)):null;
+      const over=bs.filter(b=>/^Over/.test(b.line||'')), under=bs.filter(b=>/^Under/.test(b.line||'')), plus=bs.filter(b=>/^\+/.test(b.line||'')), minus=bs.filter(b=>/^[−-]/.test(b.line||''));
+      const sideStat= g.name==='Total games'? {l:'Over v Under', v:`${over.length} · ${under.length}`, c:'#FFFFFF', sub:`over ${sgn(this.stats(over).profit)} · under ${sgn(this.stats(under).profit)}`} : g.name==='Games handicap'? {l:'Giving v taking', v:`${minus.length} · ${plus.length}`, c:'#FFFFFF', sub:`giving ${sgn(this.stats(minus).profit)} · taking ${sgn(this.stats(plus).profit)}`} : {l:'Favourites v dogs', v:`${bs.filter(b=>b.odds<2).length} · ${bs.filter(b=>b.odds>=2).length}`, c:'#FFFFFF', sub:`favs ${sgn(this.stats(bs.filter(b=>b.odds<2)).profit)} · dogs ${sgn(this.stats(bs.filter(b=>b.odds>=2)).profit)}`};
+      const stats=[
+        {l:'Win rate', v:wr===null?'—':wr+'%', c:'#FFFFFF', sub:`${s.w} of ${s.w+s.l}`},
+        {l:'Avg odds', v:avgOdds?avgOdds.toFixed(2):'—', c:'#FFFFFF', sub:`break-even ${avgOdds?Math.round(100/avgOdds)+'%':'—'}`},
+        {l:'Avg CLV', v:s.clv===null?'—':sgn(s.clv*100), c:col(s.clv), sub:`beat the close ${s.beat} of ${s.clvN}`},
+        {l:'Avg stake', v:avgStake?avgStake.toFixed(2)+'%':'—', c:'#FFFFFF', sub:`${s.staked.toFixed(1)}% staked in total`},
+        sideStat,
+        {l:isMW?'Best price band':'Best line', v:bestL?bestL.name:'—', c:C.pos, sub:bestL?`${bestL.pl} · ${bestL.n} bets`:''}
+      ];
+      const foot= isMW? `Match winner has no line — the split is by the price you took. ${worstL&&worstL!==bestL?'Weakest band: '+worstL.name+' at '+worstL.pl+' over '+worstL.n+' bets.':''}` : `${lines.length} lines hit in ${g.name} · ${bs.length} settled bets. ${worstL&&worstL!==bestL?'Weakest line: '+worstL.name+' at '+worstL.pl+' over '+worstL.n+' bets.':''}`;
+      return {stats, lines, foot, subHead:isMW?'Price band':'Line', title:g.name, sub:`${bs.length} settled bets · ${s.w}–${s.l} · ROI ${sgn(s.roi*100)} · P/L ${sgn(s.profit)} · ${PERL[per]||per}`}; };
+    const bdRows=group(list,dim).sort((a,b)=> order? order.indexOf(a.name)-order.indexOf(b.name) : b.s.profit-a.s.profit).map(g=>{ const expandable=dim==='market'; const open=false; return Object.assign({name:g.name, n:g.s.n, wl:`${g.s.w}–${g.s.l}`, roi:sgn(g.s.roi*100), roiC:col(g.s.roi), clv:g.s.clv===null?'—':sgn(g.s.clv*100), clvC:col(g.s.clv), pl:sgn(g.s.profit), plC:col(g.s.profit), expandable, open, chev:open?'▲':'▼', cursor:expandable?'pointer':'default', rowBg:open?'rgba(255,255,255,0.03)':'transparent', onClick:expandable?()=>this.setState(s=>({openMkt:s.openMkt===g.name?null:g.name})):null}, bar(g.s.roi)); });
+    const mktG=openMkt?group(list,'market').find(g=>g.name===openMkt):null; const mktPop=mktG?Object.assign(mktDetail(mktG),{onClose:()=>this.setState({openMkt:null}), stop:e=>e.stopPropagation()}):{stats:[],lines:[],foot:'',subHead:'',title:'',sub:'',onClose:null,stop:null};
+    const bdHeadRow=Component.DIMS.find(x=>x[0]===dim);
+    // segments across dims
+    const segs=[]; ['market','surface','odds','level','timing','situation','dow'].forEach(d=>group(list,d).forEach(g=>{ if(g.s.n>=minN && g.name!=='Normal rhythm') segs.push(g); }));
+    const segTitle=g=>({market:g.name, surface:g.name+' courts', odds:'Odds '+g.name.toLowerCase(), level:g.name, book:g.name+' prices', situation:g.name, dow:g.name+' bets', timing:g.name+' bets'}[g.dim]);
+    const mk=g=>({title:segTitle(g), pl:sgn(g.s.profit), plC:col(g.s.profit), sub:`${g.s.n} bets · ${g.s.w}–${g.s.l} · ROI ${sgn(g.s.roi*100)} · CLV ${g.s.clv===null?'—':sgn(g.s.clv*100)}`});
+    const strengthsG=segs.filter(g=>g.s.profit>0&&g.s.roi>.03).sort((a,b)=>b.s.profit-a.s.profit).slice(0,3);
+    const leaksG=segs.filter(g=>g.s.profit<0).sort((a,b)=>a.s.profit-b.s.profit).slice(0,3);
+    const leakSum=leaksG.reduce((a,g)=>a+g.s.profit,0);
+    // verdict cards (edge · leak · blind spot)
+    const segCurve=(bs,color)=>{ const o=bs.slice().sort((a,b)=>a.date-b.date); const a=[0]; let c=0; o.forEach(b=>{ c+=this.pl(b); a.push(c); }); const mnv=Math.min(0,...a),mxv=Math.max(0,...a),spv=(mxv-mnv)||1; const Yv=v=>4+62*(mxv-v)/spv; const p=a.map((v,i)=>(i?'L':'M')+(i*380/Math.max(1,a.length-1)).toFixed(1)+' '+Yv(v).toFixed(1)).join(' '); return {path:p, area:p+' L380 70 L0 70 Z', sc:color, fill:color.replace(')',',0.35)').replace('rgb(','rgba(')}; };
+    const rgb=c=>c===C.pos?'rgb(92,203,132)':c===C.neg?'rgb(224,98,102)':'rgb(232,168,78)';
+    const figs=g=>[{l:'Record',v:g.s.w+'–'+g.s.l,c:'#FFFFFF'},{l:'ROI',v:sgn(g.s.roi*100),c:col(g.s.roi)},{l:'CLV',v:g.s.clv===null?'—':sgn(g.s.clv*100),c:col(g.s.clv)}];
+    const vcard=(kind,lc,g,title,empty)=> g? Object.assign({kind, lc, seg:segTitle(g)+' · '+g.s.n+' bets', pl:sgn(g.s.profit), plC:col(g.s.profit), title, figs:figs(g), isSingle:true, isPair:false, path2:'', sc2:'transparent'}, segCurve(g.bs,rgb(lc))) : {kind, lc, seg:'', pl:'—', plC:C.lab, title:empty, figs:[], path:'', area:'', sc:'transparent', fill:'transparent', isSingle:true, isPair:false, path2:'', sc2:'transparent'};
+    const bandRow=(g,c,dash)=>({band:g.name, n:'n='+g.s.n, rec:g.s.w+'–'+g.s.l, roi:sgn(g.s.roi*100), roiC:col(g.s.roi), clv:g.s.clv===null?'—':sgn(g.s.clv*100), clvC:col(g.s.clv), c, dash});
+    const priceCard=()=>{ const bands=group(list,'odds').filter(g=>g.s.n>=minN).sort((a,b)=>b.s.roi-a.s.roi); if(bands.length<2) return {kind:'Your price range', lc:'#5B9BFF', seg:'', pl:'—', plC:C.lab, title:`Two odds bands with ${minN}+ bets are needed to compare prices.`, figs:[], path:'', area:'', sc:'transparent', fill:'transparent', isSingle:true, isPair:false, path2:'', sc2:'transparent'};
+      const best=bands[0], worst=bands[bands.length-1]; const gap=(best.s.roi-worst.s.roi)*100; const bc=segCurve(best.bs,'rgb(92,203,132)'), wc=segCurve(worst.bs,'rgb(224,98,102)');
+      return {kind:'Your price range', lc:'#5B9BFF', seg:'best v worst odds band', pl:(gap>0?'+':'')+gap.toFixed(1)+' pp', plC:C.pos, title:`You earn most at ${best.name}${worst.s.roi<0?' and lose at '+worst.name:' and least at '+worst.name}${best.s.clv!==null&&worst.s.clv!==null&&best.s.clv>worst.s.clv?' — the close agrees.':'.'}`, figs:[], isSingle:false, isPair:true, rows:[bandRow(best,'rgb(92,203,132)','solid'), bandRow(worst,'rgb(224,98,102)','dashed')], path:bc.path, area:bc.area, sc:bc.sc, fill:bc.fill, path2:wc.path, sc2:wc.sc}; };
+    const edgeG=strengthsG[0], leakG=leaksG[0];
+    const early=[]; ['market','surface','odds','level','timing','situation'].forEach(d=>group(list,d).forEach(g=>{ if(g.s.n<minN && g.s.n>=5 && g.name!=='Normal rhythm' && g.s.roi<0) early.push(g); })); early.sort((a,b)=>a.s.profit-b.s.profit); const blindG=early[0];
+    const verdicts=[
+      vcard('Your edge', C.pos, edgeG, edgeG?`${segTitle(edgeG)} is where you beat the market${edgeG.s.clv>0?' — the close agrees':''}.`:'', `No segment with ${minN}+ bets is clearly profitable yet.`),
+      vcard('Your leak', C.neg, leakG, leakG?`${segTitle(leakG)} ${leakG.s.profit<-S.profit/2&&S.profit>0?'cost you half your profit':'is your biggest leak'}${leakG.s.clv!==null&&leakG.s.clv<0?' and the close went against you.':'.'}`:'', `No losing segment with ${minN}+ bets in this period.`),
+      priceCard()
+    ];
+    // discipline
+    const beatPct=S.clvN?S.beat/S.clvN*100:null;
+    const withClv=settled.filter(b=>b.close); const pos=withClv.filter(b=>this.clv(b)>0), negc=withClv.filter(b=>this.clv(b)<=0);
+    const sp=this.stats(pos), sn=this.stats(negc);
+    const afterLoss=[], afterWin=[]; settled.forEach((b,i)=>{ if(i===0) return; const pr=this.res(settled[i-1]); if(pr==='lost') afterLoss.push(b.stake); else if(pr==='won') afterWin.push(b.stake); });
+    const avg=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:0; const aL=avg(afterLoss), aW=avg(afterWin), ratio=aW?aL/aW:1;
+    const tiltB=settled.filter(b=>b.tilt), st=this.stats(tiltB), calm=this.stats(settled.filter(b=>!b.tilt));
+    const stakes=settled.map(b=>b.stake); const maxSt=Math.max(...stakes,0), avgSt=avg(stakes); const spread=avgSt?maxSt/avgSt:1; const bigB=settled.filter(b=>b.stake>=avgSt*1.5), bigN=bigB.length, bigS=this.stats(bigB), evenS=this.stats(settled.filter(b=>b.stake<avgSt*1.5));
+    const arcD=t=>{ const a=Math.PI*(1-Math.max(0,Math.min(1,t))); return `M20 100 A80 80 0 0 1 ${(100+80*Math.cos(a)).toFixed(1)} ${(100-80*Math.sin(a)).toFixed(1)}`; };
+    const zoneD=(a,b)=>{ const p=Math.PI*(1-a), q=Math.PI*(1-b); return `M${(100+80*Math.cos(p)).toFixed(1)} ${(100-80*Math.sin(p)).toFixed(1)} A80 80 0 0 1 ${(100+80*Math.cos(q)).toFixed(1)} ${(100-80*Math.sin(q)).toFixed(1)}`; };
+    const disc=[
+      { label:'Closing line', verdict:beatPct===null?'—':beatPct>=55?'REAL EDGE':beatPct>=48?'COIN FLIP':'PAYING TOO MUCH', verdictC:beatPct===null?C.lab:beatPct>=55?C.pos:beatPct>=48?'#E8A84E':C.neg,
+        fig:beatPct===null?'—':beatPct.toFixed(0)+'%', figC:'#FFFFFF', claim:'of bets beat the close',
+        body:`${S.beat} of ${S.clvN} priced bets closed shorter than you took them. Bets that beat the close ran at ROI ${sgn(sp.roi*100)}; the ones that didn't ran at ${sgn(sn.roi*100)}. The close is the sharpest number you can measure yourself against.`,
+        pair:[{label:'Beat close',value:sgn(sp.roi*100),color:col(sp.roi),sub:`ROI · n=${sp.n}`},{label:'Missed close',value:sgn(sn.roi*100),color:col(sn.roi),sub:`ROI · n=${sn.n}`}],
+        arc:arcD(beatPct===null?0:beatPct/100), zone:zoneD(.55,1), short:beatPct===null?'No closing prices in the period.':`${S.beat} of ${S.clvN} priced bets beat the close · target 55%+`, ok:beatPct!==null&&beatPct>=55 },
+      { label:'Stake after a loss', verdict:ratio>1.15?'CHASING':ratio<.85?'SHRINKING':'STEADY', verdictC:ratio>1.15?C.neg:ratio<.85?'#E8A84E':C.pos,
+        fig:'×'+ratio.toFixed(2), figC:ratio>1.15?C.neg:'#FFFFFF', claim:'your stake after a loss vs after a win',
+        body:`Average stake ${aL.toFixed(2)}% after a losing bet against ${aW.toFixed(2)}% after a winning one (n=${afterLoss.length} / ${afterWin.length}). A plan sets the stake before the match, not after the last result. Largest single stake ${maxSt.toFixed(1)}% vs an average of ${avgSt.toFixed(2)}%.`,
+        pair:[{label:'After a loss',value:aL.toFixed(2)+'%',color:'#FFFFFF',sub:`avg · n=${afterLoss.length}`},{label:'After a win',value:aW.toFixed(2)+'%',color:'#FFFFFF',sub:`avg · n=${afterWin.length}`}],
+        arc:arcD((ratio-.5)/1.5), zone:zoneD((.85-.5)/1.5,(1.15-.5)/1.5), short:`${aL.toFixed(2)}% after a loss vs ${aW.toFixed(2)}% after a win (n=${afterLoss.length} / ${afterWin.length}) · target ×0.85 – ×1.15`, ok:ratio<=1.15&&ratio>=.85 },
+      { label:'Stake consistency', verdict:!settled.length?'—':spread>2?'WENT BIG':spread>1.5?'UNEVEN':'EVEN', verdictC:!settled.length?C.lab:spread>2?C.neg:spread>1.5?'#E8A84E':C.pos,
+        fig:settled.length?'×'+spread.toFixed(2):'—', figC:spread>1.5?(spread>2?C.neg:'#E8A84E'):'#FFFFFF', claim:'biggest stake vs your average',
+        body:`Your largest stake was ${maxSt.toFixed(1)}% against an average of ${avgSt.toFixed(2)}% over ${settled.length} bets. ${bigN} bet${bigN===1?'':'s'} went in at 1.5× your average or more and ran at ROI ${sgn(bigS.roi*100)}; the rest ran at ${sgn(evenS.roi*100)}. A plan sizes every bet the same way — the biggest stake should never be the one you remember.`,
+        pair:[{label:'Over 1.5× avg',value:bigS.n?sgn(bigS.profit):'—',color:bigS.n?col(bigS.profit):C.lab,sub:`P/L · n=${bigS.n}`},{label:'Within plan',value:sgn(evenS.profit),color:col(evenS.profit),sub:`P/L · n=${evenS.n}`}],
+        arc:arcD((spread-1)/2), zone:zoneD(0,(1.5-1)/2), short:settled.length?`Largest ${maxSt.toFixed(1)}% vs average ${avgSt.toFixed(2)}% · ${bigN} of ${settled.length} bets over 1.5× · target ≤ ×1.5`:'No settled bets in the period.', ok:settled.length?spread<=1.5:null },
+    ];
+    const judged=disc.filter(c=>c.ok!==null), bad=judged.filter(c=>!c.ok).length;
+    const discSum=`${bad} of ${judged.length}`, discSumC=bad?C.neg:C.pos, discSumTxt=`check${judged.length===1?'':'s'} need${bad===1?'s':''} work · ${settled.length} bets${judged.length<3?' · '+(3-judged.length)+' not judged yet':''}`;
+    // staking sim
+    const PLANS=[
+      {name:'Your stakes', sub:'as logged', color:'#007AFF', f:b=>b.stake, how:'The stakes you actually logged — sized by feel, confidence and the bet before.'},
+      {name:'Flat 1%', sub:'every bet at 1% of the starting bankroll', color:'#8FB8FF', f:()=>1, how:'1% of the starting bankroll on every bet. The stake never moves.', when:'The baseline: if your stakes cannot beat it, your sizing is costing you money.'},
+      {name:'Flat 2%', sub:'every bet at 2% of the starting bankroll', color:'#C9DDFF', f:()=>2, how:'Flat 1% at double the size. Same shape, twice the profit and twice the drawdown.', when:'Only for an edge already proven at 1% — a 10-bet losing run costs 20%.'},
+      {name:'Compounding 1%', sub:'1% of the bankroll as it stands · cumulative', color:'#E7E9EE', f:(b,cum)=>Math.max(0,1*(1+cum/100)), how:'1% of the bankroll as it stands, so stakes grow when winning and shrink when losing.', when:'Faster growth on a winning season; the biggest stakes land right after the best run.'},
+      {name:'To win 1%', sub:'stake = 1% ÷ (odds − 1) · same profit on every winner', color:'#5B9BFF', f:b=>Math.min(5,1/(b.odds-1)), how:'Stake = 1% ÷ (odds − 1): every winner adds exactly 1%. Short prices get big stakes, cap 5%.', when:'Smooth when your edge sits on favourites; a losing 1.25 shot costs 4%.'},
+      {name:'¼ Kelly on CLV', sub:'sized on the close you did not know yet · hindsight', color:'#A3AABE', f:b=>{ const c=this.clv(b); if(c===null||c<=0) return 0; return Math.min(3, 25*c/(b.odds-1)); }, how:'A quarter Kelly stake sized on how far the close moved your way; no stake when it did not. Cap 3%.', when:'Hindsight — the ceiling to measure against, not a plan you can follow.'},
+      {name:'½ Kelly on model', sub:'sized on the Stennisfy fair price at posting · cap 3%', color:'#B48CFF', f:b=>{ if(!b.fair) return 0; const p=1/b.fair, k=b.odds-1; const fs=(p*k-(1-p))/k; return fs<=0?0:Math.min(3, 50*fs); }, how:'Half Kelly on the edge your own fair price showed at posting: stake = ½ × (p·(odds−1) − (1−p)) ÷ (odds−1). No stake when the model saw no edge. Cap 3%. No hindsight — the close is not used.', when:'Honest Kelly — if this line beats your stakes, your model is sizing better than your gut; if it trails, the model is overconfident.'},
+      {name:'Odds-banded', sub:'1.5% under 1.60 · 1% to 2.20 · 0.5% above', color:'#7FD6C2', f:b=>b.odds<1.60?1.5:b.odds<=2.20?1:0.5, how:'Stake falls as the price rises: 1.5% under 1.60, 1% up to 2.20, 0.5% above. Every bet risks about the same swing.', when:'Read it against your Odds-band breakdown — it helps when your longer prices are the leak.'},
+      {name:'Confidence tiers', sub:'1 · 2 · 3 units = 0.5 · 1 · 1.5% · inferred from your stake band', color:'#F0C27A', f:b=>b.stake<=1?0.5:b.stake<=1.5?1:1.5, how:'Three fixed sizes — 1 unit 0.5%, 2 units 1%, 3 units 1.5% — read off the stake band you logged until Log-a-bet carries a Confidence field. Shows whether the bets you sized big earned the size.', when:'If this trails Flat 1%, your confidence is not information; if it leads, keep the tiers and make the field explicit.'},
+      {name:'Double after a loss', sub:'1%, doubled after each loss, back to 1% on a win · cap 8%', color:'#E06266', f:(b,cum,prev)=>prev===null?1:prev.res==='lost'?Math.min(8,prev.st*2):1, how:'1%, doubled after every loss, back to 1% on a win. Cap 8%.', when:'The chase — wins the money back until the run that takes 15% in four bets.'}
+    ];
+    const other=this.state.vsPlan||'Compounding 1%'; const on={'Your stakes':true,[other]:true}; const simLines=PLANS.filter(p=>on[p.name]).map(p=>{ let c=0,pk=0,dd=0,prev=null; const arr=[0], sts=[]; settled.forEach(b=>{ const r=this.res(b); const st=p.f(b,c,prev); c+= r==='won'?st*(b.odds-1): r==='lost'?-st:0; arr.push(c); if(c>pk)pk=c; if(pk-c>dd)dd=pk-c; prev={res:r,st}; sts.push(st); }); return {name:p.name,sub:p.sub,color:p.color,arr,end:c,dd,sts}; });
+    const smn=Math.min(0,...simLines.flatMap(l=>l.arr)), smx=Math.max(0,...simLines.flatMap(l=>l.arr)), sspan=(smx-smn)||1;
+    const SY=v=>6+214*(smx-v)/sspan, SX=i=>36+1220*i/Math.max(1,settled.length);
+    const sstep=sspan>200?50:sspan>80?20:sspan>40?10:sspan>16?5:sspan>8?2:1; const sTicks=[]; for(let v=Math.ceil(smn/sstep)*sstep; v<=smx; v+=sstep) sTicks.push({y:SY(v).toFixed(1), top:(SY(v)-5).toFixed(1)+'px', label:(v>0?'+':'')+v+'%', stroke:v===0?'rgba(255,255,255,0.22)':'rgba(255,255,255,0.06)', dash:v===0?'0':'3 4'});
+    const yL=simLines.find(l=>l.name==='Your stakes'), oL=simLines.find(l=>l.name===other)||yL; const oP=PLANS.find(p=>p.name===other);
+    const toPath=a=>a.map((v,i)=>(i?'L':'M')+SX(i).toFixed(1)+' '+SY(v).toFixed(1)).join(' ');
+    const simArea=toPath(yL.arr)+' '+oL.arr.slice().reverse().map((v,j)=>'L'+SX(oL.arr.length-1-j).toFixed(1)+' '+SY(v).toFixed(1)).join(' ')+' Z';
+    const worstMonth=arr=>{ const m={}; settled.forEach((b,i)=>{ const k=b.date.getMonth(); m[k]=(m[k]||0)+(arr[i+1]-arr[i]); }); const vals=Object.values(m); return vals.length?Math.min(...vals):0; };
+    const bigLoss=arr=>{ let w=0; for(let i=1;i<arr.length;i++) w=Math.min(w,arr[i]-arr[i-1]); return w; };
+    const dRow=(l,a,b,betterUp)=>{ const d=b-a; const good=betterUp?d>0:d<0; return {l, a:sgn(a), b:sgn(b), d:(d>0?'+':d<0?'−':'')+Math.abs(d).toFixed(1), c:d===0?C.lab:good?C.pos:C.neg}; };
+    const gapArr=oL.arr.map((v,i)=>v-yL.arr[i]); const gMax=Math.max(...gapArr), gMin=Math.min(...gapArr);
+    const sim={ yTicks:sTicks, meta:`${settled.length} bets · cumulative % of the starting bankroll`, note:'Same bets and results, only the stake changes. A plan is judged on the whole season, not the end figure alone: read End together with Max drawdown and Biggest single loss. The Kelly line uses the closing price you did not know at the time — a ceiling, not a plan.',
+      otherName:oL.name, otherSub:oP?oP.sub:'', otherColor:oL.color, yourHow:PLANS[0].how, otherHow:oP?oP.how:'', otherWhen:oP?oP.when:'', otherRisk:oP?oP.risk:'', diffTxt:(()=>{ const st=a=>({avg:avg(a), lo:a.length?Math.min(...a):0, hi:a.length?Math.max(...a):0}); const y=st(yL.sts), o=st(oL.sts.filter(s=>s>0)); const skipped=oL.sts.filter(s=>s===0).length; const ahead=oL.end-yL.end; return `You averaged ${y.avg.toFixed(2)}% a bet (${y.lo.toFixed(1)}–${y.hi.toFixed(1)}%), the plan ${o.avg.toFixed(2)}% (${o.lo.toFixed(1)}–${o.hi.toFixed(1)}%)${skipped?`, skipping ${skipped} of ${settled.length} bets`:''}. Same results: ${ahead>=0?'+':'−'}${Math.abs(ahead).toFixed(1)}% at the end, drawdown ${Math.abs(oL.dd-yL.dd).toFixed(1)}% ${oL.dd<=yL.dd?'shallower':'deeper'}.`; })(), yourPath:toPath(yL.arr), otherPath:toPath(oL.arr), area:simArea, areaFill:oL.end>=yL.end?'rgba(92,203,132,0.08)':'rgba(224,98,102,0.08)',
+      gapTxt:`plan ahead by up to ${gMax.toFixed(1)}%, behind by up to ${Math.abs(gMin).toFixed(1)}%`,
+      deltas:[dRow('End',yL.end,oL.end,true), dRow('Max drawdown',-yL.dd,-oL.dd,true), dRow('Worst month',worstMonth(yL.arr),worstMonth(oL.arr),true), dRow('Biggest single loss',bigLoss(yL.arr),bigLoss(oL.arr),true)],
+      plans:PLANS.filter(p=>p.name!=='Your stakes').map(p=>({name:p.name, how:p.how, sw:p.color, bg:p.name===other?'#1B2031':'transparent', color:p.name===other?'#FFFFFF':C.lab, bd:p.name===other?'rgba(255,255,255,0.20)':'rgba(255,255,255,0.06)', onClick:()=>this.setState({vsPlan:p.name})})) };
+    // heat
+    const dayKey=d=>d.getFullYear()+'-'+d.getMonth()+'-'+d.getDate(); const byDay={}; all.forEach(b=>{ const k=dayKey(b.date); (byDay[k]=byDay[k]||{pl:0,n:0,pend:0,bets:[]}); byDay[k].bets.push(b); if(this.res(b)){byDay[k].pl+=this.pl(b); byDay[k].n++;} else byDay[k].pend++; });
+    const mon=new Date(today); mon.setDate(mon.getDate()-((mon.getDay()+6)%7)); const gridStart=new Date(mon); gridStart.setDate(gridStart.getDate()-25*7);
+    const cells=[], hmonths=[]; let pm=-1; const DN=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+    for(let w=0;w<26;w++){ for(let dI=0;dI<7;dI++){ const d=new Date(gridStart); d.setDate(d.getDate()+w*7+dI); if(dI===0&&d.getMonth()!==pm){ pm=d.getMonth(); hmonths.push({left:(w*32)+'px',label:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][pm]}); }
+      const v=byDay[dayKey(d)]; const future=d>today; let bg='rgba(255,255,255,0.04)', fg='transparent', n='';
+      if(future) bg='transparent'; else if(v&&(v.n||v.pend)){ const a=Math.min(1,.3+Math.abs(v.pl)/3*.7); bg= v.pend&&!v.n? 'rgba(106,154,248,0.35)' : v.pl>0?`rgba(92,203,132,${a.toFixed(2)})`: v.pl<0?`rgba(224,98,102,${a.toFixed(2)})`:'rgba(255,255,255,0.12)'; fg='rgba(255,255,255,0.92)'; const eur=Math.round(v.pl*100); n= v.n? (eur>0?'+':eur<0?'−':'')+Math.abs(eur) : '·'; }
+      const key=dayKey(d), hov=this.state.hoverDay===key, sel=this.state.openDay===key, hasB=!!(v&&v.bets.length);
+      const rowOf=b=>{ const r=this.res(b); return {text:b.text, meta:`${b.tour} · ${b.market} · @ ${b.odds.toFixed(2)} · ${b.stake}%`, res:r?r.toUpperCase():'PENDING', resC:r==='won'?C.pos:r==='lost'?C.neg:r==='void'?C.lab:'#5B9BFF', pl:r?sgn(this.pl(b)):'—', plC:r?col(this.pl(b)):C.lab}; };
+      const wn=v&&v.n?v.bets.filter(b=>this.res(b)==='won').length:0, ls=v&&v.n?v.bets.filter(b=>this.res(b)==='lost').length:0;
+      cells.push({bg,fg,n,hasB,t:hasB?'':`${DN[dI]} ${fmtD(d)} · no bets`, ring:sel?'0 0 0 2px #FFFFFF':hov&&hasB?'0 0 0 1px rgba(255,255,255,0.45)':'none', cursor:hasB?'pointer':'default',
+        showPop:hov&&hasB&&!sel, popLeft:w>14?'auto':'-6px', popRight:w>14?'-6px':'auto', title:`${DN[dI]} ${fmtD(d)}`, sub:hasB?`${v.n} settled${v.pend?` · ${v.pend} pending`:''} · ${wn}–${ls} · ${sgn(v.pl)} = ${(v.pl*100>0?'+':'')+Math.round(v.pl*100)} €`:'', rows:hasB?v.bets.map(rowOf):[],
+        onEnter:()=>{ if(hasB) this.setState({hoverDay:key}); }, onLeave:()=>{ if(this.state.hoverDay===key) this.setState({hoverDay:null}); }, onClick:()=>{ if(hasB) this.setState(s=>({openDay:s.openDay===key?null:key})); } }); } }
+    const openCell=cells.find(c=>c.hasB&&this.state.openDay&&c.ring==='0 0 0 2px #FFFFFF')||null;
+    const daysWith=Object.values(byDay).filter(v=>v.n).length, greenDays=Object.values(byDay).filter(v=>v.pl>0).length;
+    const heat={cells, months:hmonths, days:DN, open:openCell, hasOpen:!!openCell, onClose:()=>this.setState({openDay:null}), meta:`${daysWith} betting days this season · ${greenDays} finished up · ${daysWith-greenDays} down or flat`};
+    // months
+    const mg={}; all.forEach(b=>{ if(!this.res(b)) return; const k=b.date.getMonth(); (mg[k]=mg[k]||[]).push(b); });
+    const MN=['January','February','March','April','May','June','July','August','September','October','November','December'];
+    const months=Object.keys(mg).map(Number).sort((a,b)=>b-a).map(k=>{ const s=this.stats(mg[k]); return Object.assign({name:MN[k]+' 2026', n:s.n, pl:sgn(s.profit), plC:col(s.profit), onClick:()=>this.setState({openMonth:k}), rowBg:this.state.openMonth===k?'rgba(255,255,255,0.04)':'transparent'}, bar(s.roi)); });
+    const om=this.state.openMonth; const omBets=om!==null&&mg[om]?mg[om].slice().sort((a,b)=>b.date-a.date||b.id-a.id):[]; const omS=omBets.length?this.stats(omBets):null;
+    const monthPop=omS?{ title:MN[om]+' 2026', sub:`${omS.n} settled bets · ${omS.w}–${omS.l}${omS.v?'–'+omS.v+' void':''} · ${omS.staked.toFixed(1)}% staked`, onClose:()=>this.setState({openMonth:null}), stop:e=>e.stopPropagation(),
+      stats:[{l:'P/L',v:sgn(omS.profit),c:col(omS.profit)},{l:'ROI',v:sgn(omS.roi*100),c:col(omS.roi)},{l:'Win rate',v:omS.w+omS.l?Math.round(100*omS.w/(omS.w+omS.l))+'%':'—',c:'#FFFFFF'},{l:'Avg CLV',v:omS.clv===null?'—':sgn(omS.clv*100),c:col(omS.clv)}],
+      rows:omBets.map(b=>{ const r=this.res(b); const c=this.clv(b); return {date:fmtD(b.date), resC:r==='won'?C.pos:r==='lost'?C.neg:C.lab, text:b.text, meta:`${b.tour} · ${Component.LEVEL[b.level]} · ${b.surface}`, market:b.market+(b.line?' '+b.line:''), odds:b.odds.toFixed(2), close:b.close?b.close.toFixed(2):'—', clv:c===null?'—':sgn(c*100), clvC:col(c), stake:b.stake.toFixed(1)+'%', res:r.toUpperCase(), pl:sgn(this.pl(b)), plC:col(this.pl(b))}; }) }:null;
+    // calendar · month cards (1e, 2026-10-29)
+    { const DNc=['Mon','Tue','Wed','Thu','Fri','Sat','Sun']; const yr=today.getFullYear();
+      const byD={}; all.forEach(b=>{ const k=dayKey(b.date); (byD[k]=byD[k]||{pl:0,n:0,pend:0,w:0,bets:[]}); byD[k].bets.push(b); const r=this.res(b); if(r){ byD[k].pl+=this.pl(b); byD[k].n++; if(r==='won') byD[k].w++; } else byD[k].pend++; });
+      const eur=pl=>{ const e=Math.round(pl*100); return (e>0?'+':e<0?'−':'')+Math.abs(e).toLocaleString('en-US'); };
+      const tint=pl=>{ const a=Math.abs(pl); const al=a<1.2?0.3:a<2.8?0.55:0.9; return pl>0?`rgba(92,203,132,${al})`:pl<0?`rgba(224,98,102,${al})`:'rgba(255,255,255,0.14)'; };
+      const isT=d=>d.getFullYear()===today.getFullYear()&&d.getMonth()===today.getMonth()&&d.getDate()===today.getDate();
+      const rowOf=b=>{ const r=this.res(b); return {text:b.text, meta:`${b.tour} · ${b.market} · @ ${b.odds.toFixed(2)} · ${b.stake}%`, res:r?r.toUpperCase():'PENDING', resC:r==='won'?C.pos:r==='lost'?C.neg:r==='void'?C.lab:'#5B9BFF', pl:r?sgn(this.pl(b)):'—', plC:r?col(this.pl(b)):C.lab}; };
+      const mgA={}; all.forEach(b=>{ const k=b.date.getMonth(); (mgA[k]=mgA[k]||[]).push(b); });
+      const cOpen=this.state.calOpen===undefined?today.getMonth():this.state.calOpen;
+      const cards=Object.keys(mgA).map(Number).sort((a,b)=>a-b).map(m=>{ const settled=mgA[m].filter(b=>this.res(b)); const s=settled.length?this.stats(settled):{n:0,w:0,l:0,profit:0,roi:0}; const fd=(new Date(yr,m,1).getDay()+6)%7, dim=new Date(yr,m+1,0).getDate(); const rows=[]; let dd=0;
+        for(let r=0;r<6;r++){ const cells=[]; for(let c=0;c<7;c++){ const idx=r*7+c-fd; const inM=idx>=0&&idx<dim; const d=new Date(yr,m,1+idx); const v=inM?byD[dayKey(d)]:null; if(v&&v.n) dd++; const fut=d>today;
+          cells.push({bg:!inM?'transparent':fut?'transparent':!v?'rgba(255,255,255,0.04)':v.pend&&!v.n?'rgba(106,154,248,0.35)':tint(v.pl), ring:inM&&isT(d)?'0 0 0 1px rgba(255,255,255,0.4)':'none', t:inM?`${DNc[c]} ${fmtD(d)}${v&&v.n?' · '+sgn(v.pl)+' = '+eur(v.pl)+' €':v&&v.pend?' · '+v.pend+' pending':fut?'':' · no bets'}`:''}); } rows.push({cells}); }
+        const on=cOpen===m; return {name:MN[m]+' '+yr, pl:s.n?sgn(s.profit):'—', plC:s.n?col(s.profit):C.lab, sub:`${s.n} bets · ${s.w}–${s.l} · ${dd} betting days`, roi:s.n?sgn(s.roi*100):'—', roiC:s.n?col(s.roi):C.lab, rows, bg:on?'#131623':'#0A0D14', bd:on?'rgba(255,255,255,0.16)':'rgba(255,255,255,0.06)', chev:on?'▴':'▾', onClick:()=>this.setState(st=>({calOpen:st.calOpen===m?null:m}))}; });
+      let openP=null;
+      if(cOpen!==null&&mgA[cOpen]){ const m=cOpen; const settled=mgA[m].filter(b=>this.res(b)); const s=settled.length?this.stats(settled):null; const fd=(new Date(yr,m,1).getDay()+6)%7, dim=new Date(yr,m+1,0).getDate(), rowsN=Math.ceil((fd+dim)/7); const prow=[], dayList=[];
+        for(let r=0;r<rowsN;r++){ const cells=[]; let wpl=0,wn=0,any=false; for(let c=0;c<7;c++){ const idx=r*7+c-fd; const inM=idx>=0&&idx<dim; const d=new Date(yr,m,1+idx); const hk=dayKey(d); const v=inM?byD[hk]:null; const has=!!(v&&(v.n||v.pend)); if(v&&v.n){ wpl+=v.pl; wn+=v.n; any=true; dayList.push({d,c,v}); } const hovOn=has&&this.state.calHov===hk; const last=r>=rowsN-2;
+          cells.push({dt:String(d.getDate()), dtC:!inM?'rgba(163,170,190,0.3)':has?'#E7E9EE':'rgba(163,170,190,0.7)', fig:v&&v.n?eur(v.pl):v&&v.pend?'·':'', figC:v&&v.n?col(v.pl):C.lab, bg:!inM?'transparent':v&&v.n?(v.pl>0?'rgba(92,203,132,0.09)':v.pl<0?'rgba(224,98,102,0.09)':'rgba(255,255,255,0.05)'):v&&v.pend?'rgba(106,154,248,0.10)':'rgba(255,255,255,0.02)', ring:inM&&isT(d)?'inset 0 0 0 1px rgba(255,255,255,0.45)':'none', sub:has?(v.n?`${v.n} settled${v.pend?' · '+v.pend+' pending':''} · ${v.w}–${v.n-v.w}`:`${v.pend} pending`):'', short:has?(v.n?`${v.w}–${v.n-v.w}`:`${v.pend} pend.`):'', cursor:has?'pointer':'default', showPop:hovOn, popSide:c>3?'auto':'0', popSideR:c>3?'0':'auto', popTop:last?'auto':'100%', popBot:last?'100%':'auto', popMt:last?'0':'4px', popMb:last?'4px':'0', title:`${DNc[c]} ${fmtD(d)}`, rows:has?v.bets.map(rowOf):[], onEnter:()=>{ if(has) this.setState({calHov:hk}); }, onLeave:()=>{ if(this.state.calHov===hk) this.setState({calHov:null}); }}); }
+          prow.push({cells, pl:any?eur(wpl):'—', plC:any?col(wpl):C.lab, n:any?wn+(wn===1?' bet':' bets'):'', wpl, any}); }
+        const bd=dayList.length?dayList.reduce((p,x)=>x.v.pl>p.v.pl?x:p,dayList[0]):null, wd=dayList.length?dayList.reduce((p,x)=>x.v.pl<p.v.pl?x:p,dayList[0]):null; const wks=prow.filter(r=>r.any); const bw=wks.length?wks.reduce((p,r)=>r.wpl>p.wpl?r:p,wks[0]):null; const wr=s&&s.w+s.l?Math.round(100*s.w/(s.w+s.l))+'%':'—';
+        openP={title:MN[m]+' '+yr, sub:s?`${s.n} settled bets · ${s.w}–${s.l}${s.v?'–'+s.v+' void':''} · ${dayList.length} betting days`:'No settled bets yet', rows:prow, dn:DNc, onClose:()=>this.setState({calOpen:null}), onFull:()=>this.setState({openMonth:m}),
+          stats:[{l:'P/L',v:s?sgn(s.profit):'—',c:s?col(s.profit):C.lab,s:''},{l:'ROI',v:s?sgn(s.roi*100):'—',c:s?col(s.roi):C.lab,s:''},{l:'Win rate',v:wr,c:'#FFFFFF',s:''},{l:'Avg CLV',v:s&&s.clv!==null?sgn(s.clv*100):'—',c:s?col(s.clv):C.lab,s:''},{l:'Best day',v:bd?eur(bd.v.pl)+' €':'—',c:bd?col(bd.v.pl):C.lab,s:bd?`${DNc[bd.c]} ${fmtD(bd.d)}`:''},{l:'Worst day',v:wd?eur(wd.v.pl)+' €':'—',c:wd?col(wd.v.pl):C.lab,s:wd?`${DNc[wd.c]} ${fmtD(wd.d)}`:''},{l:'Best week',v:bw?eur(bw.wpl)+' €':'—',c:bw?col(bw.wpl):C.lab,s:bw?bw.n:''},{l:'Up days',v:`${dayList.filter(x=>x.v.pl>0).length} of ${dayList.length}`,c:'#FFFFFF',s:''}]}; }
+      const SA=this.stats(all.filter(b=>this.res(b)));
+      var calendar={cards, dn:['M','T','W','T','F','S','S'], open:openP, hasOpen:!!openP, meta:`${daysWith} betting days this season · ${greenDays} finished up · ${daysWith-greenDays} down or flat`, seasonSub:`Season · ${SA.n} bets · ${SA.w}–${SA.l}`, seasonPl:sgn(SA.profit), seasonC:col(SA.profit)}; }
+    // ledger
+    const lf=this.state.lf; const lfs=[['all','All'],['pending','Pending'],['won','Won'],['lost','Lost']].map(([k,label])=>({label, bg:lf===k?'#1B2031':'transparent', color:lf===k?'#FFFFFF':C.lab, onClick:()=>this.setState({lf:k})}));
+    const sorted=list.slice().sort((a,b)=>(this.res(b)?0:1)-(this.res(a)?0:1)||b.date-a.date||b.id-a.id);
+    const filt=sorted.filter(b=>{ const r=this.res(b); return lf==='all'||(lf==='pending'?!r:r===lf); });
+    const chip={won:['WON','rgba(92,203,132,0.14)','rgba(92,203,132,0.40)',C.pos],lost:['LOST','rgba(224,98,102,0.14)','rgba(224,98,102,0.40)',C.neg],void:['VOID','rgba(255,255,255,0.05)','rgba(255,255,255,0.18)',C.lab]};
+    const ledger=filt.map(b=>{ const r=this.res(b); const c=this.clv(b); const ch=r?chip[r]:null; const settle=v=>()=>this.setState(s=>({settled:Object.assign({},s.settled,{[b.id]:v})}));
+      return { date:fmtD(b.date), dow:DN[(b.date.getDay()+6)%7], text:b.text, meta:`${b.tour} · ${Component.LEVEL[b.level]} · ${b.surface}${b.type&&b.type!=='Single'?' · '+b.type+' · '+b.legs+' legs':''}${b.timing==='live'?' · Live':''}${b.tilt?' · after two losses':''}`, market:b.market+(b.line?' '+b.line:''), book:b.book, odds:b.odds.toFixed(2), close:b.close?b.close.toFixed(2):'—', clv:c===null?'—':sgn(c*100), clvC:col(c), stake:b.stake.toFixed(1)+'%',
+        pending:!r, settled:!!r, locked:isLocked(b), canUndo:b.pending&&!!r&&!this.state.locked[b.id], onLock:()=>this.setState(s=>({locked:Object.assign({},s.locked,{[b.id]:true})})), onUndo:()=>this.setState(s=>{ const n=Object.assign({},s.settled); delete n[b.id]; return {settled:n}; }), onWon:settle('won'), onLost:settle('lost'), onVoid:settle('void'),
+        chip:ch?ch[0]:'', chipBg:ch?ch[1]:'', chipBd:ch?ch[2]:'', chipC:ch?ch[3]:'', pl:r?sgn(this.pl(b)):'—', plC:r?col(this.pl(b)):C.lab, rowBg:!r?'rgba(106,154,248,0.05)':'transparent' }; });
+    return Object.assign(this.baVals(), { headMeta, periods, hero, curve, dims, bdRows, tk, mktOpen:!!mktG, mktPop, bdHead:bdHeadRow[2], bdMeta:`${S.n} settled bets in the period, cut eight ways · ${order?'in order':'sorted by P/L'} · every row carries its count`,
+      banks, archived, hasArchived:archived.length>0, onAddBank, pageStats, onAllTime, allBg:tA.bg, allBd:tA.bd, allC:tA.c, allW:tA.w, bankName:curBank.name, certTxt, filters, filterTxt, menuFoot:`${list.length} of ${perList.length} bets in the period · a count is what that row would leave given the others`, hasFilters:nF>0, onClearFilters, isCustom:per==='custom', range:rg, onRange, periodOpen:menu==='period', filtersOpen:menu==='filters', onTogglePeriod, onToggleFilters, periodLabel:PERL[per], periodBg:tP.bg, periodBd:tP.bd, periodC:tP.c, periodW:tP.w, filtersLabel, filtersBg:tF.bg, filtersBd:tF.bd, filtersC:tF.c, filtersW:tF.w, logOpen:this.state.logOpen, planHint:!!ap, planHintTxt, onUsePlanStake, logBtn:this.state.logOpen?'Close':'+ Log a bet', onLogToggle, form, onForm, legs, canAddLeg, onAddLeg, legsNote, oddsLabel, oddsTxt, oddsC, timings, types, needOther:marketOther||bookOther, marketOther, bookOther, onPost, postBg:valid?'#007AFF':'#131623', postC:valid?'#FFFFFF':C.lab, logHint, logHintC:valid?'#E7E9EE':C.lab, bdFoot:`ROI bar clipped at ±40% · CLV = your price ÷ closing price − 1, over bets with a close · P/L in % of bankroll`,
+      strengths:strengthsG.map(mk), leaks:leaksG.map(mk), noStrengths:!strengthsG.length, noStrengthsTxt:`No segment with ${minN}+ bets is clearly profitable in this period.`, noLeaks:!leaksG.length, noLeaksTxt:`No losing segment with ${minN}+ bets in this period.`, segMeta:`segments with ${minN}+ bets`,
+      leakFoot:leaksG.length?`Without these ${leaksG.length} segments the period would read ${sgn(S.profit-leakSum)} instead of ${sgn(S.profit)} — in hindsight. Segments overlap, so the three do not simply add up.`:'',
+      onToggleDim, dimOpen:menu==='dim', dimLabel, dimBg:tD.bg, dimBd:tD.bd, dimC:tD.c, dimW:tD.w, bdTotLabel:'All · '+dimLabel.toLowerCase(), bdTotN:String(bdTot.n), bdTotWL:bdTot.w+'–'+bdTot.l, bdTotRoi:sgn(bdTot.roi*100), bdTotRoiC:col(bdTot.roi), bdTotClv:bdTot.clv===null?'—':sgn(bdTot.clv*100), bdTotClvC:col(bdTot.clv), bdTotPl:sgn(bdTot.profit), bdTotPlC:col(bdTot.profit),
+      disc, discSum, discSumC, discSumTxt, discPeriod:PERL[per].toLowerCase(), verdicts, sim, heat, months, monthPop, calendar, monthOpen:!!monthPop, lfs, ledger, ledgerGroups,
+      viewResults:(this.state.view||'results')==='results', viewInsights:this.state.view==='insights', viewStaking:this.state.view==='staking', onViewStaking:()=>this.setState({view:'staking'}),
+      viewStkW:this.state.view==='staking'?700:600, viewStkC:this.state.view==='staking'?'#FFFFFF':C.lab, viewStkBg:this.state.view==='staking'?'#1B2031':'transparent',
+      planApplied:!!this.state.appliedPlan, appliedTxt:this.state.appliedPlan?`${this.state.appliedPlan} is on for ${curBank.name} · the next bet you log is pre-sized`:'', onClearPlan:()=>this.setState({appliedPlan:null}),
+      onApplyPlan:()=>this.setState(s=>({appliedPlan:s.vsPlan||'Compounding 1%'})), applyLabel:this.state.appliedPlan===other?'Applied to '+curBank.name:'Apply '+other+' to this bankroll', applyBg:this.state.appliedPlan===other?'#131623':'#007AFF', applyC:this.state.appliedPlan===other?C.lab:'#FFFFFF', applyBd:this.state.appliedPlan===other?'rgba(255,255,255,0.10)':'transparent', onViewResults:()=>this.setState({view:'results'}), onViewInsights:()=>this.setState({view:'insights'}),
+      viewResW:(this.state.view||'results')==='results'?700:600, viewResC:(this.state.view||'results')==='results'?'#FFFFFF':C.lab, viewResBg:(this.state.view||'results')==='results'?'#1B2031':'transparent',
+      viewInsW:this.state.view==='insights'?700:600, viewInsC:this.state.view==='insights'?'#FFFFFF':C.lab, viewInsBg:this.state.view==='insights'?'#1B2031':'transparent', insBadge:judged.length?`${bad}/${judged.length}`:'', insBadgeC:bad?C.neg:C.pos, ledgerMeta:`${filt.length} of ${list.length} bets in the period · pending first · settle a bet and every figure above recomputes`, ledgerFoot:`${filt.length} bets · a result you settle here can be undone until you lock it · a locked result (blue tick) is frozen for good` });
+  }
+}
+</script>
+</body>
+</html>

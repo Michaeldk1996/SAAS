@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>body{margin:0;background:#05060A;font-family:'IBM Plex Sans',sans-serif;color:#E7E9EE;-webkit-font-smoothing:antialiased} a{color:#5B9BFF;text-decoration:none} a:hover{color:#8AB8FF}</style>
+</helmet>
+<section style="display:flex; flex-direction:column; gap:40px; padding:36px; align-items:flex-start;">
+  <div style="display:flex; flex-direction:column; gap:6px;"><span style="font-size:20px; font-weight:800; color:#FFFFFF;">Calendar · five treatments</span><span style="font-size:13px; color:#A3AABE; max-width:760px; line-height:1.5;">Same 26 demo weeks (4 May → 29 Oct, 10,000 € bankroll) in every card. Each card is the Calendar block at the page width; nothing else on the page changes.</span></div>
+
+  <!-- 1a -->
+  <div id="1a" style="display:flex; flex-direction:column; gap:10px; width:1292px;">
+    <div style="display:flex; align-items:baseline; gap:12px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:700; letter-spacing:0.08em; color:#05060A; background:#E7E9EE; border-radius:4px; padding:2px 6px;">1a</span><span style="font-size:15px; font-weight:700; color:#FFFFFF;">Quiet heat</span><span style="font-size:12.5px; color:#A3AABE;">The current grid, calmed: no figures in the cells, three tonal steps only, month ledger on the right. The € shows on hover and pins on click.</span></div>
+    <div style="background:#0E1019; border:1px solid rgba(255,255,255,0.05); box-shadow:inset 0 1px 0 rgba(143,170,255,0.03); border-radius:12px; display:grid; grid-template-columns:minmax(0,1fr) 320px;">
+      <div style="padding:18px 22px 16px; display:flex; flex-direction:column; gap:10px; border-right:1px solid rgba(255,255,255,0.05);">
+        <div style="display:flex; align-items:baseline; justify-content:space-between; gap:12px;"><span style="display:flex; gap:10px; align-items:baseline;"><span style="font-size:15px; font-weight:800; color:#FFFFFF;">Calendar</span><span style="font-size:12px; color:#A3AABE;">Last 26 weeks · one cell a day</span></span><span style="display:flex; align-items:center; gap:5px; font-size:11px; color:#A3AABE;"><span style="margin-right:3px;">loss</span><span style="width:12px; height:12px; border-radius:3px; background:rgba(224,98,102,0.9);"></span><span style="width:12px; height:12px; border-radius:3px; background:rgba(224,98,102,0.55);"></span><span style="width:12px; height:12px; border-radius:3px; background:rgba(224,98,102,0.3);"></span><span style="width:12px; height:12px; border-radius:3px; background:rgba(255,255,255,0.05);"></span><span style="width:12px; height:12px; border-radius:3px; background:rgba(92,203,132,0.3);"></span><span style="width:12px; height:12px; border-radius:3px; background:rgba(92,203,132,0.55);"></span><span style="width:12px; height:12px; border-radius:3px; background:rgba(92,203,132,0.9);"></span><span style="margin-left:3px;">win</span></span></div>
+        <div style="position:relative; height:14px; margin-left:38px; margin-top:4px;">
+          <sc-for list="{{ a.months }}" as="m" hint-placeholder-count="6"><span style="position:absolute; left:{{ m.left }}; top:0; font-size:11px; color:#A3AABE; white-space:nowrap;">{{ m.label }}</span></sc-for>
+        </div>
+        <div style="display:flex; gap:14px;">
+          <div style="display:flex; flex-direction:column; gap:6px; width:24px;">
+            <sc-for list="{{ a.days }}" as="d" hint-placeholder-count="7"><span style="height:24px; line-height:24px; font-size:10.5px; color:#A3AABE;">{{ d }}</span></sc-for>
+          </div>
+          <div style="display:grid; grid-auto-flow:column; grid-template-rows:repeat(7,24px); grid-auto-columns:24px; gap:6px;">
+            <sc-for list="{{ a.cells }}" as="c" hint-placeholder-count="182">
+              <span title="{{ c.t }}" onMouseEnter="{{ c.onEnter }}" onMouseLeave="{{ c.onLeave }}" onClick="{{ c.onClick }}" style="position:relative; width:24px; height:24px; border-radius:4px; background:{{ c.bg }}; box-shadow:{{ c.ring }}; cursor:{{ c.cursor }};"><sc-if value="{{ c.showPop }}" hint-placeholder-val="{{ false }}"><span style="position:absolute; z-index:5; top:30px; left:{{ c.popLeft }}; right:{{ c.popRight }}; background:#0C0E16; border:1px solid rgba(255,255,255,0.10); border-radius:8px; box-shadow:0 12px 32px rgba(0,0,0,0.45); padding:8px 11px; display:flex; flex-direction:column; gap:3px; white-space:nowrap; pointer-events:none;"><span style="font-size:12px; font-weight:700; color:#FFFFFF;">{{ c.title }}</span><span style="font-size:11px; color:#A3AABE;">{{ c.sub }}</span></span></sc-if></span>
+            </sc-for>
+          </div>
+        </div>
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-top:6px; padding-top:10px; border-top:1px solid rgba(255,255,255,0.05);"><span style="font-size:11.5px; color:#A3AABE;">{{ a.meta }}</span><span style="font-size:11.5px; color:{{ a.selC }};">{{ a.selTxt }}</span></div>
+      </div>
+      <div style="display:flex; flex-direction:column;">
+        <div style="display:grid; grid-template-columns:minmax(0,1fr) 36px 90px 70px; gap:0 10px; align-items:center; height:30px; padding:0 18px; border-bottom:1px solid rgba(255,255,255,0.05);"><span style="font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">Month</span><span style="text-align:right; font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">Bets</span><span style="text-align:center; font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">ROI</span><span style="text-align:right; font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">P/L</span></div>
+        <sc-for list="{{ a.ledger }}" as="m" hint-placeholder-count="6">
+          <div style="display:grid; grid-template-columns:minmax(0,1fr) 36px 90px 70px; gap:0 10px; align-items:center; height:40px; padding:0 18px; border-bottom:1px solid rgba(255,255,255,0.05); cursor:pointer;" style-hover="background:rgba(255,255,255,0.03);">
+            <span style="font-size:13px; font-weight:600; color:#FFFFFF;">{{ m.name }}</span>
+            <span style="text-align:right; font-family:'IBM Plex Mono',monospace; font-size:12px; color:#E7E9EE;">{{ m.n }}</span>
+            <span style="position:relative; height:6px; background:rgba(255,255,255,0.05); border-radius:2px;"><span style="position:absolute; left:50%; top:-3px; bottom:-3px; width:1px; background:rgba(255,255,255,0.18);"></span><span style="position:absolute; top:0; bottom:0; left:{{ m.barL }}; width:{{ m.barW }}; background:{{ m.barC }}; border-radius:2px;"></span></span>
+            <span style="text-align:right; font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:800; color:{{ m.plC }};">{{ m.pl }}</span>
+          </div>
+        </sc-for>
+        <div style="display:grid; grid-template-columns:minmax(0,1fr) 36px 90px 70px; gap:0 10px; align-items:center; height:40px; padding:0 18px; margin-top:auto; background:#0A0D14; border-radius:0 0 12px 0;"><span style="font-size:12.5px; font-weight:600; color:#A3AABE;">Season</span><span style="text-align:right; font-family:'IBM Plex Mono',monospace; font-size:12px; color:#E7E9EE;">{{ season.n }}</span><span style="text-align:center; font-family:'IBM Plex Mono',monospace; font-size:11.5px; color:{{ season.roiC }};">{{ season.roi }}</span><span style="text-align:right; font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:800; color:{{ season.plC }};">{{ season.pl }}</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 1b -->
+  <div id="1b" style="display:flex; flex-direction:column; gap:10px; width:1292px;">
+    <div style="display:flex; align-items:baseline; gap:12px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:700; letter-spacing:0.08em; color:#05060A; background:#E7E9EE; border-radius:4px; padding:2px 6px;">1b</span><span style="font-size:15px; font-weight:700; color:#FFFFFF;">Month page</span><span style="font-size:12.5px; color:#A3AABE;">A planner: one month at a time, real day boxes with the € in each, the week's net in a column. Months on the right switch the page.</span></div>
+    <div style="background:#0E1019; border:1px solid rgba(255,255,255,0.05); box-shadow:inset 0 1px 0 rgba(143,170,255,0.03); border-radius:12px; display:grid; grid-template-columns:minmax(0,1fr) 300px;">
+      <div style="padding:18px 22px 18px; display:flex; flex-direction:column; gap:14px; border-right:1px solid rgba(255,255,255,0.05);">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:16px;">
+          <span style="display:flex; align-items:center; gap:10px;"><span onClick="{{ b.onPrev }}" style="width:28px; height:28px; border-radius:7px; border:1px solid rgba(255,255,255,0.08); display:flex; align-items:center; justify-content:center; font-size:14px; color:{{ b.prevC }}; cursor:pointer;" style-hover="background:rgba(255,255,255,0.04);">‹</span><span style="font-size:17px; font-weight:800; color:#FFFFFF; min-width:150px; text-align:center;">{{ b.title }}</span><span onClick="{{ b.onNext }}" style="width:28px; height:28px; border-radius:7px; border:1px solid rgba(255,255,255,0.08); display:flex; align-items:center; justify-content:center; font-size:14px; color:{{ b.nextC }}; cursor:pointer;" style-hover="background:rgba(255,255,255,0.04);">›</span></span>
+          <span style="display:flex; align-items:baseline; gap:8px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:18px; font-weight:800; color:{{ b.plC }};">{{ b.pl }}</span><span style="font-size:12.5px; color:#A3AABE;">{{ b.sentence }}</span></span>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:4px;">
+          <div style="display:grid; grid-template-columns:repeat(7,minmax(0,1fr)) 100px; gap:4px; padding-bottom:6px; border-bottom:1px solid rgba(255,255,255,0.06);">
+            <sc-for list="{{ b.dn }}" as="d" hint-placeholder-count="7"><span style="font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE; padding-left:10px;">{{ d }}</span></sc-for>
+            <span style="font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE; text-align:right; padding-right:10px;">Week</span>
+          </div>
+          <sc-for list="{{ b.rows }}" as="r" hint-placeholder-count="5">
+            <div style="display:grid; grid-template-columns:repeat(7,minmax(0,1fr)) 100px; gap:4px;">
+              <sc-for list="{{ r.cells }}" as="c" hint-placeholder-count="7">
+                <span onMouseEnter="{{ c.onEnter }}" onMouseLeave="{{ c.onLeave }}" style="position:relative; height:64px; border-radius:7px; background:{{ c.bg }}; box-shadow:{{ c.ring }}; padding:8px 10px; display:flex; flex-direction:column; justify-content:space-between; cursor:{{ c.cursor }};"><span style="font-size:11px; font-weight:600; color:{{ c.dtC }};">{{ c.dt }}</span><span style="display:flex; align-items:baseline; justify-content:space-between; gap:6px;"><span style="font-size:10px; color:#A3AABE; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ c.sub }}</span><span style="font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:700; color:{{ c.figC }}; white-space:nowrap;">{{ c.fig }}</span></span>
+                  <sc-if value="{{ c.showPop }}" hint-placeholder-val="{{ false }}"><span style="position:absolute; z-index:6; top:{{ c.popTop }}; bottom:{{ c.popBot }}; margin-top:{{ c.popMt }}; margin-bottom:{{ c.popMb }}; left:{{ c.popSide }}; right:{{ c.popSideR }}; width:380px; background:#0C0E16; border:1px solid rgba(255,255,255,0.10); border-radius:10px; box-shadow:0 12px 32px rgba(0,0,0,0.45); padding:10px 12px; display:flex; flex-direction:column; gap:8px; pointer-events:none;"><span style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;"><span style="font-size:12.5px; font-weight:700; color:#FFFFFF;">{{ c.title }}</span><span style="font-size:11px; color:#A3AABE; white-space:nowrap;">{{ c.sub }}</span></span><sc-for list="{{ c.rows }}" as="r" hint-placeholder-count="2"><span style="display:grid; grid-template-columns:minmax(0,1fr) 54px 56px; gap:0 8px; align-items:center;"><span style="display:flex; flex-direction:column; gap:1px; min-width:0;"><span style="font-size:12px; font-weight:600; color:#E7E9EE; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ r.text }}</span><span style="font-size:10.5px; color:#A3AABE; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ r.meta }}</span></span><span style="font-size:9.5px; font-weight:700; letter-spacing:0.08em; color:{{ r.resC }}; text-align:right;">{{ r.res }}</span><span style="font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:800; color:{{ r.plC }}; text-align:right; white-space:nowrap;">{{ r.pl }}</span></span></sc-for></span></sc-if></span>
+              </sc-for>
+              <span style="height:64px; border-radius:7px; background:#0A0D14; border:1px solid rgba(255,255,255,0.05); padding:8px 10px; display:flex; flex-direction:column; justify-content:space-between; align-items:flex-end;"><span style="font-size:10px; color:#A3AABE;">{{ r.n }}</span><span style="font-family:'IBM Plex Mono',monospace; font-size:14px; font-weight:800; color:{{ r.plC }};">{{ r.pl }}</span></span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+      <div style="display:flex; flex-direction:column; padding:14px 12px 12px;">
+        <span style="font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE; padding:0 8px 10px;">Season · by month</span>
+        <sc-for list="{{ b.rail }}" as="m" hint-placeholder-count="6">
+          <div onClick="{{ m.onClick }}" style="display:grid; grid-template-columns:minmax(0,1fr) auto; gap:0 10px; align-items:center; height:44px; padding:0 10px; border-radius:8px; cursor:pointer; background:{{ m.bg }}; box-shadow:inset 0 0 0 1px {{ m.bd }};" style-hover="background:rgba(255,255,255,0.03);">
+            <span style="display:flex; flex-direction:column; gap:2px;"><span style="font-size:13px; font-weight:{{ m.w }}; color:{{ m.c }};">{{ m.name }}</span><span style="font-size:10.5px; color:#A3AABE;">{{ m.n }}</span></span>
+            <span style="font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:800; color:{{ m.plC }};">{{ m.pl }}</span>
+          </div>
+        </sc-for>
+        <div style="margin-top:auto; display:flex; align-items:center; justify-content:space-between; padding:12px 10px 0; border-top:1px solid rgba(255,255,255,0.05);"><span style="font-size:12px; color:#A3AABE; white-space:nowrap;">Season · {{ season.n }} bets</span><span style="font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:800; color:{{ season.plC }};">{{ season.pl }}</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 1c -->
+  <div id="1c" style="display:flex; flex-direction:column; gap:10px; width:1292px;">
+    <div style="display:flex; align-items:baseline; gap:12px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:700; letter-spacing:0.08em; color:#05060A; background:#E7E9EE; border-radius:4px; padding:2px 6px;">1c</span><span style="font-size:15px; font-weight:700; color:#FFFFFF;">Week ledger</span><span style="font-size:12.5px; color:#A3AABE;">One row a week, newest first, grouped by month like the Certified ledger: seven day chips, bets, the week's net and a signed bar.</span></div>
+    <div style="background:#0E1019; border:1px solid rgba(255,255,255,0.05); box-shadow:inset 0 1px 0 rgba(143,170,255,0.03); border-radius:12px; overflow:hidden;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; padding:18px 22px 12px;"><span style="display:flex; gap:10px; align-items:baseline;"><span style="font-size:15px; font-weight:800; color:#FFFFFF;">Calendar</span><span style="font-size:12px; color:#A3AABE;">Week by week · last 26 weeks</span></span><span style="font-size:12px; color:#A3AABE;">{{ c.meta }}</span></div>
+      <div style="display:grid; grid-template-columns:170px minmax(0,1fr) 50px 90px 140px; gap:0 16px; align-items:center; height:28px; padding:0 22px; border-top:1px solid rgba(255,255,255,0.05); border-bottom:1px solid rgba(255,255,255,0.05);">
+        <span style="font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">Week</span>
+        <span style="display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:6px;"><sc-for list="{{ c.dn }}" as="d" hint-placeholder-count="7"><span style="font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE; text-align:center;">{{ d }}</span></sc-for></span>
+        <span style="text-align:right; font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">Bets</span>
+        <span style="text-align:right; font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">Net</span>
+        <span style="text-align:center; font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">− · +</span>
+      </div>
+      <sc-for list="{{ c.weeks }}" as="w" hint-placeholder-count="10">
+        <sc-if value="{{ w.hasHead }}" hint-placeholder-val="{{ false }}"><div style="display:flex; align-items:center; justify-content:space-between; height:28px; padding:0 22px; background:#0A0D14; border-bottom:1px solid rgba(255,255,255,0.05);"><span style="font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">{{ w.head }}</span><span style="display:flex; gap:10px; align-items:baseline;"><span style="font-size:11px; color:#A3AABE;">{{ w.headN }}</span><span style="font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:800; color:{{ w.headPlC }};">{{ w.headPl }}</span></span></div></sc-if>
+        <div style="display:grid; grid-template-columns:170px minmax(0,1fr) 50px 90px 140px; gap:0 16px; align-items:center; height:50px; padding:0 22px; border-bottom:1px solid rgba(255,255,255,0.05);" style-hover="background:rgba(255,255,255,0.025);">
+          <span style="display:flex; flex-direction:column; gap:2px;"><span style="font-size:13px; font-weight:600; color:#FFFFFF;">{{ w.label }}</span><span style="font-size:11px; color:#A3AABE;">{{ w.range }}</span></span>
+          <span style="display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:6px;"><sc-for list="{{ w.days }}" as="d" hint-placeholder-count="7"><span title="{{ d.t }}" style="height:28px; border-radius:5px; background:{{ d.bg }}; border:{{ d.bd }}; display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:700; letter-spacing:-0.02em; color:rgba(255,255,255,0.92);">{{ d.fig }}</span></sc-for></span>
+          <span style="text-align:right; font-family:'IBM Plex Mono',monospace; font-size:12.5px; color:#E7E9EE;">{{ w.n }}</span>
+          <span style="text-align:right; font-family:'IBM Plex Mono',monospace; font-size:13.5px; font-weight:800; color:{{ w.plC }};">{{ w.pl }}</span>
+          <span style="position:relative; height:6px; background:rgba(255,255,255,0.05); border-radius:2px;"><span style="position:absolute; left:50%; top:-3px; bottom:-3px; width:1px; background:rgba(255,255,255,0.18);"></span><span style="position:absolute; top:0; bottom:0; left:{{ w.barL }}; width:{{ w.barW }}; background:{{ w.barC }}; border-radius:2px;"></span></span>
+        </div>
+      </sc-for>
+      <div onClick="{{ c.onToggle }}" style="display:flex; align-items:center; justify-content:center; height:40px; font-size:12px; font-weight:600; color:#5B9BFF; cursor:pointer;" style-hover="background:rgba(255,255,255,0.025);">{{ c.toggle }}</div>
+    </div>
+  </div>
+
+  <!-- 1d -->
+  <div id="1d" style="display:flex; flex-direction:column; gap:10px; width:1292px;">
+    <div style="display:flex; align-items:baseline; gap:12px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:700; letter-spacing:0.08em; color:#05060A; background:#E7E9EE; border-radius:4px; padding:2px 6px;">1d</span><span style="font-size:15px; font-weight:700; color:#FFFFFF;">Daily bars</span><span style="font-size:12.5px; color:#A3AABE;">The calendar as a signed chart: one bar a day on a zero line, size says how much, not just which way. Months as a band under it.</span></div>
+    <div style="background:#0E1019; border:1px solid rgba(255,255,255,0.05); box-shadow:inset 0 1px 0 rgba(143,170,255,0.03); border-radius:12px; padding:18px 22px 16px; display:flex; flex-direction:column; gap:10px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between;"><span style="display:flex; gap:10px; align-items:baseline;"><span style="font-size:15px; font-weight:800; color:#FFFFFF;">Calendar</span><span style="font-size:12px; color:#A3AABE;">Day by day · last 26 weeks · € on a 10,000 € bankroll</span></span><span style="display:flex; align-items:center; gap:14px; font-size:11px; color:#A3AABE;"><span style="display:flex; align-items:center; gap:6px;"><span style="width:8px; height:8px; border-radius:2px; background:#5CCB84;"></span>day up</span><span style="display:flex; align-items:center; gap:6px;"><span style="width:8px; height:8px; border-radius:2px; background:#E06266;"></span>day down</span><span style="display:flex; align-items:center; gap:6px;"><span style="width:8px; height:2px; background:rgba(255,255,255,0.2);"></span>no bets</span></span></div>
+      <div style="display:flex; gap:12px; margin-top:6px;">
+        <div style="width:44px; position:relative; height:170px; flex:none;"><span style="position:absolute; top:0; right:0; font-family:'IBM Plex Mono',monospace; font-size:10px; color:#A3AABE;">{{ d.yTop }}</span><span style="position:absolute; top:79px; right:0; font-family:'IBM Plex Mono',monospace; font-size:10px; color:#A3AABE;">0</span><span style="position:absolute; bottom:0; right:0; font-family:'IBM Plex Mono',monospace; font-size:10px; color:#A3AABE;">{{ d.yBot }}</span></div>
+        <div style="position:relative; flex:1; min-width:0; height:170px;">
+          <span style="position:absolute; left:0; right:0; top:85px; height:1px; background:rgba(255,255,255,0.14);"></span>
+          <div style="position:absolute; inset:0; display:flex; gap:2px;">
+            <sc-for list="{{ d.bars }}" as="b" hint-placeholder-count="182">
+              <span title="{{ b.t }}" style="flex:1; min-width:0; position:relative; height:170px;"><span style="position:absolute; left:0; right:0; top:{{ b.top }}; bottom:{{ b.bottom }}; height:{{ b.h }}; background:{{ b.bg }}; border-radius:1.5px;"></span><sc-if value="{{ b.hasLbl }}" hint-placeholder-val="{{ false }}"><span style="position:absolute; left:50%; transform:translateX(-50%); top:{{ b.lblTop }}; font-family:'IBM Plex Mono',monospace; font-size:10px; font-weight:700; color:{{ b.lblC }}; white-space:nowrap;">{{ b.lbl }}</span></sc-if><sc-if value="{{ b.isMonth }}" hint-placeholder-val="{{ false }}"><span style="position:absolute; left:0; top:0; bottom:0; width:1px; background:rgba(255,255,255,0.05);"></span></sc-if></span>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex; margin-left:56px; margin-top:4px; border-top:1px solid rgba(255,255,255,0.06);">
+        <sc-for list="{{ d.bands }}" as="m" hint-placeholder-count="6">
+          <span style="flex:{{ m.flex }}; min-width:0; display:flex; align-items:baseline; justify-content:space-between; gap:8px; padding:9px 10px 2px 8px; border-left:1px solid rgba(255,255,255,0.06);"><span style="font-size:10.5px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:#A3AABE;">{{ m.name }}</span><span style="font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:800; color:{{ m.plC }};">{{ m.pl }}</span></span>
+        </sc-for>
+      </div>
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px; padding-top:10px; border-top:1px solid rgba(255,255,255,0.05);"><span style="font-size:11.5px; color:#A3AABE;">{{ d.meta }}</span><span style="font-size:11.5px; color:#A3AABE;">{{ d.extremes }}</span></div>
+    </div>
+  </div>
+
+  <!-- 1e -->
+  <div id="1e" style="display:flex; flex-direction:column; gap:10px; width:1292px;">
+    <div style="display:flex; align-items:baseline; gap:12px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:700; letter-spacing:0.08em; color:#05060A; background:#E7E9EE; border-radius:4px; padding:2px 6px;">1e</span><span style="font-size:15px; font-weight:700; color:#FFFFFF;">Month cards</span><span style="font-size:12.5px; color:#A3AABE;">A wall calendar: six month tiles, each with its own mini grid and the month's figure. Click a month to open its record.</span></div>
+    <div style="background:#0E1019; border:1px solid rgba(255,255,255,0.05); box-shadow:inset 0 1px 0 rgba(143,170,255,0.03); border-radius:12px; padding:18px 22px 18px; display:flex; flex-direction:column; gap:14px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between;"><span style="display:flex; gap:10px; align-items:baseline;"><span style="font-size:15px; font-weight:800; color:#FFFFFF;">Calendar</span><span style="font-size:12px; color:#A3AABE;">Season · May to October</span></span><span style="display:flex; align-items:baseline; gap:8px;"><span style="font-size:12px; color:#A3AABE; white-space:nowrap; flex:none;">Season · {{ season.n }} bets · {{ season.rec }}</span><span style="font-family:'IBM Plex Mono',monospace; font-size:14px; font-weight:800; color:{{ season.plC }};">{{ season.pl }}</span></span></div>
+      <div style="display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px;">
+        <sc-for list="{{ e.cards }}" as="m" hint-placeholder-count="6">
+          <div onClick="{{ m.onClick }}" style="background:{{ m.bg }}; border:1px solid {{ m.bd }}; border-radius:10px; padding:14px 16px 14px; display:flex; gap:18px; cursor:pointer;" style-hover="border-color:rgba(255,255,255,0.14);">
+            <div style="display:flex; flex-direction:column; gap:4px; flex:none;">
+              <div style="display:grid; grid-template-columns:repeat(7,24px); gap:4px;"><sc-for list="{{ e.dn }}" as="d" hint-placeholder-count="7"><span style="font-size:9.5px; font-weight:700; color:#A3AABE; text-align:center; opacity:0.8;">{{ d }}</span></sc-for></div>
+              <sc-for list="{{ m.rows }}" as="r" hint-placeholder-count="6"><div style="display:grid; grid-template-columns:repeat(7,24px); gap:4px;"><sc-for list="{{ r.cells }}" as="c" hint-placeholder-count="7"><span title="{{ c.t }}" style="height:20px; border-radius:4px; background:{{ c.bg }}; box-shadow:{{ c.ring }};"></span></sc-for></div></sc-for>
+            </div>
+            <div style="display:flex; flex-direction:column; min-width:0; flex:1; padding-top:2px;">
+              <span style="font-size:13.5px; font-weight:700; color:#FFFFFF;">{{ m.name }}</span>
+              <span style="font-family:'IBM Plex Mono',monospace; font-size:24px; font-weight:800; letter-spacing:-0.01em; color:{{ m.plC }}; margin-top:6px;">{{ m.pl }}</span>
+              <span style="font-size:11.5px; color:#A3AABE; margin-top:6px; line-height:1.5;">{{ m.sub }}</span>
+              <span style="margin-top:auto; display:flex; align-items:baseline; justify-content:space-between; gap:8px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.05);"><span style="font-size:10.5px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:#A3AABE;">ROI</span><span style="display:flex; align-items:baseline; gap:8px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:12.5px; font-weight:700; color:{{ m.roiC }};">{{ m.roi }}</span><span style="font-size:10px; color:#A3AABE;">{{ m.chev }}</span></span></span>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+      <sc-if value="{{ e.hasOpen }}" hint-placeholder-val="{{ true }}">
+        <div style="background:#0A0D14; border:1px solid rgba(255,255,255,0.06); border-radius:10px; display:flex; flex-direction:column;">
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 18px; border-bottom:1px solid rgba(255,255,255,0.05);"><span style="display:flex; align-items:baseline; gap:10px;"><span style="font-size:14px; font-weight:800; color:#FFFFFF;">{{ e.open.title }}</span><span style="font-size:11.5px; color:#A3AABE;">{{ e.open.sub }}</span></span><span onClick="{{ e.open.onClose }}" style="cursor:pointer; font-size:11px; font-weight:600; color:#5B9BFF;">Close</span></div>
+          <div style="display:grid; grid-template-columns:minmax(0,1fr) 300px;">
+            <div style="padding:14px 18px 16px; display:flex; flex-direction:column; gap:4px; border-right:1px solid rgba(255,255,255,0.05);">
+              <div style="display:grid; grid-template-columns:repeat(7,minmax(0,1fr)) 96px; gap:4px; padding-bottom:6px; border-bottom:1px solid rgba(255,255,255,0.06);">
+                <sc-for list="{{ e.open.dn }}" as="d" hint-placeholder-count="7"><span style="font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE; padding-left:10px;">{{ d }}</span></sc-for>
+                <span style="font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE; text-align:right; padding-right:10px;">Week</span>
+              </div>
+              <sc-for list="{{ e.open.rows }}" as="r" hint-placeholder-count="5">
+                <div style="display:grid; grid-template-columns:repeat(7,minmax(0,1fr)) 96px; gap:4px;">
+                  <sc-for list="{{ r.cells }}" as="c" hint-placeholder-count="7">
+                    <span onMouseEnter="{{ c.onEnter }}" onMouseLeave="{{ c.onLeave }}" style="position:relative; height:58px; border-radius:7px; background:{{ c.bg }}; box-shadow:{{ c.ring }}; padding:7px 10px; display:flex; flex-direction:column; justify-content:space-between; cursor:{{ c.cursor }};"><span style="font-size:11px; font-weight:600; color:{{ c.dtC }};">{{ c.dt }}</span><span style="display:flex; align-items:baseline; justify-content:space-between; gap:6px;"><span style="font-size:10px; color:#A3AABE; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ c.sub }}</span><span style="font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:700; color:{{ c.figC }}; white-space:nowrap;">{{ c.fig }}</span></span>
+                      <sc-if value="{{ c.showPop }}" hint-placeholder-val="{{ false }}"><span style="position:absolute; z-index:6; top:{{ c.popTop }}; bottom:{{ c.popBot }}; margin-top:{{ c.popMt }}; margin-bottom:{{ c.popMb }}; left:{{ c.popSide }}; right:{{ c.popSideR }}; width:380px; background:#0C0E16; border:1px solid rgba(255,255,255,0.10); border-radius:10px; box-shadow:0 12px 32px rgba(0,0,0,0.45); padding:10px 12px; display:flex; flex-direction:column; gap:8px; pointer-events:none;"><span style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;"><span style="font-size:12.5px; font-weight:700; color:#FFFFFF;">{{ c.title }}</span><span style="font-size:11px; color:#A3AABE; white-space:nowrap;">{{ c.sub }}</span></span><sc-for list="{{ c.rows }}" as="r" hint-placeholder-count="2"><span style="display:grid; grid-template-columns:minmax(0,1fr) 54px 56px; gap:0 8px; align-items:center;"><span style="display:flex; flex-direction:column; gap:1px; min-width:0;"><span style="font-size:12px; font-weight:600; color:#E7E9EE; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ r.text }}</span><span style="font-size:10.5px; color:#A3AABE; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ r.meta }}</span></span><span style="font-size:9.5px; font-weight:700; letter-spacing:0.08em; color:{{ r.resC }}; text-align:right;">{{ r.res }}</span><span style="font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:800; color:{{ r.plC }}; text-align:right; white-space:nowrap;">{{ r.pl }}</span></span></sc-for></span></sc-if></span>
+                  </sc-for>
+                  <span style="height:58px; border-radius:7px; background:#0E1019; border:1px solid rgba(255,255,255,0.05); padding:7px 10px; display:flex; flex-direction:column; justify-content:space-between; align-items:flex-end;"><span style="font-size:10px; color:#A3AABE;">{{ r.n }}</span><span style="font-family:'IBM Plex Mono',monospace; font-size:14px; font-weight:800; color:{{ r.plC }};">{{ r.pl }}</span></span>
+                </div>
+              </sc-for>
+            </div>
+            <div style="padding:14px 16px 16px; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; align-content:start;">
+              <sc-for list="{{ e.open.stats }}" as="s" hint-placeholder-count="8">
+                <div style="background:#0E1019; border:1px solid rgba(255,255,255,0.05); border-radius:8px; padding:10px 12px; display:flex; flex-direction:column; gap:4px;"><span style="font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A3AABE;">{{ s.l }}</span><span style="font-family:'IBM Plex Mono',monospace; font-size:16px; font-weight:800; color:{{ s.c }};">{{ s.v }}</span><span style="font-size:10.5px; color:#A3AABE; min-height:13px;">{{ s.s }}</span></div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+    </div>
+  </div>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { hov:null, sel:null, calM:9, weeksAll:false, selCard:9 };
+  days(today, start){
+    if(this._days) return this._days;
+    let s=20261029; const rnd=()=>{ s=(s*48271)%2147483647; return s/2147483647; };
+    const out=[];
+    for(let i=0;i<182;i++){ const d=new Date(start); d.setDate(start.getDate()+i); const dow=i%7, w=Math.floor(i/7); const future=d>today; let n=0,pl=0,pend=0,wn=0,st=0;
+      const p=dow===0?0.3:dow>=4?0.72:0.55;
+      const PL=['Sinner','Alcaraz','Zverev','Fritz','Djokovic','Musetti','Draper','De Minaur','Shelton','Rune','Medvedev','Tiafoe','Rublev','Ruud','Fils','Mensik','Cerundolo','Lehecka','Khachanov','Tsitsipas','Machac','Popyrin','Michelsen','Auger-Aliassime','Humbert','Berrettini','Paul','Dimitrov','Bublik','Etcheverry','Altmaier','Cobolli'];
+      const TR=[['Rome','Masters 1000'],['Madrid','Masters 1000'],['Roland Garros','Grand Slam'],['Halle','ATP 500'],['Queen\u2019s','ATP 500'],['Wimbledon','Grand Slam'],['Hamburg','ATP 500'],['Washington','ATP 500'],['Toronto','Masters 1000'],['Cincinnati','Masters 1000'],['US Open','Grand Slam'],['Tokyo','ATP 500'],['Beijing','ATP 500'],['Shanghai','Masters 1000'],['Vienna','ATP 500'],['Basel','ATP 500'],['Davis Cup','Davis Cup']];
+      const MK=['Match winner','Games handicap','Total games','Set 1 winner','Match winner','Match winner'];
+      const bets=[];
+      if(!future&&rnd()<p){ n=1+Math.floor(rnd()*3); const ti=Math.min(TR.length-1,Math.floor(i/182*TR.length)); for(let k=0;k<n;k++){ const stake=100+Math.round(rnd()*15)*10; const odds=1.5+rnd()*1.2; st+=stake; const won=rnd()<0.56; const a=PL[Math.floor(rnd()*PL.length)]; let b=PL[Math.floor(rnd()*PL.length)]; if(b===a) b=PL[(PL.indexOf(a)+5)%PL.length]; const mk=MK[Math.floor(rnd()*MK.length)]; const line=mk==='Games handicap'?' '+(rnd()<0.5?'+':'−')+(2+Math.floor(rnd()*4)).toFixed(1):mk==='Total games'?' '+(rnd()<0.5?'Over':'Under')+' '+(21+Math.floor(rnd()*4))+'.5':'';
+        const dpl=won?Math.round(stake*(odds-1)):-stake; pl+=dpl; if(won) wn++; bets.push({text:mk==='Total games'?`${a} v ${b}${line}`:mk==='Games handicap'?`${a}${line} v ${b}`:`${a} to win v ${b}`, meta:`${TR[ti][0]} · ${mk} · @ ${odds.toFixed(2)} · ${(stake/100).toFixed(1)}%`, res:won?'WON':'LOST', pl:dpl}); } pl=Math.round(pl); }
+      if(d.getTime()===today.getTime()){ pend=2; n=1; pl=140; wn=1; st=200; bets.length=0; bets.push({text:'De Minaur to win v Mensik',meta:'Vienna · Match winner · @ 1.70 · 2.0%',res:'WON',pl:140},{text:'Sinner −4.5 v Cobolli',meta:'Vienna · Games handicap · @ 1.92 · 1.5%',res:'PENDING',pl:null},{text:'Fritz v Shelton Over 22.5',meta:'Basel · Total games · @ 1.85 · 1.0%',res:'PENDING',pl:null}); }
+      out.push({d,i,dow,w,future,n,pl,pend,wn,st,bets,m:d.getMonth(),dt:d.getDate()}); }
+    return this._days=out;
+  }
+  renderVals(){
+    const POS='#5CCB84', NEG='#E06266', LAB='#A3AABE', PEND='#6A9AF8';
+    const MS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'], ML=['January','February','March','April','May','June','July','August','September','October','November','December'], DN=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+    const today=new Date(2026,9,29), start=new Date(2026,4,4);
+    const days=this.days(today,start);
+    const fmt=n=>Math.abs(Math.round(n)).toLocaleString('en-US'); const sg=n=>n>0?'+':n<0?'−':''; const E=n=>sg(n)+fmt(n)+' €'; const Es=n=>sg(n)+fmt(n);
+    const col=n=>n>0?POS:n<0?NEG:LAB; const fmtD=d=>d.getDate()+' '+MS[d.getMonth()];
+    const tint=(pl,st)=>{ const a=Math.abs(pl); const al=a<120?st[0]:a<280?st[1]:st[2]; return pl>0?`rgba(92,203,132,${al})`:pl<0?`rgba(224,98,102,${al})`:'rgba(255,255,255,0.14)'; };
+    const fill=(x,st)=>x.future?'transparent':x.pend&&!x.n?'rgba(106,154,248,0.35)':x.n?tint(x.pl,st):'rgba(255,255,255,0.04)';
+    const agg=list=>{ const o={pl:0,n:0,w:0,l:0,st:0,dd:0,up:0,dn:0}; list.forEach(x=>{ if(!x.n) return; o.pl+=x.pl; o.n+=x.n; o.w+=x.wn; o.l+=x.n-x.wn; o.st+=x.st; o.dd++; if(x.pl>0) o.up++; else o.dn++; }); o.roi=o.st?o.pl/o.st:0; return o; };
+    const MONTHS=[4,5,6,7,8,9].map(m=>Object.assign({m,name:ML[m]},agg(days.filter(x=>x.m===m))));
+    const S=agg(days); const roiTxt=r=>sg(r)+Math.abs(r*100).toFixed(1)+'%';
+    const season={n:String(S.n), pl:E(S.pl), plC:col(S.pl), roi:roiTxt(S.roi), roiC:col(S.roi), rec:S.w+'–'+S.l};
+    const bar=(v,full)=>{ const w=Math.min(50,Math.abs(v)/full*50); return {barW:w+'%', barL:v>=0?'50%':(50-w)+'%', barC:v>=0?POS:NEG}; };
+    const byDate={}; days.forEach(x=>{ byDate[x.m+'-'+x.dt]=x; });
+    const isT=d=>d.getTime()===today.getTime();
+    // 1a
+    const hov=this.state.hov, sel=this.state.sel;
+    const aCells=days.map(x=>{ const has=!!x.n, key=x.i, isH=hov===key, isS=sel===key; return {bg:fill(x,[0.3,0.55,0.9]), ring:isS?'0 0 0 1.5px #FFFFFF':isT(x.d)?'0 0 0 1px rgba(255,255,255,0.35)':isH&&has?'0 0 0 1px rgba(255,255,255,0.45)':'none', cursor:has?'pointer':'default', t:has?'':`${DN[x.dow]} ${fmtD(x.d)} · no bets`, showPop:isH&&has&&!isS, popLeft:x.w>14?'auto':'-6px', popRight:x.w>14?'-6px':'auto', title:`${DN[x.dow]} ${fmtD(x.d)}`, sub:`${E(x.pl)} · ${x.n} bet${x.n>1?'s':''} · ${x.wn}–${x.n-x.wn}${x.pend?' · '+x.pend+' pending':''}`,
+      onEnter:()=>{ if(has) this.setState({hov:key}); }, onLeave:()=>{ if(this.state.hov===key) this.setState({hov:null}); }, onClick:()=>{ if(has) this.setState(s=>({sel:s.sel===key?null:key})); } }; });
+    const aMonths=[]; let pm=-1; days.forEach(x=>{ if(x.dow===0&&x.m!==pm){ pm=x.m; aMonths.push({left:(x.w*30)+'px', label:MS[x.m]}); } });
+    const selD=sel!==null?days[sel]:null;
+    const a={cells:aCells, months:aMonths, days:['Mon','','Wed','','Fri','','Sun'], meta:`${S.dd} betting days this season · ${S.up} finished up · ${S.dn} down or flat`, selTxt:selD?`Pinned · ${DN[selD.dow]} ${fmtD(selD.d)} · ${E(selD.pl)} · ${selD.n} bet${selD.n>1?'s':''} · ${selD.wn}–${selD.n-selD.wn}`:'Hover a day · click to pin', selC:selD?'#FFFFFF':LAB,
+      ledger:MONTHS.slice().reverse().map(mo=>Object.assign({name:mo.name, n:String(mo.n), pl:Es(mo.pl), plC:col(mo.pl)}, bar(mo.roi,0.2)))};
+    // 1b
+    const planner=cm=>{ const fd=(new Date(2026,cm,1).getDay()+6)%7, dim=new Date(2026,cm+1,0).getDate(), rowsN=Math.ceil((fd+dim)/7); const bRows=[]; for(let r=0;r<rowsN;r++){ const cells=[]; let wpl=0,wn=0,any=false; for(let c=0;c<7;c++){ const idx=r*7+c-fd; const dd=new Date(2026,cm,1+idx); const inM=idx>=0&&idx<dim; const x=byDate[dd.getMonth()+'-'+dd.getDate()]; const has=!!(inM&&x&&x.n); if(has){ wpl+=x.pl; wn+=x.n; any=true; }
+      const hk=cm+'-'+dd.getDate(), hovOn=has&&this.state.hovE===hk;
+      const lastRows=r>=rowsN-2;
+      cells.push({showPop:hovOn, popSide:c>3?'auto':'0', popSideR:c>3?'0':'auto', popTop:lastRows?'auto':'100%', popBot:lastRows?'100%':'auto', popMt:lastRows?'0':'4px', popMb:lastRows?'4px':'0', rows:has?x.bets.map(bt=>({text:bt.text, meta:bt.meta, res:bt.res, resC:bt.res==='WON'?POS:bt.res==='LOST'?NEG:'#5B9BFF', pl:bt.pl===null?'—':Es(bt.pl)+' €', plC:bt.pl===null?LAB:col(bt.pl)})):[], title:has?`${DN[(dd.getDay()+6)%7]} ${fmtD(dd)}`:'', onEnter:()=>{ if(has) this.setState({hovE:hk}); }, onLeave:()=>{ if(this.state.hovE===hk) this.setState({hovE:null}); }, cursor:has?'pointer':'default', dt:String(dd.getDate()), dtC:!inM?'rgba(163,170,190,0.3)':has?'#E7E9EE':'rgba(163,170,190,0.7)', fig:has?Es(x.pl):'', figC:has?col(x.pl):LAB, bg:has?(x.pl>0?'rgba(92,203,132,0.09)':x.pl<0?'rgba(224,98,102,0.09)':'rgba(255,255,255,0.05)'):inM?'rgba(255,255,255,0.02)':'transparent', ring:isT(dd)?'inset 0 0 0 1px rgba(255,255,255,0.45)':'none', sub:has?`${x.n} bet${x.n>1?'s':''} · ${x.wn}–${x.n-x.wn}${x.pend?' · '+x.pend+' pending':''}`:''}); }
+      bRows.push({cells, pl:any?Es(wpl):'—', plC:any?col(wpl):LAB, n:any?wn+' bets':'', wpl, any}); } return bRows; };
+    const cm=this.state.calM, bRows=planner(cm);
+    const mo=MONTHS.find(z=>z.m===cm);
+    const b={title:ML[cm]+' 2026', pl:E(mo.pl), plC:col(mo.pl), sentence:`across ${mo.dd} betting days · ${mo.n} bets · ${mo.w}–${mo.l}`, dn:DN, rows:bRows,
+      onPrev:()=>this.setState(s=>({calM:Math.max(4,s.calM-1)})), onNext:()=>this.setState(s=>({calM:Math.min(9,s.calM+1)})), prevC:cm>4?'#E7E9EE':'rgba(163,170,190,0.35)', nextC:cm<9?'#E7E9EE':'rgba(163,170,190,0.35)',
+      rail:MONTHS.slice().reverse().map(z=>{ const on=z.m===cm; return {name:z.name+' 2026', n:`${z.n} bets · ${z.w}–${z.l}`, pl:E(z.pl), plC:col(z.pl), bg:on?'#131623':'transparent', bd:on?'rgba(255,255,255,0.16)':'transparent', w:on?700:600, c:on?'#FFFFFF':'#C6CCDB', onClick:()=>this.setState({calM:z.m})}; })};
+    // 1c
+    const iso=d=>{ const t=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())); const dn=t.getUTCDay()||7; t.setUTCDate(t.getUTCDate()+4-dn); const y0=new Date(Date.UTC(t.getUTCFullYear(),0,1)); return Math.ceil(((t-y0)/864e5+1)/7); };
+    const weeks=[]; let cpm=-1;
+    for(let w=25;w>=0;w--){ const ws=days.slice(w*7,w*7+7); const ag=agg(ws); const m0=ws[0].d, s6=ws[6].d; const hm=ws[0].m; const hasHead=hm!==cpm; cpm=hm; const hmo=MONTHS.find(z=>z.m===hm);
+      weeks.push(Object.assign({label:'Week '+iso(m0), range:`${m0.getDate()}${m0.getMonth()!==s6.getMonth()?' '+MS[m0.getMonth()]:''} – ${s6.getDate()} ${MS[s6.getMonth()]}`, n:ag.n?String(ag.n):'—', pl:ag.n?Es(ag.pl):'—', plC:ag.n?col(ag.pl):LAB, hasHead, head:ML[hm]+' 2026', headN:hmo?`${hmo.n} bets · ${hmo.w}–${hmo.l}`:'', headPl:hmo?E(hmo.pl):'', headPlC:hmo?col(hmo.pl):LAB,
+        days:ws.map(x=>({fig:x.n?Es(x.pl):'', bg:fill(x,[0.28,0.5,0.85]), bd:x.future?'1px dashed rgba(255,255,255,0.10)':'1px solid transparent', t:`${DN[x.dow]} ${fmtD(x.d)}${x.n?` · ${E(x.pl)} · ${x.n} bets`:x.future?'':' · no bets'}`}))}, ag.n?bar(ag.pl,900):{barW:'0',barL:'50%',barC:'transparent'})); }
+    const all=this.state.weeksAll; const c={dn:DN, weeks:all?weeks:weeks.slice(0,10), toggle:all?'Show fewer weeks':`Show ${weeks.length-10} more weeks`, onToggle:()=>this.setState(s=>({weeksAll:!s.weeksAll})), meta:`${S.dd} betting days · ${S.up} up · ${S.dn} down or flat`};
+    // 1d
+    const mx=Math.max(...days.map(x=>Math.abs(x.pl)))||1, H=78;
+    const best=days.reduce((p,x)=>x.pl>p.pl?x:p,days[0]), worst=days.reduce((p,x)=>x.pl<p.pl?x:p,days[0]);
+    const dBars=days.map(x=>{ const h=Math.max(2,Math.round(Math.abs(x.pl)/mx*H)); const up=x.pl>=0, has=!!x.n, past=!x.future; const lb=x===best?best:x===worst?worst:null;
+      return {top:has?(up?'auto':'85px'):'84px', bottom:has?(up?'85px':'auto'):'auto', h:has?h+'px':past?'2px':'0', bg:has?(x.pl>0?POS:x.pl<0?NEG:'rgba(255,255,255,0.3)'):'rgba(255,255,255,0.12)', t:`${DN[x.dow]} ${fmtD(x.d)}${has?` · ${E(x.pl)} · ${x.n} bet${x.n>1?'s':''} · ${x.wn}–${x.n-x.wn}`:past?' · no bets':''}`, hasLbl:!!lb, lbl:lb?Es(x.pl):'', lblTop:lb?(up?(85-h-15)+'px':(85+h+3)+'px'):'0', lblC:up?POS:NEG, isMonth:x.dt===1}; });
+    const cnt={}; days.forEach(x=>{ cnt[x.m]=(cnt[x.m]||0)+1; }); cnt[9]+=cnt[10]||0;
+    const d={bars:dBars, yTop:'+'+fmt(mx), yBot:'−'+fmt(mx), bands:MONTHS.map(z=>({flex:String(cnt[z.m]), name:MS[z.m], pl:E(z.pl), plC:col(z.pl)})), meta:`${S.dd} betting days · ${S.up} up · ${S.dn} down or flat · ${S.n} bets`, extremes:`Best ${E(best.pl)} · ${DN[best.dow]} ${fmtD(best.d)} · worst ${E(worst.pl)} · ${DN[worst.dow]} ${fmtD(worst.d)}`};
+    // 1e
+    const eCards=MONTHS.map(z=>{ const m=z.m, f=(new Date(2026,m,1).getDay()+6)%7, dm=new Date(2026,m+1,0).getDate(); const rows=[]; for(let r=0;r<6;r++){ const cells=[]; for(let cc=0;cc<7;cc++){ const idx=r*7+cc-f; const inM=idx>=0&&idx<dm; const x=inM?byDate[m+'-'+(idx+1)]:null; cells.push({bg:!inM?'transparent':!x?'rgba(255,255,255,0.03)':fill(x,[0.3,0.55,0.9]), ring:x&&isT(x.d)?'0 0 0 1px rgba(255,255,255,0.4)':'none', t:x?`${DN[x.dow]} ${fmtD(x.d)}${x.n?' · '+E(x.pl)+' · '+x.n+' bets':x.future?'':' · no bets'}`:''}); } rows.push({cells}); }
+      const on=this.state.selCard===m; return {name:z.name+' 2026', pl:E(z.pl), plC:col(z.pl), sub:`${z.n} bets · ${z.w}–${z.l} · ${z.dd} betting days`, roi:roiTxt(z.roi), roiC:col(z.roi), rows, bg:on?'#131623':'#0A0D14', bd:on?'rgba(255,255,255,0.16)':'rgba(255,255,255,0.06)', chev:on?'▴':'▾', onClick:()=>this.setState(s=>({selCard:s.selCard===m?null:m}))}; });
+    const sm=this.state.selCard, smo=sm!==null?MONTHS.find(z=>z.m===sm):null; let eOpen=null;
+    if(smo){ const md=days.filter(x=>x.m===sm&&x.n); const bd=md.length?md.reduce((p,x)=>x.pl>p.pl?x:p,md[0]):null, wd=md.length?md.reduce((p,x)=>x.pl<p.pl?x:p,md[0]):null; const pr=planner(sm); const wk=pr.filter(r=>r.any); const bw=wk.length?wk.reduce((p,r)=>r.wpl>p.wpl?r:p,wk[0]):null;
+      const wr=smo.w+smo.l?Math.round(100*smo.w/(smo.w+smo.l))+'%':'—';
+      eOpen={title:smo.name+' 2026', sub:`${smo.n} settled bets · ${smo.w}–${smo.l} · ${smo.dd} betting days · ${wk.length} weeks with bets`, rows:pr, dn:DN, onClose:()=>this.setState({selCard:null}),
+        stats:[{l:'P/L',v:E(smo.pl),c:col(smo.pl),s:''},{l:'ROI',v:roiTxt(smo.roi),c:col(smo.roi),s:''},{l:'Win rate',v:wr,c:'#FFFFFF',s:''},{l:'Staked',v:fmt(smo.st)+' €',c:'#FFFFFF',s:''},{l:'Best day',v:bd?E(bd.pl):'—',c:bd?col(bd.pl):LAB,s:bd?`${DN[bd.dow]} ${fmtD(bd.d)}`:''},{l:'Worst day',v:wd?E(wd.pl):'—',c:wd?col(wd.pl):LAB,s:wd?`${DN[wd.dow]} ${fmtD(wd.d)}`:''},{l:'Best week',v:bw?E(bw.wpl):'—',c:bw?col(bw.wpl):LAB,s:bw?bw.n:''},{l:'Up days',v:`${smo.up} of ${smo.dd}`,c:'#FFFFFF',s:''}]}; }
+    const e={cards:eCards, dn:['M','T','W','T','F','S','S'], open:eOpen, hasOpen:!!eOpen};
+    return {a,b,c,d,e,season};
+  }
+}
+</script>
+</body>
+</html>

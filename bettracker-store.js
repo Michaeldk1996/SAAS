@@ -146,7 +146,7 @@
   if (typeof module === 'object' && module.exports) module.exports = api;
   else {
     var inst = create({ local: safe(function () { return root.localStorage; }), session: safe(function () { return root.sessionStorage; }) });
-    inst.create = create;
+    inst.create = create; inst.KEY = KEY;
     root.BetTrackerStore = inst;
   }
 })(typeof globalThis !== 'undefined' ? globalThis : this);
