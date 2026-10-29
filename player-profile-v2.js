@@ -7096,7 +7096,7 @@
     if (!d.team) return '';
     return ' ' + (d.teamPriced ? d.teamPriced + ' of his ' : 'His ') + d.team + ' team-event ' + (d.team === 1 ? 'match' : 'matches') +
       (d.teamPriced ? (d.teamPriced === 1 ? ' is' : ' are') + ' priced in the Database' : '') +
-      (d.teamPriced ? '; team events (Davis Cup and the like) are' : ' (Davis Cup and the like) are') +
+      (d.teamPriced ? '; team events (Davis Cup and the like) are' : ' (Davis Cup and the like) ' + (d.team === 1 ? 'is' : 'are')) +
       ' left out of Market edge, as they are of every Database figure.';
   }
   function marketEmptyText(key) {

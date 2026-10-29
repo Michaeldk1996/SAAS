@@ -22967,9 +22967,9 @@ async function loadPp2CareerHistory(key){
     if (recOk && k in _careerHistoryShards) {   // answered — settle the bridge
       window.careerHistory = window.careerHistory || {};
       window.careerHistory[k] = rows || [];
-      _pp2ChFailed.delete(k);
-    } else _pp2ChFailed.add(k);   // market-edge-box: a failed load ends the box's wait (no reason claimed)
-  } catch (e) { _pp2ChFailed.add(k); /* additive; the date/surface columns dash and the note says why */ }
+      if (window._pp2ChFailed) window._pp2ChFailed.delete(k);
+    } else (window._pp2ChFailed = window._pp2ChFailed || new Set()).add(k);   // market-edge-box: a failed load ends the box's wait (no reason claimed)
+  } catch (e) { (window._pp2ChFailed = window._pp2ChFailed || new Set()).add(k); /* additive; the date/surface columns dash and the note says why */ }
   pp2RepaintIfOpen(k);
 }
 // TEN-207 moved tournamentHistory out of player-profiles.json into a lazy shard
@@ -23064,10 +23064,9 @@ window.pp2DbJoinNeed = pp2DbJoinNeed;
 // Davis Cup, 4 of them priced). { pending: true } = his history or the join has not answered yet (the box claims
 // nothing); null = one of them failed (no reason is claimed).
 const PP2_TEAM_EVENT = /laver cup|davis cup|united cup|atp cup|hopman cup/i;
-const _pp2ChFailed = new Set();
 function pp2MarketDashed(key){
   const k = String(key);
-  if (_sfDbJoinSt === 'failed' || _pp2ChFailed.has(k)) return null;
+  if (_sfDbJoinSt === 'failed' || (window._pp2ChFailed && window._pp2ChFailed.has(k))) return null;
   const rows = (window.careerHistory && window.careerHistory[k]) || (k in _careerHistoryShards ? _careerHistoryShards[k] : null);
   if (_sfDbJoinSt !== 'ready' || !_sfDbJoin || !Array.isArray(rows)) return { pending: true };
   const atp = rows.filter(x => x && x.level === 'atp' && !x.walkover && !x.unconfirmed && !x.qualifying && !/^qualif/i.test(String(x.round || '')));

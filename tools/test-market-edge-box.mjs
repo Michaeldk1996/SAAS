@@ -82,9 +82,9 @@ const slice = (src, from, to) => { const a = src.indexOf(from), b = src.indexOf(
   ctx.window.careerHistory = { 9209: rows };
   const r = vm.runInContext('pp2MarketDashed("9209")', ctx);
   ok(r && r.main === 2 && r.dashed === 2 && r.priced === 0 && r.team === 7 && r.teamPriced === 4, `bridge: the Bueno shape — 2 main draw, both dashed; 7 team events, 4 priced (${JSON.stringify(r)})`);
-  vm.runInContext('_pp2ChFailed.add("9209")', ctx);
+  ctx.window._pp2ChFailed = new Set(['9209']);
   ok(vm.runInContext('pp2MarketDashed("9209")', ctx) === null, 'bridge: a failed history load ends the wait (null: no reason claimed)');
-  vm.runInContext('_pp2ChFailed.delete("9209")', ctx); ctx._sfDbJoinSt = 'failed';
+  ctx.window._pp2ChFailed.delete('9209'); ctx._sfDbJoinSt = 'failed';
   ok(vm.runInContext('pp2MarketDashed("9209")', ctx) === null, 'bridge: a failed join → null');
 }
 
@@ -97,6 +97,8 @@ const slice = (src, from, to) => { const a = src.indexOf(from), b = src.indexOf(
   ok(t === 'No confirmed closing prices for these matches. 2 of his 2 ATP main-draw matches have no Pinnacle close the close rules accept, so they show a dash. 4 of his 7 team-event matches are priced in the Database; team events (Davis Cup and the like) are left out of Market edge, as they are of every Database figure.', 'Bueno: "' + t + '"');
   ok(say({ pending: true }) === 'Loading the priced matches.', 'pending: the modal claims nothing');
   ok(/^No priced matches on record\. The odds archive is tour main-draw only.*His 3 team-event matches \(Davis Cup and the like\) are left out of Market edge/.test(say({ main: 0, dashed: 0, priced: 0, team: 3, teamPriced: 0 })), 'no main draw + unpriced team events: the Challenger line, then the team line');
+  const one = say({ main: 1, dashed: 1, priced: 0, team: 1, teamPriced: 0 });
+  ok(/His 1 team-event match \(Davis Cup and the like\) is left out of Market edge/.test(one), 'one team event: "is", not "are" (' + one + ')');
   ok(say(null) === 'No priced matches on record.', 'no bridge answer: no reason claimed');
   ok(/marketEmptyWhy\(p\.key\)\.pending \? \{ headline: null, support: null, pending: true \}/.test(prof), 'box: pending while the reason is loading (never "no priced matches on record" that then changes)');
   ok(/currentKey: function \(\) \{ return mounted && state\.key \? String\(state\.key\) : null; \}/.test(prof), 'module exports currentKey (the host\'s guard reads it)');
