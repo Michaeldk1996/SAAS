@@ -1,16 +1,7 @@
 {
  "schema": 1,
- "updated": "2026-10-28T17:56:01.522Z",
+ "updated": "2026-10-29T03:55:09.877Z",
  "runs": [
-  {
-   "ts": "2026-10-04T03:50:11.570Z",
-   "run": "37174717616",
-   "priced": 46,
-   "logged": 1138,
-   "flagged": 32,
-   "newlyLogged": 0,
-   "newlyFrozen": 0
-  },
   {
    "ts": "2026-10-04T03:58:33.014Z",
    "run": "37175190331",
@@ -18001,6 +17992,15 @@
    "flagged": 29,
    "newlyLogged": 0,
    "newlyFrozen": 0
+  },
+  {
+   "ts": "2026-10-29T03:55:09.877Z",
+   "run": "40812473712",
+   "priced": 46,
+   "logged": 1437,
+   "flagged": 29,
+   "newlyLogged": 4,
+   "newlyFrozen": 1
   }
  ],
  "flags": {
@@ -37103,7 +37103,7 @@
    "status": "finished",
    "finalScore": "6-3, 6-4",
    "modelFairLast": 0.6357,
-   "lastSeen": "2026-10-28T17:56:01.522Z"
+   "lastSeen": "2026-10-29T03:55:09.877Z"
   },
   "12173976": {
    "key": "12173976",
@@ -37124,7 +37124,7 @@
    "status": "finished",
    "finalScore": "6-4, 3-6, 6-3",
    "modelFairLast": 0.6207,
-   "lastSeen": "2026-10-28T17:56:01.522Z"
+   "lastSeen": "2026-10-29T03:55:09.877Z"
   },
   "12173977": {
    "key": "12173977",
@@ -37139,7 +37139,7 @@
    "status": "finished",
    "finalScore": "7-5, 6-2",
    "modelFairLast": 0.5649,
-   "lastSeen": "2026-10-28T17:56:01.522Z"
+   "lastSeen": "2026-10-29T03:55:09.877Z"
   },
   "12173978": {
    "key": "12173978",
@@ -37160,7 +37160,7 @@
    "status": "finished",
    "finalScore": "6-1, 4-6, 7-6(2)",
    "modelFairLast": 0.3297,
-   "lastSeen": "2026-10-28T17:56:01.522Z"
+   "lastSeen": "2026-10-29T03:55:09.877Z"
   },
   "12173979": {
    "key": "12173979",
@@ -37181,7 +37181,7 @@
    "status": "finished",
    "finalScore": "4-6, 6-7(5)",
    "modelFairLast": 0.1596,
-   "lastSeen": "2026-10-28T17:56:01.522Z"
+   "lastSeen": "2026-10-29T03:55:09.877Z"
   },
   "12173980": {
    "key": "12173980",
@@ -37202,7 +37202,7 @@
    "status": "finished",
    "finalScore": "6-7(5), 1-6",
    "modelFairLast": 0.2398,
-   "lastSeen": "2026-10-28T17:56:01.522Z"
+   "lastSeen": "2026-10-29T03:55:09.877Z"
   },
   "12173981": {
    "key": "12173981",
@@ -37223,7 +37223,7 @@
    "status": "finished",
    "finalScore": "7-6(6), 7-5",
    "modelFairLast": 0.44,
-   "lastSeen": "2026-10-28T17:56:01.522Z"
+   "lastSeen": "2026-10-29T03:55:09.877Z"
   },
   "12173982": {
    "key": "12173982",
@@ -37238,7 +37238,7 @@
    "status": "finished",
    "finalScore": "6-4, 6-1",
    "modelFairLast": 0.4004,
-   "lastSeen": "2026-10-28T17:56:01.522Z"
+   "lastSeen": "2026-10-29T03:55:09.877Z"
   },
   "12173983": {
    "key": "12173983",
@@ -37259,7 +37259,7 @@
    "status": "finished",
    "finalScore": "7-5, 6-2",
    "modelFairLast": 0.5807,
-   "lastSeen": "2026-10-28T17:56:01.522Z"
+   "lastSeen": "2026-10-29T03:55:09.877Z"
   },
   "12173984": {
    "key": "12173984",
@@ -37277,10 +37277,10 @@
     "ts": "2026-10-25T18:14:20.748Z"
    },
    "firstSeen": "2026-10-24T13:33:17.890Z",
-   "status": "live",
-   "finalScore": null,
+   "status": "finished",
+   "finalScore": "6-7, 1-6",
    "modelFairLast": 0.4152,
-   "lastSeen": "2026-10-28T17:56:01.522Z"
+   "lastSeen": "2026-10-29T03:55:09.877Z"
   },
   "12173985": {
    "key": "12173985",
@@ -37301,7 +37301,7 @@
    "status": "finished",
    "finalScore": "3-6, 1-6",
    "modelFairLast": 0.2362,
-   "lastSeen": "2026-10-28T17:56:01.522Z"
+   "lastSeen": "2026-10-29T03:55:09.877Z"
   },
   "12173986": {
    "key": "12173986",
@@ -37322,7 +37322,7 @@
    "status": "finished",
    "finalScore": "7-5, 3-6, 7-6(11)",
    "modelFairLast": 0.9,
-   "lastSeen": "2026-10-28T17:56:01.522Z"
+   "lastSeen": "2026-10-29T03:55:09.877Z"
   },
   "12173999": {
    "key": "12173999",
@@ -37430,10 +37430,10 @@
     "ts": "2026-10-26T05:52:51.230Z"
    },
    "firstSeen": "2026-10-24T20:15:21.033Z",
-   "status": "live",
-   "finalScore": null,
+   "status": "finished",
+   "finalScore": "4-6, 6-3, 6-4",
    "modelFairLast": 0.8089,
-   "lastSeen": "2026-10-28T17:56:01.522Z"
+   "lastSeen": "2026-10-29T03:55:09.877Z"
   },
   "12174051": {
    "key": "12174051",
@@ -37484,7 +37484,7 @@
    "status": "finished",
    "finalScore": "7-6(1), 6-4",
    "modelFairLast": 0.4435,
-   "lastSeen": "2026-10-28T17:56:01.522Z"
+   "lastSeen": "2026-10-29T03:55:09.877Z"
   },
   "12174054": {
    "key": "12174054",
@@ -37505,7 +37505,7 @@
    "status": "finished",
    "finalScore": "5-7, 6-3, 6-3",
    "modelFairLast": 0.5979,
-   "lastSeen": "2026-10-28T17:56:01.522Z"
+   "lastSeen": "2026-10-29T03:55:09.877Z"
   },
   "12174056": {
    "key": "12174056",
@@ -37520,7 +37520,7 @@
    "status": "finished",
    "finalScore": "6-4, 5-7, 3-6",
    "modelFairLast": 0.1056,
-   "lastSeen": "2026-10-28T17:56:01.522Z"
+   "lastSeen": "2026-10-29T03:55:09.877Z"
   },
   "12174057": {
    "key": "12174057",
@@ -37541,7 +37541,7 @@
    "status": "finished",
    "finalScore": "4-6, 2-6",
    "modelFairLast": 0.2418,
-   "lastSeen": "2026-10-28T17:56:01.522Z"
+   "lastSeen": "2026-10-29T03:55:09.877Z"
   },
   "12174058": {
    "key": "12174058",
@@ -37562,7 +37562,7 @@
    "status": "finished",
    "finalScore": "6-3, 7-6(4)",
    "modelFairLast": 0.71,
-   "lastSeen": "2026-10-28T17:56:01.522Z"
+   "lastSeen": "2026-10-29T03:55:09.877Z"
   },
   "12174059": {
    "key": "12174059",
@@ -37583,7 +37583,7 @@
    "status": "finished",
    "finalScore": "5-7, 6-7(2)",
    "modelFairLast": 0.1506,
-   "lastSeen": "2026-10-28T17:56:01.522Z"
+   "lastSeen": "2026-10-29T03:55:09.877Z"
   },
   "12174071": {
    "key": "12174071",
@@ -37640,7 +37640,7 @@
    "status": "finished",
    "finalScore": "4-6, 2-6",
    "modelFairLast": 0.1673,
-   "lastSeen": "2026-10-28T17:56:01.522Z"
+   "lastSeen": "2026-10-29T03:55:09.877Z"
   },
   "12174229": {
    "key": "12174229",
@@ -37661,7 +37661,7 @@
    "status": "finished",
    "finalScore": "4-6, 3-6",
    "modelFairLast": 0.4956,
-   "lastSeen": "2026-10-28T17:56:01.522Z"
+   "lastSeen": "2026-10-29T03:55:09.877Z"
   },
   "12174230": {
    "key": "12174230",
@@ -37682,7 +37682,7 @@
    "status": "finished",
    "finalScore": "6-7(4), 7-6(3), 7-6(4)",
    "modelFairLast": 0.9,
-   "lastSeen": "2026-10-28T17:56:01.522Z"
+   "lastSeen": "2026-10-29T03:55:09.877Z"
   },
   "12174231": {
    "key": "12174231",
@@ -37697,7 +37697,7 @@
    "status": "finished",
    "finalScore": "0-6, 7-5, 6-4",
    "modelFairLast": 0.422,
-   "lastSeen": "2026-10-28T17:56:01.522Z"
+   "lastSeen": "2026-10-29T03:55:09.877Z"
   },
   "12174267": {
    "key": "12174267",
@@ -37718,7 +37718,7 @@
    "status": "finished",
    "finalScore": "3-6, 1-6",
    "modelFairLast": 0.312,
-   "lastSeen": "2026-10-28T17:56:01.522Z"
+   "lastSeen": "2026-10-29T03:55:09.877Z"
   },
   "12174268": {
    "key": "12174268",
@@ -37739,7 +37739,7 @@
    "status": "finished",
    "finalScore": "6-7(5), 7-6(4), 6-4",
    "modelFairLast": 0.3801,
-   "lastSeen": "2026-10-28T17:56:01.522Z"
+   "lastSeen": "2026-10-29T03:55:09.877Z"
   },
   "12174269": {
    "key": "12174269",
@@ -37760,7 +37760,7 @@
    "status": "finished",
    "finalScore": "6-1, 4-6, 3-6",
    "modelFairLast": 0.2446,
-   "lastSeen": "2026-10-28T17:56:01.522Z"
+   "lastSeen": "2026-10-29T03:55:09.877Z"
   },
   "12174270": {
    "key": "12174270",
@@ -37775,7 +37775,7 @@
    "status": "finished",
    "finalScore": "5-1",
    "modelFairLast": 0.617,
-   "lastSeen": "2026-10-28T17:56:01.522Z"
+   "lastSeen": "2026-10-29T03:55:09.877Z"
   },
   "12174271": {
    "key": "12174271",
@@ -37796,7 +37796,7 @@
    "status": "finished",
    "finalScore": "6-2, 6-2",
    "modelFairLast": 0.8699,
-   "lastSeen": "2026-10-28T17:56:01.522Z"
+   "lastSeen": "2026-10-29T03:55:09.877Z"
   },
   "12174303": {
    "key": "12174303",
@@ -37811,7 +37811,7 @@
    "status": "finished",
    "finalScore": "6-7(5), 5-7",
    "modelFairLast": 0.1,
-   "lastSeen": "2026-10-28T17:56:01.522Z"
+   "lastSeen": "2026-10-29T03:55:09.877Z"
   },
   "12174304": {
    "key": "12174304",
@@ -37832,7 +37832,7 @@
    "status": "finished",
    "finalScore": "3-6, 6-3, 6-4",
    "modelFairLast": 0.6544,
-   "lastSeen": "2026-10-28T17:56:01.522Z"
+   "lastSeen": "2026-10-29T03:55:09.877Z"
   },
   "12174305": {
    "key": "12174305",
@@ -37844,10 +37844,10 @@
    "modelFairEntry": 0.806,
    "valueSnapshot": null,
    "firstSeen": "2026-10-25T23:44:17.444Z",
-   "status": "upcoming",
-   "finalScore": null,
+   "status": "finished",
+   "finalScore": "6-4, 7-6",
    "modelFairLast": 0.8269,
-   "lastSeen": "2026-10-28T17:56:01.522Z"
+   "lastSeen": "2026-10-29T03:55:09.877Z"
   },
   "12174663": {
    "key": "12174663",
@@ -37865,10 +37865,10 @@
     "ts": "2026-10-27T13:01:02.128Z"
    },
    "firstSeen": "2026-10-26T22:17:54.523Z",
-   "status": "upcoming",
-   "finalScore": null,
+   "status": "finished",
+   "finalScore": "4-6, 2-6",
    "modelFairLast": 0.4505,
-   "lastSeen": "2026-10-28T17:56:01.522Z"
+   "lastSeen": "2026-10-29T03:55:09.877Z"
   },
   "12174665": {
    "key": "12174665",
@@ -37889,7 +37889,7 @@
    "status": "finished",
    "finalScore": "1-6, 6-3, 6-4",
    "modelFairLast": 0.3114,
-   "lastSeen": "2026-10-28T17:56:01.522Z"
+   "lastSeen": "2026-10-29T03:55:09.877Z"
   },
   "12174967": {
    "key": "12174967",
@@ -37909,8 +37909,8 @@
    "firstSeen": "2026-10-27T16:18:19.755Z",
    "status": "upcoming",
    "finalScore": null,
-   "modelFairLast": 0.2855,
-   "lastSeen": "2026-10-28T17:56:01.522Z"
+   "modelFairLast": 0.2844,
+   "lastSeen": "2026-10-29T03:55:09.877Z"
   },
   "12174968": {
    "key": "12174968",
@@ -37924,8 +37924,8 @@
    "firstSeen": "2026-10-27T16:18:19.755Z",
    "status": "upcoming",
    "finalScore": null,
-   "modelFairLast": 0.782,
-   "lastSeen": "2026-10-28T17:56:01.522Z"
+   "modelFairLast": 0.7833,
+   "lastSeen": "2026-10-29T03:55:09.877Z"
   },
   "12175004": {
    "key": "12175004",
@@ -37943,10 +37943,10 @@
     "ts": "2026-10-28T05:40:29.713Z"
    },
    "firstSeen": "2026-10-27T20:17:50.906Z",
-   "status": "live",
-   "finalScore": null,
+   "status": "finished",
+   "finalScore": "4-6, 5-7",
    "modelFairLast": 0.8438,
-   "lastSeen": "2026-10-28T17:56:01.522Z"
+   "lastSeen": "2026-10-29T03:55:09.877Z"
   },
   "12175151": {
    "key": "12175151",
@@ -37956,12 +37956,18 @@
    "surface": "hard",
    "tour": "ATP Basel",
    "modelFairEntry": 0.2986,
-   "valueSnapshot": null,
+   "valueSnapshot": {
+    "fairP1": 0.3106,
+    "fairP2": 0.6894,
+    "edgeVsPinnacleP1": -0.0243,
+    "edgeVsPinnacleP2": 0.0243,
+    "ts": "2026-10-29T03:34:43.200Z"
+   },
    "firstSeen": "2026-10-27T21:22:45.089Z",
    "status": "upcoming",
    "finalScore": null,
-   "modelFairLast": 0.2986,
-   "lastSeen": "2026-10-28T17:56:01.522Z"
+   "modelFairLast": 0.3106,
+   "lastSeen": "2026-10-29T03:55:09.877Z"
   },
   "12175152": {
    "key": "12175152",
@@ -37975,8 +37981,8 @@
    "firstSeen": "2026-10-27T21:22:45.089Z",
    "status": "upcoming",
    "finalScore": null,
-   "modelFairLast": 0.898,
-   "lastSeen": "2026-10-28T17:56:01.522Z"
+   "modelFairLast": 0.8774,
+   "lastSeen": "2026-10-29T03:55:09.877Z"
   },
   "12175157": {
    "key": "12175157",
@@ -37990,8 +37996,8 @@
    "firstSeen": "2026-10-27T23:37:34.806Z",
    "status": "upcoming",
    "finalScore": null,
-   "modelFairLast": 0.1044,
-   "lastSeen": "2026-10-28T17:56:01.522Z"
+   "modelFairLast": 0.1004,
+   "lastSeen": "2026-10-29T03:55:09.877Z"
   },
   "12175228": {
    "key": "12175228",
@@ -38005,8 +38011,8 @@
    "firstSeen": "2026-10-28T02:14:03.445Z",
    "status": "upcoming",
    "finalScore": null,
-   "modelFairLast": 0.5417,
-   "lastSeen": "2026-10-28T17:56:01.522Z"
+   "modelFairLast": 0.5429,
+   "lastSeen": "2026-10-29T03:55:09.877Z"
   },
   "12175383": {
    "key": "12175383",
@@ -38020,8 +38026,8 @@
    "firstSeen": "2026-10-28T15:51:12.844Z",
    "status": "upcoming",
    "finalScore": null,
-   "modelFairLast": 0.1735,
-   "lastSeen": "2026-10-28T17:56:01.522Z"
+   "modelFairLast": 0.174,
+   "lastSeen": "2026-10-29T03:55:09.877Z"
   },
   "12175384": {
    "key": "12175384",
@@ -38036,7 +38042,67 @@
    "status": "upcoming",
    "finalScore": null,
    "modelFairLast": 0.85,
-   "lastSeen": "2026-10-28T17:56:01.522Z"
+   "lastSeen": "2026-10-29T03:55:09.877Z"
+  },
+  "12175433": {
+   "key": "12175433",
+   "date": "2026-10-29",
+   "p1": "N. Djokovic",
+   "p2": "J-L. Struff",
+   "surface": "hard",
+   "tour": "ATP Basel",
+   "modelFairEntry": 0.85,
+   "valueSnapshot": null,
+   "firstSeen": "2026-10-29T03:55:09.877Z",
+   "status": "upcoming",
+   "finalScore": null,
+   "modelFairLast": 0.85,
+   "lastSeen": "2026-10-29T03:55:09.877Z"
+  },
+  "12175434": {
+   "key": "12175434",
+   "date": "2026-10-29",
+   "p1": "N. Basilashvili",
+   "p2": "C. Alcaraz",
+   "surface": "hard",
+   "tour": "ATP Vienna",
+   "modelFairEntry": 0.1,
+   "valueSnapshot": null,
+   "firstSeen": "2026-10-29T03:55:09.877Z",
+   "status": "upcoming",
+   "finalScore": null,
+   "modelFairLast": 0.1,
+   "lastSeen": "2026-10-29T03:55:09.877Z"
+  },
+  "12175435": {
+   "key": "12175435",
+   "date": "2026-10-29",
+   "p1": "A. Fery",
+   "p2": "L. Musetti",
+   "surface": "hard",
+   "tour": "ATP Vienna",
+   "modelFairEntry": 0.2528,
+   "valueSnapshot": null,
+   "firstSeen": "2026-10-29T03:55:09.877Z",
+   "status": "upcoming",
+   "finalScore": null,
+   "modelFairLast": 0.2528,
+   "lastSeen": "2026-10-29T03:55:09.877Z"
+  },
+  "12175527": {
+   "key": "12175527",
+   "date": "2026-10-29",
+   "p1": "T. Fritz",
+   "p2": "D. Shapovalov",
+   "surface": "hard",
+   "tour": "ATP Basel",
+   "modelFairEntry": 0.6056,
+   "valueSnapshot": null,
+   "firstSeen": "2026-10-29T03:55:09.877Z",
+   "status": "upcoming",
+   "finalScore": null,
+   "modelFairLast": 0.6056,
+   "lastSeen": "2026-10-29T03:55:09.877Z"
   },
   "e81136d8af2867898952ce896f71662f": {
    "key": "e81136d8af2867898952ce896f71662f",
