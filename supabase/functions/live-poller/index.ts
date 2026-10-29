@@ -17,11 +17,13 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
 import { fetchFinals, FINALS_EVERY_S, FINALS_MAX_PER_TICK, FINALS_WINDOW_MIN } from "./finals.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-// Prefer the platform-injected legacy service_role JWT; fall back to the new
-// sb_secret_ key (injected by go-live as SB_SERVICE_KEY) if a project on the
-// new API-key system doesn't expose SUPABASE_SERVICE_ROLE_KEY. Both bypass RLS.
-const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ??
-  Deno.env.get("SB_SERVICE_KEY")!;
+// Prefer SB_SERVICE_KEY (set by go-live, and by hand as a stop-gap), else the
+// platform-injected SUPABASE_SERVICE_ROLE_KEY. Both bypass RLS. SB_SERVICE_KEY
+// comes first because only it can be changed: SUPABASE_* names are reserved.
+// Stop-gap 2026-10-29: SB_SERVICE_KEY holds the legacy service_role key while
+// the sb_secret_ / injected key gets "JWT issued at future" (clock-skew 401).
+const SERVICE_ROLE = Deno.env.get("SB_SERVICE_KEY") ??
+  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const API_TENNIS_KEY = Deno.env.get("API_TENNIS_KEY")!;
 // Shared secret so only pg_cron (which sends it) can trigger the poller.
 const POLLER_SECRET = Deno.env.get("POLLER_SECRET") ?? "";
