@@ -2407,6 +2407,7 @@
           // shift"): no baseline yet -> the clause is left out (the line keeps its one-line box), never "tour —".
           support: 'flat-stake yield ' + MIDDOT + ' ' + mk.headline.n + ' priced' +
             (tourAllBox == null ? '' : ' ' + MIDDOT + ' tour ' + neg(tourAllBox, 2, '%')) + idHidden }
+      : marketEmptyWhy(p.key).pending ? { headline: null, support: null, pending: true }
       : { headline: null, support: (marketEmptyWhy(p.key).dashed ? 'no confirmed closing prices' : 'no priced matches on record') + idHidden };
 
     // 8 · Live trading (was "Playing profile") — the headline CHANGES SUBJECT,
@@ -7082,22 +7083,31 @@
   // kept; flip MKT_SHOW_FILTERS to render the controls again.
   var MKT_SHOW_FILTERS = false;
 
-  // market-edge-stale (founder 2026-10-29): the empty state says WHY, from the host's one join (window.pp2MarketDashed):
-  // main-draw matches the close rules dash → say so plainly; no main-draw match at all → the Challenger / qualifying
-  // line; anything else, or not answered yet → no reason claimed. It never asks for the join itself (the join loads after
-  // first paint, TEN-402 R2, and its landing repaints this).
+  // market-edge-stale (founder 2026-10-29) + market-edge-box: the empty state says WHY, from the host's one join
+  // (window.pp2MarketDashed): main-draw matches the close rules dash → say so plainly; no main-draw match → the
+  // Challenger / qualifying line; team events are named apart (in the Database join, never in Market edge). While his
+  // history or the join is still loading it claims nothing (pending); a failed load or no bridge → no reason claimed.
+  // It never asks for the join itself (the join loads after first paint, TEN-402 R2, and its landing repaints this).
   function marketEmptyWhy(key) {
     var d = typeof window !== 'undefined' && typeof window.pp2MarketDashed === 'function' ? window.pp2MarketDashed(key) : null;
     return d || { unknown: true };
   }
+  function marketTeamLine(d) {
+    if (!d.team) return '';
+    return ' ' + (d.teamPriced ? d.teamPriced + ' of his ' : 'His ') + d.team + ' team-event ' + (d.team === 1 ? 'match' : 'matches') +
+      (d.teamPriced ? (d.teamPriced === 1 ? ' is' : ' are') + ' priced in the Database' : '') +
+      (d.teamPriced ? '; team events (Davis Cup and the like) are' : ' (Davis Cup and the like) are') +
+      ' left out of Market edge, as they are of every Database figure.';
+  }
   function marketEmptyText(key) {
     var d = marketEmptyWhy(key);
+    if (d.pending) return 'Loading the priced matches.';
     if (d.dashed) return 'No confirmed closing prices for these matches. ' + d.dashed + ' of his ' + d.main +
       ' ATP main-draw ' + (d.main === 1 ? 'match has' : 'matches have') + ' no Pinnacle close the close rules accept, so ' +
-      (d.dashed === 1 ? 'it shows' : 'they show') + ' a dash.';
+      (d.dashed === 1 ? 'it shows' : 'they show') + ' a dash.' + marketTeamLine(d);
     if (d.main === 0) return 'No priced matches on record. The odds archive is tour main-draw only, so a player ' +
-      'whose record is Challenger or qualifying has no priced row here.';
-    return 'No priced matches on record.';
+      'whose record is Challenger or qualifying has no priced row here.' + marketTeamLine(d);
+    return 'No priced matches on record.' + (d.unknown ? '' : marketTeamLine(d));
   }
 
   function renderMarketModal(p) {
@@ -12305,6 +12315,8 @@
     render: build,
     mount: mount,
     repaint: repaint,
+    // market-edge-box: the player this module is showing (the host never repaints another player's profile under B)
+    currentKey: function () { return mounted && state.key ? String(state.key) : null; },
     sheetClosed: sheetClosed,
     // exported so the reconciliation check and the tests can call the same
     // code path the page uses, rather than a copy that can drift

@@ -6452,7 +6452,9 @@ function psRenderPage(P){
   document.getElementById('psCards').innerHTML = html;
 }
 async function psOpenProfile(key){
-  if (typeof ensurePlayerProfile === 'function' && !(await ensurePlayerProfile(key))) return;
+  // market-edge-box: from another player's profile, B's loading shell replaces A at once (never A's figures under B)
+  const shell = typeof pp2ShowLoadingIfOther === 'function' && pp2ShowLoadingIfOther(key);
+  if (typeof ensurePlayerProfile === 'function' && !(await ensurePlayerProfile(key))) { if (shell) ppShowLoadError(key); return; }
   document.querySelector('#mainNav button[data-tab="players"]').click();
   showPlayerProfile(key);
 }
@@ -22867,7 +22869,8 @@ function pp2PrefetchFeedIndexes(key){
 function pp2RepaintIfOpen(key){
   const view = document.getElementById('playerProfileView');
   if (view && view.style.display !== 'none' && view.querySelector('.pp2-main') && window.PlayerProfileV2
-      && window.PlayerProfileV2.repaint && ppState.key === String(key)) {
+      && window.PlayerProfileV2.repaint && ppState.key === String(key)
+      && (!window.PlayerProfileV2.currentKey || window.PlayerProfileV2.currentKey() === String(key))) {
     pp2Bridge();
     window.PlayerProfileV2.repaint();
   }
@@ -22964,8 +22967,9 @@ async function loadPp2CareerHistory(key){
     if (recOk && k in _careerHistoryShards) {   // answered — settle the bridge
       window.careerHistory = window.careerHistory || {};
       window.careerHistory[k] = rows || [];
-    }
-  } catch (e) { /* additive; the date/surface columns dash and the note says why */ }
+      _pp2ChFailed.delete(k);
+    } else _pp2ChFailed.add(k);   // market-edge-box: a failed load ends the box's wait (no reason claimed)
+  } catch (e) { _pp2ChFailed.add(k); /* additive; the date/surface columns dash and the note says why */ }
   pp2RepaintIfOpen(k);
 }
 // TEN-207 moved tournamentHistory out of player-profiles.json into a lazy shard
@@ -23052,21 +23056,28 @@ function pp2DbJoinNeed(key){
   return true;
 }
 window.pp2DbJoinNeed = pp2DbJoinNeed;
-// market-edge-stale (founder 2026-10-29): why a player's Market edge holds no priced row. His ATP main-draw career
-// matches (not qualifying, not a walkover) priced through the ONE join; 'dashed' = the ones the close rules dash
-// (sfDbNoPriceWhy 'od10' = only a start − 10 snapshot; 'nopin' = Bet365 outside its window). null = the join or his
-// career history has not answered yet (the profile then claims nothing about why).
+// market-edge-stale (founder 2026-10-29) + market-edge-box: why a player's Market edge holds no priced row. His ATP
+// main-draw career matches (not qualifying, not a walkover, not a team event) priced through the ONE join; 'dashed' = the
+// ones the close rules dash (sfDbNoPriceWhy 'od10' = only a start − 10 snapshot; 'nopin' = Bet365 outside its window).
+// Team events (Davis / Laver / United / ATP / Hopman Cup) are counted apart: the join prices them, Market edge and every
+// Database figure leave them out (founder 2026-10-17), so they are never "main draw" here (G. Bueno: 2 main draw + 7
+// Davis Cup, 4 of them priced). { pending: true } = his history or the join has not answered yet (the box claims
+// nothing); null = one of them failed (no reason is claimed).
+const PP2_TEAM_EVENT = /laver cup|davis cup|united cup|atp cup|hopman cup/i;
+const _pp2ChFailed = new Set();
 function pp2MarketDashed(key){
   const k = String(key);
-  if (_sfDbJoinSt !== 'ready' || !_sfDbJoin) return null;
+  if (_sfDbJoinSt === 'failed' || _pp2ChFailed.has(k)) return null;
   const rows = (window.careerHistory && window.careerHistory[k]) || (k in _careerHistoryShards ? _careerHistoryShards[k] : null);
-  if (!Array.isArray(rows)) return null;
-  const main = rows.filter(x => x && x.level === 'atp' && !x.walkover && !x.unconfirmed && !x.qualifying && !/^qualif/i.test(String(x.round || '')));
-  if (!main.length) return { main: 0, dashed: 0, priced: 0 };
-  const px = sfDbPxRows(k, null, main.map(x => ({ date: x.date, won: !!x.won, round: fhRoundCode(x.round, false), opp: x.opponent })));
+  if (_sfDbJoinSt !== 'ready' || !_sfDbJoin || !Array.isArray(rows)) return { pending: true };
+  const atp = rows.filter(x => x && x.level === 'atp' && !x.walkover && !x.unconfirmed && !x.qualifying && !/^qualif/i.test(String(x.round || '')));
+  const team = atp.filter(x => PP2_TEAM_EVENT.test(String(x.tournament || '')));
+  const main = atp.filter(x => !PP2_TEAM_EVENT.test(String(x.tournament || '')));
+  const priceOf = (list) => list.length ? sfDbPxRows(k, null, list.map(x => ({ date: x.date, won: !!x.won, round: fhRoundCode(x.round, false), opp: x.opponent }))) : Object.assign([], { why: [] });
+  const px = priceOf(main), tx = priceOf(team);
   let dashed = 0, priced = 0;
   px.forEach((d, i) => { if (d) priced++; else if (px.why && (px.why[i] === 'od10' || px.why[i] === 'nopin')) dashed++; });
-  return { main: main.length, dashed, priced };
+  return { main: main.length, dashed, priced, team: team.length, teamPriced: tx.filter(Boolean).length };
 }
 window.pp2MarketDashed = pp2MarketDashed;
 // ── Draw record drill-in (founder 2026-10-13) ────────────────────────────────────────────────────────────────
@@ -23204,10 +23215,22 @@ function pp2LoadSplits(key){
   if (typeof careerSplitsTour !== 'undefined' && !careerSplitsTour && typeof loadCareerSplitsTour === 'function') loadCareerSplitsTour().then(t => { if (t) pp2RepaintIfOpen(k); });
   return load;
 }
+// market-edge-box (founder 2026-10-29): opening B from A's profile must never leave A on screen while B loads (the
+// profile-shard fetch, the first-paint wait). The view swaps to a neutral loading shell at once — no name, no figure —
+// and pp2RepaintIfOpen never repaints a mounted profile that is not the one asked for.
+function pp2ShowLoadingIfOther(key){
+  const view = document.getElementById('playerProfileView');
+  if (!view || view.style.display === 'none' || !view.querySelector('.pp2-main')) return false;
+  const cur = window.PlayerProfileV2 && window.PlayerProfileV2.currentKey ? window.PlayerProfileV2.currentKey() : null;
+  if (cur === String(key)) return false;
+  view.innerHTML = '<div class="pp2-loading" data-pp2-loading="' + String(key).replace(/[^0-9A-Za-z_-]/g, '') + '" style="border:1px solid var(--edge-6); border-radius:16px; background:var(--card); padding:26px 24px; margin:4px 10px 22px; text-align:center; font-size:13px; color:var(--text-label);">Loading profile…</div>';
+  return true;
+}
 function showPlayerProfileV2(key){
   const profile = playerProfiles[String(key)];
   if (!profile) return false;
   if (!window.PlayerProfileV2 || !window.PlayerProfileV2.mount) return false;
+  pp2ShowLoadingIfOther(key);
   ppState.key = String(key);
   const seq = ++_pp2OpenSeq;
   const shard = loadPp2MarketShard(key);
@@ -23234,7 +23257,17 @@ function pp2MountNow(key){
 }
 function showPlayerProfile(key){
   const profile = playerProfiles[String(key)];
-  if (!profile) return;
+  if (!profile) {
+    // market-edge-box: a player whose profile is not loaded yet (the lazy profiles/{key}.json) is fetched, never left
+    // as a silent no-op with the previous player still on screen; from another profile the loading shell shows meanwhile
+    if (typeof ensurePlayerProfile !== 'function') return;
+    const shell = pp2ShowLoadingIfOther(key);
+    ensurePlayerProfile(key).then(ok => {
+      if (ok && playerProfiles[String(key)]) showPlayerProfile(key);
+      else if (shell) ppShowLoadError(key);
+    });
+    return;
+  }
   // ESC brief: remember the view this profile was opened from (not for a re-open of the profile already showing).
   if (globalThis.SfNav && !(ppState.key === String(key) && document.getElementById('playerListView').style.display === 'none')) SfNav.push('players');
   // v2 is the only renderer (legacy retired 2026-10-21). A false return (module absent, mount failed) is a load
