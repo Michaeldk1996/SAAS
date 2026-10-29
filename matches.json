@@ -2233,21 +2233,10 @@
       ]
     },
     "live": true,
-    "liveStatus": "Set 2",
-    "liveScore": [
-      {
-        "set": 1,
-        "p1": 3,
-        "p2": 6
-      },
-      {
-        "set": 2,
-        "p1": 0,
-        "p2": 1
-      }
-    ],
-    "liveGameScore": "30 - 0",
-    "liveServer": "p1",
+    "liveStatus": "Set 3",
+    "liveScore": null,
+    "liveGameScore": "15 - 0",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/2973_b-shelton.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1304_j-kym.jpg",
     "tournamentKey": "1706",
@@ -3625,7 +3614,10 @@
       "edgeVsPinnacleP1": 0.0785,
       "edgeVsPinnacleP2": -0.0785,
       "ts": "2026-10-29T17:09:42.541Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12175723",
@@ -85737,7 +85729,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "4-6, 6-7",
+      "display": "4-6, 6-7(5)",
       "sets": [
         {
           "p1": 4,
@@ -100111,7 +100103,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-5, 3-6, 7-6",
+      "display": "7-5, 3-6, 7-6(11)",
       "sets": [
         {
           "p1": 7,
@@ -147178,7 +147170,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-1, 4-6, 7-6",
+      "display": "6-1, 4-6, 7-6(2)",
       "sets": [
         {
           "p1": 6,
@@ -153016,7 +153008,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-7, 1-6",
+      "display": "6-7(5), 1-6",
       "sets": [
         {
           "p1": 6,
@@ -157289,7 +157281,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6, 7-5",
+      "display": "7-6(6), 7-5",
       "sets": [
         {
           "p1": 7,
@@ -163665,7 +163657,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-7, 1-6",
+      "display": "6-7(3), 1-6",
       "sets": [
         {
           "p1": 6,
