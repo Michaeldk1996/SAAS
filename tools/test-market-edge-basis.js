@@ -19,8 +19,22 @@ const fs = require('fs');
 const path = require('path');
 const core = require('../market-edge-core.js');
 
-const DIR = path.join(__dirname, '..', 'market-edge');
-const INDEX = path.join(__dirname, '..', 'market-edge-index.json');
+// market-edge-stale (founder 2026-10-29): the committed market-edge/ is a price-free floor (tools/market-edge-floor.js),
+// so the basis is checked on what the pipeline builds: the REAL builders, in a temp root, over the committed odds
+// archive (build-database-yield.js → the master → build-market-edge.js), the floor's names as the roster.
+const FRESH = (() => {
+  const os = require('os'), { execFileSync } = require('child_process'), R = path.join(__dirname, '..');
+  const t = fs.mkdtempSync(path.join(os.tmpdir(), 'market-edge-basis-'));
+  process.on('exit', () => fs.rmSync(t, { recursive: true, force: true }));
+  for (const f of ['build-market-edge.js', 'build-odds-performance.js', 'settlement.js', 'market-edge-core.js', 'build-database-yield.js', 'td-identity.js', 'player-profiles.json']) fs.copyFileSync(path.join(R, f), path.join(t, f));
+  for (const f of ['odds-archive', 'court-speed-map.json', 'playing-styles.json']) if (fs.existsSync(path.join(R, f))) fs.symlinkSync(path.join(R, f), path.join(t, f));
+  fs.cpSync(path.join(R, 'market-edge'), path.join(t, 'market-edge'), { recursive: true });
+  execFileSync(process.execPath, [path.join(t, 'build-database-yield.js')], { stdio: 'pipe' });
+  execFileSync(process.execPath, [path.join(t, 'build-market-edge.js'), '--quiet'], { stdio: 'pipe' });
+  return t;
+})();
+const DIR = path.join(FRESH, 'market-edge');
+const INDEX = path.join(FRESH, 'market-edge-index.json');
 const BASIS = 'Pinnacle closing, else Bet365 closing';
 
 let failures = 0;
@@ -48,7 +62,11 @@ function checkShard(name, s) {
     bad.push(`${name}: curve has ${s.curve.length} points against headline n=${s.headline.n}`);
   }
   for (const m of (s.matches || [])) {
-    if (m.inBasis !== (m.band != null)) { bad.push(`${name}: row ${m.date} (book=${m.book}, band ${m.band}) inBasis=${m.inBasis} — every banded priced row is on the basis, nothing else`); break; }
+    // Pinnacle retirement rules (founder 2026-10-22): a void retirement, or one with no set scores, keeps its band and
+    // prices but carries no units (pl null, `settle` names why) and is off the basis; every other banded row is on it.
+    const stands = !(m.ret && (m.settle === 'void' || m.settle === 'no-sets'));
+    if (m.inBasis !== (m.band != null && stands)) { bad.push(`${name}: row ${m.date} (book=${m.book}, band ${m.band}, settle ${m.settle || '—'}) inBasis=${m.inBasis} — every banded priced row that stands is on the basis, nothing else`); break; }
+    if (!stands && m.pl != null) { bad.push(`${name}: row ${m.date} settled ${m.settle} but carries units`); break; }
     if (!m.inBasis) continue;
     // role and band follow the price alone (the tab's rule), never the opponent's price. `price` on the
     // row is rounded to 2dp and the band stamp comes from the unrounded price, so the role is checked

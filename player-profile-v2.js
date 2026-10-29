@@ -2407,7 +2407,7 @@
           // shift"): no baseline yet -> the clause is left out (the line keeps its one-line box), never "tour —".
           support: 'flat-stake yield ' + MIDDOT + ' ' + mk.headline.n + ' priced' +
             (tourAllBox == null ? '' : ' ' + MIDDOT + ' tour ' + neg(tourAllBox, 2, '%')) + idHidden }
-      : { headline: null, support: 'no priced matches on record' + idHidden };
+      : { headline: null, support: (marketEmptyWhy(p.key).dashed ? 'no confirmed closing prices' : 'no priced matches on record') + idHidden };
 
     // 8 · Live trading (was "Playing profile") — the headline CHANGES SUBJECT,
     // and this is the second half of RULING 2's fix. It used to print the season
@@ -7082,6 +7082,24 @@
   // kept; flip MKT_SHOW_FILTERS to render the controls again.
   var MKT_SHOW_FILTERS = false;
 
+  // market-edge-stale (founder 2026-10-29): the empty state says WHY, from the host's one join (window.pp2MarketDashed):
+  // main-draw matches the close rules dash → say so plainly; no main-draw match at all → the Challenger / qualifying
+  // line; anything else, or not answered yet → no reason claimed. It never asks for the join itself (the join loads after
+  // first paint, TEN-402 R2, and its landing repaints this).
+  function marketEmptyWhy(key) {
+    var d = typeof window !== 'undefined' && typeof window.pp2MarketDashed === 'function' ? window.pp2MarketDashed(key) : null;
+    return d || { unknown: true };
+  }
+  function marketEmptyText(key) {
+    var d = marketEmptyWhy(key);
+    if (d.dashed) return 'No confirmed closing prices for these matches. ' + d.dashed + ' of his ' + d.main +
+      ' ATP main-draw ' + (d.main === 1 ? 'match has' : 'matches have') + ' no Pinnacle close the close rules accept, so ' +
+      (d.dashed === 1 ? 'it shows' : 'they show') + ' a dash.';
+    if (d.main === 0) return 'No priced matches on record. The odds archive is tour main-draw only, so a player ' +
+      'whose record is Challenger or qualifying has no priced row here.';
+    return 'No priced matches on record.';
+  }
+
   function renderMarketModal(p) {
     var mk = marketFor(p.key);
     if (!mk && marketPending(p.key)) {
@@ -7090,10 +7108,8 @@
         'text-align:center;font-size:13px;color:var(--text-label);">Loading the priced matches.</div>';
     }
     if (!mk || !mk.headline || !mk.headline.n) {
-      return '<div style="border:1px dashed var(--edge-6);border-radius:10px;padding:26px;' +
-        'text-align:center;font-size:13px;color:var(--text-label);">' +
-        'No priced matches on record. The odds archive is tour main-draw only, so a player ' +
-        'whose record is Challenger or qualifying has no priced row here.</div>';
+      return '<div data-pp2-market-empty style="border:1px dashed var(--edge-6);border-radius:10px;padding:26px;' +
+        'text-align:center;font-size:13px;color:var(--text-label);">' + marketEmptyText(p.key) + '</div>';
     }
     var mktTab = state.marketTab === 'lines' ? 'lines' : 'winner';
     if (mktTab === 'lines') return ANA_STYLE + marketTabsHtml() + renderLinesTab(p);
