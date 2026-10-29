@@ -2289,12 +2289,31 @@ def kibl_payloads(rows, keep_stored_key=False):
                               [p for p in payload if 'is_selected' in p]) if part]
 
 
-def upsert_kibl_rows(url, key, rows, keep_stored_key=False):
+WRITE_RETRIES = 3            # a write that times out is sent again, then fails loudly
+
+
+def upsert_kibl_rows(url, key, rows, keep_stored_key=False, sleep=time.sleep):
+    """Upsert the Kibl card rows (card-job-lock, 2026-10-29).
+
+    A write that times out (57014: run 40950690137 stopped at row 0 of 7,866 on
+    29 Oct 20:52Z) is sent again from the first row not yet written, up to
+    WRITE_RETRIES times, then fails loudly. Re-sending is safe: the upsert merges
+    on the grain key (fixture_id, book, market, side, line), so a row written
+    twice is the same row."""
     sent = 0
     for part in kibl_payloads(rows, keep_stored_key):
-        s, err = L.upsert(url, key, 'odds_card_state', part,
-                          'fixture_id,book,market,side,line')
-        sent += s
+        done = 0
+        for attempt in range(1, WRITE_RETRIES + 1):
+            s, err = L.upsert(url, key, 'odds_card_state', part[done:],
+                              'fixture_id,book,market,side,line')
+            done += s
+            sent += s
+            if not err:
+                break
+            if attempt < WRITE_RETRIES:
+                print(f'odds_card_state: write from row {done} failed ({str(err)[:120]}); '
+                      f'retry {attempt}/{WRITE_RETRIES - 1}')
+                sleep(10 * attempt)
         if err:
             return sent, err
     return sent, None

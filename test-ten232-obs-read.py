@@ -85,7 +85,49 @@ rows, err = K.fetch_by_fixtures('u', 'k', 't', 'c', '', FIX, _sb=api, sleep=lamb
 check('a page that never answers returns the error (the step fails, never a short read)',
       err is not None and '57014' in str(err) and len(api.calls) == K.READ_RETRIES)
 
-print('3. the wiring')
+print('3. a timed-out card-state write is sent again from the first unwritten row')
+
+
+class FakeUpsert:
+    """L.upsert stand-in: writes in BATCH chunks; the listed call numbers time out after `ok_rows` rows."""
+
+    def __init__(self, fail_calls=(), ok_rows=0):
+        self.calls, self.fail_calls, self.ok_rows, self.stored = 0, set(fail_calls), ok_rows, {}
+
+    def __call__(self, url, key, table, rows, conflict):
+        self.calls += 1
+        if self.calls in self.fail_calls:
+            for r in rows[:self.ok_rows]:
+                self.stored[r['k']] = r
+            return self.ok_rows, (500, '{"code":"57014","message":"canceling statement due to statement timeout"}')
+        for r in rows:
+            self.stored[r['k']] = r
+        return len(rows), None
+
+
+CARD_ROWS = [{'k': i} for i in range(1200)]
+real_upsert, real_payloads = K.L.upsert, K.kibl_payloads
+K.kibl_payloads = lambda rows, keep=False: [rows]
+try:
+    sleeps, fake = [], FakeUpsert(fail_calls={1}, ok_rows=500)
+    K.L.upsert = fake
+    n, err = K.upsert_kibl_rows('u', 'k', CARD_ROWS, sleep=sleeps.append)
+    check('a timeout after 500 rows, then success → all 1200 written once each  [mutant: WRITE_RETRIES=1]',
+          err is None and n == 1200 and len(fake.stored) == 1200 and len(sleeps) == 1, f'{n} {err} {sleeps}')
+    sleeps, fake = [], FakeUpsert(fail_calls={1, 2}, ok_rows=0)
+    K.L.upsert = fake
+    n, err = K.upsert_kibl_rows('u', 'k', CARD_ROWS, sleep=sleeps.append)
+    check('two timeouts at row 0, then success (the 29 Oct 20:52Z failure)  [control: the pre-fix writer stops at row 0]',
+          err is None and n == 1200 and sleeps == [10, 20], f'{n} {err} {sleeps}')
+    fake = FakeUpsert(fail_calls={1, 2, 3, 4}, ok_rows=0)
+    K.L.upsert = fake
+    n, err = K.upsert_kibl_rows('u', 'k', CARD_ROWS, sleep=lambda s: None)
+    check('a write that never lands returns the error (the step fails, never a silent short write)',
+          err is not None and '57014' in str(err) and n == 0 and fake.calls == K.WRITE_RETRIES)
+finally:
+    K.L.upsert, K.kibl_payloads = real_upsert, real_payloads
+
+print('4. the wiring')
 src = open(K.__file__).read()
 reads = re.findall(r"(fetch_\w+)\(\s*url, key, 'kibl_line_observations'", src)
 check("both kibl_line_observations reads go through fetch_by_fixtures  [control: the pre-fix builder used fetch_all]",
