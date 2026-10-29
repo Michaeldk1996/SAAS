@@ -3,9 +3,10 @@
 // cancelled and timed-out runs too. It died at "Apply the schema" on every run from 27 Oct 13:31Z and the only signal
 // was a stale odds-card-state.json; its circuit breaker's own unschedule failed (HTTP 544) without anyone told.
 //
-// Same rule as tools/live-flip-fail-alert.mjs: a non-success run alerts when it is the FIRST after a success, or the
-// first of its UTC day (a daily reminder naming the streak). Everything else is logged, not sent. Never fails the job
-// for an unsent alert: it is an ::error:: in the log and the step summary instead.
+// One Telegram per failure streak (founder 2026-10-29, replacing the once-per-UTC-day reminder): a non-success run
+// alerts only when it is the FIRST after a success, so a fail → pass → fail on one day sends twice and a streak that
+// runs past midnight sends nothing more. Everything else is logged, not sent. Never fails the job for an unsent
+// alert: it is an ::error:: in the log and the step summary instead.
 // Env: GH_TOKEN, GITHUB_REPOSITORY, RUN_ID (the triggering run), TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, ALERT_TEST;
 // GITHUB_API_URL / TELEGRAM_API_URL point the test at fake servers (tools/test-card-job-fail-alert.mjs).
 import { appendFileSync } from 'node:fs';
@@ -34,15 +35,14 @@ export async function decide(env) {
   let streak = 1;
   for (const r of before) { if (NOT_OK.has(r.conclusion)) streak++; else break; }
   const prev = before[0];
-  const day = (r) => String(r.created_at || '').slice(0, 10);
   const first = !prev || !NOT_OK.has(prev.conclusion);
-  if (!first && day(prev) === day(run) && !env.ALERT_TEST)
-    return { alert: false, why: `run ${runId} ${run.conclusion}: ${streak} in a row, already alerted on ${day(run)} (UTC)` };
+  if (!first && !env.ALERT_TEST)
+    return { alert: false, why: `run ${runId} ${run.conclusion}: ${streak} in a row, this streak was alerted at its first failure` };
   const jobs = (await gh(env, `/actions/runs/${runId}/jobs?filter=latest&per_page=100`)).jobs || [];
   const steps = jobs.flatMap(j => (j.steps || []).filter(s => NOT_OK.has(s.conclusion)).map(s => `${plainStep(s.name)} (${s.conclusion})`));
   const text = [`Stennisfy card job (Kibl archive / odds-card-state) ${run.conclusion.toUpperCase()} (run ${run.run_number}, ${run.event}).`,
     steps.length ? `Step: ${steps.join('; ')}.` : 'GitHub names no failing step (the job itself stopped).',
-    first ? 'First failure after a passing run.' : `Still failing: ${streak} runs in a row (daily reminder).`,
+    first ? 'First failure after a passing run.' : `Still failing: ${streak} runs in a row.`,
     "While it fails, the site's match cards keep their last published odds and no Close is cut.",
     run.html_url || ''].filter(Boolean).join('\n');
   return { alert: true, text };

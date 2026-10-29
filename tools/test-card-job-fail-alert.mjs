@@ -3,8 +3,9 @@
 //   1. a CANCELLED run after a pass alerts, naming the step               mutant: drop 'cancelled' from NOT_OK
 //   2. a failed run after a pass alerts ("first failure")                 mutant: alert only on cancelled
 //   3. a successful run sends nothing                                     mutant: alert on everything
-//   4. a second failure the same UTC day sends nothing (hourly: no spam)   mutant: drop the same-day rule
-//   5. the first failure of a new UTC day alerts with the streak           mutant: alert only after a pass
+//   4. a second failure in the SAME streak sends nothing                  mutant: alert on every failure
+//   5. a streak running past midnight sends nothing more (no daily reminder) mutant: the once-per-UTC-day reminder back
+//   5b. fail → pass → fail on ONE day sends twice (one per streak)          mutant: dedup by UTC day
 //   6. the end-to-end CLI posts exactly one message; a replay says TEST   mutant: never call sendTelegram / unmarked replay
 //   7. the wiring: workflow_run `completed` of the exact `name:` of ten232-kibl-archive.yml; cancelled let through
 import { createServer } from 'node:http';
@@ -51,10 +52,14 @@ d = await decide({ ...env, RUN_ID: '2' });
 ok(!d.alert && /concluded success/.test(d.why), '3. a successful run → nothing', JSON.stringify(d));
 RUNS = { 1: run(1, 10, 'success', at(7)), 2: run(2, 11, 'failure', at(8)), 3: run(3, 12, 'failure', at(9)) };
 d = await decide({ ...env, RUN_ID: '3' });
-ok(!d.alert && /2 in a row, already alerted on 2026-10-26/.test(d.why), '4. a second failure the same UTC day → nothing', JSON.stringify(d));
+ok(!d.alert && /2 in a row, this streak was alerted at its first failure/.test(d.why), '4. a second failure in the same streak → nothing', JSON.stringify(d));
 RUNS = { 1: run(1, 10, 'success', at(20, 24)), 2: run(2, 11, 'failure', at(22, 25)), 3: run(3, 12, 'timed_out', at(23, 25)), 4: run(4, 13, 'failure', at(0)) };
 d = await decide({ ...env, RUN_ID: '4' });
-ok(d.alert && /Still failing: 3 runs in a row \(daily reminder\)/.test(d.text), '5. the first failure of a new UTC day → reminder with the streak', JSON.stringify(d));
+ok(!d.alert && /3 in a row/.test(d.why), '5. a streak running into a new UTC day → nothing more (no daily reminder)', JSON.stringify(d));
+RUNS = { 1: run(1, 10, 'success', at(6)), 2: run(2, 11, 'failure', at(7)), 3: run(3, 12, 'success', at(10)), 4: run(4, 13, 'failure', at(14)) };
+const sent5b = [];
+for (const id of ['2', '4']) { d = await decide({ ...env, RUN_ID: id }); if (d.alert) sent5b.push(id); }
+ok(sent5b.join() === '2,4' && /First failure after a passing run/.test(d.text), '5b. fail → pass → fail on one UTC day → two messages, one per streak', sent5b.join());
 
 const cli = (extra) => new Promise(res => {   // async: the fake servers live on this event loop
   const p = spawn(process.execPath, [join(ROOT, 'tools', 'card-job-fail-alert.mjs')], { env: { ...process.env, ...env, ...extra } });

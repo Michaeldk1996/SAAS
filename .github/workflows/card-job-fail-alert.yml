@@ -2,8 +2,8 @@ name: Card job failure alert
 
 # card-job-lock (2026-10-28). workflow_run fires on EVERY completion of the watched workflow, including cancelled and
 # timed-out runs. ten232-kibl-archive.yml (the card job behind odds-card-state.json) failed on every run from
-# 27 Oct 13:31Z with nobody told. The decision (any conclusion but success / skipped / neutral; first failure after a
-# pass, then once per UTC day) is in tools/card-job-fail-alert.mjs, tested by tools/test-card-job-fail-alert.mjs.
+# 27 Oct 13:31Z with nobody told. The decision (any conclusion but success / skipped / neutral; one Telegram per failure
+# streak: the first failure after a pass, founder 2026-10-29) is in tools/card-job-fail-alert.mjs, tested by tools/test-card-job-fail-alert.mjs.
 on:
   workflow_run:
     workflows: ['TEN-232 kibl archive']
