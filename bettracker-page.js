@@ -327,16 +327,23 @@
   function clearDayHov() { var r = root(); if (r) r.querySelectorAll('.bt-pday.is-hov').forEach(function (x) { x.classList.remove('is-hov'); }); }
 
   // ── 6 · Insights (README §6): verdict cards · Breakdown · Discipline ────────────────────────────────────────────
-  var TONE_VAR = { pos: 'pos', neg: 'neg', amber: 'amber' };
+  var TONE_VAR = { pos: 'pos', neg: 'neg', amber: 'amber', link2: 'tracker-link-2' };
   function insights(ctx) {
     var V = M.verdicts(ctx.list, M.MIN_SAMPLE), B = M.breakdown(ctx.list, S.dim), D = M.disciplineView(ctx.list, M.MIN_SAMPLE, M.PERIODS[S.period]);
     var cards = V.map(function (v) {
       var col = 'var(--' + TONE_VAR[v.tone] + ')';
-      return '<div class="bt-card bt-vcard"><svg class="bt-vspark" viewBox="0 0 380 70" preserveAspectRatio="none">' + (v.path ? '<path d="' + v.area + '" style="fill:color-mix(in srgb, ' + col + ' 35%, transparent)"></path>'
-        + '<path d="' + v.path + '" fill="none" style="stroke:' + col + '" stroke-width="1.5"></path>' : '') + '</svg>'
+      // a pair card draws the best band's curve in green and the worst band's dashed in red (the reference's path / path2)
+      var c1 = v.pair ? 'var(--pos)' : col;
+      return '<div class="bt-card bt-vcard"><svg class="bt-vspark" viewBox="0 0 380 70" preserveAspectRatio="none">' + (v.path ? '<path d="' + v.area + '" style="fill:color-mix(in srgb, ' + c1 + ' 35%, transparent)"></path>'
+        + '<path d="' + v.path + '" fill="none" style="stroke:' + c1 + '" stroke-width="1.5"></path>' : '')
+        + (v.path2 ? '<path d="' + v.path2 + '" fill="none" style="stroke:var(--neg)" stroke-width="1.5" stroke-dasharray="4 3"></path>' : '') + '</svg>'
         + '<div class="bt-vhead"><span class="bt-caps bt-' + v.tone + '">' + esc(v.kind) + '</span><span class="bt-vseg">' + esc(v.seg) + '</span></div>'
         + '<span class="bt-vpl bt-' + v.plKind + '">' + esc(v.pl) + '</span><span class="bt-vtitle">' + esc(v.title) + '</span>'
-        + '<div class="bt-vfigs">' + v.figs.map(function (f) { return '<span class="bt-vfig"><span class="bt-caps10">' + esc(f.l) + '</span><span class="bt-vfig-v bt-' + f.kind + '">' + esc(f.v) + '</span></span>'; }).join('') + '</div>'
+        + (v.pair ? '<div class="bt-vpair">' + v.rows.map(function (r) {
+          return '<div class="bt-vprow"><span class="bt-vp-l"><span class="bt-vp-key is-' + r.dash + ' bt-bd-' + r.tone + '"></span><span class="bt-vp-band">' + esc(r.band) + '</span><span class="bt-vp-n">' + esc(r.n) + '</span></span>'
+            + '<span class="bt-vp-f bt-ink">' + esc(r.rec) + '</span><span class="bt-vp-f bt-' + r.roiKind + '">' + esc(r.roi) + '</span><span class="bt-vp-f bt-' + r.clvKind + '">' + esc(r.clv) + '</span></div>';
+        }).join('') + '</div>'
+          : '<div class="bt-vfigs">' + v.figs.map(function (f) { return '<span class="bt-vfig"><span class="bt-caps10">' + esc(f.l) + '</span><span class="bt-vfig-v bt-' + f.kind + '">' + esc(f.v) + '</span></span>'; }).join('') + '</div>')
         + '<span class="bt-vspacer"></span></div>';
     }).join('');
     var dimOn = S.menu === 'dim';
@@ -345,14 +352,15 @@
     }).join('') + '</div>' : '';
     var heads = '<span></span><span class="bt-caps10">' + esc(B.head) + '</span><span class="bt-caps10 bt-r">Bets</span><span class="bt-caps10 bt-r">W–L</span><span class="bt-caps10 bt-c">ROI · −40 ‥ +40</span>'
       + '<span class="bt-caps10 bt-r">ROI</span><span class="bt-caps10 bt-r">CLV</span><span class="bt-caps10 bt-r">P/L</span>';
+    var mkt = S.dim === 'market';   // v26: a Market row opens its pop-up (›)
     var rows = B.rows.map(function (r) {
-      return '<div class="bt-bgrid bt-brow"><span class="bt-bmark bt-bg-' + r.bar.kind + '"></span><span class="bt-bname">' + esc(r.name) + '</span><span class="bt-bn">' + r.n + '</span><span class="bt-bwl">' + esc(r.wl) + '</span>'
+      return '<div class="bt-bgrid bt-brow' + (mkt ? ' is-x" data-act="openmkt" data-k="' + esc(r.name) + '"' : '"') + '><span class="bt-bmark bt-bg-' + r.bar.kind + '"></span><span class="bt-bname-w"><span class="bt-bname">' + esc(r.name) + '</span>' + (mkt ? '<span class="bt-bchev">›</span>' : '') + '</span><span class="bt-bn">' + r.n + '</span><span class="bt-bwl">' + esc(r.wl) + '</span>'
         + '<span class="bt-roibar"><span class="bt-roitick"></span><span class="bt-roifill bt-bg-' + r.bar.kind + '" style="left:' + r.bar.left + ';width:' + r.bar.width + '"></span></span>'
         + '<span class="bt-broi bt-' + r.roiKind + '">' + esc(r.roi) + '</span><span class="bt-bclv bt-' + r.clvKind + '">' + esc(r.clv) + '</span><span class="bt-bpl bt-' + r.plKind + '">' + esc(r.pl) + '</span></div>';
     }).join('');
     var T = B.tot;
     var box = '<div class="bt-card bt-bdbox"><div class="bt-bdhead"><span class="bt-bdhl"><span class="bt-bdtitle">Breakdown</span><span class="bt-bdby">by</span><span class="bt-rel">'
-      + '<span class="bt-trig' + (dimOn ? ' on' : '') + '" data-act="menu" data-k="dim">' + esc(B.label) + CARET + '</span>' + dmenu + '</span></span>'
+      + '<span class="bt-trig bt-trig-dim' + (dimOn ? ' on' : '') + '" data-act="menu" data-k="dim">' + esc(B.label) + CARET + '</span>' + dmenu + '</span></span>'
       + '<span class="bt-bdsum"><span>' + T.n + ' bets · ' + esc(T.wl) + '</span><span>ROI <span class="bt-bdsum-roi bt-' + T.roiKind + '">' + esc(T.roi) + '</span></span><span>P/L <span class="bt-bdsum-pl bt-' + T.plKind + '">' + esc(T.pl) + '</span></span></span></div>'
       + '<div class="bt-bgrid bt-bhead">' + heads + '</div>' + rows
       + '<div class="bt-bgrid bt-btot"><span></span><span class="bt-btot-l">' + esc(B.totLabel) + '</span><span class="bt-btot-n">' + T.n + '</span><span class="bt-bwl">' + esc(T.wl) + '</span><span></span>'
@@ -364,8 +372,21 @@
         + (c.zone ? '<path class="bt-dial-zone" d="' + c.zone + '"></path>' : '') + '<path class="bt-dial-arc" d="' + c.arc + '" style="stroke:' + col + '"></path></svg><span class="bt-dial-fig">' + esc(c.fig) + '</span></div>'
         + '<div class="bt-dial-t"><span class="bt-dial-l">' + esc(c.label) + '</span><span class="bt-dial-v" style="color:' + col + '">' + esc(c.verdict) + '</span><span class="bt-dial-s">' + esc(c.short) + '</span></div></div>';
     }).join('');
+    var mp = '';
+    if (S.openMkt) {
+      var X = M.marketDetail(ctx.list, S.openMkt, M.PERIODS[S.period]);
+      mp = '<div class="bt-mpop" data-act="mktclose"><div class="bt-mpop-sheet bt-mkt-sheet" data-stop="1"><div class="bt-mpop-h"><div class="bt-mpop-hl"><span class="bt-mpop-t">' + esc(X.title) + '</span><span class="bt-mpop-s">' + esc(X.sub) + '</span></div>'
+        + '<span class="bt-mpop-x" data-act="mktclose">✕</span></div><div class="bt-mk-stats">' + X.stats.map(function (x) {
+          return '<div class="bt-mk-tile"><span class="bt-mk-l">' + esc(x.l) + '</span><span class="bt-mk-v bt-' + x.k + '">' + esc(x.v) + '</span><span class="bt-mk-s">' + esc(x.sub) + '</span></div>';
+        }).join('') + '</div><div class="bt-mk-table"><div class="bt-mkgrid bt-mk-head"><span class="bt-caps10">' + esc(X.subHead) + '</span><span class="bt-caps10 bt-r">Bets</span><span class="bt-caps10 bt-r">W–L</span><span class="bt-caps10">ROI · bar</span>'
+        + '<span class="bt-caps10 bt-r">ROI</span><span class="bt-caps10 bt-r">CLV</span><span class="bt-caps10 bt-r">P/L</span></div>' + X.lines.map(function (x) {
+          return '<div class="bt-mkgrid bt-mk-row"><span class="bt-mk-name"><span class="bt-mk-nm">' + esc(x.name) + '</span><span class="bt-mk-sub">' + esc(x.sub) + '</span></span><span class="bt-bn">' + x.n + '</span><span class="bt-bwl">' + esc(x.wl) + '</span>'
+            + '<span class="bt-roibar"><span class="bt-roitick"></span><span class="bt-roifill bt-bg-' + x.bar.kind + '" style="left:' + x.bar.left + ';width:' + x.bar.width + '"></span></span>'
+            + '<span class="bt-broi bt-' + x.roiKind + '">' + esc(x.roi) + '</span><span class="bt-bclv bt-' + x.clvKind + '">' + esc(x.clv) + '</span><span class="bt-bpl bt-' + x.plKind + '">' + esc(x.pl) + '</span></div>';
+        }).join('') + '<div class="bt-bdfoot">' + esc(X.foot) + '</div></div></div></div>';
+    }
     return '<div class="bt-ins"><div class="bt-headrow"><span class="bt-h16">Where it works · where it leaks</span><span class="bt-sub125">' + esc(B.meta) + '</span></div>'
-      + '<div class="bt-vcards">' + cards + '</div>' + box + '</div>'
+      + '<div class="bt-vcards">' + cards + '</div>' + box + mp + '</div>'
       + '<div class="bt-disc"><div class="bt-headrow"><span class="bt-h16">Discipline</span><span class="bt-sub125">Skill shows in the closing line and the stakes long before it shows in the P/L.</span></div>'
       + '<div class="bt-card bt-discbox"><div class="bt-dischead"><span class="bt-caps">' + esc(D.head) + '</span><span class="bt-discsum"><span class="bt-discsum-n bt-' + D.sumKind + '">' + esc(D.sum) + '</span> ' + esc(D.sumTxt) + '</span></div>'
       + '<div class="bt-dials">' + dials + '</div></div></div>';
@@ -388,7 +409,7 @@
       return '<div class="bt-delta"><span class="bt-caps">' + esc(d.l) + '</span><span class="bt-delta-r"><span class="bt-delta-a">' + esc(d.a) + '</span><span class="bt-delta-arr">→</span>'
         + '<span class="bt-delta-b">' + esc(d.b) + '</span><span class="bt-delta-d bt-' + d.kind + '">' + esc(d.d) + '</span></span></div>';
     }).join('');
-    return '<div class="bt-stk"><div class="bt-stk-top"><div class="bt-stk-hrow"><span class="bt-stk-hl"><span class="bt-h16 bt-nowrap">Staking strategy</span><span class="bt-sub125">Same bets and results, only the stake changes · pick a plan, read it against your stakes, apply it to this bankroll.</span></span>'
+    return '<div class="bt-stk"><div class="bt-stk-top"><div class="bt-stk-hrow"><span class="bt-stk-hl"><span class="bt-h16 bt-nowrap">Staking strategy</span><span class="bt-sub125">Same bets and results, only the stake changes · pick a plan and read it against your stakes.</span></span>'
       + '<span class="bt-stk-hr">' + applied + '<span class="bt-apply' + (on ? ' is-on' : '') + '" data-act="applyplan">' + esc(on ? 'Applied to ' + cur.name : 'Apply ' + Z.other + ' to this bankroll') + '</span></span></div>'
       + '<div class="bt-pchips">' + chips + '</div></div>'
       + '<div class="bt-card bt-simcard"><div class="bt-simhead"><span class="bt-simtitle"><span class="bt-simkey" style="' + sw('tracker-ring') + '"></span>Your stakes<span class="bt-simvs">vs</span>'
@@ -437,7 +458,7 @@
   function onClick(e) {
     var t = e.target.closest('[data-act]'); if (!t || !root().contains(t)) return;
     // the month pop-up: a click inside the sheet is not a click on the overlay
-    if (t.dataset.act === 'monthclose' && t.classList.contains('bt-mpop') && e.target.closest('[data-stop]')) return;
+    if ((t.dataset.act === 'monthclose' || t.dataset.act === 'mktclose') && t.classList.contains('bt-mpop') && e.target.closest('[data-stop]')) return;
     var a = t.dataset.act, id = t.dataset.id;
     if (a === 'bank') { S.bank = id; S.month = null; S.filters = NOF(); S.range = null; S.calOpen = undefined; S.openMonth = null; S.vsPlan = null; render(); }
     else if (a === 'archive') {
@@ -456,6 +477,8 @@
     else if (a === 'dim') { S.dim = t.dataset.k; S.menu = null; render(); }
     else if (a === 'calmonth') { var mk = +t.dataset.k; S.calOpen = calOpenKey(M.calendarView(betsOf(S.bank), todayDate(), null, null).keys, todayDate()) === mk ? null : mk; render(); }
     else if (a === 'calclose') { S.calOpen = null; render(); }
+    else if (a === 'openmkt') { S.openMkt = t.dataset.k; render(); }
+    else if (a === 'mktclose') { S.openMkt = null; render(); }
     else if (a === 'openmonth') { S.openMonth = +t.dataset.k; render(); }
     else if (a === 'monthclose') { S.openMonth = null; render(); }
     else if (a === 'menu') { S.menu = S.menu === t.dataset.k ? null : t.dataset.k; render(); }

@@ -63,6 +63,9 @@
   --tracker-link-2:     #5B9BFF;   /* menu footer links (Reset filters, Remove, Use, Close) */
   --tracker-plan-flat1: #8FB8FF;   /* staking plan swatch · Flat 1% */
   --tracker-plan-flat2: #C9DDFF;   /* staking plan swatch · Flat 2% */
+  --tracker-plan-model: #B48CFF;   /* staking plan swatch · ½ Kelly on model (v26) */
+  --tracker-plan-banded: #7FD6C2;  /* staking plan swatch · Odds-banded (v26) */
+  --tracker-plan-conf: #F0C27A;    /* staking plan swatch · Confidence tiers (v26; the chip is off until a Confidence field exists) */
   --tracker-placeholder: #5E667C;  /* Log a bet Ticket · the "Your selection" placeholder (v26) */
   --tracker-top-light:  inset 0 1px 0 rgba(143, 170, 255, 0.03);   /* every Bet Tracker card */
   --tracker-menu-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);   /* menu pop (Period, Filters, Breakdown cut) */

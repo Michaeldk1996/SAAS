@@ -113,14 +113,15 @@ async function browser() {
     check('View segment renders Results · Insights · Staking', JSON.stringify(await E(`[...document.querySelectorAll('.bt-view')].map(e=>e.textContent)`)) === '["Results","Insights","Staking"]');
     await click('.bt-view[data-k="insights"]');
     check('Insights (new member): three verdict cards with their empty sentences, no numbers', JSON.stringify(await E(`[...document.querySelectorAll('.bt-vcard')].map(c=>[c.querySelector('.bt-vpl').textContent, c.querySelector('.bt-vtitle').textContent])`))
-      === JSON.stringify([['—', 'No segment with 15+ bets is clearly profitable yet.'], ['—', 'No losing segment with 15+ bets in this period.'], ['—', 'Nothing under the sample floor is trending wrong.']]) && await E(`!document.querySelector('.bt-ledger')`));
+      === JSON.stringify([['—', 'No segment with 15+ bets is clearly profitable yet.'], ['—', 'No losing segment with 15+ bets in this period.'], ['—', 'Two odds bands with 15+ bets are needed to compare prices.']]) && await E(`!document.querySelector('.bt-ledger')`));
     check('Insights (new member): the Closing-line dial reads — over "0 of 0 priced bets", no verdict', JSON.stringify(await E(`(function(){ var d=document.querySelector('.bt-dial'); return [d.querySelector('.bt-dial-fig').textContent, d.querySelector('.bt-dial-v').textContent, d.querySelector('.bt-dial-s').textContent]; })()`))
       === JSON.stringify(['—', '—', '0 of 0 priced bets beat the close · target 55%+']));
-    check('Insights (new member): every dial is a dash or EARLY · n=0 — no judgement on no data', JSON.stringify(await E(`[...document.querySelectorAll('.bt-dial-v')].map(e=>e.textContent)`)) === JSON.stringify(['—', '—', 'EARLY · n=0']));
+    check('Insights (new member): every dial is a dash — no judgement on no data', JSON.stringify(await E(`[...document.querySelectorAll('.bt-dial-v')].map(e=>e.textContent)`)) === JSON.stringify(['—', '—', '—']));
+    check('Insights (new member): Stake consistency reads "No settled bets in the period."', (await E(`[...document.querySelectorAll('.bt-dial-s')][2].textContent`)) === 'No settled bets in the period.');
     check('Insights (new member): "0 of 0 checks need work · 0 bets · 3 not judged yet", not green', (await T('.bt-discsum')) === '0 of 0 checks need work · 0 bets · 3 not judged yet' && (await E(`document.querySelector('.bt-discsum-n').classList.contains('bt-lab')`)));
     await click('.bt-view[data-k="staking"]');
-    check('Staking (new member): six plan chips, Compounding 1% picked, "0 bets", the difference a dash', JSON.stringify(await E(`[...document.querySelectorAll('.bt-pchip')].map(e=>e.textContent)`))
-      === JSON.stringify(['Flat 1%', 'Flat 2%', 'Compounding 1%', 'To win 1%', '¼ Kelly on CLV', 'Double after a loss']) && (await T('.bt-pchip.on')) === 'Compounding 1%'
+    check('Staking (new member): eight plan chips (Confidence tiers off), Compounding 1% picked, "0 bets", the difference a dash', JSON.stringify(await E(`[...document.querySelectorAll('.bt-pchip')].map(e=>e.textContent)`))
+      === JSON.stringify(['Flat 1%', 'Flat 2%', 'Compounding 1%', 'To win 1%', '¼ Kelly on CLV', '½ Kelly on model', 'Odds-banded', 'Double after a loss']) && (await T('.bt-pchip.on')) === 'Compounding 1%'
       && (await T('.bt-simmeta')).startsWith('0 bets · cumulative % of the starting bankroll') && (await E(`[...document.querySelectorAll('.bt-ex-t')][2].textContent`)) === '—');
     await click('.bt-view[data-k="results"]');
 
@@ -300,7 +301,19 @@ async function browser() {
     check('breakdown: Odds band rows in band order, head "Odds taken", total "All · odds band"', (await T('.bt-bhead .bt-caps10')) === 'Odds taken' && (await T('.bt-btot-l')) === 'All · odds band'
       && await E(`(function(){ var B=${JSON.stringify(['1.10 – 1.35','1.36 – 1.60','1.61 – 1.90','1.91 – 2.20','2.21 – 2.60','2.61 – 3.20','3.21 and up'])}; var n=[...document.querySelectorAll('.bt-brow .bt-bname')].map(e=>e.textContent); return n.length>0 && n.every((x,i)=>i===0||B.indexOf(x)>B.indexOf(n[i-1])); })()`));
     check('breakdown: the total row counts the settled bets', (await T('.bt-btot-n')) === '3');
-    check('discipline: three dials with the README labels', JSON.stringify(await E(`[...document.querySelectorAll('.bt-dial-l')].map(e=>e.textContent)`)) === JSON.stringify(['Closing line', 'Stake after a loss', 'Third bet after two losses']));
+    await click('.bt-trig[data-k="dim"]'); await click('.bt-mrow[data-k="market"]');
+    check('breakdown (Market cut): every row carries › and opens the Market pop-up', await E(`[...document.querySelectorAll('.bt-brow')].every(r => r.classList.contains('is-x') && r.querySelector('.bt-bchev'))`));
+    await click('.bt-brow.is-x');
+    check('Market pop-up: six tiles, the lines table, a fixed overlay', (await E(`document.querySelectorAll('.bt-mk-tile').length`)) === 6 && (await E(`getComputedStyle(document.querySelector('.bt-mkt-sheet').parentElement).position`)) === 'fixed'
+      && JSON.stringify(await E(`[...document.querySelectorAll('.bt-mk-l')].map(e=>e.textContent)`)) === JSON.stringify(['Win rate', 'Avg odds', 'Avg CLV', 'Avg stake', 'Favourites v dogs', 'Best price band']));
+    await click('.bt-mk-tile');
+    check('Market pop-up: a click inside stays open', await E(`!!document.querySelector('.bt-mkt-sheet')`));
+    await E(`document.dispatchEvent(new KeyboardEvent('keydown', {key:'Escape', bubbles:true}))`);
+    check('F4: Escape closes the Market pop-up', !(await E(`!!document.querySelector('.bt-mkt-sheet')`)));
+    check('discipline: Stake consistency reads a spread, a verdict and its short line', /^×\d\.\d\d$/.test(await E(`[...document.querySelectorAll('.bt-dial-fig')][2].textContent`))
+      && ['EVEN', 'UNEVEN', 'WENT BIG'].includes(await E(`[...document.querySelectorAll('.bt-dial-v')][2].textContent`)) && /^Largest \d+\.\d% vs average \d+\.\d\d% · \d+ of 3 bets over 1\.5× · target ≤ ×1\.5$/.test(await E(`[...document.querySelectorAll('.bt-dial-s')][2].textContent`)),
+      await E(`[...document.querySelectorAll('.bt-dial-s')][2].textContent`));
+    check('discipline: three dials with the README labels', JSON.stringify(await E(`[...document.querySelectorAll('.bt-dial-l')].map(e=>e.textContent)`)) === JSON.stringify(['Closing line', 'Stake after a loss', 'Stake consistency']));
     check('discipline: closing line judged on 1 priced bet', (await E(`document.querySelector('.bt-dial-s').textContent`)) === '1 of 1 priced bets beat the close · target 55%+');
     await click('.bt-view[data-k="results"]');
 

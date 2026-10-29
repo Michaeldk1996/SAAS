@@ -101,7 +101,12 @@ function run(M) {
   eq('curve meta', `${cur.n} bets · peak ${M.sgn(cur.peak)} · now ${M.sgn(cur.now)}`, READ.curveMeta);
   const settled = list.filter(M.isSettled);
   eq('deepest drawdown note', `deepest drawdown −${S.dd.toFixed(1)}% on ${M.fmtD(settled[S.ddIdx].date)}`, READ.ddNote);
-  eq('Insights badge (discipline judged/bad)', M.discipline(list, 15).badge, READ.insBadge);
+  { // v26: three judged checks — recomputed here (closing line, stake after a loss, stake consistency)
+    const sl = list.filter(M.isSettled), pr = sl.filter(b => b.close), bt = pr.filter(b => b.odds / b.close - 1 > 0).length;
+    const aL = [], aW = []; sl.forEach((b, i) => { if (!i) return; if (sl[i - 1].res === 'lost') aL.push(b.stake); else if (sl[i - 1].res === 'won') aW.push(b.stake); });
+    const av = a => a.reduce((x, y) => x + y, 0) / a.length, ratio = av(aL) / av(aW), st = sl.map(b => b.stake), spread = Math.max(...st) / av(st);
+    const bad = [!(bt / pr.length * 100 >= 55), !(ratio >= 0.85 && ratio <= 1.15), !(spread <= 1.5)].filter(Boolean).length;
+    eq('Insights badge = bad of judged over the three v26 checks', M.discipline(list, 15).badge, bad + '/3'); }
   // historical results are locked (the store stamps lockedAt on load); the reference's header reads 170 of 170
   eq('certified text', M.certText(main.map(b => Object.assign({}, b, { lockedAt: b.res ? '2026-10-27T00:00:00Z' : null }))), READ.cert);
   eq('header meta', M.headMeta(main, list, perList, 'season', win, {}, 0, today), READ.head);
@@ -162,14 +167,21 @@ function run(M) {
   eq('stake after a loss ×1.20 → CHASING', M.discipline(seq([['lost', 1], ['won', 1.2], ['won', 1]]), 15).checks[1].verdict, 'CHASING');
   eq('stake after a loss ×0.50 → SHRINKING', M.discipline(seq([['lost', 1], ['won', 0.5], ['won', 1]]), 15).checks[1].verdict, 'SHRINKING');
   eq('stake after a loss ×1.00 → STEADY', M.discipline(seq([['lost', 1], ['won', 1], ['won', 1]]), 15).checks[1].verdict, 'STEADY');
-  const tiltB = (n, res) => Array.from({ length: n }, (_, i) => ({ id: i, date: d, odds: 2, close: null, stake: 1, res: typeof res === 'function' ? res(i) : res, tilt: true }));
-  eq('third bet after two losses n=14 → EARLY · n=14', M.discipline(tiltB(14, 'lost'), 15).checks[2].verdict, 'EARLY · n=14');
-  eq('n=15 all lost → TILT', M.discipline(tiltB(15, 'lost'), 15).checks[2].verdict, 'TILT');
-  eq('n=15 all won → UNDER CONTROL', M.discipline(tiltB(15, 'won'), 15).checks[2].verdict, 'UNDER CONTROL');
+  // 3 · stake consistency (v26): largest ÷ average — EVEN ≤ ×1.5 · UNEVEN ≤ ×2 · WENT BIG above; each with its flip case
+  const stk = a => a.map((x, i) => ({ id: i, date: d, odds: 2, close: null, stake: x, res: 'won' }));
+  const sc = a => M.disciplineView(stk(a), 15, 'Season').checks[2];
+  eq('stake consistency ×1.50 → EVEN · ×1.60 → UNEVEN (flip)', [sc([1, 3]).verdict, sc([1, 3]).fig, sc([1, 1, 1, 2.01]).verdict], ['EVEN', '×1.50', 'UNEVEN']);
+  eq('stake consistency ×2.00 → UNEVEN · ×2.02 → WENT BIG (flip)', [sc([1, 1, 4]).verdict, sc([1, 1, 4]).fig, sc([1, 1, 4.1]).verdict], ['UNEVEN', '×2.00', 'WENT BIG']);
+  eq('stake consistency short line, exact', sc([1, 1, 4]).short, 'Largest 4.0% vs average 2.00% · 1 of 3 bets over 1.5× · target ≤ ×1.5');
+  eq('stake consistency label + judged: EVEN ok, UNEVEN / WENT BIG need work', [sc([1, 1]).label, sc([1, 1]).ok, sc([1, 1, 4]).ok, sc([1, 1, 4.1]).ok], ['Stake consistency', true, false, false]);
+  eq('stake consistency with no bets: — and not judged', [M.discipline([], 15).checks[2].verdict, M.discipline([], 15).checks[2].ok], [DASH, null]);
+  ok('no "Third bet after two losses" check is left', !M.discipline(stk([1, 2]), 15).checks.some(c => /Third bet/.test(c.label)));
   eq('no bets → nothing judged, no badge (never a fabricated verdict)', [M.discipline([], 15).judged, M.discipline([], 15).badge], [0, '']);
 
   // ── 6 · the six staking plans ──
-  eq('six plans in the reference order', M.PLANS.map(p => p.name), ['Flat 1%', 'Flat 2%', 'Compounding 1%', 'To win 1%', '¼ Kelly on CLV', 'Double after a loss']);
+  eq('v26 plans in the reference order', M.PLANS.map(p => p.name), ['Flat 1%', 'Flat 2%', 'Compounding 1%', 'To win 1%', '¼ Kelly on CLV', '½ Kelly on model', 'Odds-banded', 'Confidence tiers', 'Double after a loss']);
+  eq('Odds-banded edges: 1.59 → 1.5 · 1.60 → 1 · 2.20 → 1 · 2.21 → 0.5', [1.59, 1.60, 2.20, 2.21].map(o => M.plan('Odds-banded').f({ odds: o })), [1.5, 1, 1, 0.5]);
+  eq('shown plans: Confidence tiers is off until a Confidence field exists (Michael\'s ruling)', [M.CONFIDENCE_TIERS, M.shownPlans().map(p => p.name)], [false, ['Flat 1%', 'Flat 2%', 'Compounding 1%', 'To win 1%', '¼ Kelly on CLV', '½ Kelly on model', 'Odds-banded', 'Double after a loss']]);
   const b2 = { odds: 2.0, close: 1.9 }, b125 = { odds: 1.25, close: 1.3 };
   near('Flat 1%', M.plan('Flat 1%').f(b2, 0, null), 1); near('Flat 2%', M.plan('Flat 2%').f(b2, 0, null), 2);
   near('Compounding 1% at +20%', M.plan('Compounding 1%').f(b2, 20, null), 1.2); near('Compounding 1% floors at 0', M.plan('Compounding 1%').f(b2, -150, null), 0);
@@ -277,6 +289,8 @@ function run(M) {
   eq('F5: a blank tournament starts at the level', M.betMeta({ tour: '', level: '500', surface: 'Hard' }), 'ATP 500 · Hard');
   eq('F5: a stored "—" tournament is not printed', M.betMeta({ tour: '—', level: '250', surface: '' }), 'ATP 250');
   eq('F5: nothing there → nothing', M.betMeta({ tour: '', level: null, surface: null }), '');
+  { const C = M.heroCurve([{ id: 1, date: new Date(2026, 9, 2), tour: '', level: null, odds: 1.82, stake: 1, res: 'lost', text: 'x' }], today);
+    eq('F5: the curve hover meta has no leading separator when tournament and level are blank', M.curveHover(C, C.X(1), today).bet.meta, '@ 1.82'); }
   eq('F5: the month pop-up meta joins only what is there', M.monthPop(1, [{ id: 1, date: new Date(2026, 9, 2), tour: '', level: '500', surface: 'Hard', market: 'Match winner', odds: 2, close: null, stake: 1, res: 'won', text: 'x' }], today).rows[0].meta, 'ATP 500 · Hard');
 
   {
@@ -304,20 +318,33 @@ function run(M) {
   // 2 · stake after a loss ÷ after a win: > 1.15 CHASING · < 0.85 SHRINKING · else STEADY
   const alt = r => mkb(40, i => ({ res: i % 2 ? 'lost' : 'won', stake: i % 2 ? 1 : (i === 0 ? 1 : r) }));   // a win follows every loss: stake r; a loss follows every win: stake 1
   eq('stake ratio ×1.16 CHASING · ×1.14 STEADY · ×0.86 STEADY · ×0.84 SHRINKING', [1.16, 1.14, 0.86, 0.84].map(r => M.discipline(alt(r), 15).checks[1].verdict), ['CHASING', 'STEADY', 'STEADY', 'SHRINKING']);
-  // 3 · third bet after two losses: n < 15 EARLY · ROI < −5% TILT · else UNDER CONTROL
-  const tiltB = (n, won) => mkb(n, i => ({ tilt: true, odds: 2, res: i < won ? 'won' : 'lost' })).concat(base);
-  eq('tilt 15 bets ROI −6.7% → TILT · ROI 0% → UNDER CONTROL · 14 bets → EARLY · n=14', [M.discipline(tiltB(15, 7), 15).checks[2].verdict, M.discipline(tiltB(16, 8), 15).checks[2].verdict, M.discipline(tiltB(14, 0), 15).checks[2].verdict], ['TILT', 'UNDER CONTROL', 'EARLY · n=14']);
   eq('no data is never judged: closing line —, stake ratio —', [M.discipline([], 15).checks[0].verdict, M.discipline([], 15).checks[1].verdict, M.discipline([], 15).judged], [DASH, DASH, 0]);
   const dv = M.disciplineView(mkb(3, { close: null }), 15, 'Season');
-  eq('discipline view with no closes: "0 of 0 priced bets beat the close · target 55%+", sum grey', [dv.checks[0].short, dv.sumKind], ['0 of 0 priced bets beat the close · target 55%+', 'lab']);
+  eq('discipline view with no closes: "0 of 0 priced bets beat the close · target 55%+", the dial not judged', [dv.checks[0].short, dv.checks[0].fig, dv.checks[0].ok], ['0 of 0 priced bets beat the close · target 55%+', DASH, null]);
   eq('breakdown: a bet with no value for the cut is in no row (counted in left)', [M.breakdown(mkb(4, i => ({ level: i < 1 ? '' : '500' })), 'level').rows.map(r => [r.name, r.n]), M.breakdown(mkb(4, i => ({ level: i < 1 ? '' : '500' })), 'level').left], [[['ATP 500', 3]], 1]);
   }
 
+  // ── 11b · T8 verdict pair card + the Market pop-up ──
+  { const mk = (n, odds, won, extra) => Array.from({ length: n }, (_, i) => Object.assign({ id: odds * 1000 + i, date: new Date(2026, 5, 1 + (i % 25)), odds, close: odds, stake: 1, res: i < won ? 'won' : 'lost', market: 'Match winner', level: '500', surface: 'Hard', book: 'bet105', timing: 'pre', text: 't' }, extra || {}));
+    const two = mk(15, 1.50, 12).concat(mk(15, 2.50, 3));   // 1.36 – 1.60: 12×0.5 − 3 = +3.0, ROI +20% · 2.21 – 2.60: 3×1.5 − 12 = −7.5, ROI −50%
+    const V = M.verdicts(two, 15)[2];
+    eq('price card: best v worst band, gap in pp, the pair rows', [V.kind, V.seg, V.pl, V.title, V.rows.map(r => [r.band, r.n, r.rec, r.roi, r.dash])],
+      ['Your price range', 'best v worst odds band', '+70.0 pp', 'You earn most at 1.36 – 1.60 and lose at 2.21 – 2.60.', [['1.36 – 1.60', 'n=15', '12–3', '+20.0%', 'solid'], ['2.21 – 2.60', 'n=15', '3–12', '−50.0%', 'dashed']]]);
+    eq('price card: one band with 15+ → the empty sentence', [M.verdicts(mk(15, 1.50, 12).concat(mk(14, 2.50, 3)), 15)[2].pl, M.verdicts(mk(15, 1.50, 12), 15)[2].title], [DASH, 'Two odds bands with 15+ bets are needed to compare prices.']);
+    eq('price card: both bands up → "and least at" (+20% v +16.7%)', M.verdicts(mk(15, 1.50, 12).concat(mk(15, 2.50, 7)), 15)[2].title, 'You earn most at 1.36 – 1.60 and least at 2.21 – 2.60.');
+    const X = M.marketDetail(mk(4, 1.40, 3).concat(mk(3, 2.80, 1)), 'Match winner', 'Season');
+    eq('market pop-up (Match winner): split by price, six tiles', [X.subHead, X.lines.map(l => [l.name, l.n, l.wl]), X.stats.map(x => x.l), X.stats[0].v, X.stats[4].v],
+      ['Price band', [['Under 1.50', 4, '3–1'], ['2.60 and up', 3, '1–2']], ['Win rate', 'Avg odds', 'Avg CLV', 'Avg stake', 'Favourites v dogs', 'Best price band'], '57%', '4 · 3']);
+    const G = M.marketDetail(mk(2, 2, 1, { market: 'Games handicap', line: '−3.5' }).concat(mk(2, 2, 2, { market: 'Games handicap', line: '+2.5' })), 'Games handicap', 'Season');
+    eq('market pop-up (Games handicap): lines, giving v taking', [G.subHead, G.lines.map(l => l.name), G.stats[4].l, G.stats[4].v, G.stats[5].v], ['Line', ['−3.5', '+2.5'], 'Giving v taking', '2 · 2', '+2.5']);
+  }
   // ── 12 · T5 staking: every plan on a hand-computed 5-bet case (won 2.00 · lost 1.50 · won 1.15 · lost 3.00 no close · void 2.50) ──
   {
     const d5 = new Date(2026, 6, 1);
     const B5 = [{ id: 1, date: d5, odds: 2.00, stake: 1, res: 'won', close: 1.90 }, { id: 2, date: d5, odds: 1.50, stake: 2, res: 'lost', close: 1.60 },
       { id: 3, date: d5, odds: 1.15, stake: 1, res: 'won', close: 1.10 }, { id: 4, date: d5, odds: 3.00, stake: 0.5, res: 'lost', close: null }, { id: 5, date: d5, odds: 2.50, stake: 1, res: 'void', close: 2.40 }];
+    // the Stennisfy fair price at posting (v26 ½ Kelly on model): 1.80 · 1.60 · 1.10 · none · 2.45
+    [1.80, 1.60, 1.10, null, 2.45].forEach((f, i) => { B5[i].fair = f; });
     const hand = {
       'Your stakes': { sts: [1, 2, 1, 0.5, 1], end: 1 - 2 + 0.15 - 0.5 },
       'Flat 1%': { sts: [1, 1, 1, 1, 1], end: 1 - 1 + 0.15 - 1, dd: 1.85 },
@@ -325,7 +352,14 @@ function run(M) {
       'Compounding 1%': { sts: [1, 1.01, 0.9999, 1.00139985, 0.9913858515], end: 1 - 1.01 + 0.9999 * 0.15 - 1.00139985 },
       'To win 1%': { sts: [1, 2, 5, 0.5, 1 / 1.5], end: 1 - 2 + 5 * 0.15 - 0.5 },   // 1 ÷ 0.15 = 6.67 → the 5% cap
       '¼ Kelly on CLV': { sts: [25 * (2 / 1.9 - 1), 0, 3, 0, 25 * (2.5 / 2.4 - 1) / 1.5], end: 25 * (2 / 1.9 - 1) + 3 * 0.15 },   // no close / CLV ≤ 0 → 0; 7.58 → the 3% cap
-      'Double after a loss': { sts: [1, 1, 2, 1, 2], end: 1 - 1 + 2 * 0.15 - 1 }
+      'Double after a loss': { sts: [1, 1, 2, 1, 2], end: 1 - 1 + 2 * 0.15 - 1 },
+      // ½ Kelly on model: p = 1/fair, k = odds − 1, f = (p·k − (1−p))/k → 50·f, cap 3, f ≤ 0 or no fair → 0
+      //   2.00 @ 1.80: f = 0.1111 → 5.56 → 3 · 1.50 @ 1.60: f < 0 → 0 · 1.15 @ 1.10: f = 0.3030 → 3 · no fair → 0 · 2.50 @ 2.45: f = 0.013605 → 0.6803
+      '½ Kelly on model': { sts: [3, 0, 3, 0, 50 * ((1 / 2.45) * 1.5 - (1 - 1 / 2.45)) / 1.5], end: 3 + 3 * 0.15 },
+      // Odds-banded: 1.5 under 1.60 · 1 to 2.20 · 0.5 above
+      'Odds-banded': { sts: [1, 1.5, 1.5, 0.5, 0.5], end: 1 - 1.5 + 1.5 * 0.15 - 0.5 },
+      // Confidence tiers (off on the page, kept in the maths): logged stake ≤ 1 → 0.5 · ≤ 1.5 → 1 · else 1.5
+      'Confidence tiers': { sts: [0.5, 1.5, 0.5, 0.5, 0.5], end: 0.5 - 1.5 + 0.5 * 0.15 - 0.5 }
     };
     for (const [name, h] of Object.entries(hand)) {
       const r = M.simulate(B5, name);
@@ -341,6 +375,10 @@ function run(M) {
       ok('¼ Kelly that places no bet: no plan line, no gap area, gap and result text are dashes', Z.otherPath === '' && Z.area === '' && Z.gapTxt === 'plan ahead by up to —, behind by up to —' && Z.diffTxt.endsWith('Same results: — at the end, drawdown —.'));
       ok('a plan that stakes: real figures still print', M.stakingView(B5, 'Flat 1%').deltas.every(d => d.b !== '—') && M.stakingView(B5, 'Flat 1%').otherPath !== ''); }
     eq('staking view defaults to Compounding 1%', M.stakingView(B5, 'nonsense').other, 'Compounding 1%');
+    { const Z = M.stakingView(B5.map(b => Object.assign({}, b, { fair: null })), '½ Kelly on model');
+      ok('½ Kelly on model with no fair price (every imported bet): skips every bet, reads —', Z.diffTxt.includes('the plan —, skipping 5 of 5 bets') && Z.deltas.every(d => d.b === DASH) && Z.otherPath === ''); }
+    eq('the chips show the shown plans only', M.stakingView(B5, 'Flat 1%').plans.map(p => p.name).includes('Confidence tiers'), false);
+    eq('a posted bet carries fair: null (nothing writes it yet)', M.newBet({ type: 'Single', timing: 'pre', legs: [{ text: 'x', odds: '2' }], tour: 'Paris', level: '1000', surface: 'Hard', market: 'Match winner', marketOther: '', book: 'bet105', bookOther: '', stake: '1' }, 'b1', d5, 9).fair, null);
     eq('plan stake hint: Flat 2% · To win 1% at 1.50 · Double after a loss after a loss', [M.planStake('Flat 2%', B5, 2), M.planStake('To win 1%', B5, 1.5), M.planStake('Double after a loss', B5.slice(0, 4), 2)], [2, 2, 1]);
   }
 
@@ -391,6 +429,7 @@ console.log(fails.length ? `bettracker-math: ${fails.length} failure(s)` : 'bett
 
 // ── mutants: every one must turn the suite red ──
 const MUTANTS = [
+  ['F5: hover meta leading separator', ".filter(present).concat('@ ' + hb.odds.toFixed(2)).join(' · '),", ".filter(present).join(' · ') + ' · @ ' + hb.odds.toFixed(2),"],
   ['day W–L reads a void as a loss', "' · ' + v2.w + EN + v2.l :", "' · ' + v2.w + EN + (v2.n - v2.w) :"],
   ['tint: the 1.2 step inclusive', 'alpha: a < 1.2 ? 0.3 : a < 2.8 ? 0.55 : 0.9', 'alpha: a <= 1.2 ? 0.3 : a < 2.8 ? 0.55 : 0.9'],
   ['tint: the 2.8 step moved', 'alpha: a < 1.2 ? 0.3 : a < 2.8 ? 0.55 : 0.9', 'alpha: a < 1.2 ? 0.3 : a < 3 ? 0.55 : 0.9'],
@@ -407,7 +446,12 @@ const MUTANTS = [
   ['strength ROI floor 0', 'return g.s.profit > 0 && g.s.roi > 0.03;', 'return g.s.profit > 0 && g.s.roi > 0;'],
   ['coin flip from 50', "beatPct >= 48 ? 'COIN FLIP'", "beatPct >= 50 ? 'COIN FLIP'"],
   ['chasing from ×1.10', "ratio > 1.15 ? 'CHASING'", "ratio > 1.10 ? 'CHASING'"],
-  ['tilt from −10%', "st.roi < -0.05 ? 'TILT'", "st.roi < -0.10 ? 'TILT'"],
+  ['stake consistency: ×1.5 is UNEVEN', "spread > 1.5 ? 'UNEVEN'", "spread >= 1.5 ? 'UNEVEN'"],
+  ['stake consistency: WENT BIG from ×2.5', "spread > 2 ? 'WENT BIG'", "spread > 2.5 ? 'WENT BIG'"],
+  ['½ Kelly: half becomes full', 'return fs <= 0 ? 0 : Math.min(3, 50 * fs);', 'return fs <= 0 ? 0 : Math.min(3, 100 * fs);'],
+  ['Odds-banded: 2.20 in the long band', 'b.odds <= 2.20 ? 1 : 0.5', 'b.odds < 2.20 ? 1 : 0.5'],
+  ['Confidence tiers shown', 'CONFIDENCE_TIERS = false', 'CONFIDENCE_TIERS = true'],
+  ['price card: worst band first', 'best = bands[0], worst = bands[bands.length - 1]', 'best = bands[bands.length - 1], worst = bands[0]'],
   ['blank key counted', 'var k = key(b, dim); if (k === null) return;', 'var k = key(b, dim);'],
   ['ROI bar unclipped', 'var w = Math.min(Math.abs(roi), 0.4) / 0.4 * 50;', 'var w = Math.abs(roi) / 0.4 * 50;'],
   ['filter count ignores the other groups', "var n = filterCount(perList, F, d[0], o);", "var n = perList.filter(function (b) { return key(b, d[0]) === o; }).length;"],

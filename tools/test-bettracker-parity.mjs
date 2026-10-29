@@ -28,7 +28,7 @@ const Component = new Function('DCLogic', HTML.slice(HTML.indexOf('class Compone
 function ref(state) { const c = new Component(); c.props = { minSample: 15 }; c.setState(state); return { c, v: c.renderVals() }; }
 
 const minus = s => String(s).replace(/(^|[\s(=])-(?=\d)/g, '$1−');
-const SECTIONS = new Set(['hero', 'filters', 'hover', 'calendar']);   // T8 adds 'insights' + 'staking'
+const SECTIONS = new Set(['hero', 'filters', 'hover', 'calendar', 'insights', 'staking']);
 const noF2 = src => src.replace('if (mx > 0 && mx < step) mx = step;', '').replace('if (mn < 0 && mn > -step) mn = -step;', '');
 function run(M, MC) {
   const fails = [];
@@ -67,14 +67,23 @@ function run(M, MC) {
     eq(`${name} · filters label + foot`, [M.filtersLabel(F), M.filtersFoot(list, perList)], [v.filtersLabel, v.menuFoot]);
     if (SECTIONS.has('insights')) {
     const V = M.verdicts(list, 15);
-    eq(`${name} · verdict cards`, V.map(x => [x.kind, x.seg, x.pl, x.title, x.figs.map(f => [f.l, f.v]), x.path, x.area]),
-      v.verdicts.map(x => [x.kind, x.seg, x.pl, x.title, x.figs.map(f => [f.l, f.v]), x.path, x.area]));
+    const TC = { pos: '#5CCB84', neg: '#E06266', amber: '#E8A84E', link2: '#5B9BFF' }, RG = { pos: 'rgb(92,203,132)', neg: 'rgb(224,98,102)' };
+    eq(`${name} · verdict cards (kind · colour · seg · P/L · title · figs · curves)`, V.map(x => [x.kind, TC[x.tone], x.seg, x.pl, KC[x.plKind], x.title, x.figs.map(f => [f.l, f.v]), x.path, x.area, x.path2 || '', !!x.pair]),
+      v.verdicts.map(x => [x.kind, x.lc, x.seg, x.pl, x.plC, x.title, x.figs.map(f => [f.l, f.v]), x.path, x.area, x.path2, x.isPair]));
+    eq(`${name} · verdict pair rows`, V.filter(x => x.pair).map(x => x.rows.map(r => [r.band, r.n, r.rec, r.roi, KC[r.roiKind], r.clv, KC[r.clvKind], RG[r.tone], r.dash])),
+      v.verdicts.filter(x => x.isPair).map(x => x.rows.map(r => [r.band, r.n, r.rec, r.roi, r.roiC, r.clv, r.clvC, r.c, r.dash])));
     for (const d of M.DIMS.map(x => x[0])) {
       const rv = d === 'market' ? v : ref(Object.assign({}, st, { dim: d })).v, B = M.breakdown(list, d);
       eq(`${name} · breakdown ${d} rows`, B.rows.map(r => [r.name, r.n, r.wl, r.roi, r.clv, r.pl, r.bar.left, r.bar.width]), rv.bdRows.map(r => [r.name, r.n, r.wl, r.roi, r.clv, r.pl, r.barL, r.barW]));
       eq(`${name} · breakdown ${d} total + meta + head`, [B.totLabel, String(B.tot.n), B.tot.wl, B.tot.roi, B.tot.clv, B.tot.pl, B.meta, B.head, B.foot],
         [rv.bdTotLabel, rv.bdTotN, rv.bdTotWL, rv.bdTotRoi, rv.bdTotClv, rv.bdTotPl, rv.bdMeta, rv.bdHead, rv.bdFoot]);
       eq(`${name} · breakdown ${d} menu counts`, B.menu.map(m => [m.label, String(m.count), m.on]), rv.dims.map(m => [m.label, m.count, m.tick === '✓']));
+      eq(`${name} · breakdown ${d} rows open the Market pop-up (Market cut only)`, B.rows.map(() => d === 'market'), rv.bdRows.map(r => !!r.expandable));
+    }
+    for (const mk of M.breakdown(list, 'market').rows.map(r => r.name)) {
+      const rp = ref(Object.assign({}, st, { openMkt: mk })).v.mktPop, X = M.marketDetail(list, mk, M.PERIODS[per]);
+      eq(`${name} · market pop-up ${mk}`, [X.title, X.sub, X.subHead, X.foot, X.stats.map(x => [x.l, x.v, x.k === 'ink' ? '#FFFFFF' : KC[x.k], x.sub]), X.lines.map(l => [l.name, l.sub, l.n, l.wl, l.roi, KC[l.roiKind], l.clv, l.pl, l.bar.left, l.bar.width])],
+        [rp.title, rp.sub, rp.subHead, rp.foot, rp.stats.map(x => [x.l, x.v, x.c, x.sub]), rp.lines.map(l => [l.name, l.sub, l.n, l.wl, l.roi, l.roiC, l.clv, l.pl, l.barL, l.barW])]);
     }
     const D = M.disciplineView(list, 15, M.PERIODS[per]);
     eq(`${name} · discipline dials`, D.checks.map(k => [k.label, k.verdict, k.fig, k.short, k.body, k.arc, k.zone]), v.disc.map(k => [k.label, k.verdict, k.fig, k.short, k.body, k.arc, k.zone]));
@@ -89,7 +98,8 @@ function run(M, MC) {
       eq(`${name} · staking ${p} ticks`, Z.yTicks.map(t => [t.y, t.top, t.label]), sv.yTicks.map(t => [t.y, t.top, minus(t.label)]));
       eq(`${name} · staking ${p} fill`, Z.areaKind, sv.areaFill.includes('92,203,132') ? 'pos' : 'neg');
     }
-    eq(`${name} · plan chips`, M.stakingView(list, 'Flat 2%').plans.map(p => [p.name, p.how, p.on]), ref(Object.assign({}, st, { vsPlan: 'Flat 2%' })).v.sim.plans.map(p => [p.name, p.how, p.bg === '#1B2031']));
+    // Confidence tiers: compared as a plan above, not shown as a chip (Michael's ruling, until a Confidence field exists)
+    eq(`${name} · plan chips`, M.stakingView(list, 'Flat 2%').plans.map(p => [p.name, p.how, p.on]), ref(Object.assign({}, st, { vsPlan: 'Flat 2%' })).v.sim.plans.filter(p => p.name !== 'Confidence tiers').map(p => [p.name, p.how, p.bg === '#1B2031']));
     }
     if (SECTIONS.has('calendar')) {
       // the reference's calendar covers every bet of the bankroll (its one season) — so does this comparison

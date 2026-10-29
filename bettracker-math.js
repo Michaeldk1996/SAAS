@@ -165,7 +165,7 @@
     var r = hb ? hb.res : null, p = hb ? pl(hb) : 0;
     return { i: i, left: pct.toFixed(2) + '%', top: C.Y(C.pts[i]).toFixed(1) + 'px', flip: pct > 58,
       date: hb ? fmtDY(hb.date, today) : 'Season start', idx: i + ' of ' + C.settled.length, cum: sgn(C.pts[i]), cumKind: kind(C.pts[i]),
-      bet: hb ? { text: hb.text, meta: [hb.tour, LEVEL[hb.level] || hb.level].filter(present).join(' · ') + ' · @ ' + hb.odds.toFixed(2),
+      bet: hb ? { text: hb.text, meta: [hb.tour, LEVEL[hb.level] || hb.level].filter(present).concat('@ ' + hb.odds.toFixed(2)).join(' · '),
         stake: 'stake ' + hb.stake.toFixed(1) + '% · ' + (r === 'won' ? 'WON' : r === 'lost' ? 'LOST' : 'VOID'), pl: sgn(p), plKind: kind(p),
         resKind: r === 'won' ? 'pos' : r === 'lost' ? 'neg' : 'lab' } : null };
   }
@@ -240,13 +240,14 @@
       verdict: ratio === null ? DASH : ratio > 1.15 ? 'CHASING' : ratio < 0.85 ? 'SHRINKING' : 'STEADY',
       tone: ratio === null ? 'lab' : ratio > 1.15 ? 'neg' : ratio < 0.85 ? 'amber' : 'pos',
       fig: ratio === null ? DASH : '×' + ratio.toFixed(2), ok: ratio === null ? null : ratio <= 1.15 && ratio >= 0.85 };
-    // 3 · third-or-later bet on a day already down two
-    var st = stats(settled.filter(function (b) { return b.tilt; })), calm = stats(settled.filter(function (b) { return !b.tilt; }));
-    var tilt = { label: 'Third bet after two losses', value: st.n ? st.roi : null, n: st.n, rest: calm,
-      verdict: st.n < m ? 'EARLY · n=' + st.n : st.roi < -0.05 ? 'TILT' : 'UNDER CONTROL',
-      tone: st.n < m ? 'amber' : st.roi < -0.05 ? 'neg' : 'pos',
-      fig: st.n ? sgn(st.roi === null ? null : st.roi * 100) : DASH, ok: st.n >= m ? st.roi >= -0.05 : null };
-    var checks = [close, chase, tilt];
+    // 3 · stake consistency (v26): largest stake ÷ average stake — EVEN ≤ ×1.5 · UNEVEN ≤ ×2 · WENT BIG above
+    var stakes = settled.map(function (b) { return b.stake; }), n = settled.length, maxSt = n ? Math.max.apply(null, stakes) : 0, avgSt = avg(stakes), spread = avgSt ? maxSt / avgSt : null;
+    var bigB = settled.filter(function (b) { return b.stake >= avgSt * 1.5; });
+    var cons = { label: 'Stake consistency', value: n ? spread : null, maxSt: maxSt, avgSt: avgSt, n: n, big: bigB.length, bigS: stats(bigB), evenS: stats(settled.filter(function (b) { return b.stake < avgSt * 1.5; })),
+      verdict: !n ? DASH : spread > 2 ? 'WENT BIG' : spread > 1.5 ? 'UNEVEN' : 'EVEN',
+      tone: !n ? 'lab' : spread > 2 ? 'neg' : spread > 1.5 ? 'amber' : 'pos',
+      fig: n ? '×' + spread.toFixed(2) : DASH, ok: n ? spread <= 1.5 : null };
+    var checks = [close, chase, cons];
     var judged = checks.filter(function (c) { return c.ok !== null; }), bad = judged.filter(function (c) { return !c.ok; }).length;
     return { checks: checks, judged: judged.length, bad: bad, n: settled.length, minN: m,
       badge: judged.length ? bad + '/' + judged.length : '', badgeTone: bad ? 'neg' : 'pos' };
@@ -273,12 +274,23 @@
       return g ? Object.assign({ kind: k, tone: tone, seg: segTitle(g) + ' · ' + g.s.n + ' bets', pl: sgn(g.s.profit), plKind: kind(g.s.profit), title: title, figs: figs(g), empty: false }, segCurve(g.bs))
         : { kind: k, tone: tone, seg: '', pl: DASH, plKind: 'lab', title: empty, figs: [], path: '', area: '', empty: true };
     };
-    var e = G.strengths[0], l = G.leaks[0], b = G.blind;
+    var e = G.strengths[0], l = G.leaks[0];
+    // v26: the third card is the pair variant — the best and the worst odds band with m+ bets, read against each other
+    var bandRow = function (g, tone, dash) { return { band: g.name, n: 'n=' + g.s.n, rec: g.s.w + EN + g.s.l, roi: sgn(g.s.roi === null ? null : g.s.roi * 100), roiKind: g.s.roi === null ? 'lab' : kind(g.s.roi),
+      clv: g.s.clv === null ? DASH : sgn(g.s.clv * 100), clvKind: kind(g.s.clv), tone: tone, dash: dash }; };
+    var priceCard = function () {
+      var bands = group(settled, 'odds').filter(function (g) { return g.s.n >= m; }).sort(function (x, y) { return (y.s.roi || 0) - (x.s.roi || 0); });
+      if (bands.length < 2) return { kind: 'Your price range', tone: 'link2', seg: '', pl: DASH, plKind: 'lab', title: 'Two odds bands with ' + m + '+ bets are needed to compare prices.', figs: [], path: '', area: '', empty: true, pair: false };
+      var best = bands[0], worst = bands[bands.length - 1], gap = ((best.s.roi || 0) - (worst.s.roi || 0)) * 100, bc = segCurve(best.bs), wc = segCurve(worst.bs);
+      return { kind: 'Your price range', tone: 'link2', seg: 'best v worst odds band', pl: (gap > 0 ? '+' : '') + gap.toFixed(1) + ' pp', plKind: 'pos',
+        title: 'You earn most at ' + best.name + ((worst.s.roi || 0) < 0 ? ' and lose at ' + worst.name : ' and least at ' + worst.name) + (best.s.clv !== null && worst.s.clv !== null && best.s.clv > worst.s.clv ? ' — the close agrees.' : '.'),
+        figs: [], pair: true, rows: [bandRow(best, 'pos', 'solid'), bandRow(worst, 'neg', 'dashed')], path: bc.path, area: bc.area, path2: wc.path, empty: false };
+    };
     return [
       card('Your edge', 'pos', e, e ? segTitle(e) + ' is where you beat the market' + (e.s.clv > 0 ? ' — the close agrees' : '') + '.' : '', 'No segment with ' + m + '+ bets is clearly profitable yet.'),
       card('Your leak', 'neg', l, l ? segTitle(l) + ' ' + (l.s.profit < -S.profit / 2 && S.profit > 0 ? 'cost you half your profit' : 'is your biggest leak') + (l.s.clv !== null && l.s.clv < 0 ? ' and the close went against you.' : '.') : '',
         'No losing segment with ' + m + '+ bets in this period.'),
-      card('Blind spot', 'amber', b, b ? segTitle(b) + ': EARLY · n=' + b.s.n + ', trending wrong.' : '', 'Nothing under the sample floor is trending wrong.')
+      priceCard()
     ];
   }
   // The Breakdown box: one cut's rows (Odds band and Weekday in natural order, every other cut by P/L desc), the
@@ -297,6 +309,40 @@
       foot: 'ROI bar clipped at ±40% · CLV = your price ÷ closing price − 1, over bets with a close · P/L in % of bankroll',
       menu: DIMS.map(function (x) { return { key: x[0], label: x[1], count: group(settled, x[0]).length, on: x[0] === dim }; }) };
   }
+  // The Market pop-up (v26, a Market-cut row's ›): one market split by its line (Match winner: by the price taken),
+  // six tiles and the lines table. `list` = the period + filters, as the Breakdown box.
+  function marketDetail(list, name, periodLabel) {
+    var bs = list.filter(function (b) { return isSettled(b) && key(b, 'market') === name; }), s = stats(bs), isMW = name === 'Match winner';
+    var lineKey = function (b) { return !isMW ? (b.line || DASH) : b.odds < 1.5 ? 'Under 1.50' : b.odds < 2 ? '1.50 – 1.99' : b.odds < 2.6 ? '2.00 – 2.59' : '2.60 and up'; };
+    var lm = {}; bs.forEach(function (b) { var k = lineKey(b); (lm[k] = lm[k] || []).push(b); });
+    var lineNum = function (k) { var m = String(k).replace('−', '-').match(/-?[\d.]+/); return m ? parseFloat(m[0]) : 0; };
+    var sortL = function (a, b) { if (isMW) return lineNum(a) - lineNum(b); var ao = /^Over/.test(a), bo = /^Over/.test(b); if (ao !== bo) return ao ? -1 : 1; return lineNum(a) - lineNum(b); };
+    var lines = Object.keys(lm).sort(sortL).map(function (k) {
+      var ls = stats(lm[k]), avgO = lm[k].reduce(function (x, b) { return x + b.odds; }, 0) / lm[k].length;
+      return { name: k, sub: 'avg @ ' + avgO.toFixed(2), n: ls.n, wl: ls.w + EN + ls.l, roi: sgn(ls.roi === null ? null : ls.roi * 100), roiKind: ls.roi === null ? 'lab' : kind(ls.roi),
+        clv: ls.clv === null ? DASH : sgn(ls.clv * 100), clvKind: kind(ls.clv), pl: sgn(ls.profit), plKind: kind(ls.profit), profit: ls.profit, bar: roiBar(ls.roi) };
+    });
+    // ranked on the printed P/L (1 dp), so a tie goes to the line listed first — the reference's own order
+    var shown = function (x) { return parseFloat(x.pl.replace(MINUS, '-')); };
+    var bestL = lines.slice().sort(function (a, b) { return shown(b) - shown(a); })[0], worstL = lines.slice().sort(function (a, b) { return shown(a) - shown(b); })[0];
+    var avgOdds = bs.length ? bs.reduce(function (x, b) { return x + b.odds; }, 0) / bs.length : 0, avgStake = bs.length ? s.staked / bs.length : 0, wr = s.w + s.l ? Math.round(100 * s.w / (s.w + s.l)) : null;
+    var by = function (re) { return bs.filter(function (b) { return re.test(b.line || ''); }); };
+    var pf = function (x) { return sgn(stats(x).profit); };
+    var side = name === 'Total games' ? (function () { var o = by(/^Over/), u = by(/^Under/); return { l: 'Over v Under', v: o.length + ' · ' + u.length, k: 'ink', sub: 'over ' + pf(o) + ' · under ' + pf(u) }; })()
+      : name === 'Games handicap' ? (function () { var mi = by(/^[−-]/), pl2 = by(/^\+/); return { l: 'Giving v taking', v: mi.length + ' · ' + pl2.length, k: 'ink', sub: 'giving ' + pf(mi) + ' · taking ' + pf(pl2) }; })()
+      : (function () { var fv = bs.filter(function (b) { return b.odds < 2; }), dg = bs.filter(function (b) { return b.odds >= 2; }); return { l: 'Favourites v dogs', v: fv.length + ' · ' + dg.length, k: 'ink', sub: 'favs ' + pf(fv) + ' · dogs ' + pf(dg) }; })();
+    var stats6 = [
+      { l: 'Win rate', v: wr === null ? DASH : wr + '%', k: 'ink', sub: s.w + ' of ' + (s.w + s.l) },
+      { l: 'Avg odds', v: avgOdds ? avgOdds.toFixed(2) : DASH, k: 'ink', sub: 'break-even ' + (avgOdds ? Math.round(100 / avgOdds) + '%' : DASH) },
+      { l: 'Avg CLV', v: s.clv === null ? DASH : sgn(s.clv * 100), k: kind(s.clv), sub: 'beat the close ' + s.beat + ' of ' + s.clvN },
+      { l: 'Avg stake', v: avgStake ? avgStake.toFixed(2) + '%' : DASH, k: 'ink', sub: s.staked.toFixed(1) + '% staked in total' },
+      side,
+      { l: isMW ? 'Best price band' : 'Best line', v: bestL ? bestL.name : DASH, k: 'pos', sub: bestL ? bestL.pl + ' · ' + bestL.n + ' bets' : '' }];
+    var foot = isMW ? 'Match winner has no line — the split is by the price you took. ' + (worstL && worstL !== bestL ? 'Weakest band: ' + worstL.name + ' at ' + worstL.pl + ' over ' + worstL.n + ' bets.' : '')
+      : lines.length + ' lines hit in ' + name + ' · ' + bs.length + ' settled bets. ' + (worstL && worstL !== bestL ? 'Weakest line: ' + worstL.name + ' at ' + worstL.pl + ' over ' + worstL.n + ' bets.' : '');
+    return { title: name, sub: bs.length + ' settled bets · ' + s.w + EN + s.l + ' · ROI ' + sgn(s.roi === null ? null : s.roi * 100) + ' · P/L ' + sgn(s.profit) + ' · ' + periodLabel,
+      subHead: isMW ? 'Price band' : 'Line', stats: stats6, lines: lines, foot: foot };
+  }
   // The dial geometry (SVG 200 × 110): the value arc from the left end, and a target zone.
   function arcD(t) { var a = Math.PI * (1 - Math.max(0, Math.min(1, t))); return 'M20 100 A80 80 0 0 1 ' + (100 + 80 * Math.cos(a)).toFixed(1) + ' ' + (100 - 80 * Math.sin(a)).toFixed(1); }
   function zoneD(a, b) { var p = Math.PI * (1 - a), q = Math.PI * (1 - b); return 'M' + (100 + 80 * Math.cos(p)).toFixed(1) + ' ' + (100 - 80 * Math.sin(p)).toFixed(1) + ' A80 80 0 0 1 ' + (100 + 80 * Math.cos(q)).toFixed(1) + ' ' + (100 - 80 * Math.sin(q)).toFixed(1); }
@@ -305,8 +351,8 @@
     var D = discipline(list, minSample), settled = list.filter(isSettled), S = stats(settled);
     var withClv = settled.filter(function (b) { return clv(b) !== null; }), sp = stats(withClv.filter(function (b) { return clv(b) > 0; })), sn = stats(withClv.filter(function (b) { return clv(b) <= 0; }));
     var r2 = function (x) { return x === null ? DASH : sgn(x * 100); };
-    var c = D.checks[0], k = D.checks[1], t = D.checks[2], rest = t.rest;
-    var stakes = settled.map(function (b) { return b.stake; }), tiltB = settled.filter(function (b) { return b.tilt; });
+    var c = D.checks[0], k = D.checks[1], t = D.checks[2];
+    var stakes = settled.map(function (b) { return b.stake; });
     c.arc = arcD(c.value === null ? 0 : c.value / 100); c.zone = zoneD(0.55, 1);
     c.short = S.beat + ' of ' + S.clvN + ' priced bets beat the close · target 55%+';
     c.body = S.beat + ' of ' + S.clvN + ' priced bets closed shorter than you took them. Bets that beat the close ran at ROI ' + r2(sp.roi) + '; the ones that didn\'t ran at ' + r2(sn.roi) + '. The close is the sharpest number you can measure yourself against.';
@@ -315,10 +361,10 @@
     k.short = pc(k.afterLoss, k.nLoss) + ' after a loss vs ' + pc(k.afterWin, k.nWin) + ' after a win (n=' + k.nLoss + ' / ' + k.nWin + ') · target ×0.85 – ×1.15';
     k.body = 'Average stake ' + pc(k.afterLoss, k.nLoss) + ' after a losing bet against ' + pc(k.afterWin, k.nWin) + ' after a winning one (n=' + k.nLoss + ' / ' + k.nWin + '). A plan sets the stake before the match, not after the last result. Largest single stake '
       + (stakes.length ? Math.max.apply(null, stakes).toFixed(1) + '%' : DASH) + ' vs an average of ' + (stakes.length ? avg(stakes).toFixed(2) + '%' : DASH) + '.';
-    t.arc = arcD(t.n && t.value !== null ? (t.value + 0.3) / 0.6 : 0); t.zone = rest.roi === null ? '' : zoneD(Math.max(0, Math.min(1, (rest.roi + 0.3) / 0.6)), 1);
-    t.short = t.n ? t.n + ' bets at ROI ' + r2(t.value) + ' · the rest run ' + r2(rest.roi) + ' over ' + rest.n : 'No third-or-later bets after two losses in the period.';
-    t.body = t.n + ' bets were a third-or-later bet on a day that had already lost twice' + (t.n ? ', at an average stake of ' + avg(tiltB.map(function (b) { return b.stake; })).toFixed(2) + '%' : '')
-      + '. The rest of the ledger ran at ROI ' + r2(rest.roi) + ' over ' + rest.n + ' bets.' + (t.n < D.minN ? ' Too few to judge yet — keep logging.' : '');
+    t.arc = arcD(t.n ? (t.value - 1) / 2 : 0); t.zone = zoneD(0, (1.5 - 1) / 2);
+    t.short = t.n ? 'Largest ' + t.maxSt.toFixed(1) + '% vs average ' + t.avgSt.toFixed(2) + '% · ' + t.big + ' of ' + t.n + ' bets over 1.5× · target ≤ ×1.5' : 'No settled bets in the period.';
+    t.body = 'Your largest stake was ' + t.maxSt.toFixed(1) + '% against an average of ' + t.avgSt.toFixed(2) + '% over ' + t.n + ' bets. ' + t.big + ' bet' + (t.big === 1 ? '' : 's') + ' went in at 1.5× your average or more and ran at ROI '
+      + r2(t.bigS.roi) + '; the rest ran at ' + r2(t.evenS.roi) + '. A plan sizes every bet the same way — the biggest stake should never be the one you remember.';
     D.head = 'Discipline · ' + periodLabel.toLowerCase();
     D.sum = D.bad + ' of ' + D.judged; D.sumKind = D.judged ? (D.bad ? 'neg' : 'pos') : 'lab';
     D.sumTxt = 'check' + (D.judged === 1 ? '' : 's') + ' need' + (D.bad === 1 ? 's' : '') + ' work · ' + D.n + ' bets' + (D.judged < 3 ? ' · ' + (3 - D.judged) + ' not judged yet' : '');
@@ -338,11 +384,23 @@
       how: 'Stake = 1% ÷ (odds − 1): every winner adds exactly 1%. Short prices get big stakes, cap 5%.', when: 'Smooth when your edge sits on favourites; a losing 1.25 shot costs 4%.' },
     { name: '¼ Kelly on CLV', sw: 'text-label', sub: 'sized on the close you did not know yet · hindsight', f: function (b) { var c = clv(b); if (c === null || c <= 0) return 0; return Math.min(3, 25 * c / (b.odds - 1)); },
       how: 'A quarter Kelly stake sized on how far the close moved your way; no stake when it did not. Cap 3%.', when: 'Hindsight — the ceiling to measure against, not a plan you can follow.' },
+    { name: '½ Kelly on model', sw: 'tracker-plan-model', sub: 'sized on the Stennisfy fair price at posting · cap 3%',
+      f: function (b) { if (!b.fair) return 0; var p = 1 / b.fair, k = b.odds - 1, fs = (p * k - (1 - p)) / k; return fs <= 0 ? 0 : Math.min(3, 50 * fs); },
+      how: 'Half Kelly on the edge your own fair price showed at posting: stake = ½ × (p·(odds−1) − (1−p)) ÷ (odds−1). No stake when the model saw no edge. Cap 3%. No hindsight — the close is not used.',
+      when: 'Honest Kelly — if this line beats your stakes, your model is sizing better than your gut; if it trails, the model is overconfident.' },
+    { name: 'Odds-banded', sw: 'tracker-plan-banded', sub: '1.5% under 1.60 · 1% to 2.20 · 0.5% above', f: function (b) { return b.odds < 1.60 ? 1.5 : b.odds <= 2.20 ? 1 : 0.5; },
+      how: 'Stake falls as the price rises: 1.5% under 1.60, 1% up to 2.20, 0.5% above. Every bet risks about the same swing.', when: 'Read it against your Odds-band breakdown — it helps when your longer prices are the leak.' },
+    // Confidence tiers: not shown until Log a bet carries a Confidence field (Michael's ruling, 2026-10-29) — the stake
+    // rule is kept and tested; CONFIDENCE_TIERS turns the chip on.
+    { name: 'Confidence tiers', sw: 'tracker-plan-conf', hidden: true, sub: '1 · 2 · 3 units = 0.5 · 1 · 1.5% · inferred from your stake band', f: function (b) { return b.stake <= 1 ? 0.5 : b.stake <= 1.5 ? 1 : 1.5; },
+      how: 'Three fixed sizes — 1 unit 0.5%, 2 units 1%, 3 units 1.5% — read off the stake band you logged until Log-a-bet carries a Confidence field. Shows whether the bets you sized big earned the size.',
+      when: 'If this trails Flat 1%, your confidence is not information; if it leads, keep the tiers and make the field explicit.' },
     { name: 'Double after a loss', sw: 'neg', sub: '1%, doubled after each loss, back to 1% on a win · cap 8%', f: function (b, cum, prev) { return prev === null ? 1 : prev.res === 'lost' ? Math.min(8, prev.st * 2) : 1; },
       how: '1%, doubled after every loss, back to 1% on a win. Cap 8%.', when: 'The chase — wins the money back until the run that takes 15% in four bets.' }
   ];
   var YOUR_STAKES = { name: 'Your stakes', sw: 'tracker-ring', sub: 'as logged', f: function (b) { return b.stake; }, how: 'The stakes you actually logged — sized by feel, confidence and the bet before.' };
-  var DEFAULT_PLAN = 'Compounding 1%';
+  var DEFAULT_PLAN = 'Compounding 1%', CONFIDENCE_TIERS = false;
+  function shownPlans() { return PLANS.filter(function (p) { return !p.hidden || CONFIDENCE_TIERS; }); }
   function plan(name) { if (name === YOUR_STAKES.name) return YOUR_STAKES; for (var i = 0; i < PLANS.length; i++) if (PLANS[i].name === name) return PLANS[i]; return null; }
   // Replays the settled bets under a plan: same results, only the stake changes.
   function simulate(settled, name) {
@@ -384,7 +442,7 @@
         + (skipped ? ', skipping ' + skipped + ' of ' + settled.length + ' bets' : '') + '. Same results: ' + (none ? DASH + ' at the end, drawdown ' + DASH + '.' : (ahead >= 0 ? '+' : MINUS) + Math.abs(ahead).toFixed(1) + '% at the end, drawdown '
         + Math.abs(oL.dd - yL.dd).toFixed(1) + '% ' + (oL.dd <= yL.dd ? 'shallower' : 'deeper') + '.'),
       note: 'Same bets and results, only the stake changes. A plan is judged on the whole season, not the end figure alone: read End together with Max drawdown and Biggest single loss. The Kelly line uses the closing price you did not know at the time — a ceiling, not a plan.',
-      plans: PLANS.map(function (p) { return { name: p.name, how: p.how, sw: p.sw, on: p.name === other }; }) };
+      plans: shownPlans().map(function (p) { return { name: p.name, how: p.how, sw: p.sw, on: p.name === other }; }) };
   }
   // The stake hint once a plan is applied (the reference's planStake); null = the plan needs the odds first / no plan.
   function planStake(name, settledAll, odds) {
@@ -613,7 +671,7 @@
     isLocked: isLocked, certText: certText, periodPhrase: periodPhrase, headMeta: headMeta, sortLedger: sortLedger, ledgerFilter: ledgerFilter,
     ledgerMonths: ledgerMonths, ledgerMeta: ledgerMeta, ledgerFoot: ledgerFoot, betMeta: betMeta, bankCard: bankCard,
     fitLegs: fitLegs, legsOk: legsOk, combinedOdds: combinedOdds, legsNote: legsNote, formCheck: formCheck, newBet: newBet,
-    curveScale: curveScale, curveHover: curveHover, ticket: ticket, present: present, monYear: monYear
+    marketDetail: marketDetail, shownPlans: shownPlans, CONFIDENCE_TIERS: CONFIDENCE_TIERS, curveScale: curveScale, curveHover: curveHover, ticket: ticket, present: present, monYear: monYear
   };
   if (typeof module === 'object' && module.exports) module.exports = api;
   else root.BetTrackerMath = api;
