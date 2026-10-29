@@ -151,7 +151,9 @@ console.log(`  ····  profile store: ${STORE_WORD.toUpperCase()}${BUILT ? ` (
 // only "not built" state; an absent key means "not asked for / in flight").
 const SPLITS_BUILT = require('./career-splits-store').loadAll(ROOT).players;
 const SPLITS = Object.assign(Object.fromEntries(Object.keys(PLAYERS).map(k => [k, null])), SPLITS_BUILT);
-const MARKET_DIR = path.join(ROOT, 'market-edge');
+// market-edge-stale (founder 2026-10-29): the committed market-edge/ is a price-free floor; the shards this suite reads
+// are the ones the pipeline builds — the real builders over the committed odds archive (tools/market-edge-fresh.js).
+const MARKET_DIR = path.join(require('./market-edge-fresh.js').freshMarketEdge(), 'market-edge');
 const MARKET = {};
 if (fs.existsSync(MARKET_DIR)) {
   fs.readdirSync(MARKET_DIR).filter(f => f.endsWith('.json')).forEach((f) => {
@@ -4071,7 +4073,10 @@ check('the all-stores table covers every data store the module reads', () => {
     'fhSrcTitle',
     // founder ruling 2026-10-20 item 1: the host's "Data paused" rule for a Mac-only feed (sfFeedPaused over the
     // career-splits-tour.json build date the page already loaded) — logic, no rows
-    'sfFeedPaused']);
+    'sfFeedPaused',
+    // market-edge-stale (founder 2026-10-29): why the Market edge box is empty (pp2MarketDashed over the page's loaded
+    // Database join + career-history; tools/test-market-edge-stale.mjs) — logic, no rows
+    'pp2MarketDashed']);
   for (const cb of HOST_CALLBACKS) {
     assert(new RegExp(`typeof window\\.${cb} === 'function'`).test(src),
       `window.${cb} is called without a typeof guard — the page must not assume the host defines it`);
