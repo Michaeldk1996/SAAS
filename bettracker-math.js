@@ -128,7 +128,7 @@
   // T9 (Michael 2026-10-29): at most CURVE_MAX_TICKS y ticks — the span's own step (1 / 2 / 5 / 10 %) steps up through
   // 20 / 50 % (then 100, 200, 500 …) until the range carries no more than that, the zero line always among them.
   // CURVE_PX: the label strip is 1286px wide at the 1340 column (measured), the viewBox 1292 units.
-  var CURVE_LABEL_GAP = 70, CURVE_LABEL_FIT = 40, CURVE_PX = 1286 / 1292, CURVE_MAX_TICKS = 8, CURVE_STEPS = [1, 2, 5, 10, 20, 50];
+  var CURVE_LABEL_GAP = 70, CURVE_PX = 1286 / 1292, CURVE_MAX_TICKS = 8, CURVE_STEPS = [1, 2, 5, 10, 20, 50];
   function curveTickCount(mn, mx, step) { return Math.floor(mx / step + 1e-9) - Math.ceil(mn / step - 1e-9) + 1; }
   function curveStep(mn, mx) {
     var sp = (mx - mn) || 1, base = sp > 40 ? 10 : sp > 16 ? 5 : sp > 8 ? 2 : 1;
@@ -160,19 +160,17 @@
       var vv = Math.round(v * 1e6) / 1e6;
       yTicks.push({ y: Y(vv).toFixed(1), top: (Y(vv) - 5).toFixed(1) + 'px', label: (vv > 0 ? '+' : vv < 0 ? MINUS : '') + Math.abs(vv) + '%', zero: vv === 0 });
     }
-    // T9 (Michael 2026-10-29): the candidates stay the first bet of each month; on a ledger that crosses a year a January
-    // label carries its year. When every candidate clears the one before (CURVE_LABEL_FIT px, CURVE_LABEL_GAP after a
-    // label with its year) all are drawn, as the reference draws a season; otherwise a label is drawn only
-    // CURVE_LABEL_GAP px (px at the 1340 column) right of the last one drawn.
+    // T9 (Michael 2026-10-29, re-ruled: always, short ledgers too): the candidates stay the first bet of each month; a label
+    // is drawn only CURVE_LABEL_GAP px (at the 1340 column) right of the last one drawn. On a ledger that crosses a year a
+    // January label carries its year.
     var cand = [], lastM = -1, multiYear = settled.length > 0 && settled[0].date.getFullYear() !== settled[settled.length - 1].date.getFullYear();
     settled.forEach(function (b, i) {
       var m = b.date.getMonth(), mk = b.date.getFullYear() * 12 + m;
       if (mk !== lastM) { lastM = mk; cand.push({ x: X(i + 1), label: MON[m] + (multiYear && m === 0 ? ' ' + b.date.getFullYear() : '') }); }
     });
-    var fits = cand.every(function (c, i) { return !i || (c.x - cand[i - 1].x) * CURVE_PX >= (cand[i - 1].label.length > 3 ? CURVE_LABEL_GAP : CURVE_LABEL_FIT); });
     var xTicks = [], lastX = -Infinity;
     cand.forEach(function (c) {
-      if (!fits && (c.x - lastX) * CURVE_PX < CURVE_LABEL_GAP) return; lastX = c.x;
+      if ((c.x - lastX) * CURVE_PX < CURVE_LABEL_GAP) return; lastX = c.x;
       xTicks.push({ left: (c.x / 1292 * 100).toFixed(2) + '%', label: c.label });
     });
     var ddI = S.ddIdx + 1;
@@ -696,7 +694,7 @@
     isLocked: isLocked, certText: certText, periodPhrase: periodPhrase, headMeta: headMeta, sortLedger: sortLedger, ledgerFilter: ledgerFilter,
     ledgerMonths: ledgerMonths, ledgerMeta: ledgerMeta, ledgerFoot: ledgerFoot, betMeta: betMeta, bankCard: bankCard,
     fitLegs: fitLegs, legsOk: legsOk, combinedOdds: combinedOdds, legsNote: legsNote, formCheck: formCheck, newBet: newBet,
-    marketDetail: marketDetail, shownPlans: shownPlans, CONFIDENCE_TIERS: CONFIDENCE_TIERS, curveScale: curveScale, CURVE_LABEL_GAP: CURVE_LABEL_GAP, CURVE_LABEL_FIT: CURVE_LABEL_FIT, CURVE_PX: CURVE_PX, CURVE_MAX_TICKS: CURVE_MAX_TICKS, curveHover: curveHover, ticket: ticket, present: present, monYear: monYear
+    marketDetail: marketDetail, shownPlans: shownPlans, CONFIDENCE_TIERS: CONFIDENCE_TIERS, curveScale: curveScale, CURVE_LABEL_GAP: CURVE_LABEL_GAP, CURVE_PX: CURVE_PX, CURVE_MAX_TICKS: CURVE_MAX_TICKS, curveHover: curveHover, ticket: ticket, present: present, monYear: monYear
   };
   if (typeof module === 'object' && module.exports) module.exports = api;
   else root.BetTrackerMath = api;

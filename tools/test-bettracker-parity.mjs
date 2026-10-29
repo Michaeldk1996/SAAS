@@ -14,6 +14,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import vm from 'node:vm';
 import { fileURLToPath } from 'node:url';
+const thin70 = xs => { let last = -Infinity; return xs.filter(t => { const x = parseFloat(t.left) / 100 * 1286; if (x - last < 70) return false; last = x; return true; }); };
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const HTML = fs.readFileSync(path.join(ROOT, 'design_handoff_bet_tracker/Bet Tracker Page.dc.html'), 'utf8');
@@ -60,7 +61,8 @@ function run(M, MC) {
     eq(`${name} · curve meta + drawdown note`, [HC.meta, HC.ddNote], [v.curve.meta, v.curve.ddNote]);
     eq(`${name} · curve path + area`, [HC.path, HC.area], [v.curve.path, v.curve.area]);
     eq(`${name} · curve ticks`, HC.yTicks.map(t => [t.y, t.top, t.label]), v.curve.yTicks.map(t => [t.y, t.top, minus(t.label)]));
-    eq(`${name} · curve x labels`, HC.xTicks.map(t => [t.left, t.label]), v.curve.xTicks.map(t => [t.left, t.label]));
+    // T9 (Michael 2026-10-29, always): the reference's month labels, thinned to 70px on the 1286px strip — the one deviation
+    eq(`${name} · curve x labels (reference, 70px rule)`, HC.xTicks.map(t => [t.left, t.label]), thin70(v.curve.xTicks).map(t => [t.left, t.label]));
     eq(`${name} · curve points`, [HC.lastX, HC.lastY, HC.ddX, HC.ddY], [v.curve.lastX, v.curve.lastY, v.curve.ddX, v.curve.ddY]);
     eq(`${name} · Filters menu rows + counts`, M.filterMenu(bets, perList, F).map(g => [g.label, g.opts.map(o => [o.label, String(o.n), o.on])]),
       v.filters.map(g => [g.label, g.opts.map(o => [o.label, o.n, o.tick === '✓'])]));

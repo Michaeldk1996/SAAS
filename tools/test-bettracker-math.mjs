@@ -223,7 +223,7 @@ function run(M) {
   eq('curve: 170 points + the origin, M first', [HC.path.split(/[ML]/).length - 1, HC.path[0]], [171, 'M']);
   ok('curve: the zero tick is solid and present', HC.yTicks.some(t => t.zero));
   eq('curve: y step 5 on a ~30% span, labels signed', HC.yTicks.map(t => t.label), ['−10%', '−5%', '0%', '+5%', '+10%', '+15%']);
-  eq('curve: one x label per month of the season', HC.xTicks.map(t => t.label), ['Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct']);
+  eq('curve: the season\'s month labels, May dropped (44px after Apr, under the 70px rule)', HC.xTicks.map(t => t.label), ['Apr', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct']);
   eq('curve: nothing settled → no line, meta dashes', [M.heroCurve([], today).path, M.heroCurve([], today).meta], ['', '0 bets · peak — · now —']);
   eq('Avg CLV tile with no closes: — over "no closing prices"', M.heroTiles(M.stats(V)).rows[3], { label: 'Avg CLV', sub: 'no closing prices', value: DASH, kind: 'lab', when: '' });
   const longYears = []; for (let y = 2022; y <= 2025; y++) for (let m = 0; m < 12; m++) longYears.push({ id: y * 100 + m, date: new Date(y, m, 5), odds: 2, stake: 1, res: 'won' });
@@ -240,7 +240,7 @@ function run(M) {
     const SW = M.heroCurve(swing, today).yTicks.map(t => t.label);   // −120 … +48: step 10 would be 18 ticks
     ok('T9: a −120 → +48 span steps up to ≤ 8 ticks', SW.length <= 8 && SW.includes('0%'), JSON.stringify(SW));
     eq('T9: … on step 50 (20 still gives 9)', SW, ['−100%', '−50%', '0%', '+50%']);
-    eq('T9: the seed season keeps every month (none closer than the fit), bare labels', HC.xTicks.map(t => t.label), ['Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct']);
+    ok('T9: the 70px rule holds on the short seed season too, bare labels', HC.xTicks.every((t, i, a) => !i || (parseFloat(t.left) - parseFloat(a[i - 1].left)) / 100 * 1286 >= 70 - 1e-6) && HC.xTicks.every(t => t.label.length === 3), JSON.stringify(HC.xTicks));
     const edge = []; for (let i = 0; i < 71; i++) edge.push({ id: i, date: new Date(2022, Math.floor(i / 2), 5), odds: 2, stake: 1, res: 'won' });   // months 70.08 viewBox units apart in pairs
     const ex = M.heroCurve(edge, today).xTicks.map(t => parseFloat(t.left) / 100 * 1286);
     ok('T9: the 70px is read on the 1286px strip, not in viewBox units', ex.every((x, i) => !i || x - ex[i - 1] >= 70 - 1e-6), JSON.stringify(ex.map(x => x.toFixed(2))));
@@ -449,8 +449,7 @@ console.log(fails.length ? `bettracker-math: ${fails.length} failure(s)` : 'bett
 // ── mutants: every one must turn the suite red ──
 const MUTANTS = [
   ['T9: label gap 69', 'CURVE_LABEL_GAP = 70,', 'CURVE_LABEL_GAP = 69,'],
-  ['T9: never thin', "if (!fits && (c.x - lastX) * CURVE_PX < CURVE_LABEL_GAP) return;", "if (false) return;"],
-  ['T9: always thin', "if (!fits && (c.x - lastX) * CURVE_PX < CURVE_LABEL_GAP) return;", "if ((c.x - lastX) * CURVE_PX < CURVE_LABEL_GAP) return;"],
+  ['T9: never thin', "if ((c.x - lastX) * CURVE_PX < CURVE_LABEL_GAP) return;", "if (false) return;"],
   ['T9: no year on January', "MON[m] + (multiYear && m === 0 ? ' ' + b.date.getFullYear() : '')", "MON[m]"],
   ['T9: gap read in viewBox units', 'CURVE_PX = 1286 / 1292,', 'CURVE_PX = 1,'],
   ['T9: tick cap 9', 'CURVE_MAX_TICKS = 8,', 'CURVE_MAX_TICKS = 9,'],
