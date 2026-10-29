@@ -1,8 +1,8 @@
 {
  "_meta": {
   "task": "TEN-103 — api-tennis-native DNA ratings; TEN-319 — daily rebuild off the deployed roster, true percentiles",
-  "generatedAt": "2026-10-28T22:51:55.584Z",
-  "source": "api-tennis box scores, ATP main-tour singles (event_type 265), 2024-03-06..2026-10-28 — NO Sackmann/TML",
+  "generatedAt": "2026-10-29T13:40:15.870Z",
+  "source": "api-tennis box scores, ATP main-tour singles (event_type 265), 2024-03-06..2026-10-29 — NO Sackmann/TML",
   "scopes": {
    "last52": "matches within 364d of player's most-recent match (last52From..latestMatch)",
    "sinceBase": "all data since 2024-03-06 (shown as \"Since Mar 2024\")"
@@ -17,7 +17,7 @@
   },
   "roster": {
    "source": "deployed",
-   "fetchedAt": "2026-10-28T17:26:26.417Z",
+   "fetchedAt": "2026-10-29T12:48:31.997Z",
    "players": 411
   },
   "rosterSize": 411,
@@ -287,7 +287,7 @@
        122.7,
        122.8,
        123.3,
-       123.4,
+       123.3,
        123.4,
        124,
        124.1,
@@ -1585,7 +1585,7 @@
        123.3,
        123.5,
        123.5,
-       123.7,
+       123.6,
        123.7,
        123.7,
        123.8,
@@ -6658,12 +6658,12 @@
     "2025-12-10",
     "2025-12-24"
    ],
-   "fixturesSeen": 12651,
+   "fixturesSeen": 12663,
    "playerMatchesIngested": 21580,
    "playerMatchesWithoutSurface": 598,
    "distinctPlayersInCorpus": 741
   },
-  "wallClockMs": 43850
+  "wallClockMs": 43914
  },
  "players": [
   {
@@ -21350,7 +21350,7 @@
        "returnGamesWonPct": 14.6,
        "bpConvPct": 33.3,
        "rating": 123.4,
-       "pct": 18.2
+       "pct": 18.5
       },
       "underPressure": {
        "bpSavedPct": 68.4,
@@ -29792,7 +29792,7 @@
        "returnGamesWonPct": 15.9,
        "bpConvPct": 35.8,
        "rating": 123.7,
-       "pct": 20.5
+       "pct": 20.7
       },
       "underPressure": {
        "bpSavedPct": 62.5,
@@ -32737,12 +32737,12 @@
        "pct": 98.1
       },
       "return": {
-       "ret1stWonPct": 26.7,
+       "ret1stWonPct": 26.6,
        "ret2ndWonPct": 45.1,
        "returnGamesWonPct": 14.3,
        "bpConvPct": 37.3,
-       "rating": 123.4,
-       "pct": 18.2
+       "rating": 123.3,
+       "pct": 17.7
       },
       "underPressure": {
        "bpSavedPct": 72.3,
@@ -33037,8 +33037,8 @@
        "ret2ndWonPct": 45.6,
        "returnGamesWonPct": 15.3,
        "bpConvPct": 35.4,
-       "rating": 123.7,
-       "pct": 20.5
+       "rating": 123.6,
+       "pct": 20.1
       },
       "underPressure": {
        "bpSavedPct": 69.7,
@@ -38784,7 +38784,7 @@
        "returnGamesWonPct": 16.9,
        "bpConvPct": 31.2,
        "rating": 123.3,
-       "pct": 17.4
+       "pct": 17.7
       },
       "underPressure": {
        "bpSavedPct": 53.1,
@@ -77840,7 +77840,7 @@
        "returnGamesWonPct": 15.1,
        "bpConvPct": 38,
        "rating": 123.7,
-       "pct": 20.5
+       "pct": 20.7
       },
       "underPressure": {
        "bpSavedPct": 51.6,
@@ -112810,7 +112810,7 @@
        "returnGamesWonPct": 17.6,
        "bpConvPct": 33.3,
        "rating": 123.6,
-       "pct": 19.9
+       "pct": 20.1
       },
       "underPressure": {
        "bpSavedPct": 58.8,
