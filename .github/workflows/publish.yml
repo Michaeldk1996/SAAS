@@ -29,8 +29,15 @@ on:
 # later publishes were cancelled behind it and nothing reached the site for 17.5 h. Now the next trigger (a
 # data run, every ~10 min) cancels a stuck one. Backstop: pipeline-stall-guard.yml cancels a publish waiting
 # > 20 min and Telegrams when the live site's build-info.json is > 40 min old.
+#
+# Only a run that WILL publish joins site-publish (card-job-lock, founder 2026-10-29). A run triggered by a failed
+# gate or pipeline run skips its job, but at workflow level it still entered the group and cancelled the publish in
+# progress: on 29 Oct the gate for b1502f532 finished 02:49:24Z, its publish (40808623038) started 02:49:26Z and was
+# cancelled 02:50:19Z by a skipped run a failed pipeline run started at 02:50:05Z. With the pipeline failing every
+# ~10 min, no code reached the site. A skipping run now goes to a group of its own and cancels nothing. The
+# condition is the assemble job's `if:`, word for word (tools/test-publish-split.js holds them equal).
 concurrency:
-  group: site-publish
+  group: ${{ (github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success') && 'site-publish' || format('site-publish-skip-{0}', github.run_id) }}
   cancel-in-progress: true
 
 env:

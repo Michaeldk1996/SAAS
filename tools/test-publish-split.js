@@ -84,7 +84,13 @@ const CASES = {
     assert.ok(/github\.event\.workflow_run\.conclusion == 'success'/.test(S.publish), 'a failed gate or pipeline run publishes nothing');
     assert.ok(/needs\.assemble\.outputs\.deploy == 'true'/.test(S.publish) && /steps\.mode\.outputs\.deploy == 'true'/.test(S.publish), 'Pages only behind PUBLISH_DEPLOY');
     // founder 2026-10-13: the newest publish cancels a stuck one (run 38253661020 held the group 17.5 h)
-    assert.ok(/concurrency:\n\s+group: site-publish\n\s+cancel-in-progress: true/.test(S.publish), 'a stuck publish must be replaced by the next one');
+    const conc = /\nconcurrency:\n\s+group: \$\{\{ \((.+?)\) && 'site-publish' \|\| format\('site-publish-skip-\{0\}', github\.run_id\) \}\}\n\s+cancel-in-progress: true\n/.exec(S.publish);
+    assert.ok(conc, 'a stuck publish must be replaced by the next one (site-publish, cancel-in-progress true)');
+    // card-job-lock, founder 2026-10-29: a run that skips must not join site-publish, or it cancels the publish in
+    // progress (29 Oct 02:50Z: a failed pipeline run's skipped publish cancelled b1502f532's). The group's condition
+    // must be the assemble job's `if:`, word for word: a run that publishes joins site-publish, one that skips does not.
+    const runIf = /\n  assemble:\n    if: (.+)\n/.exec(S.publish);
+    assert.ok(runIf && runIf[1].trim() === conc[1].trim(), `group condition ${conc[1]} != assemble if: ${runIf && runIf[1]}`);
   },
   'site-code.sh = the code lines of pipeline.yml "Assemble site", line for line (no file in one list only)': (S) => {
     const asm = S.pipeline.slice(S.pipeline.indexOf('      - name: Assemble site'), S.pipeline.indexOf('      - name: Inject Supabase public config'));
@@ -122,7 +128,8 @@ const MUTANTS = [
   ['the lane watches pipeline.yml again', 'lane', "workflow: DEPLOY_WORKFLOW })", "workflow: 'pipeline.yml' })", 'deploy-lane.mjs'],
   ['pipeline.yml deploys Pages again', 'pipeline', null, 'PAGES', 'pipeline.yml'],
   ['publish deploys whatever the switch says', 'publish', "if: needs.assemble.outputs.ready == 'true' && needs.assemble.outputs.deploy == 'true'", "if: needs.assemble.outputs.ready == 'true'", 'publish.yml'],
-  ['publish fires on a failed run', 'publish', "github.event.workflow_run.conclusion == 'success'", "github.event.workflow_run.conclusion != ''", 'publish.yml'],
+  ['publish fires on a failed run', 'publish', "    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'", "    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion != ''", 'publish.yml'],
+  ['a skipping run joins site-publish and cancels the publish in progress', 'publish', "  group: ${{ (github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success') && 'site-publish' || format('site-publish-skip-{0}', github.run_id) }}", '  group: site-publish', 'publish.yml'],
   ['site-data uploaded before the data checks', 'pipeline', null, null, 'pipeline.yml'],
   ['a code file in pipeline.yml but not in site-code.sh', 'code', 'cp tournament-identity.js "$SITE/"\n', '', 'site-code.sh ='],
   ['a code file in site-code.sh but not in pipeline.yml', 'pipeline', null, 'DROPCP', 'site-code.sh ='],
