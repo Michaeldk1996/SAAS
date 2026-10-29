@@ -23052,6 +23052,23 @@ function pp2DbJoinNeed(key){
   return true;
 }
 window.pp2DbJoinNeed = pp2DbJoinNeed;
+// market-edge-stale (founder 2026-10-29): why a player's Market edge holds no priced row. His ATP main-draw career
+// matches (not qualifying, not a walkover) priced through the ONE join; 'dashed' = the ones the close rules dash
+// (sfDbNoPriceWhy 'od10' = only a start − 10 snapshot; 'nopin' = Bet365 outside its window). null = the join or his
+// career history has not answered yet (the profile then claims nothing about why).
+function pp2MarketDashed(key){
+  const k = String(key);
+  if (_sfDbJoinSt !== 'ready' || !_sfDbJoin) return null;
+  const rows = (window.careerHistory && window.careerHistory[k]) || (k in _careerHistoryShards ? _careerHistoryShards[k] : null);
+  if (!Array.isArray(rows)) return null;
+  const main = rows.filter(x => x && x.level === 'atp' && !x.walkover && !x.unconfirmed && !x.qualifying && !/^qualif/i.test(String(x.round || '')));
+  if (!main.length) return { main: 0, dashed: 0, priced: 0 };
+  const px = sfDbPxRows(k, null, main.map(x => ({ date: x.date, won: !!x.won, round: fhRoundCode(x.round, false), opp: x.opponent })));
+  let dashed = 0, priced = 0;
+  px.forEach((d, i) => { if (d) priced++; else if (px.why && (px.why[i] === 'od10' || px.why[i] === 'nopin')) dashed++; });
+  return { main: main.length, dashed, priced };
+}
+window.pp2MarketDashed = pp2MarketDashed;
 // ── Draw record drill-in (founder 2026-10-13) ────────────────────────────────────────────────────────────────
 // A Draw record row (Level / Format / By round / Opponent, Results tab) opens the matches behind its W–L. They are the
 // per-player match list built in the SAME run and from the SAME Tennis Abstract rows as the figures
