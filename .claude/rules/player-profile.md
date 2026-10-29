@@ -15,6 +15,13 @@ Newer rulings that also bind the profile: `modal-analysis.md` "Walkovers and ret
   `points-at-risk.json` loader lived only in the legacy view); no profile shows a Points at Risk figure.
   **Test:** force a failed mount — the view holds only that message and Retry, no digit, and a lazy repaint
   leaves it (`tools/test-pp-load-error.mjs`).
+- **A profile shows only the player asked for (market-edge-box, founder 2026-10-29).** Opening B from A's profile swaps
+  the view to a neutral "Loading profile…" shell at once (no name, no figure) while B's profile file and first-paint data
+  load (`pp2ShowLoadingIfOther`, from `psOpenProfile`, `showPlayerProfile` and `showPlayerProfileV2`); a repaint never
+  redraws a mounted profile that is not the one asked for (`PlayerProfileV2.currentKey`); a player whose lazy
+  `profiles/{key}.json` is not loaded yet is fetched, never a silent no-op with A still up. **Test:**
+  `tools/test-market-edge-box.mjs` "A then B" (mutants `no-shell`, `repaint-any-key`). Measured on live data, 6 pairs × 50
+  samples: 6 of 300 showed A after B was asked for before, 0 of 300 after.
 - **Player Profile — export parity (founder ruling 2026-08-01).** The Player Profile page
   (`buildPlayerProfileHtml`) drops three intentional enrichments the export lacks. **(1) No "Surface record"
   rail card** — the Layer #4A career + rolling-52-week per-surface card is removed; the left rail carries

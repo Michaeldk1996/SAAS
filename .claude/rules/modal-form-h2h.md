@@ -356,7 +356,12 @@ rule, and the TEN-263 "api-tennis ∪ career-history eventKey join".
   (the floor clean; master missing / corrupt → builder fails, the guard exits 1; control: the old 28 Sep shape is caught).
   The profile's empty state says why (`pp2MarketDashed`, the one join): ATP main-draw matches dashed by the close rules
   read "No confirmed closing prices for these matches. N of his M ATP main-draw matches have no Pinnacle close …"; no
-  main-draw match → the Challenger / qualifying line; otherwise, or before the join answers, no reason is claimed.
+  main-draw match → the Challenger / qualifying line; otherwise no reason is claimed. **Team events are counted apart**
+  (market-edge-box, founder 2026-10-29): Davis / Laver / United / ATP / Hopman Cup ties are in the Database join and in no
+  Market edge or Database figure, so the empty state names them separately ("4 of his 7 team-event matches are priced in
+  the Database; team events … are left out of Market edge, as they are of every Database figure" — G. Bueno), never as
+  main-draw matches. While his history or the join is loading the box and modal claim nothing (pending). **Test:**
+  `tools/test-market-edge-box.mjs` (mutants `team-as-main`, `no-pending`, `box-claims-while-pending`).
 - Inputs: `database-yield-master.json` (the one master, built by `build-database-yield.js` in the same run — founder 2026-10-17), `player-profiles.json` (pipeline),
   `court-speed-map.json`, `playing-styles.json`.
 
