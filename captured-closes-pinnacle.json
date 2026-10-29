@@ -1,28 +1,28 @@
 {
- "generatedAt": "2026-10-28T12:41:04.889Z",
+ "generatedAt": "2026-10-29T04:14:42.176Z",
  "source": "matches.json git history: oddsMovement.books.Pinnacle (Oddspapi pinnacle, to 2026-09-02) and oddsMovement.chart.books[\"Pinnacle +30s\"] (Oddspapi pinnacle+30, from 2026-09-23)",
  "rule": "each side = last tick at or before the actual start (Oddspapi trueStart, else the card-state start: Oddspapi or the live-flip lower bound); both sides required; dropped when no unique actual start",
  "scannedThrough": {
-  "commit": "b2b3441821e67392ef405f6befb3d6d8fcdc929d",
-  "at": "2026-10-28T12:07:10Z"
+  "commit": "0bd9b48984c432be2c06bb5ee23f9c6d950fc78a",
+  "at": "2026-10-29T00:36:13Z"
  },
- "commitsScanned": 6131,
+ "commitsScanned": 6153,
  "lastRun": {
-  "from": "2026-10-27T23:01:07Z",
-  "snapshots": 44,
-  "added": 13,
-  "replaced": 0,
-  "series": 52,
-  "kept": 29,
+  "from": "2026-10-28T12:07:10Z",
+  "snapshots": 23,
+  "added": 1,
+  "replaced": 3,
+  "series": 54,
+  "kept": 30,
   "bySource": {
    "oddspapi": 21,
-   "api-tennis-live": 8
+   "api-tennis-live": 9
   },
   "byBook": {
-   "Pinnacle +30s": 29
+   "Pinnacle +30s": 30
   },
   "dropped": {
-   "noStart": 22,
+   "noStart": 23,
    "ambiguousStart": 1
   }
  },
@@ -12477,7 +12477,7 @@
    "p1": 4.69,
    "p2": 1.225,
    "at": "2026-10-27T12:26:39.249Z",
-   "trueStart": "2026-10-27T14:30:58.947Z",
+   "trueStart": "2026-10-27T14:30:58.000Z",
    "startSource": "oddspapi",
    "book": "Pinnacle +30s",
    "round": "ATP Vienna - 1/16-finals",
@@ -12519,7 +12519,7 @@
    "p1": 1.847,
    "p2": 2.05,
    "at": "2026-10-27T12:27:16.945Z",
-   "trueStart": "2026-10-27T12:34:11.743Z",
+   "trueStart": "2026-10-27T12:34:11.000Z",
    "startSource": "oddspapi",
    "book": "Pinnacle +30s",
    "round": "ATP Vienna - 1/16-finals",
@@ -12687,7 +12687,7 @@
    "p1": 4.37,
    "p2": 1.249,
    "at": "2026-10-27T14:32:52.080Z",
-   "trueStart": "2026-10-27T14:50:36.021Z",
+   "trueStart": "2026-10-27T14:50:36.000Z",
    "startSource": "oddspapi",
    "book": "Pinnacle +30s",
    "round": "ATP Basel - 1/16-finals",
@@ -12717,6 +12717,27 @@
    "o1": 1.584,
    "o2": 2.49,
    "oAt": "2026-10-26T17:41:21.426Z",
+   "winner": "p1"
+  },
+  {
+   "eventKey": 12173981,
+   "date": "2026-10-28",
+   "p1Key": 2849,
+   "p2Key": 2846,
+   "p1Name": "L. Musetti",
+   "p2Name": "F. Tiafoe",
+   "p1": 2.13,
+   "p2": 1.787,
+   "at": "2026-10-28T08:04:45.056Z",
+   "trueStart": "2026-10-28T14:29:53.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s",
+   "round": "ATP Vienna - 1/16-finals",
+   "qualifying": false,
+   "event": "ATP Vienna",
+   "o1": 1.934,
+   "o2": 1.934,
+   "oAt": "2026-10-25T11:01:15.291Z",
    "winner": "p1"
   }
  ]
