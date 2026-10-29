@@ -87,7 +87,7 @@ for (const [label, master] of [['master missing', null], ['master corrupt', '{"m
   ok(!/marketEmptyWhy[\s\S]{0,400}pp2DbJoinNeed/.test(src.slice(a, b)), 'the empty state never requests the join itself (TEN-402 R2 load order)');
 
   const page = readFileSync(join(ROOT, 'bsp-consult-dashboard.html'), 'utf8');
-  const pa = page.indexOf('function pp2MarketDashed('), pb = page.indexOf('window.pp2MarketDashed = pp2MarketDashed;');
+  const pa = page.indexOf('const PP2_TEAM_EVENT'), pb = page.indexOf('window.pp2MarketDashed = pp2MarketDashed;');
   ok(pa > 0 && pb > pa, 'page: pp2MarketDashed found');
   const pc = { window: { careerHistory: {} }, _careerHistoryShards: {}, _sfDbJoinSt: 'ready', _sfDbJoin: {}, fhRoundCode: (r) => r || '—',
     sfDbPxRows: (k, n, views) => { const out = views.map((v) => (v.date === '2026-01-20' ? { price: 1.5 } : null)); out.why = views.map((v) => (v.date === '2026-05-01' ? 'od10' : v.date === '2026-06-01' ? 'nopin' : 'none')); return out; } };
@@ -101,9 +101,9 @@ for (const [label, master] of [['master missing', null], ['master corrupt', '{"m
     { date: '2026-05-03', level: 'atp', round: 'R64', opponent: 'K. L', won: true, walkover: true },
     { date: '2026-05-04', level: 'chitf', round: 'R32', opponent: 'M. N', won: true }];
   const r = vm.runInContext('pp2MarketDashed("7")', pc);
-  ok(r && r.main === 4 && r.dashed === 2 && r.priced === 1, `bridge: 4 ATP main-draw, 2 dashed by the close rules (od10 + nopin), 1 priced (${JSON.stringify(r)})`);
+  ok(r && r.main === 4 && r.dashed === 2 && r.priced === 1 && r.team === 0, `bridge: 4 ATP main-draw, 2 dashed by the close rules (od10 + nopin), 1 priced (${JSON.stringify(r)})`);
   pc._sfDbJoinSt = 'loading';
-  ok(vm.runInContext('pp2MarketDashed("7")', pc) === null, 'bridge: join not loaded → null (no reason claimed)');
+  ok(JSON.stringify(vm.runInContext('pp2MarketDashed("7")', pc)) === '{"pending":true}', 'bridge: join not loaded → pending (no reason claimed; market-edge-box)');
 }
 
 console.log(fails ? `\n${fails} check(s) failed` : '\nmarket-edge-stale: all checks pass');
