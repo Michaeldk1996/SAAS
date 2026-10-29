@@ -1,18 +1,18 @@
 {
- "generatedAt": "2026-10-29T07:43:44.274Z",
+ "generatedAt": "2026-10-29T08:40:03.532Z",
  "source": "matches.json git history: oddsMovement.books.Pinnacle (Oddspapi pinnacle, to 2026-09-02) and oddsMovement.chart.books[\"Pinnacle +30s\"] (Oddspapi pinnacle+30, from 2026-09-23)",
  "rule": "each side = last tick at or before the actual start (the earlier of Oddspapi trueStart and the card-state start: Oddspapi or the live-flip lower bound); both sides required; dropped when no unique actual start. seenAt = our last capture read before the start that confirmed the close (founder 2026-10-28); age = start - (seenAt or at)",
  "scannedThrough": {
   "commit": "4af39e4aad50e1ecdf08e1d44df355c89ce64d54",
   "at": "2026-10-29T06:12:56Z"
  },
- "commitsScanned": 6156,
+ "commitsScanned": 6157,
  "lastRun": {
-  "from": "2026-10-29T00:36:13Z",
-  "snapshots": 3,
+  "from": "2026-10-29T06:12:56Z",
+  "snapshots": 2,
   "added": 0,
-  "replaced": 0,
-  "seenBackfilled": 176,
+  "replaced": 2,
+  "seenBackfilled": 0,
   "series": 50,
   "kept": 27,
   "bySource": {
@@ -12721,7 +12721,7 @@
    "p1": 1.448,
    "p2": 2.96,
    "at": "2026-10-27T20:24:04.331Z",
-   "trueStart": "2026-10-27T20:30:24.983Z",
+   "trueStart": "2026-10-27T20:30:24.000Z",
    "startSource": "oddspapi",
    "book": "Pinnacle +30s",
    "round": "ATP Vienna - 1/16-finals",
@@ -12809,7 +12809,7 @@
    "p1": 1.083,
    "p2": 8.71,
    "at": "2026-10-27T12:09:41.240Z",
-   "trueStart": "2026-10-27T16:59:21.862Z",
+   "trueStart": "2026-10-27T16:59:21.000Z",
    "startSource": "oddspapi",
    "book": "Pinnacle +30s",
    "round": "ATP Vienna - 1/16-finals",
