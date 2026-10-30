@@ -926,7 +926,9 @@ TE_SOURCE = 'Tennis Explorer · Pinnacle'
 TE_HOVER = 'Tennis Explorer, last pre-match price, not a confirmed close'   # one fixed text, no time (the time stays in price_ts)
 # founder 2026-10-30 ("TE above Bet365" follow-up, "Yes, last before dash"; "for market edge and derived lines it's fine"):
 # Tennis Explorer's Bet365 price, read from the pages te-odds-batch already saved (stennisfy-ops tools/te-b365-extract.mjs).
-# Last before the dash at every level; ATP main-draw rows ride the lower feed (join-only, never a Database figure). The same
+# Last before the dash at every level. Lower levels ride the lower feed (join-only, never a Database figure); ATP main-draw
+# rows (no level) ride the main-draw feed into the Database itself (founder 2026-10-30: "the Database must show the same
+# price"), where they price only a match that would otherwise be a dash. The same
 # in-play rule as the Pinnacle rows wherever the page shows a change time; a cell that never moved has none and is kept.
 TE_B365_SOURCE = 'Tennis Explorer · Bet365'
 TE_B365_HOVER = 'Bet365 (approx.) · Tennis Explorer, last pre-match price, not a confirmed close'
@@ -1041,8 +1043,8 @@ def lower_feed_rows(current):
     out = []
     for _, r in sorted(best.values(), key=lambda x: (str(x[1]['match_date']), x[1]['event_key'])):
         d = r['detail']
-        out.append({'date': str(r['match_date']), 'level': d['level'], 'tournament': r['tournament'], 'round': d.get('round') or r.get('round') or '',
-                    'winner': r['winner'] if d['level'] == TE_MD_LEVEL else P.td_name(r['winner']), 'loser': r['loser'] if d['level'] == TE_MD_LEVEL else P.td_name(r['loser']), 'winnerKey': d.get('winnerKey') or '', 'loserKey': d.get('loserKey') or '',
+        out.append({'date': str(r['match_date']), 'level': d['level'], 'tournament': r['tournament'], 'round': d.get('round') or '',
+                    'winner': P.td_name(r['winner']), 'loser': P.td_name(r['loser']), 'winnerKey': d.get('winnerKey') or '', 'loserKey': d.get('loserKey') or '',
                     'psw': r['price_winner'], 'psl': r['price_loser'], 'eventKey': r['event_key'], 'snapshotId': r['id'],
                     'source': r.get('source') or APPROX_SOURCE, 'cutTs': r.get('cut_ts') or '',
                     'gapToStartS': '' if r.get('gap_to_start_s') is None else r['gap_to_start_s'],
@@ -1247,14 +1249,11 @@ def te_md_row(d, x, p, md_join, flip_start, rep, src_kind=None):
     a, b = f.get('event_first_player'), f.get('event_second_player')
     SRC, LAB, _, HOV = src_kind or te_doc_kind(d)
     rep['stored'] += 1; rep[f"atp-md stored: {x.get('group')}"] += 1
-    # a Tennis Explorer Bet365 row rides the LOWER feed as level atp-md (join-only, never a Database figure; founder 2026-10-30)
-    lvl = {'level': TE_MD_LEVEL, 'winnerKey': str(f.get('first_player_key') if w else f.get('second_player_key')),
-           'loserKey': str(f.get('second_player_key') if w else f.get('first_player_key')), 'status': st} if SRC == TE_B365_SOURCE else {}
     return {'dedupe_key': '|'.join(str(v) for v in (SRC, td['date'], td['tournament'], td['winner'], td['loser'], f['event_key'], pw, pl, x['pageSha256'])),
             'source': SRC, 'label': LAB, 'match_date': td['date'], 'tournament': td['tournament'],
             'round': x.get('round') or None, 'winner': td['winner'], 'loser': td['loser'], 'event_key': int(f['event_key']),
             'price_winner': pw, 'price_loser': pl, 'fetched_at': x.get('fetchedAt'), 'price_ts': pts,
-            'detail': {**lvl, 'atpMainDraw': True, 'group': x.get('group'), 'teMatchId': str(x['teId']), 'pageSha256': x['pageSha256'],
+            'detail': {'atpMainDraw': True, 'group': x.get('group'), 'teMatchId': str(x['teId']), 'pageSha256': x['pageSha256'],
                        'batch': d.get('batch'), 'teTournament': x.get('tour'), 'books': x.get('books') or [], 'moves': p.get('moves'),
                        'sideTs': {'winner': p.get('p1Ts'), 'loser': p.get('p2Ts')},
                        'open': {'winner': (p.get('open') or {}).get('p1'), 'loser': (p.get('open') or {}).get('p2'),

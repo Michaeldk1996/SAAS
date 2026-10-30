@@ -222,14 +222,16 @@ closes, odds performance and started-evidence.
   listed pre-match price on the Tennis Explorer pages we already saved (`stennisfy-ops` `tools/te-b365-extract.mjs`, no
   request; a page whose sha256 differs from the batch's is skipped), book 10, src `teb`, every hover exactly "Bet365 (approx.)
   · Tennis Explorer, last pre-match price, not a confirmed close" (`FH_B365_TE_HOVER`). It prices a match only where no
-  other source does: at ATP qualifying, Challenger, Challenger qualifying and `atp-x` after api-tennis's Bet365; on the ATP
-  main draw only a match the Database itself shows as a dash (level `atp-md`, keyed by the Tennis-Data row). Every TE Bet365
-  row rides the era shard behind flag `l` (team events `t`): read by the price join only — **never a Database figure, ROI,
-  tour baseline or odds-performance row** — so the Database page's closing-price figures never move. The in-play rule runs
+  other source does: at ATP qualifying, Challenger, Challenger qualifying and `atp-x` after api-tennis's Bet365, in the era
+  shard behind flag `l` (team events `t`): read by the price join only, never a Database figure, ROI, tour baseline or
+  odds-performance row. **ATP main draw (founder, same day: "the Database must show the same price"):** a Database row of
+  its own (book 10, `bookCounts` "Bet365 (approx.) · Tennis Explorer", `meta.approx.sources.tb`), only on a match that would
+  otherwise be a dash — a start − 10 dash included — so the Database and every page show one price; never above Bet365. The in-play rule runs
   wherever the page shows a change time (about one row in three); a cell that never moved carries none and is kept. Measured
   30 Oct on the saved pages: median no-vig gap to TE Pinnacle 1.38pp on 1,399 pages showing both (api-tennis Bet365 1.47pp
-  from a real close); about 3,970 current dashes it would price. **Test:** `tools/test-te-b365.js` (book 10 last; a
-  main-draw dash only; Database byte-identical; MUTANT: the dash guard removed → red), `tools/test-tdarch.py` "TE Bet365",
+  from a real close); about 3,970 current dashes it would price. **Test:** `tools/test-te-b365.js` (book 10 last; lower
+  levels leave the Database byte-identical; a main-draw dash becomes a book-10 Database row; MUTANT: TE Bet365 above
+  Tennis-Data's Bet365 → red), `tools/test-tdarch.py` "TE Bet365",
   `tools/test-approx-pinnacle.mjs` + `tools/test-close-label.py` (the hover), `tools/test-historical-archive-sql.py`.
 - **ATP main-draw order (founder ruling 2026-10-30, "TE above Bet365"; replaces every earlier main-draw order):**
   Tennis-Data Pinnacle → our archive close → E (the early-cut fill) → api-tennis Pinnacle → **Tennis Explorer Pinnacle** →

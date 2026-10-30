@@ -68,10 +68,11 @@ take styling from it, structure from the rules below.
   never stored (`odds.md`, in-play rule). No Database figure reads book 8. **Test:**
   `tools/test-approx-pinnacle.mjs` (the exact words, no time anywhere on the page), `tools/test-lower-master.js` (book 8's rank,
   Database byte-identical, the era shard's shape unchanged, mutant), `tools/test-tdarch.py` (switch on, order, in-play rule).
-- **Book 10 = Tennis Explorer's Bet365 (founder 2026-10-30).** Join-only (era shard, flag `l`): never a Database row, figure,
-  ROI or tour baseline, so `database-yield.json` and `tour-baselines.json` are byte-identical with and without it. On the ATP
-  main draw it fills only a match the Database shows as a dash (`meta.lower.teB365MainDraw`: offered / kept / notADash). The
-  join reads it as Bet365 `B` + `teb`, hover `FH_B365_TE_HOVER` (`odds.md`). **Test:** `tools/test-te-b365.js`.
+- **Book 10 = Tennis Explorer's Bet365 (founder 2026-10-30).** On the ATP main draw a Database row of its own, last before
+  the dash (after Bet365; a start − 10 dash included): `bookCounts` "Bet365 (approx.) · Tennis Explorer", `meta.approx.sources.tb`
+  (used / filledDash / filledStart10Dash); the per-book split counts it with Bet365 and the footnote and the Player split
+  name it. At the lower levels it is join-only (era shard, flag `l`), so no Database figure moves there. The join reads it
+  as Bet365 `B` + `teb`, hover `FH_B365_TE_HOVER` (`odds.md`). **Test:** `tools/test-te-b365.js`.
 - **Retirements settle through settlement.js (founder ruling 2026-10-25, round 2 item 1.3; replaces the 2026-09-20 "void
   them" and 2026-10-08 "behind a flag, no Database figure" rulings).** Two rules, two functions, one module (`settlement.js`,
   UMD, `window.Settlement`): **yields / ROI / units → `settleBet`** (Pinnacle rules: a retirement after the first set was

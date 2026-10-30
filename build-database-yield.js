@@ -89,12 +89,14 @@ const APPROX_COLS = ['date', 'tournament', 'winner', 'loser', 'psw', 'psl', 'eve
 const APPROX_HOVER = 'Pinnacle snapshot from api-tennis, no timestamp, not a confirmed close';
 // Founder ruling 2026-10-17 (item 2): for 13 Apr - 16 Sep the first Pinnacle (approx.) source is the Oddspapi Pinnacle archive at
 // Oddspapi's start - 10 min (book index 5, its own hover); api-tennis (book 2) only where the archive has no pre-cut pair.
-const APPROX_SRC = { 'api-tennis Pinnacle': 'at', 'oddspapi Pinnacle (start − 10)': 'od', 'Tennis Explorer · Pinnacle': 'te' };
+const APPROX_SRC = { 'api-tennis Pinnacle': 'at', 'oddspapi Pinnacle (start − 10)': 'od', 'Tennis Explorer · Pinnacle': 'te',
+  // founder 2026-10-30: Tennis Explorer's Bet365 — on the ATP main draw a Database row (book 10), only where it would be a dash
+  'Tennis Explorer · Bet365': 'tb' };
 // Founder ruling 2026-10-30 ("TE above Bet365"): on the ATP main draw Tennis Explorer's Pinnacle price (book 8, the code the
 // lower levels already carry) prices a row after api-tennis's Pinnacle and before Bet365 — Tennis-Data Pinnacle > our archive
 // close > E (both the td-feed override) > api-tennis Pinnacle > Tennis Explorer Pinnacle > Bet365 > a dash — and it is the
 // one source that prices a start − 10 dash (the 26 Oct ruling still never shows the start − 10 snapshot itself).
-const TE_BOOK = 8;
+const TE_BOOK = 8, TE_B365_BOOK = 10;
 const APPROX_HOVER_TE = 'Tennis Explorer, last pre-match price, not a confirmed close';
 const APPROX_HOVER_OD10 = 'Pinnacle history, taken 10 minutes before the recorded start, not a confirmed close';
 
@@ -265,8 +267,8 @@ const B365_FROM = '2026-01-01', B365_TO = '2026-04-30';
 const B365_INTERIM = true;
 const b365Dropped = { rows: 0, byYear: {} };
 // Founder ruling 2026-10-26: the ATP main-draw start − 10 snapshots (book 5) the build no longer shows
-const od10Dropped = { rows: 0, byMonth: {}, hadApiTennisSnapshot: 0, hadBet365: 0, pricedByTe: 0 }; // founder TEN-146 ruling (2026-09-04): window starts 2010, fail-closed, no pre-window fallback
-const bookCount = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 8: 0, 9: 0 };
+const od10Dropped = { rows: 0, byMonth: {}, hadApiTennisSnapshot: 0, hadBet365: 0, pricedByTe: 0, pricedByTeBet365: 0 }; // founder TEN-146 ruling (2026-09-04): window starts 2010, fail-closed, no pre-window fallback
+const bookCount = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 8: 0, 9: 0, 10: 0 };
 let dateMin = '99999999', dateMax = '00000000';
 // TEN-262: the latest archive date with a valid Pinnacle pair, read BEFORE any exclusion.
 // The Database header says where the source's Pinnacle prices stop; it is never typed.
@@ -288,8 +290,8 @@ if (feedOn) {
   }
 }
 const feedUsedKeys = new Set();
-const approx = { map: new Map(), applied: 0, appliedBySource: { at: 0, od: 0, te: 0 }, tdHadPinnacle: 0, archiveFirst: 0, unmatched: 0, rows: 0, rowsBySource: { at: 0, od: 0, te: 0 },
-  teOverBet365: 0, teFilledDash: 0, teFilledOd10: 0, eOverApiTennis: 0 };
+const approx = { map: new Map(), applied: 0, appliedBySource: { at: 0, od: 0, te: 0, tb: 0 }, tdHadPinnacle: 0, archiveFirst: 0, unmatched: 0, rows: 0, rowsBySource: { at: 0, od: 0, te: 0, tb: 0 },
+  teOverBet365: 0, teFilledDash: 0, teFilledOd10: 0, eOverApiTennis: 0, tbFilledDash: 0, tbFilledOd10: 0 };
 const approxOn = fs.existsSync(APPROX_FEED);
 if (approxOn) {
   const lines = fs.readFileSync(APPROX_FEED, 'utf8').split(/\r?\n/).filter(Boolean);
@@ -388,7 +390,17 @@ function processLine(c, col, season, fromFeed) {
     const dB = (c[col.date] || '').trim();
     const b365Ok = (validPrice(B365[0]) && validPrice(B365[1])) && (B365_INTERIM || season < WINDOW_START || (dB >= B365_FROM && dB <= B365_TO));
     const b365Cut = !b365Ok && validPrice(B365[0]) && validPrice(B365[1]);
-    const bookIdx = (validPrice(P[0]) && validPrice(P[1])) ? pinIdx : od10Cut ? -1 : AP ? (APS === 'od' ? 5 : APS === 'te' ? TE_BOOK : 2) : b365Ok ? 1 : -1;
+    let bookIdx = (validPrice(P[0]) && validPrice(P[1])) ? pinIdx : od10Cut ? -1 : AP ? (APS === 'od' ? 5 : APS === 'te' ? TE_BOOK : 2) : b365Ok ? 1 : -1;
+    // founder 2026-10-30: Tennis Explorer's Bet365, last before the dash — a Database row (book 10), so the Database and every
+    // page show the same price; a start − 10 dash included (the snapshot itself stays unshown)
+    let TB = null;
+    if (bookIdx < 0 && !fromFeed && approxOn) {
+      const ap = approx.map.get(tdKey);
+      if (ap && ap.tb && validPrice(ap.tb[0]) && validPrice(ap.tb[1])) {
+        TB = ap.tb; bookIdx = TE_B365_BOOK; approx.applied++; approx.appliedBySource.tb++;
+        if (od10Cut) { od10Cut = false; od10Dropped.pricedByTeBet365++; approx.tbFilledOd10++; } else approx.tbFilledDash++;
+      }
+    }
     // TEN-402: a retirement passes the SAME filters as a used row, counted in its own buckets (retBucket),
     // so the Database's reconciliation (each archive row in exactly one bucket) is untouched.
     const B_ = behindFlag ? retBucket : bucket;
@@ -402,7 +414,7 @@ function processLine(c, col, season, fromFeed) {
       if (Number.isFinite(dU)) uRaw.push([dU, (c[col.winner] || '').trim(), (c[col.loser] || '').trim(), od10Cut ? 'od10' : b365Cut ? 'nopin' : one ? 'one' : 'nobook']);
       return;
     }
-    const [pw, pl] = isPinIdx(bookIdx) || bookIdx === EARLY_BOOK ? P : isApproxIdx(bookIdx) ? AP : B365;
+    const [pw, pl] = isPinIdx(bookIdx) || bookIdx === EARLY_BOOK ? P : isApproxIdx(bookIdx) ? AP : bookIdx === TE_B365_BOOK ? TB : B365;
 
     if (pw === pl) {                                            // exact tie: no favourite, no underdog
       B_.tie++;
@@ -538,20 +550,16 @@ const LOWER_COLS = ['date', 'level', 'tournament', 'round', 'winner', 'loser', '
 // api-tennis Bet365 > a dash. Its rows reach the feed when tools/tdarch.py TE_FEED_ON is on.
 // Tennis Explorer's Bet365 (10; founder 2026-10-30, "last before dash"; "for market edge and derived lines it's fine"): last,
 // after api-tennis's Bet365 snapshot, under the same in-play rule as the Pinnacle rows where the page shows a change time
-// (te-import). Its ATP main-draw rows (level atp-md) ride here too — join-only, never a Database figure — and only where the
-// Database itself has a dash for that Tennis-Data match.
+// (te-import). Its ATP main-draw rows come through the main approx feed instead (APPROX_SRC 'tb', book 10, below).
 const LOWER_RANK = { 3: 0, 4: 0, 5: 1, 2: 1.5, 8: 1.75, 6: 3, 7: 4, 10: 5 };
-const TE_SOURCE = 'Tennis Explorer · Pinnacle', TE_B365_SOURCE = 'Tennis Explorer · Bet365', TE_B365_BOOK = 10;
+const TE_SOURCE = 'Tennis Explorer · Pinnacle', TE_B365_SOURCE = 'Tennis Explorer · Bet365';
 const LOWER_LEVEL_NAME = { 'atp-q': 'ATP Qualifying', ch: 'Challenger', 'ch-q': 'Challenger Qualifying', itf: 'ITF',
   // founder brief 2026-10-19 (item 1): an ATP main-draw match at an event Tennis-Data does not carry (Davis Cup, United Cup,
   // ATP Cup, Laver Cup, Hopman Cup, the Olympics, the Next Gen Finals, the Asian Games) — behind the team flag 't', like the
   // archive's own team closes: read by the price join only, never a Database figure
-  'atp-x': 'ATP',
-  // founder 2026-10-30: an ATP main-draw match the Database shows as a dash, priced by Tennis Explorer's Bet365 (join-only)
-  'atp-md': 'ATP' };
+  'atp-x': 'ATP' };
 const LOWER_B365_TO = '2026-09-16';                               // from 17 Sep only a close prices these levels
-const lower = { files: {}, rows: 0, byLevel: {}, byBook: {}, dropped: 0, b365: { captures: 0, noCareerRow: 0, atpMainDraw: 0, kept: 0, after16Sep: 0 },
-  teB365MainDraw: { offered: 0, kept: 0, notADash: 0 } };
+const lower = { files: {}, rows: 0, byLevel: {}, byBook: {}, dropped: 0, b365: { captures: 0, noCareerRow: 0, atpMainDraw: 0, kept: 0, after16Sep: 0 } };
 const lowerBest = new Map();
 // Oddspapi "Bergs, Zizou" -> "Z. Bergs" (our short form; tdNameJs then spells it as Tennis-Data)
 const commaToShort = n => { const s = String(n || ''); const i = s.indexOf(','); if (i < 1 || s.includes('/')) return null;
@@ -610,23 +618,14 @@ const LOWER_B365_ROOT = process.env.DB_YIELD_B365_ROOT || __dirname;   // bet365
     r.winner = self && opp ? tdNameJs(won ? self : opp) : ''; r.loser = self && opp ? tdNameJs(won ? opp : self) : '';
   }
 })();
-// an ATP main-draw row (atp-md) fills only a Database dash: the main-draw unpriced row of the same Tennis-Data match
-// (date | winner | loser, the names as Tennis-Data spells them); a match the Database prices keeps its Database price alone
-const mainDash = new Set(uRaw.filter(u => u.length === 4).map(u => `${u[0]}|${u[1]}|${u[2]}`));
 for (const r of lowerBest.values()) {
   const dI = parseInt(String(r.date).replace(/-/g, ''), 10);
   if (!Number.isFinite(dI) || !r.winner || !r.loser || !r.winner.trim() || !r.loser.trim()) { lower.dropped++; continue; }
-  if (r.level === 'atp-md') {
-    lower.teB365MainDraw.offered++;
-    if (!mainDash.has(`${dI}|${r.winner.trim()}|${r.loser.trim()}`)) { lower.teB365MainDraw.notADash++; continue; }
-    lower.teB365MainDraw.kept++;
-  }
   const isRet = RETIRED.has((r.comment || '').trim());
-  const tx = r.level === 'atp-x' || r.level === 'atp-md', series = tx ? '' : LOWER_LEVEL_NAME[r.level];
+  const tx = r.level === 'atp-x', series = tx ? '' : LOWER_LEVEL_NAME[r.level];
   xAtt.push([series, '', '', (r.comment || '').trim(), '', '']);
-  // atp-md keeps the Tennis-Data round (the join's round test) and rides behind flag 'l' (join-only), never the team flag
-  xRaw.push([dI, tx ? null : series, '', r.level === 'atp-md' ? (r.round || '').trim() : '', (r.tournament || '').trim(), Math.min(r.pw, r.pl), Math.max(r.pw, r.pl),
-    r.pw <= r.pl ? 1 : 0, r.book, r.winner.trim(), r.loser.trim(), (r.level === 'atp-x' ? 't' : 'l') + (isRet ? 'r' : '') + (r.pw === r.pl ? 'e' : '')]);
+  xRaw.push([dI, tx ? null : series, '', '', (r.tournament || '').trim(), Math.min(r.pw, r.pl), Math.max(r.pw, r.pl),
+    r.pw <= r.pl ? 1 : 0, r.book, r.winner.trim(), r.loser.trim(), (tx ? 't' : 'l') + (isRet ? 'r' : '') + (r.pw === r.pl ? 'e' : '')]);
   lower.rows++; lower.byLevel[r.level] = (lower.byLevel[r.level] || 0) + 1; lower.byBook[r.book] = (lower.byBook[r.book] || 0) + 1;
 }
 // founder ruling 2026-10-18 (item 5): the lower-level matches the import checked and could not price, with their reason —
@@ -715,7 +714,8 @@ function baselinesOf(list, books) {
 }
 const dbList = figRows.map(r => ({ fav: r[5], dog: r[6], won: r[7], book: r[8] }));
 const BOOK_COUNTS = { Pinnacle: bookCount[0] + bookCount[3] + bookCount[4], Bet365: bookCount[1], ...(approxOn ? { [BOOKS[2]]: bookCount[2] + bookCount[5] + bookCount[TE_BOOK] } : {}),
-  ...(bookCount[EARLY_BOOK] ? { 'Pinnacle (early cut)': bookCount[EARLY_BOOK] } : {}) };
+  ...(bookCount[EARLY_BOOK] ? { 'Pinnacle (early cut)': bookCount[EARLY_BOOK] } : {}),
+  ...(bookCount[TE_B365_BOOK] ? { 'Bet365 (approx.) · Tennis Explorer': bookCount[TE_B365_BOOK] } : {}) };
 // one buffer per feed: the page's tooltip names it, so two different minutes in one build would make one of them wrong
 if (earlyMinutes.size > 1) { console.error(`archive feed: early-cut rows carry ${earlyMinutes.size} different buffers (${[...earlyMinutes].join(', ')} min): one per build`); process.exit(1); }
 const EARLY_MIN = earlyMinutes.size ? [...earlyMinutes][0] : null;
@@ -789,6 +789,10 @@ const meta = {
       at: { book: 2, source: 'api-tennis Pinnacle', hover: APPROX_HOVER, rows: approx.rowsBySource.at, applied: approx.appliedBySource.at, used: bookCount[2] },
       te: { book: TE_BOOK, source: 'Tennis Explorer · Pinnacle', hover: APPROX_HOVER_TE, rows: approx.rowsBySource.te, applied: approx.appliedBySource.te, used: bookCount[TE_BOOK],
         overBet365: approx.teOverBet365, filledDash: approx.teFilledDash, filledStart10Dash: approx.teFilledOd10 },
+      // founder 2026-10-30: Tennis Explorer's Bet365, last before the dash — a Bet365 (approx.) Database row, never a close
+      tb: { book: TE_B365_BOOK, source: 'Tennis Explorer · Bet365', label: 'Bet365 (approx.) · Tennis Explorer',
+        hover: 'Bet365 (approx.) · Tennis Explorer, last pre-match price, not a confirmed close', rows: approx.rowsBySource.tb, applied: approx.appliedBySource.tb,
+        used: bookCount[TE_B365_BOOK], filledDash: approx.tbFilledDash, filledStart10Dash: approx.tbFilledOd10 },
     },
     rows: approx.rows, applied: approx.applied, tdHadPinnacle: approx.tdHadPinnacle, archiveFirst: approx.archiveFirst, unmatched: approx.unmatched,
     eOverApiTennis: approx.eOverApiTennis,   // founder 2026-10-30: matches with both an E price and an api-tennis snapshot (E shown)

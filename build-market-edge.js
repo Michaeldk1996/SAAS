@@ -203,7 +203,7 @@ function pickBook(row) {
 // The 1.01 floor (CLAUDE.md odds invariant) is the core's too: a price below it has no band, so it is
 // on no basis — never in the headline while missing from the bands.
 const BASIS_BOOKS = new Set(['pinnacle', 'pinnacle-capture', 'bet365-archive', 'bet365-capture',
-  'pinnacle-history', 'pinnacle-approx', 'pinnacle-approx-od10', 'pinnacle-early', 'pinnacle-approx-te']);   // the Database's own books (founder 2026-10-17, item 1; 9 = early cut 2026-10-25; 8 = Tennis Explorer 2026-10-30)
+  'pinnacle-history', 'pinnacle-approx', 'pinnacle-approx-od10', 'pinnacle-early', 'pinnacle-approx-te', 'bet365-approx-te']);   // the Database's own books (founder 2026-10-17, item 1; 9 = early cut 2026-10-25; 8 = Tennis Explorer 2026-10-30)
 
 // Founder ruling 2026-10-17: the master's book codes (build-database-yield.js) -> this file's book ids and labels.
 const DB_BOOK = {
@@ -215,6 +215,8 @@ const DB_BOOK = {
   // founder ruling 2026-10-30 ("TE above Bet365"): Tennis Explorer's last pre-match Pinnacle price on the ATP main draw — a
   // snapshot, never a close; the page names it "Pinnacle (approx.) · Tennis Explorer, last pre-match price, not a confirmed close"
   8: ['pinnacle-approx-te', 'Pinnacle (approx.) · Tennis Explorer'],
+  // founder 2026-10-30: Tennis Explorer's Bet365 on an ATP main-draw match that would otherwise be a dash — never a close
+  10: ['bet365-approx-te', 'Bet365 (approx.) · Tennis Explorer'],
 };
 // ruling 4 (founder 2026-10-22): a retirement is on the basis only when its first set was completed (Pinnacle's rule) —
 // void, or no set scores, leaves every aggregate (player, band, curve, tour)

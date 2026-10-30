@@ -332,7 +332,8 @@ check('control: without the snapshot feed the same row is Bet365', JSON.stringif
   const ME = createRequire(import.meta.url)(join(ROOT, 'build-market-edge.js'));
   const meSrc = readFileSync(join(ROOT, 'build-market-edge.js'), 'utf8');
   check('Market edge reads Database book 8 as Tennis Explorer (pinnacle-approx-te, the page\'s own book id) and keeps it on its basis',
-    JSON.stringify(ME.DB_BOOK[8]) === JSON.stringify(['pinnacle-approx-te', 'Pinnacle (approx.) · Tennis Explorer']) && /'pinnacle-approx-te'\]\);/.test(meSrc)
+    JSON.stringify(ME.DB_BOOK[8]) === JSON.stringify(['pinnacle-approx-te', 'Pinnacle (approx.) · Tennis Explorer']) && /'pinnacle-approx-te', 'bet365-approx-te'\]\);/.test(meSrc)
+    && JSON.stringify(ME.DB_BOOK[10]) === JSON.stringify(['bet365-approx-te', 'Bet365 (approx.) · Tennis Explorer'])
     && /'pinnacle-approx-te': \['A', 'te'\]/.test(html), JSON.stringify(ME.DB_BOOK[8]));
 }
 console.log(`\ntest-approx-pinnacle: ${passed} passed, ${failed} failed`);

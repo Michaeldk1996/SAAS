@@ -499,9 +499,9 @@ check('control: two TE Bet365 rows on one match keep one (no duplicate)', len(mu
 bmd = [{'batch': 'b365-atp-md-id', 'source': T.TE_B365_SOURCE, 'complete': True, 'rows': [
     dict(MD(1, None), pin=None, b365={'p1': 1.6, 'p2': 2.4, 'p1Ts': None, 'p2Ts': None, 'open': {}, 'moves': [0, 0]})]}]
 bm, bmrep = T.te_rows(bmd, lambda ek: None, lambda ek: None, lambda td: mjoin.get((td['winner'], td['loser']), (None, 'no fixture')))
-check('atp-md TE Bet365: level atp-md (the lower, join-only feed), never the main-draw Database feed; Tennis-Data names and round kept',
-      len(bm) == 1 and bm[0]['detail']['level'] == T.TE_MD_LEVEL and bm[0]['source'] == T.TE_B365_SOURCE and T.main_snapshots([dict(bm[0], id=910)]) == []
-      and [(r['level'], r['winner'], r['loser'], r['round'], r['source']) for r in T.lower_feed_rows([dict(bm[0], id=910)])]
-      == [(T.TE_MD_LEVEL, 'One A.', 'Two B.', '2nd Round', T.TE_B365_SOURCE)], (bm, bmrep))
+check('atp-md TE Bet365 (founder 2026-10-30: "the Database must show the same price"): no level — the main-draw feed into the Database, never the lower feed; Tennis-Data names kept',
+      len(bm) == 1 and 'level' not in bm[0]['detail'] and bm[0]['source'] == T.TE_B365_SOURCE and bm[0]['label'] == 'Bet365 (approx.)'
+      and [r['id'] for r in T.main_snapshots([dict(bm[0], id=910)])] == [910] and T.lower_feed_rows([dict(bm[0], id=910)]) == []
+      and [(r['source'], r['winner'], r['psw']) for r in T.approx_feed_rows([dict(bm[0], id=910)])] == [(T.TE_B365_SOURCE, 'One A.', 1.6)], (bm, bmrep))
 print(f'\ntest-tdarch: {passed} passed, {failed} failed')
 sys.exit(1 if failed else 0)

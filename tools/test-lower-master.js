@@ -81,10 +81,10 @@ ok(A.base === B.base, 'the Database files are byte-identical with and without th
 ok(A.x.meta.counts.lower === 5 && A.x.meta.counts.team === B.x.meta.counts.team + 1 && A.master.meta.counts.x === B.master.meta.counts.x + 6, 'the era shard and the master count the lower rows (and the atp-x row as team)');
 // mutant: the source order reversed (api-tennis over start − 10) → the source checks go red
 const src = fs.readFileSync(path.join(ROOT, 'build-database-yield.js'), 'utf8');
-const anchor = 'const LOWER_RANK = { 3: 0, 4: 0, 5: 1, 2: 1.5, 8: 1.75, 6: 3, 7: 4 };';
+const anchor = 'const LOWER_RANK = { 3: 0, 4: 0, 5: 1, 2: 1.5, 8: 1.75, 6: 3, 7: 4, 10: 5 };';
 ok(src.split(anchor).length === 2, 'the mutant anchor is found exactly once');
 const mp = path.join(ROOT, '.mutant-lower-yield.js');
-fs.writeFileSync(mp, src.replace(anchor, 'const LOWER_RANK = { 3: 0, 4: 0, 5: 2, 2: 1, 6: 0, 7: 0 };'));
+fs.writeFileSync(mp, src.replace(anchor, 'const LOWER_RANK = { 3: 0, 4: 0, 5: 2, 2: 1, 6: 0, 7: 0, 10: 0 };'));
 let red = false;
 try { const M = build(FEEDS, mp); const m = M.x.xRows.map((x, i) => [x, M.x.xNames[i]]).filter(([x]) => String(x[9]).includes('l'));
   const r1 = m.find(([, n]) => n[1] === 'Herbert P.H.'), r2 = m.find(([, n]) => n[1] === 'Roe R.');
@@ -115,7 +115,7 @@ ok(E.base === B.base, 'TE: the Database files are byte-identical with TE rows in
 ok(E.x.xTs === undefined && Object.keys(E.x).sort().join() === Object.keys(A.x).sort().join(), 'TE: the era shard carries no time (no new field: the shape is unchanged)');
 ok(E.master.meta.bookCodes[8] === 'Pinnacle (approx.) Tennis Explorer', 'TE: the master names book 8');
 const mp2 = path.join(ROOT, '.mutant-lower-yield-te.js');
-fs.writeFileSync(mp2, src.replace(anchor, 'const LOWER_RANK = { 3: 0, 4: 0, 5: 1, 8: 1.25, 2: 1.5, 6: 3, 7: 4 };'));
+fs.writeFileSync(mp2, src.replace(anchor, 'const LOWER_RANK = { 3: 0, 4: 0, 5: 1, 8: 1.25, 2: 1.5, 6: 3, 7: 4, 10: 5 };'));
 let red2 = false;
 try { const M = build(Object.assign({}, FEEDS, { DB_YIELD_LOWER_APPROX: path.join(tmp, 'approx-te.csv') }), mp2);
   const r = M.x.xRows.map((x, i) => [x, M.x.xNames[i]]).find(([, n]) => n[1] === 'Roe R.'); red2 = !(r && r[0][8] === 2); }
