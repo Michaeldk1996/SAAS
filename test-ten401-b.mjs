@@ -338,8 +338,9 @@ function checkRanksNames(src) {
   if (rows.length !== 9) return 'expected 9 player rows, read ' + rows.length;
   const ranks = rows.map(r => r.rank).join(' ');
   if (ranks !== '#19 #29 #55 #65 — —  — #101') return 'ranks: "' + ranks + '" (want "#19 #29 #55 #65 — —  — #101": Hemery is not Calvin Hemery)';
-  if (/showPlayerProfile\('1206'\)/.test(html)) return 'Clement Hemery still links to Calvin Hemery\'s profile';
-  if (!/showPlayerProfile\('2227'\)/.test(html)) return 'a key whose name agrees lost its profile link';
+  // list-flash fix (founder 2026-10-30): the link opens through sfGoToProfile (Players page straight on the profile)
+  if (/(?:sfGoToProfile|showPlayerProfile)\('1206'\)/.test(html)) return 'Clement Hemery still links to Calvin Hemery\'s profile';
+  if (!/(?:sfGoToProfile|showPlayerProfile)\('2227'\)/.test(html)) return 'a key whose name agrees lost its profile link';
   if (rows.some(r => !/font-family:'IBM Plex Mono'[^;]*;[^"]*color:var\(--text-label\)/.test(r.style))) return 'a rank cell is not grey mono';
   const names = rows.map(r => r.name).slice(0, 6);
   const want = ['Valentin Vacherot SEED', 'Alejandro Davidovich Fokina', 'Juan Manuel Cerundolo', 'Pablo Carreno Busta Q', 'Known Nobody', 'Smith, Jo…'];
