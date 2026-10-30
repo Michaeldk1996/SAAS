@@ -60,6 +60,13 @@ Founder rulings: TEN-418 card 7a80b6fe, R1 review and R2 review 73f754f9 (2026-1
   Zandschulp"; founder card bef6d3c2, 2026-10-10: this page keeps the shared string, and lower-case particles land
   site-wide under TEN-410 — never a page-only rule. Test: the rail string = Player Profile's `pp2-name` for the same key; a long pair wraps, never truncates); events
   `sfEventName`; styles the step-9 labels; "Elo" in both the header and the analysis. Rail = `getFiltered()`.
+- **An empty rail always says why** (founder brief 2026-10-30, "Model page empty"): the rail follows the Today's Matches
+  view, so when that view is empty (Completed, another day, a search, a chip) while the board holds upcoming matches, the
+  body reads "This page follows the Today's Matches view, which has no matches (<view>). N upcoming matches are on the
+  board. Model last run <d Mon · HH:MM>." with **Show all upcoming matches** (`edgeShowAllUpcoming`: the same
+  `getFiltered` under Upcoming · All days, no search / chips / surface; Today's Matches' own state is put back; a rail
+  visit returns to following the board). No board yet = "Loading the match board…"; a failed board load or no upcoming
+  match says so, with the model run time. **Test:** `test-ten418-model.mjs` "empty view" / "empty board".
 
 ## Stennisfy Analysis
 - **Switch:** `h2h-model/config.js` `summary.enabled`; the pipeline writes it into `model-output.json` as `analysisOn`.

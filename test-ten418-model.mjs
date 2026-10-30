@@ -56,8 +56,9 @@ function boot(opts = {}) {
     getComputedStyle: () => ({ overflowY: 'visible' }), MutationObserver: undefined, console,
     setTimeout: () => 0, clearTimeout() {}, fetch: () => Promise.resolve({ ok: false }),
     Date: class extends Date { constructor(...a) { super(...(a.length ? a : [NOW])); } static now() { return NOW; } },
-    matches: board.concat([{ id: 'past-12160000', p1: 'Z. Done', p2: 'Z. Over', tour: 'ATP Shanghai', date: '2026-10-09', time: '10:00' }]), modelOutput: { generatedAt: FIX.generatedAt, matches: { [M.id]: E, [M2.id]: FIX.e2 }, analysisOn: opts.analysisOn === true }, modelOutputLoaded: true,
-    getFiltered: () => board.slice(), playerProfiles: { 8781: { name: FIX.names.p1 }, 1906: { name: FIX.names.p2 } },
+    matches: opts.noBoard ? [] : board.concat([{ id: 'past-12160000', p1: 'Z. Done', p2: 'Z. Over', tour: 'ATP Shanghai', date: '2026-10-09', time: '10:00' }]), modelOutput: { generatedAt: FIX.generatedAt, matches: { [M.id]: E, [M2.id]: FIX.e2 }, analysisOn: opts.analysisOn === true }, modelOutputLoaded: true,
+    state: opts.state, matchesLoadedOnce: opts.loadedOnce !== false, isFinishedMatch: m => /^past-/.test(m.id),
+    getFiltered: () => (opts.filtered ? opts.filtered(ctx.state, ctx.matches) : board.slice()), playerProfiles: { 8781: { name: FIX.names.p1 }, 1906: { name: FIX.names.p2 } },
     ppStyleFor: (n, k) => (String(k) === '8781' ? { archetype_label: FIX.styles[0] } : String(k) === '1906' ? { archetype_label: FIX.styles[1] } : null),
     psArchFor: id => { if (!id) return null; let a = ctx.PS_ARCHETYPES.find(x => x.name === id); if (!a) { a = { name: id }; ctx.PS_ARCHETYPES.push(a); } return a; }, sfEventName: raw => (raw === 'ATP Shanghai' ? 'Shanghai Masters' : raw),
     PS_ARCHETYPES: [], PS_PAGE_MIN_N: 30, psMatrixData: { matrix: {} }, psCellFor: () => (opts.cell === undefined ? { pct: 38, n: 1259 } : opts.cell),
@@ -67,7 +68,7 @@ function boot(opts = {}) {
   };
   ctx.globalThis = ctx;
   vm.createContext(ctx);
-  vm.runInContext(HELPERS + '\n' + BLOCK + '\nthis.API = { renderEdgeModel, openEdgeModel, edgeOddInput, edgeJumpLayer, edgeSharp, edgeBestSoft, edgeLayerRows, edgeParseOdd, edgeWhyText, edgeToggleLayers, edgeToggleLayer, edgeGenerate, edgeAiState, get open(){ return [edgeLayersOpen, edgeLayerOpen]; } };', ctx);
+  vm.runInContext(HELPERS + '\n' + BLOCK + '\nthis.API = { renderEdgeModel, openEdgeModel, edgeOddInput, edgeJumpLayer, edgeSharp, edgeBestSoft, edgeLayerRows, edgeParseOdd, edgeWhyText, edgeToggleLayers, edgeToggleLayer, edgeGenerate, edgeAiState, openEdgeModelTab, edgeShowAllUpcoming, get scopeAll(){ return edgeScopeAll; }, get open(){ return [edgeLayersOpen, edgeLayerOpen]; } };', ctx);
   const api = ctx.API;
   api.render = (id = M.id) => { api.openEdgeModel(id); return els.edgeBody.innerHTML; };
   return { api, els, calls, M, E, ctx };
@@ -260,4 +261,60 @@ test('the analysis generator reads the page’s own rules, character for charact
   assert.equal(facts.layersShown, 14, 'the analysis counts the same 14 layers');
   assert.match(pipe, /analysisOn: !!require\('\.\/h2h-model\/config'\)\.summary\.enabled,/, 'the one switch reaches the page');
   assert.match(pipe, /update\(JSON\.stringify\(\[m\.id, fr\.p1 && fr\.p1\.odds, fr\.p2 && fr\.p2\.odds\]\)\)/, 'cached per match until the shown fair price changes');
+});
+
+// Model page empty (founder 2026-10-30): the rail follows Today's Matches' view, so a Completed view / another day /
+// a search left "0 of 0" saying "No matches on the board right now" while the board held priced fixtures. The empty
+// state names the reason and the model's last run, and one click shows every upcoming board match.
+const boardPredicate = (st, all) => all.filter(m => {
+  if (st.view === 'completed') return /^past-/.test(m.id);
+  if (/^past-/.test(m.id)) return false;
+  if (st.day !== 'today' && st.day !== 'all') return false;
+  if (st.search && !m.p1.toLowerCase().includes(st.search.toLowerCase())) return false;
+  return !st.tournaments.size || st.tournaments.has(m.tour);
+});
+test('empty view: the reason, the board count and the model run — never "no matches on the board" while fixtures exist', () => {
+  for (const [st, words] of [
+    [{ day: 'today', view: 'completed', search: '', surface: 'all', tournaments: new Set() }, null],
+    [{ day: 'tomorrow', view: 'upcoming', search: '', surface: 'all', tournaments: new Set() }, 'Upcoming · Tomorrow'],
+    [{ day: 'today', view: 'upcoming', search: 'zzz', surface: 'all', tournaments: new Set() }, 'Upcoming · search “zzz”'],
+  ]) {
+    const S = Object.assign({}, st);
+    const filtered = (s, all) => (s.view === 'completed' ? [] : boardPredicate(s, all));
+    const { api, els, ctx } = boot({ state: S, filtered });
+    api.openEdgeModelTab();
+    const t = text(els.edgeBody.innerHTML);
+    assert.match(t, new RegExp('This page follows the Today’s Matches view, which has no matches \\(' + (words || 'Completed · Today').replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\)\\. 12 upcoming matches are on the board\\. Model last run 10 Oct · 04:51\\.'), t);
+    assert.doesNotMatch(t, /No matches on the board right now/);
+    assert.match(els.edgeBody.innerHTML, /<a class="em-link" onclick="edgeShowAllUpcoming\(\)">Show all upcoming matches<\/a>/);
+    assert.equal(els.edgeRailN.textContent, '0 of 0');
+    assert.match(els.edgeRailList.innerHTML, /No matches in this view\./);
+    assert.deepEqual([ctx.state.day, ctx.state.view, ctx.state.search], [st.day, st.view, st.search], 'Today’s Matches state untouched');
+    // one click: every upcoming board match, priced; the board's own state is put back
+    api.edgeShowAllUpcoming();
+    assert.equal(els.edgeRailN.textContent, '12 of 12', 'the 12 upcoming board matches, never the finished one');
+    assert.match(text(els.edgeHeadStats.innerHTML), /^Matches 12 /);
+    assert.deepEqual([ctx.state.day, ctx.state.view, ctx.state.search, ctx.state.tournaments.size], [st.day, st.view, st.search, 0], 'state restored');
+    assert.equal(ctx.state.tournaments, S.tournaments, 'the same Set back');
+    // a background reload keeps the chosen scope; a fresh visit from the rail follows the board again
+    api.openEdgeModelTab(true); assert.equal(els.edgeRailN.textContent, '12 of 12');
+    api.openEdgeModelTab(); assert.equal(api.scopeAll, false); assert.equal(els.edgeRailN.textContent, '0 of 0');
+  }
+});
+test('empty board: no upcoming match / not loaded yet / load failed each say so', () => {
+  const S = () => ({ day: 'today', view: 'upcoming', search: '', surface: 'all', tournaments: new Set() });
+  let b = boot({ state: S(), filtered: () => [] , noBoard: true });
+  b.api.openEdgeModelTab();
+  assert.equal(text(b.els.edgeBody.innerHTML), 'No matches on the board right now. The Stennisfy Model prices each match as soon as the board has fixtures. Model last run 10 Oct · 04:51.');
+  b = boot({ state: S(), filtered: () => [], noBoard: true, loadedOnce: false });
+  b.api.openEdgeModelTab();
+  assert.equal(text(b.els.edgeBody.innerHTML), 'Loading the match board…');
+  b = boot({ state: S(), filtered: () => [], noBoard: true });
+  b.els.dataStatus = { classList: { contains: c => c === 'error' } };
+  b.api.openEdgeModelTab();
+  assert.match(text(b.els.edgeBody.innerHTML), /^The match board could not be loaded, so there is nothing to price\. The page tries again every 3 minutes\. Model last run/);
+  b = boot({ state: S(), filtered: (s, all) => (s.day === 'all' ? [] : []) });   // only the finished match: nothing upcoming
+  b.ctx.matches = b.ctx.matches.filter(m => /^past-/.test(m.id));
+  b.api.openEdgeModelTab();
+  assert.match(text(b.els.edgeBody.innerHTML), /^No upcoming matches on the board right now\./);
 });

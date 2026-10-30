@@ -7,7 +7,12 @@ const src = fs.readFileSync(path.join(ROOT, 'bsp-consult-dashboard.html'), 'utf8
 const MUTANTS = [
   ['header: Updated reads the clock', "const at = e.generatedAt || (modelOutput && modelOutput.generatedAt);", "const at = new Date().toISOString();"],
   ['header: the layer count is a fixed 17', "sub.textContent = total ? `Fair prices from ${total} weighted layers", "sub.textContent = total ? `Fair prices from 17 weighted layers"],
-  ['rail: reads every match, not the board list', "  const all = (typeof getFiltered === 'function') ? getFiltered() : matches;\n  const order = [], by = {};", "  const all = matches;\n  const order = [], by = {};"],
+  ['rail: reads every match, not the board list', "  if (edgeScopeAll) return edgeUpcomingAll();\n  return (typeof getFiltered === 'function') ? getFiltered() : matches;", "  if (edgeScopeAll) return edgeUpcomingAll();\n  return matches;"],
+  ['empty: the old blank message back', "    if (body) body.innerHTML = edgeEmptyBoardHtml();", "    if (body) body.innerHTML = edgeEmptyCard('No matches on the board right now. The Stennisfy Model prices each match as soon as the board has fixtures.');"],
+  ['empty: Show all lists the finished matches too', "  try { return getFiltered(); } finally { Object.assign(state, keep); }", "  try { return matches.slice(); } finally { Object.assign(state, keep); }"],
+  ['empty: Today’s Matches state not put back', "  try { return getFiltered(); } finally { Object.assign(state, keep); }", "  return getFiltered();"],
+  ['empty: no model-run time in the note', "  const runLine = run ? ' Model last run ' + run + '.' : '';", "  const runLine = '';"],
+  ['scope: a rail visit keeps the widened scope', "  if (keepScope !== true) edgeScopeAll = false;\n", ""],
   ['rail: raw feed tournament name', "options: [{ value: 'all', label: 'All tournaments' }].concat(order.map(t => ({ value: t, label: edgeEventName(t) }))) });", "options: [{ value: 'all', label: 'All tournaments' }].concat(order.map(t => ({ value: t, label: t }))) });"],
   ['names: feed spelling instead of the shared formatter', "return (typeof newsPlayerName === 'function') ? newsPlayerName(key, feed) : String(feed || '');", "return String(feed || '');"],
   ['styles: a second label set (engine archetype)', "const style = edgeStyleName(name, key);", "const style = P.archetype || null;"],

@@ -6529,7 +6529,7 @@ async function loadModelOutput(){
       // it), re-resolve the view: an empty state becomes real output, and a fresh
       // tab open re-picks its runnable default instead of the first board match.
       const edgePage = document.querySelector('.tabpage[data-page="edge"]');
-      if (edgePage && edgePage.classList.contains('active')) openEdgeModelTab();
+      if (edgePage && edgePage.classList.contains('active')) openEdgeModelTab(true);
     }
   } catch (err) {
     console.warn('model-output.json fetch failed (kept last-good; Edge Model may be stale):', err.message);
@@ -6638,7 +6638,7 @@ async function loadMatches(){
   const edgeOpen = document.querySelector('.tabpage[data-page="edge"]');
   if (edgeOpen && edgeOpen.classList.contains('active') && edgeCurrentId) {
     renderEdgeModel(edgeCurrentId);
-  }
+  } else if (edgeOpen && edgeOpen.classList.contains('active')) openEdgeModelTab(true);
 }
 
 // Build one filter pill per active tournament from the real data
@@ -10301,7 +10301,10 @@ let edgeLayerOpen = null;
 let edgeLayerFlash = null;
 let edgeFlashTimer = null;
 let edgeMkView = 'odds';                 // Market context view: 'odds' | 'pct'
-let edgeRailTour = 'all';                // rail drop-down: 'all' | a feed tournament name
+let edgeRailTour = 'all';
+// The member asked for every upcoming board match because the Today's Matches view the rail follows was empty.
+// Reset on every visit from the rail (openEdgeModelTab from the nav), so the rail goes back to following the board.
+let edgeScopeAll = false;                // rail drop-down: 'all' | a feed tournament name
 const edgeOddEdits = {};                 // typed odds per match: { [id]: { 'soft:p1': '2.10', ... } }
 const edgeAiState = {};                  // Stennisfy Analysis per match: undefined (Generate) | 'loading' | 'shown'
 
@@ -10324,8 +10327,9 @@ function openEdgeModel(id){
 }
 // Entry point when the rail's Stennisfy Model item is clicked (no specific match chosen). Lands on the match the user
 // last looked at if it is still on the board, else the first board match with model output, else the first match.
-function openEdgeModelTab(){
-  const list = (typeof getFiltered === 'function') ? getFiltered() : matches;
+function openEdgeModelTab(keepScope){
+  if (keepScope !== true) edgeScopeAll = false;
+  const list = edgeBoardList();
   const ids = list.map(m => m.id);
   const hasOutput = mid => modelOutput.matches && modelOutput.matches[mid] && modelOutput.matches[mid].ok;
   const id = (edgeUserPicked && edgeCurrentId && ids.indexOf(edgeCurrentId) !== -1) ? edgeCurrentId
@@ -10335,7 +10339,7 @@ function openEdgeModelTab(){
     edgeRenderRail();
     edgeSetHeader(null);
     const body = document.getElementById('edgeBody');
-    if (body) body.innerHTML = edgeEmptyCard('No matches on the board right now. The Stennisfy Model prices each match as soon as the board has fixtures.');
+    if (body) body.innerHTML = edgeEmptyBoardHtml();
     return;
   }
   edgeCurrentId = id;
@@ -10620,7 +10624,7 @@ function edgeIsFree(){ const b = document.querySelector('.sf-nav [data-tab="edge
 function edgeSetHeader(e){
   const sub = document.getElementById('edgeHeadSub'), st = document.getElementById('edgeHeadStats');
   if (!sub || !st) return;
-  const all = (typeof getFiltered === 'function') ? getFiltered() : matches;
+  const all = edgeBoardList();
   let total = (e && e.stage2 && e.stage2.adjustments) ? e.stage2.adjustments.length : 0;
   if (!total) Object.values((modelOutput && modelOutput.matches) || {}).forEach(x => { if (x && x.ok && x.stage2) total = Math.max(total, (x.stage2.adjustments || []).length); });
   sub.textContent = total ? `Fair prices from ${total} weighted layers, against the market.` : 'Fair prices from weighted layers, against the market.';
@@ -10651,10 +10655,51 @@ function edgeWhenLabel(m){
   else if (m && m.date){ const d = new Date(m.date + 'T00:00:00'); if (!isNaN(d)) day = d.toLocaleDateString('en-GB', { weekday: 'short' }); }
   return [day, t].filter(Boolean).join(' ');
 }
+// The rail's list = Today's Matches' own (getFiltered), or — after "Show all upcoming matches" — the board's every
+// upcoming day under the same predicate with no search / chips / surface. Today's Matches' state is put back in a finally.
+function edgeUpcomingAll(){
+  if (typeof getFiltered !== 'function' || typeof state === 'undefined') return matches.filter(m => !(typeof isFinishedMatch === 'function' && isFinishedMatch(m)));
+  const keep = { day: state.day, view: state.view, search: state.search, surface: state.surface, tournaments: state.tournaments };
+  state.day = 'all'; state.view = 'upcoming'; state.search = ''; state.surface = 'all'; state.tournaments = new Set();
+  try { return getFiltered(); } finally { Object.assign(state, keep); }
+}
+function edgeBoardList(){
+  if (edgeScopeAll) return edgeUpcomingAll();
+  return (typeof getFiltered === 'function') ? getFiltered() : matches;
+}
+function edgeShowAllUpcoming(){ edgeScopeAll = true; edgeUserPicked = false; edgeCurrentId = null; openEdgeModelTab(true); }
+// Words for the Today's Matches view the rail follows ("Completed · Today", "Upcoming · Tomorrow · search “x”").
+function edgeBoardViewText(){
+  if (typeof state === 'undefined') return '';
+  const dayBtn = (typeof document !== 'undefined' && document.querySelector) ? document.querySelector('#dayTabs button[data-day="' + state.day + '"]') : null;
+  const dayWord = { today: 'Today', tomorrow: 'Tomorrow', yesterday: 'Yesterday', all: 'All days', past: 'Past' }[state.day]
+    || (dayBtn && dayBtn.textContent ? dayBtn.textContent.replace(/\s+/g, ' ').trim() : state.day);
+  const parts = [state.view === 'completed' ? 'Completed' : 'Upcoming'];
+  if (!(state.search && state.search.trim())) parts.push(dayWord);
+  if (state.search && state.search.trim()) parts.push('search “' + state.search.trim() + '”');
+  const nT = state.tournaments ? state.tournaments.size : 0;
+  if (nT) parts.push(nT === 1 ? '1 tournament selected' : nT + ' tournaments selected');
+  if (state.view !== 'completed' && state.surface && state.surface !== 'all') parts.push(edgeCap(state.surface) + ' only');
+  return parts.join(' · ');
+}
+// Never a blank board without its reason (founder 2026-10-30): the empty state says why, and when the model last ran.
+function edgeEmptyBoardHtml(){
+  const run = (typeof modelOutputLoaded !== 'undefined' && modelOutputLoaded && modelOutput) ? edgeClock(modelOutput.generatedAt, 'stamp') : null;
+  const runLine = run ? ' Model last run ' + run + '.' : '';
+  const statusEl = (typeof document !== 'undefined' && document.getElementById) ? document.getElementById('dataStatus') : null;
+  const loadFailed = !!(statusEl && statusEl.classList && statusEl.classList.contains('error'));
+  if (!matches.length) return edgeEmptyCard(loadFailed
+    ? 'The match board could not be loaded, so there is nothing to price. The page tries again every 3 minutes.' + runLine
+    : ((typeof matchesLoadedOnce !== 'undefined' && !matchesLoadedOnce) ? 'Loading the match board…' : 'No matches on the board right now. The Stennisfy Model prices each match as soon as the board has fixtures.' + runLine));
+  const up = edgeUpcomingAll().length;
+  if (!up || edgeScopeAll) return edgeEmptyCard('No upcoming matches on the board right now. The Stennisfy Model prices each match as soon as the board has fixtures.' + runLine);
+  return `<div class="em-card em-empty">${edgeEsc('This page follows the Today’s Matches view, which has no matches (' + edgeBoardViewText() + '). ' + up + ' upcoming match' + (up === 1 ? ' is' : 'es are') + ' on the board.' + runLine)}
+    <div><a class="em-link" onclick="edgeShowAllUpcoming()">Show all upcoming matches</a></div></div>`;
+}
 function edgeRenderRail(){
   const listEl = document.getElementById('edgeRailList'), nEl = document.getElementById('edgeRailN');
   if (!listEl) return;
-  const all = (typeof getFiltered === 'function') ? getFiltered() : matches;
+  const all = edgeBoardList();
   const order = [], by = {};
   all.forEach(m => { const t = m.tour || '—'; if (!by[t]){ by[t] = []; order.push(t); } by[t].push(m); });
   if (edgeRailTour !== 'all' && !by[edgeRailTour]) edgeRailTour = 'all';
@@ -10670,7 +10715,7 @@ function edgeRenderRail(){
         return `<button type="button" class="em-rail-row${m.id === edgeCurrentId ? ' on' : ''}" onclick="edgeRailPick('${edgeJs(m.id)}')">
             <span class="em-rail-nm">${edgeEsc(edgePlayerName(m, null, 'p1'))} v ${edgeEsc(edgePlayerName(m, null, 'p2'))}</span>
             <span class="em-rail-meta">${edgeEsc(meta)}</span></button>`; }).join('')}</div>`).join('')
-    : '<div class="em-rail-empty">No matches on the board right now.</div>';
+    : `<div class="em-rail-empty">${matches.length && edgeUpcomingAll().length && !edgeScopeAll ? 'No matches in this view.' : 'No matches on the board right now.'}</div>`;
 }
 
 // ── Cards ──────────────────────────────────────────────────────────────────
