@@ -217,36 +217,44 @@ closes, odds performance and started-evidence.
   (2) api-tennis's stored `Pncl` price where the archive has no pre-cut pair (13 Jan – 12 Apr always: no archive exists;
   hover unchanged, "Pinnacle snapshot from api-tennis, no timestamp, not a confirmed close"); (3) Tennis Explorer's Pinnacle
   (book 8, below); (4) Bet365; (5) a dash (`historical-odds-archive.md`, `database.md`).**
-- **Tennis Explorer · Bet365 — last before the dash, every level (founder 2026-10-30, "Yes, last before dash"; "for market
-  edge and derived lines it's fine — they are not about the pure closing price, as the Database page is").** Bet365's last
-  listed pre-match price on the Tennis Explorer pages we already saved (`stennisfy-ops` `tools/te-b365-extract.mjs`, no
-  request; a page whose sha256 differs from the batch's is skipped), book 10, src `teb`, every hover exactly "Bet365 (approx.)
-  · Tennis Explorer, last pre-match price, not a confirmed close" (`FH_B365_TE_HOVER`). It prices a match only where no
-  other source does: at ATP qualifying, Challenger, Challenger qualifying and `atp-x` after api-tennis's Bet365, in the era
-  shard behind flag `l` (team events `t`): read by the price join only, never a Database figure, ROI, tour baseline or
-  odds-performance row. **ATP main draw (founder, same day: "the Database must show the same price"):** a Database row of
-  its own (book 10, `bookCounts` "Bet365 (approx.) · Tennis Explorer", `meta.approx.sources.tb`), only on a match that would
-  otherwise be a dash — a start − 10 dash included — so the Database and every page show one price; never above Bet365. The in-play rule runs
-  wherever the page shows a change time (about one row in three); a cell that never moved carries none and is kept. Measured
-  30 Oct on the saved pages: median no-vig gap to TE Pinnacle 1.38pp on 1,399 pages showing both (api-tennis Bet365 1.47pp
-  from a real close); about 3,970 current dashes it would price. **Test:** `tools/test-te-b365.js` (book 10 last; lower
-  levels leave the Database byte-identical; a main-draw dash becomes a book-10 Database row; MUTANT: TE Bet365 above
-  Tennis-Data's Bet365 → red), `tools/test-tdarch.py` "TE Bet365",
-  `tools/test-approx-pinnacle.mjs` + `tools/test-close-label.py` (the hover), `tools/test-historical-archive-sql.py`.
-- **ATP main-draw order (founder ruling 2026-10-30, "TE above Bet365"; replaces every earlier main-draw order):**
-  Tennis-Data Pinnacle → our archive close → E (the early-cut fill) → api-tennis Pinnacle → **Tennis Explorer Pinnacle** →
-  Bet365 → a dash, one source per match. E stays before api-tennis, as the build applies it (both travel the td-feed
-  override, which is read before any snapshot). Tennis Explorer's last pre-match Pinnacle price (book 8, "Pinnacle (approx.) ·
-  Tennis Explorer, last pre-match price, not a confirmed close", never a close) prices an ATP main-draw match at any date
-  where no source above it has a pair — replacing Bet365 "B" and filling dashes — and it is the ONE source that prices a
-  start − 10 dash (the start − 10 snapshot itself stays unshown, the 26 Oct ruling). It comes from the Mac's TE batches
-  `atp-md-id` / `atp-md-days` (level `atp-md`, keyed by the Tennis-Data row) through `tdarch.py te-import` (joined to the
-  ONE api-tennis fixture for its event key and start; the in-play rule applies; no fixture = no start = not stored) and
-  `approx-feed` (`pinnacle-approx.csv`). The rows already priced by Tennis-Data, the archive, E or api-tennis never move.
-  **Test:** `tools/test-approx-pinnacle.mjs` "TE on the ATP main draw" (order, the start − 10 dash, the counts; MUTANT: TE
-  above api-tennis → red), `tools/test-tdarch.py` "atp-md" (the join, the in-play rule, no fixture = not stored).
-  2009 is not targeted yet (founder 2026-10-30). **api-tennis Pinnacle (`Pncl`) is never a close** (founder brief 2026-10-14 item 2: it has no
-  timestamps; measured 2 decimals) — a cross-check only.
+- **Price sources by page and level (founder ruling 2026-10-30, replacing every earlier price-source ruling where they differ).**
+  - **ATP main draw, Database:** Pinnacle prices only, in this order — Tennis-Data Pinnacle → our archive close → E (the
+    early-cut fill) → api-tennis Pinnacle → Tennis Explorer Pinnacle → a dash. No Bet365 of any kind: no Tennis-Data
+    Bet365 row and no Tennis Explorer Bet365 row is a Database row, figure, ROI, tour baseline or Tournaments ROI / favourite
+    figure. **Test:** does a Database row (`database-yield.json` rows / retRows / tieRows) carry book 1 or 10 on an ATP
+    main-draw match from 2010? It must not (`tools/test-te-b365.js`, `tools/test-b365-window.mjs`).
+  - **ATP main draw, Market edge and Derived lines (and every other page that reads the price join):** the same Pinnacle
+    order, then Bet365 — Tennis-Data's, then Tennis Explorer's — then a dash, marked "B". These Bet365 rows ride the era
+    shard behind flag `b` (`database-yield-x.json`, `meta.counts.mainDrawBet365`; the Database's `meta.bet365OutOfDatabase`
+    counts them by year and book): in the master and the join, never a Database figure. A start − 10 dash with a Bet365
+    price is "B" here too (the start − 10 snapshot itself stays unshown).
+  - **ATP qualifying, Challenger and Challenger qualifying, every page:** Pinnacle first (our close, start − 10, api-tennis
+    Pinnacle, Tennis Explorer Pinnacle), then Bet365 (our captured Bet365, api-tennis Bet365, Tennis Explorer Bet365), then a
+    dash; Bet365 marked "B" / "Bet365 (approx.)" as built. These levels stay out of the Database figures (flag `l`).
+  - **The one allowed difference between pages:** an ATP main-draw match with no Pinnacle price is a dash in the Database and
+    "B" in Market edge / Derived lines. `tools/me-db-report.mjs` counts exactly that case as "allowed" (a flag-`b` era row
+    Market edge prices at the same Bet365 price and book) and still flags every other difference.
+  - **Market edge shows its Bet365 share:** "N of M on Bet365" beside the priced count — the profile's Market edge box,
+    the Match analysis Market edge tab's Price sensitivity header and its profit-chart legend.
+  - **Tennis Explorer · Bet365** (book 10, src `teb`, every hover exactly "Bet365 (approx.) · Tennis Explorer, last
+    pre-match price, not a confirmed close", `FH_B365_TE_HOVER`): Bet365's last listed pre-match price on the Tennis
+    Explorer pages we already saved (`stennisfy-ops` `tools/te-b365-extract.mjs`, no request; a page whose sha256 differs
+    from the batch's is skipped), last before the dash at every level; the in-play rule runs wherever the page shows a change
+    time (about one row in three), a cell that never moved is kept. Measured 30 Oct: median no-vig gap 1.38pp to TE
+    Pinnacle on 1,399 pages showing both (api-tennis Bet365 1.47pp from a real close).
+  - **Test:** `tools/test-te-b365.js` (Database Pinnacle-only, flag `b`, TE Bet365 last; MUTANT: Bet365 back in the
+    Database → red), `tools/test-b365-window.mjs`, `tools/test-approx-pinnacle.mjs`, `tools/test-early-cut-marker.mjs`,
+    `tools/test-me-db-report.mjs` (the allowed case; MUTANT: not told apart → red), `tools/test-tdarch.py` "TE Bet365",
+    `tools/test-close-label.py`, `tools/test-historical-archive-sql.py`.
+  - **Tennis Explorer Pinnacle on the ATP main draw** (book 8, "Pinnacle (approx.) · Tennis Explorer, last pre-match price,
+    not a confirmed close", never a close): after api-tennis Pinnacle; the one Pinnacle source that prices a start − 10 dash.
+    E stays before api-tennis, as the build applies it (both travel the td-feed override, read before any snapshot). From the
+    Mac's TE batches `atp-md-id` / `atp-md-days` (level `atp-md`, keyed by the Tennis-Data row) through `tdarch.py te-import`
+    (joined to the ONE api-tennis fixture for its event key and start; the in-play rule applies; no fixture = no start = not
+    stored) and `approx-feed` (`pinnacle-approx.csv`). 2009 is not targeted yet. **Test:** `tools/test-approx-pinnacle.mjs`
+    "TE on the ATP main draw", `tools/test-tdarch.py` "atp-md".
+  - **api-tennis Pinnacle (`Pncl`) is never a close** (founder brief 2026-10-14 item 2: it has no timestamps; measured 2
+    decimals) — a cross-check only.
 - **The archive close = the last ACTIVE `pinnacle+30` match-winner entry at or before the EARLIER of our live-flip
   start and Oddspapi's `trueStartTime`** (founder ruling 2026-10-14, after the start-time check: api-tennis flagged a match
   live after its real start on 131 of 644 closes, median 143 s, and an entry fell between the two on 53). Our live-flip =

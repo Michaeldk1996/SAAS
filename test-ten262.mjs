@@ -546,7 +546,7 @@ const STALE_MUTANTS = {
   split: s => s.replace("// Tour and Tournament band panels carry none.\n    return panel;", "// Tour and Tournament band panels carry none.\n    panel.appendChild(el('div','db-split','Split by book: x'));\n    return panel;"),
   splitGate: s => s.replace("if(s.n<HARD_GATE) return fmtInt(s.n)+' '+dbMatchWord(s.n)+' priced on '", "if(false) return fmtInt(s.n)+' '+dbMatchWord(s.n)+' priced on '"),
   footnote: s => s.replace("fmtInt(bc[M.books[0]])+' priced on '+esc(M.books[0])+' and '", "fmtInt(bc[M.books[0]])+' settled on '+esc(M.books[0])+' prices and '"),
-  header: s => s.replace("' closing, else '+esc(M.books[1])+', per match, '", "' closing, else Bet365, per match, '"),
+  header: s => s.replace("' : ', else '+esc(M.books[1]))+', per match, '", "' : ', else Bet365')+', per match, '"),
   stats: s => s.replace("['Seasons', fmtInt(seasons)]", "['Seasons', fmtInt(17)]"),
   fresh: s => s.replace("(stale ? ' <span class=\"sfh__tail\">· updates pending</span>' : '')", "' <span class=\"sfh__tail\">· updates pending</span>'"),
   oneValue: s => s.replace("['Updated', fmtDate(M.dateRange[1])]];", "['Updated', fmtDate(M.dateRange[1]), 'Updates pending']];").replace("esc(s[1])+'</span></div>';", "esc(s[1])+'</span>'+(s[2] ? '<span class=\"db-hstat__n\">'+s[2]+'</span>' : '')+'</div>';"),

@@ -2405,7 +2405,9 @@
       ? { headline: neg(mk.headline.yield, 2, '%'),
           // fx2 item 3 (founder: "the tour line hidden until the data arrives, with no dash and no layout
           // shift"): no baseline yet -> the clause is left out (the line keeps its one-line box), never "tour —".
+          // founder 2026-10-30: how many of its matches are on Bet365 ("12 of 174 on Bet365"), when any are
           support: 'flat-stake yield ' + MIDDOT + ' ' + mk.headline.n + ' priced' +
+            (mk.headline.book && mk.headline.book.bet365 ? ' ' + MIDDOT + ' ' + mk.headline.book.bet365 + ' of ' + mk.headline.n + ' on Bet365' : '') +
             (tourAllBox == null ? '' : ' ' + MIDDOT + ' tour ' + neg(tourAllBox, 2, '%')) + idHidden }
       : marketEmptyWhy(p.key).pending ? { headline: null, support: null, pending: true }
       : { headline: null, support: (marketEmptyWhy(p.key).dashed ? 'no confirmed closing prices' : 'no priced matches on record') + idHidden };
@@ -7312,7 +7314,7 @@
         y(ps) + ' across ' + ps.n.toLocaleString('en-US') + ' Pinnacle-priced matches, ' +
         (ap.n ? y(ap) + ' across ' + ap.n.toLocaleString('en-US') + ' matches priced on Pinnacle (approx.), a snapshot, not a confirmed close, ' : '') +
         y(b3) + ' across ' + b3.n.toLocaleString('en-US') + ' matches priced on Bet365. ' +
-        'Tour = the Database Tour figures (ATP main tour, all surfaces, 2010 on).' +
+        'Tour = the Database Tour figures (ATP main tour, all surfaces, 2010 on, Pinnacle prices only).' +
         (lvl ? ' ' + lvl + ' level close' + (lvl === 1 ? '' : 's') + ' in All matches only.' : '') +
         (window.MarketEdgeCore ? ' <span data-ret-note="profile-me">' + esc(window.MarketEdgeCore.RET_SETTLE_NOTE) + '</span>' : '') +
         (built ? ' <span data-market-built style="' + MK_MONO + 'font-size:11px;">' + esc(marketBuiltText(mk)) + '</span>' : '') +

@@ -257,7 +257,10 @@ writeFileSync(join(d, 'feed.csv'), 'kind,date,tournament,series,court,surface,ro
   'override,2026-02-11,Dallas Open,,,,,,Early E.,Api E.,,1.44,2.8,12,early cut 71,12\n');
 const run = env => { execFileSync('node', ['build-database-yield.js'], { cwd: d, env: { ...process.env, ...env }, stdio: 'pipe' });
   const b = JSON.parse(readFileSync(join(d, 'database-yield.json'), 'utf8')), n = JSON.parse(readFileSync(join(d, 'database-yield-players.json'), 'utf8'));
-  return Object.fromEntries(b.rows.map((r, i) => [n.names[i][0], [r[8], r[5], r[6]]])); };
+  // founder 2026-10-30: a main-draw Bet365 row is no Database row — it is the join's "B" (era shard, flag b): read here as [book, fav, dog, 'join']
+  const x = JSON.parse(readFileSync(join(d, 'database-yield-x.json'), 'utf8'));
+  return Object.fromEntries(b.rows.map((r, i) => [n.names[i][0], [r[8], r[5], r[6]]])
+    .concat(x.xRows.map((r, i) => [r, i]).filter(([r]) => String(r[9] || '').includes('b')).map(([r, i]) => [x.xNames[i][0], [r[8], r[5], r[6], 'join']]))); };
 const R = run({ DB_YIELD_APPROX: join(d, 'approx.csv'), DB_YIELD_FEED: join(d, 'feed.csv') });
 check('builder: a Tennis-Data Pinnacle close is never replaced by a snapshot', JSON.stringify(R['Pin P.']) === JSON.stringify([0, 1.55, 2.62]), R['Pin P.']);
 check('builder: our archive\'s close outranks the snapshot, under its own code (3 = from Pinnacle history)', JSON.stringify(R['Arch A.']) === JSON.stringify([3, 1.48, 2.7]), R['Arch A.']);
@@ -266,10 +269,10 @@ const MB = JSON.parse(readFileSync(join(d, 'database-yield.json'), 'utf8')).meta
 check('builder: the Pinnacle count includes our archive\'s closes (no figure moves), and meta names each label',
   MB.bookCounts.Pinnacle === 4 && MB.archiveFeed.rowsByLabel['from Pinnacle history'] === 2 && MB.archiveFeed.rowsByLabel.captured === 1, JSON.stringify(MB.bookCounts));
 check('builder: no Pinnacle close → the snapshot, book 2', JSON.stringify(R['Snap S.']) === JSON.stringify([2, 1.45, 2.75]), R['Snap S.']);
-check('builder: no snapshot → Bet365 stays the fallback', JSON.stringify(R['Bet B.']) === JSON.stringify([1, 1.5, 2.6]), R['Bet B.']);
+check('builder: no snapshot → Bet365 is the join\'s "B" only (a Database dash, 2026-10-30)', JSON.stringify(R['Bet B.']) === JSON.stringify([1, 1.5, 2.6, 'join']), R['Bet B.']);
 // founder ruling 2026-10-26 (supersedes 2026-10-17 item 2 for the ATP main draw): a start − 10 snapshot is never shown —
 // the match is a DASH, with no fall-through to api-tennis or Bet365 (tools/test-b365-window.mjs carries the full rule)
-check('builder: a start − 10 row is a dash, never book 5 and never the api-tennis snapshot beside it', R['Ten T.'] === undefined, R['Ten T.']);
+check('builder: a start − 10 row is a Database dash, never book 5 and never the api-tennis snapshot beside it; its Bet365 is the join\'s "B" (2026-10-30)', JSON.stringify(R['Ten T.']) === JSON.stringify([1, 1.5, 2.6, 'join']), R['Ten T.']);
 check('builder: no start − 10 pair → the api-tennis snapshot (book 2)', JSON.stringify(R['Ate A.']) === JSON.stringify([2, 1.6, 2.3]), R['Ate A.']);
 check('builder: both snapshot sources count as Pinnacle (approx.), each named with its hover and count in meta',
   MB.bookCounts['Pinnacle (approx.)'] === 2 && MB.approx.sources.od.used === 0 && MB.approx.sources.at.used === 2 && MB.approx.sources.od.hover === OD10
@@ -282,7 +285,7 @@ writeFileSync(join(d, 'old.csv'), 'date,tournament,winner,loser,psw,psl,eventKey
 let oldErr = ''; try { run({ DB_YIELD_APPROX: join(d, 'old.csv'), DB_YIELD_FEED: join(d, 'feed.csv') }); } catch (e) { oldErr = String(e.stderr || e); }
 check('control: a feed without the source column is refused, never read as one source', /unexpected header/.test(oldErr), oldErr);
 const R0 = run({ DB_YIELD_APPROX: join(d, 'none.csv'), DB_YIELD_FEED: join(d, 'feed.csv') });
-check('control: without the snapshot feed the same row is Bet365', JSON.stringify(R0['Snap S.']) === JSON.stringify([1, 1.5, 2.6]), R0['Snap S.']);
+check('control: without the snapshot feed the same row is Bet365 (the join\'s "B")', JSON.stringify(R0['Snap S.']) === JSON.stringify([1, 1.5, 2.6, 'join']), R0['Snap S.']);
 // ── TE on the ATP main draw (founder ruling 2026-10-30): TD Pinnacle > archive close > E > api-tennis > TE > Bet365 > dash;
 // TE is the one source that prices a start − 10 dash
 {
@@ -299,13 +302,13 @@ check('control: without the snapshot feed the same row is Bet365', JSON.stringif
   check('TE on the ATP main draw: a dash with a TE price is priced on TE', JSON.stringify(T['Dash D.']) === JSON.stringify([8, 1.7, 2.15]), T['Dash D.']);
   check('TE on the ATP main draw: api-tennis Pinnacle stays above TE', JSON.stringify(T['Both B.']) === JSON.stringify([2, 1.61, 2.35]), T['Both B.']);
   check('TE on the ATP main draw: a start − 10 dash is priced on TE (never on the start − 10 snapshot)', JSON.stringify(T['Odte O.']) === JSON.stringify([8, 1.42, 2.85]), T['Odte O.']);
-  check('TE on the ATP main draw: our archive close stays above TE; a start − 10 row with no TE stays a dash',
-    JSON.stringify(T['Arch E.']) === JSON.stringify([3, 1.49, 2.69]) && T['Ten T.'] === undefined, JSON.stringify([T['Arch E.'], T['Ten T.']]));
+  check('TE on the ATP main draw: our archive close stays above TE; a start − 10 row with no TE stays a Database dash (its Bet365 the join\'s "B")',
+    JSON.stringify(T['Arch E.']) === JSON.stringify([3, 1.49, 2.69]) && JSON.stringify(T['Ten T.']) === JSON.stringify([1, 1.5, 2.6, 'join']), JSON.stringify([T['Arch E.'], T['Ten T.']]));
   check('ruling 1: E stays above api-tennis, and the overlap is counted (meta.approx.eOverApiTennis)',
     JSON.stringify(T['Early E.']) === JSON.stringify([9, 1.44, 2.8]) && JSON.parse(readFileSync(join(d, 'database-yield.json'), 'utf8')).meta.approx.eOverApiTennis === 1,
     JSON.stringify(T['Early E.']));
   check('control: with the feed that has no TE rows the same matches are Bet365 / a dash, as before',
-    JSON.stringify(R['Tee T.']) === JSON.stringify([1, 1.5, 2.6]) && R['Dash D.'] === undefined && JSON.stringify(R['Odte O.']) === JSON.stringify([1, 1.5, 2.6]),
+    JSON.stringify(R['Tee T.']) === JSON.stringify([1, 1.5, 2.6, 'join']) && R['Dash D.'] === undefined && JSON.stringify(R['Odte O.']) === JSON.stringify([1, 1.5, 2.6, 'join']),
     JSON.stringify([R['Tee T.'], R['Dash D.'], R['Odte O.']]));
   const MT = JSON.parse(readFileSync(join(d, 'database-yield.json'), 'utf8')).meta;
   check('TE on the ATP main draw: meta counts TE in Pinnacle (approx.) and names it: used, over Bet365, filled a dash, filled a start − 10 dash',
@@ -317,9 +320,9 @@ check('control: without the snapshot feed the same row is Bet365', JSON.stringif
   const m1 = mut('} else if (pick) { AP = ap[pick];', '} else if (pick && !teOk) { AP = ap[pick];', 'TE above api-tennis');
   check('MUTANT TE above api-tennis is caught', m1 && JSON.stringify(m1['Both B.']) !== JSON.stringify([2, 1.61, 2.35]));
   const m2 = mut("if (teOk) { od10Cut = false;", "if (false) { od10Cut = false;", 'no TE for start − 10');
-  check('MUTANT a start − 10 dash TE does not price is caught', m2 && m2['Odte O.'] === undefined);
+  check('MUTANT a start − 10 dash TE does not price is caught', m2 && JSON.stringify(m2['Odte O.']) === JSON.stringify([1, 1.5, 2.6, 'join']));
   const m3 = mut("    const b365Ok = (validPrice(B365[0])", "    if (APS === 'te') { AP = null; APS = null; }\n    const b365Ok = (validPrice(B365[0])", 'TE below Bet365');
-  check('MUTANT TE below Bet365 is caught', m3 && JSON.stringify(m3['Tee T.']) === JSON.stringify([1, 1.5, 2.6]));
+  check('MUTANT TE below Bet365 is caught', m3 && JSON.stringify(m3['Tee T.']) === JSON.stringify([1, 1.5, 2.6, 'join']));
   const a8 = new Function(`function median(a){ return a.length ? a[a.length >> 1] : null; }\n${fn(html, 'agg')}\nreturn agg;`)()([{ p: 1.5, w: 1, b: 8 }, { p: 1.6, w: 0, b: 0 }]);
   check('the Database folds book 8 into Pinnacle (approx.) (the per-book split had no bucket for it: a crash)', a8.book.ap && a8.book.ap.n === 1 && a8.book.ps.n === 1, JSON.stringify(a8.book));
   const fT = paintFoot({ ...M0, books: ['Pinnacle', 'Bet365', 'Pinnacle (approx.)'], bookCounts: { ...M0.bookCounts, 'Pinnacle (approx.)': 755 },

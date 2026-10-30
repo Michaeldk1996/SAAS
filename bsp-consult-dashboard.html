@@ -16126,7 +16126,7 @@ function meBandsCol(E, i, M, O){
           + `<span class="me-units" style="${FH_MONO} font-size:11.5px; font-weight:700; text-align:right;">${maRateHtml(b.w, n, { text: n ? meSg(b.units, 1, 'u') : null, nopct: '—', note: 'title', color: n ? meUC(b.units, 1) : ME_C.m1 })}</span></div>`;
       }).join('')).join('') + '</div>';
   }
-  const meta = M.state === 'ready' && M.priced ? `today <span style="color:${ME_C.text}; font-weight:700;">${M.today == null ? '—' : M.today.toFixed(2)}</span> · ${M.priced.length.toLocaleString('en-US')} priced` : '';
+  const meta = M.state === 'ready' && M.priced ? `today <span style="color:${ME_C.text}; font-weight:700;">${M.today == null ? '—' : M.today.toFixed(2)}</span> · ${M.priced.length.toLocaleString('en-US')} priced${M.priced.filter(r => r.book === 'B').length ? ' · ' + M.priced.filter(r => r.book === 'B').length.toLocaleString('en-US') + ' of ' + M.priced.length.toLocaleString('en-US') + ' on Bet365' : ''}` : '';   // founder 2026-10-30: "12 of 174 on Bet365"
   return `<div style="display:flex; flex-direction:column; min-width:0;"><span class="me-phead" style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; padding:0 8px 8px; margin-bottom:6px; border-bottom:${ME_C.hw} solid ${ME_C.headLine};"><span style="font-size:13.5px; font-weight:700;">${fhEsc(name)}</span><span class="me-pmeta" style="${FH_MONO} font-size:11px; color:${ME_C.m3};">${meta}</span></span>${head}${body}</div>`;
 }
 function mePriceCard(E, MM){
@@ -16146,7 +16146,8 @@ function meChartCard(E, MM){
   const col = [[ME_C.wbar, '2.4'], [ME_C.wbar2, '2']];   // README §4: lead --white-bar 2.4px, other --white-bar-2 2px
   const legend = [0, 1].map(i => {
     const M = MM[i], has = M.state === 'ready' && M.priced.length > 0;
-    const nTxt = M.state === 'ready' ? M.priced.length.toLocaleString('en-US') + ' priced' : M.state === 'loading' ? '' : '—';
+    const nB = M.state === 'ready' ? M.priced.filter(r => r.book === 'B').length : 0;   // founder 2026-10-30: the Bet365 count beside the total
+    const nTxt = M.state === 'ready' ? M.priced.length.toLocaleString('en-US') + ' priced' + (nB ? ' · ' + nB.toLocaleString('en-US') + ' on Bet365' : '') : M.state === 'loading' ? '' : '—';
     return `<span style="display:flex; align-items:center; gap:8px;"><span style="width:16px; height:3px; border-radius:2px; background:${col[i][0]};"></span><span style="font-size:13px; font-weight:700;">${fhEsc(names[i])}</span><span style="${FH_MONO} font-size:10.5px; color:${ME_C.m2};">${nTxt}</span>`
       + (has ? `<span style="${FH_MONO} font-size:14px; font-weight:700; color:${meUC(M.units, 1)};">${meSg(M.units, 1, 'u')}</span>` : '') + '</span>';
   }).join('');
@@ -33362,8 +33363,9 @@ window.DatabaseTab = (function(){
       // TEN-403 R1 item 7: one plain sentence (no bold run), years with an en dash; a behind archive
       // (dbArchiveStale) appends "· updates pending" to the grey tail.
       var stale = dbArchiveStale(M.dateRange[1], Date.now());
+      // founder 2026-10-30: the ATP main draw is Pinnacle prices only — the sentence names Bet365 only while a Database row is on it
       sub.innerHTML='Historical yield by odds band from our own ATP closing-line archive — '+
-        esc(M.books[0])+' closing, else '+esc(M.books[1])+', per match, '+y0+'\u2013'+y1+'.'+
+        esc(M.books[0])+' closing'+(M.bookCounts && !M.bookCounts[M.books[1]] ? ' only' : ', else '+esc(M.books[1]))+', per match, '+y0+'\u2013'+y1+'.'+
         (stale ? ' <span class="sfh__tail">· updates pending</span>' : '');
     }
     if(fr){

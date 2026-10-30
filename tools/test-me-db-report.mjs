@@ -17,7 +17,9 @@ const db = { rows: [
   [20260210, 0, 0, 'R32', 'Argentina Open', 1.40, 3.00, 1, 1],     // same day, same loser spelling: Bu Y. d. Smith
 ], retRows: [], tieRows: [[20260211, 0, 0, 'R16', 'Argentina Open', 1.90, 1.90, 1, 0]] };
 const names = { names: [['Martinez P.', 'Feldbausch J.'], ['Wu Y.', 'Smith J.'], ['Bu Y.', 'Smith J.']], retNames: [], tieNames: [['Struff J-L.', 'Ruud C.']] };
-const era = { xRows: [[20080505, 0, 0, 'R1', 'Davis Cup', 1.20, 4.50, 1, 3]], xNames: [['Gasquet R.', 'Wawrinka S.']] };
+// founder 2026-10-30: an ATP main-draw match with no Pinnacle rides the era shard behind flag 'b' (a Database dash)
+const era = { xRows: [[20080505, 0, 0, 'R1', 'Davis Cup', 1.20, 4.50, 1, 3, 'p'], [20260213, 0, 0, 'R32', 'Argentina Open', 1.70, 2.20, 1, 1, 'b']],
+  xNames: [['Gasquet R.', 'Wawrinka S.'], ['Bergs Z.', 'Moe M.']] };
 const shard = (playerKey, name, matches) => ({ playerKey, name, matches });
 const good = () => [
   shard('1', 'J. Feldbausch', [{ date: '2026-02-09', opp: 'Martinez P.', won: false, price: 2.11, oppPrice: 1.8, book: 'pinnacle-approx' }]),
@@ -26,6 +28,7 @@ const good = () => [
   shard('4', 'J-L. Struff', [{ date: '2026-02-11', opp: 'Ruud C.', won: true, price: 1.9, oppPrice: 1.9, book: 'pinnacle' },
     { date: '2026-02-12', opp: 'Nobody X.', won: true, price: null, oppPrice: null, book: null }]),
   shard('5', 'R. Gasquet', [{ date: '2008-05-05', opp: 'Wawrinka S.', won: true, price: 1.2, oppPrice: 4.5, book: 'pinnacle-history' }]),
+  shard('6', 'Z. Bergs', [{ date: '2026-02-13', opp: 'Moe M.', won: true, price: 1.7, oppPrice: 2.2, book: 'bet365-archive' }]),
 ];
 
 async function run(src) {
@@ -37,8 +40,13 @@ const tool = path.join(here, 'me-db-report.mjs');
 const { M, idx, S } = await run(tool);
 
 const a = S(good());
-ok(idx.n === 5, 'the index holds rows, ties and the era shard (5 Database rows)');
-ok(a.rows === 5 && a.same === 5 && a.status === 'ok', 'every priced shard row equals its Database row (5 of 5; the unpriced row is not counted)');
+ok(idx.n === 6, 'the index holds rows, ties and the era shard (6 rows the join reads)');
+ok(a.rows === 6 && a.same === 5 && a.allowed === 1 && a.status === 'ok', 'every priced shard row equals its Database row (5 of 6), the 6th is the one allowed case (a Database dash, "B" in Market edge)');
+const ab = good(); ab[5].matches[0].book = 'pinnacle';
+ok(S(ab).differ === 1, 'a flag-b row Market edge prices on another book is a difference, not the allowed case');
+const ap = good(); ap[5].matches[0].price = 1.75;
+ok(S(ap).differ === 1, 'a flag-b row priced differently is a difference');
+ok(/1 the allowed case/.test(M.lines(a, idx.n)[0]) && /0 unexpected/.test(M.lines(a, idx.n)[0]), 'the report line names the allowed case and the unexpected count');
 ok(a.ambiguous === 0, 'two rows on one day v the same opponent spelling are told apart by the player (Wu / Bu, two-letter surnames)');
 
 const stale = good(); stale[0].matches[0] = { date: '2026-02-09', opp: 'Martinez P.', won: false, price: 2.2, oppPrice: 1.71, book: 'bet365-archive' };
@@ -50,7 +58,7 @@ const op = good(); op[1].matches[0].oppPrice = 1.51;
 ok(S(op).differ === 1, 'the other player\'s price is compared too');
 const nd = good(); nd[0].matches.push({ date: '2026-03-01', opp: 'Martinez P.', won: true, price: 1.5, oppPrice: 2.5, book: 'pinnacle' });
 ok(S(nd).noDbRow === 1, 'a priced shard row the Database does not hold is counted (the join prices it a dash)');
-ok(M.lines(b, idx.n)[0].includes('4 of 5 priced rows in 5 player shards') && M.lines(b, idx.n).some(l => /differ: J. Feldbausch v Martinez P./.test(l)), 'the report line carries its denominator and names the match');
+ok(M.lines(b, idx.n)[0].includes('4 of 6 priced rows in 6 player shards') && M.lines(b, idx.n).some(l => /differ: J. Feldbausch v Martinez P./.test(l)), 'the report line carries its denominator and names the match');
 
 // A check that passes on an empty set is not a check: no priced row = SKIPPED, said out loud.
 const e = S([shard('9', 'X. Y', [{ date: '2026-01-01', price: null }])]);
@@ -63,6 +71,7 @@ const mutants = [
   ['book not compared', ' && o.book === m.book', ''],
   ['other price not compared', ' && q === m.oppPrice', ''],
   ['no player tie-break', 'if (c.length > 1) c = c.filter', 'if (false) c = c.filter'],
+  ['the allowed branch dropped', "if (eq && o.kind === 'bet365-join') S.allowed++;", "if (false) S.allowed++;"],
 ];
 for (const [label, from, to] of mutants) {
   if (!srcTxt.includes(from)) { ok(false, `mutant "${label}": anchor gone`); continue; }
@@ -70,7 +79,7 @@ for (const [label, from, to] of mutants) {
   fs.writeFileSync(f, srcTxt.replace(from, to));
   try {
     const R = (await run(f)).S;
-    const caught = R(bk).differ === 1 && R(op).differ === 1 && R(good()).ambiguous === 0;
+    const caught = R(bk).differ === 1 && R(op).differ === 1 && R(good()).ambiguous === 0 && R(ab).differ === 1 && R(good()).same === 5 && R(good()).allowed === 1;
     ok(!caught, `mutant "${label}" is caught`);
   } finally { fs.rmSync(f, { force: true }); }
 }

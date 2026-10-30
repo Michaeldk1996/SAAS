@@ -267,7 +267,9 @@ const B365_FROM = '2026-01-01', B365_TO = '2026-04-30';
 const B365_INTERIM = true;
 const b365Dropped = { rows: 0, byYear: {} };
 // Founder ruling 2026-10-26: the ATP main-draw start − 10 snapshots (book 5) the build no longer shows
-const od10Dropped = { rows: 0, byMonth: {}, hadApiTennisSnapshot: 0, hadBet365: 0, pricedByTe: 0, pricedByTeBet365: 0 }; // founder TEN-146 ruling (2026-09-04): window starts 2010, fail-closed, no pre-window fallback
+// founder 2026-10-30: the ATP main-draw Bet365 rows moved out of the Database (era shard flag 'b'), counted
+const b365Out = { rows: 0, byYear: {}, byBook: {}, retired: 0, ties: 0 };
+const od10Dropped = { rows: 0, byMonth: {}, hadApiTennisSnapshot: 0, hadBet365: 0, pricedByTe: 0, pricedByTeBet365: 0, bet365InJoin: 0 }; // founder TEN-146 ruling (2026-09-04): window starts 2010, fail-closed, no pre-window fallback
 const bookCount = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 8: 0, 9: 0, 10: 0 };
 let dateMin = '99999999', dateMax = '00000000';
 // TEN-262: the latest archive date with a valid Pinnacle pair, read BEFORE any exclusion.
@@ -390,7 +392,10 @@ function processLine(c, col, season, fromFeed) {
     const dB = (c[col.date] || '').trim();
     const b365Ok = (validPrice(B365[0]) && validPrice(B365[1])) && (B365_INTERIM || season < WINDOW_START || (dB >= B365_FROM && dB <= B365_TO));
     const b365Cut = !b365Ok && validPrice(B365[0]) && validPrice(B365[1]);
-    let bookIdx = (validPrice(P[0]) && validPrice(P[1])) ? pinIdx : od10Cut ? -1 : AP ? (APS === 'od' ? 5 : APS === 'te' ? TE_BOOK : 2) : b365Ok ? 1 : -1;
+    // founder 2026-10-30: a start − 10 dash takes no Pinnacle price (the snapshot stays unshown) but, like any match with no
+    // Pinnacle, its Bet365 rides the join only ("B", flag b) — the Database still shows the dash
+    let bookIdx = (validPrice(P[0]) && validPrice(P[1])) ? pinIdx : AP ? (APS === 'od' ? 5 : APS === 'te' ? TE_BOOK : 2) : b365Ok ? 1 : -1;
+    if (od10Cut && bookIdx === 1) { od10Cut = false; od10Dropped.bet365InJoin = (od10Dropped.bet365InJoin || 0) + 1; }
     // founder 2026-10-30: Tennis Explorer's Bet365, last before the dash — a Database row (book 10), so the Database and every
     // page show the same price; a start − 10 dash included (the snapshot itself stays unshown)
     let TB = null;
@@ -415,9 +420,30 @@ function processLine(c, col, season, fromFeed) {
       return;
     }
     const [pw, pl] = isPinIdx(bookIdx) || bookIdx === EARLY_BOOK ? P : isApproxIdx(bookIdx) ? AP : bookIdx === TE_B365_BOOK ? TB : B365;
+    // Founder ruling 2026-10-30 (replacing the earlier price-source rulings): the Database's ATP main draw is Pinnacle prices
+    // only (Tennis-Data Pinnacle, our archive close, E, api-tennis Pinnacle, TE Pinnacle) — no Bet365 of any kind; where there
+    // is no Pinnacle the Database shows a dash. The Bet365 price (Tennis-Data's, then Tennis Explorer's) of such a match rides
+    // the era shard behind flag 'b': read by the price join (Market edge, Derived lines and every other page, marked "B"),
+    // never a Database figure, ROI or tour baseline. Before 2010 (the 'p' rows) nothing changes: no Database figure reads them.
+    const joinOnlyB = season >= WINDOW_START && (bookIdx === 1 || bookIdx === TE_B365_BOOK);
+    const pushB = (flags) => {
+      const dI = parseInt((c[col.date] || '').trim().replace(/-/g, ''), 10);
+      if (!Number.isFinite(dI)) return;
+      xAtt.push(att());
+      xRaw.push([dI, LEVEL_MAP[(c[col.series] || '').trim()] || null, (c[col.surface] || '').trim(), (c[col.round] || '').trim(),
+        (c[col.tournament] || '').trim(), Math.min(pw, pl), Math.max(pw, pl), pw < pl ? 1 : 0, bookIdx,
+        (c[col.winner] || '').trim(), (c[col.loser] || '').trim(), flags]);
+      const y = (c[col.date] || '').trim().slice(0, 4);
+      b365Out.rows++; b365Out.byYear[y] = (b365Out.byYear[y] || 0) + 1; b365Out.byBook[bookIdx] = (b365Out.byBook[bookIdx] || 0) + 1;
+      if (behindFlag) b365Out.retired++;
+      if (startedNonResult) { started.priced++; started.byComment[comment] = (started.byComment[comment] || 0) + 1; }
+      // the archive's own date range still spans them (the "after the archive's last match" hovers read it)
+      const dS = (c[col.date] || '').trim(); if (dS < dateMin) dateMin = dS; if (dS > dateMax) dateMax = dS;
+    };
 
     if (pw === pl) {                                            // exact tie: no favourite, no underdog
       B_.tie++;
+      if (joinOnlyB) { if ((1 / pw) + (1 / pl) <= 1.15) { b365Out.ties++; pushB('be' + (behindFlag ? 'r' : '')); } return; }
       const dT = (c[col.date] || '').trim(), dI = parseInt(dT.replace(/-/g, ''), 10), lvT = LEVEL_MAP[(c[col.series] || '').trim()];
       if ((1 / pw) + (1 / pl) <= 1.15 && season >= WINDOW_START && Number.isFinite(dI) && lvT) {
         tieAtt.push(att());
@@ -432,6 +458,7 @@ function processLine(c, col, season, fromFeed) {
       return;
     }
     if ((1 / pw) + (1 / pl) > 1.15) { B_.overround++; return; } // corrupt market
+    if (joinOnlyB) { B_.noPrice++; pushB('b' + (behindFlag ? 'r' : '')); return; }   // a Database dash; the join's "B"
 
     // pre-window regime cut: 2004-2008 is a materially different sport (founder ruling,
     // Option A, 2026-09-04). Placed AFTER the exclusion checks so those buckets keep their
@@ -728,6 +755,8 @@ const meta = {
   schema: 1,
   // founder ruling 2026-10-26: Bet365 prices an ATP main-draw row only inside this window; the rows it no longer prices
   bet365Window: { from: B365_FROM, to: B365_TO, interim: B365_INTERIM, droppedOutside: b365Dropped },
+  // founder 2026-10-30: the Database's ATP main draw is Pinnacle only; these Bet365 rows are the join's (flag 'b'), never a figure
+  bet365OutOfDatabase: { rule: 'ATP main draw: Pinnacle prices only in the Database; a match with no Pinnacle is a Database dash and the price join\'s Bet365 "B" (Tennis-Data, then Tennis Explorer).', ...b365Out },
   od10Dropped,
   generatedFrom: `odds-archive/*.csv (${files[0]}..${files[files.length - 1]})`,
   archiveRows: bucket.archive,
@@ -860,9 +889,9 @@ writeAtomic(OUT_NAMES, JSON.stringify({ names, retNames, tieNames, aliases: name
 // the same file; its strings are its own (no Database dictionary is touched, so no Database picker gains an entry).
 const xCount = f => xRaw.filter(x => x[11].includes(f)).length;
 const X_META = { schema: 1, rule: 'Priced completed matches the master holds but the Database statistics leave out: before ' + WINDOW_START +
-  ' (flag p) and team events (flag t), with r = a retirement (settled on the official ATP result) and e = an exact tie. Same book ' +
+  ' (flag p), team events (flag t), the lower levels (flag l) and the ATP main-draw matches with no Pinnacle price, priced on Bet365 (flag b, founder 2026-10-30), with r = a retirement (settled on the official ATP result) and e = an exact tie. Same book ' +
   'codes as database-yield.json. Read by the price join only; no Database figure, tour baseline or ROI reads it.',
-  counts: { all: xRaw.length, pre2010: xCount('p'), team: xCount('t'), lower: xCount('l'), retired: xCount('r'), ties: xCount('e'), teamDropped: feed.teamDropped }, lower };
+  counts: { all: xRaw.length, pre2010: xCount('p'), team: xCount('t'), lower: xCount('l'), mainDrawBet365: xCount('b'), retired: xCount('r'), ties: xCount('e'), teamDropped: feed.teamDropped }, lower };
 writeAtomic(OUT_X, JSON.stringify({ meta: X_META,
   xRows: xRaw.map(x => [x[0], x[1], x[2], x[3], x[4], x[5], x[6], x[7], x[8], x[11]]), xNames: xRaw.map(x => [x[9], x[10]]), uRows: uRaw }));
 // …and the ONE master file every builder downstream reads (build-market-edge.js): every priced completed match, one row

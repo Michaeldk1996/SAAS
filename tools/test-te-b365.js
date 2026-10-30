@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 // Founder 2026-10-30 ("TE above Bet365" follow-up, "Yes, last before dash"; "for market edge and derived lines it's fine"):
 // Tennis Explorer's Bet365 (book 10) prices a match only where no other source does — last before the dash at every level.
-// Lower levels: the era shard behind flag 'l', never a Database figure. ATP main draw (founder, same day: "the Database must
-// show the same price"): a Database row of its own, book 10, labelled, only on a match that would otherwise be a dash.
-// Runs the real build-database-yield.js on fixture feeds, with a MUTANT that ranks TE Bet365 above Tennis-Data's Bet365.
+// Lower levels: the era shard behind flag 'l', never a Database figure. ATP main draw (founder ruling 2026-10-30, replacing
+// the earlier ones): the Database is Pinnacle only; Bet365 (Tennis-Data, then TE) rides the era shard behind flag 'b' — a
+// Database dash, the join's "B". Runs the real build-database-yield.js on fixture feeds, with mutants.
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
@@ -59,25 +59,41 @@ const xb = xOf(B), at = (w, l) => xb.filter(r => r.names[0] === w && r.names[1] 
 ok(B.raw === A.raw, 'lower levels: no Database figure moves — database-yield.json, its names shard and tour-baselines.json byte-identical with and without TE Bet365');
 ok(at('Bergs Z.', 'Moe M.').length === 1 && at('Bergs Z.', 'Moe M.')[0].book === 10 && /^l/.test(at('Bergs Z.', 'Moe M.')[0].flags), 'a lower match only TE Bet365 prices: one era-shard row, book 10, flag l', at('Bergs Z.', 'Moe M.'));
 ok(at('Bergs Z.', 'Loe L.').length === 1 && at('Bergs Z.', 'Loe L.')[0].book === 7, 'api-tennis Bet365 keeps its match: TE Bet365 is last before the dash', at('Bergs Z.', 'Loe L.'));
-// 2. ATP main draw: a Database row of its own on the dash; the priced match keeps its price
-const C = build(path.join(tmp, 'lower-base.csv'), path.join(tmp, 'main-teb.csv')), dc = dbOf(C), m = (w, l) => dc.filter(r => r.names[0] === w && r.names[1] === l);
-ok(m('Cee C.', 'Dee D.').length === 1 && m('Cee C.', 'Dee D.')[0].book === 10 && m('Cee C.', 'Dee D.')[0].fav === 1.7,
-  'ATP main draw: the Database dash becomes a Database row priced on TE Bet365 (book 10), so the Database shows the price every page shows', m('Cee C.', 'Dee D.'));
-ok(m('Ace A.', 'Bee B.').length === 1 && m('Ace A.', 'Bee B.')[0].book === 0 && m('Ace A.', 'Bee B.')[0].fav === 1.5, 'a main-draw match the Database prices keeps its Tennis-Data Pinnacle price', m('Ace A.', 'Bee B.'));
-ok(!(C.x.uRows || []).some(u => u[1] === 'Cee C.'), 'the filled match is no longer a dash');
-ok(C.base.meta.bookCounts['Bet365 (approx.) · Tennis Explorer'] === 1 && C.base.meta.approx.sources.tb.used === 1 && C.base.meta.approx.sources.tb.filledDash === 1,
-  'the Database names it: bookCounts "Bet365 (approx.) · Tennis Explorer" 1, meta.approx.sources.tb', { bc: C.base.meta.bookCounts, tb: C.base.meta.approx.sources.tb });
-ok(C.base.meta.approx.sources.tb.hover === 'Bet365 (approx.) · Tennis Explorer, last pre-match price, not a confirmed close', 'its hover is the ruled words, never a close');
-// MUTANT: TE Bet365 ranked above Tennis-Data's Bet365 (the dash test dropped)
+// 2. ATP main draw (founder ruling 2026-10-30, replacing the earlier ones): the Database is Pinnacle prices only. A match with
+// no Pinnacle is a Database dash; its Bet365 (Tennis-Data's, then Tennis Explorer's) rides the era shard behind flag 'b'.
+const C = build(path.join(tmp, 'lower-base.csv'), path.join(tmp, 'main-teb.csv')), dc = dbOf(C), xc = xOf(C);
+const m = (w, l) => dc.filter(r => r.names[0] === w && r.names[1] === l), xm = (w, l) => xc.filter(r => r.names[0] === w && r.names[1] === l);
+ok(dc.every(r => r.book !== 1 && r.book !== 10), 'the Database\'s ATP main draw holds no Bet365 row of any kind (books 1 and 10)', dc.map(r => r.book));
+ok(m('Eee E.', 'Fee F.').length === 0 && xm('Eee E.', 'Fee F.').length === 1 && xm('Eee E.', 'Fee F.')[0].book === 1 && xm('Eee E.', 'Fee F.')[0].flags === 'b',
+  'a Tennis-Data Bet365-only row leaves the Database: a dash there, the join\'s "B" (era shard, book 1, flag b)', { db: m('Eee E.', 'Fee F.'), x: xm('Eee E.', 'Fee F.') });
+ok(m('Cee C.', 'Dee D.').length === 0 && xm('Cee C.', 'Dee D.').length === 1 && xm('Cee C.', 'Dee D.')[0].book === 10 && xm('Cee C.', 'Dee D.')[0].flags === 'b',
+  'a match with no Pinnacle and no Tennis-Data Bet365 takes TE Bet365 in the join only (book 10, flag b) — a Database dash', xm('Cee C.', 'Dee D.'));
+ok(m('Ace A.', 'Bee B.').length === 1 && m('Ace A.', 'Bee B.')[0].book === 0 && xm('Ace A.', 'Bee B.').length === 0, 'a match with a Pinnacle price keeps it in the Database, and no Bet365 row is added');
+ok(C.base.meta.bet365OutOfDatabase.rows === 2 && C.base.meta.bet365OutOfDatabase.byBook[1] === 1 && C.base.meta.bet365OutOfDatabase.byBook[10] === 1,
+  'the build counts the rows moved out: 2 (Tennis-Data 1, Tennis Explorer 1)', C.base.meta.bet365OutOfDatabase);
+ok(!C.base.meta.bookCounts.Bet365 && !C.base.meta.bookCounts['Bet365 (approx.) · Tennis Explorer'], 'the Database\'s book counts name no Bet365', C.base.meta.bookCounts);
+ok(C.x.meta.counts.mainDrawBet365 === 2, 'the era shard counts its flag-b rows');
+const D = build(path.join(tmp, 'lower-base.csv'), path.join(tmp, 'main-none.csv'));
+ok(xOf(D).filter(r => r.flags === 'b').map(r => r.names[0]).join() === 'Eee E.' && !(D.x.uRows || []).some(u => u[1] === 'Eee E.'),
+  'with no TE feed the Tennis-Data Bet365 row is still the join\'s "B" (never a dash in the join)');
+// MUTANT: Bet365 back in the Database (the flag-b route removed)
 const src = fs.readFileSync(path.join(ROOT, 'build-database-yield.js'), 'utf8');
-const mutated = src.replace('if (bookIdx < 0 && !fromFeed && approxOn) {', 'if (!fromFeed && approxOn && !(validPrice(P[0]) && validPrice(P[1]))) {');
+const mutated = src.replace("const joinOnlyB = season >= WINDOW_START && (bookIdx === 1 || bookIdx === TE_B365_BOOK);", 'const joinOnlyB = false;');
 ok(mutated !== src, 'mutant applies');
 const mf = path.join(ROOT, '.mutant-te-b365-build.js'); fs.writeFileSync(mf, mutated);
-try {
-  fs.writeFileSync(path.join(tmp, 'main-teb2.csv'), [ACOLS, A_({ date: '2025-05-22', tournament: 'Geneva Open', winner: 'Eee E.', loser: 'Fee F.', psw: 1.9, psl: 1.95, eventKey: 705, snapshotId: 3, source: TEB })].join('\n') + '\n');
-  const Mu = build(path.join(tmp, 'lower-base.csv'), path.join(tmp, 'main-teb2.csv'), mf), Ok = build(path.join(tmp, 'lower-base.csv'), path.join(tmp, 'main-teb2.csv'));
-  const e = (R) => dbOf(R).filter(r => r.names[0] === 'Eee E.').map(r => r.book);
-  ok(JSON.stringify(e(Ok)) === '[1]' && JSON.stringify(e(Mu)) === '[10]', 'MUTANT caught: TE Bet365 above Tennis-Data\'s Bet365 replaces a Bet365 row (the real build keeps Bet365)', { ok: e(Ok), mu: e(Mu) });
+try { const Mu = build(path.join(tmp, 'lower-base.csv'), path.join(tmp, 'main-teb.csv'), mf);
+  ok(dbOf(Mu).some(r => r.book === 1), 'MUTANT caught: without the route a Tennis-Data Bet365 row is a Database row again');
 } finally { fs.unlinkSync(mf); }
+// the page texts (founder 2026-10-30): the Database header names Bet365 only while a Database row is on it; Market edge shows
+// its Bet365 share ("N of M on Bet365") on the profile box and the Match analysis tab
+{
+  const html = fs.readFileSync(path.join(ROOT, 'bsp-consult-dashboard.html'), 'utf8'), pp = fs.readFileSync(path.join(ROOT, 'player-profile-v2.js'), 'utf8');
+  const hdr = new Function('esc', 'M', `return M.books[0]+' closing'+(M.bookCounts && !M.bookCounts[M.books[1]] ? ' only' : ', else '+esc(M.books[1]));`);
+  ok(html.includes("esc(M.books[0])+' closing'+(M.bookCounts && !M.bookCounts[M.books[1]] ? ' only' : ', else '+esc(M.books[1]))+', per match, '"), 'the Database header sentence follows the data');
+  ok(hdr(x => x, { books: ['Pinnacle', 'Bet365'], bookCounts: { Pinnacle: 9, Bet365: 0 } }) === 'Pinnacle closing only'
+    && hdr(x => x, { books: ['Pinnacle', 'Bet365'], bookCounts: { Pinnacle: 9, Bet365: 2 } }) === 'Pinnacle closing, else Bet365', 'header: "Pinnacle closing only" with no Bet365 row; control: "else Bet365" with one');
+  ok(/' of ' \+ M\.priced\.length\.toLocaleString\('en-US'\) \+ ' on Bet365'/.test(html) && /' on Bet365' : ''\) : M\.state === 'loading'/.test(html), 'Match analysis Market edge: "N of M on Bet365" in the header, the count in the legend');
+  ok(/mk\.headline\.book\.bet365 \+ ' of ' \+ mk\.headline\.n \+ ' on Bet365'/.test(pp), 'profile Market edge box: "N of M on Bet365"');
+}
 console.log(`\ntest-te-b365: ${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

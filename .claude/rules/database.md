@@ -8,13 +8,12 @@ reference `OFFICIAL VERSION 1.html` draws the **old** Database content (Heavy / 
 take styling from it, structure from the rules below.
 
 ## Price join — one join, no seam
-- **Test:** every row of `database-yield.json` is priced Pinnacle closing, else Bet365 closing, per match
-  (`build-database-yield.js`, the same `pickBook` as Market edge). **Interim (founder 2026-10-26, "finish and close" item 2,
-  replacing the same day's Jan–Apr-only window):** a Bet365-only row shows the real Bet365 close, marked "B", at every date,
-  until a Pinnacle close is found — a Pinnacle pair (Tennis-Data's or our archive's) wins per row, so an arriving close
-  replaces the B on the next build. Switch: `B365_INTERIM` (false = Bet365 only for 1 Jan – 30 Apr 2026, elsewhere a dash,
-  reason `nopin`, counted in `meta.bet365Window.droppedOutside`). **Test:** `tools/test-b365-window.mjs`. Tour = Favourites −1.78% · Underdogs −6.96% on
-  40,972 matches (All −4.37% = the tour-baselines figure), measured 2026-10-07.
+- **Test:** every row of `database-yield.json` is priced on a Pinnacle price, per match (founder ruling 2026-10-30, replacing
+  the 2026-10-26 interim that kept Bet365 "B" rows in the Database): a Bet365-only ATP main-draw match is a Database dash and
+  the join's "B" (era shard, flag `b`). `B365_INTERIM` now only decides whether such a row reaches the join at every date
+  (on) or only for 1 Jan – 30 Apr 2026 (off); either way it is never a Database row. **Test:** `tools/test-b365-window.mjs`,
+  `tools/test-te-b365.js`. (Before the ruling: Tour = Favourites −1.78% · Underdogs −6.96% on 40,972 matches, measured
+  2026-10-07, Bet365 rows included.)
 - **Exact price ties behind a flag (founder ruling 2026-10-16: "Keep tied prices. Exclude them only from favourite/underdog
   figures.").** A tie is no favourite and no underdog, so it stays out of `rows` (every Database figure, `tour-baselines.json`,
   `tournament-market.json`; `meta.exclusions.exactTie` still counts it). The same build keeps every tie that passes the other
@@ -44,8 +43,8 @@ take styling from it, structure from the rules below.
   `SF_APPROX_HOVER`) — 13 Jan – 12 Apr always (no archive exists). Both count as ONE book in every Database figure,
   "Pinnacle (approx.)" in `meta.bookCounts` (codes 2 + 5), `meta.approx.sources.od` / `.at` name each with its count and
   hover. Order per row (founder 2026-10-30): Tennis-Data Pinnacle > our archive's close (E included) > api-tennis >
-  Tennis Explorer (book 8, any date; also the one source for a start − 10 dash) > Bet365 (every date while `B365_INTERIM`
-  holds) > a dash. Book 8 counts in the same "Pinnacle (approx.)" bucket (`meta.bookCounts`) and is named apart in
+  Tennis Explorer (book 8, any date; also the one Pinnacle source for a start − 10 dash) > a dash in the Database (Bet365
+  is the join's "B" only, founder 2026-10-30). Book 8 counts in the same "Pinnacle (approx.)" bucket (`meta.bookCounts`) and is named apart in
   `meta.approx.sources.te` (used, over Bet365, filled a dash, filled a start − 10 dash); the footnote, chart note and
   Player split name it with its own count, never inside the dated 13 Jan – 16 Sep sentence. **Test:** `tools/test-b365-window.mjs` (every surface: Database, master, tour-baselines, Market edge,
   Favourites, the page join). The
@@ -68,11 +67,12 @@ take styling from it, structure from the rules below.
   never stored (`odds.md`, in-play rule). No Database figure reads book 8. **Test:**
   `tools/test-approx-pinnacle.mjs` (the exact words, no time anywhere on the page), `tools/test-lower-master.js` (book 8's rank,
   Database byte-identical, the era shard's shape unchanged, mutant), `tools/test-tdarch.py` (switch on, order, in-play rule).
-- **Book 10 = Tennis Explorer's Bet365 (founder 2026-10-30).** On the ATP main draw a Database row of its own, last before
-  the dash (after Bet365; a start − 10 dash included): `bookCounts` "Bet365 (approx.) · Tennis Explorer", `meta.approx.sources.tb`
-  (used / filledDash / filledStart10Dash); the per-book split counts it with Bet365 and the footnote and the Player split
-  name it. At the lower levels it is join-only (era shard, flag `l`), so no Database figure moves there. The join reads it
-  as Bet365 `B` + `teb`, hover `FH_B365_TE_HOVER` (`odds.md`). **Test:** `tools/test-te-b365.js`.
+- **The ATP main draw is Pinnacle only (founder ruling 2026-10-30).** No Database row, figure, ROI, tour baseline or
+  Tournaments figure carries a Bet365 price (book 1, or 10 = Tennis Explorer's Bet365); a match with no Pinnacle price is a
+  Database dash. Its Bet365 price rides the era shard behind flag `b` — read by the price join only, so Market edge, Derived
+  lines and every other page show it as "B" (`odds.md` "Price sources by page and level"). The Database header reads
+  "Pinnacle closing only" while no Bet365 row is in its figures. `meta.bet365OutOfDatabase` counts the moved rows by year and
+  book. Before 2010 (the `p` rows) nothing changes. **Test:** `tools/test-te-b365.js`, `tools/test-b365-window.mjs`.
 - **Retirements settle through settlement.js (founder ruling 2026-10-25, round 2 item 1.3; replaces the 2026-09-20 "void
   them" and 2026-10-08 "behind a flag, no Database figure" rulings).** Two rules, two functions, one module (`settlement.js`,
   UMD, `window.Settlement`): **yields / ROI / units → `settleBet`** (Pinnacle rules: a retirement after the first set was

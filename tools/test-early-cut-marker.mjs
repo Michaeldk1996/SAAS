@@ -71,14 +71,15 @@ function build(feed) {
   writeFileSync(join(d, 'feed.csv'), [feed.cols.join(','), ...feed.feed.map(r => feed.cols.map(k => r[k] ?? '').join(','))].join('\n') + '\n');
   const r = spawnSync(process.execPath, ['build-database-yield.js'], { cwd: d, encoding: 'utf8', env: { ...process.env, DB_YIELD_FEED: join(d, 'feed.csv') } });
   const out = r.status === 0 ? { db: JSON.parse(readFileSync(join(d, 'database-yield.json'), 'utf8')), names: JSON.parse(readFileSync(join(d, 'database-yield-players.json'), 'utf8')),
-    master: JSON.parse(readFileSync(join(d, 'database-yield-master.json'), 'utf8')) } : null;
+    master: JSON.parse(readFileSync(join(d, 'database-yield-master.json'), 'utf8')), x: JSON.parse(readFileSync(join(d, 'database-yield-x.json'), 'utf8')) } : null;
   rmSync(d, { recursive: true, force: true });
   return { status: r.status, err: r.stderr, ...out };
 }
 const B1 = build(F1);
-check('builder: the early-cut rows are book 9 (Database rows), the Bet365-only row stays book 1', () => {
+check('builder: the early-cut rows are book 9 (Database rows); the Bet365-only row is the join\'s "B" (era shard, flag b, 2026-10-30)', () => {
   assert.equal(B1.status, 0, B1.err);
-  assert.deepEqual(B1.db.rows.map(r => [r[0], r[8]]), [[20260601, 9], [20260402, 1], [20260603, 9]]);
+  assert.deepEqual(B1.db.rows.map(r => [r[0], r[8]]), [[20260601, 9], [20260603, 9]]);
+  assert.deepEqual(B1.x.xRows.map(r => [r[0], r[8], r[9]]), [[20260402, 1, 'b']]);
 });
 check('builder: meta.earlyCut names book 9, the 71 min, the mark and the founder\'s exact tooltip', () => {
   assert.deepEqual([B1.db.meta.earlyCut.book, B1.db.meta.earlyCut.minutes, B1.db.meta.earlyCut.mark, B1.db.meta.earlyCut.hover], [9, 71, 'E', HOVER]);
@@ -86,7 +87,8 @@ check('builder: meta.earlyCut names book 9, the 71 min, the mark and the founder
 check('builder: never counted as a Pinnacle close (its own book count; Pinnacle yields leave it out)', () => {
   assert.equal(B1.db.meta.archiveFeed.rowsByLabel['early cut 71'], 2);
   assert.equal(B1.db.meta.archiveFeed.rowsByLabel['from Pinnacle history'], 0);
-  assert.deepEqual([B1.db.meta.yieldOverall.all.n, B1.db.meta.yieldOverall.Pinnacle.n, B1.db.meta.yieldOverall.Bet365.n], [3, 0, 1]);
+  // founder 2026-10-30: no Bet365 row in the Database figures
+  assert.deepEqual([B1.db.meta.yieldOverall.all.n, B1.db.meta.yieldOverall.Pinnacle.n, (B1.db.meta.yieldOverall.Bet365 || { n: 0 }).n], [2, 0, 0]);
 });
 check('master: book 9 rows, its code named, the same earlyCut meta', () => {
   const ci = B1.master.meta.cols.indexOf('book');
@@ -111,7 +113,7 @@ ${['FH_MONO', 'FH_DASHC', 'FH_BOOK', 'SF_APPROX_HOVER', 'SF_OD10_HOVER', 'SF_TE_
 const FH_DASH = 'var(--text-label)';
 ${['fhEsc', 'sfEarlyHover', 'fhPxMark', 'fhB365Approx', 'fhSrcTitle', 'fhPriceCell'].map(slice).join('\n')}
 return { fhPxMark, fhSrcTitle, fhPriceCell };`)();
-const J = B1.status === 0 ? dbPriceJoinRows(B1.db, B1.names) : null;
+const J = B1.status === 0 ? dbPriceJoinRows(B1.db, B1.names, B1.x) : null;   // the era shard joins too (flag b)
 const view = (date, opp) => { const v = [{ date, won: true, round: null }]; priceJoin(v, { full: 'A. Alpha' }, { full: opp }, J); return v[0]; };
 check('join: the early-cut meeting = Pinnacle (approx.) "A", source "early", the hover from the build', () => {
   const v = view('2026-06-01', 'B. Beta');

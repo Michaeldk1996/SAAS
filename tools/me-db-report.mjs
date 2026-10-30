@@ -6,6 +6,9 @@
 // (database-yield.json rows + retRows + tieRows, and the era shard database-yield-x.json): same day, the opponent's
 // Tennis-Data spelling and the result pick the row; its winner / loser prices and book must equal the shard's.
 // It never fails the run and changes no threshold: counts go to the step summary, a difference is a ::warning::.
+// The ONE allowed difference (founder 2026-10-30): an ATP main-draw match with no Pinnacle price is a dash in the Database and
+// Bet365 "B" in Market edge — its row is the era shard's flag 'b' and Market edge prices it on that same Bet365 row. Counted
+// on its own ("allowed"); a flag-'b' row priced differently, or not on Bet365, is still a difference.
 // Usage: node tools/me-db-report.mjs --site _site [--out .me-db-report.json]
 import fs from 'node:fs';
 import path from 'node:path';
@@ -25,7 +28,7 @@ export function databaseIndex(db, names, era) {
   const add = (r, nm, kind) => {
     if (!r || !nm) return; n++;
     const k = iso(r[0]); if (!byDay.has(k)) byDay.set(k, []);
-    byDay.get(k).push({ w: nm[0], l: nm[1], pw: r[7] ? r[5] : r[6], pl: r[7] ? r[6] : r[5], book: bookOf(r[8]), kind });
+    byDay.get(k).push({ w: nm[0], l: nm[1], pw: r[7] ? r[5] : r[6], pl: r[7] ? r[6] : r[5], book: bookOf(r[8]), kind: kind === 'era' && String(r[9] || '').includes('b') ? 'bet365-join' : kind });
   };
   (db.rows || []).forEach((r, i) => add(r, (names.names || [])[i], 'rows'));
   (db.retRows || []).forEach((r, i) => add(r, (names.retNames || [])[i], 'retRows'));
@@ -36,7 +39,7 @@ export function databaseIndex(db, names, era) {
 
 // Every priced shard row against its Database row.
 export function compare(shards, idx, exMax = 20) {
-  const S = { players: 0, rows: 0, same: 0, differ: 0, noDbRow: 0, ambiguous: 0, ex: { differ: [], noDbRow: [], ambiguous: [] } };
+  const S = { players: 0, rows: 0, same: 0, allowed: 0, differ: 0, noDbRow: 0, ambiguous: 0, ex: { differ: [], noDbRow: [], ambiguous: [] } };
   for (const s of shards) {
     S.players++;
     const mine = words(s.name);
@@ -49,7 +52,9 @@ export function compare(shards, idx, exMax = 20) {
       if (!c.length) { S.noDbRow++; if (S.ex.noDbRow.length < exMax) S.ex.noDbRow.push(tag); continue; }
       if (c.length > 1) { S.ambiguous++; if (S.ex.ambiguous.length < exMax) S.ex.ambiguous.push(tag); continue; }
       const o = c[0], p = m.won ? o.pw : o.pl, q = m.won ? o.pl : o.pw;
-      if (p === m.price && q === m.oppPrice && o.book === m.book) S.same++;
+      const eq = p === m.price && q === m.oppPrice && o.book === m.book;
+      if (eq && o.kind === 'bet365-join') S.allowed++;   // flag-b rows are Bet365 rows: eq already holds the book   // the one allowed case: a Database dash, "B" here
+      else if (eq) S.same++;
       else { S.differ++; if (S.ex.differ.length < exMax) S.ex.differ.push(Object.assign(tag, { db: [p, q, o.book, o.kind] })); }
     }
   }
@@ -59,7 +64,9 @@ export function compare(shards, idx, exMax = 20) {
 
 export function lines(S, dbN) {
   if (S.status === 'skipped') return [`Market edge vs Database: SKIPPED — no priced Market edge row on the site (${S.players} shards), nothing was compared.`];
-  const out = [`Market edge vs Database (every shard row, report only): ${S.same} of ${S.rows} priced rows in ${S.players} player shards equal their Database row (${dbN} Database rows); ${S.differ} differ, ${S.noDbRow} have no Database row, ${S.ambiguous} match two.`];
+  const out = [`Market edge vs Database (every shard row, report only): ${S.same} of ${S.rows} priced rows in ${S.players} player shards equal their Database row (${dbN} Database rows); ` +
+    `${S.allowed} the allowed case (an ATP main-draw match with no Pinnacle: a Database dash, Bet365 "B" in Market edge); ` +
+    `${S.differ + S.noDbRow + S.ambiguous} unexpected: ${S.differ} differ, ${S.noDbRow} have no Database row, ${S.ambiguous} match two.`];
   const f = t => `${t.name} v ${t.opp}, ${t.date} (${t.won ? 'won' : 'lost'}): Market edge ${t.me.join(' / ')}` + (t.db ? `, Database ${t.db.slice(0, 3).join(' / ')}` : '');
   for (const k of ['differ', 'noDbRow', 'ambiguous']) for (const t of S.ex[k]) out.push(`  ${k}: ${f(t)}`);
   return out;

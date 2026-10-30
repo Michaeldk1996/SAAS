@@ -70,15 +70,17 @@ let pass = 0, fail = 0;
 const check = (n, fn) => { try { fn(); pass++; console.log('  PASS  ' + n); } catch (e) { fail++; console.log('  FAIL  ' + n + '\n        ' + String(e.message).split('\n')[0]); } };
 const R = run();
 const byName = () => (R.db.rows || []).map((r, i) => [String(r[0]), R.names.names[i][0], r[8]]);
+// founder ruling 2026-10-30 (replacing 2026-10-26): the Database's ATP main draw is Pinnacle only — a Bet365-only match is a
+// Database dash and the price join's "B", in the era shard behind flag 'b'
+const xB = () => (R.x.xRows || []).filter(r => String(r[9] || '').includes('b')).map(r => [String(r[0]), r[8]]);
 check('the builder ran', () => assert.ok(!R.err, R.err));
 // founder 2026-10-26 ("finish and close" item 2, interim): the Bet365 close shows, marked "B", outside Jan–Apr 2026 too
-check('interim: a Bet365-only row outside Jan–Apr 2026 shows the Bet365 close as "B" (book 1): Almaty 2025 R1, French Open 2026', () => {
-  const got = byName();
-  assert.deepEqual(got.filter(([d]) => d === '20251013' || d === '20260525').map(x => x[2]), [1, 1]);
+check('2026-10-30: a Bet365-only row is no Database row, at any date (Almaty 2025, French Open 2026, Jan–Apr 2026 included)', () => {
+  assert.ok(!byName().some(([d]) => ['20251013', '20260525', '20260310', '20260430'].includes(d)));
+  assert.ok(!(R.db.rows || []).some(r => r[8] === 1), 'no Bet365 book in the Database rows');
 });
-check('control: Jan–Apr 2026 Bet365 rows stay "B" (book 1), the last day included', () => {
-  const got = byName();
-  assert.deepEqual(got.filter(([d]) => d === '20260310' || d === '20260430').map(x => x[2]), [1, 1]);
+check('2026-10-30: each is the join\'s "B" — the era shard, book 1, flag b', () => {
+  assert.deepEqual(xB().filter(([d]) => ['20251013', '20260525', '20260310', '20260430'].includes(d)).map(x => x[1]), [1, 1, 1, 1]);
 });
 check('control: a Pinnacle row is untouched (book 0)', () => assert.deepEqual(byName().filter(([d]) => d === '20251014').map(x => x[2]), [0]));
 check('control: before 2010 (the era shard) Bet365 still prices — the ruling\'s count does not cover it', () => {
@@ -90,28 +92,31 @@ check('interim: no Bet365-only row is unpriced ("nopin" never emitted)', () => {
 check('meta.bet365Window says the window is off (interim) and drops nothing', () => {
   assert.deepEqual(R.db.meta.bet365Window, { from: '2026-01-01', to: '2026-04-30', interim: true, droppedOutside: { rows: 0, byYear: {} } });
 });
-check('Favourites (Almaty, past editions): the B row is in the column — n 2, b365 1', () => {
+check('Favourites (Almaty, past editions): a Database figure — the Pinnacle row only (n 1, b365 0)', () => {
   const p = R.fav.events.Almaty.past.rows[0];
-  assert.deepEqual([p.n, p.b365], [2, 1]);
+  assert.deepEqual([p.n, p.b365], [1, 0]);
 });
 const od10Dates = ['20260420', '20260610'];
-check('start − 10: every book-5 row is a dash — no fall-through to Bet365 (in window) or api-tennis', () => {
+check('start − 10: every book-5 row is a Database dash — no fall-through to api-tennis or a Database Bet365 row', () => {
   const got = byName();
   for (const d of od10Dates) assert.ok(!got.some(([x]) => x === d), d + ' must not be priced');
   assert.ok(!(R.db.rows || []).some(r => r[8] === 5), 'no book 5 left');
 });
 check('control: an api-tennis snapshot with no start − 10 still prices (book 2)', () => assert.deepEqual(byName().filter(([d]) => d === '20260701').map(x => x[2]), [2]));
 check('start − 10: its own dash reason "od10"', () => {
-  assert.deepEqual(R.x.uRows.filter(u => od10Dates.includes(String(u[0]))).map(u => u[3]), ['od10', 'od10']);
+  // the one with Bet365 (20 Apr) is the join's "B" (no dash reason); the other keeps "od10"
+  assert.deepEqual(R.x.uRows.filter(u => od10Dates.includes(String(u[0]))).map(u => [String(u[0]), u[3]]), [['20260610', 'od10']]);
 });
 check('meta.od10Dropped counts them, and how many had another price it did not fall back to', () => {
-  assert.deepEqual(R.db.meta.od10Dropped, { rows: 2, byMonth: { '2026-04': 1, '2026-06': 1 }, hadApiTennisSnapshot: 1, hadBet365: 1, pricedByTe: 0, pricedByTeBet365: 0 });
+  assert.deepEqual(R.db.meta.od10Dropped, { rows: 2, byMonth: { '2026-04': 1, '2026-06': 1 }, hadApiTennisSnapshot: 1, hadBet365: 1, pricedByTe: 0, pricedByTeBet365: 0, bet365InJoin: 1 });
 });
-check('single price: the master holds no book 5 and none of the dashed matches', () => {
+check('single price: the master holds no book 5; a dash with no Bet365 is in no master row', () => {
   const c = R.master.meta.cols, bi = c.indexOf('book'), di = c.indexOf('date');
   assert.ok(!R.master.rows.some(r => r[bi] === 5));
-  assert.ok(!R.master.rows.some(r => ['2026-04-20', '2026-06-10'].includes(r[di])));
-  assert.ok(['2025-10-13', '2026-05-25'].every(d => R.master.rows.some(r => r[di] === d && r[bi] === 1)), 'interim: the B rows are in the master as Bet365');
+  assert.ok(!R.master.rows.some(r => r[di] === '2026-06-10'), 'the start − 10 match with no Bet365 is in no master row');
+  assert.ok(R.master.rows.some(r => r[di] === '2026-04-20' && r[bi] === 1), 'the start − 10 match with Bet365 is the master\'s Bet365 row (the join\'s "B")');
+  const fi = c.indexOf('flags');
+  assert.ok(['2025-10-13', '2026-05-25'].every(d => R.master.rows.some(r => r[di] === d && r[bi] === 1 && String(r[fi]).includes('b'))), 'the B rows are in the master as Bet365, flag b');
 });
 check('single price: tour-baselines counts only the priced rows (no dashed match in its n)', () => {
   const n = JSON.stringify(R.baselines).match(/"n":\s*(\d+)/);
@@ -121,7 +126,8 @@ check('single price: Market edge (the real builder) holds no price for the dashe
   assert.ok(!R.me.err, R.me.err);
   const has = (k, date) => ((R.me[k] && R.me[k].matches) || []).some(m => m.date === date && m.price != null);
   assert.equal(has('1', '2026-06-10'), false, 'Xi v Omi (start − 10) is a dash in Market edge');
-  assert.equal(has('2', '2026-04-20'), false, 'Mu v Nu (start − 10) is a dash in Market edge');
+  // founder 2026-10-30: Market edge = the Pinnacle order, then Bet365 — a start − 10 match with Bet365 is "B" there
+  assert.equal(((R.me['2'] && R.me['2'].matches) || []).find(m => m.date === '2026-04-20')?.book, 'bet365-archive', 'Mu v Nu (start − 10, Bet365): "B" in Market edge');
   assert.equal(has('3', '2026-07-01'), true, 'control: Pi v Rho (api-tennis approx.) still prices in Market edge');
 });
 check('one price: a shard the last build left is rewritten — a player whose rows all left the master gets an empty shard, never his old price', () => {
@@ -136,7 +142,7 @@ check('single price: the Tournament cards and every page join read the same data
   const html = readFileSync(join(root, 'bsp-consult-dashboard.html'), 'utf8');
   assert.match(html, /od10: 'No Pinnacle close: the only Pinnacle price was read 10 min before a recorded start that can run late, so it may be in play'/);
 });
-check('single price on every page surface: the ONE Database join (Head to Head, Form, profile, Series, Tournament tab) gives the dashed matches no price', () => {
+check('single price on every page surface: the ONE Database join (Head to Head, Form, profile, Series, Tournament tab) — no Pinnacle, no Bet365 = a dash; Bet365 = "B"', () => {
   const html = readFileSync(join(root, 'bsp-consult-dashboard.html'), 'utf8');
   const slice = name => { const st = html.indexOf(`function ${name}(`); assert.ok(st > 0, name); let dep = 0, i = html.indexOf('{', st);
     for (; i < html.length; i++) { if (html[i] === '{') dep++; else if (html[i] === '}') { dep--; if (!dep) break; } } return html.slice(st, i + 1); };
@@ -146,11 +152,12 @@ check('single price on every page surface: the ONE Database join (Head to Head, 
 ${['fhIsInitial', 'fhNameKey', 'psRoundAbbr', 'h2hRoundLabel', 'fhRoundCode', 'h2hTdIx', 'h2hTdKey', 'h2hTdSame', 'h2hTdRound', 'h2hTdEvent', 'h2hNearest', 'h2hPriceJoin'].map(slice).join('\n')}
 return h2hPriceJoin;`)(fhDayNum);
   globalThis.FH_SRC = { td: 'Tennis-Data', cap: 'captured', hist: 'from Pinnacle history' };
-  const dbJ = new Function(`${slice('dbPriceJoinRows')}\nreturn dbPriceJoinRows;`)()(R.db, R.names);
+  const dbJ = new Function(`${slice('dbPriceJoinRows')}\nreturn dbPriceJoinRows;`)()(R.db, R.names, R.x);   // the era shard joins too
   const one = (date, a, b) => { const v = [{ date, won: true, round: null }]; J(v, { full: a }, { full: b }, dbJ); return v[0]; };
   assert.equal(one('2026-06-10', 'X. Xi', 'O. Omi').price ?? null, null, 'start − 10 match: a dash');
-  assert.equal(one('2026-04-20', 'M. Mu', 'N. Nu').price ?? null, null, 'start − 10 match in Jan–Apr with Bet365: a dash');
-  assert.equal(one('2025-10-13', 'A. Alpha', 'B. Beta').book, 'B', 'interim: Bet365-only 2025 prices as "B"');
+  // founder 2026-10-30: a start − 10 match with a Bet365 price is the join's "B" (a Database dash, flag b)
+  assert.equal(one('2026-04-20', 'M. Mu', 'N. Nu').book, 'B', 'start − 10 match with Bet365: "B" in the join');
+  assert.equal(one('2025-10-13', 'A. Alpha', 'B. Beta').book, 'B', 'Bet365-only 2025 prices as "B" in the join');
   assert.equal(one('2026-07-01', 'P. Pi', 'R. Rho').book, 'A', 'control: the api-tennis snapshot prices');
 });
 console.log(`\ntest-b365-window: ${pass} passed, ${fail} failed`);
@@ -161,7 +168,6 @@ if (!process.env.B365W_ROOT) {
     ['build-database-yield.js', 'interim off: the Jan–Apr-only window (B rows dashed)', 'const B365_INTERIM = true;', 'const B365_INTERIM = false;'],
     ['build-database-yield.js', 'the interim not recorded in meta', 'interim: B365_INTERIM, droppedOutside', 'droppedOutside'],
     ['build-database-yield.js', 'start − 10 shown again', "          if (pick === 'od') {", "          if (false) {"],
-    ['build-database-yield.js', 'start − 10 falls through to Bet365 / api-tennis', ": od10Cut ? -1 : AP ?", ": AP ?"],
     ['build-database-yield.js', 'start − 10 dash reason lost', "od10Cut ? 'od10' : b365Cut", "b365Cut"],
     ['build-database-yield.js', 'start − 10 rows not counted', "            od10Dropped.rows++;", "            void 0;"],
     ['build-market-edge.js', 'a shard the last build left is kept (no rewrite)', "    if (!m || perPlayer.has(m[1])) continue;", "    continue;"],
