@@ -135,6 +135,30 @@
     return Object.assign({}, x, { qualifying: false, round: mainWord });
   }
 
+  // THE single qualifying rule (founder 2026-10-30, "one shared isQualifying() using the h2h-core.js rule everywhere"):
+  // the date test resolveQualifying applies, on ANY set of rows of ONE edition (one event, one season) — one player's
+  // own rows (the pipeline's career-history and Record per tournament builders) or both players' (resolveQualifying).
+  // A row whose round is a bracket WORD (Quarter-finals / Semi-finals / Final / Qualifying…) is qualifying when it is
+  // dated strictly before the first certified main-draw round ("1/N-finals") among those rows, or when they hold no
+  // such round at all; a "1/N-finals" row never is. api-tennis filed qualifying brackets under the main-draw key with
+  // its own words and no event_qualification flag (measured 30 Oct on the 733 deployed career histories: 520 ATP rows,
+  // 518 of them 2021–23, and 1,841 Challenger / ITF rows; 0 of the ATP ones matched a Tennis-Data main-draw match).
+  // Round-robin and team events (no qualifying draw) are the caller's to exempt, as resolveQualifying does.
+  function qualifyingByMainDraw(x, editionRows) {
+    const r = rnd(x);
+    if (FRAC_ROUND.test(r) || !WORD_ROUND.test(r)) return false;
+    if (qualTag(x)) return true;
+    let md = null;
+    for (const e of editionRows || []) {
+      if (!e || !FRAC_ROUND.test(rnd(e))) continue;
+      const d = dayNum(e.date);
+      if (d != null && (md == null || d < md)) md = d;
+    }
+    if (md == null) return true;
+    const d0 = dayNum(x.date);
+    return d0 != null && d0 < md;
+  }
+
   function inPopulation(x) {
     return H2H_LEVELS.includes(String(x.level || '').toLowerCase())
       && !x.qualifying && !/^qualif/i.test(String(x.round || ''))   // (D1: resolveQualifying has already read both rows)
@@ -211,7 +235,7 @@
   function played(rows) { return (rows || []).filter(x => !isWalkover(x)); }
   function record(rows) { const p = played(rows), a = p.filter(x => x.won).length; return { a, b: p.length - a, n: p.length }; }
 
-  const api = { H2H_LEVELS, ATP_RECORD_NOT_COUNTED, H2H_NOT_COUNTED, H2H_DEDUPE_WINDOW, API_KEY_ALIASES, canonKey, nameKey, nameCounts, eventId, roundCode, dedupe, resolveQualifying, inPopulation, joinMeetings, isWalkover, played, record };
+  const api = { H2H_LEVELS, ATP_RECORD_NOT_COUNTED, H2H_NOT_COUNTED, H2H_DEDUPE_WINDOW, API_KEY_ALIASES, canonKey, nameKey, nameCounts, eventId, roundCode, dedupe, resolveQualifying, qualifyingByMainDraw, inPopulation, joinMeetings, isWalkover, played, record };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.H2HCore = api;
 })(typeof window !== 'undefined' ? window : this);

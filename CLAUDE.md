@@ -303,9 +303,6 @@ change to allow it.
   Also: `tools/test-post-deploy-check.mjs` fails in the TE-prices session's cloud container (its network blocks
   `www.gstatic.com`, the Firebase script), so a full `npm test` there exits 1 and blocks pushes from it (founder one-time
   exception for the docs-only note, 2026-10-26).
-- **Single qualifying rule.** Record per tournament / Tournament tab, event hold rate, Derived lines and the price import decide
-  qualifying by api-tennis flag or 'qualif' text; 446 qualifying matches from 2021–23 filed as main-draw word rounds slip through.
-  Fix: one shared isQualifying() using the h2h-core.js rule everywhere; backfill/verify flags for 2021–23.
 - **`bsp-ceo-bot`.** Another agent commits code to main under this name (e.g. the 30 → 45 timeout, `763c080a`); coordinate
   before touching the files it owns.
 
