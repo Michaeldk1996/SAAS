@@ -34,7 +34,7 @@ const constLine = name => { const m = html.match(new RegExp('\\nconst ' + name +
 const constBlock = name => { const a = html.indexOf('\nconst ' + name + ' = {'); assert.ok(a >= 0, 'const ' + name); return html.slice(a, html.indexOf('\n};', a) + 3); };
 const HELPERS = [constBlock('MX_BOOK_LABELS'), fn('mxBookLabel'), constLine('MC_BOOK_NAMES'), fn('mxOddsTxt'),
   fn('formIni'), fn('fhIni'), fn('newsTz'), fn('newsPlayerName'), fn('acctTzOffsetMin'), fn('cardStartMs'),
-  fn('cardFmtStart'), fn('matchDayBucket'), fn('isFinishedMatch'), fn('getFiltered')].join('\n');
+  fn('cardFmtStart'), fn('localDayKey'), fn('apiStartMs'), fn('mxShiftDayKey'), fn('mxTodayKey'), fn('matchLocalDayKey'), fn('matchDayBucket'), fn('isFinishedMatch'), fn('crossDateSearch'), fn('mxTodayPreview'), fn('getFiltered')].join('\n');
 const TR_CSS = (() => { const a = html.indexOf('/* TEN-421 (founder step 13'); return html.slice(a, html.indexOf('/* ── TEN-107', a)); })();
 
 const IOC = { Spain: 'ESP', Italy: 'ITA', France: 'FRA', 'United States': 'USA' };
@@ -132,7 +132,9 @@ const bands = page => [...page.matchAll(/<span class="tr-band" style="grid-colum
 
 // Independent expectations, computed from the fixture with the dashboard's own Today's Matches function.
 function expectSlate(b) {
-  const list = b.ctx.getFiltered();
+  // founder 2026-10-30: the board's Today also previews the next local day below a divider; the Trading Report's
+  // day slate is that day's own cards (the preview is a display device of the Matches board, not part of Today)
+  const list = b.ctx.getFiltered().filter(m => b.ctx.matchDayBucket(m) === 'today');
   const under = new Set(b.fix.fixtures.filter(b.ctx.window.LiveFeed.isUnderway).map(f => [f.first_player_key, f.second_player_key].map(Number).sort((x, y) => x - y).join(':')));
   const pre = list.filter(m => !under.has([m.p1Key, m.p2Key].map(Number).sort((x, y) => x - y).join(':')));
   return { list, pre, under };

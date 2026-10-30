@@ -6541,7 +6541,33 @@ async function loadModelOutput(){
 // JSON.parse) so that a *partial* file — e.g. the pipeline is mid-write when
 // this 3-minute refresh lands — is caught here as a parse error rather than
 // silently yielding garbage.
+// Founder 2026-10-30: on a day with no fixtures the header's Updated and Live · loaded clocks keep the
+// LAST PIPELINE TIME — build-info.json `data.builtAt`, the data run the site was published with — never a
+// dash and never the page-load instant. null until read (or when the file has none): the clocks keep
+// their own rules then.
+let mxPipelineAt = null, _mxPipelineAsk = null;
+function mxLoadPipelineAt(){
+  if (_mxPipelineAsk) return _mxPipelineAsk;
+  _mxPipelineAsk = fetch('./build-info.json', { cache: 'no-cache' })
+    .then(r => (r.ok ? r.json() : null))
+    .then(j => { const t = Date.parse(j && j.data && j.data.builtAt); if (isFinite(t)) mxPipelineAt = t; return mxPipelineAt; })
+    .catch(() => null)
+    .finally(() => { setTimeout(() => { _mxPipelineAsk = null; }, 180000); });
+  return _mxPipelineAsk;
+}
+// The selected day holds no fixture at all in the feed (filters and the Upcoming / Completed split aside).
+function mxDayHasNoFixtures(){
+  if (crossDateSearch() || !['daymin3','daymin2','yesterday','today','tomorrow','day2','day3'].includes(state.day)) return false;
+  return !matches.some(m => matchDayBucket(m) === state.day);
+}
+function mxDayLongLabel(dayKey){
+  const k = { daymin3: -3, daymin2: -2, yesterday: -1, today: 0, tomorrow: 1, day2: 2, day3: 3 }[dayKey];
+  const key = k == null ? '' : mxShiftDayKey(mxTodayKey(), k);
+  if (!key) return '';
+  return new Date(`${key}T12:00:00Z`).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' });
+}
 async function fetchMatchesOnce(){
+  try { mxLoadPipelineAt(); } catch (e) {}
   const res = await fetch('./matches.json', { cache: 'no-cache' });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const text = await res.text();
@@ -7154,6 +7180,14 @@ function mxHeaderStatusHtml(){
     // TEN-403: the 35b header's first stat column — caps label over a live dot + the clock (mono 15/700 soft).
     return `<span class="sfh__l mx-live-txt" title="${escapeHtml(detail)}">${label}</span>`
          + `<span class="sfh__v sfh__v--soft sfh__live"><span class="sfh__dot" aria-hidden="true"></span><span class="mx-clock" title="${escapeHtml(detail)}">${headerClockFmt(new Date(b.oldest))}${tail}</span></span>`;
+  }
+  // Founder 2026-10-30: a day with no cards at all keeps the last pipeline time, labelled as such.
+  let emptyBoard = false;
+  try { emptyBoard = matches.length > 0 && getFiltered().length === 0 && mxPipelineAt != null; } catch (e) {}
+  if (emptyBoard){
+    const pd = 'no matches on this day — this is the last pipeline run (data built), not an odds clock';
+    return `<span class="sfh__l mx-live-txt" title="${escapeHtml(pd)}">Live · loaded</span>`
+         + `<span class="sfh__v sfh__v--soft sfh__live"><span class="sfh__dot" aria-hidden="true"></span><span class="mx-clock" title="${escapeHtml(pd)}">${headerClockFmt(new Date(mxPipelineAt))}</span></span>`;
   }
   const d = dataLoadedAt || new Date();
   const noneDetail = b.shown
@@ -8267,6 +8301,10 @@ function syncSortDropdown(completed){
 // (nearest first) then completed (most recent first); Completed → the reverse. The tournament and
 // surface filters still apply. Each card keeps its own layout (isFinishedMatch drives it).
 function crossDateSearch(){ return !!(state.search && state.search.trim()); }
+// Founder 2026-10-30: Today under Upcoming = today's local-day cards, then a divider for the next
+// local day with that day's cards — always, not only when today is short. The next day's cards are
+// the same cards its own tab shows (same bucket). No next-day fixtures → no divider (none rendered).
+function mxTodayPreview(){ return state.view === 'upcoming' && state.day === 'today' && !crossDateSearch(); }
 function getFiltered(){
   const crossDate = crossDateSearch();
   let out = matches.filter(m => {
@@ -8284,7 +8322,7 @@ function getFiltered(){
         if (!isFinishedMatch(m)) return false;
         if (!m.finishedAt) return false;
         if (Date.now() - new Date(m.finishedAt).getTime() > 86400000) return false;
-      } else if (bucket !== state.day) return false;
+      } else if (bucket !== state.day && !(mxTodayPreview() && bucket === 'tomorrow')) return false;
     }
     // Upcoming / Completed segmented control (export item 5): a view filter over
     // the already-bound matches for the selected day. Live matches count as
@@ -8365,7 +8403,13 @@ function getFiltered(){
     out.sort((a,b) => (sc.get(b) - sc.get(a)) || (cardStartMs(a) - cardStartMs(b)) || (a.time || '').localeCompare(b.time || ''));
   }
   else if (state.sort === 'closing') out.sort((a,b) => closingScore(a) - closingScore(b));
-  else out.sort((a,b) => (a.time || '').localeCompare(b.time || ''));
+  else out.sort((a,b) => {
+    // by the start instant: a local day spans two Berlin feed dates, so the feed's clock string alone misorders it
+    const ta = cardStartMs(a), tb = cardStartMs(b);
+    if (isFinite(ta) && isFinite(tb) && ta !== tb) return ta - tb;
+    if (isFinite(ta) !== isFinite(tb)) return isFinite(ta) ? -1 : 1;
+    return (a.time || '').localeCompare(b.time || '');
+  });
   return out;
 }
 
@@ -8374,42 +8418,27 @@ function getFiltered(){
 function formatShortDate(d){
   return `${d.getDate()} ${d.toLocaleDateString('en-US', { month: 'short' })}`;
 }
-const daymin3Date = new Date(Date.now() - 3 * 86400000);
-const daymin2Date = new Date(Date.now() - 2 * 86400000);
-const day2Date = new Date(Date.now() + 2 * 86400000);
-// TEN-179 — the +3 rail slot. Built for the export's today-forward Upcoming rail, then
-// RETIRED by the founder's 2026-09-09 ruling: the Upcoming rail went back to
-// `yesterday · today · +1 · +2`, so #day3Tab is hidden in BOTH views. The bucket and
-// label are kept (a +3 fixture buckets to 'day3' instead of 'later' — neither is
-// rendered by any tab, so this is behaviourally identical) so the slot can be turned
-// back on by unhiding the tab if he ever wants the forward rail again.
-const day3Date = new Date(Date.now() + 3 * 86400000);
-const daymin3Label = formatShortDate(daymin3Date);
-const daymin2Label = formatShortDate(daymin2Date);
-const day2Label = formatShortDate(day2Date);
-const day3Label = formatShortDate(day3Date);
+// Founder 2026-10-30: the rail's dates are the member-zone calendar days matchDayBucket() keys
+// on (mxTodayKey ± n), so a tab always names the local day whose matches it admits. Recomputed
+// on every chrome pass (updateMatchesHeaderChrome), so a page left open past midnight relabels.
+let daymin3Label = '', daymin2Label = '', day2Label = '', day3Label = '';
 function weekday(d){ return d.toLocaleDateString('en-US', { weekday: 'short' }); }
-// TEN-8: the date rail shows real tournament-day dates as the PRIMARY label
-// ("Thu 6") across all five tabs; the relative word is demoted to a small
-// secondary line on the ±1 days only, and the current tournament day is marked
-// with a persistent dot (button.is-today) rather than the word "Today". These are
-// the same day boundaries matchDayBucket() uses, so a tab's date always names the
-// tournament day whose fixtures it admits — the grouping itself is unchanged.
-const railDate = d => `${weekday(d)} ${d.getDate()}`;
-document.getElementById('daymin3Top').textContent   = railDate(daymin3Date);
-document.getElementById('daymin2Top').textContent   = railDate(daymin2Date);
-document.getElementById('yesterdayTop').textContent = railDate(new Date(Date.now() - 86400000));
-document.getElementById('todayTop').textContent     = railDate(new Date());
-document.getElementById('tomorrowTop').textContent  = railDate(new Date(Date.now() + 86400000));
-document.getElementById('day2Top').textContent      = railDate(day2Date);
-document.getElementById('day3Top').textContent      = railDate(day3Date);
-document.getElementById('daymin3Bottom').textContent   = '';
-document.getElementById('daymin2Bottom').textContent   = '';
-document.getElementById('yesterdayBottom').textContent = 'Yesterday';
-document.getElementById('todayBottom').textContent     = 'Today';
-document.getElementById('tomorrowBottom').textContent  = 'Tomorrow';
-document.getElementById('day2Bottom').textContent      = '';
-document.getElementById('day3Bottom').textContent      = '';
+function mxRailDay(k){
+  let key = '';
+  try { key = mxShiftDayKey(mxTodayKey(), k); } catch (e) {}
+  const d = key ? new Date(`${key}T12:00:00Z`) : new Date(Date.now() + k * 86400000);
+  const wd = d.toLocaleDateString('en-US', { weekday: 'short', timeZone: 'UTC' });
+  const mon = d.toLocaleDateString('en-US', { month: 'short', timeZone: 'UTC' });
+  return { top: `${wd} ${d.getUTCDate()}`, short: `${d.getUTCDate()} ${mon}` };
+}
+function mxRefreshRailLabels(){
+  const set = (id, t) => { const el = document.getElementById(id); if (el) el.textContent = t; };
+  const ids = { daymin3: -3, daymin2: -2, yesterday: -1, today: 0, tomorrow: 1, day2: 2, day3: 3 };
+  for (const [id, k] of Object.entries(ids)){ set(id + 'Top', id === 'today' ? 'Today' : mxRailDay(k).top); set(id + 'Bottom', ''); }
+  daymin3Label = mxRailDay(-3).short; daymin2Label = mxRailDay(-2).short;
+  day2Label = mxRailDay(2).short; day3Label = mxRailDay(3).short;
+}
+try { mxRefreshRailLabels(); } catch (e) {}
 
 // The pipeline bakes a day-bucket label (m.day) into matches.json at the
 // moment it runs — that label goes stale as soon as real time moves past
@@ -8419,52 +8448,43 @@ document.getElementById('day3Bottom').textContent      = '';
 // the real current date on every render, so bucketing is always correct
 // regardless of when matches.json was last generated. Falls back to the
 // pipeline's frozen m.day only if a match has no date on file.
+// Founder 2026-10-30 (matches-day-tabs): a match belongs to the LOCAL calendar day of its START
+// INSTANT in the member's zone (newsTz: stennisfy.tz, else the browser) — the same rule the Today
+// page's day divider uses (localDayKey(cardStartMs(m))). It replaces the feed's own `date` (the
+// Europe/Berlin wall date, TEN-308), which put a 17:30 Berlin start (00:30 next day in
+// Asia/Makassar) on the previous day's tab. A record with no start instant (no startTs and no
+// time, or api-tennis's 02:00Z placeholder — apiStartMs, TEN-304) keeps its feed date — never a
+// guessed time. Same rule in both views.
+function mxShiftDayKey(key, k){
+  const d = new Date(`${key}T12:00:00Z`);
+  if (!isFinite(d.getTime())) return '';
+  d.setUTCDate(d.getUTCDate() + k);
+  return d.toISOString().slice(0, 10);
+}
+function mxTodayKey(){ return localDayKey(Date.now()); }
+function matchLocalDayKey(m){
+  const ms = m ? apiStartMs(m) : NaN;
+  return isFinite(ms) ? localDayKey(ms) : ((m && m.date) || '');
+}
 function matchDayBucket(m){
-  if (!m.date) return m.day;
-  const now = new Date();
-  const dayMs = 86400000;
-  // Bucket by the viewer's LOCAL calendar day, not UTC. m.date is the venue-local
-  // fixture date, and the day-tab LABELS (daymin2Label/day2Label/weekday above) are
-  // already computed in local time — so deciding today/yesterday/tomorrow in UTC
-  // here left them inconsistent: after local midnight but before UTC midnight
-  // (e.g. 01:00 CEST = 23:00 UTC the prior day) every one of "today's" matches
-  // bucketed to Tomorrow and the default Today tab rendered empty.
-  const dateStr = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-  const matchDay = m.date;
-  const threeDaysAgo = dateStr(new Date(now.getTime() - 3 * dayMs));
-  const twoDaysAgo = dateStr(new Date(now.getTime() - 2 * dayMs));
-  const yesterday = dateStr(new Date(now.getTime() - dayMs));
-  const today = dateStr(now);
-  const tomorrow = dateStr(new Date(now.getTime() + dayMs));
-  const dayAfterTomorrow = dateStr(new Date(now.getTime() + 2 * dayMs));
-  const threeDaysOut = dateStr(new Date(now.getTime() + 3 * dayMs));
-
-  if (matchDay === threeDaysAgo) return 'daymin3';
-  if (matchDay === twoDaysAgo) return 'daymin2';
-  if (matchDay === yesterday) return 'yesterday';
+  const matchDay = matchLocalDayKey(m);
+  if (!matchDay) return m.day;
+  const today = mxTodayKey();
+  const at = k => mxShiftDayKey(today, k);
+  if (matchDay === at(-3)) return 'daymin3';
+  if (matchDay === at(-2)) return 'daymin2';
+  if (matchDay === at(-1)) return 'yesterday';
   if (matchDay === today) {
-    // A suspended match is still today's match, in progress — it belongs on the
-    // Today tab. Without this it falls through to the start-time check below,
-    // buckets to 'past' the moment its start time passes, and then vanishes: the
-    // Past tab only admits finished matches, so nothing would render it at all.
+    // A suspended match is still today's match, in progress (see TEN-8 history in git).
     if (m.interrupted) return 'today';
     if (m.live) return 'past';
-    // A today-dated match stays on the Today tab all day — including after it
-    // finishes. The day rail has no separate "Past"/results tab (only
-    // daymin2/yesterday/today/tomorrow/day2), so a today match that retired to
-    // 'past' the moment it was scored fell into a bucket no tab renders and
-    // vanished entirely (founder report, TEN-8: completed-today matches missing
-    // from Today+Completed). A completed today match is still today's match; it
-    // belongs on Today, surfaced via the Completed segmented toggle (which
-    // filters finished vs upcoming within the selected day). This mirrors the
-    // 'yesterday' bucket above, which admits finished and unfinished alike. The
-    // start-time fall-through below no longer applies to today-dated fixtures.
+    // A today match stays on Today all day, finished or not (TEN-8).
     return 'today';
   }
-  if (matchDay === tomorrow) return 'tomorrow';
-  if (matchDay === dayAfterTomorrow) return 'day2';
-  if (matchDay === threeDaysOut) return 'day3';   // TEN-179 — 4th forward rail slot
-  if (new Date(`${m.date}T00:00:00Z`) < now) return 'past';
+  if (matchDay === at(1)) return 'tomorrow';
+  if (matchDay === at(2)) return 'day2';
+  if (matchDay === at(3)) return 'day3';   // TEN-179 — 4th forward rail slot
+  if (matchDay < today) return 'past';
   return 'later';
 }
 
@@ -9085,11 +9105,7 @@ function updateMatchesHeaderChrome(){
     // Results keeps its 4-day backward retention rail (daymin3 · daymin2 · yesterday ·
     // today) with the back chevron carrying the "kept for 4 days" notice — restore any
     // display the Matches branch hid.
-    if (dm3)  dm3.style.display  = '';
-    if (dm2)  dm2.style.display  = '';
-    if (yday) yday.style.display = '';
-    // TEN-179 — the +3 slot is retired (founder ruling 2026-09-09); hidden in both views.
-    if (d3)   d3.style.display   = 'none';
+    // Founder 2026-10-30: the three-day window (Wed · Thu · Today); mxApplyRailWindow below.
     if (back) back.style.display = '';
     // Date-rail arrows (founder task 2026-08-08, supersedes the earlier §5 "forward
     // chevron removed" rule): BOTH arrows render on Results. The forward arrow is
@@ -9099,13 +9115,8 @@ function updateMatchesHeaderChrome(){
     if (fwd)  fwd.style.display  = '';
     // A future day could be the active tab when the user lands on Results — snap
     // back to Today before it filters an empty (upcoming) day into a settled view.
-    if (state.day === 'tomorrow' || state.day === 'day2' || state.day === 'day3'){
-      state.day = 'today';
-      const todayBtn = document.querySelector('#dayTabs button[data-day="today"]');
-      if (todayBtn) setActiveButton(document.getElementById('dayTabs'), todayBtn);
-    }
-    if (tomo) tomo.style.display = 'none';
-    if (d2)   d2.style.display   = 'none';
+    // Founder 2026-10-30: paging forward past Today is allowed (the window is a default, not a
+    // limit); a future day shows its upcoming cards, as getFiltered's effView rule already does.
     if (yBot) yBot.textContent = '';
     if (tBot) tBot.textContent = '';
     // §1 (founder review 2026-08-08) — Flashscore convention: the current-day tab
@@ -9130,17 +9141,13 @@ function updateMatchesHeaderChrome(){
     // and stay hidden here; if one was the active day (carried over from Completed),
     // snap to Today so the filter can't target an invisible tab. 'day3' gets the same
     // snap — its tab no longer renders in either view, so it can only be a stale value.
-    if (dm3)  dm3.style.display  = 'none';
-    if (dm2)  dm2.style.display  = 'none';
-    if (yday) yday.style.display = '';
-    if (d3)   d3.style.display   = 'none';
-    if (state.day === 'daymin2' || state.day === 'daymin3' || state.day === 'day3' || state.day === 'past'){
+    // Founder 2026-10-30 (supersedes the 2026-09-09 yesterday · today · +1 · +2 rail): the default
+    // window is Today · +1 · +2; ‹ pages back into yesterday and beyond (mxApplyRailWindow below).
+    if (state.day === 'past'){
       state.day = 'today';
       const todayBtn = document.querySelector('#dayTabs button[data-day="today"]');
       if (todayBtn) setActiveButton(document.getElementById('dayTabs'), todayBtn);
     }
-    if (tomo) tomo.style.display = '';
-    if (d2)   d2.style.display   = '';
     // Date-rail arrows: BOTH render on Matches too, bounded by this rail's range
     // (yesterday · today · +1 · +2). syncDayArrows() disables left at yesterday and
     // right at the +2 day.
@@ -9191,8 +9198,9 @@ function updateMatchesHeaderChrome(){
   // state has to be carried on the row as well or they stay live while the rail is off.
   const dayRowEl = document.querySelector('[data-page="matches"] .mx-daytabsrow');
   if (dayRowEl) dayRowEl.classList.toggle('is-searching', crossDateSearch());
-  // Re-sync the paging arrows to the active day's position within the now-visible
-  // window (which day tabs are shown was decided by the branches above).
+  // The three-day window (founder 2026-10-30) and its labels, then the paging arrows.
+  try { mxRefreshRailLabels(); } catch (e) {}
+  mxApplyRailWindow();
   syncDayArrows();
 }
 
@@ -9206,14 +9214,30 @@ function visibleDayButtons(){
   return [...document.querySelectorAll('#dayTabs button[data-day]')]
     .filter(b => b.style.display !== 'none');
 }
+// Founder 2026-10-30: the rail shows THREE days — Upcoming = Today and the two days after (Today
+// leftmost), Completed = the two days before and Today (Today rightmost). That is the default view,
+// not a limit: ‹ › page one day at a time through every day the rail has (daymin3 … day3), and the
+// window slides to keep the selected day on screen.
+const MX_RAIL_DAYS = ['daymin3', 'daymin2', 'yesterday', 'today', 'tomorrow', 'day2', 'day3'];
+function mxRailWindow(){
+  const def = state.view === 'completed' ? 1 : 3;   // index of the window's first day
+  const idx = MX_RAIL_DAYS.indexOf(state.day);
+  let start = def;
+  if (idx >= 0 && idx < start) start = idx;
+  if (idx >= 0 && idx > start + 2) start = idx - 2;
+  return MX_RAIL_DAYS.slice(start, start + 3);
+}
+function mxApplyRailWindow(){
+  const win = mxRailWindow();
+  document.querySelectorAll('#dayTabs button[data-day]').forEach(b => { b.style.display = win.includes(b.dataset.day) ? '' : 'none'; });
+}
 function syncDayArrows(){
   const left  = document.getElementById('dayTabsLeft');
   const right = document.getElementById('dayTabsRight');
   if (!left || !right) return;
-  const btns = visibleDayButtons();
-  const idx  = btns.findIndex(b => b.dataset.day === state.day);
+  const idx  = MX_RAIL_DAYS.indexOf(state.day);
   const atLeftEdge  = idx <= 0;
-  const atRightEdge = idx < 0 || idx >= btns.length - 1;
+  const atRightEdge = idx < 0 || idx >= MX_RAIL_DAYS.length - 1;
   left.classList.toggle('is-disabled', atLeftEdge);
   right.classList.toggle('is-disabled', atRightEdge);
   left.setAttribute('aria-disabled', atLeftEdge ? 'true' : 'false');
@@ -9222,13 +9246,13 @@ function syncDayArrows(){
   right.setAttribute('aria-label', 'Next day');
 }
 function stepDay(dir){ // dir: -1 = older (left), +1 = newer (right)
-  const btns = visibleDayButtons();
-  const idx  = btns.findIndex(b => b.dataset.day === state.day);
+  const idx  = MX_RAIL_DAYS.indexOf(state.day);
   if (idx < 0) return;
-  const next = btns[idx + dir];
+  const key = MX_RAIL_DAYS[idx + dir];
+  const next = key && document.querySelector(`#dayTabs button[data-day="${key}"]`);
   if (!next) return; // at an edge — arrow is disabled, nothing to do
   setActiveButton(document.getElementById('dayTabs'), next);
-  state.day = next.dataset.day;
+  state.day = key;
   renderMatches(); // re-runs updateMatchesHeaderChrome → syncDayArrows
 }
 
@@ -9616,7 +9640,9 @@ function mcRenderHeaderStats(list){
   const completed = state.view === 'completed';
   const shown = completed ? list.filter(m => m.finalScore) : list;
   const tours = new Set(shown.map(m => m.tour).filter(Boolean)).size;
-  const up = mxOddsUpdatedAt();
+  let up = mxOddsUpdatedAt();
+  if (up == null && !list.length && mxPipelineAt != null) up = mxPipelineAt;   // founder 2026-10-30: empty day → last pipeline time
+  else if (up == null && !list.length && matches.length) mxLoadPipelineAt().then(t => { if (t != null) { try { mcRenderHeaderStats(getFiltered()); updateMatchesHeaderChrome(); } catch (e) {} } });
   const fmt = tz => new Intl.DateTimeFormat('en-GB', { timeZone: tz, hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(up)).replace(/^24/, '00');
   let hhmm = '—';
   if (up != null) { try { hhmm = fmt((typeof newsTz === 'function' && newsTz()) || undefined); } catch (e) { hhmm = fmt(undefined); } }   // a bad stored zone never stops the board
@@ -9680,7 +9706,11 @@ function renderMatches(){
       const range = ds.length ? (ds[0] === ds[ds.length - 1] ? ds[0] : `${ds[0]} – ${ds[ds.length - 1]}`) : '';
       list.innerHTML = `<div class="mx-empty">No match for “${escapeHtml(state.search.trim())}” in the loaded window${range ? ` (${range})` : ''}. The board only holds the most recent days of fixtures — a match outside that window won’t appear here.</div>`;
     } else {
-      list.innerHTML = `<div class="mx-empty">No matches found. ${matches.length === 0 ? 'No data loaded yet — check the status message above.' : 'Try different filters.'}</div>`;
+      const emptyDay = matches.length && mxDayHasNoFixtures() && ['today','tomorrow','day2','day3'].includes(state.day);
+      list.innerHTML = emptyDay
+        // Founder 2026-10-30: a day the feed holds no fixture for says why, with no mention of filters.
+        ? `<div class="mx-empty">Order of play for ${escapeHtml(mxDayLongLabel(state.day))} isn’t published yet.</div>`
+        : `<div class="mx-empty">No matches found. ${matches.length === 0 ? 'No data loaded yet — check the status message above.' : 'Try different filters.'}</div>`;
     }
     return;
   }
@@ -9708,11 +9738,11 @@ function renderMatches(){
     // midnight. Never before the first card; only when a rollover actually occurs.
     let dividerHtml = '';
     if (dividersOn){
-      const dms = cardStartMs(m);
-      if (isFinite(dms)){
-        const dkey = localDayKey(dms);
+      // founder 2026-10-30: the divider and the day tabs read ONE rule — matchLocalDayKey(m)
+      const dkey = matchLocalDayKey(m);
+      if (dkey){
         if (prevLocalDay !== null && dkey !== prevLocalDay){
-          dividerHtml = `<div class="mx-daydivider"><span>${localDayLabel(dms)}</span></div>`;
+          dividerHtml = `<div class="mx-daydivider"><span>${new Date(`${dkey}T12:00:00Z`).toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short', timeZone:'UTC' })}</span></div>`;
         }
         prevLocalDay = dkey;
       }
@@ -10084,6 +10114,10 @@ function renderMatches(){
     const startWithDate = cardFmtStart(m, showAltDate);
     const rightMeta = isCompleted
       ? `<span class="mc-altdate-inl">${cardFmtStart(m, crossDateSearch())}</span>`
+      // Founder 2026-10-30: the move view's header is ONE line — surface · event · round, then
+      // OPEN / NOW / MOVE over their columns — with no start time (a live card keeps its LIVE word).
+      : mxDriftView()
+        ? (m.live ? `<span class="mc-status live">${statusLabel(m)}</span>` : '')
       : m.live
         ? `<span class="mc-status live">${statusLabel(m)}</span><span class="mc-time">${cardFmtStart(m, false)}</span>`
         // TEN-225 ruling 1 — start time and tournament only; no countdown suffix.
@@ -36227,7 +36261,8 @@ if(document.querySelector('.tabpage[data-page="live"]')&&document.querySelector(
   [data-page="matches"] .match-card .mc-colhead-inline .lbl{ display:flex; justify-content:flex-end; white-space:nowrap; font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label); }
   [data-page="matches"] .match-card .mc-colhead-inline .lbl:first-child{ margin-right:-9px; }
   [data-page="matches"] .match-card:not(.cmpl) .mc-head{ flex-wrap:nowrap; gap:6px 7px; }
-  [data-page="matches"] .match-card:not(.cmpl) .mc-head:has(.mc-colhead-drift){ flex-wrap:wrap; gap:6px 9px; }
+  /* founder 2026-10-30: the move view's head is one line — OPEN / NOW / MOVE on the surface · event · round line */
+  [data-page="matches"] .match-card:not(.cmpl) .mc-head:has(.mc-colhead-drift){ flex-wrap:nowrap; gap:6px 9px; }
   [data-page="matches"] .match-card .mc-head > *{ flex:none; }
   [data-page="matches"] .match-card .mc-head > .mc-tourn{ flex:0 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   [data-page="matches"] .match-card .mc-head > .mc-datetime, [data-page="matches"] .match-card .mc-head > .mc-altdate-inl{ white-space:nowrap; }

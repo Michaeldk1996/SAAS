@@ -38,7 +38,7 @@ function fn(name) {
   return html.slice(at + 1, i + 1);
 }
 const HELPERS = [fn('formIni'), fn('fhIni'), fn('newsTz'), fn('newsPlayerName'), fn('acctTzOffsetMin'), fn('cardStartMs'),
-  fn('cardFmtStart'), fn('matchDayBucket'), fn('isFinishedMatch'), fn('trDbEnd'), fn('trDayWords'), fn('trPxAfterTitle'),
+  fn('cardFmtStart'), fn('localDayKey'), fn('apiStartMs'), fn('mxShiftDayKey'), fn('mxTodayKey'), fn('matchLocalDayKey'), fn('matchDayBucket'), fn('isFinishedMatch'), fn('trDbEnd'), fn('trDayWords'), fn('trPxAfterTitle'),
   fn('trPxAfterOf')].join('\n');
 
 // A grid element that records the page's own listeners, so a test clicks exactly what a member clicks.

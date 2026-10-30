@@ -84,6 +84,20 @@ except where a ruling below says otherwise. Colours are foundation tokens (`foun
 - **Market Signal drawer (review):** no explainer paragraph; a source without data is not drawn (no "—" rows, no empty bars);
   a group with no rows is not drawn; nothing at all → one grey line `No market signal for this match yet`. Caret ▾ closed /
   ▴ open (180° turn), white, font stack `'Hanken Grotesk', sans-serif` (system-ui drew a dot).
+- **Day tabs, date bar, move-view head (founder 2026-10-30, matches-day-tabs-datebar-drift; supersedes TEN-179's
+  2026-09-09 `yesterday · today · +1 · +2` rail and the tabs keyed on the feed's Berlin `date`).** A match belongs to the
+  **local calendar day of its start instant in the member zone** (`matchLocalDayKey`: `newsTz`, the start through
+  `apiStartMs`); a record with no start (no time, or api-tennis's 02:00Z placeholder) keeps its feed date. The tabs, the
+  Today divider, Completed and every `matchDayBucket` reader (Trading Report, Series) use that one rule. **Today under
+  Upcoming** = today's cards, then a divider for the next local day and that day's cards — the same cards as its own tab;
+  no next-day fixtures, no divider (`mxTodayPreview`). The time sort orders by the start instant. **Date bar = three
+  days:** Upcoming `Today · +1 · +2` (Today leftmost), Completed `−2 · −1 · Today` (Today rightmost); ‹ › page one day at a
+  time through every rail slot (−3 … +3), the window sliding to keep the selected day on screen (`mxRailWindow`). **A day
+  the feed holds no fixture for** (Today and later) reads "Order of play for <Sat 31 Oct> isn’t published yet." and its
+  header Updated and Live · loaded show the last pipeline run (`build-info.json` `data.builtAt`), never a dash. **Move
+  view head:** one line — surface · event · round, then OPEN / NOW / MOVE over their columns — with no start time (a live
+  card keeps its LIVE word); the default head is unchanged. **Test:** `test-matches-day-tabs.mjs` (a 00:30-local start
+  lands on the next day's tab; mutants: feed-date rule, no preview, the four-day rail, a wrapping head).
 - **Search shows both views (founder 2026-10-12, supersedes TEN-95's "the upcoming/completed split still applies"):** a
   typed player name drops the date (TEN-95) AND the Upcoming / Completed split, so the player's upcoming and completed
   matches on the board show together in either view. The active view's group comes first: Upcoming → upcoming / live

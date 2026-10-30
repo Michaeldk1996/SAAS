@@ -12,7 +12,7 @@ TEN-151 / TEN-192 rulings that still stand.
 
 ## Slate and status
 - **Pre-match = Today's Matches → Upcoming for the day** (Today or Tomorrow): `matchDayBucket(m)` (by date, member's
-  calendar day — not the frozen `m.day`), finished out (`isFinishedMatch`: a match leaves on the first matches.json
+  calendar day of the start instant since 2026-10-30 — not the frozen `m.day`; the board's next-day preview under Today is not part of the Trading Report's Today), finished out (`isFinishedMatch`: a match leaves on the first matches.json
   with its final score), sorted on `m.time` — exactly `getFiltered()` with no filters. A match the Live feed shows
   underway is a Live row, not a pre-match row, even before matches.json flags it. **Test:** "Data 2" (rows = the
   board's list in its order; a match flips when the feed shows it; a stale `m.day` does not move it).

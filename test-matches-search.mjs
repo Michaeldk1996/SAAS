@@ -27,6 +27,7 @@ const api = new Function(`
   const oddsGap = () => 0, upsetScore = () => 0, moveScore = () => 0, marketWrongScore = () => 0, closingScore = () => 0, moveNowScore = () => 0;
   ${slice('isFinishedMatch')}
   ${slice('crossDateSearch')}
+  ${slice('mxTodayPreview')}
   ${slice('getFiltered')}
   return { state, set board(v){ matches = v; }, getFiltered };
 `)();
@@ -69,7 +70,9 @@ test('both views list the same matches for any search; a live match counts as up
 
 // Mutation: the split dropped for every list, not only under a search.
 test('without a search the day and the Upcoming / Completed split still apply', () => {
-  assert.deepEqual(run('upcoming', '').sort(), ['b-r16', 'f-live']);
+  // founder 2026-10-30: Today under Upcoming previews the next local day below its divider (same cards as its own tab)
+  assert.deepEqual(run('upcoming', '').sort(), ['b-qf', 'b-r16', 'f-live', 'z-r16']);
+  assert.deepEqual(run('upcoming', '', { day: 'tomorrow' }).sort(), ['b-qf', 'z-r16'], 'the next day\'s own tab = the preview');
   assert.deepEqual(run('completed', '', { day: 'yesterday' }).sort(), ['b-r32', 'f-old', 'z-r32']);
   assert.deepEqual(run('completed', ''), ['t-done'], 'Completed on today = only today\'s finished match');
 });

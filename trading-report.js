@@ -300,7 +300,12 @@ window.SfCountryIoc = (function () {
   function tmSlate(day) {
     var arr = Array.isArray(_matches) ? _matches : [];
     return arr.filter(function (m) { return m && tmBucket(m) === day && !tmFinished(m); })
-      .sort(function (a, b) { return String(a.time || '').localeCompare(String(b.time || '')); });
+      .sort(function (a, b) {
+        // by the start instant, as the Matches board (founder 2026-10-30: a local day spans two feed dates)
+        var ta = (typeof cardStartMs === 'function') ? cardStartMs(a) : NaN, tb = (typeof cardStartMs === 'function') ? cardStartMs(b) : NaN;
+        if (isFinite(ta) && isFinite(tb) && ta !== tb) return ta - tb;
+        return String(a.time || '').localeCompare(String(b.time || ''));
+      });
   }
   function isMatchLive(m) {
     if (_underway) return !!(m.p1Key && m.p2Key && _underway[pairKey(m.p1Key, m.p2Key)]);
