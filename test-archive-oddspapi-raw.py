@@ -93,6 +93,27 @@ check('startTime is the fallback',
       raw.start_of({'fixtureId': 'x', 'startTime': '2026-09-01T10:00:00Z',
                     'trueStartTime': None}).minute, 0)
 
+# 5. A transport failure mid-body is one failed call, never a crashed run (29 Oct 2026:
+#    http.client.IncompleteRead escaped api_get and ended the daily archive).
+import http.client, urllib.request as _ur
+class _CutBody:
+    def __init__(self, exc): self.exc = exc
+    def __enter__(self): return self
+    def __exit__(self, *a): return False
+    def read(self): raise self.exc
+_real = _ur.urlopen
+try:
+    for exc in (http.client.IncompleteRead(b'x' * 10), ConnectionResetError('reset'),
+                http.client.RemoteDisconnected('gone')):
+        _ur.urlopen = lambda req, timeout=None, _e=exc: _CutBody(_e)
+        try:
+            got = raw.api_get('/v4/historical-odds', {'fixtureId': 'f1'}, 'k', raw=True)
+        except Exception as e:
+            got = ('raised', type(e).__name__)
+        check(f'api_get turns {type(exc).__name__} into (None, its name)', got, (None, type(exc).__name__))
+finally:
+    _ur.urlopen = _real
+
 print()
 if FAILED:
     print(f'{len(FAILED)} FAILED: {FAILED}')

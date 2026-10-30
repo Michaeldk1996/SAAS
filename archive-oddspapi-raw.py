@@ -66,6 +66,7 @@ environment (or .env for the odds key). Secrets are never printed.
 import argparse
 import collections
 import gzip
+import http.client
 import io
 import json
 import os
@@ -139,6 +140,12 @@ def api_get(path, params, key, timeout=180, raw=False):
         return None, e.code
     except (urllib.error.URLError, TimeoutError, ValueError) as e:
         return None, str(e)
+    except (http.client.HTTPException, ConnectionError) as e:
+        # A body cut off mid-read (IncompleteRead, 29 Oct 2026: 423,007 bytes of a
+        # chunked payload, then the connection dropped) or a reset socket is a
+        # transport failure for THIS call: counted, and the fixture is pulled again
+        # next run. Before, it escaped and killed the whole archive run.
+        return None, type(e).__name__
 
 
 def meter(key, when, get=None):
