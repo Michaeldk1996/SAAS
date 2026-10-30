@@ -1,0 +1,80 @@
+name: drops-scope
+# Telegram drop bots: ATP-only POSTING scope (founder task "telegram-bot-scope", 2026-10-30). tools/drops-scope.sql.
+#   install  the throwaway-Postgres test first, then apply tools/drops-scope.sql (additive, idempotent: a schema, three
+#            tables, a BEFORE INSERT trigger on each bot's alerts table, a 1-min pg_cron re-check), then write the
+#            api-tennis fixture list once so the bots never start on an empty list, then the read-back.
+#   report   the read-back only: fixtures by type, verdicts and deliveries over the last 24 h (counts, no player data).
+#   rollback drop the two triggers and the re-check job; every alert is then posted exactly as before.
+# Main only. No bot function, no existing column and no Telegram secret is touched.
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        type: choice
+        options: [report, install, rollback]
+        default: report
+permissions:
+  contents: read
+concurrency:
+  group: drops-scope
+  cancel-in-progress: false
+jobs:
+  scope:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      MODE: ${{ inputs.mode }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '24' }
+      - name: SQL test (throwaway Postgres)
+        if: inputs.mode == 'install'
+        run: python3 tools/test-drops-scope-sql.py
+      - name: Apply / roll back / read back
+        run: |
+          python3 - <<'PY'
+          import json, os, re, sys, urllib.request, urllib.error
+          ref = re.sub(r'^https://([^.]+)\..*$', r'\1', os.environ['SUPABASE_URL'].strip())
+          def sql(q):
+              req = urllib.request.Request(f'https://api.supabase.com/v1/projects/{ref}/database/query',
+                  data=json.dumps({'query': q}).encode(), headers={'Authorization': 'Bearer ' + os.environ['SUPABASE_ACCESS_TOKEN'],
+                  'Content-Type': 'application/json', 'User-Agent': 'drops-scope'})
+              try:
+                  with urllib.request.urlopen(req, timeout=120) as r: return r.status, json.loads(r.read() or b'null')
+              except urllib.error.HTTPError as e: return e.code, e.read()[:600].decode('utf8', 'replace')
+          mode = os.environ['MODE']
+          if mode == 'install':
+              st, r = sql(open('tools/drops-scope.sql').read()); print('apply HTTP', st)
+              if st >= 400: print(r); sys.exit(1)
+          if mode == 'rollback':
+              st, r = sql("drop trigger if exists drops_scope_scope on ten280_bot.alerts; drop trigger if exists drops_scope_scope on ten287_bot.alerts; "
+                          "select cron.unschedule('drops-scope-recheck') where exists (select 1 from cron.job where jobname = 'drops-scope-recheck');")
+              print('rollback HTTP', st, r if st >= 400 else '')
+              if st >= 400: sys.exit(1)
+          st, r = sql("select event_object_schema || '.' || event_object_table t from information_schema.triggers where trigger_name = 'drops_scope_scope'")
+          print('triggers:', r)
+          if mode == 'install' and (st >= 400 or len(r or []) != 2): print('::error::the two scope triggers are not both installed'); sys.exit(1)
+          PY
+      - name: Write the fixture list once
+        if: inputs.mode == 'install'
+        env:
+          API_TENNIS_KEY: ${{ secrets.API_TENNIS_KEY }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+        run: node tools/drops-scope-fixtures.mjs
+      - name: Read-back
+        if: inputs.mode != 'rollback'
+        run: |
+          python3 - <<'PY'
+          import json, os, re, urllib.request, urllib.error
+          ref = re.sub(r'^https://([^.]+)\..*$', r'\1', os.environ['SUPABASE_URL'].strip())
+          req = urllib.request.Request(f'https://api.supabase.com/v1/projects/{ref}/database/query',
+              data=json.dumps({'query': 'select drops_scope.report(24) r'}).encode(), headers={'Authorization': 'Bearer ' +
+              os.environ['SUPABASE_ACCESS_TOKEN'], 'Content-Type': 'application/json', 'User-Agent': 'drops-scope'})
+          try:
+              with urllib.request.urlopen(req, timeout=120) as r: print(json.dumps(json.loads(r.read())[0]['r'], indent=1))
+          except urllib.error.HTTPError as e: print('read-back HTTP', e.code, e.read()[:400].decode('utf8', 'replace'))
+          PY

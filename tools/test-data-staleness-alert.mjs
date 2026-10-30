@@ -109,7 +109,7 @@ ok(/cron: '\*\/15 \* \* \* \*'/.test(y), 'scheduled every 15 min');
 ok(/workflows: \['BSP data pipeline', 'BSP oddspapi post-match archive'\]/.test(y), 'also rides on the two pg_cron-pinged workflows (schedule is throttled here)');
 ok(/if: github\.ref == 'refs\/heads\/main'/.test(y) && /ref: main/.test(y), 'runs from main only');
 ok(/cancel-in-progress: false/.test(y), 'one pass at a time, never cut off (so each pass restores the last save)');
-ok(/node tools\/data-staleness-alert\.mjs/.test(y) && /TELEGRAM_BOT_TOKEN: \$\{\{ secrets\.TELEGRAM_BOT_TOKEN \}\}/.test(y) && /TELEGRAM_CHAT_ID: \$\{\{ secrets\.TELEGRAM_CHAT_ID \}\}/.test(y),
+ok(/node tools\/data-staleness-alert\.mjs/.test(y) && /TELEGRAM_BOT_TOKEN: \$\{\{ secrets\.TELEGRAM_BOT_TOKEN \}\}/.test(y) && /TELEGRAM_CHAT_ID: \$\{\{ secrets\.TELEGRAM_PIPELINE_CHAT_ID \|\| secrets\.TELEGRAM_CHAT_ID \}\}/.test(y),
   'the existing Telegram secrets');
 ok(/SITE_URL: https:\/\/michaeldk1996\.github\.io\/SAAS\n/.test(y), 'reads the live site');
 const restore = y.slice(y.indexOf('actions/cache/restore@v4')), save = y.slice(y.indexOf('actions/cache/save@v4'));

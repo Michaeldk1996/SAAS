@@ -66,6 +66,7 @@ jobs:
           # TEN-270 post-match dispatcher: the PAT the pg_cron job dispatches with.
           # Stored in Vault as gh_postmatch_dispatch_pat; never printed.
           POSTMATCH_DISPATCH_PAT: ${{ secrets.POSTMATCH_DISPATCH_PAT }}
+          TELEGRAM_PIPELINE_CHAT_ID: ${{ secrets.TELEGRAM_PIPELINE_CHAT_ID }}
         run: |
           python3 - <<'PY'
           import json, os, sys, urllib.parse, urllib.request, urllib.error
@@ -136,12 +137,27 @@ jobs:
                   if st >= 400: print(f"::warning::post-match PAT not stored in Vault (HTTP {st})")
               else:
                   print("POSTMATCH_DISPATCH_PAT not set: the Vault secret gh_postmatch_dispatch_pat is left exactly as it is")
-              # The alarm's Telegram route is the Superbet drop-bot chat (Vault
-              # ten287_telegram_*, founder 2026-09-27 TEN-295 item 3), stored by the
-              # TEN-287 bot install — this action never writes it.
+              # The alarm's Telegram route (telegram-bot-scope, founder 2026-10-30): the pipeline
+              # chat once Vault holds pipeline_telegram_chat_id (copied here from the repo secret
+              # TELEGRAM_PIPELINE_CHAT_ID when it exists), else the Superbet drop-bot chat (Vault
+              # ten287_telegram_*, stored by the TEN-287 bot install — this action never writes it).
+              pc = (os.environ.get("TELEGRAM_PIPELINE_CHAT_ID") or "").strip()
+              if pc:
+                  lit = "'" + pc.replace("'", "''") + "'"
+                  st, r = sql("delete from vault.secrets where name = 'pipeline_telegram_chat_id'; "
+                              f"select vault.create_secret({lit}, 'pipeline_telegram_chat_id', "
+                              "'telegram-bot-scope: pipeline/health alert chat');")
+                  print(f"vault pipeline_telegram_chat_id store -> HTTP {st}")
+                  if st >= 400: print(f"::warning::pipeline chat not stored in Vault (HTTP {st}); alerts keep the drop-bot chat")
+              else:
+                  print("TELEGRAM_PIPELINE_CHAT_ID not set: health alerts keep their current chat")
               st, r = sql(open("oddspapi-postmatch-pinger.sql").read())
               print(f"oddspapi-postmatch-pinger.sql apply HTTP {st}")
               if st >= 400: print(f"::warning::oddspapi-postmatch-pinger.sql not applied (HTTP {st})")
+              # the collector watchdog reads the same route (idempotent re-apply; refuses without its heartbeat table)
+              st, r = sql(open("ten216-collector-watchdog.sql").read())
+              print(f"ten216-collector-watchdog.sql apply HTTP {st}")
+              if st >= 400: print(f"::warning::ten216-collector-watchdog.sql not applied (HTTP {st})")
           if act in ("schema", "verify"):
               pk = os.environ["SUPABASE_PUBLISHABLE_KEY"]
               st, r = call(f"{url}/rest/v1/kibl_now_price?select=card_key&limit=1", key=pk)

@@ -120,6 +120,9 @@ begin
   begin
     select decrypted_secret into tok from vault.decrypted_secrets where name = 'ten287_telegram_bot_token' limit 1;
     select decrypted_secret into chat from vault.decrypted_secrets where name = 'ten287_telegram_chat_id' limit 1;
+    -- telegram-bot-scope (founder 2026-10-30): health alerts go to the pipeline chat once its Vault secret exists;
+    -- until then the current route above (the Superbet drop-bot chat) is kept, never dropped.
+    chat := coalesce((select nullif(trim(decrypted_secret), '') from vault.decrypted_secrets where name = 'pipeline_telegram_chat_id' limit 1), chat);
     if tok is null or length(trim(tok)) = 0 or chat is null or length(trim(chat)) = 0 then
       insert into public.postmatch_alert_log (condition, kind, message, delivered)
       values (p_condition, p_kind, p_text, 'unsent: telegram secret missing in vault');

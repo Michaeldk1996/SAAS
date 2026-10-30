@@ -329,7 +329,7 @@ check('TEN-449 template: dispatch inputs cover weekly 0/2 and 1/2, the re-read s
 check('TEN-449 template: the failure alert posts the run link to Telegram from secrets, never printing a secret', () => {
   const a = stepRun(tpl, 'Alert on failure');
   assert.ok(/- name: Alert on failure\n\s+if: failure\(\)/.test(tpl));
-  assert.ok(/TELEGRAM_BOT_TOKEN: \$\{\{ secrets\.TELEGRAM_BOT_TOKEN \}\}/.test(tpl) && /TELEGRAM_CHAT_ID: \$\{\{ secrets\.TELEGRAM_CHAT_ID \}\}/.test(tpl));
+  assert.ok(/TELEGRAM_BOT_TOKEN: \$\{\{ secrets\.TELEGRAM_BOT_TOKEN \}\}/.test(tpl) && /TELEGRAM_CHAT_ID: \$\{\{ secrets\.TELEGRAM_PIPELINE_CHAT_ID \|\| secrets\.TELEGRAM_CHAT_ID \}\}/.test(tpl));
   assert.ok(/actions\/runs\/\$\{\{ github\.run_id \}\}/.test(a), 'run link');
   assert.ok(!/(echo|printf)[^\n]*\$\{?TELEGRAM_(BOT_TOKEN|CHAT_ID)/.test(a) && !/set -x/.test(tpl), 'a secret is echoed');
   assert.ok(!/(echo|printf)[^\n]*\$\{?API_TENNIS_KEY/.test(tpl));

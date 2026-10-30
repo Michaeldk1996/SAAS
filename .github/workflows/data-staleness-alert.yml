@@ -58,7 +58,7 @@ jobs:
           SITE_URL: https://michaeldk1996.github.io/SAAS
           STATE_FILE: .data-staleness-alert/state.json
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_PIPELINE_CHAT_ID || secrets.TELEGRAM_CHAT_ID }}
         run: node tools/data-staleness-alert.mjs
       - name: Save the alert just sent
         if: steps.alert.outputs.save == 'true'

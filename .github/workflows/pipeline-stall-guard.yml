@@ -71,7 +71,7 @@ jobs:
           STALL_GUARD_LOG_REPO: ${{ vars.STALL_GUARD_LOG_REPO || 'Michaeldk1996/stennisfy-ops' }}
           STALL_GUARD_ISSUE: ${{ vars.STALL_GUARD_ISSUE }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_PIPELINE_CHAT_ID || secrets.TELEGRAM_CHAT_ID }}
           # founder 2026-10-13: also cancel a publish.yml run stuck `waiting` > 20 min, and Telegram when the live
           # site's build-info.json is > 40 min old (the watchdog's red run reaches nobody)
           SITE_URL: https://michaeldk1996.github.io/SAAS

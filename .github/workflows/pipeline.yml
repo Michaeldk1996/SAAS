@@ -143,6 +143,19 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # Telegram drop bots' ATP-only posting scope (tools/drops-scope.sql): the api-tennis fixture list the bots' alerts
+      # are matched against (yesterday .. +4 days, UTC). Early, so a later failure in the data build never leaves it
+      # stale. Best-effort: a failed write leaves the last list, and an alert it cannot match is held, never posted.
+      - name: Drop bots' api-tennis fixture list (best-effort)
+        env:
+          API_TENNIS_KEY: ${{ secrets.API_TENNIS_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+        run: |
+          t0=$(date +%s); rc=0
+          node tools/drops-scope-fixtures.mjs || rc=$?
+          node tools/step-check.mjs --step "Drop bots' api-tennis fixture list (best-effort)" --rc "$rc" --since "$t0"
+
       # The Code gate (every `npm test` command, TEN-174 / TEN-351) is .github/workflows/gate.yml since the
       # code/data split (founder 2026-10-12): it runs once per CODE commit, across machines, and publish.yml
       # publishes only gated code. This workflow builds and checks DATA; it deploys nothing itself.
@@ -616,7 +629,7 @@ jobs:
         if: failure() && hashFiles('.archive-failed') != ''
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_PIPELINE_CHAT_ID || secrets.TELEGRAM_CHAT_ID }}
         run: |
           msg="Stennisfy: Pinnacle archive gate failed · run ${GITHUB_RUN_ID} · $(date -u +%Y-%m-%dT%H:%MZ) · nothing published, the site keeps the last good data"
           if [ -z "$TELEGRAM_BOT_TOKEN" ] || [ -z "$TELEGRAM_CHAT_ID" ]; then echo "::error::archive gate failed and no Telegram secret is set: alert NOT sent"; exit 1; fi
@@ -1808,13 +1821,13 @@ jobs:
         if: always() && hashFiles('.price-alert.txt') != ''
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_PIPELINE_CHAT_ID || secrets.TELEGRAM_CHAT_ID }}
         run: node tools/price-alert-send.mjs .price-alert.txt
       - name: Alert — price coverage dropped or a join miss (Telegram; founder ruling 2026-10-18 item 5)
         if: always() && hashFiles('.coverage-alert.txt') != ''
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_PIPELINE_CHAT_ID || secrets.TELEGRAM_CHAT_ID }}
         run: node tools/price-alert-send.mjs .coverage-alert.txt
 
       # Surface failures loudly: if the pipeline could not produce a fresh
@@ -2098,7 +2111,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_PIPELINE_CHAT_ID || secrets.TELEGRAM_CHAT_ID }}
           ME_REASON: ${{ steps.me_check.outputs.reason }}
         run: node tools/market-edge-alert.mjs || echo "::error title=Market-edge alert not sent::market-edge-alert.mjs exited $? (alert only, the run stays green)"
       # "Streak already alerted": runs after Telegram answered 2xx (sent) or when an earlier run of the streak delivered
@@ -2125,5 +2138,5 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_PIPELINE_CHAT_ID || secrets.TELEGRAM_CHAT_ID }}
         run: node tools/pipeline-fail-alert.mjs

@@ -38,7 +38,7 @@ jobs:
         env:
           CHROME_BIN: google-chrome
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_PIPELINE_CHAT_ID || secrets.TELEGRAM_CHAT_ID }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           PUBLISH_RUN: ${{ github.event.workflow_run.id }}
         run: node tools/post-deploy-check.mjs --alert --expect-run "$PUBLISH_RUN"

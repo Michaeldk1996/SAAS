@@ -112,7 +112,7 @@ const y = readFileSync(join(ROOT, '.github/workflows/post-deploy-check.yml'), 'u
 ok(/workflow_run:\n\s+workflows: \['Publish site'\]\n\s+types: \[completed\]/.test(y), 'triggers on "Publish site" completing');
 ok(/if: github\.event_name == 'workflow_dispatch' \|\| github\.event\.workflow_run\.conclusion == 'success'/.test(y), 'only after a successful publish (or by hand)');
 ok(/ref: main/.test(y), 'runs the checker from main');
-ok(/node tools\/post-deploy-check\.mjs --alert --expect-run/.test(y) && /TELEGRAM_BOT_TOKEN: \$\{\{ secrets\.TELEGRAM_BOT_TOKEN \}\}/.test(y) && /TELEGRAM_CHAT_ID: \$\{\{ secrets\.TELEGRAM_CHAT_ID \}\}/.test(y),
+ok(/node tools\/post-deploy-check\.mjs --alert --expect-run/.test(y) && /TELEGRAM_BOT_TOKEN: \$\{\{ secrets\.TELEGRAM_BOT_TOKEN \}\}/.test(y) && /TELEGRAM_CHAT_ID: \$\{\{ secrets\.TELEGRAM_PIPELINE_CHAT_ID \|\| secrets\.TELEGRAM_CHAT_ID \}\}/.test(y),
   'the checker with --alert, the publish run id, and the existing Telegram secrets');
 ok(/CHROME_BIN: google-chrome/.test(y) && !/continue-on-error/.test(y) && !/\|\|\s*true/.test(y), 'Chrome on the runner; a failure fails the job (no continue-on-error)');
 console.log(`\ntest-post-deploy-check: ${pass} passed, ${fail} failed`);

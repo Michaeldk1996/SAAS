@@ -76,7 +76,7 @@ jobs:
           # TEN-179 item 4 — the single outbound alert path. Without these the run
           # still succeeds and says loudly that the alert had nowhere to go.
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_OPS_CHAT_ID: ${{ secrets.TELEGRAM_OPS_CHAT_ID }}
+          TELEGRAM_OPS_CHAT_ID: ${{ secrets.TELEGRAM_PIPELINE_CHAT_ID || secrets.TELEGRAM_OPS_CHAT_ID }}
         run: |
           if [ -z "$ODDSPAPI_KEY" ]; then
             echo "::error::ODDSPAPI_KEY secret is not set. Add it under Settings -> Secrets and variables -> Actions."

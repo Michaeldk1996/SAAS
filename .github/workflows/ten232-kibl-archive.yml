@@ -202,7 +202,7 @@ jobs:
           # A write still timing out after its 3 retries alerts the ops chat
           # (card-job-lock, founder 2026-10-28).
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_PIPELINE_CHAT_ID || secrets.TELEGRAM_CHAT_ID }}
         run: |
           # The gate applies to every AUTOMATIC firing — the schedule, and the
           # pg_cron pinger that dispatches with cadence_gate=true. A hand

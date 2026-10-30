@@ -64,6 +64,11 @@ begin
   begin
     select decrypted_secret into tok  from vault.decrypted_secrets where name = 'ten287_telegram_bot_token' limit 1;
     select decrypted_secret into chat from vault.decrypted_secrets where name = 'ten287_telegram_chat_id' limit 1;
+    -- telegram-bot-scope (founder 2026-10-30): the pipeline chat once its Vault secret exists, else the route above.
+    if exists (select 1 from vault.decrypted_secrets where name = 'pipeline_telegram_chat_id' and length(trim(decrypted_secret)) > 0) then
+      select trim(decrypted_secret) into chat from vault.decrypted_secrets where name = 'pipeline_telegram_chat_id' limit 1;
+      ch := 'pipeline-chat';
+    end if;
     if coalesce(length(trim(tok)), 0) = 0 or coalesce(length(trim(chat)), 0) = 0 then
       insert into public.ten216_watch_log (condition, kind, channel, message, delivered)
       values (p_condition, p_kind, 'none', p_text, 'unsent: no telegram secret in vault');

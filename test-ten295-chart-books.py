@@ -612,9 +612,10 @@ check("'watchdog_error'" in chk and "interval '3 hours'" in chk and 'raise warni
 check("interval '3 hours'" in chk and "'RECOVERED - " in chk, 'watchdog: repeats every 3 h while open; says RECOVERED')
 snd = wd[wd.index('function public.ten216_watch_send'):wd.index('$fn$;', wd.index('function public.ten216_watch_send'))]
 check("'ops_telegram" not in snd and "'ten287_telegram_bot_token'" in snd and "'ten287_telegram_chat_id'" in snd
+      and "'pipeline_telegram_chat_id'" in snd and "ch := 'pipeline-chat'" in snd
       and "ch text := 'ten287-drop-bot'" in snd and "'unsent: no telegram secret in vault'" in snd
       and 'raise warning' in snd and "channel" in snd,
-      'watchdog: sends to the drop-bot chat, the official ops route (TEN-295 item 3); no secret = unsent + WARNING, channel logged')
+      'watchdog: sends to the pipeline chat once stored, else the drop-bot chat (telegram-bot-scope); no secret = unsent + WARNING, channel logged')
 check("'failed: no response'" in chk and "'sent'" in chk, 'watchdog: every send is resolved against pg_net')
 check("cron.schedule('ten216-collector-watchdog', '*/10 * * * *'" in wd
       and 'exception when others then\n  raise warning' not in wd and wd.count('exception when others') == 2

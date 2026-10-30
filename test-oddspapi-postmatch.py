@@ -998,11 +998,17 @@ def route_ok(text):
     t = re.sub(r'--[^\n]*', '', text)
     i = t.index('function public.postmatch_send_alert')
     snd = t[i:t.index('$fn$;', i)]
+    # telegram-bot-scope (founder 2026-10-30): the pipeline chat first once Vault holds it, else the drop-bot chat
     return ("name = 'ten287_telegram_bot_token'" in snd and "name = 'ten287_telegram_chat_id'" in snd
+            and "name = 'pipeline_telegram_chat_id'" in snd
+            and snd.index("'ten287_telegram_chat_id'") < snd.index("'pipeline_telegram_chat_id'")
+            and "'pipeline_telegram_chat_id' limit 1), chat)" in snd
             and 'ops_telegram' not in snd)
 
 
-check('the alarm sends to the Superbet drop-bot chat, the official ops route (TEN-295 item 3)', route_ok(PINGER))
+check('the alarm sends to the pipeline chat once stored, else the Superbet drop-bot chat (telegram-bot-scope)', route_ok(PINGER))
+check('CONTROL: a sender with no pipeline-chat route is caught',
+      not route_ok(PINGER.replace("'pipeline_telegram_chat_id'", "'x_chat_id'")))
 check('CONTROL: an alarm reading the never-stored ops_telegram_* pair is caught',
       "'ten287_telegram_chat_id'" in PINGER
       and not route_ok(PINGER.replace("'ten287_telegram_chat_id'", "'ops_telegram_chat_id'")))

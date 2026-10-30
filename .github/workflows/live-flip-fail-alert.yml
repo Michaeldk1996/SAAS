@@ -36,5 +36,5 @@ jobs:
           RUN_ID: ${{ github.event.workflow_run.id || inputs.run_id }}
           ALERT_TEST: ${{ github.event_name == 'workflow_dispatch' && '1' || '' }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_PIPELINE_CHAT_ID || secrets.TELEGRAM_CHAT_ID }}
         run: node tools/live-flip-fail-alert.mjs
