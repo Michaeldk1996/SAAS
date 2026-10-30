@@ -82,8 +82,9 @@ service cloud.firestore {
     // Only the admin writes, and only what the founder types: the pick, the stake, the note (+ the identity of the match
     // and the price the drawer read). Open / Now / Close / result / status after posting / CLV / P/L are written by the
     // pipeline with the Admin SDK (tools/picks-updater.mjs), which bypasses these rules — a client can never write them.
-    // A posted pick may change only its note and stake for 10 minutes, or be voided with a reason in that window; then it
-    // is frozen. Nothing is ever deleted.
+    // Research and development (founder 2026-10-30): the admin may change a posted pick's note and stake, void it with a
+    // reason, or delete it (with its teaser) at any time — no 10-minute window, no freeze. The note has no length cap
+    // (Firestore's own 1 MiB document limit is the only bound). Server-written fields stay server-only.
     function signedIn() { return request.auth != null; }
     function isPro() {
       return signedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.plan == 'pro';
@@ -94,7 +95,7 @@ service cloud.firestore {
               'posted_at', 'stake', 'note', 'model_pct', 'status', 'void_reason', 'created_by', 'edited_at'];
     }
     function stakeOk(d) { return d.stake is number && d.stake >= 0.1 && d.stake <= 10; }
-    function noteOk(d) { return d.note is string && d.note.size() <= 2000; }
+    function noteOk(d) { return d.note is string; }
     function newPickOk(d) {
       return d.keys().hasOnly(pickClientKeys())
         && d.status in ['posted', 'draft'] && d.kind in ['match', 'outright']
@@ -102,16 +103,16 @@ service cloud.firestore {
         && d.created_by == request.auth.uid
         && (d.status == 'draft' || d.posted_at == request.time);
     }
-    function inWindow() { return resource.data.status == 'posted' && request.time < resource.data.posted_at + duration.value(10, 'm'); }
+    function postedPick() { return resource.data.status in ['posted', 'live', 'won', 'lost', 'void']; }
     function editOk() {
       let ch = request.resource.data.diff(resource.data).affectedKeys();
       return (resource.data.status == 'draft' && request.resource.data.keys().hasOnly(pickClientKeys())
                 && request.resource.data.status in ['draft', 'posted'] && stakeOk(request.resource.data) && noteOk(request.resource.data)
                 && (request.resource.data.status == 'draft'
                     || request.resource.data.posted_at == request.time))
-        || (inWindow() && ch.hasOnly(['note', 'stake', 'edited_at']) && stakeOk(request.resource.data) && noteOk(request.resource.data)
+        || (postedPick() && ch.hasOnly(['note', 'stake', 'edited_at']) && stakeOk(request.resource.data) && noteOk(request.resource.data)
                 && request.resource.data.edited_at == request.time)
-        || (inWindow() && ch.hasOnly(['status', 'void_reason', 'edited_at']) && request.resource.data.status == 'void'
+        || (postedPick() && resource.data.status != 'void' && ch.hasOnly(['status', 'void_reason', 'edited_at']) && request.resource.data.status == 'void'
                 && request.resource.data.void_reason is string && request.resource.data.void_reason.size() > 0
                 && request.resource.data.edited_at == request.time);
     }
@@ -121,7 +122,7 @@ service cloud.firestore {
                   || (resource.data.status in ['posted', 'live'] && isPro());
       allow create: if isAdmin() && newPickOk(request.resource.data);
       allow update: if isAdmin() && editOk();
-      allow delete: if false;
+      allow delete: if isAdmin();
     }
     function teaserKeys() {
       return ['kind', 'event', 'date', 'tournament', 'round', 'scheduled_at', 'surface', 'market', 'posted_at', 'stake', 'status'];
@@ -129,7 +130,7 @@ service cloud.firestore {
     match /picks_public/{id} {
       allow read: if signedIn();   // a teaser is written only when a pick is posted, never for a draft
       allow create, update: if isAdmin() && request.resource.data.keys().hasOnly(teaserKeys());
-      allow delete: if false;
+      allow delete: if isAdmin();
     }
 
     // as live: any depth under intel_notes

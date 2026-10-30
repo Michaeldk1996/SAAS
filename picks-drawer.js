@@ -105,11 +105,13 @@
     return D.m ? (D.sel === 'a' ? D.m.p1 : D.m.p2) : '';
   }
   function marketName() { return D.marketCustom ? String(D.marketCustom).trim() : D.market; }
+  // the note has no length limit (founder 2026-10-30): the count is information, never a cap
+  function noteCount(n) { return n.toLocaleString('en-GB') + (n === 1 ? ' character' : ' characters'); }
   function valid() {
     if (D.mode === 'frozen') return false;
-    if (D.mode === 'edit') return stakeOk() && String(D.note || '').length <= 2000;
+    if (D.mode === 'edit') return stakeOk();
     var p = priceNow();
-    if (!(p > 1) || !stakeOk() || D.searchOpen || String(D.note || '').length > 2000) return false;
+    if (!(p > 1) || !stakeOk() || D.searchOpen) return false;
     if (D.market === 'Outright') return !!String(D.orEvent || '').trim() && !!String(D.orSel || '').trim();
     if (!D.m) return false;
     if ((D.market === 'Games handicap' || D.market === 'Total games') && !D.marketCustom && !lineText()) return false;
@@ -173,8 +175,8 @@
   }
   function openEdit(p) {
     if (!admin() || !p) return;
-    var open = p.status === 'posted' && Date.parse(p.posted_at) + EDIT_MS > Date.now();
-    D = { mode: open ? 'edit' : 'frozen', pick: p, stake: String(p.stake), note: p.note || '', voiding: false, voidReason: '', busy: false, err: '' };
+    // founder 2026-10-30 (research and development): the admin edits any pick at any time — no 10-minute window, no freeze
+    D = { mode: 'edit', pick: p, stake: String(p.stake == null ? '' : p.stake), note: p.note || '', voiding: false, voidReason: '', deleting: false, busy: false, err: '' };
     mount();
   }
   function close() { var ov = document.getElementById('pkdOv'); if (ov) ov.remove(); D = null; document.removeEventListener('keydown', trap, true); }
@@ -226,9 +228,9 @@
     if (D.mode === 'new') return '';
     var p = D.pick, at = C.hhmm(p.posted_at), px = C.f2(p.posted_price);
     if (D.mode === 'edit') {
-      var left = Math.max(1, Math.ceil((Date.parse(p.posted_at) + EDIT_MS - Date.now()) / 60000));
-      return '<div class="pkd-ban pkd-ban--edit"><span class="pkd-dot"></span><span>Posted ' + at + ' at ' + px + ' ' + MID + ' editable for ' + left + ' more minute' + (left === 1 ? '' : 's')
-        + ' ' + MID + ' note and stake only</span><button type="button" class="pkd-void" data-pkd="voidask">Void pick…</button></div>';
+      return '<div class="pkd-ban pkd-ban--edit"><span class="pkd-dot"></span><span>' + (p.posted_at ? 'Posted ' + at + ' at ' + px : 'Draft') + ' ' + MID + ' note and stake</span>'
+        + (p.status !== 'void' && p.status !== 'draft' ? '<button type="button" class="pkd-void" data-pkd="voidask">Void pick…</button>' : '')
+        + '<button type="button" class="pkd-void" data-pkd="delask">Delete pick…</button></div>';
     }
     var fr = C.hhmm(new Date(Date.parse(p.posted_at) + EDIT_MS).toISOString());
     return '<div class="pkd-ban pkd-ban--frozen"><span class="pkd-dot"></span><span>Posted ' + at + ' at ' + px + ' ' + MID + ' the 10-minute window closed at ' + fr + '</span></div>';
@@ -348,8 +350,8 @@
   }
   function noteSection() {
     var n = String(D.note || '').length;
-    return '<div class="pkd-sec' + (D.mode === 'frozen' ? ' pkd-off' : '') + '"><div class="pkd-lab"><span class="pkd-caps">Note</span><span class="pkd-count' + (n > 1900 ? ' is-warn' : '') + '">' + n.toLocaleString('en-GB') + ' / 2,000</span></div>'
-      + '<textarea id="pkdNote" rows="6" maxlength="2000" placeholder="Why this pick — the full analysis, 6 to 10 sentences"' + (D.mode === 'frozen' ? ' disabled' : '') + '>' + esc(D.note) + '</textarea></div>';
+    return '<div class="pkd-sec' + (D.mode === 'frozen' ? ' pkd-off' : '') + '"><div class="pkd-lab"><span class="pkd-caps">Note</span><span class="pkd-count">' + noteCount(n) + '</span></div>'
+      + '<textarea id="pkdNote" rows="6" placeholder="Why this pick — the full analysis, 6 to 10 sentences"' + (D.mode === 'frozen' ? ' disabled' : '') + '>' + esc(D.note) + '</textarea></div>';
   }
   function actions() {
     var out = '';
@@ -357,9 +359,13 @@
       out += '<div class="pkd-sum"><span class="pkd-caps pkd-caps10">You post</span><span class="pkd-sum-t">' + esc(summary()) + '</span></div>';
       out += '<div class="pkd-acts"><button type="button" class="pkd-primary" data-pkd="post"' + (valid() && !D.busy ? '' : ' aria-disabled="true"') + '>' + (D.busy ? 'Posting…' : 'Post pick') + '</button>'
         + '<button type="button" class="pkd-secondary" data-pkd="draft"' + (D.busy ? ' aria-disabled="true"' : '') + '>Save as draft</button></div>';
-      out += '<span class="pkd-foot">Drafts are visible only to you and are never counted. A posted pick can be edited for 10 minutes (note and stake only) and voided with a reason; after that it is frozen.</span>';
+      out += '<span class="pkd-foot">Drafts are visible only to you and are never counted. While we are in research and development you can change a posted pick\'s note and stake, void it or delete it at any time.</span>';
     } else if (D.mode === 'edit') {
-      if (D.voiding) {
+      if (D.deleting) {
+        out += '<div class="pkd-sec"><span class="pkd-foot">Delete this pick for good? It leaves the page, the ledger and every figure. A void keeps it in the ledger.</span></div>'
+          + '<div class="pkd-acts"><button type="button" class="pkd-primary" data-pkd="dodel"' + (D.busy ? ' aria-disabled="true"' : '') + '>' + (D.busy ? 'Deleting…' : 'Delete pick') + '</button>'
+          + '<button type="button" class="pkd-secondary" data-pkd="delcancel">Cancel</button></div>';
+      } else if (D.voiding) {
         out += '<div class="pkd-sec">' + caps('Void · reason') + '<input class="pkd-in pkd-wide" id="pkdVoid" value="' + esc(D.voidReason) + '" placeholder="Why this pick is void"></div>'
           + '<div class="pkd-acts"><button type="button" class="pkd-primary" data-pkd="dovoid"' + (String(D.voidReason).trim() && !D.busy ? '' : ' aria-disabled="true"') + '>Void pick</button>'
           + '<button type="button" class="pkd-secondary" data-pkd="voidcancel">Cancel</button></div>';
@@ -394,7 +400,7 @@
     else if (id === 'pkdLineCustom') { D.lineCustom = v; D.priceTyped = ''; }
     else if (id === 'pkdPrice') D.priceTyped = v;
     else if (id === 'pkdStake') D.stake = v;
-    else if (id === 'pkdNote') { D.note = v.slice(0, 2000); var c = document.querySelector('#pkdOv .pkd-count'); if (c) { c.textContent = D.note.length.toLocaleString('en-GB') + ' / 2,000'; c.classList.toggle('is-warn', D.note.length > 1900); } refreshActs(); return; }
+    else if (id === 'pkdNote') { D.note = v; var c = document.querySelector('#pkdOv .pkd-count'); if (c) c.textContent = noteCount(D.note.length); refreshActs(); return; }
     else if (id === 'pkdBook') D.bookCustom = v;
     else if (id === 'pkdOrEvent') D.orEvent = v; else if (id === 'pkdOrSel') D.orSel = v;
     else if (id === 'pkdOrSettles') D.orSettles = v; else if (id === 'pkdOrMarket') D.orMarket = v;
@@ -415,7 +421,10 @@
     else if (act === 'line') { var parts = k.split('|'); if (parts[0]) D.lineSide = parts[0]; D.line = +parts[1]; D.lineCustom = ''; D.priceTyped = ''; }
     else if (act === 'book') { D.book = k; D.priceTyped = ''; }
     else if (act === 'refresh') { if (D.m && window.LinePrices) { delete LinePrices._cache[String(evKey(D.m))]; ensurePrices(D.m); } }
-    else if (act === 'voidask') D.voiding = true;
+    else if (act === 'voidask') { D.voiding = true; D.deleting = false; }
+    else if (act === 'delask') { D.deleting = true; D.voiding = false; }
+    else if (act === 'delcancel') D.deleting = false;
+    else if (act === 'dodel') { doDelete(); return; }
     else if (act === 'voidcancel') D.voiding = false;
     else if (act === 'post' || act === 'draft') { submit(act === 'draft'); return; }
     else if (act === 'save') { save(); return; }
@@ -432,7 +441,8 @@
     D.busy = true; D.err = ''; paint();
     PicksStore.post(buildPick(), { draft: draft }).then(done, fail);
   }
-  function save() { if (!valid()) return; D.busy = true; D.err = ''; paint(); PicksStore.edit(D.pick.id, { stake: stakeVal(), note: String(D.note || '') }).then(done, fail); }
+  function save() { if (!valid()) return; D.busy = true; D.err = ''; paint(); PicksStore.edit(D.pick.id, { stake: stakeVal(), note: String(D.note || '') }, D.pick.status).then(done, fail); }
+  function doDelete() { D.busy = true; D.err = ''; paint(); PicksStore.remove(D.pick.id).then(done, fail); }
   function doVoid() { D.busy = true; D.err = ''; paint(); PicksStore.voidPick(D.pick.id, D.voidReason).then(done, fail); }
 
   window.PicksDrawer = { openNew: openNew, openEdit: openEdit, close: close, isOpen: function () { return !!D; },

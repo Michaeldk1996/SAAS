@@ -116,7 +116,7 @@
         + '</span></span>';
     }
     return '<div class="pk-pl"><span class="pk-bar' + (picked ? ' is-on' : '') + '"></span>'
-      + '<span class="pk-av' + (dim ? ' is-loser' : '') + '">' + esc(q.initials || '') + '</span>'
+      + avHtml(q, 'pk-av' + (dim ? ' is-loser' : ''), gatedOf(p))
       + '<span class="pk-pl-n"><span class="pk-name' + (dim ? ' is-dim' : '') + '" style="font-weight:' + w + '" data-stop="1">' + esc(q.name) + '</span>'
       + (fav ? '<span class="pk-fav">FAV</span>' : '') + (lt ? '<span class="pk-line">' + esc(lt) + '</span>' : '') + '</span>'
       + score + '</div>';
@@ -152,12 +152,17 @@
       + '<span class="pk-bl-p">' + C.f2(p.posted_price) + '</span><span class="pk-bk">bet105</span></div>';
   }
   function noteText(p) { return (p.note || '') + (p.status === 'void' ? C.voidTail(p) : ''); }
-  // admin only (board 1i): "Edit · 6 min left" while the 10-minute window is open (note + stake, or void)
+  // admin only: "Edit" on every pick at any time (founder 2026-10-30, research and development — replaces board 1i's
+  // ten-minute countdown link): note + stake, void, or delete, in the drawer
   function editLink(p) {
-    if (!isAdmin() || p.status !== 'posted' || !p.posted_at) return '';
-    var left = Math.ceil((Date.parse(p.posted_at) + 600000 - Date.now()) / 60000);
-    if (!(left > 0)) return '';
-    return '<span class="pk-edit" data-act="edit" data-id="' + esc(p.id) + '" data-stop="1">Edit · ' + left + ' min left</span>';
+    if (!isAdmin() || !p || p._teaser) return '';
+    return '<span class="pk-edit" data-act="edit" data-id="' + esc(p.id) + '" data-stop="1">Edit</span>';
+  }
+  // a player's circle: the monogram, with his ATP photo over it when the pick carries his player ID (player-photos.md:
+  // one resolver, by ID, never by name). A gated card never carries a photo: under the blur it would name the pick.
+  function avHtml(q, cls, gated) {
+    var ph = !gated && q && q.id != null && q.id !== '' && typeof window.playerPhotoImg === 'function' ? window.playerPhotoImg(q.id, q.name) : '';
+    return '<span class="' + cls + '">' + esc((q && q.initials) || '') + ph + '</span>';
   }
   function footHtml(p, gated, open, pad) {
     var left = gated
@@ -173,7 +178,7 @@
   function bandPlayer(p, side) {
     var q = side === 'a' ? p.player_a : p.player_b; if (!q) return '';
     var picked = p.selection === side, fav = !C.isOutright(p) && C.favSide(p) === side, lt = picked ? C.lineTag(p) : '';
-    return '<div class="pk-bp"><span class="pk-bp-bar' + (picked ? ' is-on' : '') + '"></span><span class="pk-bp-av' + (picked ? ' is-on' : '') + '">' + esc(q.initials || '') + '</span>'
+    return '<div class="pk-bp"><span class="pk-bp-bar' + (picked ? ' is-on' : '') + '"></span>' + avHtml(q, 'pk-bp-av' + (picked ? ' is-on' : ''), gatedOf(p))
       + '<span class="pk-bp-n' + (picked ? ' is-on' : '') + '" data-stop="1">' + esc(q.name) + '</span>'
       + (fav ? '<span class="pk-fav">FAV</span>' : '') + (lt ? '<span class="pk-line">' + esc(lt) + '</span>' : '') + '</div>';
   }
@@ -259,6 +264,8 @@
   // ── analysis sheet (CHANGES 10-29 §4 + 10-30 §3) ────────────────────────────────────────────────────────────────
   function stop(label, val, cls) { return '<div class="pk-sh-st' + (cls || '') + '"><span class="pk-sh-l">' + label + '</span>' + val + '</div>'; }
   function tile(label, val, cls) { return '<div class="pk-sh-tile"><span class="pk-sh-tl">' + label + '</span><span class="pk-sh-tv' + (cls ? ' ' + cls : '') + '">' + val + '</span></div>'; }
+  // the analysis sheet's photo is the backed player's (founder 2026-10-30); a totals / outright pick backs player a
+  function pickedPlayer(p) { return (p.selection === 'b' ? p.player_b : p.player_a) || null; }
   function sheetHtml(p) {
     if (!p) return '';
     var outright = C.isOutright(p), settled = C.isSettled(p), clv = C.clvOf(p), mf = C.modelFair(p.model_pct);
@@ -267,7 +274,7 @@
     var headRow = typeTag(p) + (outright ? '' : '<span class="pk-sh-surf">' + esc(p.surface || DASH) + '</span>')
       + '<span class="pk-sh-tourn">' + esc(outright ? p.event : p.tournament) + '</span>'
       + (outright ? '' : '<span class="pk-round">' + esc(p.round || DASH) + '</span><span class="pk-sh-time">' + C.hhmm(p.scheduled_at) + '</span>')
-      + '<span class="pk-sh-r"><span class="pk-rchip pk-chip--' + chipC.kind + (settled ? '' : ' is-posted') + '">' + esc(chipC.text) + '</span><span class="pk-sh-x" data-act="sheetclose" title="Close">×</span></span>';
+      + '<span class="pk-sh-r">' + editLink(p) + '<span class="pk-rchip pk-chip--' + chipC.kind + (settled ? '' : ' is-posted') + '">' + esc(chipC.text) + '</span><span class="pk-sh-x" data-act="sheetclose" title="Close">×</span></span>';
     var meta = '<span>Posted ' + C.hhmm(p.posted_at) + ' ' + MID + ' ' + esc(C.whereText(p)) + '</span>'
       + '<span>Stake <span class="pk-sh-mv">' + esc(C.stakeText(p.stake)) + '</span></span>'
       + '<span>Stennisfy <span class="pk-sh-mv' + modelBlur + '">' + C.f2(mf) + '</span></span>'
@@ -302,7 +309,7 @@
     var analysis = (block ? '<div class="pk-sh-acap">Analysis</div>' : '')
       + '<div class="pk-sh-note' + (block ? '' : ' is-top') + '">' + esc(note || 'No analysis stored for this pick.') + '</div>';
     return '<div class="pk-sh-ov" data-act="sheetclose"><div class="pk-sh" role="dialog" aria-modal="true" aria-label="Analysis" data-stop="1">'
-      + '<div class="pk-sh-hd"><div class="pk-sh-row1">' + headRow + '</div><div class="pk-sh-bet">' + esc(C.betLine(p)) + '</div><div class="pk-sh-meta">' + meta + '</div></div>'
+      + '<div class="pk-sh-hd"><div class="pk-sh-row1">' + headRow + '</div><div class="pk-sh-betrow">' + avHtml(pickedPlayer(p), 'pk-sh-av') + '<div class="pk-sh-bet">' + esc(C.betLine(p)) + '</div></div><div class="pk-sh-meta">' + meta + '</div></div>'
       + '<div class="pk-sh-body">' + block + analysis + '</div></div></div>';
   }
   function openSheet(id) {

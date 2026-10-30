@@ -42,6 +42,16 @@ const drawerSrc = readFileSync(join(ROOT, 'picks-drawer.js'), 'utf8');
 const autofillOff = src => ['pkdPrice', 'pkdStake'].every(id => new RegExp('<input[^>]*id="' + id + '"[^>]*autocomplete="off"').test(src));
 check('drawer: autocomplete="off" on the price and stake boxes', autofillOff(drawerSrc));
 check('MUTANT caught: the price box without autocomplete="off"', !autofillOff(drawerSrc.replace(/(id="pkdPrice"[^>]*?) autocomplete="off"/, '$1')));
+// founder 2026-10-30 (research and development): the admin edits / voids / deletes any pick at any time; the note has no cap
+const pageSrc0 = readFileSync(join(ROOT, 'picks-page.js'), 'utf8');
+const editAnyTime = src => /function editLink\(p\) \{\s*if \(!isAdmin\(\) \|\| !p \|\| p\._teaser\) return '';/.test(src) && !/min left/.test(src);
+check('page: the admin Edit link is on every pick, no 10-minute window', editAnyTime(pageSrc0));
+check('MUTANT caught: Edit only on posted picks again', !editAnyTime(pageSrc0.replace("if (!isAdmin() || !p || p._teaser) return '';", "if (!isAdmin() || !p || p._teaser || p.status !== 'posted') return '';")));
+const noCap = src => !/maxlength=|2,000|\.slice\(0, 2000\)|length [<>]=? ?2000/.test(src);
+check('drawer: no note cap (no maxlength, no 2,000, no slice)', noCap(drawerSrc));
+check('MUTANT caught: the note sliced at 2,000 again', !noCap(drawerSrc.replace('D.note = v;', 'D.note = v.slice(0, 2000);')));
+const storeSrc = readFileSync(join(ROOT, 'picks-store.js'), 'utf8');
+check('store: delete removes the pick and its teaser in one batch', /function remove\(id\)[\s\S]*?b\.delete\(s\.db\.collection\('picks'\)\.doc\(id\)\);\s*b\.delete\(s\.db\.collection\('picks_public'\)\.doc\(id\)\);/.test(storeSrc));
 check('the synthetic ledger is in no deploy list', !/picks-synthetic-ledger/.test(pipe + pub + readFileSync(join(ROOT, 'tools/site-code.sh'), 'utf8')));
 
 const chrome = process.env.CHROME_BIN || ['/opt/pw-browsers/chromium', '/usr/bin/google-chrome', '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'].find(existsSync);
@@ -164,6 +174,27 @@ async function browser() {
       q('[data-sheet="p1"] .pk-star').click(); o.star = !document.querySelector('.pk-sh') || o.inner; set({ sheet: null }); return o;`);
     check('sheet: a band click opens it with the bet, the trail and the analysis', sh.open && /Berrettini to win/.test(sh.t) && /Open 1\.95 Posted 2\.02 Now 2\.10 Close —/i.test(sh.t.replace(/\s+/g, ' ').replace(/OPEN|POSTED|NOW|CLOSE/g, m => m[0] + m.slice(1).toLowerCase())) && /Analysis/i.test(sh.t), sh.t);
     check('sheet: Esc closes it, ✕ closes it, a click inside keeps it open', sh.esc && sh.x && sh.inner, JSON.stringify(sh));
+    // founder 2026-10-30: player photos on the cards and in the analysis (by player ID through playerPhotoImg, monogram under it)
+    const PH = `window.__phWas = window.playerPhotoImg; window.playerPhotoImg = (k, n) => '<img class="sf-ph" data-k="' + k + '" alt="' + n + '">';
+      const ids = { p1: [104745, 207989], p3: [206173, 208029] }; S.fixture.picks.forEach(p => { const v = ids[p.id]; if (v) { p.player_a.id = v[0]; p.player_b.id = v[1]; } });
+      set({ tab: 'upcoming', view: 'cards', sheet: null }); const o = { band: qa('[data-sheet="p1"] .pk-bp-av img.sf-ph').map(i => i.dataset.k), mono: txt(q('[data-sheet="p1"] .pk-bp-av')),
+        noId: qa('[data-sheet="p2"] .pk-bp-av img').length, pos: cs(q('[data-sheet="p1"] .pk-bp-av'), 'position') };
+      set({ sheet: 'p3' }); o.sheet = [...document.querySelectorAll('.pk-sh .pk-sh-av img.sf-ph')].map(i => i.dataset.k); o.sheetMono = txt(document.querySelector('.pk-sh .pk-sh-av'));
+      set({ sheet: null }); window.__pkPlan = 'free'; set({ tab: 'upcoming' }); o.gated = qa('.pk-band.is-gated img.sf-ph').length; o.gatedN = qa('.pk-band.is-gated').length;
+      window.__pkPlan = 'pro'; S.fixture.picks.forEach(p => { if (ids[p.id]) { p.player_a.id = null; p.player_b.id = null; } }); window.playerPhotoImg = window.__phWas; set({}); return o;`;
+    const ph = await R(PH);
+    check('cards: each player\'s photo by his ID over his monogram; no ID → monogram only', JSON.stringify(ph.band) === '["104745","207989"]' && ph.mono === 'MB TE'.split(' ')[0] && ph.noId === 0 && ph.pos === 'relative', JSON.stringify(ph));
+    check('analysis: the backed player\'s photo (Musetti, side b) beside the bet line', JSON.stringify(ph.sheet) === '["208029"]' && ph.sheetMono === 'FC', JSON.stringify(ph));
+    check('a gated (non-Pro) card carries no photo — it never names the pick', ph.gatedN > 0 && ph.gated === 0, JSON.stringify(ph));
+    const gmut = pageSrc0.replace('var ph = !gated && q &&', 'var ph = q &&');
+    check('MUTANT caught: a gated card shows the photo', gmut !== pageSrc0 && await (async () => {
+      await E(`(0, eval)(${JSON.stringify(gmut)}); PicksPage._inject(${FIXTURE}); 1`); const m = await R(PH);
+      await E(`(0, eval)(${JSON.stringify(pageSrc0)}); PicksPage._inject(${FIXTURE}); 1`); return m.gated > 0; })());
+    // MUTANT: the sheet shows player a whatever the selection → the analysis check must go red
+    const pageSrc = readFileSync(join(ROOT, 'picks-page.js'), 'utf8'), pmut = pageSrc.replace("(p.selection === 'b' ? p.player_b : p.player_a)", 'p.player_a');
+    check('MUTANT caught: the analysis photo ignores the selection', pmut !== pageSrc && await (async () => {
+      await E(`(0, eval)(${JSON.stringify(pmut)}); PicksPage._inject(${FIXTURE}); 1`); const m = await R(PH);
+      await E(`(0, eval)(${JSON.stringify(pageSrc)}); PicksPage._inject(${FIXTURE}); 1`); return JSON.stringify(m.sheet) !== '["208029"]'; })());
 
     // 1d · non-Pro: bands blurred, not clickable, PRO + unlock
     const d = await R(`window.__pkPlan = 'free'; set({ tab: 'upcoming', sheet: null });
@@ -227,6 +258,7 @@ async function browser() {
       PicksStore.post = (pick, opts) => { window.__pkCalls.push(['post', pick, opts]); return Promise.resolve('id1'); };
       PicksStore.edit = (id, patch) => { window.__pkCalls.push(['edit', id, patch]); return Promise.resolve(); };
       PicksStore.voidPick = (id, why) => { window.__pkCalls.push(['void', id, why]); return Promise.resolve(); };
+      PicksStore.remove = (id) => { window.__pkCalls.push(['remove', id]); return Promise.resolve(); };
       PicksPage.reload = () => Promise.resolve(); })()`);
     // founder 2026-10-28/30: the admin posts from the Picks page only — "+ Post a pick" at the end of the tabs row, admin
     // only (on both tabs), opening the drawer on its match search. Mutant: the button drawn for every member.
@@ -285,14 +317,22 @@ async function browser() {
       return new Promise(r => setTimeout(() => { const c = window.__pkCalls.slice(-1)[0]; PicksDrawer.openEdit(p); click('[data-pkd="voidask"]'); e.voidOff = dis('[data-pkd="dovoid"]');
         type('#pkdVoid', 'Wrong line posted'); click('[data-pkd="dovoid"]');
         setTimeout(() => r({ e, save: c, v: window.__pkCalls.slice(-1)[0] }), 50); }, 50));`);
-    check('1g edit: "Edit pick", banner "editable for 7 more minutes · note and stake only", selection locked', d4.e.title === 'Edit pick' && /editable for 7 more minutes · note and stake only/.test(d4.e.ban) && d4.e.selOff, JSON.stringify(d4.e));
+    check('1g edit (founder 2026-10-30): "Edit pick", no time window in the banner, Void + Delete offered, selection locked', d4.e.title === 'Edit pick' && /note and stake/.test(d4.e.ban) && !/editable for|minute/.test(d4.e.ban) && /Void pick…/.test(d4.e.ban) && /Delete pick…/.test(d4.e.ban) && d4.e.selOff, JSON.stringify(d4.e));
     check('1g Save changes → PicksStore.edit(id, { stake, note }) only', d4.save[0] === 'edit' && d4.save[1] === 'pk1' && JSON.stringify(Object.keys(d4.save[2]).sort()) === '["note","stake"]' && d4.save[2].stake === 1.5, JSON.stringify(d4.save));
     check('1g Void pick… needs a reason → PicksStore.voidPick(id, reason)', d4.e.voidOff && d4.v[0] === 'void' && d4.v[1] === 'pk1' && d4.v[2] === 'Wrong line posted', JSON.stringify(d4.v));
-    const d5 = await DR(`PicksDrawer.openEdit({ id: 'pk2', kind: 'match', status: 'posted', posted_at: new Date(Date.now() - 20 * 60000).toISOString(), posted_price: 2.02, stake: 1, note: 'n',
+    const d5 = await DR(`PicksDrawer.openEdit({ id: 'pk2', kind: 'match', status: 'won', posted_at: new Date(Date.now() - 2 * 86400e3).toISOString(), posted_price: 2.02, stake: 1, note: 'n',
         selection: 'b', market: 'Other', market_text: 'Tiebreak', player_a: { name: 'B. Vacherot' }, player_b: { name: 'A. Michelsen' } });
-      const f = { title: txt(q('.pkd-title')), line: txt(q('.pkd-frozen')), stakeOff: q('#pkdStake').disabled, save: !!q('[data-pkd="save"]'), body: txt(document.getElementById('pkdOv')) };
+      const f = { title: txt(q('.pkd-title')), stakeOff: q('#pkdStake').disabled, save: !!q('[data-pkd="save"]'), body: txt(document.getElementById('pkdOv')),
+        noteMax: q('#pkdNote').getAttribute('maxlength') };
+      const long = 'x'.repeat(3000); type('#pkdNote', long); f.count = txt(q('.pkd-count')); f.saveOn = !dis('[data-pkd="save"]'); click('[data-pkd="save"]');
+      f.saved = (window.__pkCalls.slice(-1)[0] || [])[2]; f.savedLen = f.saved && f.saved.note.length;
+      PicksDrawer.openEdit({ id: 'pk2', kind: 'match', status: 'won', posted_at: new Date(Date.now() - 2 * 86400e3).toISOString(), posted_price: 2.02, stake: 1, note: 'n',
+        selection: 'b', market: 'Other', market_text: 'Tiebreak', player_a: { name: 'B. Vacherot' }, player_b: { name: 'A. Michelsen' } });
+      click('[data-pkd="delask"]'); f.delAsk = txt(q('.pkd-acts')); click('[data-pkd="dodel"]'); f.del = window.__pkCalls.slice(-1)[0];
       document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); f.escClosed = !PicksDrawer.isOpen(); return f;`);
-    check('1h frozen after 10 min: "Pick · frozen", nothing can change, no Save', d5.title === 'Pick · frozen' && /nothing can change/.test(d5.line) && d5.stakeOff && !d5.save, JSON.stringify(d5).slice(0, 300));
+    check('1h (founder 2026-10-30) a settled pick two days old still opens "Edit pick" with stake and Save — no freeze', d5.title === 'Edit pick' && !d5.stakeOff && d5.save, JSON.stringify(d5).slice(0, 300));
+    check('note has no limit: no maxlength, a 3,000-character note counts "3,000 characters", saves whole', d5.noteMax === null && d5.count === '3,000 characters' && d5.saveOn && d5.savedLen === 3000, JSON.stringify({ m: d5.noteMax, c: d5.count, on: d5.saveOn, n: d5.savedLen }));
+    check('Delete pick… asks first, then PicksStore.remove(id) — delete, not void', /Delete pick/.test(d5.delAsk) && /Cancel/.test(d5.delAsk) && d5.del && d5.del[0] === 'remove' && d5.del[1] === 'pk2', JSON.stringify({ a: d5.delAsk, d: d5.del }));
     check('1h a frozen typed-market pick reads its market, never a dash ("Michelsen · Tiebreak")', /Michelsen · Tiebreak/.test(d5.body), d5.body);
     check('Esc closes the drawer (the one Esc handler)', d5.escClosed, JSON.stringify(d5).slice(0, 200));
     // MUTANT: the drawer reads the Total games side for a typed market (the Michelsen bug) — the typed-market check must go red

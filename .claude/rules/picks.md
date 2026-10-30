@@ -8,7 +8,14 @@ SIDEBAR_NAV > CHANGES_2026-10-29 > SPEC > README; reference `Picks LOCKED 2026-1
 ## Roles are real, never a preview switch (founder 2026-10-27)
 
 - **Admin** = the founder's uid, the same allowlist as `isAdmin()` in `firestore.rules` and `isBspAdmin()` (admin-config.js).
-  Only the admin posts, edits within 10 minutes (note and stake only), voids with a reason.
+  Only the admin posts. **Research and development (founder 2026-10-30):** the admin changes a pick's note and stake, voids
+  it with a reason, or deletes it (pick + teaser together) at any time; no 10-minute window, no freeze. The note has no
+  length cap. Server-written fields stay server-only.
+  - **Test:** a two-day-old settled pick opens "Edit pick" with Save and "Delete pick…"; a 3,000-character note saves whole;
+    Google's evaluator allows the admin's delete and late edit and refuses a Pro member's (`node tools/firestore-rules.mjs test`).
+- **Photos (founder 2026-10-30):** every player circle on the cards shows his photo by player ID through `playerPhotoImg`
+  over the monogram (`player-photos.md`); the analysis sheet shows the backed player's photo beside the bet line. A
+  gated (non-Pro) card never carries a photo: under the blur it would name the pick. **Test:** `tools/test-picks-page.mjs`.
 - **The admin posts ONLY from the Picks page** (founder 2026-10-30, override 1; replaces the 2026-10-28 "too"): the blue
   "+ Post a pick" button, last in the tabs row on both tabs, admin only by the store's role, opens the drawer on its match
   search. There is no "+ Pick" on Today's Matches cards or in the analysis modal header. **Test:** `tools/test-picks-page.mjs`

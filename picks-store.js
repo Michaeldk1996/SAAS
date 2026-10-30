@@ -110,14 +110,14 @@
       return b.commit().then(function () { return ref.id; });
     });
   }
-  // within 10 minutes of posting: note and stake only
-  function edit(id, patch) {
+  // note and stake, at any time (founder 2026-10-30, research and development); a draft has no teaser to update
+  function edit(id, patch, status) {
     return ready().then(function (s) {
       if (!s || !s.admin) throw new Error('Only the admin can edit a pick.');
       var d = pickOut(patch, ['note', 'stake']); d.edited_at = stamp();
       var b = s.db.batch();
       b.update(s.db.collection('picks').doc(id), d);
-      if (patch.stake != null) b.update(s.db.collection('picks_public').doc(id), { stake: patch.stake });
+      if (patch.stake != null && status !== 'draft') b.update(s.db.collection('picks_public').doc(id), { stake: patch.stake });
       return b.commit();
     });
   }
@@ -132,6 +132,17 @@
     });
   }
 
+  // delete, not void (founder 2026-10-30): the pick and its teaser go together; it leaves the ledger and every figure
+  function remove(id) {
+    return ready().then(function (s) {
+      if (!s || !s.admin) throw new Error('Only the admin can delete a pick.');
+      var b = s.db.batch();
+      b.delete(s.db.collection('picks').doc(id));
+      b.delete(s.db.collection('picks_public').doc(id));
+      return b.commit();
+    });
+  }
+
   window.PicksStore = { ready: ready, loadDay: loadDay, loadSettled: loadSettled, latestPostedAt: latestPostedAt,
-    post: post, edit: edit, voidPick: voidPick, isAdmin: isAdmin, _row: row };
+    post: post, edit: edit, voidPick: voidPick, remove: remove, isAdmin: isAdmin, _row: row };
 })();

@@ -2,7 +2,7 @@
 // Picks Task 2 — firestore.rules for the picks store, checked as text (the rules language has no local runner without the
 // Firebase emulator + Java; that run is NOT done here and is said out loud — a static check is not an emulator pass).
 // Locks: `plan` is never client-written (Pro by plan means nothing otherwise); picks / picks_public read per role; only the
-// admin writes; no computed field is client-writable; the 10-minute edit window; nothing is deleted. And the browser
+// admin writes; no computed field is client-writable; the admin edits / voids / deletes at any time (founder 2026-10-30, research and development), and no one else does; the note has no length cap. And the browser
 // side agrees: every key picks-store.js writes is a key the rules accept. Each check is shown to bite on a mutant.
 import fs from 'node:fs';
 import path from 'node:path';
@@ -39,23 +39,24 @@ function problems(rules, store, auth) {
   if (/draft/.test(read)) p.push('picks read: a draft is readable by someone other than the admin');
   if (!/allow create: if isAdmin\(\) && newPickOk/.test(picks)) p.push('picks create: not admin-only');
   if (!/allow update: if isAdmin\(\) && editOk\(\)/.test(picks)) p.push('picks update: not admin-only');
-  if (!/allow delete: if false/.test(picks)) p.push('picks: delete is not refused');
+  if (!/allow delete: if isAdmin\(\);/.test(picks)) p.push('picks: delete is not admin-only');
   if (!/get\(\/databases\/\$\(database\)\/documents\/users\/\$\(request\.auth\.uid\)\)\.data\.plan == 'pro'/.test(fnBody(rules, 'isPro'))) p.push('isPro does not read users/{uid}.plan == pro');
 
   const client = listOf(rules, 'pickClientKeys');
   if (client.length < 20) p.push('pickClientKeys not found');
   COMPUTED.forEach(k => { if (client.includes(k)) p.push(`a computed field is client-writable: ${k}`); });
-  const w = fnBody(rules, 'inWindow');
-  if (!/request\.time < resource\.data\.posted_at \+ duration\.value\(10, 'm'\)/.test(w)) p.push('the edit window is not posted_at + 10 min');
+  if (/duration\.value\(/.test(strip(rules))) p.push('a time window is back on editing (founder 2026-10-30: any time)');
+  const pp = listOf(rules, 'postedPick');
+  if (['posted', 'live', 'won', 'lost', 'void'].some(k => !pp.includes(k))) p.push('the admin cannot edit every posted pick (posted / live / won / lost / void)');
   const e = fnBody(rules, 'editOk');
   if (!/ch\.hasOnly\(\['note', 'stake', 'edited_at'\]\)/.test(e)) p.push('an edit may change more than note + stake');
   if (!/void_reason\.size\(\) > 0/.test(e)) p.push('a void does not need a reason');
   if (!/posted_price is number && d\.posted_price > 1/.test(fnBody(rules, 'newPickOk'))) p.push('a pick can be posted without a price > 1');
   if (!/d\.stake >= 0\.1 && d\.stake <= 10/.test(fnBody(rules, 'stakeOk'))) p.push('stake is not bounded 0.1–10');
-  if (!/note\.size\(\) <= 2000/.test(fnBody(rules, 'noteOk'))) p.push('note is not capped at 2,000');
+  if (/size\(\)/.test(fnBody(rules, 'noteOk')) || !/d\.note is string/.test(fnBody(rules, 'noteOk'))) p.push('the note is capped (founder 2026-10-30: no limit) or not a string');
 
   const pub = block(rules, 'match /picks_public/{id}');
-  if (!/allow read: if signedIn\(\)/.test(pub) || !/allow create, update: if isAdmin\(\)/.test(pub) || !/allow delete: if false/.test(pub)) p.push('picks_public: read signed-in / write admin / no delete not held');
+  if (!/allow read: if signedIn\(\)/.test(pub) || !/allow create, update: if isAdmin\(\)/.test(pub) || !/allow delete: if isAdmin\(\);/.test(pub)) p.push('picks_public: read signed-in / write + delete admin not held');
   const teaser = listOf(rules, 'teaserKeys');
   ['player_a', 'player_b', 'selection', 'posted_price', 'note', 'line', 'model_pct'].forEach(k => { if (teaser.includes(k)) p.push(`the teaser exposes ${k}`); });
 
@@ -73,7 +74,7 @@ function problems(rules, store, auth) {
 let fail = 0;
 const real = problems(RULES, STORE, AUTH);
 if (real.length) { fail++; console.log('  FAIL  firestore.rules / picks-store.js:\n        ' + real.join('\n        ')); }
-else console.log('  PASS  firestore.rules: plan locked, picks read per role, admin-only writes, no computed field client-writable, 10-min window, no deletes; picks-store.js writes only allowed keys');
+else console.log('  PASS  firestore.rules: plan locked, picks read per role, admin-only writes, no computed field client-writable, admin edits + deletes any time, note uncapped; picks-store.js writes only allowed keys');
 
 const MUTANTS = [
   ['blanket users write', r => r.replace(/allow create: if request\.auth != null && request\.auth\.uid == uid/, 'allow write: if request.auth != null && request.auth.uid == uid; allow create: if false')],
@@ -82,10 +83,12 @@ const MUTANTS = [
   ['drafts readable', r => r.replace("resource.data.status in ['won', 'lost', 'void'])", "resource.data.status in ['won', 'lost', 'void', 'draft'])")],
   ['any member writes picks', r => r.replace('allow create: if isAdmin() && newPickOk', 'allow create: if signedIn() && newPickOk')],
   ['clv client-writable', r => r.replace("'created_by', 'edited_at'];", "'created_by', 'edited_at', 'clv'];")],
-  ['30-minute window', r => r.replace("duration.value(10, 'm'); }", "duration.value(30, 'm'); }")],
+  ['10-minute window back', r => r.replace("function postedPick() { return resource.data.status in ['posted', 'live', 'won', 'lost', 'void']; }", "function postedPick() { return resource.data.status == 'posted' && request.time < resource.data.posted_at + duration.value(10, 'm'); }")],
+  ['note capped again', r => r.replace('function noteOk(d) { return d.note is string; }', 'function noteOk(d) { return d.note is string && d.note.size() <= 2000; }')],
+  ['a member deletes a teaser', r => r.replace(/(match \/picks_public\/\{id\} \{[\s\S]*?)allow delete: if isAdmin\(\);/, '$1allow delete: if signedIn();')],
   ['price editable in window', r => r.replace("ch.hasOnly(['note', 'stake', 'edited_at'])", "ch.hasOnly(['note', 'stake', 'edited_at', 'posted_price'])")],
   ['void without reason', r => r.replace('void_reason.size() > 0', 'void_reason.size() >= 0')],
-  ['deletes allowed', r => r.replace(/match \/picks\/\{id\} \{([\s\S]*?)allow delete: if false/, (m, a) => 'match /picks/{id} {' + a + 'allow delete: if isAdmin()')],
+  ['any member deletes a pick', r => r.replace(/match \/picks\/\{id\} \{([\s\S]*?)allow delete: if isAdmin\(\);/, (m, a) => 'match /picks/{id} {' + a + 'allow delete: if signedIn();')],
   ['teaser leaks the selection', r => r.replace("'posted_at', 'stake', 'status'];", "'posted_at', 'stake', 'status', 'selection'];")],
 ];
 let caught = 0;
