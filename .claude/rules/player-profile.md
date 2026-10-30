@@ -22,6 +22,9 @@ Newer rulings that also bind the profile: `modal-analysis.md` "Walkovers and ret
   `profiles/{key}.json` is not loaded yet is fetched, never a silent no-op with A still up. **Test:**
   `tools/test-market-edge-box.mjs` "A then B" (mutants `no-shell`, `repaint-any-key`). Measured on live data, 6 pairs × 50
   samples: 6 of 300 showed A after B was asked for before, 0 of 300 after.
+  **From another page, no list flash (founder 2026-10-30):** every open from another page (`psOpenProfile`, a match card,
+  the Match analysis header) goes through `sfGoToProfile`: the Players switch lands straight on B's loading shell; a plain
+  click on the Players tab still lands on the list. **Test:** same file, "from another page" (mutant `list-flash`).
 - **Player Profile — export parity (founder ruling 2026-08-01).** The Player Profile page
   (`buildPlayerProfileHtml`) drops three intentional enrichments the export lacks. **(1) No "Surface record"
   rail card** — the Layer #4A career + rolling-52-week per-surface card is removed; the left rail carries

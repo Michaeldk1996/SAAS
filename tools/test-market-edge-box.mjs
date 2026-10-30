@@ -22,6 +22,7 @@ if (MUT === 'no-shell') page = page.replace('  pp2ShowLoadingIfOther(key);\n  pp
 if (MUT === 'repaint-any-key') page = page.replace("\n      && (!window.PlayerProfileV2.currentKey || window.PlayerProfileV2.currentKey() === String(key))) {", ') {');
 if (MUT === 'team-as-main') page = page.replace("const main = atp.filter(x => !PP2_TEAM_EVENT.test(String(x.tournament || '')));", 'const main = atp;');
 if (MUT === 'no-pending') page = page.replace("if (_sfDbJoinSt !== 'ready' || !_sfDbJoin || !Array.isArray(rows)) return { pending: true };", "if (_sfDbJoinSt !== 'ready' || !_sfDbJoin || !Array.isArray(rows)) return null;");
+if (MUT === 'list-flash') page = page.replace("if (tab === 'players') { if (_sfProfileOpening != null) pp2ShowLoading(_sfProfileOpening); else showPlayerList(); }", "if (tab === 'players') showPlayerList();");
 if (MUT === 'box-claims-while-pending') prof = prof.replace("      : marketEmptyWhy(p.key).pending ? { headline: null, support: null, pending: true }\n", '');
 const slice = (src, from, to) => { const a = src.indexOf(from), b = src.indexOf(to, a + 1); if (a < 0 || b < 0) throw new Error('slice not found: ' + from); return src.slice(a, b); };
 
@@ -59,6 +60,25 @@ const slice = (src, from, to) => { const a = src.indexOf(from), b = src.indexOf(
   ok(repaints === 1, 'control: once B is mounted, B\'s repaint runs');
   mountedKey = '9209'; view.innerHTML = '<div class="pp2-main"><h1 class="pp2-name">G. Bueno</h1></div>';
   ok(vm.runInContext('pp2ShowLoadingIfOther("9209")', ctx) === false && /Bueno/.test(view.innerHTML), 'control: re-opening the player already shown keeps his profile');
+}
+
+// 1b · list flash (founder 2026-10-30): opening a profile from another page switches to the Players page straight onto
+// the loading shell — the list is never shown on the way. The nav handler's own Players line runs on the click.
+{
+  const navLine = (page.match(/  if \(tab === 'players'\)[^\n]*\n/) || [''])[0];
+  const code = slice(page, 'const PP2_LOADING_HTML', 'function showPlayerProfileV2(key){') + 'function showPlayerList(){ document.getElementById("playerListView").style.display = ""; const v = document.getElementById("playerProfileView"); v.style.display = "none"; v.innerHTML = ""; }\n';
+  const listView = { style: { display: '' } };
+  const view = { style: { display: 'none' }, innerHTML: '', querySelector(sel) { return sel === '.pp2-main' ? (this.innerHTML.includes('pp2-main') ? {} : null) : sel.startsWith('[data-pp2-loading=') ? (this.innerHTML.includes(sel.slice(1, -1).replace(/"/g, '"')) ? {} : null) : null; } };
+  const seen = [];
+  const ctx = { console, window: { PlayerProfileV2: { currentKey: () => null } }, ppState: { key: null } };
+  ctx.document = { getElementById: (id) => (id === 'playerProfileView' ? view : id === 'playerListView' ? listView : null),
+    querySelector: () => ({ click: () => { vm.runInContext('(function (tab) {\n' + navLine + '})("players")', ctx); seen.push(listView.style.display); } }) };
+  vm.createContext(ctx); vm.runInContext(code, ctx);
+  vm.runInContext('sfGoToProfile("9209", false)', ctx);
+  ok(navLine.includes('_sfProfileOpening') && seen[0] === 'none' && listView.style.display === 'none' && /data-pp2-loading="9209"/.test(view.innerHTML) && view.style.display === '',
+    'from another page: the Players switch lands on B\'s loading shell, the list never shows (mutant list-flash)');
+  vm.runInContext('(function (tab) {\n' + navLine + '})("players")', ctx);
+  ok(listView.style.display === '' && view.style.display === 'none', 'control: a plain click on the Players tab still lands on the list');
 }
 
 // 2 · the bridge
