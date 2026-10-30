@@ -7784,8 +7784,7 @@ async function runPipeline() {
     if (!s || !s.opening) continue;
     const vf = vigFreeFor(s.opening.p1, s.opening.p2);
     if (!vf) continue;
-    const pinBook = m.oddsMovement && m.oddsMovement.books && m.oddsMovement.books.Pinnacle;
-    const ts = (pinBook && pinBook.p1 && pinBook.p1[0] && pinBook.p1[0][0]) || null;
+    const ts = s.opening.ts || null;   // api-tennis Pinnacle first sighting (bookOpens.Pncl.seenAt)
     m.pinnacleOpen = { p1: s.opening.p1, p2: s.opening.p2, ts, vfP1: Math.round(vf.p1 * 1e4) / 1e4 };
     pinFrozen++;
     // Switch event: what was this match anchored on before Pinnacle appeared?

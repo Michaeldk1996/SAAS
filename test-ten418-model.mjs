@@ -68,7 +68,8 @@ function boot(opts = {}) {
   };
   ctx.globalThis = ctx;
   vm.createContext(ctx);
-  vm.runInContext(HELPERS + '\n' + BLOCK + '\nthis.API = { renderEdgeModel, openEdgeModel, edgeOddInput, edgeJumpLayer, edgeSharp, edgeBestSoft, edgeLayerRows, edgeParseOdd, edgeWhyText, edgeToggleLayers, edgeToggleLayer, edgeGenerate, edgeAiState, openEdgeModelTab, edgeShowAllUpcoming, get scopeAll(){ return edgeScopeAll; }, get open(){ return [edgeLayersOpen, edgeLayerOpen]; } };', ctx);
+  const block = opts.staleMin != null ? BLOCK.replace('const EDGE_PIN_STALE_MIN = null;', `const EDGE_PIN_STALE_MIN = ${opts.staleMin};`) : BLOCK;
+  vm.runInContext(HELPERS + '\n' + block + '\nthis.API = { renderEdgeModel, openEdgeModel, edgeOddInput, edgeJumpLayer, edgeSharp, edgeBestSoft, edgeLayerRows, edgeParseOdd, edgeWhyText, edgeToggleLayers, edgeToggleLayer, edgeGenerate, edgeAiState, openEdgeModelTab, edgeShowAllUpcoming, get scopeAll(){ return edgeScopeAll; }, get open(){ return [edgeLayersOpen, edgeLayerOpen]; } };', ctx);
   const api = ctx.API;
   api.render = (id = M.id) => { api.openEdgeModel(id); return els.edgeBody.innerHTML; };
   return { api, els, calls, M, E, ctx };
@@ -317,4 +318,26 @@ test('empty board: no upcoming match / not loaded yet / load failed each say so'
   b.ctx.matches = b.ctx.matches.filter(m => /^past-/.test(m.id));
   b.api.openEdgeModelTab();
   assert.match(text(b.els.edgeBody.innerHTML), /^No upcoming matches on the board right now\./);
+});
+
+// Model anchor — api-tennis Pinnacle (founder brief 2026-10-30): the Market context head names the anchor quote and the
+// pipeline's last read of it; a stale gate (threshold = Michael's, OFF until set) dashes the model price with its age.
+test('anchor label: "Pinnacle (api-tennis) · read HH:MM" from bookNow.Pncl.seenAt (the pipeline read), age on hover', () => {
+  const { api } = boot();
+  const h = api.render();
+  assert.match(h, /<span class="em-mk-anchor" title="Pipeline read 10 Oct, 04:49:51 · 10 min ago\. The model anchors to this Pinnacle quote from api-tennis\.">Pinnacle \(api-tennis\) · read <span class="em-mono">04:49<\/span><\/span>/);
+  assert.match(h, /Value layers/i, 'gate off: the full model shows');
+  const noPin = JSON.parse(JSON.stringify(FIX.m1)); delete noPin.bookNow.Pncl;
+  assert.doesNotMatch(boot({ m: noPin }).api.render(), /em-mk-anchor/, 'no api-tennis Pinnacle quote now: no anchor label');
+  assert.match(html, /^const EDGE_PIN_STALE_MIN = null;/m, 'the threshold is unset until Michael rules');
+});
+test('stale gate: with a threshold set, a Pinnacle read older than it dashes the model price and says how old', () => {
+  const old = JSON.parse(JSON.stringify(FIX.m1)); old.bookNow.Pncl.seenAt = '2026-10-10T01:50:00.000Z';   // 3h 10m before NOW
+  const { api, els } = boot({ m: old, staleMin: 60 });
+  const t = text(api.render());
+  assert.match(t, /Pinnacle quote stale \(3h 10m\)\. No model price until the next read\.$/, t);
+  assert.doesNotMatch(t, /Value layers|Model base/);
+  assert.match(text(els.edgeHeadStats.innerHTML), /Layers active — Updated —/);
+  const fresh = boot({ staleMin: 60 });   // 10 min old → priced
+  assert.match(text(fresh.api.render()), /Model base/);
 });

@@ -91,24 +91,31 @@ const OLD = {
   const pinMatch = (date, time, pts) => ({ date, time, oddsMovement: { books: { Pinnacle: series(pts) } } });
   const cet = pinMatch('2026-10-26', '14:00', [
     ['2026-10-25T18:00:00Z', 2.00, 1.85], ['2026-10-26T09:30:00Z', 1.95, 1.90], ['2026-10-26T10:30:00Z', 1.90, 1.95]]);
-  await check('pinnacleSeries CET: the close is the 09:30Z tick (old UTC read took 10:30Z, 2.5 h pre-start; fixed +2 took 18:00Z)', () => {
-    const s = price.pinnacleSeries(cet);
+  // pinnacleSeries reads api-tennis's Pinnacle quote (bookOpens.Pncl first sighting, bookNow.Pncl latest read; founder
+  // brief 2026-10-30): the cut decides whether the latest read is a pre-match line. `pncl` puts the first point in
+  // bookOpens and the chosen point in bookNow, each with its seenAt.
+  const pncl = (date, time, open, now) => ({ date, time,
+    bookOpens: { Pncl: { p1: open[1], p2: open[2], seenAt: open[0] } }, bookNow: { Pncl: { p1: now[1], p2: now[2], seenAt: now[0] } } });
+  await check('pinnacleSeries CET: a 09:30Z read is pre-match (cut 10:00Z); a 10:30Z read is not (old UTC read admitted it; fixed +2 cut both)', () => {
+    let s = price.pinnacleSeries(pncl('2026-10-26', '14:00', ['2026-10-25T18:00:00Z', 2.00, 1.85], ['2026-10-26T09:30:00Z', 1.95, 1.90]));
     assert.deepStrictEqual([s.current.p1, s.current.p2, s.closingUsed], [1.95, 1.90, true]);
+    s = price.pinnacleSeries(pncl('2026-10-26', '14:00', ['2026-10-25T18:00:00Z', 2.00, 1.85], ['2026-10-26T10:30:00Z', 1.90, 1.95]));
+    assert.deepStrictEqual([s.current.p1, s.current.p2], [2.00, 1.85], 'the post-cut read is not the line: the last pre-cut one (the first sighting) is');
   });
   await check('bookSeries CET: same cut — two pre-match ticks, not three', () =>
     assert.strictEqual(price.bookSeries(cet, 'Pinnacle').count, 2));
   // 25 Oct 01:30 Berlin = 23:30Z on the 24th → cut 20:30Z. The page's old method: 21:30Z.
-  const window = pinMatch('2026-10-25', '01:30', [
-    ['2026-10-24T12:00:00Z', 2.00, 1.85], ['2026-10-24T20:00:00Z', 1.95, 1.90], ['2026-10-24T21:00:00Z', 1.90, 1.95]]);
-  await check('pinnacleSeries 25 Oct 01:30: the close is the 20:00Z tick, not 21:00Z (cut 20:30Z)', () => {
-    const s = price.pinnacleSeries(window);
-    assert.deepStrictEqual([s.current.p1, s.current.p2], [1.95, 1.90]);
+  await check('pinnacleSeries 25 Oct 01:30: a 20:00Z read is pre-match, a 21:00Z read is not (cut 20:30Z)', () => {
+    let s = price.pinnacleSeries(pncl('2026-10-25', '01:30', ['2026-10-24T12:00:00Z', 2.00, 1.85], ['2026-10-24T20:00:00Z', 1.95, 1.90]));
+    assert.deepStrictEqual([s.current.p1, s.current.p2, s.closingUsed], [1.95, 1.90, true]);
+    s = price.pinnacleSeries(pncl('2026-10-25', '01:30', ['2026-10-24T12:00:00Z', 2.00, 1.85], ['2026-10-24T21:00:00Z', 1.90, 1.95]));
+    assert.deepStrictEqual([s.current.p1, s.current.p2], [2.00, 1.85], 'the post-cut read is not the line');
   });
-  const cest = pinMatch('2026-10-24', '14:00', [
-    ['2026-10-23T18:00:00Z', 2.00, 1.85], ['2026-10-24T08:30:00Z', 1.95, 1.90], ['2026-10-24T09:30:00Z', 1.90, 1.95]]);
-  await check('pinnacleSeries CEST: the close is the 08:30Z tick (cut 09:00Z; old UTC read 11:00Z took 09:30Z)', () => {
-    const s = price.pinnacleSeries(cest);
-    assert.deepStrictEqual([s.current.p1, s.current.p2], [1.95, 1.90]);
+  await check('pinnacleSeries CEST: a 08:30Z read is pre-match, a 09:30Z read is not (cut 09:00Z; old UTC read 11:00Z)', () => {
+    let s = price.pinnacleSeries(pncl('2026-10-24', '14:00', ['2026-10-23T18:00:00Z', 2.00, 1.85], ['2026-10-24T08:30:00Z', 1.95, 1.90]));
+    assert.deepStrictEqual([s.current.p1, s.current.p2, s.closingUsed], [1.95, 1.90, true]);
+    s = price.pinnacleSeries(pncl('2026-10-24', '14:00', ['2026-10-23T18:00:00Z', 2.00, 1.85], ['2026-10-24T09:30:00Z', 1.90, 1.95]));
+    assert.deepStrictEqual([s.current.p1, s.current.p2], [2.00, 1.85], 'the post-cut read is not the line');
   });
   await check('timingWeight: the late window is measured back from the Berlin-correct cut', () => {
     // cut 26 Oct 10:00Z, late window 12 h → edge 25 Oct 22:00Z. A tick at 22:30Z is LATE under the

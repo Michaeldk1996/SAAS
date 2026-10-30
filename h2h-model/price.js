@@ -76,20 +76,31 @@ function preMatchCutoffMs(match) {
  * that jumped implausibly far from the opening (in-play leak past the cutoff).
  * @returns { current:{p1,p2}, opening:{p1,p2}, source, closingUsed } | null
  */
+// The api-tennis Pinnacle quote ('Pncl'), as the pipeline records it: bookOpens.Pncl = the first two-sided sighting,
+// bookNow.Pncl = the latest read (seenAt = when the pipeline read it; the feed itself carries no clock). Both legs or
+// nothing; never another book. Founder brief 2026-10-30 ("Model anchor — api-tennis Pinnacle"): this replaces
+// oddsMovement.books.Pinnacle (Oddspapi plain pinnacle, not written since 2 Sep) and the bestOdds two-way path.
+function apiTennisPinnacle(match) {
+  const leg = (rec) => (rec && dec(rec.p1) && dec(rec.p2)) ? { p1: rec.p1, p2: rec.p2, ts: rec.seenAt || null } : null;
+  const open = leg(match.bookOpens && match.bookOpens.Pncl);
+  const now = leg(match.bookNow && match.bookNow.Pncl);
+  const ticks = [];
+  if (open) ticks.push(open);
+  if (now && !(open && open.ts && now.ts && Date.parse(now.ts) <= Date.parse(open.ts))) ticks.push(now);
+  return ticks;
+}
+
 function pinnacleSeries(match) {
-  const pin = match.oddsMovement && match.oddsMovement.books && match.oddsMovement.books.Pinnacle;
-  if (pin && Array.isArray(pin.p1) && Array.isArray(pin.p2)) {
-    const len = Math.min(pin.p1.length, pin.p2.length);
+  const pinTicks = apiTennisPinnacle(match);
+  if (pinTicks.length) {
     const cutoff = preMatchCutoffMs(match);
     const sane = [];      // all sane ticks
     const sanePre = [];   // sane ticks at/before the pre-match cutoff
-    for (let k = 0; k < len; k++) {
-      const a = pin.p1[k] && pin.p1[k][1];
-      const b = pin.p2[k] && pin.p2[k][1];
-      if (!saneTwoWay(a, b)) continue;
-      const tick = { p1: a, p2: b };
+    for (const t of pinTicks) {
+      if (!saneTwoWay(t.p1, t.p2)) continue;
+      const tick = { p1: t.p1, p2: t.p2, ts: t.ts };
       sane.push(tick);
-      const ts = pin.p1[k] && Date.parse(pin.p1[k][0]);
+      const ts = t.ts && Date.parse(t.ts);
       if (cutoff == null || (ts && ts <= cutoff)) sanePre.push(tick);
     }
     if (sane.length) {
@@ -108,20 +119,12 @@ function pinnacleSeries(match) {
       return {
         opening, current, closingUsed,
         source: closingUsed
-          ? 'Pinnacle (pre-match closing line)'
-          : 'Pinnacle (opening line; match in play / no clean closing tick)',
+          ? 'Pinnacle (api-tennis, latest pre-match read)'
+          : 'Pinnacle (api-tennis, first sighting; no clean later read)',
       };
     }
   }
-  // Fallback: bestOdds only if it is a genuine two-way Pinnacle line
-  const bo = match.bestOdds;
-  const sharpSet = config.value.sharpBooks;
-  if (bo && bo.p1 && bo.p2 &&
-      sharpSet.includes(bo.p1.bookmaker) && sharpSet.includes(bo.p2.bookmaker) &&
-      saneTwoWay(bo.p1.price, bo.p2.price)) {
-    const two = { p1: bo.p1.price, p2: bo.p2.price };
-    return { opening: two, current: two, closingUsed: true, source: 'bestOdds (Pinnacle two-way)' };
-  }
+  // No api-tennis Pinnacle quote on both legs = no Pinnacle line. Never another book standing in.
   return null;
 }
 

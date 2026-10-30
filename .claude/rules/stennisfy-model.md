@@ -10,7 +10,15 @@ Founder rulings: TEN-418 card 7a80b6fe, R1 review and R2 review 73f754f9 (2026-1
 - **Test:** no "sample data" anywhere on the page; a section with nothing to source is hidden, never a disclaimer.
 - **Model:** `model-output.json`, built every pipeline run by `buildModelOutput` (`bsp-pipeline.js` → `h2h-model`).
   Model base = `stage1.baseP1/P2` (Elo raw 0.3 · surface Elo 0.4 · 50/50 0.3, blended 50/50 with the Pinnacle anchor
-  `pinnacleOpen` when one is confirmed). Layers = `stage2.adjustments`, summed into `totalDeltaP1`; adjusted fair =
+  `pinnacleOpen` when one is confirmed). **The Pinnacle line is api-tennis's Pinnacle quote** (founder brief 2026-10-30):
+  `bookOpens.Pncl` (first sighting) and `bookNow.Pncl` (the pipeline's latest read), each with its `seenAt`, both legs or
+  nothing (`h2h-model/price.js` `apiTennisPinnacle`); never `oddsMovement.books.Pinnacle` (Oddspapi plain pinnacle, not
+  written since 2 Sep), never the bestOdds "Pinnacle best on both sides" path, never another book — no quote = State 3.
+  The frozen opening (`pinnacleOpen`, written once, never recomputed) takes the first sighting and its time. The
+  Market context head prints "Pinnacle (api-tennis) · read HH:MM" (`bookNow.Pncl.seenAt`, age on hover). Stale gate:
+  `EDGE_PIN_STALE_MIN` dashes the model price with "Pinnacle quote stale (Xh)" — **null (off) until the founder sets
+  it** (measured 30 Oct: the live build carries a read ~56 min old the moment it publishes). **Test:**
+  `tools/test-model-anchor-pncl.js` (+ mutants), `test-ten418-model.mjs` "anchor label" / "stale gate". Layers = `stage2.adjustments`, summed into `totalDeltaP1`; adjusted fair =
   `stage3.fair`.
 - **14 layers, one number everywhere.** **Test:** the header sentence ("Fair prices from 14 weighted layers…"), Layers
   active "N/14", "N of 14 active", the strip (14 segments) and the table (14 rows) agree on every match. A layer the

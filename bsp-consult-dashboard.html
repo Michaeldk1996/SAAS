@@ -4722,6 +4722,7 @@ window.EntryListsTab = (function(){
   .em-ai-stamp{ font-family:var(--font-nums); font-size:10.5px; color:var(--text-label); }
 
   /* Empty / gated states */
+  .em-mk-anchor{ margin-left:auto; margin-right:12px; font-size:11px; color:var(--text-label); white-space:nowrap; }
   .em-empty{ padding:26px 24px; font-size:13px; color:var(--text-label); line-height:1.6; }
   @media (max-width:900px){
     .em-page{ padding:18px 14px 60px; }
@@ -10415,6 +10416,17 @@ function edgeBestSoft(m, side){
   edgeSoftBooks(m).forEach(k => { const q = m.bookNow[k]; if (!best || q[side] > best.price) best = { key: k, name: edgeBookName(k), price: q[side], now: q, open: edgeQuote(m.bookOpens, k) }; });
   return best;
 }
+// The model's Pinnacle anchor is api-tennis's 'Pncl' quote (h2h-model/price.js apiTennisPinnacle). Its read time is the
+// pipeline's last read (bookNow.Pncl.seenAt); the feed itself carries no clock.
+const EDGE_PIN_STALE_MIN = null;   // Michael's threshold (lean 60). null = no stale gate.
+function edgePinRead(m){ const q = m && m.bookNow && m.bookNow.Pncl; return (q && q.p1 > 1 && q.p2 > 1 && q.seenAt && isFinite(Date.parse(q.seenAt))) ? q.seenAt : null; }
+function edgeAgeText(ms){ const mins = Math.max(0, Math.round(ms / 60000)); return mins < 60 ? mins + ' min' : Math.floor(mins / 60) + 'h' + (mins % 60 ? ' ' + (mins % 60) + 'm' : ''); }
+function edgeAnchorHtml(m){
+  const at = edgePinRead(m); if (!at) return '';
+  const age = Date.now() - Date.parse(at);
+  const tip = 'Pipeline read ' + (edgeClock(at, 'full') || '') + ' · ' + edgeAgeText(age) + ' ago. The model anchors to this Pinnacle quote from api-tennis.';
+  return `<span class="em-mk-anchor" title="${edgeEsc(tip)}">Pinnacle (api-tennis) · read <span class="em-mono">${edgeEsc(edgeClock(at) || '—')}</span></span>`;
+}
 function edgeNoVig(q, side){ if (!q) return null; const a = 1 / q.p1, b = 1 / q.p2; return (side === 'p1' ? a : b) / (a + b); }
 function edgeMargin(q){ return q ? ((1 / q.p1 + 1 / q.p2 - 1) * 100).toFixed(1) + '%' : '—'; }
 // Signed percentage points: true minus, one decimal, grey at 0.0, green / red by sign.
@@ -10791,7 +10803,7 @@ function edgeMarketHtml(m, e, names, keys, noModel){
   const seg = (v, l) => `<button type="button" class="em-seg-b${edgeMkView === v ? ' on' : ''}" onclick="edgeSetMkView('${v}')">${l}</button>`;
   return `
     <div class="em-card em-mk">
-      <div class="em-head"><span class="em-caps">Market context · match winner</span><div class="em-seg">${seg('odds', 'Odds')}${seg('pct', 'Implied %')}</div></div>
+      <div class="em-head"><span class="em-caps">Market context · match winner</span>${edgeAnchorHtml(m)}<div class="em-seg">${seg('odds', 'Odds')}${seg('pct', 'Implied %')}</div></div>
       <div class="em-mk-grid">${panel('p1')}${panel('p2')}</div>
       <span class="em-note">${unit}${noModel ? '' : ' · edge = model’s base probability minus the book’s no-vig probability, green = model has the player shorter than the book'}${sharp && sharp.now ? ` · ${edgeEsc(sharp.name)} margin now <span class="em-mono">${edgeMargin(sharp.now)}</span>` : ''}${softNote ? `, soft at open ${softNote}` : ''}${opened ? ` · opened <span class="em-mono">${edgeEsc(opened)}</span>` : ''}</span>
     </div>`;
@@ -11020,6 +11032,15 @@ function renderEdgeModel(id){
     noModel(); return;
   }
 
+  // Stale gate (threshold = EDGE_PIN_STALE_MIN, Michael's call): a Pinnacle quote read longer ago than that dashes the
+  // model price and says how old it is.
+  const pinAt = edgePinRead(m);
+  if (EDGE_PIN_STALE_MIN != null && pinAt && Date.now() - Date.parse(pinAt) > EDGE_PIN_STALE_MIN * 60000){
+    edgeSetHeader(null);
+    body.innerHTML = edgeMatchHeadHtml(m, e) + edgeMarketHtml(m, null, names0, keys0, true)
+      + edgeEmptyCard('Pinnacle quote stale (' + edgeAgeText(Date.now() - Date.parse(pinAt)) + '). No model price until the next read.');
+    return;
+  }
   edgeSetHeader(e);
   const names = { p1: edgePlayerName(m, e, 'p1'), p2: edgePlayerName(m, e, 'p2') };
   const keys = { p1: edgePlayerKey(m, e, 'p1'), p2: edgePlayerKey(m, e, 'p2') };

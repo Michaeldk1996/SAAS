@@ -252,7 +252,7 @@ function pinnacleAnchor(match) {
   const s = pinnacleSeries(match);
   if (s && s.opening) {
     const vf = vigFree(s.opening.p1, s.opening.p2);
-    if (vf) return { p1: s.opening.p1, p2: s.opening.p2, vfP1: vf.p1, ts: null, frozen: false };
+    if (vf) return { p1: s.opening.p1, p2: s.opening.p2, vfP1: vf.p1, ts: s.opening.ts || null, frozen: false };
   }
   return null;
 }
