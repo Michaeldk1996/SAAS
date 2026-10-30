@@ -218,7 +218,7 @@ test('step 15 §4–§5: Market Signal = ONE grid, six rows in order, a dash row
     const mxJClose = (m, who) => (m.__j ? m.__j[who] : null), cardStartMs = m => m.__start, newsTz = () => 'UTC';
     ${slice('psEsc')} ${slice('psEloNorm')} ${slice('mxOddsTxt')} ${slice('mxSurname')} ${slice('mxIsPro')}
     ${slice('mcSigReady')} ${slice('mcSigPanel')} ${slice('mcSigPair')} ${slice('mcSigImp')} ${slice('mcSigFirst')} ${slice('mcSigClock')}
-    ${slice('mcSigEloRec')} ${slice('mcSigEloP')} ${slice('mcSigFair')} ${slice('mcSigElo')} ${slice('mcSigEloTitle')} ${slice('mcSigModelP')} ${slice('mcSigBody')}
+    ${slice('mcSigEloRec')} ${slice('mcSigEloLast')} ${slice('mcSigEloStaleText')} ${slice('mcSigEloP')} ${slice('mcSigFair')} ${slice('mcSigElo')} ${slice('mcSigEloTitle')} ${slice('mcSigModelP')} ${slice('mcSigBody')}
     return { mcSigPanel, mcSigBody };`)(opts);
   const names = h => [...h.matchAll(/mc-sg-name">([^<]*)</g)].map(x => x[1]);
   const up = { id: 'u1', p1: 'A. Rublev', p2: 'R. Safiullin', surface: 'hard', _oddsLoaded: true,

@@ -8927,14 +8927,30 @@ function mcSigEloRec(name){
   const tok = parts[parts.length - 1];
   return (e.elo && e.elo[tok + '|' + parts[0][0]]) || (e.bySurnameElo && e.bySurnameElo[tok]) || null;
 }
+// Founder 2026-10-30: a player Tennis Abstract has dropped from its current report takes his LAST record
+// (elo-ratings.json `lastKnown`, fetch-elo.js), exact key only — never the surname fallback, never when the current
+// report holds him. The row says so: `stale` names him and the report's date.
+function mcSigEloLast(name){
+  const e = eloRatings || {};
+  const parts = psEloNorm(name).split(' ').filter(Boolean);
+  if (parts.length < 2 || !e.lastKnown) return null;
+  return e.lastKnown[parts[parts.length - 1] + '|' + parts[0][0]] || null;
+}
 // Elo win % for p1 on `slot` ('all' | 'hard' | 'clay' | 'grass'); null with the reason when a rating is missing.
 function mcSigElo(m, slot){
   if (!eloRatings || !eloRatings.elo) return { p: null, why: 'Elo file not loaded' };
-  const r1 = mcSigEloRec(m.p1), r2 = mcSigEloRec(m.p2);
+  const stale = [];
+  const rec = n => { const r = mcSigEloRec(n); if (r) return r; const l = mcSigEloLast(n); if (l) stale.push({ name: n, report: l.report, fetched: l.fetched }); return l; };
+  const r1 = rec(m.p1), r2 = rec(m.p2);
   if (!r1 || !r2) return { p: null, why: 'player not in the Elo file' };
   const a = r1[slot] && r1[slot].rating, b = r2[slot] && r2[slot].rating;
   if (!(a > 0) || !(b > 0)) return { p: null, why: slot === 'all' ? 'no Elo rating' : `no ${slot} rating` };
-  return { p: 100 * mcSigEloP(a, b), why: '' };
+  return { p: 100 * mcSigEloP(a, b), why: '', stale };
+}
+// "H. Rune: not in the current Tennis Abstract report — rating from its 21 Sep 2026 report (stale)".
+function mcSigEloStaleText(st){
+  const d = iso => { const x = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || ''); return x ? `${+x[3]} ${'Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec'.split(' ')[+x[2] - 1]} ${x[1]}` : null; };
+  return st.map(s => `${s.name}: not in the current Tennis Abstract report — rating from ${s.report && d(s.report) ? `its ${d(s.report)} report` : `the report we read on ${d(s.fetched) || 'an earlier date'}`} (stale)`).join('; ');
 }
 // Founder 2026-10-27: P(A) = 1 / (1 + 10^((R_B − R_A) / 400)), P(B) = 1 − P(A); no margin.
 function mcSigEloP(ra, rb){ return 1 / (1 + Math.pow(10, (rb - ra) / 400)); }
@@ -9015,7 +9031,8 @@ function mcSigBody(m){
   };
   const estRow = (label, r, src, blur) => {
     if (r.p == null) return { label, src: src + ' · ' + r.why, dash: true, blur };
-    return { label, src, dash: false, pa: r.p, oA: mcSigFair(r.p), oB: mcSigFair(100 - r.p), blur };
+    const st = r.stale && r.stale.length ? mcSigEloStaleText(r.stale) : '';
+    return { label, src: st ? src + ' · ' + st : src, dash: false, pa: r.p, oA: mcSigFair(r.p), oB: mcSigFair(100 - r.p), blur, stale: st };
   };
   const modelR = mcSigModelP(m, false);
   const rows = [
@@ -9026,7 +9043,13 @@ function mcSigBody(m){
     estRow(surfLabel, slot ? mcSigElo(m, slot) : { p: null, why: 'no match surface' }, mcSigEloTitle(slot, surfCap), false),
     estRow('Stennisfy Model', modelR, `Stennisfy model · win % → fair odds${modelR.ts ? ' · frozen ' + mcSigClock(modelR.ts) : ''}${pro ? '' : ' · Pro'}`, !pro && modelR.p != null),
   ];
+  // The stale line sits under the two Elo rows (the 96px source column has no room for a tag).
+  const eloStale = [...new Set(rows.filter(r => r.stale).map(r => r.stale))].join('; ');
   const row = r => {
+    if (r.label === surfLabel && eloStale) return rowHtml(r) + `<div class="mc-sg-stale">Elo · ${psEsc(eloStale)}</div>`;
+    return rowHtml(r);
+  };
+  const rowHtml = r => {
     const bl = r.blur ? ' is-blur' : '';
     if (r.dash) return `<div class="mc-sg-row dash"><span class="mc-sg-src" title="${psEsc(r.src)}"><span class="mc-sg-dot"></span><span class="mc-sg-name">${psEsc(r.label)}</span></span><span class="mc-sg-oa">${D}</span><span class="mc-sg-pa">${D}</span><span class="mc-sg-bar2"></span><span class="mc-sg-pb">${D}</span><span class="mc-sg-ob">${D}</span></div>`;
     return `<div class="mc-sg-row"><span class="mc-sg-src" title="${psEsc(r.src)}"><span class="mc-sg-dot"></span><span class="mc-sg-name">${psEsc(r.label)}</span></span>`
@@ -36454,6 +36477,7 @@ if(document.querySelector('.tabpage[data-page="live"]')&&document.querySelector(
   [data-page="matches"] .mc-sg-ch{ font-family:var(--font-nums); font-size:11px; color:var(--text-label); text-align:right; }
   [data-page="matches"] .mc-sg-best{ flex:none; font-family:var(--font-words); font-size:9px; font-weight:700; letter-spacing:0.08em; color:var(--pos); border:1px solid color-mix(in srgb, var(--pos) 40%, transparent); border-radius:4px; padding:1px 5px; }
   [data-page="matches"] .mc-sg-rule{ height:1px; background:var(--edge-6); margin:2px 0; }
+  [data-page="matches"] .mc-sg-stale{ font-family:var(--font-words); font-size:10.5px; line-height:1.4; color:var(--text-label); margin-top:-4px; }
   [data-page="matches"] .mc-sg-wait{ font-family:var(--font-words); font-size:11px; color:var(--text-label); }
 
   /* "3 Bets Today" promo */

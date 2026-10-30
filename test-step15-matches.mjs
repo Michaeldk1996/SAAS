@@ -126,7 +126,7 @@ test('Elo rows: P(A) = 1/(1+10^((Rb−Ra)/400)), fair odds 1/P to 2 dp, no margi
   const E = new Function(`
     let eloRatings = { elo: { 'fils|a': { all: { rating: 2034.5 }, hard: { rating: 1973.6 }, clay: { rating: 1900 } },
                               'michelsen|a': { all: { rating: 1880.7 }, hard: { rating: 1859.6 } } } };
-    ${slice('psEloNorm')} ${slice('mcSigEloRec')} ${slice('mcSigEloP')} ${slice('mcSigFair')} ${slice('mcSigElo')}
+    ${slice('psEloNorm')} ${slice('mcSigEloRec')} ${slice('mcSigEloLast')} ${slice('mcSigEloP')} ${slice('mcSigFair')} ${slice('mcSigElo')}
     return { mcSigElo, mcSigFair, mcSigEloP };`)();
   const m = { p1: 'A. Fils', p2: 'A. Michelsen' };
   const all = E.mcSigElo(m, 'all'), hard = E.mcSigElo(m, 'hard'), clay = E.mcSigElo(m, 'clay');
@@ -142,8 +142,74 @@ test('Elo rows: P(A) = 1/(1+10^((Rb−Ra)/400)), fair odds 1/P to 2 dp, no margi
     "const a = (r1[slot] && r1[slot].rating) || r1.all.rating, b = (r2[slot] && r2[slot].rating) || r2.all.rating;");
   assert.notEqual(mut, slice('mcSigElo'));
   const M = new Function(`let eloRatings = { elo: { 'fils|a': { all: { rating: 2034.5 }, clay: { rating: 1900 } }, 'michelsen|a': { all: { rating: 1880.7 } } } };
-    ${slice('psEloNorm')} ${slice('mcSigEloRec')} ${slice('mcSigEloP')} ${mut} return mcSigElo;`)();
+    ${slice('psEloNorm')} ${slice('mcSigEloRec')} ${slice('mcSigEloLast')} ${slice('mcSigEloP')} ${mut} return mcSigElo;`)();
   assert.notEqual(M(m, 'clay').p, null, 'the mutant mixes surface and overall — the real code does not');
+});
+
+test('Elo rows: a player Tennis Abstract dropped takes his LAST record, labelled stale with its report date; the current report always wins (founder 2026-10-30, Rune v Vacherot)', () => {
+  // The real shapes: Vacherot in the current report, Rune only in lastKnown (his 21 Sep report record, read 29 Sep).
+  const store = {
+    elo: { 'vacherot|v': { all: { rating: 1858 }, hard: { rating: 1809 } }, 'zverev|a': { all: { rating: 2050 }, hard: { rating: 2000 } } },
+    bySurnameElo: { vacherot: { all: { rating: 1858 }, hard: { rating: 1809 } } },
+    lastKnown: { 'rune|h': { all: { rating: 1776 }, hard: { rating: 1747 }, name: 'Holger Rune', report: '2026-09-21', fetched: '2026-09-29' },
+                 'zverev|a': { all: { rating: 1500 }, hard: { rating: 1500 }, report: '2026-01-05' },
+                 'smith|j': { all: { rating: 1600 }, report: null, fetched: '2026-08-10' } },
+  };
+  const make = (fn = slice('mcSigElo')) => new Function('store', `let eloRatings = store;
+    ${slice('psEloNorm')} ${slice('mcSigEloRec')} ${html.includes('function mcSigEloLast(') ? slice('mcSigEloLast') : ''} ${slice('mcSigEloP')} ${slice('mcSigFair')} ${fn}
+    ${html.includes('function mcSigEloStaleText(') ? slice('mcSigEloStaleText') : 'function mcSigEloStaleText(){ return ""; }'}
+    return { mcSigElo, mcSigFair, mcSigEloStaleText };`)(store);
+  const E = make();
+  const m = { p1: 'H. Rune', p2: 'V. Vacherot' };
+  const all = E.mcSigElo(m, 'all'), hard = E.mcSigElo(m, 'hard');
+  // P(A) = 1/(1+10^((1858−1776)/400)) = 38.41%; hard 1/(1+10^((1809−1747)/400)) = 41.17% — the formula unchanged.
+  assert.equal(all.p.toFixed(2), '38.41'); assert.deepEqual([E.mcSigFair(all.p), E.mcSigFair(100 - all.p)], ['2.60', '1.62']);
+  assert.equal(hard.p.toFixed(2), '41.17'); assert.deepEqual([E.mcSigFair(hard.p), E.mcSigFair(100 - hard.p)], ['2.43', '1.70']);
+  assert.deepEqual(all.stale.map(s => s.name), ['H. Rune'], 'only the dropped player is marked stale');
+  assert.equal(E.mcSigEloStaleText(all.stale), 'H. Rune: not in the current Tennis Abstract report — rating from its 21 Sep 2026 report (stale)');
+  assert.equal(E.mcSigEloStaleText([{ name: 'J. Smith', report: null, fetched: '2026-08-10' }]),
+    'J. Smith: not in the current Tennis Abstract report — rating from the report we read on 10 Aug 2026 (stale)');
+  // The current report wins: Zverev's lastKnown 1500 is never read while the report holds him.
+  const z = E.mcSigElo({ p1: 'A. Zverev', p2: 'V. Vacherot' }, 'all');
+  assert.equal(z.stale.length, 0); assert.equal(z.p.toFixed(2), (100 / (1 + Math.pow(10, (1858 - 2050) / 400))).toFixed(2));
+  // Exact key only — a different initial never borrows a dropped player's record; a player in neither file still dashes.
+  assert.equal(E.mcSigElo({ p1: 'A. Rune', p2: 'V. Vacherot' }, 'all').p, null);
+  assert.equal(E.mcSigElo({ p1: 'X. Nobody', p2: 'V. Vacherot' }, 'all').p, null);
+  // A last record without the surface still dashes the surface row (never the overall in its place).
+  assert.equal(E.mcSigElo({ p1: 'J. Smith', p2: 'V. Vacherot' }, 'hard').p, null);
+  // The card: the stale line sits under the Elo rows and the rows' hover carries it.
+  const body = slice('mcSigBody');
+  assert.match(body, /<div class="mc-sg-stale">Elo · \$\{psEsc\(eloStale\)\}<\/div>/);
+  assert.match(body, /src: st \? src \+ ' · ' \+ st : src/);
+  assert.match(html, /\.mc-sg-stale\{[^}]*color:var\(--text-label\)/);
+  // CONTROL — the pre-fix lookup (no lastKnown) dashes Rune v Vacherot.
+  const old = `function mcSigElo(m, slot){
+  if (!eloRatings || !eloRatings.elo) return { p: null, why: 'Elo file not loaded' };
+  const r1 = mcSigEloRec(m.p1), r2 = mcSigEloRec(m.p2);
+  if (!r1 || !r2) return { p: null, why: 'player not in the Elo file' };
+  const a = r1[slot] && r1[slot].rating, b = r2[slot] && r2[slot].rating;
+  if (!(a > 0) || !(b > 0)) return { p: null, why: slot === 'all' ? 'no Elo rating' : \`no \${slot} rating\` };
+  return { p: 100 * mcSigEloP(a, b), why: '' };
+}`;
+  assert.equal(make(old).mcSigElo(m, 'all').p, null, 'control: the old code dashes the row this test fills');
+});
+
+test('fetch-elo carryLastKnown: a dropped player keeps his last record with the report date; a returning, ambiguous or 2-year-old one does not', () => {
+  const { carryLastKnown } = createRequire(import.meta.url)('./fetch-elo.js');
+  const now = Date.parse('2026-10-26T23:00:00Z');
+  const prev = { generatedAt: '2026-09-29T00:11:10Z', taLastUpdate: '2026-09-21', ambiguous: ['blanch|d'],
+    elo: { 'rune|h': { all: { rating: 1776 } }, 'blanch|d': { all: { rating: 1500 } }, 'sinner|j': { all: { rating: 2297 } } },
+    names: { 'rune|h': 'Holger Rune' },
+    lastKnown: { 'old|x': { all: { rating: 1400 }, report: '2024-09-01' }, 'back|y': { all: { rating: 1600 }, report: '2026-08-01' } } };
+  const out = { elo: { 'sinner|j': { all: { rating: 2300 } }, 'back|y': { all: { rating: 1650 } } }, ambiguous: [] };
+  const lk = carryLastKnown(prev, out, now);
+  assert.deepEqual(Object.keys(lk), ['rune|h']);
+  assert.deepEqual(lk['rune|h'], { all: { rating: 1776 }, name: 'Holger Rune', report: '2026-09-21', fetched: '2026-09-29' });
+  // Carried on: the next week's report still lacks him → the same record, the same date.
+  assert.deepEqual(carryLastKnown(Object.assign({}, out, { lastKnown: lk, generatedAt: '2026-10-27' }), out, now)['rune|h'], lk['rune|h']);
+  // The committed store carries Rune's 21 Sep record.
+  const store = JSON.parse(readFileSync(join(dirname(fileURLToPath(import.meta.url)), 'elo-ratings.json'), 'utf8'));
+  for (const k of Object.keys(store.lastKnown || {})) assert.ok(!store.elo[k], `${k} is in the report AND lastKnown`);
 });
 
 test('Bets today (BETS_TODAY_TILE.md, LOCK 2026-10-30): row = selection · market + price; 3-line cap; PRO chip in both states; non-Pro rows blurred whole', () => {

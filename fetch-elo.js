@@ -40,7 +40,40 @@ function lastToken(name) {
   return p.length < 2 ? null : p[p.length - 1];
 }
 
-(async () => {
+// Founder 2026-10-30 (Rune v Vacherot): a player Tennis Abstract has dropped from its report (it drops a player with
+// no match in 12 months, so a returning player is missing until the next report lists him) keeps his LAST full
+// record here, under `lastKnown`, with the date of the report it came from — the Matches card's Elo rows read it,
+// labelled stale with that date. Nothing else reads it. Rules: a key the new report holds (or holds twice) leaves
+// lastKnown at once, so a current rating always wins; a key the previous report held twice is never carried (we
+// cannot say whose it was); an entry from a report more than LAST_KNOWN_MAX_DAYS old is dropped.
+const LAST_KNOWN_MAX_DAYS = 730;
+function carryLastKnown(prev, out, nowMs) {
+  const keep = {};
+  const add = (k, v) => { keep[k] = v; };
+  const prevLk = (prev && prev.lastKnown) || {};
+  for (const k of Object.keys(prevLk)) add(k, prevLk[k]);
+  const prevAmb = new Set((prev && prev.ambiguous) || []);
+  const prevElo = (prev && prev.elo) || {};
+  for (const k of Object.keys(prevElo)) {
+    if (prevAmb.has(k)) continue;
+    add(k, Object.assign({}, prevElo[k], {
+      name: (prev.names && prev.names[k]) || null,
+      report: prev.taLastUpdate || null,                          // TA's printed "Last update"
+      fetched: prev.generatedAt ? String(prev.generatedAt).slice(0, 10) : null,   // the day we read it
+    }));
+  }
+  const curAmb = new Set(out.ambiguous || []);
+  const res = {};
+  for (const k of Object.keys(keep).sort()) {
+    if ((out.elo && out.elo[k]) || curAmb.has(k)) continue;      // back in the report → the current rating wins
+    const d = Date.parse(keep[k].report || keep[k].fetched || '');
+    if (!Number.isFinite(d) || (nowMs - d) / 864e5 > LAST_KNOWN_MAX_DAYS) continue;
+    res[k] = keep[k];
+  }
+  return res;
+}
+
+async function main() {
   let html;
   const res = await fetch(SRC, { headers: { 'User-Agent': 'bsp-consult' } }).catch(e => null);
   if (res && res.ok) {
@@ -169,8 +202,15 @@ function lastToken(name) {
     names,
     bySurnameElo,  // fallback: unique last-token -> {all,hard,clay,grass,peak}
   };
+  let prev = null;
+  try { prev = JSON.parse(fs.readFileSync(OUT, 'utf8')); } catch (e) { prev = null; }
+  out.lastKnown = carryLastKnown(prev, out, Date.now());
+  console.log(`  lastKnown: ${Object.keys(out.lastKnown).length} players dropped from the report keep their last record.`);
   const tmp = OUT + '.tmp';
   fs.writeFileSync(tmp, JSON.stringify(out, null, 2));
   fs.renameSync(tmp, OUT);
   console.log(`Wrote elo-ratings.json (${rows} players).`);
-})();
+}
+
+if (require.main === module) main();
+module.exports = { carryLastKnown, LAST_KNOWN_MAX_DAYS };
