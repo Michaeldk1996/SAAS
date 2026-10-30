@@ -86,13 +86,24 @@ SIDEBAR_NAV > CHANGES_2026-10-29 > SPEC > README; reference `Picks LOCKED 2026-1
   **Test:** `tools/test-picks-core.mjs` (3 mutants), `tools/test-picks-page.mjs` (drawer mutant).
 - **The drawer's price and stake boxes are `autocomplete="off"`** (founder 2026-10-30: a Fils pick was posted at Jodar's
   price). **Test:** `tools/test-picks-page.mjs` (static + rendered, with a mutant).
-- **Bets today tile**: each row is its own pick — a match winner reads the selected player's surname (the reference), every
-  other market the bet line. **Test:** `test-step15-matches.mjs` (mutant: the tile reads player_a).
+- **Bets today tile** (`BETS_TODAY_TILE.md`, LOCK 2026-10-30): row = the picked player's short name · the market as posted
+  (Match winner · Games +2.5 · Total games O 22.5 · an outright's event · a typed market's own name; none stored → Match
+  winner) + the posted price; no tournament, round or time. **Never more than 3 lines**: ≤ 3 bets one row each, more → the
+  first 2 in posting order + "+N more bets →". PRO chip in both states; Pro cue "Open picks →" grey, non-Pro "Unlock
+  today's picks →" link-blue with every row blurred whole over a placeholder (the more-line readable). The rows are
+  `PicksShell.loadToday()` — the same read the rail badge counts. **Test:** `test-step15-matches.mjs` (mutants: no cap, no
+  PRO chip for Pro).
 - **Picks count badge** (SIDEBAR_NAV, replaces the new-pick dot): the Live count chip on the Picks icon showing today's
-  posted + live bets (Brussels day), hidden at 0 (`PicksShell.todayCount` / `setCount`, re-read on auth and every 5 min).
+  posted + live bets (member-zone day), hidden at 0 (`PicksShell.loadToday` / `setCount`, re-read on auth and every 5 min).
   **Test:** `tools/test-picks-page.mjs` "count badge".
-- **Report, not resolved** (open with the founder): Picks times are Brussels while Matches uses the viewer's zone; the
-  outright CLV benchmark; a ledger export; a drafts list; a Bets settled tile.
+- **Times and days read the member zone (founder 2026-10-30, override 2; replaces the package's Europe/Brussels).** Every
+  time shown (posted, start, drawer stamps) is `stennisfy.tz`, else the browser's zone — the Today's Matches rule. A pick
+  belongs to the member-zone day of its start (`PicksCore.pickDay`; an outright, with no start, keeps its stored day); today
+  is the member-zone day. The stored `date` field stays the Brussels match day (schema, written by the drawer), so every
+  stored day either side is read (`storedDaysAround`). **Test:** `tools/test-picks-core.mjs` "member zone" (16:30Z reads
+  00:30 on 31 Oct in Asia/Makassar; mutant: the day in Brussels), `tools/test-picks-page.mjs` "override 2".
+- **Report, not resolved** (open with the founder): the outright CLV benchmark; a ledger export; a drafts list; a Bets
+  settled tile; real settlement + analysis wiring for the ledger rows.
 
 ## Visuals
 

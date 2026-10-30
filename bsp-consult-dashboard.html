@@ -9586,40 +9586,50 @@ function mxStreakTileHtml(){
   }
   return `<div class="mc-story mc-story--click mc-story--nav" data-mxtile="streak" data-mxsummary="streak" role="button" tabindex="0">${head}${body}</div>`;
 }
-// README §1.3 Bets today (option 2c) — Task 3: today's picks from the picks store (picks-store.js, access by
-// firestore.rules). Pro / admin read the real picks; any other member reads the teasers (no selection, no price), so the
-// blurred span is drawn over a placeholder and the real pick never reaches a non-Pro browser. Outrights are counted but
-// not listed (board 1k).
+// Bets today tile (BETS_TODAY_TILE.md, LOCK 2026-10-30; replaces README §1.3 option 2c): today's open picks (posted ·
+// live) in the member zone, read through PicksShell.loadToday — the SAME rows the rail's Picks badge counts. Row =
+// selection · market + price (no tournament, round or time); never more than 3 lines: ≤ 3 bets one row each, more →
+// the first 2 in posting order + "+N more bets →". Pro / admin read the real picks; any other member reads the teasers
+// (no selection, no price), so each blurred row is drawn over a placeholder and the real pick never reaches the browser.
 let _mxPicks = null, _mxPicksP = null;
 function mxBetsEnsure(){
-  if (_mxPicksP || !window.PicksStore || !window.PicksCore) return;
-  const day = PicksCore.brusselsDay(new Date().toISOString());
-  _mxPicksP = PicksStore.loadDay(day).then(r => r.rows.filter(p => p.status === 'posted' || p.status === 'live'))
-    .catch(() => []).then(rows => {
-      _mxPicks = rows;
-      const el = document.querySelector('[data-mxtile="bets"]');
-      if (el) el.outerHTML = mxBetsTileHtml();
-    });
+  if (_mxPicksP || !window.PicksShell || !window.PicksCore) return;
+  _mxPicksP = PicksShell.loadToday().catch(() => []).then(rows => {
+    _mxPicks = rows;
+    const el = document.querySelector('[data-mxtile="bets"]');
+    if (el) el.outerHTML = mxBetsTileHtml();
+  });
 }
 // a new pick, a role change (sign-in) → read again
 window.mxBetsRefresh = function () { _mxPicks = null; _mxPicksP = null; mxBetsEnsure(); };
+// the market as posted: "Match winner" · "Games +3.5" · "Total games O 22.5" · an outright's event · a typed market's own
+// name (+ its line); no market stored → "Match winner"
+function mxBetMarket(p){
+  if (!p) return 'Match winner';
+  if (p.kind === 'outright') return p.event || p.market_text || 'Outright';
+  const line = p.line ? String(p.line).trim() : '';
+  if (!p.market || p.market === 'Match winner') return 'Match winner';
+  if (p.market === 'Games handicap') return 'Games' + (line ? ' ' + line : '');
+  if (p.market === 'Total games') return 'Total games' + (line ? ' ' + line.replace(/^over\s*/i, 'O ').replace(/^under\s*/i, 'U ') : '');
+  return PicksCore.marketLabel(p) + (line ? ' ' + line : '');
+}
 function mxBetsTileHtml(){
   const pro = mxIsPro();
   const picks = _mxPicks || [];
-  const listed = picks.filter(p => p.kind !== 'outright');
-  const cue = `<span class="mc-story__bethead">${pro ? '' : '<span class="mc-story__pro">PRO</span>'}<span class="mc-story__hint${pro ? '' : ' mc-story__hint--cta'}">${pro ? 'Open picks →' : 'Unlock today’s picks →'}</span></span>`;
+  const n = picks.length;
+  const cue = `<span class="mc-story__bethead"><span class="mc-story__pro">PRO</span><span class="mc-story__hint${pro ? '' : ' mc-story__hint--cta'}">${pro ? 'Open picks →' : 'Unlock today’s picks →'}</span></span>`;
   const head = `<div class="mc-story__top"><span class="mc-story__lbl">Bets today</span>${cue}</div>`;
-  const count = `<div class="mc-story__betcount"><span class="mc-story__now">${picks.length ? picks.length : '—'}</span><span class="mc-story__name">${picks.length === 1 ? 'bet today' : 'bets today'}</span></div>`;
-  // each row is its OWN pick (founder 2026-10-30): a match winner reads its selected player's surname (the reference);
-  // every other market reads the Picks page's bet line for that pick — "Michelsen · Tiebreak", "Hanfmann +2 games"
-  const sel = p => {
-    if (p._teaser || !pro) return { name: 'Pick hidden', price: '—' };
-    const name = p.market === 'Match winner' ? PicksCore.surname(PicksCore.pickedPlayer(p) && PicksCore.pickedPlayer(p).name) : PicksCore.betLine(p);
-    return { name, price: mxOddsTxt(Number(p.posted_price)) };
+  const count = `<div class="mc-story__betcount"><span class="mc-story__now">${n ? n : '—'}</span><span class="mc-story__name">${n === 1 ? 'bet today' : 'bets today'}</span></div>`;
+  const row = p => {
+    const real = pro && !p._teaser;
+    const pl = PicksCore.pickedPlayer(p);
+    const sel = real ? (PicksCore.surname(pl && pl.name) || '—') : 'Pick hidden';
+    const px = real && Number(p.posted_price) > 1 ? mxOddsTxt(Number(p.posted_price)) : '—';
+    return `<div class="mc-story__bet${real ? '' : ' is-blur'}"${real ? '' : ' aria-hidden="true"'}><span class="mc-story__betsel"><span class="mc-story__betpick">${psEsc(sel)}</span><span class="mc-story__betmkt"> · ${psEsc(mxBetMarket(p))}</span></span><span class="mc-story__betpx">${psEsc(px)}</span></div>`;
   };
-  const right = listed.length
-    ? `<div class="mc-story__betlist">${listed.map(p => { const s = sel(p); return `<div class="mc-story__bet"><span class="mc-story__betmeta">${psEsc([p.tournament || '', p.round || ''].filter(Boolean).join(' '))}</span>`
-        + `<span class="mc-story__betsel${pro ? '' : ' is-blur'}"${pro ? '' : ' aria-hidden="true"'}><span class="mc-story__betpick">${psEsc(s.name)}</span><span class="mc-story__betpx">${psEsc(s.price)}</span></span></div>`; }).join('')}</div>`
+  const shown = n > 3 ? picks.slice(0, 2) : picks;
+  const right = n
+    ? `<div class="mc-story__betlist">${shown.map(row).join('')}${n > 3 ? `<div class="mc-story__betmore">+${n - 2} more bets →</div>` : ''}</div>`
     : `<div class="mc-story__betlist mc-story__betlist--empty">${_mxPicks == null ? 'Loading…' : 'No bets posted yet today'}</div>`;
   return `<div class="mc-story mc-story--click mc-story--nav" data-mxtile="bets" data-mxsummary="bets" role="button" tabindex="0">${head}<div class="mc-story__betrow">${count}${right}</div></div>`;
 }
@@ -36407,12 +36417,13 @@ if(document.querySelector('.tabpage[data-page="live"]')&&document.querySelector(
   [data-page="matches"] .mc-story__betcount .mc-story__name{ white-space:nowrap; }
   [data-page="matches"] .mc-story__betlist{ flex:1; min-width:0; display:flex; flex-direction:column; gap:4px; border-left:1px solid color-mix(in srgb, var(--text) 8%, transparent); padding-left:14px; margin-top:2px; }
   [data-page="matches"] .mc-story__betlist--empty{ display:block; font-family:var(--font-words); font-size:12.5px; color:var(--text-label); line-height:40px; }
-  [data-page="matches"] .mc-story__bet{ display:flex; align-items:baseline; justify-content:space-between; gap:10px; }
-  [data-page="matches"] .mc-story__betmeta{ font-family:var(--font-words); font-size:12px; color:var(--text-label); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; }
-  [data-page="matches"] .mc-story__betsel{ display:inline-flex; align-items:baseline; gap:8px; flex:none; }
-  [data-page="matches"] .mc-story__betsel.is-blur{ filter:blur(5px); user-select:none; }
-  [data-page="matches"] .mc-story__betpick{ font-family:var(--font-words); font-size:12.5px; font-weight:700; color:var(--text); }
-  [data-page="matches"] .mc-story__betpx{ font-family:var(--font-nums); font-size:12.5px; font-weight:800; color:var(--text); }
+  [data-page="matches"] .mc-story__bet{ display:flex; align-items:baseline; justify-content:space-between; gap:10px; min-width:0; }
+  [data-page="matches"] .mc-story__bet.is-blur{ filter:blur(5px); user-select:none; }
+  [data-page="matches"] .mc-story__betsel{ font-family:var(--font-words); font-size:12.5px; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; }
+  [data-page="matches"] .mc-story__betpick{ font-weight:700; }
+  [data-page="matches"] .mc-story__betmkt{ font-weight:400; color:var(--text-label); }
+  [data-page="matches"] .mc-story__betpx{ font-family:var(--font-nums); font-size:12.5px; font-weight:800; color:var(--text); flex:none; }
+  [data-page="matches"] .mc-story__betmore{ font-family:var(--font-words); font-size:12px; color:var(--text-label); white-space:nowrap; }
   /* Market Signal — Upcoming grid 96 · 44 · 30 · 1fr · 30 · 44 (gap 0 8); Completed 132 · 1fr · 54 · 54 (gap 0 12) */
   [data-page="matches"] .mc-sg{ display:flex; flex-direction:column; gap:9px; }
   [data-page="matches"] .mc-sg-row{ display:grid; align-items:center; min-width:0; }

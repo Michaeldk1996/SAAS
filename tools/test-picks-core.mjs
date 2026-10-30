@@ -19,8 +19,11 @@ const SERVED = JSON.parse(fs.readFileSync(path.join(ROOT, 'tools/fixtures/picks-
 const SYN = JSON.parse(fs.readFileSync(path.join(ROOT, 'tools/fixtures/picks-synthetic-ledger.json'), 'utf8'));
 const MINUS = '−', EN = '–', DASH = '—';
 
-function load(src) {
-  const sandbox = { module: { exports: {} }, Intl, Date, Math, JSON, String, Number, Object, Array, isFinite, isNaN };
+// the member zone (founder 2026-10-30, override 2: stennisfy.tz, else the browser's). The demo rows and the reference
+// are drawn in Europe/Brussels, so the suite pins that zone; the member-zone checks below load another one.
+function load(src, tz = 'Europe/Brussels') {
+  const sandbox = { module: { exports: {} }, Intl, Date, Math, JSON, String, Number, Object, Array, isFinite, isNaN,
+    localStorage: { getItem: k => (k === 'stennisfy.tz' ? tz : null) } };
   sandbox.globalThis = sandbox;
   vm.runInNewContext(src, sandbox, { filename: 'picks-core.js' });
   return sandbox.module.exports;
@@ -254,6 +257,28 @@ function suite(C) {
   return { n, fails };
 }
 
+// founder 2026-10-30, override 2: times and a pick's day read the member zone, never Brussels; the stored `date`
+// (schema) stays the Brussels day. 16:30Z = 17:30 Brussels (CET) = 00:30 the next day in Asia/Makassar.
+function zoneChecks(C) {
+  const f = [];
+  const eq = (a, b, m) => { if (a !== b) f.push(`${m}: got ${JSON.stringify(a)} want ${JSON.stringify(b)}`); };
+  const p = { id: 'z', status: 'posted', date: '2026-10-30', scheduled_at: '2026-10-30T16:30:00.000Z', posted_at: '2026-10-30T08:41:00.000Z' };
+  eq(C.hhmm(p.scheduled_at), '00:30', 'Makassar: a 16:30Z start reads 00:30');
+  eq(C.hhmm(p.posted_at), '16:41', 'Makassar: posted 08:41Z reads 16:41');
+  eq(C.pickDay(p), '2026-10-31', 'Makassar: the pick belongs to 31 Oct (its start), not its Brussels date');
+  eq(C.brusselsDay(p.scheduled_at), '2026-10-30', 'the stored day stays Brussels');
+  eq(C.pickDay({ id: 'o', kind: 'outright', date: '2026-10-30', scheduled_at: null }), '2026-10-30', 'no start instant: the stored day');
+  eq(C.upcoming([p], '2026-10-31').length, 1, 'upcoming on the member day');
+  eq(C.picksFor([p], 'upcoming', '2026-10-30').length, 0, 'not on the Brussels day');
+  C.useStoredDay(true); eq(C.pickDay(p), '2026-10-30', 'a fixture pins its stored day'); C.useStoredDay(false);
+  return f;
+}
+const zf = zoneChecks(load(CORE_SRC, 'Asia/Makassar'));
+console.log(`member zone: ${zf.length ? zf.length + ' FAIL' : 'pass'}`); zf.forEach(x => console.log('  FAIL ' + x));
+const zm = zoneChecks(load(CORE_SRC.replace("function viewDay(iso) { return ymd(iso, viewTz()); }", "function viewDay(iso) { return ymd(iso, STORE_TZ); }"), 'Asia/Makassar'));
+const zmCaught = zm.length > 0;
+console.log(zmCaught ? 'mutant (pick day in Brussels): caught' : '  MUTANT SURVIVED: pick day in Brussels');
+
 const real = suite(load(CORE_SRC));
 console.log(`picks-core: ${real.n - real.fails.length}/${real.n} checks pass`);
 real.fails.forEach(f => console.log('  FAIL ' + f));
@@ -273,7 +298,7 @@ const MUTANTS = [
   ['trail colours inverted', "return to < from ? 'down' : to > from ? 'up' : 'flat';", "return to > from ? 'down' : to < from ? 'up' : 'flat';"],
   ['thin at 10', 'var THIN_N = 20;', 'var THIN_N = 10;'],
   ['hyphen-minus', "MINUS = '\u2212'", "MINUS = '-'"],
-  ['UTC clock', "var TZ = 'Europe/Brussels';", "var TZ = 'UTC';"],
+  ['the stored zone ignored', "return (t && String(t).trim()) || undefined;", "return 'UTC';"],
   ['avg CLV over every row', 'var c = clvOf(p); if (c != null) { withC++; clvSum += c; }', 'var c = clvOf(p); withC++; clvSum += c || 0;'],
   ['W–L counts voids', "l = set.filter(function (p) { return p.status === 'lost'; }).length", "l = set.filter(function (p) { return p.status !== 'won'; }).length"],
   ['model % not odds', 'return m == null || !(m > 0) || m > 100 ? null : 1 / (m / 100);', 'return m == null || !(m > 0) || m > 100 ? null : m / 100;'],
@@ -292,6 +317,6 @@ for (const [name, from, to] of MUTANTS) {
 }
 console.log(`mutants: ${MUTANTS.length - survived}/${MUTANTS.length} caught`);
 
-const exit = real.fails.length || !built || survived ? 1 : 0;
+const exit = real.fails.length || !built || survived || zf.length || !zmCaught ? 1 : 0;
 console.log(`EXIT=${exit}`);
 process.exit(exit);

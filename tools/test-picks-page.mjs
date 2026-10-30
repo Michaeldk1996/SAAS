@@ -105,6 +105,9 @@ async function browser() {
       await new Promise(r => setTimeout(r, 300));
     }
     check('signed out, the store yields nothing: no card, no picks file fetched', await E(`document.querySelectorAll('#picksRoot .pk-card').length === 0`));
+    // the demo fixture and the reference are drawn in Europe/Brussels: pin the member zone there (founder 2026-10-30,
+    // override 2 — Picks reads stennisfy.tz, else the browser's zone, never a hard-coded Brussels)
+    await E(`localStorage.setItem('stennisfy.tz', 'Europe/Brussels')`);
     await E(`PicksPage._inject(${FIXTURE})`);
     const R = (js) => E(`(() => { const S = PicksPage._state, q = s => document.querySelector('#picksRoot ' + s), qa = s => [...document.querySelectorAll('#picksRoot ' + s)],
       txt = e => { if (!e) return null; const w = document.createTreeWalker(e, NodeFilter.SHOW_TEXT), out = []; let t; while ((t = w.nextNode())) { const v = t.nodeValue.replace(/\\s+/g, ' ').trim(); if (v) out.push(v); } return out.join(' '); }, cs = (e, p) => e ? getComputedStyle(e)[p] : null;
@@ -134,6 +137,9 @@ async function browser() {
         head: txt(q('.pk-bands-hd')), tabs: qa('.pk-tab').map(txt), tsub: txt(q('.pk-tsub')), old: qa('.pk-day, .pk-search, .pk-tpill, .pk-chev, .pk-card').length, blur: qa('.is-blur').length,
         p1: txt(q('[data-sheet="p1"]')), p2tl: qa('[data-sheet="p2"] .pk-bt-l').map(txt), o1: txt(q('[data-sheet="o1"] .pk-b5')), tag: txt(q('[data-sheet="p1"] .pk-tag')),
         fav: txt(q('[data-sheet="p1"] .pk-fav')?.closest('.pk-bp')), page: cs(q('.pk-page'), 'maxWidth'), minH: cs(document.querySelector('.tabpage[data-page="picks"]'), 'minHeight') }; `);
+    const zone = await R(`window.__pkPlan = 'pro'; localStorage.setItem('stennisfy.tz', 'Asia/Makassar'); set({ tab: 'upcoming', view: 'cards', sheet: null });
+      const mk = txt(q('[data-sheet="p1"] .pk-b3-s')); localStorage.setItem('stennisfy.tz', 'Europe/Brussels'); set({}); return { mk, br: txt(q('[data-sheet="p1"] .pk-b3-s')) };`);
+    check('override 2: times read the member zone (Makassar 16:41 · 03:30, Brussels 09:41 · 20:30), never a fixed Brussels', /posted 16:41/.test(zone.mk) && /posted 09:41/.test(zone.br) && zone.mk !== zone.br, JSON.stringify(zone));
     check('1a header copy', a.title === 'Picks' && a.sub === 'Hand-picked daily from the Stennisfy model and strategy.', JSON.stringify(a).slice(0, 300));
     check('1a header stats Bets today · Match · Outright · Staked · If all land', a.stats.join(' | ') === 'BETS TODAY 5 | MATCH 3 | OUTRIGHT 2 | STAKED 5% | IF ALL LAND +6.4%' || a.stats.join(' | ') === 'Bets today 5 | Match 3 | Outright 2 | Staked 5% | If all land +6.4%', a.stats.join(' | '));
     check('1a five bands, head "Open · 5 bets" + "all at bet105 · click a bet for the analysis"', a.bands.length === 5 && a.head === 'Open · 5 bets all at bet105 · click a bet for the analysis', JSON.stringify([a.bands, a.head]));

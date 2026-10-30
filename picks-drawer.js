@@ -33,22 +33,25 @@
   function eventName(m) { return typeof mxEventName === 'function' ? mxEventName(m.tour) : (m.tour || ''); }   // eslint-disable-line no-undef
   function roundOf(m) { return typeof roundBadgeText === 'function' ? (roundBadgeText(m.tournamentRound) || '') : ''; }   // eslint-disable-line no-undef
   function initials(n) { var t = C.surname(n).split(/[\s-]+/).filter(Boolean); var f = String(n || '').trim().charAt(0); return ((f || '') + (t.length ? t[t.length - 1].charAt(0) : '')).toUpperCase(); }
-  var _hms = null;
-  function hhmmss(iso) {   // Europe/Brussels, the drawer's price stamps (reference: 11:41:14 · posted 09:41:07)
+  var _hms = {};
+  function hhmmss(iso) {   // the member zone (founder 2026-10-30, override 2), the drawer's price stamps (reference: 11:41:14 · posted 09:41:07)
     var d = new Date(iso); if (isNaN(d)) return '—';
-    if (!_hms) _hms = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Brussels', hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' });
-    return _hms.format(d);
+    var tz = C.viewTz() || '';
+    if (!_hms[tz]) { try { _hms[tz] = new Intl.DateTimeFormat('en-GB', Object.assign(tz ? { timeZone: tz } : {}, { hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' })); }
+      catch (e) { _hms[tz] = new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' }); } }
+    return _hms[tz].format(d);
   }
   function surf(m) { var s = String(m.surface || ''); return s ? s.charAt(0).toUpperCase() + s.slice(1) : ''; }
   function hhmmMs(t) { return Number.isFinite(t) ? C.hhmm(new Date(t).toISOString()) : '—'; }
-  function dayOfMs(t) { return Number.isFinite(t) ? C.brusselsDay(new Date(t).toISOString()) : null; }
+  function dayOfMs(t) { return Number.isFinite(t) ? C.brusselsDay(new Date(t).toISOString()) : null; }   // the stored `date` (schema)
+  function viewDayOfMs(t) { return Number.isFinite(t) ? C.viewDay(new Date(t).toISOString()) : null; }   // shown: the member zone
 
   // Today's slate for the search: upcoming board matches that have not started (they leave at scheduled start).
   function slate() {
-    var now = Date.now(), today = C.brusselsDay(new Date().toISOString());
+    var now = Date.now(), today = C.viewDay(new Date().toISOString());
     return board().filter(function (m) {
       if (!m || m.live || m.finalScore != null || !m.p1 || !m.p2) return false;
-      var t = startMs(m); return Number.isFinite(t) && t > now && dayOfMs(t) === today;
+      var t = startMs(m); return Number.isFinite(t) && t > now && viewDayOfMs(t) === today;
     }).sort(function (a, b) { return startMs(a) - startMs(b); });
   }
 
@@ -203,7 +206,7 @@
   }
   function metaRow(m) {
     if (!m) return '';
-    var t = startMs(m), dl = Number.isFinite(t) ? C.dayLabel(dayOfMs(t)) + ' ' + MID + ' ' + hhmmMs(t) : '—';
+    var t = startMs(m), dl = Number.isFinite(t) ? C.dayLabel(viewDayOfMs(t)) + ' ' + MID + ' ' + hhmmMs(t) : '—';
     return '<div class="pkd-meta">' + (surf(m) ? '<span class="pkd-surf">' + esc(surf(m)) + '</span>' : '') + '<span class="pkd-tourn">' + esc(eventName(m)) + '</span>'
       + (roundOf(m) ? '<span class="pkd-round">' + esc(roundOf(m)) + '</span>' : '') + '<span class="pkd-time">' + esc(dl) + '</span></div>';
   }
@@ -215,7 +218,7 @@
     if (p.kind === 'outright') return orMeta(p.event || 'Outright', p.settles_at ? C.dayMonthShort(p.settles_at) : '—');
     var t = Date.parse(p.scheduled_at);
     return '<div class="pkd-meta">' + (p.surface ? '<span class="pkd-surf">' + esc(p.surface) + '</span>' : '') + '<span class="pkd-tourn">' + esc(p.tournament || '') + '</span>'
-      + (p.round ? '<span class="pkd-round">' + esc(p.round) + '</span>' : '') + '<span class="pkd-time">' + esc(Number.isFinite(t) ? C.dayLabel(dayOfMs(t)) + ' ' + MID + ' ' + hhmmMs(t) : '—') + '</span></div>';
+      + (p.round ? '<span class="pkd-round">' + esc(p.round) + '</span>' : '') + '<span class="pkd-time">' + esc(Number.isFinite(t) ? C.dayLabel(viewDayOfMs(t)) + ' ' + MID + ' ' + hhmmMs(t) : '—') + '</span></div>';
   }
   function head() {
     var title = D.mode === 'new' ? 'Post a pick' : D.mode === 'edit' ? 'Edit pick' : 'Pick · frozen';

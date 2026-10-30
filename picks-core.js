@@ -12,7 +12,14 @@
   'use strict';
 
   var DASH = '—', MINUS = '−', EN = '–', MID = '·';
-  var TZ = 'Europe/Brussels';
+  // the stored `date` field (schema, README) is the match's Europe/Brussels day; what a member SEES — every time and
+  // which day a pick belongs to — reads the site's member zone (founder 2026-10-30, override 2: stennisfy.tz, else the
+  // browser's zone — the Today's Matches rule), never Brussels
+  var STORE_TZ = 'Europe/Brussels';
+  function viewTz() {
+    try { var ls = root && root.localStorage, t = ls && ls.getItem('stennisfy.tz'); return (t && String(t).trim()) || undefined; }
+    catch (e) { return undefined; }
+  }
   var THIN_N = 20;                       // SPEC §11: fewer than 20 settled in the period → dashes + n=N · thin
   var SETTLED = { won: 1, lost: 1, void: 1 };
 
@@ -103,28 +110,46 @@
   function sgnColour(x) { var n = num(x); return n == null || n === 0 ? 'var(--text-label)' : n > 0 ? 'var(--pos)' : 'var(--neg)'; }
   function sgnKind(x) { var n = num(x); return n == null || n === 0 ? 'zero' : n > 0 ? 'pos' : 'neg'; }
 
-  // ── Brussels clock ───────────────────────────────────────────────────────────────────────────────────────────────
+  // ── clocks: the member zone for everything shown, Brussels for the stored day ──────────────────────────────────
   var _fmt = {};
-  function fmt(key, opts) {
-    if (!_fmt[key]) _fmt[key] = new Intl.DateTimeFormat('en-GB', Object.assign({ timeZone: TZ }, opts));
-    return _fmt[key];
+  function fmt(key, opts, tz) {
+    var k = key + '|' + (tz || '');
+    if (!_fmt[k]) {
+      try { _fmt[k] = new Intl.DateTimeFormat('en-GB', Object.assign(tz ? { timeZone: tz } : {}, opts)); }
+      catch (e) { _fmt[k] = new Intl.DateTimeFormat('en-GB', opts); }   // a bad stored zone falls back to the browser's
+    }
+    return _fmt[k];
   }
-  function parts(d, key, opts) {
-    var o = {}; fmt(key, opts).formatToParts(d).forEach(function (x) { o[x.type] = x.value; }); return o;
+  function parts(d, key, opts, tz) {
+    var o = {}; fmt(key, opts, tz).formatToParts(d).forEach(function (x) { o[x.type] = x.value; }); return o;
   }
   function toDate(iso) { if (!iso) return null; var d = new Date(iso); return isNaN(d) ? null : d; }
-  // "09:41" in Brussels; "—" when absent
+  // "09:41" in the member zone; "—" when absent
   function hhmm(iso) {
     var d = toDate(iso); if (!d) return DASH;
-    var o = parts(d, 'hm', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
+    var o = parts(d, 'hm', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }, viewTz());
     return o.hour + ':' + o.minute;
   }
-  // the Brussels calendar day of an instant, YYYY-MM-DD
-  function brusselsDay(iso) {
+  function ymd(iso, tz) {
     var d = toDate(iso); if (!d) return null;
-    var o = parts(d, 'ymd', { year: 'numeric', month: '2-digit', day: '2-digit' });
+    var o = parts(d, 'ymd', { year: 'numeric', month: '2-digit', day: '2-digit' }, tz);
     return o.year + '-' + o.month + '-' + o.day;
   }
+  // the Brussels calendar day of an instant, YYYY-MM-DD — the stored `date` field only (drawer writes, store queries)
+  function brusselsDay(iso) { return ymd(iso, STORE_TZ); }
+  // the member-zone calendar day of an instant
+  function viewDay(iso) { return ymd(iso, viewTz()); }
+  // the day a pick belongs to on screen: the member-zone day of its start (as Today's Matches); a pick with no start
+  // instant (an outright) keeps its stored day. A fixture pins its own days (useStoredDay).
+  var _storedDay = false;
+  function useStoredDay(on) { _storedDay = !!on; }
+  function pickDay(p) {
+    if (!p) return null;
+    if (!_storedDay && p.scheduled_at) { var d = viewDay(p.scheduled_at); if (d) return d; }
+    return p.date || null;
+  }
+  // the stored days a member-zone day can hold (the member zone is at most a day either side of Brussels)
+  function storedDaysAround(day) { return [addDays(day, -1), day, addDays(day, 1)]; }
   // calendar arithmetic on YYYY-MM-DD (a civil date, no zone)
   function dayUTC(day) { var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(day || ''); return m ? Date.UTC(+m[1], +m[2] - 1, +m[3]) : null; }
   function addDays(day, n) { var t = dayUTC(day); if (t == null) return null; return new Date(t + n * 864e5).toISOString().slice(0, 10); }
@@ -222,12 +247,12 @@
   // Upcoming (10-30 lock) = every open pick (posted · live) from `today` on, by day then posted time; Completed = every
   // settled pick of the last 30 days (`today` included), newest day first. Drafts are never shown.
   function upcoming(rows, today) {
-    return (rows || []).filter(function (p) { return p && (p.status === 'posted' || p.status === 'live') && p.date >= today; })
-      .sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : String(a.posted_at || '') < String(b.posted_at || '') ? -1 : 1; });
+    return (rows || []).filter(function (p) { return p && (p.status === 'posted' || p.status === 'live') && pickDay(p) >= today; })
+      .sort(function (a, b) { var x = pickDay(a), y = pickDay(b); return x < y ? -1 : x > y ? 1 : String(a.posted_at || '') < String(b.posted_at || '') ? -1 : 1; });
   }
   function history(rows, today) {
-    return (rows || []).filter(function (p) { var age = daysBetween(p && p.date, today); return isSettled(p) && age != null && age >= 0 && age <= 30; })
-      .sort(function (a, b) { return a.date > b.date ? -1 : a.date < b.date ? 1 : String(a.posted_at || '') < String(b.posted_at || '') ? -1 : 1; });
+    return (rows || []).filter(function (p) { var age = daysBetween(pickDay(p), today); return isSettled(p) && age != null && age >= 0 && age <= 30; })
+      .sort(function (a, b) { var x = pickDay(a), y = pickDay(b); return x > y ? -1 : x < y ? 1 : String(a.posted_at || '') < String(b.posted_at || '') ? -1 : 1; });
   }
   // the Upcoming header (CHANGES 10-30 §2): Bets today · Match · Outright · Staked Σ stake · If all land Σ stake × (posted − 1)
   function todayStats(picks) {
@@ -240,7 +265,7 @@
   // Upcoming = posted / live picks of that day; Completed = settled picks of that day. Drafts are never shown.
   function picksFor(rows, tab, day) {
     return (rows || []).filter(function (p) {
-      if (!p || p.status === 'draft' || p.date !== day) return false;
+      if (!p || p.status === 'draft' || pickDay(p) !== day) return false;
       return tab === 'completed' ? isSettled(p) : (p.status === 'posted' || p.status === 'live');
     });
   }
@@ -275,7 +300,7 @@
 
   // ── Record (strip + ledger) ─────────────────────────────────────────────────────────────────────────────────────
   // Settled rows (won · lost · void) whose day is within the period of `today`: 30 d / 90 d = age in days ≤ 30 / 90;
-  // Season = 1 January to today (Brussels; founder ruling 2026-10-27). W–L excludes voids; Profit Σ pl_pct; ROI =
+  // Season = 1 January to today (member zone since 2026-10-30; founder ruling 2026-10-27). W–L excludes voids; Profit Σ pl_pct; ROI =
   // Σ pl_pct ÷ Σ stake over WON + LOST rows only — a void stake is returned, so it is not in the denominator (founder
   // ruling 2026-10-27); Avg CLV over rows with a close. n < 20 → every stat "—" and Settled "n=N · thin".
   var PERIODS = {
@@ -283,10 +308,10 @@
     '90d': { label: '90 d', title: 'Last 90 d', days: 90, hover: 'Settled picks from the last 90 days, today included' },
     season: { label: 'Season', title: 'Season', days: null, hover: '1 January to today' } };
   function inPeriod(p, period, today) {
-    var age = daysBetween(p.date, today);
+    var age = daysBetween(pickDay(p), today);
     if (age == null || age < 0) return false;
     var def = PERIODS[period]; if (!def) return false;
-    return def.days == null ? String(p.date).slice(0, 4) === String(today).slice(0, 4) : age <= def.days;
+    return def.days == null ? String(pickDay(p)).slice(0, 4) === String(today).slice(0, 4) : age <= def.days;
   }
   function record(rows, period, today) {
     var set = (rows || []).filter(function (p) { return isSettled(p) && inPeriod(p, period, today); });
@@ -312,7 +337,7 @@
   function ledgerRow(p) {
     var pl = pickedPlayer(p), c = clvOf(p), x = plOf(p);
     return {
-      id: p.id, date: p.date, dateText: dayMonth(p.date),
+      id: p.id, date: pickDay(p), dateText: dayMonth(pickDay(p)),
       match: isOutright(p) ? (pl && pl.name) || DASH : (p.player_a && p.player_a.name) + ' v ' + (p.player_b && p.player_b.name),
       event: isOutright(p) ? (p.event || DASH) : (p.tournament || DASH) + ' ' + MID + ' ' + (p.round || DASH),
       pick: (pl && pl.name) || DASH, market: isOutright(p) ? (p.market_text || 'Outright') : marketLabel(p) + (p.line ? ' ' + p.line : ''),
@@ -347,7 +372,7 @@
     closeOf: closeOf, oppCloseOf: oppCloseOf, clvOf: clvOf, plOf: plOf, favSide: favSide,
     trailKind: trailKind, trailColour: trailColour, trail: trail,
     f2: f2, pct: pct, u: u, stakeText: stakeText, sgnColour: sgnColour, sgnKind: sgnKind,
-    hhmm: hhmm, brusselsDay: brusselsDay, addDays: addDays, daysBetween: daysBetween, dayLabel: dayLabel, dayMonth: dayMonth, dayMonthShort: dayMonthShort,
+    hhmm: hhmm, brusselsDay: brusselsDay, viewDay: viewDay, viewTz: viewTz, pickDay: pickDay, useStoredDay: useStoredDay, storedDaysAround: storedDaysAround, addDays: addDays, daysBetween: daysBetween, dayLabel: dayLabel, dayMonth: dayMonth, dayMonthShort: dayMonthShort,
     surname: surname, pickedPlayer: pickedPlayer, betLine: betLine, lineTag: lineTag, typeTag: typeTag, statusChip: statusChip,
     plText: plText, voidTail: voidTail, scoreSide: scoreSide, winnerSide: winnerSide, scoreText: scoreText,
     marketLabel: marketLabel, upcoming: upcoming, history: history, todayStats: todayStats,

@@ -28,18 +28,31 @@
     b.textContent = String(n);
     var btn = ico.closest('button'); if (btn) btn.title = 'Picks · ' + n + (n === 1 ? ' bet today' : ' bets today');
   }
-  function todayCount(rows, day) {
-    return (rows || []).filter(function (p) { return p && p.date === day && (p.status === 'posted' || p.status === 'live'); }).length;
+  // today = the member-zone day (founder 2026-10-30, override 2), a pick's day = PicksCore.pickDay (its start, member
+  // zone); the store is keyed by the Brussels `date`, so the stored days either side are read too
+  function todayOpen(rows, day) {
+    var seen = {};
+    return (rows || []).filter(function (p) {
+      if (!p || seen[p.id] || PicksCore.pickDay(p) !== day || !(p.status === 'posted' || p.status === 'live')) return false;
+      seen[p.id] = 1; return true;
+    }).sort(function (a, b) { return String(a.posted_at || '') < String(b.posted_at || '') ? -1 : 1; });   // posting order
+  }
+  function todayCount(rows, day) { return todayOpen(rows, day).length; }
+  // ONE read of today's open picks, shared by the rail badge and the Bets today tile (the same count on both)
+  function loadToday() {
+    if (!window.PicksStore || !window.PicksCore) return Promise.reject(new Error('no store'));
+    var day = PicksCore.viewDay(new Date().toISOString());
+    return Promise.all(PicksCore.storedDaysAround(day).map(function (d) { return PicksStore.loadDay(d); }))
+      .then(function (rs) { return todayOpen([].concat.apply([], rs.map(function (r) { return r.rows; })), day); });
   }
   function checkCount() {
     if (!window.PicksStore || !window.PicksCore) return;
-    var day = PicksCore.brusselsDay(new Date().toISOString());
-    PicksStore.loadDay(day).then(function (r) { setCount(todayCount(r.rows, day)); }).catch(function () { setCount(0); });
+    loadToday().then(function (rows) { setCount(rows.length); }).catch(function () { setCount(0); });
   }
 
   function onAuth() { paintBadge(); checkCount(); if (typeof window.mxBetsRefresh === 'function') window.mxBetsRefresh(); }
   if (window.BSP && BSP.onAuthChange) BSP.onAuthChange(function () { onAuth(); });
   if (window.BSP && BSP.whenAuthReady) BSP.whenAuthReady().then(onAuth);
   setInterval(function () { if (!document.hidden) checkCount(); }, 5 * 60000);
-  window.PicksShell = { checkCount: checkCount, todayCount: todayCount, setCount: setCount, paintBadge: paintBadge };
+  window.PicksShell = { checkCount: checkCount, todayCount: todayCount, todayOpen: todayOpen, loadToday: loadToday, setCount: setCount, paintBadge: paintBadge };
 })();

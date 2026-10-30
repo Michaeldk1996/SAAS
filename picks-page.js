@@ -31,7 +31,7 @@
   function isPro() { return window.sfPlan === 'pro' || isAdmin(); }
   function today() {
     if (S.fixture && S.fixture.as_of_day) return S.fixture.as_of_day;   // a fixture pins its own day
-    return C.brusselsDay(new Date().toISOString());
+    return C.viewDay(new Date().toISOString());   // the member-zone day (founder 2026-10-30, override 2)
   }
   // A teaser row (a non-Pro member's view of today's pick) is drawn over placeholders, blurred: never the real pick.
   var HIDDEN = { id: null, name: 'Pick hidden', initials: '··' };
@@ -46,9 +46,10 @@
     (S.settled || []).forEach(function (p) { if (!seen[p.id]) { seen[p.id] = 1; out.push(p); } });
     return out;
   }
-  // Upcoming reads today and tomorrow (a late slate can roll past Brussels midnight); Completed reads the settled store
-  function days() { var t = today(); return [t, C.addDays(t, 1)]; }
-  function loaded() { return !!S.fixture || (S.settled != null && S.byDay[today()] != null); }
+  // Upcoming reads today and tomorrow in the member zone; the store is keyed by the Brussels `date`, so every stored day
+  // either side is read and each pick is placed by C.pickDay. Completed reads the settled store.
+  function days() { var t = today(), out = []; [t, C.addDays(t, 1)].forEach(function (d) { C.storedDaysAround(d).forEach(function (x) { if (out.indexOf(x) < 0) out.push(x); }); }); return out; }
+  function loaded() { return !!S.fixture || (S.settled != null && days().every(function (d) { return S.byDay[d] != null; })); }
   function mobile() { return !!(window.matchMedia && window.matchMedia('(max-width: 640px)').matches); }
 
   // the Record's widest window: Season (1 January) or 90 days back, whichever is earlier
@@ -102,7 +103,7 @@
   var PRO = '<span class="pk-pro">PRO</span>';
 
   // a teaser is always gated; a real open pick of today is gated for a non-Pro view (a fixture renders both states)
-  function gatedOf(p) { return !!p._teaser || (!isPro() && (p.status === 'posted' || p.status === 'live') && p.date === today()); }
+  function gatedOf(p) { return !!p._teaser || (!isPro() && (p.status === 'posted' || p.status === 'live') && C.pickDay(p) === today()); }
 
   function playerRow(p, side, opts) {
     var q = side === 'a' ? p.player_a : p.player_b; if (!q) return '';
@@ -211,7 +212,7 @@
   }
   function upcomingView(list) {
     var t = today(), byDay = {};
-    list.forEach(function (p) { (byDay[p.date] = byDay[p.date] || []).push(p); });
+    list.forEach(function (p) { var d = C.pickDay(p); (byDay[d] = byDay[d] || []).push(p); });
     var ds = Object.keys(byDay).sort(), many = ds.length > 1;
     if (mobile()) return '<div class="pk-mlist">' + list.map(mcard).join('') + '</div>';
     return ds.map(function (d, i) {
@@ -241,7 +242,7 @@
     var withC = list.map(C.clvOf).filter(function (x) { return x != null; });
     var avg = withC.length ? withC.reduce(function (a, x) { return a + x; }, 0) / withC.length : null;
     var byDay = [], idx = {};
-    list.forEach(function (p) { if (idx[p.date] == null) { idx[p.date] = byDay.length; byDay.push([]); } byDay[idx[p.date]].push(p); });
+    list.forEach(function (p) { var d = C.pickDay(p); if (idx[d] == null) { idx[d] = byDay.length; byDay.push([]); } byDay[idx[d]].push(p); });
     // whole days, ~HIST_PAGE_ROWS rows a page
     var pages = [], cur = [], n = 0;
     byDay.forEach(function (ps) { if (cur.length && n >= HIST_PAGE_ROWS) { pages.push(cur); cur = []; n = 0; } cur.push(ps); n += ps.length; });
@@ -250,7 +251,7 @@
     var body = (pages[pg - 1] || []).map(function (ps) {
       var dw = ps.filter(function (p) { return p.status === 'won'; }).length, dl = ps.filter(function (p) { return p.status === 'lost'; }).length;
       var dv = ps.filter(function (p) { return p.status === 'void'; }).length, dpl = ps.reduce(function (a, p) { return a + (C.plOf(p) || 0); }, 0);
-      return '<div class="pk-hday"><span class="pk-hday-d">' + esc(C.dayLabel(ps[0].date)) + '</span><span class="pk-hday-m">' + ps.length + (ps.length === 1 ? ' bet' : ' bets') + ' ' + MID + ' ' + dw + C.EN + dl + (dv ? ' ' + MID + ' ' + dv + ' void' : '') + '</span>'
+      return '<div class="pk-hday"><span class="pk-hday-d">' + esc(C.dayLabel(C.pickDay(ps[0]))) + '</span><span class="pk-hday-m">' + ps.length + (ps.length === 1 ? ' bet' : ' bets') + ' ' + MID + ' ' + dw + C.EN + dl + (dv ? ' ' + MID + ' ' + dv + ' void' : '') + '</span>'
         + '<span class="pk-hday-pl ' + sgnCls(dpl) + '">' + C.u(dpl, 1) + '</span></div>' + ps.map(histRow).join('');
     }).join('');
     var pager = pages.length > 1 ? '<div class="pk-pager"><span class="pk-pg' + (pg > 1 ? '' : ' is-off') + '" data-act="hprev">‹ Previous</span><span class="pk-pg-t">Page ' + pg + ' of ' + pages.length + '</span>'
@@ -322,7 +323,7 @@
   function header(list) {
     var right;
     if (S.tab === 'upcoming' && S.view !== 'record') {
-      var todays = list.filter(function (p) { return p.date === today(); });
+      var todays = list.filter(function (p) { return C.pickDay(p) === today(); });
       right = '<div class="pk-tstats">' + C.todayStats(todays).map(function (s) {
         return '<div class="sfh__stat"><span class="sfh__l">' + esc(s.label) + '</span><span class="sfh__v pk-tv pk-tv--' + s.kind + '">' + esc(s.value) + '</span></div>';
       }).join('') + '</div>';
@@ -348,7 +349,7 @@
     var tabs = [['upcoming', 'Upcoming'], ['completed', 'Completed']].map(function (x) {
       return '<button type="button" role="tab" class="pk-tab' + (S.tab === x[0] ? ' on' : '') + '" aria-selected="' + (S.tab === x[0]) + '" data-act="tab" data-k="' + x[0] + '">' + x[1] + '</button>';
     }).join('');
-    var nd = {}; list.forEach(function (p) { nd[p.date] = 1; });
+    var nd = {}; list.forEach(function (p) { nd[C.pickDay(p)] = 1; });
     var k = Object.keys(nd).length;
     var sub = S.tab === 'upcoming' ? (k > 1 ? 'Today and the next ' + (k - 1) + (k - 1 === 1 ? ' day' : ' days') : 'Today') : '';
     return '<div class="pk-ctrl"><div class="pk-tabs" role="tablist">' + tabs + '</div>' + (sub ? '<span class="pk-tsub">' + esc(sub) + '</span>' : '')
@@ -510,7 +511,7 @@
     window.sfPlanLocks._picks = true;
   }
   // tests and the screenshot harness inject a fixture (the store is not reachable from a headless clone)
-  function inject(fx) { S.fixture = fx; if (S.timer) { clearInterval(S.timer); S.timer = null; } render(); }
+  function inject(fx) { S.fixture = fx; C.useStoredDay(!!fx); if (S.timer) { clearInterval(S.timer); S.timer = null; } render(); }
   window.PicksPage = { setActive: setActive, render: render, reload: reload, _inject: inject, _state: S, _rows: rows };
   window.addEventListener('hashchange', applyHash);
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', applyHash); else applyHash();

@@ -146,54 +146,62 @@ test('Elo rows: P(A) = 1/(1+10^((Rb−Ra)/400)), fair odds 1/P to 2 dp, no margi
   assert.notEqual(M(m, 'clay').p, null, 'the mutant mixes surface and overall — the real code does not');
 });
 
-test('Bets today: count unblurred; tournament + round readable, selection + price blurred in ONE span unless Pro; empty → "No bets posted yet today"', () => {
-  // Task 3 (founder 2026-10-27): the tile reads today's open picks from the picks store (picks-store.js). A non-Pro member
-  // gets teasers (no selection, no price), so the blurred span is drawn over a placeholder — never the real pick.
+test('Bets today (BETS_TODAY_TILE.md, LOCK 2026-10-30): row = selection · market + price; 3-line cap; PRO chip in both states; non-Pro rows blurred whole', () => {
+  // Today's open picks (posted · live), posting order, the rail badge's rows (PicksShell.loadToday). A non-Pro member gets
+  // teasers (no selection, no price), so each blurred row is drawn over a placeholder — never the real pick.
   const PC = createRequire(import.meta.url)('./picks-core.js');   // the real picks-core: the tile reads the Picks page's own words
   const B = (picks, plan, admin, src = slice('mxBetsTileHtml')) => new Function('picks', 'plan', 'admin', 'PicksCore', `
     const window = { sfPlan: plan }; let _mxPicks = picks; const isBspAdmin = () => !!admin;
-    ${slice('psEsc')} ${slice('mxOddsTxt')} ${slice('mxIsPro')} ${src} return mxBetsTileHtml();`)(picks, plan, admin, PC);
-  const real = [{ kind: 'match', market: 'Match winner', tournament: 'Vienna Open', round: 'R32', selection: 'a', player_a: { name: 'M. Berrettini' }, player_b: { name: 'T. M. Etcheverry' }, posted_price: 2.02, status: 'posted' },
-                { kind: 'match', market: 'Match winner', tournament: 'Swiss Indoors', round: 'R32', selection: 'b', player_a: { name: 'A. Bublik' }, player_b: { name: 'H. Rune' }, posted_price: 1.85, status: 'live' },
-                { kind: 'outright', event: 'Nitto ATP Finals · Turin', selection: 'a', player_a: { name: 'J. Sinner' }, posted_price: 3.5, status: 'posted' }];
-  const teasers = real.map(p => Object.assign({}, p, { _teaser: true, player_a: null, player_b: null, posted_price: null }));
-  const free = B(teasers, null);
-  assert.match(free, /mc-story__now">3<\/span><span class="mc-story__name">bets today/, 'the count includes the outright');
-  assert.equal((free.match(/mc-story__betsel is-blur"/g) || []).length, 2, 'one blurred span per match pick (outrights are not listed)');
-  assert.match(free, /mc-story__betmeta">Vienna Open R32</);
-  assert.match(free, /PRO<\/span><span class="mc-story__hint mc-story__hint--cta">Unlock today’s picks →/);
-  assert.doesNotMatch(free, /Berrettini|Rune|2\.02|1\.85/, 'a non-Pro tile never holds the real selection or price');
-  assert.doesNotMatch(free, /\d\d:\d\d/, 'no time');
-  const pro = B(real, 'pro');
+    ${slice('psEsc')} ${slice('mxOddsTxt')} ${slice('mxIsPro')} ${slice('mxBetMarket')} ${src} return mxBetsTileHtml();`)(picks, plan, admin, PC);
+  const mw = (a, b, sel, px, extra) => Object.assign({ kind: 'match', market: 'Match winner', tournament: 'Swiss Indoors', round: 'QF', selection: sel, player_a: { name: a }, player_b: { name: b }, posted_price: px, status: 'posted' }, extra || {});
+  const fritz = mw('T. Fritz', 'A. Fils', 'a', 1.95), struff = mw('J-L. Struff', 'N. Borges', 'a', 1.77),
+    struffHc = mw('J-L. Struff', 'N. Borges', 'a', 1.8, { market: 'Games handicap', line: '+2.5' }),
+    tot = mw('H. Rune', 'V. Vacherot', 'a', 1.9, { market: 'Total games', line: 'Over 22.5' }),
+    typed = mw('B. Vacherot', 'A. Michelsen', 'b', 2.4, { market: 'Other', market_text: 'Tiebreak' }),
+    outr = { kind: 'outright', event: 'Nitto ATP Finals', selection: 'a', player_a: { name: 'J. Sinner' }, posted_price: 3.5, status: 'posted' },
+    noMkt = mw('T. Paul', 'C. Alcaraz', 'a', 2.1, { market: null });
+  const rows = h => (h.match(/class="mc-story__bet[ "]/g) || []).length;
+  // 1–3 bets: one row each, no more-line
+  for (const set of [[fritz], [fritz, struff], [fritz, struff, struffHc]]) {
+    const h = B(set, 'pro'); assert.equal(rows(h), set.length); assert.doesNotMatch(h, /more bets/);
+  }
+  // 4+: exactly 2 rows + "+N more bets →"
+  const five = B([fritz, struff, struffHc, tot, typed], 'pro');
+  assert.equal(rows(five), 2, 'never more than 3 lines');
+  assert.match(five, /mc-story__betmore">\+3 more bets →</);
+  assert.match(five, /betpick">Fritz<\/span><span class="mc-story__betmkt"> · Match winner<\/span><\/span><span class="mc-story__betpx">1\.95</, 'selection · market + price');
+  assert.match(five, /betpick">J-L\. Struff<\/span><span class="mc-story__betmkt"> · Match winner</, 'the reference\'s "J-L. Struff"');
+  assert.match(five, /mc-story__now">5<\/span><span class="mc-story__name">bets today/);
+  assert.doesNotMatch(five, /Swiss Indoors|QF|\d\d:\d\d/, 'no tournament, round or time on the tile');
+  // the market as posted
+  const m = B([struffHc, tot, typed], 'pro');
+  assert.match(m, /betmkt"> · Games \+2\.5</); assert.match(m, /betmkt"> · Total games O 22\.5</); assert.match(m, /betpick">Michelsen<\/span><span class="mc-story__betmkt"> · Tiebreak</, 'a typed market reads its own name, the picked side');
+  assert.match(B([outr], 'pro'), /betpick">Sinner<\/span><span class="mc-story__betmkt"> · Nitto ATP Finals</, 'an outright reads its event');
+  assert.match(B([noMkt], 'pro'), /betmkt"> · Match winner</, 'no market stored → Match winner');
+  // Pro / non-Pro: PRO chip in both; cue grey vs accent; non-Pro rows blurred whole, the more-line readable, no real pick
+  const pro = B([fritz, struff, struffHc, tot], 'pro');
+  assert.match(pro, /mc-story__pro">PRO<\/span><span class="mc-story__hint">Open picks →/);
   assert.doesNotMatch(pro, /is-blur/);
-  assert.match(pro, /Open picks →/);
-  assert.doesNotMatch(pro, /mc-story__pro/, 'Pro: no PRO chip');
-  assert.match(pro, /betpick">Berrettini<\/span><span class="mc-story__betpx">2\.02</);
-  assert.match(pro, /betpick">Rune</, 'the picked side (b)');
-  // founder 2026-10-28: the admin bypasses Pro gating everywhere — on a Free plan the tile is unblurred, "Open picks →"
-  const adm = B(real, 'free', true);
-  assert.doesNotMatch(adm, /is-blur/); assert.match(adm, /Open picks →/); assert.match(adm, /betpick">Berrettini</);
+  const teasers = [fritz, struff, struffHc, tot].map(p => Object.assign({}, p, { _teaser: true, player_a: null, player_b: null, posted_price: null }));
+  const free = B(teasers, null);
+  assert.match(free, /mc-story__pro">PRO<\/span><span class="mc-story__hint mc-story__hint--cta">Unlock today’s picks →/);
+  assert.equal((free.match(/mc-story__bet is-blur"/g) || []).length, 2, 'each listed row blurred as a whole');
+  assert.match(free, /mc-story__betmore">\+2 more bets →</, 'the more-line stays readable');
+  assert.doesNotMatch(free, /Fritz|Struff|1\.95|1\.77/, 'a non-Pro tile never holds the real selection or price');
+  // the admin bypasses Pro gating (founder 2026-10-28)
+  const adm = B([fritz], 'free', true); assert.doesNotMatch(adm, /is-blur/); assert.match(adm, /Open picks →/);
   const mxIsPro = new Function('window', 'isBspAdmin', `${slice('mxIsPro')} return mxIsPro();`);
-  assert.equal(mxIsPro({ sfPlan: 'free' }, () => true), true, 'mxIsPro: the admin on Free');
-  assert.equal(mxIsPro({ sfPlan: 'free' }, () => false), false, 'mxIsPro: a Free member');
-  assert.equal(mxIsPro({ sfPlan: 'pro' }, () => false), true, 'mxIsPro: a Pro member');
+  assert.equal(mxIsPro({ sfPlan: 'free' }, () => true), true); assert.equal(mxIsPro({ sfPlan: 'free' }, () => false), false); assert.equal(mxIsPro({ sfPlan: 'pro' }, () => false), true);
   assert.match(B([], null), /mc-story__now">—<\/span>[\s\S]*No bets posted yet today/);
-  assert.match(B([real[0]], null), /bet today</, 'singular');
-  // founder 2026-10-30: each row reads ITS OWN pick — a typed market on the picked side reads "{Surname} · {market}"
-  // (the Michelsen pick showed his opponent and no market); a handicap reads its bet line
-  const typed = { kind: 'match', tournament: 'Swiss Indoors', round: 'R16', selection: 'b', market: 'Other', market_text: 'Tiebreak', line: null,
-    player_a: { name: 'B. Vacherot' }, player_b: { name: 'A. Michelsen' }, posted_price: 2.4, status: 'posted' };
-  const hc = { kind: 'match', tournament: 'Vienna Open', round: 'R16', selection: 'a', market: 'Games handicap', line: '+2', player_a: { name: 'D. Hanfmann' }, player_b: { name: 'X. Y' }, posted_price: 1.9, status: 'posted' };
-  const t = B([typed, hc, real[0]], 'pro');
-  assert.match(t, /betpick">Michelsen · Tiebreak<\/span><span class="mc-story__betpx">2\.40</);
-  assert.match(t, /betpick">Hanfmann \+2 games</);
-  assert.match(t, /betpick">Berrettini</, 'a match winner reads the surname, as the reference');
-  assert.doesNotMatch(t, /Vacherot/, 'never the other player');
-  // MUTANT: the tile reads player_a whatever the selection → the typed row shows Vacherot
-  const mut = slice('mxBetsTileHtml').replace("const name = p.market === 'Match winner' ? PicksCore.surname(PicksCore.pickedPlayer(p) && PicksCore.pickedPlayer(p).name) : PicksCore.betLine(p);",
-    "const name = PicksCore.surname(p.player_a && p.player_a.name);");
-  assert.notEqual(mut, slice('mxBetsTileHtml'));
-  assert.match(B([typed], 'pro', false, mut), /Vacherot/, 'the mutant is caught');
+  assert.match(B([fritz], null), /bet today</, 'singular');
+  // CSS: a long market truncates before the price; the price never wraps
+  assert.match(html, /\.mc-story__betsel\{[^}]*white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0;/);
+  assert.match(html, /\.mc-story__betpx\{[^}]*flex:none;/);
+  // MUTANTS: no cap (every bet listed); the PRO chip hidden for Pro
+  const noCap = slice('mxBetsTileHtml').replace('const shown = n > 3 ? picks.slice(0, 2) : picks;', 'const shown = picks;');
+  assert.notEqual(noCap, slice('mxBetsTileHtml')); assert.equal(rows(B([fritz, struff, struffHc, tot, typed], 'pro', false, noCap)), 5, 'no-cap mutant caught');
+  const noChip = slice('mxBetsTileHtml').replace('<span class="mc-story__pro">PRO</span><span', "${pro ? '' : '<span class=\"mc-story__pro\">PRO</span>'}<span");
+  assert.notEqual(noChip, slice('mxBetsTileHtml')); assert.doesNotMatch(B([fritz], 'pro', false, noChip), /mc-story__pro/, 'no-chip mutant caught');
 });
 
 test('Streak on court: the top Series card, "+N more on court today" by player, the empty state; Series is asked with its defaults', () => {
