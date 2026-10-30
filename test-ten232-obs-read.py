@@ -127,7 +127,63 @@ try:
 finally:
     K.L.upsert, K.kibl_payloads = real_upsert, real_payloads
 
-print('4. the wiring')
+print("4. the publisher's read of odds_card_state retries a timed-out page")
+import io, urllib.error  # noqa: E402
+P = types.ModuleType('P')
+P.__file__ = os.path.join(HERE, 'ten225-publish-card-state.py')
+exec(compile(open(P.__file__).read(), P.__file__, 'exec'), P.__dict__)
+
+
+class Resp:
+    def __init__(self, rows):
+        self.body = json.dumps(rows).encode()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *a):
+        return False
+
+    def read(self):
+        return self.body
+
+
+def opener_for(script):
+    """script: list of ('ok', n_rows) or ('err', code); one entry per request."""
+    seen = []
+
+    def op(req, timeout=None):
+        off = int(urllib.parse.parse_qs(urllib.parse.urlsplit(req.full_url).query)['offset'][0])
+        kind, v = script[len(seen)]
+        seen.append(off)
+        if kind == 'err':
+            raise urllib.error.HTTPError(req.full_url, v, 'x', {}, io.BytesIO(b'{"code":"57014"}'))
+        return Resp([{'i': off + k} for k in range(v)])
+    return op, seen
+
+
+op, seen = opener_for([('ok', 1000), ('err', 500), ('ok', 1000), ('ok', 7)])
+waits = []
+rows = P.fetch_all('https://x', 'k', 'odds_card_state', 'a', sleep=waits.append, opener=op)
+check('a 57014 on page 2, then success → 2007 rows, each once, page 2 asked again from offset 1000  [mutant: READ_RETRIES=1]',
+      [r['i'] for r in rows] == list(range(2007)) and seen == [0, 1000, 1000, 2000] and waits == [10], (seen, waits))
+op, seen = opener_for([('err', 500)] * P.READ_RETRIES)
+try:
+    P.fetch_all('https://x', 'k', 'odds_card_state', 'a', sleep=lambda s: None, opener=op)
+    exited = False
+except SystemExit as e:
+    exited = e.code == 1
+check('a page that never answers fails the step (exit 1), never a short read',
+      exited and len(seen) == P.READ_RETRIES, seen)
+op, seen = opener_for([('err', 401)])
+try:
+    P.fetch_all('https://x', 'k', 'odds_card_state', 'a', sleep=lambda s: None, opener=op)
+    exited = False
+except SystemExit as e:
+    exited = e.code == 1
+check('a 4xx fails at once, no retry  [mutant: retry everything]', exited and len(seen) == 1, seen)
+
+print('5. the wiring')
 src = open(K.__file__).read()
 reads = re.findall(r"(fetch_\w+)\(\s*url, key, 'kibl_line_observations'", src)
 check("both kibl_line_observations reads go through fetch_by_fixtures  [control: the pre-fix builder used fetch_all]",

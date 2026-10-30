@@ -46,6 +46,7 @@ import collections
 import json
 import os
 import sys
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -64,6 +65,7 @@ MARKET = 'match winner'
 # it has to cover.
 WINDOW_MARGIN_DAYS = 7
 PAGE = 1000                 # PostgREST caps a page here; asking for more truncates
+READ_RETRIES = 3            # a page that times out (5xx) is asked again, then fails loudly
 MIN_N = 30                  # standing rule: flag anything below this
 
 
@@ -78,7 +80,7 @@ def creds():
     return url, key
 
 
-def fetch_all(url, key, table, cols, extra=''):
+def fetch_all(url, key, table, cols, extra='', sleep=time.sleep, opener=None):
     """Read a table, paged.
 
     PostgREST caps a page at 1,000 rows however many you ask for, so the page
@@ -87,25 +89,37 @@ def fetch_all(url, key, table, cols, extra=''):
     unpaged read; asking for more than 1,000 makes `len(rows) < PAGE` true on
     the first full page and stops the walk at 1,000, which is the same bug
     wearing a bigger number.
+
+    A page that answers 5xx (57014 statement timeout, 544 connection timeout)
+    is asked again from the same offset, up to READ_RETRIES, then the run fails
+    — never a short read. A 4xx fails at once. Run 40978817609 (30 Oct) lost
+    its publish to one 57014 on this read after the card write had landed.
     """
+    opener = opener or urllib.request.urlopen
     out, offset = [], 0
     while True:
         q = f'/rest/v1/{table}?select={urllib.parse.quote(cols)}{extra}' \
             f'&limit={PAGE}&offset={offset}'
-        req = urllib.request.Request(
-            url + q, method='GET',
-            headers={'Authorization': f'Bearer {key}', 'apikey': key})
-        try:
-            with urllib.request.urlopen(req, timeout=300) as r:
-                body = r.read()
-                READ_STATS['gets'] += 1
-                READ_STATS['bytes'] += len(body)
-                READ_STATS[f'gets_{table}'] += 1
-                rows = json.loads(body.decode('utf-8'))
-        except urllib.error.HTTPError as e:
-            print(f'::error::{table} read failed ({e.code}): '
-                  f'{e.read()[:300].decode("utf-8", "replace")}')
-            sys.exit(1)
+        for attempt in range(1, READ_RETRIES + 1):
+            req = urllib.request.Request(
+                url + q, method='GET',
+                headers={'Authorization': f'Bearer {key}', 'apikey': key})
+            try:
+                with opener(req, timeout=300) as r:
+                    body = r.read()
+                    READ_STATS['gets'] += 1
+                    READ_STATS['bytes'] += len(body)
+                    READ_STATS[f'gets_{table}'] += 1
+                    rows = json.loads(body.decode('utf-8'))
+                break
+            except urllib.error.HTTPError as e:
+                msg = e.read()[:300].decode('utf-8', 'replace')
+                if e.code < 500 or attempt == READ_RETRIES:
+                    print(f'::error::{table} read failed ({e.code}): {msg}')
+                    sys.exit(1)
+                print(f'{table}: page at offset {offset} failed ({e.code}: {msg[:120]}); '
+                      f'retry {attempt}/{READ_RETRIES - 1}')
+                sleep(10 * attempt)
         out.extend(rows)
         if len(rows) < PAGE:
             return out
