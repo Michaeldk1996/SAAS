@@ -37,11 +37,24 @@ check('control: the same stale capture with 1 upcoming match goes red',
 check('no tick at all on a board with 0 upcoming matches is quiet, not red',
       f.verdict([{'finalScore': '2-0'}], P('2026-09-17T12:00:00Z'), 24)[0] == 0)
 check('the gate is one constant, set to 1', f.MIN_UPCOMING == 1)
+# 30 Oct 2026: since TEN-295 every capture writes oddsMovement.chart.books only; the
+# checker read only oddsMovement.books and was red on a live capture from 18 Oct.
+def chart_match(book_ticks, final=False):
+    return {'finalScore': '2-0' if final else None, 'oddsMovement': {'chart': {'books': {b: {'p1': [[t, 1.5]], 'p2': [[t, 2.5]]} for b, t in book_ticks.items()}, 'meta': {}}}}
+cb = [chart_match({'Pinnacle +30s': '2026-10-30T04:05:31Z', 'Bet105': '2026-10-30T08:18:35Z'}), chart_match({'Superbet': '2026-10-29T08:00:00Z'})]
+cc, cm = f.verdict(cb, P('2026-10-30T09:00:00Z'), 24)
+check('a board whose ticks live only in oddsMovement.chart.books is fresh, and names the chart books', cc == 0 and 'Bet105' in cm and 'Pinnacle +30s' in cm)
+check('control: chart-only ticks older than 24 h still go red',
+      f.verdict(cb, P('2026-11-01T09:00:00Z'), 24)[0] == 1)
+check('the legacy books and the chart books are read together (newest of both wins)',
+      f.verdict(board + cb, P('2026-10-30T09:00:00Z'), 24)[0] == 0)
+check('a chart that is not an object is skipped, not a crash',
+      f.verdict([{'oddsMovement': {'chart': [1]}}] + cb, P('2026-10-30T09:00:00Z'), 24)[0] == 0)
 with tempfile.TemporaryDirectory() as d:
     p = os.path.join(d, 'matches.json'); json.dump({'matches': board}, open(p, 'w'))
     r = subprocess.run([sys.executable, os.path.join(HERE, 'tools', 'odds-capture-freshness.py'), '--matches', p, '--now', '2026-09-05T00:00:00Z'], capture_output=True, text=True)
     check('CLI exits 1 with one ::error:: line when stale', r.returncode == 1 and r.stdout.startswith('::error::odds capture stale'))
     r = subprocess.run([sys.executable, os.path.join(HERE, 'tools', 'odds-capture-freshness.py'), '--matches', p, '--now', '2026-09-02T05:00:00Z'], capture_output=True, text=True)
     check('CLI exits 0 when fresh', r.returncode == 0)
-print(f'RESULT: {14 - fails} passed, {fails} failed')
+print(f'RESULT: {18 - fails} passed, {fails} failed')
 sys.exit(1 if fails else 0)

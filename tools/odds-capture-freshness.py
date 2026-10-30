@@ -3,7 +3,8 @@
 
 The live collector froze for EVERY book from 2026-09-02 02:5xZ to 2026-09-10 02:14Z and
 nothing fired. This reads the captured series the board carries (matches.json
-oddsMovement.books.<book>.p1/p2, [iso, price] ticks) and goes red when NO book has a new
+oddsMovement.books.<book>.p1/p2 and oddsMovement.chart.books.<book>.p1/p2, [iso, price]
+ticks) and goes red when NO book has a new
 tick for more than --max-hours (default 24, a starting default — see below).
 
     python3 tools/odds-capture-freshness.py [--matches matches.json] [--now ISO] [--max-hours 24]
@@ -34,6 +35,20 @@ def parse(ts):
     return t if t.tzinfo else t.replace(tzinfo=datetime.timezone.utc)   # the feed writes UTC
 
 
+def captured_series(m):
+    """(book, series) for every captured series a match carries: the legacy
+    oddsMovement.books (frozen bet365, the model's Pinnacle key) AND, since TEN-295,
+    oddsMovement.chart.books, where every capture writes now (Pinnacle +30s, Bet105,
+    odds-api.io and api-tennis books). Reading only `books` saw no tick at all once the
+    frozen bet365 series aged off the board (red from 18 Oct 2026 on a live capture)."""
+    om = m.get('oddsMovement') or {}
+    chart = om.get('chart') if isinstance(om.get('chart'), dict) else {}
+    for src in (om.get('books'), chart.get('books')):
+        if isinstance(src, dict):
+            for book, series in src.items():
+                yield book, series
+
+
 def last_ticks(matches, now=None):
     """{book: newest tick datetime} across every match's oddsMovement. A tick dated more than
     an hour after `now` is a bad timestamp, not a fresh one, and is ignored — otherwise one
@@ -41,10 +56,7 @@ def last_ticks(matches, now=None):
     out = {}
     limit = (now + datetime.timedelta(hours=1)) if now else None
     for m in matches:
-        books = ((m.get('oddsMovement') or {}).get('books')) or {}
-        if not isinstance(books, dict):
-            continue
-        for book, series in books.items():
+        for book, series in captured_series(m):
             if not isinstance(series, dict):
                 continue
             for side in ('p1', 'p2'):
