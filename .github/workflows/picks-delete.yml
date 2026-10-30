@@ -1,0 +1,47 @@
+name: Picks delete
+
+# Founder order 2026-10-30: delete the test picks Fils, Jodar and Michelsen (delete, not void; Hanfmann stays).
+# Dispatch only, from main. tools/picks-delete.mjs deletes picks/{id} + picks_public/{id} only when a player of the
+# stored pick carries the named surname; dry run unless apply is ticked. The log names ids and verdicts, no pick content.
+
+on:
+  workflow_dispatch:
+    inputs:
+      targets:
+        description: 'space-separated <pick id>:<Surname>'
+        type: string
+        required: true
+      apply:
+        description: 'delete (unticked = dry run)'
+        type: boolean
+        default: false
+
+concurrency:
+  group: picks-delete
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  delete:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install firebase-admin
+        run: npm install --no-save --no-audit --no-fund firebase-admin@12 > /dev/null
+      - name: Delete the named picks
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          TARGETS: ${{ inputs.targets }}
+          APPLY: ${{ inputs.apply }}
+        run: |
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$RUNNER_TEMP/firebase-sa.json"
+          flag=""; [ "$APPLY" = "true" ] && flag="--apply"
+          # shellcheck disable=SC2086
+          GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/firebase-sa.json" node tools/picks-delete.mjs $TARGETS $flag
