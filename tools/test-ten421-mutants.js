@@ -8,7 +8,7 @@ const FILES = { js: path.join(ROOT, 'trading-report.js'), html: path.join(ROOT, 
 const SRC = { js: fs.readFileSync(FILES.js, 'utf8'), html: fs.readFileSync(FILES.html, 'utf8') };
 const MUTANTS = [
   ['js', 'slate: the frozen m.day, not the board\'s day bucket', "return m && tmBucket(m) === day && !tmFinished(m); })", "return m && m.day === day && !tmFinished(m); })"],
-  ['js', 'slate: not in the board\'s m.time order', "      .sort(function (a, b) { return String(a.time || '').localeCompare(String(b.time || '')); });\n  }", "      .slice();\n  }"],
+  ['js', 'slate: not in the board\'s start order', "        if (isFinite(ta) && isFinite(tb) && ta !== tb) return ta - tb;\n        return String(a.time || '').localeCompare(String(b.time || ''));", "        return 0;"],
   ['js', 'slate: finished matches kept', "return m && tmBucket(m) === day && !tmFinished(m); })", "return m && tmBucket(m) === day; })"],
   ['js', 'slate: a match the Live feed shows in play stays a pre-match row', "if (day === 'today' && isMatchLive(m)) return;", "if (false) return;"],
   ['js', 'R3: a close fallback back (column shows a price the card face does not)', "      return { price: Number(pair[who]), book: cardBookName(pair.book, pair), kind: 'now' };\n    }\n    return null;", "      return { price: Number(pair[who]), book: cardBookName(pair.book, pair), kind: 'now' };\n    }\n    try { var c = _mcCloseOf(m, who); if (c != null) return { price: Number(c), book: 'Bet105', kind: 'close' }; } catch (e) {}\n    return null;"],
