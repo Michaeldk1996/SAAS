@@ -176,15 +176,22 @@ def _api_get(path, params, key):
         return None, str(e)
 
 
-def active_subscription(key):
-    """The live /v4/account active subscription block, or None. FREE — /v4/account
-    does not move the meter (measured repeatedly: 10 consecutive reads, delta 0)."""
+def read_account(key):
+    """(active subscription block or None, read error or None) from the live
+    /v4/account. FREE — /v4/account does not move the meter (measured repeatedly:
+    10 consecutive reads, delta 0). The error tells "could not read the account"
+    (a 429, a timeout) apart from "read it, and no subscription is active"."""
     data, err = _api_get('/v4/account', {}, key)
     if data is None:
         print(f'::warning::Could not read the oddspapi account ({err}).', file=sys.stderr)
-        return None
+        return None, err if err is not None else 'unreadable'
     subs = [s for s in (data.get('subscriptions') or []) if s.get('is_active')]
-    return subs[0] if subs else None
+    return (subs[0] if subs else None), None
+
+
+def active_subscription(key):
+    """The live /v4/account active subscription block, or None (unread or none)."""
+    return read_account(key)[0]
 
 
 def _parse(ts):
@@ -251,7 +258,12 @@ def quota_status(key, cadence_note='', by=None):
     days left in the window is not a problem, and firing on it would train the
     channel to be ignored, which is how the 80% warning died.
     """
-    sub = active_subscription(key)
+    sub, read_err = read_account(key)
+    if read_err is not None:
+        # 30 Oct 2026: a 429 on /v4/account was reported as "NO active subscription"
+        # on every odds-history run while the subscription was valid to 10 Nov. An
+        # unread meter is a warning (already printed), never that error.
+        return None
     if not sub:
         print('::error::oddspapi reports NO active subscription — every metered '
               'call will fail until it is renewed.', file=sys.stderr)
