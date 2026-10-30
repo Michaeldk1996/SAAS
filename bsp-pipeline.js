@@ -239,6 +239,8 @@ const H2H_EVENT_TYPES = new Set(['Atp Singles', 'Challenger Men Singles', 'Itf M
 // h2h-core.js ATP_RECORD_NOT_COUNTED — read, never copied (also the Asian Games and Davis Cup Group III/IV, absent from
 // ATP's H2H). Only H2H reads it.
 const H2H_NOT_ATP_RECORD = require('./h2h-core.js').ATP_RECORD_NOT_COUNTED;
+// The single qualifying rule (founder 2026-10-30): every builder that decides "is this row qualifying?" asks h2h-core.
+const H2H_QUAL_RULE = require('./h2h-core.js').qualifyingByMainDraw;
 // Form keeps its OWN list, never the H2H one (founder TEN-380 + TEN-383 2026-10-04; kept by the 2026-10-16 correction):
 // Laver Cup, Hopman Cup and exhibitions out; Challengers / ITF / qualifying (TEN-8, 2026-08-03), the Asian Games and
 // Davis Cup Group III/IV stay in. The card's Recent form %, the Form tab, Key factors' Recent form, the profile ribbon and
@@ -412,10 +414,17 @@ async function fetchPlayerTournamentMatches(playerKey, hintKey) {
   const res = await fetch(url);
   const data = await res.json();
   if (!data.success) return [];
-  return sanitizeFixtures(Array.isArray(data.result) ? data.result : [])
+  const fx = sanitizeFixtures(Array.isArray(data.result) ? data.result : []);
+  // The single qualifying rule (founder 2026-10-30): main draw only (N7) = not flagged AND not a word round before his
+  // first "1/N-finals" round of that edition (h2h-core qualifyingByMainDraw); round-robin / team events keep theirs.
+  const edRows = new Map();
+  const edKey = f => `${f.tournament_key}|${f.tournament_season || String(f.event_date || '').slice(0, 4)}`;
+  for (const f of fx) if (f.tournament_round) { if (!edRows.has(edKey(f))) edRows.set(edKey(f), []); edRows.get(edKey(f)).push({ date: f.event_date, round: f.tournament_round }); }
+  const ruleQual = f => !ROUND_ROBIN_NAMES.test(f.tournament_name || '') && H2H_QUAL_RULE({ date: f.event_date, round: f.tournament_round }, edRows.get(edKey(f)));
+  return fx
     .filter(f =>
       f.tournament_name && f.tournament_name.includes(hintKey) &&
-      f.tournament_round && f.event_qualification !== 'True' &&
+      f.tournament_round && f.event_qualification !== 'True' && !ruleQual(f) &&
       (f.event_winner === 'First Player' || f.event_winner === 'Second Player')
     )
     // TEN-313: carry the walkover verdict trimFixture drops, so buildTournamentHistory can
@@ -984,6 +993,15 @@ function playerMatchHistory(fixtures, playerKey, currentYear, surfaceMap, courtM
       if (m.won && m._short !== 'Q' && !m._frac && m._rank > firstLossRank) { m._qual = true; m._short = 'Q'; m._rank = -1; }
     }
   }
+  // (4) The single qualifying rule (founder 2026-10-30; h2h-core qualifyingByMainDraw, the date test H2H applies): a
+  // word-round row dated before this edition's first "1/N-finals" round — or in an edition with none — is qualifying.
+  // It catches what the first-loss net cannot: a qualifier who LOST in the qualifying semi-final or final has no main-draw
+  // loss to anchor on (2021–23: 518 ATP + 1,841 Challenger / ITF rows read as main-draw SF / F / QF). Round-robin and team
+  // events keep their rounds.
+  for (const [, ms] of _byEd) {
+    if (ROUND_ROBIN_NAMES.test(ms[0]._cname || '') || ms.some(m => m._short === 'RR')) continue;
+    for (const m of ms) if (!m._qual && H2H_QUAL_RULE(m, ms)) { m._qual = true; m._short = 'Q'; m._rank = -1; }
+  }
   // Apply the founder's universal label, then drop the scratch fields so the
   // shipped shard row shape is unchanged apart from the corrected `round`.
   for (const r of out) {
@@ -1030,6 +1048,30 @@ const SURFACE_CORRECTIONS = [
 // across editions, so every Olympic match read as grass (London 2012's surface). The surface is per edition, by year —
 // Tokyo 2021 hard, Paris 2024 clay — and this map is the source for every Olympic row, whatever its name spelling.
 const OLYMPIC_SURFACE_BY_YEAR = { 2000: 'hard', 2004: 'hard', 2008: 'hard', 2012: 'grass', 2016: 'hard', 2021: 'hard', 2024: 'clay', 2028: 'hard' };
+// The single qualifying rule on one player's career-history rows (founder 2026-10-30; h2h-core qualifyingByMainDraw). The
+// edition is resolveQualifying's own window — the same tournament and level, −16…+5 days — so an edition across
+// 1 January stays one; round-robin / team events and archive (TML) rows keep their rounds. Labels only, as the
+// first-loss net: the row stays counted, its round becomes "Qualifying". Returns how many rows it relabelled.
+function applyQualifyingRule(rows) {
+  const byEv = new Map();
+  for (const r of rows || []) {
+    if (!r || r.src === 'archive' || !r.round || ROUND_ROBIN_NAMES.test(String(r.tournament || ''))) continue;
+    const k = `${r.level}|${r.tournament}`;
+    if (!byEv.has(k)) byEv.set(k, []);
+    byEv.get(k).push(r);
+  }
+  const day = d => { const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(d || '')); return m ? Date.UTC(+m[1], +m[2] - 1, +m[3]) / 864e5 : null; };
+  let n = 0;
+  for (const [, ev] of byEv) {
+    for (const r of ev) {
+      if (/^qualif/i.test(String(r.round))) continue;
+      const d0 = day(r.date); if (d0 == null) continue;
+      const win = ev.filter(e => { const d = day(e.date); return d != null && d - d0 >= -16 && d - d0 <= 5; });
+      if (H2H_QUAL_RULE(r, win)) { r.round = 'Qualifying'; n++; }
+    }
+  }
+  return n;
+}
 function olympicSurface(name, date) {
   if (!/olympic/i.test(String(name || ''))) return null;
   return OLYMPIC_SURFACE_BY_YEAR[String(date || '').slice(0, 4)] || null;
@@ -4410,6 +4452,7 @@ async function writeCareerHistoryShards(profiles, opts = {}) {
   // With SET_REPAIR on, a missing or corrupt repair file stops the run rather than publish the short lists again.
   const setRepairs = SET_REPAIR ? JSON.parse(fs.readFileSync(SET_REPAIRS_FILE, 'utf8')) : null;
   const setRepairTotals = { repaired: 0, flagged: 0, stale: 0 };
+  const qualRuleTotals = { relabelled: 0 };   // the single qualifying rule's relabels this write (founder 2026-10-30)
   if (TE_INGEST && !fs.existsSync(TE_HISTORY_INDEX)) throw new Error(`TE_INGEST is on but ${TE_HISTORY_INDEX} is missing — refusing to publish career records without the Tennis Explorer store`);
 
   for (const [key, p] of Object.entries(profiles)) {
@@ -4436,6 +4479,9 @@ async function writeCareerHistoryShards(profiles, opts = {}) {
     // profile built before the correction — the map is the one fixtureSurface() reads. Before the year tally,
     // so the tally counts it on its edition's surface too (review 2026-10-16).
     for (const r of rows) { const os = olympicSurface(r.tournament, r.date); if (os) r.surface = os; }
+    // The single qualifying rule (founder 2026-10-30), also on rows a cached profile built before it (14-day TTL): a
+    // feed word-round row before this edition's first "1/N-finals" round reads "Qualifying" (applyQualifyingRule).
+    qualRuleTotals.relabelled += applyQualifyingRule(rows);
     if (setRepairs) { const d = SetRepairs.applySetRepairs(rows, key, setRepairs); for (const k of Object.keys(setRepairTotals)) setRepairTotals[k] += d[k]; }
     // TEN-443 step 2: merge the player's Tennis Explorer rows (te-history/<key>.json) — one match = one row, TE's
     // counting rules minus exhibitions, TE's court class and edition-year season, every disagreement kept on the row —
@@ -4641,6 +4687,7 @@ async function writeCareerHistoryShards(profiles, opts = {}) {
       te: TE_INGEST ? teTotals : null,
       // TEN-443: dropped-set repairs — null while SET_REPAIR is off
       setRepairs: SET_REPAIR ? { ...setRepairTotals, builtAt: setRepairs.builtAt || null } : null,
+      qualifyingRule: { relabelled: qualRuleTotals.relabelled },
       exclusions: {
         // What a games-based rate must drop, and why.
         incomplete: incompleteTotal,      // did not finish, for its format
@@ -5702,7 +5749,9 @@ function historyCacheFresh(cached, now, isSeed) {
 // certifier, parity with the set-count net (v5) and the record-by-season twin.
 // Bumping to 6 busts every cached history so the corrected rows rebuild.
 // v7 (founder 2026-10-22): walkover rows listed in each edition, walkover-only editions kept with the round reached.
-const TOURNAMENT_HISTORY_SCHEMA_VERSION = 7;
+// v8 (founder 2026-10-30): the single qualifying rule (h2h-core qualifyingByMainDraw) — a word-round fixture before his
+// first "1/N-finals" round of the edition is 'Q' (Ofner, Wimbledon 2021 read "Final" for a qualifying final). Busts the cache.
+const TOURNAMENT_HISTORY_SCHEMA_VERSION = 8;
 
 // Round depth ranking (higher = deeper run). Used to derive each player's best
 // result at a tournament. Covers both the word forms ("Quarter-finals") and the
@@ -5823,6 +5872,15 @@ async function fetchPlayerCareerHistory(playerKey) {
   if (!data || !data.success || !Array.isArray(data.result)) return null;
   sanitizeFixtures(data.result);
 
+  // The single qualifying rule (founder 2026-10-30): his own fixtures of each edition (tournament_key + season), so a
+  // word-round fixture before his first "1/N-finals" round there reads 'Q' (h2h-core qualifyingByMainDraw).
+  const edRows = new Map();
+  for (const f of data.result) {
+    if (!f.tournament_round) continue;
+    const ek = `${f.tournament_key}|${f.tournament_season || String(f.event_date || '').slice(0, 4)}`;
+    if (!edRows.has(ek)) edRows.set(ek, []);
+    edRows.get(ek).push({ date: f.event_date, round: f.tournament_round });
+  }
   const byTournament = {};
   for (const f of data.result) {
     if (!f.tournament_name || !f.tournament_round) continue;
@@ -5855,6 +5913,8 @@ async function fetchPlayerCareerHistory(playerKey) {
     const year = parseInt(f.tournament_season || (f.event_date || '').slice(0, 4), 10);
     if (!year) continue;
     let code = isQualifying ? 'Q' : careerRoundShort(f.tournament_round);
+    if (code !== 'Q' && !ROUND_ROBIN_NAMES.test(name)
+        && H2H_QUAL_RULE({ date: f.event_date, round: f.tournament_round }, edRows.get(`${f.tournament_key}|${f.tournament_season || String(f.event_date || '').slice(0, 4)}`))) code = 'Q';
     const opp = (isP1 ? f.event_second_player : f.event_first_player) || '';
     const oppKey = isP1 ? f.second_player_key : f.first_player_key;
     // event_final_result is raw fixture order ("player1 sets - player2 sets"),
@@ -8327,7 +8387,7 @@ if (require.main === module) {
   });
 }
 
-module.exports = { venueHintKeyFor, buildDrawMatchesStore, feedSetScores, drawFixtureRow, feedRoundCode, liveCardCheck, isCardableFixture, fixtureLiveState, olympicSurface, fixtureSurface, modelH2hMatches, modelMatchStarted, modelEventKey, modelPreMatchCandidates, buildModelOutput, isUnplayedFinishedFixture, buildMatchObject, buildUpcomingMatchObject, buildOneProfile, profileNameFromFixtures, findApiTennisFixture, fixtureFirstIsHome, pinnacleOrFirst, normalizeName, venueAndCourtSpeedFor, courtConditionsFor, courtSpeedRecordFromFixtures, COURT_CONDITIONS, ocsMatchKey, ocsNameKey, fetchH2H, h2hCountsInAtpRecord, H2H_NOT_ATP_RECORD, FORM_NOT_ATP_RECORD, recentFormPct, capRecentFormMatches, PROFILE_FORM_WINDOW, tourLabelOf, aggregatePlayerWue, aggregateStatsFromFixtures, isCancelledFixture, profileRosterFloorVerdict, lastPublishedRosterCount, profilesWithoutTournamentHistory, PROFILE_ROSTER_BACKSTOP, PROFILE_ROSTER_RATIO, MAX_OPPONENT_BUILDS_PER_RUN, isIndoorTournament, loadTournamentCourtMap, fetchRecentSinglesFixtures, recentFormFromFixtures, progressionSheetMatches, buildTournamentProgression, extractProgressionMetrics, buildSetStatsFromFixture, buildMatchStatsFromFixture, extractFormShards, buildRecentFormForMatch,
+module.exports = { applyQualifyingRule, venueHintKeyFor, buildDrawMatchesStore, feedSetScores, drawFixtureRow, feedRoundCode, liveCardCheck, isCardableFixture, fixtureLiveState, olympicSurface, fixtureSurface, modelH2hMatches, modelMatchStarted, modelEventKey, modelPreMatchCandidates, buildModelOutput, isUnplayedFinishedFixture, buildMatchObject, buildUpcomingMatchObject, buildOneProfile, profileNameFromFixtures, findApiTennisFixture, fixtureFirstIsHome, pinnacleOrFirst, normalizeName, venueAndCourtSpeedFor, courtConditionsFor, courtSpeedRecordFromFixtures, COURT_CONDITIONS, ocsMatchKey, ocsNameKey, fetchH2H, h2hCountsInAtpRecord, H2H_NOT_ATP_RECORD, FORM_NOT_ATP_RECORD, recentFormPct, capRecentFormMatches, PROFILE_FORM_WINDOW, tourLabelOf, aggregatePlayerWue, aggregateStatsFromFixtures, isCancelledFixture, profileRosterFloorVerdict, lastPublishedRosterCount, profilesWithoutTournamentHistory, PROFILE_ROSTER_BACKSTOP, PROFILE_ROSTER_RATIO, MAX_OPPONENT_BUILDS_PER_RUN, isIndoorTournament, loadTournamentCourtMap, fetchRecentSinglesFixtures, recentFormFromFixtures, progressionSheetMatches, buildTournamentProgression, extractProgressionMetrics, buildSetStatsFromFixture, buildMatchStatsFromFixture, extractFormShards, buildRecentFormForMatch,
   // The Career-record pair. Exported together on purpose: their whole contract
   // is that the counts one returns are tallyable from the rows the other
   // returns, and that is what ten8-career-verify.js asserts.

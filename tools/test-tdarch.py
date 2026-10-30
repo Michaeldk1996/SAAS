@@ -409,5 +409,27 @@ try:
 finally:
     T.te_imported_batches, T.te_import_run = _imp, _run
 shutil.rmtree(td)
+# The single qualifying rule in the price import (founder 2026-10-30): an unflagged ATP word round before either player's first
+# "1/N-finals" round of the edition is ATP qualifying ('atp-q', a lower-level target); a main-draw run, a Davis Cup tie and a
+# flagged fixture keep their level. Mirrors h2h-core qualifyingByMainDraw (tools/test-qualifying-rule.js runs the JS twin).
+def _qf(ek, date, rnd, a, b, flag='False', name='ATP Washington', tk='2100', season='2021'):
+    return {'event_key': ek, 'event_date': date, 'tournament_round': f'{name} - {rnd}', 'tournament_name': name, 'tournament_key': tk,
+            'tournament_season': season, 'event_type_type': 'Atp Singles', 'event_qualification': flag,
+            'first_player_key': a, 'second_player_key': b}
+qfx = [_qf(1, '2021-07-31', 'Semi-finals', '359', '700'), _qf(2, '2021-08-01', 'Final', '359', '701'),     # Ofner's qualifying SF / F
+       _qf(3, '2021-08-03', '1/32-finals', '359', '702'),                                                   # ...then his main-draw R64 (LL)
+       _qf(4, '2021-08-02', '1/32-finals', '800', '801'), _qf(5, '2021-08-06', 'Quarter-finals', '800', '803'),  # a main-draw run
+       _qf(6, '2021-08-03', '1/16-finals', '803', '804'),
+       _qf(7, '2021-09-18', 'Semi-finals', '900', '901', name='ATP Davis Cup - World Group I', tk='2300'),
+       _qf(8, '2021-07-30', 'Final', '360', '361', flag='True')]
+n_ruled = T.mark_rule_qualifying(qfx)
+lv = {f['event_key']: T.lower_level(f) for f in qfx}
+check('qualifying rule: the unflagged qualifying SF / F are atp-q (lower-level targets); 2 marked', n_ruled == 2 and lv[1] == 'atp-q' and lv[2] == 'atp-q', (n_ruled, lv))
+check('qualifying rule controls: the LL main-draw R64 and a main-draw QF after R64 stay ATP main draw (Tennis-Data); Davis Cup keeps atp-x; the flag still decides',
+      lv[3] is None and lv[4] is None and lv[5] is None and lv[7] == 'atp-x' and lv[8] == 'atp-q', lv)
+_mr = T.mark_rule_qualifying
+check('qualifying rule wired: _lower_fixtures marks the rule before filtering to lower levels',
+      'ruled = mark_rule_qualifying(fx)' in open(os.path.join(os.path.dirname(__file__), 'tdarch.py')).read())
+
 print(f'\ntest-tdarch: {passed} passed, {failed} failed')
 sys.exit(1 if failed else 0)

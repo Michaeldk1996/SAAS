@@ -928,10 +928,51 @@ TE_LEVELS = ('atp-q', 'atp-x', 'ch', 'ch-q')
 RESULT_STATUSES = ('Finished', 'Retired')
 
 
+# The single qualifying rule (founder 2026-10-30; h2h-core.js qualifyingByMainDraw, the date test H2H applies): an ATP
+# fixture whose round is a bracket WORD (Quarter-finals / Semi-finals / Final / Qualifying...) is qualifying when it is dated
+# strictly before the first certified main-draw round ("1/N-finals") either player played at that edition (tournament key +
+# season), or when neither has one there. api-tennis filed 2021-23 qualifying brackets under the main-draw key with its own
+# words and no event_qualification flag, so lower_level read them as ATP main draw (Tennis-Data's) and none was ever offered
+# for a lower-level price. Round-robin / team events keep theirs. Applied to ATP only: a Challenger qualifying match the
+# flag missed is already a lower-level target ('ch'), so its price does not depend on the label.
+QUAL_WORD_ROUND = re.compile(r'^(quarter-?finals?|semi-?finals?|final|qualif\w*)$', re.I)
+QUAL_FRAC_ROUND = re.compile(r'^1/\d+\s*-?\s*finals?$', re.I)
+QUAL_NO_DRAW = re.compile(r'davis cup|atp cup|united cup|world team|laver|hopman|tour finals|atp finals|nitto|next ?gen|olympic|\bfinals\b|masters cup', re.I)
+
+
+def _qual_round(f):
+    return re.sub(r'^.* - ', '', str(f.get('tournament_round') or '')).strip()
+
+
+def mark_rule_qualifying(fixtures):
+    """Set f['_qual_rule'] on every ATP fixture the single qualifying rule calls qualifying (see above). Returns the count."""
+    ed = collections.defaultdict(list)
+    for f in fixtures:
+        if f.get('event_type_type') == 'Atp Singles' and QUAL_FRAC_ROUND.match(_qual_round(f)):
+            ed[(str(f.get('tournament_key')), str(f.get('tournament_season') or str(f.get('event_date') or '')[:4]))].append(f)
+    n = 0
+    for f in fixtures:
+        if f.get('event_type_type') != 'Atp Singles' or P.api_is_qualifying(f) or QUAL_NO_DRAW.search(str(f.get('tournament_name') or '')):
+            continue
+        if not QUAL_WORD_ROUND.match(_qual_round(f)):
+            continue
+        players = {str(f.get('first_player_key')), str(f.get('second_player_key'))}
+        key = (str(f.get('tournament_key')), str(f.get('tournament_season') or str(f.get('event_date') or '')[:4]))
+        md = min((str(g.get('event_date') or '') for g in ed.get(key, [])
+                  if {str(g.get('first_player_key')), str(g.get('second_player_key'))} & players and g.get('event_date')), default=None)
+        if md is None or str(f.get('event_date') or '') < md:
+            f['_qual_rule'] = True
+            n += 1
+    return n
+
+
 def lower_level(f):
     """pinarch's levels ('atp-q' | 'ch' | 'ch-q' | 'itf'), plus 'atp-x': an ATP singles main-draw match at an event Tennis-Data
     does not carry (its own regex on api-tennis's tournament name). Read here only: pinarch's lower closes keep its own
-    levels, so a team event's archive close still travels the td-feed 'team' path, never twice."""
+    levels, so a team event's archive close still travels the td-feed 'team' path, never twice. An ATP fixture the single
+    qualifying rule marked (mark_rule_qualifying) is 'atp-q'."""
+    if f.get('_qual_rule') and f.get('event_type_type') == 'Atp Singles':
+        return 'atp-q'
     lv = P.lower_level(f)
     if lv or f.get('event_type_type') != 'Atp Singles':
         return lv
@@ -1000,7 +1041,9 @@ def _lower_fixtures(frm, to):
         if not isinstance(j.get('result'), list) and j.get('success') != 1:
             raise RuntimeError(f'get_fixtures {d}: no result list ({str(j)[:200]})')
         # slim: the point-by-point, set scores and statistics are dropped (the 2021+ window holds ~2,100 days of fixtures)
-        return d, [{k: v for k, v in f.items() if not isinstance(v, (list, dict))} for f in (j.get('result') or []) if lower_level(f)]
+        # ATP main-draw fixtures are kept for now: the single qualifying rule reads each edition's "1/N-finals" rounds
+        return d, [{k: v for k, v in f.items() if not isinstance(v, (list, dict))} for f in (j.get('result') or [])
+                   if lower_level(f) or f.get('event_type_type') == 'Atp Singles']
     def odds(d):
         j = _at({'method': 'get_odds', 'date_start': d, 'date_stop': d})
         return d, j.get('result') if isinstance(j.get('result'), dict) else {}
@@ -1013,7 +1056,9 @@ def _lower_fixtures(frm, to):
         for d, res in ex.map(odds, days):
             for ek, v in res.items():
                 od[str(ek)] = (v or {}).get('Home/Away') or {}
-    return fx, od, empty
+    ruled = mark_rule_qualifying(fx)
+    print(f'single qualifying rule: {ruled} ATP fixture(s) the flag filed as main draw are qualifying (atp-q)')
+    return [f for f in fx if lower_level(f)], od, empty
 
 
 def cmd_lower_import(dry_run=False, frm=LOWER_FROM, to=LOWER_TO, unpriced_out=None):

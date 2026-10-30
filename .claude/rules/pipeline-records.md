@@ -166,6 +166,26 @@ Where this file conflicts with `modal-analysis.md` (TEN-312, 2026-09-28), that f
   *Convergence:* a builder change reaches a player's cells and shard on his next profile rebuild (14-day
   TTL, `OPPONENT_PROFILE_MAX_AGE_MS`), not on deploy; re-measure after the TTL, not before.
 
+- **One qualifying rule (founder 2026-10-30, "one shared isQualifying() using the h2h-core.js rule everywhere").** A
+  row whose round is a bracket word (Quarter-finals / Semi-finals / Final / Qualifying…) is qualifying when it is dated
+  strictly before the first certified main-draw round ("1/N-finals") of its edition, or when the edition holds none; a
+  "1/N-finals" row never is; round-robin and team events keep their rounds. ONE function, `H2HCore.qualifyingByMainDraw`
+  (h2h-core.js), on one player's rows (the pipeline) or both players' (`resolveQualifying`, H2H). Applied in
+  `playerMatchHistory` (career-history rows, after the first-loss net), at shard write to every cached row
+  (`applyQualifyingRule`, the edition = same tournament and level, −16…+5 days, so an edition across 1 January stays one;
+  count in `career-history-index.json` `meta.qualifyingRule`), in `fetchPlayerCareerHistory` (Record per tournament, cache
+  v8) and in `fetchPlayerTournamentMatches` (the Match analysis Tournament tab, main draw only). Labels only: a qualifying
+  row stays counted (TE rules). **Why:** api-tennis filed 2021–23 qualifying brackets under the main-draw key with its own
+  words and no `event_qualification` flag; the first-loss net only re-tagged qualifying WINS. Measured 30 Oct on the 733
+  deployed career histories: 520 ATP rows (518 in 2021–23) and 1,841 Challenger / ITF rows moved to qualifying, none the
+  other way; 0 of the ATP ones matched a Tennis-Data main-draw match; 514 showed in Record per tournament as SF 347 / F 149
+  / QF 17 / R32 1 (Ofner, Wimbledon 2021 read "Final" for a qualifying final). **Test:** `tools/test-qualifying-rule.js`
+  (the real builders; the 57 H2H golden pairs unmoved; mutants `no-career-pass`, `no-editions-rule`, `no-shard-pass`).
+  **The price import too** (`tools/tdarch.py` `mark_rule_qualifying`, ATP only): an unflagged ATP word round before either
+  player's first "1/N-finals" round of the edition is `atp-q`, so the daily lower-level import offers it for a price (before,
+  the flag filed it as ATP main draw — Tennis-Data's, which lists no qualifying — and none was ever priced). A Challenger
+  qualifying match the flag missed was already a lower-level target, so its price does not depend on the label; stored
+  archive rows keep theirs (append-only). **Test:** `tools/test-tdarch.py` "qualifying rule".
 - **Walkovers (founder 2026-10-22; counting from TEN-312 N2 kept, display N6 reversed): a walkover is neither a win nor
   a loss, for either player, on every surface, the player profile included — and it IS a row.** Canonical text:
   `modal-analysis.md` "Walkovers and retirements — every tab". The career-history files carry every explicitly flagged
