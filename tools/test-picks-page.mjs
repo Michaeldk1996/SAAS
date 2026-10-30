@@ -159,6 +159,10 @@ async function browser() {
     const late = await R(`localStorage.setItem('stennisfy.tz', Intl.DateTimeFormat().resolvedOptions().timeZone); set({ tab: 'upcoming', view: 'cards', sheet: null });
       return { dev: Intl.DateTimeFormat().resolvedOptions().timeZone, s: txt(q('[data-sheet="p1"] .pk-b3-s')) };`);
     check('a late auth zone sync (device zone → stennisfy.tz) keeps the fixture on Brussels: posted 09:41', late.dev === 'Europe/Brussels' && /^posted 09:41 /.test(late.s), JSON.stringify(late));
+    // Close ink: white when there is a close (board 1a `closeC`), the segment before it carries the trail colour
+    const ci = await R(`window.__pkPlan = 'pro'; set({ tab: 'upcoming', view: 'cards', sheet: null }); const band = cs(q('[data-sheet="p2"] .pk-bt-close'), 'color'), none = cs(q('[data-sheet="p1"] .pk-bt-close'), 'color');
+      q('[data-sheet="p2"] .pk-b3').click(); const sheet = [...document.querySelectorAll('.pk-sh .pk-sh-c')].map(e => getComputedStyle(e).color); set({ sheet: null }); return { band, none, sheet };`);
+    check('Close ink: white 1.78 on the band and in the sheet (board 1a closeC), grey dash with none', ci.band === 'rgb(231, 233, 238)' && ci.none === 'rgb(163, 170, 190)' && ci.sheet.length > 0 && ci.sheet.every(c => c === 'rgb(231, 233, 238)'), JSON.stringify(ci));
     check('1a header copy', a.title === 'Picks' && a.sub === 'Hand-picked daily from the Stennisfy model and strategy.', JSON.stringify(a).slice(0, 300));
     check('1a header stats Bets today · Match · Outright · Staked · If all land', a.stats.join(' | ') === 'BETS TODAY 5 | MATCH 3 | OUTRIGHT 2 | STAKED 5% | IF ALL LAND +6.4%' || a.stats.join(' | ') === 'Bets today 5 | Match 3 | Outright 2 | Staked 5% | If all land +6.4%', a.stats.join(' | '));
     check('1a five bands, head "Open · 5 bets" + "all at bet105 · click a bet for the analysis"', a.bands.length === 5 && a.head === 'Open · 5 bets all at bet105 · click a bet for the analysis', JSON.stringify([a.bands, a.head]));

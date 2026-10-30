@@ -75,6 +75,9 @@ SIDEBAR_NAV > CHANGES_2026-10-29 > SPEC > README; reference `Picks LOCKED 2026-1
   whole days; the header carries the Record strip (30 d · 90 d · Season; under 20 settled → dashes + "n=N · thin").
   Two tabs only: no date strip, tournament menu, search or day chips. Bands keep the store's posted order (the
   package says "the bets-box row order").
+- **Close ink is white when there is a close, a grey dash when not** (board 1a `closeC`, band, sheet and mobile card
+  alike); the trail segment before it carries the green / red. CHANGES_2026-10-30 §1's "coloured by the trail rule" is
+  outranked by the board. **Test:** `tools/test-picks-page.mjs` "Close ink" (mutant: the segment colour).
 - **Any band or ledger row opens the analysis sheet** (settled picks get the result block, open picks the trail); Esc, ✕
   and the scrim close it. A gated (non-Pro) band is blurred, not clickable and opens nothing.
 - **Mobile (≤ 640)**: one mobile card per bet, 16 px gutter.

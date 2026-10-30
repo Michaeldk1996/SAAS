@@ -189,11 +189,15 @@
     return '<div class="pk-bt"><span class="pk-bt-open">' + C.f2(t.open) + '</span>' + seg(t.segs[0])
       + '<span class="pk-bt-posted">' + C.f2(t.posted) + '</span>' + seg(t.segs[1])
       + '<span class="pk-bt-now">' + C.f2(t.now) + '</span>' + seg(t.segs[2])
-      + '<span class="pk-bt-close" style="color:' + (t.close == null ? 'var(--text-label)' : t.segs[2]) + '">' + C.f2(t.close) + '</span>'
+      + '<span class="pk-bt-close" style="color:' + closeInk(t) + '">' + C.f2(t.close) + '</span>'
       + '<span class="pk-bt-l" style="grid-column:1">Open</span><span class="pk-bt-l" style="grid-column:3">Posted</span>'
       + '<span class="pk-bt-l" style="grid-column:5">' + esc(t.nowLabel) + '</span><span class="pk-bt-l" style="grid-column:7">Close</span></div>';
   }
   // dayWord: the pick's day ("Today", "Tue 28") when the open bets span more than one day, else '' (board 1a `where`)
+  // Close ink = white when there is a close, grey dash when not — the board's one rule (`closeC`: white, else the label
+  // grey; band, sheet and card alike); the trail segment before it carries the colour. CHANGES_2026-10-30 §1's
+  // "coloured by the trail rule" is outranked by the board.
+  function closeInk(t) { return t.close == null ? 'var(--text-label)' : 'var(--text)'; }
   function band(p, dayWord) {
     var gated = gatedOf(p), outright = C.isOutright(p), blur = gated ? ' is-blur' : '', clv = C.clvOf(p);
     var where = (dayWord ? dayWord + ' ' + MID + ' ' : '') + (outright ? (p.event || DASH) : C.whereText(p));
@@ -296,7 +300,7 @@
       }).join('');
       var tr = t ? '<div class="pk-sh-trail">' + stop('Open', '<span class="pk-sh-o">' + C.f2(t.open) + '</span>') + '<span class="pk-sh-seg" style="background:' + t.segs[0] + '"></span>'
         + stop('Posted', '<span class="pk-sh-p16">' + C.f2(t.posted) + '</span>', ' is-c') + '<span class="pk-sh-seg" style="background:' + C.trailColour(t.posted, t.close) + '"></span>'
-        + stop('Close', '<span class="pk-sh-c" style="color:' + (t.close == null ? 'var(--text-label)' : C.trailColour(t.posted, t.close)) + '">' + C.f2(t.close) + '</span>', ' is-r') + '</div>' : '';
+        + stop('Close', '<span class="pk-sh-c" style="color:' + closeInk(t) + '">' + C.f2(t.close) + '</span>', ' is-r') + '</div>' : '';
       block = '<div class="pk-sh-set-blk"><div class="pk-sh-res"><span class="pk-sh-cap">Result</span>' + players + '</div>'
         + '<div class="pk-sh-right">' + tr + '<div class="pk-sh-tiles pk-sh-tiles--4">' + tile('CLV', C.pct(clv), clv == null ? 'pk-s-zero' : sgnCls(clv))
         + tile('Stennisfy', C.f2(mf)) + tile('Stake', esc(C.stakeText(p.stake))) + tile('P/L', esc(C.plText(p) || DASH), sgnCls(pl)) + '</div></div></div>';
@@ -305,7 +309,7 @@
         + stop('Open', '<span class="pk-sh-o">' + C.f2(t.open) + '</span>') + '<span class="pk-sh-seg" style="background:' + t.segs[0] + '"></span>'
         + stop('Posted', '<span class="pk-sh-p14">' + C.f2(t.posted) + '</span>', ' is-c') + '<span class="pk-sh-seg" style="background:' + t.segs[1] + '"></span>'
         + stop(esc(t.nowLabel), '<span class="pk-sh-p16">' + C.f2(t.now) + '</span>', ' is-c') + '<span class="pk-sh-seg" style="background:' + t.segs[2] + '"></span>'
-        + stop('Close', '<span class="pk-sh-c" style="color:' + (t.close == null ? 'var(--text-label)' : t.segs[2]) + '">' + C.f2(t.close) + '</span>', ' is-r') + '</div></div>'
+        + stop('Close', '<span class="pk-sh-c" style="color:' + closeInk(t) + '">' + C.f2(t.close) + '</span>', ' is-r') + '</div></div>'
         + '<div class="pk-sh-tiles pk-sh-tiles--3">' + tile('CLV', C.pct(clv), clv == null ? 'pk-s-zero' : sgnCls(clv))
         + tile('Stennisfy', C.f2(mf), modelBlur.trim()) + tile('Stake', esc(C.stakeText(p.stake))) + '</div></div>';
     }
