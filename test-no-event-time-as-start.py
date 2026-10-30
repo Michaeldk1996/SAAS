@@ -140,6 +140,7 @@ ALLOWED = {
     'tools/test-tdarch.py': {  # pinned 2026-10-26 (live-flip-recorder)
         "bd10 = {'2026-05-20': [{'event_key': 50, 'event_first_player': 'T. Theta', 'event_second_player': 'E. Eta', 'event_date': '2026-05-20', 'event_time': '12:00'}]}",  # test fixture / assertion; never a start in shipped code
         "G = lambda ek, d, tm=None: dict(F(ek, 'Challenger Men Singles', d=d), **({'event_time': tm} if tm else {}))",  # test fixture / assertion; never a start in shipped code
+        "MDF = lambda ek, win='First Player', tm='18:00': dict(F(ek, 'Atp Singles', win=win, d='2025-03-10'), event_time=tm, event_first_player='A. One', event_second_player='B. Two')",  # test fixture (TE above Bet365, 2026-10-30): the scheduled time te_start rejects against; never a start in shipped code
     },
     'tools/test-ten308-berlin-time.js': {  # pinned 2026-10-26 (live-flip-recorder)
         '// TEN-308 — api-tennis event_date/event_time is the Europe/Berlin wall clock',  # test fixture / assertion; never a start in shipped code
