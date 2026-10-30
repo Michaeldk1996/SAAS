@@ -15,6 +15,7 @@ MIG3 = os.path.join(os.path.dirname(MIG), '20261016150000_historical_snapshot.sq
 MIG4 = os.path.join(os.path.dirname(MIG), '20261017090000_historical_snapshot_start10.sql')
 MIG5 = os.path.join(os.path.dirname(MIG), '20261019090000_historical_snapshot_bet365.sql')
 MIG6 = os.path.join(os.path.dirname(MIG), '20261020090000_historical_snapshot_te.sql')
+MIG7 = os.path.join(os.path.dirname(MIG), '20261030090000_historical_snapshot_te_bet365.sql')
 pg = PG()
 if not pg.available():
     print(f'SKIP  test-historical-archive-sql: {pg.why} — NOT A PASS (the code gate runs it)'); sys.exit(0)
@@ -163,6 +164,28 @@ try:
     rc, out = q("delete from public.historical_snapshot where source = 'Tennis Explorer · Pinnacle'", 'service_role')
     check('service_role DELETE of a TE row refused', rc != 0, out)
     rc, out = q("select public.historical_snapshot_guard()->>'ok'"); check('snapshot guard ok after the TE migration', out == 'true', out)
+    # ── Tennis Explorer's Bet365 price as a fifth SNAPSHOT source (founder 2026-10-30), 'Bet365 (approx.)', never a time ──
+    n2 = q('select count(*) from public.historical_snapshot')[1]
+    for i in (1, 2):
+        rc, err = pg.file(MIG7); check(f'Tennis Explorer Bet365 migration applies (pass {i}: idempotent)', rc == 0, err)
+    tb = lambda key, label='Bet365 (approx.)', price_ts='null', detail=None, extra='': te(key, label, price_ts, detail, extra).replace(
+        "'Tennis Explorer · Pinnacle'", "'Tennis Explorer · Bet365'")
+    check('service_role can store a Tennis Explorer Bet365 snapshot', q(tb('tb1'), 'service_role')[0] == 0)
+    rc, out = q(tb('tb2', label='Pinnacle (approx.)'), 'service_role'); check('a Tennis Explorer Bet365 snapshot can never carry the Pinnacle label', rc != 0, out)
+    rc, out = q(tb('tb3', label='from Pinnacle history'), 'service_role'); check('a Tennis Explorer Bet365 snapshot can never carry a close label', rc != 0, out)
+    rc, out = q(tb('tb4', price_ts="'2026-09-28 13:55Z'"), 'service_role'); check('a Tennis Explorer Bet365 snapshot may carry its change time', rc == 0, out)
+    rc, out = q(tb('tb9', price_ts="'2026-10-21 00:00Z'"), 'service_role'); check('a Tennis Explorer Bet365 change time after the page was read is refused', rc != 0, out)
+    rc, out = q(tb('tb5', detail={'teMatchId': '3338923', 'pageSha256': 'x'}), 'service_role'); check('a Tennis Explorer Bet365 snapshot must name its page sha256', rc != 0, out)
+    rc, out = q(tb('tb6', detail={'pageSha256': SHA}), 'service_role'); check('a Tennis Explorer Bet365 snapshot must name its TE match', rc != 0, out)
+    rc, out = q(tb('tb7', extra='start'), 'service_role'); check('a Tennis Explorer Bet365 snapshot claiming a start is refused', rc != 0, out)
+    rc, out = q(te('tb8'), 'service_role'); check('a Tennis Explorer Pinnacle snapshot is still accepted', rc == 0, out)
+    rc, out = q(B5.replace("'b1'", "'b11'"), 'service_role'); check('an api-tennis Bet365 snapshot is still accepted', rc == 0, out)
+    rc, out = q(B5.replace("'b1'", "'b12'").replace("'Bet365 (approx.)'", "'Pinnacle (approx.)'"), 'service_role')
+    check('control: an api-tennis Bet365 snapshot still cannot carry the Pinnacle label', rc != 0, out)
+    check('no stored snapshot lost by the TE Bet365 migration', int(q('select count(*) from public.historical_snapshot')[1]) == int(n2) + 4)
+    rc, out = q("delete from public.historical_snapshot where source = 'Tennis Explorer · Bet365'", 'service_role')
+    check('service_role DELETE of a TE Bet365 row refused', rc != 0, out)
+    rc, out = q("select public.historical_snapshot_guard()->>'ok'"); check('snapshot guard ok after the TE Bet365 migration', out == 'true', out)
 finally:
     pg.close()
 print(f'\ntest-historical-archive-sql: {passed} passed, {failed} failed')

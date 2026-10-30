@@ -17,7 +17,8 @@ const T = TABLES.join('|');
 const MIGRATIONS = new Set(['supabase/migrations/20261016090000_historical_odds_archive.sql', 'supabase/migrations/20261016150000_historical_snapshot.sql',
   'supabase/migrations/20261017090000_historical_snapshot_start10.sql',
   'supabase/migrations/20261019090000_historical_snapshot_bet365.sql',
-  'supabase/migrations/20261020090000_historical_snapshot_te.sql']);
+  'supabase/migrations/20261020090000_historical_snapshot_te.sql',
+  'supabase/migrations/20261030090000_historical_snapshot_te_bet365.sql']);
 const ALLOWED = new Set([...MIGRATIONS, 'tools/tdarch.py', 'tools/histarch-guard.mjs', '.github/workflows/historical-archive.yml',
   'tools/test-histarch.mjs', 'tools/test-historical-archive-sql.py', 'tools/test-tdarch.py',
   'tools/archive_install.py', 'tools/test-archive-ledger.py',

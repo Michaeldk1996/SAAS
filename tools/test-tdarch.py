@@ -476,5 +476,32 @@ check('main-draw feed: approx_feed_rows hands TE to the Database under its sourc
       [(r['source'], r['winner'], r['psw']) for r in T.approx_feed_rows([dict(m1, id=700)])] == [(T.TE_SOURCE, 'One A.', 1.6)])
 cv = T.te_coverage([m1], [], set())
 check('coverage: an atp-md row counts under its own level (no KeyError on a row with no level)', cv['teWins'] == {'atp-md': {'2025': 1}}, cv)
+# ── Tennis Explorer · Bet365 (founder 2026-10-30, "last before dash"): read from saved pages, join-only ──────────────────
+B3 = lambda ek, ts=None, lvl='ch', ka='11', kb='22': dict(TX(ek, lvl=lvl, pin=None, ka=ka, kb=kb), books=['bet365'],
+    b365={'p1': 1.8, 'p2': 2.0, 'p1Ts': ts, 'p2Ts': None, 'open': {'p1': 1.9, 'p2': 1.9}, 'moves': [1 if ts else 0, 0]})
+bdocs = [{'batch': 'b365-ch-01', 'source': T.TE_B365_SOURCE, 'complete': True, 'rows': [B3(81), B3(82, ts='2026-09-28T23:30:00Z'), B3(83, lvl='itf'), dict(B3(84), b365=None)]}]
+bfx = {str(k): F(k, 'Challenger Men Singles', d='2026-09-28') for k in (81, 82, 83, 84)}
+brows, brep = T.te_rows(bdocs, bfx.get, lambda ek: '2026-09-28T23:00:00Z')
+check('TE Bet365: a "Tennis Explorer · Bet365" row labelled "Bet365 (approx.)", its own hover, read from the b365 field (never pin)',
+      [(r['event_key'], r['source'], r['label'], r['detail']['hover']) for r in brows] == [(81, T.TE_B365_SOURCE, 'Bet365 (approx.)', T.TE_B365_HOVER)]
+      and T.TE_B365_HOVER == 'Bet365 (approx.) · Tennis Explorer, last pre-match price, not a confirmed close' and brows[0]['price_winner'] == 1.8, (brows, brep))
+check('TE Bet365: the in-play rule runs where the page shows a change time (82 dropped), ITF refused (83), no Bet365 pair (84) counted',
+      brep.get('dropped: last change after the start') == 1 and brep.get('level out of scope') == 1 and brep.get('joined, no Bet365 on the page') == 1
+      and brep.get('batch b365-ch-01: kept, no TE timestamp') == 1, brep)
+check('TE Bet365: te_docs accepts both TE sources; a doc of another source still stops the import', T.te_doc_kind(bdocs[0])[2] == 'b365' and T.te_doc_kind(tdocs[0])[2] == 'pin')
+bcur = [dict(brows[0], id=900, event_key=31), dict(ar[1], id=901, event_key=31, source=T.B365_SOURCE),
+        dict(brows[0], id=902, event_key=95), dict(te[0], id=903, event_key=96), dict(brows[0], id=904, event_key=96)]
+bf = T.lower_feed_rows(bcur)
+check('lower feed (2026-10-30): api-tennis Bet365 over TE Bet365 (31), TE Bet365 alone (95), TE Pinnacle over TE Bet365 (96) — last before the dash',
+      sorted((r['eventKey'], r['source']) for r in bf) == [(31, T.B365_SOURCE), (95, T.TE_B365_SOURCE), (96, T.TE_SOURCE)], bf)
+mut = T.lower_feed_rows([dict(r, source=T.TE_B365_SOURCE if r.get('source') == T.B365_SOURCE else r['source']) for r in bcur[:2]])
+check('control: two TE Bet365 rows on one match keep one (no duplicate)', len(mut) == 1, mut)
+bmd = [{'batch': 'b365-atp-md-id', 'source': T.TE_B365_SOURCE, 'complete': True, 'rows': [
+    dict(MD(1, None), pin=None, b365={'p1': 1.6, 'p2': 2.4, 'p1Ts': None, 'p2Ts': None, 'open': {}, 'moves': [0, 0]})]}]
+bm, bmrep = T.te_rows(bmd, lambda ek: None, lambda ek: None, lambda td: mjoin.get((td['winner'], td['loser']), (None, 'no fixture')))
+check('atp-md TE Bet365: level atp-md (the lower, join-only feed), never the main-draw Database feed; Tennis-Data names and round kept',
+      len(bm) == 1 and bm[0]['detail']['level'] == T.TE_MD_LEVEL and bm[0]['source'] == T.TE_B365_SOURCE and T.main_snapshots([dict(bm[0], id=910)]) == []
+      and [(r['level'], r['winner'], r['loser'], r['round'], r['source']) for r in T.lower_feed_rows([dict(bm[0], id=910)])]
+      == [(T.TE_MD_LEVEL, 'One A.', 'Two B.', '2nd Round', T.TE_B365_SOURCE)], (bm, bmrep))
 print(f'\ntest-tdarch: {passed} passed, {failed} failed')
 sys.exit(1 if failed else 0)

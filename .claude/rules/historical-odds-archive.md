@@ -82,6 +82,13 @@ file we hold is irreplaceable.
   change; kept in the archive, shown on no page — founder 2026-10-19), `fetched_at` = when the page was read, and names its TE match and page sha256 (CHECKs); it claims no cut, start or
   Oddspapi fixture. ITF is out of scope (refused by the importer). **In-play rule (founder 2026-10-20):** a price whose last change (`price_ts`) is after the start is not stored — our verified start (the batch row's close start, else `live_flip_log`) where we have one, otherwise api-tennis's scheduled time (UTC) — **used only to reject** (founder ruling 2026-10-26: the scheduled time may only reject a price or stop collecting / showing, never create a start, cut a close or label a start). **A row with no start of any kind (no verified start, no scheduled time) is not stored** (same ruling; replaces "no start → kept"). Each stored row names the time it was checked against (`detail.startChecked` / `startKind`); the dropped count per batch is in the import report. **The same rule is applied again at read time** (founder 2026-10-20, item 5 revised): `lower_feed_rows` never feeds a TE row whose `price_ts` is after its `startChecked` (`te_in_play`), so the rule can be tightened later without touching the append-only table. **Kept for these levels** (same ruling): a row with no TE time and a change in the start's own minute (TE prints minutes); the import report counts each per batch, and the rows not stored for having no start (`not stored: no start of any kind`), with the over-1pp share of the no-time group where the batch row carries our verified close (calib-01: 10 of 51). **Test:** `tools/test-historical-archive-sql.py`
   (negative controls), `tools/test-tdarch.py`.
+- **Tennis Explorer · Bet365 — a fifth snapshot source** (founder 2026-10-30; migration
+  `20261030090000_historical_snapshot_te_bet365.sql`): source `Tennis Explorer · Bet365`, label `Bet365 (approx.)` (the CHECK
+  pairs both Bet365 sources with that label), the TE Pinnacle row's other rules (names its TE match and page sha256, no cut,
+  start or Oddspapi fixture; `price_ts` null or no later than the read). Read from the saved pages by `stennisfy-ops`
+  `tools/te-b365-extract.mjs` (batches `b365-<source batch>`, no request) and stored by `tdarch.py te-import` like the TE
+  Pinnacle rows, in-play rule included. Fed last before the dash, join-only (`odds.md`). **Test:**
+  `tools/test-historical-archive-sql.py` (negative controls), `tools/test-tdarch.py`.
 - **Where it is used:** the Database join only (`database.md` "Pinnacle (approx.)"), never over a Tennis-Data or Oddspapi
   close; Bet365 stays the fallback where api-tennis has no pair. The private CSV export does NOT carry it (its columns are
   closes).

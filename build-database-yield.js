@@ -536,15 +536,22 @@ const LOWER_COLS = ['date', 'level', 'tournament', 'round', 'winner', 'loser', '
 // Tennis Explorer's Pinnacle (8; founder 2026-10-20, after the calibration: median 0.10pp on 988): after api-tennis Pinnacle,
 // before our captured Bet365 — close > start - 10 > api-tennis Pinnacle > Tennis Explorer Pinnacle > captured Bet365 >
 // api-tennis Bet365 > a dash. Its rows reach the feed when tools/tdarch.py TE_FEED_ON is on.
-const LOWER_RANK = { 3: 0, 4: 0, 5: 1, 2: 1.5, 8: 1.75, 6: 3, 7: 4 };
-const TE_SOURCE = 'Tennis Explorer · Pinnacle';
+// Tennis Explorer's Bet365 (10; founder 2026-10-30, "last before dash"; "for market edge and derived lines it's fine"): last,
+// after api-tennis's Bet365 snapshot, under the same in-play rule as the Pinnacle rows where the page shows a change time
+// (te-import). Its ATP main-draw rows (level atp-md) ride here too — join-only, never a Database figure — and only where the
+// Database itself has a dash for that Tennis-Data match.
+const LOWER_RANK = { 3: 0, 4: 0, 5: 1, 2: 1.5, 8: 1.75, 6: 3, 7: 4, 10: 5 };
+const TE_SOURCE = 'Tennis Explorer · Pinnacle', TE_B365_SOURCE = 'Tennis Explorer · Bet365', TE_B365_BOOK = 10;
 const LOWER_LEVEL_NAME = { 'atp-q': 'ATP Qualifying', ch: 'Challenger', 'ch-q': 'Challenger Qualifying', itf: 'ITF',
   // founder brief 2026-10-19 (item 1): an ATP main-draw match at an event Tennis-Data does not carry (Davis Cup, United Cup,
   // ATP Cup, Laver Cup, Hopman Cup, the Olympics, the Next Gen Finals, the Asian Games) — behind the team flag 't', like the
   // archive's own team closes: read by the price join only, never a Database figure
-  'atp-x': 'ATP' };
+  'atp-x': 'ATP',
+  // founder 2026-10-30: an ATP main-draw match the Database shows as a dash, priced by Tennis Explorer's Bet365 (join-only)
+  'atp-md': 'ATP' };
 const LOWER_B365_TO = '2026-09-16';                               // from 17 Sep only a close prices these levels
-const lower = { files: {}, rows: 0, byLevel: {}, byBook: {}, dropped: 0, b365: { captures: 0, noCareerRow: 0, atpMainDraw: 0, kept: 0, after16Sep: 0 } };
+const lower = { files: {}, rows: 0, byLevel: {}, byBook: {}, dropped: 0, b365: { captures: 0, noCareerRow: 0, atpMainDraw: 0, kept: 0, after16Sep: 0 },
+  teB365MainDraw: { offered: 0, kept: 0, notADash: 0 } };
 const lowerBest = new Map();
 // Oddspapi "Bergs, Zizou" -> "Z. Bergs" (our short form; tdNameJs then spells it as Tennis-Data)
 const commaToShort = n => { const s = String(n || ''); const i = s.indexOf(','); if (i < 1 || s.includes('/')) return null;
@@ -566,7 +573,8 @@ function lowerRead(file, bookOf, tag) {
   for (const l of lines.slice(1)) { const c = l.split(','); const r = {}; LOWER_COLS.forEach((k, i) => { r[k] = c[i]; }); const b = bookOf(r); if (b != null) lowerOffer(r, b); }
 }
 lowerRead(LOWER_CLOSES, r => ARCH_BOOK[(r.source || '').trim()], 'closes');
-lowerRead(LOWER_APPROX, r => (r.source === 'oddspapi Pinnacle (start − 10)' ? 5 : r.source === TE_SOURCE ? 8 : r.source === 'api-tennis Pinnacle' ? 2 : r.source === 'api-tennis Bet365' ? 7 : null), 'snapshots');
+lowerRead(LOWER_APPROX, r => (r.source === 'oddspapi Pinnacle (start − 10)' ? 5 : r.source === TE_SOURCE ? 8 : r.source === 'api-tennis Pinnacle' ? 2 : r.source === 'api-tennis Bet365' ? 7
+  : r.source === TE_B365_SOURCE ? TE_B365_BOOK : null), 'snapshots');
 // our captured Bet365 (cut at Oddspapi's start): its result, round and event from the player's own career row
 const LOWER_B365_ROOT = process.env.DB_YIELD_B365_ROOT || __dirname;   // bet365-history + career-history + the roster
 (function lowerBet365() {
@@ -602,14 +610,23 @@ const LOWER_B365_ROOT = process.env.DB_YIELD_B365_ROOT || __dirname;   // bet365
     r.winner = self && opp ? tdNameJs(won ? self : opp) : ''; r.loser = self && opp ? tdNameJs(won ? opp : self) : '';
   }
 })();
+// an ATP main-draw row (atp-md) fills only a Database dash: the main-draw unpriced row of the same Tennis-Data match
+// (date | winner | loser, the names as Tennis-Data spells them); a match the Database prices keeps its Database price alone
+const mainDash = new Set(uRaw.filter(u => u.length === 4).map(u => `${u[0]}|${u[1]}|${u[2]}`));
 for (const r of lowerBest.values()) {
   const dI = parseInt(String(r.date).replace(/-/g, ''), 10);
   if (!Number.isFinite(dI) || !r.winner || !r.loser || !r.winner.trim() || !r.loser.trim()) { lower.dropped++; continue; }
+  if (r.level === 'atp-md') {
+    lower.teB365MainDraw.offered++;
+    if (!mainDash.has(`${dI}|${r.winner.trim()}|${r.loser.trim()}`)) { lower.teB365MainDraw.notADash++; continue; }
+    lower.teB365MainDraw.kept++;
+  }
   const isRet = RETIRED.has((r.comment || '').trim());
-  const tx = r.level === 'atp-x', series = tx ? '' : LOWER_LEVEL_NAME[r.level];
+  const tx = r.level === 'atp-x' || r.level === 'atp-md', series = tx ? '' : LOWER_LEVEL_NAME[r.level];
   xAtt.push([series, '', '', (r.comment || '').trim(), '', '']);
-  xRaw.push([dI, tx ? null : series, '', '', (r.tournament || '').trim(), Math.min(r.pw, r.pl), Math.max(r.pw, r.pl),
-    r.pw <= r.pl ? 1 : 0, r.book, r.winner.trim(), r.loser.trim(), (tx ? 't' : 'l') + (isRet ? 'r' : '') + (r.pw === r.pl ? 'e' : '')]);
+  // atp-md keeps the Tennis-Data round (the join's round test) and rides behind flag 'l' (join-only), never the team flag
+  xRaw.push([dI, tx ? null : series, '', r.level === 'atp-md' ? (r.round || '').trim() : '', (r.tournament || '').trim(), Math.min(r.pw, r.pl), Math.max(r.pw, r.pl),
+    r.pw <= r.pl ? 1 : 0, r.book, r.winner.trim(), r.loser.trim(), (r.level === 'atp-x' ? 't' : 'l') + (isRet ? 'r' : '') + (r.pw === r.pl ? 'e' : '')]);
   lower.rows++; lower.byLevel[r.level] = (lower.byLevel[r.level] || 0) + 1; lower.byBook[r.book] = (lower.byBook[r.book] || 0) + 1;
 }
 // founder ruling 2026-10-18 (item 5): the lower-level matches the import checked and could not price, with their reason —
