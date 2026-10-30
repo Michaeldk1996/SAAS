@@ -3802,7 +3802,7 @@ window.EntryListsTab = (function(){
       var inner = isBye
         ? '<span style="color:var(--text-label);font-style:italic;">Bye</span>'
         : (linkKey
-            ? '<a href="#" onclick="event.preventDefault();event.stopPropagation();document.querySelector(\'#mainNav button[data-tab=players]\').click();showPlayerProfile(\''+linkKey+'\')" style="color:var(--text);">'+nm+'</a>'
+            ? '<a href="#" onclick="event.preventDefault();event.stopPropagation();sfGoToProfile(\''+linkKey+'\')" style="color:var(--text);">'+nm+'</a>'
             : nm);
       var st = fmtStatus(p.status, p.seed);
       var tag = st ? ' <span style="font-family:'+M+';font-size:9.5px;letter-spacing:0.06em;color:var(--text-label);">'+st+'</span>' : '';
@@ -4940,8 +4940,9 @@ document.getElementById('mainNav').addEventListener('click', e => {
   if (tab === 'results') setMatchesView('completed');
   else if (tab === 'matches') setMatchesView('upcoming');
   // Re-entering the Players tab always lands on the player list, never a
-  // stale open profile from a previous visit.
-  if (tab === 'players') showPlayerList();
+  // stale open profile from a previous visit — unless the switch is opening a profile (sfGoToProfile), which lands on
+  // the loading shell instead (list-flash fix, founder 2026-10-30: the list showed for 0.2–0.4 s first).
+  if (tab === 'players') { if (_sfProfileOpening != null) pp2ShowLoading(_sfProfileOpening); else showPlayerList(); }
   if (tab === 'tournaments') { showTournamentList(); renderTournamentsTab(); }
   if (tab === 'styles') renderPlayingStyles();
   if (tab === 'edge') openEdgeModelTab();
@@ -6452,10 +6453,10 @@ function psRenderPage(P){
   document.getElementById('psCards').innerHTML = html;
 }
 async function psOpenProfile(key){
-  // market-edge-box: from another player's profile, B's loading shell replaces A at once (never A's figures under B)
-  const shell = typeof pp2ShowLoadingIfOther === 'function' && pp2ShowLoadingIfOther(key);
-  if (typeof ensurePlayerProfile === 'function' && !(await ensurePlayerProfile(key))) { if (shell) ppShowLoadError(key); return; }
-  document.querySelector('#mainNav button[data-tab="players"]').click();
+  // From any page: the Players page opens straight on B's loading shell (never the list, never A's figures), then B's
+  // profile file, then B (list-flash fix, founder 2026-10-30; market-edge-box)
+  sfGoToProfile(key, false);
+  if (typeof ensurePlayerProfile === 'function' && !(await ensurePlayerProfile(key))) { if (pp2ShowingShellFor(key)) ppShowLoadError(key); return; }
   showPlayerProfile(key);
 }
 const PS_CHEV = '<svg width="16" height="16" viewBox="0 0 20 20" fill="none"><path d="M5 8l5 5 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>';
@@ -8569,8 +8570,7 @@ function openPlayerProfileFromMatch(key){
   // sits on top of everything — close it first, otherwise the Players tab switch
   // happens behind the overlay and looks like nothing happened. (T2 fix)
   if (typeof closeAnalysisModal === 'function') closeAnalysisModal();
-  document.querySelector('#mainNav button[data-tab="players"]').click();
-  showPlayerProfile(key);
+  sfGoToProfile(key);
 }
 
 // The Key Factors tab's Stennisfy Model card deep-links here: there is no model
@@ -23217,13 +23217,38 @@ function pp2LoadSplits(key){
 // market-edge-box (founder 2026-10-29): opening B from A's profile must never leave A on screen while B loads (the
 // profile-shard fetch, the first-paint wait). The view swaps to a neutral loading shell at once — no name, no figure —
 // and pp2RepaintIfOpen never repaints a mounted profile that is not the one asked for.
+const PP2_LOADING_HTML = (key) => '<div class="pp2-loading" data-pp2-loading="' + String(key).replace(/[^0-9A-Za-z_-]/g, '') + '" style="border:1px solid var(--edge-6); border-radius:16px; background:var(--card); padding:26px 24px; margin:4px 10px 22px; text-align:center; font-size:13px; color:var(--text-label);">Loading profile…</div>';
 function pp2ShowLoadingIfOther(key){
   const view = document.getElementById('playerProfileView');
   if (!view || view.style.display === 'none' || !view.querySelector('.pp2-main')) return false;
   const cur = window.PlayerProfileV2 && window.PlayerProfileV2.currentKey ? window.PlayerProfileV2.currentKey() : null;
   if (cur === String(key)) return false;
-  view.innerHTML = '<div class="pp2-loading" data-pp2-loading="' + String(key).replace(/[^0-9A-Za-z_-]/g, '') + '" style="border:1px solid var(--edge-6); border-radius:16px; background:var(--card); padding:26px 24px; margin:4px 10px 22px; text-align:center; font-size:13px; color:var(--text-label);">Loading profile…</div>';
+  view.innerHTML = PP2_LOADING_HTML(key);
   return true;
+}
+// list-flash fix (founder 2026-10-30): the Players page opened for a profile shows B's loading shell — the list is hidden
+// at once — unless B's profile is already the one on screen. Every open from another page goes through sfGoToProfile.
+function pp2ShowLoading(key){
+  const view = document.getElementById('playerProfileView'), lv = document.getElementById('playerListView');
+  if (!view) return false;
+  if (typeof closePpSplitDrawer === 'function') closePpSplitDrawer();
+  if (lv) lv.style.display = 'none';
+  const cur = window.PlayerProfileV2 && window.PlayerProfileV2.currentKey ? window.PlayerProfileV2.currentKey() : null;
+  const showing = view.style.display !== 'none' && view.querySelector('.pp2-main') && cur === String(key);
+  view.style.display = '';
+  if (!showing) view.innerHTML = PP2_LOADING_HTML(key);
+  return !showing;
+}
+function pp2ShowingShellFor(key){
+  const v = document.getElementById('playerProfileView');
+  return !!(v && v.style.display !== 'none' && v.querySelector('[data-pp2-loading="' + String(key).replace(/[^0-9A-Za-z_-]/g, '') + '"]'));
+}
+var _sfProfileOpening = null;   // var: the nav handler may read it before this line has run (no TDZ)
+function sfGoToProfile(key, show){
+  _sfProfileOpening = String(key);
+  try { document.querySelector('#mainNav button[data-tab="players"]').click(); }
+  finally { _sfProfileOpening = null; }
+  if (show !== false) showPlayerProfile(key);
 }
 function showPlayerProfileV2(key){
   const profile = playerProfiles[String(key)];
