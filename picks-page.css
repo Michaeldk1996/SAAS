@@ -15,8 +15,11 @@
  * Scoped under [data-page="picks"].
  */
 
-[data-page="picks"].tabpage.active { display: block; padding: 30px 40px 70px; box-sizing: border-box; line-height: normal; }
-[data-page="picks"] #picksRoot { display: flex; flex-direction: column; gap: 22px; color: var(--text); font-family: var(--font-words); font-size: 16px; line-height: normal; -webkit-font-smoothing: antialiased; }
+/* the shared Betting column (SIDEBAR_NAV, CHANGES 10-29 §1): 1420 incl. 40px side padding → 1340 content, padding 32 40 60,
+   centred — the Bet Tracker page's column; the page fills the viewport so an empty day shows the whole glow (override 3) */
+[data-page="picks"].tabpage.active { display: block; min-height: 100vh; padding: 0; box-sizing: border-box; line-height: normal; }
+[data-page="picks"] .pk-page { width: 100%; max-width: 1420px; margin: 0 auto; padding: 32px 40px 60px; box-sizing: border-box; display: flex; flex-direction: column; gap: 22px; }
+[data-page="picks"] #picksRoot { color: var(--text); font-family: var(--font-words); font-size: 16px; line-height: normal; -webkit-font-smoothing: antialiased; }
 [data-page="picks"] #picksRoot *, [data-page="picks"] #picksRoot *::before, [data-page="picks"] #picksRoot *::after { box-sizing: border-box; }
 [data-page="picks"] .pk-mono { font-family: var(--font-nums); }
 [data-page="picks"] button { font-family: inherit; }
@@ -44,42 +47,21 @@
 [data-page="picks"] .pk-gt { font-family: var(--font-words); font-size: 13px; color: var(--text-label); }
 
 /* ── 3 · CONTROLS — the reference's controls row (founder ruling 2026-10-27: design wins on every visual). ── */
-[data-page="picks"] .pk-row1 { display: inline-flex; align-items: center; gap: 12px; align-self: flex-start; }
 [data-page="picks"] .pk-tabs { display: inline-flex; gap: 3px; padding: 3px; border-radius: 10px; background: var(--inner); }
 [data-page="picks"] .pk-tab { appearance: none; margin: 0; cursor: pointer; padding: 7px 14px; border-radius: 8px; border: 1px solid transparent; background: transparent;
   font-size: 12.5px; font-weight: 600; line-height: normal; color: var(--text-label); }
 [data-page="picks"] .pk-tab:hover { color: var(--text); }
 [data-page="picks"] .pk-tab.on { background: var(--selected); border-color: var(--edge-10); color: var(--text); font-weight: 700; }
-[data-page="picks"] .pk-chev { appearance: none; margin: 0; padding: 0; cursor: pointer; width: 30px; height: 30px; border-radius: 8px; border: 0; background: var(--inner);
-  display: flex; align-items: center; justify-content: center; font-size: 14px; line-height: normal; color: var(--text-label); flex: none; }
-[data-page="picks"] .pk-chev:hover { color: var(--text); }
-[data-page="picks"] .pk-days { display: flex; align-items: flex-end; gap: 4px; }
-[data-page="picks"] .pk-day { appearance: none; margin: 0; cursor: pointer; background: none; border: 0; border-bottom: 2px solid transparent; border-radius: 0; padding: 8px 12px 9px;
-  font-size: 13.5px; font-weight: 600; line-height: normal; color: var(--text-label); white-space: nowrap; }
-[data-page="picks"] .pk-day:hover { color: var(--text); }
-[data-page="picks"] .pk-day.on { font-weight: 700; color: var(--text); border-bottom-color: var(--text); }
-[data-page="picks"] .pk-row2 { display: flex; align-items: center; gap: 12px; }
-[data-page="picks"] .pk-tdd { position: relative; flex: none; }
-[data-page="picks"] .pk-tpill { appearance: none; margin: 0; cursor: pointer; padding: 9px 16px; border-radius: 10px; border: 0; background: var(--inner);
-  font-size: 12.5px; font-weight: 600; line-height: normal; color: var(--text-label); white-space: nowrap; }
-[data-page="picks"] .pk-tpill.on { box-shadow: inset 0 0 0 1px var(--edge-10); color: var(--text); }
-[data-page="picks"] .pk-tmenu { position: absolute; z-index: 30; top: calc(100% + 6px); left: 0; min-width: 100%; display: flex; flex-direction: column; padding: 4px;
-  background: var(--card); border: 1px solid var(--edge-10); border-radius: 10px; box-shadow: var(--shadow-menu); }
-[data-page="picks"] .pk-topt { appearance: none; margin: 0; cursor: pointer; text-align: left; padding: 8px 12px; border: 0; border-radius: 8px; background: transparent;
-  font-size: 12.5px; font-weight: 600; color: var(--text-label); white-space: nowrap; }
-[data-page="picks"] .pk-topt:hover { background: var(--inner); color: var(--text); }
-[data-page="picks"] .pk-topt.on { color: var(--text); }
-[data-page="picks"] .pk-search { flex: 1; min-width: 0; display: flex; align-items: center; gap: 9px; padding: 10px 14px; border-radius: 10px; background: var(--inner);
-  border: 0; color: var(--text-label); font-size: 13px; cursor: text; }
-[data-page="picks"] .pk-search:focus-within { box-shadow: inset 0 0 0 1px var(--edge-16); }
-[data-page="picks"] .pk-search svg { flex: none; }
-[data-page="picks"] .pk-search input { flex: 1; min-width: 0; padding: 0; margin: 0; background: transparent; border: 0; outline: none; box-shadow: none;
-  font-family: var(--font-words); font-size: 13px; line-height: normal; color: var(--text); -webkit-appearance: none; appearance: none; }
-[data-page="picks"] .pk-search input::placeholder { color: var(--text-label); }
-[data-page="picks"] .pk-search input::-webkit-search-cancel-button { display: none; }
+[data-page="picks"] .pk-ctrl { display: flex; align-items: center; gap: 12px; }
+[data-page="picks"] .pk-tsub { font-size: 12.5px; color: var(--text-label); white-space: nowrap; }
+[data-page="picks"] .pk-flex { flex: 1; }
+/* "+ Post a pick" (admin) — the reference's button: --bar fill, white 700 12.5, 38 high, radius 10, pad 0 16 0 13 */
+[data-page="picks"] .pk-post { appearance: none; margin: 0; cursor: pointer; flex: none; display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 0 16px 0 13px;
+  border: 0; border-radius: 10px; background: var(--bar); color: var(--tracker-ink); font-family: var(--font-words); font-size: 12.5px; font-weight: 700; white-space: nowrap; }
+[data-page="picks"] .pk-post:hover { background: var(--pk-post-hover); }
 
 /* ── atoms: type tag · state chip · PRO chip ── */
-[data-page="picks"] .pk-tag { flex: none; display: inline-flex; align-items: center; gap: 6px; height: 20px; padding: 0 8px; border-radius: 6px; white-space: nowrap;
+[data-page="picks"] .pk-tag { flex: none; max-width: 100%; overflow: hidden; text-overflow: ellipsis; display: inline-flex; align-items: center; gap: 6px; height: 20px; padding: 0 8px; border-radius: 6px; white-space: nowrap;
   background: var(--inner); border: 1px solid color-mix(in srgb, var(--text) 8%, transparent); font-family: var(--font-nums); font-size: 10px; font-weight: 700; letter-spacing: 0.08em; color: var(--text-soft); }
 [data-page="picks"] .pk-tag--or { background: var(--selected); border-color: color-mix(in srgb, var(--text) 18%, transparent); color: var(--text); }
 [data-page="picks"] .pk-chip--won { background: color-mix(in srgb, var(--pos) 14%, transparent); border-color: color-mix(in srgb, var(--pos) 40%, transparent); color: var(--pos); }
@@ -87,29 +69,7 @@
 [data-page="picks"] .pk-chip--void { color: var(--text-label); }
 [data-page="picks"] .pk-pro { font-family: var(--font-nums); font-size: 9px; font-weight: 700; letter-spacing: 0.12em; color: var(--pro-text); border: 1px solid var(--pro); border-radius: 20px; padding: 2px 8px; }
 
-/* ── 4 · bets box ── */
-[data-page="picks"] .pk-box { min-width: 0; background: var(--card); box-shadow: var(--top-light); border: 1px solid var(--edge-6); border-radius: 12px; overflow: hidden; }
-[data-page="picks"] .pk-box-hd { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 16px; border-bottom: 1px solid var(--edge-6); }
-[data-page="picks"] .pk-box-meta { font-size: 12px; color: var(--text-label); white-space: nowrap; }
-[data-page="picks"] .pk-bx-heads { display: grid; grid-template-columns: 92px 360px 56px 44px 64px; gap: 0 12px; align-items: center; height: 28px; padding: 0 16px;
-  border-bottom: 1px solid var(--edge-6); background: transparent; }
-[data-page="picks"] .pk-bx-heads span { font-size: 10px; font-weight: 700; letter-spacing: 0.10em; text-transform: uppercase; color: var(--text-label); }
-[data-page="picks"] .pk-bx-heads .r { text-align: right; }
-[data-page="picks"] .pk-bx-row { display: grid; grid-template-columns: 92px 360px 56px 44px 0px; gap: 0 12px; align-items: center; height: 50px; padding: 0 16px;
-  border-bottom: 1px solid var(--line); }
-[data-page="picks"] .pk-bx-row.is-settled { grid-template-columns: 92px 360px 56px 44px 64px; }
-[data-page="picks"] .pk-bx-row.is-last { border-bottom-color: transparent; }
-[data-page="picks"] .pk-bx-row:hover { background: color-mix(in srgb, var(--text) 3%, transparent); }
-[data-page="picks"] .pk-bx-row > .pk-tag { justify-self: start; }
-[data-page="picks"] .pk-bx-bet { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-[data-page="picks"] .pk-bx-line { font-size: 13.5px; font-weight: 700; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-[data-page="picks"] .pk-bx-sub { font-size: 11.5px; color: var(--text-label); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-[data-page="picks"] .pk-bx-price { text-align: right; font-family: var(--font-nums); font-size: 15px; font-weight: 800; color: var(--text); }
-[data-page="picks"] .pk-bx-stake { text-align: right; font-family: var(--font-nums); font-size: 12px; font-weight: 700; color: var(--text-soft); }
-[data-page="picks"] .pk-bx-res { justify-self: end; display: inline-flex; }
-
-/* ── 5 · pick card ── */
-[data-page="picks"] .pk-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; gap: 12px; }
+/* ── 5 · pick card (the mobile card, board 1j, and the lifecycle reference) ── */
 [data-page="picks"] .pk-card { background: var(--card); box-shadow: var(--top-light); border: 1px solid var(--edge-6); border-radius: 14px; overflow: hidden; }
 [data-page="picks"] .pk-card.is-lost { background: var(--lost-card); }
 [data-page="picks"] .pk-card.is-routed { cursor: pointer; }
@@ -230,13 +190,12 @@
 
 /* ── 9 · mobile card (390; the page gutter is 16px under 640) ── */
 @media (max-width: 640px) {
-  [data-page="picks"].tabpage.active { padding: 16px; }
-  [data-page="picks"] .pk-grid { grid-template-columns: minmax(0, 1fr); }
+  [data-page="picks"].tabpage.active { padding: 0; }
+  [data-page="picks"] .pk-page { padding: 16px 16px 40px; }
   [data-page="picks"] .pk-head { flex-wrap: wrap; }
   [data-page="picks"] .pk-rec { flex: 1 1 100%; min-width: 0; flex-wrap: wrap; gap: 12px; }
   [data-page="picks"] .pk-recstats { flex: 1 1 100%; min-width: 0; flex-wrap: wrap; gap: 12px 24px; margin-right: 0; }
-  [data-page="picks"] .pk-row1 { flex-wrap: wrap; }
-  [data-page="picks"] .pk-box { overflow-x: auto; }
+  [data-page="picks"] .pk-ctrl { flex-wrap: wrap; }
   [data-page="picks"] .pk-ledger { overflow-x: auto; }
 }
 [data-page="picks"] .pk-hd--m { padding: 11px 14px; }
@@ -370,19 +329,166 @@
 .pkd-foot { font-size: 11.5px; line-height: 1.45; color: var(--text-label); text-wrap: pretty; }
 .pkd-err { font-size: 12px; color: var(--neg); }
 
-/* ── 10 · "+ Pick" (admin) on the Upcoming match card footer and the analysis modal header (board 1k) ── */
-.pk-plus { appearance: none; margin: 0; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; height: 26px; padding: 0 10px; border-radius: 7px;
-  background: var(--selected); border: 1px solid color-mix(in srgb, var(--text) 12%, transparent); font-family: var(--font-words); font-size: 12px; font-weight: 700; color: var(--text); white-space: nowrap; }
-.pk-plus:hover { border-color: color-mix(in srgb, var(--text) 28%, transparent); }
-.pk-plus__p { font-family: var(--font-nums); font-size: 13px; }
-/* the Picks page's own "+ Post a pick" (admin): the card button, at the search row's height */
-[data-page="picks"] .pk-post { flex: none; height: 40px; padding: 0 14px; border-radius: 10px; }
-
-/* the new-pick dot on the rail's Picks icon · the admin badge on the rail avatar (board 1k; picks-shell.js paints them) */
-#mainNav .sf-ico .pk-dot { position: absolute; top: -4px; right: -5px; width: 9px; height: 9px; border-radius: 50%; background: var(--bar); box-shadow: 0 0 0 2px var(--sidebar); pointer-events: none; }
 #acctAvatar { position: relative; }
 #acctAvatar .pk-admin { position: absolute; right: -3px; bottom: -3px; width: 15px; height: 15px; border-radius: 50%; background: var(--badge-fill); box-shadow: 0 0 0 2px var(--sidebar);
   display: flex; align-items: center; justify-content: center; pointer-events: none; }
 #acctAvatar .pk-admin svg { stroke: var(--badge-ink); }
-.pk-footr { display: inline-flex; align-items: center; gap: 14px; }
-#analysisModal .aclosecell.pk-plus-cell { display: flex; align-items: center; gap: 12px; }
+
+/* ── 11 · Upcoming bands (CHANGES 10-30 §1, "2a Quiet ink") ── */
+[data-page="picks"] .pk-bands { display: flex; flex-direction: column; gap: 8px; }
+[data-page="picks"] .pk-bands-hd { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 0 2px 2px; }
+[data-page="picks"] .pk-bands-m { font-size: 12px; color: var(--text-label); white-space: nowrap; }
+[data-page="picks"] .pk-band { cursor: pointer; background: var(--pk-band); border: 1px solid color-mix(in srgb, var(--text) 5%, transparent); border-radius: 14px; padding: 12px 18px; transition: border-color .14s;
+  display: grid; grid-template-columns: 118px minmax(0, 0.9fr) 1px minmax(0, 1.2fr) 64px 1px 300px 1px 56px; gap: 0 18px; align-items: center; }
+[data-page="picks"] .pk-band:hover, [data-page="picks"] .pk-band:focus-visible { border-color: var(--edge-16); outline: none; }
+[data-page="picks"] .pk-band.is-gated { cursor: default; }
+[data-page="picks"] .pk-band.is-gated:hover { border-color: color-mix(in srgb, var(--text) 5%, transparent); }
+[data-page="picks"] .pk-brule { align-self: stretch; border-left: 1px solid color-mix(in srgb, var(--text) 5%, transparent); }
+[data-page="picks"] .pk-b1 { display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
+[data-page="picks"] .pk-b1 .pk-star { width: 24px; height: 24px; margin-left: -6px; }
+[data-page="picks"] .pk-b2 { display: flex; flex-direction: column; min-width: 0; }
+[data-page="picks"] .pk-bp { position: relative; display: flex; align-items: center; gap: 9px; padding: 3px 0 3px 10px; min-width: 0; }
+[data-page="picks"] .pk-bp-bar { position: absolute; left: 0; top: 4px; bottom: 4px; width: 3px; border-radius: 2px; background: color-mix(in srgb, var(--text) 14%, transparent); }
+[data-page="picks"] .pk-bp-bar.is-on { background: var(--bar); }
+[data-page="picks"] .pk-bp-av { width: 24px; height: 24px; flex: none; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 9.5px; font-weight: 700;
+  background: var(--inner); color: var(--text-label); }
+[data-page="picks"] .pk-bp-av.is-on { color: var(--text); }
+[data-page="picks"] .pk-bp-n { font-size: 13.5px; font-weight: 500; color: var(--text-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+[data-page="picks"] .pk-bp-n.is-on { font-weight: 700; color: var(--text); }
+[data-page="picks"] .pk-b3 { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+[data-page="picks"] .pk-b3-l { display: flex; align-items: baseline; gap: 7px; min-width: 0; white-space: nowrap; }
+[data-page="picks"] .pk-b3-t { font-size: 13.5px; font-weight: 700; color: var(--text); min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+[data-page="picks"] .pk-b3-l .pk-at { font-size: 12px; color: var(--text-label); }
+[data-page="picks"] .pk-b3-p { font-family: var(--font-nums); font-size: 16px; font-weight: 800; color: var(--tracker-ink); }
+[data-page="picks"] .pk-b3-l .pk-bk { font-family: var(--font-nums); font-size: 10.5px; color: var(--text-label); }
+[data-page="picks"] .pk-b3-s { font-size: 11.5px; color: var(--text-label); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+[data-page="picks"] .pk-bcap { font-family: var(--font-words); font-size: 9.5px; font-weight: 700; letter-spacing: 0.10em; text-transform: uppercase; color: var(--text-label); }
+[data-page="picks"] .pk-b4 { display: flex; flex-direction: column; gap: 3px; align-items: flex-start; }
+[data-page="picks"] .pk-b4-v { font-family: var(--font-nums); font-size: 16px; font-weight: 800; color: var(--tracker-ink); }
+[data-page="picks"] .pk-b5 { min-width: 0; display: flex; flex-direction: column; align-items: stretch; justify-content: center; }
+[data-page="picks"] .pk-bt { display: grid; grid-template-columns: auto minmax(8px, 1fr) auto minmax(8px, 1fr) auto minmax(8px, 1fr) auto; gap: 3px 6px; align-items: center; }
+[data-page="picks"] .pk-bt-seg { height: 2px; border-radius: 1px; }
+[data-page="picks"] .pk-bt-open { font-family: var(--font-nums); font-size: 13px; font-weight: 600; color: var(--text-label); }
+[data-page="picks"] .pk-bt-posted { font-family: var(--font-nums); font-size: 13px; font-weight: 700; color: var(--tracker-ink); }
+[data-page="picks"] .pk-bt-now { font-family: var(--font-nums); font-size: 14px; font-weight: 800; color: var(--tracker-ink); }
+[data-page="picks"] .pk-bt-close { font-family: var(--font-nums); font-size: 13px; font-weight: 700; }
+[data-page="picks"] .pk-bt-l { font-family: var(--font-words); font-size: 9.5px; font-weight: 700; letter-spacing: 0.10em; text-transform: uppercase; color: var(--text-label); }
+[data-page="picks"] .pk-bor { display: flex; flex-direction: column; align-items: center; gap: 3px; text-align: center; }
+[data-page="picks"] .pk-bor-t { font-size: 12px; font-weight: 700; color: var(--text); }
+[data-page="picks"] .pk-bor-s { font-size: 11.5px; color: var(--text-label); white-space: nowrap; }
+[data-page="picks"] .pk-unlock--band { display: inline-flex; align-items: center; justify-content: center; gap: 10px; }
+[data-page="picks"] .pk-b6 { display: flex; flex-direction: column; gap: 3px; align-items: flex-end; }
+[data-page="picks"] .pk-b6-v { font-family: var(--font-nums); font-size: 13px; font-weight: 700; }
+[data-page="picks"] .pk-mlist { display: flex; flex-direction: column; gap: 12px; }
+
+/* ── 12 · Completed history ledger (CHANGES 10-29 §5) ── */
+[data-page="picks"] .pk-hist { background: var(--card); box-shadow: var(--top-light); border: 1px solid var(--edge-6); border-radius: 12px; overflow: hidden; }
+[data-page="picks"] .pk-hist-hd { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 16px; border-bottom: 1px solid var(--edge-6); }
+[data-page="picks"] .pk-hist-m { font-family: var(--font-nums); font-size: 12px; color: var(--text-soft); white-space: nowrap; }
+[data-page="picks"] .pk-hh, [data-page="picks"] .pk-hr { display: grid; grid-template-columns: 92px minmax(0, 1fr) 56px 56px 64px 44px 64px 64px 16px; gap: 0 12px; align-items: center; padding: 0 16px; }
+[data-page="picks"] .pk-hh { height: 28px; border-bottom: 1px solid var(--edge-6); }
+[data-page="picks"] .pk-hh span { font-size: 10px; font-weight: 700; letter-spacing: 0.10em; text-transform: uppercase; color: var(--text-label); }
+[data-page="picks"] .pk-hh .r { text-align: right; }
+[data-page="picks"] .pk-hday { display: flex; align-items: baseline; gap: 10px; margin: 10px 10px 0; padding: 8px 12px; background: var(--tracker-inner); border: 1px solid color-mix(in srgb, var(--text) 12%, transparent); border-radius: 8px; }
+[data-page="picks"] .pk-hday-d { font-size: 12.5px; font-weight: 700; color: var(--tracker-ink); }
+[data-page="picks"] .pk-hday-m { font-size: 11.5px; color: var(--text-label); }
+[data-page="picks"] .pk-hday-pl { margin-left: auto; font-family: var(--font-nums); font-size: 12px; font-weight: 800; }
+[data-page="picks"] .pk-hr { cursor: pointer; height: 50px; border-bottom: 1px solid color-mix(in srgb, var(--text) 5%, transparent); }
+[data-page="picks"] .pk-hr:hover, [data-page="picks"] .pk-hr:focus-visible { background: color-mix(in srgb, var(--text) 3%, transparent); outline: none; }
+[data-page="picks"] .pk-hr .pk-tag { justify-self: start; }
+[data-page="picks"] .pk-hr-bet { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+[data-page="picks"] .pk-hr-t { font-size: 13.5px; font-weight: 700; color: var(--tracker-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+[data-page="picks"] .pk-hr-s { font-size: 11.5px; color: var(--text-label); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+[data-page="picks"] .pk-hr-posted { text-align: right; font-family: var(--font-nums); font-size: 14px; font-weight: 800; color: var(--tracker-ink); }
+[data-page="picks"] .pk-hr-close { text-align: right; font-family: var(--font-nums); font-size: 12.5px; font-weight: 600; color: var(--text-soft); }
+[data-page="picks"] .pk-hr-clv { text-align: right; font-family: var(--font-nums); font-size: 12px; font-weight: 700; }
+[data-page="picks"] .pk-hr-stake { text-align: right; font-family: var(--font-nums); font-size: 12px; font-weight: 700; color: var(--text-soft); }
+[data-page="picks"] .pk-hr-pl { text-align: right; font-family: var(--font-nums); font-size: 13px; font-weight: 800; }
+[data-page="picks"] .pk-hr-gt { font-size: 13px; color: var(--text-label); text-align: right; }
+/* result chips (CHANGES 10-29 §3): one shape, text centred, min-width 48 */
+[data-page="picks"] .pk-rchip { justify-self: end; display: inline-flex; align-items: center; justify-content: center; min-width: 48px; height: 20px; padding: 0 8px; border-radius: 6px;
+  background: var(--inner); border: 1px solid color-mix(in srgb, var(--text) 12%, transparent); font-family: var(--font-nums); font-size: 10px; font-weight: 700; letter-spacing: 0.08em; color: var(--text-label); white-space: nowrap; }
+[data-page="picks"] .pk-rchip.pk-chip--won { background: color-mix(in srgb, var(--pos) 16%, transparent); border-color: color-mix(in srgb, var(--pos) 40%, transparent); color: var(--pos); }
+[data-page="picks"] .pk-rchip.pk-chip--lost { background: color-mix(in srgb, var(--neg) 16%, transparent); border-color: color-mix(in srgb, var(--neg) 40%, transparent); color: var(--neg); }
+[data-page="picks"] .pk-rchip.is-posted { min-width: 0; border-color: color-mix(in srgb, var(--text) 8%, transparent); color: var(--text-soft); }
+[data-page="picks"] .pk-pager { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 16px; border-top: 1px solid var(--edge-6); }
+[data-page="picks"] .pk-pg { cursor: pointer; display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px; border-radius: 8px; background: var(--pk-pill); border: 1px solid color-mix(in srgb, var(--text) 8%, transparent);
+  font-size: 12px; font-weight: 600; color: var(--text); }
+[data-page="picks"] .pk-pg.is-off { cursor: default; color: var(--text-label); }
+[data-page="picks"] .pk-pg-t { font-family: var(--font-nums); font-size: 12px; color: var(--text-label); }
+[data-page="picks"] .pk-hist-ft { padding: 9px 16px 11px; font-size: 11.5px; color: var(--text-label); }
+
+/* ── 13 · the analysis sheet (CHANGES 10-29 §4 + 10-30 §3): a page layer, from the rail edge, centred ── */
+[data-page="picks"] .pk-sh-ov { position: fixed; top: 0; right: 0; bottom: 0; left: var(--sf-side); z-index: 60; background: var(--pk-sheet-backdrop); clip-path: inset(0);
+  display: flex; align-items: center; justify-content: center; padding: 40px 24px; font-family: var(--font-words); color: var(--text); }
+[data-page="picks"] .pk-sh { width: 100%; max-width: 680px; max-height: 100%; display: flex; flex-direction: column; background: var(--pk-band); border: 1px solid var(--edge-10);
+  border-radius: 14px; box-shadow: var(--pk-shadow-sheet); overflow: hidden; }
+[data-page="picks"] .pk-sh-hd { display: flex; flex-direction: column; gap: 10px; padding: 18px 22px 16px; border-bottom: 1px solid var(--edge-6); }
+[data-page="picks"] .pk-sh-row1 { display: flex; align-items: center; gap: 8px; white-space: nowrap; min-width: 0; }
+[data-page="picks"] .pk-sh-surf { flex: none; font-size: 11px; font-weight: 600; color: var(--text-label); }
+[data-page="picks"] .pk-sh-tourn { min-width: 0; overflow: hidden; text-overflow: ellipsis; font-size: 11px; color: var(--text-label); }
+[data-page="picks"] .pk-sh-row1 .pk-round { flex: none; font-size: 10.5px; font-family: var(--font-nums); font-weight: 600; color: var(--text-label); background: var(--pk-pill); border-radius: 5px; padding: 2px 6px; }
+[data-page="picks"] .pk-sh-time { flex: none; font-size: 11.5px; font-family: var(--font-nums); color: var(--text-label); }
+[data-page="picks"] .pk-sh-r { margin-left: auto; flex: none; display: inline-flex; align-items: center; gap: 10px; }
+[data-page="picks"] .pk-sh-x { cursor: pointer; width: 28px; height: 28px; border-radius: 8px; background: var(--pk-pill); display: flex; align-items: center; justify-content: center; font-size: 15px; color: var(--text-label); }
+[data-page="picks"] .pk-sh-x:hover { color: var(--tracker-ink); }
+[data-page="picks"] .pk-sh-bet { font-size: 20px; font-weight: 800; letter-spacing: -0.01em; line-height: 1.2; color: var(--tracker-ink); text-wrap: pretty; }
+[data-page="picks"] .pk-sh-meta { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; font-size: 12.5px; color: var(--text-label); }
+[data-page="picks"] .pk-sh-mv { font-family: var(--font-nums); font-weight: 700; color: var(--tracker-ink); }
+[data-page="picks"] .pk-sh-mv.pk-s-pos { color: var(--pos); }
+[data-page="picks"] .pk-sh-mv.pk-s-neg { color: var(--neg); }
+[data-page="picks"] .pk-sh-mv.pk-s-zero { color: var(--text-label); }
+[data-page="picks"] .pk-sh-body { overflow-y: auto; display: flex; flex-direction: column; }
+[data-page="picks"] .pk-sh-set-blk { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0 28px; padding: 18px 22px; border-bottom: 1px solid var(--edge-6); background: var(--tracker-inner); }
+[data-page="picks"] .pk-sh-live { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 0 28px; align-items: center; padding: 18px 22px; border-bottom: 1px solid var(--edge-6); background: var(--card); }
+[data-page="picks"] .pk-sh-res, [data-page="picks"] .pk-sh-pr { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+[data-page="picks"] .pk-sh-right { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+[data-page="picks"] .pk-sh-cap, [data-page="picks"] .pk-sh-l { font-size: 10px; font-weight: 700; letter-spacing: 0.10em; text-transform: uppercase; color: var(--text-label); }
+[data-page="picks"] .pk-sh-pl { display: flex; align-items: center; gap: 10px; min-width: 0; }
+[data-page="picks"] .pk-sh-bar { width: 3px; height: 18px; border-radius: 2px; flex: none; background: color-mix(in srgb, var(--text) 14%, transparent); }
+[data-page="picks"] .pk-sh-bar.is-w { background: var(--pos); }
+[data-page="picks"] .pk-sh-bar.is-l { background: var(--neg); }
+[data-page="picks"] .pk-sh-pn { font-size: 13.5px; font-weight: 500; color: var(--text-label); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+[data-page="picks"] .pk-sh-pn.is-win { font-weight: 700; color: var(--tracker-ink); }
+[data-page="picks"] .pk-sh-sets { margin-left: auto; display: inline-flex; align-items: center; gap: 4px; }
+[data-page="picks"] .pk-sh-sw { width: 26px; height: 24px; border-radius: 6px; display: flex; align-items: center; justify-content: center; background: color-mix(in srgb, var(--text) 2.5%, transparent);
+  font-family: var(--font-nums); font-size: 12.5px; font-weight: 800; color: var(--text-label); }
+[data-page="picks"] .pk-sh-sw.is-win { background: var(--selected); border: 1px solid var(--edge-16); color: var(--tracker-ink); }
+[data-page="picks"] .pk-sh-rule { width: 1px; height: 16px; background: var(--edge-10); margin: 0 4px; }
+[data-page="picks"] .pk-sh-set { width: 24px; height: 24px; border-radius: 5px; display: flex; align-items: center; justify-content: center; background: color-mix(in srgb, var(--text) 2.5%, transparent);
+  font-family: var(--font-nums); font-size: 12px; font-weight: 500; color: var(--text-label); }
+[data-page="picks"] .pk-sh-set.is-won { background: color-mix(in srgb, var(--text) 8%, transparent); font-weight: 700; color: var(--tracker-ink); }
+[data-page="picks"] .pk-sh-set sup { font-size: 7.5px; margin-left: 1px; }
+[data-page="picks"] .pk-sh-trail { display: flex; align-items: flex-end; gap: 0; }
+[data-page="picks"] .pk-sh-st { display: flex; flex-direction: column; gap: 3px; flex: none; }
+[data-page="picks"] .pk-sh-st.is-c { align-items: center; }
+[data-page="picks"] .pk-sh-st.is-r { align-items: flex-end; }
+[data-page="picks"] .pk-sh-seg { flex: 1; height: 2px; margin: 0 10px 7px; border-radius: 2px; }
+[data-page="picks"] .pk-sh-o { font-family: var(--font-nums); font-size: 14px; font-weight: 600; color: var(--text-soft); }
+[data-page="picks"] .pk-sh-p14 { font-family: var(--font-nums); font-size: 14px; font-weight: 700; color: var(--tracker-ink); }
+[data-page="picks"] .pk-sh-p16 { font-family: var(--font-nums); font-size: 16px; font-weight: 800; color: var(--tracker-ink); }
+[data-page="picks"] .pk-sh-c { font-family: var(--font-nums); font-size: 14px; font-weight: 700; }
+[data-page="picks"] .pk-sh-tiles { display: grid; gap: 8px; }
+[data-page="picks"] .pk-sh-tiles--4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+[data-page="picks"] .pk-sh-tiles--3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+[data-page="picks"] .pk-sh-tile { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 3px; padding: 8px 10px; border-radius: 8px; background: var(--pk-band); border: 1px solid var(--edge-6); }
+[data-page="picks"] .pk-sh-tl { font-size: 9.5px; font-weight: 700; letter-spacing: 0.10em; text-transform: uppercase; color: var(--text-label); }
+[data-page="picks"] .pk-sh-tv { font-family: var(--font-nums); font-size: 14px; font-weight: 800; color: var(--tracker-ink); }
+[data-page="picks"] .pk-sh-tv.pk-s-pos { color: var(--pos); }
+[data-page="picks"] .pk-sh-tv.pk-s-neg { color: var(--neg); }
+[data-page="picks"] .pk-sh-tv.pk-s-zero { color: var(--text-label); }
+[data-page="picks"] .pk-sh-acap { padding: 16px 22px 0; font-size: 10px; font-weight: 700; letter-spacing: 0.10em; text-transform: uppercase; color: var(--text-label); }
+[data-page="picks"] .pk-sh-note { padding: 10px 22px 22px; font-size: 13.5px; line-height: 1.55; color: var(--text-soft); white-space: pre-line; text-wrap: pretty; }
+[data-page="picks"] .pk-sh-note.is-top { padding-top: 18px; }
+
+/* ── 14 · header — Upcoming shows today's numbers (CHANGES 10-30 §2) ── */
+[data-page="picks"] .pk-tstats { display: flex; gap: 26px; align-items: flex-end; flex: none; }
+[data-page="picks"] .pk-tv--lead { color: var(--tracker-ink); }
+[data-page="picks"] .pk-tv--soft { color: var(--text-soft); }
+[data-page="picks"] .pk-tv--pos { color: var(--pos); }
+[data-page="picks"] .pk-tv--none { color: var(--text-label); }
+
+/* the Picks count badge on the rail (SIDEBAR_NAV): the Live count chip (.sf-count) — picks-shell.js paints it */
+@media (max-width: 640px) {
+  [data-page="picks"] .pk-tstats { flex-wrap: wrap; flex: 1 1 100%; gap: 14px 22px; align-items: flex-start; }
+}

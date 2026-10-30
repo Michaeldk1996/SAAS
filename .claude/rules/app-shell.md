@@ -44,6 +44,8 @@ drift, the line-chart Model icon. `test-ten286-layout.mjs` locks every closed va
   `--sidebar` ring, top-right of the icon. The count is the Live page header's **In play** (founder TEN-417 R1:
   LiveFeed payload `inPlay` = ATP singles underway minus interrupted, the same `isInterrupted` as the page; the one-shot
   `LiveFeed.liveCount()` off the Live page counts the same); no feed or 0 in play = no badge.
+- Picks count badge (founder 2026-10-30, `design_handoff_picks/SIDEBAR_NAV.md`; replaces the per-member new-pick dot): the
+  same chip on the Picks icon, showing today's posted + live bets (Brussels day); 0 = no badge (`picks-shell.js`).
 - Pro lock (founder R1 item 3, 2026-10-09; SUPERSEDES "no page is Pro-locked today"): on the Free plan (`plan` free or
   missing) or signed out, **Trading Report** (`data-tab="trading"`) and **Stennisfy Model** (`data-tab="edge"`) show the
   locked state: icon `--nav-locked` (#5B6880) + a 16px `--inner` circle with a grey (`--text-label`) 9px lock (stroke 2) at

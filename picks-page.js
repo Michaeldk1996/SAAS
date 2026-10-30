@@ -1,15 +1,16 @@
-/* picks-page.js — the Picks page (boards 1a–1e, 1i, 1j of `design_handoff_picks`, LOCKED 2026-10-27) + the admin's way in
- * to the Post-a-pick drawer (picks-drawer.js, Task 2).
+/* picks-page.js — the Picks page, LOCKED 2026-10-30 (`design_handoff_picks`: CHANGES_2026-10-30 > SIDEBAR_NAV >
+ * CHANGES_2026-10-29 > SPEC > README). Upcoming = one full-width band per open bet with today's numbers in the header;
+ * Completed = the settled history ledger with the Record strip in the header; any band or ledger row opens the analysis
+ * sheet; the Record view; the mobile card. Posting is only through "+ Post a pick" here (founder 2026-10-30, override 1).
  *
  * Reads the picks store (picks-store.js: Firestore `picks` / `picks_public`, access by firestore.rules) and renders it
  * with the figures from picks-core.js. Nothing here computes a number: every price, CLV, P/L and record figure comes
- * from PicksCore, or is a dash. Values = the export's inline styles (picks-page.css). The page header is the shared 35b
- * header (.sfh); the controls row is the Picks reference's (founder ruling 2026-10-27).
+ * from PicksCore, or is a dash. Values = the export's inline styles (picks-page.css).
  *
- * Roles (founder 2026-10-27: real roles, no preview switch): the admin (isBspAdmin — the founder's uid, the same
- * allowlist firestore.rules checks) sees everything and edits; a Pro member (window.sfPlan === 'pro') sees today's
- * picks; any other member gets the teaser of today's picks (blurred over placeholders — the real pick never reaches
- * the browser) and every settled pick. Tests inject a fixture with PicksPage._inject (tools/fixtures/picks-demo.json).
+ * Roles (founder 2026-10-27: real roles, no preview switch): the admin (isBspAdmin) sees everything and posts / edits;
+ * a Pro member (window.sfPlan === 'pro') sees today's picks; any other member gets the teaser of today's picks (blurred
+ * over placeholders — the real pick never reaches the browser) and every settled pick. Tests inject a fixture with
+ * PicksPage._inject (tools/fixtures/picks-demo.json).
  */
 (function () {
   'use strict';
@@ -17,15 +18,14 @@
   if (!C) return;
   var DASH = C.DASH, MID = '·';
   var REFRESH_MS = 60000;   // the store is re-read while the page is open (the pipeline fills Now / Close / results)
+  var HIST_PAGE_ROWS = 10;  // the Completed ledger pages by whole days, ~10 rows a page (reference, user 2026-10-30)
 
   var S = {
     fixture: null, byDay: {}, settled: null, failed: false, loading: {}, role: null,
-    tab: 'upcoming', day: null, period: '30d', view: 'cards', sort: { key: 'date', dir: -1 },
-    tourn: null, tournOpen: false, q: '', noteOpen: {}, stars: {}
+    tab: 'upcoming', period: '30d', view: 'cards', sort: { key: 'date', dir: -1 }, stars: {}, sheet: null, histPage: 1
   };
 
   function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
-  function fold(s) { return String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim(); }
   function root() { return document.getElementById('picksRoot'); }
   function isAdmin() { return !S.fixture && !!(window.PicksStore && PicksStore.isAdmin()); }
   function isPro() { return window.sfPlan === 'pro' || isAdmin(); }
@@ -46,20 +46,22 @@
     (S.settled || []).forEach(function (p) { if (!seen[p.id]) { seen[p.id] = 1; out.push(p); } });
     return out;
   }
-  function loaded() { return !!S.fixture || (S.settled != null && S.byDay[S.day] != null); }
+  // Upcoming reads today and tomorrow (a late slate can roll past Brussels midnight); Completed reads the settled store
+  function days() { var t = today(); return [t, C.addDays(t, 1)]; }
+  function loaded() { return !!S.fixture || (S.settled != null && S.byDay[today()] != null); }
   function mobile() { return !!(window.matchMedia && window.matchMedia('(max-width: 640px)').matches); }
 
   // the Record's widest window: Season (1 January) or 90 days back, whichever is earlier
   function settledFrom() { var t = today(), y = t.slice(0, 4) + '-01-01', d90 = C.addDays(t, -90); return y < d90 ? y : d90; }
   function load(force) {
     if (S.fixture || !window.PicksStore) { render(); return Promise.resolve(); }
-    if (!S.day) S.day = today();
-    var day = S.day, jobs = [];
-    if (force || S.byDay[day] == null) {
+    var jobs = [];
+    days().forEach(function (day) {
+      if (!force && S.byDay[day] != null) return;
       if (!S.loading[day]) S.loading[day] = PicksStore.loadDay(day).then(function (r) { S.byDay[day] = r.rows; S.role = r.role; })
         .catch(function () { S.failed = true; S.byDay[day] = S.byDay[day] || []; }).then(function () { delete S.loading[day]; });
       jobs.push(S.loading[day]);
-    }
+    });
     if (force || S.settled == null) {
       if (!S.loading._settled) S.loading._settled = PicksStore.loadSettled(settledFrom()).then(function (r) { S.settled = r; })
         .catch(function () { S.failed = true; S.settled = S.settled || []; }).then(function () { delete S.loading._settled; });
@@ -160,45 +162,201 @@
   function footHtml(p, gated, open, pad) {
     var left = gated
       ? '<span class="pk-unlock">' + PRO + '<a class="pk-link" href="account.html" data-stop="1">Unlock today’s picks →</a></span>'
-      : '<span class="pk-foot-l">' + (p.note ? '<span class="pk-toggle" data-act="note" data-id="' + esc(p.id) + '">' + (open ? 'Hide analysis' : 'Read the analysis')
-        + ' <span class="pk-tchev' + (open ? ' is-open' : '') + '">▾</span></span>' : '') + editLink(p) + '</span>';
+      : '<span class="pk-foot-l"><span class="pk-toggle" data-act="sheet" data-id="' + esc(p.id) + '">Read the analysis <span class="pk-tchev">▾</span></span>' + editLink(p) + '</span>';
     var routed = !!boardMatch(p);
     return '<div class="pk-foot' + (pad || '') + '">' + left + '<span class="pk-link pk-openmatch' + (routed ? '' : ' is-inert') + '"'
       + (routed ? ' data-act="open" data-id="' + esc(p.id) + '"' : ' title="This match is not on the board"') + '>Open match →</span></div>';
   }
 
-  // ── the pick card (SPEC §5) ────────────────────────────────────────────────────────────────────────────────────
-  function card(p) {
-    var outright = C.isOutright(p), settled = C.isSettled(p), gated = gatedOf(p);
-    var open = !gated && !!S.noteOpen[p.id], blur = gated ? ' is-blur' : '', routed = !!boardMatch(p);
-    var dim = p.status === 'lost' || p.status === 'void' ? ' is-dim' : '';
-    var pl = C.plText(p), plOf = p.status === 'void' ? 0 : C.plOf(p);
-    var head = '<div class="pk-hd">'
-      + '<span class="pk-star' + (S.stars[p.id] ? ' is-on' : '') + '" data-act="star" data-id="' + esc(p.id) + '" title="Favourite">' + STAR + '</span>'
-      + typeTag(p)
-      + (outright ? '' : '<span class="pk-surf">' + esc(p.surface || DASH) + '</span>')
-      + '<span class="pk-tourn">' + esc(outright ? p.event : p.tournament) + '</span>'
-      + (outright ? '' : '<span class="pk-round">' + esc(p.round || DASH) + '</span><span class="pk-time">' + C.hhmm(p.scheduled_at) + '</span>')
-      + '<span class="pk-hd-r">' + (pl ? '<span class="pk-pl-v ' + sgnCls(plOf) + '">' + pl + '</span>' : '') + chip(p) + '</span></div>';
-    var players = outright ? playerRow(p, 'a', { outright: true }) : playerRow(p, 'a', {}) + playerRow(p, 'b', {});
-    var right = betLineHtml(p);
-    if (outright) {
-      right += '<div class="pk-or"><span>Posted ' + C.hhmm(p.posted_at) + ' ' + MID + ' bet105 ' + MID + ' Stake <span class="pk-mono pk-w pk-b7">' + esc(C.stakeText(p.stake)) + '</span></span>'
-        + '<span class="pk-ell">Settles ' + C.dayMonthShort(p.settles_at) + ' ' + MID + ' no open / now / close for outrights</span></div>';
-    } else {
-      right += trailHtml(p) + metaLine(p);
+  // ── Upcoming band (CHANGES 10-30 §1, "2a Quiet ink") ────────────────────────────────────────────────────────────
+  // star + type tag · players · | · bet · stake · | · trail (or outright two-liner / PRO unlock when gated) · | · CLV
+  function bandPlayer(p, side) {
+    var q = side === 'a' ? p.player_a : p.player_b; if (!q) return '';
+    var picked = p.selection === side, fav = !C.isOutright(p) && C.favSide(p) === side, lt = picked ? C.lineTag(p) : '';
+    return '<div class="pk-bp"><span class="pk-bp-bar' + (picked ? ' is-on' : '') + '"></span><span class="pk-bp-av' + (picked ? ' is-on' : '') + '">' + esc(q.initials || '') + '</span>'
+      + '<span class="pk-bp-n' + (picked ? ' is-on' : '') + '" data-stop="1">' + esc(q.name) + '</span>'
+      + (fav ? '<span class="pk-fav">FAV</span>' : '') + (lt ? '<span class="pk-line">' + esc(lt) + '</span>' : '') + '</div>';
+  }
+  function bandTrail(p) {
+    var t = C.trail(p, true); if (!t) return '';
+    var seg = function (c) { return '<span class="pk-bt-seg" style="background:' + c + '"></span>'; };
+    return '<div class="pk-bt"><span class="pk-bt-open">' + C.f2(t.open) + '</span>' + seg(t.segs[0])
+      + '<span class="pk-bt-posted">' + C.f2(t.posted) + '</span>' + seg(t.segs[1])
+      + '<span class="pk-bt-now">' + C.f2(t.now) + '</span>' + seg(t.segs[2])
+      + '<span class="pk-bt-close" style="color:' + (t.close == null ? 'var(--text-label)' : t.segs[2]) + '">' + C.f2(t.close) + '</span>'
+      + '<span class="pk-bt-l" style="grid-column:1">Open</span><span class="pk-bt-l" style="grid-column:3">Posted</span>'
+      + '<span class="pk-bt-l" style="grid-column:5">' + esc(t.nowLabel) + '</span><span class="pk-bt-l" style="grid-column:7">Close</span></div>';
+  }
+  function band(p) {
+    var gated = gatedOf(p), outright = C.isOutright(p), blur = gated ? ' is-blur' : '', clv = C.clvOf(p);
+    var where = outright ? (p.event || DASH) : C.whereText(p);
+    var trail = gated
+      ? '<span class="pk-unlock pk-unlock--band">' + PRO + '<a class="pk-link" href="account.html" data-stop="1">Unlock today’s picks →</a></span>'
+      : outright ? '<div class="pk-bor"><span class="pk-bor-t">Open position</span><span class="pk-bor-s">Settles ' + esc(C.dayMonthShort(p.settles_at)) + ' ' + MID + ' no open / now / close for outrights</span></div>'
+      : bandTrail(p);
+    return '<div class="pk-band' + (gated ? ' is-gated' : '') + '"' + (gated ? '' : ' data-sheet="' + esc(p.id) + '" role="button" tabindex="0"') + '>'
+      + '<span class="pk-b1"><span class="pk-star' + (S.stars[p.id] ? ' is-on' : '') + '" data-act="star" data-id="' + esc(p.id) + '" title="Favourite">' + STAR + '</span>' + typeTag(p) + '</span>'
+      + '<div class="pk-b2' + blur + '">' + bandPlayer(p, 'a') + (outright ? '' : bandPlayer(p, 'b')) + '</div><span class="pk-brule"></span>'
+      + '<div class="pk-b3"><div class="pk-b3-l' + blur + '"><span class="pk-b3-t">' + esc(C.betLine(p)) + '</span><span class="pk-at">@</span>'
+      + '<span class="pk-b3-p">' + C.f2(p.posted_price) + '</span><span class="pk-bk">' + esc(p.book || 'bet105') + '</span></div>'
+      + '<span class="pk-b3-s"><span class="pk-mono">posted ' + C.hhmm(p.posted_at) + '</span> ' + MID + ' ' + esc(where) + '</span></div>'
+      + '<div class="pk-b4"><span class="pk-bcap">Stake</span><span class="pk-b4-v">' + esc(C.stakeText(p.stake)) + '</span></div><span class="pk-brule"></span>'
+      + '<div class="pk-b5">' + trail + '</div><span class="pk-brule"></span>'
+      + '<div class="pk-b6"><span class="pk-bcap">CLV</span><span class="pk-b6-v ' + (clv == null ? 'pk-s-zero' : sgnCls(clv)) + '">' + C.pct(clv) + '</span></div></div>';
+  }
+  function upcomingView(list) {
+    var t = today(), byDay = {};
+    list.forEach(function (p) { (byDay[p.date] = byDay[p.date] || []).push(p); });
+    var ds = Object.keys(byDay).sort(), many = ds.length > 1;
+    if (mobile()) return '<div class="pk-mlist">' + list.map(mcard).join('') + '</div>';
+    return ds.map(function (d, i) {
+      var ps = byDay[d], n = ps.length, label = (many ? (d === t ? 'Today' : C.dayLabel(d)) : 'Open') + ' ' + MID + ' ' + n + (n === 1 ? ' bet' : ' bets');
+      var stake = ps.reduce(function (a, p) { return a + (+p.stake || 0); }, 0);
+      var meta = many ? C.stakeText(stake) + ' staked' : (i === 0 ? 'all at bet105 ' + MID + ' click a bet for the analysis' : '');
+      return '<div class="pk-bands"><div class="pk-bands-hd"><span class="pk-caps">' + esc(label) + '</span><span class="pk-bands-m">' + esc(meta) + '</span></div>'
+        + ps.map(band).join('') + '</div>';
+    }).join('');
+  }
+
+  // ── Completed · history ledger (CHANGES 10-29 §5) ───────────────────────────────────────────────────────────────
+  function resultChip(p) { var c = C.statusChip(p); return '<span class="pk-rchip pk-chip--' + c.kind + '">' + esc(c.text) + '</span>'; }
+  function histRow(p) {
+    var clv = C.clvOf(p), pl = p.status === 'void' ? 0 : C.plOf(p);
+    return '<div class="pk-hr" data-sheet="' + esc(p.id) + '" role="button" tabindex="0">' + typeTag(p)
+      + '<span class="pk-hr-bet"><span class="pk-hr-t">' + esc(C.betLine(p)) + '</span><span class="pk-hr-s"><span class="pk-mono">' + C.hhmm(p.posted_at) + '</span> ' + MID + ' ' + esc(C.whereText(p)) + '</span></span>'
+      + '<span class="pk-hr-posted">' + C.f2(p.posted_price) + '</span><span class="pk-hr-close">' + C.f2(C.closeOf(p)) + '</span>'
+      + '<span class="pk-hr-clv ' + (clv == null ? 'pk-s-zero' : sgnCls(clv)) + '">' + C.pct(clv) + '</span>'
+      + '<span class="pk-hr-stake">' + esc(C.stakeText(p.stake)) + '</span>'
+      + '<span class="pk-hr-pl ' + sgnCls(pl) + '">' + esc(C.plText(p) || DASH) + '</span>' + resultChip(p) + '<span class="pk-hr-gt">›</span></div>';
+  }
+  function completedView(list) {
+    if (!list.length) return emptyPanel({ title: 'No bets settled in the last 30 days.', sub: '' });
+    var w = list.filter(function (p) { return p.status === 'won'; }).length, l = list.filter(function (p) { return p.status === 'lost'; }).length;
+    var pl = list.reduce(function (a, p) { var x = C.plOf(p); return a + (x || 0); }, 0);
+    var withC = list.map(C.clvOf).filter(function (x) { return x != null; });
+    var avg = withC.length ? withC.reduce(function (a, x) { return a + x; }, 0) / withC.length : null;
+    var byDay = [], idx = {};
+    list.forEach(function (p) { if (idx[p.date] == null) { idx[p.date] = byDay.length; byDay.push([]); } byDay[idx[p.date]].push(p); });
+    // whole days, ~HIST_PAGE_ROWS rows a page
+    var pages = [], cur = [], n = 0;
+    byDay.forEach(function (ps) { if (cur.length && n >= HIST_PAGE_ROWS) { pages.push(cur); cur = []; n = 0; } cur.push(ps); n += ps.length; });
+    if (cur.length) pages.push(cur);
+    var pg = Math.min(Math.max(1, S.histPage), pages.length);
+    var body = (pages[pg - 1] || []).map(function (ps) {
+      var dw = ps.filter(function (p) { return p.status === 'won'; }).length, dl = ps.filter(function (p) { return p.status === 'lost'; }).length;
+      var dv = ps.filter(function (p) { return p.status === 'void'; }).length, dpl = ps.reduce(function (a, p) { return a + (C.plOf(p) || 0); }, 0);
+      return '<div class="pk-hday"><span class="pk-hday-d">' + esc(C.dayLabel(ps[0].date)) + '</span><span class="pk-hday-m">' + ps.length + (ps.length === 1 ? ' bet' : ' bets') + ' ' + MID + ' ' + dw + C.EN + dl + (dv ? ' ' + MID + ' ' + dv + ' void' : '') + '</span>'
+        + '<span class="pk-hday-pl ' + sgnCls(dpl) + '">' + C.u(dpl, 1) + '</span></div>' + ps.map(histRow).join('');
+    }).join('');
+    var pager = pages.length > 1 ? '<div class="pk-pager"><span class="pk-pg' + (pg > 1 ? '' : ' is-off') + '" data-act="hprev">‹ Previous</span><span class="pk-pg-t">Page ' + pg + ' of ' + pages.length + '</span>'
+      + '<span class="pk-pg' + (pg < pages.length ? '' : ' is-off') + '" data-act="hnext">Next ›</span></div>' : '';
+    return '<div class="pk-hist"><div class="pk-hist-hd"><span class="pk-caps">Settled ' + MID + ' last 30 days ' + MID + ' ' + list.length + (list.length === 1 ? ' bet' : ' bets') + '</span>'
+      + '<span class="pk-hist-m">' + w + C.EN + l + ' ' + MID + ' ' + C.u(pl, 1) + ' ' + MID + ' CLV ' + C.pct(avg) + '</span></div>'
+      + '<div class="pk-hh"><span>Type</span><span>Bet</span><span class="r">Posted</span><span class="r">Close</span><span class="r">CLV</span><span class="r">Stake</span><span class="r">P/L</span><span class="r">Result</span><span></span></div>'
+      + body + pager + '<div class="pk-hist-ft">Click a bet to open it: score, open → posted → close, CLV and the analysis. Older than 30 days: the Record ledger (header).</div></div>';
+  }
+
+  // ── analysis sheet (CHANGES 10-29 §4 + 10-30 §3) ────────────────────────────────────────────────────────────────
+  function stop(label, val, cls) { return '<div class="pk-sh-st' + (cls || '') + '"><span class="pk-sh-l">' + label + '</span>' + val + '</div>'; }
+  function tile(label, val, cls) { return '<div class="pk-sh-tile"><span class="pk-sh-tl">' + label + '</span><span class="pk-sh-tv' + (cls ? ' ' + cls : '') + '">' + val + '</span></div>'; }
+  function sheetHtml(p) {
+    if (!p) return '';
+    var outright = C.isOutright(p), settled = C.isSettled(p), clv = C.clvOf(p), mf = C.modelFair(p.model_pct);
+    var modelBlur = !isPro() && !settled ? ' is-blur' : '', t = C.trail(p, true);
+    var chipC = C.statusChip(p);
+    var headRow = typeTag(p) + (outright ? '' : '<span class="pk-sh-surf">' + esc(p.surface || DASH) + '</span>')
+      + '<span class="pk-sh-tourn">' + esc(outright ? p.event : p.tournament) + '</span>'
+      + (outright ? '' : '<span class="pk-round">' + esc(p.round || DASH) + '</span><span class="pk-sh-time">' + C.hhmm(p.scheduled_at) + '</span>')
+      + '<span class="pk-sh-r"><span class="pk-rchip pk-chip--' + chipC.kind + (settled ? '' : ' is-posted') + '">' + esc(chipC.text) + '</span><span class="pk-sh-x" data-act="sheetclose" title="Close">×</span></span>';
+    var meta = '<span>Posted ' + C.hhmm(p.posted_at) + ' ' + MID + ' ' + esc(C.whereText(p)) + '</span>'
+      + '<span>Stake <span class="pk-sh-mv">' + esc(C.stakeText(p.stake)) + '</span></span>'
+      + '<span>Stennisfy <span class="pk-sh-mv' + modelBlur + '">' + C.f2(mf) + '</span></span>'
+      + (t ? '<span>CLV <span class="pk-sh-mv ' + (clv == null ? 'pk-s-zero' : sgnCls(clv)) + '">' + C.pct(clv) + '</span></span>' : '');
+    var block = '';
+    if (settled && !outright) {
+      var pl = p.status === 'void' ? 0 : C.plOf(p), win = C.winnerSide(p);
+      var players = ['a', 'b'].map(function (side) {
+        var q = side === 'a' ? p.player_a : p.player_b; if (!q) return '';
+        var picked = p.selection === side, sc = C.scoreSide(p, side), isW = win === side;
+        var bar = picked ? (p.status === 'won' ? 'is-w' : p.status === 'lost' ? 'is-l' : '') : '';
+        var sets = sc ? '<span class="pk-sh-sets"><span class="pk-sh-sw' + (isW ? ' is-win' : '') + '">' + sc.setsWon + '</span><span class="pk-sh-rule"></span>'
+          + sc.cells.map(function (c) { return '<span class="pk-sh-set' + (c.won ? ' is-won' : '') + '">' + esc(c.v) + (c.tb ? '<sup>' + esc(c.tb) + '</sup>' : '') + '</span>'; }).join('') + '</span>' : '';
+        return '<div class="pk-sh-pl"><span class="pk-sh-bar ' + bar + '"></span><span class="pk-sh-pn' + (isW ? ' is-win' : '') + '">' + esc(q.name) + '</span>' + sets + '</div>';
+      }).join('');
+      var tr = t ? '<div class="pk-sh-trail">' + stop('Open', '<span class="pk-sh-o">' + C.f2(t.open) + '</span>') + '<span class="pk-sh-seg" style="background:' + t.segs[0] + '"></span>'
+        + stop('Posted', '<span class="pk-sh-p16">' + C.f2(t.posted) + '</span>', ' is-c') + '<span class="pk-sh-seg" style="background:' + C.trailColour(t.posted, t.close) + '"></span>'
+        + stop('Close', '<span class="pk-sh-c" style="color:' + (t.close == null ? 'var(--text-label)' : C.trailColour(t.posted, t.close)) + '">' + C.f2(t.close) + '</span>', ' is-r') + '</div>' : '';
+      block = '<div class="pk-sh-set-blk"><div class="pk-sh-res"><span class="pk-sh-cap">Result</span>' + players + '</div>'
+        + '<div class="pk-sh-right">' + tr + '<div class="pk-sh-tiles pk-sh-tiles--4">' + tile('CLV', C.pct(clv), clv == null ? 'pk-s-zero' : sgnCls(clv))
+        + tile('Stennisfy', C.f2(mf)) + tile('Stake', esc(C.stakeText(p.stake))) + tile('P/L', esc(C.plText(p) || DASH), sgnCls(pl)) + '</div></div></div>';
+    } else if (!settled && t) {
+      block = '<div class="pk-sh-live"><div class="pk-sh-pr"><span class="pk-sh-cap">Price ' + MID + ' bet105</span><div class="pk-sh-trail">'
+        + stop('Open', '<span class="pk-sh-o">' + C.f2(t.open) + '</span>') + '<span class="pk-sh-seg" style="background:' + t.segs[0] + '"></span>'
+        + stop('Posted', '<span class="pk-sh-p14">' + C.f2(t.posted) + '</span>', ' is-c') + '<span class="pk-sh-seg" style="background:' + t.segs[1] + '"></span>'
+        + stop(esc(t.nowLabel), '<span class="pk-sh-p16">' + C.f2(t.now) + '</span>', ' is-c') + '<span class="pk-sh-seg" style="background:' + t.segs[2] + '"></span>'
+        + stop('Close', '<span class="pk-sh-c" style="color:' + (t.close == null ? 'var(--text-label)' : t.segs[2]) + '">' + C.f2(t.close) + '</span>', ' is-r') + '</div></div>'
+        + '<div class="pk-sh-tiles pk-sh-tiles--3">' + tile('CLV', C.pct(clv), clv == null ? 'pk-s-zero' : sgnCls(clv))
+        + tile('Stennisfy', C.f2(mf), modelBlur.trim()) + tile('Stake', esc(C.stakeText(p.stake))) + '</div></div>';
     }
-    var body = '<div class="pk-body' + (settled ? ' is-settled' : '') + dim + '">'
-      + '<div class="pk-players' + blur + '">' + players + '</div><span class="pk-div"></span>'
-      + '<div class="pk-right' + blur + '">' + right + '</div></div>';
-    var note = open ? '<div class="pk-note' + dim + '">' + esc(noteText(p)) + '</div>' : '';
-    return '<div class="pk-card' + (p.status === 'lost' ? ' is-lost' : '') + (routed ? ' is-routed' : '') + '" data-card="' + esc(p.id) + '">'
-      + head + body + note + footHtml(p, gated, open) + '</div>';
+    var note = noteText(p);
+    var analysis = (block ? '<div class="pk-sh-acap">Analysis</div>' : '')
+      + '<div class="pk-sh-note' + (block ? '' : ' is-top') + '">' + esc(note || 'No analysis stored for this pick.') + '</div>';
+    return '<div class="pk-sh-ov" data-act="sheetclose"><div class="pk-sh" role="dialog" aria-modal="true" aria-label="Analysis" data-stop="1">'
+      + '<div class="pk-sh-hd"><div class="pk-sh-row1">' + headRow + '</div><div class="pk-sh-bet">' + esc(C.betLine(p)) + '</div><div class="pk-sh-meta">' + meta + '</div></div>'
+      + '<div class="pk-sh-body">' + block + analysis + '</div></div></div>';
+  }
+  function openSheet(id) {
+    var p = rows().find(function (x) { return x.id === id; });
+    if (!p || gatedOf(p)) return;
+    S.sheet = id; render();
+  }
+
+  // ── header (CHANGES 10-30 §2): Upcoming = today's numbers; Completed / Record = the Record strip ────────────────
+  function header(list) {
+    var right;
+    if (S.tab === 'upcoming' && S.view !== 'record') {
+      var todays = list.filter(function (p) { return p.date === today(); });
+      right = '<div class="pk-tstats">' + C.todayStats(todays).map(function (s) {
+        return '<div class="sfh__stat"><span class="sfh__l">' + esc(s.label) + '</span><span class="sfh__v pk-tv pk-tv--' + s.kind + '">' + esc(s.value) + '</span></div>';
+      }).join('') + '</div>';
+    } else {
+      var rec = C.record(rows(), S.period, today());
+      var seg = Object.keys(C.PERIODS).map(function (k) {
+        return '<button type="button" class="pk-per' + (S.period === k ? ' on' : '') + '" data-act="period" data-k="' + k + '" title="' + esc(C.PERIODS[k].hover) + '">' + esc(C.PERIODS[k].label) + '</button>';
+      }).join('');
+      var stats = rec.stats.map(function (s) {
+        return '<div class="sfh__stat"><span class="sfh__l">' + esc(s.label) + '</span><span class="sfh__v pk-rv pk-s-' + (s.kind === 'plain' ? 'plain' : s.kind) + '">' + esc(s.value) + '</span></div>';
+      }).join('');
+      right = '<div class="pk-rec"><div class="pk-pers" role="tablist" aria-label="Record period">' + seg + '</div>'
+        + '<div class="pk-recstats" data-act="record" title="Open the record" role="button" tabindex="0">' + stats
+        + '<div class="sfh__stat"><span class="sfh__l">Settled</span><span class="sfh__v pk-rv pk-settled' + (rec.thin ? ' is-thin' : '') + '">' + esc(rec.settledText)
+        + ' <span class="pk-gt">›</span></span></div></div></div>';
+    }
+    return '<div class="sfh pk-head"><div class="sfh__text"><h1 class="sfh__title">Picks</h1>'
+      + '<p class="sfh__sub">Hand-picked daily from the Stennisfy model and strategy.</p></div>' + right + '</div>';
+  }
+
+  // ── controls (CHANGES 10-29 §1): two tabs + sub, "+ Post a pick" right (admin) ─────────────────────────────────
+  function controls(list) {
+    var tabs = [['upcoming', 'Upcoming'], ['completed', 'Completed']].map(function (x) {
+      return '<button type="button" role="tab" class="pk-tab' + (S.tab === x[0] ? ' on' : '') + '" aria-selected="' + (S.tab === x[0]) + '" data-act="tab" data-k="' + x[0] + '">' + x[1] + '</button>';
+    }).join('');
+    var nd = {}; list.forEach(function (p) { nd[p.date] = 1; });
+    var k = Object.keys(nd).length;
+    var sub = S.tab === 'upcoming' ? (k > 1 ? 'Today and the next ' + (k - 1) + (k - 1 === 1 ? ' day' : ' days') : 'Today') : '';
+    return '<div class="pk-ctrl"><div class="pk-tabs" role="tablist">' + tabs + '</div>' + (sub ? '<span class="pk-tsub">' + esc(sub) + '</span>' : '')
+      + '<span class="pk-flex"></span>' + postBtn() + '</div>';
+  }
+  // Founder 2026-10-28/30: the admin posts ONLY from the Picks page (the match-card / analysis-header "+ Pick" is gone).
+  // Admin only, by the store's role (not isAdmin(), which a demo fixture turns off for editing its fake rows).
+  function postBtn() {
+    if (!(window.PicksStore && PicksStore.isAdmin())) return '';
+    return '<button type="button" class="pk-post" data-act="post" title="Post a pick"><svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path></svg>Post a pick</button>';
   }
 
   // ── the mobile card (SPEC §9, board 1j) ────────────────────────────────────────────────────────────────────────
   function mcard(p) {
-    var outright = C.isOutright(p), gated = gatedOf(p), open = !gated && !!S.noteOpen[p.id], blur = gated ? ' is-blur' : '';
+    var outright = C.isOutright(p), gated = gatedOf(p), open = false, blur = gated ? ' is-blur' : '';
     var dim = p.status === 'lost' || p.status === 'void' ? ' is-dim' : '';
     var pl = C.plText(p), plOf = p.status === 'void' ? 0 : C.plOf(p);
     var head = '<div class="pk-hd pk-hd--m">'
@@ -214,84 +372,6 @@
     return '<div class="pk-card pk-card--m' + (p.status === 'lost' ? ' is-lost' : '') + '" data-card="' + esc(p.id) + '">' + head
       + '<div class="pk-mplayers' + blur + dim + '">' + players + '</div>'
       + '<div class="pk-mpanel' + blur + dim + '">' + panel + '</div>' + note + footHtml(p, gated, open, open ? ' pk-foot--m' : ' pk-foot--m is-closed') + '</div>';
-  }
-
-  // ── bets box (SPEC §4) ─────────────────────────────────────────────────────────────────────────────────────────
-  function betsBox(list) {
-    var b = C.betsBox(list, S.tab, S.day, today()); if (!b.show) return '';
-    var settled = S.tab === 'completed';
-    var rowsH = list.map(function (p, i) {
-      var g = gatedOf(p) ? ' is-blur' : '';
-      return '<div class="pk-bx-row' + (settled ? ' is-settled' : '') + (i === list.length - 1 ? ' is-last' : '') + '">' + typeTag(p)
-        + '<span class="pk-bx-bet"><span class="pk-bx-line' + g + '">' + esc(C.betLine(p)) + '</span>'
-        + '<span class="pk-bx-sub"><span class="pk-mono">' + C.hhmm(p.posted_at) + '</span> ' + MID + ' ' + esc(C.whereText(p)) + '</span></span>'
-        + '<span class="pk-bx-price' + g + '">' + C.f2(p.posted_price) + '</span>'
-        + '<span class="pk-bx-stake">' + esc(C.stakeText(p.stake)) + '</span>'
-        + (settled ? '<span class="pk-bx-res">' + chip(p) + '</span>' : '') + '</div>';
-    }).join('');
-    return '<div class="pk-box"><div class="pk-box-hd"><span class="pk-caps">' + esc(b.title) + '</span><span class="pk-box-meta">' + esc(b.meta) + '</span></div>'
-      + (settled ? '<div class="pk-bx-heads"><span>Type</span><span>Bet</span><span class="r">Price</span><span class="r">Stake</span><span class="r">Result</span></div>' : '')
-      + rowsH + '</div>';
-  }
-
-  // ── header + Record strip (SPEC §2) ────────────────────────────────────────────────────────────────────────────
-  function header() {
-    var rec = C.record(rows(), S.period, today());
-    var seg = Object.keys(C.PERIODS).map(function (k) {
-      return '<button type="button" class="pk-per' + (S.period === k ? ' on' : '') + '" data-act="period" data-k="' + k + '" title="' + esc(C.PERIODS[k].hover) + '">' + esc(C.PERIODS[k].label) + '</button>';
-    }).join('');
-    var stats = rec.stats.map(function (s) {
-      return '<div class="sfh__stat"><span class="sfh__l">' + esc(s.label) + '</span><span class="sfh__v pk-rv pk-s-' + (s.kind === 'plain' ? 'plain' : s.kind) + '">' + esc(s.value) + '</span></div>';
-    }).join('');
-    return '<div class="sfh pk-head"><div class="sfh__text"><h1 class="sfh__title">Picks</h1>'
-      + '<p class="sfh__sub">Hand-picked daily from the Stennisfy model and strategy.</p></div>'
-      + '<div class="pk-rec"><div class="pk-pers" role="tablist" aria-label="Record period">' + seg + '</div>'
-      + '<div class="pk-recstats" data-act="record" title="Open the record" role="button" tabindex="0">' + stats
-      + '<div class="sfh__stat"><span class="sfh__l">Settled</span><span class="sfh__v pk-rv pk-settled' + (rec.thin ? ' is-thin' : '') + '">' + esc(rec.settledText)
-      + ' <span class="pk-gt">›</span></span></div></div></div></div>';
-  }
-
-  // ── controls (SPEC §3) — the landed Today's Matches shell grammar ──────────────────────────────────────────────
-  function stripDays() {
-    var t = today(), lo = C.addDays(t, -2), hi = C.addDays(t, 1);
-    if (S.day < lo) lo = S.day; else if (S.day > hi) lo = C.addDays(S.day, -3);
-    return [0, 1, 2, 3].map(function (i) { return C.addDays(lo, i); });
-  }
-  function tournaments() {
-    var set = {};
-    C.picksFor(rows(), S.tab, S.day).forEach(function (p) { var n = C.isOutright(p) ? p.event : p.tournament; if (n) set[n] = 1; });
-    return Object.keys(set).sort();
-  }
-  function controls() {
-    var t = today();
-    var tabs = [['upcoming', 'Upcoming'], ['completed', 'Completed']].map(function (x) {
-      return '<button type="button" role="tab" class="pk-tab' + (S.tab === x[0] ? ' on' : '') + '" aria-selected="' + (S.tab === x[0]) + '" data-act="tab" data-k="' + x[0] + '">' + x[1] + '</button>';
-    }).join('');
-    var days = stripDays().map(function (d) {
-      return '<button type="button" class="pk-day' + (d === S.day ? ' on' : '') + '" data-act="day" data-k="' + d + '">' + (d === t ? 'Today' : esc(C.dayLabel(d))) + '</button>';
-    }).join('');
-    var ts = tournaments(), menu = '';
-    if (S.tournOpen) {
-      menu = '<div class="pk-tmenu" role="listbox">' + ['All tournaments'].concat(ts).map(function (n, i) {
-        var on = i === 0 ? !S.tourn : S.tourn === n;
-        return '<button type="button" class="pk-topt' + (on ? ' on' : '') + '" data-act="tsel" data-k="' + (i === 0 ? '' : esc(n)) + '">' + esc(n) + '</button>';
-      }).join('') + '</div>';
-    }
-    return '<div class="pk-row1"><div class="pk-tabs" role="tablist" aria-label="Picks view">' + tabs + '</div>'
-      + '<button type="button" class="pk-chev" data-act="prev" aria-label="Previous day">‹</button>'
-      + '<div class="pk-days">' + days + '</div>'
-      + '<button type="button" class="pk-chev" data-act="next" aria-label="Next day">›</button></div>'
-      + '<div class="pk-row2"><span class="pk-tdd"><button type="button" class="pk-tpill' + (S.tourn ? ' on' : '') + '" data-act="tourn" aria-haspopup="listbox">' + esc(S.tourn || 'All tournaments') + '</button>' + menu + '</span>'
-      + '<label class="pk-search"><svg width="15" height="15" viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="9" cy="9" r="6" stroke="currentColor" stroke-width="1.6"></circle><path d="M13.5 13.5 17 17" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path></svg>'
-      + '<input type="search" id="pkSearch" placeholder="Search for a player…" value="' + esc(S.q) + '" autocomplete="off"></label>' + postBtn() + '</div>';
-  }
-
-  // Founder 2026-10-28: the admin posts from the Picks page too (the design draws "+ Pick" on match cards only) — the
-  // same button as the card's, opening the same drawer with no match, so the drawer starts on its match search.
-  // Admin only, by the store's role (not isAdmin(), which a demo fixture turns off for editing its fake rows).
-  function postBtn() {
-    if (!(window.PicksStore && PicksStore.isAdmin())) return '';
-    return '<button type="button" class="pk-plus pk-post" data-act="post" title="Post a pick"><span class="pk-plus__p">+</span>Post a pick</button>';
   }
 
   // ── Record view (SPEC §7) ──────────────────────────────────────────────────────────────────────────────────────
@@ -332,61 +412,48 @@
   function render() {
     var el = root(); if (!el) return;
     shownPlan = window.sfPlan || null;
-    if (!S.day) S.day = today();
+    var page = '<div class="pk-page">';
     if (!loaded()) {
-      el.innerHTML = S.failed ? header() + emptyPanel({ title: 'Picks could not be loaded.', sub: '' }) : '';
+      el.innerHTML = page + (S.failed ? header([]) + emptyPanel({ title: 'Picks could not be loaded.', sub: '' }) : '') + '</div>';
       return;
     }
-    if (S.view === 'record') { el.innerHTML = header() + recordView(); return; }
-    var list = C.picksFor(rows(), S.tab, S.day);
-    var all = list.length;
-    if (S.tourn) list = list.filter(function (p) { return (C.isOutright(p) ? p.event : p.tournament) === S.tourn; });
-    if (S.q) {
-      var q = fold(S.q);
-      list = list.filter(function (p) { return [p.player_a, p.player_b].some(function (x) { return x && fold(x.name).indexOf(q) >= 0; }); });
-    }
-    var t = today(), main;
-    if (!all) main = emptyPanel(C.emptyState(S.tab, S.day, t));
-    else if (!list.length) main = emptyPanel({ title: 'No bets match this filter.', sub: '' });
-    else main = betsBox(list) + '<div class="pk-grid">' + list.map(mobile() ? mcard : card).join('') + '</div>';
-    var focus = document.activeElement && document.activeElement.id === 'pkSearch';
-    el.innerHTML = header() + controls() + main;
-    if (focus) { var i = document.getElementById('pkSearch'); if (i) { i.focus(); i.setSelectionRange(i.value.length, i.value.length); } }
+    var t = today(), up = C.upcoming(rows(), t), main;
+    if (S.view === 'record') main = recordView();
+    else if (S.tab === 'upcoming') main = controls(up) + (up.length ? upcomingView(up) : emptyPanel(C.emptyState('upcoming', t, t)));
+    else main = controls(up) + completedView(C.history(rows(), t));
+    var sheet = S.sheet ? sheetHtml(rows().find(function (x) { return x.id === S.sheet; })) : '';
+    el.innerHTML = page + header(up) + main + '</div>' + sheet;
   }
 
   // ── events (one delegated handler) ─────────────────────────────────────────────────────────────────────────────
   function onClick(e) {
     var a = e.target.closest('[data-act]');
-    var cardEl = e.target.closest('[data-card]');
     if (!a) {
-      if (S.tournOpen && !e.target.closest('.pk-tdd')) { S.tournOpen = false; render(); }
-      if (cardEl && !e.target.closest('[data-stop]')) openMatch(cardEl.getAttribute('data-card'));
+      var sh = e.target.closest('[data-sheet]');
+      if (sh && !e.target.closest('[data-stop]')) openSheet(sh.getAttribute('data-sheet'));
       return;
     }
+    if (a.getAttribute('data-act') === 'sheetclose' && e.target.closest('[data-stop]') && !e.target.closest('.pk-sh-x')) return;   // a click inside the sheet
     var act = a.getAttribute('data-act'), k = a.getAttribute('data-k'), id = a.getAttribute('data-id');
     e.stopPropagation();
-    if (act === 'note') S.noteOpen[id] = !S.noteOpen[id];
-    else if (act === 'star') S.stars[id] = !S.stars[id];
+    if (act === 'star') S.stars[id] = !S.stars[id];
+    else if (act === 'sheet') { openSheet(id); return; }
+    else if (act === 'sheetclose') S.sheet = null;
     else if (act === 'open') { openMatch(id); return; }
-    else if (act === 'tab') { S.tab = k; S.tournOpen = false; }                 // tab switch keeps tournament + date
-    else if (act === 'day') { S.day = k; S.tournOpen = false; }
-    else if (act === 'prev') S.day = C.addDays(S.day, -1);
-    else if (act === 'next') S.day = C.addDays(S.day, 1);
+    else if (act === 'tab') { S.tab = k; S.histPage = 1; }
     else if (act === 'period') S.period = k;
     else if (act === 'record') { S.view = 'record'; window.scrollTo(0, 0); }
     else if (act === 'back') S.view = 'cards';
     else if (act === 'sort') S.sort = C.nextSort(S.sort, k);
-    else if (act === 'tourn') S.tournOpen = !S.tournOpen;
-    else if (act === 'tsel') { S.tourn = k || null; S.tournOpen = false; }
+    else if (act === 'hprev') S.histPage = Math.max(1, S.histPage - 1);
+    else if (act === 'hnext') S.histPage = S.histPage + 1;
     else if (act === 'post') { if (window.PicksDrawer) PicksDrawer.openNew(); return; }
     else if (act === 'edit') { if (window.PicksDrawer) PicksDrawer.openEdit(rows().find(function (x) { return x.id === id; })); return; }
-    if (!S.fixture && S.byDay[S.day] == null) { load(); return; }   // a day not read yet
     render();
   }
   function onKey(e) {
-    if ((e.key === 'Enter' || e.key === ' ') && e.target.closest('[data-act="record"],[data-act="back"]')) { e.preventDefault(); e.target.click(); }
+    if ((e.key === 'Enter' || e.key === ' ') && e.target.closest('[data-act="record"],[data-act="back"],[data-sheet]')) { e.preventDefault(); e.target.click(); }
   }
-  function onInput(e) { if (e.target.id === 'pkSearch') { S.q = e.target.value; render(); } }
 
   var wired = false, active = false;
   function wire() {
@@ -394,20 +461,20 @@
     wired = true;
     el.addEventListener('click', onClick);
     el.addEventListener('keydown', onKey);
-    el.addEventListener('input', onInput);
     if (window.matchMedia) {
       var mq = window.matchMedia('(max-width: 640px)');
       var re = function () { if (active) render(); };
       if (mq.addEventListener) mq.addEventListener('change', re); else if (mq.addListener) mq.addListener(re);
     }
   }
-  // The tournament menu is a layer: Esc closes it (the one Esc handler, esc-nav.js).
-  (globalThis.sfEscLayers = globalThis.sfEscLayers || []).push({ id: 'picks-tournament-menu', z: 30,
-    isOpen: function () { return active && S.tournOpen; }, close: function () { S.tournOpen = false; render(); } });
+  // The analysis sheet is a layer: Esc closes it (the one Esc handler, esc-nav.js), as does a rail click.
+  (globalThis.sfEscLayers = globalThis.sfEscLayers || []).push({ id: 'picks-sheet', z: 60,
+    isOpen: function () { return active && !!S.sheet; }, close: function () { S.sheet = null; render(); } });
+  (window.sfOverlayClosers = window.sfOverlayClosers || []).push(function () { if (S.sheet) { S.sheet = null; if (active) render(); } });
 
   function setActive(on) {
     active = !!on;
-    if (!active) { S.tournOpen = false; return; }
+    if (!active) { S.sheet = null; return; }
     wire();
     if (loaded()) render();
     load(true);
@@ -436,7 +503,7 @@
     window.sfPlanLocks._picks = true;
   }
   // tests and the screenshot harness inject a fixture (the store is not reachable from a headless clone)
-  function inject(fx) { S.fixture = fx; S.day = null; if (S.timer) { clearInterval(S.timer); S.timer = null; } render(); }
+  function inject(fx) { S.fixture = fx; if (S.timer) { clearInterval(S.timer); S.timer = null; } render(); }
   window.PicksPage = { setActive: setActive, render: render, reload: reload, _inject: inject, _state: S, _rows: rows };
   window.addEventListener('hashchange', applyHash);
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', applyHash); else applyHash();

@@ -46,6 +46,13 @@
   --pro-hover:   #3A5EE6;   /* the --pro primary button on hover (Picks lock) */
   --badge-fill:  #FFFFFF;   /* the admin badge disc on the rail avatar (Picks lock, board 1k) */
   --badge-ink:   #0B0C13;   /* its shield stroke (Picks lock) */
+  /* Picks LOCK 2026-10-30 (CHANGES_2026-10-30 / -10-29, exact hex): the band / sheet fill, the sheet's dim and shadow,
+     the dark pill (round chip, sheet ×, pager), the Post button's hover */
+  --pk-band:     #0E1019;
+  --pk-pill:     #131623;
+  --pk-post-hover: #1F8AFF;
+  --pk-sheet-backdrop: rgba(5, 6, 10, 0.72);
+  --pk-shadow-sheet: 0 24px 64px rgba(0, 0, 0, 0.5);
 
   /* Bet Tracker page — exact hex from design_handoff_bet_tracker (LOCKED 2026-10-28, README §Design tokens, Quiet ink
      pass). A night-only page: the same value in Day, never routed through the theme engine. Inks / meaning colours it

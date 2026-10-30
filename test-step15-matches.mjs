@@ -5,6 +5,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
@@ -148,12 +149,12 @@ test('Elo rows: P(A) = 1/(1+10^((Rb−Ra)/400)), fair odds 1/P to 2 dp, no margi
 test('Bets today: count unblurred; tournament + round readable, selection + price blurred in ONE span unless Pro; empty → "No bets posted yet today"', () => {
   // Task 3 (founder 2026-10-27): the tile reads today's open picks from the picks store (picks-store.js). A non-Pro member
   // gets teasers (no selection, no price), so the blurred span is drawn over a placeholder — never the real pick.
-  const B = (picks, plan, admin) => new Function('picks', 'plan', 'admin', `
+  const PC = createRequire(import.meta.url)('./picks-core.js');   // the real picks-core: the tile reads the Picks page's own words
+  const B = (picks, plan, admin, src = slice('mxBetsTileHtml')) => new Function('picks', 'plan', 'admin', 'PicksCore', `
     const window = { sfPlan: plan }; let _mxPicks = picks; const isBspAdmin = () => !!admin;
-    const PicksCore = { surname: n => String(n || '').split(' ').slice(1).join(' ') };
-    ${slice('psEsc')} ${slice('mxOddsTxt')} ${slice('mxIsPro')} ${slice('mxBetsTileHtml')} return mxBetsTileHtml();`)(picks, plan, admin);
-  const real = [{ kind: 'match', tournament: 'Vienna Open', round: 'R32', selection: 'a', player_a: { name: 'M. Berrettini' }, player_b: { name: 'T. M. Etcheverry' }, posted_price: 2.02, status: 'posted' },
-                { kind: 'match', tournament: 'Swiss Indoors', round: 'R32', selection: 'b', player_a: { name: 'A. Bublik' }, player_b: { name: 'H. Rune' }, posted_price: 1.85, status: 'live' },
+    ${slice('psEsc')} ${slice('mxOddsTxt')} ${slice('mxIsPro')} ${src} return mxBetsTileHtml();`)(picks, plan, admin, PC);
+  const real = [{ kind: 'match', market: 'Match winner', tournament: 'Vienna Open', round: 'R32', selection: 'a', player_a: { name: 'M. Berrettini' }, player_b: { name: 'T. M. Etcheverry' }, posted_price: 2.02, status: 'posted' },
+                { kind: 'match', market: 'Match winner', tournament: 'Swiss Indoors', round: 'R32', selection: 'b', player_a: { name: 'A. Bublik' }, player_b: { name: 'H. Rune' }, posted_price: 1.85, status: 'live' },
                 { kind: 'outright', event: 'Nitto ATP Finals · Turin', selection: 'a', player_a: { name: 'J. Sinner' }, posted_price: 3.5, status: 'posted' }];
   const teasers = real.map(p => Object.assign({}, p, { _teaser: true, player_a: null, player_b: null, posted_price: null }));
   const free = B(teasers, null);
@@ -178,6 +179,21 @@ test('Bets today: count unblurred; tournament + round readable, selection + pric
   assert.equal(mxIsPro({ sfPlan: 'pro' }, () => false), true, 'mxIsPro: a Pro member');
   assert.match(B([], null), /mc-story__now">—<\/span>[\s\S]*No bets posted yet today/);
   assert.match(B([real[0]], null), /bet today</, 'singular');
+  // founder 2026-10-30: each row reads ITS OWN pick — a typed market on the picked side reads "{Surname} · {market}"
+  // (the Michelsen pick showed his opponent and no market); a handicap reads its bet line
+  const typed = { kind: 'match', tournament: 'Swiss Indoors', round: 'R16', selection: 'b', market: 'Other', market_text: 'Tiebreak', line: null,
+    player_a: { name: 'B. Vacherot' }, player_b: { name: 'A. Michelsen' }, posted_price: 2.4, status: 'posted' };
+  const hc = { kind: 'match', tournament: 'Vienna Open', round: 'R16', selection: 'a', market: 'Games handicap', line: '+2', player_a: { name: 'D. Hanfmann' }, player_b: { name: 'X. Y' }, posted_price: 1.9, status: 'posted' };
+  const t = B([typed, hc, real[0]], 'pro');
+  assert.match(t, /betpick">Michelsen · Tiebreak<\/span><span class="mc-story__betpx">2\.40</);
+  assert.match(t, /betpick">Hanfmann \+2 games</);
+  assert.match(t, /betpick">Berrettini</, 'a match winner reads the surname, as the reference');
+  assert.doesNotMatch(t, /Vacherot/, 'never the other player');
+  // MUTANT: the tile reads player_a whatever the selection → the typed row shows Vacherot
+  const mut = slice('mxBetsTileHtml').replace("const name = p.market === 'Match winner' ? PicksCore.surname(PicksCore.pickedPlayer(p) && PicksCore.pickedPlayer(p).name) : PicksCore.betLine(p);",
+    "const name = PicksCore.surname(p.player_a && p.player_a.name);");
+  assert.notEqual(mut, slice('mxBetsTileHtml'));
+  assert.match(B([typed], 'pro', false, mut), /Vacherot/, 'the mutant is caught');
 });
 
 test('Streak on court: the top Series card, "+N more on court today" by player, the empty state; Series is asked with its defaults', () => {

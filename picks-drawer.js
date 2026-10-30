@@ -16,7 +16,10 @@
   var C = window.PicksCore;
   if (!C) return;
   var MID = '·', MINUS = '−', EDIT_MS = 600000;
-  var MARKETS = ['Match winner', 'Games handicap', 'Total games', 'Outright'];
+  // CHANGES 10-29 §6: 11 chips + a typed market. Only Match winner / handicap / totals carry a live bet105 price; every
+  // other market is a typed price, tagged MANUAL.
+  var MARKETS = ['Match winner', 'Games handicap', 'Total games', 'Set betting', 'First set winner', 'Set handicap', 'Total sets',
+    'Player total games', 'Tiebreak in match', 'Player to win a set', 'Outright'];
   var MKT_CODE = { 'Match winner': 'ml', 'Games handicap': 'gh', 'Total games': 'tg' };
   var BOOKS = ['bet105', 'Pinnacle', 'bet365', 'Other'];
   var D = null;   // the open drawer's state, or null
@@ -52,7 +55,7 @@
   // ── the bet105 price the feed quotes for the current selection (line-prices.js), or null ──
   function sideKey() {
     if (!D.m) return null;
-    if (D.market === 'Total games') return D.lineSide;   // 'over' | 'under'
+    if (D.market === 'Total games' && !D.marketCustom) return D.lineSide;   // 'over' | 'under'
     return D.sel === 'a' ? D.m.p1Key : D.m.p2Key;
   }
   function chipLine() { return D.lineCustom ? null : D.line; }   // a typed line is never a feed line
@@ -81,7 +84,7 @@
 
   // ── the line, stored as SPEC writes it: "+2.5" · "−3.5" · "Over 22.5" ──
   function lineText() {
-    if (D.market === 'Match winner' || D.market === 'Outright') return null;
+    if (D.market === 'Match winner' || D.market === 'Outright' || D.marketCustom) return null;   // a typed market carries no chip line
     var raw = D.lineCustom ? String(D.lineCustom).trim() : D.line == null ? '' : D.market === 'Total games'
       ? (D.lineSide === 'over' ? 'Over ' : 'Under ') + D.line : (D.line > 0 ? '+' : D.line < 0 ? MINUS : '') + Math.abs(D.line);
     return raw.replace(/^-/, MINUS) || null;
@@ -143,7 +146,7 @@
       surface: surf(m) || null, match_id: Number(evKey(m)) || null,
       player_a: { id: m.p1Key == null ? null : m.p1Key, name: m.p1, initials: initials(m.p1) },
       player_b: { id: m.p2Key == null ? null : m.p2Key, name: m.p2, initials: initials(m.p2) },
-      selection: D.market === 'Total games' ? (D.lineSide === 'under' ? 'b' : 'a') : D.sel,
+      selection: D.market === 'Total games' && !D.marketCustom ? (D.lineSide === 'under' ? 'b' : 'a') : D.sel,
       market: D.marketCustom ? 'Other' : D.market, line: lineText(), book: bookName(), price_source: manual() ? 'manual' : 'feed',
       posted_price: priceNow(), stake: stakeVal(), note: String(D.note || ''),
       model_pct: D.market === 'Match winner' && !D.marketCustom && model != null ? Math.round(model * 10) / 10 : null };
@@ -314,7 +317,7 @@
     if (D.mode !== 'new') {
       var p = D.pick;
       return '<div class="pkd-sec">' + caps('Posted price ' + MID + ' locked') + '<div class="pkd-pbox"><span class="pkd-px">' + C.f2(p.posted_price) + '</span>'
-        + '<span class="pkd-psrc"><span class="pkd-psrc-a">' + esc((p.book || 'bet105') + ' ' + MID + ' ' + C.surname(((p.selection === 'b' ? p.player_b : p.player_a) || {}).name || '') + ' ' + MID + ' ' + (p.market || '') + (p.line ? ' ' + p.line : '')) + '</span>'
+        + '<span class="pkd-psrc"><span class="pkd-psrc-a">' + esc((p.book || 'bet105') + ' ' + MID + ' ' + C.surname(((p.selection === 'b' ? p.player_b : p.player_a) || {}).name || '') + ' ' + MID + ' ' + C.marketLabel(p) + (p.line ? ' ' + p.line : '')) + '</span>'
         + '<span class="pkd-psrc-b">posted ' + esc(hhmmss(p.posted_at)) + '</span></span><span class="pkd-lock" title="Price is locked at posting">' + LOCK + '</span></div>'
         + '<span class="pkd-note">Price can never change after posting.</span></div>';
     }
@@ -331,7 +334,7 @@
       ? bookName() + ' ' + MID + ' ' + (String(D.orSel || '').trim() || 'Selection') + ' ' + MID + ' ' + (String(D.orMarket || '').trim() || 'To win')
       : bookName() + ' ' + MID + ' ' + (C.surname(selName()) || '—') + ' ' + MID + ' ' + marketName() + (lineText() ? ' ' + lineText() : '');
     return '<div class="pkd-sec">' + caps('Price ' + MID + ' typed') + '<div class="pkd-pbox pkd-pbox--typed' + (bad ? ' is-bad' : '') + '">'
-      + '<input class="pkd-pin" id="pkdPrice" inputmode="decimal" placeholder="2.10" value="' + esc(D.priceTyped) + '">'
+      + '<input class="pkd-pin" id="pkdPrice" inputmode="decimal" autocomplete="off" placeholder="2.10" value="' + esc(D.priceTyped) + '">'
       + '<span class="pkd-psrc"><span class="pkd-psrc-a">' + esc(mline) + '</span><span class="pkd-psrc-b">typed by you ' + MID + ' decimal odds</span></span><span class="pkd-manual">MANUAL</span></div>'
       + '<span class="pkd-note">' + (q && q.loading ? 'Reading the bet105 price… ' : '') + 'Typed price — not from a feed. Stored with source = manual and shown on the card as ' + esc(bookName()) + '; CLV still runs against the Pinnacle close.</span></div>';
   }
@@ -340,7 +343,7 @@
     if (String(D.stake).trim() === '') { hint = 'Type the stake in % of bankroll'; bad = true; }
     else if (!stakeOk()) { hint = 'Stake is % of bankroll, 0.1 to 10'; bad = true; }
     else hint = p > 1 ? 'Wins → ' + C.u(s * (p - 1)) + ' ' + MID + ' loses → ' + C.u(-s) + ' ' + MID + ' at ' + C.f2(p) : 'Wins → — until a price is set ' + MID + ' loses → ' + C.u(-s);
-    return '<div class="pkd-sec' + (D.mode === 'frozen' ? ' pkd-off' : '') + '">' + caps('Stake ' + MID + ' % of bankroll') + '<div class="pkd-stake"><div class="pkd-sbox"><input id="pkdStake" inputmode="decimal" placeholder="1" value="' + esc(D.stake) + '"' + (D.mode === 'frozen' ? ' disabled' : '') + '><span class="pkd-pct">%</span></div>'
+    return '<div class="pkd-sec' + (D.mode === 'frozen' ? ' pkd-off' : '') + '">' + caps('Stake ' + MID + ' % of bankroll') + '<div class="pkd-stake"><div class="pkd-sbox"><input id="pkdStake" inputmode="decimal" autocomplete="off" placeholder="1" value="' + esc(D.stake) + '"' + (D.mode === 'frozen' ? ' disabled' : '') + '><span class="pkd-pct">%</span></div>'
       + '<span class="pkd-shint' + (bad ? ' is-bad' : '') + '">' + esc(hint) + '</span></div></div>';
   }
   function noteSection() {
@@ -383,7 +386,11 @@
     if (!D) return;
     var id = e.target.id, v = e.target.value;
     if (id === 'pkdQ') D.q = v;
-    else if (id === 'pkdMktCustom') { D.marketCustom = v; D.priceTyped = ''; }
+    else if (id === 'pkdMktCustom') {
+      var chip = MARKETS.filter(function (k) { return k.toLowerCase() === String(v).trim().toLowerCase(); })[0];
+      if (chip) { D.market = chip; D.marketCustom = ''; D.line = null; D.lineCustom = ''; D.priceTyped = ''; paint(); return; }
+      D.marketCustom = v; D.priceTyped = '';
+    }
     else if (id === 'pkdLineCustom') { D.lineCustom = v; D.priceTyped = ''; }
     else if (id === 'pkdPrice') D.priceTyped = v;
     else if (id === 'pkdStake') D.stake = v;
@@ -415,7 +422,10 @@
     else if (act === 'dovoid') { doVoid(); return; }
     paint();
   }
-  function done() { close(); if (window.PicksPage) PicksPage.reload(); if (typeof window.mxBetsRefresh === 'function') window.mxBetsRefresh(); }
+  function done() {
+    close(); if (window.PicksPage) PicksPage.reload(); if (typeof window.mxBetsRefresh === 'function') window.mxBetsRefresh();
+    if (window.PicksShell && PicksShell.checkCount) PicksShell.checkCount();
+  }
   function fail(err) { D.busy = false; D.err = (err && err.message) || 'Could not save — try again.'; paint(); }
   function submit(draft) {
     if (!draft && !valid()) return;

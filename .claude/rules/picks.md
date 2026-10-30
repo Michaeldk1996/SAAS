@@ -1,16 +1,18 @@
 # Picks — store, roles, figures
 
 Applies to `picks-*.js`, `picks-page.css`, `firestore.rules`, `tools/picks-updater.mjs`, `tools/firestore-rules.mjs`
-and the "Bets today" tile. Design source: `design-export/picks-handoff/` (LOCKED 2026-10-27). Handoff and open items:
+and the "Bets today" tile. Design source: `design_handoff_picks/` (LOCK 2026-10-30; authority CHANGES_2026-10-30 >
+SIDEBAR_NAV > CHANGES_2026-10-29 > SPEC > README; reference `Picks LOCKED 2026-10-30.dc.html`). Handoff and open items:
 `picks-readonly-handoff.md` in the main checkout.
 
 ## Roles are real, never a preview switch (founder 2026-10-27)
 
 - **Admin** = the founder's uid, the same allowlist as `isAdmin()` in `firestore.rules` and `isBspAdmin()` (admin-config.js).
   Only the admin posts, edits within 10 minutes (note and stake only), voids with a reason.
-- **The admin posts from the Picks page too** (founder 2026-10-28; the design draws "+ Pick" on match cards only): a
-  "+ Post a pick" button, last in the search row, admin only by the store's role, opens the drawer on its match search.
-  **Test:** `tools/test-picks-page.mjs` "+ Post a pick" (a member sees no button; mutant: drawn for everyone).
+- **The admin posts ONLY from the Picks page** (founder 2026-10-30, override 1; replaces the 2026-10-28 "too"): the blue
+  "+ Post a pick" button, last in the tabs row on both tabs, admin only by the store's role, opens the drawer on its match
+  search. There is no "+ Pick" on Today's Matches cards or in the analysis modal header. **Test:** `tools/test-picks-page.mjs`
+  "+ Post a pick" (a member sees no button) and "no "+ Pick" on match cards" (no `pkPlusHtml` / `.pk-plus` anywhere).
 - **The admin bypasses Pro gating everywhere on the site** (founder 2026-10-28), by the same uid rule.
   - `mxIsPro()` covers the Bets today tile, the Stennisfy Model row blur and the tile click.
   - `sfPlanLocks` covers the rail lock on Trading Report and Stennisfy Model, on both pages. `account.html` loads `admin-config.js` for this.
@@ -57,8 +59,37 @@ and the "Bets today" tile. Design source: `design-export/picks-handoff/` (LOCKED
 - `picks-core.js` (SPEC §11): ROI = Σ P/L ÷ Σ stake over **won + lost** only (founder 2026-10-27). Season = **1 January to today**.
 - **Test:** `tools/test-picks-core.mjs`.
 
+## Page (LOCK 2026-10-30)
+
+- **Upcoming** = one full-width band per posted / live bet, today on (`PicksCore.upcoming`), under "Open · N bets" (day
+  heads when the bets span more than one day); the header carries Bets today · Match · Outright · Staked · If all land
+  (`todayStats`). **Completed** = the history ledger, settled in the last 30 days, newest day first, ~10 rows a page in
+  whole days; the header carries the Record strip (30 d · 90 d · Season; under 20 settled → dashes + "n=N · thin").
+  Two tabs only: no date strip, tournament menu, search or day chips. Bands keep the store's posted order (the
+  package says "the bets-box row order").
+- **Any band or ledger row opens the analysis sheet** (settled picks get the result block, open picks the trail); Esc, ✕
+  and the scrim close it. A gated (non-Pro) band is blurred, not clickable and opens nothing.
+- **Mobile (≤ 640)**: one mobile card per bet, 16 px gutter.
+- **Shared 1340 column**: `.pk-page` 1420 max with 40 px gutters; the tab page is `min-height:100vh` so an empty day keeps
+  the page glow (override 3).
+- **Typed / other markets are never a dash** (founder 2026-10-30, override 2): the market's own name is the type tag (caps,
+  truncated to fit) and the bet line reads "{Surname} · {market}" — band, sheet, ledger, Bets today tile, drawer label —
+  from the stored `market_text` (a stored record is never rewritten). A typed name that equals a chip name selects that
+  chip. The drawer keeps the player clicked for a typed market (the Michelsen pick was stored on the Total games side).
+  **Test:** `tools/test-picks-core.mjs` (3 mutants), `tools/test-picks-page.mjs` (drawer mutant).
+- **The drawer's price and stake boxes are `autocomplete="off"`** (founder 2026-10-30: a Fils pick was posted at Jodar's
+  price). **Test:** `tools/test-picks-page.mjs` (static + rendered, with a mutant).
+- **Bets today tile**: each row is its own pick — a match winner reads the selected player's surname (the reference), every
+  other market the bet line. **Test:** `test-step15-matches.mjs` (mutant: the tile reads player_a).
+- **Picks count badge** (SIDEBAR_NAV, replaces the new-pick dot): the Live count chip on the Picks icon showing today's
+  posted + live bets (Brussels day), hidden at 0 (`PicksShell.todayCount` / `setCount`, re-read on auth and every 5 min).
+  **Test:** `tools/test-picks-page.mjs` "count badge".
+- **Report, not resolved** (open with the founder): Picks times are Brussels while Matches uses the viewer's zone; the
+  outright CLV benchmark; a ledger export; a drafts list; a Bets settled tile.
+
 ## Visuals
 
 - Design wins on every visual (founder 2026-10-27): the controls row is the Picks reference's, not the landed Matches shell.
-- Picks tokens are named in `tokens.css`: `--lost-card`, `--inner-band`, `--drawer-backdrop`, `--shadow-drawer`, `--pro-hover`, `--badge-fill`, `--badge-ink`.
+- Picks tokens are named in `tokens.css`: `--lost-card`, `--inner-band`, `--drawer-backdrop`, `--shadow-drawer`, `--pro-hover`, `--badge-fill`, `--badge-ink`, `--pk-band`, `--pk-pill`, `--pk-post-hover`,
+  `--pk-sheet-backdrop`, `--pk-shadow-sheet`.
 - **Test:** `tools/test-picks-page.mjs` (headless Chrome, `--hide-scrollbars`, plan pinned).

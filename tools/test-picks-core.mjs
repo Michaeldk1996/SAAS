@@ -126,6 +126,24 @@ function suite(C) {
   eq('line tag handicap', C.lineTag(sb.syn02), '+2.5 games');
   eq('line tag totals', C.lineTag(sb.syn03), 'Over 22.5');
   eq('type tags', [by.p1, sb.syn02, sb.syn03, by.o1].map(C.typeTag).join(' '), 'WINNER HANDICAP TOTALS OUTRIGHT');
+  // founder 2026-10-30, override 2: a typed market is never a dash — its name is the tag (caps) and the bet line, from
+  // the stored market text (the Michelsen record: market 'Other', market_text 'Tiebreak', selection b)
+  const tb = Object.assign({}, by.p1, { id: 'tb', market: 'Other', market_text: 'Tiebreak', line: null, selection: 'b' });
+  eq('typed market: tag', C.typeTag(tb), 'TIEBREAK');
+  eq('typed market: bet line on the picked side', C.betLine(tb), 'Etcheverry · Tiebreak');
+  eq('typed market: label', C.marketLabel(tb), 'Tiebreak');
+  eq('typed market: ledger market column', C.ledgerRow(Object.assign({}, tb, { status: 'won' })).market, 'Tiebreak');
+  const sbm = Object.assign({}, by.p1, { market: 'Set betting', line: null });
+  eq('another chip market: tag + bet line', C.typeTag(sbm) + ' | ' + C.betLine(sbm), 'SET BETTING | Berrettini · Set betting');
+  eq('typed market with no text still reads Other', C.betLine(Object.assign({}, tb, { market_text: '' })), 'Etcheverry · Other');
+
+  // ── LOCK 10-30: Upcoming = every posted / live pick from SERVED.as_of_day on; Completed = settled, last 30 days, newest first ──
+  eq('upcoming = today\'s posted + live', C.upcoming(SERVED.picks, SERVED.as_of_day).map(p => p.id).sort().join(','), 'o1,o2,p1,p2,p3');
+  eq('upcoming drops a past day', C.upcoming(SERVED.picks, '2026-10-28').length, 0);
+  eq('history = settled in 30 days', C.history(SERVED.picks, SERVED.as_of_day).map(p => p.id).sort().join(','), 's1,s2,s3,s4');
+  eq('history drops a row 31 days back', C.history(SERVED.picks, '2026-11-26').length, 0);
+  const ts = C.todayStats(C.upcoming(SERVED.picks, SERVED.as_of_day));
+  eq('header stats on Upcoming', ts.map(x => x.label + '=' + x.value).join(' | '), 'Bets today=5 | Match=3 | Outright=2 | Staked=5% | If all land=+6.4%');
 
   // ── chips, times (Europe/Brussels), void tail, score block ──
   eq('chip posted', C.statusChip(by.p1).text, 'POSTED 09:41');
@@ -158,9 +176,8 @@ function suite(C) {
   eq('singular bet', C.betsBox(up.slice(0, 1), 'upcoming', today, today).title, 'Today · 1 bet');
   eq('where (match)', C.whereText(by.p1), 'Vienna Open R32 · 20:30');
   eq('where (outright)', C.whereText(by.o1), 'Nitto ATP Finals · Turin');
-  eq('empty upcoming today', C.emptyState('upcoming', today, today).title, 'No bets posted yet today');
+  eq('empty upcoming (reference 10-30)', JSON.stringify(C.emptyState('upcoming', today, today)), JSON.stringify({ title: 'No open bets right now', sub: 'Posted picks stay here until their match ends, then move to Completed.' }));
   eq('empty completed today', JSON.stringify(C.emptyState('completed', today, today)), JSON.stringify({ title: 'No bets settled yet today.', sub: 'Today’s picks are under Upcoming until their match ends.' }));
-  eq('empty future', C.emptyState('upcoming', '2026-10-28', today).title, 'No bets posted yet for Wed 28.');
   eq('empty past', C.emptyState('completed', '2026-10-24', today).title, 'No bets this day.');
 
   // ── Record: the served demo period is thin ──
@@ -261,6 +278,9 @@ const MUTANTS = [
   ['W–L counts voids', "l = set.filter(function (p) { return p.status === 'lost'; }).length", "l = set.filter(function (p) { return p.status !== 'won'; }).length"],
   ['model % not odds', 'return m == null || !(m > 0) || m > 100 ? null : 1 / (m / 100);', 'return m == null || !(m > 0) || m > 100 ? null : m / 100;'],
   ['ROI counts void stakes', "if (p.status !== 'void') stake += num(p.stake) || 0;", 'stake += num(p.stake) || 0;'],
+  ['typed market tag is a dash', "TYPE[p && p.market] || (p ? marketLabel(p).toUpperCase() : DASH)", "TYPE[p && p.market] || DASH"],
+  ['typed market bet line dashes', "return sn + ' ' + MID + ' ' + marketLabel(p) + (p.line ? ' ' + p.line : '');", "return p.market_text || DASH;"],
+  ['ledger market reads the raw market', ": marketLabel(p) + (p.line ? ' ' + p.line : ''),", ": p.market + (p.line ? ' ' + p.line : ''),"],
   ['set cells per match', 'var won = !retiredSet && isFinite(mine) && isFinite(theirs) && mine > theirs;', "var won = p.status === 'won' ? side === p.selection : side !== p.selection;"],
 ];
 let survived = 0;

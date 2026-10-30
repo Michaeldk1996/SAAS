@@ -153,7 +153,15 @@
     if (p.market === 'Match winner') return sn + ' to win';
     if (p.market === 'Games handicap') return sn + ' ' + (p.line || DASH) + ' games';
     if (p.market === 'Total games') return (p.line || DASH) + ' games';
-    return DASH;
+    // every other market — the drawer's other chips and a typed market (stored market 'Other' + market_text) — reads
+    // "{Surname} · {market}" (founder 2026-10-30, override 2: never a dash); a line, when one was typed, follows
+    return sn + ' ' + MID + ' ' + marketLabel(p) + (p.line ? ' ' + p.line : '');
+  }
+  // the market's own name: a typed market's text ("Tiebreak"), else the chip name ("Set betting")
+  function marketLabel(p) {
+    if (!p) return DASH;
+    if (p.market === 'Other') return String(p.market_text || '').trim() || 'Other';
+    return p.market || DASH;
   }
   // the line tag on the picked side (handicap / totals): "+2.5 games" · "Over 22.5"
   function lineTag(p) {
@@ -161,7 +169,8 @@
     return p.market === 'Games handicap' ? p.line + ' games' : p.market === 'Total games' ? p.line : '';
   }
   var TYPE = { 'Match winner': 'WINNER', 'Games handicap': 'HANDICAP', 'Total games': 'TOTALS', 'Outright': 'OUTRIGHT' };
-  function typeTag(p) { return isOutright(p) ? 'OUTRIGHT' : TYPE[p && p.market] || DASH; }
+  // any other market's tag = its own name in caps ("TIEBREAK", "SET BETTING"); the tag box truncates it to fit
+  function typeTag(p) { return isOutright(p) ? 'OUTRIGHT' : TYPE[p && p.market] || (p ? marketLabel(p).toUpperCase() : DASH); }
   // posted / live → "POSTED hh:mm" (a live card still shows POSTED, SPEC §5.1); won / lost / void words
   function statusChip(p) {
     if (!p) return { text: DASH, kind: 'posted' };
@@ -210,6 +219,24 @@
   }
 
   // ── the day: which picks belong to a (tab, day) ─────────────────────────────────────────────────────────────────
+  // Upcoming (10-30 lock) = every open pick (posted · live) from `today` on, by day then posted time; Completed = every
+  // settled pick of the last 30 days (`today` included), newest day first. Drafts are never shown.
+  function upcoming(rows, today) {
+    return (rows || []).filter(function (p) { return p && (p.status === 'posted' || p.status === 'live') && p.date >= today; })
+      .sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : String(a.posted_at || '') < String(b.posted_at || '') ? -1 : 1; });
+  }
+  function history(rows, today) {
+    return (rows || []).filter(function (p) { var age = daysBetween(p && p.date, today); return isSettled(p) && age != null && age >= 0 && age <= 30; })
+      .sort(function (a, b) { return a.date > b.date ? -1 : a.date < b.date ? 1 : String(a.posted_at || '') < String(b.posted_at || '') ? -1 : 1; });
+  }
+  // the Upcoming header (CHANGES 10-30 §2): Bets today · Match · Outright · Staked Σ stake · If all land Σ stake × (posted − 1)
+  function todayStats(picks) {
+    var n = picks.length, or = picks.filter(isOutright).length, stake = 0, land = 0;
+    picks.forEach(function (p) { var s = num(p.stake) || 0, x = num(p.posted_price); stake += s; if (x != null) land += s * (x - 1); });
+    return [{ label: 'Bets today', value: String(n), kind: 'lead' }, { label: 'Match', value: String(n - or), kind: 'soft' },
+      { label: 'Outright', value: String(or), kind: 'soft' }, { label: 'Staked', value: n ? u(stake, 1).replace('+', '') : DASH, kind: n ? 'soft' : 'none' },
+      { label: 'If all land', value: n ? u(land, 1) : DASH, kind: n ? 'pos' : 'none' }];
+  }
   // Upcoming = posted / live picks of that day; Completed = settled picks of that day. Drafts are never shown.
   function picksFor(rows, tab, day) {
     return (rows || []).filter(function (p) {
@@ -219,7 +246,7 @@
   }
   // the four empty-panel strings (SPEC §6)
   function emptyState(tab, day, today) {
-    if (tab === 'upcoming' && day === today) return { title: 'No bets posted yet today', sub: '' };
+    if (tab === 'upcoming') return { title: 'No open bets right now', sub: 'Posted picks stay here until their match ends, then move to Completed.' };   // reference 10-30
     if (tab === 'completed' && day === today) return { title: 'No bets settled yet today.', sub: 'Today’s picks are under Upcoming until their match ends.' };
     if (day > today) return { title: 'No bets posted yet for ' + dayLabel(day) + '.', sub: '' };
     return { title: 'No bets this day.', sub: '' };
@@ -288,7 +315,7 @@
       id: p.id, date: p.date, dateText: dayMonth(p.date),
       match: isOutright(p) ? (pl && pl.name) || DASH : (p.player_a && p.player_a.name) + ' v ' + (p.player_b && p.player_b.name),
       event: isOutright(p) ? (p.event || DASH) : (p.tournament || DASH) + ' ' + MID + ' ' + (p.round || DASH),
-      pick: (pl && pl.name) || DASH, market: isOutright(p) ? (p.market_text || 'Outright') : p.market + (p.line ? ' ' + p.line : ''),
+      pick: (pl && pl.name) || DASH, market: isOutright(p) ? (p.market_text || 'Outright') : marketLabel(p) + (p.line ? ' ' + p.line : ''),
       posted: price(p.posted_price), close: closeOf(p), clv: c, status: p.status,
       result: (p.status === 'won' ? 'W' : p.status === 'lost' ? 'L' : 'V') + ' ' + MID + ' ' + scoreText(p),
       pl: x
@@ -323,6 +350,7 @@
     hhmm: hhmm, brusselsDay: brusselsDay, addDays: addDays, daysBetween: daysBetween, dayLabel: dayLabel, dayMonth: dayMonth, dayMonthShort: dayMonthShort,
     surname: surname, pickedPlayer: pickedPlayer, betLine: betLine, lineTag: lineTag, typeTag: typeTag, statusChip: statusChip,
     plText: plText, voidTail: voidTail, scoreSide: scoreSide, winnerSide: winnerSide, scoreText: scoreText,
+    marketLabel: marketLabel, upcoming: upcoming, history: history, todayStats: todayStats,
     picksFor: picksFor, emptyState: emptyState, betsBox: betsBox, whereText: whereText,
     inPeriod: inPeriod, record: record, ledgerRow: ledgerRow, sortLedger: sortLedger, nextSort: nextSort
   };

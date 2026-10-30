@@ -9579,10 +9579,12 @@ function mxBetsTileHtml(){
   const cue = `<span class="mc-story__bethead">${pro ? '' : '<span class="mc-story__pro">PRO</span>'}<span class="mc-story__hint${pro ? '' : ' mc-story__hint--cta'}">${pro ? 'Open picks →' : 'Unlock today’s picks →'}</span></span>`;
   const head = `<div class="mc-story__top"><span class="mc-story__lbl">Bets today</span>${cue}</div>`;
   const count = `<div class="mc-story__betcount"><span class="mc-story__now">${picks.length ? picks.length : '—'}</span><span class="mc-story__name">${picks.length === 1 ? 'bet today' : 'bets today'}</span></div>`;
+  // each row is its OWN pick (founder 2026-10-30): a match winner reads its selected player's surname (the reference);
+  // every other market reads the Picks page's bet line for that pick — "Michelsen · Tiebreak", "Hanfmann +2 games"
   const sel = p => {
     if (p._teaser || !pro) return { name: 'Pick hidden', price: '—' };
-    const pl = p.selection === 'b' ? p.player_b : p.player_a;
-    return { name: PicksCore.surname(pl && pl.name), price: mxOddsTxt(Number(p.posted_price)) };
+    const name = p.market === 'Match winner' ? PicksCore.surname(PicksCore.pickedPlayer(p) && PicksCore.pickedPlayer(p).name) : PicksCore.betLine(p);
+    return { name, price: mxOddsTxt(Number(p.posted_price)) };
   };
   const right = listed.length
     ? `<div class="mc-story__betlist">${listed.map(p => { const s = sel(p); return `<div class="mc-story__bet"><span class="mc-story__betmeta">${psEsc([p.tournament || '', p.round || ''].filter(Boolean).join(' '))}</span>`
@@ -10173,7 +10175,7 @@ function renderMatches(){
       ${playersHtml}
       <div class="mc-foot">
         <button class="mc-msig mx-msigchip" data-msig="${eventKeyOfMatch(m)}" onclick="toggleSig(this)">Market Signal${isCompleted ? ' · final' : ''} <span class="chev">▾</span></button>
-        <span class="pk-footr">${typeof pkPlusHtml === 'function' && !isCompleted ? pkPlusHtml(m) : ''}<a class="mc-analysis" onclick="mxOpenCard(this.closest('.match-card'))">See full analysis →</a></span>
+        <a class="mc-analysis" onclick="mxOpenCard(this.closest('.match-card'))">See full analysis →</a>
       </div>
       ${mcSigPanel(m)}
     </article>
