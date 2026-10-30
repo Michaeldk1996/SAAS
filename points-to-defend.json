@@ -1,11 +1,11 @@
 {
  "schemaVersion": 1,
- "generatedAt": "2026-10-30T11:35:53.452Z",
+ "generatedAt": "2026-10-30T21:40:47.700Z",
  "asOf": "2026-10-30",
  "sources": {
   "fixtures": "api-tennis get_fixtures (event_type_key 265), per prior edition",
   "playerIndex": {
-   "fetchedAt": "2026-10-30T11:14:48.699Z",
+   "fetchedAt": "2026-10-30T17:20:34.867Z",
    "source": "api-tennis get_standings (ATP)"
   },
   "draws": {
@@ -7456,13 +7456,11 @@
      "dropDate": "2026-11-02",
      "byeCorrected": false,
      "flags": [],
-     "status": "Withdrew",
-     "statusBasis": "entry-list-not-in-draw",
-     "statusInferred": true,
-     "listSections": [
-      "Main Draw"
-     ],
-     "listLastSeen": "2026-10-30T02:19:01Z"
+     "status": "Playing",
+     "statusBasis": "draw-sheet",
+     "statusInferred": false,
+     "drawSection": "main",
+     "drawEntry": null
     },
     {
      "order": 4,
@@ -7510,13 +7508,11 @@
      "dropDate": "2026-11-02",
      "byeCorrected": false,
      "flags": [],
-     "status": "Withdrew",
-     "statusBasis": "entry-list-not-in-draw",
-     "statusInferred": true,
-     "listSections": [
-      "Main Draw"
-     ],
-     "listLastSeen": "2026-10-30T02:19:01Z"
+     "status": "Playing",
+     "statusBasis": "draw-sheet",
+     "statusInferred": false,
+     "drawSection": "main",
+     "drawEntry": null
     },
     {
      "order": 6,
@@ -7537,13 +7533,11 @@
      "dropDate": "2026-11-02",
      "byeCorrected": false,
      "flags": [],
-     "status": "Withdrew",
-     "statusBasis": "entry-list-not-in-draw",
-     "statusInferred": true,
-     "listSections": [
-      "Main Draw"
-     ],
-     "listLastSeen": "2026-10-30T02:19:01Z"
+     "status": "Playing",
+     "statusBasis": "draw-sheet",
+     "statusInferred": false,
+     "drawSection": "main",
+     "drawEntry": null
     },
     {
      "order": 7,
@@ -7564,13 +7558,11 @@
      "dropDate": "2026-11-02",
      "byeCorrected": false,
      "flags": [],
-     "status": "Withdrew",
-     "statusBasis": "entry-list-not-in-draw",
-     "statusInferred": true,
-     "listSections": [
-      "Main Draw"
-     ],
-     "listLastSeen": "2026-10-30T02:19:01Z"
+     "status": "Playing",
+     "statusBasis": "draw-sheet",
+     "statusInferred": false,
+     "drawSection": "main",
+     "drawEntry": null
     },
     {
      "order": 8,
@@ -7591,13 +7583,11 @@
      "dropDate": "2026-11-02",
      "byeCorrected": false,
      "flags": [],
-     "status": "Withdrew",
-     "statusBasis": "entry-list-not-in-draw",
-     "statusInferred": true,
-     "listSections": [
-      "Main Draw"
-     ],
-     "listLastSeen": "2026-10-30T02:19:01Z"
+     "status": "Playing",
+     "statusBasis": "draw-sheet",
+     "statusInferred": false,
+     "drawSection": "main",
+     "drawEntry": null
     },
     {
      "order": 9,
@@ -7618,13 +7608,11 @@
      "dropDate": "2026-11-02",
      "byeCorrected": false,
      "flags": [],
-     "status": "Withdrew",
-     "statusBasis": "entry-list-not-in-draw",
-     "statusInferred": true,
-     "listSections": [
-      "Main Draw"
-     ],
-     "listLastSeen": "2026-10-30T02:19:01Z"
+     "status": "Playing",
+     "statusBasis": "draw-sheet",
+     "statusInferred": false,
+     "drawSection": "main",
+     "drawEntry": null
     },
     {
      "order": 10,
@@ -7645,13 +7633,11 @@
      "dropDate": "2026-11-02",
      "byeCorrected": false,
      "flags": [],
-     "status": "Withdrew",
-     "statusBasis": "entry-list-not-in-draw",
-     "statusInferred": true,
-     "listSections": [
-      "Main Draw"
-     ],
-     "listLastSeen": "2026-10-30T02:19:01Z"
+     "status": "Playing",
+     "statusBasis": "draw-sheet",
+     "statusInferred": false,
+     "drawSection": "main",
+     "drawEntry": null
     },
     {
      "order": 11,
@@ -7672,13 +7658,11 @@
      "dropDate": "2026-11-02",
      "byeCorrected": false,
      "flags": [],
-     "status": "Withdrew",
-     "statusBasis": "entry-list-not-in-draw",
-     "statusInferred": true,
-     "listSections": [
-      "Main Draw"
-     ],
-     "listLastSeen": "2026-10-30T02:19:01Z"
+     "status": "Playing",
+     "statusBasis": "draw-sheet",
+     "statusInferred": false,
+     "drawSection": "main",
+     "drawEntry": null
     },
     {
      "order": 12,
@@ -7699,13 +7683,11 @@
      "dropDate": "2026-11-02",
      "byeCorrected": false,
      "flags": [],
-     "status": "Withdrew",
-     "statusBasis": "entry-list-not-in-draw",
-     "statusInferred": true,
-     "listSections": [
-      "Main Draw"
-     ],
-     "listLastSeen": "2026-10-30T02:19:01Z"
+     "status": "Playing",
+     "statusBasis": "draw-sheet",
+     "statusInferred": false,
+     "drawSection": "main",
+     "drawEntry": null
     },
     {
      "order": 13,
@@ -7726,13 +7708,11 @@
      "dropDate": "2026-11-02",
      "byeCorrected": false,
      "flags": [],
-     "status": "Withdrew",
-     "statusBasis": "entry-list-not-in-draw",
-     "statusInferred": true,
-     "listSections": [
-      "Main Draw"
-     ],
-     "listLastSeen": "2026-10-30T02:19:01Z"
+     "status": "Playing",
+     "statusBasis": "draw-sheet",
+     "statusInferred": false,
+     "drawSection": "main",
+     "drawEntry": null
     },
     {
      "order": 14,
@@ -7753,13 +7733,11 @@
      "dropDate": "2026-11-02",
      "byeCorrected": false,
      "flags": [],
-     "status": "Withdrew",
-     "statusBasis": "entry-list-not-in-draw",
-     "statusInferred": true,
-     "listSections": [
-      "Main Draw"
-     ],
-     "listLastSeen": "2026-10-30T02:19:01Z"
+     "status": "Playing",
+     "statusBasis": "draw-sheet",
+     "statusInferred": false,
+     "drawSection": "main",
+     "drawEntry": null
     },
     {
      "order": 15,
@@ -7855,13 +7833,11 @@
      "dropDate": "2026-11-02",
      "byeCorrected": false,
      "flags": [],
-     "status": "Withdrew",
-     "statusBasis": "entry-list-not-in-draw",
-     "statusInferred": true,
-     "listSections": [
-      "Main Draw"
-     ],
-     "listLastSeen": "2026-10-30T02:19:01Z"
+     "status": "Playing",
+     "statusBasis": "draw-sheet",
+     "statusInferred": false,
+     "drawSection": "main",
+     "drawEntry": null
     },
     {
      "order": 19,
@@ -7882,13 +7858,11 @@
      "dropDate": "2026-11-02",
      "byeCorrected": false,
      "flags": [],
-     "status": "Withdrew",
-     "statusBasis": "entry-list-not-in-draw",
-     "statusInferred": true,
-     "listSections": [
-      "Main Draw"
-     ],
-     "listLastSeen": "2026-10-30T02:19:01Z"
+     "status": "Playing",
+     "statusBasis": "draw-sheet",
+     "statusInferred": false,
+     "drawSection": "main",
+     "drawEntry": null
     },
     {
      "order": 20,
@@ -7909,13 +7883,11 @@
      "dropDate": "2026-11-02",
      "byeCorrected": false,
      "flags": [],
-     "status": "Withdrew",
-     "statusBasis": "entry-list-not-in-draw",
-     "statusInferred": true,
-     "listSections": [
-      "Main Draw"
-     ],
-     "listLastSeen": "2026-10-30T02:19:01Z"
+     "status": "Playing",
+     "statusBasis": "draw-sheet",
+     "statusInferred": false,
+     "drawSection": "main",
+     "drawEntry": null
     },
     {
      "order": 21,
@@ -7990,13 +7962,11 @@
      "dropDate": "2026-11-02",
      "byeCorrected": false,
      "flags": [],
-     "status": "Withdrew",
-     "statusBasis": "entry-list-not-in-draw",
-     "statusInferred": true,
-     "listSections": [
-      "Main Draw"
-     ],
-     "listLastSeen": "2026-10-30T02:19:01Z"
+     "status": "Playing",
+     "statusBasis": "draw-sheet",
+     "statusInferred": false,
+     "drawSection": "main",
+     "drawEntry": null
     },
     {
      "order": 24,
@@ -8161,9 +8131,11 @@
      "flags": [
       "qualifier-bonus"
      ],
-     "status": "Not entered",
-     "statusBasis": "not-on-entry-list",
-     "statusInferred": false
+     "status": "Playing",
+     "statusBasis": "draw-sheet",
+     "statusInferred": false,
+     "drawSection": "main",
+     "drawEntry": null
     },
     {
      "order": 31,
@@ -8309,13 +8281,11 @@
      "dropDate": "2026-11-02",
      "byeCorrected": false,
      "flags": [],
-     "status": "Withdrew",
-     "statusBasis": "entry-list-not-in-draw",
-     "statusInferred": true,
-     "listSections": [
-      "Main Draw"
-     ],
-     "listLastSeen": "2026-10-30T02:19:01Z"
+     "status": "Playing",
+     "statusBasis": "draw-sheet",
+     "statusInferred": false,
+     "drawSection": "main",
+     "drawEntry": null
     },
     {
      "order": 37,
@@ -8411,13 +8381,11 @@
      "flags": [
       "bye-first-round-correction"
      ],
-     "status": "Withdrew",
-     "statusBasis": "entry-list-not-in-draw",
-     "statusInferred": true,
-     "listSections": [
-      "Main Draw"
-     ],
-     "listLastSeen": "2026-10-30T02:19:01Z"
+     "status": "Playing",
+     "statusBasis": "draw-sheet",
+     "statusInferred": false,
+     "drawSection": "main",
+     "drawEntry": null
     },
     {
      "order": 41,
@@ -8438,13 +8406,11 @@
      "dropDate": "2026-11-02",
      "byeCorrected": false,
      "flags": [],
-     "status": "Withdrew",
-     "statusBasis": "entry-list-not-in-draw",
-     "statusInferred": true,
-     "listSections": [
-      "Main Draw"
-     ],
-     "listLastSeen": "2026-10-30T02:19:01Z"
+     "status": "Playing",
+     "statusBasis": "draw-sheet",
+     "statusInferred": false,
+     "drawSection": "main",
+     "drawEntry": null
     },
     {
      "order": 42,
@@ -8465,13 +8431,11 @@
      "dropDate": "2026-11-02",
      "byeCorrected": false,
      "flags": [],
-     "status": "Withdrew",
-     "statusBasis": "entry-list-not-in-draw",
-     "statusInferred": true,
-     "listSections": [
-      "Main Draw"
-     ],
-     "listLastSeen": "2026-10-30T02:19:01Z"
+     "status": "Playing",
+     "statusBasis": "draw-sheet",
+     "statusInferred": false,
+     "drawSection": "main",
+     "drawEntry": null
     },
     {
      "order": 43,
@@ -8492,13 +8456,11 @@
      "dropDate": "2026-11-02",
      "byeCorrected": false,
      "flags": [],
-     "status": "Withdrew",
-     "statusBasis": "entry-list-not-in-draw",
-     "statusInferred": true,
-     "listSections": [
-      "Main Draw"
-     ],
-     "listLastSeen": "2026-10-30T02:19:01Z"
+     "status": "Playing",
+     "statusBasis": "draw-sheet",
+     "statusInferred": false,
+     "drawSection": "main",
+     "drawEntry": null
     },
     {
      "order": 44,
@@ -8521,13 +8483,11 @@
      "flags": [
       "bye-first-round-correction"
      ],
-     "status": "Withdrew",
-     "statusBasis": "entry-list-not-in-draw",
-     "statusInferred": true,
-     "listSections": [
-      "Main Draw"
-     ],
-     "listLastSeen": "2026-10-30T02:19:01Z"
+     "status": "Playing",
+     "statusBasis": "draw-sheet",
+     "statusInferred": false,
+     "drawSection": "main",
+     "drawEntry": null
     },
     {
      "order": 45,
@@ -8550,13 +8510,11 @@
      "flags": [
       "bye-first-round-correction"
      ],
-     "status": "Withdrew",
-     "statusBasis": "entry-list-not-in-draw",
-     "statusInferred": true,
-     "listSections": [
-      "Main Draw"
-     ],
-     "listLastSeen": "2026-10-30T02:19:01Z"
+     "status": "Playing",
+     "statusBasis": "draw-sheet",
+     "statusInferred": false,
+     "drawSection": "main",
+     "drawEntry": null
     },
     {
      "order": 46,
@@ -8577,13 +8535,11 @@
      "dropDate": "2026-11-02",
      "byeCorrected": false,
      "flags": [],
-     "status": "Withdrew",
-     "statusBasis": "entry-list-not-in-draw",
-     "statusInferred": true,
-     "listSections": [
-      "Main Draw"
-     ],
-     "listLastSeen": "2026-10-30T02:19:01Z"
+     "status": "Playing",
+     "statusBasis": "draw-sheet",
+     "statusInferred": false,
+     "drawSection": "main",
+     "drawEntry": null
     },
     {
      "order": 47,
@@ -8659,13 +8615,11 @@
      "dropDate": "2026-11-02",
      "byeCorrected": false,
      "flags": [],
-     "status": "Withdrew",
-     "statusBasis": "entry-list-not-in-draw",
-     "statusInferred": true,
-     "listSections": [
-      "Main Draw"
-     ],
-     "listLastSeen": "2026-10-30T02:19:01Z"
+     "status": "Playing",
+     "statusBasis": "draw-sheet",
+     "statusInferred": false,
+     "drawSection": "main",
+     "drawEntry": null
     },
     {
      "order": 50,
@@ -8965,13 +8919,11 @@
      "flags": [
       "qual-early-zero"
      ],
-     "status": "Withdrew",
-     "statusBasis": "entry-list-not-in-draw",
-     "statusInferred": true,
-     "listSections": [
-      "Main Draw"
-     ],
-     "listLastSeen": "2026-10-30T02:19:01Z"
+     "status": "Playing",
+     "statusBasis": "draw-sheet",
+     "statusInferred": false,
+     "drawSection": "main",
+     "drawEntry": null
     },
     {
      "playerKey": "1925",
@@ -8993,15 +8945,11 @@
      "flags": [
       "qual-early-zero"
      ],
-     "status": "Withdrew",
-     "statusBasis": "entry-list-not-in-draw",
-     "statusInferred": true,
-     "listSections": [
-      "Qualifying",
-      "Alternates & Reserves",
-      "Main Draw"
-     ],
-     "listLastSeen": "2026-10-30T02:19:01Z"
+     "status": "Playing",
+     "statusBasis": "draw-sheet",
+     "statusInferred": false,
+     "drawSection": "main",
+     "drawEntry": null
     },
     {
      "playerKey": "1066",
@@ -9023,15 +8971,11 @@
      "flags": [
       "qual-early-zero"
      ],
-     "status": "Withdrew",
-     "statusBasis": "entry-list-not-in-draw",
-     "statusInferred": true,
-     "listSections": [
-      "Qualifying",
-      "Alternates & Reserves",
-      "Main Draw"
-     ],
-     "listLastSeen": "2026-10-30T02:19:01Z"
+     "status": "Playing",
+     "statusBasis": "draw-sheet",
+     "statusInferred": false,
+     "drawSection": "main",
+     "drawEntry": null
     },
     {
      "playerKey": "1083",
@@ -9153,13 +9097,11 @@
      "flags": [
       "qual-early-zero"
      ],
-     "status": "Withdrew",
-     "statusBasis": "entry-list-not-in-draw",
-     "statusInferred": true,
-     "listSections": [
-      "Main Draw"
-     ],
-     "listLastSeen": "2026-10-30T02:19:01Z"
+     "status": "Playing",
+     "statusBasis": "draw-sheet",
+     "statusInferred": false,
+     "drawSection": "main",
+     "drawEntry": "WC"
     },
     {
      "playerKey": "1096",
