@@ -59,9 +59,12 @@ function build({ matches = [], OCS = { byKey: {} }, tz = undefined, dataLoadedAt
     // "priced but undated" and "dashed" independently — the three states the
     // ruling turns on.
     function getFiltered(){ return matches; }
+    // founder 2026-10-30: the header reads the selected day's own cards (mxHeaderSet); no next-day preview here
+    function mxTodayPreview(){ return false; }
+    let mxPipelineAt = null;
     function _mcNowPair(m){ return m && m._pair ? m._pair : null; }
   `;
-  const body = `${pre}\n${slice('mxOddsAgeBound')}\n${slice('mxOddsUpdatedAt')}\n${slice('mxHeaderStatusHtml')}\n${slice('ocsFmtClock')}
+  const body = `${pre}\n${slice('mxHeaderSet')}\n${slice('mxOddsAgeBound')}\n${slice('mxOddsUpdatedAt')}\n${slice('mxHeaderStatusHtml')}\n${slice('ocsFmtClock')}
     return { mxOddsAgeBound, mxOddsUpdatedAt, mxHeaderStatusHtml, ocsFmtClock };`;
   return new Function(body)();
 }
