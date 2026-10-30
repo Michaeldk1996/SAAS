@@ -16146,8 +16146,7 @@ function meChartCard(E, MM){
   const col = [[ME_C.wbar, '2.4'], [ME_C.wbar2, '2']];   // README §4: lead --white-bar 2.4px, other --white-bar-2 2px
   const legend = [0, 1].map(i => {
     const M = MM[i], has = M.state === 'ready' && M.priced.length > 0;
-    const nB = M.state === 'ready' ? M.priced.filter(r => r.book === 'B').length : 0;   // founder 2026-10-30: the Bet365 count beside the total
-    const nTxt = M.state === 'ready' ? M.priced.length.toLocaleString('en-US') + ' priced' + (nB ? ' · ' + nB.toLocaleString('en-US') + ' on Bet365' : '') : M.state === 'loading' ? '' : '—';
+    const nTxt = M.state === 'ready' ? M.priced.length.toLocaleString('en-US') + ' priced' : M.state === 'loading' ? '' : '—';
     return `<span style="display:flex; align-items:center; gap:8px;"><span style="width:16px; height:3px; border-radius:2px; background:${col[i][0]};"></span><span style="font-size:13px; font-weight:700;">${fhEsc(names[i])}</span><span style="${FH_MONO} font-size:10.5px; color:${ME_C.m2};">${nTxt}</span>`
       + (has ? `<span style="${FH_MONO} font-size:14px; font-weight:700; color:${meUC(M.units, 1)};">${meSg(M.units, 1, 'u')}</span>` : '') + '</span>';
   }).join('');

@@ -235,7 +235,7 @@ closes, odds performance and started-evidence.
     "B" in Market edge / Derived lines. `tools/me-db-report.mjs` counts exactly that case as "allowed" (a flag-`b` era row
     Market edge prices at the same Bet365 price and book) and still flags every other difference.
   - **Market edge shows its Bet365 share:** "N of M on Bet365" beside the priced count — the profile's Market edge box,
-    the Match analysis Market edge tab's Price sensitivity header and its profit-chart legend.
+    the Match analysis Market edge tab's Price sensitivity header.
   - **Tennis Explorer · Bet365** (book 10, src `teb`, every hover exactly "Bet365 (approx.) · Tennis Explorer, last
     pre-match price, not a confirmed close", `FH_B365_TE_HOVER`): Bet365's last listed pre-match price on the Tennis
     Explorer pages we already saved (`stennisfy-ops` `tools/te-b365-extract.mjs`, no request; a page whose sha256 differs
