@@ -7117,7 +7117,7 @@ function mxOddsAgeBound(){
   // "oldest" without also seeing how much of the board it failed to cover.
   let oldest = null, dated = 0, undated = 0, shown = 0;
   let list;
-  try { list = (typeof getFiltered === 'function') ? getFiltered() : []; }
+  try { list = (typeof getFiltered === 'function') ? mxHeaderSet(getFiltered()) : []; }
   catch (e) { list = []; }
   (Array.isArray(list) ? list : []).forEach(m => {
     let pair = null;
@@ -7142,7 +7142,7 @@ function mxOddsAgeBound(){
 // 03:42 while the oldest bound said 08:00). null when no shown price carries a clock.
 function mxOddsUpdatedAt(){
   let best = null, list;
-  try { list = (typeof getFiltered === 'function') ? getFiltered() : []; }
+  try { list = (typeof getFiltered === 'function') ? mxHeaderSet(getFiltered()) : []; }
   catch (e) { list = []; }
   (Array.isArray(list) ? list : []).forEach(m => {
     let pair = null;
@@ -7183,7 +7183,7 @@ function mxHeaderStatusHtml(){
   }
   // Founder 2026-10-30: a day with no cards at all keeps the last pipeline time, labelled as such.
   let emptyBoard = false;
-  try { emptyBoard = matches.length > 0 && getFiltered().length === 0 && mxPipelineAt != null; } catch (e) {}
+  try { emptyBoard = matches.length > 0 && mxHeaderSet(getFiltered()).length === 0 && mxPipelineAt != null; } catch (e) {}
   if (emptyBoard){
     const pd = 'no matches on this day — this is the last pipeline run (data built), not an odds clock';
     return `<span class="sfh__l mx-live-txt" title="${escapeHtml(pd)}">Live · loaded</span>`
@@ -8305,6 +8305,12 @@ function crossDateSearch(){ return !!(state.search && state.search.trim()); }
 // local day with that day's cards — always, not only when today is short. The next day's cards are
 // the same cards its own tab shows (same bucket). No next-day fixtures → no divider (none rendered).
 function mxTodayPreview(){ return state.view === 'upcoming' && state.day === 'today' && !crossDateSearch(); }
+// Founder 2026-10-30 correction: the header (Matches, Tournaments, Books, Updated, the live clock) counts the selected
+// day's own cards — never the next-day preview under Today's divider.
+function mxHeaderSet(list){
+  const arr = Array.isArray(list) ? list : [];
+  return mxTodayPreview() ? arr.filter(m => matchDayBucket(m) !== 'tomorrow') : arr;
+}
 function getFiltered(){
   const crossDate = crossDateSearch();
   let out = matches.filter(m => {
@@ -9638,11 +9644,11 @@ function mcRenderHeaderStats(list){
   const el = document.getElementById('mxHeaderStats');
   if (!el) return;
   const completed = state.view === 'completed';
-  const shown = completed ? list.filter(m => m.finalScore) : list;
+  const shown = completed ? list.filter(m => m.finalScore) : mxHeaderSet(list);
   const tours = new Set(shown.map(m => m.tour).filter(Boolean)).size;
   let up = mxOddsUpdatedAt();
-  if (up == null && !list.length && mxPipelineAt != null) up = mxPipelineAt;   // founder 2026-10-30: empty day → last pipeline time
-  else if (up == null && !list.length && matches.length) mxLoadPipelineAt().then(t => { if (t != null) { try { mcRenderHeaderStats(getFiltered()); updateMatchesHeaderChrome(); } catch (e) {} } });
+  if (up == null && !shown.length && mxPipelineAt != null) up = mxPipelineAt;   // founder 2026-10-30: empty day → last pipeline time
+  else if (up == null && !shown.length && matches.length) mxLoadPipelineAt().then(t => { if (t != null) { try { mcRenderHeaderStats(getFiltered()); updateMatchesHeaderChrome(); } catch (e) {} } });
   const fmt = tz => new Intl.DateTimeFormat('en-GB', { timeZone: tz, hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(up)).replace(/^24/, '00');
   let hhmm = '—';
   if (up != null) { try { hhmm = fmt((typeof newsTz === 'function' && newsTz()) || undefined); } catch (e) { hhmm = fmt(undefined); } }   // a bad stored zone never stops the board

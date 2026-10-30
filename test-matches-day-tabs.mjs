@@ -29,7 +29,7 @@ function constLine(name, src) { const m = src.match(new RegExp('\\nconst ' + nam
 const NOW = Date.parse('2026-10-30T14:00:00Z');
 function build(src = SRC, tz = 'Asia/Makassar') {
   const names = ['newsTz', 'acctTzOffsetMin', 'cardStartMs', 'apiStartMs', 'localDayKey', 'mxShiftDayKey', 'mxTodayKey',
-    'matchLocalDayKey', 'matchDayBucket', 'isFinishedMatch', 'crossDateSearch', 'mxTodayPreview', 'getFiltered', 'mxRailWindow'];
+    'matchLocalDayKey', 'matchDayBucket', 'isFinishedMatch', 'crossDateSearch', 'mxTodayPreview', 'getFiltered', 'mxRailWindow', 'mxHeaderSet'];
   return new Function('NOW', 'TZ', `
     const Date = class extends globalThis.Date { static now(){ return NOW; } };
     const localStorage = { getItem: k => (k === 'stennisfy.tz' ? TZ : null) };
@@ -38,7 +38,7 @@ function build(src = SRC, tz = 'Asia/Makassar') {
     const oddsGap = () => 0, moveNowScore = () => 0, closingScore = () => 0;
     ${constLine('MX_RAIL_DAYS', src)}
     ${names.map(n => slice(n, src)).join('\n')}
-    return { state, set board(v){ matches = v; }, getFiltered, matchDayBucket, mxRailWindow };
+    return { state, set board(v){ matches = v; }, getFiltered, matchDayBucket, mxRailWindow, mxHeaderSet };
   `)(NOW, tz);
 }
 const M = (id, date, time, extra) => Object.assign({ id, date, time, p1: id + '1', p2: id + '2', tour: 'ATP Paris' }, extra || {});
@@ -58,6 +58,10 @@ function checkA(api) {
   assert.deepEqual(run(api, 'upcoming', 'tomorrow'), ['n0030', 'n1000'], 'Sat 31 = every match starting on 31 Oct local, nothing else');
   assert.deepEqual(run(api, 'upcoming', 'today'), ['t2200', 'n0030', 'n1000'], 'Today = today\'s cards, then the next day\'s (the divider\'s) — the same cards');
   assert.deepEqual(run(api, 'upcoming', 'day2'), ['s1600']);
+  run(api, 'upcoming', 'today');
+  assert.deepEqual(api.mxHeaderSet(api.getFiltered()).map(m => m.id), ['t2200'], 'the header counts today\'s cards only, never the preview');
+  run(api, 'upcoming', 'tomorrow');
+  assert.deepEqual(api.mxHeaderSet(api.getFiltered()).map(m => m.id), ['n0030', 'n1000'], 'on its own tab the next day counts in full');
   assert.deepEqual(run(api, 'completed', 'today'), ['done'], 'Completed keys on the start instant too');
   assert.deepEqual(run(api, 'completed', 'yesterday'), ['y-done']);
 }
@@ -103,4 +107,9 @@ test('C mutant: the head wraps again', () => {
   const mut = SRC.replace('.mc-head:has(.mc-colhead-drift){ flex-wrap:nowrap;', '.mc-head:has(.mc-colhead-drift){ flex-wrap:wrap;');
   assert.notEqual(mut, SRC);
   assert.throws(() => checkC(mut));
+});
+test('A mutant: the header counts the next-day preview', () => {
+  const mut = SRC.replace("return mxTodayPreview() ? arr.filter(m => matchDayBucket(m) !== 'tomorrow') : arr;", 'return arr;');
+  assert.notEqual(mut, SRC);
+  assert.throws(() => checkA(build(mut)));
 });
