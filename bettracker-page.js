@@ -260,10 +260,8 @@
   // The month tiles cover the shown period (Season → this season's months; All time → every month). The planner opens
   // on the current month — or, when it has no bets, on the latest month that does (the reference opens today's month).
   function calPhrase() { return S.period === 'season' ? 'this season' : S.period === 'all' ? 'since the first bet' : S.period === 'custom' ? 'in the period' : 'in the ' + M.PERIODS[S.period].toLowerCase(); }
-  function calOpenKey(keys, today) {
-    if (S.calOpen !== undefined) return S.calOpen;
-    var cur = M.ym(today); return keys.indexOf(cur) >= 0 ? cur : keys.length ? keys[keys.length - 1] : null;
-  }
+  // Michael 2026-10-30: a month opens in a pop-up box, only when its tile is clicked (nothing opens on its own).
+  function calOpenKey() { return S.calOpen === undefined ? null : S.calOpen; }
   function dayPop(c) {
     return '<span class="bt-dpop' + (c.right ? ' is-right' : '') + (c.above ? ' is-above' : '') + '"><span class="bt-dpop-h"><span class="bt-dpop-t">' + esc(c.title) + '</span><span class="bt-dpop-s">' + esc(c.sub) + '</span></span>'
       + c.rows.map(function (r) {
@@ -272,11 +270,13 @@
       }).join('') + '</span>';
   }
   function calendar(ctx) {
-    var keys = M.calendarView(ctx.perList, ctx.today, null, null).keys, openKey = calOpenKey(keys, ctx.today);
+    var keys = M.calendarView(ctx.perList, ctx.today, null, null).keys, openKey = calOpenKey();
     var C = M.calendarView(ctx.perList, ctx.today, openKey, null, calPhrase());
+    // with no box open, the latest month with bets wears the selected look (Michael 2026-10-30): one click opens it
+    var markKey = openKey !== null ? null : ctx.perList.reduce(function (k, b) { var y = M.ym(b.date); return k === null || y > k ? y : k; }, null);
     var dn = ['M', 'T', 'W', 'T', 'F', 'S', 'S'].map(function (d) { return '<span class="bt-mc-dn">' + d + '</span>'; }).join('');
     var cards = C.cards.map(function (m) {
-      return '<div class="bt-mcard' + (m.on ? ' on' : '') + '" data-act="calmonth" data-k="' + m.key + '"><div class="bt-mc-cal"><div class="bt-mc-row">' + dn + '</div>'
+      return '<div class="bt-mcard' + (m.on || m.key === markKey ? ' on' : '') + '" data-act="calmonth" data-k="' + m.key + '"><div class="bt-mc-cal"><div class="bt-mc-row">' + dn + '</div>'
         + m.rows.map(function (r) {
           return '<div class="bt-mc-row">' + r.map(function (c) {
             var st = c.alpha !== null && (c.kind === 'pos' || c.kind === 'neg') ? ' style="background:color-mix(in srgb, var(--' + c.kind + ') ' + Math.round(c.alpha * 100) + '%, transparent)"' : '';
@@ -298,9 +298,9 @@
       var stats = O.stats.map(function (x) {
         return '<div class="bt-pst"><span class="bt-caps10">' + esc(x.l) + '</span><span class="bt-pst-v bt-' + x.k + '">' + esc(x.v) + '</span><span class="bt-pst-s">' + esc(x.s) + '</span></div>';
       }).join('');
-      panel = '<div class="bt-opm"><div class="bt-opm-h"><span class="bt-opm-hl"><span class="bt-opm-t">' + esc(O.title) + '</span><span class="bt-opm-s">' + esc(O.sub) + '</span></span>'
-        + '<span class="bt-opm-hr"><span class="bt-opm-full" data-act="openmonth" data-k="' + O.key + '">Full record →</span><span class="bt-opm-x" data-act="calclose">Close</span></span></div>'
-        + '<div class="bt-opm-body"><div class="bt-planner"><div class="bt-pl-head">' + head + '</div>' + rows + '</div><div class="bt-pstats">' + stats + '</div></div></div>';
+      panel = '<div class="bt-mpop bt-calpop" data-act="calclose"><div class="bt-mpop-sheet bt-calpop-sheet" data-stop="1"><div class="bt-opm"><div class="bt-opm-h"><span class="bt-opm-hl"><span class="bt-opm-t">' + esc(O.title) + '</span><span class="bt-opm-s">' + esc(O.sub) + '</span></span>'
+        + '<span class="bt-opm-hr"><span class="bt-opm-full" data-act="openmonth" data-k="' + O.key + '">Full record →</span><span class="bt-mpop-x bt-opm-x" data-act="calclose">✕</span></span></div>'
+        + '<div class="bt-opm-body"><div class="bt-planner"><div class="bt-pl-head">' + head + '</div>' + rows + '</div><div class="bt-pstats">' + stats + '</div></div></div></div></div>';
     }
     var omBets = S.openMonth === null ? [] : ctx.perList.filter(function (b) { return M.isSettled(b) && M.ym(b.date) === S.openMonth; }), pop = '';
     if (omBets.length) {
@@ -394,7 +394,7 @@
 
   // ── 7 · Staking (README §7): plan chips · your stakes vs a plan · deltas · explainers · Apply / Remove ────────────
   function staking(ctx) {
-    var cur = curBank(), ap = appliedPlan(), Z = M.stakingView(ctx.list, S.vsPlan || M.DEFAULT_PLAN), on = ap === Z.other;
+    var cur = curBank(), ap = appliedPlan(), Z = M.stakingView(ctx.list, S.vsPlan || M.DEFAULT_PLAN);
     var sw = function (k) { return 'background:var(--' + k + ')'; };
     var chips = Z.plans.map(function (p) {
       return '<span class="bt-pchip' + (p.on ? ' on' : '') + '" data-act="vsplan" data-k="' + esc(p.name) + '" title="' + esc(p.how) + '"><span class="bt-pchip-sw" style="' + sw(p.sw) + '"></span>' + esc(p.name) + '</span>';
@@ -410,7 +410,7 @@
         + '<span class="bt-delta-b">' + esc(d.b) + '</span><span class="bt-delta-d bt-' + d.kind + '">' + esc(d.d) + '</span></span></div>';
     }).join('');
     return '<div class="bt-stk"><div class="bt-stk-top"><div class="bt-stk-hrow"><span class="bt-stk-hl"><span class="bt-h16 bt-nowrap">Staking strategy</span><span class="bt-sub125">Same bets and results, only the stake changes · pick a plan and read it against your stakes.</span></span>'
-      + '<span class="bt-stk-hr">' + applied + '<span class="bt-apply' + (on ? ' is-on' : '') + '" data-act="applyplan">' + esc(on ? 'Applied to ' + cur.name : 'Apply ' + Z.other + ' to this bankroll') + '</span></span></div>'
+      + (applied ? '<span class="bt-stk-hr">' + applied + '</span>' : '') + '</div>'
       + '<div class="bt-pchips">' + chips + '</div></div>'
       + '<div class="bt-card bt-simcard"><div class="bt-simhead"><span class="bt-simtitle"><span class="bt-simkey" style="' + sw('tracker-ring') + '"></span>Your stakes<span class="bt-simvs">vs</span>'
       + '<span class="bt-simkey" style="' + sw(Z.otherSw) + '"></span>' + esc(Z.other) + '<span class="bt-simsub">· ' + esc(Z.otherSub) + '</span></span><span class="bt-simmeta">' + esc(Z.meta + ' · shaded = the gap · ' + Z.gapTxt) + '</span></div>'
@@ -458,7 +458,7 @@
   function onClick(e) {
     var t = e.target.closest('[data-act]'); if (!t || !root().contains(t)) return;
     // the month pop-up: a click inside the sheet is not a click on the overlay
-    if ((t.dataset.act === 'monthclose' || t.dataset.act === 'mktclose') && t.classList.contains('bt-mpop') && e.target.closest('[data-stop]')) return;
+    if ((t.dataset.act === 'monthclose' || t.dataset.act === 'mktclose' || t.dataset.act === 'calclose') && t.classList.contains('bt-mpop') && e.target.closest('[data-stop]')) return;
     var a = t.dataset.act, id = t.dataset.id;
     if (a === 'bank') { S.bank = id; S.month = null; S.filters = NOF(); S.range = null; S.calOpen = undefined; S.openMonth = null; S.vsPlan = null; render(); }
     else if (a === 'archive') {
@@ -471,11 +471,10 @@
     else if (a === 'delete') { if (store.deleteBank(id).ok) { load(); render(); } }
     else if (a === 'addbank') { var nid = 'b' + Date.now(); store.saveBank({ id: nid, name: 'New bankroll ' + (S.banks.length + 1), archived: false }); S.bank = nid; S.month = null; S.filters = NOF(); S.range = null; load(); render(); }
     else if (a === 'vsplan') { S.vsPlan = t.dataset.k; render(); }
-    else if (a === 'applyplan') { var cb = curBank(); store.saveBank(Object.assign({}, cb, { plan: S.vsPlan || M.DEFAULT_PLAN })); load(); render(); }
     else if (a === 'removeplan') { var cb2 = curBank(); store.saveBank(Object.assign({}, cb2, { plan: null })); load(); render(); }
     else if (a === 'useplan') { var ps = planStakeNow(); if (ps !== null) { S.form = Object.assign({}, S.form, { stake: ps.toFixed(2) }); render(); } }
     else if (a === 'dim') { S.dim = t.dataset.k; S.menu = null; render(); }
-    else if (a === 'calmonth') { var mk = +t.dataset.k; S.calOpen = calOpenKey(M.calendarView(betsOf(S.bank), todayDate(), null, null).keys, todayDate()) === mk ? null : mk; render(); }
+    else if (a === 'calmonth') { var mk = +t.dataset.k; S.calOpen = calOpenKey() === mk ? null : mk; render(); }
     else if (a === 'calclose') { S.calOpen = null; render(); }
     else if (a === 'openmkt') { S.openMkt = t.dataset.k; render(); }
     else if (a === 'mktclose') { S.openMkt = null; render(); }
@@ -545,6 +544,7 @@
   (window.sfEscLayers = window.sfEscLayers || []).push(
     { id: 'bt-menu', z: 90, isOpen: function () { return active && !!S.menu; }, close: function () { S.menu = null; render(); } },
     { id: 'bt-day-pop', z: 100, isOpen: function () { return active && !!(root() && root().querySelector('.bt-pday.is-hov')); }, close: clearDayHov },
+    { id: 'bt-cal-pop', z: 73, isOpen: function () { return active && calOpenKey() !== null; }, close: function () { S.calOpen = null; render(); } },
     { id: 'bt-month-pop', z: 74, isOpen: function () { return active && S.openMonth !== null; }, close: function () { S.openMonth = null; render(); } },
     { id: 'bt-mkt-pop', z: 74, isOpen: function () { return active && !!S.openMkt; }, close: function () { S.openMkt = null; render(); } },
     { id: 'bt-log', z: 72, isOpen: function () { return active && S.logOpen; }, close: function () { S.logOpen = false; render(); } });

@@ -262,9 +262,11 @@ async function browser() {
 
     // ── T7 · Calendar (v26 month cards): this month's tile, the open planner, today's day, hover pop-up, month pop-up ──
     const ckey = await E(`(function(){ var d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); })()`);
-    check('calendar: one month tile (this month), selected, ▴', (await E(`document.querySelectorAll('.bt-mcard').length`)) === 1 && await E(`document.querySelector('.bt-mcard').classList.contains('on') && document.querySelector('.bt-mc-chev').textContent === '▴'`));
+    check('calendar: one month tile (this month), no box open by default, ▾, marked as the latest month with bets', (await E(`document.querySelectorAll('.bt-mcard').length`)) === 1 && await E(`document.querySelector('.bt-mcard').classList.contains('on') && document.querySelector('.bt-mc-chev').textContent === '▾' && !document.querySelector('.bt-opm')`));
+    await click('.bt-mcard');
+    check('calendar: a click opens the month in a pop-up box over the page (fixed), the tile ▴', await E(`!!document.querySelector('.bt-calpop .bt-calpop-sheet .bt-opm') && getComputedStyle(document.querySelector('.bt-calpop')).position === 'fixed' && document.querySelector('.bt-mc-chev').textContent === '▴'`));
     check('calendar: the tile reads −0.4% and "3 bets · 1–1 · 1 betting days"', JSON.stringify(await E(`[document.querySelector('.bt-mc-pl').textContent, document.querySelector('.bt-mc-sub').textContent]`)) === JSON.stringify(['−0.4%', '3 bets · 1–1 · 1 betting days']));
-    check('calendar: the current month opens by default, its planner shows today −40 € red', JSON.stringify(await E(`(function(){ var c=document.querySelector('.bt-pday[data-day="${ckey}"]'); return c && [c.querySelector('.bt-pday-fig').textContent, c.classList.contains('is-neg'), c.classList.contains('is-today')]; })()`)) === JSON.stringify(['−40', true, true]));
+    check('calendar: in the open box the planner shows today −40 € red', JSON.stringify(await E(`(function(){ var c=document.querySelector('.bt-pday[data-day="${ckey}"]'); return c && [c.querySelector('.bt-pday-fig').textContent, c.classList.contains('is-neg'), c.classList.contains('is-today')]; })()`)) === JSON.stringify(['−40', true, true]));
     check('calendar: today\'s mini cell has the 40% ring', await E(`!!document.querySelector('.bt-mc-c.is-today')`));
     check('calendar: the day pop-up is hidden until hover', (await E(`getComputedStyle(document.querySelector('.bt-pday[data-day="${ckey}"] .bt-dpop')).display`)) === 'none');
     await E(`document.querySelector('.bt-pday[data-day="${ckey}"]').dispatchEvent(new MouseEvent('mouseover', {bubbles:true}))`);
@@ -275,21 +277,29 @@ async function browser() {
     check('calendar: stats — P/L −0.4% · Up days "0 of 1" · Best week −40 €', JSON.stringify(await E(`[...document.querySelectorAll('.bt-pst')].map(e=>[e.querySelector('.bt-caps10').textContent, e.querySelector('.bt-pst-v').textContent])`)).includes('["Up days","0 of 1"]')
       && (await E(`[...document.querySelectorAll('.bt-pst')].find(e=>e.textContent.startsWith('Best week')).querySelector('.bt-pst-v').textContent`)) === '−40 €');
     await click('.bt-opm-x');
-    check('calendar: Close collapses the planner, the tile goes back to ▾', !(await E(`!!document.querySelector('.bt-opm')`)) && (await T('.bt-mc-chev')) === '▾');
+    check('calendar: ✕ closes the box, the tile goes back to ▾', !(await E(`!!document.querySelector('.bt-opm, .bt-calpop')`)) && (await T('.bt-mc-chev')) === '▾');
     await click('.bt-mcard');
-    check('calendar: clicking the tile opens it again', !!(await E(`!!document.querySelector('.bt-opm')`)));
+    check('calendar: clicking the tile opens it again', !!(await E(`!!document.querySelector('.bt-calpop .bt-opm')`)));
+    await click('.bt-pst');
+    check('calendar: a click inside the box keeps it open', !!(await E(`!!document.querySelector('.bt-calpop')`)));
+    await click('.bt-calpop');
+    check('calendar: a click outside the box closes it', !(await E(`!!document.querySelector('.bt-calpop')`)));
+    await click('.bt-mcard'); await E(`document.dispatchEvent(new KeyboardEvent('keydown', {key:'Escape', bubbles:true}))`);
+    check('F4: Escape closes the month box', !(await E(`!!document.querySelector('.bt-calpop')`)));
+    await click('.bt-mcard');
     await click('.bt-opm-full');
     check('month pop-up: "Full record →" opens it — four tiles P/L · ROI · Win rate · Avg CLV and three rows', JSON.stringify(await E(`[...document.querySelectorAll('.bt-mpop-tile .bt-caps')].map(e=>e.textContent)`)) === JSON.stringify(['P/L', 'ROI', 'Win rate', 'Avg CLV']) && (await E(`document.querySelectorAll('.bt-mpop-row').length`)) === 3);
     check('month pop-up: sub "3 settled bets · 1–1–1 void · 3.0% staked"', (await T('.bt-mpop-s')) === '3 settled bets · 1–1–1 void · 3.0% staked', await T('.bt-mpop-s'));
-    check('month pop-up: a fixed overlay over the page', (await E(`getComputedStyle(document.querySelector('.bt-mpop')).position`)) === 'fixed');
+    check('month pop-up: a fixed overlay over the page', (await E(`getComputedStyle(document.querySelector('.bt-mpop:not(.bt-calpop)')).position`)) === 'fixed');
     await click('.bt-mpop-tile');
-    check('month pop-up: a click inside stays open', await E(`!!document.querySelector('.bt-mpop')`));
-    await click('.bt-mpop');
-    check('month pop-up: a click outside closes it', !(await E(`!!document.querySelector('.bt-mpop')`)));
+    check('month pop-up: a click inside stays open', await E(`!!document.querySelector('.bt-mpop:not(.bt-calpop)')`));
+    await click('.bt-mpop:not(.bt-calpop)');
+    check('month pop-up: a click outside closes it', !(await E(`!!document.querySelector('.bt-mpop:not(.bt-calpop)')`)));
     await click('.bt-opm-full'); await E(`document.dispatchEvent(new KeyboardEvent('keydown', {key:'Escape', bubbles:true}))`);
-    check('F4: Escape closes the month pop-up', !(await E(`!!document.querySelector('.bt-mpop')`)));
-    await click('.bt-opm-full'); await click('.bt-mpop-x');
-    check('month pop-up: ✕ closes it', !(await E(`!!document.querySelector('.bt-mpop')`)));
+    check('F4: one Escape closes the Full record pop-up only; the month box stays', !(await E(`!!document.querySelector('.bt-mpop:not(.bt-calpop)')`)) && !!(await E(`!!document.querySelector('.bt-calpop')`)));
+    await click('.bt-opm-full'); await click('.bt-mpop:not(.bt-calpop) .bt-mpop-x');
+    check('month pop-up: ✕ closes it', !(await E(`!!document.querySelector('.bt-mpop:not(.bt-calpop)')`)));
+    await click('.bt-opm-x');
     check('F5: a ledger meta never starts with " · " and prints no dash for a blank tournament', await E(`[...document.querySelectorAll('.bt-betmeta')].every(e => !/^ ?·/.test(e.textContent) && !/^— ·/.test(e.textContent))`));
 
     // ── T4 · Insights: the cut menu (8 cuts with counts), a cut in natural order, the total row, three dials ──
@@ -320,9 +330,12 @@ async function browser() {
     // ── T5 · Staking: pick a plan, Apply → the Log-a-bet hint + Use, Remove ──
     await click('.bt-view[data-k="staking"]');
     await click('.bt-pchip[data-k="Flat 2%"]');
-    check('staking: picking Flat 2% puts it on the chart and the Apply button', (await T('.bt-pchip.on')) === 'Flat 2%' && (await T('.bt-apply')) === 'Apply Flat 2% to this bankroll');
-    await click('.bt-apply');
-    check('staking: Apply → "Applied to Bankroll 1" + the applied line + Remove', (await T('.bt-apply')) === 'Applied to Bankroll 1' && (await T('.bt-applied')) === 'Flat 2% is on for Bankroll 1 · the next bet you log is pre-sized' && await E(`!!document.querySelector('.bt-remove')`));
+    check('staking: picking Flat 2% puts it on the chart', (await T('.bt-pchip.on')) === 'Flat 2%' && (await T('.bt-simtitle')).includes('Flat 2%'));
+    check('staking: no Apply button (Michael 2026-10-30: the plan chips pick the plan)', !(await E(`!!document.querySelector('.bt-apply, [data-act="applyplan"]')`)) && !(await E(`!!document.querySelector('.bt-applied')`)));
+    // a plan applied before the button went keeps working: seed it in the store, reload
+    await E(`(function(){ var b = BetTrackerStore.listBanks().find(function(x){ return x.name === 'Bankroll 1'; }); BetTrackerStore.saveBank(Object.assign({}, b, { plan: 'Flat 2%' })); })()`);
+    await open(); await click('.bt-view[data-k="staking"]');
+    check('staking: an applied plan still shows its line + Remove', (await T('.bt-applied')) === 'Flat 2% is on for Bankroll 1 · the next bet you log is pre-sized' && await E(`!!document.querySelector('.bt-remove')`));
     check('staking: the View segment shows the green dot', await E(`!!document.querySelector('.bt-view[data-k="staking"] .bt-plandot')`));
     await click('.bt-logbtn');
     check('log a bet: the stake hint "Flat 2% says 2.00%" + Use', (await T('#btPlanHint')) === 'Flat 2% says 2.00%Use');
@@ -331,7 +344,7 @@ async function browser() {
     await click('.bt-logbtn');
     await click('.bt-remove');
     check('staking: Remove clears the plan', !(await E(`!!document.querySelector('.bt-plandot')`)) && !(await E(`!!document.querySelector('.bt-remove')`)));
-    await click('.bt-pchip[data-k="Flat 1%"]'); await click('.bt-apply');
+    await E(`(function(){ var b = BetTrackerStore.listBanks().find(function(x){ return x.name === 'Bankroll 1'; }); BetTrackerStore.saveBank(Object.assign({}, b, { plan: 'Flat 1%' })); })()`);
     await click('.bt-view[data-k="results"]');
 
     // ── reload: everything is still there ──
