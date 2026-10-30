@@ -215,8 +215,21 @@ closes, odds performance and started-evidence.
   `trueStartTime` − 10 min, the trueStart through the `resolve_start` gate; stored with its source, cut time and gap to the
   start; hover "Pinnacle (approx.) · Pinnacle history, taken 10 minutes before the recorded start, not a confirmed close");
   (2) api-tennis's stored `Pncl` price where the archive has no pre-cut pair (13 Jan – 12 Apr always: no archive exists;
-  hover unchanged, "Pinnacle snapshot from api-tennis, no timestamp, not a confirmed close"); (3) Bet365; (4) a dash
-  (`historical-odds-archive.md`, `database.md`).** **api-tennis Pinnacle (`Pncl`) is never a close** (founder brief 2026-10-14 item 2: it has no
+  hover unchanged, "Pinnacle snapshot from api-tennis, no timestamp, not a confirmed close"); (3) Tennis Explorer's Pinnacle
+  (book 8, below); (4) Bet365; (5) a dash (`historical-odds-archive.md`, `database.md`).**
+- **ATP main-draw order (founder ruling 2026-10-30, "TE above Bet365"; replaces every earlier main-draw order):**
+  Tennis-Data Pinnacle → our archive close → E (the early-cut fill) → api-tennis Pinnacle → **Tennis Explorer Pinnacle** →
+  Bet365 → a dash, one source per match. E stays before api-tennis, as the build applies it (both travel the td-feed
+  override, which is read before any snapshot). Tennis Explorer's last pre-match Pinnacle price (book 8, "Pinnacle (approx.) ·
+  Tennis Explorer, last pre-match price, not a confirmed close", never a close) prices an ATP main-draw match at any date
+  where no source above it has a pair — replacing Bet365 "B" and filling dashes — and it is the ONE source that prices a
+  start − 10 dash (the start − 10 snapshot itself stays unshown, the 26 Oct ruling). It comes from the Mac's TE batches
+  `atp-md-id` / `atp-md-days` (level `atp-md`, keyed by the Tennis-Data row) through `tdarch.py te-import` (joined to the
+  ONE api-tennis fixture for its event key and start; the in-play rule applies; no fixture = no start = not stored) and
+  `approx-feed` (`pinnacle-approx.csv`). The rows already priced by Tennis-Data, the archive, E or api-tennis never move.
+  **Test:** `tools/test-approx-pinnacle.mjs` "TE on the ATP main draw" (order, the start − 10 dash, the counts; MUTANT: TE
+  above api-tennis → red), `tools/test-tdarch.py` "atp-md" (the join, the in-play rule, no fixture = not stored).
+  2009 is not targeted yet (founder 2026-10-30). **api-tennis Pinnacle (`Pncl`) is never a close** (founder brief 2026-10-14 item 2: it has no
   timestamps; measured 2 decimals) — a cross-check only.
 - **The archive close = the last ACTIVE `pinnacle+30` match-winner entry at or before the EARLIER of our live-flip
   start and Oddspapi's `trueStartTime`** (founder ruling 2026-10-14, after the start-time check: api-tennis flagged a match
@@ -291,8 +304,8 @@ closes, odds performance and started-evidence.
 - **One price per match, on every page — a standing rule** (founder ruling 2026-10-17, item 1). A match shows the SAME
   price, source and hover wherever it appears: Database, Head to Head, Player Profile, Series, the Match analysis Tournament
   tab, and the Form, H2H, Market edge, Overview and Progression tabs. The one source is the Database join
-  (`DatabaseTab.priceRows()` through `H2HPage.priceJoin`; its order Tennis-Data Pinnacle > our archive close > start − 10 >
-  api-tennis Pinnacle (approx.) > Bet365, one source per match, `database.md` "Price join"). The five closes-shard tabs take
+  (`DatabaseTab.priceRows()` through `H2HPage.priceJoin`; its ATP main-draw order is the 2026-10-30 one above, one source
+  per match, `database.md` "Price join"). The five closes-shard tabs take
   it through `sfDbPxRows` (`fhFormPlayer`, `fhMeetings`, `meRowFromCareer`) and wait for it to load (`sfDbPxLoad`); the
   Market edge builder (`build-market-edge.js`) reads ONLY the master file (below). No page builds its own price for a
   match the Database holds.

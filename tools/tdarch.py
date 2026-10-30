@@ -925,6 +925,12 @@ TE_FEED_ON = True    # founder 2026-10-20: calibration passed (median 0.10pp on 
 TE_SOURCE = 'Tennis Explorer · Pinnacle'
 TE_HOVER = 'Tennis Explorer, last pre-match price, not a confirmed close'   # one fixed text, no time (the time stays in price_ts)
 TE_LEVELS = ('atp-q', 'atp-x', 'ch', 'ch-q')
+# founder 2026-10-30 ("TE above Bet365"): an ATP main-draw match the Database prices on Bet365 or shows as a dash. The target
+# carries its Tennis-Data row (td: date, tournament, winner, loser; a / b = winner / loser) and no api-tennis key: the row is
+# joined to its ONE api-tennis fixture with the main-draw snapshots' own join (approx_join) for the event key and the start
+# the in-play rule checks against; no fixture = no start = not stored. Stored under the Tennis-Data key with NO detail.level,
+# so it travels the main-draw feed (pinnacle-approx.csv), where the Database ranks it after api-tennis and before Bet365.
+TE_MD_LEVEL = 'atp-md'
 RESULT_STATUSES = ('Finished', 'Retired')
 
 
@@ -1187,7 +1193,61 @@ def te_start(x, f, flip_start):
     return None, None
 
 
-def te_rows(docs, fixture_of, flip_start=lambda ek: None):
+def te_md_row(d, x, p, md_join, flip_start, rep):
+    """One ATP main-draw TE row (level atp-md), or None with the reason counted. See TE_MD_LEVEL."""
+    td = x.get('td') or {}
+    if not all(td.get(k) for k in ('date', 'tournament', 'winner', 'loser')):
+        rep['atp-md: no Tennis-Data key'] += 1; return None
+    p1, p2 = price(p.get('p1')), price(p.get('p2'))
+    if p1 is None or p2 is None:
+        rep['a side below 1.01'] += 1; return None
+    if not re.fullmatch(r'[0-9a-f]{64}', str(x.get('pageSha256') or '')) or not re.fullmatch(r'[0-9]+', str(x.get('teId') or '')):
+        rep['no page sha256 / TE id'] += 1; return None
+    if x.get('a') != td['winner'] or x.get('b') != td['loser']:
+        rep['atp-md: a / b are not the Tennis-Data winner / loser'] += 1; return None
+    f, w = md_join(td)
+    if f is None:
+        rep[f'atp-md: not stored, no api-tennis fixture ({w}) — no start'] += 1; return None
+    st = str(f.get('event_status') or '')
+    if 'walk' in st.lower():
+        rep['walkover'] += 1; return None
+    if st not in RESULT_STATUSES or f.get('event_winner') not in ('First Player', 'Second Player'):
+        rep['no result'] += 1; return None
+    if (f['event_winner'] == 'First Player') != w:
+        rep['atp-md: the fixture names the other winner'] += 1; return None
+    pw, pl = p1, p2                                     # TE's a / b ARE the Tennis-Data winner / loser (the page check oriented them)
+    ts = [t for t in (p.get('p1Ts'), p.get('p2Ts')) if t]
+    pts = max(ts) if ts else None
+    start, kind = te_start({'ek': str(f['event_key']), 'close': x.get('close')}, f, flip_start)
+    bt = f"batch {d.get('batch')}: "
+    if start is None:
+        rep['not stored: no start of any kind'] += 1; rep[bt + 'not stored, no start'] += 1
+        return None
+    if pts and _ts(pts) and _ts(pts) > start:
+        rep['dropped: last change after the start'] += 1
+        rep[f'dropped: last change after the start ({kind})'] += 1
+        rep[f"dropped in batch {d.get('batch')}"] += 1
+        return None
+    if not pts:
+        rep[bt + 'kept, no TE timestamp'] += 1
+    elif _ts(pts) > start - dt.timedelta(minutes=1):
+        rep[bt + "kept, in the start's own minute"] += 1
+    a, b = f.get('event_first_player'), f.get('event_second_player')
+    rep['stored'] += 1; rep[f"atp-md stored: {x.get('group')}"] += 1
+    return {'dedupe_key': '|'.join(str(v) for v in (TE_SOURCE, td['date'], td['tournament'], td['winner'], td['loser'], f['event_key'], pw, pl, x['pageSha256'])),
+            'source': TE_SOURCE, 'label': APPROX_LABEL, 'match_date': td['date'], 'tournament': td['tournament'],
+            'round': x.get('round') or None, 'winner': td['winner'], 'loser': td['loser'], 'event_key': int(f['event_key']),
+            'price_winner': pw, 'price_loser': pl, 'fetched_at': x.get('fetchedAt'), 'price_ts': pts,
+            'detail': {'atpMainDraw': True, 'group': x.get('group'), 'teMatchId': str(x['teId']), 'pageSha256': x['pageSha256'],
+                       'batch': d.get('batch'), 'teTournament': x.get('tour'), 'books': x.get('books') or [], 'moves': p.get('moves'),
+                       'sideTs': {'winner': p.get('p1Ts'), 'loser': p.get('p2Ts')},
+                       'open': {'winner': (p.get('open') or {}).get('p1'), 'loser': (p.get('open') or {}).get('p2'),
+                                'winnerTs': (p.get('open') or {}).get('p1Ts'), 'loserTs': (p.get('open') or {}).get('p2Ts')},
+                       'firstPlayer': a, 'secondPlayer': b, 'winnerIsFirst': w, 'hover': TE_HOVER,
+                       'startChecked': start.isoformat().replace('+00:00', 'Z'), 'startKind': kind}}
+
+
+def te_rows(docs, fixture_of, flip_start=lambda ek: None, md_join=lambda td: (None, 'no fixture list read')):
     """Snapshot rows from the joined TE matches with a Pinnacle pair + a report. `fixture_of(ek)` = the CURRENT api-tennis
     fixture (the result and the names; a match with no result, a walkover or an unreadable fixture -> no row). Prices
     are oriented to the winner from TE's a / b (= api-tennis's first / second player). A side below 1.01 = no row. ITF is
@@ -1200,6 +1260,11 @@ def te_rows(docs, fixture_of, flip_start=lambda ek: None):
             p = x.get('pin')
             if not p:
                 rep['joined, no Pinnacle on the page'] += 1; continue
+            if x.get('level') == TE_MD_LEVEL:
+                r = te_md_row(d, x, p, md_join, flip_start, rep)
+                if r:
+                    rows.append(r)
+                continue
             if x.get('level') not in TE_LEVELS:
                 rep['level out of scope'] += 1; continue
             p1, p2 = price(p.get('p1')), price(p.get('p2'))
@@ -1268,6 +1333,35 @@ def te_rows(docs, fixture_of, flip_start=lambda ek: None):
     return rows, dict(rep)
 
 
+def te_md_joiner(md):
+    """The ATP main-draw rows' api-tennis fixtures: get_fixtures for each target's date -1 .. +2 (UTC, ATP singles), joined with
+    approx_join (both surnames, one fixture). Returns (td -> (fixture, winnerIsFirst) | (None, reason), the joined event keys
+    dated from 17 Sep — the ones a live-flip start can exist for)."""
+    if not md:
+        return (lambda td: (None, 'no fixture list read')), []
+    import concurrent.futures as cf
+    days = sorted({(dt.date.fromisoformat(x['td']['date']) + dt.timedelta(days=k)).isoformat() for x in md if (x.get('td') or {}).get('date')
+                   for k in (-1, 0, 1, 2)})
+    def day(d):
+        j = _at({'method': 'get_fixtures', 'date_start': d, 'date_stop': d, 'timezone': 'UTC'})
+        if not isinstance(j.get('result'), list) and j.get('success') != 1:
+            raise RuntimeError(f'get_fixtures {d}: no result list ({str(j)[:200]})')
+        return d, [{k: v for k, v in f.items() if not isinstance(v, (list, dict))} for f in (j.get('result') or []) if f.get('event_type_type') == 'Atp Singles']
+    by_day = collections.defaultdict(list)
+    with cf.ThreadPoolExecutor(8) as ex:
+        for d, res in ex.map(day, days):
+            for f in res:
+                by_day[f['event_date']].append(f)
+    memo = {}
+    def join(td):
+        k = (td['date'], td['winner'], td['loser'])
+        if k not in memo:
+            memo[k] = approx_join({'date': td['date'], 'winner': td['winner'], 'loser': td['loser']}, by_day)
+        return memo[k]
+    eks = [str(f['event_key']) for x in md for f, _ in [join(x['td'])] if f is not None and str(x['td']['date']) >= P.VERIFIED_START_FROM]
+    return join, eks
+
+
 def te_in_play(r):
     """The in-play rule at READ time (founder 2026-10-20): a stored TE row whose last change (price_ts) is after the start it was
     checked against (detail.startChecked) is never fed. te-import applies the same rule; reading it here as well keeps the
@@ -1298,7 +1392,7 @@ def te_coverage(rows, held, closed):
             by[str(h.get('event_key'))].add(h.get('source'))
     wins, newly, over = (collections.defaultdict(collections.Counter) for _ in range(3))
     for r in rows:
-        ek, lv, y = str(r['event_key']), r['detail']['level'], str(r['match_date'])[:4]
+        ek, lv, y = str(r['event_key']), r['detail'].get('level') or TE_MD_LEVEL, str(r['match_date'])[:4]
         src = by.get(ek, set())
         if ek in closed or START10_SOURCE in src or APPROX_SOURCE in src:
             continue
@@ -1324,11 +1418,14 @@ def te_import_run(store, dry_run=False):
     if not docs:
         P.die(f'{store}/te-odds: no complete batch file — nothing to import' + (f' (partial: {", ".join(skipped)})' if skipped else ''))
     akey = os.environ.get('API_TENNIS_KEY') or P.die('API_TENNIS_KEY is not set')
-    eks = sorted({str(x['ek']) for d in docs for x in d['rows'] if x.get('status') == 'joined' and x.get('pin')})
+    live = [x for d in docs for x in d['rows'] if x.get('status') == 'joined' and x.get('pin')]
+    md = [x for x in live if x.get('level') == TE_MD_LEVEL]
+    eks = sorted({str(x['ek']) for x in live if x.get('level') != TE_MD_LEVEL})
     fx = P.apitennis_fixture_fetcher(akey)(eks)
-    flip = te_flip_starts([ek for d in docs for x in d['rows'] if x.get('status') == 'joined' and x.get('pin') and str(x.get('date') or '') >= P.VERIFIED_START_FROM
-                           for ek in [str(x['ek'])]])
-    rows, rep = te_rows(docs, fx.get, flip.get)
+    md_join, md_eks = te_md_joiner(md)
+    flip = te_flip_starts([str(x['ek']) for x in live if x.get('level') != TE_MD_LEVEL and str(x.get('date') or '') >= P.VERIFIED_START_FROM]
+                          + md_eks)
+    rows, rep = te_rows(docs, fx.get, flip.get, md_join)
     held = P.select_all(SNAP, 'id,dedupe_key,source,match_date,tournament,winner,loser,supersedes,event_key')
     add = plan_snapshots(rows, held)
     closed = {str(r['event_key']) for r in P.select_all(P.CLOSE, 'event_key')}
@@ -1406,6 +1503,13 @@ def cmd_te_import_new(store, out_path):
     return lines
 
 
+def main_snapshots(cur):
+    """The ATP main draw's current snapshots: every one with no level; a Tennis Explorer row (founder 2026-10-30, level atp-md
+    at import) only while the feed switch is on and never one whose last change came after the start it was checked against."""
+    return [r for r in cur if not (r.get('detail') or {}).get('level')
+            and not (r.get('source') == TE_SOURCE and (not TE_FEED_ON or te_in_play(r)))]
+
+
 def cmd_approx_feed(out_csv, lower_csv=None):
     try:
         try:
@@ -1422,7 +1526,7 @@ def cmd_approx_feed(out_csv, lower_csv=None):
         raise
     cur = current_snapshots(held)
     lower = lower_feed_rows(cur)
-    cur = [r for r in cur if not (r.get('detail') or {}).get('level')]
+    cur = main_snapshots(cur)
     if lower_csv:
         tmp = lower_csv + '.tmp'
         with open(tmp, 'w') as fh:

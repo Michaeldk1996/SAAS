@@ -105,7 +105,7 @@ check('start − 10: its own dash reason "od10"', () => {
   assert.deepEqual(R.x.uRows.filter(u => od10Dates.includes(String(u[0]))).map(u => u[3]), ['od10', 'od10']);
 });
 check('meta.od10Dropped counts them, and how many had another price it did not fall back to', () => {
-  assert.deepEqual(R.db.meta.od10Dropped, { rows: 2, byMonth: { '2026-04': 1, '2026-06': 1 }, hadApiTennisSnapshot: 1, hadBet365: 1 });
+  assert.deepEqual(R.db.meta.od10Dropped, { rows: 2, byMonth: { '2026-04': 1, '2026-06': 1 }, hadApiTennisSnapshot: 1, hadBet365: 1, pricedByTe: 0 });
 });
 check('single price: the master holds no book 5 and none of the dashed matches', () => {
   const c = R.master.meta.cols, bi = c.indexOf('book'), di = c.indexOf('date');

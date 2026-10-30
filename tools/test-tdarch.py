@@ -431,5 +431,50 @@ _mr = T.mark_rule_qualifying
 check('qualifying rule wired: _lower_fixtures marks the rule before filtering to lower levels',
       'ruled = mark_rule_qualifying(fx)' in open(os.path.join(os.path.dirname(__file__), 'tdarch.py')).read())
 
+# ── TE on the ATP main draw (founder 2026-10-30, "TE above Bet365"): level atp-md, keyed by the Tennis-Data row ──────
+MDTD = lambda w='One A.', l='Two B.': {'date': '2025-03-10', 'tournament': 'BNP Paribas Open', 'winner': w, 'loser': l}
+MD = lambda n, pin, group='B', a='One A.', b='Two B.', td=None: {'ek': f'md:{n}', 'level': T.TE_MD_LEVEL, 'group': group, 'date': '2025-03-10',
+    'round': '2nd Round', 'a': a, 'b': b, 'ka': None, 'kb': None, 'td': td or MDTD(a, b), 'status': 'joined', 'teId': str(9000 + n),
+    'tour': 'Indian Wells', 'books': ['Pinnacle'], 'pageSha256': SHA, 'fetchedAt': '2026-10-31T03:00:00Z', 'pin': pin}
+MDF = lambda ek, win='First Player', tm='18:00': dict(F(ek, 'Atp Singles', win=win, d='2025-03-10'), event_time=tm, event_first_player='A. One', event_second_player='B. Two')
+mjoin = {('One A.', 'Two B.'): (MDF(501), True), ('Rev R.', 'Two B.'): (MDF(502, win='Second Player'), False),
+         ('Late L.', 'Two B.'): (MDF(503), True), ('Bad W.', 'Two B.'): (MDF(504, win='Second Player'), True)}
+mdocs = [{'batch': 'atp-md-id', 'complete': True, 'rows': [
+    MD(1, {'p1': 1.6, 'p2': 2.4, 'p1Ts': '2025-03-10T17:00:00Z', 'p2Ts': None, 'open': {'p1': 1.7}, 'moves': [1, 0]}),
+    MD(2, {'p1': 2.2, 'p2': 1.7, 'p1Ts': None, 'p2Ts': None, 'open': {}, 'moves': [0, 0]}, group='od10', a='Rev R.'),
+    MD(3, {'p1': 1.5, 'p2': 2.6, 'p1Ts': '2025-03-10T18:05:00Z', 'p2Ts': None, 'open': {}, 'moves': [1, 0]}, a='Late L.'),
+    MD(4, {'p1': 1.5, 'p2': 2.6, 'p1Ts': None, 'p2Ts': None, 'open': {}, 'moves': [0, 0]}, a='None N.'),
+    MD(5, {'p1': 1.5, 'p2': 2.6, 'p1Ts': None, 'p2Ts': None, 'open': {}, 'moves': [0, 0]}, a='Bad W.'),
+    MD(6, {'p1': 1.5, 'p2': 2.6, 'p1Ts': None, 'p2Ts': None, 'open': {}, 'moves': [0, 0]}, a='One A.', td=MDTD('Two B.', 'One A.'))]}]
+mrows, mrep = T.te_rows(mdocs, lambda ek: None, lambda ek: None, lambda td: mjoin.get((td['winner'], td['loser']), (None, 'no fixture')))
+m1 = next((r for r in mrows if r['detail']['teMatchId'] == '9001'), None)
+check('atp-md: stored under the Tennis-Data key (date, tournament, winner, loser), prices oriented to the Tennis-Data winner, event key from its ONE fixture, NO level (the main-draw feed)',
+      m1 is not None and (m1['match_date'], m1['tournament'], m1['winner'], m1['loser'], m1['price_winner'], m1['price_loser'], m1['event_key'])
+      == ('2025-03-10', 'BNP Paribas Open', 'One A.', 'Two B.', 1.6, 2.4, 501) and 'level' not in m1['detail'] and m1['detail']['group'] == 'B'
+      and m1['source'] == T.TE_SOURCE and m1['label'] == 'Pinnacle (approx.)' and m1['detail']['startKind'] == 'scheduled', (mrows, mrep))
+m2 = next((r for r in mrows if r['detail']['teMatchId'] == '9002'), None)
+check('atp-md: a fixture whose first player is the loser still reads the winner\'s price (a / b are the Tennis-Data winner / loser)',
+      m2 is not None and (m2['winner'], m2['price_winner'], m2['price_loser']) == ('Rev R.', 2.2, 1.7), m2)
+check('atp-md: the in-play rule applies — a last change after the scheduled start is dropped (3); no fixture = no start = not stored (4); a fixture naming the other winner (5) and a / b that are not the Tennis-Data winner / loser (6) are refused, each counted',
+      sorted(r['detail']['teMatchId'] for r in mrows) == ['9001', '9002'] and mrep.get('dropped: last change after the start') == 1
+      and mrep.get('atp-md: not stored, no api-tennis fixture (no fixture) — no start') == 1 and mrep.get('atp-md: the fixture names the other winner') == 1
+      and mrep.get('atp-md: a / b are not the Tennis-Data winner / loser') == 1 and mrep.get('atp-md stored: B') == 1 and mrep.get('atp-md stored: od10') == 1, mrep)
+nm, nrep = T.te_rows(mdocs, lambda ek: None)
+check('control: with no fixture list read, no atp-md row is stored (never a start invented)', nm == [] and nrep.get('atp-md: not stored, no api-tennis fixture (no fixture list read) — no start') == 5, nrep)
+mcur = [dict(m1, id=700), dict(m2, id=701, price_ts='2025-03-10T19:00:00Z', detail=dict(m2['detail'], startChecked='2025-03-10T18:00:00Z')),
+        dict(te[0], id=702), dict(r0, id=703)]
+ms = T.main_snapshots(mcur)
+check('main-draw feed: an atp-md TE row is fed, an in-play one is not, a lower-level row never is; api-tennis rows unchanged',
+      sorted(r['id'] for r in ms) == [700, 703], [r['id'] for r in ms])
+orig = T.TE_FEED_ON
+try:
+    T.TE_FEED_ON = False
+    check('main-draw feed: TE_FEED_ON off feeds no TE row', sorted(r['id'] for r in T.main_snapshots(mcur)) == [703])
+finally:
+    T.TE_FEED_ON = orig
+check('main-draw feed: approx_feed_rows hands TE to the Database under its source, keyed by the Tennis-Data row',
+      [(r['source'], r['winner'], r['psw']) for r in T.approx_feed_rows([dict(m1, id=700)])] == [(T.TE_SOURCE, 'One A.', 1.6)])
+cv = T.te_coverage([m1], [], set())
+check('coverage: an atp-md row counts under its own level (no KeyError on a row with no level)', cv['teWins'] == {'atp-md': {'2025': 1}}, cv)
 print(f'\ntest-tdarch: {passed} passed, {failed} failed')
 sys.exit(1 if failed else 0)

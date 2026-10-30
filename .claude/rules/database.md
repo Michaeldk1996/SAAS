@@ -39,12 +39,15 @@ take styling from it, structure from the rules below.
   `cutTs`, `gapToStartS`). **The Oddspapi start − 10 snapshot (book 5) is never shown on the ATP main draw** (founder
   ruling 2026-10-26: Oddspapi's trueStart runs late — ATP p98 70.5 min — so start − 10 can be in play, and no live-flip
   exists before 17 Sep to prove otherwise): a match whose snapshot is start − 10 is a DASH, with no fall-through to
-  api-tennis or Bet365 (unpriced reason `od10`, counted in `meta.od10Dropped` with how many had another price); the
+  api-tennis or Bet365 — only Tennis Explorer prices it (founder 2026-10-30) (unpriced reason `od10`, counted in `meta.od10Dropped` with how many had another price); the
   lower levels' start − 10 rows are not covered. Otherwise api-tennis's stored Pinnacle price (`r[8] = 2`, book "A"; hover "Pinnacle snapshot from api-tennis, no timestamp, not a confirmed close",
   `SF_APPROX_HOVER`) — 13 Jan – 12 Apr always (no archive exists). Both count as ONE book in every Database figure,
   "Pinnacle (approx.)" in `meta.bookCounts` (codes 2 + 5), `meta.approx.sources.od` / `.at` name each with its count and
-  hover. Order per row: Tennis-Data Pinnacle > our archive's close > (start − 10 → a dash) > api-tennis > Bet365 (every
-  date while `B365_INTERIM` holds) > a dash. **Test:** `tools/test-b365-window.mjs` (every surface: Database, master, tour-baselines, Market edge,
+  hover. Order per row (founder 2026-10-30): Tennis-Data Pinnacle > our archive's close (E included) > api-tennis >
+  Tennis Explorer (book 8, any date; also the one source for a start − 10 dash) > Bet365 (every date while `B365_INTERIM`
+  holds) > a dash. Book 8 counts in the same "Pinnacle (approx.)" bucket (`meta.bookCounts`) and is named apart in
+  `meta.approx.sources.te` (used, over Bet365, filled a dash, filled a start − 10 dash); the footnote, chart note and
+  Player split name it with its own count, never inside the dated 13 Jan – 16 Sep sentence. **Test:** `tools/test-b365-window.mjs` (every surface: Database, master, tour-baselines, Market edge,
   Favourites, the page join). The
   footnote, the chart note and the Player split name the snapshot with its count; no feed = nothing changes. *Known:* the
   header sentence ("Pinnacle closing, else Bet365, per match") is unchanged (the 120-character cap) — the footnote carries

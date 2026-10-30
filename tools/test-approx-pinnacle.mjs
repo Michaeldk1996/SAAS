@@ -223,6 +223,13 @@ writeFileSync(join(d, 'odds-archive', '2026.csv'), H26 + [
   '2026-02-06,Dallas Open,ATP500,Indoor,Hard,1st Round,3,Cap C.,Ture T.,1,2,Completed,1.5,2.6,,',                        // our captured close
   '2026-07-20,Generali Open,ATP250,Outdoor,Clay,1st Round,3,Ten T.,Odd O.,1,2,Completed,1.5,2.6,,',                     // start − 10 + api-tennis: start − 10 first
   '2026-07-21,Generali Open,ATP250,Outdoor,Clay,1st Round,3,Ate A.,Only O.,1,2,Completed,1.5,2.6,,',                    // api-tennis only (no pre-cut pair)
+  // founder 2026-10-30 ("TE above Bet365"): read only by the TE feed below (approx-te.csv); with approx.csv they are Bet365 / dashes
+  '2026-02-07,Dallas Open,ATP500,Indoor,Hard,2nd Round,3,Tee T.,Bee B.,1,2,Completed,1.5,2.6,,',                      // TE over Bet365
+  '2026-02-08,Dallas Open,ATP500,Indoor,Hard,2nd Round,3,Dash D.,Fill F.,1,2,Completed,,,,',                         // TE fills a dash
+  '2026-02-09,Dallas Open,ATP500,Indoor,Hard,2nd Round,3,Both B.,Api A.,1,2,Completed,1.5,2.6,,',                     // api-tennis + TE: api-tennis
+  '2026-07-22,Generali Open,ATP250,Outdoor,Clay,1st Round,3,Odte O.,Ten N.,1,2,Completed,1.5,2.6,,',                 // start − 10 + TE: TE
+  '2026-02-10,Dallas Open,ATP500,Indoor,Hard,2nd Round,3,Arch E.,Tee E.,1,2,Completed,1.5,2.6,,',                     // archive close + TE: the close
+  '2026-02-11,Dallas Open,ATP500,Indoor,Hard,2nd Round,3,Early E.,Api E.,1,2,Completed,1.5,2.6,,',                    // E + api-tennis: E
 ].join('\n') + '\n');
 const AT = 'api-tennis Pinnacle', OD = 'oddspapi Pinnacle (start − 10)';
 writeFileSync(join(d, 'approx.csv'), 'date,tournament,winner,loser,psw,psl,eventKey,snapshotId,source,cutTs,gapToStartS\n' +
@@ -231,7 +238,9 @@ writeFileSync(join(d, 'approx.csv'), 'date,tournament,winner,loser,psw,psl,event
   `2026-07-21,Generali Open,Ate A.,Only O.,1.6,2.3,6,6,${AT},,\n`);
 writeFileSync(join(d, 'feed.csv'), 'kind,date,tournament,series,court,surface,round,bestof,winner,loser,comment,psw,psl,archiveId,label,eventKey\n' +
   'override,2026-02-04,Dallas Open,,,,,,Arch A.,Ive I.,,1.48,2.7,9,from Pinnacle history,9\n' +
-  'override,2026-02-06,Dallas Open,,,,,,Cap C.,Ture T.,,1.47,2.72,10,captured,10\n');
+  'override,2026-02-06,Dallas Open,,,,,,Cap C.,Ture T.,,1.47,2.72,10,captured,10\n' +
+  'override,2026-02-10,Dallas Open,,,,,,Arch E.,Tee E.,,1.49,2.69,11,from Pinnacle history,11\n' +
+  'override,2026-02-11,Dallas Open,,,,,,Early E.,Api E.,,1.44,2.8,12,early cut 71,12\n');
 const run = env => { execFileSync('node', ['build-database-yield.js'], { cwd: d, env: { ...process.env, ...env }, stdio: 'pipe' });
   const b = JSON.parse(readFileSync(join(d, 'database-yield.json'), 'utf8')), n = JSON.parse(readFileSync(join(d, 'database-yield-players.json'), 'utf8'));
   return Object.fromEntries(b.rows.map((r, i) => [n.names[i][0], [r[8], r[5], r[6]]])); };
@@ -241,7 +250,7 @@ check('builder: our archive\'s close outranks the snapshot, under its own code (
 check('builder: a captured close from our archive is code 4, at its own price', JSON.stringify(R['Cap C.']) === JSON.stringify([4, 1.47, 2.72]), R['Cap C.']);
 const MB = JSON.parse(readFileSync(join(d, 'database-yield.json'), 'utf8')).meta;
 check('builder: the Pinnacle count includes our archive\'s closes (no figure moves), and meta names each label',
-  MB.bookCounts.Pinnacle === 3 && MB.archiveFeed.rowsByLabel['from Pinnacle history'] === 1 && MB.archiveFeed.rowsByLabel.captured === 1, JSON.stringify(MB.bookCounts));
+  MB.bookCounts.Pinnacle === 4 && MB.archiveFeed.rowsByLabel['from Pinnacle history'] === 2 && MB.archiveFeed.rowsByLabel.captured === 1, JSON.stringify(MB.bookCounts));
 check('builder: no Pinnacle close → the snapshot, book 2', JSON.stringify(R['Snap S.']) === JSON.stringify([2, 1.45, 2.75]), R['Snap S.']);
 check('builder: no snapshot → Bet365 stays the fallback', JSON.stringify(R['Bet B.']) === JSON.stringify([1, 1.5, 2.6]), R['Bet B.']);
 // founder ruling 2026-10-26 (supersedes 2026-10-17 item 2 for the ATP main draw): a start − 10 snapshot is never shown —
@@ -260,5 +269,57 @@ let oldErr = ''; try { run({ DB_YIELD_APPROX: join(d, 'old.csv'), DB_YIELD_FEED:
 check('control: a feed without the source column is refused, never read as one source', /unexpected header/.test(oldErr), oldErr);
 const R0 = run({ DB_YIELD_APPROX: join(d, 'none.csv'), DB_YIELD_FEED: join(d, 'feed.csv') });
 check('control: without the snapshot feed the same row is Bet365', JSON.stringify(R0['Snap S.']) === JSON.stringify([1, 1.5, 2.6]), R0['Snap S.']);
+// ── TE on the ATP main draw (founder ruling 2026-10-30): TD Pinnacle > archive close > E > api-tennis > TE > Bet365 > dash;
+// TE is the one source that prices a start − 10 dash
+{
+  const TE = 'Tennis Explorer · Pinnacle';
+  writeFileSync(join(d, 'approx-te.csv'), readFileSync(join(d, 'approx.csv'), 'utf8') +
+    `2026-02-07,Dallas Open,Tee T.,Bee B.,1.52,2.58,20,20,${TE},,\n2026-02-08,Dallas Open,Dash D.,Fill F.,1.7,2.15,21,21,${TE},,\n` +
+    `2026-02-09,Dallas Open,Both B.,Api A.,1.61,2.35,22,22,${AT},,\n2026-02-09,Dallas Open,Both B.,Api A.,1.66,2.25,22,23,${TE},,\n` +
+    `2026-07-22,Generali Open,Odte O.,Ten N.,1.4,2.9,24,24,${OD},2026-07-22T09:50:00Z,600\n2026-07-22,Generali Open,Odte O.,Ten N.,1.42,2.85,24,25,${TE},,\n` +
+    `2026-02-10,Dallas Open,Arch E.,Tee E.,1.5,2.6,26,26,${TE},,\n2026-02-11,Dallas Open,Early E.,Api E.,1.6,2.3,27,27,${AT},,\n`);
+  const teRun = (src) => { if (src) copyFileSync(src, join(d, 'build-database-yield.js'));
+    try { return run({ DB_YIELD_APPROX: join(d, 'approx-te.csv'), DB_YIELD_FEED: join(d, 'feed.csv') }); } finally { copyFileSync(join(ROOT, 'build-database-yield.js'), join(d, 'build-database-yield.js')); } };
+  const T = teRun();
+  check('TE on the ATP main draw: a Bet365 row with a TE price is priced on TE, book 8', JSON.stringify(T['Tee T.']) === JSON.stringify([8, 1.52, 2.58]), T['Tee T.']);
+  check('TE on the ATP main draw: a dash with a TE price is priced on TE', JSON.stringify(T['Dash D.']) === JSON.stringify([8, 1.7, 2.15]), T['Dash D.']);
+  check('TE on the ATP main draw: api-tennis Pinnacle stays above TE', JSON.stringify(T['Both B.']) === JSON.stringify([2, 1.61, 2.35]), T['Both B.']);
+  check('TE on the ATP main draw: a start − 10 dash is priced on TE (never on the start − 10 snapshot)', JSON.stringify(T['Odte O.']) === JSON.stringify([8, 1.42, 2.85]), T['Odte O.']);
+  check('TE on the ATP main draw: our archive close stays above TE; a start − 10 row with no TE stays a dash',
+    JSON.stringify(T['Arch E.']) === JSON.stringify([3, 1.49, 2.69]) && T['Ten T.'] === undefined, JSON.stringify([T['Arch E.'], T['Ten T.']]));
+  check('ruling 1: E stays above api-tennis, and the overlap is counted (meta.approx.eOverApiTennis)',
+    JSON.stringify(T['Early E.']) === JSON.stringify([9, 1.44, 2.8]) && JSON.parse(readFileSync(join(d, 'database-yield.json'), 'utf8')).meta.approx.eOverApiTennis === 1,
+    JSON.stringify(T['Early E.']));
+  check('control: with the feed that has no TE rows the same matches are Bet365 / a dash, as before',
+    JSON.stringify(R['Tee T.']) === JSON.stringify([1, 1.5, 2.6]) && R['Dash D.'] === undefined && JSON.stringify(R['Odte O.']) === JSON.stringify([1, 1.5, 2.6]),
+    JSON.stringify([R['Tee T.'], R['Dash D.'], R['Odte O.']]));
+  const MT = JSON.parse(readFileSync(join(d, 'database-yield.json'), 'utf8')).meta;
+  check('TE on the ATP main draw: meta counts TE in Pinnacle (approx.) and names it: used, over Bet365, filled a dash, filled a start − 10 dash',
+    MT.approx.sources.te.used === 3 && MT.approx.sources.te.overBet365 === 1 && MT.approx.sources.te.filledDash === 1 && MT.approx.sources.te.filledStart10Dash === 1
+    && MT.od10Dropped.pricedByTe === 1 && MT.bookCounts['Pinnacle (approx.)'] === MT.approx.sources.at.used + MT.approx.sources.od.used + 3
+    && MT.approx.sources.te.hover === 'Tennis Explorer, last pre-match price, not a confirmed close', JSON.stringify({ s: MT.approx.sources.te, bc: MT.bookCounts }));
+  const src = readFileSync(join(ROOT, 'build-database-yield.js'), 'utf8');
+  const mut = (a, b, name) => { if (!src.includes(a)) { check('mutant anchor present: ' + name, false); return null; } const f = join(d, 'mut.js'); writeFileSync(f, src.replace(a, b)); return teRun(f); };
+  const m1 = mut('} else if (pick) { AP = ap[pick];', '} else if (pick && !teOk) { AP = ap[pick];', 'TE above api-tennis');
+  check('MUTANT TE above api-tennis is caught', m1 && JSON.stringify(m1['Both B.']) !== JSON.stringify([2, 1.61, 2.35]));
+  const m2 = mut("if (teOk) { od10Cut = false;", "if (false) { od10Cut = false;", 'no TE for start − 10');
+  check('MUTANT a start − 10 dash TE does not price is caught', m2 && m2['Odte O.'] === undefined);
+  const m3 = mut("    const b365Ok = (validPrice(B365[0])", "    if (APS === 'te') { AP = null; APS = null; }\n    const b365Ok = (validPrice(B365[0])", 'TE below Bet365');
+  check('MUTANT TE below Bet365 is caught', m3 && JSON.stringify(m3['Tee T.']) === JSON.stringify([1, 1.5, 2.6]));
+  const a8 = new Function(`function median(a){ return a.length ? a[a.length >> 1] : null; }\n${fn(html, 'agg')}\nreturn agg;`)()([{ p: 1.5, w: 1, b: 8 }, { p: 1.6, w: 0, b: 0 }]);
+  check('the Database folds book 8 into Pinnacle (approx.) (the per-book split had no bucket for it: a crash)', a8.book.ap && a8.book.ap.n === 1 && a8.book.ps.n === 1, JSON.stringify(a8.book));
+  const fT = paintFoot({ ...M0, books: ['Pinnacle', 'Bet365', 'Pinnacle (approx.)'], bookCounts: { ...M0.bookCounts, 'Pinnacle (approx.)': 755 },
+    approx: { hover: HOVER, sources: { at: { used: 752 }, od: { used: 0 }, te: { used: 3, hover: 'Tennis Explorer, last pre-match price, not a confirmed close' } } } });
+  check('the footnote names TE apart, with its own count, outside the dated 13 Jan – 16 Sep sentence',
+    /and 752 on Pinnacle \(approx\.\) — /.test(fT) && /and 3 on Pinnacle \(approx\.\) · Tennis Explorer, last pre-match price, not a confirmed close \(ATP main draw, where no other Pinnacle price exists\)/.test(fT), fT.slice(0, 1200));
+}
+{
+  const { createRequire } = await import('node:module');
+  const ME = createRequire(import.meta.url)(join(ROOT, 'build-market-edge.js'));
+  const meSrc = readFileSync(join(ROOT, 'build-market-edge.js'), 'utf8');
+  check('Market edge reads Database book 8 as Tennis Explorer (pinnacle-approx-te, the page\'s own book id) and keeps it on its basis',
+    JSON.stringify(ME.DB_BOOK[8]) === JSON.stringify(['pinnacle-approx-te', 'Pinnacle (approx.) · Tennis Explorer']) && /'pinnacle-approx-te'\]\);/.test(meSrc)
+    && /'pinnacle-approx-te': \['A', 'te'\]/.test(html), JSON.stringify(ME.DB_BOOK[8]));
+}
 console.log(`\ntest-approx-pinnacle: ${passed} passed, ${failed} failed`);
 process.exit(failed ? 1 : 0);
