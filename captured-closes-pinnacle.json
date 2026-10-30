@@ -1,30 +1,29 @@
 {
- "generatedAt": "2026-10-30T09:05:38.697Z",
+ "generatedAt": "2026-10-30T09:33:07.806Z",
  "source": "matches.json git history: oddsMovement.books.Pinnacle (Oddspapi pinnacle, to 2026-09-02) and oddsMovement.chart.books[\"Pinnacle +30s\"] (Oddspapi pinnacle+30, from 2026-09-23)",
  "rule": "each side = last tick at or before the actual start (the earlier of Oddspapi trueStart and the card-state start: Oddspapi or the live-flip lower bound); both sides required; dropped when no unique actual start. seenAt = our last capture read before the start that confirmed the close (founder 2026-10-28); age = start - (seenAt or at)",
  "scannedThrough": {
-  "commit": "8593b9ceb2d229cf4f19ec419ae1a0dacd2c7736",
-  "at": "2026-10-30T08:45:14Z"
+  "commit": "36794e7906ad6e9780161608229406bce3446b75",
+  "at": "2026-10-30T09:15:13Z"
  },
- "commitsScanned": 6177,
+ "commitsScanned": 6181,
  "lastRun": {
-  "from": "2026-10-29T09:18:52Z",
-  "snapshots": 18,
-  "added": 12,
-  "replaced": 0,
+  "from": "2026-10-30T08:45:14Z",
+  "snapshots": 5,
+  "added": 0,
+  "replaced": 8,
   "seenBackfilled": 0,
-  "series": 59,
-  "kept": 46,
+  "series": 48,
+  "kept": 36,
   "bySource": {
-   "oddspapi": 37,
-   "api-tennis-live": 9
+   "oddspapi": 35,
+   "api-tennis-live": 1
   },
   "byBook": {
-   "Pinnacle +30s": 46
+   "Pinnacle +30s": 36
   },
   "dropped": {
-   "noStart": 12,
-   "ambiguousStart": 1
+   "noStart": 12
   }
  },
  "stats": {
@@ -13248,7 +13247,7 @@
    "p1": 3.44,
    "p2": 1.363,
    "at": "2026-10-29T07:48:25.071Z",
-   "trueStart": "2026-10-29T11:00:31.231Z",
+   "trueStart": "2026-10-29T11:00:31.000Z",
    "startSource": "oddspapi",
    "book": "Pinnacle +30s",
    "round": "ATP Basel - 1/8-finals",
@@ -13292,7 +13291,7 @@
    "p1": 2.92,
    "p2": 1.465,
    "at": "2026-10-29T04:53:36.348Z",
-   "trueStart": "2026-10-29T14:02:59.694Z",
+   "trueStart": "2026-10-29T14:02:59.000Z",
    "startSource": "oddspapi",
    "book": "Pinnacle +30s",
    "round": "ATP Basel - 1/8-finals",
@@ -13314,7 +13313,7 @@
    "p1": 1.25,
    "p2": 4.46,
    "at": "2026-10-29T21:04:44.082Z",
-   "trueStart": "2026-10-29T21:11:23.021Z",
+   "trueStart": "2026-10-29T21:11:23.000Z",
    "startSource": "oddspapi",
    "book": "Pinnacle +30s",
    "round": "ATP Basel - 1/8-finals",
@@ -13402,7 +13401,7 @@
    "p1": 1.338,
    "p2": 3.6,
    "at": "2026-10-29T17:05:58.238Z",
-   "trueStart": "2026-10-29T17:26:20.921Z",
+   "trueStart": "2026-10-29T17:26:20.000Z",
    "startSource": "oddspapi",
    "book": "Pinnacle +30s",
    "round": "ATP Vienna - 1/8-finals",
@@ -13424,7 +13423,7 @@
    "p1": 1.303,
    "p2": 3.89,
    "at": "2026-10-29T17:52:12.620Z",
-   "trueStart": "2026-10-29T18:22:23.238Z",
+   "trueStart": "2026-10-29T18:22:23.000Z",
    "startSource": "oddspapi",
    "book": "Pinnacle +30s",
    "round": "ATP Basel - 1/8-finals",
@@ -13446,7 +13445,7 @@
    "p1": 8.27,
    "p2": 1.094,
    "at": "2026-10-29T14:50:08.073Z",
-   "trueStart": "2026-10-29T15:32:09.312Z",
+   "trueStart": "2026-10-29T15:32:09.000Z",
    "startSource": "oddspapi",
    "book": "Pinnacle +30s",
    "round": "ATP Vienna - 1/8-finals",
@@ -13468,7 +13467,7 @@
    "p1": 3.66,
    "p2": 1.331,
    "at": "2026-10-29T15:51:18.268Z",
-   "trueStart": "2026-10-29T16:02:16.627Z",
+   "trueStart": "2026-10-29T16:02:16.000Z",
    "startSource": "oddspapi",
    "book": "Pinnacle +30s",
    "round": "ATP Vienna - 1/8-finals",
@@ -13490,7 +13489,7 @@
    "p1": 1.54,
    "p2": 2.67,
    "at": "2026-10-29T16:38:41.953Z",
-   "trueStart": "2026-10-29T16:43:22.587Z",
+   "trueStart": "2026-10-29T16:43:22.000Z",
    "startSource": "oddspapi",
    "book": "Pinnacle +30s",
    "round": "ATP Basel - 1/8-finals",
