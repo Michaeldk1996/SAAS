@@ -1371,7 +1371,9 @@ const DB_FNS = new Function(dbSlice(DB_BLOCK, 'function median(a){') + '\n' + db
 // settlement.js. tour-baselines.json is built on the same list. A store served before the rebuild (no retComment / retFs)
 // is its rows alone, exactly as the page reads it.
 const DB_FIGURE_VIEW = new Function('window', dbSlice(DB_SRC, 'function dbFigureView(j){') + '\nreturn dbFigureView;')({ Settlement: require(path.join(ROOT, 'settlement.js')) });
-const DB_ROWS = DB_FIGURE_VIEW(JSON.parse(fs.readFileSync(path.join(ROOT, 'database-yield.json'), 'utf8'))).rows;
+const DB_JSON = JSON.parse(fs.readFileSync(path.join(ROOT, 'database-yield.json'), 'utf8'));
+const DB_META = DB_JSON.meta || {};
+const DB_ROWS = DB_FIGURE_VIEW(DB_JSON).rows;
 const TB_PATH = path.join(ROOT, 'tour-baselines.json');
 const TB_RAW = fs.readFileSync(TB_PATH, 'utf8');
 const TB = JSON.parse(TB_RAW);
@@ -1386,14 +1388,21 @@ function fileTour(tb) {
   const r = tb.roles;
   return { n: r.favourite.n, nDog: r.underdog.n, nAll: r.all.matches, fav: r.favourite.yield, dog: r.underdog.yield, all: r.all.yield };
 }
-function assertFileIsDatabase(tb, rows) {
+function assertFileIsDatabase(tb, rows, meta = DB_META) {
   const db = databaseTour(rows), f = fileTour(tb);
   assert.strictEqual(tb.basis, 'market-edge', `tour-baselines.json is built on basis "${tb.basis}", not the one join (Pinnacle, else Bet365)`);
   assert.strictEqual(tb.equalsDatabaseTour, true, 'tour-baselines.json does not declare that it equals the Database Tour aggregates');
   assert(/^Pinnacle closing, else Bet365 closing, per row/.test(tb.priceRule || ''), `tour-baselines.json priceRule "${tb.priceRule}" is not the per-row join`);
-  // The store itself is on the per-row join: each row carries the book actually used, and
-  // Bet365 fills rows Pinnacle did not price in seasons before 2026 (191 of them today).
-  assert(rows.some(r => r[8] === 1 && r[0] < 20260101), 'database-yield.json has no Bet365-priced row before 2026 — it is not on the per-row join');
+  // The store itself is on the per-row join: each row carries the book actually used. Founder ruling 2026-10-30 (ATP main
+  // draw, Database: Pinnacle prices only): a store built under it declares meta.bet365OutOfDatabase and holds NO Bet365 row
+  // (book 1 Tennis-Data, book 10 Tennis Explorer) — those matches are a Database dash and the price join's "B". A store
+  // built before the ruling (the committed drop-in copy) still fills rows Pinnacle did not price with Bet365 before 2026.
+  if (meta && meta.bet365OutOfDatabase) {
+    const b = rows.filter(r => r[8] === 1 || r[8] === 10);
+    assert.strictEqual(b.length, 0, `database-yield.json holds ${b.length} Bet365-priced rows — the Database is Pinnacle only on the ATP main draw`);
+  } else {
+    assert(rows.some(r => r[8] === 1 && r[0] < 20260101), 'database-yield.json has no Bet365-priced row before 2026 — it is not on the per-row join');
+  }
   [['favourite', f.n], ['underdog', f.nDog], ['all', f.nAll]].forEach(([k, n]) =>
     assert.strictEqual(n, db.n, `${k}: the file counts ${n} matches, the Database ${db.n}`));
   ['fav', 'dog', 'all'].forEach((k) => {
@@ -1419,7 +1428,19 @@ mustFail('Q8 would catch the file built on the superseded one-book-per-season ba
   assertFileIsDatabase(tb, DB_ROWS);
 });
 mustFail('Q8 would catch a store still on one book per season (no Bet365 row before 2026)', () => {
-  assertFileIsDatabase(TB, DB_ROWS.map(r => (r[0] < 20260101 ? r.slice(0, 8).concat([0]) : r)));
+  assertFileIsDatabase(TB, DB_ROWS.map(r => (r[0] < 20260101 ? r.slice(0, 8).concat([0]) : r)), {});   // a store built before the 2026-10-30 ruling
+});
+mustFail('Q8 would catch a Pinnacle-only store (meta.bet365OutOfDatabase) that still holds a Bet365 row', () => {
+  const rows = DB_ROWS.map(r => r.slice(0, 8).concat([r[8] === 1 || r[8] === 10 ? 0 : r[8]]));
+  rows[0] = rows[0].slice(0, 8).concat([10]);
+  assertFileIsDatabase(TB, rows, { bet365OutOfDatabase: { rule: 'x' } });
+});
+check('Q8 · a Pinnacle-only store (meta.bet365OutOfDatabase) with no Bet365 row passes the book check', () => {
+  const rows = DB_ROWS.map(r => r.slice(0, 8).concat([r[8] === 1 || r[8] === 10 ? 0 : r[8]]));
+  assert.strictEqual(rows.filter(r => r[8] === 1 || r[8] === 10).length, 0);
+  // the book check alone (the yields of this synthetic store are not the file's)
+  try { assertFileIsDatabase(TB, rows, { bet365OutOfDatabase: { rule: 'x' } }); }
+  catch (e) { assert(!/Bet365-priced rows/.test(e.message), e.message); }
 });
 check('Q8 · tour-baselines.json is small (≤ 10 KB)', () => {
   const bytes = Buffer.byteLength(TB_RAW);
