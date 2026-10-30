@@ -178,9 +178,10 @@ const rowOf = (h, attr, key) => { const i = h.indexOf(`${attr}="${key}"`); const
 // Mutation: the Needs / W–L columns back, the bar back on --text, the tick colour off --viz-tick, the Edge not won − needs.
 test('TEN-380 price sensitivity: "today X · N priced" on a rule; one white bar + grey Needs tick; Edge (pp) = Won − Needs', () => {
   const R = ui.render(M, { meView: 'winner' }, rows);
-  const heads = [...R.html.matchAll(/class="me-phead"[^>]*border-bottom:1px solid var\(--line\);"><span[^>]*>([^<]*)<\/span><span class="me-pmeta"[^>]*>today <span[^>]*>([^<]*)<\/span> · (\d+) priced</g)].map((m) => [m[1], m[2], +m[3]]);
+  const heads = [...R.html.matchAll(/class="me-phead"[^>]*border-bottom:1px solid var\(--line\);"><span[^>]*>([^<]*)<\/span><span class="me-pmeta"[^>]*>today <span[^>]*>([^<]*)<\/span> · (\d+) priced(?: · (\d+) of \d+ on Bet365)?</g)].map((m) => [m[1], m[2], +m[3], +(m[4] || 0)]);
   assert.deepEqual(heads.map((h) => h.slice(0, 2)), [['J. Sinner', '1.54'], ['C. Alcaraz', '2.62']], 'the header price per player');
   assert.deepEqual(heads.map((h) => h[2]), R.MM.map((m) => m.priced.length), 'N priced = the model');
+  assert.deepEqual(heads.map((h) => h[3]), R.MM.map((m) => m.priced.filter((r) => r.book === 'B').length), 'the Bet365 share = the model (founder 2026-10-30: "12 of 174 on Bet365")');
   const head = R.html.slice(R.html.lastIndexOf('<span', R.html.indexOf('>Price<')), R.html.indexOf('>1u stake<') + 16);
   assert.deepEqual(txt(head), ['Price', 'Won · needs', 'Won', 'Edge', '1u stake']);
   const M0 = R.MM[0];
