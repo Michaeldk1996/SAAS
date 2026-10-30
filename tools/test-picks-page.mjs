@@ -98,6 +98,10 @@ async function browser() {
     // signed out, the page is sent to auth.html: this read-only check stays on the page (nothing is signed in)
     await send('Fetch.enable', { patterns: [{ urlPattern: '*auth.html*', resourceType: 'Document' }, { urlPattern: '*verify.html*', resourceType: 'Document' }] });
     await send('Emulation.setDeviceMetricsOverride', { width: 1512, height: 982, deviceScaleFactor: 1, mobile: false });
+    // the demo fixture and the reference read Europe/Brussels. auth.js re-writes stennisfy.tz to the DEVICE zone on every
+    // auth-state change (syncActiveTimezone), so a localStorage pin alone loses a race on a UTC runner (gate runs
+    // 41128718144 / 41134174208: every time an hour early). The device zone itself is Brussels here.
+    await send('Emulation.setTimezoneOverride', { timezoneId: 'Europe/Brussels' });
     await send('Page.navigate', { url: BASE + 'bsp-consult-dashboard.html#picks' });
     const t0 = Date.now();
     while (!(await E(`!!window.PicksPage`).catch(() => false))) {
@@ -150,6 +154,11 @@ async function browser() {
     check('1a over two days: one group "Open · 6 bets", line 2 names the day (Today / Wed 28; the design demo calendar reads Tue), sub "Today and the next 1 day"',
       two.heads.length === 1 && two.heads[0] === 'Open · 6 betsall at bet105 · click a bet for the analysis'
       && /^posted 09:41 · Today · Vienna Open R32 · 20:30$/.test(two.p1) && /^posted 18:20 · Wed 28 · Paris Masters R64 · 11:00$/.test(two.p9) && two.tsub === 'Today and the next 1 day', JSON.stringify(two));
+    // what auth.js syncActiveTimezone does on a late auth-state change: write the DEVICE zone into stennisfy.tz. With the
+    // device zone pinned to Brussels the fixture still reads 09:41 (control: a UTC device reads 08:41 — the gate's red)
+    const late = await R(`localStorage.setItem('stennisfy.tz', Intl.DateTimeFormat().resolvedOptions().timeZone); set({ tab: 'upcoming', view: 'cards', sheet: null });
+      return { dev: Intl.DateTimeFormat().resolvedOptions().timeZone, s: txt(q('[data-sheet="p1"] .pk-b3-s')) };`);
+    check('a late auth zone sync (device zone → stennisfy.tz) keeps the fixture on Brussels: posted 09:41', late.dev === 'Europe/Brussels' && /^posted 09:41 /.test(late.s), JSON.stringify(late));
     check('1a header copy', a.title === 'Picks' && a.sub === 'Hand-picked daily from the Stennisfy model and strategy.', JSON.stringify(a).slice(0, 300));
     check('1a header stats Bets today · Match · Outright · Staked · If all land', a.stats.join(' | ') === 'BETS TODAY 5 | MATCH 3 | OUTRIGHT 2 | STAKED 5% | IF ALL LAND +6.4%' || a.stats.join(' | ') === 'Bets today 5 | Match 3 | Outright 2 | Staked 5% | If all land +6.4%', a.stats.join(' | '));
     check('1a five bands, head "Open · 5 bets" + "all at bet105 · click a bet for the analysis"', a.bands.length === 5 && a.head === 'Open · 5 bets all at bet105 · click a bet for the analysis', JSON.stringify([a.bands, a.head]));
