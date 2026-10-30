@@ -140,6 +140,16 @@ async function browser() {
     const zone = await R(`window.__pkPlan = 'pro'; localStorage.setItem('stennisfy.tz', 'Asia/Makassar'); set({ tab: 'upcoming', view: 'cards', sheet: null });
       const mk = txt(q('[data-sheet="p1"] .pk-b3-s')); localStorage.setItem('stennisfy.tz', 'Europe/Brussels'); set({}); return { mk, br: txt(q('[data-sheet="p1"] .pk-b3-s')) };`);
     check('override 2: times read the member zone (Makassar 16:41 · 03:30, Brussels 09:41 · 20:30), never a fixed Brussels', /posted 16:41/.test(zone.mk) && /posted 09:41/.test(zone.br) && zone.mk !== zone.br, JSON.stringify(zone));
+    // board 1a with bets over two days (Today + Tue 28): ONE group "Open · 6 bets"; each band's line 2 names its day
+    const two = await E(`(() => { const fx = JSON.parse(JSON.stringify(${FIXTURE})), p0 = fx.picks.find(p => p.id === 'p1');
+      fx.picks.push(Object.assign({}, p0, { id: 'p9', date: '2026-10-28', scheduled_at: '2026-10-28T11:00:00+01:00', posted_at: '2026-10-27T18:20:00+01:00', tournament: 'Paris Masters', round: 'R64' }));
+      window.__pkPlan = 'pro'; PicksPage._inject(fx); Object.assign(PicksPage._state, { tab: 'upcoming', view: 'cards', sheet: null }); PicksPage.render();
+      const t = e => (e ? e.textContent.replace(/\\s+/g, ' ').trim() : null);
+      const out = { heads: [...document.querySelectorAll('#picksRoot .pk-bands-hd')].map(t), p1: t(document.querySelector('#picksRoot [data-sheet="p1"] .pk-b3-s')), p9: t(document.querySelector('#picksRoot [data-sheet="p9"] .pk-b3-s')), tsub: t(document.querySelector('#picksRoot .pk-tsub')) };
+      PicksPage._inject(${FIXTURE}); return out; })()`);
+    check('1a over two days: one group "Open · 6 bets", line 2 names the day (Today / Wed 28; the design demo calendar reads Tue), sub "Today and the next 1 day"',
+      two.heads.length === 1 && two.heads[0] === 'Open · 6 betsall at bet105 · click a bet for the analysis'
+      && /^posted 09:41 · Today · Vienna Open R32 · 20:30$/.test(two.p1) && /^posted 18:20 · Wed 28 · Paris Masters R64 · 11:00$/.test(two.p9) && two.tsub === 'Today and the next 1 day', JSON.stringify(two));
     check('1a header copy', a.title === 'Picks' && a.sub === 'Hand-picked daily from the Stennisfy model and strategy.', JSON.stringify(a).slice(0, 300));
     check('1a header stats Bets today · Match · Outright · Staked · If all land', a.stats.join(' | ') === 'BETS TODAY 5 | MATCH 3 | OUTRIGHT 2 | STAKED 5% | IF ALL LAND +6.4%' || a.stats.join(' | ') === 'Bets today 5 | Match 3 | Outright 2 | Staked 5% | If all land +6.4%', a.stats.join(' | '));
     check('1a five bands, head "Open · 5 bets" + "all at bet105 · click a bet for the analysis"', a.bands.length === 5 && a.head === 'Open · 5 bets all at bet105 · click a bet for the analysis', JSON.stringify([a.bands, a.head]));

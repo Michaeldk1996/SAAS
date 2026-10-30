@@ -68,8 +68,9 @@ SIDEBAR_NAV > CHANGES_2026-10-29 > SPEC > README; reference `Picks LOCKED 2026-1
 
 ## Page (LOCK 2026-10-30)
 
-- **Upcoming** = one full-width band per posted / live bet, today on (`PicksCore.upcoming`), under "Open · N bets" (day
-  heads when the bets span more than one day); the header carries Bets today · Match · Outright · Staked · If all land
+- **Upcoming** = one full-width band per posted / live bet, today on (`PicksCore.upcoming`), under ONE head "Open · N bets"
+  (board 1a, today first then the coming days; when the bets span more than one day each band's second line names its
+  day, "Today" / "Wed 28" — the board outranks CHANGES_2026-10-30 §1's "per-day heads unchanged"); the header carries Bets today · Match · Outright · Staked · If all land
   (`todayStats`). **Completed** = the history ledger, settled in the last 30 days, newest day first, ~10 rows a page in
   whole days; the header carries the Record strip (30 d · 90 d · Season; under 20 settled → dashes + "n=N · thin").
   Two tabs only: no date strip, tournament menu, search or day chips. Bands keep the store's posted order (the

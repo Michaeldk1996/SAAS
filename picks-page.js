@@ -193,9 +193,10 @@
       + '<span class="pk-bt-l" style="grid-column:1">Open</span><span class="pk-bt-l" style="grid-column:3">Posted</span>'
       + '<span class="pk-bt-l" style="grid-column:5">' + esc(t.nowLabel) + '</span><span class="pk-bt-l" style="grid-column:7">Close</span></div>';
   }
-  function band(p) {
+  // dayWord: the pick's day ("Today", "Tue 28") when the open bets span more than one day, else '' (board 1a `where`)
+  function band(p, dayWord) {
     var gated = gatedOf(p), outright = C.isOutright(p), blur = gated ? ' is-blur' : '', clv = C.clvOf(p);
-    var where = outright ? (p.event || DASH) : C.whereText(p);
+    var where = (dayWord ? dayWord + ' ' + MID + ' ' : '') + (outright ? (p.event || DASH) : C.whereText(p));
     var trail = gated
       ? '<span class="pk-unlock pk-unlock--band">' + PRO + '<a class="pk-link" href="account.html" data-stop="1">Unlock today’s picks →</a></span>'
       : outright ? '<div class="pk-bor"><span class="pk-bor-t">Open position</span><span class="pk-bor-s">Settles ' + esc(C.dayMonthShort(p.settles_at)) + ' ' + MID + ' no open / now / close for outrights</span></div>'
@@ -215,13 +216,15 @@
     list.forEach(function (p) { var d = C.pickDay(p); (byDay[d] = byDay[d] || []).push(p); });
     var ds = Object.keys(byDay).sort(), many = ds.length > 1;
     if (mobile()) return '<div class="pk-mlist">' + list.map(mcard).join('') + '</div>';
-    return ds.map(function (d, i) {
-      var ps = byDay[d], n = ps.length, label = (many ? (d === t ? 'Today' : C.dayLabel(d)) : 'Open') + ' ' + MID + ' ' + n + (n === 1 ? ' bet' : ' bets');
-      var stake = ps.reduce(function (a, p) { return a + (+p.stake || 0); }, 0);
-      var meta = many ? C.stakeText(stake) + ' staked' : (i === 0 ? 'all at bet105 ' + MID + ' click a bet for the analysis' : '');
-      return '<div class="pk-bands"><div class="pk-bands-hd"><span class="pk-caps">' + esc(label) + '</span><span class="pk-bands-m">' + esc(meta) + '</span></div>'
-        + ps.map(band).join('') + '</div>';
-    }).join('');
+    // ONE group, as board 1a draws it (6 open bets over Today and Tue 28 under "Open · 6 bets"): today first, then the
+    // coming days; when the bets span more than one day each band's second line names its day (the reference's
+    // `where`). CHANGES_2026-10-30 §1 says the per-day heads are "unchanged"; the board outranks it (PROMPT order).
+    var n = list.length, ordered = [];
+    ds.forEach(function (d) { ordered = ordered.concat(byDay[d]); });
+    var dayWord = function (p) { if (!many) return ''; var d = C.pickDay(p); return d === t ? 'Today' : C.dayLabel(d); };
+    return '<div class="pk-bands"><div class="pk-bands-hd"><span class="pk-caps">Open ' + MID + ' ' + n + (n === 1 ? ' bet' : ' bets') + '</span>'
+      + '<span class="pk-bands-m">all at bet105 ' + MID + ' click a bet for the analysis</span></div>'
+      + ordered.map(function (p) { return band(p, dayWord(p)); }).join('') + '</div>';
   }
 
   // ── Completed · history ledger (CHANGES 10-29 §5) ───────────────────────────────────────────────────────────────
