@@ -190,7 +190,7 @@ test('header stats render: Upcoming and Completed labels, counts, Updated HH:MM,
     const _mcCardCloseDerivedOf = (m, who) => (m.__pin ? m.__pin[who] : null);
     const _mcPinClose = m => m.__pin || null, mxPinCloseAgeMin = () => 5;
     ${MX_BOOK_LABELS_SRC}
-    ${slice('mxBookLabel')} ${slice('mxPinCloseW60')} ${slice('mxUpsetOf')} ${slice('mxUpsets')} ${slice('mcBoardBooks')} ${slice('mxHeaderSet')} ${slice('mcRenderHeaderStats')}
+    ${slice('mxBookLabel')} ${slice('mxPinCloseW60')} ${slice('mxUpsetOf')} ${slice('mxUpsets')} ${slice('mcBoardBooks')} ${slice('mxHeaderSet')} const MX_QUAL_SUFFIX = ' · Qualifying'; ${slice('mxIsQual')} ${slice('mxTourKey')} ${slice('mcRenderHeaderStats')}
     mcRenderHeaderStats(list); return el.innerHTML;`)(list, view, up, tz);
   const vals = h => [...h.matchAll(/sfh__l">([^<]*)<\/span><span class="sfh__v[^"]*">([^<]*)</g)].map(x => x[1] + '=' + x[2]);
   const up = [{ tour: 'ATP Tokyo', bookNow: { Pncl: {} } }, { tour: 'ATP Beijing', bookOpens: { Pinnacle: {}, Betano: {} } }];

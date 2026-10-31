@@ -98,6 +98,17 @@ except where a ruling below says otherwise. Colours are foundation tokens (`foun
   view head:** one line — surface · event · round, then OPEN / NOW / MOVE over their columns — with no start time (a live
   card keeps its LIVE word); the default head is unchanged. **Test:** `test-matches-day-tabs.mjs` (a 00:30-local start
   lands on the next day's tab; mutants: feed-date rule, no preview, the four-day rail, a wrapping head).
+- **Qualifying is shown, never hidden (founder 2026-10-31, publish-and-qualifying).** The upcoming card builder no
+  longer skips `event_qualification === 'True'`. A card is qualifying (`boardQualifying`, `board-qualifying.js`) when the
+  feed flags it, or when its event's OFFICIAL main draw (`draws.json`, joined through the ATP tier map
+  `tools/points-at-risk/atp-tier-map-v1.json`) starts after the fixture's date and either both players are on the posted
+  qualifying sheet or — sheet not posted — neither is on the posted main-draw sheet (the Paris rows of 31 Oct arrive with
+  `event_qualification: null` and no round). The round slot reads `Q1` / `Q2` where the sheet gives the bracket depth
+  (rounds = log2(qualifying size / qualifier places); the feed's "Final" = the last round), else **"Qualifying"**, never a
+  guessed round. The raw `qualifying` field stays the feed flag the captures carry. **Chips:** a qualifying event has its
+  own chip "<Event> · Qualifying" right after its main draw's (`mxTourKey`); the header Tournaments count = the distinct
+  chips. **Test:** `tools/test-board-qualifying.js` (real rows: Basel / Vienna Q1 / Q2, Paris 14 of 14 qualifying with no
+  round, the SFs main draw; 6 mutants).
 - **Search shows both views (founder 2026-10-12, supersedes TEN-95's "the upcoming/completed split still applies"):** a
   typed player name drops the date (TEN-95) AND the Upcoming / Completed split, so the player's upcoming and completed
   matches on the board show together in either view. The active view's group comes first: Upcoming → upcoming / live

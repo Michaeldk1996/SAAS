@@ -6692,8 +6692,8 @@ function buildTournamentFilters(){
       .filter(m => completed
         ? (isFinishedMatch(m) && matchDayBucket(m) === state.day)
         : (isUpcomingOrLive(m) && matchDayBucket(m) === state.day))
-      .map(m => m.tour).filter(Boolean)
-  )].sort((a, b) => mxEventName(a).localeCompare(mxEventName(b)));   // TEN-402 r3: ordered by the printed name
+      .map(mxTourKey).filter(Boolean)
+  )].sort((a, b) => mxTourKeyName(a).localeCompare(mxTourKeyName(b)));   // TEN-402 r3: ordered by the printed name (a qualifying chip sorts right after its main draw's)
   // Drop selections whose tournament isn't in the current day's set, else a stale name
   // would filter every card away with no chip left to clear it.
   for (const sel of state.tournaments) if (!tournaments.includes(sel)) state.tournaments.delete(sel);
@@ -6705,7 +6705,7 @@ function buildTournamentFilters(){
     const active = state.tournaments.has(t);
     // The × on a selected chip removes just that tournament; clicking anywhere
     // on the chip toggles it the same way. No selections at all = show every one.
-    return `<button class="mx-chip${active ? ' active' : ''}" data-tournament="${t.replace(/"/g,'&quot;')}" aria-pressed="${active}">${mxEventName(t)}${active ? ' <span class="mx-chip-x" aria-hidden="true">×</span>' : ''}</button>`;
+    return `<button class="mx-chip${active ? ' active' : ''}" data-tournament="${t.replace(/"/g,'&quot;')}" aria-pressed="${active}">${mxTourKeyName(t)}${active ? ' <span class="mx-chip-x" aria-hidden="true">×</span>' : ''}</button>`;
   }).join('');
 }
 
@@ -8354,7 +8354,7 @@ function getFiltered(){
     // §3 (Batch B) — surface is not a Results filter (its control is hidden there), so
     // skip the predicate in completed view; the Matches surface selection is untouched.
     if (state.view !== 'completed' && state.surface !== 'all' && m.surface !== state.surface) return false;
-    if (state.tournaments.size && !state.tournaments.has(m.tour)) return false;
+    if (state.tournaments.size && !state.tournaments.has(mxTourKey(m))) return false;
     if (state.search){
       const q = state.search.toLowerCase();
       if (!m.p1.toLowerCase().includes(q) && !m.p2.toLowerCase().includes(q)) return false;
@@ -9427,7 +9427,7 @@ function mxFavStripHtml(list){
   const px = v => (v != null ? mxOddsTxt(v) : '—');
   const cards = fav.map(m => {
     const pr = _mcNowPair(m);
-    const meta = [mxEventName(m.tour), roundBadgeText(m.tournamentRound) || '', cardFmtStart(m, matchDayBucket(m) !== state.day) || ''].filter(Boolean).join(' · ');   // TEN-407: the one event name
+    const meta = [mxEventName(m.tour), mxRoundLabel(m), cardFmtStart(m, matchDayBucket(m) !== state.day) || ''].filter(Boolean).join(' · ');   // TEN-407: the one event name
     return `<div class="mx-favcard" data-id="${psEsc(m.id)}">`
       + `<div class="mx-favcard__meta"><span class="mx-favcard__where">${meta}</span>`
       + `<button type="button" class="mx-favcard__star" data-fav="${psEsc(mxFavKey(m))}" title="Remove from favourites" aria-label="Remove from favourites">${mxFavStarSvg(13)}</button></div>`
@@ -9603,7 +9603,7 @@ function mxStreakTileHtml(){
   else {
     const r = rows[0], bm = r.matchId ? matchById(r.matchId) : null;
     const more = new Set(rows.slice(1).map(x => x.key).filter(k => k !== r.key)).size;
-    const where = [r.event || (bm ? mxEventName(bm.tour) : ''), bm ? (roundBadgeText(bm.tournamentRound) || '') : ''].filter(Boolean).join(' ');
+    const where = [r.event || (bm ? mxEventName(bm.tour) : ''), bm ? mxRoundLabel(bm) : ''].filter(Boolean).join(' ');
     body = `<div class="mc-story__move"><span class="mc-story__now">${psEsc(String(r.count))}</span><span class="mc-story__name">${psEsc(r.name)}</span><span class="mc-story__claim">${psEsc(r.claim)}</span></div>`
       + `<div class="mc-story__ctx mc-story__ctxrow"><span class="mc-story__ctxmain">v ${psEsc(r.opp || '—')}${where ? ' · ' + psEsc(where) : ''}</span>${more ? `<span class="mc-story__more">+${more} more on court today</span>` : ''}</div>`;
   }
@@ -9678,7 +9678,7 @@ function mcRenderHeaderStats(list){
   if (!el) return;
   const completed = state.view === 'completed';
   const shown = completed ? list.filter(m => m.finalScore) : mxHeaderSet(list);
-  const tours = new Set(shown.map(m => m.tour).filter(Boolean)).size;
+  const tours = new Set(shown.map(mxTourKey).filter(Boolean)).size;   // = the distinct chips shown (founder 2026-10-31)
   let up = mxOddsUpdatedAt();
   if (up == null && !shown.length && mxPipelineAt != null) up = mxPipelineAt;   // founder 2026-10-30: empty day → last pipeline time
   else if (up == null && !shown.length && matches.length) mxLoadPipelineAt().then(t => { if (t != null) { try { mcRenderHeaderStats(getFiltered()); updateMatchesHeaderChrome(); } catch (e) {} } });
@@ -9708,7 +9708,7 @@ function mxCompletedBiggestMove(list){
       if (!d || d.v === 0) return;
       if (!bmv || Math.abs(d.v) > Math.abs(bmv.d.v)) {
         bmv = { o, c, d, who, name: who === 'p1' ? m.p1 : m.p2, opp: who === 'p1' ? m.p2 : m.p1,
-                tour: m.tour, round: roundBadgeText(m.tournamentRound), m };
+                tour: m.tour, round: mxRoundLabel(m), m };
       }
     });
   });
@@ -9719,6 +9719,15 @@ function mxCompletedBiggestMove(list){
 // outside the registry prints cleaned. Display only: m.tour stays the data key everywhere it is read — the tournament
 // filter (state.tournaments / data-tournament), the Tournaments count, the weather index, the edge rail, every join.
 function mxEventName(tour){ return tour && typeof sfEventName === 'function' ? sfEventName(tour) : (tour || ''); }
+// Founder 2026-10-31 (publish-and-qualifying): a qualifying card is labelled and filtered as its own event. The pipeline
+// marks it (boardQualifying: the feed flag or the ATP sheet, board-qualifying.js); a board built before that field reads
+// the raw feed flag. Round = the pipeline's Q1 / Q2 where the bracket depth is known, else "Qualifying" — never guessed.
+const MX_QUAL_SUFFIX = ' · Qualifying';
+function mxIsQual(m){ return !!(m && (m.boardQualifying != null ? m.boardQualifying : m.qualifying === true)); }
+function mxRoundLabel(m){ return mxIsQual(m) ? (m.qualifyingRound || 'Qualifying') : (roundBadgeText(m && m.tournamentRound) || ''); }
+// the tournament filter's key: the event, or the event + " · Qualifying" for its qualifying cards
+function mxTourKey(m){ return m && m.tour ? m.tour + (mxIsQual(m) ? MX_QUAL_SUFFIX : '') : ''; }
+function mxTourKeyName(k){ const q = String(k || '').endsWith(MX_QUAL_SUFFIX); const t = q ? k.slice(0, -MX_QUAL_SUFFIX.length) : k; return mxEventName(t) + (q ? MX_QUAL_SUFFIX : ''); }
 function renderMatches(){
   updateMatchesHeaderChrome();
   // Rebuild the day-scoped tournament chips AFTER the chrome snap so they key off the
@@ -9838,7 +9847,7 @@ function renderMatches(){
         : nowPair
           ? (nowPair.book || 'unnamed book')
           : 'no book has posted a price for this match yet';
-    const roundBadge = roundBadgeText(m.tournamentRound);
+    const roundBadge = mxRoundLabel(m);
     // Live / suspended / pending get a score line above the rows. Completed
     // matches show their result through the set-score cluster (mcSetCluster),
     // not this line, so the finalScore branch is intentionally omitted here.
@@ -10314,7 +10323,7 @@ function renderMatches(){
       const d = who === 'p1' ? d1 : d2;
       bmv = { o: who === 'p1' ? p.o1 : p.o2, c: who === 'p1' ? p.n1 : p.n2, d, mag: s,
               name: who === 'p1' ? m.p1 : m.p2, opp: who === 'p1' ? m.p2 : m.p1,
-              tour: m.tour, round: roundBadgeText(m.tournamentRound), m };
+              tour: m.tour, round: mxRoundLabel(m), m };
     });
     const driftOn = state.sort === 'drift';
     panels.push(sortTile('drift', driftOn, tileHead('Biggest market move', driftOn ? 'Showing open → now · biggest first' : 'Show open → now')

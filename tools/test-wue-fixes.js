@@ -73,7 +73,7 @@ if (typeof P.isCardableFixture === 'function') {
   check('an in-play fixture is cardable (was dropped)', P.isCardableFixture(fx({ event_live: '1', event_status: 'Set 2' })) === true);
   check('a scheduled fixture is cardable', P.isCardableFixture(fx({})) === true);
   check('a Finished fixture with a lagging live flag is not (the past builder takes it)', P.isCardableFixture(fx({ event_live: '1', event_status: 'Finished', event_winner: 'First Player' })) === false);
-  check('qualifying is not', P.isCardableFixture(fx({ event_qualification: 'True' })) === false);
+  check('qualifying is cardable — shown, never hidden (founder 2026-10-31)', P.isCardableFixture(fx({ event_qualification: 'True' })) === true);
   check('a TBD slot is not', P.isCardableFixture(fx({ second_player_key: null })) === false);
   const ls = P.fixtureLiveState(fx({ event_live: '1', event_status: 'Set 2', event_game_result: '30 - 15', event_serve: 'Second Player',
     scores: [{ score_set: '1', score_first: '6', score_second: '4' }, { score_set: '2', score_first: '2', score_second: '3' }] }));

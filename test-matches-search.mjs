@@ -28,6 +28,9 @@ const api = new Function(`
   ${slice('isFinishedMatch')}
   ${slice('crossDateSearch')}
   ${slice('mxTodayPreview')}
+  const MX_QUAL_SUFFIX = ' · Qualifying';
+  ${slice('mxIsQual')}
+  ${slice('mxTourKey')}
   ${slice('getFiltered')}
   return { state, set board(v){ matches = v; }, getFiltered };
 `)();

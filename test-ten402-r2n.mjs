@@ -338,7 +338,7 @@ test('r3.3 Matches board: the card head, the story strip and the chips print the
   // the chips, executed: printed name in the label, the data name in data-tournament (the filter reads it)
   const group = { innerHTML: '' };
   const state = { view: 'upcoming', day: 'd0', tournaments: new Set(['ATP Shanghai']) };
-  make(fnSrc('mxEventName') + '\n' + fnSrc('buildTournamentFilters'), 'buildTournamentFilters()', {
+  make(fnSrc('mxEventName') + "\nconst MX_QUAL_SUFFIX = ' · Qualifying';\n" + ['mxIsQual', 'mxTourKey', 'mxTourKeyName'].map(fnSrc).join('\n') + '\n' + fnSrc('buildTournamentFilters'), 'buildTournamentFilters()', {
     document: { getElementById: () => group }, state, isFinishedMatch: () => false, isUpcomingOrLive: () => true, matchDayBucket: () => 'd0',
     matches: [{ tour: 'ATP Shanghai' }, { tour: 'ATP Tokyo' }, { tour: 'ATP Chengdu' }, { tour: 'ATP Shanghai' }] });
   const chips = [...group.innerHTML.matchAll(/data-tournament="([^"]*)" aria-pressed="(true|false)">([^<]*)/g)].map(x => [x[1], x[3].trim()]);
@@ -373,7 +373,7 @@ test('r3.5 the ATP Cup prints "ATP Cup" (the cleaner strips "ATP " to "Cup"); ot
 
 test('TEN-407 review: the sheet head, favourites strip, profile Next match, Playing styles group titles and the Progression tooltip print the one name', () => {
   assert.match(html, /const meta = \[r\.tourn && \(typeof sfEventName === 'function' \? sfEventName\(r\.tourn\) : r\.tourn\), r\.surface/);
-  assert.match(fnSrc('mxFavStripHtml'), /const meta = \[mxEventName\(m\.tour\), roundBadgeText/);
+  assert.match(fnSrc('mxFavStripHtml'), /const meta = \[mxEventName\(m\.tour\), mxRoundLabel\(m\)/);
   assert.match(html, /const event = \(m\.tour && typeof sfEventName === 'function' \? sfEventName\(m\.tour\)/);
   assert.match(html, /return \{ title: \(typeof sfEventName === 'function' \? sfEventName\(gp\.tournament\) : gp\.tournament\), meta:/);
   assert.match(html, /'No box scores for ' \+ P\.labels\[i\] \+ ' at ' \+ \(typeof sfEventName === 'function' \? sfEventName\(P\.tourn\) : P\.tourn\);/);

@@ -275,7 +275,7 @@ test('Streak on court: the top Series card, "+N more on court today" by player, 
     const state = { day }; const _mxStreak = { day: 'today', rows };
     const matchById = () => ({ tour: 'ATP Vienna', tournamentRound: 'ATP Vienna - 1/16-finals' });
     const mxEventName = t => t, roundBadgeText = () => 'R32';
-    ${slice('psEsc')} ${slice('mxStreakTileHtml')} return mxStreakTileHtml();`)(rows, day);
+    ${slice('mxIsQual')} ${slice('mxRoundLabel')} ${slice('psEsc')} ${slice('mxStreakTileHtml')} return mxStreakTileHtml();`)(rows, day);
   const rows = [{ count: 6, claim: 'wins in a row', name: 'A. De Minaur', key: '1', opp: 'T. Machac', event: 'Vienna Open', matchId: 'u1' },
                 { count: 4, claim: 'wins in a row', name: 'H. Rune', key: '2', opp: 'Q. Halys', event: 'Swiss Indoors' },
                 { count: 4, claim: 'Over 21.5 total games', name: 'H. Rune', key: '2', opp: 'Q. Halys', event: 'Swiss Indoors' }];

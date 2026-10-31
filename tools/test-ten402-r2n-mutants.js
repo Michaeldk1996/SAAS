@@ -68,9 +68,9 @@ const MUTANTS = [
   ['r3: the card head prints the feed name', '>${mxEventName(m.tour)}</span>\n        ${roundBadge ?', '>${m.tour}</span>\n        ${roundBadge ?'],
   ['TEN-407: the card head appends the level', '>${mxEventName(m.tour)}</span>\n        ${roundBadge ?', '>${mxEventName(m.tour)}${tierSuffix}</span>\n        ${roundBadge ?'],
   ['r3: the story strip prints the feed name', '<div class="mc-story__ctx">${[mxEventName(u0.m.tour), roundBadgeText', "<div class=\"mc-story__ctx\">${[u0.m.tour || '', roundBadgeText"],
-  ['r3: the chip label prints the feed name', 'aria-pressed="${active}">${mxEventName(t)}${active', 'aria-pressed="${active}">${t}${active'],
+  ['r3: the chip label prints the feed name', 'aria-pressed="${active}">${mxTourKeyName(t)}${active', 'aria-pressed="${active}">${t}${active'],
   ['r3: the chip filters on the printed name', 'data-tournament="${t.replace(/"/g,\'&quot;\')}"', 'data-tournament="${mxEventName(t).replace(/"/g,\'&quot;\')}"'],
-  ['r3: the chips ordered by the feed name', '.sort((a, b) => mxEventName(a).localeCompare(mxEventName(b)));', '.sort();'],
+  ['r3: the chips ordered by the feed name', ')].sort((a, b) => mxTourKeyName(a).localeCompare(mxTourKeyName(b)));', ')].sort();'],
   // ---- the one-name function
   ['r3: the row city never breaks a shared name', '  if (ck && ck !== hit && SF_EVENT_NAMES[hit] && SF_EVENT_NAMES[ck] === SF_EVENT_NAMES[hit]) return ck;', ''],
   ['r3: the row city moves any event', '  if (ck && ck !== hit && SF_EVENT_NAMES[hit] && SF_EVENT_NAMES[ck] === SF_EVENT_NAMES[hit]) return ck;', '  if (ck) return ck;'],

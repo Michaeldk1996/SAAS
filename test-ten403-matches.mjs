@@ -210,7 +210,7 @@ const tileApi = src => {
     const _ocsOf = m => null, _mcNowPair = m => null, _openAnchorOf = () => null, _mcNowOf = () => null;
     const _mcOpenNowPair = m => m.__pair || null;
     const cardStartMs = m => m.__t;
-    const roundBadgeText = r => r || '';
+    const roundBadgeText = r => r || ''; ${slice('mxIsQual', src)} ${slice('mxRoundLabel', src)}
     ${slice('_mcHasAnyPrice', src)} ${slice('mxMovePct', src)} ${slice('moveNowScore', src)}
     ${body.slice(a, b)}
     return bmv;`)(daySlate);
@@ -284,7 +284,7 @@ function favApi({ ls = {}, bsp = null, src = html } = {}) {
     const state = { day: 'today', view: 'upcoming' };
     const cardStartMs = m => m.__t;
     const _mcNowPair = m => m.__pair || null;
-    const roundBadgeText = r => r || '';
+    const roundBadgeText = r => r || ''; ${slice('mxIsQual', src)} ${slice('mxRoundLabel', src)}
     const mxEventName = t => (t === 'ATP Shanghai' ? 'Shanghai Masters' : (t || ''));   // TEN-407: the one event name
     const cardFmtStart = (m, withDate) => (withDate ? '9 Oct ' : '') + (m.__hm || '');
     const matchDayBucket = m => m.__day || 'today';
@@ -536,7 +536,7 @@ function completedHarness(src = html) {
     function _openAnchorOf(m, who){ return m._open ? m._open[who] : null; }
     function _openDerivedOf(m, who){ return _openPinIsVendor(m) ? null : _openAnchorOf(m, who); }
     function _mcCardCloseOf(m, who){ return m._close ? m._close[who] : null; }
-    function roundBadgeText(r){ return r || ''; }
+    function roundBadgeText(r){ return r || ''; } ${slice('mxIsQual', src)} ${slice('mxRoundLabel', src)}
     function mcTitleAttr(){ return ''; }
     ${slice('mxOddsTxt', src)} ${slice('mxMovePct', src)} ${slice('mcJourney', src)} ${slice('mxCompletedBiggestMove', src)}
     return { mxCompletedBiggestMove, mcJourney, _openAnchorOf, _mcCardCloseOf, _openPinIsVendor };`)();

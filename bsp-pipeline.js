@@ -44,6 +44,23 @@ const { sanitizeFixture: sanitizeFixtureStats, parseCount, sanitizeMatchStatsSto
 // only a complete, unambiguous one (fixture-winner.js) — at the one place every fetched fixture passes, so every reader
 // (records, form, H2H, draws) sees the same fixture.
 const { fillWinnerFromScore } = require('./fixture-winner');
+// Founder 2026-10-31 (publish-and-qualifying): qualifying fixtures are carded and labelled (board-qualifying.js)
+const BoardQualifying = require('./board-qualifying.js');
+let _boardQualIndex = null;
+// draws.json (the ATP sheets, committed by the draws bot) joined to api-tennis keys through the ATP tier map. A missing
+// or unreadable file leaves only the feed flag deciding — logged, never fatal (the board still cards the fixture).
+function boardQualIndex() {
+  if (_boardQualIndex) return _boardQualIndex;
+  try {
+    const draws = JSON.parse(fs.readFileSync(require('path').join(__dirname, 'draws.json'), 'utf8'));
+    const tier = JSON.parse(fs.readFileSync(require('path').join(__dirname, 'tools', 'points-at-risk', 'atp-tier-map-v1.json'), 'utf8'));
+    _boardQualIndex = BoardQualifying.buildIndex(draws, tier);
+  } catch (e) {
+    console.warn(`board qualifying: draws.json / tier map unreadable (${e.message}) — the feed flag alone marks qualifying`);
+    _boardQualIndex = {};
+  }
+  return _boardQualIndex;
+}
 const sanitizeFixture = (fx) => (fx ? fillWinnerFromScore(sanitizeFixtureStats(fx)) : fx);
 const sanitizeFixtures = (list) => { if (Array.isArray(list)) for (const fx of list) sanitizeFixture(fx); return list; };
 // TEN-371: the pre-publish gate reads these players by key with no stand-in, so
@@ -3429,6 +3446,10 @@ async function buildPastMatchObject(fixture, surfaceMap, venueMap) {
     bestOdds: { p1: null, p2: null },
     tournamentRound: fixture.tournament_round,
     qualifying: fixture.event_qualification === 'True',   // founder ruling 2026-10-18 (phase 2): carried to every capture
+    // the board's own qualifying label (founder 2026-10-31): the flag, or the ATP sheet (board-qualifying.js); the round
+    // only where the bracket depth is known, else null (the card reads "Qualifying"). `qualifying` above stays the raw
+    // feed flag the captures carry.
+    ...boardQualFields(fixture),
     p1Key,
     p2Key,
     h2h: null,
@@ -3601,12 +3622,16 @@ async function buildPastMatchObject(fixture, surfaceMap, venueMap) {
 // for as long as it was being played (measured 20 Oct 13:4xZ: 3 of 3 live ATP main-draw matches absent, 0 of 45
 // cards live). The old odds-driven builder was what carded live matches; this restores that, on the fixture.
 // Stateless half of the upcoming filter: a fixture that may be carded as not-yet-decided (scheduled OR in play).
+function boardQualFields(fixture) {
+  const q = BoardQualifying.classify(fixture, boardQualIndex());
+  return { boardQualifying: q.qualifying, qualifyingRound: q.round, qualifyingBasis: q.basis };
+}
 function isCardableFixture(f) {
   if (RECORD_STATUSES.includes(f.event_status)) return false;   // TEN-437: "Awarded" is decided, never upcoming
   if (isCancelledFixture(f)) return false;
   // An interrupted match is built by the completed-match builder (partial score + stats), never here.
   if (isInterruptedFixture(f)) return false;
-  if (f.event_qualification === 'True') return false;
+  // Founder 2026-10-31: qualifying is SHOWN, never hidden — the `event_qualification === 'True'` skip is removed.
   if (f.event_winner === 'First Player' || f.event_winner === 'Second Player') return false;
   // A not-yet-assigned player (TBD / awaiting-qualifier slot) has no key, so no enrichment can run.
   if (!f.first_player_key || !f.second_player_key) return false;
@@ -3668,6 +3693,10 @@ async function buildUpcomingMatchObject(fixture, surfaceMap, venueMap) {
     bestOdds: { p1: null, p2: null },
     tournamentRound: fixture.tournament_round,
     qualifying: fixture.event_qualification === 'True',   // founder ruling 2026-10-18 (phase 2): carried to every capture
+    // the board's own qualifying label (founder 2026-10-31): the flag, or the ATP sheet (board-qualifying.js); the round
+    // only where the bracket depth is known, else null (the card reads "Qualifying"). `qualifying` above stays the raw
+    // feed flag the captures carry.
+    ...boardQualFields(fixture),
     p1Key,
     p2Key,
     h2h: null,
