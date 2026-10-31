@@ -80,6 +80,14 @@ async function browser() {
     await send('Page.enable'); await send('Runtime.enable');
     // signed out, the page is sent to auth.html: stay on the page (the tracker's store is the browser's own)
     await send('Fetch.enable', { patterns: [{ urlPattern: '*auth.html*', resourceType: 'Document' }, { urlPattern: '*verify.html*', resourceType: 'Document' }] });
+    // ...and never start that redirect: a client navigation begun while the deferred scripts are still downloading
+    // aborts them (net::ERR_ABORTED), so TrackerPage never exists. Measured on the Mac 2026-10-31 (2 of 3 runs red),
+    // where Firebase resolves "signed out" before the deferred scripts arrive; the Linux gate happened to win the race.
+    // The route guards resolve signed out without redirecting; the abort above stays as the backstop.
+    await send('Page.addScriptToEvaluateOnNewDocument', { source: `(function(){ var b;
+      Object.defineProperty(window, 'BSP', { configurable: true, get: function(){ return b; }, set: function(v){
+        b = v; if (v && typeof v === 'object') ['requireAuth', 'requireVerified'].forEach(function(k){
+          if (typeof v[k] === 'function') v[k] = function(){ return Promise.resolve(null); }; }); } }); })();` });
     const size = (w) => send('Emulation.setDeviceMetricsOverride', { width: w, height: 982, deviceScaleFactor: 1, mobile: false });
     // a real document load every time (a new query string: the same URL + #tracker would only be a fragment hop)
     let loads = 0;
