@@ -101,9 +101,11 @@ function main() {
     for (const tier of TIERS) for (const role of ROLES) {
       const html = (() => { Object.assign(I.state, { key: p.key, marketTab: 'lines', lcFmt: 'bo3', lcRole: role, lcWin: 'career', lcTier: tier, lcSurf: 'all', lcSpeed: 'all', lcDrill: null }); return I.renderLinesTab(p); })();
       const c = I.lineCoverage(p, 'bo3', role, { tier });
-      // Challenger & ITF has no favourite / underdog (no closing prices): those cards draw no table at all
+      // founder 2026-10-31: Challenger & ITF roles come from the page's one price join (window.pp2CareerClose), which this
+      // Node fixture does not load — so those cards hold no match and draw no rated line, and the field (built without the
+      // join) has no cell for them: never a Field figure under them
       if (tier === 'chitf' && role !== 'all') {
-        assert(!/data-lc-field=/.test(html) && /no favourite or underdog at this tier/.test(T(html)), tier + '/' + role + ': a table under no prices');
+        assert(c.n === 0 && !/data-lc-field="[^"]*"[^>]*>[^<—]*\d/.test(html), tier + '/' + role + ': a rated Challenger & ITF card without a join price');
         continue;
       }
       if (!c.n) continue;

@@ -168,6 +168,7 @@ function main() {
   shapeChecks(mod(), 'feed');
   console.log('TE shape (the record a Tennis Explorer join builds; every season split by tier)');
   shapeChecks(TE, 'te');
+  joinChecks();
   mutants();
   H.done();
 }
@@ -263,17 +264,13 @@ function shapeChecks(A, shape) {
     return k + ' states';
   });
 
-  H.check(tag('C · Challenger & ITF: the favourite / underdog cards and tables read a dash, never a rate (founder 2026-10-23)'), () => {
+  H.check(tag('C · Challenger & ITF without a join price: the favourite / underdog cards read 0 and no table rates a line (founder 2026-10-31 replaces 2026-10-23\'s dash)'), () => {
     let k = 0;
-    WINS.forEach((win) => FMTS.forEach((f) => ['all', 'fav', 'dog'].forEach((role) => {
+    WINS.forEach((win) => FMTS.forEach((f) => ['fav', 'dog'].forEach((role) => {
+      const c = I.lineCoverage(p, f, role, { win, tier: 'chitf' });
+      assert.strictEqual(c.n, 0, win + '/' + f + '/' + role + ': ' + c.n + ' rated with no join price');
       const html = withState(I, { key: p.key, marketTab: 'lines', lcFmt: f, lcRole: role, lcWin: win, lcTier: 'chitf', lcDrill: null }, () => I.renderLinesTab(p));
-      const cards = html.match(/data-pp2="lc-role"[\s\S]*?<\/span><\/span><\/div>/g) || [];
-      const count = (c) => (/font-size:24px[^>]*>([^<]*)</.exec(c) || [])[1];
-      assert.strictEqual(count(cards[1]), '—', win + '/' + f + ': favourite card ' + count(cards[1]));
-      assert.strictEqual(count(cards[2]), '—', win + '/' + f + ': underdog card ' + count(cards[2]));
-      if (role !== 'all') {
-        assert(!/data-lc-line=/.test(html) && /no favourite or underdog at this tier/.test(T(html)), win + '/' + f + '/' + role + ': a rated table under no prices');
-      }
+      assert(!/data-lc-line=/.test(html) && !/closed under|closing price/.test(T(html)), win + '/' + f + '/' + role + ': a rated line or "closed" wording');
       k++;
     })));
     return k + ' Challenger & ITF states';
@@ -475,6 +472,50 @@ function shapeChecks(A, shape) {
   });
 
 }
+// founder 2026-10-31 (TE above Bet365, "join for lower levels"): a match that is not ATP main draw takes its favourite /
+// underdog role from the site's one price join (window.pp2CareerClose, stubbed here with the join's shape); an ATP
+// main-draw match never does (it keeps the Market edge basis); a joined price below 1.01 on a side is no role.
+const JOIN = { 'C. Cover': { price: 1.5, oppPrice: 2.6, book: 'pinnacle-approx-te' }, 'D. Miss': { price: 2.4, oppPrice: 1.6, book: 'bet365-approx-te' },
+  'E. Void': { price: 1.4, oppPrice: 3.0, book: 'pinnacle' }, 'B. Void': { price: 1.0, oppPrice: 9.0, book: 'bet365' } };
+function withJoin(src) {
+  const p = JSON.parse(JSON.stringify(FX.profile));
+  p.tournamentHistory = FX.tournamentHistory;
+  const ch = FX.careerHistory.concat(EXTRA);
+  const wo = ch.findIndex((r) => !/\d/.test(r.result));
+  p.careerByYear = TJ.careerByYearFromRows(ch.filter((r, i) => i !== wo));
+  const cl = { rows: [] };
+  const m = L.loadPp2({ src: src || SRC, now: FX.asOf, players: { [FX.key]: p }, careerHistory: { [FX.key]: ch },
+    marketEdge: { [FX.key]: FX.marketEdge }, bet365History: FX.bet365History,
+    extra: { careerRecord: { [FX.key]: { v: 1, over: [], out: [[wo, 'walkover']], add: [] } },
+      pp2ClosesOf: () => cl, pp2CareerClose: (k, r) => JOIN[r.opponent] || null } });
+  return { I: m.I, p };
+}
+function joinChecks() {
+  const { I, p } = withJoin();
+  H.check('J · a Challenger & ITF match priced by the one join gets its role (C. Cover favourite on TE Pinnacle, D. Miss underdog on TE Bet365); All = favourite + underdog + unpriced', () => {
+    const c = I.lineCoverage(p, 'bo3', 'all', { tier: 'chitf' });
+    const pool = new Map(); rowsOf(c).forEach((r) => r.members.forEach((x) => pool.set(x.m, 1)));
+    const role = (o) => [...pool.keys()].find((m) => m.r.opp === o);
+    assert.strictEqual(role('C. Cover').role, 'fav'); assert.strictEqual(role('D. Miss').role, 'dog');
+    assert.strictEqual(role('D. Miss').r.book, 'bet365-approx-te');
+    assert.strictEqual(c.favN + c.dogN + c.unpriced, c.all);
+    assert.strictEqual(c.favN, 1); assert.strictEqual(c.dogN, 1);
+    return `Challenger & ITF career Bo3: ${c.all} = ${c.favN} favourite + ${c.dogN} underdog + ${c.unpriced} unpriced`;
+  });
+  H.check('J · an ATP main-draw match is never given a role by the join (E. Void stays on the Market edge basis); a side below 1.01 gives none (B. Void)', () => {
+    const c = I.lineCoverage(p, 'bo3', 'all', { tier: 'all' });
+    const pool = []; rowsOf(c).forEach((r) => r.members.forEach((x) => pool.push(x.m)));
+    assert(pool.some((m) => m.r.opp === 'E. Void'), 'E. Void not in the pool');
+    pool.filter((m) => m.r.opp === 'E. Void' || m.r.opp === 'B. Void').forEach((m) => assert.strictEqual(m.role, null, m.r.opp + ' ' + m.role));
+    return 'E. Void (ATP main draw) and B. Void (1.00) unpriced';
+  });
+  H.check('J · the Challenger & ITF cards and tables show the joined roles, worded "priced", never "closed"', () => {
+    const html = withState(I, { key: p.key, marketTab: 'lines', lcFmt: 'bo3', lcRole: 'fav', lcWin: 'career', lcTier: 'chitf', lcDrill: null }, () => I.renderLinesTab(p));
+    assert(/data-lc-line=/.test(html), 'no rated line under As favourite');
+    assert(/priced under 2\.00/.test(T(html)) && !/closed under/.test(T(html)));
+    return 'As favourite table drawn';
+  });
+}
 function mutants() {
   // ── [neg] the drill must not be able to drift from the record ──
   const SRC_TEXT = fs.readFileSync(SRC, 'utf8');
@@ -484,6 +525,17 @@ function mutants() {
     fs.writeFileSync(f, SRC_TEXT.replace(from, to));
     try { return mod(f, 'te'); } finally { fs.unlinkSync(f); }
   }
+  H.mustFail('the join role given to an ATP main-draw row too (masterClass test removed) is caught', () => {
+    const f = path.join(require('os').tmpdir(), 'pp2-join-mutant-' + process.pid + '.js');
+    fs.writeFileSync(f, SRC_TEXT.replace('lr === cc && !masterClass(r) &&', 'lr === cc &&'));
+    try { const m = withJoin(f); const c = m.I.lineCoverage(m.p, 'bo3', 'all', { tier: 'all' });
+      rowsOf(c).forEach((r) => r.members.forEach((x) => { if (x.m.r.opp === 'E. Void') assert.strictEqual(x.m.role, null); })); } finally { fs.unlinkSync(f); }
+  });
+  H.mustFail('Derived lines ignoring the join (roleOf back on cents only) is caught', () => {
+    const f = path.join(require('os').tmpdir(), 'pp2-join-mutant2-' + process.pid + '.js');
+    fs.writeFileSync(f, SRC_TEXT.replace('((r.cents != null || r.joinRole) && r.price != null', '(r.cents != null && r.price != null'));
+    try { const m = withJoin(f); assert.strictEqual(m.I.lineCoverage(m.p, 'bo3', 'all', { tier: 'chitf' }).favN, 1); } finally { fs.unlinkSync(f); }
+  });
   H.mustFail('a Surface filter that reads the raw feed surface instead of the record\'s cell is caught', () => {
     const m = mutant("return !r.notCounted && (surf === 'all' || r.cell === surf);", "return !r.notCounted && (surf === 'all' || r.surface === surf);");
     const c = m.I.lineCoverage(m.p, 'bo3', 'all');

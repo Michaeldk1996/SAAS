@@ -3568,7 +3568,8 @@
       conflicts: r.conflicts || null,
       // Derived lines read their population off this list (lineCoverage): the per-set games, the Market edge close
       // (`cents`: the favourite / underdog role) and the feed's event name (NextGen).
-      setGames: r.setGames || null, cents: r.cents != null ? r.cents : null, tournament: r.tournament || null
+      setGames: r.setGames || null, cents: r.cents != null ? r.cents : null, tournament: r.tournament || null,
+      joinRole: r.joinRole || null, book: r.book || null
     };
   }
 
@@ -6644,7 +6645,8 @@
     // A role needs a CLOSING price on the Market edge basis (`cents` set); a ledger pre-match capture
     // shows as H / A but is not a close, so the row counts as unpriced here and in the note.
     function roleOf(r) {
-      return (r.cents != null && r.price != null && r.price >= 1.01)
+      // founder 2026-10-31: a lower-level row priced by the one join (joinRole) takes its role from that price
+      return ((r.cents != null || r.joinRole) && r.price != null && r.price >= 1.01)
         ? ((MEC ? MEC.isFavPrice(r.price) : r.price < 2) ? 'fav' : 'dog') : null;
     }
     for (var i = 0; i < scope.length; i++) {
@@ -6836,47 +6838,38 @@
           mkSeg('lc-surf', LC_SURFACES, surf, true) + mkSeg('lc-speed', LC_SPEEDS, speed, true) + '</span></span></div>';
 
     function pctOf(n) { return d.all ? Math.round(100 * n / d.all) + '% of ' + d.all.toLocaleString('en-US') : DASH; }
-    // Founder 2026-10-23 · Challenger & ITF matches carry effectively no closing price (2 of 222,732 player-sides in the
-    // database): there is no favourite or underdog at that tier, so those cards and their tables read a dash — never a
-    // rate off a match or two.
-    var noRoles = tier === 'chitf';
+    // Founder 2026-10-31 (replaces 2026-10-23's "no favourite or underdog at Challenger & ITF"): a match that is not ATP
+    // main draw takes its role from the site's one price join (spineOver `joinRole`), so every tier has its cards and
+    // tables. Lower-level prices are snapshots, never closes, so the cards say "priced", not "closed".
     var tiles = '<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:18px;">' +
       LC_ROLES.map(function (t) {
         var on = role === t[0];
         var n = t[0] === 'fav' ? d.favN : t[0] === 'dog' ? d.dogN : d.all;
         var sub = t[0] === 'all' ? d.fmtLabel + ' ' + MIDDOT + ' set scores on record'
-          : noRoles ? 'no closing prices at this tier'
-          : t[0] === 'fav' ? pctOf(d.favN) + ' ' + MIDDOT + ' closed under 2.00'
-          : pctOf(d.dogN) + ' ' + MIDDOT + ' closed 2.00 or longer';
+          : t[0] === 'fav' ? pctOf(d.favN) + ' ' + MIDDOT + ' priced under 2.00'
+          : pctOf(d.dogN) + ' ' + MIDDOT + ' priced 2.00 or longer';
         // Founder 2026-10-22 · a card's height never follows its numbers: the subtitle shares its cell with a hidden
         // widest-case copy (every count at 4 digits, the rate at 100%), so a "—" subtitle takes the room of a full
         // one and no filter state moves the table, at any width.
         var reserve = t[0] === 'all' ? d.fmtLabel + ' ' + MIDDOT + ' set scores on record'
-          : '100% of 9,999 ' + MIDDOT + (t[0] === 'fav' ? ' closed under 2.00' : ' closed 2.00 or longer');
+          : '100% of 9,999 ' + MIDDOT + (t[0] === 'fav' ? ' priced under 2.00' : ' priced 2.00 or longer');
         return mkTile('lc-role', 'data-v', t[0], on,
           '<span style="' + MK_CAPS + '">' + esc(t[1]) + '</span>' +
           '<span style="' + MK_MONO + 'font-size:24px;font-weight:700;line-height:24px;color:' +
-            (on ? 'var(--text)' : 'var(--text-soft)') + ';">' + (noRoles && t[0] !== 'all' ? DASH : n.toLocaleString('en-US')) + '</span>' +
+            (on ? 'var(--text)' : 'var(--text-soft)') + ';">' + n.toLocaleString('en-US') + '</span>' +
           '<span style="display:grid;font-size:11px;color:var(--text-label);">' +
             '<span style="grid-area:1 / 1;">' + esc(sub) + '</span>' +
             '<span aria-hidden="true" style="grid-area:1 / 1;visibility:hidden;">' + esc(reserve) + '</span></span>',
           '14px 16px', 7);
       }).join('') + '</div>';
 
-    if (noRoles && role !== 'all') {
-      return head + tiles +
-        '<div data-lc="table" style="border:1px dashed var(--edge-6);border-radius:10px;padding:26px;' +
-          'text-align:center;font-size:13px;color:var(--text-label);">' +
-          'Challenger & ITF matches carry no closing price, so there is no favourite or underdog at this tier.' +
-        '</div>';
-    }
     if (!d.n) {
       var inScope = scopeWord ? ' in this window and tier' : '';
       return head + tiles +
         '<div data-lc="table" style="border:1px dashed var(--edge-6);border-radius:10px;padding:26px;' +
           'text-align:center;font-size:13px;color:var(--text-label);">' +
           (d.all
-            ? 'No completed ' + esc(d.fmtLabel) + ' match ' + roleWord + inScope + ' carries a scoreline and a closing price.'
+            ? 'No completed ' + esc(d.fmtLabel) + ' match ' + roleWord + inScope + ' carries a scoreline and a price.'
             : 'No completed ' + esc(d.fmtLabel) + ' match' + inScope + ' on record carries a scoreline to derive a line from.') +
         '</div>';
     }
@@ -7892,6 +7885,11 @@
         settle: vd ? vd.settle : null,   // ruling 4: 'void' | 'no-sets' — prices shown, units none
         book: pin ? (pin.book || null) : (lr ? lr.book : null),
         role: pin ? (pin.role || null) : null,
+        // Founder 2026-10-31 (TE above Bet365, "join for lower levels"): a row that is NOT ATP main draw (qualifying,
+        // Challenger, ITF — masterClass false) and whose price is the site's one join (cc: Pinnacle, then Bet365, then a
+        // dash) gives Derived lines its favourite / underdog role. Market edge itself stays ATP main draw: no cents, no
+        // P&L, no yield. An ATP main-draw row keeps the Market edge basis only.
+        joinRole: !pin && !vd && cc && lr === cc && !masterClass(r) && cc.price >= 1.01 && cc.oppPrice >= 1.01 ? true : null,
         // The Market edge row's own result and retirement flag, kept so the join can be audited
         // against career-history's `won` (tools/test-ten384-figures-agree.js "J").
         dateKind: r.src === 'archive' ? 'start' : 'match',   // archive rows carry the event's START date
