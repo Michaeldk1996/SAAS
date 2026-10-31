@@ -2287,3 +2287,10 @@ SF, 6-2 3-0 ret.); the set scores are already from the player's side, so the cor
 - **Why a pending table and not reader changes:** all five readers of `live_flip_log` already skip a row with no lower bound. Holding flags back upstream means none of them needed to change.
 - **Why T = 300 s:** it is a starting value. `play_seen_at` measures the real delay from flag to first play, and the founder sets T from that measurement.
 - **Same-tick play gets no bound (2026-10-27):** if play is already on the board when the match is first listed live, the poll before only proves the match wasn't listed, not that no ball had been struck. So the row is written with no lower bound. This was 2 of the first 4 promoted rows on 27 Oct.
+
+## atp-entry-harvest paused (2026-10-31)
+
+- **State:** `atp-entry-harvest.yml` is disabled in GitHub Actions (`state: disabled_manually`, 2026-10-31 02:32:44Z), paused by the founder: "Just pause this for now, we don't need it for now." The workflow file is unchanged.
+- **Why:** every run since 16 Oct failed on `X API 402 — credits depleted`; the harvest has no other source.
+- **Re-enable:** the Actions UI ("Enable workflow"), or `PUT /repos/michaeldk1996/SAAS/actions/workflows/atp-entry-harvest.yml/enable` — after the X API balance is topped up.
+- **Left as they are (founder, same day: "for the rest don't change anything"):** live-probes, odds-archive-staleness and bet365-archive stay red or stopped as they are.
