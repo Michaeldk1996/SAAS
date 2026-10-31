@@ -9,13 +9,6 @@
   "schema": "odds-capture-cadence/1",
   "ticks": [
     {
-      "at": "2026-10-26T22:32:25Z",
-      "iter": 7,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "40371833021/1"
-    },
-    {
       "at": "2026-10-26T22:47:23Z",
       "iter": 8,
       "mode": "free+metered-deferred",
@@ -2804,6 +2797,13 @@
     {
       "at": "2026-10-31T02:00:16Z",
       "iter": 15,
+      "mode": "free",
+      "outcome": "captured",
+      "run": "41129183507/1"
+    },
+    {
+      "at": "2026-10-31T02:15:13Z",
+      "iter": 16,
       "mode": "free",
       "outcome": "captured",
       "run": "41129183507/1"
