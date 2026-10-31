@@ -206,6 +206,23 @@ ALLOWED = {
         'event_date, event_time, first_player, second_player, tournament_name, event_type_type, play_seen_at',  # provenance copied through live_flip_pending into live_flip_log; nothing reads it as a time (played-start-recorder, 2026-10-26)
         'event_date, event_time, first_player, second_player, tournament_name, event_type_type, _now',  # provenance copied through live_flip_pending into live_flip_log; nothing reads it as a time (played-start-recorder, 2026-10-26)
     },
+    'tools/drops-scope.sql': {
+        'event_time           text,',  # drops bots' ATP posting scope: the fixture's scheduled instant is only a ±24 h join window to its vendor row; a miss HOLDS the post (conservative), never creates, cuts or labels a start (telegram-bot-scope 2026-10-31)
+        "-- The writer: service_role only (the pipeline's key). p_rows = [{event_key, event_date, event_time, first, second,",  # drops bots' ATP posting scope: the fixture's scheduled instant is only a ±24 h join window to its vendor row; a miss HOLDS the post (conservative), never creates, cuts or labels a start (telegram-bot-scope 2026-10-31)
+        'insert into drops_scope.fixture as f (event_key, event_date, event_time, start_utc, first_player, second_player, sk1, sk2,',  # drops bots' ATP posting scope: the fixture's scheduled instant is only a ±24 h join window to its vendor row; a miss HOLDS the post (conservative), never creates, cuts or labels a start (telegram-bot-scope 2026-10-31)
+        "select (r->>'event_key')::bigint, (r->>'event_date')::date, r->>'event_time',",  # drops bots' ATP posting scope: the fixture's scheduled instant is only a ±24 h join window to its vendor row; a miss HOLDS the post (conservative), never creates, cuts or labels a start (telegram-bot-scope 2026-10-31)
+        "((r->>'event_date') || ' ' || case when coalesce(r->>'event_time', '') ~ '^\\d\\d:\\d\\d$' then r->>'event_time' else '00:00' end)::timestamp",  # drops bots' ATP posting scope: the fixture's scheduled instant is only a ±24 h join window to its vendor row; a miss HOLDS the post (conservative), never creates, cuts or labels a start (telegram-bot-scope 2026-10-31)
+        'on conflict (event_key) do update set event_date = excluded.event_date, event_time = excluded.event_time,',  # drops bots' ATP posting scope: the fixture's scheduled instant is only a ±24 h join window to its vendor row; a miss HOLDS the post (conservative), never creates, cuts or labels a start (telegram-bot-scope 2026-10-31)
+    },
+    'tools/drops-scope-fixtures.mjs': {
+        'out.push({ event_key: String(f.event_key), event_date: f.event_date || null, event_time: f.event_time || null,',  # passes the api-tennis fixture to drops_scope_ingest; the field is not read as a time here (telegram-bot-scope 2026-10-31)
+    },
+    'tools/test-telegram-routing.mjs': {
+        "{ event_key: 1, event_first_player: 'C. Alcaraz', event_second_player: 'J. Sinner', event_type_type: 'Atp Singles', event_qualification: 'False', event_date: '2026-10-30', event_time: '12:00' },",  # stub api-tennis fixture for the writer's unit test; never read as a start (telegram-bot-scope 2026-10-31)
+    },
+    'tools/test-drops-scope-sql.py': {
+        'return {\'event_key\': ek, \'event_date\': f"__D{day_off}__", \'event_time\': hhmm, \'first\': a, \'second\': b,',  # stub fixture for the scope SQL test's join window; never read as a start (telegram-bot-scope 2026-10-31)
+    },
 }
 
 
