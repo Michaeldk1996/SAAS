@@ -1207,9 +1207,24 @@ def te_start(x, f, flip_start):
     return None, None
 
 
+MD_EK = re.compile(r'^md:(\d{4}-\d\d-\d\d)\|([^|]+)\|([^|]+)\|([^|]+)$')
+
+
+def md_td(x):
+    """The atp-md row's Tennis-Data match. The batches te-odds-batch.mjs wrote on 30 Oct carry no `td` field (its row copy kept
+    only ek / level / date / a / b / ka / kb), but the target's own key IS that match: md:<date>|<tournament>|<winner>|<loser>
+    (te-targets-md; checked on all 1,312 targets: the key parses back to exactly their td). An explicit td wins; a key that is
+    not exactly that shape gives {} (counted 'no Tennis-Data key', never guessed)."""
+    td = x.get('td')
+    if td:
+        return td
+    m = MD_EK.match(str(x.get('ek') or ''))
+    return dict(zip(('date', 'tournament', 'winner', 'loser'), m.groups())) if m else {}
+
+
 def te_md_row(d, x, p, md_join, flip_start, rep, src_kind=None):
     """One ATP main-draw TE row (level atp-md), or None with the reason counted. See TE_MD_LEVEL."""
-    td = x.get('td') or {}
+    td = md_td(x)
     if not all(td.get(k) for k in ('date', 'tournament', 'winner', 'loser')):
         rep['atp-md: no Tennis-Data key'] += 1; return None
     p1, p2 = price(p.get('p1')), price(p.get('p2'))
@@ -1356,7 +1371,7 @@ def te_md_joiner(md):
     if not md:
         return (lambda td: (None, 'no fixture list read')), []
     import concurrent.futures as cf
-    days = sorted({(dt.date.fromisoformat(x['td']['date']) + dt.timedelta(days=k)).isoformat() for x in md if (x.get('td') or {}).get('date')
+    days = sorted({(dt.date.fromisoformat(md_td(x)['date']) + dt.timedelta(days=k)).isoformat() for x in md if md_td(x).get('date')
                    for k in (-1, 0, 1, 2)})
     def day(d):
         j = _at({'method': 'get_fixtures', 'date_start': d, 'date_stop': d, 'timezone': 'UTC'})
@@ -1374,7 +1389,7 @@ def te_md_joiner(md):
         if k not in memo:
             memo[k] = approx_join({'date': td['date'], 'winner': td['winner'], 'loser': td['loser']}, by_day)
         return memo[k]
-    eks = [str(f['event_key']) for x in md for f, _ in [join(x['td'])] if f is not None and str(x['td']['date']) >= P.VERIFIED_START_FROM]
+    eks = [str(f['event_key']) for x in md if md_td(x).get('date') for f, _ in [join(md_td(x))] if f is not None and str(md_td(x)['date']) >= P.VERIFIED_START_FROM]
     return join, eks
 
 

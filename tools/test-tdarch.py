@@ -459,6 +459,23 @@ check('atp-md: the in-play rule applies — a last change after the scheduled st
       sorted(r['detail']['teMatchId'] for r in mrows) == ['9001', '9002'] and mrep.get('dropped: last change after the start') == 1
       and mrep.get('atp-md: not stored, no api-tennis fixture (no fixture) — no start') == 1 and mrep.get('atp-md: the fixture names the other winner') == 1
       and mrep.get('atp-md: a / b are not the Tennis-Data winner / loser') == 1 and mrep.get('atp-md stored: B') == 1 and mrep.get('atp-md stored: od10') == 1, mrep)
+# the batches as te-odds-batch.mjs really wrote them on 30 Oct: no td / group / round, the Tennis-Data match only in the key
+RAW = lambda n, a, b: {k: v for k, v in dict(MD(n, {'p1': 1.6, 'p2': 2.4, 'p1Ts': None, 'p2Ts': None, 'open': {}, 'moves': [0, 0]}, a=a, b=b),
+                                                ek=f'md:2025-03-10|BNP Paribas Open|{a}|{b}').items() if k not in ('td', 'group', 'round')}
+rdocs = [{'batch': 'atp-md-id', 'complete': True, 'rows': [RAW(11, 'One A.', 'Two B.'), dict(RAW(12, 'One A.', 'Two B.'), ek='md:2025-03-10|BNP Paribas Open|One A.')]}]
+rrows, rrep = T.te_rows(rdocs, lambda ek: None, lambda ek: None, lambda td: mjoin.get((td['winner'], td['loser']), (None, 'no fixture')))
+check('atp-md: a batch row with no td field reads its Tennis-Data match from its key (md:date|tournament|winner|loser); a key not of that shape is "no Tennis-Data key", never guessed',
+      [(r['match_date'], r['tournament'], r['winner'], r['loser'], r['event_key']) for r in rrows] == [('2025-03-10', 'BNP Paribas Open', 'One A.', 'Two B.', 501)]
+      and rrep.get('atp-md: no Tennis-Data key') == 1 and T.md_td({'td': {'date': 'x'}}) == {'date': 'x'}, (rrows, rrep))
+_mdj = []
+_bd = T._at
+T._at = lambda q: (_mdj.append(q['date_start']), {'success': 1, 'result': []})[1]
+try:
+    T.te_md_joiner([RAW(13, 'One A.', 'Two B.'), dict(RAW(14, 'X', 'Y'), ek='bogus')])
+finally:
+    T._at = _bd
+check('atp-md: the fixture-list days come from the key too (no KeyError on a batch row without td); a bad key reads no day',
+      sorted(_mdj) == ['2025-03-09', '2025-03-10', '2025-03-11', '2025-03-12'], _mdj)
 nm, nrep = T.te_rows(mdocs, lambda ek: None)
 check('control: with no fixture list read, no atp-md row is stored (never a start invented)', nm == [] and nrep.get('atp-md: not stored, no api-tennis fixture (no fixture list read) — no start') == 5, nrep)
 mcur = [dict(m1, id=700), dict(m2, id=701, price_ts='2025-03-10T19:00:00Z', detail=dict(m2['detail'], startChecked='2025-03-10T18:00:00Z')),
