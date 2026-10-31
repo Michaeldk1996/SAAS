@@ -1100,7 +1100,8 @@
   // not qualifying, not a walkover) is priced by the master / its join only; the bet365 pre-match capture never stands in
   // for it (it stays the display source for Challenger, qualifying and ITF until phase 2). Same test as the host's sfMasterClass.
   function masterClass(r) {
-    if (!r || r.walkover || r.wo || r.qualifying || /^qualif/i.test(String(r.round || ''))) return false;
+    // a Tennis Explorer record row marks qualifying with a "Q-" round (Q-R16, Q-1R, Q-QF; founder 2026-10-31, pre-2021 on screen)
+    if (!r || r.walkover || r.wo || r.qualifying || /^qualif/i.test(String(r.round || '')) || /^q-/i.test(String(r.round || ''))) return false;
     return /^atp$/i.test(String(r.tier != null ? r.tier : r.level != null ? r.level : ''));
   }
   function b365PriceFor(subjName, m) {

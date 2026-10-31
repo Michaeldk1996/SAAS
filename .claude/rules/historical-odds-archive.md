@@ -89,6 +89,15 @@ file we hold is irreplaceable.
   `tools/te-b365-extract.mjs` (batches `b365-<source batch>`, no request) and stored by `tdarch.py te-import` like the TE
   Pinnacle rows, in-play rule included. Fed last before the dash, join-only (`odds.md`). **Test:**
   `tools/test-historical-archive-sql.py` (negative controls), `tools/test-tdarch.py`.
+- **Pre-2021 TE prices with no api-tennis fixture (founder ruling 2026-10-31):** `tools/tdarch.py te-pre21-import`
+  (`historical-archive.yml` modes `te-pre21-dry-run` / `te-pre21-import`) stores the private store's `te-odds-pre2021/` prices
+  (2016–2020, ATP qualifying and Challenger) as source `Tennis Explorer · Pinnacle`, insert-only, `event_key` = −(TE match ID)
+  (never an api-tennis key, which are positive). The in-play rule reads the start on TE's own match page
+  (`te-odds-pre2021/starts.json`, written on the Mac by stennisfy-ops `tools/te-pre21-starts.mjs` from the saved pages, no
+  request, Prague → UTC, the page's sha256 checked), kept in `detail.startChecked` (`startKind` "TE match page (no api-tennis
+  fixture)"); no time = not stored, counted. The result is te-history's (both players' rows agree; a walkover is not stored).
+  The lower feed and the Database build take the rows unchanged (join-only, flag `l`). **Test:** `tools/test-tdarch.py`
+  "pre-2021", stennisfy-ops `tools/te-pre21-starts.test.mjs`.
 - **Where it is used:** the Database join only (`database.md` "Pinnacle (approx.)"), never over a Tennis-Data or Oddspapi
   close; Bet365 stays the fallback where api-tennis has no pair. The private CSV export does NOT carry it (its columns are
   closes).

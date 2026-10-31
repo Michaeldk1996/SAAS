@@ -524,5 +524,52 @@ check('atp-md TE Bet365 (founder 2026-10-30: "the Database must show the same pr
       len(bm) == 1 and 'level' not in bm[0]['detail'] and bm[0]['source'] == T.TE_B365_SOURCE and bm[0]['label'] == 'Bet365 (approx.)'
       and [r['id'] for r in T.main_snapshots([dict(bm[0], id=910)])] == [910] and T.lower_feed_rows([dict(bm[0], id=910)]) == []
       and [(r['source'], r['winner'], r['psw']) for r in T.approx_feed_rows([dict(bm[0], id=910)])] == [(T.TE_B365_SOURCE, 'One A.', 1.6)], (bm, bmrep))
+
+# ── Pre-2021 on screen (founder 2026-10-31): a TE price with no api-tennis fixture, checked against TE's own page start ──
+SHA = 'a' * 64
+def PX(tid, a='Bergs Z.', b='Herbert P.', ka='1064', kb='1748', lv='pre-ch', date='2016-10-15', p1=2.5, p2=1.55, t1=None, t2=None):
+    return {'ek': f'te:{tid}', 'level': lv, 'date': date, 'a': a, 'b': b, 'ka': ka, 'kb': kb, 'teId': str(tid), 'tour': 'Antwerp',
+            'pageSha256': SHA, 'fetchedAt': '2026-10-28T18:22:00Z', 'status': 'joined',
+            'pin': {'p1': p1, 'p2': p2, 'p1Ts': t1, 'p2Ts': t2, 'open': {'p1': p1, 'p2': p2}, 'moves': [0, 0]}}
+pdocs = [{'batch': 'pre21-01', 'source': T.TE_SOURCE, 'complete': True, 'rows': [
+    PX(1),                                                     # Bergs lost (te-history won 0) -> Herbert the winner at 1.55
+    PX(2, t1='2016-10-15T15:01:00Z'),                           # last change after the 15:00Z start -> dropped
+    PX(3),                                                     # no start on the page -> not stored
+    PX(4),                                                     # walkover -> not stored
+    PX(5),                                                     # the two histories disagree -> not stored
+    PX(6, lv='pre-atp'),                                        # ATP main draw: out of scope, never stored
+    PX(7, lv='pre-atp-q', kb=None),                             # a qualifying win, one side with no api-tennis key
+    PX(8),                                                     # already priced in the archive -> not stored
+    PX(9),                                                     # a retirement
+    PX(10, p2=1.0),                                            # a side below 1.01
+]}]
+pst = {str(i): {'start': '2016-10-15T15:00:00Z', 'stamp': '15.10.2016 17:00', 'pageSha256': SHA} for i in (1, 2, 4, 5, 6, 7, 8, 9, 10)}
+H = lambda won, wo=0, ret=0, rnd='R16': {'won': won, 'wo': wo, 'ret': ret, 'round': rnd}
+phist = {'1': [('1064', H(0)), ('1748', H(1))], '2': [('1064', H(0))], '3': [('1064', H(0))], '4': [('1064', H(1, wo=1))],
+         '5': [('1064', H(1)), ('1748', H(1))], '6': [('1064', H(1))], '7': [('1064', H(1, rnd='Q-R16'))], '8': [('1064', H(1))],
+         '9': [('1748', H(0, ret=1))], '10': [('1064', H(1))]}
+prows, prep = T.te_pre21_rows(pdocs, pst, phist, lambda ka, kb, d: {ka, kb} == {'1064', '1748'} and d == '2016-10-15' and False)
+by = {r['detail']['teMatchId']: r for r in prows}
+check('pre-2021: the winner comes from te-history (Bergs lost: Herbert wins at 1.55, Bergs 2.50), keyed by the negative TE match ID',
+      by.get('1', {}).get('winner') == 'Herbert P.' and by['1']['price_winner'] == 1.55 and by['1']['price_loser'] == 2.5
+      and by['1']['event_key'] == -1 and by['1']['detail']['winnerKey'] == '1748' and by['1']['detail']['level'] == 'ch'
+      and by['1']['detail']['startKind'] == T.PRE21_START_KIND and by['1']['detail']['startChecked'] == '2016-10-15T15:00:00Z', prows)
+check('pre-2021: a price whose last change came after the TE page start is dropped (the in-play rule)', '2' not in by and prep.get('dropped: last change after the start') == 1, prep)
+check('pre-2021: no start on the TE page = not stored, counted', '3' not in by and prep.get('not stored: no start on the TE page') == 1, prep)
+check('pre-2021: a walkover is never stored', '4' not in by and prep.get('walkover') == 1, prep)
+check("pre-2021: two te-history rows that disagree on the result = not stored", '5' not in by and prep.get("the two players' te-history rows disagree on the result") == 1, prep)
+check('pre-2021: ATP main draw is out of scope (founder: "Don\'t touch ATP main draw")', '6' not in by and prep.get('level out of scope') == 1, prep)
+check('pre-2021: ATP qualifying stored as atp-q, an absent key stays empty', by.get('7', {}).get('detail', {}).get('level') == 'atp-q' and by['7']['detail']['loserKey'] == '', prows)
+check('pre-2021: a retirement is stored with status Retired (the lower feed settles it on Pinnacle rules)', by.get('9', {}).get('detail', {}).get('status') == 'Retired', prows)
+check('pre-2021: a side below 1.01 is never stored', '10' not in by and prep.get('a side below 1.01') == 1, prep)
+_, prep2 = T.te_pre21_rows(pdocs, pst, phist, lambda ka, kb, d: str(ka) in ('1064',) and d == '2016-10-15')
+check('pre-2021: a match the archive already prices is never stored over (any row that already holds a price)', prep2.get('already priced in the archive', 0) >= 1, prep2)
+_, prep3 = T.te_pre21_rows(pdocs, {k: dict(v, pageSha256='b' * 64) for k, v in pst.items()}, phist)
+check('control: a start read from a different page (sha256 differs) is no start — nothing stored', prep3.get('stored', 0) == 0 and prep3.get('not stored: no start on the TE page') == 6, prep3)
+pf = T.lower_feed_rows([dict(r, id=1000 + i) for i, r in enumerate(prows)])
+check('pre-2021: the lower feed carries them unchanged (level, both keys, negative event key, the TE source)',
+      sorted((r['eventKey'], r['level'], r['source']) for r in pf) == sorted((r['event_key'], r['detail']['level'], T.TE_SOURCE) for r in prows) and len(pf) == len(prows), pf)
+pix = T.te_pre21_priced_index([{'wk': '1064', 'lk': '1748', 'match_date': '2016-10-16'}])
+check('pre-2021: the already-priced lookup is the same two keys +-1 day, either order', pix('1748', '1064', '2016-10-15') and not pix('1748', '1064', '2016-10-13') and not pix('1064', '', '2016-10-16'))
 print(f'\ntest-tdarch: {passed} passed, {failed} failed')
 sys.exit(1 if failed else 0)

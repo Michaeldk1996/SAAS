@@ -42,6 +42,10 @@ Commands
                             the current api-tennis fixture; env API_TENNIS_KEY. --dry-run counts, inserts nothing
   te-import-new STORE OUT   the scheduled import (te-import-scheduled.yml): runs te-import only when the store holds a
                             complete batch the archive has no row of; one line per new batch into OUT (else OUT is empty)
+  te-pre21-import STORE [--dry-run]
+                            Pre-2021 on screen (founder 2026-10-31): the pre-2021 TE Pinnacle prices in te-odds-pre2021/
+                            (no api-tennis fixture), checked against the start on TE's own page, the result from te-history;
+                            keyed by the negative TE match ID. --dry-run counts, inserts nothing
   approx-feed OUT.csv       the current snapshots as the Database builder's feed (build-database-yield.js), each row with
                             its source
 Env: SUPABASE_URL, SUPABASE_SECRET_KEY (service_role: SELECT + INSERT only)."""
@@ -1540,6 +1544,156 @@ def cmd_te_import_new(store, out_path):
     return lines
 
 
+# ── Pre-2021 on screen (founder 2026-10-31) ──────────────────────────────────────────────────────────────────────────
+# The 17,073 pre-2021 TE Pinnacle prices (stennisfy-te-store te-odds-pre2021/: 2016-2020, ATP qualifying and Challenger,
+# read by TE match ID from the career-record store) have no api-tennis fixture. Ruling: such a price may be stored using the
+# start time on TE's own match page for the in-play rule (te-odds-pre2021/starts.json, stennisfy-ops te-pre21-starts.mjs,
+# Prague -> UTC, the page's sha256 checked); no time = not stored, counted. The result (who won, a retirement, a walkover)
+# is the player's own te-history row for that TE match ID; both players' rows, where both exist, must agree. The row is
+# keyed by the NEGATIVE TE match ID (event_key; never an api-tennis key, which are positive) and carries the level, both
+# api-tennis keys and the status, so the lower feed and the Database build take it unchanged (join-only, flag l: never a
+# Database figure). Never stored over a match the archive already prices at a lower level (the same two keys, +-1 day).
+PRE21_DIR = 'te-odds-pre2021'
+PRE21_STARTS = 'starts.json'
+PRE21_LEVELS = {'pre-atp-q': 'atp-q', 'pre-ch': 'ch', 'pre-ch-q': 'ch-q'}
+PRE21_START_KIND = 'TE match page (no api-tennis fixture)'
+
+
+def te_pre21_docs(store):
+    """The COMPLETE pre21 batch files (te-odds-pre2021/pre21-*.json) and the start-times file."""
+    docs = []
+    for f in sorted(glob.glob(os.path.join(store, PRE21_DIR, 'pre21-*.json'))):
+        with open(f) as fh:
+            d = json.load(fh)
+        if d.get('source') != TE_SOURCE or not isinstance(d.get('rows'), list):
+            P.die(f'{f}: not a pre21 batch file (source {d.get("source")!r})')
+        if d.get('complete'):
+            docs.append(d)
+    sf = os.path.join(store, PRE21_DIR, PRE21_STARTS)
+    starts = (json.load(open(sf)).get('starts') or {}) if os.path.exists(sf) else {}
+    return docs, starts
+
+
+def te_pre21_history(store):
+    """teMatchId -> [(player key, row as a dict)] from the career-record store's te-history/<key>.json."""
+    out = collections.defaultdict(list)
+    for f in glob.glob(os.path.join(store, 'te-history', '*.json')):
+        with open(f) as fh:
+            h = json.load(fh)
+        cols = h.get('cols') or []
+        if 'teMatchId' not in cols:
+            continue
+        for r in h.get('rows') or []:
+            o = dict(zip(cols, r))
+            if o.get('teMatchId'):
+                out[str(o['teMatchId'])].append((str(h.get('key')), o))
+    return out
+
+
+def te_pre21_result(x, hist):
+    """(a won?, round, retired?) of a pre21 row from the te-history rows of its TE match ID, or (None, reason)."""
+    rs = [(k, o) for k, o in hist.get(str(x.get('teId')), []) if k in (str(x.get('ka')), str(x.get('kb')))]
+    if not rs:
+        return None, 'no te-history row for the TE match'
+    if any(o.get('wo') for _, o in rs):
+        return None, 'walkover'
+    wins = {(o.get('won') == 1) == (k == str(x.get('ka'))) for k, o in rs}   # True = a won
+    if len(wins) != 1:
+        return None, "the two players' te-history rows disagree on the result"
+    return (wins.pop(), rs[0][1].get('round'), any(o.get('ret') for _, o in rs)), None
+
+
+def te_pre21_rows(docs, starts, hist, priced=lambda ka, kb, date: False):
+    """Snapshot rows for the pre21 prices + a report. `priced(ka, kb, date)` = the archive already prices this match at a
+    lower level (then no row)."""
+    rows, rep = [], collections.Counter()
+    for d in docs:
+        for x in d['rows']:
+            if x.get('status') != 'joined':
+                rep[str(x.get('status'))] += 1; continue
+            p = x.get('pin')
+            if not p:
+                rep['joined, no Pinnacle on the page'] += 1; continue
+            lv = PRE21_LEVELS.get(x.get('level'))
+            if not lv:
+                rep['level out of scope'] += 1; continue
+            p1, p2 = price(p.get('p1')), price(p.get('p2'))
+            if p1 is None or p2 is None:
+                rep['a side below 1.01'] += 1; continue
+            if not re.fullmatch(r'[0-9a-f]{64}', str(x.get('pageSha256') or '')) or not re.fullmatch(r'[0-9]+', str(x.get('teId') or '')):
+                rep['no page sha256 / TE id'] += 1; continue
+            res, why = te_pre21_result(x, hist)
+            if res is None:
+                rep[why] += 1; continue
+            a_won, rnd, ret = res
+            s = starts.get(str(x['teId'])) or {}
+            start = _ts(s.get('start')) if s.get('pageSha256') == x['pageSha256'] else None
+            if start is None:
+                rep['not stored: no start on the TE page'] += 1; continue
+            ts = [t for t in (p.get('p1Ts'), p.get('p2Ts')) if t]
+            pts = max(ts) if ts else None
+            if pts and _ts(pts) and _ts(pts) > start:
+                rep['dropped: last change after the start'] += 1; continue
+            ka, kb = str(x.get('ka') or ''), str(x.get('kb') or '')
+            if priced(ka, kb, x['date']):
+                rep['already priced in the archive'] += 1; continue
+            if not pts:
+                rep['kept, no TE timestamp'] += 1
+            elif _ts(pts) > start - dt.timedelta(minutes=1):
+                rep["kept, in the start's own minute"] += 1
+            W, L = (x['a'], x['b']) if a_won else (x['b'], x['a'])
+            pw, pl = (p1, p2) if a_won else (p2, p1)
+            wts, lts = (p.get('p1Ts'), p.get('p2Ts')) if a_won else (p.get('p2Ts'), p.get('p1Ts'))
+            o = p.get('open') or {}
+            rows.append({'dedupe_key': '|'.join(str(v) for v in (TE_SOURCE, x['date'], x.get('tour'), W, L, -int(x['teId']), pw, pl, x['pageSha256'])),
+                         'source': TE_SOURCE, 'label': APPROX_LABEL, 'match_date': x['date'], 'tournament': str(x.get('tour') or '').strip(),
+                         'round': rnd or None, 'winner': W, 'loser': L, 'event_key': -int(x['teId']),
+                         'price_winner': pw, 'price_loser': pl, 'fetched_at': x.get('fetchedAt'), 'price_ts': pts,
+                         'detail': {'level': lv, 'round': rnd, 'winnerKey': ka if a_won else kb, 'loserKey': kb if a_won else ka,
+                                    'status': 'Retired' if ret else 'Finished', 'teMatchId': str(x['teId']), 'pageSha256': x['pageSha256'],
+                                    'batch': d.get('batch'), 'teTournament': x.get('tour'), 'books': x.get('books') or [], 'moves': p.get('moves'),
+                                    'sideTs': {'winner': wts, 'loser': lts},
+                                    'open': {'winner': o.get('p1' if a_won else 'p2'), 'loser': o.get('p2' if a_won else 'p1')},
+                                    'noApiTennisFixture': True, 'hover': TE_HOVER, 'teStamp': s.get('stamp'),
+                                    'startChecked': start.isoformat().replace('+00:00', 'Z'), 'startKind': PRE21_START_KIND}})
+            rep['stored'] += 1; rep[f'stored {lv} {x["date"][:4]}'] += 1
+    return rows, dict(rep)
+
+
+def te_pre21_priced_index(held):
+    """(sorted keys, date) of every lower-level snapshot the archive holds (any source) -> a +-1 day lookup."""
+    ix = set()
+    for h in held:
+        if h.get('wk') and h.get('lk'):
+            ix.add((tuple(sorted((str(h['wk']), str(h['lk'])))), str(h['match_date'])[:10]))
+    def priced(ka, kb, date):
+        if not (ka and kb):
+            return False
+        k, d0 = tuple(sorted((ka, kb))), dt.date.fromisoformat(date)
+        return any((k, (d0 + dt.timedelta(days=i)).isoformat()) in ix for i in (-1, 0, 1))
+    return priced
+
+
+def cmd_te_pre21_import(store, dry_run=False):
+    docs, starts = te_pre21_docs(store)
+    if not docs:
+        P.die(f'{store}/{PRE21_DIR}: no complete pre21 batch file')
+    hist = te_pre21_history(store)
+    held = P.select_all(SNAP, 'id,dedupe_key,source,match_date,tournament,winner,loser,supersedes,event_key')
+    lower = P.select_all(SNAP, 'id,match_date,wk:detail->>winnerKey,lk:detail->>loserKey', 'match_date=lt.2021-01-03')
+    rows, rep = te_pre21_rows(docs, starts, hist, te_pre21_priced_index(lower))
+    add = plan_snapshots(rows, held)
+    ids = []
+    if not dry_run:
+        for i in range(0, len(add), 500):
+            ids += P.insert(SNAP, add[i:i + 500], 'dedupe_key')
+    print('### te-pre21-import', json.dumps({'dryRun': dry_run, 'batches': [d.get('batch') for d in docs], 'starts': len(starts),
+                                             'report': rep, 'wouldAdd' if dry_run else 'added': len(add) if dry_run else len(ids)}))
+    if not dry_run:
+        cmd_snapshot_counts('te-pre21-import')
+    return rows, rep, add
+
+
 def main_snapshots(cur):
     """The ATP main draw's current snapshots: every one with no level; a Tennis Explorer row (founder 2026-10-30, level atp-md
     at import) only while the feed switch is on and never one whose last change came after the start it was checked against."""
@@ -1650,6 +1804,8 @@ if __name__ == '__main__':
         cmd_te_import(a[1], '--dry-run' in a)
     elif a[0] == 'te-import-new':
         cmd_te_import_new(a[1], a[2])
+    elif a[0] == 'te-pre21-import':
+        cmd_te_pre21_import(a[1], '--dry-run' in a)
     elif a[0] == 'snapshot-counts':
         cmd_snapshot_counts(a[a.index('--record') + 1] if '--record' in a else None)
     else:

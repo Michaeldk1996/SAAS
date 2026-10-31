@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: install | daily | verify-export | restore-check | inventory | approx-import | start10-dry-run | start10-import | lower-dry-run | lower-import | te-dry-run | te-import
+        description: install | daily | verify-export | restore-check | inventory | approx-import | start10-dry-run | start10-import | lower-dry-run | lower-import | te-dry-run | te-import | te-pre21-dry-run | te-pre21-import
         required: true
         default: daily
 permissions:
@@ -92,7 +92,7 @@ jobs:
       # never a close. The store is read with its read-only token into .te-store/ (outside every published path). Whether a
       # page reads these rows is tools/tdarch.py TE_FEED_ON (off until the founder approves the calibration).
       - name: Tennis Explorer — check out the private store (read-only token)
-        if: env.MODE == 'te-import' || env.MODE == 'te-dry-run'
+        if: env.MODE == 'te-import' || env.MODE == 'te-dry-run' || env.MODE == 'te-pre21-import' || env.MODE == 'te-pre21-dry-run'
         uses: actions/checkout@v4
         with:
           repository: michaeldk1996/stennisfy-te-store
@@ -103,6 +103,11 @@ jobs:
         env:
           API_TENNIS_KEY: ${{ secrets.API_TENNIS_KEY }}
         run: python3 tools/tdarch.py te-import .te-store ${{ env.MODE == 'te-dry-run' && '--dry-run' || '' }}
+      # founder 2026-10-31 (Pre-2021 on screen): the pre-2021 TE prices in te-odds-pre2021/ (no api-tennis fixture), checked
+      # against the start on TE's own match page, the result from te-history; insert-only, keyed by the negative TE match ID.
+      - name: Tennis Explorer — import the pre-2021 prices (insert-only; --dry-run counts)
+        if: env.MODE == 'te-pre21-import' || env.MODE == 'te-pre21-dry-run'
+        run: python3 tools/tdarch.py te-pre21-import .te-store ${{ env.MODE == 'te-pre21-dry-run' && '--dry-run' || '' }}
       - name: lower levels — hand the unpriced reasons to the pipeline (founder ruling 2026-10-18 item 5)
         if: (env.MODE == 'lower-import' || env.MODE == 'daily') && hashFiles('lower-unpriced.json') != ''
         uses: actions/upload-artifact@v4

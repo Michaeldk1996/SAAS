@@ -476,11 +476,14 @@ function shapeChecks(A, shape) {
 // underdog role from the site's one price join (window.pp2CareerClose, stubbed here with the join's shape); an ATP
 // main-draw match never does (it keeps the Market edge basis); a joined price below 1.01 on a side is no role.
 const JOIN = { 'C. Cover': { price: 1.5, oppPrice: 2.6, book: 'pinnacle-approx-te' }, 'D. Miss': { price: 2.4, oppPrice: 1.6, book: 'bet365-approx-te' },
-  'E. Void': { price: 1.4, oppPrice: 3.0, book: 'pinnacle' }, 'B. Void': { price: 1.0, oppPrice: 9.0, book: 'bet365' } };
-function withJoin(src) {
+  'E. Void': { price: 1.4, oppPrice: 3.0, book: 'pinnacle' }, 'B. Void': { price: 1.0, oppPrice: 9.0, book: 'bet365' },
+  'Q. Qual': { price: 1.7, oppPrice: 2.2, book: 'pinnacle-approx-te' } };
+// a Tennis Explorer record row marks qualifying with a "Q-" round (Q-R16, Q-1R, Q-QF): qualifying, never ATP main draw
+const QUAL_ROW = row('2025-07-07', 'atp', 'ATP Quebec', 'Q. Qual', '2 - 0', true, S([[6, 4], [6, 3]]), { round: 'Q-R16' });
+function withJoin(src, more) {
   const p = JSON.parse(JSON.stringify(FX.profile));
   p.tournamentHistory = FX.tournamentHistory;
-  const ch = FX.careerHistory.concat(EXTRA);
+  const ch = FX.careerHistory.concat(EXTRA, more || []);
   const wo = ch.findIndex((r) => !/\d/.test(r.result));
   p.careerByYear = TJ.careerByYearFromRows(ch.filter((r, i) => i !== wo));
   const cl = { rows: [] };
@@ -509,6 +512,15 @@ function joinChecks() {
     pool.filter((m) => m.r.opp === 'E. Void' || m.r.opp === 'B. Void').forEach((m) => assert.strictEqual(m.role, null, m.r.opp + ' ' + m.role));
     return 'E. Void (ATP main draw) and B. Void (1.00) unpriced';
   });
+  H.check('J · an ATP qualifying match from the Tennis Explorer record (round "Q-R16") takes its role from the join (pre-2021 on screen, 2026-10-31)', () => {
+    const q = withJoin(undefined, [QUAL_ROW]);
+    const c = q.I.lineCoverage(q.p, 'bo3', 'all', { tier: 'atp' });
+    const pool = []; rowsOf(c).forEach((r) => r.members.forEach((x) => pool.push(x.m)));
+    const m = pool.find((x) => x.r.opp === 'Q. Qual');
+    assert(m, 'Q. Qual not in the ATP pool'); assert.strictEqual(m.role, 'fav'); assert.strictEqual(m.r.book, 'pinnacle-approx-te');
+    assert.strictEqual(c.favN + c.dogN + c.unpriced, c.all);
+    return 'Q. Qual favourite at 1.70 (TE Pinnacle)';
+  });
   H.check('J · the Challenger & ITF cards and tables show the joined roles, worded "priced", never "closed"', () => {
     const html = withState(I, { key: p.key, marketTab: 'lines', lcFmt: 'bo3', lcRole: 'fav', lcWin: 'career', lcTier: 'chitf', lcDrill: null }, () => I.renderLinesTab(p));
     assert(/data-lc-line=/.test(html), 'no rated line under As favourite');
@@ -530,6 +542,13 @@ function mutants() {
     fs.writeFileSync(f, SRC_TEXT.replace('lr === cc && !masterClass(r) &&', 'lr === cc &&'));
     try { const m = withJoin(f); const c = m.I.lineCoverage(m.p, 'bo3', 'all', { tier: 'all' });
       rowsOf(c).forEach((r) => r.members.forEach((x) => { if (x.m.r.opp === 'E. Void') assert.strictEqual(x.m.role, null); })); } finally { fs.unlinkSync(f); }
+  });
+  H.mustFail('a "Q-" round read as ATP main draw (masterClass without the Tennis Explorer qualifying test) is caught', () => {
+    const f = path.join(require('os').tmpdir(), 'pp2-join-mutant3-' + process.pid + '.js');
+    fs.writeFileSync(f, SRC_TEXT.replace(" || /^q-/i.test(String(r.round || ''))", ''));
+    try { const m = withJoin(f, [QUAL_ROW]); const c = m.I.lineCoverage(m.p, 'bo3', 'all', { tier: 'atp' });
+      const pool = []; rowsOf(c).forEach((r) => r.members.forEach((x) => pool.push(x.m)));
+      assert.strictEqual(pool.find((x) => x.r.opp === 'Q. Qual').role, 'fav'); } finally { fs.unlinkSync(f); }
   });
   H.mustFail('Derived lines ignoring the join (roleOf back on cents only) is caught', () => {
     const f = path.join(require('os').tmpdir(), 'pp2-join-mutant2-' + process.pid + '.js');
