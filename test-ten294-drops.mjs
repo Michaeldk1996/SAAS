@@ -1089,9 +1089,36 @@ test('pop-up review 2: the SQL rules sit in the step that uses them (block comme
   const cte = (name, next) => sql.slice(sql.indexOf(name + ' as ('), sql.indexOf(next + ' as ('));
   assert.match(cte('ko', 'pts'), /and o\.side_id in \(2, 3\)/, 'the side filter is in the Bet105 step itself');
   assert.match(cte('per_side', 'per_book'), /filter \(where rn <= 1000\)[\s\S]*count\(\*\) > 1000 truncated/, 'the whole-life rule and its truncation flag are in the series step');
-  assert.match(cte('per_book', 'zzz_end') || sql.slice(sql.indexOf('per_book as (')), /'lastSeen', \(select max\(p\.seen\) from pts p/);
+  assert.match(cte('seen', 'per_book'), /select k1, k2, ks, book, max\(seen\) last_seen from pts group by 1, 2, 3, 4/, 'lastSeen = every sighting, one grouped pass');
+  assert.match(cte('per_book', 'books'), /'lastSeen', max\(sn\.last_seen\)/);
   assert.match(cte('ko', 'pts'), /coalesce\(o\.last_seen_at, o\.inserted_on\) seen/);
   assert.match(cte('tk', 'ko'), /t\.seen_at seen/);
+});
+
+test('overload 2026-10-30: the read is bounded on the server and lines() does each pass once', () => {
+  // drops_reader's own statement_timeout: the app's startup option did not bound the reads (17–19 min each, five at
+  // a time); the role setting holds whatever the pooler forwards, and fires before the app gives up
+  const api = read('tools/ten294-drops-api.sql').replace(/--.*$/gm, '');
+  const m = api.match(/alter role drops_reader set statement_timeout = '(\d+)s';/);
+  assert.ok(m, 'drops_reader carries its own statement_timeout');
+  const cfg = dbConfig('postgresql://u.ref:p@h:5432/postgres', 'CA');
+  assert.ok(Number(m[1]) * 1000 < cfg.query_timeout, 'the server stops the read before the app abandons it');
+  assert.ok(api.indexOf('alter role drops_reader') > api.indexOf("create role drops_reader"), 'set after the role exists');
+  const steps = JSON.parse(read('tools/ten294-steps-install.json'));
+  assert.ok(steps.find((x) => x.name === 'reader_timeout' && x.required), 'the install reads the setting back');
+  // lines(): measured 7.5 s -> 0.8 s on the live store, output md5-identical at 24 / 48 / 72 h
+  const sql = read('tools/ten294-drops-lines.sql').replace(/--.*$/gm, '');
+  assert.match(sql, /fx_c as materialized \(/, 'fixtures keyed once, not once per selection');
+  assert.match(sql, /ev_c as materialized \(/);
+  assert.doesNotMatch(sql, /from pts p where/, 'no re-scan of pts per book (it spilled ~2.3 GB of temp a read)');
+  assert.doesNotMatch(sql, /from per_side p where/, 'no correlated per_side scans per book');
+  assert.doesNotMatch(sql, /from per_book pb\s+where/, 'no correlated per_book scan per selection');
+  assert.match(sql, /left join books b on b\.k1 = s\.k1 and b\.k2 = s\.k2 and b\.ks = s\.ks/);
+  assert.match(sql, /'books', coalesce\(b\.books, '\{\}'::jsonb\)/, 'a selection with no book still ships {}');
+  // the SQL-only reinstall never touches the Fly app
+  const wf = read('.github/workflows/ten294-drops.yml');
+  assert.match(wf, /\n  workflow_dispatch:\n/);
+  assert.match(wf, /deploy:\n\s+needs: sql\n\s+if: github\.event_name == 'push'\n/, 'deploy (and the watchdog after it) is push-only');
 });
 
 test('pop-up review 2: the board date window is ±36 h around noon UTC of the card\'s date (live UTC+2 / Kibl drift cases)', () => {

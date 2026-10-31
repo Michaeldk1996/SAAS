@@ -17,6 +17,11 @@
   "sql": "select has_function_privilege('anon', 'drops_api.snapshot(integer)', 'execute') anon_exec, has_function_privilege('authenticated', 'drops_api.snapshot(integer)', 'execute') auth_exec, has_function_privilege('drops_reader', 'drops_api.snapshot(integer)', 'execute') reader_exec, (select rolcanlogin from pg_roles where rolname = 'drops_reader') reader_login, has_schema_privilege('anon', 'drops_api', 'usage') anon_usage"
  },
  {
+  "name": "reader_timeout",
+  "required": true,
+  "sql": "select (select array_to_string(s.setconfig, ',') from pg_db_role_setting s join pg_roles r on r.oid = s.setrole where r.rolname = 'drops_reader' and s.setdatabase = 0) reader_config"
+ },
+ {
   "name": "plan_poller_watermark",
   "sql": "explain select o.last_seen_at from public.kibl_line_observations o where o.feed_source_id = 171 and o.last_seen_at is not null order by o.last_seen_at desc limit 1"
  },

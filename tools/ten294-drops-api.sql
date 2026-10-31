@@ -24,6 +24,11 @@ do $$ begin
   end if;
 end $$;
 grant usage on schema drops_api to drops_reader;
+-- Server-side limit (overload 2026-10-30). The Fly app's 20 s statement_timeout is a startup option sent through the
+-- session pooler; it did not bound the reads. A read the app abandoned at 25 s ran on, then hung ~18 min writing to a
+-- dead socket (Postgres cannot cancel a backend blocked in ClientWrite), five at a time. The role setting applies
+-- to every drops_reader session whatever the pooler forwards: execution stops before the app gives up.
+alter role drops_reader set statement_timeout = '20s';
 
 create or replace function drops_api.snapshot(p_hours integer default 24) returns jsonb
 language plpgsql security definer

@@ -53,7 +53,8 @@ sel as (   -- one per selection: the players/side of its newest alert, any known
     from k where ka <> '' and kb <> '' and ka <> kb and ks in (ka, kb)
    group by 1, 2, 3
 ),
-fx_c as (  -- Kibl fixtures in reach (bounded window), keyed once
+fx_c as materialized (  -- Kibl fixtures in reach (bounded window), keyed once (materialized: inlined, every
+                        -- selection re-keyed every fixture, ~1 s of nk() a read — overload 2026-10-30)
   select f.fixture_id, f.scheduled_start, f.player1_name, f.player2_name,
          least(drops_api.nk(f.player1_name), drops_api.nk(f.player2_name)) k1,
          greatest(drops_api.nk(f.player1_name), drops_api.nk(f.player2_name)) k2
@@ -61,7 +62,7 @@ fx_c as (  -- Kibl fixtures in reach (bounded window), keyed once
    where f.scheduled_start >= now() - make_interval(hours => p_hours + 24)
      and f.scheduled_start <  now() + interval '3 days'
 ),
-ev_c as (
+ev_c as materialized (
   select e.event_id, e.start_at, e.home, e.away,
          least(drops_api.nk(e.home), drops_api.nk(e.away)) k1, greatest(drops_api.nk(e.home), drops_api.nk(e.away)) k2
     from ten287_rec.events e
@@ -132,26 +133,33 @@ per_side as (
          count(*) > 1000 truncated     -- the whole recorded life (opening -> now axis); the newest 1000 if longer
     from kept group by 1, 2, 3, 4, 5
 ),
-per_book as (
-  select k1, k2, ks, book,
+seen as (  -- every sighting, re-stamps included (the series collapses them): a book not seen lately is not
+           -- quoting. One grouped pass: a re-scan of pts per book read ~2.3 GB of temp a call (overload 2026-10-30)
+  select k1, k2, ks, book, max(seen) last_seen from pts group by 1, 2, 3, 4
+),
+per_book as (  -- one row per book, both sides pivoted from per_side in one pass
+  select p.k1, p.k2, p.ks, p.book,
          jsonb_build_object(
-           'source', case when book = 'Bet105' then 'Kibl' else 'odds-api.io' end,
-           -- every sighting, re-stamps included (the series collapses them): a book not seen lately is not quoting
-           'lastSeen', (select max(p.seen) from pts p where p.k1 = b.k1 and p.k2 = b.k2 and p.ks = b.ks and p.book = b.book),
-           'first', (select jsonb_build_array(p.first_at, round(p.first_px::numeric, 3)) from per_side p
-                      where p.k1 = b.k1 and p.k2 = b.k2 and p.ks = b.ks and p.book = b.book and p.w = 's'),
-           'side',  coalesce((select p.series from per_side p where p.k1 = b.k1 and p.k2 = b.k2 and p.ks = b.ks and p.book = b.book and p.w = 's'), '[]'::jsonb),
-           'other', coalesce((select p.series from per_side p where p.k1 = b.k1 and p.k2 = b.k2 and p.ks = b.ks and p.book = b.book and p.w = 'o'), '[]'::jsonb),
-           'truncated', coalesce((select p.truncated from per_side p where p.k1 = b.k1 and p.k2 = b.k2 and p.ks = b.ks and p.book = b.book and p.w = 's'), false)
+           'source', case when p.book = 'Bet105' then 'Kibl' else 'odds-api.io' end,
+           'lastSeen', max(sn.last_seen),
+           'first', (array_agg(jsonb_build_array(p.first_at, round(p.first_px::numeric, 3))) filter (where p.w = 's'))[1],
+           'side',  coalesce((array_agg(p.series) filter (where p.w = 's'))[1], '[]'::jsonb),
+           'other', coalesce((array_agg(p.series) filter (where p.w = 'o'))[1], '[]'::jsonb),
+           'truncated', coalesce((array_agg(p.truncated) filter (where p.w = 's'))[1], false)
          ) j
-    from (select distinct k1, k2, ks, book from per_side) b
+    from per_side p
+    join seen sn on sn.k1 = p.k1 and sn.k2 = p.k2 and sn.ks = p.ks and sn.book = p.book
+   group by p.k1, p.k2, p.ks, p.book
+),
+books as (
+  select k1, k2, ks, jsonb_object_agg(book, j) books from per_book group by 1, 2, 3
 )
 select coalesce(jsonb_agg(jsonb_build_object(
          'key', s.k1 || '|' || s.k2 || '|' || s.ks, 'playerA', s.pa, 'playerB', s.pb, 'side', s.sp,
-         'books', coalesce((select jsonb_object_agg(pb.book, pb.j) from per_book pb
-                             where pb.k1 = s.k1 and pb.k2 = s.k2 and pb.ks = s.ks), '{}'::jsonb))
+         'books', coalesce(b.books, '{}'::jsonb))
        order by s.k1, s.k2, s.ks), '[]'::jsonb)
   from sel s
+  left join books b on b.k1 = s.k1 and b.k2 = s.k2 and b.ks = s.ks
 -- END LINES QUERY
 $fn$;
 

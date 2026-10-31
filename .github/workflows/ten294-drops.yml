@@ -10,6 +10,9 @@ name: ten294-drops
 on:
   push:
     branches: [ten294-drops]
+  # SQL only (overload fix, founder 2026-10-30): reinstalls drops_api + the drops_reader role setting from the
+  # dispatched ref. Never deploys, restarts or re-keys the Fly app: deploy (and the watchdog after it) is push-only.
+  workflow_dispatch:
 permissions:
   contents: read
 concurrency:
@@ -40,6 +43,7 @@ jobs:
 
   deploy:
     needs: sql
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:

@@ -44,6 +44,8 @@ answers on card 37612d3d (TEN-294 doc `design`). Suite: `test-ten294-drops.mjs`.
   Before the first good read, `/drops.json` answers 503, never an empty list.
   *Exception to CLAUDE.md's "no infrastructure warning" non-negotiable* (founder, card 79e9db02 Q3, 2026-09-26): this one banner, worded exactly as the export draws it, coloured `--neg` caps text on a card-tone banner (`--card` + `--top-light`, TEN-427 What changes 9; was a white 4% banner) with no red fill (founder R4, TEN-376), Reconnect `--link`. Nothing else on the page names a feed, bot or service. Source-by-source health lives in `/status.json` and the watchdog.
 
+- **The read is bounded on the database, not only in the app** (founder 2026-10-30, after the 29–30 Oct overload).
+  **Test:** role `drops_reader` carries `statement_timeout = '20s'`, below the app's 25 s `query_timeout`, so the server stops a slow read before the app abandons it. The app's own startup option did not bound the reads: they ran 17–19 min each, five at a time, the last stretch blocked writing to a dead socket, which no timeout cancels. `drops_api.lines` does each pass once: materialized fixture/event keys, `lastSeen` in one grouped pass, no per-book or per-selection re-scans. Output stayed md5-identical at 24/48/72 h; measured 7.5 s → 0.8 s. `ten294-drops.yml` dispatched = SQL only, never a Fly deploy (`test-ten294-drops.mjs` "overload 2026-10-30").
 - **The database link is verified TLS or nothing.** The Fly app verifies the pooler against the bundled Supabase Root 2021 CA and refuses to start without it.
   **Test:** the connection URL carries no `ssl*` parameter (in node-postgres one overrides the CA silently). Failures are public only as a code, never the driver's text.
 
