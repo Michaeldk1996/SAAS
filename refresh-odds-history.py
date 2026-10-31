@@ -255,6 +255,17 @@ JOIN_TOLERANCE_H = 6.0
 # match is ~2h out (well inside the gate), a wrong-day one is ~24h out (well
 # outside it), so the gate separates them without any calibration at all.
 MIN_CALIB_SAMPLES = 3
+# A feed placeholder start is not a start. api-tennis lists a newly posted draw
+# before its order of play with every card at one date and time (2026-10-31:
+# all 17 Paris first-round cards at 2026-11-02 10:00, a day off oddspapi's
+# fixtures). Those cards outvoted the real ones and the median read +24.00h, so
+# the four real semi-finals that day landed 23h from their fixtures and went
+# unjoined. A block of this many cards sharing one event, date and time is a
+# placeholder: it never votes in the median and is joined like a card with no
+# clock (exactly one candidate on both surnames inside the window). A real
+# same-time block this large (a Slam's first-day 11:00 starts) loses only its
+# votes and its time disambiguation, never a correct single-candidate join.
+PLACEHOLDER_BLOCK_MIN = 5
 
 # The committed matches.json is written back only by the refreshers, so its
 # match SET never advances on its own — the main pipeline rebuilds today's board
@@ -519,6 +530,18 @@ def board_start_naive(m):
         return None
 
 
+def placeholder_starts(matches):
+    """ids of the cards whose board start is a feed placeholder: a block of at
+    least PLACEHOLDER_BLOCK_MIN cards at one event on one date and time."""
+    blocks = {}
+    for m in matches:
+        if board_start_naive(m) is None:
+            continue
+        k = (str(m.get('tournamentKey') or m.get('tour') or ''), m.get('date'), (m.get('time') or '')[:5])
+        blocks.setdefault(k, []).append(m)
+    return {id(m) for b in blocks.values() if len(b) >= PLACEHOLDER_BLOCK_MIN for m in b}
+
+
 def fixture_start(f):
     try:
         return datetime.fromisoformat((f.get('startTime') or '').replace('Z', '+00:00'))
@@ -569,6 +592,14 @@ def join_fixtures(targets, fixtures, calibrate_from=None):
         return out
 
     by_match = [(m, candidates_for(m)) for m in targets if m.get('date')]
+    seen, pool = set(), []
+    for m in list(targets) + list(calibrate_from or []):
+        if id(m) not in seen:
+            seen.add(id(m)); pool.append(m)
+    placeholder = placeholder_starts(pool)
+
+    def real_start(m):
+        return None if id(m) in placeholder else board_start_naive(m)
 
     # --- calibrate the account offset off the single-candidate joins ---
     calib = by_match if calibrate_from is None else \
@@ -577,7 +608,7 @@ def join_fixtures(targets, fixtures, calibrate_from=None):
     for m, cands in calib:
         if len(cands) != 1:
             continue
-        bs = board_start_naive(m)
+        bs = real_start(m)
         if bs is None:
             continue
         deltas.append((bs - cands[0][1]).total_seconds() / 3600.0)
@@ -586,7 +617,8 @@ def join_fixtures(targets, fixtures, calibrate_from=None):
         offset_h = deltas[len(deltas) // 2]          # median
         print(f'Account-timezone offset measured this run: {offset_h:+.2f}h '
               f'(median of {len(deltas)} unambiguous join(s) across the board, '
-              f'range {min(deltas):+.2f}..{max(deltas):+.2f}).')
+              f'range {min(deltas):+.2f}..{max(deltas):+.2f}; '
+              f'{len(placeholder)} placeholder-start card(s) not counted).')
     else:
         offset_h = 0.0
         print(f'Account-timezone offset NOT calibrated: only {len(deltas)} '
@@ -600,9 +632,9 @@ def join_fixtures(targets, fixtures, calibrate_from=None):
             unjoined.append((m, 'no fixture matched both surnames within '
                                 f'+/-{JOIN_WINDOW_DAYS}d', None))
             continue
-        bs = board_start_naive(m)
+        bs = real_start(m)
         if bs is None:
-            # No usable clock on our side. A single candidate is still safe —
+            # No usable clock on our side (none, or a feed placeholder). A single candidate is still safe —
             # both surnames matched inside the window — so take it; more than
             # one is genuinely ambiguous and must not be guessed.
             if len(cands) == 1:
@@ -611,7 +643,8 @@ def join_fixtures(targets, fixtures, calibrate_from=None):
                                  'startTime': f.get('startTime'), 'deltaH': None}
             else:
                 unjoined.append((m, f'{len(cands)} candidates and no usable '
-                                    'board time to disambiguate', None))
+                                    'board time to disambiguate'
+                                    + (' (placeholder start)' if id(m) in placeholder else ''), None))
             continue
         ours = bs - timedelta(hours=offset_h)
         f, fs, ori = min(cands, key=lambda c: abs((ours - c[1]).total_seconds()))
