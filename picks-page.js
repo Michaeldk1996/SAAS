@@ -233,6 +233,8 @@
 
   // ── Completed · history ledger (CHANGES 10-29 §5) ───────────────────────────────────────────────────────────────
   function resultChip(p) { var c = C.statusChip(p); return '<span class="pk-rchip pk-chip--' + c.kind + '">' + esc(c.text) + '</span>'; }
+  // the ledger's day head: "Sun 26 Oct" (board 1a Completed — weekday, day, month)
+  function histDayLabel(d) { var m = C.dayMonthShort(d); return C.dayLabel(d) + (m && m !== DASH ? ' ' + m.split(' ')[1] : ''); }
   function histRow(p) {
     var clv = C.clvOf(p), pl = p.status === 'void' ? 0 : C.plOf(p);
     return '<div class="pk-hr" data-sheet="' + esc(p.id) + '" role="button" tabindex="0">' + typeTag(p)
@@ -258,7 +260,7 @@
     var body = (pages[pg - 1] || []).map(function (ps) {
       var dw = ps.filter(function (p) { return p.status === 'won'; }).length, dl = ps.filter(function (p) { return p.status === 'lost'; }).length;
       var dv = ps.filter(function (p) { return p.status === 'void'; }).length, dpl = ps.reduce(function (a, p) { return a + (C.plOf(p) || 0); }, 0);
-      return '<div class="pk-hday"><span class="pk-hday-d">' + esc(C.dayLabel(C.pickDay(ps[0]))) + '</span><span class="pk-hday-m">' + ps.length + (ps.length === 1 ? ' bet' : ' bets') + ' ' + MID + ' ' + dw + C.EN + dl + (dv ? ' ' + MID + ' ' + dv + ' void' : '') + '</span>'
+      return '<div class="pk-hday"><span class="pk-hday-d">' + esc(histDayLabel(C.pickDay(ps[0]))) + '</span><span class="pk-hday-m">' + ps.length + (ps.length === 1 ? ' bet' : ' bets') + ' ' + MID + ' ' + dw + C.EN + dl + (dv ? ' ' + MID + ' ' + dv + ' void' : '') + '</span>'
         + '<span class="pk-hday-pl ' + sgnCls(dpl) + '">' + C.u(dpl, 1) + '</span></div>' + ps.map(histRow).join('');
     }).join('');
     var pager = pages.length > 1 ? '<div class="pk-pager"><span class="pk-pg' + (pg > 1 ? '' : ' is-off') + '" data-act="hprev">‹ Previous</span><span class="pk-pg-t">Page ' + pg + ' of ' + pages.length + '</span>'
@@ -293,7 +295,7 @@
       var players = ['a', 'b'].map(function (side) {
         var q = side === 'a' ? p.player_a : p.player_b; if (!q) return '';
         var picked = p.selection === side, sc = C.scoreSide(p, side), isW = win === side;
-        var bar = picked ? (p.status === 'won' ? 'is-w' : p.status === 'lost' ? 'is-l' : '') : '';
+        var bar = picked ? 'is-pick' : '';   // board 1a: the picked side's bar is the blue fill, the other none (the result chip says won / lost)
         var sets = sc ? '<span class="pk-sh-sets"><span class="pk-sh-sw' + (isW ? ' is-win' : '') + '">' + sc.setsWon + '</span><span class="pk-sh-rule"></span>'
           + sc.cells.map(function (c) { return '<span class="pk-sh-set' + (c.won ? ' is-won' : '') + '">' + esc(c.v) + (c.tb ? '<sup>' + esc(c.tb) + '</sup>' : '') + '</span>'; }).join('') + '</span>' : '';
         return '<div class="pk-sh-pl"><span class="pk-sh-bar ' + bar + '"></span><span class="pk-sh-pn' + (isW ? ' is-win' : '') + '">' + esc(q.name) + '</span>' + sets + '</div>';

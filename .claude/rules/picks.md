@@ -78,6 +78,9 @@ SIDEBAR_NAV > CHANGES_2026-10-29 > SPEC > README; reference `Picks LOCKED 2026-1
 - **Close ink is white when there is a close, a grey dash when not** (board 1a `closeC`, band, sheet and mobile card
   alike); the trail segment before it carries the green / red. CHANGES_2026-10-30 §1's "coloured by the trail rule" is
   outranked by the board. **Test:** `tools/test-picks-page.mjs` "Close ink" (mutant: the segment colour).
+- **Ledger day head = "Sun 26 Oct"** (weekday, day, month; board 1a Completed). **The settled sheet's result bars are the
+  pick marker, not the result:** the picked side's bar is the blue fill (`--bar`), the other side has none (board 1a
+  `bar: isPick`); won / lost is the chip's job. **Test:** `tools/test-picks-page.mjs` "1c day head", "1c sheet result bars".
 - **Any band or ledger row opens the analysis sheet** (settled picks get the result block, open picks the trail); Esc, ✕
   and the scrim close it. A gated (non-Pro) band is blurred, not clickable and opens nothing.
 - **Mobile (≤ 640)**: one mobile card per bet, 16 px gutter.

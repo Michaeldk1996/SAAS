@@ -450,9 +450,8 @@
 [data-page="picks"] .pk-sh-right { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
 [data-page="picks"] .pk-sh-cap, [data-page="picks"] .pk-sh-l { font-size: 10px; font-weight: 700; letter-spacing: 0.10em; text-transform: uppercase; color: var(--text-label); }
 [data-page="picks"] .pk-sh-pl { display: flex; align-items: center; gap: 10px; min-width: 0; }
-[data-page="picks"] .pk-sh-bar { width: 3px; height: 18px; border-radius: 2px; flex: none; background: color-mix(in srgb, var(--text) 14%, transparent); }
-[data-page="picks"] .pk-sh-bar.is-w { background: var(--pos); }
-[data-page="picks"] .pk-sh-bar.is-l { background: var(--neg); }
+[data-page="picks"] .pk-sh-bar { width: 3px; height: 18px; border-radius: 2px; flex: none; background: transparent; }
+[data-page="picks"] .pk-sh-bar.is-pick { background: var(--bar); }   /* board 1a: picked = the blue fill, whatever the result */
 [data-page="picks"] .pk-sh-pn { font-size: 13.5px; font-weight: 500; color: var(--text-label); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 [data-page="picks"] .pk-sh-pn.is-win { font-weight: 700; color: var(--tracker-ink); }
 [data-page="picks"] .pk-sh-sets { margin-left: auto; display: inline-flex; align-items: center; gap: 4px; }

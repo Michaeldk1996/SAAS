@@ -237,10 +237,12 @@ async function browser() {
       return { rows: qa('.pk-hr').map(r => r.dataset.sheet), blur: qa('.is-blur').length, day: txt(q('.pk-hday')), chips: qa('.pk-rchip').map(txt), heads: txt(q('.pk-hh')),
         strip: qa('.pk-recstats .sfh__stat').map(txt), pers: qa('.pk-per').map(txt), tstats: qa('.pk-tstats').length, bands: qa('.pk-band').length, tsub: qa('.pk-tsub').length };`);
     check('1c Completed: four ledger rows, newest day first, never blurred', c.rows.length === 4 && c.blur === 0 && c.bands === 0, JSON.stringify(c));
-    check('1c day head "Mon 26 · 4 bets · 2–1 · 1 void" + P/L', /^Mon 26 4 bets · 2–1 · 1 void \+/.test(c.day), c.day);
+    check('1c day head "Mon 26 Oct · 4 bets · 2–1 · 1 void" + P/L (board 1a: weekday, day, month)', /^Mon 26 Oct 4 bets · 2–1 · 1 void \+/.test(c.day), c.day);
     check('1c result chips WON / LOST / VOID', c.chips.slice().sort().join('|') === 'LOST|VOID|WON|WON', c.chips.join('|'));
     check('1c header carries the Record strip (30 d · 90 d · Season), not today\'s stats', c.pers.join('|') === '30 d|90 d|Season' && c.tstats === 0 && c.strip.length === 5 && c.tsub === 0, JSON.stringify(c));
     const cs1 = await R(`q('[data-sheet="s1"]').click(); const t = txt(document.querySelector('.pk-sh')); const res = !!document.querySelector('.pk-sh .pk-sh-res'); set({ sheet: null }); return { t, res };`);
+    const rb = await R(`q('[data-sheet="s2"]').click(); const bars = [...document.querySelectorAll('.pk-sh .pk-sh-res .pk-sh-bar')].map(e => getComputedStyle(e).backgroundColor); set({ sheet: null }); return bars;`);
+    check('1c sheet result bars: the picked side (Moutet, lost) blue, the other none — board 1a, never a result colour', rb.length === 2 && rb[0] === 'rgba(0, 0, 0, 0)' && rb[1] === 'rgb(0, 122, 255)', JSON.stringify(rb));
     check('1c a ledger row opens the sheet with the settled block (result, score)', cs1.res && /WON/.test(cs1.t) && /F\. Cerundolo/.test(cs1.t), cs1.t);
 
     // empty states
