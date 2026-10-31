@@ -50,7 +50,11 @@ async function main() {
     headers: { apikey: sk, Authorization: 'Bearer ' + sk, 'Content-Type': 'application/json' },
     body: JSON.stringify({ p_rows: rows, p_window: `${ds}..${de}` }),
   }).catch((e) => ({ ok: false, status: e.name, text: async () => '' }));
-  if (!r.ok) { console.log(`::error::drops-scope fixtures: ingest failed (HTTP ${r.status}) — the bots hold what they cannot match`); process.exit(1); }
+  if (!r.ok) {
+    // PostgREST's error object names the cause (code + message); it carries no player data
+    const why = String(await r.text().catch(() => '')).slice(0, 300).replace(/\s+/g, ' ');
+    console.log(`::error::drops-scope fixtures: ingest failed (HTTP ${r.status}) ${why} — the bots hold what they cannot match`); process.exit(1);
+  }
   console.log(`drops-scope fixtures ${ds}..${de}: ${rows.length} singles of ${body.result.length} fixtures written`);
   console.log(JSON.stringify(countByType(rows)));
 }

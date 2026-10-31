@@ -75,6 +75,10 @@ try:
         fx(9008, 'X. Dub / Y. Dub', 'Z. Dub / W. Dub', 'Atp Doubles'),
     ])
     check('service_role can ingest fixtures', rc == 0 and out == '8', out)
+    rc, out = ingest([fx(9001, 'C. Alcaraz', 'J. Sinner', 'Atp Singles', 'False'), fx(9001, 'C. Alcaraz', 'J. Sinner', 'Atp Singles', 'False')])
+    check('a fixture listed twice in one answer is written once (no upsert error)', rc == 0 and out == '1', out)
+    rc, out = q("select count(*) from pg_proc where proname = 'drops_scope_ingest' and prosrc ~ 'update drops_scope\\.feed set[^;]*where'")
+    check('the feed UPDATE carries a WHERE (pg_safeupdate refuses a bare UPDATE over REST)', out == '1', out)
     rc, out = q("select public.drops_scope_ingest('[]'::jsonb, 'x')", 'anon')
     check('anon cannot write the fixture list', rc != 0, out)
     rc, out = q("select count(*) from drops_scope.fixture", 'anon')

@@ -208,15 +208,16 @@ begin
              at time zone 'UTC' end,
          r->>'first', r->>'second', drops_scope.sk(r->>'first'), drops_scope.sk(r->>'second'),
          r->>'type', r->>'qual', r->>'tournament', r->>'round', now()
-    from jsonb_array_elements(p_rows) r
-   where coalesce(r->>'event_key', '') ~ '^\d+$'
+    from (select distinct on (r->>'event_key') r from jsonb_array_elements(p_rows) r
+           where coalesce(r->>'event_key', '') ~ '^\d+$' order by r->>'event_key') d(r)
   on conflict (event_key) do update set event_date = excluded.event_date, event_time = excluded.event_time,
       start_utc = excluded.start_utc, first_player = excluded.first_player, second_player = excluded.second_player,
       sk1 = excluded.sk1, sk2 = excluded.sk2, event_type_type = excluded.event_type_type,
       event_qualification = excluded.event_qualification, tournament_name = excluded.tournament_name,
       tournament_round = excluded.tournament_round, seen_at = excluded.seen_at;
   get diagnostics n = row_count;
-  update drops_scope.feed set last_ok_at = now(), last_rows = n, last_window = p_window;
+  -- WHERE true: Supabase's pg_safeupdate refuses a bare UPDATE on a REST call (HTTP 400, the first install, 31 Oct)
+  update drops_scope.feed set last_ok_at = now(), last_rows = n, last_window = p_window where true;
   delete from drops_scope.fixture where start_utc < now() - interval '10 days';
   delete from drops_scope.verdict_log where at < now() - interval '60 days';
   return n;
