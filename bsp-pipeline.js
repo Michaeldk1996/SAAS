@@ -6705,20 +6705,20 @@ async function runPipeline() {
   // since finished matches have no betting-odds event to build from. Same
   // 'Finished'/'Retired'/'Walk Over' filter already used elsewhere
   // (courtSpeedRecordFromFixtures, seasonRowFromFixtures) for a genuinely
-  // decided match, plus excluding qualifying-round matches to match the
-  // main-tour-only scope the odds-driven Today/Tomorrow tabs already have.
+  // decided match. Qualifying matches are carded too (founder 2026-10-31).
   const dayMs = 86400000;
   const dateStr = d => d.toISOString().split('T')[0];
   const threeDaysAgo = dateStr(new Date(Date.now() - 3 * dayMs));
   console.log(`Fetching finished fixtures (${threeDaysAgo} to ${today}, incl. today) for completed-match scores/stats...`);
   const pastFixtures = await fetchApiTennisFixtures(threeDaysAgo, today);
-  const unplayed = pastFixtures.filter(f => isUnplayedFinishedFixture(f) && f.event_qualification !== 'True');
+  // Founder 2026-10-31: a finished qualifying match is a Completed card too (labelled Q1 / Q2 / Qualifying), as it was
+  // an Upcoming one — the `event_qualification` skip is removed here as on the Upcoming builder.
+  const unplayed = pastFixtures.filter(f => isUnplayedFinishedFixture(f));
   for (const f of unplayed) {
     console.log(`  not carded (Finished, no winner, no game won): ${f.event_first_player} v ${f.event_second_player} · event ${f.event_key} · ${f.event_date}`);
   }
   const finishedPastFixtures = pastFixtures.filter(f =>
     (RECORD_STATUSES.includes(f.event_status) || isInterruptedFixture(f))
-    && f.event_qualification !== 'True'
     && !isUnplayedFinishedFixture(f)
   );
   const interruptedCount = finishedPastFixtures.filter(isInterruptedFixture).length;

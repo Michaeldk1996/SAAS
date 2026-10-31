@@ -98,8 +98,9 @@ except where a ruling below says otherwise. Colours are foundation tokens (`foun
   view head:** one line — surface · event · round, then OPEN / NOW / MOVE over their columns — with no start time (a live
   card keeps its LIVE word); the default head is unchanged. **Test:** `test-matches-day-tabs.mjs` (a 00:30-local start
   lands on the next day's tab; mutants: feed-date rule, no preview, the four-day rail, a wrapping head).
-- **Qualifying is shown, never hidden (founder 2026-10-31, publish-and-qualifying).** The upcoming card builder no
-  longer skips `event_qualification === 'True'`. A card is qualifying (`boardQualifying`, `board-qualifying.js`) when the
+- **Qualifying is shown, never hidden (founder 2026-10-31, publish-and-qualifying).** Neither card builder skips
+  `event_qualification === 'True'`: a qualifying match is an Upcoming card and, once finished, a Completed card (founder
+  "Yes, card them"; the Completed Upsets tile names its round the same way). A card is qualifying (`boardQualifying`, `board-qualifying.js`) when the
   feed flags it, or when its event's OFFICIAL main draw (`draws.json`, joined through the ATP tier map
   `tools/points-at-risk/atp-tier-map-v1.json`) starts after the fixture's date and either both players are on the posted
   qualifying sheet or — sheet not posted — neither is on the posted main-draw sheet (the Paris rows of 31 Oct arrive with

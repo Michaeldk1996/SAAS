@@ -10289,7 +10289,7 @@ function renderMatches(){
     panels.push(sortTile('upset', upOn, tileHead('Upsets', upOn ? 'Biggest first' : 'Sort by upset')
       + (u0
           ? `<div class="mc-story__move"><span class="mc-story__od">${mxOddsTxt(u0.close)}</span><span class="mc-story__upw">${psEsc(mxSurname(u0.winner))}</span><span class="mc-story__upl">d. ${psEsc(mxSurname(u0.loser))}</span></div>`
-            + `<div class="mc-story__ctx">${[mxEventName(u0.m.tour), roundBadgeText(u0.m.tournamentRound) || ''].filter(Boolean).join(' ')} · ${favLine}</div>`
+            + `<div class="mc-story__ctx">${[mxEventName(u0.m.tour), mxRoundLabel(u0.m)].filter(Boolean).join(' ')} · ${favLine}</div>`
           : `<div class="mc-story__none">No upsets</div><div class="mc-story__ctx">${favLine}</div>`),
       ` title="${psEsc(up.title)}"`));
     // 3. Market read — of the matches whose card price moved open → close by at least MX_MOVE_MIN, how often the

@@ -134,5 +134,33 @@ check('MUTANT caught: the round slot keeps the feed word ("SF") on a qualifying 
   assert.notStrictEqual(mut, HTML); assert.throws(() => checkC(page(mut)));
 });
 
+// Founder 2026-10-31 ("Yes, card them"): a FINISHED qualifying match is a Completed card too. The Completed builder's
+// filter is evaluated as shipped on a flagged, finished Paris qualifier (Carreno-Busta v Bellucci, 12176007) and a
+// main-draw control; the Upsets tile names the round through the same label as the card.
+const pastFilter = (pipe) => {
+  const m = pipe.match(/const finishedPastFixtures = pastFixtures\.filter\((f =>[\s\S]*?)\n  \);/);
+  assert.ok(m, 'finishedPastFixtures filter not found');
+  return new Function('RECORD_STATUSES', 'isInterruptedFixture', 'isUnplayedFinishedFixture', 'return (' + m[1] + ');')(
+    ['Finished', 'Retired', 'Walk Over'], f => /interrupt|suspend/i.test(f.event_status || ''), P.isUnplayedFinishedFixture);
+};
+const finishedQual = fx({ event_key: 12176007, event_status: 'Finished', event_qualification: 'True', event_winner: 'First Player',
+  event_final_result: '2 - 0', scores: [{ score_first: '6', score_second: '4', score_set: '1' }, { score_first: '6', score_second: '3', score_set: '2' }] });
+const finishedMain = Object.assign({}, finishedQual, { event_key: 2, event_qualification: 'False' });
+function checkD(pipe) {
+  const keep = pastFilter(pipe);
+  assert.strictEqual(keep(finishedMain), true, 'main-draw control');
+  assert.strictEqual(keep(finishedQual), true, 'a finished qualifier is dropped from Completed');
+  assert.ok(!/const unplayed = pastFixtures\.filter\([^\n]*event_qualification/.test(pipe), 'the unplayed log still skips qualifying');
+}
+check('Completed: a finished qualifying match is carded (flag True, Finished), the main-draw control too', () => checkD(PIPE));
+check('MUTANT caught: the Completed builder skips qualifying again', () => {
+  const mut = PIPE.replace("    (RECORD_STATUSES.includes(f.event_status) || isInterruptedFixture(f))\n", "    (RECORD_STATUSES.includes(f.event_status) || isInterruptedFixture(f))\n    && f.event_qualification !== 'True'\n");
+  assert.notStrictEqual(mut, PIPE); assert.throws(() => checkD(mut));
+});
+check('the Completed Upsets tile names the round through mxRoundLabel, never the feed word', () => {
+  assert.ok(HTML.includes('[mxEventName(u0.m.tour), mxRoundLabel(u0.m)]'));
+  assert.ok(!HTML.includes('roundBadgeText(u0.m.tournamentRound)'));
+});
+
 console.log(`\nboard-qualifying: ${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

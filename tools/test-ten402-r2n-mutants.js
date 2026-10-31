@@ -67,7 +67,7 @@ const MUTANTS = [
   ['r3: mxEventName prints the feed name', "function mxEventName(tour){ return tour && typeof sfEventName === 'function' ? sfEventName(tour) : (tour || ''); }", "function mxEventName(tour){ return tour || ''; }"],
   ['r3: the card head prints the feed name', '>${mxEventName(m.tour)}</span>\n        ${roundBadge ?', '>${m.tour}</span>\n        ${roundBadge ?'],
   ['TEN-407: the card head appends the level', '>${mxEventName(m.tour)}</span>\n        ${roundBadge ?', '>${mxEventName(m.tour)}${tierSuffix}</span>\n        ${roundBadge ?'],
-  ['r3: the story strip prints the feed name', '<div class="mc-story__ctx">${[mxEventName(u0.m.tour), roundBadgeText', "<div class=\"mc-story__ctx\">${[u0.m.tour || '', roundBadgeText"],
+  ['r3: the story strip prints the feed name', '<div class="mc-story__ctx">${[mxEventName(u0.m.tour), mxRoundLabel(u0.m)', "<div class=\"mc-story__ctx\">${[u0.m.tour || '', mxRoundLabel(u0.m)"],
   ['r3: the chip label prints the feed name', 'aria-pressed="${active}">${mxTourKeyName(t)}${active', 'aria-pressed="${active}">${t}${active'],
   ['r3: the chip filters on the printed name', 'data-tournament="${t.replace(/"/g,\'&quot;\')}"', 'data-tournament="${mxEventName(t).replace(/"/g,\'&quot;\')}"'],
   ['r3: the chips ordered by the feed name', ')].sort((a, b) => mxTourKeyName(a).localeCompare(mxTourKeyName(b)));', ')].sort();'],
