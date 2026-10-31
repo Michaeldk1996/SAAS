@@ -61,8 +61,8 @@ try:
         rc, err = pg.file(SQL); check(f'drops-scope.sql applies (pass {i}: idempotent)', rc == 0, err)
     rc, out = q("select drops_scope.sk('Damm Jr, Martin'), drops_scope.sk('P. Carreno-Busta'), drops_scope.sk('Pablo Carreno Busta'), drops_scope.sk('J. Lehečka'), array_to_string(drops_scope.inits('Adolfo Daniel Vallejo'), '')")
     check('name keys = the drops page join (sk / initials)', out == 'damm|busta|busta|lehecka|ad', out)
-    rc, out = q("select drops_scope.same('Adolfo Daniel Vallejo', 'D. Vallejo'), drops_scope.same('Ze Zhang', 'Zh. Zhang'), drops_scope.same('Zhizhen Zhang', 'Ze Zhang')")
-    check('initials: a middle name counts; two different given names do not', out == 't|t|f', out)
+    rc, out = q("select drops_scope.same('Adolfo Daniel Vallejo', 'D. Vallejo'), drops_scope.same('Ze Zhang', 'Zh. Zhang'), drops_scope.same('Alexander Zverev', 'M. Zverev')")
+    check('initials: a middle name counts; two different initials do not (one shared initial = one player, as status.mjs)', out == 't|t|f', out)
     rc, out = q("select drops_scope.sk(null) is null")
     check('no name -> no key', out == 't', out)
     rc, out = ingest([
