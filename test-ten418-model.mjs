@@ -39,10 +39,10 @@ function boot(opts = {}) {
   const el = id => (els[id] = els[id] || { id, innerHTML: '', textContent: '', className: '' });
   ['edgeBody', 'edgeHeadSub', 'edgeHeadStats', 'edgeRailList', 'edgeRailN'].forEach(el);
   const navBtn = { matches: sel => sel === '.is-locked' && !!opts.free };
-  const calls = { scrollBy: [], scrollIntoView: 0, dd: null, profile: [] };
+  const calls = { scrollBy: [], scrollIntoView: 0, dd: null, profile: [], b105: {}, pairFor: [] };
   const rowEl = { getBoundingClientRect: () => ({ top: 1400, height: 40 }), parentElement: null, classList: { remove() {} }, scrollIntoView() { calls.scrollIntoView++; } };
   const document = {
-    getElementById: id => (id.startsWith('emLayer-') ? (els.edgeBody.innerHTML.includes(`id="${id}"`) ? rowEl : null) : (els[id] || null)),
+    getElementById: id => id.startsWith('emB105-') ? (calls.b105[id] = calls.b105[id] || { id, outerHTML: '' }) : (id.startsWith('emLayer-') ? (els.edgeBody.innerHTML.includes(`id="${id}"`) ? rowEl : null) : (els[id] || null)),
     querySelector: sel => (sel === '.sf-nav [data-tab="edge"]' ? navBtn : null),
     querySelectorAll: () => [],
   };
@@ -51,7 +51,8 @@ function boot(opts = {}) {
   const E = JSON.parse(JSON.stringify(opts.e || FIX.e1));
   const board = FIX.board.map(id => (id === M.id ? M : id === M2.id ? M2 : { id, p1: 'X. A' + id.slice(-2), p2: 'Y. B' + id.slice(-2), p1Key: null, p2Key: null, tour: 'ATP Shanghai', tournamentRound: 'ATP Shanghai - 1/32-finals', date: '2026-10-10', time: '10:30' }));
   const ctx = {
-    document, window: { innerHeight: 982, scrollTo() {}, scrollBy: o => calls.scrollBy.push(o) },
+    document, window: { innerHeight: 982, scrollTo() {}, scrollBy: o => calls.scrollBy.push(o),
+      KiblNow: opts.kibl === undefined ? undefined : { enabled: true, pairFor: (m, book) => { calls.pairFor.push([m && m.id, book]); return typeof opts.kibl === 'function' ? opts.kibl(m) : opts.kibl; } } },
     localStorage: { getItem: k => (k === 'stennisfy.tz' ? 'UTC' : null) },
     getComputedStyle: () => ({ overflowY: 'visible' }), MutationObserver: undefined, console,
     setTimeout: () => 0, clearTimeout() {}, fetch: () => Promise.resolve({ ok: false }),
@@ -69,7 +70,7 @@ function boot(opts = {}) {
   ctx.globalThis = ctx;
   vm.createContext(ctx);
   const block = opts.staleMin != null ? BLOCK.replace('const EDGE_PIN_STALE_MIN = null;', `const EDGE_PIN_STALE_MIN = ${opts.staleMin};`) : BLOCK;
-  vm.runInContext(HELPERS + '\n' + block + '\nthis.API = { renderEdgeModel, openEdgeModel, edgeOddInput, edgeJumpLayer, edgeSharp, edgeBestSoft, edgeLayerRows, edgeParseOdd, edgeWhyText, edgeToggleLayers, edgeToggleLayer, edgeGenerate, edgeAiState, openEdgeModelTab, edgeShowAllUpcoming, get scopeAll(){ return edgeScopeAll; }, get open(){ return [edgeLayersOpen, edgeLayerOpen]; } };', ctx);
+  vm.runInContext(HELPERS + '\n' + block + '\nthis.API = { renderEdgeModel, openEdgeModel, edgeOddInput, edgeJumpLayer, edgeSharp, edgeBestSoft, edgeLayerRows, edgeParseOdd, edgeWhyText, edgeToggleLayers, edgeToggleLayer, edgeGenerate, edgeAiState, edgeB105Line, edgeB105Paint, openEdgeModelTab, edgeShowAllUpcoming, get scopeAll(){ return edgeScopeAll; }, get open(){ return [edgeLayersOpen, edgeLayerOpen]; } };', ctx);
   const api = ctx.API;
   api.render = (id = M.id) => { api.openEdgeModel(id); return els.edgeBody.innerHTML; };
   return { api, els, calls, M, E, ctx };
@@ -340,4 +341,81 @@ test('stale gate: with a threshold set, a Pinnacle read older than it dashes the
   assert.match(text(els.edgeHeadStats.innerHTML), /Layers active — Updated —/);
   const fresh = boot({ staleMin: 60 });   // 10 min old → priced
   assert.match(text(fresh.api.render()), /Model base/);
+});
+
+// Pinnacle line from Bet105 (founder brief 2026-10-31): Bet105's live pair with its fixed cut removed (÷ 0.9956),
+// labelled as derived from Bet105, in Market context and the Fair price card; repainted in place; display only.
+const B105 = (p1, p2, live = true) => ({ p1, p2, book: 'bet105', live, sideAt: { p1: '2026-10-10T04:58:10.000Z', p2: '2026-10-10T04:57:40.000Z' } });
+test('Bet105 line: the derivation — prices ÷ 0.9956, no-vig = the pair’s own, the older side’s time, both legs or nothing', () => {
+  const { api, M } = boot({ kibl: B105(3.0, 1.42) });
+  const bl = api.edgeB105Line(M);
+  assert.deepEqual([+(bl.p1).toFixed(4), +(bl.p2).toFixed(4)], [+(3.0 / 0.9956).toFixed(4), +(1.42 / 0.9956).toFixed(4)]);
+  const nv = (1 / 3.0) / (1 / 3.0 + 1 / 1.42);
+  assert.ok(Math.abs(bl.nv.p1 - nv) < 1e-12 && Math.abs(bl.nv.p1 + bl.nv.p2 - 1) < 1e-12, 'no-vig of the Bet105 pair itself (the cut does not change it)');
+  assert.equal(bl.at, '2026-10-10T04:57:40.000Z', 'the Kibl time of the OLDER side');
+  assert.equal(boot({ kibl: { p1: 3.0, p2: null, book: 'bet105', live: true } }).api.edgeB105Line(M), null, 'one leg = no line');
+  assert.equal(boot({ kibl: null }).api.edgeB105Line(M), null, 'no pair = no line');
+  assert.equal(boot().api.edgeB105Line(M), null, 'no stream on the page = no line');
+  const started = JSON.parse(JSON.stringify(M)); started.date = '2026-10-09';   // cardStartMs → before NOW
+  const s = boot({ kibl: B105(3.0, 1.42) });
+  assert.equal(s.api.edgeB105Line(started), null, 'a started match has no line');
+  const live = JSON.parse(JSON.stringify(M)); live.live = true;
+  assert.equal(s.api.edgeB105Line(live), null, 'a live match has no line');
+  s.api.edgeB105Line(M);
+  assert.ok(s.calls.pairFor.length > 0 && s.calls.pairFor.every(([, b]) => b === 'bet105'), 'asks the stream for Bet105 only');
+});
+test('Bet105 line: the Market context row and the Fair price line — labelled "(from Bet105)", time, derived price, gaps', () => {
+  const { api, E } = boot({ kibl: B105(3.0, 1.42) });
+  const h = api.render();
+  const row = h.match(/<div class="em-mk-row em-b105" id="emB105-mk-p1"[\s\S]*?<\/div>/)[0];
+  assert.match(row, /title="Bet105’s price with its fixed 0\.44% cut removed \(Bet105 = Pinnacle × 0\.9956, measured on 3,489 moments, 6–31 Oct\)\. Not a Pinnacle price\."/);
+  assert.match(text(row), /^Pinnacle line \(from Bet105\) 04:57:40 · Bet105 ÷ 0\.9956 3\.01 /, text(row));
+  const nv = (1 / 3.0) / (1 / 3.0 + 1 / 1.42), base = E.stage1.baseP1;
+  const want = ((base - nv) * 100);
+  assert.match(text(row), new RegExp((want < 0 ? '−' : '\\+') + Math.abs(want).toFixed(1) + 'pp$'), 'edge = base − this line’s no-vig (the card’s convention)');
+  const fp = h.match(/<div class="em-fp-b105" id="emB105-fp-p1"[\s\S]*?<\/span><\/span><\/div>/)[0];
+  const fair = E.stage3.fair.p1.prob, g = Math.round(fair * 1000) / 10 - nv * 100;
+  assert.match(text(fp), new RegExp('^Pinnacle line \\(from Bet105\\) 3\\.01 ' + (g < 0 ? '−' : '\\+') + Math.abs(g).toFixed(1) + 'pp$'), text(fp));
+  assert.doesNotMatch(h, />Pinnacle ·/, 'never "Pinnacle ·" on the derived line');
+  assert.equal((h.match(/Pinnacle line \(from Bet105\)/g) || []).length, 4, 'two rows + two Fair price lines');
+});
+test('Bet105 line: stale stream = dashes + "— stale", the last pair in the hover; no pair = no row', () => {
+  const { api } = boot({ kibl: B105(3.0, 1.42, false) });
+  const h = api.render();
+  const row = h.match(/<div class="em-mk-row em-b105" id="emB105-mk-p1"[\s\S]*?<\/div>/)[0];
+  assert.match(text(row), /^Pinnacle line \(from Bet105\) — stale — —$/);
+  assert.match(row, /Stream not live: last Bet105 pair 3\.00 \/ 1\.42 at 04:57:40\./);
+  assert.match(text(h.match(/<div class="em-fp-b105" id="emB105-fp-p2"[\s\S]*?<\/span><\/span><\/div>/)[0]), /^Pinnacle line \(from Bet105\) — —$/);
+  const none = boot({ kibl: null }).api.render();
+  assert.doesNotMatch(none, /em-b105|em-fp-b105/, 'no pair: no row and no line');
+});
+test('Bet105 line: a stream change repaints the four elements in place; the fair price never moves', () => {
+  let pair = B105(3.0, 1.42);
+  const { api, calls, els } = boot({ kibl: () => pair });
+  api.render();
+  const fairBefore = text(els.edgeBody.innerHTML).match(/Adjusted fair odd · [0-9.]+%/g).join('|');
+  pair = B105(3.2, 1.36);
+  els.edgeBody.innerHTML = els.edgeBody.innerHTML + '<!--sentinel-->';
+  api.edgeB105Paint();
+  assert.match(els.edgeBody.innerHTML, /<!--sentinel-->$/, 'the page body is not re-rendered (an odd being typed survives)');
+  assert.match(text(calls.b105['emB105-mk-p1'].outerHTML), /^Pinnacle line \(from Bet105\) .* 3\.21 /);
+  assert.match(text(calls.b105['emB105-fp-p2'].outerHTML), /^Pinnacle line \(from Bet105\) 1\.37 /);
+  assert.equal(text(els.edgeBody.innerHTML).match(/Adjusted fair odd · [0-9.]+%/g).join('|'), fairBefore, 'the pipeline’s fair price is untouched');
+  pair = null; api.edgeB105Paint();
+  assert.equal(calls.b105['emB105-mk-p1'].outerHTML, '<div id="emB105-mk-p1"></div>', 'the pair gone: the row leaves, its slot stays');
+});
+test('Bet105 line: the api-tennis Pinnacle rows, the anchor label and every other figure are byte-identical with and without the stream', () => {
+  const strip = h => h.replace(/<div class="em-mk-row em-b105"[\s\S]*?<\/span><\/span><\/div>/g, '').replace(/<div class="em-fp-b105"[\s\S]*?<\/span><\/span><\/div>/g, '')
+    .replace(/<div id="emB105-(mk|fp)-p[12]"><\/div>/g, '');
+  const a = strip(boot().api.render()), b = strip(boot({ kibl: B105(3.0, 1.42) }).api.render());
+  assert.equal(a, b);
+});
+test('Bet105 line: isolation — the derived price lives on the Model page only', () => {
+  const { execFileSync } = createRequire(import.meta.url)('child_process');
+  const files = execFileSync('git', ['ls-files'], { cwd: HERE, encoding: 'utf8' }).split('\n')
+    .filter(f => /\.(js|mjs|py|html|sql|yml)$/.test(f) && !/^(test-|tools\/test-|tools\/fixtures\/|design|\.ten)/.test(f) && f !== 'bsp-consult-dashboard.html');
+  const hits = files.filter(f => { try { return /EDGE_B105_K|Pinnacle line \(from Bet105\)|0\.9956/.test(readFileSync(join(HERE, f), 'utf8')); } catch { return false; } });
+  assert.deepEqual(hits, [], 'no other page, pipeline file or builder carries the derived line');
+  const outside = html.replace(BLOCK, '');
+  assert.doesNotMatch(outside, /EDGE_B105_K|edgeB105/, 'the dashboard uses it inside the Model block only');
 });

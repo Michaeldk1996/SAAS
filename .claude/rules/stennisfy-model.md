@@ -62,6 +62,17 @@ Founder rulings: TEN-418 card 7a80b6fe, R1 review and R2 review 73f754f9 (2026-1
 - **Pinnacle tile open → now** = Pinnacle's own first recorded price → its current price, move = `mxMovePct` on the 2 dp
   prices. It is not the Today's Matches pop-up pair (that is the card's book, Bet105 by the card ladder in `odds.md`).
   The model's frozen anchor (`pinnacleOpen`) is never shown as a third price.
+- **Pinnacle line (from Bet105)** (founder brief 2026-10-31): Bet105's live stream pair with its fixed cut removed —
+  **Bet105 = Pinnacle × 0.9956** (`EDGE_B105_K`; measured 6–31 Oct on 3,489 stable moments / 268 matches, IQR
+  0.9945–0.9963, every price band and day; Bet105's no-vig line = Pinnacle's, median 0.00pp). A Market context row
+  "Pinnacle line (from Bet105)" (derived price or no-vig %, the Kibl time of the older side, edge = base − its no-vig)
+  and a Fair price line per player (gap = adjusted fair % as printed − its no-vig %). Both legs or nothing, pre-match only,
+  suspended = none; stream not live (`pairFor().live`: heartbeat < 180 s and joined) = dashes + "— stale" with the last
+  pair on hover. Repainted in place on `kiblnow:change` (the page is never re-rendered for it); the shown match joins the
+  stream's Realtime scope through `window.kiblExtraKeys`. **Display on this page only:** never written, never a close,
+  never in a price join, never called "Pinnacle" without "(from Bet105)"; the model and its anchor are untouched.
+  Disagreement note vs the api-tennis quote: `EDGE_B105_DISAGREE_PP` — **null (off) until the founder sets it**.
+  **Test:** `test-ten418-model.mjs` "Bet105 line" (+ mutants), `test-ten270-now-stream.mjs` "kiblExtraKeys" / "kiblnow:change".
 - **Gap** = the adjusted fair % as printed (1 dp) − 100 / odd, in pp. An edited odd re-computes its own gap in place;
   empty, ≤ 1.00 or not a number reads `—`, never NaN.
 - **Names:** players `newsPlayerName(key, feed)` (the profile string, as Player Profile prints it — today "B. Van De

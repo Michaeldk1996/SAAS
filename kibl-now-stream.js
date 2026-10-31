@@ -118,6 +118,8 @@
   }
 
   function paintNow() {
+    // Other surfaces (the Model page's Bet105 line) repaint themselves on this; the board repaints below.
+    try { if (typeof window.dispatchEvent === 'function' && typeof Event === 'function') window.dispatchEvent(new Event('kiblnow:change')); } catch (e) { /* no listener */ }
     if (typeof renderMatches !== 'function' || !document.getElementById('matchlist')) return;
     // A price tick must not collapse what the member is reading.
     const open = [...document.querySelectorAll('.match-card.sig-open')].map(e => e.dataset.id);
@@ -203,6 +205,16 @@
     }
     return [...keys].sort();
   }
+  // The rendered cards plus any key another surface asks to hear (window.kiblExtraKeys: the Stennisfy Model page's
+  // shown pre-match match, founder brief 2026-10-31 "Pinnacle line from Bet105"). Same unquoted-key rule as the cards;
+  // a failing provider leaves the cards' scope as it was.
+  function scopeKeys() {
+    const keys = new Set(renderedKeys());
+    if (typeof window.kiblExtraKeys === 'function') {
+      try { for (const k of window.kiblExtraKeys() || []) if (k && !/[,()"\s]/.test(k)) keys.add(k); } catch (e) { /* cards only */ }
+    }
+    return [...keys].sort();
+  }
   function bindings(keys) {
     const out = [];
     for (let i = 0; i < keys.length; i += MAX_IN)
@@ -241,7 +253,7 @@
     // re-join again — the loop review round 4 (finding 1) reproduced. The
     // confirmation repaints the labels back, then the check runs once.
     if (topic && !joined) { soon(); return; }
-    const next = renderedKeys();
+    const next = scopeKeys();
     if (!next.length) {
       if (scope.length) { scope = []; leave(); repaint(); }
       return;
@@ -328,7 +340,7 @@
     backstop();                          // re-seed: the table, not the missed pushes
     clearInterval(backstopTimer);
     backstopTimer = setInterval(backstop, BACKSTOP_MS);
-    scope = renderedKeys();
+    scope = scopeKeys();
     connect();
   }
   document.addEventListener('visibilitychange', () => { if (document.hidden) pause(); else resume(); });

@@ -4682,6 +4682,8 @@ window.EntryListsTab = (function(){
   .em-fp-col.b .em-fp-odd{ align-items:flex-start; }
   .em-fp-big{ font-family:var(--font-nums); font-size:40px; font-weight:700; line-height:0.9; color:var(--text); }
   .em-fp-tiles{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .em-fp-b105{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:10px; padding:8px 12px; border-radius:10px; background:var(--inner); }
+  .em-fp-b105-v{ display:flex; align-items:baseline; gap:10px; font-size:13px; color:var(--text); }
   .em-tile{ display:flex; flex-direction:column; gap:8px; background:var(--inner); border-radius:12px; padding:12px 13px; }
   .em-tile-h{ display:flex; justify-content:space-between; align-items:baseline; gap:6px; min-height:16px; }
   .em-gap{ font-family:var(--font-nums); font-size:12.5px; font-weight:700; }
@@ -10509,6 +10511,95 @@ function edgeAnchorHtml(m){
   const tip = 'Pipeline read ' + (edgeClock(at, 'full') || '') + ' · ' + edgeAgeText(age) + ' ago. The model anchors to this Pinnacle quote from api-tennis.';
   return `<span class="em-mk-anchor" title="${edgeEsc(tip)}">Pinnacle (api-tennis) · read <span class="em-mono">${edgeEsc(edgeClock(at) || '—')}</span></span>`;
 }
+// ── Pinnacle line from Bet105 (founder brief 2026-10-31) ───────────────────
+// Bet105 = Pinnacle × EDGE_B105_K, one fixed price multiplier. Measured 30–31 Oct on the committed matches.json chart
+// series 6–31 Oct: 3,489 moments with no change in either book for ≥ 5 min either side, 268 matches, 6,978 prices;
+// median 0.9956 (IQR 0.9945–0.9963), every price band 0.9949–0.9959, every day 0.9953–0.9959; re-measured 24–31 Oct
+// 0.9956 on 1,091 moments / 89 matches. Bet105's no-vig line = Pinnacle's (median difference 0.00pp). A derived line,
+// never a Pinnacle price: display on this page only, never written, never a close, never in a price join.
+const EDGE_B105_K = 0.9956;
+const EDGE_B105_DISAGREE_PP = null;   // Michael's threshold (measured p95 1.19pp, misses median 0.71pp). null = no note.
+let edgeB105Ctx = null;               // the shown match's base / fair probabilities and view, for the in-place repaint
+function edgeClockSec(iso){
+  const t = Date.parse(iso || ''); if (!isFinite(t)) return null;
+  const tz = (typeof newsTz === 'function') ? newsTz() : undefined, o = { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
+  try { return new Date(t).toLocaleTimeString('en-GB', Object.assign({ timeZone: tz }, o)); } catch (err) { return new Date(t).toLocaleTimeString('en-GB', o); }
+}
+// The shown match's Bet105 stream pair → the Pinnacle-equivalent line, or null. Both legs or nothing; pre-match only;
+// a suspended pair (the page's own test) is no line. at = the Kibl time of the older side.
+function edgeB105Line(m){
+  const K = (typeof window !== 'undefined') ? window.KiblNow : null;
+  if (!m || !K || !K.enabled || typeof K.pairFor !== 'function') return null;
+  if (m.finalScore || m.live) return null;
+  const st = (typeof cardStartMs === 'function') ? cardStartMs(m) : NaN;
+  if (isFinite(st) && Date.now() >= st) return null;
+  const sp = K.pairFor(m, 'bet105');
+  if (!sp || !(Number(sp.p1) >= 1.01) || !(Number(sp.p2) >= 1.01)) return null;
+  if (typeof mxIsSuspendedPair === 'function' && mxIsSuspendedPair(sp.p1, sp.p2, { id: m.id || null, book: sp.book, path: 'model.b105line' })) return null;
+  const ts = [sp.sideAt && sp.sideAt.p1, sp.sideAt && sp.sideAt.p2].map(x => Date.parse(x || ''));
+  const at = ts.every(isFinite) ? new Date(Math.min(ts[0], ts[1])).toISOString() : null;
+  const a = 1 / sp.p1, b = 1 / sp.p2;
+  return { bet: { p1: Number(sp.p1), p2: Number(sp.p2) }, p1: sp.p1 / EDGE_B105_K, p2: sp.p2 / EDGE_B105_K,
+           nv: { p1: a / (a + b), p2: b / (a + b) }, at, live: sp.live === true };
+}
+function edgeB105Tip(bl, m){
+  let t = 'Bet105’s price with its fixed 0.44% cut removed (Bet105 = Pinnacle × 0.9956, measured on 3,489 moments, 6–31 Oct). Not a Pinnacle price.';
+  if (bl && !bl.live) t += ` Stream not live: last Bet105 pair ${mxOddsTxt(bl.bet.p1)} / ${mxOddsTxt(bl.bet.p2)}${bl.at ? ' at ' + edgeClockSec(bl.at) : ''}.`;
+  const pin = m && m.bookNow && edgeQuote(m.bookNow, 'Pncl');
+  if (bl && bl.live && pin && EDGE_B105_DISAGREE_PP != null){
+    const d = Math.abs(bl.nv.p1 - edgeNoVig(pin, 'p1')) * 100;
+    if (d > EDGE_B105_DISAGREE_PP) t += ` Bet105 and Pinnacle disagree by ${d.toFixed(1)}pp right now — one book has not caught up.`;
+  }
+  return t;
+}
+// Market context row (the card's own convention: edge = the model's base probability minus this line's no-vig).
+function edgeB105RowHtml(bl, m, s, bp, pct){
+  if (!bl) return '';
+  const live = bl.live;
+  const q = live ? { p1: bl.p1, p2: bl.p2 } : null;
+  const v = !q ? '—' : (pct ? (bl.nv[s] * 100).toFixed(1) + '%' : mxOddsTxt(q[s]));
+  const d = (q && bp != null) ? edgePP((bp - bl.nv[s]) * 100) : { t: '—', c: 'em-zero' };
+  const sub = live ? `${edgeEsc(edgeClockSec(bl.at) || '—')} · Bet105 ÷ 0.9956` : '— stale';
+  return `<div class="em-mk-row em-b105" id="emB105-mk-${s}" title="${edgeEsc(edgeB105Tip(bl, m))}"><span class="em-mk-l"><span class="em-mk-lb">Pinnacle line (from Bet105)</span><span class="em-mk-sub">${sub}</span></span>`
+    + `<span class="em-mk-pv"><span class="em-mk-v">${v}</span><span class="em-mk-d ${d.c}">${d.t}</span></span></div>`;
+}
+// Fair price card line: gap = the adjusted fair probability (as printed, 1 dp) minus this line's no-vig probability.
+function edgeB105FairHtml(bl, m, s, prob){
+  if (!bl) return '';
+  const live = bl.live;
+  const g = (live && prob != null) ? edgePP(Math.round(prob * 1000) / 10 - bl.nv[s] * 100) : { t: '—', c: 'em-zero' };
+  const px = live ? mxOddsTxt(bl[s]) : '—';
+  return `<div class="em-fp-b105" id="emB105-fp-${s}" title="${edgeEsc(edgeB105Tip(bl, m))}"><span class="em-caps">Pinnacle line (from Bet105)</span>`
+    + `<span class="em-fp-b105-v"><span class="em-mono">${px}</span><span class="em-gap ${g.c}">${g.t}</span></span></div>`;
+}
+// A stream change repaints only these four elements — the page is not re-rendered, so an odd being typed survives.
+function edgeB105Paint(){
+  const c = edgeB105Ctx; if (!c || c.id !== edgeCurrentId) return;
+  const pg = document.querySelector('.tabpage[data-page="edge"]');
+  if (pg && pg.classList && !pg.classList.contains('active')) return;
+  const m = matches.find(x => x.id === c.id) || null;
+  const bl = edgeB105Line(m);
+  ['p1', 'p2'].forEach(s => {
+    const mk = document.getElementById('emB105-mk-' + s), fp = document.getElementById('emB105-fp-' + s);
+    if (mk) mk.outerHTML = edgeB105RowHtml(bl, m, s, c.base[s], c.pct) || '<div id="emB105-mk-' + s + '"></div>';
+    if (fp) fp.outerHTML = edgeB105FairHtml(bl, m, s, c.fair[s]) || '<div id="emB105-fp-' + s + '"></div>';
+  });
+}
+// The shown pre-match match joins the stream's Realtime scope (kibl-now-stream.js scopeKeys).
+if (typeof window !== 'undefined'){
+  window.kiblExtraKeys = () => {
+    if (typeof document === 'undefined' || !document.querySelector) return [];
+    const pg = document.querySelector('.tabpage[data-page="edge"]');
+    if (!pg || !pg.classList || !pg.classList.contains('active') || !edgeCurrentId) return [];
+    const m = matches.find(x => x.id === edgeCurrentId);
+    if (!m || m.finalScore || m.live) return [];
+    const st = (typeof cardStartMs === 'function') ? cardStartMs(m) : NaN;
+    if (isFinite(st) && Date.now() >= st) return [];
+    const k = (typeof ocsKeyOf === 'function') ? ocsKeyOf(m) : null;
+    return k ? [k] : [];
+  };
+  if (typeof window.addEventListener === 'function') window.addEventListener('kiblnow:change', edgeB105Paint);
+}
 function edgeNoVig(q, side){ if (!q) return null; const a = 1 / q.p1, b = 1 / q.p2; return (side === 'p1' ? a : b) / (a + b); }
 function edgeMargin(q){ return q ? ((1 / q.p1 + 1 / q.p2 - 1) * 100).toFixed(1) + '%' : '—'; }
 // Signed percentage points: true minus, one decimal, grey at 0.0, green / red by sign.
@@ -10853,6 +10944,8 @@ function edgeMarketHtml(m, e, names, keys, noModel){
   const pct = edgeMkView === 'pct';
   const fmtV = (q, s) => !q ? '—' : (pct ? (edgeNoVig(q, s) * 100).toFixed(1) + '%' : mxOddsTxt(q[s]));
   const softA = edgeBestSoft(m, 'p1'), softB = edgeBestSoft(m, 'p2');
+  const b105 = edgeB105Line(m);
+  edgeB105Ctx = { id: m && m.id, base, fair: { p1: null, p2: null }, pct };
   const panel = s => {
     const soft = s === 'p1' ? softA : softB;
     const bp = base[s];
@@ -10871,6 +10964,7 @@ function edgeMarketHtml(m, e, names, keys, noModel){
       nowSub = mv + edgeMargin(sharp.now);
     }
     rows.push(row(`${sn} now`, nowSub, sharp ? sharp.now : null, true));
+    rows.push(edgeB105RowHtml(b105, m, s, bp, pct) || `<div id="emB105-mk-${s}"></div>`);
     const odd = bp > 0 ? (1 / bp).toFixed(2) : '—', p = bp != null ? (bp * 100).toFixed(1) + '%' : '—';
     return `<div class="em-mk-p ${s === 'p1' ? 'a' : 'b'}">
         <div class="em-mk-nm">${edgeNameHtml(names[s], keys[s])}</div>
@@ -10978,6 +11072,8 @@ function edgeFairHtml(m, e, names, keys){
   const edits = edgeOddEdits[edgeCurrentId] || {};
   const netPP = ((e.stage2 && e.stage2.totalDeltaP1) || 0) * 100;
   const netWho = netPP >= 0 ? names.p1 : names.p2;
+  const b105 = edgeB105Line(m);
+  if (edgeB105Ctx && edgeB105Ctx.id === (m && m.id)) edgeB105Ctx.fair = { p1: fair.p1 && fair.p1.prob != null ? fair.p1.prob : null, p2: fair.p2 && fair.p2.prob != null ? fair.p2.prob : null };
   const col = s => {
     const f = fair[s] || {}, prob = f.prob != null ? f.prob : null;
     const flag = flags.find(x => x.side === s);
@@ -11004,6 +11100,7 @@ function edgeFairHtml(m, e, names, keys){
           ${tile('soft', 'Best soft', soft ? soft.price : null, soft ? edgeEsc(soft.name) : 'no soft book')}
           ${tile('pin', sharp ? sharp.name : 'Pinnacle', sharp && sharp.now ? sharp.now[s] : null, pinFoot)}
         </div>
+        ${edgeB105FairHtml(b105, m, s, prob) || `<div id="emB105-fp-${s}"></div>`}
       </div>`;
   };
   const books = edgeSoftBooks(m).map(edgeBookName);

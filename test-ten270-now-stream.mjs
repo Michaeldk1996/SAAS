@@ -72,7 +72,9 @@ function makeCtx(restRows, opts = {}) {
     WebSocket: FakeWS,
     fetch: async (u) => { fetches.push(u); return { ok: true, json: async () =>
       (u.includes('kibl_now_card') ? cardRows : hbRows) }; },
+    Event: class { constructor(type) { this.type = type; } },
     window: { SUPABASE_URL: 'https://proj.example.co', SUPABASE_ANON_KEY: 'sb_publishable_TEST',
+              kiblExtraKeys: opts.extraKeys, dispatchEvent: ev => { (ctx.__events = ctx.__events || []).push(ev.type); return true; },
               addEventListener: (ev, fn) => { (winListeners[ev] = winListeners[ev] || []).push(fn); } },
     newsTz: () => 'UTC',
     __rendered: rendered, __scrollY: 0,
@@ -419,4 +421,25 @@ test('no creds: the client is inert and every card stays on the poller', () => {
   vm.runInContext(client, ctx);
   assert.equal(ctx.window.KiblNow.enabled, false);
   assert.equal(ctx.window.KiblNow.pairFor({}), null);
+});
+
+// Pinnacle line from Bet105 (founder brief 2026-10-31): the Model page's shown match joins the Realtime scope through
+// window.kiblExtraKeys, with no card of it on screen; every repaint announces 'kiblnow:change'.
+test('scope: a key from window.kiblExtraKeys is subscribed with no card on screen; a bad key or a throwing provider changes nothing', async () => {
+  const { ctx, sockets } = makeCtx([HB(10000), CR(1.6, '2026-09-24T04:00:00.000Z', 2.4, '2026-09-24T04:00:01.000Z')], { rendered: [], extraKeys: () => [KEY, 'bad,key'] });
+  await tick();
+  assert.ok(sockets.length === 1, 'a socket opens for the extra key alone');
+  const join = joinOk(sockets[0]);
+  assert.deepEqual(join.payload.config.postgres_changes.map(b => b.filter), ['card_key=in.(' + KEY + ')'], 'the extra key, never the unquotable one');
+  assert.equal(JSON.stringify(ctx.window.KiblNow.scope()), JSON.stringify([KEY]));
+  const pair = ctx.window.KiblNow.pairFor(CARD, 'bet105');
+  assert.ok(pair && pair.live === true, 'the extra key is joined, so its pair is live');
+  const thrower = makeCtx([HB(10000)], { rendered: [], extraKeys: () => { throw new Error('boom'); } });
+  await tick();
+  assert.equal(thrower.sockets.length, 0, 'a throwing provider: the cards’ scope (none) stands, no socket');
+});
+test('repaint announces kiblnow:change so other surfaces can repaint themselves', async () => {
+  const { ctx, runTimers } = makeCtx([HB(10000), CR(1.6, '2026-09-24T04:00:00.000Z', 2.4, '2026-09-24T04:00:01.000Z')]);
+  await tick(); runTimers();
+  assert.ok((ctx.__events || []).includes('kiblnow:change'));
 });
