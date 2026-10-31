@@ -392,6 +392,10 @@ check('batch line: a batch with nothing new reads 0 of 0, never a ZeroDivisionEr
 td = tempfile.mkdtemp(); os.makedirs(os.path.join(td, 'te-odds'))
 json.dump(dict(tdocs[0], batch='calib-01'), open(os.path.join(td, 'te-odds', 'calib-01.json'), 'w'))
 json.dump(dict(tdocs[0], batch='ch-02'), open(os.path.join(td, 'te-odds', 'ch-02.json'), 'w'))
+# the import report counts rows per level; an atp-md row has no detail.level (31 Oct: KeyError after the insert)
+_lc = T.te_level_counts([{'detail': {'level': 'ch'}}, {'detail': {}}, {'detail': {'level': 'atp-q'}}, {'detail': {'level': 'ch'}}])
+check('te-import report: an atp-md row (no detail.level) counts under the atp-md level, never a KeyError', dict(_lc) == {'ch': 2, T.TE_MD_LEVEL: 1, 'atp-q': 1})
+
 _imp, _run, calls = T.te_imported_batches, T.te_import_run, []
 try:
     T.te_import_run = lambda store, dry_run=False: calls.append(store) or {'rows': brows, 'add': brows[:4], 'rep': brep, 'held': [], 'closed': set()}

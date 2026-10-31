@@ -1442,6 +1442,12 @@ def te_coverage_lines(gained):
             for lv in sorted(gained['teWins'])]
 
 
+def te_level_counts(rows):
+    """Rows per level for the import report. An atp-md row carries no detail.level (it is keyed by the Tennis-Data row),
+    so it counts under TE_MD_LEVEL, as te_coverage reads it (31 Oct: detail['level'] crashed the report after the insert)."""
+    return collections.Counter((r.get('detail') or {}).get('level') or TE_MD_LEVEL for r in rows)
+
+
 def te_import_run(store, dry_run=False):
     """The te-import itself (insert-only; a changed price for a held match is a new row that supersedes the old one), with
     everything the report lines need. Env SUPABASE_URL / SUPABASE_SECRET_KEY, API_TENNIS_KEY (the current fixture per event)."""
@@ -1466,7 +1472,7 @@ def te_import_run(store, dry_run=False):
         for i in range(0, len(add), 500):
             ids += P.insert(SNAP, add[i:i + 500], 'dedupe_key')
     print('### te-import', json.dumps({'dryRun': dry_run, 'batches': [d.get('batch') for d in docs], 'partialSkipped': skipped, 'report': rep,
-                                       'byLevel': collections.Counter(r['detail']['level'] for r in rows),
+                                       'byLevel': te_level_counts(rows),
                                        'wouldAdd' if dry_run else 'added': len(add) if dry_run else len(ids), 'feedOn': TE_FEED_ON,
                                        'coverage': gained}))
     for line in te_coverage_lines(gained):
