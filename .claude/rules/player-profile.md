@@ -144,6 +144,11 @@ Newer rulings that also bind the profile: `modal-analysis.md` "Walkovers and ret
   - *Q4.6* Record per tournament goes up to 1440px; its helper, list footnote and in-detail explainer are removed (the
     stored-record disagreement line stays — a data disclosure).
   **Test:** `tools/test-pp2-reconcile.js` "TEN-384 Q1", "2026 tab ·", "Calendar tiles ·", "Market edge box = All tile", "Court speed: chips on the Darker track…", §5.3 items 2–3 / 6–7.
+- **A listed walkover row opens no match sheet in the Versus playing styles drill (founder 2026-10-31).** Walkovers are
+  listed there (2026-10-22) but no ball was played, so the row carries no `data-pp2="sheet"` hook; every played row does.
+  **Test:** `tools/test-pp2-reconcile.js` item 31 (hooks = counted rows × 9) and 31b (a walkover row has no hook; control:
+  T. Griekspoor, Big Server + First Strike, 34 rows + 2 walkovers → 324 hooks without the rule). The Draw record drill keeps
+  its own ruling (every row opens the sheet) until ruled otherwise.
 - **TEN-384 step-4 rulings, Group C (founder card, 2026-10-05).**
   - **Q6 · no Back/Fade and no surface controls.** The heatmap pop-up renders Hold | Break only (`HB_SHOW_SURF = false`). Market edge Match winner is the backing side over all surfaces (`MKT_SHOW_FILTERS = false`). The state paths behind both stay wired.
   - **Q7 · Draw record Opponent stops at vs Top 10.** There is no vs Top 50 row, dash or note: the career-splits files hold no Top-50 split. *Early rounds* is a render-only By round row. It is recomposed from the Round of 16/32/64/128 **counts**. Its Service rates print "—" because the store keeps those as rates, without their counts.

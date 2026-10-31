@@ -10031,7 +10031,8 @@
     }).map(function (m) {
       var s = perSetScore(m);
       return mlRowHtml({
-        hook: sheetHook(m.sheetId || (m.date + '|' + m.opp)), won: m.won, date: m.date, wo: !!m.wo, unconf: !!m.unconf,
+        // Founder 2026-10-31: a listed walkover row opens no match sheet (no ball was played) — it is listed, not a link.
+        hook: m.wo ? '' : sheetHook(m.sheetId || (m.date + '|' + m.opp)), won: m.won, date: m.date, wo: !!m.wo, unconf: !!m.unconf,
         oppHtml: esc(m.opp ? styleOppName(m.opp) : DASH),
         event: tournDisplayName(m.event, null) || DASH, round: m.round || DASH,
         // Set scores where recentForm reaches, space-separated ("4-6 3-6"); the

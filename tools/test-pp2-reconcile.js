@@ -3491,6 +3491,29 @@ mustFail('the sheet-hook check would catch an unclickable drill row', () => {
   assert.strictEqual(0, 27 * 9, 'X/Y: 0 sheet hooks for 27 rows');
 });
 
+// Founder 2026-10-31: a listed walkover row in the playing-style drill opens no match sheet (no ball was played).
+checkCareer('item 31b · a listed walkover row in the drill carries no match-sheet hook', () => {
+  let n = 0;
+  for (const p of SAMPLE) {
+    const open = I.styleRows(p).filter(r => I.styleOpenable(r.won + r.lost) && (r.listed || []).some(m => m.wo))[0];
+    if (!open) continue;
+    I.state.styleRow = open.axis.label;
+    const html = I.renderStylesModal(p);
+    I.state.styleRow = null;
+    const woCells = html.match(/<span [^>]*data-pp2-wo-row="1"[^>]*>/g) || [];
+    const woN = open.listed.filter(m => m.wo).length;
+    assert.strictEqual(woCells.length, woN, `${p.name}/${open.axis.label}: ${woCells.length} walkover rows drawn for ${woN} listed`);
+    assert(woCells.every(c => !/data-pp2="sheet"/.test(c)), `${p.name}/${open.axis.label}: a walkover row carries a sheet hook`);
+    n++;
+    if (n >= 2) break;
+  }
+  if (!n) console.log('        SKIP — no sampled player has a listed walkover in an openable archetype');
+  else console.log(`        ${n} drills draw their walkover rows without a sheet hook`);
+});
+mustFail('the walkover check would catch a hooked walkover row', () => {
+  assert(['<span data-pp2="sheet" data-v="x" data-pp2-wo-row="1" style="">'].every(c => !/data-pp2="sheet"/.test(c)), 'X/Y: a walkover row carries a sheet hook');
+});
+
 checkCareer('every archetype drill renders without leaking NaN/undefined', () => {
   let n = 0;
   for (const p of SAMPLE) {
