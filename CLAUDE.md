@@ -326,6 +326,7 @@ Surface-specific rulings moved out of this file so they load only when relevant:
 | Odds sources, book ladder, card rules, close rules | `.claude/rules/odds.md` |
 | Telegram — drops chat = ATP drops only (api-tennis `Atp Singles`), every pipeline / health alert to the pipeline chat (`TELEGRAM_PIPELINE_CHAT_ID`, fallback = current chat) | `.claude/rules/telegram-alerts.md` |
 | Picks store, roles (admin / Pro), who writes which figure | `.claude/rules/picks.md` |
+| Model value ledger — append-only snapshots / key marks / settlements, value tiers in one config, CSV export | `.claude/rules/value-ledger.md` |
 | Player photos — one resolver (ATP headshot by player ID, else monogram) on every avatar; alias map, manifest, probe | `.claude/rules/player-photos.md` |
 | Match analysis Form / H2H tabs — price order, display constants, all-level H2H, market-edge, odds alarms | `.claude/rules/modal-form-h2h.md` |
 | Market edge (Match analysis tab + player-profile basis) — data path, populations, settlement, today's price, Needs, floor, pill, shared basis | `.claude/rules/modal-market-edge.md` |

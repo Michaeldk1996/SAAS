@@ -1,0 +1,71 @@
+name: Model value ledger
+# Founder brief 2026-11-01 (.claude/rules/value-ledger.md). The pipeline writes the ledger on every data run
+# (pipeline.yml "Model value ledger"); this workflow only installs its tables and exports it. Main only, dispatch only.
+#   install — apply supabase/migrations/20261101090000_model_value_ledger.sql once (tools/archive_install.py: recorded in
+#             archive_migrations; an applied file is skipped, an edited one stops), then print the guard.
+#   export  — every row + the tier summary as CSV, stored in the private ops repo (never the site, never this repo).
+#   guard   — the protections and the row counts.
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: install | export | guard
+        required: true
+        default: export
+permissions:
+  contents: read
+concurrency:
+  group: value-ledger
+  cancel-in-progress: false
+jobs:
+  ledger:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      MODE: ${{ github.event.inputs.mode || 'export' }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Refuse to run off main
+        run: |
+          if [ "${GITHUB_REF}" != "refs/heads/main" ]; then echo "::error::the ledger jobs run from main only (got ${GITHUB_REF})"; exit 1; fi
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: install — apply the additive migration once
+        if: env.MODE == 'install'
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: python3 tools/archive_install.py supabase/migrations/20261101090000_model_value_ledger.sql
+
+      - name: guard — protections and row counts
+        if: env.MODE == 'install' || env.MODE == 'guard'
+        run: |
+          curl -sS -X POST "${SUPABASE_URL%/}/rest/v1/rpc/value_ledger_guard" -H "apikey: $SUPABASE_SECRET_KEY" \
+            -H "Authorization: Bearer $SUPABASE_SECRET_KEY" -H "Content-Type: application/json" -d '{}' | tee guard.json
+          echo
+          node -e 'const g=JSON.parse(require("fs").readFileSync("guard.json","utf8")); if(g.ok!==true){console.log("::error::value ledger protections NOT ok");process.exit(1)}'
+
+      - name: export — every row, the tier summary first
+        if: env.MODE == 'export'
+        run: node tools/value-ledger.mjs export --out value-ledger.csv   # counts only in the log: this repo's logs are public
+
+      # The SAAS repo is public, so its run artifacts are not private: the export goes to the private ops repo as a NEW
+      # dated file (never replaced; plain push, never --force) — the historical archive's export pattern.
+      - name: Store the export in the private ops repo
+        if: env.MODE == 'export'
+        env:
+          WORKFLOW_PAT: ${{ secrets.WORKFLOW_PAT }}
+        run: |
+          set -euo pipefail
+          [ -n "${WORKFLOW_PAT:-}" ] || { echo "::error::WORKFLOW_PAT not set: the export was NOT stored"; exit 1; }
+          git clone -q --depth 1 "https://x-access-token:${WORKFLOW_PAT}@github.com/Michaeldk1996/stennisfy-ops.git" ops
+          day=$(date -u +%F); f="value-ledger/${day}/value-ledger_$(date -u +%H%M%S).csv"
+          mkdir -p "ops/value-ledger/${day}"; [ ! -e "ops/$f" ] || { echo "::error::$f exists — never replaced"; exit 1; }
+          cp value-ledger.csv "ops/$f"
+          cd ops && git add "$f" && git -c user.name=value-ledger-bot -c user.email=value-ledger-bot@users.noreply.github.com commit -qm "value ledger export $f" && git push -q origin HEAD
+          echo "stored: stennisfy-ops/$f ($(wc -l < ../value-ledger.csv) lines)" | tee -a "$GITHUB_STEP_SUMMARY"

@@ -625,6 +625,19 @@ jobs:
         run: |
           node tools/apply-archive-pinclose.mjs --closes pinnacle-closes.json --matches matches.json || echo "::warning::apply-archive-pinclose failed — board cards keep the captured close"
 
+      # Model value ledger (founder brief 2026-11-01): every model price this run made for an upcoming match, saved with the
+      # bet105 / Pinnacle prices of the moment, its key snapshots marked, and finished matches settled (CLV vs this run's
+      # Pinnacle close export, result, flat-1u profit at the bet105 price). Append-only Supabase tables, written only by
+      # tools/value-ledger.mjs (INSERT … ON CONFLICT DO NOTHING). READ-ONLY toward the model, the board and the archive.
+      # Best-effort (F5): a failure is reported by step-check and never blocks the publish.
+      - name: Model value ledger — snapshots, key marks, settlements (best-effort)
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+        run: |
+          rc=0; node tools/value-ledger.mjs record || rc=$?
+          node tools/step-check.mjs --step "tools/value-ledger.mjs record" --rc "$rc"
+
       - name: Alert — the Pinnacle archive gate failed (Telegram)
         if: failure() && hashFiles('.archive-failed') != ''
         env:
