@@ -29,7 +29,7 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_PIPELINE_CHAT_ID || secrets.TELEGRAM_CHAT_ID }}
           SQL_PUB_PEM: tools/ten347-pub.pem
         run: TEN294_STEPS=tools/ten347-steps-$TEN347_STEPS.json python3 tools/ten294-sql.py
       - uses: actions/upload-artifact@v4
