@@ -3643,8 +3643,9 @@ function isCardableFixture(f) {
 // cards were built from: which ATP main-draw singles api-tennis reports in play, and how many live cards the board got.
 // Not ok = api-tennis shows ≥1 match in play and the board has 0 live cards (tools/check-live-cards.mjs fails the run).
 function liveCardCheck(fixtures, matches) {
+  // Founder 2026-11-01: qualifying is carded (2026-10-31), so a qualifier in play counts here too.
   const apiLive = (fixtures || []).filter(f => f.event_live === '1' && !RECORD_STATUSES.includes(f.event_status)
-    && f.event_qualification !== 'True' && !isCancelledFixture(f) && !isInterruptedFixture(f))
+    && !isCancelledFixture(f) && !isInterruptedFixture(f))
     .map(f => ({ eventKey: String(f.event_key), players: `${f.event_first_player} v ${f.event_second_player}`, status: f.event_status, tournament: f.tournament_name }));
   const cardsLive = (matches || []).filter(m => m.live).length;
   return { apiLive, apiLiveCount: apiLive.length, cardsLive, ok: !(apiLive.length > 0 && cardsLive === 0) };

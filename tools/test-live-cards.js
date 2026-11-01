@@ -16,7 +16,8 @@ check('B8 state (3 in play, 0 live cards) → not ok', gap.ok === false && gap.a
 check('carded → ok', liveCardCheck([fx({})], [{ live: true }]).ok === true);
 check('nothing in play → ok (nothing to compare)', liveCardCheck([fx({ event_live: '0' })], []).ok === true);
 check('decided with a lagging live flag is not "in play"', liveCardCheck([fx({ event_status: 'Finished' })], []).apiLiveCount === 0);
-check('qualifying in play does not count (never carded)', liveCardCheck([fx({ event_qualification: 'True' })], []).apiLiveCount === 0);
+check('qualifying in play counts (carded since 2026-10-31; founder 2026-11-01)', liveCardCheck([fx({ event_qualification: 'True' })], []).apiLiveCount === 1);
+check('a qualifying-only live slate with no live card is a gap', liveCardCheck([fx({ event_qualification: 'True' })], [{ live: false }]).ok === false);
 check('interrupted does not count (built by the completed-match path)', liveCardCheck([fx({ event_status: 'Interrupted' })], []).apiLiveCount === 0);
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'lc-'));
 const run = (obj) => { const f = path.join(tmp, 'lc.json'); if (obj) fs.writeFileSync(f, JSON.stringify(obj)); else if (fs.existsSync(f)) fs.unlinkSync(f);

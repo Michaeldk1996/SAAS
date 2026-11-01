@@ -247,6 +247,18 @@ H.check('C12 · loading / none / failed states claim nothing about the player', 
   assert(/could not be loaded/.test(drill(load({ file: { st: 'failed' } }).I, 'Masters')));
 });
 
+// Founder 2026-11-01: a listed walkover row opens no match sheet (the playing-style drill's rule, 2026-10-31).
+H.check('C7b · the two walkover rows carry no sheet hook; every played row keeps its nine', () => {
+  const { I } = load();
+  I.state.drawDrill = 'Quarter-finals';
+  const M = I.drawDrillModel(P, FX.splits.career, 'career');
+  const h = drill(I, 'Quarter-finals');
+  const woCells = h.match(/<span [^>]*data-pp2-wo-row="1"[^>]*>/g) || [];
+  assert.strictEqual(woCells.length, 2, 'the two walkover rows are listed');
+  assert.ok(woCells.every(c => !/data-pp2="draw-sheet"/.test(c)), 'a walkover row carries the sheet hook');
+  const played = M.rows.length - 2, onPage = Math.min(played + 2, 100) - 2;
+  assert.strictEqual((h.match(/data-pp2="draw-sheet"/g) || []).length, onPage * 9, 'played rows keep every hook');
+});
 // ── D · the sheet ───────────────────────────────────────────────────────────────────────────────────────────────
 H.check('D1 · every listed row carries the sheet hook; a joined row opens on its career match (event key, its prices)', () => {
   const { I } = load({ join: (k, n, rows) => { rows.forEach(r => { r.price = 1.4; r.oppPrice = 3.1; r.book = 'B';

@@ -100,7 +100,9 @@ except where a ruling below says otherwise. Colours are foundation tokens (`foun
   lands on the next day's tab; mutants: feed-date rule, no preview, the four-day rail, a wrapping head).
 - **Qualifying is shown, never hidden (founder 2026-10-31, publish-and-qualifying).** Neither card builder skips
   `event_qualification === 'True'`: a qualifying match is an Upcoming card and, once finished, a Completed card (founder
-  "Yes, card them"; the Completed Upsets tile names its round the same way). A card is qualifying (`boardQualifying`, `board-qualifying.js`) when the
+  "Yes, card them"; the Completed Upsets tile names its round the same way). The live-card alarm (`liveCardCheck`) counts a qualifier in play
+  like any other match, and the Stennisfy Model page and the profile's Next match name its round through the same label
+  (founder 2026-11-01). A card is qualifying (`boardQualifying`, `board-qualifying.js`) when the
   feed flags it, or when its event's OFFICIAL main draw (`draws.json`, joined through the ATP tier map
   `tools/points-at-risk/atp-tier-map-v1.json`) starts after the fixture's date and either both players are on the posted
   qualifying sheet or — sheet not posted — neither is on the posted main-draw sheet (the Paris rows of 31 Oct arrive with

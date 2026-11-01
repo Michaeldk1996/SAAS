@@ -1546,6 +1546,57 @@ check('the mutation anchor still exists — otherwise the control is vacuous',
 check('CONTROL: restoring that line takes the count to 2, so the check fires',
       _bind_count(_mut, 'main', 'st') == 2, str(_bind_count(_mut, 'main', 'st')))
 
+# ---------------------------------------------------------------------------
+# fix-all 2026-11-01: fetch_all pages by key, never by deep OFFSET. The fake server
+# times out (57014) on any OFFSET past 3,000 rows — what Postgres did on
+# oddspapi_fixtures / oddspapi_line_summary from 31 Oct 13:46Z — and once on a keyset page.
+# ---------------------------------------------------------------------------
+def _ks_table():
+    rows = []
+    for f in range(1, 1601):                       # 1,600 fixtures, 1–4 rows each, split across pages
+        for side in range(1 + f % 4):
+            rows.append({'fixture_id': f'id{f:06d}', 'side': side})
+    return rows
+_KS = _ks_table()
+def _ks_server(fail_once=True):
+    state = {'failed': not fail_once, 'calls': 0}
+    def call(method, path, url, key):
+        state['calls'] += 1
+        q = urllib.parse.parse_qs(urllib.parse.urlsplit(path).query)
+        rows = sorted(_KS, key=lambda r: (r['fixture_id'], r['side']))
+        lim = int(q['limit'][0]); off = int(q.get('offset', ['0'])[0])
+        if off > 3000:
+            return None, (500, '{"code":"57014","message":"canceling statement due to statement timeout"}')
+        if 'fixture_id' in q:
+            lo = q['fixture_id'][0].split('.', 1)[1]
+            rows = [r for r in rows if r['fixture_id'] >= lo]
+            if not state['failed']:
+                state['failed'] = True
+                return None, (500, '{"code":"57014"}')
+        return json.dumps(rows[off:off + lim]).encode(), None
+    return call, state
+import urllib.parse, json
+_call, _st = _ks_server()
+_rows, _err = K.fetch_all('u', 'k', 'oddspapi_line_summary', 'fixture_id,side', '&market=eq.x',
+                          order='fixture_id.asc,side.asc', _sb=_call, sleep=lambda s: None)
+check('fetch_all keyset: every row read exactly once, in order, past the deep-offset timeout',
+      _err is None and _rows == sorted(_KS, key=lambda r: (r['fixture_id'], r['side'])),
+      f'err={_err} got={len(_rows)} of {len(_KS)}')
+check('fetch_all keyset: a page that timed out once was asked again (not a failed run)', _st['failed'])
+check('fetch_all keyset: a page never cuts a fixture in half (no duplicate, no gap)',
+      len({(r['fixture_id'], r['side']) for r in _rows}) == len(_KS))
+_call2, _ = _ks_server(fail_once=False)
+_o_rows, _o_err = K._fetch_all_offset('u', 'k', 'oddspapi_line_summary', 'fixture_id,side', '', 'fixture_id.asc,side.asc',
+                                      _call2, lambda s: None)
+check('CONTROL: the old OFFSET read fails on the same server (57014 past row 3,000)', _o_err is not None and len(_o_rows) <= 4000)
+# A table whose order column is not selected (or one key fills a page) still reads in full by OFFSET.
+_small = [{'side': i} for i in range(1500)]
+def _plain(method, path, url, key):
+    q = urllib.parse.parse_qs(urllib.parse.urlsplit(path).query)
+    off = int(q.get('offset', ['0'])[0]); return json.dumps(_small[off:off + int(q['limit'][0])]).encode(), None
+_p_rows, _p_err = K.fetch_all('u', 'k', 'kibl_now_gaps', 'side', order='id.asc', _sb=_plain, sleep=lambda s: None)
+check('fetch_all: no key column in the rows → falls back to OFFSET and still reads all 1,500', _p_err is None and _p_rows == _small)
+
 print()
 if FAILED:
     print(f'{len(FAILED)} FAILED: {FAILED}')

@@ -31,7 +31,7 @@ function fn(name) {
   return html.slice(at + 1, i + 1);
 }
 const block = name => { const a = html.indexOf('const ' + name + ' = {'); return html.slice(a, html.indexOf('\n};\n', a) + 3); };
-const HELPERS = [block('MX_BOOK_LABELS'), fn('mxBookLabel'), fn('mxOddsTxt'), fn('mxMovePct'), fn('playerInitials'), fn('newsTz'), fn('newsPlayerName')].join('\n');
+const HELPERS = [block('MX_BOOK_LABELS'), fn('mxBookLabel'), fn('mxOddsTxt'), fn('mxMovePct'), fn('playerInitials'), fn('newsTz'), fn('newsPlayerName'), fn('mxIsQual'), fn('mxRoundLabel')].join('\n');
 const NOW = Date.parse('2026-10-10T05:00:00Z');   // 3.5 h before the 08:30Z start: inside the 30 h display window
 
 function boot(opts = {}) {

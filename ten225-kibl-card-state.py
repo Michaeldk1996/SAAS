@@ -2319,15 +2319,61 @@ def upsert_kibl_rows(url, key, rows, keep_stored_key=False, sleep=time.sleep):
     return sent, None
 
 
-def fetch_all(url, key, table, cols, extra='', order='fixture_id.asc'):
+def fetch_all(url, key, table, cols, extra='', order='fixture_id.asc', _sb=None, sleep=time.sleep):
     """Page a table. PostgREST caps a page at 1,000 rows and truncates silently
     past that, so the loop is not an optimisation — without it a full read is a
-    quiet 1,000-row lie."""
+    quiet 1,000-row lie.
+
+    Keyset paging on the order's first column (fix-all 2026-11-01): OFFSET paging made
+    Postgres re-walk every earlier row for each page, so the deep pages of
+    oddspapi_fixtures (61,706 rows) and oddspapi_line_summary hit the statement timeout
+    (57014) and the card-state step failed on every run from 31 Oct 13:46Z to 1 Nov
+    00:02Z — odds-card-state.json stayed at 31 Oct 07:37Z and Completed cards had no
+    close. Each page asks `key >= last key` instead; the last key's rows are dropped
+    from a full page and read again with the next one, so a key split across two pages
+    is never half-read. A full page holding one key only cannot advance, so the read
+    falls back to OFFSET paging for the whole table (slower, still complete). Every page
+    is retried READ_RETRIES times, then fails loudly. Same rows, same order as before."""
+    call = _sb or sb
+    kcol = order.split(',')[0].split('.')[0]
+    out, last = [], None
+    while True:
+        cond = f'&{kcol}=gte.{urllib.parse.quote(str(last), safe="")}' if last is not None else ''
+        got, err = None, None
+        for attempt in range(1, READ_RETRIES + 1):
+            got, err = call('GET', f'/rest/v1/{table}?select={cols}{extra}{cond}'
+                                   f'&order={order}&limit={PAGE}', url, key)
+            if got is not None:
+                break
+            if attempt < READ_RETRIES:
+                print(f'{table}: keyset page after {kcol} {last!r} failed ({err}); '
+                      f'retry {attempt}/{READ_RETRIES - 1}')
+                sleep(2 * attempt)
+        if got is None:
+            return out, err
+        rows = json.loads(got.decode('utf-8'))
+        if len(rows) < PAGE:
+            out.extend(rows)
+            return out, None
+        tail = rows[-1].get(kcol)
+        if tail is None or tail == last or all(r.get(kcol) == tail for r in rows):
+            return _fetch_all_offset(url, key, table, cols, extra, order, call, sleep)
+        out.extend(r for r in rows if r.get(kcol) != tail)
+        last = tail
+
+
+def _fetch_all_offset(url, key, table, cols, extra, order, call, sleep):
+    """The pre-2026-11-01 OFFSET read, kept as the fallback for a key with a full page of rows."""
     out, offset = [], 0
     while True:
-        got, err = sb('GET', f'/rest/v1/{table}?select={cols}{extra}'
-                             f'&order={order}&limit={PAGE}&offset={offset}',
-                      url, key)
+        got, err = None, None
+        for attempt in range(1, READ_RETRIES + 1):
+            got, err = call('GET', f'/rest/v1/{table}?select={cols}{extra}'
+                                   f'&order={order}&limit={PAGE}&offset={offset}', url, key)
+            if got is not None:
+                break
+            if attempt < READ_RETRIES:
+                sleep(2 * attempt)
         if got is None:
             return out, err
         rows = json.loads(got.decode('utf-8'))

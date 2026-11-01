@@ -6271,7 +6271,8 @@
     var body = shown.slice(from, to).map(function (r) {
       var c = r.careerMatch, st = r.sc.wo ? 'wo' : r.sc.ret ? 'ret' : null;
       return mlRowHtml({
-        hook: 'data-pp2="draw-sheet" data-v="' + r.i + '" ', won: r.won, wo: st === 'wo',
+        // Founder 2026-11-01: a listed walkover row opens no match sheet here either (no ball was played).
+        hook: st === 'wo' ? '' : 'data-pp2="draw-sheet" data-v="' + r.i + '" ', won: r.won, wo: st === 'wo',
         date: c && /^\d{4}-\d{2}-\d{2}/.test(String(c.date || '')) ? String(c.date).slice(0, 10) : r.date,
         oppHtml: drawOppHtml(r),
         event: tournDisplayName(r.m.t, null) || DASH, round: r.m.rd || DASH,

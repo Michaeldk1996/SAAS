@@ -10445,7 +10445,8 @@ function edgeStyleName(name, key){
   try { const s = ppStyleFor(name, key); const a = s && psArchFor(s.archetype_label); return a ? a.name : null; } catch (err) { return null; }
 }
 function edgeEventName(raw){ return (typeof sfEventName === 'function' && raw) ? (sfEventName(raw) || raw) : (raw || ''); }
-function edgeRoundCode(m, e){ return roundBadgeText((m && m.tournamentRound) || (e && e.match && e.match.round)) || null; }
+// A qualifying match reads its own label (Q1 / Q2 / Qualifying), never the feed's round word (founder 2026-11-01).
+function edgeRoundCode(m, e){ if (mxIsQual(m)) return mxRoundLabel(m); return roundBadgeText((m && m.tournamentRound) || (e && e.match && e.match.round)) || null; }
 function edgeRoundFull(code){ return code ? ((typeof TR_RESULT !== 'undefined' && TR_RESULT[code]) || code) : null; }
 // A player's name, linked to his profile when one exists (white, underline on hover — never link blue).
 function edgeHasProfile(key){ return key != null && !!(typeof playerProfiles !== 'undefined' && playerProfiles && playerProfiles[String(key)]); }
@@ -23035,7 +23036,7 @@ window.pp2NextMatchFor = function(key){
     else { const d = new Date(key0 + 'T12:00:00Z'); day = d.toLocaleDateString('en-GB', { weekday: 'short', timeZone: 'UTC' }) + ' ' + d.getUTCDate(); }
   }
   const event = (m.tour && typeof sfEventName === 'function' ? sfEventName(m.tour) : String(m.tour || '').replace(/^ATP\s+/, '')).trim();   // TEN-407: the one event name
-  const rd = m.tournamentRound ? roundBadgeText(m.tournamentRound) : null;
+  const rd = mxRoundLabel(m) || null;   // qualifying reads Q1 / Q2 / Qualifying (founder 2026-11-01), else the round badge
   const where = [event, rd].filter(Boolean).join(' ');
   return { label: [day, where].filter(Boolean).join(' · ') || null, opponent: (best.side === 1 ? m.p2 : m.p1) || null,
     opponentKey: best.side === 1 ? m.p2Key : m.p1Key,

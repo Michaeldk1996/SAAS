@@ -209,7 +209,8 @@ Newer rulings that also bind the profile: `modal-analysis.md` "Walkovers and ret
   - **Walkovers** are listed as walkover rows with no price and no P&L, and are in no W–L — the Draw record
     included (founder 2026-10-22 closes the open question: a walkover is never a win or a loss).
   - **Date** = the tournament's month (the source dates every match at its event start; founder: "yes").
-  - **Every row opens the step-3 stats sheet (founder: required):** on the career-history match the join met for it
+  - **Every played row opens the step-3 stats sheet (founder: required); a listed walkover row opens none** (founder
+    2026-11-01, as the playing-style drill since 2026-10-31; `tools/test-draw-record-drill.js` C7b): on the career-history match the join met for it
     (`careerMatch`, event key → the full sheet), else on the row's own date, score and event (the sheet's "Match stats not
     available" state). A loss's score is turned to his side ("6-3 6-4" on a loss reads "3-6 4-6").
   - **An opponent links to his profile** only when the joined match carries his key and the standings say a profile exists

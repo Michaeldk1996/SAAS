@@ -162,5 +162,25 @@ check('the Completed Upsets tile names the round through mxRoundLabel, never the
   assert.ok(!HTML.includes('roundBadgeText(u0.m.tournamentRound)'));
 });
 
+// Founder 2026-11-01: the Stennisfy Model page (edgeRoundCode) and the profile's Next match (pp2NextMatchFor) name a
+// qualifying round through the card's label, never the feed word ("Semi-finals" on the Paris qualifiers of 31 Oct).
+const fnSrc = (n, html = HTML) => { const m = html.match(new RegExp('\\nfunction ' + n + '\\([^\\n]*')); assert.ok(m, n); return m[0]; };
+const edge = (html) => new Function(`${constLine('MX_QUAL_SUFFIX', html)}
+  function roundBadgeText(r){ return /Semi-finals/.test(r || '') ? 'SF' : /32-finals/.test(r || '') ? 'R64' : null; }
+  ${fnSrc('mxIsQual', html)} ${fnSrc('mxRoundLabel', html)} ${fnSrc('edgeRoundCode', html)}
+  return edgeRoundCode;`)();
+function checkE(html) {
+  const er = edge(html);
+  assert.strictEqual(er({ tournamentRound: 'ATP Paris - Semi-finals', boardQualifying: true, qualifyingRound: null }, null), 'Qualifying');
+  assert.strictEqual(er({ tournamentRound: 'ATP Paris - Semi-finals', boardQualifying: true, qualifyingRound: 'Q2' }, null), 'Q2');
+  assert.strictEqual(er({ tournamentRound: 'ATP Paris - 1/32-finals', boardQualifying: false }, null), 'R64');
+  assert.ok(html.includes('const rd = mxRoundLabel(m) || null;'), 'pp2NextMatchFor reads the card label');
+}
+check('Model page + Next match: a qualifier reads Qualifying / Q2, a main-draw match its round badge', () => checkE(HTML));
+check('MUTANT caught: the Model page prints the feed word on a qualifier', () => {
+  const mut = HTML.replace("function edgeRoundCode(m, e){ if (mxIsQual(m)) return mxRoundLabel(m); return", "function edgeRoundCode(m, e){ return");
+  assert.notStrictEqual(mut, HTML); assert.throws(() => checkE(mut));
+});
+
 console.log(`\nboard-qualifying: ${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
