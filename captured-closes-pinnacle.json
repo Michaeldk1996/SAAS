@@ -1,29 +1,29 @@
 {
- "generatedAt": "2026-11-01T13:21:39.895Z",
+ "generatedAt": "2026-11-01T15:43:13.033Z",
  "source": "matches.json git history: oddsMovement.books.Pinnacle (Oddspapi pinnacle, to 2026-09-02) and oddsMovement.chart.books[\"Pinnacle +30s\"] (Oddspapi pinnacle+30, from 2026-09-23)",
  "rule": "each side = last tick at or before the actual start (the earlier of Oddspapi trueStart and the card-state start: Oddspapi or the live-flip lower bound); both sides required; dropped when no unique actual start. seenAt = our last capture read before the start that confirmed the close (founder 2026-10-28); age = start - (seenAt or at)",
  "scannedThrough": {
-  "commit": "40b6f699ba5c8114956fa0554944bda2ed6660f5",
-  "at": "2026-11-01T13:00:19Z"
+  "commit": "5ded6779b95fce1870bf1758a4c114f43e1db716",
+  "at": "2026-11-01T15:03:04Z"
  },
- "commitsScanned": 6278,
+ "commitsScanned": 6286,
  "lastRun": {
-  "from": "2026-11-01T12:15:12Z",
-  "snapshots": 4,
-  "added": 0,
-  "replaced": 6,
+  "from": "2026-11-01T13:00:19Z",
+  "snapshots": 9,
+  "added": 1,
+  "replaced": 0,
   "seenBackfilled": 0,
   "series": 63,
-  "kept": 38,
+  "kept": 39,
   "bySource": {
    "oddspapi": 37,
-   "api-tennis-live": 1
+   "api-tennis-live": 2
   },
   "byBook": {
-   "Pinnacle +30s": 38
+   "Pinnacle +30s": 39
   },
   "dropped": {
-   "noStart": 25
+   "noStart": 24
   }
  },
  "stats": {
@@ -14070,6 +14070,28 @@
    "oAt": "2026-10-31T09:30:39.246Z",
    "winner": "p1",
    "seenAt": "2026-10-31T15:20:00.000Z"
+  },
+  {
+   "eventKey": 12176263,
+   "date": "2026-11-01",
+   "p1Key": 2959,
+   "p2Key": 1852,
+   "p1Name": "J. Lehecka",
+   "p2Name": "V. Vacherot",
+   "p1": 1.54,
+   "p2": 2.66,
+   "at": "2026-11-01T11:00:39.151Z",
+   "trueStart": "2026-11-01T14:40:06.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s",
+   "round": "ATP Basel - Final",
+   "qualifying": false,
+   "event": "ATP Basel",
+   "o1": 1.46,
+   "o2": 2.91,
+   "oAt": "2026-10-31T21:05:40.558Z",
+   "winner": null,
+   "seenAt": "2026-11-01T12:38:18.000Z"
   }
  ]
 }
