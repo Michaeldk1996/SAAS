@@ -54,7 +54,7 @@ insert into data_alarms.expected_jobs (jobname) values
   ('live-poller-10s'), ('ten141-pipeline-ping'), ('ten280-bet105-drop-bot'), ('ten287-recorder'),
   ('ten287-recorder-sweep'), ('ten287-superbet-drop-bot'), ('ten294_drops_watchdog'), ('ten347_publish_watch'),
   ('drops-scope-recheck'), ('ten270-oddspapi-postmatch-ping'), ('ten270-oddspapi-postmatch-check'),
-  ('ten216-collector-watchdog')
+  ('ten216-collector-watchdog'), ('ten232-kibl-sweep-ping')
 on conflict (jobname) do nothing;
 
 -- one row per GET; only the fields the rows need are kept (the response itself is deleted once read)
@@ -129,7 +129,7 @@ create or replace function data_alarms.utc(t timestamptz) returns text
 language sql immutable as $$ select to_char(t at time zone 'UTC', 'DD Mon HH24:MI') || 'Z' $$;
 
 create or replace function data_alarms.mins(i interval) returns integer
-language sql immutable as $$ select floor(extract(epoch from i) / 60)::int $$;
+language sql immutable as $$ select greatest(0, floor(extract(epoch from i) / 60))::int $$;   -- a clock a few seconds ahead never reads -1
 
 create or replace function data_alarms.skey(p_name text) returns text
 language sql stable as $$ select decrypted_secret from vault.decrypted_secrets where name = p_name limit 1 $$;

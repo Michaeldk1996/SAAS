@@ -50,7 +50,7 @@ create table public.kibl_now_price (card_key text, side_key text, kind text, wri
 """
 JOBS = ['live-poller-10s', 'ten141-pipeline-ping', 'ten280-bet105-drop-bot', 'ten287-recorder', 'ten287-recorder-sweep',
         'ten287-superbet-drop-bot', 'ten294_drops_watchdog', 'ten347_publish_watch', 'drops-scope-recheck',
-        'ten270-oddspapi-postmatch-ping', 'ten270-oddspapi-postmatch-check', 'ten216-collector-watchdog']
+        'ten270-oddspapi-postmatch-ping', 'ten270-oddspapi-postmatch-check', 'ten216-collector-watchdog', 'ten232-kibl-sweep-ping']
 
 def reset(src=SRC):
     q('drop schema if exists data_alarms cascade; truncate net.requests, net._http_response, cron.job, public.live_snapshot, public.kibl_now_price;')

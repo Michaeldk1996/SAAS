@@ -114,7 +114,7 @@ check("the threshold is 3", sc.BREAKER_N == 3)
 check("it dispatches the archive workflow", sc.WF == "ten232-kibl-archive.yml")
 check("at the 5-minute floor the standing rules set", sc.SCHEDULE == "*/5 * * * *")
 
-print("6. the unschedule survives a dropped connection (27 Oct 19:02Z: HTTP 544)")
+print("6. the backoff survives a dropped connection (27 Oct 19:02Z: HTTP 544); it never unschedules")
 import io
 import json
 import urllib.error
@@ -155,20 +155,43 @@ def trip(answers):
         sc.urllib.request.urlopen = real
 
 
-msg, sleeps, sent = trip([544, 544, [{"jobname": sc.JOB, "unscheduled": True}], [{"n": 0}]])
-check("two 544s then success → unscheduled, and says so  [mutant: attempts=1]",
-      msg is not None and "unscheduled after" in msg and len(sleeps) == 2, f"{msg} {sleeps}")
-check("it unschedules by jobid from cron.job, by its own name only",
-      "cron.unschedule(j.jobid)" in sent[-2] and f"'{sc.JOB}'" in sent[-2] and sc.FOREIGN_JOB not in sent[-2])
-msg, sleeps, sent = trip([[], [{"n": 0}]])
-check("an already-absent pinger says 'already unscheduled' (no swallowed exception)",
-      msg is not None and "already unscheduled" in msg, msg)
-msg, sleeps, sent = trip([[{"jobname": sc.JOB, "unscheduled": True}], [{"n": 1}]])
-check("a job still present on read-back fails loudly", msg is None)
+msg, sleeps, sent = trip([544, 544, [{"jobname": sc.JOB, "altered": True}], [{"schedule": sc.BACKOFF, "active": True}]])
+check("two 544s then success → backed off, and says so  [mutant: attempts=1]",
+      msg is not None and "backed off" in msg and len(sleeps) == 2, f"{msg} {sleeps}")
+check("it alters by jobid from cron.job, by its own name only, to the backoff cadence",
+      "cron.alter_job(j.jobid" in sent[-2] and f"'{sc.JOB}'" in sent[-2] and sc.FOREIGN_JOB not in sent[-2] and sc.BACKOFF in sent[-2])
+check("it NEVER unschedules (stage 1: breakers back off + alert)", not any("unschedule" in q for q in sent), sent)
+msg, sleeps, sent = trip([[], []])
+check("an already-absent pinger is said out loud ('not in cron.job'), no swallowed exception",
+      msg is not None and "not in cron.job" in msg, msg)
+msg, sleeps, sent = trip([[{"jobname": sc.JOB, "altered": True}], [{"schedule": sc.SCHEDULE, "active": True}]])
+check("a schedule that did not change on read-back fails loudly", msg is None)
 msg, sleeps, sent = trip([400])
 check("an SQL error (400) is not retried", msg is None and sleeps == [], sleeps)
 msg, sleeps, sent = trip([544, 544, 544, 544])
 check("four 544s in a row give up loudly (non-zero), after 3 waits", msg is None and len(sleeps) == 3, sleeps)
+check("the backoff is slower than the floor, never off", sc.BACKOFF == "*/30 * * * *" and sc.BACKOFF != sc.SCHEDULE)
+
+def restore(answers):
+    real = sc.urllib.request.urlopen
+    sc.urllib.request.urlopen, sent = fake_api(answers)
+    try:
+        try:
+            return sc.restore_cadence("ref", "tok", sleep=lambda s: None), sent
+        except SystemExit:
+            return "DIED", sent
+    finally:
+        sc.urllib.request.urlopen = real
+
+line, sent = restore([[{"schedule": sc.BACKOFF}], [{"altered": True}], [{"schedule": sc.SCHEDULE}]])
+check("a green run after a backoff restores */5 and says RECOVERED", line and "RECOVERED" in line and sc.SCHEDULE in sent[1], line)
+line, sent = restore([[{"schedule": sc.SCHEDULE}]])
+check("a pinger already on */5: nothing to do, one read only", line is None and len(sent) == 1, sent)
+line, sent = restore([[{"schedule": sc.BACKOFF}], [{"altered": True}], [{"schedule": sc.BACKOFF}]])
+check("a restore that did not take fails loudly", line == "DIED", line)
+wf = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".github/workflows/ten232-kibl-archive.yml")).read()
+check("the workflow alerts the pipeline chat on a trip and restores on a green run",
+      "ACTION: breaker" in wf and "ACTION: restore" in wf and "TELEGRAM_PIPELINE_CHAT_ID" in wf)
 
 print()
 if FAILS:

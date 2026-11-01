@@ -19,6 +19,10 @@ on:
         default: 'status'
         type: choice
         options: [install, status, fire-test, uninstall]
+      only:
+        description: 'fire-test only: comma-separated rows (empty = all)'
+        required: false
+        default: ''
 
 concurrency:
   group: data-alarms
@@ -46,4 +50,5 @@ jobs:
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_PIPELINE_CHAT_ID || secrets.TELEGRAM_CHAT_ID }}
+          FIRE_ONLY: ${{ inputs.only }}
         run: python3 tools/data-alarms-manage.py "$ACTION"

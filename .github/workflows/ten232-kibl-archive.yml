@@ -580,14 +580,30 @@ jobs:
       # runs, and unschedules the pinger when all three failed. Recovery is
       # deliberately manual: re-run ten232-kibl-sweep-cron.yml with
       # action=install once the cause is fixed.
-      - name: Circuit breaker — stop the pinger after 3 consecutive failures
+      # Architecture program stage 1 (2026-11-01): the breaker BACKS OFF the pinger (*/30) and alerts the pipeline chat —
+      # it never unschedules it. A green run puts it back on */5 and says so.
+      - name: Circuit breaker — back the pinger off after 3 consecutive failures, and alert
         if: failure()
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_PIPELINE_CHAT_ID || secrets.TELEGRAM_CHAT_ID }}
           ACTION: breaker
+        run: |
+          set -o pipefail
+          python3 -B ten232-kibl-sweep-cron.py | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Circuit breaker — a green run restores the pinger's cadence
+        if: success()
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_PIPELINE_CHAT_ID || secrets.TELEGRAM_CHAT_ID }}
+          ACTION: restore
         run: |
           set -o pipefail
           python3 -B ten232-kibl-sweep-cron.py | tee -a "$GITHUB_STEP_SUMMARY"

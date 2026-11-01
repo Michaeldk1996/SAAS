@@ -35,6 +35,9 @@ FOREIGN_SECRET = "gh_workflow_pat"            # ditto
 REPO = "Michaeldk1996/SAAS"
 WF = "ten232-kibl-archive.yml"
 SCHEDULE = "*/5 * * * *"
+# Architecture program stage 1 (2026-11-01): a breaker never unschedules a job permanently — it backs the pinger off to
+# this cadence and alerts; the next green run puts it back on SCHEDULE (and says so).
+BACKOFF = "*/30 * * * *"
 MGMT = "https://api.supabase.com"
 
 
@@ -103,25 +106,65 @@ def run_sql(ref, token, query, what, soft=False, attempts=1, sleep=time.sleep):
 
 
 def trip_breaker(ref, token, sleep=time.sleep):
-    """Unschedule the pinger and prove it is gone. Returns the line to print.
+    """Back the pinger off to BACKOFF and prove it. Returns the line to print and alert.
 
-    Unschedules by jobid from cron.job, so an absent job is an empty result and
-    not an exception swallowed inside a DO block: the log says which it was.
+    Never an unschedule (architecture program stage 1, 2026-11-01): an unscheduled pinger left the card state on GitHub's
+    throttled schedule for days with no alert (27 Sep, 5 Oct, 30 Oct). Alters by jobid from cron.job, by its own name
+    only, and reads the schedule back: an absent job is said out loud (the data alarms' cron_jobs row alerts on it too).
     """
-    gone = run_sql(ref, token, f"""
-      select j.jobname, cron.unschedule(j.jobid) as unscheduled
+    run_sql(ref, token, f"""
+      select j.jobname, cron.alter_job(j.jobid, schedule := {sql_lit(BACKOFF)}) is null as altered
         from cron.job j where j.jobname = {sql_lit(JOB)};
-    """, "breaker unschedule", attempts=4, sleep=sleep)
-    left = run_sql(ref, token, f"""
-      select count(*)::int as n from cron.job where jobname = {sql_lit(JOB)};
+    """, "breaker backoff", attempts=4, sleep=sleep)
+    back = run_sql(ref, token, f"""
+      select schedule, active from cron.job where jobname = {sql_lit(JOB)};
     """, "breaker read-back", attempts=4, sleep=sleep)
-    if left and left[0].get("n"):
-        die(f"breaker: `{JOB}` is still in cron.job after unschedule")
-    if gone:
-        return (f"circuit breaker TRIPPED — `{JOB}` unscheduled after "
-                f"{BREAKER_N} consecutive failing runs (read back: gone).")
-    return (f"circuit breaker TRIPPED — `{JOB}` was already unscheduled "
-            f"(read back: not in cron.job); nothing to stop.")
+    if not back:
+        return (f"circuit breaker: `{JOB}` is not in cron.job (unscheduled earlier) — nothing to back off. "
+                f"Reinstall with ten232-kibl-sweep-cron.yml action=install.")
+    if back[0].get("schedule") != BACKOFF:
+        die(f"breaker: `{JOB}` read back schedule {back[0].get('schedule')!r}, not the backoff {BACKOFF!r}")
+    return (f"circuit breaker TRIPPED — `{JOB}` backed off to `{BACKOFF}` after {BREAKER_N} consecutive failing "
+            f"runs (read back). It returns to `{SCHEDULE}` after the next green run.")
+
+
+def restore_cadence(ref, token, sleep=time.sleep):
+    """After a green run: a backed-off pinger goes back to SCHEDULE. Returns the line to alert, or None (nothing to do)."""
+    back = run_sql(ref, token, f"""
+      select schedule from cron.job where jobname = {sql_lit(JOB)};
+    """, "cadence read", attempts=4, sleep=sleep)
+    if not back or back[0].get("schedule") == SCHEDULE:
+        return None
+    run_sql(ref, token, f"""
+      select cron.alter_job(j.jobid, schedule := {sql_lit(SCHEDULE)}) is null as altered
+        from cron.job j where j.jobname = {sql_lit(JOB)};
+    """, "cadence restore", attempts=4, sleep=sleep)
+    again = run_sql(ref, token, f"""
+      select schedule from cron.job where jobname = {sql_lit(JOB)};
+    """, "cadence read-back", attempts=4, sleep=sleep)
+    if not again or again[0].get("schedule") != SCHEDULE:
+        die(f"restore: `{JOB}` read back {again!r}, not {SCHEDULE!r}")
+    return f"RECOVERED — `{JOB}` back on `{SCHEDULE}` after a green archive run (was backed off to `{back[0].get('schedule')}`)."
+
+
+def telegram(text):
+    """One message to the pipeline-alerts chat. A send that fails is an ::error:: — never silent."""
+    tok = (os.environ.get("TELEGRAM_BOT_TOKEN") or "").strip()
+    chat = (os.environ.get("TELEGRAM_CHAT_ID") or "").strip()
+    if not tok or not chat:
+        print("::error::breaker alert NOT sent: TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID missing")
+        return False
+    req = urllib.request.Request(f"https://api.telegram.org/bot{tok}/sendMessage", method="POST",
+                                 data=json.dumps({"chat_id": chat, "text": text}).encode(),
+                                 headers={"Content-Type": "application/json"})
+    try:
+        with urllib.request.urlopen(req, timeout=20) as r:
+            ok = 200 <= r.status < 300
+    except Exception as e:                      # noqa: BLE001 — reported
+        print(f"::error::breaker alert NOT sent: {type(e).__name__}")
+        return False
+    print("breaker alert sent" if ok else "::error::breaker alert NOT sent (non-2xx)")
+    return ok
 
 
 def rest_get(url, key, path):
@@ -277,12 +320,21 @@ def main():
         if not tripped:
             print("breaker: not tripped; the pinger stays scheduled.")
             return 0
-        print("::error::" + trip_breaker(ref, token) +
-              " The archive now runs only on GitHub's throttled schedule. Fix "
-              "the cause, then run ten232-kibl-sweep-cron.yml with action=install.")
+        line = trip_breaker(ref, token)
+        print("::error::" + line)
+        telegram("Stennisfy: Kibl sweep pinger — " + line + " Card prices refresh every 30 min until then.")
         # Exit non-zero: a tripped breaker is an outage, and a green run here
         # would be the fail-open this repo has been bitten by before.
         sys.exit(1)
+
+    if action == "restore":
+        line = restore_cadence(ref, token)
+        if line:
+            print(line)
+            telegram("Stennisfy: Kibl sweep pinger — " + line)
+        else:
+            print(f"restore: `{JOB}` already on `{SCHEDULE}` (or not installed) — nothing to do.")
+        return 0
 
     if action == "install":
         if not pat:

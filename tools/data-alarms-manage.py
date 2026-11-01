@@ -96,15 +96,20 @@ def main():
     elif act == 'status':
         status()
     elif act == 'fire-test':
+        only = [r for r in (os.environ.get('FIRE_ONLY') or '').split(',') if r]
         fakes = {'data_age': {'age_min': 120}, 'card_state': {'age_min': 120}, 'live_poller': {'age_min': 30, 'n': 1},
                  'kibl_stream': {'age_min': 30}, 'cron_jobs': {'missing': ['fire-test-job']}}
+        if only:
+            fakes = {k: v for k, v in fakes.items() if k in only}
         start = sql('select now() as t')[0]['t']
         for name, fake in fakes.items():
             sql(f"insert into data_alarms.force values ({lit(name)}, now() + interval '20 minutes', {lit(json.dumps(fake))}::jsonb) "
                 f"on conflict (name) do update set until = excluded.until, fake = excluded.fake")
         yday = sql("select to_char((now() at time zone 'Europe/Berlin')::date - 1, 'YYYY-MM-DD') as d")[0]['d']
         cover = {'day': yday, 'x': 1, 'y': 2, 'dashes': [{'match': 'Fire-test v Fire-test', 'reason': 'manufactured for the alarm proof'}]}
-        sql(f"insert into data_alarms.force values ('close_cover', now() + interval '20 minutes', {lit(json.dumps(cover))}::jsonb) "
+        # the daily report is judged at 10:00Z today, so its fake must outlive that instant
+        if not only or 'close_cover' in only:
+          sql(f"insert into data_alarms.force values ('close_cover', date_trunc('day', now()) + interval '1 day', {lit(json.dumps(cover))}::jsonb) "
             f"on conflict (name) do update set until = excluded.until, fake = excluded.fake")
         print(sql("select data_alarms.tick() as r")[0]['r'])
         print(sql("select data_alarms.coverage(date_trunc('day', now()) + interval '10 hours') as r")[0]['r'])
@@ -115,8 +120,9 @@ def main():
         sql('select data_alarms.tick()')
         rec = wait_delivered(f"created_at >= {lit(start)} and text like '[TEST] RECOVERED%'", '[TEST] RECOVERED per row')
         back = {r['alarm'] for r in sql(f"select distinct alarm from data_alarms.messages where created_at >= {lit(start)} and text like '[TEST] RECOVERED%' and delivery = 'sent'")}
-        missing_fire = sorted(set(ROWS + ['close_cover']) - got)
-        missing_rec = sorted(set(ROWS) - back)
+        want = [r for r in ROWS + ['close_cover'] if not only or r in only]
+        missing_fire = sorted(set(want) - got)
+        missing_rec = sorted(set(r for r in want if r != 'close_cover') - back)
         print(f'fired and delivered: {sorted(got)}; recovered and delivered: {sorted(back)}')
         status()
         if missing_fire or missing_rec or not fired or not rec:
