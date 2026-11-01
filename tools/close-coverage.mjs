@@ -87,7 +87,8 @@ try {
       const built = OCS.generatedAt ? ms(OCS.generatedAt) : null, sched = typeof cardStartMs === 'function' ? cardStartMs(m) : null;
       if (wo) return { real: false, bucket: 'other', reason: 'walkover (no ball played)', book };
       if (!o) return { real: false, bucket: 'other', reason: m.closingOdds ? 'no card-state entry; matches.json close not the card book' : 'no card-state entry and no close in matches.json', book };
-      const verified = o.startTs && o.startTsSource && o.startTsSource !== 'none';
+      // the card state publishes startTs only beside a close, so a verified start is read from its SOURCE
+      const verified = !!(o.startTsSource && o.startTsSource !== 'none');
       if (!verified) {
         if (built != null && sched != null && built < sched) return { real: false, bucket: 'other', reason: 'card state last built ' + new Date(built).toISOString().slice(0, 16) + 'Z, before this match started', book };
         return { real: false, bucket: 'no verified start', reason: 'no verified start (our live flip and Oddspapi\\'s recorded start both missing or rejected)', book };

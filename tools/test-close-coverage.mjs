@@ -50,7 +50,8 @@ else {
       // A: verified start 11:00Z, both sides seen 2 min before → REAL
       [DAY + '|alpha|bravo']: Object.assign({ book: 'bet105', source: 'kibl', sides: { alpha: side(1.5, 1.45, DAY + 'T10:58:00Z'), bravo: side(2.6, 2.7, DAY + 'T10:58:00Z') } }, ver(DAY + 'T11:00:00Z')),
       // B: verified start, no close → book quiet before start
-      [DAY + '|charlie|delta']: Object.assign({ book: 'bet105', source: 'kibl', sides: { charlie: side(1.8, null), delta: side(2.0, null) } }, ver(DAY + 'T12:00:00Z')),
+      // (as published: a verified start with no close carries startTsSource but no startTs)
+      [DAY + '|charlie|delta']: { book: 'bet105', source: 'kibl', startTsSource: 'oddspapi', sides: { charlie: side(1.8, null), delta: side(2.0, null) } },
       // D: no verified start, card state built before the scheduled start → other
       [DAY + '|golf|hotel']: { book: 'bet105', source: 'kibl', startTsSource: 'none', sides: { golf: side(1.9, null), hotel: side(1.9, null) } },
       // E: no verified start → "no verified start"
@@ -84,6 +85,7 @@ else {
     // recovered by re-verification: B gains a real close in a later card state; the second report, fed the first as --prev
     if (rep) {
       const first = join(site, 'first.json'); writeFileSync(first, JSON.stringify(rep));
+      ocs.byKey[DAY + '|charlie|delta'].startTs = DAY + 'T12:00:00Z';
       ocs.byKey[DAY + '|charlie|delta'].sides = { charlie: side(1.8, 1.82, DAY + 'T11:57:00Z'), delta: side(2.0, 1.98, DAY + 'T11:57:00Z') };
       writeFileSync(join(site, 'odds-card-state.json'), JSON.stringify(ocs));
       const r3 = spawnSync(process.execPath, [join(ROOT, 'tools/close-coverage.mjs'), '--site', site, '--out', out, '--day', DAY, '--prev', first],
