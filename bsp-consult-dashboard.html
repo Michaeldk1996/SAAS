@@ -10556,7 +10556,7 @@ function edgeB105Disagree(bl, m){
 function edgeB105WarnHtml(bl, m){ return edgeB105Disagree(bl, m) != null ? '<span class="em-b105-warn" aria-label="Disagrees with Pinnacle">⚠︎</span>' : ''; }
 function edgeB105Tip(bl, m){
   let t = 'bet105’s price with its fixed 0.44% margin removed (bet105 = Pinnacle × 0.9956, measured on 3,489 moments, 6–31 Oct). It tracks Pinnacle closely.';
-  if (bl && bl.lastAt) t += ` bet105 last changed ${edgeClockSec(bl.lastAt)} (Kibl insert time).`;
+  if (bl && bl.lastAt) t += ` Kibl recorded bet105’s last change at ${edgeClockSec(bl.lastAt)} (Kibl insert time, not bet105’s own time).`;
   t += ' Not a Pinnacle price.';
   if (bl && !bl.live) t += ` Stream not live: last bet105 pair ${mxOddsTxt(bl.bet.p1)} / ${mxOddsTxt(bl.bet.p2)}${bl.at ? ' at ' + edgeClockSec(bl.at) : ''}.`;
   const d = edgeB105Disagree(bl, m);

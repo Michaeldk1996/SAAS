@@ -75,8 +75,8 @@ Founder rulings: TEN-418 card 7a80b6fe, R1 review and R2 review 73f754f9 (2026-1
   pair on hover. Repainted in place on `kiblnow:change` (the page is never re-rendered for it); the shown match joins the
   stream's Realtime scope through `window.kiblExtraKeys`. **Display on this page only:** never written, never a close,
   never in a price join, never labelled a Pinnacle price; the model and its anchor are untouched. Hover (row and Fair
-  price line): the 0.9956 derivation, "It tracks Pinnacle closely.", "bet105 last changed HH:MM:SS (Kibl insert time)"
-  (the newer side), "Not a Pinnacle price."
+  price line): the 0.9956 derivation, "It tracks Pinnacle closely.", "Kibl recorded bet105's last change at HH:MM:SS (Kibl insert time, not
+  bet105's own time)" (the newer side; Kibl publishes no book-post time) — hover only, never on the row, "Not a Pinnacle price."
   **Disagreement:** `EDGE_B105_DISAGREE_PP` = **1.5** (founder 2026-11-01): when the live line's no-vig and the api-tennis
   Pinnacle quote's differ by more than 1.5pp, a small neutral ⚠ mark sits after the label on the row and the Fair price
   line, and the hover adds "bet105 and Pinnacle (api-tennis) disagree by X.Xpp (over 1.5pp)". The price stays; nothing

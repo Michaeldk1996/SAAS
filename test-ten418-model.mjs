@@ -384,7 +384,7 @@ test('Bet105 line: the Market context row and the Fair price line — labelled "
   const { api, E } = boot({ kibl: B105(3.0, 1.42) });
   const h = api.render();
   const row = h.match(/<div class="em-mk-row em-b105" id="emB105-mk-p1"[\s\S]*?<\/div>/)[0];
-  assert.match(row, /title="bet105’s price with its fixed 0\.44% margin removed \(bet105 = Pinnacle × 0\.9956, measured on 3,489 moments, 6–31 Oct\)\. It tracks Pinnacle closely\. bet105 last changed 04:58:10 \(Kibl insert time\)\. Not a Pinnacle price\."/);
+  assert.match(row, /title="bet105’s price with its fixed 0\.44% margin removed \(bet105 = Pinnacle × 0\.9956, measured on 3,489 moments, 6–31 Oct\)\. It tracks Pinnacle closely\. Kibl recorded bet105’s last change at 04:58:10 \(Kibl insert time, not bet105’s own time\)\. Not a Pinnacle price\."/);
   assert.match(text(row), /^bet105 \(margin removed\) 04:57:40 · bet105 ÷ 0\.9956 3\.01 /, text(row));
   const nv = (1 / 3.0) / (1 / 3.0 + 1 / 1.42), base = E.stage1.baseP1;
   const want = ((base - nv) * 100);
