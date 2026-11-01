@@ -1,29 +1,29 @@
 {
- "generatedAt": "2026-10-31T11:48:37.445Z",
+ "generatedAt": "2026-11-01T04:49:22.902Z",
  "source": "matches.json git history: oddsMovement.books.Pinnacle (Oddspapi pinnacle, to 2026-09-02) and oddsMovement.chart.books[\"Pinnacle +30s\"] (Oddspapi pinnacle+30, from 2026-09-23)",
  "rule": "each side = last tick at or before the actual start (the earlier of Oddspapi trueStart and the card-state start: Oddspapi or the live-flip lower bound); both sides required; dropped when no unique actual start. seenAt = our last capture read before the start that confirmed the close (founder 2026-10-28); age = start - (seenAt or at)",
  "scannedThrough": {
-  "commit": "4dba4351a4ded348f2341520c413f0661b94ebef",
-  "at": "2026-10-31T11:15:22Z"
+  "commit": "70cc670a6d078db82b2c7a8d60d91b62d2d76056",
+  "at": "2026-11-01T04:15:22Z"
  },
- "commitsScanned": 6215,
+ "commitsScanned": 6245,
  "lastRun": {
-  "from": "2026-10-30T09:15:13Z",
-  "snapshots": 35,
-  "added": 8,
-  "replaced": 0,
+  "from": "2026-10-31T11:15:22Z",
+  "snapshots": 31,
+  "added": 1,
+  "replaced": 9,
   "seenBackfilled": 0,
-  "series": 50,
-  "kept": 44,
+  "series": 73,
+  "kept": 32,
   "bySource": {
-   "oddspapi": 43,
-   "api-tennis-live": 1
+   "oddspapi": 30,
+   "api-tennis-live": 2
   },
   "byBook": {
-   "Pinnacle +30s": 44
+   "Pinnacle +30s": 32
   },
   "dropped": {
-   "noStart": 6
+   "noStart": 41
   }
  },
  "stats": {
@@ -13269,7 +13269,7 @@
    "p1": 1.261,
    "p2": 4.32,
    "at": "2026-10-29T05:34:35.947Z",
-   "trueStart": "2026-10-29T12:40:01.865Z",
+   "trueStart": "2026-10-29T12:40:01.000Z",
    "startSource": "oddspapi",
    "book": "Pinnacle +30s",
    "round": "ATP Vienna - 1/8-finals",
@@ -13335,7 +13335,7 @@
    "p1": 5.9,
    "p2": 1.164,
    "at": "2026-10-29T16:10:14.847Z",
-   "trueStart": "2026-10-29T16:20:22.877Z",
+   "trueStart": "2026-10-29T16:20:22.000Z",
    "startSource": "oddspapi",
    "book": "Pinnacle +30s",
    "round": "ATP Basel - 1/8-finals",
@@ -13357,7 +13357,7 @@
    "p1": 1.97,
    "p2": 1.934,
    "at": "2026-10-29T15:40:34.270Z",
-   "trueStart": "2026-10-29T19:48:29.812Z",
+   "trueStart": "2026-10-29T19:48:29.000Z",
    "startSource": "oddspapi",
    "book": "Pinnacle +30s",
    "round": "ATP Vienna - 1/8-finals",
@@ -13379,7 +13379,7 @@
    "p1": 5.19,
    "p2": 1.202,
    "at": "2026-10-29T09:15:13.333Z",
-   "trueStart": "2026-10-29T12:40:01.478Z",
+   "trueStart": "2026-10-29T12:40:01.000Z",
    "startSource": "oddspapi",
    "book": "Pinnacle +30s",
    "round": "ATP Vienna - 1/8-finals",
@@ -13533,7 +13533,7 @@
    "p1": 4.69,
    "p2": 1.233,
    "at": "2026-10-30T12:01:18.650Z",
-   "trueStart": "2026-10-30T12:32:37.871Z",
+   "trueStart": "2026-10-30T12:32:37.000Z",
    "startSource": "oddspapi",
    "book": "Pinnacle +30s",
    "round": "ATP Vienna - Quarter-finals",
@@ -13555,7 +13555,7 @@
    "p1": 1.99,
    "p2": 1.909,
    "at": "2026-10-30T11:43:05.012Z",
-   "trueStart": "2026-10-30T15:36:29.035Z",
+   "trueStart": "2026-10-30T15:36:29.000Z",
    "startSource": "oddspapi",
    "book": "Pinnacle +30s",
    "round": "ATP Basel - Quarter-finals",
@@ -13620,7 +13620,7 @@
    "p1": 3,
    "p2": 1.446,
    "at": "2026-10-30T18:58:23.240Z",
-   "trueStart": "2026-10-30T19:18:20.198Z",
+   "trueStart": "2026-10-30T19:18:20.000Z",
    "startSource": "oddspapi",
    "book": "Pinnacle +30s",
    "round": "ATP Vienna - Quarter-finals",
@@ -13642,7 +13642,7 @@
    "p1": 1.813,
    "p2": 2.12,
    "at": "2026-10-30T18:25:52.510Z",
-   "trueStart": "2026-10-30T18:54:29.743Z",
+   "trueStart": "2026-10-30T18:54:29.000Z",
    "startSource": "oddspapi",
    "book": "Pinnacle +30s",
    "round": "ATP Basel - Quarter-finals",
@@ -13664,7 +13664,7 @@
    "p1": 3.51,
    "p2": 1.352,
    "at": "2026-10-30T16:14:26.918Z",
-   "trueStart": "2026-10-30T17:02:58.685Z",
+   "trueStart": "2026-10-30T17:02:58.000Z",
    "startSource": "oddspapi",
    "book": "Pinnacle +30s",
    "round": "ATP Basel - Quarter-finals",
@@ -13675,6 +13675,28 @@
    "oAt": "2026-10-30T01:08:16.688Z",
    "winner": "p2",
    "seenAt": "2026-10-30T17:00:00.000Z"
+  },
+  {
+   "eventKey": 12176018,
+   "date": "2026-10-31",
+   "p1Key": 436,
+   "p2Key": 1099,
+   "p1Name": "A. Molcan",
+   "p2Name": "D. Altmaier",
+   "p1": 1.787,
+   "p2": 2.09,
+   "at": "2026-10-31T15:59:42.611Z",
+   "trueStart": "2026-10-31T16:07:59.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s",
+   "round": "ATP Paris - Semi-finals",
+   "qualifying": true,
+   "event": "ATP Paris",
+   "o1": 1.746,
+   "o2": 2.21,
+   "oAt": "2026-10-31T09:26:48.449Z",
+   "winner": "p1",
+   "seenAt": "2026-10-31T16:05:00.000Z"
   }
  ]
 }
