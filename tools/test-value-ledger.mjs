@@ -65,6 +65,10 @@ check('verified start = the archive export\'s start, else the card\'s actual sta
   L.verifiedStart(300, closes, matches[2]).ts === '2026-11-01T11:05:00.000Z' && L.verifiedStart(500, closes, card('x')) === null
   && L.verifiedStart(500, closes, card('x', { pinClose: { startBasis: 'actual', startTs: '2026-11-01T11:01:00Z' } })).source === 'card state actual start'
   && L.verifiedStart(500, closes, card('x', { pinClose: { startBasis: 'scheduled', startTs: '2026-11-01T11:01:00Z' } })) === null);
+const flips = new Map([['500', { event_key: '500', last_not_live_seen_at: '2026-11-01T11:02:10Z' }], ['600', { event_key: '600', last_not_live_seen_at: null }]]);
+check('our live-flip log is a verified start (last poll not live); a flip with no lower bound is none; the archive start still wins',
+  L.verifiedStart(500, closes, card('x'), flips).ts === '2026-11-01T11:02:10.000Z' && L.verifiedStart(500, closes, card('x'), flips).source === 'live-flip (last poll not live)'
+  && L.verifiedStart(600, closes, card('x'), flips) === null && L.verifiedStart(300, closes, matches[2], new Map([['300', { last_not_live_seen_at: '2026-11-01T09:00:00Z' }]])).ts === '2026-11-01T11:05:00.000Z');
 
 // ── settlement ────────────────────────────────────────────────────────────────────────────────────────────────────────
 console.log('settlement');

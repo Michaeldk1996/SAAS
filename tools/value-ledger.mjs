@@ -71,11 +71,15 @@ export function shownOnPage(state, m, nowMs) {
   return state === 2 && h > 0 && h <= 30;
 }
 // The VERIFIED start of a match (CLAUDE.md "Close only at a verified start"): the archive export's start (live-flip or the
-// earlier-of rule), else the board card's own close start when it is the actual start (card state, live-flip). Never the
-// schedule.
-export function verifiedStart(ek, closesByEk, m) {
+// earlier-of rule), else our live-flip log, else the board card's own close start when it is the actual start (card
+// state, live-flip). Never the schedule.
+export function verifiedStart(ek, closesByEk, m, flips) {
   const c = closesByEk && closesByEk.get(String(ek));
   if (c && c.startTs && Number.isFinite(Date.parse(c.startTs))) return { ts: new Date(Date.parse(c.startTs)).toISOString(), source: 'archive export: ' + (c.startSource || 'verified start') };
+  // our live-flip (live_flip_log_current): the last poll where the match was NOT live — the house rule's verified start,
+  // null on the table when play was not seen soon enough after the flag (founder 2026-10-26/27: no lower bound, no start)
+  const f = flips && flips.get(String(ek));
+  if (f && f.last_not_live_seen_at && Number.isFinite(Date.parse(f.last_not_live_seen_at))) return { ts: new Date(Date.parse(f.last_not_live_seen_at)).toISOString(), source: 'live-flip (last poll not live)' };
   const pc = m && m.pinClose;
   if (pc && pc.startBasis === 'actual' && pc.startTs && Number.isFinite(Date.parse(pc.startTs))) return { ts: new Date(Date.parse(pc.startTs)).toISOString(), source: 'card state actual start' };
   return null;
@@ -339,10 +343,11 @@ async function record(dry) {
     const snapEks = new Set((await sbGet(`${TABLES.snap}?select=event_key&event_key=${inList(stEks)}`)).map(x => Number(x.event_key)));
     const eks = stEks.filter(k => snapEks.has(k));
     if (eks.length) {
+      const flips = new Map((await sbGet(`live_flip_log_current?select=event_key,last_not_live_seen_at&event_key=${inList(eks.map(String))}`)).map(x => [String(x.event_key), x]));
       const marks = await sbGet(`${TABLES.mark}?select=id,event_key,side,kind,snapshot_id&event_key=${inList(eks)}`);
       const newMarks = [];
       for (const ek of eks) {
-        const m = started.get(ek), vs = verifiedStart(ek, closesByEk, m);
+        const m = started.get(ek), vs = verifiedStart(ek, closesByEk, m, flips);
         const need = SIDES.filter(s => !marks.some(x => Number(x.event_key) === ek && x.side === s && x.kind === 'last_pre_start'));
         if (!need.length) continue;
         if (!vs) { noStart++; continue; }
@@ -360,7 +365,7 @@ async function record(dry) {
         const rows = [];
         for (const mk of todo) {
           const ek = Number(mk.event_key), m = started.get(ek), snap = snapById.get(mk.snapshot_id); if (!snap) continue;
-          const vs = verifiedStart(ek, closesByEk, m);
+          const vs = verifiedStart(ek, closesByEk, m, flips);
           const close = closeFor(closesByEk.get(String(ek)), m, mk.side);
           const row = settlementFor({ mark: { event_key: ek, side: mk.side, kind: mk.kind }, snap, m, close, startIso: vs ? vs.ts : null, nowMs });
           if (row) rows.push(row); else waiting++;

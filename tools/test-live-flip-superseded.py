@@ -36,7 +36,8 @@ DIAGNOSTIC = {'tools/pinarch.py': ('def cmd_false_starts_report', 'def cmd_false
 # the files that WRITE the supersede (they must see the raw row to decide it), not readers of a start
 WRITERS = {'tools/false-starts-supersede.sql'}
 READERS = ['ten225-kibl-card-state.py', 'tools/pinarch.py', 'ten225-load-line-summary.py', 'tools/ten294-drops-api.sql',
-           'tools/ten299-live-cut.sql', 'tools/tdarch.py', 'tools/archive-fill-probe.py']
+           'tools/ten299-live-cut.sql', 'tools/tdarch.py', 'tools/archive-fill-probe.py',
+           'tools/value-ledger.mjs']
 
 
 def strip_diag(path, text):
