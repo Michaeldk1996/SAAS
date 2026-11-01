@@ -568,6 +568,18 @@ check('pre-2021: no start on the TE page = not stored, counted', '3' not in by a
 check('pre-2021: a walkover is never stored', '4' not in by and prep.get('walkover') == 1, prep)
 check("pre-2021: two te-history rows that disagree on the result = not stored", '5' not in by and prep.get("the two players' te-history rows disagree on the result") == 1, prep)
 check('pre-2021: ATP main draw is out of scope (founder: "Don\'t touch ATP main draw")', '6' not in by and prep.get('level out of scope') == 1, prep)
+# founder 2026-11-01 (team events: "just in terms of pricing for market edge etc."): a team event by TE match ID is stored as
+# atp-x (the team flag t downstream), from a team-NN batch read with the pre21 ones
+xrows, xrep = T.te_pre21_rows([{'batch': 'team-01', 'source': T.TE_SOURCE, 'complete': True, 'rows': [PX(11, lv='pre-atp-x')]}],
+                              {'11': pst['1']}, {'11': [('1064', H(1)), ('1748', H(0))]})
+check('team events: pre-atp-x is stored as atp-x, keyed by the negative TE match ID', [(r['event_key'], r['detail']['level']) for r in xrows] == [(-11, 'atp-x')], (xrows, xrep))
+with tempfile.TemporaryDirectory() as td:
+    os.makedirs(os.path.join(td, T.PRE21_DIR))
+    for n in ('pre21-01', 'team-01'):
+        json.dump({'batch': n, 'source': T.TE_SOURCE, 'complete': True, 'rows': []}, open(os.path.join(td, T.PRE21_DIR, n + '.json'), 'w'))
+    tdocs2 = T.te_pre21_docs(td)
+    names = sorted(d.get('batch') for d in (tdocs2[0] if isinstance(tdocs2, tuple) else tdocs2))
+check('team events: the team-NN batch files are read beside the pre21 ones', names == ['pre21-01', 'team-01'], names)
 check('pre-2021: ATP qualifying stored as atp-q, an absent key stays empty', by.get('7', {}).get('detail', {}).get('level') == 'atp-q' and by['7']['detail']['loserKey'] == '', prows)
 check('pre-2021: a retirement is stored with status Retired (the lower feed settles it on Pinnacle rules)', by.get('9', {}).get('detail', {}).get('status') == 'Retired', prows)
 check('pre-2021: a side below 1.01 is never stored', '10' not in by and prep.get('a side below 1.01') == 1, prep)

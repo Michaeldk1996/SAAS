@@ -438,6 +438,13 @@ closes, odds performance and started-evidence.
   only** (Telegram, the run publishes), naming the source and the drop. **Test (when built):** does a drop in a price-join
   source change whether the run publishes? It must not — it must send one alert naming that source; a drop in a
   Database-figure source must fail the run.
+- **Team events, priced (founder 2026-11-01: "just in terms of pricing for market edge etc.").** Every Davis Cup, Olympics,
+  ATP Cup, United Cup, Laver Cup, Hopman Cup and Next Gen Finals match in the career-record store is a Tennis Explorer
+  target by TE match ID (stennisfy-ops `te-targets-team.mjs`, batches `team-NN` in `te-odds-pre2021/`; from 2021 only the
+  ones the site shows unpriced); `te-pre21-import` stores it at level `atp-x` under the pre-2021 rules (TE page start, the
+  player's own te-history result, never over a match the archive already prices). Downstream it is a team row (flag `t`):
+  priced on every surface (Market edge's match lists, Form, H2H …), never in ROI, a favourite / underdog figure, a
+  Database figure or a tour baseline. **Test:** `tools/test-tdarch.py` "team events".
 - **ATP main-draw matches Tennis-Data does not hold (`atp-nt`, founder 2026-11-01, Task A "TE never-tried").** A completed
   ATP main-draw match with an api-tennis fixture and no Tennis-Data row (late October 2026 after Tennis-Data's last day, and
   the odd 2021–2025 match Tennis-Data left out) is a Tennis Explorer target keyed on the api-tennis event key, both players

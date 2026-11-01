@@ -1559,14 +1559,17 @@ def cmd_te_import_new(store, out_path):
 # Database figure). Never stored over a match the archive already prices at a lower level (the same two keys, +-1 day).
 PRE21_DIR = 'te-odds-pre2021'
 PRE21_STARTS = 'starts.json'
-PRE21_LEVELS = {'pre-atp-q': 'atp-q', 'pre-ch': 'ch', 'pre-ch-q': 'ch-q'}
+# 'pre-atp-x' (founder 2026-11-01, team events "just in terms of pricing for market edge etc."): Davis Cup, Olympics, ATP /
+# United Cup, Laver Cup, Hopman Cup and Next Gen Finals by TE match ID (stennisfy-ops te-targets-team.mjs, batches team-NN in
+# the same folder) -> atp-x: the team flag t, priced on every surface, never a Database figure, ROI or favourite / underdog
+PRE21_LEVELS = {'pre-atp-q': 'atp-q', 'pre-ch': 'ch', 'pre-ch-q': 'ch-q', 'pre-atp-x': 'atp-x'}
 PRE21_START_KIND = 'TE match page (no api-tennis fixture)'
 
 
 def te_pre21_docs(store):
-    """The COMPLETE pre21 batch files (te-odds-pre2021/pre21-*.json) and the start-times file."""
+    """The COMPLETE pre21 and team batch files (te-odds-pre2021/pre21-*.json, team-*.json) and the start-times file."""
     docs = []
-    for f in sorted(glob.glob(os.path.join(store, PRE21_DIR, 'pre21-*.json'))):
+    for f in sorted(glob.glob(os.path.join(store, PRE21_DIR, 'pre21-*.json')) + glob.glob(os.path.join(store, PRE21_DIR, 'team-*.json'))):
         with open(f) as fh:
             d = json.load(fh)
         if d.get('source') != TE_SOURCE or not isinstance(d.get('rows'), list):
