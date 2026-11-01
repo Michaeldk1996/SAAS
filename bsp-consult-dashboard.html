@@ -8985,14 +8985,19 @@ async function loadPolymarket(){
   return polymarketVol;
 }
 function mcSigPolyUsd(v){ return '$' + Math.round(v).toLocaleString('en-US'); }
+// Founder 2026-11-01: the cards show ONLY the match-winner market's liquidity (Polymarket's figure / Kalshi's whole order
+// book, both players); a finished match shows the last read before its start. No liquidity → no line, never $0.
+function mcSigLiqRec(vol, m){
+  const rec = vol && vol.byEvent && vol.byEvent[eventKeyOfMatch(m)];
+  if (!rec || rec.liquidity == null || rec.liquidity === '' || !(Number(rec.liquidity) >= 0)) return null;
+  return { liq: Number(rec.liquidity), at: mcSigClock(rec.liquidityAt || vol.generatedAt) };
+}
 function mcSigPolyHtml(m){
-  const rec = polymarketVol && polymarketVol.byEvent && polymarketVol.byEvent[eventKeyOfMatch(m)];
-  if (!rec || rec.volume == null || rec.volume === '' || !(Number(rec.volume) >= 0)) return '';   // missing = no line, never $0
-  const read = mcSigClock(polymarketVol.generatedAt);
-  const liq = rec.liquidity != null && rec.liquidity !== '' && Number(rec.liquidity) >= 0 ? Number(rec.liquidity) : null;
-  const title = `Polymarket · traded = total traded on this match, every market; liquidity = the match-winner market's whole order book (Polymarket's own figures)${read ? ' · read ' + read : ''}`;
+  const r = mcSigLiqRec(polymarketVol, m);
+  if (!r) return '';
+  const title = `Polymarket · match-winner market liquidity (Polymarket's own figure for that market's order book)${r.at ? ' · read ' + r.at : ''}`;
   return `<div class="mc-sg-rule"></div><div class="mc-sg-poly" title="${psEsc(title)}"><span class="mc-sg-src"><span class="mc-sg-dot"></span>`
-    + `<span class="mc-sg-name">Polymarket</span></span><span class="mc-sg-polyv">${mcSigPolyUsd(Number(rec.volume))} traded${liq != null ? ' · ' + mcSigPolyUsd(liq) + ' liquidity' : ''}</span></div>`;
+    + `<span class="mc-sg-name">Polymarket</span></span><span class="mc-sg-polyv">${mcSigPolyUsd(r.liq)} liquidity</span></div>`;
 }
 // Founder 2026-11-01: Kalshi's totals, one line under Polymarket's. kalshi.json (tools/kalshi-volume.mjs, every pipeline
 // run, Kalshi's public API) keyed by the card's event key, the same one-to-one join; no confident join = no line.
@@ -9006,14 +9011,12 @@ async function loadKalshi(){
   return kalshiVol;
 }
 function mcSigKalshiHtml(m){
-  const rec = kalshiVol && kalshiVol.byEvent && kalshiVol.byEvent[eventKeyOfMatch(m)];
-  if (!rec || rec.contracts == null || rec.contracts === '' || !(Number(rec.contracts) >= 0)) return '';   // missing = no line, never 0
-  const liq = rec.liquidity != null && rec.liquidity !== '' && Number(rec.liquidity) >= 0 ? Number(rec.liquidity) : null;
-  const read = mcSigClock(kalshiVol.generatedAt);
-  const title = `Kalshi · traded = contracts traded on the match winner, both players ($1 per contract); liquidity = the match-winner order book, every resting bid, both players, in dollars (Kalshi's public data)${read ? ' · read ' + read : ''}`;
+  const r = mcSigLiqRec(kalshiVol, m);
+  if (!r) return '';
+  const title = `Kalshi · match-winner market liquidity: every resting order on both players' markets, in dollars (Kalshi's public data)${r.at ? ' · read ' + r.at : ''}`;
   const rule = (typeof mcSigPolyHtml === 'function' && mcSigPolyHtml(m)) ? '' : '<div class="mc-sg-rule"></div>';   // one rule above the pair
   return `${rule}<div class="mc-sg-poly" title="${psEsc(title)}"><span class="mc-sg-src"><span class="mc-sg-dot"></span>`
-    + `<span class="mc-sg-name">Kalshi</span></span><span class="mc-sg-polyv">${Math.round(Number(rec.contracts)).toLocaleString('en-US')} contracts traded${liq != null ? ' · ' + mcSigPolyUsd(liq) + ' liquidity' : ''}</span></div>`;
+    + `<span class="mc-sg-name">Kalshi</span></span><span class="mc-sg-polyv">${mcSigPolyUsd(r.liq)} liquidity</span></div>`;
 }
 function mcSigBody(m){
   const surfCap = m.surface ? m.surface.charAt(0).toUpperCase() + m.surface.slice(1) : '';

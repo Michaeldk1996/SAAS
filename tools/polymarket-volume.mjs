@@ -85,6 +85,30 @@ export function joinBoard(board, poly, startOf) {
   return { byEvent: out, ambiguous };
 }
 
+// Founder 2026-11-01: a finished match keeps the LAST liquidity read before its start (Kalshi's book is empty once a market
+// is finalized — measured on KXATPMATCH-26OCT29SHEKYM; Polymarket's closed markets carry none either). Per card:
+//   before the start, a fresh read → that read, stamped now; at / after the start, never a new read (an in-play book is
+//   not the pre-match market) → the previous published file's figure if it was read before the start, else none.
+// An unknown start takes the fresh read (it cannot be shown to be in play).
+export function carryPreStart(byEvent, prev, board, startOf, nowMs = Date.now()) {
+  const startByEk = new Map(board.map((m) => [eventKeyOf(m), startOf(m)]));
+  const old = (prev && prev.byEvent) || {};
+  const out = {};
+  for (const [ek, rec] of Object.entries(byEvent)) {
+    const st = startByEk.get(ek), p = old[ek];
+    const fresh = rec.liquidity != null && (!Number.isFinite(st) || nowMs < st);
+    const prevOk = p && p.liquidity != null && Number.isFinite(Date.parse(p.liquidityAt || '')) && (!Number.isFinite(st) || Date.parse(p.liquidityAt) < st);
+    out[ek] = fresh ? { ...rec, liquidityAt: new Date(nowMs).toISOString() }
+      : prevOk ? { ...rec, liquidity: p.liquidity, liquidityAt: p.liquidityAt }
+      : { ...rec, liquidity: null, liquidityAt: null };
+  }
+  return out;
+}
+export async function fetchPublished(file) {
+  try { const r = await fetch(`https://michaeldk1996.github.io/SAAS/${file}?cb=${Date.now()}`, { signal: AbortSignal.timeout(60e3) }); return r.ok ? await r.json() : null; }
+  catch { return null; }
+}
+
 async function getJson(url) {
   const r = await fetch(url, { signal: AbortSignal.timeout(30e3), headers: { 'User-Agent': 'stennisfy-pipeline' } });
   if (!r.ok) throw new Error(`HTTP ${r.status} ${url.replace(GAMMA, '')}`);
@@ -121,9 +145,12 @@ async function main() {
   catch (e) { console.log(`::error::polymarket: Gamma API failed (${e.message}) — nothing written; the cards and alerts show no volume`); process.exit(1); }
   const poly = polyMatches(events);
   const startOf = (m) => cardStartMs(m, berlinWallMs);
-  const { byEvent, ambiguous } = joinBoard(board, poly, startOf);
+  const joined = joinBoard(board, poly, startOf);
+  const prev = await fetchPublished('polymarket.json');
+  const byEvent = carryPreStart(joined.byEvent, prev, board, startOf), ambiguous = joined.ambiguous;
   const out = { generatedAt: new Date().toISOString(), source: 'Polymarket Gamma API (public), ATP Tour series ' + ATP_SERIES,
-    counts: { polymarketMatches: poly.length, boardCards: board.length, joined: Object.keys(byEvent).length, ambiguous }, byEvent };
+    counts: { polymarketMatches: poly.length, boardCards: board.length, joined: Object.keys(byEvent).length, ambiguous,
+      withLiquidity: Object.values(byEvent).filter((r) => r.liquidity != null).length, previousFile: !!prev }, byEvent };
   writeAtomic(outPath, out);
   console.log(`polymarket: ${poly.length} Polymarket ATP matches; ${Object.keys(byEvent).length} of ${board.length} board cards joined, ${ambiguous} ambiguous (left out)`);
 

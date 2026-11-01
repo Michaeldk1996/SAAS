@@ -6,7 +6,7 @@
 // MUTANTS: a surname-only join takes the wrong brother; dropping the one-to-one rule joins an ambiguous card.
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
-import { sk, inits, same, polyMatches, joinBoard, eventKeyOf, cardStartMs } from './polymarket-volume.mjs';
+import { sk, inits, same, polyMatches, joinBoard, eventKeyOf, cardStartMs, carryPreStart } from './polymarket-volume.mjs';
 const { berlinWallMs } = createRequire(import.meta.url)('../berlin-time.js');
 let n = 0; const ok = (name, fn) => { fn(); n++; console.log('  PASS ', name); };
 
@@ -68,5 +68,20 @@ ok('MUTANT surname-only join takes the wrong Zverev', () => {
 ok('MUTANT without one-to-one the ambiguous card joins', () => {
   const firstOnly = joinBoard(board, P.filter((p) => p.slug !== 'atp-twin-b-2026-11-02'), startOf);
   assert.equal(!!firstOnly.byEvent['12176004'], true, 'with one candidate it joins, so the ambiguity rule is what holds it');
+});
+// founder 2026-11-01: a finished match keeps the last liquidity read before its start
+ok('pre-start carry: fresh before the start, the previous pre-start read after it, never an in-play read', () => {
+  const b = [card('upcoming-1', 'A. One', 'B. Two', '2026-11-01', '14:00')];          // 13:00Z (Berlin CET)
+  const st = startOf(b[0]);
+  const before = carryPreStart({ 1: { liquidity: 500 } }, null, b, startOf, st - 600e3);
+  assert.deepEqual([before[1].liquidity, before[1].liquidityAt], [500, new Date(st - 600e3).toISOString()]);
+  const after = carryPreStart({ 1: { liquidity: 900 } }, { byEvent: before }, b, startOf, st + 600e3);
+  assert.deepEqual([after[1].liquidity, after[1].liquidityAt], [500, before[1].liquidityAt], 'in play: the pre-start 500 is kept, the 900 ignored');
+  const closed = carryPreStart({ 1: { liquidity: null } }, { byEvent: after }, b, startOf, st + 86400e3);
+  assert.equal(closed[1].liquidity, 500, 'finished (empty book): still the pre-start read');
+  const none = carryPreStart({ 1: { liquidity: 900 } }, null, b, startOf, st + 600e3);
+  assert.equal(none[1].liquidity, null, 'no pre-start read on record → none, never an in-play figure');
+  const late = carryPreStart({ 1: { liquidity: null } }, { byEvent: { 1: { liquidity: 7, liquidityAt: new Date(st + 60e3).toISOString() } } }, b, startOf, st + 600e3);
+  assert.equal(late[1].liquidity, null, 'a previous read taken after the start is not carried');
 });
 console.log(`test-polymarket-volume: ${n} passed`);

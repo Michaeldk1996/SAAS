@@ -81,15 +81,14 @@ except where a ruling below says otherwise. Colours are foundation tokens (`foun
   signed out → localStorage `stennisfy.favourites`; on sign-in the local list merges into the account (account order
   first) and is emptied once the write succeeds. A starred match that settles (finished, retired, walkover; not live)
   leaves the list on the next render. Nothing is starred by default. Test: `test-ten403-matches.mjs`.
-- **Polymarket traded (founder 2026-11-01, re-adds what Step 15 removed, for this one figure):** one line under the six-row
-  Market Signal grid, "Polymarket · $X traded · $Y liquidity" (traded = Polymarket's total for the match, every market; liquidity =
-  the match-winner market's whole order book, founder 2026-11-01; no liquidity figure → "$X traded" alone), Upcoming and Completed;
-  `polymarket.json` (`tools/polymarket-volume.mjs`, every pipeline run) keyed by the card's event key, joined one-to-one on both
-  surnames + initials and a start within 36 h. No confident join, no file or no volume → no line (never $0). The six rows are
-  unchanged. **Test:** `test-polymarket-signal.mjs`, `tools/test-polymarket-volume.mjs` (measured 1 Nov: 62 of 64 board cards).
-  **Kalshi** (founder 2026-11-01): a second line under it, "Kalshi · N contracts traded · $Y liquidity" (contracts on the match
-  winner, both players, $1 each; liquidity = the whole match-winner book of both markets, dollars), from `kalshi.json`
-  (`tools/kalshi-volume.mjs`, Kalshi's public API), the same one-to-one join and the same empty rules; one rule above the pair.
+- **Prediction-market liquidity (founder 2026-11-01, re-adds what Step 15 removed, for this one figure):** under the six-row
+  Market Signal grid, "Polymarket · $Y liquidity" then "Kalshi · $Y liquidity" — ONLY the match-winner market's liquidity
+  (Polymarket's own figure for that market's book; Kalshi = every resting order on both players' markets, dollars), no traded
+  figure. One rule above the pair. From `polymarket.json` / `kalshi.json` (pipeline steps), keyed by the card's event key, joined
+  one-to-one on both surnames + initials and a start within 36 h. **A finished match shows the last read before its start**
+  (`carryPreStart`: a read at / after the start is never shown — an in-play book is not the pre-match market; Kalshi empties a
+  finalized market's book, measured 1 Nov), the hover names the read time. No liquidity → no line (never $0); a genuine 0 is
+  "$0". **Test:** `test-polymarket-signal.mjs`, `tools/test-polymarket-volume.mjs` (carry), `tools/test-kalshi-volume.mjs`.
 - **Market Signal drawer (review):** no explainer paragraph; a source without data is not drawn (no "—" rows, no empty bars);
   a group with no rows is not drawn; nothing at all → one grey line `No market signal for this match yet`. Caret ▾ closed /
   ▴ open (180° turn), white, font stack `'Hanken Grotesk', sans-serif` (system-ui drew a dot).

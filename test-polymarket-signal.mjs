@@ -27,9 +27,9 @@ const S = (vol) => new Function('vol', `
   ${slice('eventKeyOfMatch')} ${slice('psEsc')} ${slice('psEloNorm')} ${slice('mxOddsTxt')} ${slice('mxSurname')} ${slice('mxIsPro')}
   ${slice('mcSigReady')} ${slice('mcSigPair')} ${slice('mcSigImp')} ${slice('mcSigFirst')} ${slice('mcSigClock')}
   ${slice('mcSigEloRec')} ${slice('mcSigEloLast')} ${slice('mcSigEloStaleText')} ${slice('mcSigEloP')} ${slice('mcSigFair')} ${slice('mcSigElo')}
-  ${slice('mcSigEloTitle')} ${slice('mcSigModelP')} ${slice('mcSigPolyUsd')} ${slice('mcSigPolyHtml')} ${slice('mcSigBody')}
+  ${slice('mcSigEloTitle')} ${slice('mcSigModelP')} ${slice('mcSigPolyUsd')} ${slice('mcSigLiqRec')} ${slice('mcSigPolyHtml')} ${slice('mcSigBody')}
   return { mcSigBody };`)(vol);
-const VOL = { generatedAt: '2026-11-01T10:05:00Z', byEvent: { '12166001': { slug: 'atp-tirante-bellucc-2026-11-01', volume: 1851.213744, volumeMl: 1700.5, liquidity: 22090.2256 } } };
+const VOL = { generatedAt: '2026-11-01T10:05:00Z', byEvent: { '12166001': { slug: 'atp-tirante-bellucc-2026-11-01', volume: 1851.213744, volumeMl: 1700.5, liquidity: 22090.2256, liquidityAt: '2026-11-01T09:55:00Z' } } };
 const up = { id: 'upcoming-12166001', p1: 'T. A. Tirante', p2: 'M. Bellucci', surface: 'hard', _oddsLoaded: true };
 const done = { id: 'past-12166001', p1: 'T. A. Tirante', p2: 'M. Bellucci', surface: 'hard', finalScore: { winner: 'p1' } };
 const names = h => [...h.matchAll(/mc-sg-name">([^<]*)</g)].map(x => x[1]);
@@ -37,17 +37,18 @@ const names = h => [...h.matchAll(/mc-sg-name">([^<]*)</g)].map(x => x[1]);
 test('a joined card: one Polymarket line under the grid, Upcoming and Completed', () => {
   for (const m of [up, done]) {
     const h = S(VOL).mcSigBody(m);
-    assert.match(h, /<div class="mc-sg-poly"[^>]*>.*Polymarket<\/span><\/span><span class="mc-sg-polyv">\$1,851 traded · \$22,090 liquidity<\/span><\/div>/);
+    assert.match(h, /<div class="mc-sg-poly"[^>]*>.*Polymarket<\/span><\/span><span class="mc-sg-polyv">\$22,090 liquidity<\/span><\/div>/, 'liquidity only (founder 2026-11-01)');
+    assert.doesNotMatch(h, /traded/, 'no traded figure on the card');
     assert.equal(names(h).at(-1), 'Polymarket', 'the line comes after the six rows');
     assert.equal((h.match(/class="mc-sg-row(?: dash)?"/g) || []).length, 6, 'the six grid rows are unchanged');
-    assert.match(h, /title="Polymarket · traded = total traded on this match, every market; liquidity = the match-winner market's whole order book \(Polymarket's own figures\) · read [^"]+"/);
+    assert.match(h, /title="Polymarket · match-winner market liquidity \(Polymarket's own figure for that market's order book\) · read Sun 01 Nov, 09:55"/, 'the read time is the liquidity read');
   }
 });
 test('no line without a confident Polymarket match: another card, no file, no volume', () => {
   assert.doesNotMatch(S(VOL).mcSigBody({ ...up, id: 'upcoming-999' }), /Polymarket/);
   assert.doesNotMatch(S(null).mcSigBody(up), /Polymarket/, 'file not loaded / missing');
-  assert.doesNotMatch(S({ byEvent: { '12166001': { volume: null } } }).mcSigBody(up), /Polymarket/, 'no volume → nothing, never $0');
-  assert.match(S({ byEvent: { '12166001': { volume: 500, liquidity: null } } }).mcSigBody(up), /\$500 traded<\/span>/, 'no liquidity → traded alone, never "$0 liquidity"');
+  assert.doesNotMatch(S({ byEvent: { '12166001': { volume: 500, liquidity: null } } }).mcSigBody(up), /Polymarket/, 'no liquidity → no line, never $0');
+  assert.match(S({ byEvent: { '12166001': { volume: null, liquidity: 0 } } }).mcSigBody(up), /\$0 liquidity/, 'a genuine 0 is 0');
 });
 test('the toggle loads polymarket.json once and repaints the open panel', () => {
   const t = slice('toggleSig');
@@ -76,17 +77,17 @@ const SK = (vol, kvol) => new Function('vol', 'kvol', `
   ${slice('eventKeyOfMatch')} ${slice('psEsc')} ${slice('psEloNorm')} ${slice('mxOddsTxt')} ${slice('mxSurname')} ${slice('mxIsPro')}
   ${slice('mcSigReady')} ${slice('mcSigPair')} ${slice('mcSigImp')} ${slice('mcSigFirst')} ${slice('mcSigClock')}
   ${slice('mcSigEloRec')} ${slice('mcSigEloLast')} ${slice('mcSigEloStaleText')} ${slice('mcSigEloP')} ${slice('mcSigFair')} ${slice('mcSigElo')}
-  ${slice('mcSigEloTitle')} ${slice('mcSigModelP')} ${slice('mcSigPolyUsd')} ${slice('mcSigPolyHtml')} ${slice('mcSigKalshiHtml')} ${slice('mcSigBody')}
+  ${slice('mcSigEloTitle')} ${slice('mcSigModelP')} ${slice('mcSigPolyUsd')} ${slice('mcSigLiqRec')} ${slice('mcSigPolyHtml')} ${slice('mcSigKalshiHtml')} ${slice('mcSigBody')}
   return { mcSigBody };`)(vol, kvol);
 const KV = { generatedAt: '2026-11-01T10:05:00Z', byEvent: { '12166001': { event: 'KXATPMATCH-26NOV01TIRBEL', contracts: 5590.03, liquidity: 431220.5 } } };
 test('Kalshi: one line under Polymarket — contracts traded and the whole match-winner book', () => {
   const h = SK(VOL, KV).mcSigBody(up);
-  assert.match(h, /<span class="mc-sg-name">Kalshi<\/span><\/span><span class="mc-sg-polyv">5,590 contracts traded · \$431,221 liquidity<\/span>/);
+  assert.match(h, /<span class="mc-sg-name">Kalshi<\/span><\/span><span class="mc-sg-polyv">\$431,221 liquidity<\/span>/);
+  assert.doesNotMatch(h, /contracts/, 'no contracts on the card');
   assert.deepEqual(names(h).slice(-2), ['Polymarket', 'Kalshi']);
   assert.equal((h.match(/mc-sg-rule/g) || []).length, 1, 'ONE rule above the prediction-market pair');
   const k = SK(null, KV).mcSigBody(up);
   assert.equal((k.match(/mc-sg-rule/g) || []).length, 1, 'Kalshi alone carries the rule');
-  assert.doesNotMatch(SK(VOL, { byEvent: { '12166001': { contracts: null } } }).mcSigBody(up), /Kalshi/, 'no contracts → no line, never 0');
-  assert.match(SK(null, { byEvent: { '12166001': { contracts: 12, liquidity: null } } }).mcSigBody(up), /12 contracts traded<\/span>/);
+  assert.doesNotMatch(SK(VOL, { byEvent: { '12166001': { contracts: 12, liquidity: null } } }).mcSigBody(up), /Kalshi/, 'no liquidity → no line');
   assert.doesNotMatch(SK(VOL, KV).mcSigBody({ ...up, id: 'upcoming-999' }), /Kalshi/);
 });

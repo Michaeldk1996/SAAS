@@ -10,7 +10,7 @@
 // (2) kalshi_bot.book (tools/kalshi-drop-bot.sql) through public.kalshi_book_ingest, for the 🟣 KALSHI DROP alerts.
 // Env: SUPABASE_URL, SUPABASE_SECRET_KEY (the DB write; without them only the file). Args: board file, out file.
 import fs from 'node:fs';
-import { joinBoard, cardStartMs } from './polymarket-volume.mjs';
+import { joinBoard, cardStartMs, carryPreStart, fetchPublished } from './polymarket-volume.mjs';
 
 export const KALSHI = 'https://api.elections.kalshi.com/trade-api/v2';
 export const SERIES = 'KXATPMATCH';
@@ -95,11 +95,15 @@ async function main() {
       } catch { m.liquidity = null; failed++; }
     }));
   }
-  const { byEvent: j, ambiguous } = joinBoard(board, matches.map((m) => ({ ...m, volumeMl: m.volume })), (m) => cardStartMs(m, berlinWallMs));
-  const byEvent = {};
-  for (const [ek, r] of Object.entries(j)) byEvent[ek] = { event: r.slug, contracts: r.volume, liquidity: r.liquidity ?? null };
+  const startOf = (m) => cardStartMs(m, berlinWallMs);
+  const { byEvent: j, ambiguous } = joinBoard(board, matches.map((m) => ({ ...m, volumeMl: m.volume })), startOf);
+  const raw = {};
+  for (const [ek, r] of Object.entries(j)) raw[ek] = { event: r.slug, contracts: r.volume, liquidity: r.liquidity ?? null };
+  const prev = await fetchPublished('kalshi.json');
+  const byEvent = carryPreStart(raw, prev, board, startOf);
   writeAtomic(outPath, { generatedAt: new Date().toISOString(), source: 'Kalshi public API, series ' + SERIES,
-    counts: { kalshiMatches: matches.length, open: open.length, booksFailed: failed, boardCards: board.length, joined: Object.keys(byEvent).length, ambiguous }, byEvent });
+    counts: { kalshiMatches: matches.length, open: open.length, booksFailed: failed, boardCards: board.length, joined: Object.keys(byEvent).length, ambiguous,
+      withLiquidity: Object.values(byEvent).filter((r) => r.liquidity != null).length, previousFile: !!prev }, byEvent });
   console.log(`kalshi: ${matches.length} Kalshi ATP matches (${open.length} open, ${failed} books unreadable); ${Object.keys(byEvent).length} of ${board.length} board cards joined, ${ambiguous} ambiguous`);
 
   const { SUPABASE_URL: url, SUPABASE_SECRET_KEY: key } = process.env;
