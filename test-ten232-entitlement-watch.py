@@ -157,6 +157,30 @@ if os.path.exists(bl):
           'visible rather than silent',
           bool(d.get('updated_at')), json.dumps(d.get('updated_at')))
 
+# stage 2 (2026-11-01): a timed-out census count is asked again, then skipped out loud — never a failed archive run
+import importlib.util as _iu
+_sp = _iu.spec_from_file_location('bf', os.path.join(os.path.dirname(os.path.abspath(__file__)), 'ten232-bet105-find.py'))
+BF = _iu.module_from_spec(_sp); _sp.loader.exec_module(BF)
+def _seq(answers):
+    calls = []
+    def once(url, key, table, query=''):
+        calls.append(query); return answers.pop(0)
+    return once, calls
+_real = BF._sb_count_once
+try:
+    BF._sb_count_once, _c = _seq([((500, '57014'), None), ((500, '57014'), None), (None, 42)])
+    check('a count that times out twice then answers returns the count', BF.sb_count('u', 'k', 't', sleep=lambda s: None) == (None, 42) and len(_c) == 3)
+    BF._sb_count_once, _c = _seq([((500, '57014'), None)] * 3)
+    err, n = BF.sb_count('u', 'k', 't', sleep=lambda s: None)
+    check('three timeouts give up with the error (no fake zero)', err is not None and n is None and len(_c) == 3)
+    BF._sb_count_once, _c = _seq([((401, 'nope'), None)])
+    check('a 401 is not retried', BF.sb_count('u', 'k', 't', sleep=lambda s: None)[0][0] == 401 and len(_c) == 1)
+finally:
+    BF._sb_count_once = _real
+_src = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'ten232-bet105-find.py')).read()
+check('a census the database will not answer is a ::warning:: and exit 0, never ::error:: + exit 1',
+      'census skipped this run' in _src and 'print(f"::error::count for feed_source_id' not in _src)
+
 print()
 if FAILED:
     print(f'{len(FAILED)} FAILED: {FAILED}')

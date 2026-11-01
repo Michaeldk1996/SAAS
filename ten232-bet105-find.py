@@ -83,8 +83,24 @@ def supabase_creds():
     return url, key
 
 
-def sb_count(url, key, table, query=""):
-    """(err, exact_count). PostgREST returns the count in Content-Range only."""
+def sb_count(url, key, table, query="", tries=3, sleep=None):
+    """(err, exact_count). PostgREST returns the count in Content-Range only.
+
+    A statement timeout (57014, HTTP 500) is asked again, twice (architecture program stage 2, 2026-11-01: an exact count
+    over kibl_line_observations on every 5-min sweep timed out and failed run 41273170837 — a report failing the archive
+    run counts toward the pinger's breaker)."""
+    import time as _t
+    sleep = sleep or _t.sleep
+    for attempt in range(1, tries + 1):
+        err, n = _sb_count_once(url, key, table, query)
+        if not err or attempt == tries or not (err[0] == 500 or err[0] is None):
+            return err, n
+        print(f"count on {table}{query} failed ({err[0]}); retry {attempt}/{tries - 1}")
+        sleep(10 * attempt)
+    return err, n
+
+
+def _sb_count_once(url, key, table, query=""):
     h = {"Authorization": f"Bearer {key}", "apikey": key,
          "User-Agent": "BSP-Consult-Dashboard/1.0",
          "Prefer": "count=exact", "Range": "0-0"}
@@ -273,21 +289,24 @@ def main():
         err, n = sb_count(url, key, "kibl_line_observations",
                           f"&feed_source_id=eq.{fsid}")
         if err:
-            print(f"::error::count for feed_source_id {fsid} failed: {err}")
-            return 1
+            # The census is a report; the guard that matters (one id for both books) ran above. A census the database
+            # will not answer this run is said out loud and skipped — never a fake zero, never a failed archive run.
+            print(f"::warning::census skipped this run: the count for feed_source_id {fsid} failed after retries "
+                  f"({err}). The Bet105/Sports411 id check above ran and passed.")
+            return 0
         per_book[fsid] = n or 0
         total_seen += (n or 0)
         print(f"| {fsid} | {nm} | {n} |")
 
     err, grand = sb_count(url, key, "kibl_line_observations")
     if err:
-        print(f"::error::total count failed: {err}")
-        return 1
+        print(f"::warning::census skipped this run: the total count failed after retries ({err}).")
+        return 0
     err, nullfs = sb_count(url, key, "kibl_line_observations",
                            "&feed_source_id=is.null")
     if err:
-        print(f"::error::null feed_source_id count failed: {err}")
-        return 1
+        print(f"::warning::census skipped this run: the null feed_source_id count failed after retries ({err}).")
+        return 0
     print(f"| (null) | — | {nullfs} |")
     print(f"\n**Total rows: {grand}.**\n")
 
