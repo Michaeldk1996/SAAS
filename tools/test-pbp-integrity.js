@@ -185,7 +185,7 @@ async function runBuilder({ cache, matches, feed, prev = null, once = null }) {
   try { process.chdir(dir); await builder.main(); }
   finally { process.chdir(cwd); global.fetch = realFetch; console.log = log; }
   const read = f => fs.existsSync(path.join(dir, f)) ? JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8')) : null;
-  return { calls, logs, cache: read('point-by-point-cache.json'), shard: read(`pbp/${EK}.json`), out: read('point-by-point.json'),
+  return { calls, logs, cache: fs.existsSync(path.join(dir, 'point-by-point-cache.json')) ? require('../pbp-cache-io.js').readCache(path.join(dir, 'point-by-point-cache.json')) : null, shard: read(`pbp/${EK}.json`), out: read('point-by-point.json'),
     repairs: read('pbp-repairs.json'), stats: read('pbp-build-stats.json'), index: read('pbp-index.json') };
 }
 const daysAgo = n => new Date(Date.now() - n * 864e5).toISOString().slice(0, 10);

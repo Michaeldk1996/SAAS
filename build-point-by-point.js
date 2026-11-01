@@ -30,6 +30,7 @@
 // each run only fetches point logs it has never seen.
 
 const fs = require('fs');
+const { readCache, writeCache } = require('./pbp-cache-io.js');
 try { require('dotenv').config({ quiet: true }); } catch (_) { /* dotenv optional */ }
 // Importing the pipeline is side-effect free — it only self-runs under
 // `require.main === module`.
@@ -401,9 +402,8 @@ async function main() {
   const parsed = JSON.parse(fs.readFileSync(MATCHES_PATH, 'utf8'));
   const matches = Array.isArray(parsed) ? parsed : (parsed.matches || []);
 
-  const cache = fs.existsSync(CACHE_PATH)
-    ? JSON.parse(fs.readFileSync(CACHE_PATH, 'utf8'))
-    : {};
+  // one line per match (pbp-cache-io.js): the whole store as one string passed V8's max length on 31 Oct (Task D)
+  const cache = readCache(CACHE_PATH);
   // Entries cached before the placeholder rule carry the untracked W/UE 0s in both
   // the whole-match sheet and the per-set sheets. A cached match is never
   // refetched, so the correction is applied to the stored shape here; the setstats/
@@ -415,7 +415,7 @@ async function main() {
   if (fs.existsSync(PREV_CACHE_PATH)) {
     prevSeen = true;
     let prev = null;
-    try { prev = JSON.parse(fs.readFileSync(PREV_CACHE_PATH, 'utf8')); } catch (e) { console.log(`::error title=pbp fallback::${PREV_CACHE_PATH} unreadable: ${e.message}`); }
+    try { prev = readCache(PREV_CACHE_PATH); } catch (e) { console.log(`::error title=pbp fallback::${PREV_CACHE_PATH} unreadable: ${e.message}`); }
     for (const [ek, pe] of Object.entries(prev || {})) {
       const named = !!(pe && pe.p1 && pe.sets && pe.sets.length);
       if (named) prevLogs++;
@@ -741,7 +741,7 @@ async function main() {
   // BEFORE it renders — never as a 404 it has to render against.
   writeAtomic(MATCHSTATS_INDEX_PATH, JSON.stringify(matchIndex));
 
-  writeAtomic(CACHE_PATH, JSON.stringify(cache));
+  writeCache(CACHE_PATH, cache);
   writeAtomic(OUT_PATH, JSON.stringify(out));
   // Read by tools/cache-save-decision.mjs: a run that replaced stored logs asks for a cache save, or the next run would
   // restore the old copies (the cache otherwise saves only on a day's first run or a large profile build).

@@ -98,7 +98,7 @@ async function runBuilder({ cache, floor, floorRaw, matches = [], form = [], arc
     if (!fs.existsSync(path.join(dir, f))) return null;
     try { return JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8')); } catch (_) { return undefined; }   // the unreadable-floor control
   };
-  const res = { dir, calls, cache: read('point-by-point-cache.json'), floor: read(tbFloor.FLOOR_PATH), floorBytes: fs.existsSync(path.join(dir, tbFloor.FLOOR_PATH)) ? fs.readFileSync(path.join(dir, tbFloor.FLOOR_PATH), 'utf8') : null, shard: ek => read(`pbp/${ek}.json`), out: read('point-by-point.json') };
+  const res = { dir, calls, cache: fs.existsSync(path.join(dir, 'point-by-point-cache.json')) ? require('../pbp-cache-io.js').readCache(path.join(dir, 'point-by-point-cache.json')) : null, floor: read(tbFloor.FLOOR_PATH), floorBytes: fs.existsSync(path.join(dir, tbFloor.FLOOR_PATH)) ? fs.readFileSync(path.join(dir, tbFloor.FLOOR_PATH), 'utf8') : null, shard: ek => read(`pbp/${ek}.json`), out: read('point-by-point.json') };
   return res;
 }
 

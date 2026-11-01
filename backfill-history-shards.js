@@ -35,6 +35,7 @@
 // today's matches, which is the failure mode a shared budget caused before.
 
 const fs = require('fs');
+const { readCache, writeCache } = require('./pbp-cache-io.js');
 try { require('dotenv').config({ quiet: true }); } catch (_) { /* dotenv optional */ }
 const { fetchRecentSinglesFixtures, isCountedSinglesFixture } = require('./bsp-pipeline.js');
 const { buildCacheEntry, parseFixture, mergeEntry, adoptFeedLog, compactPbp } = require('./build-point-by-point.js');
@@ -88,7 +89,7 @@ async function main() {
       histories[file.replace(/\.json$/, '')] = (shard.matches || []).filter(r => r && r.src !== 'archive' && !r.walkover);
     } catch (e) { /* a half-written shard is skipped, not fatal */ }
   }
-  const cache = fs.existsSync(CACHE_PATH) ? JSON.parse(fs.readFileSync(CACHE_PATH, 'utf8')) : {};
+  const cache = readCache(CACHE_PATH);   // one line per match (pbp-cache-io.js, Task D)
 
   // An entry is only "done" once it has been asked for BOTH box scores —
   // present-even-when-null is the marker build-point-by-point.js uses for the
@@ -154,7 +155,7 @@ async function main() {
     }
   }
 
-  writeAtomic(CACHE_PATH, JSON.stringify(cache));
+  writeCache(CACHE_PATH, cache);
 
   const stillPending = ranked.length - batch.length;
   console.log(`history-backfill: ${calls} call(s) -> ${added} new cache entries, ${filled} existing entries completed, ${skipped} already done (${replaced} of their point logs replaced by the provider's latest)${failed ? `, ${failed} failed` : ''}.`);

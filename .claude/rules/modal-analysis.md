@@ -389,6 +389,11 @@ this file wins.
   live only on the founder's explicit approval (as TEN-345 did), behind one rollback switch.
 
 ## Data protection
+- **The store is one line per match** (founder 2026-11-01, Task D, "Invalid string length"): `point-by-point-cache.json` is
+  written and read by `pbp-cache-io.js` — a header line, then one `[eventKey, entry]` JSON line per match — never as one
+  string (at 71,035 logs on 31 Oct the single JSON.stringify passed V8's max string length and both writers failed every run
+  from 04:10Z). The reader still takes the older single-object file. **Test:** `tools/test-pbp-cache-io.js` (the writer's
+  largest string is one match; CONTROL: the old writer's is the whole store).
 - **`point-by-point-cache.json` is irreplaceable:** api-tennis no longer returns tiebreak point rows for past
   matches. A from-scratch rebuild must not drop stored tiebreak points. **Test:** a rebuild over a cache holding
   tiebreak points fails if any stored tiebreak point row disappears.
