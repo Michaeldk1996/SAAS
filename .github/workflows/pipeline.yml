@@ -1604,6 +1604,18 @@ jobs:
           # founder ruling 2026-10-18 (item 5): coverage per level, compared with the published report (the alert is sent after the upload)
           node tools/price-coverage-alert.mjs --cur _site/price-coverage.json --baseline-url https://michaeldk1996.github.io/SAAS/price-coverage.json --out .coverage-alert.txt --run-label "pipeline run ${{ github.run_number }}"
 
+      # Architecture program stage 1 (2026-11-01): yesterday's Completed cards with a card-book close, from the page's own
+      # _mcCardCloseOf over the site this run built, with each dash's reason. The data-alarms watch (pg_cron) reads the
+      # published file once a day and alerts below 90%. A failed report writes no file — the watch then alarms on a
+      # missing report — and never stops the publish (an alarm, not a gate).
+      - name: Close coverage report (yesterday's Completed cards)
+        run: |
+          if CHROME_BIN=google-chrome node tools/close-coverage.mjs --site _site --out _site/close-coverage.json; then
+            echo "close-coverage: written"
+          else
+            echo "::error title=Close coverage report did not run::tools/close-coverage.mjs exited non-zero; no _site/close-coverage.json this run (the data-alarms watch reports the missing file)"
+          fi
+
       # Founder 2026-10-28: the guard above checks Market edge on 2026 and a 1-in-10 player sample. This report compares
       # EVERY priced Market edge shard row with its Database row on the site that will publish (report only: the step
       # summary, a ::warning:: on a difference; it never fails the run and changes no threshold).

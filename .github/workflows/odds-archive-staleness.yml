@@ -9,9 +9,9 @@
 name: Odds archive staleness
 
 on:
+  # RETIRED 2026-11-01 (architecture program stage 1): Tennis-Data stopped serving its files (founder 2026-10-16), so the
+  # archive can never be fresher and this check was red on every weekly run. Schedule removed; manual only.
   workflow_dispatch:
-  schedule:
-    - cron: '0 7 * * 1'
 
 permissions:
   contents: read

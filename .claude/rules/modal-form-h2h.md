@@ -372,8 +372,9 @@ rule, and the TEN-263 "api-tennis ∪ career-history eventKey join".
   is never filled. **Test:** `tier_of` keeps ITF Men and Davis Cup, drops ITF Women and BJK Cup.
 
 ## Alarms (rulings 2026-09-23 / 2026-09-24): two separate workflows
-- **Tennis-Data staleness** (`odds-archive-staleness.yml`): red when the newest archive row
-  is more than 7 days old. 7 days is ruled final (2026-09-24).
+- **Tennis-Data staleness** (`odds-archive-staleness.yml`): RETIRED 2026-11-01 (architecture program stage 1) — Tennis-Data
+  stopped serving its files (founder 2026-10-16), so the archive cannot get fresher; the schedule is removed, manual dispatch
+  only. (Was: red when the newest archive row is more than 7 days old.)
 - **Capture freshness** (`odds-capture-freshness.yml`): red when no book in the board's captured
   series (`matches.json` `oddsMovement`) has ticked for 24 h **and at least one upcoming match
   is on the board** (`MIN_UPCOMING = 1`). A stale capture on a board with nothing to price is

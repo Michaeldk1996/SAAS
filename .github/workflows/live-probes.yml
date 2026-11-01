@@ -48,7 +48,9 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          # 22: the probes use the global WebSocket (Node 22+); on 20 every run died with "WebSocket is not defined"
+          # (red twice a day from at least 28 Oct to 1 Nov — architecture program stage 1).
+          node-version: '22'
 
       - name: Confirm Chrome is present before claiming a result
         id: chrome

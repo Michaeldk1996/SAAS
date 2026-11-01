@@ -1,0 +1,49 @@
+name: Data alarms (pg_cron)
+
+# Architecture program stage 1 (2026-11-01): the data alarms run in the Supabase pg_cron heartbeat, every 5 min,
+# outside GitHub (tools/data-alarms.sql). This workflow only INSTALLS / inspects / proves / removes them, by hand:
+#   install    the SQL test on a throwaway Postgres (must pass), the Telegram secrets → Vault under the watch's own
+#              names, the SQL, the cron job data_alarms_5min, a first tick, a self-test ping CONFIRMED delivered (2xx);
+#   status     the job, the last tick, every row's state, the last fetches and messages;
+#   fire-test  manufactures a stale state on EVERY row (data_alarms.force), waits for each [TEST] ALARM to be
+#              confirmed delivered, clears it, waits for each [TEST] RECOVERED line — the proof that every row fires;
+#   uninstall  the job, the schema and its two Vault entries.
+# Messages go to the pipeline-alerts chat (TELEGRAM_PIPELINE_CHAT_ID, else the old ops chat). The log prints states,
+# ages and message texts only, never a secret: the Vault values travel in the request body, which is not printed.
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'install | status | fire-test | uninstall'
+        required: true
+        default: 'status'
+        type: choice
+        options: [install, status, fire-test, uninstall]
+
+concurrency:
+  group: data-alarms
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  manage:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      ACTION: ${{ inputs.action }}
+    steps:
+      - uses: actions/checkout@v4
+        with: { ref: main }
+      - name: SQL test (throwaway Postgres)
+        if: inputs.action == 'install'
+        run: python3 tools/test-data-alarms-sql.py
+      - name: Supabase steps
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_PIPELINE_CHAT_ID || secrets.TELEGRAM_CHAT_ID }}
+        run: python3 tools/data-alarms-manage.py "$ACTION"

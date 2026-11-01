@@ -1,8 +1,8 @@
 name: ATP_Entry W/UE card harvest (Layer #8)
 
 on:
-  schedule:
-    - cron: '0 */4 * * *'   # 6x/day (UTC). Incremental, so cost is flat vs 1x/day.
+  # RETIRED 2026-11-01 (architecture program stage 1): paused by the founder (X API credits depleted) and red on every
+  # run since; the workflow was already disabled. Schedule removed so a red here means something again. Manual only.
   workflow_dispatch:
 
 concurrency:
