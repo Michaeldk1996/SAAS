@@ -60,6 +60,18 @@ const CHECKS = [
     assert.strictEqual(P.pinnacleSeries(m), null);
     assert.strictEqual(P.pinnaclePrices ? null : null, null);
   }],
+  // Founder 2026-11-01: the model never falls back to the bet105 line (the Model page's "bet105 (margin removed)",
+  // display only, 5c807fd22) as its anchor — not as a bookNow / bookOpens key, not from the chart series.
+  ['never the bet105 line: a bet105 quote (any spelling) with no Pncl quote is no Pinnacle line', (P) => {
+    const m = base();
+    const q = { p1: 2.94 * 0.9956, p2: 1.45 * 0.9956, seenAt: T_NOW };
+    m.bookOpens = { Bet105: q, bet105: q, 'bet105 (margin removed)': q, Kibl: q };
+    m.bookNow = { Bet105: q, bet105: q, 'bet105 (margin removed)': q, Kibl: q };
+    m.oddsMovement = { chart: { books: { Bet105: { p1: [[T_OPEN, 2.92]], p2: [[T_OPEN, 1.44]] } } } };
+    assert.strictEqual(P.pinnacleSeries(m), null);
+    const both = withPncl(); Object.assign(both.bookNow, { Bet105: { p1: 3.5, p2: 1.3, seenAt: T_NOW } });
+    assert.strictEqual(P.pinnacleSeries(both).current.p1, 2.95, 'with both, the api-tennis Pinnacle quote is the line');
+  }],
   ['both legs or nothing: a one-sided Pncl quote is no line', (P) => {
     const m = withPncl(); m.bookOpens.Pncl.p2 = null; m.bookNow.Pncl.p2 = 0;
     assert.strictEqual(P.pinnacleSeries(m), null);
@@ -83,7 +95,11 @@ try {
   assert.notStrictEqual(selectMarketAnchor(old).state, 2, 'the old field never confirms State 2');
   const bo = base(); bo.bestOdds = { p1: { price: 2.95, bookmaker: 'Pncl' }, p2: { price: 1.45, bookmaker: 'Pncl' } };
   assert.notStrictEqual(selectMarketAnchor(bo).state, 2, 'bestOdds never confirms State 2');
-  console.log('  PASS  model: State 2 on the api-tennis quote (anchor = first sighting + its time), never on the old field or bestOdds');
+  const b105 = base(); const bq = { p1: 2.93, p2: 1.44, seenAt: T_NOW };
+  b105.bookOpens = { Bet105: bq, bet105: bq }; b105.bookNow = { Bet105: bq, bet105: bq };
+  b105.oddsMovement = { chart: { books: { Bet105: { p1: [[T_OPEN, 2.92]], p2: [[T_OPEN, 1.44]] } } } };
+  assert.notStrictEqual(selectMarketAnchor(b105).state, 2, 'a bet105 quote never confirms State 2');
+  console.log('  PASS  model: State 2 on the api-tennis quote (anchor = first sighting + its time), never on the old field, bestOdds or bet105');
 } catch (e) { modelFail = 1; console.log('  FAIL  model: ' + e.message.split('\n')[0]); }
 
 // 3) the pipeline freezes the opening's time from the api-tennis sighting and reads no oddsMovement.books.Pinnacle
@@ -91,6 +107,11 @@ const pipe = fs.readFileSync(path.join(ROOT, 'bsp-pipeline.js'), 'utf8');
 const pipeReads = pipe.split('\n').filter(l => /oddsMovement\.books\.Pinnacle/.test(l) && !/^\s*\/\//.test(l));
 const fnBody = (() => { const a = SRC.indexOf('function apiTennisPinnacle('), b = SRC.indexOf('\nfunction bookSeries(', a); return a > 0 && b > a ? SRC.slice(a, b) : null; })();
 const priceReads = fnBody == null ? ['pinnacleSeries / apiTennisPinnacle not found'] : fnBody.split('\n').filter(l => /books\.Pinnacle|bestOdds|sharpBooks/.test(l) && !/^\s*(\/\/|\*)/.test(l));
+// the model never reads the bet105 stream or the page's derived line (founder 2026-11-01): no h2h-model file names it
+const modelDir = path.join(ROOT, 'h2h-model');
+const b105Reads = fs.readdirSync(modelDir).filter(f => /\.js$/.test(f) && !/^test-|^\.price-mut-/.test(f))
+  .flatMap(f => fs.readFileSync(path.join(modelDir, f), 'utf8').split('\n').filter(l => /bet105|kibl|EDGE_B105|margin removed/i.test(l) && !/^\s*(\/\/|\*)/.test(l)).map(l => f + ': ' + l.trim()));
+priceReads.push(...b105Reads);
 const staticOk = pipeReads.length === 0 && priceReads.length === 0;
 console.log((staticOk ? '  PASS  ' : '  FAIL  ') + 'no code line in bsp-pipeline.js, or in price.js\'s Pinnacle reader, reads oddsMovement.books.Pinnacle / bestOdds / sharpBooks' + (staticOk ? '' : ' :: ' + pipeReads.concat(priceReads).join(' | ')));
 
@@ -104,6 +125,10 @@ const MUTANTS = [
     "const open = leg(match.bookOpens && (match.bookOpens.Pncl || match.bookOpens.bet365));"],
   ['another book stands in (now)', "const now = leg(match.bookNow && match.bookNow.Pncl);",
     "const now = leg(match.bookNow && (match.bookNow.Pncl || match.bookNow.bet365));"],
+  ['bet105 stands in for a missing Pncl quote', "const now = leg(match.bookNow && match.bookNow.Pncl);",
+    "const now = leg(match.bookNow && (match.bookNow.Pncl || match.bookNow.Bet105 || match.bookNow.bet105));"],
+  ['bet105 stands in (opening)', "const open = leg(match.bookOpens && match.bookOpens.Pncl);",
+    "const open = leg(match.bookOpens && (match.bookOpens.Pncl || match.bookOpens.Bet105));"],
   ['the read time dropped', "{ p1: rec.p1, p2: rec.p2, ts: rec.seenAt || null }", "{ p1: rec.p1, p2: rec.p2, ts: null }"],
 ];
 let survived = 0;

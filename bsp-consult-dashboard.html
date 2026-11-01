@@ -4684,6 +4684,7 @@ window.EntryListsTab = (function(){
   .em-fp-tiles{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
   .em-fp-b105{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:10px; padding:8px 12px; border-radius:10px; background:var(--inner); }
   .em-fp-b105-v{ display:flex; align-items:baseline; gap:10px; font-size:13px; color:var(--text); }
+  .em-b105-warn{ margin-left:6px; color:var(--text); font-size:11px; letter-spacing:0; }
   .em-tile{ display:flex; flex-direction:column; gap:8px; background:var(--inner); border-radius:12px; padding:12px 13px; }
   .em-tile-h{ display:flex; justify-content:space-between; align-items:baseline; gap:6px; min-height:16px; }
   .em-gap{ font-family:var(--font-nums); font-size:12.5px; font-weight:700; }
@@ -10503,7 +10504,7 @@ function edgeBestSoft(m, side){
 }
 // The model's Pinnacle anchor is api-tennis's 'Pncl' quote (h2h-model/price.js apiTennisPinnacle). Its read time is the
 // pipeline's last read (bookNow.Pncl.seenAt); the feed itself carries no clock.
-const EDGE_PIN_STALE_MIN = null;   // Michael's threshold (lean 60). null = no stale gate.
+const EDGE_PIN_STALE_MIN = 120;   // founder 2026-11-01: a Pinnacle read older than 120 min dashes the model price.
 function edgePinRead(m){ const q = m && m.bookNow && m.bookNow.Pncl; return (q && q.p1 > 1 && q.p2 > 1 && q.seenAt && isFinite(Date.parse(q.seenAt))) ? q.seenAt : null; }
 function edgeAgeText(ms){ const mins = Math.max(0, Math.round(ms / 60000)); return mins < 60 ? mins + ' min' : Math.floor(mins / 60) + 'h' + (mins % 60 ? ' ' + (mins % 60) + 'm' : ''); }
 function edgeAnchorHtml(m){
@@ -10519,7 +10520,7 @@ function edgeAnchorHtml(m){
 // 0.9956 on 1,091 moments / 89 matches. Bet105's no-vig line = Pinnacle's (median difference 0.00pp). A derived line,
 // never a Pinnacle price: display on this page only, never written, never a close, never in a price join.
 const EDGE_B105_K = 0.9956;
-const EDGE_B105_DISAGREE_PP = null;   // Michael's threshold (measured p95 1.19pp, misses median 0.71pp). null = no note.
+const EDGE_B105_DISAGREE_PP = 1.5;   // founder 2026-11-01 (measured p95 1.19pp): over it, a warning mark + the gap on hover.
 let edgeB105Ctx = null;               // the shown match's base / fair probabilities and view, for the in-place repaint
 function edgeClockSec(iso){
   const t = Date.parse(iso || ''); if (!isFinite(t)) return null;
@@ -10540,17 +10541,26 @@ function edgeB105Line(m){
   const ts = [sp.sideAt && sp.sideAt.p1, sp.sideAt && sp.sideAt.p2].map(x => Date.parse(x || ''));
   const at = ts.every(isFinite) ? new Date(Math.min(ts[0], ts[1])).toISOString() : null;
   const a = 1 / sp.p1, b = 1 / sp.p2;
+  const lastAt = ts.some(isFinite) ? new Date(Math.max(...ts.filter(isFinite))).toISOString() : null;   // bet105's last change (Kibl insert time)
   return { bet: { p1: Number(sp.p1), p2: Number(sp.p2) }, p1: sp.p1 / EDGE_B105_K, p2: sp.p2 / EDGE_B105_K,
-           nv: { p1: a / (a + b), p2: b / (a + b) }, at, live: sp.live === true };
+           nv: { p1: a / (a + b), p2: b / (a + b) }, at, lastAt, live: sp.live === true };
 }
-function edgeB105Tip(bl, m){
-  let t = 'Bet105’s price with its fixed 0.44% cut removed (Bet105 = Pinnacle × 0.9956, measured on 3,489 moments, 6–31 Oct). Not a Pinnacle price.';
-  if (bl && !bl.live) t += ` Stream not live: last Bet105 pair ${mxOddsTxt(bl.bet.p1)} / ${mxOddsTxt(bl.bet.p2)}${bl.at ? ' at ' + edgeClockSec(bl.at) : ''}.`;
+// Disagreement with api-tennis's Pinnacle quote (founder 2026-11-01): the no-vig gap in pp when it is over
+// EDGE_B105_DISAGREE_PP, else null. A warning only: the row keeps its price and the model is not touched.
+function edgeB105Disagree(bl, m){
   const pin = m && m.bookNow && edgeQuote(m.bookNow, 'Pncl');
-  if (bl && bl.live && pin && EDGE_B105_DISAGREE_PP != null){
-    const d = Math.abs(bl.nv.p1 - edgeNoVig(pin, 'p1')) * 100;
-    if (d > EDGE_B105_DISAGREE_PP) t += ` Bet105 and Pinnacle disagree by ${d.toFixed(1)}pp right now — one book has not caught up.`;
-  }
+  if (!bl || !bl.live || !pin || EDGE_B105_DISAGREE_PP == null) return null;
+  const d = Math.abs(bl.nv.p1 - edgeNoVig(pin, 'p1')) * 100;
+  return d > EDGE_B105_DISAGREE_PP ? d : null;
+}
+function edgeB105WarnHtml(bl, m){ return edgeB105Disagree(bl, m) != null ? '<span class="em-b105-warn" aria-label="Disagrees with Pinnacle">⚠︎</span>' : ''; }
+function edgeB105Tip(bl, m){
+  let t = 'bet105’s price with its fixed 0.44% margin removed (bet105 = Pinnacle × 0.9956, measured on 3,489 moments, 6–31 Oct). It tracks Pinnacle closely.';
+  if (bl && bl.lastAt) t += ` bet105 last changed ${edgeClockSec(bl.lastAt)} (Kibl insert time).`;
+  t += ' Not a Pinnacle price.';
+  if (bl && !bl.live) t += ` Stream not live: last bet105 pair ${mxOddsTxt(bl.bet.p1)} / ${mxOddsTxt(bl.bet.p2)}${bl.at ? ' at ' + edgeClockSec(bl.at) : ''}.`;
+  const d = edgeB105Disagree(bl, m);
+  if (d != null) t += ` bet105 and Pinnacle (api-tennis) disagree by ${d.toFixed(1)}pp (over ${EDGE_B105_DISAGREE_PP}pp) — one book has not caught up.`;
   return t;
 }
 // Market context row (the card's own convention: edge = the model's base probability minus this line's no-vig).
@@ -10560,8 +10570,8 @@ function edgeB105RowHtml(bl, m, s, bp, pct){
   const q = live ? { p1: bl.p1, p2: bl.p2 } : null;
   const v = !q ? '—' : (pct ? (bl.nv[s] * 100).toFixed(1) + '%' : mxOddsTxt(q[s]));
   const d = (q && bp != null) ? edgePP((bp - bl.nv[s]) * 100) : { t: '—', c: 'em-zero' };
-  const sub = live ? `${edgeEsc(edgeClockSec(bl.at) || '—')} · Bet105 ÷ 0.9956` : '— stale';
-  return `<div class="em-mk-row em-b105" id="emB105-mk-${s}" title="${edgeEsc(edgeB105Tip(bl, m))}"><span class="em-mk-l"><span class="em-mk-lb">Pinnacle line (from Bet105)</span><span class="em-mk-sub">${sub}</span></span>`
+  const sub = live ? `${edgeEsc(edgeClockSec(bl.at) || '—')} · bet105 ÷ 0.9956` : '— stale';
+  return `<div class="em-mk-row em-b105" id="emB105-mk-${s}" title="${edgeEsc(edgeB105Tip(bl, m))}"><span class="em-mk-l"><span class="em-mk-lb">bet105 (margin removed)${edgeB105WarnHtml(bl, m)}</span><span class="em-mk-sub">${sub}</span></span>`
     + `<span class="em-mk-pv"><span class="em-mk-v">${v}</span><span class="em-mk-d ${d.c}">${d.t}</span></span></div>`;
 }
 // Fair price card line: gap = the adjusted fair probability (as printed, 1 dp) minus this line's no-vig probability.
@@ -10570,7 +10580,7 @@ function edgeB105FairHtml(bl, m, s, prob){
   const live = bl.live;
   const g = (live && prob != null) ? edgePP(Math.round(prob * 1000) / 10 - bl.nv[s] * 100) : { t: '—', c: 'em-zero' };
   const px = live ? mxOddsTxt(bl[s]) : '—';
-  return `<div class="em-fp-b105" id="emB105-fp-${s}" title="${edgeEsc(edgeB105Tip(bl, m))}"><span class="em-caps">Pinnacle line (from Bet105)</span>`
+  return `<div class="em-fp-b105" id="emB105-fp-${s}" title="${edgeEsc(edgeB105Tip(bl, m))}"><span class="em-caps">bet105 (margin removed)${edgeB105WarnHtml(bl, m)}</span>`
     + `<span class="em-fp-b105-v"><span class="em-mono">${px}</span><span class="em-gap ${g.c}">${g.t}</span></span></div>`;
 }
 // A stream change repaints only these four elements — the page is not re-rendered, so an odd being typed survives.

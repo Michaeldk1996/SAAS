@@ -325,6 +325,9 @@ closes, odds performance and started-evidence.
   change reports it to the founder for this task. **Apply:** a diff that touches `FH_BOOK_ORDER`, `pickBook`,
   `build-database-yield.js` book selection, `pinarch.py` cut / export / td-feed rules or `tdarch.py approx-*` is this
   task's, or it does not land.
+  **On record for this task (founder 2026-11-01):** the Stennisfy Model's anchor is api-tennis Pinnacle (`Pncl`,
+  `0912a97b0`); the "bet105 (margin removed)" line on the Model page is display-only (`5c807fd22`) and never the
+  model's anchor or a fallback for it (`tools/test-model-anchor-pncl.js`).
 - **One price per match, on every page — a standing rule** (founder ruling 2026-10-17, item 1). A match shows the SAME
   price, source and hover wherever it appears: Database, Head to Head, Player Profile, Series, the Match analysis Tournament
   tab, and the Form, H2H, Market edge, Overview and Progression tabs. The one source is the Database join
