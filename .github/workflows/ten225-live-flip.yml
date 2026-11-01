@@ -8,15 +8,11 @@ jobs:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
     steps:
-      - name: kalshi in the arb engine (read-only)
+      - name: kalshi times vs api-tennis starts (read-only)
         run: |
+          curl -s "https://api.elections.kalshi.com/trade-api/v2/markets?series_ticker=KXATPMATCH&status=open&limit=200" | jq -r '[.markets[]|{e:.event_ticker,o:.occurrence_datetime,x:.expected_expiration_time,c:.close_time,w:.yes_sub_title}]|unique_by(.e)[]|"\(.e) occ=\(.o) exp=\(.x) | \(.w)"' | head -30
           REF=$(echo "$SUPABASE_URL" | sed -E 's#https://([^.]+)\..*#\1#')
-          q() { echo "-- $1" | cut -c1-120; jq -n --arg q "$1" '{query:$q}' | curl -s -X POST "https://api.supabase.com/v1/projects/$REF/database/query" -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" -H "Content-Type: application/json" -d @- | jq -c '.' | cut -c1-1500; }
-          q "select kalshi_bot.report(24)"
-          q "select count(*) n, max(seen_at) last, count(*) filter (where status='active') act from kalshi_rec.ticks where seen_at > now() - interval '1 day'"
-          q "select max(processed_at) last_ok, count(*) from kalshi_rec.requests where status_code = 200 and processed_at > now() - interval '10 minutes'"
-          q "select id, fired_at, processed_at, status_code, n_items, note from kalshi_rec.requests order by fired_at desc limit 5"
-          q "select event_ticker, player_a, player_b, occurrence_at, n_markets from kalshi_bot.matches where occurrence_at > now() order by occurrence_at limit 6"
-          q "select f.event_key, f.first_player, f.second_player, f.start_utc from drops_scope.fixture f where f.event_type_type='Atp Singles' and f.start_utc > now() order by start_utc limit 6"
-          q "select cron.job.jobname, d.status, count(*), max(d.start_time), max(left(d.return_message,200)) from cron.job_run_details d join cron.job using (jobid) where jobname in ('kalshi-recorder','kalshi-drop-bot','arb-engine','poly-drop-bot') and d.start_time > now() - interval '30 minutes' group by 1,2"
+          q() { jq -n --arg q "$1" '{query:$q}' | curl -s -X POST "https://api.supabase.com/v1/projects/$REF/database/query" -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" -H "Content-Type: application/json" -d @- | jq -c '.' | cut -c1-1500; }
+          echo "== kalshi alerts by delivery"; q "select delivery, count(*) from kalshi_bot.alerts where mode='live' group by 1"
+          echo "== api-tennis starts"; q "select first_player, second_player, start_utc from drops_scope.fixture where event_type_type='Atp Singles' and start_utc > now() - interval '3 hours' order by start_utc limit 12"
           exit 0
