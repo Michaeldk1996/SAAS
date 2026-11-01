@@ -1,0 +1,108 @@
+name: poly-drops
+# The 🔵 POLYMARKET DROP Telegram bot (founder 2026-11-01). tools/poly-drop-bot.sql; rules in .claude/rules/drops.md.
+#   install  the throwaway-Postgres test first; apply tools/poly-drop-bot.sql (additive, idempotent: schema poly_bot, the
+#            ATP-only scope trigger on its alerts); the shared odds-api.io recorder records Superbet + Polymarket (Betfair
+#            Exchange left the account on 1 Nov); Polymarket's match totals written once; the 30-s bot scheduled; one
+#            startup message to the drop chat; the read-back (counts only).
+#   report   the read-back only.
+#   rollback unschedule the bot (its tables stay; the recorder keeps recording Polymarket).
+# Main only. Changes no Bet105 / Superbet bot function and no Telegram secret.
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        type: choice
+        options: [report, install, rollback]
+        default: report
+permissions:
+  contents: read
+concurrency:
+  group: poly-drops
+  cancel-in-progress: false
+jobs:
+  poly:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      MODE: ${{ inputs.mode }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '24' }
+      - name: SQL test (throwaway Postgres)
+        if: inputs.mode == 'install'
+        run: python3 tools/test-poly-drop-bot-sql.py
+      - name: Apply / roll back
+        if: inputs.mode != 'report'
+        run: |
+          python3 - <<'PY'
+          import json, os, re, sys, urllib.request, urllib.error
+          ref = re.sub(r'^https://([^.]+)\..*$', r'\1', os.environ['SUPABASE_URL'].strip())
+          def sql(q):
+              req = urllib.request.Request(f'https://api.supabase.com/v1/projects/{ref}/database/query',
+                  data=json.dumps({'query': q}).encode(), headers={'Authorization': 'Bearer ' + os.environ['SUPABASE_ACCESS_TOKEN'],
+                  'Content-Type': 'application/json', 'User-Agent': 'poly-drops'})
+              try:
+                  with urllib.request.urlopen(req, timeout=120) as r: return r.status, json.loads(r.read() or b'null')
+              except urllib.error.HTTPError as e: return e.code, e.read()[:600].decode('utf8', 'replace')
+          if os.environ['MODE'] == 'rollback':
+              st, r = sql("select cron.unschedule('poly-drop-bot') where exists (select 1 from cron.job where jobname = 'poly-drop-bot')")
+              print('rollback HTTP', st, r if st >= 400 else ''); sys.exit(1 if st >= 400 else 0)
+          st, r = sql(open('tools/poly-drop-bot.sql').read()); print('apply HTTP', st)
+          if st >= 400: print(r); sys.exit(1)
+          st, r = sql("update ten287_rec.config set books = array['Superbet', 'Polymarket'] where id returning books")
+          print('recorder books HTTP', st, r)
+          if st >= 400: sys.exit(1)
+          st, r = sql("select count(*) n from information_schema.triggers where trigger_name = 'drops_scope_scope' and event_object_schema = 'poly_bot'")
+          if st >= 400 or (r or [{}])[0].get('n') != 1: print('::error::the ATP-only scope trigger is not on poly_bot.alerts', r); sys.exit(1)
+          PY
+      - name: Polymarket match totals, once (the bot never starts without them)
+        if: inputs.mode == 'install'
+        env:
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+        run: |
+          curl -sfL --retry 2 --max-time 60 -o board.json "https://michaeldk1996.github.io/SAAS/matches.json?cb=$(date +%s)"
+          node tools/polymarket-volume.mjs board.json polymarket.json
+      - name: Schedule the bot + startup message
+        if: inputs.mode == 'install'
+        run: |
+          python3 - <<'PY'
+          import json, os, re, sys, urllib.request, urllib.error
+          ref = re.sub(r'^https://([^.]+)\..*$', r'\1', os.environ['SUPABASE_URL'].strip())
+          def sql(q):
+              req = urllib.request.Request(f'https://api.supabase.com/v1/projects/{ref}/database/query',
+                  data=json.dumps({'query': q}).encode(), headers={'Authorization': 'Bearer ' + os.environ['SUPABASE_ACCESS_TOKEN'],
+                  'Content-Type': 'application/json', 'User-Agent': 'poly-drops'})
+              try:
+                  with urllib.request.urlopen(req, timeout=120) as r: return r.status, json.loads(r.read() or b'null')
+              except urllib.error.HTTPError as e: return e.code, e.read()[:600].decode('utf8', 'replace')
+          st, r = sql("select cron.schedule('poly-drop-bot', '30 seconds', 'select poly_bot.tick()') as jobid"); print('schedule HTTP', st, r)
+          if st >= 400: sys.exit(1)
+          st, r = sql("select poly_bot.startup() as rid"); print('startup HTTP', st, r)
+          if st >= 400: sys.exit(1)
+          PY
+      - name: Read-back
+        if: inputs.mode != 'rollback'
+        run: |
+          [ "$MODE" = install ] && sleep 75
+          python3 - <<'PY'
+          import json, os, re, sys, urllib.request, urllib.error
+          ref = re.sub(r'^https://([^.]+)\..*$', r'\1', os.environ['SUPABASE_URL'].strip())
+          req = urllib.request.Request(f'https://api.supabase.com/v1/projects/{ref}/database/query',
+              data=json.dumps({'query': "select poly_bot.settle(); select poly_bot.report(24) r"}).encode(), headers={'Authorization': 'Bearer ' +
+              os.environ['SUPABASE_ACCESS_TOKEN'], 'Content-Type': 'application/json', 'User-Agent': 'poly-drops'})
+          try:
+              with urllib.request.urlopen(req, timeout=120) as r: rep = json.loads(r.read())[0]['r']
+          except urllib.error.HTTPError as e: print('read-back HTTP', e.code, e.read()[:400].decode('utf8', 'replace')); sys.exit(1)
+          print(json.dumps(rep, indent=1))
+          if os.environ['MODE'] == 'install':
+              bad = []
+              if rep.get('recorderBooks') != ['Superbet', 'Polymarket']: bad.append('recorder books')
+              if not (rep.get('cron') or {}).get('active'): bad.append('cron not active')
+              if (rep.get('volumeRows') or 0) < 1: bad.append('no Polymarket match totals')
+              if rep.get('startup') != 'sent': bad.append(f"startup message {rep.get('startup')}")
+              if bad: print('::error::' + '; '.join(bad)); sys.exit(1)
+          PY

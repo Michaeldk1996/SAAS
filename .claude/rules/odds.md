@@ -42,7 +42,7 @@ Wired as a **dash-filler only** — bet365 only, ATP and Challenger, never overr
 
 **Tennis-Data.co.uk** — Pinnacle closes, ATP main tour, pre-2026.
 
-**odds-api.io — Superbet + Betfair Exchange, shown to members** (founder 2026-09-26, TEN-287 card 89e3671d: "show them to members now"; the ToS §9 written-consent risk is accepted by the founder). Our recorder `ten287_rec` (pg_cron, 30 s) holds them; the vendor has no history for Betfair Exchange, so that book is **self-recorded, forward only (from 26 Sep 2026)**. The book list is `ten287_rec.config.books` — a slot swap needs no code change.
+**odds-api.io — Superbet + Betfair Exchange, shown to members** (founder 2026-09-26, TEN-287 card 89e3671d: "show them to members now"; the ToS §9 written-consent risk is accepted by the founder). Our recorder `ten287_rec` (pg_cron, 30 s) holds them; the vendor has no history for Betfair Exchange, so that book is **self-recorded, forward only (from 26 Sep 2026)**. The book list is `ten287_rec.config.books` — a slot swap needs no code change. **Since 1 Nov 2026 the account's two slots are Superbet + Polymarket** (Polymarket = `AODDS_BOOKS` group `prediction`, labelled "PREDICTION MARKET" after Sharp and Soft on the Odds tab and the drops box — founder 2026-11-01) (founder: Betfair Exchange removed); the recorder records exactly those (`poly-drops.yml` install). Betfair Exchange's recorded series stop at 1 Nov 03:37Z and are kept as history; a match with no Betfair line does not list the book.
 
 ---
 

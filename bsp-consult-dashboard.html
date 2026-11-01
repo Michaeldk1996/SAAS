@@ -8972,6 +8972,28 @@ function mcSigModelP(m, completed){
   }
   return { p: 100 * vs.fairP1 / (vs.fairP1 + vs.fairP2), why: '', ts: vs.ts };
 }
+// Founder 2026-11-01: Polymarket's total traded on the match, one line under the six-row grid (the grid itself is the
+// Step 15 design, unchanged). polymarket.json (tools/polymarket-volume.mjs, every pipeline run) keys it by the card's
+// event key; only a one-to-one name + start join is listed, so a card without a confident Polymarket match shows nothing.
+let polymarketVol = null;
+async function loadPolymarket(){
+  if (polymarketVol) return polymarketVol;
+  try {
+    const res = await fetch('./polymarket.json', { cache: 'no-cache' });
+    polymarketVol = res.ok ? await res.json() : { byEvent: {} };
+  } catch (err) { polymarketVol = { byEvent: {} }; }
+  return polymarketVol;
+}
+function mcSigPolyUsd(v){ return '$' + Math.round(v).toLocaleString('en-US'); }
+function mcSigPolyHtml(m){
+  const rec = polymarketVol && polymarketVol.byEvent && polymarketVol.byEvent[eventKeyOfMatch(m)];
+  if (!rec || rec.volume == null || rec.volume === '' || !(Number(rec.volume) >= 0)) return '';   // missing = no line, never $0
+  const read = mcSigClock(polymarketVol.generatedAt);
+  const liq = rec.liquidity != null && rec.liquidity !== '' && Number(rec.liquidity) >= 0 ? Number(rec.liquidity) : null;
+  const title = `Polymarket · traded = total traded on this match, every market; liquidity = the match-winner market's whole order book (Polymarket's own figures)${read ? ' · read ' + read : ''}`;
+  return `<div class="mc-sg-rule"></div><div class="mc-sg-poly" title="${psEsc(title)}"><span class="mc-sg-src"><span class="mc-sg-dot"></span>`
+    + `<span class="mc-sg-name">Polymarket</span></span><span class="mc-sg-polyv">${mcSigPolyUsd(Number(rec.volume))} traded${liq != null ? ' · ' + mcSigPolyUsd(liq) + ' liquidity' : ''}</span></div>`;
+}
 function mcSigBody(m){
   const surfCap = m.surface ? m.surface.charAt(0).toUpperCase() + m.surface.slice(1) : '';
   const slot = String(m.surface || '').toLowerCase();
@@ -9013,7 +9035,7 @@ function mcSigBody(m){
       : `<span class="mc-sg-bar"><span style="width:${r.pw.toFixed(2)}%"></span></span><span class="mc-sg-odds${r.best ? ' best' : ''}">${r.fair || mxOddsTxt(r.odds)}</span><span class="mc-sg-ch">${Math.round(r.pw)}%</span>`;
     return `<div class="mc-sg mc-sg--done"><div class="mc-sg-row mc-sg-head"><span class="mc-sg-cap">Price on ${psEsc(mxSurname(winName))}</span><span></span><span class="mc-sg-capr">Odds</span><span class="mc-sg-capr">Chance</span></div>`
       + rows.map(r => `${r.label === 'Elo Overall' ? '<div class="mc-sg-rule"></div>' : ''}<div class="mc-sg-row${r.dash ? ' dash' : ''}"><span class="mc-sg-src" title="${psEsc(r.src)}"><span class="mc-sg-name">${psEsc(r.label)}</span>${r.best ? '<span class="mc-sg-best">BEST</span>' : ''}</span>${cell(r)}</div>`).join('')
-      + `</div>`;
+      + (typeof mcSigPolyHtml === 'function' ? mcSigPolyHtml(m) : '') + `</div>`;
   }
   // Upcoming — the open on each book, the estimate as fair odds.
   const po = m.pinnacleOpen && mcSigPair(m.pinnacleOpen.p1, m.pinnacleOpen.p2);
@@ -9061,7 +9083,7 @@ function mcSigBody(m){
       + `<span class="mc-sg-pb${bl}">${Math.round(100 - r.pa)}%</span><span class="mc-sg-ob${bl}">${r.oB}</span></div>`;
   };
   return `<div class="mc-sg mc-sg--up"><div class="mc-sg-row mc-sg-head"><span>Books</span><span class="r">Open</span><span class="r">%</span><span></span><span>%</span><span>Open</span></div>`
-    + rows.map(row).join('') + `</div>`;
+    + rows.map(row).join('') + (typeof mcSigPolyHtml === 'function' ? mcSigPolyHtml(m) : '') + `</div>`;
 }
 
 // §1/§2/§4 — Completed vs Upcoming page chrome: title, subtitle, status line, and
@@ -10360,6 +10382,10 @@ function toggleSig(btn){
   if (!card) return;
   card.classList.toggle('sig-open');
   const m = card.classList.contains('sig-open') ? matchById(card.dataset.id) : null;
+  if (m && !polymarketVol) loadPolymarket().then(() => {
+    const panel = card.querySelector('.mc-sigpanel');
+    if (panel && card.isConnected && card.classList.contains('sig-open') && mcSigReady(m)) panel.innerHTML = mcSigBody(m);
+  });
   if (!m || mcSigReady(m)) return;
   Promise.all([ensureOddsMovement(m), (eloRatings && eloRatings.elo) ? null : loadEloRatings()].map(x => Promise.resolve(x).catch(() => null)))
     .then(() => {
@@ -17756,6 +17782,7 @@ const AODDS_CONFIG = {
   'Pinnacle +30s (Oddspapi)': { group: 'sharp', source: 'Oddspapi', clock: 'book tick' },
   'Bet105': { group: 'sharp', source: 'Kibl', clock: 'Kibl insert' },
   'Superbet': { group: 'soft', source: 'odds-api.io', clock: 'vendor updatedAt' },
+  'Polymarket (odds-api.io)': { group: 'prediction', source: 'odds-api.io', clock: 'vendor updatedAt' },
   'Betfair Exchange (recorded by us)': { group: 'soft', source: 'odds-api.io', clock: 'recorded by us' },
   'Pinnacle (api-tennis)': { group: 'sharp', source: 'api-tennis', clock: AODDS_AT_CLOCK },
   'Betano': { group: 'soft', source: 'api-tennis', clock: AODDS_AT_CLOCK },
@@ -17838,6 +17865,9 @@ const AODDS_BOOKS = [
   { name: 'Sbobet', group: 'soft', sources: ['Sbobet'] },
   { name: 'William Hill', group: 'soft', sources: ['William Hill'] },
   { name: 'Superbet', group: 'soft', sources: ['Superbet'] },
+  // Founder 2026-11-01: Polymarket (odds-api.io slot since 1 Nov) is its own group, "Prediction market" — neither a
+  // sharp book nor a soft one. Listed after Soft.
+  { name: 'Polymarket', group: 'prediction', sources: ['Polymarket (odds-api.io)'] },
 ];
 // Spec §2 tiles, in order. Only Match Winner is recorded: an unrecorded tile is HIDDEN (founder Q10, 2026-10-03; never
 // Match Winner prices under another market's name, TEN-303 §3.3). A market turns on here.
@@ -18070,7 +18100,8 @@ function aOddsRowsOf(m, opts){
     rows.forEach(r => { r[x + 'Best'] = best != null && !r.noData && !r.stale && num(r[x + 'Now']) === best; });
   });
   const rank = r => (r.noData ? 2 : r.stale ? 1 : 0);
-  rows.sort((p, q) => ((p.group === 'sharp' ? 0 : 1) - (q.group === 'sharp' ? 0 : 1)) || (rank(p) - rank(q)) || (p.order - q.order));
+  const gOrd = g => (g === 'sharp' ? 0 : g === 'prediction' ? 2 : 1);
+  rows.sort((p, q) => (gOrd(p.group) - gOrd(q.group)) || (rank(p) - rank(q)) || (p.order - q.order));
   // STEAM: N = live books with an open and a now on this match; stale books count in neither. Read on the
   // as-quoted prices in both modes — stripping the margin can flip a book's direction, not the market's.
   const moving = live.filter(r => ['a', 'b'].every(x => r[x + 'QOpen'] != null && r[x + 'QNow'] != null));
@@ -18425,7 +18456,7 @@ function buildOddsSection(m){
   };
   // TEN-380 review (founder 2026-10-04): a book with no odds for this match is not listed (as unrecorded markets are
   // hidden, ruling 15) — its group label goes with it; no book at all → one line saying so.
-  const groups = [['sharp', 'SHARP', C.sharp], ['soft', 'SOFT', C.soft]].map(([g, h, c]) => {
+  const groups = [['sharp', 'SHARP', C.sharp], ['soft', 'SOFT', C.soft], ['prediction', 'PREDICTION MARKET', C.soft]].map(([g, h, c]) => {
     const rs = D.rows.filter(r => r.group === g && !r.noData);
     if (!rs.length) return '';
     return '<div class="aox-grouphead" data-group="' + g + '" style="padding:14px 11px 4px;"><span style="font-family:var(--font-words); font-size:10.5px; font-weight:800; letter-spacing:0.10em; text-transform:uppercase; color:' + c + ';">' + h + '</span></div>'
@@ -36601,6 +36632,8 @@ if(document.querySelector('.tabpage[data-page="live"]')&&document.querySelector(
   [data-page="matches"] .mc-sg-rule{ height:1px; background:var(--edge-6); margin:2px 0; }
   [data-page="matches"] .mc-sg-stale{ font-family:var(--font-words); font-size:10.5px; line-height:1.4; color:var(--text-label); margin-top:-4px; }
   [data-page="matches"] .mc-sg-wait{ font-family:var(--font-words); font-size:11px; color:var(--text-label); }
+  [data-page="matches"] .mc-sg-poly{ display:flex; align-items:center; justify-content:space-between; gap:8px; min-width:0; }
+  [data-page="matches"] .mc-sg-polyv{ font-family:var(--font-nums); font-size:11px; font-weight:700; color:var(--text); white-space:nowrap; }
 
   /* "3 Bets Today" promo */
   .mc-promo{ border-radius:12px; padding:13px 20px; border:1px solid transparent; box-shadow:var(--top-light); margin:0; gap:16px; min-height:0; }

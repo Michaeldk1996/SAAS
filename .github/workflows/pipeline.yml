@@ -530,6 +530,19 @@ jobs:
           node build-news-feed.js || rc=$?
           node tools/step-check.mjs --step "Build news feed (best-effort)" --rc "$rc" --since "$t0" --exists news-feed.json
 
+      # Polymarket's total traded per ATP match (founder 2026-11-01): polymarket.json for the Market Signal panel, and
+      # every Polymarket ATP match's total written to poly_bot.volume for the 🔵 POLYMARKET DROP alerts
+      # (tools/poly-drop-bot.sql). Public Gamma API, no key. Best-effort: a failure leaves no line on the cards and "—"
+      # in the alerts, never a guessed number.
+      - name: Polymarket traded totals (best-effort)
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+        run: |
+          t0=$(date +%s); rc=0
+          node tools/polymarket-volume.mjs matches.json polymarket.json || rc=$?
+          node tools/step-check.mjs --step "Polymarket traded totals (best-effort)" --rc "$rc" --since "$t0" --exists polymarket.json
+
       # Tournament entries (TEN-8): for each current ATP-main-tour singles event,
       # the roster of players in it (derived from get_fixtures) enriched with ATP
       # rank + nationality (get_standings). Powers the News page tournament filter.
@@ -1118,6 +1131,8 @@ jobs:
           # stored verbatim by build-news-feed.js. Committed but not copied = silent
           # 404, which empties the News page.
           cp news-feed.json _site/ 2>/dev/null || true
+          # Polymarket traded totals (founder 2026-11-01): the Market Signal panel's Polymarket line. Not copied = no line.
+          cp polymarket.json _site/ 2>/dev/null || true
           # Tournament entries (TEN-8): per-ATP-draw rosters that power the News
           # page tournament filter. Committed but not copied = silent 404, which
           # just hides the filter (the feed still shows).

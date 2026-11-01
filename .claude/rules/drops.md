@@ -30,6 +30,22 @@ answers on card 37612d3d (TEN-294 doc `design`). Suite: `test-ten294-drops.mjs`.
 - **The list is upcoming matches only** (TEN-427 r2, founder comment 20de43fe, 2026-10-11; supersedes card 518c56f0 Q1's three views Upcoming · In play · Completed — the reference has no Matches control). A row leaves the list at its scheduled start — the Today's Matches card's start when matched (`cardStartMs`), else the vendor's — or earlier when the feed marks it live (`liveAt`, `in_play`, `finished`, or a `cutAt`). A row with no start is not listed. There is no Matches control, no In play / Completed count and no "Status unknown" badge: an `unknown` row whose start is still ahead is just an upcoming row. **Test:** `test-ten427-drops.mjs` "r2 ruling" (`isUpcoming` on real rows: Hernandez Ramirez v McCormick, unknown and cut 8 Oct, is gone; McCormick v Bini and Covato v Andrade Da Silva, finished, are gone; a row leaves AT its card's start).
 - **A row's prices stop at the live start** (Q2 = a; endpoint). **Test:** every price the endpoint serves for a started or finished row was recorded before `liveAt`. With no `liveAt`, the feed stops at the scheduled time once it has passed: api-tennis's when a fixture is joined (the vendor's only when earlier by ≤ 3 h), else the vendor's; this includes **unknown** rows. That is the scheduled time's only permitted use (founder ruling 2026-10-26): conservative only — reject a price or stop collecting / showing; it never creates a start, cuts a close or labels a start. A row with no recorded price before the cut is not served. No in-play price is ever a pre-match figure; nothing is invented after the cut. (The page lists no cut row since the r2 ruling; the cut still bounds every chart.)
 - **The endpoint holds 72 h** (Q4 = b): alerts and their lines from the last 72 h.
+- **The 🔵 POLYMARKET DROP bot** (founder 2026-11-01; `tools/poly-drop-bot.sql`, schema `poly_bot`, pg_cron `poly-drop-bot` every 30 s,
+  installed by `poly-drops.yml`). Same rules as Bet105 / Superbet: ≥ 5% vs the price 10 min earlier, 30-min cooldown per match, ML,
+  pre-match men's singles, ATP only (the `drops_scope` trigger), cut at the live start (`drops_live.cuts_287`). Reads the shared
+  odds-api.io recorder (`ten287_rec`, book `Polymarket`); posts to the drop chat (the Superbet bot's Vault names). Polymarket only:
+  - **Liquidity** = odds-api.io `depthHome` / `depthAway` = **dollars** at the best back price (measured 1 Nov: Halys 348 = 589.78
+    shares × $0.59 on Polymarket's own book). **An alert needs ≥ `poly_bot.config.min_depth` ($100, founder lean, one row; NULL =
+    none) before AND after the drop**; a missing depth is not enough.
+  - **Traded on match** = Polymarket's Gamma API event `volume` (every market on the match), written by the pipeline
+    (`tools/polymarket-volume.mjs` → `poly_bot.volume`); joined on both surnames + initials and a start within 36 h, exactly one
+    candidate, else "—".
+  - **Match-winner liquidity** = Polymarket's `liquidity` for the match-winner market only (its whole order book, every price,
+    both sides; founder 2026-11-01 "just that market"), same join, "—" without one.
+  - Not on the Dropping Odds rows (`drops_api` reads the Bet105 / Superbet alerts only); the price box shows Polymarket's line
+    because it lists every recorder book, under its own group **"Prediction market"** (founder 2026-11-01; `bookCls` →
+    `prediction`, after Sharp and Soft), never Sharp or Soft. On the cards' Market Signal it is named "Polymarket".
+  **Test:** `tools/test-poly-drop-bot-sql.py` (real throwaway Postgres; CONTROL: no minimum → the $50 drop alerts).
 - **The Telegram drop bots stop at the live start too** (TEN-299, founder comment 8585095a, 2026-09-27; installed from `tools/ten299-live-cut.sql` by the drops workflow).
   **Test:** each bot's `load_ticks` removes every tick at or after its match's cut, and each bot's `scan` evaluates nothing at or after the cut. So no alert fires on a started or finished match, and every drop is measured against a pre-match price. A backtest of the last 24 h holds 0 alerts at or after a cut (`ten299_after_cut`).
   The cut is the live sighting, joined as the endpoint joins; when ambiguous, the vendor's scheduled start. A match with no sighting is not cut (the vendor start is not a live signal).

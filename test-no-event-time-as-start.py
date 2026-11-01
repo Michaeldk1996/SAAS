@@ -223,6 +223,9 @@ ALLOWED = {
     'tools/test-drops-scope-sql.py': {
         'return {\'event_key\': ek, \'event_date\': f"__D{day_off}__", \'event_time\': hhmm, \'first\': a, \'second\': b,',  # stub fixture for the scope SQL test's join window; never read as a start (telegram-bot-scope 2026-10-31)
     },
+    'tools/test-poly-drop-bot-sql.py': {
+        "return {'event_key': ek, 'event_date': '__D0__', 'event_time': '12:00', 'first': a, 'second': b,",  # stub api-tennis fixture fed to the real drops_scope_ingest for the Polymarket bot's ATP-only scope; never read as a start (Polymarket bot 2026-11-01)
+    },
 }
 
 

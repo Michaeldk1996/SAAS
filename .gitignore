@@ -82,6 +82,8 @@ model-prematch.json
 # model-output.json they churn every run and need the API key to build, so they
 # are never committed.
 news-feed.json
+# Polymarket traded totals (tools/polymarket-volume.mjs): rebuilt every pipeline run, never committed.
+polymarket.json
 tournament-entries.json
 _render-page.html
 _render-reports.html

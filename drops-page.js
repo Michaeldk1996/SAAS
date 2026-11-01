@@ -31,11 +31,15 @@
   // TEN-427 Data 3: ONE Sharp / Soft grouping, odds.md's AODDS_BOOKS (the Odds tab; Model's best-soft scan agrees):
   // Sharp = Pinnacle (both sources), Betfair Exchange, Bet105; every other book Soft. An exchange is never soft.
   var SHARP_BOOKS = { 'Pinnacle': 1, 'Pinnacle +30s': 1, 'Pinnacle (api-tennis)': 1, 'Betfair Exchange': 1, 'Bet105': 1 };
+  // Founder 2026-11-01: Polymarket is its own group, "Prediction market" (the Odds tab's AODDS_BOOKS says the same).
+  var PREDICTION_BOOKS = { 'Polymarket': 1 };
   function bookCls(n) {
     var s = String(n || ''), base = s.replace(/\s*\([^)]*\)\s*$/, '');   // a source suffix ("(Oddspapi)", "(recorded by us)") is not the book
+    if (PREDICTION_BOOKS[s] || PREDICTION_BOOKS[base]) return 'prediction';
     return SHARP_BOOKS[s] || SHARP_BOOKS[base] || /exchange|matchbook|smarkets|betdaq/i.test(base) ? 'sharp' : 'soft';
   }
   // the two alert books (the bots that write the feed), read through the one grouping
+  var GROUP_NAME = { sharp: 'Sharp', soft: 'Soft', prediction: 'Prediction market' };
   var BOOK_CLASS = { Bet105: bookCls('Bet105'), Superbet: bookCls('Superbet') };
   // TEN-427 r2 fix 10: the drop bots record Match winner only, so it is the only market tab (no tab for a market we do
   // not record — the Alerts rule); "All markets" = the sum of the market tabs
@@ -768,7 +772,7 @@
   function books() {
     var set = {};
     st.rows.forEach(function (r) { set[r.book] = 1; });
-    var order = function (b) { return bookCls(b) === 'sharp' ? 0 : 1; };
+    var order = function (b) { var c = bookCls(b); return c === 'sharp' ? 0 : c === 'prediction' ? 2 : 1; };
     return Object.keys(set).sort(function (a, b) { return order(a) - order(b) || a.localeCompare(b); });
   }
   // the board (Today's Matches' matches.json) and the search index, as the dashboard holds them
@@ -953,10 +957,10 @@
   }
   function resultsHtml(v) {
     var S = st.S, bks = books(), allB = S.books.length === bks.length;
-    var bookBody = ['sharp', 'soft'].map(function (cls) {
+    var bookBody = ['sharp', 'soft', 'prediction'].map(function (cls) {
       var bs = bks.filter(function (b) { return bookCls(b) === cls; });
       if (!bs.length) return '';
-      return '<div class="do-pop-h">' + (cls === 'sharp' ? 'Sharp' : 'Soft') + '</div>' + bs.map(function (b) { return opt(b, S.books.indexOf(b) >= 0, 'book', b, true); }).join('');
+      return '<div class="do-pop-h">' + GROUP_NAME[cls] + '</div>' + bs.map(function (b) { return opt(b, S.books.indexOf(b) >= 0, 'book', b, true); }).join('');
     }).join('');
     var bookVal = allB ? 'All' : S.books.length === 1 ? S.books[0] : S.books.length + ' books';
     var surfs = surfaces();
@@ -1171,10 +1175,10 @@
       // books under SHARP / SOFT group labels (a caps label + a hairline; no TYPE chip column, no "from" column); the
       // open struck through as on the rows (r3 item 5)
       '<div class="do-ov-tbl"><div class="do-ov-th"><span>Book</span><span class="r do-ov-hr">' + openHelp('do-ov-help', 'do-ov-tip') + ' → Now</span><span class="r">Drop</span></div>' +
-      ['sharp', 'soft'].map(function (g) {
-        var gb = mb.books.filter(function (b) { return (b.cls === 'sharp' ? 'sharp' : 'soft') === g; });
+      ['sharp', 'soft', 'prediction'].map(function (g) {
+        var gb = mb.books.filter(function (b) { return (b.cls === 'sharp' || b.cls === 'prediction' ? b.cls : 'soft') === g; });
         if (!gb.length) return '';
-        return '<div class="do-ov-grp"><span class="do-ov-grk">' + (g === 'sharp' ? 'Sharp' : 'Soft') + '</span><span class="do-ov-grl"></span></div>' +
+        return '<div class="do-ov-grp"><span class="do-ov-grk">' + GROUP_NAME[g] + '</span><span class="do-ov-grl"></span></div>' +
           gb.map(function (b) {
             var sp = bookSplit(b.book), dc = dropCell(b.own ? r.drop : b.drop, b.single);
             return '<div class="do-ov-tr' + (b === sel ? ' sel' : '') + (b.own ? ' own' : '') + '" role="button" tabindex="0" data-act="book" data-v="' + esc(b.book) + '" title="' + esc(b.book + (b.src ? ' · ' + b.src : '')) + '">' +
