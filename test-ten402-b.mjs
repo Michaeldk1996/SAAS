@@ -88,7 +88,7 @@ test('Data 1: walkovers are not completed meetings; the record is counted by the
 
 // ---------------------------------------------------------------- Data 2: the Database price join
 const fhDayNum = new Function(`${slice('fhDayNum')}\nreturn fhDayNum;`)();
-const JOIN_SRC = `const FH_DASHC = '—';\n${['H2H_PAGE_PRICE_WINDOW', 'H2H_PAGE_MATCH_WINDOW', 'H2H_PAGE_START_WINDOW', 'H2H_PAGE_ROW_WINDOW', 'H2H_TD_ROUND', 'H2H_PAGE_BEFORE_RANK'].map(constLine).join('\n')}
+const JOIN_SRC = `const FH_DASHC = '—';\n${['H2H_PAGE_PRICE_WINDOW', 'H2H_PAGE_MATCH_WINDOW', 'H2H_PAGE_START_WINDOW', 'H2H_PAGE_ROW_WINDOW', 'H2H_TD_ROUND', 'H2H_PAGE_BEFORE_RANK', 'H2H_TD_LOWER'].map(constLine).join('\n')}
 ${['fhIsInitial', 'fhNameKey', 'psRoundAbbr', 'h2hRoundLabel', 'fhRoundCode', 'h2hTdIx', 'h2hTdKey', 'h2hTdSame', 'h2hTdRound', 'h2hTdEvent', 'h2hNearest', 'h2hPriceJoin'].map(slice).join('\n')}`;
 const J = new Function('fhDayNum', `${JOIN_SRC}\nreturn { h2hPriceJoin, h2hTdKey, h2hTdSame, h2hTdRound, fhRoundCode };`)(fhDayNum);
 const priceJoin = J.h2hPriceJoin;
@@ -111,6 +111,21 @@ test('Data 2: Home = A\'s closing price, Away = B\'s, from the Database rows (bo
   // founder r1 fix 3 (2026-10-09): no per-row Bet365 mark; one footnote under the ledger (executed in test-ten402-r1y.mjs)
   assert.match(h2hCardSrc, /hTitle: h2hPriceTitle\(r\), aTitle: h2hPriceTitle\(r\), hMark: typeof fhPxMark === 'function' \? fhPxMark\(r\) : r\.price != null && r\.book === 'B' \? 'B' : '',/, 'the ledger row carries the B marker on a Bet365 close (TEN-437)');
   assert.match(h2hCardSrc, /\$\{h2hPxNote\('margin-top:-8px;', F\)\}/, 'one footnote under the Meetings ledger');
+});
+
+test('lower-level era rows never move a main-draw event (2026-11-01: pre-2021 qualifying filed under "Wimbledon")', () => {
+  // [date, level, surface, round, tournament, fav, dog, favWon, book]; levels 0 = Grand Slam, 1 = ATP Qualifying
+  const mk = (withQual) => { const db = { meta: { levels: ['Grand Slam', 'ATP Qualifying'], rounds: ['1st Round', '2nd Round', '3rd Round', '4th Round', ''], surfaces: [''], tournaments: ['Wimbledon'] }, rows: [], names: [] };
+    const add = (d, lv, rd, w, l, f, g, fw) => { db.rows.push([d, lv, 0, rd, 0, f, g, fw, 0]); db.names.push([w, l]); };
+    add(20170703, 0, 0, 'Ramos-Vinolas A.', 'Thompson J.', 1.78, 2.16, 1); add(20170705, 0, 1, 'Ramos-Vinolas A.', 'Kudla D.', 1.4, 3, 1);
+    add(20170707, 0, 2, 'Ramos-Vinolas A.', 'Isner J.', 2, 1.8, 0); add(20170709, 0, 3, 'Federer R.', 'Dimitrov G.', 1.1, 7, 1);
+    if (withQual) [20170626, 20170627, 20170628, 20170629, 20170630].forEach((d, j) => add(d, 1, 4, 'Qual' + j + ' A.', 'Qual' + j + ' B.', 1.6, 2.3, 1));   // the qualifying week
+    return db; };
+  // the career store dates a pre-2021 archive row at the event START (3 July), so the join compares event starts
+  const career = [{ date: '2017-07-03', won: false, opponent: 'A. Ramos', round: 'R128', tournament: 'Wimbledon' }];
+  const price = db => { const x = [{ date: '2017-07-03', won: false, round: 'R128' }]; priceJoin(x, { full: 'J. Thompson' }, { full: 'A. Ramos' }, db, null, career); return x[0].price; };
+  assert.equal(price(mk(false)), 2.16, 'control: the main draw alone joins (R128 = 1st of 4 numbered rounds)');
+  assert.equal(price(mk(true)), 2.16, 'a qualifying week under the same name (26-30 June, the main draw from 3 July) changes nothing');
 });
 
 test('Data 2: a meeting with no matching Database row is a dash — wrong winner, outside the window, a round that contradicts, or two equally close', () => {
