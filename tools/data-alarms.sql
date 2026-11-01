@@ -249,6 +249,12 @@ begin
     b := (lf.f).body;
     if b is null or b->>'day' is distinct from yday then
       if extract(hour from p_now at time zone 'UTC') < 12 then return 'waiting for ' || yday; end if;
+      -- "no report" only once the file has actually been READ since 12:00Z and was missing or for another day — never on a
+      -- tick that has not read it yet (the first tick after an install, or a test's first tick, read nothing)
+      if not exists (select 1 from data_alarms.fetches where source = 'coverage' and processed_at is not null
+                       and fired_at >= date_trunc('day', p_now at time zone 'UTC') at time zone 'UTC' + interval '12 hours') then
+        return 'waiting for a read of close-coverage.json';
+      end if;
       b := jsonb_build_object('day', yday, 'unread', true);
     end if;
   end if;
