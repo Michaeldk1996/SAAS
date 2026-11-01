@@ -1651,7 +1651,7 @@ jobs:
       # missing report — and never stops the publish (an alarm, not a gate).
       - name: Close coverage report (yesterday's Completed cards)
         run: |
-          if CHROME_BIN=google-chrome node tools/close-coverage.mjs --site _site --out _site/close-coverage.json; then
+          if CHROME_BIN=google-chrome node tools/close-coverage.mjs --site _site --out _site/close-coverage.json --prev https://michaeldk1996.github.io/SAAS/close-coverage.json; then
             echo "close-coverage: written"
           else
             echo "::error title=Close coverage report did not run::tools/close-coverage.mjs exited non-zero; no _site/close-coverage.json this run (the data-alarms watch reports the missing file)"

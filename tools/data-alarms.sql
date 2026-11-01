@@ -10,7 +10,9 @@
 --   live_poller   live_snapshot has not been written for 10 min while an ATP singles card is scheduled today
 --                 (Europe/Berlin day, an unfinished card on the live matches.json)
 --   kibl_stream   the kibl-stream worker heartbeat (kibl_now_price, card_key '__stream__') is silent for 10 min
---   close_cover   once a day: fewer than 90% of yesterday's Completed cards carry a card-book close
+--   close_cover   once a day: fewer than 90% of yesterday's Completed cards carry a REAL close (founder 2026-11-01:
+--                 both sides, a verified start, each sighting within 300 s before it); lines for the approximate tier and
+--                 the closes recovered by re-verification, never merged into the count
 --                 (close-coverage.json, built by tools/close-coverage.mjs in the pipeline from the page's own
 --                 _mcCardCloseOf); the daily message gives "X of Y" and every dash's reason
 --   cron_jobs     a job in data_alarms.expected_jobs is missing from cron.job or inactive (a breaker unscheduled it)
@@ -257,12 +259,19 @@ begin
     x := (b->>'x')::int; y := (b->>'y')::int;
     pct := case when y > 0 then round(100.0 * x / y, 1) end;
     is_bad := y > 0 and pct < cfg.min_pct;
-    head := format('%sClose coverage %s: %s of %s Completed cards carry a card-book close (%s%%; alarm below %s%%).',
-                   pre, yday, x, y, coalesce(pct::text, '—'), cfg.min_pct);
+    head := format('%sClose coverage %s: %s of %s Completed cards carry a REAL close (%s%%; alarm below %s%%).',
+                   pre, yday, x, y, coalesce(pct::text, '—'), cfg.min_pct)
+            || format(E'\napproximate: %s', case when b->'approx' is null or jsonb_typeof(b->'approx') = 'null' then '— (tier not built yet)'
+                                                 else (b->'approx'->>'x') || ' of ' || y end)
+            || format(E'\nrecovered by re-verification: %s', coalesce(b->>'recovered', '—'))
+            || case when b ? 'buckets' then E'\ndashes: ' || coalesce((select string_agg(key || ' ' || value, ' · ' order by value::int desc)
+                                                                  from jsonb_each_text(b->'buckets')), 'none') else '' end
+            || coalesce((select string_agg(format(E'\n%s: %s of %s real, %s recovered since its first report', e->>'day', e->>'x', e->>'y', coalesce(e->>'recovered', '—')), '')
+                           from jsonb_array_elements(coalesce(b->'earlier', '[]'::jsonb)) e), '');
     for d in select * from jsonb_array_elements(coalesce(b->'dashes', '[]'::jsonb)) loop
       k := k + 1;
       exit when k > 40;
-      body := body || E'\n· ' || coalesce(d->>'match', '?') || ' — ' || coalesce(d->>'reason', 'no reason given');
+      body := body || E'\n· ' || coalesce(d->>'match', '?') || ' — ' || coalesce('[' || (d->>'bucket') || '] ', '') || coalesce(d->>'reason', 'no reason given');
     end loop;
     if k > 40 then body := body || format(E'\n… and %s more (close-coverage.json)', jsonb_array_length(b->'dashes') - 40); end if;
   end if;

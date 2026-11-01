@@ -173,8 +173,9 @@ def coverage_checks():
     reset()
     yday = q("select to_char((now() at time zone 'Europe/Berlin')::date - 1, 'YYYY-MM-DD')")
     hour = int(q("select extract(hour from now() at time zone 'UTC')::int"))
-    cover = {'day': yday, 'generatedAt': iso(5), 'x': 15, 'y': 18,
-             'dashes': [{'match': 'A v B', 'reason': 'no card-state close (book went quiet before the start)'}]}
+    cover = {'day': yday, 'generatedAt': iso(5), 'x': 15, 'y': 18, 'recovered': 2, 'approx': None,
+             'buckets': {'no verified start': 2, 'book quiet before start': 1},
+             'dashes': [{'match': 'A v B', 'bucket': 'book quiet before start', 'reason': 'no card-state close (book went quiet before the start)'}]}
     tick(); answer(cover=cover); tick(); deliver()
     a = msgs('close_cover')
     if hour < 9:
@@ -194,6 +195,9 @@ def coverage_checks():
     check('close_cover (forced, 10:00Z): [TEST] daily line with X of Y below 90% → ALARM', len(a) == 1 and '[TEST]' in a[0] and '15 of 18' in a[0] and 'ALARM' in a[0], [out] + a)
     st = q("select coalesce(bad::text, 'none') from data_alarms.state where name = 'close_cover'")
     check('close_cover: the [TEST] report leaves the real streak untouched', st in ('', 'none', 'false'), st)
+    t0 = a[0] if a else ''
+    check('close_cover: the daily line carries "approximate: —", "recovered by re-verification: 2" and the dash buckets, not merged',
+          'approximate: — (tier not built yet)' in t0 and 'recovered by re-verification: 2' in t0 and 'no verified start 2' in t0 and 'REAL close' in t0, t0)
     q("delete from data_alarms.force")
     real = dict(cover, day=yday, x=17, y=18)
     q("delete from data_alarms.fetches; ")

@@ -65,38 +65,79 @@ while (!(await E(`!!(typeof matchesLoadedOnce !== 'undefined' && matchesLoadedOn
 }
 
 let report;
+const PREV = arg('--prev', null);   // the published close-coverage.json (URL or file): each day's first-seen status, for "recovered"
+let prev = null;
+if (PREV) {
+  try { prev = /^https?:/.test(PREV) ? await (await fetch(PREV + (PREV.includes('?') ? '&' : '?') + 'cb=' + Date.now())).json().catch(() => null)
+                                     : JSON.parse(readFileSync(PREV, 'utf8')); }
+  catch (e) { prev = null; }
+}
+const DAYS = [0, 1, 2].map(k => { const t = Date.parse(DAY + 'T12:00:00Z') - k * 864e5; return new Date(t).toISOString().slice(0, 10); });
 try {
   report = await E(`(() => {
-    const DAY = ${JSON.stringify(DAY)};
-    const cards = (matches || []).filter(m => isFinishedMatch(m) && m.date === DAY);
-    const dashes = []; let x = 0;
-    for (const m of cards) {
-      const c1 = _mcCardCloseOf(m, 'p1'), c2 = _mcCardCloseOf(m, 'p2');
-      if (c1 != null && c2 != null) { x++; continue; }
-      const built = OCS.generatedAt ? Date.parse(OCS.generatedAt) : null, st = typeof cardStartMs === 'function' ? cardStartMs(m) : null;
-      const o = _ocsOf(m), wo = /walk\\s*over|w\\/o/i.test(String(m.status || '') + ' ' + String((m.finalScore && m.finalScore.display) || ''));
+    const DAYS = ${JSON.stringify(DAYS)};
+    const MAXLAG = 300e3, APPROX_LAG = 1800e3;
+    const ms = v => { const t = Date.parse(v); return isNaN(t) ? null : t; };
+    function judge(m) {
+      // REAL close (founder ruling 2026-11-01): both sides of the card book, a verified start, each side's close sighting
+      // within 300 s before it. The card face shows _mcCardCloseOf; a shown close that is older is not a real close here.
+      const o = _ocsOf(m), c1 = _mcCardCloseOf(m, 'p1'), c2 = _mcCardCloseOf(m, 'p2');
+      const wo = /walk\\s*over|w\\/o/i.test(String(m.status || '') + ' ' + String((m.finalScore && m.finalScore.display) || ''));
       const book = o ? (mxBookLabel(o.book) || o.book) : (m.openingOdds && m.openingOdds.bookmaker) || null;
-      let reason;
-      if (wo) reason = 'walkover (no ball played)';
-      else if (o && (c1 != null) !== (c2 != null)) reason = 'card state holds a close for one side only (' + book + ')';
-      else if (o && built != null && st != null && built < st) reason = 'card state last built ' + new Date(built).toISOString().slice(0, 16) + 'Z, before this match started — its close was never computed';
-      else if (o && (o.startTsSource === 'none' || !o.startTs)) reason = 'no verified start recorded for this match (live flag never followed by play within the window, or no start source) — no close can be cut';
-      else if (o) reason = 'card state holds no close for ' + (book || 'the card book') + ' (no price seen before the start)';
-      else if (m.closingOdds && m.openingOdds && m.closingOdds.bookmaker && m.openingOdds.bookmaker) reason = 'no card-state entry; matches.json close (' + m.closingOdds.bookmaker + ') is not the Open\\'s book (' + m.openingOdds.bookmaker + ')';
-      else if (m.closingOdds) reason = 'no card-state entry; matches.json close incomplete or suspended';
-      else reason = 'no card-state entry and no close in matches.json';
-      dashes.push({ id: m.id, match: (m.p1 || '?') + ' v ' + (m.p2 || '?') + (m.tour ? ' · ' + (typeof mxEventName === 'function' ? mxEventName(m.tour) : m.tour) : ''), book, reason });
+      const built = OCS.generatedAt ? ms(OCS.generatedAt) : null, sched = typeof cardStartMs === 'function' ? cardStartMs(m) : null;
+      if (wo) return { real: false, bucket: 'other', reason: 'walkover (no ball played)', book };
+      if (!o) return { real: false, bucket: 'other', reason: m.closingOdds ? 'no card-state entry; matches.json close not the card book' : 'no card-state entry and no close in matches.json', book };
+      const verified = o.startTs && o.startTsSource && o.startTsSource !== 'none';
+      if (!verified) {
+        if (built != null && sched != null && built < sched) return { real: false, bucket: 'other', reason: 'card state last built ' + new Date(built).toISOString().slice(0, 16) + 'Z, before this match started', book };
+        return { real: false, bucket: 'no verified start', reason: 'no verified start (our live flip and Oddspapi\\'s recorded start both missing or rejected)', book };
+      }
+      if ((c1 != null) !== (c2 != null)) return { real: false, bucket: 'other', reason: 'a close for one side only (' + book + ')', book };
+      if (c1 == null) return { real: false, bucket: 'book quiet before start', reason: 'verified start, but no ' + (book || 'card-book') + ' price seen before it', book };
+      const st = ms(o.startTs), lags = [o.p1 && o.p1.closeTs, o.p2 && o.p2.closeTs].map(t => (st != null && ms(t) != null ? st - ms(t) : null));
+      if (lags.some(l => l == null)) return { real: false, bucket: 'other', reason: 'close without a sighting time', book };
+      const lag = Math.max(...lags);
+      if (lag <= MAXLAG) return { real: true, book, lagS: Math.round(lag / 1000) };
+      if (lag <= APPROX_LAG) return { real: false, bucket: 'last sighting 300 s–30 min', reason: (book || 'card book') + ' last seen ' + Math.round(lag / 60000) + ' min before the verified start', book, lagS: Math.round(lag / 1000) };
+      return { real: false, bucket: 'book quiet before start', reason: (book || 'card book') + ' last seen ' + Math.round(lag / 60000) + ' min before the verified start', book, lagS: Math.round(lag / 1000) };
     }
-    return { day: DAY, x, y: cards.length, pct: cards.length ? Math.round(1000 * x / cards.length) / 10 : null, dashes,
-             cardStateGeneratedAt: OCS.generatedAt || null,
-             population: 'board cards with a final result (isFinishedMatch) dated ' + DAY + ' (Europe/Berlin, the board date)' };
+    const days = DAYS.map(day => {
+      const cards = (matches || []).filter(m => isFinishedMatch(m) && m.date === day);
+      const rows = cards.map(m => Object.assign({ id: m.id, match: (m.p1 || '?') + ' v ' + (m.p2 || '?') + (m.tour ? ' · ' + (typeof mxEventName === 'function' ? mxEventName(m.tour) : m.tour) : '') }, judge(m)));
+      const x = rows.filter(r => r.real).length, buckets = {};
+      for (const r of rows) if (!r.real) buckets[r.bucket] = (buckets[r.bucket] || 0) + 1;
+      return { day, x, y: rows.length, pct: rows.length ? Math.round(1000 * x / rows.length) / 10 : null, buckets,
+               cards: rows.map(r => ({ id: r.id, real: r.real })),
+               dashes: rows.filter(r => !r.real).map(r => ({ id: r.id, match: r.match, book: r.book, bucket: r.bucket, reason: r.reason, lagS: r.lagS })) };
+    });
+    return { days, cardStateGeneratedAt: OCS.generatedAt || null,
+             rule: 'real close = both sides of the card book, a verified start, each close sighting within 300 s before it (founder 2026-11-01)',
+             population: 'board cards with a final result (isFinishedMatch) dated on the day (Europe/Berlin, the board date)' };
   })()`);
 } catch (e) { fail('the page check threw: ' + e.message); }
+// "recovered by re-verification": a card that was a dash in the FIRST report of its day and carries a real close now.
+// Each day keeps its first-seen status from the previous published report (never rewritten once set).
+const prevDays = Object.fromEntries(((prev && prev.days) || []).map(d => [d.day, d]));
+for (const d of report.days) {
+  const p0 = prevDays[d.day];
+  const first = (p0 && p0.first) || Object.fromEntries(d.cards.map(c => [c.id, c.real]));
+  for (const c of d.cards) if (!(c.id in first)) first[c.id] = c.real;
+  d.first = first;
+  d.recovered = d.cards.filter(c => c.real && first[c.id] === false).length;
+  d.approx = null;   // the approximate tier (ADD PRICES, founder 2026-11-01) is not built yet: shown as —, never counted here
+}
+// the top level = yesterday, for the data-alarms watch (its daily line)
+Object.assign(report, { day: report.days[0].day, x: report.days[0].x, y: report.days[0].y, pct: report.days[0].pct,
+                        dashes: report.days[0].dashes, buckets: report.days[0].buckets, recovered: report.days[0].recovered,
+                        approx: report.days[0].approx, earlier: report.days.slice(1).map(d => ({ day: d.day, x: d.x, y: d.y, recovered: d.recovered })) });
 ch.kill('SIGKILL'); if (!LIVE) server.close();
 report.generatedAt = new Date().toISOString();
 const tmp = OUT + '.tmp';
 writeFileSync(tmp, JSON.stringify(report, null, 1)); renameSync(tmp, OUT);   // atomic: temp file + rename
-console.log(`close-coverage ${report.day}: ${report.x} of ${report.y} Completed cards carry a card-book close` +
-            (report.pct != null ? ` (${report.pct}%)` : '') + `; card state generated ${report.cardStateGeneratedAt || '—'}`);
-for (const d of report.dashes) console.log(`  — ${d.match}: ${d.reason}`);
+for (const d of report.days) {
+  console.log(`close-coverage ${d.day}: ${d.x} of ${d.y} Completed cards carry a REAL close` + (d.pct != null ? ` (${d.pct}%)` : '') +
+              `; recovered by re-verification ${d.recovered}; dashes ${JSON.stringify(d.buckets)}`);
+}
+console.log(`card state generated ${report.cardStateGeneratedAt || '—'}`);
+for (const d of report.dashes) console.log(`  — ${d.match}: [${d.bucket}] ${d.reason}`);
 process.exit(0);

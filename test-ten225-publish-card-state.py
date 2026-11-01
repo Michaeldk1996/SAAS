@@ -269,6 +269,30 @@ _bw3, _ = P.build(_w, ODDSPAPI_FX, KIBL_FX, BOARD_FX)
 check('a one-sided close is voided on both sides, flag and all',
       all(v.get('close') is None and 'closeW60' not in v for v in _bw3[K2]['sides'].values()))
 
+# founder ruling 2026-11-01: post-match re-verification — a real close is never overwritten; after 3 days a match is final
+def _e(start, close_ts, close=1.9, src='api-tennis-live'):
+    return {'book': 'bet105', 'source': 'kibl', 'startTsSource': src, 'startTs': start, 'closeTsKind': 'sighting',
+            'sides': {'a': {'open': 1.8, 'close': close, 'closeTs': close_ts}, 'b': {'open': 2.0, 'close': 2.0 if close else None, 'closeTs': close_ts}}}
+_none = lambda: {'book': 'bet105', 'source': 'kibl', 'startTsSource': 'none', 'sides': {'a': {'open': 1.8, 'close': None, 'closeTs': None}, 'b': {'open': 2.0, 'close': None, 'closeTs': None}}}
+check('real_close: both sides seen 4 min before a verified start', P.real_close(_e('2026-10-31T14:09:21Z', '2026-10-31T14:05:21Z')))
+check('real_close: a sighting 6 min before is not real (300 s)', not P.real_close(_e('2026-10-31T14:09:21Z', '2026-10-31T14:03:21Z')))
+check('real_close: no verified start is not real', not P.real_close(_e('2026-10-31T14:09:21Z', '2026-10-31T14:08:21Z', src='none')))
+prev = {'2026-10-31|a|b': _e('2026-10-31T14:09:21Z', '2026-10-31T14:06:00Z'), '2026-10-25|a|b': _none(), '2026-10-31|c|d': _none()}
+cur = {'2026-10-31|a|b': _none(), '2026-10-25|a|b': _e('2026-10-25T10:00:00Z', '2026-10-25T09:58:00Z'), '2026-10-31|c|d': _e('2026-10-31T16:12:36Z', '2026-10-31T16:10:00Z')}
+_st = P.carry_over(cur, prev, '2026-11-01', ('2026-10-20', '2026-11-08'))
+check('a published real close is never dashed by a later run', P.real_close(cur['2026-10-31|a|b']) and cur['2026-10-31|a|b']['sides']['a']['close'] == 1.9, cur['2026-10-31|a|b'])
+check('a match more than 3 days old is final: a close found now does not replace its dash', not P.real_close(cur['2026-10-25|a|b']) and cur['2026-10-25|a|b']['sides']['a']['close'] is None, cur['2026-10-25|a|b'])
+check('within 3 days a dash is recovered (counted)', P.real_close(cur['2026-10-31|c|d']) and _st['real_close_new_or_recovered'] == 1, dict(_st))
+cur2 = {}
+P.carry_over(cur2, prev, '2026-11-01', ('2026-10-20', '2026-11-08'))
+check('a real close whose entry left the build is restored whole', P.real_close(cur2.get('2026-10-31|a|b')))
+cur3 = {'2026-10-31|a|b': _e('2026-10-31T14:09:21Z', '2026-10-31T14:07:00Z', close=1.7)}
+P.carry_over(cur3, prev, '2026-11-01', ('2026-10-20', '2026-11-08'))
+check('a different later close never overwrites a published real one', cur3['2026-10-31|a|b']['sides']['a']['close'] == 1.9)
+_src = open(P.__file__).read()
+check('main() guards the projection with carry_over before publishing, and refuses when the old file is unreadable',
+      'cst = carry_over(by_key, prev, today, window)' in _src and 'no real close can be guarded this run; not publishing' in _src)
+
 print()
 if FAILED:
     print(f'FAILED {len(FAILED)}: {", ".join(FAILED)}')

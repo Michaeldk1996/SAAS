@@ -394,6 +394,90 @@ def build(rows, oddspapi_fx, kibl_fx, board_fx, window=(None, None)):
     return by_key, st
 
 
+REAL_CLOSE_MAX_LAG_S = 300     # founder ruling 2026-11-01: a real close is seen within 300 s before the verified start
+RECHECK_DAYS = 3               # founder ruling 2026-11-01: a match's start / close is re-checked for 3 days, then final
+
+
+def _epoch(v):
+    try:
+        return datetime.fromisoformat(str(v).replace('Z', '+00:00')).timestamp()
+    except (TypeError, ValueError):
+        return None
+
+
+def real_close(entry):
+    """True when an entry carries a REAL close (founder ruling 2026-11-01): both sides priced, a verified start, and each
+    side's close sighting within REAL_CLOSE_MAX_LAG_S before it."""
+    if not entry or not entry.get('startTs') or entry.get('startTsSource') in (None, 'none'):
+        return False
+    st = _epoch(entry['startTs'])
+    sides = list((entry.get('sides') or {}).values())
+    if st is None or len(sides) != 2:
+        return False
+    for s in sides:
+        ct = _epoch(s.get('closeTs'))
+        if s.get('close') is None or ct is None or not (0 <= st - ct <= REAL_CLOSE_MAX_LAG_S):
+            return False
+    return True
+
+
+CLOSE_KEYS = ('close', 'closeTs', 'closeW60')
+ENTRY_CLOSE_KEYS = ('startTs', 'startTsSource', 'closeTsKind')
+
+
+def _take_close(dst, src):
+    for k in ENTRY_CLOSE_KEYS:
+        if k in src:
+            dst[k] = src[k]
+        else:
+            dst.pop(k, None)
+    for nk, sv in (src.get('sides') or {}).items():
+        if nk in (dst.get('sides') or {}):
+            for k in CLOSE_KEYS:
+                if k in sv:
+                    dst['sides'][nk][k] = sv[k]
+                else:
+                    dst['sides'][nk].pop(k, None)
+
+
+def carry_over(by_key, prev_by_key, today, window=(None, None), recheck_days=RECHECK_DAYS):
+    """Post-match re-verification guard (founder ruling 2026-11-01), applied to the projection before it is published.
+
+    Every run re-derives every close in the window from the archive (the start re-checked against our live flip and
+    Oddspapi's recorded start; never the scheduled time), so a close the start check could not make yesterday can be
+    recovered today. Two limits:
+      * a REAL close already published is never overwritten — not changed, not dashed, not dropped;
+      * a match dated more than `recheck_days` before `today` (YYYY-MM-DD) is final: its close fields stay exactly as
+        last published (a dash stays a dash).
+    Returns counters."""
+    st = collections.Counter()
+    cutoff = (datetime.strptime(today, '%Y-%m-%d') - timedelta(days=recheck_days)).strftime('%Y-%m-%d')
+    for k, prev in (prev_by_key or {}).items():
+        day = k.split('|', 1)[0]
+        if window[0] and day < window[0]:
+            continue
+        cur = by_key.get(k)
+        if real_close(prev):
+            if cur is None:
+                by_key[k] = json.loads(json.dumps(prev)); st['real_close_kept_entry_missing'] += 1
+            elif not real_close(cur) or any((cur['sides'].get(n) or {}).get('close') != (sv or {}).get('close')
+                                            for n, sv in prev['sides'].items()):
+                _take_close(cur, prev); st['real_close_kept'] += 1
+            continue
+        if day < cutoff and cur is not None:
+            before = json.dumps({x: cur.get(x) for x in ENTRY_CLOSE_KEYS} | {n: {x: v.get(x) for x in CLOSE_KEYS} for n, v in cur['sides'].items()}, sort_keys=True)
+            _take_close(cur, prev)
+            after = json.dumps({x: cur.get(x) for x in ENTRY_CLOSE_KEYS} | {n: {x: v.get(x) for x in CLOSE_KEYS} for n, v in cur['sides'].items()}, sort_keys=True)
+            if before != after:
+                st['final_after_recheck_window'] += 1
+    for k, cur in by_key.items():
+        day = k.split('|', 1)[0]
+        prev = (prev_by_key or {}).get(k)
+        if day >= cutoff and real_close(cur) and not real_close(prev):
+            st['real_close_new_or_recovered'] += 1
+    return st
+
+
 def board_window(matches, margin_days=WINDOW_MARGIN_DAYS):
     """The day range the board can actually render, widened by a margin.
 
@@ -478,6 +562,20 @@ def main():
     rows, oddspapi_fx, kibl_fx = read_inputs(url, key, window)
 
     by_key, st = build(rows, oddspapi_fx, kibl_fx, board_fx, window)
+    # founder ruling 2026-11-01: re-verification keeps a real close and makes a match final after RECHECK_DAYS
+    prev = {}
+    if os.path.exists(args.out):
+        try:
+            with open(args.out) as fh:
+                prev = json.load(fh).get('byKey') or {}
+        except (OSError, ValueError) as e:
+            print(f'::error::the previous {os.path.basename(args.out)} could not be read ({e}) — no real close can be guarded this run; not publishing')
+            return 1
+    import zoneinfo
+    today = datetime.now(zoneinfo.ZoneInfo('Europe/Berlin')).strftime('%Y-%m-%d')   # the board's own date
+    cst = carry_over(by_key, prev, today, window)
+    for k2, v2 in cst.items():
+        st['reverify_' + k2] = v2
     cov = board_coverage(matches, by_key)
 
     doc = {
