@@ -43,7 +43,7 @@ const profileOf = (k) => {
   return (bundle && bundle.players && bundle.players[k]) || null;
 };
 
-const WINS = ['career', 'l24', 'l52'], TIERS = ['all', 'atp', 'chitf'], FMTS = ['bo3', 'bo5'];
+const WINS = ['career', 'l24', 'l52'], TIERS = ['all', 'main', 'atpq', 'ch', 'itf'], FMTS = ['bo3', 'bo5'];
 const cells = {};
 const lineLabels = {};
 let loaded = 0;

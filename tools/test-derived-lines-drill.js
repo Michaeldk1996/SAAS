@@ -446,13 +446,13 @@ function shapeChecks(A, shape) {
       const title = /data-lc="title"[^>]*>([^<]*)</.exec(h);
       assert(title && title[1] === 'Coverage by line', win + '/' + tier + '/' + f + '/' + role + ' title: ' + (title && title[1]));
       const btns = h.match(/<button[^>]*data-pp2="lc-(?:win|tier|fmt)"[\s\S]*?<\/button>/g) || [];
-      assert.strictEqual(btns.length, 8, 'controls ' + btns.length);
+      assert.strictEqual(btns.length, 10, 'controls ' + btns.length);   // Task E: five levels (All · ATP main draw · ATP qualifying · Challenger · ITF)
       btns.forEach((b) => assert(/visibility:hidden;">[^<]+<\/span><\/span><\/button>$/.test(b) && /font-weight:700;visibility:hidden/.test(b), 'no width reserve: ' + b.slice(0, 120)));
       // the label text and order, stripped of state: one signature in every state
       seen.add(btns.map((b) => /data-v="(\w+)"/.exec(b)[1]).join(','));
       n++;
     }))));
-    assert.deepStrictEqual([...seen], ['l52,l24,career,all,atp,chitf,bo3,bo5']);
+    assert.deepStrictEqual([...seen], ['l52,l24,career,all,main,atpq,ch,itf,bo3,bo5']);
     // the three cards hold a hidden widest-case subtitle in the same cell (their height never follows the numbers)
     const card = withState(I, { key: p.key, marketTab: 'lines', lcWin: 'l52', lcTier: 'chitf', lcFmt: 'bo5' }, () => I.renderLinesTab(p));
     const cards = card.match(/data-pp2="lc-role"[\s\S]*?<\/span><\/span><\/div>/g) || [];

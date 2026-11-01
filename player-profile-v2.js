@@ -6517,7 +6517,23 @@
   // Founder 2026-10-22: Last 52 weeks / Last 24 months / Career, in that order; Career stays the default.
   var LC_WINDOWS = [['l52', 'Last 52 weeks'], ['l24', 'Last 24 months'], ['career', 'Career']];
   function lcWindowOf(v) { return v === 'l24' || v === 'l52' ? v : 'career'; }
-  function lcTierOf(v) { return v === 'atp' || v === 'chitf' ? v : 'all'; }
+  // Founder 2026-11-01 (Task E): ONE level filter on both Market edge tabs — All · ATP main draw · ATP qualifying ·
+  // Challenger (main draw + qualifying) · ITF — replacing Derived lines' All / ATP / Challenger & ITF. A match's level is
+  // its feed tier ('atp' / 'chitf', career-history's own scope), its qualifying mark (the same test masterClass reads) and,
+  // inside 'chitf', ITF by the event's own ITF name (M15 / M25 … / ITF / Futures); a row with no tier sits under All only.
+  var LC_LEVELS = [['all', 'All'], ['main', 'ATP main draw'], ['atpq', 'ATP qualifying'], ['ch', 'Challenger'], ['itf', 'ITF']];
+  var LC_LEVEL_WORD = { main: 'ATP main draw', atpq: 'ATP qualifying', ch: 'Challenger', itf: 'ITF' };
+  // 'atp' / 'chitf' (the two combined tiers the field file and older readers know) stay valid: atp = main draw + qualifying
+  function lcTierOf(v) { return LC_LEVEL_WORD[v] || v === 'atp' || v === 'chitf' ? v : 'all'; }
+  function lcLevelWord(v) { return LC_LEVEL_WORD[v] || (v === 'atp' || v === 'chitf' ? careerTierWord(v) : 'all levels'); }
+  function lcBaseTier(v) { return v === 'main' || v === 'atpq' || v === 'atp' ? 'atp' : v === 'ch' || v === 'itf' || v === 'chitf' ? 'chitf' : 'all'; }
+  var LC_ITF_NAME = /(^|[^a-z0-9])(m\d{2,3}|itf|futures?)([^a-z0-9]|$)/i;
+  function lcQualifying(r) { return !!(r && (r.qual || r.qualifying || /^qualif/i.test(String(r.round || '')) || /^q(-|\d|$)/i.test(String(r.round || '')))); }
+  function lcLevelOfRow(r) {
+    if (!r || !r.tier) return null;
+    if (r.tier === 'atp') return lcQualifying(r) ? 'atpq' : 'main';
+    return LC_ITF_NAME.test(String(r.raw || '') + ' ' + String(r.event || '') + ' ' + String(r.tournament || '')) ? 'itf' : 'ch';
+  }
   // Both rolling windows count back from today: Last 52 weeks is the Career record's own cutoff (last52Cutoff),
   // Last 24 months the same calendar day two years back.
   function last24Cutoff() {
@@ -6574,7 +6590,9 @@
     return out;
   }
   function lcFieldOf(d, fmt, label) {
-    if (d.tier === 'chitf' && d.role !== 'all') return null;
+    // the field file is built in Node without the page's price join, so a favourite / underdog card below the ATP main draw
+    // (priced only by that join) has no field figure: blank, never a field built from unpriced rows
+    if ((d.tier === 'chitf' || d.tier === 'atpq' || d.tier === 'ch' || d.tier === 'itf') && d.role !== 'all') return null;
     var f = typeof window.pp2Field === 'function' ? window.pp2Field() : null;
     if (!f || f.st !== 'ready' || !f.d) return null;
     var labels = f.d.lines && f.d.lines[fmt], i = labels ? labels.indexOf(label) : -1;
@@ -6635,8 +6653,9 @@
     var o = opts || {};
     var def = LINE_DEFS[fmt] || LINE_DEFS.bo3;
     var win = lcWindowOf(o.win), tier = lcTierOf(o.tier), since = lcSinceOf(win), surf = lcSurfOf(o.surf), speed = lcSpeedOf(o.speed);
-    var scope = drillScope(p, null, since, tier).filter(function (r) {
-      return !r.notCounted && (surf === 'all' || r.cell === surf) && (speed === 'all' || lcSpeedBucket(r) === speed);
+    var scope = drillScope(p, null, since, lcBaseTier(tier)).filter(function (r) {
+      return !r.notCounted && (surf === 'all' || r.cell === surf) && (speed === 'all' || lcSpeedBucket(r) === speed)
+        && (!LC_LEVEL_WORD[tier] || lcLevelOfRow(r) === tier);
     });
     // Founder rulings 2026-10-22: a retirement is SHOWN (every line's Retired tab, its table's count per family) and
     // never counted; NextGen and match-tiebreak matches are out of every line.
@@ -6732,19 +6751,20 @@
     var noSplit = 0;
     if (tier !== 'all' && win === 'career') {
       var split = {};
-      spineYears(p).forEach(function (y) { if (tierRowOf(y, tier)) split[String(y.year)] = 1; });
-      noSplit = countedSpine(p).filter(function (r) { return r.tier === tier && !split[r.year]; }).length;
+      spineYears(p).forEach(function (y) { if (tierRowOf(y, lcBaseTier(tier))) split[String(y.year)] = 1; });
+      noSplit = countedSpine(p).filter(function (r) { return (LC_LEVEL_WORD[tier] ? lcLevelOfRow(r) === tier : r.tier === tier) && !split[r.year]; }).length;
     }
     var recN = scope.length;
     // the record holds no court-speed cell: under a speed filter its figure is the filtered list's own count
-    if (win === 'career' && speed === 'all') {
+    // the record holds All / ATP / Challenger & ITF only: under one of the five levels its figure is the list's own count
+    if (win === 'career' && speed === 'all' && !LC_LEVEL_WORD[tier]) {
       var tot = careerTierCells(p, tier)[surf === 'all' ? 'total' : surf];
       recN = tot ? (tot.won || 0) + (tot.lost || 0) : 0;
     }
     return {
       // TEN-384 fix 5 · All = As favourite + As underdog + unpriced, by construction; the note states the
       // unpriced count so the three tiles reconcile on the page.
-      groups: groups, n: sub.length, all: all, favN: favN, dogN: dogN, unpriced: all - favN - dogN, role: sel,
+      groups: groups, n: sub.length, all: all, favN: favN, dogN: dogN, unpriced: all - favN - dogN, role: sel, pool: pool,
       withGames: withGames, setMissing: setMissing, fmtLabel: def.label, retiredHere: retSub.length,
       win: win, tier: tier, surf: surf, speed: speed, since: since, scopeN: scope.length, recordN: recN, undated: recN - scope.length, why: why, noSplit: noSplit,
       // kept for the readers that predate the reasons split
@@ -6814,6 +6834,47 @@
       'border:1px solid ' + (on ? 'var(--edge-24)' : 'var(--edge-7)') + ';">' + inner + '</div>';
   }
 
+  function mkLevelOf(v) { return LC_LEVEL_WORD[v] || v === 'all' ? v : 'main'; }
+  /** Task E (founder 2026-11-01): a level's records on Match winner, below the main draw or across all levels — all
+   *  matches, as favourite, as underdog and no price (summing to all), each with its W–L, and how many of the priced are
+   *  Bet365. Records only: no ROI or yield (founder: "Records only, no ROI"). The rows are the Career record's dated rows
+   *  (walkovers out, a retirement a match), priced by the same rows Derived lines reads: the Market edge close on the main
+   *  draw, the site's one price join below it; favourite = priced under 2.00. */
+  function levelRecords(p, level) {
+    var MEC = window.MarketEdgeCore;
+    var rows = drillScope(p, null, null, lcBaseTier(level)).filter(function (r) {
+      return !r.notCounted && !r.wo && (level === 'all' || lcLevelOfRow(r) === level);
+    });
+    var out = { all: { n: 0, w: 0 }, fav: { n: 0, w: 0 }, dog: { n: 0, w: 0 }, none: { n: 0, w: 0 }, b365: 0, priced: 0, rows: rows };
+    rows.forEach(function (r) {
+      var priced = (r.cents != null || r.joinRole) && r.price != null && r.price >= 1.01;
+      var k = priced ? ((MEC ? MEC.isFavPrice(r.price) : r.price < 2) ? 'fav' : 'dog') : 'none';
+      out.all.n++; out[k].n++;
+      if (r.won) { out.all.w++; out[k].w++; }
+      if (priced) { out.priced++; if (/bet365|^b$/i.test(String(r.book || ''))) out.b365++; }
+    });
+    return out;
+  }
+  function renderLevelRecords(p, level) {
+    var d = levelRecords(p, level);
+    function pct(n) { return d.all.n ? Math.round(100 * n / d.all.n) + '% of total' : DASH; }
+    var cards = [['all', 'All matches', d.all], ['fav', 'As favourite', d.fav], ['dog', 'As underdog', d.dog], ['none', 'No price', d.none]].map(function (c) {
+      return '<span data-mk-level-card="' + c[0] + '" style="display:flex;flex-direction:column;gap:7px;padding:14px 16px;border-radius:12px;' +
+        'background:var(--card);box-shadow:inset 0 0 0 1px var(--edge-6);min-width:0;">' +
+        '<span style="display:flex;align-items:baseline;justify-content:space-between;gap:8px;"><span style="' + MK_CAPS + '">' + c[1] + '</span>' +
+          '<span style="' + MK_MONO + 'font-size:11px;color:var(--text-label);">' + (c[0] === 'all' ? '' : esc(pct(c[2].n))) + '</span></span>' +
+        '<span style="' + MK_MONO + 'font-size:24px;font-weight:700;line-height:24px;color:var(--text);">' + c[2].n.toLocaleString('en-US') + '</span>' +
+        '<span style="' + MK_MONO + 'font-size:12px;color:var(--text-soft);">' + (c[2].n ? recordText(c[2].w, c[2].n - c[2].w) : DASH) + '</span></span>';
+    }).join('');
+    var word = level === 'all' ? 'every level' : lcLevelWord(level);
+    return '<div data-mk-level="' + level + '" style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:12px;">' + cards + '</div>' +
+      '<div data-mk-level-note style="font-size:11.5px;line-height:1.55;color:var(--text-label);">' +
+        esc((d.priced ? d.b365 + ' of ' + d.priced + ' priced on Bet365. ' : '') +
+          'Records only for ' + word + ': ROI and the favourite / underdog yields are on ATP main draw, where the prices are closes. ' +
+          'Favourite = priced under 2.00; ' + (level === 'all' || level === 'main' ? '' : 'prices at this level are approximate snapshots (Pinnacle, then Bet365), never closes; ') +
+          'walkovers are not matches; a retirement counts.') + '</div>';
+  }
+
   /** §5.8 Derived lines (TEN-384 reference build). */
   function renderLinesTab(p) {
     var fmt = state.lcFmt === 'bo5' ? 'bo5' : 'bo3';
@@ -6824,7 +6885,7 @@
     // Brief 2026-10-21 · Window and Tier sit beside Best of 3 | Best of 5, on the same darker-track segment; the
     // Tier labels are the Career record's own (CAREER_TIERS).
     var scopeWord = (win === 'career' ? '' : ' ' + MIDDOT + ' ' + LC_WINDOW_WORD[win]) +
-      (tier === 'all' ? '' : ' ' + MIDDOT + ' ' + careerTierWord(tier)) +
+      (tier === 'all' ? '' : ' ' + MIDDOT + ' ' + lcLevelWord(tier)) +
       (surf === 'all' ? '' : ' ' + MIDDOT + ' ' + surf.charAt(0).toUpperCase() + surf.slice(1)) +
       (speed === 'all' ? '' : ' ' + MIDDOT + ' ' + (speed === 'unrated' ? 'Unrated courts' : bandById(speed).label + ' courts'));
     var head = '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px 12px;margin-bottom:12px;min-height:32px;">' +
@@ -6834,7 +6895,7 @@
       // founder 2026-10-23 · Surface on a second row, directly below, aligned the same way, the same fixed widths
       '<span style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;">' +
         '<span style="display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px;">' +
-          mkSeg('lc-win', LC_WINDOWS, win, true) + mkSeg('lc-tier', CAREER_TIERS, tier, true) +
+          mkSeg('lc-win', LC_WINDOWS, win, true) + mkSeg('lc-tier', LC_LEVELS, tier, true) +
           mkSeg('lc-fmt', [['bo3', 'Best of 3'], ['bo5', 'Best of 5']], fmt, true) + '</span>' +
         '<span style="display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px;">' +
           mkSeg('lc-surf', LC_SURFACES, surf, true) + mkSeg('lc-speed', LC_SPEEDS, speed, true) + '</span></span></div>';
@@ -6843,7 +6904,11 @@
     // Founder 2026-10-31 (replaces 2026-10-23's "no favourite or underdog at Challenger & ITF"): a match that is not ATP
     // main draw takes its role from the site's one price join (spineOver `joinRole`), so every tier has its cards and
     // tables. Lower-level prices are snapshots, never closes, so the cards say "priced", not "closed".
-    var tiles = '<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:18px;">' +
+    // Task E (founder 2026-11-01): "No price · N · X% of total" beside the two role cards (All = favourite + underdog + no
+    // price, on the page), and how many of the priced ones are Bet365 — per filter
+    var b365N = 0;
+    d.pool.forEach(function (m) { if (m.role && /bet365|^b$/i.test(String(m.r.book || ''))) b365N++; });
+    var tiles = '<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:18px;">' +
       LC_ROLES.map(function (t) {
         var on = role === t[0];
         var n = t[0] === 'fav' ? d.favN : t[0] === 'dog' ? d.dogN : d.all;
@@ -6863,7 +6928,16 @@
             '<span style="grid-area:1 / 1;">' + esc(sub) + '</span>' +
             '<span aria-hidden="true" style="grid-area:1 / 1;visibility:hidden;">' + esc(reserve) + '</span></span>',
           '14px 16px', 7);
-      }).join('') + '</div>';
+      }).join('') +
+      '<span data-lc="noprice" style="display:flex;flex-direction:column;gap:7px;padding:14px 16px;border-radius:12px;background:var(--card);' +
+        'box-shadow:inset 0 0 0 1px var(--edge-6);">' +
+        '<span style="' + MK_CAPS + '">No price</span>' +
+        '<span style="' + MK_MONO + 'font-size:24px;font-weight:700;line-height:24px;color:var(--text-soft);">' + d.unpriced.toLocaleString('en-US') + '</span>' +
+        '<span style="font-size:11px;color:var(--text-label);">' + esc(d.all ? Math.round(100 * d.unpriced / d.all) + '% of total' : DASH) + '</span></span>' +
+      '</div>' +
+      '<div data-lc="b365" style="font-size:11px;color:var(--text-label);margin:-10px 0 14px;">' +
+        esc((d.favN + d.dogN ? b365N + ' of ' + (d.favN + d.dogN).toLocaleString('en-US') + ' priced on Bet365' : 'None priced') +
+          (d.tier === 'all' || d.tier === 'main' ? '' : ' ' + MIDDOT + ' ' + lcLevelWord(d.tier) + ' prices are approximate snapshots, never closes')) + '</div>';
 
     if (!d.n) {
       var inScope = scopeWord ? ' in this window and tier' : '';
@@ -6965,12 +7039,12 @@
     if (w.format) outs.push(w.format + ' in another non-standard format');
     if (w.unshaped) outs.push(w.unshaped + ' whose set score on file is level and decides no match shape');
     if (d.undated > 0) outs.push(plural(d.undated, 'with no dated match row', 'with no dated match rows'));
-    note += ' Career record' + (scopeWord ? ' (' + LC_WINDOW_WORD[win] + (tier === 'all' ? '' : ', ' + careerTierWord(tier)) +
+    note += ' Career record' + (scopeWord ? ' (' + LC_WINDOW_WORD[win] + (tier === 'all' ? '' : ', ' + lcLevelWord(tier)) +
       (surf === 'all' ? '' : ', ' + surf) + (speed === 'all' ? '' : ', ' + (speed === 'unrated' ? 'unrated' : bandById(speed).label.toLowerCase()) + ' courts') + ')' : '') +
       ': ' + d.recordN.toLocaleString('en-US') + ' matches = ' + d.all + ' ' + d.fmtLabel + ' + ' + w.otherFmt + ' ' + other +
       (outs.length ? ' + ' + outs.join(' + ') : '') + '.';
     if (d.noSplit) {
-      note += ' ' + plural(d.noSplit, careerTierWord(tier) + ' match sits', careerTierWord(tier) + ' matches sit') +
+      note += ' ' + plural(d.noSplit, lcLevelWord(tier) + ' match sits', lcLevelWord(tier) + ' matches sit') +
         ' in seasons the Career record holds without a tier split (before 2021) and count under All only.';
     }
     if (d.withGames < d.n) note += ' Games lines rest on the ' + d.withGames + ' of ' + d.n + ' with per-set games' +
@@ -7120,6 +7194,12 @@
     }
     var mktTab = state.marketTab === 'lines' ? 'lines' : 'winner';
     if (mktTab === 'lines') return ANA_STYLE + marketTabsHtml() + renderLinesTab(p);
+    // Task E (founder 2026-11-01): the level filter on Match winner too. ATP main draw (the default) is the view as it was,
+    // unchanged; every other level shows records only — no ROI, no favourite / underdog yield (founder 2026-11-01: "Records
+    // only, no ROI": below the main draw the prices are mostly snapshots, not closes).
+    var mkLevel = mkLevelOf(state.mkLevel);
+    var levelRow = '<div style="display:flex;justify-content:flex-end;margin:-6px 0 14px;">' + mkSeg('mk-level', LC_LEVELS, mkLevel, true) + '</div>';
+    if (mkLevel !== 'main') return ANA_STYLE + marketTabsHtml() + levelRow + renderLevelRecords(p, mkLevel);
 
     var sel = state.marketRole || 'all';
     var side = MKT_SHOW_FILTERS && state.marketSide === 'fade' ? 'fade' : 'back';
@@ -7214,9 +7294,17 @@
     var lvl = mk.roles.level && mk.roles.level.n ? mk.roles.level.n : 0;
     var cov = mk.coverage || {};
 
-    return ANA_STYLE + marketTabsHtml(summary) +
+    // Task E: "No price · N · X% of total" beside the role cards — the ATP main-draw matches on his record with no price
+    var lvMain = levelRecords(p, 'main');
+    var noPriceCard = '<span data-mk-level-card="none" style="display:flex;flex-direction:column;gap:7px;padding:14px 16px 13px;border-radius:12px;' +
+      'background:var(--card);box-shadow:inset 0 0 0 1px var(--edge-6);min-width:0;">' +
+      '<span style="display:flex;align-items:baseline;justify-content:space-between;gap:8px;"><span style="' + MK_CAPS + '">No price</span>' +
+        '<span style="' + MK_MONO + 'font-size:11px;color:var(--text-label);">' + (lvMain.all.n ? Math.round(100 * lvMain.none.n / lvMain.all.n) + '% of total' : DASH) + '</span></span>' +
+      '<span style="' + MK_MONO + 'font-size:26px;font-weight:700;line-height:26px;color:var(--text-soft);">' + lvMain.none.n.toLocaleString('en-US') + '</span>' +
+      '<span style="' + MK_MONO + 'font-size:11px;color:var(--text-label);">of ' + lvMain.all.n.toLocaleString('en-US') + ' ATP main-draw matches</span></span>';
+    return ANA_STYLE + marketTabsHtml(summary) + levelRow +
       '<div style="display:flex;flex-direction:column;gap:16px;min-width:0;">' +
-        '<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;">' + cards + '</div>' +
+        '<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;">' + cards + noPriceCard + '</div>' +
         '<div data-pp2-mk="bands" style="min-width:0;">' +
           '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:12px;">' +
             '<span style="' + MK_CAPS + '">Price sensitivity ' + MIDDOT + ' his closing price</span>' +
@@ -7899,6 +7987,9 @@
         // career-history's feed scope ('atp' / 'chitf'), the same split careerByYear's Tier rows carry —
         // the Career record's Tier control filters the dated window on it.
         tier: r.level === 'atp' ? 'atp' : r.level ? 'chitf' : null,
+        // Task E (founder 2026-11-01): the row's qualifying mark, read off the career row exactly as masterClass reads it
+        // (the drill's round label drops a TE "Q-R16"), so the level filter can tell ATP qualifying from ATP main draw
+        qual: !!(r.qualifying || /^qualif/i.test(String(r.round || '')) || /^q-/i.test(String(r.round || ''))),
         // Integer cents: a float sum re-ordered moved a painted card by 0.01u
         // once already, so every P&L here is accumulated in whole cents and
         // divided only at the point it is printed.
@@ -11934,7 +12025,7 @@
     marketTab: 'winner', lcFmt: 'bo3', lcRole: 'all',
     // Brief 2026-10-21 · the Derived-lines Window (career | l24 | l52) and Tier (all | atp | chitf), the open line's
     // label (its drill; null = none) and the drill's Covered / Not covered / Void filter.
-    lcWin: 'career', lcTier: 'all', lcSurf: 'all', lcSpeed: 'all', lcDrill: null, lcDrillRes: null,
+    lcWin: 'career', lcTier: 'all', lcSurf: 'all', lcSpeed: 'all', lcDrill: null, lcDrillRes: null, mkLevel: 'main',
     // §5.7 Splits. The scope switch (Career / Last 52 weeks) and the tab switch
     // (Results / Sets & Games / Service) are independent axes of the same table —
     // changing scope must not reset the tab, so they are separate state.
@@ -12046,7 +12137,7 @@
     state.surfaces = []; state.priceFilters = []; state.modal = null;
     state.careerScope = 'career'; state.careerDrill = null; state.careerTab = 'record'; state.careerTier = 'all';
     state.splitScope = 'career'; state.marketRole = 'all'; state.lcRole = 'all';
-    state.lcWin = 'career'; state.lcTier = 'all'; state.lcSurf = 'all'; state.lcSpeed = 'all'; state.lcDrill = null; state.lcDrillRes = null;
+    state.lcWin = 'career'; state.lcTier = 'all'; state.lcSurf = 'all'; state.lcSpeed = 'all'; state.lcDrill = null; state.lcDrillRes = null; state.mkLevel = 'main';
     state.drawDrill = null; state.drawFilter = 'all'; state.drawPage = 0;
     state.tournQuery = ''; state.tournOpen = null;
     state.calTab = 'calendar'; state.calSurface = 'all'; state.calCell = null; state.cal26Month = null;
@@ -12135,6 +12226,7 @@
     // Brief 2026-10-21 · Window and Tier re-cut every figure on the tab; an open line drill stays open and follows.
     else if (kind === 'lc-win') { state.lcWin = lcWindowOf(v); }
     else if (kind === 'lc-tier') { state.lcTier = lcTierOf(v); }
+    else if (kind === 'mk-level') { state.mkLevel = mkLevelOf(v); }
     else if (kind === 'lc-surf') { state.lcSurf = lcSurfOf(v); }
     else if (kind === 'lc-speed') { state.lcSpeed = lcSpeedOf(v); }
     // A line opens its matches (Covered first); the same line again, or Close, shuts it.
@@ -12345,7 +12437,7 @@
       drawGrainHtml: drawGrainHtml,
       // §5.8 Derived lines
       lineCoverage: lineCoverage, lcBestWorst: lcBestWorst, lcVsField: lcVsField, lineFormatOf: lineFormatOf, lineRetiredFormat: lineRetiredFormat, speedRowOf: speedRowOf, lcFieldOf: lcFieldOf,
-      renderLinesTab: renderLinesTab,
+      renderLinesTab: renderLinesTab, lcLevelOfRow: lcLevelOfRow, levelRecords: levelRecords, renderLevelRecords: renderLevelRecords, LC_LEVELS: LC_LEVELS,
       lineSetCount: lineSetCount,
       lineGames: lineGames,
       normaliseEdition: normaliseEdition,

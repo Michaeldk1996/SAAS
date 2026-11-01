@@ -53,7 +53,7 @@ function page(field) {
 }
 const rowsOf = (c) => [].concat.apply([], c.groups.map((g) => g.rows));
 const I0 = (I, p) => I.lineCoverage(p, 'bo3', 'all');
-const WINS = ['career', 'l24', 'l52'], TIERS = ['all', 'atp', 'chitf'], FMTS = ['bo3', 'bo5'], ROLES = ['all', 'fav', 'dog'];
+const WINS = ['career', 'l24', 'l52'], TIERS = ['all', 'main', 'atpq', 'ch', 'itf'], FMTS = ['bo3', 'bo5'], ROLES = ['all', 'fav', 'dog'];
 const SURFS = ['all', 'hard', 'indoors', 'clay', 'grass'], SPEEDS = ['all', 'slow', 'med', 'fast', 'unrated'];
 
 function oneDefinition(field) {
@@ -104,7 +104,7 @@ function main() {
       // founder 2026-10-31: Challenger & ITF roles come from the page's one price join (window.pp2CareerClose), which this
       // Node fixture does not load — so those cards hold no match and draw no rated line, and the field (built without the
       // join) has no cell for them: never a Field figure under them
-      if (tier === 'chitf' && role !== 'all') {
+      if ((tier === 'atpq' || tier === 'ch' || tier === 'itf') && role !== 'all') {
         assert(c.n === 0 && !/data-lc-field="[^"]*"[^>]*>[^<—]*\d/.test(html), tier + '/' + role + ': a rated Challenger & ITF card without a join price');
         continue;
       }
@@ -272,7 +272,7 @@ function main() {
   H.mustFail('a page that shows a Challenger & ITF favourite field is caught', () => {
     const SRC = fs.readFileSync(path.join(L.ROOT, 'player-profile-v2.js'), 'utf8');
     const f = path.join(os.tmpdir(), 'pp2-field-mutant-' + process.pid + '.js');
-    fs.writeFileSync(f, SRC.replace("if (d.tier === 'chitf' && d.role !== 'all') return null;", ''));
+    fs.writeFileSync(f, SRC.replace("if ((d.tier === 'chitf' || d.tier === 'atpq' || d.tier === 'ch' || d.tier === 'itf') && d.role !== 'all') return null;", ''));
     try {
       const p = Object.assign({}, FX.profile, { tournamentHistory: FX.tournamentHistory });
       const m = L.loadPp2({ src: f, players: { [KEY]: p }, careerHistory: { [KEY]: FX.careerHistory }, marketEdge: { [KEY]: FX.marketEdge }, bet365History: FX.bet365History });

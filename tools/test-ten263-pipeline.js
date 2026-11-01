@@ -177,7 +177,8 @@ check('stored point-by-point cache sheets (match + per set) are corrected on loa
   assert.strictEqual(cache[7].matchStats.p2['Points:Winners'], null);
   assert.strictEqual(cache[7].stats[2].p1['Points:Unforced errors'], null);
   const src = fs.readFileSync(path.join(ROOT, 'build-point-by-point.js'), 'utf8');
-  const load = src.indexOf("JSON.parse(fs.readFileSync(CACHE_PATH, 'utf8'))");
+  // the store is read one line per match since Task D (pbp-cache-io.js readCache, founder 2026-11-01)
+  const load = src.indexOf('const cache = readCache(CACHE_PATH);');
   const fix = src.indexOf('sanitizePbpCache(cache)');
   const write = src.indexOf('fs.mkdirSync(SETSTATS_DIR');
   assert.ok(load > 0 && fix > load && fix < write, 'build-point-by-point main() does not sanitize the cache between load and the setstats/ write');
