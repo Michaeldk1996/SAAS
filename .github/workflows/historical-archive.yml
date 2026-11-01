@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: install | daily | verify-export | restore-check | inventory | approx-import | start10-dry-run | start10-import | lower-dry-run | lower-import | te-dry-run | te-import | te-pre21-dry-run | te-pre21-import
+        description: install | daily | verify-export | restore-check | inventory | approx-import | start10-dry-run | start10-import | lower-dry-run | lower-import | te-dry-run | te-import | te-pre21-dry-run | te-pre21-import | sched-dry-run | sched-import
         required: true
         default: daily
 permissions:
@@ -44,7 +44,7 @@ jobs:
               "https://api.supabase.com/v1/projects/$REF/database/query"; }
           CHECKS="select conname, pg_get_constraintdef(oid) as def from pg_constraint where conrelid = 'public.historical_snapshot'::regclass and contype = 'c' order by conname"
           echo "== snapshot CHECKs before (read-only)"; printf '%s' "$CHECKS" | q | sed '$d' | head -c 3000; echo
-          MIGS=(supabase/migrations/20261016090000_historical_odds_archive.sql supabase/migrations/20261016150000_historical_snapshot.sql supabase/migrations/20261017090000_historical_snapshot_start10.sql supabase/migrations/20261019090000_historical_snapshot_bet365.sql supabase/migrations/20261020090000_historical_snapshot_te.sql supabase/migrations/20261030090000_historical_snapshot_te_bet365.sql)
+          MIGS=(supabase/migrations/20261016090000_historical_odds_archive.sql supabase/migrations/20261016150000_historical_snapshot.sql supabase/migrations/20261017090000_historical_snapshot_start10.sql supabase/migrations/20261019090000_historical_snapshot_bet365.sql supabase/migrations/20261020090000_historical_snapshot_te.sql supabase/migrations/20261030090000_historical_snapshot_te_bet365.sql supabase/migrations/20261101090000_historical_snapshot_sched.sql)
           # founder 2026-10-20 (item 9): each file once, recorded in the archive's migration ledger in the same transaction; an
           # edited applied file stops the install; an archive installed before the ledger is recorded at bootstrap (never re-run)
           python3 tools/archive_install.py "${MIGS[@]}"
@@ -77,6 +77,11 @@ jobs:
         env:
           API_TENNIS_KEY: ${{ secrets.API_TENNIS_KEY }}
         run: python3 tools/tdarch.py approx-import
+      - name: Pinnacle (approx.) before the start — where no start is verified (founder 2026-11-01, Task B; insert-only)
+        if: env.MODE == 'sched-import' || env.MODE == 'sched-dry-run'
+        env:
+          API_TENNIS_KEY: ${{ secrets.API_TENNIS_KEY }}
+        run: python3 tools/tdarch.py sched-import ${{ env.MODE == 'sched-dry-run' && '--dry-run' || '' }}
       - name: start10 — Pinnacle (approx.) from the Oddspapi Pinnacle archive at start − 10 (founder ruling 2026-10-17; insert-only)
         if: env.MODE == 'start10-import' || env.MODE == 'start10-dry-run'
         env:

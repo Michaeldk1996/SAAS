@@ -592,5 +592,32 @@ check('pre-2021: the lower feed carries them unchanged (level, both keys, negati
       sorted((r['eventKey'], r['level'], r['source']) for r in pf) == sorted((r['event_key'], r['detail']['level'], T.TE_SOURCE) for r in prows) and len(pf) == len(prows), pf)
 pix = T.te_pre21_priced_index([{'wk': '1064', 'lk': '1748', 'match_date': '2016-10-16'}])
 check('pre-2021: the already-priced lookup is the same two keys +-1 day, either order', pix('1748', '1064', '2016-10-15') and not pix('1748', '1064', '2016-10-13') and not pix('1064', '', '2016-10-16'))
+# ── founder 2026-11-01 (Task B): Pinnacle (approx.) before the start, where no start is verified ──────────────────────
+SF = lambda ek, t, tm='12:00', d='2026-10-27', **k: dict(F(ek, t, d=d, **k), event_time=tm, event_key=ek)
+sfx = [SF(901, 'Atp Singles'), SF(902, 'Challenger Men Singles', tm='11:58'), SF(903, 'Atp Singles', st='Walk Over'),
+       SF(904, 'Itf Men Singles'), SF(905, 'Atp Singles', d='2026-09-10'), dict(SF(906, 'Challenger Men Singles'), event_time=None)]
+sod = {'901': ('F901', True), '902': ('F902', True), '903': ('F903', True), '904': ('F904', True), '905': ('F905', True), '906': ('F906', True)}
+SFX = {'F901': {'trueStartTime': '2026-10-27T11:50:00Z', 'trueEndTime': '2026-10-27T13:20:00Z', 'startTime': '2026-10-27T12:00:00Z'}}
+SSER = {'121': [e('2026-10-27T11:40:00Z', 2.10), e('2026-10-27T11:49:00Z', 2.20), e('2026-10-27T11:55:00Z', 2.30), e('2026-10-27T12:05:00Z', 3.00)],
+        '122': [e('2026-10-27T11:40:00Z', 1.75), e('2026-10-27T11:48:00Z', 1.70), e('2026-10-27T11:56:00Z', 1.65), e('2026-10-27T12:05:00Z', 1.40)]}
+flive = {'901': P.iso_ms('2026-10-27T11:52:00Z')}
+srows, srep = T.sched_rows(sfx, lambda f: sod[str(f['event_key'])], SFX, lambda fid: (88, SSER), flive.get, '2026-11-01T12:00:00+00:00')
+sb = {r['event_key']: r for r in srows}
+check('before start: an ATP main-draw match (no Tennis-Data row) is cut at the EARLIEST time held — the gated trueStart 11:50, before our first sighting 11:52 and the 12:00 schedule',
+      sb.get(901, {}).get('start_source') == 'oddspapi trueStart' and sb[901]['cut_ts'] == '2026-10-27T11:50:00Z' and sb[901]['price_winner'] == 2.2
+      and sb[901]['price_loser'] == 1.7 and sb[901]['detail']['level'] == 'atp-nt' and sb[901]['source'] == T.SCHED_SOURCE and sb[901]['label'] == 'Pinnacle (approx.)', srows)
+check('before start: a Challenger match with only a schedule is cut at it (11:58), never on an entry after the cut',
+      sb.get(902, {}).get('start_source') == 'scheduled start' and sb[902]['price_winner'] == 2.3 and sb[902]['price_loser'] == 1.65
+      and sb[902]['price_ts'] <= sb[902]['cut_ts'] and sb[902]['cut_ts'] == sb[902]['start_ts'], srows)
+check('before start: a walkover, an ITF match, a match before 17 Sep and a match with no time of any kind are never stored',
+      sorted(sb) == [901, 902] and srep.get('atp-nt: walkover') == 1 and srep.get('ch: no start of any kind') == 1 and not any('no pre-start pair' in k for k in srep), srep)
+check('before start: the cut is the earliest of the three; with none there is no cut',
+      T.sched_cut(None, None, None) == (None, None) and T.sched_cut(P.iso_ms('2026-10-27T12:00:00Z'), None, P.iso_ms('2026-10-27T11:59:00Z'))[1] == 'first live sighting')
+_ap = lambda src, p: {'id': 1, 'source': src, 'match_date': '2026-10-27', 'tournament': 'X', 'winner': 'A. One', 'loser': 'B. Two', 'event_key': 902,
+                      'price_winner': p, 'price_loser': 2.0, 'detail': {'level': 'ch'}, 'cut_ts': None, 'gap_to_start_s': None}
+lf = T.lower_feed_rows([_ap(T.APPROX_SOURCE, 1.5), _ap(T.SCHED_SOURCE, 1.6)])
+check('before start: in the lower feed it wins over api-tennis Pinnacle (one source per match)', [x['source'] for x in lf] == [T.SCHED_SOURCE], lf)
+lf2 = T.lower_feed_rows([_ap(T.START10_SOURCE, 1.55), _ap(T.SCHED_SOURCE, 1.6)])
+check('before start: start − 10 still ranks above it', [x['source'] for x in lf2] == [T.START10_SOURCE], lf2)
 print(f'\ntest-tdarch: {passed} passed, {failed} failed')
 sys.exit(1 if failed else 0)

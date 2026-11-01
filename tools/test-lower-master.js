@@ -81,10 +81,10 @@ ok(A.base === B.base, 'the Database files are byte-identical with and without th
 ok(A.x.meta.counts.lower === 5 && A.x.meta.counts.team === B.x.meta.counts.team + 1 && A.master.meta.counts.x === B.master.meta.counts.x + 6, 'the era shard and the master count the lower rows (and the atp-x row as team)');
 // mutant: the source order reversed (api-tennis over start − 10) → the source checks go red
 const src = fs.readFileSync(path.join(ROOT, 'build-database-yield.js'), 'utf8');
-const anchor = 'const LOWER_RANK = { 3: 0, 4: 0, 5: 1, 2: 1.5, 8: 1.75, 6: 3, 7: 4, 10: 5 };';
+const anchor = 'const LOWER_RANK = { 3: 0, 4: 0, 5: 1, 11: 1.1, 2: 1.5, 8: 1.75, 6: 3, 7: 4, 10: 5 };';
 ok(src.split(anchor).length === 2, 'the mutant anchor is found exactly once');
 const mp = path.join(ROOT, '.mutant-lower-yield.js');
-fs.writeFileSync(mp, src.replace(anchor, 'const LOWER_RANK = { 3: 0, 4: 0, 5: 2, 2: 1, 6: 0, 7: 0, 10: 0 };'));
+fs.writeFileSync(mp, src.replace(anchor, 'const LOWER_RANK = { 3: 0, 4: 0, 5: 2, 11: 2, 2: 1, 6: 0, 7: 0, 10: 0 };'));
 let red = false;
 try { const M = build(FEEDS, mp); const m = M.x.xRows.map((x, i) => [x, M.x.xNames[i]]).filter(([x]) => String(x[9]).includes('l'));
   const r1 = m.find(([, n]) => n[1] === 'Herbert P.H.'), r2 = m.find(([, n]) => n[1] === 'Roe R.');
@@ -115,7 +115,7 @@ ok(E.base === B.base, 'TE: the Database files are byte-identical with TE rows in
 ok(E.x.xTs === undefined && Object.keys(E.x).sort().join() === Object.keys(A.x).sort().join(), 'TE: the era shard carries no time (no new field: the shape is unchanged)');
 ok(E.master.meta.bookCodes[8] === 'Pinnacle (approx.) Tennis Explorer', 'TE: the master names book 8');
 const mp2 = path.join(ROOT, '.mutant-lower-yield-te.js');
-fs.writeFileSync(mp2, src.replace(anchor, 'const LOWER_RANK = { 3: 0, 4: 0, 5: 1, 8: 1.25, 2: 1.5, 6: 3, 7: 4, 10: 5 };'));
+fs.writeFileSync(mp2, src.replace(anchor, 'const LOWER_RANK = { 3: 0, 4: 0, 5: 1, 11: 1.1, 8: 1.25, 2: 1.5, 6: 3, 7: 4, 10: 5 };'));
 let red2 = false;
 try { const M = build(Object.assign({}, FEEDS, { DB_YIELD_LOWER_APPROX: path.join(tmp, 'approx-te.csv') }), mp2);
   const r = M.x.xRows.map((x, i) => [x, M.x.xNames[i]]).find(([, n]) => n[1] === 'Roe R.'); red2 = !(r && r[0][8] === 2); }
@@ -148,6 +148,21 @@ try { const M = build(Object.assign({}, FEEDS, { DB_YIELD_LOWER_APPROX: path.joi
   red3 = M.x.xNames.some(n => n[0] === 'Ace A.' && n[1] === 'Bee B.'); }
 finally { fs.unlinkSync(mp3); }
 ok(red3, 'MUTANT (no Tennis-Data guard) lets the Geneva match in twice — the duplicate check turns red');
+// ── founder 2026-11-01 (Task B): Pinnacle (approx.) before the start (book 11) — after start − 10, before api-tennis, and on
+// an ATP main-draw match Tennis-Data does not hold an ATP main-draw era row (no flag), never a Database figure
+fs.writeFileSync(path.join(tmp, 'approx-sb.csv'), [COLS].concat(approx.slice(1),
+  TEC({ date: '2026-05-20', level: 'ch-q', tournament: 'Challenger Bordeaux - Qualification', winner: 'Bergs Z.', loser: 'Herbert P.H.', winnerKey: '1', loserKey: '3', psw: 1.64, psl: 2.25, eventKey: 601, source: 'oddspapi Pinnacle (before start)', comment: 'Completed' }),
+  TEC({ date: '2026-03-10', level: 'itf', tournament: 'M25 Antalya', winner: 'Doe J.', loser: 'Roe R.', winnerKey: '4', loserKey: '5', psw: 2.08, psl: 1.72, eventKey: 602, source: 'oddspapi Pinnacle (before start)', comment: 'Retired' }),
+  TEC({ date: '2026-10-29', level: 'atp-nt', tournament: 'ATP Vienna', winner: 'Zverev A.', loser: 'Griekspoor T.', winnerKey: '31', loserKey: '32', psw: 1.33, psl: 3.4, eventKey: 801, source: 'oddspapi Pinnacle (before start)', comment: 'Completed' }),
+).join('\n') + '\n');
+const SBD = build(Object.assign({}, FEEDS, { DB_YIELD_LOWER_APPROX: path.join(tmp, 'approx-sb.csv') }));
+const sx = SBD.x.xRows.map((x, i) => ({ x, n: SBD.x.xNames[i] })), sBy = (w, l) => sx.find(o => o.n[0] === w && o.n[1] === l);
+ok(sBy('Bergs Z.', 'Herbert P.H.').x[8] === 5, 'before start: start − 10 still wins a match both price (601)');
+ok(sBy('Doe J.', 'Roe R.').x[8] === 11, 'before start: book 11 wins over api-tennis Pinnacle on the same match (602)');
+const sv = sBy('Zverev A.', 'Griekspoor T.');
+ok(sv && sv.x[8] === 11 && sv.x[9] === '', 'before start: an ATP main-draw match Tennis-Data lacks is an era row on book 11 with no flag (Market edge reads it)');
+ok(SBD.base === B.base, 'before start: the Database files are byte-identical (never a Database figure)');
+ok(SBD.master.meta.bookCodes[11] === 'Pinnacle (approx.) before the start', 'before start: the master names book 11');
 fs.rmSync(tmp, { recursive: true, force: true });
 console.log(`\ntest-lower-master: ${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

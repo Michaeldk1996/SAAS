@@ -16,6 +16,7 @@ MIG4 = os.path.join(os.path.dirname(MIG), '20261017090000_historical_snapshot_st
 MIG5 = os.path.join(os.path.dirname(MIG), '20261019090000_historical_snapshot_bet365.sql')
 MIG6 = os.path.join(os.path.dirname(MIG), '20261020090000_historical_snapshot_te.sql')
 MIG7 = os.path.join(os.path.dirname(MIG), '20261030090000_historical_snapshot_te_bet365.sql')
+MIG8 = os.path.join(os.path.dirname(MIG), '20261101090000_historical_snapshot_sched.sql')
 pg = PG()
 if not pg.available():
     print(f'SKIP  test-historical-archive-sql: {pg.why} — NOT A PASS (the code gate runs it)'); sys.exit(0)
@@ -186,6 +187,24 @@ try:
     rc, out = q("delete from public.historical_snapshot where source = 'Tennis Explorer · Bet365'", 'service_role')
     check('service_role DELETE of a TE Bet365 row refused', rc != 0, out)
     rc, out = q("select public.historical_snapshot_guard()->>'ok'"); check('snapshot guard ok after the TE Bet365 migration', out == 'true', out)
+    # ── Pinnacle (approx.) before the start (founder 2026-11-01, Task B): a sixth SNAPSHOT source; cut = the start it names ──
+    n3 = q('select count(*) from public.historical_snapshot')[1]
+    for i in (1, 2):
+        rc, err = pg.file(MIG8); check(f'before-start migration applies (pass {i}: idempotent)', rc == 0, err)
+    SB = (T10.replace("'t1'", "'sb1'").replace("'oddspapi Pinnacle (start − 10)'", "'oddspapi Pinnacle (before start)'")
+          .replace("'2026-07-20 09:50Z','2026-07-20 09:41Z','2026-07-20 10:00Z','oddspapi trueStart'", "'2026-07-20 10:00Z','2026-07-20 09:41Z','2026-07-20 10:00Z','scheduled start'"))
+    check('service_role can store a before-start snapshot (cut = its start, which time set it)', q(SB, 'service_role')[0] == 0)
+    rc, out = q(SB.replace("'sb1'", "'sb2'").replace("'2026-07-20 09:41Z'", "'2026-07-20 10:05Z'"), 'service_role')
+    check('a before-start snapshot priced after its cut is refused', rc != 0, out)
+    rc, out = q(SB.replace("'sb1'", "'sb3'").replace("'scheduled start'", "'live-flip (last poll not live)'"), 'service_role')
+    check('a before-start snapshot must name scheduled start / trueStart / first live sighting', rc != 0, out)
+    rc, out = q(SB.replace("'sb1'", "'sb4'").replace("'Pinnacle (approx.)'", "'from Pinnacle history'"), 'service_role')
+    check('a before-start snapshot can never carry a close label', rc != 0, out)
+    rc, out = q(SB.replace("'sb1'", "'sb5'").replace("'2026-07-20 10:00Z','2026-07-20 09:41Z','2026-07-20 10:00Z'", "'2026-07-20 09:50Z','2026-07-20 09:41Z','2026-07-20 10:00Z'"), 'service_role')
+    check('a before-start snapshot whose cut is not its start is refused', rc != 0, out)
+    rc, out = q(T10.replace("'t1'", "'t12'"), 'service_role'); check('a start − 10 snapshot is still accepted', rc == 0, out)
+    check('no stored snapshot lost by the before-start migration', int(q('select count(*) from public.historical_snapshot')[1]) == int(n3) + 2)
+    rc, out = q("select public.historical_snapshot_guard()->>'ok'"); check('snapshot guard ok after the before-start migration', out == 'true', out)
 finally:
     pg.close()
 print(f'\ntest-historical-archive-sql: {passed} passed, {failed} failed')

@@ -1352,6 +1352,7 @@ def cmd_pull(budget_s, cache_path, hours=6):
 BACKFILL_RETENTION_DAYS = 180   # /v4/historical-odds 404s past ~180 days (measured); the oldest fixtures go first
 BACKFILL_GAP_S = 6.5            # one second wider than the pull's cooldown: the post-start pull keeps the faster slot
 BACKFILL_YIELD_S = 20           # while a post-start pull runs, the back-fill sits out and asks again after this
+BACKFILL_RECENT_H = 3          # the back-fill's newest start: 3 h ago (founder 2026-11-01, Task B)
 BACKFILL_404_TRIES = 2          # a fixture that answered 404 on two runs is not asked again (no history to keep)
 POSTMATCH_WORKFLOW = 'oddspapi-postmatch.yml'
 _busy = {'at': -1e9, 'busy': False}
@@ -1402,7 +1403,11 @@ def cmd_backfill(budget_s, cache_path, state_path, frm=None, to=None, clock=None
     t_end = clock() + budget_s
     now = dt.datetime.now(dt.timezone.utc)
     frm = frm or (now - dt.timedelta(days=BACKFILL_RETENTION_DAYS + 5))
-    to = to or dt.datetime(2026, 9, 17, tzinfo=dt.timezone.utc)   # from 17 Sep the live-flip pulls cover every start
+    # founder 2026-11-01 (Task B, "No match is a dash because the recorder missed it"): every started fixture with no
+    # Pinnacle +30 payload, up to BACKFILL_RECENT_H ago — the post-start pull covers only the matches whose live flag came
+    # with a verified start (27 Oct - 1 Nov: 65 of 202 ATP / Challenger flips), and the recorder missed 24 Oct 06:47Z -
+    # 26 Oct 09:37Z altogether (0abf713ac). Their pre-start entries are complete once the match has begun.
+    to = to or (now - dt.timedelta(hours=BACKFILL_RECENT_H))
     disc, calls = discovery(frm, to, cache_path, okey, itf=True)
     held_pin, any_raw = set(), set()
     for r in select_all(RAW, 'id,fixture_id,books'):

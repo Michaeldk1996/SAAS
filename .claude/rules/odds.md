@@ -550,6 +550,22 @@ stream closes change price, each to a tick recorded before the new start (Cerund
 
 **A live flag is a start only once play is seen** (founder ruling 2026-10-26, played-start-recorder). A close is a price from before the first ball: an early close is acceptable, a late one never is. **Test:** a `live_flip_log` row exists only after the board showed play (`match_played()`, the same rule as the line-price worker's `played()`: a game score, a set score above 0-0, a point, or finished). When play is seen within **T = 300 s** of the flag, the lower bound is the poll before the flag, never the play-seen time. When it is seen later, or is **already on the board at the first sighting**, the row has **no lower bound**, so no close is cut (dash; founder 2026-10-27: the poll before only proves the match was not listed live, not that no ball had been struck). A flag that leaves the live board before play is dropped. Every row carries `play_seen_at`, the measurement T is set from. Harness: `test-live-flip-played.sql` (named mutants).
 
+**Pinnacle (approx.) before the start — no match is a dash because the recorder missed it** (founder 2026-11-01, Task B: "the
+300 s rule stays for 'real close'. Where no start is verified, use the last pre-match Pinnacle price before the scheduled
+start, labelled approximate."). **Test:** every played ATP main-draw, ATP qualifying and Challenger (+ qualifying) singles
+match from 17 Sep 2026 (the verified-start era; Challenger and qualifying after 16 Sep with no archive close were dashes) with a held `pinnacle+30` payload gets a snapshot (source `oddspapi Pinnacle (before start)`, label
+"Pinnacle (approx.)", book 11, hover "Pinnacle (approx.) · Pinnacle history, last pre-match price before the start, not a
+confirmed close"): the last ACTIVE entry per side at or before the EARLIEST of api-tennis's scheduled start, Oddspapi's gated
+trueStart and our first live sighting (`tools/tdarch.py sched-import`, every 3 h in `te-import-scheduled.yml`). The row names
+which time set its cut (`start_source`); it is never a close and never counted as one; a verified close always outranks it
+(lower feed: close > start − 10 > before start > api-tennis Pinnacle > Tennis Explorer > Bet365). The scheduled time is used
+here ONLY as an upper bound on the cut (an exception to the 2026-10-26 "rejects or stops only" rule, by this ruling); a price
+after the cut is never read. ITF is out. The Pinnacle back-fill (`pinarch.py backfill`) pulls every started fixture with no
+payload up to 3 h ago, not only those before 17 Sep: the post-start pull covers only flips with a verified start (27 Oct –
+1 Nov: 65 of 202 ATP / Challenger flips), and the recorder missed 24 Oct 06:47Z – 26 Oct 09:37Z altogether (0abf713ac).
+**Test:** `tools/test-tdarch.py` "before start", `tools/test-lower-master.js` "before start", `tools/test-approx-pinnacle.mjs`
+"before start", `tools/test-historical-archive-sql.py` (the source's times rule).
+
 **Never the scheduled time** — it lands after the real start 58% of the time (p95 11 min), and matches often start *early* (median 11 min, one case 14 hours).
 
 Reject `trueStartTime` when `end − start > 6h` or `end < start`.

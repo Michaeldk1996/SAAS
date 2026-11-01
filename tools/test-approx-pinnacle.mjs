@@ -35,10 +35,10 @@ check('the source note names the snapshot with its count, never folds it into "P
 check('control: without a snapshot the note is unchanged', C.fhSourceNote([{ book: 'P' }, { book: 'B' }]) === 'Pinnacle, Bet365 where missing (1)' && C.fhSourceNote([{ book: 'P' }]) === 'Pinnacle');
 
 // the one join: book 2 → 'A'
-const join2 = /r\.book = bk === 0 \|\| bk === 3 \|\| bk === 4 \? 'P' : bk === 2 \|\| bk === 5 \|\| bk === 8 \? 'A' : 'B';/.test(html);
+const join2 = /r\.book = bk === 0 \|\| bk === 3 \|\| bk === 4 \? 'P' : bk === 2 \|\| bk === 5 \|\| bk === 8 \|\| bk === 11 \? 'A' : 'B';/.test(html);
 check('the price join maps the store\'s books 2, 5 and 8 (the three Pinnacle snapshot sources) to "A" (never "B" or "P") and 3 / 4 (our archive) to "P"', join2);
 // founder 2026-10-16 (round 3, item 1): our archive's closes carry their own source on every surface, never "Tennis-Data"
-const join34 = /r\.src = bk === 3 \? 'hist' : bk === 4 \|\| bk === 6 \? 'cap' : bk === 5 \? 'od10' : bk === 7 \? 'atb' : bk === 8 \? 'te' : bk === 10 \? 'teb' : 'td'; r\.srcLabel = bk === 3 \? FH_SRC\.hist : bk === 4 \? FH_SRC\.cap : undefined;/.test(html);
+const join34 = /r\.src = bk === 3 \? 'hist' : bk === 4 \|\| bk === 6 \? 'cap' : bk === 5 \? 'od10' : bk === 7 \? 'atb' : bk === 8 \? 'te' : bk === 10 \? 'teb' : bk === 11 \? 'sch' : 'td'; r\.srcLabel = bk === 3 \? FH_SRC\.hist : bk === 4 \? FH_SRC\.cap : undefined;/.test(html);
 check('the price join gives our archive\'s closes their own source: 3 → "from Pinnacle history", 4 → "captured", 5 → the start − 10 snapshot', join34);
 // founder 2026-10-18 (item 3): book 6 = our captured Bet365 at the lower levels — 'B' + 'cap', so it hovers as an approx, never a close
 check('the price join reads book 6 (our captured Bet365) as Bet365 with source "cap" → "Bet365 (approx.) · not a confirmed close"', join34 && join2 && C.fhSrcTitle({ book: 'B', src: 'cap' }) !== 'Bet365 close · captured');
@@ -160,7 +160,7 @@ check('a Head to Head ledger price from our archive names it: "Pinnacle closing 
   && H.h2hPriceTitle({ price: 1.8, book: 'P', src: 'cap', srcLabel: 'captured' }) === 'Pinnacle closing price · captured');
 check('a Head to Head ledger price on the start − 10 snapshot hovers its own words', H.h2hPriceTitle({ price: 1.8, book: 'A', src: 'od10' }) === 'Pinnacle (approx.) · ' + OD10);
 check('the profile hands a start − 10 price to its sheet as its own source (A / od10), never the api-tennis hover',
-  /r\.src === 'od10' \? 'pinnacle-approx-od10' : r\.src === 'te' \? 'pinnacle-approx-te' : r\.src === 'early' \? 'pinnacle-early' : 'pinnacle-approx'/.test(fn(html, 'trProfilePriceOf'))
+  /r\.src === 'od10' \? 'pinnacle-approx-od10' : r\.src === 'te' \? 'pinnacle-approx-te' : r\.src === 'sch' \? 'pinnacle-approx-sched' : r\.src === 'early' \? 'pinnacle-early' : 'pinnacle-approx'/.test(fn(html, 'trProfilePriceOf'))
   && /'pinnacle-approx-od10': \['A', 'od10'\]/.test(readFileSync(join(ROOT, 'player-profile-v2.js'), 'utf8')));
 check('control: a Tennis-Data Pinnacle ledger price still names Tennis-Data', H.h2hPriceTitle({ price: 1.8, book: 'P', src: 'td' }) === 'Pinnacle closing price · Database join (Tennis-Data)');
 check('control: a Bet365 / Pinnacle ledger price keeps its words (TEN-437 Bet365 hover)', H.h2hPriceTitle({ price: 1.8, book: 'B' }) === 'Bet365 closing odds, Pinnacle not available' && /^Pinnacle closing price/.test(H.h2hPriceTitle({ price: 1.8, book: 'P' })));
@@ -194,7 +194,7 @@ check('one hover per price: a Pinnacle (approx.) price reads only the snapshot h
   oh.ok, JSON.stringify(oh));
 const ohMut = oneHover(html.replace(": r && r.book === 'B' ? FH_B365_HOVER : fhSrcTitle(r); }", ": r && r.book !== 'P' ? FH_B365_HOVER : fhSrcTitle(r); }"));
 check('control: an H2H hover that treats any non-Pinnacle book as Bet365 is caught', !ohMut.ok);
-const ohMut2 = oneHover(html.replace("if (r.price != null && r.book === 'A') return 'Pinnacle (approx.) · ' + (r.src === 'od10' ? SF_OD10_HOVER : r.src === 'te' ? SF_TE_HOVER : SF_APPROX_HOVER);\n", ''));
+const ohMut2 = oneHover(html.replace("if (r.price != null && r.book === 'A') return 'Pinnacle (approx.) · ' + (r.src === 'od10' ? SF_OD10_HOVER : r.src === 'te' ? SF_TE_HOVER : r.src === 'sch' ? SF_SCHED_HOVER : SF_APPROX_HOVER);\n", ''));
 check('control: the H2H page dropping its snapshot branch is caught', !ohMut2.ok);
 
 // Series: the cell title
@@ -335,9 +335,21 @@ check('control: without the snapshot feed the same row is Bet365 (the join\'s "B
   const ME = createRequire(import.meta.url)(join(ROOT, 'build-market-edge.js'));
   const meSrc = readFileSync(join(ROOT, 'build-market-edge.js'), 'utf8');
   check('Market edge reads Database book 8 as Tennis Explorer (pinnacle-approx-te, the page\'s own book id) and keeps it on its basis',
-    JSON.stringify(ME.DB_BOOK[8]) === JSON.stringify(['pinnacle-approx-te', 'Pinnacle (approx.) · Tennis Explorer']) && /'pinnacle-approx-te', 'bet365-approx-te'\]\);/.test(meSrc)
+    JSON.stringify(ME.DB_BOOK[8]) === JSON.stringify(['pinnacle-approx-te', 'Pinnacle (approx.) · Tennis Explorer']) && /'pinnacle-approx-te', 'bet365-approx-te', 'pinnacle-approx-sched'\]\);/.test(meSrc)
     && JSON.stringify(ME.DB_BOOK[10]) === JSON.stringify(['bet365-approx-te', 'Bet365 (approx.) · Tennis Explorer'])
     && /'pinnacle-approx-te': \['A', 'te'\]/.test(html), JSON.stringify(ME.DB_BOOK[8]));
+}
+// founder 2026-11-01 (Task B): book 11 = our Pinnacle history's last pre-match pair before the start — A / sch, its own words
+{
+  const SBH = 'Pinnacle (approx.) · Pinnacle history, last pre-match price before the start, not a confirmed close';
+  const T = new Function(`${constLine(html, 'FH_BOOK')}\n${constLine(html, 'FH_SRC')}\n${constLine(html, 'SF_APPROX_HOVER')}\n${constLine(html, 'SF_OD10_HOVER')}\n${constLine(html, 'SF_TE_HOVER')}\n${constLine(html, 'SF_SCHED_HOVER')}
+    ${constLine(html, 'FH_B365_APPROX_HOVER')}\n${constLine(html, 'FH_B365_AT_HOVER')}\n${fn(html, 'fhB365Approx')}\n${fn(html, 'fhSrcTitle')}\n${fn(html, 'sfApproxHover')}
+    return { fhSrcTitle, sfApproxHover };`)();
+  check('before start: a book 11 price hovers exactly "' + SBH + '" (never a close, never api-tennis)', T.fhSrcTitle({ book: 'A', src: 'sch' }) === SBH, T.fhSrcTitle({ book: 'A', src: 'sch' }));
+  check('before start: Series reads the same words', 'Pinnacle (approx.) · ' + T.sfApproxHover({ src: 'sch' }) === SBH);
+  check('before start: Market edge names book 11 and keeps it on its basis; the profile maps it to A / sch',
+    /11: \['pinnacle-approx-sched', 'Pinnacle \(approx\.\) · before the start'\]/.test(readFileSync(join(ROOT, 'build-market-edge.js'), 'utf8'))
+    && /'pinnacle-approx-sched': \['A', 'sch'\]/.test(readFileSync(join(ROOT, 'player-profile-v2.js'), 'utf8')) && /'pinnacle-approx-sched': \['A', 'sch'\]/.test(html));
 }
 console.log(`\ntest-approx-pinnacle: ${passed} passed, ${failed} failed`);
 process.exit(failed ? 1 : 0);

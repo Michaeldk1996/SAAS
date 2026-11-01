@@ -29,6 +29,9 @@ Commands
   approx-import             Pinnacle (approx.) — founder ruling 2026-10-16: api-tennis's stored Pinnacle price for every ATP
                             main-draw match of 13 Jan - 16 Sep 2026 with no Tennis-Data Pinnacle close, into the snapshot
                             table (its own source and label, never a close); env API_TENNIS_KEY
+  sched-import [--dry-run] [--from D] [--to D]   Pinnacle (approx.) before the start (founder 2026-11-01, Task B): ATP main draw /
+                         qualifying / Challenger from 17 Sep, the last pinnacle+30 pair before the earliest of scheduled start,
+                         gated trueStart and our first live sighting
   start10-import [--dry-run]
                             Pinnacle (approx.) — founder ruling 2026-10-17: for every ATP main-draw match of 13 Apr - 16 Sep
                             2026 with no Tennis-Data Pinnacle close, the Oddspapi Pinnacle archive's last active pinnacle+30
@@ -1044,7 +1047,7 @@ def lower_feed_rows(current):
             continue
         # founder 2026-10-20: start - 10 > api-tennis Pinnacle > Tennis Explorer Pinnacle > api-tennis Bet365; founder 2026-10-30:
         # Tennis Explorer Bet365 last, before the dash
-        rank = (0 if r.get('source') == START10_SOURCE else 1.5 if r.get('source') == TE_SOURCE else 2 if r.get('source') == B365_SOURCE
+        rank = (0 if r.get('source') == START10_SOURCE else 0.5 if r.get('source') == SCHED_SOURCE else 1.5 if r.get('source') == TE_SOURCE else 2 if r.get('source') == B365_SOURCE
                 else 3 if r.get('source') == TE_B365_SOURCE else 1)
         if k not in best or rank < best[k][0]:
             best[k] = (rank, r)
@@ -1087,6 +1090,152 @@ def _lower_fixtures(frm, to):
     ruled = mark_rule_qualifying(fx)
     print(f'single qualifying rule: {ruled} ATP fixture(s) the flag filed as main draw are qualifying (atp-q)')
     return [f for f in fx if lower_level(f)], od, empty
+
+
+# ── Pinnacle (approx.) before the start (founder 2026-11-01, Task B: "the 300 s rule stays for 'real close'. Where no
+# start is verified, use the last pre-match Pinnacle price before the scheduled start, labelled approximate. No match is a
+# dash because the recorder missed it.") ─────────────────────────────────────────────────────────────────────────────
+# Every played ATP main-draw, ATP qualifying and Challenger (+ qualifying) singles match from SCHED_FROM: the last ACTIVE
+# pinnacle+30 entry per side at or before the EARLIEST of (api-tennis's scheduled start, Oddspapi's gated trueStart, our
+# first live sighting) — each of them a moment the match had not yet started or had just started, so the earliest is the
+# safest cut; the scheduled time is used only as an upper bound here (it never moves a cut later). A snapshot, never a
+# close: its own source, label 'Pinnacle (approx.)', the cut and which time set it stored on the row. A match with a
+# verified close keeps it (the feed ranks a close first). ITF is out (founder brief: ATP main draw, qualifying, Challenger).
+SCHED_SOURCE = 'oddspapi Pinnacle (before start)'
+SCHED_HOVER = 'Pinnacle history, last pre-match price before the start, not a confirmed close'
+SCHED_FROM = '2026-09-17'      # the verified-start era (live_flip_log begins 17 Sep): every lower-level match after 16 Sep with no archive close was a dash
+SCHED_LEVELS = ('atp-nt', 'atp-q', 'atp-x', 'ch', 'ch-q')
+
+
+def sched_level(f):
+    """tdarch's lower levels, plus 'atp-nt' for an ATP singles main-draw match (no Tennis-Data row after its last day)."""
+    lv = lower_level(f)
+    if lv:
+        return lv
+    return 'atp-nt' if f.get('event_type_type') == 'Atp Singles' and str(f.get('event_qualification') or '').lower() != 'true' else None
+
+
+def sched_cut(sched, true_start, first_live):
+    """The earliest of the three times we hold (None, None) when none; returns (cut, which)."""
+    c = [(t, k) for t, k in ((sched, 'scheduled start'), (true_start, 'oddspapi trueStart'), (first_live, 'first live sighting')) if t is not None]
+    return min(c, key=lambda x: x[0]) if c else (None, None)
+
+
+def sched_rows(fixtures, od_of, od_fixtures, series_of, first_live, fetched_at, frm=SCHED_FROM, to=None):
+    """Snapshot rows + a report. `fixtures`: api-tennis get_fixtures rows (timezone UTC); `od_of(f)` -> (fixtureId,
+    firstIsP1) | (None, why); `od_fixtures[fid]` the held Oddspapi fixture; `series_of(fid)` -> (raw_id, series) | (None,
+    why); `first_live(event_key)` -> our first live sighting or None. A fixture two api-tennis matches claim is no one's."""
+    rep, cand = collections.Counter(), []
+    for f in fixtures:
+        lv = sched_level(f)
+        d = str(f.get('event_date') or '')
+        if lv not in SCHED_LEVELS or not (frm <= d and (to is None or d <= to)):
+            continue
+        st = str(f.get('event_status') or '')
+        if 'walk' in st.lower():
+            rep[lv + ': walkover'] += 1; continue
+        if st not in RESULT_STATUSES or f.get('event_winner') not in ('First Player', 'Second Player'):
+            rep[lv + ': no result'] += 1; continue
+        fid, first_p1 = od_of(f)
+        if fid is None:
+            rep[lv + ': oddspapi: ' + str(first_p1)] += 1; continue
+        cand.append((f, lv, fid, first_p1))
+    claimed = collections.Counter(c[2] for c in cand)
+    rows = []
+    for f, lv, fid, first_p1 in cand:
+        if claimed[fid] > 1:
+            rep[lv + ': one Oddspapi fixture, two matches'] += 1; continue
+        fx = od_fixtures.get(fid) or {}
+        ts, te, sc_od = P.iso_ms(fx.get('trueStartTime')), P.iso_ms(fx.get('trueEndTime')), P.iso_ms(fx.get('startTime'))
+        sched = P._at_start(f) if f.get('event_time') else None
+        gts, _, _ = P.effective_cut(None, ts, te, sched or sc_od) if ts else (None, None, None)
+        cut, which = sched_cut(sched, gts, first_live(str(f['event_key'])))
+        if cut is None:
+            rep[lv + ': no start of any kind'] += 1; continue
+        raw_id, S = series_of(fid)
+        if raw_id is None:
+            rep[lv + ': payload: ' + S] += 1; continue
+        c, why = P.close_at(S, cut)
+        if c is None:
+            rep[lv + ': no pre-start pair: ' + why] += 1; continue
+        fw = f['event_winner'] == 'First Player'
+        win_oc = '121' if fw == bool(first_p1) else '122'
+        lose_oc = '122' if win_oc == '121' else '121'
+        pw, pl = c[win_oc][0], c[lose_oc][0]
+        pts = max(P.iso_ms(c['121'][1]), P.iso_ms(c['122'][1]))
+        a, b = f.get('event_first_player'), f.get('event_second_player')
+        ka, kb = f.get('first_player_key'), f.get('second_player_key')
+        tour = str(f.get('tournament_name') or '').strip()
+        iso = lambda t: t.isoformat().replace('+00:00', 'Z')
+        rows.append({'dedupe_key': '|'.join(str(v) for v in (SCHED_SOURCE, f['event_key'], fid, raw_id, iso(cut), pw, pl)),
+                     'source': SCHED_SOURCE, 'label': APPROX_LABEL, 'match_date': f['event_date'], 'tournament': tour,
+                     'round': f.get('tournament_round') or None, 'winner': a if fw else b, 'loser': b if fw else a,
+                     'event_key': int(f['event_key']), 'price_winner': pw, 'price_loser': pl, 'fetched_at': fetched_at,
+                     'cut_ts': iso(cut), 'price_ts': iso(pts), 'start_ts': iso(cut), 'start_source': which,
+                     'gap_to_start_s': round((cut - pts).total_seconds(), 3), 'fixture_id': fid, 'raw_id': raw_id,
+                     'detail': {'level': lv, 'round': f.get('tournament_round'), 'winnerKey': str(ka if fw else kb), 'loserKey': str(kb if fw else ka),
+                                'status': str(f.get('event_status') or '') or None, 'book': 'pinnacle+30',
+                                'scheduled': iso(sched) if sched else None, 'trueStart': iso(gts) if gts else None,
+                                'firstLive': (lambda x: iso(x) if x else None)(first_live(str(f['event_key']))),
+                                'winnerOutcome': win_oc, 'entries': {'121': list(c['121']), '122': list(c['122'])},
+                                'firstPlayer': a, 'secondPlayer': b, 'winnerIsFirst': fw, 'hover': SCHED_HOVER}})
+        rep[lv + ': stored'] += 1; rep['stored by ' + which] += 1
+    return rows, dict(rep)
+
+
+def cmd_sched_import(dry_run=False, frm=SCHED_FROM, to=None):
+    """Write the before-start snapshots (append-only; a changed price is a new row superseding the old one)."""
+    to = to or (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=1)).date().isoformat()
+    fx, _od, _empty = _lower_fixtures(frm, to)
+    if not fx:
+        P.die('api-tennis returned no fixture for the whole window: nothing written')
+    R = P._load('roh', 'refresh-odds-history.py')
+    idx = json.load(gzip.open(os.path.join(P.ROOT_DIR, P.FIXTURE_INDEX))).get('fixtures') or {}
+    fixtures = P.held_fixture_meta(idx, P.select_all(P.RAW, 'id,fixture_id,books,meta', 'meta->>trigger=eq.backfill'))
+    disc = [f for f in fixtures.values() if f.get('categoryName') in P.BACKFILL_CATEGORIES]
+    by_day_od, bmap = P._fixtures_by_day(disc), P._board_map()
+    oc = {}
+    def od_of(f):
+        k = str(f.get('event_key'))
+        if k not in oc:
+            oc[k] = od_fixture_of(f, R, bmap, by_day_od)
+        return oc[k]
+    since = dt.datetime.fromisoformat(frm + 'T00:00:00+00:00') - dt.timedelta(days=1)
+    fl = {str(x['event_key']): P.iso_ms(x.get('first_live_seen_at')) for x in P.flips(since)}
+    want = [f for f in fx if sched_level(f) in SCHED_LEVELS]
+    fids = sorted({od_of(f)[0] for f in want if od_of(f)[0]})
+    import concurrent.futures as cf
+    def chunk_series(ch):
+        out = {}
+        for fid, raw in P.raw_latest(ch).items():
+            out[fid] = raw if raw is P.NO_PINNACLE else (raw['id'], P.mw_series(gzip.decompress(P.unhex(raw['payload_gz']))))
+        return out
+    series = {}
+    with cf.ThreadPoolExecutor(8) as ex:
+        for part in ex.map(chunk_series, [fids[i:i + 10] for i in range(0, len(fids), 10)]):
+            series.update(part)
+    def series_of(fid):
+        got = series.get(fid)
+        if not got:
+            return None, 'no pinnacle+30 payload held'
+        if got is P.NO_PINNACLE:
+            return None, 'held payloads are another book only'
+        return got
+    fetched = dt.datetime.now(dt.timezone.utc).isoformat(timespec='seconds')
+    rows, rep = sched_rows(want, od_of, fixtures, series_of, fl.get, fetched, frm, to)
+    held = P.select_all(SNAP, 'id,dedupe_key,source,match_date,tournament,winner,loser,supersedes,event_key')
+    add = plan_snapshots(rows, held)
+    ids = []
+    if not dry_run:
+        for i in range(0, len(add), 500):
+            ids += P.insert(SNAP, add[i:i + 500], 'dedupe_key')
+    by_day = collections.Counter((str(r['match_date']), r['detail']['level']) for r in rows)
+    print('### sched-import', json.dumps({'window': [frm, to], 'dryRun': dry_run, 'targets': len(want), 'report': rep,
+                                          'stored': len(rows), 'wouldAdd' if dry_run else 'added': len(add) if dry_run else len(ids),
+                                          'byDayLevel': {f'{d} {lv}': n for (d, lv), n in sorted(by_day.items())}}))
+    if not dry_run:
+        cmd_snapshot_counts('sched-import')
+    return rows
 
 
 def cmd_lower_import(dry_run=False, frm=LOWER_FROM, to=LOWER_TO, unpriced_out=None):
@@ -1807,6 +1956,12 @@ if __name__ == '__main__':
     elif a[0] == 'lower-import':
         cmd_lower_import('--dry-run' in a, a[a.index('--from') + 1] if '--from' in a else LOWER_FROM, a[a.index('--to') + 1] if '--to' in a else LOWER_TO,
                          a[a.index('--unpriced') + 1] if '--unpriced' in a else None)
+    elif a[0] == 'sched-import':
+        # --recent N (the 3-hourly job): the last N days only, never before SCHED_FROM — the window does not grow with time
+        _frm = a[a.index('--from') + 1] if '--from' in a else SCHED_FROM
+        if '--recent' in a:
+            _frm = max(_frm, (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=int(a[a.index('--recent') + 1]))).date().isoformat())
+        cmd_sched_import('--dry-run' in a, _frm, a[a.index('--to') + 1] if '--to' in a else None)
     elif a[0] == 'te-import':
         cmd_te_import(a[1], '--dry-run' in a)
     elif a[0] == 'te-import-new':
