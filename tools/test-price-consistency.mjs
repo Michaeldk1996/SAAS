@@ -130,6 +130,18 @@ else {
     writeFileSync(join(site, 'market-edge-index.json'), JSON.stringify({ latestMatch: iso, players: {} }));
     r = run();
     check('6 · control: a committed floor (no source) → exit 1', r.status === 1 && /lags the master/.test(r.stderr), (r.stdout || '') + (r.stderr || ''));
+    // founder 2026-11-01 (Task A): an ATP main-draw era row (no t / l flag) Market edge reads moves the master's latest past
+    // the Database's own rows; a team / lower-level era row never does
+    const xNext = (() => { const d = new Date(Date.UTC(Math.floor(last / 10000), Math.floor(last / 100) % 100 - 1, last % 100 + 2)); return d.toISOString().slice(0, 10); })();
+    const xInt = parseInt(xNext.replace(/-/g, ''), 10);
+    writeFileSync(join(site, 'market-edge-index.json'), JSON.stringify({ source: 'database-yield-master.json', latestMatch: xNext, players: {} }));
+    writeFileSync(join(site, 'database-yield-x.json'), JSON.stringify({ xRows: [[xInt, null, '', '', 'ATP Basel', 1.5, 2.6, 1, 8, '']], xNames: [['Zed Z.', 'Yew Y.']] }));
+    r = run();
+    check('6 · an ATP main-draw era row (atp-nt, no flag) after the Database\'s last row: Market edge carries it → exit 0', r.status === 0, (r.stdout || '').slice(-600) + (r.stderr || '').slice(-600));
+    writeFileSync(join(site, 'database-yield-x.json'), JSON.stringify({ xRows: [[xInt, 'Challenger', '', '', 'Challenger X', 1.5, 2.6, 1, 8, 'l']], xNames: [['Zed Z.', 'Yew Y.']] }));
+    r = run();
+    check('6 · control: a lower-level (l) era row never moves the master\'s latest → exit 1, "lags the master"', r.status === 1 && /lags the master/.test(r.stderr), (r.stdout || '') + (r.stderr || ''));
+    rmSync(join(site, 'database-yield-x.json'));
     rmSync(join(site, 'market-edge-index.json'));
 
     writeFileSync(join(site, 'career-history', K + '.json'), JSON.stringify({ matches: [] }));

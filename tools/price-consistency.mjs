@@ -54,6 +54,13 @@ const LAG = { checked: false };
 if (!LIVE && existsSync(join(SITE, 'market-edge-index.json'))) {
   const b = JSON.parse(readFileSync(join(SITE, 'database-yield.json'), 'utf8'));
   let dbLast = 0; for (const k of ['rows', 'retRows', 'tieRows']) for (const r of b[k] || []) if (r[0] > dbLast) dbLast = r[0];
+  // …and the era shard's ATP main-draw rows Market edge reads too (founder 2026-11-01, Task A: an atp-nt match — ATP main draw
+  // Tennis-Data does not hold — is an era row with no team 't' / lower 'l' flag, so Market edge's latest can pass the
+  // Database's own; 11:00Z 1 Nov every data run failed closed here on Basel / Vienna 31 Oct). Team and lower-level rows stay out.
+  if (existsSync(join(SITE, 'database-yield-x.json'))) {
+    const x = JSON.parse(readFileSync(join(SITE, 'database-yield-x.json'), 'utf8'));
+    for (const r of x.xRows || []) if (!/[tl]/.test(String(r[9] || '')) && r[0] > dbLast) dbLast = r[0];
+  }
   const ds = String(dbLast), dbIso = `${ds.slice(0, 4)}-${ds.slice(4, 6)}-${ds.slice(6, 8)}`;
   const ix = JSON.parse(readFileSync(join(SITE, 'market-edge-index.json'), 'utf8'));
   Object.assign(LAG, { checked: true, database: dbIso, marketEdge: ix.latestMatch || null, marketEdgeSource: ix.source || null });
