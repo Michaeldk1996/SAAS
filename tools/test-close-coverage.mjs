@@ -39,13 +39,15 @@ else {
       card('past-2', 'C. Charlie', 'D. Delta', '13:00'),
       card('past-3', 'E. Echo', 'F. Foxtrot', '14:00'),
       card('past-4', 'G. Golf', 'H. Hotel', '20:00'),
+      card('past-7', 'M. Mike', 'N. November', '12:30'),
       card('past-5', 'I. India', 'J. Juliet', '12:00', { date: '2026-10-30' }),
       { id: 'upcoming-6', p1: 'K. Kilo', p2: 'L. Lima', date: DAY, time: '22:00', tour: 'ATP Vienna', finalScore: null },
     ];
     const side = (open, close) => ({ open, now: null, close, closeTs: close ? DAY + 'T10:00:00Z' : null, openTs: DAY + 'T06:00:00Z' });
     const ocs = { generatedAt: DAY + 'T18:00:00Z', windowFrom: '2026-10-20', windowTo: '2026-11-07', matches: 4, market: 'match-winner', byKey: {
       [DAY + '|alpha|bravo']: { book: 'bet105', source: 'kibl', sides: { alpha: side(1.5, 1.45), bravo: side(2.6, 2.7) } },
-      [DAY + '|charlie|delta']: { book: 'bet105', source: 'kibl', sides: { charlie: side(1.8, null), delta: side(2.0, null) } },
+      [DAY + '|charlie|delta']: { book: 'bet105', source: 'kibl', startTs: DAY + 'T12:58:00Z', startTsSource: 'api-tennis-live', sides: { charlie: side(1.8, null), delta: side(2.0, null) } },
+      [DAY + '|mike|november']: { book: 'bet105', source: 'kibl', startTsSource: 'none', sides: { mike: side(1.8, null), november: side(2.0, null) } },
       [DAY + '|golf|hotel']: { book: 'bet105', source: 'kibl', sides: { golf: side(1.9, null), hotel: side(1.9, null) } },
     } };
     writeFileSync(join(site, 'matches.json'), JSON.stringify(matches));
@@ -57,12 +59,13 @@ else {
     const rep = existsSync(out) ? JSON.parse(readFileSync(out, 'utf8')) : null;
     check('exit 0 and the report written', r.status === 0 && rep, r.stdout + r.stderr);
     if (rep) {
-      check('1 of 4: only the card with a close on both sides counts; another day and an unfinished card are not in the population',
-        rep.x === 1 && rep.y === 4 && rep.pct === 25, JSON.stringify(rep));
+      check('1 of 5: only the card with a close on both sides counts; another day and an unfinished card are not in the population',
+        rep.x === 1 && rep.y === 5 && rep.pct === 20, JSON.stringify(rep));
       const why = Object.fromEntries(rep.dashes.map(d => [d.id, d.reason]));
       check('B: the entry holds no close → its reason says so, naming the book', /holds no close for bet105/.test(why['past-2'] || ''), why['past-2']);
       check('C: no entry → "no card-state entry and no close in matches.json"', why['past-3'] === 'no card-state entry and no close in matches.json', why['past-3']);
       check('D: card state built before the start → "last built …, before this match started"', /last built 2026-10-31T18:00Z, before this match started/.test(why['past-4'] || ''), why['past-4']);
+      check('E: an entry with no verified start → "no verified start recorded … no close can be cut"', /^no verified start recorded/.test(why['past-7'] || ''), why['past-7']);
       check('every dash names its match', rep.dashes.every(d => / v /.test(d.match)), JSON.stringify(rep.dashes));
       check('no temp file left behind (written atomically)', !existsSync(out + '.tmp'));
     }

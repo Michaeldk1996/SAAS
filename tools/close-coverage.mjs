@@ -80,6 +80,7 @@ try {
       if (wo) reason = 'walkover (no ball played)';
       else if (o && (c1 != null) !== (c2 != null)) reason = 'card state holds a close for one side only (' + book + ')';
       else if (o && built != null && st != null && built < st) reason = 'card state last built ' + new Date(built).toISOString().slice(0, 16) + 'Z, before this match started — its close was never computed';
+      else if (o && (o.startTsSource === 'none' || !o.startTs)) reason = 'no verified start recorded for this match (live flag never followed by play within the window, or no start source) — no close can be cut';
       else if (o) reason = 'card state holds no close for ' + (book || 'the card book') + ' (no price seen before the start)';
       else if (m.closingOdds && m.openingOdds && m.closingOdds.bookmaker && m.openingOdds.bookmaker) reason = 'no card-state entry; matches.json close (' + m.closingOdds.bookmaker + ') is not the Open\\'s book (' + m.openingOdds.bookmaker + ')';
       else if (m.closingOdds) reason = 'no card-state entry; matches.json close incomplete or suspended';
