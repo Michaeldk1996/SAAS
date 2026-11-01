@@ -121,6 +121,33 @@ try { const M = build(Object.assign({}, FEEDS, { DB_YIELD_LOWER_APPROX: path.joi
   const r = M.x.xRows.map((x, i) => [x, M.x.xNames[i]]).find(([, n]) => n[1] === 'Roe R.'); red2 = !(r && r[0][8] === 2); }
 finally { fs.unlinkSync(mp2); }
 ok(red2, 'MUTANT (TE ranked above api-tennis Pinnacle, the 2026-10-19 order) turns the order check red');
+// ── 'atp-nt' (founder 2026-11-01, Task A "TE never-tried"): an ATP main-draw match with an api-tennis fixture and no
+// Tennis-Data row. An ATP main-draw era row: no 't' / 'l' flag (Market edge and the join read it), Bet365 behind 'b', a
+// Tennis-Data copy of the same match wins (the row is dropped and counted), never a Database figure.
+fs.writeFileSync(path.join(tmp, 'approx-nt.csv'), [COLS].concat(approx.slice(1),
+  TEC({ date: '2026-10-27', level: 'atp-nt', tournament: 'ATP Basel', winner: 'Fils A.', loser: 'Mpetshi Perricard G.', winnerKey: '21', loserKey: '22', psw: 1.55, psl: 2.45, eventKey: 701, source: 'Tennis Explorer · Pinnacle', comment: 'Completed' }),
+  TEC({ date: '2026-10-28', level: 'atp-nt', tournament: 'ATP Basel', winner: 'Ruud C.', loser: 'Borges N.', winnerKey: '23', loserKey: '24', psw: 1.6, psl: 2.3, eventKey: 702, source: 'Tennis Explorer · Bet365', comment: 'Completed' }),
+  TEC({ date: '2026-05-21', level: 'atp-nt', tournament: 'ATP Geneva', winner: 'Ace A.', loser: 'Bee B.', winnerKey: '25', loserKey: '26', psw: 1.45, psl: 2.7, eventKey: 703, source: 'Tennis Explorer · Pinnacle', comment: 'Completed' }),
+).join('\n') + '\n');
+const NT = build(Object.assign({}, FEEDS, { DB_YIELD_LOWER_APPROX: path.join(tmp, 'approx-nt.csv') }));
+const nx = NT.x.xRows.map((x, i) => ({ x, n: NT.x.xNames[i] }));
+const ntBy = (w, l) => nx.find(o => o.n[0] === w && o.n[1] === l);
+const n1 = ntBy('Fils A.', 'Mpetshi Perricard G.'), n2 = ntBy('Ruud C.', 'Borges N.');
+ok(n1 && n1.x[8] === 8 && n1.x[9] === '' && n1.x[1] == null, `atp-nt: a TE Pinnacle price is an ATP main-draw era row — book 8, no flag, no lower level (got ${n1 && JSON.stringify(n1.x)})`);
+ok(n2 && /b/.test(n2.x[9]) && !/[lt]/.test(n2.x[9]), 'atp-nt: a TE Bet365 price rides behind the main-draw Bet365 flag b, never l / t');
+ok(!ntBy('Ace A.', 'Bee B.') && NT.x.meta.lower.ntHasTd === 1, 'atp-nt: a match Tennis-Data holds (Geneva, a day later) is never a second row — dropped and counted');
+const mRows = NT.master.rows.filter(r => r[7] === 'Fils A.' && r[8] === 'Mpetshi Perricard G.');
+ok(mRows.length === 1 && !/[lt]/.test(mRows[0][14]), 'atp-nt: the master holds the match once, outside the team / lower flags (Market edge reads it)');
+ok(NT.base === B.base, 'atp-nt: the Database files are byte-identical (never a Database figure)');
+const ntAnchor = "    if ([-1, 0, 1].some(n => tdPairs.has(tdPairKey(dd(n), r.winner, r.loser)))) { lower.ntHasTd = (lower.ntHasTd || 0) + 1; continue; }";
+ok(src.split(ntAnchor).length === 2, 'atp-nt: the duplicate-guard mutant anchor is found exactly once');
+const mp3 = path.join(ROOT, '.mutant-lower-yield-nt.js');
+fs.writeFileSync(mp3, src.replace(ntAnchor, ''));
+let red3 = false;
+try { const M = build(Object.assign({}, FEEDS, { DB_YIELD_LOWER_APPROX: path.join(tmp, 'approx-nt.csv') }), mp3);
+  red3 = M.x.xNames.some(n => n[0] === 'Ace A.' && n[1] === 'Bee B.'); }
+finally { fs.unlinkSync(mp3); }
+ok(red3, 'MUTANT (no Tennis-Data guard) lets the Geneva match in twice — the duplicate check turns red');
 fs.rmSync(tmp, { recursive: true, force: true });
 console.log(`\ntest-lower-master: ${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

@@ -940,7 +940,11 @@ TE_SOURCES = (TE_SOURCE, TE_B365_SOURCE)
 def te_doc_kind(d):
     """(source, label, price field, hover) of a te-odds batch doc."""
     return (TE_B365_SOURCE, B365_LABEL, 'b365', TE_B365_HOVER) if d.get('source') == TE_B365_SOURCE else (TE_SOURCE, APPROX_LABEL, 'pin', TE_HOVER)
-TE_LEVELS = ('atp-q', 'atp-x', 'ch', 'ch-q')
+# 'atp-nt' (founder 2026-11-01, Task A "TE never-tried"): an ATP main-draw match with an api-tennis fixture that no Tennis-Data
+# row holds; keyed on the api-tennis event key and the players' api-tennis keys like every level here. Its row rides the era
+# shard as an ATP main-draw match (no 't' / 'l' flag; Bet365 behind 'b'): the price join and Market edge read it, no
+# Database figure does (build-database-yield.js LOWER_LEVEL_NAME).
+TE_LEVELS = ('atp-q', 'atp-x', 'atp-nt', 'ch', 'ch-q')
 # founder 2026-10-30 ("TE above Bet365"): an ATP main-draw match the Database prices on Bet365 or shows as a dash. The target
 # carries its Tennis-Data row (td: date, tournament, winner, loser; a / b = winner / loser) and no api-tennis key: the row is
 # joined to its ONE api-tennis fixture with the main-draw snapshots' own join (approx_join) for the event key and the start

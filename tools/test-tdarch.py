@@ -318,6 +318,15 @@ check('in-play rule: each kept row names the start it was checked against',
       [(r['event_key'], r['detail']['startKind']) for r in sorted(irows, key=lambda r: r['event_key'])]
       == [(72, 'verified (our close)'), (75, 'scheduled'), (77, 'scheduled')], irows)
 nrows, _ = T.te_rows(idocs, ifx.get)
+# founder 2026-11-01 (Task A, "TE never-tried"): 'atp-nt' — an ATP main-draw match with an api-tennis fixture and no
+# Tennis-Data row — is a TE level: keyed on the event key, oriented by the players' api-tennis keys like every level here
+ndocs = [{'batch': 'atp-nt-01', 'complete': True, 'rows': [TX(81, lvl='atp-nt', ka='22', kb='11', pin=PIN('2026-10-27T09:55:00Z'))]}]
+nfx = {'81': G(81, '2026-10-27', '10:00') | {'event_type_type': 'Atp Singles', 'tournament_name': 'ATP Basel'}}
+ntrows, ntrep = T.te_rows(ndocs, nfx.get)
+check('atp-nt: stored as its own level, the TE a / b turned to the fixture by key (TE a = key 22 = the second player, the loser)',
+      [(r['event_key'], r['detail']['level'], r['winner'], r['price_winner'], r['price_loser']) for r in ntrows] == [(81, 'atp-nt', 'A. One', 2.6, 1.5)], (ntrows, ntrep))
+check('atp-nt: rides the lower feed (the era shard), never the ATP main-draw snapshots the Database reads',
+      [x['level'] for x in T.lower_feed_rows([dict(r, id=1) for r in ntrows])] == ['atp-nt'] and T.main_snapshots([dict(r, id=1) for r in ntrows]) == [])
 check('control: without the live-flip start, 73 is checked against its schedule (11:00) and kept — the verified start decides',
       73 in [r['event_key'] for r in nrows])
 # founder 2026-10-20 (item 5 revised): kept and counted per batch — no TE time, a change in the start's own minute, no start;

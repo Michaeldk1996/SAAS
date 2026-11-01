@@ -311,6 +311,9 @@ if (approxOn) {
 }
 const approxUsed = new Set();
 
+// every Tennis-Data match by day + both names as Tennis-Data spells them (the 'atp-nt' guard below)
+const tdPairs = new Set();
+const tdPairKey = (d, w, l) => `${String(d).replace(/-/g, '')}|${String(w).trim()}|${String(l).trim()}`;
 function processLine(c, col, season, fromFeed) {
     bucket.archive++;
     const att = () => [(c[col.series] || '').trim(), (c[col.court] || '').trim(), (c[col.bestof] || '').trim(), (c[col.comment] || '').trim(),
@@ -321,6 +324,7 @@ function processLine(c, col, season, fromFeed) {
     if (WALKOVER.has(comment)) { bucket.walkover++; return; }
     // founder 2026-10-17 (close-out item 1): a non-result that STARTED is priced like a retirement (behind the flag)
     const tdKey = [(c[col.date] || '').trim(), (c[col.tournament] || '').trim(), (c[col.winner] || '').trim(), (c[col.loser] || '').trim()].join('|');
+    if (!fromFeed) tdPairs.add(tdPairKey((c[col.date] || '').trim(), (c[col.winner] || '').trim(), (c[col.loser] || '').trim()));
     const verdict = RESULT_STANDS.has(comment) || RETIRED.has(comment) ? null
       : fromFeed ? (FEED_STARTED.has(comment) && !!(c[col.label] || '').trim() ? 'started' : 'none')
       : verdictOfRow(tdKey, comment, feedOn && feed.overrides.has(tdKey));
@@ -584,7 +588,12 @@ const LOWER_LEVEL_NAME = { 'atp-q': 'ATP Qualifying', ch: 'Challenger', 'ch-q': 
   // founder brief 2026-10-19 (item 1): an ATP main-draw match at an event Tennis-Data does not carry (Davis Cup, United Cup,
   // ATP Cup, Laver Cup, Hopman Cup, the Olympics, the Next Gen Finals, the Asian Games) — behind the team flag 't', like the
   // archive's own team closes: read by the price join only, never a Database figure
-  'atp-x': 'ATP' };
+  'atp-x': 'ATP',
+  // founder 2026-11-01 (Task A, "TE never-tried"): an ATP main-draw match with an api-tennis fixture that no Tennis-Data row
+  // holds (tools/tdarch.py 'atp-nt'). An ATP main-draw era row: no 't' / 'l' flag (Market edge and the join read it), a
+  // Bet365 price behind 'b' as every main-draw Bet365 row — never a Database figure. A Tennis-Data row of the same match
+  // (a later drop-in) wins: this row is then dropped and counted (lower.ntHasTd).
+  'atp-nt': 'ATP' };
 const LOWER_B365_TO = '2026-09-16';                               // from 17 Sep only a close prices these levels
 const lower = { files: {}, rows: 0, byLevel: {}, byBook: {}, dropped: 0, b365: { captures: 0, noCareerRow: 0, atpMainDraw: 0, kept: 0, after16Sep: 0 } };
 const lowerBest = new Map();
@@ -649,10 +658,15 @@ for (const r of lowerBest.values()) {
   const dI = parseInt(String(r.date).replace(/-/g, ''), 10);
   if (!Number.isFinite(dI) || !r.winner || !r.loser || !r.winner.trim() || !r.loser.trim()) { lower.dropped++; continue; }
   const isRet = RETIRED.has((r.comment || '').trim());
-  const tx = r.level === 'atp-x', series = tx ? '' : LOWER_LEVEL_NAME[r.level];
+  const tx = r.level === 'atp-x', nt = r.level === 'atp-nt', series = tx || nt ? '' : LOWER_LEVEL_NAME[r.level];
+  if (nt) {
+    const dd = n => { const x = new Date(Date.UTC(Math.floor(dI / 10000), Math.floor(dI / 100) % 100 - 1, dI % 100 + n)); return x.toISOString().slice(0, 10).replace(/-/g, ''); };
+    if ([-1, 0, 1].some(n => tdPairs.has(tdPairKey(dd(n), r.winner, r.loser)))) { lower.ntHasTd = (lower.ntHasTd || 0) + 1; continue; }
+  }
   xAtt.push([series, '', '', (r.comment || '').trim(), '', '']);
-  xRaw.push([dI, tx ? null : series, '', '', (r.tournament || '').trim(), Math.min(r.pw, r.pl), Math.max(r.pw, r.pl),
-    r.pw <= r.pl ? 1 : 0, r.book, r.winner.trim(), r.loser.trim(), (tx ? 't' : 'l') + (isRet ? 'r' : '') + (r.pw === r.pl ? 'e' : '')]);
+  const ntB = nt && (r.book === 6 || r.book === 7 || r.book === TE_B365_BOOK);   // a main-draw Bet365 price: the join's "B"
+  xRaw.push([dI, tx || nt ? null : series, '', '', (r.tournament || '').trim(), Math.min(r.pw, r.pl), Math.max(r.pw, r.pl),
+    r.pw <= r.pl ? 1 : 0, r.book, r.winner.trim(), r.loser.trim(), (tx ? 't' : nt ? (ntB ? 'b' : '') : 'l') + (isRet ? 'r' : '') + (r.pw === r.pl ? 'e' : '')]);
   lower.rows++; lower.byLevel[r.level] = (lower.byLevel[r.level] || 0) + 1; lower.byBook[r.book] = (lower.byBook[r.book] || 0) + 1;
 }
 // founder ruling 2026-10-18 (item 5): the lower-level matches the import checked and could not price, with their reason —
