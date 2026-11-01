@@ -51,8 +51,10 @@ answers on card 37612d3d (TEN-294 doc `design`). Suite: `test-ten294-drops.mjs`.
   series `KXATPMATCH` (ATP match winner, main draw + qualifying; one market per player). Same rules as the Polymarket bot:
   ≥ 5% drop of the decimal price **1 ÷ yes_ask** vs 10 min earlier, 30-min cooldown per match, ≥ `kalshi_bot.config.min_depth`
   ($100) at the price before AND after (dollars = contracts offered × price), ATP only (`drops_scope`). **Live cut** = the earlier
-  of our live-flip sighting (exactly one, both surnames + initials) and Kalshi's scheduled `occurrence_datetime` — the schedule
-  only ever stops a feed early. Traded = both markets' contracts (live, $1 each); match-winner liquidity = the whole book of both
+  of our live-flip sighting (exactly one, both surnames + initials) and the matched api-tennis fixture's scheduled start
+  (`kalshi_bot.match_fx`) — the schedule only ever stops a feed early. **Kalshi's own occurrence / expiration times are listing
+  placeholders, never a start** (measured 1 Nov 2026: every 2-Nov Paris match read 1 Nov 13:00Z); the fixture start is used for
+  the cut, the ATP scope and the arbitrage join. Traded = both markets' contracts (live, $1 each); match-winner liquidity = the whole book of both
   markets (Σ price × contracts, every resting bid) from `tools/kalshi-volume.mjs`. Telegram: the drop chat. Not on the Odds tab
   or the Dropping Odds page (Kalshi is not an odds-api.io recorder book). **Test:** `tools/test-kalshi-drop-bot-sql.py`.
 - **Arbitrage + divergence engine** (founder 2026-11-01; `tools/arb-engine.sql`, schema `arb`, pg_cron `arb-engine` every 30 s,

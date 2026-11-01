@@ -12,7 +12,9 @@
 --   >= 5% drop of the DECIMAL price (1 / yes_ask) vs 10 min earlier · 30-min cooldown per match · >= $100 at the price
 --   before AND after (dollars = contracts offered × price; config.min_depth, NULL = none) · ATP only (drops_scope) ·
 --   never after the live start: the cut = the earlier of our live-flip sighting (live_flip_log, joined on both surnames
---   + initials, exactly one) and Kalshi's scheduled occurrence time (a scheduled time only ever STOPS a feed early).
+--   + initials, exactly one) and the api-tennis fixture's scheduled start (kalshi_bot.match_fx; a scheduled time only
+--   ever STOPS a feed early). Kalshi's own occurrence / expiration times are LISTING placeholders, never a start
+--   (measured 1 Nov 2026: every 2-Nov Paris match read occurrence = expiration = 1 Nov 13:00Z; api-tennis 2 Nov 09:00Z).
 --   Header "🟣 KALSHI DROP". Traded = both players' markets' contracts traded, live from the recorder (a contract pays
 --   $1). Match-winner liquidity = the whole order book of both markets, in dollars, from the pipeline
 --   (tools/kalshi-volume.mjs → public.kalshi_book_ingest), "—" without one.
@@ -240,6 +242,22 @@ create or replace view kalshi_bot.matches as
     from (select m.*, row_number() over (partition by event_ticker order by ticker) rn from kalshi_rec.markets m) x
    group by event_ticker;
 
+-- each Kalshi match → ONE api-tennis fixture: both surnames + initials, either order, the fixture starting within
+-- [occurrence − 24 h, occurrence + 72 h] (Kalshi's occurrence is the listing time, a day or more before the match),
+-- exactly one candidate both ways. Its start is the match's start everywhere (the cut, the ATP scope, the arb engine).
+create or replace view kalshi_bot.match_fx as
+  with j as (
+    select m.event_ticker, f.event_key, f.start_utc, f.first_player, f.second_player
+      from kalshi_bot.matches m join drops_scope.fixture f
+        on ((drops_scope.same(m.player_a, f.first_player) and drops_scope.same(m.player_b, f.second_player))
+         or (drops_scope.same(m.player_a, f.second_player) and drops_scope.same(m.player_b, f.first_player)))
+       and f.start_utc between m.occurrence_at - interval '24 hours' and m.occurrence_at + interval '72 hours'
+     where m.n_markets = 2 and position('/' in coalesce(f.first_player, '') || coalesce(f.second_player, '')) = 0
+  )
+  select j.* from j
+   where (select count(*) from j x where x.event_ticker = j.event_ticker) = 1
+     and (select count(*) from j x where x.event_key = j.event_key) = 1;
+
 -- the live-start cut per match: the earlier of our live-flip sighting (exactly one, both surnames + initials, within
 -- 24 h of the schedule) and Kalshi's scheduled occurrence time.
 create or replace function kalshi_bot.cuts(p_from timestamptz) returns table(event_ticker text, cut_at timestamptz)
@@ -247,8 +265,8 @@ language plpgsql stable as $$
 begin
   return query
   with ev as (
-    select m.event_ticker, m.player_a, m.player_b, m.occurrence_at, drops_live.sk(m.player_a) h, drops_live.sk(m.player_b) a
-      from kalshi_bot.matches m where m.n_markets = 2 and m.occurrence_at >= p_from
+    select m.event_ticker, m.player_a, m.player_b, x.start_utc occurrence_at, drops_live.sk(m.player_a) h, drops_live.sk(m.player_b) a
+      from kalshi_bot.matches m join kalshi_bot.match_fx x using (event_ticker) where x.start_utc >= p_from
   ), fl as (select * from drops_live.flips(p_from - interval '1 day')),
   j as (
     select ev.event_ticker, fl.event_key, fl.live_at from ev join fl on fl.k1 = ev.h and fl.k2 = ev.a
@@ -390,7 +408,7 @@ declare st timestamptz; v text;
 begin
   if new.mode <> 'live' or new.delivery <> 'unsent' then return new; end if;
   begin
-    select m.occurrence_at into st from kalshi_bot.matches m where m.event_ticker = new.event_ticker;
+    select x.start_utc into st from kalshi_bot.match_fx x where x.event_ticker = new.event_ticker;
   exception when others then st := null;
   end;
   v := drops_scope.apply('kalshi', new.id, new.player_a, new.player_b, st, new.eval_at, false);
@@ -408,7 +426,7 @@ begin
   for r in select a.id, a.player_a, a.player_b, a.eval_at, a.event_ticker from kalshi_bot.alerts a
             where a.mode = 'live' and a.eval_at > now() - interval '30 minutes'
               and a.delivery in ('held: no api-tennis fixture', 'held: no api-tennis fixture (fixture list stale)', 'held: scope check failed') loop
-    select m.occurrence_at into st from kalshi_bot.matches m where m.event_ticker = r.event_ticker;
+    select x.start_utc into st from kalshi_bot.match_fx x where x.event_ticker = r.event_ticker;
     v := drops_scope.apply('kalshi', r.id, r.player_a, r.player_b, st, r.eval_at, true);
     update kalshi_bot.alerts set delivery = case when v = 'post' then 'unsent' else v end where id = r.id and delivery like 'held:%';
     if v = 'post' then n := n + 1; end if;

@@ -51,12 +51,14 @@ create function drops_live.ini_ok(a text, b text) returns boolean language sql i
 create function drops_live.flips(p_from timestamptz) returns table(event_key text, live_at timestamptz, p1 text, p2 text, k1 text, k2 text)
   language sql stable as $$ select event_key, live_at, p1, p2, drops_live.sk(p1), drops_live.sk(p2) from drops_live.flip where live_at >= p_from $$;
 """
-def fx(ek, a, b, typ):
-    return {'event_key': ek, 'event_date': '__D0__', 'event_time': '12:00', 'first': a, 'second': b,
+import datetime as _dt
+def fx(ek, a, b, typ, mins=180):
+    t = _dt.datetime.now(_dt.timezone.utc) + _dt.timedelta(minutes=mins)      # the api-tennis start, UTC
+    return {'event_key': ek, 'event_date': t.strftime('%Y-%m-%d'), 'event_time': t.strftime('%H:%M'), 'first': a, 'second': b,
             'type': typ, 'qual': 'False', 'tournament': 'T', 'round': 'R'}
 def ingest_fx(rows):
     rc, d = q("select to_char(now() at time zone 'UTC', 'YYYY-MM-DD')")
-    return q("select public.drops_scope_ingest($j$" + json.dumps(rows).replace('__D0__', d) + "$j$::jsonb, 'test')", 'service_role')
+    return q("select public.drops_scope_ingest($j$" + json.dumps(rows) + "$j$::jsonb, 'test')", 'service_role')
 def market(ev, code, who, occ="now() + interval '3 hours'"):
     q(f"insert into kalshi_rec.markets (ticker, event_ticker, player, occurrence_at, status) values "
       f"('{ev}-{code}', '{ev}', $${who}$$, {occ}, 'active') on conflict (ticker) do update set occurrence_at = excluded.occurrence_at")
@@ -101,7 +103,8 @@ try:
 
     ingest_fx([fx(9001, 'Q. Halys', 'A. Fery', 'Atp Singles'), fx(9002, 'L. Tien', 'R. Opelka', 'Challenger Men Singles'),
                fx(9003, 'T. Thin', 'B. Book', 'Atp Singles'), fx(9004, 'S. Small', 'M. Move', 'Atp Singles'),
-               fx(9005, 'F. Flip', 'L. Live', 'Atp Singles'), fx(9006, 'S. Sched', 'P. Past', 'Atp Singles')])
+               fx(9005, 'F. Flip', 'L. Live', 'Atp Singles'), fx(9006, 'S. Sched', 'P. Past', 'Atp Singles', mins=-6),
+               fx(9007, 'L. Lister', 'E. Early', 'Atp Singles')])
 
     # 1: the real drop
     E1 = 'KXATPMATCH-X1'
@@ -138,9 +141,15 @@ try:
     q("insert into drops_live.flip values ('9005', now() - interval '5 minutes', 'F. Flip', 'L. Live')")
     scan(); check('a price after our live-flip sighting → no alert', alerts(E5) == '', alerts(E5))
     # 6: past Kalshi's scheduled time (no flip)
-    E6 = 'KXATPMATCH-X6'; market(E6, 'PAS', 'Pat Past', "now() - interval '6 minutes'"); market(E6, 'SCH', 'Sid Sched', "now() - interval '6 minutes'")
+    E6 = 'KXATPMATCH-X6'; market(E6, 'PAS', 'Pat Past', "now() - interval '20 hours'"); market(E6, 'SCH', 'Sid Sched', "now() - interval '20 hours'")
     tick(E6, 'SCH', 20, 0.40, 1000); tick(E6, 'SCH', 2, 0.45, 1000)
-    scan(); check('a price after the scheduled start (no flip seen) → no alert: the schedule only stops a feed', alerts(E6) == '', alerts(E6))
+    scan(); check('a price after the api-tennis scheduled start (no flip seen) → no alert: the schedule only stops a feed', alerts(E6) == '', alerts(E6))
+    # 7: Kalshi's placeholder time (listing, 20 h ago) is never the start: the fixture starts in 3 h, so the drop alerts
+    E7 = 'KXATPMATCH-X7'; market(E7, 'EAR', 'Ed Early', "now() - interval '20 hours'"); market(E7, 'LIS', 'Leo Lister', "now() - interval '20 hours'")
+    tick(E7, 'LIS', 20, 0.40, 1000); tick(E7, 'LIS', 2, 0.45, 1000)
+    scan(); check('Kalshi listing time in the past, real start ahead → the drop alerts (the 1 Nov bug)', alerts(E7) == f'{E7}-LIS:unsent', alerts(E7))
+    rc, out = q(f"select event_key from kalshi_bot.match_fx where event_ticker = '{E7}'")
+    check('match_fx joins the Kalshi match to its api-tennis fixture', out == '9007', out)
 
     rc, out = q("select kalshi_bot.tick()"); check('tick() runs', rc == 0, out)
     rc, out = q(f"select delivery from kalshi_bot.alerts where event_ticker = '{E1}'")

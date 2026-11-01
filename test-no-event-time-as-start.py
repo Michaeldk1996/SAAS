@@ -227,7 +227,7 @@ ALLOWED = {
         "return {'event_key': ek, 'event_date': '__D1__', 'event_time': '12:00', 'first': a, 'second': b,",  # stub api-tennis fixture fed to the real drops_scope_ingest for the arbitrage engine's spine; never read as a start (arb engine 2026-11-01)
     },
     'tools/test-kalshi-drop-bot-sql.py': {
-        "return {'event_key': ek, 'event_date': '__D0__', 'event_time': '12:00', 'first': a, 'second': b,",  # stub api-tennis fixture fed to the real drops_scope_ingest for the Kalshi bot's ATP-only scope; never read as a start (Kalshi bot 2026-11-01)
+        "return {'event_key': ek, 'event_date': t.strftime('%Y-%m-%d'), 'event_time': t.strftime('%H:%M'), 'first': a, 'second': b,",  # stub api-tennis fixture fed to the real drops_scope_ingest for the Kalshi bot's ATP-only scope; never read as a start (Kalshi bot 2026-11-01)
     },
     'tools/test-poly-drop-bot-sql.py': {
         "return {'event_key': ek, 'event_date': '__D0__', 'event_time': '12:00', 'first': a, 'second': b,",  # stub api-tennis fixture fed to the real drops_scope_ingest for the Polymarket bot's ATP-only scope; never read as a start (Polymarket bot 2026-11-01)

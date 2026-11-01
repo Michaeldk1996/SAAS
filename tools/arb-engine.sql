@@ -8,7 +8,8 @@
 --   Bet105     sharp       public.kibl_now_card (the Kibl stream), live while the worker heartbeat is <= 180 s old
 --   Superbet   soft        ten287_rec (odds-api.io recorder), live while that book's recorder answered within 3 min
 --   Polymarket prediction  ten287_rec, same; liquidity = dollars at the best price (odds-api.io depth)
---   Kalshi     prediction  kalshi_rec (public API recorder), live while it answered within 3 min; liquidity = ask × size
+--   Kalshi     prediction  kalshi_rec (public API recorder), live while it answered within 3 min; liquidity = ask × size;
+--                          its fixture = kalshi_bot.match_fx (Kalshi's own times are listing placeholders)
 -- (The api-tennis bookmaker collector, ten216_test_odds_changes, has written nothing since 30 Sep 2026: not a source.)
 -- Fees (per contract / share, on the buy price q = 1 / decimal):
 --   Kalshi taker:     0.07 × q × (1 − q)          (series fee_type quadratic_with_maker_fees, multiplier 1; config)
@@ -143,30 +144,24 @@ begin
        and exists (select 1 from kalshi_rec.requests r where r.status_code = 200 and r.processed_at > now() - c.rec_max)
      order by t.ticker, t.seen_at desc
   ),
+  -- each Kalshi match's api-tennis fixture is kalshi_bot.match_fx (Kalshi's own times are listing placeholders)
   kam as (
-    select m.event_ticker, m.player_a, m.player_b, m.occurrence_at,
+    select m.event_ticker, m.player_a, m.player_b, x.event_key,
            (select ka.yes_ask from ka join kalshi_rec.markets mk using (ticker) where mk.event_ticker = m.event_ticker and mk.player = m.player_a) qa,
            (select ka.yes_ask * ka.yes_ask_size from ka join kalshi_rec.markets mk using (ticker) where mk.event_ticker = m.event_ticker and mk.player = m.player_a) la,
            (select ka.yes_ask from ka join kalshi_rec.markets mk using (ticker) where mk.event_ticker = m.event_ticker and mk.player = m.player_b) qb,
            (select ka.yes_ask * ka.yes_ask_size from ka join kalshi_rec.markets mk using (ticker) where mk.event_ticker = m.event_ticker and mk.player = m.player_b) lb,
            (select max(ka.at) from ka where ka.event_ticker = m.event_ticker) at
-      from kalshi_bot.matches m where m.n_markets = 2 and m.occurrence_at > now() - interval '1 hour'
+      from kalshi_bot.matches m join kalshi_bot.match_fx x using (event_ticker)
   ),
-  kaj as (
+  kau as (
     select fx.event_key, k.event_ticker, k.at,
            case when drops_scope.same(k.player_a, fx.first_player) then k.qa else k.qb end qf,
            case when drops_scope.same(k.player_a, fx.first_player) then k.qb else k.qa end qs,
            case when drops_scope.same(k.player_a, fx.first_player) then k.la else k.lb end lf,
            case when drops_scope.same(k.player_a, fx.first_player) then k.lb else k.la end ls
-      from fx join kam k on ((drops_scope.same(k.player_a, fx.first_player) and drops_scope.same(k.player_b, fx.second_player))
-                          or (drops_scope.same(k.player_a, fx.second_player) and drops_scope.same(k.player_b, fx.first_player)))
-                         and abs(extract(epoch from k.occurrence_at - fx.start_utc)) < 86400
+      from fx join kam k using (event_key)
      where k.qa > 0 and k.qa < 1 and k.qb > 0 and k.qb < 1
-  ),
-  kau as (
-    select j.* from kaj j
-     where (select count(*) from kaj x where x.event_key = j.event_key) = 1
-       and (select count(*) from kaj x where x.event_ticker = j.event_ticker) = 1
   ),
   q as (
     select b.event_key, 'Bet105'::text src, 'sharp'::text g, b.pf, b.ps, null::numeric lf, null::numeric ls, b.at from b105u b
