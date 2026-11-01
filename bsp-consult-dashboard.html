@@ -28575,8 +28575,8 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
   // A lower-level era row (ATP / Challenger qualifying, Challenger, ITF) keeps its own runs: a qualifying draw filed under the
   // main draw's name ("Wimbledon", the pre-2021 Tennis Explorer rows, 2026-11-01) must never move the main-draw event's start
   // or its last numbered round (it did: 186 Slam and tour matches quarantined, their "1st Round" read against a shifted start).
-  const H2H_TD_LOWER = /^(ATP Qualifying|Challenger|Challenger Qualifying|ITF)$/;
   function h2hTdEvent(db, i) {
+    const H2H_TD_LOWER = /^(ATP Qualifying|Challenger|Challenger Qualifying|ITF)$/;
     const rounds = (db.meta && db.meta.rounds) || [], levels = (db.meta && db.meta.levels) || [], day = di => Date.UTC(Math.floor(di / 10000), Math.floor(di / 100) % 100 - 1, di % 100) / 86400000;
     const tk = r => (H2H_TD_LOWER.test(String(levels[r[1]] || '')) ? 'L' : '') + r[4];
     if (!db._h2hEv || db._h2hEv.n !== db.rows.length) {

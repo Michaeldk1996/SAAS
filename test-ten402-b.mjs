@@ -88,7 +88,7 @@ test('Data 1: walkovers are not completed meetings; the record is counted by the
 
 // ---------------------------------------------------------------- Data 2: the Database price join
 const fhDayNum = new Function(`${slice('fhDayNum')}\nreturn fhDayNum;`)();
-const JOIN_SRC = `const FH_DASHC = '—';\n${['H2H_PAGE_PRICE_WINDOW', 'H2H_PAGE_MATCH_WINDOW', 'H2H_PAGE_START_WINDOW', 'H2H_PAGE_ROW_WINDOW', 'H2H_TD_ROUND', 'H2H_PAGE_BEFORE_RANK', 'H2H_TD_LOWER'].map(constLine).join('\n')}
+const JOIN_SRC = `const FH_DASHC = '—';\n${['H2H_PAGE_PRICE_WINDOW', 'H2H_PAGE_MATCH_WINDOW', 'H2H_PAGE_START_WINDOW', 'H2H_PAGE_ROW_WINDOW', 'H2H_TD_ROUND', 'H2H_PAGE_BEFORE_RANK'].map(constLine).join('\n')}
 ${['fhIsInitial', 'fhNameKey', 'psRoundAbbr', 'h2hRoundLabel', 'fhRoundCode', 'h2hTdIx', 'h2hTdKey', 'h2hTdSame', 'h2hTdRound', 'h2hTdEvent', 'h2hNearest', 'h2hPriceJoin'].map(slice).join('\n')}`;
 const J = new Function('fhDayNum', `${JOIN_SRC}\nreturn { h2hPriceJoin, h2hTdKey, h2hTdSame, h2hTdRound, fhRoundCode };`)(fhDayNum);
 const priceJoin = J.h2hPriceJoin;
