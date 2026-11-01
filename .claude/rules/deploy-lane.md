@@ -250,6 +250,19 @@ git dir, absolute `core.hooksPath`: the checkout and every worktree). Re-run the
   work is listed, never removed. Never: the main checkout, tool caches, Paperclip's own data. **Test:**
   `tools/test-prune-agent-space.js`.
 
+## Every job failure the same day; a daily digest (founder 2026-11-01, Task C)
+
+- **Instant:** `job-fail-alert.yml` (`tools/job-fail-alert.mjs`) runs on every completed main-branch run of every scheduled
+  workflow, the publish and the pg_cron-dispatched jobs, and sends ONE Telegram to the pipeline-alerts chat per failure
+  streak per workflow — failed, timed out, cancelled after a job started, or a data run that uploaded no `site-data`
+  ("published nothing") — then one RECOVERED line. A run cancelled while still queued (a newer tick superseding it) is not a
+  failure. **Test:** is any scheduled workflow missing from its watch list? Then it is wrong (`tools/test-job-fail-alert.mjs`).
+- **Daily:** `daily-digest.yml` (07:00Z, `tools/daily-digest.mjs`) lists every watched workflow, every pg_cron job, the published
+  data and code, the live poller, the start recorder and the Kibl stream with its last success; a line is red when older than
+  twice the longest gap its own schedule allows plus 30 min (read from the cron itself). An unreadable source is red with its
+  reason. **Test:** `tools/test-daily-digest.mjs`.
+- **Proven on real runs:** `alert-dry-run.yml` (mode fail | cancel | nothing | ok) and the digest's `force_late` input.
+
 ## Pipeline-down alert (founder ruling 2026-10-18)
 
 - **Two failed `pipeline.yml` runs in a row → ONE Telegram naming the failing step in plain words** (the step name

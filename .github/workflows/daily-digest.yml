@@ -1,0 +1,36 @@
+name: Daily health digest
+# Founder 2026-11-01, Task C: one daily message to the pipeline-alerts chat (TELEGRAM_PIPELINE_CHAT_ID, never Data Alerts):
+# each feed, job, recorder and publish with its last-success time, red where late against its own schedule
+# (tools/daily-digest.mjs, read-only). Dispatch with force_late=<text> for the deliberately broken dry run.
+on:
+  schedule:
+    - cron: '0 7 * * *'
+  workflow_dispatch:
+    inputs:
+      force_late:
+        description: 'dry run: mark the line containing this text late (empty = the real digest)'
+        required: false
+        default: ''
+permissions:
+  actions: read
+  contents: read
+concurrency:
+  group: daily-digest
+  cancel-in-progress: false
+jobs:
+  digest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Build and send the digest
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_PIPELINE_CHAT_ID || secrets.TELEGRAM_CHAT_ID }}
+          FORCE_LATE: ${{ inputs.force_late }}
+        run: node tools/daily-digest.mjs

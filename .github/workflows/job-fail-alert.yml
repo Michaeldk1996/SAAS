@@ -1,0 +1,70 @@
+name: Job failure alert
+# Founder 2026-11-01, Task C ("I hear about any failure the same day"): one instant Telegram to the pipeline-alerts chat
+# (TELEGRAM_PIPELINE_CHAT_ID, never Data Alerts) when a watched job fails, times out or is cancelled mid-run, or when a data
+# run publishes nothing — one per failure streak per workflow, then a RECOVERED line (tools/job-fail-alert.mjs). The list is
+# every workflow with a schedule plus the ones pg_cron dispatches and the publish; tools/test-job-fail-alert.mjs fails when
+# a scheduled workflow is missing from it.
+on:
+  workflow_run:
+    workflows:
+      - 'Alert dry run'
+      - 'BSP ASAP Sports readiness signal'
+      - 'BSP daily DNA ratings refresh'
+      - 'BSP data pipeline'
+      - 'BSP odds capture loop'
+      - 'BSP odds-movement capture'
+      - 'BSP oddspapi post-match archive'
+      - 'BSP oddspapi raw archive'
+      - 'BSP pipeline stall guard'
+      - 'BSP pipeline watchdog'
+      - 'BSP score + odds refresh'
+      - 'BSP weekly Elo refresh'
+      - 'BSP weekly W/UE harvest'
+      - 'BSP weekly archetypes refresh'
+      - 'BSP weekly clutch-ratings refresh'
+      - 'BSP weekly style-radar refresh'
+      - 'BSP weekly surface-ratings refresh'
+      - 'Daily health digest'
+      - 'Data staleness alert'
+      - 'Historical odds archive'
+      - 'Live browser probes (deployed bytes)'
+      - 'Odds capture freshness'
+      - 'Pinnacle archive'
+      - 'Pinnacle archive back-fill'
+      - 'Publish site'
+      - 'TEN-225 fixture index refresh'
+      - 'TEN-225 line summary'
+      - 'TEN-225 line summary (same day)'
+      - 'TEN-225 live-flip recorder'
+      - 'TEN-225 oddspapi budget'
+      - 'TEN-232 kibl archive'
+      - 'Tennis Explorer — scheduled import'
+      - 'draws'
+      - 'entry-lists-advance'
+      - 'feed-freshness'
+      - 'playing-styles'
+      - 'points-to-defend'
+    types: [completed]
+permissions:
+  actions: read
+  contents: read
+concurrency:
+  group: job-fail-alert-${{ github.event.workflow_run.workflow_id }}
+  cancel-in-progress: false
+jobs:
+  alert:
+    if: github.event.workflow_run.head_branch == 'main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          sparse-checkout: tools/job-fail-alert.mjs
+          sparse-checkout-cone-mode: false
+      - name: Alert on a failed / cancelled / publish-nothing run (one per streak)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_PIPELINE_CHAT_ID || secrets.TELEGRAM_CHAT_ID }}
+        run: node tools/job-fail-alert.mjs
