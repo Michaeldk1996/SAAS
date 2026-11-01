@@ -55,6 +55,20 @@ answers on card 37612d3d (TEN-294 doc `design`). Suite: `test-ten294-drops.mjs`.
   only ever stops a feed early. Traded = both markets' contracts (live, $1 each); match-winner liquidity = the whole book of both
   markets (Σ price × contracts, every resting bid) from `tools/kalshi-volume.mjs`. Telegram: the drop chat. Not on the Odds tab
   or the Dropping Odds page (Kalshi is not an odds-api.io recorder book). **Test:** `tools/test-kalshi-drop-bot-sql.py`.
+- **Arbitrage + divergence engine** (founder 2026-11-01; `tools/arb-engine.sql`, schema `arb`, pg_cron `arb-engine` every 30 s,
+  installed by `arb-engine.yml`). **Fair price = Pinnacle's, read as Bet105 with the margin removed** (founder): p = (1/a)/(1/a+1/b).
+  Sources, each joined to ONE api-tennis `Atp Singles` fixture (`drops_scope.fixture`, both surnames + initials, start within
+  24 h, exactly one both ways): Bet105 (`kibl_now_card`, live while the worker heartbeat <= 180 s), Superbet + Polymarket
+  (`ten287_rec`, live while that book answered within 3 min), Kalshi (`kalshi_rec`, same). The api-tennis bookmaker collector
+  (`ten216_test_odds_changes`) last wrote on 30 Sep 2026 and is not a source. **Fees**: Kalshi taker 0.07·q·(1−q) (series
+  fee_type quadratic_with_maker_fees, multiplier 1); Polymarket taker rate·q·(1−q) (Polymarket's docs: fee = C × feeRate × p × (1 − p); Sports
+  0.05, makers free); books none; both in `arb.config`. **DIVERGENCE** = a source's after-fee price >= `div_min` (5%)
+  above fair; **ARB** = back each player at a different source with locked-in profit >= `arb_min` (1%) after fees, best pair
+  per match, stakes by 1/e. A prediction-market leg needs >= `min_liq` ($100) at the price. **Retirement mismatch is
+  flagged, never excluded** (founder): a prediction market (pays the player who advances once a ball is played) against a
+  bookmaker. Telegram ⚖️ ARB / 📐 DIVERGENCE to the drop chat, one per match + kind + source(s) per 30 min. Page: Dropping Odds
+  → Arbitrage (`arb-page.js`, reads `public.arb_now()` with the publishable key every 30 s; a plain first build the founder
+  designs later). **Test:** `tools/test-arb-engine-sql.py`, `test-arb-page.mjs`.
 - **NoVig: not built** (founder 2026-11-01 "try NoVig as possible"): its prices and book need a signed key from a NoVig account
   (`docs.novig.com`, Ed25519 / P-256); the only keyless route lists market types (ATP: MONEY, SPREAD, TOTAL). Two ways in: a
   NoVig account key, or NoVig as an odds-api.io slot (odds-api.io lists "NoVig", active).

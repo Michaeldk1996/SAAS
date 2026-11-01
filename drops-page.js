@@ -755,6 +755,7 @@
   var st = {
     S: defaults(), rows: [], feedRows: null, status: null, statusAt: 0, reachable: true, everLoaded: false,
     refreshing: false, menu: null, drawer: null, drBook: null, tip: false, active: false, timer: null, ticker: null, etag: null,
+    view: 'drops',                    // founder 2026-11-01: Drops | Arbitrage (arb-page.js)
   };
 
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
@@ -906,6 +907,12 @@
     return '<button class="do-seg' + (mono ? ' mono' : '') + (on ? ' on' : '') + '" data-act="' + act + '" data-v="' + esc(val) + '"' +
       (disabled ? ' disabled' : '') + (title ? ' title="' + esc(title) + '"' : '') + '>' + esc(label) + '</button>';
   }
+  // founder 2026-11-01: the page's two views, on the site darker track (the rails' own segment)
+  function viewSegHtml() {
+    if (!window.ArbPage) return '';
+    return '<div class="do-viewseg"><div class="do-rail">' + seg('Drops', st.view === 'drops', 'view', 'drops') +
+      seg('Arbitrage', st.view === 'arb', 'view', 'arb') + '</div></div>';
+  }
   function railsHtml() {
     var S = st.S, win = st.windowH || 24;
     var r = '<div class="do-rails">';
@@ -1049,7 +1056,9 @@
     enrich();
     var now = dataNow(), v = view(st.rows, st.S, now), fs = feedState(ageS(), st.reachable);
     var blank = !st.everLoaded;
-    el.innerHTML = '<div class="do-wrap">' + headerHtml(v, fs, blank) + (fs === 'disconnected' && (st.everLoaded || !st.reachable) ? bannerHtml() : '') +
+    var arb = st.view === 'arb' && window.ArbPage;
+    if (arb) { el.innerHTML = '<div class="do-wrap">' + window.ArbPage.headerHtml() + viewSegHtml() + window.ArbPage.bodyHtml() + '</div>'; return; }
+    el.innerHTML = '<div class="do-wrap">' + headerHtml(v, fs, blank) + viewSegHtml() + (fs === 'disconnected' && (st.everLoaded || !st.reachable) ? bannerHtml() : '') +
       searchHtml(v) + railsHtml() + tabsHtml(v) + resultsHtml(v) + colsHtml() + listHtml(v, fs) +
       (st.menu ? '<div class="do-clickaway" data-act="clickaway"></div>' : '') + '</div>';
     if (focusQ) { var q = el.querySelector('[data-act="q"]'); q.focus(); try { q.setSelectionRange(caret, caret); } catch (e) {} }
@@ -1230,6 +1239,10 @@
       case 'sort': S.sort = v; st.menu = null; break;
       case 'reset': st.S = defaults(books()); st.menu = null; break;
       case 'reconnect': refresh(); return;
+      case 'view':
+        st.view = v === 'arb' ? 'arb' : 'drops'; st.menu = null;
+        if (st.view === 'arb' && window.ArbPage) window.ArbPage.load().then(function () { if (st.active && st.view === 'arb') render(); });
+        break;
       case 'row': st.drawer = v; st.drBook = null; st.tip = false; st.menu = null; renderModal(); return;
       case 'close': closeModal(); return;
       case 'back': st.drBook = null; renderModal(); return;
@@ -1261,7 +1274,10 @@
     render();
     load().then(function () { render(); schedule(); });
     // re-render the data-time labels ("moved 41m ago", the feed's age behind the banner) between reads
-    st.ticker = setInterval(function () { if (!st.menu) render(); }, 5000);
+    st.ticker = setInterval(function () {
+      if (st.view === 'arb' && window.ArbPage && window.ArbPage.stale()) window.ArbPage.load(true).then(function () { if (st.active) render(); });
+      if (!st.menu) render();
+    }, 5000);
   }
 
   function boot() {

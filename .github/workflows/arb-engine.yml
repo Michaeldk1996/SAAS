@@ -1,0 +1,60 @@
+name: arb-engine
+# The arbitrage + divergence engine (founder 2026-11-01). tools/arb-engine.sql; rules in .claude/rules/drops.md.
+#   install  the throwaway-Postgres test first; apply tools/arb-engine.sql (additive, idempotent: schema arb, the
+#            read-only public.arb_now() for Dropping Odds → Arbitrage); schedule the 30-s engine; the read-back.
+#   report   the read-back only (counts, current opportunities by kind, alerts by delivery).
+#   rollback unschedule the engine (its tables stay; the page then shows what arb_now() computes live).
+# Main only. Changes no bot and no Telegram secret (alerts go to the drop chat through the Superbet bot's Vault names).
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        type: choice
+        options: [report, install, rollback]
+        default: report
+permissions:
+  contents: read
+concurrency:
+  group: arb-engine
+  cancel-in-progress: false
+jobs:
+  arb:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      MODE: ${{ inputs.mode }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: SQL test (throwaway Postgres)
+        if: inputs.mode == 'install'
+        run: python3 tools/test-arb-engine-sql.py
+      - name: Apply / schedule / roll back, then read back
+        run: |
+          python3 - <<'PY'
+          import json, os, re, sys, time, urllib.request, urllib.error
+          ref = re.sub(r'^https://([^.]+)\..*$', r'\1', os.environ['SUPABASE_URL'].strip())
+          def sql(q):
+              req = urllib.request.Request(f'https://api.supabase.com/v1/projects/{ref}/database/query',
+                  data=json.dumps({'query': q}).encode(), headers={'Authorization': 'Bearer ' + os.environ['SUPABASE_ACCESS_TOKEN'],
+                  'Content-Type': 'application/json', 'User-Agent': 'arb-engine'})
+              try:
+                  with urllib.request.urlopen(req, timeout=120) as r: return r.status, json.loads(r.read() or b'null')
+              except urllib.error.HTTPError as e: return e.code, e.read()[:600].decode('utf8', 'replace')
+          mode = os.environ['MODE']
+          if mode == 'rollback':
+              st, r = sql("select cron.unschedule('arb-engine') where exists (select 1 from cron.job where jobname = 'arb-engine')")
+              print('rollback HTTP', st, r if st >= 400 else ''); sys.exit(1 if st >= 400 else 0)
+          if mode == 'install':
+              st, r = sql(open('tools/arb-engine.sql').read()); print('apply HTTP', st)
+              if st >= 400: print(r); sys.exit(1)
+              st, r = sql("select cron.schedule('arb-engine', '30 seconds', 'select arb.tick()') as jobid"); print('schedule HTTP', st, r)
+              if st >= 400: sys.exit(1)
+              time.sleep(70)
+          st, r = sql("select arb.report(24) r")
+          if st >= 400: print('read-back HTTP', st, r); sys.exit(1)
+          rep = r[0]['r']; print(json.dumps(rep, indent=1))
+          if mode == 'install' and not (rep.get('cron') or {}).get('active'): print('::error::arb-engine is not scheduled'); sys.exit(1)
+          PY
