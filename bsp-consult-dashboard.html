@@ -8994,6 +8994,27 @@ function mcSigPolyHtml(m){
   return `<div class="mc-sg-rule"></div><div class="mc-sg-poly" title="${psEsc(title)}"><span class="mc-sg-src"><span class="mc-sg-dot"></span>`
     + `<span class="mc-sg-name">Polymarket</span></span><span class="mc-sg-polyv">${mcSigPolyUsd(Number(rec.volume))} traded${liq != null ? ' · ' + mcSigPolyUsd(liq) + ' liquidity' : ''}</span></div>`;
 }
+// Founder 2026-11-01: Kalshi's totals, one line under Polymarket's. kalshi.json (tools/kalshi-volume.mjs, every pipeline
+// run, Kalshi's public API) keyed by the card's event key, the same one-to-one join; no confident join = no line.
+let kalshiVol = null;
+async function loadKalshi(){
+  if (kalshiVol) return kalshiVol;
+  try {
+    const res = await fetch('./kalshi.json', { cache: 'no-cache' });
+    kalshiVol = res.ok ? await res.json() : { byEvent: {} };
+  } catch (err) { kalshiVol = { byEvent: {} }; }
+  return kalshiVol;
+}
+function mcSigKalshiHtml(m){
+  const rec = kalshiVol && kalshiVol.byEvent && kalshiVol.byEvent[eventKeyOfMatch(m)];
+  if (!rec || rec.contracts == null || rec.contracts === '' || !(Number(rec.contracts) >= 0)) return '';   // missing = no line, never 0
+  const liq = rec.liquidity != null && rec.liquidity !== '' && Number(rec.liquidity) >= 0 ? Number(rec.liquidity) : null;
+  const read = mcSigClock(kalshiVol.generatedAt);
+  const title = `Kalshi · traded = contracts traded on the match winner, both players ($1 per contract); liquidity = the match-winner order book, every resting bid, both players, in dollars (Kalshi's public data)${read ? ' · read ' + read : ''}`;
+  const rule = (typeof mcSigPolyHtml === 'function' && mcSigPolyHtml(m)) ? '' : '<div class="mc-sg-rule"></div>';   // one rule above the pair
+  return `${rule}<div class="mc-sg-poly" title="${psEsc(title)}"><span class="mc-sg-src"><span class="mc-sg-dot"></span>`
+    + `<span class="mc-sg-name">Kalshi</span></span><span class="mc-sg-polyv">${Math.round(Number(rec.contracts)).toLocaleString('en-US')} contracts traded${liq != null ? ' · ' + mcSigPolyUsd(liq) + ' liquidity' : ''}</span></div>`;
+}
 function mcSigBody(m){
   const surfCap = m.surface ? m.surface.charAt(0).toUpperCase() + m.surface.slice(1) : '';
   const slot = String(m.surface || '').toLowerCase();
@@ -9035,7 +9056,7 @@ function mcSigBody(m){
       : `<span class="mc-sg-bar"><span style="width:${r.pw.toFixed(2)}%"></span></span><span class="mc-sg-odds${r.best ? ' best' : ''}">${r.fair || mxOddsTxt(r.odds)}</span><span class="mc-sg-ch">${Math.round(r.pw)}%</span>`;
     return `<div class="mc-sg mc-sg--done"><div class="mc-sg-row mc-sg-head"><span class="mc-sg-cap">Price on ${psEsc(mxSurname(winName))}</span><span></span><span class="mc-sg-capr">Odds</span><span class="mc-sg-capr">Chance</span></div>`
       + rows.map(r => `${r.label === 'Elo Overall' ? '<div class="mc-sg-rule"></div>' : ''}<div class="mc-sg-row${r.dash ? ' dash' : ''}"><span class="mc-sg-src" title="${psEsc(r.src)}"><span class="mc-sg-name">${psEsc(r.label)}</span>${r.best ? '<span class="mc-sg-best">BEST</span>' : ''}</span>${cell(r)}</div>`).join('')
-      + (typeof mcSigPolyHtml === 'function' ? mcSigPolyHtml(m) : '') + `</div>`;
+      + (typeof mcSigPolyHtml === 'function' ? mcSigPolyHtml(m) : '') + (typeof mcSigKalshiHtml === 'function' ? mcSigKalshiHtml(m) : '') + `</div>`;
   }
   // Upcoming — the open on each book, the estimate as fair odds.
   const po = m.pinnacleOpen && mcSigPair(m.pinnacleOpen.p1, m.pinnacleOpen.p2);
@@ -9083,7 +9104,7 @@ function mcSigBody(m){
       + `<span class="mc-sg-pb${bl}">${Math.round(100 - r.pa)}%</span><span class="mc-sg-ob${bl}">${r.oB}</span></div>`;
   };
   return `<div class="mc-sg mc-sg--up"><div class="mc-sg-row mc-sg-head"><span>Books</span><span class="r">Open</span><span class="r">%</span><span></span><span>%</span><span>Open</span></div>`
-    + rows.map(row).join('') + (typeof mcSigPolyHtml === 'function' ? mcSigPolyHtml(m) : '') + `</div>`;
+    + rows.map(row).join('') + (typeof mcSigPolyHtml === 'function' ? mcSigPolyHtml(m) : '') + (typeof mcSigKalshiHtml === 'function' ? mcSigKalshiHtml(m) : '') + `</div>`;
 }
 
 // §1/§2/§4 — Completed vs Upcoming page chrome: title, subtitle, status line, and
@@ -10382,7 +10403,7 @@ function toggleSig(btn){
   if (!card) return;
   card.classList.toggle('sig-open');
   const m = card.classList.contains('sig-open') ? matchById(card.dataset.id) : null;
-  if (m && !polymarketVol) loadPolymarket().then(() => {
+  if (m && (!polymarketVol || !kalshiVol)) Promise.all([loadPolymarket(), loadKalshi()]).then(() => {
     const panel = card.querySelector('.mc-sigpanel');
     if (panel && card.isConnected && card.classList.contains('sig-open') && mcSigReady(m)) panel.innerHTML = mcSigBody(m);
   });

@@ -46,6 +46,18 @@ answers on card 37612d3d (TEN-294 doc `design`). Suite: `test-ten294-drops.mjs`.
     because it lists every recorder book, under its own group **"Prediction market"** (founder 2026-11-01; `bookCls` →
     `prediction`, after Sharp and Soft), never Sharp or Soft. On the cards' Market Signal it is named "Polymarket".
   **Test:** `tools/test-poly-drop-bot-sql.py` (real throwaway Postgres; CONTROL: no minimum → the $50 drop alerts).
+- **The 🟣 KALSHI DROP bot** (founder 2026-11-01; `tools/kalshi-drop-bot.sql`, schemas `kalshi_rec` + `kalshi_bot`, pg_cron
+  `kalshi-recorder` + `kalshi-drop-bot` every 30 s, installed by `kalshi-drops.yml`). Source: Kalshi's **public** API (no key):
+  series `KXATPMATCH` (ATP match winner, main draw + qualifying; one market per player). Same rules as the Polymarket bot:
+  ≥ 5% drop of the decimal price **1 ÷ yes_ask** vs 10 min earlier, 30-min cooldown per match, ≥ `kalshi_bot.config.min_depth`
+  ($100) at the price before AND after (dollars = contracts offered × price), ATP only (`drops_scope`). **Live cut** = the earlier
+  of our live-flip sighting (exactly one, both surnames + initials) and Kalshi's scheduled `occurrence_datetime` — the schedule
+  only ever stops a feed early. Traded = both markets' contracts (live, $1 each); match-winner liquidity = the whole book of both
+  markets (Σ price × contracts, every resting bid) from `tools/kalshi-volume.mjs`. Telegram: the drop chat. Not on the Odds tab
+  or the Dropping Odds page (Kalshi is not an odds-api.io recorder book). **Test:** `tools/test-kalshi-drop-bot-sql.py`.
+- **NoVig: not built** (founder 2026-11-01 "try NoVig as possible"): its prices and book need a signed key from a NoVig account
+  (`docs.novig.com`, Ed25519 / P-256); the only keyless route lists market types (ATP: MONEY, SPREAD, TOTAL). Two ways in: a
+  NoVig account key, or NoVig as an odds-api.io slot (odds-api.io lists "NoVig", active).
 - **The Telegram drop bots stop at the live start too** (TEN-299, founder comment 8585095a, 2026-09-27; installed from `tools/ten299-live-cut.sql` by the drops workflow).
   **Test:** each bot's `load_ticks` removes every tick at or after its match's cut, and each bot's `scan` evaluates nothing at or after the cut. So no alert fires on a started or finished match, and every drop is measured against a pre-match price. A backtest of the last 24 h holds 0 alerts at or after a cut (`ten299_after_cut`).
   The cut is the live sighting, joined as the endpoint joins; when ambiguous, the vendor's scheduled start. A match with no sighting is not cut (the vendor start is not a live signal).

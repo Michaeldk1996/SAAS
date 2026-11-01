@@ -51,7 +51,7 @@ test('no line without a confident Polymarket match: another card, no file, no vo
 });
 test('the toggle loads polymarket.json once and repaints the open panel', () => {
   const t = slice('toggleSig');
-  assert.match(t, /if \(m && !polymarketVol\) loadPolymarket\(\)\.then\(/);
+  assert.match(t, /if \(m && \(!polymarketVol \|\| !kalshiVol\)\) Promise\.all\(\[loadPolymarket\(\), loadKalshi\(\)\]\)\.then\(/);
   assert.match(slice('loadPolymarket'), /fetch\('\.\/polymarket\.json'/);
 });
 test('Polymarket is its own group, "Prediction market", on the Odds tab and the Dropping Odds box (cards say "Polymarket")', async () => {
@@ -66,4 +66,27 @@ test('Polymarket is its own group, "Prediction market", on the Odds tab and the 
   assert.deepEqual(['Polymarket', 'Polymarket (odds-api.io)', 'Superbet', 'Bet105', 'Betfair Exchange'].map(ctx.bookCls),
     ['prediction', 'prediction', 'soft', 'sharp', 'sharp']);
   assert.match(js, /var GROUP_NAME = \{ sharp: 'Sharp', soft: 'Soft', prediction: 'Prediction market' \};/);
+});
+const SK = (vol, kvol) => new Function('vol', 'kvol', `
+  const window = { sfPlan: null };
+  const eloRatings = { taLastUpdate: '2026-10-26', elo: {} };
+  const _ocsOf = () => null, _mcPinClose = () => null, mxPinCloseAgeMin = () => null, mxJClose = () => null;
+  const cardStartMs = m => m.__start, newsTz = () => 'UTC';
+  let polymarketVol = vol, kalshiVol = kvol;
+  ${slice('eventKeyOfMatch')} ${slice('psEsc')} ${slice('psEloNorm')} ${slice('mxOddsTxt')} ${slice('mxSurname')} ${slice('mxIsPro')}
+  ${slice('mcSigReady')} ${slice('mcSigPair')} ${slice('mcSigImp')} ${slice('mcSigFirst')} ${slice('mcSigClock')}
+  ${slice('mcSigEloRec')} ${slice('mcSigEloLast')} ${slice('mcSigEloStaleText')} ${slice('mcSigEloP')} ${slice('mcSigFair')} ${slice('mcSigElo')}
+  ${slice('mcSigEloTitle')} ${slice('mcSigModelP')} ${slice('mcSigPolyUsd')} ${slice('mcSigPolyHtml')} ${slice('mcSigKalshiHtml')} ${slice('mcSigBody')}
+  return { mcSigBody };`)(vol, kvol);
+const KV = { generatedAt: '2026-11-01T10:05:00Z', byEvent: { '12166001': { event: 'KXATPMATCH-26NOV01TIRBEL', contracts: 5590.03, liquidity: 431220.5 } } };
+test('Kalshi: one line under Polymarket — contracts traded and the whole match-winner book', () => {
+  const h = SK(VOL, KV).mcSigBody(up);
+  assert.match(h, /<span class="mc-sg-name">Kalshi<\/span><\/span><span class="mc-sg-polyv">5,590 contracts traded · \$431,221 liquidity<\/span>/);
+  assert.deepEqual(names(h).slice(-2), ['Polymarket', 'Kalshi']);
+  assert.equal((h.match(/mc-sg-rule/g) || []).length, 1, 'ONE rule above the prediction-market pair');
+  const k = SK(null, KV).mcSigBody(up);
+  assert.equal((k.match(/mc-sg-rule/g) || []).length, 1, 'Kalshi alone carries the rule');
+  assert.doesNotMatch(SK(VOL, { byEvent: { '12166001': { contracts: null } } }).mcSigBody(up), /Kalshi/, 'no contracts → no line, never 0');
+  assert.match(SK(null, { byEvent: { '12166001': { contracts: 12, liquidity: null } } }).mcSigBody(up), /12 contracts traded<\/span>/);
+  assert.doesNotMatch(SK(VOL, KV).mcSigBody({ ...up, id: 'upcoming-999' }), /Kalshi/);
 });

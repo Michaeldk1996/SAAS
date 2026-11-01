@@ -543,6 +543,18 @@ jobs:
           node tools/polymarket-volume.mjs matches.json polymarket.json || rc=$?
           node tools/step-check.mjs --step "Polymarket traded totals (best-effort)" --rc "$rc" --since "$t0" --exists polymarket.json
 
+      # Kalshi's totals per ATP match (founder 2026-11-01): kalshi.json for the Market Signal panel (contracts traded + the
+      # whole match-winner book), and kalshi_bot.book for the 🟣 KALSHI DROP alerts (tools/kalshi-drop-bot.sql). Kalshi's
+      # public API, no key. Best-effort: a failure leaves no Kalshi line on the cards and "—" in the alerts.
+      - name: Kalshi traded totals (best-effort)
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+        run: |
+          t0=$(date +%s); rc=0
+          node tools/kalshi-volume.mjs matches.json kalshi.json || rc=$?
+          node tools/step-check.mjs --step "Kalshi traded totals (best-effort)" --rc "$rc" --since "$t0" --exists kalshi.json
+
       # Tournament entries (TEN-8): for each current ATP-main-tour singles event,
       # the roster of players in it (derived from get_fixtures) enriched with ATP
       # rank + nationality (get_standings). Powers the News page tournament filter.
@@ -1133,6 +1145,7 @@ jobs:
           cp news-feed.json _site/ 2>/dev/null || true
           # Polymarket traded totals (founder 2026-11-01): the Market Signal panel's Polymarket line. Not copied = no line.
           cp polymarket.json _site/ 2>/dev/null || true
+          cp kalshi.json _site/ 2>/dev/null || true
           # Tournament entries (TEN-8): per-ATP-draw rosters that power the News
           # page tournament filter. Committed but not copied = silent 404, which
           # just hides the filter (the feed still shows).
