@@ -129,6 +129,12 @@ try:
     check('DIVERGENCE message', msg.startswith('📐 DIVERGENCE') and '🎯 Superbet: Q. Halys @ 2.2' in msg and '📏 Fair (Bet105, margin removed): 1.95 → +12.8% above fair' in msg, msg)
     rc, out = q("select delivery from arb.alerts limit 1"); check('no Vault secret → recorded, nothing sent', out == 'unsent: no vault secret', out)
     rc, out = q("select (public.arb_now()->>'at') is not null", 'anon'); check('anon reads arb_now()', rc == 0 and out == 't', out)
+    rc, out = q("select (select at from arb.snap) is not null and jsonb_array_length((select opps from arb.snap)->'arbs') = 1")
+    check('tick() stores its result; arb_now() serves the stored copy (page read under the anon statement limit)', out == 't', out)
+    q("update arb.snap set opps = jsonb_set(opps, '{arbs}', '[]'::jsonb)")
+    rc, out = q("select jsonb_array_length(public.arb_now()->'arbs')", 'anon'); check('a fresh stored copy is what the page gets (not recomputed)', out == '0', out)
+    q("update arb.snap set at = now() - interval '10 minutes'")
+    rc, out = q("select jsonb_array_length(public.arb_now()->'arbs')", 'anon'); check('a stored copy older than 2 min is recomputed', out == '1', out)
     rc, out = q("select count(*) from arb.alerts", 'anon'); check('anon cannot read the alerts', rc != 0, out)
     rc, out = q("select arb.report(24)->>'arbsNow'"); check('report() without pg_cron', rc == 0 and out == '1', out)
 

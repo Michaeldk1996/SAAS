@@ -73,6 +73,14 @@ create table if not exists arb.live_state (
     worker  jsonb                        -- its own counters (pairs joined, polls, errors)
 );
 insert into arb.live_state (id) values (true) on conflict (id) do nothing;
+-- arb.tick() stores each 30-s result here; the page reads it (arb.opps() takes ~3 s, the anon statement limit:
+-- measured 2 Nov 11:22Z, 1 read in 4 timed out). Older than 2 min (engine stopped) → computed on the spot.
+create table if not exists arb.snap (
+    id    boolean primary key default true check (id),
+    at    timestamptz,
+    opps  jsonb
+);
+alter table arb.snap enable row level security;
 alter table arb.live_state enable row level security;
 alter table arb.alerts enable row level security;
 alter table arb.config enable row level security;
@@ -263,7 +271,8 @@ language sql stable security definer set search_path = pg_catalog, public as $$
                 where (g->>'edge')::numeric >= c.live_min and (c.min_liq is null or (g->>'stake')::numeric >= c.min_liq))
             end,
     'config', (o->'config') || jsonb_build_object('liveMin', c.live_min))
-  from arb.opps() o, arb.live_state l, arb.config c $$;
+  from (select case when s.at > now() - interval '2 minutes' then s.opps else arb.opps() end as o
+          from (select 1) one left join arb.snap s on s.id) oo(o), arb.live_state l, arb.config c $$;
 revoke all on function public.arb_now() from public;
 do $$ begin
   if exists (select 1 from pg_roles where rolname = 'anon') then
@@ -339,6 +348,7 @@ begin
     from net._http_response r where a.delivery = 'queued' and r.id = a.net_request_id;
   select * into c from arb.config;
   o := arb.opps();
+  insert into arb.snap (id, at, opps) values (true, now(), o) on conflict (id) do update set at = excluded.at, opps = excluded.opps;
   for x in select * from jsonb_array_elements(o->'arbs') loop
     k := 'arb|' || (x->>'eventKey') || '|' || (x->'legFirst'->>'source') || '+' || (x->'legSecond'->>'source');
     continue when exists (select 1 from arb.alerts where akey = k and created_at > now() - c.cooldown);
