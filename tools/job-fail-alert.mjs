@@ -9,7 +9,7 @@
 //   cancelled                                               -> alert like a failure only if a job of the run STARTED; a run
 //                                                             cancelled while queued (a newer tick superseded it, the
 //                                                             concurrency groups' normal work) is skipped and counted
-//   success, data pipeline ('BSP data pipeline')            -> a run that uploaded no `site-data` artifact published
+//   success, data pipeline ('BSP data pipeline')            -> a run that uploaded no data artifact (PUBLISHERS) published
 //                                                             nothing: alert (its own streak)
 //   success after a reported streak                         -> RECOVERED line
 // Main-branch runs only (a probe branch never alerts). Pure decisions (`decide`) are exported for the tests.
@@ -17,8 +17,10 @@ import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 export const DATA_PIPELINE = 'BSP data pipeline';
-// the runs that must upload `site-data`: the data pipeline, and the alert dry run (Task C's deliberately broken real run)
-export const PUBLISHERS = new Set([DATA_PIPELINE, 'Alert dry run']);
+// the runs that must upload a data artifact, and its name: the data pipeline's `site-data`, and the alert dry run's
+// `alert-dry-data` (Task C's deliberately broken real run). The dry run never uploads `site-data`: publish.yml takes the
+// newest artifact of that name from ANY workflow (tools/publish-resolve.mjs pickData), so a dry run would publish itself.
+export const PUBLISHERS = new Map([[DATA_PIPELINE, 'site-data'], ['Alert dry run', 'alert-dry-data']]);
 const BAD = new Set(['failure', 'timed_out', 'startup_failure', 'action_required']);
 
 // a run whose jobs never started (cancelled while queued) is not a decisive outcome
@@ -30,7 +32,7 @@ export function outcome(run, jobs, artifacts) {
   if (run.conclusion === 'cancelled') return started(jobs) ? 'bad' : null;
   if (BAD.has(run.conclusion)) return 'bad';
   if (run.conclusion === 'success') {
-    if (PUBLISHERS.has(run.name) && artifacts && !artifacts.some((a) => a.name === 'site-data')) return 'nothing';
+    if (PUBLISHERS.has(run.name) && artifacts && !artifacts.some((a) => a.name === PUBLISHERS.get(run.name))) return 'nothing';
     return 'ok';
   }
   return null;   // skipped / neutral / stale

@@ -1,7 +1,7 @@
 name: Alert dry run
 # Founder 2026-11-01, Task C: the alerts are proven on a REAL, deliberately broken run, not a local copy. Dispatch with
-# mode=fail (the job fails), mode=cancel (it cancels itself mid-run), mode=nothing (it succeeds without uploading site-data,
-# like a data run that publishes nothing) or mode=ok (it succeeds and uploads, so a RECOVERED line follows a reported streak).
+# mode=fail (the job fails), mode=cancel (it cancels itself mid-run), mode=nothing (it succeeds without uploading its data artifact,
+# like a data run that publishes nothing) or mode=ok (it succeeds and uploads `alert-dry-data`, so a RECOVERED line follows a reported streak).
 # Job failure alert (job-fail-alert.yml) watches it like any scheduled job.
 on:
   workflow_dispatch:
@@ -36,6 +36,6 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: inputs.mode == 'ok'
         with:
-          name: site-data
+          name: alert-dry-data   # never `site-data`: publish.yml would take it as the site's data
           path: _dry
           retention-days: 1

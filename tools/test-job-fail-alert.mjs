@@ -20,7 +20,11 @@ ok(outcome(R({ conclusion: 'timed_out' }), null, null) === 'bad' && /TIMED OUT/.
 const P = (o) => R({ name: 'BSP data pipeline', conclusion: 'success', ...o });
 ok(outcome(P(), null, [{ name: 'other' }]) === 'nothing' && /published NOTHING/.test(decide(P(), 'nothing', 'ok').text), 'a data run that uploaded no site-data published nothing: alert');
 ok(outcome(P(), null, [{ name: 'site-data' }]) === 'ok', 'a data run that uploaded site-data is a success');
-ok(outcome(R({ name: 'Alert dry run', conclusion: 'success' }), null, []) === 'nothing', 'the alert dry run is watched like the data pipeline (no site-data = nothing)');
+ok(outcome(R({ name: 'Alert dry run', conclusion: 'success' }), null, []) === 'nothing', 'the alert dry run is watched like the data pipeline (no data artifact = nothing)');
+ok(outcome(R({ name: 'Alert dry run', conclusion: 'success' }), null, [{ name: 'alert-dry-data' }]) === 'ok', 'the dry run succeeds on its own artifact');
+ok(outcome(R({ name: 'Alert dry run', conclusion: 'success' }), null, [{ name: 'site-data' }]) === 'nothing', 'site-data does not count for the dry run');
+{ const wf = fs.readFileSync(new URL('../.github/workflows/alert-dry-run.yml', import.meta.url), 'utf8');
+  ok(!/name:\s*site-data\b/.test(wf) && /name:\s*alert-dry-data\b/.test(wf), 'the dry run never uploads an artifact named site-data (publish.yml would publish it as the site data)'); }
 ok(outcome(R({ conclusion: 'success' }), null, null) === 'ok' && decide(R({ conclusion: 'success' }), 'ok', 'bad').action === 'send'
   && /RECOVERED/.test(decide(R({ conclusion: 'success' }), 'ok', 'bad').text), 'a success after a reported streak sends RECOVERED');
 ok(decide(R({ conclusion: 'success' }), 'ok', 'ok').action === 'skip', 'a success after a success sends nothing');
