@@ -1,29 +1,29 @@
 {
- "generatedAt": "2026-11-01T20:05:49.764Z",
+ "generatedAt": "2026-11-02T05:47:32.574Z",
  "source": "matches.json git history: oddsMovement.books.Pinnacle (Oddspapi pinnacle, to 2026-09-02) and oddsMovement.chart.books[\"Pinnacle +30s\"] (Oddspapi pinnacle+30, from 2026-09-23)",
  "rule": "each side = last tick at or before the actual start (the earlier of Oddspapi trueStart and the card-state start: Oddspapi or the live-flip lower bound); both sides required; dropped when no unique actual start. seenAt = our last capture read before the start that confirmed the close (founder 2026-10-28); age = start - (seenAt or at)",
  "scannedThrough": {
-  "commit": "fa9b1f8bfb1b841a25dee41b518ca6737c03d043",
-  "at": "2026-11-01T19:45:31Z"
+  "commit": "a7683e43e9058e95305eed7c572684027de8d0f3",
+  "at": "2026-11-02T05:15:29Z"
  },
- "commitsScanned": 6297,
+ "commitsScanned": 6320,
  "lastRun": {
-  "from": "2026-11-01T15:03:04Z",
-  "snapshots": 11,
-  "added": 0,
-  "replaced": 0,
+  "from": "2026-11-01T19:45:31Z",
+  "snapshots": 24,
+  "added": 1,
+  "replaced": 7,
   "seenBackfilled": 0,
   "series": 64,
-  "kept": 39,
+  "kept": 40,
   "bySource": {
    "oddspapi": 37,
-   "api-tennis-live": 2
+   "api-tennis-live": 3
   },
   "byBook": {
-   "Pinnacle +30s": 39
+   "Pinnacle +30s": 40
   },
   "dropped": {
-   "noStart": 25
+   "noStart": 24
   }
  },
  "stats": {
@@ -13577,7 +13577,7 @@
    "p1": 3.9,
    "p2": 1.302,
    "at": "2026-10-30T12:05:31.577Z",
-   "trueStart": "2026-10-30T14:37:06.542Z",
+   "trueStart": "2026-10-30T14:37:06.000Z",
    "startSource": "oddspapi",
    "book": "Pinnacle +30s",
    "round": "ATP Vienna - Quarter-finals",
@@ -13708,7 +13708,7 @@
    "p1": 2.96,
    "p2": 1.448,
    "at": "2026-10-30T22:55:15.471Z",
-   "trueStart": "2026-10-31T14:09:25.366Z",
+   "trueStart": "2026-10-31T14:09:25.000Z",
    "startSource": "oddspapi",
    "book": "Pinnacle +30s",
    "round": "ATP Vienna - Semi-finals",
@@ -13730,7 +13730,7 @@
    "p1": 1.502,
    "p2": 2.79,
    "at": "2026-10-31T15:44:06.248Z",
-   "trueStart": "2026-10-31T16:09:19.419Z",
+   "trueStart": "2026-10-31T16:09:19.000Z",
    "startSource": "oddspapi",
    "book": "Pinnacle +30s",
    "round": "ATP Basel - Semi-finals",
@@ -13752,7 +13752,7 @@
    "p1": 1.4,
    "p2": 3.23,
    "at": "2026-10-31T15:49:08.883Z",
-   "trueStart": "2026-10-31T16:12:36.439Z",
+   "trueStart": "2026-10-31T16:12:36.000Z",
    "startSource": "oddspapi",
    "book": "Pinnacle +30s",
    "round": "ATP Vienna - Semi-finals",
@@ -13840,7 +13840,7 @@
    "p1": 1.487,
    "p2": 2.73,
    "at": "2026-10-31T10:53:59.949Z",
-   "trueStart": "2026-10-31T11:09:19.126Z",
+   "trueStart": "2026-10-31T11:09:19.000Z",
    "startSource": "oddspapi",
    "book": "Pinnacle +30s",
    "round": "ATP Paris - Semi-finals",
@@ -13884,7 +13884,7 @@
    "p1": 2.23,
    "p2": 1.694,
    "at": "2026-10-31T08:43:40.596Z",
-   "trueStart": "2026-10-31T11:33:31.957Z",
+   "trueStart": "2026-10-31T11:33:31.000Z",
    "startSource": "oddspapi",
    "book": "Pinnacle +30s",
    "round": "ATP Paris - Semi-finals",
@@ -13906,7 +13906,7 @@
    "p1": 1.495,
    "p2": 2.7,
    "at": "2026-10-31T08:32:48.167Z",
-   "trueStart": "2026-10-31T12:00:37.877Z",
+   "trueStart": "2026-10-31T12:00:37.000Z",
    "startSource": "oddspapi",
    "book": "Pinnacle +30s",
    "round": "ATP Paris - Semi-finals",
@@ -14090,6 +14090,28 @@
    "o1": 1.46,
    "o2": 2.91,
    "oAt": "2026-10-31T21:05:40.558Z",
+   "winner": "p2",
+   "seenAt": "2026-11-01T12:38:18.000Z"
+  },
+  {
+   "eventKey": 12176267,
+   "date": "2026-11-01",
+   "p1Key": 358,
+   "p2Key": 436,
+   "p1Name": "N. Borges",
+   "p2Name": "A. Molcan",
+   "p1": 1.649,
+   "p2": 2.32,
+   "at": "2026-11-01T11:15:40.923Z",
+   "trueStart": "2026-11-01T13:54:22.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s",
+   "round": "ATP Paris - Final",
+   "qualifying": true,
+   "event": "ATP Paris",
+   "o1": 1.653,
+   "o2": 2.28,
+   "oAt": "2026-10-31T21:09:01.460Z",
    "winner": "p2",
    "seenAt": "2026-11-01T12:38:18.000Z"
   }
