@@ -31,6 +31,8 @@ create table if not exists data_alarms.config (
     enabled     boolean not null default true,
     what        text not null
 );
+alter table data_alarms.config add column if not exists confirm_ticks integer not null default 1;   -- bad this many ticks in a row before the alert
+alter table data_alarms.config add column if not exists recover_below interval;                     -- once bad, good again only below this (null = threshold)
 insert into data_alarms.config (name, threshold, min_pct, what) values
   ('data_age',    interval '60 minutes', null, 'published site data (build-info.json data.builtAt)'),
   ('card_state',  interval '60 minutes', null, 'card prices file (odds-card-state.json generatedAt)'),
@@ -39,6 +41,11 @@ insert into data_alarms.config (name, threshold, min_pct, what) values
   ('close_cover', null,                  90,   'yesterday''s Completed cards with a card-book close'),
   ('cron_jobs',   null,                  null, 'scheduled database jobs present and active')
 on conflict (name) do nothing;
+-- card prices reach the site 40–60 min after they are built (GitHub runners + the data publish), so the age sits near
+-- the 60-min line on a healthy day: 2 bad ticks in a row before the alert, and good again only below 45 min (it flapped
+-- ALARM / RECOVERED five times on 1 Nov). Stage 3 moves card state off GitHub and the limit to 15 min.
+update data_alarms.config set confirm_ticks = 2, recover_below = interval '45 minutes'
+ where name = 'card_state' and confirm_ticks = 1 and recover_below is null;
 
 create table if not exists data_alarms.sources (
     name  text primary key,
@@ -86,6 +93,7 @@ create table if not exists data_alarms.state (
     test         boolean not null default false   -- the open streak was manufactured (data_alarms.force)
 );
 alter table data_alarms.state add column if not exists test boolean not null default false;
+alter table data_alarms.state add column if not exists strikes integer not null default 0;   -- bad ticks in a row, not yet alerted
 
 create table if not exists data_alarms.force (
     name   text primary key,
@@ -171,9 +179,12 @@ end $$;
 create or replace function data_alarms.judge(p_name text, p_now timestamptz, out bad boolean, out detail text, out forced boolean)
 language plpgsql as $$
 declare cfg data_alarms.config; fz data_alarms.force; lf record; age interval; ts timestamptz; n integer; v text;
-        x integer; y integer; day text; missing text[];
+        x integer; y integer; day text; missing text[]; lim interval;
 begin
   select * into cfg from data_alarms.config where name = p_name;
+  -- an open streak recovers only below recover_below (hysteresis); otherwise the threshold
+  lim := case when coalesce((select st0.bad from data_alarms.state st0 where st0.name = p_name), false)
+              then coalesce(cfg.recover_below, cfg.threshold) else cfg.threshold end;
   select * into fz from data_alarms.force where name = p_name and until > p_now;
   forced := fz.name is not null;
   if p_name in ('data_age', 'card_state') then
@@ -184,7 +195,7 @@ begin
       if (lf.f).id is null then return; end if;
       age := (lf.f).fired_at - (lf.f).stamp;
     end if;
-    bad := age > cfg.threshold;
+    bad := age > lim;
     detail := format('%s: %s min old (alarm above %s)', cfg.what, data_alarms.mins(age), data_alarms.mins(cfg.threshold));
   elsif p_name = 'live_poller' then
     if forced then age := make_interval(mins => (fz.fake->>'age_min')::int); n := coalesce((fz.fake->>'n')::int, 1);
@@ -200,7 +211,7 @@ begin
       bad := false; detail := format('live poller last wrote %s min ago; no unfinished ATP singles card dated today', data_alarms.mins(age));
       return;
     end if;
-    bad := age > cfg.threshold;
+    bad := age > lim;
     detail := format('live poller last wrote %s min ago (alarm above %s; %s unfinished ATP singles card(s) today)',
                      data_alarms.mins(age), data_alarms.mins(cfg.threshold), n);
   elsif p_name = 'kibl_stream' then
@@ -210,7 +221,7 @@ begin
       age := p_now - ts;
     end if;
     if age is null then bad := true; detail := 'kibl-stream has never written a heartbeat'; return; end if;
-    bad := age > cfg.threshold;
+    bad := age > lim;
     detail := format('kibl-stream heartbeat %s min old (alarm above %s)', data_alarms.mins(age), data_alarms.mins(cfg.threshold));
   elsif p_name = 'cron_jobs' then
     if forced then missing := array(select jsonb_array_elements_text(fz.fake->'missing'));
@@ -235,12 +246,15 @@ declare cfg data_alarms.config; fz data_alarms.force; lf record; b jsonb; st dat
 begin
   select * into cfg from data_alarms.config where name = 'close_cover';
   yday := to_char((p_now at time zone 'Europe/Berlin')::date - 1, 'YYYY-MM-DD');
-  -- once a day, from 09:00 UTC (the morning publish has run); a day already reported is not reported again
-  if extract(hour from p_now at time zone 'UTC') < 9 then return 'before 09:00Z'; end if;
+  -- once a day, from 10:00 Berlin (the board's own clock: yesterday = the Berlin day before; the morning publish has run).
+  -- A day already reported is not reported again. (Was UTC: at 23:00Z the Berlin date had turned, so the watch asked for
+  -- a day the pipeline had not reported yet and sent "no report" — 1 Nov 23:00Z.)
+  if extract(hour from p_now at time zone 'Europe/Berlin') < 10 then return 'before 10:00 Berlin'; end if;
   select * into fz from data_alarms.force where name = 'close_cover' and until > p_now;
   -- a [TEST] report never stands in for the real one, and the real one is sent once a day
   if fz.name is null and exists (select 1 from data_alarms.messages where alarm = 'close_cover' and kind = 'daily'
-               and text like '%' || yday || '%' and text not like '%[TEST]%' and delivery in ('sent', 'queued')) then return 'reported'; end if;
+               and text like '%' || yday || '%' and text not like '%[TEST]%' and text not like '%: no report%'
+               and delivery in ('sent', 'queued')) then return 'reported'; end if;
   if fz.name is not null and exists (select 1 from data_alarms.messages where alarm = 'close_cover' and kind = 'daily'
                and text like '%[TEST]%' and created_at > now() - interval '30 minutes' and delivery in ('sent', 'queued')) then return 'test reported'; end if;
   if fz.name is not null then b := fz.fake; pre := '[TEST] ';
@@ -248,19 +262,22 @@ begin
     select * into lf from data_alarms.last_fetch('coverage');
     b := (lf.f).body;
     if b is null or b->>'day' is distinct from yday then
-      if extract(hour from p_now at time zone 'UTC') < 12 then return 'waiting for ' || yday; end if;
-      -- "no report" only once the file has actually been READ since 12:00Z and was missing or for another day — never on a
-      -- tick that has not read it yet (the first tick after an install, or a test's first tick, read nothing)
+      if extract(hour from p_now at time zone 'Europe/Berlin') < 14 then return 'waiting for ' || yday; end if;
+      -- "no report" only once the file has actually been READ since 14:00 Berlin and was missing or for another day —
+      -- never on a tick that has not read it yet (the first tick after an install, or a test's first tick, read nothing)
       if not exists (select 1 from data_alarms.fetches where source = 'coverage' and processed_at is not null
-                       and fired_at >= date_trunc('day', p_now at time zone 'UTC') at time zone 'UTC' + interval '12 hours') then
+                       and fired_at >= (date_trunc('day', p_now at time zone 'Europe/Berlin') + interval '14 hours') at time zone 'Europe/Berlin') then
         return 'waiting for a read of close-coverage.json';
       end if;
+      -- said once a day; a real report that turns up later still goes out
+      if exists (select 1 from data_alarms.messages where alarm = 'close_cover' and kind = 'daily' and text like '%' || yday || ': no report%'
+                   and delivery in ('sent', 'queued')) then return 'no report already said for ' || yday; end if;
       b := jsonb_build_object('day', yday, 'unread', true);
     end if;
   end if;
   if b ? 'unread' then
     is_bad := true;
-    head := format('%sClose coverage %s: no report (close-coverage.json for that day could not be read by 12:00Z).', pre, yday);
+    head := format('%sClose coverage %s: no report (close-coverage.json for that day could not be read by 14:00 Berlin).', pre, yday);
   else
     x := (b->>'x')::int; y := (b->>'y')::int;
     pct := case when y > 0 then round(100.0 * x / y, 1) end;
@@ -309,9 +326,17 @@ begin
   update data_alarms.state set checked_at = p_now, last_detail = j.detail where name = p_name;
   if j.bad is null then return p_name || ': nothing to judge'; end if;
   pre := case when j.forced then '[TEST] ' else '' end;
+  if not j.bad then
+    update data_alarms.state set strikes = 0 where name = p_name;
+  elsif not st.bad then
+    update data_alarms.state set strikes = strikes + 1 where name = p_name;
+    if st.strikes + 1 < coalesce((select confirm_ticks from data_alarms.config where name = p_name), 1) then
+      return p_name || ': bad, not yet confirmed (' || (st.strikes + 1) || ' tick) ' || j.detail;
+    end if;
+  end if;
   if j.bad and not st.bad then
     txt := pre || 'ALARM — ' || j.detail || E'\n' || data_alarms.utc(p_now) || ' (pg_cron)';
-    update data_alarms.state set bad = true, since = p_now, detail = j.detail, owe = 'alert', owe_text = txt, test = j.forced where name = p_name;
+    update data_alarms.state set bad = true, since = p_now, detail = j.detail, owe = 'alert', owe_text = txt, test = j.forced, strikes = 0 where name = p_name;
   elsif not j.bad and st.bad then
     txt := case when st.test or j.forced then '[TEST] ' else '' end || 'RECOVERED — ' || j.detail || format(' (bad since %s, %s min)', data_alarms.utc(st.since), data_alarms.mins(p_now - st.since))
            || E'\n' || data_alarms.utc(p_now) || ' (pg_cron)';

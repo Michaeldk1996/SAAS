@@ -119,14 +119,23 @@ def suite(tag, src=SRC):
     answer(build_min=3); tick(); deliver()
     check(f'{tag}data_age: stays fresh → nothing more', len(msgs('data_age')) == 2, msgs('data_age'))
 
-    # card_state: 60 is not stale, 61 is; a failed send is sent again
+    # card_state (hysteresis): 59 is fine; 61 once is not yet an alarm, twice in a row is; a failed send is sent again;
+    # once bad it recovers only below 45 min (on a healthy day the published age sits near 60 — it flapped on 1 Nov)
     answer(card_min=59); tick(); deliver()
     check(f'{tag}card_state: 59 min → no alarm', not msgs('card_state'), msgs('card_state'))
+    answer(card_min=61); tick(); deliver()
+    check(f'{tag}card_state: 61 min on ONE tick → not yet an alarm (2 ticks in a row needed)', not msgs('card_state'), msgs('card_state'))
+    answer(card_min=59); tick(); deliver()
+    answer(card_min=61); tick(); deliver()
+    check(f'{tag}card_state: a good tick in between resets the count', not msgs('card_state'), msgs('card_state'))
     answer(card_min=61); tick(); deliver(code=500)
     answer(card_min=62); tick()
     a = msgs('card_state')
-    check(f'{tag}card_state: an alert whose send failed (HTTP 500) is sent again', len(a) == 2 and 'failed: HTTP 500' in a[0] and 'ALARM' in a[1], a)
-    deliver(); answer(card_min=2); tick(); deliver()
+    check(f'{tag}card_state: bad twice in a row → ALARM; a send that failed (HTTP 500) is sent again', len(a) == 2 and 'failed: HTTP 500' in a[0] and 'ALARM' in a[1], a)
+    deliver(); answer(card_min=50); tick(); deliver()
+    check(f'{tag}card_state: 50 min after an alarm → still bad (recovers only below 45)', len(msgs('card_state')) == 2, msgs('card_state'))
+    answer(card_min=40); tick(); deliver()
+    check(f'{tag}card_state: 40 min → RECOVERED', len(msgs('card_state')) == 3 and 'RECOVERED' in msgs('card_state')[2], msgs('card_state'))
 
     # unreadable twice in a row is an alarm; once is not
     answer(status=503, only={'build_info'}); answer(only={'card_state', 'matches', 'coverage'}); tick(); deliver()
@@ -172,15 +181,15 @@ def suite(tag, src=SRC):
 def coverage_checks():
     reset()
     yday = q("select to_char((now() at time zone 'Europe/Berlin')::date - 1, 'YYYY-MM-DD')")
-    hour = int(q("select extract(hour from now() at time zone 'UTC')::int"))
+    hour = int(q("select extract(hour from now() at time zone 'Europe/Berlin')::int"))
     cover = {'day': yday, 'generatedAt': iso(5), 'x': 15, 'y': 18, 'recovered': 2, 'approx': None,
              'buckets': {'no verified start': 2, 'book quiet before start': 1},
              'dashes': [{'match': 'A v B', 'bucket': 'book quiet before start', 'reason': 'no card-state close (book went quiet before the start)'}]}
     tick(); answer(cover=cover); tick(); deliver()
     a = msgs('close_cover')
-    if hour < 9:
-        check('close_cover: before 09:00Z → no daily report yet', not a, a)
-        print('  NOTE  the daily-report half runs only after 09:00Z UTC; it is exercised by the force path below')
+    if hour < 10:
+        check('close_cover: before 10:00 Berlin → no daily report yet', not a, a)
+        print('  NOTE  the daily-report half runs only after 10:00 Berlin; it is exercised by the force path below')
     else:
         check('close_cover: 15 of 18 (83.3%) → one daily message, ALARM, with the dash and its reason',
               len(a) == 1 and 'ALARM' in a[0] and '15 of 18' in a[0] and 'A v B' in a[0] and 'book went quiet' in a[0], a)
@@ -204,6 +213,12 @@ def coverage_checks():
     tick(); answer(cover=real); tick()
     q2 = q("select data_alarms.coverage(date_trunc('day', now()) + interval '10 hours')")
     a2 = msgs('close_cover', 'daily')
+    q("delete from data_alarms.messages where alarm = 'close_cover' and kind = 'daily' and text like '%17 of 18%'")
+    q(f"insert into data_alarms.messages (alarm, kind, text, delivery) values ('close_cover', 'daily', 'ALARM — Close coverage {yday}: no report (x).', 'sent')")
+    q("select data_alarms.coverage(date_trunc('day', now()) + interval '10 hours')")
+    a3 = msgs('close_cover', 'daily')
+    check('close_cover: an earlier "no report" for the day never blocks its real report when it turns up',
+          any('17 of 18' in x for x in a3), a3)
     check('close_cover: the real report still goes out after a [TEST] one the same day (17 of 18, no ALARM)',
           any('17 of 18' in x and '[TEST]' not in x and 'ALARM' not in x for x in a2), [q2] + a2)
 
@@ -216,12 +231,14 @@ try:
     coverage_checks()
     # mutants: each must turn the behaviour red
     MUT = [
-        ('the threshold dropped (never stale)', 'bad := age > cfg.threshold;', 'bad := false;'),
+        ('the threshold dropped (never stale)', 'bad := age > lim;', 'bad := false;'),
         ('the streak rule dropped (alert every tick)', 'if j.bad and not st.bad then', 'if j.bad then'),
         ('the delivery check dropped (a failed send is never re-sent)',
          "update data_alarms.state s set owe = null, owe_text = null\n   where s.owe is not null and exists",
          "update data_alarms.state s set owe = null, owe_text = null\n   where s.owe is not null or exists"),
         ('the schedule condition dropped (alarm when nothing is scheduled)', 'if coalesce(n, 0) = 0 then', 'if false then'),
+        ('the confirm count dropped (one bad tick alerts)', 'if st.strikes + 1 < coalesce(', 'if false and st.strikes + 1 < coalesce('),
+        ('the recovery limit dropped (flaps around the threshold)', 'then coalesce(cfg.recover_below, cfg.threshold) else cfg.threshold end;', 'then cfg.threshold else cfg.threshold end;'),
     ]
     saved = (passed, failed)
     for name, a, b in MUT:
