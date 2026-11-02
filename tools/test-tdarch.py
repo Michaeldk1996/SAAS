@@ -619,5 +619,17 @@ lf = T.lower_feed_rows([_ap(T.APPROX_SOURCE, 1.5), _ap(T.SCHED_SOURCE, 1.6)])
 check('before start: in the lower feed it wins over api-tennis Pinnacle (one source per match)', [x['source'] for x in lf] == [T.SCHED_SOURCE], lf)
 lf2 = T.lower_feed_rows([_ap(T.START10_SOURCE, 1.55), _ap(T.SCHED_SOURCE, 1.6)])
 check('before start: start − 10 still ranks above it', [x['source'] for x in lf2] == [T.START10_SOURCE], lf2)
+# the fetch the importer uses keeps the ATP main-draw matches (the first build dropped every one: atp-nt never reached it)
+_at0 = T._at
+T._at = lambda q: {'success': 1, 'result': [SF(911, 'Atp Singles'), SF(912, 'Challenger Men Singles'), SF(913, 'Wta Singles')]} if q['method'] == 'get_fixtures' else {'result': {}}
+try:
+    fk_main, _, _ = T._lower_fixtures('2026-10-27', '2026-10-27', keep_main=True)
+    fk_low, _, _ = T._lower_fixtures('2026-10-27', '2026-10-27')
+finally:
+    T._at = _at0
+check('before start: the importer fetch keeps the ATP main-draw match (atp-nt); the lower-level fetch still drops it; WTA never',
+      sorted(f['event_key'] for f in fk_main) == [911, 912] and [f['event_key'] for f in fk_low] == [912], (fk_main, fk_low))
+import inspect
+check('before start: cmd_sched_import asks for the main-draw fixtures', 'keep_main=True' in inspect.getsource(T.cmd_sched_import))
 print(f'\ntest-tdarch: {passed} passed, {failed} failed')
 sys.exit(1 if failed else 0)

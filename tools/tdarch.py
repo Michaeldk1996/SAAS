@@ -1063,7 +1063,9 @@ def lower_feed_rows(current):
     return out
 
 
-def _lower_fixtures(frm, to):
+def _lower_fixtures(frm, to, keep_main=False):
+    """api-tennis fixtures of the window (UTC). Lower levels only, unless `keep_main`: the before-start import also keeps the
+    ATP main-draw matches with no Tennis-Data row ('atp-nt', sched_level) — without it Task B's own level never reached it."""
     import concurrent.futures as cf
     d0, d1 = dt.date.fromisoformat(frm), dt.date.fromisoformat(to)
     days = [(d0 + dt.timedelta(days=i)).isoformat() for i in range((d1 - d0).days + 1)]
@@ -1089,7 +1091,7 @@ def _lower_fixtures(frm, to):
                 od[str(ek)] = (v or {}).get('Home/Away') or {}
     ruled = mark_rule_qualifying(fx)
     print(f'single qualifying rule: {ruled} ATP fixture(s) the flag filed as main draw are qualifying (atp-q)')
-    return [f for f in fx if lower_level(f)], od, empty
+    return [f for f in fx if lower_level(f) or (keep_main and sched_level(f) == 'atp-nt')], od, empty
 
 
 # ── Pinnacle (approx.) before the start (founder 2026-11-01, Task B: "the 300 s rule stays for 'real close'. Where no
@@ -1186,7 +1188,7 @@ def sched_rows(fixtures, od_of, od_fixtures, series_of, first_live, fetched_at, 
 def cmd_sched_import(dry_run=False, frm=SCHED_FROM, to=None):
     """Write the before-start snapshots (append-only; a changed price is a new row superseding the old one)."""
     to = to or (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=1)).date().isoformat()
-    fx, _od, _empty = _lower_fixtures(frm, to)
+    fx, _od, _empty = _lower_fixtures(frm, to, keep_main=True)
     if not fx:
         P.die('api-tennis returned no fixture for the whole window: nothing written')
     R = P._load('roh', 'refresh-odds-history.py')
