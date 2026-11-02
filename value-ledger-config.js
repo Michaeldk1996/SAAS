@@ -1,9 +1,13 @@
 // Model value ledger — the ONE config (founder brief 2026-11-01). Michael changes the numbers here, and only here.
 //
-// Edge = model probability × decimal odds − 1, against the bet105 price of the snapshot. The tier is never stored: the
+// Edge = model probability × decimal odds − 1, against the bet105 price of the snapshot (see edgeBasis). The tier is never stored: the
 // export reads the stored edge through these thresholds, so changing them re-tests the same rows. A tier holds edges in
 // [min, max); max null = no upper bound. Below the lowest min = untagged.
 module.exports = {
+  // Which bet105 price the edge (and so the tier and the first-edge snapshot) is measured against (Michael 2026-11-01:
+  // "use the bet105 prices devigged"): 'b105-novig' = the no-vig price of the snapshot's bet105 pair (both sides needed,
+  // else no edge); 'b105' = the price as quoted. Profit is always settled at the price as quoted — the price you can bet.
+  edgeBasis: 'b105-novig',
   tiers: [
     { name: 'Value',           min: 0.02, max: 0.05 },
     { name: 'Strong value',    min: 0.05, max: 0.10 },

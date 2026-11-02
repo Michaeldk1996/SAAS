@@ -54,10 +54,14 @@ check('alt-anchor (state 1) is its own kind, never "full"', L.priceKindOf(1) ===
 
 // ── key marks ─────────────────────────────────────────────────────────────────────────────────────────────────────────
 console.log('key marks');
-const sn = [{ id: 1, event_key: 9, side: 'p1', snapshot_ts: '2026-11-01T01:00:00Z', edge_b105: -0.01 }, { id: 2, event_key: 9, side: 'p1', snapshot_ts: '2026-11-01T02:00:00Z', edge_b105: 0.004 },
-  { id: 3, event_key: 9, side: 'p1', snapshot_ts: '2026-11-01T03:00:00Z', edge_b105: 0.08 }, { id: 4, event_key: 9, side: 'p2', snapshot_ts: '2026-11-01T03:00:00Z', edge_b105: null }];
+const S0 = (id, side, ts, prob, b, o) => ({ id, event_key: 9, side, snapshot_ts: ts, model_prob: prob, b105_price: b, b105_opp_price: o, edge_b105: L.edgeOf(prob, b) });
+// no-vig 2.0 | 1.9: implied .5 + .5263 → share .4872 → 2.0526. prob .49: quoted −2.0%, no-vig +0.6% (the basis decides)
+const sn = [S0(1, 'p1', '2026-11-01T01:00:00Z', 0.45, 2.0, 1.9), S0(2, 'p1', '2026-11-01T02:00:00Z', 0.49, 2.0, 1.9),
+  S0(3, 'p1', '2026-11-01T03:00:00Z', 0.55, 2.0, 1.9), S0(4, 'p2', '2026-11-01T03:00:00Z', 0.6, 1.9, null)];
+check('no-vig price of one side of a pair; a missing side gives none', near(L.noVig(2.0, 1.9), 2.052632) && L.noVig(2.0, null) === null);
+check('edge basis: no-vig (the config default) vs as quoted', CFG.edgeBasis === 'b105-novig' && near(L.edgeFor(sn[1]), 0.49 * 2.052632 - 1) && near(L.edgeFor(sn[1], 'b105'), -0.02));
 const fe = L.firstEdgeMarks(sn, []);
-check('first edge = the earliest positive edge (any size), one per side; no edge → no mark', fe.length === 1 && fe[0].snapshot_id === 2 && fe[0].kind === 'first_edge');
+check('first edge = the earliest positive no-vig edge (any size), one per side; no opposite price → no edge, no mark', fe.length === 1 && fe[0].snapshot_id === 2 && fe[0].kind === 'first_edge' && fe[0].detail.basis === 'b105-novig');
 check('an existing first_edge mark is never replaced', L.firstEdgeMarks(sn, [{ event_key: 9, side: 'p1', kind: 'first_edge' }]).length === 0);
 check('last before start = the newest snapshot strictly before the verified start', L.lastBefore(sn.filter(r => r.side === 'p1'), '2026-11-01T03:00:00Z').id === 2 && L.lastBefore(sn, '2026-11-01T00:00:00Z') === null);
 const closes = new Map([['300', { eventKey: 300, p1Key: 22, p2Key: 11, p1: 2.5, p2: 1.6, startTs: '2026-11-01T11:05:00Z', startSource: 'live-flip (last poll not live)', closeTs: '2026-11-01T10:50:00Z', label: 'captured' }]]);
@@ -99,23 +103,34 @@ check('an unfinished match is not settled', L.settlementFor({ mark: mk, snap: { 
 console.log('export');
 const snaps = [], marks = [], settles = [];
 for (let i = 1; i <= 40; i++) {
-  snaps.push({ id: i, event_key: 1000 + i, side: 'p1', snapshot_ts: '2026-11-01T00:00:00Z', price_kind: i <= 35 ? 'full' : 'elo-only', edge_b105: 0.03, b105_price: 2 });
+  // prob .5 at bet105 2.0 | 1.9 → no-vig edge +2.6% (Value); as quoted 0.0% (untagged)
+  snaps.push({ id: i, event_key: 1000 + i, side: 'p1', snapshot_ts: '2026-11-01T00:00:00Z', price_kind: i <= 35 ? 'full' : 'elo-only', model_prob: 0.5, b105_price: 2, b105_opp_price: 1.9, edge_b105: 0 });
   marks.push({ id: i, event_key: 1000 + i, side: 'p1', kind: 'last_pre_start', snapshot_id: i });
-  settles.push({ id: i, event_key: 1000 + i, side: 'p1', mark_kind: 'last_pre_start', result: i % 2 ? 'won' : 'lost', profit: i % 2 ? 1 : -1, clv: 0.02, close_gap_s: i === 1 ? 7200 : 600 });
+  settles.push({ id: i, event_key: 1000 + i, side: 'p1', mark_kind: 'last_pre_start', result: i % 2 ? 'won' : 'lost', close_price: 2.1, close_opp_price: 1.8, close_gap_s: i === 1 ? 7200 : 600 });
 }
-snaps.push({ id: 99, event_key: 2000, side: 'p2', snapshot_ts: '2026-11-01T00:00:00Z', price_kind: 'full', edge_b105: 0.01 });
+snaps.push({ id: 99, event_key: 2000, side: 'p2', snapshot_ts: '2026-11-01T00:00:00Z', price_kind: 'full', model_prob: 0.3, b105_price: 2, b105_opp_price: 1.9, edge_b105: -0.4 });
 const X = L.exportRows(snaps, marks, settles);
 const sum = L.summarise(X.keyRows);
 const full = sum.find(s => s.key_snapshot === 'last_pre_start' && s.price_kind === 'full' && s.tier === 'Value');
 const elo = sum.find(s => s.key_snapshot === 'last_pre_start' && s.price_kind === 'elo-only' && s.tier === 'Value');
-check('35 full-model Value bets: rates shown, each with its count', full.bets === 35 && near(full.win_rate, 18 / 35) && near(full.roi, 1 / 35) && full.clv_n === 34);
-check('CLV only from a close seen ≤ 60 min before the start (the 2-hour-old one is left out, counted)', full.clv_n === 34 && near(full.avg_clv, 0.02));
+check('35 full-model Value bets: rates shown, each with its count; profit at the price as quoted (2.0 → +1 / −1)', full.bets === 35 && near(full.win_rate, 18 / 35) && near(full.roi, 1 / 35) && full.clv_n === 34);
+const clvX = 2 * ((1 / 2.1) / (1 / 2.1 + 1 / 1.8)) - 1;
+check('CLV only from a close seen ≤ 60 min before the start (the 2-hour-old one is left out, counted); CLV = quoted × no-vig close − 1', full.clv_n === 34 && near(full.avg_clv, clvX));
 check('Elo-only rows never mixed in: their own row; 5 bets < 30 → count shown, rates a dash', elo.bets === 5 && elo.win_rate === null && elo.roi === null && elo.avg_clv === null && elo.profit != null);
-check('an unmarked snapshot is listed but not in the summary', X.rows.length === 41 && X.keyRows.length === 40);
+check('each side lists its first-edge and last-pre-start rows (here the same snapshot); an unmarked snapshot is listed but not in the summary', X.keyRows.length === 80 && X.rows.length === 81 && X.rows[80].snapshot_id === 99);
 const csv = L.toCsv(X.keyRows, X.rows, CFG, '2026-11-01T05:00:00Z');
 const first = csv.split('\n');
 check('the CSV opens with the tier summary, then every row', /^Model value ledger — tier summary/.test(first[0]) && first[2].startsWith('key snapshot,') && csv.includes('\n\nsnapshot_id,'));
 check('thin tier rows print a dash for the rates, never 0', first.some(x => x.startsWith('last_pre_start,elo-only,Value,5,5,5,') && x.split(',')[8] === '—' && x.split(',')[11] === '—'));
+check('the same rows re-tier on the quoted basis (0.0% → untagged)', L.summarise(L.exportRows(snaps, marks, settles, Object.assign({}, CFG, { edgeBasis: 'b105' })).keyRows, Object.assign({}, CFG, { edgeBasis: 'b105' })).find(s => s.key_snapshot === 'last_pre_start' && s.price_kind === 'full' && s.tier === 'untagged').bets === 35);
+check('first edge derived at export: the earliest positive edge at or before the last-pre-start snapshot', (() => {
+  const a = [{ id: 1, event_key: 7, side: 'p1', snapshot_ts: '2026-11-01T01:00:00Z', price_kind: 'full', model_prob: 0.3, b105_price: 2, b105_opp_price: 1.9 },
+    { id: 2, event_key: 7, side: 'p1', snapshot_ts: '2026-11-01T02:00:00Z', price_kind: 'full', model_prob: 0.6, b105_price: 2, b105_opp_price: 1.9 },
+    { id: 3, event_key: 7, side: 'p1', snapshot_ts: '2026-11-01T03:00:00Z', price_kind: 'full', model_prob: 0.6, b105_price: 2.2, b105_opp_price: 1.7 }];
+  const r = L.exportRows(a, [{ event_key: 7, side: 'p1', kind: 'last_pre_start', snapshot_id: 3 }], [{ id: 9, event_key: 7, side: 'p1', mark_kind: 'last_pre_start', result: 'won' }]).keyRows;
+  const f = r.find(x => x.mark_kind === 'first_edge'), l = r.find(x => x.mark_kind === 'last_pre_start');
+  return f.snapshot_id === 2 && near(f.profit, 1) && l.snapshot_id === 3 && near(l.profit, 1.2);
+})());
 check('a correction supersedes: the newest settlement is the one read', (() => {
   const s2 = settles.concat([{ id: 500, event_key: 1001, side: 'p1', mark_kind: 'last_pre_start', result: 'void', profit: 0, clv: null, supersedes: 1 }]);
   return L.exportRows(snaps, marks, s2).keyRows.find(r => r.event_key === 1001).result === 'void';

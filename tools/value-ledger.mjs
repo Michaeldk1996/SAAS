@@ -42,6 +42,12 @@ const r6 = x => (x == null ? null : Math.round(x * 1e6) / 1e6);
 export function eventKeyOf(m) { const x = /(\d+)$/.exec(String((m && m.id) || '')); return x ? Number(x[1]) : null; }
 // Edge = probability × decimal odds − 1 (the brief's definition). Null when either is missing.
 export function edgeOf(prob, price) { const p = num(prob), o = px(price); return p == null || o == null ? null : r6(p * o - 1); }
+// The no-vig decimal price of one side of a two-way pair (1 / its share of the summed implied), or null.
+export function noVig(price, opp) { const a = px(price), b = px(opp); return a == null || b == null ? null : r6(1 / ((1 / a) / (1 / a + 1 / b))); }
+// A snapshot's edge on the configured basis: vs the no-vig bet105 price (default) or vs the price as quoted.
+export function edgeFor(s, basis = CFG.edgeBasis) {
+  return basis === 'b105' ? num(s.edge_b105) : edgeOf(s.model_prob, noVig(s.b105_price, s.b105_opp_price));
+}
 // The tier of an edge under the config's thresholds, or null (untagged / no edge).
 export function tierOf(edge, tiers = CFG.tiers) {
   if (edge == null || !Number.isFinite(edge)) return null;
@@ -145,11 +151,11 @@ export function firstEdgeMarks(snaps, existing) {
   const have = new Set((existing || []).filter(x => x.kind === 'first_edge').map(x => x.event_key + '|' + x.side));
   const best = new Map();
   for (const r of snaps || []) {
-    if (!(r.edge_b105 > 0) || r.id == null) continue;
+    if (!(edgeFor(r) > 0) || r.id == null) continue;
     const k = r.event_key + '|' + r.side; if (have.has(k)) continue;
     const b = best.get(k); if (!b || Date.parse(r.snapshot_ts) < Date.parse(b.snapshot_ts) || (r.snapshot_ts === b.snapshot_ts && r.id < b.id)) best.set(k, r);
   }
-  return [...best.values()].map(r => ({ event_key: r.event_key, side: r.side, kind: 'first_edge', snapshot_id: r.id, detail: { edge_b105: r.edge_b105 } }));
+  return [...best.values()].map(r => ({ event_key: r.event_key, side: r.side, kind: 'first_edge', snapshot_id: r.id, detail: { edge_b105: r.edge_b105, edge: edgeFor(r), basis: CFG.edgeBasis } }));
 }
 // The last snapshot strictly before the verified start (null when none).
 export function lastBefore(snaps, startIso) {
@@ -237,7 +243,7 @@ export function toCsv(keyRows, allRows, cfg = CFG, generatedAt = new Date().toIS
   const S = summarise(keyRows, cfg), L = [];
   const tierTxt = cfg.tiers.map(t => `${t.name} ${pct(t.min, 0)}${t.max == null ? '+' : '–' + pct(t.max, 0)}`).join(' · ');
   L.push(['Model value ledger — tier summary', generatedAt].map(cell).join(','));
-  L.push(cell(`Edge = model probability × bet105 price − 1. Tiers: ${tierTxt}; below ${pct(cfg.tiers[0].min, 0)} untagged. Rates need ${cfg.minSettledForRates} settled bets (else a dash, with the count). CLV only from a Pinnacle close seen ≤ ${cfg.clvCloseMaxGapMin == null ? 'any' : cfg.clvCloseMaxGapMin} min before the start. Population: every snapshot that is a key snapshot of its match-side.`));
+  L.push(cell(`Edge = model probability × bet105 ${cfg.edgeBasis === 'b105' ? 'price as quoted' : 'no-vig price (both sides of the pair)'} − 1; profit at the price as quoted. Tiers: ${tierTxt}; below ${pct(cfg.tiers[0].min, 0)} untagged. Rates need ${cfg.minSettledForRates} settled bets (else a dash, with the count). CLV only from a Pinnacle close seen ≤ ${cfg.clvCloseMaxGapMin == null ? 'any' : cfg.clvCloseMaxGapMin} min before the start. Population: every snapshot that is a key snapshot of its match-side.`));
   L.push(['key snapshot', 'price kind', 'tier', 'key snapshots', 'settled', 'bets (priced, not void)', 'void', 'no bet105 price', 'avg CLV', 'CLV n', 'won', 'win rate', 'win rate n', 'profit (1u flat)', 'ROI', 'ROI n'].map(cell).join(','));
   for (const s of S) {
     if (!s.rows) continue;
@@ -247,27 +253,45 @@ export function toCsv(keyRows, allRows, cfg = CFG, generatedAt = new Date().toIS
   L.push('');
   const cols = ['snapshot_id', 'snapshot_ts', 'event_key', 'side', 'player', 'opponent', 'tournament', 'tier_of_event', 'surface', 'round', 'scheduled_start',
     'price_kind', 'base_state', 'shown_on_page', 'layers_active', 'layers_total', 'model_prob', 'model_fair_odds', 'pin_anchor_price', 'pin_anchor_ts',
-    'pin_now_price', 'pin_now_read_at', 'b105_price', 'b105_price_at', 'b105_status', 'edge_b105', 'edge_pin', 'value_tier', 'key_snapshot',
+    'pin_now_price', 'pin_now_read_at', 'b105_price', 'b105_opp_price', 'b105_price_at', 'b105_status', 'edge_b105', 'edge', 'edge_pin', 'value_tier', 'key_snapshot',
     'close_price', 'close_opp_price', 'close_ts', 'close_label', 'close_gap_s', 'clv', 'result', 'bet_rule', 'profit', 'no_profit_reason'];
   L.push(cols.map(cell).join(','));
   for (const r of allRows) L.push(cols.map(c => cell(c === 'value_tier' ? r.tier : c === 'tier_of_event' ? r.event_tier : c === 'key_snapshot' ? r.mark_kind : r[c])).join(','));
   return L.join('\n') + '\n';
 }
-// Joins the three tables into export rows: one per (snapshot, mark), plus every other snapshot (key_snapshot empty).
+// Joins the three tables into export rows. The tier and the first-edge snapshot are derived HERE from the stored prices on
+// the configured basis (so a basis or threshold change re-tests the same rows); the stored first_edge marks stay in the
+// database as the record of what each run saw. last_pre_start = the stored mark (cut at the verified start). A match-side's
+// close and result come from its newest settlement row (any key snapshot: they are the match's); CLV and profit are
+// worked from each key snapshot's own bet105 price.
 export function exportRows(snaps, marks, settles, cfg = CFG) {
   const byId = new Map(snaps.map(s => [s.id, s]));
-  const live = new Map();   // the newest settlement per (event, side, mark): a correction names what it supersedes
   const superseded = new Set(settles.map(x => x.supersedes).filter(x => x != null));
-  for (const x of settles) if (!superseded.has(x.id)) live.set(x.event_key + '|' + x.side + '|' + x.mark_kind, x);
+  const settleOf = new Map();
+  for (const x of settles) if (!superseded.has(x.id)) { const k = x.event_key + '|' + x.side; const p = settleOf.get(k); if (!p || x.id > p.id) settleOf.set(k, x); }
+  const edge = s => edgeFor(s, cfg.edgeBasis);
+  const base = s => Object.assign({}, s, { snapshot_id: s.id, event_tier: s.tier, edge: edge(s), tier: tierOf(edge(s), cfg.tiers) || 'untagged' });
+  const settled = (s, kind) => {
+    const st = settleOf.get(s.event_key + '|' + s.side) || {};
+    const b = px(s.b105_price), res = st.result ?? null, close = px(st.close_price), opp = px(st.close_opp_price);
+    return Object.assign(base(s), { mark_kind: kind, close_price: close, close_opp_price: opp, close_ts: st.close_ts ?? null,
+      close_label: st.close_label ?? null, close_gap_s: num(st.close_gap_s),
+      clv: b != null && close != null && opp != null ? r6(PICKS.clv(b, close, opp)) : null,
+      result: res, bet_rule: st.bet_rule ?? null,
+      profit: res == null || b == null ? null : res === 'void' ? 0 : res === 'won' ? r6(b - 1) : -1,
+      no_profit_reason: res != null && b == null ? 'no bet105 price at this snapshot' : null });
+  };
+  const lps = new Map(marks.filter(m => m.kind === 'last_pre_start').map(m => [m.event_key + '|' + m.side, m]));
+  const bySide = new Map();
+  for (const s of snaps) { const k = s.event_key + '|' + s.side; if (!bySide.has(k)) bySide.set(k, []); bySide.get(k).push(s); }
   const rows = [], keyed = new Set();
-  const base = s => Object.assign({}, s, { snapshot_id: s.id, event_tier: s.tier, tier: tierOf(num(s.edge_b105), cfg.tiers) || 'untagged' });
-  for (const mk of marks) {
-    const s = byId.get(mk.snapshot_id); if (!s) continue;
-    keyed.add(s.id);
-    const st = live.get(mk.event_key + '|' + mk.side + '|' + mk.kind) || {};
-    rows.push(Object.assign(base(s), { mark_kind: mk.kind, close_price: st.close_price ?? null, close_opp_price: st.close_opp_price ?? null,
-      close_ts: st.close_ts ?? null, close_label: st.close_label ?? null, close_gap_s: num(st.close_gap_s), clv: num(st.clv),
-      result: st.result ?? null, bet_rule: st.bet_rule ?? null, profit: num(st.profit), no_profit_reason: st.no_profit_reason ?? null }));
+  for (const [k, list] of bySide) {
+    const lm = lps.get(k), last = lm ? byId.get(lm.snapshot_id) : null;
+    const cut = last ? Date.parse(last.snapshot_ts) : Infinity;
+    const first = list.filter(s => edge(s) > 0 && Date.parse(s.snapshot_ts) <= cut)
+      .sort((a, b) => Date.parse(a.snapshot_ts) - Date.parse(b.snapshot_ts) || a.id - b.id)[0];
+    if (first) { rows.push(settled(first, 'first_edge')); keyed.add(first.id); }
+    if (last) { rows.push(settled(last, 'last_pre_start')); keyed.add(last.id); }
   }
   const keyRows = rows.slice();
   for (const s of snaps) if (!keyed.has(s.id)) rows.push(Object.assign(base(s), { mark_kind: null }));

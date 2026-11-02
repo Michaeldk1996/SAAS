@@ -17,9 +17,13 @@ yet (founder: tiers or marks on the match card / Model page come later, once the
   the latest api-tennis Pinnacle read + its time, the bet105 match-winner price from `line_prices_current` + its Kibl insert
   time (live only while the worker heartbeat is ≤ 3 min old; otherwise null with the reason), edge vs bet105 and vs
   Pinnacle. A missing price is null with its reason, never another book.
-- **Edge = model probability × decimal odds − 1.** The value tier is NEVER stored: the export reads the stored edge
-  through `value-ledger-config.js` `tiers` (Value 2–5% · Strong value 5–10% · Max value (+++) 10%+, below 2% untagged), so
-  a threshold change re-tests the same rows.
+- **Edge = model probability × the NO-VIG bet105 price − 1** (Michael 2026-11-01: "use the bet105 prices devigged";
+  `value-ledger-config.js` `edgeBasis: 'b105-novig'`, both sides of the pair needed, else no edge; `'b105'` = as quoted).
+  Profit is always at the price as quoted. The value tier is NEVER stored: the export works the edge from the stored
+  prices and reads it through `tiers` (Value 2–5% · Strong value 5–10% · Max value (+++) 10%+, below 2% untagged), so a
+  basis or threshold change re-tests the same rows. **The export derives the first-edge snapshot on that basis** (the
+  earliest positive edge at or before the last-pre-start snapshot); the stored `first_edge` marks are the record of what
+  each run saw. **Test:** `tools/test-value-ledger.mjs` (basis switch re-tiers the same rows; derived first edge).
 - **Key snapshots (marks):** `first_edge` = the first snapshot of a match-side with a positive edge vs bet105 (any size);
   `last_pre_start` = the last snapshot strictly before the VERIFIED start (the archive export's start, else the card's
   actual start — never the schedule). One per kind per match-side.
@@ -38,3 +42,14 @@ yet (founder: tiers or marks on the match card / Model page come later, once the
 The Model page's chip reads `h2h-model/config.js` `value.sharpEdge` 0.03 ("Sharp Value": fair prob − Pinnacle vig-free prob
 ≥ 3pp) and `value.softEdge` 0.05 ("Soft Book Value": fair prob − 1/best soft price ≥ 5pp) — probability gaps, not the
 ledger's expected-value edge vs bet105. Which applies on screen is Michael's call.
+
+## Historical backtest — reconstructed from records, never in the ledger (Michael 2026-11-01)
+`tools/value-backtest.mjs --out FILE.csv` (run by hand; reads the board's git history, so not a pipeline step). One row per
+side of every match the model priced at full model since 23 Jul 2026, frozen at its first full-model read (`admin-log.json`
+`valueSnapshot`, never recomputed). Entry price: bet105 at that moment (the Kibl archive, last price per side at or before
+the snapshot; both sides → no-vig) where it exists (from 19 Sep), else Pinnacle's no-vig price from the snapshot
+(fair − edge vs Pinnacle). Result: the board's (retirement rules via `settlement.js`), else the log's score (retirement
+unknown, said in the row). CLV only vs a verified board close. Summaries per price source — bet105 (as quoted) and
+Pinnacle no-vig (no margin: not bettable, flatters the result) are never pooled — by tier, by Sharp Value (`h2h-model/config.js`
+`value.sharpEdge`, the Model page's flag) and by month; under 30 bets the counts only. The file says "RECONSTRUCTED FROM
+RECORDS" on its first line and goes to the private ops repo `value-ledger/backtest/`. **Test:** `tools/test-value-backtest.mjs`.
