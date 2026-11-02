@@ -45,7 +45,7 @@
     var stat = function (k, v, cls) { return '<div class="sfh__stat"><span class="sfh__l">' + k + '</span><span class="sfh__v' + (cls || '') + (v === '—' ? ' sfh__v--none' : '') + '">' + v + '</span></div>'; };
     return '<div class="sfh do-head"><div class="sfh__text"><h1 class="sfh__title">Arbitrage</h1>' +
       '<p class="sfh__sub"><span class="do-subtitle">Upcoming ATP prices against the fair price (Bet105, margin removed), after fees.</span></p></div>' +
-      '<div class="sfh__stats">' + stat('Arbs', d ? String(d.arbs.length) : '—') + stat('Divergences', d ? String(d.divergences.length) : '—') +
+      '<div class="sfh__stats">' + stat('Arbs', d ? String(d.arbs.length + (d.liveOn && d.live ? d.live.length : 0)) : '—') + stat('Divergences', d ? String(d.divergences.length) : '—') +
       stat('Matches', d ? String(d.fair.length) : '—') + stat('Updated', d ? clock(d.at) : '—', ' sfh__v--soft') + '</div></div>';
   }
   function legHtml(l, player) {
@@ -63,6 +63,26 @@
         (a.retirementFlag ? '<div class="ar-flag">Retirement rules differ: Kalshi / Polymarket pay the player who advances once a ball is played; a bookmaker may void the bet on a retirement.</div>' : '') +
         '</div>';
     }).join('');
+  }
+  // Live (founder 2026-11-02): Kalshi × Polymarket during play, from the 2-second worker (live-arb.yml). Shown only while
+  // the worker is fresh (liveOn); otherwise the section is absent — never a feed-status message on the page.
+  function liveHtml(d) {
+    if (!d.liveOn) return '';
+    var rows = d.live || [];
+    var body = !rows.length ? '<div class="ar-empty">No live arbitrage above ' + pct(d.config.liveMin) + ' after fees right now.</div>' :
+      rows.map(function (g) {
+        var leg = function (who, src, dec, eff, liq) {
+          return '<div class="ar-leg"><span class="ar-leg-who">Back ' + esc(who) + '</span><span class="ar-leg-src">' + src + '</span>' +
+            '<span class="ar-px">' + px(dec) + '<span class="ar-fee">after fee ' + px(eff) + '</span></span><span class="ar-liq">' + usd(liq) + ' at price</span></div>';
+        };
+        return '<div class="ar-card"><div class="ar-card-h"><span class="ar-match">' + esc(g.match) + '</span>' +
+          '<span class="ar-when">' + (g.inPlay ? 'In play' : 'Past its start') + '</span><span class="ar-profit">' + pct(g.edge) + '</span></div>' +
+          leg(g.polyName, 'Polymarket', g.polyDec, g.polyEff, g.polyLiq) + leg(g.kalName, 'Kalshi', g.kalDec, g.kalEff, g.kalLiq) +
+          '<div class="ar-foot">Stakes ' + Number(g.stakePoly).toFixed(1) + '% / ' + Number(g.stakeKalshi).toFixed(1) + '% · up to ' + usd(g.stake) +
+          ' · prices ' + clock(g.polyAt) + ' / ' + clock(g.kalAt) + '</div></div>';
+      }).join('');
+    return '<h2 class="ar-h">Live · Kalshi × Polymarket</h2>' + body +
+      '<p class="ar-note">Live prices move every point: check both before you bet. Updated every 5 seconds.</p>';
   }
   function divsHtml(d) {
     if (!d.divergences.length) return '<div class="ar-empty">No price ' + pct(d.config.divMin) + ' or more above the fair price right now.</div>';
@@ -88,7 +108,7 @@
   function bodyHtml() {
     var d = st.data;
     if (!d) return '<div class="ar-empty">' + (st.failed ? 'Arbitrage data unavailable.' : 'Loading prices…') + '</div>';
-    return '<h2 class="ar-h">Arbitrage</h2>' + arbsHtml(d) + '<h2 class="ar-h">Divergence from the fair price</h2>' + divsHtml(d) +
+    return liveHtml(d) + '<h2 class="ar-h">Arbitrage</h2>' + arbsHtml(d) + '<h2 class="ar-h">Divergence from the fair price</h2>' + divsHtml(d) +
       '<h2 class="ar-h">Fair price per match</h2>' + fairHtml(d) +
       '<p class="ar-note">Fair = Bet105 with its margin removed. Kalshi and Polymarket prices carry their taker fees. A prediction-market leg needs ' +
       usd(d.config.minLiq) + ' at the price. Bookmaker limits are not known here.</p>';

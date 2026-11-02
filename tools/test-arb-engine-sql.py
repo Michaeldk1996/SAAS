@@ -11,6 +11,8 @@ Vault, then checks one match where every source has a price:
   Challenger fixture is not on the spine; a stale Bet105 heartbeat leaves no fair price (so no divergence);
   tick() posts each opportunity once per cooldown (no Vault secret -> recorded, nothing sent); arb_now() is readable by
   anon, the alerts table is not. CONTROL: div_min 50 -> no divergence.
+Live (founder 2026-11-02): arb_live_push() posts a started ATP Kalshi × Polymarket gap >= live_min with >= min_liq to
+  lock in, once per match + direction per live_cooldown; arb_now() lists live gaps only while the worker is fresh.
 No Postgres binaries on this machine -> SKIP out loud (never a pass); CI runners carry them."""
 import os, sys, json
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -132,6 +134,34 @@ try:
 
     q("update public.kibl_now_price set written_at = now() - interval '10 minutes'")
     o = opps(); check('a stale Bet105 heartbeat → no fair price, no divergence', o['fair'] == [] and o['divergences'] == [], o)
+
+    # LIVE (founder 2026-11-02): the in-play Kalshi × Polymarket worker's push
+    def gap(**kw):
+        g = {'match': 'Alex Molcan vs Titouan Droguet', 'event': 'Rolex Paris Masters', 'kalshiEvent': 'KXATPMATCH-26NOV02MOLDRO',
+             'dir': 'polyA+kalshiB', 'polyName': 'Alex Molcan', 'kalName': 'Titouan Droguet', 'polyDec': 2.222, 'polyEff': 2.17,
+             'polyLiq': 900, 'kalDec': 2.083, 'kalEff': 2.02, 'kalLiq': 480, 'edge': 2.4, 'contracts': 500, 'stake': 470,
+             'stakePoly': 48.2, 'stakeKalshi': 51.8, 'inPlay': True, 'started': True,
+             'polyAt': '2026-11-02T12:00:00Z', 'kalAt': '2026-11-02T12:00:01Z'}
+        g.update(kw); return g
+    def push(gaps):
+        return q("select public.arb_live_push($j$" + json.dumps({'gaps': gaps, 'worker': {'pairs': 3}}) + "$j$::jsonb)", 'service_role')
+    rc, out = q("select public.arb_live_push('{}'::jsonb)", 'anon'); check('anon cannot push live gaps', rc != 0, out)
+    rc, out = push([gap(), gap(dir='polyB+kalshiA', edge=0.6), gap(kalshiEvent='KXATPMATCH-X', dir='d2', stake=40),
+                    gap(kalshiEvent='KXATPMATCH-Y', started=False), gap(kalshiEvent='KXATPCHALLENGERMATCH-Z')])
+    check('live push posts only the one that qualifies (>= 1%, >= $100 to lock in, started, ATP tour)', rc == 0 and out == '1', out)
+    rc, out = push([gap()]); check('the same match + direction inside the live cooldown posts nothing', out == '0', out)
+    rc, out = q("select message from arb.alerts where kind = 'live'")
+    check('LIVE message: header, both legs after fee with dollars, profit, stakes',
+          out.startswith('⚡ LIVE ARB') and 'Back Alex Molcan @ 2.222 on Polymarket (after fee 2.17) · $900 at price' in out
+          and 'Back Titouan Droguet @ 2.083 on Kalshi (after fee 2.02) · $480 at price' in out
+          and '+2.40% after fees · stakes 48.2% / 51.8% · up to $470' in out and 'in play' in out, out)
+    a = json.loads(q("select public.arb_now()", 'anon')[1])
+    check('arb_now(): live list = the qualifying gaps only, feed on', a.get('liveOn') is True and [g['dir'] for g in a.get('live') or []] == ['polyA+kalshiB'] and a['config'].get('liveMin') == 1, a.get('live'))
+    q("update arb.live_state set at = now() - interval '5 minutes'")
+    a = json.loads(q("select public.arb_now()", 'anon')[1])
+    check('a stale worker (no push for 90 s) → no live list, feed off', a.get('liveOn') is False and a.get('live') is None, a.get('live'))
+    q("update arb.config set live_min = 5"); push([gap(kalshiEvent='KXATPMATCH-W')])
+    rc, out = q("select count(*) from arb.alerts where kind = 'live'"); check('CONTROL: live_min 5 → a 2.4% gap posts nothing', out == '1', out)
     q("update public.kibl_now_price set written_at = now()")
     q("update arb.config set div_min = 50")
     o = opps(); check('CONTROL: div_min 50 → no divergence (the threshold decides)', o['divergences'] == [], o['divergences'])

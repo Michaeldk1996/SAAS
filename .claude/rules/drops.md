@@ -71,6 +71,19 @@ answers on card 37612d3d (TEN-294 doc `design`). Suite: `test-ten294-drops.mjs`.
   bookmaker. Telegram ⚖️ ARB / 📐 DIVERGENCE to the drop chat, one per match + kind + source(s) per 30 min. Page: Dropping Odds
   → Arbitrage (`arb-page.js`, reads `public.arb_now()` with the publishable key every 30 s; a plain first build the founder
   designs later). **Test:** `tools/test-arb-engine-sql.py`, `test-arb-page.mjs`.
+- **Live arbitrage, Kalshi × Polymarket** (founder 2026-11-02, "Let's go!"; ATP tour only). `tools/live-arb-recorder.mjs`,
+  run by `live-arb.yml` (main only, 350-min runs, an hourly start keeps one queued so the next starts as the current ends):
+  Polymarket's public CLOB websocket (every book change) + Kalshi's public `KXATPMATCH` list every 2 s (YES ask + size; the
+  opponent's NO ask as the other way in, never sized). A pair joins on both names, exactly one candidate each way; Kalshi
+  Challengers (`KXATPCHALLENGERMATCH`) are never read. Gap = back one player on each market for < $1 after both taker fees
+  (the engine's 0.07·q(1−q) / 0.05·p(1−p)). Every 5 s the positive gaps + a heartbeat go to `public.arb_live_push`
+  (service role). **Test:** a gap posts ⚡ LIVE ARB (drop chat, the engine's `arb.send`) only when edge ≥ `config.live_min`
+  (1%), ≥ `min_liq` ($100) to lock in, the match has started (Polymarket `live` or its start passed; before the start the
+  30-s engine covers it) and the Kalshi event is `KXATPMATCH-`, once per match + direction per `live_cooldown` (10 min).
+  `arb_now()` carries `live` only while the last push is ≤ `live_hb_max` (90 s) old; otherwise the page draws no live
+  section (no feed-status text). Bet105 joins when Kibl serves in-play lines (measured 2 Nov 01:05Z: 0 in-play rows for
+  every sport on feed 171; founder asking Kibl). **Test:** `tools/test-live-arb-recorder.mjs`, `tools/test-arb-engine-sql.py`
+  ("LIVE"), `test-arb-page.mjs` ("live section").
 - **NoVig: not built** (founder 2026-11-01 "try NoVig as possible"): its prices and book need a signed key from a NoVig account
   (`docs.novig.com`, Ed25519 / P-256); the only keyless route lists market types (ATP: MONEY, SPREAD, TOTAL). Two ways in: a
   NoVig account key, or NoVig as an odds-api.io slot (odds-api.io lists "NoVig", active).

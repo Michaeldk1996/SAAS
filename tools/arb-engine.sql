@@ -60,6 +60,20 @@ create table if not exists arb.alerts (
     created_at      timestamptz not null default now()
 );
 create index if not exists arb_alerts_key_idx on arb.alerts (akey, created_at);
+-- LIVE (founder 2026-11-02): the in-play Kalshi × Polymarket worker posts its gaps here as kind 'live'.
+alter table arb.alerts drop constraint if exists alerts_kind_check;
+alter table arb.alerts add constraint alerts_kind_check check (kind in ('arb', 'divergence', 'live'));
+alter table arb.config add column if not exists live_min      numeric  not null default 1;                      -- % after fees
+alter table arb.config add column if not exists live_cooldown interval not null default interval '10 minutes';  -- per match + direction
+alter table arb.config add column if not exists live_hb_max   interval not null default interval '90 seconds';  -- worker heartbeat
+create table if not exists arb.live_state (
+    id      boolean primary key default true check (id),
+    at      timestamptz,                 -- the worker's last push (its heartbeat)
+    gaps    jsonb not null default '[]', -- every Kalshi × Polymarket pair with a positive edge after fees right now
+    worker  jsonb                        -- its own counters (pairs joined, polls, errors)
+);
+insert into arb.live_state (id) values (true) on conflict (id) do nothing;
+alter table arb.live_state enable row level security;
 alter table arb.alerts enable row level security;
 alter table arb.config enable row level security;
 do $$ begin
@@ -240,7 +254,16 @@ end $$;
 
 -- read-only, for the page (publishable key)
 create or replace function public.arb_now() returns jsonb
-language sql stable security definer set search_path = pg_catalog, public as $$ select arb.opps() $$;
+language sql stable security definer set search_path = pg_catalog, public as $$
+  select o || jsonb_build_object(
+    'liveOn', coalesce(l.at > now() - c.live_hb_max, false),
+    'liveAt', l.at,
+    'live', case when l.at > now() - c.live_hb_max then
+              (select coalesce(jsonb_agg(g order by (g->>'edge')::numeric desc), '[]'::jsonb) from jsonb_array_elements(l.gaps) g
+                where (g->>'edge')::numeric >= c.live_min and (c.min_liq is null or (g->>'stake')::numeric >= c.min_liq))
+            end,
+    'config', (o->'config') || jsonb_build_object('liveMin', c.live_min))
+  from arb.opps() o, arb.live_state l, arb.config c $$;
 revoke all on function public.arb_now() from public;
 do $$ begin
   if exists (select 1 from pg_roles where rolname = 'anon') then
@@ -337,6 +360,56 @@ begin
   return n;
 end $$;
 
+create or replace function arb.render_live(g jsonb) returns text
+language sql immutable as $$
+  select concat_ws(chr(10),
+    '⚡ LIVE ARB',
+    '',
+    format('🎾 Match: %s (ATP)%s', g->>'match', case when (g->>'inPlay')::boolean then ' · in play' else ' · past its start' end),
+    format('✅ Back %s @ %s on Polymarket (after fee %s) · %s at price', g->>'polyName', arb.px((g->>'polyDec')::numeric),
+           arb.px((g->>'polyEff')::numeric), arb.usd((g->>'polyLiq')::numeric)),
+    format('✅ Back %s @ %s on Kalshi (after fee %s) · %s at price', g->>'kalName', arb.px((g->>'kalDec')::numeric),
+           arb.px((g->>'kalEff')::numeric), arb.usd((g->>'kalLiq')::numeric)),
+    format('💰 Locked-in: +%s%% after fees · stakes %s%% / %s%% · up to %s', to_char((g->>'edge')::numeric, 'FM990.00'),
+           to_char((g->>'stakePoly')::numeric, 'FM990.0'), to_char((g->>'stakeKalshi')::numeric, 'FM990.0'), arb.usd((g->>'stake')::numeric)),
+    '⚠️ Live prices move every point: check both before you bet.',
+    format('🕒 Prices: Polymarket @ %s · Kalshi @ %s', arb.hhmm((g->>'polyAt')::timestamptz), arb.hhmm((g->>'kalAt')::timestamptz)))
+$$;
+
+-- the live worker's push (service role only): the current gaps + heartbeat; posts each new one >= live_min with
+-- >= min_liq dollars to lock in, once per match + direction per live_cooldown. Returns the number posted.
+create or replace function public.arb_live_push(p jsonb) returns integer
+language plpgsql security definer set search_path = pg_catalog, public as $$
+declare c arb.config; g jsonb; k text; n integer := 0; rid bigint; msg text;
+begin
+  select * into c from arb.config;
+  update arb.live_state set at = now(), gaps = coalesce(p->'gaps', '[]'::jsonb), worker = p->'worker' where id;
+  update arb.alerts a set delivery = case when r.status_code between 200 and 299 then 'sent'
+                                         else 'failed: ' || coalesce('HTTP ' || r.status_code, r.error_msg, 'no response') end
+    from net._http_response r where a.kind = 'live' and a.delivery = 'queued' and r.id = a.net_request_id;
+  for g in select * from jsonb_array_elements(coalesce(p->'gaps', '[]'::jsonb)) loop
+    continue when coalesce((g->>'edge')::numeric, 0) < c.live_min;
+    continue when c.min_liq is not null and coalesce((g->>'stake')::numeric, 0) < c.min_liq;
+    continue when not coalesce((g->>'started')::boolean, false);   -- before the start the 30-s engine covers it
+    continue when not coalesce(g->>'kalshiEvent', '') like 'KXATPMATCH-%';   -- ATP tour only
+    k := 'live|' || (g->>'kalshiEvent') || '|' || (g->>'dir');
+    continue when exists (select 1 from arb.alerts where akey = k and created_at > now() - c.live_cooldown);
+    msg := arb.render_live(g); rid := arb.send(msg);
+    insert into arb.alerts (kind, akey, event_key, detail, message, net_request_id, sent_at, delivery)
+    values ('live', k, 0, g, msg, rid, case when rid is not null then now() end,
+            case when rid is null then 'unsent: no vault secret' else 'queued' end);
+    n := n + 1;
+  end loop;
+  return n;
+end $$;
+revoke all on function public.arb_live_push(jsonb) from public;
+do $$ begin
+  if exists (select 1 from pg_roles where rolname = 'anon') then
+    execute 'revoke all on function public.arb_live_push(jsonb) from anon, authenticated';
+    execute 'grant execute on function public.arb_live_push(jsonb) to service_role';
+  end if;
+end $$;
+
 create or replace function arb.report(p_hours integer default 24) returns jsonb
 language plpgsql stable as $$
 declare o jsonb; cj jsonb;
@@ -353,7 +426,8 @@ begin
     'divergencesNow', jsonb_array_length(o->'divergences'), 'arbsNow', jsonb_array_length(o->'arbs'),
     'alerts', (select coalesce(jsonb_object_agg(k, n), '{}'::jsonb) from (select kind || ' · ' || delivery k, count(*) n from arb.alerts
                 where created_at > now() - make_interval(hours => p_hours) group by 1) a),
-    'cron', cj);
+    'cron', cj,
+    'live', (select jsonb_build_object('at', at, 'gaps', jsonb_array_length(gaps), 'worker', worker) from arb.live_state));
 end $$;
 
 do $$ begin

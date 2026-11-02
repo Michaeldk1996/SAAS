@@ -1,0 +1,49 @@
+name: Live arbitrage (Kalshi x Polymarket)
+
+# Founder 2026-11-02: live (in-play) arbitrage between Kalshi and Polymarket on ATP tour matches.
+# tools/live-arb-recorder.mjs reads Polymarket's public order-book websocket and Kalshi's public market list every 2 s,
+# and every 5 s pushes the current gaps after fees + a heartbeat to public.arb_live_push (tools/arb-engine.sql), which
+# feeds Dropping Odds → Arbitrage → Live and posts ⚡ LIVE ARB to the drop chat (>= 1% after fees, >= $100 to lock in,
+# once per match + direction per 10 min). Public endpoints only; the one write is that RPC (service key).
+#
+# Always on: each run records for 350 min; the hourly schedule keeps exactly one run queued behind it (concurrency,
+# never cancelled), so the next run starts the moment the current one ends. Runs from main only (self-chaining rule).
+# Stop it: disable this workflow. The page drops the live section by itself 90 s after the last push.
+
+on:
+  schedule:
+    - cron: '7 * * * *'
+  workflow_dispatch:
+    inputs:
+      minutes:
+        description: 'Minutes to record (max 350)'
+        default: '350'
+
+concurrency:
+  group: live-arb
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  live:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 358
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Record + push live gaps
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+        run: node tools/live-arb-recorder.mjs --minutes "${{ inputs.minutes || '350' }}" --out live-arb --push 1
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: live-arb-${{ github.run_id }}
+          path: live-arb/
+          retention-days: 14

@@ -63,3 +63,17 @@ test('wiring: Drops | Arbitrage switch, script loaded before drops-page.js, publ
   assert.match(html, /<script src="arb-page\.js" defer><\/script>\n<script src="drops-page\.js" defer><\/script>/);
   assert.match(readFileSync(new URL('./tools/site-code.sh', import.meta.url), 'utf8'), /arb-page\.js/);
 });
+
+test('live section: only while the worker is fresh; cards carry both legs after fee, dollars, stakes; counted in Arbs', () => {
+  const L = { ...D, config: { ...D.config, liveMin: 1 }, liveOn: true, live: [{ match: 'Alex Molcan vs Titouan Droguet', inPlay: true, edge: 2.4,
+    polyName: 'Alex Molcan', polyDec: 2.222, polyEff: 2.17, polyLiq: 900, kalName: 'Titouan Droguet', kalDec: 2.083, kalEff: 2.02, kalLiq: 480,
+    stakePoly: 48.2, stakeKalshi: 51.8, stake: 470, polyAt: '2026-11-02T12:00:00Z', kalAt: '2026-11-02T12:00:01Z' }] };
+  const b = page(L).bodyHtml();
+  assert.match(b, /<h2 class="ar-h">Live · Kalshi × Polymarket<\/h2>/);
+  assert.match(b, /Back Alex Molcan<\/span><span class="ar-leg-src">Polymarket<\/span><span class="ar-px">2\.22<span class="ar-fee">after fee 2\.17<\/span><\/span><span class="ar-liq">\$900 at price/);
+  assert.match(b, /In play<\/span><span class="ar-profit">\+2\.4%/); assert.match(b, /Stakes 48\.2% \/ 51\.8% · up to \$470/);
+  assert.match(page(L).headerHtml(), /Arbs<\/span><span class="sfh__v">2</);
+  assert.match(page({ ...L, live: [] }).bodyHtml(), /No live arbitrage above \+1\.0% after fees right now\./);
+  const off = page({ ...L, liveOn: false, live: null }).bodyHtml();
+  assert.doesNotMatch(off, /Live ·/, 'a stale worker draws no live section and no status message');
+});
