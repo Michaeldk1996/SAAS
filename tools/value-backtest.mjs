@@ -59,6 +59,13 @@ export function b105At(payload, sideKey, t) {
   const rows = PHB.sideRows(payload, sideKey, nameKey).filter(r => r.at <= t);
   return rows.length ? rows[rows.length - 1] : null;
 }
+// bet105's opening price (its first recorded price) and closing price (its last recorded price before the start), each
+// with its Kibl time. The start cuts the close only when it is a verified one; the archive's rows are pre-match only.
+export function b105OpenClose(payload, sideKey, startMs) {
+  const rows = PHB.sideRows(payload, sideKey, nameKey);
+  const pre = startMs != null ? rows.filter(r => r.at < startMs) : rows;
+  return { open: pre.length ? pre[0] : null, close: pre.length ? pre[pre.length - 1] : null };
+}
 // the admin log's score text ("6-3, 4-6, 6-2", p1 first) → winner side, or null
 export function winnerFromText(s) {
   const sets = String(s || '').split(',').map(x => /^\s*(\d+)\s*-\s*(\d+)/.exec(x)).filter(Boolean).map(m => [+m[1], +m[2]]);
@@ -108,6 +115,12 @@ export function buildRows({ log, board, b105, since }) {
       const edge = edgeOf(prob, entryNv);
       const res = resultFor(card, r, side), close = closeFor(card, side);
       const profit = !res || betPrice == null ? null : res.result === 'void' ? 0 : res.result === 'won' ? r6(betPrice - 1) : -1;
+      const pl = price => !res || price == null ? null : res.result === 'void' ? 0 : res.result === 'won' ? r6(price - 1) : -1;
+      const vStart = card && card.pinClose && (card.pinClose.startBasis === 'actual' || card.pinClose.source === 'Pinnacle close (archive)') ? Date.parse(card.pinClose.startTs || '') : NaN;
+      const startMs = Number.isFinite(vStart) ? vStart : null;
+      const oc = pay ? b105OpenClose(pay, nameKey(r[side]), startMs) : { open: null, close: null };
+      const ocOpp = pay ? b105OpenClose(pay, nameKey(r[o]), startMs) : { open: null, close: null };
+      const b105CloseNv = oc.close && ocOpp.close ? noVig(oc.close.price, ocOpp.close.price) : null;
       out.push({
         event: r.key, date: r.date, month: String(r.date).slice(0, 7), tournament: r.tour || null, surface: r.surface || null,
         side, player: r[side], opponent: r[o], entry_ts: vs.ts, model_prob: prob,
@@ -118,6 +131,12 @@ export function buildRows({ log, board, b105, since }) {
         bet_price: betPrice, result: res ? res.result : null, result_source: res ? res.source || null : null, bet_rule: res ? res.betRule : null,
         profit, close_price: close ? close.price : null, close_opp_price: close ? close.opp : null,
         clv: close && betPrice != null ? r6(PICKS.clv(betPrice, close.price, close.opp)) : null,
+        b105_open: oc.open ? oc.open.price : null, b105_open_at: oc.open ? new Date(oc.open.at).toISOString() : null,
+        b105_close: oc.close ? oc.close.price : null, b105_close_at: oc.close ? new Date(oc.close.at).toISOString() : null,
+        b105_close_cut: startMs != null ? 'verified start' : 'last pre-match row',
+        profit_at_open: source === 'bet105' ? pl(oc.open && oc.open.price) : null,
+        profit_at_close: source === 'bet105' ? pl(oc.close && oc.close.price) : null,
+        clv_b105: source === 'bet105' && b105CloseNv != null ? r6(betPrice / b105CloseNv - 1) : null,
         note: !source ? 'no entry price (no bet105 pair, no Pinnacle edge recorded)' : !res ? 'no result on record' : res.why || null,
       });
     }
@@ -165,11 +184,29 @@ export function toCsv(rows, cfg = CFG, at = new Date().toISOString()) {
     block(`Sharp Value bets by month · ${SRC[src]}`, summary(R.filter(r => r.sharp_value), r => r.month));
     block(`Value tiers (2%+) by month · ${SRC[src]}`, summary(R.filter(r => r.edge != null && r.edge >= cfg.tiers[0].min), r => r.month));
   }
+  // the same bets at three prices: bet105's opening price, the price at the flag, bet105's closing price
+  const triple = (title, R) => {
+    const A = R.filter(r => r.source === 'bet105' && r.result && r.result !== 'void' && r.profit != null && r.profit_at_open != null && r.profit_at_close != null);
+    const s = k => A.reduce((x, r) => x + r[k], 0);
+    const roi = k => A.length < cfg.minSettledForRates ? null : s(k) / A.length;
+    const clv = A.filter(r => r.clv_b105 != null);
+    L.push([title, A.length, sgnU(A.length ? s('profit_at_open') : null), pct(roi('profit_at_open')), sgnU(A.length ? s('profit') : null), pct(roi('profit')),
+      sgnU(A.length ? s('profit_at_close') : null), pct(roi('profit_at_close')),
+      pct(A.length < cfg.minSettledForRates || !clv.length ? null : clv.reduce((x, r) => x + r.clv_b105, 0) / clv.length, 2), clv.length].map(cell).join(','));
+  };
+  L.push(''); L.push(cell('Same bets at bet105 OPEN · at the FLAG · at bet105 CLOSE (bet105 rows with all three prices; flat 1u)'));
+  L.push(['strategy', 'bets', 'P/L at open', 'ROI at open', 'P/L at flag', 'ROI at flag', 'P/L at close', 'ROI at close', 'avg CLV vs bet105 no-vig close', 'CLV n'].map(cell).join(','));
+  triple('every side with an edge > 0', rows.filter(r => r.edge > 0));
+  triple(`every edge ${pct(cfg.tiers[0].min, 0)}+ (below the cap)`, rows.filter(r => r.edge >= cfg.tiers[0].min && (cfg.edgeCap == null || r.edge < cfg.edgeCap)));
+  if (cfg.betRule) triple(`bet rule ${pct(cfg.betRule.min, 0)}–${pct(cfg.betRule.max, 0)}`, rows.filter(r => r.edge >= cfg.betRule.min && r.edge < cfg.betRule.max));
+  triple('Sharp Value', rows.filter(r => r.sharp_value));
+  for (const t of cfg.tiers) triple(`tier ${t.name}`, rows.filter(r => r.tier === t.name));
+  triple('every side (no filter)', rows);
   block('No entry price (not in any summary above)', summary(rows.filter(r => !r.source), () => 'no entry price'));
   L.push('');
   const cols = ['event', 'date', 'tournament', 'surface', 'side', 'player', 'opponent', 'entry_ts', 'model_prob', 'edge_vs_pinnacle_pp', 'sharp_value', 'pin_novig_price',
     'b105_price', 'b105_opp_price', 'b105_at', 'source', 'entry_novig_price', 'edge', 'tier', 'bet_price', 'result', 'result_source', 'bet_rule', 'profit',
-    'close_price', 'close_opp_price', 'clv', 'note'];
+    'close_price', 'close_opp_price', 'clv', 'b105_open', 'b105_open_at', 'b105_close', 'b105_close_at', 'b105_close_cut', 'profit_at_open', 'profit_at_close', 'clv_b105', 'note'];
   L.push(cols.map(cell).join(','));
   for (const r of rows) L.push(cols.map(c => cell(r[c])).join(','));
   return L.join('\n') + '\n';

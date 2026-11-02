@@ -137,6 +137,26 @@ check('a correction supersedes: the newest settlement is the one read', (() => {
   return L.exportRows(snaps, marks, s2).keyRows.find(r => r.event_key === 1001).result === 'void';
 })());
 
+// ── bet105 open and close ─────────────────────────────────────────────────────────────────────────────────────────────
+console.log('bet105 open / close');
+const mOC = { date: '2026-11-01', p1: 'C. Ruud', p2: 'R. Jodar', p1Key: 11, p2Key: 22 };
+const lpcOC = [{ side: '11', open_price: 1.9, open_ts: '2026-10-31T08:00:00Z', close_price: 1.75, close_at: '2026-11-01T10:59:00Z', close_src: 'live-flip' },
+  { side: '22', open_price: 1.95, open_ts: '2026-10-31T08:00:00Z', close_price: 2.15, close_at: '2026-11-01T10:59:00Z', close_src: 'live-flip' }];
+const ocA = L.b105OpenCloseOf({ lpc: lpcOC, payload: null, m: mOC, side: 'p1', startIso: '2026-11-01T11:00:00Z' });
+check('the worker\'s open and its live-flip close, by player key, each with its time', ocA.open.price === 1.9 && ocA.close.price === 1.75 && ocA.close.opp === 2.15 && ocA.close.source === 'live-flip close');
+const payOC = { fixtures: [{ fixture_id: 1, player1: 'Ruud, Casper', player2: 'Jodar, Rafael' }], poller: [], stream: [
+  { at: '2026-10-31T09:00:00Z', side: 'ruud', price: 1.92 }, { at: '2026-10-31T09:00:00Z', side: 'jodar', price: 1.93 },
+  { at: '2026-11-01T10:50:00Z', side: 'ruud', price: 1.8 }, { at: '2026-11-01T10:50:00Z', side: 'jodar', price: 2.05 },
+  { at: '2026-11-01T11:10:00Z', side: 'ruud', price: 1.3 }] };
+const ocB = L.b105OpenCloseOf({ lpc: [], payload: payOC, m: mOC, side: 'p1', startIso: '2026-11-01T11:00:00Z' });
+check('no worker close → the archive\'s last pre-match price BEFORE the verified start (never one after it)', ocB.close.price === 1.8 && ocB.close.opp === 2.05 && ocB.open.price === 1.92 && /archive/.test(ocB.close.source));
+check('neither source → no open, no close (a dash)', (() => { const x = L.b105OpenCloseOf({ lpc: [], payload: null, m: mOC, side: 'p1', startIso: null }); return x.open === null && x.close === null; })());
+const XOC = L.exportRows([{ id: 1, event_key: 5, side: 'p1', snapshot_ts: '2026-11-01T10:00:00Z', price_kind: 'full', model_prob: 0.6, b105_price: 1.85, b105_opp_price: 2.0 }],
+  [{ event_key: 5, side: 'p1', kind: 'last_pre_start', snapshot_id: 1 }],
+  [{ id: 1, event_key: 5, side: 'p1', mark_kind: 'last_pre_start', result: 'won', detail: { b105: ocA } }]).keyRows.find(r => r.mark_kind === 'last_pre_start');
+check('profit at open / at the snapshot / at close; CLV vs bet105\'s no-vig close', near(XOC.profit_at_open, 0.9) && near(XOC.profit, 0.85) && near(XOC.profit_at_close, 0.75)
+  && near(XOC.clv_b105, 1.85 / L.noVig(1.75, 2.15) - 1));
+
 // ── append-only: no code path updates or deletes a ledger row ─────────────────────────────────────────────────────────
 console.log('append-only');
 const ALLOW = new Set(['supabase/migrations/20261101090000_model_value_ledger.sql', 'tools/value-ledger.mjs', 'tools/test-value-ledger.mjs',
@@ -162,7 +182,10 @@ for (const f of tracked) {
   scan(f, s).forEach(w => faults.push(f + ': ' + w));
 }
 check('only the allow-listed files name a ledger table, and none updates, deletes, truncates, upserts or drops', faults.length === 0 && naming.length >= 3, faults);
-check('the writer only POSTs with resolution=ignore-duplicates (INSERT … ON CONFLICT DO NOTHING)', /method: 'POST'/.test(src) && /Prefer: 'resolution=ignore-duplicates/.test(src) && (src.match(/method:/g) || []).length === 1);
+const posts = src.split('\n').filter(l => /method:/.test(l));
+check('every request is a POST: the one insert-only writer (resolution=ignore-duplicates) or the read-only price_history RPC',
+  posts.length === 2 && posts.every(l => /method: 'POST'/.test(l)) && posts.filter(l => /rest\/v1\/\$\{table\}\?on_conflict=/.test(l)).length === 1
+  && posts.filter(l => /rpc\/price_history/.test(l)).length === 1 && /Prefer: 'resolution=ignore-duplicates/.test(src), posts);
 const mig = fs.readFileSync(path.join(ROOT, 'supabase/migrations/20261101090000_model_value_ledger.sql'), 'utf8');
 check('the migration grants service_role SELECT + INSERT only, and every table gets the no-change + no-truncate triggers',
   /grant select, insert on public\.%I to service_role/.test(mig) && /before update or delete on public\.%I/.test(mig) && /before truncate on public\.%I/.test(mig)

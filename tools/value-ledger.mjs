@@ -30,6 +30,7 @@ const CFG = require(path.join(ROOT, 'value-ledger-config.js'));
 const SETTLE = require(path.join(ROOT, 'settlement.js'));
 const PICKS = require(path.join(ROOT, 'picks-core.js'));
 const { berlinWallMs } = require(path.join(ROOT, 'berlin-time.js'));
+const { cardKey, nameKey, b105OpenClose } = await import(new URL('./value-backtest.mjs', import.meta.url).href);
 
 export const TABLES = { snap: 'value_ledger_snapshot', mark: 'value_ledger_mark', settle: 'value_ledger_settlement' };
 const SIDES = ['p1', 'p2'];
@@ -193,8 +194,26 @@ export function closeFor(c, m, side) {
   return { price: me, opp: op, ts: c.closeTs || null, label: c.label || null, startTs: c.startTs || null,
     gapS: Number.isFinite(st) && Number.isFinite(ct) ? Math.round((st - ct) / 1000) : num(c.gapToStartS) };
 }
+// bet105's opening and closing price for one side, from line_prices_current (the worker's own open, and the close it
+// captured at the live flip — close_src 'live-flip') and, where the worker holds no close, the Kibl archive's last
+// pre-match price before the verified start (price_history, the price-history box's read). Each with its Kibl time.
+export function b105OpenCloseOf({ lpc, payload, m, side, startIso }) {
+  const o = side === 'p1' ? 'p2' : 'p1', k = m && m[side + 'Key'], ko = m && m[o + 'Key'];
+  const row = key => (lpc || []).find(r => String(r.side) === String(key)) || null;
+  const me = row(k), op = row(ko);
+  const startMs = Date.parse(startIso || '');
+  const arch = payload && m ? b105OpenClose(payload, nameKey(m[side]), Number.isFinite(startMs) ? startMs : null) : { open: null, close: null };
+  const archO = payload && m ? b105OpenClose(payload, nameKey(m[o]), Number.isFinite(startMs) ? startMs : null) : { open: null, close: null };
+  const iso = t => (t == null ? null : new Date(t).toISOString());
+  const open = px(me && me.open_price) != null ? { price: px(me.open_price), at: me.open_ts || null, source: 'worker open' }
+    : arch.open ? { price: arch.open.price, at: iso(arch.open.at), source: 'archive first price' } : null;
+  const live = px(me && me.close_price) != null && px(op && op.close_price) != null;
+  const close = live ? { price: px(me.close_price), opp: px(op.close_price), at: me.close_at || null, source: 'live-flip close' }
+    : arch.close && archO.close ? { price: arch.close.price, opp: archO.close.price, at: iso(arch.close.at), source: 'archive last pre-match price' } : null;
+  return { open, close };
+}
 // One settlement row for a mark, or null to wait (the close may still come).
-export function settlementFor({ mark, snap, m, close, startIso, nowMs, waitHours = CFG.closeWaitHours }) {
+export function settlementFor({ mark, snap, m, close, startIso, nowMs, waitHours = CFG.closeWaitHours, b105oc = null }) {
   const res = resultOf(m, mark.side); if (!res) return null;
   if (!close) { const st = Date.parse(startIso || ''); if (!Number.isFinite(st) || nowMs - st < waitHours * H) return null; }
   const b105 = px(snap.b105_price);
@@ -206,7 +225,8 @@ export function settlementFor({ mark, snap, m, close, startIso, nowMs, waitHours
     clv: close && b105 != null ? r6(PICKS.clv(b105, close.price, close.opp)) : null,
     result: res.result, bet_rule: res.betRule, profit,
     no_profit_reason: b105 == null ? 'no bet105 price at this snapshot' : null,
-    detail: { winner: res.winner, why: res.why || null, score: (m.finalScore && m.finalScore.display) || null, noClose: close ? undefined : 'no Pinnacle close in the archive ' + waitHours + ' h after the start' },
+    detail: { winner: res.winner, why: res.why || null, score: (m.finalScore && m.finalScore.display) || null, noClose: close ? undefined : 'no Pinnacle close in the archive ' + waitHours + ' h after the start',
+      b105: b105oc || undefined },
   };
 }
 
@@ -252,11 +272,26 @@ export function toCsv(keyRows, allRows, cfg = CFG, generatedAt = new Date().toIS
     L.push([s.key_snapshot, s.price_kind, s.tier, s.rows, s.settled, s.bets, s.void, s.no_bet105, pct(s.avg_clv, 2), s.clv_n, s.won,
       pct(s.win_rate), s.bets, sgnU(s.profit), pct(s.roi), s.bets].map(cell).join(','));
   }
+  // the same key-snapshot bets at bet105's open, at the snapshot, at bet105's close (only bets with all three prices)
+  L.push(''); L.push(cell('Same bets at bet105 OPEN · at the SNAPSHOT · at bet105 CLOSE (full model; bets with all three prices; flat 1u)'));
+  L.push(['key snapshot', 'group', 'bets', 'P/L at open', 'ROI at open', 'P/L at snapshot', 'ROI at snapshot', 'P/L at close', 'ROI at close', 'avg CLV vs bet105 no-vig close', 'CLV n'].map(cell).join(','));
+  for (const mk of ['first_edge', 'last_pre_start']) {
+    const base = keyRows.filter(r => r.mark_kind === mk && r.price_kind === 'full' && r.result && r.result !== 'void' && r.profit != null && r.profit_at_open != null && r.profit_at_close != null);
+    const groups = [['every edge > 0', r => r.edge > 0], ...(cfg.betRule ? [[`bet rule ${pct(cfg.betRule.min, 0)}–${pct(cfg.betRule.max, 0)}`, r => r.edge >= cfg.betRule.min && r.edge < cfg.betRule.max]] : []),
+      ...cfg.tiers.map(t => [t.name, r => r.tier === t.name]), ['every side', () => true]];
+    for (const [name, f] of groups) {
+      const A = base.filter(f), sum = k => A.reduce((x, r) => x + r[k], 0), thin = A.length < cfg.minSettledForRates, clv = A.filter(r => r.clv_b105 != null);
+      L.push([mk, name, A.length, sgnU(A.length ? sum('profit_at_open') : null), pct(thin ? null : sum('profit_at_open') / A.length), sgnU(A.length ? sum('profit') : null),
+        pct(thin ? null : sum('profit') / A.length), sgnU(A.length ? sum('profit_at_close') : null), pct(thin ? null : sum('profit_at_close') / A.length),
+        pct(thin || !clv.length ? null : clv.reduce((x, r) => x + r.clv_b105, 0) / clv.length, 2), clv.length].map(cell).join(','));
+    }
+  }
   L.push('');
   const cols = ['snapshot_id', 'snapshot_ts', 'event_key', 'side', 'player', 'opponent', 'tournament', 'tier_of_event', 'surface', 'round', 'scheduled_start',
     'price_kind', 'base_state', 'shown_on_page', 'layers_active', 'layers_total', 'model_prob', 'model_fair_odds', 'pin_anchor_price', 'pin_anchor_ts',
     'pin_now_price', 'pin_now_read_at', 'b105_price', 'b105_opp_price', 'b105_price_at', 'b105_status', 'edge_b105', 'edge', 'edge_pin', 'value_tier', 'key_snapshot',
-    'close_price', 'close_opp_price', 'close_ts', 'close_label', 'close_gap_s', 'clv', 'result', 'bet_rule', 'profit', 'no_profit_reason'];
+    'close_price', 'close_opp_price', 'close_ts', 'close_label', 'close_gap_s', 'clv', 'b105_open', 'b105_open_at', 'b105_close', 'b105_close_at', 'b105_close_source',
+    'clv_b105', 'result', 'bet_rule', 'profit', 'profit_at_open', 'profit_at_close', 'no_profit_reason'];
   L.push(cols.map(cell).join(','));
   for (const r of allRows) L.push(cols.map(c => cell(c === 'value_tier' ? r.tier : c === 'tier_of_event' ? r.event_tier : c === 'key_snapshot' ? r.mark_kind : r[c])).join(','));
   return L.join('\n') + '\n';
@@ -266,6 +301,7 @@ export function toCsv(keyRows, allRows, cfg = CFG, generatedAt = new Date().toIS
 // database as the record of what each run saw. last_pre_start = the stored mark (cut at the verified start). A match-side's
 // close and result come from its newest settlement row (any key snapshot: they are the match's); CLV and profit are
 // worked from each key snapshot's own bet105 price.
+const plAt = (res, price) => (res == null || price == null ? null : res === 'void' ? 0 : res === 'won' ? r6(price - 1) : -1);
 export function exportRows(snaps, marks, settles, cfg = CFG) {
   const byId = new Map(snaps.map(s => [s.id, s]));
   const superseded = new Set(settles.map(x => x.supersedes).filter(x => x != null));
@@ -276,11 +312,16 @@ export function exportRows(snaps, marks, settles, cfg = CFG) {
   const settled = (s, kind) => {
     const st = settleOf.get(s.event_key + '|' + s.side) || {};
     const b = px(s.b105_price), res = st.result ?? null, close = px(st.close_price), opp = px(st.close_opp_price);
+    const oc = (st.detail && st.detail.b105) || {};
     return Object.assign(base(s), { mark_kind: kind, close_price: close, close_opp_price: opp, close_ts: st.close_ts ?? null,
       close_label: st.close_label ?? null, close_gap_s: num(st.close_gap_s),
       clv: b != null && close != null && opp != null ? r6(PICKS.clv(b, close, opp)) : null,
       result: res, bet_rule: st.bet_rule ?? null,
-      profit: res == null || b == null ? null : res === 'void' ? 0 : res === 'won' ? r6(b - 1) : -1,
+      profit: plAt(res, b),
+      b105_open: oc.open ? px(oc.open.price) : null, b105_open_at: oc.open ? oc.open.at : null,
+      b105_close: oc.close ? px(oc.close.price) : null, b105_close_at: oc.close ? oc.close.at : null, b105_close_source: oc.close ? oc.close.source : null,
+      profit_at_open: plAt(res, oc.open && px(oc.open.price)), profit_at_close: plAt(res, oc.close && px(oc.close.price)),
+      clv_b105: b != null && oc.close && noVig(oc.close.price, oc.close.opp) != null ? r6(b / noVig(oc.close.price, oc.close.opp) - 1) : null,
       no_profit_reason: res != null && b == null ? 'no bet105 price at this snapshot' : null });
   };
   const lps = new Map(marks.filter(m => m.kind === 'last_pre_start').map(m => [m.event_key + '|' + m.side, m]));
@@ -388,12 +429,20 @@ async function record(dry) {
       if (todo.length) {
         const sn = await sbGet(`${TABLES.snap}?select=id,b105_price&id=${inList(todo.map(x => x.snapshot_id))}`);
         const snapById = new Map(sn.map(x => [x.id, x]));
+        const lpcRows = await sbGet(`line_prices_current?select=event_key,side,open_price,open_ts,close_price,close_at,close_src&book=eq.bet105&market=eq.ml&event_key=${inList(todo.map(x => x.event_key))}`);
+        const lpcBy = new Map(); for (const x of lpcRows) { const k = Number(x.event_key); if (!lpcBy.has(k)) lpcBy.set(k, []); lpcBy.get(k).push(x); }
+        const payloads = new Map();
+        for (const ek of new Set(todo.map(x => Number(x.event_key)))) {
+          const m = started.get(ek), ck = m ? cardKey(m.date, m.p1, m.p2) : null; if (!ck) continue;
+          try { const r = await fetch(`${url}/rest/v1/rpc/price_history`, { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, H_), body: JSON.stringify({ p_card_key: ck }) }); if (r.ok) payloads.set(ek, await r.json()); } catch (_) { /* no archive read: the close falls to the worker's alone */ }
+        }
         const rows = [];
         for (const mk of todo) {
           const ek = Number(mk.event_key), m = started.get(ek), snap = snapById.get(mk.snapshot_id); if (!snap) continue;
           const vs = verifiedStart(ek, closesByEk, m, flips);
           const close = closeFor(closesByEk.get(String(ek)), m, mk.side);
-          const row = settlementFor({ mark: { event_key: ek, side: mk.side, kind: mk.kind }, snap, m, close, startIso: vs ? vs.ts : null, nowMs });
+          const b105oc = b105OpenCloseOf({ lpc: lpcBy.get(ek), payload: payloads.get(ek), m, side: mk.side, startIso: vs ? vs.ts : null });
+          const row = settlementFor({ mark: { event_key: ek, side: mk.side, kind: mk.kind }, snap, m, close, startIso: vs ? vs.ts : null, nowMs, b105oc });
           if (row) rows.push(row); else waiting++;
         }
         settledN = (await sbInsert(TABLES.settle, rows, 'event_key,side,mark_kind,supersedes')).length;

@@ -64,3 +64,12 @@ RECORDS" on its first line and goes to the private ops repo `value-ledger/backte
   days, out of sample: log-loss 0.6467 → 0.6417, Brier 0.2282 → 0.2259, Sharp Value flags 87 of 386 sides changed);
   rollback = `enabled: false`, one commit. Frozen pre-match prices of started matches never change. **Test:** `h2h-model/test-h2h.js`
   "Stage 3 calibration".
+
+## bet105 open and close (Michael 2026-11-02: "the bet105 timestamp should help … results on the opening and closing price")
+- **Each settlement stores bet105's open and close for its side** (`detail.b105`): the worker's open (`line_prices_current`
+  `open_price`, Kibl time) and its live-flip close (`close_price`, both sides), else the Kibl archive's first price and last
+  pre-match price before the verified start (`price_history`). Each names its source and time; none → a dash.
+- **The export** adds per key snapshot: profit at bet105's OPEN, at the SNAPSHOT and at bet105's CLOSE (same bets, all three
+  prices present) and CLV vs bet105's no-vig close (timestamped to the start, so no 60-min rule; the Pinnacle CLV keeps its
+  rule). The backtest carries the same block. **Test:** `tools/test-value-ledger.mjs` "bet105 open / close",
+  `tools/test-value-backtest.mjs`.
