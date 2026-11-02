@@ -6,8 +6,10 @@ name: Live arbitrage (Kalshi x Polymarket)
 # feeds Dropping Odds → Arbitrage → Live and posts ⚡ LIVE ARB to the drop chat (>= 1% after fees, >= $100 to lock in,
 # once per match + direction per 10 min). Public endpoints only; the one write is that RPC (service key).
 #
-# Always on: each run records for 350 min; the hourly schedule keeps exactly one run queued behind it (concurrency,
-# never cancelled), so the next run starts the moment the current one ends. Runs from main only (self-chaining rule).
+# Always on: each run records for 350 min and, as it starts, queues its successor (workflow_dispatch with the job's own
+# token — the one event GITHUB_TOKEN may trigger); the concurrency group holds that one pending run until the current one
+# ends, so the next starts at once. The hourly schedule is a backstop (measured 2 Nov: GitHub had not yet started a
+# scheduled run 2 h after the file landed). Runs from main only (self-chaining rule).
 # Stop it: disable this workflow. The page drops the live section by itself 90 s after the last push.
 
 on:
@@ -25,6 +27,7 @@ concurrency:
 
 permissions:
   contents: read
+  actions: write
 
 jobs:
   live:
@@ -32,6 +35,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 358
     steps:
+      - name: Queue the next run (waits in the concurrency group until this one ends)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run live-arb.yml --repo "${{ github.repository }}" --ref main || echo "::warning::could not queue the next run (the hourly schedule is the backstop)"
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:

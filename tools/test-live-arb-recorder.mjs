@@ -2,7 +2,7 @@
 // stale legs and episodes. Each check names the mutation it catches.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { samePlayer, polyMatches, kalshiMatches, joinPairs, kalshiFee, polyFee, Books, evaluate, Episodes, summarise, gapRow } from './live-arb-recorder.mjs';
+import { samePlayer, polyMatches, kalshiMatches, joinPairs, kalshiFee, polyFee, Books, evaluate, Episodes, summarise, gapRow, PolyFeed } from './live-arb-recorder.mjs';
 
 const ev = (id, a, b, extra = {}) => ({ id, title: `X: ${a} vs ${b}`, live: false, ...extra,
   markets: [{ sportsMarketType: 'moneyline', outcomes: JSON.stringify([a, b]), clobTokenIds: JSON.stringify([id + 'A', id + 'B']), gameStartTime: '2026-11-02 12:00:00+00' }] });
@@ -93,4 +93,42 @@ test('gap row for the push: decimals, after-fee prices, dollars, stakes, flags',
   assert.equal(g.polyDec, 2.222); assert.equal(g.polyEff, +(1 / (0.45 + 0.05 * 0.45 * 0.55)).toFixed(3));
   assert.equal(g.polyLiq, 13.5, '30 shares × $0.45'); assert.equal(g.kalLiq, 24, '50 contracts × $0.48');
   assert.equal(+(g.stakePoly + g.stakeKalshi).toFixed(1), 100); assert.equal(g.inPlay, true); assert.equal(g.stake, e.stake);
+});
+
+class FakeWS {
+  static all = [];
+  constructor(url) { this.url = url; this.readyState = 0; this.sent = []; FakeWS.all.push(this); }
+  send(x) { this.sent.push(x); }
+  close() { this.readyState = 3; setImmediate(() => this.onclose && this.onclose({})); }
+}
+const tickQ = () => new Promise((r) => setImmediate(r));
+
+test('feed: replacing the token list never re-opens from the old socket (the 5,166-reconnect bug)', async () => {
+  FakeWS.all = []; const timers = [];
+  const f = new PolyFeed({ WS: FakeWS, url: 'u', books: new Books(), later: (fn) => timers.push(fn) });
+  f.set(['a', 'b']); f.set(['a', 'c']); f.set(['a', 'd']);
+  await tickQ(); await tickQ();
+  assert.equal(FakeWS.all.length, 3, 'one socket per list change'); assert.equal(timers.length, 0, 'no reconnect scheduled (mutant: old close handled)');
+  assert.equal(FakeWS.all.filter((w) => w.readyState !== 3).length, 1, 'exactly one socket left open');
+  f.set(['d', 'a']); assert.equal(FakeWS.all.length, 3, 'the same list in another order is not a change');
+});
+
+test('feed: an unexpected close drops that feed\'s books and reconnects once; messages on a replaced socket are ignored', async () => {
+  FakeWS.all = []; const timers = []; const b = new Books(); let drops = 0;
+  const f = new PolyFeed({ WS: FakeWS, url: 'u', books: b, later: (fn) => timers.push(fn), onDrop: () => drops++ });
+  f.set(['a']); const w = FakeWS.all[0]; w.readyState = 1; w.onopen();
+  assert.match(w.sent[0], /"assets_ids":\["a"\]/);
+  w.onmessage({ data: JSON.stringify([{ event_type: 'book', asset_id: 'a', asks: [{ price: '0.4', size: '10' }] }]) });
+  assert.equal(b.best('a').price, 0.4);
+  w.readyState = 3; w.onclose({});
+  assert.equal(b.best('a'), null, 'no price survives a dead feed (mutant: books kept)'); assert.equal(drops, 1); assert.equal(timers.length, 1);
+  timers[0](); assert.equal(FakeWS.all.length, 2, 'reconnected');
+  w.onmessage({ data: JSON.stringify([{ event_type: 'book', asset_id: 'a', asks: [{ price: '0.1', size: '10' }] }]) });
+  assert.equal(b.best('a'), null, 'the dead socket writes nothing');
+});
+
+test('evaluate: a Polymarket book whose two asks sum under 0.98 is not used', () => {
+  const { p, b } = pair(0.45, 0.48);
+  b.snapshot('1B', [{ price: '0.40', size: '30' }], 1000);
+  assert.equal(evaluate(p, b, 1000, 2000).length, 0, 'asks 0.45 + 0.40 = 0.85 → inconsistent (mutant: no check)');
 });

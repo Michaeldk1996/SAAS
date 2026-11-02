@@ -104,6 +104,7 @@ export class Books {
     const s = Number(size); if (s > 0) m.set(String(price), s); else m.delete(String(price));
     this.at.set(tok, t);
   }
+  drop(tok) { this.asks.delete(tok); this.at.delete(tok); }
   best(tok) {
     const m = this.asks.get(tok); if (!m || !m.size) return null;
     let p = Infinity, s = 0; for (const [k, v] of m) { const x = Number(k); if (x < p) { p = x; s = v; } }
@@ -129,6 +130,8 @@ export function evaluate(pair, books, kalAt, now) {
     { dir: 'polyA+kalshiB', poly: books.best(pair.pm.tokA), kal: kSide(kB), polyName: pair.pm.a, kalName: pair.pm.b },
     { dir: 'polyB+kalshiA', poly: books.best(pair.pm.tokB), kal: kSide(kA), polyName: pair.pm.b, kalName: pair.pm.a },
   ];
+  const pa = books.best(pair.pm.tokA), pb = books.best(pair.pm.tokB);
+  if (pa && pb && pa.price + pb.price < 0.98) return out;   // the two asks of one binary market cannot sum under 1 − slack
   for (const d of dirs) {
     if (!d.poly || !d.kal || !(d.poly.price > 0 && d.poly.price < 1)) continue;
     if (d.poly.at == null || now - d.poly.at > STALE_MS.poly) continue;
@@ -160,6 +163,46 @@ export class Episodes {
   }
   close(k, now) { const o = this.open.get(k); if (!o) return; this.open.delete(k); this.onClose({ ...o, end: now, durationS: +((now - o.start) / 1000).toFixed(1) }); }
   closeAll(now) { for (const k of [...this.open.keys()]) this.close(k, now); }
+}
+
+// Polymarket's market websocket for one token list. Only the CURRENT connection reacts to a close: replacing the list
+// closes the old socket on purpose and its close is ignored (2 Nov: an old socket's close re-opened the feed every
+// ~4 s, 5,166 times in 5.5 h, so books lagged by seconds). An unexpected close of the current socket drops its books
+// (no price is ever evaluated from a dead feed) and reconnects after 2 s; the server re-sends a full book on subscribe.
+export class PolyFeed {
+  constructor({ WS, url, books, stopAt = Infinity, onMessages = () => {}, onDrop = () => {}, now = () => Date.now(), later = (f, ms) => setTimeout(f, ms) }) {
+    Object.assign(this, { WS, url, books, stopAt, onMessages, onDrop, now, later }); this.ws = null; this.sig = ''; this.toks = [];
+  }
+  set(toks) {
+    const sig = toks.slice().sort().join(',');
+    if (sig === this.sig && this.ws && this.ws.readyState <= 1) return false;
+    this.sig = sig; this.toks = toks.slice(); this.open(); return true;
+  }
+  open() {
+    const old = this.ws; this.ws = null; try { old && old.close(); } catch {}
+    if (!this.toks.length || this.now() >= this.stopAt) return;
+    const me = new this.WS(this.url); this.ws = me;
+    me.onopen = () => { if (this.ws === me) me.send(JSON.stringify({ assets_ids: this.toks, type: 'market' })); };
+    me.onmessage = (ev) => {
+      if (this.ws !== me || ev.data === 'PONG') return;
+      let d; try { d = JSON.parse(ev.data); } catch { return; }
+      const t = this.now(); let k = 0;
+      for (const x of [].concat(d)) {
+        k++;
+        if (x.event_type === 'book') this.books.snapshot(x.asset_id, x.asks, t);
+        else if (x.event_type === 'price_change') for (const c of x.price_changes || []) this.books.change(c.asset_id, c.side, c.price, c.size, t);
+      }
+      this.onMessages(k, t);
+    };
+    me.onclose = () => {
+      if (this.ws !== me) return;                    // a socket we replaced on purpose
+      this.ws = null; for (const t of this.toks) this.books.drop(t); this.onDrop();
+      if (this.now() < this.stopAt) this.later(() => { if (!this.ws) this.open(); }, 2000);
+    };
+    me.onerror = () => {};
+  }
+  ping() { try { this.ws && this.ws.readyState === 1 && this.ws.send('PING'); } catch {} }
+  stop() { this.stopAt = 0; const w = this.ws; this.ws = null; try { w && w.close(); } catch {} }
 }
 
 // One row per positive gap for the database push (public.arb_live_push): the page's live list and the ⚡ alert.
@@ -216,30 +259,11 @@ async function main() {
   const stats = { kalshiPolls: 0, kalshiErrors: 0, gammaRefreshes: 0, gammaErrors: 0, wsMessages: 0, wsReconnects: 0, evaluations: 0,
     pairsJoinedMax: 0, liveMatchesSeen: new Set(), pairsSeen: new Set() };
   const closest = new Map(), latest = new Map();
-  let poly = [], pairs = [], kal = [], kalAt = null, ws = null, wsTokens = '';
+  let poly = [], pairs = [], kal = [], kalAt = null;
 
-  const subscribe = () => {
-    const toks = pairs.flatMap((p) => [p.pm.tokA, p.pm.tokB]);
-    const sig = toks.slice().sort().join(',');
-    if (sig === wsTokens && ws && ws.readyState === 1) return;
-    wsTokens = sig; try { ws && ws.close(); } catch {}
-    if (!toks.length) return;
-    ws = new WebSocket(POLY_WS);
-    ws.onopen = () => ws.send(JSON.stringify({ assets_ids: toks, type: 'market' }));
-    ws.onmessage = (ev) => {
-      if (ev.data === 'PONG') return;
-      let d; try { d = JSON.parse(ev.data); } catch { return; }
-      const now = Date.now();
-      for (const x of [].concat(d)) {
-        stats.wsMessages++;
-        if (x.event_type === 'book') books.snapshot(x.asset_id, x.asks, now);
-        else if (x.event_type === 'price_change') for (const c of x.price_changes || []) books.change(c.asset_id, c.side, c.price, c.size, now);
-      }
-      tick(now);
-    };
-    ws.onclose = () => { if (Date.now() < stop) { stats.wsReconnects++; wsTokens = ''; setTimeout(subscribe, 2000); } };
-    ws.onerror = () => {};
-  };
+  const feed = new PolyFeed({ WS: WebSocket, url: POLY_WS, books, stopAt: stop,
+    onMessages: (k, now) => { stats.wsMessages += k; tick(now); }, onDrop: () => { stats.wsReconnects++; } });
+  const subscribe = () => feed.set(pairs.flatMap((p) => [p.pm.tokA, p.pm.tokB]));
   const tick = (now) => {
     for (const p of pairs) {
       const started = p.pm.live || (p.pm.start != null && now >= p.pm.start), live = started;
@@ -287,10 +311,10 @@ async function main() {
   if (push && (!sbUrl || !sbKey)) { log('push asked for but SUPABASE_URL / SUPABASE_SECRET_KEY missing'); process.exit(1); }
   const pushT = push ? setInterval(doPush, 5e3) : null;
   const gT = setInterval(refreshGamma, 60e3);
-  const pingT = setInterval(() => { try { ws && ws.readyState === 1 && ws.send('PING'); } catch {} }, 10e3);
+  const pingT = setInterval(() => { feed.ping(); }, 10e3);
   const repT = setInterval(() => log(`pairs ${pairs.length} live ${pairs.filter((p) => p.pm.live).length} open ${E.open.size} closed ${eps.length} ws ${stats.wsMessages} kalshi ${stats.kalshiPolls}/${stats.kalshiErrors} push ${stats.pushes}/${stats.pushErrors} posted ${stats.posted}`), 300e3);
   while (Date.now() < stop) { const t = Date.now(); await pollKalshi(); await new Promise((r) => setTimeout(r, Math.max(0, POLL_S * 1000 - (Date.now() - t)))); }
-  clearInterval(gT); clearInterval(pingT); if (pushT) clearInterval(pushT); clearInterval(repT); E.closeAll(Date.now()); try { ws && ws.close(); } catch {}
+  clearInterval(gT); clearInterval(pingT); if (pushT) clearInterval(pushT); clearInterval(repT); E.closeAll(Date.now()); feed.stop();
   const meta = { from: new Date(t0).toISOString(), to: new Date().toISOString(), minutes, pollS: POLL_S, fees: FEE,
     ...stats, liveMatchesSeen: stats.liveMatchesSeen.size, pairsSeen: stats.pairsSeen.size,
     closestPerMatch: [...closest].map(([match, c]) => ({ match, ...c })).sort((a, b) => a.cost - b.cost).slice(0, 15) };

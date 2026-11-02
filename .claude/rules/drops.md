@@ -74,7 +74,9 @@ answers on card 37612d3d (TEN-294 doc `design`). Suite: `test-ten294-drops.mjs`.
 - **Live arbitrage, Kalshi × Polymarket** (founder 2026-11-02, "Let's go!"; ATP tour only). `tools/live-arb-recorder.mjs`,
   run by `live-arb.yml` (main only, 350-min runs, an hourly start keeps one queued so the next starts as the current ends):
   Polymarket's public CLOB websocket (every book change) + Kalshi's public `KXATPMATCH` list every 2 s (YES ask + size; the
-  opponent's NO ask as the other way in, never sized). A pair joins on both names, exactly one candidate each way; Kalshi
+  opponent's NO ask as the other way in, never sized). Only the current Polymarket socket reacts to a close (a replaced one is ignored); a dropped feed
+  clears its books, so no gap is ever read off a dead feed; a match whose two Polymarket asks sum under 0.98 is not read
+  (an inconsistent book). A pair joins on both names, exactly one candidate each way; Kalshi
   Challengers (`KXATPCHALLENGERMATCH`) are never read. Gap = back one player on each market for < $1 after both taker fees
   (the engine's 0.07·q(1−q) / 0.05·p(1−p)). Every 5 s the positive gaps + a heartbeat go to `public.arb_live_push`
   (service role). **Test:** a gap posts ⚡ LIVE ARB (drop chat, the engine's `arb.send`) only when edge ≥ `config.live_min`
