@@ -350,5 +350,21 @@ console.log('=== resolvePlayer Elo join: aliases + no-key fallback (TEN-263 foll
   fs.rmSync(root,{recursive:true,force:true});
 }
 
+// ---- Stage 3 calibration (Michael 2026-11-02, "Soften (T 1.3)"): one switch, staged OFF ----
+{
+  console.log('\nStage 3 calibration');
+  const cfgC = require('./config').calibration;
+  const { calibrate } = require('./model');
+  ok('the switch is ON (founder ruling 2026-11-02 on the go-live report) and T is 1.3', cfgC && cfgC.enabled === true && cfgC.temperature === 1.3, cfgC);
+  ok('off: the probability is unchanged', calibrate(0.7, { enabled: false, temperature: 1.3 }).p1 === 0.7 && calibrate(0.7, { enabled: false, temperature: 1.3 }).applied === false);
+  const on = calibrate(0.7, { enabled: true, temperature: 1.3 });
+  ok('on: sigmoid(logit(p) / T) — 0.70 → 0.6575', on.applied && Math.abs(on.p1 - 1 / (1 + Math.exp(-Math.log(0.7 / 0.3) / 1.3))) < 1e-12 && Math.abs(on.p1 - 0.6575) < 1e-4, on);
+  ok('on: it pulls toward 50% from both sides and keeps 50% at 50%', calibrate(0.2, { enabled: true, temperature: 1.3 }).p1 > 0.2 && calibrate(0.5, { enabled: true, temperature: 1.3 }).p1 === 0.5);
+  ok('on: the two sides still sum to 1', Math.abs(calibrate(0.3, { enabled: true, temperature: 1.3 }).p1 + calibrate(0.7, { enabled: true, temperature: 1.3 }).p1 - 1) < 1e-12);
+  ok('T 1 or a bad T is no calibration', calibrate(0.7, { enabled: true, temperature: 1 }).applied === false && calibrate(0.7, { enabled: true, temperature: 0 }).applied === false);
+  const src = require('fs').readFileSync(require('path').join(__dirname, 'model.js'), 'utf8');
+  ok('stage 3 prices the calibrated probability and records the raw one', /const cal = calibrate\(adjustedP1, config\.calibration\);\s*const pricing = priceAndValue\(cal\.p1, match\);/.test(src) && /rawP1: round4\(adjustedP1\)/.test(src));
+}
+
 console.log(`\nRESULT: ${pass} passed, ${fail} failed`);
 process.exit(fail?1:0);

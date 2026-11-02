@@ -53,3 +53,14 @@ unknown, said in the row). CLV only vs a verified board close. Summaries per pri
 Pinnacle no-vig (no margin: not bettable, flatters the result) are never pooled — by tier, by Sharp Value (`h2h-model/config.js`
 `value.sharpEdge`, the Model page's flag) and by month; under 30 bets the counts only. The file says "RECONSTRUCTED FROM
 RECORDS" on its first line and goes to the private ops repo `value-ledger/backtest/`. **Test:** `tools/test-value-backtest.mjs`.
+
+## Edge cap, bet rule, model calibration (Michael 2026-11-02, after the backtest)
+- **Edge cap:** an edge of `edgeCap` (15%) or more is "Capped (likely model error)" — its own group, never a tier; Max
+  value is 10–15%. **Bet rule:** `betRule` 2–5% — the backtest's "Followed the bet rule" line. Both in `value-ledger-config.js`.
+  **Test:** `tools/test-value-ledger.mjs`, `tools/test-value-backtest.mjs`.
+- **Calibration:** `h2h-model/config.js` `calibration` {enabled, temperature 1.3} — stage 3 prices
+  sigmoid(logit(adjustedP1) / T); stage 2 keeps the raw probability and stage 3 records it (`stage3.calibration.rawP1`); the
+  ledger snapshot keeps it in `detail.calibration`. **LIVE** by founder ruling on the go-live report (2026-11-02; last 30
+  days, out of sample: log-loss 0.6467 → 0.6417, Brier 0.2282 → 0.2259, Sharp Value flags 87 of 386 sides changed);
+  rollback = `enabled: false`, one commit. Frozen pre-match prices of started matches never change. **Test:** `h2h-model/test-h2h.js`
+  "Stage 3 calibration".

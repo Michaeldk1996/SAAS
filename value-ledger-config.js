@@ -11,8 +11,13 @@ module.exports = {
   tiers: [
     { name: 'Value',           min: 0.02, max: 0.05 },
     { name: 'Strong value',    min: 0.05, max: 0.10 },
-    { name: 'Max value (+++)', min: 0.10, max: null },
+    { name: 'Max value (+++)', min: 0.10, max: 0.15 },
   ],
+  // Edges at or above this are treated as a likely model error, not value (Michael 2026-11-02, point 3: backtest edges
+  // of 20%+ won 2 of 11 on bet105). Their own group, "Capped (likely model error)", never a tier. null = no cap.
+  edgeCap: 0.15,
+  // The bet rule Michael agreed (2026-11-02, point 4): only mild edges. Its own "Followed the bet rule" summary line.
+  betRule: { min: 0.02, max: 0.05 },
   // A tier's rates (avg CLV, win rate, ROI) need this many settled bets; below it the summary shows the count and a dash.
   minSettledForRates: 30,
   // CLV is read only from a Pinnacle close whose price was last seen at most this many minutes before the start (the

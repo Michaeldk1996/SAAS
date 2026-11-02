@@ -444,6 +444,18 @@ module.exports = {
   liveSignalCap: 0.07,
   liveSignalCapLayerIds: [8, 9, 12],
 
+  // ---- Stage 3 calibration (Michael 2026-11-02: "Soften (T 1.3)") ------
+  // The model's fair probability is too extreme: favourites rated too high, underdogs too low (backtest of the frozen
+  // pre-match prices 23 Jul – 1 Nov: model 62% → won 58%, 77% → 72%, 21% → 25%). Temperature scaling pulls it toward
+  // 50%: fairP1 = sigmoid(logit(adjustedP1) / temperature). T fitted on Jul–Sep (608 matches, log-loss), tested on
+  // Oct–Nov (189 matches never used in the fit): log-loss 0.6442 → 0.6398. ONE switch. LIVE by founder ruling on the
+  // go-live report (2026-11-02: "Yes let's go!"; report: last 30 days log-loss 0.6467 → 0.6417, 87 of 386 Sharp Value
+  // flags changed); rollback = enabled false, one commit.
+  calibration: {
+    enabled: true,
+    temperature: 1.3,
+  },
+
   // ---- Stage 3: value detection --------------------------------------
   value: {
     // Edge = fairProb - marketImplied (vig-removed). Flag thresholds:

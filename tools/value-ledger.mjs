@@ -49,8 +49,10 @@ export function edgeFor(s, basis = CFG.edgeBasis) {
   return basis === 'b105' ? num(s.edge_b105) : edgeOf(s.model_prob, noVig(s.b105_price, s.b105_opp_price));
 }
 // The tier of an edge under the config's thresholds, or null (untagged / no edge).
-export function tierOf(edge, tiers = CFG.tiers) {
+export const CAPPED = 'Capped (likely model error)';
+export function tierOf(edge, tiers = CFG.tiers, cap = CFG.edgeCap) {
   if (edge == null || !Number.isFinite(edge)) return null;
+  if (cap != null && edge >= cap) return CAPPED;
   for (const t of tiers) if (edge >= t.min && (t.max == null || edge < t.max)) return t.name;
   return null;
 }
@@ -138,7 +140,7 @@ export function buildSnapshots({ modelOutput, matches, lines, hbAgeMs, runId, no
         b105_price: b.price, b105_opp_price: b.opp, b105_price_at: b.price != null ? b.at : null, b105_status: b.status,
         edge_b105: edgeOf(prob, b.price), edge_pin: edgeOf(prob, pinNow),
         detail: { anchorBook: bs.anchorBook || null, anchorPrice: state === 1 && bs.anchorPrice ? bs.anchorPrice : undefined,
-          pinSource: sharp ? sharp.source || null : null, b105LastAt: b.price == null ? b.at : undefined, modelGeneratedAt: e.generatedAt || null },
+          pinSource: sharp ? sharp.source || null : null, calibration: e.stage3.calibration || undefined, b105LastAt: b.price == null ? b.at : undefined, modelGeneratedAt: e.generatedAt || null },
       });
     }
   }
@@ -215,7 +217,7 @@ export function summarise(rows, cfg = CFG) {
   for (const r of rows) {
     const k = keyOf(r); if (!groups.has(k)) groups.set(k, []); groups.get(k).push(r);
   }
-  const order = cfg.tiers.map(t => t.name).concat(['untagged']);
+  const order = cfg.tiers.map(t => t.name).concat([CAPPED, 'untagged']);
   const out = [];
   for (const mk of ['first_edge', 'last_pre_start']) for (const pk of ['full', 'alt-anchor', 'elo-only']) for (const tn of order) {
     const g = groups.get([mk, pk, tn].join('|')) || [];
@@ -270,7 +272,7 @@ export function exportRows(snaps, marks, settles, cfg = CFG) {
   const settleOf = new Map();
   for (const x of settles) if (!superseded.has(x.id)) { const k = x.event_key + '|' + x.side; const p = settleOf.get(k); if (!p || x.id > p.id) settleOf.set(k, x); }
   const edge = s => edgeFor(s, cfg.edgeBasis);
-  const base = s => Object.assign({}, s, { snapshot_id: s.id, event_tier: s.tier, edge: edge(s), tier: tierOf(edge(s), cfg.tiers) || 'untagged' });
+  const base = s => Object.assign({}, s, { snapshot_id: s.id, event_tier: s.tier, edge: edge(s), tier: tierOf(edge(s), cfg.tiers, cfg.edgeCap) || 'untagged' });
   const settled = (s, kind) => {
     const st = settleOf.get(s.event_key + '|' + s.side) || {};
     const b = px(s.b105_price), res = st.result ?? null, close = px(st.close_price), opp = px(st.close_opp_price);

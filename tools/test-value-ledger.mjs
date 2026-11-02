@@ -15,10 +15,11 @@ const near = (a, b) => a != null && b != null && Math.abs(a - b) < 1e-6;
 
 // ── tiers: one config, re-testable ────────────────────────────────────────────────────────────────────────────────────
 console.log('tiers');
-check('0.0199 untagged · 0.02 Value · 0.0499 Value · 0.05 Strong · 0.0999 Strong · 0.10 Max · 0.5 Max',
-  [0.0199, 0.02, 0.0499, 0.05, 0.0999, 0.10, 0.5].map(e => L.tierOf(e)).join('|') === '|Value|Value|Strong value|Strong value|Max value (+++)|Max value (+++)');
+check('0.0199 untagged · 0.02 Value · 0.0499 Value · 0.05 Strong · 0.0999 Strong · 0.10 Max · 0.1499 Max · 0.15 and 0.5 capped (likely model error)',
+  [0.0199, 0.02, 0.0499, 0.05, 0.0999, 0.10, 0.1499, 0.15, 0.5].map(e => L.tierOf(e)).join('|') === '|Value|Value|Strong value|Strong value|Max value (+++)|Max value (+++)|Capped (likely model error)|Capped (likely model error)');
+check('no cap (null) puts every big edge back in Max value', L.tierOf(0.5, CFG.tiers, null) === null && L.tierOf(0.12, CFG.tiers, null) === 'Max value (+++)');
 check('no edge (null) is untagged, never a tier', L.tierOf(null) === null && L.tierOf(NaN) === null);
-check('the thresholds are the config\'s', CFG.tiers.map(t => t.min).join() === '0.02,0.05,0.1' && CFG.tiers[2].max === null);
+check('the thresholds are the config\'s (cap 15%, bet rule 2–5%)', CFG.tiers.map(t => t.min).join() === '0.02,0.05,0.1' && CFG.tiers[2].max === 0.15 && CFG.edgeCap === 0.15 && CFG.betRule.min === 0.02 && CFG.betRule.max === 0.05);
 const alt = [{ name: 'A', min: 0.03, max: null }];
 check('another config re-tiers the same edge (0.025: Value → untagged)', L.tierOf(0.025) === 'Value' && L.tierOf(0.025, alt) === null);
 const src = fs.readFileSync(path.join(ROOT, 'tools/value-ledger.mjs'), 'utf8');

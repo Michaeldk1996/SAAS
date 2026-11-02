@@ -47,8 +47,10 @@ export function cardKey(date, p1, p2) {
 }
 export function noVig(p, q) { const a = px(p), b = px(q); return a == null || b == null ? null : r6(1 / ((1 / a) / (1 / a + 1 / b))); }
 export function edgeOf(prob, price) { const p = num(prob), o = num(price); return p == null || o == null || o <= 1 ? null : r6(p * o - 1); }
-export function tierOf(edge, tiers = CFG.tiers) {
+export const CAPPED = 'Capped (likely model error)';
+export function tierOf(edge, tiers = CFG.tiers, cap = CFG.edgeCap) {
   if (edge == null || !Number.isFinite(edge)) return null;
+  if (cap != null && edge >= cap) return CAPPED;
   for (const t of tiers) if (edge >= t.min && (t.max == null || edge < t.max)) return t.name;
   return null;
 }
@@ -154,10 +156,11 @@ export function toCsv(rows, cfg = CFG, at = new Date().toISOString()) {
   const tierTxt = cfg.tiers.map(t => `${t.name} ${pct(t.min, 0)}${t.max == null ? '+' : '–' + pct(t.max, 0)}`).join(' · ');
   L.push(['Model backtest — RECONSTRUCTED FROM RECORDS (separate from the forward ledger)', at].map(cell).join(','));
   L.push(cell(`Population: every side of every match the model priced at full model (state 2) since 23 Jul 2026, frozen at its first full-model read (admin-log valueSnapshot), never recomputed. Edge = model probability × no-vig entry price − 1: bet105 where both sides were priced at that moment, else Pinnacle's no-vig price from the snapshot. Tiers: ${tierTxt}. Sharp Value = the Model page's flag (model − Pinnacle no-vig ≥ ${SHARP_VALUE_MIN * 100} pts). Profit flat 1u, retirements on Pinnacle rules; bet105 rows at the price as quoted, Pinnacle rows at the NO-VIG price (no margin: flatters them). Fewer than ${cfg.minSettledForRates} bets: counts only, rates a dash. CLV vs a verified Pinnacle close (board, from 27 Sep). Model versions changed over these months.`));
-  const tiers = cfg.tiers.map(t => t.name).concat(['untagged']);
+  const tiers = cfg.tiers.map(t => t.name).concat([CAPPED, 'untagged']);
   for (const src of ['bet105', 'pinnacle-novig']) {
     const R = rows.filter(r => r.source === src);
     block(`By value tier · ${SRC[src]}`, summary(R, r => r.tier), tiers);
+    if (cfg.betRule) block(`Followed the bet rule (edge ${pct(cfg.betRule.min, 0)}–${pct(cfg.betRule.max, 0)}) · ${SRC[src]}`, summary(R.filter(r => r.edge != null && r.edge >= cfg.betRule.min && r.edge < cfg.betRule.max), () => 'bet rule'));
     block(`By Sharp Value flag · ${SRC[src]}`, summary(R, r => (r.sharp_value ? 'Sharp Value' : 'no Sharp Value')), ['Sharp Value', 'no Sharp Value']);
     block(`Sharp Value bets by month · ${SRC[src]}`, summary(R.filter(r => r.sharp_value), r => r.month));
     block(`Value tiers (2%+) by month · ${SRC[src]}`, summary(R.filter(r => r.edge != null && r.edge >= cfg.tiers[0].min), r => r.month));

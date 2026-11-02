@@ -57,5 +57,7 @@ const csv = B.toCsv(rows, undefined, '2026-11-02T00:00:00Z');
 check('the CSV says what it is, keeps the two price sources apart and lists every row', /RECONSTRUCTED FROM RECORDS/.test(csv.split('\n')[0])
   && csv.includes('By value tier · bet105 (as quoted)') && csv.includes('By value tier · Pinnacle no-vig (no margin, not bettable)') && (csv.match(/\n100,/g) || []).length === 2);
 
+check('an edge of 15% or more is capped (likely model error), never a tier', B.tierOf(0.16) === B.CAPPED && B.tierOf(0.149) === 'Max value (+++)');
+check('the CSV carries the "Followed the bet rule (2%–5%)" line per price source', csv.includes('Followed the bet rule (edge 2%–5%) · bet105 (as quoted)') && csv.includes('Followed the bet rule (edge 2%–5%) · Pinnacle no-vig'));
 console.log(`\ntest-value-backtest: ${pass} passed, ${fail} failed`);
 process.exitCode = fail ? 1 : 0;

@@ -116,7 +116,11 @@ function runModel(match, opts = {}) {
   const adjustedP1 = clamp(baselineP1, 1 - tierCeil, tierCeil);
 
   // ---- Stage 3 ----
-  const pricing = priceAndValue(adjustedP1, match);
+  // Calibration (config.calibration, one switch, staged off): temperature-scale the adjusted probability toward 50%.
+  // Stage 2 keeps the uncalibrated adjustedP1; stage 3 prices the calibrated one and records both.
+  const cal = calibrate(adjustedP1, config.calibration);
+  const pricing = priceAndValue(cal.p1, match);
+  pricing.calibration = cal.applied ? { applied: true, temperature: cal.temperature, rawP1: round4(adjustedP1) } : { applied: false };
 
   const appliedCount = adjustments.filter(a => a.applied).length;
   const gatedCount = adjustments.filter(a => a.gated).length;
@@ -207,6 +211,13 @@ function playerMeta(p) {
 }
 
 function round4(x) { return Math.round(x * 1e4) / 1e4; }
+// Temperature scaling of P(p1 wins): sigmoid(logit(p) / T). T > 1 pulls toward 50%; off (or T 1) returns p unchanged.
+function calibrate(p1, cfg) {
+  const T = cfg && Number(cfg.temperature);
+  if (!cfg || cfg.enabled !== true || !(T > 0) || T === 1 || !(p1 > 0 && p1 < 1)) return { p1, applied: false };
+  const z = Math.log(p1 / (1 - p1)) / T;
+  return { p1: 1 / (1 + Math.exp(-z)), applied: true, temperature: T };
+}
 
 // Current-rank proxy for a resolved player bundle: profile rank first (only
 // covers ~current-slate players), then elo-ratings overall rank (wider tail).
@@ -281,4 +292,4 @@ function selectMarketAnchor(match) {
   return { state: 3, market: null, book: null, anchorPrice: null, frozen: false, flag: flags[3] };
 }
 
-module.exports = { runModel, inferBestOf, selectMarketAnchor };
+module.exports = { runModel, inferBestOf, selectMarketAnchor, calibrate };
