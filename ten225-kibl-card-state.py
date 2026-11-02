@@ -506,10 +506,24 @@ def stream_close(series, start_ts, gaps):
 
 def suspended_after(obs_list, change_ts, start_ts):
     """True when the sweep saw Bet105's 0.000 suspension marker after the close's price and before the start."""
+    return first_suspension(obs_list, change_ts, start_ts) is not None
+
+
+def first_suspension(obs_list, change_ts, start_ts):
+    """The epoch of Bet105's FIRST 0.000 suspension marker after the close's price and before the start, or None."""
     if change_ts is None or start_ts is None:
-        return False
-    return any(real_price(o) is None and epoch(o.get('inserted_on')) is not None
-               and change_ts < epoch(o['inserted_on']) < start_ts for o in obs_list)
+        return None
+    ts = [epoch(o['inserted_on']) for o in obs_list
+          if real_price(o) is None and epoch(o.get('inserted_on')) is not None
+          and change_ts < epoch(o['inserted_on']) < start_ts]
+    return min(ts) if ts else None
+
+
+# Founder ruling 2026-11-02 ("Yes, keep it"): Bet105 suspends its market a minute or two before the first ball (31 Oct:
+# Medvedev v Alcaraz 61 s, Lehecka v Struff 149 s, Zverev v De Minaur 218 s before the verified start). A suspension
+# within this many seconds of the verified start is the book closing at the off: the last price stood until the
+# suspension, so it is kept as the close, sighted AT the suspension. An earlier suspension is still no close (a dash).
+SUSPEND_AT_OFF_S = 300
 
 
 def close_time(obs, start_ts):
@@ -1053,7 +1067,13 @@ def build_rows(kibl_fixtures, observations, odds_index, as_of,
                 st['close_basis_sweep_fallback'] += 1
                 close_obs = close_of(lst, start_ts)
             _chg = (_sc[2] if _sc else epoch(close_obs['inserted_on'])) if close_obs else None
-            if close_obs is not None and suspended_after(lst, _chg, start_ts):
+            _sus = first_suspension(lst, _chg, start_ts) if close_obs is not None else None
+            if _sus is not None and start_ts - _sus <= SUSPEND_AT_OFF_S:
+                # the book closed at the off (founder 2026-11-02): keep the last price, sighted at the suspension
+                st['close_kept_suspended_at_off'] += 1
+                if _sc:
+                    _sc = (_sc[0], min(_sc[1], _sus), _sc[2])
+            elif _sus is not None:
                 st['close_dash_suspended_after_last_price'] += 1
                 close_obs, _sc = None, None
             # ITEM 1(b) CONTROL — what the pre-fix build would have picked on

@@ -554,6 +554,15 @@ stream closes change price, each to a tick recorded before the new start (Cerund
 
 Reject `trueStartTime` when `end − start > 6h` or `end < start`.
 
+**Bet105 close from the stream, and a suspension at the off** (founder rulings 2026-10-27 and 2026-11-02). The Bet105 close
+is the Kibl stream's last price change before the verified start (`kibl_now_history`; the sweep only for a card the stream does
+not carry); a push feed sends nothing while a price stands, so the last change is the price at the off unless the worker lost
+history (a `kibl_now_gaps` row with lost_history, which stamps the close at the gap's start). **A Bet105 0.000 suspension after
+the last price** is no close (a dash) — **except within 300 s before the verified start** (2026-11-02, "Yes, keep it"): that is
+the book closing at the off, so the last price is the close, sighted AT the suspension (31 Oct: Medvedev v Alcaraz 61 s,
+Lehecka v Struff 149 s, Zverev v De Minaur 218 s). **Test:** `test-ten225-kibl-card-state.py` "SUSPENSION AT THE OFF" (120 s
+kept and stamped at the suspension; 360 s and 600 s dashed; mutant: the rule removed dashes the 120 s case).
+
 **Kibl Close = the last price SEEN before the actual start** (TEN-253 Fix 1, founder 2026-09-23). A row competes only if it is a real price (≥ 1.01), was **inserted before the start**, and **Kibl marks it `is_current`**. The winner is the one with the latest `min(last_seen_at, start)`, ties to the later insert; `close_ts` is that capped clock — **our** sweep clock, not Kibl's insert time, so it is published with `closeTsKind: 'sighting'` and never labelled vendor-insert. Test: a price still listed at the off closes at lag 0; a price never re-seen closes at its own sighting time.
 - **Never a superseded row.** Kibl keeps superseded prices listed — the opener for the life of the fixture, and superseded non-openers after replacement (10 of 22 re-seen after a later row replaced them, run `35827198225`). Such a row caps to a perfect-looking lag 0 and would put an earlier price in the Close column. Exception: an opener that is **still** current (opened, never moved) competes normally.
 - `inserted_on` is never the Close clock (it is Kibl's first-saved time). It survives only as the control arm `close_of_inserted_on()`.

@@ -987,9 +987,10 @@ check('GAP RULE: last change 10:00, lost-history gap from 10:30 -> lag 90 min ->
       all(r['close_within_60'] is False and r['close_price'] is not None for r in _b))
 check('GAP RULE: a gap that closed BEFORE the last change does not count',
       K.stream_close([(_E(T % (11, 47)), 1.48)], S0, [(_E(T % (9, 0)), _E(T % (10, 0)), True)])[1] == S0)
-# SUSPENSION: Bet105's 0.000 marker after the last price -> no close (a dash), never the pre-suspension price.
-_susp = {77: _old_obs[77] + [cur(0.0, T % (11, 55), T % (11, 56), side_id=2, fixture_participant_id=1),
-                             cur(0.0, T % (11, 55), T % (11, 56), side_id=3, fixture_participant_id=2)]}
+# SUSPENSION: Bet105's 0.000 marker after the last price and MORE than 300 s before the start -> no close (a dash),
+# never the pre-suspension price. (Founder 2026-11-02: within 300 s of the start it is the book closing at the off — below.)
+_susp = {77: _old_obs[77] + [cur(0.0, T % (11, 50), T % (11, 51), side_id=2, fixture_participant_id=1),
+                             cur(0.0, T % (11, 50), T % (11, 51), side_id=3, fixture_participant_id=2)]}
 _b, _bst, _, _ = _sb(obs_=_susp)
 check('SUSPENSION: a 0.000 marker after the last price -> no close, NULL flag (Altmaier v Cerundolo 26 Oct)',
       all(r['close_price'] is None and r['close_within_60'] is None for r in _b), [r['close_price'] for r in _b])
@@ -997,6 +998,28 @@ check('...counted', _bst['close_dash_suspended_after_last_price'] == 2, dict(_bs
 _b, _bst, _, _ = _sb(obs_=_susp, stream={})
 check('SUSPENSION on the sweep fallback too: the pre-suspension 1.50 is not a close',
       all(r['close_price'] is None for r in _b), [r['close_price'] for r in _b])
+# SUSPENSION AT THE OFF (founder 2026-11-02, "Yes, keep it"): a marker 2 min before the verified start (Medvedev v Alcaraz,
+# 31 Oct: last stream price 14:04:48, suspended 14:08:24, start 14:09:25) keeps the last price, sighted at the suspension.
+_off = {77: _old_obs[77] + [cur(0.0, T % (11, 58), T % (11, 59), side_id=2, fixture_participant_id=1),
+                            cur(0.0, T % (11, 58), T % (11, 59), side_id=3, fixture_participant_id=2)]}
+_b, _bst, _, _ = _sb(obs_=_off)
+check('SUSPENSION AT THE OFF: a marker 120 s before the start keeps the last stream price as the close',
+      all(r['close_price'] is not None for r in _b), [r['close_price'] for r in _b])
+check('...sighted AT the suspension (11:58), never the start: the 300 s real-close judge reads the true lag',
+      all(r['close_ts'] == K.iso(_E(T % (11, 58))) and r['close_within_60'] is True for r in _b), [r['close_ts'] for r in _b])
+check('...counted as kept at the off, not dashed', _bst['close_kept_suspended_at_off'] == 2 and _bst['close_dash_suspended_after_last_price'] == 0, dict(_bst))
+_edge = {77: _old_obs[77] + [cur(0.0, T % (11, 54), T % (11, 55), side_id=2, fixture_participant_id=1),
+                             cur(0.0, T % (11, 54), T % (11, 55), side_id=3, fixture_participant_id=2)]}
+_b, _bst, _, _ = _sb(obs_=_edge)
+check('SUSPENSION 360 s before the start -> still a dash (outside the 300 s window)',
+      all(r['close_price'] is None for r in _b) and _bst['close_dash_suspended_after_last_price'] == 2, dict(_bst))
+_ksrc = open(K.__file__).read()
+_anchor = "if _sus is not None and start_ts - _sus <= SUSPEND_AT_OFF_S:"
+_KM = types.ModuleType('KM'); _KM.__file__ = K.__file__
+exec(compile(_ksrc.replace(_anchor, "if False:"), K.__file__, 'exec'), _KM.__dict__)
+_bm, _, _, _ = _KM.build_rows(_fx, _off, _ix, _E(T % (13, 0)), stream=_st, gaps=())
+check('MUTANT control: without the at-the-off rule the 120 s case is dashed again (the check above bites)',
+      _anchor in _ksrc and all(r['close_price'] is None for r in _bm), [r['close_price'] for r in _bm])
 # FALLBACK: a card the stream does not carry keeps the sweep cut, unchanged.
 _b, _bst, _, _ = _sb(stream={('2026-09-18|other|card', 'other'): [(_E(T % (11, 47)), 1.48)]})
 check('FALLBACK: no stream row on this card -> the sweep close (1.50 / 2.60, flagged FALSE as before)',
