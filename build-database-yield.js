@@ -586,7 +586,9 @@ const LOWER_COLS = ['date', 'level', 'tournament', 'round', 'winner', 'loser', '
 // 11 = Pinnacle (approx.) before the start (founder 2026-11-01, Task B): our Oddspapi archive's last pre-match pair before the
 // earliest of the scheduled start, the gated trueStart and our first live sighting — after start − 10, before api-tennis
 const SCHED_BOOK = 11, SCHED_SOURCE = 'oddspapi Pinnacle (before start)';
-const LOWER_RANK = { 3: 0, 4: 0, 5: 1, 11: 1.1, 2: 1.5, 8: 1.75, 6: 3, 7: 4, 10: 5 };
+// book 11 (Pinnacle (approx.) before the start, Task B) is LAST: it fills a dash only — the brief: "don't touch any row that
+// already has a price" (2 Nov: ranked above api-tennis it would have re-priced ~338 already-priced ATP main-draw matches)
+const LOWER_RANK = { 3: 0, 4: 0, 5: 1, 2: 1.5, 8: 1.75, 6: 3, 7: 4, 10: 5, 11: 6 };
 const TE_SOURCE = 'Tennis Explorer · Pinnacle', TE_B365_SOURCE = 'Tennis Explorer · Bet365';
 const LOWER_LEVEL_NAME = { 'atp-q': 'ATP Qualifying', ch: 'Challenger', 'ch-q': 'Challenger Qualifying', itf: 'ITF',
   // founder brief 2026-10-19 (item 1): an ATP main-draw match at an event Tennis-Data does not carry (Davis Cup, United Cup,

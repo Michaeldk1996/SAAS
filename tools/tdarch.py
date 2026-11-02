@@ -1046,8 +1046,8 @@ def lower_feed_rows(current):
         if r.get('source') in TE_SOURCES and (not TE_FEED_ON or te_in_play(r)):
             continue
         # founder 2026-10-20: start - 10 > api-tennis Pinnacle > Tennis Explorer Pinnacle > api-tennis Bet365; founder 2026-10-30:
-        # Tennis Explorer Bet365 last, before the dash
-        rank = (0 if r.get('source') == START10_SOURCE else 0.5 if r.get('source') == SCHED_SOURCE else 1.5 if r.get('source') == TE_SOURCE else 2 if r.get('source') == B365_SOURCE
+        # Tennis Explorer Bet365, then (founder 2026-11-01, Task B) Pinnacle before the start, which only fills a dash
+        rank = (0 if r.get('source') == START10_SOURCE else 4 if r.get('source') == SCHED_SOURCE else 1.5 if r.get('source') == TE_SOURCE else 2 if r.get('source') == B365_SOURCE
                 else 3 if r.get('source') == TE_B365_SOURCE else 1)
         if k not in best or rank < best[k][0]:
             best[k] = (rank, r)

@@ -557,8 +557,9 @@ match from 17 Sep 2026 (the verified-start era; Challenger and qualifying after 
 "Pinnacle (approx.)", book 11, hover "Pinnacle (approx.) · Pinnacle history, last pre-match price before the start, not a
 confirmed close"): the last ACTIVE entry per side at or before the EARLIEST of api-tennis's scheduled start, Oddspapi's gated
 trueStart and our first live sighting (`tools/tdarch.py sched-import`, every 3 h in `te-import-scheduled.yml`). The row names
-which time set its cut (`start_source`); it is never a close and never counted as one; a verified close always outranks it
-(lower feed: close > start − 10 > before start > api-tennis Pinnacle > Tennis Explorer > Bet365). The scheduled time is used
+which time set its cut (`start_source`); it is never a close and never counted as one; it ONLY FILLS A DASH: every other source
+outranks it (lower feed and Database: close > start − 10 > api-tennis Pinnacle > Tennis Explorer > Bet365 > before start; the
+brief: "don't touch any row that already has a price"). The scheduled time is used
 here ONLY as an upper bound on the cut (an exception to the 2026-10-26 "rejects or stops only" rule, by this ruling); a price
 after the cut is never read. ITF is out. The Pinnacle back-fill (`pinarch.py backfill`) pulls every started fixture with no
 payload up to 3 h ago, not only those before 17 Sep: the post-start pull covers only flips with a verified start (27 Oct –

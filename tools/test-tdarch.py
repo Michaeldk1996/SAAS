@@ -616,7 +616,9 @@ check('before start: the cut is the earliest of the three; with none there is no
 _ap = lambda src, p: {'id': 1, 'source': src, 'match_date': '2026-10-27', 'tournament': 'X', 'winner': 'A. One', 'loser': 'B. Two', 'event_key': 902,
                       'price_winner': p, 'price_loser': 2.0, 'detail': {'level': 'ch'}, 'cut_ts': None, 'gap_to_start_s': None}
 lf = T.lower_feed_rows([_ap(T.APPROX_SOURCE, 1.5), _ap(T.SCHED_SOURCE, 1.6)])
-check('before start: in the lower feed it wins over api-tennis Pinnacle (one source per match)', [x['source'] for x in lf] == [T.SCHED_SOURCE], lf)
+check('before start: it only fills a dash — api-tennis Pinnacle keeps a match it prices (the brief: never touch a priced row)', [x['source'] for x in lf] == [T.APPROX_SOURCE], lf)
+lf3 = T.lower_feed_rows([_ap(T.TE_B365_SOURCE, 1.62), _ap(T.SCHED_SOURCE, 1.6)])
+check('before start: even Tennis Explorer Bet365 keeps its match; alone, the before-start price fills the dash', [x['source'] for x in lf3] == [T.TE_B365_SOURCE] and [x['source'] for x in T.lower_feed_rows([_ap(T.SCHED_SOURCE, 1.6)])] == [T.SCHED_SOURCE], lf3)
 lf2 = T.lower_feed_rows([_ap(T.START10_SOURCE, 1.55), _ap(T.SCHED_SOURCE, 1.6)])
 check('before start: start − 10 still ranks above it', [x['source'] for x in lf2] == [T.START10_SOURCE], lf2)
 # the fetch the importer uses keeps the ATP main-draw matches (the first build dropped every one: atp-nt never reached it)
