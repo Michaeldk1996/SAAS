@@ -290,16 +290,33 @@ jobs:
           key: ten270-card-${{ github.run_id }}
           restore-keys: ten270-card-
 
+      # Architecture program stage 3 (2026-11-03): the card state is built by the always-on card worker (kibl-stream app,
+      # process group `cards`, every 10 min, kibl-stream/cards_worker.py). While it has a good cycle under 20 min old this
+      # job does NOT build it too — one writer for odds_card_state — but still publishes odds-card-state.json from the
+      # same table (the page's fallback, and the like-for-like check against public.card_state_doc). The card_state_doc
+      # schema is applied here, through the gate (only when the file changes).
+      - name: Card worker — fresh? (stage 3)
+        id: cardworker
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+        run: |
+          set -euo pipefail
+          python3 -B ten232-schema-gate.py card-state-doc-schema.sql
+          python3 -B tools/card-worker-fresh.py
+
       - name: Card state (Open / Now / Close)
         id: cards
         # Only when the sweep actually ran. A skipped firing moved nothing, and
         # re-reading the whole card table twelve times an hour to project an
         # unchanged archive is cost with no output.
         if: |
+          steps.cardworker.outputs.fresh != 'true' && (
           inputs.mode == 'cards' ||
           ((github.event_name == 'schedule' || inputs.mode == 'sweep') &&
            steps.sweep.outputs.swept != 'false' &&
-           steps.guard.outputs.busy != 'true')
+           steps.guard.outputs.busy != 'true'))
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}

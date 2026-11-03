@@ -55,6 +55,20 @@ primary_region = "sjc"
 [[vm]]
   size = "shared-cpu-1x"
   memory = "256mb"
+  processes = ["app"]
+
+# Architecture program stage 3 (2026-11-03): the card-state worker, its OWN machine in this app (same image, same
+# secrets, same deploy token), so the stream's machine is never shared with a heavy job. Every 10 min it builds the
+# card state from a fresh clone of main and writes the published doc to public.card_state_doc (cards_worker.py).
+# 1 GB: the builder holds ~68k card rows + ~45k observations + ~62k Oddspapi fixtures in memory.
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "1gb"
+  processes = ["cards"]
+
+[processes]
+  app = "python3 kibl-stream/now_worker.py"
+  cards = "python3 kibl-stream/cards_worker.py"
 
 # NO [http_service] AND NO [[services]] BLOCK, and that is the correction.
 #

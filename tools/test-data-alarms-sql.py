@@ -137,6 +137,16 @@ def suite(tag, src=SRC):
     answer(card_min=40); tick(); deliver()
     check(f'{tag}card_state: 40 min → RECOVERED', len(msgs('card_state')) == 3 and 'RECOVERED' in msgs('card_state')[2], msgs('card_state'))
 
+    # stage 3: card prices from the database doc — a fresh card_state_doc keeps the row good though the file is old
+    q("create table if not exists public.card_state_doc (id smallint primary key, generated_at timestamptz, doc jsonb)")
+    q("insert into public.card_state_doc values (1, now() - interval '3 minutes', '{}') on conflict (id) do update set generated_at = excluded.generated_at")
+    answer(card_min=120); tick(); deliver(); answer(card_min=120); tick(); deliver()
+    check(f'{tag}card_state: a 3-min-old card_state_doc wins over a 120-min-old file (no alarm)', len(msgs('card_state')) == 3, msgs('card_state'))
+    q("update public.card_state_doc set generated_at = now() - interval '70 minutes'")
+    answer(card_min=120); tick(); deliver(); answer(card_min=120); tick(); deliver()
+    check(f'{tag}card_state: a 70-min-old doc and a 120-min-old file → ALARM', len(msgs('card_state')) == 4 and 'ALARM' in msgs('card_state')[3], msgs('card_state'))
+    q("drop table public.card_state_doc"); answer(card_min=2); tick(); deliver(); answer(card_min=2); tick(); deliver()
+
     # unreadable twice in a row is an alarm; once is not
     answer(status=503, only={'build_info'}); answer(only={'card_state', 'matches', 'coverage'}); tick(); deliver()
     check(f'{tag}one unreadable build-info.json → no alarm', len(msgs('data_age')) == 2, msgs('data_age'))

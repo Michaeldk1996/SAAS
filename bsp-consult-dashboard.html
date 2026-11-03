@@ -6766,7 +6766,7 @@ function oddsGap(m){
 // consulted for that match at all. Where it does NOT cover a match, every
 // existing binding is untouched — this is additive, and a match the publisher
 // has never heard of renders exactly as it did before.
-const OCS = { byKey: null, generatedAt: null, gen: 0, loaded: false };
+const OCS = { byKey: null, generatedAt: null, gen: 0, loaded: false, source: null };
 
 // The JS twin of ten225_names.py. Same rule, restated in the one other language
 // that has to compute it. Two copies of a matcher is how a matcher drifts, so
@@ -7380,13 +7380,45 @@ function mcTitleAttr(txt){
   // read it); a `title` here would pop a second box over the new one.
   return txt ? ` data-pt="${String(txt).replace(/"/g, '&quot;')}"` : '';
 }
+// Architecture program stage 3 (2026-11-03): card prices are read from the DATABASE (public.card_state_doc, the doc the
+// always-on card worker writes every 10 min — the same projection as odds-card-state.json). The committed file is the
+// fallback: read when the database answers nothing, or its doc is older than OCS_DB_STALE_MS, and then the NEWER of the
+// two is used. OCS.source names which one the page shows ('db' | 'file').
+const OCS_DB_STALE_MS = 30 * 60 * 1000;
+async function ocsFetchDb(){
+  const u = (window.SUPABASE_URL || ''), k = (window.SUPABASE_ANON_KEY || '');
+  if (!/^https:\/\//.test(u) || !k || /__SUPABASE/.test(u + k)) return null;
+  try {
+    const res = await fetch(`${u.replace(/\/$/, '')}/rest/v1/card_state_doc?id=eq.1&select=doc`, { cache: 'no-store',
+      headers: { apikey: k, Authorization: 'Bearer ' + k } });
+    if (!res.ok) return null;
+    const rows = await res.json();
+    const doc = rows && rows[0] && rows[0].doc;
+    return doc && doc.byKey ? doc : null;
+  } catch (e){ return null; }
+}
+async function ocsFetchFile(){
+  const res = await fetch('./odds-card-state.json', { cache: 'no-cache' });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return JSON.parse(await res.text());
+}
+function ocsPickNewer(db, file){
+  const t = d => (d && d.generatedAt ? Date.parse(d.generatedAt) : NaN);
+  if (db && !(t(file) > t(db))) return { doc: db, source: 'db' };
+  if (file) return { doc: file, source: 'file' };
+  return db ? { doc: db, source: 'db' } : null;
+}
 async function loadOddsCardState(){
   try {
-    const res = await fetch('./odds-card-state.json', { cache: 'no-cache' });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const doc = JSON.parse(await res.text());
+    const db = await ocsFetchDb();
+    let file = null;
+    if (!db || !(Date.now() - Date.parse(db.generatedAt) < OCS_DB_STALE_MS)) file = await ocsFetchFile().catch(() => null);
+    const pick = ocsPickNewer(db, file);
+    if (!pick) throw new Error('neither the database nor odds-card-state.json answered');
+    const doc = pick.doc;
     OCS.byKey = doc && doc.byKey ? doc.byKey : {};
     OCS.generatedAt = doc ? doc.generatedAt || null : null;
+    OCS.source = pick.source;
   } catch (err){
     // A missing or unreadable file is NOT an error state for the page: every
     // surface below already dashes what it does not have, and the pre-TEN-225

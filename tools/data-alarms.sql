@@ -35,7 +35,7 @@ alter table data_alarms.config add column if not exists confirm_ticks integer no
 alter table data_alarms.config add column if not exists recover_below interval;                     -- once bad, good again only below this (null = threshold)
 insert into data_alarms.config (name, threshold, min_pct, what) values
   ('data_age',    interval '60 minutes', null, 'published site data (build-info.json data.builtAt)'),
-  ('card_state',  interval '60 minutes', null, 'card prices file (odds-card-state.json generatedAt)'),
+  ('card_state',  interval '60 minutes', null, 'card prices (the newer of card_state_doc and odds-card-state.json)'),
   ('live_poller', interval '10 minutes', null, 'live poller (live_snapshot.updated_at) while ATP singles are scheduled'),
   ('kibl_stream', interval '10 minutes', null, 'kibl-stream worker heartbeat'),
   ('close_cover', null,                  90,   'yesterday''s Completed cards with a card-book close'),
@@ -191,9 +191,17 @@ begin
     if forced then age := make_interval(mins => (fz.fake->>'age_min')::int);
     else
       select * into lf from data_alarms.last_fetch(case p_name when 'data_age' then 'build_info' else 'card_state' end);
-      if lf.unread then bad := true; detail := format('%s cannot be read (two checks in a row)', cfg.what); return; end if;
-      if (lf.f).id is null then return; end if;
-      age := (lf.f).fired_at - (lf.f).stamp;
+      -- stage 3 (2026-11-03): the page shows the NEWER of public.card_state_doc (the always-on worker) and the file
+      if p_name = 'card_state' and to_regclass('public.card_state_doc') is not null then
+        execute 'select generated_at from public.card_state_doc where id = 1' into ts;
+      end if;
+      if ts is not null and (lf.unread or (lf.f).id is null or ts > (lf.f).stamp) then
+        age := p_now - ts;
+      else
+        if lf.unread then bad := true; detail := format('%s cannot be read (two checks in a row)', cfg.what); return; end if;
+        if (lf.f).id is null then return; end if;
+        age := (lf.f).fired_at - (lf.f).stamp;
+      end if;
     end if;
     bad := age > lim;
     detail := format('%s: %s min old (alarm above %s)', cfg.what, data_alarms.mins(age), data_alarms.mins(cfg.threshold));
