@@ -1542,19 +1542,21 @@
    "atpId": 352,
    "category": "ATP Tour Masters 1000",
    "city": "Nanterre",
-   "contentChangedAt": "2026-11-03T08:33:32Z",
-   "contentHash": "a76ca536324e0c2c",
+   "contentChangedAt": "2026-11-03T11:59:27Z",
+   "contentHash": "e491e0d701b3c1f9",
    "endDate": "2026-11-08",
    "feedCity": "Paris",
    "idVerified": false,
    "main": {
     "alternatesLuckyLosers": [
+     "A. Vallejo (LL)",
      "T. Tirante (LL)",
+     "N. Borges (LL)",
      "S. Baez (LL)"
     ],
     "halves": false,
     "lastDirectAcceptance": "Q. Halys - 48",
-    "releasedLocal": "11/03/2026 00:44:10",
+    "releasedLocal": "11/03/2026 10:54:48",
     "seeded": [
      {
       "inDraw": true,
@@ -1623,7 +1625,7 @@
       "seed": 12
      },
      {
-      "inDraw": true,
+      "inDraw": false,
       "name": "Davidovich Fokina, Alej…",
       "rank": 15,
       "seed": 13
@@ -1652,7 +1654,7 @@
      {
       "bye": false,
       "entry": null,
-      "ioc": null,
+      "ioc": "GER",
       "keyMatch": "surname+given",
       "name": "ZVEREV, Alexander",
       "nameSource": "sheet",
@@ -1678,7 +1680,7 @@
      {
       "bye": false,
       "entry": null,
-      "ioc": null,
+      "ioc": "ITA",
       "keyMatch": "surname+given",
       "name": "MUSETTI, Lorenzo",
       "nameSource": "sheet",
@@ -1691,7 +1693,7 @@
      {
       "bye": false,
       "entry": null,
-      "ioc": null,
+      "ioc": "POL",
       "keyMatch": "surname+given",
       "name": "HURKACZ, Hubert",
       "nameSource": "sheet",
@@ -1704,7 +1706,7 @@
      {
       "bye": false,
       "entry": null,
-      "ioc": null,
+      "ioc": "FRA",
       "keyMatch": "surname+given",
       "name": "VAN ASSCHE, Luca",
       "nameSource": "sheet",
@@ -1717,7 +1719,7 @@
      {
       "bye": false,
       "entry": null,
-      "ioc": null,
+      "ioc": "ARG",
       "keyMatch": "surname+given",
       "name": "NAVONE, Mariano",
       "nameSource": "sheet",
@@ -1729,13 +1731,13 @@
      },
      {
       "bye": false,
-      "entry": null,
-      "ioc": null,
+      "entry": "LL",
+      "ioc": "PAR",
       "keyMatch": "surname+given",
-      "name": "TSITSIPAS, Stefanos",
+      "name": "VALLEJO, Adolfo Daniel",
       "nameSource": "sheet",
       "nameTruncated": false,
-      "playerKey": "1906",
+      "playerKey": "9217",
       "pos": 7,
       "seed": null,
       "seedRank": null
@@ -1743,7 +1745,7 @@
      {
       "bye": false,
       "entry": null,
-      "ioc": null,
+      "ioc": "USA",
       "keyMatch": "surname+given",
       "name": "TIEN, Learner",
       "nameSource": "sheet",
@@ -1756,7 +1758,7 @@
      {
       "bye": false,
       "entry": null,
-      "ioc": null,
+      "ioc": "SRB",
       "keyMatch": "surname+given",
       "name": "DJOKOVIC, Novak",
       "nameSource": "sheet",
@@ -1769,7 +1771,7 @@
      {
       "bye": false,
       "entry": null,
-      "ioc": null,
+      "ioc": "MON",
       "keyMatch": "surname+given",
       "name": "VACHEROT, Valentin",
       "nameSource": "sheet",
@@ -1782,7 +1784,7 @@
      {
       "bye": false,
       "entry": null,
-      "ioc": null,
+      "ioc": "ITA",
       "keyMatch": "surname+given",
       "name": "DARDERI, Luciano",
       "nameSource": "sheet",
@@ -1795,7 +1797,7 @@
      {
       "bye": false,
       "entry": "Q",
-      "ioc": null,
+      "ioc": "AUS",
       "keyMatch": "surname+given",
       "name": "HIJIKATA, Rinky",
       "nameSource": "sheet",
@@ -1821,9 +1823,9 @@
      {
       "bye": false,
       "entry": null,
-      "ioc": null,
+      "ioc": "ARG",
       "keyMatch": "surname+given",
-      "name": "ETCHEVERRY, Tomas Ma…",
+      "name": "ETCHEVERRY, Tomas …",
       "nameSource": "sheet",
       "nameTruncated": true,
       "playerKey": "1777",
@@ -1847,7 +1849,7 @@
      {
       "bye": false,
       "entry": null,
-      "ioc": null,
+      "ioc": "AUS",
       "keyMatch": "surname+given",
       "name": "DE MINAUR, Alex",
       "nameSource": "sheet",
@@ -1860,7 +1862,7 @@
      {
       "bye": false,
       "entry": null,
-      "ioc": null,
+      "ioc": "USA",
       "keyMatch": "surname+given",
       "name": "SHELTON, Ben",
       "nameSource": "sheet",
@@ -1886,7 +1888,7 @@
      {
       "bye": false,
       "entry": null,
-      "ioc": null,
+      "ioc": "GBR",
       "keyMatch": "surname+given",
       "name": "NORRIE, Cameron",
       "nameSource": "sheet",
@@ -1899,7 +1901,7 @@
      {
       "bye": false,
       "entry": null,
-      "ioc": null,
+      "ioc": "ITA",
       "keyMatch": "surname+given",
       "name": "ARNALDI, Matteo",
       "nameSource": "sheet",
@@ -1912,7 +1914,7 @@
      {
       "bye": false,
       "entry": "Q",
-      "ioc": null,
+      "ioc": "ITA",
       "keyMatch": "surname+given",
       "name": "BELLUCCI, Mattia",
       "nameSource": "sheet",
@@ -1925,7 +1927,7 @@
      {
       "bye": false,
       "entry": "Q",
-      "ioc": null,
+      "ioc": "ITA",
       "keyMatch": "surname+given",
       "name": "SONEGO, Lorenzo",
       "nameSource": "sheet",
@@ -1938,7 +1940,7 @@
      {
       "bye": false,
       "entry": null,
-      "ioc": null,
+      "ioc": "FRA",
       "keyMatch": "surname+given",
       "name": "RINDERKNECH, Arthur",
       "nameSource": "sheet",
@@ -1951,10 +1953,10 @@
      {
       "bye": false,
       "entry": null,
-      "ioc": null,
+      "ioc": "ARG",
       "keyMatch": "surname+given",
       "name": "CERUNDOLO, Francisco",
-      "nameSource": "sheet",
+      "nameSource": "seeded-table",
       "nameTruncated": false,
       "playerKey": "1104",
       "pos": 24,
@@ -1964,7 +1966,7 @@
      {
       "bye": false,
       "entry": null,
-      "ioc": null,
+      "ioc": "USA",
       "keyMatch": "surname+given",
       "name": "PAUL, Tommy",
       "nameSource": "sheet",
@@ -1977,7 +1979,7 @@
      {
       "bye": false,
       "entry": "PR",
-      "ioc": null,
+      "ioc": "DEN",
       "keyMatch": "surname+given",
       "name": "RUNE, Holger",
       "nameSource": "sheet",
@@ -1990,7 +1992,7 @@
      {
       "bye": false,
       "entry": null,
-      "ioc": null,
+      "ioc": "ESP",
       "keyMatch": "surname+given",
       "name": "MERIDA, Daniel",
       "nameSource": "sheet",
@@ -2003,7 +2005,7 @@
      {
       "bye": false,
       "entry": "LL",
-      "ioc": null,
+      "ioc": "ARG",
       "keyMatch": "surname+given",
       "name": "BAEZ, Sebastian",
       "nameSource": "sheet",
@@ -2016,7 +2018,7 @@
      {
       "bye": false,
       "entry": null,
-      "ioc": null,
+      "ioc": "FRA",
       "keyMatch": "surname+given",
       "name": "HALYS, Quentin",
       "nameSource": "sheet",
@@ -2029,7 +2031,7 @@
      {
       "bye": false,
       "entry": null,
-      "ioc": null,
+      "ioc": "GBR",
       "keyMatch": "surname+given",
       "name": "FERY, Arthur",
       "nameSource": "sheet",
@@ -2055,7 +2057,7 @@
      {
       "bye": false,
       "entry": null,
-      "ioc": null,
+      "ioc": "USA",
       "keyMatch": "surname+given",
       "name": "TIAFOE, Frances",
       "nameSource": "sheet",
@@ -2068,7 +2070,7 @@
      {
       "bye": false,
       "entry": "LL",
-      "ioc": null,
+      "ioc": "ARG",
       "keyMatch": "surname+given",
       "name": "TIRANTE, Thiago Agustin",
       "nameSource": "sheet",
@@ -2094,7 +2096,7 @@
      {
       "bye": false,
       "entry": "SE",
-      "ioc": null,
+      "ioc": "GER",
       "keyMatch": "surname+given",
       "name": "STRUFF, Jan-Lennard",
       "nameSource": "sheet",
@@ -2107,7 +2109,7 @@
      {
       "bye": false,
       "entry": "WC",
-      "ioc": null,
+      "ioc": "FRA",
       "keyMatch": "surname+given",
       "name": "GEA, Arthur",
       "nameSource": "sheet",
@@ -2120,7 +2122,7 @@
      {
       "bye": false,
       "entry": null,
-      "ioc": null,
+      "ioc": "NOR",
       "keyMatch": "surname+given",
       "name": "RUUD, Casper",
       "nameSource": "sheet",
@@ -2133,11 +2135,11 @@
      {
       "bye": false,
       "entry": "Q",
-      "ioc": null,
+      "ioc": "ARG",
       "keyMatch": "surname+given",
-      "name": "CERUNDOLO, Juan Manuel",
+      "name": "CERUNDOLO, Juan M…",
       "nameSource": "sheet",
-      "nameTruncated": false,
+      "nameTruncated": true,
       "playerKey": "388",
       "pos": 38,
       "seed": null,
@@ -2146,7 +2148,7 @@
      {
       "bye": false,
       "entry": null,
-      "ioc": null,
+      "ioc": "CHI",
       "keyMatch": "surname+given",
       "name": "TABILO, Alejandro",
       "nameSource": "sheet",
@@ -2159,7 +2161,7 @@
      {
       "bye": false,
       "entry": null,
-      "ioc": null,
+      "ioc": "ESP",
       "keyMatch": "surname+given",
       "name": "JODAR, Rafael",
       "nameSource": "sheet",
@@ -2171,21 +2173,21 @@
      },
      {
       "bye": false,
-      "entry": null,
-      "ioc": null,
+      "entry": "LL",
+      "ioc": "POR",
       "keyMatch": "surname+given",
-      "name": "DAVIDOVICH FOKINA, Al…",
+      "name": "BORGES, Nuno",
       "nameSource": "sheet",
-      "nameTruncated": true,
-      "playerKey": "2842",
+      "nameTruncated": false,
+      "playerKey": "358",
       "pos": 41,
-      "seed": 13,
-      "seedRank": 15
+      "seed": null,
+      "seedRank": null
      },
      {
       "bye": false,
       "entry": "WC",
-      "ioc": null,
+      "ioc": "FRA",
       "keyMatch": "surname+given",
       "name": "KOUAME, Moise",
       "nameSource": "sheet",
@@ -2198,7 +2200,7 @@
      {
       "bye": false,
       "entry": null,
-      "ioc": null,
+      "ioc": "CAN",
       "keyMatch": "surname+given",
       "name": "SHAPOVALOV, Denis",
       "nameSource": "sheet",
@@ -2224,7 +2226,7 @@
      {
       "bye": false,
       "entry": null,
-      "ioc": null,
+      "ioc": "PER",
       "keyMatch": "surname+given",
       "name": "BUSE, Ignacio",
       "nameSource": "sheet",
@@ -2237,7 +2239,7 @@
      {
       "bye": false,
       "entry": null,
-      "ioc": null,
+      "ioc": "BEL",
       "keyMatch": "surname+given",
       "name": "BERGS, Zizou",
       "nameSource": "sheet",
@@ -2276,7 +2278,7 @@
      {
       "bye": false,
       "entry": null,
-      "ioc": null,
+      "ioc": "FRA",
       "keyMatch": "surname+given",
       "name": "FILS, Arthur",
       "nameSource": "sheet",
@@ -2302,7 +2304,7 @@
      {
       "bye": false,
       "entry": "WC",
-      "ioc": null,
+      "ioc": "FRA",
       "keyMatch": "surname+given",
       "name": "JACQUET, Kyrian",
       "nameSource": "sheet",
@@ -2315,7 +2317,7 @@
      {
       "bye": false,
       "entry": "Q",
-      "ioc": null,
+      "ioc": "CZE",
       "keyMatch": "surname+given",
       "name": "MACHAC, Tomas",
       "nameSource": "sheet",
@@ -2328,7 +2330,7 @@
      {
       "bye": false,
       "entry": "Q",
-      "ioc": null,
+      "ioc": "SVK",
       "keyMatch": "surname+given",
       "name": "MOLCAN, Alex",
       "nameSource": "sheet",
@@ -2341,7 +2343,7 @@
      {
       "bye": false,
       "entry": "WC",
-      "ioc": null,
+      "ioc": "FRA",
       "keyMatch": "surname+given",
       "name": "DROGUET, Titouan",
       "nameSource": "sheet",
@@ -2354,7 +2356,7 @@
      {
       "bye": false,
       "entry": "Q",
-      "ioc": null,
+      "ioc": "FRA",
       "keyMatch": "surname+given",
       "name": "BONZI, Benjamin",
       "nameSource": "sheet",
@@ -2367,7 +2369,7 @@
      {
       "bye": false,
       "entry": null,
-      "ioc": null,
+      "ioc": "USA",
       "keyMatch": "surname+given",
       "name": "FRITZ, Taylor",
       "nameSource": "sheet",
@@ -2380,7 +2382,7 @@
      {
       "bye": false,
       "entry": null,
-      "ioc": null,
+      "ioc": "USA",
       "keyMatch": "surname+given",
       "name": "NAKASHIMA, Brandon",
       "nameSource": "sheet",
@@ -2393,7 +2395,7 @@
      {
       "bye": false,
       "entry": null,
-      "ioc": null,
+      "ioc": "ITA",
       "keyMatch": "surname+given",
       "name": "BERRETTINI, Matteo",
       "nameSource": "sheet",
@@ -2406,7 +2408,7 @@
      {
       "bye": false,
       "entry": null,
-      "ioc": null,
+      "ioc": "FRA",
       "keyMatch": "surname+given",
       "name": "HUMBERT, Ugo",
       "nameSource": "sheet",
@@ -2419,9 +2421,9 @@
      {
       "bye": false,
       "entry": null,
-      "ioc": null,
-      "keyMatch": "surname+given",
-      "name": "VAN DE ZANDSCHULP, B…",
+      "ioc": "NED",
+      "keyMatch": "surname-prefix",
+      "name": "VAN DE ZANDSCHULP…",
       "nameSource": "sheet",
       "nameTruncated": true,
       "playerKey": "2972",
@@ -2432,7 +2434,7 @@
      {
       "bye": false,
       "entry": null,
-      "ioc": null,
+      "ioc": "USA",
       "keyMatch": "surname+given",
       "name": "MICHELSEN, Alex",
       "nameSource": "sheet",
@@ -2445,7 +2447,7 @@
      {
       "bye": false,
       "entry": null,
-      "ioc": null,
+      "ioc": "CZE",
       "keyMatch": "surname+given",
       "name": "LEHECKA, Jiri",
       "nameSource": "sheet",
@@ -2471,7 +2473,7 @@
      {
       "bye": false,
       "entry": null,
-      "ioc": null,
+      "ioc": "ESP",
       "keyMatch": "surname+given",
       "name": "ALCARAZ, Carlos",
       "nameSource": "sheet",
@@ -2485,14 +2487,16 @@
     "status": "posted",
     "withdrawals": [
      "A. Blockx (Right ankle)",
-     "F. Cobolli (Left leg)"
+     "F. Cobolli (Left leg)",
+     "S. Tsitsipas (Right Shoulder)",
+     "A. Davidovich Fokina (Back)"
     ]
    },
    "qualifying": {
     "alternatesLuckyLosers": [],
     "halves": false,
     "lastDirectAcceptance": "L. Sonego -87 (1Alt)",
-    "releasedLocal": "11/03/2026 00:44:10",
+    "releasedLocal": "11/03/2026 10:54:48",
     "seeded": [
      {
       "inDraw": true,
