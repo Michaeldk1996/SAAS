@@ -260,7 +260,9 @@ console.log('build stamp');
         if (withMaster) fs.writeFileSync(path.join(t2, 'database-yield-master.json'), JSON.stringify({ meta: { schema: 1, cols, latest: '2026-09-12' }, rows: [
           ['2026-07-14', 'Hamburg', 'ATP500', 'Clay', 'Outdoor', '1st Round', 3, 'Sinner J.', 'Doe J.', 'Completed', 1.12, 6.10, 5, 'db', ''],
           ['2026-07-16', 'Hamburg', 'ATP500', 'Clay', 'Outdoor', '2nd Round', 3, 'Roe R.', 'Sinner J.', 'Completed', 5.00, 1.15, 1, 'db', ''],
-          ['2026-09-12', 'Davis Cup', 'Team event', '', '', '', '', 'Sinner J.', 'Doe J.', 'Completed', 1.20, 4.50, 3, 'x', 't']] }));
+          ['2026-09-12', 'Davis Cup', 'Team event', '', '', '', '', 'Sinner J.', 'Doe J.', 'Completed', 1.20, 4.50, 3, 'x', 't'],
+          // founder 2026-11-03: another book, margin removed (flag v) — in the master, never a Market edge yield / ROI
+          ['2026-08-20', 'ATP Vienna', '', '', '', '', '', 'Sinner J.', 'Roe R.', 'Completed', 1.30, 4.33, 13, 'x', 'v']] }));
         const r = spawnSync(process.execPath, [path.join(t2, 'build-market-edge.js'), '--quiet'], { encoding: 'utf8' });
         if (r.status !== 0) return { status: r.status };
         const sh = JSON.parse(fs.readFileSync(path.join(t2, 'market-edge', '47.json'), 'utf8'));
@@ -276,6 +278,8 @@ console.log('build stamp');
       else fail(`Bet365 row ${JSON.stringify(a.ms && pick(a.ms, '2026-07-16'))}, want ${JSON.stringify(want2)}`);
       if (a.status === 0 && !a.ms.some((m) => m.date === '2026-09-12')) ok('a team event (flag t) is in the master but never in Market edge');
       else fail('the Davis Cup master row reached Market edge');
+      if (a.status === 0 && !a.ms.some((m) => m.date === '2026-08-20')) ok('another book, margin removed (flag v) is in the master but never in Market edge');
+      else fail('the margin-removed other-book row reached Market edge');
       if (a.status === 0 && a.ix.source === 'database-yield-master.json' && a.ix.latestMatch === '2026-07-16' && a.ix.masterLatest === '2026-09-12') ok('the index names its source and both latest dates (the lag guard reads them)');
       else fail(`index source/latest ${JSON.stringify(a.ix && [a.ix.source, a.ix.latestMatch, a.ix.masterLatest])}`);
       if (b.status !== 0) ok('control: no master file → the build fails (no fallback to the Tennis-Data CSVs)');

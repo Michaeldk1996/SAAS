@@ -17,6 +17,7 @@ MIG5 = os.path.join(os.path.dirname(MIG), '20261019090000_historical_snapshot_be
 MIG6 = os.path.join(os.path.dirname(MIG), '20261020090000_historical_snapshot_te.sql')
 MIG7 = os.path.join(os.path.dirname(MIG), '20261030090000_historical_snapshot_te_bet365.sql')
 MIG8 = os.path.join(os.path.dirname(MIG), '20261101090000_historical_snapshot_sched.sql')
+MIG9 = os.path.join(os.path.dirname(MIG), '20261103090000_historical_snapshot_te_other.sql')
 pg = PG()
 if not pg.available():
     print(f'SKIP  test-historical-archive-sql: {pg.why} — NOT A PASS (the code gate runs it)'); sys.exit(0)
@@ -205,6 +206,25 @@ try:
     rc, out = q(T10.replace("'t1'", "'t12'"), 'service_role'); check('a start − 10 snapshot is still accepted', rc == 0, out)
     check('no stored snapshot lost by the before-start migration', int(q('select count(*) from public.historical_snapshot')[1]) == int(n3) + 2)
     rc, out = q("select public.historical_snapshot_guard()->>'ok'"); check('snapshot guard ok after the before-start migration', out == 'true', out)
+    # ── another book, margin removed (founder 2026-11-03): a seventh SNAPSHOT source with its own label, the book named ──
+    n4 = q('select count(*) from public.historical_snapshot')[1]
+    for i in (1, 2):
+        rc, err = pg.file(MIG9); check(f'other-book migration applies (pass {i}: idempotent)', rc == 0, err)
+    OL = 'Other book (approx., margin removed)'
+    to = lambda key, label=OL, price_ts='null', detail=None, extra='': te(key, label, price_ts, detail if detail is not None else
+        {'teMatchId': '3338923', 'pageSha256': SHA, 'book': 'Interwetten'}, extra).replace("'Tennis Explorer · Pinnacle'", "'Tennis Explorer · other book'")
+    check('service_role can store an other-book snapshot', q(to('o1'), 'service_role')[0] == 0)
+    rc, out = q(to('o2', label='Pinnacle (approx.)'), 'service_role'); check('an other-book snapshot can never carry the Pinnacle label', rc != 0, out)
+    rc, out = q(to('o3', label='Bet365 (approx.)'), 'service_role'); check('an other-book snapshot can never carry the Bet365 label', rc != 0, out)
+    rc, out = q(to('o4', label='from Pinnacle history'), 'service_role'); check('an other-book snapshot can never carry a close label', rc != 0, out)
+    rc, out = q(to('o5', detail={'teMatchId': '3338923', 'pageSha256': SHA}), 'service_role'); check('an other-book snapshot must name its book', rc != 0, out)
+    rc, out = q(to('o6', extra='start'), 'service_role'); check('an other-book snapshot claiming a start is refused', rc != 0, out)
+    rc, out = q(te('o7', label=OL), 'service_role'); check('control: a Tennis Explorer Pinnacle snapshot cannot carry the other-book label', rc != 0, out)
+    rc, out = q(te('o8'), 'service_role'); check('a Tennis Explorer Pinnacle snapshot is still accepted', rc == 0, out)
+    check('no stored snapshot lost by the other-book migration', int(q('select count(*) from public.historical_snapshot')[1]) == int(n4) + 2)
+    rc, out = q("delete from public.historical_snapshot where source = 'Tennis Explorer · other book'", 'service_role')
+    check('service_role DELETE of an other-book row refused', rc != 0, out)
+    rc, out = q("select public.historical_snapshot_guard()->>'ok'"); check('snapshot guard ok after the other-book migration', out == 'true', out)
 finally:
     pg.close()
 print(f'\ntest-historical-archive-sql: {passed} passed, {failed} failed')

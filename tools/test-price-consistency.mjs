@@ -141,6 +141,13 @@ else {
     writeFileSync(join(site, 'database-yield-x.json'), JSON.stringify({ xRows: [[xInt, 'Challenger', '', '', 'Challenger X', 1.5, 2.6, 1, 8, 'l']], xNames: [['Zed Z.', 'Yew Y.']] }));
     r = run();
     check('6 · control: a lower-level (l) era row never moves the master\'s latest → exit 1, "lags the master"', r.status === 1 && /lags the master/.test(r.stderr), (r.stdout || '') + (r.stderr || ''));
+    // founder 2026-11-03: an ATP main-draw era row on another book, margin removed (flag v) is never in Market edge, so it never
+    // moves the latest Market edge must reach (else every data run would fail closed, as on 1 Nov)
+    const lastIso = `${String(last).slice(0, 4)}-${String(last).slice(4, 6)}-${String(last).slice(6, 8)}`;
+    writeFileSync(join(site, 'market-edge-index.json'), JSON.stringify({ source: 'database-yield-master.json', latestMatch: lastIso, players: {} }));
+    writeFileSync(join(site, 'database-yield-x.json'), JSON.stringify({ xRows: [[xInt, null, '', '', 'ATP Vienna', 1.5, 2.6, 1, 13, 'v']], xNames: [['Zed Z.', 'Yew Y.']] }));
+    r = run();
+    check('6 · an other-book era row (flag v) after the Database\'s last row never makes Market edge "lag" → exit 0', r.status === 0, (r.stdout || '').slice(-600) + (r.stderr || '').slice(-600));
     rmSync(join(site, 'database-yield-x.json'));
     rmSync(join(site, 'market-edge-index.json'));
 

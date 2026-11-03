@@ -35,7 +35,7 @@ check('the source note names the snapshot with its count, never folds it into "P
 check('control: without a snapshot the note is unchanged', C.fhSourceNote([{ book: 'P' }, { book: 'B' }]) === 'Pinnacle, Bet365 where missing (1)' && C.fhSourceNote([{ book: 'P' }]) === 'Pinnacle');
 
 // the one join: book 2 → 'A'
-const join2 = /r\.book = bk === 0 \|\| bk === 3 \|\| bk === 4 \? 'P' : bk === 2 \|\| bk === 5 \|\| bk === 8 \|\| bk === 11 \? 'A' : 'B';/.test(html);
+const join2 = /r\.book = bk === 0 \|\| bk === 3 \|\| bk === 4 \? 'P' : bk === 2 \|\| bk === 5 \|\| bk === 8 \|\| bk === 11 \|\| \(bk >= 12 && bk < 12 \+ SF_OTHER_BOOKS\.length\) \? 'A' : 'B';/.test(html);
 check('the price join maps the store\'s books 2, 5 and 8 (the three Pinnacle snapshot sources) to "A" (never "B" or "P") and 3 / 4 (our archive) to "P"', join2);
 // founder 2026-10-16 (round 3, item 1): our archive's closes carry their own source on every surface, never "Tennis-Data"
 const join34 = /r\.src = bk === 3 \? 'hist' : bk === 4 \|\| bk === 6 \? 'cap' : bk === 5 \? 'od10' : bk === 7 \? 'atb' : bk === 8 \? 'te' : bk === 10 \? 'teb' : bk === 11 \? 'sch' : 'td'; r\.srcLabel = bk === 3 \? FH_SRC\.hist : bk === 4 \? FH_SRC\.cap : undefined;/.test(html);
@@ -350,6 +350,24 @@ check('control: without the snapshot feed the same row is Bet365 (the join\'s "B
   check('before start: Market edge names book 11 and keeps it on its basis; the profile maps it to A / sch',
     /11: \['pinnacle-approx-sched', 'Pinnacle \(approx\.\) · before the start'\]/.test(readFileSync(join(ROOT, 'build-market-edge.js'), 'utf8'))
     && /'pinnacle-approx-sched': \['A', 'sch'\]/.test(readFileSync(join(ROOT, 'player-profile-v2.js'), 'utf8')) && /'pinnacle-approx-sched': \['A', 'sch'\]/.test(html));
+}
+// founder 2026-11-03: another book, margin removed (books 12-23) — A / oth, the book named, never "Pinnacle"
+{
+  const OH = 'Betway (approx., margin removed) · Tennis Explorer, last pre-match price, margin removed, not a confirmed close';
+  const T = new Function(`${constLine(html, 'FH_BOOK')}\n${constLine(html, 'FH_SRC')}\n${constLine(html, 'SF_APPROX_HOVER')}\n${constLine(html, 'SF_OD10_HOVER')}\n${constLine(html, 'SF_TE_HOVER')}\n${constLine(html, 'SF_SCHED_HOVER')}
+    ${constLine(html, 'SF_OTHER_BOOKS')}\n${constLine(html, 'SF_OTHER_HOVER')}\n${fn(html, 'sfOtherHover')}
+    ${constLine(html, 'FH_B365_APPROX_HOVER')}\n${constLine(html, 'FH_B365_AT_HOVER')}\n${fn(html, 'fhB365Approx')}\n${fn(html, 'fhSrcTitle')}\n${fn(html, 'sfApproxHover')}\n${fn(html, 'fhSourceNote')}
+    return { fhSrcTitle, sfApproxHover, fhSourceNote, SF_OTHER_BOOKS };`)();
+  check('other book: the hover names the book and says margin removed, never "Pinnacle"', T.fhSrcTitle({ book: 'A', src: 'oth', srcLabel: 'Betway' }) === OH, T.fhSrcTitle({ book: 'A', src: 'oth', srcLabel: 'Betway' }));
+  check('other book: Series reads the same words', T.sfApproxHover({ src: 'oth', srcLabel: 'Betway' }) === OH);
+  check('other book: the codes follow the build\'s fixed order (12 = Interwetten, 13 = Betway)', T.SF_OTHER_BOOKS[0] === 'Interwetten' && T.SF_OTHER_BOOKS[1] === 'Betway'
+    && /const TE_OTHER_ORDER = \['Interwetten', 'Betway', 'bwin', '1xBet', 'Ladbrokes', 'William Hill', 'Betsson', 'Betsafe', 'bet-at-home',\n  'BetVictor', '10Bet', 'Unibet'\];/.test(readFileSync(join(ROOT, 'build-database-yield.js'), 'utf8')));
+  const note = T.fhSourceNote([{ book: 'P' }, { book: 'A', src: 'sch' }, { book: 'A', src: 'oth', srcLabel: 'Betway' }, { book: 'B' }]);
+  check('other book: the source note counts it apart, never as Pinnacle (approx.)', /Pinnacle \(approx\.\) snapshot where no close \(1\)/.test(note) && /another book, margin removed, where neither \(1\)/.test(note), note);
+  check('other book: the join maps 12-23 to A / oth with the name; the profile and the consistency check read other-approx',
+    /if \(bk >= 12 && bk < 12 \+ SF_OTHER_BOOKS\.length\) \{ r\.src = 'oth'; r\.srcLabel = SF_OTHER_BOOKS\[bk - 12\]; \}/.test(html)
+    && /'other-approx': \['A', 'oth'\]/.test(readFileSync(join(ROOT, 'player-profile-v2.js'), 'utf8')) && /'other-approx': \['A', 'oth'\]/.test(html)
+    && /'other-approx' \? 'oth'/.test(readFileSync(join(ROOT, 'tools', 'price-consistency.mjs'), 'utf8')));
 }
 console.log(`\ntest-approx-pinnacle: ${passed} passed, ${failed} failed`);
 process.exit(failed ? 1 : 0);

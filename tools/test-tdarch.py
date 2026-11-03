@@ -592,6 +592,39 @@ check('pre-2021: the lower feed carries them unchanged (level, both keys, negati
       sorted((r['eventKey'], r['level'], r['source']) for r in pf) == sorted((r['event_key'], r['detail']['level'], T.TE_SOURCE) for r in prows) and len(pf) == len(prows), pf)
 pix = T.te_pre21_priced_index([{'wk': '1064', 'lk': '1748', 'match_date': '2016-10-16'}])
 check('pre-2021: the already-priced lookup is the same two keys +-1 day, either order', pix('1748', '1064', '2016-10-15') and not pix('1748', '1064', '2016-10-13') and not pix('1064', '', '2016-10-16'))
+# ── founder 2026-11-03: another book, margin removed (one book of a fixed order, only where Pinnacle and Bet365 are missing) ──
+OT = lambda ek, book='Betway', p=(1.8, 2.25), lvl='ch', ts=None: dict(TX(ek, lvl=lvl, pin=None, ka='11', kb='22'), books=[book],
+    oth={'book': book, 'p1': p[0], 'p2': p[1], 'margin': 0.05, 'raw': {'p1': 1.72, 'p2': 2.1}, 'p1Ts': ts, 'p2Ts': None, 'open': {}, 'moves': [0, 0]})
+odocs = [{'batch': 'other-ch-01', 'source': T.TE_OTHER_SOURCE, 'complete': True,
+          'rows': [OT(71), OT(72, book='Betfair'), OT(73, p=(1.8, 2.0)), OT(74, ts='2026-09-28T23:30:00Z'), dict(OT(75), level='atp-md')]}]
+ofx = {str(k): F(k, 'Challenger Men Singles', d='2026-09-28') for k in (71, 72, 73, 74, 75)}
+orows, orep = T.te_rows(odocs, ofx.get, lambda ek: '2026-09-28T23:00:00Z')
+ob = {r['event_key']: r for r in orows}
+check('other book: a "Tennis Explorer · other book" row, its own label and hover, the book and its raw pair kept in detail',
+      sorted(ob) == [71] and ob[71]['source'] == T.TE_OTHER_SOURCE and ob[71]['label'] == 'Other book (approx., margin removed)'
+      and ob[71]['detail']['book'] == 'Betway' and ob[71]['detail']['hover'] == T.TE_OTHER_HOVER and ob[71]['detail']['raw'] == {'first': 1.72, 'second': 2.1}, (orows, orep))
+check('other book: a book outside the order (72), a pair that does not sum to 100% (73), the in-play rule (74), an atp-md row (75: a Database row = ROI) are never stored',
+      orep.get('other book: not a book of the order, or the sides do not sum to 100%') == 2 and orep.get('dropped: last change after the start') == 1
+      and orep.get('atp-md: other book not stored (a Database row: ROI)') == 1, orep)
+check('other book: te_doc_kind reads the oth field', T.te_doc_kind(odocs[0])[2] == 'oth' and T.TE_OTHER_SOURCE in T.TE_SOURCES)
+ocur = [dict(ob[71], id=950, event_key=41), dict(brows[0], id=951, event_key=41), dict(ob[71], id=952, event_key=42), dict(ob[71], id=953, event_key=43),
+        dict(ob[71], id=954, event_key=43, source=T.SCHED_SOURCE)]
+of = T.lower_feed_rows(ocur)
+check('other book: last of all in the lower feed (TE Bet365 keeps 41, before start keeps 43); alone it fills the dash (42), named in the source column',
+      sorted((r['eventKey'], r['source']) for r in of) == [(41, T.TE_B365_SOURCE), (42, T.TE_OTHER_SOURCE + ' · Betway'), (43, T.SCHED_SOURCE)], of)
+oxrows, oxrep = T.te_pre21_rows([{'batch': 'other-team-01', 'source': T.TE_OTHER_SOURCE, 'complete': True,
+                                 'rows': [dict(PX(12, lv='pre-atp-x'), pin=None, books=['Interwetten'], oth={'book': 'Interwetten', 'p1': 1.6, 'p2': 2.67, 'raw': {'p1': 1.55, 'p2': 2.5}})]}],
+                                {'12': pst['1']}, {'12': [('1064', H(1)), ('1748', H(0))]})
+check('other book: a team / pre-2021 other-book batch is stored like its Pinnacle batch (atp-x, negative TE ID), the book and raw pair oriented to the winner',
+      [(r['event_key'], r['source'], r['detail']['level'], r['detail']['book'], r['detail']['raw']) for r in oxrows]
+      == [(-12, T.TE_OTHER_SOURCE, 'atp-x', 'Interwetten', {'winner': 1.55, 'loser': 2.5})], (oxrows, oxrep))
+with tempfile.TemporaryDirectory() as td:
+    os.makedirs(os.path.join(td, T.PRE21_DIR))
+    for n, src in (('team-01', T.TE_SOURCE), ('b365-team-01', T.TE_B365_SOURCE), ('other-team-01', T.TE_OTHER_SOURCE), ('other-pre21-01', T.TE_OTHER_SOURCE)):
+        json.dump({'batch': n, 'source': src, 'complete': True, 'rows': []}, open(os.path.join(td, T.PRE21_DIR, n + '.json'), 'w'))
+    od2 = T.te_pre21_docs(td)
+    onames = sorted(d.get('batch') for d in (od2[0] if isinstance(od2, tuple) else od2))
+check('other book + Bet365: the b365-* and other-* batches are read beside the team / pre21 ones', onames == ['b365-team-01', 'other-pre21-01', 'other-team-01', 'team-01'], onames)
 # ── founder 2026-11-01 (Task B): Pinnacle (approx.) before the start, where no start is verified ──────────────────────
 SF = lambda ek, t, tm='12:00', d='2026-10-27', **k: dict(F(ek, t, d=d, **k), event_time=tm, event_key=ek)
 sfx = [SF(901, 'Atp Singles'), SF(902, 'Challenger Men Singles', tm='11:58'), SF(903, 'Atp Singles', st='Walk Over'),

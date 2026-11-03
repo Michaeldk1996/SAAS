@@ -586,9 +586,20 @@ const LOWER_COLS = ['date', 'level', 'tournament', 'round', 'winner', 'loser', '
 // 11 = Pinnacle (approx.) before the start (founder 2026-11-01, Task B): our Oddspapi archive's last pre-match pair before the
 // earliest of the scheduled start, the gated trueStart and our first live sighting — after start − 10, before api-tennis
 const SCHED_BOOK = 11, SCHED_SOURCE = 'oddspapi Pinnacle (before start)';
+// founder 2026-11-03 ("use those books but can you devig them?"; "fixed order, out of ROI"): another book with its margin
+// removed (tools/tdarch.py TE_OTHER_*). One code per book, 12 + its place in the fixed order, so the page names the book; LAST
+// in LOWER_RANK (it only fills a dash) and flag 'v' on its era row (never a Market edge yield / ROI, never a Database figure).
+const TE_OTHER_SOURCE = 'Tennis Explorer · other book';
+const TE_OTHER_ORDER = ['Interwetten', 'Betway', 'bwin', '1xBet', 'Ladbrokes', 'William Hill', 'Betsson', 'Betsafe', 'bet-at-home',
+  'BetVictor', '10Bet', 'Unibet'];
+const TE_OTHER_BOOK0 = 12;
+const isOtherBook = b => b >= TE_OTHER_BOOK0 && b < TE_OTHER_BOOK0 + TE_OTHER_ORDER.length;
+const otherBookOf = src => { const s = String(src || ''); if (!s.startsWith(TE_OTHER_SOURCE + ' · ')) return null;
+  const i = TE_OTHER_ORDER.indexOf(s.slice(TE_OTHER_SOURCE.length + 3)); return i < 0 ? null : TE_OTHER_BOOK0 + i; };
 // book 11 (Pinnacle (approx.) before the start, Task B) is LAST: it fills a dash only — the brief: "don't touch any row that
 // already has a price" (2 Nov: ranked above api-tennis it would have re-priced ~338 already-priced ATP main-draw matches)
 const LOWER_RANK = { 3: 0, 4: 0, 5: 1, 2: 1.5, 8: 1.75, 6: 3, 7: 4, 10: 5, 11: 6 };
+TE_OTHER_ORDER.forEach((b, i) => { LOWER_RANK[TE_OTHER_BOOK0 + i] = 7; });   // all other books last (one per match)
 const TE_SOURCE = 'Tennis Explorer · Pinnacle', TE_B365_SOURCE = 'Tennis Explorer · Bet365';
 const LOWER_LEVEL_NAME = { 'atp-q': 'ATP Qualifying', ch: 'Challenger', 'ch-q': 'Challenger Qualifying', itf: 'ITF',
   // founder brief 2026-10-19 (item 1): an ATP main-draw match at an event Tennis-Data does not carry (Davis Cup, United Cup,
@@ -624,7 +635,7 @@ function lowerRead(file, bookOf, tag) {
 }
 lowerRead(LOWER_CLOSES, r => ARCH_BOOK[(r.source || '').trim()], 'closes');
 lowerRead(LOWER_APPROX, r => (r.source === 'oddspapi Pinnacle (start − 10)' ? 5 : r.source === SCHED_SOURCE ? SCHED_BOOK : r.source === TE_SOURCE ? 8 : r.source === 'api-tennis Pinnacle' ? 2 : r.source === 'api-tennis Bet365' ? 7
-  : r.source === TE_B365_SOURCE ? TE_B365_BOOK : null), 'snapshots');
+  : r.source === TE_B365_SOURCE ? TE_B365_BOOK : otherBookOf(r.source)), 'snapshots');
 // our captured Bet365 (cut at Oddspapi's start): its result, round and event from the player's own career row
 const LOWER_B365_ROOT = process.env.DB_YIELD_B365_ROOT || __dirname;   // bet365-history + career-history + the roster
 (function lowerBet365() {
@@ -672,7 +683,7 @@ for (const r of lowerBest.values()) {
   xAtt.push([series, '', '', (r.comment || '').trim(), '', '']);
   const ntB = nt && (r.book === 6 || r.book === 7 || r.book === TE_B365_BOOK);   // a main-draw Bet365 price: the join's "B"
   xRaw.push([dI, tx || nt ? null : series, '', '', (r.tournament || '').trim(), Math.min(r.pw, r.pl), Math.max(r.pw, r.pl),
-    r.pw <= r.pl ? 1 : 0, r.book, r.winner.trim(), r.loser.trim(), (tx ? 't' : nt ? (ntB ? 'b' : '') : 'l') + (isRet ? 'r' : '') + (r.pw === r.pl ? 'e' : '')]);
+    r.pw <= r.pl ? 1 : 0, r.book, r.winner.trim(), r.loser.trim(), (tx ? 't' : nt ? (ntB ? 'b' : '') : 'l') + (isOtherBook(r.book) ? 'v' : '') + (isRet ? 'r' : '') + (r.pw === r.pl ? 'e' : '')]);
   lower.rows++; lower.byLevel[r.level] = (lower.byLevel[r.level] || 0) + 1; lower.byBook[r.book] = (lower.byBook[r.book] || 0) + 1;
 }
 // founder ruling 2026-10-18 (item 5): the lower-level matches the import checked and could not price, with their reason —
@@ -937,7 +948,8 @@ if (rowsAtt.length !== rows.length || retAtt.length !== retRaw.length || tieAtt.
 writeAtomic(OUT_MASTER, JSON.stringify({ meta: { schema: 1, cols: MASTER_COLS, builtFrom: 'build-database-yield.js (the same run as database-yield.json)',
   dateRange: [dateMin, dateMax], latest: masterRows.reduce((m, r) => (r[0] > m ? r[0] : m), ''), bookCodes: { 0: 'Tennis-Data Pinnacle', 1: 'Bet365 (Tennis-Data)',
   2: 'Pinnacle (approx.) api-tennis', 3: 'Pinnacle (from Pinnacle history)', 4: 'Pinnacle (captured)', 5: 'Pinnacle (approx.) start - 10',
-  6: 'Bet365 (approx.) captured', 7: 'Bet365 (approx.) api-tennis', 8: 'Pinnacle (approx.) Tennis Explorer', 9: 'Pinnacle early cut (not a close)', 11: 'Pinnacle (approx.) before the start' }, ...EARLY_META,
+  6: 'Bet365 (approx.) captured', 7: 'Bet365 (approx.) api-tennis', 8: 'Pinnacle (approx.) Tennis Explorer', 9: 'Pinnacle early cut (not a close)', 11: 'Pinnacle (approx.) before the start',
+  ...Object.fromEntries(TE_OTHER_ORDER.map((b, i) => [TE_OTHER_BOOK0 + i, `${b} (approx., margin removed)`])) }, ...EARLY_META,
   counts: { all: masterRows.length, db: rows.length, ret: retRaw.length, tie: tieRaw.length, x: xRaw.length } }, rows: masterRows }));
 console.log(`name table (archive aliases → page join): ${JSON.stringify(nameTable)}`);
 // TEN-384: loaded by the player profile WITH the profile data (never database-yield.json).

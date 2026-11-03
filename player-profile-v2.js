@@ -1240,7 +1240,7 @@
   function pxSrcHtml(m, v) {
     if (v == null) return DASH;
     var bk = SHEET_BOOK[String(m && m.book || '').toLowerCase()];
-    var t = bk && typeof window !== 'undefined' && typeof window.fhSrcTitle === 'function' ? window.fhSrcTitle({ book: bk[0], src: bk[1] }) : null;
+    var t = bk && typeof window !== 'undefined' && typeof window.fhSrcTitle === 'function' ? window.fhSrcTitle({ book: bk[0], src: bk[1], srcLabel: m && m.srcLabel || undefined }) : null;   // srcLabel: the other book's name (2026-11-03)
     return t ? '<span data-pp2-px-src="1" title="' + esc(t) + '">' + oddsText(v) + '</span>' : oddsText(v);
   }
 
@@ -5276,7 +5276,7 @@
           setScores: x.setScores || null,
           price: jp && jp.price != null ? jp.price : null,
           oppPrice: jp && jp.price != null ? jp.oppPrice : null,
-          book: jp && jp.price != null ? jp.book : null, sheetId: x.sheetId || null,
+          book: jp && jp.price != null ? jp.book : null, srcLabel: jp && jp.price != null ? jp.srcLabel || null : null, sheetId: x.sheetId || null,
           retired: !!x.retired, walkover: !!(m.walkover || x.walkover)
         };
       });
@@ -10531,7 +10531,7 @@
   // the book ids the ledger rows carry -> the sheet's { book, src } (the host's ME_PROFILE_BOOK, plus the
   // ledger's own bet365 pre-match capture, which it labels 'bet365')
   var SHEET_BOOK = { pinnacle: ['P', 'td'], 'pinnacle-capture': ['P', 'cap'], 'bet365-archive': ['B', 'td'],
-    'bet365-capture': ['B', 'cap'], bet365: ['B', 'cap'], 'bet365-approx-at': ['B', 'atb'], 'bet365-approx-te': ['B', 'teb'], 'pinnacle-approx': ['A', 'td'], 'pinnacle-approx-od10': ['A', 'od10'], 'pinnacle-approx-sched': ['A', 'sch'], 'pinnacle-approx-te': ['A', 'te'],
+    'bet365-capture': ['B', 'cap'], bet365: ['B', 'cap'], 'bet365-approx-at': ['B', 'atb'], 'bet365-approx-te': ['B', 'teb'], 'pinnacle-approx': ['A', 'td'], 'pinnacle-approx-od10': ['A', 'od10'], 'pinnacle-approx-sched': ['A', 'sch'], 'other-approx': ['A', 'oth'], 'pinnacle-approx-te': ['A', 'te'],
     'pinnacle-early': ['A', 'early'],   // founder ruling 2026-10-25: the early cut (Database book 9), marked 'E' by the host
     'pinnacle-history': ['P', 'hist'] };   // hist: our Pinnacle archive, 'from Pinnacle history' (founder 2026-10-16, round 3 item 1)   // A: Pinnacle (approx.), a snapshot (founder 2026-10-16)
   function sheetPayload(p, ctx, id) {

@@ -58,7 +58,7 @@ def consts(path, names):
         m = re.search(rf"\b{n}\s*=\s*(['\"])(.+?)\1", src)
         out[n] = m.group(2) if m else None
     return out
-hovers = {**consts('bsp-consult-dashboard.html', ['SF_APPROX_HOVER', 'SF_OD10_HOVER', 'SF_SCHED_HOVER']),
+hovers = {**consts('bsp-consult-dashboard.html', ['SF_APPROX_HOVER', 'SF_OD10_HOVER', 'SF_SCHED_HOVER', 'SF_OTHER_HOVER']),
           **consts('build-database-yield.js', ['APPROX_HOVER', 'APPROX_HOVER_OD10']),
           **consts('tools/tdarch.py', ['START10_HOVER', 'APPROX_HOVER', 'SCHED_HOVER'])}
 def snapshot_ok(t): return bool(t) and 'not a confirmed close' in t and not re.search(r'\bclose ·|\bclosing\b|\bclose price', t, re.I)
@@ -66,7 +66,7 @@ check('every snapshot hover in the code is found', all(hovers.values()), hovers)
 check('every snapshot hover says "not a confirmed close" and never names itself a close', all(snapshot_ok(t) for t in hovers.values()), hovers)
 check('control: a hover that called a snapshot a "Pinnacle close" fails the rule', not snapshot_ok('Pinnacle close · start − 10'))
 html = open(os.path.join(ROOT, 'bsp-consult-dashboard.html'), encoding='utf8').read()
-m = re.search(r"function fhSrcTitle\(r\)\{ return (?:r && r\.book === 'A' && r\.src === 'early' \? \(r\.srcLabel \|\| sfEarlyHover\(\)\) : )?r && r\.book === 'A' \? `\$\{FH_BOOK\.A\} · \$\{r\.src === 'od10' \? SF_OD10_HOVER : r\.src === 'te' \? SF_TE_HOVER : (?:r\.src === 'sch' \? SF_SCHED_HOVER : )?SF_APPROX_HOVER\}`", html)
+m = re.search(r"function fhSrcTitle\(r\)\{ return (?:r && r\.book === 'A' && r\.src === 'early' \? \(r\.srcLabel \|\| sfEarlyHover\(\)\) : )?(?:r && r\.book === 'A' && r\.src === 'oth' \? sfOtherHover\(r\) : )?r && r\.book === 'A' \? `\$\{FH_BOOK\.A\} · \$\{r\.src === 'od10' \? SF_OD10_HOVER : r\.src === 'te' \? SF_TE_HOVER : (?:r\.src === 'sch' \? SF_SCHED_HOVER : )?SF_APPROX_HOVER\}`", html)
 check('the shared source title gives a snapshot (book A) its snapshot hover before the "… close ·" branch', bool(m))
 check('no snapshot label reads "Pinnacle (approx.) close" anywhere in the shipped code', not any(
     re.search(r'Pinnacle \(approx\.\)\s*close', open(os.path.join(ROOT, f), encoding='utf8').read())

@@ -163,6 +163,23 @@ const sv = sBy('Zverev A.', 'Griekspoor T.');
 ok(sv && sv.x[8] === 11 && sv.x[9] === '', 'before start: an ATP main-draw match Tennis-Data lacks is an era row on book 11 with no flag (Market edge reads it)');
 ok(SBD.base === B.base, 'before start: the Database files are byte-identical (never a Database figure)');
 ok(SBD.master.meta.bookCodes[11] === 'Pinnacle (approx.) before the start', 'before start: the master names book 11');
+// ── founder 2026-11-03: another book, margin removed (books 12-23, one per book of the fixed order) — last of all, flag v
+const OB = 'Tennis Explorer · other book · ';
+fs.writeFileSync(path.join(tmp, 'approx-ob.csv'), [COLS].concat(approx.slice(1),
+  TEC({ date: '2026-05-20', level: 'ch-q', tournament: 'Challenger Bordeaux - Qualification', winner: 'Bergs Z.', loser: 'Herbert P.H.', winnerKey: '1', loserKey: '3', psw: 1.70, psl: 2.43, eventKey: 601, source: OB + 'Interwetten', comment: 'Completed' }),
+  TEC({ date: '2026-03-11', level: 'ch', tournament: 'Challenger Rome', winner: 'One A.', loser: 'Two B.', winnerKey: '41', loserKey: '42', psw: 1.52, psl: 2.92, eventKey: 701, source: OB + 'Betway', comment: 'Completed' }),
+  TEC({ date: '2026-10-28', level: 'atp-nt', tournament: 'ATP Vienna', winner: 'Three C.', loser: 'Four D.', winnerKey: '43', loserKey: '44', psw: 1.94, psl: 2.06, eventKey: 702, source: OB + 'bwin', comment: 'Completed' }),
+  TEC({ date: '2026-03-12', level: 'ch', tournament: 'Challenger Rome', winner: 'Five E.', loser: 'Six F.', winnerKey: '45', loserKey: '46', psw: 1.5, psl: 3.0, eventKey: 703, source: OB + 'Betfair', comment: 'Completed' }),
+).join('\n') + '\n');
+const OBD = build(Object.assign({}, FEEDS, { DB_YIELD_LOWER_APPROX: path.join(tmp, 'approx-ob.csv') }));
+const ox = OBD.x.xRows.map((x, i) => ({ x, n: OBD.x.xNames[i] })), oBy = (w, l) => ox.find(o => o.n[0] === w && o.n[1] === l);
+ok(oBy('Bergs Z.', 'Herbert P.H.').x[8] === 5, 'other book: start − 10 keeps a match it prices — the other book only fills a dash (601)');
+const o1 = oBy('One A.', 'Two B.'), o2 = oBy('Three C.', 'Four D.');
+ok(o1 && o1.x[8] === 13 && /v/.test(o1.x[9]) && /l/.test(o1.x[9]), `other book: a dash is filled on its own book code (Betway = 13), flags l + v (got ${o1 && JSON.stringify(o1.x)})`);
+ok(o2 && o2.x[8] === 14 && o2.x[9] === 'v', 'other book: on an ATP main-draw era row it carries v (never a Market edge yield / ROI)');
+ok(!oBy('Five E.', 'Six F.'), 'other book: a book outside the fixed order (Betfair, an exchange) is never read');
+ok(OBD.base === B.base, 'other book: the Database files are byte-identical (never a Database figure)');
+ok(OBD.master.meta.bookCodes[12] === 'Interwetten (approx., margin removed)' && OBD.master.meta.bookCodes[23] === 'Unibet (approx., margin removed)', 'other book: the master names every code');
 fs.rmSync(tmp, { recursive: true, force: true });
 console.log(`\ntest-lower-master: ${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

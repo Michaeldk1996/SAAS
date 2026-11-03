@@ -567,6 +567,18 @@ payload up to 3 h ago, not only those before 17 Sep: the post-start pull covers 
 **Test:** `tools/test-tdarch.py` "before start", `tools/test-lower-master.js` "before start", `tools/test-approx-pinnacle.mjs`
 "before start", `tools/test-historical-archive-sql.py` (the source's times rule).
 
+**Another bookmaker, margin removed — after Pinnacle and Bet365, before the dash** (founder 2026-11-03: "use those books but
+can you devig them?"; "fixed order, out of ROI"). A played match whose Tennis Explorer page lists neither Pinnacle nor
+Bet365 takes ONE other book: the first the page lists in the fixed order `TE_OTHER_ORDER` (Interwetten > Betway > bwin >
+1xBet > Ladbrokes > William Hill > Betsson > Betsafe > bet-at-home > BetVictor > 10Bet > Unibet), its last pre-match price per
+side with the margin removed (p = 1 / ((1/q) / Σ 1/q), both sides from that one book), labelled "approx., margin removed"
+with the book named in the hover. One book per match, never an average and never two books. It only fills a dash: every
+Pinnacle and Bet365 source and Pinnacle before the start outrank it. **Never in Market edge yield or ROI** (flag `v`, skipped
+like the lower levels and team events): a margin-free price is higher than any price that could be bet, so a yield on it
+reads too good. Exchanges are never chosen (Betfair on Tennis Explorer is out of the order). The in-play rule applies as
+for Tennis Explorer Pinnacle. **Test:** is a match with any Pinnacle or Bet365 price priced on another book? It must not be.
+Do its two sides come from one book and sum to 100% implied? They must.
+
 **Never the scheduled time** — it lands after the real start 58% of the time (p95 11 min), and matches often start *early* (median 11 min, one case 14 hours).
 
 Reject `trueStartTime` when `end − start > 6h` or `end < start`.

@@ -939,10 +939,31 @@ TE_HOVER = 'Tennis Explorer, last pre-match price, not a confirmed close'   # on
 # in-play rule as the Pinnacle rows wherever the page shows a change time; a cell that never moved has none and is kept.
 TE_B365_SOURCE = 'Tennis Explorer · Bet365'
 TE_B365_HOVER = 'Bet365 (approx.) · Tennis Explorer, last pre-match price, not a confirmed close'
-TE_SOURCES = (TE_SOURCE, TE_B365_SOURCE)
+# founder 2026-11-03 ("use those books but can you devig them?"; "fixed order, out of ROI"): where the page lists neither
+# Pinnacle nor bet365, ONE other book (stennisfy-ops te-other-extract.mjs: the first of TE_OTHER_ORDER with both prices),
+# margin removed from that one pair. Last before the dash, after Pinnacle before the start; never Market edge ROI (the
+# Database build flags it 'v'). The feed names the book in its source column (TE_OTHER_SOURCE + ' · ' + book): the archive
+# keeps one fixed source name, the book in detail.book. Tennis-Data-keyed ATP main-draw rows (atp-md) are NOT stored yet: they
+# would price a Database row (ROI) — handoff list.
+TE_OTHER_SOURCE = 'Tennis Explorer · other book'
+TE_OTHER_LABEL = 'Other book (approx., margin removed)'
+TE_OTHER_HOVER = 'Tennis Explorer, last pre-match price, margin removed, not a confirmed close'
+TE_OTHER_ORDER = ('Interwetten', 'Betway', 'bwin', '1xBet', 'Ladbrokes', 'William Hill', 'Betsson', 'Betsafe', 'bet-at-home',
+                  'BetVictor', '10Bet', 'Unibet')
+TE_SOURCES = (TE_SOURCE, TE_B365_SOURCE, TE_OTHER_SOURCE)
 def te_doc_kind(d):
     """(source, label, price field, hover) of a te-odds batch doc."""
+    if d.get('source') == TE_OTHER_SOURCE:
+        return (TE_OTHER_SOURCE, TE_OTHER_LABEL, 'oth', TE_OTHER_HOVER)
     return (TE_B365_SOURCE, B365_LABEL, 'b365', TE_B365_HOVER) if d.get('source') == TE_B365_SOURCE else (TE_SOURCE, APPROX_LABEL, 'pin', TE_HOVER)
+
+
+def te_other_ok(p):
+    """An other-book price block is usable: a book of the order, both de-vigged sides summing to 100% (+-1.5% for the 2 dp)."""
+    try:
+        return p.get('book') in TE_OTHER_ORDER and abs(1 / float(p['p1']) + 1 / float(p['p2']) - 1) <= 0.015
+    except (TypeError, ValueError, ZeroDivisionError, KeyError):
+        return False
 # 'atp-nt' (founder 2026-11-01, Task A "TE never-tried"): an ATP main-draw match with an api-tennis fixture that no Tennis-Data
 # row holds; keyed on the api-tennis event key and the players' api-tennis keys like every level here. Its row rides the era
 # shard as an ATP main-draw match (no 't' / 'l' flag; Bet365 behind 'b'): the price join and Market edge read it, no
@@ -1048,7 +1069,8 @@ def lower_feed_rows(current):
         # founder 2026-10-20: start - 10 > api-tennis Pinnacle > Tennis Explorer Pinnacle > api-tennis Bet365; founder 2026-10-30:
         # Tennis Explorer Bet365, then (founder 2026-11-01, Task B) Pinnacle before the start, which only fills a dash
         rank = (0 if r.get('source') == START10_SOURCE else 4 if r.get('source') == SCHED_SOURCE else 1.5 if r.get('source') == TE_SOURCE else 2 if r.get('source') == B365_SOURCE
-                else 3 if r.get('source') == TE_B365_SOURCE else 1)
+                else 3 if r.get('source') == TE_B365_SOURCE else 5 if r.get('source') == TE_OTHER_SOURCE else 1)
+        # founder 2026-11-03: another book, margin removed — last of all, it only fills a dash
         if k not in best or rank < best[k][0]:
             best[k] = (rank, r)
     out = []
@@ -1057,7 +1079,9 @@ def lower_feed_rows(current):
         out.append({'date': str(r['match_date']), 'level': d['level'], 'tournament': r['tournament'], 'round': d.get('round') or '',
                     'winner': P.td_name(r['winner']), 'loser': P.td_name(r['loser']), 'winnerKey': d.get('winnerKey') or '', 'loserKey': d.get('loserKey') or '',
                     'psw': r['price_winner'], 'psl': r['price_loser'], 'eventKey': r['event_key'], 'snapshotId': r['id'],
-                    'source': r.get('source') or APPROX_SOURCE, 'cutTs': r.get('cut_ts') or '',
+                    # the other book rides the source column with its name (the Database build gives each book its own code)
+                    'source': (TE_OTHER_SOURCE + ' · ' + d['book']) if r.get('source') == TE_OTHER_SOURCE and d.get('book') in TE_OTHER_ORDER
+                              else r.get('source') or APPROX_SOURCE, 'cutTs': r.get('cut_ts') or '',
                     'gapToStartS': '' if r.get('gap_to_start_s') is None else r['gap_to_start_s'],
                     'comment': 'Retired' if d.get('status') == 'Retired' else 'Completed'})
     return out
@@ -1450,6 +1474,10 @@ def te_rows(docs, fixture_of, flip_start=lambda ek: None, md_join=lambda td: (No
             p = x.get(FIELD)
             if not p:
                 rep['joined, no Pinnacle on the page' if FIELD == 'pin' else 'joined, no Bet365 on the page'] += 1; continue
+            if FIELD == 'oth' and not te_other_ok(p):
+                rep['other book: not a book of the order, or the sides do not sum to 100%'] += 1; continue
+            if FIELD == 'oth' and x.get('level') == TE_MD_LEVEL:
+                rep['atp-md: other book not stored (a Database row: ROI)'] += 1; continue
             if x.get('level') == TE_MD_LEVEL:
                 r = te_md_row(d, x, p, md_join, flip_start, rep, (SRC, LAB, FIELD, HOV))
                 if r:
@@ -1518,9 +1546,19 @@ def te_rows(docs, fixture_of, flip_start=lambda ek: None, md_join=lambda td: (No
                                     'open': {'first': (p.get('open') or {}).get('p1' if same else 'p2'), 'second': (p.get('open') or {}).get('p2' if same else 'p1'),
                                              'firstTs': (p.get('open') or {}).get('p1Ts' if same else 'p2Ts'), 'secondTs': (p.get('open') or {}).get('p2Ts' if same else 'p1Ts')},
                                     'firstPlayer': a, 'secondPlayer': b, 'winnerIsFirst': fw, 'hover': HOV,
-                                    'startChecked': start.isoformat().replace('+00:00', 'Z') if start else None, 'startKind': kind}})
+                                    'startChecked': start.isoformat().replace('+00:00', 'Z') if start else None, 'startKind': kind,
+                                    **te_other_detail(FIELD, p, same)}})
             rep['stored'] += 1
     return rows, dict(rep)
+
+
+def te_other_detail(field, p, same=True):
+    """The other-book row's book, its raw (with-margin) pair and the margin, oriented like the stored prices (first / second)."""
+    if field != 'oth':
+        return {}
+    raw = p.get('raw') or {}
+    return {'book': p.get('book'), 'margin': p.get('margin'),
+            'raw': {'first': raw.get('p1' if same else 'p2'), 'second': raw.get('p2' if same else 'p1')}}
 
 
 def te_md_joiner(md):
@@ -1720,10 +1758,11 @@ PRE21_START_KIND = 'TE match page (no api-tennis fixture)'
 def te_pre21_docs(store):
     """The COMPLETE pre21 and team batch files (te-odds-pre2021/pre21-*.json, team-*.json) and the start-times file."""
     docs = []
-    for f in sorted(glob.glob(os.path.join(store, PRE21_DIR, 'pre21-*.json')) + glob.glob(os.path.join(store, PRE21_DIR, 'team-*.json'))):
+    pats = [pre + k for pre in ('', 'b365-', 'other-') for k in ('pre21-*.json', 'team-*.json')]   # founder 2026-11-03: Bet365 + other book
+    for f in sorted(g for pat in pats for g in glob.glob(os.path.join(store, PRE21_DIR, pat))):
         with open(f) as fh:
             d = json.load(fh)
-        if d.get('source') != TE_SOURCE or not isinstance(d.get('rows'), list):
+        if d.get('source') not in TE_SOURCES or not isinstance(d.get('rows'), list):
             P.die(f'{f}: not a pre21 batch file (source {d.get("source")!r})')
         if d.get('complete'):
             docs.append(d)
@@ -1769,9 +1808,12 @@ def te_pre21_rows(docs, starts, hist, priced=lambda ka, kb, date: False):
         for x in d['rows']:
             if x.get('status') != 'joined':
                 rep[str(x.get('status'))] += 1; continue
-            p = x.get('pin')
+            SRC, LAB, FIELD, HOV = te_doc_kind(d)
+            p = x.get(FIELD)
             if not p:
-                rep['joined, no Pinnacle on the page'] += 1; continue
+                rep['joined, no Pinnacle on the page' if FIELD == 'pin' else f'joined, no {FIELD} price'] += 1; continue
+            if FIELD == 'oth' and not te_other_ok(p):
+                rep['other book: not a book of the order, or the sides do not sum to 100%'] += 1; continue
             lv = PRE21_LEVELS.get(x.get('level'))
             if not lv:
                 rep['level out of scope'] += 1; continue
@@ -1803,8 +1845,8 @@ def te_pre21_rows(docs, starts, hist, priced=lambda ka, kb, date: False):
             pw, pl = (p1, p2) if a_won else (p2, p1)
             wts, lts = (p.get('p1Ts'), p.get('p2Ts')) if a_won else (p.get('p2Ts'), p.get('p1Ts'))
             o = p.get('open') or {}
-            rows.append({'dedupe_key': '|'.join(str(v) for v in (TE_SOURCE, x['date'], x.get('tour'), W, L, -int(x['teId']), pw, pl, x['pageSha256'])),
-                         'source': TE_SOURCE, 'label': APPROX_LABEL, 'match_date': x['date'], 'tournament': str(x.get('tour') or '').strip(),
+            rows.append({'dedupe_key': '|'.join(str(v) for v in (SRC, x['date'], x.get('tour'), W, L, -int(x['teId']), pw, pl, x['pageSha256'])),
+                         'source': SRC, 'label': LAB, 'match_date': x['date'], 'tournament': str(x.get('tour') or '').strip(),
                          'round': rnd or None, 'winner': W, 'loser': L, 'event_key': -int(x['teId']),
                          'price_winner': pw, 'price_loser': pl, 'fetched_at': x.get('fetchedAt'), 'price_ts': pts,
                          'detail': {'level': lv, 'round': rnd, 'winnerKey': ka if a_won else kb, 'loserKey': kb if a_won else ka,
@@ -1812,8 +1854,11 @@ def te_pre21_rows(docs, starts, hist, priced=lambda ka, kb, date: False):
                                     'batch': d.get('batch'), 'teTournament': x.get('tour'), 'books': x.get('books') or [], 'moves': p.get('moves'),
                                     'sideTs': {'winner': wts, 'loser': lts},
                                     'open': {'winner': o.get('p1' if a_won else 'p2'), 'loser': o.get('p2' if a_won else 'p1')},
-                                    'noApiTennisFixture': True, 'hover': TE_HOVER, 'teStamp': s.get('stamp'),
-                                    'startChecked': start.isoformat().replace('+00:00', 'Z'), 'startKind': PRE21_START_KIND}})
+                                    'noApiTennisFixture': True, 'hover': HOV, 'teStamp': s.get('stamp'),
+                                    'startChecked': start.isoformat().replace('+00:00', 'Z'), 'startKind': PRE21_START_KIND,
+                                    **({'book': p.get('book'), 'margin': p.get('margin'),
+                                        'raw': {'winner': (p.get('raw') or {}).get('p1' if a_won else 'p2'),
+                                                'loser': (p.get('raw') or {}).get('p2' if a_won else 'p1')}} if FIELD == 'oth' else {})}})
             rep['stored'] += 1; rep[f'stored {lv} {x["date"][:4]}'] += 1
     return rows, dict(rep)
 

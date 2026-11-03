@@ -59,7 +59,8 @@ if (!LIVE && existsSync(join(SITE, 'market-edge-index.json'))) {
   // Database's own; 11:00Z 1 Nov every data run failed closed here on Basel / Vienna 31 Oct). Team and lower-level rows stay out.
   if (existsSync(join(SITE, 'database-yield-x.json'))) {
     const x = JSON.parse(readFileSync(join(SITE, 'database-yield-x.json'), 'utf8'));
-    for (const r of x.xRows || []) if (!/[tl]/.test(String(r[9] || '')) && r[0] > dbLast) dbLast = r[0];
+    // founder 2026-11-03: nor an other book, margin removed (flag v) — Market edge never reads it
+    for (const r of x.xRows || []) if (!/[tlv]/.test(String(r[9] || '')) && r[0] > dbLast) dbLast = r[0];
   }
   const ds = String(dbLast), dbIso = `${ds.slice(0, 4)}-${ds.slice(4, 6)}-${ds.slice(6, 8)}`;
   const ix = JSON.parse(readFileSync(join(SITE, 'market-edge-index.json'), 'utf8'));
@@ -235,7 +236,7 @@ const result = await E(`(async () => {
     const meOf = x => { const d0 = Date.parse(x.date + 'T00:00:00Z'); let hit = null, n = 0;
       for (const dd of [0, -1, 1]) { const ds = new Date(d0 + dd * 864e5).toISOString().slice(0, 10), m = meBy.get(ds + '|' + (x.won ? 1 : 0) + '|' + surn(x.opponent)); if (m) { hit = m; n++; } }
       return n === 1 ? { price: hit.price, oppPrice: hit.oppPrice, book: hit.book === 'bet365-archive' ? 'B' : /approx|early/.test(hit.book) ? 'A' : 'P',
-        src: hit.book === 'pinnacle-history' ? 'hist' : hit.book === 'pinnacle-capture' ? 'cap' : hit.book === 'pinnacle-approx-od10' ? 'od10' : hit.book === 'pinnacle-approx-te' ? 'te' : hit.book === 'pinnacle-approx-sched' ? 'sch' : hit.book === 'pinnacle-early' ? 'early' : 'td',
+        src: hit.book === 'pinnacle-history' ? 'hist' : hit.book === 'pinnacle-capture' ? 'cap' : hit.book === 'pinnacle-approx-od10' ? 'od10' : hit.book === 'pinnacle-approx-te' ? 'te' : hit.book === 'pinnacle-approx-sched' ? 'sch' : hit.book === 'other-approx' ? 'oth' : hit.book === 'pinnacle-early' ? 'early' : 'td',
         _id: { date: hit.date, opp: hit.opp, won: !!hit.won } } : null; };
     // the Form tab, called as the tab calls it, on this player's career rows (every window, every surface)
     const formAt = new Map();
