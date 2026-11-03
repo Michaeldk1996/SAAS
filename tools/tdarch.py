@@ -659,6 +659,51 @@ def approx_join(r, by_day):
     return None, ('two fixtures' if c else 'no fixture')
 
 
+# founder 2026-11-03 ("find all the possible odds"; the other-book ruling of the same day — "use those books but can you devig
+# them?", "fixed order, out of ROI"): where api-tennis holds neither a Pinnacle nor a Bet365 pair, ONE other book it stores —
+# the first of API_OTHER_ORDER with both sides — with the margin removed from that one pair. Its own source (the hover says
+# api-tennis, no timestamp), last in the lower feed (fills a dash only), flag v downstream (never Market edge ROI).
+API_OTHER_SOURCE = 'api-tennis · other book'
+API_OTHER_HOVER = 'api-tennis snapshot, no timestamp, margin removed, not a confirmed close'
+API_OTHER_ORDER = ('1xBet', 'Marathon', 'Betano', 'BetVictor', 'WilliamHill', 'Unibet', 'Betway', 'bwin', '10Bet', 'Betfair', 'Fonbet',
+                   'Tipico', 'Betsson', 'NordicBet', 'Betcris', 'Sbo')
+API_OTHER_ALIAS = {'1xbet': '1xBet', 'Victor Chandler': 'BetVictor'}   # odds.md "Book names": the vendor's spellings
+
+
+def devig(q1, q2):
+    """One book's pair with its margin removed (2 dp), and the margin."""
+    s = 1 / q1 + 1 / q2
+    return round(q1 * s, 2), round(q2 * s, 2), round(s - 1, 4)
+
+
+def api_other_rows(targets, odds_of, fetched_at, join=None):
+    """The api-tennis other-book rows (see API_OTHER_ORDER) + a report."""
+    rows, rep = [], collections.Counter()
+    for r in targets:
+        f, w = (join or approx_join)(r, None)
+        if f is None:
+            rep['join: ' + w] += 1; continue
+        ha = odds_of(f['event_key']) or {}
+        home = {API_OTHER_ALIAS.get(k, k): v for k, v in (ha.get('Home') or {}).items()}
+        away = {API_OTHER_ALIAS.get(k, k): v for k, v in (ha.get('Away') or {}).items()}
+        pick = next((b for b in API_OTHER_ORDER if price(home.get(b)) is not None and price(away.get(b)) is not None), None)
+        if pick is None:
+            rep['no other book with a pair on api-tennis'] += 1; continue
+        ph, pa, margin = devig(price(home[pick]), price(away[pick]))
+        if not (ph >= 1.01 and pa >= 1.01):
+            rep['a side below 1.01'] += 1; continue
+        pw, pl = (ph, pa) if w else (pa, ph)
+        rows.append({'dedupe_key': '|'.join(str(x) for x in (API_OTHER_SOURCE, r['date'], r['tournament'], r['winner'], r['loser'], f['event_key'], pick, pw, pl)),
+                     'source': API_OTHER_SOURCE, 'label': TE_OTHER_LABEL, 'match_date': r['date'], 'tournament': r['tournament'],
+                     'round': r.get('round') or None, 'winner': r['winner'], 'loser': r['loser'], 'event_key': int(f['event_key']),
+                     'price_winner': pw, 'price_loser': pl, 'fetched_at': fetched_at,
+                     'detail': dict({'book': pick, 'margin': margin, 'raw': {'home': home[pick], 'away': away[pick]},
+                                     'firstPlayer': f.get('event_first_player'), 'secondPlayer': f.get('event_second_player'),
+                                     'winnerIsFirst': w, 'hover': API_OTHER_HOVER}, **(r.get('_detail') or {}))})
+        rep['stored'] += 1; rep['book ' + pick] += 1
+    return rows, dict(rep)
+
+
 def approx_rows(targets, by_day, odds_of, fetched_at, join=None, book='Pncl', source=None, label=None, hover=None):
     """Snapshot rows (Home = the fixture's first player) + a report. A side missing or below 1.01 = no row (Bet365 stays
     the fallback); nothing is filled from another book."""
@@ -1076,7 +1121,7 @@ def lower_feed_rows(current):
         # founder 2026-10-20: start - 10 > api-tennis Pinnacle > Tennis Explorer Pinnacle > api-tennis Bet365; founder 2026-10-30:
         # Tennis Explorer Bet365, then (founder 2026-11-01, Task B) Pinnacle before the start, which only fills a dash
         rank = (0 if r.get('source') == START10_SOURCE else 4 if r.get('source') == SCHED_SOURCE else 1.5 if r.get('source') == TE_SOURCE else 2 if r.get('source') == B365_SOURCE
-                else 3 if r.get('source') == TE_B365_SOURCE else 5 if r.get('source') == TE_OTHER_SOURCE else 1)
+                else 3 if r.get('source') == TE_B365_SOURCE else 5 if r.get('source') == TE_OTHER_SOURCE else 5.5 if r.get('source') == API_OTHER_SOURCE else 1)
         if r.get('source') in (APPROX_SOURCE, B365_SOURCE) and str(r.get('match_date')) > LOWER_LATE_AFTER:
             rank = 4.5 + (0.1 if r.get('source') == B365_SOURCE else 0)   # 2026-11-03: after 16 Sep it only fills a dash
         # founder 2026-11-03: another book, margin removed — last of all, it only fills a dash
@@ -1090,6 +1135,7 @@ def lower_feed_rows(current):
                     'psw': r['price_winner'], 'psl': r['price_loser'], 'eventKey': r['event_key'], 'snapshotId': r['id'],
                     # the other book rides the source column with its name (the Database build gives each book its own code)
                     'source': (TE_OTHER_SOURCE + ' · ' + d['book']) if r.get('source') == TE_OTHER_SOURCE and d.get('book') in TE_OTHER_ORDER
+                              else (API_OTHER_SOURCE + ' · ' + d['book']) if r.get('source') == API_OTHER_SOURCE and d.get('book') in API_OTHER_ORDER
                               else r.get('source') or APPROX_SOURCE, 'cutTs': r.get('cut_ts') or '',
                     'gapToStartS': '' if r.get('gap_to_start_s') is None else r['gap_to_start_s'],
                     'comment': 'Retired' if d.get('status') == 'Retired' else 'Completed'})
@@ -1318,7 +1364,10 @@ def cmd_lower_import(dry_run=False, frm=LOWER_FROM, to=LOWER_TO, unpriced_out=No
     have_pin = {r['event_key'] for r in s10_rows + api_rows}
     b_rows, brep = approx_rows([r for r in targets if int(r['_f']['event_key']) not in have_pin], None, lambda ek: od.get(str(ek)) or {}, fetched,
                                join=_lower_join, book='bet365', source=B365_SOURCE, label=B365_LABEL, hover=B365_HOVER)
-    rows = s10_rows + api_rows + b_rows
+    have_any = have_pin | {r['event_key'] for r in b_rows}
+    o_rows, orep = api_other_rows([r for r in targets if int(r['_f']['event_key']) not in have_any], lambda ek: od.get(str(ek)) or {}, fetched,
+                                  join=_lower_join)
+    rows = s10_rows + api_rows + b_rows + o_rows
     # founder ruling 2026-10-18 (item 5): every played match we checked and could not price, with its reason — api-tennis
     # priced one player only ("one side only") or neither ("no bookmaker priced it"). Read by build-database-yield.js (the
     # dash's hover); a price from another source (our captured Bet365) wins over it there.
@@ -1348,7 +1397,7 @@ def cmd_lower_import(dry_run=False, frm=LOWER_FROM, to=LOWER_TO, unpriced_out=No
     for r in rows:
         got[(r['detail']['level'], str(r['match_date'])[:7])].add(r['event_key'])
     print('### lower-import', json.dumps({'window': [frm, to], 'dryRun': dry_run, 'fixtures': len(fx), 'daysWithNoFixture': empty,
-                                          'targets': trep, 'apiTennis': arep, 'start10': srep, 'apiTennisBet365': brep, 'wouldAdd' if dry_run else 'added': len(add) if dry_run else len(ids),
+                                          'targets': trep, 'apiTennis': arep, 'start10': srep, 'apiTennisBet365': brep, 'apiTennisOtherBook': orep, 'wouldAdd' if dry_run else 'added': len(add) if dry_run else len(ids),
                                           'pricedOfPlayed': {f'{lv} {m}': f'{len(got[(lv, m)])}/{n}' for (lv, m), n in sorted(lv_month.items())},
                                           'unpriced': dict(collections.Counter(u[3] for u in unpriced)),
                                           'oddspapiFixtureCalls': 0}))

@@ -179,6 +179,18 @@ ok(o1 && o1.x[8] === 13 && /v/.test(o1.x[9]) && /l/.test(o1.x[9]), `other book: 
 ok(o2 && o2.x[8] === 14 && o2.x[9] === 'v', 'other book: on an ATP main-draw era row it carries v (never a Market edge yield / ROI)');
 ok(!oBy('Five E.', 'Six F.'), 'other book: a book outside the fixed order (Betfair, an exchange) is never read');
 ok(OBD.base === B.base, 'other book: the Database files are byte-identical (never a Database figure)');
+const AO = 'api-tennis · other book · ';
+fs.writeFileSync(path.join(tmp, 'approx-ao.csv'), [COLS].concat(approx.slice(1),
+  TEC({ date: '2026-03-11', level: 'ch', tournament: 'Challenger Rome', winner: 'One A.', loser: 'Two B.', winnerKey: '41', loserKey: '42', psw: 1.55, psl: 2.82, eventKey: 701, source: AO + '1xBet', comment: 'Completed' }),
+  TEC({ date: '2026-03-11', level: 'ch', tournament: 'Challenger Rome', winner: 'One A.', loser: 'Two B.', winnerKey: '41', loserKey: '42', psw: 1.52, psl: 2.92, eventKey: 701, source: OB + 'Betway', comment: 'Completed' }),
+  TEC({ date: '2026-03-13', level: 'ch', tournament: 'Challenger Rome', winner: 'Seven G.', loser: 'Eight H.', winnerKey: '47', loserKey: '48', psw: 1.7, psl: 2.43, eventKey: 704, source: AO + 'Marathon', comment: 'Completed' }),
+).join('\n') + '\n');
+const AOD = build(Object.assign({}, FEEDS, { DB_YIELD_LOWER_APPROX: path.join(tmp, 'approx-ao.csv') }));
+const ax = AOD.x.xRows.map((x, i) => ({ x, n: AOD.x.xNames[i] })), aBy = (w, l) => ax.find(o => o.n[0] === w && o.n[1] === l);
+ok(aBy('One A.', 'Two B.').x[8] === 13, 'api-tennis other book: ranks after Tennis Explorer\'s other book (Betway keeps 701)');
+const a2 = aBy('Seven G.', 'Eight H.');
+ok(a2 && a2.x[8] === 41 && /v/.test(a2.x[9]), 'api-tennis other book: alone it fills the dash on its own code (Marathon = 41), flag v');
+ok(AOD.base === B.base && AOD.master.meta.bookCodes[40] === '1xBet (api-tennis, approx., margin removed)', 'api-tennis other book: never a Database figure; the master names its code');
 ok(OBD.master.meta.bookCodes[12] === 'Interwetten (approx., margin removed)' && OBD.master.meta.bookCodes[23] === 'Unibet (approx., margin removed)', 'other book: the master names every code');
 // founder 2026-11-03 ("find all the possible odds"): api-tennis after 16 Sep only fills a dash
 fs.writeFileSync(path.join(tmp, 'approx-late.csv'), [COLS].concat(approx.slice(1),

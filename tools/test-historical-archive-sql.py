@@ -18,6 +18,7 @@ MIG6 = os.path.join(os.path.dirname(MIG), '20261020090000_historical_snapshot_te
 MIG7 = os.path.join(os.path.dirname(MIG), '20261030090000_historical_snapshot_te_bet365.sql')
 MIG8 = os.path.join(os.path.dirname(MIG), '20261101090000_historical_snapshot_sched.sql')
 MIG9 = os.path.join(os.path.dirname(MIG), '20261103090000_historical_snapshot_te_other.sql')
+MIG10 = os.path.join(os.path.dirname(MIG), '20261103150000_historical_snapshot_api_other.sql')
 pg = PG()
 if not pg.available():
     print(f'SKIP  test-historical-archive-sql: {pg.why} — NOT A PASS (the code gate runs it)'); sys.exit(0)
@@ -225,6 +226,18 @@ try:
     rc, out = q("delete from public.historical_snapshot where source = 'Tennis Explorer · other book'", 'service_role')
     check('service_role DELETE of an other-book row refused', rc != 0, out)
     rc, out = q("select public.historical_snapshot_guard()->>'ok'"); check('snapshot guard ok after the other-book migration', out == 'true', out)
+    # ── api-tennis's other book (founder 2026-11-03, "find all the possible odds"): the same label, api-tennis's no-time rule
+    for i in (1, 2):
+        rc, err = pg.file(MIG10); check(f'api-tennis other-book migration applies (pass {i}: idempotent)', rc == 0, err)
+    AO = lambda key, label='Other book (approx., margin removed)', detail='{"book": "1xBet"}': (
+        "insert into public.historical_snapshot (dedupe_key,source,label,match_date,tournament,winner,loser,event_key,price_winner,price_loser,fetched_at,detail) "
+        f"values ('{key}','api-tennis · other book','{label}','2025-03-02','Davis Cup','A.','B.',9,1.62,2.61,now(),'{detail}')")
+    rc, out = q(AO('ao1', detail='{}'), 'service_role'); check('an api-tennis other-book snapshot must name its book', rc != 0, out)
+    rc, out = q(AO('ao2'), 'service_role'); check('service_role can store an api-tennis other-book snapshot naming its book', rc == 0, out)
+    rc, out = q(AO('ao3', label='Pinnacle (approx.)'), 'service_role'); check('an api-tennis other-book snapshot can never carry the Pinnacle label', rc != 0, out)
+    rc, out = q(AO('ao4').replace(",detail)", ",detail,price_ts)").replace("}')", "}','2025-03-02 10:00Z')"), 'service_role')
+    check('an api-tennis other-book snapshot can never claim a time (api-tennis has none)', rc != 0, out)
+    rc, out = q("select public.historical_snapshot_guard()->>'ok'"); check('snapshot guard ok after the api-tennis other-book migration', out == 'true', out)
 finally:
     pg.close()
 print(f'\ntest-historical-archive-sql: {passed} passed, {failed} failed')

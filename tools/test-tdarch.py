@@ -685,5 +685,20 @@ check('before start: the importer fetch keeps the ATP main-draw match (atp-nt); 
       sorted(f['event_key'] for f in fk_main) == [911, 912] and [f['event_key'] for f in fk_low] == [912], (fk_main, fk_low))
 import inspect
 check('before start: cmd_sched_import asks for the main-draw fixtures', 'keep_main=True' in inspect.getsource(T.cmd_sched_import))
+# founder 2026-11-03 ("find all the possible odds"): api-tennis's other book, margin removed, where it holds no Pinnacle / Bet365
+atg = [dict(t) for t in tg[:2]]
+aod = {1: {'Home': {'1xbet': '1.80', 'Marathon': '1.75', 'Betfair': '1.9'}, 'Away': {'1xbet': '2.00', 'Marathon': '2.10'}},
+       2: {'Home': {'Betfair': '1.50'}, 'Away': {'Betfair': '2.70'}}}
+aor, aorep = T.api_other_rows(atg, lambda ek: aod.get(ek), 'now', join=T._lower_join)
+a1 = {r['event_key']: r for r in aor}
+check('api-tennis other book: the first of the order with both sides (1xBet, alias "1xbet"), margin removed, oriented to the winner; its own source and the other-book label',
+      a1[1]['detail']['book'] == '1xBet' and (a1[1]['price_winner'], a1[1]['price_loser']) == T.devig(1.8, 2.0)[:2]
+      and a1[1]['source'] == T.API_OTHER_SOURCE and a1[1]['label'] == T.TE_OTHER_LABEL and a1[1]['detail']['hover'] == T.API_OTHER_HOVER
+      and a1[2]['detail']['book'] == 'Betfair' and (a1[2]['price_winner'], a1[2]['price_loser']) == T.devig(2.7, 1.5)[:2], (aor, aorep))
+check('api-tennis other book: no book of the order with both sides = no row, counted', T.api_other_rows([atg[0]], lambda ek: {'Home': {'X': '1.5'}, 'Away': {'X': '2.5'}}, 'now', join=T._lower_join)[1].get('no other book with a pair on api-tennis') == 1)
+_apo = lambda src, book: dict(_ap(src, 1.6), detail={'level': 'ch', 'book': book})
+lfx = T.lower_feed_rows([_apo(T.API_OTHER_SOURCE, '1xBet'), _apo(T.TE_OTHER_SOURCE, 'Betway')])
+check('api-tennis other book: after Tennis Explorer\'s other book; alone it fills the dash, named in the source column',
+      [x['source'] for x in lfx] == [T.TE_OTHER_SOURCE + ' · Betway'] and [x['source'] for x in T.lower_feed_rows([_apo(T.API_OTHER_SOURCE, '1xBet')])] == [T.API_OTHER_SOURCE + ' · 1xBet'], lfx)
 print(f'\ntest-tdarch: {passed} passed, {failed} failed')
 sys.exit(1 if failed else 0)

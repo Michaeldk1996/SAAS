@@ -14074,7 +14074,14 @@ const SF_SCHED_HOVER = 'Pinnacle history, last pre-match price before the start,
 // book's name, in SF_OTHER_BOOKS order). Its hover names the book; never "Pinnacle"; never a Market edge yield (flag v).
 const SF_OTHER_BOOKS = ['Interwetten', 'Betway', 'bwin', '1xBet', 'Ladbrokes', 'William Hill', 'Betsson', 'Betsafe', 'bet-at-home', 'BetVictor', '10Bet', 'Unibet'];
 const SF_OTHER_HOVER = 'Tennis Explorer, last pre-match price, margin removed, not a confirmed close';
-function sfOtherHover(r){ return `${(r && r.srcLabel) || 'Another bookmaker'} (approx., margin removed) · ${SF_OTHER_HOVER}`; }
+// …and api-tennis's other books (books 40-55, SF_API_OTHER_BOOKS order; 2026-11-03 "find all the possible odds"): srcLabel
+// "<book> (api-tennis)", the hover names api-tennis and no time
+const SF_API_OTHER_BOOKS = ['1xBet', 'Marathon', 'Betano', 'BetVictor', 'WilliamHill', 'Unibet', 'Betway', 'bwin', '10Bet', 'Betfair', 'Fonbet', 'Tipico', 'Betsson', 'NordicBet', 'Betcris', 'Sbo'];
+const SF_API_OTHER_HOVER = 'api-tennis snapshot, no timestamp, margin removed, not a confirmed close';
+function sfOtherHover(r){
+  const l = (r && r.srcLabel) || 'Another bookmaker', api = / \(api-tennis\)$/.test(l);
+  return `${api ? l.replace(/ \(api-tennis\)$/, '') : l} (approx., margin removed) · ${api ? SF_API_OTHER_HOVER : SF_OTHER_HOVER}`;
+}
 // Founder ruling 2026-10-25 (the 13 Apr - 16 Sep fill): Database book 9 = a Pinnacle price cut the tier buffer (X min) before
 // the start — NOT a close. Read as Pinnacle (approx.) ('A', src 'early'), marked 'E' wherever the 'B' marker is drawn, with
 // the founder's tooltip naming the build's X (database-yield.json meta.earlyCut.hover). Before the Database join answers
@@ -28837,12 +28844,13 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
       // books 3 / 4 = our Pinnacle archive's closes (founder 2026-10-16, round 3 item 1): Pinnacle, and the hover names
       // their source ('from Pinnacle history' / 'captured'), never Tennis-Data.
       const bk = row[8];
-      r.price = r.won ? winP : loseP; r.oppPrice = r.won ? loseP : winP; r.book = bk === 0 || bk === 3 || bk === 4 ? 'P' : bk === 2 || bk === 5 || bk === 8 || bk === 11 || (bk >= 12 && bk < 12 + SF_OTHER_BOOKS.length) ? 'A' : 'B';
+      r.price = r.won ? winP : loseP; r.oppPrice = r.won ? loseP : winP; r.book = bk === 0 || bk === 3 || bk === 4 ? 'P' : bk === 2 || bk === 5 || bk === 8 || bk === 11 || (bk >= 12 && bk < 12 + SF_OTHER_BOOKS.length) || (bk >= 40 && bk < 40 + SF_API_OTHER_BOOKS.length) ? 'A' : 'B';
       // book 6 = our captured Bet365 at the lower levels (founder 2026-10-18 item 3): 'B' + 'cap' = "Bet365 (approx.) · not a confirmed close"
       // book 7 = api-tennis's stored Bet365 (founder brief 2026-10-19 item 3): 'B' + 'atb' = its own approx. hover
       r.src = bk === 3 ? 'hist' : bk === 4 || bk === 6 ? 'cap' : bk === 5 ? 'od10' : bk === 7 ? 'atb' : bk === 8 ? 'te' : bk === 10 ? 'teb' : bk === 11 ? 'sch' : 'td'; r.srcLabel = bk === 3 ? FH_SRC.hist : bk === 4 ? FH_SRC.cap : undefined;
       // book 9 = the early cut (founder ruling 2026-10-25): Pinnacle (approx.) 'A' + 'early', marked 'E'; its hover = the build's own
       if (bk >= 12 && bk < 12 + SF_OTHER_BOOKS.length) { r.src = 'oth'; r.srcLabel = SF_OTHER_BOOKS[bk - 12]; }   // founder 2026-11-03: the book named
+      if (bk >= 40 && bk < 40 + SF_API_OTHER_BOOKS.length) { r.src = 'oth'; r.srcLabel = SF_API_OTHER_BOOKS[bk - 40] + ' (api-tennis)'; }
       if (bk === 9) { r.book = 'A'; r.src = 'early'; r.srcLabel = (db.meta && db.meta.earlyCut && db.meta.earlyCut.hover) || undefined; }
       // book 8 = Tennis Explorer's Pinnacle (founder 2026-10-19): 'A' + 'te', its own fixed approx. hover
       n++;

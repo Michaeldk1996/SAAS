@@ -599,6 +599,10 @@ like the lower levels and team events): a margin-free price is higher than any p
 reads too good. Exchanges are never chosen (Betfair on Tennis Explorer is out of the order). The in-play rule applies as
 for Tennis Explorer Pinnacle. **Test:** is a match with any Pinnacle or Bet365 price priced on another book? It must not be.
 Do its two sides come from one book and sum to 100% implied? They must.
+**api-tennis's other books too** (founder 2026-11-03, "find all the possible odds"): where api-tennis holds neither a Pinnacle
+nor a Bet365 pair, the first of `API_OTHER_ORDER` (1xBet > Marathon > Betano > BetVictor > William Hill > …, tools/tdarch.py)
+with both sides, margin removed — source `api-tennis · other book`, the same label, codes 40+ in the Database build, flag `v`;
+its hover names the book and says "api-tennis snapshot, no timestamp". It ranks after Tennis Explorer's other book.
 
 **Never the scheduled time** — it lands after the real start 58% of the time (p95 11 min), and matches often start *early* (median 11 min, one case 14 hours).
 

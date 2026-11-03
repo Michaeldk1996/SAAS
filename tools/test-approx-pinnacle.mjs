@@ -35,7 +35,7 @@ check('the source note names the snapshot with its count, never folds it into "P
 check('control: without a snapshot the note is unchanged', C.fhSourceNote([{ book: 'P' }, { book: 'B' }]) === 'Pinnacle, Bet365 where missing (1)' && C.fhSourceNote([{ book: 'P' }]) === 'Pinnacle');
 
 // the one join: book 2 → 'A'
-const join2 = /r\.book = bk === 0 \|\| bk === 3 \|\| bk === 4 \? 'P' : bk === 2 \|\| bk === 5 \|\| bk === 8 \|\| bk === 11 \|\| \(bk >= 12 && bk < 12 \+ SF_OTHER_BOOKS\.length\) \? 'A' : 'B';/.test(html);
+const join2 = /r\.book = bk === 0 \|\| bk === 3 \|\| bk === 4 \? 'P' : bk === 2 \|\| bk === 5 \|\| bk === 8 \|\| bk === 11 \|\| \(bk >= 12 && bk < 12 \+ SF_OTHER_BOOKS\.length\) \|\| \(bk >= 40 && bk < 40 \+ SF_API_OTHER_BOOKS\.length\) \? 'A' : 'B';/.test(html);
 check('the price join maps the store\'s books 2, 5 and 8 (the three Pinnacle snapshot sources) to "A" (never "B" or "P") and 3 / 4 (our archive) to "P"', join2);
 // founder 2026-10-16 (round 3, item 1): our archive's closes carry their own source on every surface, never "Tennis-Data"
 const join34 = /r\.src = bk === 3 \? 'hist' : bk === 4 \|\| bk === 6 \? 'cap' : bk === 5 \? 'od10' : bk === 7 \? 'atb' : bk === 8 \? 'te' : bk === 10 \? 'teb' : bk === 11 \? 'sch' : 'td'; r\.srcLabel = bk === 3 \? FH_SRC\.hist : bk === 4 \? FH_SRC\.cap : undefined;/.test(html);
@@ -355,11 +355,15 @@ check('control: without the snapshot feed the same row is Bet365 (the join\'s "B
 {
   const OH = 'Betway (approx., margin removed) · Tennis Explorer, last pre-match price, margin removed, not a confirmed close';
   const T = new Function(`${constLine(html, 'FH_BOOK')}\n${constLine(html, 'FH_SRC')}\n${constLine(html, 'SF_APPROX_HOVER')}\n${constLine(html, 'SF_OD10_HOVER')}\n${constLine(html, 'SF_TE_HOVER')}\n${constLine(html, 'SF_SCHED_HOVER')}
-    ${constLine(html, 'SF_OTHER_BOOKS')}\n${constLine(html, 'SF_OTHER_HOVER')}\n${fn(html, 'sfOtherHover')}
+    ${constLine(html, 'SF_OTHER_BOOKS')}\n${constLine(html, 'SF_OTHER_HOVER')}\n${constLine(html, 'SF_API_OTHER_BOOKS')}\n${constLine(html, 'SF_API_OTHER_HOVER')}\n${fn(html, 'sfOtherHover')}
     ${constLine(html, 'FH_B365_APPROX_HOVER')}\n${constLine(html, 'FH_B365_AT_HOVER')}\n${fn(html, 'fhB365Approx')}\n${fn(html, 'fhSrcTitle')}\n${fn(html, 'sfApproxHover')}\n${fn(html, 'fhSourceNote')}
     return { fhSrcTitle, sfApproxHover, fhSourceNote, SF_OTHER_BOOKS };`)();
   check('other book: the hover names the book and says margin removed, never "Pinnacle"', T.fhSrcTitle({ book: 'A', src: 'oth', srcLabel: 'Betway' }) === OH, T.fhSrcTitle({ book: 'A', src: 'oth', srcLabel: 'Betway' }));
   check('other book: Series reads the same words', T.sfApproxHover({ src: 'oth', srcLabel: 'Betway' }) === OH);
+  check('api-tennis other book: the hover names the book and api-tennis, no time',
+    T.fhSrcTitle({ book: 'A', src: 'oth', srcLabel: '1xBet (api-tennis)' }) === '1xBet (approx., margin removed) · api-tennis snapshot, no timestamp, margin removed, not a confirmed close'
+    && /if \(bk >= 40 && bk < 40 \+ SF_API_OTHER_BOOKS\.length\) \{ r\.src = 'oth'; r\.srcLabel = SF_API_OTHER_BOOKS\[bk - 40\] \+ ' \(api-tennis\)'; \}/.test(html),
+    T.fhSrcTitle({ book: 'A', src: 'oth', srcLabel: '1xBet (api-tennis)' }));
   check('other book: the codes follow the build\'s fixed order (12 = Interwetten, 13 = Betway)', T.SF_OTHER_BOOKS[0] === 'Interwetten' && T.SF_OTHER_BOOKS[1] === 'Betway'
     && /const TE_OTHER_ORDER = \['Interwetten', 'Betway', 'bwin', '1xBet', 'Ladbrokes', 'William Hill', 'Betsson', 'Betsafe', 'bet-at-home',\n  'BetVictor', '10Bet', 'Unibet'\];/.test(readFileSync(join(ROOT, 'build-database-yield.js'), 'utf8')));
   const note = T.fhSourceNote([{ book: 'P' }, { book: 'A', src: 'sch' }, { book: 'A', src: 'oth', srcLabel: 'Betway' }, { book: 'B' }]);

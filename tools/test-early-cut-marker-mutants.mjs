@@ -18,7 +18,7 @@ const MUTANTS = [
   ['build-database-yield.js', 'book 9 counted as a Pinnacle close', 'const isPinIdx = i => i === 0 || i === 3 || i === 4;', 'const isPinIdx = i => i === 0 || i === 3 || i === 4 || i === 9;'],
   ['build-database-yield.js', 'two buffers accepted', 'if (earlyMinutes.size > 1) {', 'if (false) {'],
   ['build-database-yield.js', 'the tooltip text changed', "min before Oddspapi's recorded start. True closing price unavailable.`", 'min before the start`'],
-  ['build-database-yield.js', 'no earlyCut meta on the master', "(approx., margin removed)`])) }, ...EARLY_META,", "(approx., margin removed)`])) },"],
+  ['build-database-yield.js', 'no earlyCut meta on the master', "margin removed)`])) }, ...EARLY_META,", "margin removed)`])) },"],
   ['bsp-consult-dashboard.html', 'the join leaves book 9 as Bet365', "      if (bk === 9) { r.book = 'A'; r.src = 'early'; r.srcLabel = (db.meta && db.meta.earlyCut && db.meta.earlyCut.hover) || undefined; }\n", ''],
   ['bsp-consult-dashboard.html', 'the marker never draws E', "r.book === 'A' && r.src === 'early' ? 'E' : ''", "''"],
   ['bsp-consult-dashboard.html', 'the hover names the approx. snapshot instead', "r && r.book === 'A' && r.src === 'early' ? (r.srcLabel || sfEarlyHover()) : ", ''],

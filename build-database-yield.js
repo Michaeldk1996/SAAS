@@ -593,13 +593,22 @@ const TE_OTHER_SOURCE = 'Tennis Explorer · other book';
 const TE_OTHER_ORDER = ['Interwetten', 'Betway', 'bwin', '1xBet', 'Ladbrokes', 'William Hill', 'Betsson', 'Betsafe', 'bet-at-home',
   'BetVictor', '10Bet', 'Unibet'];
 const TE_OTHER_BOOK0 = 12;
-const isOtherBook = b => b >= TE_OTHER_BOOK0 && b < TE_OTHER_BOOK0 + TE_OTHER_ORDER.length;
-const otherBookOf = src => { const s = String(src || ''); if (!s.startsWith(TE_OTHER_SOURCE + ' · ')) return null;
-  const i = TE_OTHER_ORDER.indexOf(s.slice(TE_OTHER_SOURCE.length + 3)); return i < 0 ? null : TE_OTHER_BOOK0 + i; };
+// …and api-tennis's other books (founder 2026-11-03, "find all the possible odds"): codes 40 + the place in API_OTHER_ORDER
+// (tools/tdarch.py), so the page names the book AND says api-tennis; ranked after Tennis Explorer's other book.
+const API_OTHER_SOURCE = 'api-tennis · other book';
+const API_OTHER_ORDER = ['1xBet', 'Marathon', 'Betano', 'BetVictor', 'WilliamHill', 'Unibet', 'Betway', 'bwin', '10Bet', 'Betfair', 'Fonbet',
+  'Tipico', 'Betsson', 'NordicBet', 'Betcris', 'Sbo'];
+const API_OTHER_BOOK0 = 40;
+const isOtherBook = b => (b >= TE_OTHER_BOOK0 && b < TE_OTHER_BOOK0 + TE_OTHER_ORDER.length) || (b >= API_OTHER_BOOK0 && b < API_OTHER_BOOK0 + API_OTHER_ORDER.length);
+const otherBookOf = src => { const s = String(src || '');
+  if (s.startsWith(TE_OTHER_SOURCE + ' · ')) { const i = TE_OTHER_ORDER.indexOf(s.slice(TE_OTHER_SOURCE.length + 3)); return i < 0 ? null : TE_OTHER_BOOK0 + i; }
+  if (s.startsWith(API_OTHER_SOURCE + ' · ')) { const i = API_OTHER_ORDER.indexOf(s.slice(API_OTHER_SOURCE.length + 3)); return i < 0 ? null : API_OTHER_BOOK0 + i; }
+  return null; };
 // book 11 (Pinnacle (approx.) before the start, Task B) is LAST: it fills a dash only — the brief: "don't touch any row that
 // already has a price" (2 Nov: ranked above api-tennis it would have re-priced ~338 already-priced ATP main-draw matches)
 const LOWER_RANK = { 3: 0, 4: 0, 5: 1, 2: 1.5, 8: 1.75, 6: 3, 7: 4, 10: 5, 11: 6 };
 TE_OTHER_ORDER.forEach((b, i) => { LOWER_RANK[TE_OTHER_BOOK0 + i] = 7; });   // all other books last (one per match)
+API_OTHER_ORDER.forEach((b, i) => { LOWER_RANK[API_OTHER_BOOK0 + i] = 7.5; });   // api-tennis's other book after Tennis Explorer's
 const TE_SOURCE = 'Tennis Explorer · Pinnacle', TE_B365_SOURCE = 'Tennis Explorer · Bet365';
 const LOWER_LEVEL_NAME = { 'atp-q': 'ATP Qualifying', ch: 'Challenger', 'ch-q': 'Challenger Qualifying', itf: 'ITF',
   // founder brief 2026-10-19 (item 1): an ATP main-draw match at an event Tennis-Data does not carry (Davis Cup, United Cup,
@@ -953,7 +962,8 @@ writeAtomic(OUT_MASTER, JSON.stringify({ meta: { schema: 1, cols: MASTER_COLS, b
   dateRange: [dateMin, dateMax], latest: masterRows.reduce((m, r) => (r[0] > m ? r[0] : m), ''), bookCodes: { 0: 'Tennis-Data Pinnacle', 1: 'Bet365 (Tennis-Data)',
   2: 'Pinnacle (approx.) api-tennis', 3: 'Pinnacle (from Pinnacle history)', 4: 'Pinnacle (captured)', 5: 'Pinnacle (approx.) start - 10',
   6: 'Bet365 (approx.) captured', 7: 'Bet365 (approx.) api-tennis', 8: 'Pinnacle (approx.) Tennis Explorer', 9: 'Pinnacle early cut (not a close)', 11: 'Pinnacle (approx.) before the start',
-  ...Object.fromEntries(TE_OTHER_ORDER.map((b, i) => [TE_OTHER_BOOK0 + i, `${b} (approx., margin removed)`])) }, ...EARLY_META,
+  ...Object.fromEntries(TE_OTHER_ORDER.map((b, i) => [TE_OTHER_BOOK0 + i, `${b} (approx., margin removed)`])),
+  ...Object.fromEntries(API_OTHER_ORDER.map((b, i) => [API_OTHER_BOOK0 + i, `${b} (api-tennis, approx., margin removed)`])) }, ...EARLY_META,
   counts: { all: masterRows.length, db: rows.length, ret: retRaw.length, tie: tieRaw.length, x: xRaw.length } }, rows: masterRows }));
 console.log(`name table (archive aliases → page join): ${JSON.stringify(nameTable)}`);
 // TEN-384: loaded by the player profile WITH the profile data (never database-yield.json).

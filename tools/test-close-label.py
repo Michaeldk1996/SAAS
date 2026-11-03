@@ -58,7 +58,7 @@ def consts(path, names):
         m = re.search(rf"\b{n}\s*=\s*(['\"])(.+?)\1", src)
         out[n] = m.group(2) if m else None
     return out
-hovers = {**consts('bsp-consult-dashboard.html', ['SF_APPROX_HOVER', 'SF_OD10_HOVER', 'SF_SCHED_HOVER', 'SF_OTHER_HOVER']),
+hovers = {**consts('bsp-consult-dashboard.html', ['SF_APPROX_HOVER', 'SF_OD10_HOVER', 'SF_SCHED_HOVER', 'SF_OTHER_HOVER', 'SF_API_OTHER_HOVER']),
           **consts('build-database-yield.js', ['APPROX_HOVER', 'APPROX_HOVER_OD10']),
           **consts('tools/tdarch.py', ['START10_HOVER', 'APPROX_HOVER', 'SCHED_HOVER'])}
 def snapshot_ok(t): return bool(t) and 'not a confirmed close' in t and not re.search(r'\bclose ·|\bclosing\b|\bclose price', t, re.I)
