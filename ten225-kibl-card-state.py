@@ -525,6 +525,55 @@ def first_suspension(obs_list, change_ts, start_ts):
 # suspension, so it is kept as the close, sighted AT the suspension. An earlier suspension is still no close (a dash).
 SUSPEND_AT_OFF_S = 300
 
+# FOUNDER RULING 2026-11-03 — WHAT A CLOSING PRICE IS (.claude/rules/odds.md "What a closing price is"): the close is the
+# book's last pre-match quote before its market goes in-play; the warm-up is pre-match. Bet105's switch is the first
+# 0.000 suspension after its last real price (sweep and stream); the cut is the EARLIER of that switch and the first
+# point we saw played (live_flip_log.play_seen_at), so no price after the first point is ever a close. Only for a
+# match our live poller saw go live (a pause before an upcoming match is never a switch). Where neither the switch nor
+# the first point is known the start ladder above still cuts it. Measured on 40 ATP matches 31 Oct - 2 Nov: the
+# switch is seen before the first point on 31, a median 4.0 min before it.
+INPLAY_CLOSE = True
+INPLAY_SRC_SWITCH = 'bet105-switch'
+INPLAY_SRC_POINT = 'first-point'
+
+
+def index_inplay(flip_rows):
+    """live_flip_log -> {match_key: {'flag': epoch, 'play': epoch|None}} for every row with a live flag, lower bound or
+    not. Two rows on one key = neither (as index_live_flips)."""
+    by_key, amb = {}, set()
+    for r in flip_rows:
+        day = (r.get('event_date') or '')[:10]
+        n1, n2 = r.get('first_player'), r.get('second_player')
+        k = mk_of(day, n1, n2) if (day and n1 and n2) else None
+        flag = epoch(r.get('first_live_seen_at'))
+        if not k or flag is None:
+            continue
+        if k in by_key:
+            amb.add(k)
+        by_key[k] = {'flag': flag, 'play': epoch(r.get('play_seen_at')), 'player1': n1, 'player2': n2}
+    for k in amb:
+        by_key.pop(k, None)
+    return by_key
+
+
+def inplay_cut(obs, stream_series, rec):
+    """(cut epoch, source) for a fixture that went live, else (None, reason). `obs` = its match-winner observations,
+    `stream_series` = its stream [(epoch, price)] lists, `rec` = its index_inplay record."""
+    if not rec:
+        return None, 'not live yet'
+    real_t = [epoch(o.get('inserted_on')) for o in obs if real_price(o) is not None and epoch(o.get('inserted_on')) is not None]
+    real_t += [t for ser in stream_series for t, p in (ser or []) if t is not None and p is not None and p >= MIN_REAL_PRICE]
+    last = max(real_t) if real_t else None
+    sus = [epoch(o['inserted_on']) for o in obs if real_price(o) is None and epoch(o.get('inserted_on')) is not None
+           and last is not None and epoch(o['inserted_on']) > last]
+    switch = min(sus) if sus else None
+    play = rec.get('play')
+    if switch is not None and (play is None or switch <= play):
+        return switch, INPLAY_SRC_SWITCH
+    if play is not None:
+        return play, INPLAY_SRC_POINT
+    return None, 'no switch and no first point seen'
+
 
 def close_time(obs, start_ts):
     """The Close's timestamp: when we last saw it listed, capped at the off.
@@ -942,7 +991,7 @@ def find_start(kibl_fx, odds_index, flip_index=None, use_flip=False, true_index=
 # ------------------------------------------------------------ the build itself
 
 def build_rows(kibl_fixtures, observations, odds_index, as_of,
-               flip_index=None, use_flip=False, stream=None, gaps=(), true_index=None):
+               flip_index=None, use_flip=False, stream=None, gaps=(), true_index=None, inplay_index=None):
     """kibl_fixtures + kibl_line_observations -> odds_card_state rows.
 
     One row per (fixture, side). `observations` is {fixture_id: [obs, ...]}.
@@ -1004,6 +1053,23 @@ def build_rows(kibl_fixtures, observations, odds_index, as_of,
 
         sched = epoch(fx.get('scheduled_start'))
         now_ok, now_basis = qualifies_as_now(start_ts, sched, as_of)
+
+        # the close's cut (founder 2026-11-03): the book's own switch to in-play, capped at the first point we saw played.
+        # Now (above) keeps the ladder start; from here start_ts is the CLOSE's start, and it is what the row publishes.
+        if INPLAY_CLOSE and inplay_index is not None:
+            _ip = None
+            for _d in day_candidates((fx.get('scheduled_start') or '')[:10]):
+                _k = mk_of(_d, fx.get('player1_name'), fx.get('player2_name'))
+                if _k and _k in inplay_index:
+                    _ip = inplay_index[_k] if _initials_ok(fx.get('player1_name'), fx.get('player2_name'), inplay_index[_k]) else None
+                    break
+            _ser = [stream.get((fx.get('match_key'), name_key(n))) for n in (fx.get('player1_name'), fx.get('player2_name'))]
+            _cut, _src = inplay_cut(obs, _ser, _ip)
+            if _cut is not None:
+                start_ts, start_src, reject, flip_gap = _cut, _src, None, None
+                st[f'close_cut_{_src}'] += 1
+            else:
+                st[f'close_cut_ladder ({_src})'] += 1
 
         # WHICH side_ids this fixture actually carries, as a set. The counts
         # alone cannot answer the question that matters: run 35294707656 showed
@@ -2699,7 +2765,7 @@ def main():
     flip_rows, err = fetch_all(url, key, 'live_flip_log_current',
                                'event_key,first_live_seen_at,'
                                'last_not_live_seen_at,gap_seconds,event_date,'
-                               'first_player,second_player',
+                               'first_player,second_player,play_seen_at',
                                order='event_key.asc')
     if err:
         # NOT fatal. Losing the flip index costs some Closes; failing the run
@@ -2733,8 +2799,10 @@ def main():
         print(f'::warning::fixture index unreadable ({terr}) — rung I(a\') is '
               f'unavailable this run; starts fall to the live flip only')
     print(f'fixture-index start rung: {len(true_index)} match keys  {dict(tst)}')
+    inplay_index = index_inplay(flip_rows) if a.use_live_flip else None
+    print(f'in-play close index (founder 2026-11-03): {len(inplay_index or {})} live match keys')
     rows, st, unknown_sides, side_shapes = build_rows(
-        fx, observations, odds_index, as_of, flip_index, a.use_live_flip, stream, gaps, true_index)
+        fx, observations, odds_index, as_of, flip_index, a.use_live_flip, stream, gaps, true_index, inplay_index)
     print(f'side_id shapes per priced fixture: {side_shapes}')
     # ⚠️ THIS COUNTED THE WRONG THING UNTIL 2026-09-18. It asked how many
     # fixtures carry side_ids *1 and 2*, and side_id 1 does not exist on this

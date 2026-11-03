@@ -831,7 +831,7 @@ _ri, _rst, _rerr = K.load_true_starts()
 check('the committed index loads and indexes match keys', _rerr is None and len(_ri) > 0, (_rerr, dict(_rst)))
 _src = open(os.path.join(os.path.dirname(os.path.abspath(K.__file__)), 'ten225-kibl-card-state.py')).read()
 check('main() hands the index to build_rows (a rung never wired is a rung that is not there)',
-      'load_true_starts()' in _src and 'stream, gaps, true_index)' in _src)
+      'load_true_starts()' in _src and 'stream, gaps, true_index, inplay_index)' in _src)
 
 
 # ------------------------------------------------------- end-to-end build shape
@@ -1621,6 +1621,47 @@ _p_rows, _p_err = K.fetch_all('u', 'k', 'kibl_now_gaps', 'side', order='id.asc',
 check('fetch_all: no key column in the rows → falls back to OFFSET and still reads all 1,500', _p_err is None and _p_rows == _small)
 
 print()
+print('\nThe in-play close (founder 2026-11-03): the cut is Bet105\'s own switch, capped at the first point we saw played')
+_KEY = '2026-09-18|alcaraz|zverev'
+def _ipobs(sus_at):
+    return {77: [cur(1.50, T % (6, 0), T % (11, 50), opener=True, side_id=2, fixture_participant_id=1),
+                 cur(2.60, T % (6, 0), T % (11, 50), opener=True, side_id=3, fixture_participant_id=2),
+                 obs(0.0, sus_at, side_id=2, fixture_participant_id=1, last_seen_at=sus_at),
+                 obs(0.0, sus_at, side_id=3, fixture_participant_id=2, last_seen_at=sus_at)]}
+_ipst = {(_KEY, 'alcaraz'): [(_E(T % (11, 0)), 1.45), (_E(T % (11, 56)), 1.40)],
+         (_KEY, 'zverev'): [(_E(T % (11, 0)), 2.80), (_E(T % (11, 56)), 3.00)]}
+_ipx = {_KEY: {'flag': _E(T % (11, 50)), 'play': _E(T % (12, 1)), 'player1': 'Carlos Alcaraz', 'player2': 'Alexander Zverev'}}
+def _ip(obs_, stream_, ipx=_ipx, mod=K):
+    return mod.build_rows(_fx, obs_, _ix, _E(T % (13, 0)), stream=stream_, inplay_index=ipx)
+_b, _bst, _, _ = _ip(_ipobs(T % (11, 57)), _ipst)
+check('SWITCH: the last stream price before Bet105\'s 0.000 at 11:57 is the close (1.40 / 3.00), cut AT the switch',
+      sorted(r['close_price'] for r in _b) == [1.40, 3.00] and all(r['start_ts'] == K.iso(_E(T % (11, 57))) and r['start_ts_source'] == K.INPLAY_SRC_SWITCH for r in _b),
+      [(r['close_price'], r['start_ts'], r['start_ts_source']) for r in _b])
+check('...counted as cut at the switch', _bst['close_cut_bet105-switch'] == 1, dict(_bst))
+_late = {k: v + [(_E(T % (12, 3)), (1.30 if k[1] == 'alcaraz' else 3.60))] for k, v in _ipst.items()}
+_b, _bst, _, _ = _ip(_ipobs(T % (12, 10)), _late)
+check('FIRST POINT: Bet105 suspends only at 12:10, after the first point (12:01) — cut at the first point, and the 12:03 '
+      'price (in play) is never the close',
+      sorted(r['close_price'] for r in _b) == [1.40, 3.00] and all(r['start_ts_source'] == K.INPLAY_SRC_POINT and r['start_ts'] == K.iso(_E(T % (12, 1))) for r in _b),
+      [(r['close_price'], r['start_ts'], r['start_ts_source']) for r in _b])
+_up = _ip(_ipobs(T % (11, 57)), _ipst, ipx={})[0]
+_old = K.build_rows(_fx, _ipobs(T % (11, 57)), _ix, _E(T % (13, 0)), stream=_ipst)[0]
+check('NOT LIVE: a match our poller never saw go live keeps the ladder (a pause is never a switch) — rows equal the old build',
+      [(r['close_price'], r['start_ts']) for r in _up] == [(r['close_price'], r['start_ts']) for r in _old],
+      ([(r['close_price'], r['start_ts']) for r in _up], [(r['close_price'], r['start_ts']) for r in _old]))
+_resumed = {77: _ipobs(T % (11, 40))[77] + [cur(1.42, T % (11, 45), T % (11, 50), side_id=2, fixture_participant_id=1)]}
+_b, _, _, _ = _ip(_resumed, _ipst)
+check('a mid-day pause the market came back from is not the switch (the switch is AFTER the last real price): cut at the first point',
+      all(r['start_ts_source'] == K.INPLAY_SRC_POINT for r in _b), [r['start_ts_source'] for r in _b])
+_src = open(K.__file__).read()
+_M = types.ModuleType('M'); _M.__file__ = K.__file__
+exec(compile(_src.replace("if switch is not None and (play is None or switch <= play):", "if switch is not None:"), K.__file__, 'exec'), _M.__dict__)
+_b, _, _, _ = _ip(_ipobs(T % (12, 10)), _late, mod=_M)
+check('MUTANT caught: without the first-point cap the in-play 12:03 price becomes the close',
+      sorted(r['close_price'] for r in _b) != [1.40, 3.00], [r['close_price'] for r in _b])
+check('main() reads play_seen_at and hands the in-play index to build_rows',
+      "first_player,second_player,play_seen_at" in _src and 'inplay_index = index_inplay(flip_rows)' in _src)
+
 if FAILED:
     print(f'{len(FAILED)} FAILED: {FAILED}')
     sys.exit(1)
