@@ -4664,7 +4664,31 @@
       "edgeVsPinnacleP1": -0.0652,
       "edgeVsPinnacleP2": 0.0652,
       "ts": "2026-10-31T20:03:37.668Z"
-    }
+    },
+    "retired": false,
+    "walkover": false,
+    "finalScore": {
+      "display": "7-6, 6-7, 6-3",
+      "sets": [
+        {
+          "p1": 7,
+          "p2": 6
+        },
+        {
+          "p1": 6,
+          "p2": 7
+        },
+        {
+          "p1": 6,
+          "p2": 3
+        }
+      ],
+      "p1Sets": 2,
+      "p2Sets": 1,
+      "winner": "p1"
+    },
+    "interrupted": false,
+    "partialScore": null
   },
   {
     "id": "upcoming-12176036",
@@ -8114,22 +8138,11 @@
         }
       ]
     },
-    "live": true,
-    "liveStatus": "Set 2",
-    "liveScore": [
-      {
-        "set": 1,
-        "p1": 3,
-        "p2": 6
-      },
-      {
-        "set": 2,
-        "p1": 6.4,
-        "p2": 6.3
-      }
-    ],
-    "liveGameScore": "4 - 3",
-    "liveServer": "p2",
+    "live": false,
+    "liveStatus": null,
+    "liveScore": null,
+    "liveGameScore": null,
+    "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/431_d-shapovalov.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/435_k-khachanov.jpg",
     "tournamentKey": "1725",
@@ -8907,7 +8920,31 @@
       "edgeVsPinnacleP1": 0.0221,
       "edgeVsPinnacleP2": -0.0221,
       "ts": "2026-10-31T16:15:47.298Z"
-    }
+    },
+    "retired": true,
+    "walkover": false,
+    "finalScore": {
+      "display": "3-6, 7-6, 4-1",
+      "sets": [
+        {
+          "p1": 3,
+          "p2": 6
+        },
+        {
+          "p1": 7,
+          "p2": 6
+        },
+        {
+          "p1": 4,
+          "p2": 1
+        }
+      ],
+      "p1Sets": 2,
+      "p2Sets": 1,
+      "winner": "p2"
+    },
+    "interrupted": false,
+    "partialScore": null
   },
   {
     "id": "upcoming-12176024",
@@ -228653,7 +228690,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6(3), 7-6(10)",
+      "display": "7-6, 7-6",
       "sets": [
         {
           "p1": 7,
@@ -257456,7 +257493,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-7(7), 1-6",
+      "display": "6-7, 1-6",
       "sets": [
         {
           "p1": 6,
