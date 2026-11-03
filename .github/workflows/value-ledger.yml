@@ -6,6 +6,10 @@ name: Model value ledger
 #   export  — every row + the tier summary as CSV, stored in the private ops repo (never the site, never this repo).
 #   guard   — the protections and the row counts.
 on:
+  # Weekly model review (Michael 2026-11-03): every Monday 06:00 UTC the export runs on its own, is stored in the ops repo
+  # and one Telegram line says where. Schedules run from main only.
+  schedule:
+    - cron: '0 6 * * 1'
   workflow_dispatch:
     inputs:
       mode:
@@ -73,3 +77,17 @@ jobs:
           cp value-ledger.csv "ops/$f"
           cd ops && git add "$f" && git -c user.name=value-ledger-bot -c user.email=value-ledger-bot@users.noreply.github.com commit -qm "value ledger export $f" && git push -q origin HEAD
           echo "stored: stennisfy-ops/$f ($(wc -l < ../value-ledger.csv) lines)" | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "LEDGER_FILE=$f" >> "$GITHUB_ENV"
+
+      # one line to the pipeline chat: where the week's review is and how many matches it reads (no figures: the file is private)
+      - name: Telegram — the weekly model review is stored
+        if: env.MODE == 'export' && env.LEDGER_FILE != ''
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_PIPELINE_CHAT_ID || secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          n=$(grep -o 'Model review · last snapshot before the start · [0-9]* settled matches' value-ledger.csv | grep -o '[0-9]* settled' | head -1)
+          msg="Stennisfy model review stored: stennisfy-ops/${LEDGER_FILE} · ${n:-0 settled} matches"
+          if [ -z "$TELEGRAM_BOT_TOKEN" ] || [ -z "$TELEGRAM_CHAT_ID" ]; then echo "::warning::no Telegram secret: review stored, line NOT sent"; exit 0; fi
+          code=$(curl -s -o /dev/null -w '%{http_code}' -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" --data-urlencode "chat_id=${TELEGRAM_CHAT_ID}" --data-urlencode "text=${msg}")
+          echo "Telegram: HTTP ${code}"; [ "$code" = "200" ] || echo "::warning::Telegram line not sent (HTTP ${code})"

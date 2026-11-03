@@ -141,7 +141,9 @@ export function buildSnapshots({ modelOutput, matches, lines, hbAgeMs, runId, no
         b105_price: b.price, b105_opp_price: b.opp, b105_price_at: b.price != null ? b.at : null, b105_status: b.status,
         edge_b105: edgeOf(prob, b.price), edge_pin: edgeOf(prob, pinNow),
         detail: { anchorBook: bs.anchorBook || null, anchorPrice: state === 1 && bs.anchorPrice ? bs.anchorPrice : undefined,
-          pinSource: sharp ? sharp.source || null : null, calibration: e.stage3.calibration || undefined, b105LastAt: b.price == null ? b.at : undefined, modelGeneratedAt: e.generatedAt || null },
+          pinSource: sharp ? sharp.source || null : null, calibration: e.stage3.calibration || undefined,
+          // per-layer contributions (the layer analysis): [id, deltaP1] for each applied layer; the stage-2 probability before calibration
+          layers: Array.isArray(s2.adjustments) ? s2.adjustments.filter(a => a && a.applied).map(a => [a.id, num(a.deltaP1)]) : undefined, adjustedP1: num(s2.adjustedP1), b105LastAt: b.price == null ? b.at : undefined, modelGeneratedAt: e.generatedAt || null },
       });
     }
   }
@@ -260,6 +262,43 @@ const DASH = '—';
 const cell = v => { if (v == null) return DASH; const s = String(v); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
 const pct = (x, d = 1) => (x == null ? null : (x * 100).toFixed(d) + '%');
 const sgnU = x => (x == null ? null : (x > 0 ? '+' : x < 0 ? '−' : '') + Math.abs(x).toFixed(2) + 'u');
+// ── model review: is the model getting better? (Michael 2026-11-03) ─────────────────────────────────────────────────
+// Match-level, on the last snapshot before the verified start (side p1 of each settled match; void out):
+//   - accuracy: log-loss and Brier of the model as priced, the raw (uncalibrated) model and the market (bet105 no-vig at the
+//     same snapshot), each with its n — lower is better;
+//   - reliability: model probability bucket → how often that player won;
+//   - per layer: log-loss with the layer vs with its contribution taken out (positive = the layer helps), per layer with its n;
+//   - timing: the same strategies at the first edge vs the last snapshot (in the tier summary and the open/close block).
+const clampP = x => Math.min(0.995, Math.max(0.005, x));
+const llOf = (p, y) => { const q = clampP(p); return -(y ? Math.log(q) : Math.log(1 - q)); };
+const calT = (p, T) => (T > 0 && T !== 1 ? 1 / (1 + Math.exp(-Math.log(clampP(p) / (1 - clampP(p))) / T)) : p);
+export function modelReview(keyRows, cfg = CFG) {
+  const M = keyRows.filter(r => r.mark_kind === 'last_pre_start' && r.side === 'p1' && (r.result === 'won' || r.result === 'lost') && num(r.model_prob) != null)
+    .map(r => {
+      const d = r.detail || {}, cal = d.calibration || {}, T = cal.applied ? num(cal.temperature) : null;
+      const raw = cal.applied && num(cal.rawP1) != null ? num(cal.rawP1) : num(r.model_prob);
+      const nv = noVig(r.b105_price, r.b105_opp_price);
+      return { y: r.result === 'won' ? 1 : 0, model: num(r.model_prob), raw, T, market: nv != null ? 1 / nv : null, layers: d.layers || [], kind: r.price_kind };
+    });
+  const thin = n => n < cfg.minSettledForRates;
+  const acc = (rows, f) => { const a = rows.filter(r => f(r) != null); return { n: a.length, ll: thin(a.length) ? null : a.reduce((s, r) => s + llOf(f(r), r.y), 0) / a.length,
+    brier: thin(a.length) ? null : a.reduce((s, r) => s + (f(r) - r.y) ** 2, 0) / a.length }; };
+  const both = M.filter(r => r.market != null);
+  const accuracy = [['model as priced', acc(both, r => r.model)], ['raw model (no calibration)', acc(both, r => r.raw)], ['market (bet105 no-vig)', acc(both, r => r.market)]];
+  const buckets = [[0, 0.3], [0.3, 0.45], [0.45, 0.55], [0.55, 0.7], [0.7, 0.85], [0.85, 1.01]].map(([a, b]) => {
+    const x = M.filter(r => r.model >= a && r.model < b);
+    return { bucket: `${Math.round(a * 100)}–${Math.min(100, Math.round(b * 100))}%`, n: x.length,
+      model: x.length ? x.reduce((s, r) => s + r.model, 0) / x.length : null, won: thin(x.length) ? null : x.reduce((s, r) => s + r.y, 0) / x.length };
+  });
+  const byLayer = new Map();
+  for (const r of M) for (const [id, delta] of r.layers) {
+    if (delta == null || !(Math.abs(delta) > 0)) continue;
+    const without = calT(clampP(r.raw - delta), r.T);
+    const L = byLayer.get(id) || []; L.push(llOf(without, r.y) - llOf(r.model, r.y)); byLayer.set(id, L);
+  }
+  const layers = [...byLayer.entries()].sort((a, b) => a[0] - b[0]).map(([id, d]) => ({ id, n: d.length, gain: thin(d.length) ? null : d.reduce((s, x) => s + x, 0) / d.length }));
+  return { matches: M.length, withMarket: both.length, accuracy, buckets, layers };
+}
 // The CSV opens with the tier summary (key snapshots only), then every row (keyRows + the other snapshots).
 export function toCsv(keyRows, allRows, cfg = CFG, generatedAt = new Date().toISOString()) {
   const S = summarise(keyRows, cfg), L = [];
@@ -272,6 +311,15 @@ export function toCsv(keyRows, allRows, cfg = CFG, generatedAt = new Date().toIS
     L.push([s.key_snapshot, s.price_kind, s.tier, s.rows, s.settled, s.bets, s.void, s.no_bet105, pct(s.avg_clv, 2), s.clv_n, s.won,
       pct(s.win_rate), s.bets, sgnU(s.profit), pct(s.roi), s.bets].map(cell).join(','));
   }
+  // model review
+  const MR = modelReview(keyRows, cfg), f4 = x => (x == null ? null : x.toFixed(4));
+  L.push(''); L.push(cell(`Model review · last snapshot before the start · ${MR.matches} settled matches (${MR.withMarket} with a bet105 pair) · lower log-loss / Brier = better; under ${cfg.minSettledForRates} matches a dash`));
+  L.push(['accuracy', 'matches', 'log-loss', 'Brier'].map(cell).join(','));
+  for (const [name, a] of MR.accuracy) L.push([name, a.n, f4(a.ll), f4(a.brier)].map(cell).join(','));
+  L.push(['reliability: model says', 'matches', 'avg model prob', 'actually won'].map(cell).join(','));
+  for (const b of MR.buckets) L.push([b.bucket, b.n, pct(b.model), pct(b.won)].map(cell).join(','));
+  L.push(['layer id (h2h-model)', 'matches where it moved the price', 'log-loss gain (positive = the layer helps)'].map(cell).join(','));
+  for (const l of MR.layers) L.push([l.id, l.n, l.gain == null ? null : (l.gain >= 0 ? '+' : '−') + Math.abs(l.gain).toFixed(4)].map(cell).join(','));
   // the same key-snapshot bets at bet105's open, at the snapshot, at bet105's close (only bets with all three prices)
   L.push(''); L.push(cell('Same bets at bet105 OPEN · at the SNAPSHOT · at bet105 CLOSE (full model; bets with all three prices; flat 1u)'));
   L.push(['key snapshot', 'group', 'bets', 'P/L at open', 'ROI at open', 'P/L at snapshot', 'ROI at snapshot', 'P/L at close', 'ROI at close', 'avg CLV vs bet105 no-vig close', 'CLV n'].map(cell).join(','));

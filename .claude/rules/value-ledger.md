@@ -73,3 +73,14 @@ RECORDS" on its first line and goes to the private ops repo `value-ledger/backte
   prices present) and CLV vs bet105's no-vig close (timestamped to the start, so no 60-min rule; the Pinnacle CLV keeps its
   rule). The backtest carries the same block. **Test:** `tools/test-value-ledger.mjs` "bet105 open / close",
   `tools/test-value-backtest.mjs`.
+
+## Weekly model review (Michael 2026-11-03: "is the model getting better")
+- **Every snapshot stores each applied layer's contribution** (`detail.layers` = [id, deltaP1]) and the stage-2 probability
+  (`detail.adjustedP1`), so the layer analysis has data from 3 Nov 2026 on (earlier snapshots hold only the count).
+- **The export's "Model review" section** (`modelReview`), match-level on the last snapshot before the verified start (side
+  p1, void out): log-loss and Brier of the model as priced, the raw model (calibration undone) and the market (bet105 no-vig at
+  the same snapshot); a reliability table (model probability bucket → won); per layer, log-loss with vs without its
+  contribution (positive = the layer helps), each with its n. Timing = the tier summary and the open / snapshot / close block
+  split by first edge vs last snapshot. Under `minSettledForRates` (30): counts only, rates a dash.
+- **`value-ledger.yml` runs the export every Monday 06:00 UTC**, stores it in the ops repo and sends one Telegram line
+  (file path + match count; no figures — the file is private). **Test:** `tools/test-value-ledger.mjs` "model review".

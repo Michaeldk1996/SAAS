@@ -157,6 +157,30 @@ const XOC = L.exportRows([{ id: 1, event_key: 5, side: 'p1', snapshot_ts: '2026-
 check('profit at open / at the snapshot / at close; CLV vs bet105\'s no-vig close', near(XOC.profit_at_open, 0.9) && near(XOC.profit, 0.85) && near(XOC.profit_at_close, 0.75)
   && near(XOC.clv_b105, 1.85 / L.noVig(1.75, 2.15) - 1));
 
+// ── model review ──────────────────────────────────────────────────────────────────────────────────────────────────────
+console.log('model review');
+const RV = [];
+for (let i = 0; i < 40; i++) {
+  const won = i % 4 !== 0;   // 30 of 40 won
+  RV.push({ mark_kind: 'last_pre_start', side: 'p1', result: won ? 'won' : 'lost', price_kind: 'full', model_prob: 0.7, b105_price: 1.4, b105_opp_price: 3.2,
+    detail: { calibration: { applied: true, temperature: 1.3, rawP1: 0.75 }, layers: [[4, 0.05], [9, i < 20 ? -0.02 : 0]] } });
+}
+RV.push({ mark_kind: 'last_pre_start', side: 'p2', result: 'lost', price_kind: 'full', model_prob: 0.3, detail: {} });   // the other side of a match: not counted twice
+RV.push({ mark_kind: 'first_edge', side: 'p1', result: 'won', price_kind: 'full', model_prob: 0.7, detail: {} });          // not the last snapshot
+const MR = L.modelReview(RV);
+const ll = (p, n, w) => -(w * Math.log(p) + (n - w) * Math.log(1 - p)) / n;
+check('match-level: last snapshot before the start, side p1 only, void out', MR.matches === 40 && MR.withMarket === 40);
+check('accuracy: model as priced vs raw (calibration undone) vs market, same matches', near(MR.accuracy[0][1].ll, ll(0.7, 40, 30)) && near(MR.accuracy[1][1].ll, ll(0.75, 40, 30))
+  && near(MR.accuracy[2][1].ll, ll(1 / L.noVig(1.4, 3.2), 40, 30)) && MR.accuracy[0][1].n === 40);
+check('reliability bucket: 55–70% is empty, 70–85% says 70% and won 75%', MR.buckets.find(b => b.bucket === '70–85%').n === 40 && near(MR.buckets.find(b => b.bucket === '70–85%').won, 0.75));
+const lay4 = MR.layers.find(l => l.id === 4), lay9 = MR.layers.find(l => l.id === 9);
+const calT = p => 1 / (1 + Math.exp(-Math.log(p / (1 - p)) / 1.3));
+check('per layer: log-loss without the layer (raw − its delta, recalibrated) minus with it; only matches where it moved the price', lay4.n === 40
+  && near(lay4.gain, ll(calT(0.70), 40, 30) - ll(0.7, 40, 30)) && lay9.n === 20 && lay9.gain === null);
+check('under 30 matches: counts only, the accuracy rates a dash', L.modelReview(RV.slice(0, 20)).accuracy[0][1].ll === null && L.modelReview(RV.slice(0, 20)).accuracy[0][1].n === 20);
+const csvR = L.toCsv(L.exportRows([], [], []).keyRows, [], CFG);
+check('the CSV carries the model review section', /Model review · last snapshot before the start/.test(csvR) && /layer id \(h2h-model\)/.test(csvR));
+
 // ── append-only: no code path updates or deletes a ledger row ─────────────────────────────────────────────────────────
 console.log('append-only');
 const ALLOW = new Set(['supabase/migrations/20261101090000_model_value_ledger.sql', 'tools/value-ledger.mjs', 'tools/test-value-ledger.mjs',
