@@ -111,15 +111,28 @@ def main():
         if not only or 'close_cover' in only:
           sql(f"insert into data_alarms.force values ('close_cover', date_trunc('day', now()) + interval '1 day', {lit(json.dumps(cover))}::jsonb) "
             f"on conflict (name) do update set until = excluded.until, fake = excluded.fake")
-        print(sql("select data_alarms.tick() as r")[0]['r'])
+        # a row with confirm_ticks > 1 (card_state: 2) alarms only on its Nth bad tick in a row: tick until every
+        # forced row is bad, at most 4 times
+        for _ in range(4):
+            print(sql("select data_alarms.tick() as r")[0]['r'])
+            open_ = {r['name'] for r in sql("select name from data_alarms.state where bad")}
+            if set(fakes) <= open_:
+                break
         print(sql("select data_alarms.coverage(date_trunc('day', now()) + interval '10 hours') as r")[0]['r'])
         fired = wait_delivered(f"created_at >= {lit(start)} and text like '[TEST]%ALARM%' or (created_at >= {lit(start)} and kind = 'daily' and text like '%[TEST]%')",
                                'manufactured stale states: [TEST] ALARM per row')
         got = {r['alarm'] for r in sql(f"select distinct alarm from data_alarms.messages where created_at >= {lit(start)} and text like '%[TEST]%' and delivery = 'sent'")}
-        sql("delete from data_alarms.force")
+        # recovery is proven on a manufactured FRESH state too (never on whatever the live data happens to be: a
+        # 13-min-old card doc is above card_state's 12-min recovery line), then the fakes are removed
+        goods = {'data_age': {'age_min': 0}, 'card_state': {'age_min': 0}, 'live_poller': {'age_min': 0, 'n': 1},
+                 'kibl_stream': {'age_min': 0}, 'cron_jobs': {'missing': []}}
+        for name in fakes:
+            sql(f"update data_alarms.force set fake = {lit(json.dumps(goods[name]))}::jsonb where name = {lit(name)}")
+        sql("delete from data_alarms.force where name = 'close_cover'")
         sql('select data_alarms.tick()')
         rec = wait_delivered(f"created_at >= {lit(start)} and text like '[TEST] RECOVERED%'", '[TEST] RECOVERED per row')
         back = {r['alarm'] for r in sql(f"select distinct alarm from data_alarms.messages where created_at >= {lit(start)} and text like '[TEST] RECOVERED%' and delivery = 'sent'")}
+        sql("delete from data_alarms.force")
         want = [r for r in ROWS + ['close_cover'] if not only or r in only]
         missing_fire = sorted(set(want) - got)
         missing_rec = sorted(set(r for r in want if r != 'close_cover') - back)

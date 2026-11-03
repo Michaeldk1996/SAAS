@@ -85,6 +85,31 @@ M = load(os.path.join(HERE, 'cards_worker.py'), ("        if rc != 0:\n         
 ok, c = harness(M, build_rc=1)
 check('MUTANT caught: a failed build ignored → a doc would be written', any(x[0] == 'POST' and x[1].startswith('card_state_doc') for x in c['rest']))
 
+# run(): unbuffered, every line timed; the trace names the line BEFORE the longest pause; a silent hang is killed
+R0 = load(os.path.join(HERE, 'cards_worker.py'))
+R0.WORK = tempfile.mkdtemp()
+rc, secs, tail = R0.run([sys.executable, '-c', "import time; print('read obs'); time.sleep(1.2); print('next'); print('done')"], 20)
+check('run(): exit code, tail and a trace whose longest pause is after the line printed before it',
+      rc == 0 and 'done' in tail and R0.LAST_TRACE[0][1] == 'read obs' and R0.LAST_TRACE[0][0] >= 1.0,
+      (rc, tail, R0.LAST_TRACE[:2]))
+check('trace_text: one line per pause, seconds first', R0.trace_text(R0.LAST_TRACE).splitlines()[0].strip().startswith('1.') and 'after: read obs' in R0.trace_text(R0.LAST_TRACE))
+import subprocess as _sp, time as _t
+t0 = _t.time()
+try:
+    R0.run([sys.executable, '-c', "import time; print('stuck here'); time.sleep(30)"], 2)
+    timed_out = False
+except _sp.TimeoutExpired:
+    timed_out = True
+check('run(): a SILENT hang is killed at the timeout and raises TimeoutExpired (its trace kept)',
+      timed_out and _t.time() - t0 < 10 and R0.LAST_TRACE[0][1] == 'stuck here', (timed_out, _t.time() - t0, R0.LAST_TRACE[:1]))
+M = load(os.path.join(HERE, 'cards_worker.py'), ("    killer.start()\n", "    pass\n"))
+M.WORK = R0.WORK
+import threading as _th
+res = {}
+th = _th.Thread(target=lambda: res.setdefault('r', M.run([sys.executable, '-c', "import time; time.sleep(6)"], 1)), daemon=True)
+th.start(); th.join(4)
+check('MUTANT caught: without the kill timer a silent hang runs past its timeout', th.is_alive() or 'r' in res)
+
 # card-worker-fresh
 F = load(os.path.join(ROOT, 'tools', 'card-worker-fresh.py'))
 

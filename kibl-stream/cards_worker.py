@@ -14,7 +14,7 @@ A failed cycle writes its card_state_runs row with the stage it stopped at and t
 the next cycle tries again; the data-alarms watch alarms on a doc older than its limit. Nothing here is a gate.
 Env: SUPABASE_URL, SUPABASE_SECRET_KEY, API_TENNIS_KEY (the app's existing secrets, base64 as NAME_B64).
 """
-import base64, json, os, shutil, socket, subprocess, sys, time, urllib.error, urllib.request
+import base64, json, os, shutil, socket, subprocess, sys, threading, time, urllib.error, urllib.request
 from datetime import datetime, timezone
 
 REPO = os.environ.get('CARDS_REPO', 'https://github.com/Michaeldk1996/SAAS.git')
@@ -68,12 +68,38 @@ def line_summary_busy():
         return True, f'guard unreadable ({type(e).__name__}) — counted as busy'
 
 
+LAST_TRACE = []                                  # the slowest pauses of the last run() (see trace_text)
+
+
 def run(cmd, timeout):
+    """Run a builder script unbuffered, timing every output line: LAST_TRACE keeps the 10 longest pauses with the line
+    printed BEFORE each (the step that took the time), so card_state_runs says where a slow build spent it."""
+    global LAST_TRACE
     t0 = time.time()
-    p = subprocess.run(cmd, cwd=WORK, capture_output=True, text=True, timeout=timeout,
-                       env={**os.environ, 'TEN270_CACHE_DIR': '/tmp/cards-cache'})
-    tail = (p.stdout + p.stderr)[-1500:]
+    p = subprocess.Popen(cmd, cwd=WORK, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1,
+                         env={**os.environ, 'TEN270_CACHE_DIR': '/tmp/cards-cache', 'PYTHONUNBUFFERED': '1'})
+    lines, gaps, prev_t, prev_l = [], [], t0, '(start)'
+    killer = threading.Timer(timeout, p.kill)    # a silent hang is killed too (the read below would block forever)
+    killer.start()
+    try:
+        for line in p.stdout:
+            t = time.time()
+            gaps.append((t - prev_t, prev_l))
+            prev_t, prev_l = t, line.rstrip()[:200]
+            lines.append(line)
+        p.wait()
+    finally:
+        killer.cancel()
+    gaps.append((time.time() - prev_t, prev_l))
+    LAST_TRACE = sorted(gaps, reverse=True)[:10]
+    if time.time() - t0 >= timeout:
+        raise subprocess.TimeoutExpired(cmd, timeout)
+    tail = ''.join(lines)[-1500:]
     return p.returncode, time.time() - t0, tail
+
+
+def trace_text(trace):
+    return '\n'.join(f'{d:7.1f}s after: {l}' for d, l in trace) or None
 
 
 def cycle():
@@ -87,6 +113,7 @@ def cycle():
         stage = 'build'
         rc, build_s, tail = run([sys.executable, '-B', 'ten225-kibl-card-state.py', '--use-live-flip'], BUILD_TIMEOUT_S)
         row['build_s'] = round(build_s, 1)
+        row['trace'] = trace_text(LAST_TRACE)
         if rc != 0:
             raise RuntimeError(f'card-state build exited {rc}: {tail}')
         stage = 'publish'
@@ -111,12 +138,14 @@ def cycle():
         pass
     except Exception as e:                       # noqa: BLE001 — recorded, the next cycle retries
         ok, err = False, f'{type(e).__name__}: {str(e)[-1200:]}'
+        if stage == 'build' and LAST_TRACE:
+            row['trace'] = trace_text(LAST_TRACE)
     try:
         rest('POST', 'card_state_runs', {'started_at': started, 'ok': ok, 'stage': stage, 'error': err,
                                          'host': socket.gethostname(), **row}, prefer='return=minimal')
     except Exception as e:                       # noqa: BLE001
         print(f'card_state_runs write failed: {e}', flush=True)
-    print(f'{now_iso()} cycle ok={ok} stage={stage} {row} {err or ""}'[:2000], flush=True)
+    print(f'{now_iso()} cycle ok={ok} stage={stage} {row} {err or ""}'[:3000], flush=True)
     return ok
 
 

@@ -51,6 +51,8 @@ update data_alarms.config set confirm_ticks = 2, recover_below = interval '45 mi
 -- 20 min is. Once alerted it is good again below 12 min (a fresh doc), so it cannot flap on a 14-min-old one.
 update data_alarms.config set threshold = interval '15 minutes', recover_below = interval '12 minutes'
  where name = 'card_state' and recover_below = interval '45 minutes';
+update data_alarms.config set what = 'card prices (the newer of card_state_doc and odds-card-state.json)'
+ where name = 'card_state' and what like 'card prices file%';
 
 create table if not exists data_alarms.sources (
     name  text primary key,

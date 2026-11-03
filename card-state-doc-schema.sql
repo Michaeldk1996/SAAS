@@ -37,3 +37,5 @@ create table if not exists public.card_state_runs (
 alter table public.card_state_runs enable row level security;
 revoke all on public.card_state_runs from anon, authenticated;
 create index if not exists card_state_runs_started_idx on public.card_state_runs (started_at desc);
+-- the 10 longest pauses in the builder's own output, with the line before each (where a slow build spent its time)
+alter table public.card_state_runs add column if not exists trace text;
