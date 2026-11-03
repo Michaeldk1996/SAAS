@@ -62,6 +62,10 @@ ok, c = harness(W, prev_doc={'generatedAt': '2026-11-03T09:50:00Z', 'byKey': {'o
 writes = [x for x in c['rest'] if x[0] == 'POST' and x[1].startswith('card_state_doc')]
 runs = [x for x in c['rest'] if x[0] == 'POST' and x[1] == 'card_state_runs']
 check('a good cycle builds, then publishes', ok and len(c['run']) == 2 and 'ten225-kibl-card-state.py' in c['run'][0][2], c['run'])
+check('the builder reads observations incrementally (--obs-incremental)', '--obs-incremental' in c['run'][0], c['run'][0])
+src = open(os.path.join(HERE, 'cards_worker.py')).read()
+check('never back to back: the sleep between cycles is at least MIN_GAP_S (300 s)',
+      'time.sleep(max(MIN_GAP_S, CYCLE_S' in src and W.MIN_GAP_S == 300)
 check('the publisher is handed the PREVIOUS doc (its re-verification guard reads it)', (c.get('prev_seen') or {}).get('byKey') == {'old': {}}, c.get('prev_seen'))
 check('the new doc is written to card_state_doc id 1 (merge), with its generatedAt',
       len(writes) == 1 and writes[0][2]['id'] == 1 and writes[0][2]['generated_at'] == '2026-11-03T10:00:00Z' and writes[0][2]['doc']['byKey'] == {'k': {}}, writes)

@@ -198,6 +198,23 @@ closes, odds performance and started-evidence.
 
 **Close = last price before the *actual* start.**
 
+### What a closing price is (founder ruling 2026-11-03 — RULED, NOT YET BUILT; the build goes to the price-source task)
+- **The close is the book's last pre-match quote before its market goes in-play** (or is suspended at the off). The
+  warm-up is part of the pre-match market — the price can still move on strapping, movement or late sharp money — so
+  a price from before the warm-up is not the close. Never the scheduled time (it slips, "followed by" matches most),
+  never our api-tennis live flag (it fires at the warm-up on ATP tour matches: 10–28 min before the first point on
+  Paris 2 Nov), never a fixed cut-off: books switch at slightly different moments, so each book's close is read from
+  its own switch.
+- **The reference close is de-vigged, from Bet105 or Pinnacle** — one book per match, the margin removed on that
+  book's own pair. Which book leads is open: it is decided on the measurement (per book, the share of matches with a
+  clean last pre-match quote, and the pp gap between the two de-vigged closes where both exist, 31 Oct – 2 Nov).
+- **Test (when built):** for every close, the next thing its book shows is in-play, a suspension or no market — no
+  later pre-match quote exists; no close is cut at our live flag, a schedule or start − N.
+- **When built it replaces**, for closes: the verified-start requirement below ("Close" only at our live flip or the
+  earlier-of rule, 17 Oct), the played-start rule's 300 s condition as a gate on closes (26–27 Oct), and the 300 s
+  sighting test of a "real" close (1 Nov). Until then those rules stand. Measured cost of the old rule: 54 of 61 ATP
+  singles live-flip rows since 28 Oct have no lower bound, so 2 Nov's close coverage read 0 of 13 real.
+
 ### Pinnacle closing source by period, and the 2026 order (founder rulings 2026-10-14)
 - **Up to 13 Jan 2026:** the Tennis-Data Pinnacle column (`odds-archive/{yyyy}.csv` `psw`/`psl`, the historical archive,
   unchanged; its Pinnacle column stops on 13 Jan 2026, `database-yield.json` `meta.pinnacleLastPriced`).

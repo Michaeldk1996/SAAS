@@ -48,11 +48,10 @@ primary_region = "sjc"
   # Without this, print() is block-buffered in a container with no TTY and the
   # worker's own log never reaches `fly logs` (measured: silent after start).
   PYTHONUNBUFFERED = "1"
-  # Card worker PAUSED (2026-11-03 06:00Z): run back to back, its builds doubled the reads of kibl_line_observations
-  # and the database ran out of disk-read headroom (every query waiting on DataFileRead, statement timeouts from 05:00Z,
-  # the GitHub card job stuck too). Paused, the GitHub job builds the card state as before stage 3 (card-worker-fresh
-  # finds no fresh cycle). "0" restarts it — only together with a lighter build.
-  CARDS_PAUSED = "1"
+  # Card worker pause switch ("1" = no builds; the GitHub card job builds instead). Paused 3 Nov 06:00Z when back-to-
+  # back full builds starved the database of disk reads; back on with the incremental observations read and a
+  # 5-min minimum gap between builds (cards_worker.py MIN_GAP_S).
+  CARDS_PAUSED = "0"
 
 # One machine, always on. `auto_stop_machines = false` is the whole point: a
 # worker that scales to zero is a worker that is not listening, and this exists

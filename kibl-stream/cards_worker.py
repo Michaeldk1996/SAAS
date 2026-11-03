@@ -21,6 +21,9 @@ REPO = os.environ.get('CARDS_REPO', 'https://github.com/Michaeldk1996/SAAS.git')
 WORK = os.environ.get('CARDS_WORK', '/tmp/cards')
 CYCLE_S = int(os.environ.get('CARDS_CYCLE_S', '600'))
 BUILD_TIMEOUT_S = int(os.environ.get('CARDS_BUILD_TIMEOUT_S', '1500'))
+# the database's rest between builds: never back to back, whatever a build took (3 Nov: a 30-s gap after slow builds
+# kept the database reading continuously)
+MIN_GAP_S = int(os.environ.get('CARDS_MIN_GAP_S', '300'))
 
 
 def decode_b64_env():
@@ -111,7 +114,11 @@ def cycle():
             raise StopIteration
         sync_repo()
         stage = 'build'
-        rc, build_s, tail = run([sys.executable, '-B', 'ten225-kibl-card-state.py', '--use-live-flip'], BUILD_TIMEOUT_S)
+        # --obs-incremental: the builder reads kibl_line_observations from its local snapshot plus the rows seen since
+        # its last read (a full read daily) — run back to back, the full 45-day read every cycle starved the database
+        # of disk reads (3 Nov 05:00Z)
+        rc, build_s, tail = run([sys.executable, '-B', 'ten225-kibl-card-state.py', '--use-live-flip', '--obs-incremental'],
+                                BUILD_TIMEOUT_S)
         row['build_s'] = round(build_s, 1)
         row['trace'] = trace_text(LAST_TRACE)
         if rc != 0:
@@ -163,7 +170,7 @@ def main():
     while True:
         t0 = time.time()
         cycle()
-        time.sleep(max(30, CYCLE_S - (time.time() - t0)))
+        time.sleep(max(MIN_GAP_S, CYCLE_S - (time.time() - t0)))
 
 
 if __name__ == '__main__':

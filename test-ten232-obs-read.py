@@ -186,12 +186,150 @@ check('a 4xx fails at once, no retry  [mutant: retry everything]', exited and le
 print('5. the wiring')
 src = open(K.__file__).read()
 reads = re.findall(r"(fetch_\w+)\(\s*url, key, 'kibl_line_observations'", src)
-check("both kibl_line_observations reads go through fetch_by_fixtures  [control: the pre-fix builder used fetch_all]",
-      reads == ['fetch_by_fixtures', 'fetch_by_fixtures'], reads)
+check("the kibl_line_observations reads: the incremental since-read (fetch_since, last_seen_at index) and the two "
+      "fixture-batched full reads (fetch_by_fixtures)  [control: the pre-fix builder used fetch_all]",
+      reads == ['fetch_since', 'fetch_by_fixtures', 'fetch_by_fixtures'], reads)
 pkg = json.load(open(os.path.join(HERE, 'package.json')))['scripts']['test']
 wf = open(os.path.join(HERE, '.github/workflows/ten232-kibl-archive.yml')).read()
 check('wired into npm test and the workflow\'s offline tests',
       'test-ten232-obs-read.py' in pkg and 'python3 -B test-ten232-obs-read.py' in wf)
+
+print('6. read_observations: incremental = full (architecture program stage 3)')
+import tempfile, copy
+from datetime import datetime, timezone
+
+
+def T(s):
+    return datetime.fromtimestamp(s, timezone.utc).isoformat()
+
+
+class Table:
+    """kibl_line_observations + kibl_sweeps as the sweep writes them: rows inserted once, then only state and
+    last_seen_at move; a sweep's rows carry its start time and become visible when it commits."""
+    def __init__(self):
+        self.rows, self.sweeps = {}, []
+
+    def sweep(self, start, commit, rows):
+        self.sweeps.append({'started_at': T(start), 'finished_at': T(commit), 'commit': commit, 'rows': rows})
+
+    def visible(self, at):
+        out = {}
+        for sw in sorted(self.sweeps, key=lambda x: x['commit']):
+            for r in sw['rows']:
+                if r.get('_c', sw['commit']) > at:      # a sweep inserts in chunks: a row can land before it finishes
+                    continue
+                old = out.get(r['row_key'])
+                if old is None:
+                    out[r['row_key']] = {k: v for k, v in dict(r, last_seen_at=sw['started_at']).items() if k != '_c'}
+                else:                    # a re-sighting: state + last_seen_at only
+                    old.update(state=r.get('state', old.get('state')), last_seen_at=sw['started_at'])
+        return out
+
+    def sb(self, at):
+        def call(method, path, url, key):
+            q = urllib.parse.urlparse(path)
+            args = urllib.parse.parse_qs(q.query)
+            if 'kibl_sweeps' in q.path:
+                lo = args['finished_at'][0][len('gte.'):]
+                done = [s for s in self.sweeps if s['commit'] <= at and s['finished_at'] >= lo]
+                done.sort(key=lambda s: s['started_at'])
+                return json.dumps([{'started_at': s['started_at']} for s in done[:1]]).encode(), None
+            rows = list(self.visible(at).values())
+            for k in ('observed_at', 'last_seen_at'):
+                if k in args:
+                    rows = [r for r in rows if r[k] >= args[k][0][len('gte.'):]]
+            if 'fixture_id' in args:
+                ids = {int(x) for x in args['fixture_id'][0][len('in.('):-1].split(',')}
+                rows = [r for r in rows if r['fixture_id'] in ids]
+            order = args['order'][0]
+            rows.sort(key=(lambda r: (r['last_seen_at'], r['row_key'])) if order.startswith('last_seen_at')
+                      else (lambda r: (r['fixture_id'], r['inserted_on'])))
+            lim, off = int(args['limit'][0]), int(args['offset'][0])
+            return json.dumps(rows[off:off + lim]).encode(), None
+        return call
+
+
+def row(k, fid, obs, price, ins=None):
+    return {'row_key': k, 'fixture_id': fid, 'observed_at': T(obs), 'inserted_on': T(ins or obs),
+            'price_decimal': price, 'state': 'current', 'feed_source_id': K.VERIFIED_FEED_SOURCE_ID}
+
+
+def scenario(MOD, steps):
+    """Run the builder's read at each `at` in steps, incremental vs full; returns the mismatches."""
+    K0 = MOD
+    K0.CACHE_DIR = tempfile.mkdtemp()
+    bad = []
+    for at, tab in steps:
+        cutoff = at - 45 * 86400
+        inc, err, info = K0.read_observations('u', 'k', '&x=1', range(1, 30), cutoff, now_s=at, incremental=True,
+                                              _sb=tab.sb(at), sleep=lambda s: None)
+        full, err2, _ = K0.read_observations('u', 'k', '&x=1', range(1, 30), cutoff, now_s=at, incremental=False,
+                                             _sb=tab.sb(at), sleep=lambda s: None)
+        strip = lambda rs: [{k: v for k, v in r.items()} for r in rs]
+        if err or err2 or strip(inc) != strip(full):
+            bad.append((at, info, len(inc), len(full)))
+    return bad
+
+
+H = 3600
+t0 = 1_800_000_000
+tab = Table()
+tab.sweep(t0, t0 + 120, [row(f'a{i}', 1 + i % 20, t0, 2.0 + i / 100) for i in range(60)])
+tab.sweep(t0 + 600, t0 + 700, [row('a1', 2, t0, 2.01), row('n1', 3, t0 + 600, 1.8)])                    # re-sight + new
+# a slow sweep: starts before the second read, commits after it (its rows carry the EARLIER start)
+tab.sweep(t0 + 1100, t0 + 1500, [row('late', 4, t0 + 1100, 3.3), dict(row('a2', 3, t0, 2.02), state='old')])
+# a sweep longer than the margin: starts 2 h before the third read, finishes after the second
+tab.sweep(t0 + 2000 - 2 * H, t0 + 2100, [row('long', 5, t0 + 2000 - 2 * H, 4.4)])
+tab.sweep(t0 + 2500, t0 + 2600, [row('a3', 4, t0, 2.03), row('n2', 6, t0 + 2500, 1.5)])
+# a sweep still RUNNING at the read: started before the previous read, one chunk committed after it, not finished
+tab.sweep(t0 + 1700, t0 + 3500, [dict(row('chunk', 7, t0 + 1700, 5.5), _c=t0 + 1900)])
+steps = [(t0 + 300, tab), (t0 + 1200, tab), (t0 + 1800, tab), (t0 + 3000, tab), (t0 + 3000 + 25 * H, tab)]
+bad = scenario(K, steps)
+check('incremental reads = the full read at every step (late commit, long sweep, re-sightings, new rows, state '
+      'change, the daily full read)', not bad, bad)
+
+def mutant(a, b):
+    src = open(K.__file__).read()
+    assert a in src, 'mutant anchor gone: ' + a
+    M = types.ModuleType('M'); M.__file__ = K.__file__
+    exec(compile(src.replace(a, b), K.__file__, 'exec'), M.__dict__)
+    return M
+
+# on its own: a sweep still RUNNING at the read — started before the previous read, a chunk committed after it, the
+# sweep not finished (so kibl_sweeps cannot move the bound): only the margin catches it
+tab2 = Table()
+tab2.sweep(t0, t0 + 120, [row(f'b{i}', 1 + i % 9, t0, 2.0) for i in range(20)])
+tab2.sweep(t0 + 1700, t0 + 4000, [dict(row('chunk', 7, t0 + 1700, 5.5), _c=t0 + 1900)])
+steps2 = [(t0 + 300, tab2), (t0 + 1800, tab2), (t0 + 2400, tab2)]
+check('a sweep still running at the read: incremental = full', not scenario(K, steps2), scenario(K, steps2))
+check('MUTANT caught: no sweep margin (a running sweep\'s early chunk is lost)',
+      bool(scenario(mutant("bound = prev_read - OBS_SWEEP_MARGIN_S", "bound = prev_read"), steps2)))
+check('MUTANT caught: a long sweep that finished since the last read does not move the bound',
+      bool(scenario(mutant("bound = min(bound, _ts(first[0]['started_at']) - 60)", "pass"), steps)))
+check('MUTANT caught: read_at taken AFTER the read (rows committed during it are skipped)',
+      bool(scenario(mutant("'read_at': now_s,", "'read_at': now_s + 900,"), steps)))
+
+# the daily full read and the failure fallback
+K.CACHE_DIR = tempfile.mkdtemp()
+_, _, i1 = K.read_observations('u', 'k', '&x=1', range(1, 30), 0, now_s=t0 + 300, incremental=True, _sb=tab.sb(t0 + 300))
+_, _, i2 = K.read_observations('u', 'k', '&x=1', range(1, 30), 0, now_s=t0 + 1200, incremental=True, _sb=tab.sb(t0 + 1200))
+_, _, i3 = K.read_observations('u', 'k', '&x=1', range(1, 30), 0, now_s=t0 + 25 * H, incremental=True, _sb=tab.sb(t0 + 25 * H))
+_, _, i4 = K.read_observations('u', 'k', '&y=2', range(1, 30), 0, now_s=t0 + 25 * H + 60, incremental=True, _sb=tab.sb(t0 + 25 * H))
+check('modes: first read full, next incremental, a day later full again, a changed filter full',
+      (i1['mode'], i2['mode'], i3['mode'], i4['mode'], i4['why']) == ('full', 'incremental', 'full', 'full', 'filter changed'),
+      (i1, i2, i3, i4))
+real = tab.sb(t0 + 1500)
+def flaky(method, path, url, key):
+    if 'last_seen_at=gte' in path:
+        return None, (500, 'statement timeout')
+    return real(method, path, url, key)
+rows, err, i5 = K.read_observations('u', 'k', '&y=2', range(1, 30), 0, now_s=t0 + 1500, incremental=True, _sb=flaky,
+                                    sleep=lambda s: None)
+check('a since-read that keeps failing falls back to the full read (never a stale snapshot)',
+      err is None and i5['mode'] == 'full' and 'since-read failed' in i5['why'] and len(rows) == len(tab.visible(t0 + 1500)),
+      i5)
+cut = K.read_observations('u', 'k', '&x=1', range(1, 30), t0 + 500, now_s=t0 + 3000, incremental=False, _sb=tab.sb(t0 + 3000))[0]
+check('the observed_at window holds: no row observed before the cutoff', all(r['observed_at'] >= T(t0 + 500) for r in cut) and cut)
 
 print()
 if FAILS:

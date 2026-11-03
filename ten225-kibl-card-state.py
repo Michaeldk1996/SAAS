@@ -2447,11 +2447,122 @@ def fetch_by_fixtures(url, key, table, cols, extra, fixture_ids, order='fixture_
     return out, None
 
 
+OBS_SNAPSHOT = 'ten225-obs-snapshot.json.gz'
+OBS_FULL_EVERY_S = 24 * 3600      # a full read at least once a day (the snapshot is never trusted longer)
+OBS_SWEEP_MARGIN_S = 3600         # a sweep stamps last_seen_at with ITS start and commits later: re-read an hour back
+                                  # (longest sweep in the 3 days to 3 Nov 10:40Z: 44 min 48 s, p95 4 min 28 s, n = 503)
+
+
+def _ts(v):
+    """A PostgREST timestamptz → epoch seconds (None stays None)."""
+    if not v:
+        return None
+    return datetime.fromisoformat(str(v).replace('Z', '+00:00')).timestamp()
+
+
+def fetch_since(url, key, table, cols, extra, since_iso, _sb=None, sleep=time.sleep):
+    """Every row with last_seen_at >= since_iso (the kibl_lo_last_seen_idx range), paged, each page retried like
+    fetch_by_fixtures. Same return shape: (rows, err)."""
+    call = _sb or sb
+    out, offset = [], 0
+    while True:
+        path = (f'/rest/v1/{table}?select={cols}{extra}&last_seen_at=gte.{since_iso}'
+                f'&order=last_seen_at.asc,row_key.asc&limit={PAGE}&offset={offset}')
+        for attempt in range(1, READ_RETRIES + 1):
+            got, err = call('GET', path, url, key)
+            if got is not None:
+                break
+            if attempt < READ_RETRIES:
+                print(f'{table}: since-read page at offset {offset} failed ({str(err)[:120]}); '
+                      f'retry {attempt}/{READ_RETRIES - 1}')
+                sleep(5 * attempt)
+        if got is None:
+            return out, err
+        rows = json.loads(got.decode('utf-8'))
+        out.extend(rows)
+        if len(rows) < PAGE:
+            return out, None
+        offset += PAGE
+
+
+def read_observations(url, key, extra, fixture_ids, cutoff_s, now_s=None, incremental=False, _sb=None,
+                      sleep=time.sleep):
+    """The match-winner observations the builder projects, read in full or — `incremental` (the always-on card
+    worker, architecture program stage 3) — from a local snapshot plus the rows seen since the last read.
+
+    Why it is exact: archive-kibl.py is the only writer of kibl_line_observations; a row is inserted once
+    (ignore-duplicates) and afterwards only `state` and `last_seen_at` are rewritten, last_seen_at always forward,
+    and no job deletes from it. So every row that is new or changed since a read carries last_seen_at >= the
+    observed_at of the sweep that wrote it, and that sweep started at most OBS_SWEEP_MARGIN_S before the read began —
+    unless a sweep that finished since then started earlier, in which case the bound moves to its start. Rows read
+    replace the snapshot's copy by row_key. A full read happens with no snapshot, a snapshot over OBS_FULL_EVERY_S
+    old, a changed filter, or any failure of the incremental path.
+
+    `extra` is the PostgREST filter WITHOUT the observed_at window (it is the snapshot's identity, so it must not move
+    run to run); `cutoff_s` is the window, put on the full read's query and re-applied locally to every row.
+
+    Returns (rows, err, info): rows filtered to `fixture_ids` and observed_at >= cutoff_s, in fetch_by_fixtures'
+    order (fixture_id, inserted_on; row_key breaks ties)."""
+    call = _sb or sb
+    now_s = time.time() if now_s is None else now_s
+    cols = OBS_COLUMNS + ',row_key'
+    ids = {int(i) for i in fixture_ids if i is not None}
+    snap = _load_snapshot(OBS_SNAPSHOT) if incremental else None
+    why = 'not incremental' if not incremental else None
+    if incremental and snap is None:
+        why = 'no snapshot'
+    elif snap is not None and snap.get('extra') != extra:
+        why, snap = 'filter changed', None
+    elif snap is not None and now_s - float(snap.get('full_at') or 0) >= OBS_FULL_EVERY_S:
+        why, snap = 'daily full read', None
+    by_key, mode, n_read = None, 'full', 0
+    if snap is not None:
+        prev_read = float(snap.get('read_at') or 0)
+        bound = prev_read - OBS_SWEEP_MARGIN_S
+        got, serr = call('GET', '/rest/v1/kibl_sweeps?select=started_at'
+                                f'&finished_at=gte.{iso(prev_read - 300)}&order=started_at.asc&limit=1', url, key)
+        if got is None:
+            why = f'kibl_sweeps unreadable ({str(serr)[:80]})'
+        else:
+            first = json.loads(got.decode('utf-8'))
+            if first and _ts(first[0].get('started_at')) is not None:
+                bound = min(bound, _ts(first[0]['started_at']) - 60)
+            rows, err = fetch_since(url, key, 'kibl_line_observations', cols, extra, iso(bound), _sb=call, sleep=sleep)
+            if err:
+                why = f'since-read failed ({str(err)[:80]})'
+            else:
+                by_key = {k: v for k, v in (snap.get('rows') or {}).items()}
+                for r in rows:
+                    by_key[r['row_key']] = r
+                mode, n_read, full_at = 'incremental', len(rows), float(snap['full_at'])
+    if by_key is None:
+        rows, err = fetch_by_fixtures(url, key, 'kibl_line_observations', cols,
+                                      extra + f'&observed_at=gte.{iso(cutoff_s)}', sorted(ids),
+                                      order='fixture_id.asc,inserted_on.asc', _sb=call, sleep=sleep)
+        if err:
+            return rows, err, {'mode': 'full', 'why': why}
+        by_key = {r['row_key']: r for r in rows}
+        n_read, full_at = len(rows), now_s
+    # rows past the observed_at cutoff leave the snapshot too (it never grows past the window)
+    by_key = {k: r for k, r in by_key.items() if (_ts(r.get('observed_at')) or 0) >= cutoff_s}
+    if incremental:
+        # read_at = when this read BEGAN (now_s, taken before any query): a row committed during it is re-read next time
+        _save_snapshot(OBS_SNAPSHOT, {'extra': extra, 'full_at': full_at, 'read_at': now_s, 'rows': by_key})
+    out = [r for r in by_key.values()
+           if r.get('fixture_id') in ids and (_ts(r.get('observed_at')) or 0) >= cutoff_s]
+    out.sort(key=lambda r: (r.get('fixture_id'), r.get('inserted_on') is None, _ts(r.get('inserted_on')) or 0,
+                            r.get('row_key') or ''))
+    return out, None, {'mode': mode, 'why': why, 'read': n_read, 'held': len(by_key)}
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--dry-run', action='store_true')
     ap.add_argument('--days-back', type=int, default=45,
                     help='how far back to read observations')
+    ap.add_argument('--obs-incremental', action='store_true',
+                    help='architecture program stage 3: read kibl_line_observations from a local snapshot plus the '
+                         'rows seen since the last read (the always-on card worker); a full read daily')
     ap.add_argument('--use-live-flip', action='store_true',
                     help='LADDER I(b): cut a Kibl Close at the live-flip lower '
                          'bound where oddspapi has no pair. OFF by default — '
@@ -2481,21 +2592,19 @@ def main():
               'fixtures yet. Refusing to report a clean zero as coverage.')
         return 1
 
-    obs_rows, err = fetch_by_fixtures(
-        url, key, 'kibl_line_observations',
-        OBS_COLUMNS,
+    obs_extra = (
         f'&market_type_id=eq.{MARKET_TYPE_ID}&segment_id=eq.{SEGMENT_ID}'
         f'&betting_type_id=eq.{BETTING_TYPE_ID}'
         # Item 7: only the book whose side mapping has passed its own gate may
         # reach a card. See VERIFIED_FEED_SOURCE_ID.
-        f'&feed_source_id=eq.{VERIFIED_FEED_SOURCE_ID}'
-        # Bounded on OUR capture time, not on the price's. A window on
-        # inserted_on would drop a still-valid opener the moment the book's
-        # opening price aged past the cutoff, which is the one row the whole
-        # source exists to carry.
-        f'&observed_at=gte.{iso(as_of - a.days_back * 86400)}',
-        [f.get('fixture_id') for f in fx],
-        order='fixture_id.asc,inserted_on.asc')
+        f'&feed_source_id=eq.{VERIFIED_FEED_SOURCE_ID}')
+    # Bounded on OUR capture time (observed_at), not on the price's. A window on inserted_on would drop a still-valid
+    # opener the moment the book's opening price aged past the cutoff, which is the one row the whole source exists
+    # to carry. read_observations puts it on the query (full read) and re-applies it locally (incremental).
+    obs_rows, err, obs_info = read_observations(
+        url, key, obs_extra, [f.get('fixture_id') for f in fx], as_of - a.days_back * 86400,
+        now_s=as_of, incremental=a.obs_incremental)
+    print(f'kibl_line_observations read: {obs_info}')
     if err:
         print(f'::error::reading kibl_line_observations failed ({err})')
         return 1
@@ -2522,27 +2631,30 @@ def main():
     # or "a new book was activated" looks exactly like "nothing happened". This
     # is the line that turns the day Bet105 lands from a silent relabel into a
     # number in the job summary.
-    excluded, err_x = fetch_by_fixtures(
-        url, key, 'kibl_line_observations', 'fixture_id,feed_source_id',
-        f'&market_type_id=eq.{MARKET_TYPE_ID}&segment_id=eq.{SEGMENT_ID}'
-        f'&betting_type_id=eq.{BETTING_TYPE_ID}'
-        f'&observed_at=gte.{iso(as_of - a.days_back * 86400)}'
-        f'&feed_source_id=neq.{VERIFIED_FEED_SOURCE_ID}',
-        [f.get('fixture_id') for f in fx])
-    n_excluded = len(excluded or [])
-    if err_x:
-        print(f'::warning::could not count unverified-book rows ({err_x})')
-    elif n_excluded:
-        books_seen = sorted({o.get('feed_source_id') for o in excluded})
-        print(f'::warning::ITEM 7 HELD: {n_excluded} rows from book(s) '
-              f'{books_seen} — other than '
-              f'feed_source_id {VERIFIED_FEED_SOURCE_ID} are in the archive and '
-              f'were NOT projected to any card. They are captured and safe; they '
-              f'stay off cards until that book passes its own side-mapping gate.')
+    if obs_info.get('mode') == 'incremental':
+        print('item 7: unverified-book rows are counted on the daily full read (this run read incrementally)')
     else:
-        print(f'item 7: 0 rows from any other book in this window '
-              f'(the archive holds one book, feed_source_id '
-              f'{VERIFIED_FEED_SOURCE_ID}).')
+        excluded, err_x = fetch_by_fixtures(
+            url, key, 'kibl_line_observations', 'fixture_id,feed_source_id',
+            f'&market_type_id=eq.{MARKET_TYPE_ID}&segment_id=eq.{SEGMENT_ID}'
+            f'&betting_type_id=eq.{BETTING_TYPE_ID}'
+            f'&observed_at=gte.{iso(as_of - a.days_back * 86400)}'
+            f'&feed_source_id=neq.{VERIFIED_FEED_SOURCE_ID}',
+            [f.get('fixture_id') for f in fx])
+        n_excluded = len(excluded or [])
+        if err_x:
+            print(f'::warning::could not count unverified-book rows ({err_x})')
+        elif n_excluded:
+            books_seen = sorted({o.get('feed_source_id') for o in excluded})
+            print(f'::warning::ITEM 7 HELD: {n_excluded} rows from book(s) '
+                  f'{books_seen} — other than '
+                  f'feed_source_id {VERIFIED_FEED_SOURCE_ID} are in the archive and '
+                  f'were NOT projected to any card. They are captured and safe; they '
+                  f'stay off cards until that book passes its own side-mapping gate.')
+        else:
+            print(f'item 7: 0 rows from any other book in this window '
+                  f'(the archive holds one book, feed_source_id '
+                  f'{VERIFIED_FEED_SOURCE_ID}).')
 
     # TEN-270: both tables are written by the DAILY line-summary loader, so a
     # 5-minute job re-reads them only when a count + newest-stamp probe says
