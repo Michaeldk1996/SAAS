@@ -143,6 +143,7 @@ ALLOWED = {
         "MDF = lambda ek, win='First Player', tm='18:00': dict(F(ek, 'Atp Singles', win=win, d='2025-03-10'), event_time=tm, event_first_player='A. One', event_second_player='B. Two')",  # test fixture (TE above Bet365, 2026-10-30): the scheduled time te_start rejects against; never a start in shipped code
         "SF = lambda ek, t, tm='12:00', d='2026-10-27', **k: dict(F(ek, t, d=d, **k), event_time=tm, event_key=ek)",  # test fixture (founder 2026-11-01, Task B): the scheduled time the before-start snapshot is cut at — labelled approximate, never a start or a close
         "SF(904, 'Itf Men Singles'), SF(905, 'Atp Singles', d='2026-09-10'), dict(SF(906, 'Challenger Men Singles'), event_time=None)]",  # test fixture (founder 2026-11-01, Task B): a match with no time of any kind is never stored
+        "ifx = {'91': F(91, 'Itf Men Singles', d='2026-09-28'), '92': dict(F(92, 'Itf Men Singles', d='2026-09-28'), event_time='12:00')}",  # test fixture (founder 2026-11-03, ITF): the scheduled time the ITF in-play rule reads (ITF has no verified start); never a start in shipped code
     },
     'tools/test-ten308-berlin-time.js': {  # pinned 2026-10-26 (live-flip-recorder)
         '// TEN-308 — api-tennis event_date/event_time is the Europe/Berlin wall clock',  # test fixture / assertion; never a start in shipped code
