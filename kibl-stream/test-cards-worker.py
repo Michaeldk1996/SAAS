@@ -65,7 +65,8 @@ check('a good cycle builds, then publishes', ok and len(c['run']) == 2 and 'ten2
 check('the builder reads observations incrementally (--obs-incremental)', '--obs-incremental' in c['run'][0], c['run'][0])
 src = open(os.path.join(HERE, 'cards_worker.py')).read()
 check('never back to back: the sleep between cycles is at least MIN_GAP_S (300 s)',
-      'time.sleep(max(MIN_GAP_S, CYCLE_S' in src and W.MIN_GAP_S == 300)
+      'time.sleep(max(MIN_GAP_S if ok else FAIL_GAP_S, CYCLE_S' in src and W.MIN_GAP_S == 300)
+check('a failed cycle backs off: the next one waits FAIL_GAP_S (900 s)', W.FAIL_GAP_S == 900 and 'ok = cycle()' in src)
 check('the publisher is handed the PREVIOUS doc (its re-verification guard reads it)', (c.get('prev_seen') or {}).get('byKey') == {'old': {}}, c.get('prev_seen'))
 check('the new doc is written to card_state_doc id 1 (merge), with its generatedAt',
       len(writes) == 1 and writes[0][2]['id'] == 1 and writes[0][2]['generated_at'] == '2026-11-03T10:00:00Z' and writes[0][2]['doc']['byKey'] == {'k': {}}, writes)

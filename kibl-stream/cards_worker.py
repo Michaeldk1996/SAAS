@@ -24,6 +24,8 @@ BUILD_TIMEOUT_S = int(os.environ.get('CARDS_BUILD_TIMEOUT_S', '1500'))
 # the database's rest between builds: never back to back, whatever a build took (3 Nov: a 30-s gap after slow builds
 # kept the database reading continuously)
 MIN_GAP_S = int(os.environ.get('CARDS_MIN_GAP_S', '300'))
+# after a FAILED cycle (statement timeouts are the usual cause: a busy database) the next one waits longer
+FAIL_GAP_S = int(os.environ.get('CARDS_FAIL_GAP_S', '900'))
 
 
 def decode_b64_env():
@@ -169,8 +171,8 @@ def main():
     print(f'cards worker up: every {CYCLE_S} s, repo {REPO}', flush=True)
     while True:
         t0 = time.time()
-        cycle()
-        time.sleep(max(MIN_GAP_S, CYCLE_S - (time.time() - t0)))
+        ok = cycle()
+        time.sleep(max(MIN_GAP_S if ok else FAIL_GAP_S, CYCLE_S - (time.time() - t0)))
 
 
 if __name__ == '__main__':

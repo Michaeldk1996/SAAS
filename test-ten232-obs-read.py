@@ -331,6 +331,20 @@ check('a since-read that keeps failing falls back to the full read (never a stal
 cut = K.read_observations('u', 'k', '&x=1', range(1, 30), t0 + 500, now_s=t0 + 3000, incremental=False, _sb=tab.sb(t0 + 3000))[0]
 check('the observed_at window holds: no row observed before the cutoff', all(r['observed_at'] >= T(t0 + 500) for r in cut) and cut)
 
+seen_ids, naps = [], []
+def counting(method, path, url, key):
+    q = urllib.parse.parse_qs(urllib.parse.urlparse(path).query)
+    if 'fixture_id' in q:
+        seen_ids.append(len(q['fixture_id'][0][len('in.('):-1].split(',')))
+    return tab.sb(t0 + 300)(method, path, url, key)
+K.CACHE_DIR = tempfile.mkdtemp()
+K.read_observations('u', 'k', '&x=1', range(1, 80), 0, now_s=t0 + 300, incremental=True, _sb=counting, sleep=naps.append)
+check(f'the worker\'s snapshot seed reads {K.OBS_SEED_BATCH} ids per request with a {K.OBS_SEED_PAUSE_S}s pause between batches',
+      seen_ids and max(seen_ids) <= K.OBS_SEED_BATCH and naps.count(K.OBS_SEED_PAUSE_S) == len(seen_ids) - 1, (seen_ids, naps))
+seen_ids.clear(); naps.clear()
+K.read_observations('u', 'k', '&x=1', range(1, 250), 0, now_s=t0 + 300, incremental=False, _sb=counting, sleep=naps.append)
+check('the GitHub (non-incremental) read keeps its 100-id batches and no pause', max(seen_ids) == K.FIXTURE_BATCH and not naps, (seen_ids, naps))
+
 print()
 if FAILS:
     print(f'FAILED {len(FAILS)}: {FAILS}')

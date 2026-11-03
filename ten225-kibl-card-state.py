@@ -2408,7 +2408,7 @@ READ_RETRIES = 3             # a page that times out is asked again, then fails 
 
 
 def fetch_by_fixtures(url, key, table, cols, extra, fixture_ids, order='fixture_id.asc',
-                      _sb=None, sleep=time.sleep):
+                      _sb=None, sleep=time.sleep, batch=None, pause_s=0):
     """Page a fixture-keyed table in batches of fixture ids (card-job-lock, 2026-10-28).
 
     fetch_all() on kibl_line_observations — every market, filtered down to match
@@ -2423,8 +2423,11 @@ def fetch_by_fixtures(url, key, table, cols, extra, fixture_ids, order='fixture_
     call = _sb or sb
     ids = sorted({int(i) for i in fixture_ids if i is not None})
     out = []
-    for b in range(0, len(ids), FIXTURE_BATCH):
-        inlist = ','.join(str(i) for i in ids[b:b + FIXTURE_BATCH])
+    step = batch or FIXTURE_BATCH
+    for b in range(0, len(ids), step):
+        if b and pause_s:
+            sleep(pause_s)              # a gentle read: the database gets a breath between batches
+        inlist = ','.join(str(i) for i in ids[b:b + step])
         offset = 0
         while True:
             path = (f'/rest/v1/{table}?select={cols}&fixture_id=in.({inlist}){extra}'
@@ -2434,7 +2437,7 @@ def fetch_by_fixtures(url, key, table, cols, extra, fixture_ids, order='fixture_
                 if got is not None:
                     break
                 if attempt < READ_RETRIES:
-                    print(f'{table}: batch {b // FIXTURE_BATCH + 1} page at offset {offset} failed '
+                    print(f'{table}: batch {b // step + 1} page at offset {offset} failed '
                           f'({str(err)[:120]}); retry {attempt}/{READ_RETRIES - 1}')
                     sleep(5 * attempt)
             if got is None:
@@ -2449,6 +2452,8 @@ def fetch_by_fixtures(url, key, table, cols, extra, fixture_ids, order='fixture_
 
 OBS_SNAPSHOT = 'ten225-obs-snapshot.json.gz'
 OBS_FULL_EVERY_S = 24 * 3600      # a full read at least once a day (the snapshot is never trusted longer)
+OBS_SEED_BATCH = 25               # fixture ids per request on the worker's snapshot seed (the GitHub read keeps 100)
+OBS_SEED_PAUSE_S = 0.5
 OBS_SWEEP_MARGIN_S = 3600         # a sweep stamps last_seen_at with ITS start and commits later: re-read an hour back
                                   # (longest sweep in the 3 days to 3 Nov 10:40Z: 44 min 48 s, p95 4 min 28 s, n = 503)
 
@@ -2536,9 +2541,14 @@ def read_observations(url, key, extra, fixture_ids, cutoff_s, now_s=None, increm
                     by_key[r['row_key']] = r
                 mode, n_read, full_at = 'incremental', len(rows), float(snap['full_at'])
     if by_key is None:
+        # the card worker's (incremental) full read is its once-a-day snapshot seed: small batches with a pause, so no
+        # single statement reaches the statement timeout when the database is busy (3 Nov 12:04Z / 12:34Z: the
+        # 100-id batches timed out twice and the seed never landed)
         rows, err = fetch_by_fixtures(url, key, 'kibl_line_observations', cols,
                                       extra + f'&observed_at=gte.{iso(cutoff_s)}', sorted(ids),
-                                      order='fixture_id.asc,inserted_on.asc', _sb=call, sleep=sleep)
+                                      order='fixture_id.asc,inserted_on.asc', _sb=call, sleep=sleep,
+                                      batch=OBS_SEED_BATCH if incremental else None,
+                                      pause_s=OBS_SEED_PAUSE_S if incremental else 0)
         if err:
             return rows, err, {'mode': 'full', 'why': why}
         by_key = {r['row_key']: r for r in rows}
