@@ -22,6 +22,9 @@
 -- them reverts this. This file re-applies on every ten294-drops install (tools/ten294-steps-install.json).
 -- ONE transaction: the guard at the end raises on any failure and nothing is installed.
 begin;
+-- the first install of the Bet105 price table seeds it (a 15-day read) and the guard compares it with the direct read:
+-- on a throttled disk that is minutes, not seconds (3 Nov: 8,367 disk reads took 47 s)
+set local statement_timeout = '25min';
 create schema if not exists drops_live;
 revoke all on schema drops_live from public, anon, authenticated;
 
@@ -141,6 +144,65 @@ begin
 end $fn$
 ;
 
+-- ── THE Bet105 BOT'S OWN PRICE TABLE (architecture program, 2026-11-03) ──────────────────────────────────────────
+-- load_ticks read 14 days of match-winner prices straight from kibl_line_observations (887 MB) on every 30-s tick:
+-- pg_stat_statements on 3 Nov, ten280_bot.tick() 4,785 calls, mean 39.2 s, 140 M blocks read — the bot ran back to
+-- back and the database's disk was throttled for every reader (the sweep failed, card prices froze from 11:30Z).
+-- The bot now reads its own copy of exactly the rows the poll CTE selected. A row of kibl_line_observations is
+-- inserted once (ignore-duplicates) and afterwards only `state` and `last_seen_at` move — none of the columns kept
+-- here — and nothing deletes from it, so each tick adds only the rows first OBSERVED since the last refresh began,
+-- re-reading an hour back (a sweep stamps observed_at at its start and commits later; longest sweep 3 Nov 44 min),
+-- or back to the start of any sweep that finished since, if earlier. A full re-seed runs daily.
+create table if not exists ten280_bot.tick_cache (
+  row_key    text primary key,
+  fixture_id bigint not null,
+  side_id    integer not null,
+  price      numeric not null,
+  at         timestamptz not null,       -- the row's inserted_on (Kibl's clock)
+  known_at   timestamptz not null,       -- the row's observed_at (ours)
+  is_opener  boolean not null
+);
+create index if not exists ten280_tick_cache_fx on ten280_bot.tick_cache (fixture_id, side_id, at);
+create index if not exists ten280_tick_cache_at on ten280_bot.tick_cache (at);
+create table if not exists ten280_bot.tick_cache_state (
+  id smallint primary key default 1 check (id = 1), read_at timestamptz, full_at timestamptz, rows_added integer);
+revoke all on ten280_bot.tick_cache, ten280_bot.tick_cache_state from public, anon, authenticated;
+alter table ten280_bot.tick_cache enable row level security;
+alter table ten280_bot.tick_cache_state enable row level security;
+
+create or replace function ten280_bot.refresh_cache(p_now timestamptz default now()) returns integer
+ LANGUAGE plpgsql
+AS $fn$
+declare st ten280_bot.tick_cache_state; bound timestamptz; sw timestamptz; n integer; full_read boolean;
+begin
+  select * into st from ten280_bot.tick_cache_state where id = 1;
+  full_read := st.read_at is null or st.full_at is null or st.full_at < p_now - interval '1 day';
+  if full_read then
+    delete from ten280_bot.tick_cache;
+    bound := null;
+  else
+    bound := st.read_at - interval '1 hour';
+    select min(started_at) into sw from public.kibl_sweeps where finished_at >= st.read_at - interval '5 minutes';
+    if sw is not null and sw - interval '1 minute' < bound then bound := sw - interval '1 minute'; end if;
+  end if;
+  insert into ten280_bot.tick_cache (row_key, fixture_id, side_id, price, at, known_at, is_opener)
+  select o.row_key, o.fixture_id, o.side_id, o.price_decimal, o.inserted_on, o.observed_at, coalesce(o.is_opener, false)
+    from public.kibl_line_observations o
+   where o.feed_source_id = 171 and o.market_type_id = 1 and o.segment_id = 1
+     and o.betting_type_id = 1 and o.is_live is false and o.price_decimal >= 1.01
+     and o.side_id in (2, 3) and o.inserted_on is not null and o.observed_at is not null
+     and o.inserted_on >= p_now - interval '15 days'
+     and (bound is null or o.observed_at >= bound)
+  on conflict (row_key) do nothing;
+  get diagnostics n = row_count;
+  delete from ten280_bot.tick_cache where at < p_now - interval '15 days';
+  insert into ten280_bot.tick_cache_state (id, read_at, full_at, rows_added)
+  values (1, p_now, case when full_read then p_now else st.full_at end, n)
+  on conflict (id) do update set read_at = excluded.read_at, full_at = excluded.full_at, rows_added = excluded.rows_added;
+  return n;
+end $fn$
+;
+
 create or replace function ten280_bot.load_ticks(p_from timestamp with time zone, p_to timestamp with time zone)
  RETURNS integer
  LANGUAGE plpgsql
@@ -155,14 +217,12 @@ begin
     where league_id in (19, 537, 962) and player1_name is not null and player2_name is not null
   ),
   poll as (
-    select o.fixture_id, o.side_id, o.price_decimal as price, o.inserted_on as at,
-           o.observed_at as known_at, coalesce(o.is_opener, false) as is_opener, o.row_key, 'poller'::text as src
-    from public.kibl_line_observations o join fx using (fixture_id)
-    where o.feed_source_id = 171 and o.market_type_id = 1 and o.segment_id = 1
-      and o.betting_type_id = 1 and o.is_live is false and o.price_decimal >= 1.01
-      and o.side_id in (2, 3)
-      and o.inserted_on between p_from and p_to
-      and o.observed_at <= p_to          -- as known at p_to: a re-run over a past window is reproducible
+    -- the bot's own copy of these rows (ten280_bot.tick_cache, refreshed by tick()): the same filter, applied when the
+    -- row was copied, and the same window here
+    select c.fixture_id, c.side_id, c.price, c.at, c.known_at, c.is_opener, c.row_key, 'poller'::text as src
+    from ten280_bot.tick_cache c join fx using (fixture_id)
+    where c.at between p_from and p_to
+      and c.known_at <= p_to             -- as known at p_to: a re-run over a past window is reproducible
   ),
   strm as (
     select h.fixture_id,
@@ -332,6 +392,39 @@ begin
 end $fn$
 ;
 
+-- tick(): the LIVE definition (read from the database 2026-11-03) plus one line — the price table is refreshed before
+-- load_ticks reads it.
+create or replace function ten280_bot.tick()
+ RETURNS integer
+ LANGUAGE plpgsql
+AS $function$
+-- evaluated at the tick instant (cron every 30 s, founder 2026-09-25)
+declare e timestamptz := now(); n integer; a ten280_bot.alerts; rid bigint;
+        v_at timestamptz; msg text; fl numeric;
+begin
+  -- one tick at a time: a manual call during a cron run can never double-send
+  if not pg_try_advisory_xact_lock(280280) then
+    return 0;
+  end if;
+  perform ten280_bot.settle();
+  perform ten280_bot.refresh_cache(e);
+  perform ten280_bot.load_ticks(now() - interval '14 days', now());
+  select min_dropped_to_price into fl from ten280_bot.config;
+  n := ten280_bot.scan(e, e, 5, 'live', null, interval '10 minutes', fl);
+  for a in select * from ten280_bot.alerts where mode = 'live' and delivery = 'unsent' order by id limit 10 loop  -- Telegram burst cap; the rest go next tick
+    v_at := clock_timestamp();
+    msg  := ten280_bot.render(a, v_at);
+    rid  := ten280_bot.send(msg);
+    update ten280_bot.alerts set net_request_id = rid, message = msg,
+                                 sent_at = case when rid is not null then v_at end,
+                                 move_delay_s = case when rid is not null then round(extract(epoch from (v_at - a.cur_at))::numeric, 3) end,
+                                 delivery = case when rid is null then 'unsent: no vault secret' else 'queued' end
+     where id = a.id;
+  end loop;
+  return n;
+end $function$
+;
+
 -- INSTALL GUARD (same transaction as the definitions above): both bots' load_ticks must run and leave no tick at
 -- or after a cut, and the signal must exist; any failure raises and the whole install rolls back, so a broken
 -- definition can never reach the 30-s cron.
@@ -341,6 +434,27 @@ begin
   perform ten287_bot.load_ticks('Superbet', now() - interval '3 days', now());
   select count(*) into c from pg_temp.t287 t join drops_live.cuts_287(now() - interval '5 days') x using (event_id) where t.at >= x.cut_at;
   if c <> 0 then raise exception 'TEN-299 guard: % Superbet ticks left after the live cut', c; end if;
+  -- the price table holds exactly the rows the direct read selected (3 Nov): seed it, then compare both ways over 3 days
+  perform ten280_bot.refresh_cache(now());
+  select count(*) into c from (
+    (select o.row_key, o.fixture_id, o.side_id, o.price_decimal, o.inserted_on, o.observed_at, coalesce(o.is_opener, false)
+       from public.kibl_line_observations o
+      where o.feed_source_id = 171 and o.market_type_id = 1 and o.segment_id = 1 and o.betting_type_id = 1
+        and o.is_live is false and o.price_decimal >= 1.01 and o.side_id in (2, 3)
+        and o.inserted_on between now() - interval '3 days' and now() and o.observed_at <= now()
+     except
+     select row_key, fixture_id, side_id, price, at, known_at, is_opener from ten280_bot.tick_cache
+      where at between now() - interval '3 days' and now() and known_at <= now())
+    union all
+    (select row_key, fixture_id, side_id, price, at, known_at, is_opener from ten280_bot.tick_cache
+      where at between now() - interval '3 days' and now() and known_at <= now()
+     except
+     select o.row_key, o.fixture_id, o.side_id, o.price_decimal, o.inserted_on, o.observed_at, coalesce(o.is_opener, false)
+       from public.kibl_line_observations o
+      where o.feed_source_id = 171 and o.market_type_id = 1 and o.segment_id = 1 and o.betting_type_id = 1
+        and o.is_live is false and o.price_decimal >= 1.01 and o.side_id in (2, 3)
+        and o.inserted_on between now() - interval '3 days' and now() and o.observed_at <= now())) d;
+  if c <> 0 then raise exception 'price-table guard: % rows differ from the direct read over 3 days', c; end if;
   perform ten280_bot.load_ticks(now() - interval '3 days', now());
   select count(*) into c from pg_temp.t280 t join drops_live.cuts_280(now() - interval '5 days') x using (fixture_id) where t.at >= x.cut_at;
   if c <> 0 then raise exception 'TEN-299 guard: % Bet105 ticks left after the live cut', c; end if;
