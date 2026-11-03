@@ -592,6 +592,9 @@ check('pre-2021: the lower feed carries them unchanged (level, both keys, negati
       sorted((r['eventKey'], r['level'], r['source']) for r in pf) == sorted((r['event_key'], r['detail']['level'], T.TE_SOURCE) for r in prows) and len(pf) == len(prows), pf)
 pix = T.te_pre21_priced_index([{'wk': '1064', 'lk': '1748', 'match_date': '2016-10-16'}])
 check('pre-2021: the already-priced lookup is the same two keys +-1 day, either order', pix('1748', '1064', '2016-10-15') and not pix('1748', '1064', '2016-10-13') and not pix('1064', '', '2016-10-16'))
+check('names: a hyphenated initial is dotted as Tennis-Data writes it (Struff J.L., Herbert P.H.); plain initials unchanged',
+      P.td_name('J-L. Struff') == 'Struff J.L.' and P.td_name('P-H. Herbert') == 'Herbert P.H.'
+      and P.td_name('J. M. Cerundolo') == 'Cerundolo J.M.' and P.td_name('A. Zverev') == 'Zverev A.', [P.td_name('J-L. Struff'), P.td_name('P-H. Herbert')])
 # ── founder 2026-11-03: another book, margin removed (one book of a fixed order, only where Pinnacle and Bet365 are missing) ──
 OT = lambda ek, book='Betway', p=(1.8, 2.25), lvl='ch', ts=None: dict(TX(ek, lvl=lvl, pin=None, ka='11', kb='22'), books=[book],
     oth={'book': book, 'p1': p[0], 'p2': p[1], 'margin': 0.05, 'raw': {'p1': 1.72, 'p2': 2.1}, 'p1Ts': ts, 'p2Ts': None, 'open': {}, 'moves': [0, 0]})

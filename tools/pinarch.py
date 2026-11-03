@@ -1534,7 +1534,9 @@ def td_name(api_name):
     toks = str(api_name or '').split()
     ini = [t for t in toks if t.endswith('.') and len(t) <= 4]
     sur = [t for t in toks if t not in ini]
-    return ' '.join(sur) + (' ' + ''.join(ini) if ini else '')
+    # a hyphenated initial is dotted as Tennis-Data writes it: 'J-L. Struff' -> 'Struff J.L.' (2026-11-03: 'Struff J-L.' met
+    # no name his opponents' rows join through, so their side of his matches read a dash)
+    return ' '.join(sur) + (' ' + ''.join(t.replace('-', '.') for t in ini) if ini else '')
 
 
 def parse_alias(js_text):
