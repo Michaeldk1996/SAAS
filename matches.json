@@ -3289,22 +3289,11 @@
         }
       ]
     },
-    "live": true,
-    "liveStatus": "Set 2",
-    "liveScore": [
-      {
-        "set": 1,
-        "p1": 7.7,
-        "p2": 6.3
-      },
-      {
-        "set": 2,
-        "p1": 1,
-        "p2": 0
-      }
-    ],
-    "liveGameScore": "15 - 15",
-    "liveServer": "p2",
+    "live": false,
+    "liveStatus": null,
+    "liveScore": null,
+    "liveGameScore": null,
+    "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/2831_j-l-struff.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/9210_a-gea.jpg",
     "tournamentKey": "1725",
@@ -5138,7 +5127,27 @@
       "edgeVsPinnacleP1": -0.0935,
       "edgeVsPinnacleP2": 0.0935,
       "ts": "2026-11-02T19:57:22.234Z"
-    }
+    },
+    "retired": false,
+    "walkover": false,
+    "finalScore": {
+      "display": "7-6(3), 6-3",
+      "sets": [
+        {
+          "p1": 7,
+          "p2": 6
+        },
+        {
+          "p1": 6,
+          "p2": 3
+        }
+      ],
+      "p1Sets": 2,
+      "p2Sets": 0,
+      "winner": "p1"
+    },
+    "interrupted": false,
+    "partialScore": null
   },
   {
     "id": "upcoming-12176565",
@@ -9138,7 +9147,27 @@
       "edgeVsPinnacleP1": 0.0482,
       "edgeVsPinnacleP2": -0.0482,
       "ts": "2026-11-03T12:14:04.340Z"
-    }
+    },
+    "retired": false,
+    "walkover": false,
+    "finalScore": {
+      "display": "6-3, 6-4",
+      "sets": [
+        {
+          "p1": 6,
+          "p2": 3
+        },
+        {
+          "p1": 6,
+          "p2": 4
+        }
+      ],
+      "p1Sets": 2,
+      "p2Sets": 0,
+      "winner": "p1"
+    },
+    "interrupted": false,
+    "partialScore": null
   },
   {
     "id": "upcoming-12176554",
@@ -48155,13 +48184,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 5.0,
+      "p2": 1.16,
+      "bookmaker": "bet365"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 5.5,
+        "bookmaker": "Betano"
+      },
+      "p2": {
+        "price": 1.17,
+        "bookmaker": "WilliamHill"
+      }
     },
     "tournamentRound": null,
     "qualifying": false,
@@ -50514,13 +50549,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 4.0,
+      "p2": 1.25,
+      "bookmaker": "bet365"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 4.25,
+        "bookmaker": "Betano"
+      },
+      "p2": {
+        "price": 1.29,
+        "bookmaker": "WilliamHill"
+      }
     },
     "tournamentRound": null,
     "qualifying": false,
