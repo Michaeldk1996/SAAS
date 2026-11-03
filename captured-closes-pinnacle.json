@@ -1,29 +1,29 @@
 {
- "generatedAt": "2026-11-03T16:11:40.763Z",
+ "generatedAt": "2026-11-03T18:58:16.041Z",
  "source": "matches.json git history: oddsMovement.books.Pinnacle (Oddspapi pinnacle, to 2026-09-02) and oddsMovement.chart.books[\"Pinnacle +30s\"] (Oddspapi pinnacle+30, from 2026-09-23)",
  "rule": "each side = last tick at or before the actual start (the earlier of Oddspapi trueStart and the card-state start: Oddspapi or the live-flip lower bound); both sides required; dropped when no unique actual start. seenAt = our last capture read before the start that confirmed the close (founder 2026-10-28); age = start - (seenAt or at)",
  "scannedThrough": {
-  "commit": "8bd8fac3812692283a72c007f1ed677c2578c8e2",
-  "at": "2026-11-03T15:01:03Z"
+  "commit": "9300d0c05786d63aab54b760c8bd15f4eb1c8ea9",
+  "at": "2026-11-03T18:18:41Z"
  },
- "commitsScanned": 6395,
+ "commitsScanned": 6399,
  "lastRun": {
-  "from": "2026-11-03T13:31:26Z",
-  "snapshots": 8,
-  "added": 2,
-  "replaced": 8,
+  "from": "2026-11-03T15:01:03Z",
+  "snapshots": 5,
+  "added": 1,
+  "replaced": 0,
   "seenBackfilled": 0,
   "series": 59,
-  "kept": 41,
+  "kept": 42,
   "bySource": {
    "oddspapi": 37,
-   "api-tennis-live": 4
+   "api-tennis-live": 5
   },
   "byBook": {
-   "Pinnacle +30s": 41
+   "Pinnacle +30s": 42
   },
   "dropped": {
-   "noStart": 18
+   "noStart": 17
   }
  },
  "stats": {
@@ -14552,7 +14552,7 @@
    "o1": 1.671,
    "o2": 2.29,
    "oAt": "2026-10-31T18:09:04.326Z",
-   "winner": null,
+   "winner": "p2",
    "seenAt": "2026-11-03T13:10:00.000Z"
   },
   {
@@ -14574,6 +14574,28 @@
    "o1": 1.492,
    "o2": 2.75,
    "oAt": "2026-10-31T18:09:04.326Z",
+   "winner": "p1",
+   "seenAt": "2026-11-03T13:34:54.000Z"
+  },
+  {
+   "eventKey": 12176464,
+   "date": "2026-11-03",
+   "p1Key": 1771,
+   "p2Key": 2832,
+   "p1Name": "B. Bonzi",
+   "p2Name": "T. Fritz",
+   "p1": 4.36,
+   "p2": 1.25,
+   "at": "2026-11-03T13:14:44.295Z",
+   "trueStart": "2026-11-03T16:30:28.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s",
+   "round": "ATP Paris - 1/32-finals",
+   "qualifying": false,
+   "event": "ATP Paris",
+   "o1": 4.75,
+   "o2": 1.214,
+   "oAt": "2026-11-02T09:59:08.436Z",
    "winner": null,
    "seenAt": "2026-11-03T13:34:54.000Z"
   }
