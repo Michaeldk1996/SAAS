@@ -819,6 +819,7 @@ def _load(name, file):
 
 
 FLIP_PAGE = 1000
+PULL_ONLY_SOURCE = 'no live-flip lower bound (history pulled for the in-play close; no close derived)'
 
 
 def flips(since, until=None):
@@ -953,7 +954,7 @@ def _fixture_candidates(R, a1, a2, ref, by_day):
     return []
 
 
-def events_for(fl_rows, fixture_map, discovered, at_key):
+def events_for(fl_rows, fixture_map, discovered, at_key, pull_only_unbound=False):
     """Each flip -> {event_key, fixture_id, p1IsParticipant1, cut, keys, names, trueStart}. The fixture comes from the
     odds loop's board map (odds-fixture-map.json, eventKey -> fixtureId + orient) or, else, from the Oddspapi
     fixtures list joined on BOTH surnames within 36 h (exactly one candidate, never a guess). Players and keys are
@@ -968,7 +969,7 @@ def events_for(fl_rows, fixture_map, discovered, at_key):
         ek = str(fl['event_key'])
         a1, a2 = fl.get('first_player'), fl.get('second_player')
         cut, flip = iso_ms(fl.get('last_not_live_seen_at')), iso_ms(fl.get('first_live_seen_at'))
-        if not cut:
+        if not cut and not (pull_only_unbound and flip):
             m('no live-flip lower bound'); continue
         fx, p1first, ts = None, None, None
         bm = (fixture_map or {}).get(ek)
@@ -988,7 +989,12 @@ def events_for(fl_rows, fixture_map, discovered, at_key):
             fx, p1first = cands[0][0]['fixtureId'], cands[0][1] == 'same'
             ts = iso_ms(cands[0][0].get('trueStartTime'))
         fxr = by_id.get(fx) or (cands[0][0] if cands else {})
-        eff, src, reject = effective_cut(cut, ts, iso_ms(fxr.get('trueEndTime')), iso_ms(fxr.get('startTime')))
+        if cut:
+            eff, src, reject = effective_cut(cut, ts, iso_ms(fxr.get('trueEndTime')), iso_ms(fxr.get('startTime')))
+        else:
+            # founder 2026-11-03: pull the history of a match with no verified live-flip start too — for the in-play
+            # close (the book's last pre-match quote before its switch). No close is derived for it here: `cut` None.
+            eff, src, reject = None, PULL_ONLY_SOURCE, None
         at = (at_key or {}).get(ek) or {}
         k1, k2 = at.get('first_player_key'), at.get('second_player_key')
         out.append({'event_key': ek, 'fixture_id': fx, 'p1IsParticipant1': p1first, 'cut': eff, 'cutSource': src,
@@ -1299,7 +1305,9 @@ def cmd_pull(budget_s, cache_path, hours=6):
     okey = env('ODDSPAPI_KEY')
     t_end = A._clock_s() + budget_s
     now = dt.datetime.now(dt.timezone.utc)
-    fl = [f for f in flips(now - dt.timedelta(hours=hours)) if iso_ms(f.get('last_not_live_seen_at'))]
+    # every started match (founder 2026-11-03): those with no verified live-flip lower bound too (ATP tour matches
+    # flag "live" at the warm-up, so most have none) — their history is pulled once and no close is derived from it
+    fl = list(flips(now - dt.timedelta(hours=hours)))
     done = set()
     for i in range(0, len(fl), 100):                       # chunked: a 30-day backlog is ~1,400 event keys
         done |= {r['event_key'] for r in select_all(CLOSE, 'id,event_key', f'label=eq.{urllib.parse.quote(ARCHIVE_LABEL)}&event_key=in.('
@@ -1307,7 +1315,7 @@ def cmd_pull(budget_s, cache_path, hours=6):
     fl = [f for f in fl if int(f['event_key']) not in done]
     disc, calls = discovery(now - dt.timedelta(hours=max(hours, 24) + 24), now + dt.timedelta(days=1), cache_path, okey) if fl else ([], 0)
     at, failed = _at_keys({f['event_date'] for f in fl if f.get('event_date')})
-    evs, miss = events_for(fl, _board_map(), disc, at)
+    evs, miss = events_for(fl, _board_map(), disc, at, pull_only_unbound=True)
     # at most PULL_TRIES pulls per match, PULL_GAP_MIN apart: a payload with no pre-start entry is not pulled every run
     prior, has_pin = {}, set()
     for i in range(0, len(evs), 20):
@@ -1322,6 +1330,11 @@ def cmd_pull(budget_s, cache_path, hours=6):
         p = prior.get(ev['fixture_id']) or []
         if hours > 6 and ev['fixture_id'] in has_pin:
             return False                                    # backlog: a Pinnacle +30 payload is held; derive reads it
+        if ev['cut'] is None:
+            # no verified start: one pull, at least PULL_GAP_MIN after our live flag (the pre-match market has closed
+            # by then), and never again once a Pinnacle +30 payload is held
+            flag = iso_ms(ev.get('firstLive'))
+            return not p and ev['fixture_id'] not in has_pin and flag is not None and (now - flag).total_seconds() >= PULL_GAP_MIN * 60
         return len(p) < PULL_TRIES and (not p or (now - max(p)).total_seconds() >= PULL_GAP_MIN * 60)
     skipped = sum(1 for e in evs if not due(e))
     evs = [e for e in evs if due(e)]
@@ -1336,12 +1349,15 @@ def cmd_pull(budget_s, cache_path, hours=6):
         gz, raw_body, sha = payload_parts(body)
         ids = insert(RAW, [{'fixture_id': ev['fixture_id'], 'source': 'oddspapi /v4/historical-odds', 'pulled_at': dt.datetime.now(dt.timezone.utc).isoformat(),
                             'books': books_of(raw_body), 'payload_gz': hexbytes(gz), 'payload_sha256': sha, 'body_bytes': len(raw_body),
-                            'meta': {'eventKey': ev['event_key'], 'trigger': 'post-start' if hours <= 6 else 'backlog', 'cut': ev['cut'].isoformat(),
-                                     'liveFlipCut': (ev.get('liveFlipCut') or ev['cut']).isoformat(), 'book': HIST_BOOK}}], 'fixture_id,payload_sha256')
+                            'meta': {'eventKey': ev['event_key'], 'trigger': 'post-start' if hours <= 6 else 'backlog',
+                                     'cut': ev['cut'].isoformat() if ev['cut'] else None,
+                                     'liveFlipCut': (ev.get('liveFlipCut') or ev['cut']).isoformat() if (ev.get('liveFlipCut') or ev['cut']) else None,
+                                     'firstLive': ev.get('firstLive'), 'cutSource': ev.get('cutSource'), 'book': HIST_BOOK}}], 'fixture_id,payload_sha256')
         raw_add += len(ids)
         pulled[ev['fixture_id']] = ev
-    rep, _ = derive_and_add(list(pulled.values()), raw_latest(list(pulled))) if pulled else ({'derived': 0, 'added': 0}, [])
-    rep.update({'started': len(fl), 'mapped': len(evs) + skipped, 'notDueYet': skipped, 'unmapped': miss, 'pulled': len(pulled), 'rawAdded': raw_add, 'pullErrors': errs,
+    bound = {fx: ev for fx, ev in pulled.items() if ev['cut'] is not None}   # a pull-only event never yields a close
+    rep, _ = derive_and_add(list(bound.values()), raw_latest(list(bound))) if bound else ({'derived': 0, 'added': 0}, [])
+    rep.update({'started': len(fl), 'mapped': len(evs) + skipped, 'pulledNoStart': len(pulled) - len(bound), 'notDueYet': skipped, 'unmapped': miss, 'pulled': len(pulled), 'rawAdded': raw_add, 'pullErrors': errs,
                 'keyWaitS': counts['waitS'], 'http429': counts['http429'], 'oddspapiFixtureCalls': calls, 'apiTennisDaysFailed': failed})
     print('### pull', json.dumps(rep))
     return rep

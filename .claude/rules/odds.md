@@ -205,9 +205,13 @@ closes, odds performance and started-evidence.
   never our api-tennis live flag (it fires at the warm-up on ATP tour matches: 10–28 min before the first point on
   Paris 2 Nov), never a fixed cut-off: books switch at slightly different moments, so each book's close is read from
   its own switch.
-- **The reference close is de-vigged, from Bet105 or Pinnacle** — one book per match, the margin removed on that
-  book's own pair. Which book leads is open: it is decided on the measurement (per book, the share of matches with a
-  clean last pre-match quote, and the pp gap between the two de-vigged closes where both exist, 31 Oct – 2 Nov).
+- **The reference close is de-vigged: Bet105 first, Pinnacle where Bet105 has no line** (founder 2026-11-03, after the
+  measurement `closing-price-measurement-2026-11-03.md`: on 40 ATP matches 31 Oct – 2 Nov, Bet105's switch — the first
+  0.000 suspension after its last price — is visible and a close can be read on 39; Pinnacle's history was held for 5,
+  because its post-start pull ran only on verified starts, now extended to every started match). One book per match,
+  the margin removed on that book's own pair. The card shows its book's quoted close.
+- **The cut:** the earlier of the book's switch and the first point we saw played (`live_flip_log.play_seen_at`) — never
+  a price after the first point, even when a book suspends late.
 - **Test (when built):** for every close, the next thing its book shows is in-play, a suspension or no market — no
   later pre-match quote exists; no close is cut at our live flag, a schedule or start − N.
 - **When built it replaces**, for closes: the verified-start requirement below ("Close" only at our live flip or the

@@ -79,6 +79,11 @@ Applies to `supabase/migrations/20261014120000_pinnacle_archive.sql`, `tools/pin
   pg_cron pinger, after the post-match job so the two never call Oddspapi at once): every match our poller saw start in the
   last 6 h without an archive close → its free `/v4/historical-odds` for `bookmakers=pinnacle+30`, stored as a raw row,
   then the close derived at once. A match whose close is not derivable yet is pulled again at most 4 times, 30 min apart.
+  **Every started match, verified start or not (founder 2026-11-03).** A match with no live-flip lower bound (ATP tour
+  matches flag "live" at the warm-up, so most have none: 54 of 61 ATP singles since 28 Oct) is pulled ONCE, at least 30
+  min after our live flag, never again once a Pinnacle +30 payload is held; its raw row's `meta.cutSource` says so and
+  NO close is derived from it here (`PULL_ONLY_SOURCE`) — the in-play close (`odds.md` "What a closing price is") reads
+  it. **Test:** `tools/test-pinarch-close.py` "pull: a match with NO verified start is pulled too".
   The captured close stays first on the page until the archive close supersedes it.
   **Its own slot (founder 2026-10-14 item 2):** the pull never waits for the odds loop's key gate (`loop_idle` / the
   :05–:14 window, `odds.md` "The loop wins the key"): the endpoint is free, so only Oddspapi's ~5 s cooldown applies

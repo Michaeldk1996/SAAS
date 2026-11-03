@@ -424,5 +424,57 @@ check('recut: Echargui is not re-cut (founder 2026-10-27: keep 1.735 / 2.14)', 1
 # mutant: orientation from slot order (participant 1 = api-tennis first player) would give 2.60 / 1.55 — caught above
 _src = open(os.path.join(HERE, 'pinarch.py')).read()
 check('recut workflow: dry run unless exactly "no"', 'yes) python3 tools/pinarch.py false-starts-recut ;;' in open(os.path.join(HERE, '..', '.github/workflows/pinnacle-archive.yml')).read())
+
+# founder 2026-11-03: the post-start pull reaches every started match; one with no verified live-flip start is pulled
+# ONCE (>= PULL_GAP_MIN after our flag) and no close is derived from it; a bound match is pulled and derived as before
+def _pull_run(flips_rows, prior_raw=None, now_s=None):
+    Q = importlib.util.module_from_spec(spec); spec.loader.exec_module(Q)
+    seen = {'hist': [], 'insert': [], 'derive': None}
+    class A:
+        @staticmethod
+        def _clock_s(): return 0
+    real_load = Q._load
+    Q._load = lambda n, f: A if n == 'aor' else real_load(n, f)
+    Q.env = lambda k: 'k'
+    Q.flips = lambda since, until=None: flips_rows
+    Q.select_all = lambda *a, **k: []
+    Q.discovery = lambda *a, **k: ([], 0)
+    Q._at_keys = lambda days: ({}, [])
+    Q._board_map = lambda: {r['event_key']: {'fixtureId': 'fx' + r['event_key'], 'orient': 'same', 'p1': r['first_player']} for r in flips_rows}
+    Q.rest = lambda m, path, *a, **k: (200, prior_raw or [], None)
+    Q.hist_get = lambda fx, key, counts: (seen['hist'].append(fx) or b'{}', None)
+    Q.payload_parts = lambda body: (b'', b'{}', 'sha')
+    Q.books_of = lambda b: ['pinnacle+30']
+    Q.hexbytes = lambda b: ''
+    Q.insert = lambda table, rows, conflict: (seen['insert'].extend(rows) or [1] * len(rows))
+    Q.raw_latest = lambda fxs: []
+    def dera(evs, raws):
+        seen['derive'] = [e['event_key'] for e in evs]
+        return {'derived': len(evs), 'added': 0}, []
+    Q.derive_and_add = dera
+    if now_s:
+        class FakeDT(dt.datetime):
+            @classmethod
+            def now(cls, tz=None): return dt.datetime.fromtimestamp(now_s, dt.timezone.utc)
+        Q.dt = type('m', (), {'datetime': FakeDT, 'timedelta': dt.timedelta, 'timezone': dt.timezone})
+    rep = Q.cmd_pull(600, '/dev/null', hours=6)
+    return rep, seen
+now_ = T('2026-11-02T12:00:00Z').timestamp()
+FL = [{'event_key': '1', 'first_player': 'I. Buse', 'second_player': 'Z. Bergs', 'event_date': '2026-11-02',
+       'first_live_seen_at': '2026-11-02T10:00:08Z', 'last_not_live_seen_at': None},
+      {'event_key': '2', 'first_player': 'D. Merida Aguilar', 'second_player': 'S. Baez', 'event_date': '2026-11-02',
+       'first_live_seen_at': '2026-11-02T11:32:15Z', 'last_not_live_seen_at': '2026-11-02T11:32:05Z'}]
+rep, seen = _pull_run(FL, now_s=now_)
+check('pull: a match with NO verified start is pulled too; a verified one is pulled and derived',
+      sorted(seen['hist']) == ['fx1', 'fx2'] and seen['derive'] == ['2'] and rep['pulledNoStart'] == 1, (seen, rep))
+meta = {r['meta']['eventKey']: r['meta'] for r in seen['insert']}
+check('pull: the unbound match\'s raw row says so (cut None, cutSource names the pull-only reason)',
+      meta['1']['cut'] is None and meta['1']['cutSource'] == P.PULL_ONLY_SOURCE and meta['2']['cut'], meta)
+rep, seen = _pull_run(FL, now_s=T('2026-11-02T10:10:00Z').timestamp())
+check('pull: an unbound match is not pulled until PULL_GAP_MIN after our live flag (the pre-match market has closed)',
+      'fx1' not in seen['hist'], seen['hist'])
+rep, seen = _pull_run(FL, prior_raw=[{'fixture_id': 'fx1', 'pulled_at': '2026-11-02T10:40:00Z', 'source': 'oddspapi /v4/historical-odds', 'books': ['pinnacle+30']}], now_s=now_)
+check('pull: an unbound match is pulled once — never again once its payload is held', 'fx1' not in seen['hist'], seen['hist'])
+
 print(f'\ntest-pinarch-close: {passed} passed, {failed} failed')
 sys.exit(1 if failed else 0)
