@@ -619,12 +619,16 @@ const commaToShort = n => { const s = String(n || ''); const i = s.indexOf(',');
   const g = s.slice(i + 1).trim().split(/[\s-]+/).filter(Boolean); return g.length ? g.map(x => x[0].toUpperCase() + '.').join(' ') + ' ' + s.slice(0, i).trim() : null; };
 const tdNameJs = n => { const t = String(n || '').split(/\s+/).filter(Boolean); const ini = t.filter(x => x.endsWith('.') && x.length <= 4);
   const sur = t.filter(x => !ini.includes(x)); return sur.join(' ') + (ini.length ? ' ' + ini.join('') : ''); };
+// founder 2026-11-03 ("find all the possible odds"): an api-tennis snapshot (book 2 Pinnacle / 7 Bet365) dated after 16 Sep
+// only fills a dash — it ranks after Pinnacle before the start (11) and before another book, margin removed (12-23)
+const LOWER_LATE_AFTER = '2026-09-16';
+const lowerRankOf = (book, date) => ((book === 2 || book === 7) && String(date) > LOWER_LATE_AFTER ? 6.5 + (book === 7 ? 0.1 : 0) : LOWER_RANK[book]);
 function lowerOffer(r, book) {
   const pw = num(r.psw), pl = num(r.psl);
   if (!validPrice(pw) || !validPrice(pl) || !LOWER_LEVEL_NAME[r.level] || !r.date || (1 / pw) + (1 / pl) > 1.15) { lower.dropped++; return; }
   const k = r.eventKey ? 'e' + r.eventKey : `${r.date}|${[r.winnerKey, r.loserKey].sort().join('|')}`;
   const prev = lowerBest.get(k);
-  if (!prev || LOWER_RANK[book] < LOWER_RANK[prev.book]) lowerBest.set(k, Object.assign({}, r, { book, pw, pl }));
+  if (!prev || lowerRankOf(book, r.date) < lowerRankOf(prev.book, prev.date)) lowerBest.set(k, Object.assign({}, r, { book, pw, pl }));
 }
 function lowerRead(file, bookOf, tag) {
   if (!fs.existsSync(file)) { console.log(`lower levels: no ${path.basename(file)} — no ${tag} rows`); lower.files[tag] = null; return; }

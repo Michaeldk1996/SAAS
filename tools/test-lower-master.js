@@ -180,6 +180,20 @@ ok(o2 && o2.x[8] === 14 && o2.x[9] === 'v', 'other book: on an ATP main-draw era
 ok(!oBy('Five E.', 'Six F.'), 'other book: a book outside the fixed order (Betfair, an exchange) is never read');
 ok(OBD.base === B.base, 'other book: the Database files are byte-identical (never a Database figure)');
 ok(OBD.master.meta.bookCodes[12] === 'Interwetten (approx., margin removed)' && OBD.master.meta.bookCodes[23] === 'Unibet (approx., margin removed)', 'other book: the master names every code');
+// founder 2026-11-03 ("find all the possible odds"): api-tennis after 16 Sep only fills a dash
+fs.writeFileSync(path.join(tmp, 'approx-late.csv'), [COLS].concat(approx.slice(1),
+  TEC({ date: '2026-10-22', level: 'atp-q', tournament: 'Lyon (France) - Qualification', winner: 'Late A.', loser: 'Late B.', winnerKey: '61', loserKey: '62', psw: 1.6, psl: 2.4, eventKey: 901, source: 'api-tennis Pinnacle', comment: 'Completed' }),
+  TEC({ date: '2026-10-22', level: 'atp-q', tournament: 'Lyon (France) - Qualification', winner: 'Late A.', loser: 'Late B.', winnerKey: '61', loserKey: '62', psw: 1.62, psl: 2.35, eventKey: 901, source: 'Tennis Explorer · Pinnacle', comment: 'Completed' }),
+  TEC({ date: '2026-10-23', level: 'atp-q', tournament: 'Lyon (France) - Qualification', winner: 'Late C.', loser: 'Late D.', winnerKey: '63', loserKey: '64', psw: 1.7, psl: 2.2, eventKey: 902, source: 'api-tennis Pinnacle', comment: 'Completed' }),
+  TEC({ date: '2026-09-10', level: 'atp-q', tournament: 'X - Qualification', winner: 'Early A.', loser: 'Early B.', winnerKey: '65', loserKey: '66', psw: 1.6, psl: 2.4, eventKey: 903, source: 'api-tennis Pinnacle', comment: 'Completed' }),
+  TEC({ date: '2026-09-10', level: 'atp-q', tournament: 'X - Qualification', winner: 'Early A.', loser: 'Early B.', winnerKey: '65', loserKey: '66', psw: 1.62, psl: 2.35, eventKey: 903, source: 'Tennis Explorer · Pinnacle', comment: 'Completed' }),
+).join('\n') + '\n');
+const LD = build(Object.assign({}, FEEDS, { DB_YIELD_LOWER_APPROX: path.join(tmp, 'approx-late.csv') }));
+const lx = LD.x.xRows.map((x, i) => ({ x, n: LD.x.xNames[i] })), lBy = (w, l) => lx.find(o => o.n[0] === w && o.n[1] === l);
+ok(lBy('Late A.', 'Late B.').x[8] === 8, 'after 16 Sep: api-tennis Pinnacle never displaces Tennis Explorer Pinnacle (901)');
+ok(lBy('Late C.', 'Late D.').x[8] === 2, 'after 16 Sep: api-tennis Pinnacle alone fills the dash (902)');
+ok(lBy('Early A.', 'Early B.').x[8] === 2, 'up to 16 Sep the order is unchanged: api-tennis Pinnacle over Tennis Explorer (903)');
+ok(LD.base === B.base, 'after 16 Sep: the Database files are byte-identical (never a Database figure)');
 fs.rmSync(tmp, { recursive: true, force: true });
 console.log(`\ntest-lower-master: ${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """The historical odds archive (founder brief 2026-10-16, items 1-4), on pure functions and temp dirs — no network.
 Each check has a control (the mutation it must catch)."""
-import collections, csv, gzip, io, json, os, shutil, subprocess, sys, tempfile, importlib.util
+import collections, csv, datetime as dt, gzip, io, json, os, shutil, subprocess, sys, tempfile, importlib.util
 HERE = os.path.dirname(os.path.abspath(__file__))
 spec = importlib.util.spec_from_file_location('tdarch', os.path.join(HERE, 'tdarch.py'))
 T = importlib.util.module_from_spec(spec); spec.loader.exec_module(T)
@@ -219,9 +219,9 @@ F = lambda ek, t, st='Finished', win='First Player', q='False', tn='M25 Somewher
     'tournament_round': rnd, 'event_date': d, 'event_first_player': 'A. One', 'event_second_player': 'B. Two', 'first_player_key': 11, 'second_player_key': 22}
 fxs = [F(1, 'Itf Men Singles'), F(2, 'Challenger Men Singles', win='Second Player'), F(3, 'Challenger Men Singles', q='True'),
        F(4, 'Atp Singles', q='True'), F(5, 'Atp Singles'), F(6, 'Itf Men Singles', st='Walk Over'), F(7, 'Itf Men Singles', win=None),
-       F(8, 'Itf Women Singles'), F(9, 'Itf Men Singles', d='2026-09-20')]
+       F(8, 'Itf Women Singles'), F(9, 'Itf Men Singles', d='2099-01-01')]
 tg, trep = T.lower_targets(fxs)
-check('lower levels: ITF, Challenger, Challenger qualifying, ATP qualifying in; ATP main draw (Tennis-Data\'s), ITF Women, walkovers, no-result and after 16 Sep out',
+check('lower levels: ITF, Challenger, Challenger qualifying, ATP qualifying in; ATP main draw (Tennis-Data\'s), ITF Women, walkovers, no-result and after the window (yesterday) out',
       [r['_f']['event_key'] for r in tg] == [1, 2, 3, 4] and [r['_detail']['level'] for r in tg] == ['itf', 'ch', 'ch-q', 'atp-q']
       and trep.get('itf: walkover') == 1 and trep.get('itf: no result') == 1, (tg, trep))
 check('lower levels: the winner and both keys follow event_winner (no name guess)', tg[1]['winner'] == 'B. Two' and tg[1]['_detail']['winnerKey'] == '22', tg[1])
@@ -246,7 +246,7 @@ xt, _ = T.lower_targets(xf)
 check("atp-x: Davis Cup and the Next Gen Finals are in; the ATP Finals (Tennis-Data's), a tour event and a qualifying row keep their level",
       [(r['_f']['event_key'], r['_detail']['level']) for r in xt] == [(10, 'atp-x'), (11, 'atp-x'), (13, 'atp-q')], xt)
 check("atp-x is tdarch's only: pinarch's lower_level (its lower closes) never reads a team event", T.P.lower_level(xf[0]) is None and T.lower_level(xf[0]) == 'atp-x')
-check('the history window reaches back to 2021 (api-tennis keeps prices from 2022-23)', T.LOWER_FROM == '2021-01-01' and T.LOWER_TO == '2026-09-16')
+check('the history window reaches back to 2021 (api-tennis keeps prices from 2022-23)', T.LOWER_FROM == '2021-01-01' and T.LOWER_TO == (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=1)).date().isoformat())
 br, brep = T.approx_rows(tg, None, lambda ek: odds.get(ek), 'now', join=T._lower_join, book='bet365', source=T.B365_SOURCE, label=T.B365_LABEL, hover=T.B365_HOVER)
 check('api-tennis Bet365: its own source and label, oriented to the winner, never a Pinnacle label or a close',
       [(r['event_key'], r['source'], r['label'], r['price_winner']) for r in br] == [(4, 'api-tennis Bet365', 'Bet365 (approx.)', 1.5)]
@@ -660,7 +660,15 @@ check('before start: the cut is the earliest of the three; with none there is no
 _ap = lambda src, p: {'id': 1, 'source': src, 'match_date': '2026-10-27', 'tournament': 'X', 'winner': 'A. One', 'loser': 'B. Two', 'event_key': 902,
                       'price_winner': p, 'price_loser': 2.0, 'detail': {'level': 'ch'}, 'cut_ts': None, 'gap_to_start_s': None}
 lf = T.lower_feed_rows([_ap(T.APPROX_SOURCE, 1.5), _ap(T.SCHED_SOURCE, 1.6)])
-check('before start: it only fills a dash — api-tennis Pinnacle keeps a match it prices (the brief: never touch a priced row)', [x['source'] for x in lf] == [T.APPROX_SOURCE], lf)
+check('before start: on a match both price after 16 Sep, the before-start price (stored first) keeps it — api-tennis there only fills a dash (2026-11-03)', [x['source'] for x in lf] == [T.SCHED_SOURCE], lf)
+_ap16 = lambda src, p: dict(_ap(src, p), match_date='2026-09-10')
+lfo = T.lower_feed_rows([_ap16(T.APPROX_SOURCE, 1.5), _ap16(T.TE_SOURCE, 1.55)])
+check('up to 16 Sep the order is unchanged: api-tennis Pinnacle over Tennis Explorer', [x['source'] for x in lfo] == [T.APPROX_SOURCE], lfo)
+lfl = T.lower_feed_rows([_ap(T.APPROX_SOURCE, 1.5), _ap(T.TE_SOURCE, 1.55)])
+lfb = T.lower_feed_rows([_ap(T.B365_SOURCE, 1.52), _ap(T.TE_B365_SOURCE, 1.53)])
+check('after 16 Sep (2026-11-03, "find all the possible odds"): api-tennis never displaces another source (Tennis Explorer Pinnacle / Bet365 keep the match) and fills a dash alone',
+      [x['source'] for x in lfl] == [T.TE_SOURCE] and [x['source'] for x in lfb] == [T.TE_B365_SOURCE]
+      and [x['source'] for x in T.lower_feed_rows([_ap(T.APPROX_SOURCE, 1.5)])] == [T.APPROX_SOURCE], (lfl, lfb))
 lf3 = T.lower_feed_rows([_ap(T.TE_B365_SOURCE, 1.62), _ap(T.SCHED_SOURCE, 1.6)])
 check('before start: even Tennis Explorer Bet365 keeps its match; alone, the before-start price fills the dash', [x['source'] for x in lf3] == [T.TE_B365_SOURCE] and [x['source'] for x in T.lower_feed_rows([_ap(T.SCHED_SOURCE, 1.6)])] == [T.SCHED_SOURCE], lf3)
 lf2 = T.lower_feed_rows([_ap(T.START10_SOURCE, 1.55), _ap(T.SCHED_SOURCE, 1.6)])

@@ -919,7 +919,12 @@ def cmd_start10_import(dry_run=False):
 # unpriced career rows: ATP qualifying 2023 686 of 1,234 priced, 2025 1,182 of 1,241; 2021 none) — and, beside the lower
 # levels, the ATP events Tennis-Data does not cover ('atp-x': Davis Cup, United Cup, ATP Cup, Laver Cup, Hopman Cup, the
 # Olympics, the Next Gen Finals, the Asian Games), which the master holds behind its team flag.
-LOWER_FROM, LOWER_TO = '2021-01-01', '2026-09-16'
+# founder 2026-11-03 ("find all the possible odds"; settles the "after 16 Sep … a dash (pending a ruling)"): the window runs to
+# yesterday. An api-tennis snapshot dated after LOWER_LATE_FROM's day before only FILLS A DASH: it ranks after every other
+# source there (lower_feed_rows; the Database build's LOWER_RANK), so a close, start − 10, Tennis Explorer or before-start price
+# it would otherwise outrank is never touched.
+LOWER_LATE_AFTER = '2026-09-16'
+LOWER_FROM, LOWER_TO = '2021-01-01', (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=1)).date().isoformat()
 NOT_TD_EVENT = re.compile(r'davis cup|united cup|atp cup|laver cup|hopman|olympic|next ?gen|asian games', re.I)
 LOWER_FEED_COLS = ['date', 'level', 'tournament', 'round', 'winner', 'loser', 'winnerKey', 'loserKey', 'psw', 'psl', 'eventKey',
                    'snapshotId', 'source', 'cutTs', 'gapToStartS', 'comment']
@@ -1072,6 +1077,8 @@ def lower_feed_rows(current):
         # Tennis Explorer Bet365, then (founder 2026-11-01, Task B) Pinnacle before the start, which only fills a dash
         rank = (0 if r.get('source') == START10_SOURCE else 4 if r.get('source') == SCHED_SOURCE else 1.5 if r.get('source') == TE_SOURCE else 2 if r.get('source') == B365_SOURCE
                 else 3 if r.get('source') == TE_B365_SOURCE else 5 if r.get('source') == TE_OTHER_SOURCE else 1)
+        if r.get('source') in (APPROX_SOURCE, B365_SOURCE) and str(r.get('match_date')) > LOWER_LATE_AFTER:
+            rank = 4.5 + (0.1 if r.get('source') == B365_SOURCE else 0)   # 2026-11-03: after 16 Sep it only fills a dash
         # founder 2026-11-03: another book, margin removed — last of all, it only fills a dash
         if k not in best or rank < best[k][0]:
             best[k] = (rank, r)
