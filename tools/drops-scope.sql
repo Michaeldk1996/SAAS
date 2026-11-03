@@ -44,6 +44,10 @@ create table if not exists drops_scope.fixture (
     seen_at              timestamptz not null default now()
 );
 create index if not exists fixture_pair_idx on drops_scope.fixture (sk1, sk2);
+-- api-tennis's own status + winner (founder 2026-11-03): the arbitrage engine never alerts on a match that is over or will
+-- not be played (Walk Over, Retired, Cancelled, Finished, Awarded …; Davidovich Fokina v Kouame, 3 Nov).
+alter table drops_scope.fixture add column if not exists event_status text;
+alter table drops_scope.fixture add column if not exists event_winner text;
 
 create table if not exists drops_scope.feed (
     id           boolean primary key default true check (id),
@@ -201,20 +205,22 @@ language plpgsql security definer set search_path = pg_catalog, public as $$
 declare n integer;
 begin
   insert into drops_scope.fixture as f (event_key, event_date, event_time, start_utc, first_player, second_player, sk1, sk2,
-                                         event_type_type, event_qualification, tournament_name, tournament_round, seen_at)
+                                         event_type_type, event_qualification, tournament_name, tournament_round, seen_at,
+                                         event_status, event_winner)
   select (r->>'event_key')::bigint, (r->>'event_date')::date, r->>'event_time',
          case when r->>'event_date' ~ '^\d{4}-\d\d-\d\d$' then
            ((r->>'event_date') || ' ' || case when coalesce(r->>'event_time', '') ~ '^\d\d:\d\d$' then r->>'event_time' else '00:00' end)::timestamp
              at time zone 'UTC' end,
          r->>'first', r->>'second', drops_scope.sk(r->>'first'), drops_scope.sk(r->>'second'),
-         r->>'type', r->>'qual', r->>'tournament', r->>'round', now()
+         r->>'type', r->>'qual', r->>'tournament', r->>'round', now(), nullif(r->>'status', ''), nullif(r->>'winner', '')
     from (select distinct on (r->>'event_key') r from jsonb_array_elements(p_rows) r
            where coalesce(r->>'event_key', '') ~ '^\d+$' order by r->>'event_key') d(r)
   on conflict (event_key) do update set event_date = excluded.event_date, event_time = excluded.event_time,
       start_utc = excluded.start_utc, first_player = excluded.first_player, second_player = excluded.second_player,
       sk1 = excluded.sk1, sk2 = excluded.sk2, event_type_type = excluded.event_type_type,
       event_qualification = excluded.event_qualification, tournament_name = excluded.tournament_name,
-      tournament_round = excluded.tournament_round, seen_at = excluded.seen_at;
+      tournament_round = excluded.tournament_round, seen_at = excluded.seen_at,
+      event_status = excluded.event_status, event_winner = excluded.event_winner;
   get diagnostics n = row_count;
   -- WHERE true: Supabase's pg_safeupdate refuses a bare UPDATE on a REST call (HTTP 400, the first install, 31 Oct)
   update drops_scope.feed set last_ok_at = now(), last_rows = n, last_window = p_window where true;

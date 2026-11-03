@@ -273,6 +273,36 @@ export class KalshiFeed {
   stop() { this.stopAt = 0; const w = this.ws; this.ws = null; try { w && w.close(); } catch {} }
 }
 
+// The live score board (public.live_snapshot, api-tennis get_livescore every 10 s — the Live page's feed). Founder
+// 2026-11-03: a live alert only when there is time to place both bets — the game score at 0–0:
+//   'set'        a new set at 0–0 in games (the set break);
+//   'changeover' an odd number of games played in the set (players sit, 90 s);
+//   'game'       an even number (a new game, the serve changes, ~25 s);
+// anything else ('point': a game under way, or a tiebreak, or the board stale or unmatched) never alerts.
+export function boardPhase(fix) {
+  if (!fix) return { phase: null };
+  const status = String(fix.event_status || '');
+  const sc = Array.isArray(fix.scores) ? fix.scores : [];
+  const cur = sc.length ? sc[sc.length - 1] : null;
+  const ga = cur ? Number(cur.score_first) : 0, gb = cur ? Number(cur.score_second) : 0;
+  const sets = sc.map((x) => `${x.score_first}–${x.score_second}`).join(' ');
+  const base = { status, score: sets || '0–0' };
+  if (!/^set \d/i.test(status)) return { ...base, phase: null };                       // not in play (finished, interrupted, …)
+  if (!isFinite(ga) || !isFinite(gb)) return { ...base, phase: null };
+  const pts = String(fix.event_game_result || '').replace(/\s+/g, '');
+  if (pts !== '' && pts !== '0-0') return { ...base, phase: 'point' };
+  if (ga === 6 && gb === 6) return { ...base, phase: 'point' };                         // tiebreak: no time between points
+  const n = ga + gb;
+  return { ...base, phase: n === 0 && sc.length > 1 ? 'set' : n % 2 === 1 ? 'changeover' : 'game' };
+}
+// the board fixture of a pair: ATP singles, both players by name, exactly one
+export function boardFixture(pair, board) {
+  const c = (board || []).filter((f) => /atp/i.test(f.event_type_type || '') && /single/i.test(f.event_type_type || '') && (
+    (samePlayer(f.event_first_player, pair.pm.a) && samePlayer(f.event_second_player, pair.pm.b)) ||
+    (samePlayer(f.event_first_player, pair.pm.b) && samePlayer(f.event_second_player, pair.pm.a))));
+  return c.length === 1 ? c[0] : null;
+}
+
 // One row per positive gap for the database push (public.arb_live_push): the page's live list and the ⚡ alert.
 export function gapRow(pair, e, ctx) {
   const polyCost = e.polyAsk + polyFee(e.polyAsk), kalCost = e.kalAsk + kalshiFee(e.kalAsk);
@@ -281,6 +311,7 @@ export function gapRow(pair, e, ctx) {
     polyName: e.polyName, kalName: e.kalName, polyDec: r2(1 / e.polyAsk), polyEff: r2(1 / polyCost), polyLiq: r2(e.polySize * e.polyAsk),
     kalDec: r2(1 / e.kalAsk), kalEff: r2(1 / kalCost), kalLiq: e.kalSize == null ? null : r2(e.kalSize * e.kalAsk), kalLeg: e.kalLeg,
     edge: e.edge, contracts: e.contracts, stake: e.stake, stakePoly: +(polyCost / e.cost * 100).toFixed(1), stakeKalshi: +(kalCost / e.cost * 100).toFixed(1),
+    phase: ctx.board ? ctx.board.phase : null, score: ctx.board ? ctx.board.score : null, boardStatus: ctx.board ? ctx.board.status : null,
     inPlay: ctx.inPlay, started: ctx.started, polyAt: new Date(ctx.polyAt).toISOString(), kalAt: new Date(ctx.kalAt).toISOString() };
 }
 
@@ -327,6 +358,7 @@ async function main() {
   const stats = { kalshiPolls: 0, kalshiErrors: 0, gammaRefreshes: 0, gammaErrors: 0, wsMessages: 0, wsReconnects: 0, evaluations: 0,
     pairsJoinedMax: 0, liveMatchesSeen: new Set(), pairsSeen: new Set() };
   const closest = new Map(), latest = new Map();
+  const sbUrl0 = (process.env.SUPABASE_URL || '').replace(/\/$/, ''), sbKey0 = process.env.SUPABASE_SECRET_KEY || '';
   let poly = [], pairs = [], kal = [], kalAt = null;
 
   const feed = new PolyFeed({ WS: WebSocket, url: POLY_WS, books, stopAt: stop,
@@ -370,14 +402,25 @@ async function main() {
   await pollKalshi(); await refreshGamma();
   log(`start: ${poly.length} Polymarket matches, ${kalshiMatches(kal).length} Kalshi matches, ${pairs.length} joined`);
   const push = arg('push', '') === '1';
-  const sbUrl = (process.env.SUPABASE_URL || '').replace(/\/$/, ''), sbKey = process.env.SUPABASE_SECRET_KEY || '';
+  let board = [], boardAt = 0; stats.boardReads = 0; stats.boardErrors = 0;
+  const readBoard = async () => {
+    try {
+      const r = await fetch(sbUrl0 + '/rest/v1/live_snapshot?select=board,updated_at&limit=1', { signal: AbortSignal.timeout(10e3),
+        headers: { apikey: sbKey0, Authorization: 'Bearer ' + sbKey0 } });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const j = await r.json(); const row = j && j[0];
+      board = (row && row.board && row.board.matches) || []; boardAt = Date.parse(row && row.updated_at) || 0; stats.boardReads++;
+    } catch (e) { stats.boardErrors++; if (stats.boardErrors % 20 === 1) log('board', e.message); }
+  };
+  const boardOf = (p, now) => (now - boardAt <= 30e3 ? boardPhase(boardFixture(p, board)) : null);   // a stale board → no phase → no alert
+  const sbUrl = sbUrl0, sbKey = sbKey0;
   stats.pushes = 0; stats.pushErrors = 0; stats.posted = 0;
   const doPush = async () => {
     const keys = new Set(pairs.map((p) => p.key));
     const gaps = [];
-    for (const [k, L] of latest) { if (!keys.has(k)) continue; for (const e of L.ev) if (e.edge > 0) gaps.push(gapRow(L.p, e, L)); }
+    for (const [k, L] of latest) { if (!keys.has(k)) continue; const bd = boardOf(L.p, Date.now()); for (const e of L.ev) if (e.edge > 0) gaps.push(gapRow(L.p, e, { ...L, board: bd })); }
     const body = JSON.stringify({ p: { gaps, worker: { pairs: pairs.length, live: pairs.filter((p) => p.pm.live).length, kalshiPolls: stats.kalshiPolls,
-      kalshiErrors: stats.kalshiErrors, kalshiFeed: stats.kalshiFeed, kalshiWsMessages: stats.kalshiWsMessages, kalshiWsDrops: stats.kalshiWsDrops, wsMessages: stats.wsMessages, wsReconnects: stats.wsReconnects, run: process.env.GITHUB_RUN_ID || null } } });
+      kalshiErrors: stats.kalshiErrors, kalshiFeed: stats.kalshiFeed, kalshiWsMessages: stats.kalshiWsMessages, kalshiWsDrops: stats.kalshiWsDrops, boardReads: stats.boardReads, boardErrors: stats.boardErrors, wsMessages: stats.wsMessages, wsReconnects: stats.wsReconnects, run: process.env.GITHUB_RUN_ID || null } } });
     try {
       const r = await fetch(sbUrl + '/rest/v1/rpc/arb_live_push', { method: 'POST', body, signal: AbortSignal.timeout(15e3),
         headers: { apikey: sbKey, Authorization: 'Bearer ' + sbKey, 'Content-Type': 'application/json' } });
@@ -386,6 +429,8 @@ async function main() {
     } catch (e) { stats.pushErrors++; if (stats.pushErrors % 20 === 1) log('push', e.message); }
   };
   if (push && (!sbUrl || !sbKey)) { log('push asked for but SUPABASE_URL / SUPABASE_SECRET_KEY missing'); process.exit(1); }
+  if (sbUrl0 && sbKey0) await readBoard();
+  const boardT = sbUrl0 && sbKey0 ? setInterval(readBoard, 5e3) : null;
   const pushT = push ? setInterval(doPush, 5e3) : null;
   const gT = setInterval(refreshGamma, 60e3);
   const pingT = setInterval(() => { feed.ping(); }, 10e3);
@@ -393,7 +438,7 @@ async function main() {
   log('kalshi prices: ' + stats.kalshiFeed);
   const pollMs = () => (kfeed && kfeed.ws && kfeed.ws.readyState === 1 && kfeed.book.size ? 30e3 : POLL_S * 1000);   // the list for new matches; prices from the feed
   while (Date.now() < stop) { const t = Date.now(); await pollKalshi(); await new Promise((r) => setTimeout(r, Math.max(0, pollMs() - (Date.now() - t)))); }
-  clearInterval(gT); clearInterval(pingT); if (pushT) clearInterval(pushT); clearInterval(repT); E.closeAll(Date.now()); feed.stop(); if (kfeed) kfeed.stop();
+  clearInterval(gT); clearInterval(pingT); if (pushT) clearInterval(pushT); if (boardT) clearInterval(boardT); clearInterval(repT); E.closeAll(Date.now()); feed.stop(); if (kfeed) kfeed.stop();
   const meta = { from: new Date(t0).toISOString(), to: new Date().toISOString(), minutes, pollS: POLL_S, fees: FEE,
     ...stats, liveMatchesSeen: stats.liveMatchesSeen.size, pairsSeen: stats.pairsSeen.size,
     closestPerMatch: [...closest].map(([match, c]) => ({ match, ...c })).sort((a, b) => a.cost - b.cost).slice(0, 15) };

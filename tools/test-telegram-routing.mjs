@@ -42,12 +42,13 @@ for (const f of ['oddspapi-postmatch-pinger.sql', 'ten216-collector-watchdog.sql
 // the fixture-list writer
 const rows = rowsOf([
   { event_key: 1, event_first_player: 'C. Alcaraz', event_second_player: 'J. Sinner', event_type_type: 'Atp Singles', event_qualification: 'False', event_date: '2026-10-30', event_time: '12:00' },
-  { event_key: 2, event_first_player: 'P. Bar Biryukov', event_second_player: 'S. Sakellaridis', event_type_type: 'Atp Singles', event_qualification: 'True' },
+  { event_key: 2, event_first_player: 'P. Bar Biryukov', event_second_player: 'S. Sakellaridis', event_type_type: 'Atp Singles', event_qualification: 'True', event_status: 'Walk Over', event_winner: 'Second Player' },
   { event_key: 3, event_first_player: 'A. B / C. D', event_second_player: 'E. F / G. H', event_type_type: 'Atp Doubles' },
   { event_key: null, event_first_player: 'X', event_second_player: 'Y' },
 ]);
 check('writer: singles kept, doubles and keyless rows dropped', rows.length === 2 && rows.map((r) => r.event_key).join() === '1,2');
 check('writer: the qualifying flag is carried as api-tennis sends it', rows[1].qual === 'True' && rows[1].type === 'Atp Singles');
+check('writer: api-tennis status + winner carried (no arb alert on a withdrawn match)', rows[1].status === 'Walk Over' && rows[1].winner === 'Second Player' && rows[0].status === null);
 check('writer: counts by type and qualification', JSON.stringify(countByType(rows)) === '{"Atp Singles · qualification False":1,"Atp Singles · qualification True":1}');
 const [a, b] = windowDays(Date.parse('2026-10-30T15:00:00Z'));
 check('writer: window = yesterday .. +4 days, UTC', a === '2026-10-29' && b === '2026-11-03', `${a} ${b}`);

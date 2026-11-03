@@ -35,6 +35,7 @@ end $$;
 create table if not exists arb.config (
     id            boolean primary key default true check (id),
     arb_min       numeric  not null default 1,        -- % locked-in profit after fees
+    arb_max       numeric           default 10,       -- a pre-match arb above this is a settlement artefact, never sent
     div_min       numeric  not null default 5,        -- % above the fair price
     min_liq       numeric           default 100,      -- dollars at the price for a prediction-market leg; NULL = none
     kalshi_coef   numeric  not null default 0.07,
@@ -64,6 +65,7 @@ create index if not exists arb_alerts_key_idx on arb.alerts (akey, created_at);
 alter table arb.alerts add column if not exists retries integer not null default 0;   -- Telegram re-sends (founder 2026-11-03)
 alter table arb.alerts drop constraint if exists alerts_kind_check;
 alter table arb.alerts add constraint alerts_kind_check check (kind in ('arb', 'divergence', 'live'));
+alter table arb.config add column if not exists arb_max numeric default 10;   -- founder 2026-11-03 (withdrawals)
 alter table arb.config add column if not exists live_min      numeric  not null default 1;                      -- % after fees
 alter table arb.config add column if not exists live_cooldown interval not null default interval '10 minutes';  -- per match + direction
 alter table arb.config add column if not exists live_hb_max   interval not null default interval '90 seconds';  -- worker heartbeat
@@ -103,6 +105,14 @@ begin
   return round(1 / (q + c.poly_rate * power(q * (1 - q), c.poly_exp)), 3);
 end $$;
 
+-- a match api-tennis marks over or not to be played: no price, no alert (founder 2026-11-03, Davidovich Fokina v Kouame:
+-- four ⚖️ ARB of +26% after the withdrawal, off a frozen Polymarket book). Not started / Set N = open.
+create or replace function arb.fixture_closed(p_status text, p_winner text) returns boolean
+language sql immutable as $$
+  select coalesce(p_winner, '') <> ''
+      or coalesce(p_status, '') ~* '(walk ?over|w/o|retired|ret\.|cancel|postpon|abandon|finished|awarded|default|withdr|suspend|interrupt)'
+$$;
+
 -- every live quote, one row per (fixture, source): both players' price, effective price, liquidity, time
 create or replace function arb.quotes() returns table(event_key bigint, first_player text, second_player text, start_utc timestamptz,
     source text, grp text, p_first numeric, p_second numeric, e_first numeric, e_second numeric, l_first numeric, l_second numeric,
@@ -116,6 +126,7 @@ begin
     select f.event_key, f.first_player, f.second_player, f.start_utc, drops_scope.sk(f.first_player) k1, drops_scope.sk(f.second_player) k2
       from drops_scope.fixture f
      where f.event_type_type = 'Atp Singles' and f.start_utc > now() and f.start_utc < now() + c.horizon
+       and not arb.fixture_closed(f.event_status, f.event_winner)
        and position('/' in coalesce(f.first_player, '') || coalesce(f.second_player, '')) = 0
   ),
   -- Bet105 (Kibl stream): card key = board date | surname keys; live while the worker beats
@@ -162,7 +173,7 @@ begin
   ),
   -- Kalshi (public API recorder): the latest tick per market, live while the recorder answered lately
   ka as (
-    select distinct on (t.ticker) t.ticker, t.event_ticker, t.yes_ask, t.yes_ask_size, coalesce(t.updated_at, t.seen_at) at
+    select distinct on (t.ticker) t.ticker, t.event_ticker, t.yes_ask, t.yes_ask_size, t.seen_at at   -- when WE saw it (Kalshi's updated_time read 15:00 for a 09:38 price)
       from kalshi_rec.ticks t
      where t.status = 'active' and t.seen_at > now() - interval '1 day'
        and exists (select 1 from kalshi_rec.requests r where r.status_code = 200 and r.processed_at > now() - c.rec_max)
@@ -238,11 +249,11 @@ begin
      where a.ok and b.ok and a.eff is not null and b.eff is not null
   ),
   best as (
-    select distinct on (event_key) * from pairs where profit >= c.arb_min order by event_key, profit desc, sa, sb
+    select distinct on (event_key) * from pairs where profit >= c.arb_min and (c.arb_max is null or profit <= c.arb_max) order by event_key, profit desc, sa, sb
   )
   select jsonb_build_object(
     'at', now(),
-    'config', jsonb_build_object('arbMin', c.arb_min, 'divMin', c.div_min, 'minLiq', c.min_liq),
+    'config', jsonb_build_object('arbMin', c.arb_min, 'arbMax', c.arb_max, 'divMin', c.div_min, 'minLiq', c.min_liq),
     'fair', coalesce((select jsonb_agg(jsonb_build_object('eventKey', f.event_key, 'first', q.first_player, 'second', q.second_player,
                         'start', q.start_utc, 'fairFirst', f.ff, 'fairSecond', f.fs, 'at', f.fair_at,
                         'sources', (select jsonb_agg(jsonb_build_object('source', x.source, 'group', x.grp, 'first', x.p_first, 'second', x.p_second,
@@ -385,7 +396,9 @@ language sql immutable as $$
   select concat_ws(chr(10),
     '⚡ LIVE ARB',
     '',
-    format('🎾 Match: %s (ATP)%s', g->>'match', case when (g->>'inPlay')::boolean then ' · in play' else ' · past its start' end),
+    format('🎾 Match: %s (ATP)', g->>'match'),
+    format('%s · %s', case g->>'phase' when 'changeover' then '🪑 Changeover (players sit)' when 'set' then '⏸ Set break'
+                                         else '🔄 New game (serve changes)' end, coalesce(g->>'score', 'score —')),
     format('✅ Back %s @ %s on Polymarket (after fee %s) · %s at price', g->>'polyName', arb.px((g->>'polyDec')::numeric),
            arb.px((g->>'polyEff')::numeric), arb.usd((g->>'polyLiq')::numeric)),
     format('✅ Back %s @ %s on Kalshi (after fee %s) · %s at price', g->>'kalName', arb.px((g->>'kalDec')::numeric),
@@ -411,6 +424,11 @@ begin
     continue when coalesce((g->>'edge')::numeric, 0) < c.live_min;
     continue when c.min_liq is not null and coalesce((g->>'stake')::numeric, 0) < c.min_liq;
     continue when not coalesce((g->>'started')::boolean, false);   -- before the start the 30-s engine covers it
+    -- only when there is time to place both bets (founder 2026-11-03): the live score board shows the game at 0–0 — a new
+    -- game (the serve changes), a changeover (players sit, after an odd game) or a set break — never during points;
+    -- and never on a match the board or api-tennis says is over or not being played (walkover, retirement …)
+    continue when coalesce(g->>'phase', '') not in ('game', 'changeover', 'set');
+    continue when arb.fixture_closed(g->>'boardStatus', null);
     continue when not coalesce(g->>'kalshiEvent', '') like 'KXATPMATCH-%';   -- ATP tour only
     k := 'live|' || (g->>'kalshiEvent') || '|' || (g->>'dir');
     continue when exists (select 1 from arb.alerts where akey = k and created_at > now() - c.live_cooldown);

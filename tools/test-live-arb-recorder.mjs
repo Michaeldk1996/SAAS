@@ -3,7 +3,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { generateKeyPairSync, createVerify, constants as CC } from 'node:crypto';
-import { samePlayer, polyMatches, kalshiMatches, joinPairs, kalshiFee, polyFee, Books, evaluate, Episodes, summarise, gapRow, PolyFeed, KalshiFeed, kalshiSign } from './live-arb-recorder.mjs';
+import { samePlayer, polyMatches, kalshiMatches, joinPairs, kalshiFee, polyFee, Books, evaluate, Episodes, summarise, gapRow, PolyFeed, KalshiFeed, kalshiSign, boardPhase, boardFixture } from './live-arb-recorder.mjs';
 
 const ev = (id, a, b, extra = {}) => ({ id, title: `X: ${a} vs ${b}`, live: false, ...extra,
   markets: [{ sportsMarketType: 'moneyline', outcomes: JSON.stringify([a, b]), clobTokenIds: JSON.stringify([id + 'A', id + 'B']), gameStartTime: '2026-11-02 12:00:00+00' }] });
@@ -171,4 +171,35 @@ test('evaluate: the Kalshi websocket clock decides staleness; a NO leg from the 
   p.kalAt = 1000; p.km.p[p.aIs].noAsk = 0.47; p.km.p[p.aIs].noSize = 60;
   const e = evaluate(p, b, 0, 2000).find((x) => x.dir === 'polyA+kalshiB');
   assert.ok(e, 'the pair\'s own Kalshi clock (1 s old) is used, not the stale global one'); assert.equal(e.kalLeg.slice(0, 2), 'no'); assert.equal(e.contracts, 30);
+});
+
+const fix = (status, game, sets, extra = {}) => ({ event_type_type: 'Atp Singles', event_first_player: 'A. Molcan', event_second_player: 'T. Droguet',
+  event_status: status, event_game_result: game, scores: sets.map(([a, b], i) => ({ score_first: String(a), score_second: String(b), score_set: String(i + 1) })), ...extra });
+
+test('board phase: alerts only at 0–0 — new game, changeover (odd games), set break; never a point, a tiebreak or a match not in play', () => {
+  assert.equal(boardPhase(fix('Set 1', '0 - 0', [[2, 1]])).phase, 'changeover', '3 games played → players sit');
+  assert.equal(boardPhase(fix('Set 1', '0 - 0', [[2, 2]])).phase, 'game', '4 games → new game, serve changes');
+  assert.equal(boardPhase(fix('Set 2', '0 - 0', [[6, 3], [0, 0]])).phase, 'set', 'a new set at 0–0 → set break');
+  assert.equal(boardPhase(fix('Set 2', '30 - 15', [[6, 3], [1, 0]])).phase, 'point', 'a game under way (mutant: points ignored)');
+  assert.equal(boardPhase(fix('Set 1', '0 - 0', [[6, 6]])).phase, 'point', 'a tiebreak has no break between points');
+  assert.equal(boardPhase(fix('Retired', '0 - 0', [[6, 3]])).phase, null, 'a retirement is not in play (mutant: status ignored)');
+  assert.equal(boardPhase(fix('Walk Over', '', [])).phase, null);
+  assert.equal(boardPhase(fix('Set 2', '0 - 0', [[6, 3], [2, 1]])).score, '6–3 2–1');
+  assert.equal(boardPhase(null).phase, null);
+});
+
+test('board fixture: ATP singles, both names either way round, exactly one', () => {
+  const { p } = pair(0.45, 0.48);
+  assert.ok(boardFixture(p, [fix('Set 1', '0 - 0', [[0, 0]])]));
+  assert.ok(boardFixture(p, [fix('Set 1', '0 - 0', [[0, 0]], { event_first_player: 'T. Droguet', event_second_player: 'A. Molcan' })]));
+  assert.equal(boardFixture(p, [fix('Set 1', '0 - 0', [[0, 0]]), fix('Set 1', '0 - 0', [[0, 0]])]), null, 'two candidates → none');
+  assert.equal(boardFixture(p, [fix('Set 1', '0 - 0', [[0, 0]], { event_type_type: 'Challenger Men Singles' })]), null, 'ATP only');
+});
+
+test('gap row carries the board state (phase, score, status) for the alert rule', () => {
+  const { p, b } = pair(0.45, 0.48);
+  const e = evaluate(p, b, 1000, 2000).find((x) => x.dir === 'polyA+kalshiB');
+  const g = gapRow(p, e, { inPlay: true, started: true, polyAt: 1000, kalAt: 1000, board: boardPhase(fix('Set 1', '0 - 0', [[2, 1]])) });
+  assert.equal(g.phase, 'changeover'); assert.equal(g.score, '2–1'); assert.equal(g.boardStatus, 'Set 1');
+  assert.equal(gapRow(p, e, { inPlay: true, started: true, polyAt: 1, kalAt: 1, board: null }).phase, null, 'no board → no phase → no alert');
 });

@@ -153,6 +153,20 @@ try:
     rc, out = q("select count(*) from arb.alerts", 'anon'); check('anon cannot read the alerts', rc != 0, out)
     rc, out = q("select arb.report(24)->>'arbsNow'"); check('report() without pg_cron', rc == 0 and out == '1', out)
 
+    # withdrawals (founder 2026-11-03, Davidovich Fokina v Kouame): a match api-tennis marks over / not to be played
+    q("update arb.config set arb_max = 5")
+    o = opps(); check('a pre-match arb above arb_max is never offered (the 9.07% goes; the next pair, +4.76%, stays)', [a['profit'] for a in o['arbs']] == [4.76], o['arbs'])
+    q("update arb.config set arb_max = 10")
+    o = opps(); check('CONTROL: arb_max 10 → the 9.07% arb is back', len(o['arbs']) == 1, o['arbs'])
+    w = fx(9001, 'Q. Halys', 'A. Fery', 'Atp Singles'); w['status'] = 'Walk Over'
+    rc, out = q("select public.drops_scope_ingest($j$" + json.dumps([w]).replace('__D1__', d1) + "$j$::jsonb, 'test')", 'service_role')
+    o = opps(); check('a walkover fixture leaves no price, no divergence and no arb', 'Q. Halys' not in [f['first'] for f in o['fair']]
+          and not any(d['first'] == 'Q. Halys' for d in o['divergences']) and o['arbs'] == [], o)
+    rc, out = q("select arb.fixture_closed(s, null) from unnest(array['Retired','Finished','Cancelled','Awarded','Set 2','Not Started','']) s")
+    check('closed: Retired / Finished / Cancelled / Awarded; open: Set 2, not started, blank', out.split() == ['t', 't', 't', 't', 'f', 'f', 'f'], out)
+    w['status'] = None
+    q("select public.drops_scope_ingest($j$" + json.dumps([w]).replace('__D1__', d1) + "$j$::jsonb, 'test')", 'service_role')
+    o = opps(); check('CONTROL: the same fixture not closed → priced again', 'Q. Halys' in [f['first'] for f in o['fair']], o['fair'])
     q("update public.kibl_now_price set written_at = now() - interval '10 minutes'")
     o = opps(); check('a stale Bet105 heartbeat → no fair price, no divergence', o['fair'] == [] and o['divergences'] == [], o)
 
@@ -162,6 +176,7 @@ try:
              'dir': 'polyA+kalshiB', 'polyName': 'Alex Molcan', 'kalName': 'Titouan Droguet', 'polyDec': 2.222, 'polyEff': 2.17,
              'polyLiq': 900, 'kalDec': 2.083, 'kalEff': 2.02, 'kalLiq': 480, 'edge': 2.4, 'contracts': 500, 'stake': 470,
              'stakePoly': 48.2, 'stakeKalshi': 51.8, 'inPlay': True, 'started': True,
+             'phase': 'changeover', 'score': '6–3 2–1', 'boardStatus': 'Set 2',
              'polyAt': '2026-11-02T12:00:00Z', 'kalAt': '2026-11-02T12:00:01Z'}
         g.update(kw); return g
     def push(gaps):
@@ -171,18 +186,23 @@ try:
                     gap(kalshiEvent='KXATPMATCH-Y', started=False), gap(kalshiEvent='KXATPCHALLENGERMATCH-Z')])
     check('live push posts only the one that qualifies (>= 1%, >= $100 to lock in, started, ATP tour)', rc == 0 and out == '1', out)
     rc, out = push([gap()]); check('the same match + direction inside the live cooldown posts nothing', out == '0', out)
+    rc, out = push([gap(kalshiEvent='KXATPMATCH-P1', phase='point'), gap(kalshiEvent='KXATPMATCH-P2', phase=None),
+                    gap(kalshiEvent='KXATPMATCH-P3', boardStatus='Retired'), gap(kalshiEvent='KXATPMATCH-P4', boardStatus='Walk Over')])
+    check('never during a point, without a board phase, or on a retired / walkover match', out == '0', out)
+    rc, out = push([gap(kalshiEvent='KXATPMATCH-P5', phase='set'), gap(kalshiEvent='KXATPMATCH-P6', phase='game')])
+    check('a set break and a new game do post', out == '2', out)
     rc, out = q("select message from arb.alerts where kind = 'live'")
     check('LIVE message: header, both legs after fee with dollars, profit, stakes',
           out.startswith('⚡ LIVE ARB') and 'Back Alex Molcan @ 2.222 on Polymarket (after fee 2.17) · $900 at price' in out
           and 'Back Titouan Droguet @ 2.083 on Kalshi (after fee 2.02) · $480 at price' in out
-          and '+2.40% after fees · stakes 48.2% / 51.8% · up to $470' in out and 'in play' in out, out)
+          and '+2.40% after fees · stakes 48.2% / 51.8% · up to $470' in out and '🪑 Changeover (players sit) · 6–3 2–1' in out, out)
     a = json.loads(q("select public.arb_now()", 'anon')[1])
-    check('arb_now(): live list = the qualifying gaps only, feed on', a.get('liveOn') is True and [g['dir'] for g in a.get('live') or []] == ['polyA+kalshiB'] and a['config'].get('liveMin') == 1, a.get('live'))
+    check('arb_now(): live list = the last push\'s qualifying gaps, feed on', a.get('liveOn') is True and sorted(g['kalshiEvent'] for g in a.get('live') or []) == ['KXATPMATCH-P5', 'KXATPMATCH-P6'] and a['config'].get('liveMin') == 1, a.get('live'))
     q("update arb.live_state set at = now() - interval '5 minutes'")
     a = json.loads(q("select public.arb_now()", 'anon')[1])
     check('a stale worker (no push for 90 s) → no live list, feed off', a.get('liveOn') is False and a.get('live') is None, a.get('live'))
     q("update arb.config set live_min = 5"); push([gap(kalshiEvent='KXATPMATCH-W')])
-    rc, out = q("select count(*) from arb.alerts where kind = 'live'"); check('CONTROL: live_min 5 → a 2.4% gap posts nothing', out == '1', out)
+    rc, out = q("select count(*) from arb.alerts where kind = 'live'"); check('CONTROL: live_min 5 → a 2.4% gap posts nothing', out == '3', out)
     q("update public.kibl_now_price set written_at = now()")
     q("update arb.config set div_min = 50")
     o = opps(); check('CONTROL: div_min 50 → no divergence (the threshold decides)', o['divergences'] == [], o['divergences'])

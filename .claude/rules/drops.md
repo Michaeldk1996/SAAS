@@ -71,6 +71,13 @@ answers on card 37612d3d (TEN-294 doc `design`). Suite: `test-ten294-drops.mjs`.
   bookmaker. Telegram ⚖️ ARB / 📐 DIVERGENCE to the drop chat, one per match + kind + source(s) per 30 min. Page: Dropping Odds
   → Arbitrage (`arb-page.js`, reads `public.arb_now()` with the publishable key every 30 s; a plain first build the founder
   designs later). **Test:** `tools/test-arb-engine-sql.py`, `test-arb-page.mjs`.
+  **No alert on a withdrawn match, any kind** (founder 2026-11-03: four ⚖️ ARB of +26% on Davidovich Fokina v Kouame after
+  the withdrawal, off a frozen Polymarket book): the fixture spine carries api-tennis's `event_status` / `event_winner`
+  (`drops-scope-fixtures.mjs`, every pipeline run) and `arb.fixture_closed` (walkover, retired, cancelled, postponed,
+  abandoned, finished, awarded, default, withdrawn, suspended, interrupted, or any winner) takes the match out of prices,
+  divergences and arbs; the live alert also needs the board's own status open. A pre-match arb above `arb_max` (10%) is a
+  settlement artefact and is never offered. Kalshi's price time = when we saw it (its `updated_time` read 15:00 for a 09:38
+  price). **Test:** `tools/test-arb-engine-sql.py` ("walkover", "arb_max").
   **The page reads the stored result** (`arb.snap`, written by every tick) while it is ≤ 10 min old (founder 2026-11-03),
   recomputed only after that. **A failed Telegram send is re-sent once** while ≤ 15 min old, any kind (`arb.alerts.retries`).
 - **Live arbitrage, Kalshi × Polymarket** (founder 2026-11-02, "Let's go!"; ATP tour only). `tools/live-arb-recorder.mjs`,
@@ -82,7 +89,11 @@ answers on card 37612d3d (TEN-294 doc `design`). Suite: `test-ten294-drops.mjs`.
   `KALSHI_PRIVATE_KEY` the worker reads Kalshi's `orderbook_delta` feed (RSA-PSS signed headers) — YES ask = 1 − best NO bid,
   NO ask = 1 − best YES bid, each sized — and polls the list only every 30 s for new matches; without them, or while the
   feed is down, the 2-s polling stands. **Thresholds ruled** (founder 2026-11-03, "Yes"): 1% after fees, $100 to lock in,
-  10 min per match + direction. A pair joins on both names, exactly one candidate each way; Kalshi
+  10 min per match + direction. **Only when there is time to place both bets** (founder 2026-11-03): the worker reads the live
+  score board (`live_snapshot`, the Live page's 10-s feed; ≤ 30 s old, the pair joined to exactly one ATP singles fixture by
+  both names) and an alert needs the game at 0–0 — `set` (a new set, the set break), `changeover` (odd games played: players
+  sit) or `game` (even: a new game, the serve changes) — never a point under way, a tiebreak (6–6), a stale or unmatched
+  board, or a board status that is not "Set N". **Test:** `boardPhase` in `tools/test-live-arb-recorder.mjs`. A pair joins on both names, exactly one candidate each way; Kalshi
   Challengers (`KXATPCHALLENGERMATCH`) are never read. Gap = back one player on each market for < $1 after both taker fees
   (the engine's 0.07·q(1−q) / 0.05·p(1−p)). Every 5 s the positive gaps + a heartbeat go to `public.arb_live_push`
   (service role). **Test:** a gap posts ⚡ LIVE ARB (drop chat, the engine's `arb.send`) only when edge ≥ `config.live_min`

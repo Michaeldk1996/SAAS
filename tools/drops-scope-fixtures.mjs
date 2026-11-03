@@ -19,7 +19,9 @@ export function rowsOf(list) {
     if (!a || !b || a.includes('/') || b.includes('/')) continue;
     out.push({ event_key: String(f.event_key), event_date: f.event_date || null, event_time: f.event_time || null,
       first: a, second: b, type: f.event_type_type || null, qual: f.event_qualification == null ? null : String(f.event_qualification),
-      tournament: f.tournament_name || null, round: f.tournament_round || null });
+      tournament: f.tournament_name || null, round: f.tournament_round || null,
+      // the match's api-tennis status + winner (founder 2026-11-03: never an arb alert on a withdrawn match)
+      status: f.event_status || null, winner: f.event_winner || null });
   }
   return out;
 }
