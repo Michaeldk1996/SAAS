@@ -1,19 +1,19 @@
 {
- "generatedAt": "2026-11-03T18:58:16.041Z",
+ "generatedAt": "2026-11-03T21:42:00.533Z",
  "source": "matches.json git history: oddsMovement.books.Pinnacle (Oddspapi pinnacle, to 2026-09-02) and oddsMovement.chart.books[\"Pinnacle +30s\"] (Oddspapi pinnacle+30, from 2026-09-23)",
  "rule": "each side = last tick at or before the actual start (the earlier of Oddspapi trueStart and the card-state start: Oddspapi or the live-flip lower bound); both sides required; dropped when no unique actual start. seenAt = our last capture read before the start that confirmed the close (founder 2026-10-28); age = start - (seenAt or at)",
  "scannedThrough": {
-  "commit": "9300d0c05786d63aab54b760c8bd15f4eb1c8ea9",
-  "at": "2026-11-03T18:18:41Z"
+  "commit": "53b86fee1f407195914b369001baa2228055f24b",
+  "at": "2026-11-03T21:15:59Z"
  },
- "commitsScanned": 6399,
+ "commitsScanned": 6406,
  "lastRun": {
-  "from": "2026-11-03T15:01:03Z",
-  "snapshots": 5,
-  "added": 1,
+  "from": "2026-11-03T18:18:41Z",
+  "snapshots": 8,
+  "added": 0,
   "replaced": 0,
   "seenBackfilled": 0,
-  "series": 59,
+  "series": 67,
   "kept": 42,
   "bySource": {
    "oddspapi": 37,
@@ -23,7 +23,7 @@
    "Pinnacle +30s": 42
   },
   "dropped": {
-   "noStart": 17
+   "noStart": 25
   }
  },
  "stats": {
@@ -14596,7 +14596,7 @@
    "o1": 4.75,
    "o2": 1.214,
    "oAt": "2026-11-02T09:59:08.436Z",
-   "winner": null,
+   "winner": "p2",
    "seenAt": "2026-11-03T13:34:54.000Z"
   }
  ]
