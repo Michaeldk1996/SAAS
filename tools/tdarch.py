@@ -968,7 +968,9 @@ def te_other_ok(p):
 # row holds; keyed on the api-tennis event key and the players' api-tennis keys like every level here. Its row rides the era
 # shard as an ATP main-draw match (no 't' / 'l' flag; Bet365 behind 'b'): the price join and Market edge read it, no
 # Database figure does (build-database-yield.js LOWER_LEVEL_NAME).
-TE_LEVELS = ('atp-q', 'atp-x', 'atp-nt', 'ch', 'ch-q')
+# 'itf' (founder 2026-11-03, "sample first, then run"; the 30-match sample: 30 joined, 21 Pinnacle, 5 Bet365, 3 another book):
+# ITF Men from Tennis Explorer too. It has no verified start, so the in-play rule reads api-tennis's scheduled start.
+TE_LEVELS = ('atp-q', 'atp-x', 'atp-nt', 'ch', 'ch-q', 'itf')
 # founder 2026-10-30 ("TE above Bet365"): an ATP main-draw match the Database prices on Bet365 or shows as a dash. The target
 # carries its Tennis-Data row (td: date, tournament, winner, loser; a / b = winner / loser) and no api-tennis key: the row is
 # joined to its ONE api-tennis fixture with the main-draw snapshots' own join (approx_join) for the event key and the start
@@ -1463,8 +1465,8 @@ def te_md_row(d, x, p, md_join, flip_start, rep, src_kind=None):
 def te_rows(docs, fixture_of, flip_start=lambda ek: None, md_join=lambda td: (None, 'no fixture list read')):
     """Snapshot rows from the joined TE matches with a Pinnacle pair + a report. `fixture_of(ek)` = the CURRENT api-tennis
     fixture (the result and the names; a match with no result, a walkover or an unreadable fixture -> no row). Prices
-    are oriented to the winner from TE's a / b (= api-tennis's first / second player). A side below 1.01 = no row. ITF is
-    out of scope: a TE row of any other level is refused, never stored."""
+    are oriented to the winner from TE's a / b (= api-tennis's first / second player). A side below 1.01 = no row. A TE row
+    of a level outside TE_LEVELS is refused, never stored (ITF is in since 2026-11-03)."""
     rows, rep = [], collections.Counter()
     for d in docs:
         SRC, LAB, FIELD, HOV = te_doc_kind(d)

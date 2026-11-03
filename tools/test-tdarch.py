@@ -263,7 +263,7 @@ TX = lambda ek, lvl='ch', pin={'p1': 1.36, 'p2': 2.9, 'p1Ts': '2026-09-28T09:18:
     'ek': str(ek), 'level': lvl, 'date': '2026-09-28', 'a': 'A. One', 'b': 'B. Two', 'ka': ka, 'kb': kb, 'status': st, 'teId': '3338923', 'tour': 'Porto challenger',
     'books': ['bet365', 'Pinnacle'], 'pageSha256': SHA, 'fetchedAt': '2026-10-20T03:00:00Z', 'pin': pin}
 tdocs = [{'batch': 'calib-01', 'source': T.TE_SOURCE, 'complete': True, 'rows': [
-    TX(31), TX(32, ka='22', kb='11'), TX(33, lvl='itf'), TX(34, st='ambiguous'), TX(35, pin=None), TX(36, pin={'p1': 1.005, 'p2': 9.0}),
+    TX(31), TX(32, ka='22', kb='11'), TX(33, lvl='wta'), TX(34, st='ambiguous'), TX(35, pin=None), TX(36, pin={'p1': 1.005, 'p2': 9.0}),
     TX(37), TX(38)]}]
 tfx = {'31': F(31, 'Challenger Men Singles', d='2026-09-28'), '32': F(32, 'Challenger Men Singles', win='Second Player', d='2026-09-28'),
        '37': F(37, 'Challenger Men Singles', st='Walk Over', d='2026-09-28'), '38': None}
@@ -275,7 +275,7 @@ check('TE: oriented to the winner — TE a / b = api-tennis first / second; a re
 check('TE: the later side change is price_ts, every side time and the opening price kept; page sha256 + TE id in detail, hover is the one fixed text',
       te[0]['price_ts'] == '2026-09-28T09:18:00Z' and te[0]['detail']['open']['first'] == 1.38 and te[0]['detail']['pageSha256'] == SHA
       and te[0]['detail']['teMatchId'] == '3338923' and te[0]['detail']['hover'] == 'Tennis Explorer, last pre-match price, not a confirmed close' and te[0]['fetched_at'] == '2026-10-20T03:00:00Z', te[0])
-check('TE: ITF refused, ambiguous / no Pinnacle / a side below 1.01 / a walkover / an unreadable fixture = no row, each counted',
+check('TE: a level outside TE_LEVELS refused, ambiguous / no Pinnacle / a side below 1.01 / a walkover / an unreadable fixture = no row, each counted',
       terep.get('level out of scope') == 1 and terep.get('ambiguous') == 1 and terep.get('joined, no Pinnacle on the page') == 1 and terep.get('a side below 1.01') == 1
       and terep.get('walkover') == 1 and terep.get('api-tennis fixture unreadable') == 1, terep)
 tcur = [dict(r, id=40 + i) for i, r in enumerate(te)] + [dict(ar[1], id=50, event_key=31), dict(cur[2], id=51, event_key=32)]
@@ -509,13 +509,13 @@ check('coverage: an atp-md row counts under its own level (no KeyError on a row 
 # ── Tennis Explorer · Bet365 (founder 2026-10-30, "last before dash"): read from saved pages, join-only ──────────────────
 B3 = lambda ek, ts=None, lvl='ch', ka='11', kb='22': dict(TX(ek, lvl=lvl, pin=None, ka=ka, kb=kb), books=['bet365'],
     b365={'p1': 1.8, 'p2': 2.0, 'p1Ts': ts, 'p2Ts': None, 'open': {'p1': 1.9, 'p2': 1.9}, 'moves': [1 if ts else 0, 0]})
-bdocs = [{'batch': 'b365-ch-01', 'source': T.TE_B365_SOURCE, 'complete': True, 'rows': [B3(81), B3(82, ts='2026-09-28T23:30:00Z'), B3(83, lvl='itf'), dict(B3(84), b365=None)]}]
+bdocs = [{'batch': 'b365-ch-01', 'source': T.TE_B365_SOURCE, 'complete': True, 'rows': [B3(81), B3(82, ts='2026-09-28T23:30:00Z'), B3(83, lvl='wta'), dict(B3(84), b365=None)]}]
 bfx = {str(k): F(k, 'Challenger Men Singles', d='2026-09-28') for k in (81, 82, 83, 84)}
 brows, brep = T.te_rows(bdocs, bfx.get, lambda ek: '2026-09-28T23:00:00Z')
 check('TE Bet365: a "Tennis Explorer · Bet365" row labelled "Bet365 (approx.)", its own hover, read from the b365 field (never pin)',
       [(r['event_key'], r['source'], r['label'], r['detail']['hover']) for r in brows] == [(81, T.TE_B365_SOURCE, 'Bet365 (approx.)', T.TE_B365_HOVER)]
       and T.TE_B365_HOVER == 'Bet365 (approx.) · Tennis Explorer, last pre-match price, not a confirmed close' and brows[0]['price_winner'] == 1.8, (brows, brep))
-check('TE Bet365: the in-play rule runs where the page shows a change time (82 dropped), ITF refused (83), no Bet365 pair (84) counted',
+check('TE Bet365: the in-play rule runs where the page shows a change time (82 dropped), a level outside TE_LEVELS refused (83), no Bet365 pair (84) counted',
       brep.get('dropped: last change after the start') == 1 and brep.get('level out of scope') == 1 and brep.get('joined, no Bet365 on the page') == 1
       and brep.get('batch b365-ch-01: kept, no TE timestamp') == 1, brep)
 check('TE Bet365: te_docs accepts both TE sources; a doc of another source still stops the import', T.te_doc_kind(bdocs[0])[2] == 'b365' and T.te_doc_kind(tdocs[0])[2] == 'pin')
@@ -595,6 +595,14 @@ check('pre-2021: the already-priced lookup is the same two keys +-1 day, either 
 check('names: a hyphenated initial is dotted as Tennis-Data writes it (Struff J.L., Herbert P.H.); plain initials unchanged',
       P.td_name('J-L. Struff') == 'Struff J.L.' and P.td_name('P-H. Herbert') == 'Herbert P.H.'
       and P.td_name('J. M. Cerundolo') == 'Cerundolo J.M.' and P.td_name('A. Zverev') == 'Zverev A.', [P.td_name('J-L. Struff'), P.td_name('P-H. Herbert')])
+# founder 2026-11-03 (ITF: "sample first, then run" — the 30-match sample: 30 joined, 21 Pinnacle): ITF is a TE level now;
+# no verified start exists for it, so the in-play rule reads api-tennis's scheduled start
+idocs = [{'batch': 'itf-s01', 'source': T.TE_SOURCE, 'complete': True, 'rows': [TX(91, lvl='itf'), TX(92, lvl='itf')]}]
+ifx = {'91': F(91, 'Itf Men Singles', d='2026-09-28'), '92': dict(F(92, 'Itf Men Singles', d='2026-09-28'), event_time='12:00')}
+irows, irep = T.te_rows(idocs, ifx.get)
+check('ITF: a Tennis Explorer ITF price is stored at level itf (a snapshot, never a close); one with no start of any kind is not',
+      'itf' in T.TE_LEVELS and [(r['event_key'], r['detail']['level'], r['label']) for r in irows] == [(92, 'itf', 'Pinnacle (approx.)')]
+      and irep.get('not stored: no start of any kind') == 1, (irows, irep))
 # ── founder 2026-11-03: another book, margin removed (one book of a fixed order, only where Pinnacle and Bet365 are missing) ──
 OT = lambda ek, book='Betway', p=(1.8, 2.25), lvl='ch', ts=None: dict(TX(ek, lvl=lvl, pin=None, ka='11', kb='22'), books=[book],
     oth={'book': book, 'p1': p[0], 'p2': p[1], 'margin': 0.05, 'raw': {'p1': 1.72, 'p2': 2.1}, 'p1Ts': ts, 'p2Ts': None, 'open': {}, 'moves': [0, 0]})
