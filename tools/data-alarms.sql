@@ -6,7 +6,7 @@
 --
 -- Rows (thresholds in data_alarms.config, set by the program brief, 1 Nov 2026):
 --   data_age      the live build-info.json data.builtAt is more than 60 min old when read
---   card_state    the live odds-card-state.json generatedAt is more than 60 min old when read (15 after stage 3)
+--   card_state    card prices (the newer of card_state_doc and odds-card-state.json) more than 15 min old, 2 ticks in a row
 --   live_poller   live_snapshot has not been written for 10 min while an ATP singles card is scheduled today
 --                 (Europe/Berlin day, an unfinished card on the live matches.json)
 --   kibl_stream   the kibl-stream worker heartbeat (kibl_now_price, card_key '__stream__') is silent for 10 min
@@ -35,17 +35,22 @@ alter table data_alarms.config add column if not exists confirm_ticks integer no
 alter table data_alarms.config add column if not exists recover_below interval;                     -- once bad, good again only below this (null = threshold)
 insert into data_alarms.config (name, threshold, min_pct, what) values
   ('data_age',    interval '60 minutes', null, 'published site data (build-info.json data.builtAt)'),
-  ('card_state',  interval '60 minutes', null, 'card prices (the newer of card_state_doc and odds-card-state.json)'),
+  ('card_state',  interval '15 minutes', null, 'card prices (the newer of card_state_doc and odds-card-state.json)'),
   ('live_poller', interval '10 minutes', null, 'live poller (live_snapshot.updated_at) while ATP singles are scheduled'),
   ('kibl_stream', interval '10 minutes', null, 'kibl-stream worker heartbeat'),
   ('close_cover', null,                  90,   'yesterday''s Completed cards with a card-book close'),
   ('cron_jobs',   null,                  null, 'scheduled database jobs present and active')
 on conflict (name) do nothing;
--- card prices reach the site 40–60 min after they are built (GitHub runners + the data publish), so the age sits near
--- the 60-min line on a healthy day: 2 bad ticks in a row before the alert, and good again only below 45 min (it flapped
--- ALARM / RECOVERED five times on 1 Nov). Stage 3 moves card state off GitHub and the limit to 15 min.
+-- Before stage 3 card prices reached the site 40–60 min after they were built (GitHub runners + the data publish), so
+-- the age sat near the 60-min line on a healthy day: 2 bad ticks in a row before the alert, and good again only below
+-- 45 min (it flapped ALARM / RECOVERED five times on 1 Nov). Kept for an install that predates the next statement.
 update data_alarms.config set confirm_ticks = 2, recover_below = interval '45 minutes'
  where name = 'card_state' and confirm_ticks = 1 and recover_below is null;
+-- Stage 3 (2026-11-03): the always-on card worker writes card_state_doc every 12–14 min (measured), so the limit drops
+-- to 15 min. Two ticks in a row stay: one slow cycle (age 15–19 min on a single tick) is not an alarm; no new doc for
+-- 20 min is. Once alerted it is good again below 12 min (a fresh doc), so it cannot flap on a 14-min-old one.
+update data_alarms.config set threshold = interval '15 minutes', recover_below = interval '12 minutes'
+ where name = 'card_state' and recover_below = interval '45 minutes';
 
 create table if not exists data_alarms.sources (
     name  text primary key,

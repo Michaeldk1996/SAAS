@@ -119,23 +119,32 @@ def suite(tag, src=SRC):
     answer(build_min=3); tick(); deliver()
     check(f'{tag}data_age: stays fresh → nothing more', len(msgs('data_age')) == 2, msgs('data_age'))
 
-    # card_state (hysteresis): 59 is fine; 61 once is not yet an alarm, twice in a row is; a failed send is sent again;
-    # once bad it recovers only below 45 min (on a healthy day the published age sits near 60 — it flapped on 1 Nov)
-    answer(card_min=59); tick(); deliver()
-    check(f'{tag}card_state: 59 min → no alarm', not msgs('card_state'), msgs('card_state'))
-    answer(card_min=61); tick(); deliver()
-    check(f'{tag}card_state: 61 min on ONE tick → not yet an alarm (2 ticks in a row needed)', not msgs('card_state'), msgs('card_state'))
-    answer(card_min=59); tick(); deliver()
-    answer(card_min=61); tick(); deliver()
+    # card_state (hysteresis, stage 3 limits): 14 is fine; 16 once is not yet an alarm, twice in a row is; a failed send
+    # is sent again; once bad it recovers only below 12 min (the worker writes every 12–14 min: no flap on a 14-min doc)
+    answer(card_min=14); tick(); deliver()
+    check(f'{tag}card_state: 14 min → no alarm', not msgs('card_state'), msgs('card_state'))
+    answer(card_min=16); tick(); deliver()
+    check(f'{tag}card_state: 16 min on ONE tick → not yet an alarm (2 ticks in a row needed)', not msgs('card_state'), msgs('card_state'))
+    answer(card_min=14); tick(); deliver()
+    answer(card_min=16); tick(); deliver()
     check(f'{tag}card_state: a good tick in between resets the count', not msgs('card_state'), msgs('card_state'))
-    answer(card_min=61); tick(); deliver(code=500)
-    answer(card_min=62); tick()
+    answer(card_min=16); tick(); deliver(code=500)
+    answer(card_min=21); tick()
     a = msgs('card_state')
     check(f'{tag}card_state: bad twice in a row → ALARM; a send that failed (HTTP 500) is sent again', len(a) == 2 and 'failed: HTTP 500' in a[0] and 'ALARM' in a[1], a)
-    deliver(); answer(card_min=50); tick(); deliver()
-    check(f'{tag}card_state: 50 min after an alarm → still bad (recovers only below 45)', len(msgs('card_state')) == 2, msgs('card_state'))
-    answer(card_min=40); tick(); deliver()
-    check(f'{tag}card_state: 40 min → RECOVERED', len(msgs('card_state')) == 3 and 'RECOVERED' in msgs('card_state')[2], msgs('card_state'))
+    deliver(); answer(card_min=14); tick(); deliver()
+    check(f'{tag}card_state: 14 min after an alarm → still bad (recovers only below 12)', len(msgs('card_state')) == 2, msgs('card_state'))
+    answer(card_min=10); tick(); deliver()
+    check(f'{tag}card_state: 10 min → RECOVERED', len(msgs('card_state')) == 3 and 'RECOVERED' in msgs('card_state')[2], msgs('card_state'))
+    # an install that predates stage 3 (60 min, recover 45) is moved to the stage-3 limits by the installer
+    check(f'{tag}card_state config: 15 min, 2 ticks, recover below 12',
+          q("select threshold || '|' || confirm_ticks || '|' || recover_below from data_alarms.config where name = 'card_state'").strip() == '00:15:00|2|00:12:00',
+          q("select threshold || '|' || confirm_ticks || '|' || recover_below from data_alarms.config where name = 'card_state'"))
+    q("update data_alarms.config set threshold = interval '60 minutes', recover_below = interval '45 minutes' where name = 'card_state'")
+    q(src)                                          # re-install over a pre-stage-3 config (the live upgrade)
+    check(f'{tag}card_state config: a pre-stage-3 install (60 / 45) is moved to 15 / 12 on re-install',
+          q("select threshold || '|' || recover_below from data_alarms.config where name = 'card_state'").strip() == '00:15:00|00:12:00',
+          q("select threshold || '|' || recover_below from data_alarms.config where name = 'card_state'"))
 
     # stage 3: card prices from the database doc — a fresh card_state_doc keeps the row good though the file is old
     q("create table if not exists public.card_state_doc (id smallint primary key, generated_at timestamptz, doc jsonb)")
