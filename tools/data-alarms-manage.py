@@ -60,7 +60,11 @@ def wait_delivered(where, label, tries=6):
         time.sleep(40)
         sql('select data_alarms.tick()')
         rows = sql(f"select id, alarm, kind, delivery, left(text, 160) as text from data_alarms.messages where {where} order by id")
-        if rows and all(r['delivery'] == 'sent' for r in rows):
+        # delivered = every (row, kind) has a SENT message; a failed attempt the alarm sent again (pg_net TLS errors
+        # happen, the re-send is the design) is not a failure
+        want = {(r['alarm'], r['kind']) for r in rows}
+        sent = {(r['alarm'], r['kind']) for r in rows if r['delivery'] == 'sent'}
+        if rows and want == sent:
             show(label + ' (confirmed delivered)', rows); return True
     show(label + ' (NOT all confirmed)', rows); return False
 

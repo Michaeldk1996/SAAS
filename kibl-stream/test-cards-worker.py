@@ -110,6 +110,21 @@ th = _th.Thread(target=lambda: res.setdefault('r', M.run([sys.executable, '-c', 
 th.start(); th.join(4)
 check('MUTANT caught: without the kill timer a silent hang runs past its timeout', th.is_alive() or 'r' in res)
 
+# paused: main() never builds and never writes
+P = load(os.path.join(HERE, 'cards_worker.py'))
+os.environ.update(CARDS_PAUSED='1', SUPABASE_URL='https://x', SUPABASE_SECRET_KEY='k')
+P.cycle = lambda: (_ for _ in ()).throw(AssertionError('a paused worker built'))
+class _Stop(Exception): pass
+P.time = types.SimpleNamespace(sleep=lambda s: (_ for _ in ()).throw(_Stop()), time=__import__('time').time)
+try:
+    P.main(); paused_ok = False
+except _Stop:
+    paused_ok = True
+except AssertionError:
+    paused_ok = False
+check('CARDS_PAUSED=1: the worker idles — no cycle, no build, no write', paused_ok)
+os.environ.pop('CARDS_PAUSED')
+
 # card-worker-fresh
 F = load(os.path.join(ROOT, 'tools', 'card-worker-fresh.py'))
 

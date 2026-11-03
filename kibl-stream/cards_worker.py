@@ -154,6 +154,11 @@ def main():
     for k in ('SUPABASE_URL', 'SUPABASE_SECRET_KEY'):
         if not os.environ.get(k):
             raise SystemExit(f'missing {k}')
+    if os.environ.get('CARDS_PAUSED') == '1':
+        # paused by the deployment (fly.toml): no build, no write — the GitHub card job builds instead
+        print('cards worker PAUSED (CARDS_PAUSED=1): no builds; the GitHub card job builds the card state', flush=True)
+        while True:
+            time.sleep(3600)
     print(f'cards worker up: every {CYCLE_S} s, repo {REPO}', flush=True)
     while True:
         t0 = time.time()
