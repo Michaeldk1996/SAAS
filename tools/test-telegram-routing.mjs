@@ -49,6 +49,11 @@ const rows = rowsOf([
 check('writer: singles kept, doubles and keyless rows dropped', rows.length === 2 && rows.map((r) => r.event_key).join() === '1,2');
 check('writer: the qualifying flag is carried as api-tennis sends it', rows[1].qual === 'True' && rows[1].type === 'Atp Singles');
 check('writer: api-tennis status + winner carried (no arb alert on a withdrawn match)', rows[1].status === 'Walk Over' && rows[1].winner === 'Second Player' && rows[0].status === null);
+{
+  const dsy = fs.readFileSync(new URL('../.github/workflows/drops-scope.yml', import.meta.url), 'utf8');
+  check('drops-scope install: checks both of its own triggers by name, never an exact count (4 bots carry one since 1 Nov)',
+    /\{'ten280_bot\.alerts', 'ten287_bot\.alerts'\} <= have/.test(dsy) && !/len\(r or \[\]\) != 2/.test(dsy));
+}
 check('writer: counts by type and qualification', JSON.stringify(countByType(rows)) === '{"Atp Singles · qualification False":1,"Atp Singles · qualification True":1}');
 const [a, b] = windowDays(Date.parse('2026-10-30T15:00:00Z'));
 check('writer: window = yesterday .. +4 days, UTC', a === '2026-10-29' && b === '2026-11-03', `${a} ${b}`);

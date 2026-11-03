@@ -57,7 +57,10 @@ jobs:
               if st >= 400: sys.exit(1)
           st, r = sql("select event_object_schema || '.' || event_object_table t from information_schema.triggers where trigger_name = 'drops_scope_scope'")
           print('triggers:', r)
-          if mode == 'install' and (st >= 400 or len(r or []) != 2): print('::error::the two scope triggers are not both installed'); sys.exit(1)
+          # this file installs the trigger on the two Superbet / Bet105 bots; the Polymarket and Kalshi bots install their own
+          # (poly-drop-bot.sql, kalshi-drop-bot.sql, 1 Nov), so the check is that both of OURS exist — never an exact count
+          have = {x.get('t') for x in (r or [])} if st < 400 else set()
+          if mode == 'install' and not {'ten280_bot.alerts', 'ten287_bot.alerts'} <= have: print('::error::the two scope triggers (ten280_bot, ten287_bot) are not both installed'); sys.exit(1)
           PY
       - name: Write the fixture list once
         if: inputs.mode == 'install'
