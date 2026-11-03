@@ -123,5 +123,21 @@ check('every bracket column is at least its widest card (minmax(max-content, …
   gridRules.length === 2 && gridRules.every(r => /minmax\(max-content, 1fr\)/.test(r)), gridRules.join(' | '));
 const yml = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'pipeline.yml'), 'utf8'), sc = fs.readFileSync(path.join(ROOT, 'tools', 'site-code.sh'), 'utf8'), ps = fs.readFileSync(path.join(ROOT, 'tools', 'publish-site.mjs'), 'utf8');
 check('draw-view.js ships on both deploy lanes and is required', /cp draw-view\.js _site\//.test(yml) && /wue-sheet\.js draw-view\.js \\/.test(yml) && sc.includes('cp draw-view.js "$SITE/"') && /'draw-view\.js'/.test(ps));
+// Paris 2026 (fix 2026-11-03): the calendar names the event by its venue city ("Nanterre"), while the results
+// (tournament-progression.json), the board and the W/UE sheet name it "Paris". The draw is joined by its feedCity —
+// before, the bracket showed R64 0 of 24 with 13 matches played and the W/UE bar never drew.
+const PX = JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures', 'draw-view', 'paris-2026-11-03.json'), 'utf8'));
+const pdraw = PX.draws.tournaments['352'];
+check('Paris fixture: calendar city Nanterre, feedCity Paris, 64-slot main + 28-slot qualifying', pdraw.city === 'Nanterre' && pdraw.feedCity === 'Paris' && pdraw.main.size === 64 && pdraw.qualifying.size === 28);
+const pel = { innerHTML: '' };
+DV.mount(pel, { draws: PX.draws, prog: PX.progression, board: [], drawStore: null, city: null, kind: 'main', from: null });
+check('the Draw tab names the event Paris and places its played results (R64 13 of 24)', />Paris</.test(pel.innerHTML) && !/Nanterre/.test(pel.innerHTML) && /R64<\/span><span class="dv-count">13 of 24/.test(pel.innerHTML),
+  (pel.innerHTML.match(/dv-count">[^<]*/g) || []).join(' '));
+DV.set('kind', 'qualifying');
+check('Paris qualifying: 28 slots in sections of 4 → Q1 14 of 14, Q2 7 of 7', /Q1<\/span><span class="dv-count">14 of 14/.test(pel.innerHTML) && /Q2<\/span><span class="dv-count">7 of 7/.test(pel.innerHTML),
+  (pel.innerHTML.match(/dv-count">[^<]*/g) || []).join(' '));
+DV.set('kind', 'main');
+const WS = require(path.join(ROOT, 'wue-sheet.js'));
+check('the W/UE sheet finds the Paris draw by its feed name (status "R64: 13 of 24")', WS.drawFor(PX.draws, 'Paris') === pdraw && WS.roundStatus(PX.progression.tournaments.Paris, pdraw) === 'R64: 13 of 24');
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

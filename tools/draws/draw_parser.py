@@ -171,7 +171,11 @@ def parse_sheet(pdf_bytes):
             raise DrawParseError(f"slot {s['pos']} parsed twice")
         by_pos[s["pos"]] = s
     n = max(by_pos) if by_pos else 0
-    if n == 0 or n & (n - 1):
+    # A main draw is a power of two. A qualifying draw is sections of 2^R slots, R = its "Qualifying Round N" columns:
+    # Paris 2026 qs = 28 slots, 7 sections of 4 (two rounds, 7 qualifiers) — a real sheet, not a parse fault.
+    q_rounds = len(set(re.findall(r"Qualifying Round (\d)", full_text))) if kind == "qualifying" else 0
+    sectioned = kind == "qualifying" and q_rounds > 0 and n > 0 and n % (2 ** q_rounds) == 0
+    if not sectioned and (n == 0 or n & (n - 1)):
         raise DrawParseError(f"draw size {n} is not a power of two ({len(by_pos)} slots parsed)")
     missing = [p for p in range(1, n + 1) if p not in by_pos]
     if missing:

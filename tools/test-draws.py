@@ -66,6 +66,20 @@ check("Shanghai: two-half 1000 sheet → 128 of 128 slots, 32 byes, 32 seeds",
 check("Shanghai: glued '27 BLOCKX' → seed 27; '126 Q' → slot 126 qualifier", sh["slots"][7]["seed"] == 27 and sh["slots"][125]["entry"] == "Q")
 q = DP.parse_sheet(pdf("9410-qs.pdf"))
 check("Almaty qualifying: 16 of 16, kind=qualifying", q["kind"] == "qualifying" and q["size"] == 16 and len(q["slots"]) == 16)
+# Paris 2026 qualifying is 28 players: 7 sections of 4, two rounds, 7 qualifiers. A real sheet, not a short one — it
+# failed every draws run from 31 Oct ("draw size 28 is not a power of two") and froze the Paris main draw too.
+pq = DP.parse_sheet(pdf("352-qs.pdf"))
+check("Paris qualifying: 28 of 28 (7 sections of 4), kind=qualifying, Baez [1] slot 1, Kopriva [11] slot 28",
+      pq["kind"] == "qualifying" and pq["size"] == 28 and [s["pos"] for s in pq["slots"]] == list(range(1, 29))
+      and pq["slots"][0]["name"].startswith("BAEZ") and pq["slots"][27]["seed"] == 11, pq["size"])
+_orig_slots = DP.parse_slots
+DP.parse_slots = lambda page: [s for s in _orig_slots(page) if s["pos"] != 28]
+try:
+    DP.parse_sheet(pdf("352-qs.pdf")); q27 = None
+except DP.DrawParseError as e:
+    q27 = str(e)
+DP.parse_slots = _orig_slots
+check("Paris qualifying with slot 28 lost (27 slots, not whole sections) → DrawParseError", q27 is not None, q27)
 
 # C14 · a short sheet must fail, never publish 31 of 32
 orig = DP.parse_slots

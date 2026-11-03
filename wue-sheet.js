@@ -81,7 +81,7 @@ const BYE_ROW = ['BYE', BLANK, BLANK, BLANK, BLANK, BLANK, BLANK];
 
 function drawFor(draws, tour) {
   const ts = draws && draws.tournaments ? Object.values(draws.tournaments) : [];
-  const hit = ts.filter(t => String(t.city || '').toLowerCase() === String(tour).toLowerCase() && t.main && t.main.status === 'posted');
+  const hit = ts.filter(t => String(t.feedCity || t.city || '').toLowerCase() === String(tour).toLowerCase() && t.main && t.main.status === 'posted');
   return hit.length === 1 ? hit[0] : null;
 }
 function slotName(s) {                            // "DIAZ ACOSTA, Facundo" → "F. Diaz Acosta" (the feed's own style)

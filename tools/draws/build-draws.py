@@ -200,7 +200,10 @@ def main():
     errors = []
     for t in events:
         tid = str(t["atpId"])
+        # feedCity: the name api-tennis, the board and tournament-progression use when the calendar names the venue city
+        # ("Nanterre" for the 2026 Paris Masters, api-tennis "ATP Paris") — the Draw tab and W/UE sheet join on it.
         entry = {"atpId": t["atpId"], "article": t.get("article"), "city": t.get("city"), "category": t.get("category"),
+                 **({"feedCity": t["feedCity"]} if t.get("feedCity") else {}),
                  "startDate": t.get("startDate"), "endDate": t.get("endDate"), "idVerified": t.get("verified", False)}
         try:
             for typ, field in (("mds", "main"), ("qs", "qualifying")):

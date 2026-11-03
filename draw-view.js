@@ -178,8 +178,11 @@ function fmtChanged(iso, tz) {
 
 // state + data the page hands in
 const S = { city: null, kind: 'main', from: null, draws: null, prog: null, board: null, drawStore: null, tz: undefined, el: null };
-function cities() { return S.draws ? Object.values(S.draws.tournaments || {}).filter(t => t.main && t.main.status === 'posted').map(t => t.city).sort() : []; }
-function drawOf(city) { return Object.values((S.draws && S.draws.tournaments) || {}).find(t => t.city === city) || null; }
+// An event is named by its feed city (draws.json `feedCity`, e.g. "Paris" for the 2026 Paris Masters played in Nanterre),
+// the name tournament-progression.json and the board use; else the calendar city.
+const cityOf = t => t.feedCity || t.city;
+function cities() { return S.draws ? Object.values(S.draws.tournaments || {}).filter(t => t.main && t.main.status === 'posted').map(cityOf).sort() : []; }
+function drawOf(city) { return Object.values((S.draws && S.draws.tournaments) || {}).find(t => cityOf(t) === city) || null; }
 function entryOf(city) { const t = S.prog && S.prog.tournaments; if (!t) return null; return t[city] || Object.values(t).find(e => e.feedName === city) || null; }
 function entryName(city) { const t = S.prog && S.prog.tournaments; if (!t) return null; return t[city] ? city : (Object.keys(t).find(k => t[k] && t[k].feedName === city) || null); }
 function boardOf(city) { return (S.board || []).filter(m => String(m.tour || '').replace(/^ATP /, '') === city && !m.finalScore); }
