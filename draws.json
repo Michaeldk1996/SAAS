@@ -1542,15 +1542,19 @@
    "atpId": 352,
    "category": "ATP Tour Masters 1000",
    "city": "Nanterre",
-   "contentChangedAt": "2026-10-30T19:27:38Z",
-   "contentHash": "eb85ede65f13a34c",
+   "contentChangedAt": "2026-11-03T08:33:32Z",
+   "contentHash": "a76ca536324e0c2c",
    "endDate": "2026-11-08",
+   "feedCity": "Paris",
    "idVerified": false,
    "main": {
-    "alternatesLuckyLosers": [],
+    "alternatesLuckyLosers": [
+     "T. Tirante (LL)",
+     "S. Baez (LL)"
+    ],
     "halves": false,
     "lastDirectAcceptance": "Q. Halys - 48",
-    "releasedLocal": "10/30/2026 19:50:05",
+    "releasedLocal": "11/03/2026 00:44:10",
     "seeded": [
      {
       "inDraw": true,
@@ -1577,7 +1581,7 @@
       "seed": 4
      },
      {
-      "inDraw": true,
+      "inDraw": false,
       "name": "Cobolli, Flavio",
       "rank": 6,
       "seed": 5
@@ -1790,13 +1794,13 @@
      },
      {
       "bye": false,
-      "entry": null,
+      "entry": "Q",
       "ioc": null,
-      "keyMatch": "no-name",
-      "name": "Qualifier / Special Exempt",
+      "keyMatch": "surname+given",
+      "name": "HIJIKATA, Rinky",
       "nameSource": "sheet",
       "nameTruncated": false,
-      "playerKey": null,
+      "playerKey": "3317",
       "pos": 12,
       "seed": null,
       "seedRank": null
@@ -1907,26 +1911,26 @@
      },
      {
       "bye": false,
-      "entry": null,
+      "entry": "Q",
       "ioc": null,
-      "keyMatch": "no-name",
-      "name": "Qualifier / Special Exempt",
+      "keyMatch": "surname+given",
+      "name": "BELLUCCI, Mattia",
       "nameSource": "sheet",
       "nameTruncated": false,
-      "playerKey": null,
+      "playerKey": "2112",
       "pos": 21,
       "seed": null,
       "seedRank": null
      },
      {
       "bye": false,
-      "entry": null,
+      "entry": "Q",
       "ioc": null,
-      "keyMatch": "no-name",
-      "name": "Qualifier / Special Exempt",
+      "keyMatch": "surname+given",
+      "name": "SONEGO, Lorenzo",
       "nameSource": "sheet",
       "nameTruncated": false,
-      "playerKey": null,
+      "playerKey": "2843",
       "pos": 22,
       "seed": null,
       "seedRank": null
@@ -1998,13 +2002,13 @@
      },
      {
       "bye": false,
-      "entry": null,
+      "entry": "LL",
       "ioc": null,
       "keyMatch": "surname+given",
-      "name": "BLOCKX, Alexander",
+      "name": "BAEZ, Sebastian",
       "nameSource": "sheet",
       "nameTruncated": false,
-      "playerKey": "39913",
+      "playerKey": "1101",
       "pos": 28,
       "seed": null,
       "seedRank": null
@@ -2063,16 +2067,16 @@
      },
      {
       "bye": false,
-      "entry": null,
+      "entry": "LL",
       "ioc": null,
       "keyMatch": "surname+given",
-      "name": "COBOLLI, Flavio",
+      "name": "TIRANTE, Thiago Agustin",
       "nameSource": "sheet",
       "nameTruncated": false,
-      "playerKey": "372",
+      "playerKey": "366",
       "pos": 33,
-      "seed": 5,
-      "seedRank": 6
+      "seed": null,
+      "seedRank": null
      },
      {
       "bye": true,
@@ -2089,13 +2093,13 @@
      },
      {
       "bye": false,
-      "entry": null,
+      "entry": "SE",
       "ioc": null,
-      "keyMatch": "no-name",
-      "name": "Qualifier / Special Exempt",
+      "keyMatch": "surname+given",
+      "name": "STRUFF, Jan-Lennard",
       "nameSource": "sheet",
       "nameTruncated": false,
-      "playerKey": null,
+      "playerKey": "2831",
       "pos": 35,
       "seed": null,
       "seedRank": null
@@ -2128,13 +2132,13 @@
      },
      {
       "bye": false,
-      "entry": null,
+      "entry": "Q",
       "ioc": null,
-      "keyMatch": "no-name",
-      "name": "Qualifier / Special Exempt",
+      "keyMatch": "surname+given",
+      "name": "CERUNDOLO, Juan Manuel",
       "nameSource": "sheet",
       "nameTruncated": false,
-      "playerKey": null,
+      "playerKey": "388",
       "pos": 38,
       "seed": null,
       "seedRank": null
@@ -2310,26 +2314,26 @@
      },
      {
       "bye": false,
-      "entry": null,
+      "entry": "Q",
       "ioc": null,
-      "keyMatch": "no-name",
-      "name": "Qualifier / Special Exempt",
+      "keyMatch": "surname+given",
+      "name": "MACHAC, Tomas",
       "nameSource": "sheet",
       "nameTruncated": false,
-      "playerKey": null,
+      "playerKey": "2981",
       "pos": 52,
       "seed": null,
       "seedRank": null
      },
      {
       "bye": false,
-      "entry": null,
+      "entry": "Q",
       "ioc": null,
-      "keyMatch": "no-name",
-      "name": "Qualifier / Special Exempt",
+      "keyMatch": "surname+given",
+      "name": "MOLCAN, Alex",
       "nameSource": "sheet",
       "nameTruncated": false,
-      "playerKey": null,
+      "playerKey": "436",
       "pos": 53,
       "seed": null,
       "seedRank": null
@@ -2349,13 +2353,13 @@
      },
      {
       "bye": false,
-      "entry": null,
+      "entry": "Q",
       "ioc": null,
-      "keyMatch": "no-name",
-      "name": "Qualifier / Special Exempt",
+      "keyMatch": "surname+given",
+      "name": "BONZI, Benjamin",
       "nameSource": "sheet",
       "nameTruncated": false,
-      "playerKey": null,
+      "playerKey": "1771",
       "pos": 55,
       "seed": null,
       "seedRank": null
@@ -2479,10 +2483,465 @@
      }
     ],
     "status": "posted",
-    "withdrawals": []
+    "withdrawals": [
+     "A. Blockx (Right ankle)",
+     "F. Cobolli (Left leg)"
+    ]
    },
    "qualifying": {
-    "status": "not_posted"
+    "alternatesLuckyLosers": [],
+    "halves": false,
+    "lastDirectAcceptance": "L. Sonego -87 (1Alt)",
+    "releasedLocal": "11/03/2026 00:44:10",
+    "seeded": [
+     {
+      "inDraw": true,
+      "name": "Baez, Sebastian",
+      "rank": 49,
+      "seed": 1
+     },
+     {
+      "inDraw": true,
+      "name": "Griekspoor, Tallon",
+      "rank": 50,
+      "seed": 2
+     },
+     {
+      "inDraw": true,
+      "name": "Tirante, Thiago Agustin",
+      "rank": 51,
+      "seed": 3
+     },
+     {
+      "inDraw": true,
+      "name": "Borges, Nuno",
+      "rank": 53,
+      "seed": 4
+     },
+     {
+      "inDraw": true,
+      "name": "Cerundolo, Juan Manuel",
+      "rank": 54,
+      "seed": 5
+     },
+     {
+      "inDraw": true,
+      "name": "Vallejo, Adolfo Daniel",
+      "rank": 56,
+      "seed": 6
+     },
+     {
+      "inDraw": true,
+      "name": "Faria, Jaime",
+      "rank": 57,
+      "seed": 7
+     },
+     {
+      "inDraw": true,
+      "name": "Kecmanovic, Miomir",
+      "rank": 58,
+      "seed": 8
+     },
+     {
+      "inDraw": true,
+      "name": "Altmaier, Daniel",
+      "rank": 60,
+      "seed": 10
+     },
+     {
+      "inDraw": true,
+      "name": "Kopriva, Vit",
+      "rank": 64,
+      "seed": 11
+     },
+     {
+      "inDraw": true,
+      "name": "Munar, Jaume",
+      "rank": 65,
+      "seed": 12
+     },
+     {
+      "inDraw": true,
+      "name": "Bellucci, Mattia",
+      "rank": 66,
+      "seed": 13
+     },
+     {
+      "inDraw": true,
+      "name": "Landaluce, Martin",
+      "rank": 67,
+      "seed": 14
+     }
+    ],
+    "size": 28,
+    "slots": [
+     {
+      "bye": false,
+      "entry": null,
+      "ioc": "ARG",
+      "keyMatch": "surname+given",
+      "name": "BAEZ, Sebastian",
+      "nameSource": "sheet",
+      "nameTruncated": false,
+      "playerKey": "1101",
+      "pos": 1,
+      "seed": 1,
+      "seedRank": 49
+     },
+     {
+      "bye": false,
+      "entry": null,
+      "ioc": "BIH",
+      "keyMatch": "surname+given",
+      "name": "DZUMHUR, Damir",
+      "nameSource": "sheet",
+      "nameTruncated": false,
+      "playerKey": "1079",
+      "pos": 2,
+      "seed": null,
+      "seedRank": null
+     },
+     {
+      "bye": false,
+      "entry": null,
+      "ioc": "CZE",
+      "keyMatch": "surname+given",
+      "name": "MACHAC, Tomas",
+      "nameSource": "sheet",
+      "nameTruncated": false,
+      "playerKey": "2981",
+      "pos": 3,
+      "seed": null,
+      "seedRank": null
+     },
+     {
+      "bye": false,
+      "entry": null,
+      "ioc": "ESP",
+      "keyMatch": "surname+given",
+      "name": "LANDALUCE, Martin",
+      "nameSource": "sheet",
+      "nameTruncated": false,
+      "playerKey": "39864",
+      "pos": 4,
+      "seed": 14,
+      "seedRank": 67
+     },
+     {
+      "bye": false,
+      "entry": null,
+      "ioc": "NED",
+      "keyMatch": "surname+given",
+      "name": "GRIEKSPOOR, Tallon",
+      "nameSource": "sheet",
+      "nameTruncated": false,
+      "playerKey": "427",
+      "pos": 5,
+      "seed": 2,
+      "seedRank": 50
+     },
+     {
+      "bye": false,
+      "entry": "WC",
+      "ioc": "FRA",
+      "keyMatch": "surname+given",
+      "name": "BONZI, Benjamin",
+      "nameSource": "sheet",
+      "nameTruncated": false,
+      "playerKey": "1771",
+      "pos": 6,
+      "seed": null,
+      "seedRank": null
+     },
+     {
+      "bye": false,
+      "entry": "WC",
+      "ioc": "FRA",
+      "keyMatch": "surname+given",
+      "name": "BALSHAW, Felix",
+      "nameSource": "sheet",
+      "nameTruncated": false,
+      "playerKey": "52682",
+      "pos": 7,
+      "seed": null,
+      "seedRank": null
+     },
+     {
+      "bye": false,
+      "entry": null,
+      "ioc": "GER",
+      "keyMatch": "surname+given",
+      "name": "HANFMANN, Yannick",
+      "nameSource": "sheet",
+      "nameTruncated": false,
+      "playerKey": "1764",
+      "pos": 8,
+      "seed": 9,
+      "seedRank": null
+     },
+     {
+      "bye": false,
+      "entry": null,
+      "ioc": "ARG",
+      "keyMatch": "surname+given",
+      "name": "TIRANTE, Thiago Agustin",
+      "nameSource": "seeded-table",
+      "nameTruncated": false,
+      "playerKey": "366",
+      "pos": 9,
+      "seed": 3,
+      "seedRank": 51
+     },
+     {
+      "bye": false,
+      "entry": null,
+      "ioc": "USA",
+      "keyMatch": "surname+given",
+      "name": "SVAJDA, Zachary",
+      "nameSource": "sheet",
+      "nameTruncated": false,
+      "playerKey": "2986",
+      "pos": 10,
+      "seed": null,
+      "seedRank": null
+     },
+     {
+      "bye": false,
+      "entry": null,
+      "ioc": "ESP",
+      "keyMatch": "surname+given",
+      "name": "CARRENO BUSTA, Pa…",
+      "nameSource": "sheet",
+      "nameTruncated": true,
+      "playerKey": "434",
+      "pos": 11,
+      "seed": null,
+      "seedRank": null
+     },
+     {
+      "bye": false,
+      "entry": null,
+      "ioc": "ITA",
+      "keyMatch": "surname+given",
+      "name": "BELLUCCI, Mattia",
+      "nameSource": "sheet",
+      "nameTruncated": false,
+      "playerKey": "2112",
+      "pos": 12,
+      "seed": 13,
+      "seedRank": 66
+     },
+     {
+      "bye": false,
+      "entry": null,
+      "ioc": "POR",
+      "keyMatch": "surname+given",
+      "name": "BORGES, Nuno",
+      "nameSource": "sheet",
+      "nameTruncated": false,
+      "playerKey": "358",
+      "pos": 13,
+      "seed": 4,
+      "seedRank": 53
+     },
+     {
+      "bye": false,
+      "entry": null,
+      "ioc": "FRA",
+      "keyMatch": "surname+given",
+      "name": "MANNARINO, Adrian",
+      "nameSource": "sheet",
+      "nameTruncated": false,
+      "playerKey": "438",
+      "pos": 14,
+      "seed": null,
+      "seedRank": null
+     },
+     {
+      "bye": false,
+      "entry": null,
+      "ioc": "SVK",
+      "keyMatch": "surname+given",
+      "name": "MOLCAN, Alex",
+      "nameSource": "sheet",
+      "nameTruncated": false,
+      "playerKey": "436",
+      "pos": 15,
+      "seed": null,
+      "seedRank": null
+     },
+     {
+      "bye": false,
+      "entry": null,
+      "ioc": "GER",
+      "keyMatch": "surname+given",
+      "name": "ALTMAIER, Daniel",
+      "nameSource": "sheet",
+      "nameTruncated": false,
+      "playerKey": "1099",
+      "pos": 16,
+      "seed": 10,
+      "seedRank": 60
+     },
+     {
+      "bye": false,
+      "entry": null,
+      "ioc": "ARG",
+      "keyMatch": "surname+given",
+      "name": "CERUNDOLO, Juan Manuel",
+      "nameSource": "seeded-table",
+      "nameTruncated": false,
+      "playerKey": "388",
+      "pos": 17,
+      "seed": 5,
+      "seedRank": 54
+     },
+     {
+      "bye": false,
+      "entry": null,
+      "ioc": "USA",
+      "keyMatch": "surname+given",
+      "name": "KOVACEVIC, Aleksandar",
+      "nameSource": "sheet",
+      "nameTruncated": false,
+      "playerKey": "2978",
+      "pos": 18,
+      "seed": null,
+      "seedRank": null
+     },
+     {
+      "bye": false,
+      "entry": null,
+      "ioc": "AUS",
+      "keyMatch": "surname+given",
+      "name": "DUCKWORTH, James",
+      "nameSource": "sheet",
+      "nameTruncated": false,
+      "playerKey": "1900",
+      "pos": 19,
+      "seed": null,
+      "seedRank": null
+     },
+     {
+      "bye": false,
+      "entry": null,
+      "ioc": "SRB",
+      "keyMatch": "surname+given",
+      "name": "KECMANOVIC, Miomir",
+      "nameSource": "sheet",
+      "nameTruncated": false,
+      "playerKey": "2848",
+      "pos": 20,
+      "seed": 8,
+      "seedRank": 58
+     },
+     {
+      "bye": false,
+      "entry": null,
+      "ioc": "PAR",
+      "keyMatch": "surname+given",
+      "name": "VALLEJO, Adolfo Daniel",
+      "nameSource": "seeded-table",
+      "nameTruncated": false,
+      "playerKey": "9217",
+      "pos": 21,
+      "seed": 6,
+      "seedRank": 56
+     },
+     {
+      "bye": false,
+      "entry": "WC",
+      "ioc": "BUL",
+      "keyMatch": "surname+given",
+      "name": "DIMITROV, Grigor",
+      "nameSource": "sheet",
+      "nameTruncated": false,
+      "playerKey": "2384",
+      "pos": 22,
+      "seed": null,
+      "seedRank": null
+     },
+     {
+      "bye": false,
+      "entry": null,
+      "ioc": "ITA",
+      "keyMatch": "surname+given",
+      "name": "SONEGO, Lorenzo",
+      "nameSource": "sheet",
+      "nameTruncated": false,
+      "playerKey": "2843",
+      "pos": 23,
+      "seed": null,
+      "seedRank": null
+     },
+     {
+      "bye": false,
+      "entry": null,
+      "ioc": "ESP",
+      "keyMatch": "surname+given",
+      "name": "MUNAR, Jaume",
+      "nameSource": "sheet",
+      "nameTruncated": false,
+      "playerKey": "2083",
+      "pos": 24,
+      "seed": 12,
+      "seedRank": 65
+     },
+     {
+      "bye": false,
+      "entry": null,
+      "ioc": "POR",
+      "keyMatch": "surname+given",
+      "name": "FARIA, Jaime",
+      "nameSource": "sheet",
+      "nameTruncated": false,
+      "playerKey": "824",
+      "pos": 25,
+      "seed": 7,
+      "seedRank": 57
+     },
+     {
+      "bye": false,
+      "entry": null,
+      "ioc": "AUS",
+      "keyMatch": "surname+given",
+      "name": "HIJIKATA, Rinky",
+      "nameSource": "sheet",
+      "nameTruncated": false,
+      "playerKey": "3317",
+      "pos": 26,
+      "seed": null,
+      "seedRank": null
+     },
+     {
+      "bye": false,
+      "entry": "WC",
+      "ioc": "FRA",
+      "keyMatch": "surname+given",
+      "name": "GASTON, Hugo",
+      "nameSource": "sheet",
+      "nameTruncated": false,
+      "playerKey": "1102",
+      "pos": 27,
+      "seed": null,
+      "seedRank": null
+     },
+     {
+      "bye": false,
+      "entry": null,
+      "ioc": "CZE",
+      "keyMatch": "surname+given",
+      "name": "KOPRIVA, Vit",
+      "nameSource": "sheet",
+      "nameTruncated": false,
+      "playerKey": "1083",
+      "pos": 28,
+      "seed": 11,
+      "seedRank": 64
+     }
+    ],
+    "status": "posted",
+    "withdrawals": []
    },
    "sheetHeader": {
     "city": "Paris",
