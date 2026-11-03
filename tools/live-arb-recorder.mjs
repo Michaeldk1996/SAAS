@@ -16,10 +16,12 @@
 // --push 1 (live-arb.yml): every 5 s the current positive gaps + a heartbeat go to public.arb_live_push (Supabase, service
 // role), which feeds Dropping Odds → Arbitrage → Live and posts ⚡ LIVE ARB to the drop chat (rules there, tools/arb-engine.sql).
 import { mkdirSync, appendFileSync, writeFileSync } from 'node:fs';
+import { createSign, constants as CC } from 'node:crypto';
 
 export const GAMMA = 'https://gamma-api.polymarket.com';
 export const KALSHI = 'https://api.elections.kalshi.com/trade-api/v2';
 export const POLY_WS = 'wss://ws-subscriptions-clob.polymarket.com/ws/market';
+export const KALSHI_WS = 'wss://api.elections.kalshi.com/trade-api/ws/v2';
 export const FEE = { kalshi: 0.07, poly: 0.05 };
 export const STALE_MS = { kalshi: 8000, poly: 120000 };   // Kalshi is polled (2 s); a Polymarket book only changes on an order
 
@@ -116,12 +118,13 @@ export class Books {
 // (the NO size is not on the listing, so a NO leg carries no size and is never sized).
 export function evaluate(pair, books, kalAt, now) {
   const out = [];
+  if (pair.kalAt != null) kalAt = pair.kalAt;   // the Kalshi websocket's own clock for this pair (KalshiFeed)
   if (kalAt == null || now - kalAt > STALE_MS.kalshi) return out;
   const kSide = (idx) => {
     const me = pair.km.p[idx], other = pair.km.p[1 - idx];
     const legs = [];
     if (me.yesAsk > 0 && me.yesAsk < 1) legs.push({ price: me.yesAsk, size: me.yesSize, how: 'yes ' + me.ticker });
-    if (other.noAsk > 0 && other.noAsk < 1) legs.push({ price: other.noAsk, size: null, how: 'no ' + other.ticker });
+    if (other.noAsk > 0 && other.noAsk < 1) legs.push({ price: other.noAsk, size: other.noSize ?? null, how: 'no ' + other.ticker });
     legs.sort((x, y) => x.price - y.price);
     return legs[0] || null;
   };
@@ -205,6 +208,71 @@ export class PolyFeed {
   stop() { this.stopAt = 0; const w = this.ws; this.ws = null; try { w && w.close(); } catch {} }
 }
 
+// Kalshi's authenticated market websocket (founder 2026-11-03: "fix this too"). Turned on by the repository secrets
+// KALSHI_API_KEY_ID + KALSHI_PRIVATE_KEY (an RSA key made on the Kalshi account → API keys); without them the worker polls
+// the public list every 2 s as before. Signature = RSA-PSS SHA-256 of timestamp + "GET" + "/trade-api/ws/v2" (Kalshi docs).
+// Channel orderbook_delta: a snapshot then deltas of the YES and NO bid books per market. Kalshi holds bids only, so
+// YES ask = 1 − best NO bid (size = that NO bid's quantity) and NO ask = 1 − best YES bid (size = that quantity): both
+// ways in are sized. A close drops the books; the pair falls back to the polled list until a new snapshot arrives.
+export function kalshiSign(privateKeyPem, ts, path = '/trade-api/ws/v2') {
+  const s = createSign('sha256'); s.update(String(ts) + 'GET' + path); s.end();
+  return s.sign({ key: privateKeyPem, padding: CC.RSA_PKCS1_PSS_PADDING, saltLength: CC.RSA_PSS_SALTLEN_DIGEST }, 'base64');
+}
+const px = (v) => { const n = Number(v); return !isFinite(n) ? null : (String(v).includes('.') ? n : n / 100); };   // dollars, or cents
+export class KalshiFeed {
+  constructor({ WS, url = KALSHI_WS, keyId, privateKey, stopAt = Infinity, onMessage = () => {}, onDrop = () => {}, now = () => Date.now(), later = (f, ms) => setTimeout(f, ms) }) {
+    Object.assign(this, { WS, url, keyId, privateKey, stopAt, onMessage, onDrop, now, later });
+    this.ws = null; this.sig = ''; this.tickers = []; this.book = new Map(); this.msgId = 0;
+  }
+  headers() { const ts = this.now(); return { 'KALSHI-ACCESS-KEY': this.keyId, 'KALSHI-ACCESS-TIMESTAMP': String(ts), 'KALSHI-ACCESS-SIGNATURE': kalshiSign(this.privateKey, ts) }; }
+  set(tickers) {
+    const sig = tickers.slice().sort().join(',');
+    if (sig === this.sig && this.ws && this.ws.readyState <= 1) return false;
+    this.sig = sig; this.tickers = tickers.slice(); this.open(); return true;
+  }
+  open() {
+    const old = this.ws; this.ws = null; try { old && old.close(); } catch {}
+    this.book.clear();
+    if (!this.tickers.length || this.now() >= this.stopAt) return;
+    const me = new this.WS(this.url, { headers: this.headers() }); this.ws = me;
+    me.onopen = () => { if (this.ws === me) me.send(JSON.stringify({ id: ++this.msgId, cmd: 'subscribe', params: { channels: ['orderbook_delta'], market_tickers: this.tickers } })); };
+    me.onmessage = (ev) => {
+      if (this.ws !== me) return;
+      let d; try { d = JSON.parse(ev.data); } catch { return; }
+      const m = d.msg || {}, t = m.market_ticker, at = this.now();
+      if (d.type === 'orderbook_snapshot' && t) {
+        const side = (arr) => { const b = new Map(); for (const [p, q] of arr || []) { const pr = px(p), qq = Number(q); if (pr != null && qq > 0) b.set(pr, qq); } return b; };
+        this.book.set(t, { yes: side(m.yes_dollars || m.yes), no: side(m.no_dollars || m.no), at });
+      } else if (d.type === 'orderbook_delta' && t && this.book.has(t)) {
+        const b = this.book.get(t), bk = b[m.side === 'no' ? 'no' : 'yes'], pr = px(m.price_dollars ?? m.price), dq = Number(m.delta_fp ?? m.delta);
+        if (pr != null && isFinite(dq)) { const q = (bk.get(pr) || 0) + dq; if (q > 0) bk.set(pr, q); else bk.delete(pr); }
+        b.at = at;
+      } else return;
+      this.onMessage(t, at);
+    };
+    me.onclose = () => {
+      if (this.ws !== me) return;
+      this.ws = null; this.book.clear(); this.onDrop();
+      if (this.now() < this.stopAt) this.later(() => { if (!this.ws) this.open(); }, 2000);
+    };
+    me.onerror = () => {};
+  }
+  // the player market's YES / NO ask (and the size at each) from the live books, or null without a snapshot
+  quote(ticker) {
+    const b = this.book.get(ticker); if (!b || !this.ws) return null;
+    const best = (m) => { let p = -1, q = 0; for (const [k, v] of m) if (k > p) { p = k; q = v; } return p < 0 ? null : { p, q }; };
+    const bn = best(b.no), by = best(b.yes);
+    return { yesAsk: bn ? +(1 - bn.p).toFixed(4) : null, yesSize: bn ? bn.q : null, noAsk: by ? +(1 - by.p).toFixed(4) : null, noSize: by ? by.q : null, at: b.at };
+  }
+  // a Kalshi match with both player markets on the live books → its prices from the books and its own clock
+  overlay(km) {
+    const q = km.p.map((x) => this.quote(x.ticker)); if (q.some((x) => !x)) return null;
+    return { ev: km.ev, live: true, p: km.p.map((x, i) => ({ ...x, yesAsk: q[i].yesAsk, yesSize: q[i].yesSize, noAsk: q[i].noAsk, noSize: q[i].noSize })),
+      at: this.now() };
+  }
+  stop() { this.stopAt = 0; const w = this.ws; this.ws = null; try { w && w.close(); } catch {} }
+}
+
 // One row per positive gap for the database push (public.arb_live_push): the page's live list and the ⚡ alert.
 export function gapRow(pair, e, ctx) {
   const polyCost = e.polyAsk + polyFee(e.polyAsk), kalCost = e.kalAsk + kalshiFee(e.kalAsk);
@@ -263,14 +331,23 @@ async function main() {
 
   const feed = new PolyFeed({ WS: WebSocket, url: POLY_WS, books, stopAt: stop,
     onMessages: (k, now) => { stats.wsMessages += k; tick(now); }, onDrop: () => { stats.wsReconnects++; } });
-  const subscribe = () => feed.set(pairs.flatMap((p) => [p.pm.tokA, p.pm.tokB]));
+  const kKey = (process.env.KALSHI_API_KEY_ID || '').trim(), kPem = (process.env.KALSHI_PRIVATE_KEY || '').replace(/\\n/g, '\n').trim();
+  stats.kalshiFeed = kKey && kPem ? 'websocket' : 'polling'; stats.kalshiWsMessages = 0; stats.kalshiWsDrops = 0;
+  const kfeed = stats.kalshiFeed === 'websocket' ? new KalshiFeed({ WS: WebSocket, keyId: kKey, privateKey: kPem, stopAt: stop,
+    onMessage: (t, now) => { stats.kalshiWsMessages++; refreshKal(now); }, onDrop: () => { stats.kalshiWsDrops++; } }) : null;
+  const refreshKal = (now) => {   // pairs on the live Kalshi books take their prices and clock from them
+    if (!kfeed) return;
+    for (const p of pairs) { const o = kfeed.overlay(p.km.base || p.km); if (o) { o.base = p.km.base || p.km; p.km = o; p.kalAt = now; } else { p.km = p.km.base || p.km; p.kalAt = undefined; } }
+    tick(now);
+  };
+  const subscribe = () => { feed.set(pairs.flatMap((p) => [p.pm.tokA, p.pm.tokB])); if (kfeed) kfeed.set(pairs.flatMap((p) => p.km.p.map((x) => x.ticker))); };
   const tick = (now) => {
     for (const p of pairs) {
       const started = p.pm.live || (p.pm.start != null && now >= p.pm.start), live = started;
       if (p.pm.live) stats.liveMatchesSeen.add(p.pm.title);
       stats.evaluations++;
       const ev = evaluate(p, books, kalAt, now);
-      latest.set(p.key, { p, ev, inPlay: p.pm.live, started, kalAt, polyAt: Math.max(books.at.get(p.pm.tokA) || 0, books.at.get(p.pm.tokB) || 0) });
+      latest.set(p.key, { p, ev, inPlay: p.pm.live, started, kalAt: p.kalAt ?? kalAt, polyAt: Math.max(books.at.get(p.pm.tokA) || 0, books.at.get(p.pm.tokB) || 0) });
       for (const e of ev) { const c = closest.get(p.pm.title); if (!c || e.cost < c.cost) closest.set(p.pm.title, { cost: e.cost, edge: e.edge, dir: e.dir, live, at: new Date(now).toISOString() }); }
       E.update(p, ev, now, live);
     }
@@ -286,8 +363,8 @@ async function main() {
   const refreshGamma = async () => { try { poly = polyMatches(await polyAll()); stats.gammaRefreshes++; rejoin(); } catch (e) { stats.gammaErrors++; log('gamma', e.message); } };
   const pollKalshi = async () => {
     try { kal = await kalshiAll(); kalAt = Date.now(); stats.kalshiPolls++; const kk = kalshiMatches(kal);
-      for (const p of pairs) { const k = kk.find((x) => x.ev === p.km.ev); if (k) p.km = k; }
-      tick(kalAt);
+      for (const p of pairs) { const k = kk.find((x) => x.ev === p.km.ev); if (k) { p.km = k; p.kalAt = undefined; } }
+      if (kfeed) refreshKal(Date.now()); else tick(kalAt);
     } catch (e) { stats.kalshiErrors++; if (stats.kalshiErrors % 20 === 1) log('kalshi', e.message); }
   };
   await pollKalshi(); await refreshGamma();
@@ -300,7 +377,7 @@ async function main() {
     const gaps = [];
     for (const [k, L] of latest) { if (!keys.has(k)) continue; for (const e of L.ev) if (e.edge > 0) gaps.push(gapRow(L.p, e, L)); }
     const body = JSON.stringify({ p: { gaps, worker: { pairs: pairs.length, live: pairs.filter((p) => p.pm.live).length, kalshiPolls: stats.kalshiPolls,
-      kalshiErrors: stats.kalshiErrors, wsMessages: stats.wsMessages, wsReconnects: stats.wsReconnects, run: process.env.GITHUB_RUN_ID || null } } });
+      kalshiErrors: stats.kalshiErrors, kalshiFeed: stats.kalshiFeed, kalshiWsMessages: stats.kalshiWsMessages, kalshiWsDrops: stats.kalshiWsDrops, wsMessages: stats.wsMessages, wsReconnects: stats.wsReconnects, run: process.env.GITHUB_RUN_ID || null } } });
     try {
       const r = await fetch(sbUrl + '/rest/v1/rpc/arb_live_push', { method: 'POST', body, signal: AbortSignal.timeout(15e3),
         headers: { apikey: sbKey, Authorization: 'Bearer ' + sbKey, 'Content-Type': 'application/json' } });
@@ -313,8 +390,10 @@ async function main() {
   const gT = setInterval(refreshGamma, 60e3);
   const pingT = setInterval(() => { feed.ping(); }, 10e3);
   const repT = setInterval(() => log(`pairs ${pairs.length} live ${pairs.filter((p) => p.pm.live).length} open ${E.open.size} closed ${eps.length} ws ${stats.wsMessages} kalshi ${stats.kalshiPolls}/${stats.kalshiErrors} push ${stats.pushes}/${stats.pushErrors} posted ${stats.posted}`), 300e3);
-  while (Date.now() < stop) { const t = Date.now(); await pollKalshi(); await new Promise((r) => setTimeout(r, Math.max(0, POLL_S * 1000 - (Date.now() - t)))); }
-  clearInterval(gT); clearInterval(pingT); if (pushT) clearInterval(pushT); clearInterval(repT); E.closeAll(Date.now()); feed.stop();
+  log('kalshi prices: ' + stats.kalshiFeed);
+  const pollMs = () => (kfeed && kfeed.ws && kfeed.ws.readyState === 1 && kfeed.book.size ? 30e3 : POLL_S * 1000);   // the list for new matches; prices from the feed
+  while (Date.now() < stop) { const t = Date.now(); await pollKalshi(); await new Promise((r) => setTimeout(r, Math.max(0, pollMs() - (Date.now() - t)))); }
+  clearInterval(gT); clearInterval(pingT); if (pushT) clearInterval(pushT); clearInterval(repT); E.closeAll(Date.now()); feed.stop(); if (kfeed) kfeed.stop();
   const meta = { from: new Date(t0).toISOString(), to: new Date().toISOString(), minutes, pollS: POLL_S, fees: FEE,
     ...stats, liveMatchesSeen: stats.liveMatchesSeen.size, pairsSeen: stats.pairsSeen.size,
     closestPerMatch: [...closest].map(([match, c]) => ({ match, ...c })).sort((a, b) => a.cost - b.cost).slice(0, 15) };

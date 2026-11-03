@@ -71,12 +71,18 @@ answers on card 37612d3d (TEN-294 doc `design`). Suite: `test-ten294-drops.mjs`.
   bookmaker. Telegram ⚖️ ARB / 📐 DIVERGENCE to the drop chat, one per match + kind + source(s) per 30 min. Page: Dropping Odds
   → Arbitrage (`arb-page.js`, reads `public.arb_now()` with the publishable key every 30 s; a plain first build the founder
   designs later). **Test:** `tools/test-arb-engine-sql.py`, `test-arb-page.mjs`.
+  **The page reads the stored result** (`arb.snap`, written by every tick) while it is ≤ 10 min old (founder 2026-11-03),
+  recomputed only after that. **A failed Telegram send is re-sent once** while ≤ 15 min old, any kind (`arb.alerts.retries`).
 - **Live arbitrage, Kalshi × Polymarket** (founder 2026-11-02, "Let's go!"; ATP tour only). `tools/live-arb-recorder.mjs`,
   run by `live-arb.yml` (main only, 350-min runs, an hourly start keeps one queued so the next starts as the current ends):
   Polymarket's public CLOB websocket (every book change) + Kalshi's public `KXATPMATCH` list every 2 s (YES ask + size; the
   opponent's NO ask as the other way in, never sized). Only the current Polymarket socket reacts to a close (a replaced one is ignored); a dropped feed
   clears its books, so no gap is ever read off a dead feed; a match whose two Polymarket asks sum under 0.98 is not read
-  (an inconsistent book). A pair joins on both names, exactly one candidate each way; Kalshi
+  (an inconsistent book). **Kalshi's websocket** (founder 2026-11-03): with the repo secrets `KALSHI_API_KEY_ID` +
+  `KALSHI_PRIVATE_KEY` the worker reads Kalshi's `orderbook_delta` feed (RSA-PSS signed headers) — YES ask = 1 − best NO bid,
+  NO ask = 1 − best YES bid, each sized — and polls the list only every 30 s for new matches; without them, or while the
+  feed is down, the 2-s polling stands. **Thresholds ruled** (founder 2026-11-03, "Yes"): 1% after fees, $100 to lock in,
+  10 min per match + direction. A pair joins on both names, exactly one candidate each way; Kalshi
   Challengers (`KXATPCHALLENGERMATCH`) are never read. Gap = back one player on each market for < $1 after both taker fees
   (the engine's 0.07·q(1−q) / 0.05·p(1−p)). Every 5 s the positive gaps + a heartbeat go to `public.arb_live_push`
   (service role). **Test:** a gap posts ⚡ LIVE ARB (drop chat, the engine's `arb.send`) only when edge ≥ `config.live_min`

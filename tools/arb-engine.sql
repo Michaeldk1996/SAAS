@@ -61,6 +61,7 @@ create table if not exists arb.alerts (
 );
 create index if not exists arb_alerts_key_idx on arb.alerts (akey, created_at);
 -- LIVE (founder 2026-11-02): the in-play Kalshi × Polymarket worker posts its gaps here as kind 'live'.
+alter table arb.alerts add column if not exists retries integer not null default 0;   -- Telegram re-sends (founder 2026-11-03)
 alter table arb.alerts drop constraint if exists alerts_kind_check;
 alter table arb.alerts add constraint alerts_kind_check check (kind in ('arb', 'divergence', 'live'));
 alter table arb.config add column if not exists live_min      numeric  not null default 1;                      -- % after fees
@@ -74,7 +75,8 @@ create table if not exists arb.live_state (
 );
 insert into arb.live_state (id) values (true) on conflict (id) do nothing;
 -- arb.tick() stores each 30-s result here; the page reads it (arb.opps() takes ~3 s, the anon statement limit:
--- measured 2 Nov 11:22Z, 1 read in 4 timed out). Older than 2 min (engine stopped) → computed on the spot.
+-- measured 2 Nov 11:22Z, 1 read in 4 timed out). Served up to 10 min old (founder 2026-11-03: a few skipped ticks timed the
+-- page out again, 3 Nov 06:03Z, at 2 min); older (engine stopped) → computed on the spot.
 create table if not exists arb.snap (
     id    boolean primary key default true check (id),
     at    timestamptz,
@@ -271,7 +273,7 @@ language sql stable security definer set search_path = pg_catalog, public as $$
                 where (g->>'edge')::numeric >= c.live_min and (c.min_liq is null or (g->>'stake')::numeric >= c.min_liq))
             end,
     'config', (o->'config') || jsonb_build_object('liveMin', c.live_min))
-  from (select case when s.at > now() - interval '2 minutes' then s.opps else arb.opps() end as o
+  from (select case when s.at > now() - interval '10 minutes' then s.opps else arb.opps() end as o
           from (select 1) one left join arb.snap s on s.id) oo(o), arb.live_state l, arb.config c $$;
 revoke all on function public.arb_now() from public;
 do $$ begin
@@ -346,6 +348,14 @@ begin
   update arb.alerts a set delivery = case when r.status_code between 200 and 299 then 'sent'
                                          else 'failed: ' || coalesce('HTTP ' || r.status_code, r.error_msg, 'no response') end
     from net._http_response r where a.delivery = 'queued' and r.id = a.net_request_id;
+  -- one re-send for an alert Telegram did not take (founder 2026-11-03: 3 of 13 live alerts timed out at the TLS handshake
+  -- on 2 Nov), only while it is fresh (15 min): any kind, the same message, recorded on the row.
+  for x in select to_jsonb(a) from arb.alerts a where a.delivery like 'failed:%' and a.retries = 0 and a.created_at > now() - interval '15 minutes' loop
+    rid := arb.send(x->>'message');
+    update arb.alerts set retries = 1, net_request_id = coalesce(rid, net_request_id), sent_at = case when rid is not null then now() else sent_at end,
+           delivery = case when rid is null then 'unsent: no vault secret' else 'queued' end
+     where id = (x->>'id')::bigint;
+  end loop;
   select * into c from arb.config;
   o := arb.opps();
   insert into arb.snap (id, at, opps) values (true, now(), o) on conflict (id) do update set at = excluded.at, opps = excluded.opps;

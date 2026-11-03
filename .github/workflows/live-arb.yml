@@ -42,11 +42,14 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: '24'
       - name: Record + push live gaps
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          # Kalshi's live websocket (founder 2026-11-03): set both on the repo to switch from polling to the feed.
+          KALSHI_API_KEY_ID: ${{ secrets.KALSHI_API_KEY_ID }}
+          KALSHI_PRIVATE_KEY: ${{ secrets.KALSHI_PRIVATE_KEY }}
         run: node tools/live-arb-recorder.mjs --minutes "${{ inputs.minutes || '350' }}" --out live-arb --push 1
       - uses: actions/upload-artifact@v4
         if: always()

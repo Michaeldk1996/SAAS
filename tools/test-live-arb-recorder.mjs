@@ -2,7 +2,8 @@
 // stale legs and episodes. Each check names the mutation it catches.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { samePlayer, polyMatches, kalshiMatches, joinPairs, kalshiFee, polyFee, Books, evaluate, Episodes, summarise, gapRow, PolyFeed } from './live-arb-recorder.mjs';
+import { generateKeyPairSync, createVerify, constants as CC } from 'node:crypto';
+import { samePlayer, polyMatches, kalshiMatches, joinPairs, kalshiFee, polyFee, Books, evaluate, Episodes, summarise, gapRow, PolyFeed, KalshiFeed, kalshiSign } from './live-arb-recorder.mjs';
 
 const ev = (id, a, b, extra = {}) => ({ id, title: `X: ${a} vs ${b}`, live: false, ...extra,
   markets: [{ sportsMarketType: 'moneyline', outcomes: JSON.stringify([a, b]), clobTokenIds: JSON.stringify([id + 'A', id + 'B']), gameStartTime: '2026-11-02 12:00:00+00' }] });
@@ -131,4 +132,43 @@ test('evaluate: a Polymarket book whose two asks sum under 0.98 is not used', ()
   const { p, b } = pair(0.45, 0.48);
   b.snapshot('1B', [{ price: '0.40', size: '30' }], 1000);
   assert.equal(evaluate(p, b, 1000, 2000).length, 0, 'asks 0.45 + 0.40 = 0.85 → inconsistent (mutant: no check)');
+});
+
+test('Kalshi signature: RSA-PSS SHA-256 over timestamp + GET + the websocket path (verifies with the public key)', () => {
+  const { privateKey, publicKey } = generateKeyPairSync('rsa', { modulusLength: 2048 });
+  const pem = privateKey.export({ type: 'pkcs8', format: 'pem' });
+  const sig = kalshiSign(pem, 1730000000000);
+  const v = createVerify('sha256'); v.update('1730000000000GET/trade-api/ws/v2'); v.end();
+  assert.ok(v.verify({ key: publicKey, padding: CC.RSA_PKCS1_PSS_PADDING, saltLength: CC.RSA_PSS_SALTLEN_DIGEST }, sig, 'base64'));
+});
+
+test('Kalshi feed: auth headers, subscribe, snapshot + deltas → sized YES and NO asks; a close drops the books', () => {
+  const { privateKey } = generateKeyPairSync('rsa', { modulusLength: 2048 });
+  const all = []; class W { constructor(u, o) { this.u = u; this.o = o; this.sent = []; this.readyState = 1; all.push(this); } send(x) { this.sent.push(x); } close() { this.readyState = 3; } }
+  const timers = []; let drops = 0;
+  const f = new KalshiFeed({ WS: W, keyId: 'kid', privateKey: privateKey.export({ type: 'pkcs8', format: 'pem' }), later: (fn) => timers.push(fn), onDrop: () => drops++ });
+  f.set(['M-A', 'M-B']); const w = all[0];
+  assert.equal(w.o.headers['KALSHI-ACCESS-KEY'], 'kid'); assert.ok(w.o.headers['KALSHI-ACCESS-SIGNATURE'].length > 100);
+  w.onopen(); assert.deepEqual(JSON.parse(w.sent[0]).params, { channels: ['orderbook_delta'], market_tickers: ['M-A', 'M-B'] });
+  const msg = (o) => w.onmessage({ data: JSON.stringify(o) });
+  msg({ type: 'orderbook_snapshot', msg: { market_ticker: 'M-A', yes_dollars: [['0.50', '100'], ['0.52', '40']], no_dollars: [['0.45', '300']] } });
+  msg({ type: 'orderbook_snapshot', msg: { market_ticker: 'M-B', yes: [[44, 10]], no: [[54, 70]] } });
+  assert.deepEqual(f.quote('M-A'), { yesAsk: 0.55, yesSize: 300, noAsk: 0.48, noSize: 40, at: f.quote('M-A').at }, 'YES ask = 1 − best NO bid; NO ask = 1 − best YES bid');
+  assert.equal(f.quote('M-B').yesAsk, 0.46, 'cents read as cents');
+  msg({ type: 'orderbook_delta', msg: { market_ticker: 'M-A', side: 'no', price_dollars: '0.47', delta_fp: '25' } });
+  assert.equal(f.quote('M-A').yesAsk, 0.53); assert.equal(f.quote('M-A').yesSize, 25);
+  msg({ type: 'orderbook_delta', msg: { market_ticker: 'M-A', side: 'no', price_dollars: '0.47', delta_fp: '-25' } });
+  assert.equal(f.quote('M-A').yesAsk, 0.55, 'a level emptied by a delta is gone (mutant: kept at 0)');
+  const km = { ev: 'KXATPMATCH-X', p: [{ name: 'A', ticker: 'M-A', yesAsk: 0.9 }, { name: 'B', ticker: 'M-B', yesAsk: 0.9 }] };
+  const o = f.overlay(km); assert.equal(o.p[0].yesAsk, 0.55); assert.equal(o.p[1].noAsk, 0.56); assert.equal(o.p[0].name, 'A');
+  w.readyState = 3; w.onclose({});
+  assert.equal(f.quote('M-A'), null, 'no price from a dead feed'); assert.equal(f.overlay(km), null); assert.equal(drops, 1); assert.equal(timers.length, 1);
+  f.set(['M-A']); const n = all.length; all[n - 1].onclose && all[0].onclose({}); assert.equal(timers.length, 1, 'a replaced socket never re-opens');
+});
+
+test('evaluate: the Kalshi websocket clock decides staleness; a NO leg from the feed is sized', () => {
+  const { p, b } = pair(0.45, 0.48);
+  p.kalAt = 1000; p.km.p[p.aIs].noAsk = 0.47; p.km.p[p.aIs].noSize = 60;
+  const e = evaluate(p, b, 0, 2000).find((x) => x.dir === 'polyA+kalshiB');
+  assert.ok(e, 'the pair\'s own Kalshi clock (1 s old) is used, not the stale global one'); assert.equal(e.kalLeg.slice(0, 2), 'no'); assert.equal(e.contracts, 30);
 });
