@@ -25,7 +25,7 @@
   "eloResolved": 269,
   "underPressureSource": {
    "file": "surface-ratings.json",
-   "generatedAt": "2026-11-03T13:17:46.902Z",
+   "generatedAt": "2026-11-04T13:29:51.293Z",
    "players": 237,
    "joined": 223,
    "rated": 297,
@@ -444,7 +444,6 @@
       "population": "rated ATP main-tour players with >= 10 matches (Hard, last 52 weeks)",
       "n": 151,
       "values": [
-       114.8,
        118.6,
        137.5,
        137.9,
@@ -452,6 +451,7 @@
        140.4,
        143.7,
        145.3,
+       150.5,
        154.1,
        154.4,
        154.5,
@@ -466,10 +466,8 @@
        160.2,
        160.9,
        164,
-       165.5,
        167.4,
        167.8,
-       168.3,
        168.3,
        168.7,
        169.4,
@@ -480,11 +478,13 @@
        172.3,
        172.6,
        173,
+       173,
        173.4,
        174.2,
        175.2,
        175.4,
        176.3,
+       177.1,
        178.5,
        179.4,
        179.5,
@@ -507,7 +507,6 @@
        189,
        189.5,
        189.6,
-       190.1,
        190.2,
        190.4,
        192.3,
@@ -522,6 +521,7 @@
        195,
        196,
        196.4,
+       197.9,
        197.9,
        198,
        198.3,
@@ -1038,7 +1038,7 @@
        187.2,
        188.9,
        189.1,
-       191.2,
+       191.3,
        191.9,
        192,
        192.1,
@@ -1797,16 +1797,16 @@
       "values": [
        118.6,
        124.2,
-       126.7,
        128.8,
        131.6,
+       135.7,
        137.4,
        143.3,
        143.6,
        145.5,
        145.8,
-       151.1,
        151.4,
+       151.8,
        151.9,
        152.2,
        153.7,
@@ -1819,16 +1819,16 @@
        160.4,
        161.7,
        161.7,
-       162.6,
+       162.4,
+       164.6,
        165.2,
        165.6,
-       165.8,
-       166.7,
        167,
        167.4,
        167.9,
        168,
        168.6,
+       168.8,
        169.7,
        170,
        170.8,
@@ -1850,11 +1850,10 @@
        176,
        176.1,
        176.2,
+       176.2,
        177.4,
        177.4,
        177.4,
-       178.3,
-       178.4,
        180,
        180.1,
        180.9,
@@ -1862,6 +1861,7 @@
        181.2,
        181.4,
        181.5,
+       181.8,
        181.8,
        182.2,
        182.4,
@@ -1879,7 +1879,6 @@
        188.9,
        189.5,
        190.2,
-       190.3,
        190.6,
        190.9,
        191.9,
@@ -1890,7 +1889,7 @@
        193.3,
        193.9,
        194.4,
-       194.5,
+       194.6,
        194.8,
        194.9,
        196,
@@ -1899,6 +1898,7 @@
        196.4,
        196.5,
        197.1,
+       197.2,
        197.5,
        197.7,
        198.4,
@@ -2780,27 +2780,27 @@
        170.9,
        171.5,
        171.7,
-       172.1,
        172.6,
        172.6,
        172.8,
        173.9,
        174.3,
+       175.6,
        176.3,
        176.5,
+       176.6,
        176.9,
        177.3,
        177.4,
-       178.1,
+       178,
        178.4,
        178.7,
        178.7,
        178.8,
        178.9,
-       179.1,
        179.2,
        179.2,
-       179.7,
+       179.5,
        179.7,
        179.8,
        180.2,
@@ -2835,7 +2835,7 @@
        190.6,
        191.2,
        191.3,
-       191.4,
+       191.6,
        191.6,
        191.7,
        191.7,
@@ -2858,12 +2858,12 @@
        196.5,
        196.8,
        197,
-       197.3,
-       197.3,
+       197.5,
        197.8,
        197.8,
        198,
        198.2,
+       198.5,
        199.2,
        199.5,
        199.8,
@@ -2889,7 +2889,7 @@
        206.2,
        206.4,
        206.8,
-       206.9,
+       207.3,
        207.4,
        207.6,
        207.7,
@@ -5070,7 +5070,7 @@
        152.3,
        153.8,
        158.1,
-       158.3,
+       158.2,
        162.5,
        163.2,
        164.6,
@@ -5086,14 +5086,14 @@
        169.7,
        173.1,
        173.4,
-       173.6,
        174,
        174.7,
        175.1,
+       175.2,
        175.3,
+       175.5,
        175.8,
        176,
-       176.5,
        176.9,
        177.2,
        177.6,
@@ -5152,7 +5152,7 @@
        191.2,
        191.3,
        191.4,
-       191.6,
+       191.5,
        191.6,
        191.7,
        191.8,
@@ -5199,7 +5199,7 @@
        200.7,
        200.7,
        201.3,
-       201.3,
+       201.5,
        201.5,
        202.4,
        202.6,
@@ -10403,7 +10403,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "last52",
-       "pct": 52
+       "pct": 51.7
       },
       "dominanceRatio": {
        "servicePtsWonPct": 63,
@@ -12856,7 +12856,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "last52",
-       "pct": 47.4
+       "pct": 46.7
       },
       "dominanceRatio": {
        "servicePtsWonPct": 67.4,
@@ -15693,7 +15693,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "last52",
-       "pct": 21.5
+       "pct": 20.2
       },
       "dominanceRatio": {
        "servicePtsWonPct": 66.1,
@@ -15989,7 +15989,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "last52",
-       "pct": 28.4
+       "pct": 28.9
       },
       "dominanceRatio": {
        "servicePtsWonPct": 67.7,
@@ -16807,7 +16807,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "last52",
-       "pct": 33.9
+       "pct": 33.7
       },
       "dominanceRatio": {
        "servicePtsWonPct": 62.2,
@@ -17327,7 +17327,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "last52",
-       "pct": 18.2
+       "pct": 16.9
       },
       "dominanceRatio": {
        "servicePtsWonPct": 63,
@@ -17623,7 +17623,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "last52",
-       "pct": 30.4
+       "pct": 29.9
       },
       "dominanceRatio": {
        "servicePtsWonPct": 62.6,
@@ -18032,7 +18032,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "last52",
-       "pct": 47
+       "pct": 46.5
       },
       "dominanceRatio": {
        "servicePtsWonPct": 67.5,
@@ -18553,7 +18553,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "last52",
-       "pct": 26.2
+       "pct": 25.5
       },
       "dominanceRatio": {
        "servicePtsWonPct": 68.6,
@@ -18848,7 +18848,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "last52",
-       "pct": 14.8
+       "pct": 14.3
       },
       "dominanceRatio": {
        "servicePtsWonPct": 67,
@@ -19775,7 +19775,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "last52",
-       "pct": 48.7
+       "pct": 48
       },
       "dominanceRatio": {
        "servicePtsWonPct": 68.5,
@@ -20480,7 +20480,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "last52",
-       "pct": 50
+       "pct": 49.5
       },
       "dominanceRatio": {
        "servicePtsWonPct": 63.1,
@@ -21297,7 +21297,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "last52",
-       "pct": 33.4
+       "pct": 32.9
       },
       "dominanceRatio": {
        "servicePtsWonPct": 67.9,
@@ -21864,7 +21864,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "career",
-       "pct": 55.8
+       "pct": 55.3
       },
       "dominanceRatio": {
        "servicePtsWonPct": 67.7,
@@ -22635,7 +22635,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "last52",
-       "pct": 50
+       "pct": 49.3
       },
       "dominanceRatio": {
        "servicePtsWonPct": 66.9,
@@ -22932,7 +22932,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "last52",
-       "pct": 43
+       "pct": 42.5
       },
       "dominanceRatio": {
        "servicePtsWonPct": 66.6,
@@ -24156,7 +24156,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "last52",
-       "pct": 15.8
+       "pct": 15.3
       },
       "dominanceRatio": {
        "servicePtsWonPct": 62.2,
@@ -24564,7 +24564,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "last52",
-       "pct": 51.5
+       "pct": 51
       },
       "dominanceRatio": {
        "servicePtsWonPct": 64.1,
@@ -25490,7 +25490,7 @@
        "components": 4,
        "inclChallenger": true,
        "srScope": "last52",
-       "pct": 4.3
+       "pct": 3.6
       },
       "dominanceRatio": {
        "servicePtsWonPct": 62.3,
@@ -25785,7 +25785,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "last52",
-       "pct": 31.9
+       "pct": 31.4
       },
       "dominanceRatio": {
        "servicePtsWonPct": 61.2,
@@ -27827,7 +27827,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "last52",
-       "pct": 15.3
+       "pct": 14.8
       },
       "dominanceRatio": {
        "servicePtsWonPct": 64.7,
@@ -27873,7 +27873,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "career",
-       "pct": 12.8
+       "pct": 12.3
       },
       "dominanceRatio": {
        "servicePtsWonPct": 63.3,
@@ -28753,7 +28753,7 @@
        "components": 4,
        "inclChallenger": true,
        "srScope": "last52",
-       "pct": 16.2
+       "pct": 15.6
       },
       "dominanceRatio": {
        "servicePtsWonPct": 65.3,
@@ -29949,7 +29949,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "last52",
-       "pct": 45.7
+       "pct": 45
       },
       "dominanceRatio": {
        "servicePtsWonPct": 69.7,
@@ -30403,7 +30403,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "career",
-       "pct": 15.8
+       "pct": 15.3
       },
       "dominanceRatio": {
        "servicePtsWonPct": 65.5,
@@ -30759,7 +30759,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "last52",
-       "pct": 26.8
+       "pct": 26.2
       },
       "dominanceRatio": {
        "servicePtsWonPct": 63.6,
@@ -31575,7 +31575,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "last52",
-       "pct": 24.8
+       "pct": 24.2
       },
       "dominanceRatio": {
        "servicePtsWonPct": 65.6,
@@ -31872,7 +31872,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "last52",
-       "pct": 46.2
+       "pct": 45.7
       },
       "dominanceRatio": {
        "servicePtsWonPct": 65.8,
@@ -31984,7 +31984,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "last52",
-       "pct": 22.8
+       "pct": 21.5
       },
       "dominanceRatio": {
        "servicePtsWonPct": 63.8,
@@ -32281,7 +32281,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "last52",
-       "pct": 27.4
+       "pct": 27.6
       },
       "dominanceRatio": {
        "servicePtsWonPct": 64.1,
@@ -34265,7 +34265,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "last52",
-       "pct": 49
+       "pct": 48.5
       },
       "dominanceRatio": {
        "servicePtsWonPct": 62.4,
@@ -34377,7 +34377,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "last52",
-       "pct": 4
+       "pct": 3.3
       },
       "dominanceRatio": {
        "servicePtsWonPct": 55.1,
@@ -35895,7 +35895,7 @@
        "components": 4,
        "inclChallenger": true,
        "srScope": "last52",
-       "pct": 31.4
+       "pct": 30.9
       },
       "dominanceRatio": {
        "servicePtsWonPct": 59.9,
@@ -36007,7 +36007,7 @@
        "components": 4,
        "inclChallenger": true,
        "srScope": "last52",
-       "pct": 50.7
+       "pct": 50
       },
       "dominanceRatio": {
        "servicePtsWonPct": 65.5,
@@ -36053,7 +36053,7 @@
        "components": 4,
        "inclChallenger": true,
        "srScope": "career",
-       "pct": 18.8
+       "pct": 19.3
       },
       "dominanceRatio": {
        "servicePtsWonPct": 64.8,
@@ -37639,7 +37639,7 @@
        "components": 4,
        "inclChallenger": true,
        "srScope": "last52",
-       "pct": 17.2
+       "pct": 16.2
       },
       "dominanceRatio": {
        "servicePtsWonPct": 67,
@@ -38842,7 +38842,7 @@
        "components": 3,
        "inclChallenger": true,
        "srScope": "last52",
-       "pct": 5
+       "pct": 4.3
       },
       "dominanceRatio": {
        "servicePtsWonPct": 59.4,
@@ -40064,7 +40064,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "last52",
-       "pct": 20.9
+       "pct": 19.5
       },
       "dominanceRatio": {
        "servicePtsWonPct": 63.3,
@@ -40110,7 +40110,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "career",
-       "pct": 20.3
+       "pct": 20.8
       },
       "dominanceRatio": {
        "servicePtsWonPct": 62.6,
@@ -40360,7 +40360,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "last52",
-       "pct": 16.3
+       "pct": 15.8
       },
       "dominanceRatio": {
        "servicePtsWonPct": 63.2,
@@ -41176,7 +41176,7 @@
        "components": 4,
        "inclChallenger": true,
        "srScope": "last52",
-       "pct": 48.5
+       "pct": 48
       },
       "dominanceRatio": {
        "servicePtsWonPct": 66.5,
@@ -41674,7 +41674,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "last52",
-       "pct": 20.2
+       "pct": 18.9
       },
       "dominanceRatio": {
        "servicePtsWonPct": 66.8,
@@ -42490,7 +42490,7 @@
        "components": 4,
        "inclChallenger": true,
        "srScope": "last52",
-       "pct": 1.7
+       "pct": 1
       },
       "dominanceRatio": {
        "servicePtsWonPct": 60.7,
@@ -42528,15 +42528,15 @@
       },
       "underPressure": {
        "bpSavedPct": 57.3,
-       "bpConvPct": 34.3,
-       "tbWinPct": 42.1,
+       "bpConvPct": 34.1,
+       "tbWinPct": 41.3,
        "decWinPct": 45.4,
-       "rating": 179.1,
+       "rating": 178,
        "estimated": false,
        "components": 4,
        "inclChallenger": true,
        "srScope": "career",
-       "pct": 22.8
+       "pct": 20.3
       },
       "dominanceRatio": {
        "servicePtsWonPct": 62.1,
@@ -42833,7 +42833,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "career",
-       "pct": 15
+       "pct": 15.5
       },
       "dominanceRatio": {
        "servicePtsWonPct": 62.9,
@@ -42899,7 +42899,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "last52",
-       "pct": 48
+       "pct": 47.4
       },
       "dominanceRatio": {
        "servicePtsWonPct": 67.9,
@@ -43286,7 +43286,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "last52",
-       "pct": 24.5
+       "pct": 23.8
       },
       "dominanceRatio": {
        "servicePtsWonPct": 60.5,
@@ -43582,7 +43582,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "last52",
-       "pct": 32.4
+       "pct": 31.9
       },
       "dominanceRatio": {
        "servicePtsWonPct": 59.2,
@@ -44101,7 +44101,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "last52",
-       "pct": 15.6
+       "pct": 14.9
       },
       "dominanceRatio": {
        "servicePtsWonPct": 63,
@@ -44396,7 +44396,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "last52",
-       "pct": 43.5
+       "pct": 43
       },
       "dominanceRatio": {
        "servicePtsWonPct": 64.3,
@@ -44508,7 +44508,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "last52",
-       "pct": 18.9
+       "pct": 17.5
       },
       "dominanceRatio": {
        "servicePtsWonPct": 66,
@@ -44901,7 +44901,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "last52",
-       "pct": 49.3
+       "pct": 48.7
       },
       "dominanceRatio": {
        "servicePtsWonPct": 64.3,
@@ -48930,7 +48930,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "last52",
-       "pct": 44
+       "pct": 43.4
       },
       "dominanceRatio": {
        "servicePtsWonPct": 62,
@@ -49311,14 +49311,14 @@
       "underPressure": {
        "bpSavedPct": 51.4,
        "bpConvPct": 35.7,
-       "tbWinPct": 40.9,
-       "decWinPct": 37.5,
-       "rating": 165.5,
+       "tbWinPct": 45,
+       "decWinPct": 40.9,
+       "rating": 173,
        "estimated": false,
        "components": 4,
        "inclChallenger": true,
        "srScope": "last52",
-       "pct": 14.9
+       "pct": 22.5
       },
       "dominanceRatio": {
        "servicePtsWonPct": 57.6,
@@ -49607,14 +49607,14 @@
       "underPressure": {
        "bpSavedPct": 54.8,
        "bpConvPct": 37.8,
-       "tbWinPct": 48.2,
+       "tbWinPct": 51.2,
        "decWinPct": 25,
-       "rating": 165.8,
+       "rating": 168.8,
        "estimated": false,
        "components": 4,
        "inclChallenger": true,
        "srScope": "last52",
-       "pct": 13.8
+       "pct": 16.8
       },
       "dominanceRatio": {
        "servicePtsWonPct": 58,
@@ -50131,7 +50131,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "last52",
-       "pct": 24.2
+       "pct": 23.5
       },
       "dominanceRatio": {
        "servicePtsWonPct": 64.5,
@@ -50177,7 +50177,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "career",
-       "pct": 21
+       "pct": 21.5
       },
       "dominanceRatio": {
        "servicePtsWonPct": 63.5,
@@ -50428,7 +50428,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "last52",
-       "pct": 49.5
+       "pct": 49
       },
       "dominanceRatio": {
        "servicePtsWonPct": 64.2,
@@ -50835,7 +50835,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "last52",
-       "pct": 52
+       "pct": 51.5
       },
       "dominanceRatio": {
        "servicePtsWonPct": 60.9,
@@ -50947,7 +50947,7 @@
        "components": 3,
        "inclChallenger": false,
        "srScope": "last52",
-       "pct": 50.3
+       "pct": 49.7
       },
       "dominanceRatio": {
        "servicePtsWonPct": 60.7,
@@ -50993,7 +50993,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "career",
-       "pct": 21.8
+       "pct": 22.3
       },
       "dominanceRatio": {
        "servicePtsWonPct": 61.5,
@@ -51334,7 +51334,7 @@
        "components": 4,
        "inclChallenger": true,
        "srScope": "last52",
-       "pct": 25.2
+       "pct": 24.5
       },
       "dominanceRatio": {
        "servicePtsWonPct": 61.5,
@@ -52915,7 +52915,7 @@
        "components": 4,
        "inclChallenger": true,
        "srScope": "last52",
-       "pct": 44.7
+       "pct": 44
       },
       "dominanceRatio": {
        "servicePtsWonPct": 62.7,
@@ -53369,7 +53369,7 @@
        "components": 4,
        "inclChallenger": true,
        "srScope": "career",
-       "pct": 54.5
+       "pct": 54
       },
       "dominanceRatio": {
        "servicePtsWonPct": 64.8,
@@ -54115,7 +54115,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "last52",
-       "pct": 22.2
+       "pct": 20.9
       },
       "dominanceRatio": {
        "servicePtsWonPct": 66.4,
@@ -54523,7 +54523,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "last52",
-       "pct": 4
+       "pct": 3.3
       },
       "dominanceRatio": {
        "servicePtsWonPct": 61.1,
@@ -54909,7 +54909,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "last52",
-       "pct": 51.3
+       "pct": 50.7
       },
       "dominanceRatio": {
        "servicePtsWonPct": 61.5,
@@ -54955,7 +54955,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "career",
-       "pct": 19.3
+       "pct": 19.8
       },
       "dominanceRatio": {
        "servicePtsWonPct": 60.9,
@@ -55205,7 +55205,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "last52",
-       "pct": 44
+       "pct": 43.5
       },
       "dominanceRatio": {
        "servicePtsWonPct": 61,
@@ -55754,7 +55754,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "career",
-       "pct": 16.8
+       "pct": 16.3
       },
       "dominanceRatio": {
        "servicePtsWonPct": 66.9,
@@ -56391,7 +56391,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "last52",
-       "pct": 30.9
+       "pct": 30.4
       },
       "dominanceRatio": {
        "servicePtsWonPct": 62.9,
@@ -56798,7 +56798,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "last52",
-       "pct": 16.8
+       "pct": 16.3
       },
       "dominanceRatio": {
        "servicePtsWonPct": 67.3,
@@ -58911,16 +58911,16 @@
        "pct": 99.7
       },
       "underPressure": {
-       "bpSavedPct": 54.9,
-       "bpConvPct": 41.9,
+       "bpSavedPct": 59,
+       "bpConvPct": 43.5,
        "tbWinPct": 18,
-       "decWinPct": 0,
-       "rating": 114.8,
+       "decWinPct": 30,
+       "rating": 150.5,
        "estimated": false,
        "components": 4,
        "inclChallenger": true,
        "srScope": "last52",
-       "pct": 0.3
+       "pct": 5
       },
       "dominanceRatio": {
        "servicePtsWonPct": 58.6,
@@ -58957,16 +58957,16 @@
        "pct": 99.8
       },
       "underPressure": {
-       "bpSavedPct": 52.4,
-       "bpConvPct": 44,
+       "bpSavedPct": 52.9,
+       "bpConvPct": 44.3,
        "tbWinPct": 27.7,
-       "decWinPct": 48,
-       "rating": 172.1,
+       "decWinPct": 50.6,
+       "rating": 175.6,
        "estimated": false,
        "components": 4,
        "inclChallenger": true,
        "srScope": "career",
-       "pct": 14.3
+       "pct": 16.8
       },
       "dominanceRatio": {
        "servicePtsWonPct": 58.1,
@@ -59209,13 +59209,13 @@
        "bpSavedPct": 52,
        "bpConvPct": 43.2,
        "tbWinPct": 22.5,
-       "decWinPct": 9,
-       "rating": 126.7,
+       "decWinPct": 18,
+       "rating": 135.7,
        "estimated": false,
        "components": 4,
        "inclChallenger": true,
        "srScope": "last52",
-       "pct": 1.3
+       "pct": 2.3
       },
       "dominanceRatio": {
        "servicePtsWonPct": 58.4,
@@ -59252,16 +59252,16 @@
        "pct": 99.8
       },
       "underPressure": {
-       "bpSavedPct": 50.7,
-       "bpConvPct": 45.3,
+       "bpSavedPct": 50.9,
+       "bpConvPct": 45.4,
        "tbWinPct": 30,
-       "decWinPct": 47.6,
-       "rating": 173.6,
+       "decWinPct": 48.9,
+       "rating": 175.2,
        "estimated": false,
        "components": 4,
        "inclChallenger": true,
        "srScope": "career",
-       "pct": 12.3
+       "pct": 13.7
       },
       "dominanceRatio": {
        "servicePtsWonPct": 57.8,
@@ -60801,7 +60801,7 @@
        "components": 4,
        "inclChallenger": true,
        "srScope": "last52",
-       "pct": 45.5
+       "pct": 45
       },
       "dominanceRatio": {
        "servicePtsWonPct": 60.2,
@@ -60847,7 +60847,7 @@
        "components": 4,
        "inclChallenger": true,
        "srScope": "career",
-       "pct": 62.8
+       "pct": 62.6
       },
       "dominanceRatio": {
        "servicePtsWonPct": 59.8,
@@ -61320,7 +61320,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "last52",
-       "pct": 19.5
+       "pct": 18.2
       },
       "dominanceRatio": {
        "servicePtsWonPct": 61.7,
@@ -62925,7 +62925,7 @@
        "components": 4,
        "inclChallenger": true,
        "srScope": "career",
-       "pct": 24.5
+       "pct": 24.8
       },
       "dominanceRatio": {
        "servicePtsWonPct": 64,
@@ -63776,11 +63776,11 @@
        "pct": 55.4
       },
       "underPressure": {
-       "bpSavedPct": 53.3,
-       "bpConvPct": 36.5,
+       "bpSavedPct": 53.1,
+       "bpConvPct": 36.7,
        "tbWinPct": 48.8,
        "decWinPct": 52.6,
-       "rating": 191.2,
+       "rating": 191.3,
        "estimated": false,
        "components": 4,
        "inclChallenger": true,
@@ -64085,16 +64085,16 @@
        "pct": 67.3
       },
       "underPressure": {
-       "bpSavedPct": 52.2,
-       "bpConvPct": 35.1,
-       "tbWinPct": 40,
-       "decWinPct": 52.9,
-       "rating": 180.2,
+       "bpSavedPct": 54.7,
+       "bpConvPct": 35.6,
+       "tbWinPct": 38.6,
+       "decWinPct": 56,
+       "rating": 184.8,
        "estimated": false,
        "components": 4,
        "inclChallenger": true,
        "srScope": "last52",
-       "pct": 29.1
+       "pct": 33.1
       },
       "dominanceRatio": {
        "servicePtsWonPct": 61.7,
@@ -64381,16 +64381,16 @@
        "pct": 92.7
       },
       "underPressure": {
-       "bpSavedPct": 51.3,
-       "bpConvPct": 34.5,
-       "tbWinPct": 51.4,
-       "decWinPct": 53.2,
-       "rating": 190.3,
+       "bpSavedPct": 52.5,
+       "bpConvPct": 34.7,
+       "tbWinPct": 52.1,
+       "decWinPct": 55.3,
+       "rating": 194.6,
        "estimated": false,
        "components": 4,
        "inclChallenger": true,
        "srScope": "last52",
-       "pct": 42.5
+       "pct": 47.5
       },
       "dominanceRatio": {
        "servicePtsWonPct": 63.3,
@@ -64798,7 +64798,7 @@
        "components": 4,
        "inclChallenger": true,
        "srScope": "last52",
-       "pct": 5.8
+       "pct": 5.3
       },
       "dominanceRatio": {
        "servicePtsWonPct": 62.4,
@@ -65316,7 +65316,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "last52",
-       "pct": 1
+       "pct": 0.3
       },
       "dominanceRatio": {
        "servicePtsWonPct": 61.5,
@@ -65981,7 +65981,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "last52",
-       "pct": 12.8
+       "pct": 13.3
       },
       "dominanceRatio": {
        "servicePtsWonPct": 64.8,
@@ -66900,7 +66900,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "last52",
-       "pct": 49.7
+       "pct": 49
       },
       "dominanceRatio": {
        "servicePtsWonPct": 58.7,
@@ -67329,11 +67329,11 @@
        "pct": 40.5
       },
       "underPressure": {
-       "bpSavedPct": 55.1,
-       "bpConvPct": 39.1,
+       "bpSavedPct": 55.4,
+       "bpConvPct": 39.2,
        "tbWinPct": 56.1,
        "decWinPct": 56.7,
-       "rating": 206.9,
+       "rating": 207.3,
        "estimated": false,
        "components": 4,
        "inclChallenger": true,
@@ -67624,16 +67624,16 @@
        "pct": 80.6
       },
       "underPressure": {
-       "bpSavedPct": 52.6,
+       "bpSavedPct": 52.8,
        "bpConvPct": 39.6,
        "tbWinPct": 51.7,
        "decWinPct": 57.4,
-       "rating": 201.3,
+       "rating": 201.5,
        "estimated": false,
        "components": 4,
        "inclChallenger": true,
        "srScope": "career",
-       "pct": 62.8
+       "pct": 63.2
       },
       "dominanceRatio": {
        "servicePtsWonPct": 61.3,
@@ -67699,7 +67699,7 @@
        "components": 3,
        "inclChallenger": true,
        "srScope": "last52",
-       "pct": 2.3
+       "pct": 1.7
       },
       "dominanceRatio": {
        "servicePtsWonPct": 58.6,
@@ -68110,7 +68110,7 @@
        "components": 4,
        "inclChallenger": true,
        "srScope": "career",
-       "pct": 15
+       "pct": 14.5
       },
       "dominanceRatio": {
        "servicePtsWonPct": 64.1,
@@ -68744,7 +68744,7 @@
        "components": 4,
        "inclChallenger": true,
        "srScope": "last52",
-       "pct": 32.9
+       "pct": 32.4
       },
       "dominanceRatio": {
        "servicePtsWonPct": 62.1,
@@ -68856,7 +68856,7 @@
        "components": 4,
        "inclChallenger": true,
        "srScope": "last52",
-       "pct": 44.7
+       "pct": 44
       },
       "dominanceRatio": {
        "servicePtsWonPct": 61.8,
@@ -68902,7 +68902,7 @@
        "components": 4,
        "inclChallenger": true,
        "srScope": "career",
-       "pct": 54.5
+       "pct": 54
       },
       "dominanceRatio": {
        "servicePtsWonPct": 63.5,
@@ -69242,7 +69242,7 @@
        "components": 4,
        "inclChallenger": true,
        "srScope": "last52",
-       "pct": 20.5
+       "pct": 19.2
       },
       "dominanceRatio": {
        "servicePtsWonPct": 62,
@@ -69583,7 +69583,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "career",
-       "pct": 13.2
+       "pct": 12.8
       },
       "dominanceRatio": {
        "servicePtsWonPct": 62.3,
@@ -70101,7 +70101,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "career",
-       "pct": 16.3
+       "pct": 15.8
       },
       "dominanceRatio": {
        "servicePtsWonPct": 57.5,
@@ -70322,14 +70322,14 @@
       "underPressure": {
        "bpSavedPct": 58.8,
        "bpConvPct": 39.2,
-       "tbWinPct": 46.4,
+       "tbWinPct": 49.3,
        "decWinPct": 42.4,
-       "rating": 186.8,
+       "rating": 189.7,
        "estimated": false,
        "components": 4,
        "inclChallenger": true,
        "srScope": "last52",
-       "pct": 40.2
+       "pct": 41.7
       },
       "dominanceRatio": {
        "servicePtsWonPct": 55.6,
@@ -70736,7 +70736,7 @@
        "components": 4,
        "inclChallenger": true,
        "srScope": "last52",
-       "pct": 13.3
+       "pct": 13.8
       },
       "dominanceRatio": {
        "servicePtsWonPct": 63.1,
@@ -72367,7 +72367,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "career",
-       "pct": 13.7
+       "pct": 13.2
       },
       "dominanceRatio": {
        "servicePtsWonPct": 60.9,
@@ -72834,7 +72834,7 @@
        "components": 3,
        "inclChallenger": true,
        "srScope": "last52",
-       "pct": 4
+       "pct": 3.3
       },
       "dominanceRatio": {
        "servicePtsWonPct": 62.4,
@@ -73129,7 +73129,7 @@
        "components": 4,
        "inclChallenger": true,
        "srScope": "last52",
-       "pct": 44.5
+       "pct": 44
       },
       "dominanceRatio": {
        "servicePtsWonPct": 63.8,
@@ -73232,16 +73232,16 @@
        "pct": 0
       },
       "underPressure": {
-       "bpSavedPct": 54.1,
-       "bpConvPct": 31.6,
-       "tbWinPct": 53.3,
+       "bpSavedPct": 53.8,
+       "bpConvPct": 31.8,
+       "tbWinPct": 56.2,
        "decWinPct": 57.9,
-       "rating": 196.9,
+       "rating": 199.6,
        "estimated": false,
        "components": 4,
        "inclChallenger": true,
        "srScope": "last52",
-       "pct": 51.7
+       "pct": 56.3
       },
       "dominanceRatio": {
        "servicePtsWonPct": 60.3,
@@ -73278,16 +73278,16 @@
        "pct": 17.8
       },
       "underPressure": {
-       "bpSavedPct": 55.4,
-       "bpConvPct": 36.5,
-       "tbWinPct": 52,
+       "bpSavedPct": 55.3,
+       "bpConvPct": 36.6,
+       "tbWinPct": 53.2,
        "decWinPct": 53.3,
-       "rating": 197.3,
+       "rating": 198.5,
        "estimated": false,
        "components": 4,
        "inclChallenger": true,
        "srScope": "career",
-       "pct": 53.5
+       "pct": 55.8
       },
       "dominanceRatio": {
        "servicePtsWonPct": 63.3,
@@ -73924,7 +73924,7 @@
        "components": 4,
        "inclChallenger": true,
        "srScope": "last52",
-       "pct": 31.2
+       "pct": 30.7
       },
       "dominanceRatio": {
        "servicePtsWonPct": 53.5,
@@ -74036,7 +74036,7 @@
        "components": 3,
        "inclChallenger": true,
        "srScope": "last52",
-       "pct": 25.5
+       "pct": 24.8
       },
       "dominanceRatio": {
        "servicePtsWonPct": 66,
@@ -74489,7 +74489,7 @@
        "components": 3,
        "inclChallenger": true,
        "srScope": "career",
-       "pct": 18.3
+       "pct": 18.8
       },
       "dominanceRatio": {
        "servicePtsWonPct": 62.9,
@@ -75288,7 +75288,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "career",
-       "pct": 42.3
+       "pct": 42
       },
       "dominanceRatio": {
        "servicePtsWonPct": 67.8,
@@ -76097,7 +76097,7 @@
        "components": 4,
        "inclChallenger": true,
        "srScope": "career",
-       "pct": 15
+       "pct": 14.5
       },
       "dominanceRatio": {
        "servicePtsWonPct": 61.2,
@@ -76337,16 +76337,16 @@
        "pct": 28.8
       },
       "underPressure": {
-       "bpSavedPct": 53,
-       "bpConvPct": 34.9,
+       "bpSavedPct": 53.1,
+       "bpConvPct": 35.6,
        "tbWinPct": 29.4,
        "decWinPct": 33.8,
-       "rating": 151.1,
+       "rating": 151.8,
        "estimated": false,
        "components": 4,
        "inclChallenger": true,
        "srScope": "last52",
-       "pct": 5.3
+       "pct": 5.8
       },
       "dominanceRatio": {
        "servicePtsWonPct": 59.5,
@@ -77302,7 +77302,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "career",
-       "pct": 55.3
+       "pct": 54.8
       },
       "dominanceRatio": {
        "servicePtsWonPct": 68.4,
@@ -77643,7 +77643,7 @@
        "components": 4,
        "inclChallenger": true,
        "srScope": "last52",
-       "pct": 46.7
+       "pct": 46
       },
       "dominanceRatio": {
        "servicePtsWonPct": 63.7,
@@ -77689,7 +77689,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "career",
-       "pct": 21
+       "pct": 21.5
       },
       "dominanceRatio": {
        "servicePtsWonPct": 62.8,
@@ -78043,7 +78043,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "last52",
-       "pct": 3
+       "pct": 2.3
       },
       "dominanceRatio": {
        "servicePtsWonPct": 62.2,
@@ -78306,7 +78306,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "last52",
-       "pct": 1.8
+       "pct": 1.3
       },
       "dominanceRatio": {
        "servicePtsWonPct": 63,
@@ -79186,7 +79186,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "last52",
-       "pct": 49.7
+       "pct": 49
       },
       "dominanceRatio": {
        "servicePtsWonPct": 59.9,
@@ -79552,7 +79552,7 @@
        "components": 4,
        "inclChallenger": true,
        "srScope": "last52",
-       "pct": 0.7
+       "pct": 0
       },
       "dominanceRatio": {
        "servicePtsWonPct": 65,
@@ -81056,7 +81056,7 @@
        "components": 4,
        "inclChallenger": true,
        "srScope": "last52",
-       "pct": 50.5
+       "pct": 50
       },
       "dominanceRatio": {
        "servicePtsWonPct": 65.5,
@@ -81561,10 +81561,10 @@
       },
       "underPressure": {
        "bpSavedPct": 55.6,
-       "bpConvPct": 35,
+       "bpConvPct": 35.4,
        "tbWinPct": 53.8,
        "decWinPct": 64,
-       "rating": 208.4,
+       "rating": 208.8,
        "estimated": false,
        "components": 4,
        "inclChallenger": true,
@@ -81607,15 +81607,15 @@
       },
       "underPressure": {
        "bpSavedPct": 56.2,
-       "bpConvPct": 37.3,
+       "bpConvPct": 37.5,
        "tbWinPct": 45.2,
        "decWinPct": 58.6,
-       "rating": 197.3,
+       "rating": 197.5,
        "estimated": false,
        "components": 4,
        "inclChallenger": true,
        "srScope": "career",
-       "pct": 53.5
+       "pct": 53.3
       },
       "dominanceRatio": {
        "servicePtsWonPct": 67.1,
@@ -81902,7 +81902,7 @@
       },
       "underPressure": {
        "bpSavedPct": 55.8,
-       "bpConvPct": 36.6,
+       "bpConvPct": 36.7,
        "tbWinPct": 56.3,
        "decWinPct": 56.7,
        "rating": 205.4,
@@ -82422,7 +82422,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "career",
-       "pct": 22.3
+       "pct": 22.8
       },
       "dominanceRatio": {
        "servicePtsWonPct": 63,
@@ -82660,7 +82660,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "last52",
-       "pct": 46.2
+       "pct": 45.7
       },
       "dominanceRatio": {
        "servicePtsWonPct": 61.5,
@@ -84720,16 +84720,16 @@
        "pct": 57.7
       },
       "underPressure": {
-       "bpSavedPct": 56.8,
-       "bpConvPct": 33.1,
-       "tbWinPct": 31.7,
-       "decWinPct": 68.6,
-       "rating": 190.1,
+       "bpSavedPct": 58.2,
+       "bpConvPct": 36.7,
+       "tbWinPct": 25,
+       "decWinPct": 78,
+       "rating": 197.9,
        "estimated": false,
        "components": 4,
        "inclChallenger": true,
        "srScope": "last52",
-       "pct": 42.1
+       "pct": 51.7
       },
       "dominanceRatio": {
        "servicePtsWonPct": 62.7,
@@ -84766,16 +84766,16 @@
        "pct": 43.4
       },
       "underPressure": {
-       "bpSavedPct": 53,
-       "bpConvPct": 39.8,
+       "bpSavedPct": 52.9,
+       "bpConvPct": 39.7,
        "tbWinPct": 28.5,
        "decWinPct": 58.4,
-       "rating": 179.7,
+       "rating": 179.5,
        "estimated": false,
        "components": 4,
        "inclChallenger": true,
        "srScope": "career",
-       "pct": 24.5
+       "pct": 24.3
       },
       "dominanceRatio": {
        "servicePtsWonPct": 62,
@@ -85015,16 +85015,16 @@
        "pct": 84.5
       },
       "underPressure": {
-       "bpSavedPct": 56.6,
-       "bpConvPct": 36.1,
-       "tbWinPct": 45.7,
-       "decWinPct": 56.1,
-       "rating": 194.5,
+       "bpSavedPct": 57,
+       "bpConvPct": 37.2,
+       "tbWinPct": 45.8,
+       "decWinPct": 57.1,
+       "rating": 197.2,
        "estimated": false,
        "components": 4,
        "inclChallenger": true,
        "srScope": "last52",
-       "pct": 48
+       "pct": 52
       },
       "dominanceRatio": {
        "servicePtsWonPct": 61.1,
@@ -85061,16 +85061,16 @@
        "pct": 78.8
       },
       "underPressure": {
-       "bpSavedPct": 52.3,
+       "bpSavedPct": 52.2,
        "bpConvPct": 39.5,
        "tbWinPct": 40.3,
        "decWinPct": 59.5,
-       "rating": 191.6,
+       "rating": 191.5,
        "estimated": false,
        "components": 4,
        "inclChallenger": true,
        "srScope": "career",
-       "pct": 42.2
+       "pct": 41.9
       },
       "dominanceRatio": {
        "servicePtsWonPct": 59.8,
@@ -87175,7 +87175,7 @@
        "components": 3,
        "inclChallenger": true,
        "srScope": "career",
-       "pct": 14.5
+       "pct": 14
       },
       "dominanceRatio": {
        "servicePtsWonPct": 59,
@@ -87560,7 +87560,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "career",
-       "pct": 24.5
+       "pct": 24.8
       },
       "dominanceRatio": {
        "servicePtsWonPct": 54.6,
@@ -87809,7 +87809,7 @@
        "components": 4,
        "inclChallenger": true,
        "srScope": "last52",
-       "pct": 30.2
+       "pct": 29.6
       },
       "dominanceRatio": {
        "servicePtsWonPct": 53.8,
@@ -89114,7 +89114,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "last52",
-       "pct": 42.7
+       "pct": 42.1
       },
       "dominanceRatio": {
        "servicePtsWonPct": 62,
@@ -89921,7 +89921,7 @@
        "components": 4,
        "inclChallenger": true,
        "srScope": "last52",
-       "pct": 3.6
+       "pct": 3
       },
       "dominanceRatio": {
        "servicePtsWonPct": 60.9,
@@ -90328,7 +90328,7 @@
        "components": 4,
        "inclChallenger": true,
        "srScope": "last52",
-       "pct": 46.7
+       "pct": 46
       },
       "dominanceRatio": {
        "servicePtsWonPct": 66.3,
@@ -90735,7 +90735,7 @@
        "components": 4,
        "inclChallenger": true,
        "srScope": "last52",
-       "pct": 43.4
+       "pct": 42.7
       },
       "dominanceRatio": {
        "servicePtsWonPct": 63,
@@ -91935,7 +91935,7 @@
        "components": 4,
        "inclChallenger": true,
        "srScope": "last52",
-       "pct": 51.7
+       "pct": 51
       },
       "dominanceRatio": {
        "servicePtsWonPct": 65.3,
@@ -92231,7 +92231,7 @@
        "components": 4,
        "inclChallenger": true,
        "srScope": "last52",
-       "pct": 47.5
+       "pct": 47
       },
       "dominanceRatio": {
        "servicePtsWonPct": 64.7,
@@ -92707,7 +92707,7 @@
        "components": 4,
        "inclChallenger": true,
        "srScope": "last52",
-       "pct": 23.5
+       "pct": 22.5
       },
       "dominanceRatio": {
        "servicePtsWonPct": 61.5,
@@ -93000,7 +93000,7 @@
        "components": 4,
        "inclChallenger": true,
        "srScope": "last52",
-       "pct": 28.4
+       "pct": 28.9
       },
       "dominanceRatio": {
        "servicePtsWonPct": 62.3,
@@ -93363,7 +93363,7 @@
        "components": 3,
        "inclChallenger": true,
        "srScope": "last52",
-       "pct": 51
+       "pct": 50.5
       },
       "dominanceRatio": {
        "servicePtsWonPct": 64.5,
@@ -93876,7 +93876,7 @@
        "components": 4,
        "inclChallenger": true,
        "srScope": "last52",
-       "pct": 45.7
+       "pct": 45
       },
       "dominanceRatio": {
        "servicePtsWonPct": 61.3,
@@ -94266,7 +94266,7 @@
        "components": 4,
        "inclChallenger": true,
        "srScope": "last52",
-       "pct": 5.3
+       "pct": 4.6
       },
       "dominanceRatio": {
        "servicePtsWonPct": 62.6,
@@ -96662,16 +96662,16 @@
        "pct": 2.2
       },
       "underPressure": {
-       "bpSavedPct": 57,
-       "bpConvPct": 32.5,
-       "tbWinPct": 42,
+       "bpSavedPct": 57.5,
+       "bpConvPct": 31.2,
+       "tbWinPct": 39.4,
        "decWinPct": 34.6,
-       "rating": 166.1,
+       "rating": 162.6,
        "estimated": false,
        "components": 4,
        "inclChallenger": true,
        "srScope": "last52",
-       "pct": 15.2
+       "pct": 13.9
       },
       "dominanceRatio": {
        "servicePtsWonPct": 66.7,
@@ -96708,16 +96708,16 @@
        "pct": 2.3
       },
       "underPressure": {
-       "bpSavedPct": 57.9,
-       "bpConvPct": 33.2,
-       "tbWinPct": 49,
+       "bpSavedPct": 58,
+       "bpConvPct": 32.8,
+       "tbWinPct": 47.8,
        "decWinPct": 38.1,
-       "rating": 178.1,
+       "rating": 176.6,
        "estimated": false,
        "components": 4,
        "inclChallenger": true,
        "srScope": "career",
-       "pct": 19.8
+       "pct": 18.3
       },
       "dominanceRatio": {
        "servicePtsWonPct": 64.3,
@@ -96959,16 +96959,16 @@
        "pct": 4.6
       },
       "underPressure": {
-       "bpSavedPct": 56.9,
-       "bpConvPct": 33.8,
-       "tbWinPct": 52,
+       "bpSavedPct": 57.1,
+       "bpConvPct": 33.1,
+       "tbWinPct": 50.3,
        "decWinPct": 35.7,
-       "rating": 178.3,
+       "rating": 176.2,
        "estimated": false,
        "components": 4,
        "inclChallenger": true,
        "srScope": "last52",
-       "pct": 29.4
+       "pct": 27.6
       },
       "dominanceRatio": {
        "servicePtsWonPct": 65.7,
@@ -97005,16 +97005,16 @@
        "pct": 4.2
       },
       "underPressure": {
-       "bpSavedPct": 57.1,
-       "bpConvPct": 32.8,
-       "tbWinPct": 51,
+       "bpSavedPct": 57.2,
+       "bpConvPct": 32.5,
+       "tbWinPct": 50.2,
        "decWinPct": 35.7,
-       "rating": 176.5,
+       "rating": 175.5,
        "estimated": false,
        "components": 4,
        "inclChallenger": true,
        "srScope": "career",
-       "pct": 15.5
+       "pct": 14.6
       },
       "dominanceRatio": {
        "servicePtsWonPct": 66.1,
@@ -97355,7 +97355,7 @@
        "components": 4,
        "inclChallenger": true,
        "srScope": "last52",
-       "pct": 29.1
+       "pct": 29.6
       },
       "dominanceRatio": {
        "servicePtsWonPct": 65.5,
@@ -102106,16 +102106,16 @@
        "pct": 83.8
       },
       "underPressure": {
-       "bpSavedPct": 55,
-       "bpConvPct": 36.2,
+       "bpSavedPct": 56.6,
+       "bpConvPct": 37,
        "tbWinPct": 27.1,
-       "decWinPct": 50,
-       "rating": 168.3,
+       "decWinPct": 56.3,
+       "rating": 177.1,
        "estimated": false,
        "components": 4,
        "inclChallenger": true,
        "srScope": "last52",
-       "pct": 17.2
+       "pct": 26.8
       },
       "dominanceRatio": {
        "servicePtsWonPct": 60.6,
@@ -102152,16 +102152,16 @@
        "pct": 82.4
       },
       "underPressure": {
-       "bpSavedPct": 51,
-       "bpConvPct": 38.9,
+       "bpSavedPct": 50.8,
+       "bpConvPct": 39.2,
        "tbWinPct": 43.3,
        "decWinPct": 58.2,
-       "rating": 191.4,
+       "rating": 191.6,
        "estimated": false,
        "components": 4,
        "inclChallenger": true,
        "srScope": "career",
-       "pct": 41.8
+       "pct": 42
       },
       "dominanceRatio": {
        "servicePtsWonPct": 61.7,
@@ -102401,16 +102401,16 @@
        "pct": 86.9
       },
       "underPressure": {
-       "bpSavedPct": 53.4,
-       "bpConvPct": 36.6,
+       "bpSavedPct": 53.9,
+       "bpConvPct": 36.8,
        "tbWinPct": 41.1,
-       "decWinPct": 47.4,
-       "rating": 178.4,
+       "decWinPct": 50,
+       "rating": 181.8,
        "estimated": false,
        "components": 4,
        "inclChallenger": true,
        "srScope": "last52",
-       "pct": 29.9
+       "pct": 33.7
       },
       "dominanceRatio": {
        "servicePtsWonPct": 61.3,
@@ -103703,7 +103703,7 @@
        "components": 3,
        "inclChallenger": true,
        "srScope": "last52",
-       "pct": 26.5
+       "pct": 25.8
       },
       "dominanceRatio": {
        "servicePtsWonPct": 57,
@@ -103998,7 +103998,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "last52",
-       "pct": 6
+       "pct": 5.8
       },
       "dominanceRatio": {
        "servicePtsWonPct": 57.2,
@@ -104511,7 +104511,7 @@
        "components": 4,
        "inclChallenger": true,
        "srScope": "last52",
-       "pct": 46.4
+       "pct": 45.7
       },
       "dominanceRatio": {
        "servicePtsWonPct": 66.1,
@@ -106294,7 +106294,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "last52",
-       "pct": 43.7
+       "pct": 43.2
       },
       "dominanceRatio": {
        "servicePtsWonPct": 53.6,
@@ -107433,7 +107433,7 @@
        "components": 4,
        "inclChallenger": true,
        "srScope": "last52",
-       "pct": 33.9
+       "pct": 33.7
       },
       "dominanceRatio": {
        "servicePtsWonPct": 61.9,
@@ -107833,10 +107833,10 @@
       },
       "underPressure": {
        "bpSavedPct": 55.2,
-       "bpConvPct": 37.4,
+       "bpConvPct": 37.2,
        "tbWinPct": 30,
        "decWinPct": 40,
-       "rating": 162.6,
+       "rating": 162.4,
        "estimated": false,
        "components": 4,
        "inclChallenger": true,
@@ -107879,10 +107879,10 @@
       },
       "underPressure": {
        "bpSavedPct": 54.1,
-       "bpConvPct": 39.2,
+       "bpConvPct": 39.1,
        "tbWinPct": 29.4,
        "decWinPct": 35.6,
-       "rating": 158.3,
+       "rating": 158.2,
        "estimated": false,
        "components": 4,
        "inclChallenger": true,
@@ -108235,7 +108235,7 @@
        "components": 4,
        "inclChallenger": true,
        "srScope": "last52",
-       "pct": 45
+       "pct": 44.5
       },
       "dominanceRatio": {
        "servicePtsWonPct": 59.4,
@@ -108334,16 +108334,16 @@
        "pct": 24.5
       },
       "underPressure": {
-       "bpSavedPct": 53.6,
-       "bpConvPct": 41,
-       "tbWinPct": 36,
+       "bpSavedPct": 52.5,
+       "bpConvPct": 40.6,
+       "tbWinPct": 32.7,
        "decWinPct": 65.5,
-       "rating": 196,
+       "rating": 191.3,
        "estimated": false,
        "components": 4,
        "inclChallenger": true,
        "srScope": "last52",
-       "pct": 50.7
+       "pct": 43
       },
       "dominanceRatio": {
        "servicePtsWonPct": 64.9,
@@ -108629,16 +108629,16 @@
        "pct": 75.8
       },
       "underPressure": {
-       "bpSavedPct": 51.3,
-       "bpConvPct": 39.4,
-       "tbWinPct": 36,
+       "bpSavedPct": 50.8,
+       "bpConvPct": 39.2,
+       "tbWinPct": 34.6,
        "decWinPct": 40,
-       "rating": 166.7,
+       "rating": 164.6,
        "estimated": false,
        "components": 4,
        "inclChallenger": true,
        "srScope": "last52",
-       "pct": 14.3
+       "pct": 12.8
       },
       "dominanceRatio": {
        "servicePtsWonPct": 62.6,
@@ -108750,7 +108750,7 @@
        "components": 4,
        "inclChallenger": true,
        "srScope": "last52",
-       "pct": 20.5
+       "pct": 19.2
       },
       "dominanceRatio": {
        "servicePtsWonPct": 64.9,
@@ -110997,7 +110997,7 @@
        "components": 4,
        "inclChallenger": true,
        "srScope": "last52",
-       "pct": 19.5
+       "pct": 18.2
       },
       "dominanceRatio": {
        "servicePtsWonPct": 62.6,
@@ -111668,7 +111668,7 @@
        "components": 3,
        "inclChallenger": true,
        "srScope": "last52",
-       "pct": 2.3
+       "pct": 1.8
       },
       "dominanceRatio": {
        "servicePtsWonPct": 59.5,
@@ -114815,7 +114815,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "career",
-       "pct": 42.2
+       "pct": 42.4
       },
       "dominanceRatio": {
        "servicePtsWonPct": 61.5,
@@ -115599,7 +115599,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "last52",
-       "pct": 1.3
+       "pct": 0.7
       },
       "dominanceRatio": {
        "servicePtsWonPct": 65.7,
@@ -115851,7 +115851,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "last52",
-       "pct": 28.4
+       "pct": 28.9
       },
       "dominanceRatio": {
        "servicePtsWonPct": 66.4,
@@ -115897,7 +115897,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "career",
-       "pct": 63.5
+       "pct": 63.2
       },
       "dominanceRatio": {
        "servicePtsWonPct": 66.7,
@@ -117826,16 +117826,16 @@
        "pct": 70.9
       },
       "underPressure": {
-       "bpSavedPct": 53.3,
-       "bpConvPct": 39.2,
+       "bpSavedPct": 52.1,
+       "bpConvPct": 38.9,
        "tbWinPct": 45.5,
        "decWinPct": 41.5,
-       "rating": 179.6,
+       "rating": 178,
        "estimated": false,
        "components": 4,
        "inclChallenger": true,
        "srScope": "last52",
-       "pct": 29.1
+       "pct": 27.2
       },
       "dominanceRatio": {
        "servicePtsWonPct": 57.8,
@@ -117872,16 +117872,16 @@
        "pct": 64.7
       },
       "underPressure": {
-       "bpSavedPct": 52.8,
+       "bpSavedPct": 52.5,
        "bpConvPct": 40.5,
        "tbWinPct": 41.8,
        "decWinPct": 45.3,
-       "rating": 180.4,
+       "rating": 180.1,
        "estimated": false,
        "components": 4,
        "inclChallenger": true,
        "srScope": "career",
-       "pct": 26.5
+       "pct": 25.5
       },
       "dominanceRatio": {
        "servicePtsWonPct": 55.3,
@@ -122665,16 +122665,16 @@
       "serve": null,
       "return": null,
       "underPressure": {
-       "bpSavedPct": 49.5,
-       "bpConvPct": 32.5,
-       "tbWinPct": 54,
-       "decWinPct": 45,
-       "rating": 181,
-       "estimated": false,
-       "components": 4,
+       "bpSavedPct": 42.9,
+       "bpConvPct": 30.4,
+       "tbWinPct": null,
+       "decWinPct": 38.6,
+       "rating": 149.2,
+       "estimated": true,
+       "components": 3,
        "inclChallenger": true,
        "srScope": "last52",
-       "pct": 29.1
+       "pct": 4.6
       },
       "dominanceRatio": null,
       "sample": {
@@ -122892,16 +122892,16 @@
        "pct": 0.8
       },
       "underPressure": {
-       "bpSavedPct": 55.9,
-       "bpConvPct": 36.6,
-       "tbWinPct": 60.4,
-       "decWinPct": 53.2,
-       "rating": 206.1,
+       "bpSavedPct": 55.1,
+       "bpConvPct": 36.5,
+       "tbWinPct": 65.9,
+       "decWinPct": 51.4,
+       "rating": 208.9,
        "estimated": false,
        "components": 4,
        "inclChallenger": true,
        "srScope": "last52",
-       "pct": 64.1
+       "pct": 70.6
       },
       "dominanceRatio": {
        "servicePtsWonPct": 64.1,
@@ -122947,7 +122947,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "career",
-       "pct": 14.6
+       "pct": 15
       },
       "dominanceRatio": {
        "servicePtsWonPct": 67.3,
