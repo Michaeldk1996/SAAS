@@ -297,9 +297,52 @@ create or replace function arb.px(p numeric) returns text
 language sql immutable as $$ select regexp_replace(regexp_replace(to_char(p, 'FM9990.000'), '0+$', ''), '\.$', '') $$;
 create or replace function arb.usd(p numeric) returns text
 language sql immutable as $$ select case when p is null then '—' else '$' || to_char(round(p), 'FM999,999,999,990') end $$;
+-- USD → EUR (founder 2026-11-04: "just in euros"): the ECB reference rate via api.frankfurter.app, asked through pg_net at most
+-- every 6 h from tick(), settled on the next tick. A rate older than 4 days is not used: the amount stays in dollars.
+create table if not exists arb.fx (
+    id        boolean primary key default true check (id),
+    usd_eur   numeric,
+    rate_date date,
+    asked_at  timestamptz,
+    req       bigint
+);
+insert into arb.fx (id) values (true) on conflict (id) do nothing;
+alter table arb.fx enable row level security;
+create or replace function arb.fx_tick() returns void
+language plpgsql as $$
+declare f arb.fx; r record; v numeric;
+begin
+  select * into f from arb.fx;
+  if f.req is not null then
+    select * into r from net._http_response where id = f.req;
+    if found then
+      begin
+        v := (r.content::jsonb -> 'rates' ->> 'EUR')::numeric;
+        if r.status_code between 200 and 299 and v > 0.3 and v < 3 then
+          update arb.fx set usd_eur = v, rate_date = (r.content::jsonb ->> 'date')::date, req = null where id;
+        else update arb.fx set req = null where id; end if;
+      exception when others then update arb.fx set req = null where id;
+      end;
+    end if;
+  end if;
+  if (f.asked_at is null or f.asked_at < now() - interval '6 hours') then
+    update arb.fx set req = net.http_get(url := 'https://api.frankfurter.app/latest?from=USD&to=EUR'), asked_at = now() where id;
+  end if;
+end $$;
+create or replace function arb.eur2(p numeric) returns text
+language sql immutable as $$ select case when p is null then '—' when abs(p) < 1000 then '€' || to_char(p, 'FM990.00')
+                                         else '€' || to_char(round(p), 'FM999,999,999,990') end $$;
 create or replace function arb.usd2(p numeric) returns text
 language sql immutable as $$ select case when p is null then '—' when abs(p) < 1000 then '$' || to_char(p, 'FM990.00')
                                          else '$' || to_char(round(p), 'FM999,999,999,990') end $$;
+-- an amount people read: euros first (dollars in brackets) while the rate is fresh, else dollars
+create or replace function arb.money(p numeric) returns text
+language sql stable as $$
+  select case when p is null then '—'
+              when (select usd_eur from arb.fx where rate_date > current_date - 4) is null then arb.usd2(p)
+              else arb.eur2(p * (select usd_eur from arb.fx)) || ' (' || arb.usd2(p) || ')' end
+$$;
+
 -- a pre-match arb's largest total: a prediction-market leg holds liq dollars at its price (= contracts × price), so the most
 -- that leg takes is liq × price / eff (its cost with the fee) and the total is that over its share of the split; the
 -- smaller of the two legs decides. NULL when neither leg is a prediction market (bookmaker limits are not known here).
@@ -323,7 +366,7 @@ language sql immutable as $$
 $$;
 
 create or replace function arb.render_arb(a jsonb) returns text
-language sql immutable as $$
+language sql stable as $$
   select concat_ws(chr(10),
     '⚖️ ARB',
     '',
@@ -333,10 +376,10 @@ language sql immutable as $$
     -- dollars per leg (founder 2026-11-04): at the largest total the prediction-market book takes, else per $1,000
     format('💰 %s: stake %s on %s + %s on %s = %s → pays %s whoever wins → profit %s (+%s%%)',
            case when arb.max_total(a) is not null then 'Max' else 'Per $1,000' end,
-           arb.usd2(coalesce(arb.max_total(a), 1000) * (a->>'stakeFirst')::numeric / 100), a->>'first',
-           arb.usd2(coalesce(arb.max_total(a), 1000) * (a->>'stakeSecond')::numeric / 100), a->>'second',
-           arb.usd2(coalesce(arb.max_total(a), 1000)), arb.usd2(coalesce(arb.max_total(a), 1000) * (1 + (a->>'profit')::numeric / 100)),
-           arb.usd2(coalesce(arb.max_total(a), 1000) * (a->>'profit')::numeric / 100), to_char((a->>'profit')::numeric, 'FM990.00')),
+           arb.money(coalesce(arb.max_total(a), 1000) * (a->>'stakeFirst')::numeric / 100), a->>'first',
+           arb.money(coalesce(arb.max_total(a), 1000) * (a->>'stakeSecond')::numeric / 100), a->>'second',
+           arb.money(coalesce(arb.max_total(a), 1000)), arb.money(coalesce(arb.max_total(a), 1000) * (1 + (a->>'profit')::numeric / 100)),
+           arb.money(coalesce(arb.max_total(a), 1000) * (a->>'profit')::numeric / 100), to_char((a->>'profit')::numeric, 'FM990.00')),
     case when arb.max_total(a) is null then '📏 Both legs are bookmakers: their limits are not known here.'
          else '📏 The most the prediction-market book takes at this price; a smaller stake keeps the same split.' end,
     case when (a->>'retirementFlag')::boolean then
@@ -358,12 +401,18 @@ language sql immutable as $$
     format('🕒 Prices: %s @ %s · Bet105 @ %s', d->>'source', arb.hhmm((d->>'at')::timestamptz), arb.hhmm((d->>'fairAt')::timestamptz)))
 $$;
 
-create or replace function arb.send(p_text text) returns bigint
+-- the chat by kind (founder 2026-11-04): ⚡ live arbitrage and 📐 divergence go to the arbitrage group (Vault
+-- arb_telegram_chat_id, "Arbritage Bot"); ⚖️ pre-match arbitrage stays in the drop chat (ten287_telegram_chat_id). Same bot.
+-- No arbitrage chat stored yet → the drop chat (an alert is never lost to a missing setting).
+create or replace function arb.send(p_text text, p_kind text default 'arb') returns bigint
 language plpgsql as $$
 declare tok text; chat text;
 begin
   select decrypted_secret into tok  from vault.decrypted_secrets where name = 'ten287_telegram_bot_token';
-  select decrypted_secret into chat from vault.decrypted_secrets where name = 'ten287_telegram_chat_id';
+  if p_kind in ('live', 'divergence') then
+    select decrypted_secret into chat from vault.decrypted_secrets where name = 'arb_telegram_chat_id';
+  end if;
+  if chat is null then select decrypted_secret into chat from vault.decrypted_secrets where name = 'ten287_telegram_chat_id'; end if;
   if tok is null or chat is null then return null; end if;
   return net.http_post(url := 'https://api.telegram.org/bot' || btrim(tok) || '/sendMessage',
     body := jsonb_build_object('chat_id', btrim(chat), 'text', p_text, 'disable_web_page_preview', true),
@@ -382,11 +431,12 @@ begin
   -- one re-send for an alert Telegram did not take (founder 2026-11-03: 3 of 13 live alerts timed out at the TLS handshake
   -- on 2 Nov), only while it is fresh (15 min): any kind, the same message, recorded on the row.
   for x in select to_jsonb(a) from arb.alerts a where a.delivery like 'failed:%' and a.retries = 0 and a.created_at > now() - interval '15 minutes' loop
-    rid := arb.send(x->>'message');
+    rid := arb.send(x->>'message', x->>'kind');
     update arb.alerts set retries = 1, net_request_id = coalesce(rid, net_request_id), sent_at = case when rid is not null then now() else sent_at end,
            delivery = case when rid is null then 'unsent: no vault secret' else 'queued' end
      where id = (x->>'id')::bigint;
   end loop;
+  perform arb.fx_tick();
   select * into c from arb.config;
   o := arb.opps();
   insert into arb.snap (id, at, opps) values (true, now(), o) on conflict (id) do update set at = excluded.at, opps = excluded.opps;
@@ -402,7 +452,7 @@ begin
   for x in select * from jsonb_array_elements(o->'divergences') loop
     k := 'divergence|' || (x->>'eventKey') || '|' || (x->>'source') || '|' || (x->>'side');
     continue when exists (select 1 from arb.alerts where akey = k and created_at > now() - c.cooldown);
-    msg := arb.render_div(x); rid := arb.send(msg);
+    msg := arb.render_div(x); rid := arb.send(msg, 'divergence');
     insert into arb.alerts (kind, akey, event_key, detail, message, net_request_id, sent_at, delivery)
     values ('divergence', k, (x->>'eventKey')::bigint, x, msg, rid, case when rid is not null then now() end,
             case when rid is null then 'unsent: no vault secret' else 'queued' end);
@@ -412,7 +462,7 @@ begin
 end $$;
 
 create or replace function arb.render_live(g jsonb) returns text
-language sql immutable as $$
+language sql stable as $$
   select concat_ws(chr(10),
     '⚡ LIVE ARB',
     '',
@@ -420,12 +470,12 @@ language sql immutable as $$
     format('%s · %s', case g->>'phase' when 'changeover' then '🪑 Changeover (players sit)' when 'set' then '⏸ Set break'
                                          else '🔄 New game (serve changes)' end, coalesce(g->>'score', 'score —')),
     -- dollars, not shares (founder 2026-11-04): the most both books take at these prices, per leg, and what it returns
-    format('✅ Stake %s on %s @ %s on Polymarket (after fee %s)', arb.usd2((g->>'polyStake')::numeric), g->>'polyName',
+    format('✅ Stake %s on %s @ %s on Polymarket (after fee %s)', arb.money((g->>'polyStake')::numeric), g->>'polyName',
            arb.px((g->>'polyDec')::numeric), arb.px((g->>'polyEff')::numeric)),
-    format('✅ Stake %s on %s @ %s on Kalshi (after fee %s)', arb.usd2((g->>'kalStake')::numeric), g->>'kalName',
+    format('✅ Stake %s on %s @ %s on Kalshi (after fee %s)', arb.money((g->>'kalStake')::numeric), g->>'kalName',
            arb.px((g->>'kalDec')::numeric), arb.px((g->>'kalEff')::numeric)),
-    format('💰 Total %s → pays %s whoever wins → profit %s (+%s%%)', arb.usd2((g->>'stake')::numeric), arb.usd2((g->>'payout')::numeric),
-           arb.usd2((g->>'profitUsd')::numeric), to_char((g->>'edge')::numeric, 'FM990.00')),
+    format('💰 Total %s → pays %s whoever wins → profit %s (+%s%%)', arb.money((g->>'stake')::numeric), arb.money((g->>'payout')::numeric),
+           arb.money((g->>'profitUsd')::numeric), to_char((g->>'edge')::numeric, 'FM990.00')),
     '📏 That is the most both order books take at these prices; a smaller stake keeps the same split and the same +%.',
     '⚠️ Live prices move every point: check both before you bet.',
     format('🕒 Prices: Polymarket @ %s · Kalshi @ %s', arb.hhmm((g->>'polyAt')::timestamptz), arb.hhmm((g->>'kalAt')::timestamptz)))
@@ -454,7 +504,7 @@ begin
     continue when not coalesce(g->>'kalshiEvent', '') like 'KXATPMATCH-%';   -- ATP tour only
     k := 'live|' || (g->>'kalshiEvent') || '|' || (g->>'dir');
     continue when exists (select 1 from arb.alerts where akey = k and created_at > now() - c.live_cooldown);
-    msg := arb.render_live(g); rid := arb.send(msg);
+    msg := arb.render_live(g); rid := arb.send(msg, 'live');
     insert into arb.alerts (kind, akey, event_key, detail, message, net_request_id, sent_at, delivery)
     values ('live', k, 0, g, msg, rid, case when rid is not null then now() end,
             case when rid is null then 'unsent: no vault secret' else 'queued' end);

@@ -96,7 +96,11 @@ answers on card 37612d3d (TEN-294 doc `design`). Suite: `test-ten294-drops.mjs`.
   board, or a board status that is not "Set N". **Test:** `boardPhase` in `tools/test-live-arb-recorder.mjs`. **Stakes in dollars** (founder 2026-11-04): ⚡ shows the stake per leg (contracts × each leg's
   cost with its fee), the total, the payout (contracts × $1, whoever wins) and the profit; ⚖️ shows the same at the largest
   total the prediction-market leg's book takes at its price (`arb.max_total`: liq × price / eff over its share), or per $1,000
-  when both legs are bookmakers (limits unknown). Tiebreak sets read "7–6(5)" (`setText`). A pair joins on both names, exactly one candidate each way; Kalshi
+  when both legs are bookmakers (limits unknown). Tiebreak sets read "7–6(5)" (`setText`). **Euros** (founder 2026-11-04): every amount reads
+  "€… ($…)" at the ECB reference rate (`arb.fx`, api.frankfurter.app via pg_net from `arb.tick()`, at most every 6 h); a rate
+  older than 4 days is not used and the amount stays in dollars. **Chats** (founder 2026-11-04): ⚡ LIVE ARB and 📐 DIVERGENCE
+  go to the arbitrage group "Arbritage Bot" (Vault `arb_telegram_chat_id`), ⚖️ pre-match ARB stays in the drop chat; the same
+  bot posts both; no arbitrage chat stored → the drop chat (`arb.send(text, kind)`). A pair joins on both names, exactly one candidate each way; Kalshi
   Challengers (`KXATPCHALLENGERMATCH`) are never read. Gap = back one player on each market for < $1 after both taker fees
   (the engine's 0.07·q(1−q) / 0.05·p(1−p)). Every 5 s the positive gaps + a heartbeat go to `public.arb_live_push`
   (service role). **Test:** a gap posts ⚡ LIVE ARB (drop chat, the engine's `arb.send`) only when edge ≥ `config.live_min`
