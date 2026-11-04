@@ -89,7 +89,12 @@ def scenario(src):
     # day 0: a mix of rows the bot reads and rows it never reads (other book, market, live, a marker, side 3 kept)
     obs('a1', -600); obs('a2', -300, side_id=3); obs('x1', -200, feed_source_id=43); obs('x2', -100, market_type_id=2)
     obs('x3', -90, is_live='true'); obs('x4', -80, price='0.0'); obs('old', -16 * 24 * 60)
-    refresh(0); out['seed'] = diff(f"{T0}")
+    refresh(0)
+    out['not seeded after one call'] = int(q("select (not seeded)::int from ten280_bot.tick_cache_state").strip()) - 1
+    for _ in range(16):
+        refresh(0)
+    out['seeded after 17 calls (a day each)'] = int(q("select seeded::int from ten280_bot.tick_cache_state").strip()) - 1
+    out['seed'] = diff(f"{T0}")
     # a sweep that began at -20 min and commits after the refresh at 0: its row carries observed_at -20
     obs('late', -25, observed_min=-20); obs('n1', 3)
     refresh(10); out['late commit'] = diff(f"{T0} + interval '10 minutes'")
@@ -101,7 +106,8 @@ def scenario(src):
     refresh(20); out['long sweep'] = diff(f"{T0} + interval '20 minutes'")
     # the daily re-seed and the 15-day prune
     obs('n2', 25 * 60)
-    refresh(25 * 60 + 5); out['daily re-seed'] = diff(f"{T0} + interval '{25 * 60 + 5} minutes'")
+    refresh(25 * 60 + 5); out['daily re-walk'] = diff(f"{T0} + interval '{25 * 60 + 5} minutes'")
+    out['the re-walk keeps the table serving (seeded stays true)'] = int(q("select seeded::int from ten280_bot.tick_cache_state").strip()) - 1
     out['15-day prune'] = int(q(f"select count(*) from ten280_bot.tick_cache where at < {T0} + interval '{25 * 60 + 5} minutes' - interval '15 days'").strip())
     return out
 
@@ -110,12 +116,10 @@ r = scenario(SRC)
 for k, v in r.items():
     check(f'price table = the direct read: {k}', v == 0, r)
 check('the 15-day prune leaves nothing older', r['15-day prune'] == 0, r)
-st = q("select rows_added || '|' || (full_at = read_at) from ten280_bot.tick_cache_state").strip()
-check('the state records the refresh (a full re-seed sets full_at = read_at)', st.endswith('|true'), st)
 
 MUT = [
     ('no 1-hour margin (a sweep that commits after the refresh loses its rows)',
-     "bound := st.read_at - interval '1 hour';", "bound := st.read_at;"),
+     "bound := coalesce(st.read_at, p_now) - interval '1 hour';", "bound := coalesce(st.read_at, p_now);"),
     ('a long sweep that finished since does not move the bound',
      "if sw is not null and sw - interval '1 minute' < bound then bound := sw - interval '1 minute'; end if;", ""),
 ]
@@ -123,14 +127,21 @@ for name, a, b in MUT:
     assert SRC.count(a) == 1, 'mutant anchor gone: ' + name
     m = scenario(SRC.replace(a, b))
     check(f'MUTANT caught: {name}', any(v for k, v in m.items() if k != '15-day prune'), m)
+m = scenario(SRC.replace("lo := greatest(st.seed_low - interval '1 day', horizon);", "lo := horizon;"))
+check('MUTANT (control): the whole window in one call seeds at once — the staged walk is what the first two checks see',
+      m['seeded after 17 calls (a day each)'] == 0 and m['not seeded after one call'] != 0, m)
 
 src_t = piece(SRC, 'create or replace function ten280_bot.tick()', '$function$\n;')
 check('tick() refreshes the price table before load_ticks reads it',
       src_t.index('ten280_bot.refresh_cache(e)') < src_t.index('ten280_bot.load_ticks('), src_t[:200])
-check("load_ticks' poll reads the price table, never kibl_line_observations",
-      'from ten280_bot.tick_cache c join fx' in piece(SRC, 'create or replace function ten280_bot.load_ticks(', 'strm as ('))
-check('the install guard compares the table with the direct read over 3 days and raises on any difference',
-      "price-table guard: % rows differ from the direct read over 3 days" in SRC)
+lt = piece(SRC, 'create or replace function ten280_bot.load_ticks(', 'strm as (')
+check("load_ticks' poll reads the price table once seeded, the direct read until then (never both)",
+      'from ten280_bot.tick_cache c join fx' in lt and "where (select ok from seeded) and c.at between" in lt
+      and "where not (select ok from seeded)" in lt)
+check('cache_check() compares the table with the direct read over a window, for a by-hand check once seeded',
+      'create or replace function ten280_bot.cache_check(' in SRC)
+check('the install transaction no longer seeds or compares 15 days (it ran past 25 min and rolled back)',
+      'price-table guard' not in SRC)
 pg.close()
 print(f'\ntest-ten280-tick-cache-sql: {passed} passed, {failed} failed')
 sys.exit(1 if failed else 0)
