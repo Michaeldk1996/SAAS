@@ -279,13 +279,20 @@ export class KalshiFeed {
 //   'changeover' an odd number of games played in the set (players sit, 90 s);
 //   'game'       an even number (a new game, the serve changes, ~25 s);
 // anything else ('point': a game under way, or a tiebreak, or the board stale or unmatched) never alerts.
+// a set as people write it: api-tennis gives a tiebreak set as "7.7" / "6.5" (games.points) → "7–6(5)", the loser's points
+export function setText(a, b) {
+  const [ga, ta] = String(a ?? '').split('.'), [gb, tb] = String(b ?? '').split('.');
+  if (ta == null && tb == null) return `${ga}–${gb}`;
+  const lose = Number(ga) < Number(gb) ? ta : tb;
+  return `${ga}–${gb}` + (lose != null && lose !== '' ? `(${lose})` : '');
+}
 export function boardPhase(fix) {
   if (!fix) return { phase: null };
   const status = String(fix.event_status || '');
   const sc = Array.isArray(fix.scores) ? fix.scores : [];
   const cur = sc.length ? sc[sc.length - 1] : null;
-  const ga = cur ? Number(cur.score_first) : 0, gb = cur ? Number(cur.score_second) : 0;
-  const sets = sc.map((x) => `${x.score_first}–${x.score_second}`).join(' ');
+  const ga = cur ? Number(String(cur.score_first).split('.')[0]) : 0, gb = cur ? Number(String(cur.score_second).split('.')[0]) : 0;
+  const sets = sc.map((x) => setText(x.score_first, x.score_second)).join(' ');
   const base = { status, score: sets || '0–0' };
   if (!/^set \d/i.test(status)) return { ...base, phase: null };                       // not in play (finished, interrupted, …)
   if (!isFinite(ga) || !isFinite(gb)) return { ...base, phase: null };
@@ -310,7 +317,10 @@ export function gapRow(pair, e, ctx) {
   return { match: pair.pm.title.replace(/^[^:]*:\s*/, ''), event: pair.pm.title.split(':')[0], kalshiEvent: pair.km.ev, dir: e.dir,
     polyName: e.polyName, kalName: e.kalName, polyDec: r2(1 / e.polyAsk), polyEff: r2(1 / polyCost), polyLiq: r2(e.polySize * e.polyAsk),
     kalDec: r2(1 / e.kalAsk), kalEff: r2(1 / kalCost), kalLiq: e.kalSize == null ? null : r2(e.kalSize * e.kalAsk), kalLeg: e.kalLeg,
-    edge: e.edge, contracts: e.contracts, stake: e.stake, stakePoly: +(polyCost / e.cost * 100).toFixed(1), stakeKalshi: +(kalCost / e.cost * 100).toFixed(1),
+    edge: e.edge, contracts: e.contracts, stake: e.stake,
+    // dollars per leg (founder 2026-11-04): contracts × each leg's cost with its fee; a contract pays $1 whoever wins
+    polyStake: e.contracts == null ? null : +(e.contracts * polyCost).toFixed(2), kalStake: e.contracts == null ? null : +(e.contracts * kalCost).toFixed(2),
+    payout: e.contracts == null ? null : +e.contracts.toFixed(2), profitUsd: e.contracts == null || e.stake == null ? null : +(e.contracts - e.stake).toFixed(2), stakePoly: +(polyCost / e.cost * 100).toFixed(1), stakeKalshi: +(kalCost / e.cost * 100).toFixed(1),
     phase: ctx.board ? ctx.board.phase : null, score: ctx.board ? ctx.board.score : null, boardStatus: ctx.board ? ctx.board.status : null,
     inPlay: ctx.inPlay, started: ctx.started, polyAt: new Date(ctx.polyAt).toISOString(), kalAt: new Date(ctx.kalAt).toISOString() };
 }

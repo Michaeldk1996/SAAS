@@ -297,6 +297,19 @@ create or replace function arb.px(p numeric) returns text
 language sql immutable as $$ select regexp_replace(regexp_replace(to_char(p, 'FM9990.000'), '0+$', ''), '\.$', '') $$;
 create or replace function arb.usd(p numeric) returns text
 language sql immutable as $$ select case when p is null then '—' else '$' || to_char(round(p), 'FM999,999,999,990') end $$;
+create or replace function arb.usd2(p numeric) returns text
+language sql immutable as $$ select case when p is null then '—' when abs(p) < 1000 then '$' || to_char(p, 'FM990.00')
+                                         else '$' || to_char(round(p), 'FM999,999,999,990') end $$;
+-- a pre-match arb's largest total: a prediction-market leg holds liq dollars at its price (= contracts × price), so the most
+-- that leg takes is liq × price / eff (its cost with the fee) and the total is that over its share of the split; the
+-- smaller of the two legs decides. NULL when neither leg is a prediction market (bookmaker limits are not known here).
+create or replace function arb.max_total(a jsonb) returns numeric
+language sql immutable as $$
+  select min(t) from (
+    select (l->>'liq')::numeric * (l->>'price')::numeric / (l->>'eff')::numeric / (sh / 100) t
+      from (values (a->'legFirst', (a->>'stakeFirst')::numeric), (a->'legSecond', (a->>'stakeSecond')::numeric)) v(l, sh)
+     where l->>'group' = 'prediction' and (l->>'liq')::numeric > 0 and sh > 0) x
+$$;
 create or replace function arb.hhmm(p timestamptz) returns text
 language sql immutable as $$ select case when p is null then '—' else to_char(p at time zone 'UTC', 'HH24:MI') || ' UTC' end $$;
 create or replace function arb.feeword(p_source text) returns text
@@ -317,8 +330,15 @@ language sql immutable as $$
     format('🎾 Match: %s vs %s (ATP)', a->>'first', a->>'second'),
     arb.leg(a->'legFirst', a->>'first'),
     arb.leg(a->'legSecond', a->>'second'),
-    format('💰 Locked-in: +%s%% after fees · stakes %s%% / %s%%', to_char((a->>'profit')::numeric, 'FM990.00'),
-           to_char((a->>'stakeFirst')::numeric, 'FM990.0'), to_char((a->>'stakeSecond')::numeric, 'FM990.0')),
+    -- dollars per leg (founder 2026-11-04): at the largest total the prediction-market book takes, else per $1,000
+    format('💰 %s: stake %s on %s + %s on %s = %s → pays %s whoever wins → profit %s (+%s%%)',
+           case when arb.max_total(a) is not null then 'Max' else 'Per $1,000' end,
+           arb.usd2(coalesce(arb.max_total(a), 1000) * (a->>'stakeFirst')::numeric / 100), a->>'first',
+           arb.usd2(coalesce(arb.max_total(a), 1000) * (a->>'stakeSecond')::numeric / 100), a->>'second',
+           arb.usd2(coalesce(arb.max_total(a), 1000)), arb.usd2(coalesce(arb.max_total(a), 1000) * (1 + (a->>'profit')::numeric / 100)),
+           arb.usd2(coalesce(arb.max_total(a), 1000) * (a->>'profit')::numeric / 100), to_char((a->>'profit')::numeric, 'FM990.00')),
+    case when arb.max_total(a) is null then '📏 Both legs are bookmakers: their limits are not known here.'
+         else '📏 The most the prediction-market book takes at this price; a smaller stake keeps the same split.' end,
     case when (a->>'retirementFlag')::boolean then
       '⚠️ Retirement rules differ: Kalshi / Polymarket pay the player who advances once a ball is played; a bookmaker may void the bet on a retirement.' end,
     format('🕒 Prices: %s @ %s · %s @ %s', a->'legFirst'->>'source', arb.hhmm((a->'legFirst'->>'at')::timestamptz),
@@ -399,12 +419,14 @@ language sql immutable as $$
     format('🎾 Match: %s (ATP)', g->>'match'),
     format('%s · %s', case g->>'phase' when 'changeover' then '🪑 Changeover (players sit)' when 'set' then '⏸ Set break'
                                          else '🔄 New game (serve changes)' end, coalesce(g->>'score', 'score —')),
-    format('✅ Back %s @ %s on Polymarket (after fee %s) · %s at price', g->>'polyName', arb.px((g->>'polyDec')::numeric),
-           arb.px((g->>'polyEff')::numeric), arb.usd((g->>'polyLiq')::numeric)),
-    format('✅ Back %s @ %s on Kalshi (after fee %s) · %s at price', g->>'kalName', arb.px((g->>'kalDec')::numeric),
-           arb.px((g->>'kalEff')::numeric), arb.usd((g->>'kalLiq')::numeric)),
-    format('💰 Locked-in: +%s%% after fees · stakes %s%% / %s%% · up to %s', to_char((g->>'edge')::numeric, 'FM990.00'),
-           to_char((g->>'stakePoly')::numeric, 'FM990.0'), to_char((g->>'stakeKalshi')::numeric, 'FM990.0'), arb.usd((g->>'stake')::numeric)),
+    -- dollars, not shares (founder 2026-11-04): the most both books take at these prices, per leg, and what it returns
+    format('✅ Stake %s on %s @ %s on Polymarket (after fee %s)', arb.usd2((g->>'polyStake')::numeric), g->>'polyName',
+           arb.px((g->>'polyDec')::numeric), arb.px((g->>'polyEff')::numeric)),
+    format('✅ Stake %s on %s @ %s on Kalshi (after fee %s)', arb.usd2((g->>'kalStake')::numeric), g->>'kalName',
+           arb.px((g->>'kalDec')::numeric), arb.px((g->>'kalEff')::numeric)),
+    format('💰 Total %s → pays %s whoever wins → profit %s (+%s%%)', arb.usd2((g->>'stake')::numeric), arb.usd2((g->>'payout')::numeric),
+           arb.usd2((g->>'profitUsd')::numeric), to_char((g->>'edge')::numeric, 'FM990.00')),
+    '📏 That is the most both order books take at these prices; a smaller stake keeps the same split and the same +%.',
     '⚠️ Live prices move every point: check both before you bet.',
     format('🕒 Prices: Polymarket @ %s · Kalshi @ %s', arb.hhmm((g->>'polyAt')::timestamptz), arb.hhmm((g->>'kalAt')::timestamptz)))
 $$;

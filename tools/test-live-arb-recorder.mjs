@@ -3,7 +3,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { generateKeyPairSync, createVerify, constants as CC } from 'node:crypto';
-import { samePlayer, polyMatches, kalshiMatches, joinPairs, kalshiFee, polyFee, Books, evaluate, Episodes, summarise, gapRow, PolyFeed, KalshiFeed, kalshiSign, boardPhase, boardFixture } from './live-arb-recorder.mjs';
+import { samePlayer, polyMatches, kalshiMatches, joinPairs, kalshiFee, polyFee, Books, evaluate, Episodes, summarise, gapRow, PolyFeed, KalshiFeed, kalshiSign, boardPhase, boardFixture, setText } from './live-arb-recorder.mjs';
 
 const ev = (id, a, b, extra = {}) => ({ id, title: `X: ${a} vs ${b}`, live: false, ...extra,
   markets: [{ sportsMarketType: 'moneyline', outcomes: JSON.stringify([a, b]), clobTokenIds: JSON.stringify([id + 'A', id + 'B']), gameStartTime: '2026-11-02 12:00:00+00' }] });
@@ -202,4 +202,20 @@ test('gap row carries the board state (phase, score, status) for the alert rule'
   const g = gapRow(p, e, { inPlay: true, started: true, polyAt: 1000, kalAt: 1000, board: boardPhase(fix('Set 1', '0 - 0', [[2, 1]])) });
   assert.equal(g.phase, 'changeover'); assert.equal(g.score, '2–1'); assert.equal(g.boardStatus, 'Set 1');
   assert.equal(gapRow(p, e, { inPlay: true, started: true, polyAt: 1, kalAt: 1, board: null }).phase, null, 'no board → no phase → no alert');
+});
+
+test('gap row in dollars: per-leg stake, payout = contracts, profit = payout − total (founder 2026-11-04)', () => {
+  const { p, b } = pair(0.45, 0.48);
+  const e = evaluate(p, b, 1000, 2000).find((x) => x.dir === 'polyA+kalshiB');
+  const g = gapRow(p, e, { inPlay: true, started: true, polyAt: 1000, kalAt: 1000, board: null });
+  assert.equal(g.payout, 30, '30 contracts pay $30 whoever wins');
+  assert.ok(Math.abs(g.polyStake + g.kalStake - e.stake) <= 0.011, 'the two legs add up to the total (each rounded to the cent)');
+  assert.equal(g.polyStake, +(30 * (0.45 + 0.05 * 0.45 * 0.55)).toFixed(2));
+  assert.equal(g.profitUsd, +(30 - e.stake).toFixed(2)); assert.ok(g.profitUsd > 0);
+});
+
+test('tiebreak sets read as written: 7–6(5), 6–7(5); plain sets unchanged; the games feed the phase', () => {
+  assert.equal(setText('7.7', '6.5'), '7–6(5)'); assert.equal(setText('6.5', '7.7'), '6–7(5)'); assert.equal(setText('6', '3'), '6–3');
+  assert.equal(boardPhase(fix('Set 2', '0 - 0', [[6.5, 7.7], [2, 1]])).score, '6–7(5) 2–1');
+  assert.equal(boardPhase(fix('Set 2', '0 - 0', [['7.7', '6.5'], ['2', '1']])).phase, 'changeover');
 });

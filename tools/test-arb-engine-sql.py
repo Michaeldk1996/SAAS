@@ -123,7 +123,8 @@ try:
     rc, msg = q("select message from arb.alerts where kind = 'arb'")
     check('ARB message: header, both legs, profit, the retirement warning',
           msg.startswith('⚖️ ARB') and '✅ Back Q. Halys @ 2.5 on Kalshi (after fee 2.399) · liquidity $400' in msg
-          and '✅ Back A. Fery @ 2 on Bet105 · bookmaker' in msg and '💰 Locked-in: +9.07% after fees · stakes 45.5% / 54.5%' in msg
+          and '✅ Back A. Fery @ 2 on Bet105 · bookmaker' in msg
+          and '💰 Max: stake $416.84 on Q. Halys + $499.29 on A. Fery = $916.13 → pays $999.23 whoever wins → profit $83.09 (+9.07%)' in msg
           and '⚠️ Retirement rules differ' in msg, msg)
     rc, msg = q("select message from arb.alerts where kind = 'divergence' and detail->>'source' = 'Superbet'")
     check('DIVERGENCE message', msg.startswith('📐 DIVERGENCE') and '🎯 Superbet: Q. Halys @ 2.2' in msg and '📏 Fair (Bet105, margin removed): 1.95 → +12.8% above fair' in msg, msg)
@@ -175,6 +176,7 @@ try:
         g = {'match': 'Alex Molcan vs Titouan Droguet', 'event': 'Rolex Paris Masters', 'kalshiEvent': 'KXATPMATCH-26NOV02MOLDRO',
              'dir': 'polyA+kalshiB', 'polyName': 'Alex Molcan', 'kalName': 'Titouan Droguet', 'polyDec': 2.222, 'polyEff': 2.17,
              'polyLiq': 900, 'kalDec': 2.083, 'kalEff': 2.02, 'kalLiq': 480, 'edge': 2.4, 'contracts': 500, 'stake': 470,
+             'polyStake': 230.41, 'kalStake': 239.59, 'payout': 500, 'profitUsd': 30,
              'stakePoly': 48.2, 'stakeKalshi': 51.8, 'inPlay': True, 'started': True,
              'phase': 'changeover', 'score': '6–3 2–1', 'boardStatus': 'Set 2',
              'polyAt': '2026-11-02T12:00:00Z', 'kalAt': '2026-11-02T12:00:01Z'}
@@ -192,10 +194,11 @@ try:
     rc, out = push([gap(kalshiEvent='KXATPMATCH-P5', phase='set'), gap(kalshiEvent='KXATPMATCH-P6', phase='game')])
     check('a set break and a new game do post', out == '2', out)
     rc, out = q("select message from arb.alerts where kind = 'live'")
-    check('LIVE message: header, both legs after fee with dollars, profit, stakes',
-          out.startswith('⚡ LIVE ARB') and 'Back Alex Molcan @ 2.222 on Polymarket (after fee 2.17) · $900 at price' in out
-          and 'Back Titouan Droguet @ 2.083 on Kalshi (after fee 2.02) · $480 at price' in out
-          and '+2.40% after fees · stakes 48.2% / 51.8% · up to $470' in out and '🪑 Changeover (players sit) · 6–3 2–1' in out, out)
+    check('LIVE message: dollars per leg, total, payout, profit (founder 2026-11-04), the break',
+          out.startswith('⚡ LIVE ARB') and '✅ Stake $230.41 on Alex Molcan @ 2.222 on Polymarket (after fee 2.17)' in out
+          and '✅ Stake $239.59 on Titouan Droguet @ 2.083 on Kalshi (after fee 2.02)' in out
+          and '💰 Total $470.00 → pays $500.00 whoever wins → profit $30.00 (+2.40%)' in out
+          and 'stakes 48.2%' not in out and '🪑 Changeover (players sit) · 6–3 2–1' in out, out)
     a = json.loads(q("select public.arb_now()", 'anon')[1])
     check('arb_now(): live list = the last push\'s qualifying gaps, feed on', a.get('liveOn') is True and sorted(g['kalshiEvent'] for g in a.get('live') or []) == ['KXATPMATCH-P5', 'KXATPMATCH-P6'] and a['config'].get('liveMin') == 1, a.get('live'))
     q("update arb.live_state set at = now() - interval '5 minutes'")
