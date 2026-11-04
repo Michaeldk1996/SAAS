@@ -148,6 +148,24 @@ try { const M = build(Object.assign({}, FEEDS, { DB_YIELD_LOWER_APPROX: path.joi
   red3 = M.x.xNames.some(n => n[0] === 'Ace A.' && n[1] === 'Bee B.'); }
 finally { fs.unlinkSync(mp3); }
 ok(red3, 'MUTANT (no Tennis-Data guard) lets the Geneva match in twice — the duplicate check turns red');
+// ── founder 2026-11-04 ("always find prices"): one match = one row, whatever the spelling or the key
+// (a) an atp-nt row whose names Tennis-Data spells another way (hyphen, a longer initial) is the same match: dropped
+fs.writeFileSync(path.join(tmp, 'approx-sp.csv'), [COLS].concat(approx.slice(1),
+  TEC({ date: '2026-05-20', level: 'atp-nt', tournament: 'ATP Geneva', winner: 'A-ce A.', loser: 'Bee Be.', winnerKey: '25', loserKey: '26', psw: 1.45, psl: 2.7, eventKey: 704, source: 'Tennis Explorer · Pinnacle', comment: 'Completed' }),
+  // (b) the same Davis Cup match stored with its event key and without it (team-event import) — one row, the keyed copy
+  TEC({ date: '2026-09-18', level: 'atp-x', tournament: 'ATP Davis Cup - World Group II', winner: 'Gee G.', loser: 'Hee H.', winnerKey: '41', loserKey: '42', psw: 1.44, psl: 2.62, eventKey: 12163905, source: 'Tennis Explorer · Bet365', comment: 'Completed' }),
+  TEC({ date: '2026-09-18', level: 'atp-x', tournament: 'Davis Cup', winner: 'Gee G.', loser: 'Hee H.', winnerKey: '42', loserKey: '41', psw: 1.44, psl: 2.62, source: 'Tennis Explorer · Bet365', comment: 'Completed' }),
+  // control: the same pair on another day is another match — kept
+  TEC({ date: '2026-09-20', level: 'atp-x', tournament: 'Davis Cup', winner: 'Gee G.', loser: 'Hee H.', winnerKey: '41', loserKey: '42', psw: 1.5, psl: 2.5, source: 'Tennis Explorer · Bet365', comment: 'Completed' }),
+).join('\n') + '\n');
+const SP = build(Object.assign({}, FEEDS, { DB_YIELD_LOWER_APPROX: path.join(tmp, 'approx-sp.csv') }));
+const spN = SP.x.xNames.map((n, i) => ({ n, x: SP.x.xRows[i] }));
+ok(!spN.some(o => o.n[0] === 'A-ce A.') && SP.x.meta.lower.ntHasTd === 1, 'one match: an atp-nt row Tennis-Data spells another way ("A-ce A." / "Bee Be." v "Ace A." / "Bee B.") is never a second row');
+const gh = spN.filter(o => o.n[0] === 'Gee G.' && o.n[1] === 'Hee H.');
+ok(gh.length === 2 && gh.some(o => o.x[0] === 20260918 && o.x[4] === 'ATP Davis Cup - World Group II') && gh.some(o => o.x[0] === 20260920),
+  `one match: a Davis Cup match stored with and without its event key is one row (the keyed copy); another day stays (got ${JSON.stringify(gh.map(o => [o.x[0], o.x[4]]))})`);
+ok(SP.x.meta.lower.sameMatchMerged === 1, 'one match: the merge is counted');
+ok(SP.base === B.base, 'one match: the Database files are byte-identical');
 // ── founder 2026-11-01 (Task B): Pinnacle (approx.) before the start (book 11) — after start − 10, before api-tennis, and on
 // an ATP main-draw match Tennis-Data does not hold an ATP main-draw era row (no flag), never a Database figure
 fs.writeFileSync(path.join(tmp, 'approx-sb.csv'), [COLS].concat(approx.slice(1),

@@ -314,7 +314,13 @@ const approxUsed = new Set();
 // every Tennis-Data match — and every match the archive feed adds after its last day — by day + both names as Tennis-Data
 // spells them (the 'atp-nt' guard below: a Database row of the same match wins)
 const tdPairs = new Set();
-const tdPairKey = (d, w, l) => `${String(d).replace(/-/g, '')}|${String(w).trim()}|${String(l).trim()}`;
+// founder 2026-11-04 ("always find prices"): the pair is matched on surname + first initial, spelling-tolerant — the archive
+// feed spells "Carreno Busta P." / "Zhang Zh." where Tennis Explorer has "Carreno-Busta P." / "Zhang Z."; an exact-spelling
+// key let a second row of a match the Database already prices in, and the join dashed both (two rows fit)
+const tdNameKey = n => { const t = String(n || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').split(/\s+/).filter(Boolean);
+  const ini = t.filter(x => x.endsWith('.') && x.length <= 4); const sur = t.filter(x => !ini.includes(x)).join('').toLowerCase().replace(/[^a-z]/g, '');
+  return sur + '~' + (ini.length ? ini[0][0].toLowerCase() : ''); };
+const tdPairKey = (d, w, l) => `${String(d).replace(/-/g, '')}|${tdNameKey(w)}|${tdNameKey(l)}`;
 function processLine(c, col, season, fromFeed) {
     bucket.archive++;
     const att = () => [(c[col.series] || '').trim(), (c[col.court] || '').trim(), (c[col.bestof] || '').trim(), (c[col.comment] || '').trim(),
@@ -682,6 +688,22 @@ const LOWER_B365_ROOT = process.env.DB_YIELD_B365_ROOT || __dirname;   // bet365
     if (r.book !== 6) continue;
     const [opp, won] = r._names; const self = nameOf(won ? r.winnerKey : r.loserKey) || commaToShort(r._self);
     r.winner = self && opp ? tdNameJs(won ? self : opp) : ''; r.loser = self && opp ? tdNameJs(won ? opp : self) : '';
+  }
+})();
+// founder 2026-11-04 ("always find prices"): one match = one row. A match stored once with its api-tennis event key and once
+// without (the Tennis Explorer team-event import keys by date + both players) is ONE match: the better-ranked copy stays (a tie:
+// the keyed one), the other is dropped and counted (lower.sameMatchMerged). Two copies made the join dash it (two rows fit).
+(function mergeSameMatch() {
+  const byPair = new Map();
+  for (const [k, r] of lowerBest) {
+    if (!r.winnerKey || !r.loserKey) continue;
+    const pk = `${String(r.date).slice(0, 10)}|${[String(r.winnerKey), String(r.loserKey)].sort().join('|')}`;
+    const prev = byPair.get(pk);
+    if (!prev) { byPair.set(pk, k); continue; }
+    const p = lowerBest.get(prev), rr = lowerRankOf(r.book, r.date), pr = lowerRankOf(p.book, p.date);
+    const keepNew = rr < pr || (rr === pr && !!r.eventKey && !p.eventKey);
+    lowerBest.delete(keepNew ? prev : k); if (keepNew) byPair.set(pk, k);
+    lower.sameMatchMerged = (lower.sameMatchMerged || 0) + 1;
   }
 })();
 for (const r of lowerBest.values()) {
