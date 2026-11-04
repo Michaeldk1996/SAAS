@@ -48,12 +48,11 @@ primary_region = "sjc"
   # Without this, print() is block-buffered in a container with no TTY and the
   # worker's own log never reaches `fly logs` (measured: silent after start).
   PYTHONUNBUFFERED = "1"
-  # Card worker pause switch ("1" = no builds; the GitHub card job builds instead). PAUSED AGAIN 3 Nov 15:25Z: from
-  # 13:54Z every build timed out on kibl_line_observations even with the gentle 25-id seed (the database was
-  # struggling for every reader), so a worker that only fails adds load; restart once a build can complete. Paused 3 Nov 06:00Z when back-to-
-  # back full builds starved the database of disk reads; back on with the incremental observations read and a
-  # 5-min minimum gap between builds (cards_worker.py MIN_GAP_S).
-  CARDS_PAUSED = "1"
+  # Card worker pause switch ("1" = no builds; the GitHub card job builds instead). ON again 4 Nov 09:00Z: the 3 Nov
+  # database starvation was the Bet105 drop bot re-reading 14 days of kibl_line_observations every 30 s (fixed
+  # 4 Nov 05:16Z, ten280_bot.tick_cache, seeded 06:38Z; ticks 3-6 s). The worker builds with the incremental
+  # observations read and a 5-min minimum gap (15 min after a failed build; cards_worker.py MIN_GAP_S / FAIL_GAP_S).
+  CARDS_PAUSED = "0"
 
 # One machine, always on. `auto_stop_machines = false` is the whole point: a
 # worker that scales to zero is a worker that is not listening, and this exists
