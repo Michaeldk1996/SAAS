@@ -181,7 +181,7 @@ CREATE TABLE IF NOT EXISTS odds_card_state (
            OR now_price IS NOT NULL
            OR close_price IS NOT NULL),
   CONSTRAINT odds_card_state_start_src_ck
-    CHECK (start_ts_source IN ('oddspapi', 'api-tennis-live', 'none')),
+    CHECK (start_ts_source IN ('oddspapi', 'api-tennis-live', 'bet105-switch', 'first-point', 'none')),
   -- Michael: the fallback is "shown with label 'last seen'". Make the pairing
   -- structural rather than a convention the filler is trusted to follow.
   CONSTRAINT odds_card_state_label_ck
@@ -219,6 +219,16 @@ ALTER TABLE odds_card_state
   ADD COLUMN IF NOT EXISTS ts_kind             text,
   ADD COLUMN IF NOT EXISTS open_observed_at    timestamptz,
   ADD COLUMN IF NOT EXISTS now_observed_at     timestamptz;
+
+-- the in-play close (founder 2026-11-03) cuts at Bet105's switch or the first point: two more start sources. The old
+-- constraint rejected every row of the 4 Nov builds (23514, "upserted 0/8850"). NOT VALID + VALIDATE: the add takes a
+-- brief lock, the validation does not block writers.
+ALTER TABLE odds_card_state
+  DROP CONSTRAINT IF EXISTS odds_card_state_start_src_ck;
+ALTER TABLE odds_card_state
+  ADD CONSTRAINT odds_card_state_start_src_ck
+  CHECK (start_ts_source IN ('oddspapi', 'api-tennis-live', 'bet105-switch', 'first-point', 'none')) NOT VALID;
+ALTER TABLE odds_card_state VALIDATE CONSTRAINT odds_card_state_start_src_ck;
 
 ALTER TABLE odds_card_state
   DROP CONSTRAINT IF EXISTS odds_card_state_reject_ck;

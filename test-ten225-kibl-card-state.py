@@ -41,6 +41,7 @@ list is the record of an actual run and not a plan.
 import os
 import sys
 import types
+import re
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 # STALE-BYTECODE GUARD — macOS caches .pyc outside the repo keyed on
@@ -1659,6 +1660,12 @@ exec(compile(_src.replace("if switch is not None and (play is None or switch <= 
 _b, _, _, _ = _ip(_ipobs(T % (12, 10)), _late, mod=_M)
 check('MUTANT caught: without the first-point cap the in-play 12:03 price becomes the close',
       sorted(r['close_price'] for r in _b) != [1.40, 3.00], [r['close_price'] for r in _b])
+_schema = open(os.path.join(os.path.dirname(os.path.abspath(K.__file__)), 'ten225-card-state-schema.sql')).read()
+_cks = re.findall(r"odds_card_state_start_src_ck\s+CHECK \(start_ts_source IN \(([^)]*)\)\)", _schema)
+check('every start source the builder writes is allowed by odds_card_state_start_src_ck (4 Nov: the in-play sources '
+      'were not, and every row of the build was rejected)',
+      _cks and all(all(f"'{x}'" in ck for x in ('oddspapi', 'api-tennis-live', K.INPLAY_SRC_SWITCH, K.INPLAY_SRC_POINT, 'none')) for ck in _cks)
+      and len(_cks) >= 2, _cks)
 check('main() reads play_seen_at and hands the in-play index to build_rows',
       "first_player,second_player,play_seen_at" in _src and 'inplay_index = index_inplay(flip_rows)' in _src)
 
