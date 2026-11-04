@@ -166,7 +166,7 @@ create index if not exists ten280_tick_cache_fx on ten280_bot.tick_cache (fixtur
 create index if not exists ten280_tick_cache_at on ten280_bot.tick_cache (at);
 create table if not exists ten280_bot.tick_cache_state (
   id smallint primary key default 1 check (id = 1), read_at timestamptz, full_at timestamptz, rows_added integer);
--- seed_low: the table holds every qualifying row OBSERVED at or after it; the seed walks it back a day per tick until
+-- seed_low: the table holds every qualifying row OBSERVED at or after it; the seed walks it back 6 h per tick until
 -- it reaches the 15-day window (seeded), so no single statement reads the whole window (3 Nov: a one-shot 15-day seed
 -- ran past 25 min on the throttled disk and rolled back)
 alter table ten280_bot.tick_cache_state add column if not exists seed_low timestamptz;
@@ -179,8 +179,8 @@ create or replace function ten280_bot.refresh_cache(p_now timestamptz default no
  LANGUAGE plpgsql
 AS $fn$
 -- each call: (1) the rows first observed since the last call began, re-read an hour back (a sweep stamps observed_at at
--- its start and commits later) or back to the start of any sweep that finished since; (2) while not yet seeded, ONE
--- more day of history further back, by observed_at (indexed). A day after the seed completed, it starts again from now
+-- its start and commits later) or back to the start of any sweep that finished since; (2) while not yet seeded, 6 more
+-- hours of history further back, by observed_at (indexed). A day after the seed completed, it starts again from now
 -- (re-reading, never deleting: rows only ever arrive). Rows outside the 15-day window leave the table.
 declare st ten280_bot.tick_cache_state; bound timestamptz; sw timestamptz; lo timestamptz; n integer := 0; m integer;
         horizon timestamptz := p_now - interval '15 days' - interval '1 hour';
@@ -210,7 +210,7 @@ begin
   get diagnostics m = row_count; n := n + m;
   -- (2) one day of history, while the walk has not reached the 15-day window
   if st.seed_low > horizon then
-    lo := greatest(st.seed_low - interval '1 day', horizon);
+    lo := greatest(st.seed_low - interval '6 hours', horizon);   -- 6 h a tick: inside the 2-min statement timeout on a throttled disk
     insert into ten280_bot.tick_cache (row_key, fixture_id, side_id, price, at, known_at, is_opener)
     select o.row_key, o.fixture_id, o.side_id, o.price_decimal, o.inserted_on, o.observed_at, coalesce(o.is_opener, false)
       from public.kibl_line_observations o
@@ -466,6 +466,11 @@ begin
   end if;
   perform ten280_bot.settle();
   perform ten280_bot.refresh_cache(e);
+  -- while the price table is still seeding, a tick only advances the seed and stops: the direct 14-day read ran past
+  -- the 2-min statement timeout on every tick (4 Nov 03:48–04:11Z) and its rollback undid the seed step with it
+  if not coalesce((select seeded from ten280_bot.tick_cache_state where id = 1), false) then
+    return 0;
+  end if;
   perform ten280_bot.load_ticks(now() - interval '14 days', now());
   select min_dropped_to_price into fl from ten280_bot.config;
   n := ten280_bot.scan(e, e, 5, 'live', null, interval '10 minutes', fl);

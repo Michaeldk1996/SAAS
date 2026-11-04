@@ -91,9 +91,9 @@ def scenario(src):
     obs('x3', -90, is_live='true'); obs('x4', -80, price='0.0'); obs('old', -16 * 24 * 60)
     refresh(0)
     out['not seeded after one call'] = int(q("select (not seeded)::int from ten280_bot.tick_cache_state").strip()) - 1
-    for _ in range(16):
+    for _ in range(60):
         refresh(0)
-    out['seeded after 17 calls (a day each)'] = int(q("select seeded::int from ten280_bot.tick_cache_state").strip()) - 1
+    out['seeded after 61 calls (6 h each)'] = int(q("select seeded::int from ten280_bot.tick_cache_state").strip()) - 1
     out['seed'] = diff(f"{T0}")
     # a sweep that began at -20 min and commits after the refresh at 0: its row carries observed_at -20
     obs('late', -25, observed_min=-20); obs('n1', 3)
@@ -127,13 +127,16 @@ for name, a, b in MUT:
     assert SRC.count(a) == 1, 'mutant anchor gone: ' + name
     m = scenario(SRC.replace(a, b))
     check(f'MUTANT caught: {name}', any(v for k, v in m.items() if k != '15-day prune'), m)
-m = scenario(SRC.replace("lo := greatest(st.seed_low - interval '1 day', horizon);", "lo := horizon;"))
+m = scenario(SRC.replace("lo := greatest(st.seed_low - interval '6 hours', horizon);", "lo := horizon;"))
 check('MUTANT (control): the whole window in one call seeds at once — the staged walk is what the first two checks see',
-      m['seeded after 17 calls (a day each)'] == 0 and m['not seeded after one call'] != 0, m)
+      m['seeded after 61 calls (6 h each)'] == 0 and m['not seeded after one call'] != 0, m)
 
 src_t = piece(SRC, 'create or replace function ten280_bot.tick()', '$function$\n;')
 check('tick() refreshes the price table before load_ticks reads it',
       src_t.index('ten280_bot.refresh_cache(e)') < src_t.index('ten280_bot.load_ticks('), src_t[:200])
+check('until seeded a tick only advances the seed (returns before load_ticks / scan), so it commits inside the timeout',
+      src_t.index('ten280_bot.refresh_cache(e)') < src_t.index('if not coalesce((select seeded from ten280_bot.tick_cache_state where id = 1), false) then')
+      < src_t.index('ten280_bot.load_ticks('), src_t[:400])
 lt = piece(SRC, 'create or replace function ten280_bot.load_ticks(', 'strm as (')
 check("load_ticks' poll reads the price table once seeded, the direct read until then (never both)",
       'from ten280_bot.tick_cache c join fx' in lt and "where (select ok from seeded) and c.at between" in lt
