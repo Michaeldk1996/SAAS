@@ -16,6 +16,14 @@
    "by": "bsp-ceo-bot",
    "at": "2026-10-26T03:12:29.119Z",
    "check": "0420f2c61b8fc414"
+  },
+  {
+   "key": "xRows",
+   "expect": 143782,
+   "reason": "fix 53fbefd82 (one match = one row): 76 duplicate copies of the same match (atp-nt rows that are Tennis-Data matches under another spelling; keyed + keyless team-event copies) merged into one row each, 143858 -> 143782 (live 2026-11-04)",
+   "by": "bsp-ceo-bot",
+   "at": "2026-11-04T15:18:46.323Z",
+   "check": "1e802d0b164d93b3"
   }
  ]
 }
