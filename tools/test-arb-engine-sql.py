@@ -46,7 +46,7 @@ create table ten287_bot.alerts (id bigserial primary key, mode text not null, bo
 create table ten287_rec.events (event_id bigint primary key, home text, away text, start_at timestamptz, status text, league text, tier text);
 create table ten287_rec.ticks (id bigserial primary key, book text not null, event_id bigint not null, market text not null default 'ML',
   back_home numeric, back_away numeric, depth_home numeric, depth_away numeric, book_updated_at timestamptz, seen_at timestamptz not null,
-  event_status text);
+  event_status text, src text);
 create table ten287_rec.requests (id bigint primary key, kind text, book text, fired_at timestamptz default now(), processed_at timestamptz, status_code int);
 create table public.kibl_now_card (card_key text primary key, book text, book_name text, a_side text, a_price numeric, a_at timestamptz,
   b_side text, b_price numeric, b_at timestamptz, written_at timestamptz default now());
