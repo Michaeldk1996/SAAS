@@ -90,7 +90,13 @@ try:
     q(f"insert into ten287_rec.events values (1, 'Halys, Quentin', 'Fery, Arthur', {START}, 'pending', 'ATP - Paris', 'ATP')")
     q(f"insert into ten287_rec.events values (2, 'Thin, Tom', 'Book, Bob', {START}, 'pending', 'ATP - Paris', 'ATP')")
     q("insert into ten287_rec.ticks (book, event_id, back_home, back_away, book_updated_at, seen_at, event_status) values ('Superbet', 1, 2.20, 1.80, now(), now(), 'pending')")
-    q("insert into ten287_rec.ticks (book, event_id, back_home, back_away, depth_home, depth_away, book_updated_at, seen_at, event_status) values ('Polymarket', 2, 3.50, 1.40, 50, 50, now(), now(), 'pending')")
+    q("insert into ten287_rec.ticks (book, event_id, back_home, back_away, depth_home, depth_away, book_updated_at, seen_at, event_status, src) values ('Polymarket', 2, 3.50, 1.40, 50, 50, now(), now(), 'pending', 'clob')")
+    # the Polymarket switch (4 Nov): our recorder's event for Halys / Fery (src clob) AND odds-api.io's older copy of the
+    # same match, still 'pending' — only ours is read
+    q(f"insert into ten287_rec.events values (3, 'Halys, Quentin', 'Fery, Arthur', {START}, 'pending', 'ATP - Paris', 'ATP')")
+    q(f"insert into ten287_rec.events values (900000000001, 'Quentin Halys', 'Arthur Fery', {START}, 'pending', 'ATP - Paris', 'ATP')")
+    q("insert into ten287_rec.ticks (book, event_id, back_home, back_away, depth_home, depth_away, book_updated_at, seen_at, event_status, src) values ('Polymarket', 3, 2.10, 1.90, 500, 500, now() - interval '10 minutes', now() - interval '10 minutes', 'pending', 'updated')")
+    q("insert into ten287_rec.ticks (book, event_id, back_home, back_away, depth_home, depth_away, book_updated_at, seen_at, event_status, src) values ('Polymarket', 900000000001, 2.00, 2.00, 500, 500, now(), now(), 'pending', 'clob')")
     q("insert into ten287_rec.requests values (1, 'updated', 'Superbet', now(), now(), 200), (2, 'updated', 'Polymarket', now(), now(), 200)")
     # Kalshi: Halys 0.40 (2.5) / Fery 0.45, 1,000 contracts each
     q(f"insert into kalshi_rec.markets (ticker, event_ticker, player, occurrence_at, status) values ('KX-HF-HAL', 'KX-HF', 'Quentin Halys', {START}, 'active'), ('KX-HF-FER', 'KX-HF', 'Arthur Fery', {START}, 'active')")
@@ -105,7 +111,10 @@ try:
     fair = {f['first']: f for f in o.get('fair', [])}
     check('fair = Bet105 without its margin: Halys 1.95 / Fery 2.053', fair.get('Q. Halys', {}).get('fairFirst') == 1.95 and fair['Q. Halys']['fairSecond'] == 2.053, o.get('fair'))
     srcs = sorted(s['source'] for s in fair.get('Q. Halys', {}).get('sources', []))
-    check('every source joined the match once: Bet105, Kalshi, Superbet', srcs == ['Bet105', 'Kalshi', 'Superbet'], srcs)
+    check('every source joined the match once: Bet105, Kalshi, Polymarket (ours; odds-api.io\'s stale copy ignored, else both drop as ambiguous), Superbet',
+          srcs == ['Bet105', 'Kalshi', 'Polymarket', 'Superbet'], srcs)
+    pm = [x for x in fair.get('Q. Halys', {}).get('sources', []) if x['source'] == 'Polymarket']
+    check('the Polymarket price is our recorder\'s (2.00), never odds-api.io\'s 2.10', bool(pm) and pm[0]['first'] == 2.0, pm)
     check('the Challenger fixture is not on the spine', 'L. Tien' not in fair, list(fair))
     dv = sorted((d['source'], d['player'], d['edge']) for d in o.get('divergences', []))
     check('divergences: Kalshi Halys +23.03%, Superbet Halys +12.82%; nothing under 5% (Kalshi Fery +4.2%)',

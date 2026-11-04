@@ -152,6 +152,9 @@ begin
            coalesce(t.book_updated_at, t.seen_at) at, e.home, e.away, e.start_at
       from ten287_rec.ticks t join ten287_rec.events e using (event_id)
      where t.market = 'ML' and t.book in ('Superbet', 'Polymarket') and coalesce(t.event_status, e.status) = 'pending'
+       -- Polymarket = our own CLOB recorder only (src 'clob', tools/poly-recorder.sql). odds-api.io's older Polymarket
+       -- events stay 'pending' after the switch (4 Nov 12:28Z) and would make every match carried by both ambiguous.
+       and (t.book <> 'Polymarket' or t.src = 'clob')
        and e.start_at > now() - interval '1 hour' and e.start_at < now() + c.horizon
        and exists (select 1 from ten287_rec.requests r where r.book = t.book and r.status_code = 200 and r.processed_at > now() - c.rec_max)
      order by t.event_id, t.book, coalesce(t.book_updated_at, t.seen_at) desc, t.seen_at desc
