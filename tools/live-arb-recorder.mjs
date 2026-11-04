@@ -273,6 +273,22 @@ export class KalshiFeed {
   stop() { this.stopAt = 0; const w = this.ws; this.ws = null; try { w && w.close(); } catch {} }
 }
 
+// Rows for our own Polymarket recorder (tools/poly-recorder.sql, public.poly_rec_push; founder 2026-11-04): every open
+// ATP / Challenger Polymarket match, each player's best ask + the shares at it, from the live books. A match with no
+// book yet on either side is left out (never a guessed price).
+export function recRows(poly, books, now = Date.now(), staleMs = STALE_MS.poly) {
+  const out = [];
+  for (const m of poly || []) {
+    const a = books.best(m.tokA), b = books.best(m.tokB);
+    const fresh = (x) => x && x.at != null && now - x.at <= staleMs * 5;   // a quiet book still stands; a dead feed has no books
+    if (!fresh(a) && !fresh(b)) continue;
+    out.push({ pmId: m.id, title: m.title, a: m.a, b: m.b, start: m.start != null ? new Date(m.start).toISOString() : null,
+      live: m.live === true, ended: false,
+      askA: fresh(a) ? a.price : null, sizeA: fresh(a) ? a.size : null, askB: fresh(b) ? b.price : null, sizeB: fresh(b) ? b.size : null });
+  }
+  return out;
+}
+
 // The live score board (public.live_snapshot, api-tennis get_livescore every 10 s — the Live page's feed). Founder
 // 2026-11-03: a live alert only when there is time to place both bets — the game score at 0–0:
 //   'set'        a new set at 0–0 in games (the set break);
@@ -382,7 +398,8 @@ async function main() {
     for (const p of pairs) { const o = kfeed.overlay(p.km.base || p.km); if (o) { o.base = p.km.base || p.km; p.km = o; p.kalAt = now; } else { p.km = p.km.base || p.km; p.kalAt = undefined; } }
     tick(now);
   };
-  const subscribe = () => { feed.set(pairs.flatMap((p) => [p.pm.tokA, p.pm.tokB])); if (kfeed) kfeed.set(pairs.flatMap((p) => p.km.p.map((x) => x.ticker))); };
+  // every Polymarket match (not only the Kalshi pairs): the arbitrage needs the pairs, our Polymarket recorder needs all
+  const subscribe = () => { feed.set(poly.flatMap((m) => [m.tokA, m.tokB])); if (kfeed) kfeed.set(pairs.flatMap((p) => p.km.p.map((x) => x.ticker))); };
   const tick = (now) => {
     for (const p of pairs) {
       const started = p.pm.live || (p.pm.start != null && now >= p.pm.start), live = started;
@@ -430,7 +447,7 @@ async function main() {
     const gaps = [];
     for (const [k, L] of latest) { if (!keys.has(k)) continue; const bd = boardOf(L.p, Date.now()); for (const e of L.ev) if (e.edge > 0) gaps.push(gapRow(L.p, e, { ...L, board: bd })); }
     const body = JSON.stringify({ p: { gaps, worker: { pairs: pairs.length, live: pairs.filter((p) => p.pm.live).length, kalshiPolls: stats.kalshiPolls,
-      kalshiErrors: stats.kalshiErrors, kalshiFeed: stats.kalshiFeed, kalshiWsMessages: stats.kalshiWsMessages, kalshiWsDrops: stats.kalshiWsDrops, boardReads: stats.boardReads, boardErrors: stats.boardErrors, wsMessages: stats.wsMessages, wsReconnects: stats.wsReconnects, run: process.env.GITHUB_RUN_ID || null } } });
+      kalshiErrors: stats.kalshiErrors, kalshiFeed: stats.kalshiFeed, kalshiWsMessages: stats.kalshiWsMessages, kalshiWsDrops: stats.kalshiWsDrops, boardReads: stats.boardReads, boardErrors: stats.boardErrors, recPushes: stats.recPushes, recErrors: stats.recErrors, recTicks: stats.recTicks, wsMessages: stats.wsMessages, wsReconnects: stats.wsReconnects, run: process.env.GITHUB_RUN_ID || null } } });
     try {
       const r = await fetch(sbUrl + '/rest/v1/rpc/arb_live_push', { method: 'POST', body, signal: AbortSignal.timeout(15e3),
         headers: { apikey: sbKey, Authorization: 'Bearer ' + sbKey, 'Content-Type': 'application/json' } });
@@ -442,13 +459,24 @@ async function main() {
   if (sbUrl0 && sbKey0) await readBoard();
   const boardT = sbUrl0 && sbKey0 ? setInterval(readBoard, 5e3) : null;
   const pushT = push ? setInterval(doPush, 5e3) : null;
+  stats.recPushes = 0; stats.recErrors = 0; stats.recTicks = 0;
+  const doRec = async () => {
+    const rows = recRows(poly, books, Date.now());
+    try {
+      const r = await fetch(sbUrl + '/rest/v1/rpc/poly_rec_push', { method: 'POST', body: JSON.stringify({ p: { rows } }), signal: AbortSignal.timeout(20e3),
+        headers: { apikey: sbKey, Authorization: 'Bearer ' + sbKey, 'Content-Type': 'application/json' } });
+      if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + (await r.text()).slice(0, 200));
+      stats.recPushes++; stats.recTicks += Number(await r.json()) || 0;
+    } catch (e) { stats.recErrors++; if (stats.recErrors % 20 === 1) log('poly recorder', e.message); }
+  };
+  const recT = push ? setInterval(doRec, 15e3) : null;
   const gT = setInterval(refreshGamma, 60e3);
   const pingT = setInterval(() => { feed.ping(); }, 10e3);
   const repT = setInterval(() => log(`pairs ${pairs.length} live ${pairs.filter((p) => p.pm.live).length} open ${E.open.size} closed ${eps.length} ws ${stats.wsMessages} kalshi ${stats.kalshiPolls}/${stats.kalshiErrors} push ${stats.pushes}/${stats.pushErrors} posted ${stats.posted}`), 300e3);
   log('kalshi prices: ' + stats.kalshiFeed);
   const pollMs = () => (kfeed && kfeed.ws && kfeed.ws.readyState === 1 && kfeed.book.size ? 30e3 : POLL_S * 1000);   // the list for new matches; prices from the feed
   while (Date.now() < stop) { const t = Date.now(); await pollKalshi(); await new Promise((r) => setTimeout(r, Math.max(0, pollMs() - (Date.now() - t)))); }
-  clearInterval(gT); clearInterval(pingT); if (pushT) clearInterval(pushT); if (boardT) clearInterval(boardT); clearInterval(repT); E.closeAll(Date.now()); feed.stop(); if (kfeed) kfeed.stop();
+  clearInterval(gT); clearInterval(pingT); if (pushT) clearInterval(pushT); if (recT) clearInterval(recT); if (boardT) clearInterval(boardT); clearInterval(repT); E.closeAll(Date.now()); feed.stop(); if (kfeed) kfeed.stop();
   const meta = { from: new Date(t0).toISOString(), to: new Date().toISOString(), minutes, pollS: POLL_S, fees: FEE,
     ...stats, liveMatchesSeen: stats.liveMatchesSeen.size, pairsSeen: stats.pairsSeen.size,
     closestPerMatch: [...closest].map(([match, c]) => ({ match, ...c })).sort((a, b) => a.cost - b.cost).slice(0, 15) };

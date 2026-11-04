@@ -4,13 +4,16 @@ name: arb-engine
 #            read-only public.arb_now() for Dropping Odds → Arbitrage); schedule the 30-s engine; the read-back.
 #   report   the read-back only (counts, current opportunities by kind, alerts by delivery).
 #   rollback unschedule the engine (its tables stay; the page then shows what arb_now() computes live).
+#   poly-compare  our Polymarket recorder (tools/poly-recorder.sql, founder 2026-11-04) beside odds-api.io's Polymarket.
+#   poly-switch   ours becomes 'Polymarket' and odds-api.io stops recording it (polyrec.switch(); then the slot is free).
+# install also applies tools/poly-recorder.sql (before the engine) with its own throwaway-Postgres test.
 # Main only. Changes no bot and no Telegram secret (alerts go to the drop chat through the Superbet bot's Vault names).
 on:
   workflow_dispatch:
     inputs:
       mode:
         type: choice
-        options: [report, install, rollback]
+        options: [report, install, rollback, poly-compare, poly-switch]
         default: report
 permissions:
   contents: read
@@ -30,7 +33,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: SQL test (throwaway Postgres)
         if: inputs.mode == 'install'
-        run: python3 tools/test-arb-engine-sql.py
+        run: python3 tools/test-arb-engine-sql.py && python3 tools/test-poly-recorder-sql.py
       - name: Apply / schedule / roll back, then read back
         run: |
           python3 - <<'PY'
@@ -47,7 +50,12 @@ jobs:
           if mode == 'rollback':
               st, r = sql("select cron.unschedule('arb-engine') where exists (select 1 from cron.job where jobname = 'arb-engine')")
               print('rollback HTTP', st, r if st >= 400 else ''); sys.exit(1 if st >= 400 else 0)
+          if mode in ('poly-compare', 'poly-switch'):
+              st, r = sql("select polyrec.switch() r" if mode == 'poly-switch' else "select polyrec.compare(6) r")
+              print(mode, 'HTTP', st); print(json.dumps(r, indent=1) if st < 400 else r); sys.exit(1 if st >= 400 else 0)
           if mode == 'install':
+              st, r = sql(open('tools/poly-recorder.sql').read()); print('apply poly-recorder HTTP', st)
+              if st >= 400: print(r); sys.exit(1)
               st, r = sql(open('tools/arb-engine.sql').read()); print('apply HTTP', st)
               if st >= 400: print(r); sys.exit(1)
               st, r = sql("select cron.schedule('arb-engine', '30 seconds', 'select arb.tick()') as jobid"); print('schedule HTTP', st, r)

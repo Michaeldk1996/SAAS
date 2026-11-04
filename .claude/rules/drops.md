@@ -80,6 +80,14 @@ answers on card 37612d3d (TEN-294 doc `design`). Suite: `test-ten294-drops.mjs`.
   price). **Test:** `tools/test-arb-engine-sql.py` ("walkover", "arb_max").
   **The page reads the stored result** (`arb.snap`, written by every tick) while it is ≤ 10 min old (founder 2026-11-03),
   recomputed only after that. **A failed Telegram send is re-sent once** while ≤ 15 min old, any kind (`arb.alerts.retries`).
+- **Our Polymarket recorder** (founder 2026-11-04: free the odds-api.io slot for Napoleon Sports BE). `tools/poly-recorder.sql`
+  + the live worker: every ATP / Challenger Polymarket match on the public CLOB websocket → `public.poly_rec_push` every 15 s
+  → `ten287_rec.events` / `ticks` in the odds-api.io recorder's shape (back = 1 / best ask, depth = shares × ask in dollars,
+  event = 900 000 000 000 + the Polymarket id, tier from the one api-tennis fixture both players join, one `requests` row
+  per push as the engine's liveness test). A tick on a price change, a ≥ 20 % move in the dollars at it, or every 5 min.
+  Label `polyrec.config.book`: 'Polymarket CLOB' during the parallel run (`arb-engine.yml` mode `poly-compare`), then
+  `poly-switch` makes it 'Polymarket' and drops it from `ten287_rec.config.books` in one transaction. **Test:**
+  `tools/test-poly-recorder-sql.py`, `recRows` in `tools/test-live-arb-recorder.mjs`.
 - **Live arbitrage, Kalshi × Polymarket** (founder 2026-11-02, "Let's go!"; ATP tour only). `tools/live-arb-recorder.mjs`,
   run by `live-arb.yml` (main only, 350-min runs, an hourly start keeps one queued so the next starts as the current ends):
   Polymarket's public CLOB websocket (every book change) + Kalshi's public `KXATPMATCH` list every 2 s (YES ask + size; the

@@ -3,7 +3,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { generateKeyPairSync, createVerify, constants as CC } from 'node:crypto';
-import { samePlayer, polyMatches, kalshiMatches, joinPairs, kalshiFee, polyFee, Books, evaluate, Episodes, summarise, gapRow, PolyFeed, KalshiFeed, kalshiSign, boardPhase, boardFixture, setText } from './live-arb-recorder.mjs';
+import { samePlayer, polyMatches, kalshiMatches, joinPairs, kalshiFee, polyFee, Books, evaluate, Episodes, summarise, gapRow, PolyFeed, KalshiFeed, kalshiSign, boardPhase, boardFixture, setText, recRows } from './live-arb-recorder.mjs';
 
 const ev = (id, a, b, extra = {}) => ({ id, title: `X: ${a} vs ${b}`, live: false, ...extra,
   markets: [{ sportsMarketType: 'moneyline', outcomes: JSON.stringify([a, b]), clobTokenIds: JSON.stringify([id + 'A', id + 'B']), gameStartTime: '2026-11-02 12:00:00+00' }] });
@@ -218,4 +218,14 @@ test('tiebreak sets read as written: 7–6(5), 6–7(5); plain sets unchanged; t
   assert.equal(setText('7.7', '6.5'), '7–6(5)'); assert.equal(setText('6.5', '7.7'), '6–7(5)'); assert.equal(setText('6', '3'), '6–3');
   assert.equal(boardPhase(fix('Set 2', '0 - 0', [[6.5, 7.7], [2, 1]])).score, '6–7(5) 2–1');
   assert.equal(boardPhase(fix('Set 2', '0 - 0', [['7.7', '6.5'], ['2', '1']])).phase, 'changeover');
+});
+
+test('our Polymarket recorder rows: every match with a live book, best ask + shares per player; no book → left out', () => {
+  const poly = polyMatches([ev('1', 'Alex Molcan', 'Titouan Droguet'), ev('2', 'A B', 'C D')]);
+  const b = new Books(); b.snapshot('1A', [{ price: '0.45', size: '1000' }, { price: '0.47', size: '9' }], 1000); b.snapshot('1B', [{ price: '0.56', size: '500' }], 1000);
+  const r = recRows(poly, b, 2000);
+  assert.equal(r.length, 1, 'the match with no book is left out (mutant: pushed with null prices)');
+  assert.deepEqual([r[0].pmId, r[0].askA, r[0].sizeA, r[0].askB, r[0].sizeB], ['1', 0.45, 1000, 0.56, 500]);
+  assert.equal(r[0].start, '2026-11-02T12:00:00.000Z'); assert.equal(r[0].live, false);
+  assert.equal(recRows(poly, b, 1000 + 120000 * 5 + 1).length, 0, 'a book silent beyond the window → no row (a dead feed is never recorded)');
 });
