@@ -16680,13 +16680,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 2.62,
+      "p2": 1.5,
+      "bookmaker": "bet365"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 2.62,
+        "bookmaker": "bet365"
+      },
+      "p2": {
+        "price": 1.55,
+        "bookmaker": "Pncl"
+      }
     },
     "tournamentRound": "ATP Paris - 1/8-finals",
     "qualifying": false,
@@ -24165,13 +24171,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 1.8,
+      "p2": 2.0,
+      "bookmaker": "bet365"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 1.81,
+        "bookmaker": "1xBet"
+      },
+      "p2": {
+        "price": 2.13,
+        "bookmaker": "Pncl"
+      }
     },
     "tournamentRound": null,
     "qualifying": false,
@@ -34761,7 +34773,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6, 6-7, 6-3",
+      "display": "7-6(5), 6-7(9), 6-3",
       "sets": [
         {
           "p1": 7,
@@ -39771,7 +39783,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6, 7-6",
+      "display": "7-6(3), 7-6(10)",
       "sets": [
         {
           "p1": 7,
@@ -49003,7 +49015,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "3-6, 7-6, 4-1",
+      "display": "3-6, 7-6(6), 4-1",
       "sets": [
         {
           "p1": 3,
@@ -73733,7 +73745,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-7, 1-6",
+      "display": "6-7(7), 1-6",
       "sets": [
         {
           "p1": 6,
@@ -86700,7 +86712,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-7, 7-5, 6-1",
+      "display": "6-7(5), 7-5, 6-1",
       "sets": [
         {
           "p1": 6,
@@ -91822,7 +91834,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6, 7-5",
+      "display": "7-6(6), 7-5",
       "sets": [
         {
           "p1": 7,
@@ -95858,7 +95870,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-7, 6-2, 6-4",
+      "display": "6-7(5), 6-2, 6-4",
       "sets": [
         {
           "p1": 6,
@@ -100672,7 +100684,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "4-6, 6-3, 6-7",
+      "display": "4-6, 6-3, 6-7(8)",
       "sets": [
         {
           "p1": 4,
@@ -109333,7 +109345,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "3-6, 7-6, 2-0",
+      "display": "3-6, 7-6(2), 2-0",
       "sets": [
         {
           "p1": 3,
@@ -114739,7 +114751,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "4-6, 7-6, 6-7",
+      "display": "4-6, 7-6(4), 6-7(3)",
       "sets": [
         {
           "p1": 4,
@@ -125427,7 +125439,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6, 6-3",
+      "display": "7-6(3), 6-3",
       "sets": [
         {
           "p1": 7,
