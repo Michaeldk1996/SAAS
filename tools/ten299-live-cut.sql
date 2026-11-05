@@ -311,6 +311,78 @@ begin
 end $fn$
 ;
 
+-- DB load (2026-11-05): tick() read 14 days of prices for every fixture every 30 s. load_ticks_live is load_ticks above
+-- plus ONE predicate (fixtures with a tick in the scan window); scan(e, e) needs a current tick inside (e - window, e],
+-- so every alert, reference and opening price is unchanged (tools/test-ten280-tick-cache-sql.py: text + wiring).
+create or replace function ten280_bot.load_ticks_live(p_from timestamp with time zone, p_to timestamp with time zone, p_window interval)
+ RETURNS integer
+ LANGUAGE plpgsql
+AS $fn$
+declare n integer;
+begin
+  drop table if exists pg_temp.t280;
+  create temp table t280 as
+  with fx as (
+    select fixture_id, league_id, player1_name, player2_name
+    from public.kibl_fixtures
+    where league_id in (19, 537, 962) and player1_name is not null and player2_name is not null
+      -- LIVE: once seeded, only the fixtures with a tick inside (p_to - p_window, p_to] in the price table or the stream:
+      -- scan(p_to, p_to) alerts only on a side whose latest tick is in that window, and keeps every older tick of them
+      and (not coalesce((select seeded from ten280_bot.tick_cache_state where id = 1), false)
+           or fixture_id in (select c.fixture_id from ten280_bot.tick_cache c
+                              where c.at > p_to - p_window and c.at <= p_to and c.known_at <= p_to
+                             union
+                             select h.fixture_id from public.kibl_now_history h
+                              where h.kibl_inserted_on > p_to - p_window and h.kibl_inserted_on <= p_to and h.written_at <= p_to))
+  ),
+  seeded as (select coalesce((select seeded from ten280_bot.tick_cache_state where id = 1), false) as ok),
+  poll as (
+    -- once seeded, the bot's own copy of these rows (ten280_bot.tick_cache, refreshed by tick()): the same filter,
+    -- applied when the row was copied, and the same window here; until then the direct read, as before
+    select c.fixture_id, c.side_id, c.price, c.at, c.known_at, c.is_opener, c.row_key, 'poller'::text as src
+    from ten280_bot.tick_cache c join fx using (fixture_id)
+    where (select ok from seeded) and c.at between p_from and p_to
+      and c.known_at <= p_to             -- as known at p_to: a re-run over a past window is reproducible
+    union all
+    select o.fixture_id, o.side_id, o.price_decimal as price, o.inserted_on as at,
+           o.observed_at as known_at, coalesce(o.is_opener, false) as is_opener, o.row_key, 'poller'::text as src
+    from public.kibl_line_observations o join fx using (fixture_id)
+    where not (select ok from seeded)
+      and o.feed_source_id = 171 and o.market_type_id = 1 and o.segment_id = 1
+      and o.betting_type_id = 1 and o.is_live is false and o.price_decimal >= 1.01
+      and o.side_id in (2, 3)
+      and o.inserted_on between p_from and p_to
+      and o.observed_at <= p_to
+  ),
+  strm as (
+    select h.fixture_id,
+           coalesce((select o.side_id from public.kibl_line_observations o where o.row_key = h.row_key limit 1),
+                    case when ten280_bot.skey(fx.player1_name) = ten280_bot.skey(fx.player2_name) then null  -- same surname: never guess
+                         when h.side_key = ten280_bot.skey(fx.player1_name) then 2
+                         when h.side_key = ten280_bot.skey(fx.player2_name) then 3 end) as side_id,
+           h.price, h.kibl_inserted_on as at, h.written_at as known_at, false as is_opener, h.row_key, 'stream'::text as src
+    from public.kibl_now_history h join fx using (fixture_id)
+    where h.price >= 1.01 and h.kibl_inserted_on between p_from and p_to and h.written_at <= p_to
+      and not exists (select 1 from poll p where p.row_key = h.row_key)
+  )
+  select * from poll
+  union all
+  select * from strm where side_id in (2, 3);
+  create index on t280 (fixture_id, side_id, at);
+  create index on t280 (at);
+  -- TEN-299 (founder comment 8585095a, card 518c56f0): no price at or after the match's live start is
+  -- pre-match; with the in-play ticks gone, no alert fires on a started match and every drop is measured
+  -- against a pre-match price. The cut is drops_live.cuts_280 (tools/ten299-live-cut.sql).
+  -- the cuts stay in pg_temp.cut280 for this bot's scan, which evaluates nothing at or after a cut
+  drop table if exists pg_temp.cut280;
+  create temp table cut280 as select * from drops_live.cuts_280(greatest(p_from, p_to - interval '4 days') - interval '2 days');
+  delete from pg_temp.t280 t using pg_temp.cut280 c
+   where t.fixture_id = c.fixture_id and t.at >= c.cut_at;
+  select count(*) into n from t280;
+  return n;
+end $fn$
+;
+
 -- ── the bots' scan: the live definitions + the at-or-after-the-cut exclusion ──
 create or replace function ten287_bot.scan(p_book text, p_from timestamp with time zone, p_to timestamp with time zone, p_threshold numeric, p_mode text, p_run text, p_window interval DEFAULT '00:10:00'::interval, p_floor numeric DEFAULT NULL::numeric, p_cooldown interval DEFAULT '00:30:00'::interval)
  RETURNS integer
@@ -471,7 +543,7 @@ begin
   if not coalesce((select seeded from ten280_bot.tick_cache_state where id = 1), false) then
     return 0;
   end if;
-  perform ten280_bot.load_ticks(now() - interval '14 days', now());
+  perform ten280_bot.load_ticks_live(now() - interval '14 days', now(), interval '10 minutes');
   select min_dropped_to_price into fl from ten280_bot.config;
   n := ten280_bot.scan(e, e, 5, 'live', null, interval '10 minutes', fl);
   for a in select * from ten280_bot.alerts where mode = 'live' and delivery = 'unsent' order by id limit 10 loop  -- Telegram burst cap; the rest go next tick

@@ -133,10 +133,10 @@ check('MUTANT (control): the whole window in one call seeds at once — the stag
 
 src_t = piece(SRC, 'create or replace function ten280_bot.tick()', '$function$\n;')
 check('tick() refreshes the price table before load_ticks reads it',
-      src_t.index('ten280_bot.refresh_cache(e)') < src_t.index('ten280_bot.load_ticks('), src_t[:200])
+      src_t.index('ten280_bot.refresh_cache(e)') < src_t.index('ten280_bot.load_ticks_live('), src_t[:200])
 check('until seeded a tick only advances the seed (returns before load_ticks / scan), so it commits inside the timeout',
       src_t.index('ten280_bot.refresh_cache(e)') < src_t.index('if not coalesce((select seeded from ten280_bot.tick_cache_state where id = 1), false) then')
-      < src_t.index('ten280_bot.load_ticks('), src_t[:400])
+      < src_t.index('ten280_bot.load_ticks_live('), src_t[:400])
 lt = piece(SRC, 'create or replace function ten280_bot.load_ticks(', 'strm as (')
 check("load_ticks' poll reads the price table once seeded, the direct read until then (never both)",
       'from ten280_bot.tick_cache c join fx' in lt and "where (select ok from seeded) and c.at between" in lt
@@ -145,6 +145,22 @@ check('cache_check() compares the table with the direct read over a window, for 
       'create or replace function ten280_bot.cache_check(' in SRC)
 check('the install transaction no longer seeds or compares 15 days (it ran past 25 min and rolled back)',
       'price-table guard' not in SRC)
+# DB load (2026-11-05): tick() reads load_ticks_live = load_ticks + ONE predicate (fixtures with a tick in the window)
+def fn_src(name):
+    a = SRC.index(f'create or replace function {name}('); return SRC[a:SRC.index('\n;\n', a) + 3]
+live = fn_src('ten280_bot.load_ticks_live')
+mm = re.search(r"\n      -- LIVE:.*?written_at <= p_to\)\)\n", live, re.S)
+back = live.replace(mm.group(0), '\n') if mm else ''
+back = back.replace('ten280_bot.load_ticks_live(p_from timestamp with time zone, p_to timestamp with time zone, p_window interval)',
+                    'ten280_bot.load_ticks(p_from timestamp with time zone, p_to timestamp with time zone)')
+check('load_ticks_live is load_ticks + the one window predicate, nothing else', bool(mm) and back == fn_src('ten280_bot.load_ticks'),
+      'drifted from load_ticks')
+check('the window predicate covers both sources load_ticks reads (price table and stream) and only once seeded',
+      bool(mm) and 'from ten280_bot.tick_cache c' in mm.group(0) and 'from public.kibl_now_history h' in mm.group(0)
+      and 'not coalesce((select seeded from ten280_bot.tick_cache_state' in mm.group(0))
+check('tick() reads load_ticks_live with the scan window (10 minutes = scan p_window)',
+      "ten280_bot.load_ticks_live(now() - interval '14 days', now(), interval '10 minutes')" in src_t
+      and "interval '10 minutes', fl)" in src_t and 'ten280_bot.load_ticks(' not in src_t)
 pg.close()
 print(f'\ntest-ten280-tick-cache-sql: {passed} passed, {failed} failed')
 sys.exit(1 if failed else 0)
