@@ -135,12 +135,12 @@ try:
     for m_ago, h in ((600, 4.00), (30, 4.00), (9, 3.40), (1, 3.40)): tk(13, h, m_ago, away=1.30)            # drop inside window, then flat
     def run(loader, rid, window="interval '10 minutes'"):
         args = f"'Superbet', now() - interval '14 days', now()" + (f", {window}" if loader.endswith('_live') else '')
-        q(f"select {loader}({args}), ten287_bot.scan('Superbet', now(), now(), 5, 'selftest', '{rid}', interval '10 minutes', null, interval '0 minutes')")
+        q(f"select {loader}({args}); select ten287_bot.scan('Superbet', now(), now(), 5, 'selftest', '{rid}', interval '10 minutes', null, interval '0 minutes')")
         rc, out = q(f"select coalesce(string_agg(concat_ws('|', event_id, side, ref_price, ref_at, cur_price, cur_at, pct_10m, open_price, open_at, open_kind, pct_open), ';' order by event_id, side), '') from ten287_bot.alerts where run_id = '{rid}'")
         return out
     old, new = run('ten287_bot.load_ticks', 'old'), run('ten287_bot.load_ticks_live', 'new')
-    check('replay: load_ticks_live alerts exactly as load_ticks (match, side, ref, current, opening, %)', old == new and old.count(';') == 1, f'{old}\n{new}')
-    check('the opening is the 10-day-old tick, kept by the live loader', '|2.60|' in new, new)
+    check('replay: load_ticks_live alerts exactly as load_ticks (match, side, ref, current, opening, %)', old == new and ';10|home|' in old and ';13|home|' in old and not any(x.startswith(('11|', '12|')) for x in old.split(';')), f'{old}\n{new}')
+    check('the opening is the 10-day-old tick, kept by the live loader', [x for x in new.split(';') if x.startswith('10|')][0].split('|')[7] == '2.6', new)
     narrow = run('ten287_bot.load_ticks_live', 'narrow', "interval '90 seconds'")
     check('CONTROL: a window narrower than the scan\'s loses an alert (the replay can tell)', narrow != old, narrow)
     q("delete from ten287_bot.alerts where mode = 'selftest'")
