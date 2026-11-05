@@ -19,7 +19,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: code-gate
+  group: code-gate-${{ github.ref }}   # per branch: a branch run (dispatch) never cancels main's gate
   cancel-in-progress: true
 
 permissions:
