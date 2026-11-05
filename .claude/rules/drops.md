@@ -68,7 +68,7 @@ answers on card 37612d3d (TEN-294 doc `design`). Suite: `test-ten294-drops.mjs`.
   above fair; **ARB** = back each player at a different source with locked-in profit >= `arb_min` (1%) after fees, best pair
   per match, stakes by 1/e. A prediction-market leg needs >= `min_liq` ($100) at the price. **Retirement mismatch is
   flagged, never excluded** (founder): a prediction market (pays the player who advances once a ball is played) against a
-  bookmaker. Telegram ⚖️ ARB / 📐 DIVERGENCE to the drop chat, one per match + kind + source(s) per 30 min. Page: Dropping Odds
+  bookmaker. Telegram ⚖️ ARB / 📐 DIVERGENCE to the arbitrage chat, one per match + kind + source(s) per 30 min. Page: Dropping Odds
   → Arbitrage (`arb-page.js`, reads `public.arb_now()` with the publishable key every 30 s; a plain first build the founder
   designs later). **Test:** `tools/test-arb-engine-sql.py`, `test-arb-page.mjs`.
   **No alert on a withdrawn match, any kind** (founder 2026-11-03: four ⚖️ ARB of +26% on Davidovich Fokina v Kouame after
@@ -106,12 +106,12 @@ answers on card 37612d3d (TEN-294 doc `design`). Suite: `test-ten294-drops.mjs`.
   total the prediction-market leg's book takes at its price (`arb.max_total`: liq × price / eff over its share), or per $1,000
   when both legs are bookmakers (limits unknown). Tiebreak sets read "7–6(5)" (`setText`). **Euros** (founder 2026-11-04): every amount reads
   "€… ($…)" at the ECB reference rate (`arb.fx`, api.frankfurter.app via pg_net from `arb.tick()`, at most every 6 h); a rate
-  older than 4 days is not used and the amount stays in dollars. **Chats** (founder 2026-11-04): ⚡ LIVE ARB and 📐 DIVERGENCE
-  go to the arbitrage group "Arbritage Bot" (Vault `arb_telegram_chat_id`), ⚖️ pre-match ARB stays in the drop chat; the same
-  bot posts both; no arbitrage chat stored → the drop chat (`arb.send(text, kind)`). A pair joins on both names, exactly one candidate each way; Kalshi
+  older than 4 days is not used and the amount stays in dollars. **Chats** (founder 2026-11-05, replacing 2026-11-04's split): ⚡ LIVE
+  ARB, ⚖️ ARB and 📐 DIVERGENCE all go to the arbitrage group "Arbritage Bot" (Vault `arb_telegram_chat_id`); the drop bot
+  posts them; no arbitrage chat stored → the drop chat (`arb.send(text, kind)`). A pair joins on both names, exactly one candidate each way; Kalshi
   Challengers (`KXATPCHALLENGERMATCH`) are never read. Gap = back one player on each market for < $1 after both taker fees
   (the engine's 0.07·q(1−q) / 0.05·p(1−p)). Every 5 s the positive gaps + a heartbeat go to `public.arb_live_push`
-  (service role). **Test:** a gap posts ⚡ LIVE ARB (drop chat, the engine's `arb.send`) only when edge ≥ `config.live_min`
+  (service role). **Test:** a gap posts ⚡ LIVE ARB (arbitrage chat, the engine's `arb.send`) only when edge ≥ `config.live_min`
   (1%), ≥ `min_liq` ($100) to lock in, the match has started (Polymarket `live` or its start passed; before the start the
   30-s engine covers it) and the Kalshi event is `KXATPMATCH-`, once per match + direction per `live_cooldown` (10 min).
   `arb_now()` carries `live` only while the last push is ≤ `live_hb_max` (90 s) old; otherwise the page draws no live

@@ -74,8 +74,12 @@ try:
     rc, out = q(STUB); check('stubs', rc == 0, out)
     for f, n in ((SCOPE, 'drops-scope.sql'), (None, 'drops_live'), (KALSHI, 'kalshi-drop-bot.sql')):
         rc, err = (pg.file(f) if f else q(LIVE)); check(f'{n} applies', rc == 0, err)
+    # the live database as it stood on 4 Nov: the one-argument send of 2 Nov still beside the two-argument one
+    q("create schema if not exists arb; create or replace function arb.send(p_text text) returns bigint language sql as $$ select null::bigint $$")
     for i in (1, 2):
         rc, err = pg.file(SQL); check(f'arb-engine.sql applies (pass {i}: idempotent)', rc == 0, err)
+    rc, out = q("select count(*) from pg_proc where proname = 'send' and pronamespace = 'arb'::regnamespace")
+    check('one arb.send after the upgrade (the one-argument one of 2 Nov dropped)', out == '1', out)
     rc, d1 = q("select to_char(current_date + 1, 'YYYY-MM-DD')")
     rc, out = q("select public.drops_scope_ingest($j$" + json.dumps([
         fx(9001, 'Q. Halys', 'A. Fery', 'Atp Singles'), fx(9002, 'T. Thin', 'B. Book', 'Atp Singles'),
@@ -226,7 +230,7 @@ try:
     q("delete from net.posts"); q("insert into vault.decrypted_secrets values ('arb_telegram_chat_id', 'ARB')")
     q("select arb.send('a', 'live'), arb.send('b', 'divergence'), arb.send('c', 'arb')")
     rc, out = q("select string_agg(chat, ',' order by id) from net.posts")
-    check('⚡ live and 📐 divergence → the arbitrage chat; ⚖️ pre-match arb → the drop chat', out == 'ARB,ARB,DROP', out)
+    check('every kind → the arbitrage chat (founder 2026-11-05: ⚖️ pre-match arb too)', out == 'ARB,ARB,ARB', out)
     rc, out = q("select arb.money(1234.5), arb.money(12.5)")
     check('no ECB rate yet → amounts stay in dollars', out.split('|') == ['$1,235', '$12.50'], out)
     q("update arb.fx set asked_at = null, req = null"); q("select arb.fx_tick()")

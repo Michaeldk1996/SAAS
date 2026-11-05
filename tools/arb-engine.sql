@@ -404,17 +404,18 @@ language sql immutable as $$
     format('🕒 Prices: %s @ %s · Bet105 @ %s', d->>'source', arb.hhmm((d->>'at')::timestamptz), arb.hhmm((d->>'fairAt')::timestamptz)))
 $$;
 
--- the chat by kind (founder 2026-11-04): ⚡ live arbitrage and 📐 divergence go to the arbitrage group (Vault
--- arb_telegram_chat_id, "Arbritage Bot"); ⚖️ pre-match arbitrage stays in the drop chat (ten287_telegram_chat_id). Same bot.
--- No arbitrage chat stored yet → the drop chat (an alert is never lost to a missing setting).
+-- the chat (founder 2026-11-05, replacing 2026-11-04's split): every kind — ⚡ live arbitrage, ⚖️ pre-match arbitrage and
+-- 📐 divergence — goes to the arbitrage group (Vault arb_telegram_chat_id, "Arbritage Bot"). Same bot as the drop chat.
+-- No arbitrage chat stored yet → the drop chat (ten287_telegram_chat_id; an alert is never lost to a missing setting).
+-- the one-argument send of 2026-11-02 is dropped: left beside this one, every arb.send(msg) call was ambiguous and each
+-- tick that found a pre-match arbitrage failed (4 Nov 13:16Z – 5 Nov, 146 runs) — create or replace never removes an old signature.
+drop function if exists arb.send(text);
 create or replace function arb.send(p_text text, p_kind text default 'arb') returns bigint
 language plpgsql as $$
 declare tok text; chat text;
 begin
   select decrypted_secret into tok  from vault.decrypted_secrets where name = 'ten287_telegram_bot_token';
-  if p_kind in ('live', 'divergence') then
-    select decrypted_secret into chat from vault.decrypted_secrets where name = 'arb_telegram_chat_id';
-  end if;
+  select decrypted_secret into chat from vault.decrypted_secrets where name = 'arb_telegram_chat_id';
   if chat is null then select decrypted_secret into chat from vault.decrypted_secrets where name = 'ten287_telegram_chat_id'; end if;
   if tok is null or chat is null then return null; end if;
   return net.http_post(url := 'https://api.telegram.org/bot' || btrim(tok) || '/sendMessage',
@@ -446,7 +447,7 @@ begin
   for x in select * from jsonb_array_elements(o->'arbs') loop
     k := 'arb|' || (x->>'eventKey') || '|' || (x->'legFirst'->>'source') || '+' || (x->'legSecond'->>'source');
     continue when exists (select 1 from arb.alerts where akey = k and created_at > now() - c.cooldown);
-    msg := arb.render_arb(x); rid := arb.send(msg);
+    msg := arb.render_arb(x); rid := arb.send(msg, 'arb');
     insert into arb.alerts (kind, akey, event_key, detail, message, net_request_id, sent_at, delivery)
     values ('arb', k, (x->>'eventKey')::bigint, x, msg, rid, case when rid is not null then now() end,
             case when rid is null then 'unsent: no vault secret' else 'queued' end);
