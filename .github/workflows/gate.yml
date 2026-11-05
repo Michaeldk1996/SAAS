@@ -60,14 +60,61 @@ jobs:
       - name: Run this shard of every npm test command
         run: node tools/gate-run.mjs --shards "$GATE_SHARDS" --shard ${{ matrix.shard }}
 
+  # Architecture program stage 5 (2026-11-05): the data pipeline's fail-closed gates (archive chain + archive gate,
+  # market shards, Series row gate, the reconcile suite, the H2H reconciliation) run with THIS commit's code against the
+  # DEPLOYED store (the newest site-data artifact). A code change that would trip one fails here, and pipeline.yml builds
+  # data only with gated code (tools/gated-code.mjs), so the site's data keeps flowing instead of freezing. Read-only:
+  # the archive exports are SELECTs, nothing is committed, uploaded or sent. No store or no archive = SKIPPED out loud.
+  data-dry-run:
+    name: data dry-run
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Download the deployed store (the newest site-data artifact)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set +e
+          AID=$(gh api "repos/$GITHUB_REPOSITORY/actions/artifacts?name=site-data&per_page=5" -q '[.artifacts[] | select(.expired|not)][0].id' 2>/dev/null)
+          if [ -z "$AID" ] || [ "$AID" = null ]; then echo "::warning::no site-data artifact — the dry-run will skip out loud"; exit 0; fi
+          for i in 1 2 3; do
+            gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/$AID/zip" > .site-data.zip && unzip -q -o .site-data.zip -d .deployed-site && break
+            echo "::warning::download attempt $i failed"; rm -rf .deployed-site .site-data.zip; sleep 10
+          done
+          rm -f .site-data.zip
+          ls .deployed-site 2>/dev/null | wc -l
+
+      - name: The data gates on this code (tools/data-dry-run.sh)
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          API_TENNIS_KEY: ${{ secrets.API_TENNIS_KEY }}
+        run: bash tools/data-dry-run.sh .deployed-site
+
   result:
     name: all shards passed
-    needs: shard
+    needs: [shard, data-dry-run]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
       - name: Every shard passed, or the gate fails
         run: |
-          echo "shards: ${{ needs.shard.result }}"
+          echo "shards: ${{ needs.shard.result }} · data dry-run: ${{ needs['data-dry-run'].result }}"
           [ "${{ needs.shard.result }}" = "success" ] || { echo "::error title=Code gate::a shard failed or did not run. This commit is not published."; exit 1; }
+          [ "${{ needs['data-dry-run'].result }}" = "success" ] || { echo "::error title=Code gate::the data dry-run failed or did not run. This commit is not published and the data pipeline does not build with it."; exit 1; }

@@ -140,6 +140,19 @@ jobs:
           node-version: '24'
           cache: 'npm'
 
+
+      # Architecture program stage 5 (2026-11-05): the data is built with the newest GATED code (gate.yml: every npm test
+      # command + the data dry-run on the deployed store) laid over the newest DATA on main. A code commit whose gate has
+      # not passed is not built into the data, so it cannot trip a data gate and freeze the site; it is built once its
+      # gate passes. tools/gated-code.mjs writes the gated bytes into the WORKING TREE only (the index stays HEAD's, so
+      # no commit-back can commit a reverted code file) and never fails the run: a GitHub read error, no gated commit, or
+      # a .github/workflows/ difference (split build) builds HEAD as before, with a warning.
+      - name: Code = the newest gated commit (stage 5)
+        id: gatedcode
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node tools/gated-code.mjs apply || echo "::warning title=Gated code::gated-code.mjs exited $? — building HEAD as is"
+
       - name: Install dependencies
         run: npm ci
 
