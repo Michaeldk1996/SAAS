@@ -40,7 +40,7 @@ say "- store: $(node -e 'const b=require(require("path").resolve(process.argv[1]
 
 # The deployed store's inputs, laid into this checkout where the builders read them.
 rm -rf career-history && cp -R "$SITE/career-history" career-history || { skip "the store has no career-history/"; exit 0; }
-for f in career-history-index.json player-profiles.json matches.json series.json; do
+for f in career-history-index.json player-profiles.json matches.json series.json match-stat-event-coverage.json historical-match-stats.json; do
   [ -f "$SITE/$f" ] && cp "$SITE/$f" "$f"
 done
 
