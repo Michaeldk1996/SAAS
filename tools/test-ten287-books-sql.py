@@ -110,6 +110,41 @@ try:
     rc, out = q("select coalesce(string_agg(book, ','), '') from ten287_bot.alerts where event_id = 4")
     check('rollback books = [Superbet]: Napoleon stops, Superbet still alerts', out == 'Superbet', out)
 
+    # DB load (2026-11-05): tick() reads load_ticks_live = load_ticks + ONE predicate (matches with a tick in the window)
+    books = open(SQL).read()
+    a = books.index('create or replace function ten287_bot.load_ticks_live('); b = books.index('\n;\n', a)
+    live = books[a:b + 3]
+    m = re.search(r"\n      -- LIVE:.*?\n                            and w\.book_updated_at <= p_to and w\.seen_at <= p_to\)\n", live, re.S)
+    stripped = live.replace(m.group(0)[1:], '') if m else ''
+    stripped = stripped.replace('function ten287_bot.load_ticks_live(p_book text, p_from timestamp with time zone, p_to timestamp with time zone, p_window interval)',
+                                'function ten287_bot.load_ticks(p_book text, p_from timestamp with time zone, p_to timestamp with time zone)')
+    check('load_ticks_live is ten299-live-cut.sql load_ticks + the one window predicate, nothing else',
+          bool(m) and stripped == fn('ten287_bot.load_ticks'), 'drifted from load_ticks')
+    check('tick() reads load_ticks_live with the scan window', "ten287_bot.load_ticks_live(bk, now() - interval '14 days', now(), interval '10 minutes')" in books
+          and 'perform ten287_bot.load_ticks(bk' not in books)
+
+    # replay: the same alerts, field for field, from load_ticks and load_ticks_live on a varied board
+    q("delete from ten287_bot.alerts")
+    event(10, 'A, A', 'B, B'); event(11, 'C, C', 'D, D'); event(12, 'E, E', 'F, F'); event(13, 'G, G', 'H, H')
+    def tk(eid, h, mins_ago, book='Superbet', away=1.80):
+        q(f"insert into ten287_rec.ticks (book, event_id, back_home, back_away, book_updated_at, seen_at, event_status) values "
+          f"('{book}', {eid}, {h}, {away}, now() - interval '{mins_ago} minutes', now() - interval '{mins_ago} minutes', 'pending')")
+    for m_ago, h in ((14000, 2.60), (3000, 2.50), (40, 2.40), (12, 2.40), (2, 2.10)): tk(10, h, m_ago)      # opener 10 days back, drop now
+    for m_ago, h in ((9000, 3.10), (20, 3.00), (11, 3.00), (4, 2.95)): tk(11, h, m_ago)                     # moved, not 5%
+    for m_ago, h in ((5000, 1.90), (25, 1.80), (15, 1.50)): tk(12, h, m_ago)                                # dropped 15 min ago: out of window
+    for m_ago, h in ((600, 4.00), (30, 4.00), (9, 3.40), (1, 3.40)): tk(13, h, m_ago, away=1.30)            # drop inside window, then flat
+    def run(loader, rid, window="interval '10 minutes'"):
+        args = f"'Superbet', now() - interval '14 days', now()" + (f", {window}" if loader.endswith('_live') else '')
+        q(f"select {loader}({args}), ten287_bot.scan('Superbet', now(), now(), 5, 'selftest', '{rid}', interval '10 minutes', null, interval '0 minutes')")
+        rc, out = q(f"select coalesce(string_agg(concat_ws('|', event_id, side, ref_price, ref_at, cur_price, cur_at, pct_10m, open_price, open_at, open_kind, pct_open), ';' order by event_id, side), '') from ten287_bot.alerts where run_id = '{rid}'")
+        return out
+    old, new = run('ten287_bot.load_ticks', 'old'), run('ten287_bot.load_ticks_live', 'new')
+    check('replay: load_ticks_live alerts exactly as load_ticks (match, side, ref, current, opening, %)', old == new and old.count(';') == 1, f'{old}\n{new}')
+    check('the opening is the 10-day-old tick, kept by the live loader', '|2.60|' in new, new)
+    narrow = run('ten287_bot.load_ticks_live', 'narrow', "interval '90 seconds'")
+    check('CONTROL: a window narrower than the scan\'s loses an alert (the replay can tell)', narrow != old, narrow)
+    q("delete from ten287_bot.alerts where mode = 'selftest'")
+
     # CONTROL: the single-book tick() of before, on a fresh Napoleon-only drop — no Napoleon alert
     q("update ten287_bot.config set books = array['Superbet', 'Napoleon Sports BE']")
     q(OLD_TICK); event(5, 'Sinner, Jannik', 'Draper, Jack'); drop(5, 'Napoleon Sports BE', 2.00, 1.70); q("select ten287_bot.tick()")
