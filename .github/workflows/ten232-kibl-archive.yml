@@ -155,6 +155,8 @@ jobs:
           # (40P01 / 57014 from 27 Oct 13:31Z). A changed file is applied with a
           # short lock_timeout and retried — see ten232-schema-gate.py.
           python3 -B ten232-schema-gate.py ten232-kibl-schema.sql
+          # Architecture stage 4 (2026-11-05): the append-only capture tables (applied only when the file changes).
+          python3 -B ten232-schema-gate.py capture-tables.sql
 
       # Proves the posture rather than asserting it: RLS on, zero policies. This
       # is odds data under a partner grant, not public data.

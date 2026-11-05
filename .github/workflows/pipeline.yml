@@ -595,6 +595,15 @@ jobs:
           node build-captured-pinnacle.js || rc=$?
           node tools/step-check.mjs --step "Refresh captured Pinnacle closes (best-effort)" --rc "$rc" --since "$t0" --exists captured-closes-pinnacle.json
 
+      # Architecture stage 4, phase A (2026-11-05): REPORT ONLY. The captured closes rebuilt from the append-only capture
+      # tables (written by tools/capture-to-table.py after every capture tick) next to the git-built ones above, match by
+      # match. Nothing reads the tables yet; this is the ≥ 3-day parallel run the switch waits for. Never fails the run.
+      - name: Captured closes, git vs capture tables (stage 4, report only)
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+        run: node tools/captured-diff.js --root . --out .captured-diff.json || echo "::warning title=Captured closes git vs tables::exited $?"
+
       # Founder brief 2026-10-14 (item 1 + 2): the match-close shards are rebuilt from the permanent Pinnacle archive
       # (Supabase pinnacle_archive_close — .claude/rules/pinnacle-archive.md): the current close per match, an archive
       # close ("from Pinnacle history") over a captured one. This run's refreshed captured closes are appended first

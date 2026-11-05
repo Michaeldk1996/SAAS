@@ -308,6 +308,11 @@ while [ "$STOPPING" -eq 0 ]; do
   OUTCOME="captured"
   [ "$FREE_BILLED" -eq 1 ] && { MODE="stood-down"; OUTCOME="skipped"; }
   record_cadence "$MODE" "$OUTCOME"
+  # Architecture stage 4, phase A (2026-11-05): this tick's captured series also go into the append-only capture
+  # tables (capture-tables.sql). Supabase only, zero oddspapi units; never fails the tick (exit 0 on any error), and
+  # nothing reads the tables yet but the report-only git-vs-tables diff in pipeline.yml.
+  python3 tools/capture-to-table.py matches.json || \
+    echo "::warning::capture-to-table.py exited non-zero at iteration $ITER."
   ./ci-commit-push.sh "chore(odds): capture tick ${ITER} (${MODE}) [skip ci]" $STATE_FILES
   RC=$?
   if [ "$RC" -eq 3 ]; then
@@ -337,6 +342,8 @@ while [ "$STOPPING" -eq 0 ]; do
     # 'redo' excluded it from the gap population and made a real capture read as a
     # missed slot. '+redo' keeps the race visible in the audit trail.
     record_cadence "${MODE}+redo" "captured"
+    python3 tools/capture-to-table.py matches.json || \
+      echo "::warning::capture-to-table.py (recompute) exited non-zero at iteration $ITER."
     ./ci-commit-push.sh "chore(odds): capture tick ${ITER} (recomputed) [skip ci]" $STATE_FILES || \
       echo "::warning::Recomputed iteration $ITER still could not be pushed; next tick will carry it."
   fi

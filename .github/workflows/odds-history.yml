@@ -93,6 +93,15 @@ jobs:
           SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
         run: python3 oddspapi_budget.py commit --job odds-history
 
+      # Architecture stage 4, phase A (2026-11-05): this run's captured series also go into the append-only capture
+      # tables (capture-tables.sql). Supabase only; never fails the run.
+      - name: Captures to the capture tables (stage 4, best-effort)
+        if: always()
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+        run: python3 tools/capture-to-table.py matches.json || echo "::warning::capture-to-table.py exited $?"
+
       # Runs even when the capture step failed. A PARTIAL capture (exit 2) has
       # already written real prices into matches.json and those are worth
       # keeping; the run is still failed below so a shortfall can never read as
