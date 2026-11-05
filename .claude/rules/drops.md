@@ -60,8 +60,9 @@ answers on card 37612d3d (TEN-294 doc `design`). Suite: `test-ten294-drops.mjs`.
 - **Arbitrage + divergence engine** (founder 2026-11-01; `tools/arb-engine.sql`, schema `arb`, pg_cron `arb-engine` every 30 s,
   installed by `arb-engine.yml`). **Fair price = Pinnacle's, read as Bet105 with the margin removed** (founder): p = (1/a)/(1/a+1/b).
   Sources, each joined to ONE api-tennis `Atp Singles` fixture (`drops_scope.fixture`, both surnames + initials, start within
-  24 h, exactly one both ways): Bet105 (`kibl_now_card`, live while the worker heartbeat <= 180 s), Superbet + Polymarket
-  (`ten287_rec`, live while that book answered within 3 min), Kalshi (`kalshi_rec`, same). The api-tennis bookmaker collector
+  24 h, exactly one both ways): Bet105 (`kibl_now_card`, live while the worker heartbeat <= 180 s), the soft books in `arb.config.soft_books`
+  (Superbet + Napoleon Sports BE, founder 2026-11-05; a book outside the list is never read) and Polymarket (`ten287_rec`, live
+  while that book answered within 3 min), Kalshi (`kalshi_rec`, same). The api-tennis bookmaker collector
   (`ten216_test_odds_changes`) last wrote on 30 Sep 2026 and is not a source. **Fees**: Kalshi taker 0.07·q·(1−q) (series
   fee_type quadratic_with_maker_fees, multiplier 1); Polymarket taker rate·q·(1−q) (Polymarket's docs: fee = C × feeRate × p × (1 − p); Sports
   0.05, makers free); books none; both in `arb.config`. **DIVERGENCE** = a source's after-fee price >= `div_min` (5%)

@@ -6,7 +6,8 @@
 -- Sources (each joined to ONE api-tennis fixture of type 'Atp Singles' in drops_scope.fixture — the drop bots' spine —
 -- on both surnames + initials and a start within 24 h, exactly one candidate both ways, never a guess):
 --   Bet105     sharp       public.kibl_now_card (the Kibl stream), live while the worker heartbeat is <= 180 s old
---   Superbet   soft        ten287_rec (odds-api.io recorder), live while that book's recorder answered within 3 min
+--   Superbet   soft        ten287_rec (odds-api.io recorder), live while that book's recorder answered within 3 min;
+--              + every other book in config.soft_books (founder 2026-11-05: Napoleon Sports BE), same recorder, same rule
 --   Polymarket prediction  ten287_rec, same; liquidity = dollars at the best price (odds-api.io depth)
 --   Kalshi     prediction  kalshi_rec (public API recorder), live while it answered within 3 min; liquidity = ask × size;
 --                          its fixture = kalshi_bot.match_fx (Kalshi's own times are listing placeholders)
@@ -69,6 +70,9 @@ alter table arb.config add column if not exists arb_max numeric default 10;   --
 alter table arb.config add column if not exists live_min      numeric  not null default 1;                      -- % after fees
 alter table arb.config add column if not exists live_cooldown interval not null default interval '10 minutes';  -- per match + direction
 alter table arb.config add column if not exists live_hb_max   interval not null default interval '90 seconds';  -- worker heartbeat
+-- the odds-api.io bookmakers read as soft sources (founder 2026-11-05: Napoleon Sports BE beside Superbet); each must also
+-- be in ten287_rec.config.books or it has no ticks. A book's name here is the name its alerts print.
+alter table arb.config add column if not exists soft_books text[] not null default array['Superbet', 'Napoleon Sports BE'];
 create table if not exists arb.live_state (
     id      boolean primary key default true check (id),
     at      timestamptz,                 -- the worker's last push (its heartbeat)
@@ -151,7 +155,7 @@ begin
     select distinct on (t.event_id, t.book) t.event_id, t.book, t.back_home, t.back_away, t.depth_home, t.depth_away,
            coalesce(t.book_updated_at, t.seen_at) at, e.home, e.away, e.start_at
       from ten287_rec.ticks t join ten287_rec.events e using (event_id)
-     where t.market = 'ML' and t.book in ('Superbet', 'Polymarket') and coalesce(t.event_status, e.status) = 'pending'
+     where t.market = 'ML' and (t.book = 'Polymarket' or t.book = any(c.soft_books)) and coalesce(t.event_status, e.status) = 'pending'
        -- Polymarket = our own CLOB recorder only (src 'clob', tools/poly-recorder.sql). odds-api.io's older Polymarket
        -- events stay 'pending' after the switch (4 Nov 12:28Z) and would make every match carried by both ambiguous.
        and (t.book <> 'Polymarket' or t.src = 'clob')
