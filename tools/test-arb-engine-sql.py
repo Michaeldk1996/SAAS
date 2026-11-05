@@ -128,6 +128,19 @@ try:
     srcs2 = sorted(s['source'] for s in {f['first']: f for f in opps().get('fair', [])}.get('Q. Halys', {}).get('sources', []))
     check('config.soft_books decides: Superbet alone → Napoleon is not a source', srcs2 == ['Bet105', 'Kalshi', 'Polymarket', 'Superbet'], srcs2)
     q("update arb.config set soft_books = array['Superbet', 'Napoleon Sports BE']")
+    # "answered lately" (read once per run since 5 Nov): a book whose last 200 is older than rec_max, or a recorder whose
+    # only recent answer failed, is not a source; restoring the answer brings it back
+    q("update ten287_rec.requests set processed_at = now() - interval '10 minutes' where book = 'Superbet'")
+    q("update kalshi_rec.requests set status_code = 500")
+    srcs3 = sorted(s['source'] for s in {f['first']: f for f in opps().get('fair', [])}.get('Q. Halys', {}).get('sources', []))
+    check('a book that last answered 10 min ago (Superbet) and a recorder whose answer failed (Kalshi 500) are not sources',
+          srcs3 == ['Bet105', 'Napoleon Sports BE', 'Polymarket'], srcs3)
+    q("update ten287_rec.requests set processed_at = now() where book = 'Superbet'")
+    q("update kalshi_rec.requests set status_code = 200")
+    rc, out = q("select string_agg(indexname, ',' order by indexname) from pg_indexes where indexname in ('ten287_rec_requests_ok_idx', 'kalshi_rec_requests_ok_idx')")
+    check('the two "answered lately" indexes are installed', out == 'kalshi_rec_requests_ok_idx,ten287_rec_requests_ok_idx', out)
+    rc, out = q("select pg_get_functiondef('arb.quotes()'::regprocedure) ~ 'r\\.book = t\\.book'")
+    check('the engine never checks the recorder once per price row', out == 'f', out)
     pm = [x for x in fair.get('Q. Halys', {}).get('sources', []) if x['source'] == 'Polymarket']
     check('the Polymarket price is our recorder\'s (2.00), never odds-api.io\'s 2.10', bool(pm) and pm[0]['first'] == 2.0, pm)
     check('the Challenger fixture is not on the spine', 'L. Tien' not in fair, list(fair))

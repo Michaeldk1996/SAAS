@@ -65,6 +65,15 @@ jobs:
               st, r = sql("select polyrec.switch() r" if mode == 'poly-switch' else "select polyrec.compare(6) r")
               print(mode, 'HTTP', st); print(json.dumps(r, indent=1) if st < 400 else r); sys.exit(1 if st >= 400 else 0)
           if mode == 'install':
+              # the engine's "answered lately" indexes, built CONCURRENTLY first (one statement per call: never inside a
+              # transaction) so recorder inserts never wait; the file's own "create index if not exists" is then a no-op
+              for ix in ("create index concurrently if not exists ten287_rec_requests_ok_idx on ten287_rec.requests (processed_at) include (book) where status_code = 200",
+                         "create index concurrently if not exists kalshi_rec_requests_ok_idx on kalshi_rec.requests (processed_at) where status_code = 200"):
+                  st, r = sql(ix); print('index HTTP', st, ix.split(' on ')[0].split()[-1])
+                  if st >= 400: print(r); sys.exit(1)
+              st, r = sql("select string_agg(c.relname || '=' || i.indisvalid, ', ') v from pg_index i join pg_class c on c.oid = i.indexrelid where c.relname in ('ten287_rec_requests_ok_idx', 'kalshi_rec_requests_ok_idx')")
+              print('indexes', r)
+              if st >= 400 or 'false' in json.dumps(r) or json.dumps(r).count('=true') != 2: print('::error::an index is missing or invalid (drop it and re-run)'); sys.exit(1)
               st, r = sql(open('tools/poly-recorder.sql').read()); print('apply poly-recorder HTTP', st)
               if st >= 400: print(r); sys.exit(1)
               st, r = sql(open('tools/arb-engine.sql').read()); print('apply HTTP', st)

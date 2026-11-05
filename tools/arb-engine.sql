@@ -62,6 +62,9 @@ create table if not exists arb.alerts (
     created_at      timestamptz not null default now()
 );
 create index if not exists arb_alerts_key_idx on arb.alerts (akey, created_at);
+-- the engine's "answered lately" reads (arb.quotes live_books / kalshi_live); first built CONCURRENTLY by arb-engine.yml mode indexes
+create index if not exists ten287_rec_requests_ok_idx on ten287_rec.requests (processed_at) include (book) where status_code = 200;
+create index if not exists kalshi_rec_requests_ok_idx on kalshi_rec.requests (processed_at) where status_code = 200;
 -- LIVE (founder 2026-11-02): the in-play Kalshi × Polymarket worker posts its gaps here as kind 'live'.
 alter table arb.alerts add column if not exists retries integer not null default 0;   -- Telegram re-sends (founder 2026-11-03)
 alter table arb.alerts drop constraint if exists alerts_kind_check;
@@ -150,6 +153,14 @@ begin
      where (select count(*) from b105j x where x.event_key = j.event_key) = 1
        and (select count(*) from b105j x where x.card_key = j.card_key) = 1
   ),
+  -- which recorders answered lately: read ONCE per run on the (processed_at) WHERE status_code = 200 indexes below,
+  -- never once per price row (5 Nov 2026: the per-row check scanned all of ten287_rec.requests every tick, 3.1B rows read)
+  live_books as materialized (
+    select distinct r.book from ten287_rec.requests r where r.status_code = 200 and r.processed_at > now() - c.rec_max
+  ),
+  kalshi_live as materialized (
+    select exists (select 1 from kalshi_rec.requests r where r.status_code = 200 and r.processed_at > now() - c.rec_max) ok
+  ),
   -- odds-api.io books (shared recorder): the latest ML tick per event and book, live while that book answered lately
   oa as (
     select distinct on (t.event_id, t.book) t.event_id, t.book, t.back_home, t.back_away, t.depth_home, t.depth_away,
@@ -160,7 +171,7 @@ begin
        -- events stay 'pending' after the switch (4 Nov 12:28Z) and would make every match carried by both ambiguous.
        and (t.book <> 'Polymarket' or t.src = 'clob')
        and e.start_at > now() - interval '1 hour' and e.start_at < now() + c.horizon
-       and exists (select 1 from ten287_rec.requests r where r.book = t.book and r.status_code = 200 and r.processed_at > now() - c.rec_max)
+       and t.book in (select lb.book from live_books lb)
      order by t.event_id, t.book, coalesce(t.book_updated_at, t.seen_at) desc, t.seen_at desc
   ),
   oaj as (
@@ -183,7 +194,7 @@ begin
     select distinct on (t.ticker) t.ticker, t.event_ticker, t.yes_ask, t.yes_ask_size, t.seen_at at   -- when WE saw it (Kalshi's updated_time read 15:00 for a 09:38 price)
       from kalshi_rec.ticks t
      where t.status = 'active' and t.seen_at > now() - interval '1 day'
-       and exists (select 1 from kalshi_rec.requests r where r.status_code = 200 and r.processed_at > now() - c.rec_max)
+       and (select kl.ok from kalshi_live kl)
      order by t.ticker, t.seen_at desc
   ),
   -- each Kalshi match's api-tennis fixture is kalshi_bot.match_fx (Kalshi's own times are listing placeholders)
