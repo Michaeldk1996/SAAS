@@ -182,10 +182,11 @@ const stepsOf = (yml) => yml.split(/\n(?=      - name: )/).map((s) => ({
   name: (/^\s*- name: (.*)/m.exec(s) || [])[1] || '',
   body: s.replace(/\n\s*\n(\s*#[^\n]*\n?)*\s*$/, ''),
 }));
-function runResult(gate, shardResult) {
+function runResult(gate, shardResult, dryRunResult = 'success') {
   const job = gate.slice(gate.indexOf('\n  result:'));
   const script = job.split(/\n\s+run: \|\n/)[1].split('\n').map((l) => l.replace(/^ {10}/, '')).join('\n')
-    .split('${{ needs.shard.result }}').join(shardResult);
+    .split('${{ needs.shard.result }}').join(shardResult)
+    .split("${{ needs['data-dry-run'].result }}").join(dryRunResult);   // stage 5: the data dry-run job
   return spawnSync('bash', ['-e', '-c', script], { encoding: 'utf8' }).status;
 }
 const WIRING = {
@@ -210,6 +211,8 @@ const WIRING = {
   'W3. the gate passes only when every shard passed': (w) => {
     assert.strictEqual(runResult(w.gate, 'success'), 0, 'success');
     for (const r of ['failure', 'cancelled', 'skipped']) assert.strictEqual(runResult(w.gate, r), 1, r);
+    // architecture stage 5: the data dry-run is part of the gate (every shard green, the dry-run not → no gate)
+    for (const r of ['failure', 'cancelled', 'skipped']) assert.strictEqual(runResult(w.gate, 'success', r), 1, `data dry-run ${r}`);
   },
   'W4. nothing else runs npm test in the job': (w) => {
     for (const [f, y] of Object.entries(w)) assert.ok(!/^\s+run: npm test\s*$/m.test(y), `a serial \`npm test\` step is wired in ${f}`);
@@ -259,7 +262,7 @@ const MUTANTS = [
   ['a cancelled shard passes', 'W3. the gate passes only when every shard passed', 'gate',
     '[ "${{ needs.shard.result }}" = "success" ] ||', '[ "${{ needs.shard.result }}" != "failure" ] ||'],
   ['the serial npm test step left in as well', 'W4. nothing else runs npm test in the job', 'gate',
-    '      - name: Install dependencies\n        run: npm ci\n', '      - name: Install dependencies\n        run: npm ci\n\n      - name: Old gate\n        run: npm test\n'],
+    '      - name: Install dependencies\n        run: npm ci\n\n      # Draw source', '      - name: Install dependencies\n        run: npm ci\n\n      - name: Old gate\n        run: npm test\n\n      # Draw source'],
   ['the seed passes a failed hydrate', 'S2. an unreachable deployed index exits 1', 'seed',
     "  console.error(`::error title=tournament-history seed::${TH.error || `attached ${TH.attached} of ${TH.indexed} indexed players`}`);\n  process.exit(1);",
     "  console.error(`::error title=tournament-history seed::${TH.error || `attached ${TH.attached} of ${TH.indexed} indexed players`}`);"],
