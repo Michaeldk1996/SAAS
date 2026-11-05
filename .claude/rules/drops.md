@@ -12,6 +12,14 @@ answers on card 37612d3d (TEN-294 doc `design`). Suite: `test-ten294-drops.mjs`.
   **Test:** every row id resolves to one `ten280_bot.alerts` (Bet105) or `ten287_bot.alerts` (Superbet) row with `mode = 'live'`.
   Nothing on the page re-detects a drop. The drop rules are therefore the bots' rules: ≥5% against the price 10 min earlier, no floor, a 30-min cooldown per match (per book), ML pre-match men's singles.
   *A new book* joins when its bot writes an `alerts` table of the same shape, as one more branch in `drops_api.snapshot()`.
+  **An odds-api.io book joins by config** (founder 2026-11-05, Napoleon Sports BE): `ten287_bot` scans every book in
+  `ten287_bot.config.books` (`tools/ten287-books.sql`; the book must also be in `ten287_rec.config.books`), one alert per
+  book (the cooldown is per book, so Superbet and Napoleon dropping together are two alerts), each headed with its book
+  ("🟢 NAPOLEON SPORTS BE DROP"); the feed and the page read `a.book`, so its rows appear with no page change.
+  **Test:** `tools/test-ten287-books-sql.py` (control: the single-book tick never alerts Napoleon). Measured 4 Nov 12:45Z –
+  5 Nov 05:00Z on 397 matches both books price: 174 Superbet / 173 Napoleon 5% drops, 140 within 10 min of each other
+  (median Napoleon 30 s later, 90 within 60 s — our polls are 30 s apart); same price at the same moment 33%, Napoleon
+  lower 42%, higher 25%.
 
 - **"Dropped to" and "Latest" are two fields, each with its own clock.**
   "Dropped to" is the alert's price. "Latest" is the side's latest *pre-match* price, read with the bot loader's own filters and side mapping (per alert, on indexes; calling the loader itself full-scans the Kibl tables).

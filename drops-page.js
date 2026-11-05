@@ -373,7 +373,8 @@
   Object.keys(SHARP_BOOKS).forEach(function (b) { STRIP_CLASS[b] = 'sharp'; });
   // the dashboard's AODDS_ORDER (Sharp then Soft, stable; never re-sorted by drop)
   var BOOK_ORDER = ['Pinnacle +30s', 'Pinnacle (api-tennis)', 'Bet105', 'Betano', '1xBet', 'BetVictor', 'Betfair Sportsbook (api-tennis)',
-    'Marathon', 'bet365 (api-tennis)', 'Sbobet', 'William Hill', 'Superbet', 'Betfair Exchange'];
+    'Marathon', 'bet365 (api-tennis)', 'Sbobet', 'William Hill', 'Superbet', 'Napoleon Sports BE',
+    'Betfair Exchange'];
   var EXCHANGES = { 'Betfair Exchange': true };      // no margin on an exchange (decision 4)
   function stripName(n) { return String(n || '').replace(/\s*\(recorded by us\)\s*$/i, ''); }
   // TEN-427 r2 fix 13: the box names a book as the Odds tab does — the dashboard's one config AODDS_BOOKS (odds.md: one

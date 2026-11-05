@@ -17842,7 +17842,7 @@ const AODDS_LEGACY_BET365 = 'bet365 (Oddspapi, capture ended 26 Sep)';
 // Pinnacles, two Betfairs and two bet365s are DIFFERENT lines, labelled by source.
 const AODDS_ORDER = ['Pinnacle +30s (Oddspapi)', 'Pinnacle (api-tennis)', 'Bet105',
   'Betano', '1xBet', 'BetVictor', 'Betfair Sportsbook (api-tennis)', 'Marathon', 'bet365 (api-tennis)', 'Sbobet', 'William Hill',
-  'Superbet', 'Betfair Exchange (recorded by us)'];
+  'Superbet', 'Napoleon Sports BE (odds-api.io)', 'Betfair Exchange (recorded by us)'];
 // Founder 2026-09-26 (comment 5dafce2b): a book that appears from two sources shows its source in
 // its NAME, so no two rows ever read the same. The stored chart key "Pinnacle +30s" (written since
 // Wave 1) is shown as "Pinnacle +30s (Oddspapi)"; the api-tennis labels carry "(api-tennis)" from
@@ -17941,6 +17941,8 @@ const AODDS_BOOKS = [
   { name: 'Sbobet', group: 'soft', sources: ['Sbobet'] },
   { name: 'William Hill', group: 'soft', sources: ['William Hill'] },
   { name: 'Superbet', group: 'soft', sources: ['Superbet'] },
+  // founder 2026-11-05: Napoleon Sports BE, recorded through odds-api.io beside Superbet (stored label "<book> (odds-api.io)")
+  { name: 'Napoleon Sports BE', group: 'soft', sources: ['Napoleon Sports BE (odds-api.io)'] },
   // Founder 2026-11-01: Polymarket (odds-api.io slot since 1 Nov) is its own group, "Prediction market" — neither a
   // sharp book nor a soft one. Listed after Soft.
   { name: 'Polymarket', group: 'prediction', sources: ['Polymarket (odds-api.io)'] },

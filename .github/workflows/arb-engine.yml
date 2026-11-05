@@ -6,14 +6,16 @@ name: arb-engine
 #   rollback unschedule the engine (its tables stay; the page then shows what arb_now() computes live).
 #   poly-compare  our Polymarket recorder (tools/poly-recorder.sql, founder 2026-11-04) beside odds-api.io's Polymarket.
 #   poly-switch   ours becomes 'Polymarket' and odds-api.io stops recording it (polyrec.switch(); then the slot is free).
+#   drop-books    the odds-api.io drop bot for every book in ten287_bot.config.books (tools/ten287-books.sql, founder
+#            2026-11-05: Napoleon Sports BE beside Superbet), after its throwaway-Postgres test; read-back of books + alerts.
 # install also applies tools/poly-recorder.sql (before the engine) with its own throwaway-Postgres test.
-# Main only. Changes no bot and no Telegram secret (alerts go to the drop chat through the Superbet bot's Vault names).
+# Main only. drop-books changes the odds-api.io drop bot's book list; no other bot and no Telegram secret (alerts go to the drop chat through the Superbet bot's Vault names).
 on:
   workflow_dispatch:
     inputs:
       mode:
         type: choice
-        options: [report, install, rollback, poly-compare, poly-switch]
+        options: [report, install, rollback, poly-compare, poly-switch, drop-books]
         default: report
 permissions:
   contents: read
@@ -34,6 +36,9 @@ jobs:
       - name: SQL test (throwaway Postgres)
         if: inputs.mode == 'install'
         run: python3 tools/test-arb-engine-sql.py && python3 tools/test-poly-recorder-sql.py
+      - name: SQL test, drop bot books (throwaway Postgres)
+        if: inputs.mode == 'drop-books'
+        run: python3 tools/test-ten287-books-sql.py
       - name: Apply / schedule / roll back, then read back
         run: |
           python3 - <<'PY'
@@ -50,6 +55,12 @@ jobs:
           if mode == 'rollback':
               st, r = sql("select cron.unschedule('arb-engine') where exists (select 1 from cron.job where jobname = 'arb-engine')")
               print('rollback HTTP', st, r if st >= 400 else ''); sys.exit(1 if st >= 400 else 0)
+          if mode == 'drop-books':   # tools/ten287-books.sql: the odds-api.io drop bot for every book in ten287_bot.config.books
+              st, r = sql(open('tools/ten287-books.sql').read()); print('apply ten287-books HTTP', st)
+              if st >= 400: print(r); sys.exit(1)
+              time.sleep(70)
+              st, r = sql("select (select books from ten287_bot.config) books, (select jsonb_object_agg(book, n) from (select book, count(*) n from ten287_bot.alerts where mode = 'live' and created_at > now() - interval '1 day' group by 1) x) alerts_24h, (select jsonb_object_agg(status, n) from (select d.status, count(*) n from cron.job_run_details d join cron.job j using (jobid) where j.jobname = 'ten287-superbet-drop-bot' and d.start_time > now() - interval '60 seconds' group by 1) y) runs_60s")
+              print('read-back HTTP', st, json.dumps(r, default=str)); sys.exit(1 if st >= 400 else 0)
           if mode in ('poly-compare', 'poly-switch'):
               st, r = sql("select polyrec.switch() r" if mode == 'poly-switch' else "select polyrec.compare(6) r")
               print(mode, 'HTTP', st); print(json.dumps(r, indent=1) if st < 400 else r); sys.exit(1 if st >= 400 else 0)
