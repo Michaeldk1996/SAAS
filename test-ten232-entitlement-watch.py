@@ -181,6 +181,21 @@ _src = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'ten232-bet
 check('a census the database will not answer is a ::warning:: and exit 0, never ::error:: + exit 1',
       'census skipped this run' in _src and 'print(f"::error::count for feed_source_id' not in _src)
 
+# DB load (2026-11-05): the full-table counts run in the 04 UTC hour only (each reads all of kibl_line_observations)
+from datetime import datetime as _dt, timezone as _tz
+_old = os.environ.pop('KIBL_CENSUS', None)
+check('census runs in the 04 UTC hour', BF.census_due(_dt(2026, 11, 5, 4, 37, tzinfo=_tz.utc)) is True)
+check('census is skipped in any other hour', not any(BF.census_due(_dt(2026, 11, 5, h, 5, tzinfo=_tz.utc)) for h in range(24) if h != 4))
+os.environ['KIBL_CENSUS'] = '1'
+check('KIBL_CENSUS=1 forces the census', BF.census_due(_dt(2026, 11, 5, 13, 0, tzinfo=_tz.utc)) is True)
+os.environ.pop('KIBL_CENSUS')
+if _old is not None: os.environ['KIBL_CENSUS'] = _old
+check('the skipped census says so and counts nothing (no sb_count before the gate)',
+      _src.index('if not census_due():') < _src.index('sb_count(url, key, "kibl_line_observations"') and 'Not counted this run' in _src)
+_ak = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'archive-kibl.py')).read()
+check('archive report counts observations in the 04 UTC hour only, a dash otherwise (fmt(None))',
+      'if os.environ.get("KIBL_CENSUS") == "1" or now.hour == 4 else None' in _ak and 'n_obs = (sb_count(url, key, TABLE_OBS)[2]' in _ak)
+
 print()
 if FAILED:
     print(f'{len(FAILED)} FAILED: {FAILED}')

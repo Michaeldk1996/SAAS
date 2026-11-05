@@ -131,6 +131,13 @@ def out(k, v):
     print(f"{k}={v}")
 
 
+def census_due(now=None):
+    """The per-book row census runs in the 04 UTC hour, or when KIBL_CENSUS=1 (DB load, 2026-11-05)."""
+    if os.environ.get("KIBL_CENSUS") == "1":
+        return True
+    return (now or datetime.now(timezone.utc)).hour == 4
+
+
 def main():
     from kibl_client import KiblClient
 
@@ -278,6 +285,13 @@ def main():
     # ------------------------------- has it already landed, and under what label
     url, key = supabase_creds()
 
+    # The census reads all of kibl_line_observations (~1 GB) once per feed_source_id, plus the total and the blank rows:
+    # every archive run did that, and it was a third of the database's disk reads (DB load, 2026-11-05: the throttled
+    # disk slowed every cron job 23:00Z-07:30Z). It is a report, so it runs in the 04 UTC hour only; KIBL_CENSUS=1 forces it.
+    if not census_due():
+        print("### What the archive already holds, per feed_source_id\n")
+        print("Census runs once a day, in the 04:00 UTC hour (each count reads the whole table). Not counted this run.\n")
+        return 0
     print("### What the archive already holds, per feed_source_id\n")
     print("| feed_source_id | book | rows in kibl_line_observations |")
     print("|---|---|---|")

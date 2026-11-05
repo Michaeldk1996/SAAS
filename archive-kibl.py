@@ -1118,7 +1118,10 @@ def report(args):
     # count=exact on a 1-row page: the row total without pulling the rows. This
     # was already being fetched and then thrown away — the archive's headline
     # number was computed and never printed.
-    _, _, n_obs = sb_count(url, key, TABLE_OBS)
+    # The observations count reads the whole table (~1 GB) on every archive run: once a day, in the 04 UTC hour
+    # (DB load, 2026-11-05); KIBL_CENSUS=1 forces it. Not counted = a dash, never a zero.
+    n_obs = (sb_count(url, key, TABLE_OBS)[2]
+             if os.environ.get("KIBL_CENSUS") == "1" or now.hour == 4 else None)
     _, _, n_fx = sb_count(url, key, TABLE_FIXTURES)
 
     # A BACKFILL WINDOW IS NOT A SWEEP. Both record a row in kibl_sweeps, and a
