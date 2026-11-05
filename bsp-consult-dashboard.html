@@ -17075,7 +17075,9 @@ function sfDbNoPriceWhy(full, v){
   const d0 = fhDayNum(v.date); if (d0 == null) return 'none';
   const me = H.tdKey(full), op = H.tdKey(v.opp);
   const hits = [];
-  for (let dd = -16; dd <= 1; dd++) for (const u of _sfDbJoin._uIx.get(d0 + dd) || []) {
+  // the master row's date minus the career row's: a start-dated career row's match is on or after it (fix 2026-11-05: the
+  // loop read [−16, +1], the wrong side, so a start-dated row's "one side only" read "No source found yet")
+  for (let dd = -1; dd <= 16; dd++) for (const u of _sfDbJoin._uIx.get(d0 + dd) || []) {
     const [w, l] = v.won ? [u[1], u[2]] : [u[2], u[1]];
     if (H.tdSame(me, H.tdKey(w)) && H.tdSame(op, H.tdKey(l))) hits.push(u[3]);
   }
