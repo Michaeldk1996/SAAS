@@ -122,12 +122,6 @@
         return streakVerb(st.direction);
     }
   }
-  // Long form (pop-up): the all-comps claim names its pool, the handicap claim keeps its format.
-  function claimLong(st) {
-    if (st.type === 'all') return claimOf(st) + ' across all competitions';
-    if (st.type === 'handicap') return claimOf(st) + bo(st);
-    return claimOf(st);
-  }
 
   // ─── THE ONE ROW BUILDER (single source: the card's Avg price and the pop-up ledger) ─────────────────────────
   // Rows come back OLDEST FIRST (series.json's order); the pop-up reverses for display. Prices are READ from the
@@ -145,17 +139,8 @@
     }
     return out;
   }
-  // Which proof figure a line family is judged on (the run's own claim, read off the same score string the row
-  // prints). Not painted on the card; kept so the row-integrity gate (tools/test-series-rows.js) reads the builder.
-  var PROOF_SPEC = {
-    total:    { key: 'games',    label: 'Avg games',         dp: 1 },
-    handicap: { key: 'margin',   label: 'Avg margin',        dp: 1, signed: true },
-    setgames: { key: 'set1',     label: 'Avg 1st-set games', dp: 1 },
-    setout:   { key: null,       label: 'Proof',             dp: 0 },
-    all:      { key: null,       label: 'Avg price',         dp: 0 },
-    surface:  { key: null,       label: 'Avg price',         dp: 0 },
-    style:    { key: null,       label: 'Avg price',         dp: 0 },
-  };
+  // The games figure a line family is judged on, read off the same score string the row prints (total games, set-1
+  // games, or the player's games margin). Never stored separately.
   function proofOf(st, m) {
     var s = setsOf(m && m.score);
     if (!s) return null;
@@ -179,8 +164,10 @@
     var ms = Array.isArray(st.matches) ? st.matches : [];
     return ms.map(function (m) {
       var px = pxOf(m);
-      var ok = !!(px && typeof px.price === 'number' && isFinite(px.price) && px.price > 1 &&
-        typeof px.oppPrice === 'number' && isFinite(px.oppPrice) && px.oppPrice > 1);
+      // Founder ruling 2026-11-06 (series-v2 ruling 1): a row is priced when THE PLAYER's price exists; the opponent's
+      // price is not required (it is shown, and counted only in the Favourite "n of N").
+      var ok = !!(px && typeof px.price === 'number' && isFinite(px.price) && px.price > 1);
+      var okOpp = ok && typeof px.oppPrice === 'number' && isFinite(px.oppPrice) && px.oppPrice > 1;
       return {
         date: m.date || null,
         event: m.tournament || null,
@@ -189,39 +176,22 @@
         won: (typeof m.won === 'boolean') ? m.won : null,
         proof: proofOf(st, m),
         price: ok ? px.price : null,
-        oppPrice: ok ? px.oppPrice : null,
+        oppPrice: okOpp ? px.oppPrice : null,
         book: ok ? (BOOK_NAME[px.book] || px.book || null) : null,
         src: ok ? (px.src || null) : null,   // hist / cap: our Pinnacle archive's close (founder 2026-10-16)
       };
     });
   }
-  // ─── the flat-1u ledger (match-result families; founder ruling A2 + `pnl`=keep) ───
-  // Win = price − 1, loss = −1.00, each row ROUNDED TO 2dp before summing, total = the sum of the rounded rows,
-  // yield = total ÷ priced. An unpriced row is out of both the total and the count — never counted as 0.
+  // ─── the sheet's figures (series-v2, 2026-11-06) — ONE builder for the card and the sheet ─────────────────────
+  // Series tracks no P&L (README §0): the flat-1u ledger, its total and yield are gone. Every figure below is read off
+  // streakRows(st) — the rows the sheet lists — so the card's Avg price can never differ from the sheet's AVG PRICE.
   var MATCH_RESULT_FAMS = { all: 1, surface: 1, style: 1 };
   function isMatchResultFam(st) { return !!MATCH_RESULT_FAMS[famOf(st)]; }
-  // Money is summed in INTEGER HUNDREDTHS: a price is exact to 2dp, so the sum is exact and order-independent.
+  // Prices are exact to 2 dp, so they are summed in integer hundredths (exact, order-independent).
   function cents(x) { return Math.round(x * 100); }
-  function halfAway(x) { return x < 0 ? -Math.round(-x) : Math.round(x); }
-  function ledgerOf(st) {
-    if (!isMatchResultFam(st)) return null;
-    var rows = streakRows(st), totalC = 0, priced = 0, books = {};
-    for (var i = 0; i < rows.length; i++) {
-      var r = rows[i];
-      if (r.price == null || r.won == null) continue;
-      priced++;
-      totalC += r.won ? (cents(r.price) - 100) : -100;
-      if (r.book) books[r.book] = (books[r.book] || 0) + 1;
-    }
-    if (!priced) return { priced: 0, of: rows.length, total: null, yield: null, books: [] };
-    var total = totalC / 100;
-    return {
-      priced: priced, of: rows.length, total: total,
-      yield: halfAway(10 * totalC / priced) / 10,   // tenths of a percent, half away from zero (−22.75 → −22.8)
-      books: Object.keys(books).sort(),
-    };
-  }
-  // The card's Avg price — the mean Home price of the SAME rows the pop-up lists, priced rows only, exact cents.
+  // Avg price = the mean of THE PLAYER's own pre-match price (the sheet's Home column) over the rows where it exists —
+  // favourite or underdog, every streak type, line streaks included. A missing price is out of the mean, never 0;
+  // n of N travels with it (founder 2026-11-06: "(5/6)" after the price while some rows are unpriced).
   function avgPriceOf(st) {
     var rows = streakRows(st), sumC = 0, n = 0;
     for (var i = 0; i < rows.length; i++) {
@@ -236,23 +206,52 @@
     for (var i = 0; i < rows.length; i++) if (rows[i].price != null) n++;
     return n;
   }
-  function proofSummary(st) {
-    var spec = PROOF_SPEC[famOf(st)] || PROOF_SPEC.all;
-    if (isMatchResultFam(st)) {
-      var ap = avgPriceOf(st);
-      if (!ap) return { label: spec.label, value: null };
-      return { label: spec.label, value: ap.value, n: ap.n, of: ap.of };
-    }
-    if (!spec.key) return { label: spec.label, value: null };
-    var rows = streakRows(st), sum = 0, n = 0;
+  // Favourite n of N: N = the rows where BOTH prices exist, n = those where the player's price is the shorter
+  // (founder 2026-11-06 ruling 1). No row with both prices → null (a dash).
+  function favOf(st) {
+    var rows = streakRows(st), n = 0, of = 0;
     for (var i = 0; i < rows.length; i++) {
-      if (typeof rows[i].proof === 'number' && isFinite(rows[i].proof)) { sum += rows[i].proof; n++; }
+      var r = rows[i];
+      if (r.price == null || r.oppPrice == null) continue;
+      of++;
+      if (r.price < r.oppPrice) n++;
     }
-    if (!n) return { label: spec.label, value: null };
-    var avg = sum / n;
-    var txt = avg.toFixed(spec.dp);
-    if (spec.signed && avg > 0) txt = '+' + txt;
-    return { label: spec.label, value: txt, n: n, of: rows.length };
+    return of ? { n: n, of: of } : null;
+  }
+  // Line mode (README §5.1 / §7): Total games, Set games (first set) and Handicap read their games figure off the score.
+  // tg max = ⌈line × 1.5⌉, sg 13, hc 12. The handicap line is signed from the player's side: covered −h is a margin
+  // above +h; failed to cover +h is a margin below −h.
+  function lineSpecOf(st) {
+    var fam = famOf(st), L = Number(st.line);
+    if (!isFinite(L)) return null;
+    if (fam === 'total') return { mode: 'tg', line: L, target: L, max: Math.ceil(L * 1.5), head: String(L), unit: 'Avg games' };
+    if (fam === 'setgames') return { mode: 'sg', line: L, target: L, max: 13, head: String(L), unit: 'Avg games in set 1' };
+    if (fam === 'handicap') {
+      var cover = st.cover !== false;
+      return { mode: 'hc', line: L, target: cover ? L : -L, max: 12, head: (cover ? '−' : '+') + L, unit: 'Avg games margin' };
+    }
+    return null;
+  }
+  function signedFig(v, mode, dp) {
+    var t = Math.abs(v).toFixed(dp);
+    if (mode !== 'hc') return v < 0 ? '−' + t : t;
+    return (v > 0 ? '+' : v < 0 ? '−' : '') + t;
+  }
+  // avg · range (min–max) · closest call (the row figure nearest the line; ties → the newest row, as the sheet lists it).
+  function lineStatsOf(st) {
+    var spec = lineSpecOf(st);
+    if (!spec) return null;
+    var rows = streakRows(st).slice().reverse(), figs = [];
+    for (var i = 0; i < rows.length; i++) if (typeof rows[i].proof === 'number' && isFinite(rows[i].proof)) figs.push(rows[i].proof);
+    if (!figs.length) return { spec: spec, n: 0, of: rows.length, avg: null, min: null, max: null, closest: null };
+    var sum = 0, mn = figs[0], mx = figs[0], cl = figs[0];
+    for (var j = 0; j < figs.length; j++) {
+      var f = figs[j]; sum += f;
+      if (f < mn) mn = f;
+      if (f > mx) mx = f;
+      if (Math.abs(f - spec.target) < Math.abs(cl - spec.target)) cl = f;
+    }
+    return { spec: spec, n: figs.length, of: rows.length, avg: sum / figs.length, min: mn, max: mx, closest: cl };
   }
 
   // ─── families ────────────────────────────────────────────────────────────────
@@ -342,16 +341,9 @@
   var DATA_MAX_AGE_MS = 15 * 60000;  // a page show refetches series.json once the loaded copy is older than this
   var SLOT_TICK_MS = 5 * 60000;      // while shown, the slots (day word, already-played, start) are recomputed this often
 
-  var DEFAULTS = { level: 'all', day: 'all', dir: 'all', type: 'all', minLen: 6, sort: 'longest', showPlayed: false };
-  var _filters = {
-    level: 'all',         // all | tour | chal          — the step 13 tour tag (qualifying included)
-    day: 'all',           // all | today | tomorrow     — the scheduled date, Today's Matches day rule
-    dir: 'all',           // all | win | loss
-    type: 'all',          // all | all-comp | surface | style | total | handicap | setout | setgames
-    minLen: 6,            // item 9 (founder 2026-09-12): 6+ by default; 3+…8+ stay reachable
-    sort: 'longest',      // longest | soonest
-    showPlayed: false,    // include streaks whose next match has started or finished
-  };
+  // series-v2 (founder 2026-11-06): the page opens on Level = ATP and Min length = 3+.
+  var DEFAULTS = { level: 'tour', day: 'all', dir: 'all', type: 'all', minLen: 3, sort: 'longest', showPlayed: false };
+  var _filters = Object.assign({}, DEFAULTS);   // level · day · dir · type · minLen · sort · showPlayed (one source: DEFAULTS)
   function styleFloor() { return (_data && _data.rules && _data.rules.viewFloorStyle) || 3; }
 
   // ─── item 1 · outcome-family de-duplication (founder 2026-09-12) ──────────────
@@ -614,7 +606,7 @@
         if (!list.length) return;
         trDbJoinPx(displayName(p.key, p.name), pc[1])(list);
         list.forEach(function (r) {
-          var v = (r.price != null && r.oppPrice != null) ? { price: Number(r.price), oppPrice: Number(r.oppPrice), book: r.book } : null;
+          var v = (r.price != null) ? { price: Number(r.price), oppPrice: r.oppPrice != null ? Number(r.oppPrice) : null, book: r.book, src: r.src || null } : null;
           r._ms.forEach(function (m) { if (PX) { if (v) PX.set(m, v); else PX.delete(m); } });
         });
       });
@@ -635,8 +627,7 @@
   function avgPriceHtml(st) {
     if (_pxState === 'idle' || _pxState === 'loading') return '';          // a price claims nothing while it loads
     if (_pxState === 'failed') return '<span class="sr-dash" title="Prices unavailable">—</span>';   // = the pop-up's line
-    var ap = avgPriceOf(st);
-    return ap ? esc(ap.value) : DASH;
+    return avgPriceText(avgPriceOf(st), 'sr-avg-n') || DASH;   // the sheet's AVG PRICE, same builder, same "(n/N)"
   }
   function nextHtml(c) {
     var s = c.slot || {};
@@ -787,36 +778,7 @@
     '</div>';
   }
 
-  // ─── footnote + empty state ──────────────────────────────────────────────────────────────────────────────────
-  // The reference's form (founder round 3 item 1): the tag-row sentence, then ONE mono line of the engine's real values
-  // from series.json rules, `·` separated, ending "data <build date>" (series.json generatedAt, YYYY-MM-DD in
-  // stennisfy.tz) — never the filter state.
-  function dataDate(iso) {
-    var ms = iso ? Date.parse(iso) : NaN;
-    if (!isFinite(ms)) return '—';
-    var zone = (typeof newsTz === 'function' && newsTz()) || undefined;
-    var f = function (z) { return new Intl.DateTimeFormat('en-CA', { timeZone: z, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(ms)); };
-    try { return f(zone); } catch (e) { return f(undefined); }
-  }
-  function rulesLine() {
-    var r = (_data && _data.rules) || {};
-    var num = function (v) { return (typeof v === 'number' && isFinite(v)) ? String(v) : '—'; };
-    var parts = ['runs ' + num(r.minLen) + '+'];
-    if (r.onePerFamily) parts.push('one card per player per family');
-    parts.push('recency cap ' + num(r.maxAgeDays) + 'd' + (r.slamAgeExempt ? ' (Grand Slams exempt)' : ''));
-    parts.push('a gap over ' + num(r.maxGapDays) + 'd ends a run');
-    parts.push('pool floor ' + num(r.minPoolConditional) + ' for surface, style, set and line runs');
-    parts.push('data ' + dataDate(_data && _data.generatedAt));
-    return parts.join(' · ');
-  }
-  function footnoteHtml() {
-    return '<div class="sr-footnote">' +
-      '<p>Direction shows as a word in the tag row — <span class="sr-fn-w">Winning run</span>, <span class="sr-fn-w">Losing ' +
-      'run</span>, <span class="sr-fn-w">Neutral</span>. Betting lines (over/under, handicap) and set-shape volatility are a ' +
-      'direction, not good or bad.<br>Prices are closing prices, flat 1 unit per match.</p>' +
-      '<p class="sr-fn-rules">' + esc(rulesLine()) + '</p>' +
-    '</div>';
-  }
+  // ─── empty state ── (series-v2: the footnote paragraph and the engine-rules line are removed; the rules stand)
   function emptyHtml() {
     return '<div class="sr-empty"><span>No streaks match these filters.</span>' +
       '<button type="button" class="sr-clear" data-clear="1">Clear</button></div>';
@@ -837,7 +799,7 @@
     var body = view.length
       ? '<div class="sr-cards">' + view.map(cardHtml).join('') + '</div>'
       : emptyHtml();
-    root.innerHTML = headerHtml(view) + filterBarHtml() + body + footnoteHtml();
+    root.innerHTML = headerHtml(view) + filterBarHtml() + body;   // series-v2: the page ends after the grid
     fitNextLines(root);
     watchWidth(root);
     wireFilters(root);
@@ -889,99 +851,112 @@
     render();
   }
 
-  // ─── history pop-up: Count tile header, ledger, total line ────────────────────────────────────────────────────
-  // One grid for the head and every row (eight tracks: result · date · event · opponent · score · Home · Away · P&L).
-  // Home = this player (bold), Away = the opponent (dim). P&L only on the match-result families (all comps, surface,
-  // vs style): a line or set family is judged on the score, not on a match-winner bet, so its P&L track is blank.
-  function modalHeadHtml() {
-    return '<div class="sr-mhead">' +
-      '<span class="sr-mres"></span><span class="sr-mdate">Date</span><span class="sr-mtour">Event</span>' +
-      '<span class="sr-mopp">Opponent</span><span class="sr-mscore">Score</span>' +
-      '<span class="sr-mp1">Home</span><span class="sr-mp2">Away</span><span class="sr-mpl">P&amp;L</span>' +
-    '</div>';
+  // ─── match sheet (series-v2, README §5): "Count tile" header, one row grammar, a bare foot ──────────────────────
+  // Odds mode (all comps, surface, vs style, set outcome): Date · Event · Opponent · Score · Home · Away.
+  // Line mode (Total games, Set games, Handicap): the same, then the games figure and a 72px bar with the line's tick.
+  // Home = this player's pre-match price (bold), Away = the opponent's. No P&L, no total line, no foot note.
+  function avgPriceText(ap, cls) {
+    if (!ap) return null;
+    return esc(ap.value) + (ap.n < ap.of ? ' <span class="' + cls + '">(' + esc(String(ap.n)) + '/' + esc(String(ap.of)) + ')</span>' : '');
   }
-  function signed(v, dp) {
-    return (v > 0 ? '+' : (v < 0 ? '−' : '')) + Math.abs(v).toFixed(dp);
+  function statCell(v, label, title) {
+    return '<span class="sr-ov-stat"' + (title ? ' title="' + esc(title) + '"' : '') + '><span class="sr-ov-stat-v">' + v + '</span>' +
+      '<span class="sr-ov-stat-k">' + esc(label) + '</span></span>';
+  }
+  var STAT_DIV = '<span class="sr-ov-stat-div"></span>';
+  function statsTileHtml(st) {
+    var ls = lineStatsOf(st);
+    if (ls) {
+      var m = ls.spec.mode, none = DASH;
+      var dp1 = function (v) { return v == null ? none : esc(signedFig(v, m, 1)); };
+      var int = function (v) { return esc(signedFig(v, m, 0)); };
+      var range = ls.n ? (m === 'hc' && ls.min > 0 ? '+' + esc(String(ls.min)) + '–' + esc(String(ls.max)) : int(ls.min) + '–' + int(ls.max)) : none;
+      return '<span class="sr-ov-stats">' +
+        statCell(dp1(ls.avg), ls.spec.unit, ls.n < ls.of ? ls.n + ' of ' + ls.of + ' matches with a set score' : '') + STAT_DIV +
+        statCell(range, 'Range') + STAT_DIV +
+        statCell(ls.n ? int(ls.closest) : none, 'Closest call') +
+      '</span>';
+    }
+    var pending = (_pxState === 'idle' || _pxState === 'loading');
+    var failed = _pxState === 'failed';
+    var ap = avgPriceOf(st), fv = favOf(st);
+    var apTxt = pending ? '' : failed ? DASH : (avgPriceText(ap, 'sr-ov-stat-n') || DASH);
+    var fvTxt = pending ? '' : (!failed && fv) ? esc(String(fv.n)) + ' of ' + esc(String(fv.of)) : DASH;
+    return '<span class="sr-ov-stats">' +
+      statCell(apTxt, 'Avg price', failed ? 'Prices unavailable' : (ap && ap.n < ap.of ? ap.n + ' of ' + ap.of + ' matches priced' : '')) + STAT_DIV +
+      statCell(fvTxt, 'Favourite', fv ? 'Shorter price than the opponent in ' + fv.n + ' of the ' + fv.of + ' matches with both prices' : '') +
+    '</span>';
+  }
+  function modalHeadHtml(st) {
+    var spec = lineSpecOf(st), H = function (cls, t) { return '<span class="' + cls + '">' + t + '</span>'; };
+    return '<div class="sr-mhead' + (spec ? ' sr-mline' : '') + '">' + H('sr-mres', '') + H('sr-mdate', 'Date') + H('sr-mtour', 'Event') +
+      H('sr-mopp', 'Opponent') + H('sr-mscore', 'Score') + H('sr-mp1', 'Home') + H('sr-mp2', 'Away') +
+      (spec ? H('sr-mlinehead', 'Line ' + esc(spec.head)) : '') +
+    '</div>';
   }
   function pxCell(cls, v, title) {
     if (_pxState === 'idle' || _pxState === 'loading') return '<span class="' + cls + '"></span>';
     return '<span class="' + cls + '"' + (title ? ' title="' + esc(title) + '"' : '') + '>' + (v == null ? DASH : esc(v.toFixed(2))) + '</span>';
   }
-  function detailTableHtml(st) {
+  // Hover on Home / Away: "{player} 1.64 · {opp} 2.28 · <source>". The source keeps the join's own words, so a snapshot
+  // still reads "not a confirmed close" (odds.md) — never the design's blanket "pre-match close".
+  function srcTitleOf(r) {
+    if (r.price == null) return (typeof window.trPxAfterOf === 'function') ? window.trPxAfterOf(r.date) : null;
+    return r.book === BOOK_NAME.A ? r.book + ' · ' + ((typeof window.sfApproxHover === 'function' ? window.sfApproxHover(r) : r.src === 'od10' ? window.SF_OD10_HOVER : window.SF_APPROX_HOVER) || 'not a confirmed close')
+      : r.book ? r.book + ' closing' + (r.src === 'hist' ? ' · from Pinnacle history' : r.src === 'cap' ? ' · captured' : '') : null;
+  }
+  function detailTableHtml(st, playerName) {
     var rows = streakRows(st).slice().reverse();   // newest first — a render choice, no value changes
-    var isResult = isMatchResultFam(st);
+    var spec = lineSpecOf(st);
     return rows.map(function (r) {
-      var res = (r.won === true) ? '<span class="sr-mres sr-w">W</span>'
-              : (r.won === false) ? '<span class="sr-mres sr-l">L</span>'
-              : '<span class="sr-mres">' + DASH + '</span>';
-      var after = (r.price == null && typeof window.trPxAfterOf === 'function') ? window.trPxAfterOf(r.date) : null;
-      var title = r.book === BOOK_NAME.A ? r.book + ' · ' + ((typeof window.sfApproxHover === 'function' ? window.sfApproxHover(r) : r.src === 'od10' ? window.SF_OD10_HOVER : window.SF_APPROX_HOVER) || 'not a confirmed close')
-        : r.book ? r.book + ' closing' + (r.src === 'hist' ? ' · from Pinnacle history' : r.src === 'cap' ? ' · captured' : '') : after;
-      var pl = '';
-      if (isResult && _pxState !== 'idle' && _pxState !== 'loading') {
-        pl = DASH;
-        if (r.price != null && r.won != null) {
-          var u = r.won ? (cents(r.price) - 100) / 100 : -1;
-          pl = '<span class="' + (u >= 0 ? 'sr-w' : 'sr-l') + '">' + esc(signed(u, 2)) + '</span>';
-        }
+      var res = '<span class="sr-mres' + (r.won === true ? ' sr-w' : r.won === false ? ' sr-l' : '') + '"' +
+        (r.won == null ? '' : ' title="' + (r.won ? 'Won' : 'Lost') + '"') + '></span>';
+      var src = srcTitleOf(r);
+      var title = r.price != null
+        ? (playerName || 'Player') + ' ' + r.price.toFixed(2) + ' · ' + (r.opponent || 'Opponent') + ' ' + (r.oppPrice != null ? r.oppPrice.toFixed(2) : '—') + (src ? ' · ' + src : '')
+        : src;
+      var tail = '';
+      if (spec) {
+        var f = (typeof r.proof === 'number' && isFinite(r.proof)) ? r.proof : null;
+        var w = f == null ? 0 : Math.max(0, Math.min(1, Math.abs(f) / spec.max));
+        var t = Math.max(0, Math.min(1, spec.line / spec.max));
+        tail = '<span class="sr-mfig">' + (f == null ? DASH : esc(signedFig(f, spec.mode, 0))) + '</span>' +
+          '<span class="sr-mbar">' + (f == null ? '' : '<span class="sr-mbar-f" style="width:' + (w * 100).toFixed(2) + '%"></span>') +
+          '<span class="sr-mbar-t" style="left:' + (t * 100).toFixed(2) + '%"></span></span>';
       }
-      return '<div class="sr-mrow">' + res +
+      return '<div class="sr-mrow' + (spec ? ' sr-mline' : '') + '">' + res +
         '<span class="sr-mdate">' + (fmtDate(r.date) ? esc(fmtDate(r.date)) : DASH) + '</span>' +
         '<span class="sr-mtour">' + (r.event ? esc(eventLabel(r.event)) : DASH) + '</span>' +
         '<span class="sr-mopp">' + (r.opponent ? esc(r.opponent) : DASH) + '</span>' +
         '<span class="sr-mscore">' + (r.score ? esc(scoreTxt(r.score)) : DASH) + '</span>' +
-        pxCell('sr-mp1', r.price, title) + pxCell('sr-mp2', r.oppPrice, title) +
-        '<span class="sr-mpl">' + pl + '</span>' +
+        pxCell('sr-mp1', r.price, title) + pxCell('sr-mp2', r.oppPrice, title) + tail +
       '</div>';
     }).join('');
   }
-  // Total line: "{Type} · {N} matches" left; "{n} priced", the unit total and the yield right (match-result families).
-  function modalTotalHtml(st) {
-    var rows = streakRows(st);
-    var head = '<span class="sr-ov-total-k">' + esc(FAM_BADGE[famOf(st)] || st.type) + ' · ' +
-      esc(String(rows.length)) + ' ' + (rows.length === 1 ? 'match' : 'matches') + '</span>';
-    if (_pxState === 'idle' || _pxState === 'loading') {
-      return '<div class="sr-ov-total">' + head + '<span class="sr-ov-total-r"><span class="sr-ov-total-k">Loading prices…</span></span></div>';
-    }
-    if (_pxState === 'failed') {
-      return '<div class="sr-ov-total">' + head + '<span class="sr-ov-total-r"><span class="sr-ov-total-k">Prices unavailable</span></span></div>';
-    }
-    var n = pricedOf(st);
-    var L = ledgerOf(st);
-    var right = '<span class="sr-ov-total-k">' + esc(String(n)) + ' priced</span>';
-    if (L && L.priced) {
-      var cls = L.total > 0 ? 'sr-w' : (L.total < 0 ? 'sr-l' : '');
-      right += '<span class="sr-ov-total-v ' + cls + '">' + esc(signed(L.total, 2)) + 'u</span>' +
-        '<span class="sr-ov-total-y ' + cls + '">' + esc(signed(L.yield, 1)) + '%</span>';
-    } else if (L) {
-      right += '<span class="sr-ov-total-v sr-dash">—</span>';
-    }
-    var caveat = (L && L.priced)
-      ? '<div class="sr-ov-caveat">A run is selected for its results, so this total’s sign is set by the run itself, not by the market.</div>'
-      : '';
-    return '<div class="sr-ov-total">' + head + '<span class="sr-ov-total-r">' + right + '</span>' + caveat + '</div>';
-  }
-  // The header: count tile · name + the claim · rank · "{count} of {pool} matches" (· best of N on a line family).
+  // The header: avatar · count tile · name + claim · caps "{rank} · {count} of {pool} matches[ · best of N]" · stats tile · ✕.
   function modalHeadInfoHtml(c) {
     var p = c.player, st = c.streak;
     var name = displayName(p.key, p.name || '');
-    var line = claimLong(st).replace(/\s*\(best-of-\d\)/, '');
-    var fmt = st.bestOf ? ' · best of ' + st.bestOf : '';
+    var line = claimOf(st).replace(/\s*\(best-of-\d\)/, '');
+    var fmt = (st.bestOf && (st.type === 'total' || st.type === 'handicap')) ? ' · best of ' + st.bestOf : '';
     var rankTxt = (p.rank != null && p.rank !== '') ? '#' + p.rank : '—';
-    return '<span class="sr-ov-tile"><span class="sr-ov-tile-n">' + esc(String(st.count)) + '</span><span class="sr-ov-tile-k">in a row</span></span>' +
+    return '<span class="sr-ov-ava">' + esc(initialsOf(name)) + photoOf(p.key, name) + '</span>' +
+      '<span class="sr-ov-tile"><span class="sr-ov-tile-n">' + esc(String(st.count)) + '</span><span class="sr-ov-tile-k">in a row</span></span>' +
       '<span class="sr-ov-headl">' +
         '<span class="sr-ov-title" id="srOvTitle"><span class="sr-ov-name">' + esc(name || '—') + '</span>' +
           '<span class="sr-ov-line">' + line + '</span></span>' +
         '<span class="sr-ov-sub">' + esc(rankTxt) + ' · ' + esc(String(st.count)) + ' of ' + esc(String(st.pool)) + ' ' +
           (st.pool === 1 ? 'match' : 'matches') + esc(fmt) + '</span>' +
-      '</span>';
+      '</span>' +
+      statsTileHtml(st);
   }
   function popupHtml(c) {
+    var name = displayName(c.player.key, c.player.name || '');
     return '<div class="sr-ov-head">' + modalHeadInfoHtml(c) +
         '<button class="sr-ov-close" type="button" aria-label="Close">✕</button></div>' +
-      modalHeadHtml() +
-      '<div class="sr-ov-body">' + detailTableHtml(c.streak) + '</div>' +
-      '<div class="sr-ov-foot">' + modalTotalHtml(c.streak) + '</div>';
+      modalHeadHtml(c.streak) +
+      '<div class="sr-ov-body">' + detailTableHtml(c.streak, name) + '</div>' +
+      '<span class="sr-ov-foot"></span>';
   }
 
   var _ov = null, _ovReturnFocus = null, _ovCard = null;
@@ -999,17 +974,18 @@
     _ov = back;
     return back;
   }
-  // The Score track holds the longest score in full (a best-of-5 line runs past the file's 118px): IBM Plex Mono
-  // 11.5px advances 0.6em = 6.9px a character. Head and rows share the one width, so the columns stay aligned.
+  // The Score track is the design's (112px odds, 100px line) and widens only when a row's score needs it: a five-set
+  // line ("6–4 3–6 6–7(7) 7–5 6–4") runs past 112px in IBM Plex Mono 11.5px (0.6em = 6.9px a character), so the Home
+  // column would overlap it. Head and rows share the one width, so the columns stay aligned. A data-driven exception.
   function scoreTrackPx(st) {
     var n = 0;
     (st.matches || []).forEach(function (m) { n = Math.max(n, scoreTxt(m.score).length); });
-    return Math.max(118, Math.ceil(n * 6.9) + 2);
+    return Math.max(lineSpecOf(st) ? 100 : 112, Math.ceil(n * 6.9) + 2);
   }
   function paintOverlay(c) {
     var panel = _ov && _ov.querySelector('.sr-ov');
     if (!panel) return;
-    panel.style.setProperty('--sr-score', scoreTrackPx(c.streak) + 'px');
+    if (panel.style && panel.style.setProperty) panel.style.setProperty('--sr-score', scoreTrackPx(c.streak) + 'px');
     panel.innerHTML = popupHtml(c);
   }
   // Esc is one layer in the global handler (esc-nav.js); closeOverlay hands focus back to the card itself.
@@ -1143,7 +1119,7 @@
       if (!ok || !_data) return null;
       if (!_cards) _cards = flatten(_data);
       reslot();
-      var f = Object.assign({}, DEFAULTS);
+      var f = Object.assign({}, DEFAULTS, { level: 'all' });   // the tile counts every level, as before the ATP default
       // Only a player with a card on this slate (founder 2026-10-28): the slot must be a Today's Matches board card
       // (joined by event key), never a series-only fixture — the board is ATP, so a Challenger streak (Kasnikowski,
       // Sioux Falls) has no card to point at and never heads the tile or counts in "+N more".
@@ -1173,7 +1149,16 @@
     var go = function () {
       if (!_data || _fetching) { if (++tries < 60) setTimeout(go, 250); return; }
       var i = find();
-      if (i < 0 && !reset) { reset = true; clearFilters(); i = find(); }
+      // Not in view: back to the defaults with the Level switched to the card's own (a Challenger streak opens on
+      // Challenger) and already-played shown when its match has started — never a blank sheet.
+      if (i < 0 && !reset) {
+        reset = true;
+        Object.keys(DEFAULTS).forEach(function (k) { _filters[k] = DEFAULTS[k]; });
+        if (card.player && (card.player.tier === 'tour' || card.player.tier === 'chal')) _filters.level = card.player.tier;
+        if (card.slot && card.slot.played) _filters.showPlayed = true;
+        render(); i = find();
+        if (i < 0) { _filters.level = 'all'; _filters.showPlayed = true; _filters.minLen = 3; render(); i = find(); }
+      }
       if (i >= 0) openOverlay(String(i));
     };
     setTimeout(go, 0);

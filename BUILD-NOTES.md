@@ -2294,3 +2294,13 @@ SF, 6-2 3-0 ret.); the set scores are already from the player's side, so the cor
 - **Why:** every run since 16 Oct failed on `X API 402 — credits depleted`; the harvest has no other source.
 - **Re-enable:** the Actions UI ("Enable workflow"), or `PUT /repos/michaeldk1996/SAAS/actions/workflows/atp-entry-harvest.yml/enable` — after the X API balance is topped up.
 - **Left as they are (founder, same day: "for the rest don't change anything"):** live-probes, odds-archive-staleness and bet365-archive stay red or stopped as they are.
+
+## 2026-11-06 — Series v2 (design_handoff_series_v2 + four founder rules)
+- Card and match sheet rebuilt to the v2 reference ("Count tile" header, stats tile, one row grammar, no P&L). The
+  footnote paragraph and the engine-rules line are gone as TEXT only; build-series.js still applies every rule.
+- Avg price is the player's own price (Home), averaged over the rows that carry it, from the same streakRows() the sheet
+  lists; "(n/N)" marks a partly priced run until the founder rules otherwise. Live 6 Nov: 11 of 18 cards partly priced,
+  mostly 5 Nov matches after the price archive's last day (4 Nov).
+- Team events left the streak engine (Database rule + the Olympics). The before/after diff was taken by recording the
+  live api-tennis answers once and replaying them through both builders (control: the old builder replayed = recorded).
+- The design's boxes keep their 1px ring outside the stated size (content-box): matching that closed every 1–2px drift.

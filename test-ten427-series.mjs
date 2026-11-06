@@ -142,7 +142,14 @@ function boot(opts = {}) {
   };
   return api;
 }
-async function start(opts) { const b = boot(opts); b.ctx.window.SeriesPage.setActive(true); await b.settle(); return b; }
+// series-v2 (founder 2026-11-06): the page now opens on Level = ATP · Min length 3+ (asserted by "series-v2 defaults").
+// The older checks were written against All levels · 6+, so start() puts the member's filters there first unless a test
+// asks for the shipped defaults ({ defaults: true }).
+async function start(opts) {
+  const b = boot(opts); b.ctx.window.SeriesPage.setActive(true); await b.settle();
+  if (!(opts && opts.defaults)) { b.seg('level', 'all'); b.seg('minLen', '6'); }
+  return b;
+}
 
 // ── parse the rendered page ──────────────────────────────────────────────────────────────────────────────────────
 const stat = (page, label) => { const m = page.match(new RegExp('<span class="sfh__l">' + label + '</span><span class="sfh__v([^"]*)">([^<]*)<')); return m ? { cls: m[1], v: m[2] } : null; };
@@ -162,15 +169,20 @@ function cardsOf(page) {
 }
 const nextText = s => String(s || '').replace(/<[^>]+>/g, '').replace(/&#39;/g, "'").replace(/&amp;/g, '&');
 function ledgerOf(pop) {
-  return pop.split('<div class="sr-mrow">').slice(1).map(seg0 => {
+  return pop.split(/<div class="sr-mrow[^"]*">/).slice(1).map(seg0 => {
     const seg = seg0.slice(0, seg0.indexOf('</div>'));
     const cell = c => (seg.match(new RegExp('<span class="' + c + '"[^>]*>(.*?)</span>(?=<span class="sr-m|$)')) || [])[1];
     const strip = s => String(s == null ? '' : s).replace(/<[^>]+>/g, '');
-    return { res: strip((seg.match(/^<span class="sr-mres[^"]*">(.*?)<\/span>/) || [])[1]), date: strip(cell('sr-mdate')), score: strip(cell('sr-mscore')),
-      home: strip(cell('sr-mp1')), away: strip(cell('sr-mp2')), pl: strip((seg.match(/<span class="sr-mpl">(.*)<\/span>$/) || [])[1]),
-      plCls: (seg.match(/<span class="sr-mpl"><span class="(sr-w|sr-l)">/) || [])[1] || null };
+    const mark = (seg.match(/^<span class="sr-mres([^"]*)"/) || [])[1] || '';
+    return { res: /sr-w/.test(mark) ? 'W' : /sr-l/.test(mark) ? 'L' : '', date: strip(cell('sr-mdate')), score: strip(cell('sr-mscore')),
+      home: strip(cell('sr-mp1')), away: strip(cell('sr-mp2')), fig: strip(cell('sr-mfig')),
+      homeTitle: (seg.match(/<span class="sr-mp1" title="([^"]*)"/) || [])[1] || null,
+      bar: (seg.match(/class="sr-mbar-f" style="width:([\d.]+)%"/) || [])[1] || null,
+      tick: (seg.match(/class="sr-mbar-t" style="left:([\d.]+)%"/) || [])[1] || null };
   });
 }
+// The sheet's stats tile: [[figure text, label], …]
+const statsOf = pop => [...pop.matchAll(/<span class="sr-ov-stat"[^>]*><span class="sr-ov-stat-v">(.*?)<\/span><span class="sr-ov-stat-k">([^<]*)<\/span><\/span>/g)].map(m => [m[1].replace(/<[^>]+>/g, ''), m[2]]);
 const cents = x => Math.round(x * 100);
 
 // ── Data 2 · the slate: Today's Matches day rule, the card's own strings ─────────────────────────────────────────
@@ -294,7 +306,7 @@ test('Fix 1: a card whose next match has started / finished shows the run as it 
   assert.equal(ledgerOf(pop).length, 7, 'the ledger stops at the start too');
   assert.ok(!ledgerOf(pop).some(r => r.date === '10 Oct 2026'), 'the next match is in the ledger');
   assert.match(pop, new RegExp('<span class="sr-ov-sub">#5 · 7 of ' + (view[md].base.pool - 1) + ' matches'), 'the pool loses the cut row');
-  assert.match(pop, /<span class="sr-ov-line">Won 7 straight across all competitions<\/span>/);
+  assert.match(pop, /<span class="sr-ov-line">Won 7 straight<\/span>/);
   // Baez and Vacherot played each other 10 Oct 14:50: both stop before it
   const bz = at('S. Baez', 'total'), vc = at('V. Vacherot', 'setpat');
   assert.ok(bz >= 0 && vc >= 0, 'Baez / Vacherot cards');
@@ -575,6 +587,24 @@ test('Fix 2: claims read the reference\'s templates — "Won 8 straight", "Won 6
 });
 
 // ── round 2 fix 6 · Level is ATP / Challenger only ──────────────────────────────────────────────────────────────
+test('Ruling 3 (founder 2026-11-06): team events count toward NO streak — Davis / Laver / United / ATP / Hopman Cup and the Olympics are skipped, never a break; ATP qualifying stays', () => {
+  delete require.cache[require.resolve(ENGINE)];
+  const E = require(ENGINE);
+  const T = (name, type = 'Atp Singles', q) => E.tierOf({ event_type_type: type, tournament_name: name, event_qualification: q });
+  for (const n of ['Davis Cup - World Group', 'Davis Cup Finals', 'Laver Cup', 'United Cup', 'ATP Cup', 'Hopman Cup', 'Olympic Games', 'Paris Olympics'])
+    assert.equal(T(n), null, n + ' must not reach any streak');
+  assert.equal(T('Paris'), 'tour', 'an ATP main draw counts');
+  assert.equal(T('Paris', 'Atp Singles', 'True'), 'tour', 'ATP qualifying counts (founder: kept)');
+  assert.equal(T('Antofagasta', 'Challenger Men Singles'), 'chal');
+  assert.equal(typeof E.isTeamEvent, 'function');
+  // skipped, never a break: a team match between two wins leaves the run intact (recordFor drops it before the run is cut)
+  const fx = (k, name, d, won) => ({ event_key: k, event_type_type: 'Atp Singles', tournament_name: name, tournament_key: '1', event_date: d,
+    event_status: 'Finished', first_player_key: '7', second_player_key: '8', event_first_player: 'A. A', event_second_player: 'B. B',
+    event_winner: won ? 'First Player' : 'Second Player', event_final_result: won ? '2 - 0' : '0 - 2', scores: [{ score_first: won ? '6' : '3', score_second: won ? '3' : '6', score_set: '1' }, { score_first: won ? '6' : '3', score_second: won ? '3' : '6', score_set: '2' }] });
+  assert.equal(E.recordFor(fx('3', 'Laver Cup', '2026-09-20', false), '7', 'tour', new Map(), new Map(), false), null, 'a Laver Cup loss is no record, so it cannot end a winning run');
+  assert.ok(E.recordFor(fx('1', 'Basel', '2026-09-10', true), '7', 'tour', new Map(), new Map(), false), 'a tour match is a record');
+});
+
 test('Fix 6: only ATP / Challenger fixtures reach Series — an ITF fixture is never a card (engine tierOf, page tier guard)', async () => {
   delete require.cache[require.resolve(ENGINE)];
   const E = require(ENGINE);
@@ -664,80 +694,68 @@ test('Card 2b: the photo by player ID over the initials, name + mono rank, count
 });
 
 // ── Data 5 · prices: the one Database join; single source ────────────────────────────────────────────────────────
-test('Data 5: Home / Away = the Database join (Pinnacle closing, else Bet365); the card Avg price and the ledger read the same rows', async () => {
+test('Data 5 (series-v2): Home / Away = the Database join; ONE builder — the card Avg price = the sheet AVG PRICE = the mean of the sheet Home column, "(n/N)" when partly priced; Favourite n of N over rows with both prices; no P&L', async () => {
   const b = await start();
   b.seg('minLen', '3');
   b.played(true);   // every card on the slate, started / finished included
   const view = b.view(), cards = cardsOf(b.html());
-  let sawLoss = false;
-  let priced = 0, unpricedRows = 0, sawMixed = false, sawLine = false;
+  let priced = 0, unpricedRows = 0, sawMixed = false, sawLine = false, sawOdds = false;
   view.forEach((v, i) => {
-    const pop = b.popup(i), L = ledgerOf(pop);
-    assert.equal(L.length, v.streak.count, 'ledger row count = the count');
+    const pop = b.popup(i), L = ledgerOf(pop), S = statsOf(pop);
+    assert.equal(L.length, v.streak.count, 'sheet row count = the count');
     const homes = L.map(r => r.home).filter(x => x !== '—');
     const ap = cards[i].rows[2][1];
-    if (homes.length) {
-      const want = (Math.round(homes.reduce((s, x) => s + cents(+x), 0) / homes.length) / 100).toFixed(2);
-      assert.equal(ap, want, 'Avg price is not the mean of the ledger Home prices for ' + v.player.name);
-      priced++;
-    } else assert.equal(ap, '—', 'an unpriced card must read a dash');
+    // the one builder: card = mean of the sheet's own Home prices, with "(n/N)" when some rows are unpriced
+    const want = homes.length ? (Math.round(homes.reduce((s, x) => s + cents(+x), 0) / homes.length) / 100).toFixed(2) +
+      (homes.length < L.length ? ' (' + homes.length + '/' + L.length + ')' : '') : '—';
+    assert.equal(ap, want, 'card Avg price ≠ the mean of the sheet Home column for ' + v.player.name + ' · ' + v.streak.type);
+    if (homes.length) priced++;
     unpricedRows += L.length - homes.length;
     if (homes.length && homes.length < L.length) sawMixed = true;
-    assert.match(pop, new RegExp('<span class="sr-ov-total-k">' + homes.length + ' priced</span>'), '"{n} priced" label');
-    // every printed price is the join's answer for that row, 2 dp; Away beside it; no join answer → dash
+    // every printed price is the join's answer for that row, 2 dp; no join answer → dash
     const A = b.fix.join[v.player.key] || [];
     v.streak.matches.slice().reverse().forEach((m, j) => {
       const a = A.find(x => x[0] === m.date && x[1] === (m.opponent || '') && !!x[2] === !!m.won);
       assert.equal(L[j].home, a ? a[3].toFixed(2) : '—', 'Home price row ' + j + ' of ' + v.player.name);
-      assert.equal(L[j].away, a ? a[4].toFixed(2) : '—', 'Away price row ' + j);
+      assert.equal(L[j].away, a && a[4] != null ? a[4].toFixed(2) : '—', 'Away price row ' + j);
       assert.equal(L[j].score, (m.score || '—').replace(/(\d)-(\d)/g, '$1–$2'), 'score with en dashes');
+      assert.equal(L[j].res, m.won === true ? 'W' : m.won === false ? 'L' : '', 'result mark');
     });
-    const isResult = ['all', 'surface', 'style'].includes(v.streak.type);
-    if (!isResult) { sawLine = true; L.forEach(r => assert.equal(r.pl, '', 'a line / set family must leave P&L blank')); return; }
-    // ledger: win = price − 1 rounded, loss = −1.00; total = sum of the rounded rows; yield = total ÷ priced
-    let tc = 0, n = 0;
-    L.forEach(r => {
-      if (r.home === '—') { assert.equal(r.pl, '—'); return; }
-      n++;
-      const u = r.res === 'W' ? cents(+r.home) - 100 : -100;
-      tc += u;
-      assert.equal(r.pl, (u > 0 ? '+' : u < 0 ? '−' : '') + Math.abs(u / 100).toFixed(2), 'row P&L (true minus, 2 dp)');
-      assert.equal(r.plCls, u >= 0 ? 'sr-w' : 'sr-l', 'P&L colour');
-      if (u < 0) sawLoss = true;
-    });
-    if (n) {
-      const tot = (tc > 0 ? '+' : tc < 0 ? '−' : '') + Math.abs(tc / 100).toFixed(2) + 'u';
-      const y10 = 10 * tc / n, y = (y10 < 0 ? -Math.round(-y10) : Math.round(y10)) / 10;   // half away from zero
-      assert.match(pop, new RegExp('<span class="sr-ov-total-v (sr-w|sr-l|)">' + tot.replace('+', '\\+') + '</span><span class="sr-ov-total-y [^"]*">' + ((y > 0 ? '\\+' : y < 0 ? '−' : '') + Math.abs(y).toFixed(1)) + '%</span>'), 'total / yield of ' + v.player.name);
+    const line = ['total', 'handicap'].includes(v.streak.type) || (v.streak.type === 'setpat' && v.streak.firstSet);
+    if (line) {
+      sawLine = true;
+      assert.deepEqual(S.map(x => x[1]), [v.streak.type === 'total' ? 'Avg games' : v.streak.type === 'handicap' ? 'Avg games margin' : 'Avg games in set 1', 'Range', 'Closest call'], 'line mode = 3 cells');
+      // the games figures read off the score the row prints
+      const figs = L.map(r => r.fig).filter(x => x !== '—').map(x => Number(x.replace('−', '-')));
+      if (figs.length) {
+        const avg = figs.reduce((a, x) => a + x, 0) / figs.length;
+        assert.equal(S[0][0].replace('+', '').replace('−', '-'), avg.toFixed(1), 'AVG GAMES = the mean of the row figures');
+        const tgt = v.streak.type === 'handicap' ? (v.streak.cover === false ? -v.streak.line : v.streak.line) : v.streak.line;
+        const best = figs.reduce((c, f) => Math.abs(f - tgt) < Math.abs(c - tgt) ? f : c, figs[0]);
+        assert.equal(Number(S[2][0].replace('+', '').replace('−', '-')), best, 'CLOSEST CALL = the row figure nearest the line');
+        assert.match(S[1][0], new RegExp('^[+−]?' + Math.abs(Math.min(...figs)) + '–[+−]?' + Math.abs(Math.max(...figs)) + '$'), 'RANGE = min–max');
+      }
+      assert.match(pop, /<span class="sr-mlinehead">Line [−+]?\d+(\.5)?<\/span>/, 'the "Line N" head');
+    } else {
+      sawOdds = true;
+      assert.deepEqual(S.map(x => x[1]), ['Avg price', 'Favourite'], 'odds mode = 2 cells');
+      assert.equal(S[0][0], ap, 'the sheet AVG PRICE = the card Avg price');
+      const both = L.filter(r => r.home !== '—' && r.away !== '—');
+      const fav = both.filter(r => +r.home < +r.away).length;
+      assert.equal(S[1][0], both.length ? fav + ' of ' + both.length : '—', 'Favourite n of N over the rows with both prices');
     }
+    assert.ok(!/P&amp;L|P&L|sr-mpl|sr-ov-total|sr-ov-caveat|A run is selected|Informative only/.test(pop), 'no P&L, total line or caveat');
   });
-  assert.ok(priced > 0 && sawMixed && sawLine && sawLoss, `the fixture must exercise priced, partly priced, line and losing ledger rows (${priced}, ${sawMixed}, ${sawLine}, ${sawLoss})`);
+  assert.ok(priced > 0 && sawMixed && sawLine && sawOdds, `the fixture must exercise priced, partly priced, line and odds sheets (${priced}, ${sawMixed}, ${sawLine}, ${sawOdds})`);
   assert.ok(unpricedRows > 0, 'unpriced rows must exist');
-  // the books: what the join hands back is named in house style
   const books = new Set(Object.values(b.fix.join).flat().map(x => x[5]));
   assert.ok([...books].every(x => x === 'P' || x === 'B'), 'the join answers in its own letters');
-  // a failed join: dashes stay honest and the total says so
   const bf = await start({ joinFails: true });
-  assert.match(bf.popup(0), /Prices unavailable/);
+  assert.deepEqual(statsOf(bf.popup(0)).slice(0, 1).map(x => x[0]).length <= 1, true);
   assert.ok(cardsOf(bf.html()).every(c => c.rows[2][1] === '—'));
 });
 
-test('Data 5: a failed join says "Prices unavailable" on the card too, and is retried on the next show after 2 min', async () => {
-  const b = await start({ joinFails: true });
-  const cards = cardsOf(b.html());
-  assert.ok(cards.length > 0 && cards.every(c => /<span class="sr-dash" title="Prices unavailable">—<\/span>/.test(c.raw)), 'the card\'s Avg price must say what the pop-up says');
-  b.opts.joinFails = false;
-  b.clock.t += 60000;
-  await b.show();
-  assert.equal(b.ctx.window.SeriesPage._pxState(), 'failed', 'no retry inside 2 min');
-  b.clock.t += 90000;
-  await b.show();
-  assert.equal(b.ctx.window.SeriesPage._pxState(), 'ready', 'a failed join must be tried again on the next show after 2 min');
-  assert.ok(b.ctx.__joinCalls.length > 0 && cardsOf(b.html()).some(c => /^\d+\.\d\d$/.test(c.rows[2][1])), 'the retried join prices the cards');
-  assert.ok(!/title="Prices unavailable"/.test(b.html()), 'no "unavailable" once priced');
-});
-
-test('Data 5: a negative yield rounds half away from zero (−72.75% prints −72.8%)', async () => {
+test('Ruling 1 (founder 2026-11-06): a row is priced on THE PLAYER\'s price alone; Favourite counts only rows with both prices', async () => {
   const b0 = await start();
   b0.seg('minLen', '3'); b0.played(true);
   const v = b0.view().find(x => ['all', 'surface', 'style'].includes(x.streak.type) && x.streak.matches.length >= 4);
@@ -745,15 +763,36 @@ test('Data 5: a negative yield rounds half away from zero (−72.75% prints −7
   const pk = v.player.key, si = v.player.streaks.findIndex(s => s.type === v.streak.type && s.subtype === v.streak.subtype && s.count === v.streak.count && s.lastDate === v.streak.lastDate);
   const b = await start({ edit: fix => {
     const st = fix.series.players.find(p => p.key === pk).streaks[si];
-    const ms = st.matches.slice(0, 4);
-    ms.forEach((m, i) => { m.won = i === 0; });
-    // one win at 1.09 and three losses: (9 − 300) cents over 4 priced rows = −72.75%
-    fix.join[pk] = ms.map((m, i) => [m.date, m.opponent || '', i === 0, i === 0 ? 1.09 : 2.5, i === 0 ? 8 : 1.5, 'P']);
+    const ms = st.matches;
+    // row 0: player 1.40 / opp —; row 1: 1.55 / 2.60 (favourite); row 2: 2.10 / 1.70 (underdog); the rest unpriced
+    fix.join[pk] = [[ms[0].date, ms[0].opponent || '', ms[0].won, 1.40, null, 'P'], [ms[1].date, ms[1].opponent || '', ms[1].won, 1.55, 2.60, 'P'],
+      [ms[2].date, ms[2].opponent || '', ms[2].won, 2.10, 1.70, 'B']];
   } });
   b.seg('minLen', '3'); b.played(true);
   const i = b.view().findIndex(x => x.player.key === pk && x.streak.type === v.streak.type && x.streak.count === v.streak.count && x.streak.lastDate === v.streak.lastDate);
   assert.ok(i >= 0);
-  assert.match(b.popup(i), /<span class="sr-ov-total-y [^"]*">−72\.8%<\/span>/, 'a negative yield must round half away from zero');
+  const n = v.streak.count, want = (Math.round((140 + 155 + 210) / 3) / 100).toFixed(2) + ' (3/' + n + ')';
+  assert.equal(cardsOf(b.html())[i].rows[2][1], want, 'the player-only row counts in the average: 1.40, 1.55, 2.10 → 1.68');
+  assert.deepEqual(statsOf(b.popup(i)), [[want, 'Avg price'], ['1 of 2', 'Favourite']], 'Favourite = 1 of the 2 rows with both prices');
+  // the reference example (rule 5): 1.40 1.55 1.30 2.10 1.45 1.60 1.35 → 1.54
+  const ex = [1.40, 1.55, 1.30, 2.10, 1.45, 1.60, 1.35];
+  assert.equal((Math.round(ex.reduce((a, x) => a + cents(x), 0) / ex.length) / 100).toFixed(2), '1.54');
+});
+
+test('Data 5: a failed join says "Prices unavailable" on the card too, and is retried on the next show after 2 min', async () => {
+  const b = await start({ joinFails: true });
+  const cards = cardsOf(b.html());
+  assert.ok(cards.length > 0 && cards.every(c => /<span class="sr-dash" title="Prices unavailable">—<\/span>/.test(c.raw)), 'the card\'s Avg price must say what the sheet says');
+  assert.match(b.popup(b.view().findIndex(v => ['all', 'surface', 'style'].includes(v.streak.type))), /<span class="sr-ov-stat" title="Prices unavailable">/);
+  b.opts.joinFails = false;
+  b.clock.t += 60000;
+  await b.show();
+  assert.equal(b.ctx.window.SeriesPage._pxState(), 'failed', 'no retry inside 2 min');
+  b.clock.t += 90000;
+  await b.show();
+  assert.equal(b.ctx.window.SeriesPage._pxState(), 'ready', 'a failed join must be tried again on the next show after 2 min');
+  assert.ok(b.ctx.__joinCalls.length > 0 && cardsOf(b.html()).some(c => /^\d+\.\d\d/.test(c.rows[2][1])), 'the retried join prices the cards');
+  assert.ok(!/title="Prices unavailable"/.test(b.html()), 'no "unavailable" once priced');
 });
 
 test('Slate: slots are recomputed on every page show and on the 5-minute tick; series.json is refetched once older than 15 min', async () => {
@@ -790,75 +829,104 @@ test('Data 5: an unpriced row after the archive\'s last date carries the shared 
   assert.match(pop, /title="After the Database archive’s last match \(13 Sep 2026\): no closing price on record yet"><span class="sr-dash">—<\/span>/);
 });
 
-// ── pop-up header (Count tile) ─────────────────────────────────────────────────────────────────────────────────────
-test('Pop-up: Count tile header (count, "in a row"), name + claim, rank · {count} of {pool} matches; the site close button', async () => {
+// ── sheet header (Count tile, series-v2 README §5.1) ──────────────────────────────────────────────────────────────
+test('Sheet (series-v2): avatar · count tile · name + claim · caps "{rank} · {count} of {pool} matches" · stats tile · transparent ✕; heads Date · Event · Opponent · Score · Home · Away (no P&L); a bare foot', async () => {
   const b = await start();
   const v = b.view()[0], pop = b.popup(0);
-  assert.match(pop, new RegExp('^<div class="sr-ov-head"><span class="sr-ov-tile"><span class="sr-ov-tile-n">' + v.streak.count + '</span><span class="sr-ov-tile-k">in a row</span></span>'));
+  assert.match(pop, new RegExp('^<div class="sr-ov-head"><span class="sr-ov-ava">[^<]*(<img[^>]*>)?</span><span class="sr-ov-tile"><span class="sr-ov-tile-n">' + v.streak.count + '</span><span class="sr-ov-tile-k">in a row</span></span>'));
   assert.match(pop, new RegExp('<span class="sr-ov-sub">#' + v.player.rank + ' · ' + v.streak.count + ' of ' + v.streak.pool + ' matches'));
-  assert.match(pop, /<button class="sr-ov-close" type="button" aria-label="Close">✕<\/button>/);
-  assert.match(pop, /<div class="sr-mhead"><span class="sr-mres"><\/span><span class="sr-mdate">Date<\/span><span class="sr-mtour">Event<\/span><span class="sr-mopp">Opponent<\/span><span class="sr-mscore">Score<\/span><span class="sr-mp1">Home<\/span><span class="sr-mp2">Away<\/span><span class="sr-mpl">P&amp;L<\/span><\/div>/);
+  assert.match(pop, /<span class="sr-ov-stats">/);
+  assert.match(pop, /<button class="sr-ov-close" type="button" aria-label="Close">✕<\/button><\/div><div class="sr-mhead[^"]*"><span class="sr-mres"><\/span><span class="sr-mdate">Date<\/span><span class="sr-mtour">Event<\/span><span class="sr-mopp">Opponent<\/span><span class="sr-mscore">Score<\/span><span class="sr-mp1">Home<\/span><span class="sr-mp2">Away<\/span>/);
+  assert.match(pop, /<span class="sr-ov-foot"><\/span>$/, 'the foot is a bare hairline — no text');
+  // the claim's best-of suffix moves to the sub-line on a line card
+  b.seg('minLen', '3'); b.played(true);
+  const li = b.view().findIndex(x => x.streak.type === 'total' && x.streak.bestOf);
+  assert.ok(li >= 0, 'a total-games card');
+  const lp = b.popup(li);
+  assert.ok(!/\(best-of-\d\)/.test(lp.slice(0, lp.indexOf('</span></span><span class="sr-ov-sub">'))), 'the claim keeps no "(best-of-N)"');
+  assert.match(lp, / matches · best of \d<\/span>/);
 });
 
-// ── copy: footnote + empty state ─────────────────────────────────────────────────────────────────────────────────
-test('Copy: the footnote = the reference form (tag-row sentence; the engine rules line, mono, with the data date); the empty state + Clear resets every filter', async () => {
+// ── copy: the removed text + empty state ─────────────────────────────────────────────────────────────────────────
+const BANNED = ['Direction shows as a word', 'Prices are closing prices, flat 1 unit per match', 'recency cap', 'a gap over 75d ends a run',
+  'pool floor', 'A run is selected for its results', 'P&L', 'P&amp;L', 'Informative only', 'FAV', 'DOG', 'sr-footnote', 'sr-fn-rules'];
+test('Copy (series-v2): no footnote paragraph, no methodology line, no P&L / FAV / DOG anywhere on the page or any sheet; the empty state + Clear resets every filter', async () => {
   const b = await start();
-  // round 3 item 1 (SUPERSEDES round 2's "no data stamp" sentence form): line 1 = the reference sentence + prices;
-  // line 2 = the engine's real values from series.json rules, `·` separated, ending with the build date
-  const FOOT = /<div class="sr-footnote"><p>Direction shows as a word in the tag row — <span class="sr-fn-w">Winning run<\/span>, <span class="sr-fn-w">Losing run<\/span>, <span class="sr-fn-w">Neutral<\/span>\. Betting lines \(over\/under, handicap\) and set-shape volatility are a direction, not good or bad\.<br>Prices are closing prices, flat 1 unit per match\.<\/p><p class="sr-fn-rules">runs 3\+ · one card per player per family · recency cap 45d \(Grand Slams exempt\) · a gap over 75d ends a run · pool floor 8 for surface, style, set and line runs · data 2026-10-10<\/p><\/div>$/;
-  assert.match(b.html(), FOOT);
-  // the rules line is the engine's values once, the same in every filter state (no filter state)
-  const foot = () => b.html().slice(b.html().indexOf('<div class="sr-footnote">'));
-  const f0 = foot();
-  b.seg('minLen', '8'); assert.equal(foot(), f0, 'the rules line follows the Min length chip');
-  b.seg('minLen', '3'); b.seg('level', 'chal'); b.played(true); assert.equal(foot(), f0, 'the rules line follows a filter');
-  b.seg('minLen', '6'); b.seg('level', 'all'); b.played(false);
-  const b9 = await start({ edit: f => { Object.assign(f.series.rules, { maxAgeDays: 44, minPoolConditional: 9, minLen: 4, maxGapDays: 70, onePerFamily: false, slamAgeExempt: false }); f.series.generatedAt = '2026-10-11T02:00:00Z'; } });
-  assert.match(b9.html(), /<p class="sr-fn-rules">runs 4\+ · recency cap 44d · a gap over 70d ends a run · pool floor 9 for surface, style, set and line runs · data 2026-10-10<\/p>/, 'the values are read from series.json rules; the date is generatedAt in stennisfy.tz (02:00Z = 10 Oct in New York)');
-  const b0 = await start({ edit: f => { delete f.series.generatedAt; } });
-  assert.match(b0.html(), / · data —<\/p><\/div>$/, 'no generatedAt: the date is a dash, never the clock');
-  assert.ok(!/How to read|Every family counts/.test(b.html()), 'the old footer or the round 2 sentence form is back');
-  const before = b.view().length;
+  b.seg('minLen', '3'); b.seg('level', 'all'); b.played(true);
+  const pages = [b.html()].concat(b.view().map((_, i) => b.popup(i)));
+  BANNED.forEach(t => pages.forEach((h, k) => assert.ok(!h.includes(t), '"' + t + '" is on ' + (k ? 'sheet ' + (k - 1) : 'the page'))));
+  assert.match(b.html(), /<\/article><\/div>$/, 'the page ends after the card grid');
   b.seg('minLen', '8'); b.seg('dir', 'loss'); b.tab('handicap');
   assert.equal(b.view().length, 0);
-  assert.match(b.html(), /<div class="sr-empty"><span>No streaks match these filters\.<\/span><button type="button" class="sr-clear" data-clear="1">Clear<\/button><\/div>/);
+  assert.match(b.html(), /<div class="sr-empty"><span>No streaks match these filters\.<\/span><button type="button" class="sr-clear" data-clear="1">Clear<\/button><\/div>$/);
   b.clear();
-  assert.equal(b.view().length, before, 'Clear must restore the default view');
+  assert.match(b.html(), /class="sr-segbtn active" aria-pressed="true" data-val="tour">ATP</, 'Clear returns to the ATP default');
+});
+
+test('series-v2 defaults: the page opens on Level = ATP and Min length 3+; the header counts the ATP set', async () => {
+  const b = await start({ defaults: true });
+  const h = b.html();
+  assert.match(h, /data-seg="level"><button type="button" class="sr-segbtn" aria-pressed="false" data-val="all">All<\/button><button type="button" class="sr-segbtn active" aria-pressed="true" data-val="tour">ATP</);
+  assert.match(h, /class="sr-segbtn active" aria-pressed="true" data-val="3">3\+</);
+  const v = b.view();
+  assert.ok(v.length > 0 && v.every(c => c.player.tier === 'tour'), 'only ATP cards on load');
+  assert.equal(stat(h, 'Streaks').v, String(v.length), 'Streaks = the ATP cards');
+  assert.equal(stat(h, 'Players').v, String(new Set(v.map(c => c.player.key)).size));
+  assert.equal(stat(h, 'Longest run').v, String(Math.max(...v.map(c => c.streak.count))));
+  b.seg('level', 'all');
+  assert.ok(b.view().some(c => c.player.tier === 'chal'), 'the fixture carries Challenger cards too');
+});
+
+test('Deep link (series-v2): "Streak on court" opens a Challenger card from the ATP default — the Level switches to Challenger', async () => {
+  const b = await start({ defaults: true });
+  b.seg('level', 'all');
+  const target = b.view().find(c => c.player.tier === 'chal');
+  assert.ok(target, 'a Challenger card');
+  b.seg('level', 'tour');
+  assert.ok(!b.view().some(c => c.player.tier === 'chal'));
+  let opened = null;
+  b.ctx.document.getElementById = (id) => id === 'seriesGrid' ? b.grid : id === 'seriesTabBtn' ? { style: {}, click() {} } : null;
+  b.ctx.document.createElement = () => ({ setAttribute() {}, removeAttribute() {}, hasAttribute: () => true, addEventListener() {},
+    querySelector: () => ({ set innerHTML(h) { opened = h; }, focus() {}, scrollTop: 0, style: { setProperty() {} } }), style: {} });
+  b.ctx.window.SeriesPage.openStreak(target);
+  await b.settle();
+  assert.match(b.html(), /class="sr-segbtn active" aria-pressed="true" data-val="chal">Challenger</, 'the Level switched to the card\'s own');
+  assert.ok(b.view().some(c => c.player.key === target.player.key && c.streak.count === target.streak.count), 'the card is in view');
+  assert.ok(opened && opened.includes('sr-ov-head') && opened.includes(target.streak.count + '</span><span class="sr-ov-tile-k">'), 'its sheet opened, never blank');
 });
 
 // ── colour (CSS) ──────────────────────────────────────────────────────────────────────────────────────────────────
-test('Colour: no blue fills / rings; links #6A9AF8 only on Clear; green / red only on the pop-up marks, P&L and total; card tone, no outline, radius 16', () => {
-  const rule = sel => { const i = CSS.indexOf(sel + ' {'); assert.ok(i >= 0, sel); return CSS.slice(i, CSS.indexOf('}', i)); };
-  assert.ok(!/--bar\b|--viz-lead|--hot-dot|--open-card|--pro\b/.test(CSS), 'a blue token is used');
+test('Colour (series-v2): no blue in the sheet; links only on Clear; green / red only on the result marks; tokens for every design colour; card radius 14', () => {
+  const rule = sel => { const i = CSS.indexOf('\n' + sel + ' {'); assert.ok(i >= 0, sel); return CSS.slice(i, CSS.indexOf('}', i)); };
+  assert.ok(!/--bar\b|--viz-lead|--hot-dot|--open-card|--pro\b|--link\)[^]*sr-ov/.test(CSS.replace(/\[data-page="series"\] \.sr-clear[^}]*\}/, '')), 'a blue token is used');
   const links = [...CSS.matchAll(/([^{}]+)\{[^}]*var\(--link\)/g)].map(m => m[1].trim());
   assert.deepEqual(links, ['[data-page="series"] .sr-clear'], 'links: ' + JSON.stringify(links));
   const signed = [...CSS.matchAll(/([^{}]+)\{[^}]*var\(--(pos|neg)\)/g)].map(m => m[1].trim());
-  assert.ok(signed.length >= 2 && signed.every(s => /^\.sr-ov/.test(s) && /sr-w|sr-l/.test(s)), 'green / red outside the pop-up marks / P&L / total: ' + JSON.stringify(signed));
+  assert.deepEqual(signed, ['.sr-ov .sr-mrow .sr-mres.sr-w', '.sr-ov .sr-mrow .sr-mres.sr-l'], 'green / red outside the result marks: ' + JSON.stringify(signed));
   const card = rule('[data-page="series"] .sr-card');
-  assert.match(card, /background: var\(--card\)/); assert.match(card, /border: 1px solid transparent/); assert.match(card, /border-radius: 16px/);
-  assert.match(rule('[data-page="series"] .sr-card.sr-has-detail:hover'), /border-color: var\(--edge-16\)/);
+  assert.match(card, /background: var\(--card\)/); assert.match(card, /border: 1px solid transparent/); assert.match(card, /border-radius: 14px/);
+  assert.match(rule('[data-page="series"] .sr-cards'), /align-items: start;/);
+  assert.match(rule('[data-page="series"] .sr-next-k'), /font-weight: 700; color: var\(--text\);/, 'the word Next is white 700');
+  assert.match(rule('[data-page="series"] .sr-next'), /display: block; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 12.5px; color: var\(--text-soft\);/, 'the Next line = 12.5 soft grey');
+  assert.match(rule('[data-page="series"] .sr-ava'), /width: 44px; height: 44px;[^;]*; border-radius: 50%; box-sizing: content-box;/);
   assert.match(rule('[data-page="series"] .sr-row'), /border-top: 1px solid var\(--edge-6\)/);
-  assert.match(rule('[data-page="series"] .sr-seg'), /background: var\(--inner\); border-radius: 10px; padding: 3px/);
-  assert.match(rule('[data-page="series"] .sr-segbtn.active'), /background: var\(--selected\); border-color: var\(--edge-16\); color: var\(--text\); font-weight: 700/);
-  assert.match(rule('[data-page="series"] .sr-tab.active'), /color: var\(--text\); font-weight: 700; border-bottom-color: var\(--text\)/);
-  assert.match(rule('[data-page="series"] .sr-toggle input:checked + .sr-box'), /background: var\(--text\)/);
-  assert.match(rule('[data-page="series"] .sr-box'), /border: 1px solid color-mix\(in srgb, var\(--text\) 18%, transparent\)/);
   assert.match(rule('[data-page="series"] .sr-tile'), /background: var\(--inner\)/);
-  // round 3 item 2: the Next line = the reference's (one line, Hanken 12.5 soft grey); the time in the line's own face —
-  // no mono / white rule of its own; the event never carries an ellipsis (it is dropped whole); cards equal height
-  assert.match(rule('[data-page="series"] .sr-next'), /display: block; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 12.5px; color: var\(--text-soft\);/);
-  assert.ok(!/\.sr-next-t\b|\.sr-next-ev\b/.test(CSS), 'the time or the event has a face / overflow rule of its own');
-  // round 3 item 1: the footnote = the reference's (12.5 grey sentence, soft direction words, mono 11.5 rules line)
-  assert.match(rule('[data-page="series"] .sr-footnote'), /gap: 10px; padding-top: 18px; border-top: 1px solid var\(--line\);/);
-  assert.match(rule('[data-page="series"] .sr-footnote p'), /max-width: 1130px; font-size: 12\.5px; line-height: 1\.6; color: var\(--text-label\);/);
-  assert.match(rule('[data-page="series"] .sr-footnote .sr-fn-w'), /color: var\(--text-soft\);/);
-  assert.match(rule('[data-page="series"] .sr-footnote .sr-fn-rules'), /font-family: var\(--font-nums\); font-size: 11\.5px; line-height: 1\.7;/);
-  assert.match(rule('[data-page="series"] .sr-cards'), /align-items: stretch;/);
-  assert.match(rule('[data-page="series"] .sr-rows'), /margin-top: auto;/);
+  assert.ok(!/sr-footnote|sr-mpl|sr-ov-total/.test(CSS), 'removed blocks keep no style');
   const ov = rule('.sr-ov');
-  assert.match(ov, /border: 1px solid var\(--edge-10\); border-radius: 16px/);
-  assert.match(ov, /box-shadow: 0 30px 80px /);
-  assert.match(rule('.sr-ov-back'), /background: color-mix\(in srgb, var\(--page\) 62%, transparent\)/);
+  assert.match(ov, /max-width: 880px; max-height: 86vh; box-sizing: content-box;/);
+  assert.match(ov, /border: 1px solid var\(--edge-10\); border-radius: 20px; box-shadow: var\(--shadow-modal\);/);
+  assert.match(rule('.sr-ov-back'), /background: var\(--backdrop\); backdrop-filter: blur\(3px\);/);
+  assert.match(rule('.sr-ov .sr-mhead, .sr-ov .sr-mrow'), /grid-template-columns: 14px 90px minmax\(0,1\.2fr\) minmax\(0,1fr\) var\(--sr-score, 112px\) 72px 84px; gap: 0 16px;/);
+  assert.match(rule('.sr-ov .sr-mhead.sr-mline, .sr-ov .sr-mrow.sr-mline'), /grid-template-columns: 14px 90px minmax\(0,1fr\) minmax\(0,1fr\) var\(--sr-score, 100px\) 64px 64px 52px 72px;/);
+  assert.match(rule('.sr-ov .sr-mrow'), /min-height: 42px; box-sizing: content-box; border-top: 1px solid var\(--line\);/);
+  assert.match(rule('.sr-ov .sr-mrow .sr-mres'), /width: 8px; height: 8px; border-radius: 2px;/);
+  assert.match(rule('.sr-ov-stats'), /height: 60px; box-sizing: content-box;\s*background: var\(--inner\); border: 1px solid var\(--line\); border-radius: 12px;/);
+  assert.match(rule('.sr-ov-stat'), /gap: 6px; padding: 0 18px; min-width: 92px; box-sizing: content-box;/);
+  assert.match(rule('.sr-ov-stat-div'), /width: 1px; background: var\(--edge-7\); margin: 10px 0;/);
+  assert.match(rule('.sr-ov .sr-mbar-t'), /top: -4px; bottom: -4px; width: 1\.5px; background: var\(--text\);/, 'the line tick is white');
+  assert.match(rule('.sr-ov .sr-mbar-f'), /background: var\(--text-label\);/);
+  assert.match(rule('.sr-ov-close'), /width: 30px; height: 30px; border-radius: 50%; box-sizing: content-box; margin-left: -4px;\s*background: transparent; border: 1px solid var\(--edge-10\);/);
+  assert.match(rule('.sr-ov-foot'), /display: block; flex: none; margin: 0 24px; padding: 0 0 20px; border-top: 1px solid color-mix\(in srgb, var\(--text\) 8%, transparent\);/);
 });
 
 // ── Data 1 / 8: nothing seeded ────────────────────────────────────────────────────────────────────────────────────

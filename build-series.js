@@ -198,9 +198,18 @@ function upcomingBestOf(fx) {
   return 3;
 }
 
-// Tier from event_type_type (get_fixtures carries no event_type_key).
+// Team events count toward NO streak (founder ruling 2026-11-06, series-v2 ruling 3: "same rule as the Database and ROI
+// figures"). api-tennis files them as "Atp Singles"; the Database keeps the same events out of its figures (pinarch.py
+// TEAM_EVENT: Davis / Laver / United / ATP / Hopman Cup), and the founder adds the Olympics. Dropped from history, the
+// slate and the outcomes ledger alike — a team match is skipped, never a break in a run.
+const TEAM_EVENT = /davis cup|laver cup|united cup|atp cup|hopman|olympic/i;
+function isTeamEvent(fx) { return TEAM_EVENT.test(String((fx && fx.tournament_name) || '')); }
+
+// Tier from event_type_type (get_fixtures carries no event_type_key). ATP = main draw AND qualifying (founder
+// 2026-11-06: kept), team events out.
 function tierOf(fx) {
   const t = String(fx.event_type_type || '');
+  if (isTeamEvent(fx)) return null;
   if (t === 'Atp Singles') return 'tour';
   if (t === 'Challenger Men Singles') return 'chal';
   return null;
@@ -1495,7 +1504,7 @@ if (require.main === module) {
   // the ENGINE's own definitions rather than a second copy of them that can drift.
   module.exports = {
     conditionHeld, setpatHeld, collapseByFamily, handicapRank, STREAK_TYPES,
-    upcomingBestOf, tierOf, recordFor, orderedRecords, cutOnGap, isRelevant,
+    upcomingBestOf, tierOf, isTeamEvent, recordFor, orderedRecords, cutOnGap, isRelevant,
     // TEN-244: exported so the suite asserts the SAME matcher the engine uses
     // rather than a copy of the key that can drift out of step with it.
     altFormatOf, ALT_FORMAT_TOURNAMENT_KEYS,

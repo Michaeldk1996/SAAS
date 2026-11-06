@@ -53,12 +53,12 @@ function liftClaim(source) {
   const end = source.indexOf('  // ─── THE ONE ROW BUILDER');
   assert(start > 0 && end > start, 'series.js claim block not found — markers moved?');
   const block = source.slice(start, end);
-  assert(/function claimOf\(/.test(block) && /function claimLong\(/.test(block), 'lifted the wrong block');
+  assert(/function claimOf\(/.test(block), 'lifted the wrong block');
   // eslint-disable-next-line no-new-func
   return new Function('esc', 'cap',
-    block + '\n return { claimOf: claimOf, claimLong: claimLong };')(esc, (s) => String(s));
+    block + '\n return { claimOf: claimOf };')(esc, (s) => String(s));
 }
-const { claimOf, claimLong } = liftClaim(src);
+const { claimOf } = liftClaim(src);
 const hcap = { type: 'handicap', cover: true, line: 3.5, bestOf: 5, direction: 'win' };
 // TEN-427 round 2 (founder 20de43fe, fix 2) rewords the claim to the reference's template ("Won by more than 3.5 games —
 // covered −3.5"); the ruling stands: no "(best-of-N)" on the card, the pop-up keeps it.
@@ -67,13 +67,16 @@ assert.strictEqual(claimOf(hcap), 'Won by more than 3.5 games — covered −3.5
 assert(!/best-of/.test(claimOf(hcap)), 'the card kept "(best-of-N)" — ruling handicap-bestof (a) rejected option (b)');
 assert(!/best-of/.test(claimOf({ type: 'handicap', cover: false, line: 3.5, bestOf: 3, direction: 'loss' })),
   'the losing side of the handicap family still prints the format qualifier');
-assert.strictEqual(claimLong(hcap), 'Won by more than 3.5 games — covered −3.5 (best-of-5)',
-  'the History modal is out of scope ("does not change") and must keep the format qualifier');
+// series-v2 (2026-11-06, README §5.1): the match sheet strips "(best-of-N)" from the claim and carries the format in its
+// caps sub-line instead (" · best of 5"), so the sheet still names it — asserted where the sheet is rendered
+// (test-ten427-series.mjs "Sheet (series-v2)"); here, the sheet's sub-line source.
+assert(/var fmt = \(st\.bestOf && \(st\.type === 'total' \|\| st\.type === 'handicap'\)\) \? ' · best of ' \+ st\.bestOf : '';/.test(src),
+  'the match sheet no longer names the handicap / total format');
 // …and the neighbouring family must NOT have been swept up: total games keeps its
 // qualifier, because only item 2 was ruled on.
 assert(/best-of-3/.test(claimOf({ type: 'total', over: false, line: 23.5, bestOf: 3, direction: 'loss' })),
   'the TOTAL family lost its "(best-of-N)" — ruling handicap-bestof (a) was about the handicap card only');
-ok('handicap-bestof (a): the card drops "(best-of-N)", the modal and the total family keep it');
+ok('handicap-bestof (a): the card drops "(best-of-N)", the sheet names the format in its sub-line, the total family keeps it');
 
 // ── handicap-line (a): −3.5 only; the fallback never reaches a card ──────────
 // Executes flatten() — the real gate — with a stubbed suppression pass, so this

@@ -1,36 +1,37 @@
-# Series (founder step 14, TEN-427, 2026-10-10)
+# Series (founder step 14, TEN-427, 2026-10-10; v2 redesign + four rules, founder 2026-11-06)
 
 Applies to `series.js` (rendered into `#seriesGrid`), `series.css`, the Series block in `bsp-consult-dashboard.html` and
 the generator `build-series.js` (runs on every `pipeline.yml` run, writes `series.json` + `series-outcomes.json`; the
 committed `series.json` is a 15 Sep fossil — read the deployed one). Reference = `OFFICIAL VERSION 1.html` → Series,
 night, 1512px; design file `Series.dc.html` (card 2b, filters 1c, pop-up header "Count tile"; its hexes are legacy).
+**v2 (2026-11-06):** the card and the match sheet follow `design_handoff_series_v2/` (README §3, §5; not committed — the
+founder's zip), measured at 1600px; the design's hexes are read as tokens (tiles `--inner`, 5% `--line`, 9% `--edge-10`,
+8% = `--text` at 8%, scrim `--backdrop`, shadow `--shadow-modal`).
 Night only. Header = the shared 35b `.sfh` (`app-shell.md`). **Test:** `test-ten427-series.mjs` executes the shipped page
 on the dashboard's own Today's Matches / name / time helpers, fed a frozen live capture (`tools/fixtures/ten427-series.json`,
 10 Oct 2026 14:52Z: series.json, the board, names, canonical events, and the real Database join's answer per row);
-`tools/test-ten427-series-mutants.js` (95 mutants, 0 may survive). Older locks that still stand: `tools/test-series-rows.js`
+`tools/test-ten427-series-mutants.js` (0 may survive). Older locks that still stand: `tools/test-series-rows.js`
 (every row satisfies its claim — also a fail-closed pipeline gate after the build), `test-series-dates.js`,
 `test-series-reference.js`, `test-series-outcome-summary.js`.
 
 ## Page
 - **Order:** header · filters (the Type tab row with mono counts, then Level · Day · Direction · Min length left, Show
-  already-played + Sort right) · card grid · footnote · history pop-up. No sidebar branch, no header card of its own,
+  already-played + Sort right) · card grid · match sheet. **The page ends after the grid** (series-v2 rules 2 + 3: no
+  footnote paragraph, no methodology line, no bottom hairline). No sidebar branch, no header card of its own,
   no "How to read" footer, no reference sub-line on the card (the 2b card has no slot; the engine still writes
   `streak.reference`).
 - **Header:** title "Series"; the ticket's sentence verbatim (128 characters — the second exception to the 120 cap,
   `test-ten403-header.mjs`). Stats over the filtered list: Streaks · Players (distinct keys) · Longest run (white,
   grey `—` when empty) · **Updated = `series.json` `generatedAt`** (the last rebuild of the streak data) as HH:MM in
   `stennisfy.tz`, else the browser zone; `—` without it. Never the clock.
-- **Footnote = the reference's form** (founder round 3 item 1, SUPERSEDES round 2's sentence form and its "no date
-  stamp"): line 1 (Hanken 12.5 / 1.6, `--text-label`, max 1130px) = "Direction shows as a word in the tag row — Winning
-  run, Losing run, Neutral. Betting lines (over/under, handicap) and set-shape volatility are a direction, not good or
-  bad." (the reference's sentence whole, the three words `--text-soft`) + a line break + "Prices are closing prices, flat
-  1 unit per match." (appended inline it orphaned "unit per match." at the reference's 1130px cap); line 2 (mono 11.5 / 1.7,
-  `--text-label`) = the engine's real values from `series.json` `rules`, `·` separated: "runs {minLen}+ · one card per
-  player per family (only when `onePerFamily`) · recency cap {maxAgeDays}d (Grand Slams exempt — only when
-  `slamAgeExempt`) · a gap over {maxGapDays}d ends a run · pool floor {minPoolConditional} for surface, style, set and
-  line runs · data {generatedAt as YYYY-MM-DD in stennisfy.tz}" (`—` without it, never the clock). No filter state.
-  Box: gap 10, padding-top 18, `--line` rule (reference measured: identical). **Test:** the exact two lines; identical
-  across Min length / Level / Show already-played; follows `rules` and `generatedAt` in the member's zone.
+- **Defaults (founder 2026-11-06, rule 1):** Level = **ATP**, Min length = **3+** (Day / Direction All, Sort Longest,
+  already-played off). The header stats count the filtered set, so the page opens on ATP numbers. One source:
+  `DEFAULTS` (the filter state is a copy of it); Clear returns to it. **Test:** "series-v2 defaults".
+- **Removed text (rules 2–4) — the RULES stay:** "Direction shows as a word …" / "Prices are closing prices, flat 1 unit
+  per match", the mono engine line ("runs 3+ · one card per player per family · recency cap … · data …"), "A run is
+  selected for its results …", the P&L column and the total line. The engine still applies 3+, one card per family, the
+  45-day cap (Slams exempt), the 75-day break and pool floor 8 (`series.json` `rules`). **Test:** "Copy (series-v2)"
+  — none of those strings, nor P&L / FAV / DOG, on the page or any sheet.
 - **Empty state** (card): "No streaks match these filters." + Clear (`--link`) → every filter back to its default.
 
 ## Slate (Data 2, 3)
@@ -39,7 +40,7 @@ on the dashboard's own Today's Matches / name / time helpers, fed a frozen live 
   `series.json` `upcoming` — Challenger players stay on the page (founder card 939259c6, 2026-10-11), under the same day
   rule and helpers. **Day rule = Today's Matches':** `matchDayBucket({date})` (the member's calendar day); only
   `today` / `tomorrow` keep a card.
-- **Next line** = "Next" (grey 700) · day word + `cardFmtStart` time · `sfEventName(event)` · "vs " +
+- **Next line** = "Next" (**white** 700, series-v2) · day word + `cardFmtStart` time · `sfEventName(event)` · "vs " +
   `newsPlayerName(opponentKey, feed name)` (founder round 3 item 2, SUPERSEDES "v" and the white mono time): one line,
   Hanken 12.5 `--text-soft` — the time in the line's own face, as the reference. **The event is shown whole or not at
   all:** after every paint `fitNextLines` measures each line (`scrollWidth > clientWidth`) and removes an overflowing
@@ -47,14 +48,21 @@ on the dashboard's own Today's Matches / name / time helpers, fed a frozen live 
   never an ellipsis inside the event. Re-fitted when the grid's width changes (ResizeObserver, width only) and when a web
   font lands. The full line (with the event) is always the `title` tooltip. Measured 11 Oct 1512px: 6 of 49 cards drop
   it (cards 319px wide). **Test:** a fixed layout model (box px, px per character) — a line over the box drops the event
-  whole, a line inside keeps it, both exercised. Cards in a row are equal height (grid `align-items: stretch`, the ruled
-  rows at the card's foot).
+  whole, a line inside keeps it, both exercised. Cards sit at their own heights (grid `align-items: start`, series-v2
+  README §3; SUPERSEDES the equal-height stretch). *Open (founder):* the reference's code drops the event from every Next
+  line while its README text keeps it; the shipped rule above (shown when it fits) is unchanged.
 - **Level = ATP / Challenger only:** the engine's `tierOf` admits `event_type_type` "Atp Singles" / "Challenger Men
   Singles" and nothing else (ITF, WTA, doubles never reach the slate), and the page paints no card for any other tier.
   A Challenger event the canonical table (`SF_EVENT_NAMES`, Grand Slams / Masters / 500s) does not hold prints the
   shared cleaned feed name ("Wuning 3 (China) - Qualification" → "Wuning 3", api-tennis tournament key 14335).
 - **Level** = the streak tier = the next match's tour tag (step 13 rule): ATP = `event_type_type` "Atp Singles",
-  Challenger = "Challenger Men Singles", qualifying included in both. **Day** = the scheduled date's bucket.
+  Challenger = "Challenger Men Singles", **main draw and qualifying** in both (founder 2026-11-06: kept).
+- **Team events count toward no streak** (founder 2026-11-06, ruling 3: "same rule as the Database and ROI figures"):
+  `build-series.js` `isTeamEvent` (Davis / Laver / United / ATP / Hopman Cup — the Database's `TEAM_EVENT` — plus the
+  Olympics) makes `tierOf` null, so a team match leaves history, the slate and the outcomes ledger: skipped, never a
+  break. Measured 6 Nov (old vs new builder on the same recorded api-tennis answers; a replay of the old builder
+  reproduced its run exactly): 1 of 115 streaks gone (C. Alcaraz "Won 3 straight vs Big Server + Complete Baseliner",
+  whose run held the 26 Sep Laver Cup win v Fritz), 32 pools smaller, every other count unchanged. **Test:** "Ruling 3". **Day** = the scheduled date's bucket.
   **Show already-played** (unchecked by default) INCLUDES cards whose next match has started or finished: board card
   `live` / `interrupted` / `isFinishedMatch`, or the feed's final status; a fixture the board does not carry counts as
   started once its start instant has passed (the deployed matches.json leaves a match out while in play).
@@ -116,8 +124,8 @@ A Retired record carries `complete: false` and no best-of (the winner's set coun
 or "6-3 3-6 6-4 ret" is not a best-of-3), so it is out of straight sets / went the distance / failed to win a set and
 the line calibration; won / lost the opening or 2nd set and first-set games count when that set was completed.
 **Lines are settled against the score, never a price:** Total games = both players' games vs the card's line;
-Handicap = the player's game margin vs ±h. No source holds a closing price for those lines, so their ledgers print the
-match-winner closes (Home / Away) and no P&L.
+Handicap = the player's game margin vs ±h. No source holds a closing price for those lines, so their sheets print the
+match-winner closes (Home / Away) beside the games figure.
 
 ## Prices (Data 5) — the one Database join
 - Home / Away = the site's one price join (`database.md`): `trDbJoinPx(name, career)` over `DatabaseTab.priceRows()`
@@ -130,12 +138,14 @@ match-winner closes (Home / Away) and no P&L.
 - **The Database join is the only price source** (founder card 939259c6, 2026-10-11): not our captured Pinnacle closes
   (`match-closes/`, ~42% of rows), not any card price. Coverage grows when the join does (TEN-406). **Test:** every priced
   ledger cell equals `trDbJoinPx` for that match; a match the join lacks is `—` even when a captured close exists.
-- **Single source:** `streakRows()` feeds the card's Avg price (mean Home price of the priced rows, exact cents) and the
-  ledger. Ledger (all comps / surface / vs style): flat 1u, win = price − 1, loss −1.00, each row rounded to 2 dp,
-  total = sum of the rounded rows, yield = total ÷ priced (tenths of a percent, half away from zero: −22.75 → −22.8); "{n} priced" on every family; P&L, total in green / red,
-  true minus. **Under a priced total, one line, grey 11, exactly:** "A run is selected for its results, so this total's
-  sign is set by the run itself, not by the market." (founder `pnl`=keep, re-ruled round 2 — it stops a winning run's
-  +P&L reading as an edge.)
+- **Single source (series-v2):** `streakRows()` feeds the card's Avg price and every sheet figure. **Avg price = the
+  player's own pre-match price** (the sheet's Home column, favourite or underdog), averaged over the rows where it
+  exists, exact cents — every family, line cards included (founder 2026-11-06, rule 5). **A row is priced when THE
+  PLAYER's price exists**; the opponent's is not required (ruling 1). Missing is never 0: no priced row → `—`; some
+  missing → the average + a grey **"(n/N)"** (ruling 2), on the card and in the sheet's AVG PRICE alike. **Favourite
+  n of N** = rows with BOTH prices, n = the player's price shorter. **Series tracks no P&L** (no column, no total line,
+  no caveat). **Test:** "Data 5 (series-v2)" (card text = sheet text = mean of the sheet's Home column), "Ruling 1",
+  `tools/test-series-rows.js` C.
 - Coverage, measured 10 Oct 2026 (series.json 14:48Z, every card on the slate, already-played included): 54 of 601 rows
   priced — the archive ends 13 Sep 2026 (451 rows after it) and holds no Challenger match (312 Challenger rows).
   Re-measured 11 Oct (series.json 03:01Z, default view, 49 cards): 29 of 282 rows priced; all 52 unpriced ATP rows are
@@ -146,29 +156,40 @@ match-winner closes (Home / Away) and no P&L.
 
 ## Display (night)
 - **Claims = the reference's templates** (`Series.dc.html`, founder round 2 fix 2): "Won 8 straight" (all comps; the
-  pop-up adds "across all competitions") · "Won 6 straight on Clay" · "Lost 4 straight vs Big Server + Complete
+  sheet prints the same words, series-v2) · "Won 6 straight on Clay" · "Lost 4 straight vs Big Server + Complete
   Baseliner" · "Under 23.5 total games (best-of-3)" · "Won by more than 3.5 games — covered −3.5" (the losing side mirrors
   it: "Lost by more than 3.5 games — failed to cover +3.5", APPROVED by the founder, card 011f0d2d, 11 Oct — the file has
   no example; **Test:** "Fix 2" pins both sides; the file's "(best-of-3)" stays off the
   handicap card — standing ruling handicap-bestof (a), TEN-194 — and on the pop-up) · "Won the opening set" / "Won the
   2nd set" / … · "First set under 9.5 games". N = the card's (as-of-start) count.
-- Cards (2b): `--card` + `--top-light`, no outline, radius 16, hover 1px `--edge-16`; avatar 44px — the player's photo by ID
+- Cards (2b, series-v2): `--card` + `--top-light`, no outline, radius 14, hover 1px `--edge-16`; avatar 44px + its 1px ring (46 outer) — the player's photo by ID
   (`playerPhotoImg`, founder 2026-10-22) over the initials (`fhIni`, `--inner`, 1px `--edge-10`, white 700); name 16/800 + mono rank grey; count tile `--inner` + 1px `--edge-6` (the
   reference's), mono 30/800 white, caps "in a row" grey; claim 16/700, "type · direction" 12 grey (Winning run / Losing
   run / Neutral — a word, never green / red); three rows on `--edge-6` hairlines, caps label, mono value, Avg price 700.
 - Filters: Type = tab row on a `--line` rule, active white 700 + 2px white underline, counts mono 11 grey; segments =
   darker track (`--inner`, padding 3, radius 10; selected `--selected` + 1px `--edge-16`, white 700; idle grey 600);
   checkbox unchecked 18% white edge, checked white fill + dark tick.
-- Pop-up: `--card` + 1px `--edge-10`, radius 16, shadow `0 30px 80px` `--page` 55% (the ticket's black 55%, read through
-  the token: no raw colour), scrim `--page` 62% + blur 3px from `--sf-side`; header = 58px `--inner` count tile, name
-  18/800 + claim 18/600 soft, mono meta "#rank · {count} of {pool} matches (· best of N)"; close = the Match analysis
-  close (34px, radius 9, 1px `--line`). Ledger head caps Hanken 10.5/700/0.10em on a 6% rule, rows on 6% hairlines,
-  W / L mark mono 11/700 green / red; scores with en dashes; the Score track widens to the longest score.
+- **Match sheet (series-v2, README §5):** `--card` + 1px `--edge-10`, radius 20, `--shadow-modal`, max 880 (+ ring),
+  scrim `--backdrop` + blur 3 from `--sf-side`. Header (22 24 18, 8% rule): avatar 60 · count tile 60 (`--inner`,
+  `--line` ring, mono 24/700, caps 9 "in a row") · name 18/800 + claim 18/600 soft (best-of stripped) · caps 10.5 sub
+  "#rank · {count} of {pool} matches[ · best of N]" · **stats tile** (`--inner`, `--line`, radius 12, h 60; cells
+  min 92 + 18 padding, mono 18/700 over caps 10; `--edge-7` dividers): **odds mode** (all comps, surface, vs style, set
+  outcome) AVG PRICE · FAVOURITE; **line mode** (Total games, Set games, Handicap) AVG GAMES (IN SET 1 / MARGIN) ·
+  RANGE · CLOSEST CALL, from the score. ✕ 30px round, transparent, `--edge-10` ring. Heads Date · Event · Opponent ·
+  Score · Home · Away (+ "Line N" over the figure and bar), caps 10.5, on an 8% rule; rows 42px on `--line`; 8px W / L
+  square (`--pos` / `--neg`); Home mono 14/700, Away 12.5 grey; line mode adds the figure (mono 14/700) and a 72px bar
+  (`--track`, fill `--text-label` = figure ÷ max, white 1.5px tick at the line; max tg ⌈line×1.5⌉, sg 13, hc 12).
+  Foot = a bare 8% hairline. **Boxes keep their ring outside** (`content-box`, as the reference renders). Divergences,
+  each for a ruled reason: Score keeps en dashes (series.md round 3); a long opponent name wraps (CLAUDE.md never
+  truncates) so a row may pass 42px; the Score track widens past 112 / 100px only for a longer score (a five-setter
+  would overlap Home); the header's 2.5% white gradient is not drawn (foundation: no decorative gradient); the Home /
+  Away hover keeps the join's source words (a snapshot says "not a confirmed close", odds.md) instead of the design's
+  blanket "pre-match close". Measured 6 Nov at 1600px: every header, head and row position = the reference.
   **Tiebreak points** print as "7–6(5)" (the loser's points) when api-tennis carries them — the decimal in
   `scores[].score_first/second` ("7.7" / "6.5"); `pointbypoint` is no fallback (its tiebreak game holds one empty
   point " - "). The feed omits them for whole events (measured 11 Oct: ATP Tokyo + Beijing 3–6 Oct, 8 sets; Challenger
   Villena 4–9 Oct, 19 sets, Jingshan 3–4 Oct, 2), so those rows print "7–6" — never invented (founder round 3 item 3).
-- **Colour:** green / red only on the pop-up's marks, P&L and total; `--link` only on Clear; no blue fills, rings or
+- **Colour:** green / red only on the sheet's W / L marks; `--link` only on Clear; nothing blue in the sheet; no blue fills, rings or
   outlines; surfaces neutral.
 
 ## Outcomes ledger (`series-outcomes.json`) — judged on the run as it stood at the start
