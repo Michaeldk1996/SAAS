@@ -37,7 +37,7 @@ DIAGNOSTIC = {'tools/pinarch.py': ('def cmd_false_starts_report', 'def cmd_false
 WRITERS = {'tools/false-starts-supersede.sql'}
 READERS = ['ten225-kibl-card-state.py', 'tools/pinarch.py', 'ten225-load-line-summary.py', 'tools/ten294-drops-api.sql',
            'tools/ten299-live-cut.sql', 'tools/tdarch.py', 'tools/archive-fill-probe.py',
-           'tools/value-ledger.mjs']
+           'tools/value-ledger.mjs', 'supabase/migrations/20261106090000_market_live.sql']
 
 
 def strip_diag(path, text):

@@ -62,3 +62,31 @@ test('one minute: a finished Kalshi match is not read; one venue failing never s
   assert.deepEqual(two.rows.map((r) => r.venue), ['polymarket']);
   assert.match(two.note.errors[0], /^kalshi: HTTP 503/);
 });
+test('stops (never starts): Polymarket live stops both venues; 3 h past the scheduled start stops; Kalshi pages followed', async () => {
+  const NOW = '2026-11-06T18:00:00Z';
+  const mk2 = (t, who, occ) => ({ ...mk(t, who, 0.4, 0.41), occurrence_datetime: occ });
+  const live = { ...GEV(), live: true };
+  let pages = 0;
+  const get = (polyEv, occ) => async (u) => {
+    if (u.includes('/markets?series_ticker')) {
+      pages++;
+      return u.includes('cursor=c2') ? { markets: [mk2('SHE', 'Ben Shelton', occ), mk2('PAU', 'Tommy Paul', occ)], cursor: '' } : { markets: [], cursor: 'c2' };
+    }
+    if (u.includes('/orderbook')) return BOOK([['0.5', '2']], []);
+    if (u.includes('gamma-api')) return [polyEv];
+    throw new Error('unexpected ' + u);
+  };
+  const t = targetsFrom(KAL, POLY);
+  let r = await readMinute(t, get(live, '2026-11-06T17:00:00Z'), () => NOW);
+  assert.deepEqual(r.rows, [], 'Polymarket says live: neither venue written');
+  pages = 0;
+  r = await readMinute(t, get(GEV(), '2026-11-06T14:30:00Z'), () => NOW);
+  assert.deepEqual(r.rows.map((x) => x.venue), ['polymarket'], 'Kalshi 3.5 h past its scheduled start: stopped');
+  assert.equal(r.note.stopped, 1);
+  assert.equal(pages, 2, 'the Kalshi cursor is followed (the match is on page 2)');
+  r = await readMinute(t, get(GEV(), '2026-11-06T16:00:00Z'), () => NOW);
+  assert.deepEqual(r.rows.map((x) => x.venue).sort(), ['kalshi', 'polymarket'], '2 h past: a late start keeps being read');
+  const late = GEV(); late.markets[1].gameStartTime = '2026-11-06 14:00:00+00';
+  r = await readMinute(t, get(late, '2026-11-06T16:00:00Z'), () => NOW);
+  assert.deepEqual(r.rows.map((x) => x.venue), ['kalshi'], 'Polymarket 4 h past its own scheduled start: stopped');
+});

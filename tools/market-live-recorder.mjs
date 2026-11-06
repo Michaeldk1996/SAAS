@@ -20,6 +20,10 @@ import { ATP_SERIES, fetchPublished } from './polymarket-volume.mjs';
 const GAMMA = 'https://gamma-api.polymarket.com';
 export const POLL_S = 60;
 export const TARGETS_EVERY_MS = 10 * 60e3;
+// A STOP only, never a start (the scheduled time's one permitted use, founder 2026-10-26): if our live poller never
+// flags a match, its reads stop 3 h after the venue's scheduled start, or as soon as Polymarket marks the event live.
+export const SCHED_STOP_MS = 3 * 3600e3;
+export function pastStop(schedIso, nowMs) { const t = Date.parse(schedIso || ''); return Number.isFinite(t) && nowMs > t + SCHED_STOP_MS; }
 const num = (v) => (v == null || v === '' || !Number.isFinite(Number(v)) ? null : Number(v));
 const r4 = (x) => (x == null ? null : Math.round(x * 1e4) / 1e4);
 const mid = (b, a) => (b != null && a != null ? r4((b + a) / 2) : null);
@@ -74,6 +78,13 @@ export function polyRow(ek, e, readAt) {
     status: open ? 'open' : 'closed', read_at: readAt };
 }
 
+// The match-winner market's scheduled start ("2026-11-06 13:00:00+00" → ISO), for the stop only
+export function polySched(e) {
+  const mk = (e.markets || []).find((m) => String(m.question || '') === String(e.title || ''));
+  const g = mk && mk.gameStartTime ? String(mk.gameStartTime).replace(' ', 'T').replace(/\+00$/, 'Z') : '';
+  return Number.isFinite(Date.parse(g)) ? g : null;
+}
+
 async function getJson(url) {
   const r = await fetch(url, { signal: AbortSignal.timeout(20e3), headers: { 'User-Agent': 'stennisfy-market-live' } });
   if (!r.ok) throw new Error(`HTTP ${r.status} ${url.replace(KALSHI, '').replace(GAMMA, '')}`);
@@ -83,20 +94,9 @@ async function getJson(url) {
 // One minute's reads → rows. Each venue fails on its own (that venue writes nothing this minute).
 export async function readMinute(targets, get = getJson, now = () => new Date().toISOString()) {
   const rows = [], note = { targets: Object.keys(targets).length, kalshi: 0, poly: 0, errors: [] };
-  const kTargets = Object.entries(targets).filter(([, t]) => t.kalshi);
-  if (kTargets.length) {
-    try {
-      const page = await get(`${KALSHI}/markets?series_ticker=${SERIES}&status=open&limit=1000`);
-      const evs = kalshiEvents(page.markets);
-      for (const [ek, t] of kTargets) {
-        const pair = evs.get(t.kalshi);
-        if (!pair) continue;                                   // not open (finished / not listed): nothing to read
-        const books = await Promise.all(pair.map((m) => get(`${KALSHI}/markets/${m.ticker}/orderbook`).catch(() => null)));
-        rows.push(kalshiRow(ek, t.kalshi, pair, books, now())); note.kalshi++;
-      }
-    } catch (e) { note.errors.push('kalshi: ' + e.message); }
-  }
+  const nowMs = Date.parse(now());
   const pTargets = Object.entries(targets).filter(([, t]) => t.poly);
+  let polyEvents = null;
   if (pTargets.length) {
     try {
       const evs = [];
@@ -105,13 +105,41 @@ export async function readMinute(targets, get = getJson, now = () => new Date().
         if (!Array.isArray(page)) throw new Error('events: not a list');
         evs.push(...page); if (page.length < 500) break;
       }
-      const bySlug = new Map(evs.map((e) => [e.slug, e]));
-      for (const [ek, t] of pTargets) {
-        const e = bySlug.get(t.poly);
-        const row = e && polyRow(ek, e, now());
-        if (row && row.status === 'open') { rows.push(row); note.poly++; }
-      }
+      polyEvents = new Map(evs.map((e) => [e.slug, e]));
     } catch (e) { note.errors.push('polymarket: ' + e.message); }
+  }
+  // Polymarket's own live flag stops BOTH venues for that card (a stop, never a start)
+  const polyLive = new Set(pTargets.filter(([, t]) => polyEvents && polyEvents.get(t.poly) && polyEvents.get(t.poly).live === true).map(([ek]) => ek));
+  note.stopped = 0;
+  const kTargets = Object.entries(targets).filter(([ek, t]) => t.kalshi && !polyLive.has(ek));
+  if (kTargets.length) {
+    try {
+      const markets = [];
+      let cursor = '';
+      for (let i = 0; i < 5; i++) {
+        const page = await get(`${KALSHI}/markets?series_ticker=${SERIES}&status=open&limit=1000${cursor ? '&cursor=' + cursor : ''}`);
+        markets.push(...(page.markets || [])); cursor = page.cursor || '';
+        if (!cursor) break;
+      }
+      const evs = kalshiEvents(markets);
+      const live = kTargets.map(([ek, t]) => [ek, t, evs.get(t.kalshi)]).filter(([, , pair]) => pair)   // not open = nothing to read
+        .filter(([, , pair]) => { const stop = pastStop(pair[0].occurrence_datetime, nowMs); if (stop) note.stopped++; return !stop; });
+      const done = await Promise.all(live.map(async ([ek, t, pair]) => {
+        const books = await Promise.all(pair.map((m) => get(`${KALSHI}/markets/${m.ticker}/orderbook`).catch(() => null)));
+        return kalshiRow(ek, t.kalshi, pair, books, now());
+      }));
+      rows.push(...done); note.kalshi = done.length;
+    } catch (e) { note.errors.push('kalshi: ' + e.message); }
+  }
+  if (polyEvents) {
+    for (const [ek, t] of pTargets) {
+      const e = polyEvents.get(t.poly);
+      if (!e || polyLive.has(ek)) continue;
+      const row = polyRow(ek, e, now());
+      if (!row || row.status !== 'open') continue;
+      if (pastStop(polySched(e), nowMs)) { note.stopped++; continue; }
+      rows.push(row); note.poly++;
+    }
   }
   return { rows, note };
 }
@@ -129,11 +157,11 @@ async function push(rows, note) {
 
 async function main() {
   const args = process.argv.slice(2);
-  const minutes = Math.min(350, Number(args[args.indexOf('--minutes') + 1]) || 350);
+  const minutes = Math.max(1, Math.min(350, Number(args[args.indexOf('--minutes') + 1]) || 350));
   const once = args.includes('--once');
   if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SECRET_KEY) { console.log('::error::market-live: SUPABASE_URL / SUPABASE_SECRET_KEY missing'); process.exit(1); }
   const stopAt = Date.now() + minutes * 60e3;
-  let targets = {}, targetsAt = 0, ticks = 0, pushFails = 0;
+  let targets = {}, targetsAt = 0, ticks = 0, pushFails = 0, rowsSeen = false;
   while (Date.now() < stopAt) {
     const t0 = Date.now();
     if (t0 - targetsAt > TARGETS_EVERY_MS || !Object.keys(targets).length) {
@@ -141,6 +169,7 @@ async function main() {
       if (k || p) { targets = targetsFrom(k, p); targetsAt = t0; }
     }
     const { rows, note } = await readMinute(targets);
+    if (rows.length || !Object.keys(targets).length || (note.errors.length === 0)) rowsSeen = true;
     try {
       const res = await push(rows, note);
       ticks++;
@@ -151,5 +180,6 @@ async function main() {
   }
   console.log(`market-live: ${ticks} minutes written, ${pushFails} push failures`);
   if (!ticks) process.exit(1);
+  if (once && !rowsSeen) { console.log('::error::market-live: the first minute read nothing from either venue'); process.exit(1); }
 }
 if (import.meta.url === `file://${process.argv[1]}`) main();

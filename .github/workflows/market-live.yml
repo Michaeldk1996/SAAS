@@ -6,7 +6,7 @@ name: Prediction-market reads, every minute
 # joined (kalshi.json / polymarket.json), every 60 s, and writes public.market_live_current through
 # public.market_live_push (service role). The page reads that table with the publishable key while a drawer is open.
 #
-# Always on: each run records for 350 min and, as it starts, queues its successor (workflow_dispatch with the job's own
+# Always on: each run records for 350 min and, once its first minute is written, queues its successor (workflow_dispatch with the job's own
 # token); the concurrency group holds that one pending run until the current one ends. The hourly schedule is the
 # backstop. Runs from main only (self-chaining rule). Each run first applies its own schema (additive, idempotent).
 # Stop it: disable this workflow. The page then falls back to the pipeline's 30-min files by itself (the beat ages out).
@@ -34,10 +34,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 358
     steps:
-      - name: Queue the next run (waits in the concurrency group until this one ends)
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: gh workflow run market-live.yml --repo "${{ github.repository }}" --ref main || echo "::warning::could not queue the next run (the hourly schedule is the backstop)"
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
@@ -59,8 +55,20 @@ jobs:
           except urllib.error.HTTPError as e:
               print(f'::error::schema apply failed: HTTP {e.code} {e.read()[:300]!r}'); sys.exit(1)
           PY
+      # One minute first: a missing secret, a refused write or both venues failing stops HERE, before the successor is
+      # queued, so a broken run never chains into back-to-back failures (the hourly schedule retries).
+      - name: First minute (must write)
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+        run: node tools/market-live-recorder.mjs --once
+      - name: Queue the next run (waits in the concurrency group until this one ends)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run market-live.yml --repo "${{ github.repository }}" --ref main || echo "::warning::could not queue the next run (the hourly schedule is the backstop)"
       - name: Record every minute
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
-        run: node tools/market-live-recorder.mjs --minutes "${{ inputs.minutes || '350' }}"
+          MINUTES: ${{ inputs.minutes || '350' }}
+        run: node tools/market-live-recorder.mjs --minutes "$MINUTES"

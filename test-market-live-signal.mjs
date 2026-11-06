@@ -64,4 +64,23 @@ test('the drawer starts the per-minute poll; the loader reads the table and the 
   assert.match(l, /market_live_current\?select=event_key,venue,liquidity,read_at,started_at/);
   assert.match(l, /market_live_beat\?select=beat_at/);
   assert.match(l, /window\.SUPABASE_ANON_KEY/);
+  assert.match(html, /document\.addEventListener\('visibilitychange', \(\) => \{ if \(!document\.hidden && document\.querySelector\('\.match-card\.sig-open'\)\) mcSigLiveStart\(\); \}\);/, 'resumes when the tab comes back');
+  assert.match(slice('mcSigLiveTick'), /if \(panel\.dataset\.liveHtml !== html\)/, 'repaints only on a change');
+});
+test('the loader: placeholder config reads nothing; real config reads the table rows + beat', async () => {
+  const L = (cfg, fetchImpl) => new Function('window', 'fetch', `let mktLive = { byEvent: {}, beatAt: NaN }, mktLiveP = null; ${slice('loadMarketLive')} return loadMarketLive().then(() => mktLive);`)(cfg, fetchImpl);
+  let calls = 0;
+  const none = await L({ SUPABASE_URL: '__SUPABASE_URL__', SUPABASE_ANON_KEY: '__SUPABASE_ANON_KEY__' }, () => { calls++; });
+  assert.equal(calls, 0, 'placeholder config: no request');
+  assert.deepEqual(none.byEvent, {});
+  const urls = [];
+  const got = await L({ SUPABASE_URL: 'https://x.supabase.co/', SUPABASE_ANON_KEY: 'pk' }, async (u) => {
+    urls.push(u);
+    return { ok: true, json: async () => u.includes('market_live_beat') ? [{ beat_at: '2026-11-06T11:59:00Z' }]
+      : [{ event_key: '1', venue: 'kalshi', liquidity: '5', read_at: '2026-11-06T11:59:00Z', started_at: null }] };
+  });
+  assert.equal(urls.length, 2);
+  assert.ok(urls[0].startsWith('https://x.supabase.co/rest/v1/market_live_current?'));
+  assert.equal(got.byEvent['1|kalshi'].liquidity, '5');
+  assert.equal(got.beatAt, Date.parse('2026-11-06T11:59:00Z'));
 });

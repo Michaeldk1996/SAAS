@@ -9059,11 +9059,15 @@ function mcSigLiveTick(){
   loadMarketLive().then(() => {
     for (const card of document.querySelectorAll('.match-card.sig-open')) {
       const m = matchById(card.dataset.id), panel = card.querySelector('.mc-sigpanel');
-      if (m && panel && card.isConnected && mcSigReady(m)) panel.innerHTML = mcSigBody(m);
+      if (!m || !panel || !card.isConnected || !mcSigReady(m)) continue;
+      const html = mcSigBody(m);
+      if (panel.dataset.liveHtml !== html) { panel.innerHTML = html; panel.dataset.liveHtml = html; }   // repaint only on a change
     }
   });
 }
 function mcSigLiveStart(){ mcSigLiveTick(); if (!mktLiveTimer) mktLiveTimer = setInterval(mcSigLiveTick, 60e3); }
+// A drawer left open while the tab was hidden resumes its minute reads when the tab comes back.
+document.addEventListener('visibilitychange', () => { if (!document.hidden && document.querySelector('.match-card.sig-open')) mcSigLiveStart(); });
 function mcSigPolyHtml(m){
   const r = mcSigLiqRec(polymarketVol, m, 'polymarket');
   if (!r) return '';

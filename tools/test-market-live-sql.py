@@ -27,6 +27,9 @@ def check(name, ok, detail=''):
 STUB = """
 create table public.live_flip_log (event_key text primary key, first_live_seen_at timestamptz not null, last_not_live_seen_at timestamptz);
 create table public.live_flip_pending (event_key text primary key, first_live_seen_at timestamptz not null, last_not_live_seen_at timestamptz);
+create table public.live_flip_log_superseded (event_key text primary key, reason text not null);
+create view public.live_flip_log_current as select f.* from public.live_flip_log f
+  where not exists (select 1 from public.live_flip_log_superseded s where s.event_key = f.event_key);
 """
 def push(rows, role='service_role'):
     return q("select public.market_live_push($j$" + json.dumps(rows) + "$j$::jsonb, '{\"t\":1}'::jsonb)", role)
@@ -70,6 +73,26 @@ try:
     rc, out = q("select count(*) from public.market_live_current where event_key = '2'")
     check('a match first seen after its live flip gets no row', out == '0', out)
 
+    # a superseded false start never freezes (the view, not the raw log)
+    push([row('4', 700, '2026-11-06T09:00:00Z')])
+    q("insert into public.live_flip_log values ('4', '2026-11-06T09:30:10Z', '2026-11-06T09:30:00Z'); insert into public.live_flip_log_superseded values ('4', 'false 0-0 start')")
+    push([row('4', 720, '2026-11-06T09:40:00Z')])
+    check('a superseded false start: not frozen, the reads go on', liq('4') == '720|-', liq('4'))
+
+    # a read taken after the poll before the flag could be in play: dropped at the freeze, never kept as pre-start
+    push([row('5', 800, '2026-11-06T11:00:00Z')])
+    push([row('5', 810, '2026-11-06T11:01:00Z')])
+    q("insert into public.live_flip_log values ('5', '2026-11-06T11:01:20Z', '2026-11-06T11:00:30Z')")
+    push([])
+    check('a read after the lower bound is dropped at the freeze (figure null, start stamped)', liq('5') == 'null|2026-11-06 11:00:30', liq('5'))
+    rc, out = q("select coalesce(outcomes::text, 'null') from public.market_live_current where event_key = '5'")
+    check('... and its prices too', out == 'null', out)
+    # no lower bound (play already on the board at the first sighting): nothing proves a pre-match read
+    push([row('6', 900, '2026-11-06T11:00:00Z')])
+    q("insert into public.live_flip_log values ('6', '2026-11-06T11:02:00Z', null)")
+    push([])
+    check('no lower bound: the figure is dropped', liq('6') == 'null|2026-11-06 11:02:00', liq('6'))
+
     rc, out = q("select note->>'t' from public.market_live_beat where id = 1")
     check('the beat is written', out == '1', out)
 
@@ -84,12 +107,21 @@ try:
     src = open(SQL).read()
     fn = src[src.index('create or replace function public.market_live_push'):src.index('revoke all on function')]
     mut = (fn.replace('public.market_live_push(', 'public.market_live_push_ctl(')
-             .replace("where not exists (select 1 from public.live_flip_log l where l.event_key = r.ek)\n     and not exists (select 1 from public.live_flip_pending p where p.event_key = r.ek)", '')
+             .replace("where not exists (select 1 from public.live_flip_log_current l where l.event_key = r.ek)\n     and not exists (select 1 from public.live_flip_pending p where p.event_key = r.ek)", '')
              .replace('where c.started_at is null and excluded.read_at', 'where excluded.read_at'))
     check('CONTROL: the mutant differs from the shipped function', mut.count('from public.live_flip_pending') == 0 and 'started_at is null and' not in mut)
     rc, out = q(mut); check('CONTROL: mutant applies', rc == 0, out)
     q("select public.market_live_push_ctl($j$" + json.dumps([row('1', 1500, '2026-11-06T10:20:00Z')]) + "$j$::jsonb)")
     check('CONTROL: without the freeze clauses the frozen value is overwritten', liq('1').startswith('1500|'), liq('1'))
+    # CONTROL: without the drop, a read after the lower bound would be kept as the pre-start value
+    keep = (fn.replace('public.market_live_push(', 'public.market_live_push_ctl2(')
+              .replace("liquidity  = case when l.last_not_live_seen_at is not null and c.read_at <= l.last_not_live_seen_at then c.liquidity end,", 'liquidity = c.liquidity,'))
+    check('CONTROL: the keep-mutant differs', 'liquidity = c.liquidity,' in keep)
+    q(keep)
+    push([row('7', 810, '2026-11-06T12:01:00Z')])
+    q("insert into public.live_flip_log values ('7', '2026-11-06T12:01:20Z', '2026-11-06T12:00:30Z')")
+    q("select public.market_live_push_ctl2('[]'::jsonb)")
+    check('CONTROL: without the drop the in-play read is kept', liq('7').startswith('810|'), liq('7'))
 finally:
     pg.close()
 print(f'test-market-live-sql: {passed} passed, {failed} failed')
