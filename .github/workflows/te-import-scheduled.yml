@@ -37,10 +37,13 @@ jobs:
           path: .te-store
       # founder 2026-11-01 (Task B, "No match is a dash because the recorder missed it"): every 3 h, the last pre-match
       # Pinnacle pair before the start for each played ATP main-draw / qualifying / Challenger match from 17 Sep with a held
-      # payload (insert-only; a re-run adds 0). A failure fails the job and sends the FAILED line below.
+      # payload (insert-only; a re-run adds 0). A failure fails the job and sends the FAILED line below. Self-heal (founder
+      # 2026-11-06): a recent played match with no Oddspapi fixture or no payload held is mapped / pulled by this step itself.
       - name: Pinnacle (approx.) before the start (insert-only)
         env:
           API_TENNIS_KEY: ${{ secrets.API_TENNIS_KEY }}
+          # the self-heal (founder 2026-11-06): one metered fixtures read when a recent match is unmapped, free history pulls
+          ODDSPAPI_KEY: ${{ secrets.ODDSPAPI_KEY }}
         run: python3 tools/tdarch.py sched-import --recent 14
       - name: Import the batches the archive does not hold yet (insert-only)
         env:

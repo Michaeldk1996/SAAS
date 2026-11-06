@@ -1264,6 +1264,57 @@ def sched_rows(fixtures, od_of, od_fixtures, series_of, first_live, fetched_at, 
     return rows, dict(rep)
 
 
+# ── Self-heal (founder 2026-11-06: "it should just be done automatically"): a recent played match the job cannot price
+# because no Oddspapi fixture is held for it, or no Pinnacle +30 payload was ever pulled (the post-start pull's 6 h window
+# and the back-fill both missed it), is fixed by this job itself: one metered /v4/fixtures read for the recent window maps
+# it, the free /v4/historical-odds pull fetches its payload (insert-only, stored as a back-fill row so every later run holds
+# the fixture), then the rows are built as before. A dash no longer waits for a person to notice it.
+HEAL_DAYS = 4            # the recent window the heal looks at (one metered fixtures window covers it)
+HEAL_MAX_PULLS = 80      # free history pulls per run at most (~5.5 s each)
+
+
+def _played(f):
+    return (str(f.get('event_status') or '') in RESULT_STATUSES and f.get('event_winner') in ('First Player', 'Second Player')
+            and 'walk' not in str(f.get('event_status') or '').lower())
+
+
+def sched_heal_targets(want, od_of, series_of, today, days=HEAL_DAYS):
+    """Pure. The recent played targets the heal can fix: (unmapped fixtures, fixtureIds with no payload). `unmapped` = no
+    Oddspapi fixture held for it; `no_payload` = a mapped fixture with no Pinnacle +30 payload held. A walkover, an
+    unplayed match, today's matches and anything older than `days` days are never targets."""
+    frm = (today - dt.timedelta(days=days)).isoformat()
+    unmapped, no_payload = [], []
+    for f in want:
+        if not (frm <= str(f.get('event_date') or '') < today.isoformat()) or not _played(f):
+            continue
+        fid, why = od_of(f)
+        if fid is None:
+            if why == 'no Oddspapi fixture held':
+                unmapped.append(f)
+            continue
+        if series_of(fid) == (None, 'no pinnacle+30 payload held') and fid not in no_payload:
+            no_payload.append(fid)
+    return unmapped, no_payload
+
+
+def heal_reason_lines(want, od_of, series_of, today, days=HEAL_DAYS):
+    """Pure. One line per recent played ATP main-draw match this job still has no before-start price source for, with why
+    (the run's public notice): 'Paris 2026-11-04 A v B: no pinnacle+30 payload held'."""
+    frm, out = (today - dt.timedelta(days=days)).isoformat(), []
+    for f in want:
+        d = str(f.get('event_date') or '')
+        if sched_level(f) != 'atp-nt' or not (frm <= d < today.isoformat()) or not _played(f):
+            continue
+        fid, why = od_of(f)
+        if fid is not None:
+            got = series_of(fid)
+            if got[0] is not None:
+                continue
+            why = got[1]
+        out.append(f"{str(f.get('tournament_name') or '').strip()} {d} {f.get('event_first_player')} v {f.get('event_second_player')}: {why}")
+    return out
+
+
 def cmd_sched_import(dry_run=False, frm=SCHED_FROM, to=None):
     """Write the before-start snapshots (append-only; a changed price is a new row superseding the old one)."""
     to = to or (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=1)).date().isoformat()
@@ -1302,6 +1353,43 @@ def cmd_sched_import(dry_run=False, frm=SCHED_FROM, to=None):
         if got is P.NO_PINNACLE:
             return None, 'held payloads are another book only'
         return got
+    # self-heal (sched_heal_targets): map the unmapped recent matches, pull the missing payloads, then build the rows
+    today, okey, heal = dt.datetime.now(dt.timezone.utc).date(), os.environ.get('ODDSPAPI_KEY') or '', collections.Counter()
+    unmapped, _np = sched_heal_targets(want, od_of, series_of, today)
+    if unmapped and okey:
+        new, calls = P.discovery(dt.datetime.combine(today - dt.timedelta(days=HEAL_DAYS + 1), dt.time(), dt.timezone.utc),
+                                 dt.datetime.combine(today, dt.time(), dt.timezone.utc), os.path.join(P.ROOT_DIR, '.sched-heal-fixtures.json'), okey)
+        heal['oddspapiFixtureCalls'] += calls
+        for f in new:
+            fixtures.setdefault(f['fixtureId'], dict(f, trueEndTime=None, **{'from': 'sched-heal discovery'}))
+        by_day_od = P._fixtures_by_day([f for f in fixtures.values() if f.get('categoryName') in P.BACKFILL_CATEGORIES])
+        for f in unmapped:
+            oc.pop(str(f.get('event_key')), None)
+        heal['mappedByDiscovery'] = sum(1 for f in unmapped if od_of(f)[0])
+        new_fids = sorted({od_of(f)[0] for f in unmapped if od_of(f)[0]} - set(series))
+        for part in map(chunk_series, [new_fids[i:i + 10] for i in range(0, len(new_fids), 10)]):
+            series.update(part)
+    _u, no_payload = sched_heal_targets(want, od_of, series_of, today)
+    if no_payload and okey and not dry_run:
+        counts = {}
+        for fid in no_payload[:HEAL_MAX_PULLS]:
+            body, err = P.hist_get(fid, okey, counts)
+            if body is None:
+                heal['pullError ' + str(err)] += 1; continue
+            gz, raw_body, sha = P.payload_parts(body)
+            fx_ = fixtures.get(fid) or {}
+            ek = next((str(f.get('event_key')) for f in want if od_of(f)[0] == fid), None)
+            P.insert(P.RAW, [{'fixture_id': fid, 'source': 'oddspapi /v4/historical-odds', 'pulled_at': dt.datetime.now(dt.timezone.utc).isoformat(),
+                              'books': P.books_of(raw_body), 'payload_gz': P.hexbytes(gz), 'payload_sha256': sha, 'body_bytes': len(raw_body),
+                              'meta': {'trigger': 'backfill', 'via': 'sched-heal', 'eventKey': ek, 'book': P.HIST_BOOK,
+                                       'category': fx_.get('categoryName'), 'startTime': fx_.get('startTime'), 'trueStartTime': fx_.get('trueStartTime'),
+                                       'participants': [fx_.get('participant1Name'), fx_.get('participant2Name')]}}], 'fixture_id,payload_sha256')
+            heal['pulled'] += 1
+        for part in map(chunk_series, [no_payload[i:i + 10] for i in range(0, len(no_payload), 10)]):
+            series.update(part)
+    heal['unmappedBefore'], heal['noPayloadBefore'] = len(unmapped), len(no_payload)
+    if not okey:
+        heal['skipped: no ODDSPAPI_KEY'] = 1
     fetched = dt.datetime.now(dt.timezone.utc).isoformat(timespec='seconds')
     rows, rep = sched_rows(want, od_of, fixtures, series_of, fl.get, fetched, frm, to)
     held = P.select_all(SNAP, 'id,dedupe_key,source,match_date,tournament,winner,loser,supersedes,event_key')
@@ -1311,7 +1399,12 @@ def cmd_sched_import(dry_run=False, frm=SCHED_FROM, to=None):
         for i in range(0, len(add), 500):
             ids += P.insert(SNAP, add[i:i + 500], 'dedupe_key')
     by_day = collections.Counter((str(r['match_date']), r['detail']['level']) for r in rows)
-    print('### sched-import', json.dumps({'window': [frm, to], 'dryRun': dry_run, 'targets': len(want), 'report': rep,
+    left = heal_reason_lines(want, od_of, series_of, today)
+    # a public notice (run annotations are readable without a token): the heal, and every recent ATP main-draw match still
+    # without a before-start price source, with why
+    print(f"::notice title=sched-import heal::{json.dumps(dict(heal))} · recent ATP main draw still without a before-start price: {len(left)}"
+          + ''.join(f'%0A{x}' for x in left[:30]), flush=True)
+    print('### sched-import', json.dumps({'window': [frm, to], 'dryRun': dry_run, 'targets': len(want), 'report': rep, 'heal': dict(heal),
                                           'stored': len(rows), 'wouldAdd' if dry_run else 'added': len(add) if dry_run else len(ids),
                                           'byDayLevel': {f'{d} {lv}': n for (d, lv), n in sorted(by_day.items())}}))
     if not dry_run:

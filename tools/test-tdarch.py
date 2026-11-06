@@ -700,5 +700,31 @@ _apo = lambda src, book: dict(_ap(src, 1.6), detail={'level': 'ch', 'book': book
 lfx = T.lower_feed_rows([_apo(T.API_OTHER_SOURCE, '1xBet'), _apo(T.TE_OTHER_SOURCE, 'Betway')])
 check('api-tennis other book: after Tennis Explorer\'s other book; alone it fills the dash, named in the source column',
       [x['source'] for x in lfx] == [T.TE_OTHER_SOURCE + ' · Betway'] and [x['source'] for x in T.lower_feed_rows([_apo(T.API_OTHER_SOURCE, '1xBet')])] == [T.API_OTHER_SOURCE + ' · 1xBet'], lfx)
+# self-heal (founder 2026-11-06): the scheduled import maps an unmapped recent match and pulls a missing payload itself
+_today = dt.date(2026, 11, 6)
+def _hf(ek, d, st='Finished', w='First Player', typ='Atp Singles'):
+    return {'event_key': ek, 'event_date': d, 'event_status': st, 'event_winner': w, 'event_type_type': typ, 'event_qualification': 'False',
+            'tournament_name': 'Paris', 'event_first_player': f'A{ek}', 'event_second_player': f'B{ek}'}
+_hw = [_hf(1, '2026-11-04'), _hf(2, '2026-11-03'), _hf(3, '2026-11-04'), _hf(4, '2026-11-04', st='Walk Over'),
+       _hf(5, '2026-11-06'), _hf(6, '2026-10-30'), _hf(7, '2026-11-04', st='Not Started', w=None), _hf(8, '2026-11-05'), _hf(9, '2026-11-05')]
+_hod = {1: (None, 'no Oddspapi fixture held'), 2: ('F2', True), 3: ('F3', True), 4: (None, 'no Oddspapi fixture held'),
+        5: (None, 'no Oddspapi fixture held'), 6: (None, 'no Oddspapi fixture held'), 7: (None, 'no Oddspapi fixture held'),
+        8: (None, 'two or more Oddspapi fixtures'), 9: ('F3', True)}
+_hser = {'F2': (None, 'no pinnacle+30 payload held'), 'F3': (77, {'121': [], '122': []})}
+hu, hn = T.sched_heal_targets(_hw, lambda f: _hod[f['event_key']], lambda fid: _hser[fid], _today)
+check('self-heal: an unmapped played match of the last 4 days is mapped (1); a mapped one with no payload is pulled once (F2); a walkover, an unplayed match, today and older than 4 days are not targets; two candidates are not guessed',
+      [f['event_key'] for f in hu] == [1] and hn == ['F2'], (hu, hn))
+hl = T.heal_reason_lines(_hw, lambda f: _hod[f['event_key']], lambda fid: _hser[fid], _today)
+check('self-heal: the public notice names every recent played ATP main-draw match still without a source, with why — never one that has a payload',
+      hl == ['Paris 2026-11-04 A1 v B1: no Oddspapi fixture held', 'Paris 2026-11-03 A2 v B2: no pinnacle+30 payload held',
+             'Paris 2026-11-05 A8 v B8: two or more Oddspapi fixtures'], hl)
+_hser2 = {'F2': (55, {'121': [], '122': []}), 'F3': (77, {'121': [], '122': []})}
+check('self-heal: once the payload is held the match is no longer a target (control: before the pull it was)',
+      T.sched_heal_targets(_hw, lambda f: _hod[f['event_key']], lambda fid: _hser2[fid], _today)[1] == [] and hn == ['F2'])
+_hsrc = open(os.path.join(HERE, 'tdarch.py')).read()
+check('self-heal: the pulled payload is stored insert-only as a back-fill row (so later runs hold the fixture) and the workflow passes the Oddspapi key',
+      "'trigger': 'backfill', 'via': 'sched-heal'" in _hsrc and 'P.insert(P.RAW' in _hsrc
+      and 'ODDSPAPI_KEY: ${{ secrets.ODDSPAPI_KEY }}' in open(os.path.join(HERE, '..', '.github', 'workflows', 'te-import-scheduled.yml')).read())
+
 print(f'\ntest-tdarch: {passed} passed, {failed} failed')
 sys.exit(1 if failed else 0)
