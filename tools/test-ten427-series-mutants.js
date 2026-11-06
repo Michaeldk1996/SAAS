@@ -49,6 +49,7 @@ const MUTANTS = [
   ['eng', 'v2 ruling 3: team events count again', '  if (isTeamEvent(fx)) return null;\n', ''],
   ['eng', 'v2 ruling 3: the Olympics count', 'hopman|olympic/i;', 'hopman/i;'],
   ['eng', 'v2 ruling 3: ATP qualifying dropped', "  if (t === 'Atp Singles') return 'tour';", "  if (t === 'Atp Singles') return String(fx.event_qualification) === 'True' ? null : 'tour';"],
+  ['js', 'v2: the average rounds apart from the printed price (1.595 → 160)', 'function cents(x) { return Math.round(Number(x.toFixed(2)) * 100); }', 'function cents(x) { return Math.round(x * 100); }'],
   ['js', 'Data 5: rows not priced on the Database join', '        trDbJoinPx(displayName(p.key, p.name), pc[1])(list);\n', '\n'],
   ['js', 'Type: a hyphen in scores', "'<span class=\"sr-mscore\">' + (r.score ? esc(scoreTxt(r.score)) : DASH)", "'<span class=\"sr-mscore\">' + (r.score ? esc(r.score) : DASH)"],
   ['js', 'Pop-up: the pool replaced by the count', "' of ' + esc(String(st.pool)) + ' ' +", "' of ' + esc(String(st.count)) + ' ' +"],

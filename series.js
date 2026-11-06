@@ -187,8 +187,10 @@
   // streakRows(st) — the rows the sheet lists — so the card's Avg price can never differ from the sheet's AVG PRICE.
   var MATCH_RESULT_FAMS = { all: 1, surface: 1, style: 1 };
   function isMatchResultFam(st) { return !!MATCH_RESULT_FAMS[famOf(st)]; }
-  // Prices are exact to 2 dp, so they are summed in integer hundredths (exact, order-independent).
-  function cents(x) { return Math.round(x * 100); }
+  // Summed in integer hundredths (exact, order-independent) — of the price AS THE ROW PRINTS IT (toFixed(2)). A snapshot
+  // price can carry a third decimal: 1.595 prints "1.59" (its float is 1.5949…) while Math.round(1.595 * 100) is 160, so
+  // rounding apart put the card a cent off the mean of the printed Home column (L. van Assche, live 6 Nov: 2.63 v 2.62).
+  function cents(x) { return Math.round(Number(x.toFixed(2)) * 100); }
   // Avg price = the mean of THE PLAYER's own pre-match price (the sheet's Home column) over the rows where it exists —
   // favourite or underdog, every streak type, line streaks included. A missing price is out of the mean, never 0;
   // n of N travels with it (founder 2026-11-06: "(5/6)" after the price while some rows are unpriced).

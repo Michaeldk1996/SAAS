@@ -774,6 +774,18 @@ test('Ruling 1 (founder 2026-11-06): a row is priced on THE PLAYER\'s price alon
   const n = v.streak.count, want = (Math.round((140 + 155 + 210) / 3) / 100).toFixed(2) + ' (3/' + n + ')';
   assert.equal(cardsOf(b.html())[i].rows[2][1], want, 'the player-only row counts in the average: 1.40, 1.55, 2.10 → 1.68');
   assert.deepEqual(statsOf(b.popup(i)), [[want, 'Avg price'], ['1 of 2', 'Favourite']], 'Favourite = 1 of the 2 rows with both prices');
+  // a three-decimal snapshot is averaged as the row prints it (live 6 Nov, L. van Assche: 3.674 / 2.614 / 1.595 printed
+  // 3.67 / 2.61 / 1.59 → 2.62, never 2.63)
+  const b3 = await start({ edit: fix => {
+    const st = fix.series.players.find(p => p.key === pk).streaks[si], ms = st.matches;
+    fix.join[pk] = [[ms[0].date, ms[0].opponent || '', ms[0].won, 3.674, 1.33, 'P'], [ms[1].date, ms[1].opponent || '', ms[1].won, 2.614, 1.55, 'P'],
+      [ms[2].date, ms[2].opponent || '', ms[2].won, 1.595, 2.49, 'P']];
+  } });
+  b3.seg('minLen', '3'); b3.played(true);
+  const i3 = b3.view().findIndex(x => x.player.key === pk && x.streak.type === v.streak.type && x.streak.count === v.streak.count && x.streak.lastDate === v.streak.lastDate);
+  const L3 = ledgerOf(b3.popup(i3)).map(r => r.home).filter(x => x !== '—');
+  assert.deepEqual(L3, ['1.59', '2.61', '3.67'].filter(x => L3.includes(x)).length === 3 ? L3 : null, 'the sheet prints 3.67 / 2.61 / 1.59');
+  assert.equal(cardsOf(b3.html())[i3].rows[2][1], '2.62 (3/' + n + ')', 'Avg price = the mean of the PRINTED Home prices (1.595 counts as 1.59)');
   // the reference example (rule 5): 1.40 1.55 1.30 2.10 1.45 1.60 1.35 → 1.54
   const ex = [1.40, 1.55, 1.30, 2.10, 1.45, 1.60, 1.35];
   assert.equal((Math.round(ex.reduce((a, x) => a + cents(x), 0) / ex.length) / 100).toFixed(2), '1.54');

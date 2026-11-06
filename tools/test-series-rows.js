@@ -236,7 +236,7 @@ function unjudgeable(predicate) {
     if (r === 4) return;                                             // unpriced
     B.PX.set(m, { price: 1.05 + (k % 37) / 10, oppPrice: r === 3 ? null : 1.10 + (k % 23) / 10, book: r % 2 ? 'B' : 'P' });
   }));
-  const centsAvg = (xs) => (Math.round(xs.reduce((a, b) => a + Math.round(b * 100), 0) / xs.length) / 100).toFixed(2);
+  const centsAvg = (xs) => (Math.round(xs.reduce((a, b) => a + Math.round(Number(b.toFixed(2)) * 100), 0) / xs.length) / 100).toFixed(2);
   let checked = 0, withLine = 0, withPartial = 0, withPlayerOnly = 0;
   eachStreak((p, st) => {
     const rows = B.streakRows(st);
@@ -302,7 +302,7 @@ function unjudgeable(predicate) {
 
   // And the shipped page must be using that arithmetic, not floats.
   const src = fs.readFileSync(path.join(ROOT, 'series.js'), 'utf8');
-  assert(/function cents\s*\(/.test(src) && /Math\.round\(x \* 100\)/.test(src),
+  assert(/function cents\s*\(/.test(src) && /Math\.round\(Number\(x\.toFixed\(2\)\) \* 100\)/.test(src),
     'TEN-204 — series.js no longer defines the integer-cent helper; money is back on floats.');
   ok('E · money sums in exact cents, order-independent (witness: the 1.415 card)');
 }
