@@ -41,19 +41,30 @@ const EVENT_ALIAS = { rolandgarros: 'French Open', usopen: 'US Open', canadamast
 const days = (a, b) => Math.round((Date.parse(a) - Date.parse(b)) / 864e5);
 
 function pairRows(teRows, ourRows) {
+  // Architecture stage 6 (2026-11-06): each row's normalised name, event key and date are computed ONCE, and the cheap
+  // date window is tested before the name and event comparisons. Same tests, same order of candidates, same pairs —
+  // the old loop recomputed them for every TE row × our row (≈ 0.5 s a player, 9 min a pipeline run).
+  const ourInfo = ourRows.map((o) => ({
+    ms: o.date ? Date.parse(o.date) : NaN,
+    sn: ourSurname(o.opponent),
+    ev: evKey(EVENT_ALIAS[norm(o.tournament)] || o.tournament),
+    weekDated: o.src === 'archive' || o.holeFill,
+  }));
+  const dayGap = (tms, oms) => Math.round((tms - oms) / 864e5);   // = days(t.date, o.date)
   const cand = [];
   teRows.forEach((t, i) => {
-    const ts = teSurname(t.opp), te = evKey(t.event);
+    if (!t.date) return;
+    const ts = teSurname(t.opp), te = evKey(t.event), tms = Date.parse(t.date);
     ourRows.forEach((o, j) => {
-      if (!o.date || !t.date) return;
-      const nameExact = similar(ts, ourSurname(o.opponent));
+      if (!o.date) return;
+      const oi = ourInfo[j];
+      const dd = dayGap(tms, oi.ms);
+      if (oi.weekDated ? (dd < -3 || dd > 20) : Math.abs(dd) > 3) return;
+      const nameExact = similar(ts, oi.sn);
       const nameOk = nameExact || swapped(t.opp, o.opponent) || sameWords(t.opp, o.opponent);
-      const evOk = te && te === evKey(EVENT_ALIAS[norm(o.tournament)] || o.tournament) && !!t.won === !!o.won;
+      const evSame = !!te && te === oi.ev;
+      const evOk = evSame && !!t.won === !!o.won;
       if (!nameOk && !evOk) return;
-      const dd = days(t.date, o.date);
-      const weekDated = o.src === 'archive' || o.holeFill;
-      if (weekDated ? (dd < -3 || dd > 20) : Math.abs(dd) > 3) return;
-      const evSame = te && te === evKey(EVENT_ALIAS[norm(o.tournament)] || o.tournament);
       cand.push([Math.abs(dd) + (!!t.won !== !!o.won ? 100 : 0) + (nameExact ? 0 : nameOk ? 10 : 50) + (evSame ? 0 : 20), i, j]);
     });
   });
@@ -66,10 +77,11 @@ function pairRows(teRows, ourRows) {
   const cand2 = [];
   teRows.forEach((t, i) => {
     if (te2our.has(i) || !t.date) return;
+    const ts = teSurname(t.opp), tms = Date.parse(t.date);
     ourRows.forEach((o, j) => {
       // exact surname only: the loose `similar` lets "martin" sit inside "martinez" (review 2026-10-19)
-      if (used.has(j) || !o.date || !!t.won !== !!o.won || teSurname(t.opp) !== ourSurname(o.opponent)) return;
-      const dd = Math.abs(days(t.date, o.date)); if (dd <= 10) cand2.push([dd, i, j]);
+      if (used.has(j) || !o.date || !!t.won !== !!o.won || ts !== ourInfo[j].sn) return;
+      const dd = Math.abs(dayGap(tms, ourInfo[j].ms)); if (dd <= 10) cand2.push([dd, i, j]);
     });
   });
   cand2.sort((a, b) => a[0] - b[0]);
