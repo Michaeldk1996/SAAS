@@ -10583,13 +10583,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 1.5,
+      "p2": 2.62,
+      "bookmaker": "bet365"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 1.5,
+        "bookmaker": "bet365"
+      },
+      "p2": {
+        "price": 2.82,
+        "bookmaker": "Pncl"
+      }
     },
     "tournamentRound": null,
     "qualifying": false,
@@ -17976,7 +17982,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-7, 7-5, 6-1",
+      "display": "6-7(5), 7-5, 6-1",
       "sets": [
         {
           "p1": 6,
@@ -23113,7 +23119,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6, 7-5",
+      "display": "7-6(6), 7-5",
       "sets": [
         {
           "p1": 7,
@@ -27149,7 +27155,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-7, 6-2, 6-4",
+      "display": "6-7(5), 6-2, 6-4",
       "sets": [
         {
           "p1": 6,
@@ -31972,7 +31978,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "4-6, 6-3, 6-7",
+      "display": "4-6, 6-3, 6-7(8)",
       "sets": [
         {
           "p1": 4,
@@ -40663,7 +40669,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "3-6, 7-6, 2-0",
+      "display": "3-6, 7-6(2), 2-0",
       "sets": [
         {
           "p1": 3,
@@ -46084,7 +46090,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "4-6, 7-6, 6-7",
+      "display": "4-6, 7-6(4), 6-7(3)",
       "sets": [
         {
           "p1": 4,
@@ -56802,7 +56808,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6, 6-3",
+      "display": "7-6(3), 6-3",
       "sets": [
         {
           "p1": 7,
@@ -81348,7 +81354,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-7, 2-6",
+      "display": "6-7(5), 2-6",
       "sets": [
         {
           "p1": 6,
@@ -85366,7 +85372,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-3, 7-6",
+      "display": "6-3, 7-6(4)",
       "sets": [
         {
           "p1": 6,
@@ -94123,7 +94129,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6, 6-3",
+      "display": "7-6(2), 6-3",
       "sets": [
         {
           "p1": 7,
@@ -99095,7 +99101,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-3, 1-6, 7-6",
+      "display": "6-3, 1-6, 7-6(9)",
       "sets": [
         {
           "p1": 6,
@@ -107715,7 +107721,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6, 6-4",
+      "display": "7-6(4), 6-4",
       "sets": [
         {
           "p1": 7,
@@ -112207,7 +112213,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6, 7-5",
+      "display": "7-6(3), 7-5",
       "sets": [
         {
           "p1": 7,
@@ -125881,7 +125887,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-7, 3-6",
+      "display": "6-7(4), 3-6",
       "sets": [
         {
           "p1": 6,
@@ -130689,7 +130695,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6, 5-7, 6-7",
+      "display": "7-6(6), 5-7, 6-7(5)",
       "sets": [
         {
           "p1": 7,
@@ -135568,7 +135574,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6, 3-6, 6-7",
+      "display": "7-6(5), 3-6, 6-7(3)",
       "sets": [
         {
           "p1": 7,
