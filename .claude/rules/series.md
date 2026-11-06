@@ -49,8 +49,8 @@ on the dashboard's own Today's Matches / name / time helpers, fed a frozen live 
   font lands. The full line (with the event) is always the `title` tooltip. Measured 11 Oct 1512px: 6 of 49 cards drop
   it (cards 319px wide). **Test:** a fixed layout model (box px, px per character) — a line over the box drops the event
   whole, a line inside keeps it, both exercised. Cards sit at their own heights (grid `align-items: start`, series-v2
-  README §3; SUPERSEDES the equal-height stretch). *Open (founder):* the reference's code drops the event from every Next
-  line while its README text keeps it; the shipped rule above (shown when it fits) is unchanged.
+  README §3; SUPERSEDES the equal-height stretch). **Founder ruling 2026-11-06:** the event stays when it fits (the
+  reference's code drops it from every Next line; its README keeps it — the README wins). **Test:** "Round 3 item 2".
 - **Level = ATP / Challenger only:** the engine's `tierOf` admits `event_type_type` "Atp Singles" / "Challenger Men
   Singles" and nothing else (ITF, WTA, doubles never reach the slate), and the page paints no card for any other tier.
   A Challenger event the canonical table (`SF_EVENT_NAMES`, Grand Slams / Masters / 500s) does not hold prints the
@@ -180,11 +180,13 @@ match-winner closes (Home / Away) beside the games figure.
   square (`--pos` / `--neg`); Home mono 14/700, Away 12.5 grey; line mode adds the figure (mono 14/700) and a 72px bar
   (`--track`, fill `--text-label` = figure ÷ max, white 1.5px tick at the line; max tg ⌈line×1.5⌉, sg 13, hc 12).
   Foot = a bare 8% hairline. **Boxes keep their ring outside** (`content-box`, as the reference renders). Divergences,
-  each for a ruled reason: Score keeps en dashes (series.md round 3); a long opponent name wraps (CLAUDE.md never
+  each ruled (the last three confirmed by the founder 2026-11-06): Score keeps en dashes (series.md round 3); a long opponent name wraps (CLAUDE.md never
   truncates) so a row may pass 42px; the Score track widens past 112 / 100px only for a longer score (a five-setter
   would overlap Home); the header's 2.5% white gradient is not drawn (foundation: no decorative gradient); the Home /
   Away hover keeps the join's source words (a snapshot says "not a confirmed close", odds.md) instead of the design's
-  blanket "pre-match close". Measured 6 Nov at 1600px: every header, head and row position = the reference.
+  blanket "pre-match close"; a **failed-to-cover handicap** sheet (the reference draws only the covered side) heads
+  "Line +h" and prints the player's margin signed with a true minus (−5), the bar on |margin| ÷ 12, the tick at h.
+  Measured 6 Nov at 1600px: every header, head and row position = the reference.
   **Tiebreak points** print as "7–6(5)" (the loser's points) when api-tennis carries them — the decimal in
   `scores[].score_first/second` ("7.7" / "6.5"); `pointbypoint` is no fallback (its tiebreak game holds one empty
   point " - "). The feed omits them for whole events (measured 11 Oct: ATP Tokyo + Beijing 3–6 Oct, 8 sets; Challenger
