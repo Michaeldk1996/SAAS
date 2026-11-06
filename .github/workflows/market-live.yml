@@ -1,0 +1,66 @@
+name: Prediction-market reads, every minute
+
+# Founder 2026-11-06 ("Build this"): Kalshi and Polymarket read every minute for the Market Signal drawer on Today's
+# Matches, frozen at our own live sighting (the real start), not the scheduled one.
+# tools/market-live-recorder.mjs reads the public Kalshi and Polymarket APIs (no key) for every card the pipeline has
+# joined (kalshi.json / polymarket.json), every 60 s, and writes public.market_live_current through
+# public.market_live_push (service role). The page reads that table with the publishable key while a drawer is open.
+#
+# Always on: each run records for 350 min and, as it starts, queues its successor (workflow_dispatch with the job's own
+# token); the concurrency group holds that one pending run until the current one ends. The hourly schedule is the
+# backstop. Runs from main only (self-chaining rule). Each run first applies its own schema (additive, idempotent).
+# Stop it: disable this workflow. The page then falls back to the pipeline's 30-min files by itself (the beat ages out).
+
+on:
+  schedule:
+    - cron: '17 * * * *'
+  workflow_dispatch:
+    inputs:
+      minutes:
+        description: 'Minutes to record (max 350)'
+        default: '350'
+
+concurrency:
+  group: market-live
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  actions: write
+
+jobs:
+  record:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 358
+    steps:
+      - name: Queue the next run (waits in the concurrency group until this one ends)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run market-live.yml --repo "${{ github.repository }}" --ref main || echo "::warning::could not queue the next run (the hourly schedule is the backstop)"
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Apply the schema (additive, idempotent)
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          python3 - <<'PY'
+          import json, os, re, sys, urllib.request, urllib.error
+          ref = re.sub(r'^https://([^.]+)\..*$', r'\1', os.environ['SUPABASE_URL'].strip())
+          q = open('supabase/migrations/20261106090000_market_live.sql').read()
+          req = urllib.request.Request(f'https://api.supabase.com/v1/projects/{ref}/database/query',
+              data=json.dumps({'query': q}).encode(), headers={'Authorization': 'Bearer ' + os.environ['SUPABASE_ACCESS_TOKEN'],
+              'Content-Type': 'application/json', 'User-Agent': 'market-live'})
+          try:
+              urllib.request.urlopen(req, timeout=120).read(); print('schema applied')
+          except urllib.error.HTTPError as e:
+              print(f'::error::schema apply failed: HTTP {e.code} {e.read()[:300]!r}'); sys.exit(1)
+          PY
+      - name: Record every minute
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+        run: node tools/market-live-recorder.mjs --minutes "${{ inputs.minutes || '350' }}"

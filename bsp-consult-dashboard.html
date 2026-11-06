@@ -9019,15 +9019,55 @@ async function loadPolymarket(){
 function mcSigPolyUsd(v){ return '$' + Math.round(v).toLocaleString('en-US'); }
 // Founder 2026-11-01: the cards show ONLY the match-winner market's liquidity (Polymarket's figure / Kalshi's whole order
 // book, both players); a finished match shows the last read before its start. No liquidity → no line, never $0.
-function mcSigLiqRec(vol, m){
-  const rec = vol && vol.byEvent && vol.byEvent[eventKeyOfMatch(m)];
-  if (!rec || rec.liquidity == null || rec.liquidity === '' || !(Number(rec.liquidity) >= 0)) return null;
+// Founder 2026-11-06: the same figure read every minute (market-live.yml → public.market_live_current), frozen by the
+// database at our own live sighting (the real start). Its row wins when it is frozen, when the recorder's beat is fresh
+// (≤ 3 min), or when it is newer than the pipeline file's read; otherwise the 30-min file stands (recorder down).
+function mcSigLiqRec(vol, m, venue){
+  const ek = eventKeyOfMatch(m);
+  const rec = vol && vol.byEvent && vol.byEvent[ek];
+  const fileOk = !!(rec && rec.liquidity != null && rec.liquidity !== '' && Number(rec.liquidity) >= 0);
+  const live = venue && typeof mktLive !== 'undefined' && mktLive.byEvent[ek + '|' + venue];
+  if (live && live.liquidity != null && Number(live.liquidity) >= 0) {
+    const fileAt = fileOk ? Date.parse(rec.liquidityAt || vol.generatedAt) : NaN;
+    if (live.started_at || mcSigLiveFresh() || !fileOk || !(fileAt > Date.parse(live.read_at)))
+      return { liq: Number(live.liquidity), at: mcSigClock(live.read_at), frozen: !!live.started_at };
+  }
+  if (!fileOk) return null;
   return { liq: Number(rec.liquidity), at: mcSigClock(rec.liquidityAt || vol.generatedAt) };
 }
+let mktLive = { byEvent: {}, beatAt: NaN }, mktLiveP = null, mktLiveTimer = null;
+const MKT_LIVE_STALE_MS = 3 * 60e3;   // the recorder writes every 60 s; three missed minutes = down (the line-prices rule)
+function mcSigLiveFresh(){ return typeof mktLive !== 'undefined' && Date.now() - mktLive.beatAt <= MKT_LIVE_STALE_MS; }
+function loadMarketLive(){
+  if (mktLiveP) return mktLiveP;
+  const u = String(window.SUPABASE_URL || '').replace(/\/$/, ''), k = String(window.SUPABASE_ANON_KEY || '');
+  if (!u || u.indexOf('__') === 0 || !k || k.indexOf('__') === 0) return Promise.resolve(mktLive);
+  const get = p => fetch(`${u}/rest/v1/${p}`, { headers: { apikey: k, Authorization: `Bearer ${k}`, Accept: 'application/json' }, cache: 'no-store' })
+    .then(r => r.ok ? r.json() : null).catch(() => null);
+  const since = new Date(Date.now() - 2 * 86400e3).toISOString();
+  mktLiveP = Promise.all([get(`market_live_current?select=event_key,venue,liquidity,read_at,started_at&read_at=gte.${encodeURIComponent(since)}`), get('market_live_beat?select=beat_at')])
+    .then(([rows, beat]) => {
+      if (Array.isArray(rows)) { const by = {}; for (const r of rows) by[r.event_key + '|' + r.venue] = r; mktLive.byEvent = by; }
+      if (Array.isArray(beat)) mktLive.beatAt = beat[0] ? Date.parse(beat[0].beat_at) : NaN;
+      mktLiveP = null; return mktLive;
+    });
+  return mktLiveP;
+}
+// While any Market Signal drawer is open (and the tab is visible), re-read the table every minute and repaint the drawers.
+function mcSigLiveTick(){
+  if (!document.querySelector('.match-card.sig-open') || document.hidden) { clearInterval(mktLiveTimer); mktLiveTimer = null; return; }
+  loadMarketLive().then(() => {
+    for (const card of document.querySelectorAll('.match-card.sig-open')) {
+      const m = matchById(card.dataset.id), panel = card.querySelector('.mc-sigpanel');
+      if (m && panel && card.isConnected && mcSigReady(m)) panel.innerHTML = mcSigBody(m);
+    }
+  });
+}
+function mcSigLiveStart(){ mcSigLiveTick(); if (!mktLiveTimer) mktLiveTimer = setInterval(mcSigLiveTick, 60e3); }
 function mcSigPolyHtml(m){
-  const r = mcSigLiqRec(polymarketVol, m);
+  const r = mcSigLiqRec(polymarketVol, m, 'polymarket');
   if (!r) return '';
-  const title = `Polymarket · match-winner market liquidity (Polymarket's own figure for that market's order book)${r.at ? ' · read ' + r.at : ''}`;
+  const title = `Polymarket · match-winner market liquidity (Polymarket's own figure for that market's order book)${r.at ? ' · read ' + r.at : ''}${r.frozen ? ' · last read before the start' : ''}`;
   return `<div class="mc-sg-rule"></div><div class="mc-sg-poly" title="${psEsc(title)}"><span class="mc-sg-src"><span class="mc-sg-dot"></span>`
     + `<span class="mc-sg-name">Polymarket</span></span><span class="mc-sg-polyv">${mcSigPolyUsd(r.liq)} liquidity</span></div>`;
 }
@@ -9043,9 +9083,9 @@ async function loadKalshi(){
   return kalshiVol;
 }
 function mcSigKalshiHtml(m){
-  const r = mcSigLiqRec(kalshiVol, m);
+  const r = mcSigLiqRec(kalshiVol, m, 'kalshi');
   if (!r) return '';
-  const title = `Kalshi · match-winner market liquidity: every resting order on both players' markets, in dollars (Kalshi's public data)${r.at ? ' · read ' + r.at : ''}`;
+  const title = `Kalshi · match-winner market liquidity: every resting order on both players' markets, in dollars (Kalshi's public data)${r.at ? ' · read ' + r.at : ''}${r.frozen ? ' · last read before the start' : ''}`;
   const rule = (typeof mcSigPolyHtml === 'function' && mcSigPolyHtml(m)) ? '' : '<div class="mc-sg-rule"></div>';   // one rule above the pair
   return `${rule}<div class="mc-sg-poly" title="${psEsc(title)}"><span class="mc-sg-src"><span class="mc-sg-dot"></span>`
     + `<span class="mc-sg-name">Kalshi</span></span><span class="mc-sg-polyv">${mcSigPolyUsd(r.liq)} liquidity</span></div>`;
@@ -10442,6 +10482,7 @@ function toggleSig(btn){
     const panel = card.querySelector('.mc-sigpanel');
     if (panel && card.isConnected && card.classList.contains('sig-open') && mcSigReady(m)) panel.innerHTML = mcSigBody(m);
   });
+  if (m) mcSigLiveStart();   // the per-minute prediction-market reads (founder 2026-11-06)
   if (!m || mcSigReady(m)) return;
   Promise.all([ensureOddsMovement(m), (eloRatings && eloRatings.elo) ? null : loadEloRatings()].map(x => Promise.resolve(x).catch(() => null)))
     .then(() => {
