@@ -162,3 +162,30 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           PINARCH_FIXTURES: .pinarch-fixtures.json
         run: python3 tools/pinarch.py pull --budget 600
+  # founder 2026-11-06 ("price it about 30-45 minutes after the match, automatically"): every dispatch (pg_cron, :07/:22/
+  # :37/:52) also prices today's and yesterday's finished matches that hold no before-start Pinnacle snapshot yet, with
+  # the self-heal (an unmapped match is mapped, a missing payload pulled). Insert-only; the next data run publishes it.
+  # It shares te-import-scheduled.yml's lock so two archive writers never run at once. A failure here is caught by the
+  # 3-hourly run of the same import, which alerts.
+  before-start-prices:
+    needs: pinnacle-history
+    if: always() && inputs.mode != 'verify-report'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    concurrency:
+      group: historical-archive
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Refuse to run off main
+        run: |
+          if [ "${GITHUB_REF}" != "refs/heads/main" ]; then echo "::error::the archive jobs run from main only (got ${GITHUB_REF})"; exit 1; fi
+      - name: Pinnacle (approx.) before the start — today's finished matches (insert-only)
+        env:
+          ODDSPAPI_KEY: ${{ secrets.ODDSPAPI_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          API_TENNIS_KEY: ${{ secrets.API_TENNIS_KEY }}
+        run: python3 tools/tdarch.py sched-import --recent 1 --fresh

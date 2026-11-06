@@ -1278,14 +1278,20 @@ def _played(f):
             and 'walk' not in str(f.get('event_status') or '').lower())
 
 
+def fresh_targets(want, held):
+    """Pure. The 15-minute run's targets: the matches with no before-start snapshot held yet (by event key)."""
+    have = {str(h.get('event_key')) for h in held if h.get('source') == SCHED_SOURCE}
+    return [f for f in want if str(f.get('event_key')) not in have]
+
+
 def sched_heal_targets(want, od_of, series_of, today, days=HEAL_DAYS):
     """Pure. The recent played targets the heal can fix: (unmapped fixtures, fixtureIds with no payload). `unmapped` = no
     Oddspapi fixture held for it; `no_payload` = a mapped fixture with no Pinnacle +30 payload held. A walkover, an
-    unplayed match, today's matches and anything older than `days` days are never targets."""
+    unplayed match and anything older than `days` days are never targets (today's finished matches are)."""
     frm = (today - dt.timedelta(days=days)).isoformat()
     unmapped, no_payload = [], []
     for f in want:
-        if not (frm <= str(f.get('event_date') or '') < today.isoformat()) or not _played(f):
+        if not (frm <= str(f.get('event_date') or '') <= today.isoformat()) or not _played(f):
             continue
         fid, why = od_of(f)
         if fid is None:
@@ -1303,7 +1309,7 @@ def heal_reason_lines(want, od_of, series_of, today, days=HEAL_DAYS):
     frm, out = (today - dt.timedelta(days=days)).isoformat(), []
     for f in want:
         d = str(f.get('event_date') or '')
-        if sched_level(f) != 'atp-nt' or not (frm <= d < today.isoformat()) or not _played(f):
+        if sched_level(f) != 'atp-nt' or not (frm <= d <= today.isoformat()) or not _played(f):
             continue
         fid, why = od_of(f)
         if fid is not None:
@@ -1315,15 +1321,19 @@ def heal_reason_lines(want, od_of, series_of, today, days=HEAL_DAYS):
     return out
 
 
-def cmd_sched_import(dry_run=False, frm=SCHED_FROM, to=None):
-    """Write the before-start snapshots (append-only; a changed price is a new row superseding the old one)."""
-    to = to or (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=1)).date().isoformat()
+def cmd_sched_import(dry_run=False, frm=SCHED_FROM, to=None, fresh=False):
+    """Write the before-start snapshots (append-only; a changed price is a new row superseding the old one). The window
+    ends TODAY (founder 2026-11-06: a price as soon as the match has a result, not the next day; a match with no result is
+    never a target). `fresh` = the 15-minute run (oddspapi-postmatch.yml): it reads only what it needs, the matches that
+    hold no before-start snapshot yet, so it stays light on the database; the 3-hourly run re-checks the whole window."""
+    to = to or dt.datetime.now(dt.timezone.utc).date().isoformat()
     fx, _od, _empty = _lower_fixtures(frm, to, keep_main=True)
     if not fx:
         P.die('api-tennis returned no fixture for the whole window: nothing written')
     R = P._load('roh', 'refresh-odds-history.py')
     idx = json.load(gzip.open(os.path.join(P.ROOT_DIR, P.FIXTURE_INDEX))).get('fixtures') or {}
-    fixtures = P.held_fixture_meta(idx, P.select_all(P.RAW, 'id,fixture_id,books,meta', 'meta->>trigger=eq.backfill'))
+    _bf = 'meta->>trigger=eq.backfill' + (f"&meta->>startTime=gte.{(dt.date.fromisoformat(frm) - dt.timedelta(days=2)).isoformat()}" if fresh else '')
+    fixtures = P.held_fixture_meta(idx, P.select_all(P.RAW, 'id,fixture_id,books,meta', _bf))
     disc = [f for f in fixtures.values() if f.get('categoryName') in P.BACKFILL_CATEGORIES]
     by_day_od, bmap = P._fixtures_by_day(disc), P._board_map()
     oc = {}
@@ -1335,6 +1345,14 @@ def cmd_sched_import(dry_run=False, frm=SCHED_FROM, to=None):
     since = dt.datetime.fromisoformat(frm + 'T00:00:00+00:00') - dt.timedelta(days=1)
     fl = {str(x['event_key']): P.iso_ms(x.get('first_live_seen_at')) for x in P.flips(since)}
     want = [f for f in fx if sched_level(f) in SCHED_LEVELS]
+    held_sched = None
+    if fresh:
+        keys = sorted({str(f['event_key']) for f in want if f.get('event_key')})
+        held_sched = []
+        for i in range(0, len(keys), 100):
+            held_sched += P.select_all(SNAP, 'id,dedupe_key,source,match_date,tournament,winner,loser,supersedes,event_key',
+                                       'event_key=in.(' + ','.join(keys[i:i + 100]) + ')')
+        want = fresh_targets(want, held_sched)
     fids = sorted({od_of(f)[0] for f in want if od_of(f)[0]})
     import concurrent.futures as cf
     def chunk_series(ch):
@@ -1392,7 +1410,7 @@ def cmd_sched_import(dry_run=False, frm=SCHED_FROM, to=None):
         heal['skipped: no ODDSPAPI_KEY'] = 1
     fetched = dt.datetime.now(dt.timezone.utc).isoformat(timespec='seconds')
     rows, rep = sched_rows(want, od_of, fixtures, series_of, fl.get, fetched, frm, to)
-    held = P.select_all(SNAP, 'id,dedupe_key,source,match_date,tournament,winner,loser,supersedes,event_key')
+    held = held_sched if fresh else P.select_all(SNAP, 'id,dedupe_key,source,match_date,tournament,winner,loser,supersedes,event_key')
     add = plan_snapshots(rows, held)
     ids = []
     if not dry_run:
@@ -2159,7 +2177,7 @@ if __name__ == '__main__':
         _frm = a[a.index('--from') + 1] if '--from' in a else SCHED_FROM
         if '--recent' in a:
             _frm = max(_frm, (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=int(a[a.index('--recent') + 1]))).date().isoformat())
-        cmd_sched_import('--dry-run' in a, _frm, a[a.index('--to') + 1] if '--to' in a else None)
+        cmd_sched_import('--dry-run' in a, _frm, a[a.index('--to') + 1] if '--to' in a else None, '--fresh' in a)
     elif a[0] == 'te-import':
         cmd_te_import(a[1], '--dry-run' in a)
     elif a[0] == 'te-import-new':

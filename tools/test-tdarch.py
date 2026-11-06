@@ -712,12 +712,12 @@ _hod = {1: (None, 'no Oddspapi fixture held'), 2: ('F2', True), 3: ('F3', True),
         8: (None, 'two or more Oddspapi fixtures'), 9: ('F3', True)}
 _hser = {'F2': (None, 'no pinnacle+30 payload held'), 'F3': (77, {'121': [], '122': []})}
 hu, hn = T.sched_heal_targets(_hw, lambda f: _hod[f['event_key']], lambda fid: _hser[fid], _today)
-check('self-heal: an unmapped played match of the last 4 days is mapped (1); a mapped one with no payload is pulled once (F2); a walkover, an unplayed match, today and older than 4 days are not targets; two candidates are not guessed',
-      [f['event_key'] for f in hu] == [1] and hn == ['F2'], (hu, hn))
+check('self-heal: an unmapped played match of the last 4 days or today is mapped (1, 5); a mapped one with no payload is pulled once (F2); a walkover, an unplayed match and older than 4 days are not targets; two candidates are not guessed',
+      [f['event_key'] for f in hu] == [1, 5] and hn == ['F2'], (hu, hn))
 hl = T.heal_reason_lines(_hw, lambda f: _hod[f['event_key']], lambda fid: _hser[fid], _today)
 check('self-heal: the public notice names every recent played ATP main-draw match still without a source, with why — never one that has a payload',
       hl == ['Paris 2026-11-04 A1 v B1: no Oddspapi fixture held', 'Paris 2026-11-03 A2 v B2: no pinnacle+30 payload held',
-             'Paris 2026-11-05 A8 v B8: two or more Oddspapi fixtures'], hl)
+             'Paris 2026-11-06 A5 v B5: no Oddspapi fixture held', 'Paris 2026-11-05 A8 v B8: two or more Oddspapi fixtures'], hl)
 _hser2 = {'F2': (55, {'121': [], '122': []}), 'F3': (77, {'121': [], '122': []})}
 check('self-heal: once the payload is held the match is no longer a target (control: before the pull it was)',
       T.sched_heal_targets(_hw, lambda f: _hod[f['event_key']], lambda fid: _hser2[fid], _today)[1] == [] and hn == ['F2'])
@@ -725,6 +725,17 @@ _hsrc = open(os.path.join(HERE, 'tdarch.py')).read()
 check('self-heal: the pulled payload is stored insert-only as a back-fill row (so later runs hold the fixture) and the workflow passes the Oddspapi key',
       "'trigger': 'backfill', 'via': 'sched-heal'" in _hsrc and 'P.insert(P.RAW' in _hsrc
       and 'ODDSPAPI_KEY: ${{ secrets.ODDSPAPI_KEY }}' in open(os.path.join(HERE, '..', '.github', 'workflows', 'te-import-scheduled.yml')).read())
+
+# founder 2026-11-06 ("price it about 30-45 minutes after the match"): today's finished matches are targets, and the
+# 15-minute run skips a match that already holds a before-start snapshot
+_fh = [{'event_key': 1, 'source': T.SCHED_SOURCE}, {'event_key': 2, 'source': 'api-tennis Pinnacle'}]
+check('fast run: a match holding a before-start snapshot is skipped; one holding only another source is still a target',
+      [f['event_key'] for f in T.fresh_targets([_hf(1, '2026-11-06'), _hf(2, '2026-11-06'), _hf(3, '2026-11-06')], _fh)] == [2, 3])
+_hsrc2 = open(os.path.join(HERE, 'tdarch.py')).read()
+_pm = open(os.path.join(HERE, '..', '.github', 'workflows', 'oddspapi-postmatch.yml')).read()
+check('fast run: the window ends today (never yesterday) and oddspapi-postmatch.yml runs the 15-minute import with the shared archive lock',
+      "to = to or dt.datetime.now(dt.timezone.utc).date().isoformat()" in _hsrc2 and 'timedelta(days=1)).date().isoformat()\n    fx, _od' not in _hsrc2
+      and 'tools/tdarch.py sched-import --recent 1 --fresh' in _pm and 'group: historical-archive' in _pm)
 
 print(f'\ntest-tdarch: {passed} passed, {failed} failed')
 sys.exit(1 if failed else 0)
