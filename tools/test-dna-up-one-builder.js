@@ -16,8 +16,9 @@
 //     board and the radar) whenever the DNA file was sourced from this SR build.
 //  6. Both dashboard radars print no Δ for Under pressure (its baseline is career,
 //     not the "2024–now" the label names).
-//  7. surface-ratings.yml re-sources the DNA axis and commits both files together,
-//     so the radar never trails the Ratings board.
+//  7. ONE writer per file (architecture stage 7): surface-ratings.yml never writes the
+//     DNA file; dna-ratings.yml runs on its completion in re-source mode (no rebuild),
+//     so the radar follows the Ratings board within minutes.
 //  8. dna-ratings.yml rebuilds its commit on the current main (re-sourced from main's
 //     surface-ratings.json, re-gated) instead of line-merging two generated files.
 //
@@ -32,7 +33,9 @@
 //   M7  a DNA Under-pressure value differs from surface-ratings           -> 5
 //   M8  match radar Δ guard removed                                        -> 6
 //   M9  H2H radar Δ guard removed                                          -> 6
-//   M10 surface-ratings.yml commits surface-ratings.json alone             -> 7
+//   M10 surface-ratings.yml commits the DNA file again (two writers)       -> 7
+//   M13 dna-ratings.yml no longer runs on surface-ratings' completion      -> 7
+//   M14 re-source mode still calls api-tennis (the rebuild not skipped)    -> 7
 //   M11 dna-ratings.yml back to rebasing its commit (commitback-push.sh)   -> 8
 //   M12 dna-ratings.yml loop no longer restores this run's built file      -> 8
 // ─────────────────────────────────────────────────────────────────────────────
@@ -204,7 +207,7 @@ check('5. committed DNA file carries the surface-ratings value', () => {
   if (srcMeta.generatedAt !== srFile.generatedAt) {
     committedAgree(dnaFile, srFile, B.UP_SCOPE_FROM_SR, false);
     console.log(`        (DNA sourced from SR ${srcMeta.generatedAt}; committed SR is ${srFile.generatedAt} — ` +
-      'surface-ratings.yml re-sources both together, so this is a race; value check skipped, scope check run)');
+      'dna-ratings.yml re-sources on surface-ratings.yml\'s completion, so this is a race; value check skipped, scope check run)');
     return;
   }
   const n = committedAgree(dnaFile, srFile, B.UP_SCOPE_FROM_SR, true);
@@ -261,20 +264,36 @@ check('M9 is caught by check 6 (H2H radar guard removed)', () => {
   assert.throws(() => deltasOk(radarDeltas(d)));
 });
 
-// 7 — the SR workflow keeps the two files in one commit.
+// 7 — one writer: the SR workflow never writes the DNA file; the DNA workflow re-sources
+// on the SR workflow's completion, without rebuilding (no api-tennis calls).
 const SR_WF = fs.readFileSync(path.join(ROOT, '.github/workflows/surface-ratings.yml'), 'utf8');
-function srWorkflowResyncs(wf) {
-  const resource = wf.indexOf('node tools/dna-up-from-surface-ratings.js');
-  const commit = wf.indexOf('git add surface-ratings.json dna-apitennis-ratings.json');
-  assert.ok(resource > 0, 'surface-ratings.yml does not re-source the DNA Under-pressure axis');
-  assert.ok(commit > resource, 'surface-ratings.yml does not commit the re-sourced DNA file with surface-ratings.json');
-  assert.ok(wf.indexOf('node tools/test-dna-up-one-builder.js', resource) > resource, 'the re-sourced file is not gated');
+const DNA_WF7 = fs.readFileSync(path.join(ROOT, '.github/workflows/dna-ratings.yml'), 'utf8');
+function oneDnaWriter(sr, dna) {
+  const code = sr.split('\n').filter(l => !/^\s*#/.test(l)).join('\n');
+  assert.ok(!/git add[^\n]*dna-apitennis-ratings\.json/.test(code), 'surface-ratings.yml commits the DNA file (two writers)');
+  assert.ok(!/dna-up-from-surface-ratings\.js/.test(code), 'surface-ratings.yml re-sources the DNA file itself');
+  const name = (sr.match(/^name:\s*(.+)$/m) || [])[1];
+  assert.ok(name && dna.includes(`workflows: ['${name.trim()}']`) && /workflow_run:[\s\S]{0,80}types: \[completed\]/.test(dna),
+    'dna-ratings.yml does not run on surface-ratings.yml\'s completion');
+  assert.ok(/RESOURCE_ONLY: \$\{\{ github\.event_name == 'workflow_run' \}\}/.test(dna), 'no re-source mode');
+  const rebuild = dna.slice(dna.indexOf('- name: Rebuild DNA ratings'));
+  assert.ok(/^\s+if: env\.RESOURCE_ONLY != 'true'\s*$/m.test(rebuild.split('\n').slice(1, 3).join('\n')), 're-source mode still rebuilds (calls api-tennis)');
 }
-check('7. surface-ratings.yml re-sources and commits the DNA file', () => srWorkflowResyncs(SR_WF));
-check('M10 is caught by check 7 (SR committed alone)', () => {
-  const w = SR_WF.split('git add surface-ratings.json dna-apitennis-ratings.json').join('git add surface-ratings.json');
+check('7. one writer of the DNA file, re-sourced on the SR run\'s completion', () => oneDnaWriter(SR_WF, DNA_WF7));
+check('M10 is caught by check 7 (SR commits the DNA file again)', () => {
+  const w = SR_WF.split('git add surface-ratings.json').join('git add surface-ratings.json dna-apitennis-ratings.json');
   assert.notStrictEqual(w, SR_WF, 'M10 anchor not found');
-  assert.throws(() => srWorkflowResyncs(w));
+  assert.throws(() => oneDnaWriter(w, DNA_WF7));
+});
+check('M13 is caught by check 7 (no workflow_run trigger)', () => {
+  const w = DNA_WF7.replace(/  workflow_run:\n    workflows: \[[^\]]*\]\n    types: \[completed\]\n/, '');
+  assert.notStrictEqual(w, DNA_WF7, 'M13 anchor not found');
+  assert.throws(() => oneDnaWriter(SR_WF, w));
+});
+check('M14 is caught by check 7 (re-source mode rebuilds)', () => {
+  const w = DNA_WF7.replace("- name: Rebuild DNA ratings\n        if: env.RESOURCE_ONLY != 'true'\n", '- name: Rebuild DNA ratings\n');
+  assert.notStrictEqual(w, DNA_WF7, 'M14 anchor not found');
+  assert.throws(() => oneDnaWriter(SR_WF, w));
 });
 
 // 8 — the DNA bot never rebases a generated file over the SR bot's copy.
