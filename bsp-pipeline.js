@@ -6535,6 +6535,51 @@ async function buildPlayerProfiles(matches, surfaceMap) {
 // Production passes nothing and therefore gets the floor, and
 // tools/test-profile-roster-floor.js asserts the production call site does not
 // carry an override - so this cannot become the flag someone leaves on.
+// Stage 6 (2026-11-07) · the per-player profile shards, written as one atomic set:
+// every file goes into `${dir}.tmp-<pid>/`, then `${dir}` is renamed aside and the new
+// folder renamed into place (two renames, no window with a half-written set). A
+// failure before the swap removes the temp folder and leaves the old set untouched.
+function writeProfileShardsAtomic(dir, allProfiles, tourAverage) {
+  const tmp = `${dir}.tmp-${process.pid}`, old = `${dir}.old-${process.pid}`;
+  fs.rmSync(tmp, { recursive: true, force: true });
+  fs.mkdirSync(tmp, { recursive: true });
+  let written = 0;
+  try {
+    for (const [key, profile] of Object.entries(allProfiles)) {
+      if (!profile) continue;
+      // tourAverage travels with each shard: the page's "vs tour" comparisons need it.
+      fs.writeFileSync(`${tmp}/${key}.json`, JSON.stringify({ key, profile, tourAverage }));
+      written++;
+    }
+  } catch (err) {
+    fs.rmSync(tmp, { recursive: true, force: true });
+    throw err;
+  }
+  const had = fs.existsSync(dir);
+  if (had) fs.renameSync(dir, old);
+  fs.renameSync(tmp, dir);
+  if (had) fs.rmSync(old, { recursive: true, force: true });
+  return written;
+}
+
+// Stage 6 (2026-11-07) · profile-roster.json — the slim roster the page reads instead of
+// fetching player-profiles.json up front. EXACTLY the eager key set (the same players the
+// page's roster-wide readers, clickability and namesake counts see today), and only the
+// fields those readers use, copied verbatim (never re-derived), plus the file's
+// tourAverage / radarCalibration. The full profile is the per-player shard.
+function profileRoster(store) {
+  const players = {};
+  for (const [k, p] of Object.entries((store && store.players) || {})) {
+    if (!p) continue;
+    const m0 = p.recentForm && Array.isArray(p.recentForm.matches) ? p.recentForm.matches[0] : null;
+    players[k] = { key: p.key, name: p.name, rank: p.rank, country: p.country, age: p.age,
+      lastTournament: m0 ? m0.tournament : null };
+  }
+  const out = { fetchedAt: store && store.fetchedAt, tourAverage: store && store.tourAverage, players };
+  if (store && store.radarCalibration) out.radarCalibration = store.radarCalibration;
+  return out;
+}
+
 function writePlayerShardsAndIndex(allProfiles, tourAverage, wrongSchemaRejections = 0, opts = {}) {
   const dir = 'profiles';
 
@@ -6566,19 +6611,11 @@ function writePlayerShardsAndIndex(allProfiles, tourAverage, wrongSchemaRejectio
       + `Failing closed: shards and index are not rewritten, yesterday's profiles stay live.`);
   }
 
-  fs.mkdirSync(dir, { recursive: true });
   // Rewrite from scratch each run so a player who leaves the roster stops being
-  // served a profile that no longer refreshes.
-  for (const f of fs.readdirSync(dir)) if (f.endsWith('.json')) fs.unlinkSync(`${dir}/${f}`);
-
-  let written = 0;
-  for (const [key, profile] of Object.entries(allProfiles)) {
-    if (!profile) continue;
-    // tourAverage travels with each shard: the page's "vs tour" comparisons need
-    // it, and a shard may be opened without the eager file's copy being relevant.
-    fs.writeFileSync(`${dir}/${key}.json`, JSON.stringify({ key, profile, tourAverage }));
-    written++;
-  }
+  // served a profile that no longer refreshes. Stage 6 (2026-11-07): ATOMIC — every
+  // shard is written into a fresh sibling folder, then the folder is swapped in with
+  // renames, so a run that dies mid-write leaves the previous complete set in place.
+  const written = writeProfileShardsAtomic(dir, allProfiles, tourAverage);
 
   const byKey = new Map();
   for (const row of atpStandingRows) {
@@ -7928,6 +7965,9 @@ async function runPipeline() {
   // explicit delete that used to sit here only covered the one carrier it named.
   writeJsonAtomic('player-profiles.json', profilesWithoutTournamentHistory(playerProfiles), true);
   console.log(`Wrote player-profiles.json (${Object.keys(playerProfiles.players).length} eager player profile(s), tournamentHistory sharded).`);
+  // Stage 6: the slim roster the page loads instead of the eager file (same key set).
+  writeJsonAtomic('profile-roster.json', profileRoster(playerProfiles), true);
+  console.log(`Wrote profile-roster.json (${Object.keys(playerProfiles.players).length} roster player(s)).`);
 
   // Backfill the per-match embedded tournament histories (p1/p2TournamentHistory)
   // with the same pre-2021 archive used for the profiles, so the Today's Matches
@@ -8416,7 +8456,7 @@ if (require.main === module) {
   });
 }
 
-module.exports = { applyQualifyingRule, venueHintKeyFor, buildDrawMatchesStore, feedSetScores, drawFixtureRow, feedRoundCode, liveCardCheck, isCardableFixture, fixtureLiveState, olympicSurface, fixtureSurface, modelH2hMatches, modelMatchStarted, modelEventKey, modelPreMatchCandidates, buildModelOutput, isUnplayedFinishedFixture, buildMatchObject, buildUpcomingMatchObject, buildOneProfile, profileNameFromFixtures, findApiTennisFixture, fixtureFirstIsHome, pinnacleOrFirst, normalizeName, venueAndCourtSpeedFor, courtConditionsFor, courtSpeedRecordFromFixtures, COURT_CONDITIONS, ocsMatchKey, ocsNameKey, fetchH2H, h2hCountsInAtpRecord, H2H_NOT_ATP_RECORD, FORM_NOT_ATP_RECORD, recentFormPct, capRecentFormMatches, PROFILE_FORM_WINDOW, tourLabelOf, aggregatePlayerWue, aggregateStatsFromFixtures, isCancelledFixture, profileRosterFloorVerdict, lastPublishedRosterCount, profilesWithoutTournamentHistory, PROFILE_ROSTER_BACKSTOP, PROFILE_ROSTER_RATIO, MAX_OPPONENT_BUILDS_PER_RUN, isIndoorTournament, loadTournamentCourtMap, fetchRecentSinglesFixtures, recentFormFromFixtures, progressionSheetMatches, buildTournamentProgression, extractProgressionMetrics, buildSetStatsFromFixture, buildMatchStatsFromFixture, extractFormShards, buildRecentFormForMatch,
+module.exports = { profileRoster, writeProfileShardsAtomic, applyQualifyingRule, venueHintKeyFor, buildDrawMatchesStore, feedSetScores, drawFixtureRow, feedRoundCode, liveCardCheck, isCardableFixture, fixtureLiveState, olympicSurface, fixtureSurface, modelH2hMatches, modelMatchStarted, modelEventKey, modelPreMatchCandidates, buildModelOutput, isUnplayedFinishedFixture, buildMatchObject, buildUpcomingMatchObject, buildOneProfile, profileNameFromFixtures, findApiTennisFixture, fixtureFirstIsHome, pinnacleOrFirst, normalizeName, venueAndCourtSpeedFor, courtConditionsFor, courtSpeedRecordFromFixtures, COURT_CONDITIONS, ocsMatchKey, ocsNameKey, fetchH2H, h2hCountsInAtpRecord, H2H_NOT_ATP_RECORD, FORM_NOT_ATP_RECORD, recentFormPct, capRecentFormMatches, PROFILE_FORM_WINDOW, tourLabelOf, aggregatePlayerWue, aggregateStatsFromFixtures, isCancelledFixture, profileRosterFloorVerdict, lastPublishedRosterCount, profilesWithoutTournamentHistory, PROFILE_ROSTER_BACKSTOP, PROFILE_ROSTER_RATIO, MAX_OPPONENT_BUILDS_PER_RUN, isIndoorTournament, loadTournamentCourtMap, fetchRecentSinglesFixtures, recentFormFromFixtures, progressionSheetMatches, buildTournamentProgression, extractProgressionMetrics, buildSetStatsFromFixture, buildMatchStatsFromFixture, extractFormShards, buildRecentFormForMatch,
   // The Career-record pair. Exported together on purpose: their whole contract
   // is that the counts one returns are tallyable from the rows the other
   // returns, and that is what ten8-career-verify.js asserts.

@@ -1040,6 +1040,8 @@ jobs:
           # out of it 404s live while every test still passes, so player-index.json
           # is asserted below.
           cp player-index.json _site/
+          # Stage 6: the slim profile roster (eager key set) the page loads instead of player-profiles.json.
+          cp profile-roster.json _site/
           # TEN-243, founder-authorised 2026-09-21. This was
           #   cp profiles/*.json _site/profiles/ 2>/dev/null || true
           # and `|| true` swallowed BOTH failures the same way: "the glob matched
@@ -1353,7 +1355,7 @@ jobs:
                    holdbreak-heatmap.js player-profile-v2.js settlement.js market-edge-core.js tournament-identity.js h2h-core.js wue-sheet.js draw-view.js \
                    esc-nav.js pbp-integrity.js \
                    matches.json player-profiles.json career-splits-tour.json form-index.json \
-                   player-index.json \
+                   player-index.json profile-roster.json \
                    player-atp-aliases.json \
                    matchup-matrix.json playing-styles.json style-radar.json \
                    dna-apitennis-ratings.json \
