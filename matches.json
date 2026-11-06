@@ -12,23 +12,23 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 2.1,
-      "p2": 1.72,
+      "p1": 2,
+      "p2": 1.8,
       "bookmaker": "bet365",
-      "seenAt": "2026-11-06T00:29:19.761Z"
+      "seenAt": "2026-11-06T09:54:41.083Z"
     },
     "bestOdds": {
       "p1": {
-        "price": 2.17,
-        "bookmaker": "Pncl"
+        "price": 2.1,
+        "bookmaker": "Betfair"
       },
       "p2": {
-        "price": 1.76,
+        "price": 1.83,
         "bookmaker": "Pncl"
       },
-      "seenAt": "2026-11-06T00:29:19.761Z"
+      "seenAt": "2026-11-06T09:54:41.083Z"
     },
-    "tournamentRound": null,
+    "tournamentRound": "ATP Paris - Quarter-finals",
     "qualifying": false,
     "boardQualifying": false,
     "qualifyingRound": null,
@@ -2837,9 +2837,9 @@
       "category": "Medium"
     },
     "weather": {
-      "temperature": 12.2,
-      "windSpeed": 4.5,
-      "humidity": 65,
+      "temperature": 11.9,
+      "windSpeed": 5.6,
+      "humidity": 62,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Nov 2 – 8, 2026",
@@ -2901,11 +2901,11 @@
           "dow": "Fri",
           "label": "Nov 6",
           "code": 3,
-          "hi": 13,
-          "lo": 8,
-          "rain": 5,
-          "wind": 5,
-          "humidity": 77,
+          "hi": 12,
+          "lo": 7,
+          "rain": 15,
+          "wind": 6,
+          "humidity": 76,
           "isMatch": true,
           "available": true
         },
@@ -2913,12 +2913,12 @@
           "date": "2026-11-07",
           "dow": "Sat",
           "label": "Nov 7",
-          "code": 45,
+          "code": 3,
           "hi": 12,
           "lo": 5,
-          "rain": 0,
-          "wind": 6,
-          "humidity": 83,
+          "rain": 3,
+          "wind": 5,
+          "humidity": 80,
           "isMatch": false,
           "available": true
         },
@@ -2927,11 +2927,11 @@
           "dow": "Sun",
           "label": "Nov 8",
           "code": 45,
-          "hi": 9,
+          "hi": 7,
           "lo": 5,
-          "rain": 0,
+          "rain": 3,
           "wind": 8,
-          "humidity": 87,
+          "humidity": 97,
           "isMatch": false,
           "available": true
         }
@@ -2997,6 +2997,34 @@
               [
                 "2026-11-05T21:34:27.006Z",
                 2.17
+              ],
+              [
+                "2026-11-06T04:11:49.697Z",
+                2.2
+              ],
+              [
+                "2026-11-06T04:11:50.688Z",
+                2.17
+              ],
+              [
+                "2026-11-06T04:45:08.222Z",
+                2.18
+              ],
+              [
+                "2026-11-06T05:51:31.624Z",
+                2.19
+              ],
+              [
+                "2026-11-06T07:43:49.350Z",
+                2.16
+              ],
+              [
+                "2026-11-06T07:44:41.855Z",
+                2.08
+              ],
+              [
+                "2026-11-06T09:41:13.706Z",
+                2.09
               ]
             ],
             "p2": [
@@ -3047,6 +3075,34 @@
               [
                 "2026-11-05T21:34:27.006Z",
                 1.757
+              ],
+              [
+                "2026-11-06T04:11:49.697Z",
+                1.74
+              ],
+              [
+                "2026-11-06T04:11:50.688Z",
+                1.763
+              ],
+              [
+                "2026-11-06T04:45:08.222Z",
+                1.757
+              ],
+              [
+                "2026-11-06T05:51:31.624Z",
+                1.746
+              ],
+              [
+                "2026-11-06T07:43:49.350Z",
+                1.769
+              ],
+              [
+                "2026-11-06T07:44:41.855Z",
+                1.826
+              ],
+              [
+                "2026-11-06T09:41:13.706Z",
+                1.833
               ]
             ]
           },
@@ -3314,7 +3370,7 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-11-06T01:20:40.000Z"
+            "checkedAt": "2026-11-06T10:21:07.000Z"
           },
           "Superbet": {
             "source": "odds-api.io",
@@ -3456,59 +3512,59 @@
       }
     },
     "bookNow": {
+      "WilliamHill": {
+        "p1": 2,
+        "p2": 1.8,
+        "seenAt": "2026-11-06T09:57:16.898Z",
+        "since": "2026-11-06T09:57:16.898Z"
+      },
+      "bet365": {
+        "p1": 2,
+        "p2": 1.8,
+        "seenAt": "2026-11-06T09:57:16.898Z",
+        "since": "2026-11-06T09:57:16.898Z"
+      },
       "Marathon": {
-        "p1": 2.11,
-        "p2": 1.72,
-        "seenAt": "2026-11-06T00:31:32.019Z",
-        "since": "2026-11-06T00:31:32.019Z"
+        "p1": 2.06,
+        "p2": 1.75,
+        "seenAt": "2026-11-06T09:57:16.898Z",
+        "since": "2026-11-06T09:57:16.898Z"
       },
       "Betfair": {
         "p1": 2.1,
         "p2": 1.73,
-        "seenAt": "2026-11-06T00:31:32.019Z",
+        "seenAt": "2026-11-06T09:57:16.898Z",
         "since": "2026-11-06T00:31:32.019Z"
-      },
-      "1xBet": {
-        "p1": 2.14,
-        "p2": 1.74,
-        "seenAt": "2026-11-06T00:31:32.019Z",
-        "since": "2026-11-06T00:31:32.019Z"
-      },
-      "Betano": {
-        "p1": 2.1,
-        "p2": 1.72,
-        "seenAt": "2026-11-06T00:31:32.019Z",
-        "since": "2026-11-06T00:31:32.019Z"
-      },
-      "WilliamHill": {
-        "p1": 2.1,
-        "p2": 1.73,
-        "seenAt": "2026-11-06T00:31:32.019Z",
-        "since": "2026-11-05T19:03:19.459Z"
       },
       "BetVictor": {
-        "p1": 2.05,
-        "p2": 1.7,
-        "seenAt": "2026-11-06T00:31:32.019Z",
-        "since": "2026-11-06T00:31:32.019Z"
-      },
-      "bet365": {
-        "p1": 2.1,
-        "p2": 1.72,
-        "seenAt": "2026-11-06T00:31:32.019Z",
-        "since": "2026-11-05T19:03:19.459Z"
-      },
-      "Sbo": {
-        "p1": 2.04,
-        "p2": 1.65,
-        "seenAt": "2026-11-06T00:31:32.019Z",
-        "since": "2026-11-06T00:31:32.019Z"
+        "p1": 2,
+        "p2": 1.73,
+        "seenAt": "2026-11-06T09:57:16.898Z",
+        "since": "2026-11-06T09:57:16.898Z"
       },
       "Pncl": {
-        "p1": 2.17,
-        "p2": 1.76,
-        "seenAt": "2026-11-06T00:31:32.019Z",
-        "since": "2026-11-06T00:31:32.019Z"
+        "p1": 2.08,
+        "p2": 1.83,
+        "seenAt": "2026-11-06T09:57:16.898Z",
+        "since": "2026-11-06T09:57:16.898Z"
+      },
+      "Sbo": {
+        "p1": 2.03,
+        "p2": 1.67,
+        "seenAt": "2026-11-06T09:57:16.898Z",
+        "since": "2026-11-06T09:57:16.898Z"
+      },
+      "1xBet": {
+        "p1": 2.09,
+        "p2": 1.78,
+        "seenAt": "2026-11-06T09:57:16.898Z",
+        "since": "2026-11-06T09:57:16.898Z"
+      },
+      "Betano": {
+        "p1": 2,
+        "p2": 1.78,
+        "seenAt": "2026-11-06T09:57:16.898Z",
+        "since": "2026-11-06T09:57:16.898Z"
       }
     },
     "pinnacleOpen": {
@@ -3541,20 +3597,20 @@
       "p1": 1.57,
       "p2": 2.37,
       "bookmaker": "bet365",
-      "seenAt": "2026-11-06T00:29:19.761Z"
+      "seenAt": "2026-11-06T09:54:41.083Z"
     },
     "bestOdds": {
       "p1": {
-        "price": 1.67,
-        "bookmaker": "Betfair"
-      },
-      "p2": {
-        "price": 2.49,
+        "price": 1.59,
         "bookmaker": "Pncl"
       },
-      "seenAt": "2026-11-06T00:29:19.761Z"
+      "p2": {
+        "price": 2.52,
+        "bookmaker": "Betano"
+      },
+      "seenAt": "2026-11-06T09:54:41.083Z"
     },
-    "tournamentRound": null,
+    "tournamentRound": "ATP Paris - Quarter-finals",
     "qualifying": false,
     "boardQualifying": false,
     "qualifyingRound": null,
@@ -6247,9 +6303,9 @@
       "category": "Medium"
     },
     "weather": {
-      "temperature": 12.8,
-      "windSpeed": 4.8,
-      "humidity": 63,
+      "temperature": 12.4,
+      "windSpeed": 5.4,
+      "humidity": 60,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Nov 2 – 8, 2026",
@@ -6312,10 +6368,10 @@
           "label": "Nov 6",
           "code": 3,
           "hi": 13,
-          "lo": 8,
-          "rain": 5,
+          "lo": 7,
+          "rain": 15,
           "wind": 5,
-          "humidity": 77,
+          "humidity": 76,
           "isMatch": true,
           "available": true
         },
@@ -6325,10 +6381,10 @@
           "label": "Nov 7",
           "code": 45,
           "hi": 12,
-          "lo": 5,
-          "rain": 0,
-          "wind": 6,
-          "humidity": 83,
+          "lo": 4,
+          "rain": 3,
+          "wind": 5,
+          "humidity": 81,
           "isMatch": false,
           "available": true
         },
@@ -6337,11 +6393,11 @@
           "dow": "Sun",
           "label": "Nov 8",
           "code": 45,
-          "hi": 9,
-          "lo": 5,
-          "rain": 0,
-          "wind": 8,
-          "humidity": 87,
+          "hi": 8,
+          "lo": 4,
+          "rain": 3,
+          "wind": 7,
+          "humidity": 93,
           "isMatch": false,
           "available": true
         }
@@ -6355,123 +6411,6 @@
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1066_l-van-assche.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/3317_r-hijikata.jpg",
     "tournamentKey": "1725",
-    "bookOpens": {
-      "WilliamHill": {
-        "p1": 1.57,
-        "p2": 2.38,
-        "seenAt": "2026-11-06T00:31:32.019Z"
-      },
-      "Betfair": {
-        "p1": 1.67,
-        "p2": 2.2,
-        "seenAt": "2026-11-06T00:31:32.019Z"
-      },
-      "BetVictor": {
-        "p1": 1.57,
-        "p2": 2.25,
-        "seenAt": "2026-11-06T00:31:32.019Z"
-      },
-      "Betano": {
-        "p1": 1.55,
-        "p2": 2.42,
-        "seenAt": "2026-11-06T00:31:32.019Z"
-      },
-      "Marathon": {
-        "p1": 1.57,
-        "p2": 2.39,
-        "seenAt": "2026-11-06T00:31:32.019Z"
-      },
-      "Sbo": {
-        "p1": 1.5,
-        "p2": 2.26,
-        "seenAt": "2026-11-06T00:31:32.019Z"
-      },
-      "bet365": {
-        "p1": 1.57,
-        "p2": 2.37,
-        "seenAt": "2026-11-06T00:31:32.019Z"
-      },
-      "Pncl": {
-        "p1": 1.59,
-        "p2": 2.49,
-        "seenAt": "2026-11-06T00:31:32.019Z"
-      },
-      "1xBet": {
-        "p1": 1.59,
-        "p2": 2.42,
-        "seenAt": "2026-11-06T00:31:32.019Z"
-      }
-    },
-    "bookNow": {
-      "WilliamHill": {
-        "p1": 1.57,
-        "p2": 2.38,
-        "seenAt": "2026-11-06T00:31:32.019Z",
-        "since": "2026-11-06T00:31:32.019Z"
-      },
-      "Betfair": {
-        "p1": 1.67,
-        "p2": 2.2,
-        "seenAt": "2026-11-06T00:31:32.019Z",
-        "since": "2026-11-06T00:31:32.019Z"
-      },
-      "BetVictor": {
-        "p1": 1.57,
-        "p2": 2.25,
-        "seenAt": "2026-11-06T00:31:32.019Z",
-        "since": "2026-11-06T00:31:32.019Z"
-      },
-      "Betano": {
-        "p1": 1.55,
-        "p2": 2.42,
-        "seenAt": "2026-11-06T00:31:32.019Z",
-        "since": "2026-11-06T00:31:32.019Z"
-      },
-      "Marathon": {
-        "p1": 1.57,
-        "p2": 2.39,
-        "seenAt": "2026-11-06T00:31:32.019Z",
-        "since": "2026-11-06T00:31:32.019Z"
-      },
-      "Sbo": {
-        "p1": 1.5,
-        "p2": 2.26,
-        "seenAt": "2026-11-06T00:31:32.019Z",
-        "since": "2026-11-06T00:31:32.019Z"
-      },
-      "bet365": {
-        "p1": 1.57,
-        "p2": 2.37,
-        "seenAt": "2026-11-06T00:31:32.019Z",
-        "since": "2026-11-06T00:31:32.019Z"
-      },
-      "Pncl": {
-        "p1": 1.59,
-        "p2": 2.49,
-        "seenAt": "2026-11-06T00:31:32.019Z",
-        "since": "2026-11-06T00:31:32.019Z"
-      },
-      "1xBet": {
-        "p1": 1.59,
-        "p2": 2.42,
-        "seenAt": "2026-11-06T00:31:32.019Z",
-        "since": "2026-11-06T00:31:32.019Z"
-      }
-    },
-    "openingOdds": {
-      "p1": 1.57,
-      "p2": 2.37,
-      "bookmaker": "bet365",
-      "seenAt": "2026-11-06T00:29:24.966Z",
-      "src": "vendor-sighting",
-      "vendor": "api-tennis"
-    },
-    "pinnacleOpen": {
-      "p1": 1.59,
-      "p2": 2.49,
-      "ts": "2026-11-06T00:31:32.019Z",
-      "vfP1": 0.6103
-    },
     "oddsMovement": {
       "chart": {
         "books": {
@@ -6524,6 +6463,14 @@
               [
                 "2026-11-06T00:18:48.584Z",
                 1.598
+              ],
+              [
+                "2026-11-06T01:32:17.332Z",
+                1.591
+              ],
+              [
+                "2026-11-06T08:23:21.113Z",
+                1.588
               ]
             ],
             "p2": [
@@ -6574,6 +6521,18 @@
               [
                 "2026-11-06T00:18:48.584Z",
                 2.48
+              ],
+              [
+                "2026-11-06T01:32:17.332Z",
+                2.5
+              ],
+              [
+                "2026-11-06T05:37:10.149Z",
+                2.49
+              ],
+              [
+                "2026-11-06T08:23:21.113Z",
+                2.51
               ]
             ]
           },
@@ -6905,7 +6864,7 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-11-06T01:20:40.000Z"
+            "checkedAt": "2026-11-06T10:21:07.000Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -6991,6 +6950,123 @@
         }
       }
     },
+    "openingOdds": {
+      "p1": 1.57,
+      "p2": 2.37,
+      "bookmaker": "bet365",
+      "seenAt": "2026-11-06T00:29:24.966Z",
+      "src": "vendor-sighting",
+      "vendor": "api-tennis"
+    },
+    "bookOpens": {
+      "WilliamHill": {
+        "p1": 1.57,
+        "p2": 2.38,
+        "seenAt": "2026-11-06T00:31:32.019Z"
+      },
+      "Betfair": {
+        "p1": 1.67,
+        "p2": 2.2,
+        "seenAt": "2026-11-06T00:31:32.019Z"
+      },
+      "BetVictor": {
+        "p1": 1.57,
+        "p2": 2.25,
+        "seenAt": "2026-11-06T00:31:32.019Z"
+      },
+      "Betano": {
+        "p1": 1.55,
+        "p2": 2.42,
+        "seenAt": "2026-11-06T00:31:32.019Z"
+      },
+      "Marathon": {
+        "p1": 1.57,
+        "p2": 2.39,
+        "seenAt": "2026-11-06T00:31:32.019Z"
+      },
+      "Sbo": {
+        "p1": 1.5,
+        "p2": 2.26,
+        "seenAt": "2026-11-06T00:31:32.019Z"
+      },
+      "bet365": {
+        "p1": 1.57,
+        "p2": 2.37,
+        "seenAt": "2026-11-06T00:31:32.019Z"
+      },
+      "Pncl": {
+        "p1": 1.59,
+        "p2": 2.49,
+        "seenAt": "2026-11-06T00:31:32.019Z"
+      },
+      "1xBet": {
+        "p1": 1.59,
+        "p2": 2.42,
+        "seenAt": "2026-11-06T00:31:32.019Z"
+      }
+    },
+    "bookNow": {
+      "WilliamHill": {
+        "p1": 1.57,
+        "p2": 2.38,
+        "seenAt": "2026-11-06T09:57:16.898Z",
+        "since": "2026-11-06T00:31:32.019Z"
+      },
+      "bet365": {
+        "p1": 1.57,
+        "p2": 2.37,
+        "seenAt": "2026-11-06T09:57:16.898Z",
+        "since": "2026-11-06T00:31:32.019Z"
+      },
+      "Marathon": {
+        "p1": 1.57,
+        "p2": 2.39,
+        "seenAt": "2026-11-06T09:57:16.898Z",
+        "since": "2026-11-06T00:31:32.019Z"
+      },
+      "Betfair": {
+        "p1": 1.57,
+        "p2": 2.38,
+        "seenAt": "2026-11-06T09:57:16.898Z",
+        "since": "2026-11-06T09:57:16.898Z"
+      },
+      "BetVictor": {
+        "p1": 1.53,
+        "p2": 2.3,
+        "seenAt": "2026-11-06T09:57:16.898Z",
+        "since": "2026-11-06T09:57:16.898Z"
+      },
+      "Pncl": {
+        "p1": 1.59,
+        "p2": 2.51,
+        "seenAt": "2026-11-06T09:57:16.898Z",
+        "since": "2026-11-06T09:57:16.898Z"
+      },
+      "Sbo": {
+        "p1": 1.5,
+        "p2": 2.26,
+        "seenAt": "2026-11-06T09:57:16.898Z",
+        "since": "2026-11-06T00:31:32.019Z"
+      },
+      "1xBet": {
+        "p1": 1.59,
+        "p2": 2.42,
+        "seenAt": "2026-11-06T09:57:16.898Z",
+        "since": "2026-11-06T00:31:32.019Z"
+      },
+      "Betano": {
+        "p1": 1.5,
+        "p2": 2.52,
+        "seenAt": "2026-11-06T09:57:16.898Z",
+        "since": "2026-11-06T09:57:16.898Z"
+      }
+    },
+    "pinnacleOpen": {
+      "p1": 1.59,
+      "p2": 2.49,
+      "ts": "2026-11-06T00:31:32.019Z",
+      "vfP1": 0.6103
+    },
     "valueSnapshot": {
       "fairP1": 0.5509,
       "fairP2": 0.4491,
@@ -7012,23 +7088,23 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 3.41,
-      "p2": 1.36,
-      "bookmaker": "Pncl",
-      "seenAt": "2026-11-06T00:29:19.761Z"
+      "p1": 3.4,
+      "p2": 1.33,
+      "bookmaker": "bet365",
+      "seenAt": "2026-11-06T09:54:41.083Z"
     },
     "bestOdds": {
       "p1": {
-        "price": 3.45,
-        "bookmaker": "Betano"
-      },
-      "p2": {
-        "price": 1.36,
+        "price": 3.48,
         "bookmaker": "Pncl"
       },
-      "seenAt": "2026-11-06T00:29:19.761Z"
+      "p2": {
+        "price": 1.35,
+        "bookmaker": "Pncl"
+      },
+      "seenAt": "2026-11-06T09:54:41.083Z"
     },
-    "tournamentRound": null,
+    "tournamentRound": "ATP Paris - Quarter-finals",
     "qualifying": false,
     "boardQualifying": false,
     "qualifyingRound": null,
@@ -9993,9 +10069,9 @@
       "category": "Medium"
     },
     "weather": {
-      "temperature": 11.3,
-      "windSpeed": 4.1,
-      "humidity": 75,
+      "temperature": 10.8,
+      "windSpeed": 1.1,
+      "humidity": 70,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Nov 2 – 8, 2026",
@@ -10058,10 +10134,10 @@
           "label": "Nov 6",
           "code": 3,
           "hi": 13,
-          "lo": 8,
-          "rain": 5,
+          "lo": 7,
+          "rain": 15,
           "wind": 5,
-          "humidity": 77,
+          "humidity": 76,
           "isMatch": true,
           "available": true
         },
@@ -10071,10 +10147,10 @@
           "label": "Nov 7",
           "code": 45,
           "hi": 12,
-          "lo": 5,
-          "rain": 0,
-          "wind": 6,
-          "humidity": 83,
+          "lo": 4,
+          "rain": 3,
+          "wind": 5,
+          "humidity": 81,
           "isMatch": false,
           "available": true
         },
@@ -10083,11 +10159,11 @@
           "dow": "Sun",
           "label": "Nov 8",
           "code": 45,
-          "hi": 9,
-          "lo": 5,
-          "rain": 0,
-          "wind": 8,
-          "humidity": 87,
+          "hi": 8,
+          "lo": 4,
+          "rain": 3,
+          "wind": 7,
+          "humidity": 93,
           "isMatch": false,
           "available": true
         }
@@ -10101,104 +10177,6 @@
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/2832_t-fritz.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2382_c-alcaraz.jpg",
     "tournamentKey": "1725",
-    "bookOpens": {
-      "Marathon": {
-        "p1": 3.34,
-        "p2": 1.32,
-        "seenAt": "2026-11-06T00:31:32.019Z"
-      },
-      "Betfair": {
-        "p1": 3.25,
-        "p2": 1.33,
-        "seenAt": "2026-11-06T00:31:32.019Z"
-      },
-      "Sbo": {
-        "p1": 3.12,
-        "p2": 1.25,
-        "seenAt": "2026-11-06T00:31:32.019Z"
-      },
-      "Betano": {
-        "p1": 3.45,
-        "p2": 1.3,
-        "seenAt": "2026-11-06T00:31:32.019Z"
-      },
-      "Pncl": {
-        "p1": 3.41,
-        "p2": 1.36,
-        "seenAt": "2026-11-06T00:31:32.019Z"
-      },
-      "WilliamHill": {
-        "p1": 3.3,
-        "p2": 1.33,
-        "seenAt": "2026-11-06T00:31:32.019Z"
-      },
-      "BetVictor": {
-        "p1": 3.1,
-        "p2": 1.33,
-        "seenAt": "2026-11-06T00:31:32.019Z"
-      },
-      "1xBet": {
-        "p1": 3.38,
-        "p2": 1.34,
-        "seenAt": "2026-11-06T00:31:32.019Z"
-      }
-    },
-    "bookNow": {
-      "Marathon": {
-        "p1": 3.34,
-        "p2": 1.32,
-        "seenAt": "2026-11-06T00:31:32.019Z",
-        "since": "2026-11-06T00:31:32.019Z"
-      },
-      "Betfair": {
-        "p1": 3.25,
-        "p2": 1.33,
-        "seenAt": "2026-11-06T00:31:32.019Z",
-        "since": "2026-11-06T00:31:32.019Z"
-      },
-      "Sbo": {
-        "p1": 3.12,
-        "p2": 1.25,
-        "seenAt": "2026-11-06T00:31:32.019Z",
-        "since": "2026-11-06T00:31:32.019Z"
-      },
-      "Betano": {
-        "p1": 3.45,
-        "p2": 1.3,
-        "seenAt": "2026-11-06T00:31:32.019Z",
-        "since": "2026-11-06T00:31:32.019Z"
-      },
-      "Pncl": {
-        "p1": 3.41,
-        "p2": 1.36,
-        "seenAt": "2026-11-06T00:31:32.019Z",
-        "since": "2026-11-06T00:31:32.019Z"
-      },
-      "WilliamHill": {
-        "p1": 3.3,
-        "p2": 1.33,
-        "seenAt": "2026-11-06T00:31:32.019Z",
-        "since": "2026-11-06T00:31:32.019Z"
-      },
-      "BetVictor": {
-        "p1": 3.1,
-        "p2": 1.33,
-        "seenAt": "2026-11-06T00:31:32.019Z",
-        "since": "2026-11-06T00:31:32.019Z"
-      },
-      "1xBet": {
-        "p1": 3.38,
-        "p2": 1.34,
-        "seenAt": "2026-11-06T00:31:32.019Z",
-        "since": "2026-11-06T00:31:32.019Z"
-      }
-    },
-    "pinnacleOpen": {
-      "p1": 3.41,
-      "p2": 1.36,
-      "ts": "2026-11-06T00:31:32.019Z",
-      "vfP1": 0.2851
-    },
     "oddsMovement": {
       "chart": {
         "books": {
@@ -10251,6 +10229,14 @@
               [
                 "2026-11-06T00:19:19.291Z",
                 3.43
+              ],
+              [
+                "2026-11-06T01:32:23.070Z",
+                3.45
+              ],
+              [
+                "2026-11-06T08:09:50.580Z",
+                3.48
               ]
             ],
             "p2": [
@@ -10301,6 +10287,14 @@
               [
                 "2026-11-06T00:19:19.291Z",
                 1.354
+              ],
+              [
+                "2026-11-06T01:32:23.070Z",
+                1.352
+              ],
+              [
+                "2026-11-06T08:09:50.580Z",
+                1.347
               ]
             ]
           },
@@ -10604,7 +10598,7 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-11-06T01:20:40.000Z"
+            "checkedAt": "2026-11-06T10:21:07.000Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -10690,6 +10684,123 @@
         }
       }
     },
+    "bookOpens": {
+      "Marathon": {
+        "p1": 3.34,
+        "p2": 1.32,
+        "seenAt": "2026-11-06T00:31:32.019Z"
+      },
+      "Betfair": {
+        "p1": 3.25,
+        "p2": 1.33,
+        "seenAt": "2026-11-06T00:31:32.019Z"
+      },
+      "Sbo": {
+        "p1": 3.12,
+        "p2": 1.25,
+        "seenAt": "2026-11-06T00:31:32.019Z"
+      },
+      "Betano": {
+        "p1": 3.45,
+        "p2": 1.3,
+        "seenAt": "2026-11-06T00:31:32.019Z"
+      },
+      "Pncl": {
+        "p1": 3.41,
+        "p2": 1.36,
+        "seenAt": "2026-11-06T00:31:32.019Z"
+      },
+      "WilliamHill": {
+        "p1": 3.3,
+        "p2": 1.33,
+        "seenAt": "2026-11-06T00:31:32.019Z"
+      },
+      "BetVictor": {
+        "p1": 3.1,
+        "p2": 1.33,
+        "seenAt": "2026-11-06T00:31:32.019Z"
+      },
+      "1xBet": {
+        "p1": 3.38,
+        "p2": 1.34,
+        "seenAt": "2026-11-06T00:31:32.019Z"
+      },
+      "bet365": {
+        "p1": 3.4,
+        "p2": 1.33,
+        "seenAt": "2026-11-06T09:57:16.898Z"
+      }
+    },
+    "bookNow": {
+      "WilliamHill": {
+        "p1": 3.3,
+        "p2": 1.33,
+        "seenAt": "2026-11-06T09:57:16.898Z",
+        "since": "2026-11-06T00:31:32.019Z"
+      },
+      "bet365": {
+        "p1": 3.4,
+        "p2": 1.33,
+        "seenAt": "2026-11-06T09:57:16.898Z",
+        "since": "2026-11-06T09:57:16.898Z"
+      },
+      "Marathon": {
+        "p1": 3.28,
+        "p2": 1.33,
+        "seenAt": "2026-11-06T09:57:16.898Z",
+        "since": "2026-11-06T09:57:16.898Z"
+      },
+      "Betfair": {
+        "p1": 3.25,
+        "p2": 1.33,
+        "seenAt": "2026-11-06T09:57:16.898Z",
+        "since": "2026-11-06T00:31:32.019Z"
+      },
+      "BetVictor": {
+        "p1": 3.1,
+        "p2": 1.33,
+        "seenAt": "2026-11-06T09:57:16.898Z",
+        "since": "2026-11-06T00:31:32.019Z"
+      },
+      "Pncl": {
+        "p1": 3.48,
+        "p2": 1.35,
+        "seenAt": "2026-11-06T09:57:16.898Z",
+        "since": "2026-11-06T09:57:16.898Z"
+      },
+      "Sbo": {
+        "p1": 2.96,
+        "p2": 1.28,
+        "seenAt": "2026-11-06T09:57:16.898Z",
+        "since": "2026-11-06T09:57:16.898Z"
+      },
+      "1xBet": {
+        "p1": 3.32,
+        "p2": 1.35,
+        "seenAt": "2026-11-06T09:57:16.898Z",
+        "since": "2026-11-06T09:57:16.898Z"
+      },
+      "Betano": {
+        "p1": 3.4,
+        "p2": 1.3,
+        "seenAt": "2026-11-06T09:57:16.898Z",
+        "since": "2026-11-06T09:57:16.898Z"
+      }
+    },
+    "openingOdds": {
+      "p1": 3.4,
+      "p2": 1.33,
+      "bookmaker": "bet365",
+      "seenAt": "2026-11-06T09:54:50.308Z",
+      "src": "vendor-sighting",
+      "vendor": "api-tennis"
+    },
+    "pinnacleOpen": {
+      "p1": 3.41,
+      "p2": 1.36,
+      "ts": "2026-11-06T00:31:32.019Z",
+      "vfP1": 0.2851
+    },
     "valueSnapshot": {
       "fairP1": 0.2894,
       "fairP2": 0.7106,
@@ -10711,21 +10822,23 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 1.5,
-      "p2": 2.62,
-      "bookmaker": "bet365"
+      "p1": 1.44,
+      "p2": 2.75,
+      "bookmaker": "bet365",
+      "seenAt": "2026-11-06T09:54:41.083Z"
     },
     "bestOdds": {
       "p1": {
-        "price": 1.5,
-        "bookmaker": "bet365"
+        "price": 1.48,
+        "bookmaker": "Pncl"
       },
       "p2": {
         "price": 2.82,
         "bookmaker": "Pncl"
-      }
+      },
+      "seenAt": "2026-11-06T09:54:41.083Z"
     },
-    "tournamentRound": null,
+    "tournamentRound": "ATP Paris - Quarter-finals",
     "qualifying": false,
     "boardQualifying": false,
     "qualifyingRound": null,
@@ -13835,107 +13948,7 @@
       "cpiYear": 2025,
       "category": "Medium"
     },
-    "weather": {
-      "temperature": 10.9,
-      "windSpeed": 1.8,
-      "humidity": 79,
-      "source": "Open-Meteo",
-      "historical": false,
-      "weekRange": "Nov 2 – 8, 2026",
-      "week": [
-        {
-          "date": "2026-11-02",
-          "dow": "Mon",
-          "label": "Nov 2",
-          "code": 80,
-          "hi": 12,
-          "lo": 9,
-          "rain": 53,
-          "wind": 15,
-          "humidity": 82,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-11-03",
-          "dow": "Tue",
-          "label": "Nov 3",
-          "code": 80,
-          "hi": 10,
-          "lo": 7,
-          "rain": 15,
-          "wind": 15,
-          "humidity": 72,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-11-04",
-          "dow": "Wed",
-          "label": "Nov 4",
-          "code": 61,
-          "hi": 10,
-          "lo": 7,
-          "rain": 0,
-          "wind": 15,
-          "humidity": 65,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-11-05",
-          "dow": "Thu",
-          "label": "Nov 5",
-          "code": 3,
-          "hi": 12,
-          "lo": 5,
-          "rain": 20,
-          "wind": 9,
-          "humidity": 71,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-11-06",
-          "dow": "Fri",
-          "label": "Nov 6",
-          "code": 3,
-          "hi": 13,
-          "lo": 8,
-          "rain": 5,
-          "wind": 5,
-          "humidity": 77,
-          "isMatch": true,
-          "available": true
-        },
-        {
-          "date": "2026-11-07",
-          "dow": "Sat",
-          "label": "Nov 7",
-          "code": 45,
-          "hi": 12,
-          "lo": 5,
-          "rain": 0,
-          "wind": 6,
-          "humidity": 83,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-11-08",
-          "dow": "Sun",
-          "label": "Nov 8",
-          "code": 45,
-          "hi": 9,
-          "lo": 5,
-          "rain": 0,
-          "wind": 8,
-          "humidity": 87,
-          "isMatch": false,
-          "available": true
-        }
-      ]
-    },
+    "weather": null,
     "live": false,
     "liveStatus": null,
     "liveScore": null,
@@ -13984,6 +13997,18 @@
               [
                 "2026-11-06T00:17:47.219Z",
                 1.49
+              ],
+              [
+                "2026-11-06T01:25:15.440Z",
+                1.485
+              ],
+              [
+                "2026-11-06T01:32:27.768Z",
+                1.483
+              ],
+              [
+                "2026-11-06T10:04:01.583Z",
+                1.478
               ]
             ],
             "p2": [
@@ -14018,6 +14043,18 @@
               [
                 "2026-11-06T00:17:42.307Z",
                 2.79
+              ],
+              [
+                "2026-11-06T01:25:15.440Z",
+                2.81
+              ],
+              [
+                "2026-11-06T01:32:27.768Z",
+                2.82
+              ],
+              [
+                "2026-11-06T10:04:01.583Z",
+                2.84
               ]
             ]
           },
@@ -14141,7 +14178,7 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-11-06T01:20:40.000Z"
+            "checkedAt": "2026-11-06T10:21:07.000Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -14226,6 +14263,130 @@
           }
         }
       }
+    },
+    "bookOpens": {
+      "WilliamHill": {
+        "p1": 1.44,
+        "p2": 2.75,
+        "seenAt": "2026-11-06T09:57:16.898Z"
+      },
+      "bet365": {
+        "p1": 1.44,
+        "p2": 2.75,
+        "seenAt": "2026-11-06T09:57:16.898Z"
+      },
+      "Marathon": {
+        "p1": 1.44,
+        "p2": 2.76,
+        "seenAt": "2026-11-06T09:57:16.898Z"
+      },
+      "Betfair": {
+        "p1": 1.44,
+        "p2": 2.75,
+        "seenAt": "2026-11-06T09:57:16.898Z"
+      },
+      "BetVictor": {
+        "p1": 1.45,
+        "p2": 2.6,
+        "seenAt": "2026-11-06T09:57:16.898Z"
+      },
+      "Pncl": {
+        "p1": 1.48,
+        "p2": 2.82,
+        "seenAt": "2026-11-06T09:57:16.898Z"
+      },
+      "Sbo": {
+        "p1": 1.4,
+        "p2": 2.49,
+        "seenAt": "2026-11-06T09:57:16.898Z"
+      },
+      "1xBet": {
+        "p1": 1.46,
+        "p2": 2.8,
+        "seenAt": "2026-11-06T09:57:16.898Z"
+      },
+      "Betano": {
+        "p1": 1.45,
+        "p2": 2.67,
+        "seenAt": "2026-11-06T09:57:16.898Z"
+      }
+    },
+    "bookNow": {
+      "WilliamHill": {
+        "p1": 1.44,
+        "p2": 2.75,
+        "seenAt": "2026-11-06T09:57:16.898Z",
+        "since": "2026-11-06T09:57:16.898Z"
+      },
+      "bet365": {
+        "p1": 1.44,
+        "p2": 2.75,
+        "seenAt": "2026-11-06T09:57:16.898Z",
+        "since": "2026-11-06T09:57:16.898Z"
+      },
+      "Marathon": {
+        "p1": 1.44,
+        "p2": 2.76,
+        "seenAt": "2026-11-06T09:57:16.898Z",
+        "since": "2026-11-06T09:57:16.898Z"
+      },
+      "Betfair": {
+        "p1": 1.44,
+        "p2": 2.75,
+        "seenAt": "2026-11-06T09:57:16.898Z",
+        "since": "2026-11-06T09:57:16.898Z"
+      },
+      "BetVictor": {
+        "p1": 1.45,
+        "p2": 2.6,
+        "seenAt": "2026-11-06T09:57:16.898Z",
+        "since": "2026-11-06T09:57:16.898Z"
+      },
+      "Pncl": {
+        "p1": 1.48,
+        "p2": 2.82,
+        "seenAt": "2026-11-06T09:57:16.898Z",
+        "since": "2026-11-06T09:57:16.898Z"
+      },
+      "Sbo": {
+        "p1": 1.4,
+        "p2": 2.49,
+        "seenAt": "2026-11-06T09:57:16.898Z",
+        "since": "2026-11-06T09:57:16.898Z"
+      },
+      "1xBet": {
+        "p1": 1.46,
+        "p2": 2.8,
+        "seenAt": "2026-11-06T09:57:16.898Z",
+        "since": "2026-11-06T09:57:16.898Z"
+      },
+      "Betano": {
+        "p1": 1.45,
+        "p2": 2.67,
+        "seenAt": "2026-11-06T09:57:16.898Z",
+        "since": "2026-11-06T09:57:16.898Z"
+      }
+    },
+    "openingOdds": {
+      "p1": 1.44,
+      "p2": 2.75,
+      "bookmaker": "bet365",
+      "seenAt": "2026-11-06T09:55:05.683Z",
+      "src": "vendor-sighting",
+      "vendor": "api-tennis"
+    },
+    "pinnacleOpen": {
+      "p1": 1.48,
+      "p2": 2.82,
+      "ts": "2026-11-06T09:57:16.898Z",
+      "vfP1": 0.6558
+    },
+    "valueSnapshot": {
+      "fairP1": 0.6469,
+      "fairP2": 0.3531,
+      "edgeVsPinnacleP1": -0.0089,
+      "edgeVsPinnacleP2": 0.0089,
+      "ts": "2026-11-06T09:57:16.803Z"
     }
   },
   {
@@ -14246,7 +14407,7 @@
       "p1": 1.44,
       "p2": 2.75,
       "bookmaker": "bet365",
-      "seenAt": "2026-11-06T00:29:33.726Z"
+      "seenAt": "2026-11-06T09:55:10.995Z"
     },
     "bestOdds": {
       "p1": {
@@ -14257,7 +14418,7 @@
         "price": 3.01,
         "bookmaker": "Pncl"
       },
-      "seenAt": "2026-11-06T00:29:33.726Z"
+      "seenAt": "2026-11-06T09:55:10.995Z"
     },
     "tournamentRound": "ATP Paris - 1/32-finals",
     "qualifying": false,
@@ -18023,8 +18184,8 @@
     },
     "weather": {
       "temperature": 9.2,
-      "windSpeed": 15.2,
-      "humidity": 61,
+      "windSpeed": 18.9,
+      "humidity": 66,
       "source": "Open-Meteo",
       "historical": true,
       "weekRange": "Nov 2 – 8, 2026",
@@ -18033,12 +18194,12 @@
           "date": "2026-11-02",
           "dow": "Mon",
           "label": "Nov 2",
-          "code": 80,
-          "hi": 12,
-          "lo": 9,
-          "rain": 53,
+          "code": 51,
+          "hi": 11,
+          "lo": 7,
+          "rain": null,
           "wind": 15,
-          "humidity": 82,
+          "humidity": 89,
           "isMatch": false,
           "available": true
         },
@@ -18046,12 +18207,12 @@
           "date": "2026-11-03",
           "dow": "Tue",
           "label": "Nov 3",
-          "code": 80,
+          "code": 51,
           "hi": 10,
-          "lo": 7,
-          "rain": 15,
-          "wind": 15,
-          "humidity": 72,
+          "lo": 5,
+          "rain": null,
+          "wind": 19,
+          "humidity": 78,
           "isMatch": true,
           "available": true
         },
@@ -18059,12 +18220,12 @@
           "date": "2026-11-04",
           "dow": "Wed",
           "label": "Nov 4",
-          "code": 61,
-          "hi": 10,
-          "lo": 7,
-          "rain": 0,
-          "wind": 15,
-          "humidity": 65,
+          "code": 3,
+          "hi": 9,
+          "lo": 5,
+          "rain": null,
+          "wind": 16,
+          "humidity": 72,
           "isMatch": false,
           "available": true
         },
@@ -18073,11 +18234,11 @@
           "dow": "Thu",
           "label": "Nov 5",
           "code": 3,
-          "hi": 12,
-          "lo": 5,
-          "rain": 20,
+          "hi": 10,
+          "lo": 3,
+          "rain": null,
           "wind": 9,
-          "humidity": 71,
+          "humidity": 84,
           "isMatch": false,
           "available": true
         },
@@ -18086,39 +18247,21 @@
           "dow": "Fri",
           "label": "Nov 6",
           "code": 3,
-          "hi": 13,
-          "lo": 8,
-          "rain": 5,
+          "hi": 12,
+          "lo": 5,
+          "rain": null,
           "wind": 5,
-          "humidity": 77,
+          "humidity": 90,
           "isMatch": false,
           "available": true
         },
         {
           "date": "2026-11-07",
-          "dow": "Sat",
-          "label": "Nov 7",
-          "code": 45,
-          "hi": 12,
-          "lo": 5,
-          "rain": 0,
-          "wind": 6,
-          "humidity": 83,
-          "isMatch": false,
-          "available": true
+          "available": false
         },
         {
           "date": "2026-11-08",
-          "dow": "Sun",
-          "label": "Nov 8",
-          "code": 45,
-          "hi": 9,
-          "lo": 5,
-          "rain": 0,
-          "wind": 8,
-          "humidity": 87,
-          "isMatch": false,
-          "available": true
+          "available": false
         }
       ]
     },
@@ -18130,7 +18273,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-7(5), 7-5, 6-1",
+      "display": "6-7, 7-5, 6-1",
       "sets": [
         {
           "p1": 6,
@@ -20031,7 +20174,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-11-06T00:31:32.020Z"
+      "seenAt": "2026-11-06T09:57:16.898Z"
     },
     "pinClose": {
       "p1": 1.454,
@@ -20076,7 +20219,7 @@
       "p1": 1.61,
       "p2": 2.3,
       "bookmaker": "bet365",
-      "seenAt": "2026-11-06T00:29:33.726Z"
+      "seenAt": "2026-11-06T09:55:10.995Z"
     },
     "bestOdds": {
       "p1": {
@@ -20087,7 +20230,7 @@
         "price": 2.38,
         "bookmaker": "Betfair"
       },
-      "seenAt": "2026-11-06T00:29:33.726Z"
+      "seenAt": "2026-11-06T09:55:10.995Z"
     },
     "tournamentRound": "ATP Paris - 1/32-finals",
     "qualifying": false,
@@ -23224,10 +23367,10 @@
           "label": "Nov 6",
           "code": 3,
           "hi": 13,
-          "lo": 8,
-          "rain": 5,
+          "lo": 7,
+          "rain": 15,
           "wind": 5,
-          "humidity": 77,
+          "humidity": 76,
           "isMatch": false,
           "available": true
         },
@@ -23237,10 +23380,10 @@
           "label": "Nov 7",
           "code": 45,
           "hi": 12,
-          "lo": 5,
-          "rain": 0,
-          "wind": 6,
-          "humidity": 83,
+          "lo": 4,
+          "rain": 3,
+          "wind": 5,
+          "humidity": 81,
           "isMatch": false,
           "available": true
         },
@@ -23249,11 +23392,11 @@
           "dow": "Sun",
           "label": "Nov 8",
           "code": 45,
-          "hi": 9,
-          "lo": 5,
-          "rain": 0,
-          "wind": 8,
-          "humidity": 87,
+          "hi": 8,
+          "lo": 4,
+          "rain": 3,
+          "wind": 7,
+          "humidity": 93,
           "isMatch": false,
           "available": true
         }
@@ -23267,7 +23410,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6(6), 7-5",
+      "display": "7-6, 7-5",
       "sets": [
         {
           "p1": 7,
@@ -24796,7 +24939,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-11-06T00:31:32.020Z"
+      "seenAt": "2026-11-06T09:57:16.898Z"
     },
     "pinClose": {
       "p1": 1.657,
@@ -24841,7 +24984,7 @@
       "p1": 2.3,
       "p2": 1.61,
       "bookmaker": "bet365",
-      "seenAt": "2026-11-06T00:29:33.726Z"
+      "seenAt": "2026-11-06T09:55:10.995Z"
     },
     "bestOdds": {
       "p1": {
@@ -24852,7 +24995,7 @@
         "price": 1.67,
         "bookmaker": "WilliamHill"
       },
-      "seenAt": "2026-11-06T00:29:33.726Z"
+      "seenAt": "2026-11-06T09:55:10.995Z"
     },
     "tournamentRound": "ATP Paris - 1/32-finals",
     "qualifying": false,
@@ -27260,10 +27403,10 @@
           "label": "Nov 6",
           "code": 3,
           "hi": 13,
-          "lo": 8,
-          "rain": 5,
+          "lo": 7,
+          "rain": 15,
           "wind": 5,
-          "humidity": 77,
+          "humidity": 76,
           "isMatch": false,
           "available": true
         },
@@ -27273,10 +27416,10 @@
           "label": "Nov 7",
           "code": 45,
           "hi": 12,
-          "lo": 5,
-          "rain": 0,
-          "wind": 6,
-          "humidity": 83,
+          "lo": 4,
+          "rain": 3,
+          "wind": 5,
+          "humidity": 81,
           "isMatch": false,
           "available": true
         },
@@ -27285,11 +27428,11 @@
           "dow": "Sun",
           "label": "Nov 8",
           "code": 45,
-          "hi": 9,
-          "lo": 5,
-          "rain": 0,
-          "wind": 8,
-          "humidity": 87,
+          "hi": 8,
+          "lo": 4,
+          "rain": 3,
+          "wind": 7,
+          "humidity": 93,
           "isMatch": false,
           "available": true
         }
@@ -27303,7 +27446,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-7(5), 6-2, 6-4",
+      "display": "6-7, 6-2, 6-4",
       "sets": [
         {
           "p1": 6,
@@ -29124,7 +29267,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-11-06T00:31:32.020Z"
+      "seenAt": "2026-11-06T09:57:16.898Z"
     },
     "pinClose": {
       "p1": 2.35,
@@ -29169,7 +29312,7 @@
       "p1": 1.61,
       "p2": 2.3,
       "bookmaker": "bet365",
-      "seenAt": "2026-11-06T00:29:33.726Z"
+      "seenAt": "2026-11-06T09:55:10.995Z"
     },
     "bestOdds": {
       "p1": {
@@ -29180,7 +29323,7 @@
         "price": 2.43,
         "bookmaker": "Pncl"
       },
-      "seenAt": "2026-11-06T00:29:33.726Z"
+      "seenAt": "2026-11-06T09:55:10.995Z"
     },
     "tournamentRound": "ATP Paris - 1/32-finals",
     "qualifying": false,
@@ -32083,10 +32226,10 @@
           "label": "Nov 6",
           "code": 3,
           "hi": 13,
-          "lo": 8,
-          "rain": 5,
+          "lo": 7,
+          "rain": 15,
           "wind": 5,
-          "humidity": 77,
+          "humidity": 76,
           "isMatch": false,
           "available": true
         },
@@ -32096,10 +32239,10 @@
           "label": "Nov 7",
           "code": 45,
           "hi": 12,
-          "lo": 5,
-          "rain": 0,
-          "wind": 6,
-          "humidity": 83,
+          "lo": 4,
+          "rain": 3,
+          "wind": 5,
+          "humidity": 81,
           "isMatch": false,
           "available": true
         },
@@ -32108,11 +32251,11 @@
           "dow": "Sun",
           "label": "Nov 8",
           "code": 45,
-          "hi": 9,
-          "lo": 5,
-          "rain": 0,
-          "wind": 8,
-          "humidity": 87,
+          "hi": 8,
+          "lo": 4,
+          "rain": 3,
+          "wind": 7,
+          "humidity": 93,
           "isMatch": false,
           "available": true
         }
@@ -32126,7 +32269,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "4-6, 6-3, 6-7(8)",
+      "display": "4-6, 6-3, 6-7",
       "sets": [
         {
           "p1": 4,
@@ -33695,7 +33838,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-11-06T00:31:32.020Z"
+      "seenAt": "2026-11-06T09:57:16.898Z"
     },
     "pinClose": {
       "p1": 1.617,
@@ -33745,7 +33888,7 @@
       "p1": 1.44,
       "p2": 2.75,
       "bookmaker": "bet365",
-      "seenAt": "2026-11-06T00:29:33.726Z"
+      "seenAt": "2026-11-06T09:55:10.995Z"
     },
     "bestOdds": {
       "p1": {
@@ -33756,7 +33899,7 @@
         "price": 2.84,
         "bookmaker": "Marathon"
       },
-      "seenAt": "2026-11-06T00:29:33.726Z"
+      "seenAt": "2026-11-06T09:55:10.995Z"
     },
     "tournamentRound": "ATP Paris - 1/32-finals",
     "qualifying": false,
@@ -36418,10 +36561,10 @@
           "label": "Nov 6",
           "code": 3,
           "hi": 13,
-          "lo": 8,
-          "rain": 5,
+          "lo": 7,
+          "rain": 15,
           "wind": 5,
-          "humidity": 77,
+          "humidity": 76,
           "isMatch": false,
           "available": true
         },
@@ -36431,10 +36574,10 @@
           "label": "Nov 7",
           "code": 45,
           "hi": 12,
-          "lo": 5,
-          "rain": 0,
-          "wind": 6,
-          "humidity": 83,
+          "lo": 4,
+          "rain": 3,
+          "wind": 5,
+          "humidity": 81,
           "isMatch": false,
           "available": true
         },
@@ -36443,11 +36586,11 @@
           "dow": "Sun",
           "label": "Nov 8",
           "code": 45,
-          "hi": 9,
-          "lo": 5,
-          "rain": 0,
-          "wind": 8,
-          "humidity": 87,
+          "hi": 8,
+          "lo": 4,
+          "rain": 3,
+          "wind": 7,
+          "humidity": 93,
           "isMatch": false,
           "available": true
         }
@@ -37774,7 +37917,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-11-06T00:31:32.020Z"
+      "seenAt": "2026-11-06T09:57:16.898Z"
     },
     "pinClose": {
       "p1": 1.487,
@@ -37817,7 +37960,7 @@
       "p1": 2.5,
       "p2": 1.53,
       "bookmaker": "bet365",
-      "seenAt": "2026-11-06T00:29:33.726Z"
+      "seenAt": "2026-11-06T09:55:10.995Z"
     },
     "bestOdds": {
       "p1": {
@@ -37828,7 +37971,7 @@
         "price": 1.61,
         "bookmaker": "Pncl"
       },
-      "seenAt": "2026-11-06T00:29:33.726Z"
+      "seenAt": "2026-11-06T09:55:10.995Z"
     },
     "tournamentRound": "ATP Paris - 1/32-finals",
     "qualifying": false,
@@ -40774,10 +40917,10 @@
           "label": "Nov 6",
           "code": 3,
           "hi": 13,
-          "lo": 8,
-          "rain": 5,
+          "lo": 7,
+          "rain": 15,
           "wind": 5,
-          "humidity": 77,
+          "humidity": 76,
           "isMatch": false,
           "available": true
         },
@@ -40787,10 +40930,10 @@
           "label": "Nov 7",
           "code": 45,
           "hi": 12,
-          "lo": 5,
-          "rain": 0,
-          "wind": 6,
-          "humidity": 83,
+          "lo": 4,
+          "rain": 3,
+          "wind": 5,
+          "humidity": 81,
           "isMatch": false,
           "available": true
         },
@@ -40799,11 +40942,11 @@
           "dow": "Sun",
           "label": "Nov 8",
           "code": 45,
-          "hi": 9,
-          "lo": 5,
-          "rain": 0,
-          "wind": 8,
-          "humidity": 87,
+          "hi": 8,
+          "lo": 4,
+          "rain": 3,
+          "wind": 7,
+          "humidity": 93,
           "isMatch": false,
           "available": true
         }
@@ -40817,7 +40960,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "3-6, 7-6(2), 2-0",
+      "display": "3-6, 7-6, 2-0",
       "sets": [
         {
           "p1": 3,
@@ -42954,7 +43097,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-11-06T00:31:32.020Z"
+      "seenAt": "2026-11-06T09:57:16.898Z"
     },
     "pinClose": {
       "p1": 2.56,
@@ -42999,7 +43142,7 @@
       "p1": 1.4,
       "p2": 3,
       "bookmaker": "bet365",
-      "seenAt": "2026-11-06T00:29:33.726Z"
+      "seenAt": "2026-11-06T09:55:10.995Z"
     },
     "bestOdds": {
       "p1": {
@@ -43010,7 +43153,7 @@
         "price": 3.01,
         "bookmaker": "Pncl"
       },
-      "seenAt": "2026-11-06T00:29:33.726Z"
+      "seenAt": "2026-11-06T09:55:10.995Z"
     },
     "tournamentRound": "ATP Paris - 1/32-finals",
     "qualifying": false,
@@ -46195,10 +46338,10 @@
           "label": "Nov 6",
           "code": 3,
           "hi": 13,
-          "lo": 8,
-          "rain": 5,
+          "lo": 7,
+          "rain": 15,
           "wind": 5,
-          "humidity": 77,
+          "humidity": 76,
           "isMatch": false,
           "available": true
         },
@@ -46208,10 +46351,10 @@
           "label": "Nov 7",
           "code": 45,
           "hi": 12,
-          "lo": 5,
-          "rain": 0,
-          "wind": 6,
-          "humidity": 83,
+          "lo": 4,
+          "rain": 3,
+          "wind": 5,
+          "humidity": 81,
           "isMatch": false,
           "available": true
         },
@@ -46220,11 +46363,11 @@
           "dow": "Sun",
           "label": "Nov 8",
           "code": 45,
-          "hi": 9,
-          "lo": 5,
-          "rain": 0,
-          "wind": 8,
-          "humidity": 87,
+          "hi": 8,
+          "lo": 4,
+          "rain": 3,
+          "wind": 7,
+          "humidity": 93,
           "isMatch": false,
           "available": true
         }
@@ -46238,7 +46381,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "4-6, 7-6(4), 6-7(3)",
+      "display": "4-6, 7-6, 6-7",
       "sets": [
         {
           "p1": 4,
@@ -48103,7 +48246,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-11-06T00:31:32.020Z"
+      "seenAt": "2026-11-06T09:57:16.898Z"
     },
     "pinClose": {
       "p1": 1.434,
@@ -48148,7 +48291,7 @@
       "p1": 4,
       "p2": 1.25,
       "bookmaker": "bet365",
-      "seenAt": "2026-11-06T00:29:33.726Z"
+      "seenAt": "2026-11-06T09:55:10.995Z"
     },
     "bestOdds": {
       "p1": {
@@ -48159,7 +48302,7 @@
         "price": 1.25,
         "bookmaker": "WilliamHill"
       },
-      "seenAt": "2026-11-06T00:29:33.726Z"
+      "seenAt": "2026-11-06T09:55:10.995Z"
     },
     "tournamentRound": "ATP Paris - 1/32-finals",
     "qualifying": false,
@@ -51719,10 +51862,10 @@
           "label": "Nov 6",
           "code": 3,
           "hi": 13,
-          "lo": 8,
-          "rain": 5,
+          "lo": 7,
+          "rain": 15,
           "wind": 5,
-          "humidity": 77,
+          "humidity": 76,
           "isMatch": false,
           "available": true
         },
@@ -51732,10 +51875,10 @@
           "label": "Nov 7",
           "code": 45,
           "hi": 12,
-          "lo": 5,
-          "rain": 0,
-          "wind": 6,
-          "humidity": 83,
+          "lo": 4,
+          "rain": 3,
+          "wind": 5,
+          "humidity": 81,
           "isMatch": false,
           "available": true
         },
@@ -51744,11 +51887,11 @@
           "dow": "Sun",
           "label": "Nov 8",
           "code": 45,
-          "hi": 9,
-          "lo": 5,
-          "rain": 0,
-          "wind": 8,
-          "humidity": 87,
+          "hi": 8,
+          "lo": 4,
+          "rain": 3,
+          "wind": 7,
+          "humidity": 93,
           "isMatch": false,
           "available": true
         }
@@ -53539,7 +53682,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-11-06T00:31:32.020Z"
+      "seenAt": "2026-11-06T09:57:16.898Z"
     },
     "pinClose": {
       "p1": 4.28,
@@ -53589,7 +53732,7 @@
       "p1": 2,
       "p2": 1.8,
       "bookmaker": "bet365",
-      "seenAt": "2026-11-06T00:29:33.726Z"
+      "seenAt": "2026-11-06T09:55:10.995Z"
     },
     "bestOdds": {
       "p1": {
@@ -53600,7 +53743,7 @@
         "price": 1.8,
         "bookmaker": "WilliamHill"
       },
-      "seenAt": "2026-11-06T00:29:33.726Z"
+      "seenAt": "2026-11-06T09:55:10.995Z"
     },
     "tournamentRound": "ATP Paris - 1/32-finals",
     "qualifying": false,
@@ -56913,10 +57056,10 @@
           "label": "Nov 6",
           "code": 3,
           "hi": 13,
-          "lo": 8,
-          "rain": 5,
+          "lo": 7,
+          "rain": 15,
           "wind": 5,
-          "humidity": 77,
+          "humidity": 76,
           "isMatch": false,
           "available": true
         },
@@ -56926,10 +57069,10 @@
           "label": "Nov 7",
           "code": 45,
           "hi": 12,
-          "lo": 5,
-          "rain": 0,
-          "wind": 6,
-          "humidity": 83,
+          "lo": 4,
+          "rain": 3,
+          "wind": 5,
+          "humidity": 81,
           "isMatch": false,
           "available": true
         },
@@ -56938,11 +57081,11 @@
           "dow": "Sun",
           "label": "Nov 8",
           "code": 45,
-          "hi": 9,
-          "lo": 5,
-          "rain": 0,
-          "wind": 8,
-          "humidity": 87,
+          "hi": 8,
+          "lo": 4,
+          "rain": 3,
+          "wind": 7,
+          "humidity": 93,
           "isMatch": false,
           "available": true
         }
@@ -56956,7 +57099,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6(3), 6-3",
+      "display": "7-6, 6-3",
       "sets": [
         {
           "p1": 7,
@@ -59225,7 +59368,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-11-06T00:31:32.020Z"
+      "seenAt": "2026-11-06T09:57:16.898Z"
     },
     "pinClose": {
       "p1": 2.16,
@@ -59270,7 +59413,7 @@
       "p1": 2.5,
       "p2": 1.53,
       "bookmaker": "bet365",
-      "seenAt": "2026-11-06T00:29:33.726Z"
+      "seenAt": "2026-11-06T09:55:10.995Z"
     },
     "bestOdds": {
       "p1": {
@@ -59281,7 +59424,7 @@
         "price": 1.58,
         "bookmaker": "1xBet"
       },
-      "seenAt": "2026-11-06T00:29:33.726Z"
+      "seenAt": "2026-11-06T09:55:10.995Z"
     },
     "tournamentRound": "ATP Paris - 1/16-finals",
     "qualifying": false,
@@ -61914,10 +62057,10 @@
           "label": "Nov 6",
           "code": 3,
           "hi": 13,
-          "lo": 8,
-          "rain": 5,
+          "lo": 7,
+          "rain": 15,
           "wind": 5,
-          "humidity": 77,
+          "humidity": 76,
           "isMatch": false,
           "available": true
         },
@@ -61927,10 +62070,10 @@
           "label": "Nov 7",
           "code": 45,
           "hi": 12,
-          "lo": 5,
-          "rain": 0,
-          "wind": 6,
-          "humidity": 83,
+          "lo": 4,
+          "rain": 3,
+          "wind": 5,
+          "humidity": 81,
           "isMatch": false,
           "available": true
         },
@@ -61939,11 +62082,11 @@
           "dow": "Sun",
           "label": "Nov 8",
           "code": 45,
-          "hi": 9,
-          "lo": 5,
-          "rain": 0,
-          "wind": 8,
-          "humidity": 87,
+          "hi": 8,
+          "lo": 4,
+          "rain": 3,
+          "wind": 7,
+          "humidity": 93,
           "isMatch": false,
           "available": true
         }
@@ -63818,7 +63961,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-11-06T00:31:32.020Z"
+      "seenAt": "2026-11-06T09:57:16.898Z"
     },
     "pinClose": {
       "p1": 2.59,
@@ -63863,7 +64006,7 @@
       "p1": 1.36,
       "p2": 3.2,
       "bookmaker": "bet365",
-      "seenAt": "2026-11-06T00:29:33.726Z"
+      "seenAt": "2026-11-06T09:55:10.995Z"
     },
     "bestOdds": {
       "p1": {
@@ -63874,7 +64017,7 @@
         "price": 3.32,
         "bookmaker": "Pncl"
       },
-      "seenAt": "2026-11-06T00:29:33.726Z"
+      "seenAt": "2026-11-06T09:55:10.995Z"
     },
     "tournamentRound": "ATP Paris - 1/16-finals",
     "qualifying": false,
@@ -66570,10 +66713,10 @@
           "label": "Nov 6",
           "code": 3,
           "hi": 13,
-          "lo": 8,
-          "rain": 5,
+          "lo": 7,
+          "rain": 15,
           "wind": 5,
-          "humidity": 77,
+          "humidity": 76,
           "isMatch": false,
           "available": true
         },
@@ -66583,10 +66726,10 @@
           "label": "Nov 7",
           "code": 45,
           "hi": 12,
-          "lo": 5,
-          "rain": 0,
-          "wind": 6,
-          "humidity": 83,
+          "lo": 4,
+          "rain": 3,
+          "wind": 5,
+          "humidity": 81,
           "isMatch": false,
           "available": true
         },
@@ -66595,11 +66738,11 @@
           "dow": "Sun",
           "label": "Nov 8",
           "code": 45,
-          "hi": 9,
-          "lo": 5,
-          "rain": 0,
-          "wind": 8,
-          "humidity": 87,
+          "hi": 8,
+          "lo": 4,
+          "rain": 3,
+          "wind": 7,
+          "humidity": 93,
           "isMatch": false,
           "available": true
         }
@@ -67666,7 +67809,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-11-06T00:31:32.020Z"
+      "seenAt": "2026-11-06T09:57:16.898Z"
     },
     "pinClose": {
       "p1": 1.366,
@@ -67711,7 +67854,7 @@
       "p1": 1.66,
       "p2": 2.31,
       "bookmaker": "Pncl",
-      "seenAt": "2026-11-06T00:29:33.726Z"
+      "seenAt": "2026-11-06T09:55:10.995Z"
     },
     "bestOdds": {
       "p1": {
@@ -67722,7 +67865,7 @@
         "price": 2.31,
         "bookmaker": "Pncl"
       },
-      "seenAt": "2026-11-06T00:29:33.726Z"
+      "seenAt": "2026-11-06T09:55:10.995Z"
     },
     "tournamentRound": "ATP Paris - 1/32-finals",
     "qualifying": false,
@@ -70076,10 +70219,10 @@
           "label": "Nov 6",
           "code": 3,
           "hi": 13,
-          "lo": 8,
-          "rain": 5,
+          "lo": 7,
+          "rain": 15,
           "wind": 5,
-          "humidity": 77,
+          "humidity": 76,
           "isMatch": false,
           "available": true
         },
@@ -70089,10 +70232,10 @@
           "label": "Nov 7",
           "code": 45,
           "hi": 12,
-          "lo": 5,
-          "rain": 0,
-          "wind": 6,
-          "humidity": 83,
+          "lo": 4,
+          "rain": 3,
+          "wind": 5,
+          "humidity": 81,
           "isMatch": false,
           "available": true
         },
@@ -70101,11 +70244,11 @@
           "dow": "Sun",
           "label": "Nov 8",
           "code": 45,
-          "hi": 9,
-          "lo": 5,
-          "rain": 0,
-          "wind": 8,
-          "humidity": 87,
+          "hi": 8,
+          "lo": 4,
+          "rain": 3,
+          "wind": 7,
+          "humidity": 93,
           "isMatch": false,
           "available": true
         }
@@ -70809,7 +70952,7 @@
       "p1": 4.2,
       "p2": 1.26,
       "bookmaker": "Pncl",
-      "seenAt": "2026-11-06T00:29:33.726Z"
+      "seenAt": "2026-11-06T09:55:10.995Z"
     },
     "bestOdds": {
       "p1": {
@@ -70820,7 +70963,7 @@
         "price": 1.26,
         "bookmaker": "Pncl"
       },
-      "seenAt": "2026-11-06T00:29:33.726Z"
+      "seenAt": "2026-11-06T09:55:10.995Z"
     },
     "tournamentRound": "ATP Paris - 1/32-finals",
     "qualifying": false,
@@ -72897,10 +73040,10 @@
           "label": "Nov 6",
           "code": 3,
           "hi": 13,
-          "lo": 8,
-          "rain": 5,
+          "lo": 7,
+          "rain": 15,
           "wind": 5,
-          "humidity": 77,
+          "humidity": 76,
           "isMatch": false,
           "available": true
         },
@@ -72910,10 +73053,10 @@
           "label": "Nov 7",
           "code": 45,
           "hi": 12,
-          "lo": 5,
-          "rain": 0,
-          "wind": 6,
-          "humidity": 83,
+          "lo": 4,
+          "rain": 3,
+          "wind": 5,
+          "humidity": 81,
           "isMatch": false,
           "available": true
         },
@@ -72922,11 +73065,11 @@
           "dow": "Sun",
           "label": "Nov 8",
           "code": 45,
-          "hi": 9,
-          "lo": 5,
-          "rain": 0,
-          "wind": 8,
-          "humidity": 87,
+          "hi": 8,
+          "lo": 4,
+          "rain": 3,
+          "wind": 7,
+          "humidity": 93,
           "isMatch": false,
           "available": true
         }
@@ -73719,7 +73862,7 @@
       "p1": 6,
       "p2": 1.12,
       "bookmaker": "bet365",
-      "seenAt": "2026-11-06T00:30:09.459Z"
+      "seenAt": "2026-11-06T09:56:06.866Z"
     },
     "bestOdds": {
       "p1": {
@@ -73730,7 +73873,7 @@
         "price": 1.19,
         "bookmaker": "Pncl"
       },
-      "seenAt": "2026-11-06T00:30:09.459Z"
+      "seenAt": "2026-11-06T09:56:06.866Z"
     },
     "tournamentRound": "ATP Paris - 1/16-finals",
     "qualifying": false,
@@ -76726,10 +76869,10 @@
           "label": "Nov 6",
           "code": 3,
           "hi": 13,
-          "lo": 8,
-          "rain": 5,
+          "lo": 7,
+          "rain": 15,
           "wind": 5,
-          "humidity": 77,
+          "humidity": 76,
           "isMatch": false,
           "available": true
         },
@@ -76739,10 +76882,10 @@
           "label": "Nov 7",
           "code": 45,
           "hi": 12,
-          "lo": 5,
-          "rain": 0,
-          "wind": 6,
-          "humidity": 83,
+          "lo": 4,
+          "rain": 3,
+          "wind": 5,
+          "humidity": 81,
           "isMatch": false,
           "available": true
         },
@@ -76751,11 +76894,11 @@
           "dow": "Sun",
           "label": "Nov 8",
           "code": 45,
-          "hi": 9,
-          "lo": 5,
-          "rain": 0,
-          "wind": 8,
-          "humidity": 87,
+          "hi": 8,
+          "lo": 4,
+          "rain": 3,
+          "wind": 7,
+          "humidity": 93,
           "isMatch": false,
           "available": true
         }
@@ -78008,7 +78151,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-11-06T00:31:32.020Z"
+      "seenAt": "2026-11-06T09:57:16.898Z"
     },
     "pinClose": {
       "p1": 6.37,
@@ -78053,7 +78196,7 @@
       "p1": 1.4,
       "p2": 3,
       "bookmaker": "bet365",
-      "seenAt": "2026-11-06T00:30:09.459Z"
+      "seenAt": "2026-11-06T09:56:06.866Z"
     },
     "bestOdds": {
       "p1": {
@@ -78064,7 +78207,7 @@
         "price": 3.3,
         "bookmaker": "WilliamHill"
       },
-      "seenAt": "2026-11-06T00:30:09.459Z"
+      "seenAt": "2026-11-06T09:56:06.866Z"
     },
     "tournamentRound": "ATP Paris - 1/16-finals",
     "qualifying": false,
@@ -81459,10 +81602,10 @@
           "label": "Nov 6",
           "code": 3,
           "hi": 13,
-          "lo": 8,
-          "rain": 5,
+          "lo": 7,
+          "rain": 15,
           "wind": 5,
-          "humidity": 77,
+          "humidity": 76,
           "isMatch": false,
           "available": true
         },
@@ -81472,10 +81615,10 @@
           "label": "Nov 7",
           "code": 45,
           "hi": 12,
-          "lo": 5,
-          "rain": 0,
-          "wind": 6,
-          "humidity": 83,
+          "lo": 4,
+          "rain": 3,
+          "wind": 5,
+          "humidity": 81,
           "isMatch": false,
           "available": true
         },
@@ -81484,11 +81627,11 @@
           "dow": "Sun",
           "label": "Nov 8",
           "code": 45,
-          "hi": 9,
-          "lo": 5,
-          "rain": 0,
-          "wind": 8,
-          "humidity": 87,
+          "hi": 8,
+          "lo": 4,
+          "rain": 3,
+          "wind": 7,
+          "humidity": 93,
           "isMatch": false,
           "available": true
         }
@@ -81502,7 +81645,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-7(5), 2-6",
+      "display": "6-7, 2-6",
       "sets": [
         {
           "p1": 6,
@@ -82963,7 +83106,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-11-06T00:31:32.020Z"
+      "seenAt": "2026-11-06T09:57:16.898Z"
     },
     "pinClose": {
       "p1": 1.371,
@@ -83013,7 +83156,7 @@
       "p1": 1.53,
       "p2": 2.5,
       "bookmaker": "bet365",
-      "seenAt": "2026-11-06T00:30:09.459Z"
+      "seenAt": "2026-11-06T09:56:06.866Z"
     },
     "bestOdds": {
       "p1": {
@@ -83024,7 +83167,7 @@
         "price": 2.5,
         "bookmaker": "bet365"
       },
-      "seenAt": "2026-11-06T00:30:09.459Z"
+      "seenAt": "2026-11-06T09:56:06.866Z"
     },
     "tournamentRound": "ATP Paris - 1/16-finals",
     "qualifying": false,
@@ -85477,10 +85620,10 @@
           "label": "Nov 6",
           "code": 3,
           "hi": 13,
-          "lo": 8,
-          "rain": 5,
+          "lo": 7,
+          "rain": 15,
           "wind": 5,
-          "humidity": 77,
+          "humidity": 76,
           "isMatch": false,
           "available": true
         },
@@ -85490,10 +85633,10 @@
           "label": "Nov 7",
           "code": 45,
           "hi": 12,
-          "lo": 5,
-          "rain": 0,
-          "wind": 6,
-          "humidity": 83,
+          "lo": 4,
+          "rain": 3,
+          "wind": 5,
+          "humidity": 81,
           "isMatch": false,
           "available": true
         },
@@ -85502,11 +85645,11 @@
           "dow": "Sun",
           "label": "Nov 8",
           "code": 45,
-          "hi": 9,
-          "lo": 5,
-          "rain": 0,
-          "wind": 8,
-          "humidity": 87,
+          "hi": 8,
+          "lo": 4,
+          "rain": 3,
+          "wind": 7,
+          "humidity": 93,
           "isMatch": false,
           "available": true
         }
@@ -85520,7 +85663,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-3, 7-6(4)",
+      "display": "6-3, 7-6",
       "sets": [
         {
           "p1": 6,
@@ -87055,7 +87198,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-11-06T00:31:32.020Z"
+      "seenAt": "2026-11-06T09:57:16.898Z"
     },
     "pinClose": {
       "p1": 1.617,
@@ -87100,7 +87243,7 @@
       "p1": 1.66,
       "p2": 2.2,
       "bookmaker": "bet365",
-      "seenAt": "2026-11-06T00:30:09.459Z"
+      "seenAt": "2026-11-06T09:56:06.866Z"
     },
     "bestOdds": {
       "p1": {
@@ -87111,7 +87254,7 @@
         "price": 2.22,
         "bookmaker": "Pncl"
       },
-      "seenAt": "2026-11-06T00:30:09.459Z"
+      "seenAt": "2026-11-06T09:56:06.866Z"
     },
     "tournamentRound": "ATP Paris - 1/16-finals",
     "qualifying": false,
@@ -89996,9 +90139,9 @@
       "category": "Medium"
     },
     "weather": {
-      "temperature": 8,
-      "windSpeed": 12.3,
-      "humidity": 70,
+      "temperature": 8.6,
+      "windSpeed": 15.1,
+      "humidity": 63,
       "source": "Open-Meteo",
       "historical": true,
       "weekRange": "Nov 2 – 8, 2026",
@@ -90007,12 +90150,12 @@
           "date": "2026-11-02",
           "dow": "Mon",
           "label": "Nov 2",
-          "code": 51,
-          "hi": 11,
-          "lo": 7,
-          "rain": null,
+          "code": 80,
+          "hi": 12,
+          "lo": 9,
+          "rain": 53,
           "wind": 15,
-          "humidity": 89,
+          "humidity": 82,
           "isMatch": false,
           "available": true
         },
@@ -90020,12 +90163,12 @@
           "date": "2026-11-03",
           "dow": "Tue",
           "label": "Nov 3",
-          "code": 51,
+          "code": 80,
           "hi": 10,
-          "lo": 5,
-          "rain": null,
-          "wind": 19,
-          "humidity": 78,
+          "lo": 7,
+          "rain": 15,
+          "wind": 15,
+          "humidity": 72,
           "isMatch": false,
           "available": true
         },
@@ -90033,12 +90176,12 @@
           "date": "2026-11-04",
           "dow": "Wed",
           "label": "Nov 4",
-          "code": 3,
-          "hi": 9,
-          "lo": 5,
-          "rain": null,
-          "wind": 16,
-          "humidity": 72,
+          "code": 61,
+          "hi": 10,
+          "lo": 7,
+          "rain": 0,
+          "wind": 15,
+          "humidity": 65,
           "isMatch": true,
           "available": true
         },
@@ -90047,11 +90190,11 @@
           "dow": "Thu",
           "label": "Nov 5",
           "code": 3,
-          "hi": 10,
-          "lo": 3,
-          "rain": null,
+          "hi": 12,
+          "lo": 5,
+          "rain": 20,
           "wind": 9,
-          "humidity": 84,
+          "humidity": 71,
           "isMatch": false,
           "available": true
         },
@@ -90060,21 +90203,39 @@
           "dow": "Fri",
           "label": "Nov 6",
           "code": 3,
-          "hi": 12,
-          "lo": 4,
-          "rain": null,
-          "wind": 6,
-          "humidity": 90,
+          "hi": 13,
+          "lo": 7,
+          "rain": 15,
+          "wind": 5,
+          "humidity": 76,
           "isMatch": false,
           "available": true
         },
         {
           "date": "2026-11-07",
-          "available": false
+          "dow": "Sat",
+          "label": "Nov 7",
+          "code": 45,
+          "hi": 12,
+          "lo": 4,
+          "rain": 3,
+          "wind": 5,
+          "humidity": 81,
+          "isMatch": false,
+          "available": true
         },
         {
           "date": "2026-11-08",
-          "available": false
+          "dow": "Sun",
+          "label": "Nov 8",
+          "code": 45,
+          "hi": 8,
+          "lo": 4,
+          "rain": 3,
+          "wind": 7,
+          "humidity": 93,
+          "isMatch": false,
+          "available": true
         }
       ]
     },
@@ -91106,7 +91267,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-11-06T00:31:32.020Z"
+      "seenAt": "2026-11-06T09:57:16.898Z"
     },
     "pinClose": {
       "p1": 1.746,
@@ -91151,7 +91312,7 @@
       "p1": 4.5,
       "p2": 1.2,
       "bookmaker": "bet365",
-      "seenAt": "2026-11-06T00:30:09.459Z"
+      "seenAt": "2026-11-06T09:56:06.866Z"
     },
     "bestOdds": {
       "p1": {
@@ -91162,7 +91323,7 @@
         "price": 1.21,
         "bookmaker": "1xBet"
       },
-      "seenAt": "2026-11-06T00:30:09.459Z"
+      "seenAt": "2026-11-06T09:56:06.866Z"
     },
     "tournamentRound": "ATP Paris - 1/16-finals",
     "qualifying": false,
@@ -94187,8 +94348,8 @@
       "category": "Medium"
     },
     "weather": {
-      "temperature": 9.4,
-      "windSpeed": 15.2,
+      "temperature": 9.8,
+      "windSpeed": 13.7,
       "humidity": 63,
       "source": "Open-Meteo",
       "historical": true,
@@ -94198,12 +94359,12 @@
           "date": "2026-11-02",
           "dow": "Mon",
           "label": "Nov 2",
-          "code": 51,
-          "hi": 11,
-          "lo": 7,
-          "rain": null,
+          "code": 80,
+          "hi": 12,
+          "lo": 9,
+          "rain": 53,
           "wind": 15,
-          "humidity": 89,
+          "humidity": 82,
           "isMatch": false,
           "available": true
         },
@@ -94211,12 +94372,12 @@
           "date": "2026-11-03",
           "dow": "Tue",
           "label": "Nov 3",
-          "code": 51,
+          "code": 80,
           "hi": 10,
-          "lo": 5,
-          "rain": null,
-          "wind": 19,
-          "humidity": 78,
+          "lo": 7,
+          "rain": 15,
+          "wind": 15,
+          "humidity": 72,
           "isMatch": false,
           "available": true
         },
@@ -94224,12 +94385,12 @@
           "date": "2026-11-04",
           "dow": "Wed",
           "label": "Nov 4",
-          "code": 3,
-          "hi": 9,
-          "lo": 5,
-          "rain": null,
-          "wind": 16,
-          "humidity": 72,
+          "code": 61,
+          "hi": 10,
+          "lo": 7,
+          "rain": 0,
+          "wind": 15,
+          "humidity": 65,
           "isMatch": true,
           "available": true
         },
@@ -94238,11 +94399,11 @@
           "dow": "Thu",
           "label": "Nov 5",
           "code": 3,
-          "hi": 10,
-          "lo": 3,
-          "rain": null,
+          "hi": 12,
+          "lo": 5,
+          "rain": 20,
           "wind": 9,
-          "humidity": 84,
+          "humidity": 71,
           "isMatch": false,
           "available": true
         },
@@ -94251,21 +94412,39 @@
           "dow": "Fri",
           "label": "Nov 6",
           "code": 3,
-          "hi": 12,
-          "lo": 4,
-          "rain": null,
-          "wind": 6,
-          "humidity": 90,
+          "hi": 13,
+          "lo": 7,
+          "rain": 15,
+          "wind": 5,
+          "humidity": 76,
           "isMatch": false,
           "available": true
         },
         {
           "date": "2026-11-07",
-          "available": false
+          "dow": "Sat",
+          "label": "Nov 7",
+          "code": 45,
+          "hi": 12,
+          "lo": 4,
+          "rain": 3,
+          "wind": 5,
+          "humidity": 81,
+          "isMatch": false,
+          "available": true
         },
         {
           "date": "2026-11-08",
-          "available": false
+          "dow": "Sun",
+          "label": "Nov 8",
+          "code": 45,
+          "hi": 8,
+          "lo": 4,
+          "rain": 3,
+          "wind": 7,
+          "humidity": 93,
+          "isMatch": false,
+          "available": true
         }
       ]
     },
@@ -94277,7 +94456,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6(2), 6-3",
+      "display": "7-6, 6-3",
       "sets": [
         {
           "p1": 7,
@@ -95388,7 +95567,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-11-06T00:31:32.020Z"
+      "seenAt": "2026-11-06T09:57:16.898Z"
     },
     "pinClose": {
       "p1": 5.3,
@@ -95433,7 +95612,7 @@
       "p1": 2.2,
       "p2": 1.66,
       "bookmaker": "bet365",
-      "seenAt": "2026-11-06T00:30:09.459Z"
+      "seenAt": "2026-11-06T09:56:06.866Z"
     },
     "bestOdds": {
       "p1": {
@@ -95444,7 +95623,7 @@
         "price": 1.68,
         "bookmaker": "Pncl"
       },
-      "seenAt": "2026-11-06T00:30:09.459Z"
+      "seenAt": "2026-11-06T09:56:06.866Z"
     },
     "tournamentRound": "ATP Paris - 1/16-finals",
     "qualifying": false,
@@ -99206,10 +99385,10 @@
           "label": "Nov 6",
           "code": 3,
           "hi": 13,
-          "lo": 8,
-          "rain": 5,
+          "lo": 7,
+          "rain": 15,
           "wind": 5,
-          "humidity": 77,
+          "humidity": 76,
           "isMatch": false,
           "available": true
         },
@@ -99219,10 +99398,10 @@
           "label": "Nov 7",
           "code": 45,
           "hi": 12,
-          "lo": 5,
-          "rain": 0,
-          "wind": 6,
-          "humidity": 83,
+          "lo": 4,
+          "rain": 3,
+          "wind": 5,
+          "humidity": 81,
           "isMatch": false,
           "available": true
         },
@@ -99231,11 +99410,11 @@
           "dow": "Sun",
           "label": "Nov 8",
           "code": 45,
-          "hi": 9,
-          "lo": 5,
-          "rain": 0,
-          "wind": 8,
-          "humidity": 87,
+          "hi": 8,
+          "lo": 4,
+          "rain": 3,
+          "wind": 7,
+          "humidity": 93,
           "isMatch": false,
           "available": true
         }
@@ -99249,7 +99428,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-3, 1-6, 7-6(9)",
+      "display": "6-3, 1-6, 7-6",
       "sets": [
         {
           "p1": 6,
@@ -100585,7 +100764,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-11-06T00:31:32.020Z"
+      "seenAt": "2026-11-06T09:57:16.898Z"
     },
     "pinClose": {
       "p1": 2.33,
@@ -100630,7 +100809,7 @@
       "p1": 2.75,
       "p2": 1.44,
       "bookmaker": "bet365",
-      "seenAt": "2026-11-06T00:30:09.459Z"
+      "seenAt": "2026-11-06T09:56:06.866Z"
     },
     "bestOdds": {
       "p1": {
@@ -100641,7 +100820,7 @@
         "price": 1.51,
         "bookmaker": "Pncl"
       },
-      "seenAt": "2026-11-06T00:30:09.459Z"
+      "seenAt": "2026-11-06T09:56:06.866Z"
     },
     "tournamentRound": "ATP Paris - 1/16-finals",
     "qualifying": false,
@@ -104080,10 +104259,10 @@
           "label": "Nov 6",
           "code": 3,
           "hi": 13,
-          "lo": 8,
-          "rain": 5,
+          "lo": 7,
+          "rain": 15,
           "wind": 5,
-          "humidity": 77,
+          "humidity": 76,
           "isMatch": false,
           "available": true
         },
@@ -104093,10 +104272,10 @@
           "label": "Nov 7",
           "code": 45,
           "hi": 12,
-          "lo": 5,
-          "rain": 0,
-          "wind": 6,
-          "humidity": 83,
+          "lo": 4,
+          "rain": 3,
+          "wind": 5,
+          "humidity": 81,
           "isMatch": false,
           "available": true
         },
@@ -104105,11 +104284,11 @@
           "dow": "Sun",
           "label": "Nov 8",
           "code": 45,
-          "hi": 9,
-          "lo": 5,
-          "rain": 0,
-          "wind": 8,
-          "humidity": 87,
+          "hi": 8,
+          "lo": 4,
+          "rain": 3,
+          "wind": 7,
+          "humidity": 93,
           "isMatch": false,
           "available": true
         }
@@ -105418,7 +105597,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-11-06T00:31:32.020Z"
+      "seenAt": "2026-11-06T09:57:16.898Z"
     },
     "pinClose": {
       "p1": 2.78,
@@ -105463,7 +105642,7 @@
       "p1": 2.5,
       "p2": 1.53,
       "bookmaker": "bet365",
-      "seenAt": "2026-11-06T00:30:09.459Z"
+      "seenAt": "2026-11-06T09:56:06.866Z"
     },
     "bestOdds": {
       "p1": {
@@ -105474,7 +105653,7 @@
         "price": 1.55,
         "bookmaker": "Pncl"
       },
-      "seenAt": "2026-11-06T00:30:09.459Z"
+      "seenAt": "2026-11-06T09:56:06.866Z"
     },
     "tournamentRound": "ATP Paris - 1/16-finals",
     "qualifying": false,
@@ -107826,10 +108005,10 @@
           "label": "Nov 6",
           "code": 3,
           "hi": 13,
-          "lo": 8,
-          "rain": 5,
+          "lo": 7,
+          "rain": 15,
           "wind": 5,
-          "humidity": 77,
+          "humidity": 76,
           "isMatch": false,
           "available": true
         },
@@ -107839,10 +108018,10 @@
           "label": "Nov 7",
           "code": 45,
           "hi": 12,
-          "lo": 5,
-          "rain": 0,
-          "wind": 6,
-          "humidity": 83,
+          "lo": 4,
+          "rain": 3,
+          "wind": 5,
+          "humidity": 81,
           "isMatch": false,
           "available": true
         },
@@ -107851,11 +108030,11 @@
           "dow": "Sun",
           "label": "Nov 8",
           "code": 45,
-          "hi": 9,
-          "lo": 5,
-          "rain": 0,
-          "wind": 8,
-          "humidity": 87,
+          "hi": 8,
+          "lo": 4,
+          "rain": 3,
+          "wind": 7,
+          "humidity": 93,
           "isMatch": false,
           "available": true
         }
@@ -107869,7 +108048,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6(4), 6-4",
+      "display": "7-6, 6-4",
       "sets": [
         {
           "p1": 7,
@@ -109126,7 +109305,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-11-06T00:31:32.020Z"
+      "seenAt": "2026-11-06T09:57:16.898Z"
     },
     "pinClose": {
       "p1": 2.58,
@@ -109171,7 +109350,7 @@
       "p1": 2,
       "p2": 1.8,
       "bookmaker": "bet365",
-      "seenAt": "2026-11-06T00:30:09.459Z"
+      "seenAt": "2026-11-06T09:56:06.866Z"
     },
     "bestOdds": {
       "p1": {
@@ -109182,7 +109361,7 @@
         "price": 1.82,
         "bookmaker": "1xBet"
       },
-      "seenAt": "2026-11-06T00:30:09.459Z"
+      "seenAt": "2026-11-06T09:56:06.866Z"
     },
     "tournamentRound": "ATP Paris - 1/16-finals",
     "qualifying": false,
@@ -112318,10 +112497,10 @@
           "label": "Nov 6",
           "code": 3,
           "hi": 13,
-          "lo": 8,
-          "rain": 5,
+          "lo": 7,
+          "rain": 15,
           "wind": 5,
-          "humidity": 77,
+          "humidity": 76,
           "isMatch": false,
           "available": true
         },
@@ -112331,10 +112510,10 @@
           "label": "Nov 7",
           "code": 45,
           "hi": 12,
-          "lo": 5,
-          "rain": 0,
-          "wind": 6,
-          "humidity": 83,
+          "lo": 4,
+          "rain": 3,
+          "wind": 5,
+          "humidity": 81,
           "isMatch": false,
           "available": true
         },
@@ -112343,11 +112522,11 @@
           "dow": "Sun",
           "label": "Nov 8",
           "code": 45,
-          "hi": 9,
-          "lo": 5,
-          "rain": 0,
-          "wind": 8,
-          "humidity": 87,
+          "hi": 8,
+          "lo": 4,
+          "rain": 3,
+          "wind": 7,
+          "humidity": 93,
           "isMatch": false,
           "available": true
         }
@@ -112361,7 +112540,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6(3), 7-5",
+      "display": "7-6, 7-5",
       "sets": [
         {
           "p1": 7,
@@ -113972,7 +114151,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-11-06T00:31:32.020Z"
+      "seenAt": "2026-11-06T09:57:16.898Z"
     },
     "pinClose": {
       "p1": 2.09,
@@ -114016,7 +114195,7 @@
       "p1": 1.25,
       "p2": 4,
       "bookmaker": "bet365",
-      "seenAt": "2026-11-06T00:30:09.459Z"
+      "seenAt": "2026-11-06T09:56:06.866Z"
     },
     "bestOdds": {
       "p1": {
@@ -114027,7 +114206,7 @@
         "price": 4.85,
         "bookmaker": "Pncl"
       },
-      "seenAt": "2026-11-06T00:30:09.459Z"
+      "seenAt": "2026-11-06T09:56:06.866Z"
     },
     "tournamentRound": "ATP Paris - 1/16-finals",
     "qualifying": false,
@@ -117989,10 +118168,10 @@
           "label": "Nov 6",
           "code": 3,
           "hi": 13,
-          "lo": 8,
-          "rain": 5,
+          "lo": 7,
+          "rain": 15,
           "wind": 5,
-          "humidity": 77,
+          "humidity": 76,
           "isMatch": false,
           "available": true
         },
@@ -118002,10 +118181,10 @@
           "label": "Nov 7",
           "code": 45,
           "hi": 12,
-          "lo": 5,
-          "rain": 0,
-          "wind": 6,
-          "humidity": 83,
+          "lo": 4,
+          "rain": 3,
+          "wind": 5,
+          "humidity": 81,
           "isMatch": false,
           "available": true
         },
@@ -118014,11 +118193,11 @@
           "dow": "Sun",
           "label": "Nov 8",
           "code": 45,
-          "hi": 9,
-          "lo": 5,
-          "rain": 0,
-          "wind": 8,
-          "humidity": 87,
+          "hi": 8,
+          "lo": 4,
+          "rain": 3,
+          "wind": 7,
+          "humidity": 93,
           "isMatch": false,
           "available": true
         }
@@ -119799,7 +119978,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-11-06T00:31:32.020Z"
+      "seenAt": "2026-11-06T09:57:16.898Z"
     },
     "pinClose": {
       "p1": 1.236,
@@ -119844,7 +120023,7 @@
       "p1": 1.25,
       "p2": 4,
       "bookmaker": "bet365",
-      "seenAt": "2026-11-06T00:30:09.459Z"
+      "seenAt": "2026-11-06T09:56:06.866Z"
     },
     "bestOdds": {
       "p1": {
@@ -119855,7 +120034,7 @@
         "price": 4.5,
         "bookmaker": "WilliamHill"
       },
-      "seenAt": "2026-11-06T00:30:09.459Z"
+      "seenAt": "2026-11-06T09:56:06.866Z"
     },
     "tournamentRound": "ATP Paris - 1/16-finals",
     "qualifying": false,
@@ -122708,10 +122887,10 @@
           "label": "Nov 6",
           "code": 3,
           "hi": 13,
-          "lo": 8,
-          "rain": 5,
+          "lo": 7,
+          "rain": 15,
           "wind": 5,
-          "humidity": 77,
+          "humidity": 76,
           "isMatch": false,
           "available": true
         },
@@ -122721,10 +122900,10 @@
           "label": "Nov 7",
           "code": 45,
           "hi": 12,
-          "lo": 5,
-          "rain": 0,
-          "wind": 6,
-          "humidity": 83,
+          "lo": 4,
+          "rain": 3,
+          "wind": 5,
+          "humidity": 81,
           "isMatch": false,
           "available": true
         },
@@ -122733,11 +122912,11 @@
           "dow": "Sun",
           "label": "Nov 8",
           "code": 45,
-          "hi": 9,
-          "lo": 5,
-          "rain": 0,
-          "wind": 8,
-          "humidity": 87,
+          "hi": 8,
+          "lo": 4,
+          "rain": 3,
+          "wind": 7,
+          "humidity": 93,
           "isMatch": false,
           "available": true
         }
@@ -123666,7 +123845,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-11-06T00:31:32.020Z"
+      "seenAt": "2026-11-06T09:57:16.898Z"
     },
     "pinClose": {
       "p1": 1.209,
@@ -123716,7 +123895,7 @@
       "p1": 5,
       "p2": 1.16,
       "bookmaker": "bet365",
-      "seenAt": "2026-11-06T00:30:09.459Z"
+      "seenAt": "2026-11-06T09:56:06.866Z"
     },
     "bestOdds": {
       "p1": {
@@ -123727,7 +123906,7 @@
         "price": 1.19,
         "bookmaker": "Pncl"
       },
-      "seenAt": "2026-11-06T00:30:09.459Z"
+      "seenAt": "2026-11-06T09:56:06.866Z"
     },
     "tournamentRound": "ATP Paris - 1/16-finals",
     "qualifying": false,
@@ -125992,10 +126171,10 @@
           "label": "Nov 6",
           "code": 3,
           "hi": 13,
-          "lo": 8,
-          "rain": 5,
+          "lo": 7,
+          "rain": 15,
           "wind": 5,
-          "humidity": 77,
+          "humidity": 76,
           "isMatch": false,
           "available": true
         },
@@ -126005,10 +126184,10 @@
           "label": "Nov 7",
           "code": 45,
           "hi": 12,
-          "lo": 5,
-          "rain": 0,
-          "wind": 6,
-          "humidity": 83,
+          "lo": 4,
+          "rain": 3,
+          "wind": 5,
+          "humidity": 81,
           "isMatch": false,
           "available": true
         },
@@ -126017,11 +126196,11 @@
           "dow": "Sun",
           "label": "Nov 8",
           "code": 45,
-          "hi": 9,
-          "lo": 5,
-          "rain": 0,
-          "wind": 8,
-          "humidity": 87,
+          "hi": 8,
+          "lo": 4,
+          "rain": 3,
+          "wind": 7,
+          "humidity": 93,
           "isMatch": false,
           "available": true
         }
@@ -126035,7 +126214,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-7(4), 3-6",
+      "display": "6-7, 3-6",
       "sets": [
         {
           "p1": 6,
@@ -127486,7 +127665,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-11-06T00:31:32.020Z"
+      "seenAt": "2026-11-06T09:57:16.898Z"
     },
     "pinClose": {
       "p1": 5.29,
@@ -127530,7 +127709,7 @@
       "p1": 4.33,
       "p2": 1.22,
       "bookmaker": "bet365",
-      "seenAt": "2026-11-06T00:30:09.459Z"
+      "seenAt": "2026-11-06T09:56:06.866Z"
     },
     "bestOdds": {
       "p1": {
@@ -127541,7 +127720,7 @@
         "price": 1.25,
         "bookmaker": "WilliamHill"
       },
-      "seenAt": "2026-11-06T00:30:09.459Z"
+      "seenAt": "2026-11-06T09:56:06.866Z"
     },
     "tournamentRound": "ATP Paris - 1/16-finals",
     "qualifying": false,
@@ -130800,10 +130979,10 @@
           "label": "Nov 6",
           "code": 3,
           "hi": 13,
-          "lo": 8,
-          "rain": 5,
+          "lo": 7,
+          "rain": 15,
           "wind": 5,
-          "humidity": 77,
+          "humidity": 76,
           "isMatch": false,
           "available": true
         },
@@ -130813,10 +130992,10 @@
           "label": "Nov 7",
           "code": 45,
           "hi": 12,
-          "lo": 5,
-          "rain": 0,
-          "wind": 6,
-          "humidity": 83,
+          "lo": 4,
+          "rain": 3,
+          "wind": 5,
+          "humidity": 81,
           "isMatch": false,
           "available": true
         },
@@ -130825,11 +131004,11 @@
           "dow": "Sun",
           "label": "Nov 8",
           "code": 45,
-          "hi": 9,
-          "lo": 5,
-          "rain": 0,
-          "wind": 8,
-          "humidity": 87,
+          "hi": 8,
+          "lo": 4,
+          "rain": 3,
+          "wind": 7,
+          "humidity": 93,
           "isMatch": false,
           "available": true
         }
@@ -130843,7 +131022,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6(6), 5-7, 6-7(5)",
+      "display": "7-6, 5-7, 6-7",
       "sets": [
         {
           "p1": 7,
@@ -132202,7 +132381,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-11-06T00:31:32.020Z"
+      "seenAt": "2026-11-06T09:57:16.898Z"
     },
     "pinClose": {
       "p1": 4.41,
@@ -132247,7 +132426,7 @@
       "p1": 2.75,
       "p2": 1.44,
       "bookmaker": "bet365",
-      "seenAt": "2026-11-06T00:30:09.459Z"
+      "seenAt": "2026-11-06T09:56:06.866Z"
     },
     "bestOdds": {
       "p1": {
@@ -132258,7 +132437,7 @@
         "price": 1.46,
         "bookmaker": "1xBet"
       },
-      "seenAt": "2026-11-06T00:30:09.459Z"
+      "seenAt": "2026-11-06T09:56:06.866Z"
     },
     "tournamentRound": "ATP Paris - 1/16-finals",
     "qualifying": false,
@@ -135679,10 +135858,10 @@
           "label": "Nov 6",
           "code": 3,
           "hi": 13,
-          "lo": 8,
-          "rain": 5,
+          "lo": 7,
+          "rain": 15,
           "wind": 5,
-          "humidity": 77,
+          "humidity": 76,
           "isMatch": false,
           "available": true
         },
@@ -135692,10 +135871,10 @@
           "label": "Nov 7",
           "code": 45,
           "hi": 12,
-          "lo": 5,
-          "rain": 0,
-          "wind": 6,
-          "humidity": 83,
+          "lo": 4,
+          "rain": 3,
+          "wind": 5,
+          "humidity": 81,
           "isMatch": false,
           "available": true
         },
@@ -135704,11 +135883,11 @@
           "dow": "Sun",
           "label": "Nov 8",
           "code": 45,
-          "hi": 9,
-          "lo": 5,
-          "rain": 0,
-          "wind": 8,
-          "humidity": 87,
+          "hi": 8,
+          "lo": 4,
+          "rain": 3,
+          "wind": 7,
+          "humidity": 93,
           "isMatch": false,
           "available": true
         }
@@ -135722,7 +135901,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6(5), 3-6, 6-7(3)",
+      "display": "7-6, 3-6, 6-7",
       "sets": [
         {
           "p1": 7,
@@ -137677,7 +137856,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-11-06T00:31:32.020Z"
+      "seenAt": "2026-11-06T09:57:16.898Z"
     },
     "pinClose": {
       "p1": 3,
@@ -137727,7 +137906,7 @@
       "p1": 1.3,
       "p2": 3.5,
       "bookmaker": "bet365",
-      "seenAt": "2026-11-06T00:31:14.144Z"
+      "seenAt": "2026-11-06T09:56:54.768Z"
     },
     "bestOdds": {
       "p1": {
@@ -137735,10 +137914,10 @@
         "bookmaker": "Pncl"
       },
       "p2": {
-        "price": 3.52,
+        "price": 3.53,
         "bookmaker": "1xBet"
       },
-      "seenAt": "2026-11-06T00:31:14.144Z"
+      "seenAt": "2026-11-06T09:56:54.768Z"
     },
     "tournamentRound": "ATP Paris - 1/8-finals",
     "qualifying": false,
@@ -140429,10 +140608,10 @@
           "label": "Nov 6",
           "code": 3,
           "hi": 13,
-          "lo": 8,
-          "rain": 5,
+          "lo": 7,
+          "rain": 15,
           "wind": 5,
-          "humidity": 77,
+          "humidity": 76,
           "isMatch": false,
           "available": true
         },
@@ -140442,10 +140621,10 @@
           "label": "Nov 7",
           "code": 45,
           "hi": 12,
-          "lo": 5,
-          "rain": 0,
-          "wind": 6,
-          "humidity": 83,
+          "lo": 4,
+          "rain": 3,
+          "wind": 5,
+          "humidity": 81,
           "isMatch": false,
           "available": true
         },
@@ -140454,11 +140633,11 @@
           "dow": "Sun",
           "label": "Nov 8",
           "code": 45,
-          "hi": 9,
-          "lo": 5,
-          "rain": 0,
-          "wind": 8,
-          "humidity": 87,
+          "hi": 8,
+          "lo": 4,
+          "rain": 3,
+          "wind": 7,
+          "humidity": 93,
           "isMatch": false,
           "available": true
         }
@@ -140472,7 +140651,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "3-6, 6-4, 7-6(5)",
+      "display": "3-6, 6-4, 7-6",
       "sets": [
         {
           "p1": 3,
@@ -141827,7 +142006,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-11-06T00:31:32.020Z"
+      "seenAt": "2026-11-06T09:57:16.898Z"
     },
     "pinClose": {
       "p1": 1.352,
@@ -141872,18 +142051,18 @@
       "p1": 1.3,
       "p2": 3.5,
       "bookmaker": "bet365",
-      "seenAt": "2026-11-06T00:31:14.144Z"
+      "seenAt": "2026-11-06T09:56:54.768Z"
     },
     "bestOdds": {
       "p1": {
         "price": 1.32,
-        "bookmaker": "Pncl"
+        "bookmaker": "1xBet"
       },
       "p2": {
-        "price": 3.73,
+        "price": 3.9,
         "bookmaker": "Pncl"
       },
-      "seenAt": "2026-11-06T00:31:14.144Z"
+      "seenAt": "2026-11-06T09:56:54.768Z"
     },
     "tournamentRound": "ATP Paris - 1/8-finals",
     "qualifying": false,
@@ -145604,10 +145783,10 @@
           "label": "Nov 6",
           "code": 3,
           "hi": 13,
-          "lo": 8,
-          "rain": 5,
+          "lo": 7,
+          "rain": 15,
           "wind": 5,
-          "humidity": 77,
+          "humidity": 76,
           "isMatch": false,
           "available": true
         },
@@ -145617,10 +145796,10 @@
           "label": "Nov 7",
           "code": 45,
           "hi": 12,
-          "lo": 5,
-          "rain": 0,
-          "wind": 6,
-          "humidity": 83,
+          "lo": 4,
+          "rain": 3,
+          "wind": 5,
+          "humidity": 81,
           "isMatch": false,
           "available": true
         },
@@ -145629,11 +145808,11 @@
           "dow": "Sun",
           "label": "Nov 8",
           "code": 45,
-          "hi": 9,
-          "lo": 5,
-          "rain": 0,
-          "wind": 8,
-          "humidity": 87,
+          "hi": 8,
+          "lo": 4,
+          "rain": 3,
+          "wind": 7,
+          "humidity": 93,
           "isMatch": false,
           "available": true
         }
@@ -145647,7 +145826,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6(3), 6-4",
+      "display": "7-6, 6-4",
       "sets": [
         {
           "p1": 7,
@@ -146774,7 +146953,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-11-06T00:31:32.020Z"
+      "seenAt": "2026-11-06T09:57:16.898Z"
     },
     "pinClose": {
       "p1": 1.302,
@@ -146819,18 +146998,18 @@
       "p1": 1.3,
       "p2": 3.5,
       "bookmaker": "bet365",
-      "seenAt": "2026-11-06T00:31:14.144Z"
+      "seenAt": "2026-11-06T09:56:54.768Z"
     },
     "bestOdds": {
       "p1": {
-        "price": 1.35,
-        "bookmaker": "Pncl"
+        "price": 1.33,
+        "bookmaker": "WilliamHill"
       },
       "p2": {
-        "price": 3.55,
-        "bookmaker": "Betano"
+        "price": 3.67,
+        "bookmaker": "Pncl"
       },
-      "seenAt": "2026-11-06T00:31:14.144Z"
+      "seenAt": "2026-11-06T09:56:54.768Z"
     },
     "tournamentRound": "ATP Paris - 1/8-finals",
     "qualifying": false,
@@ -149491,10 +149670,10 @@
           "label": "Nov 6",
           "code": 3,
           "hi": 13,
-          "lo": 8,
-          "rain": 5,
+          "lo": 7,
+          "rain": 15,
           "wind": 5,
-          "humidity": 77,
+          "humidity": 76,
           "isMatch": false,
           "available": true
         },
@@ -149504,10 +149683,10 @@
           "label": "Nov 7",
           "code": 45,
           "hi": 12,
-          "lo": 5,
-          "rain": 0,
-          "wind": 6,
-          "humidity": 83,
+          "lo": 4,
+          "rain": 3,
+          "wind": 5,
+          "humidity": 81,
           "isMatch": false,
           "available": true
         },
@@ -149516,11 +149695,11 @@
           "dow": "Sun",
           "label": "Nov 8",
           "code": 45,
-          "hi": 9,
-          "lo": 5,
-          "rain": 0,
-          "wind": 8,
-          "humidity": 87,
+          "hi": 8,
+          "lo": 4,
+          "rain": 3,
+          "wind": 7,
+          "humidity": 93,
           "isMatch": false,
           "available": true
         }
@@ -150649,7 +150828,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-11-06T00:31:32.020Z"
+      "seenAt": "2026-11-06T09:57:16.898Z"
     },
     "pinClose": {
       "p1": 1.342,
@@ -150694,18 +150873,18 @@
       "p1": 2,
       "p2": 1.8,
       "bookmaker": "bet365",
-      "seenAt": "2026-11-06T00:31:14.144Z"
+      "seenAt": "2026-11-06T09:56:54.768Z"
     },
     "bestOdds": {
       "p1": {
-        "price": 2.29,
+        "price": 2.3,
         "bookmaker": "Pncl"
       },
       "p2": {
         "price": 1.8,
         "bookmaker": "bet365"
       },
-      "seenAt": "2026-11-06T00:31:14.144Z"
+      "seenAt": "2026-11-06T09:56:54.768Z"
     },
     "tournamentRound": "ATP Paris - 1/8-finals",
     "qualifying": false,
@@ -153481,10 +153660,10 @@
           "label": "Nov 6",
           "code": 3,
           "hi": 13,
-          "lo": 8,
-          "rain": 5,
+          "lo": 7,
+          "rain": 15,
           "wind": 5,
-          "humidity": 77,
+          "humidity": 76,
           "isMatch": false,
           "available": true
         },
@@ -153494,10 +153673,10 @@
           "label": "Nov 7",
           "code": 45,
           "hi": 12,
-          "lo": 5,
-          "rain": 0,
-          "wind": 6,
-          "humidity": 83,
+          "lo": 4,
+          "rain": 3,
+          "wind": 5,
+          "humidity": 81,
           "isMatch": false,
           "available": true
         },
@@ -153506,11 +153685,11 @@
           "dow": "Sun",
           "label": "Nov 8",
           "code": 45,
-          "hi": 9,
-          "lo": 5,
-          "rain": 0,
-          "wind": 8,
-          "humidity": 87,
+          "hi": 8,
+          "lo": 4,
+          "rain": 3,
+          "wind": 7,
+          "humidity": 93,
           "isMatch": false,
           "available": true
         }
@@ -154807,7 +154986,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-11-06T00:31:32.020Z"
+      "seenAt": "2026-11-06T09:57:16.898Z"
     },
     "pinClose": {
       "p1": 2.16,
@@ -154852,7 +155031,7 @@
       "p1": 1.57,
       "p2": 2.37,
       "bookmaker": "bet365",
-      "seenAt": "2026-11-06T00:31:14.144Z"
+      "seenAt": "2026-11-06T09:56:54.768Z"
     },
     "bestOdds": {
       "p1": {
@@ -154860,10 +155039,10 @@
         "bookmaker": "Sbo"
       },
       "p2": {
-        "price": 2.58,
+        "price": 2.6,
         "bookmaker": "Pncl"
       },
-      "seenAt": "2026-11-06T00:31:14.144Z"
+      "seenAt": "2026-11-06T09:56:54.768Z"
     },
     "tournamentRound": "ATP Paris - 1/8-finals",
     "qualifying": false,
@@ -157400,10 +157579,10 @@
           "label": "Nov 6",
           "code": 3,
           "hi": 13,
-          "lo": 8,
-          "rain": 5,
+          "lo": 7,
+          "rain": 15,
           "wind": 5,
-          "humidity": 77,
+          "humidity": 76,
           "isMatch": false,
           "available": true
         },
@@ -157413,10 +157592,10 @@
           "label": "Nov 7",
           "code": 45,
           "hi": 12,
-          "lo": 5,
-          "rain": 0,
-          "wind": 6,
-          "humidity": 83,
+          "lo": 4,
+          "rain": 3,
+          "wind": 5,
+          "humidity": 81,
           "isMatch": false,
           "available": true
         },
@@ -157425,11 +157604,11 @@
           "dow": "Sun",
           "label": "Nov 8",
           "code": 45,
-          "hi": 9,
-          "lo": 5,
-          "rain": 0,
-          "wind": 8,
-          "humidity": 87,
+          "hi": 8,
+          "lo": 4,
+          "rain": 3,
+          "wind": 7,
+          "humidity": 93,
           "isMatch": false,
           "available": true
         }
@@ -158446,7 +158625,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-11-06T00:31:32.020Z"
+      "seenAt": "2026-11-06T09:57:16.898Z"
     },
     "pinClose": {
       "p1": 1.574,
@@ -158491,7 +158670,7 @@
       "p1": 2.75,
       "p2": 1.44,
       "bookmaker": "bet365",
-      "seenAt": "2026-11-06T00:31:14.144Z"
+      "seenAt": "2026-11-06T09:56:54.768Z"
     },
     "bestOdds": {
       "p1": {
@@ -158499,10 +158678,10 @@
         "bookmaker": "Pncl"
       },
       "p2": {
-        "price": 1.45,
+        "price": 1.46,
         "bookmaker": "1xBet"
       },
-      "seenAt": "2026-11-06T00:31:14.144Z"
+      "seenAt": "2026-11-06T09:56:54.768Z"
     },
     "tournamentRound": "ATP Paris - 1/8-finals",
     "qualifying": false,
@@ -162340,10 +162519,10 @@
           "label": "Nov 6",
           "code": 3,
           "hi": 13,
-          "lo": 8,
-          "rain": 5,
+          "lo": 7,
+          "rain": 15,
           "wind": 5,
-          "humidity": 77,
+          "humidity": 76,
           "isMatch": false,
           "available": true
         },
@@ -162353,10 +162532,10 @@
           "label": "Nov 7",
           "code": 45,
           "hi": 12,
-          "lo": 5,
-          "rain": 0,
-          "wind": 6,
-          "humidity": 83,
+          "lo": 4,
+          "rain": 3,
+          "wind": 5,
+          "humidity": 81,
           "isMatch": false,
           "available": true
         },
@@ -162365,11 +162544,11 @@
           "dow": "Sun",
           "label": "Nov 8",
           "code": 45,
-          "hi": 9,
-          "lo": 5,
-          "rain": 0,
-          "wind": 8,
-          "humidity": 87,
+          "hi": 8,
+          "lo": 4,
+          "rain": 3,
+          "wind": 7,
+          "humidity": 93,
           "isMatch": false,
           "available": true
         }
@@ -163994,7 +164173,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-11-06T00:31:32.020Z"
+      "seenAt": "2026-11-06T09:57:16.898Z"
     },
     "pinClose": {
       "p1": 2.93,
@@ -164039,7 +164218,7 @@
       "p1": 5.5,
       "p2": 1.14,
       "bookmaker": "bet365",
-      "seenAt": "2026-11-06T00:31:14.144Z"
+      "seenAt": "2026-11-06T09:56:54.768Z"
     },
     "bestOdds": {
       "p1": {
@@ -164050,7 +164229,7 @@
         "price": 1.17,
         "bookmaker": "Betfair"
       },
-      "seenAt": "2026-11-06T00:31:14.144Z"
+      "seenAt": "2026-11-06T09:56:54.768Z"
     },
     "tournamentRound": "ATP Paris - 1/8-finals",
     "qualifying": false,
@@ -166725,10 +166904,10 @@
           "label": "Nov 6",
           "code": 3,
           "hi": 13,
-          "lo": 8,
-          "rain": 5,
+          "lo": 7,
+          "rain": 15,
           "wind": 5,
-          "humidity": 77,
+          "humidity": 76,
           "isMatch": false,
           "available": true
         },
@@ -166738,10 +166917,10 @@
           "label": "Nov 7",
           "code": 45,
           "hi": 12,
-          "lo": 5,
-          "rain": 0,
-          "wind": 6,
-          "humidity": 83,
+          "lo": 4,
+          "rain": 3,
+          "wind": 5,
+          "humidity": 81,
           "isMatch": false,
           "available": true
         },
@@ -166750,11 +166929,11 @@
           "dow": "Sun",
           "label": "Nov 8",
           "code": 45,
-          "hi": 9,
-          "lo": 5,
-          "rain": 0,
-          "wind": 8,
-          "humidity": 87,
+          "hi": 8,
+          "lo": 4,
+          "rain": 3,
+          "wind": 7,
+          "humidity": 93,
           "isMatch": false,
           "available": true
         }
@@ -167730,7 +167909,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-11-06T00:31:32.020Z"
+      "seenAt": "2026-11-06T09:57:16.898Z"
     },
     "pinClose": {
       "p1": 6.03,
@@ -167775,7 +167954,7 @@
       "p1": 1.66,
       "p2": 2.2,
       "bookmaker": "bet365",
-      "seenAt": "2026-11-06T00:31:14.144Z"
+      "seenAt": "2026-11-06T09:56:54.768Z"
     },
     "bestOdds": {
       "p1": {
@@ -167786,7 +167965,7 @@
         "price": 2.25,
         "bookmaker": "Pncl"
       },
-      "seenAt": "2026-11-06T00:31:14.144Z"
+      "seenAt": "2026-11-06T09:56:54.768Z"
     },
     "tournamentRound": "ATP Paris - 1/8-finals",
     "qualifying": false,
@@ -170782,10 +170961,10 @@
           "label": "Nov 6",
           "code": 3,
           "hi": 13,
-          "lo": 8,
-          "rain": 5,
+          "lo": 7,
+          "rain": 15,
           "wind": 5,
-          "humidity": 77,
+          "humidity": 76,
           "isMatch": false,
           "available": true
         },
@@ -170795,10 +170974,10 @@
           "label": "Nov 7",
           "code": 45,
           "hi": 12,
-          "lo": 5,
-          "rain": 0,
-          "wind": 6,
-          "humidity": 83,
+          "lo": 4,
+          "rain": 3,
+          "wind": 5,
+          "humidity": 81,
           "isMatch": false,
           "available": true
         },
@@ -170807,11 +170986,11 @@
           "dow": "Sun",
           "label": "Nov 8",
           "code": 45,
-          "hi": 9,
-          "lo": 5,
-          "rain": 0,
-          "wind": 8,
-          "humidity": 87,
+          "hi": 8,
+          "lo": 4,
+          "rain": 3,
+          "wind": 7,
+          "humidity": 93,
           "isMatch": false,
           "available": true
         }
@@ -172248,7 +172427,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-11-06T00:31:32.020Z"
+      "seenAt": "2026-11-06T09:57:16.898Z"
     },
     "pinClose": {
       "p1": 1.689,
