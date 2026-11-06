@@ -113,6 +113,31 @@ const MAX_FETCHES_PER_RUN = Number(process.env.PBP_MAX_FETCHES || 750);
 const RECHECK_DAYS = Number(process.env.PBP_RECHECK_DAYS || 7);
 const RECHECK_MIN = Number(process.env.PBP_RECHECK_MIN || 60);
 const RECHECK_MAX = Number(process.env.PBP_RECHECK_MAX || 500);
+// Architecture stage 6 (2026-11-06): the pipeline cache is saved at most a few times a day (founder ruling A2,
+// tools/cache-save-decision.mjs), so a run's `pbpRecheckAt` stamps are usually lost and the old backlog (23,612 logs on
+// 6 Nov) was never "once each": every run re-asked the SAME newest 500, 0 of 1,000 changed. recheckPlan keeps the
+// priority order (freshly finished, restored, then matches within RECHECK_DAYS, newest first) and fills the rest of the
+// budget from the OLDER backlog starting at a slot that moves every RECHECK_SLOT_MIN, so successive runs ask different
+// logs and the whole backlog is covered. RECHECK_CONCURRENCY fetches run at once, each paced as before.
+const RECHECK_SLOT_MIN = 30;
+const RECHECK_CONCURRENCY = Number(process.env.PBP_RECHECK_CONCURRENCY || 6);
+function recheckPlan(sorted, isPriority, budget, nowMs) {
+  const head = sorted.filter(isPriority), tail = sorted.filter(ek => !isPriority(ek));
+  const plan = head.slice(0, budget);
+  const room = budget - plan.length;
+  if (room > 0 && tail.length) {
+    const slot = Math.floor(nowMs / (RECHECK_SLOT_MIN * 6e4));
+    const start = tail.length > room ? (slot * room) % tail.length : 0;
+    for (let i = 0; i < Math.min(room, tail.length); i++) plan.push(tail[(start + i) % tail.length]);
+  }
+  return plan;
+}
+async function runPool(items, n, fn) {
+  let next = 0;
+  await Promise.all(Array.from({ length: Math.max(1, Math.min(n, items.length)) }, async () => {
+    while (next < items.length) { const it = items[next++]; await fn(it); }
+  }));
+}
 const failingLog = e => integrity.check(e).some(i => i.kind !== 'header');
 // FRESHLY FINISHED (brief item 5). The provider keeps revising a match after it reports Finished: measured 2026-10-22
 // on 12 ATP/Challenger matches, the point log changed after Finished in 11 (last change +2..+16 min; 5 of the 12 gained
@@ -616,7 +641,8 @@ async function main() {
     .sort((a, b) => (fresh(b) - fresh(a)) || (restoredPending(cache[b]) - restoredPending(cache[a])) || dateOf(b).localeCompare(dateOf(a)) || Number(b) - Number(a));
   let freshAsked = 0;
   let rechecked = 0, recheckFailed = 0;
-  for (const ek of recheck.slice(0, RECHECK_MAX)) {
+  const recheckPriority = ek => fresh(ek) || restoredPending(cache[ek]) || recentEnough(ek);
+  await runPool(recheckPlan(recheck, recheckPriority, RECHECK_MAX, nowMs), RECHECK_CONCURRENCY, async (ek) => {
     const e = cache[ek];
     rechecked++;
     try {
@@ -637,7 +663,7 @@ async function main() {
       recheckFailed++;   // pbpRecheckAt untouched: a transient failure is retried next run
       console.error(`pbp-storage: re-fetch failed for ${ek}: ${err.message}`);
     }
-  }
+  });
   console.log(`pbp-storage: ${freshAsked} freshly finished match(es) re-asked (within ${FRESH_MIN} min of Finished).`);
   console.log(`pbp-storage: ${recheck.length} stored log(s) due (failing the check, or freshly finished); ${rechecked} re-fetched — ${adoptCounts.replaced} replaced by the provider's latest, ${adoptCounts.same} already identical, ${adoptCounts.shorter} kept (provider's shorter), ${adoptCounts.none} no log${recheckFailed ? `, ${recheckFailed} fetch error(s)` : ''}${recheck.length > RECHECK_MAX ? `, ${recheck.length - RECHECK_MAX} deferred (budget)` : ''}.`);
 
@@ -808,4 +834,4 @@ if (require.main === module) {
 
 // `main` is exported for tools/test-pbp-tiebreak-floor.js, which drives the real
 // writer end to end against a stubbed feed.
-module.exports = { compactPbp, parseFixture, buildCacheEntry, orderFormQueue, mergeEntry, emitShards, MAX_FETCHES_PER_RUN, RECHECK_DAYS, emitIntegrity, adoptFeedLog, main };
+module.exports = { recheckPlan, runPool, compactPbp, parseFixture, buildCacheEntry, orderFormQueue, mergeEntry, emitShards, MAX_FETCHES_PER_RUN, RECHECK_DAYS, emitIntegrity, adoptFeedLog, main };

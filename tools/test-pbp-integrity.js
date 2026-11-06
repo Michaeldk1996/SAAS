@@ -325,6 +325,42 @@ check('cache save · a run that replaced stored logs asks for a save; one that d
   assert.strictEqual(decide({ stats: { opponentsBuilt: 0 }, todayCount: 6, pbp: { replaced: 3 } }).save, false, 'the 6/day valve still holds');
 });
 
+check('recheck plan · priority first, newest first; the old backlog rotates so successive runs ask different logs', () => {
+  const { recheckPlan } = builder;
+  const keys = Array.from({ length: 20 }, (_, i) => String(1000 - i));          // already sorted newest first
+  const pri = new Set(['1000', '999', '995']);
+  const isPri = ek => pri.has(ek);
+  const slot = 30 * 6e4;
+  const a = recheckPlan(keys, isPri, 6, 0), b = recheckPlan(keys, isPri, 6, slot);
+  assert.deepStrictEqual(a.slice(0, 3), ['1000', '999', '995'], 'priority logs not first, newest first');
+  assert.deepStrictEqual(b.slice(0, 3), ['1000', '999', '995']);
+  assert.notDeepStrictEqual(a.slice(3), b.slice(3), 'two slots asked the same backlog logs');
+  // over enough slots every backlog log is asked, and no plan repeats a log or exceeds the budget
+  const seen = new Set();
+  for (let t = 0; t < 10; t++) { const p = recheckPlan(keys, isPri, 6, t * slot); assert.ok(p.length <= 6 && new Set(p).size === p.length); p.forEach(k => seen.add(k)); }
+  assert.strictEqual(keys.filter(k => !isPri(k) && !seen.has(k)).length, 0, 'part of the backlog is never asked');
+  // a budget that holds everything asks everything, in the sorted order for the priority part
+  assert.deepStrictEqual(new Set(recheckPlan(keys, isPri, 50, 12345)), new Set(keys));
+  // more priority logs than budget: priority only, newest first (never starved by the backlog)
+  assert.deepStrictEqual(recheckPlan(keys, () => true, 4, 999 * slot), keys.slice(0, 4));
+});
+check('recheck plan · MUTANT: rotation removed (always the first logs) fails the rotation check', () => {
+  const src = builder.recheckPlan.toString();
+  const mut = src.replace('(slot * room) % tail.length', '0');
+  assert.notStrictEqual(mut, src, 'mutant anchor not found');
+  const plan = new Function('RECHECK_SLOT_MIN', `return (${mut});`)(30);
+  const keys = Array.from({ length: 20 }, (_, i) => String(1000 - i));
+  const isPri = ek => ek === '1000';
+  assert.deepStrictEqual(plan(keys, isPri, 6, 0), plan(keys, isPri, 6, 30 * 6e4), 'the mutant still rotates');
+  assert.throws(() => assert.notDeepStrictEqual(plan(keys, isPri, 6, 0).slice(1), plan(keys, isPri, 6, 30 * 6e4).slice(1)));
+});
+check('recheck pool · every log is fetched once, at most N at a time', async () => {
+  const { runPool } = builder;
+  let live = 0, peak = 0; const done = [];
+  await runPool(Array.from({ length: 25 }, (_, i) => i), 6, async (i) => { live++; peak = Math.max(peak, live); await new Promise(r => setTimeout(r, 5)); done.push(i); live--; });
+  assert.strictEqual(done.length, 25); assert.strictEqual(new Set(done).size, 25); assert.ok(peak <= 6 && peak > 1, `peak ${peak}`);
+});
+
 (async () => {
   let pass = 0, fail = 0;
   console.log('\npoint-by-point: storage, repair, display\n');
