@@ -162,8 +162,9 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           PINARCH_FIXTURES: .pinarch-fixtures.json
         run: python3 tools/pinarch.py pull --budget 600
-  # founder 2026-11-06 ("price it about 30-45 minutes after the match, automatically"): every dispatch (pg_cron, :07/:22/
-  # :37/:52) also prices today's and yesterday's finished matches that hold no before-start Pinnacle snapshot yet, with
+  # founder 2026-11-06 ("price it about 30-45 minutes after the match, automatically", "every match, everywhere"): every
+  # dispatch (pg_cron, :07/:22/:37/:52) also prices today's and yesterday's finished matches at every level that hold no
+  # snapshot yet (ATP main draw: the before-start Pinnacle snapshot; lower levels: api-tennis's stored prices), with
   # the self-heal (an unmapped match is mapped, a missing payload pulled). Insert-only; the next data run publishes it.
   # It shares te-import-scheduled.yml's lock so two archive writers never run at once. A failure here is caught by the
   # 3-hourly run of the same import, which alerts.
@@ -189,3 +190,12 @@ jobs:
           SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
           API_TENNIS_KEY: ${{ secrets.API_TENNIS_KEY }}
         run: python3 tools/tdarch.py sched-import --recent 1 --fresh
+      # Challenger, qualifying, ITF and the team events: api-tennis's stored Pinnacle / Bet365 / other-book prices for today's
+      # and yesterday's finished matches with no snapshot yet (the daily 05:17 run re-checks the whole window and writes
+      # the unpriced list; this run writes no list)
+      - name: Lower levels — today's finished matches (insert-only)
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          API_TENNIS_KEY: ${{ secrets.API_TENNIS_KEY }}
+        run: python3 tools/tdarch.py lower-import --recent 1 --fresh

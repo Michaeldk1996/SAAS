@@ -1430,12 +1430,23 @@ def cmd_sched_import(dry_run=False, frm=SCHED_FROM, to=None, fresh=False):
     return rows
 
 
-def cmd_lower_import(dry_run=False, frm=LOWER_FROM, to=LOWER_TO, unpriced_out=None):
-    """Write the lower-level snapshots (append-only, the same table and guard as the ATP main-draw ones)."""
+def cmd_lower_import(dry_run=False, frm=LOWER_FROM, to=LOWER_TO, unpriced_out=None, fresh=False):
+    """Write the lower-level snapshots (append-only, the same table and guard as the ATP main-draw ones). `fresh` = the
+    15-minute run (founder 2026-11-06: "price every match straight after it ends, everywhere"): today and yesterday, only
+    the matches holding no snapshot yet, light on the database; the daily run re-checks the whole window."""
     fx, od, empty = _lower_fixtures(frm, to)
     if not fx:
         P.die('api-tennis returned no lower-level fixture for the whole window: nothing written')
     targets, trep = lower_targets(fx, frm, to)
+    held_fresh = None
+    if fresh:
+        keys = sorted({str(r['_f']['event_key']) for r in targets})
+        held_fresh = []
+        for i in range(0, len(keys), 100):
+            held_fresh += P.select_all(SNAP, 'id,dedupe_key,source,match_date,tournament,winner,loser,supersedes,event_key',
+                                       'event_key=in.(' + ','.join(keys[i:i + 100]) + ')')
+        have = {str(h.get('event_key')) for h in held_fresh}
+        targets = [r for r in targets if str(r['_f']['event_key']) not in have]
     fetched = dt.datetime.now(dt.timezone.utc).isoformat(timespec='seconds')
     api_rows, arep = approx_rows(targets, None, lambda ek: od.get(str(ek)) or {}, fetched, join=_lower_join)
     # start - 10: the held Oddspapi payloads, joined as derive-held / start10-import join (board map, else the fixtures
@@ -1443,7 +1454,8 @@ def cmd_lower_import(dry_run=False, frm=LOWER_FROM, to=LOWER_TO, unpriced_out=No
     s10 = [r for r in targets if START10_FROM <= r['date'] <= START10_TO]
     R = P._load('roh', 'refresh-odds-history.py')
     idx = json.load(gzip.open(os.path.join(P.ROOT_DIR, P.FIXTURE_INDEX))).get('fixtures') or {}
-    fixtures = P.held_fixture_meta(idx, P.select_all(P.RAW, 'id,fixture_id,books,meta', 'meta->>trigger=eq.backfill'))
+    # the start - 10 window ends 16 Sep: a run whose targets hold none of it reads no back-fill meta at all
+    fixtures = P.held_fixture_meta(idx, P.select_all(P.RAW, 'id,fixture_id,books,meta', 'meta->>trigger=eq.backfill')) if s10 or not fresh else {}
     disc = [f for f in fixtures.values() if f.get('categoryName') in P.BACKFILL_CATEGORIES]
     by_day_od, bmap = P._fixtures_by_day(disc), P._board_map()
     oc = {}
@@ -1497,7 +1509,7 @@ def cmd_lower_import(dry_run=False, frm=LOWER_FROM, to=LOWER_TO, unpriced_out=No
         with open(tmp, 'w') as fh:
             json.dump({'rule': 'lower-level matches no source priced (founder 2026-10-18 item 5)', 'window': [frm, to], 'rows': unpriced}, fh)
         os.replace(tmp, unpriced_out)
-    held = P.select_all(SNAP, 'id,dedupe_key,source,match_date,tournament,winner,loser,supersedes')
+    held = held_fresh if fresh else P.select_all(SNAP, 'id,dedupe_key,source,match_date,tournament,winner,loser,supersedes')
     add = plan_snapshots(rows, held)
     ids = []
     if not dry_run:
@@ -2170,8 +2182,11 @@ if __name__ == '__main__':
     elif a[0] == 'approx-feed':
         cmd_approx_feed(a[1], a[2] if len(a) > 2 else None)
     elif a[0] == 'lower-import':
-        cmd_lower_import('--dry-run' in a, a[a.index('--from') + 1] if '--from' in a else LOWER_FROM, a[a.index('--to') + 1] if '--to' in a else LOWER_TO,
-                         a[a.index('--unpriced') + 1] if '--unpriced' in a else None)
+        # --recent N (the 15-minute run, founder 2026-11-06): the last N days AND today, light (--fresh)
+        _now = dt.datetime.now(dt.timezone.utc).date()
+        _lf = (_now - dt.timedelta(days=int(a[a.index('--recent') + 1]))).isoformat() if '--recent' in a else (a[a.index('--from') + 1] if '--from' in a else LOWER_FROM)
+        _lt = _now.isoformat() if '--recent' in a else (a[a.index('--to') + 1] if '--to' in a else LOWER_TO)
+        cmd_lower_import('--dry-run' in a, _lf, _lt, a[a.index('--unpriced') + 1] if '--unpriced' in a else None, '--fresh' in a)
     elif a[0] == 'sched-import':
         # --recent N (the 3-hourly job): the last N days only, never before SCHED_FROM — the window does not grow with time
         _frm = a[a.index('--from') + 1] if '--from' in a else SCHED_FROM
