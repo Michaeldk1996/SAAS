@@ -52,6 +52,9 @@ create table public.kibl_now_card (card_key text primary key, book text, book_na
   b_side text, b_price numeric, b_at timestamptz, written_at timestamptz default now());
 create table public.kibl_now_price (card_key text, side_key text, kind text, written_at timestamptz default now());
 create table drops_live.flip (event_key text, live_at timestamptz, p1 text, p2 text);
+create schema poly_bot;
+create table poly_bot.volume (slug text primary key, player_a text, player_b text, sk_a text, sk_b text, start_at timestamptz,
+  volume numeric, volume_ml numeric, liquidity numeric, fetched_at timestamptz);
 """
 LIVE = """
 create function drops_live.sk(p text) returns text language sql immutable as $$ select drops_scope.sk(p) $$;
@@ -115,8 +118,24 @@ try:
     rc, out = q("select arb.eff('Kalshi', 2.5), arb.eff('Superbet', 2.2), arb.eff('Polymarket', 2.0)")
     check('fees: Kalshi 0.40 + 0.07·0.4·0.6 → 2.399; Polymarket 0.50 + 0.05·0.5·0.5 → 1.951 (the docs formula); a bookmaker price as is',
           out == '2.399|2.2|1.951', out)
+    # founder 2026-11-06: arbitrage = Polymarket, Kalshi, Napoleon Sports BE, Bet105 — Superbet out on every install
+    rc, out = q("select soft_books::text from arb.config")
+    check('install: soft books = Napoleon Sports BE only (Superbet out)', out == '{"Napoleon Sports BE"}', out)
+    srcs0 = sorted(s['source'] for s in {f['first']: f for f in opps().get('fair', [])}.get('Q. Halys', {}).get('sources', []))
+    check('Superbet recorded but not a source after install', srcs0 == ['Bet105', 'Kalshi', 'Napoleon Sports BE', 'Polymarket'], srcs0)
+    # the rest of this file was built with Superbet as the soft book: put it back for the fixtures below
+    q("update arb.config set soft_books = array['Superbet', 'Napoleon Sports BE']")
+    # Polymarket's match page (poly_bot.volume); a second same-surname slug a week away does not make it ambiguous
+    q(f"insert into poly_bot.volume (slug, player_a, player_b, sk_a, sk_b, start_at) values "
+      f"('atp-halys-fery-{d1}', 'Quentin Halys', 'Arthur Fery', drops_scope.sk('Quentin Halys'), drops_scope.sk('Arthur Fery'), {START}), "
+      f"('atp-halys-fery-old', 'Quentin Halys', 'Arthur Fery', drops_scope.sk('Quentin Halys'), drops_scope.sk('Arthur Fery'), {START} - interval '7 days')")
     o = opps()
     fair = {f['first']: f for f in o.get('fair', [])}
+    urls = {x['source']: x.get('url') for x in fair.get('Q. Halys', {}).get('sources', [])}
+    check('links: Polymarket = its event slug, Kalshi = its event ticker, bookmakers none',
+          urls.get('Polymarket') == f'https://polymarket.com/event/atp-halys-fery-{d1}'
+          and urls.get('Kalshi') == 'https://kalshi.com/markets/kxatpmatch/atp-tennis-match/kx-hf'
+          and urls.get('Bet105') is None and urls.get('Superbet') is None, urls)
     check('fair = Bet105 without its margin: Halys 1.95 / Fery 2.053', fair.get('Q. Halys', {}).get('fairFirst') == 1.95 and fair['Q. Halys']['fairSecond'] == 2.053, o.get('fair'))
     srcs = sorted(s['source'] for s in fair.get('Q. Halys', {}).get('sources', []))
     check('every source joined the match once: Bet105, Kalshi, Polymarket (ours; odds-api.io\'s stale copy ignored, else both drop as ambiguous), Superbet',
@@ -161,7 +180,9 @@ try:
     check('ARB message: header, both legs, profit, the retirement warning',
           msg.startswith('⚖️ ARB') and '✅ Back Q. Halys @ 2.5 on Kalshi (after fee 2.399) · liquidity $400' in msg
           and '✅ Back A. Fery @ 2 on Bet105 · bookmaker' in msg
-          and '💰 Max: stake $416.84 on Q. Halys + $499.29 on A. Fery = $916.13 → pays $999.23 whoever wins → profit $83.09 (+9.07%)' in msg
+          and '💰 Max stake $916.13\n   • Q. Halys: $416.84 on Kalshi\n   • A. Fery: $499.29 on Bet105\n💵 Pays $999.23 whoever wins → profit $83.09 (+9.07%)' in msg
+          and '· liquidity $400\n🔗 https://kalshi.com/markets/kxatpmatch/atp-tennis-match/kx-hf\n✅ Back A. Fery' in msg
+          and '🔗' not in msg.split('✅ Back A. Fery')[1]
           and '⚠️ Retirement rules differ' in msg, msg)
     rc, msg = q("select message from arb.alerts where kind = 'divergence' and detail->>'source' = 'Superbet'")
     check('DIVERGENCE message', msg.startswith('📐 DIVERGENCE') and '🎯 Superbet: Q. Halys @ 2.2' in msg and '📏 Fair (Bet105, margin removed): 1.95 → +12.8% above fair' in msg, msg)

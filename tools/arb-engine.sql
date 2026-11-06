@@ -6,8 +6,9 @@
 -- Sources (each joined to ONE api-tennis fixture of type 'Atp Singles' in drops_scope.fixture — the drop bots' spine —
 -- on both surnames + initials and a start within 24 h, exactly one candidate both ways, never a guess):
 --   Bet105     sharp       public.kibl_now_card (the Kibl stream), live while the worker heartbeat is <= 180 s old
---   Superbet   soft        ten287_rec (odds-api.io recorder), live while that book's recorder answered within 3 min;
---              + every other book in config.soft_books (founder 2026-11-05: Napoleon Sports BE), same recorder, same rule
+--   soft books config.soft_books, read from ten287_rec (odds-api.io recorder), live while that book's recorder answered
+--              within 3 min. Founder 2026-11-06: arbitrage = Polymarket, Kalshi, Napoleon Sports BE and Bet105 only;
+--              Superbet is out (its drop bot and recorder are untouched).
 --   Polymarket prediction  ten287_rec, same; liquidity = dollars at the best price (odds-api.io depth)
 --   Kalshi     prediction  kalshi_rec (public API recorder), live while it answered within 3 min; liquidity = ask × size;
 --                          its fixture = kalshi_bot.match_fx (Kalshi's own times are listing placeholders)
@@ -75,7 +76,11 @@ alter table arb.config add column if not exists live_cooldown interval not null 
 alter table arb.config add column if not exists live_hb_max   interval not null default interval '90 seconds';  -- worker heartbeat
 -- the odds-api.io bookmakers read as soft sources (founder 2026-11-05: Napoleon Sports BE beside Superbet); each must also
 -- be in ten287_rec.config.books or it has no ticks. A book's name here is the name its alerts print.
-alter table arb.config add column if not exists soft_books text[] not null default array['Superbet', 'Napoleon Sports BE'];
+alter table arb.config add column if not exists soft_books text[] not null default array['Napoleon Sports BE'];
+alter table arb.config alter column soft_books set default array['Napoleon Sports BE'];
+-- founder 2026-11-06: Superbet leaves the arbitrage sources (Polymarket, Kalshi, Napoleon Sports BE, Bet105). Putting it
+-- back is an edit here, not a config change: every install takes it out again.
+update arb.config set soft_books = array_remove(soft_books, 'Superbet') where 'Superbet' = any(soft_books);
 create table if not exists arb.live_state (
     id      boolean primary key default true check (id),
     at      timestamptz,                 -- the worker's last push (its heartbeat)
@@ -120,10 +125,13 @@ language sql immutable as $$
       or coalesce(p_status, '') ~* '(walk ?over|w/o|retired|ret\.|cancel|postpon|abandon|finished|awarded|default|withdr|suspend|interrupt)'
 $$;
 
--- every live quote, one row per (fixture, source): both players' price, effective price, liquidity, time
+-- every live quote, one row per (fixture, source): both players' price, effective price, liquidity, time, and the match
+-- page where we know it (founder 2026-11-06): Polymarket = its event slug from poly_bot.volume (both surname keys, start
+-- within 36 h, one candidate both ways), Kalshi = its event ticker. Bet105 and Napoleon give us no match link: none.
+drop function if exists arb.quotes();   -- the url column changes the row type (create or replace cannot)
 create or replace function arb.quotes() returns table(event_key bigint, first_player text, second_player text, start_utc timestamptz,
     source text, grp text, p_first numeric, p_second numeric, e_first numeric, e_second numeric, l_first numeric, l_second numeric,
-    at timestamptz)
+    at timestamptz, url text)
 language plpgsql stable as $$
 declare c arb.config;
 begin
@@ -216,16 +224,30 @@ begin
       from fx join kam k using (event_key)
      where k.qa > 0 and k.qa < 1 and k.qb > 0 and k.qb < 1
   ),
+  -- the Polymarket match page: poly_bot.volume's slug (a start known only by its slug day is noon UTC: 36 h either way)
+  pslug as (
+    select fx.event_key, v.slug from fx join poly_bot.volume v
+        on ((v.sk_a = fx.k1 and v.sk_b = fx.k2) or (v.sk_a = fx.k2 and v.sk_b = fx.k1))
+       and (v.start_at is null or abs(extract(epoch from v.start_at - fx.start_utc)) < 129600)
+  ),
+  pslugu as (
+    select p.* from pslug p
+     where (select count(*) from pslug x where x.event_key = p.event_key) = 1
+       and (select count(*) from pslug x where x.slug = p.slug) = 1
+  ),
   q as (
-    select b.event_key, 'Bet105'::text src, 'sharp'::text g, b.pf, b.ps, null::numeric lf, null::numeric ls, b.at from b105u b
+    select b.event_key, 'Bet105'::text src, 'sharp'::text g, b.pf, b.ps, null::numeric lf, null::numeric ls, b.at, null::text u from b105u b
     union all
     select o.event_key, o.book, case o.book when 'Polymarket' then 'prediction' else 'soft' end, o.pf, o.ps,
-           case when o.book = 'Polymarket' then o.lf end, case when o.book = 'Polymarket' then o.ls end, o.at from oau o
+           case when o.book = 'Polymarket' then o.lf end, case when o.book = 'Polymarket' then o.ls end, o.at,
+           case when o.book = 'Polymarket' then (select 'https://polymarket.com/event/' || p.slug from pslugu p where p.event_key = o.event_key) end
+      from oau o
     union all
-    select k.event_key, 'Kalshi', 'prediction', round(1 / k.qf, 3), round(1 / k.qs, 3), round(k.lf, 2), round(k.ls, 2), k.at from kau k
+    select k.event_key, 'Kalshi', 'prediction', round(1 / k.qf, 3), round(1 / k.qs, 3), round(k.lf, 2), round(k.ls, 2), k.at,
+           'https://kalshi.com/markets/kxatpmatch/atp-tennis-match/' || lower(k.event_ticker) from kau k
   )
   select fx.event_key, fx.first_player, fx.second_player, fx.start_utc, q.src, q.g, q.pf, q.ps,
-         arb.eff(q.src, q.pf), arb.eff(q.src, q.ps), q.lf, q.ls, q.at
+         arb.eff(q.src, q.pf), arb.eff(q.src, q.ps), q.lf, q.ls, q.at, q.u
     from q join fx using (event_key)
    where q.pf >= 1.01 and q.ps >= 1.01;
 end $$;
@@ -251,7 +273,7 @@ begin
     select s.*, (s.grp <> 'prediction' or c.min_liq is null or coalesce(s.liq, 0) >= c.min_liq) ok from sides s
   ),
   div as (
-    select l.event_key, l.first_player, l.second_player, l.start_utc, l.source, l.grp, l.side, l.player, l.price, l.eff, l.liq, l.at,
+    select l.event_key, l.first_player, l.second_player, l.start_utc, l.source, l.grp, l.side, l.player, l.price, l.eff, l.liq, l.at, l.url,
            case l.side when 'first' then f.ff else f.fs end fair, f.fair_at,
            round((l.eff / case l.side when 'first' then f.ff else f.fs end - 1) * 100, 2) edge
       from liq_ok l join fair f using (event_key)
@@ -259,8 +281,8 @@ begin
   ),
   pairs as (
     select a.event_key, a.first_player, a.second_player, a.start_utc,
-           a.source sa, a.grp ga, a.price pa, a.eff ea, a.liq la, a.at ta,
-           b.source sb, b.grp gb, b.price pb, b.eff eb, b.liq lb, b.at tb,
+           a.source sa, a.grp ga, a.price pa, a.eff ea, a.liq la, a.at ta, a.url ua,
+           b.source sb, b.grp gb, b.price pb, b.eff eb, b.liq lb, b.at tb, b.url ub,
            round((1 / (1 / a.eff + 1 / b.eff) - 1) * 100, 2) profit,
            round((1 / a.eff) / (1 / a.eff + 1 / b.eff) * 100, 1) stake_a
       from liq_ok a join liq_ok b on b.event_key = a.event_key and a.side = 'first' and b.side = 'second' and a.source <> b.source
@@ -275,17 +297,17 @@ begin
     'fair', coalesce((select jsonb_agg(jsonb_build_object('eventKey', f.event_key, 'first', q.first_player, 'second', q.second_player,
                         'start', q.start_utc, 'fairFirst', f.ff, 'fairSecond', f.fs, 'at', f.fair_at,
                         'sources', (select jsonb_agg(jsonb_build_object('source', x.source, 'group', x.grp, 'first', x.p_first, 'second', x.p_second,
-                                      'effFirst', x.e_first, 'effSecond', x.e_second, 'liqFirst', x.l_first, 'liqSecond', x.l_second, 'at', x.at)
+                                      'effFirst', x.e_first, 'effSecond', x.e_second, 'liqFirst', x.l_first, 'liqSecond', x.l_second, 'at', x.at, 'url', x.url)
                                       order by x.grp, x.source) from qt x where x.event_key = f.event_key))
                         order by q.start_utc)
                       from fair f join qt q on q.event_key = f.event_key and q.source = 'Bet105'), '[]'::jsonb),
     'divergences', coalesce((select jsonb_agg(jsonb_build_object('eventKey', event_key, 'first', first_player, 'second', second_player,
                         'start', start_utc, 'source', source, 'group', grp, 'side', side, 'player', player, 'price', price, 'eff', eff,
-                        'liq', liq, 'at', at, 'fair', fair, 'fairAt', fair_at, 'edge', edge) order by edge desc) from div), '[]'::jsonb),
+                        'liq', liq, 'at', at, 'url', url, 'fair', fair, 'fairAt', fair_at, 'edge', edge) order by edge desc) from div), '[]'::jsonb),
     'arbs', coalesce((select jsonb_agg(jsonb_build_object('eventKey', event_key, 'first', first_player, 'second', second_player,
                         'start', start_utc, 'profit', profit, 'stakeFirst', stake_a, 'stakeSecond', round(100 - stake_a, 1),
-                        'legFirst', jsonb_build_object('source', sa, 'group', ga, 'price', pa, 'eff', ea, 'liq', la, 'at', ta),
-                        'legSecond', jsonb_build_object('source', sb, 'group', gb, 'price', pb, 'eff', eb, 'liq', lb, 'at', tb),
+                        'legFirst', jsonb_build_object('source', sa, 'group', ga, 'price', pa, 'eff', ea, 'liq', la, 'at', ta, 'url', ua),
+                        'legSecond', jsonb_build_object('source', sb, 'group', gb, 'price', pb, 'eff', eb, 'liq', lb, 'at', tb, 'url', ub),
                         'retirementFlag', (ga = 'prediction') <> (gb = 'prediction')) order by profit desc) from best), '[]'::jsonb)
   ) into j;
   return j;
@@ -381,6 +403,7 @@ language sql immutable as $$
   select format('✅ Back %s @ %s on %s%s · %s', p_player, arb.px((l->>'price')::numeric), l->>'source',
            case when l->>'source' in ('Kalshi', 'Polymarket') then ' (after fee ' || arb.px((l->>'eff')::numeric) || ')' else '' end,
            case when l->>'group' = 'prediction' then 'liquidity ' || arb.usd((l->>'liq')::numeric) else 'bookmaker' end)
+      || case when coalesce(l->>'url', '') <> '' then chr(10) || '🔗 ' || (l->>'url') else '' end
 $$;
 
 create or replace function arb.render_arb(a jsonb) returns text
@@ -391,12 +414,14 @@ language sql stable as $$
     format('🎾 Match: %s vs %s (ATP)', a->>'first', a->>'second'),
     arb.leg(a->'legFirst', a->>'first'),
     arb.leg(a->'legSecond', a->>'second'),
-    -- dollars per leg (founder 2026-11-04): at the largest total the prediction-market book takes, else per $1,000
-    format('💰 %s: stake %s on %s + %s on %s = %s → pays %s whoever wins → profit %s (+%s%%)',
-           case when arb.max_total(a) is not null then 'Max' else 'Per $1,000' end,
-           arb.money(coalesce(arb.max_total(a), 1000) * (a->>'stakeFirst')::numeric / 100), a->>'first',
-           arb.money(coalesce(arb.max_total(a), 1000) * (a->>'stakeSecond')::numeric / 100), a->>'second',
-           arb.money(coalesce(arb.max_total(a), 1000)), arb.money(coalesce(arb.max_total(a), 1000) * (1 + (a->>'profit')::numeric / 100)),
+    -- dollars per leg (founder 2026-11-04): at the largest total the prediction-market book takes, else per $1,000;
+    -- one player per line (founder 2026-11-06: where each stake goes, at a glance)
+    format('💰 %s %s', case when arb.max_total(a) is not null then 'Max stake' else 'Per $1,000 staked' end,
+           arb.money(coalesce(arb.max_total(a), 1000))),
+    format('   • %s: %s on %s', a->>'first', arb.money(coalesce(arb.max_total(a), 1000) * (a->>'stakeFirst')::numeric / 100), a->'legFirst'->>'source'),
+    format('   • %s: %s on %s', a->>'second', arb.money(coalesce(arb.max_total(a), 1000) * (a->>'stakeSecond')::numeric / 100), a->'legSecond'->>'source'),
+    format('💵 Pays %s whoever wins → profit %s (+%s%%)',
+           arb.money(coalesce(arb.max_total(a), 1000) * (1 + (a->>'profit')::numeric / 100)),
            arb.money(coalesce(arb.max_total(a), 1000) * (a->>'profit')::numeric / 100), to_char((a->>'profit')::numeric, 'FM990.00')),
     case when arb.max_total(a) is null then '📏 Both legs are bookmakers: their limits are not known here.'
          else '📏 The most the prediction-market book takes at this price; a smaller stake keeps the same split.' end,
@@ -414,6 +439,7 @@ language sql immutable as $$
     format('🎾 Match: %s vs %s (ATP)', d->>'first', d->>'second'),
     format('🎯 %s: %s @ %s%s', d->>'source', d->>'player', arb.px((d->>'price')::numeric),
            case when d->>'source' in ('Kalshi', 'Polymarket') then ' (after fee ' || arb.px((d->>'eff')::numeric) || ')' else '' end),
+    case when coalesce(d->>'url', '') <> '' then '🔗 ' || (d->>'url') end,
     format('📏 Fair (Bet105, margin removed): %s → +%s%% above fair', arb.px((d->>'fair')::numeric), to_char((d->>'edge')::numeric, 'FM990.0')),
     case when d->>'group' = 'prediction' then format('💧 Liquidity at price: %s', arb.usd((d->>'liq')::numeric)) end,
     format('🕒 Prices: %s @ %s · Bet105 @ %s', d->>'source', arb.hhmm((d->>'at')::timestamptz), arb.hhmm((d->>'fairAt')::timestamptz)))
