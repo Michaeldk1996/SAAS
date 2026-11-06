@@ -30922,7 +30922,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
 /* ---------- INITIAL LOAD ---------- */
 // Critical path: the match list. matches.json (+ the tiny progression file)
 // load first so Today's Matches paints immediately.
-loadMatches();
+const _sfFirstBoard = loadMatches();
 _tpLoad = loadTournamentProgression();
 // Heavy profile datasets are NOT needed for the initial match list:
 // tournament-profiles.json (~5MB) powers the Tournament page; player-profiles.json
@@ -30931,8 +30931,19 @@ _tpLoad = loadTournamentProgression();
 // first paint — each re-renders its own view when it finishes loading. (Cards
 // become clickable and search populates a beat later, which is fine.)
 const loadHeavyDatasets = () => { loadTournamentProfiles(); loadPlayerIndex(); loadPlayerProfiles(); loadAsapSignals(); loadEloRatings(); loadSurfaceRatings(); loadPlayerStyles(); loadOddsPerfIndex(); loadTourHistIndex(); loadHoldbreak(); loadSituational(); };
-if ('requestIdleCallback' in window) requestIdleCallback(loadHeavyDatasets, { timeout: 2500 });
-else setTimeout(loadHeavyDatasets, 200);
+// Page speed (2026-11-07): an idle callback alone fired while matches.json was still downloading (the main thread is
+// idle during the fetch), so ~2.3 MB of these files shared the link with the board's own data: on 4G the board waited
+// ~10 s for a 370 KB matches.json. They now start once the first board paint is done (loadMatches settled, either
+// way), then on idle as before. Same files, same loaders; only the start moves. The 30 s guard keeps them coming if
+// that first load never settles.
+let _sfHeavyStarted = false;
+const _sfStartHeavy = () => {
+  if (_sfHeavyStarted) return; _sfHeavyStarted = true;
+  if ('requestIdleCallback' in window) requestIdleCallback(loadHeavyDatasets, { timeout: 2500 });
+  else setTimeout(loadHeavyDatasets, 200);
+};
+Promise.resolve(_sfFirstBoard).then(_sfStartHeavy, _sfStartHeavy);
+setTimeout(_sfStartHeavy, 30000);
 // Refresh automatically every 3 minutes while the page is open — cheap
 // since it's just re-reading the local matches.json, not re-calling
 // the paid APIs (that only happens when bsp-pipeline.js itself runs).
