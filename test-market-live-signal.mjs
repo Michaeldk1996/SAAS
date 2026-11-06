@@ -61,7 +61,7 @@ test('the drawer starts the per-minute poll; the loader reads the table and the 
   assert.match(slice('mcSigLiveStart'), /setInterval\(mcSigLiveTick, 60e3\)/);
   assert.match(slice('mcSigLiveTick'), /document\.hidden\) \{ clearInterval\(mktLiveTimer\)/, 'stops when no drawer is open or the tab is hidden');
   const l = slice('loadMarketLive');
-  assert.match(l, /market_live_current\?select=event_key,venue,liquidity,read_at,started_at/);
+  assert.match(l, /rowsOf\('event_key,venue,liquidity,outcomes,flow,read_at,started_at'\)\.then\(r => r \|\| rowsOf\('event_key,venue,liquidity,outcomes,read_at,started_at'\)\)/, 'without the traded column yet: the same read without it');
   assert.match(l, /market_live_beat\?select=beat_at/);
   assert.match(l, /window\.SUPABASE_ANON_KEY/);
   assert.match(html, /document\.addEventListener\('visibilitychange', \(\) => \{ if \(!document\.hidden && document\.querySelector\('\.match-card\.sig-open'\)\) mcSigLiveStart\(\); \}\);/, 'resumes when the tab comes back');
@@ -80,7 +80,64 @@ test('the loader: placeholder config reads nothing; real config reads the table 
       : [{ event_key: '1', venue: 'kalshi', liquidity: '5', read_at: '2026-11-06T11:59:00Z', started_at: null }] };
   });
   assert.equal(urls.length, 2);
+  const urls2 = [];
+  const fb = await L({ SUPABASE_URL: 'https://x.supabase.co/', SUPABASE_ANON_KEY: 'pk' }, async (u) => {
+    urls2.push(u);
+    if (u.includes('flow')) return { ok: false, json: async () => ({}) };
+    return { ok: true, json: async () => u.includes('market_live_beat') ? [] : [{ event_key: '2', venue: 'kalshi', liquidity: '7', read_at: '2026-11-06T11:59:00Z', started_at: null }] };
+  });
+  assert.equal(urls2.length, 3, 'a 400 on the new column → one retry without it');
+  assert.equal(fb.byEvent['2|kalshi'].liquidity, '7');
   assert.ok(urls[0].startsWith('https://x.supabase.co/rest/v1/market_live_current?'));
   assert.equal(got.byEvent['1|kalshi'].liquidity, '5');
   assert.equal(got.beatAt, Date.parse('2026-11-06T11:59:00Z'));
+});
+
+// Founder 2026-11-07 ("Build the redesign"): the Upcoming drawer's prediction-markets group.
+const MK = (live, beatAgoMin, kal = null, poly = null) => new Function('live', 'beatAt', 'kal', 'poly', `
+  const newsTz = () => 'UTC';
+  const MKT_LIVE_STALE_MS = 3 * 60e3;
+  const mktLive = { byEvent: live, beatAt };
+  let polymarketVol = poly, kalshiVol = kal;
+  const _now = ${NOW}; Date.now = () => _now;
+  ${slice('eventKeyOfMatch')} ${slice('psEsc')} ${slice('mcSigClock')} ${slice('mcSigPolyUsd')} ${slice('mcSigLiveFresh')} ${slice('mxSurname')}
+  ${slice('ocsNfd')} ${slice('mcSigLiqRec')} ${slice('mcSigSurKey')} ${slice('mcSigK')} ${slice('mcSigMktRows')} ${slice('mcSigMktHtml')}
+  return { mcSigMktHtml, mcSigMktRows };`)(live, NOW - beatAgoMin * 60e3, kal, poly);
+const OC = [{ name: 'Tommy Paul', bid: 0.54, ask: 0.55, mid: 0.545 }, { name: 'Ben Shelton', bid: 0.45, ask: 0.46, mid: 0.455 }];
+const prow = (venue, at, extra = {}) => ({ [`12177788|${venue}`]: { event_key: '12177788', venue, liquidity: '242649.08', outcomes: OC, read_at: at, started_at: null,
+  flow: { byName: { 'Ben Shelton': 27512.4, 'Tommy Paul': 3700 }, trades: 430, at }, ...extra } });
+
+test('prediction markets: each player by surname, midpoints scaled to 100% as fair odds, the traded line', () => {
+  const h = MK(prow('kalshi', '2026-11-06T11:59:10Z'), 1).mcSigMktHtml(m);
+  assert.match(h, /^<div class="mc-sg-grp">Prediction markets · now<\/div>/);
+  assert.match(h, /<span class="mc-sg-name">Kalshi<\/span><\/span><span class="mc-sg-oa">2.20<\/span><span class="mc-sg-pa">46%<\/span>/, 'Shelton (p1) = 0.455 of 1.000 → 2.20, though the venue lists Paul first');
+  assert.match(h, /<span class="mc-sg-pb">55%<\/span><span class="mc-sg-ob">1.83<\/span>/);
+  assert.match(h, /Traded on Shelton <b>\$27.5k<\/b> · Paul <b>\$3.7k<\/b> · 430 trades · <b>\$242.6k<\/b> resting/);
+  assert.match(h, /bid \/ ask Shelton 0.45 \/ 0.46, Paul 0.54 \/ 0.55 · read Fri 06 Nov, 11:59 · not a bookmaker price/);
+});
+test('prediction markets: the heading says how old the prices are; frozen = before the start', () => {
+  assert.match(MK(prow('kalshi', '2026-11-06T11:40:00Z'), 1).mcSigMktHtml(m), /Prediction markets · read Fri 06 Nov, 11:40</, 'an old row is never "now"');
+  assert.match(MK(prow('kalshi', '2026-11-06T11:59:10Z'), 10).mcSigMktHtml(m), /Prediction markets · read /, 'recorder down: never "now"');
+  const fz = MK(prow('kalshi', '2026-11-06T11:40:00Z', { started_at: '2026-11-06T11:40:30Z' }), 1).mcSigMktHtml(m);
+  assert.match(fz, /Prediction markets · before the start</);
+  assert.match(fz, /last read before the start/);
+});
+test('prediction markets: no confident player match or no price → no price row (never a guess); no read → nothing', () => {
+  const twoSame = { '12177788|kalshi': { ...prow('kalshi', '2026-11-06T11:59:10Z')['12177788|kalshi'], outcomes: [{ name: 'Ben Shelton', mid: 0.5 }, { name: 'Tom Shelton', mid: 0.5 }] } };
+  assert.doesNotMatch(MK(twoSame, 1).mcSigMktHtml(m), /mc-sg-mkt|Traded/, 'two outcomes on one surname: no price row');
+  const noMid = { '12177788|kalshi': { ...prow('kalshi', '2026-11-06T11:59:10Z')['12177788|kalshi'], outcomes: [{ name: 'Tommy Paul', mid: null }, OC[1]] } };
+  assert.doesNotMatch(MK(noMid, 1).mcSigMktHtml(m), /mc-sg-mkt/, 'one side unpriced: no price row');
+  assert.match(MK(noMid, 1).mcSigMktHtml(m), /\$242,649 liquidity/, '... the liquidity line stays');
+  assert.equal(MK({}, 1).mcSigMktHtml(m), '');
+  const noFlow = { '12177788|polymarket': { ...prow('polymarket', '2026-11-06T11:59:10Z')['12177788|polymarket'], flow: null } };
+  assert.match(MK(noFlow, 1).mcSigMktHtml(m), /<div class="mc-sg-flow"[^>]*><b>\$242.6k<\/b> resting<\/div>/, 'no traded sum: resting only');
+});
+test('the Upcoming drawer: player surnames head the columns, three groups', () => {
+  const b = slice('mcSigBody');
+  assert.match(b, /<span class="mc-sg-hn a" title="\$\{psEsc\(m\.p1\)\}">\$\{psEsc\(mxSurname\(m\.p1\)\)\}<\/span><span><\/span><span class="mc-sg-hn b"/);
+  assert.match(b, /grp\('Bookmakers · opening odds'\) \+ rows\.slice\(0, 3\)/);
+  assert.match(b, /grp\('Ratings and model · fair odds'\) \+ rows\.slice\(3\)/);
+  assert.match(b, /mcSigMktHtml\(m, D\)/);
+  assert.match(html, /\.mc-sg-head > \.mc-sg-hn\.a\{ grid-column:1 \/ 4; text-align:right; \}/, 'the left name spans the source and price columns, so a long surname never runs into its neighbour');
+  assert.match(html, /\.mc-sg-head > \.mc-sg-hn\{[^}]*white-space:normal; overflow-wrap:normal;/, 'names wrap between words, never cut');
 });

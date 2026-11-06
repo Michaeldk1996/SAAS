@@ -93,6 +93,27 @@ try:
     push([])
     check('no lower bound: the figure is dropped', liq('6') == 'null|2026-11-06 11:02:00', liq('6'))
 
+    # traded money (founder 2026-11-07): kept with its stamp, kept when a minute sends none, dropped at the freeze when
+    # summed after the lower bound, refused when stamped after the read
+    def fl(ek): return q(f"select coalesce(flow->>'trades', 'null') from public.market_live_current where event_key = '{ek}' and venue = 'kalshi'")[1]
+    F = lambda n, at: {'byName': {'A': 10.5, 'B': 2}, 'trades': n, 'at': at}
+    push([dict(row('8', 100, '2026-11-06T13:00:00Z'), flow=F(5, '2026-11-06T13:00:00Z'))])
+    check('traded money is written', fl('8') == '5', fl('8'))
+    push([row('8', 110, '2026-11-06T13:01:00Z')])
+    check('a minute with no sum keeps the stored one', fl('8') == '5', fl('8'))
+    push([dict(row('8', 120, '2026-11-06T13:02:00Z'), flow=F(9, '2026-11-06T13:05:00Z'))])
+    check('a sum stamped after its read is refused (the stored one stays)', fl('8') == '5', fl('8'))
+    push([dict(row('8', 130, '2026-11-06T13:03:00Z'), flow=F(7, '2026-11-06T13:03:00Z'))])
+    q("insert into public.live_flip_log values ('8', '2026-11-06T13:03:20Z', '2026-11-06T13:02:30Z')")
+    push([])
+    check('a sum taken after the lower bound is dropped at the freeze', fl('8') == 'null', fl('8'))
+    push([dict(row('10', 100, '2026-11-06T14:00:00Z'), flow=F(4, '2026-11-06T13:58:00Z'))])
+    q("insert into public.live_flip_log values ('10', '2026-11-06T14:01:20Z', '2026-11-06T14:00:30Z')")
+    push([])
+    check('a sum taken before the lower bound is kept at the freeze', fl('10') == '4', fl('10'))
+    rc, out = push([dict(row('11', 1, '2026-11-06T14:00:00Z'), flow={'byName': {}, 'trades': 1, 'at': '2026-13-40T99:00'})])
+    check('a malformed stamp is dropped, never an error', rc == 0 and fl('11') == 'null', out)
+
     rc, out = q("select note->>'t' from public.market_live_beat where id = 1")
     check('the beat is written', out == '1', out)
 

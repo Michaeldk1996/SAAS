@@ -22,6 +22,9 @@ create table if not exists public.market_live_current (
   started_at  timestamptz,                          -- our live flip's lower bound once seen; the row is frozen from then on
   primary key (event_key, venue)
 );
+-- Traded money (founder 2026-11-07): {byName: {player: dollars}, trades, at} summed over every trade on the match-winner
+-- market up to `at`. Sent every minute with the last good sum; a minute without one keeps the stored sum.
+alter table public.market_live_current add column if not exists flow jsonb;
 create table if not exists public.market_live_beat (
   id       int         primary key default 1 check (id = 1),
   beat_at  timestamptz not null,
@@ -54,7 +57,8 @@ begin
   update public.market_live_current c
      set started_at = coalesce(l.last_not_live_seen_at, l.first_live_seen_at),
          liquidity  = case when l.last_not_live_seen_at is not null and c.read_at <= l.last_not_live_seen_at then c.liquidity end,
-         outcomes   = case when l.last_not_live_seen_at is not null and c.read_at <= l.last_not_live_seen_at then c.outcomes end
+         outcomes   = case when l.last_not_live_seen_at is not null and c.read_at <= l.last_not_live_seen_at then c.outcomes end,
+         flow       = case when l.last_not_live_seen_at is not null and (c.flow->>'at')::timestamptz <= l.last_not_live_seen_at then c.flow end
     from public.live_flip_log_current l where l.event_key = c.event_key and c.started_at is null;
   get diagnostics f = row_count;
 
@@ -63,17 +67,20 @@ begin
            x->>'event_key' ek, x->>'venue' v, x->>'ref' ref,
            case when x->>'liquidity' ~ '^[0-9.]+$' then (x->>'liquidity')::numeric end liq,
            case when jsonb_typeof(x->'outcomes') = 'array' then x->'outcomes' end oc,
+           case when jsonb_typeof(x->'flow') = 'object' and jsonb_typeof(x->'flow'->'byName') = 'object'
+                 and x->'flow'->>'at' ~ '^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])T([01]\d|2[0-3]):[0-5]\d'
+                then case when (x->'flow'->>'at')::timestamptz <= (x->>'read_at')::timestamptz then x->'flow' end end fl,   -- nested: the cast runs only on a valid stamp
            x->>'status' st, (x->>'read_at')::timestamptz ra
       from jsonb_array_elements(coalesce(p_rows, '[]'::jsonb)) x
      where coalesce(x->>'event_key', '') <> '' and x->>'venue' in ('kalshi', 'polymarket') and x->>'read_at' is not null
      order by x->>'event_key', x->>'venue', (x->>'read_at')::timestamptz desc
   )
-  insert into public.market_live_current as c (event_key, venue, ref, liquidity, outcomes, status, read_at)
-  select ek, v, ref, liq, oc, st, ra from r
+  insert into public.market_live_current as c (event_key, venue, ref, liquidity, outcomes, flow, status, read_at)
+  select ek, v, ref, liq, oc, fl, st, ra from r
    where not exists (select 1 from public.live_flip_log_current l where l.event_key = r.ek)
      and not exists (select 1 from public.live_flip_pending p where p.event_key = r.ek)
   on conflict (event_key, venue) do update
-     set ref = excluded.ref, liquidity = excluded.liquidity, outcomes = excluded.outcomes,
+     set ref = excluded.ref, liquidity = excluded.liquidity, outcomes = excluded.outcomes, flow = coalesce(excluded.flow, c.flow),
          status = excluded.status, read_at = excluded.read_at
    where c.started_at is null and excluded.read_at > c.read_at;
   get diagnostics w = row_count;
@@ -85,3 +92,5 @@ begin
 end $$;
 revoke all on function public.market_live_push(jsonb, jsonb) from public, anon, authenticated;
 grant execute on function public.market_live_push(jsonb, jsonb) to service_role;
+-- PostgREST caches the schema: without this a changed signature or column 404s (PGRST202) until its next reload.
+notify pgrst, 'reload schema';

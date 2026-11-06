@@ -9045,7 +9045,9 @@ function loadMarketLive(){
   const get = p => fetch(`${u}/rest/v1/${p}`, { headers: { apikey: k, Authorization: `Bearer ${k}`, Accept: 'application/json' }, cache: 'no-store' })
     .then(r => r.ok ? r.json() : null).catch(() => null);
   const since = new Date(Date.now() - 2 * 86400e3).toISOString();
-  mktLiveP = Promise.all([get(`market_live_current?select=event_key,venue,liquidity,read_at,started_at&read_at=gte.${encodeURIComponent(since)}`), get('market_live_beat?select=beat_at')])
+  // The traded-money column arrives with the recorder's next schema apply: until then the same read without it.
+  const rowsOf = cols => get(`market_live_current?select=${cols}&read_at=gte.${encodeURIComponent(since)}`);
+  mktLiveP = Promise.all([rowsOf('event_key,venue,liquidity,outcomes,flow,read_at,started_at').then(r => r || rowsOf('event_key,venue,liquidity,outcomes,read_at,started_at')), get('market_live_beat?select=beat_at')])
     .then(([rows, beat]) => {
       if (Array.isArray(rows)) { const by = {}; for (const r of rows) by[r.event_key + '|' + r.venue] = r; mktLive.byEvent = by; }
       if (Array.isArray(beat)) mktLive.beatAt = beat[0] ? Date.parse(beat[0].beat_at) : NaN;
@@ -9093,6 +9095,73 @@ function mcSigKalshiHtml(m){
   const rule = (typeof mcSigPolyHtml === 'function' && mcSigPolyHtml(m)) ? '' : '<div class="mc-sg-rule"></div>';   // one rule above the pair
   return `${rule}<div class="mc-sg-poly" title="${psEsc(title)}"><span class="mc-sg-src"><span class="mc-sg-dot"></span>`
     + `<span class="mc-sg-name">Kalshi</span></span><span class="mc-sg-polyv">${mcSigPolyUsd(r.liq)} liquidity</span></div>`;
+}
+// Founder 2026-11-07 ("Build the redesign"): on an Upcoming card the prediction markets get their own group — each venue's
+// price for both players (the midpoint of its best bid and ask, the two scaled to 100%, as fair odds) and one line under it:
+// money traded on each player (by the side that started each trade), the trade count and the resting liquidity. Read from
+// the per-minute table only (market-live.yml), frozen by the database at our own live sighting. A venue with no price row
+// keeps its liquidity line; no read → nothing (never a guessed price).
+function mcSigSurKey(s){ const w = ocsNfd(s).replace(/[^a-z]+/g, ' ').trim().split(' '); return w[w.length - 1] || ''; }
+function mcSigK(v){
+  const n = Number(v);
+  return n >= 1e6 ? '$' + (n / 1e6).toFixed(2) + 'm' : n >= 1000 ? '$' + (n / 1000).toFixed(1) + 'k' : '$' + Math.round(n);
+}
+function mcSigMktRows(m){
+  const ek = eventKeyOfMatch(m), out = [];
+  const live = typeof mktLive !== 'undefined' ? mktLive.byEvent : {};
+  for (const [venue, label, vol] of [['kalshi', 'Kalshi', typeof kalshiVol !== 'undefined' ? kalshiVol : null], ['polymarket', 'Polymarket', typeof polymarketVol !== 'undefined' ? polymarketVol : null]]) {
+    const r = live[ek + '|' + venue], liq = mcSigLiqRec(vol, m, venue);
+    const oc = r && Array.isArray(r.outcomes) ? r.outcomes : [];
+    const k1 = mcSigSurKey(m.p1), k2 = mcSigSurKey(m.p2);
+    const o1 = k1 !== k2 ? oc.filter(o => o && mcSigSurKey(o.name) === k1) : [], o2 = k1 !== k2 ? oc.filter(o => o && mcSigSurKey(o.name) === k2) : [];
+    const ok = o1.length === 1 && o2.length === 1 && o1[0].mid > 0 && o2[0].mid > 0;
+    if (!ok && !liq) continue;
+    const row = { venue, label, liq, frozen: !!(r && r.started_at), readAt: r ? r.read_at : null };
+    if (ok) {
+      const a = o1[0], b = o2[0];
+      row.pa = 100 * a.mid / (a.mid + b.mid);
+      row.oA = (100 / row.pa).toFixed(2); row.oB = (100 / (100 - row.pa)).toFixed(2);
+      const ba = o => (o.bid != null ? o.bid : '—') + ' / ' + (o.ask != null ? o.ask : '—');
+      row.src = `${label} · the midpoint of the best bid and ask, both players scaled to 100%, as fair odds · bid / ask ${mxSurname(m.p1)} ${ba(a)}, ${mxSurname(m.p2)} ${ba(b)}`
+        + ` · read ${mcSigClock(r.read_at)}${row.frozen ? ' · last read before the start' : ''} · not a bookmaker price: no margin, a trade pays the spread and a fee`;
+      const f = r.flow, f1 = f && f.byName ? Object.entries(f.byName).filter(([n]) => mcSigSurKey(n) === k1) : [], f2 = f && f.byName ? Object.entries(f.byName).filter(([n]) => mcSigSurKey(n) === k2) : [];
+      if (f1.length === 1 && f2.length === 1 && Number(f.trades) >= 0) row.flow = { a: f1[0][1], b: f2[0][1], trades: Number(f.trades), at: f.at };
+    }
+    out.push(row);
+  }
+  return out;
+}
+function mcSigMktHtml(m, D){
+  const rows = mcSigMktRows(m);
+  if (!rows.length) return '';
+  const A = psEsc(mxSurname(m.p1)), B = psEsc(mxSurname(m.p2));
+  const priced = rows.filter(r => r.pa != null);
+  const fresh = r => !r.frozen && mcSigLiveFresh() && Date.now() - Date.parse(r.readAt) <= MKT_LIVE_STALE_MS;
+  let when = '';
+  if (priced.length && priced.every(r => r.frozen)) when = ' · before the start';
+  else if (priced.length && priced.every(fresh)) when = ' · now';
+  else if (priced.length) when = ' · read ' + mcSigClock(priced.map(r => r.readAt).sort()[0]);
+  let h = `<div class="mc-sg-grp">Prediction markets${when}</div>`;
+  for (const r of rows) {
+    if (r.pa == null) {   // liquidity only: the venue's line as before
+      const title = `${r.label} · match-winner market liquidity${r.liq.at ? ' · read ' + r.liq.at : ''}${r.liq.frozen ? ' · last read before the start' : ''}`;
+      h += `<div class="mc-sg-poly" title="${psEsc(title)}"><span class="mc-sg-src"><span class="mc-sg-dot"></span><span class="mc-sg-name">${r.label}</span></span><span class="mc-sg-polyv">${mcSigPolyUsd(r.liq.liq)} liquidity</span></div>`;
+      continue;
+    }
+    h += `<div class="mc-sg-row mc-sg-mkt"><span class="mc-sg-src" title="${psEsc(r.src)}"><span class="mc-sg-dot"></span><span class="mc-sg-name">${r.label}</span></span>`
+      + `<span class="mc-sg-oa">${r.oA}</span><span class="mc-sg-pa">${Math.round(r.pa)}%</span>`
+      + `<span class="mc-sg-bar2"><span class="a" style="width:${r.pa.toFixed(2)}%"></span><span class="b" style="width:${(100 - r.pa).toFixed(2)}%"></span></span>`
+      + `<span class="mc-sg-pb">${Math.round(100 - r.pa)}%</span><span class="mc-sg-ob">${r.oB}</span></div>`;
+    const parts = [];
+    if (r.flow) parts.push(`Traded on ${A} <b>${mcSigK(r.flow.a)}</b> · ${B} <b>${mcSigK(r.flow.b)}</b> · ${r.flow.trades.toLocaleString('en-US')} trade${r.flow.trades === 1 ? '' : 's'}`);
+    if (r.liq) parts.push(`<b>${mcSigK(r.liq.liq)}</b> resting`);
+    if (parts.length) {
+      const t = `${r.flow ? `Money traded on the match-winner market, by the side that started each trade (${r.venue === 'kalshi' ? 'Kalshi: the taker side' : 'Polymarket: buy or sell of each player'}), every trade so far · summed ${mcSigClock(r.flow.at)}` : 'No traded total read yet'}`
+        + `${r.liq ? ` · resting = every open order on both players, read ${r.liq.at}` : ''}${r.frozen ? ' · last read before the start' : ''}`;
+      h += `<div class="mc-sg-flow" title="${psEsc(t)}">${parts.join(' · ')}</div>`;
+    }
+  }
+  return h;
 }
 function mcSigBody(m){
   const surfCap = m.surface ? m.surface.charAt(0).toUpperCase() + m.surface.slice(1) : '';
@@ -9182,8 +9251,13 @@ function mcSigBody(m){
       + `<span class="mc-sg-bar2${bl}"><span class="a" style="width:${r.pa.toFixed(2)}%"></span><span class="b" style="width:${(100 - r.pa).toFixed(2)}%"></span></span>`
       + `<span class="mc-sg-pb${bl}">${Math.round(100 - r.pa)}%</span><span class="mc-sg-ob${bl}">${r.oB}</span></div>`;
   };
-  return `<div class="mc-sg mc-sg--up"><div class="mc-sg-row mc-sg-head"><span>Books</span><span class="r">Open</span><span class="r">%</span><span></span><span>%</span><span>Open</span></div>`
-    + rows.map(row).join('') + (typeof mcSigPolyHtml === 'function' ? mcSigPolyHtml(m) : '') + (typeof mcSigKalshiHtml === 'function' ? mcSigKalshiHtml(m) : '') + `</div>`;
+  // Founder 2026-11-07: the two players name the columns (their surnames wrap between words, never cut); the rows sit in
+  // three groups — the books' opening odds, the ratings / model as fair odds, the prediction markets.
+  const grp = t => `<div class="mc-sg-grp">${t}</div>`;
+  return `<div class="mc-sg mc-sg--up"><div class="mc-sg-row mc-sg-head"><span class="mc-sg-hn a" title="${psEsc(m.p1)}">${psEsc(mxSurname(m.p1))}</span><span></span><span class="mc-sg-hn b" title="${psEsc(m.p2)}">${psEsc(mxSurname(m.p2))}</span></div>`
+    + grp('Bookmakers · opening odds') + rows.slice(0, 3).map(row).join('')
+    + grp('Ratings and model · fair odds') + rows.slice(3).map(row).join('')
+    + (typeof mcSigMktHtml === 'function' ? mcSigMktHtml(m, D) : '') + `</div>`;
 }
 
 // §1/§2/§4 — Completed vs Upcoming page chrome: title, subtitle, status line, and
@@ -36740,6 +36814,12 @@ if(document.querySelector('.tabpage[data-page="live"]')&&document.querySelector(
   [data-page="matches"] .mc-sg--up .mc-sg-head > span{ font-family:var(--font-words); font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label); white-space:nowrap; }
   [data-page="matches"] .mc-sg--up .mc-sg-head > span:first-child{ font-size:10.5px; }
   [data-page="matches"] .mc-sg--up .mc-sg-head > span.r{ text-align:right; }
+  [data-page="matches"] .mc-sg--up .mc-sg-head > .mc-sg-hn{ font-size:10.5px; white-space:normal; overflow-wrap:normal; line-height:1.25; min-width:0; }
+  [data-page="matches"] .mc-sg--up .mc-sg-head > .mc-sg-hn.a{ grid-column:1 / 4; text-align:right; }
+  [data-page="matches"] .mc-sg--up .mc-sg-head > .mc-sg-hn.b{ grid-column:5 / 7; text-align:left; }
+  [data-page="matches"] .mc-sg-grp{ font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label); margin:4px 0 -3px; }
+  [data-page="matches"] .mc-sg-flow{ font-family:var(--font-words); font-size:10.5px; line-height:1.4; color:var(--text-label); margin:-5px 0 0 15px; cursor:default; }
+  [data-page="matches"] .mc-sg-flow b{ font-family:var(--font-nums); font-weight:700; color:var(--text-soft); }
   [data-page="matches"] .mc-sg-src{ display:inline-flex; align-items:center; gap:7px; min-width:0; cursor:default; }
   [data-page="matches"] .mc-sg--done .mc-sg-src{ gap:6px; }
   [data-page="matches"] .mc-sg-dot{ width:6px; height:6px; flex:none; border-radius:50%; background:var(--text-label); }

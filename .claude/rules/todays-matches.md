@@ -92,6 +92,18 @@ except where a ruling below says otherwise. Colours are foundation tokens (`foun
 - **Market Signal drawer (review):** no explainer paragraph; a source without data is not drawn (no "—" rows, no empty bars);
   a group with no rows is not drawn; nothing at all → one grey line `No market signal for this match yet`. Caret ▾ closed /
   ▴ open (180° turn), white, font stack `'Hanken Grotesk', sans-serif` (system-ui drew a dot).
+- **Market Signal drawer, Upcoming (founder 2026-11-07, "Build the redesign"):** the two players' surnames head the
+  columns (they wrap between words, never cut; the left name spans the source column so a long one never meets its
+  neighbour); three groups: **Bookmakers · opening odds** (Pinnacle, Bet105, Bet365), **Ratings and model · fair odds**
+  (Elo Overall, Elo surface, Stennisfy Model), **Prediction markets**. A prediction-market row = the venue's own price for
+  both players from the per-minute table (`market_live_current`, market-live.yml): the midpoint of its best bid and ask,
+  scaled to 100%, as fair odds; each venue player joined to the card player by surname, exactly one each, else no row
+  (never a guess). Under it one line: money traded on each player (by the side that started each trade, every trade so far,
+  summed every 5 min; a history over 20 pages is no sum), the trade count, and the resting liquidity. The group heading
+  says how old the prices are: "now" (read within 3 min, recorder alive), "before the start" (frozen at our live sighting),
+  else "read <time>". A venue with liquidity but no price keeps its liquidity line. Not a bookmaker price and not a match
+  price: no page's price join reads it. Completed drawer unchanged. **Test:** `test-market-live-signal.mjs`,
+  `test-polymarket-signal.mjs`, `tools/test-market-live-recorder.mjs`, `tools/test-market-live-sql.py`.
 - **Day tabs, date bar, move-view head (founder 2026-10-30, matches-day-tabs-datebar-drift; supersedes TEN-179's
   2026-09-09 `yesterday · today · +1 · +2` rail and the tabs keyed on the feed's Berlin `date`).** A match belongs to the
   **local calendar day of its start instant in the member zone** (`matchLocalDayKey`: `newsTz`, the start through

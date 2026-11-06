@@ -11,6 +11,12 @@
 //   Polymarket  GET gamma /events?series_id=10365&closed=false (one call). liquidity = the match-winner market's
 //               liquidityNum — polymarket-volume.mjs's figure. Per player: outcomePrices (the midpoint) and the best
 //               bid / ask (the second player's are the first's mirrored: one book).
+// Traded money (founder 2026-11-07, "Build the redesign": the drawer's "Traded on A $x · B $y · n trades" line), every
+// FLOW_EVERY_MS, summed over every trade on the match-winner market so far, by the side that started the trade:
+//   Kalshi      /markets/trades per player market: taker yes on A = money on A (count × yes price), taker no on A =
+//               money on the other player (count × no price).
+//   Polymarket  data-api /v2/trades?condition=: BUY outcome X = money on X, SELL X = money on the other (size × price).
+// A history longer than FLOW_MAX_PAGES pages is not summed (null): never a partial total shown as the whole.
 // Write: public.market_live_push (supabase/migrations/20261106090000_market_live.sql, service role), which refuses any
 // match our live poller has flagged live — so the card keeps the last read before our own live sighting.
 // Usage: node tools/market-live-recorder.mjs --minutes 350 [--once]. Env: SUPABASE_URL, SUPABASE_SECRET_KEY.
@@ -23,6 +29,9 @@ export const TARGETS_EVERY_MS = 10 * 60e3;
 // A STOP only, never a start (the scheduled time's one permitted use, founder 2026-10-26): if our live poller never
 // flags a match, its reads stop 3 h after the venue's scheduled start, or as soon as Polymarket marks the event live.
 export const SCHED_STOP_MS = 3 * 3600e3;
+export const FLOW_EVERY_MS = 5 * 60e3;
+export const FLOW_MAX_PAGES = 20;
+const DATA = 'https://data-api.polymarket.com';
 export function pastStop(schedIso, nowMs) { const t = Date.parse(schedIso || ''); return Number.isFinite(t) && nowMs > t + SCHED_STOP_MS; }
 const num = (v) => (v == null || v === '' || !Number.isFinite(Number(v)) ? null : Number(v));
 const r4 = (x) => (x == null ? null : Math.round(x * 1e4) / 1e4);
@@ -57,12 +66,16 @@ export function kalshiRow(ek, ev, pair, books, readAt) {
   });
   return { event_key: ek, venue: 'kalshi', ref: ev, liquidity, outcomes, status: 'open', read_at: readAt };
 }
-// One Polymarket row from its Gamma event (the match-winner market: two outcomes, question = the event title)
-export function polyRow(ek, e, readAt) {
-  const mk = (e.markets || []).find((m) => {
+// The Gamma event's match-winner market: two outcomes, question = the event title
+export function polyMarketOf(e) {
+  return (e.markets || []).find((m) => {
     let o; try { o = JSON.parse(m.outcomes || '[]'); } catch { o = []; }
     return o.length === 2 && String(m.question || '') === String(e.title || '');
-  });
+  }) || null;
+}
+// One Polymarket row from its Gamma event
+export function polyRow(ek, e, readAt) {
+  const mk = polyMarketOf(e);
   if (!mk) return null;
   let names, prices; try { names = JSON.parse(mk.outcomes); prices = JSON.parse(mk.outcomePrices || '[]'); } catch { return null; }
   const liq = num(mk.liquidityNum != null ? mk.liquidityNum : mk.liquidity);
@@ -85,6 +98,50 @@ export function polySched(e) {
   return Number.isFinite(Date.parse(g)) ? g : null;
 }
 
+const usd2 = (x) => Math.round(x * 100) / 100;
+// Kalshi traded money per player over both markets of a match (pair = the two player markets). null = unreadable / too long.
+export async function kalshiFlow(pair, get, at) {
+  const byName = {}; let trades = 0;
+  for (const m of pair) {
+    const other = pair.find((x) => x !== m).yes_sub_title;
+    let cursor = '', done = false;
+    for (let i = 0; i < FLOW_MAX_PAGES; i++) {
+      const pg = await get(`${KALSHI}/markets/trades?ticker=${m.ticker}&limit=1000${cursor ? '&cursor=' + cursor : ''}`);
+      for (const x of (pg && pg.trades) || []) {
+        const c = num(x.count_fp != null ? x.count_fp : x.count), yes = x.taker_side === 'yes';
+        const px = num(yes ? x.yes_price_dollars : x.no_price_dollars);
+        if (c == null || px == null || (x.taker_side !== 'yes' && x.taker_side !== 'no')) continue;
+        const n = yes ? m.yes_sub_title : other;
+        byName[n] = (byName[n] || 0) + c * px; trades++;
+      }
+      cursor = (pg && pg.cursor) || '';
+      if (!cursor) { done = true; break; }
+    }
+    if (!done) return null;
+  }
+  for (const n of pair.map((m) => m.yes_sub_title)) byName[n] = usd2(byName[n] || 0);
+  return { byName, trades, at };
+}
+// Polymarket traded money per outcome on the match-winner market (mk = polyMarketOf). null = unreadable / too long.
+export async function polyFlow(mk, get, at) {
+  let names; try { names = JSON.parse(mk.outcomes); } catch { return null; }
+  if (!mk.conditionId || !Array.isArray(names) || names.length !== 2) return null;
+  const byName = { [names[0]]: 0, [names[1]]: 0 }; let trades = 0, cursor = '';
+  for (let i = 0; i < FLOW_MAX_PAGES; i++) {
+    const pg = await get(`${DATA}/v2/trades?condition=${mk.conditionId}&limit=500${cursor ? '&cursor=' + encodeURIComponent(cursor) : ''}`);
+    if (!pg || !Array.isArray(pg.data)) return null;
+    for (const x of pg.data) {
+      const o = x.outcome, side = String(x.side || '').toUpperCase(), sz = num(x.size), px = num(x.price);
+      if (!(o in byName) || (side !== 'BUY' && side !== 'SELL') || sz == null || px == null) continue;
+      const n = side === 'BUY' ? o : names.find((y) => y !== o);
+      byName[n] += sz * px; trades++;
+    }
+    cursor = pg.pagination && pg.pagination.has_more ? pg.pagination.next_cursor : '';
+    if (!cursor) { for (const n of names) byName[n] = usd2(byName[n]); return { byName, trades, at }; }
+  }
+  return null;
+}
+
 async function getJson(url) {
   const r = await fetch(url, { signal: AbortSignal.timeout(20e3), headers: { 'User-Agent': 'stennisfy-market-live' } });
   if (!r.ok) throw new Error(`HTTP ${r.status} ${url.replace(KALSHI, '').replace(GAMMA, '')}`);
@@ -92,7 +149,8 @@ async function getJson(url) {
 }
 
 // One minute's reads → rows. Each venue fails on its own (that venue writes nothing this minute).
-export async function readMinute(targets, get = getJson, now = () => new Date().toISOString()) {
+// opts.flow = true: also sum each written match's traded money (row.flow); a failed sum is left off that row.
+export async function readMinute(targets, get = getJson, now = () => new Date().toISOString(), opts = {}) {
   const rows = [], note = { targets: Object.keys(targets).length, kalshi: 0, poly: 0, errors: [] };
   const nowMs = Date.parse(now());
   const pTargets = Object.entries(targets).filter(([, t]) => t.poly);
@@ -126,7 +184,9 @@ export async function readMinute(targets, get = getJson, now = () => new Date().
         .filter(([, , pair]) => { const stop = pastStop(pair[0].occurrence_datetime, nowMs); if (stop) note.stopped++; return !stop; });
       const done = await Promise.all(live.map(async ([ek, t, pair]) => {
         const books = await Promise.all(pair.map((m) => get(`${KALSHI}/markets/${m.ticker}/orderbook`).catch(() => null)));
-        return kalshiRow(ek, t.kalshi, pair, books, now());
+        const row = kalshiRow(ek, t.kalshi, pair, books, now());
+        if (opts.flow) row.flow = await kalshiFlow(pair, get, now()).catch(() => null);
+        return row;
       }));
       rows.push(...done); note.kalshi = done.length;
     } catch (e) { note.errors.push('kalshi: ' + e.message); }
@@ -138,6 +198,7 @@ export async function readMinute(targets, get = getJson, now = () => new Date().
       const row = polyRow(ek, e, now());
       if (!row || row.status !== 'open') continue;
       if (pastStop(polySched(e), nowMs)) { note.stopped++; continue; }
+      if (opts.flow) row.flow = await polyFlow(polyMarketOf(e), get, now()).catch(() => null);
       rows.push(row); note.poly++;
     }
   }
@@ -161,14 +222,21 @@ async function main() {
   const once = args.includes('--once');
   if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SECRET_KEY) { console.log('::error::market-live: SUPABASE_URL / SUPABASE_SECRET_KEY missing'); process.exit(1); }
   const stopAt = Date.now() + minutes * 60e3;
-  let targets = {}, targetsAt = 0, ticks = 0, pushFails = 0, rowsSeen = false;
+  let targets = {}, targetsAt = 0, ticks = 0, pushFails = 0, rowsSeen = false, flowAt = 0;
+  const flows = new Map();   // event_key|venue -> the last good traded-money sum, sent with every minute's row
   while (Date.now() < stopAt) {
     const t0 = Date.now();
     if (t0 - targetsAt > TARGETS_EVERY_MS || !Object.keys(targets).length) {
       const [k, p] = await Promise.all([fetchPublished('kalshi.json'), fetchPublished('polymarket.json')]);
       if (k || p) { targets = targetsFrom(k, p); targetsAt = t0; }
     }
-    const { rows, note } = await readMinute(targets);
+    const flowNow = t0 - flowAt >= FLOW_EVERY_MS;
+    const { rows, note } = await readMinute(targets, undefined, undefined, { flow: flowNow });
+    if (flowNow) flowAt = t0;
+    for (const r of rows) {
+      const k = r.event_key + '|' + r.venue;
+      if (r.flow) flows.set(k, r.flow); else if (flows.has(k)) r.flow = flows.get(k); else delete r.flow;
+    }
     if (rows.length || !Object.keys(targets).length || (note.errors.length === 0)) rowsSeen = true;
     try {
       const res = await push(rows, note);
