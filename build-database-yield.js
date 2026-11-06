@@ -558,6 +558,11 @@ if (feedOn) {
 // master with the same source order and hover as every other match (our archive close: 3 'from Pinnacle history' /
 // 4 'captured'), flagged out of every Database statistic and ROI. The same price guards: both sides >= 1.01 (here > 1.00
 // as validPrice), overround <= 1.15; an exact tie is kept (flag 'e').
+// founder 2026-11-07 ("try to find prices for all matches"): the team matches our archive prices with a close — an 'atp-x'
+// snapshot of the same match (Tennis Explorer, Pinnacle before the start …) below is then a second row of ONE match, and the
+// join dashed both (two rows fit: 112 Davis Cup / Laver Cup sides of Sep 2026). The close wins (the source order); the
+// snapshot is dropped and counted (lower.teamHasClose).
+const teamPairs = new Set();
 for (const r of feed.team) {
   const pw = num(r.psw), pl = num(r.psl), bk = archBookOf((r.label || '').trim());
   const dI = parseInt(String(r.date || '').replace(/-/g, ''), 10);
@@ -567,6 +572,7 @@ for (const r of feed.team) {
   xRaw.push([dI, null, (r.surface || '').trim(), (r.round || '').trim(), (r.tournament || '').trim(), Math.min(pw, pl), Math.max(pw, pl),
     pw <= pl ? 1 : 0, bk, (r.winner || '').trim(), (r.loser || '').trim(), 't' + (isRet ? 'r' : '') + (pw === pl ? 'e' : '')]);
   feed.teamKept++;
+  teamPairs.add(tdPairKey(dI, r.winner, r.loser)); teamPairs.add(tdPairKey(dI, r.loser, r.winner));
 }
 
 // Founder ruling 2026-10-18 (item 3): ATP qualifying, Challenger (main draw + qualifying) and ITF into the master, with the
@@ -705,12 +711,31 @@ const LOWER_B365_ROOT = process.env.DB_YIELD_B365_ROOT || __dirname;   // bet365
     lowerBest.delete(keepNew ? prev : k); if (keepNew) byPair.set(pk, k);
     lower.sameMatchMerged = (lower.sameMatchMerged || 0) + 1;
   }
+  // founder 2026-11-07 ("try to find prices for all matches"): the Tennis Explorer team-event import stores a Davis Cup rubber
+  // a second time with no player keys ("Davis Cup", same day, same two players), so the key pass above never sees it — 39
+  // matches (2021-2026), the join dashing both. Team events ('atp-x') only: the same day + both names (tdNameKey) is ONE
+  // match; the same rule picks the copy that stays (better-ranked, a tie: the keyed one), counted in lower.sameMatchMergedByName.
+  const byName = new Map();
+  for (const [k, r] of lowerBest) {
+    if (r.level !== 'atp-x' || !r.winner || !r.loser) continue;
+    const pk = `${String(r.date).slice(0, 10)}|${[tdNameKey(r.winner), tdNameKey(r.loser)].sort().join('|')}`;
+    const prev = byName.get(pk);
+    if (!prev) { byName.set(pk, k); continue; }
+    const p = lowerBest.get(prev), rr = lowerRankOf(r.book, r.date), pr = lowerRankOf(p.book, p.date);
+    const keepNew = rr < pr || (rr === pr && !!r.eventKey && !p.eventKey);
+    lowerBest.delete(keepNew ? prev : k); if (keepNew) byName.set(pk, k);
+    lower.sameMatchMergedByName = (lower.sameMatchMergedByName || 0) + 1;
+  }
 })();
 for (const r of lowerBest.values()) {
   const dI = parseInt(String(r.date).replace(/-/g, ''), 10);
   if (!Number.isFinite(dI) || !r.winner || !r.loser || !r.winner.trim() || !r.loser.trim()) { lower.dropped++; continue; }
   const isRet = RETIRED.has((r.comment || '').trim());
   const tx = r.level === 'atp-x', nt = r.level === 'atp-nt', series = tx || nt ? '' : LOWER_LEVEL_NAME[r.level];
+  if (tx) {
+    const dd = n => { const x = new Date(Date.UTC(Math.floor(dI / 10000), Math.floor(dI / 100) % 100 - 1, dI % 100 + n)); return x.toISOString().slice(0, 10).replace(/-/g, ''); };
+    if ([-1, 0, 1].some(n => teamPairs.has(tdPairKey(dd(n), r.winner, r.loser)))) { lower.teamHasClose = (lower.teamHasClose || 0) + 1; continue; }
+  }
   if (nt) {
     const dd = n => { const x = new Date(Date.UTC(Math.floor(dI / 10000), Math.floor(dI / 100) % 100 - 1, dI % 100 + n)); return x.toISOString().slice(0, 10).replace(/-/g, ''); };
     if ([-1, 0, 1].some(n => tdPairs.has(tdPairKey(dd(n), r.winner, r.loser)))) { lower.ntHasTd = (lower.ntHasTd || 0) + 1; continue; }

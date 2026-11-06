@@ -10,20 +10,20 @@
    "check": "54632161c4e556f2"
   },
   {
-   "key": "masterRows",
-   "expect": 140534,
-   "reason": "founder ruling 2026-10-26: ATP main draw is Pinnacle only - the 200 Bet365 rows outside Jan-Apr 2026 and the 710 start-10 snapshot rows become dashes (141444 -> 140534, live 2026-10-26)",
+   "key": "xRows",
+   "expect": 151211,
+   "reason": "price-all-matches 2026-11-07: one row per team-event match - (a) 56 Sep 2026 Davis Cup / Laver Cup matches our archive prices with a close were also held as an atp-x snapshot; (b) 39 Davis Cup rubbers (2021-26) the TE team import stored twice, keyed and keyless, at identical prices. The join dashed both copies; one stays (95 rows, live 151306 -> 151211)",
    "by": "bsp-ceo-bot",
-   "at": "2026-10-26T03:12:29.119Z",
-   "check": "0420f2c61b8fc414"
+   "at": "2026-11-06T21:28:26.321Z",
+   "check": "29b78bf6777edb9e"
   },
   {
-   "key": "xRows",
-   "expect": 143782,
-   "reason": "fix 53fbefd82 (one match = one row): 76 duplicate copies of the same match (atp-nt rows that are Tennis-Data matches under another spelling; keyed + keyless team-event copies) merged into one row each, 143858 -> 143782 (live 2026-11-04)",
+   "key": "masterRows",
+   "expect": 193848,
+   "reason": "price-all-matches 2026-11-07: one row per team-event match - (a) 56 Sep 2026 Davis Cup / Laver Cup matches our archive prices with a close were also held as an atp-x snapshot; (b) 39 Davis Cup rubbers (2021-26) the TE team import stored twice, keyed and keyless, at identical prices. The join dashed both copies; one stays (95 rows, live 193943 -> 193848)",
    "by": "bsp-ceo-bot",
-   "at": "2026-11-04T15:18:46.323Z",
-   "check": "1e802d0b164d93b3"
+   "at": "2026-11-06T21:28:26.368Z",
+   "check": "0d982c1d29754671"
   }
  ]
 }

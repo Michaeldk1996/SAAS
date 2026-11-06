@@ -224,6 +224,45 @@ ok(lBy('Late A.', 'Late B.').x[8] === 8, 'after 16 Sep: api-tennis Pinnacle neve
 ok(lBy('Late C.', 'Late D.').x[8] === 2, 'after 16 Sep: api-tennis Pinnacle alone fills the dash (902)');
 ok(lBy('Early A.', 'Early B.').x[8] === 2, 'up to 16 Sep the order is unchanged: api-tennis Pinnacle over Tennis Explorer (903)');
 ok(LD.base === B.base, 'after 16 Sep: the Database files are byte-identical (never a Database figure)');
+// ── founder 2026-11-07 ("try to find prices for all matches"): a team match our archive prices with a CLOSE (the td-feed's
+// team row, book 3) and that an 'atp-x' snapshot also holds is ONE match: the close stays, the snapshot is dropped and counted
+// (lower.teamHasClose). Two rows made the join dash both (112 Davis Cup / Laver Cup sides of Sep 2026).
+const FC = 'kind,date,tournament,series,court,surface,round,bestof,winner,loser,comment,psw,psl,archiveId,label,eventKey';
+fs.writeFileSync(path.join(tmp, 'team-feed.csv'), [FC,
+  ['team', '2026-09-18', 'ATP Davis Cup - World Group I', '', '', '', '', '3', 'Van De Zandschulp B.', 'Rodriguez J.A.', 'Completed', 1.016, 24.15, 9001, 'from Pinnacle history', ''].join(','),
+].join('\n') + '\n');
+fs.writeFileSync(path.join(tmp, 'approx-tm.csv'), [COLS].concat(approx.slice(1),
+  TEC({ date: '2026-09-18', level: 'atp-x', tournament: 'ATP Davis Cup - World Group I', winner: 'Van De Zandschulp B.', loser: 'Rodriguez J.A.', winnerKey: '81', loserKey: '82', psw: 1.02, psl: 21, eventKey: 12170001, source: 'Tennis Explorer · Pinnacle', comment: 'Completed' }),
+  // control: another team match on TE alone keeps its row
+  TEC({ date: '2026-09-18', level: 'atp-x', tournament: 'ATP Davis Cup - World Group I', winner: 'Griekspoor T.', loser: 'Mejia N.', winnerKey: '83', loserKey: '84', psw: 1.17, psl: 5.64, eventKey: 12170002, source: 'Tennis Explorer · Pinnacle', comment: 'Completed' }),
+).join('\n') + '\n');
+const TMENV = Object.assign({}, FEEDS, { DB_YIELD_FEED: path.join(tmp, 'team-feed.csv'), DB_YIELD_LOWER_APPROX: path.join(tmp, 'approx-tm.csv') });
+const TM = build(TMENV);
+const tmN = TM.x.xRows.map((x, i) => ({ x, n: TM.x.xNames[i] }));
+const vdz = tmN.filter(o => o.n[0] === 'Van De Zandschulp B.' && o.n[1] === 'Rodriguez J.A.');
+ok(vdz.length === 1 && vdz[0].x[8] === 3 && /t/.test(vdz[0].x[9]), `one team match: our archive close (book 3) is the only row, the TE snapshot is dropped (got ${JSON.stringify(vdz.map(o => o.x[8]))})`);
+ok(tmN.filter(o => o.n[0] === 'Griekspoor T.').length === 1 && tmN.find(o => o.n[0] === 'Griekspoor T.').x[8] === 8, 'one team match: a team match TE alone prices keeps its row (control)');
+ok(TM.x.meta.lower.teamHasClose === 1, 'one team match: the drop is counted (lower.teamHasClose)');
+{ const mp = path.join(ROOT, '.tmp-mutant-teamclose.js');
+  fs.writeFileSync(mp, fs.readFileSync(path.join(ROOT, 'build-database-yield.js'), 'utf8').replace('if (tx) {', 'if (false) {'));
+  try { const M = build(TMENV, mp); const n = M.x.xNames.filter(x => x[0] === 'Van De Zandschulp B.').length;
+    ok(n === 2, `MUTANT (no team-close guard) keeps both rows of the match — the check turns red (got ${n})`);
+    ok(M.base === TM.base, 'one team match: the Database files are byte-identical with and without the guard (never a Database figure)'); } finally { fs.rmSync(mp, { force: true }); } }
+// ── founder 2026-11-07: a Davis Cup rubber the TE team import stores twice — keyed, and keyless with no player keys
+// ("Davis Cup") — is ONE match by day + both names; the keyed copy stays (lower.sameMatchMergedByName)
+fs.writeFileSync(path.join(tmp, 'approx-nm.csv'), [COLS].concat(approx.slice(1),
+  TEC({ date: '2022-03-04', level: 'atp-x', tournament: 'ATP Davis Cup - World Group', winner: 'Bautista-Agut R.', loser: 'Boitan G.A.', winnerKey: '91', loserKey: '92', psw: 1.08, psl: 12.88, eventKey: 7701, source: 'Tennis Explorer · Pinnacle', comment: 'Completed' }),
+  TEC({ date: '2022-03-04', level: 'atp-x', tournament: 'Davis Cup', winner: 'Bautista-Agut R.', loser: 'Boitan G.', psw: 1.08, psl: 12.88, source: 'Tennis Explorer · Pinnacle', comment: 'Completed' }),
+  // control: the same two players on the next day stay two matches
+  TEC({ date: '2022-03-05', level: 'atp-x', tournament: 'Davis Cup', winner: 'Bautista-Agut R.', loser: 'Boitan G.', psw: 1.1, psl: 9, source: 'Tennis Explorer · Pinnacle', comment: 'Completed' }),
+).join('\n') + '\n');
+const NM = build(Object.assign({}, FEEDS, { DB_YIELD_LOWER_APPROX: path.join(tmp, 'approx-nm.csv') }));
+const nmN = NM.x.xRows.map((x, i) => ({ x, n: NM.x.xNames[i] })).filter(o => o.n[0] === 'Bautista-Agut R.');
+ok(nmN.filter(o => o.x[0] === 20220304).length === 1 && nmN.find(o => o.x[0] === 20220304).x[4] === 'ATP Davis Cup - World Group',
+  `one team match by name: the keyed and keyless copies are one row, the keyed one (got ${JSON.stringify(nmN.map(o => [o.x[0], o.x[4]]))})`);
+ok(nmN.some(o => o.x[0] === 20220305), 'one team match by name: the next day is another match (control)');
+ok(NM.x.meta.lower.sameMatchMergedByName === 1, 'one team match by name: the merge is counted');
+ok(NM.base === B.base, 'one team match by name: the Database files are byte-identical');
 fs.rmSync(tmp, { recursive: true, force: true });
 console.log(`\ntest-lower-master: ${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
