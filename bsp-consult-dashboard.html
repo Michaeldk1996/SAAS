@@ -5780,14 +5780,14 @@ function newsSplitParas(text){
 // TEN-409 Data 4: a player reads as on Player Profile, Head to Head and Match analysis — the profile name of his key (the
 // api-tennis spelling, "C. Alcaraz"), else the feed's player_name (the builder writes the same roster name).
 function newsPlayerName(key, fallback){
-  const p = (key != null && typeof playerProfiles !== 'undefined' && playerProfiles) ? playerProfiles[String(key)] : null;
+  const p = (typeof ppSlim === 'function' ? ppSlim(key) : ((key != null && typeof playerProfiles !== 'undefined' && playerProfiles) ? playerProfiles[String(key)] : null));
   return (p && p.name) || (fallback != null ? String(fallback) : '');
 }
 // A name links only when the player has a profile (loaded, or flagged in this week's standings; before the standings
 // load the link is offered and psOpenProfile checks the shard).
 function newsHasProfile(key){
   if (key == null) return false;
-  if (typeof playerProfiles !== 'undefined' && playerProfiles && playerProfiles[String(key)]) return true;
+  if ((typeof ppSlim === 'function' ? ppSlim(key) : (typeof playerProfiles !== 'undefined' && playerProfiles && playerProfiles[String(key)]))) return true;
   const idx = (typeof playerIndex !== 'undefined' && Array.isArray(playerIndex)) ? playerIndex : null;
   if (!idx || !idx.length) return true;
   const row = idx.find(r => String(r.key) === String(key));
@@ -6303,9 +6303,9 @@ function intelMatchPlayer(query){
 // legacy notes (player text only) are matched on the fly so they link too.
 function intelResolveNote(n){
   if (!n) return { label: '', key: null };
-  if (n.playerKey != null && typeof playerProfiles !== 'undefined' &&
-      playerProfiles && playerProfiles[String(n.playerKey)]){
-    return { label: playerProfiles[String(n.playerKey)].name || n.player || '', key: String(n.playerKey) };
+  const np = n.playerKey != null ? (typeof ppSlim === 'function' ? ppSlim(n.playerKey) : ((typeof playerProfiles !== 'undefined' && playerProfiles && playerProfiles[String(n.playerKey)]) || null)) : null;
+  if (np){
+    return { label: np.name || n.player || '', key: String(n.playerKey) };
   }
   const raw = (n.player || '').trim();
   if (!raw) return { label: '', key: null };
@@ -8984,7 +8984,7 @@ function avatarFallback(img, initials){
 // have a profile; switches to the Players tab first (showPlayerProfile only toggles
 // views WITHIN that tabpage, so without the switch nothing visible would happen).
 function openPlayerProfileFromMatch(key){
-  if (key == null || !playerProfiles[String(key)]) return;
+  if (key == null || !(typeof ppSlim === 'function' ? ppSlim(key) : playerProfiles[String(key)])) return;
   // The analysis modal (if open, e.g. clicking a face in the match detail header)
   // sits on top of everything — close it first, otherwise the Players tab switch
   // happens behind the overlay and looks like nothing happened. (T2 fix)
@@ -9006,7 +9006,7 @@ function openEdgeModelFromMatch(id){
 // style/title attrs when a profile exists for this key, else ''. stopPropagation
 // keeps it independent of any card-level handler. (T2)
 function profileLinkAttrs(playerKey, name){
-  const clickable = playerKey != null && typeof playerProfiles !== 'undefined' && playerProfiles[String(playerKey)];
+  const clickable = playerKey != null && (typeof ppSlim === 'function' ? ppSlim(playerKey) : (typeof playerProfiles !== 'undefined' && playerProfiles[String(playerKey)]));
   return clickable
     ? ` onclick="event.stopPropagation();openPlayerProfileFromMatch('${playerKey}')" style="cursor:pointer;" title="View ${name} profile"`
     : '';
@@ -10999,7 +10999,7 @@ function edgeEventName(raw){ return (typeof sfEventName === 'function' && raw) ?
 function edgeRoundCode(m, e){ if (mxIsQual(m)) return mxRoundLabel(m); return roundBadgeText((m && m.tournamentRound) || (e && e.match && e.match.round)) || null; }
 function edgeRoundFull(code){ return code ? ((typeof TR_RESULT !== 'undefined' && TR_RESULT[code]) || code) : null; }
 // A player's name, linked to his profile when one exists (white, underline on hover — never link blue).
-function edgeHasProfile(key){ return key != null && !!(typeof playerProfiles !== 'undefined' && playerProfiles && playerProfiles[String(key)]); }
+function edgeHasProfile(key){ return key != null && !!(typeof ppSlim === 'function' ? ppSlim(key) : (typeof playerProfiles !== 'undefined' && playerProfiles && playerProfiles[String(key)])); }
 // An id / key inside an onclick string: word characters only (ids are "upcoming-<n>", keys numeric), so no quote can
 // ever close the JS string after the browser decodes the attribute.
 function edgeJs(s){ return String(s == null ? '' : s).replace(/[^\w.:-]/g, ''); }
@@ -14710,9 +14710,9 @@ function fhRerender(){ if (!_fh) return; const m = _fh.m; if (aBuilt(m, 'form'))
 function fhForm(patch){ if (!_fh) return; Object.assign(_fh.form, patch); const f = document.getElementById('aSectionForm'); if (f) f.innerHTML = buildFormSection(_fh.m); }
 function fhFormToggle(key, idx){ if (!_fh) return; _fh.form[key][idx] = !_fh.form[key][idx]; fhForm({}); }
 function fhH2h(patch){ if (!_fh) return; Object.assign(_fh.h2h, patch); const h = document.getElementById('aSectionH2H'); if (h) h.innerHTML = buildH2HSection(_fh.m); }
-function fhOpenProfile(key){ if (key != null && playerProfiles && playerProfiles[String(key)]) openPlayerProfileFromMatch(key); }
+function fhOpenProfile(key){ if (key != null && (typeof ppSlim === 'function' ? ppSlim(key) : (playerProfiles && playerProfiles[String(key)]))) openPlayerProfileFromMatch(key); }
 function fhNameLink(name, key, style){
-  const has = key != null && typeof playerProfiles !== 'undefined' && playerProfiles && playerProfiles[String(key)];
+  const has = key != null && (typeof ppSlim === 'function' ? ppSlim(key) : (typeof playerProfiles !== 'undefined' && playerProfiles && playerProfiles[String(key)]));
   return has
     ? `<span class="plink" onclick="fhOpenProfile('${fhEsc(key)}')" style="${style}">${fhEsc(name)}</span>`
     : `<span style="${style}">${fhEsc(name)}</span>`;
@@ -15487,7 +15487,7 @@ function sfH2hNkCount(){
   if (_sfNkSrc !== pp || !Object.keys(_sfNk).length) { _sfNkSrc = pp; _sfNk = H2HCore.nameCounts(Object.keys(pp).map(k => pp[k] && pp[k].name).filter(Boolean)); }
   return _sfNk;
 }
-function sfH2hSide(key, name){ const p = key != null ? ((typeof playerProfiles !== 'undefined' && playerProfiles) || {})[String(key)] : null; return { full: (p && p.name) || name, short: name, key: key != null ? String(key) : null, id: key != null ? careerHistoryIdOf(key) : null }; }
+function sfH2hSide(key, name){ const p = key != null ? (typeof ppSlim === 'function' ? ppSlim(key) : (((typeof playerProfiles !== 'undefined' && playerProfiles) || {})[String(key)] || null)) : null; return { full: (p && p.name) || name, short: name, key: key != null ? String(key) : null, id: key != null ? careerHistoryIdOf(key) : null }; }
 // TEN-437 (4) · the closes a pair's keyless (archive) meetings may take: per meeting, the Tennis-Data rows of that
 // opponent in [H2H_DEDUPE_WINDOW] days after the event-start date. Meetings whose candidates overlap form one group; a
 // group gets its closes only when it holds as many distinct closes as meetings, meetings of one event have known rounds,
@@ -15578,7 +15578,7 @@ function fhMeetings(m){
   });
   // founder ruling 2026-10-17 (item 1): the Database's own price wherever its join holds the meeting — called exactly as the
   // Head to Head page calls it (player A's side, B's full name, the page's round code; walkovers never priced)
-  const oppPr = m.p2Key != null && typeof playerProfiles !== 'undefined' && playerProfiles ? playerProfiles[String(m.p2Key)] : null, oppFull = (oppPr && oppPr.name) || m.p2, RO = typeof window !== 'undefined' && window.H2HPage && window.H2HPage.roundOf;
+  const oppPr = m.p2Key != null ? (typeof ppSlim === 'function' ? ppSlim(m.p2Key) : (typeof playerProfiles !== 'undefined' && playerProfiles ? playerProfiles[String(m.p2Key)] : null)) : null, oppFull = (oppPr && oppPr.name) || m.p2, RO = typeof window !== 'undefined' && window.H2HPage && window.H2HPage.roundOf;
   if (typeof sfDbPxRows === 'function') sfDbPxRows(m.p1Key, m.p1, out.map(r => ({ date: r.wo ? null : r.date, won: r.won, round: RO ? RO(r.round, r.tournRaw) : r.round, opp: oppFull })))
     .forEach((d, i, a) => sfDbPxApply(out[i], d, a.why && a.why[i]));   // ruling 3: a master class meeting reads the join only
   return out.sort((a, b) => String(a.date).localeCompare(String(b.date)));   // oldest → newest
@@ -15936,7 +15936,7 @@ function fhH2hRowData(r){
     cls: 'fh-h2row', attrs: ` data-fh-mid="${fhEsc(r.mid)}"`, click: ` onclick="fhOpenSheet('${fhEsc(r.mid)}')"`,
     selected: !!(_fh && _fh.sheet === r.mid) };
 }
-function fhFullName(name, key){ const p = key != null && typeof playerProfiles !== 'undefined' && playerProfiles && playerProfiles[String(key)]; return (p && p.name) || fhOppFmt(name); }
+function fhFullName(name, key){ const p = key != null && (typeof ppSlim === 'function' ? ppSlim(key) : (typeof playerProfiles !== 'undefined' && playerProfiles && playerProfiles[String(key)])); return (p && p.name) || fhOppFmt(name); }
 // The record card's "Meetings ↓" (DF onOverall L4492): scroll to the list; the filter stays as it is.
 function fhH2hToList(){
   setTimeout(() => { const el = document.getElementById('fhH2hList'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 60);
@@ -18144,7 +18144,7 @@ function maMsSheetEntry(m){
   // Founder ruling 2026-10-17 (ruling 5): the header's two prices are the MASTER's (the one price join: Pinnacle closing,
   // else Bet365 closing, per match, with its hover), never the card book's close. A match the join does not hold, a join
   // still loading or failed, or a match the master does not cover (Challenger, qualifying, ITF) = a dash.
-  const oppPr = m.p2Key != null && typeof playerProfiles !== 'undefined' && playerProfiles ? playerProfiles[String(m.p2Key)] : null;
+  const oppPr = m.p2Key != null ? (typeof ppSlim === 'function' ? ppSlim(m.p2Key) : (typeof playerProfiles !== 'undefined' && playerProfiles ? playerProfiles[String(m.p2Key)] : null)) : null;
   const d = won != null && !m.walkover && typeof sfDbPxRows === 'function'
     ? sfDbPxRows(m.p1Key, m.p1, [{ date: m.date, won, round: null, opp: (oppPr && oppPr.name) || m.p2 }])[0] : null;
   return { e: { aName: m.p1, aKey: m.p1Key, bName: m.p2, bKey: m.p2Key },
@@ -21244,8 +21244,7 @@ function getPlayersFromMatches(){
   // and has no row on the board (a bye still waiting) cannot be listed: we hold
   // no entry for him, and no name is invented.
   const map = new Map();
-  const canonOf = key => (key != null && typeof playerProfiles !== 'undefined' && playerProfiles &&
-                          playerProfiles[String(key)] && playerProfiles[String(key)].name) || null;
+  const canonOf = key => { if (key == null) return null; const p = (typeof ppSlim === 'function' ? ppSlim(key) : (typeof playerProfiles !== 'undefined' && playerProfiles ? playerProfiles[String(key)] : null)); return (p && p.name) || null; };
   const upsert = (p, ev) => {
     // Identity = player_key when present, else the display name. Keying on the
     // key collapses the "Alex de Minaur" / "A. De Minaur" duplicate a feed can
@@ -21379,7 +21378,7 @@ function pp2LiveRankOf(key){
     const r = String(m.p1Key) === k ? pgRankOf(m.p1Rank) : String(m.p2Key) === k ? pgRankOf(m.p2Rank) : null;
     if (r != null) return r;
   }
-  const prof = (typeof playerProfiles !== 'undefined' && playerProfiles) ? playerProfiles[k] : null;
+  const prof = (typeof ppSlim === 'function' ? ppSlim(k) : ((typeof playerProfiles !== 'undefined' && playerProfiles) ? playerProfiles[k] : null));
   return prof ? pgRankOf(prof.rank) : null;
 }
 function pgRankOf(...vals){
@@ -21444,7 +21443,7 @@ function renderPlayers(filter){
     // Only players with a built profile (player-profiles.json) open a real page;
     // others still render an identical card — "View profile" is always present so
     // every card is the same height — but aren't wired to a broken route.
-    const hasProfile = p.key != null && playerProfiles[String(p.key)];
+    const hasProfile = p.key != null && (typeof ppSlim === 'function' ? ppSlim(p.key) : playerProfiles[String(p.key)]);
     const arch = pgArchetypeFor(p.name, p.key);
     const elo = pgEloFor(p.name);
     const initial = pesc(pgInitials(p.name));
@@ -21635,6 +21634,17 @@ document.addEventListener('click', e => {
 // Everything on the profile page is derived from this record; only the data
 // changes per player, the layout/components/UX stay identical (per the spec).
 let playerProfiles = {};
+// Stage 6 (2026-11-07) · profile-roster.json — the slim roster (the same players the eager file holds; key, name,
+// rank, country, age, lastTournament). Name / rank / "has a profile?" reads go through ppSlim(key): the loaded full
+// profile when there is one, else the roster entry (its fields are copied verbatim from the profile by the pipeline).
+// The full profile is the per-player shard (ensurePlayerProfile).
+let profileRoster = null;
+function ppSlim(key){
+  if (key == null) return null;
+  const k = String(key);
+  return (playerProfiles && playerProfiles[k]) || (profileRoster && profileRoster[k]) || null;
+}
+function ppHas(key){ return !!ppSlim(key); }
 let ppTourAverage = { dna: {}, stats: {} };
 // Task 11 — empirical Match Charting Project calibration (radar percentiles are
 // injected per player; cardBenchmarks give the tour-wide median + percentile
@@ -21795,7 +21805,7 @@ function psIndexNameOf(key){
   if (key == null) return null;
   const idx = (typeof playerIndex !== 'undefined' && Array.isArray(playerIndex)) ? playerIndex : [];
   if (psIndexNameOf._src !== idx){ psIndexNameOf._src = idx; psIndexNameOf._m = new Map(idx.map(r => [String(r.key), r.name])); }
-  const prof = (typeof playerProfiles !== 'undefined' && playerProfiles) ? playerProfiles[String(key)] : null;
+  const prof = (typeof ppSlim === 'function' ? ppSlim(key) : ((typeof playerProfiles !== 'undefined' && playerProfiles) ? playerProfiles[String(key)] : null));
   return psIndexNameOf._m.get(String(key)) || (prof && prof.name) || null;
 }
 // A styles row against the key's name: the standings scramble multi-part names ("Daniel Vallejo Adolfo" is Adolfo Daniel
@@ -22489,6 +22499,23 @@ function loadTourBaselines(){
     .catch(() => null)
     .then(v => { _tourBaselinesInflight = null; return v; });
   return _tourBaselinesInflight;
+}
+async function loadProfileRoster(){
+  try {
+    const res = await fetch('./profile-roster.json', { cache: 'no-cache' });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    profileRoster = (data && data.players) || {};
+    // only fill: the eager file / a shard sets the same tourAverage; never overwrite a real one
+    if (data.tourAverage && (!ppTourAverage || !Object.keys(ppTourAverage.dna || {}).length)) ppTourAverage = data.tourAverage;
+    if (data.radarCalibration && !Object.keys((radarCalibration && radarCalibration.cardBenchmarks) || {}).length) radarCalibration = data.radarCalibration;
+  } catch (err) {
+    console.error('Could not load profile-roster.json:', err);
+    return;
+  }
+  // the same repaints the eager loader makes: cards whose players now have a profile become clickable
+  try { renderPlayers(''); } catch (err) { console.error('Players repaint failed:', err); }
+  try { if (typeof renderMatches === 'function') renderMatches(); } catch (err) { console.error('Matches repaint failed:', err); }
 }
 async function loadPlayerProfiles(){
   const baselines = loadTourBaselines();   // in parallel; settled before any profile is openable
@@ -23997,7 +24024,7 @@ window.pp2DrawJoin = function(key, name, rows){
 window.pp2HasProfile = function(key){
   if (key == null || key === '') return false;
   const k = String(key);
-  return !!(playerProfiles[k] || (Array.isArray(playerIndex) && playerIndex.some(r => String(r.key) === k && r.hasProfile)));
+  return !!((typeof ppSlim === 'function' ? ppSlim(k) : playerProfiles[k]) || (Array.isArray(playerIndex) && playerIndex.some(r => String(r.key) === k && r.hasProfile)));
 };
 window.pp2OpenProfile = function(key){ if (typeof psOpenProfile === 'function') psOpenProfile(key); };
 function pp2DbJoinAfterPaint(key){
@@ -31294,7 +31321,7 @@ _tpLoad = loadTournamentProgression();
 // Defer them off the critical path so those large downloads don't compete with
 // first paint — each re-renders its own view when it finishes loading. (Cards
 // become clickable and search populates a beat later, which is fine.)
-const loadHeavyDatasets = () => { loadTournamentProfiles(); loadPlayerIndex(); loadPlayerProfiles(); loadAsapSignals(); loadEloRatings(); loadSurfaceRatings(); loadPlayerStyles(); loadOddsPerfIndex(); loadTourHistIndex(); loadHoldbreak(); loadSituational(); };
+const loadHeavyDatasets = () => { loadTournamentProfiles(); loadPlayerIndex(); loadProfileRoster(); loadPlayerProfiles(); loadAsapSignals(); loadEloRatings(); loadSurfaceRatings(); loadPlayerStyles(); loadOddsPerfIndex(); loadTourHistIndex(); loadHoldbreak(); loadSituational(); };
 // Page speed (2026-11-07): an idle callback alone fired while matches.json was still downloading (the main thread is
 // idle during the fetch), so ~2.3 MB of these files shared the link with the board's own data: on 4G the board waited
 // ~10 s for a 370 KB matches.json. They now start once the first board paint is done (loadMatches settled, either

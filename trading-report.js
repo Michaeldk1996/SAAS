@@ -678,7 +678,7 @@ window.SfCountryIoc = (function () {
     return '<span class="tr-tag">' + (tk.primary === 'tour' ? 'TOUR' : 'CHAL') + '</span>';
   }
   function hasProfile(key) {
-    try { return !!(key && typeof playerProfiles !== 'undefined' && playerProfiles && playerProfiles[String(key)]); }
+    try { return !!(key && (typeof ppSlim === 'function' ? ppSlim(key) : (typeof playerProfiles !== 'undefined' && playerProfiles && playerProfiles[String(key)]))); }   // eslint-disable-line no-undef
     catch (e) { return false; }
   }
 
