@@ -646,3 +646,22 @@ test('item 8 (fix 5): the sheet\'s Match / Set Dominance ratio card — the bett
   // control: every other host (Match analysis, Match Stats tab, profile) keeps both figures white 700
   assert.deepEqual(drFigs(drHtml(null, d('1.15', '0.87'))).map(f => [f[1], f[2]]), [[700, 'var(--text)'], [700, 'var(--text)']]);
 });
+
+test('archive name table (2026-11-07): Tennis Explorer\'s spellings of Y. Bu, E. Moller, J. Barranco Cosano, Y. H. Hsu and G. Campana Lee meet their player; control: without the table each misses', () => {
+  const OP_ = createRequire(import.meta.url)(join(HERE, 'build-odds-performance.js'));
+  const cases = [['Yunchaokete B.', '796', 'Y. Bu'], ['Moeller E.', '39675', 'E. Moller'], ['Barranco C.J.', '1877', 'J. Barranco Cosano'],
+    ['Hsu Yu H.', '867', 'Y. H. Hsu'], ['Lee G.C.', '10845', 'G. Campana Lee']];
+  for (const [n, k, our] of cases) {
+    assert.equal(OP_.ARCHIVE_NAME_ALIASES[n], k, `${n} is key ${k}`);
+    assert.equal(OP_.ARCHIVE_ALIAS_NAMES[k], our, `key ${k} spells ${our}`);
+    // the page join, as build-database-yield.js hands the table on (archive name -> our spelling)
+    const base = { meta: { rounds: ['1st Round'] }, rows: [[20230305, 0, 0, 0, 0, 1.53, 2.44, 1, 8]], retRows: [] };
+    const names = [['Butvilas E.', n]];
+    const db = dbPriceJoinRows(base, { names, retNames: [], aliases: { [n]: our } });
+    const x = [{ date: '2023-03-05', won: false, round: null }]; priceJoin(x, { full: our }, { full: 'E. Butvilas' }, db);
+    assert.deepEqual([x[0].price, x[0].oppPrice], [2.44, 1.53], `${our} meets "${n}"`);
+    const ctl = dbPriceJoinRows(base, { names, retNames: [] });
+    const c = [{ date: '2023-03-05', won: false, round: null }]; priceJoin(c, { full: our }, { full: 'E. Butvilas' }, ctl);
+    assert.equal(c[0].price ?? null, null, `control: without the table ${our} misses "${n}"`);
+  }
+});

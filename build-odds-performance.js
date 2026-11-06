@@ -285,11 +285,21 @@ const ARCHIVE_NAME_ALIASES = {
   'Barrios Vera, Marcelo Tomas': '396', // T. Barrios Vera
   'Vallejo, Adolfo Daniel': '9217',     // D. Vallejo
   'Miguel, Luis Guto': '67442',         // G. Miguel
+  // founder 2026-11-07 ("try to find prices for all matches"): Tennis Explorer's spellings of five players whose lower-level
+  // prices sat unjoined (144 matches). Each checked against the api-tennis key Tennis Explorer's own rows carry for that
+  // spelling (te-odds/*.json, 7 Nov): every row one key, except one 2023 Davis Cup tie (Denmark v Brazil) filed under a
+  // second key of the same E. Moller.
+  'Yunchaokete B.': '796',           // Y. Bu (Bu Yunchaokete): TE files him given name first, 45 rows, all key 796
+  'Moeller E.': '39675',             // E. Moller (Elmer Moller): TE's "oe" spelling, 125 rows key 39675 (+1, above)
+  'Barranco C.J.': '1877',           // J. Barranco Cosano (Javier Barranco Cosano): TE truncates the compound, 110 rows
+  'Hsu Yu H.': '867',                // Y. H. Hsu (Hsu Yu-Hsiou): TE's other order, 71 rows, all key 867
+  'Lee G.C.': '10845',               // G. Campana Lee (Gonzalo Campana Lee): TE keeps the last word only, 34 rows
 };
 // Our spelling of an aliased player who has no profile (the page's price join keys an alias by name, founder brief
 // 2026-10-15 item 2): the api-tennis fixture spelling his matches carry. Profiles win where they exist.
 const ARCHIVE_ALIAS_NAMES = {
   '67442': 'G. Miguel',
+  '796': 'Y. Bu', '39675': 'E. Moller', '1877': 'J. Barranco Cosano', '867': 'Y. H. Hsu', '10845': 'G. Campana Lee',   // 2026-11-07
 };
 // The page join's spelling for an archive name whose player has no api-tennis key on record (his matches are only ever
 // an opponent's rows, with no key) or whose fixtures spell him two ways (founder ruling 2026-10-17, ruling 1). Read by
