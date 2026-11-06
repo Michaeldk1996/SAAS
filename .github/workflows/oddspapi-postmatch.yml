@@ -189,7 +189,9 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
           API_TENNIS_KEY: ${{ secrets.API_TENNIS_KEY }}
-        run: python3 tools/tdarch.py sched-import --recent 1 --fresh
+        # ATP first (founder 2026-11-06): three days back, so a match the run before missed (fixture not mapped yet,
+        # payload not out yet) heals on the next 15-minute run instead of waiting for the 3-hourly one (Paris 3-4 Nov)
+        run: python3 tools/tdarch.py sched-import --recent 3 --fresh
       # Challenger, qualifying, ITF and the team events: api-tennis's stored Pinnacle / Bet365 / other-book prices for today's
       # and yesterday's finished matches with no snapshot yet (the daily 05:17 run re-checks the whole window and writes
       # the unpriced list; this run writes no list)

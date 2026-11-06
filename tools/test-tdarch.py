@@ -735,7 +735,7 @@ _hsrc2 = open(os.path.join(HERE, 'tdarch.py')).read()
 _pm = open(os.path.join(HERE, '..', '.github', 'workflows', 'oddspapi-postmatch.yml')).read()
 check('fast run: the window ends today (never yesterday) and oddspapi-postmatch.yml runs the 15-minute import with the shared archive lock',
       "to = to or dt.datetime.now(dt.timezone.utc).date().isoformat()" in _hsrc2 and 'timedelta(days=1)).date().isoformat()\n    fx, _od' not in _hsrc2
-      and 'tools/tdarch.py sched-import --recent 1 --fresh' in _pm and 'group: historical-archive' in _pm)
+      and 'tools/tdarch.py sched-import --recent 3 --fresh' in _pm and 'group: historical-archive' in _pm)
 check('fast run: the lower levels too (Challenger, qualifying, ITF) — every 15 minutes, today included, no unpriced list written by it',
       'tools/tdarch.py lower-import --recent 1 --fresh' in _pm and '--unpriced' not in _pm.split('lower-import --recent')[1].split('\n')[0]
       and "_lt = _now.isoformat() if '--recent' in a" in _hsrc2 and 'targets = [r for r in targets if str(r[\'_f\'][\'event_key\']) not in have]' in _hsrc2)
