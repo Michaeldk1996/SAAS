@@ -215,10 +215,12 @@ def coverage_checks():
         answer(cover=cover); tick(); deliver()
         check('close_cover: reported once a day, not again', len(msgs('close_cover')) == 1, msgs('close_cover'))
     # the force path: a fake day's report, any hour after 09:00 — exercised by moving the clock is not possible here,
+    # (the chosen instant is 10:00 BERLIN on the Berlin date, as the function reads it: 10:00 UTC on the UTC date named the
+    # Berlin day before yday between 23:00 and 24:00 UTC, and the gate went red then — 6 Nov 23:21Z)
     # so the judge rule itself is checked through data_alarms.coverage with a chosen instant
     q("delete from data_alarms.messages where alarm = 'close_cover'; delete from data_alarms.state where name = 'close_cover';")
     q(f"insert into data_alarms.force values ('close_cover', now() + interval '2 days', '{json.dumps(dict(cover, day=yday))}')")
-    out = q("select data_alarms.coverage(date_trunc('day', now()) + interval '10 hours')")
+    out = q("select data_alarms.coverage((date_trunc('day', now() at time zone 'Europe/Berlin') + interval '10 hours') at time zone 'Europe/Berlin')")
     a = msgs('close_cover')
     check('close_cover (forced, 10:00Z): [TEST] daily line with X of Y below 90% → ALARM', len(a) == 1 and '[TEST]' in a[0] and '15 of 18' in a[0] and 'ALARM' in a[0], [out] + a)
     st = q("select coalesce(bad::text, 'none') from data_alarms.state where name = 'close_cover'")
@@ -230,11 +232,11 @@ def coverage_checks():
     real = dict(cover, day=yday, x=17, y=18)
     q("delete from data_alarms.fetches; ")
     tick(); answer(cover=real); tick()
-    q2 = q("select data_alarms.coverage(date_trunc('day', now()) + interval '10 hours')")
+    q2 = q("select data_alarms.coverage((date_trunc('day', now() at time zone 'Europe/Berlin') + interval '10 hours') at time zone 'Europe/Berlin')")
     a2 = msgs('close_cover', 'daily')
     q("delete from data_alarms.messages where alarm = 'close_cover' and kind = 'daily' and text like '%17 of 18%'")
     q(f"insert into data_alarms.messages (alarm, kind, text, delivery) values ('close_cover', 'daily', 'ALARM — Close coverage {yday}: no report (x).', 'sent')")
-    q("select data_alarms.coverage(date_trunc('day', now()) + interval '10 hours')")
+    q("select data_alarms.coverage((date_trunc('day', now() at time zone 'Europe/Berlin') + interval '10 hours') at time zone 'Europe/Berlin')")
     a3 = msgs('close_cover', 'daily')
     check('close_cover: an earlier "no report" for the day never blocks its real report when it turns up',
           any('17 of 18' in x for x in a3), a3)
