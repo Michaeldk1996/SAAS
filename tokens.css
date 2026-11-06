@@ -54,6 +54,18 @@
   --pk-sheet-backdrop: rgba(5, 6, 10, 0.72);
   --pk-shadow-sheet: 0 24px 64px rgba(0, 0, 0, 0.5);
 
+  /* Today's Matches · Market Signal ledger — exact hex from design_handoff_todays_matches CHANGES_2026-11-07 §2–§3 (founder
+     design, night-only: the same value in Day). The group hairlines are solid hex by design. */
+  --sig-rule:        #2A2E3A;   /* the two group hairlines (before Elo Overall, before Kalshi) */
+  --sig-chip:        #131623;   /* the dark $-traded chip under a prediction-market price */
+  --sig-soft:        #C6CCDB;   /* chip ink on the trailing side; Completed source names */
+  --sig-done-panel:  #0A0D14;   /* the Completed drawer */
+  --sig-done-rule:   #1A1D26;   /* the Completed drawer's header rule */
+  --sig-legend:      #6B7390;   /* "| = Pinnacle close" */
+  --sig-done-track:  rgba(255, 255, 255, 0.08);   /* Completed bar track */
+  --sig-lose:        rgba(255, 255, 255, 0.22);   /* Completed bar: the loser's segment */
+  --sig-tick:        #FFFFFF;   /* Completed bar: the Pinnacle-close tick */
+
   /* Bet Tracker page — exact hex from design_handoff_bet_tracker (LOCKED 2026-10-28, README §Design tokens, Quiet ink
      pass). A night-only page: the same value in Day, never routed through the theme engine. Inks / meaning colours it
      shares with the site are the site tokens (--text, --text-label, --link, --pos, --neg, --amber). */

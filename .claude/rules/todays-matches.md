@@ -92,18 +92,25 @@ except where a ruling below says otherwise. Colours are foundation tokens (`foun
 - **Market Signal drawer (review):** no explainer paragraph; a source without data is not drawn (no "—" rows, no empty bars);
   a group with no rows is not drawn; nothing at all → one grey line `No market signal for this match yet`. Caret ▾ closed /
   ▴ open (180° turn), white, font stack `'Hanken Grotesk', sans-serif` (system-ui drew a dot).
-- **Market Signal drawer, Upcoming (founder 2026-11-07, "Build the redesign"):** the two players' surnames head the
-  columns (they wrap between words, never cut; the left name spans the source column so a long one never meets its
-  neighbour); three groups: **Bookmakers · opening odds** (Pinnacle, Bet105, Bet365), **Ratings and model · fair odds**
-  (Elo Overall, Elo surface, Stennisfy Model), **Prediction markets**. A prediction-market row = the venue's own price for
-  both players from the per-minute table (`market_live_current`, market-live.yml): the midpoint of its best bid and ask,
-  scaled to 100%, as fair odds; each venue player joined to the card player by surname, exactly one each, else no row
-  (never a guess). Under it one line: money traded on each player (by the side that started each trade, every trade so far,
-  summed every 5 min; a history over 20 pages is no sum), the trade count, and the resting liquidity. The group heading
-  says how old the prices are: "now" (read within 3 min, recorder alive), "before the start" (frozen at our live sighting),
-  else "read <time>". A venue with liquidity but no price keeps its liquidity line. Not a bookmaker price and not a match
-  price: no page's price join reads it. Completed drawer unchanged. **Test:** `test-market-live-signal.mjs`,
+- **Market Signal ledger (founder design 2026-11-07, `design_handoff_todays_matches` CHANGES_2026-11-07 §2–§3; replaces
+  the same morning's three-group build and the Completed "Price on {winner}" grid):** ONE ledger, eight rows in fixed order —
+  Pinnacle · Bet105 · Bet365 | Elo Overall · Elo {surface} · Stennisfy Model | Kalshi · Polymarket — a `--sig-rule`
+  hairline only before Elo Overall and before Kalshi; no group heads. Header = SOURCE (Completed "SOURCE · AT CLOSE") and
+  each player's last name token centred over his two columns (Completed: winner `--text`, loser grey, "| = Pinnacle close"
+  over the bar). A missing source is a dash row with its reason in the hover. **Upcoming:** the books' opens, Elo / model
+  fair odds, the venue's current mid; the leaning side (≥ 50%) white 700. **Completed:** closes, stored pre-match Elo /
+  model only (no Elo snapshot is stored today → dash), a prediction row only from a read the database froze before the
+  start; the winner's side white 700; a white tick at Pinnacle's closing chance on every bar with data (none without a
+  Pinnacle close); BEST ×2 = the book and the rating that gave the winner the highest chance (never a prediction market,
+  never a blurred model). **Prediction rows:** the venue's mid for both players (`market_live_current`, joined by surname,
+  one each, else a dash), scaled to 100%, as fair odds; a `--sig-chip` chip under each price = money traded on that
+  player; "$X traded · N trades" under the name; resting liquidity in the hover only. Not a match price: no price join
+  reads it. **Model row:** Pro = hover wash, click opens the Stennisfy Model page; not Pro = blurred + lock, no click.
+  **Test:** `test-ten377-todays-matches.mjs` (the ledger, both views), `test-market-live-signal.mjs`,
   `test-polymarket-signal.mjs`, `tools/test-market-live-recorder.mjs`, `tools/test-market-live-sql.py`.
+- **Completed rail stops at Today; favourite cards open the match (founder design 2026-11-07 §1, §4):** on Completed the
+  forward arrow dims at Today (supersedes 2026-10-30's paging past Today; Upcoming unchanged). A favourite mini card opens
+  Match analysis on Key factors; its star only toggles. **Test:** `test-ten377-todays-matches.mjs` "§1/§4/§5".
 - **Day tabs, date bar, move-view head (founder 2026-10-30, matches-day-tabs-datebar-drift; supersedes TEN-179's
   2026-09-09 `yesterday · today · +1 · +2` rail and the tabs keyed on the feed's Berlin `date`).** A match belongs to the
   **local calendar day of its start instant in the member zone** (`matchLocalDayKey`: `newsTz`, the start through

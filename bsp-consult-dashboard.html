@@ -9044,7 +9044,7 @@ function loadMarketLive(){
   if (!u || u.indexOf('__') === 0 || !k || k.indexOf('__') === 0) return Promise.resolve(mktLive);
   const get = p => fetch(`${u}/rest/v1/${p}`, { headers: { apikey: k, Authorization: `Bearer ${k}`, Accept: 'application/json' }, cache: 'no-store' })
     .then(r => r.ok ? r.json() : null).catch(() => null);
-  const since = new Date(Date.now() - 2 * 86400e3).toISOString();
+  const since = new Date(Date.now() - 4 * 86400e3).toISOString();   // the Completed rail reaches three days back
   // The traded-money column arrives with the recorder's next schema apply: until then the same read without it.
   const rowsOf = cols => get(`market_live_current?select=${cols}&read_at=gte.${encodeURIComponent(since)}`);
   mktLiveP = Promise.all([rowsOf('event_key,venue,liquidity,outcomes,flow,read_at,started_at').then(r => r || rowsOf('event_key,venue,liquidity,outcomes,read_at,started_at')), get('market_live_beat?select=beat_at')])
@@ -9096,72 +9096,83 @@ function mcSigKalshiHtml(m){
   return `${rule}<div class="mc-sg-poly" title="${psEsc(title)}"><span class="mc-sg-src"><span class="mc-sg-dot"></span>`
     + `<span class="mc-sg-name">Kalshi</span></span><span class="mc-sg-polyv">${mcSigPolyUsd(r.liq)} liquidity</span></div>`;
 }
-// Founder 2026-11-07 ("Build the redesign"): on an Upcoming card the prediction markets get their own group — each venue's
-// price for both players (the midpoint of its best bid and ask, the two scaled to 100%, as fair odds) and one line under it:
-// money traded on each player (by the side that started each trade), the trade count and the resting liquidity. Read from
-// the per-minute table only (market-live.yml), frozen by the database at our own live sighting. A venue with no price row
-// keeps its liquidity line; no read → nothing (never a guessed price).
+// Market Signal ledger (founder design 2026-11-07, CHANGES_2026-11-07.md §2–§3 — supersedes the 2026-11-07 morning
+// "three groups" build): ONE ledger of eight rows, fixed order — Pinnacle · Bet105 · Bet365 | Elo Overall · Elo {surface} ·
+// Stennisfy Model | Kalshi · Polymarket — a hairline only before Elo Overall and before Kalshi. Columns: source · A odds ·
+// A % · bar · B % · B odds; the two surnames (last name token) centred over each player's two columns. Every price in a
+// column sits on one edge. A source with nothing is a dash row with its reason in the hover; nothing is invented.
+// Prediction markets: the venue's own mid for both players from the per-minute table (market-live.yml), scaled to 100%,
+// as fair odds; under each price the money traded on that player (a chip), under the name "$X traded · N trades",
+// resting liquidity in the hover. Upcoming = the current read (a frozen row says "last read before the start");
+// Completed = only a row the database froze at our live sighting (the last read before the start).
 function mcSigSurKey(s){ const w = ocsNfd(s).replace(/[^a-z]+/g, ' ').trim().split(' '); return w[w.length - 1] || ''; }
 function mcSigK(v){
   const n = Number(v);
   return n >= 1e6 ? '$' + (n / 1e6).toFixed(2) + 'm' : n >= 1000 ? '$' + (n / 1000).toFixed(1) + 'k' : '$' + Math.round(n);
 }
-function mcSigMktRows(m){
-  const ek = eventKeyOfMatch(m), out = [];
+function mcSigLast(name){ const t = String(name || '').trim().split(/\s+/); return t[t.length - 1] || ''; }
+// The two prediction-market rows (Kalshi, Polymarket), always both — a dash row when there is no usable read.
+function mcSigPredRows(m, done){
+  const ek = eventKeyOfMatch(m);
   const live = typeof mktLive !== 'undefined' ? mktLive.byEvent : {};
-  for (const [venue, label, vol] of [['kalshi', 'Kalshi', typeof kalshiVol !== 'undefined' ? kalshiVol : null], ['polymarket', 'Polymarket', typeof polymarketVol !== 'undefined' ? polymarketVol : null]]) {
+  const k1 = mcSigSurKey(m.p1), k2 = mcSigSurKey(m.p2);
+  return [['kalshi', 'Kalshi', typeof kalshiVol !== 'undefined' ? kalshiVol : null], ['polymarket', 'Polymarket', typeof polymarketVol !== 'undefined' ? polymarketVol : null]].map(([venue, label, vol]) => {
     const r = live[ek + '|' + venue], liq = mcSigLiqRec(vol, m, venue);
-    const oc = r && Array.isArray(r.outcomes) ? r.outcomes : [];
-    const k1 = mcSigSurKey(m.p1), k2 = mcSigSurKey(m.p2);
+    const rest = liq ? ` · ${mcSigK(liq.liq)} resting (read ${liq.at}${liq.frozen ? ', before the start' : ''})` : '';
+    const dash = why => ({ label, src: `${label} · ${why}${rest}`, dash: true, pred: true });
+    if (!r && !liq) return dash('no market for this match');
+    if (!r) return dash('no price read for this match');
+    if (done && !r.started_at) return dash('no read stored from before the start');
+    const oc = Array.isArray(r.outcomes) ? r.outcomes : [];
     const o1 = k1 !== k2 ? oc.filter(o => o && mcSigSurKey(o.name) === k1) : [], o2 = k1 !== k2 ? oc.filter(o => o && mcSigSurKey(o.name) === k2) : [];
-    const ok = o1.length === 1 && o2.length === 1 && o1[0].mid > 0 && o2[0].mid > 0;
-    if (!ok && !liq) continue;
-    const row = { venue, label, liq, frozen: !!(r && r.started_at), readAt: r ? r.read_at : null };
-    if (ok) {
-      const a = o1[0], b = o2[0];
-      row.pa = 100 * a.mid / (a.mid + b.mid);
-      row.oA = (100 / row.pa).toFixed(2); row.oB = (100 / (100 - row.pa)).toFixed(2);
-      const ba = o => (o.bid != null ? o.bid : '—') + ' / ' + (o.ask != null ? o.ask : '—');
-      row.src = `${label} · the midpoint of the best bid and ask, both players scaled to 100%, as fair odds · bid / ask ${mxSurname(m.p1)} ${ba(a)}, ${mxSurname(m.p2)} ${ba(b)}`
-        + ` · read ${mcSigClock(r.read_at)}${row.frozen ? ' · last read before the start' : ''} · not a bookmaker price: no margin, a trade pays the spread and a fee`;
-      const f = r.flow, f1 = f && f.byName ? Object.entries(f.byName).filter(([n]) => mcSigSurKey(n) === k1) : [], f2 = f && f.byName ? Object.entries(f.byName).filter(([n]) => mcSigSurKey(n) === k2) : [];
-      if (f1.length === 1 && f2.length === 1 && Number(f.trades) >= 0) row.flow = { a: f1[0][1], b: f2[0][1], trades: Number(f.trades), at: f.at };
+    if (!(o1.length === 1 && o2.length === 1 && o1[0].mid > 0 && o2[0].mid > 0))
+      return dash(r.started_at && !r.outcomes ? 'no price read before the start' : 'no price for both players');
+    const a = o1[0], b = o2[0], pa = 100 * a.mid / (a.mid + b.mid);
+    const ba = o => (o.bid != null ? o.bid : '—') + ' / ' + (o.ask != null ? o.ask : '—');
+    const row = { label, pred: true, dash: false, pa, oA: (100 / pa).toFixed(2), oB: (100 / (100 - pa)).toFixed(2) };
+    const f = r.flow, fa = f && f.byName ? Object.entries(f.byName).filter(([n]) => mcSigSurKey(n) === k1) : [], fb = f && f.byName ? Object.entries(f.byName).filter(([n]) => mcSigSurKey(n) === k2) : [];
+    let flowTxt = '';
+    if (fa.length === 1 && fb.length === 1 && Number(f.trades) >= 0) {
+      const ta = Number(fa[0][1]), tb = Number(fb[0][1]), n = Number(f.trades);
+      row.trA = mcSigK(ta); row.trB = mcSigK(tb);
+      row.meta = `${mcSigK(ta + tb)} traded · ${n.toLocaleString('en-US')} trade${n === 1 ? '' : 's'}`;
+      flowTxt = ` · traded ${mxSurname(m.p1)} ${mcSigK(ta)}, ${mxSurname(m.p2)} ${mcSigK(tb)} (by the side that started each trade, summed ${mcSigClock(f.at)})`;
     }
-    out.push(row);
-  }
-  return out;
+    row.src = `${label} · ${done ? 'last mid before the start' : 'live mid'} (best bid and ask, both players scaled to 100%) · read ${mcSigClock(r.read_at)}${r.started_at && !done ? ' · last read before the start' : ''}`
+      + ` · bid / ask ${mxSurname(m.p1)} ${ba(a)}, ${mxSurname(m.p2)} ${ba(b)}${flowTxt}${rest} · not a bookmaker price: no margin, a trade pays the spread and a fee`;
+    return row;
+  });
 }
-function mcSigMktHtml(m, D){
-  const rows = mcSigMktRows(m);
-  if (!rows.length) return '';
-  const A = psEsc(mxSurname(m.p1)), B = psEsc(mxSurname(m.p2));
-  const priced = rows.filter(r => r.pa != null);
-  const fresh = r => !r.frozen && mcSigLiveFresh() && Date.now() - Date.parse(r.readAt) <= MKT_LIVE_STALE_MS;
-  let when = '';
-  if (priced.length && priced.every(r => r.frozen)) when = ' · before the start';
-  else if (priced.length && priced.every(fresh)) when = ' · now';
-  else if (priced.length) when = ' · read ' + mcSigClock(priced.map(r => r.readAt).sort()[0]);
-  let h = `<div class="mc-sg-grp">Prediction markets${when}</div>`;
-  for (const r of rows) {
-    if (r.pa == null) {   // liquidity only: the venue's line as before
-      const title = `${r.label} · match-winner market liquidity${r.liq.at ? ' · read ' + r.liq.at : ''}${r.liq.frozen ? ' · last read before the start' : ''}`;
-      h += `<div class="mc-sg-poly" title="${psEsc(title)}"><span class="mc-sg-src"><span class="mc-sg-dot"></span><span class="mc-sg-name">${r.label}</span></span><span class="mc-sg-polyv">${mcSigPolyUsd(r.liq.liq)} liquidity</span></div>`;
-      continue;
-    }
-    h += `<div class="mc-sg-row mc-sg-mkt"><span class="mc-sg-src" title="${psEsc(r.src)}"><span class="mc-sg-dot"></span><span class="mc-sg-name">${r.label}</span></span>`
-      + `<span class="mc-sg-oa">${r.oA}</span><span class="mc-sg-pa">${Math.round(r.pa)}%</span>`
-      + `<span class="mc-sg-bar2"><span class="a" style="width:${r.pa.toFixed(2)}%"></span><span class="b" style="width:${(100 - r.pa).toFixed(2)}%"></span></span>`
-      + `<span class="mc-sg-pb">${Math.round(100 - r.pa)}%</span><span class="mc-sg-ob">${r.oB}</span></div>`;
-    const parts = [];
-    if (r.flow) parts.push(`Traded on ${A} <b>${mcSigK(r.flow.a)}</b> · ${B} <b>${mcSigK(r.flow.b)}</b> · ${r.flow.trades.toLocaleString('en-US')} trade${r.flow.trades === 1 ? '' : 's'}`);
-    if (r.liq) parts.push(`<b>${mcSigK(r.liq.liq)}</b> resting`);
-    if (parts.length) {
-      const t = `${r.flow ? `Money traded on the match-winner market, by the side that started each trade (${r.venue === 'kalshi' ? 'Kalshi: the taker side' : 'Polymarket: buy or sell of each player'}), every trade so far · summed ${mcSigClock(r.flow.at)}` : 'No traded total read yet'}`
-        + `${r.liq ? ` · resting = every open order on both players, read ${r.liq.at}` : ''}${r.frozen ? ' · last read before the start' : ''}`;
-      h += `<div class="mc-sg-flow" title="${psEsc(t)}">${parts.join(' · ')}</div>`;
-    }
-  }
-  return h;
+// The model row's Pro behaviour (both views): Pro → hover wash, click opens the Stennisfy Model page; not Pro → blurred
+// figures, a lock after the name, no click.
+function mcSigModelDress(r, m, pro){
+  r.model = true; r.lock = !pro; r.blur = !pro && !r.dash;
+  if (pro) r.go = m.id;
+  if (!pro) r.src = 'Stennisfy model · Pro only · upgrade to see the model price';
+  return r;
+}
+// One ledger row. W = the winner's side ('a' | 'b') on a Completed card, null on Upcoming; tick = Pinnacle close pA.
+function mcSigRowHtml(r, W, tick){
+  const D = '—', SIG_LOCK = '<svg class="mc-sg-lock" width="10" height="10" viewBox="0 0 20 20" aria-hidden="true"><rect x="4.5" y="9" width="11" height="8" rx="1.5"></rect><path d="M7 9V6.5a3 3 0 016 0V9"></path></svg>';
+  const cls = ['mc-sg-row', 'mc-sg-lr'];
+  if (r.rule) cls.push('rule');
+  if (r.dash) cls.push('dash');
+  if (r.go) cls.push('go');
+  const go = r.go ? ` role="button" tabindex="0" data-sig-model="${psEsc(String(r.go))}"` : '';
+  const name = `<span class="mc-sg-src"><span class="mc-sg-nl"><span class="mc-sg-name">${psEsc(r.label)}</span>${r.lock ? SIG_LOCK : ''}${r.best ? '<span class="mc-sg-best" title="Best · gave the winner the highest chance in its group (books / ratings)">BEST</span>' : ''}</span>`
+    + `${r.meta ? `<span class="mc-sg-meta">${r.meta}</span>` : ''}</span>`;
+  const bl = r.blur ? ' is-blur' : '';
+  if (r.dash) return `<div class="${cls.join(' ')}" title="${psEsc(r.src)}"${go}>${name}<span class="mc-sg-oa"><span class="mc-sg-o">${D}</span></span><span class="mc-sg-pa">${D}</span><span class="mc-sg-bar3"><span class="t"></span></span><span class="mc-sg-pb">${D}</span><span class="mc-sg-ob"><span class="mc-sg-o">${D}</span></span></div>`;
+  // Leaning side (Upcoming: the ≥ 50% side) / winner's side (Completed) = white 700, the other grey 500.
+  const aLead = W ? W === 'a' : r.pa >= 50;
+  const sa = aLead ? ' lead' : '', sb = aLead ? '' : ' lead';
+  const chip = (t, s) => t ? `<span class="mc-sg-chip${s}">${t}</span>` : '';
+  const winA = W ? (W === 'a' ? ' win' : ' lose') : '', winB = W ? (W === 'b' ? ' win' : ' lose') : '';
+  const tk = W && tick != null ? `<span class="tk" style="left:${tick.toFixed(2)}%"></span>` : '';
+  return `<div class="${cls.join(' ')}" title="${psEsc(r.src)}"${go}>${name}`
+    + `<span class="mc-sg-oa${bl}"><span class="mc-sg-o${W ? sa : ''}">${r.oA}</span>${chip(r.trA, sa)}</span><span class="mc-sg-pa${sa}${bl}">${Math.round(r.pa)}%</span>`
+    + `<span class="mc-sg-bar3${bl}"><span class="t"><span class="a${winA}" style="width:${r.pa.toFixed(2)}%"></span><span class="b${winB}" style="width:${(100 - r.pa).toFixed(2)}%"></span></span>${tk}</span>`
+    + `<span class="mc-sg-pb${sb}${bl}">${Math.round(100 - r.pa)}%</span><span class="mc-sg-ob${bl}"><span class="mc-sg-o${W ? sb : ''}">${r.oB}</span>${chip(r.trB, sb)}</span></div>`;
 }
 function mcSigBody(m){
   const surfCap = m.surface ? m.surface.charAt(0).toUpperCase() + m.surface.slice(1) : '';
@@ -9169,95 +9180,71 @@ function mcSigBody(m){
   const surfLabel = 'Elo ' + (surfCap || 'surface');
   const ch = (m.oddsMovement && m.oddsMovement.chart && m.oddsMovement.chart.books) || {};
   const o = _ocsOf(m), ocsBook = o && o.book ? String(o.book).toLowerCase() : '';
-  const D = '—';
-  if (m.finalScore) {
-    const W = m.finalScore.winner === 'p2' ? 'p2' : 'p1';
-    const winName = W === 'p1' ? m.p1 : m.p2;
+  const pro = mxIsPro();
+  const done = !!m.finalScore;
+  const bookRow = (label, pr, src) => pr ? { label, src, dash: false, pa: mcSigImp(pr), oA: mxOddsTxt(pr.a), oB: mxOddsTxt(pr.b) } : { label, src, dash: true };
+  const estRow = (label, r, src) => {
+    if (r.p == null) return { label, src: src + ' · ' + r.why, dash: true };
+    const st = r.stale && r.stale.length ? mcSigEloStaleText(r.stale) : '';
+    return { label, src: st ? src + ' · ' + st : src, dash: false, pa: r.p, oA: mcSigFair(r.p), oB: mcSigFair(100 - r.p), stale: st };
+  };
+  let rows, W = null;
+  if (done) {
+    W = m.finalScore.winner === 'p2' ? 'b' : 'a';
     const pin = _mcPinClose(m);
     const b105 = ocsBook === 'bet105' ? mcSigPair(o.p1.close, o.p2.close) : null;
     const j = (mxJClose(m, 'p1') != null && mxJClose(m, 'p2') != null) ? mcSigPair(mxJClose(m, 'p1'), mxJClose(m, 'p2')) : null;
-    const book = (label, pr, src) => {
-      if (!pr) return { label, src, dash: true, model: false };
-      const pa = mcSigImp(pr), pw = W === 'p1' ? pa : 100 - pa;
-      return { label, src, dash: false, model: false, pw, odds: W === 'p1' ? pr.a : pr.b };
-    };
-    const est = (label, r, src) => {
-      if (r.p == null) return { label, src: src + ' · ' + r.why, dash: true, model: true };
-      const pw = W === 'p1' ? r.p : 100 - r.p;
-      return { label, src, dash: false, model: true, pw, odds: 100 / pw, fair: mcSigFair(pw) };
-    };
-    const pinAge = mxPinCloseAgeMin(m, W);
-    const rows = [
-      book('Pinnacle', pin ? mcSigPair(pin.p1, pin.p2) : null, pin ? `Pinnacle close (${pin.source || 'Oddspapi Pinnacle +30s'}) · last price before the start${pinAge != null ? ` · ${pinAge} min before` : ''}` : 'Pinnacle · no close for this match'),
-      book('Bet105', b105, b105 ? 'Bet105 (Kibl) · the card close · Kibl insert time' : (o ? 'Bet105 · not the card book for this match' : 'Bet105 · no close for this match')),
-      book('Bet365', j, j ? 'Bet365 (api-tennis) · stored last odds before start · no timestamp, no lag check' : 'Bet365 · no close for this match'),
-      est('Elo Overall', { p: null, why: 'no pre-match Elo snapshot stored' }, 'Tennis Abstract · stored pre-match Elo (all surfaces)'),
-      est(surfLabel, { p: null, why: 'no pre-match Elo snapshot stored' }, 'Tennis Abstract · stored pre-match surface Elo'),
-      est('Stennisfy Model', mcSigModelP(m, true), 'Stennisfy model · stored pre-match output'),
+    const pinAge = mxPinCloseAgeMin(m, W === 'a' ? 'p1' : 'p2');
+    rows = [
+      bookRow('Pinnacle', pin ? mcSigPair(pin.p1, pin.p2) : null, pin ? `Pinnacle close (${pin.source || 'Oddspapi Pinnacle +30s'}) · last price before the start${pinAge != null ? ` · ${pinAge} min before` : ''}` : 'Pinnacle · no close for this match'),
+      bookRow('Bet105', b105, b105 ? 'Bet105 (Kibl) · the card close · Kibl insert time' : (o ? 'Bet105 · not the card book for this match' : 'Bet105 · no close for this match')),
+      bookRow('Bet365', j, j ? 'Bet365 (api-tennis) · stored last odds before start · no timestamp, no lag check' : 'Bet365 · no close for this match'),
+      estRow('Elo Overall', { p: null, why: 'no pre-match Elo snapshot stored' }, 'Tennis Abstract · stored pre-match Elo (all surfaces)'),
+      estRow(surfLabel, { p: null, why: 'no pre-match Elo snapshot stored' }, 'Tennis Abstract · stored pre-match surface Elo'),
+      mcSigModelDress(estRow('Stennisfy Model', mcSigModelP(m, true), 'Stennisfy model · stored pre-match output'), m, pro),
     ];
-    const best = list => { const c = list.filter(r => !r.dash); if (!c.length) return; c.reduce((a, r) => r.pw > a.pw ? r : a, c[0]).best = true; };
-    const bk = rows.filter(r => !r.model && !r.dash);
-    if (bk.length) bk.reduce((a, r) => r.odds > a.odds ? r : a, bk[0]).best = true;   // books: best payout on the winner
-    best(rows.filter(r => r.model));                                                    // models: closest call
-    const cell = r => r.dash
-      ? `<span class="mc-sg-bar"></span><span class="mc-sg-odds">${D}</span><span class="mc-sg-ch">${D}</span>`
-      : `<span class="mc-sg-bar"><span style="width:${r.pw.toFixed(2)}%"></span></span><span class="mc-sg-odds${r.best ? ' best' : ''}">${r.fair || mxOddsTxt(r.odds)}</span><span class="mc-sg-ch">${Math.round(r.pw)}%</span>`;
-    return `<div class="mc-sg mc-sg--done"><div class="mc-sg-row mc-sg-head"><span class="mc-sg-cap">Price on ${psEsc(mxSurname(winName))}</span><span></span><span class="mc-sg-capr">Odds</span><span class="mc-sg-capr">Chance</span></div>`
-      + rows.map(r => `${r.label === 'Elo Overall' ? '<div class="mc-sg-rule"></div>' : ''}<div class="mc-sg-row${r.dash ? ' dash' : ''}"><span class="mc-sg-src" title="${psEsc(r.src)}"><span class="mc-sg-name">${psEsc(r.label)}</span>${r.best ? '<span class="mc-sg-best">BEST</span>' : ''}</span>${cell(r)}</div>`).join('')
-      + (typeof mcSigPolyHtml === 'function' ? mcSigPolyHtml(m) : '') + (typeof mcSigKalshiHtml === 'function' ? mcSigKalshiHtml(m) : '') + `</div>`;
+  } else {
+    // Upcoming — the open on each book, the ratings and the model as fair odds.
+    const po = m.pinnacleOpen && mcSigPair(m.pinnacleOpen.p1, m.pinnacleOpen.p2);
+    const pinS = ch['Pinnacle +30s'], pf1 = pinS && mcSigFirst(pinS.p1), pf2 = pinS && mcSigFirst(pinS.p2);
+    const pin = po || (ocsBook === 'pinnacle+30' ? mcSigPair(o.p1.open, o.p2.open) : null) || (pf1 && pf2 ? mcSigPair(pf1.v, pf2.v) : null);
+    const pinSrc = po ? 'Pinnacle +30s (Oddspapi) · the pipeline’s frozen opener'
+      : pin ? `Pinnacle +30s (Oddspapi) · first tick ${mcSigClock(pf1 ? pf1.at : (o && o.p1.openTs))}` : 'Pinnacle · no price for this match';
+    const bS = ch['Bet105'], bf1 = bS && mcSigFirst(bS.p1), bf2 = bS && mcSigFirst(bS.p2);
+    const b105 = (ocsBook === 'bet105' ? mcSigPair(o.p1.open, o.p2.open) : null) || (bf1 && bf2 ? mcSigPair(bf1.v, bf2.v) : null);
+    const b105Src = b105 ? `Bet105 (Kibl) · open ${mcSigClock(ocsBook === 'bet105' ? o.p1.openTs : bf1.at)} · Kibl insert time` : 'Bet105 · no price for this match';
+    const bo = m.bookOpens && m.bookOpens.bet365, b365 = bo ? mcSigPair(bo.p1, bo.p2) : null;
+    const b365Src = b365 ? `Bet365 (api-tennis) · first seen ${mcSigClock(bo.seenAt)} · seen by us, not book-post time` : 'Bet365 · no price for this match';
+    const modelR = mcSigModelP(m, false);
+    rows = [
+      bookRow('Pinnacle', pin, pinSrc),
+      bookRow('Bet105', b105, b105Src),
+      bookRow('Bet365', b365, b365Src),
+      estRow('Elo Overall', mcSigElo(m, 'all'), mcSigEloTitle('all', surfCap)),
+      estRow(surfLabel, slot ? mcSigElo(m, slot) : { p: null, why: 'no match surface' }, mcSigEloTitle(slot, surfCap)),
+      mcSigModelDress(estRow('Stennisfy Model', modelR, `Stennisfy model · win % → fair odds${modelR.ts ? ' · frozen ' + mcSigClock(modelR.ts) : ''}`), m, pro),
+    ];
   }
-  // Upcoming — the open on each book, the estimate as fair odds.
-  const po = m.pinnacleOpen && mcSigPair(m.pinnacleOpen.p1, m.pinnacleOpen.p2);
-  const pinS = ch['Pinnacle +30s'], pf1 = pinS && mcSigFirst(pinS.p1), pf2 = pinS && mcSigFirst(pinS.p2);
-  const pin = po || (ocsBook === 'pinnacle+30' ? mcSigPair(o.p1.open, o.p2.open) : null) || (pf1 && pf2 ? mcSigPair(pf1.v, pf2.v) : null);
-  const pinSrc = po ? 'Pinnacle +30s (Oddspapi) · the pipeline’s frozen opener'
-    : pin ? `Pinnacle +30s (Oddspapi) · first tick ${mcSigClock(pf1 ? pf1.at : (o && o.p1.openTs))}` : 'Pinnacle · no price for this match';
-  const bS = ch['Bet105'], bf1 = bS && mcSigFirst(bS.p1), bf2 = bS && mcSigFirst(bS.p2);
-  const b105 = (ocsBook === 'bet105' ? mcSigPair(o.p1.open, o.p2.open) : null) || (bf1 && bf2 ? mcSigPair(bf1.v, bf2.v) : null);
-  const b105Src = b105 ? `Bet105 (Kibl) · open ${mcSigClock(ocsBook === 'bet105' ? o.p1.openTs : bf1.at)} · Kibl insert time` : 'Bet105 · no price for this match';
-  const bo = m.bookOpens && m.bookOpens.bet365, b365 = bo ? mcSigPair(bo.p1, bo.p2) : null;
-  const b365Src = b365 ? `Bet365 (api-tennis) · first seen ${mcSigClock(bo.seenAt)} · seen by us, not book-post time` : 'Bet365 · no price for this match';
-  const pro = mxIsPro();
-  const bookRow = (label, pr, src) => {
-    if (!pr) return { label, src, dash: true };
-    const pa = mcSigImp(pr);
-    return { label, src, dash: false, pa, oA: mxOddsTxt(pr.a), oB: mxOddsTxt(pr.b) };
-  };
-  const estRow = (label, r, src, blur) => {
-    if (r.p == null) return { label, src: src + ' · ' + r.why, dash: true, blur };
-    const st = r.stale && r.stale.length ? mcSigEloStaleText(r.stale) : '';
-    return { label, src: st ? src + ' · ' + st : src, dash: false, pa: r.p, oA: mcSigFair(r.p), oB: mcSigFair(100 - r.p), blur, stale: st };
-  };
-  const modelR = mcSigModelP(m, false);
-  const rows = [
-    bookRow('Pinnacle', pin, pinSrc),
-    bookRow('Bet105', b105, b105Src),
-    bookRow('Bet365', b365, b365Src),
-    estRow('Elo Overall', mcSigElo(m, 'all'), mcSigEloTitle('all', surfCap), false),
-    estRow(surfLabel, slot ? mcSigElo(m, slot) : { p: null, why: 'no match surface' }, mcSigEloTitle(slot, surfCap), false),
-    estRow('Stennisfy Model', modelR, `Stennisfy model · win % → fair odds${modelR.ts ? ' · frozen ' + mcSigClock(modelR.ts) : ''}${pro ? '' : ' · Pro'}`, !pro && modelR.p != null),
-  ];
-  // The stale line sits under the two Elo rows (the 96px source column has no room for a tag).
+  rows = rows.concat(mcSigPredRows(m, done));
+  rows[3].rule = rows[6].rule = true;
+  let tick = null;
+  if (done) {
+    // BEST ×2: among the three books, and among the three ratings, the source that gave the winner the highest chance.
+    const pw = r => W === 'a' ? r.pa : 100 - r.pa;
+    for (const grp of [rows.slice(0, 3), rows.slice(3, 6)]) {
+      const c = grp.filter(r => !r.dash && !r.blur);
+      if (c.length) c.reduce((a, r) => pw(r) > pw(a) ? r : a, c[0]).best = true;
+    }
+    if (!rows[0].dash) tick = rows[0].pa;   // the Pinnacle close, on every bar with data
+  }
   const eloStale = [...new Set(rows.filter(r => r.stale).map(r => r.stale))].join('; ');
-  const row = r => {
-    if (r.label === surfLabel && eloStale) return rowHtml(r) + `<div class="mc-sg-stale">Elo · ${psEsc(eloStale)}</div>`;
-    return rowHtml(r);
-  };
-  const rowHtml = r => {
-    const bl = r.blur ? ' is-blur' : '';
-    if (r.dash) return `<div class="mc-sg-row dash"><span class="mc-sg-src" title="${psEsc(r.src)}"><span class="mc-sg-dot"></span><span class="mc-sg-name">${psEsc(r.label)}</span></span><span class="mc-sg-oa">${D}</span><span class="mc-sg-pa">${D}</span><span class="mc-sg-bar2"></span><span class="mc-sg-pb">${D}</span><span class="mc-sg-ob">${D}</span></div>`;
-    return `<div class="mc-sg-row"><span class="mc-sg-src" title="${psEsc(r.src)}"><span class="mc-sg-dot"></span><span class="mc-sg-name">${psEsc(r.label)}</span></span>`
-      + `<span class="mc-sg-oa${bl}">${r.oA}</span><span class="mc-sg-pa${bl}">${Math.round(r.pa)}%</span>`
-      + `<span class="mc-sg-bar2${bl}"><span class="a" style="width:${r.pa.toFixed(2)}%"></span><span class="b" style="width:${(100 - r.pa).toFixed(2)}%"></span></span>`
-      + `<span class="mc-sg-pb${bl}">${Math.round(100 - r.pa)}%</span><span class="mc-sg-ob${bl}">${r.oB}</span></div>`;
-  };
-  // Founder 2026-11-07: the two players name the columns (their surnames wrap between words, never cut); the rows sit in
-  // three groups — the books' opening odds, the ratings / model as fair odds, the prediction markets.
-  const grp = t => `<div class="mc-sg-grp">${t}</div>`;
-  return `<div class="mc-sg mc-sg--up"><div class="mc-sg-row mc-sg-head"><span class="mc-sg-hn a" title="${psEsc(m.p1)}">${psEsc(mxSurname(m.p1))}</span><span></span><span class="mc-sg-hn b" title="${psEsc(m.p2)}">${psEsc(mxSurname(m.p2))}</span></div>`
-    + grp('Bookmakers · opening odds') + rows.slice(0, 3).map(row).join('')
-    + grp('Ratings and model · fair odds') + rows.slice(3).map(row).join('')
-    + (typeof mcSigMktHtml === 'function' ? mcSigMktHtml(m, D) : '') + `</div>`;
+  const hA = mcSigLast(mxSurname(m.p1)), hB = mcSigLast(mxSurname(m.p2));
+  const hc = s => W ? (W === s ? ' win' : ' lose') : '';
+  const legend = done ? `<span class="mc-sg-tklg" title="${psEsc(tick != null ? `Pinnacle closing chance · ${m.p1} ${Math.round(tick)}% · ${m.p2} ${Math.round(100 - tick)}%` : 'No Pinnacle close stored for this match')}">| = Pinnacle close</span>` : '<span></span>';
+  const head = `<div class="mc-sg-row mc-sg-lh"><span class="mc-sg-lc">${done ? 'Source · at close' : 'Source'}</span>`
+    + `<span class="mc-sg-hn a${hc('a')}" title="${psEsc(m.p1)}">${psEsc(hA)}</span>${legend}<span class="mc-sg-hn b${hc('b')}" title="${psEsc(m.p2)}">${psEsc(hB)}</span></div>`;
+  const body = rows.map(r => mcSigRowHtml(r, W, tick) + (r.label === surfLabel && eloStale ? `<div class="mc-sg-stale">Elo · ${psEsc(eloStale)}</div>` : '')).join('');
+  return `<div class="mc-sg mc-sg--led${done ? ' mc-sg--done' : ' mc-sg--up'}">${head}<div class="mc-sg-rows">${body}</div></div>`;
 }
 
 // §1/§2/§4 — Completed vs Upcoming page chrome: title, subtitle, status line, and
@@ -9465,7 +9452,7 @@ function syncDayArrows(){
   if (!left || !right) return;
   const idx  = MX_RAIL_DAYS.indexOf(state.day);
   const atLeftEdge  = idx <= 0;
-  const atRightEdge = idx < 0 || idx >= MX_RAIL_DAYS.length - 1;
+  const atRightEdge = idx < 0 || idx >= mxRailMaxIdx();
   left.classList.toggle('is-disabled', atLeftEdge);
   right.classList.toggle('is-disabled', atRightEdge);
   left.setAttribute('aria-disabled', atLeftEdge ? 'true' : 'false');
@@ -9473,9 +9460,13 @@ function syncDayArrows(){
   left.setAttribute('aria-label', 'Previous day');
   right.setAttribute('aria-label', 'Next day');
 }
+// Founder design 2026-11-07 (CHANGES §1): on Completed the forward arrow dims at Today — results never page into a future
+// day (supersedes the 2026-10-30 "page forward past Today"). Upcoming pages through the whole rail as before.
+function mxRailMaxIdx(){ return state.view === 'completed' ? MX_RAIL_DAYS.indexOf('today') : MX_RAIL_DAYS.length - 1; }
 function stepDay(dir){ // dir: -1 = older (left), +1 = newer (right)
   const idx  = MX_RAIL_DAYS.indexOf(state.day);
   if (idx < 0) return;
+  if (dir > 0 && idx + dir > mxRailMaxIdx()) return;
   const key = MX_RAIL_DAYS[idx + dir];
   const next = key && document.querySelector(`#dayTabs button[data-day="${key}"]`);
   if (!next) return; // at an edge — arrow is disabled, nothing to do
@@ -9627,7 +9618,7 @@ function mxFavStripHtml(list){
   const cards = fav.map(m => {
     const pr = _mcNowPair(m);
     const meta = [mxEventName(m.tour), mxRoundLabel(m), cardFmtStart(m, matchDayBucket(m) !== state.day) || ''].filter(Boolean).join(' · ');   // TEN-407: the one event name
-    return `<div class="mx-favcard" data-id="${psEsc(m.id)}">`
+    return `<div class="mx-favcard" data-id="${psEsc(m.id)}" role="button" tabindex="0" title="Open match analysis">`
       + `<div class="mx-favcard__meta"><span class="mx-favcard__where">${meta}</span>`
       + `<button type="button" class="mx-favcard__star" data-fav="${psEsc(mxFavKey(m))}" title="Remove from favourites" aria-label="Remove from favourites">${mxFavStarSvg(13)}</button></div>`
       + `<div class="mx-favcard__row a"><span class="mx-favcard__name">${m.p1}</span><span class="mx-favcard__px">${px(pr ? pr.p1 : null)}</span></div>`
@@ -20686,6 +20677,27 @@ document.querySelector('[data-page="matches"]').addEventListener('click', e => {
   });
   mxFavRenderStrip();
 });
+// Founder design 2026-11-07 (CHANGES §2/§5): the Market Signal's Stennisfy Model row opens the Stennisfy Model page on a
+// Pro account (the row carries data-sig-model only for Pro); §4: a favourite mini card opens Match analysis on Key
+// factors — its star (data-fav, above) only toggles the favourite.
+function mxSigModelGo(e){
+  const row = e.target.closest('[data-sig-model]'); if (!row) return false;
+  e.preventDefault(); e.stopPropagation();
+  openEdgeModel(row.getAttribute('data-sig-model'));
+  return true;
+}
+function mxFavCardGo(e){
+  if (e.target.closest('[data-fav]')) return false;
+  const card = e.target.closest('.mx-favcard[data-id]'); if (!card) return false;
+  e.preventDefault(); e.stopPropagation();
+  openAnalysisModal(card.getAttribute('data-id'), 'key');
+  return true;
+}
+document.querySelector('[data-page="matches"]').addEventListener('click', e => { mxSigModelGo(e) || mxFavCardGo(e); }, true);
+document.querySelector('[data-page="matches"]').addEventListener('keydown', e => {
+  if (e.key !== 'Enter' && e.key !== ' ') return;
+  if (e.target.matches('[data-sig-model], .mx-favcard[data-id]')) mxSigModelGo(e) || mxFavCardGo(e);
+}, true);
 if (window.BSP && BSP.onAuthChange){
   BSP.onAuthChange(u => { mxFavOnAuth(u).then(() => { if (matchesLoadedOnce) renderMatches(); }); });
 }
@@ -36616,7 +36628,9 @@ if(document.querySelector('.tabpage[data-page="live"]')&&document.querySelector(
   [data-page="matches"] .mx-favstrip__lbl{ font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label); }
   [data-page="matches"] .mx-favstrip__row{ display:flex; gap:10px; padding:0 0 2px; overflow-x:auto; }
   [data-page="matches"] .mx-favcard{ flex:0 0 auto; width:272px; box-sizing:border-box; display:flex; flex-direction:column; gap:7px; padding:10px 14px 11px;
-    background:var(--card); border-radius:12px; box-shadow:var(--top-light); }
+    background:var(--card); border-radius:12px; box-shadow:var(--top-light); border:1px solid transparent; cursor:pointer; }
+  [data-page="matches"] .mx-favcard:hover{ border-color:var(--edge-16); }
+  [data-page="matches"] .mx-favcard:focus-visible{ outline:2px solid var(--edge-16); outline-offset:1px; }
   [data-page="matches"] .mx-favcard__meta{ display:flex; align-items:center; gap:8px; }
   [data-page="matches"] .mx-favcard__where{ flex:1 1 0; min-width:0; font-family:var(--font-words); font-size:11px; color:var(--text-label); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   [data-page="matches"] .mx-favcard__star{ flex:0 0 auto; display:flex; padding:2px 4px; margin:-2px -4px -2px 0; border:0; border-radius:5px; background:transparent; color:var(--text); cursor:pointer; }
@@ -36766,7 +36780,7 @@ if(document.querySelector('.tabpage[data-page="live"]')&&document.querySelector(
   [data-page="matches"] .match-card.cmpl .mc-foot{ padding:11px 18px; border-top:1px solid var(--edge-6); }   /* founder Q1: README 6% */
   [data-page="matches"] .match-card.cmpl .mc-msig .chev{ color:var(--text); }
   [data-page="matches"] .match-card.cmpl .mc-analysis{ font-weight:600; }
-  [data-page="matches"] .match-card.cmpl .mc-sigpanel{ padding:13px 20px 15px; border-top:1px solid var(--edge-6); }
+  [data-page="matches"] .match-card.cmpl .mc-sigpanel{ padding:13px 20px 15px; }
   [data-page="matches"] .match-card.cmpl .mc-sig-src{ width:100px; color:var(--text-soft); }   /* founder Q1: book names soft on both cards */
   [data-page="matches"] .match-card.cmpl .mc-sig-dog{ font-weight:400; }
   [data-page="matches"] .match-card.cmpl .mc-sig-row::after{ display:none; }
@@ -36820,6 +36834,55 @@ if(document.querySelector('.tabpage[data-page="live"]')&&document.querySelector(
   [data-page="matches"] .mc-sg-grp{ font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label); margin:4px 0 -3px; }
   [data-page="matches"] .mc-sg-flow{ font-family:var(--font-words); font-size:10.5px; line-height:1.4; color:var(--text-label); margin:-5px 0 0 15px; cursor:default; }
   [data-page="matches"] .mc-sg-flow b{ font-family:var(--font-nums); font-weight:700; color:var(--text-soft); }
+  /* Market Signal ledger (founder design 2026-11-07, CHANGES §2 Upcoming / §3 Completed) */
+  [data-page="matches"] .match-card.cmpl .mc-sigpanel{ background:var(--sig-done-panel); border-top:1px solid var(--edge-6); }
+  [data-page="matches"] .mc-sg--led{ gap:0; }
+  [data-page="matches"] .mc-sg--led .mc-sg-rows{ display:flex; flex-direction:column; }
+  [data-page="matches"] .mc-sg--led .mc-sg-row{ display:grid; grid-template-columns:128px 44px 30px minmax(0,1fr) 30px 44px; gap:0 8px; align-items:center; min-height:30px; padding:4px 0; box-sizing:border-box; border-top:0; }
+  [data-page="matches"] .mc-sg--led.mc-sg--done .mc-sg-row{ grid-template-columns:168px 54px 40px minmax(0,1fr) 40px 54px; gap:0 10px; }
+  [data-page="matches"] .mc-sg--led .mc-sg-row.rule{ border-top:1px solid var(--sig-rule); }
+  [data-page="matches"] .mc-sg--led .mc-sg-row.mc-sg-lh{ align-items:baseline; min-height:0; padding:0 0 7px; border-bottom:1px solid var(--edge-6); }
+  [data-page="matches"] .mc-sg--led.mc-sg--done .mc-sg-row.mc-sg-lh{ border-bottom-color:var(--sig-done-rule); }
+  [data-page="matches"] .mc-sg-lh > span{ font-family:var(--font-words); font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label); line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; }
+  [data-page="matches"] .mc-sg-lh > .mc-sg-hn{ text-align:center; }
+  [data-page="matches"] .mc-sg-lh > .mc-sg-hn.a{ grid-column:2 / 4; }
+  [data-page="matches"] .mc-sg-lh > .mc-sg-hn.b{ grid-column:5 / 7; }
+  [data-page="matches"] .mc-sg-lh > .mc-sg-hn.win{ color:var(--text); }
+  [data-page="matches"] .mc-sg-lh > .mc-sg-tklg{ text-align:center; color:var(--sig-legend); cursor:default; }
+  [data-page="matches"] .mc-sg--led .mc-sg-src{ display:flex; flex-direction:column; align-items:stretch; gap:1px; min-width:0; }
+  [data-page="matches"] .mc-sg--led .mc-sg-nl{ display:flex; align-items:center; gap:5px; min-width:0; }
+  [data-page="matches"] .mc-sg--led.mc-sg--done .mc-sg-nl{ gap:6px; }
+  [data-page="matches"] .mc-sg--led .mc-sg-name{ font-size:11.5px; color:var(--text-soft); }
+  [data-page="matches"] .mc-sg--led.mc-sg--done .mc-sg-name{ color:var(--sig-soft); }
+  [data-page="matches"] .mc-sg--led .mc-sg-meta{ font-family:var(--font-words); font-size:10px; color:var(--text-label); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  [data-page="matches"] .mc-sg--led .mc-sg-lock{ flex:none; fill:none; stroke:var(--text-label); stroke-width:1.8; }
+  [data-page="matches"] .mc-sg--led .mc-sg-oa, [data-page="matches"] .mc-sg--led .mc-sg-ob{ display:flex; flex-direction:column; gap:3px; min-width:0; }
+  [data-page="matches"] .mc-sg--led .mc-sg-oa{ align-items:flex-end; }
+  [data-page="matches"] .mc-sg--led .mc-sg-ob{ align-items:flex-start; }
+  [data-page="matches"] .mc-sg--led .mc-sg-o{ font-family:var(--font-nums); font-size:11px; font-weight:600; white-space:nowrap; color:var(--text-soft); }
+  [data-page="matches"] .mc-sg--led.mc-sg--done .mc-sg-o{ font-weight:500; color:var(--text-label); }
+  [data-page="matches"] .mc-sg--led.mc-sg--done .mc-sg-o.lead{ font-weight:700; color:var(--text); }
+  [data-page="matches"] .mc-sg--led .mc-sg-pa, [data-page="matches"] .mc-sg--led .mc-sg-pb{ font-family:var(--font-nums); font-size:11px; font-weight:500; color:var(--text-label); }
+  [data-page="matches"] .mc-sg--led .mc-sg-pa{ text-align:right; }
+  [data-page="matches"] .mc-sg--led .mc-sg-pa.lead, [data-page="matches"] .mc-sg--led .mc-sg-pb.lead{ font-weight:700; color:var(--text); }
+  [data-page="matches"] .mc-sg--led .mc-sg-chip{ font-family:var(--font-nums); font-size:9.5px; font-weight:700; line-height:1.2; white-space:nowrap; color:var(--sig-soft); background:var(--sig-chip); border:1px solid var(--edge-10); border-radius:4px; padding:1px 5px; }
+  [data-page="matches"] .mc-sg--led .mc-sg-chip.lead{ color:var(--text); }
+  [data-page="matches"] .mc-sg--led .mc-sg-oa .mc-sg-chip{ margin-right:-6px; }
+  [data-page="matches"] .mc-sg--led .mc-sg-ob .mc-sg-chip{ margin-left:-6px; }
+  [data-page="matches"] .mc-sg--led .mc-sg-bar3{ position:relative; height:4px; }
+  [data-page="matches"] .mc-sg--led .mc-sg-bar3 .t{ position:absolute; left:0; right:0; top:0; height:4px; display:flex; overflow:hidden; background:var(--track); }
+  [data-page="matches"] .mc-sg--led .mc-sg-bar3 .a{ background:var(--bar); }
+  [data-page="matches"] .mc-sg--led .mc-sg-bar3 .b{ background:var(--viz-second); }
+  [data-page="matches"] .mc-sg--led.mc-sg--done .mc-sg-bar3{ height:12px; }
+  [data-page="matches"] .mc-sg--led.mc-sg--done .mc-sg-bar3 .t{ top:4px; background:var(--sig-done-track); }
+  [data-page="matches"] .mc-sg--led.mc-sg--done .mc-sg-bar3 .win{ background:var(--bar); }
+  [data-page="matches"] .mc-sg--led.mc-sg--done .mc-sg-bar3 .lose{ background:var(--sig-lose); }
+  [data-page="matches"] .mc-sg--led .mc-sg-bar3 .tk{ position:absolute; top:1px; height:10px; width:2px; margin-left:-1px; background:var(--sig-tick); }
+  [data-page="matches"] .mc-sg--led .is-blur{ filter:blur(5px); user-select:none; }
+  [data-page="matches"] .mc-sg--led .mc-sg-row.go{ cursor:pointer; }
+  [data-page="matches"] .mc-sg--led .mc-sg-row.go:hover{ background:var(--wash-4); }
+  [data-page="matches"] .mc-sg--led .mc-sg-row.go:focus-visible{ outline:2px solid var(--edge-16); outline-offset:-2px; }
+  [data-page="matches"] .mc-sg--led .mc-sg-stale{ margin:0 0 4px; }
   [data-page="matches"] .mc-sg-src{ display:inline-flex; align-items:center; gap:7px; min-width:0; cursor:default; }
   [data-page="matches"] .mc-sg--done .mc-sg-src{ gap:6px; }
   [data-page="matches"] .mc-sg-dot{ width:6px; height:6px; flex:none; border-radius:50%; background:var(--text-label); }

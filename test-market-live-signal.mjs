@@ -93,51 +93,48 @@ test('the loader: placeholder config reads nothing; real config reads the table 
   assert.equal(got.beatAt, Date.parse('2026-11-06T11:59:00Z'));
 });
 
-// Founder 2026-11-07 ("Build the redesign"): the Upcoming drawer's prediction-markets group.
-const MK = (live, beatAgoMin, kal = null, poly = null) => new Function('live', 'beatAt', 'kal', 'poly', `
+// Founder design 2026-11-07 (CHANGES §2–§3): the Kalshi / Polymarket rows of the Market Signal ledger.
+const MK = (live, kal = null, poly = null) => new Function('live', 'kal', 'poly', `
   const newsTz = () => 'UTC';
   const MKT_LIVE_STALE_MS = 3 * 60e3;
-  const mktLive = { byEvent: live, beatAt };
+  const mktLive = { byEvent: live, beatAt: ${NOW} };
   let polymarketVol = poly, kalshiVol = kal;
   const _now = ${NOW}; Date.now = () => _now;
   ${slice('eventKeyOfMatch')} ${slice('psEsc')} ${slice('mcSigClock')} ${slice('mcSigPolyUsd')} ${slice('mcSigLiveFresh')} ${slice('mxSurname')}
-  ${slice('ocsNfd')} ${slice('mcSigLiqRec')} ${slice('mcSigSurKey')} ${slice('mcSigK')} ${slice('mcSigMktRows')} ${slice('mcSigMktHtml')}
-  return { mcSigMktHtml, mcSigMktRows };`)(live, NOW - beatAgoMin * 60e3, kal, poly);
+  ${slice('ocsNfd')} ${slice('mcSigLiqRec')} ${slice('mcSigSurKey')} ${slice('mcSigK')} ${slice('mcSigPredRows')} ${slice('mcSigRowHtml')}
+  return { rows: (m, done) => mcSigPredRows(m, done), html: (m, done, W) => mcSigPredRows(m, done).map(r => mcSigRowHtml(r, W || null, null)).join('') };`)(live, kal, poly);
 const OC = [{ name: 'Tommy Paul', bid: 0.54, ask: 0.55, mid: 0.545 }, { name: 'Ben Shelton', bid: 0.45, ask: 0.46, mid: 0.455 }];
 const prow = (venue, at, extra = {}) => ({ [`12177788|${venue}`]: { event_key: '12177788', venue, liquidity: '242649.08', outcomes: OC, read_at: at, started_at: null,
   flow: { byName: { 'Ben Shelton': 27512.4, 'Tommy Paul': 3700 }, trades: 430, at }, ...extra } });
 
-test('prediction markets: each player by surname, midpoints scaled to 100% as fair odds, the traded line', () => {
-  const h = MK(prow('kalshi', '2026-11-06T11:59:10Z'), 1).mcSigMktHtml(m);
-  assert.match(h, /^<div class="mc-sg-grp">Prediction markets · now<\/div>/);
-  assert.match(h, /<span class="mc-sg-name">Kalshi<\/span><\/span><span class="mc-sg-oa">2.20<\/span><span class="mc-sg-pa">46%<\/span>/, 'Shelton (p1) = 0.455 of 1.000 → 2.20, though the venue lists Paul first');
-  assert.match(h, /<span class="mc-sg-pb">55%<\/span><span class="mc-sg-ob">1.83<\/span>/);
-  assert.match(h, /Traded on Shelton <b>\$27.5k<\/b> · Paul <b>\$3.7k<\/b> · 430 trades · <b>\$242.6k<\/b> resting/);
-  assert.match(h, /bid \/ ask Shelton 0.45 \/ 0.46, Paul 0.54 \/ 0.55 · read Fri 06 Nov, 11:59 · not a bookmaker price/);
+test('prediction rows: each player by surname, the mid scaled to 100% as fair odds, a $ chip under each price, "$X traded · N trades" under the name', () => {
+  const h = MK(prow('kalshi', '2026-11-06T11:59:10Z')).html(m, false);
+  assert.match(h, /<span class="mc-sg-name">Kalshi<\/span><\/span><span class="mc-sg-meta">\$31\.2k traded · 430 trades<\/span><\/span>/);
+  assert.match(h, /<span class="mc-sg-oa"><span class="mc-sg-o">2\.20<\/span><span class="mc-sg-chip">\$27\.5k<\/span><\/span><span class="mc-sg-pa">46%<\/span>/, 'Shelton (p1) = 0.455 → 2.20, though the venue lists Paul first; the trailing side grey');
+  assert.match(h, /<span class="mc-sg-pb lead">55%<\/span><span class="mc-sg-ob"><span class="mc-sg-o">1\.83<\/span><span class="mc-sg-chip lead">\$3\.7k<\/span>/, 'the leaning side lead');
+  assert.match(h, /live mid \(best bid and ask, both players scaled to 100%\) · read Fri 06 Nov, 11:59 · bid \/ ask Shelton 0\.45 \/ 0\.46, Paul 0\.54 \/ 0\.55 · traded Shelton \$27\.5k, Paul \$3\.7k[^"]*\$242\.6k resting \(read Fri 06 Nov, 11:59\) · not a bookmaker price/, 'resting liquidity in the hover only');
+  assert.match(MK(prow('polymarket', '2026-11-06T11:59:10Z')).html(m, false), /title="Kalshi · no market for this match"/, 'the other venue: a dash row');
 });
-test('prediction markets: the heading says how old the prices are; frozen = before the start', () => {
-  assert.match(MK(prow('kalshi', '2026-11-06T11:40:00Z'), 1).mcSigMktHtml(m), /Prediction markets · read Fri 06 Nov, 11:40</, 'an old row is never "now"');
-  assert.match(MK(prow('kalshi', '2026-11-06T11:59:10Z'), 10).mcSigMktHtml(m), /Prediction markets · read /, 'recorder down: never "now"');
-  const fz = MK(prow('kalshi', '2026-11-06T11:40:00Z', { started_at: '2026-11-06T11:40:30Z' }), 1).mcSigMktHtml(m);
-  assert.match(fz, /Prediction markets · before the start</);
-  assert.match(fz, /last read before the start/);
+test('prediction rows: Upcoming shows the current read (a frozen one says so); Completed only a row frozen before the start', () => {
+  const fz = prow('kalshi', '2026-11-06T11:40:00Z', { started_at: '2026-11-06T11:40:30Z' });
+  assert.match(MK(fz).html(m, false), /read Fri 06 Nov, 11:40 · last read before the start/);
+  assert.match(MK(fz).html(m, true), /last mid before the start/, 'Completed reads the frozen row');
+  assert.match(MK(prow('kalshi', '2026-11-06T11:59:10Z')).html(m, true), /title="Kalshi · no read stored from before the start/, 'Completed never shows an unfrozen read');
+  assert.match(MK({ '12177788|kalshi': { ...fz['12177788|kalshi'], outcomes: null, liquidity: null } }).html(m, true), /no price read before the start/);
 });
-test('prediction markets: no confident player match or no price → no price row (never a guess); no read → nothing', () => {
+test('prediction rows: no confident player match or no mid → a dash row (never a guess); no traded sum → no chips', () => {
   const twoSame = { '12177788|kalshi': { ...prow('kalshi', '2026-11-06T11:59:10Z')['12177788|kalshi'], outcomes: [{ name: 'Ben Shelton', mid: 0.5 }, { name: 'Tom Shelton', mid: 0.5 }] } };
-  assert.doesNotMatch(MK(twoSame, 1).mcSigMktHtml(m), /mc-sg-mkt|Traded/, 'two outcomes on one surname: no price row');
+  assert.match(MK(twoSame).html(m, false), /title="Kalshi · no price for both players · \$242\.6k resting/);
   const noMid = { '12177788|kalshi': { ...prow('kalshi', '2026-11-06T11:59:10Z')['12177788|kalshi'], outcomes: [{ name: 'Tommy Paul', mid: null }, OC[1]] } };
-  assert.doesNotMatch(MK(noMid, 1).mcSigMktHtml(m), /mc-sg-mkt/, 'one side unpriced: no price row');
-  assert.match(MK(noMid, 1).mcSigMktHtml(m), /\$242,649 liquidity/, '... the liquidity line stays');
-  assert.equal(MK({}, 1).mcSigMktHtml(m), '');
-  const noFlow = { '12177788|polymarket': { ...prow('polymarket', '2026-11-06T11:59:10Z')['12177788|polymarket'], flow: null } };
-  assert.match(MK(noFlow, 1).mcSigMktHtml(m), /<div class="mc-sg-flow"[^>]*><b>\$242.6k<\/b> resting<\/div>/, 'no traded sum: resting only');
+  assert.match(MK(noMid).html(m, false), /title="Kalshi · no price for both players/);
+  const noFlow = { '12177788|kalshi': { ...prow('kalshi', '2026-11-06T11:59:10Z')['12177788|kalshi'], flow: null } };
+  const h = MK(noFlow).html(m, false);
+  assert.doesNotMatch(h, /mc-sg-chip|mc-sg-meta/);
+  assert.match(h, /<span class="mc-sg-o">2\.20<\/span><\/span>/);
 });
-test('the Upcoming drawer: player surnames head the columns, three groups', () => {
-  const b = slice('mcSigBody');
-  assert.match(b, /<span class="mc-sg-hn a" title="\$\{psEsc\(m\.p1\)\}">\$\{psEsc\(mxSurname\(m\.p1\)\)\}<\/span><span><\/span><span class="mc-sg-hn b"/);
-  assert.match(b, /grp\('Bookmakers · opening odds'\) \+ rows\.slice\(0, 3\)/);
-  assert.match(b, /grp\('Ratings and model · fair odds'\) \+ rows\.slice\(3\)/);
-  assert.match(b, /mcSigMktHtml\(m, D\)/);
-  assert.match(html, /\.mc-sg-head > \.mc-sg-hn\.a\{ grid-column:1 \/ 4; text-align:right; \}/, 'the left name spans the source and price columns, so a long surname never runs into its neighbour');
-  assert.match(html, /\.mc-sg-head > \.mc-sg-hn\{[^}]*white-space:normal; overflow-wrap:normal;/, 'names wrap between words, never cut');
+test('Completed: the winner\'s side carries the lead on prediction rows too', () => {
+  const fz = prow('kalshi', '2026-11-06T11:40:00Z', { started_at: '2026-11-06T11:40:30Z' });
+  const h = MK(fz).html(m, true, 'a');
+  assert.match(h, /<span class="mc-sg-o lead">2\.20<\/span><span class="mc-sg-chip lead">\$27\.5k<\/span>/, 'Shelton won: his side lead although the market had him at 46%');
+  assert.match(h, /<span class="a win" style="width:45\.5/);
 });

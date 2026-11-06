@@ -209,49 +209,72 @@ test('review 4/8: Completed and Upcoming always draw three tiles; an empty tile 
   assert.doesNotMatch(body, /sp\.book \? ' · ' \+ sp\.book/, 'no "· book" suffix');
   assert.match(body, /const stripHtml = `<div class="mc-story-strip">\$\{panels\.join\(''\)\}<\/div>`;/, 'Completed strip is unconditional');
 });
-test('step 15 §4–§5: Market Signal = ONE grid, six rows in order, a dash row for every missing source, nothing constant', () => {
+test('founder design 2026-11-07 (CHANGES §2–§3): Market Signal = ONE ledger, eight rows in order, dash rows for every missing source, nothing constant', () => {
   const S = (opts = {}) => new Function('opts', `
     const window = { sfPlan: opts.plan || null };
     const eloRatings = opts.elo === undefined ? { taLastUpdate: '2026-10-26', elo: {
       'rublev|a': { all: { rating: 2000 }, hard: { rating: 1950 } }, 'safiullin|r': { all: { rating: 1900 }, hard: { rating: null } } } } : opts.elo;
     const _ocsOf = m => m.__ocs || null, _mcPinClose = m => m.__pin || null, mxPinCloseAgeMin = () => 12;
     const mxJClose = (m, who) => (m.__j ? m.__j[who] : null), cardStartMs = m => m.__start, newsTz = () => 'UTC';
-    ${slice('psEsc')} ${slice('psEloNorm')} ${slice('mxOddsTxt')} ${slice('mxSurname')} ${slice('mxIsPro')}
+    ${slice('psEsc')} ${slice('psEloNorm')} ${slice('mxOddsTxt')} ${slice('mxSurname')} ${slice('mxIsPro')} ${slice('eventKeyOfMatch')} ${slice('ocsNfd')}
     ${slice('mcSigReady')} ${slice('mcSigPanel')} ${slice('mcSigPair')} ${slice('mcSigImp')} ${slice('mcSigFirst')} ${slice('mcSigClock')}
-    ${slice('mcSigEloRec')} ${slice('mcSigEloLast')} ${slice('mcSigEloStaleText')} ${slice('mcSigEloP')} ${slice('mcSigFair')} ${slice('mcSigElo')} ${slice('mcSigEloTitle')} ${slice('mcSigModelP')} ${slice('mcSigBody')}
+    ${slice('mcSigEloRec')} ${slice('mcSigEloLast')} ${slice('mcSigEloStaleText')} ${slice('mcSigEloP')} ${slice('mcSigFair')} ${slice('mcSigElo')} ${slice('mcSigEloTitle')} ${slice('mcSigModelP')}
+    ${slice('mcSigPolyUsd')} ${slice('mcSigLiqRec')} ${slice('mcSigSurKey')} ${slice('mcSigK')} ${slice('mcSigLast')} ${slice('mcSigPredRows')} ${slice('mcSigModelDress')} ${slice('mcSigRowHtml')} ${slice('mcSigBody')}
     return { mcSigPanel, mcSigBody };`)(opts);
   const names = h => [...h.matchAll(/mc-sg-name">([^<]*)</g)].map(x => x[1]);
+  const EIGHT = ['Pinnacle', 'Bet105', 'Bet365', 'Elo Overall', 'Elo Hard', 'Stennisfy Model', 'Kalshi', 'Polymarket'];
   const up = { id: 'u1', p1: 'A. Rublev', p2: 'R. Safiullin', surface: 'hard', _oddsLoaded: true,
     pinnacleOpen: { p1: 1.6, p2: 2.44 }, bookOpens: { bet365: { p1: 1.57, p2: 2.37, seenAt: '2026-10-26T10:00:00Z' } },
     oddsMovement: { chart: { books: { Bet105: { p1: [['2026-10-25T10:00:00Z', 1.64]], p2: [['2026-10-25T10:00:00Z', 2.33]] } } } },
     valueSnapshot: { fairP1: 0.65, fairP2: 0.35, ts: '2026-10-26T01:00:00Z' } };
   const free = S().mcSigBody(up);
-  assert.deepEqual(names(free), ['Pinnacle', 'Bet105', 'Bet365', 'Elo Overall', 'Elo Hard', 'Stennisfy Model']);
-  assert.doesNotMatch(free, /Polymarket|Kalshi|Betfair|Consensus|Liquidity|Says| vs |agree/i, 'removed rows and sections');
-  assert.match(free, /mc-sg-oa">1\.60<\/span><span class="mc-sg-pa">60%<\/span>/, 'open odds A, then the margin-removed implied %');
-  assert.match(free, /mc-sg-ob">2\.44</);
-  assert.equal((free.match(/class="mc-sg-row dash"/g) || []).length, 1, 'Elo Hard: no surface rating for Safiullin → dash row, kept');
+  assert.deepEqual(names(free), EIGHT);
+  assert.match(free, /<div class="mc-sg-row mc-sg-lh"><span class="mc-sg-lc">Source<\/span><span class="mc-sg-hn a" title="A\. Rublev">Rublev<\/span><span><\/span><span class="mc-sg-hn b" title="R\. Safiullin">Safiullin<\/span><\/div>/, 'SOURCE · surnames centred over each player\'s two columns');
+  assert.doesNotMatch(free, /Betfair|Consensus|Liquidity|Says| vs |agree|mc-sg-grp|BEST/i, 'no group heads, no tag on Upcoming');
+  assert.match(free, /mc-sg-oa"><span class="mc-sg-o">1\.60<\/span><\/span><span class="mc-sg-pa lead">60%<\/span>/, 'open odds A, then the margin-removed implied %, the leaning side lead');
+  assert.match(free, /<span class="mc-sg-pb">40%<\/span><span class="mc-sg-ob"><span class="mc-sg-o">2\.44</);
+  assert.equal((free.match(/mc-sg-row mc-sg-lr rule/g) || []).length, 2, 'two hairlines only');
+  assert.match(free, /mc-sg-lr rule"[^>]*><span class="mc-sg-src"><span class="mc-sg-nl"><span class="mc-sg-name">Elo Overall/);
+  assert.match(free, /mc-sg-lr rule dash"[^>]*><span class="mc-sg-src"><span class="mc-sg-nl"><span class="mc-sg-name">Kalshi/);
+  assert.equal((free.match(/class="mc-sg-row mc-sg-lr(?: rule)? dash(?: go)?"/g) || []).length, 3, 'Elo Hard (no surface rating) + Kalshi + Polymarket (no market) → dash rows, kept');
   assert.match(free, /title="Tennis Abstract weekly scrape · hElo · as of 2026-10-26 · win % → fair odds · no hard rating"/);
-  assert.match(free, /mc-sg-oa is-blur">1\.54</, 'Model → fair odds 1/p, blurred for a non-Pro member');
-  assert.doesNotMatch(S({ plan: 'pro' }).mcSigBody(up), /is-blur/, 'Pro sees it');
+  assert.match(free, /title="Kalshi · no market for this match"/);
+  assert.match(free, /title="Stennisfy model · Pro only · upgrade to see the model price"><span class="mc-sg-src"><span class="mc-sg-nl"><span class="mc-sg-name">Stennisfy Model<\/span><svg class="mc-sg-lock"/, 'non-Pro: a lock, no click');
+  assert.match(free, /mc-sg-oa is-blur"><span class="mc-sg-o">1\.54</, 'Model → fair odds 1/p, blurred for a non-Pro member');
+  const pro = S({ plan: 'pro' }).mcSigBody(up);
+  assert.doesNotMatch(pro, /is-blur|mc-sg-lock/, 'Pro sees it');
+  assert.match(pro, /class="mc-sg-row mc-sg-lr go"[^>]*role="button" tabindex="0" data-sig-model="u1"/, 'Pro: the model row opens the model page');
+  assert.doesNotMatch(free, /data-sig-model/);
   const bare = S({ elo: { elo: {} } }).mcSigBody({ id: 'u2', p1: 'A', p2: 'B', surface: 'clay', _oddsLoaded: true });
-  assert.equal((bare.match(/class="mc-sg-row dash"/g) || []).length, 6, 'no source → six dash rows, never a zero');
+  assert.equal((bare.match(/class="mc-sg-row mc-sg-lr(?: rule)? dash(?: go)?"/g) || []).length, 8, 'no source → eight dash rows, never a zero');
   assert.doesNotMatch(bare, />0\.00<|>0%</);
   assert.match(S().mcSigPanel({ id: 'u3', p1: 'A', p2: 'B' }), /Loading…/, 'not drawn before its sources load');
-  // Completed (option 1a): what each source had on the WINNER; BEST per group; Elo has no stored snapshot → dash rows
+  // Completed (CHANGES §3): both players at the close, the winner's side lead, the Pinnacle close as a tick, BEST ×2
   const done = { id: 'c1', p1: 'M. Berrettini', p2: 'T. M. Etcheverry', surface: 'hard', finalScore: { winner: 'p1' }, __start: Date.parse('2026-10-26T12:00:00Z'),
     __pin: { p1: 1.58, p2: 2.6, source: 'Oddspapi' }, __ocs: { book: 'bet105', p1: { close: 1.575 }, p2: { close: 2.51 } }, __j: { p1: 1.53, p2: 2.5 },
     valueSnapshot: { fairP1: 0.64, fairP2: 0.36, ts: '2026-10-26T01:00:00Z' } };
-  const d = S().mcSigBody(done);
-  assert.match(d, /Price on Berrettini/);
-  assert.deepEqual(names(d), ['Pinnacle', 'Bet105', 'Bet365', 'Elo Overall', 'Elo Hard', 'Stennisfy Model']);
-  assert.equal((d.match(/mc-sg-best">BEST/g) || []).length, 2, 'one BEST among the books, one among the estimates');
-  assert.match(d, /Pinnacle<\/span><span class="mc-sg-best">BEST/, 'highest odds on the winner');
-  assert.match(d, /Stennisfy Model<\/span><span class="mc-sg-best">BEST/, 'the only estimate with a value');
-  assert.equal((d.match(/class="mc-sg-row dash"/g) || []).length, 2, 'Elo Overall + Elo Hard: no pre-match snapshot stored');
-  assert.doesNotMatch(d, /is-blur/, 'not blurred on Completed');
-  const late = S().mcSigBody(Object.assign({}, done, { valueSnapshot: { fairP1: 0.6, fairP2: 0.4, ts: '2026-10-26T13:00:00Z' } }));
-  assert.equal((late.match(/class="mc-sg-row dash"/g) || []).length, 3, 'a model read frozen after the start is not a pre-match snapshot');
+  const d = S({ plan: 'pro' }).mcSigBody(done);
+  assert.match(d, /<span class="mc-sg-lc">Source · at close<\/span><span class="mc-sg-hn a win" title="M\. Berrettini">Berrettini<\/span><span class="mc-sg-tklg" title="Pinnacle closing chance · M\. Berrettini 62% · T\. M\. Etcheverry 38%">\| = Pinnacle close<\/span><span class="mc-sg-hn b lose"/);
+  assert.doesNotMatch(d, /Price on|won/);
+  assert.deepEqual(names(d), EIGHT);
+  assert.equal((d.match(/mc-sg-best"[^>]*>BEST/g) || []).length, 2, 'one BEST among the books, one among the ratings');
+  assert.match(d, /Pinnacle<\/span><span class="mc-sg-best"/, 'the book that gave the winner the highest chance (Pinnacle 62.2% > Bet365 62.0% > Bet105 61.4%)');
+  assert.match(d, /Stennisfy Model<\/span><span class="mc-sg-best"/, 'the only rating with a value');
+  assert.match(d, /<span class="mc-sg-o lead">1\.58<\/span>/, 'winner\'s odds white 700');
+  assert.match(d, /<span class="mc-sg-o">2\.60<\/span>/, 'loser\'s grey 500');
+  const ticks = [...d.matchAll(/class="tk" style="left:([0-9.]+)%"/g)].map(x => x[1]);
+  assert.equal(ticks.length, 4, 'a tick on every row with data (3 books + the model)');
+  assert.ok(ticks.every(t => t === ticks[0]) && Math.abs(Number(ticks[0]) - 62.2) < 0.1, 'all at the Pinnacle close');
+  assert.match(d, /<span class="a win" style="width:62\.2/);
+  assert.equal((d.match(/class="mc-sg-row mc-sg-lr(?: rule)? dash(?: go)?"/g) || []).length, 4, 'Elo Overall + Elo Hard (no pre-match snapshot) + Kalshi + Polymarket');
+  const dFree = S().mcSigBody(done);
+  assert.equal((dFree.match(/mc-sg-best"[^>]*>BEST/g) || []).length, 1, 'a blurred model never carries BEST');
+  assert.match(dFree, /is-blur/, 'non-Pro: the model is blurred on Completed too');
+  const late = S({ plan: 'pro' }).mcSigBody(Object.assign({}, done, { valueSnapshot: { fairP1: 0.6, fairP2: 0.4, ts: '2026-10-26T13:00:00Z' } }));
+  assert.equal((late.match(/class="mc-sg-row mc-sg-lr(?: rule)? dash(?: go)?"/g) || []).length, 5, 'a model read frozen after the start is not a pre-match snapshot');
+  const noPin = S({ plan: 'pro' }).mcSigBody(Object.assign({}, done, { __pin: null }));
+  assert.doesNotMatch(noPin, /class="tk"/, 'no Pinnacle close → no tick anywhere');
+  assert.match(noPin, /title="No Pinnacle close stored for this match"/);
 });
 test('review 6/7/9: grid start; white caret in the reference font stack; one chip row with All first on both views', () => {
   assert.match(lastRule(`${M} .match-card .mc-msig .chev`), /font-family:'Hanken Grotesk', sans-serif;[^}]*color:var\(--text\)/);
@@ -270,4 +293,25 @@ test('stats paths read _mcCardCloseDerivedOf (within-60), never the display clos
   assert.match(slice('syncSortDropdown'), /const moveLanded = [\s\S]*?_mcCardCloseOf\(m, 'p1'\) != null \|\| _mcCardCloseOf\(m, 'p2'\) != null/);
   for (const fn of ['upsetScore', 'closingScore', 'marketWrongScore', 'mxJourney', '_mcOddsLanded'])
     assert.doesNotMatch(slice(fn), /_mcCardCloseOf\(|_mcCloseOf\(|_mcPinClose/, `${fn} never reads a display close`);
+});
+
+test('founder design 2026-11-07 §1/§4/§5: Completed rail stops at Today; favourite cards and the Pro model row are click targets', () => {
+  const run = (view, day, dir) => new Function(`
+    const state = { view: ${JSON.stringify(view)}, day: ${JSON.stringify(day)} };
+    let rendered = 0; const renderMatches = () => { rendered++; }, setActiveButton = () => {};
+    const document = { querySelector: () => ({}), getElementById: () => ({}) };
+    const MX_RAIL_DAYS = ['daymin3', 'daymin2', 'yesterday', 'today', 'tomorrow', 'day2', 'day3'];
+    ${slice('mxRailMaxIdx')} ${slice('stepDay')}
+    stepDay(${dir}); return state.day;`)();
+  assert.equal(run('completed', 'today', 1), 'today', 'Completed: no paging past Today');
+  assert.equal(run('completed', 'yesterday', 1), 'today');
+  assert.equal(run('completed', 'today', -1), 'yesterday');
+  assert.equal(run('upcoming', 'today', 1), 'tomorrow', 'Upcoming pages forward as before');
+  assert.match(slice('syncDayArrows'), /const atRightEdge = idx < 0 \|\| idx >= mxRailMaxIdx\(\);/, 'the forward arrow dims at Today on Completed');
+  assert.match(slice('mxFavStripHtml'), /<div class="mx-favcard" data-id="\$\{psEsc\(m\.id\)\}" role="button" tabindex="0" title="Open match analysis">/);
+  const fav = slice('mxFavCardGo');
+  assert.match(fav, /if \(e\.target\.closest\('\[data-fav\]'\)\) return false;/, 'the star only toggles');
+  assert.match(fav, /openAnalysisModal\(card\.getAttribute\('data-id'\), 'key'\)/, 'Key factors');
+  assert.match(slice('mxSigModelGo'), /e\.stopPropagation\(\);\n  openEdgeModel\(row\.getAttribute\('data-sig-model'\)\);/);
+  assert.match(lastRule(`${M} .mx-favcard:hover`), /border-color:var\(--edge-16\)/);
 });
