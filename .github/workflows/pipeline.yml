@@ -923,6 +923,8 @@ jobs:
           mkdir -p _site/assets && cp assets/logo-dark-transparent.png assets/ring-transparent.png _site/assets/
           # TEN-376 U4: official provider marks, unmodified (auth page). Assets, not UI code: no colour lint here.
           mkdir -p _site/assets/brand && cp assets/brand/google-g.svg assets/brand/apple-white.png assets/brand/app-store-badge.svg assets/brand/google-play-badge.png _site/assets/brand/
+          # Page speed (2026-11-07): the two web fonts, self-hosted (OFL). Required.
+          mkdir -p _site/assets/fonts && cp assets/fonts/*.woff2 assets/fonts/OFL-*.txt _site/assets/fonts/
           # TEN-107 Live tab: the standalone Live page reads the Supabase live_snapshot
           # row via PostgREST. Committed but not copied = silent 404 → the Live tab stays
           # dark even with the flag on. Public Supabase creds are injected below.
