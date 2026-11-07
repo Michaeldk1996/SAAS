@@ -130,3 +130,102 @@ before the page script needs them either way).
 First contentful paint was already early (the rail paints before any data) and is unchanged within noise.
 Levers 3–5 (other pages' scripts after the board, self-hosted fonts, moving other pages' inline code out of
 `index.html`) are not built yet; they cut the 853 KB HTML and ~460 KB of scripts that now bound the mobile board.
+
+# Part 2 — levers 3–5, re-ranked after steps A and B (7 Nov 2026)
+
+### After step B: what held the mobile board (waterfall, code after A + B)
+
+| ms | What |
+|---|---|
+| 0 → 9,450 | `index.html` (836 KB gzipped): the 1.9 MB page script runs only once all of it has arrived |
+| 590 → 6,640 | `matches.json` (369 KB), sharing the link with the page, Google Analytics' tag (160 KB), Firebase (150 KB), fonts |
+| 8,220 → 10,690 | the card state (112 KB), requested only after the page script ran, competing with 20 page scripts and boot data |
+| 11,030 | first match card |
+
+Levers re-ranked by measured gain (each built and timed before landing, interleaved, frozen data):
+
+| Step | What | Mobile 4G board (n=3) | Desktop (n=5) |
+|---|---|---:|---:|
+| D | `index.html` ships its inline JavaScript without comments and indentation | 10.8 → 9.7 s | no change beyond noise |
+| C | the card state starts at the top of the page | 9.9 → 7.8 s | 595 → 512 ms |
+| G | Google Analytics' tag loads after the page's load event | 7.6 → 6.8 s | no change beyond noise |
+| F | the two fonts served from our own site | board unchanged; first paint 1.49 → 1.03 s | first paint 1.20 → 0.15 s, board 1.36 → 0.33 s |
+| (3) | other pages' scripts after the board | **not built**: after C they already start after the first card | — |
+| (5) | moving other pages' code out of the 1.9 MB page script | **not built**: see below | — |
+
+### Step D — `index.html` without comments and indentation (`157c1672b`, live)
+
+`tools/slim-code.mjs`, run by `tools/publish-site.mjs` on the published `index.html` only: every comment goes and every
+run of whitespace between two tokens becomes one newline (if it held a line break, so automatic semicolon insertion
+reads the code exactly as before) or one space. Tokens are copied byte for byte. **Proof per script, fail-closed**: the
+slimmed script must parse to the same syntax tree as the source (Node's own acorn), or the source ships.
+`bsp-consult-dashboard.html` stays the full source copy on the site; the repo file is untouched (every test reads it).
+Test: `tools/test-slim-code.mjs` (real dashboard 13 of 13 scripts proven; mutants: a slimmer that drops line breaks is
+stopped by the proof, and without the proof it would ship a different program).
+
+- Size: 2,760,063 → 1,890,422 bytes, **835 KB → 497 KB gzipped**. Live read-back: `index.html` 507 KB gzipped (with the
+  injected config), 0 comment lines; the 13 live inline scripts parse to the same trees as the live full copy.
+- Render probe: 0 of 9,864 text nodes differing; control (Move % formula changed) caught (`+16.9%` → `+14.4%`).
+- Timings (before = code after A + B): mobile board 10,797 (10,706–12,118) → **9,741 (9,733–9,993)** ms; desktop
+  1,265 → 1,286 ms (noise). Mobile FCP moved with the Google Fonts stylesheet's latency, not with this step.
+
+### Step C — the card state starts at the top of the page (`aea3ada98`, live)
+
+The `<head>` early-fetch block (step B) also starts the card-state read: the database doc where the publish injected
+the public config (the exact request `ocsFetchDb` makes), else `odds-card-state.json`. `ocsFetchDb` / `ocsFetchFile`
+take that answer once through `sfEarlyFetch`; the 30-minute freshness rule that decides whether the file is read too is
+unchanged. The harness has no database, so it measures the file path; on the live site the same change starts the
+database read.
+
+- Render probe vs D: 0 of 9,864 differing. Control: +1 on every card-state price is caught on every card and its hover
+  (`bet105 · 1.48 since …` → `2.48`). (Removing the card state outright changes no text here: the board falls back to
+  `matches.json`, which carries the same prices on this data — so the control changes the prices instead.)
+- Timings (before = D): mobile board 9,927 (9,766–10,636) → **7,783 (7,614–9,298)** ms; desktop 595 → 512 ms.
+
+### Step F — the fonts served from our own site (`b46e62969`)
+
+`assets/fonts/`: the 24 woff2 files exactly as Google Fonts serves them (Hanken Grotesk 400–800, IBM Plex Mono 400–700 —
+Plex Mono has no 800, the browser synthesises it as before; subsets latin, latin-ext, vietnamese, cyrillic,
+cyrillic-ext) + both OFL licences. Google's own `@font-face` rules inline in `<head>` (same unicode-ranges,
+`font-display: block`), the Hanken latin file preloaded; the Google preconnects and stylesheet are gone. Test:
+`tools/test-self-hosted-fonts.js` (controls: a missing file, a `swap` face, a Google link put back).
+
+- The Google stylesheet blocked both first paint and every inline script until it arrived; from this Mac it took
+  0.03–4.5 s. Desktop (before = G): FCP 1,196 → **148** ms, LCP 1,692 → **204** ms, board 1,363 → **333** ms.
+  Mobile: FCP 1,492 → 1,032 ms, board unchanged (6,813 → 6,758 ms).
+- Render probe: 0 of 9,864 differing. Font check: the same 8 faces load, 0 requests to Google, all 222 text elements of
+  the board, rail and header keep the same family, weight and width (control: an empty Hanken latin file → 4 faces,
+  62 elements differ).
+
+### Step G — Google Analytics after the load event
+
+`analytics.js` appends the 160 KB `gtag.js` tag after the page's load event (at once if the page has already loaded).
+The `dataLayer` shim, `config` and every `teTrack` call are queued as before and replayed by `gtag.js`, so no event is
+lost; a visitor who leaves before the load event is not counted. Test: `tools/test-analytics-after-load.js` (the
+pre-change loader fails it).
+
+- Render probe: 0 of 9,864 differing. Timings (before = C): mobile board 7,616 (7,524–8,106) → **6,781
+  (6,763–6,817)** ms; desktop no change beyond noise.
+
+## Overall: live code after A + B → after D, C, F, G (interleaved, n=3 mobile / n=5 desktop)
+
+| | Before | After |
+|---|---:|---:|
+| Mobile 4G — Matches usable | 10,739 ms | **6,732 ms** |
+| Mobile 4G — FCP | 924 ms | 1,032 ms |
+| Desktop — Matches usable | 389 ms | **312 ms** |
+| Desktop — LCP | 996 ms | **180 ms** |
+| `index.html` gzipped | 835 KB | 499 KB |
+
+Since the start of the day (code `09aee1a6d`): mobile board **21.2 s → 6.7 s**. The desktop "before" here had a fast
+Google Fonts answer (FCP 200 ms); on a slow one (step F's batch) the gain is ~1 s. Mobile FCP: this batch's Google
+answer was fast, so the self-hosted preload sharing the local HTTP/1.1 link costs ~0.1 s; Pages speaks HTTP/2.
+
+## Not built, with reasons
+
+- **Lever 3 (other pages' scripts after the board):** after step C those scripts start downloading after the first card
+  is already on screen, so delaying them buys nothing on the board.
+- **Lever 5 (other pages' code out of the page script):** the slimmed page script is still most of `index.html`, and
+  the board's code is spread through it; a safe split needs a dependency map of which functions the board reaches —
+  a build step of its own, with its own proof. The remaining mobile time is now the page itself (~500 KB) and
+  `matches.json` (369 KB) arriving together; Firebase (150 KB, needed for sign-in) shares the link.

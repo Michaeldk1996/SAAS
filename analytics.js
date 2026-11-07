@@ -31,10 +31,17 @@
   gtag('config', GA_ID);
 
   // Load the tag async (non-blocking). A 404 / blocked request is harmless.
-  var s = doc.createElement('script');
-  s.async = true;
-  s.src = 'https://www.googletagmanager.com/gtag/js?id=' + GA_ID;
-  doc.head.appendChild(s);
+  // Page speed (7 Nov 2026): the tag (160 KB) is requested after the page's load event, so it never shares the link
+  // with the page and its first data on a slow connection. Every call above is queued in dataLayer and replayed by
+  // gtag.js when it arrives, so no event is lost; only the moment it is sent moves.
+  function loadTag() {
+    var s = doc.createElement('script');
+    s.async = true;
+    s.src = 'https://www.googletagmanager.com/gtag/js?id=' + GA_ID;
+    doc.head.appendChild(s);
+  }
+  if (doc.readyState === 'complete') loadTag();
+  else global.addEventListener('load', loadTag, { once: true });
 
   // Public helper — the GA4 logEvent() equivalent. `name` is a GA4 event name
   // (snake_case), `params` an optional flat object of event parameters. Never
