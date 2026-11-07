@@ -5,7 +5,7 @@ const fs = require('fs'), os = require('os'), path = require('path'), { spawnSyn
 const ROOT = path.join(__dirname, '..');
 const html = fs.readFileSync(path.join(ROOT, 'bsp-consult-dashboard.html'), 'utf8');
 const MUTANTS = [
-  ['Q27: a name links with no profile behind it', "  const has = key != null && typeof playerProfiles !== 'undefined' && playerProfiles && playerProfiles[String(key)];", "  const has = key != null;"],
+  ['Q27: a name links with no profile behind it', "  const has = key != null && (typeof ppSlim === 'function' ? ppSlim(key) : (typeof playerProfiles !== 'undefined' && playerProfiles && playerProfiles[String(key)]));", "  const has = key != null;"],
   ["N2: a walkover becomes a form row again", "    && !r.wo   // N2 (TEN-312)", "    && true   // N2 (TEN-312)"],
   ['ruling A: a retirement left unpriced', '    if (c){ r.price = c.price; r.oppPrice = c.oppPrice; r.book = c.book; r.src = c.src; r.srcLabel = c.srcLabel; }\n    const d = fhDayNum(r.date); r.ago',
     '    if (c && !r.ret){ r.price = c.price; r.oppPrice = c.oppPrice; r.book = c.book; r.src = c.src; r.srcLabel = c.srcLabel; }\n    const d = fhDayNum(r.date); r.ago'],
