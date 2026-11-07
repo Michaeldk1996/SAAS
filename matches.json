@@ -7078,7 +7078,27 @@
       "edgeVsPinnacleP1": -0.0409,
       "edgeVsPinnacleP2": 0.0409,
       "ts": "2026-11-07T00:09:44.897Z"
-    }
+    },
+    "retired": false,
+    "walkover": false,
+    "finalScore": {
+      "display": "6-4, 6-3",
+      "sets": [
+        {
+          "p1": 6,
+          "p2": 4
+        },
+        {
+          "p1": 6,
+          "p2": 3
+        }
+      ],
+      "p1Sets": 2,
+      "p2Sets": 0,
+      "winner": "p1"
+    },
+    "interrupted": false,
+    "partialScore": null
   },
   {
     "id": "upcoming-12178030",
@@ -9652,11 +9672,27 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 3",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 5,
+        "p2": 7
+      },
+      {
+        "set": 2,
+        "p1": 6,
+        "p2": 4
+      },
+      {
+        "set": 3,
+        "p1": 2,
+        "p2": 1
+      }
+    ],
+    "liveGameScore": "0 - 0",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/37882_m-brunold.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/377_b-gojo.jpg",
     "tournamentKey": "1681",
@@ -10254,7 +10290,10 @@
       "edgeVsPinnacleP1": 0.0141,
       "edgeVsPinnacleP2": -0.0141,
       "ts": "2026-11-07T00:09:44.897Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12178031",
@@ -16179,11 +16218,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 0,
+        "p2": 0
+      }
+    ],
+    "liveGameScore": "0 - 15",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/38131_o-wallin.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2843_l-sonego.jpg",
     "tournamentKey": "1681",
@@ -16733,7 +16778,10 @@
       "edgeVsPinnacleP1": 0.0519,
       "edgeVsPinnacleP2": -0.0519,
       "ts": "2026-11-07T00:09:44.897Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12178033",
@@ -40685,7 +40733,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-7, 2-6",
+      "display": "6-7(5), 2-6",
       "sets": [
         {
           "p1": 6,
@@ -44703,7 +44751,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-3, 7-6",
+      "display": "6-3, 7-6(4)",
       "sets": [
         {
           "p1": 6,
@@ -53496,7 +53544,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6, 6-3",
+      "display": "7-6(2), 6-3",
       "sets": [
         {
           "p1": 7,
@@ -58468,7 +58516,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-3, 1-6, 7-6",
+      "display": "6-3, 1-6, 7-6(9)",
       "sets": [
         {
           "p1": 6,
@@ -67118,7 +67166,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6, 6-4",
+      "display": "7-6(4), 6-4",
       "sets": [
         {
           "p1": 7,
@@ -71610,7 +71658,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6, 7-5",
+      "display": "7-6(3), 7-5",
       "sets": [
         {
           "p1": 7,
@@ -85329,7 +85377,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-7, 3-6",
+      "display": "6-7(4), 3-6",
       "sets": [
         {
           "p1": 6,
@@ -90152,7 +90200,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6, 5-7, 6-7",
+      "display": "7-6(6), 5-7, 6-7(5)",
       "sets": [
         {
           "p1": 7,
@@ -95031,7 +95079,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6, 3-6, 6-7",
+      "display": "7-6(5), 3-6, 6-7(3)",
       "sets": [
         {
           "p1": 7,
@@ -99796,7 +99844,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "3-6, 6-4, 7-6",
+      "display": "3-6, 6-4, 7-6(5)",
       "sets": [
         {
           "p1": 3,
@@ -104986,7 +105034,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6, 6-4",
+      "display": "7-6(3), 6-4",
       "sets": [
         {
           "p1": 7,
@@ -138817,7 +138865,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-4, 6-7, 7-5",
+      "display": "6-4, 6-7(4), 7-5",
       "sets": [
         {
           "p1": 6,
@@ -143227,7 +143275,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6, 5-7, 3-6",
+      "display": "7-6(10), 5-7, 3-6",
       "sets": [
         {
           "p1": 7,
@@ -148187,7 +148235,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6, 6-4",
+      "display": "7-6(5), 6-4",
       "sets": [
         {
           "p1": 7,
