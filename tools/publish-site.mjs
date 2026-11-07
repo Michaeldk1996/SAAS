@@ -48,6 +48,16 @@ export function publish({ code, site, env = process.env }) {
     }
   }
 
+  // 2b. page speed (7 Nov 2026): index.html — the page members load — ships its inline JavaScript without comments and
+  // indentation (tools/slim-code.mjs: every script must parse to the same syntax tree, else it ships unchanged).
+  // bsp-consult-dashboard.html stays the full source copy. A gated checkout that predates the tool skips this.
+  const slim = path.join(code, 'tools', 'slim-code.mjs');
+  if (fs.existsSync(slim)) {
+    try {
+      execFileSync(process.execPath, ['--expose-internals', slim, path.join(site, 'index.html')], { stdio: 'inherit' });
+    } catch (e) { console.log(`::warning title=publish::slim-code failed (${e.message}); index.html ships unslimmed`); }
+  }
+
   // 3. completeness
   for (const f of CODE_REQUIRED) {
     const p = path.join(site, f);
