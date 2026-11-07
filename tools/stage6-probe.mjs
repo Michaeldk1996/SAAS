@@ -172,7 +172,7 @@ async function settle(p, maxMs = 25000) {
 const CAPTURE = (sel) => `(() => {
   const root = ${sel ? `document.querySelector(${JSON.stringify(sel)})` : 'document.body'};
   if (!root) return null;
-  const vis = e => { const s = getComputedStyle(e); return s.display !== 'none' && s.visibility !== 'hidden'; };
+  const vis = e => { const s = getComputedStyle(e); return e.getClientRects().length > 0 && s.visibility !== 'hidden'; };   // on screen: a hidden ancestor hides it too
   const text = root.innerText.split('\\n').map(x => x.trim()).filter(Boolean);
   const clicks = [...root.querySelectorAll('[onclick],a[href],[role=button]')].filter(vis).map(e => 'CLICK ' + e.textContent.replace(/\\s+/g, ' ').trim().slice(0, 80)).filter(x => x !== 'CLICK ');
   const figs = [...root.querySelectorAll('[data-aotip],[title]')].filter(vis).map(e => 'TIP ' + (e.getAttribute('data-aotip') || e.getAttribute('title') || '').replace(/\\s+/g, ' ').slice(0, 160));
