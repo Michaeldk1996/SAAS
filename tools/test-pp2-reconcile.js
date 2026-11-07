@@ -3649,6 +3649,24 @@ const STORES = [
     floor: 1,
   },
   {
+    // Stage 6 (2026-11-08): the profile's three roster-wide pools (tour from-a-set-down, Situational set rows, proven
+    // draw sizes), computed by profile-pools.js with this module's own functions over the whole store and shipped in
+    // profile-roster.json as `pools`; the host publishes them as window.profileRosterPools. Measured through the
+    // module's accessors: each must hand back the pool, not a figure pooled from the players held in memory.
+    name: 'profileRosterPools',
+    file: 'profile-roster.json',
+    resolve: () => {
+      const saved = W.profileRosterPools;
+      try {
+        const pools = require(path.join(ROOT, 'profile-pools.js')).profilePools({ players: PLAYERS });
+        W.profileRosterPools = pools;
+        return [I.tourFromASetDown() === pools.setDown, I.drawIndex() === pools.draw].filter(Boolean).length;
+      } finally { W.profileRosterPools = saved; }
+    },
+    universe: () => 2,
+    floor: 1,
+  },
+  {
     name: 'situational',
     file: 'situational.json',
     // §5.9's eight point-by-point rows. Resolution is measured through the

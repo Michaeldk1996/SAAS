@@ -22525,6 +22525,7 @@ async function loadProfileRosterOnce(){
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     profileRoster = (data && data.players) || {};
+    window.profileRosterPools = (data && data.pools) || null;   // Stage 6: the profile's roster-wide pools
     // only fill: the eager file / a shard sets the same tourAverage; never overwrite a real one
     if (data.tourAverage && (!ppTourAverage || !Object.keys(ppTourAverage.dna || {}).length)) ppTourAverage = data.tourAverage;
     if (data.radarCalibration && !Object.keys((radarCalibration && radarCalibration.cardBenchmarks) || {}).length) radarCalibration = data.radarCalibration;

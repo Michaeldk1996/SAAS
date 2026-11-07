@@ -663,6 +663,10 @@
   // Rebuilt when the store identity changes (the lazy loaders reassign it).
   var _drawIdx = null, _drawIdxSrc = null;
   function drawIndex() {
+    // Stage 6: the pipeline pools the WHOLE store (profile-roster.json `pools`, profile-pools.js runs this function);
+    // the players held in memory are only the ones opened.
+    var pools = window.profileRosterPools;
+    if (pools && pools.draw) return pools.draw;
     var store = window.playerProfiles;
     if (_drawIdx && _drawIdxSrc === store) return _drawIdx;
     var seen = {};
@@ -2063,6 +2067,8 @@
    */
   var _tourSetDown = null;
   function tourFromASetDown() {
+    var pools = window.profileRosterPools;   // Stage 6: the whole-store pool, as drawIndex
+    if (pools && pools.setDown) return pools.setDown;
     if (_tourSetDown !== null) return _tourSetDown;
     var map = playersMap();
     var won = 0, lost = 0, players = 0;
@@ -11792,7 +11798,8 @@
   var _sitTour = null;
   function sitTour() {
     if (_sitTour) return _sitTour;
-    var map = playersMap();
+    var pools = window.profileRosterPools;   // Stage 6: the whole-store set rows, as drawIndex
+    var map = pools && pools.sitSet ? {} : playersMap();
     var keys = Object.keys(map);
     var acc = {}, players = 0;
     keys.forEach(function (k) {
@@ -11809,6 +11816,7 @@
       var t = acc[id].w + acc[id].l;
       out.rows[id] = t ? (acc[id].w / t) * 100 : null;
     });
+    if (pools && pools.sitSet) { out.players = pools.sitSet.players; Object.keys(pools.sitSet.rows || {}).forEach(function (id) { out.rows[id] = pools.sitSet.rows[id]; }); }
     var st = sitStore();
     if (st && st.tour) {
       Object.keys(st.tour).forEach(function (id) {

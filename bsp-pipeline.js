@@ -6577,6 +6577,10 @@ function profileRoster(store) {
   }
   const out = { fetchedAt: store && store.fetchedAt, tourAverage: store && store.tourAverage, players };
   if (store && store.radarCalibration) out.radarCalibration = store.radarCalibration;
+  // Stage 6: the Player Profile's three roster-wide pools (tour from-a-set-down, Situational set rows, proven draw
+  // sizes), computed by the page module's own functions over the whole store. Fail-closed: without them every
+  // profile's tour comparison would shrink to the players a visitor has opened.
+  out.pools = require('./profile-pools.js').profilePools(store);
   return out;
 }
 
