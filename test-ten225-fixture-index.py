@@ -8,6 +8,7 @@ No network: api_get is stubbed. Each check names the mutation that turns it red.
   5. --days 12 sweeps 2 six-day slices = 2 metered units          mutant: ignore --days (31 slices)
   6. a failed slice still writes what was read, and exits 1     mutant: `return 0` on slice errors
   7. no meter read -> nothing spent, nothing written             (fail closed, unchanged rule)
+  8. a 429 on the free meter read is retried, then the sweep runs  mutant: no retry (the 4-7 Nov stop)
 """
 import gzip
 import json
@@ -64,8 +65,9 @@ check('   the inputs are not mutated', HELD['idGAP']['trueStart'] is None)
 
 print('\nmain() — stubbed /v4/fixtures and /v4/account')
 with tempfile.TemporaryDirectory() as td:
-    def run(days, fail_slice=None, meter_ok=True):
+    def run(days, fail_slice=None, meter_ok=True, meter_429=0):
         M2 = load()
+        M2.METER_RETRY_SLEEP = 0
         M2.OUT = os.path.join(td, 'idx.json.gz')
         M2.SLEEP = 0
         M2.read_key = lambda: 'k'
@@ -73,6 +75,8 @@ with tempfile.TemporaryDirectory() as td:
 
         def api_get(path, params, key, timeout=180):
             calls.append((path, dict(params)))
+            if path == '/v4/account' and sum(1 for c in calls if c[0] == '/v4/account') <= meter_429:
+                return None, 429
             if path == '/v4/account':
                 return ({'subscriptions': [{'is_active': True, 'request_count': 1600, 'request_limit': 5000}]}
                         if meter_ok else None), (None if meter_ok else 500)
@@ -107,6 +111,13 @@ with tempfile.TemporaryDirectory() as td:
     check('7. no meter read: exit 1, no metered call, file untouched',
           rc == 1 and not any(c[0] == '/v4/fixtures' for c in calls)
           and open(os.path.join(td, 'idx.json.gz'), 'rb').read() == before, rc)
+    rc, calls = run(12, meter_429=2)
+    acc = [c for c in calls if c[0] == '/v4/account']
+    check('8. two 429s on the meter read: retried, then the sweep runs',
+          rc == 0 and sum(1 for c in calls if c[0] == '/v4/fixtures') == 2 and len(acc) >= 3, (rc, len(acc)))
+    rc, calls = run(12, meter_429=99)
+    check('   a meter that keeps answering 429: exit 1, nothing spent',
+          rc == 1 and not any(c[0] == '/v4/fixtures' for c in calls), rc)
 
 print('\n' + ('all checks passed' if not FAILED else f'{len(FAILED)} FAILED: {FAILED}'))
 sys.exit(1 if FAILED else 0)

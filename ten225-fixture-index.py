@@ -73,8 +73,22 @@ def api_get(path, params, key, timeout=180):
         return None, str(e)
 
 
+# /v4/account is free but shares the key's rate limit, and the workflow's budget preflight reads it a moment
+# before this script does: on 4-7 Nov 2026 that second read answered 429 every day, the sweep refused to start
+# and the index stopped at 3 Nov (no start times -> no captured closes). A 429 on this free read is retried
+# with a wait longer than Oddspapi's ~5 s cooldown; any other failure still stops the run at once.
+METER_RETRIES = 4
+METER_RETRY_SLEEP = 6.0
+
+
 def meter(key, when):
     d, err = api_get('/v4/account', {}, key)
+    for attempt in range(1, METER_RETRIES):
+        if d is not None or err != 429:
+            break
+        print(f'  meter {when}: 429, retrying in {METER_RETRY_SLEEP * attempt:.0f} s')
+        time.sleep(METER_RETRY_SLEEP * attempt)
+        d, err = api_get('/v4/account', {}, key)
     if d is None:
         print(f'  meter unreadable {when} ({err})')
         return None, None
