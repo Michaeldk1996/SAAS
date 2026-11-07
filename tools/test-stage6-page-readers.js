@@ -75,4 +75,11 @@ for (const [name, re] of RM_SITES) ok(re.test(HTML), `${name} reads ppRosterMap`
 ok(!/\['loadPlayerProfiles', 'loadSurfaceRatings'/.test(HTML), 'the H2H page no longer asks for the eager file');
 ok(/typeof ppRosterMap === 'function' \? Object\.keys\(ppRosterMap\(\)\)\.length/.test(fs.readFileSync(path.join(__dirname, '..', 'drops-page.js'), 'utf8')), 'Drops counts the roster');
 
+// ---- step 4: full-profile readers wait for the player's shard
+ok(/function loadProfileRoster\(\)\{ return _ppRosterP \|\| \(_ppRosterP = loadProfileRosterOnce\(\)\); \}/.test(HTML), 'roster fetched once per session');
+ok(/_ppRosterP = null;   \/\/ not cached/.test(HTML), 'a failed roster load is asked again');
+ok(/await loadProfileRoster\(\);[^\n]*\n\s*if \(profileRoster && profileRoster\[k\] && data\.profile\.tournamentHistory !== undefined\) delete data\.profile\.tournamentHistory;/.test(HTML),
+   'a roster player\'s shard drops its inline tournamentHistory (founder 2a)');
+ok(/if \(e\.key != null && !profiles\[e\.key\] && !e\.__ppAsked\) \{\n\s*const ens = fn\('ensurePlayerProfile'\);/.test(HTML), 'the H2H page fetches the picked player\'s shard before enriching');
+
 console.log(`test-stage6-page-readers: ${n} checks passed`);

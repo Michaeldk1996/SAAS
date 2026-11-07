@@ -22480,6 +22480,11 @@ async function ensurePlayerProfile(key){
       if (!res.ok) return false;
       const data = await res.json();
       if (!data || !data.profile) return false;
+      // Stage 6 (founder 2a): a roster player's shard carries his tournamentHistory inline and UNMERGED; the eager
+      // entry never did. Drop it, so the merged tournament-history shard (loadPp2TourHist / the H2H cache) stays the
+      // one source of those rows, as before. The roster is awaited so the test is never made before it lands.
+      try { await loadProfileRoster(); } catch (e) { /* no roster: keep the shard as served */ }
+      if (profileRoster && profileRoster[k] && data.profile.tournamentHistory !== undefined) delete data.profile.tournamentHistory;
       await loadTourBaselines();   // TEN-384: the shard path settles the baselines too (see loadTourBaselines)
       playerProfiles[k] = data.profile;
       // A shard opened before the eager file lands would otherwise have no tour
@@ -22512,7 +22517,9 @@ function loadTourBaselines(){
     .then(v => { _tourBaselinesInflight = null; return v; });
   return _tourBaselinesInflight;
 }
-async function loadProfileRoster(){
+let _ppRosterP = null;
+function loadProfileRoster(){ return _ppRosterP || (_ppRosterP = loadProfileRosterOnce()); }
+async function loadProfileRosterOnce(){
   try {
     const res = await fetch('./profile-roster.json', { cache: 'no-cache' });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -22523,6 +22530,7 @@ async function loadProfileRoster(){
     if (data.radarCalibration && !Object.keys((radarCalibration && radarCalibration.cardBenchmarks) || {}).length) radarCalibration = data.radarCalibration;
   } catch (err) {
     console.error('Could not load profile-roster.json:', err);
+    _ppRosterP = null;   // not cached: the next caller asks again
     return;
   }
   // the same repaints the eager loader makes: cards whose players now have a profile become clickable
@@ -31137,6 +31145,12 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, profileRosterMap: () =
   function enrich(pkey) {
     const e = P[pkey]; if (!e || e.__rich) return;
     const profiles = DV('playerProfiles') || {};
+    // Stage 6: the full profile (kpis, Elo name, tournament list) is the player's shard — fetch it first (once), then
+    // enrich and repaint. A failed fetch enriches from what there is, as a player with no profile always did.
+    if (e.key != null && !profiles[e.key] && !e.__ppAsked) {
+      const ens = fn('ensurePlayerProfile');
+      if (ens) { e.__ppAsked = true; Promise.resolve(ens(e.key)).catch(() => false).then(() => { enrich(pkey); render(); }); return; }
+    }
     const prof = e.key != null ? profiles[e.key] : null;
     // archetype + label
     const styleFor = fn('ppStyleFor');
