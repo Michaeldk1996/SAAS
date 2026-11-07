@@ -5,6 +5,25 @@
 <!-- TEN-376 foundation: theme first (sets data-theme before paint), then the one colour file. -->
 <script src="./theme.js"></script>
 <link rel="stylesheet" href="./tokens.css">
+<!-- Page speed (2026-11-07): the first Matches paint awaits matches.json, model-output.json and the photo index, which
+     loadMatches() used to request only after the 2 MB page script below had downloaded and run. Start them here, with
+     the same URL and cache mode; each loader takes its early answer once (sfEarlyFetch), every later refresh fetches as
+     before. Same bytes, same order of use: only the start time moves. -->
+<script>
+window.__sfEarly = (function () {
+  var o = {};
+  if (typeof fetch !== 'function') return o;
+  ['./matches.json', './model-output.json', './player-photos/index.json'].forEach(function (u) {
+    try { o[u] = fetch(u, { cache: 'no-cache' }); o[u].catch(function () {}); } catch (e) {}
+  });
+  return o;
+})();
+window.sfEarlyFetch = function (u, init) {
+  var o = window.__sfEarly, p = o && o[u];
+  if (p) { o[u] = null; return p; }
+  return fetch(u, init);
+};
+</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Stennisfy — Dashboard</title>
 <link rel="icon" type="image/png" href="assets/ring-transparent.png">
@@ -18,6 +37,7 @@
 <!-- ESC brief: the ONE Escape handler (window.SfEsc) and the detail-view origin stack (globalThis.SfNav). -->
 <script src="./esc-nav.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600;700;800&display=block" rel="stylesheet">
 <!-- TEN-168 Series page: separate stylesheet (not inline) so JS/CSS-only edits
      deploy on push via the pipeline allowlist. Scoped under [data-page="series"];
@@ -6523,7 +6543,7 @@ let modelOutputLoaded = false;
 // failure here must never break the rest of the dashboard.
 async function loadModelOutput(){
   try {
-    const res = await fetch('./model-output.json', { cache: 'no-cache' });
+    const res = await sfEarlyFetch('./model-output.json', { cache: 'no-cache' });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const parsed = JSON.parse(await res.text()); // manual parse: catch mid-write reads
     if (parsed && parsed.matches) {
@@ -6571,7 +6591,7 @@ function mxDayLongLabel(dayKey){
 }
 async function fetchMatchesOnce(){
   try { mxLoadPipelineAt(); } catch (e) {}
-  const res = await fetch('./matches.json', { cache: 'no-cache' });
+  const res = await sfEarlyFetch('./matches.json', { cache: 'no-cache' });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const text = await res.text();
   return JSON.parse(text); // throws on a truncated mid-write read
@@ -8675,7 +8695,7 @@ let _photoIndexLoaded = false;
 async function loadPlayerPhotoIndex(){
   if (_photoIndexLoaded) return;
   try {
-    const res = await fetch('./player-photos/index.json', { cache: 'no-cache' });
+    const res = await sfEarlyFetch('./player-photos/index.json', { cache: 'no-cache' });
     if (res.ok){ const d = await res.json(); playerPhotoIndex = (d && d.players) || {}; _photoIndexLoaded = true; }
   } catch (e) { /* additive; absence = every avatar shows its monogram */ }
 }
