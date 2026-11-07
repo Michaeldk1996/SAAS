@@ -16,6 +16,20 @@ window.__sfEarly = (function () {
   ['./matches.json', './model-output.json', './player-photos/index.json'].forEach(function (u) {
     try { o[u] = fetch(u, { cache: 'no-cache' }); o[u].catch(function () {}); } catch (e) {}
   });
+  // The card state (Open / Now / Close) is the board's fourth read: the database doc where the publish injected the
+  // public config (ocsFetchDb's request, byte for byte), else the file (ocsFetchFile's). Whether the database answer is
+  // fresh enough still decides, in loadOddsCardState, whether the file is read too.
+  try {
+    var su = '__SUPABASE_URL__', sk = '__SUPABASE_ANON_KEY__', q;
+    if (/^https:\/\//.test(su) && sk && !/__SUPABASE/.test(su + sk)) {
+      q = su.replace(/\/$/, '') + '/rest/v1/card_state_doc?id=eq.1&select=doc';
+      o[q] = fetch(q, { cache: 'no-store', headers: { apikey: sk, Authorization: 'Bearer ' + sk } });
+    } else {
+      q = './odds-card-state.json';
+      o[q] = fetch(q, { cache: 'no-cache' });
+    }
+    o[q].catch(function () {});
+  } catch (e) {}
   return o;
 })();
 window.sfEarlyFetch = function (u, init) {
@@ -7409,7 +7423,7 @@ async function ocsFetchDb(){
   const u = (window.SUPABASE_URL || ''), k = (window.SUPABASE_ANON_KEY || '');
   if (!/^https:\/\//.test(u) || !k || /__SUPABASE/.test(u + k)) return null;
   try {
-    const res = await fetch(`${u.replace(/\/$/, '')}/rest/v1/card_state_doc?id=eq.1&select=doc`, { cache: 'no-store',
+    const res = await sfEarlyFetch(`${u.replace(/\/$/, '')}/rest/v1/card_state_doc?id=eq.1&select=doc`, { cache: 'no-store',
       headers: { apikey: k, Authorization: 'Bearer ' + k } });
     if (!res.ok) return null;
     const rows = await res.json();
@@ -7418,7 +7432,7 @@ async function ocsFetchDb(){
   } catch (e){ return null; }
 }
 async function ocsFetchFile(){
-  const res = await fetch('./odds-card-state.json', { cache: 'no-cache' });
+  const res = await sfEarlyFetch('./odds-card-state.json', { cache: 'no-cache' });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return JSON.parse(await res.text());
 }
