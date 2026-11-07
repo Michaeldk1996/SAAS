@@ -15435,7 +15435,7 @@ function fhEnsureH2hData(m){
   if (m._fhH2hP) return m._fhH2hP;
   const ch = k => (k == null ? Promise.resolve({ rows: [], ok: true }) : Promise.resolve().then(() => loadCareerHistory(k))
     .then(r => ({ rows: Array.isArray(r) ? r : [], ok: Array.isArray(r) && careerHistoryAnswered(k) })).catch(() => ({ rows: [], ok: false })));
-  const prof = (typeof profileRoster !== 'undefined' && profileRoster) || Object.keys(playerProfiles || {}).length ? null : Promise.resolve().then(() => (typeof loadProfileRoster === 'function' ? loadProfileRoster() : loadPlayerProfiles())).catch(() => null);   // the roster's namesake count
+  const prof = (typeof profileRoster !== 'undefined' && profileRoster) || Object.keys(playerProfiles || {}).length ? null : Promise.resolve().then(() => loadProfileRoster()).catch(() => null);   // the roster's namesake count
   m._fhH2hP = Promise.all([ensureFormRows(m), ch(m.p1Key), ch(m.p2Key), fhLoadCloses(m.p1Key), fhLoadCloses(m.p2Key), fhLoadEloHistory(), prof, (typeof sfDbPxLoad === 'function' ? sfDbPxLoad() : null)])   // + the Database join (2026-10-17 item 1)
     .then(([, c1, c2, e1, e2, eh]) => {
       if (!c1.ok || !c2.ok){ m._fhH2hP = null; m._fhH2hFailed = [c1.ok ? null : m.p1, c2.ok ? null : m.p2].filter(Boolean); return m; }
@@ -31348,7 +31348,7 @@ _tpLoad = loadTournamentProgression();
 // Defer them off the critical path so those large downloads don't compete with
 // first paint — each re-renders its own view when it finishes loading. (Cards
 // become clickable and search populates a beat later, which is fine.)
-const loadHeavyDatasets = () => { loadTournamentProfiles(); loadPlayerIndex(); loadProfileRoster(); loadPlayerProfiles(); loadAsapSignals(); loadEloRatings(); loadSurfaceRatings(); loadPlayerStyles(); loadOddsPerfIndex(); loadTourHistIndex(); loadHoldbreak(); loadSituational(); };
+const loadHeavyDatasets = () => { loadTournamentProfiles(); loadPlayerIndex(); loadProfileRoster();   /* Stage 6: no player-profiles.json up front (shards on demand) */ loadAsapSignals(); loadEloRatings(); loadSurfaceRatings(); loadPlayerStyles(); loadOddsPerfIndex(); loadTourHistIndex(); loadHoldbreak(); loadSituational(); };
 // Page speed (2026-11-07): an idle callback alone fired while matches.json was still downloading (the main thread is
 // idle during the fetch), so ~2.3 MB of these files shared the link with the board's own data: on 4G the board waited
 // ~10 s for a 370 KB matches.json. They now start once the first board paint is done (loadMatches settled, either

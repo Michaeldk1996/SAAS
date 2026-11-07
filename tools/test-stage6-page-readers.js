@@ -43,6 +43,9 @@ ok(/typeof ppSlim === 'function' \? ppSlim\(key\)/.test(TR), 'Trading Report has
 
 // ---- the roster loads at boot, with the eager loaders' repaints
 ok(/loadPlayerIndex\(\); loadProfileRoster\(\);/.test(HTML), 'boot loads profile-roster.json');
+// ---- step 5: nothing fetches player-profiles.json up front (MUTANT: the eager loader back in any boot / page list)
+ok(!/loadProfileRoster\(\); loadPlayerProfiles\(\)/.test(HTML), 'boot no longer loads the eager file');
+ok(!/[^.\w]loadPlayerProfiles\(\)/.test(HTML.replace(/async function loadPlayerProfiles\(\)/, '')), 'no caller of loadPlayerProfiles left');
 ok(/fetch\('\.\/profile-roster\.json'/.test(HTML), 'roster fetch');
 
 // ---- step 3: roster-wide loops read ppRosterMap() (roster + any loaded profile), memoised
