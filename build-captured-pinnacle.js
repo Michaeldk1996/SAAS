@@ -22,7 +22,8 @@
  * ACTUAL START, the .claude/rules/odds.md start ladder — never a scheduled time:
  *   1. Oddspapi trueStart (.ten225-fixture-index.json.gz, bet365-history/ v2 rows), unique per
  *      match; rejected when trueEnd - trueStart > 6 h or trueEnd < trueStart.
- *   2. odds-card-state.json startTs (startTsSource 'oddspapi' | 'api-tennis-live'). The live-flip
+ *   2. odds-card-state.json startTs (startTsSource in CARD_START_SOURCES: 'oddspapi', 'api-tennis-live',
+ *      'bet105-switch', 'first-point' — founder 2026-11-08). The live-flip
  *      value is last_not_live_seen_at — a moment the match was OBSERVED not live — so a tick at
  *      or before it cannot be in-play (board ruling 2026-09-28, TEN-316 card 9f0e123c).
  *   When both 1 and 2 exist, the EARLIER one is the cut.
@@ -52,6 +53,14 @@ const SIGHTED = { 'Pinnacle +30s': (om) => om.chart && om.chart.meta && om.chart
 // matches.json history (a CI clone holds 100 commits). eventKey -> seenAt. Applied to held rows that lack one.
 const SEEN_BACKFILL = path.join(ROOT, 'captured-pinnacle-seen-backfill.json');
 const START_CATS = new Set(['ATP', 'Davis Cup']);
+// The card-state start sources a captured close may be cut at (founder 2026-11-08, price-source task: "fix it", option B).
+// Since the 3 Nov close ruling the card state names its start 'bet105-switch' (Bet105's first suspension after its last
+// price, never after the first point we saw) or 'first-point' (live_flip_log.play_seen_at); measured 4-8 Nov on 34 ATP
+// matches: 0 captured ticks after play was seen, prices = the live-flip cut on 5 of 5. Every value the card-state writer
+// can emit MUST be in one of these two lists: tools/test-captured-start-sources.js fails CI on a new one (the 4 Nov
+// change added two sources and every capture was silently dropped as noStart for four days).
+const CARD_START_SOURCES = ['oddspapi', 'api-tennis-live', 'bet105-switch', 'first-point'];
+const CARD_START_REJECTED = ['none'];   // no start known: the card's startTs is not a start
 const STALE_MS = 7 * 864e5;
 const MAX_MATCH_MS = 6 * 3600e3;
 
@@ -152,7 +161,7 @@ function actualStart(o, trueStarts, cardState) {
   const c = cands[0];
   const okTrue = c && !(c.trueEnd != null && (c.trueEnd - c.trueStart > MAX_MATCH_MS || c.trueEnd < c.trueStart));
   const cs = ((cardState && cardState.byKey) || {})[k];
-  const csMs = cs && ['oddspapi', 'api-tennis-live'].includes(cs.startTsSource) ? toMs(cs.startTs) : null;
+  const csMs = cs && CARD_START_SOURCES.includes(cs.startTsSource) ? toMs(cs.startTs) : null;
   // Both known: cut at the EARLIER (review 2026-09-28). The two clocks disagree by minutes either way
   // (5 of 25 on the 28 Sep card state had the flip after trueStart), and the later cut can take an
   // in-play tick; the earlier one can only lose a pre-start tick — missing, never in-play.
@@ -281,7 +290,7 @@ function build({ root = ROOT, out = OUT, since = null, nowMs = Date.now(), mrOut
   const doc = {
     generatedAt: iso(nowMs),
     source: 'matches.json git history: oddsMovement.books.Pinnacle (Oddspapi pinnacle, to 2026-09-02) and oddsMovement.chart.books["Pinnacle +30s"] (Oddspapi pinnacle+30, from 2026-09-23)',
-    rule: 'each side = last tick at or before the actual start (the earlier of Oddspapi trueStart and the card-state start: Oddspapi or the live-flip lower bound); both sides required; dropped when no unique actual start. seenAt = our last capture read before the start that confirmed the close (founder 2026-10-28); age = start - (seenAt or at)',
+    rule: 'each side = last tick at or before the actual start (the earlier of Oddspapi trueStart and the card-state start: Oddspapi, the live-flip lower bound, the Bet105 switch or the first point — founder 2026-11-08); both sides required; dropped when no unique actual start. seenAt = our last capture read before the start that confirmed the close (founder 2026-10-28); age = start - (seenAt or at)',
     scannedThrough: last || held.scannedThrough || null,
     commitsScanned: (held.commitsScanned || 0) + snap.commits.length,
     lastRun: { from, snapshots: scanned, added, replaced, seenBackfilled: bfFilled, ...stats },
@@ -351,7 +360,7 @@ function marketRead30(rows, nowMs) {
     rule: 'Pinnacle open (first Oddspapi tick) → Pinnacle close (last tick at or before the actual start, within 60 min); close aged from our last capture read before the start; moved = the shortening side fell >= 2% on two-decimal prices (a drift never counts); right = the shortened side won' };
 }
 
-module.exports = { build, lastAtOrBefore, firstAtOrBefore, absorb, actualStart, deriveRow, mergeRows, oddspapiStarts, marketRead30, movePct,
+module.exports = { CARD_START_SOURCES, CARD_START_REJECTED, build, lastAtOrBefore, firstAtOrBefore, absorb, actualStart, deriveRow, mergeRows, oddspapiStarts, marketRead30, movePct,
   lastSighting, applySeenBackfill, shorteningSide };
 if (require.main === module) {
   const arg = (n) => { const i = process.argv.indexOf(n); return i > 0 ? process.argv[i + 1] : null; };
@@ -360,4 +369,10 @@ if (require.main === module) {
   console.log(`market-read-30d: ${mr.won} of ${mr.moved} moved (${mr.n} of ${mr.rows} rows usable ${mr.from}..${mr.to}; excluded ${JSON.stringify(mr.excluded)})`);
   console.log(`captured-pinnacle: ${r.rows} rows (+${r.added} new, ${r.replaced} replaced, ${r.filled} filled${r.wrote ? '' : ', file unchanged'}) from ${r.snapshots} snapshot(s); ` +
     `this run kept ${r.stats.kept} of ${r.stats.series} series ${JSON.stringify(r.stats.bySource)} ${JSON.stringify(r.stats.byBook)}; dropped ${JSON.stringify(r.stats.dropped)}`);
+  // founder 2026-11-08: a run that drops every started series for want of a start is the 4-8 Nov outage — say so loudly
+  // (the daily digest's "Captured Pinnacle closes" line turns red when it lasts; tools/test-captured-start-sources.js
+  // stops a new card-state source reaching main undecided).
+  const noStart = (r.stats.dropped.noStart || 0) + (r.stats.dropped.rejectedStart || 0);
+  if (r.stats.series > 0 && r.stats.kept === 0 && noStart > 0 && noStart === r.stats.series - (r.stats.dropped.notStarted || 0))
+    console.log(`::error title=Captured Pinnacle closes::0 of ${r.stats.series} series kept: every started one has no accepted start (${JSON.stringify(r.stats.dropped)})`);
 }

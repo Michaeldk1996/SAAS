@@ -94,6 +94,16 @@ check('trueStart beats a later card-state start: the +4 min tick is in-play', c.
   const x = run(REAL, repoWith([[card(9, 'L. Harris', 'A. Kovacevic', 10, 20, S)]], { fixtures: fx, cardState: flip(at(-5)) }));
   check('an earlier card-state start beats trueStart (the -3 min tick is after the flip)', x.row(9) && x.row(9).p1 === 1.70 && x.row(9).startSource === 'api-tennis-live', JSON.stringify(x.row(9)));
 }
+// Founder 2026-11-08 (price-source task, option B): the card state's 3 Nov close cut ('bet105-switch', 'first-point') is a
+// start; 'none' is not. Before this every capture from 4 Nov was dropped as noStart (0 of 37 kept on 7 Nov).
+for (const src of ['bet105-switch', 'first-point']) {
+  const x = run(REAL, repoWith([[card(1, 'L. Harris', 'A. Kovacevic', 10, 20, SERIES)]], { cardState: flip(at(0), src) }));
+  check(`card-state start '${src}': a close, the in-play tick never it`, x.row(1) && x.row(1).p1 === 1.534 && x.row(1).p2 === 2.65 && x.row(1).startSource === src && x.row(1).trueStart === at(0), JSON.stringify(x.row(1)));
+}
+{
+  const x = run(REAL, repoWith([[card(1, 'L. Harris', 'A. Kovacevic', 10, 20, SERIES)]], { cardState: flip(at(0), 'none') }));
+  check("card-state 'none' is never a start", !x.row(1) && x.r.stats.dropped.noStart === 1, JSON.stringify(x.r.stats));
+}
 // A held row cut at a LATER start is replaced by a stricter cut, even though its close is earlier.
 {
   const loose = { eventKey: 1, date: '2026-09-27', p1Key: 10, p2Key: 20, p1: 1.02, p2: 21.0, at: at(3), trueStart: at(10), startSource: 'api-tennis-live', book: 'Pinnacle +30s' };

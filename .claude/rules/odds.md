@@ -339,6 +339,17 @@ closes, odds performance and started-evidence.
   B365 tag, the sheet meta, the Overview pop-up and the Head to Head page). **Test:** `tools/test-close-label.py`
   (every exported close carries a verified start; a start-alone / pre-17-Sep captured / snapshot row is never exported;
   every snapshot hover and label in the code says "not a confirmed close" and never "close ·"; controls).
+- **Our captured Pinnacle closes are cut at the card state's start, the 3 Nov cut included** (founder 2026-11-08,
+  price-source task, "fix it", option B). `build-captured-pinnacle.js` takes the card-state start when its source is
+  `oddspapi`, `api-tennis-live`, `bet105-switch` (Bet105's switch to in-play) or `first-point` (the first point we saw),
+  the earlier of it and the gated Oddspapi trueStart; `none` is no start. A captured close at `api-tennis-live`,
+  `bet105-switch` or `first-point` is a verified start and exports as "captured" (`pinarch.py` `CAPTURED_VERIFIED_SOURCES`,
+  `build-match-closes.js` `CAPTURED_VERIFIED`); trueStart alone stays held back. Why: from 4 Nov the card state named only
+  the two new sources and every capture was dropped as noStart (0 of 37 kept on 7 Nov). Measured 4–8 Nov, 34 ATP matches:
+  0 captured ticks after play was seen; prices equal the live-flip cut on 5 of 5. **Test:** does every `start_ts_source` the
+  card-state schema allows sit in the builder's `CARD_START_SOURCES` or `CARD_START_REJECTED`, with both readers agreeing?
+  It must (`tools/test-captured-start-sources.js`, CONTROL: the pre-fix lists); a captured close falling 2+ days behind the
+  newest finished ATP match turns the daily digest red (`tools/test-daily-digest.mjs`).
 - **Every change to a price source goes through ONE task only** (founder ruling 2026-10-16, round 3 item 2): the
   price-source task (the founder's 2026-10-16 Tennis-Data / Pinnacle brief and its rounds). A price source = which book,
   feed or cut prices a match, or the order between them, on any surface (the Database join, the closes shards, Form /

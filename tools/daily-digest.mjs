@@ -88,6 +88,25 @@ export function watchedWorkflows(dir = path.join(ROOT, '.github', 'workflows')) 
   return out;
 }
 
+// Founder 2026-11-08 ("make sure this problem just don't come anymore"): from 4 to 8 Nov every captured Pinnacle close was
+// dropped (the card state's new start sources were not accepted) and the pipeline stayed green. This line is RED when the
+// newest captured close (captured-closes-pinnacle.json on main) is 2 or more days older than the newest finished ATP card
+// on the board (matches.json on main): a whole day of finished matches with no captured close. Off-season both stop, so
+// it stays green. Unreadable = red.
+export function capturedLine(captured, matches) {
+  const name = 'Captured Pinnacle closes · newest row';
+  const rows = captured && Array.isArray(captured.rows) ? captured.rows : null;
+  const cards = Array.isArray(matches) ? matches : matches && Array.isArray(matches.matches) ? matches.matches : null;
+  if (!rows || !cards) return { red: true, text: `🔴 ${name} · could not be read` };
+  const maxDate = (xs) => xs.filter(Boolean).sort().pop() || null;
+  const cap = maxDate(rows.map((r) => r && r.date));
+  const fin = maxDate(cards.filter((m) => m && /^past-/.test(String(m.id)) && m.finalScore && m.tourBadge === 'ATP').map((m) => m.date));
+  if (!fin) return { red: false, text: `✅ ${name} · ${cap || '—'} (no finished ATP match on the board)` };
+  const lag = cap ? Math.round((Date.parse(fin) - Date.parse(cap)) / 864e5) : Infinity;
+  const red = lag >= 2;
+  return { red, text: `${red ? '🔴' : '✅'} ${name} · ${cap || 'none'} (newest finished ATP match ${fin}${red ? `: ${lag === Infinity ? 'no' : lag + ' days of'} matches without a captured close` : ''})` };
+}
+
 async function gh(p) {
   const r = await fetch(`https://api.github.com${p}`, { headers: { Authorization: `Bearer ${process.env.GITHUB_TOKEN}`, Accept: 'application/vnd.github+json' } });
   if (!r.ok) throw new Error(`HTTP ${r.status}`);
@@ -128,6 +147,10 @@ async function main() {
     feeds.push(line('Start recorder · last tick', r.recorder, 1, now));
     feeds.push(line('Kibl stream · heartbeat', r.kibl, 5, now));
   } catch (e) { feeds.push({ red: true, text: `🔴 Live poller / recorder / Kibl · could not be read (${e.message})` }); }
+  try {
+    const rd = (f) => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'));
+    feeds.push(capturedLine(rd('captured-closes-pinnacle.json'), rd('matches.json')));
+  } catch (e) { feeds.push({ red: true, text: `🔴 Captured Pinnacle closes · could not be read (${e.message})` }); }
   const force = (process.env.FORCE_LATE || '').trim();     // the dry run: mark one named line late, as the brief asks
   const all = [...feeds, ...jobs, ...pg].map((l) => (force && l.text.includes(force) && !l.red ? { red: true, text: l.text.replace(/^✅/, '🔴') + ' · FORCED LATE (dry run)' } : l));
   const msgs = messages(`Stennisfy daily health ${new Date(now).toISOString().slice(0, 16)}Z`, all);

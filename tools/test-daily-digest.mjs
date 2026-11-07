@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Task C (founder 2026-11-01): the daily digest's schedule maths, its red rule and its message split. Each check names its mutant.
-import { cronGapMin, pgGapMin, allowedMin, line, messages, watchedWorkflows } from './daily-digest.mjs';
+import { cronGapMin, pgGapMin, allowedMin, line, messages, watchedWorkflows, capturedLine } from './daily-digest.mjs';
 let pass = 0, fail = 0;
 const ok = (c, m) => { if (c) { pass++; console.log('  PASS  ' + m); } else { fail++; console.log('  FAIL  ' + m); } };
 ok(cronGapMin('*/15 * * * *') === 15 && cronGapMin('0 */3 * * *') === 180 && cronGapMin('17 5 * * *') === 1440, 'cron gaps: every 15 min, every 3 h, daily');
@@ -20,5 +20,13 @@ ok(/🔴 18 late of 120/.test(ms[0]) && ms[0].split('\n')[1].startsWith('🔴'),
 const w = watchedWorkflows();
 ok(w.some((x) => x.file === 'pipeline.yml' && x.gap === 15) && w.some((x) => x.file === 'publish.yml') && w.some((x) => x.file === 'oddspapi-postmatch.yml'),
   'every scheduled workflow is read from its own cron; publish and the pg_cron-dispatched ones are listed');
+// Founder 2026-11-08: captured closes stopped 4-8 Nov with a green pipeline. The digest must turn red.
+const atp = (d) => ({ id: 'past-1', date: d, finalScore: { winner: 'p1' }, tourBadge: 'ATP' });
+const capd = (d) => ({ rows: [{ date: '2026-10-30' }, { date: d }] });
+ok(capturedLine(capd('2026-11-03'), [atp('2026-11-07')]).red, 'captured closes 4 days behind the finished ATP matches = red (the 4-8 Nov outage)');
+ok(!capturedLine(capd('2026-11-06'), [atp('2026-11-07')]).red, 'one day behind = green (a day can lack a Pinnacle series) — MUTANT: lag >= 1 would go red');
+ok(!capturedLine(capd('2026-11-07'), [atp('2026-11-07'), { id: 'upcoming-2', date: '2026-11-09', tourBadge: 'ATP' }]).red, 'upcoming cards are not finished matches');
+ok(!capturedLine(capd('2026-11-20'), [{ id: 'past-3', date: '2026-11-25', finalScore: { winner: 'p1' }, tourBadge: 'Challenger' }]).red, 'Challenger results never count (the builder captures ATP only)');
+ok(capturedLine(null, []).red && capturedLine({ rows: [] }, [atp('2026-11-07')]).red, 'unreadable or empty = red, never green');
 console.log(`\ntest-daily-digest: ${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

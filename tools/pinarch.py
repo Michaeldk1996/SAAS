@@ -622,7 +622,10 @@ HELD_BACK_RULES = {
                    '(a captured close cut at Oddspapi trueStart with no live-flip proof, or no start source on record); "close" '
                    'is reserved for a verified start (founder ruling 2026-10-17, item 3)',
 }
-CAPTURED_VERIFIED_SOURCES = ('api-tennis-live',)   # build-captured-pinnacle.js startSource = our live-flip (the card state's)
+# build-captured-pinnacle.js startSource values that are a verified start: our live-flip (the card state's), and since
+# founder 2026-11-08 (price-source task, option B) the 3 Nov close cut — Bet105's switch to in-play or the first point
+# we saw played, the earlier of the two (odds.md "What a closing price is"). 'oddspapi' (trueStart alone) stays held back.
+CAPTURED_VERIFIED_SOURCES = ('api-tennis-live', 'bet105-switch', 'first-point')
 
 
 # Founder ruling 2026-10-25 (round 2 item 1.4): the 13 Apr - 16 Sep ATP main-draw fill. Measured against our live-flip,
