@@ -797,7 +797,7 @@
   function enrich() {
     var b = board(), ni = 0, np = 0;
     try { ni = typeof playerIndex !== 'undefined' && playerIndex ? playerIndex.length : 0; } catch (e) { ni = 0; }           // eslint-disable-line no-undef
-    try { np = typeof playerProfiles !== 'undefined' && playerProfiles ? Object.keys(playerProfiles).length : 0; } catch (e) { np = 0; }   // eslint-disable-line no-undef
+    try { np = typeof ppRosterMap === 'function' ? Object.keys(ppRosterMap()).length : (typeof playerProfiles !== 'undefined' && playerProfiles ? Object.keys(playerProfiles).length : 0); } catch (e) { np = 0; }   // eslint-disable-line no-undef
     var sig = b.length + '|' + st.etag + '|' + st.rows.length + '|' + ni + '|' + np;
     if (st.metaSig === sig && st.metaRows === st.rows) return;
     st.metaSig = sig; st.metaRows = st.rows;

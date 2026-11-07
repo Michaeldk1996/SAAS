@@ -5400,8 +5400,9 @@ let _newsProfileRoster = null; // { surnameToKeys:Map(surname->Set(key)), keyToN
 function newsProfileRoster(){
   if (_newsProfileRoster) return _newsProfileRoster;
   const surnameToKeys = new Map(), keyToName = new Map();
-  if (typeof playerProfiles !== 'undefined' && playerProfiles){
-    for (const [key, v] of Object.entries(playerProfiles)){
+  const _ppR = (typeof ppRosterMap === 'function' ? ppRosterMap() : ((typeof playerProfiles !== 'undefined' && playerProfiles) || null));
+  if (_ppR){
+    for (const [key, v] of Object.entries(_ppR)){
       const n = (v && v.name ? String(v.name) : '').trim();
       if (!n) continue;
       keyToName.set(String(key), n);
@@ -6250,10 +6251,11 @@ function intelLev(a, b){
 let _intelRoster = null;
 function intelRoster(){
   if (_intelRoster) return _intelRoster;
-  if (typeof playerProfiles === 'undefined' || !playerProfiles) return [];
+  const _ppR = (typeof ppRosterMap === 'function' ? ppRosterMap() : ((typeof playerProfiles !== 'undefined' && playerProfiles) || null));
+  if (!_ppR) return [];
   const list = [];
-  for (const k of Object.keys(playerProfiles)){
-    const p = playerProfiles[k]; if (!p || !p.name) continue;
+  for (const k of Object.keys(_ppR)){
+    const p = _ppR[k]; if (!p || !p.name) continue;
     const nn = intelNameNorm(p.name);
     const toks = nn.split(' ').filter(Boolean);
     const surname = toks.slice(1).join(' ') || toks[0] || '';
@@ -15433,7 +15435,7 @@ function fhEnsureH2hData(m){
   if (m._fhH2hP) return m._fhH2hP;
   const ch = k => (k == null ? Promise.resolve({ rows: [], ok: true }) : Promise.resolve().then(() => loadCareerHistory(k))
     .then(r => ({ rows: Array.isArray(r) ? r : [], ok: Array.isArray(r) && careerHistoryAnswered(k) })).catch(() => ({ rows: [], ok: false })));
-  const prof = Object.keys(playerProfiles || {}).length ? null : Promise.resolve().then(() => loadPlayerProfiles()).catch(() => null);   // the roster's namesake count
+  const prof = (typeof profileRoster !== 'undefined' && profileRoster) || Object.keys(playerProfiles || {}).length ? null : Promise.resolve().then(() => (typeof loadProfileRoster === 'function' ? loadProfileRoster() : loadPlayerProfiles())).catch(() => null);   // the roster's namesake count
   m._fhH2hP = Promise.all([ensureFormRows(m), ch(m.p1Key), ch(m.p2Key), fhLoadCloses(m.p1Key), fhLoadCloses(m.p2Key), fhLoadEloHistory(), prof, (typeof sfDbPxLoad === 'function' ? sfDbPxLoad() : null)])   // + the Database join (2026-10-17 item 1)
     .then(([, c1, c2, e1, e2, eh]) => {
       if (!c1.ok || !c2.ok){ m._fhH2hP = null; m._fhH2hFailed = [c1.ok ? null : m.p1, c2.ok ? null : m.p2].filter(Boolean); return m; }
@@ -15483,7 +15485,7 @@ function fhLevelOf(level, tournament, tier){
 //   sfH2hSide    — a player as the join reads him: the profile's full name when there is one, the board's short name
 let _sfNkSrc = null, _sfNk = {};
 function sfH2hNkCount(){
-  const pp = (typeof playerProfiles !== 'undefined' && playerProfiles) || {};
+  const pp = (typeof ppRosterMap === 'function' ? ppRosterMap() : ((typeof playerProfiles !== 'undefined' && playerProfiles) || {}));
   if (_sfNkSrc !== pp || !Object.keys(_sfNk).length) { _sfNkSrc = pp; _sfNk = H2HCore.nameCounts(Object.keys(pp).map(k => pp[k] && pp[k].name).filter(Boolean)); }
   return _sfNk;
 }
@@ -17521,7 +17523,7 @@ function sfDbPxRows(selfKey, selfName, views){
   const sh = k && typeof _careerHistoryShards !== 'undefined' && _careerHistoryShards ? _careerHistoryShards[k] : null;
   const career = Array.isArray(sh) && sh.length ? sh : null;            // as the Head to Head page (h2hCareerOf)
   // the player's full name as the Head to Head page and H2HCore read it (sfH2hSide: the profile's name, else the caller's)
-  const pr = k && typeof playerProfiles !== 'undefined' && playerProfiles ? playerProfiles[k] : null;
+  const pr = k ? (typeof ppSlim === 'function' ? ppSlim(k) : (typeof playerProfiles !== 'undefined' && playerProfiles ? playerProfiles[k] : null)) : null;
   const full = (pr && pr.name) || selfName;
   if (!full) return views.map(() => null);
   const js = views.map(v => ({ date: v.date, won: v.won, round: v.round, opp: v.opp }));
@@ -21516,7 +21518,7 @@ function searchablePlayers(){
   // and is definitionally profiled — then every index row we don't already have.
   const out = [];
   const seen = new Set();
-  for (const p of Object.values(playerProfiles)){
+  for (const p of Object.values((typeof ppRosterMap === 'function' ? ppRosterMap() : playerProfiles))){
     const k = String(p.key);
     seen.add(k);
     out.push({
@@ -21524,7 +21526,7 @@ function searchablePlayers(){
       name: p.name || '',
       rank: (p.rank != null && p.rank !== '') ? parseInt(p.rank, 10) : null,
       lastTournament: (p.recentForm && p.recentForm.matches && p.recentForm.matches[0])
-        ? p.recentForm.matches[0].tournament : null,
+        ? p.recentForm.matches[0].tournament : (p.lastTournament !== undefined ? p.lastTournament : null),
       hasProfile: true,
     });
   }
@@ -21645,6 +21647,16 @@ function ppSlim(key){
   return (playerProfiles && playerProfiles[k]) || (profileRoster && profileRoster[k]) || null;
 }
 function ppHas(key){ return !!ppSlim(key); }
+// The roster as a map for the roster-wide readers (News tags, intel, H2H roster + namesake count, search, Lines,
+// Drops): every roster entry, a loaded full profile over its entry, plus any shard-loaded profile — the key set the
+// eager file and the opened shards made. Keys are numeric strings, so iteration order is the same ascending order.
+let _ppRM = null, _ppRMr = null, _ppRMp = null, _ppRMn = -1;
+function ppRosterMap(){
+  const n = playerProfiles ? Object.keys(playerProfiles).length : 0;   // a shard folds in place: the count says so
+  if (_ppRM && _ppRMr === profileRoster && _ppRMp === playerProfiles && _ppRMn === n) return _ppRM;
+  _ppRMr = profileRoster; _ppRMp = playerProfiles; _ppRMn = n;
+  return (_ppRM = Object.assign({}, profileRoster || {}, playerProfiles || {}));
+}
 let ppTourAverage = { dna: {}, stats: {} };
 // Task 11 — empirical Match Charting Project calibration (radar percentiles are
 // injected per player; cardBenchmarks give the tour-wide median + percentile
@@ -28874,7 +28886,7 @@ function tourxLineChartSvg(vals, field, color, kind, roundLabels, hi){
 
 /* ---------- HEAD TO HEAD (full comparison page — TEN-8) ---------- */
 // Expose the `let`-scoped datasets the H2H module reads (not window props otherwise).
-window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => surfaceRatings, _newsData: () => _newsData, matches: () => matches, careerSplits: () => careerSplits, oddsPerfShards: () => _oddsPerfShards, holdbreak: () => holdbreak, tourHistShards: () => _tourHistShards };
+window.__h2hEnv = { playerProfiles: () => playerProfiles, profileRosterMap: () => (typeof ppRosterMap === 'function' ? ppRosterMap() : playerProfiles), surfaceRatings: () => surfaceRatings, _newsData: () => _newsData, matches: () => matches, careerSplits: () => careerSplits, oddsPerfShards: () => _oddsPerfShards, holdbreak: () => holdbreak, tourHistShards: () => _tourHistShards };
 
 /* ============================================================================
    HEAD-TO-HEAD PAGE  (ported from design_handoff_head_to_head, high-fidelity)
@@ -31224,7 +31236,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
   }
 
   function buildH2HData() {
-    const profiles = DV('playerProfiles') || {};
+    const profiles = DV('profileRosterMap') || DV('playerProfiles') || {};
     const P2 = {}, ROSTER2 = [];
     // TEN-263 (ruling 2026-09-24): one entry per PLAYER KEY — two players who share a short
     // name ("Z. Zhang") are both on the roster; nothing is dropped on a collision.
@@ -31253,7 +31265,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
   }
 
   // ============================ LIFECYCLE ============================
-  function dataReady() { const pp = DV('playerProfiles'); return pp && Object.keys(pp).length > 0; }
+  function dataReady() { const pp = DV('profileRosterMap') || DV('playerProfiles'); return pp && Object.keys(pp).length > 0; }
   const H2H_RELOAD_MS = 60000;
   let _loadsAt = 0;
   function triggerLoads() {
@@ -31263,7 +31275,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
     // triggerLoads — without this guard the pair repainted ~17x a second forever and real clicks were lost.
     if (Date.now() - _loadsAt < H2H_RELOAD_MS) return;
     _loadsAt = Date.now();
-    ['loadPlayerProfiles', 'loadSurfaceRatings', 'loadPlayerStyles', 'loadEloRatings', 'loadNews', 'loadMatches', 'loadModelOutput'].forEach(n => {
+    ['loadProfileRoster', 'loadSurfaceRatings', 'loadPlayerStyles', 'loadEloRatings', 'loadNews', 'loadMatches', 'loadModelOutput'].forEach(n => {
       const f = fn(n); if (!f) return;
       try { Promise.resolve(f()).then(() => { if (built && state.aSel && state.bSel) render(); }).catch(() => {}); } catch (e) {}
     });
@@ -33756,9 +33768,10 @@ window.DatabaseTab = (function(){
   // which is the TEN-121 collision class. An unmatched name dashes and says so.
   function lnKeyForName(nm){
     try {
-      if (typeof playerProfiles === 'undefined' || !playerProfiles) return null;
-      for (var k in playerProfiles){
-        var p=playerProfiles[k];
+      var _ppR = (typeof ppRosterMap === 'function' ? ppRosterMap() : (typeof playerProfiles !== 'undefined' ? playerProfiles : null));
+      if (!_ppR) return null;
+      for (var k in _ppR){
+        var p=_ppR[k];
         if (p && p.name === nm) return String(k);
       }
     } catch(e){}
