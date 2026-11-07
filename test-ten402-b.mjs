@@ -665,3 +665,26 @@ test('archive name table (2026-11-07): Tennis Explorer\'s spellings of Y. Bu, E.
     assert.equal(c[0].price ?? null, null, `control: without the table ${our} misses "${n}"`);
   }
 });
+
+test('one match listed twice (2026-11-07): the first copy takes the price, the copy keeps its dash — never two prices, never both dashed', () => {
+  // J. Thompson v J. Sock, Davis Cup 2017: the archive lists the rubber twice (same day, opponent, result, round)
+  const mk = () => ({ meta: { rounds: [''] }, rows: [[20170407, 0, 0, 0, 0, 1.22, 4.74, 1, 8]], names: [['Thompson J.', 'Sock J.']] });
+  const row = () => ({ date: '2017-04-07', won: true, opponent: 'J. Sock', round: 'RR', tournament: 'Davis Cup WG QF: AUS vs USA' });
+  const career = [row(), row()];
+  const ledger = career.map(x => ({ date: x.date, won: x.won, round: x.round, opp: x.opponent }));
+  priceJoin(ledger, { full: 'J. Thompson' }, null, mk(), null, career);
+  assert.deepEqual(ledger.map(x => x.price ?? null), [1.22, null], 'the first copy is priced, the copy stays a dash');
+  // a second match the same day against another player is another match (control: both priced)
+  const db2 = { meta: { rounds: [''] }, rows: [[20170407, 0, 0, 0, 0, 1.22, 4.74, 1, 8], [20170409, 0, 0, 0, 0, 1.5, 2.6, 1, 8]], names: [['Thompson J.', 'Sock J.'], ['Thompson J.', 'Querrey S.']] };
+  const c2 = [row(), Object.assign(row(), { date: '2017-04-09', opponent: 'S. Querrey' })];
+  const l2 = c2.map(x => ({ date: x.date, won: x.won, round: x.round, opp: x.opponent }));
+  priceJoin(l2, { full: 'J. Thompson' }, null, db2, null, c2);
+  assert.deepEqual(l2.map(x => x.price ?? null), [1.22, 1.5], 'two different matches both price');
+  // MUTANT: without the one-match rule the two copies tie and both dash (the 6 Nov live state)
+  const MUT = JOIN_SRC.replace('if (x && !lCopy(ri)) meet.forEach', 'if (x) meet.forEach').replace('x && !lCopy(ri) && !R.doneL.has(ri)', 'x && !R.doneL.has(ri)');
+  assert.notEqual(MUT, JOIN_SRC, 'the mutant changed the join');
+  const JM = new Function('fhDayNum', `${MUT}\nreturn { h2hPriceJoin };`)(fhDayNum);
+  const lm = career.map(x => ({ date: x.date, won: x.won, round: x.round, opp: x.opponent }));
+  JM.h2hPriceJoin(lm, { full: 'J. Thompson' }, null, mk(), null, [row(), row()]);
+  assert.deepEqual(lm.map(x => x.price ?? null), [null, null], 'MUTANT: both copies dash');
+});

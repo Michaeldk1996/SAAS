@@ -28954,14 +28954,21 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
     }
     // ledger rows → career matches (step 2)
     const lr = rows.map(r => { const d = fhDayNum(r.date), on = oppName(r); return d == null || r.won == null || !on ? null : { d, won: !!r.won, rd: code(r.round), k: key(on), row: true }; });
+    // founder 2026-11-07 ("try to find prices for all matches"): a store that lists ONE match twice (same day, opponent,
+    // result and round — an archive Davis Cup rubber under two tie names, or the same row twice: J. Thompson v J. Sock,
+    // Davis Cup 2017) handed the join two ledger rows for one career match, h2hNearest saw a tie and dashed both. The first
+    // copy now stands for the match and takes its price; the copy keeps its dash, so no sum counts the match twice.
+    const lid = lr.map(x => (x ? x.d + '|' + x.k.s + '|' + x.won + '|' + (x.rd || '') : null)), lFirst = new Map();
+    lid.forEach((id, ri) => { if (id != null && !lFirst.has(id)) lFirst.set(id, ri); });
+    const lCopy = ri => lid[ri] != null && lFirst.get(lid[ri]) !== ri;
     const rp = [];
-    lr.forEach((x, ri) => { if (x) meet.forEach((m, j) => {
+    lr.forEach((x, ri) => { if (x && !lCopy(ri)) meet.forEach((m, j) => {
       const dm = m.d - x.d;
       if (m.won === x.won && dm >= RW[0] && dm <= RW[1] && !clash(x.rd, m.rd) && h2hTdSame(x.k, m.k)) rp.push({ l: ri, r: j, ad: dm >= 0 ? dm : H2H_PAGE_BEFORE_RANK - dm });
     }); });
     const R = h2hNearest(rp);
     // rows with no career match (step 3): only Database rows no career match holds
-    const ex = lr.map((x, ri) => (x && !R.doneL.has(ri) ? ri : -1)).filter(ri => ri >= 0);
+    const ex = lr.map((x, ri) => (x && !lCopy(ri) && !R.doneL.has(ri) ? ri : -1)).filter(ri => ri >= 0);
     const X = h2hNearest(dbPairs(ex.map(ri => lr[ri]), M.usedR));
     let n = 0;
     rows.forEach((r, ri) => {
