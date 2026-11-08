@@ -308,6 +308,12 @@ test('evaluateMulti: every direction with a bookmaker leg after fees; Kalshi × 
   assert.equal(+(g.legs[0].stake + g.legs[1].stake).toFixed(1), +g.stake.toFixed(1)); assert.equal(g.phase, 'game');
   const stale = venueQuotes(m, { books: b, kalAt: 1000, bfeed: f, now: 1000 + STALE_MS.book + 1 });
   assert.ok(!stale.Bet105, 'a book price older than STALE_MS.book is not used');
+  const U = Date.parse('2026-11-02T12:00:00Z'), live = { ...m, odds: { ...m.odds, live: true } };
+  const f2 = new BookFeed({ WS: OW, key: 'K', now: () => U + 600e3 }); OW.all = []; f2.open(); OW.all[0].onmessage({ data: JSON.stringify(upd(9, 'Bet105', '1.60', '2.40')) });
+  assert.ok(!venueQuotes(live, { books: b, kalAt: null, bfeed: f2, now: U + 600e3 + 1000 }).Bet105, 'in play, a pre-match price received now but set 10 min ago by the book is not used (mutant: receive time only)');
+  assert.ok(venueQuotes({ ...m, odds: { ...m.odds, live: false, start: null } }, { books: b, kalAt: null, bfeed: f2, now: U + 600e3 + 1000 }).Bet105, 'pre-match the same price stands');
+  const f3 = new BookFeed({ WS: OW, key: 'K', now: () => U + 30e3 }); OW.all = []; f3.open(); OW.all[0].onmessage({ data: JSON.stringify(upd(9, 'Bet105', '1.60', '2.40')) });
+  assert.ok(venueQuotes(live, { books: b, kalAt: null, bfeed: f3, now: U + 31e3 }).Bet105, 'in play, a price the book set 31 s ago is used');
 });
 
 test('evaluateMulti: Bet105 × Napoleon carries no size (no published limit); an unsized Kalshi NO leg leaves the gap unsized', () => {

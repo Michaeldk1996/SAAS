@@ -513,8 +513,13 @@ export function venueQuotes(m, { books, kalAt, bfeed, now }) {
       put('Kalshi', 'A', kSide(m.aIs)); put('Kalshi', 'B', kSide(1 - m.aIs));
     }
   }
+  const inPlay = !!m.odds && (m.odds.live || !!(m.pm && m.pm.live) || (m.odds.start != null && now >= m.odds.start));
   if (bfeed && m.odds) for (const venue of Object.values(BOOKS)) {
     const q = bfeed.quote(m.odds.id, venue); if (!q || now - q.at > STALE_MS.book) continue;
+    // in play only a price the book itself set in the last STALE_MS.book counts: odds-api.io keeps listing Bet105's last
+    // pre-match price after the start (Paris final 8 Nov: 4.07 / 1.28 from 13:57 still served at 14:12; Bet105 sends no
+    // in-play prices), and a fresh seed would otherwise date it now and pair it with live prediction prices
+    if (inPlay && (q.upd == null || now - q.upd > STALE_MS.book)) continue;
     const leg = (dec) => ({ cost: 1 / dec, dec, size: q.max != null ? q.max * dec : null, liq: q.max, at: q.at, url: q.url, group: 'book' });
     put(venue, 'A', leg(m.odds.aHome ? q.home : q.away)); put(venue, 'B', leg(m.odds.aHome ? q.away : q.home));
   }
