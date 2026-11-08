@@ -72,7 +72,14 @@ Where this file conflicts with `modal-analysis.md` (TEN-312, 2026-09-28), that f
     replaces Option A of TEN-442): the Record-by-season table carries a sixth column = the season's Total less
     Clay, Hard, Indoors and Grass as shown, so every season (and Career) sums to its total; its drill lists the
     season's rows with no clay, hard or grass surface outside Indoors (TE "Not set", mostly Davis Cup; an outdoor
-    carpet row too). No existing cell moves; a row with a surface of ours that TE leaves "Not set" keeps ours.
+    carpet row too). No existing cell moves; a row with a surface of ours that TE leaves "Not set" keeps ours. **Team-event surfaces are researched, not left blank (founder 2026-11-08, "find the surface of all these matches"):** a
+    Davis Cup row with no surface, outside Indoors, takes its tie's surface from `team-event-surfaces.json` (Wikipedia's tie
+    box first, indoor from its "(i)" mark or the season table; else Tennis Abstract's TML row) — `te-join.js`
+    `fillTeamSurfaces`, on the record's own rows only. It only fills: a surface we hold is never replaced, an indoor row is
+    never moved, indoor / outdoor is set only where the source states it (otherwise the row counts under its surface, like
+    any row with no court type). Where the two sources disagree the row stays blank unless a third source settles it (AUT v
+    FIN and CYP v THA 2025: press reports confirm Wikipedia's clay). **Test:** does any filled row replace a surface, move an
+    indoor row, or carry an indoor flag no source stated? It must not — `tools/test-team-surfaces.js`.
   - **The career record is its own population, in its own file (payload B, founder TEN-449, 2026-10-19).** The TE
     merge never changes the career-history files H2H, Lines, the model and every other reader take — not a byte.
     The record is an overlay on them (`te-join.js` `recordLayer`) in `career-record/<key>.json` (+

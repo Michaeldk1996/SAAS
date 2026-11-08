@@ -4382,6 +4382,15 @@ function subtractYearTally(yearRows, byYear) {
 
 // TEN-443 step 2 · Tennis Explorer store (written only by tools/te-build-history.mjs; guarded by tools/te-history-guard.mjs)
 const TeJoin = require('./te-join.js');
+// Founder 2026-11-08: the researched surfaces of team-event matches the feed and TE leave blank (te-join fillTeamSurfaces).
+// Committed, hand-researched data; a missing or unreadable file fills nothing (the column stays as it was) and says so.
+let _teamEventSurfaces;
+function teamEventSurfaces() {
+  if (_teamEventSurfaces !== undefined) return _teamEventSurfaces;
+  try { _teamEventSurfaces = JSON.parse(fs.readFileSync(require('path').join(__dirname, 'team-event-surfaces.json'), 'utf8')); }
+  catch (e) { console.warn(`team-event-surfaces.json unreadable (${e.message}) — no team-event surfaces filled`); _teamEventSurfaces = null; }
+  return _teamEventSurfaces;
+}
 // TEN-449: TE_STORE_DIR — where the private store repo is checked out (.github/workflows/pipeline.yml: .te-store); the
 // pipeline reads te-history/, its index and set-repairs.json there and never copies them into this checkout
 const TE_STORE_DIR = process.env.TE_STORE_DIR || '.';
@@ -4527,7 +4536,7 @@ async function writeCareerHistoryShards(profiles, opts = {}) {
         // TEN-449 golden guard (founder 2026-10-19), on every run with the switch on: the merge may not touch a byte of
         // the shared rows — H2H, Lines and the model read them, and none of them may move. A merge that did stops the run.
         const feedBefore = JSON.stringify(rows);
-        const m = teMerge = TeJoin.applyTeHistory(rows, teRec, { provisional: PROVISIONAL, resolveEmpty: teResolverFor(teRec) });
+        const m = teMerge = TeJoin.applyTeHistory(rows, teRec, { provisional: PROVISIONAL, resolveEmpty: teResolverFor(teRec), key, teamSurfaces: teamEventSurfaces() });
         if (JSON.stringify(rows) !== feedBefore) throw new Error(`TEN-449: the Tennis Explorer merge changed ${key}'s shared career-history rows — H2H, Lines and the model would move; refusing to publish`);
         teTotals.players++;
         for (const [k, v] of Object.entries(m.diag)) if (typeof v === 'number') teTotals[k] = (teTotals[k] || 0) + v;

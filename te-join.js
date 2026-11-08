@@ -389,7 +389,26 @@ function applyTeHistory(rows, teRec, opts = {}) {
     return false;
   });
   const merged = kept.concat(addedOnce).sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
+  fillTeamSurfaces(merged, opts.teamSurfaces, opts.key || teRec.key, diag);
   return { rows: merged, copyOf, out, added: addedOnce, diag };
+}
+
+// Founder 2026-11-08 ("find the surface of all these matches"): a team-event row (Davis Cup) with NO surface, outside
+// Indoors, takes its tie's surface from team-event-surfaces.json (researched: Wikipedia's tie box, else Tennis Abstract;
+// key = player key | date | ourSurname(opponent)). It only fills: a row that has a surface, or is already indoor, is never
+// touched, and indoor is set only where the source states it. The record's own rows only — these are the merge's copies
+// and TE-only rows, never the shared feed rows (the golden guard in bsp-pipeline.js checks).
+function fillTeamSurfaces(rows, table, key, diag) {
+  const T = table && table.rows;
+  if (!T || key == null) return;
+  for (const r of rows) {
+    if (r.surface || r.indoor === true || r.walkover || r.unconfirmed) continue;
+    const v = T[`${key}|${r.date}|${ourSurname(r.opponent)}`];
+    if (!v || !v[0]) continue;
+    r.surface = v[0];
+    if (v[1] === 1) r.indoor = true; else if (v[1] === 0) r.indoor = false;
+    diag.teamSurfaceFilled = (diag.teamSurfaceFilled || 0) + 1;
+  }
 }
 
 // The shard's `record` block, from the FINAL feed rows (call after every later pass has run on them):
@@ -449,4 +468,4 @@ function careerByYearFromRows(rows) {
   });
 }
 
-module.exports = { pairRows, conflictsOf, teRowsOf, applyTeHistory, recordLayer, careerByYearFromRows, teOnlyRow, isJuniorRow, ourSurname, teSurname, similar, OTHER_COUNTED, NO_DOB_EXCEPTION, NEAR_MISS_DOB, teIdentityRefusal, readDayOf, PROVISIONAL_MAX_DAYS };
+module.exports = { fillTeamSurfaces, pairRows, conflictsOf, teRowsOf, applyTeHistory, recordLayer, careerByYearFromRows, teOnlyRow, isJuniorRow, ourSurname, teSurname, similar, OTHER_COUNTED, NO_DOB_EXCEPTION, NEAR_MISS_DOB, teIdentityRefusal, readDayOf, PROVISIONAL_MAX_DAYS };
