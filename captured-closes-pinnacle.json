@@ -1,17 +1,17 @@
 {
- "generatedAt": "2026-11-08T18:46:29.365Z",
+ "generatedAt": "2026-11-08T19:33:39.248Z",
  "source": "matches.json git history: oddsMovement.books.Pinnacle (Oddspapi pinnacle, to 2026-09-02) and oddsMovement.chart.books[\"Pinnacle +30s\"] (Oddspapi pinnacle+30, from 2026-09-23)",
  "rule": "each side = last tick at or before the actual start (the earlier of Oddspapi trueStart and the card-state start: Oddspapi, the live-flip lower bound, the Bet105 switch or the first point — founder 2026-11-08; a cut at Oddspapi start before a verified start counts at the verified start only when the same tick, seen within 60 min and within 1.5pp of the Bet105 close, else it stays held back); both sides required; dropped when no unique actual start. seenAt = our last capture read before the start that confirmed the close (founder 2026-10-28); age = start - (seenAt or at)",
  "scannedThrough": {
-  "commit": "a238a514f56f3f71a1b2464c4830515f0e3d54d9",
-  "at": "2026-11-08T18:39:44Z"
+  "commit": "ead82875e17640b2606eb5ec7b5849e3fde27a85",
+  "at": "2026-11-08T19:19:45Z"
  },
- "commitsScanned": 6510,
+ "commitsScanned": 6515,
  "lastRun": {
-  "from": "2026-11-08T17:45:35Z",
+  "from": "2026-11-08T18:39:44Z",
   "snapshots": 6,
   "added": 0,
-  "replaced": 0,
+  "replaced": 1,
   "seenBackfilled": 0,
   "earlierCutBackfilled": 0,
   "series": 33,
@@ -15461,9 +15461,9 @@
    "p2Key": 2083,
    "p1Name": "T. A. Tirante",
    "p2Name": "J. Munar",
-   "p1": 2.34,
-   "p2": 1.662,
-   "at": "2026-11-08T12:26:26.887Z",
+   "p1": 2.36,
+   "p2": 1.653,
+   "at": "2026-11-08T17:18:28.918Z",
    "trueStart": "2026-11-08T17:37:44.000Z",
    "startSource": "bet105-switch",
    "book": "Pinnacle +30s",
@@ -15473,8 +15473,7 @@
    "o1": 2.33,
    "o2": 1.666,
    "oAt": "2026-11-08T11:54:12.688Z",
-   "winner": null,
-   "seenAt": "2026-11-08T12:42:24.000Z"
+   "winner": null
   },
   {
    "eventKey": 12178154,
