@@ -15,18 +15,18 @@
       "p1": 2.3,
       "p2": 1.61,
       "bookmaker": "bet365",
-      "seenAt": "2026-11-08T03:51:38.746Z"
+      "seenAt": "2026-11-08T12:17:10.816Z"
     },
     "bestOdds": {
       "p1": {
-        "price": 2.39,
-        "bookmaker": "Marathon"
+        "price": 2.37,
+        "bookmaker": "Betano"
       },
       "p2": {
-        "price": 1.62,
-        "bookmaker": "WilliamHill"
+        "price": 1.65,
+        "bookmaker": "Pncl"
       },
-      "seenAt": "2026-11-08T03:51:38.746Z"
+      "seenAt": "2026-11-08T12:17:10.816Z"
     },
     "tournamentRound": "ATP Stockholm - 1/16-finals",
     "qualifying": false,
@@ -2628,9 +2628,9 @@
       "category": "Medium"
     },
     "weather": {
-      "temperature": 3.7,
-      "windSpeed": 8.3,
-      "humidity": 82,
+      "temperature": 2.4,
+      "windSpeed": 8.6,
+      "humidity": 83,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Nov 2 – 8, 2026",
@@ -2718,10 +2718,10 @@
           "dow": "Sun",
           "label": "Nov 8",
           "code": 3,
-          "hi": 5,
-          "lo": 2,
+          "hi": 4,
+          "lo": 1,
           "rain": 0,
-          "wind": 13,
+          "wind": 14,
           "humidity": 87,
           "isMatch": true,
           "available": true
@@ -2888,6 +2888,28 @@
                 1.654
               ]
             ]
+          },
+          "Pinnacle +30s": {
+            "p1": [
+              [
+                "2026-11-08T11:54:12.688Z",
+                2.33
+              ],
+              [
+                "2026-11-08T12:26:26.887Z",
+                2.34
+              ]
+            ],
+            "p2": [
+              [
+                "2026-11-08T11:54:12.688Z",
+                1.666
+              ],
+              [
+                "2026-11-08T12:26:26.887Z",
+                1.662
+              ]
+            ]
           }
         },
         "meta": {
@@ -2971,9 +2993,23 @@
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
             "checkedAt": "2026-09-30T21:22:18.554Z"
+          },
+          "Pinnacle +30s": {
+            "source": "Oddspapi",
+            "group": "sharp",
+            "clock": "book tick",
+            "checkedAt": "2026-11-08T12:42:24.000Z"
           }
         }
       }
+    },
+    "openingOdds": {
+      "p1": 2.3,
+      "p2": 1.61,
+      "bookmaker": "bet365",
+      "seenAt": "2026-11-08T03:51:39.380Z",
+      "src": "vendor-sighting",
+      "vendor": "api-tennis"
     },
     "bookOpens": {
       "WilliamHill": {
@@ -3015,65 +3051,81 @@
         "p1": 2.3,
         "p2": 1.61,
         "seenAt": "2026-11-08T03:52:53.893Z"
+      },
+      "Pncl": {
+        "p1": 2.33,
+        "p2": 1.65,
+        "seenAt": "2026-11-08T12:18:36.839Z"
       }
     },
     "bookNow": {
       "WilliamHill": {
         "p1": 2.3,
         "p2": 1.62,
-        "seenAt": "2026-11-08T03:52:53.893Z",
-        "since": "2026-11-08T03:52:53.893Z"
-      },
-      "Marathon": {
-        "p1": 2.39,
-        "p2": 1.57,
-        "seenAt": "2026-11-08T03:52:53.893Z",
-        "since": "2026-11-08T03:52:53.893Z"
-      },
-      "Betfair": {
-        "p1": 2.38,
-        "p2": 1.57,
-        "seenAt": "2026-11-08T03:52:53.893Z",
-        "since": "2026-11-07T20:57:01.662Z"
-      },
-      "BetVictor": {
-        "p1": 2.25,
-        "p2": 1.57,
-        "seenAt": "2026-11-08T03:52:53.893Z",
-        "since": "2026-11-08T03:52:53.893Z"
-      },
-      "Sbo": {
-        "p1": 2.21,
-        "p2": 1.53,
-        "seenAt": "2026-11-08T03:52:53.893Z",
-        "since": "2026-11-07T16:58:24.816Z"
-      },
-      "1xBet": {
-        "p1": 2.36,
-        "p2": 1.59,
-        "seenAt": "2026-11-08T03:52:53.893Z",
-        "since": "2026-11-08T03:52:53.893Z"
-      },
-      "Betano": {
-        "p1": 2.37,
-        "p2": 1.6,
-        "seenAt": "2026-11-08T03:52:53.893Z",
+        "seenAt": "2026-11-08T12:18:36.839Z",
         "since": "2026-11-08T03:52:53.893Z"
       },
       "bet365": {
         "p1": 2.3,
         "p2": 1.61,
-        "seenAt": "2026-11-08T03:52:53.893Z",
+        "seenAt": "2026-11-08T12:18:36.839Z",
+        "since": "2026-11-08T03:52:53.893Z"
+      },
+      "Marathon": {
+        "p1": 2.32,
+        "p2": 1.6,
+        "seenAt": "2026-11-08T12:18:36.839Z",
+        "since": "2026-11-08T12:18:36.839Z"
+      },
+      "Betfair": {
+        "p1": 2.25,
+        "p2": 1.62,
+        "seenAt": "2026-11-08T12:18:36.839Z",
+        "since": "2026-11-08T12:18:36.839Z"
+      },
+      "BetVictor": {
+        "p1": 2.2,
+        "p2": 1.6,
+        "seenAt": "2026-11-08T12:18:36.839Z",
+        "since": "2026-11-08T12:18:36.839Z"
+      },
+      "Pncl": {
+        "p1": 2.33,
+        "p2": 1.65,
+        "seenAt": "2026-11-08T12:18:36.839Z",
+        "since": "2026-11-08T12:18:36.839Z"
+      },
+      "Sbo": {
+        "p1": 2.21,
+        "p2": 1.53,
+        "seenAt": "2026-11-08T12:18:36.839Z",
+        "since": "2026-11-07T16:58:24.816Z"
+      },
+      "1xBet": {
+        "p1": 2.3,
+        "p2": 1.62,
+        "seenAt": "2026-11-08T12:18:36.839Z",
+        "since": "2026-11-08T12:18:36.839Z"
+      },
+      "Betano": {
+        "p1": 2.37,
+        "p2": 1.6,
+        "seenAt": "2026-11-08T12:18:36.839Z",
         "since": "2026-11-08T03:52:53.893Z"
       }
     },
-    "openingOdds": {
-      "p1": 2.3,
-      "p2": 1.61,
-      "bookmaker": "bet365",
-      "seenAt": "2026-11-08T03:51:39.380Z",
-      "src": "vendor-sighting",
-      "vendor": "api-tennis"
+    "pinnacleOpen": {
+      "p1": 2.33,
+      "p2": 1.65,
+      "ts": "2026-11-08T12:18:36.839Z",
+      "vfP1": 0.4146
+    },
+    "valueSnapshot": {
+      "fairP1": 0.4,
+      "fairP2": 0.6,
+      "edgeVsPinnacleP1": -0.0146,
+      "edgeVsPinnacleP2": 0.0146,
+      "ts": "2026-11-08T12:18:36.734Z"
     }
   },
   {
@@ -3089,21 +3141,21 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 4,
-      "p2": 1.25,
+      "p1": 3.75,
+      "p2": 1.28,
       "bookmaker": "bet365",
-      "seenAt": "2026-11-08T03:51:38.746Z"
+      "seenAt": "2026-11-08T12:17:10.816Z"
     },
     "bestOdds": {
       "p1": {
-        "price": 4,
-        "bookmaker": "WilliamHill"
+        "price": 3.75,
+        "bookmaker": "bet365"
       },
       "p2": {
-        "price": 1.29,
-        "bookmaker": "Betfair"
+        "price": 1.35,
+        "bookmaker": "Pncl"
       },
-      "seenAt": "2026-11-08T03:51:38.746Z"
+      "seenAt": "2026-11-08T12:17:10.816Z"
     },
     "tournamentRound": "ATP Stockholm - 1/16-finals",
     "qualifying": false,
@@ -6238,8 +6290,8 @@
       "category": "Medium"
     },
     "weather": {
-      "temperature": 4.3,
-      "windSpeed": 8.6,
+      "temperature": 2.9,
+      "windSpeed": 9,
       "humidity": 79,
       "source": "Open-Meteo",
       "historical": false,
@@ -6328,10 +6380,10 @@
           "dow": "Sun",
           "label": "Nov 8",
           "code": 3,
-          "hi": 5,
-          "lo": 2,
+          "hi": 4,
+          "lo": 1,
           "rain": 0,
-          "wind": 13,
+          "wind": 14,
           "humidity": 87,
           "isMatch": true,
           "available": true
@@ -6648,12 +6700,20 @@
               [
                 "2026-11-07T19:21:10.774Z",
                 4.03
+              ],
+              [
+                "2026-11-08T12:24:32.325Z",
+                3.5
               ]
             ],
             "p2": [
               [
                 "2026-11-07T19:21:10.774Z",
                 1.272
+              ],
+              [
+                "2026-11-08T12:24:32.325Z",
+                1.344
               ]
             ]
           }
@@ -6744,10 +6804,18 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-11-08T04:17:44.000Z"
+            "checkedAt": "2026-11-08T12:42:24.000Z"
           }
         }
       }
+    },
+    "openingOdds": {
+      "p1": 4,
+      "p2": 1.25,
+      "bookmaker": "bet365",
+      "seenAt": "2026-11-08T03:51:41.985Z",
+      "src": "vendor-sighting",
+      "vendor": "api-tennis"
     },
     "bookOpens": {
       "WilliamHill": {
@@ -6789,72 +6857,88 @@
         "p1": 4,
         "p2": 1.25,
         "seenAt": "2026-11-08T03:52:53.893Z"
+      },
+      "Pncl": {
+        "p1": 3.48,
+        "p2": 1.35,
+        "seenAt": "2026-11-08T12:18:36.839Z"
       }
     },
     "bookNow": {
       "WilliamHill": {
-        "p1": 4,
-        "p2": 1.25,
-        "seenAt": "2026-11-08T03:52:53.893Z",
-        "since": "2026-11-08T03:52:53.893Z"
+        "p1": 3.5,
+        "p2": 1.3,
+        "seenAt": "2026-11-08T12:18:36.839Z",
+        "since": "2026-11-08T12:18:36.839Z"
+      },
+      "bet365": {
+        "p1": 3.75,
+        "p2": 1.28,
+        "seenAt": "2026-11-08T12:18:36.839Z",
+        "since": "2026-11-08T12:18:36.839Z"
       },
       "Marathon": {
-        "p1": 3.64,
-        "p2": 1.28,
-        "seenAt": "2026-11-08T03:52:53.893Z",
-        "since": "2026-11-08T03:52:53.893Z"
+        "p1": 3.55,
+        "p2": 1.29,
+        "seenAt": "2026-11-08T12:18:36.839Z",
+        "since": "2026-11-08T12:18:36.839Z"
       },
       "Betfair": {
         "p1": 3.5,
         "p2": 1.29,
-        "seenAt": "2026-11-08T03:52:53.893Z",
+        "seenAt": "2026-11-08T12:18:36.839Z",
         "since": "2026-11-08T03:52:53.893Z"
       },
       "BetVictor": {
-        "p1": 3.5,
-        "p2": 1.25,
-        "seenAt": "2026-11-08T03:52:53.893Z",
-        "since": "2026-11-08T03:52:53.893Z"
+        "p1": 3.25,
+        "p2": 1.29,
+        "seenAt": "2026-11-08T12:18:36.839Z",
+        "since": "2026-11-08T12:18:36.839Z"
+      },
+      "Pncl": {
+        "p1": 3.48,
+        "p2": 1.35,
+        "seenAt": "2026-11-08T12:18:36.839Z",
+        "since": "2026-11-08T12:18:36.839Z"
       },
       "Sbo": {
         "p1": 3.63,
         "p2": 1.19,
-        "seenAt": "2026-11-08T03:52:53.893Z",
+        "seenAt": "2026-11-08T12:18:36.839Z",
         "since": "2026-11-07T16:58:24.817Z"
       },
       "1xBet": {
-        "p1": 3.6,
-        "p2": 1.29,
-        "seenAt": "2026-11-08T03:52:53.893Z",
-        "since": "2026-11-08T03:52:53.893Z"
+        "p1": 3.52,
+        "p2": 1.3,
+        "seenAt": "2026-11-08T12:18:36.839Z",
+        "since": "2026-11-08T12:18:36.839Z"
       },
       "Betano": {
-        "p1": 3.75,
-        "p2": 1.28,
-        "seenAt": "2026-11-08T03:52:53.893Z",
-        "since": "2026-11-08T03:52:53.893Z"
-      },
-      "bet365": {
-        "p1": 4,
-        "p2": 1.25,
-        "seenAt": "2026-11-08T03:52:53.893Z",
-        "since": "2026-11-08T03:52:53.893Z"
+        "p1": 3.65,
+        "p2": 1.29,
+        "seenAt": "2026-11-08T12:18:36.839Z",
+        "since": "2026-11-08T12:18:36.839Z"
       }
     },
-    "openingOdds": {
-      "p1": 4,
-      "p2": 1.25,
-      "bookmaker": "bet365",
-      "seenAt": "2026-11-08T03:51:41.985Z",
-      "src": "vendor-sighting",
-      "vendor": "api-tennis"
+    "pinnacleOpen": {
+      "p1": 3.48,
+      "p2": 1.35,
+      "ts": "2026-11-08T12:18:36.839Z",
+      "vfP1": 0.2795
+    },
+    "valueSnapshot": {
+      "fairP1": 0.2759,
+      "fairP2": 0.7241,
+      "edgeVsPinnacleP1": -0.0036,
+      "edgeVsPinnacleP2": 0.0036,
+      "ts": "2026-11-08T12:18:36.734Z"
     }
   },
   {
     "id": "upcoming-12178166",
-    "day": "today",
+    "day": "past",
     "date": "2026-11-08",
-    "time": "12:00",
+    "time": "12:10",
     "p1": "N. Basilashvili",
     "p2": "B. Gojo",
     "tour": "ATP Stockholm",
@@ -6863,21 +6947,21 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 1.4,
-      "p2": 2.75,
+      "p1": 1.44,
+      "p2": 2.62,
       "bookmaker": "bet365",
-      "seenAt": "2026-11-08T03:51:38.746Z"
+      "seenAt": "2026-11-08T12:17:10.816Z"
     },
     "bestOdds": {
       "p1": {
-        "price": 1.53,
-        "bookmaker": "WilliamHill"
+        "price": 1.52,
+        "bookmaker": "Pncl"
       },
       "p2": {
-        "price": 2.75,
-        "bookmaker": "bet365"
+        "price": 2.68,
+        "bookmaker": "1xBet"
       },
-      "seenAt": "2026-11-08T03:51:38.746Z"
+      "seenAt": "2026-11-08T12:17:10.816Z"
     },
     "tournamentRound": "ATP Stockholm - Final",
     "qualifying": true,
@@ -10138,121 +10222,121 @@
     "extraStats": {
       "last52Weeks": {
         "p1": {
-          "matchCount": 56,
+          "matchCount": 57,
           "stats": {
             "Service:Aces": 6.9,
-            "Service:Double Faults": 3.8,
-            "Service:1st Serve Points Won": 77.2,
-            "Service:2nd Serve Points Won": 50.6,
-            "Service:Break Points Saved": 57.4,
-            "Return:Break Points Converted": 35.3,
+            "Service:Double Faults": 3.7,
+            "Service:1st Serve Points Won": 77.1,
+            "Service:2nd Serve Points Won": 50.4,
+            "Service:Break Points Saved": 57,
+            "Return:Break Points Converted": 35.2,
             "Points:Unforced Errors": 32.7,
             "Points:Service Points Won": 65,
-            "Points:Return Points Won": 36.7,
-            "Points:Total Points Won": 50.6,
+            "Points:Return Points Won": 36.6,
+            "Points:Total Points Won": 50.5,
             "Points:Winners": 24.8
           },
           "samples": {
-            "Service:Aces": 56,
-            "Service:Double Faults": 56,
-            "Service:1st Serve Points Won": 2141,
-            "Service:2nd Serve Points Won": 1767,
-            "Service:Break Points Saved": 204,
-            "Return:Break Points Converted": 269,
+            "Service:Aces": 57,
+            "Service:Double Faults": 57,
+            "Service:1st Serve Points Won": 2173,
+            "Service:2nd Serve Points Won": 1788,
+            "Service:Break Points Saved": 207,
+            "Return:Break Points Converted": 273,
             "Points:Unforced Errors": 43,
-            "Points:Service Points Won": 3900,
-            "Points:Return Points Won": 4048,
-            "Points:Total Points Won": 7948,
+            "Points:Service Points Won": 3953,
+            "Points:Return Points Won": 4099,
+            "Points:Total Points Won": 8052,
+            "Points:Winners": 43
+          }
+        },
+        "p2": {
+          "matchCount": 14,
+          "stats": {
+            "Service:Aces": 9.6,
+            "Service:Double Faults": 2.4,
+            "Service:1st Serve Points Won": 77.8,
+            "Service:2nd Serve Points Won": 43.2,
+            "Service:Break Points Saved": 65.7,
+            "Return:Break Points Converted": 38.5,
+            "Points:Winners": 23.3,
+            "Points:Unforced Errors": 24.5,
+            "Points:Service Points Won": 66.7,
+            "Points:Return Points Won": 34.2,
+            "Points:Total Points Won": 51
+          },
+          "samples": {
+            "Service:Aces": 14,
+            "Service:Double Faults": 14,
+            "Service:1st Serve Points Won": 690,
+            "Service:2nd Serve Points Won": 331,
+            "Service:Break Points Saved": 67,
+            "Return:Break Points Converted": 52,
+            "Points:Winners": 11,
+            "Points:Unforced Errors": 11,
+            "Points:Service Points Won": 1019,
+            "Points:Return Points Won": 953,
+            "Points:Total Points Won": 1972
+          }
+        }
+      },
+      "surface": {
+        "p1": {
+          "matchCount": 63,
+          "stats": {
+            "Service:Aces": 7.4,
+            "Service:Double Faults": 3.6,
+            "Service:1st Serve Points Won": 76.9,
+            "Service:2nd Serve Points Won": 52.3,
+            "Service:Break Points Saved": 60,
+            "Return:Break Points Converted": 38.4,
+            "Points:Unforced Errors": 28.7,
+            "Points:Service Points Won": 66.3,
+            "Points:Return Points Won": 36.6,
+            "Points:Total Points Won": 51.1,
+            "Points:Winners": 22.3
+          },
+          "samples": {
+            "Service:Aces": 63,
+            "Service:Double Faults": 63,
+            "Service:1st Serve Points Won": 2401,
+            "Service:2nd Serve Points Won": 1877,
+            "Service:Break Points Saved": 270,
+            "Return:Break Points Converted": 346,
+            "Points:Unforced Errors": 45,
+            "Points:Service Points Won": 4272,
+            "Points:Return Points Won": 4432,
+            "Points:Total Points Won": 8704,
             "Points:Winners": 43
           }
         },
         "p2": {
           "matchCount": 13,
           "stats": {
-            "Service:Aces": 9.5,
-            "Service:Double Faults": 2.6,
-            "Service:1st Serve Points Won": 77.8,
-            "Service:2nd Serve Points Won": 43.4,
-            "Service:Break Points Saved": 65.1,
-            "Return:Break Points Converted": 36.7,
-            "Points:Winners": 23.3,
-            "Points:Unforced Errors": 24.5,
-            "Points:Service Points Won": 66.7,
-            "Points:Return Points Won": 33.9,
-            "Points:Total Points Won": 50.9
+            "Service:Aces": 10.7,
+            "Service:Double Faults": 2,
+            "Service:1st Serve Points Won": 78.5,
+            "Service:2nd Serve Points Won": 43.1,
+            "Service:Break Points Saved": 60.4,
+            "Return:Break Points Converted": 35.6,
+            "Points:Winners": 24.9,
+            "Points:Unforced Errors": 25.4,
+            "Points:Service Points Won": 67.6,
+            "Points:Return Points Won": 34.8,
+            "Points:Total Points Won": 51.2
           },
           "samples": {
             "Service:Aces": 13,
             "Service:Double Faults": 13,
-            "Service:1st Serve Points Won": 657,
-            "Service:2nd Serve Points Won": 311,
-            "Service:Break Points Saved": 63,
-            "Return:Break Points Converted": 49,
-            "Points:Winners": 11,
-            "Points:Unforced Errors": 11,
-            "Points:Service Points Won": 968,
-            "Points:Return Points Won": 900,
-            "Points:Total Points Won": 1868
-          }
-        }
-      },
-      "surface": {
-        "p1": {
-          "matchCount": 62,
-          "stats": {
-            "Service:Aces": 7.4,
-            "Service:Double Faults": 3.6,
-            "Service:1st Serve Points Won": 76.9,
-            "Service:2nd Serve Points Won": 52.5,
-            "Service:Break Points Saved": 60.3,
-            "Return:Break Points Converted": 38.6,
-            "Points:Unforced Errors": 28.7,
-            "Points:Service Points Won": 66.3,
-            "Points:Return Points Won": 36.7,
-            "Points:Total Points Won": 51.2,
-            "Points:Winners": 22.3
-          },
-          "samples": {
-            "Service:Aces": 62,
-            "Service:Double Faults": 62,
-            "Service:1st Serve Points Won": 2369,
-            "Service:2nd Serve Points Won": 1856,
-            "Service:Break Points Saved": 267,
-            "Return:Break Points Converted": 342,
-            "Points:Unforced Errors": 45,
-            "Points:Service Points Won": 4219,
-            "Points:Return Points Won": 4381,
-            "Points:Total Points Won": 8600,
-            "Points:Winners": 43
-          }
-        },
-        "p2": {
-          "matchCount": 12,
-          "stats": {
-            "Service:Aces": 10.7,
-            "Service:Double Faults": 2.2,
-            "Service:1st Serve Points Won": 78.5,
-            "Service:2nd Serve Points Won": 43.3,
-            "Service:Break Points Saved": 59.2,
-            "Return:Break Points Converted": 33.9,
-            "Points:Winners": 24.9,
-            "Points:Unforced Errors": 25.4,
-            "Points:Service Points Won": 67.6,
-            "Points:Return Points Won": 34.5,
-            "Points:Total Points Won": 51.1
-          },
-          "samples": {
-            "Service:Aces": 12,
-            "Service:Double Faults": 12,
-            "Service:1st Serve Points Won": 615,
-            "Service:2nd Serve Points Won": 275,
-            "Service:Break Points Saved": 49,
-            "Return:Break Points Converted": 56,
+            "Service:1st Serve Points Won": 648,
+            "Service:2nd Serve Points Won": 295,
+            "Service:Break Points Saved": 53,
+            "Return:Break Points Converted": 59,
             "Points:Winners": 8,
             "Points:Unforced Errors": 8,
-            "Points:Service Points Won": 890,
-            "Points:Return Points Won": 886,
-            "Points:Total Points Won": 1776
+            "Points:Service Points Won": 941,
+            "Points:Return Points Won": 939,
+            "Points:Total Points Won": 1880
           }
         }
       },
@@ -10295,11 +10379,11 @@
       "category": "Medium"
     },
     "weather": {
-      "temperature": 4.4,
-      "windSpeed": 7.9,
-      "humidity": 76,
+      "temperature": 3,
+      "windSpeed": 8.3,
+      "humidity": 75,
       "source": "Open-Meteo",
-      "historical": false,
+      "historical": true,
       "weekRange": "Nov 2 – 8, 2026",
       "week": [
         {
@@ -10385,21 +10469,32 @@
           "dow": "Sun",
           "label": "Nov 8",
           "code": 3,
-          "hi": 5,
-          "lo": 2,
+          "hi": 4,
+          "lo": 1,
           "rain": 0,
-          "wind": 13,
+          "wind": 14,
           "humidity": 87,
           "isMatch": true,
           "available": true
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 2",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 3,
+        "p2": 6
+      },
+      {
+        "set": 2,
+        "p1": 4,
+        "p2": 3
+      }
+    ],
+    "liveGameScore": "0 - 0",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/424_n-basilashvili.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/377_b-gojo.jpg",
     "tournamentKey": "1681",
@@ -11042,6 +11137,14 @@
         }
       }
     },
+    "openingOdds": {
+      "p1": 1.4,
+      "p2": 2.75,
+      "bookmaker": "bet365",
+      "seenAt": "2026-11-08T03:51:43.737Z",
+      "src": "vendor-sighting",
+      "vendor": "api-tennis"
+    },
     "bookOpens": {
       "WilliamHill": {
         "p1": 1.53,
@@ -11082,65 +11185,68 @@
         "p1": 1.4,
         "p2": 2.75,
         "seenAt": "2026-11-08T03:52:53.893Z"
+      },
+      "Betano": {
+        "p1": 1.44,
+        "p2": 2.67,
+        "seenAt": "2026-11-08T12:18:36.839Z"
       }
     },
     "bookNow": {
       "WilliamHill": {
-        "p1": 1.53,
-        "p2": 2.38,
-        "seenAt": "2026-11-08T03:52:53.893Z",
-        "since": "2026-11-08T03:52:53.893Z"
+        "p1": 1.5,
+        "p2": 2.5,
+        "seenAt": "2026-11-08T12:18:36.839Z",
+        "since": "2026-11-08T12:18:36.839Z"
+      },
+      "bet365": {
+        "p1": 1.44,
+        "p2": 2.62,
+        "seenAt": "2026-11-08T12:18:36.839Z",
+        "since": "2026-11-08T12:18:36.839Z"
       },
       "Marathon": {
-        "p1": 1.46,
-        "p2": 2.49,
-        "seenAt": "2026-11-08T03:52:53.893Z",
-        "since": "2026-11-08T03:52:53.893Z"
-      },
-      "1xBet": {
-        "p1": 1.48,
-        "p2": 2.47,
-        "seenAt": "2026-11-08T03:52:53.893Z",
-        "since": "2026-11-08T03:52:53.893Z"
+        "p1": 1.44,
+        "p2": 2.53,
+        "seenAt": "2026-11-08T12:18:36.839Z",
+        "since": "2026-11-08T12:18:36.839Z"
       },
       "Betfair": {
         "p1": 1.44,
         "p2": 2.63,
-        "seenAt": "2026-11-08T03:52:53.893Z",
+        "seenAt": "2026-11-08T12:18:36.839Z",
         "since": "2026-11-08T03:52:53.893Z"
       },
       "BetVictor": {
         "p1": 1.45,
-        "p2": 2.5,
-        "seenAt": "2026-11-08T03:52:53.893Z",
-        "since": "2026-11-08T03:52:53.893Z"
+        "p2": 2.6,
+        "seenAt": "2026-11-08T12:18:36.839Z",
+        "since": "2026-11-08T12:18:36.839Z"
       },
       "Pncl": {
-        "p1": 1.53,
-        "p2": 2.58,
-        "seenAt": "2026-11-08T03:52:53.893Z",
-        "since": "2026-11-08T03:52:53.893Z"
+        "p1": 1.52,
+        "p2": 2.63,
+        "seenAt": "2026-11-08T12:18:36.839Z",
+        "since": "2026-11-08T12:18:36.839Z"
       },
       "Sbo": {
         "p1": 1.47,
-        "p2": 2.4,
-        "seenAt": "2026-11-08T03:52:53.893Z",
-        "since": "2026-11-08T03:52:53.893Z"
+        "p2": 2.44,
+        "seenAt": "2026-11-08T12:18:36.839Z",
+        "since": "2026-11-08T12:18:36.839Z"
       },
-      "bet365": {
-        "p1": 1.4,
-        "p2": 2.75,
-        "seenAt": "2026-11-08T03:52:53.893Z",
-        "since": "2026-11-08T03:52:53.893Z"
+      "1xBet": {
+        "p1": 1.48,
+        "p2": 2.68,
+        "seenAt": "2026-11-08T12:18:36.839Z",
+        "since": "2026-11-08T12:18:36.839Z"
+      },
+      "Betano": {
+        "p1": 1.44,
+        "p2": 2.67,
+        "seenAt": "2026-11-08T12:18:36.839Z",
+        "since": "2026-11-08T12:18:36.839Z"
       }
-    },
-    "openingOdds": {
-      "p1": 1.4,
-      "p2": 2.75,
-      "bookmaker": "bet365",
-      "seenAt": "2026-11-08T03:51:43.737Z",
-      "src": "vendor-sighting",
-      "vendor": "api-tennis"
     },
     "pinnacleOpen": {
       "p1": 1.53,
@@ -11158,9 +11264,9 @@
   },
   {
     "id": "upcoming-12178198",
-    "day": "today",
+    "day": "past",
     "date": "2026-11-08",
-    "time": "12:00",
+    "time": "12:10",
     "p1": "I. Montes-De La Torre",
     "p2": "L. Sonego",
     "tour": "ATP Stockholm",
@@ -13496,121 +13602,121 @@
     "extraStats": {
       "last52Weeks": {
         "p1": {
-          "matchCount": 1,
+          "matchCount": 2,
           "stats": {
-            "Service:Aces": 4,
-            "Service:Double Faults": 1,
-            "Service:1st Serve Points Won": 63.5,
-            "Service:2nd Serve Points Won": 52.4,
-            "Service:Break Points Saved": 57.1,
-            "Return:Break Points Converted": 83.3,
+            "Service:Aces": 2.5,
+            "Service:Double Faults": 0.5,
+            "Service:1st Serve Points Won": 64,
+            "Service:2nd Serve Points Won": 50,
+            "Service:Break Points Saved": 50,
+            "Return:Break Points Converted": 66.7,
             "Points:Winners": 24,
             "Points:Unforced Errors": 20,
-            "Points:Service Points Won": 60.3,
-            "Points:Return Points Won": 53.2,
-            "Points:Total Points Won": 57
+            "Points:Service Points Won": 59.8,
+            "Points:Return Points Won": 47,
+            "Points:Total Points Won": 53.2
           },
           "samples": {
-            "Service:Aces": 1,
-            "Service:Double Faults": 1,
-            "Service:1st Serve Points Won": 52,
-            "Service:2nd Serve Points Won": 21,
-            "Service:Break Points Saved": 7,
-            "Return:Break Points Converted": 6,
+            "Service:Aces": 2,
+            "Service:Double Faults": 2,
+            "Service:1st Serve Points Won": 75,
+            "Service:2nd Serve Points Won": 32,
+            "Service:Break Points Saved": 8,
+            "Return:Break Points Converted": 9,
             "Points:Winners": 1,
             "Points:Unforced Errors": 1,
-            "Points:Service Points Won": 73,
-            "Points:Return Points Won": 62,
-            "Points:Total Points Won": 135
+            "Points:Service Points Won": 107,
+            "Points:Return Points Won": 115,
+            "Points:Total Points Won": 222
           }
         },
         "p2": {
-          "matchCount": 43,
+          "matchCount": 44,
           "stats": {
-            "Service:Aces": 8.2,
+            "Service:Aces": 8.1,
             "Service:Double Faults": 1.8,
-            "Service:1st Serve Points Won": 73.8,
-            "Service:2nd Serve Points Won": 52.2,
-            "Service:Break Points Saved": 63.1,
-            "Return:Break Points Converted": 31.7,
+            "Service:1st Serve Points Won": 73.7,
+            "Service:2nd Serve Points Won": 52.1,
+            "Service:Break Points Saved": 63.2,
+            "Return:Break Points Converted": 32,
             "Points:Winners": 29,
             "Points:Unforced Errors": 27.3,
-            "Points:Service Points Won": 66.9,
-            "Points:Return Points Won": 33.3,
+            "Points:Service Points Won": 66.8,
+            "Points:Return Points Won": 33.4,
             "Points:Total Points Won": 49.8
           },
           "samples": {
-            "Service:Aces": 43,
-            "Service:Double Faults": 43,
-            "Service:1st Serve Points Won": 2395,
-            "Service:2nd Serve Points Won": 1131,
-            "Service:Break Points Saved": 236,
-            "Return:Break Points Converted": 240,
+            "Service:Aces": 44,
+            "Service:Double Faults": 44,
+            "Service:1st Serve Points Won": 2434,
+            "Service:2nd Serve Points Won": 1145,
+            "Service:Break Points Saved": 239,
+            "Return:Break Points Converted": 241,
             "Points:Winners": 28,
             "Points:Unforced Errors": 28,
-            "Points:Service Points Won": 3522,
-            "Points:Return Points Won": 3663,
-            "Points:Total Points Won": 7185
+            "Points:Service Points Won": 3575,
+            "Points:Return Points Won": 3697,
+            "Points:Total Points Won": 7272
           }
         }
       },
       "surface": {
         "p1": {
-          "matchCount": 1,
+          "matchCount": 2,
           "stats": {
-            "Service:Aces": 4,
-            "Service:Double Faults": 1,
-            "Service:1st Serve Points Won": 63.5,
-            "Service:2nd Serve Points Won": 52.4,
-            "Service:Break Points Saved": 57.1,
-            "Return:Break Points Converted": 83.3,
+            "Service:Aces": 2.5,
+            "Service:Double Faults": 0.5,
+            "Service:1st Serve Points Won": 64,
+            "Service:2nd Serve Points Won": 50,
+            "Service:Break Points Saved": 50,
+            "Return:Break Points Converted": 66.7,
             "Points:Winners": 24,
             "Points:Unforced Errors": 20,
-            "Points:Service Points Won": 60.3,
-            "Points:Return Points Won": 53.2,
-            "Points:Total Points Won": 57
+            "Points:Service Points Won": 59.8,
+            "Points:Return Points Won": 47,
+            "Points:Total Points Won": 53.2
           },
           "samples": {
-            "Service:Aces": 1,
-            "Service:Double Faults": 1,
-            "Service:1st Serve Points Won": 52,
-            "Service:2nd Serve Points Won": 21,
-            "Service:Break Points Saved": 7,
-            "Return:Break Points Converted": 6,
+            "Service:Aces": 2,
+            "Service:Double Faults": 2,
+            "Service:1st Serve Points Won": 75,
+            "Service:2nd Serve Points Won": 32,
+            "Service:Break Points Saved": 8,
+            "Return:Break Points Converted": 9,
             "Points:Winners": 1,
             "Points:Unforced Errors": 1,
-            "Points:Service Points Won": 73,
-            "Points:Return Points Won": 62,
-            "Points:Total Points Won": 135
+            "Points:Service Points Won": 107,
+            "Points:Return Points Won": 115,
+            "Points:Total Points Won": 222
           }
         },
         "p2": {
-          "matchCount": 60,
+          "matchCount": 61,
           "stats": {
             "Service:Aces": 7.6,
             "Service:Double Faults": 2.3,
-            "Service:1st Serve Points Won": 74.1,
-            "Service:2nd Serve Points Won": 50.7,
+            "Service:1st Serve Points Won": 74,
+            "Service:2nd Serve Points Won": 50.6,
             "Service:Break Points Saved": 67.4,
-            "Return:Break Points Converted": 36.6,
+            "Return:Break Points Converted": 36.8,
             "Points:Winners": 28.1,
             "Points:Unforced Errors": 25.3,
-            "Points:Service Points Won": 66.2,
+            "Points:Service Points Won": 66.1,
             "Points:Return Points Won": 34.1,
             "Points:Total Points Won": 50.3
           },
           "samples": {
-            "Service:Aces": 60,
-            "Service:Double Faults": 60,
-            "Service:1st Serve Points Won": 3360,
-            "Service:2nd Serve Points Won": 1718,
-            "Service:Break Points Saved": 393,
-            "Return:Break Points Converted": 358,
+            "Service:Aces": 61,
+            "Service:Double Faults": 61,
+            "Service:1st Serve Points Won": 3399,
+            "Service:2nd Serve Points Won": 1732,
+            "Service:Break Points Saved": 396,
+            "Return:Break Points Converted": 359,
             "Points:Winners": 43,
             "Points:Unforced Errors": 43,
-            "Points:Service Points Won": 5075,
-            "Points:Return Points Won": 4972,
-            "Points:Total Points Won": 10047
+            "Points:Service Points Won": 5128,
+            "Points:Return Points Won": 5006,
+            "Points:Total Points Won": 10134
           }
         }
       },
@@ -13653,11 +13759,11 @@
       "category": "Medium"
     },
     "weather": {
-      "temperature": 4.4,
-      "windSpeed": 7.9,
-      "humidity": 76,
+      "temperature": 3,
+      "windSpeed": 8.3,
+      "humidity": 75,
       "source": "Open-Meteo",
-      "historical": false,
+      "historical": true,
       "weekRange": "Nov 2 – 8, 2026",
       "week": [
         {
@@ -13743,21 +13849,27 @@
           "dow": "Sun",
           "label": "Nov 8",
           "code": 3,
-          "hi": 5,
-          "lo": 2,
+          "hi": 4,
+          "lo": 1,
           "rain": 0,
-          "wind": 13,
+          "wind": 14,
           "humidity": 87,
           "isMatch": true,
           "available": true
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 5,
+        "p2": 6
+      }
+    ],
+    "liveGameScore": "0 - 30",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/10232_i-montes-de-la-torre.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2843_l-sonego.jpg",
     "tournamentKey": "1681",
@@ -14510,21 +14622,21 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 3.75,
-      "p2": 1.22,
-      "bookmaker": "Betfair",
-      "seenAt": "2026-11-08T03:51:38.746Z"
+      "p1": 4,
+      "p2": 1.25,
+      "bookmaker": "bet365",
+      "seenAt": "2026-11-08T12:17:10.816Z"
     },
     "bestOdds": {
       "p1": {
-        "price": 4.2,
-        "bookmaker": "WilliamHill"
+        "price": 4.06,
+        "bookmaker": "Pncl"
       },
       "p2": {
-        "price": 1.27,
-        "bookmaker": "1xBet"
+        "price": 1.29,
+        "bookmaker": "Pncl"
       },
-      "seenAt": "2026-11-08T03:51:38.746Z"
+      "seenAt": "2026-11-08T12:17:10.816Z"
     },
     "tournamentRound": "ATP Paris - Final",
     "qualifying": false,
@@ -16833,9 +16945,9 @@
       "category": "Medium"
     },
     "weather": {
-      "temperature": 8.7,
-      "windSpeed": 6.4,
-      "humidity": 79,
+      "temperature": 7.4,
+      "windSpeed": 7.1,
+      "humidity": 82,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Nov 2 – 8, 2026",
@@ -16922,12 +17034,12 @@
           "date": "2026-11-08",
           "dow": "Sun",
           "label": "Nov 8",
-          "code": 80,
-          "hi": 9,
-          "lo": 5,
+          "code": 45,
+          "hi": 8,
+          "lo": 4,
           "rain": 0,
           "wind": 8,
-          "humidity": 88,
+          "humidity": 89,
           "isMatch": true,
           "available": true
         }
@@ -17353,6 +17465,40 @@
                 1.279
               ]
             ]
+          },
+          "Pinnacle +30s": {
+            "p1": [
+              [
+                "2026-11-08T12:38:34.373Z",
+                3.97
+              ],
+              [
+                "2026-11-08T12:40:09.206Z",
+                4.059
+              ],
+              [
+                "2026-11-08T12:42:33.716Z",
+                4.09
+              ]
+            ],
+            "p2": [
+              [
+                "2026-11-08T12:38:34.373Z",
+                1.294
+              ],
+              [
+                "2026-11-08T12:40:09.206Z",
+                1.284
+              ],
+              [
+                "2026-11-08T12:40:15.362Z",
+                1.285
+              ],
+              [
+                "2026-11-08T12:42:33.716Z",
+                1.281
+              ]
+            ]
           }
         },
         "meta": {
@@ -17436,6 +17582,12 @@
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
             "checkedAt": "2026-09-30T21:22:18.554Z"
+          },
+          "Pinnacle +30s": {
+            "source": "Oddspapi",
+            "group": "sharp",
+            "clock": "book tick",
+            "checkedAt": "2026-11-08T12:42:24.000Z"
           }
         }
       }
@@ -17470,52 +17622,106 @@
         "p1": 3.75,
         "p2": 1.22,
         "seenAt": "2026-11-08T03:52:53.893Z"
+      },
+      "bet365": {
+        "p1": 4,
+        "p2": 1.25,
+        "seenAt": "2026-11-08T12:18:36.839Z"
+      },
+      "BetVictor": {
+        "p1": 3.6,
+        "p2": 1.25,
+        "seenAt": "2026-11-08T12:18:36.839Z"
+      },
+      "Pncl": {
+        "p1": 4.06,
+        "p2": 1.29,
+        "seenAt": "2026-11-08T12:18:36.839Z"
       }
     },
     "bookNow": {
       "WilliamHill": {
-        "p1": 4.2,
-        "p2": 1.22,
-        "seenAt": "2026-11-08T03:52:53.893Z",
-        "since": "2026-11-08T03:52:53.893Z"
+        "p1": 4,
+        "p2": 1.25,
+        "seenAt": "2026-11-08T12:18:36.839Z",
+        "since": "2026-11-08T12:18:36.839Z"
+      },
+      "bet365": {
+        "p1": 4,
+        "p2": 1.25,
+        "seenAt": "2026-11-08T12:18:36.839Z",
+        "since": "2026-11-08T12:18:36.839Z"
       },
       "Marathon": {
         "p1": 4,
         "p2": 1.25,
-        "seenAt": "2026-11-08T03:52:53.893Z",
-        "since": "2026-11-08T03:52:53.893Z"
-      },
-      "Sbo": {
-        "p1": 3.7,
-        "p2": 1.2,
-        "seenAt": "2026-11-08T03:52:53.893Z",
-        "since": "2026-11-08T03:52:53.893Z"
-      },
-      "1xBet": {
-        "p1": 3.93,
-        "p2": 1.27,
-        "seenAt": "2026-11-08T03:52:53.893Z",
-        "since": "2026-11-08T03:52:53.893Z"
-      },
-      "Betano": {
-        "p1": 3.9,
-        "p2": 1.25,
-        "seenAt": "2026-11-08T03:52:53.893Z",
+        "seenAt": "2026-11-08T12:18:36.839Z",
         "since": "2026-11-08T03:52:53.893Z"
       },
       "Betfair": {
         "p1": 3.75,
-        "p2": 1.22,
-        "seenAt": "2026-11-08T03:52:53.893Z",
+        "p2": 1.25,
+        "seenAt": "2026-11-08T12:18:36.839Z",
+        "since": "2026-11-08T12:18:36.839Z"
+      },
+      "BetVictor": {
+        "p1": 3.6,
+        "p2": 1.25,
+        "seenAt": "2026-11-08T12:18:36.839Z",
+        "since": "2026-11-08T12:18:36.839Z"
+      },
+      "Pncl": {
+        "p1": 4.06,
+        "p2": 1.29,
+        "seenAt": "2026-11-08T12:18:36.839Z",
+        "since": "2026-11-08T12:18:36.839Z"
+      },
+      "Sbo": {
+        "p1": 3.7,
+        "p2": 1.2,
+        "seenAt": "2026-11-08T12:18:36.839Z",
         "since": "2026-11-08T03:52:53.893Z"
+      },
+      "1xBet": {
+        "p1": 4.03,
+        "p2": 1.26,
+        "seenAt": "2026-11-08T12:18:36.839Z",
+        "since": "2026-11-08T12:18:36.839Z"
+      },
+      "Betano": {
+        "p1": 4,
+        "p2": 1.24,
+        "seenAt": "2026-11-08T12:18:36.839Z",
+        "since": "2026-11-08T12:18:36.839Z"
       }
+    },
+    "openingOdds": {
+      "p1": 4,
+      "p2": 1.25,
+      "bookmaker": "bet365",
+      "seenAt": "2026-11-08T12:17:20.551Z",
+      "src": "vendor-sighting",
+      "vendor": "api-tennis"
+    },
+    "pinnacleOpen": {
+      "p1": 4.06,
+      "p2": 1.29,
+      "ts": "2026-11-08T12:18:36.839Z",
+      "vfP1": 0.2411
+    },
+    "valueSnapshot": {
+      "fairP1": 0.3042,
+      "fairP2": 0.6958,
+      "edgeVsPinnacleP1": 0.0631,
+      "edgeVsPinnacleP2": -0.0631,
+      "ts": "2026-11-08T12:18:36.734Z"
     }
   },
   {
     "id": "upcoming-12178224",
     "day": "today",
     "date": "2026-11-08",
-    "time": "13:30",
+    "time": "13:40",
     "p1": "J. Fearnley",
     "p2": "A. Shevchenko",
     "tour": "ATP Stockholm",
@@ -17524,10 +17730,10 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 1.25,
-      "p2": 3.75,
+      "p1": 1.28,
+      "p2": 3.5,
       "bookmaker": "bet365",
-      "seenAt": "2026-11-08T03:51:38.746Z"
+      "seenAt": "2026-11-08T12:17:10.816Z"
     },
     "bestOdds": {
       "p1": {
@@ -17535,10 +17741,10 @@
         "bookmaker": "WilliamHill"
       },
       "p2": {
-        "price": 3.75,
+        "price": 3.5,
         "bookmaker": "bet365"
       },
-      "seenAt": "2026-11-08T03:51:38.746Z"
+      "seenAt": "2026-11-08T12:17:10.816Z"
     },
     "tournamentRound": "ATP Stockholm - Final",
     "qualifying": true,
@@ -19877,8 +20083,8 @@
       "category": "Medium"
     },
     "weather": {
-      "temperature": 5.1,
-      "windSpeed": 7.6,
+      "temperature": 3.7,
+      "windSpeed": 7.9,
       "humidity": 72,
       "source": "Open-Meteo",
       "historical": false,
@@ -19967,10 +20173,10 @@
           "dow": "Sun",
           "label": "Nov 8",
           "code": 3,
-          "hi": 5,
-          "lo": 2,
+          "hi": 4,
+          "lo": 1,
           "rain": 0,
-          "wind": 13,
+          "wind": 14,
           "humidity": 87,
           "isMatch": true,
           "available": true
@@ -20177,6 +20383,20 @@
                 3.28
               ]
             ]
+          },
+          "Pinnacle +30s": {
+            "p1": [
+              [
+                "2026-11-08T12:04:31.240Z",
+                1.359
+              ]
+            ],
+            "p2": [
+              [
+                "2026-11-08T12:04:31.240Z",
+                3.3
+              ]
+            ]
           }
         },
         "meta": {
@@ -20260,9 +20480,23 @@
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
             "checkedAt": "2026-09-30T21:22:18.554Z"
+          },
+          "Pinnacle +30s": {
+            "source": "Oddspapi",
+            "group": "sharp",
+            "clock": "book tick",
+            "checkedAt": "2026-11-08T12:40:00.000Z"
           }
         }
       }
+    },
+    "openingOdds": {
+      "p1": 1.25,
+      "p2": 3.75,
+      "bookmaker": "bet365",
+      "seenAt": "2026-11-08T03:51:49.862Z",
+      "src": "vendor-sighting",
+      "vendor": "api-tennis"
     },
     "bookOpens": {
       "WilliamHill": {
@@ -20299,66 +20533,93 @@
         "p1": 1.3,
         "p2": 2.81,
         "seenAt": "2026-11-08T03:52:53.893Z"
+      },
+      "Pncl": {
+        "p1": 1.36,
+        "p2": 3.3,
+        "seenAt": "2026-11-08T12:18:36.839Z"
+      },
+      "Betano": {
+        "p1": 1.33,
+        "p2": 3.15,
+        "seenAt": "2026-11-08T12:18:36.839Z"
       }
     },
     "bookNow": {
       "WilliamHill": {
         "p1": 1.36,
         "p2": 3,
-        "seenAt": "2026-11-08T03:52:53.893Z",
+        "seenAt": "2026-11-08T12:18:36.839Z",
         "since": "2026-11-08T03:52:53.893Z"
+      },
+      "bet365": {
+        "p1": 1.28,
+        "p2": 3.5,
+        "seenAt": "2026-11-08T12:18:36.839Z",
+        "since": "2026-11-08T12:18:36.839Z"
       },
       "Marathon": {
         "p1": 1.31,
         "p2": 3.08,
-        "seenAt": "2026-11-08T03:52:53.893Z",
+        "seenAt": "2026-11-08T12:18:36.839Z",
         "since": "2026-11-08T03:52:53.893Z"
       },
       "Betfair": {
-        "p1": 1.29,
-        "p2": 3.25,
-        "seenAt": "2026-11-08T03:52:53.893Z",
-        "since": "2026-11-08T03:52:53.893Z"
+        "p1": 1.3,
+        "p2": 3.2,
+        "seenAt": "2026-11-08T12:18:36.839Z",
+        "since": "2026-11-08T12:18:36.839Z"
       },
       "BetVictor": {
         "p1": 1.33,
         "p2": 3,
-        "seenAt": "2026-11-08T03:52:53.893Z",
+        "seenAt": "2026-11-08T12:18:36.839Z",
+        "since": "2026-11-08T03:52:53.893Z"
+      },
+      "Pncl": {
+        "p1": 1.36,
+        "p2": 3.3,
+        "seenAt": "2026-11-08T12:18:36.839Z",
+        "since": "2026-11-08T12:18:36.839Z"
+      },
+      "Sbo": {
+        "p1": 1.3,
+        "p2": 2.81,
+        "seenAt": "2026-11-08T12:18:36.839Z",
         "since": "2026-11-08T03:52:53.893Z"
       },
       "1xBet": {
         "p1": 1.32,
         "p2": 3.09,
-        "seenAt": "2026-11-08T03:52:53.893Z",
+        "seenAt": "2026-11-08T12:18:36.839Z",
         "since": "2026-11-08T03:52:53.893Z"
       },
-      "bet365": {
-        "p1": 1.25,
-        "p2": 3.75,
-        "seenAt": "2026-11-08T03:52:53.893Z",
-        "since": "2026-11-08T03:52:53.893Z"
-      },
-      "Sbo": {
-        "p1": 1.3,
-        "p2": 2.81,
-        "seenAt": "2026-11-08T03:52:53.893Z",
-        "since": "2026-11-08T03:52:53.893Z"
+      "Betano": {
+        "p1": 1.33,
+        "p2": 3.15,
+        "seenAt": "2026-11-08T12:18:36.839Z",
+        "since": "2026-11-08T12:18:36.839Z"
       }
     },
-    "openingOdds": {
-      "p1": 1.25,
-      "p2": 3.75,
-      "bookmaker": "bet365",
-      "seenAt": "2026-11-08T03:51:49.862Z",
-      "src": "vendor-sighting",
-      "vendor": "api-tennis"
+    "pinnacleOpen": {
+      "p1": 1.36,
+      "p2": 3.3,
+      "ts": "2026-11-08T12:18:36.839Z",
+      "vfP1": 0.7082
+    },
+    "valueSnapshot": {
+      "fairP1": 0.6591,
+      "fairP2": 0.3409,
+      "edgeVsPinnacleP1": -0.049,
+      "edgeVsPinnacleP2": 0.049,
+      "ts": "2026-11-08T12:18:36.734Z"
     }
   },
   {
     "id": "upcoming-12178225",
     "day": "today",
     "date": "2026-11-08",
-    "time": "13:30",
+    "time": "13:40",
     "p1": "A. Mannarino",
     "p2": "T. Samuel",
     "tour": "ATP Stockholm",
@@ -20367,21 +20628,21 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 1.9,
-      "p2": 1.8,
+      "p1": 1.8,
+      "p2": 1.9,
       "bookmaker": "bet365",
-      "seenAt": "2026-11-08T03:51:38.746Z"
+      "seenAt": "2026-11-08T12:17:10.816Z"
     },
     "bestOdds": {
       "p1": {
-        "price": 1.92,
-        "bookmaker": "Pncl"
+        "price": 1.85,
+        "bookmaker": "Betano"
       },
       "p2": {
-        "price": 1.92,
+        "price": 2.02,
         "bookmaker": "Pncl"
       },
-      "seenAt": "2026-11-08T03:51:38.746Z"
+      "seenAt": "2026-11-08T12:17:10.816Z"
     },
     "tournamentRound": "ATP Stockholm - Final",
     "qualifying": true,
@@ -23938,8 +24199,8 @@
       "category": "Medium"
     },
     "weather": {
-      "temperature": 5.1,
-      "windSpeed": 7.6,
+      "temperature": 3.7,
+      "windSpeed": 7.9,
       "humidity": 72,
       "source": "Open-Meteo",
       "historical": false,
@@ -24028,10 +24289,10 @@
           "dow": "Sun",
           "label": "Nov 8",
           "code": 3,
-          "hi": 5,
-          "lo": 2,
+          "hi": 4,
+          "lo": 1,
           "rain": 0,
-          "wind": 13,
+          "wind": 14,
           "humidity": 87,
           "isMatch": true,
           "available": true
@@ -24322,6 +24583,20 @@
                 2.04
               ]
             ]
+          },
+          "Pinnacle +30s": {
+            "p1": [
+              [
+                "2026-11-08T11:52:36.253Z",
+                1.826
+              ]
+            ],
+            "p2": [
+              [
+                "2026-11-08T11:52:36.253Z",
+                2.04
+              ]
+            ]
           }
         },
         "meta": {
@@ -24405,9 +24680,23 @@
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
             "checkedAt": "2026-09-30T21:22:18.554Z"
+          },
+          "Pinnacle +30s": {
+            "source": "Oddspapi",
+            "group": "sharp",
+            "clock": "book tick",
+            "checkedAt": "2026-11-08T12:40:00.000Z"
           }
         }
       }
+    },
+    "openingOdds": {
+      "p1": 1.9,
+      "p2": 1.8,
+      "bookmaker": "bet365",
+      "seenAt": "2026-11-08T03:51:51.655Z",
+      "src": "vendor-sighting",
+      "vendor": "api-tennis"
     },
     "bookOpens": {
       "WilliamHill": {
@@ -24449,65 +24738,68 @@
         "p1": 1.84,
         "p2": 1.84,
         "seenAt": "2026-11-08T03:52:53.893Z"
+      },
+      "Betano": {
+        "p1": 1.85,
+        "p2": 1.9,
+        "seenAt": "2026-11-08T12:18:36.839Z"
       }
     },
     "bookNow": {
       "WilliamHill": {
-        "p1": 1.83,
-        "p2": 1.83,
-        "seenAt": "2026-11-08T03:52:53.894Z",
-        "since": "2026-11-08T03:52:53.894Z"
-      },
-      "Marathon": {
-        "p1": 1.87,
-        "p2": 1.81,
-        "seenAt": "2026-11-08T03:52:53.894Z",
-        "since": "2026-11-08T03:52:53.894Z"
-      },
-      "BetVictor": {
-        "p1": 1.87,
-        "p2": 1.83,
-        "seenAt": "2026-11-08T03:52:53.894Z",
-        "since": "2026-11-08T03:52:53.894Z"
-      },
-      "Pncl": {
-        "p1": 1.92,
-        "p2": 1.92,
-        "seenAt": "2026-11-08T03:52:53.894Z",
-        "since": "2026-11-08T03:52:53.894Z"
-      },
-      "1xBet": {
-        "p1": 1.87,
-        "p2": 1.81,
-        "seenAt": "2026-11-08T03:52:53.894Z",
-        "since": "2026-11-08T03:52:53.894Z"
+        "p1": 1.8,
+        "p2": 1.91,
+        "seenAt": "2026-11-08T12:18:36.839Z",
+        "since": "2026-11-08T12:18:36.839Z"
       },
       "bet365": {
-        "p1": 1.9,
-        "p2": 1.8,
-        "seenAt": "2026-11-08T03:52:53.894Z",
-        "since": "2026-11-08T03:52:53.894Z"
+        "p1": 1.8,
+        "p2": 1.9,
+        "seenAt": "2026-11-08T12:18:36.839Z",
+        "since": "2026-11-08T12:18:36.839Z"
+      },
+      "Marathon": {
+        "p1": 1.81,
+        "p2": 1.87,
+        "seenAt": "2026-11-08T12:18:36.839Z",
+        "since": "2026-11-08T12:18:36.839Z"
       },
       "Betfair": {
-        "p1": 1.91,
-        "p2": 1.8,
-        "seenAt": "2026-11-08T03:52:53.894Z",
-        "since": "2026-11-08T03:52:53.894Z"
+        "p1": 1.73,
+        "p2": 2,
+        "seenAt": "2026-11-08T12:18:36.839Z",
+        "since": "2026-11-08T12:18:36.839Z"
+      },
+      "BetVictor": {
+        "p1": 1.8,
+        "p2": 1.91,
+        "seenAt": "2026-11-08T12:18:36.839Z",
+        "since": "2026-11-08T12:18:36.839Z"
+      },
+      "Pncl": {
+        "p1": 1.84,
+        "p2": 2.02,
+        "seenAt": "2026-11-08T12:18:36.839Z",
+        "since": "2026-11-08T12:18:36.839Z"
       },
       "Sbo": {
-        "p1": 1.84,
-        "p2": 1.84,
-        "seenAt": "2026-11-08T03:52:53.894Z",
-        "since": "2026-11-08T03:52:53.894Z"
+        "p1": 1.82,
+        "p2": 1.88,
+        "seenAt": "2026-11-08T12:18:36.839Z",
+        "since": "2026-11-08T12:18:36.839Z"
+      },
+      "1xBet": {
+        "p1": 1.81,
+        "p2": 1.87,
+        "seenAt": "2026-11-08T12:18:36.839Z",
+        "since": "2026-11-08T12:18:36.839Z"
+      },
+      "Betano": {
+        "p1": 1.85,
+        "p2": 1.9,
+        "seenAt": "2026-11-08T12:18:36.839Z",
+        "since": "2026-11-08T12:18:36.839Z"
       }
-    },
-    "openingOdds": {
-      "p1": 1.9,
-      "p2": 1.8,
-      "bookmaker": "bet365",
-      "seenAt": "2026-11-08T03:51:51.655Z",
-      "src": "vendor-sighting",
-      "vendor": "api-tennis"
     },
     "pinnacleOpen": {
       "p1": 1.92,
@@ -24539,7 +24831,7 @@
       "p1": 3.4,
       "p2": 1.33,
       "bookmaker": "bet365",
-      "seenAt": "2026-11-08T03:51:53.620Z"
+      "seenAt": "2026-11-08T12:17:27.803Z"
     },
     "bestOdds": {
       "p1": {
@@ -24547,10 +24839,10 @@
         "bookmaker": "bet365"
       },
       "p2": {
-        "price": 1.35,
-        "bookmaker": "Betano"
+        "price": 1.37,
+        "bookmaker": "1xBet"
       },
-      "seenAt": "2026-11-08T03:51:53.620Z"
+      "seenAt": "2026-11-08T12:17:27.803Z"
     },
     "tournamentRound": "ATP Stockholm - 1/16-finals",
     "qualifying": false,
@@ -27941,9 +28233,9 @@
       "category": "Medium"
     },
     "weather": {
-      "temperature": 4.7,
-      "windSpeed": 12.6,
-      "humidity": 81,
+      "temperature": 4.3,
+      "windSpeed": 13.7,
+      "humidity": 77,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Nov 9 – 15, 2026",
@@ -27953,11 +28245,11 @@
           "dow": "Mon",
           "label": "Nov 9",
           "code": 3,
-          "hi": 6,
+          "hi": 5,
           "lo": 2,
           "rain": 0,
           "wind": 16,
-          "humidity": 83,
+          "humidity": 81,
           "isMatch": true,
           "available": true
         },
@@ -27965,12 +28257,12 @@
           "date": "2026-11-10",
           "dow": "Tue",
           "label": "Nov 10",
-          "code": 3,
+          "code": 51,
           "hi": 6,
           "lo": 3,
-          "rain": 6,
-          "wind": 14,
-          "humidity": 81,
+          "rain": 10,
+          "wind": 13,
+          "humidity": 85,
           "isMatch": false,
           "available": true
         },
@@ -27978,12 +28270,12 @@
           "date": "2026-11-11",
           "dow": "Wed",
           "label": "Nov 11",
-          "code": 51,
-          "hi": 6,
+          "code": 53,
+          "hi": 5,
           "lo": 3,
-          "rain": 35,
+          "rain": 48,
           "wind": 14,
-          "humidity": 92,
+          "humidity": 96,
           "isMatch": false,
           "available": true
         },
@@ -27991,12 +28283,12 @@
           "date": "2026-11-12",
           "dow": "Thu",
           "label": "Nov 12",
-          "code": 51,
+          "code": 71,
           "hi": 5,
           "lo": 0,
-          "rain": 51,
-          "wind": 17,
-          "humidity": 94,
+          "rain": 47,
+          "wind": 21,
+          "humidity": 86,
           "isMatch": false,
           "available": true
         },
@@ -28004,12 +28296,12 @@
           "date": "2026-11-13",
           "dow": "Fri",
           "label": "Nov 13",
-          "code": 2,
-          "hi": 2,
-          "lo": 0,
-          "rain": 20,
-          "wind": 20,
-          "humidity": 72,
+          "code": 3,
+          "hi": 1,
+          "lo": -1,
+          "rain": 14,
+          "wind": 22,
+          "humidity": 68,
           "isMatch": false,
           "available": true
         },
@@ -28017,11 +28309,11 @@
           "date": "2026-11-14",
           "dow": "Sat",
           "label": "Nov 14",
-          "code": 51,
-          "hi": 6,
+          "code": 2,
+          "hi": 5,
           "lo": -1,
-          "rain": 6,
-          "wind": 25,
+          "rain": 2,
+          "wind": 21,
           "humidity": 84,
           "isMatch": false,
           "available": true
@@ -28136,6 +28428,20 @@
                 1.38
               ]
             ]
+          },
+          "Pinnacle +30s": {
+            "p1": [
+              [
+                "2026-11-08T12:20:17.927Z",
+                3.2
+              ]
+            ],
+            "p2": [
+              [
+                "2026-11-08T12:20:17.927Z",
+                1.387
+              ]
+            ]
           }
         },
         "meta": {
@@ -28219,6 +28525,12 @@
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
             "checkedAt": "2026-09-30T21:22:18.554Z"
+          },
+          "Pinnacle +30s": {
+            "source": "Oddspapi",
+            "group": "sharp",
+            "clock": "book tick",
+            "checkedAt": "2026-11-08T12:42:24.000Z"
           }
         }
       }
@@ -28270,46 +28582,46 @@
     },
     "bookNow": {
       "WilliamHill": {
-        "p1": 3.3,
-        "p2": 1.33,
-        "seenAt": "2026-11-08T03:52:53.894Z",
-        "since": "2026-11-07T16:58:24.817Z"
+        "p1": 3.1,
+        "p2": 1.36,
+        "seenAt": "2026-11-08T12:18:36.839Z",
+        "since": "2026-11-08T12:18:36.839Z"
       },
       "bet365": {
         "p1": 3.4,
         "p2": 1.33,
-        "seenAt": "2026-11-08T03:52:53.894Z",
+        "seenAt": "2026-11-08T12:18:36.839Z",
         "since": "2026-11-07T16:58:24.817Z"
       },
       "Marathon": {
-        "p1": 3.28,
-        "p2": 1.33,
-        "seenAt": "2026-11-08T03:52:53.894Z",
-        "since": "2026-11-07T16:58:24.817Z"
+        "p1": 3.12,
+        "p2": 1.36,
+        "seenAt": "2026-11-08T12:18:36.839Z",
+        "since": "2026-11-08T12:18:36.839Z"
       },
       "Betfair": {
-        "p1": 3.25,
-        "p2": 1.33,
-        "seenAt": "2026-11-08T03:52:53.894Z",
-        "since": "2026-11-07T16:58:24.817Z"
+        "p1": 3,
+        "p2": 1.36,
+        "seenAt": "2026-11-08T12:18:36.839Z",
+        "since": "2026-11-08T12:18:36.839Z"
       },
       "BetVictor": {
-        "p1": 3.1,
+        "p1": 3,
         "p2": 1.33,
-        "seenAt": "2026-11-08T03:52:53.894Z",
-        "since": "2026-11-07T20:57:01.663Z"
+        "seenAt": "2026-11-08T12:18:36.839Z",
+        "since": "2026-11-08T12:18:36.839Z"
       },
       "1xBet": {
-        "p1": 3.26,
-        "p2": 1.34,
-        "seenAt": "2026-11-08T03:52:53.894Z",
-        "since": "2026-11-07T16:58:24.817Z"
+        "p1": 3.1,
+        "p2": 1.37,
+        "seenAt": "2026-11-08T12:18:36.839Z",
+        "since": "2026-11-08T12:18:36.839Z"
       },
       "Betano": {
-        "p1": 3.25,
-        "p2": 1.35,
-        "seenAt": "2026-11-08T03:52:53.894Z",
-        "since": "2026-11-07T16:58:24.817Z"
+        "p1": 3.15,
+        "p2": 1.37,
+        "seenAt": "2026-11-08T12:18:36.839Z",
+        "since": "2026-11-08T12:18:36.839Z"
       }
     }
   },
@@ -28329,18 +28641,18 @@
       "p1": 1.25,
       "p2": 4,
       "bookmaker": "bet365",
-      "seenAt": "2026-11-08T03:51:53.620Z"
+      "seenAt": "2026-11-08T12:17:27.803Z"
     },
     "bestOdds": {
       "p1": {
-        "price": 1.27,
-        "bookmaker": "Betano"
+        "price": 1.29,
+        "bookmaker": "WilliamHill"
       },
       "p2": {
         "price": 4,
-        "bookmaker": "WilliamHill"
+        "bookmaker": "bet365"
       },
-      "seenAt": "2026-11-08T03:51:53.620Z"
+      "seenAt": "2026-11-08T12:17:27.803Z"
     },
     "tournamentRound": "ATP Stockholm - 1/16-finals",
     "qualifying": false,
@@ -30067,9 +30379,9 @@
       "category": "Medium"
     },
     "weather": {
-      "temperature": 4.7,
-      "windSpeed": 12.6,
-      "humidity": 81,
+      "temperature": 4.3,
+      "windSpeed": 13.7,
+      "humidity": 77,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Nov 9 – 15, 2026",
@@ -30079,11 +30391,11 @@
           "dow": "Mon",
           "label": "Nov 9",
           "code": 3,
-          "hi": 6,
+          "hi": 5,
           "lo": 2,
           "rain": 0,
           "wind": 16,
-          "humidity": 83,
+          "humidity": 81,
           "isMatch": true,
           "available": true
         },
@@ -30091,12 +30403,12 @@
           "date": "2026-11-10",
           "dow": "Tue",
           "label": "Nov 10",
-          "code": 3,
+          "code": 51,
           "hi": 6,
           "lo": 3,
-          "rain": 6,
-          "wind": 14,
-          "humidity": 81,
+          "rain": 10,
+          "wind": 13,
+          "humidity": 85,
           "isMatch": false,
           "available": true
         },
@@ -30104,12 +30416,12 @@
           "date": "2026-11-11",
           "dow": "Wed",
           "label": "Nov 11",
-          "code": 51,
-          "hi": 6,
+          "code": 53,
+          "hi": 5,
           "lo": 3,
-          "rain": 35,
+          "rain": 48,
           "wind": 14,
-          "humidity": 92,
+          "humidity": 96,
           "isMatch": false,
           "available": true
         },
@@ -30117,12 +30429,12 @@
           "date": "2026-11-12",
           "dow": "Thu",
           "label": "Nov 12",
-          "code": 51,
+          "code": 71,
           "hi": 5,
           "lo": 0,
-          "rain": 51,
-          "wind": 17,
-          "humidity": 94,
+          "rain": 47,
+          "wind": 21,
+          "humidity": 86,
           "isMatch": false,
           "available": true
         },
@@ -30130,12 +30442,12 @@
           "date": "2026-11-13",
           "dow": "Fri",
           "label": "Nov 13",
-          "code": 2,
-          "hi": 2,
-          "lo": 0,
-          "rain": 20,
-          "wind": 20,
-          "humidity": 72,
+          "code": 3,
+          "hi": 1,
+          "lo": -1,
+          "rain": 14,
+          "wind": 22,
+          "humidity": 68,
           "isMatch": false,
           "available": true
         },
@@ -30143,11 +30455,11 @@
           "date": "2026-11-14",
           "dow": "Sat",
           "label": "Nov 14",
-          "code": 51,
-          "hi": 6,
+          "code": 2,
+          "hi": 5,
           "lo": -1,
-          "rain": 6,
-          "wind": 25,
+          "rain": 2,
+          "wind": 21,
           "humidity": 84,
           "isMatch": false,
           "available": true
@@ -30414,6 +30726,28 @@
                 3.92
               ]
             ]
+          },
+          "Pinnacle +30s": {
+            "p1": [
+              [
+                "2026-11-08T11:50:17.632Z",
+                1.285
+              ],
+              [
+                "2026-11-08T12:26:26.434Z",
+                1.281
+              ]
+            ],
+            "p2": [
+              [
+                "2026-11-08T11:50:17.632Z",
+                3.91
+              ],
+              [
+                "2026-11-08T12:26:26.434Z",
+                3.94
+              ]
+            ]
           }
         },
         "meta": {
@@ -30497,6 +30831,12 @@
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
             "checkedAt": "2026-09-30T21:22:18.554Z"
+          },
+          "Pinnacle +30s": {
+            "source": "Oddspapi",
+            "group": "sharp",
+            "clock": "book tick",
+            "checkedAt": "2026-11-08T12:42:24.000Z"
           }
         }
       }
@@ -30548,46 +30888,46 @@
     },
     "bookNow": {
       "WilliamHill": {
-        "p1": 1.25,
-        "p2": 4,
-        "seenAt": "2026-11-08T03:52:53.894Z",
-        "since": "2026-11-08T03:52:53.894Z"
+        "p1": 1.29,
+        "p2": 3.6,
+        "seenAt": "2026-11-08T12:18:36.839Z",
+        "since": "2026-11-08T12:18:36.839Z"
       },
       "bet365": {
         "p1": 1.25,
         "p2": 4,
-        "seenAt": "2026-11-08T03:52:53.894Z",
+        "seenAt": "2026-11-08T12:18:36.839Z",
         "since": "2026-11-07T16:58:24.817Z"
       },
       "Marathon": {
-        "p1": 1.25,
-        "p2": 3.9,
-        "seenAt": "2026-11-08T03:52:53.894Z",
-        "since": "2026-11-07T20:57:01.663Z"
+        "p1": 1.26,
+        "p2": 3.8,
+        "seenAt": "2026-11-08T12:18:36.839Z",
+        "since": "2026-11-08T12:18:36.839Z"
       },
       "Betfair": {
         "p1": 1.25,
         "p2": 3.75,
-        "seenAt": "2026-11-08T03:52:53.894Z",
+        "seenAt": "2026-11-08T12:18:36.839Z",
         "since": "2026-11-07T16:58:24.817Z"
       },
       "BetVictor": {
-        "p1": 1.22,
-        "p2": 3.75,
-        "seenAt": "2026-11-08T03:52:53.894Z",
-        "since": "2026-11-08T03:52:53.894Z"
+        "p1": 1.25,
+        "p2": 3.6,
+        "seenAt": "2026-11-08T12:18:36.839Z",
+        "since": "2026-11-08T12:18:36.839Z"
       },
       "1xBet": {
         "p1": 1.26,
         "p2": 3.85,
-        "seenAt": "2026-11-08T03:52:53.894Z",
+        "seenAt": "2026-11-08T12:18:36.839Z",
         "since": "2026-11-07T20:57:01.663Z"
       },
       "Betano": {
-        "p1": 1.27,
-        "p2": 3.75,
-        "seenAt": "2026-11-08T03:52:53.894Z",
-        "since": "2026-11-08T03:52:53.894Z"
+        "p1": 1.28,
+        "p2": 3.7,
+        "seenAt": "2026-11-08T12:18:36.839Z",
+        "since": "2026-11-08T12:18:36.839Z"
       }
     }
   },
@@ -30605,9 +30945,9 @@
     "value": null,
     "odds": {
       "p1": 1.33,
-      "p2": 3.25,
-      "bookmaker": "Betfair",
-      "seenAt": "2026-11-08T03:51:53.620Z"
+      "p2": 3.4,
+      "bookmaker": "bet365",
+      "seenAt": "2026-11-08T12:17:27.803Z"
     },
     "bestOdds": {
       "p1": {
@@ -30615,10 +30955,10 @@
         "bookmaker": "WilliamHill"
       },
       "p2": {
-        "price": 3.28,
-        "bookmaker": "Marathon"
+        "price": 3.45,
+        "bookmaker": "Betano"
       },
-      "seenAt": "2026-11-08T03:51:53.620Z"
+      "seenAt": "2026-11-08T12:17:27.803Z"
     },
     "tournamentRound": "ATP Stockholm - 1/16-finals",
     "qualifying": false,
@@ -33435,9 +33775,9 @@
       "category": "Medium"
     },
     "weather": {
-      "temperature": 4.7,
-      "windSpeed": 12.6,
-      "humidity": 81,
+      "temperature": 4.3,
+      "windSpeed": 13.7,
+      "humidity": 77,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Nov 9 – 15, 2026",
@@ -33447,11 +33787,11 @@
           "dow": "Mon",
           "label": "Nov 9",
           "code": 3,
-          "hi": 6,
+          "hi": 5,
           "lo": 2,
           "rain": 0,
           "wind": 16,
-          "humidity": 83,
+          "humidity": 81,
           "isMatch": true,
           "available": true
         },
@@ -33459,12 +33799,12 @@
           "date": "2026-11-10",
           "dow": "Tue",
           "label": "Nov 10",
-          "code": 3,
+          "code": 51,
           "hi": 6,
           "lo": 3,
-          "rain": 6,
-          "wind": 14,
-          "humidity": 81,
+          "rain": 10,
+          "wind": 13,
+          "humidity": 85,
           "isMatch": false,
           "available": true
         },
@@ -33472,12 +33812,12 @@
           "date": "2026-11-11",
           "dow": "Wed",
           "label": "Nov 11",
-          "code": 51,
-          "hi": 6,
+          "code": 53,
+          "hi": 5,
           "lo": 3,
-          "rain": 35,
+          "rain": 48,
           "wind": 14,
-          "humidity": 92,
+          "humidity": 96,
           "isMatch": false,
           "available": true
         },
@@ -33485,12 +33825,12 @@
           "date": "2026-11-12",
           "dow": "Thu",
           "label": "Nov 12",
-          "code": 51,
+          "code": 71,
           "hi": 5,
           "lo": 0,
-          "rain": 51,
-          "wind": 17,
-          "humidity": 94,
+          "rain": 47,
+          "wind": 21,
+          "humidity": 86,
           "isMatch": false,
           "available": true
         },
@@ -33498,12 +33838,12 @@
           "date": "2026-11-13",
           "dow": "Fri",
           "label": "Nov 13",
-          "code": 2,
-          "hi": 2,
-          "lo": 0,
-          "rain": 20,
-          "wind": 20,
-          "humidity": 72,
+          "code": 3,
+          "hi": 1,
+          "lo": -1,
+          "rain": 14,
+          "wind": 22,
+          "humidity": 68,
           "isMatch": false,
           "available": true
         },
@@ -33511,11 +33851,11 @@
           "date": "2026-11-14",
           "dow": "Sat",
           "label": "Nov 14",
-          "code": 51,
-          "hi": 6,
+          "code": 2,
+          "hi": 5,
           "lo": -1,
-          "rain": 6,
-          "wind": 25,
+          "rain": 2,
+          "wind": 21,
           "humidity": 84,
           "isMatch": false,
           "available": true
@@ -33670,6 +34010,20 @@
                 3.57
               ]
             ]
+          },
+          "Pinnacle +30s": {
+            "p1": [
+              [
+                "2026-11-08T11:50:17.632Z",
+                1.323
+              ]
+            ],
+            "p2": [
+              [
+                "2026-11-08T11:50:17.632Z",
+                3.59
+              ]
+            ]
           }
         },
         "meta": {
@@ -33753,6 +34107,12 @@
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
             "checkedAt": "2026-09-30T21:22:18.554Z"
+          },
+          "Pinnacle +30s": {
+            "source": "Oddspapi",
+            "group": "sharp",
+            "clock": "book tick",
+            "checkedAt": "2026-11-08T12:42:24.000Z"
           }
         }
       }
@@ -33792,51 +34152,70 @@
         "p1": 1.3,
         "p2": 2.81,
         "seenAt": "2026-11-07T16:58:24.817Z"
+      },
+      "bet365": {
+        "p1": 1.33,
+        "p2": 3.4,
+        "seenAt": "2026-11-08T12:18:36.839Z"
       }
     },
     "bookNow": {
       "WilliamHill": {
         "p1": 1.36,
         "p2": 3.1,
-        "seenAt": "2026-11-08T03:52:53.894Z",
+        "seenAt": "2026-11-08T12:18:36.839Z",
         "since": "2026-11-07T16:58:24.817Z"
+      },
+      "bet365": {
+        "p1": 1.33,
+        "p2": 3.4,
+        "seenAt": "2026-11-08T12:18:36.839Z",
+        "since": "2026-11-08T12:18:36.839Z"
       },
       "Marathon": {
-        "p1": 1.33,
-        "p2": 3.28,
-        "seenAt": "2026-11-08T03:52:53.894Z",
-        "since": "2026-11-08T03:52:53.894Z"
+        "p1": 1.32,
+        "p2": 3.34,
+        "seenAt": "2026-11-08T12:18:36.839Z",
+        "since": "2026-11-08T12:18:36.839Z"
       },
       "Betfair": {
-        "p1": 1.33,
-        "p2": 3.25,
-        "seenAt": "2026-11-08T03:52:53.894Z",
-        "since": "2026-11-07T16:58:24.817Z"
+        "p1": 1.3,
+        "p2": 3.4,
+        "seenAt": "2026-11-08T12:18:36.839Z",
+        "since": "2026-11-08T12:18:36.839Z"
       },
       "BetVictor": {
         "p1": 1.33,
-        "p2": 3,
-        "seenAt": "2026-11-08T03:52:53.894Z",
-        "since": "2026-11-08T03:52:53.894Z"
+        "p2": 3.1,
+        "seenAt": "2026-11-08T12:18:36.839Z",
+        "since": "2026-11-08T12:18:36.839Z"
       },
       "Sbo": {
         "p1": 1.3,
         "p2": 2.81,
-        "seenAt": "2026-11-08T03:52:53.894Z",
+        "seenAt": "2026-11-08T12:18:36.839Z",
         "since": "2026-11-07T16:58:24.817Z"
       },
       "1xBet": {
         "p1": 1.34,
         "p2": 3.26,
-        "seenAt": "2026-11-08T03:52:53.894Z",
+        "seenAt": "2026-11-08T12:18:36.839Z",
         "since": "2026-11-08T03:52:53.894Z"
       },
       "Betano": {
-        "p1": 1.35,
-        "p2": 3.25,
-        "seenAt": "2026-11-08T03:52:53.894Z",
-        "since": "2026-11-07T20:57:01.663Z"
+        "p1": 1.31,
+        "p2": 3.45,
+        "seenAt": "2026-11-08T12:18:36.839Z",
+        "since": "2026-11-08T12:18:36.839Z"
       }
+    },
+    "openingOdds": {
+      "p1": 1.33,
+      "p2": 3.4,
+      "bookmaker": "bet365",
+      "seenAt": "2026-11-08T12:17:32.733Z",
+      "src": "vendor-sighting",
+      "vendor": "api-tennis"
     }
   },
   {
@@ -33852,21 +34231,21 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 1.4,
-      "p2": 3,
+      "p1": 1.5,
+      "p2": 2.62,
       "bookmaker": "bet365",
-      "seenAt": "2026-11-08T03:51:53.620Z"
+      "seenAt": "2026-11-08T12:17:27.803Z"
     },
     "bestOdds": {
       "p1": {
-        "price": 1.4,
+        "price": 1.5,
         "bookmaker": "WilliamHill"
       },
       "p2": {
-        "price": 3.06,
+        "price": 2.76,
         "bookmaker": "Marathon"
       },
-      "seenAt": "2026-11-08T03:51:53.620Z"
+      "seenAt": "2026-11-08T12:17:27.803Z"
     },
     "tournamentRound": "ATP Stockholm - 1/16-finals",
     "qualifying": false,
@@ -36808,9 +37187,9 @@
       "category": "Medium"
     },
     "weather": {
-      "temperature": 4.7,
-      "windSpeed": 12.6,
-      "humidity": 81,
+      "temperature": 4.3,
+      "windSpeed": 13.7,
+      "humidity": 77,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Nov 9 – 15, 2026",
@@ -36820,11 +37199,11 @@
           "dow": "Mon",
           "label": "Nov 9",
           "code": 3,
-          "hi": 6,
+          "hi": 5,
           "lo": 2,
           "rain": 0,
           "wind": 16,
-          "humidity": 83,
+          "humidity": 81,
           "isMatch": true,
           "available": true
         },
@@ -36832,12 +37211,12 @@
           "date": "2026-11-10",
           "dow": "Tue",
           "label": "Nov 10",
-          "code": 3,
+          "code": 51,
           "hi": 6,
           "lo": 3,
-          "rain": 6,
-          "wind": 14,
-          "humidity": 81,
+          "rain": 10,
+          "wind": 13,
+          "humidity": 85,
           "isMatch": false,
           "available": true
         },
@@ -36845,12 +37224,12 @@
           "date": "2026-11-11",
           "dow": "Wed",
           "label": "Nov 11",
-          "code": 51,
-          "hi": 6,
+          "code": 53,
+          "hi": 5,
           "lo": 3,
-          "rain": 35,
+          "rain": 48,
           "wind": 14,
-          "humidity": 92,
+          "humidity": 96,
           "isMatch": false,
           "available": true
         },
@@ -36858,12 +37237,12 @@
           "date": "2026-11-12",
           "dow": "Thu",
           "label": "Nov 12",
-          "code": 51,
+          "code": 71,
           "hi": 5,
           "lo": 0,
-          "rain": 51,
-          "wind": 17,
-          "humidity": 94,
+          "rain": 47,
+          "wind": 21,
+          "humidity": 86,
           "isMatch": false,
           "available": true
         },
@@ -36871,12 +37250,12 @@
           "date": "2026-11-13",
           "dow": "Fri",
           "label": "Nov 13",
-          "code": 2,
-          "hi": 2,
-          "lo": 0,
-          "rain": 20,
-          "wind": 20,
-          "humidity": 72,
+          "code": 3,
+          "hi": 1,
+          "lo": -1,
+          "rain": 14,
+          "wind": 22,
+          "humidity": 68,
           "isMatch": false,
           "available": true
         },
@@ -36884,11 +37263,11 @@
           "date": "2026-11-14",
           "dow": "Sat",
           "label": "Nov 14",
-          "code": 51,
-          "hi": 6,
+          "code": 2,
+          "hi": 5,
           "lo": -1,
-          "rain": 6,
-          "wind": 25,
+          "rain": 2,
+          "wind": 21,
           "humidity": 84,
           "isMatch": false,
           "available": true
@@ -37107,6 +37486,28 @@
                 2.79
               ]
             ]
+          },
+          "Pinnacle +30s": {
+            "p1": [
+              [
+                "2026-11-08T12:08:42.010Z",
+                1.487
+              ],
+              [
+                "2026-11-08T12:27:15.800Z",
+                1.476
+              ]
+            ],
+            "p2": [
+              [
+                "2026-11-08T12:08:42.010Z",
+                2.77
+              ],
+              [
+                "2026-11-08T12:27:15.800Z",
+                2.8
+              ]
+            ]
           }
         },
         "meta": {
@@ -37190,6 +37591,12 @@
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
             "checkedAt": "2026-09-30T21:22:18.554Z"
+          },
+          "Pinnacle +30s": {
+            "source": "Oddspapi",
+            "group": "sharp",
+            "clock": "book tick",
+            "checkedAt": "2026-11-08T12:42:24.000Z"
           }
         }
       }
@@ -37241,46 +37648,46 @@
     },
     "bookNow": {
       "WilliamHill": {
-        "p1": 1.4,
-        "p2": 2.9,
-        "seenAt": "2026-11-08T03:52:53.894Z",
-        "since": "2026-11-07T16:58:24.817Z"
+        "p1": 1.5,
+        "p2": 2.6,
+        "seenAt": "2026-11-08T12:18:36.839Z",
+        "since": "2026-11-08T12:18:36.839Z"
       },
       "bet365": {
-        "p1": 1.4,
-        "p2": 3,
-        "seenAt": "2026-11-08T03:52:53.894Z",
-        "since": "2026-11-07T16:58:24.817Z"
+        "p1": 1.5,
+        "p2": 2.62,
+        "seenAt": "2026-11-08T12:18:36.839Z",
+        "since": "2026-11-08T12:18:36.839Z"
       },
       "Marathon": {
-        "p1": 1.37,
-        "p2": 3.06,
-        "seenAt": "2026-11-08T03:52:53.894Z",
-        "since": "2026-11-07T16:58:24.817Z"
+        "p1": 1.44,
+        "p2": 2.76,
+        "seenAt": "2026-11-08T12:18:36.839Z",
+        "since": "2026-11-08T12:18:36.839Z"
       },
       "Betfair": {
-        "p1": 1.36,
-        "p2": 3,
-        "seenAt": "2026-11-08T03:52:53.894Z",
-        "since": "2026-11-07T16:58:24.817Z"
+        "p1": 1.44,
+        "p2": 2.75,
+        "seenAt": "2026-11-08T12:18:36.839Z",
+        "since": "2026-11-08T12:18:36.839Z"
       },
       "BetVictor": {
-        "p1": 1.36,
-        "p2": 2.88,
-        "seenAt": "2026-11-08T03:52:53.894Z",
-        "since": "2026-11-07T16:58:24.817Z"
+        "p1": 1.44,
+        "p2": 2.6,
+        "seenAt": "2026-11-08T12:18:36.839Z",
+        "since": "2026-11-08T12:18:36.839Z"
       },
       "1xBet": {
-        "p1": 1.38,
-        "p2": 3.04,
-        "seenAt": "2026-11-08T03:52:53.894Z",
-        "since": "2026-11-07T16:58:24.817Z"
+        "p1": 1.45,
+        "p2": 2.75,
+        "seenAt": "2026-11-08T12:18:36.839Z",
+        "since": "2026-11-08T12:18:36.839Z"
       },
       "Betano": {
-        "p1": 1.4,
-        "p2": 2.95,
-        "seenAt": "2026-11-08T03:52:53.894Z",
-        "since": "2026-11-07T20:57:01.663Z"
+        "p1": 1.47,
+        "p2": 2.7,
+        "seenAt": "2026-11-08T12:18:36.839Z",
+        "since": "2026-11-08T12:18:36.839Z"
       }
     }
   },
@@ -37297,21 +37704,21 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 1.57,
-      "p2": 2.37,
+      "p1": 1.72,
+      "p2": 2.1,
       "bookmaker": "bet365",
-      "seenAt": "2026-11-08T03:51:53.620Z"
+      "seenAt": "2026-11-08T12:17:27.803Z"
     },
     "bestOdds": {
       "p1": {
-        "price": 1.62,
+        "price": 1.73,
         "bookmaker": "WilliamHill"
       },
       "p2": {
-        "price": 2.43,
-        "bookmaker": "Marathon"
+        "price": 2.25,
+        "bookmaker": "Betfair"
       },
-      "seenAt": "2026-11-08T03:51:53.620Z"
+      "seenAt": "2026-11-08T12:17:27.803Z"
     },
     "tournamentRound": "ATP Stockholm - 1/16-finals",
     "qualifying": false,
@@ -39653,9 +40060,9 @@
       "category": "Medium"
     },
     "weather": {
-      "temperature": 4.7,
-      "windSpeed": 12.6,
-      "humidity": 81,
+      "temperature": 4.3,
+      "windSpeed": 13.7,
+      "humidity": 77,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Nov 9 – 15, 2026",
@@ -39665,11 +40072,11 @@
           "dow": "Mon",
           "label": "Nov 9",
           "code": 3,
-          "hi": 6,
+          "hi": 5,
           "lo": 2,
           "rain": 0,
           "wind": 16,
-          "humidity": 83,
+          "humidity": 81,
           "isMatch": true,
           "available": true
         },
@@ -39677,12 +40084,12 @@
           "date": "2026-11-10",
           "dow": "Tue",
           "label": "Nov 10",
-          "code": 3,
+          "code": 51,
           "hi": 6,
           "lo": 3,
-          "rain": 6,
-          "wind": 14,
-          "humidity": 81,
+          "rain": 10,
+          "wind": 13,
+          "humidity": 85,
           "isMatch": false,
           "available": true
         },
@@ -39690,12 +40097,12 @@
           "date": "2026-11-11",
           "dow": "Wed",
           "label": "Nov 11",
-          "code": 51,
-          "hi": 6,
+          "code": 53,
+          "hi": 5,
           "lo": 3,
-          "rain": 35,
+          "rain": 48,
           "wind": 14,
-          "humidity": 92,
+          "humidity": 96,
           "isMatch": false,
           "available": true
         },
@@ -39703,12 +40110,12 @@
           "date": "2026-11-12",
           "dow": "Thu",
           "label": "Nov 12",
-          "code": 51,
+          "code": 71,
           "hi": 5,
           "lo": 0,
-          "rain": 51,
-          "wind": 17,
-          "humidity": 94,
+          "rain": 47,
+          "wind": 21,
+          "humidity": 86,
           "isMatch": false,
           "available": true
         },
@@ -39716,12 +40123,12 @@
           "date": "2026-11-13",
           "dow": "Fri",
           "label": "Nov 13",
-          "code": 2,
-          "hi": 2,
-          "lo": 0,
-          "rain": 20,
-          "wind": 20,
-          "humidity": 72,
+          "code": 3,
+          "hi": 1,
+          "lo": -1,
+          "rain": 14,
+          "wind": 22,
+          "humidity": 68,
           "isMatch": false,
           "available": true
         },
@@ -39729,11 +40136,11 @@
           "date": "2026-11-14",
           "dow": "Sat",
           "label": "Nov 14",
-          "code": 51,
-          "hi": 6,
+          "code": 2,
+          "hi": 5,
           "lo": -1,
-          "rain": 6,
-          "wind": 25,
+          "rain": 2,
+          "wind": 21,
           "humidity": 84,
           "isMatch": false,
           "available": true
@@ -40148,6 +40555,20 @@
                 2.29
               ]
             ]
+          },
+          "Pinnacle +30s": {
+            "p1": [
+              [
+                "2026-11-08T11:50:17.632Z",
+                1.662
+              ]
+            ],
+            "p2": [
+              [
+                "2026-11-08T11:50:17.632Z",
+                2.31
+              ]
+            ]
           }
         },
         "meta": {
@@ -40231,6 +40652,12 @@
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
             "checkedAt": "2026-09-30T21:22:18.554Z"
+          },
+          "Pinnacle +30s": {
+            "source": "Oddspapi",
+            "group": "sharp",
+            "clock": "book tick",
+            "checkedAt": "2026-11-08T12:42:24.000Z"
           }
         }
       }
@@ -40282,46 +40709,46 @@
     },
     "bookNow": {
       "WilliamHill": {
-        "p1": 1.62,
-        "p2": 2.3,
-        "seenAt": "2026-11-08T03:52:53.894Z",
-        "since": "2026-11-07T16:58:24.817Z"
+        "p1": 1.73,
+        "p2": 2.1,
+        "seenAt": "2026-11-08T12:18:36.839Z",
+        "since": "2026-11-08T12:18:36.839Z"
       },
       "bet365": {
-        "p1": 1.57,
-        "p2": 2.37,
-        "seenAt": "2026-11-08T03:52:53.894Z",
-        "since": "2026-11-07T16:58:24.817Z"
+        "p1": 1.72,
+        "p2": 2.1,
+        "seenAt": "2026-11-08T12:18:36.839Z",
+        "since": "2026-11-08T12:18:36.839Z"
       },
       "Marathon": {
-        "p1": 1.55,
-        "p2": 2.43,
-        "seenAt": "2026-11-08T03:52:53.894Z",
-        "since": "2026-11-07T20:57:01.663Z"
+        "p1": 1.65,
+        "p2": 2.22,
+        "seenAt": "2026-11-08T12:18:36.839Z",
+        "since": "2026-11-08T12:18:36.839Z"
       },
       "Betfair": {
-        "p1": 1.57,
-        "p2": 2.38,
-        "seenAt": "2026-11-08T03:52:53.894Z",
-        "since": "2026-11-07T20:57:01.663Z"
+        "p1": 1.62,
+        "p2": 2.25,
+        "seenAt": "2026-11-08T12:18:36.839Z",
+        "since": "2026-11-08T12:18:36.839Z"
       },
       "BetVictor": {
-        "p1": 1.53,
-        "p2": 2.3,
-        "seenAt": "2026-11-08T03:52:53.894Z",
-        "since": "2026-11-07T20:57:01.663Z"
+        "p1": 1.67,
+        "p2": 2.1,
+        "seenAt": "2026-11-08T12:18:36.839Z",
+        "since": "2026-11-08T12:18:36.839Z"
       },
       "1xBet": {
-        "p1": 1.57,
-        "p2": 2.4,
-        "seenAt": "2026-11-08T03:52:53.894Z",
-        "since": "2026-11-07T20:57:01.663Z"
+        "p1": 1.68,
+        "p2": 2.18,
+        "seenAt": "2026-11-08T12:18:36.839Z",
+        "since": "2026-11-08T12:18:36.839Z"
       },
       "Betano": {
-        "p1": 1.6,
-        "p2": 2.37,
-        "seenAt": "2026-11-08T03:52:53.894Z",
-        "since": "2026-11-07T20:57:01.663Z"
+        "p1": 1.67,
+        "p2": 2.22,
+        "seenAt": "2026-11-08T12:18:36.839Z",
+        "since": "2026-11-08T12:18:36.839Z"
       }
     }
   },
@@ -40341,18 +40768,18 @@
       "p1": 2.75,
       "p2": 1.44,
       "bookmaker": "bet365",
-      "seenAt": "2026-11-08T03:51:53.620Z"
+      "seenAt": "2026-11-08T12:17:27.803Z"
     },
     "bestOdds": {
       "p1": {
-        "price": 2.8,
-        "bookmaker": "Marathon"
-      },
-      "p2": {
-        "price": 1.45,
+        "price": 2.92,
         "bookmaker": "Betano"
       },
-      "seenAt": "2026-11-08T03:51:53.620Z"
+      "p2": {
+        "price": 1.44,
+        "bookmaker": "WilliamHill"
+      },
+      "seenAt": "2026-11-08T12:17:27.803Z"
     },
     "tournamentRound": "ATP Stockholm - 1/16-finals",
     "qualifying": false,
@@ -42896,9 +43323,9 @@
       "category": "Medium"
     },
     "weather": {
-      "temperature": 4.7,
-      "windSpeed": 12.6,
-      "humidity": 81,
+      "temperature": 4.3,
+      "windSpeed": 13.7,
+      "humidity": 77,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Nov 9 – 15, 2026",
@@ -42908,11 +43335,11 @@
           "dow": "Mon",
           "label": "Nov 9",
           "code": 3,
-          "hi": 6,
+          "hi": 5,
           "lo": 2,
           "rain": 0,
           "wind": 16,
-          "humidity": 83,
+          "humidity": 81,
           "isMatch": true,
           "available": true
         },
@@ -42920,12 +43347,12 @@
           "date": "2026-11-10",
           "dow": "Tue",
           "label": "Nov 10",
-          "code": 3,
+          "code": 51,
           "hi": 6,
           "lo": 3,
-          "rain": 6,
-          "wind": 14,
-          "humidity": 81,
+          "rain": 10,
+          "wind": 13,
+          "humidity": 85,
           "isMatch": false,
           "available": true
         },
@@ -42933,12 +43360,12 @@
           "date": "2026-11-11",
           "dow": "Wed",
           "label": "Nov 11",
-          "code": 51,
-          "hi": 6,
+          "code": 53,
+          "hi": 5,
           "lo": 3,
-          "rain": 35,
+          "rain": 48,
           "wind": 14,
-          "humidity": 92,
+          "humidity": 96,
           "isMatch": false,
           "available": true
         },
@@ -42946,12 +43373,12 @@
           "date": "2026-11-12",
           "dow": "Thu",
           "label": "Nov 12",
-          "code": 51,
+          "code": 71,
           "hi": 5,
           "lo": 0,
-          "rain": 51,
-          "wind": 17,
-          "humidity": 94,
+          "rain": 47,
+          "wind": 21,
+          "humidity": 86,
           "isMatch": false,
           "available": true
         },
@@ -42959,12 +43386,12 @@
           "date": "2026-11-13",
           "dow": "Fri",
           "label": "Nov 13",
-          "code": 2,
-          "hi": 2,
-          "lo": 0,
-          "rain": 20,
-          "wind": 20,
-          "humidity": 72,
+          "code": 3,
+          "hi": 1,
+          "lo": -1,
+          "rain": 14,
+          "wind": 22,
+          "humidity": 68,
           "isMatch": false,
           "available": true
         },
@@ -42972,11 +43399,11 @@
           "date": "2026-11-14",
           "dow": "Sat",
           "label": "Nov 14",
-          "code": 51,
-          "hi": 6,
+          "code": 2,
+          "hi": 5,
           "lo": -1,
-          "rain": 6,
-          "wind": 25,
+          "rain": 2,
+          "wind": 21,
           "humidity": 84,
           "isMatch": false,
           "available": true
@@ -43139,6 +43566,20 @@
                 1.426
               ]
             ]
+          },
+          "Pinnacle +30s": {
+            "p1": [
+              [
+                "2026-11-08T12:39:00.330Z",
+                2.98
+              ]
+            ],
+            "p2": [
+              [
+                "2026-11-08T12:39:00.330Z",
+                1.432
+              ]
+            ]
           }
         },
         "meta": {
@@ -43222,6 +43663,12 @@
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
             "checkedAt": "2026-09-30T21:22:18.554Z"
+          },
+          "Pinnacle +30s": {
+            "source": "Oddspapi",
+            "group": "sharp",
+            "clock": "book tick",
+            "checkedAt": "2026-11-08T12:42:24.000Z"
           }
         }
       }
@@ -43275,44 +43722,44 @@
       "WilliamHill": {
         "p1": 2.75,
         "p2": 1.44,
-        "seenAt": "2026-11-08T03:52:53.894Z",
+        "seenAt": "2026-11-08T12:18:36.839Z",
         "since": "2026-11-07T16:58:24.817Z"
       },
       "bet365": {
         "p1": 2.75,
         "p2": 1.44,
-        "seenAt": "2026-11-08T03:52:53.894Z",
+        "seenAt": "2026-11-08T12:18:36.839Z",
         "since": "2026-11-07T16:58:24.817Z"
       },
       "Marathon": {
-        "p1": 2.8,
-        "p2": 1.43,
-        "seenAt": "2026-11-08T03:52:53.894Z",
-        "since": "2026-11-07T16:58:24.817Z"
+        "p1": 2.88,
+        "p2": 1.41,
+        "seenAt": "2026-11-08T12:18:36.839Z",
+        "since": "2026-11-08T12:18:36.839Z"
       },
       "Betfair": {
-        "p1": 2.75,
-        "p2": 1.44,
-        "seenAt": "2026-11-08T03:52:53.894Z",
-        "since": "2026-11-07T16:58:24.817Z"
+        "p1": 2.88,
+        "p2": 1.4,
+        "seenAt": "2026-11-08T12:18:36.839Z",
+        "since": "2026-11-08T12:18:36.839Z"
       },
       "BetVictor": {
-        "p1": 2.63,
-        "p2": 1.44,
-        "seenAt": "2026-11-08T03:52:53.894Z",
-        "since": "2026-11-07T16:58:24.817Z"
+        "p1": 2.75,
+        "p2": 1.4,
+        "seenAt": "2026-11-08T12:18:36.839Z",
+        "since": "2026-11-08T12:18:36.839Z"
       },
       "1xBet": {
-        "p1": 2.79,
-        "p2": 1.44,
-        "seenAt": "2026-11-08T03:52:53.894Z",
-        "since": "2026-11-07T16:58:24.817Z"
+        "p1": 2.86,
+        "p2": 1.42,
+        "seenAt": "2026-11-08T12:18:36.839Z",
+        "since": "2026-11-08T12:18:36.839Z"
       },
       "Betano": {
-        "p1": 2.77,
-        "p2": 1.45,
-        "seenAt": "2026-11-08T03:52:53.894Z",
-        "since": "2026-11-07T16:58:24.817Z"
+        "p1": 2.92,
+        "p2": 1.42,
+        "seenAt": "2026-11-08T12:18:36.839Z",
+        "since": "2026-11-08T12:18:36.839Z"
       }
     }
   },
@@ -43334,7 +43781,7 @@
       "p1": 1.3,
       "p2": 3.5,
       "bookmaker": "bet365",
-      "seenAt": "2026-11-08T03:52:07.295Z"
+      "seenAt": "2026-11-08T12:17:42.632Z"
     },
     "bestOdds": {
       "p1": {
@@ -43345,7 +43792,7 @@
         "price": 3.53,
         "bookmaker": "1xBet"
       },
-      "seenAt": "2026-11-08T03:52:07.295Z"
+      "seenAt": "2026-11-08T12:17:42.632Z"
     },
     "tournamentRound": "ATP Paris - 1/8-finals",
     "qualifying": false,
@@ -46096,12 +46543,12 @@
           "date": "2026-11-08",
           "dow": "Sun",
           "label": "Nov 8",
-          "code": 80,
-          "hi": 9,
-          "lo": 5,
+          "code": 45,
+          "hi": 8,
+          "lo": 4,
           "rain": 0,
           "wind": 8,
-          "humidity": 88,
+          "humidity": 89,
           "isMatch": false,
           "available": true
         }
@@ -46115,7 +46562,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "3-6, 6-4, 7-6",
+      "display": "3-6, 6-4, 7-6(5)",
       "sets": [
         {
           "p1": 3,
@@ -47470,7 +47917,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-11-08T03:52:53.894Z"
+      "seenAt": "2026-11-08T12:18:36.839Z"
     },
     "pinClose": {
       "p1": 1.352,
@@ -47515,7 +47962,7 @@
       "p1": 1.3,
       "p2": 3.5,
       "bookmaker": "bet365",
-      "seenAt": "2026-11-08T03:52:07.295Z"
+      "seenAt": "2026-11-08T12:17:42.632Z"
     },
     "bestOdds": {
       "p1": {
@@ -47526,7 +47973,7 @@
         "price": 3.9,
         "bookmaker": "Pncl"
       },
-      "seenAt": "2026-11-08T03:52:07.295Z"
+      "seenAt": "2026-11-08T12:17:42.632Z"
     },
     "tournamentRound": "ATP Paris - 1/8-finals",
     "qualifying": false,
@@ -51292,12 +51739,12 @@
           "date": "2026-11-08",
           "dow": "Sun",
           "label": "Nov 8",
-          "code": 80,
-          "hi": 9,
-          "lo": 5,
+          "code": 45,
+          "hi": 8,
+          "lo": 4,
           "rain": 0,
           "wind": 8,
-          "humidity": 88,
+          "humidity": 89,
           "isMatch": false,
           "available": true
         }
@@ -51311,7 +51758,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6, 6-4",
+      "display": "7-6(3), 6-4",
       "sets": [
         {
           "p1": 7,
@@ -52438,7 +52885,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-11-08T03:52:53.894Z"
+      "seenAt": "2026-11-08T12:18:36.839Z"
     },
     "pinClose": {
       "p1": 1.302,
@@ -52483,7 +52930,7 @@
       "p1": 1.3,
       "p2": 3.5,
       "bookmaker": "bet365",
-      "seenAt": "2026-11-08T03:52:07.295Z"
+      "seenAt": "2026-11-08T12:17:42.632Z"
     },
     "bestOdds": {
       "p1": {
@@ -52494,7 +52941,7 @@
         "price": 3.67,
         "bookmaker": "Pncl"
       },
-      "seenAt": "2026-11-08T03:52:07.295Z"
+      "seenAt": "2026-11-08T12:17:42.632Z"
     },
     "tournamentRound": "ATP Paris - 1/8-finals",
     "qualifying": false,
@@ -55209,12 +55656,12 @@
           "date": "2026-11-08",
           "dow": "Sun",
           "label": "Nov 8",
-          "code": 80,
-          "hi": 9,
-          "lo": 5,
+          "code": 45,
+          "hi": 8,
+          "lo": 4,
           "rain": 0,
           "wind": 8,
-          "humidity": 88,
+          "humidity": 89,
           "isMatch": false,
           "available": true
         }
@@ -56343,7 +56790,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-11-08T03:52:53.894Z"
+      "seenAt": "2026-11-08T12:18:36.839Z"
     },
     "pinClose": {
       "p1": 1.342,
@@ -56388,7 +56835,7 @@
       "p1": 2,
       "p2": 1.8,
       "bookmaker": "bet365",
-      "seenAt": "2026-11-08T03:52:07.295Z"
+      "seenAt": "2026-11-08T12:17:42.632Z"
     },
     "bestOdds": {
       "p1": {
@@ -56399,7 +56846,7 @@
         "price": 1.8,
         "bookmaker": "bet365"
       },
-      "seenAt": "2026-11-08T03:52:07.295Z"
+      "seenAt": "2026-11-08T12:17:42.632Z"
     },
     "tournamentRound": "ATP Paris - 1/8-finals",
     "qualifying": false,
@@ -59214,12 +59661,12 @@
           "date": "2026-11-08",
           "dow": "Sun",
           "label": "Nov 8",
-          "code": 80,
-          "hi": 9,
-          "lo": 5,
+          "code": 45,
+          "hi": 8,
+          "lo": 4,
           "rain": 0,
           "wind": 8,
-          "humidity": 88,
+          "humidity": 89,
           "isMatch": false,
           "available": true
         }
@@ -60516,7 +60963,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-11-08T03:52:53.894Z"
+      "seenAt": "2026-11-08T12:18:36.839Z"
     },
     "pinClose": {
       "p1": 2.16,
@@ -60561,7 +61008,7 @@
       "p1": 1.57,
       "p2": 2.37,
       "bookmaker": "bet365",
-      "seenAt": "2026-11-08T03:52:07.295Z"
+      "seenAt": "2026-11-08T12:17:42.632Z"
     },
     "bestOdds": {
       "p1": {
@@ -60572,7 +61019,7 @@
         "price": 2.6,
         "bookmaker": "Pncl"
       },
-      "seenAt": "2026-11-08T03:52:07.295Z"
+      "seenAt": "2026-11-08T12:17:42.632Z"
     },
     "tournamentRound": "ATP Paris - 1/8-finals",
     "qualifying": false,
@@ -63188,12 +63635,12 @@
           "date": "2026-11-08",
           "dow": "Sun",
           "label": "Nov 8",
-          "code": 80,
-          "hi": 9,
-          "lo": 5,
+          "code": 45,
+          "hi": 8,
+          "lo": 4,
           "rain": 0,
           "wind": 8,
-          "humidity": 88,
+          "humidity": 89,
           "isMatch": false,
           "available": true
         }
@@ -64210,7 +64657,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-11-08T03:52:53.894Z"
+      "seenAt": "2026-11-08T12:18:36.839Z"
     },
     "pinClose": {
       "p1": 1.574,
@@ -64255,7 +64702,7 @@
       "p1": 2.75,
       "p2": 1.44,
       "bookmaker": "bet365",
-      "seenAt": "2026-11-08T03:52:07.295Z"
+      "seenAt": "2026-11-08T12:17:42.632Z"
     },
     "bestOdds": {
       "p1": {
@@ -64266,7 +64713,7 @@
         "price": 1.46,
         "bookmaker": "1xBet"
       },
-      "seenAt": "2026-11-08T03:52:07.295Z"
+      "seenAt": "2026-11-08T12:17:42.632Z"
     },
     "tournamentRound": "ATP Paris - 1/8-finals",
     "qualifying": false,
@@ -68164,12 +68611,12 @@
           "date": "2026-11-08",
           "dow": "Sun",
           "label": "Nov 8",
-          "code": 80,
-          "hi": 9,
-          "lo": 5,
+          "code": 45,
+          "hi": 8,
+          "lo": 4,
           "rain": 0,
           "wind": 8,
-          "humidity": 88,
+          "humidity": 89,
           "isMatch": false,
           "available": true
         }
@@ -69794,7 +70241,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-11-08T03:52:53.894Z"
+      "seenAt": "2026-11-08T12:18:36.839Z"
     },
     "pinClose": {
       "p1": 2.93,
@@ -69839,7 +70286,7 @@
       "p1": 5.5,
       "p2": 1.14,
       "bookmaker": "bet365",
-      "seenAt": "2026-11-08T03:52:07.295Z"
+      "seenAt": "2026-11-08T12:17:42.632Z"
     },
     "bestOdds": {
       "p1": {
@@ -69850,7 +70297,7 @@
         "price": 1.17,
         "bookmaker": "Betfair"
       },
-      "seenAt": "2026-11-08T03:52:07.295Z"
+      "seenAt": "2026-11-08T12:17:42.632Z"
     },
     "tournamentRound": "ATP Paris - 1/8-finals",
     "qualifying": false,
@@ -72579,12 +73026,12 @@
           "date": "2026-11-08",
           "dow": "Sun",
           "label": "Nov 8",
-          "code": 80,
-          "hi": 9,
-          "lo": 5,
+          "code": 45,
+          "hi": 8,
+          "lo": 4,
           "rain": 0,
           "wind": 8,
-          "humidity": 88,
+          "humidity": 89,
           "isMatch": false,
           "available": true
         }
@@ -73560,7 +74007,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-11-08T03:52:53.894Z"
+      "seenAt": "2026-11-08T12:18:36.839Z"
     },
     "pinClose": {
       "p1": 6.03,
@@ -73605,7 +74052,7 @@
       "p1": 1.66,
       "p2": 2.2,
       "bookmaker": "bet365",
-      "seenAt": "2026-11-08T03:52:07.295Z"
+      "seenAt": "2026-11-08T12:17:42.632Z"
     },
     "bestOdds": {
       "p1": {
@@ -73616,7 +74063,7 @@
         "price": 2.25,
         "bookmaker": "Pncl"
       },
-      "seenAt": "2026-11-08T03:52:07.295Z"
+      "seenAt": "2026-11-08T12:17:42.632Z"
     },
     "tournamentRound": "ATP Paris - 1/8-finals",
     "qualifying": false,
@@ -76651,12 +77098,12 @@
           "date": "2026-11-08",
           "dow": "Sun",
           "label": "Nov 8",
-          "code": 80,
-          "hi": 9,
-          "lo": 5,
+          "code": 45,
+          "hi": 8,
+          "lo": 4,
           "rain": 0,
           "wind": 8,
-          "humidity": 88,
+          "humidity": 89,
           "isMatch": false,
           "available": true
         }
@@ -78093,7 +78540,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-11-08T03:52:53.894Z"
+      "seenAt": "2026-11-08T12:18:36.839Z"
     },
     "pinClose": {
       "p1": 1.689,
@@ -78137,7 +78584,7 @@
       "p1": 2,
       "p2": 1.8,
       "bookmaker": "bet365",
-      "seenAt": "2026-11-08T03:52:28.768Z"
+      "seenAt": "2026-11-08T12:18:05.756Z"
     },
     "bestOdds": {
       "p1": {
@@ -78148,7 +78595,7 @@
         "price": 1.83,
         "bookmaker": "Betano"
       },
-      "seenAt": "2026-11-08T03:52:28.768Z"
+      "seenAt": "2026-11-08T12:18:05.756Z"
     },
     "tournamentRound": "ATP Paris - Quarter-finals",
     "qualifying": false,
@@ -81097,12 +81544,12 @@
           "date": "2026-11-08",
           "dow": "Sun",
           "label": "Nov 8",
-          "code": 80,
-          "hi": 9,
-          "lo": 5,
+          "code": 45,
+          "hi": 8,
+          "lo": 4,
           "rain": 0,
           "wind": 8,
-          "humidity": 88,
+          "humidity": 89,
           "isMatch": false,
           "available": true
         }
@@ -82367,7 +82814,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-11-08T03:52:53.894Z"
+      "seenAt": "2026-11-08T12:18:36.839Z"
     },
     "pinClose": {
       "p1": 2.09,
@@ -82412,7 +82859,7 @@
       "p1": 1.57,
       "p2": 2.37,
       "bookmaker": "bet365",
-      "seenAt": "2026-11-08T03:52:28.768Z"
+      "seenAt": "2026-11-08T12:18:05.756Z"
     },
     "bestOdds": {
       "p1": {
@@ -82423,7 +82870,7 @@
         "price": 2.48,
         "bookmaker": "Pncl"
       },
-      "seenAt": "2026-11-08T03:52:28.768Z"
+      "seenAt": "2026-11-08T12:18:05.756Z"
     },
     "tournamentRound": "ATP Paris - Quarter-finals",
     "qualifying": false,
@@ -85250,12 +85697,12 @@
           "date": "2026-11-08",
           "dow": "Sun",
           "label": "Nov 8",
-          "code": 80,
-          "hi": 9,
-          "lo": 5,
+          "code": 45,
+          "hi": 8,
+          "lo": 4,
           "rain": 0,
           "wind": 8,
-          "humidity": 88,
+          "humidity": 89,
           "isMatch": false,
           "available": true
         }
@@ -85269,7 +85716,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-4, 6-7, 7-5",
+      "display": "6-4, 6-7(4), 7-5",
       "sets": [
         {
           "p1": 6,
@@ -86520,7 +86967,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-11-08T03:52:53.894Z"
+      "seenAt": "2026-11-08T12:18:36.839Z"
     },
     "pinClose": {
       "p1": 1.588,
@@ -86565,7 +87012,7 @@
       "p1": 3.4,
       "p2": 1.33,
       "bookmaker": "bet365",
-      "seenAt": "2026-11-08T03:52:28.768Z"
+      "seenAt": "2026-11-08T12:18:05.756Z"
     },
     "bestOdds": {
       "p1": {
@@ -86576,7 +87023,7 @@
         "price": 1.34,
         "bookmaker": "Pncl"
       },
-      "seenAt": "2026-11-08T03:52:28.768Z"
+      "seenAt": "2026-11-08T12:18:05.756Z"
     },
     "tournamentRound": "ATP Paris - Quarter-finals",
     "qualifying": false,
@@ -89675,12 +90122,12 @@
           "date": "2026-11-08",
           "dow": "Sun",
           "label": "Nov 8",
-          "code": 80,
-          "hi": 9,
-          "lo": 5,
+          "code": 45,
+          "hi": 8,
+          "lo": 4,
           "rain": 0,
           "wind": 8,
-          "humidity": 88,
+          "humidity": 89,
           "isMatch": false,
           "available": true
         }
@@ -89694,7 +90141,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6, 5-7, 3-6",
+      "display": "7-6(10), 5-7, 3-6",
       "sets": [
         {
           "p1": 7,
@@ -91349,7 +91796,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-11-08T03:52:53.894Z"
+      "seenAt": "2026-11-08T12:18:36.839Z"
     },
     "pinClose": {
       "p1": 3.65,
@@ -91394,7 +91841,7 @@
       "p1": 1.44,
       "p2": 2.75,
       "bookmaker": "bet365",
-      "seenAt": "2026-11-08T03:52:28.768Z"
+      "seenAt": "2026-11-08T12:18:05.756Z"
     },
     "bestOdds": {
       "p1": {
@@ -91405,7 +91852,7 @@
         "price": 3,
         "bookmaker": "1xBet"
       },
-      "seenAt": "2026-11-08T03:52:28.768Z"
+      "seenAt": "2026-11-08T12:18:05.756Z"
     },
     "tournamentRound": "ATP Paris - Quarter-finals",
     "qualifying": false,
@@ -94668,12 +95115,12 @@
           "date": "2026-11-08",
           "dow": "Sun",
           "label": "Nov 8",
-          "code": 80,
-          "hi": 9,
-          "lo": 5,
+          "code": 45,
+          "hi": 8,
+          "lo": 4,
           "rain": 0,
           "wind": 8,
-          "humidity": 88,
+          "humidity": 89,
           "isMatch": false,
           "available": true
         }
@@ -94687,7 +95134,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6, 6-4",
+      "display": "7-6(5), 6-4",
       "sets": [
         {
           "p1": 7,
@@ -95778,7 +96225,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-11-08T03:52:53.894Z"
+      "seenAt": "2026-11-08T12:18:36.839Z"
     },
     "pinClose": {
       "p1": 1.454,
@@ -95823,7 +96270,7 @@
       "p1": 4,
       "p2": 1.25,
       "bookmaker": "bet365",
-      "seenAt": "2026-11-08T03:52:36.383Z"
+      "seenAt": "2026-11-08T12:18:15.177Z"
     },
     "bestOdds": {
       "p1": {
@@ -95834,7 +96281,7 @@
         "price": 1.31,
         "bookmaker": "Pncl"
       },
-      "seenAt": "2026-11-08T03:52:36.383Z"
+      "seenAt": "2026-11-08T12:18:15.177Z"
     },
     "tournamentRound": "ATP Paris - Semi-finals",
     "qualifying": false,
@@ -98392,12 +98839,12 @@
           "date": "2026-11-08",
           "dow": "Sun",
           "label": "Nov 8",
-          "code": 80,
-          "hi": 9,
-          "lo": 5,
+          "code": 45,
+          "hi": 8,
+          "lo": 4,
           "rain": 0,
           "wind": 8,
-          "humidity": 88,
+          "humidity": 89,
           "isMatch": false,
           "available": true
         }
@@ -99454,7 +99901,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-11-08T03:52:53.894Z"
+      "seenAt": "2026-11-08T12:18:36.839Z"
     },
     "pinClose": {
       "p1": 3.94,
@@ -99499,7 +99946,7 @@
       "p1": 1.36,
       "p2": 3,
       "bookmaker": "bet365",
-      "seenAt": "2026-11-08T03:52:36.383Z"
+      "seenAt": "2026-11-08T12:18:15.177Z"
     },
     "bestOdds": {
       "p1": {
@@ -99510,7 +99957,7 @@
         "price": 3.04,
         "bookmaker": "1xBet"
       },
-      "seenAt": "2026-11-08T03:52:36.383Z"
+      "seenAt": "2026-11-08T12:18:15.177Z"
     },
     "tournamentRound": "ATP Stockholm - Semi-finals",
     "qualifying": true,
@@ -102419,31 +102866,31 @@
     "extraStats": {
       "last52Weeks": {
         "p1": {
-          "matchCount": 56,
+          "matchCount": 57,
           "stats": {
             "Service:Aces": 6.9,
-            "Service:Double Faults": 3.8,
-            "Service:1st Serve Points Won": 77.2,
-            "Service:2nd Serve Points Won": 50.6,
-            "Service:Break Points Saved": 57.4,
-            "Return:Break Points Converted": 35.3,
+            "Service:Double Faults": 3.7,
+            "Service:1st Serve Points Won": 77.1,
+            "Service:2nd Serve Points Won": 50.5,
+            "Service:Break Points Saved": 57,
+            "Return:Break Points Converted": 35.2,
             "Points:Unforced Errors": 32.7,
             "Points:Service Points Won": 65,
-            "Points:Return Points Won": 36.7,
-            "Points:Total Points Won": 50.6,
+            "Points:Return Points Won": 36.6,
+            "Points:Total Points Won": 50.5,
             "Points:Winners": 24.8
           },
           "samples": {
-            "Service:Aces": 56,
-            "Service:Double Faults": 56,
-            "Service:1st Serve Points Won": 2141,
-            "Service:2nd Serve Points Won": 1767,
-            "Service:Break Points Saved": 204,
-            "Return:Break Points Converted": 269,
+            "Service:Aces": 57,
+            "Service:Double Faults": 57,
+            "Service:1st Serve Points Won": 2174,
+            "Service:2nd Serve Points Won": 1789,
+            "Service:Break Points Saved": 207,
+            "Return:Break Points Converted": 273,
             "Points:Unforced Errors": 43,
-            "Points:Service Points Won": 3900,
-            "Points:Return Points Won": 4048,
-            "Points:Total Points Won": 7948,
+            "Points:Service Points Won": 3954,
+            "Points:Return Points Won": 4099,
+            "Points:Total Points Won": 8053,
             "Points:Winners": 43
           }
         },
@@ -102479,31 +102926,31 @@
       },
       "surface": {
         "p1": {
-          "matchCount": 62,
+          "matchCount": 63,
           "stats": {
             "Service:Aces": 7.4,
             "Service:Double Faults": 3.6,
             "Service:1st Serve Points Won": 76.9,
-            "Service:2nd Serve Points Won": 52.5,
-            "Service:Break Points Saved": 60.3,
-            "Return:Break Points Converted": 38.6,
+            "Service:2nd Serve Points Won": 52.3,
+            "Service:Break Points Saved": 60,
+            "Return:Break Points Converted": 38.4,
             "Points:Unforced Errors": 28.7,
             "Points:Service Points Won": 66.3,
-            "Points:Return Points Won": 36.7,
-            "Points:Total Points Won": 51.2,
+            "Points:Return Points Won": 36.6,
+            "Points:Total Points Won": 51.1,
             "Points:Winners": 22.3
           },
           "samples": {
-            "Service:Aces": 62,
-            "Service:Double Faults": 62,
-            "Service:1st Serve Points Won": 2369,
-            "Service:2nd Serve Points Won": 1856,
-            "Service:Break Points Saved": 267,
-            "Return:Break Points Converted": 342,
+            "Service:Aces": 63,
+            "Service:Double Faults": 63,
+            "Service:1st Serve Points Won": 2402,
+            "Service:2nd Serve Points Won": 1878,
+            "Service:Break Points Saved": 270,
+            "Return:Break Points Converted": 346,
             "Points:Unforced Errors": 45,
-            "Points:Service Points Won": 4219,
-            "Points:Return Points Won": 4381,
-            "Points:Total Points Won": 8600,
+            "Points:Service Points Won": 4273,
+            "Points:Return Points Won": 4432,
+            "Points:Total Points Won": 8705,
             "Points:Winners": 43
           }
         },
@@ -102664,10 +103111,10 @@
           "dow": "Sun",
           "label": "Nov 8",
           "code": 3,
-          "hi": 5,
-          "lo": 2,
+          "hi": 4,
+          "lo": 1,
           "rain": 0,
-          "wind": 13,
+          "wind": 14,
           "humidity": 87,
           "isMatch": false,
           "available": true
@@ -103897,7 +104344,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-11-08T03:52:53.894Z"
+      "seenAt": "2026-11-08T12:18:36.839Z"
     },
     "pinClose": {
       "p1": 1.393,
@@ -103942,7 +104389,7 @@
       "p1": 2.25,
       "p2": 1.57,
       "bookmaker": "bet365",
-      "seenAt": "2026-11-08T03:52:36.383Z"
+      "seenAt": "2026-11-08T12:18:15.177Z"
     },
     "bestOdds": {
       "p1": {
@@ -103953,7 +104400,7 @@
         "price": 1.62,
         "bookmaker": "1xBet"
       },
-      "seenAt": "2026-11-08T03:52:36.383Z"
+      "seenAt": "2026-11-08T12:18:15.177Z"
     },
     "tournamentRound": "ATP Stockholm - Semi-finals",
     "qualifying": true,
@@ -106303,32 +106750,32 @@
           }
         },
         "p2": {
-          "matchCount": 13,
+          "matchCount": 14,
           "stats": {
-            "Service:Aces": 9.5,
-            "Service:Double Faults": 2.6,
+            "Service:Aces": 9.6,
+            "Service:Double Faults": 2.4,
             "Service:1st Serve Points Won": 77.8,
-            "Service:2nd Serve Points Won": 43.4,
-            "Service:Break Points Saved": 65.1,
-            "Return:Break Points Converted": 36.7,
+            "Service:2nd Serve Points Won": 43.2,
+            "Service:Break Points Saved": 65.7,
+            "Return:Break Points Converted": 38.5,
             "Points:Winners": 23.3,
             "Points:Unforced Errors": 24.5,
             "Points:Service Points Won": 66.7,
-            "Points:Return Points Won": 33.9,
-            "Points:Total Points Won": 50.9
+            "Points:Return Points Won": 34.2,
+            "Points:Total Points Won": 51
           },
           "samples": {
-            "Service:Aces": 13,
-            "Service:Double Faults": 13,
-            "Service:1st Serve Points Won": 657,
-            "Service:2nd Serve Points Won": 311,
-            "Service:Break Points Saved": 63,
-            "Return:Break Points Converted": 49,
+            "Service:Aces": 14,
+            "Service:Double Faults": 14,
+            "Service:1st Serve Points Won": 690,
+            "Service:2nd Serve Points Won": 331,
+            "Service:Break Points Saved": 67,
+            "Return:Break Points Converted": 52,
             "Points:Winners": 11,
             "Points:Unforced Errors": 11,
-            "Points:Service Points Won": 968,
-            "Points:Return Points Won": 900,
-            "Points:Total Points Won": 1868
+            "Points:Service Points Won": 1019,
+            "Points:Return Points Won": 954,
+            "Points:Total Points Won": 1973
           }
         }
       },
@@ -106363,32 +106810,32 @@
           }
         },
         "p2": {
-          "matchCount": 12,
+          "matchCount": 13,
           "stats": {
             "Service:Aces": 10.7,
-            "Service:Double Faults": 2.2,
+            "Service:Double Faults": 2,
             "Service:1st Serve Points Won": 78.5,
-            "Service:2nd Serve Points Won": 43.3,
-            "Service:Break Points Saved": 59.2,
-            "Return:Break Points Converted": 33.9,
+            "Service:2nd Serve Points Won": 43.1,
+            "Service:Break Points Saved": 60.4,
+            "Return:Break Points Converted": 35.6,
             "Points:Winners": 24.9,
             "Points:Unforced Errors": 25.4,
             "Points:Service Points Won": 67.6,
-            "Points:Return Points Won": 34.5,
-            "Points:Total Points Won": 51.1
+            "Points:Return Points Won": 34.8,
+            "Points:Total Points Won": 51.2
           },
           "samples": {
-            "Service:Aces": 12,
-            "Service:Double Faults": 12,
-            "Service:1st Serve Points Won": 615,
-            "Service:2nd Serve Points Won": 275,
-            "Service:Break Points Saved": 49,
-            "Return:Break Points Converted": 56,
+            "Service:Aces": 13,
+            "Service:Double Faults": 13,
+            "Service:1st Serve Points Won": 648,
+            "Service:2nd Serve Points Won": 295,
+            "Service:Break Points Saved": 53,
+            "Return:Break Points Converted": 59,
             "Points:Winners": 8,
             "Points:Unforced Errors": 8,
-            "Points:Service Points Won": 890,
-            "Points:Return Points Won": 886,
-            "Points:Total Points Won": 1776
+            "Points:Service Points Won": 941,
+            "Points:Return Points Won": 940,
+            "Points:Total Points Won": 1881
           }
         }
       },
@@ -106519,10 +106966,10 @@
           "dow": "Sun",
           "label": "Nov 8",
           "code": 3,
-          "hi": 5,
-          "lo": 2,
+          "hi": 4,
+          "lo": 1,
           "rain": 0,
-          "wind": 13,
+          "wind": 14,
           "humidity": 87,
           "isMatch": false,
           "available": true
@@ -106537,7 +106984,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "5-7, 6-4, 6-7",
+      "display": "5-7, 6-4, 6-7(7)",
       "sets": [
         {
           "p1": 5,
@@ -107668,7 +108115,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-11-08T03:52:53.894Z"
+      "seenAt": "2026-11-08T12:18:36.839Z"
     },
     "pinClose": {
       "p1": 2.46,
@@ -110667,32 +111114,32 @@
           }
         },
         "p2": {
-          "matchCount": 1,
+          "matchCount": 2,
           "stats": {
-            "Service:Aces": 4,
-            "Service:Double Faults": 1,
-            "Service:1st Serve Points Won": 63.5,
-            "Service:2nd Serve Points Won": 52.4,
-            "Service:Break Points Saved": 57.1,
-            "Return:Break Points Converted": 83.3,
+            "Service:Aces": 2.5,
+            "Service:Double Faults": 0.5,
+            "Service:1st Serve Points Won": 62.3,
+            "Service:2nd Serve Points Won": 50,
+            "Service:Break Points Saved": 50,
+            "Return:Break Points Converted": 66.7,
             "Points:Winners": 24,
             "Points:Unforced Errors": 20,
-            "Points:Service Points Won": 60.3,
-            "Points:Return Points Won": 53.2,
-            "Points:Total Points Won": 57
+            "Points:Service Points Won": 58.7,
+            "Points:Return Points Won": 47,
+            "Points:Total Points Won": 52.7
           },
           "samples": {
-            "Service:Aces": 1,
-            "Service:Double Faults": 1,
-            "Service:1st Serve Points Won": 52,
-            "Service:2nd Serve Points Won": 21,
-            "Service:Break Points Saved": 7,
-            "Return:Break Points Converted": 6,
+            "Service:Aces": 2,
+            "Service:Double Faults": 2,
+            "Service:1st Serve Points Won": 77,
+            "Service:2nd Serve Points Won": 32,
+            "Service:Break Points Saved": 8,
+            "Return:Break Points Converted": 9,
             "Points:Winners": 1,
             "Points:Unforced Errors": 1,
-            "Points:Service Points Won": 73,
-            "Points:Return Points Won": 62,
-            "Points:Total Points Won": 135
+            "Points:Service Points Won": 109,
+            "Points:Return Points Won": 115,
+            "Points:Total Points Won": 224
           }
         }
       },
@@ -110727,32 +111174,32 @@
           }
         },
         "p2": {
-          "matchCount": 1,
+          "matchCount": 2,
           "stats": {
-            "Service:Aces": 4,
-            "Service:Double Faults": 1,
-            "Service:1st Serve Points Won": 63.5,
-            "Service:2nd Serve Points Won": 52.4,
-            "Service:Break Points Saved": 57.1,
-            "Return:Break Points Converted": 83.3,
+            "Service:Aces": 2.5,
+            "Service:Double Faults": 0.5,
+            "Service:1st Serve Points Won": 62.3,
+            "Service:2nd Serve Points Won": 50,
+            "Service:Break Points Saved": 50,
+            "Return:Break Points Converted": 66.7,
             "Points:Winners": 24,
             "Points:Unforced Errors": 20,
-            "Points:Service Points Won": 60.3,
-            "Points:Return Points Won": 53.2,
-            "Points:Total Points Won": 57
+            "Points:Service Points Won": 58.7,
+            "Points:Return Points Won": 47,
+            "Points:Total Points Won": 52.7
           },
           "samples": {
-            "Service:Aces": 1,
-            "Service:Double Faults": 1,
-            "Service:1st Serve Points Won": 52,
-            "Service:2nd Serve Points Won": 21,
-            "Service:Break Points Saved": 7,
-            "Return:Break Points Converted": 6,
+            "Service:Aces": 2,
+            "Service:Double Faults": 2,
+            "Service:1st Serve Points Won": 77,
+            "Service:2nd Serve Points Won": 32,
+            "Service:Break Points Saved": 8,
+            "Return:Break Points Converted": 9,
             "Points:Winners": 1,
             "Points:Unforced Errors": 1,
-            "Points:Service Points Won": 73,
-            "Points:Return Points Won": 62,
-            "Points:Total Points Won": 135
+            "Points:Service Points Won": 109,
+            "Points:Return Points Won": 115,
+            "Points:Total Points Won": 224
           }
         }
       },
@@ -110883,10 +111330,10 @@
           "dow": "Sun",
           "label": "Nov 8",
           "code": 3,
-          "hi": 5,
-          "lo": 2,
+          "hi": 4,
+          "lo": 1,
           "rain": 0,
-          "wind": 13,
+          "wind": 14,
           "humidity": 87,
           "isMatch": false,
           "available": true
@@ -111917,7 +112364,7 @@
       "p1": 8,
       "p2": 1.08,
       "bookmaker": "bet365",
-      "seenAt": "2026-11-08T03:52:36.383Z"
+      "seenAt": "2026-11-08T12:18:15.177Z"
     },
     "bestOdds": {
       "p1": {
@@ -111928,7 +112375,7 @@
         "price": 1.11,
         "bookmaker": "WilliamHill"
       },
-      "seenAt": "2026-11-08T03:52:36.383Z"
+      "seenAt": "2026-11-08T12:18:15.177Z"
     },
     "tournamentRound": "ATP Stockholm - Semi-finals",
     "qualifying": true,
@@ -114063,32 +114510,32 @@
           }
         },
         "p2": {
-          "matchCount": 43,
+          "matchCount": 44,
           "stats": {
-            "Service:Aces": 8.2,
+            "Service:Aces": 8.1,
             "Service:Double Faults": 1.8,
-            "Service:1st Serve Points Won": 73.8,
-            "Service:2nd Serve Points Won": 52.2,
-            "Service:Break Points Saved": 63.1,
-            "Return:Break Points Converted": 31.7,
+            "Service:1st Serve Points Won": 73.7,
+            "Service:2nd Serve Points Won": 52.1,
+            "Service:Break Points Saved": 63.2,
+            "Return:Break Points Converted": 32,
             "Points:Winners": 29,
             "Points:Unforced Errors": 27.3,
-            "Points:Service Points Won": 66.9,
-            "Points:Return Points Won": 33.3,
+            "Points:Service Points Won": 66.8,
+            "Points:Return Points Won": 33.4,
             "Points:Total Points Won": 49.8
           },
           "samples": {
-            "Service:Aces": 43,
-            "Service:Double Faults": 43,
-            "Service:1st Serve Points Won": 2395,
-            "Service:2nd Serve Points Won": 1131,
-            "Service:Break Points Saved": 236,
-            "Return:Break Points Converted": 240,
+            "Service:Aces": 44,
+            "Service:Double Faults": 44,
+            "Service:1st Serve Points Won": 2434,
+            "Service:2nd Serve Points Won": 1145,
+            "Service:Break Points Saved": 239,
+            "Return:Break Points Converted": 241,
             "Points:Winners": 28,
             "Points:Unforced Errors": 28,
-            "Points:Service Points Won": 3522,
-            "Points:Return Points Won": 3663,
-            "Points:Total Points Won": 7185
+            "Points:Service Points Won": 3575,
+            "Points:Return Points Won": 3699,
+            "Points:Total Points Won": 7274
           }
         }
       },
@@ -114123,32 +114570,32 @@
           }
         },
         "p2": {
-          "matchCount": 60,
+          "matchCount": 61,
           "stats": {
             "Service:Aces": 7.6,
             "Service:Double Faults": 2.3,
-            "Service:1st Serve Points Won": 74.1,
-            "Service:2nd Serve Points Won": 50.7,
+            "Service:1st Serve Points Won": 74,
+            "Service:2nd Serve Points Won": 50.6,
             "Service:Break Points Saved": 67.4,
-            "Return:Break Points Converted": 36.6,
+            "Return:Break Points Converted": 36.8,
             "Points:Winners": 28.1,
             "Points:Unforced Errors": 25.3,
-            "Points:Service Points Won": 66.2,
+            "Points:Service Points Won": 66.1,
             "Points:Return Points Won": 34.1,
             "Points:Total Points Won": 50.3
           },
           "samples": {
-            "Service:Aces": 60,
-            "Service:Double Faults": 60,
-            "Service:1st Serve Points Won": 3360,
-            "Service:2nd Serve Points Won": 1718,
-            "Service:Break Points Saved": 393,
-            "Return:Break Points Converted": 358,
+            "Service:Aces": 61,
+            "Service:Double Faults": 61,
+            "Service:1st Serve Points Won": 3399,
+            "Service:2nd Serve Points Won": 1732,
+            "Service:Break Points Saved": 396,
+            "Return:Break Points Converted": 359,
             "Points:Winners": 43,
             "Points:Unforced Errors": 43,
-            "Points:Service Points Won": 5075,
-            "Points:Return Points Won": 4972,
-            "Points:Total Points Won": 10047
+            "Points:Service Points Won": 5128,
+            "Points:Return Points Won": 5008,
+            "Points:Total Points Won": 10136
           }
         }
       },
@@ -114279,10 +114726,10 @@
           "dow": "Sun",
           "label": "Nov 8",
           "code": 3,
-          "hi": 5,
-          "lo": 2,
+          "hi": 4,
+          "lo": 1,
           "rain": 0,
-          "wind": 13,
+          "wind": 14,
           "humidity": 87,
           "isMatch": false,
           "available": true
@@ -114297,7 +114744,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "4-6, 6-7",
+      "display": "4-6, 6-7(6)",
       "sets": [
         {
           "p1": 4,
@@ -115220,7 +115667,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-11-08T03:52:53.894Z"
+      "seenAt": "2026-11-08T12:18:36.839Z"
     },
     "pinClose": {
       "p1": 7.27,
@@ -115265,7 +115712,7 @@
       "p1": 4.5,
       "p2": 1.18,
       "bookmaker": "bet365",
-      "seenAt": "2026-11-08T03:52:36.383Z"
+      "seenAt": "2026-11-08T12:18:15.177Z"
     },
     "bestOdds": {
       "p1": {
@@ -115276,7 +115723,7 @@
         "price": 1.26,
         "bookmaker": "Pncl"
       },
-      "seenAt": "2026-11-08T03:52:36.383Z"
+      "seenAt": "2026-11-08T12:18:15.177Z"
     },
     "tournamentRound": "ATP Stockholm - Semi-finals",
     "qualifying": true,
@@ -118245,10 +118692,10 @@
           "dow": "Sun",
           "label": "Nov 8",
           "code": 3,
-          "hi": 5,
-          "lo": 2,
+          "hi": 4,
+          "lo": 1,
           "rain": 0,
-          "wind": 13,
+          "wind": 14,
           "humidity": 87,
           "isMatch": false,
           "available": true
@@ -119130,7 +119577,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-11-08T03:52:53.894Z"
+      "seenAt": "2026-11-08T12:18:36.839Z"
     },
     "pinClose": {
       "p1": 4.04,
@@ -119180,7 +119627,7 @@
       "p1": 7,
       "p2": 1.1,
       "bookmaker": "bet365",
-      "seenAt": "2026-11-08T03:52:36.383Z"
+      "seenAt": "2026-11-08T12:18:15.177Z"
     },
     "bestOdds": {
       "p1": {
@@ -119191,7 +119638,7 @@
         "price": 1.13,
         "bookmaker": "Pncl"
       },
-      "seenAt": "2026-11-08T03:52:36.383Z"
+      "seenAt": "2026-11-08T12:18:15.177Z"
     },
     "tournamentRound": "ATP Stockholm - Semi-finals",
     "qualifying": true,
@@ -121541,10 +121988,10 @@
           "dow": "Sun",
           "label": "Nov 8",
           "code": 3,
-          "hi": 5,
-          "lo": 2,
+          "hi": 4,
+          "lo": 1,
           "rain": 0,
-          "wind": 13,
+          "wind": 14,
           "humidity": 87,
           "isMatch": false,
           "available": true
@@ -121559,7 +122006,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-7, 2-6",
+      "display": "6-7(5), 2-6",
       "sets": [
         {
           "p1": 6,
@@ -122881,7 +123328,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-11-08T03:52:53.894Z"
+      "seenAt": "2026-11-08T12:18:36.839Z"
     },
     "pinClose": {
       "p1": 6.39,
@@ -122919,7 +123366,7 @@
       "p1": 1.07,
       "p2": 9,
       "bookmaker": "bet365",
-      "seenAt": "2026-11-08T03:52:36.383Z"
+      "seenAt": "2026-11-08T12:18:15.177Z"
     },
     "bestOdds": {
       "p1": {
@@ -122930,7 +123377,7 @@
         "price": 9,
         "bookmaker": "bet365"
       },
-      "seenAt": "2026-11-08T03:52:36.383Z"
+      "seenAt": "2026-11-08T12:18:15.177Z"
     },
     "tournamentRound": "ATP Stockholm - Semi-finals",
     "qualifying": true,
@@ -125139,10 +125586,10 @@
           "dow": "Sun",
           "label": "Nov 8",
           "code": 3,
-          "hi": 5,
-          "lo": 2,
+          "hi": 4,
+          "lo": 1,
           "rain": 0,
-          "wind": 13,
+          "wind": 14,
           "humidity": 87,
           "isMatch": false,
           "available": true
@@ -126140,7 +126587,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-11-08T03:52:53.894Z"
+      "seenAt": "2026-11-08T12:18:36.839Z"
     },
     "pinClose": {
       "p1": 1.078,
@@ -126178,7 +126625,7 @@
       "p1": 1.01,
       "p2": 21,
       "bookmaker": "bet365",
-      "seenAt": "2026-11-08T03:52:36.383Z"
+      "seenAt": "2026-11-08T12:18:15.177Z"
     },
     "bestOdds": {
       "p1": {
@@ -126189,7 +126636,7 @@
         "price": 21,
         "bookmaker": "bet365"
       },
-      "seenAt": "2026-11-08T03:52:36.383Z"
+      "seenAt": "2026-11-08T12:18:15.177Z"
     },
     "tournamentRound": "ATP Stockholm - Semi-finals",
     "qualifying": true,
@@ -129184,10 +129631,10 @@
           "dow": "Sun",
           "label": "Nov 8",
           "code": 3,
-          "hi": 5,
-          "lo": 2,
+          "hi": 4,
+          "lo": 1,
           "rain": 0,
-          "wind": 13,
+          "wind": 14,
           "humidity": 87,
           "isMatch": false,
           "available": true
@@ -130198,7 +130645,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-11-08T03:52:53.894Z"
+      "seenAt": "2026-11-08T12:18:36.839Z"
     },
     "pinClose": {
       "p1": 1.026,
@@ -130235,7 +130682,7 @@
       "p1": 5,
       "p2": 1.16,
       "bookmaker": "bet365",
-      "seenAt": "2026-11-08T03:52:36.383Z"
+      "seenAt": "2026-11-08T12:18:15.177Z"
     },
     "bestOdds": {
       "p1": {
@@ -130246,7 +130693,7 @@
         "price": 1.21,
         "bookmaker": "Marathon"
       },
-      "seenAt": "2026-11-08T03:52:36.383Z"
+      "seenAt": "2026-11-08T12:18:15.177Z"
     },
     "tournamentRound": "ATP Paris - Semi-finals",
     "qualifying": false,
@@ -133193,12 +133640,12 @@
           "date": "2026-11-08",
           "dow": "Sun",
           "label": "Nov 8",
-          "code": 80,
-          "hi": 9,
-          "lo": 5,
+          "code": 45,
+          "hi": 8,
+          "lo": 4,
           "rain": 0,
           "wind": 8,
-          "humidity": 88,
+          "humidity": 89,
           "isMatch": false,
           "available": true
         }
@@ -134347,7 +134794,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-11-08T03:52:53.894Z"
+      "seenAt": "2026-11-08T12:18:36.839Z"
     },
     "pinClose": {
       "p1": 5.26,
