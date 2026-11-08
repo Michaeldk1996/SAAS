@@ -139,7 +139,7 @@ ok(!ntBy('Ace A.', 'Bee B.') && NT.x.meta.lower.ntHasTd === 1, 'atp-nt: a match 
 const mRows = NT.master.rows.filter(r => r[7] === 'Fils A.' && r[8] === 'Mpetshi Perricard G.');
 ok(mRows.length === 1 && !/[lt]/.test(mRows[0][14]), 'atp-nt: the master holds the match once, outside the team / lower flags (Market edge reads it)');
 ok(NT.base === B.base, 'atp-nt: the Database files are byte-identical (never a Database figure)');
-const ntAnchor = "    if ([-1, 0, 1].some(n => tdPairs.has(tdPairKey(dd(n), r.winner, r.loser)))) { lower.ntHasTd = (lower.ntHasTd || 0) + 1; continue; }";
+const ntAnchor = "    if (tk.length && !tk.every(k => tdUnpricedPairs.has(k))) { lower.ntHasTd = (lower.ntHasTd || 0) + 1; continue; }";
 ok(src.split(ntAnchor).length === 2, 'atp-nt: the duplicate-guard mutant anchor is found exactly once');
 const mp3 = path.join(ROOT, '.mutant-lower-yield-nt.js');
 fs.writeFileSync(mp3, src.replace(ntAnchor, ''));
@@ -148,6 +148,28 @@ try { const M = build(Object.assign({}, FEEDS, { DB_YIELD_LOWER_APPROX: path.joi
   red3 = M.x.xNames.some(n => n[0] === 'Ace A.' && n[1] === 'Bee B.'); }
 finally { fs.unlinkSync(mp3); }
 ok(red3, 'MUTANT (no Tennis-Data guard) lets the Geneva match in twice — the duplicate check turns red');
+// ── founder 2026-11-08 ("add them if it's also on tennis explorer"): a Tennis-Data row with NO price is a Database dash; an
+// atp-nt row of the same match is then the only price there is — kept (behind its usual flags), counted, never a Database figure
+const arch2 = path.join(tmp, 'odds-archive-2'); fs.mkdirSync(arch2);
+fs.writeFileSync(path.join(arch2, '2026.csv'), fs.readFileSync(path.join(arch, '2026.csv'), 'utf8') + ['2026-05-22', 'Geneva Open', 'ATP250', 'Outdoor', 'Clay', '2nd Round', 3, 'Cee C.', 'Dee D.', 30, 40,
+  'Completed', '', '', '', '', '', '', '', '', 'file'].join(',') + '\n');
+fs.writeFileSync(path.join(tmp, 'approx-nt2.csv'), [COLS].concat(approx.slice(1),
+  TEC({ date: '2026-05-21', level: 'atp-nt', tournament: 'ATP Geneva', winner: 'Ace A.', loser: 'Bee B.', winnerKey: '25', loserKey: '26', psw: 1.45, psl: 2.7, eventKey: 703, source: 'Tennis Explorer · Pinnacle', comment: 'Completed' }),
+  TEC({ date: '2026-05-22', level: 'atp-nt', tournament: 'ATP Geneva', winner: 'Cee C.', loser: 'Dee D.', winnerKey: '27', loserKey: '28', psw: 1.8, psl: 2.05, eventKey: 705, source: 'Tennis Explorer · other book · Interwetten', comment: 'Completed' }),
+).join('\n') + '\n');
+const N2 = build(Object.assign({}, FEEDS, { DB_YIELD_ARCHIVE_DIR: arch2, DB_YIELD_LOWER_APPROX: path.join(tmp, 'approx-nt2.csv') }));
+const N2b = build(Object.assign({}, FEEDS, { DB_YIELD_ARCHIVE_DIR: arch2 }));
+const cd = N2.x.xRows.map((x, i) => ({ x, n: N2.x.xNames[i] })).filter(o => o.n[0] === 'Cee C.' && o.n[1] === 'Dee D.');
+ok(cd.length === 1 && cd[0].x[8] === 12 && /v/.test(cd[0].x[9]) && !/[lt]/.test(cd[0].x[9]), `unpriced Tennis-Data row: the atp-nt price (Interwetten, book 12, flag v) is kept (got ${JSON.stringify(cd.map(o => o.x))})`);
+ok(N2.x.meta.lower.ntFillsTdDash === 1 && N2.x.meta.lower.ntHasTd === 1, 'unpriced Tennis-Data row: counted as filling a dash; the priced Geneva match is still dropped as a duplicate');
+ok(N2.base === N2b.base, 'unpriced Tennis-Data row: the Database files are byte-identical (the Database keeps its dash, ROI untouched)');
+const mpU = path.join(ROOT, '.mutant-lower-yield-ntu.js');
+fs.writeFileSync(mpU, src.replace(ntAnchor, "    if (tk.length) { lower.ntHasTd = (lower.ntHasTd || 0) + 1; continue; }"));
+let redU = false;
+try { const M = build(Object.assign({}, FEEDS, { DB_YIELD_ARCHIVE_DIR: arch2, DB_YIELD_LOWER_APPROX: path.join(tmp, 'approx-nt2.csv') }), mpU);
+  redU = !M.x.xNames.some(n => n[0] === 'Cee C.' && n[1] === 'Dee D.'); }
+finally { fs.unlinkSync(mpU); }
+ok(redU, 'MUTANT (any Tennis-Data row wins, priced or not — the pre-2026-11-08 rule) drops the only price — red');
 // ── founder 2026-11-04 ("always find prices"): one match = one row, whatever the spelling or the key
 // (a) an atp-nt row whose names Tennis-Data spells another way (hyphen, a longer initial) is the same match: dropped
 fs.writeFileSync(path.join(tmp, 'approx-sp.csv'), [COLS].concat(approx.slice(1),
