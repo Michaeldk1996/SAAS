@@ -87,6 +87,11 @@ no day work, checks or screenshots on this page until the founder reopens it.
      row's: `H2H_PAGE_ROW_WINDOW` — a style-meetings row is dated at the edition start; Djokovic v Vacherot, Shanghai
      2025 SF: shard 24.09, archive 11.10 → 1.14 / 6.68) and shows THAT match's row. A row with no career match takes
      only a Database row no career match holds. The result never depends on row order.
+  - **A team-event row joins match day to match day** (founder 2026-11-08, "look deeper"): an era row with flag `t` (Davis
+    Cup, Laver / United / ATP Cup, Olympics …) carries one event name for every tie of the year ("Davis Cup"), so its run's
+    "start" is not its tie's; a keyless archive career row meets it on |match day − career date| within the price window,
+    never start to start (`dbPriceJoinRows` `tIx`). Gojo v Rublev, Davis Cup Finals 2021 F = 5.92 / 1.17. **Test:**
+    `test-ten402-b.mjs` "a team-event row joins" (control: the pre-fix join dashes it).
   - **Names** (`h2hTdSame`): surname + initial; the surname-tail rule both ways — the archive's shorter name is the first
     or last word(s) of ours ("Mpetshi G." = G. Mpetshi Perricard, "Bautista R.", "Del Potro J.M."), a longer one must
     START with ours ("Ramos-Vinolas A." = A. Ramos; "Lopez San Martin A." is NOT A. Martin). The initial keeps brothers

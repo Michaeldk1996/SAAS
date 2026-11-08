@@ -271,6 +271,29 @@ test('one source of truth (founder 2026-10-17): the era shard (before 2010 + tea
   assert.equal(J1.meta, base.meta, 'no shard: the meta is the store\'s own (no copy made)');
 });
 
+test('founder 2026-11-08: a team-event row joins a keyless archive career row match day to match day (every Davis Cup tie shares one event name, so its "start" is not the tie\'s)', () => {
+  const base = { meta: { levels: ['Grand Slam'], surfaces: ['Hard'], rounds: [''], tournaments: ['Australian Open'] }, rows: [], retRows: [] };
+  const nm = { names: [], retNames: [] };
+  // Davis Cup Finals 2021: rubbers every day from 25 Nov, so the shared name "Davis Cup" runs from 25 Nov to 5 Dec
+  const dcRow = (d, w, l, pw, pl) => [d, null, '', '', 'Davis Cup', pw, pl, 1, 8, 't'];
+  const xs = { xRows: [dcRow(20211125, 0, 0, 1.5, 2.6), dcRow(20211128, 0, 0, 1.4, 2.9), dcRow(20211201, 0, 0, 1.3, 3.4), dcRow(20211205, 0, 0, 1.17, 5.92)],
+    xNames: [['Gojo B.', 'Popyrin A.'], ['Doe J.', 'Roe R.'], ['Moe M.', 'Poe P.'], ['Rublev A.', 'Gojo B.']] };
+  const career = [{ date: '2021-12-05', won: false, opponent: 'A. Rublev', round: 'RR', tournament: 'Davis Cup Finals F: RTF vs CRO', eventKey: null, level: 'atp' }];
+  const J0 = dbPriceJoinRows(base, nm, xs);
+  const rows = [{ date: '2021-12-05', won: false, round: 'RR' }];
+  priceJoin(rows, { full: 'B. Gojo' }, null, J0, () => 'A. Rublev', JSON.parse(JSON.stringify(career)));
+  assert.deepEqual([rows[0].price, rows[0].oppPrice], [5.92, 1.17], 'Gojo v Rublev, Davis Cup Finals 2021 F, takes its Tennis Explorer price');
+  // control: read as a non-team row (the pre-fix join), the tie's "start" is 25 Nov and the 5 Dec match is refused
+  const J1 = Object.assign({}, dbPriceJoinRows(base, nm, xs), { tIx: new Set() });
+  const r1 = [{ date: '2021-12-05', won: false, round: 'RR' }];
+  priceJoin(r1, { full: 'B. Gojo' }, null, J1, () => 'A. Rublev', JSON.parse(JSON.stringify(career)));
+  assert.equal(r1[0].price ?? null, null, 'control: without the team rule the match is a dash (the bug)');
+  // the other winner still never joins
+  const r2 = [{ date: '2021-12-05', won: true, round: 'RR' }];
+  priceJoin(r2, { full: 'B. Gojo' }, null, dbPriceJoinRows(base, nm, xs), () => 'A. Rublev', [Object.assign({}, career[0], { won: true })]);
+  assert.equal(r2[0].price ?? null, null, 'the other winner: a dash');
+});
+
 test('founder ruling 2026-10-18 (item 3): ATP qualifying, Challenger and ITF ride the era shard behind flag l and price through the ONE join, each with its source', () => {
   const base = { meta: { levels: ['Grand Slam'], surfaces: ['Hard'], rounds: ['The Final'], tournaments: ['Australian Open'] },
     rows: [[20250126, 0, 0, 0, 0, 1.40, 3.00, 1, 0]], retRows: [] };
