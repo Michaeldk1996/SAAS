@@ -1,31 +1,31 @@
 {
- "generatedAt": "2026-11-08T13:53:13.271Z",
+ "generatedAt": "2026-11-08T14:54:29.477Z",
  "source": "matches.json git history: oddsMovement.books.Pinnacle (Oddspapi pinnacle, to 2026-09-02) and oddsMovement.chart.books[\"Pinnacle +30s\"] (Oddspapi pinnacle+30, from 2026-09-23)",
  "rule": "each side = last tick at or before the actual start (the earlier of Oddspapi trueStart and the card-state start: Oddspapi, the live-flip lower bound, the Bet105 switch or the first point — founder 2026-11-08; a cut at Oddspapi start before a verified start counts at the verified start only when the same tick, seen within 60 min and within 1.5pp of the Bet105 close, else it stays held back); both sides required; dropped when no unique actual start. seenAt = our last capture read before the start that confirmed the close (founder 2026-10-28); age = start - (seenAt or at)",
  "scannedThrough": {
-  "commit": "7717f16380a2a4b896431208c3e9173035853443",
-  "at": "2026-11-08T13:45:12Z"
+  "commit": "d07d1794a95b5d18ed9e0dbadea29fcfff218502",
+  "at": "2026-11-08T14:45:11Z"
  },
- "commitsScanned": 6486,
+ "commitsScanned": 6492,
  "lastRun": {
-  "from": "2026-11-08T13:30:14Z",
-  "snapshots": 3,
+  "from": "2026-11-08T13:45:12Z",
+  "snapshots": 7,
   "added": 1,
   "replaced": 0,
   "seenBackfilled": 0,
   "earlierCutBackfilled": 0,
   "series": 33,
-  "kept": 23,
+  "kept": 24,
   "bySource": {
    "oddspapi": 10,
    "bet105-switch": 10,
-   "first-point": 3
+   "first-point": 4
   },
   "byBook": {
-   "Pinnacle +30s": 23
+   "Pinnacle +30s": 24
   },
   "dropped": {
-   "noStart": 10
+   "noStart": 9
   }
  },
  "stats": {
@@ -15453,6 +15453,27 @@
     "source": "oddspapi",
     "b105GapPP": -0.02
    }
+  },
+  {
+   "eventKey": 12178223,
+   "date": "2026-11-08",
+   "p1Key": 2973,
+   "p2Key": 2382,
+   "p1Name": "B. Shelton",
+   "p2Name": "C. Alcaraz",
+   "p1": 4.09,
+   "p2": 1.281,
+   "at": "2026-11-08T12:42:33.716Z",
+   "trueStart": "2026-11-08T14:20:29.000Z",
+   "startSource": "first-point",
+   "book": "Pinnacle +30s",
+   "round": "ATP Paris - Final",
+   "qualifying": false,
+   "event": "ATP Paris",
+   "o1": 3.97,
+   "o2": 1.294,
+   "oAt": "2026-11-08T12:38:34.373Z",
+   "winner": null
   },
   {
    "eventKey": 12178224,
