@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-07T02:07:37.364Z",
+  "generatedAt": "2026-11-08T01:38:41.870Z",
   "source": "Computed from board-finalized v5.1 archetype labels (playing-styles.json) x TML match results",
   "window": "2000-2026",
   "note": "Win% of row archetype vs column, over matches where BOTH players are in the deployed labelled roster. Full grid incl. the diagonal: same-archetype cells are 50% by construction (coin flip on style) and carry the real match count n. Off-diagonal cells below the sample floor show n but no pct. TEN-88 (2026-08-27 ruling): the current-season api-tennis supplement is now folded into the aggregate matrix as well as the per-player split, so published cells track the live season instead of stopping mid-January.",
@@ -18,14 +18,14 @@
     "Solid Defender": 18,
     "All Court Elite": 3
   },
-  "matchesCounted": 16390,
+  "matchesCounted": 16393,
   "tmlMatchesCounted": 13422,
-  "supplementMatchesInMatrix": 2968,
+  "supplementMatchesInMatrix": 2971,
   "matchesInWindow": 78091,
   "tmlWalkoverExcluded": 413,
   "formRuleExcluded": 47,
   "from": "2002-12-30",
-  "through": "2026-11-06",
+  "through": "2026-11-07",
   "retentionPct": 17.2,
   "archetypes": {
     "Big Server": {
@@ -161,8 +161,8 @@
       },
       "Solid Baseliner": {
         "pct": 66,
-        "n": 531,
-        "w": 351
+        "n": 532,
+        "w": 352
       },
       "Counterpuncher": {
         "pct": 58,
@@ -198,7 +198,7 @@
       },
       "Attacking Baseliner": {
         "pct": 50,
-        "n": 1628,
+        "n": 1629,
         "note": "same archetype — coin flip on style"
       },
       "Solid Baseliner": {
@@ -218,7 +218,7 @@
       },
       "All Court Elite": {
         "pct": 16,
-        "n": 343,
+        "n": 344,
         "w": 56
       }
     },
@@ -235,7 +235,7 @@
       },
       "Big Server + Complete Baseliner": {
         "pct": 34,
-        "n": 531,
+        "n": 532,
         "w": 180
       },
       "Attacking Baseliner": {
@@ -366,8 +366,8 @@
       },
       "Attacking Baseliner": {
         "pct": 84,
-        "n": 343,
-        "w": 287
+        "n": 344,
+        "w": 288
       },
       "Solid Baseliner": {
         "pct": 88,
@@ -393,7 +393,7 @@
   },
   "surfaceNote": "matrixBySurface splits the same construction by court surface (hard/clay/grass). Same floor per surface; carpet/unknown dropped.",
   "surfaceMatchesCounted": {
-    "hard": 9884,
+    "hard": 9887,
     "clay": 4759,
     "grass": 1657
   },
@@ -506,8 +506,8 @@
         },
         "Solid Baseliner": {
           "pct": 67,
-          "n": 333,
-          "w": 222
+          "n": 334,
+          "w": 223
         },
         "Counterpuncher": {
           "pct": 58,
@@ -543,7 +543,7 @@
         },
         "Attacking Baseliner": {
           "pct": 50,
-          "n": 938,
+          "n": 939,
           "note": "same archetype — coin flip on style"
         },
         "Solid Baseliner": {
@@ -563,7 +563,7 @@
         },
         "All Court Elite": {
           "pct": 15,
-          "n": 206,
+          "n": 207,
           "w": 31
         }
       },
@@ -580,7 +580,7 @@
         },
         "Big Server + Complete Baseliner": {
           "pct": 33,
-          "n": 333,
+          "n": 334,
           "w": 111
         },
         "Attacking Baseliner": {
@@ -711,8 +711,8 @@
         },
         "Attacking Baseliner": {
           "pct": 85,
-          "n": 206,
-          "w": 175
+          "n": 207,
+          "w": 176
         },
         "Solid Baseliner": {
           "pct": 85,
@@ -1417,8 +1417,8 @@
   "byPlayerSupplement": {
     "source": "api-tennis 2026 finished fixtures",
     "loaded": true,
-    "matchesAdded": 2975,
-    "foldedIntoMatrix": 2968,
+    "matchesAdded": 2978,
+    "foldedIntoMatrix": 2971,
     "dedupedAgainstTml": 135,
     "walkoverExcluded": 24,
     "dedupTolDays": 1
@@ -1427,15 +1427,15 @@
     "note": "Closing odds per meeting row, both players. Book unlabelled (founder ruling): Bet365 for 2026, Pinnacle (Bet365 fallback) for earlier years; dash where no price. Coverage = share of meeting rows with a price on at least one side.",
     "sourceFiles": 23,
     "sourceRows": 59468,
-    "rows": 32874,
-    "priced": 30044,
+    "rows": 32880,
+    "priced": 30046,
     "pricedPct": 91.4,
-    "rows2026": 6220,
-    "priced2026": 4632,
-    "priced2026Pct": 74.5
+    "rows2026": 6226,
+    "priced2026": 4634,
+    "priced2026Pct": 74.4
   },
   "byPlayerPlayers": 248,
-  "byPlayerEndpointsCounted": 32874,
+  "byPlayerEndpointsCounted": 32880,
   "byPlayer": {
     "martin|a": {
       "name": "A. Martin",
@@ -2322,7 +2322,7 @@
       }
     },
     "pouille|l": {
-      "name": "L. Pouille",
+      "name": "Lucas Pouille",
       "vs": {
         "Attacking Baseliner": {
           "w": 9,
@@ -3057,7 +3057,7 @@
           "l": 24
         },
         "Attacking Baseliner": {
-          "w": 24,
+          "w": 25,
           "l": 29
         },
         "Big Server + First Strike": {
@@ -3934,7 +3934,7 @@
         },
         "All Court Elite": {
           "w": 2,
-          "l": 16
+          "l": 17
         }
       }
     },
@@ -5658,7 +5658,7 @@
           "l": 13
         },
         "Attacking Baseliner": {
-          "w": 86,
+          "w": 87,
           "l": 18
         },
         "Big Server + First Strike": {
@@ -7131,7 +7131,7 @@
         },
         "Attacking Baseliner": {
           "w": 6,
-          "l": 9
+          "l": 10
         },
         "Solid Baseliner": {
           "w": 0,
@@ -7361,7 +7361,7 @@
           "l": 19
         },
         "Solid Baseliner": {
-          "w": 20,
+          "w": 21,
           "l": 4
         },
         "All Court Elite": {
@@ -7688,7 +7688,7 @@
         },
         "Big Server + Complete Baseliner": {
           "w": 4,
-          "l": 6
+          "l": 7
         },
         "Solid Defender": {
           "w": 3,
@@ -8336,7 +8336,7 @@
       }
     },
     "alboran|n": {
-      "name": "Nicolas Moreno De Alboran",
+      "name": "N. Moreno De Alboran",
       "vs": {
         "Attacking Baseliner": {
           "w": 2,
