@@ -29290,7 +29290,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, profileRosterMap: () =
         if (!nm) return;
         const c = same(ka, key(nm[0])) ? { i, aWon: true, o: nm[1] } : same(ka, key(nm[1])) ? { i, aWon: false, o: nm[0] } : null;
         if (!c) return;
-        c.k = key(c.o); c.rd = h2hTdRound(db, i); c.st = h2hTdEvent(db, i).start; c.day = Date.UTC(Math.floor(db.rows[i][0] / 10000), Math.floor(db.rows[i][0] / 100) % 100 - 1, db.rows[i][0] % 100) / 86400000;
+        c.k = key(c.o); c.rd = h2hTdRound(db, i); c.st = h2hTdEvent(db, i).start; c.team = !!(db.tIx && db.tIx.has(i)); c.day = Date.UTC(Math.floor(db.rows[i][0] / 10000), Math.floor(db.rows[i][0] / 100) % 100 - 1, db.rows[i][0] % 100) / 86400000;
         new Set(h2hTdIx(c.k).concat(...(c.k.alt || []).map(h2hTdIx))).forEach(w => { if (!A0.byW.has(w)) A0.byW.set(w, []); A0.byW.get(w).push(c); });
       });
       db._h2hKeys.byP.set(pk, A0);
@@ -29311,10 +29311,11 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, profileRosterMap: () =
           seen.add(c);
           const dd = c.day - m.d, ds = c.st - m.d;
           if (c.aWon !== m.won || (!anyRound && clash(m.rd, c.rd))) return;
-          if (m.ek ? dd < MW[0] || dd > MW[1] : dd < W[0] || dd > W[1] || (!m.row && (ds < SW[0] || ds > SW[1]))) return;
+          // a team-event row (c.team): its name is every tie of the year ("Davis Cup"), so no start to start — match day only
+          if (m.ek ? dd < MW[0] || dd > MW[1] : dd < W[0] || dd > W[1] || (!m.row && !c.team && (ds < SW[0] || ds > SW[1]))) return;
           if (!same(m.k, c.k)) return;
           // match day to match day; a start-dated career row start to start; a ledger row of unknown kind (step 3) its own date
-          out.push({ l: j, r: c.i, ad: Math.abs(m.ek || m.row ? dd : ds) });
+          out.push({ l: j, r: c.i, ad: Math.abs(m.ek || m.row || c.team ? dd : ds) });
         }));
       });
       return out;
@@ -35734,12 +35735,16 @@ window.DatabaseTab = (function(){
         ix(meta.tournaments, x[4]), x[5], x[6], x[7], x[8]]; });
     }
     var rows = base.rows.concat(rr, tr, xr), names = nm.names.concat(rn, tn, xn);
+    // founder 2026-11-08 ("look deeper"): the team-event rows (flag t) by index. Their event name ("Davis Cup") is shared by
+    // every tie of the year, so its "start" is not their tie's: the join reads them match day to match day (h2hPriceJoin).
+    var x0 = base.rows.length + rr.length + tr.length, tIx = new Set();
+    ((xs && xs.xRows) || []).forEach(function(x, j){ if (String(x[9] || '').indexOf('t') >= 0) tIx.add(x0 + j); });
     // founder ruling 2026-10-18: the publish run's quarantine (price-quarantine.json) — each entry names the Database row
     // (date|winner|loser) a surface priced differently; that row is a dash on every surface (h2hPriceJoin) this build
     var qk = new Set(((q && q.entries) || []).map(function(e){ return e && e.db; }).filter(Boolean)), qz = new Set();
     if (qk.size) rows.forEach(function(r, i){ var n = names[i]; if (n && qk.has(r[0] + '|' + n[0] + '|' + n[1])) qz.add(i); });
     return { rows: rows, names: names, meta: meta, nDb: base.rows.length,
-      nX: xr.length, aliases: nm.aliases || {}, qz: qz,
+      nX: xr.length, aliases: nm.aliases || {}, qz: qz, tIx: tIx,
       // founder ruling 2026-10-18 (item 5): the played matches no source prices, with their reason ([date, winner, loser, code])
       u: (xs && Array.isArray(xs.uRows)) ? xs.uRows : [] };
   }
