@@ -1,24 +1,25 @@
 {
- "generatedAt": "2026-11-08T01:25:24.262Z",
+ "generatedAt": "2026-11-08T05:17:27.635Z",
  "source": "matches.json git history: oddsMovement.books.Pinnacle (Oddspapi pinnacle, to 2026-09-02) and oddsMovement.chart.books[\"Pinnacle +30s\"] (Oddspapi pinnacle+30, from 2026-09-23)",
- "rule": "each side = last tick at or before the actual start (the earlier of Oddspapi trueStart and the card-state start: Oddspapi, the live-flip lower bound, the Bet105 switch or the first point — founder 2026-11-08); both sides required; dropped when no unique actual start. seenAt = our last capture read before the start that confirmed the close (founder 2026-10-28); age = start - (seenAt or at)",
+ "rule": "each side = last tick at or before the actual start (the earlier of Oddspapi trueStart and the card-state start: Oddspapi, the live-flip lower bound, the Bet105 switch or the first point — founder 2026-11-08; a cut at Oddspapi start before a verified start counts at the verified start only when the same tick, seen within 60 min and within 1.5pp of the Bet105 close, else it stays held back); both sides required; dropped when no unique actual start. seenAt = our last capture read before the start that confirmed the close (founder 2026-10-28); age = start - (seenAt or at)",
  "scannedThrough": {
-  "commit": "7dda808b701f914b399d6c6f46c219a8e2db031e",
-  "at": "2026-11-08T01:15:38Z"
+  "commit": "7e2969b6617130d703774862068dda13a5539777",
+  "at": "2026-11-08T05:00:16Z"
  },
- "commitsScanned": 6439,
+ "commitsScanned": 6456,
  "lastRun": {
-  "from": "2026-11-08T00:15:14Z",
-  "snapshots": 7,
+  "from": "2026-11-08T01:15:38Z",
+  "snapshots": 18,
   "added": 0,
-  "replaced": 14,
+  "replaced": 7,
   "seenBackfilled": 0,
+  "earlierCutBackfilled": 15,
   "series": 37,
   "kept": 34,
   "bySource": {
-   "oddspapi": 20,
-   "bet105-switch": 13,
-   "first-point": 1
+   "oddspapi": 13,
+   "bet105-switch": 19,
+   "first-point": 2
   },
   "byBook": {
    "Pinnacle +30s": 34
@@ -13139,8 +13140,8 @@
    "p1": 1.111,
    "p2": 7.37,
    "at": "2026-10-28T18:14:11.592Z",
-   "trueStart": "2026-10-28T18:16:38.000Z",
-   "startSource": "oddspapi",
+   "trueStart": "2026-10-28T18:16:29.000Z",
+   "startSource": "first-point",
    "book": "Pinnacle +30s",
    "round": "ATP Basel - 1/16-finals",
    "qualifying": false,
@@ -13149,7 +13150,12 @@
    "o2": 6.59,
    "oAt": "2026-10-27T17:08:00.170Z",
    "winner": "p1",
-   "seenAt": "2026-10-28T18:15:00.000Z"
+   "seenAt": "2026-10-28T18:15:00.000Z",
+   "earlierCut": {
+    "trueStart": "2026-10-28T18:16:38.000Z",
+    "source": "oddspapi",
+    "b105GapPP": 0.89
+   }
   },
   {
    "eventKey": 12174663,
@@ -13314,8 +13320,8 @@
    "p1": 1.25,
    "p2": 4.46,
    "at": "2026-10-29T21:04:44.082Z",
-   "trueStart": "2026-10-29T21:11:23.000Z",
-   "startSource": "oddspapi",
+   "trueStart": "2026-10-29T21:17:20.000Z",
+   "startSource": "bet105-switch",
    "book": "Pinnacle +30s",
    "round": "ATP Basel - 1/8-finals",
    "qualifying": false,
@@ -13324,7 +13330,12 @@
    "o2": 3.9,
    "oAt": "2026-10-28T10:52:04.376Z",
    "winner": "p2",
-   "seenAt": "2026-10-29T21:05:00.000Z"
+   "seenAt": "2026-10-29T21:05:00.000Z",
+   "earlierCut": {
+    "trueStart": "2026-10-29T21:11:23.000Z",
+    "source": "oddspapi",
+    "b105GapPP": 0.5
+   }
   },
   {
    "eventKey": 12175157,
@@ -13534,8 +13545,8 @@
    "p1": 4.69,
    "p2": 1.233,
    "at": "2026-10-30T12:01:18.650Z",
-   "trueStart": "2026-10-30T12:32:37.000Z",
-   "startSource": "oddspapi",
+   "trueStart": "2026-10-30T12:43:14.000Z",
+   "startSource": "first-point",
    "book": "Pinnacle +30s",
    "round": "ATP Vienna - Quarter-finals",
    "qualifying": false,
@@ -13544,7 +13555,12 @@
    "o2": 1.167,
    "oAt": "2026-10-29T18:02:39.486Z",
    "winner": "p2",
-   "seenAt": "2026-10-30T12:05:05.000Z"
+   "seenAt": "2026-10-30T12:05:05.000Z",
+   "earlierCut": {
+    "trueStart": "2026-10-30T12:32:37.000Z",
+    "source": "oddspapi",
+    "b105GapPP": -0.53
+   }
   },
   {
    "eventKey": 12175778,
@@ -13621,8 +13637,8 @@
    "p1": 3,
    "p2": 1.446,
    "at": "2026-10-30T18:58:23.240Z",
-   "trueStart": "2026-10-30T19:18:20.000Z",
-   "startSource": "oddspapi",
+   "trueStart": "2026-10-30T19:17:08.000Z",
+   "startSource": "first-point",
    "book": "Pinnacle +30s",
    "round": "ATP Vienna - Quarter-finals",
    "qualifying": false,
@@ -13631,7 +13647,12 @@
    "o2": 1.454,
    "oAt": "2026-10-30T00:38:58.172Z",
    "winner": "p2",
-   "seenAt": "2026-10-30T19:00:00.000Z"
+   "seenAt": "2026-10-30T19:00:00.000Z",
+   "earlierCut": {
+    "trueStart": "2026-10-30T19:18:20.000Z",
+    "source": "oddspapi",
+    "b105GapPP": -0.16
+   }
   },
   {
    "eventKey": 12175833,
@@ -13643,8 +13664,8 @@
    "p1": 1.813,
    "p2": 2.12,
    "at": "2026-10-30T18:25:52.510Z",
-   "trueStart": "2026-10-30T18:54:29.000Z",
-   "startSource": "oddspapi",
+   "trueStart": "2026-10-30T18:53:14.000Z",
+   "startSource": "first-point",
    "book": "Pinnacle +30s",
    "round": "ATP Basel - Quarter-finals",
    "qualifying": false,
@@ -13653,7 +13674,12 @@
    "o2": 2.08,
    "oAt": "2026-10-30T00:20:28.815Z",
    "winner": "p1",
-   "seenAt": "2026-10-30T18:40:00.000Z"
+   "seenAt": "2026-10-30T18:40:00.000Z",
+   "earlierCut": {
+    "trueStart": "2026-10-30T18:54:29.000Z",
+    "source": "oddspapi",
+    "b105GapPP": 0.35
+   }
   },
   {
    "eventKey": 12175868,
@@ -13665,8 +13691,8 @@
    "p1": 3.51,
    "p2": 1.352,
    "at": "2026-10-30T16:14:26.918Z",
-   "trueStart": "2026-10-30T17:02:58.000Z",
-   "startSource": "oddspapi",
+   "trueStart": "2026-10-30T17:01:52.000Z",
+   "startSource": "bet105-switch",
    "book": "Pinnacle +30s",
    "round": "ATP Basel - Quarter-finals",
    "qualifying": false,
@@ -13675,7 +13701,12 @@
    "o2": 1.377,
    "oAt": "2026-10-30T01:08:16.688Z",
    "winner": "p2",
-   "seenAt": "2026-10-30T17:00:00.000Z"
+   "seenAt": "2026-10-30T17:00:00.000Z",
+   "earlierCut": {
+    "trueStart": "2026-10-30T17:02:58.000Z",
+    "source": "oddspapi",
+    "b105GapPP": 0.05
+   }
   },
   {
    "eventKey": 12175948,
@@ -13731,8 +13762,8 @@
    "p1": 1.502,
    "p2": 2.79,
    "at": "2026-10-31T15:44:06.248Z",
-   "trueStart": "2026-10-31T16:09:19.000Z",
-   "startSource": "oddspapi",
+   "trueStart": "2026-10-31T16:06:50.000Z",
+   "startSource": "bet105-switch",
    "book": "Pinnacle +30s",
    "round": "ATP Basel - Semi-finals",
    "qualifying": false,
@@ -13741,7 +13772,12 @@
    "o2": 2.69,
    "oAt": "2026-10-31T00:52:21.905Z",
    "winner": "p1",
-   "seenAt": "2026-10-31T16:02:00.000Z"
+   "seenAt": "2026-10-31T16:02:00.000Z",
+   "earlierCut": {
+    "trueStart": "2026-10-31T16:09:19.000Z",
+    "source": "oddspapi",
+    "b105GapPP": -0.02
+   }
   },
   {
    "eventKey": 12175993,
@@ -14170,8 +14206,8 @@
    "p1": 5.35,
    "p2": 1.175,
    "at": "2026-11-01T11:42:43.886Z",
-   "trueStart": "2026-11-01T11:50:39.000Z",
-   "startSource": "oddspapi",
+   "trueStart": "2026-11-01T11:54:31.000Z",
+   "startSource": "first-point",
    "book": "Pinnacle +30s",
    "round": "ATP Paris - Final",
    "qualifying": true,
@@ -14180,7 +14216,12 @@
    "o2": 1.294,
    "oAt": "2026-10-31T20:07:50.931Z",
    "winner": "p2",
-   "seenAt": "2026-11-01T11:45:00.000Z"
+   "seenAt": "2026-11-01T11:45:00.000Z",
+   "earlierCut": {
+    "trueStart": "2026-11-01T11:50:39.000Z",
+    "source": "oddspapi",
+    "b105GapPP": 0.57
+   }
   },
   {
    "eventKey": 12176265,
@@ -14192,8 +14233,8 @@
    "p1": 1.684,
    "p2": 2.25,
    "at": "2026-11-01T11:16:08.087Z",
-   "trueStart": "2026-11-01T11:51:18.000Z",
-   "startSource": "oddspapi",
+   "trueStart": "2026-11-01T11:53:31.000Z",
+   "startSource": "first-point",
    "book": "Pinnacle +30s",
    "round": "ATP Paris - Final",
    "qualifying": true,
@@ -14202,7 +14243,12 @@
    "o2": 1.833,
    "oAt": "2026-10-31T18:09:30.416Z",
    "winner": "p1",
-   "seenAt": "2026-11-01T11:40:00.000Z"
+   "seenAt": "2026-11-01T11:40:00.000Z",
+   "earlierCut": {
+    "trueStart": "2026-11-01T11:51:18.000Z",
+    "source": "oddspapi",
+    "b105GapPP": -0.01
+   }
   },
   {
    "eventKey": 12176266,
@@ -14258,8 +14304,8 @@
    "p1": 4.83,
    "p2": 1.223,
    "at": "2026-11-01T12:12:49.089Z",
-   "trueStart": "2026-11-01T13:14:26.261Z",
-   "startSource": "oddspapi",
+   "trueStart": "2026-11-01T13:09:15.000Z",
+   "startSource": "bet105-switch",
    "book": "Pinnacle +30s",
    "round": "ATP Vienna - Final",
    "qualifying": false,
@@ -14268,7 +14314,12 @@
    "o2": 1.265,
    "oAt": "2026-10-31T21:06:23.890Z",
    "winner": "p2",
-   "seenAt": "2026-11-01T12:38:18.000Z"
+   "seenAt": "2026-11-01T12:38:18.000Z",
+   "earlierCut": {
+    "trueStart": "2026-11-01T13:14:26.261Z",
+    "source": "oddspapi",
+    "b105GapPP": 0.41
+   }
   },
   {
    "eventKey": 12176023,
@@ -14302,8 +14353,8 @@
    "p1": 1.558,
    "p2": 2.59,
    "at": "2026-11-02T20:37:44.814Z",
-   "trueStart": "2026-11-02T20:56:43.000Z",
-   "startSource": "oddspapi",
+   "trueStart": "2026-11-02T20:59:10.000Z",
+   "startSource": "first-point",
    "book": "Pinnacle +30s",
    "round": "ATP Paris - 1/32-finals",
    "qualifying": false,
@@ -14312,7 +14363,12 @@
    "o2": 2.4,
    "oAt": "2026-10-31T18:09:04.326Z",
    "winner": "p1",
-   "seenAt": "2026-11-02T20:40:00.000Z"
+   "seenAt": "2026-11-02T20:40:00.000Z",
+   "earlierCut": {
+    "trueStart": "2026-11-02T20:56:43.000Z",
+    "source": "oddspapi",
+    "b105GapPP": 0.05
+   }
   },
   {
    "eventKey": 12176030,
@@ -14368,8 +14424,8 @@
    "p1": 2.5,
    "p2": 1.591,
    "at": "2026-11-02T17:57:35.637Z",
-   "trueStart": "2026-11-02T18:07:49.000Z",
-   "startSource": "oddspapi",
+   "trueStart": "2026-11-02T18:10:42.000Z",
+   "startSource": "bet105-switch",
    "book": "Pinnacle +30s",
    "round": "ATP Paris - 1/32-finals",
    "qualifying": false,
@@ -14378,7 +14434,12 @@
    "o2": 1.613,
    "oAt": "2026-10-31T18:09:04.326Z",
    "winner": "p2",
-   "seenAt": "2026-11-02T18:00:00.000Z"
+   "seenAt": "2026-11-02T18:00:00.000Z",
+   "earlierCut": {
+    "trueStart": "2026-11-02T18:07:49.000Z",
+    "source": "oddspapi",
+    "b105GapPP": 0.15
+   }
   },
   {
    "eventKey": 12176037,
@@ -14434,8 +14495,8 @@
    "p1": 2.24,
    "p2": 1.719,
    "at": "2026-11-02T09:36:07.725Z",
-   "trueStart": "2026-11-02T10:09:35.000Z",
-   "startSource": "oddspapi",
+   "trueStart": "2026-11-02T10:08:26.000Z",
+   "startSource": "bet105-switch",
    "book": "Pinnacle +30s",
    "round": "ATP Paris - 1/32-finals",
    "qualifying": false,
@@ -14444,7 +14505,12 @@
    "o2": 1.862,
    "oAt": "2026-11-02T01:56:35.251Z",
    "winner": "p2",
-   "seenAt": "2026-11-02T10:00:00.000Z"
+   "seenAt": "2026-11-02T10:00:00.000Z",
+   "earlierCut": {
+    "trueStart": "2026-11-02T10:09:35.000Z",
+    "source": "oddspapi",
+    "b105GapPP": -0.53
+   }
   },
   {
    "eventKey": 12176416,
@@ -14456,8 +14522,8 @@
    "p1": 1.358,
    "p2": 3.41,
    "at": "2026-11-02T12:32:17.771Z",
-   "trueStart": "2026-11-02T14:02:46.284Z",
-   "startSource": "oddspapi",
+   "trueStart": "2026-11-02T13:51:52.000Z",
+   "startSource": "bet105-switch",
    "book": "Pinnacle +30s",
    "round": "ATP Paris - 1/32-finals",
    "qualifying": false,
@@ -14466,7 +14532,12 @@
    "o2": 3.4,
    "oAt": "2026-11-02T02:00:21.259Z",
    "winner": "p1",
-   "seenAt": "2026-11-02T13:45:00.000Z"
+   "seenAt": "2026-11-02T13:45:00.000Z",
+   "earlierCut": {
+    "trueStart": "2026-11-02T14:02:46.284Z",
+    "source": "oddspapi",
+    "b105GapPP": 0.03
+   }
   },
   {
    "eventKey": 12176417,
@@ -14478,8 +14549,8 @@
    "p1": 1.675,
    "p2": 2.31,
    "at": "2026-11-02T12:31:56.953Z",
-   "trueStart": "2026-11-02T15:07:58.000Z",
-   "startSource": "oddspapi",
+   "trueStart": "2026-11-02T15:04:28.000Z",
+   "startSource": "bet105-switch",
    "book": "Pinnacle +30s",
    "round": "ATP Paris - 1/32-finals",
    "qualifying": false,
@@ -14488,7 +14559,12 @@
    "o2": 2.18,
    "oAt": "2026-11-02T02:01:10.145Z",
    "winner": "p1",
-   "seenAt": "2026-11-02T15:00:00.000Z"
+   "seenAt": "2026-11-02T15:00:00.000Z",
+   "earlierCut": {
+    "trueStart": "2026-11-02T15:07:58.000Z",
+    "source": "oddspapi",
+    "b105GapPP": -0.19
+   }
   },
   {
    "eventKey": 12176418,
@@ -14654,8 +14730,8 @@
    "p1": 1.617,
    "p2": 2.43,
    "at": "2026-11-04T19:12:15.203Z",
-   "trueStart": "2026-11-04T20:11:55.178Z",
-   "startSource": "oddspapi",
+   "trueStart": "2026-11-04T20:15:12.000Z",
+   "startSource": "bet105-switch",
    "book": "Pinnacle +30s",
    "round": "ATP Paris - 1/16-finals",
    "qualifying": false,
@@ -14664,7 +14740,12 @@
    "o2": 3.14,
    "oAt": "2026-11-02T19:15:59.049Z",
    "winner": "p1",
-   "seenAt": "2026-11-04T19:18:41.000Z"
+   "seenAt": "2026-11-04T19:18:41.000Z",
+   "earlierCut": {
+    "trueStart": "2026-11-04T20:11:55.178Z",
+    "source": "oddspapi",
+    "b105GapPP": -0.67
+   }
   },
   {
    "eventKey": 12176936,
@@ -14720,8 +14801,8 @@
    "p1": 2.33,
    "p2": 1.671,
    "at": "2026-11-04T09:58:26.217Z",
-   "trueStart": "2026-11-04T10:09:44.380Z",
-   "startSource": "oddspapi",
+   "trueStart": "2026-11-04T10:10:16.000Z",
+   "startSource": "bet105-switch",
    "book": "Pinnacle +30s",
    "round": "ATP Paris - 1/16-finals",
    "qualifying": false,
@@ -14730,7 +14811,12 @@
    "o2": 1.769,
    "oAt": "2026-11-03T13:26:03.370Z",
    "winner": "p1",
-   "seenAt": "2026-11-04T10:00:00.000Z"
+   "seenAt": "2026-11-04T10:00:00.000Z",
+   "earlierCut": {
+    "trueStart": "2026-11-04T10:09:44.380Z",
+    "source": "oddspapi",
+    "b105GapPP": -0.49
+   }
   },
   {
    "eventKey": 12176997,
@@ -14786,8 +14872,8 @@
    "p1": 2.09,
    "p2": 1.813,
    "at": "2026-11-04T17:18:08.038Z",
-   "trueStart": "2026-11-04T17:29:46.411Z",
-   "startSource": "oddspapi",
+   "trueStart": "2026-11-04T17:37:29.000Z",
+   "startSource": "bet105-switch",
    "book": "Pinnacle +30s",
    "round": "ATP Paris - 1/16-finals",
    "qualifying": false,
@@ -14795,7 +14881,12 @@
    "o1": 2.09,
    "o2": 1.8,
    "oAt": "2026-11-03T19:05:57.244Z",
-   "winner": "p1"
+   "winner": "p1",
+   "earlierCut": {
+    "trueStart": "2026-11-04T17:29:46.411Z",
+    "source": "oddspapi",
+    "b105GapPP": -0.24
+   }
   },
   {
    "eventKey": 12177026,
@@ -14872,8 +14963,8 @@
    "p1": 3,
    "p2": 1.436,
    "at": "2026-11-04T17:19:13.100Z",
-   "trueStart": "2026-11-04T18:06:12.272Z",
-   "startSource": "oddspapi",
+   "trueStart": "2026-11-04T18:06:46.000Z",
+   "startSource": "bet105-switch",
    "book": "Pinnacle +30s",
    "round": "ATP Paris - 1/16-finals",
    "qualifying": false,
@@ -14881,7 +14972,12 @@
    "o1": 2.83,
    "o2": 1.469,
    "oAt": "2026-11-04T04:36:24.681Z",
-   "winner": "p2"
+   "winner": "p2",
+   "earlierCut": {
+    "trueStart": "2026-11-04T18:06:12.272Z",
+    "source": "oddspapi",
+    "b105GapPP": 0.15
+   }
   },
   {
    "eventKey": 12177392,
@@ -14915,8 +15011,8 @@
    "p1": 1.302,
    "p2": 3.9,
    "at": "2026-11-05T09:55:05.188Z",
-   "trueStart": "2026-11-05T10:08:23.107Z",
-   "startSource": "oddspapi",
+   "trueStart": "2026-11-05T10:11:35.000Z",
+   "startSource": "bet105-switch",
    "book": "Pinnacle +30s",
    "round": "ATP Paris - 1/8-finals",
    "qualifying": false,
@@ -14925,7 +15021,12 @@
    "o2": 3.67,
    "oAt": "2026-11-05T02:23:25.577Z",
    "winner": "p1",
-   "seenAt": "2026-11-05T10:00:00.000Z"
+   "seenAt": "2026-11-05T10:00:00.000Z",
+   "earlierCut": {
+    "trueStart": "2026-11-05T10:08:23.107Z",
+    "source": "oddspapi",
+    "b105GapPP": 0.01
+   }
   },
   {
    "eventKey": 12177452,
@@ -15003,8 +15104,8 @@
    "p1": 2.93,
    "p2": 1.462,
    "at": "2026-11-05T19:24:34.374Z",
-   "trueStart": "2026-11-05T19:40:29.487Z",
-   "startSource": "oddspapi",
+   "trueStart": "2026-11-05T19:49:33.000Z",
+   "startSource": "bet105-switch",
    "book": "Pinnacle +30s",
    "round": "ATP Paris - 1/8-finals",
    "qualifying": false,
@@ -15013,7 +15114,12 @@
    "o2": 1.552,
    "oAt": "2026-11-05T02:23:25.577Z",
    "winner": "p2",
-   "seenAt": "2026-11-05T19:27:24.000Z"
+   "seenAt": "2026-11-05T19:27:24.000Z",
+   "earlierCut": {
+    "trueStart": "2026-11-05T19:40:29.487Z",
+    "source": "oddspapi",
+    "b105GapPP": 0.44
+   }
   },
   {
    "eventKey": 12177663,
@@ -15332,8 +15438,8 @@
    "p1": 5.26,
    "p2": 1.199,
    "at": "2026-11-07T16:08:59.987Z",
-   "trueStart": "2026-11-07T16:22:44.531Z",
-   "startSource": "oddspapi",
+   "trueStart": "2026-11-07T16:28:33.000Z",
+   "startSource": "first-point",
    "book": "Pinnacle +30s",
    "round": "ATP Paris - Semi-finals",
    "qualifying": false,
@@ -15341,7 +15447,12 @@
    "o1": 5.1,
    "o2": 1.201,
    "oAt": "2026-11-07T01:17:49.471Z",
-   "winner": "p2"
+   "winner": "p2",
+   "earlierCut": {
+    "trueStart": "2026-11-07T16:22:44.531Z",
+    "source": "oddspapi",
+    "b105GapPP": -0.02
+   }
   }
  ]
 }
