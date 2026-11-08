@@ -314,6 +314,10 @@ const approxUsed = new Set();
 // every Tennis-Data match — and every match the archive feed adds after its last day — by day + both names as Tennis-Data
 // spells them (the 'atp-nt' guard below: a Database row of the same match wins)
 const tdPairs = new Set();
+// founder 2026-11-08 ("add them if it's also on tennis explorer"): the Tennis-Data rows that end with NO price (a Database
+// dash). An 'atp-nt' row of the same match is then the only price there is — it is kept (it only fills the dash), never
+// dropped as "a Tennis-Data row wins"; that rule stands for a priced Tennis-Data row
+const tdUnpricedPairs = new Set();
 // founder 2026-11-04 ("always find prices"): the pair is matched on surname + first initial, spelling-tolerant — the archive
 // feed spells "Carreno Busta P." / "Zhang Zh." where Tennis Explorer has "Carreno-Busta P." / "Zhang Z."; an exact-spelling
 // key let a second row of a match the Database already prices in, and the join dashed both (two rows fit)
@@ -422,6 +426,7 @@ function processLine(c, col, season, fromFeed) {
     const B_ = behindFlag ? retBucket : bucket;
     if (bookIdx < 0) {
       B_.noPrice++;
+      tdUnpricedPairs.add(tdPairKey((c[col.date] || '').trim(), (c[col.winner] || '').trim(), (c[col.loser] || '').trim()));
       // founder ruling 2026-10-18 (item 5): every unpriced match carries its reason — a book that priced one player only is
       // "one side only", none at all "no bookmaker priced it" (read by the price join's dash hover; never a Database figure)
       const dU = parseInt((c[col.date] || '').trim().replace(/-/g, ''), 10);
@@ -738,7 +743,9 @@ for (const r of lowerBest.values()) {
   }
   if (nt) {
     const dd = n => { const x = new Date(Date.UTC(Math.floor(dI / 10000), Math.floor(dI / 100) % 100 - 1, dI % 100 + n)); return x.toISOString().slice(0, 10).replace(/-/g, ''); };
-    if ([-1, 0, 1].some(n => tdPairs.has(tdPairKey(dd(n), r.winner, r.loser)))) { lower.ntHasTd = (lower.ntHasTd || 0) + 1; continue; }
+    const tk = [-1, 0, 1].map(n => tdPairKey(dd(n), r.winner, r.loser)).filter(k => tdPairs.has(k));
+    if (tk.length && !tk.every(k => tdUnpricedPairs.has(k))) { lower.ntHasTd = (lower.ntHasTd || 0) + 1; continue; }
+    if (tk.length) lower.ntFillsTdDash = (lower.ntFillsTdDash || 0) + 1;
   }
   xAtt.push([series, '', '', (r.comment || '').trim(), '', '']);
   const ntB = nt && (r.book === 6 || r.book === 7 || r.book === TE_B365_BOOK);   // a main-draw Bet365 price: the join's "B"
