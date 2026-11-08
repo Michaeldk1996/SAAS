@@ -160,6 +160,8 @@ test('Kalshi feed: auth headers, subscribe, snapshot + deltas → sized YES and 
   assert.equal(f.quote('M-A').yesAsk, 0.53); assert.equal(f.quote('M-A').yesSize, 25);
   msg({ type: 'orderbook_delta', msg: { market_ticker: 'M-A', side: 'no', price_dollars: '0.47', delta_fp: '-25' } });
   assert.equal(f.quote('M-A').yesAsk, 0.55, 'a level emptied by a delta is gone (mutant: kept at 0)');
+  for (const d of ['0.1', '0.2', '-0.3']) msg({ type: 'orderbook_delta', msg: { market_ticker: 'M-A', side: 'no', price_dollars: '0.49', delta_fp: d } });
+  assert.equal(f.quote('M-A').yesAsk, 0.55, 'fractional deltas that empty a level leave no float dust behind (mutant: unrounded sum keeps 5.6e-17)');
   const km = { ev: 'KXATPMATCH-X', p: [{ name: 'A', ticker: 'M-A', yesAsk: 0.9 }, { name: 'B', ticker: 'M-B', yesAsk: 0.9 }] };
   const o = f.overlay(km); assert.equal(o.p[0].yesAsk, 0.55); assert.equal(o.p[1].noAsk, 0.56); assert.equal(o.p[0].name, 'A');
   w.readyState = 3; w.onclose({});

@@ -218,6 +218,9 @@ export function kalshiSign(privateKeyPem, ts, path = '/trade-api/ws/v2') {
   const s = createSign('sha256'); s.update(String(ts) + 'GET' + path); s.end();
   return s.sign({ key: privateKeyPem, padding: CC.RSA_PKCS1_PSS_PADDING, saltLength: CC.RSA_PSS_SALTLEN_DIGEST }, 'base64');
 }
+// a level's quantity on Kalshi's 0.01-contract grid: fractional deltas summed in floats leave dust (8.6e-12 measured 8 Nov,
+// Basilashvili v Gojo) that kept an emptied level as a phantom ask and a 39% gap with no contracts behind it
+const qty = (v) => Math.round(Number(v) * 1e6) / 1e6;
 const px = (v) => { const n = Number(v); return !isFinite(n) ? null : (String(v).includes('.') ? n : n / 100); };   // dollars, or cents
 export class KalshiFeed {
   constructor({ WS, url = KALSHI_WS, keyId, privateKey, stopAt = Infinity, onMessage = () => {}, onDrop = () => {}, now = () => Date.now(), later = (f, ms) => setTimeout(f, ms) }) {
@@ -241,11 +244,11 @@ export class KalshiFeed {
       let d; try { d = JSON.parse(ev.data); } catch { return; }
       const m = d.msg || {}, t = m.market_ticker, at = this.now();
       if (d.type === 'orderbook_snapshot' && t) {
-        const side = (arr) => { const b = new Map(); for (const [p, q] of arr || []) { const pr = px(p), qq = Number(q); if (pr != null && qq > 0) b.set(pr, qq); } return b; };
+        const side = (arr) => { const b = new Map(); for (const [p, q] of arr || []) { const pr = px(p), qq = qty(q); if (pr != null && qq > 0) b.set(pr, qq); } return b; };
         this.book.set(t, { yes: side(m.yes_dollars || m.yes), no: side(m.no_dollars || m.no), at });
       } else if (d.type === 'orderbook_delta' && t && this.book.has(t)) {
         const b = this.book.get(t), bk = b[m.side === 'no' ? 'no' : 'yes'], pr = px(m.price_dollars ?? m.price), dq = Number(m.delta_fp ?? m.delta);
-        if (pr != null && isFinite(dq)) { const q = (bk.get(pr) || 0) + dq; if (q > 0) bk.set(pr, q); else bk.delete(pr); }
+        if (pr != null && isFinite(dq)) { const q = qty((bk.get(pr) || 0) + dq); if (q > 0) bk.set(pr, q); else bk.delete(pr); }
         b.at = at;
       } else return;
       this.onMessage(t, at);
