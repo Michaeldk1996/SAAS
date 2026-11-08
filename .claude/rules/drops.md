@@ -97,6 +97,19 @@ answers on card 37612d3d (TEN-294 doc `design`). Suite: `test-ten294-drops.mjs`.
   Label `polyrec.config.book`: 'Polymarket CLOB' during the parallel run (`arb-engine.yml` mode `poly-compare`), then
   `poly-switch` makes it 'Polymarket' and drops it from `ten287_rec.config.books` in one transaction. **Test:**
   `tools/test-poly-recorder-sql.py`, `recRows` in `tools/test-live-arb-recorder.mjs`.
+- **Live arbitrage with bookmakers** (founder 2026-11-08: "implement the live arbitrage for bet105 and the prediction markets,
+  then napoleongames with bet105 and prediction markets"). The live worker also reads the odds-api.io WebSocket (secret
+  `ODDS_API_IO_KEY`; the account's selected books = Bet105 + Napoleon Sports BE, match winner, tennis). ATP singles events from
+  `GET /events` (league `ATP - …`, never Doubles / Challenger / WTA / UTR) join a Kalshi / Polymarket match by both names,
+  either way round, starts within 36 h, exactly one each way; a new match is seeded once from `/odds/multi`, then the stream
+  keeps it. A `deleted` / `no_markets` message removes that price at once; a 1.00 placeholder or a book over 101% is no price;
+  a closed socket clears every price, then reconnects (2 s doubling to 30 s, `lastSeq`) and reseeds. Every direction with a
+  bookmaker leg is checked after fees (Bet105 × Kalshi / Polymarket, Napoleon × Kalshi / Polymarket, Bet105 × Napoleon);
+  Kalshi × Polymarket keeps its own path. A bookmaker publishes no stake limit: it never caps the size, the $100-to-lock-in
+  rule applies only to a gap with a prediction-market leg, and a bookmaker-only gap posts with its split. Every live row
+  carries `legs[]` (venue, price, after-fee, stake, share, clock, link); ⚡ prints a 🔗 per leg and a retirement warning when a
+  bookmaker is in it; the page reads the same legs. **Test:** `tools/test-live-arb-recorder.mjs` (feed, join, directions),
+  `tools/test-arb-engine-sql.py` (bookmaker gaps post, cooldown, message, arb_now), `test-arb-page.mjs`.
 - **Live arbitrage, Kalshi × Polymarket** (founder 2026-11-02, "Let's go!"; ATP tour only). `tools/live-arb-recorder.mjs`,
   run by `live-arb.yml` (main only, 350-min runs, an hourly start keeps one queued so the next starts as the current ends):
   Polymarket's public CLOB websocket (every book change) + Kalshi's public `KXATPMATCH` list every 2 s (YES ask + size; the

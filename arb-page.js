@@ -64,24 +64,36 @@
         '</div>';
     }).join('');
   }
-  // Live (founder 2026-11-02): Kalshi × Polymarket during play, from the 2-second worker (live-arb.yml). Shown only while
-  // the worker is fresh (liveOn); otherwise the section is absent — never a feed-status message on the page.
+  // Live (founder 2026-11-02; bookmakers 2026-11-08): Kalshi, Polymarket, Bet105 and Napoleon during play, from the live worker
+  // (live-arb.yml). Shown only while the worker is fresh (liveOn); otherwise the section is absent — never a feed-status message.
+  // Each row lists its legs; a row from a worker built before 8 Nov carries the Polymarket / Kalshi fields instead.
+  function liveLegs(g) {
+    if (g.legs && g.legs.length) return g.legs;
+    return [{ venue: 'Polymarket', name: g.polyName, group: 'prediction', dec: g.polyDec, eff: g.polyEff, liq: g.polyLiq, share: g.stakePoly, at: g.polyAt },
+      { venue: 'Kalshi', name: g.kalName, group: 'prediction', dec: g.kalDec, eff: g.kalEff, liq: g.kalLiq, share: g.stakeKalshi, at: g.kalAt }];
+  }
   function liveHtml(d) {
     if (!d.liveOn) return '';
     var rows = d.live || [];
     var body = !rows.length ? '<div class="ar-empty">No live arbitrage above ' + pct(d.config.liveMin) + ' after fees right now.</div>' :
       rows.map(function (g) {
-        var leg = function (who, src, dec, eff, liq) {
-          return '<div class="ar-leg"><span class="ar-leg-who">Back ' + esc(who) + '</span><span class="ar-leg-src">' + src + '</span>' +
-            '<span class="ar-px">' + px(dec) + '<span class="ar-fee">after fee ' + px(eff) + '</span></span><span class="ar-liq">' + usd(liq) + ' at price</span></div>';
+        var legs = liveLegs(g);
+        var leg = function (l) {
+          return '<div class="ar-leg"><span class="ar-leg-who">Back ' + esc(l.name) + '</span><span class="ar-leg-src">' + esc(l.venue) + '</span>' +
+            '<span class="ar-px">' + px(l.dec) + (l.group === 'prediction' ? '<span class="ar-fee">after fee ' + px(l.eff) + '</span>' : '') + '</span>' +
+            '<span class="ar-liq">' + (l.group === 'prediction' ? usd(l.liq) + ' at price' : 'bookmaker') + '</span></div>';
         };
+        var book = legs.some(function (l) { return l.group === 'book'; }), pm = legs.some(function (l) { return l.group === 'prediction'; });
         return '<div class="ar-card"><div class="ar-card-h"><span class="ar-match">' + esc(g.match) + '</span>' +
           '<span class="ar-when">' + (g.inPlay ? 'In play' : 'Past its start') + '</span><span class="ar-profit">' + pct(g.edge) + '</span></div>' +
-          leg(g.polyName, 'Polymarket', g.polyDec, g.polyEff, g.polyLiq) + leg(g.kalName, 'Kalshi', g.kalDec, g.kalEff, g.kalLiq) +
-          '<div class="ar-foot">Stakes ' + Number(g.stakePoly).toFixed(1) + '% / ' + Number(g.stakeKalshi).toFixed(1) + '% · up to ' + usd(g.stake) +
-          ' · prices ' + clock(g.polyAt) + ' / ' + clock(g.kalAt) + '</div></div>';
+          legs.map(leg).join('') +
+          '<div class="ar-foot">Stakes ' + legs.map(function (l) { return Number(l.share).toFixed(1) + '%'; }).join(' / ') +
+          (g.stake != null ? ' · up to ' + usd(g.stake) : '') + ' · prices ' + legs.map(function (l) { return clock(l.at); }).join(' / ') + '</div>' +
+          (book && pm ? '<div class="ar-flag">Retirement rules differ: Kalshi / Polymarket pay the player who advances once a ball is played; a bookmaker may void the bet on a retirement.</div>' :
+           book ? '<div class="ar-flag">Check each bookmaker\'s retirement rule: one may void the bet on a retirement while the other settles it.</div>' : '') +
+          '</div>';
       }).join('');
-    return '<h2 class="ar-h">Live · Kalshi × Polymarket</h2>' + body +
+    return '<h2 class="ar-h">Live · Kalshi · Polymarket · Bet105 · Napoleon</h2>' + body +
       '<p class="ar-note">Live prices move every point: check both before you bet. Updated every 5 seconds.</p>';
   }
   function divsHtml(d) {

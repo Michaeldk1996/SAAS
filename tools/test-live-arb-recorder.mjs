@@ -3,7 +3,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { generateKeyPairSync, createVerify, constants as CC } from 'node:crypto';
-import { samePlayer, polyMatches, kalshiMatches, joinPairs, kalshiFee, polyFee, Books, evaluate, Episodes, summarise, gapRow, PolyFeed, KalshiFeed, kalshiSign, boardPhase, boardFixture, setText, recRows } from './live-arb-recorder.mjs';
+import { samePlayer, polyMatches, kalshiMatches, joinPairs, kalshiFee, polyFee, Books, evaluate, Episodes, summarise, gapRow, PolyFeed, KalshiFeed, kalshiSign, boardPhase, boardFixture, setText, recRows,
+  oddsName, oddsEvents, BookFeed, unify, venueQuotes, evaluateMulti, multiGapRow, STALE_MS } from './live-arb-recorder.mjs';
 
 const ev = (id, a, b, extra = {}) => ({ id, title: `X: ${a} vs ${b}`, live: false, ...extra,
   markets: [{ sportsMarketType: 'moneyline', outcomes: JSON.stringify([a, b]), clobTokenIds: JSON.stringify([id + 'A', id + 'B']), gameStartTime: '2026-11-02 12:00:00+00' }] });
@@ -228,4 +229,98 @@ test('our Polymarket recorder rows: every match with a live book, best ask + sha
   assert.deepEqual([r[0].pmId, r[0].askA, r[0].sizeA, r[0].askB, r[0].sizeB], ['1', 0.45, 1000, 0.56, 500]);
   assert.equal(r[0].start, '2026-11-02T12:00:00.000Z'); assert.equal(r[0].live, false);
   assert.equal(recRows(poly, b, 1000 + 120000 * 5 + 1).length, 0, 'a book silent beyond the window → no row (a dead feed is never recorded)');
+});
+
+// ---------- bookmakers via odds-api.io (founder 2026-11-08) ----------
+const oev = (id, home, away, league = 'ATP - Paris, France', status = 'live', date = '2026-11-02T12:00:00Z') => ({ id, home, away, league: { name: league }, status, date });
+
+test('odds-api.io names and events: "Surname, First" turned round; ATP singles only (no doubles, Challenger, WTA, UTR), live or not started', () => {
+  assert.equal(oddsName('Montes-de la Torre, Inaki'), 'Inaki Montes-de la Torre'); assert.equal(oddsName('Alcaraz'), 'Alcaraz');
+  const e = oddsEvents([oev(1, 'Shelton, Ben', 'Alcaraz, Carlos'), oev(2, 'Halys Q / Herbert P-H', 'Harrison C / Skupski N', 'ATP - Paris, France, Doubles'),
+    oev(3, 'Kozlov, Stefan', 'Mayo, Aidan', 'Challenger - Champaign, USA'), oev(4, 'A, B', 'C, D', 'WTA - Tokyo, Japan'), oev(5, 'Sonego, Lorenzo', 'Gojo, Borna', 'ATP - Stockholm, Sweden, Qualifying', 'pending'),
+    oev(6, 'X, Y', 'Z, W', 'ATP - Paris, France', 'settled'), oev(7, 'P, Q', 'R, S', 'UTR Men - UTR PTT Saitama Men 12')]);
+  assert.deepEqual(e.map((x) => x.id), ['1', '5'], 'mutants: doubles kept, Challenger kept, settled kept');
+  assert.equal(e[0].a, 'Ben Shelton'); assert.equal(e[0].event, 'Paris'); assert.equal(e[0].live, true); assert.equal(e[1].event, 'Stockholm');
+});
+
+class OW { static all = []; constructor(u) { this.url = u; this.readyState = 1; OW.all.push(this); } send() {} close() { this.readyState = 3; } }
+const upd = (id, bookie, home, away, extra = {}) => ({ type: 'updated', seq: 5, id: String(id), bookie, url: 'https://x/' + id, markets: [{ name: 'ML', updatedAt: '2026-11-02T12:00:00Z', odds: [{ home, away }] }], ...extra });
+
+test('book feed: the key and filters on the socket URL, updates priced per book, deleted / no_markets remove, a dead feed has no price', () => {
+  OW.all = []; const timers = []; let drops = 0, msgs = 0; let now = 1000;
+  const f = new BookFeed({ WS: OW, key: 'K', later: (fn, ms) => timers.push([fn, ms]), onDrop: () => drops++, onMessage: () => msgs++, now: () => now });
+  f.open(); const w = OW.all[0]; const u = new URL(w.url);
+  assert.equal(u.searchParams.get('apiKey'), 'K'); assert.equal(u.searchParams.get('markets'), 'ML'); assert.equal(u.searchParams.get('sport'), 'tennis');
+  const m = (x) => w.onmessage({ data: JSON.stringify(x) });
+  m({ type: 'welcome' }); m(upd(7, 'Bet105', '1.80', '2.10')); m(upd(7, 'Napoleon Sports BE', '1.75', '2.15')); m(upd(7, 'Superbet', '9', '9'));
+  assert.equal(f.quote(7, 'Bet105').home, 1.8); assert.equal(f.quote(7, 'Napoleon').away, 2.15); assert.equal(f.q.size, 2, 'a book not ours is not kept');
+  assert.equal(f.quote(7, 'Bet105').url, 'https://x/7'); assert.equal(f.lastSeq, 5);
+  m(upd(7, 'Napoleon Sports BE', '1.00', '9.50')); assert.equal(f.quote(7, 'Napoleon'), null, 'a 1.00 placeholder is no price (mutant: kept)');
+  m(upd(7, 'Napoleon Sports BE', '2.20', '2.20')); assert.equal(f.quote(7, 'Napoleon'), null, 'a book paying over 101% is no price');
+  m({ type: 'no_markets', id: '7', bookie: 'Bet105' }); assert.equal(f.quote(7, 'Bet105'), null, 'a pulled market is gone at once (mutant: kept)');
+  m(upd(7, 'Bet105', '1.80', '2.10')); w.readyState = 3; w.onclose({});
+  assert.equal(f.quote(7, 'Bet105'), null, 'no price from a dead feed'); assert.equal(drops, 1); assert.equal(timers.length, 1); assert.equal(timers[0][1], 2000);
+  timers[0][0](); assert.equal(new URL(OW.all[1].url).searchParams.get('lastSeq'), '5', 'reconnects from the last sequence');
+  OW.all[1].onclose({}); assert.equal(timers[1][1], 4000, 'backoff doubles');
+});
+
+test('book feed seed: REST prices fill a match, never over a newer streamed price', () => {
+  OW.all = []; const f = new BookFeed({ WS: OW, key: 'K', now: () => 1 }); f.open(); const w = OW.all[0];
+  w.onmessage({ data: JSON.stringify(upd(8, 'Bet105', '1.50', '2.70', { markets: [{ name: 'ML', updatedAt: '2026-11-02T12:05:00Z', odds: [{ home: '1.50', away: '2.70' }] }] })) });
+  f.seed([{ id: 8, urls: { Bet105: 'u8', 'Napoleon Sports BE': 'n8' }, bookmakers: {
+    Bet105: [{ name: 'ML', updatedAt: '2026-11-02T12:00:00Z', odds: [{ home: '1.40', away: '2.90' }] }],
+    'Napoleon Sports BE': [{ name: 'ML', updatedAt: '2026-11-02T12:00:00Z', odds: [{ home: '1.45', away: '2.80' }] }] } }], 2);
+  assert.equal(f.quote(8, 'Bet105').home, 1.5, 'the streamed price is newer (mutant: seed overwrites)'); assert.equal(f.quote(8, 'Napoleon').home, 1.45); assert.equal(f.quote(8, 'Napoleon').url, 'n8');
+});
+
+// a world: one Kalshi × Polymarket pair (Molcan / Droguet) + odds-api.io events
+const world = (oddsList) => {
+  const poly = polyMatches([ev('1', 'Alex Molcan', 'Titouan Droguet', { slug: 'atp-molcan-droguet' })]);
+  const kal = kalshiMatches([km('K1', 'Titouan Droguet', 0.5, 50, 0.6), km('K1', 'Alex Molcan', 0.6, 50, 0.5)]);
+  return { poly, kal, ms: unify(poly, kal, oddsEvents(oddsList)) };
+};
+test('unify: an odds-api.io event joins the pair by both names either way round, within 36 h; ambiguity or no match → nothing', () => {
+  let { ms } = world([oev(9, 'Droguet, Titouan', 'Molcan, Alex')]);
+  assert.equal(ms.length, 1); assert.equal(ms[0].odds.aHome, false, 'home is Droguet = player B'); assert.ok(ms[0].pm && ms[0].km); assert.equal(ms[0].key, 'b:9');
+  assert.equal(world([oev(9, 'Droguet, Titouan', 'Molcan, Alex'), oev(10, 'Molcan, Alex', 'Droguet, Titouan')]).ms.length, 0, 'two events fit → none (mutant: first wins)');
+  assert.equal(world([oev(9, 'Droguet, Titouan', 'Molcan, Alex', 'ATP - Paris, France', 'pending', '2026-11-05T12:00:00Z')]).ms.length, 0, 'a rematch days later is another match');
+  assert.equal(world([oev(9, 'Droguet, Adam', 'Molcan, Alex')]).ms.length, 0, 'another initial refused');
+});
+
+test('evaluateMulti: every direction with a bookmaker leg after fees; Kalshi × Polymarket left to its own path; sizes from the prediction leg', () => {
+  const { ms } = world([oev(9, 'Molcan, Alex', 'Droguet, Titouan')]); const m = ms[0];
+  const b = new Books(); b.snapshot('1A', [{ price: '0.45', size: '400' }], 1000); b.snapshot('1B', [{ price: '0.56', size: '300' }], 1000);
+  OW.all = []; const f = new BookFeed({ WS: OW, key: 'K', now: () => 1000 }); f.open();
+  OW.all[0].onmessage({ data: JSON.stringify(upd(9, 'Bet105', '1.60', '2.40')) });   // Bet105: Molcan 1.60, Droguet 2.40
+  const Q = venueQuotes(m, { books: b, kalAt: 1000, bfeed: f, now: 2000 });
+  assert.deepEqual(Object.keys(Q).sort(), ['Bet105', 'Kalshi', 'Polymarket']);
+  const ev2 = evaluateMulti(m, Q); const dirs = ev2.map((e) => e.dir).sort();
+  assert.ok(!dirs.some((d) => d.includes('Polymarket') && d.includes('Kalshi')), 'no Kalshi × Polymarket here (mutant: double-counted)');
+  const pb = ev2.find((e) => e.dir === 'Polymarket:A+Bet105:B');
+  const cost = 0.45 + 0.05 * 0.45 * 0.55 + 1 / 2.4;
+  assert.equal(pb.cost, +cost.toFixed(5)); assert.equal(pb.edge, +((1 / cost - 1) * 100).toFixed(3)); assert.ok(pb.edge > 0);
+  assert.equal(pb.contracts, 400, 'Polymarket shares cap it; the book publishes no limit'); assert.equal(pb.legs[1].url, 'https://x/9');
+  const g = multiGapRow(m, pb, { inPlay: true, started: true, board: { phase: 'game', score: '6–4 2–1', status: 'Set 2' } });
+  assert.equal(g.mkey, 'KXATPMATCH-K1'); assert.equal(g.atp, true); assert.equal(g.hasPm, true); assert.equal(g.legs.length, 2);
+  assert.equal(g.legs[0].venue, 'Polymarket'); assert.equal(g.legs[0].url, 'https://polymarket.com/event/atp-molcan-droguet'); assert.equal(g.legs[1].venue, 'Bet105'); assert.equal(g.legs[1].dec, 2.4);
+  assert.equal(+(g.legs[0].stake + g.legs[1].stake).toFixed(1), +g.stake.toFixed(1)); assert.equal(g.phase, 'game');
+  const stale = venueQuotes(m, { books: b, kalAt: 1000, bfeed: f, now: 1000 + STALE_MS.book + 1 });
+  assert.ok(!stale.Bet105, 'a book price older than STALE_MS.book is not used');
+});
+
+test('evaluateMulti: Bet105 × Napoleon carries no size (no published limit); an unsized Kalshi NO leg leaves the gap unsized', () => {
+  const { ms } = world([oev(9, 'Molcan, Alex', 'Droguet, Titouan')]); const m = { ...ms[0], pm: null, km: null };
+  OW.all = []; const f = new BookFeed({ WS: OW, key: 'K', now: () => 1000 }); f.open();
+  OW.all[0].onmessage({ data: JSON.stringify(upd(9, 'Bet105', '2.20', '1.70')) }); OW.all[0].onmessage({ data: JSON.stringify(upd(9, 'Napoleon Sports BE', '1.62', '2.35')) });
+  const e = evaluateMulti(m, venueQuotes(m, { books: new Books(), kalAt: null, bfeed: f, now: 1500 })).find((x) => x.dir === 'Bet105:A+Napoleon:B');
+  assert.ok(e.edge > 0, '1/2.20 + 1/2.35 < 1'); assert.equal(e.contracts, null); assert.equal(multiGapRow({ ...m, title: 'Paris: A vs B' }, e, {}).hasPm, false);
+  assert.equal(multiGapRow({ ...m, title: 'Paris: A vs B' }, e, {}).mkey, 'oddsapi:9');
+});
+
+test('Kalshi × Polymarket rows carry the same legs (venue, price, after fee, stake, link) for the alert and the page', () => {
+  const { p, b } = pair(0.45, 0.48);
+  const e = evaluate(p, b, 1000, 2000).find((x) => x.dir === 'polyA+kalshiB');
+  const g = gapRow(p, e, { inPlay: true, started: true, polyAt: 1000, kalAt: 1000 });
+  assert.deepEqual(g.legs.map((l) => l.venue), ['Polymarket', 'Kalshi']); assert.equal(g.legs[0].dec, g.polyDec); assert.equal(g.legs[1].eff, g.kalEff);
+  assert.equal(g.legs[0].stake, g.polyStake); assert.equal(g.legs[1].url, 'https://kalshi.com/markets/kxatpmatch/atp-tennis-match/kxatpmatch-k1'); assert.equal(g.mkey, 'KXATPMATCH-K1');
 });

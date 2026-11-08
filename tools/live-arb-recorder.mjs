@@ -23,7 +23,7 @@ export const KALSHI = 'https://api.elections.kalshi.com/trade-api/v2';
 export const POLY_WS = 'wss://ws-subscriptions-clob.polymarket.com/ws/market';
 export const KALSHI_WS = 'wss://api.elections.kalshi.com/trade-api/ws/v2';
 export const FEE = { kalshi: 0.07, poly: 0.05 };
-export const STALE_MS = { kalshi: 8000, poly: 120000 };   // Kalshi is polled (2 s); a Polymarket book only changes on an order
+export const STALE_MS = { kalshi: 8000, poly: 120000, book: 120000 };   // a book price stands until changed; a pulled market is removed by the feed   // Kalshi is polled (2 s); a Polymarket book only changes on an order
 
 export function fold(s) {
   return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z ]+/g, ' ').replace(/\s+/g, ' ').trim();
@@ -47,7 +47,7 @@ export function polyMatches(events) {
     if (!mk) continue;
     let o, t; try { o = JSON.parse(mk.outcomes || '[]'); t = JSON.parse(mk.clobTokenIds || '[]'); } catch { continue; }
     if (o.length !== 2 || t.length !== 2) continue;
-    out.push({ id: String(e.id), title: e.title, a: o[0], b: o[1], tokA: t[0], tokB: t[1], live: e.live === true,
+    out.push({ id: String(e.id), title: e.title, a: o[0], b: o[1], tokA: t[0], tokB: t[1], live: e.live === true, slug: e.slug || null,
       start: mk.gameStartTime ? Date.parse(String(mk.gameStartTime).replace(' ', 'T').replace(/\+00$/, 'Z')) : null });
   }
   return out;
@@ -338,7 +338,16 @@ export function gapRow(pair, e, ctx) {
     polyStake: e.contracts == null ? null : +(e.contracts * polyCost).toFixed(2), kalStake: e.contracts == null ? null : +(e.contracts * kalCost).toFixed(2),
     payout: e.contracts == null ? null : +e.contracts.toFixed(2), profitUsd: e.contracts == null || e.stake == null ? null : +(e.contracts - e.stake).toFixed(2), stakePoly: +(polyCost / e.cost * 100).toFixed(1), stakeKalshi: +(kalCost / e.cost * 100).toFixed(1),
     phase: ctx.board ? ctx.board.phase : null, score: ctx.board ? ctx.board.score : null, boardStatus: ctx.board ? ctx.board.status : null,
-    inPlay: ctx.inPlay, started: ctx.started, polyAt: new Date(ctx.polyAt).toISOString(), kalAt: new Date(ctx.kalAt).toISOString() };
+    inPlay: ctx.inPlay, started: ctx.started, polyAt: new Date(ctx.polyAt).toISOString(), kalAt: new Date(ctx.kalAt).toISOString(),
+    // the venue-neutral form every live row carries (founder 2026-11-08: bookmakers join the live list); the alert and the page read it
+    mkey: pair.km.ev, atp: true, hasPm: true,
+    legs: [
+      { venue: 'Polymarket', name: e.polyName, group: 'prediction', dec: r2(1 / e.polyAsk), eff: r2(1 / polyCost), liq: r2(e.polySize * e.polyAsk),
+        stake: e.contracts == null ? null : +(e.contracts * polyCost).toFixed(2), share: +(polyCost / e.cost * 100).toFixed(1),
+        at: new Date(ctx.polyAt).toISOString(), url: polyUrl(pair.pm), how: null },
+      { venue: 'Kalshi', name: e.kalName, group: 'prediction', dec: r2(1 / e.kalAsk), eff: r2(1 / kalCost), liq: e.kalSize == null ? null : r2(e.kalSize * e.kalAsk),
+        stake: e.contracts == null ? null : +(e.contracts * kalCost).toFixed(2), share: +(kalCost / e.cost * 100).toFixed(1),
+        at: new Date(ctx.kalAt).toISOString(), url: kalshiUrl(pair.km.ev), how: e.kalLeg } ] };
 }
 
 export function summarise(eps, meta) {
@@ -352,6 +361,191 @@ export function summarise(eps, meta) {
   return { ...meta,
     inPlay: { anyEdge: group((x) => x.liveAny), edge1pct: group((x) => x.liveAny && x.best.edge >= 1), edge1pctLasting5s: group((x) => x.liveAny && x.best.edge >= 1 && x.durationS >= 5) },
     preMatch: { anyEdge: group((x) => !x.liveAny), edge1pct: group((x) => !x.liveAny && x.best.edge >= 1), edge1pctLasting5s: group((x) => !x.liveAny && x.best.edge >= 1 && x.durationS >= 5) } };
+}
+
+// ---------- bookmakers via odds-api.io (founder 2026-11-08: "implement the live arbitrage for bet105 and the prediction
+// markets, then napoleongames with bet105 and prediction markets") ----------
+// The odds-api.io WebSocket (paid add-on, key ODDS_API_IO_KEY) streams every match-winner change of the bookmakers selected
+// on the account (Bet105 + Napoleon Sports BE). Measured 8 Nov 01:11Z, 8 min: connects in 0.5 s, no drop; Napoleon's live
+// prices arrive 0.57 s (median) after the book's own updatedAt, p90 8.2 s. Its messages carry the event id, the book's
+// match link and no stake limit. Names and leagues come from GET /events (every 60 s); a price for a newly joined match is
+// seeded once from GET /odds/multi. A deleted / no_markets message (a suspended or pulled market) removes that price at once;
+// a close drops every price (none is ever read from a dead feed) and the feed reconnects with backoff, then is reseeded.
+export const ODDS_API = 'https://api.odds-api.io/v3';
+export const ODDS_WS = 'wss://api.odds-api.io/v3/ws';
+export const BOOKS = { 'Bet105': 'Bet105', 'Napoleon Sports BE': 'Napoleon' };   // odds-api.io name → our venue name
+export const BOOK_LINK_HOME = { Bet105: 'https://app.bet105.ag', Napoleon: 'https://napoleonsports.be' };
+export const PM_VENUES = new Set(['Polymarket', 'Kalshi']);
+
+// "Surname, First" (odds-api.io) → "First Surname"
+export function oddsName(s) {
+  const t = String(s || '').trim(), i = t.indexOf(',');
+  return i < 0 ? t : (t.slice(i + 1).trim() + ' ' + t.slice(0, i).trim()).trim();
+}
+// odds-api.io tennis events → ATP singles only: league "ATP - City, Country[, Qualifying]"; never Doubles, Challenger, WTA,
+// UTR (founder 2026-11-02: ATP only). Live or not started.
+export function oddsEvents(list) {
+  const out = [];
+  for (const e of list || []) {
+    const league = String((e && e.league && e.league.name) ?? (e && e.league) ?? '');
+    if (!/^ATP - /.test(league) || /doubles/i.test(league)) continue;
+    if (!e.home || !e.away || /\//.test(e.home + e.away)) continue;
+    if (e.status !== 'live' && e.status !== 'pending') continue;
+    out.push({ id: String(e.id), a: oddsName(e.home), b: oddsName(e.away), league, event: league.replace(/^ATP - /, '').split(',')[0].trim(),
+      start: Date.parse(e.date) || null, live: e.status === 'live' });
+  }
+  return out;
+}
+
+export class BookFeed {
+  constructor({ WS, key, url = ODDS_WS, stopAt = Infinity, onMessage = () => {}, onDrop = () => {}, now = () => Date.now(), later = (f, ms) => setTimeout(f, ms) }) {
+    Object.assign(this, { WS, key, url, stopAt, onMessage, onDrop, now, later });
+    this.ws = null; this.q = new Map(); this.lastSeq = null; this.backoff = 2000;
+    this.stats = { msgs: 0, odds: 0, drops: 0, resyncs: 0, seeded: 0, lagMs: [] };
+  }
+  wsUrl() {
+    const u = new URL(this.url);
+    u.searchParams.set('apiKey', this.key); u.searchParams.set('markets', 'ML'); u.searchParams.set('sport', 'tennis'); u.searchParams.set('channels', 'odds');
+    if (this.lastSeq != null) u.searchParams.set('lastSeq', String(this.lastSeq));
+    return u.toString();
+  }
+  open() {
+    if (this.ws || this.now() >= this.stopAt) return;
+    const me = new this.WS(this.wsUrl()); this.ws = me;
+    me.onopen = () => { if (this.ws === me) this.backoff = 2000; };
+    me.onmessage = (ev) => {
+      if (this.ws !== me) return;
+      let d; try { d = JSON.parse(typeof ev.data === 'string' ? ev.data : String(ev.data)); } catch { return; }
+      const t = this.now(); for (const x of [].concat(d)) this.apply(x, t);
+    };
+    me.onclose = () => {
+      if (this.ws !== me) return;
+      this.ws = null; this.q.clear(); this.stats.drops++; this.onDrop();
+      if (this.now() < this.stopAt) { const ms = this.backoff; this.backoff = Math.min(30000, this.backoff * 2); this.later(() => this.open(), ms); }
+    };
+    me.onerror = () => {};
+  }
+  set(k, h, a, t, upd, url, max) {
+    if (!(h > 1) || !(a > 1) || 1 / h + 1 / a < 0.99) { this.q.delete(k); return; }   // a 1.00 placeholder or a book paying over 101% is no price
+    this.q.set(k, { home: h, away: a, at: t, upd: upd ?? null, url: url || null, max: max != null && isFinite(Number(max)) ? Number(max) : null });
+  }
+  apply(x, t) {
+    if (!x || typeof x !== 'object') return;
+    this.stats.msgs++;
+    if (x.type === 'resync_required') { this.stats.resyncs++; this.lastSeq = null; try { this.ws && this.ws.close(); } catch {} return; }
+    const venue = BOOKS[x.bookie]; if (!venue || x.id == null) return;
+    if (x.seq != null) this.lastSeq = x.seq;
+    const k = String(x.id) + '|' + venue;
+    if (x.type === 'deleted' || x.type === 'no_markets') { this.q.delete(k); this.onMessage(String(x.id), t); return; }
+    if (x.type !== 'updated' && x.type !== 'created') return;
+    const ml = (x.markets || []).find((m) => m && m.name === 'ML'); if (!ml) return;
+    const o = (ml.odds || [])[0] || {}, upd = Date.parse(ml.updatedAt) || null;
+    this.set(k, Number(o.home), Number(o.away), t, upd, x.url, o.max);
+    this.stats.odds++; if (upd) { this.stats.lagMs.push(t - upd); if (this.stats.lagMs.length > 5000) this.stats.lagMs.shift(); }
+    this.onMessage(String(x.id), t);
+  }
+  // GET /odds/multi rows → prices, never over a newer streamed one
+  seed(rows, t) {
+    for (const r of rows || []) for (const [bk, ms] of Object.entries((r && r.bookmakers) || {})) {
+      const venue = BOOKS[bk]; if (!venue) continue;
+      const ml = (ms || []).find((m) => m && m.name === 'ML'); if (!ml) continue;
+      const k = String(r.id) + '|' + venue, cur = this.q.get(k), upd = Date.parse(ml.updatedAt) || null;
+      if (cur && (cur.upd == null || upd == null || cur.upd >= upd)) continue;
+      const o = (ml.odds || [])[0] || {};
+      this.set(k, Number(o.home), Number(o.away), t, upd, (r.urls || {})[bk], o.max); this.stats.seeded++;
+    }
+  }
+  quote(id, venue) { return this.ws ? this.q.get(String(id) + '|' + venue) || null : null; }
+  stop() { this.stopAt = 0; const w = this.ws; this.ws = null; try { w && w.close(); } catch {} }
+}
+
+// Matches with a bookmaker price: an odds-api.io ATP event joined to the Kalshi × Polymarket pair, else to a Kalshi
+// event, else to a Polymarket match — both players by name, starts within 36 h, exactly one each way (never a guess).
+// Kalshi × Polymarket gaps stay on their own path (evaluate); here at least one leg is a bookmaker.
+export function unify(poly, kal, odds) {
+  const pairs = joinPairs(poly, kal);
+  const usedP = new Set(pairs.map((p) => p.pm.id)), usedK = new Set(pairs.map((p) => p.km.ev));
+  const base = pairs.map((p) => ({ key: p.key, a: p.pm.a, b: p.pm.b, pm: p.pm, km: p.km, aIs: p.aIs }));
+  for (const km of kal) if (!usedK.has(km.ev)) base.push({ key: 'k:' + km.ev, a: km.p[0].name, b: km.p[1].name, pm: null, km, aIs: 0 });
+  for (const pm of poly) if (!usedP.has(pm.id)) base.push({ key: 'p:' + pm.id, a: pm.a, b: pm.b, pm, km: null, aIs: null });
+  const near = (m, e) => { const s = m.pm && m.pm.start; return s == null || e.start == null || Math.abs(s - e.start) <= 36 * 3600e3; };
+  const fit = (m, e) => !near(m, e) ? null : samePlayer(m.a, e.a) && samePlayer(m.b, e.b) ? { aHome: true } : samePlayer(m.a, e.b) && samePlayer(m.b, e.a) ? { aHome: false } : null;
+  const cand = odds.map((e) => base.map((m, j) => [j, fit(m, e)]).filter(([, f]) => f));
+  const used = new Map(); cand.forEach((c) => c.forEach(([j]) => used.set(j, (used.get(j) || 0) + 1)));
+  const out = [];
+  odds.forEach((e, i) => {
+    if (cand[i].length !== 1) return;
+    const [j, f] = cand[i][0]; if (used.get(j) !== 1) return;
+    const m = base[j];
+    out.push({ ...m, key: 'b:' + e.id, base: m.key, odds: { ...e, aHome: f.aHome }, title: m.pm ? m.pm.title : `${e.event}: ${m.a} vs ${m.b}` });
+  });
+  return out;
+}
+
+export const kalshiUrl = (ev) => `https://kalshi.com/markets/kxatpmatch/atp-tennis-match/${String(ev).toLowerCase()}`;
+export const polyUrl = (pm) => (pm && pm.slug ? `https://polymarket.com/event/${pm.slug}` : null);
+
+// Every venue's best way to back each player of a book match (A = m.a, B = m.b): cost per $1 paid out after fees,
+// decimal price, after-fee price, contracts available (null = not known), dollars at the price, clock, link.
+export function venueQuotes(m, { books, kalAt, bfeed, now }) {
+  const Q = {};
+  const put = (venue, side, leg) => { if (leg) (Q[venue] = Q[venue] || {})[side] = { venue, ...leg }; };
+  if (m.pm) {
+    const pa = books.best(m.pm.tokA), pb = books.best(m.pm.tokB);
+    const sane = !(pa && pb && pa.price + pb.price < 0.98);
+    const leg = (x) => !sane || !x || !(x.price > 0 && x.price < 1) || x.at == null || now - x.at > STALE_MS.poly ? null :
+      { cost: x.price + polyFee(x.price), dec: 1 / x.price, size: x.size, liq: x.size * x.price, at: x.at, url: polyUrl(m.pm), group: 'prediction' };
+    put('Polymarket', 'A', leg(pa)); put('Polymarket', 'B', leg(pb));
+  }
+  if (m.km) {
+    const at = m.kalAt != null ? m.kalAt : kalAt;
+    if (at != null && now - at <= STALE_MS.kalshi) {
+      const kSide = (idx) => {
+        const me = m.km.p[idx], other = m.km.p[1 - idx], legs = [];
+        if (me.yesAsk > 0 && me.yesAsk < 1) legs.push({ price: me.yesAsk, size: me.yesSize, how: 'yes ' + me.ticker });
+        if (other.noAsk > 0 && other.noAsk < 1) legs.push({ price: other.noAsk, size: other.noSize ?? null, how: 'no ' + other.ticker });
+        legs.sort((x, y) => x.price - y.price); const l = legs[0]; if (!l) return null;
+        return { cost: l.price + kalshiFee(l.price), dec: 1 / l.price, size: l.size, liq: l.size == null ? null : l.size * l.price, at, how: l.how, url: kalshiUrl(m.km.ev), group: 'prediction' };
+      };
+      put('Kalshi', 'A', kSide(m.aIs)); put('Kalshi', 'B', kSide(1 - m.aIs));
+    }
+  }
+  if (bfeed && m.odds) for (const venue of Object.values(BOOKS)) {
+    const q = bfeed.quote(m.odds.id, venue); if (!q || now - q.at > STALE_MS.book) continue;
+    const leg = (dec) => ({ cost: 1 / dec, dec, size: q.max != null ? q.max * dec : null, liq: q.max, at: q.at, url: q.url, group: 'book' });
+    put(venue, 'A', leg(m.odds.aHome ? q.home : q.away)); put(venue, 'B', leg(m.odds.aHome ? q.away : q.home));
+  }
+  return Q;
+}
+
+// Every direction with a bookmaker leg: back A on venue X and B on venue Y (X ≠ Y). Contracts = the smallest known size;
+// a prediction leg without a size makes the gap unsized; a bookmaker publishes no limit, so it never caps the size.
+export function evaluateMulti(m, Q) {
+  const out = [], vs = Object.keys(Q);
+  for (const X of vs) for (const Y of vs) {
+    if (X === Y || (PM_VENUES.has(X) && PM_VENUES.has(Y))) continue;
+    const A = Q[X].A, B = Q[Y].B; if (!A || !B) continue;
+    const cost = A.cost + B.cost, edge = (1 / cost - 1) * 100;
+    const pmUnsized = [A, B].some((l) => l.group === 'prediction' && l.size == null);
+    const sizes = [A, B].map((l) => l.size).filter((v) => v != null);
+    const contracts = pmUnsized || !sizes.length ? null : Math.min(...sizes);
+    out.push({ dir: `${X}:A+${Y}:B`, legs: [{ ...A, name: m.a }, { ...B, name: m.b }], cost: +cost.toFixed(5), edge: +edge.toFixed(3),
+      contracts, stake: contracts == null ? null : +(contracts * cost).toFixed(2) });
+  }
+  return out;
+}
+
+const r3 = (v) => (v == null || !isFinite(v) ? null : +v.toFixed(3));
+const legRow = (l, contracts, cost) => ({ venue: l.venue, name: l.name, group: l.group, dec: r3(l.dec), eff: r3(1 / l.cost), liq: l.liq == null ? null : r3(l.liq),
+  stake: contracts == null ? null : +(contracts * l.cost).toFixed(2), share: +(l.cost / cost * 100).toFixed(1), at: new Date(l.at).toISOString(),
+  url: l.url || null, how: l.how || null });
+export function multiGapRow(m, e, ctx) {
+  return { match: m.title.replace(/^[^:]*:\s*/, ''), event: m.odds ? m.odds.event : m.title.split(':')[0], mkey: m.km ? m.km.ev : 'oddsapi:' + m.odds.id,
+    kalshiEvent: m.km ? m.km.ev : null, atp: true, dir: e.dir, edge: e.edge, contracts: e.contracts, stake: e.stake,
+    hasPm: e.legs.some((l) => l.group === 'prediction'), legs: e.legs.map((l) => legRow(l, e.contracts, e.cost)),
+    payout: e.contracts == null ? null : +e.contracts.toFixed(2), profitUsd: e.contracts == null || e.stake == null ? null : +(e.contracts - e.stake).toFixed(2),
+    phase: ctx.board ? ctx.board.phase : null, score: ctx.board ? ctx.board.score : null, boardStatus: ctx.board ? ctx.board.status : null,
+    inPlay: ctx.inPlay, started: ctx.started };
 }
 
 // ---------- the run ----------
@@ -386,6 +580,19 @@ async function main() {
   const closest = new Map(), latest = new Map();
   const sbUrl0 = (process.env.SUPABASE_URL || '').replace(/\/$/, ''), sbKey0 = process.env.SUPABASE_SECRET_KEY || '';
   let poly = [], pairs = [], kal = [], kalAt = null;
+  // bookmakers (odds-api.io WebSocket) — on when ODDS_API_IO_KEY is set
+  let oddsEv = [], bmatches = []; const latestB = new Map(), seeded = new Set();
+  const oKey = (process.env.ODDS_API_IO_KEY || '').trim();
+  stats.bookFeed = oKey ? 'websocket' : 'off'; stats.bookMsgs = 0; stats.bookDrops = 0; stats.oddsErrors = 0; stats.oddsRefreshes = 0;
+  const oddsGet = async (path, q) => {
+    const u = new URL(ODDS_API + path); u.searchParams.set('apiKey', oKey); for (const [k, v] of Object.entries(q)) u.searchParams.set(k, v);
+    const r = await fetch(u, { signal: AbortSignal.timeout(20e3), headers: { 'User-Agent': 'stennisfy-live-arb' } });
+    if (!r.ok) throw new Error('odds-api.io ' + path + ' HTTP ' + r.status);   // never the URL: it carries the key
+    return r.json();
+  };
+  const bfeed = oKey ? new BookFeed({ WS: WebSocket, key: oKey, stopAt: stop,
+    onMessage: (id, now) => { stats.bookMsgs++; tickBooks(now); },
+    onDrop: () => { stats.bookDrops++; seeded.clear(); setTimeout(() => seedNew(), 5000); } }) : null;
 
   const feed = new PolyFeed({ WS: WebSocket, url: POLY_WS, books, stopAt: stop,
     onMessages: (k, now) => { stats.wsMessages += k; tick(now); }, onDrop: () => { stats.wsReconnects++; } });
@@ -395,11 +602,24 @@ async function main() {
     onMessage: (t, now) => { stats.kalshiWsMessages++; refreshKal(now); }, onDrop: () => { stats.kalshiWsDrops++; } }) : null;
   const refreshKal = (now) => {   // pairs on the live Kalshi books take their prices and clock from them
     if (!kfeed) return;
-    for (const p of pairs) { const o = kfeed.overlay(p.km.base || p.km); if (o) { o.base = p.km.base || p.km; p.km = o; p.kalAt = now; } else { p.km = p.km.base || p.km; p.kalAt = undefined; } }
+    for (const p of [...pairs, ...bmatches.filter((m) => m.km)]) { const o = kfeed.overlay(p.km.base || p.km); if (o) { o.base = p.km.base || p.km; p.km = o; p.kalAt = now; } else { p.km = p.km.base || p.km; p.kalAt = undefined; } }
     tick(now);
   };
   // every Polymarket match (not only the Kalshi pairs): the arbitrage needs the pairs, our Polymarket recorder needs all
-  const subscribe = () => { feed.set(poly.flatMap((m) => [m.tokA, m.tokB])); if (kfeed) kfeed.set(pairs.flatMap((p) => p.km.p.map((x) => x.ticker))); };
+  const subscribe = () => { feed.set(poly.flatMap((m) => [m.tokA, m.tokB]));
+    if (kfeed) kfeed.set([...new Set([...pairs, ...bmatches.filter((m) => m.km)].flatMap((p) => (p.km.base || p.km).p.map((x) => x.ticker)))]); };
+  const shim = (m) => ({ key: m.key, pm: { title: m.title }, km: { ev: m.km ? m.km.ev : 'oddsapi:' + m.odds.id } });
+  const tickBooks = (now) => {
+    for (const m of bmatches) {
+      const inPlay = m.odds.live || !!(m.pm && m.pm.live);
+      const st = m.pm && m.pm.start != null ? m.pm.start : m.odds.start;
+      const started = inPlay || (st != null && now >= st);
+      const ev = evaluateMulti(m, venueQuotes(m, { books, kalAt, bfeed, now }));
+      latestB.set(m.key, { m, ev, inPlay, started });
+      for (const e of ev) { const c = closest.get(m.title + ' · ' + e.dir); if (!c || e.cost < c.cost) closest.set(m.title + ' · ' + e.dir, { cost: e.cost, edge: e.edge, dir: e.dir, live: started, at: new Date(now).toISOString() }); }
+      E.update(shim(m), ev, now, started);
+    }
+  };
   const tick = (now) => {
     for (const p of pairs) {
       const started = p.pm.live || (p.pm.start != null && now >= p.pm.start), live = started;
@@ -410,6 +630,7 @@ async function main() {
       for (const e of ev) { const c = closest.get(p.pm.title); if (!c || e.cost < c.cost) closest.set(p.pm.title, { cost: e.cost, edge: e.edge, dir: e.dir, live, at: new Date(now).toISOString() }); }
       E.update(p, ev, now, live);
     }
+    tickBooks(now);
   };
   const rejoin = () => {
     const before = new Set(pairs.map((p) => p.key));
@@ -417,17 +638,40 @@ async function main() {
     for (const k of before) if (!pairs.some((p) => p.key === k)) for (const ok of [...E.open.keys()]) if (ok.startsWith(k + '|')) E.close(ok, Date.now());
     pairs.forEach((p) => stats.pairsSeen.add(p.key));
     stats.pairsJoinedMax = Math.max(stats.pairsJoinedMax, pairs.length);
-    subscribe();
+    const bBefore = new Set(bmatches.map((m) => m.key));
+    bmatches = bfeed ? unify(poly, kalshiMatches(kal), oddsEv) : [];
+    for (const k of bBefore) if (!bmatches.some((m) => m.key === k)) { latestB.delete(k); for (const ok of [...E.open.keys()]) if (ok.startsWith(k + '|')) E.close(ok, Date.now()); }
+    stats.bookMatchesMax = Math.max(stats.bookMatchesMax || 0, bmatches.length);
+    subscribe(); seedNew();
+  };
+  // a newly joined bookmaker match takes its current prices from GET /odds/multi once (the feed sends only changes)
+  const seedNew = async () => {
+    if (!bfeed) return;
+    const ids = [...new Set(bmatches.map((m) => m.odds.id))].filter((id) => !seeded.has(id));
+    for (let i = 0; i < ids.length; i += 10) {
+      const part = ids.slice(i, i + 10); part.forEach((id) => seeded.add(id));
+      try { const rows = await oddsGet('/odds/multi', { eventIds: part.join(','), bookmakers: Object.keys(BOOKS).join(',') }); bfeed.seed(Array.isArray(rows) ? rows : [], Date.now()); }
+      catch (e) { part.forEach((id) => seeded.delete(id)); stats.oddsErrors++; if (stats.oddsErrors % 20 === 1) log(e.message); }
+    }
+    tickBooks(Date.now());
+  };
+  const refreshOdds = async () => {
+    if (!bfeed) return;
+    try {
+      const [l, pd] = await Promise.all([oddsGet('/events', { sport: 'tennis', status: 'live' }), oddsGet('/events', { sport: 'tennis', status: 'pending' })]);
+      oddsEv = oddsEvents([...(Array.isArray(l) ? l : []), ...(Array.isArray(pd) ? pd : [])]); stats.oddsRefreshes++; rejoin();
+    } catch (e) { stats.oddsErrors++; if (stats.oddsErrors % 20 === 1) log(e.message); }
   };
   const refreshGamma = async () => { try { poly = polyMatches(await polyAll()); stats.gammaRefreshes++; rejoin(); } catch (e) { stats.gammaErrors++; log('gamma', e.message); } };
   const pollKalshi = async () => {
     try { kal = await kalshiAll(); kalAt = Date.now(); stats.kalshiPolls++; const kk = kalshiMatches(kal);
-      for (const p of pairs) { const k = kk.find((x) => x.ev === p.km.ev); if (k) { p.km = k; p.kalAt = undefined; } }
+      for (const p of [...pairs, ...bmatches.filter((m) => m.km)]) { const k = kk.find((x) => x.ev === (p.km.base || p.km).ev); if (k) { p.km = k; p.kalAt = undefined; } }
       if (kfeed) refreshKal(Date.now()); else tick(kalAt);
     } catch (e) { stats.kalshiErrors++; if (stats.kalshiErrors % 20 === 1) log('kalshi', e.message); }
   };
   await pollKalshi(); await refreshGamma();
-  log(`start: ${poly.length} Polymarket matches, ${kalshiMatches(kal).length} Kalshi matches, ${pairs.length} joined`);
+  if (bfeed) { bfeed.open(); await refreshOdds(); }
+  log(`start: ${poly.length} Polymarket matches, ${kalshiMatches(kal).length} Kalshi matches, ${pairs.length} joined; bookmakers ${stats.bookFeed}: ${oddsEv.length} ATP events, ${bmatches.length} joined`);
   const push = arg('push', '') === '1';
   let board = [], boardAt = 0; stats.boardReads = 0; stats.boardErrors = 0;
   const readBoard = async () => {
@@ -446,8 +690,13 @@ async function main() {
     const keys = new Set(pairs.map((p) => p.key));
     const gaps = [];
     for (const [k, L] of latest) { if (!keys.has(k)) continue; const bd = boardOf(L.p, Date.now()); for (const e of L.ev) if (e.edge > 0) gaps.push(gapRow(L.p, e, { ...L, board: bd })); }
+    const bkeys = new Set(bmatches.map((m) => m.key));
+    for (const [k, L] of latestB) { if (!bkeys.has(k)) continue; const bd = boardOf({ pm: { a: L.m.a, b: L.m.b } }, Date.now()); for (const e of L.ev) if (e.edge > 0) gaps.push(multiGapRow(L.m, e, { ...L, board: bd })); }
+    const lag = bfeed ? [...bfeed.stats.lagMs].sort((a, b) => a - b) : [];
     const body = JSON.stringify({ p: { gaps, worker: { pairs: pairs.length, live: pairs.filter((p) => p.pm.live).length, kalshiPolls: stats.kalshiPolls,
-      kalshiErrors: stats.kalshiErrors, kalshiFeed: stats.kalshiFeed, kalshiWsMessages: stats.kalshiWsMessages, kalshiWsDrops: stats.kalshiWsDrops, boardReads: stats.boardReads, boardErrors: stats.boardErrors, recPushes: stats.recPushes, recErrors: stats.recErrors, recTicks: stats.recTicks, wsMessages: stats.wsMessages, wsReconnects: stats.wsReconnects, run: process.env.GITHUB_RUN_ID || null } } });
+      kalshiErrors: stats.kalshiErrors, kalshiFeed: stats.kalshiFeed, kalshiWsMessages: stats.kalshiWsMessages, kalshiWsDrops: stats.kalshiWsDrops, boardReads: stats.boardReads, boardErrors: stats.boardErrors, recPushes: stats.recPushes, recErrors: stats.recErrors, recTicks: stats.recTicks, wsMessages: stats.wsMessages, wsReconnects: stats.wsReconnects,
+      bookFeed: stats.bookFeed, bookMatches: bmatches.length, bookLive: bmatches.filter((m) => m.odds.live).length, bookMsgs: stats.bookMsgs, bookDrops: stats.bookDrops,
+      bookPrices: bfeed ? bfeed.q.size : 0, bookLagMsP50: lag.length ? lag[Math.floor(lag.length / 2)] : null, oddsErrors: stats.oddsErrors, run: process.env.GITHUB_RUN_ID || null } } });
     try {
       const r = await fetch(sbUrl + '/rest/v1/rpc/arb_live_push', { method: 'POST', body, signal: AbortSignal.timeout(15e3),
         headers: { apikey: sbKey, Authorization: 'Bearer ' + sbKey, 'Content-Type': 'application/json' } });
@@ -471,12 +720,13 @@ async function main() {
   };
   const recT = push ? setInterval(doRec, 15e3) : null;
   const gT = setInterval(refreshGamma, 60e3);
+  const oT = bfeed ? setInterval(refreshOdds, 60e3) : null;
   const pingT = setInterval(() => { feed.ping(); }, 10e3);
-  const repT = setInterval(() => log(`pairs ${pairs.length} live ${pairs.filter((p) => p.pm.live).length} open ${E.open.size} closed ${eps.length} ws ${stats.wsMessages} kalshi ${stats.kalshiPolls}/${stats.kalshiErrors} push ${stats.pushes}/${stats.pushErrors} posted ${stats.posted}`), 300e3);
+  const repT = setInterval(() => log(`pairs ${pairs.length} live ${pairs.filter((p) => p.pm.live).length} open ${E.open.size} closed ${eps.length} ws ${stats.wsMessages} books ${bmatches.length}/${stats.bookMsgs}/${stats.bookDrops} kalshi ${stats.kalshiPolls}/${stats.kalshiErrors} push ${stats.pushes}/${stats.pushErrors} posted ${stats.posted}`), 300e3);
   log('kalshi prices: ' + stats.kalshiFeed);
   const pollMs = () => (kfeed && kfeed.ws && kfeed.ws.readyState === 1 && kfeed.book.size ? 30e3 : POLL_S * 1000);   // the list for new matches; prices from the feed
   while (Date.now() < stop) { const t = Date.now(); await pollKalshi(); await new Promise((r) => setTimeout(r, Math.max(0, pollMs() - (Date.now() - t)))); }
-  clearInterval(gT); clearInterval(pingT); if (pushT) clearInterval(pushT); if (recT) clearInterval(recT); if (boardT) clearInterval(boardT); clearInterval(repT); E.closeAll(Date.now()); feed.stop(); if (kfeed) kfeed.stop();
+  clearInterval(gT); if (oT) clearInterval(oT); if (bfeed) bfeed.stop(); clearInterval(pingT); if (pushT) clearInterval(pushT); if (recT) clearInterval(recT); if (boardT) clearInterval(boardT); clearInterval(repT); E.closeAll(Date.now()); feed.stop(); if (kfeed) kfeed.stop();
   const meta = { from: new Date(t0).toISOString(), to: new Date().toISOString(), minutes, pollS: POLL_S, fees: FEE,
     ...stats, liveMatchesSeen: stats.liveMatchesSeen.size, pairsSeen: stats.pairsSeen.size,
     closestPerMatch: [...closest].map(([match, c]) => ({ match, ...c })).sort((a, b) => a.cost - b.cost).slice(0, 15) };

@@ -69,11 +69,24 @@ test('live section: only while the worker is fresh; cards carry both legs after 
     polyName: 'Alex Molcan', polyDec: 2.222, polyEff: 2.17, polyLiq: 900, kalName: 'Titouan Droguet', kalDec: 2.083, kalEff: 2.02, kalLiq: 480,
     stakePoly: 48.2, stakeKalshi: 51.8, stake: 470, polyAt: '2026-11-02T12:00:00Z', kalAt: '2026-11-02T12:00:01Z' }] };
   const b = page(L).bodyHtml();
-  assert.match(b, /<h2 class="ar-h">Live · Kalshi × Polymarket<\/h2>/);
+  assert.match(b, /<h2 class="ar-h">Live · Kalshi · Polymarket · Bet105 · Napoleon<\/h2>/);
   assert.match(b, /Back Alex Molcan<\/span><span class="ar-leg-src">Polymarket<\/span><span class="ar-px">2\.22<span class="ar-fee">after fee 2\.17<\/span><\/span><span class="ar-liq">\$900 at price/);
   assert.match(b, /In play<\/span><span class="ar-profit">\+2\.4%/); assert.match(b, /Stakes 48\.2% \/ 51\.8% · up to \$470/);
   assert.match(page(L).headerHtml(), /Arbs<\/span><span class="sfh__v">2</);
   assert.match(page({ ...L, live: [] }).bodyHtml(), /No live arbitrage above \+1\.0% after fees right now\./);
   const off = page({ ...L, liveOn: false, live: null }).bodyHtml();
   assert.doesNotMatch(off, /Live ·/, 'a stale worker draws no live section and no status message');
+});
+
+test('live section with bookmaker legs (founder 2026-11-08): each leg by venue, no fee on a bookmaker, no stake limit, the retirement flag', () => {
+  const g = { match: 'Ben Shelton vs Carlos Alcaraz', inPlay: true, edge: 1.8, stake: null, legs: [
+    { venue: 'Bet105', name: 'Ben Shelton', group: 'book', dec: 2.2, eff: 2.2, liq: null, share: 51.6, at: '2026-11-08T14:30:00Z' },
+    { venue: 'Napoleon', name: 'Carlos Alcaraz', group: 'book', dec: 2.35, eff: 2.35, liq: null, share: 48.4, at: '2026-11-08T14:30:01Z' }] };
+  const b = page({ ...D, config: { ...D.config, liveMin: 1 }, liveOn: true, live: [g] }).bodyHtml();
+  assert.match(b, /Back Ben Shelton<\/span><span class="ar-leg-src">Bet105<\/span><span class="ar-px">2\.20<\/span><span class="ar-liq">bookmaker/);
+  assert.match(b, /Back Carlos Alcaraz<\/span><span class="ar-leg-src">Napoleon<\/span>/);
+  assert.match(b, /Stakes 51\.6% \/ 48\.4% · prices/); assert.doesNotMatch(b, /up to/, 'no limit published → no "up to"');
+  assert.match(b, /retirement rule/);
+  const mixed = page({ ...D, config: { ...D.config, liveMin: 1 }, liveOn: true, live: [{ ...g, stake: 400, legs: [{ ...g.legs[0], venue: 'Polymarket', group: 'prediction', eff: 2.15, liq: 900 }, g.legs[1]] }] }).bodyHtml();
+  assert.match(mixed, /after fee 2\.15/); assert.match(mixed, /up to \$400/); assert.match(mixed, /Retirement rules differ/);
 });

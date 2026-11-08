@@ -321,7 +321,8 @@ language sql stable security definer set search_path = pg_catalog, public as $$
     'liveAt', l.at,
     'live', case when l.at > now() - c.live_hb_max then
               (select coalesce(jsonb_agg(g order by (g->>'edge')::numeric desc), '[]'::jsonb) from jsonb_array_elements(l.gaps) g
-                where (g->>'edge')::numeric >= c.live_min and (c.min_liq is null or (g->>'stake')::numeric >= c.min_liq))
+                where (g->>'edge')::numeric >= c.live_min
+                  and (c.min_liq is null or not coalesce((g->>'hasPm')::boolean, true) or (g->>'stake')::numeric >= c.min_liq))
             end,
     'config', (o->'config') || jsonb_build_object('liveMin', c.live_min))
   from (select case when s.at > now() - interval '10 minutes' then s.opps else arb.opps() end as o
@@ -506,24 +507,47 @@ begin
   return n;
 end $$;
 
+-- the legs of a live row (founder 2026-11-08: bookmakers join the live list). A row from a worker built before 8 Nov carries
+-- only the Polymarket / Kalshi fields; it is read into the same two legs.
+create or replace function arb.live_legs(g jsonb) returns jsonb
+language sql immutable as $$
+  select coalesce(case when jsonb_typeof(g->'legs') = 'array' then g->'legs' end, jsonb_build_array(
+    jsonb_build_object('venue', 'Polymarket', 'name', g->'polyName', 'group', 'prediction', 'dec', g->'polyDec', 'eff', g->'polyEff',
+                       'stake', g->'polyStake', 'at', g->'polyAt'),
+    jsonb_build_object('venue', 'Kalshi', 'name', g->'kalName', 'group', 'prediction', 'dec', g->'kalDec', 'eff', g->'kalEff',
+                       'stake', g->'kalStake', 'at', g->'kalAt')))
+$$;
+
 create or replace function arb.render_live(g jsonb) returns text
 language sql stable as $$
+  with l as (select x, n from jsonb_array_elements(arb.live_legs(g)) with ordinality t(x, n)),
+       f as (select bool_or(x->>'group' = 'book') book, bool_or(x->>'group' = 'prediction') pm from l)
   select concat_ws(chr(10),
     '⚡ LIVE ARB',
     '',
     format('🎾 Match: %s (ATP)', g->>'match'),
     format('%s · %s', case g->>'phase' when 'changeover' then '🪑 Changeover (players sit)' when 'set' then '⏸ Set break'
                                          else '🔄 New game (serve changes)' end, coalesce(g->>'score', 'score —')),
-    -- dollars, not shares (founder 2026-11-04): the most both books take at these prices, per leg, and what it returns
-    format('✅ Stake %s on %s @ %s on Polymarket (after fee %s)', arb.money((g->>'polyStake')::numeric), g->>'polyName',
-           arb.px((g->>'polyDec')::numeric), arb.px((g->>'polyEff')::numeric)),
-    format('✅ Stake %s on %s @ %s on Kalshi (after fee %s)', arb.money((g->>'kalStake')::numeric), g->>'kalName',
-           arb.px((g->>'kalDec')::numeric), arb.px((g->>'kalEff')::numeric)),
-    format('💰 Total %s → pays %s whoever wins → profit %s (+%s%%)', arb.money((g->>'stake')::numeric), arb.money((g->>'payout')::numeric),
-           arb.money((g->>'profitUsd')::numeric), to_char((g->>'edge')::numeric, 'FM990.00')),
-    '📏 That is the most both order books take at these prices; a smaller stake keeps the same split and the same +%.',
+    -- dollars, not shares (founder 2026-11-04): the most both books take at these prices, per leg, and what it returns;
+    -- a bookmaker publishes no limit, so a bookmaker-only gap gives the split instead
+    (select string_agg(concat_ws(chr(10),
+       case when x->>'stake' is not null
+            then format('✅ Stake %s on %s @ %s on %s', arb.money((x->>'stake')::numeric), x->>'name', arb.px((x->>'dec')::numeric), x->>'venue')
+            else format('✅ Back %s @ %s on %s · %s%% of the total', x->>'name', arb.px((x->>'dec')::numeric), x->>'venue',
+                        to_char((x->>'share')::numeric, 'FM990.0')) end
+         || case when x->>'group' = 'prediction' then format(' (after fee %s)', arb.px((x->>'eff')::numeric)) else '' end,
+       case when x->>'url' is not null then '🔗 ' || (x->>'url') end), chr(10) order by n) from l),
+    case when g->>'stake' is not null
+         then format('💰 Total %s → pays %s whoever wins → profit %s (+%s%%)', arb.money((g->>'stake')::numeric), arb.money((g->>'payout')::numeric),
+                     arb.money((g->>'profitUsd')::numeric), to_char((g->>'edge')::numeric, 'FM990.00'))
+         else format('💰 Any total in this split pays the same whoever wins: +%s%%', to_char((g->>'edge')::numeric, 'FM990.00')) end,
+    case when g->>'stake' is not null then
+      case when (select book from f) then '📏 That is the most the prediction market takes at this price (the bookmaker publishes no limit); a smaller stake keeps the same split and the same +%.'
+           else '📏 That is the most both order books take at these prices; a smaller stake keeps the same split and the same +%.' end end,
+    case when (select book and pm from f) then '⚠️ Retirement rules differ: Kalshi / Polymarket pay the player who advances once a ball is played; a bookmaker may void the bet on a retirement.'
+         when (select book from f) then '⚠️ Check each bookmaker''s retirement rule: one may void the bet on a retirement while the other settles it.' end,
     '⚠️ Live prices move every point: check both before you bet.',
-    format('🕒 Prices: Polymarket @ %s · Kalshi @ %s', arb.hhmm((g->>'polyAt')::timestamptz), arb.hhmm((g->>'kalAt')::timestamptz)))
+    '🕒 Prices: ' || (select string_agg(format('%s @ %s', x->>'venue', arb.hhmm((x->>'at')::timestamptz)), ' · ' order by n) from l))
 $$;
 
 -- the live worker's push (service role only): the current gaps + heartbeat; posts each new one >= live_min with
@@ -539,15 +563,17 @@ begin
     from net._http_response r where a.kind = 'live' and a.delivery = 'queued' and r.id = a.net_request_id;
   for g in select * from jsonb_array_elements(coalesce(p->'gaps', '[]'::jsonb)) loop
     continue when coalesce((g->>'edge')::numeric, 0) < c.live_min;
-    continue when c.min_liq is not null and coalesce((g->>'stake')::numeric, 0) < c.min_liq;
+    -- the dollars to lock in apply to a gap with a prediction-market leg; bookmakers publish no limit (founder 2026-11-08)
+    continue when c.min_liq is not null and coalesce((g->>'hasPm')::boolean, true) and coalesce((g->>'stake')::numeric, 0) < c.min_liq;
     continue when not coalesce((g->>'started')::boolean, false);   -- before the start the 30-s engine covers it
     -- only when there is time to place both bets (founder 2026-11-03): the live score board shows the game at 0–0 — a new
     -- game (the serve changes), a changeover (players sit, after an odd game) or a set break — never during points;
     -- and never on a match the board or api-tennis says is over or not being played (walkover, retirement …)
     continue when coalesce(g->>'phase', '') not in ('game', 'changeover', 'set');
     continue when arb.fixture_closed(g->>'boardStatus', null);
-    continue when not coalesce(g->>'kalshiEvent', '') like 'KXATPMATCH-%';   -- ATP tour only
-    k := 'live|' || (g->>'kalshiEvent') || '|' || (g->>'dir');
+    -- ATP tour only: a Kalshi ATP event, or an odds-api.io ATP singles event the worker marks atp (never Challenger)
+    continue when not (coalesce(g->>'kalshiEvent', '') like 'KXATPMATCH-%' or coalesce((g->>'atp')::boolean, false));
+    k := 'live|' || coalesce(g->>'mkey', g->>'kalshiEvent') || '|' || (g->>'dir');
     continue when exists (select 1 from arb.alerts where akey = k and created_at > now() - c.live_cooldown);
     msg := arb.render_live(g); rid := arb.send(msg, 'live');
     insert into arb.alerts (kind, akey, event_key, detail, message, net_request_id, sent_at, delivery)
