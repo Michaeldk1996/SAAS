@@ -10535,22 +10535,11 @@
         }
       ]
     },
-    "live": true,
-    "liveStatus": "Set 2",
-    "liveScore": [
-      {
-        "set": 1,
-        "p1": 3,
-        "p2": 6
-      },
-      {
-        "set": 2,
-        "p1": 4,
-        "p2": 3
-      }
-    ],
-    "liveGameScore": "0 - 0",
-    "liveServer": "p2",
+    "live": false,
+    "liveStatus": null,
+    "liveScore": null,
+    "liveGameScore": null,
+    "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/424_n-basilashvili.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/377_b-gojo.jpg",
     "tournamentKey": "1681",
@@ -11316,7 +11305,27 @@
       "edgeVsPinnacleP1": -0.0491,
       "edgeVsPinnacleP2": 0.0491,
       "ts": "2026-11-08T03:52:53.774Z"
-    }
+    },
+    "retired": false,
+    "walkover": false,
+    "finalScore": {
+      "display": "3-6, 6-7(5)",
+      "sets": [
+        {
+          "p1": 3,
+          "p2": 6
+        },
+        {
+          "p1": 6,
+          "p2": 7
+        }
+      ],
+      "p1Sets": 0,
+      "p2Sets": 2,
+      "winner": "p2"
+    },
+    "interrupted": false,
+    "partialScore": null
   },
   {
     "id": "upcoming-12178198",
@@ -13915,17 +13924,11 @@
         }
       ]
     },
-    "live": true,
-    "liveStatus": "Set 1",
-    "liveScore": [
-      {
-        "set": 1,
-        "p1": 5,
-        "p2": 6
-      }
-    ],
-    "liveGameScore": "0 - 30",
-    "liveServer": "p1",
+    "live": false,
+    "liveStatus": null,
+    "liveScore": null,
+    "liveGameScore": null,
+    "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/10232_i-montes-de-la-torre.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2843_l-sonego.jpg",
     "tournamentKey": "1681",
@@ -14663,7 +14666,27 @@
           }
         }
       }
-    }
+    },
+    "retired": false,
+    "walkover": false,
+    "finalScore": {
+      "display": "5-7, 3-6",
+      "sets": [
+        {
+          "p1": 5,
+          "p2": 7
+        },
+        {
+          "p1": 3,
+          "p2": 6
+        }
+      ],
+      "p1Sets": 0,
+      "p2Sets": 2,
+      "winner": "p2"
+    },
+    "interrupted": false,
+    "partialScore": null
   },
   {
     "id": "upcoming-12178223",
@@ -20391,11 +20414,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 2",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 2,
+        "p2": 6
+      }
+    ],
+    "liveGameScore": "0 - 0",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/12951_j-fearnley.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/566_a-shevchenko.jpg",
     "tournamentKey": "1681",
@@ -20853,7 +20882,10 @@
       "edgeVsPinnacleP1": -0.049,
       "edgeVsPinnacleP2": 0.049,
       "ts": "2026-11-08T12:18:36.734Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12178225",
@@ -24539,11 +24571,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 5,
+        "p2": 3
+      }
+    ],
+    "liveGameScore": "40 - 15",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/438_a-mannarino.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/15184_t-samuel.jpg",
     "tournamentKey": "1681",
@@ -25085,7 +25123,10 @@
       "edgeVsPinnacleP1": 0.0093,
       "edgeVsPinnacleP2": -0.0093,
       "ts": "2026-11-08T03:52:53.774Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12178147",
@@ -46858,7 +46899,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "3-6, 6-4, 7-6(5)",
+      "display": "3-6, 6-4, 7-6",
       "sets": [
         {
           "p1": 3,
@@ -52054,7 +52095,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6(3), 6-4",
+      "display": "7-6, 6-4",
       "sets": [
         {
           "p1": 7,
@@ -86012,7 +86053,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-4, 6-7(4), 7-5",
+      "display": "6-4, 6-7, 7-5",
       "sets": [
         {
           "p1": 6,
@@ -90437,7 +90478,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6(10), 5-7, 3-6",
+      "display": "7-6, 5-7, 3-6",
       "sets": [
         {
           "p1": 7,
@@ -95430,7 +95471,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6(5), 6-4",
+      "display": "7-6, 6-4",
       "sets": [
         {
           "p1": 7,
@@ -107280,7 +107321,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "5-7, 6-4, 6-7(7)",
+      "display": "5-7, 6-4, 6-7",
       "sets": [
         {
           "p1": 5,
@@ -115040,7 +115081,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "4-6, 6-7(6)",
+      "display": "4-6, 6-7",
       "sets": [
         {
           "p1": 4,
@@ -122302,7 +122343,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-7(5), 2-6",
+      "display": "6-7, 2-6",
       "sets": [
         {
           "p1": 6,
