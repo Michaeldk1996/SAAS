@@ -104,6 +104,54 @@ for (const src of ['bet105-switch', 'first-point']) {
   const x = run(REAL, repoWith([[card(1, 'L. Harris', 'A. Kovacevic', 10, 20, SERIES)]], { cardState: flip(at(0), 'none') }));
   check("card-state 'none' is never a start", !x.row(1) && x.r.stats.dropped.noStart === 1, JSON.stringify(x.r.stats));
 }
+// Founder 2026-11-08: a close cut at Oddspapi's start, BEFORE a verified card-state start, counts at the verified start
+// only when (1) the same tick, (2) seen <= 60 min before it, (3) within 1.5pp of the Bet105 close. Else it stays 'oddspapi'.
+{
+  const FX = { id9: { cat: 'ATP', trueStart: at(0), trueEnd: at(95), p1: 'Harris, Lloyd', p2: 'Kovacevic, Aleksandar' } };
+  const cs = (src, b105) => ({ [KEY]: Object.assign({ startTs: at(5), startTsSource: src },
+    b105 ? { book: 'bet105', sides: { harris: { close: b105[0] }, kovacevic: { close: b105[1] } } } : {}) });
+  const withSeen = (S, ms) => ({ chart: { books: S.chart.books, meta: { 'Pinnacle +30s': { checkedAt: ms } } } });
+  const S5 = p30([[at(-90), 1.60], [at(-22), 1.534], [at(6), 1.01]], [[at(-90), 2.40], [at(-22), 2.65], [at(6), 26.0]]);   // in-play only after the verified start
+  const go = (S, cardState, held) => run(REAL, repoWith([[card(1, 'L. Harris', 'A. Kovacevic', 10, 20, S)]], { fixtures: FX, cardState, held }));
+  let x = go(S5, cs('bet105-switch', [1.53, 2.62]));
+  check('earlier cut: same tick, 27 min old, Bet105 0.2pp -> a close at the verified start',
+    x.row(1) && x.row(1).startSource === 'bet105-switch' && x.row(1).trueStart === at(5) && x.row(1).p1 === 1.534
+      && x.row(1).earlierCut && x.row(1).earlierCut.trueStart === at(0) && x.row(1).earlierCut.source === 'oddspapi', JSON.stringify(x.row(1)));
+  x = go(S5, cs('first-point'));
+  check('earlier cut: no Bet105 close on the card state -> checks 1-2 decide', x.row(1) && x.row(1).startSource === 'first-point' && x.row(1).earlierCut.b105GapPP === null, JSON.stringify(x.row(1)));
+  const OLD = p30([[at(-90), 1.534], [at(6), 1.01]], [[at(-90), 2.65], [at(6), 26.0]]);
+  x = go(OLD, cs('bet105-switch'));
+  check('earlier cut: last seen 95 min before the start -> held (oddspapi)', x.row(1) && x.row(1).startSource === 'oddspapi' && x.row(1).trueStart === at(0)
+    && !x.row(1).earlierCut && x.row(1).earlierCutCheck.failed.join() === 'not seen within 60 min of the start', JSON.stringify(x.row(1)));
+  x = go(withSeen(OLD, at(-10)), cs('bet105-switch'));
+  check('earlier cut: the same old tick seen again 15 min before the start -> a close', x.row(1) && x.row(1).startSource === 'bet105-switch' && x.row(1).seenAt === at(-10), JSON.stringify(x.row(1)));
+  x = go(S5, cs('bet105-switch', [1.40, 3.00]));
+  check('earlier cut: Bet105 close 4.9pp away -> held', x.row(1) && x.row(1).startSource === 'oddspapi'
+    && x.row(1).earlierCutCheck.failed.join() === 'Bet105 close more than 1.5pp away' && Math.abs(x.row(1).earlierCutCheck.b105GapPP) > 1.5, JSON.stringify(x.row(1)));
+  const MID = p30([[at(-22), 1.534], [at(2), 1.50], [at(6), 1.01]], [[at(-22), 2.65], [at(2), 2.75], [at(6), 26.0]]);
+  x = go(MID, cs('bet105-switch'));
+  check('earlier cut: a tick between the two starts -> held at the earlier cut', x.row(1) && x.row(1).startSource === 'oddspapi' && x.row(1).p1 === 1.534
+    && x.row(1).earlierCutCheck.failed.includes('tick between the two starts'), JSON.stringify(x.row(1)));
+  x = go(S5, cs('none'));
+  check("earlier cut: card state 'none' -> no check, plain oddspapi", x.row(1) && x.row(1).startSource === 'oddspapi' && !x.row(1).earlierCut && !x.row(1).earlierCutCheck, JSON.stringify(x.row(1)));
+  // Merge: a held 'oddspapi' row is upgraded; a verified one is never put back.
+  const heldOdd = { eventKey: 1, date: '2026-09-27', p1Key: 10, p2Key: 20, p1: 1.534, p2: 2.65, at: at(-22), trueStart: at(0), startSource: 'oddspapi', book: 'Pinnacle +30s' };
+  x = go(S5, cs('bet105-switch', [1.53, 2.62]), { rows: [heldOdd] });
+  check('merge: a held oddspapi row that passes is replaced by the verified row', x.row(1) && x.row(1).startSource === 'bet105-switch' && x.r.replaced === 1, JSON.stringify(x.row(1)));
+  const heldVer = Object.assign({}, heldOdd, { trueStart: at(5), startSource: 'bet105-switch', earlierCut: { trueStart: at(0), source: 'oddspapi', b105GapPP: 0.2 } });
+  x = go(S5, cs('bet105-switch', [1.40, 3.00]), { rows: [heldVer] });
+  check('merge: a verified row is never put back to its earlier cut', x.row(1) && x.row(1).startSource === 'bet105-switch' && x.row(1).trueStart === at(5), JSON.stringify(x.row(1)));
+  // The one-time back-fill applies to the exact held row only.
+  const B = require(REAL);
+  const set = { trueStart: at(5), startSource: 'first-point', earlierCut: { trueStart: at(0), source: 'oddspapi', b105GapPP: null } };
+  const rows = [Object.assign({}, heldOdd), Object.assign({}, heldOdd, { eventKey: 2, p1: 1.6 })];
+  const n = B.applyEarlierCutBackfill(rows, { 1: { at: at(-22), p1: 1.534, p2: 2.65, set }, 2: { at: at(-22), p1: 1.534, p2: 2.65, set } });
+  check('back-fill: the exact held row only', n === 1 && rows[0].startSource === 'first-point' && rows[1].startSource === 'oddspapi', JSON.stringify(rows));
+  const bf = JSON.parse(fs.readFileSync(path.join(REPO, 'captured-pinnacle-earlier-cut-backfill.json'), 'utf8'));
+  check('back-fill file: every entry passed the three checks and names its earlier cut', Object.values(bf.rows).length > 0
+    && Object.values(bf.rows).every((v) => v.set && B.VERIFIED_CARD_STARTS.includes(v.set.startSource) && v.set.earlierCut && v.set.earlierCut.source === 'oddspapi'
+      && (v.set.earlierCut.b105GapPP === null || Math.abs(v.set.earlierCut.b105GapPP) <= 1.5)));
+}
 // A held row cut at a LATER start is replaced by a stricter cut, even though its close is earlier.
 {
   const loose = { eventKey: 1, date: '2026-09-27', p1Key: 10, p2Key: 20, p1: 1.02, p2: 21.0, at: at(3), trueStart: at(10), startSource: 'api-tennis-live', book: 'Pinnacle +30s' };

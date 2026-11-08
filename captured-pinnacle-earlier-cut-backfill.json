@@ -1,0 +1,343 @@
+{
+ "note": "One-time back-fill (founder 2026-11-08: count the held-back captured closes only when they are good closing prices). Held captured rows labelled oddspapi (cut at Oddspapi start, which came before a verified card-state start), dated 28 Oct - 8 Nov, checked with build-captured-pinnacle.js checkEarlierCut over the full matches.json history and the card state of 8 Nov: (1) the same tick at the verified start, (2) seen within 60 min of it, (3) within 1.5pp of the Bet105 close. Only rows that passed all three are listed; build() applies each to the exact held row it was measured on.",
+ "measuredAt": "2026-11-08",
+ "checked": 52,
+ "passed": 22,
+ "rows": {
+  "12174305": {
+   "at": "2026-10-28T18:14:11.592Z",
+   "p1": 1.111,
+   "p2": 7.37,
+   "set": {
+    "trueStart": "2026-10-28T18:16:29.000Z",
+    "startSource": "first-point",
+    "seenAt": "2026-10-28T18:15:00.000Z",
+    "earlierCut": {
+     "trueStart": "2026-10-28T18:16:38.000Z",
+     "source": "oddspapi",
+     "b105GapPP": 0.89
+    }
+   }
+  },
+  "12175152": {
+   "at": "2026-10-29T21:04:44.082Z",
+   "p1": 1.25,
+   "p2": 4.46,
+   "set": {
+    "trueStart": "2026-10-29T21:17:20.000Z",
+    "startSource": "bet105-switch",
+    "seenAt": "2026-10-29T21:05:00.000Z",
+    "earlierCut": {
+     "trueStart": "2026-10-29T21:11:23.000Z",
+     "source": "oddspapi",
+     "b105GapPP": 0.5
+    }
+   }
+  },
+  "12175725": {
+   "at": "2026-10-30T12:01:18.650Z",
+   "p1": 4.69,
+   "p2": 1.233,
+   "set": {
+    "trueStart": "2026-10-30T12:43:14.000Z",
+    "startSource": "first-point",
+    "seenAt": "2026-10-30T12:05:05.000Z",
+    "earlierCut": {
+     "trueStart": "2026-10-30T12:32:37.000Z",
+     "source": "oddspapi",
+     "b105GapPP": -0.53
+    }
+   }
+  },
+  "12175814": {
+   "at": "2026-10-30T18:58:23.240Z",
+   "p1": 3,
+   "p2": 1.446,
+   "set": {
+    "trueStart": "2026-10-30T19:17:08.000Z",
+    "startSource": "first-point",
+    "seenAt": "2026-10-30T19:00:00.000Z",
+    "earlierCut": {
+     "trueStart": "2026-10-30T19:18:20.000Z",
+     "source": "oddspapi",
+     "b105GapPP": -0.16
+    }
+   }
+  },
+  "12175833": {
+   "at": "2026-10-30T18:25:52.510Z",
+   "p1": 1.813,
+   "p2": 2.12,
+   "set": {
+    "trueStart": "2026-10-30T18:53:14.000Z",
+    "startSource": "first-point",
+    "seenAt": "2026-10-30T18:40:00.000Z",
+    "earlierCut": {
+     "trueStart": "2026-10-30T18:54:29.000Z",
+     "source": "oddspapi",
+     "b105GapPP": 0.35
+    }
+   }
+  },
+  "12175868": {
+   "at": "2026-10-30T16:14:26.918Z",
+   "p1": 3.51,
+   "p2": 1.352,
+   "set": {
+    "trueStart": "2026-10-30T17:01:52.000Z",
+    "startSource": "bet105-switch",
+    "seenAt": "2026-10-30T17:00:00.000Z",
+    "earlierCut": {
+     "trueStart": "2026-10-30T17:02:58.000Z",
+     "source": "oddspapi",
+     "b105GapPP": 0.05
+    }
+   }
+  },
+  "12175987": {
+   "at": "2026-10-31T15:44:06.248Z",
+   "p1": 1.502,
+   "p2": 2.79,
+   "set": {
+    "trueStart": "2026-10-31T16:06:50.000Z",
+    "startSource": "bet105-switch",
+    "seenAt": "2026-10-31T16:02:00.000Z",
+    "earlierCut": {
+     "trueStart": "2026-10-31T16:09:19.000Z",
+     "source": "oddspapi",
+     "b105GapPP": -0.02
+    }
+   }
+  },
+  "12176027": {
+   "at": "2026-11-02T20:37:44.814Z",
+   "p1": 1.558,
+   "p2": 2.59,
+   "set": {
+    "trueStart": "2026-11-02T20:59:10.000Z",
+    "startSource": "first-point",
+    "seenAt": "2026-11-02T20:40:00.000Z",
+    "earlierCut": {
+     "trueStart": "2026-11-02T20:56:43.000Z",
+     "source": "oddspapi",
+     "b105GapPP": 0.05
+    }
+   }
+  },
+  "12176036": {
+   "at": "2026-11-02T17:57:35.637Z",
+   "p1": 2.5,
+   "p2": 1.591,
+   "set": {
+    "trueStart": "2026-11-02T18:10:42.000Z",
+    "startSource": "bet105-switch",
+    "seenAt": "2026-11-02T18:00:00.000Z",
+    "earlierCut": {
+     "trueStart": "2026-11-02T18:07:49.000Z",
+     "source": "oddspapi",
+     "b105GapPP": 0.15
+    }
+   }
+  },
+  "12176264": {
+   "at": "2026-11-01T11:42:43.886Z",
+   "p1": 5.35,
+   "p2": 1.175,
+   "set": {
+    "trueStart": "2026-11-01T11:54:31.000Z",
+    "startSource": "first-point",
+    "seenAt": "2026-11-01T11:45:00.000Z",
+    "earlierCut": {
+     "trueStart": "2026-11-01T11:50:39.000Z",
+     "source": "oddspapi",
+     "b105GapPP": 0.57
+    }
+   }
+  },
+  "12176265": {
+   "at": "2026-11-01T11:16:08.087Z",
+   "p1": 1.684,
+   "p2": 2.25,
+   "set": {
+    "trueStart": "2026-11-01T11:53:31.000Z",
+    "startSource": "first-point",
+    "seenAt": "2026-11-01T11:40:00.000Z",
+    "earlierCut": {
+     "trueStart": "2026-11-01T11:51:18.000Z",
+     "source": "oddspapi",
+     "b105GapPP": -0.01
+    }
+   }
+  },
+  "12176268": {
+   "at": "2026-11-01T12:12:49.089Z",
+   "p1": 4.83,
+   "p2": 1.223,
+   "set": {
+    "trueStart": "2026-11-01T13:09:15.000Z",
+    "startSource": "bet105-switch",
+    "seenAt": "2026-11-01T12:38:18.000Z",
+    "earlierCut": {
+     "trueStart": "2026-11-01T13:14:26.261Z",
+     "source": "oddspapi",
+     "b105GapPP": 0.41
+    }
+   }
+  },
+  "12176415": {
+   "at": "2026-11-02T09:36:07.725Z",
+   "p1": 2.24,
+   "p2": 1.719,
+   "set": {
+    "trueStart": "2026-11-02T10:08:26.000Z",
+    "startSource": "bet105-switch",
+    "seenAt": "2026-11-02T10:00:00.000Z",
+    "earlierCut": {
+     "trueStart": "2026-11-02T10:09:35.000Z",
+     "source": "oddspapi",
+     "b105GapPP": -0.53
+    }
+   }
+  },
+  "12176416": {
+   "at": "2026-11-02T12:32:17.771Z",
+   "p1": 1.358,
+   "p2": 3.41,
+   "set": {
+    "trueStart": "2026-11-02T13:51:52.000Z",
+    "startSource": "bet105-switch",
+    "seenAt": "2026-11-02T13:45:00.000Z",
+    "earlierCut": {
+     "trueStart": "2026-11-02T14:02:46.284Z",
+     "source": "oddspapi",
+     "b105GapPP": 0.03
+    }
+   }
+  },
+  "12176417": {
+   "at": "2026-11-02T12:31:56.953Z",
+   "p1": 1.675,
+   "p2": 2.31,
+   "set": {
+    "trueStart": "2026-11-02T15:04:28.000Z",
+    "startSource": "bet105-switch",
+    "seenAt": "2026-11-02T15:00:00.000Z",
+    "earlierCut": {
+     "trueStart": "2026-11-02T15:07:58.000Z",
+     "source": "oddspapi",
+     "b105GapPP": -0.19
+    }
+   }
+  },
+  "12176568": {
+   "at": "2026-11-04T19:12:15.203Z",
+   "p1": 1.617,
+   "p2": 2.43,
+   "set": {
+    "trueStart": "2026-11-04T20:15:12.000Z",
+    "startSource": "bet105-switch",
+    "seenAt": "2026-11-04T19:18:41.000Z",
+    "earlierCut": {
+     "trueStart": "2026-11-04T20:11:55.178Z",
+     "source": "oddspapi",
+     "b105GapPP": -0.67
+    }
+   }
+  },
+  "12176938": {
+   "at": "2026-11-04T09:58:26.217Z",
+   "p1": 2.33,
+   "p2": 1.671,
+   "set": {
+    "trueStart": "2026-11-04T10:10:16.000Z",
+    "startSource": "bet105-switch",
+    "seenAt": "2026-11-04T10:00:00.000Z",
+    "earlierCut": {
+     "trueStart": "2026-11-04T10:09:44.380Z",
+     "source": "oddspapi",
+     "b105GapPP": -0.49
+    }
+   }
+  },
+  "12177025": {
+   "at": "2026-11-04T17:18:08.038Z",
+   "p1": 2.09,
+   "p2": 1.813,
+   "set": {
+    "trueStart": "2026-11-04T17:37:29.000Z",
+    "startSource": "bet105-switch",
+    "earlierCut": {
+     "trueStart": "2026-11-04T17:29:46.411Z",
+     "source": "oddspapi",
+     "b105GapPP": -0.24
+    }
+   }
+  },
+  "12177161": {
+   "at": "2026-11-04T17:19:13.100Z",
+   "p1": 3,
+   "p2": 1.436,
+   "set": {
+    "trueStart": "2026-11-04T18:06:46.000Z",
+    "startSource": "bet105-switch",
+    "earlierCut": {
+     "trueStart": "2026-11-04T18:06:12.272Z",
+     "source": "oddspapi",
+     "b105GapPP": 0.15
+    }
+   }
+  },
+  "12177411": {
+   "at": "2026-11-05T09:55:05.188Z",
+   "p1": 1.302,
+   "p2": 3.9,
+   "set": {
+    "trueStart": "2026-11-05T10:11:35.000Z",
+    "startSource": "bet105-switch",
+    "seenAt": "2026-11-05T10:00:00.000Z",
+    "earlierCut": {
+     "trueStart": "2026-11-05T10:08:23.107Z",
+     "source": "oddspapi",
+     "b105GapPP": 0.01
+    }
+   }
+  },
+  "12177621": {
+   "at": "2026-11-05T19:24:34.374Z",
+   "p1": 2.93,
+   "p2": 1.462,
+   "set": {
+    "trueStart": "2026-11-05T19:49:33.000Z",
+    "startSource": "bet105-switch",
+    "seenAt": "2026-11-05T19:27:24.000Z",
+    "earlierCut": {
+     "trueStart": "2026-11-05T19:40:29.487Z",
+     "source": "oddspapi",
+     "b105GapPP": 0.44
+    }
+   }
+  },
+  "12178070": {
+   "at": "2026-11-07T16:08:59.987Z",
+   "p1": 5.26,
+   "p2": 1.199,
+   "set": {
+    "trueStart": "2026-11-07T16:28:33.000Z",
+    "startSource": "first-point",
+    "earlierCut": {
+     "trueStart": "2026-11-07T16:22:44.531Z",
+     "source": "oddspapi",
+     "b105GapPP": -0.02
+    }
+   }
+  }
+ },
+ "counts": {
+  "heldOddspapiRows": 87,
+  "noSeriesInHistory": 5,
+  "cardStateNotVerified": 29,
+  "rebuiltRowDiffers": 1,
+  "checked": 52,
+  "passed": 22
+ }
+}

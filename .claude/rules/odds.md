@@ -350,6 +350,15 @@ closes, odds performance and started-evidence.
   card-state schema allows sit in the builder's `CARD_START_SOURCES` or `CARD_START_REJECTED`, with both readers agreeing?
   It must (`tools/test-captured-start-sources.js`, CONTROL: the pre-fix lists); a captured close falling 2+ days behind the
   newest finished ATP match turns the daily digest red (`tools/test-daily-digest.mjs`).
+- **A captured close cut at Oddspapi's start, before our verified start, counts only when it checks out** (founder 2026-11-08:
+  "check if they are accurate … if they are good closing prices count them, if they are wrong don't"). It is re-labelled at
+  the verified card-state start (`earlierCut` names the old cut) and exports as "captured" only when all three hold:
+  (1) the same last tick on both sides at the verified start, (2) our capture saw that price at most 60 min before it (the
+  within-60 rule, aged from the sighting), (3) where the card state holds Bet105's close, the two no-vig lines are within
+  1.5pp (`EDGE_B105_DISAGREE_PP`). Otherwise it stays labelled `oddspapi` and held back. A re-labelled row is a new archive
+  row (its own dedupe key) superseding the held one; prices never change. Back-fill: `captured-pinnacle-earlier-cut-backfill.json`
+  (28 Oct – 8 Nov: 87 held, 52 checkable, 22 passed; 4–8 Nov: 8 of 20). **Test:** `tools/test-captured-pinnacle.js`
+  "earlier cut", `tools/test-pinarch-close.py` "earlier cut".
 - **Every change to a price source goes through ONE task only** (founder ruling 2026-10-16, round 3 item 2): the
   price-source task (the founder's 2026-10-16 Tennis-Data / Pinnacle brief and its rounds). A price source = which book,
   feed or cut prices a match, or the order between them, on any surface (the Database join, the closes shards, Form /

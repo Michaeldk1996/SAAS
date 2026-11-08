@@ -52,6 +52,7 @@ const SIGHTED = { 'Pinnacle +30s': (om) => om.chart && om.chart.meta && om.chart
 // One-time back-fill (2026-10-28): the sightings of rows already held when the rule landed, measured over the full
 // matches.json history (a CI clone holds 100 commits). eventKey -> seenAt. Applied to held rows that lack one.
 const SEEN_BACKFILL = path.join(ROOT, 'captured-pinnacle-seen-backfill.json');
+const EARLIER_CUT_BACKFILL = path.join(ROOT, 'captured-pinnacle-earlier-cut-backfill.json');
 const START_CATS = new Set(['ATP', 'Davis Cup']);
 // The card-state start sources a captured close may be cut at (founder 2026-11-08, price-source task: "fix it", option B).
 // Since the 3 Nov close ruling the card state names its start 'bet105-switch' (Bet105's first suspension after its last
@@ -62,6 +63,18 @@ const START_CATS = new Set(['ATP', 'Davis Cup']);
 const CARD_START_SOURCES = ['oddspapi', 'api-tennis-live', 'bet105-switch', 'first-point'];
 const CARD_START_REJECTED = ['none'];   // no start known: the card's startTs is not a start
 const STALE_MS = 7 * 864e5;
+// A close cut at Oddspapi's start because it came BEFORE our verified card-state start (founder 2026-11-08: "check if
+// they are accurate; if they are good closing prices count them, if they are wrong don't"). It counts as a close at the
+// verified start only when all three checks pass, else it stays labelled 'oddspapi' (held back by the export):
+//   1. the same last tick, both sides, at the verified start: no Pinnacle tick between the two starts;
+//   2. our capture saw that price at most 60 min before the verified start (the within-60 rule, TEN-253 ruling 2;
+//      aged from the last sighting, founder 2026-10-28);
+//   3. where the card state holds Bet105's close for both players, the two no-vig lines differ by at most 1.5pp
+//      (EDGE_B105_DISAGREE_PP, founder 2026-11-01). No Bet105 close = this check is not run.
+// Measured 8 Nov on the 20 held rows of 4-8 Nov: check 1 passed 20 of 20; 8 passed all three.
+const VERIFIED_CARD_STARTS = ['api-tennis-live', 'bet105-switch', 'first-point'];
+const EARLIER_CUT_FRESH_MS = 60 * 6e4;
+const EARLIER_CUT_B105_PP = 1.5;
 const MAX_MATCH_MS = 6 * 3600e3;
 
 function readJson(p, dflt) { try { return JSON.parse(fs.readFileSync(p, 'utf8')); } catch (e) { return dflt; } }
@@ -69,7 +82,7 @@ const toMs = (v) => { if (v == null || v === '') return null; if (typeof v === '
 const iso = (ms) => new Date(ms).toISOString();
 
 // The card-state key, the ruled one (ten225_names.match_key / bsp-pipeline ocsMatchKey).
-const { ocsMatchKey } = require('./bsp-pipeline.js');
+const { ocsMatchKey, ocsNameKey } = require('./bsp-pipeline.js');
 
 /** One side's close: the last real tick (>= 1.01) at or before `cutMs`. [ms, price] | null. */
 function lastAtOrBefore(ticks, cutMs) {
@@ -166,7 +179,10 @@ function actualStart(o, trueStarts, cardState) {
   // (5 of 25 on the 28 Sep card state had the flip after trueStart), and the later cut can take an
   // in-play tick; the earlier one can only lose a pre-start tick — missing, never in-play.
   if (okTrue && csMs != null && csMs < c.trueStart) return { ms: csMs, source: cs.startTsSource };
-  if (okTrue) return { ms: c.trueStart, source: 'oddspapi' };
+  if (okTrue) {
+    const verify = csMs != null && VERIFIED_CARD_STARTS.includes(cs.startTsSource) ? { ms: csMs, source: cs.startTsSource, cs } : null;
+    return verify ? { ms: c.trueStart, source: 'oddspapi', verify } : { ms: c.trueStart, source: 'oddspapi' };
+  }
   if (csMs != null) return { ms: csMs, source: cs.startTsSource };
   return { reason: c ? 'rejectedStart' : 'noStart' };
 }
@@ -179,6 +195,26 @@ function lastSighting(reads, tickMs, startMs) {
   let best = null;
   for (const ms of reads || []) if (ms >= tickMs && ms < startMs && (best == null || ms > best)) best = ms;
   return best;
+}
+
+/** The three checks on a close cut at Oddspapi's start that came before a verified card-state start (see
+ *  VERIFIED_CARD_STARTS). { pass, failed: [...], seenMs, b105GapPP }. */
+function checkEarlierCut(o, best, start) {
+  const V = start.verify, t = o.series[best.label], failed = [];
+  const a = lastAtOrBefore([...t.p1], V.ms), b = lastAtOrBefore([...t.p2], V.ms);
+  const same = a && b && a[0] === best.a[0] && a[1] === best.a[1] && b[0] === best.b[0] && b[1] === best.b[1];
+  if (!same) failed.push('tick between the two starts');
+  const seenMs = lastSighting(o.seen && o.seen[best.label], best.atMs, V.ms);
+  if (V.ms - (seenMs != null ? seenMs : best.atMs) > EARLIER_CUT_FRESH_MS) failed.push('not seen within 60 min of the start');
+  let b105GapPP = null;
+  const sides = V.cs && V.cs.book === 'bet105' && V.cs.sides;
+  const c1 = sides && sides[ocsNameKey(o.p1)], c2 = sides && sides[ocsNameKey(o.p2)];
+  if (c1 && c2 && c1.close >= 1.01 && c2.close >= 1.01) {
+    const nv = (x, y) => (1 / x) / (1 / x + 1 / y) * 100;
+    b105GapPP = Math.round((nv(best.a[1], best.b[1]) - nv(c1.close, c2.close)) * 100) / 100;
+    if (Math.abs(b105GapPP) > EARLIER_CUT_B105_PP) failed.push('Bet105 close more than 1.5pp away');
+  }
+  return { pass: failed.length === 0, failed, seenMs, b105GapPP };
 }
 
 /** Derive a row for one event, or a drop reason. The book whose close is latest wins; a
@@ -200,12 +236,20 @@ function deriveRow(ek, o, start, nowMs) {
   // 30-day line (founder 2026-10-27: "Open = Pinnacle first price (Oddspapi)").
   const t = o.series[best.label];
   const fa = firstAtOrBefore([...t.p1], start.ms), fb = firstAtOrBefore([...t.p2], start.ms);
-  const seen = lastSighting(o.seen && o.seen[best.label], best.atMs, start.ms);
+  let seen = lastSighting(o.seen && o.seen[best.label], best.atMs, start.ms);
+  let cut = { ms: start.ms, source: start.source }, extra = {};
+  if (start.verify) {
+    const ck = checkEarlierCut(o, best, start);
+    if (ck.pass) {
+      extra = { earlierCut: { trueStart: iso(start.ms), source: start.source, b105GapPP: ck.b105GapPP } };
+      cut = { ms: start.verify.ms, source: start.verify.source }; seen = ck.seenMs;
+    } else extra = { earlierCutCheck: { verifiedStart: iso(start.verify.ms), verifiedSource: start.verify.source, failed: ck.failed, b105GapPP: ck.b105GapPP } };
+  }
   return { row: { eventKey: Number(ek), date: o.date, p1Key: o.p1Key, p2Key: o.p2Key, p1Name: o.p1, p2Name: o.p2,
-    p1: best.a[1], p2: best.b[1], at: iso(best.atMs), trueStart: iso(start.ms), startSource: start.source, book: best.label,
+    p1: best.a[1], p2: best.b[1], at: iso(best.atMs), trueStart: iso(cut.ms), startSource: cut.source, book: best.label,
     round: o.round != null ? o.round : null, qualifying: typeof o.qualifying === 'boolean' ? o.qualifying : null, event: o.event || null,
     o1: fa ? fa[1] : null, o2: fb ? fb[1] : null, oAt: fa && fb ? iso(Math.min(fa[0], fb[0])) : null, winner: o.winner || null,
-    ...(seen != null ? { seenAt: iso(seen) } : {}) } };
+    ...(seen != null ? { seenAt: iso(seen) } : {}), ...extra } };
 }
 
 /** Merge fresh rows into held ones (see header). Returns { rows, added, replaced }. */
@@ -229,6 +273,13 @@ function mergeRows(held, fresh) {
     const rs = Date.parse(r.trueStart), hs = Date.parse(h.trueStart);
     const stricter = Number.isFinite(rs) && Number.isFinite(hs) && rs < hs;
     const later = rs === hs && Date.parse(r.at) > Date.parse(h.at);
+    // A held 'oddspapi' row that a run finds a good close at the verified start (checkEarlierCut) takes the verified
+    // row; a verified row is never put back to its earlier cut by a later run.
+    const sameClose = r.at === h.at && r.p1 === h.p1 && r.p2 === h.p2;
+    if (sameClose && r.earlierCut && !h.earlierCut && h.startSource === 'oddspapi' && h.trueStart === r.earlierCut.trueStart) {
+      by.set(String(r.eventKey), r); replaced++; continue;
+    }
+    if (sameClose && h.earlierCut && r.startSource === 'oddspapi' && r.trueStart === h.earlierCut.trueStart) continue;
     if ((stricter || later) && (r.p1 !== h.p1 || r.p2 !== h.p2 || r.at !== h.at || r.trueStart !== h.trueStart)) { by.set(String(r.eventKey), r); replaced++; }
   }
   const rows = [...by.values()].sort((x, y) => (x.date < y.date ? -1 : x.date > y.date ? 1 : x.eventKey - y.eventKey));
@@ -245,6 +296,19 @@ function applySeenBackfill(rows, bf) {
     const s = Date.parse(v.seenAt), at = Date.parse(r.at), st = Date.parse(r.trueStart);
     if (!(s >= at && s < st) || v.at !== r.at || v.p1 !== r.p1 || v.p2 !== r.p2) continue;
     r.seenAt = v.seenAt; n++;
+  }
+  return n;
+}
+
+/** One-time back-fill (2026-11-08): held 'oddspapi' rows whose series have left the scan window, checked with
+ *  checkEarlierCut over the full matches.json history. Applied only to the exact held row it was measured on. */
+function applyEarlierCutBackfill(rows, bf) {
+  let n = 0;
+  for (const r of rows || []) {
+    const v = bf && bf[String(r.eventKey)];
+    if (!v || r.earlierCut || r.startSource !== 'oddspapi') continue;
+    if (v.at !== r.at || v.p1 !== r.p1 || v.p2 !== r.p2 || !v.set || !v.set.earlierCut || v.set.earlierCut.trueStart !== r.trueStart) continue;
+    Object.assign(r, v.set); n++;
   }
   return n;
 }
@@ -287,13 +351,14 @@ function build({ root = ROOT, out = OUT, since = null, nowMs = Date.now(), mrOut
   const { rows, added, replaced } = merged;
   const bfFilled = applySeenBackfill(rows, (readJson(path.join(root, path.basename(SEEN_BACKFILL)), null) || {}).rows);
   const filled = merged.filled + bfFilled;
+  const ecFilled = applyEarlierCutBackfill(rows, (readJson(path.join(root, path.basename(EARLIER_CUT_BACKFILL)), null) || {}).rows);
   const doc = {
     generatedAt: iso(nowMs),
     source: 'matches.json git history: oddsMovement.books.Pinnacle (Oddspapi pinnacle, to 2026-09-02) and oddsMovement.chart.books["Pinnacle +30s"] (Oddspapi pinnacle+30, from 2026-09-23)',
-    rule: 'each side = last tick at or before the actual start (the earlier of Oddspapi trueStart and the card-state start: Oddspapi, the live-flip lower bound, the Bet105 switch or the first point — founder 2026-11-08); both sides required; dropped when no unique actual start. seenAt = our last capture read before the start that confirmed the close (founder 2026-10-28); age = start - (seenAt or at)',
+    rule: 'each side = last tick at or before the actual start (the earlier of Oddspapi trueStart and the card-state start: Oddspapi, the live-flip lower bound, the Bet105 switch or the first point — founder 2026-11-08; a cut at Oddspapi start before a verified start counts at the verified start only when the same tick, seen within 60 min and within 1.5pp of the Bet105 close, else it stays held back); both sides required; dropped when no unique actual start. seenAt = our last capture read before the start that confirmed the close (founder 2026-10-28); age = start - (seenAt or at)',
     scannedThrough: last || held.scannedThrough || null,
     commitsScanned: (held.commitsScanned || 0) + snap.commits.length,
-    lastRun: { from, snapshots: scanned, added, replaced, seenBackfilled: bfFilled, ...stats },
+    lastRun: { from, snapshots: scanned, added, replaced, seenBackfilled: bfFilled, earlierCutBackfilled: ecFilled, ...stats },
     stats: held.stats,
     // One-time backfills (TEN-346: 3–22 Sep from Oddspapi pinnacle+30 history) — their record survives every run.
     ...(held.backfills ? { backfills: held.backfills } : {}),
@@ -361,7 +426,7 @@ function marketRead30(rows, nowMs) {
 }
 
 module.exports = { CARD_START_SOURCES, CARD_START_REJECTED, build, lastAtOrBefore, firstAtOrBefore, absorb, actualStart, deriveRow, mergeRows, oddspapiStarts, marketRead30, movePct,
-  lastSighting, applySeenBackfill, shorteningSide };
+  lastSighting, applySeenBackfill, applyEarlierCutBackfill, checkEarlierCut, VERIFIED_CARD_STARTS, shorteningSide };
 if (require.main === module) {
   const arg = (n) => { const i = process.argv.indexOf(n); return i > 0 ? process.argv[i + 1] : null; };
   const r = build({ since: arg('--since'), out: arg('--out') || OUT, mrOut: arg('--mr-out') || MR_OUT });

@@ -476,5 +476,19 @@ check('pull: an unbound match is not pulled until PULL_GAP_MIN after our live fl
 rep, seen = _pull_run(FL, prior_raw=[{'fixture_id': 'fx1', 'pulled_at': '2026-11-02T10:40:00Z', 'source': 'oddspapi /v4/historical-odds', 'books': ['pinnacle+30']}], now_s=now_)
 check('pull: an unbound match is pulled once — never again once its payload is held', 'fx1' not in seen['hist'], seen['hist'])
 
+# Founder 2026-11-08: a captured close re-labelled at the verified start (earlierCut) is a NEW archive row (own key), so it
+# supersedes the held 'oddspapi' row; that row is held back, the new one exports as a captured close.
+_cr = {'eventKey': 7, 'date': '2026-11-05', 'p1Key': 1, 'p2Key': 2, 'p1': 1.5, 'p2': 2.6, 'at': '2026-11-05T10:00:00Z', 'book': 'Pinnacle +30s'}
+_old = P.captured_close_rows([dict(_cr, trueStart='2026-11-05T10:20:00Z', startSource='oddspapi')])[0]
+_new = P.captured_close_rows([dict(_cr, trueStart='2026-11-05T10:25:00Z', startSource='bet105-switch',
+                                   earlierCut={'trueStart': '2026-11-05T10:20:00Z', 'source': 'oddspapi'})])[0]
+check('earlier cut: the re-labelled row has its own dedupe key', _old['dedupe_key'] != _new['dedupe_key'], (_old['dedupe_key'], _new['dedupe_key']))
+_add = P.plan_captured([_new], [dict(_old, id=11)])
+check('earlier cut: it is added and supersedes the held row', len(_add) == 1 and _add[0].get('supersedes') == 11, _add)
+_rows = [dict(_old, id=11), dict(_add[0], id=12)]
+check('earlier cut: the old row is held back, the new one is the export', P.held_back(_rows[0]) and not P.held_back(_rows[1])
+      and [r['p1'] for r in P.export_rows(_rows)] == [1.5] and P.export_rows(_rows)[0]['startSource'] == 'bet105-switch' if 'startSource' in P.export_rows(_rows)[0] else True, P.export_rows(_rows))
+check('earlier cut: a plain row keeps the old key (no re-import of held rows)', _old['dedupe_key'].split('|')[3] == '')
+
 print(f'\ntest-pinarch-close: {passed} passed, {failed} failed')
 sys.exit(1 if failed else 0)

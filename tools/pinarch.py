@@ -180,7 +180,10 @@ def captured_close_rows(rows, commit=None):
         at, start = iso_ms(r.get('at')), iso_ms(r.get('trueStart'))
         gap = round((start - at).total_seconds(), 3) if (at and start) else None
         out.append({
-            'dedupe_key': '|'.join(str(x) for x in (CAPTURED_SOURCE, 'captured', r['eventKey'], '', r.get('at'), r['p1'], r['p2'])),
+            # A row re-labelled at the verified start (build-captured-pinnacle.js checkEarlierCut, founder 2026-11-08) has the
+            # same tick and prices as the held 'oddspapi' row, so it takes its own key: a new row that supersedes it.
+            'dedupe_key': '|'.join(str(x) for x in (CAPTURED_SOURCE, 'captured', r['eventKey'], 'verified' if r.get('earlierCut') else '',
+                                                    r.get('at'), r['p1'], r['p2'])),
             'event_key': int(r['eventKey']), 'fixture_id': None, 'match_date': r.get('date'),
             'p1_key': r.get('p1Key'), 'p2_key': r.get('p2Key'), 'p1_name': r.get('p1Name'), 'p2_name': r.get('p2Name'),
             'p1': r['p1'], 'p2': r['p2'], 'book': book, 'label': 'captured', 'source': CAPTURED_SOURCE,
