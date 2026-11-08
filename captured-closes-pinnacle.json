@@ -1,16 +1,16 @@
 {
- "generatedAt": "2026-11-08T18:00:11.109Z",
+ "generatedAt": "2026-11-08T18:46:29.365Z",
  "source": "matches.json git history: oddsMovement.books.Pinnacle (Oddspapi pinnacle, to 2026-09-02) and oddsMovement.chart.books[\"Pinnacle +30s\"] (Oddspapi pinnacle+30, from 2026-09-23)",
  "rule": "each side = last tick at or before the actual start (the earlier of Oddspapi trueStart and the card-state start: Oddspapi, the live-flip lower bound, the Bet105 switch or the first point — founder 2026-11-08; a cut at Oddspapi start before a verified start counts at the verified start only when the same tick, seen within 60 min and within 1.5pp of the Bet105 close, else it stays held back); both sides required; dropped when no unique actual start. seenAt = our last capture read before the start that confirmed the close (founder 2026-10-28); age = start - (seenAt or at)",
  "scannedThrough": {
-  "commit": "22cbd21f5b1509b17402d828aa9fe2705e414203",
-  "at": "2026-11-08T17:45:35Z"
+  "commit": "a238a514f56f3f71a1b2464c4830515f0e3d54d9",
+  "at": "2026-11-08T18:39:44Z"
  },
- "commitsScanned": 6505,
+ "commitsScanned": 6510,
  "lastRun": {
-  "from": "2026-11-08T15:45:11Z",
-  "snapshots": 9,
-  "added": 1,
+  "from": "2026-11-08T17:45:35Z",
+  "snapshots": 6,
+  "added": 0,
   "replaced": 0,
   "seenBackfilled": 0,
   "earlierCutBackfilled": 0,
@@ -15495,7 +15495,7 @@
    "o1": 4.03,
    "o2": 1.272,
    "oAt": "2026-11-07T19:21:10.774Z",
-   "winner": null,
+   "winner": "p2",
    "seenAt": "2026-11-08T12:42:24.000Z"
   },
   {
@@ -15517,7 +15517,7 @@
    "o1": 3.97,
    "o2": 1.294,
    "oAt": "2026-11-08T12:38:34.373Z",
-   "winner": null
+   "winner": "p2"
   },
   {
    "eventKey": 12178224,
@@ -15538,7 +15538,7 @@
    "o1": 1.359,
    "o2": 3.3,
    "oAt": "2026-11-08T12:04:31.240Z",
-   "winner": null,
+   "winner": "p2",
    "seenAt": "2026-11-08T12:40:00.000Z"
   },
   {
@@ -15560,7 +15560,7 @@
    "o1": 1.826,
    "o2": 2.04,
    "oAt": "2026-11-08T11:52:36.253Z",
-   "winner": null,
+   "winner": "p2",
    "seenAt": "2026-11-08T12:40:00.000Z"
   }
  ]
