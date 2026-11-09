@@ -276,27 +276,26 @@ function shapeChecks(A, shape) {
     return k + ' Challenger & ITF states';
   });
 
-  H.check(tag('B · the bettable side: As favourite shows only − handicaps, As underdog only +, All every line (founder 2026-10-23)'), () => {
+  // Profile v2 (founder 2026-11-09; supersedes "bettable side only", 2026-10-23): favourite = the shorter closing price; a
+  // favourite is offered every minus games line and +1 / +1.5 (plus GAMES lines above +1.5 are not offered); an underdog
+  // and All see every line; set handicaps and totals are the same in every role.
+  H.check(tag('B · the offered lines: a favourite has no plus games line above +1.5; underdog and All see every line (founder 2026-11-09)'), () => {
     let k = 0;
     each((f, role, win, tier) => {
       const c = I.lineCoverage(p, f, role, { win, tier });
       const all = I.lineCoverage(p, f, 'all', { win, tier });
-      ['Games handicap', 'Set handicap'].forEach((fam) => {
-        const labels = c.groups.find((g) => g.title === fam).rows.map((r) => r.label);
-        const allLabels = all.groups.find((g) => g.title === fam).rows.map((r) => r.label);
-        const ctx = [f, role, win, tier, fam].join('/');
-        if (role === 'fav') assert(labels.length && labels.every((l) => l[0] === '−'), ctx + ': ' + labels.join(' '));
-        else if (role === 'dog') assert(labels.length && labels.every((l) => l[0] === '+'), ctx + ': ' + labels.join(' '));
-        else assert(labels.some((l) => l[0] === '−') && labels.some((l) => l[0] === '+'), ctx + ': All lost a side');
-        // the shown side is exactly All's lines of that sign, in All's order
-        if (role !== 'all') assert.deepStrictEqual(labels, allLabels.filter((l) => l[0] === (role === 'fav' ? '−' : '+')), ctx);
-      });
-      ['Total games', 'Match shape'].forEach((fam) => assert.deepStrictEqual(
-        c.groups.find((g) => g.title === fam).rows.map((r) => r.label), all.groups.find((g) => g.title === fam).rows.map((r) => r.label)));
-      // a hidden line is gone from the page, not dashed
-      const html = withState(I, { key: p.key, marketTab: 'lines', lcFmt: f, lcRole: role, lcWin: win, lcTier: tier, lcDrill: null }, () => I.renderLinesTab(p));
+      const lab = (x, fam) => x.groups.find((g) => g.title === fam).rows.map((r) => r.label);
+      const ctx = [f, role, win, tier].join('/');
+      const gh = lab(c, 'Games handicap'), ghAll = lab(all, 'Games handicap');
+      if (role === 'fav') {
+        assert.deepStrictEqual(gh, ghAll.filter((l) => l[0] === '−' || parseFloat(l.slice(1)) <= 1.5), ctx + ': ' + gh.join(' '));
+        assert(gh.every((l) => !(l[0] === '+' && parseFloat(l.slice(1)) > 1.5)), ctx + ': a plus line above +1.5 is offered to a favourite');
+      } else assert.deepStrictEqual(gh, ghAll, ctx + ': the ' + role + ' table lost a line');
+      ['Set handicap', 'Total games'].forEach((fam) => assert.deepStrictEqual(lab(c, fam), lab(all, fam), ctx + ' ' + fam));
+      assert(!c.groups.some((g) => g.title === 'Match shape'), ctx + ': Match shape is back');
+      const html = withState(I, { key: p.key, marketTab: 'lines', lcFmt: f, lcRole: role, lcWin: win, lcTier: tier }, () => I.renderLinesTabV2(p));
       const shown = (html.match(/data-lc-line="([^"]+)"/g) || []).map((x) => x.slice(14, -1));
-      assert.deepStrictEqual(shown, c.n ? rowsOf(c).map((r) => r.label) : [], [f, role, win, tier].join('/') + ' rendered lines');   // no match: the empty-state box, no table
+      assert.deepStrictEqual(shown, rowsOf(c).map((r) => r.label), ctx + ' rendered lines');
       k++;
     });
     return k + ' tables';

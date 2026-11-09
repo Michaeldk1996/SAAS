@@ -6758,41 +6758,30 @@
   // denominator. Every sign and magnitude in the export's 30 literals agrees
   // (a 2-0 win +6.9, a 0-2 loss -6.4; a tighter line carries a bigger margin
   // than a looser one, because a looser line admits closer matches).
+  // Profile v2 (founder 2026-11-09, `lineCoverage()` in Player Stat Boxes LOCKED 2026-11-09): the export's line ladder.
+  // Best of 3: games −4.5…−1 and +1…+4.5 (whole lines push), sets ±1.5, totals Over / Under 20…24.5. Best of 5: games
+  // ±1.5…6.5, sets ±1.5 and ±2.5, totals 34.5 / 37.5 / 40.5. Match shape is gone. Each family carries its one-sentence
+  // definition (the export's note). tools/build-derived-field.js reads these labels through lineCoverage, so the field
+  // follows on its next build.
   var LINE_DEFS = {
     bo3: {
       label: 'best of 3', setsToWin: 2,
       groups: [
-        ['Games handicap', [
-          // Founder brief 2026-10-21 · ±3.5 and ±3 join the family, in this order. ±3 is a whole line: a match
-          // decided by exactly 3 games is a VOID on it (lineCoverage), out of the rate and counted on its own.
-          ['−4.5 games', 'gh', 4.5, -1], ['−3.5 games', 'gh', 3.5, -1], ['−3 games', 'gh', 3, -1],
-          ['−2.5 games', 'gh', 2.5, -1], ['+2.5 games', 'gh', 2.5, 1], ['+3 games', 'gh', 3, 1],
-          ['+3.5 games', 'gh', 3.5, 1], ['+4.5 games', 'gh', 4.5, 1]]],
-        ['Set handicap', [['−1.5 sets', 'sh', 1.5, -1], ['+1.5 sets', 'sh', 1.5, 1]]],
-        ['Total games', [
-          ['over 22.5', 'tg', 22.5, 1], ['under 22.5', 'tg', 22.5, -1],
-          ['over 20.5', 'tg', 20.5, 1]]],
-        ['Match shape', [
-          ['won 2–0', 'ms', [2, 0]], ['won 2–1', 'ms', [2, 1]],
-          ['lost 1–2', 'ms', [1, 2]], ['lost 0–2', 'ms', [0, 2]]]]
+        ['Games handicap', [['−4.5 games', 'gh', 4.5, -1], ['−4 games', 'gh', 4, -1], ['−3.5 games', 'gh', 3.5, -1], ['−3 games', 'gh', 3, -1], ['−2.5 games', 'gh', 2.5, -1], ['−2 games', 'gh', 2, -1], ['−1.5 games', 'gh', 1.5, -1], ['−1 games', 'gh', 1, -1], ['+1 games', 'gh', 1, 1], ['+1.5 games', 'gh', 1.5, 1], ['+2 games', 'gh', 2, 1], ['+2.5 games', 'gh', 2.5, 1], ['+3 games', 'gh', 3, 1], ['+3.5 games', 'gh', 3.5, 1], ['+4 games', 'gh', 4, 1], ['+4.5 games', 'gh', 4.5, 1]], 'Minus lines he covers by winning by more games than the line; plus lines by staying within it. Whole-number lines push when the margin lands exactly on the line.'],
+        ['Set handicap', [['−1.5 sets', 'sh', 1.5, -1], ['+1.5 sets', 'sh', 1.5, 1]], 'Minus 1.5 is a straight-sets win; plus 1.5 is any match where he takes a set.'],
+        ['Total games', [['Over 20', 'tg', 20, 1], ['Over 20.5', 'tg', 20.5, 1], ['Over 21', 'tg', 21, 1], ['Over 21.5', 'tg', 21.5, 1], ['Over 22', 'tg', 22, 1], ['Over 22.5', 'tg', 22.5, 1], ['Over 23', 'tg', 23, 1], ['Over 23.5', 'tg', 23.5, 1], ['Over 24', 'tg', 24, 1], ['Over 24.5', 'tg', 24.5, 1], ['Under 20', 'tg', 20, -1], ['Under 20.5', 'tg', 20.5, -1], ['Under 21', 'tg', 21, -1], ['Under 21.5', 'tg', 21.5, -1], ['Under 22', 'tg', 22, -1], ['Under 22.5', 'tg', 22.5, -1], ['Under 23', 'tg', 23, -1], ['Under 23.5', 'tg', 23.5, -1], ['Under 24', 'tg', 24, -1], ['Under 24.5', 'tg', 24.5, -1]], 'Over and under on the games played in the match. A whole-number line pushes when the total lands exactly on it; pushes are left out of the rate.']
       ]
     },
     bo5: {
       label: 'best of 5', setsToWin: 3,
       groups: [
-        ['Games handicap', [
-          ['−6.5 games', 'gh', 6.5, -1], ['−3.5 games', 'gh', 3.5, -1],
-          ['+3.5 games', 'gh', 3.5, 1], ['+6.5 games', 'gh', 6.5, 1]]],
-        ['Set handicap', [['−2.5 sets', 'sh', 2.5, -1], ['+2.5 sets', 'sh', 2.5, 1]]],
-        ['Total games', [
-          ['over 37.5', 'tg', 37.5, 1], ['under 37.5', 'tg', 37.5, -1],
-          ['over 34.5', 'tg', 34.5, 1]]],
-        ['Match shape', [
-          ['won 3–0', 'ms', [3, 0]], ['won 3–1', 'ms', [3, 1]], ['won 3–2', 'ms', [3, 2]],
-          ['lost 2–3', 'ms', [2, 3]], ['lost 1–3', 'ms', [1, 3]], ['lost 0–3', 'ms', [0, 3]]]]
+        ['Games handicap', [['−6.5 games', 'gh', 6.5, -1], ['−5.5 games', 'gh', 5.5, -1], ['−4.5 games', 'gh', 4.5, -1], ['−3.5 games', 'gh', 3.5, -1], ['−2.5 games', 'gh', 2.5, -1], ['−1.5 games', 'gh', 1.5, -1], ['+1.5 games', 'gh', 1.5, 1], ['+2.5 games', 'gh', 2.5, 1], ['+3.5 games', 'gh', 3.5, 1], ['+4.5 games', 'gh', 4.5, 1], ['+5.5 games', 'gh', 5.5, 1], ['+6.5 games', 'gh', 6.5, 1]], 'Minus lines he covers by winning by more games than the line; plus lines by staying within it. Whole-number lines push when the margin lands exactly on the line.'],
+        ['Set handicap', [['−2.5 sets', 'sh', 2.5, -1], ['−1.5 sets', 'sh', 1.5, -1], ['+1.5 sets', 'sh', 1.5, 1], ['+2.5 sets', 'sh', 2.5, 1]], 'Minus 2.5 is a straight-sets win, minus 1.5 a win in four or fewer; plus lines mirror that for losses.'],
+        ['Total games', [['Over 34.5', 'tg', 34.5, 1], ['Over 37.5', 'tg', 37.5, 1], ['Over 40.5', 'tg', 40.5, 1], ['Under 34.5', 'tg', 34.5, -1], ['Under 37.5', 'tg', 37.5, -1], ['Under 40.5', 'tg', 40.5, -1]], 'Over and under on the games played in the match. A whole-number line pushes when the total lands exactly on it; pushes are left out of the rate.']
       ]
     }
   };
+
   // Games and Set handicap carry the favourite/underdog split; Total games and
   // Match shape do not. Straight from the export's own data shape, where only
   // those two groups pass an array for `hit`.
@@ -6962,7 +6951,15 @@
     var f = typeof window.pp2Field === 'function' ? window.pp2Field() : null;
     if (!f || f.st !== 'ready' || !f.d) return null;
     var labels = f.d.lines && f.d.lines[fmt], i = labels ? labels.indexOf(label) : -1;
-    var cell = f.d.cells[[d.win, d.tier, fmt, d.role, d.surf, d.speed].join('|')];
+    // profile v2: a price-band or opponent-style filter reads its own cell (built with surface and speed at All); both at
+    // once, or either beside a surface / speed filter, has no field cell → a dash, never a figure from another population
+    var ext = '';
+    if ((d.band && d.band !== 'all') || (d.arch && d.arch !== 'all')) {
+      if ((d.band && d.band !== 'all') && (d.arch && d.arch !== 'all')) return null;
+      if (d.surf !== 'all' || d.speed !== 'all' || (d.tier !== 'all' && d.tier !== 'atp')) return null;
+      ext = d.band && d.band !== 'all' ? '|b:' + d.band : '|a:' + d.arch;
+    }
+    var cell = f.d.cells[[d.win, d.tier, fmt, d.role, d.surf, d.speed].join('|') + ext];
     var t = i >= 0 && cell ? cell[i] : null;
     var rn = t ? t[0] + t[1] : 0;
     if (!rn) return null;
@@ -7021,7 +7018,10 @@
     var win = lcWindowOf(o.win), tier = lcTierOf(o.tier), since = lcSinceOf(win), surf = lcSurfOf(o.surf), speed = lcSpeedOf(o.speed);
     var scope = drillScope(p, null, since, lcBaseTier(tier)).filter(function (r) {
       return !r.notCounted && (surf === 'all' || r.cell === surf) && (speed === 'all' || lcSpeedBucket(r) === speed)
-        && (!LC_LEVEL_WORD[tier] || lcLevelOfRow(r) === tier);
+        && (!LC_LEVEL_WORD[tier] || lcLevelOfRow(r) === tier)
+        // profile v2 Filters: his own closing price band (MK_BANDS) and the opponent's archetype
+        && (!o.band || o.band === 'all' || (r.price != null && 'b' + mkBandIdx(r.price) === o.band))
+        && (!o.arch || o.arch === 'all' || styleArchetypeOf(r.opp) === o.arch);
     });
     // Founder rulings 2026-10-22: a retirement is SHOWN (every line's Retired tab, its table's count per family) and
     // never counted; NextGen and match-tiebreak matches are out of every line.
@@ -7031,10 +7031,13 @@
     var MEC = window.MarketEdgeCore;
     // A role needs a CLOSING price on the Market edge basis (`cents` set); a ledger pre-match capture
     // shows as H / A but is not a close, so the row counts as unpriced here and in the note.
+    // founder 2026-10-31: a lower-level row priced by the one join (joinRole) takes its role from that price.
+    // Profile v2 (founder 2026-11-09): favourite = the SHORTER closing price of the two in that match, underdog the
+    // longer; an exact tie (or no opponent price on record) falls back to the price-under-2.00 rule.
     function roleOf(r) {
-      // founder 2026-10-31: a lower-level row priced by the one join (joinRole) takes its role from that price
-      return ((r.cents != null || r.joinRole) && r.price != null && r.price >= 1.01)
-        ? ((MEC ? MEC.isFavPrice(r.price) : r.price < 2) ? 'fav' : 'dog') : null;
+      if (!((r.cents != null || r.joinRole) && r.price != null && r.price >= 1.01)) return null;
+      if (r.oppPrice != null && r.oppPrice >= 1.01 && r.oppPrice !== r.price) return r.price < r.oppPrice ? 'fav' : 'dog';
+      return (MEC ? MEC.isFavPrice(r.price) : r.price < 2) ? 'fav' : 'dog';
     }
     for (var i = 0; i < scope.length; i++) {
       var r = scope[i];
@@ -7097,14 +7100,16 @@
     // underdog the + ones; All matches every line. Total games and Match shape show in every card. A hidden line
     // is not in the table at all (nor in its Vs avg baseline), never a dash.
     var groups = def.groups.map(function (gr) {
+      // Profile v2: a favourite is not offered plus GAMES lines above +1.5; an underdog sees every line (founder 2026-11-09).
+      var favRole = sel === 'fav' || (sel === 'all' && o.band && /^b[0-3]$/.test(o.band));
       var rows = gr[1].filter(function (spec) {
-        if (!LINE_SPLIT_KINDS[spec[1]] || sel === 'all') return true;
-        return sel === 'fav' ? spec[3] < 0 : spec[3] > 0;
+        return !(favRole && spec[1] === 'gh' && spec[3] > 0 && spec[2] > 1.5);
       }).map(function (spec) {
         return lineRow(spec[0], tally(spec[1], spec[2], spec[3]));
       });
       var needsGames = /Games handicap|Total games/.test(gr[0]);
-      return { title: gr[0], n: needsGames ? withGames : sub.length, retired: retSub.length, rows: rows };
+      return { title: gr[0], note: (gr[2] || '') + (favRole && /Games handicap/.test(gr[0]) ? ' Plus lines above +1.5 are not offered to a favourite.' : ''),
+        n: needsGames ? withGames : sub.length, retired: retSub.length, rows: rows };
     });
     // Founder ruling 2026-10-23 · "Vs avg pp" (a line against the player's own other lines, so an easy line like +4.5
     // always read as an edge) is withdrawn: not computed, not shown, until a Field baseline (the same line across the
@@ -7242,6 +7247,221 @@
   }
 
   /** §5.8 Derived lines (TEN-384 reference build). */
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Profile v2 (founder 2026-11-09) · Market edge → Derived lines, the export's lineCoverage(): surface pills · divider
+  // · Filters (Format · Court speed · Level · His price · Opponent style) … window; one framed card = the role strip
+  // (All · As favourite · As underdog, by the shorter closing price) + Coverage by line (Line · Cover rate vs field ·
+  // Rate · Record · Field · Vs field) with the families as section heads and their one-sentence notes; a line opens the
+  // shared drill box. Colour by sign only (Vs field and its bar); every other figure white.
+  var LC_FM_KEYS = ['lcFmt', 'lcSpeed', 'lcTier', 'lcBandF', 'lcArch'];
+  var LC_BAND_OPTS = [['all', 'All prices'], ['b0', 'Heavy fav 1.01–1.20'], ['b1', 'Clear fav 1.21–1.40'], ['b2', 'Fav 1.41–1.64'],
+    ['b3', 'Slight fav 1.65–1.99'], ['b4', 'Slight dog 2.00–2.49'], ['b5', 'Dog 2.50–3.49'], ['b6', 'Big dog 3.50–5.99'], ['b7', 'Longshot 6.00+']];
+  var LC_INFO1 = { what: 'How often his matches landed on each derived line, from the set scores on record.', defs: [
+    ['Line', 'A games handicap, set handicap or total built from the final score, not a bet he placed.'],
+    ['Cover rate', 'Matches that landed on his side of the line divided by completed matches in the filter. The bar is his gap to the field: green to the right when he covers more often, red to the left when less.'],
+    ['Field', 'How often the tour as a whole covers the same line in the same role and format.'],
+    ['Vs field', 'His cover rate minus the field, in points.'],
+    ['Push', 'A whole-number line that lands exactly on the margin or total. Pushes count in neither the covers nor the misses.'],
+    ['Favourite', 'The player with the shorter closing price in that match; the underdog is the longer.'],
+    ['Retired', 'Matches ending in a retirement are left out of every line.'],
+    ['Click a line', 'Opens every match on that line with the margin or total, covered or missed.']] };
+  function lcOpts(o) {
+    o = o || {};
+    var tier = o.lcTier || state.lcTier || 'all';
+    return { win: lcWindowOf(state.lcWin), tier: tier === 'ATP' ? 'atp' : tier === 'Challenger' ? 'ch' : tier === 'ITF' ? 'itf' : lcTierOf(tier),
+      surf: lcSurfOf(state.lcSurf), speed: lcSpeedOf(o.lcSpeed || state.lcSpeed),
+      band: o.lcBandF || state.lcBandF || 'all', arch: o.lcArch || state.lcArch || 'all' };
+  }
+  function lcFmtNow(o) { var f = (o && o.lcFmt) || state.lcFmt; return f === 'bo5' ? 'bo5' : 'bo3'; }
+  function lcScopeTxt(d, fmt) {
+    var bits = [fmt === 'bo5' ? 'best of 5' : 'best of 3', LC_WINDOW_WORD[d.win] ? LC_WINDOW_WORD[d.win].toLowerCase() : 'career'];
+    if (d.surf !== 'all') bits.push(d.surf);
+    if (d.speed !== 'all') bits.push(d.speed + ' courts');
+    return bits.join(' ' + MIDDOT + ' ');
+  }
+  function renderLinesTabV2(p) {
+    FM_KEYS.lc = LC_FM_KEYS;
+    if (typeof window.pp2FieldNeed === 'function') window.pp2FieldNeed();   // derived-field.json, one fetch per session
+    var fmt = lcFmtNow(), role = state.lcRole === 'fav' || state.lcRole === 'dog' ? state.lcRole : 'all';
+    var O = lcOpts();
+    var d = lineCoverage(p, fmt, role, O);
+    d.band = O.band; d.arch = O.arch;
+    var base = lineCoverage(p, fmt, 'all', { win: O.win, surf: O.surf }).all;
+    var cntOf = function (key) { return function (v) { var o = {}; o[key] = v; try { return lineCoverage(p, lcFmtNow(o), 'all', lcOpts(o)).all; } catch (e) { return null; } }; };
+    var groups = [
+      { key: 'lcFmt', title: 'Format', cur: fmt, options: [['bo3', 'Best of 3'], ['bo5', 'Best of 5']], count: cntOf('lcFmt') },
+      { key: 'lcSpeed', title: 'Court speed', cur: O.speed, options: [['all', 'All speeds']].concat(SPEED_BANDS.map(function (b) { return [b.id, b.label]; })), count: cntOf('lcSpeed') },
+      { key: 'lcTier', title: 'Level', cur: state.lcTier === 'ATP' || state.lcTier === 'Challenger' || state.lcTier === 'ITF' ? state.lcTier : 'all',
+        options: [['all', 'All levels'], ['ATP', 'ATP'], ['Challenger', 'Challenger'], ['ITF', 'ITF']], count: cntOf('lcTier') },
+      { key: 'lcBandF', title: 'His price', cur: O.band, options: LC_BAND_OPTS, count: cntOf('lcBandF') },
+      { key: 'lcArch', title: 'Opponent style', cur: O.arch, options: [['all', 'All styles']].concat(STYLE_AXIS.map(function (a) {
+        return [a.label, a.label.replace('Big Server + First Strike', 'Big Server + FS').replace('Big Server + Complete Baseliner', 'Big Server + CB')]; })), count: cntOf('lcArch') }
+    ];
+    // Format is a two-way choice with one always on: Best of 3 reads as no filter (the default)
+    var fGroups = groups.map(function (g) { return g.key === 'lcFmt' ? Object.assign({}, g, { cur: fmt === 'bo5' ? 'bo5' : 'all', options: [['all', 'Best of 3'], ['bo5', 'Best of 5']] }) : g; });
+    var filterRow = '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;">' +
+      '<div style="display:flex;align-items:center;gap:8px;min-width:0;">' +
+        stySegPills('lc-surf', [['all', 'All surfaces'], ['hard', 'Hard'], ['clay', 'Clay'], ['grass', 'Grass'], ['indoors', 'Indoors']], O.surf) +
+        '<span style="width:1px;height:18px;background:var(--edge-10);margin:0 4px;flex:none;"></span>' +
+        filtersTriggerHtml('lc', fGroups, d.all, base) + '</div>' +
+      winSeg('lc-win', O.win, true) + '</div>';
+    var applied = filtersAppliedHtml('lc', fGroups, d.all, base);
+    var pct = function (a, b) { return b ? Math.round(100 * a / b) + '%' : DASH; };
+    var poolOf = function (r) { return r === 'all' ? d.pool : d.pool.filter(function (m) { return m.role === r; }); };
+    var cards = [['all', 'All matches', d.all, 'set scores on record'], ['fav', 'As favourite', d.favN, pct(d.favN, d.all) + ' of ' + d.all + ' ' + MIDDOT + ' shorter closing price'],
+      ['dog', 'As underdog', d.dogN, pct(d.dogN, d.all) + ' of ' + d.all + ' ' + MIDDOT + ' longer closing price']].map(function (c, i) {
+      var on = role === c[0], ms = poolOf(c[0]), w = ms.filter(function (m) { return m.sc && m.sc.w > m.sc.l; }).length;
+      return '<div data-pp2="lc-role" data-v="' + c[0] + '" class="pp2-mkcard" style="cursor:pointer;background:' + (on ? 'var(--selected)' : 'transparent') + ';' +
+        'border-right:' + (i < 2 ? '1px solid var(--edge-6)' : '0') + ';box-shadow:inset 0 -2px 0 ' + (on ? 'var(--bar)' : 'transparent') + ';' +
+        'padding:14px 18px 13px;display:flex;flex-direction:column;gap:9px;min-width:0;">' +
+        '<span style="display:flex;align-items:baseline;justify-content:space-between;gap:8px;pointer-events:none;">' +
+          recCaps(c[1], 'color:' + (on ? 'var(--text)' : 'var(--text-label)') + ';white-space:nowrap;') +
+          '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:var(--text-label);white-space:nowrap;">' + (ms.length ? recordText(w, ms.length - w) : DASH) + '</span></span>' +
+        '<span style="display:flex;align-items:baseline;gap:10px;pointer-events:none;"><span style="font-family:\'IBM Plex Mono\',monospace;font-size:26px;font-weight:700;' +
+          'line-height:1;color:var(--text);">' + c[2] + '</span><span style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:var(--text-label);">matches</span></span>' +
+        '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:var(--text-label);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none;">' + esc(c[3]) + '</span>' +
+        '</div>';
+    }).join('');
+    // Rows: rate over covered + not covered (pushes out); field and vs field from derived-field.json; colour by sign
+    var stats = [];
+    d.groups.forEach(function (g) { g.rows.forEach(function (r) {
+      var rn = r.n - (r.voids || 0), fld = lcFieldOf(d, fmt, r.label);
+      var gap = rn >= MK_FLOOR && fld && r.rate != null ? Math.round((r.rate - fld.rate) * 10) / 10 : null;
+      stats.push({ r: r, rn: rn, fld: fld, gap: gap });
+    }); });
+    var vsMax = Math.max.apply(null, [1].concat(stats.filter(function (x) { return x.gap != null; }).map(function (x) { return Math.abs(x.gap); })));
+    var GRID = 'display:grid;grid-template-columns:minmax(150px,1.1fr) minmax(170px,1fr) 64px 72px 64px 72px;gap:0 12px;align-items:center;';
+    var M = 'font-family:\'IBM Plex Mono\',monospace;';
+    var sel = state.fb && state.fb.box === 'lcline' ? state.fb.v : null;
+    var head = '<div style="' + GRID + 'margin-top:8px;">' + [['Line', 'left'], ['Cover rate vs field', 'center'], ['Rate', 'right'], ['Record', 'right'], ['Field', 'right'], ['Vs field', 'right']].map(function (h) {
+      return '<span style="' + MK_CAPS + 'padding-bottom:8px;border-bottom:1px solid var(--edge-10);white-space:nowrap;text-align:' + h[1] + ';">' + h[0] + '</span>';
+    }).join('') + '</div>';
+    var si = 0;
+    var fam = d.groups.map(function (g) {
+      var rows = g.rows.map(function (r) {
+        var x = stats[si++], thin = x.rn < MK_FLOOR, on = sel === r.label, clickable = r.n > 0 || r.retired > 0;
+        var half = x.gap == null ? 0 : Math.abs(x.gap) / vsMax * 46;
+        var push = r.voidable && r.voids ? r.voids + ' pushed' : '';
+        return '<div ' + (clickable ? 'data-pp2="fb-open" data-box="lcline" data-v="' + esc(r.label) + '" ' : '') + 'class="pp2-mkband" style="' + GRID + 'padding:9px 0;' +
+          'cursor:' + (clickable ? 'pointer' : 'default') + ';background:' + (on ? 'var(--selected)' : 'transparent') + ';box-shadow:-10px 0 0 ' + (on ? 'var(--selected)' : 'transparent') +
+          ',10px 0 0 ' + (on ? 'var(--selected)' : 'transparent') + ';border-top:1px solid var(--line);">' +
+          '<span style="display:flex;align-items:baseline;gap:8px;min-width:0;pointer-events:none;"><span data-lc-line="' + esc(r.label) + '" style="font-size:12.5px;font-weight:700;color:' +
+            (thin ? 'var(--text-label)' : 'var(--text)') + ';white-space:nowrap;">' + esc(r.label) + '</span>' +
+            (push ? '<span style="' + M + 'font-size:9.5px;color:var(--text-label);white-space:nowrap;">' + push + '</span>' : '') + '</span>' +
+          '<span style="position:relative;display:block;height:18px;pointer-events:none;"><span style="position:absolute;left:0;right:0;top:50%;height:5px;margin-top:-2.5px;border-radius:3px;' +
+            'background:var(--line);"></span><span style="position:absolute;left:50%;top:0;bottom:0;width:1px;background:color-mix(in srgb, var(--text) 18%, transparent);"></span>' +
+            (x.gap == null ? '' : '<span style="position:absolute;top:50%;height:5px;margin-top:-2.5px;left:' + (x.gap >= 0 ? 50 : 50 - half).toFixed(1) + '%;width:' + half.toFixed(1) +
+              '%;background:' + signColour(x.gap) + ';opacity:0.85;border-radius:3px;"></span>') + '</span>' +
+          '<span style="' + M + 'font-size:13px;font-weight:700;color:' + (thin ? 'var(--text-label)' : 'var(--text)') + ';text-align:right;">' + (thin || r.rate == null ? DASH : r.rate.toFixed(1) + '%') + '</span>' +
+          '<span style="' + M + 'font-size:12px;color:var(--text);text-align:right;">' + (x.rn ? recordText(r.hit, x.rn - r.hit) : DASH) + '</span>' +
+          '<span style="' + M + 'font-size:12px;color:var(--text);text-align:right;">' + (x.fld ? x.fld.rate.toFixed(1) + '%' : DASH) + '</span>' +
+          '<span style="' + M + 'font-size:12.5px;font-weight:700;color:' + (x.gap == null ? 'var(--text-label)' : signColour(x.gap)) + ';text-align:right;">' +
+            (x.gap == null ? DASH : signed(x.gap, 1, 'pp')) + '</span>' +
+          '</div>';
+      }).join('');
+      return '<div style="display:flex;align-items:baseline;gap:10px;padding:14px 0 6px;flex-wrap:wrap;"><span style="' + MK_CAPS + 'font-weight:800;color:var(--text);white-space:nowrap;">' +
+        esc(g.title) + '</span><span style="font-size:11.5px;color:var(--text-label);line-height:1.4;text-wrap:pretty;">' + esc(g.note || '') + '</span></div>' + rows;
+    }).join('');
+    var total = d.n, retN = d.retiredHere || 0;
+    return mkUnderlineTabs() + filterRow + applied +
+      '<div style="position:relative;background:var(--inner);border:1px solid var(--line);border-radius:12px;min-width:0;">' +
+        '<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-bottom:1px solid var(--edge-6);border-radius:12px 12px 0 0;overflow:hidden;">' + cards + '</div>' +
+        '<div style="position:relative;padding:14px 16px 12px;min-width:0;">' +
+          infoCorner('ln1', LC_INFO1) +
+          '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:4px;flex-wrap:wrap;padding-right:28px;">' +
+            recCaps('Coverage by line ' + MIDDOT + ' ' + esc(lcScopeTxt(d, fmt))) +
+            '<span style="' + M + 'font-size:11px;color:var(--text-label);white-space:nowrap;">' + total + ' matches' + (retN ? ' ' + MIDDOT + ' ' + retN + ' retired, not counted' : '') + '</span></div>' +
+          head + fam +
+        '</div></div>';
+  }
+  // the row's score from its own sets (his games first), else the stored score text, else a dash
+  function lcScoreOf(m) {
+    var src = m.sc && Array.isArray(m.sc.sets) ? m.sc.sets : m.r && Array.isArray(m.r.setGames) ? m.r.setGames : [];
+    var sets = src.filter(function (x) { return x && x.p != null && x.o != null; });
+    if (sets.length) return sets.map(function (x) {
+      var tb = x.pTb != null && x.oTb != null ? '(' + Math.min(x.pTb, x.oTb) + ')' : '';
+      return x.p + '-' + x.o + tb;
+    }).join(' ');
+    var t = m.r && m.r.setScores ? String(m.r.setScores).replace(/,\s*/g, ' ') : '';
+    return t || DASH;
+  }
+  (typeof FB_BUILD === 'object' ? FB_BUILD : {}).lcline = function (p, label) {
+    var fmt = lcFmtNow(), role = state.lcRole === 'fav' || state.lcRole === 'dog' ? state.lcRole : 'all';
+    var O = lcOpts(), d = lineCoverage(p, fmt, role, O);
+    d.band = O.band; d.arch = O.arch;
+    var row = null, famTitle = '', spec = null;
+    d.groups.forEach(function (g) { g.rows.forEach(function (r) { if (r.label === label) { row = r; famTitle = g.title; } }); });
+    (LINE_DEFS[fmt] || LINE_DEFS.bo3).groups.forEach(function (g) { g[1].forEach(function (sp) { if (sp[0] === label) spec = sp; }); });
+    if (!row || !spec) return null;
+    var kind = spec[1], arg = spec[2], dir = spec[3], isT = kind === 'tg';
+    var marginOf = function (m) { return kind === 'sh' ? m.sc.w - m.sc.l : !m.g ? null : isT ? m.g.f + m.g.a : m.g.f - m.g.a; };
+    var all = row.members.slice().sort(function (a, b) { return String(b.m.r.date).localeCompare(String(a.m.r.date)); });
+    var LIST = state.lcDrillRes || 'all';
+    var shown = all.filter(function (x) { return LIST === 'all' || x.res === LIST; });
+    var rated = all.filter(function (x) { return x.res === 'cover' || x.res === 'miss'; });
+    var played = all.filter(function (x) { return x.res !== 'retired'; });
+    var rn = row.n - (row.voids || 0), thin = rn < MK_FLOOR;
+    var fld = lcFieldOf(d, fmt, label), gap = !thin && fld && row.rate != null ? row.rate - fld.rate : null;
+    var rateOf = function (a) { return a.length ? 100 * a.filter(function (x) { return x.res === 'cover'; }).length / a.length : null; };
+    var recOf = function (a) { var c = a.filter(function (x) { return x.res === 'cover'; }).length; return recordText(c, a.length - c); };
+    var last20 = rated.slice(0, 20), r20 = rateOf(last20), d20 = r20 == null || row.rate == null ? null : r20 - row.rate;
+    var unit = kind === 'sh' ? ' sets' : ' games', f1 = function (v) { return (Math.round(v * 10) / 10).toFixed(1); };
+    var fmtAvg = function (a) {
+      var vals = a.map(function (x) { return marginOf(x.m); }).filter(function (v) { return v != null; });
+      if (!vals.length) return DASH;
+      var v = vals.reduce(function (s, x) { return s + x; }, 0) / vals.length;
+      return isT ? f1(v) + unit : (v > 0 ? '+' : v < 0 ? MINUS : '') + f1(Math.abs(v)) + unit;
+    };
+    var favM = played.filter(function (x) { return x.m.role === 'fav'; }), dogM = played.filter(function (x) { return x.m.role === 'dog'; });
+    var in10 = rn ? Math.round(row.rate / 10) : null, longMiss = 0, cur = 0;
+    rated.slice().reverse().forEach(function (x) { if (x.res === 'miss') { cur++; if (cur > longMiss) longMiss = cur; } else cur = 0; });
+    var relWord = in10 == null ? '' : in10 >= 8 ? 'very reliable' : in10 >= 6 ? 'reliable' : in10 >= 4 ? 'coin flip' : 'unreliable';
+    var avgLabel = isT ? 'Average total' : kind === 'gh' ? 'Average games margin' : 'Average sets margin';
+    var tiles = thin ? [
+      { label: 'Record', fig: rn ? recOf(rated) : DASH, sub: rn + ' matches', tail: 'too few matches for a rate' },
+      { label: 'Last 20', fig: recOf(last20), sub: 'his ' + last20.length + ' latest on this line' },
+      { label: avgLabel, fig: fmtAvg(favM), sub: 'as favourite ' + MIDDOT + ' ' + favM.length + ' matches', tail: fmtAvg(dogM) + ' as underdog ' + MIDDOT + ' ' + dogM.length + ' matches' },
+      { label: 'Reliability', fig: in10 == null ? DASH : in10 + ' in 10', sub: 'covers this line ' + MIDDOT + ' ' + rn + ' matches', tail: rn ? relWord + ' ' + MIDDOT + ' longest miss streak ' + longMiss : 'no completed match' }
+    ] : [
+      { label: 'Cover rate', fig: row.rate.toFixed(1) + '%', sub: recOf(rated) + ' ' + MIDDOT + ' ' + rn + ' matches',
+        tail: gap == null ? 'field ' + DASH : signed(gap, 1, 'pp') + ' vs the field at ' + fld.rate.toFixed(1) + '%', tailColor: gap == null ? null : signColour(gap) },
+      { label: 'Last 20', fig: r20 == null ? DASH : Math.round(r20) + '%', sub: recOf(last20) + ' ' + MIDDOT + ' his latest on this line',
+        tail: d20 == null ? '' : signed(d20, 1, 'pp') + ' vs his rate here', tailColor: d20 == null ? null : signColour(d20) },
+      { label: avgLabel, fig: fmtAvg(favM), sub: 'as favourite ' + MIDDOT + ' ' + favM.length + ' matches', tail: fmtAvg(dogM) + ' as underdog ' + MIDDOT + ' ' + dogM.length + ' matches' },
+      { label: 'Reliability', fig: in10 + ' in 10', sub: 'covers this line ' + MIDDOT + ' ' + rn + ' matches', tail: relWord + ' ' + MIDDOT + ' longest miss streak ' + longMiss,
+        tailColor: in10 >= 6 ? 'var(--pos)' : in10 >= 4 ? 'var(--text)' : 'var(--neg)' }
+    ];
+    var n = { all: all.length, cover: row.hit, miss: rn - row.hit, void: row.voids || 0, retired: row.retired || 0 };
+    var pills = [['all', 'All'], ['cover', 'Covered'], ['miss', 'Missed'], ['void', 'Pushed'], ['retired', 'Retired']]
+      .filter(function (x) { return x[0] === 'all' || n[x[0]]; })
+      .map(function (x) { return { hook: 'lc-drill-res', v: x[0], label: x[1] + ' ' + n[x[0]], on: LIST === x[0] }; });
+    var RES = { cover: ['Covered', 'var(--pos)'], miss: ['Missed', 'var(--neg)'], void: ['Push', 'var(--text-label)'], retired: ['Retired', 'var(--text-label)'] };
+    var M = 'font-family:\'IBM Plex Mono\',monospace;';
+    var lineTxt = label.replace(' games', '').replace(' sets', '').replace('Over ', 'o').replace('Under ', 'u');
+    var rows = shown.map(function (x) {
+      var m = x.m, r = m.r, mg = x.res === 'retired' ? null : marginOf(m), won = m.sc ? m.sc.w > m.sc.l : !!r.won;
+      var mgTxt = mg == null ? DASH : isT ? String(mg) : (mg > 0 ? '+' : mg < 0 ? MINUS : '') + Math.abs(mg);
+      return { id: r.sheetId || (r.date + '|' + r.opp), cells: [
+        { html: '<span style="display:block;width:8px;height:8px;border-radius:2px;margin-top:4px;background:' + RES[x.res][1] + ';"></span>' },
+        { html: fbDate(r.date), style: M + 'font-size:11px;color:var(--text-label);white-space:nowrap;' },
+        { html: esc(initialSurname(r.opp || '') || DASH), style: 'font-size:12.5px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;' },
+        { html: esc(tournDisplayName(r.event, null) || DASH), style: 'font-size:12px;color:var(--text-label);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;' },
+        { html: esc(r.round || DASH), style: M + 'font-size:10.5px;color:var(--text-label);' },
+        { html: (won ? 'W ' : 'L ') + esc(lcScoreOf(m)), style: M + 'font-size:11px;color:var(--text-label);white-space:nowrap;' },
+        { html: mgTxt, style: M + 'font-size:11px;color:var(--text-soft);text-align:right;' },
+        { html: esc(lineTxt), style: M + 'font-size:11px;color:var(--text-label);text-align:right;' },
+        { html: RES[x.res][0], style: M + 'font-size:11px;font-weight:700;text-align:right;color:' + RES[x.res][1] + ';' }
+      ] };
+    });
+    return { name: famTitle + ' ' + MIDDOT + ' ' + label, code: lcScopeTxt(d, fmt),
+      meta: (rn ? recOf(rated) + (thin ? '' : ' ' + MIDDOT + ' ' + row.rate.toFixed(1) + '%') + ' ' + MIDDOT + ' ' + rn + ' matches' : 'no completed match') +
+        (n.void ? ' ' + MIDDOT + ' ' + n.void + ' pushed' : '') + (n.retired ? ' ' + MIDDOT + ' ' + n.retired + ' retired' : ''),
+      tiles: tiles, pills: pills, cols: FB_LIST_COLS,
+      head: [{ label: '' }, { label: 'Date' }, { label: 'Opponent' }, { label: 'Event' }, { label: 'Rd' }, { label: 'Score' },
+        { label: isT ? 'Total' : 'Margin', align: 'right' }, { label: 'Line', align: 'right' }, { label: 'Result', align: 'right' }],
+      rows: rows, empty: 'No matches' };
+  };
+
   function renderLinesTab(p) {
     var fmt = state.lcFmt === 'bo5' ? 'bo5' : 'bo3';
     var role = state.lcRole === 'fav' || state.lcRole === 'dog' ? state.lcRole : 'all';
@@ -7888,7 +8108,7 @@
         'text-align:center;font-size:13px;color:var(--text-label);">' + marketEmptyText(p.key) + '</div>';
     }
     var mktTab = state.marketTab === 'lines' ? 'lines' : 'winner';
-    if (mktTab === 'lines') return ANA_STYLE + marketTabsHtml() + renderLinesTab(p);
+    if (mktTab === 'lines') return ANA_STYLE + (MK_V1 ? marketTabsHtml() + renderLinesTab(p) : renderLinesTabV2(p));   // profile v2
     // Profile v2 (founder 2026-11-09): Match winner is the export's view; the TEN-384 view below stays for the box tile's helpers.
     if (!MK_V1) return ANA_STYLE + renderMarketWinnerV2(p, mk);
     // Task E (founder 2026-11-01): the level filter on Match winner too. ATP main draw (the default) is the view as it was,
@@ -13072,7 +13292,8 @@
     info: null, fmOpen: null, fb: null, cmpOpen: false, cmpQ: '',
     tourLevel: 'all', tourSurf: 'all', tourSort: { k: 'wl', d: -1 },
     stySurf: 'all', styWin: 'career', stySort: { k: 'pct', d: -1 },
-    mkSurf: 'all', mkWin: 'career', mkRole: 'all', mkFmt: 'all', mkSpeed: 'all', mkLvl: 'all', mkArch: 'all'
+    mkSurf: 'all', mkWin: 'career', mkRole: 'all', mkFmt: 'all', mkSpeed: 'all', mkLvl: 'all', mkArch: 'all',
+    lcBandF: 'all', lcArch: 'all'
   };
 
   function buildCtx(p) {
@@ -13236,7 +13457,7 @@
     if (kind === 'info-close') { state.info = null; repaint(); return; }
     if (kind === 'fb-close' || (kind === 'fb-scrim' && e.target === el)) { state.fb = null; repaint(); return; }
     if (kind === 'fb-scrim') return;
-    if (kind === 'fb-open') { state.fb = { box: el.getAttribute('data-box'), v: v }; state.info = null; state.fmOpen = null; repaint(); return; }
+    if (kind === 'fb-open') { state.fb = { box: el.getAttribute('data-box'), v: v }; state.info = null; state.fmOpen = null; state.lcDrillRes = null; repaint(); return; }
     if (kind === 'fm-toggle') { state.fmOpen = state.fmOpen === v ? null : v; repaint(); return; }
     if (kind === 'fm-close') { state.fmOpen = null; repaint(); return; }
     if (kind === 'fm-set') { var fk = el.getAttribute('data-g'); if (fk && Object.prototype.hasOwnProperty.call(state, fk)) state[fk] = v; state.fb = null; repaint(); return; }
@@ -13490,6 +13711,7 @@
     _internals: {
       // Profile v2 (2026-11-09): the shared drill box, its per-box builders and the Match-up model
       FB_BUILD: FB_BUILD, floatBoxHtml: floatBoxHtml, styData: styData, renderStylesModalV2: renderStylesModalV2,
+      mkBandIdx: mkBandIdx, styleArchetypeOf: styleArchetypeOf, renderLinesTabV2: renderLinesTabV2, renderMarketWinnerV2: renderMarketWinnerV2,
       recordRowsOf: recordRowsOf,
       countedSpine: countedSpine,
       recordSourceNote: recordSourceNote,

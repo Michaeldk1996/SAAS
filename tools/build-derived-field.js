@@ -43,7 +43,9 @@ const profileOf = (k) => {
   return (bundle && bundle.players && bundle.players[k]) || null;
 };
 
-const WINS = ['career', 'l24', 'l52'], TIERS = ['all', 'main', 'atpq', 'ch', 'itf'], FMTS = ['bo3', 'bo5'];
+// Profile v2 (founder 2026-11-09): 'atp' = ATP main draw + qualifying as ONE level (the profile's Level filter).
+const WINS = ['career', 'l24', 'l52'], TIERS = ['all', 'atp', 'main', 'atpq', 'ch', 'itf'], FMTS = ['bo3', 'bo5'];
+const STYLES = J('playing-styles.json');
 const cells = {};
 const lineLabels = {};
 let loaded = 0;
@@ -53,7 +55,7 @@ for (const k of keys) {
   if (!p || !ch) continue;
   const cr = J('career-record/' + k + '.json'), me = J('market-edge/' + k + '.json');
   const { I } = L.loadPp2({ src: SRC, players: { [k]: p }, careerHistory: { [k]: ch.matches || ch },
-    marketEdge: me ? { [k]: me } : {}, extra: { careerRecord: cr && cr.record ? { [k]: cr.record } : {} } });
+    marketEdge: me ? { [k]: me } : {}, extra: { careerRecord: cr && cr.record ? { [k]: cr.record } : {}, playingStyles: STYLES || undefined } });
   loaded++;
   for (const win of WINS) for (const tier of TIERS) for (const fmt of FMTS) {
     const cov = I.lineCoverage(p, fmt, 'all', { win, tier });
@@ -66,13 +68,18 @@ for (const k of keys) {
         const roles = ['all'].concat(x.m.role ? [x.m.role] : []);
         const surfs = ['all'].concat(['hard', 'indoors', 'clay', 'grass'].indexOf(r.cell) >= 0 ? [r.cell] : []);
         const speeds = ['all', b ? b.id : 'unrated'];
-        roles.forEach((ro) => surfs.forEach((sf) => speeds.forEach((sp) => {
-          const key = [win, tier, fmt, ro, sf, sp].join('|');
+        // Profile v2: his own price band and the opponent's archetype get their own cells, with surface and speed at All
+        // ('|b:b0'…'|b:b7', '|a:<label>'), so the page's His price / Opponent style filters have a field.
+        const bi = r.price != null ? I.mkBandIdx(r.price) : -1, arch = I.styleArchetypeOf(r.opp);
+        const ext = [''].concat(bi >= 0 ? ['|b:b' + bi] : []).concat(arch ? ['|a:' + arch] : []);
+        roles.forEach((ro) => surfs.forEach((sf) => speeds.forEach((sp) => ext.forEach((ex) => {
+          if (ex && (sf !== 'all' || sp !== 'all' || (tier !== 'all' && tier !== 'atp'))) return;   // size: the band / style cells at All and ATP only
+          const key = [win, tier, fmt, ro, sf, sp].join('|') + ex;
           const c = cells[key] || (cells[key] = rows.map(() => [0, 0, 0, 0]));
           const t = c[li];
           if (x.res === 'cover') t[0]++; else if (x.res === 'miss') t[1]++; else if (x.res === 'void') t[2]++;
           if (!seen[key]) { seen[key] = 1; t[3]++; }
-        })));
+        }))));
       });
       if (!lineLabels[fmt]) lineLabels[fmt] = rows.map((r) => r.label);
     });

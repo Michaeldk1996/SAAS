@@ -222,10 +222,11 @@ H.check('2 · "1 - 2" with 4-6 6-3 4-6 1-0 on file is a Bo3 lost 1–2 (not a le
   const base = fxModule();
   const a = I.lineCoverage(p, 'bo3', 'all'), b = base.I.lineCoverage(base.p, 'bo3', 'all');
   assert.strictEqual(a.n, b.n + 1, 'Bo3 All ' + b.n + ' -> ' + a.n);
-  const row = c => c.groups.find(g => g.title === 'Match shape').rows.find(r => r.label === 'lost 1–2');
-  assert.strictEqual(row(a).hit, row(b).hit + 1, 'lost 1–2 ' + row(b).hit + ' -> ' + row(a).hit);
-  const sum = a.groups.find(g => g.title === 'Match shape').rows.reduce((x, r) => x + r.hit, 0);
-  assert.strictEqual(sum, a.n, 'the shapes sum to ' + sum + ', not ' + a.n);
+  // Profile v2 (founder 2026-11-09): Match shape is gone from Derived lines; the same fact reads off the set handicap —
+  // a 1–2 loss covers +1.5 sets and misses −1.5 sets.
+  const row = (c, l) => c.groups.find(g => g.title === 'Set handicap').rows.find(r => r.label === l);
+  assert.strictEqual(row(a, '+1.5 sets').hit, row(b, '+1.5 sets').hit + 1, '+1.5 sets ' + row(b, '+1.5 sets').hit + ' -> ' + row(a, '+1.5 sets').hit);
+  assert.strictEqual(row(a, '−1.5 sets').n - row(a, '−1.5 sets').hit, row(b, '−1.5 sets').n - row(b, '−1.5 sets').hit + 1, 'the 1–2 loss did not miss −1.5 sets');
   assert.strictEqual(a.withGames, b.withGames + 1, 'its trimmed games did not enter the games lines');
   const r = I.calSpine(p).find(x => x.date === SIN.date);
   const sc = I.lineSetCount(r);
@@ -233,7 +234,7 @@ H.check('2 · "1 - 2" with 4-6 6-3 4-6 1-0 on file is a Bo3 lost 1–2 (not a le
   assert.deepStrictEqual(I.lineGames(r, sc.sets), { f: 14, a: 15 }, 'games ' + JSON.stringify(I.lineGames(r, sc.sets)));
   // the note's "excluded because the set score on file is level" count does not take it
   assert.strictEqual(a.unshaped || 0, b.unshaped || 0, 'counted as level: unshaped ' + (b.unshaped || 0) + ' -> ' + (a.unshaped || 0));
-  return `Bo3 ${b.n} -> ${a.n}, lost 1–2 ${row(b).hit} -> ${row(a).hit}, games lines ${b.withGames} -> ${a.withGames}`;
+  return `Bo3 ${b.n} -> ${a.n}, +1.5 sets ${row(b, '+1.5 sets').hit} -> ${row(a, '+1.5 sets').hit}, games lines ${b.withGames} -> ${a.withGames}`;
 });
 H.check('2 · junk mid-list ("1 - 2", 6-3 2-6 0-1 4-6, Walton Paris 2025): the 0-1 is dropped, games come off 6-3 2-6 4-6 (12–15)', () => {
   const mid = Object.assign({}, SIN, { date: '2024-04-14', opponent: 'Q. Midjunk', sets: [{ p: 6, o: 3 }, { p: 2, o: 6 }, { p: 0, o: 1 }, { p: 4, o: 6 }] });
