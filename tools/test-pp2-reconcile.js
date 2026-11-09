@@ -1713,6 +1713,28 @@ check('profile v2 · the swing rule places the tour\'s own events where the expo
   const want = ['aus', 'me', 'gold', 'eei', 'sun', 'eclay', 'grass', 'sclay', 'nah', 'asia', 'ein', 'team'];
   assert.deepStrictEqual(got.map(g => g[0]), want, got.map(g => g[1] + ' → ' + g[0]).join(', '));
 });
+// Profile v2 (founder 2026-11-09): Opponent level = the opponent's Elo RANK in the weekly snapshot strictly before the
+// match day (≤ 7 days old) — the dashboard's own pp2OppEloRank over its fhEloAt guards, run on a two-snapshot history.
+check('profile v2 · opponent Elo rank: the snapshot before the match, ranked by rating; none in the week before → unknown', () => {
+  const HTML = fs.readFileSync(path.join(ROOT, 'bsp-consult-dashboard.html'), 'utf8');
+  const sl = (name) => { const at = HTML.indexOf('function ' + name + '('); let d = 0, i = HTML.indexOf('{', at);
+    for (; i < HTML.length; i++) { if (HTML[i] === '{') d++; else if (HTML[i] === '}' && --d === 0) break; } return HTML.slice(at, i + 1); };
+  const at = HTML.indexOf('window.pp2OppEloRank = function'); let d = 0, i = HTML.indexOf('{', at);
+  for (; i < HTML.length; i++) { if (HTML[i] === '{') d++; else if (HTML[i] === '}' && --d === 0) break; }
+  const hist = { conflicts: {}, snapshots: [
+    { asOf: '2026-10-01', ratings: { 'sinner|j': 2300, 'zverev|a': 2100, 'fils|a': 2000, 'ruud|c': 1950 } },
+    { asOf: '2026-10-20', ratings: { 'sinner|j': 2300, 'fils|a': 2150, 'zverev|a': 2100, 'ruud|c': 1950 } }] };
+  const run = new Function('HIST', `const FH_ELO_MAX_AGE_DAYS = 7; const window = {};
+    ${sl('fhDayNum')} ${sl('fhEloKey')} ${sl('fhEloAt')}
+    let _pp2EloHist = HIST; const _pp2EloSorted = new Map();
+    ${HTML.slice(at, i + 1)}
+    return window.pp2OppEloRank;`)(hist);
+  assert.strictEqual(run('A. Fils', '2026-10-05'), 3, 'Fils 3rd in the 1 Oct snapshot');
+  assert.strictEqual(run('A. Fils', '2026-10-21'), 2, 'Fils 2nd in the 20 Oct snapshot');
+  assert.strictEqual(run('A. Fils', '2026-10-20'), null, 'a same-day snapshot is never read; 1 Oct is over a week old');
+  assert.strictEqual(run('B. Nobody', '2026-10-21'), null, 'a player not in the report is unknown');
+  assert.deepStrictEqual(['t10', 't50', 't100', 'out'].map(k => I.OPP_LEVELS.some(o => o[0] === k)), [true, true, true, true]);
+});
 check('profile v2 · Calendar tiles: Best surface · Best swing · Worst swing · Swing opener, the swing pick gated at 5 priced', () => withCal(() => {
   Object.assign(I.state, { key: '__cal', seasonTab: 'calendar', calWin: 'career', calSurf: 'all', calCellV2: null, info: null });
   CAL_FM.forEach((k) => { I.state[k] = 'all'; });
@@ -3813,7 +3835,7 @@ check('the all-stores table covers every data store the module reads', () => {
     // list, not match data), Compare with… (pp2CompareRoster over the standings already covered by pp2LiveRank,
     // sfGoToH2H the hand-off) and the event link (pp2TournamentKey / pp2OpenTournament over the Tournaments registry)
     // — logic and navigation, no store of their own
-    'pp2IsWatched', 'pp2ToggleWatch', 'pp2CompareRoster', 'sfGoToH2H', 'pp2TournamentKey', 'pp2OpenTournament', 'pp2EventCategory', 'pp2EventCountry',
+    'pp2IsWatched', 'pp2ToggleWatch', 'pp2CompareRoster', 'sfGoToH2H', 'pp2TournamentKey', 'pp2OpenTournament', 'pp2EventCategory', 'pp2EventCountry', 'pp2EloNeed', 'pp2EloReady', 'pp2OppEloRank',
     // founder ruling 2026-10-20 item 1: the host's "Data paused" rule for a Mac-only feed (sfFeedPaused over the
     // career-splits-tour.json build date the page already loaded) — logic, no rows
     'sfFeedPaused',

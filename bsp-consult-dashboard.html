@@ -14389,6 +14389,36 @@ function fhEloAt(hist, name, iso, owners){
   return v == null ? { v: null, why: 'not in the Elo report of ' + snap.asOf } : { v, asOf: snap.asOf };
 }
 
+// Profile v2 (founder 2026-11-09: "Opponent level = Elo rank"): the opponent's Elo RANK at the match — his place in the
+// weekly snapshot strictly before the match day, at most FH_ELO_MAX_AGE_DAYS old, on fhEloAt's own guards (namesake,
+// shared name key). The history loads only when a profile box asks (pp2EloNeed); until then every rank is unknown.
+// pp2OppEloRank(name, iso) -> rank (1 = highest rating) or null.
+let _pp2EloHist = null, _pp2EloAsked = false;
+const _pp2EloSorted = new Map();
+window.pp2EloNeed = function(){
+  if (_pp2EloAsked) return;
+  _pp2EloAsked = true;
+  fhLoadEloHistory().then(h => {
+    if (!h) { _pp2EloAsked = false; return; }   // failed: asked again on the next open
+    _pp2EloHist = h;
+    if (typeof ppState !== 'undefined' && ppState && ppState.key && typeof pp2RepaintIfOpen === 'function') pp2RepaintIfOpen(ppState.key);
+  });
+};
+window.pp2EloReady = function(){ return !!_pp2EloHist; };
+window.pp2OppEloRank = function(name, iso){
+  const h = _pp2EloHist;
+  if (!h) return null;
+  const e = fhEloAt(h, name, iso, null);
+  if (e.v == null) return null;
+  let sorted = _pp2EloSorted.get(e.asOf);
+  if (!sorted) {
+    const snap = h.snapshots.find(x => x.asOf === e.asOf);
+    sorted = snap ? Object.values(snap.ratings).filter(v => typeof v === 'number').sort((a, b) => b - a) : [];
+    _pp2EloSorted.set(e.asOf, sorted);
+  }
+  let r = 1; for (const v of sorted) { if (v > e.v) r++; else break; }
+  return r;
+};
 // Player colours. Shared with the player profile: --fh-pa / --fh-pb are the 12a periwinkle / text outside the modal
 // (dashboard :root) and the neutral D4 pair inside it (tokens.css (TEN-376; was the modal token file)).
 const FH_AC = 'var(--fh-pa)', FH_BC = 'var(--fh-pb)', FH_B2 = 'var(--text-soft)', FH_DASH = 'var(--text-label)';

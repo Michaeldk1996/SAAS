@@ -8149,10 +8149,20 @@
     var days = win === 'l52' ? 364 : win === 'l24' ? 730 : null;
     return days ? new Date(Date.now() - days * 86400000).toISOString().slice(0, 10) : null;
   }
-  var MK_FM_KEYS = ['mkFmt', 'mkSpeed', 'mkLvl', 'mkArch'];
+  var MK_FM_KEYS = ['mkFmt', 'mkSpeed', 'mkLvl', 'mkArch', 'mkOpp'];
+  // Profile v2 (founder 2026-11-09): Opponent level = the opponent's Elo rank at the match (pp2OppEloRank, the host's
+  // weekly snapshot strictly before the match day); 'unk' when no snapshot or name join can tell — in no level but All.
+  var OPP_LEVELS = [['all', 'All opponent levels'], ['t10', 'Top 10'], ['t50', 'Top 11\u201350'], ['t100', 'Top 51\u2013100'], ['out', 'Outside 100']];
+  function oppLevelOf(name, iso) {
+    var r = typeof window.pp2OppEloRank === 'function' ? window.pp2OppEloRank(name, iso) : null;
+    return r == null ? 'unk' : r <= 10 ? 't10' : r <= 50 ? 't50' : r <= 100 ? 't100' : 'out';
+  }
+  function eloNeed() { if (typeof window.pp2EloNeed === 'function') window.pp2EloNeed(); }
   function mkFilterOk(m, o) {
     o = o || {};
     var f = o.mkFmt || state.mkFmt || 'all', sp = o.mkSpeed || state.mkSpeed || 'all', a = o.mkArch || state.mkArch || 'all';
+    var ol = o.mkOpp || state.mkOpp || 'all';
+    if (ol !== 'all' && oppLevelOf(mkOppName(m.opp), m.date) !== ol) return false;
     if (f !== 'all' && mkFmtOf(m) !== f) return false;
     if (sp !== 'all' && mkSpeedOf(m) !== sp) return false;
     if (a !== 'all' && mkArchOf(m) !== a) return false;
@@ -8204,7 +8214,8 @@
       { key: 'mkLvl', title: 'Level', cur: lvl, options: [['all', 'All levels'], ['ATP', 'ATP'], ['Challenger', 'Challenger'], ['ITF', 'ITF']], count: lvlCount },
       { key: 'mkArch', title: 'Opponent style', cur: state.mkArch || 'all', options: [['all', 'All styles']].concat(STYLE_AXIS.map(function (a) {
         return [a.label, a.label.replace('Big Server + First Strike', 'Big Server + FS').replace('Big Server + Complete Baseliner', 'Big Server + CB')]; })),
-        count: cnt('mkArch') }
+        count: cnt('mkArch') },
+      { key: 'mkOpp', title: 'Opponent level', cur: state.mkOpp || 'all', options: OPP_LEVELS, count: cnt('mkOpp') }
     ];
   }
   function mkCardsAndChart(scoped) {
@@ -8347,6 +8358,7 @@
     return mkBase(mk).filter(function (m) { return mkFilterOk(m); });
   }
   function renderMarketWinnerV2(p, mk) {
+    eloNeed();   // the Opponent level filter reads the Elo history (lazy)
     var groups = mkFilterGroups(p, mk);
     FM_KEYS.mk = MK_FM_KEYS;
     var base = mkBase(mk), scoped = mkFiltered(p, mk);
@@ -9623,7 +9635,7 @@
   var CAL_TEAM_RE = /davis cup|laver cup|united cup|atp cup|hopman|olympic/i;
   var CAL_MIDEAST = { QA: 1, AE: 1, SA: 1, BH: 1, KW: 1, OM: 1 };
   var CAL_AMERICAS = { US: 1, CA: 1, MX: 1, AR: 1, BR: 1, CL: 1, CO: 1, EC: 1, PE: 1, UY: 1, PY: 1, BO: 1 };
-  var CAL_FM_KEYS = ['calSpeed', 'calFmt', 'calBand', 'calArch', 'calCtry'];
+  var CAL_FM_KEYS = ['calSpeed', 'calFmt', 'calBand', 'calArch', 'calOpp', 'calCtry'];
   function calCountryOf(r) {
     var c = typeof window.pp2EventCountry === 'function' ? window.pp2EventCountry(r.tournament || r.event) : null;
     return c ? String(c).toUpperCase() : null;
@@ -9648,14 +9660,16 @@
   /** Every played spine row with its calendar facets (swing, country, speed band, format, price band, style). */
   function calRows(p) {
     var sp = calSpine(p), sr = speedRows(p);
-    if (calRows._sp === sp && calRows._sr === sr && calRows._v) return calRows._v;
+    var eloNow = typeof window.pp2EloReady === 'function' && window.pp2EloReady();
+    if (calRows._sp === sp && calRows._sr === sr && calRows._elo === eloNow && calRows._v) return calRows._v;
     var out = sp.map(function (r, i) {
       var cc = calCountryOf(r), spd = sr[i] ? spdBandOf(spdEditionSpeed(sr[i])) : null;
       return { r: r, i: i, cc: cc, sw: calSwingOf(r, cc), surf: r.seasonIndoor === true ? 'Indoors' : mkSurfOf(r), speed: spd,
         fmt: r.level === 'Grand Slam' || (r.setGames && r.setGames.length >= 4) ? 'bo5' : 'bo3',
-        band: r.price != null ? mkBandIdx(+r.price) : -1, arch: styleArchetypeOf(mkOppName(r.opp)) || null };
+        band: r.price != null ? mkBandIdx(+r.price) : -1, arch: styleArchetypeOf(mkOppName(r.opp)) || null,
+        lvl: oppLevelOf(mkOppName(r.opp), r.date) };
     });
-    calRows._sp = sp; calRows._sr = sr; calRows._v = out;
+    calRows._sp = sp; calRows._sr = sr; calRows._v = out; calRows._elo = typeof window.pp2EloReady === 'function' && window.pp2EloReady();
     return out;
   }
   // one P&L cell rule for the Calendar drawer and the run detail: units, "void" for a retirement before the first set was
@@ -9672,7 +9686,7 @@
   function calPass(x, skip) {
     var ok = function (k, v) { return skip === k || !state[k] || state[k] === 'all' || String(v) === String(state[k]); };
     return (skip === 'surf' || calSurfOf() === 'all' || x.surf === calSurfOf()) &&
-      ok('calSpeed', x.speed) && ok('calFmt', x.fmt) && ok('calBand', x.band) && ok('calArch', x.arch) && ok('calCtry', x.cc);
+      ok('calSpeed', x.speed) && ok('calFmt', x.fmt) && ok('calBand', x.band) && ok('calArch', x.arch) && ok('calOpp', x.lvl) && ok('calCtry', x.cc);
   }
   function calStat(list) {
     var w = 0, l = 0, pc = 0, cents = 0;
@@ -9693,6 +9707,7 @@
       { key: 'calArch', title: 'Opponent style', cur: state.calArch || 'all', options: [['all', 'All styles']].concat(STYLE_AXIS.map(function (a) {
         return [a.label, a.label.replace('Big Server + First Strike', 'Big Server + FS').replace('Big Server + Complete Baseliner', 'Big Server + CB')]; })),
         count: cnt('calArch', 'arch') },
+      { key: 'calOpp', title: 'Opponent level', cur: state.calOpp || 'all', options: OPP_LEVELS, count: cnt('calOpp', 'lvl') },
       { key: 'calCtry', title: 'Country', cur: state.calCtry || 'all', maxH: 196, options: [['all', 'All countries']].concat(ccs.map(function (c) { return [c, calCountryName(c)]; })),
         count: cnt('calCtry', 'cc') }
     ];
@@ -9736,6 +9751,7 @@
   }
   function renderCalendarV2(p) {
     FM_KEYS.cal = CAL_FM_KEYS;
+    eloNeed();   // the Opponent level filter reads the Elo history (lazy)
     var pend = shardPending(p);   // fx4 item 4 · while the price shard loads no yield, priced count or swing pick is claimed
     var M_ = 'font-family:\'IBM Plex Mono\',monospace;';
     var all = calRows(p), W0 = all.filter(calInWindow), M = W0.filter(function (x) { return calPass(x); });
@@ -9834,8 +9850,12 @@
         return '<span data-pp2="cal-view" data-v="' + t[0] + '" style="cursor:pointer;white-space:nowrap;padding:4px 11px;border-radius:7px;font-size:11px;font-weight:' + (on ? 700 : 600) + ';' +
           'color:' + (on ? 'var(--text)' : 'var(--text-label)') + ';background:' + (on ? 'var(--selected)' : 'transparent') + ';border:1px solid ' + (on ? 'var(--selected)' : 'transparent') + ';">' + t[1] + '</span>'; }).join('') + '</span>';
     var card1 = '<div style="position:relative;background:var(--card);border:1px solid var(--edge-6);border-bottom:0;border-radius:16px 16px 0 0;padding:20px 24px 22px;">' +
-      infoCorner('cal1', Object.assign({ notes: calWinOf() === 'career' && calSurfOf() === 'all' && !nAct
-        ? [calResidualNote(calResidual(p)).replace(/<[^>]+>/g, '').trim()].filter(Boolean) : [] }, CAL_INFO1)).replace('top:14px;right:14px', 'top:16px;right:16px') +
+      infoCorner('cal1', Object.assign({ notes: (calWinOf() === 'career' && calSurfOf() === 'all' && !nAct
+        ? [calResidualNote(calResidual(p)).replace(/<[^>]+>/g, '').trim()].filter(Boolean) : []).concat((function () {
+          if (!(typeof window.pp2EloReady === 'function' && window.pp2EloReady())) return [];
+          var unk = W0.filter(function (x) { return x.lvl === 'unk'; }).length;
+          return unk ? [unk + ' of these ' + W0.length + ' matches have no Elo snapshot in the week before them, so they sit in no opponent level (All only).'] : [];
+        }())) }, CAL_INFO1)).replace('top:14px;right:14px', 'top:16px;right:16px') +
       '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:14px;padding-right:28px;">' +
         recCaps('Calendar form ' + MIDDOT + ' ' + esc(calScopeText(nAct))) +
         '<span style="display:inline-flex;align-items:center;gap:12px;"><span style="' + M_ + 'font-size:12px;color:var(--text-label);white-space:nowrap;">' +
@@ -14415,7 +14435,7 @@
     state.tournQuery = ''; state.tournOpen = null;
     state.calTab = 'calendar'; state.calSurface = 'all'; state.calCell = null; state.cal26Month = null;
     state.seasonTab = 'calendar'; state.calWin = 'career'; state.calSurf = 'all'; state.calView = 'swing'; state.calCellV2 = null; state.runSel = null;
-    state.calSpeed = 'all'; state.calFmt = 'all'; state.calBand = 'all'; state.calArch = 'all'; state.calCtry = 'all';
+    state.calSpeed = 'all'; state.calFmt = 'all'; state.calBand = 'all'; state.calArch = 'all'; state.calOpp = 'all'; state.calCtry = 'all'; state.mkOpp = 'all';
     state.speedSurf = 'all'; state.speedBand = null;
     state.styleRow = null;
     state.hbSurf = 'all';
@@ -14759,7 +14779,7 @@
     // code path the page uses, rather than a copy that can drift
     _internals: {
       // Profile v2 (2026-11-09): the shared drill box, its per-box builders and the Match-up model
-      FB_BUILD: FB_BUILD, floatBoxHtml: floatBoxHtml, calRows: calRows, calSwingOf: calSwingOf, renderSeasonModalV2: renderSeasonModalV2, streakSeq: streakSeq, streakRuns: streakRuns, splModel: splModel, spdData: spdData, renderSpeedModalV2: renderSpeedModalV2, renderSplitsModalV2: renderSplitsModalV2, styData: styData, renderStylesModalV2: renderStylesModalV2,
+      FB_BUILD: FB_BUILD, floatBoxHtml: floatBoxHtml, OPP_LEVELS: OPP_LEVELS, oppLevelOf: oppLevelOf, calRows: calRows, calSwingOf: calSwingOf, renderSeasonModalV2: renderSeasonModalV2, streakSeq: streakSeq, streakRuns: streakRuns, splModel: splModel, spdData: spdData, renderSpeedModalV2: renderSpeedModalV2, renderSplitsModalV2: renderSplitsModalV2, styData: styData, renderStylesModalV2: renderStylesModalV2,
       mkBandIdx: mkBandIdx, styleArchetypeOf: styleArchetypeOf, renderLinesTabV2: renderLinesTabV2, renderMarketWinnerV2: renderMarketWinnerV2,
       recordRowsOf: recordRowsOf,
       countedSpine: countedSpine,
