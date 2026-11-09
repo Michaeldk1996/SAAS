@@ -126,13 +126,16 @@ function shapeSums(I, p) {
   const out = [];
   ['bo3', 'bo5'].forEach(f => ['all', 'fav', 'dog'].forEach(role => {
     const c = I.lineCoverage(p, f, role);
-    const sh = c.groups.find(g => g.title === 'Match shape');
-    const sum = sh.rows.reduce((a, r) => a + r.hit, 0);
-    out.push({ f, role, sum, n: c.n, hits: sh.rows.map(r => r.hit), c });
+    // Profile v2 (founder 2026-11-09): Match shape is gone; every counted match is evaluated on the ±1.5 set handicap
+    // (no games needed), so the −1.5 sets row's covered + missed = the table's matches.
+    const sh = c.groups.find(g => g.title === 'Set handicap');
+    const r15 = sh.rows.find(r => r.label === '−1.5 sets');
+    const sum = r15.n;
+    out.push({ f, role, sum, n: c.n, hits: [r15.hit, r15.n - r15.hit], c });
   }));
   return out;
 }
-H.check('2 · Korda (fixture): in Bo3 and Bo5, under All / As favourite / As underdog, the Match shape rows sum to the table\'s matches', () => {
+H.check('2 · Korda (fixture): in Bo3 and Bo5, under All / As favourite / As underdog, the ±1.5 set rows evaluate every one of the table\'s matches', () => {
   const { I, p } = fxModule();
   const s = shapeSums(I, p);
   s.forEach(x => assert.strictEqual(x.sum, x.n, x.f + '/' + x.role + ': ' + x.hits.join(' + ') + ' = ' + x.sum + ', not ' + x.n));
@@ -147,20 +150,24 @@ H.check('2 · a "3 - 2" win with four sets on file is a best-of-5 won 3–2 (not
   const bo3b = b.find(x => x.f === 'bo3' && x.role === 'all'), bo5b = b.find(x => x.f === 'bo5' && x.role === 'all');
   assert.strictEqual(bo3.n, bo3b.n, 'the Bo3 table took the match (' + bo3b.n + ' -> ' + bo3.n + ')');
   assert.strictEqual(bo5.n, bo5b.n + 1, 'the Bo5 table did not take it');
-  const won32 = I.lineCoverage(p, 'bo5', 'all').groups.find(g => g.title === 'Match shape').rows.find(r => r.label === 'won 3–2');
-  const won32b = base.I.lineCoverage(base.p, 'bo5', 'all').groups.find(g => g.title === 'Match shape').rows.find(r => r.label === 'won 3–2');
-  assert.strictEqual(won32.hit, won32b.hit + 1, 'won 3–2 did not take it');
+  // a 3–2 win covers +1.5 sets and misses −1.5 sets (v2: Match shape gone)
+  const setRow = (X, P, l) => X.lineCoverage(P, 'bo5', 'all').groups.find(g => g.title === 'Set handicap').rows.find(r => r.label === l);
+  const won32 = setRow(I, p, '+1.5 sets'), won32b = setRow(base.I, base.p, '+1.5 sets');
+  assert.strictEqual(won32.hit, won32b.hit + 1, 'the 3–2 win did not cover +1.5 sets');
+  const m15 = setRow(I, p, '−1.5 sets'), m15b = setRow(base.I, base.p, '−1.5 sets');
+  assert.strictEqual(m15.n - m15.hit, m15b.n - m15b.hit + 1, 'the 3–2 win did not miss −1.5 sets');
   assert.strictEqual(bo5.c.withGames, bo5b.c.withGames, 'its four-set games entered the games lines');
-  return `Bo5 ${bo5b.n} -> ${bo5.n}, won 3–2 ${won32b.hit} -> ${won32.hit}; Bo3 stays ${bo3.n}; games lines stay on ${bo5.c.withGames}`;
+  return `Bo5 ${bo5b.n} -> ${bo5.n}, +1.5 sets covered ${won32b.hit} -> ${won32.hit}; Bo3 stays ${bo3.n}; games lines stay on ${bo5.c.withGames}`;
 });
 H.check('2 · a "2 - 0" win with one set on file is a Bo3 won 2–0, not dropped from both formats', () => {
   const { I, p } = fxModule({ ch: FX.careerHistory.concat([ONE]) });
   const base = fxModule();
   const a = I.lineCoverage(p, 'bo3', 'all'), b = base.I.lineCoverage(base.p, 'bo3', 'all');
   assert.strictEqual(a.n, b.n + 1, 'Bo3 ' + b.n + ' -> ' + a.n);
-  const sum = a.groups.find(g => g.title === 'Match shape').rows.reduce((x, r) => x + r.hit, 0);
-  assert.strictEqual(sum, a.n);
-  return `Bo3 ${b.n} -> ${a.n} = the shapes`;
+  const r15 = (X, P) => X.lineCoverage(P, 'bo3', 'all').groups.find(g => g.title === 'Set handicap').rows.find(r => r.label === '−1.5 sets');
+  assert.strictEqual(r15(I, p).n, a.n, 'the −1.5 sets row does not evaluate every match');
+  assert.strictEqual(r15(I, p).hit, r15(base.I, base.p).hit + 1, 'the 2–0 win did not cover −1.5 sets');
+  return `Bo3 ${b.n} -> ${a.n}, −1.5 sets covered +1`;
 });
 
 // ════════════════════════════════════════════════════════════════════════════
