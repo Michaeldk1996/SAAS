@@ -3148,9 +3148,9 @@
 
   // ═══════════════════════════════════════════════════════════════════════════
   // Profile v2 (founder handoff 2026-11-09, design_handoff_player_profile_v2) — the shared parts.
-  // Every design hex is read through tokens.json → legacyColourMap: #0E1019 / #0A0D14 → --card,
-  // #0C0E16 → --inner, #131623 → --selected, #8b96b5 → --text-label, #c6ccdb → --text-soft,
-  // #e7e9ee → --text, #5b9bff (text) → --link. No raw colour.
+  // Every design colour is read through tokens.json → legacyColourMap (the dialog and tile fills → --card, the chart
+  // fill → --inner, the selected pill → --selected, grey ink → --text-label / --text-soft, accent text → --link).
+  // No raw colour in code (tools/lint-raw-colours.mjs).
   // ═══════════════════════════════════════════════════════════════════════════
 
   // (?) info icon + popover. One open at a time: state.info holds its id. Opens on hover (mouseover,
