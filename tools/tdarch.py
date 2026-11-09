@@ -1554,7 +1554,33 @@ def _ts(v):
     return t if t.tzinfo else t.replace(tzinfo=dt.timezone.utc)
 
 
-def te_start(x, f, flip_start):
+# founder 2026-11-09 ("Yes, accept them"): for the lower levels (not ATP main draw), where our only start is api-tennis's
+# scheduled time and Tennis Explorer's own match page lists a LATER start, the in-play rule checks against TE's start: a price
+# whose last change came after the scheduled time but before TE's listed start is kept. A verified start still decides; TE's
+# start never moves the check earlier. The times come from the saved match pages (stennisfy-ops te-pre21-starts.mjs
+# --te-odds -> te-odds-starts.json at the store root), only where the page's sha256 is the one the batch read.
+TE_ODDS_STARTS = 'te-odds-starts.json'
+TE_PAGE_START_KIND = 'TE match page (later than the scheduled time)'
+
+
+def te_page_starts(store):
+    """(teId -> {start, pageSha256}, sha256 of the file) from te-odds-starts.json; ({}, None) when the store has none."""
+    f = os.path.join(store, TE_ODDS_STARTS)
+    if not os.path.exists(f):
+        return {}, None
+    raw = open(f, 'rb').read()
+    return (json.loads(raw).get('starts') or {}), hashlib.sha256(raw).hexdigest()
+
+
+def te_page_start_of(starts):
+    """row -> TE's listed start (aware UTC) when the saved page is the one the batch read, else None."""
+    def get(x):
+        s = starts.get(str(x.get('teId') or ''))
+        return _ts(s.get('start')) if s and s.get('pageSha256') == x.get('pageSha256') else None
+    return get
+
+
+def te_start(x, f, flip_start, page_start=None):
     """The time the in-play rule rejects against (founder 2026-10-20): our VERIFIED start where we have one — the close's
     start in the batch row (the calibration rows), else our live-flip (live_flip_log, from 17 Sep) — otherwise api-tennis's
     scheduled time, read in UTC (the fixture is asked with timezone=UTC), used ONLY to reject a price (founder ruling
@@ -1567,7 +1593,11 @@ def te_start(x, f, flip_start):
         return v, 'verified (live-flip)'
     d, t = str(f.get('event_date') or ''), str(f.get('event_time') or '')
     if re.fullmatch(r'\d{4}-\d\d-\d\d', d) and re.fullmatch(r'\d\d:\d\d', t):
-        return dt.datetime.fromisoformat(f'{d}T{t}:00+00:00'), 'scheduled'
+        sch = dt.datetime.fromisoformat(f'{d}T{t}:00+00:00')
+        tp = page_start(x) if page_start else None
+        if tp and tp > sch:
+            return tp, TE_PAGE_START_KIND
+        return sch, 'scheduled'
     return None, None
 
 
@@ -1641,7 +1671,7 @@ def te_md_row(d, x, p, md_join, flip_start, rep, src_kind=None):
                        'startChecked': start.isoformat().replace('+00:00', 'Z'), 'startKind': kind}}
 
 
-def te_rows(docs, fixture_of, flip_start=lambda ek: None, md_join=lambda td: (None, 'no fixture list read')):
+def te_rows(docs, fixture_of, flip_start=lambda ek: None, md_join=lambda td: (None, 'no fixture list read'), page_start=None):
     """Snapshot rows from the joined TE matches with a Pinnacle pair + a report. `fixture_of(ek)` = the CURRENT api-tennis
     fixture (the result and the names; a match with no result, a walkover or an unreadable fixture -> no row). Prices
     are oriented to the winner from TE's a / b (= api-tennis's first / second player). A side below 1.01 = no row. A TE row
@@ -1691,7 +1721,7 @@ def te_rows(docs, fixture_of, flip_start=lambda ek: None, md_join=lambda td: (No
             ts = [t for t in (p.get('p1Ts'), p.get('p2Ts')) if t]
             pts = max(ts) if ts else None
             # the in-play rule (founder 2026-10-20): a price whose last change came after the start is dropped
-            start, kind = te_start(x, f, flip_start)
+            start, kind = te_start(x, f, flip_start, page_start)
             bt = f"batch {d.get('batch')}: "
             if start is None:
                 # founder 2026-10-26: no start of any kind (no verified start, no scheduled time) -> not stored
@@ -1840,7 +1870,8 @@ def te_import_run(store, dry_run=False):
     md_join, md_eks = te_md_joiner(md)
     flip = te_flip_starts([str(x['ek']) for x in live if x.get('level') != TE_MD_LEVEL and str(x.get('date') or '') >= P.VERIFIED_START_FROM]
                           + md_eks)
-    rows, rep = te_rows(docs, fx.get, flip.get, md_join)
+    pstarts, psha = te_page_starts(store)
+    rows, rep = te_rows(docs, fx.get, flip.get, md_join, te_page_start_of(pstarts))
     held = P.select_all(SNAP, 'id,dedupe_key,source,match_date,tournament,winner,loser,supersedes,event_key')
     add = plan_snapshots(rows, held)
     closed = {str(r['event_key']) for r in P.select_all(P.CLOSE, 'event_key')}
@@ -1852,11 +1883,11 @@ def te_import_run(store, dry_run=False):
     print('### te-import', json.dumps({'dryRun': dry_run, 'batches': [d.get('batch') for d in docs], 'partialSkipped': skipped, 'report': rep,
                                        'byLevel': te_level_counts(rows),
                                        'wouldAdd' if dry_run else 'added': len(add) if dry_run else len(ids), 'feedOn': TE_FEED_ON,
-                                       'coverage': gained}))
+                                       'coverage': gained, 'teStartsSha256': psha}))
     for line in te_coverage_lines(gained):
         print(line)
     if not dry_run:
-        cmd_snapshot_counts('te-import')
+        cmd_snapshot_counts('te-import', {'teStartsSha256': psha})
     return {'docs': docs, 'rows': rows, 'rep': rep, 'add': add, 'held': held, 'closed': closed, 'added': len(ids)}
 
 
@@ -1896,6 +1927,19 @@ def te_imported_batches():
     return {(g.get('detail') or {}).get('batch') for g in got} - {None}
 
 
+def te_imported_starts():
+    """The start-times files (sha256) a te-import has already read, from its count rows."""
+    return {(g.get('detail') or {}).get('teStartsSha256') for g in P.select_all(SNAPCOUNT, 'detail', 'job=eq.te-import')} - {None}
+
+
+def te_starts_line(add):
+    """One plain line for a start-times re-run: the rows stored because TE's listed start is later than the scheduled time."""
+    n = sum(1 for r in add if (r.get('detail') or {}).get('startKind') == TE_PAGE_START_KIND)
+    lv = collections.Counter((r.get('detail') or {}).get('level') for r in add if (r.get('detail') or {}).get('startKind') == TE_PAGE_START_KIND)
+    by = ', '.join(f'{k} {v}' for k, v in sorted(lv.items())) or 'none'
+    return f'TE start times re-read: {n} rows stored that the scheduled time had refused ({by}); {len(add)} rows added in all'
+
+
 def cmd_te_import_new(store, out_path):
     """The scheduled import (founder brief 2026-10-23 item 3): a complete batch in the store that the archive holds no row of
     is imported (the same te-import: insert-only, idempotent, so a re-run adds 0) and its line is written to out_path for the
@@ -1905,11 +1949,18 @@ def cmd_te_import_new(store, out_path):
     # a batch with no joined Pinnacle pair can never store a row (atp-x-02: 74 joined, 0 with Pinnacle): never "new"
     storable = lambda d: any(x.get('status') == 'joined' and x.get(te_doc_kind(d)[2]) for x in d['rows'])
     new = [d.get('batch') for d in docs if d.get('batch') not in have and storable(d)]
-    print('### te-import-new', json.dumps({'storeBatches': [d.get('batch') for d in docs], 'partial': skipped, 'imported': sorted(have), 'new': new}))
+    # founder 2026-11-09: a start-times file no import has read yet re-runs the import over every batch (insert-only: only the
+    # rows TE's later start now keeps are added)
+    _, psha = te_page_starts(store)
+    restart = bool(psha) and psha not in te_imported_starts()
+    print('### te-import-new', json.dumps({'storeBatches': [d.get('batch') for d in docs], 'partial': skipped, 'imported': sorted(have), 'new': new,
+                                           'startsRead': not restart}))
     lines = []
-    if new:
+    if new or restart:
         r = te_import_run(store)
         lines = te_batch_lines(new, r['rows'], r['add'], r['rep'], r['held'], r['closed'])
+        if restart:
+            lines.append(te_starts_line(r['add']))
         for l in lines:
             print(l)
     with open(out_path + '.tmp', 'w') as fh:
@@ -2127,11 +2178,11 @@ def cmd_approx_feed(out_csv, lower_csv=None):
     print('### approx-feed', json.dumps({'rows': len(rows), 'bySource': collections.Counter(r['source'] for r in rows), 'file': out_csv}))
 
 
-def cmd_snapshot_counts(record=None):
+def cmd_snapshot_counts(record=None, extra=None):
     _, g, _ = P.rest('POST', '/rest/v1/rpc/historical_snapshot_guard', {})
     print('### snapshot guard', json.dumps(g))
     if record:
-        row = {'job': record, 'snapshot_rows': g[SNAP]['rows'], 'detail': {'guardOk': g.get('ok')}}
+        row = {'job': record, 'snapshot_rows': g[SNAP]['rows'], 'detail': {'guardOk': g.get('ok'), **(extra or {})}}
         P.insert(SNAPCOUNT, [row], 'id')
     if not g.get('ok'):
         P.die('historical snapshot guard NOT ok: ' + json.dumps(g))
