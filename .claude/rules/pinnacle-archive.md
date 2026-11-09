@@ -59,6 +59,10 @@ Applies to `supabase/migrations/20261014120000_pinnacle_archive.sql`, `tools/pin
   the event's current one (a new row; an equal close adds nothing). Fixtures: the committed index, the back-fill raw meta
   and the Oddspapi fixtures list (metered, one call per 6-day window from 10 Sep). `dry_run` yes (default) counts by month
   and level and inserts nothing; only exactly `no` writes.
+  **ITF names:** Oddspapi writes ITF players given-name first ("Zack Viiala", "Wihan Van Der Merwe"), ATP / Challenger as
+  "Surname, Given"; the fixture join tries every surname split of a given-first name (`od_name_variants`,
+  `orient_given_first`), still both players, ±36 h and exactly one candidate (measured 15 Jul 2026: 181 of 187 ITF matches
+  join; without it, 0 — the 9 Nov dry runs). **Test:** `tools/test-pinarch-close.py` "ITF names" / "ITF join" (+ control).
 - **Fill (founder ruling 2026-10-25, round 2 item 1.4)** — `.github/workflows/archive-fill-probe.yml` (dispatch only):
   `write=false` plans read-only (measurement, rule, fill rows, diff, digest; artifact `archive-fill-plan`); `write=true` +
   `plan_digest` inserts exactly that plan through `pinarch.insert` after a fresh no-collision read (artifact

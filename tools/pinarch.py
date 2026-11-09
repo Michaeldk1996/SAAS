@@ -996,6 +996,26 @@ def orient_compound(a1, a2, od1, od2):
     return None
 
 
+def od_name_variants(od_name):
+    """Oddspapi names ATP / Challenger players "Surname, Given" but ITF players "Given Surname" (measured 2026-11-09 on
+    the fixture index: "Zack Viiala", "Wihan Van Der Merwe"). A comma-less two-plus-word name yields every split as
+    "Surname, Given" so the compound-surname join can try each; a name with a comma, a pair ("/") or one word is itself."""
+    n = str(od_name or '').strip()
+    toks = n.split()
+    if ',' in n or '/' in n or len(toks) < 2:
+        return [n]
+    return [' '.join(toks[k:]) + ', ' + ' '.join(toks[:k]) for k in range(1, len(toks))]
+
+
+def orient_given_first(a1, a2, od1, od2):
+    """orient_compound over every "Surname, Given" reading of a given-name-first Oddspapi pair (the ITF form): 'same',
+    'swap' or None; two readings that disagree on the orientation are None (never a guess)."""
+    if ',' in str(od1 or '') and ',' in str(od2 or ''):
+        return None
+    got = {orient_compound(a1, a2, x, y) for x in od_name_variants(od1) for y in od_name_variants(od2)} - {None}
+    return got.pop() if len(got) == 1 else None
+
+
 def _fixtures_by_day(discovered):
     by_day = {}
     for f in discovered or []:
@@ -1011,7 +1031,8 @@ def _fixture_candidates(R, a1, a2, ref, by_day):
     nothing) the compound-surname join. [(fixture, 'same' | 'swap')]; the caller requires exactly one."""
     days = (ref.date() - dt.timedelta(days=1), ref.date(), ref.date() + dt.timedelta(days=1))
     for join in (lambda f: R.orient({'p1': a1, 'p2': a2}, f.get('participant1Name'), f.get('participant2Name')),
-                 lambda f: orient_compound(a1, a2, f.get('participant1Name'), f.get('participant2Name'))):
+                 lambda f: orient_compound(a1, a2, f.get('participant1Name'), f.get('participant2Name')),
+                 lambda f: orient_given_first(a1, a2, f.get('participant1Name'), f.get('participant2Name'))):
         cands = [(f, o) for d in days for f, st in by_day.get(d, []) if abs((st - ref).total_seconds()) <= 36 * 3600 for o in [join(f)] if o]
         if cands:
             return cands

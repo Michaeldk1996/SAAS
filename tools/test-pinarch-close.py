@@ -554,5 +554,33 @@ check('earlier cut: the old row is held back, the new one is the export', P.held
       and [r['p1'] for r in P.export_rows(_rows)] == [1.5] and P.export_rows(_rows)[0]['startSource'] == 'bet105-switch' if 'startSource' in P.export_rows(_rows)[0] else True, P.export_rows(_rows))
 check('earlier cut: a plain row keeps the old key (no re-import of held rows)', _old['dedupe_key'].split('|')[3] == '')
 
+# founder 2026-11-09 (ITF Men included): Oddspapi names ITF players given-name first ("Wihan Van Der Merwe"); the join tries
+# every surname split, still both players and exactly one candidate (measured 15 Jul 2026: 181 of 187 ITF matches join)
+check('ITF names: every "Surname, Given" split of a given-name-first name; a comma name / pair / one word is itself',
+      P.od_name_variants('Wihan Van Der Merwe') == ['Van Der Merwe, Wihan', 'Der Merwe, Wihan Van', 'Merwe, Wihan Van Der']
+      and P.od_name_variants('Viiala, Zack') == ['Viiala, Zack'] and P.od_name_variants('A / B') == ['A / B'] and P.od_name_variants('Cher') == ['Cher'])
+check('ITF names: given-first pairs orient (same / swap), compound surname and extra initials included',
+      P.orient_given_first('W. Van Der Merwe', 'C. Sinclair', 'Wihan Van Der Merwe', 'Colin Sinclair') == 'same'
+      and P.orient_given_first('C. Sinclair', 'W. Van Der Merwe', 'Wihan Van Der Merwe', 'Colin Sinclair') == 'swap'
+      and P.orient_given_first('A. Capatos I.', 'B. Petre S.', 'Andrei Capatos', 'Stefan Ilie Bogdan Petre') == 'same')
+check('ITF names: another player, or comma names (the ATP / Challenger form, joined before), never orient here',
+      P.orient_given_first('W. Van Der Merwe', 'C. Smith', 'Wihan Van Der Merwe', 'Colin Sinclair') is None
+      and P.orient_given_first('Z. Viiala', 'T. Takizawa', 'Viiala, Zack', 'Takizawa, Taiki') is None)
+_itfx = {'pnI': {'fixtureId': 'pnI', 'participant1Name': 'Zack Viiala', 'participant2Name': 'Taiki Takizawa', 'startTime': '2026-07-15T00:12:10Z',
+                 'trueStartTime': '2026-07-15T00:14:00Z', 'categoryName': 'ITF Men'}}
+_ia = [{'event_key': 77001, 'event_date': '2026-07-15', 'event_first_player': 'T. Takizawa', 'event_second_player': 'Z. Viiala',
+        'first_player_key': 5, 'second_player_key': 6, 'event_type_type': 'Itf Men Singles', 'event_status': 'Finished'}]
+_w0, _w1 = T('2026-07-15T00:00:00Z'), T('2026-07-16T00:00:00Z')
+_ie, _im, _ = P.events_held(_ia, _itfx, set(), None, _w0, _w1, levels=P.ODDSPAPI_LEVELS, categories=P.BACKFILL_CATEGORIES, flips_by_key={})
+check('ITF join: a given-first Oddspapi fixture joins its api-tennis match, oriented (Takizawa is participant 2)',
+      len(_ie) == 1 and _ie[0]['fixture_id'] == 'pnI' and _ie[0]['p1IsParticipant1'] is False and _ie[0]['cutSource'] == P.ODDSPAPI_CLOSE_SOURCE, (_ie, _im))
+_keep = P.orient_given_first
+P.orient_given_first = lambda *a: None
+try:
+    _ie2, _im2, _ = P.events_held(_ia, _itfx, set(), None, _w0, _w1, levels=P.ODDSPAPI_LEVELS, categories=P.BACKFILL_CATEGORIES, flips_by_key={})
+finally:
+    P.orient_given_first = _keep
+check('control: without the given-first join the ITF match finds no fixture (the gap of the 9 Nov dry runs)', _ie2 == [] and _im2.get('no Oddspapi fixture held') == 1, _im2)
+
 print(f'\ntest-pinarch-close: {passed} passed, {failed} failed')
 sys.exit(1 if failed else 0)
