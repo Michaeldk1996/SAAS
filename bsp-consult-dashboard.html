@@ -3035,6 +3035,9 @@ window.sfPlanLocks(null);   // locked until the account says Edge / Pro: no unlo
         </div>
         <div class="sfh__stats" id="pgHeaderStats" aria-label="Players summary"></div>
       </div>
+      <!-- Profile v2 (founder 2026-11-09, "fix it"): the watchlist the profile's star fills. The export draws no list, so
+           it takes the nearest existing pattern — Today's Matches' "Favourites · N" strip. Hidden while empty. -->
+      <div class="pg-watchstrip" id="pgWatchStrip"></div>
       <div class="playersearchwrap" style="position:relative;">
         <div class="pgsearchbar">
           <span class="pgsearch-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.2-3.2"></path></svg></span>
@@ -9991,8 +9994,47 @@ window.pp2ToggleWatch = function(key){
   const k = String(key);
   ppWatch.keys = ppWatch.keys.includes(k) ? ppWatch.keys.filter(x => x !== k) : [...ppWatch.keys, k];
   ppWatchPersist();
+  pgRenderWatchStrip();
   if (typeof renderPlayersIfShown === 'function') { try { renderPlayersIfShown(); } catch (e) {} }
 };
+// The Players page's watchlist strip: one mini card per watched player, in the order he was starred — rank and Elo,
+// the name, a star that removes him; the card opens his profile. Names = the profile's (newsPlayerName), rank = the
+// Players card's (pp2LiveRankOf), Elo = the card's (pgEloFor).
+function pgWatchStripHtml(){
+  const keys = ppWatch.keys || [];
+  if (!keys.length) return '';
+  const idx = (typeof playerIndex !== 'undefined' && Array.isArray(playerIndex)) ? playerIndex : [];
+  const cards = keys.map(k => {
+    const row = idx.find(r => String(r.key) === String(k)) || null;
+    const name = newsPlayerName(k, row && row.name ? row.name : null) || ('Player ' + k);
+    const rank = typeof pp2LiveRankOf === 'function' ? pp2LiveRankOf(k) : null;
+    const elo = typeof pgEloFor === 'function' ? pgEloFor(name) : null;
+    const meta = [rank != null ? '#' + rank : '—', elo != null ? 'Elo ' + elo : null].filter(Boolean).join(' · ');
+    return `<div class="pg-watchcard" role="button" tabindex="0" data-watch-open="${psEsc(k)}" title="Open profile">`
+      + `<span class="pc-avatar pg-watchcard__av"><span class="pc-avatar-init">${psEsc(pgInitials(name))}</span>${playerPhotoImg(k, name)}</span>`
+      + `<span class="pg-watchcard__txt"><span class="pg-watchcard__name">${psEsc(name)}</span><span class="pg-watchcard__meta">${psEsc(meta)}</span></span>`
+      + `<button type="button" class="pg-watchcard__star" data-watch-off="${psEsc(k)}" title="Remove from watchlist" aria-label="Remove from watchlist">${mxFavStarSvg(13)}</button>`
+      + `</div>`;
+  });
+  return `<span class="mx-favstrip__lbl">Watchlist · ${keys.length}</span><div class="pg-watchstrip__row">${cards.join('')}</div>`;
+}
+function pgRenderWatchStrip(){
+  const el = document.getElementById('pgWatchStrip');
+  if (!el) return;
+  el.innerHTML = pgWatchStripHtml();
+  if (el._wired) return;
+  el._wired = true;
+  el.addEventListener('click', e => {
+    const off = e.target.closest('[data-watch-off]');
+    if (off){ e.stopPropagation(); window.pp2ToggleWatch(off.getAttribute('data-watch-off')); return; }
+    const card = e.target.closest('[data-watch-open]');
+    if (card && typeof showPlayerProfile === 'function') showPlayerProfile(card.getAttribute('data-watch-open'));
+  });
+  el.addEventListener('keydown', e => {
+    const card = e.target.closest('[data-watch-open]');
+    if (card && (e.key === 'Enter' || e.key === ' ')){ e.preventDefault(); showPlayerProfile(card.getAttribute('data-watch-open')); }
+  });
+}
 function ppWatchOnAuth(u){
   const uid = u && u.uid ? u.uid : null;
   const local = ppWatchReadLocal();
@@ -21119,7 +21161,7 @@ document.querySelector('[data-page="matches"]').addEventListener('keydown', e =>
 }, true);
 if (window.BSP && BSP.onAuthChange){
   BSP.onAuthChange(u => { mxFavOnAuth(u).then(() => { if (matchesLoadedOnce) renderMatches(); }); });
-  BSP.onAuthChange(u => { ppWatchOnAuth(u).then(() => { if (typeof ppState !== 'undefined' && ppState && ppState.key && typeof pp2RepaintIfOpen === 'function') pp2RepaintIfOpen(ppState.key); }); });
+  BSP.onAuthChange(u => { ppWatchOnAuth(u).then(() => { pgRenderWatchStrip(); if (typeof ppState !== 'undefined' && ppState && ppState.key && typeof pp2RepaintIfOpen === 'function') pp2RepaintIfOpen(ppState.key); }); });
 }
 
 document.getElementById('mxModeToggle').addEventListener('click', e => {
@@ -21501,6 +21543,7 @@ function renderPlayers(filter){
   groups.forEach(g => g.players.sort(byRank));
   // Header stats read the whole draw, not the search-filtered list.
   pgRenderHeaderStats(field.length, new Set(field.map(p => p.tour || 'Other')).size);
+  pgRenderWatchStrip();
   const cardHtml = p => {
     const odds = p.odds;
     // Only players with a built profile (player-profiles.json) open a real page;
@@ -37189,6 +37232,25 @@ if(document.querySelector('.tabpage[data-page="live"]')&&document.querySelector(
      (card tone, radius 12, top light, padding 10/14/11, column gap 7). Hidden while empty. */
   [data-page="matches"] .mx-favstrip{ display:flex; flex-direction:column; gap:8px; min-width:0; }
   [data-page="matches"] .mx-favstrip:empty{ display:none; }
+  /* Profile v2 · the Players page watchlist strip (the Favourites strip's pattern): caps label over a sideways row of
+     240px cards — card tone, radius 12, top light; avatar 32, name 13/700, rank · Elo mono 11 grey, white star. */
+  [data-page="players"] .pg-watchstrip{ display:flex; flex-direction:column; gap:8px; min-width:0; }
+  [data-page="players"] .pg-watchstrip:empty{ display:none; }
+  [data-page="players"] .pg-watchstrip .mx-favstrip__lbl{ font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label); }
+  [data-page="players"] .pg-watchstrip__row{ display:flex; gap:10px; padding:0 0 2px; overflow-x:auto; }
+  [data-page="players"] .pg-watchcard{ flex:0 0 auto; width:240px; box-sizing:border-box; display:flex; align-items:center; gap:10px; padding:10px 12px 10px 10px;
+    background:var(--card); border-radius:12px; box-shadow:var(--top-light); border:1px solid transparent; cursor:pointer; }
+  [data-page="players"] .pg-watchcard:hover{ border-color:var(--edge-16); }
+  [data-page="players"] .pg-watchcard:focus-visible{ outline:2px solid var(--edge-16); outline-offset:1px; }
+  [data-page="players"] .pg-watchcard__av{ position:relative; width:32px; height:32px; flex:none; }
+  [data-page="players"] .pg-watchcard__av .pc-avatar-init{ position:absolute; inset:0; border-radius:50%; display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono', monospace; font-weight:600; font-size:11px; color:var(--text); background:var(--selected); border:1px solid var(--line); }
+  [data-page="players"] .pg-watchcard__av .sf-ph.sf-on{ background:var(--selected); }
+  [data-page="players"] .pg-watchcard__txt{ flex:1 1 0; min-width:0; display:flex; flex-direction:column; gap:3px; }
+  [data-page="players"] .pg-watchcard__name{ font-family:var(--font-words); font-size:13px; font-weight:700; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  [data-page="players"] .pg-watchcard__meta{ font-family:var(--font-nums); font-size:11px; color:var(--text-label); white-space:nowrap; }
+  [data-page="players"] .pg-watchcard__star{ flex:0 0 auto; display:flex; padding:3px; border:0; border-radius:5px; background:transparent; color:var(--text); cursor:pointer; }
+  [data-page="players"] .pg-watchcard__star:hover{ background:var(--inner); }
+  [data-page="players"] .pg-watchcard__star path{ stroke:currentColor; stroke-width:1.5; stroke-linejoin:round; fill:currentColor; }
   [data-page="matches"] .mx-favstrip__lbl{ font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label); }
   [data-page="matches"] .mx-favstrip__row{ display:flex; gap:10px; padding:0 0 2px; overflow-x:auto; }
   [data-page="matches"] .mx-favcard{ flex:0 0 auto; width:272px; box-sizing:border-box; display:flex; flex-direction:column; gap:7px; padding:10px 14px 11px;
