@@ -4,7 +4,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { generateKeyPairSync, createVerify, constants as CC } from 'node:crypto';
 import { samePlayer, polyMatches, kalshiMatches, joinPairs, kalshiFee, polyFee, Books, evaluate, Episodes, summarise, gapRow, PolyFeed, KalshiFeed, kalshiSign, boardPhase, boardFixture, setText, recRows,
-  oddsName, oddsEvents, BookFeed, unify, venueQuotes, evaluateMulti, multiGapRow, STALE_MS } from './live-arb-recorder.mjs';
+  oddsName, oddsEvents, BookFeed, unify, venueQuotes, evaluateMulti, multiGapRow, STALE_MS, BOOKS } from './live-arb-recorder.mjs';
 
 const ev = (id, a, b, extra = {}) => ({ id, title: `X: ${a} vs ${b}`, live: false, ...extra,
   markets: [{ sportsMarketType: 'moneyline', outcomes: JSON.stringify([a, b]), clobTokenIds: JSON.stringify([id + 'A', id + 'B']), gameStartTime: '2026-11-02 12:00:00+00' }] });
@@ -189,6 +189,14 @@ test('board phase: alerts only at 0–0 — new game, changeover (odd games), se
   assert.equal(boardPhase(fix('Walk Over', '', [])).phase, null);
   assert.equal(boardPhase(fix('Set 2', '0 - 0', [[6, 3], [2, 1]])).score, '6–3 2–1');
   assert.equal(boardPhase(null).phase, null);
+  // founder 2026-11-09: the board still read "Set 2" after Alcaraz won 7–6(5) 7–5 (8 Nov 16:17Z) and both alerts went out after the match
+  assert.equal(boardPhase(fix('Set 2', '0 - 0', [['6.5', '7.7'], ['5', '7']])).phase, null, 'the last set decided → finished (mutant: 12 games = game)');
+  assert.equal(boardPhase(fix('Set 2', '0 - 0', [[6, 3], [6, 4]])).phase, null, 'straight sets, best of 3 → finished');
+  assert.equal(boardPhase(fix('Set 1', '0 - 0', [[6, 4]])).phase, 'set', 'set 1 decided, set 2 not opened yet → set break');
+  assert.equal(boardPhase(fix('Set 2', '0 - 0', [[6, 3], [6, 4]], { tournament_name: 'US Open' })).phase, 'set', 'a Grand Slam needs 3 sets');
+  assert.equal(boardPhase(fix('Set 3', '0 - 0', [[6, 3], [6, 4], [6, 2]], { tournament_name: 'US Open' })).phase, null);
+  assert.equal(boardPhase(fix('Set 2', '0 - 0', [[6, 3], [6, 4]], { tournament_name: 'US Open - Qualification' })).phase, null, 'Slam qualifying is best of 3');
+  assert.equal(boardPhase(fix('Set 2', '0 - 0', [[6, 3], [6, 5]])).phase, 'changeover', '6–5 is not decided');
 });
 
 test('board fixture: ATP singles, both names either way round, exactly one', () => {
@@ -255,10 +263,11 @@ test('book feed: the key and filters on the socket URL, updates priced per book,
   assert.equal(u.searchParams.get('apiKey'), 'K'); assert.equal(u.searchParams.get('markets'), 'ML'); assert.equal(u.searchParams.get('sport'), 'tennis');
   const m = (x) => w.onmessage({ data: JSON.stringify(x) });
   m({ type: 'welcome' }); m(upd(7, 'Bet105', '1.80', '2.10')); m(upd(7, 'Napoleon Sports BE', '1.75', '2.15')); m(upd(7, 'Superbet', '9', '9'));
-  assert.equal(f.quote(7, 'Bet105').home, 1.8); assert.equal(f.quote(7, 'Napoleon').away, 2.15); assert.equal(f.q.size, 2, 'a book not ours is not kept');
+  assert.equal(f.quote(7, 'Bet105').home, 1.8); assert.equal(f.quote(7, 'Napoleon'), null, 'Napoleon is not an arbitrage book (founder 2026-11-09; mutant: kept)'); assert.equal(f.q.size, 1, 'a book not ours is not kept');
+  assert.deepEqual(Object.values(BOOKS), ['Bet105'], 'arbitrage = Bet105 × Polymarket × Kalshi only');
   assert.equal(f.quote(7, 'Bet105').url, 'https://x/7'); assert.equal(f.lastSeq, 5);
-  m(upd(7, 'Napoleon Sports BE', '1.00', '9.50')); assert.equal(f.quote(7, 'Napoleon'), null, 'a 1.00 placeholder is no price (mutant: kept)');
-  m(upd(7, 'Napoleon Sports BE', '2.20', '2.20')); assert.equal(f.quote(7, 'Napoleon'), null, 'a book paying over 101% is no price');
+  m(upd(7, 'Bet105', '1.00', '9.50')); assert.equal(f.quote(7, 'Bet105'), null, 'a 1.00 placeholder is no price (mutant: kept)');
+  m(upd(7, 'Bet105', '2.20', '2.20')); assert.equal(f.quote(7, 'Bet105'), null, 'a book paying over 101% is no price');
   m({ type: 'no_markets', id: '7', bookie: 'Bet105' }); assert.equal(f.quote(7, 'Bet105'), null, 'a pulled market is gone at once (mutant: kept)');
   m(upd(7, 'Bet105', '1.80', '2.10')); w.readyState = 3; w.onclose({});
   assert.equal(f.quote(7, 'Bet105'), null, 'no price from a dead feed'); assert.equal(drops, 1); assert.equal(timers.length, 1); assert.equal(timers[0][1], 2000);
@@ -272,7 +281,7 @@ test('book feed seed: REST prices fill a match, never over a newer streamed pric
   f.seed([{ id: 8, urls: { Bet105: 'u8', 'Napoleon Sports BE': 'n8' }, bookmakers: {
     Bet105: [{ name: 'ML', updatedAt: '2026-11-02T12:00:00Z', odds: [{ home: '1.40', away: '2.90' }] }],
     'Napoleon Sports BE': [{ name: 'ML', updatedAt: '2026-11-02T12:00:00Z', odds: [{ home: '1.45', away: '2.80' }] }] } }], 2);
-  assert.equal(f.quote(8, 'Bet105').home, 1.5, 'the streamed price is newer (mutant: seed overwrites)'); assert.equal(f.quote(8, 'Napoleon').home, 1.45); assert.equal(f.quote(8, 'Napoleon').url, 'n8');
+  assert.equal(f.quote(8, 'Bet105').home, 1.5, 'the streamed price is newer (mutant: seed overwrites)'); assert.equal(f.quote(8, 'Napoleon'), null, 'a seeded Napoleon price is not kept');
 });
 
 // a world: one Kalshi × Polymarket pair (Molcan / Droguet) + odds-api.io events
@@ -316,13 +325,12 @@ test('evaluateMulti: every direction with a bookmaker leg after fees; Kalshi × 
   assert.ok(venueQuotes(live, { books: b, kalAt: null, bfeed: f3, now: U + 31e3 }).Bet105, 'in play, a price the book set 31 s ago is used');
 });
 
-test('evaluateMulti: Bet105 × Napoleon carries no size (no published limit); an unsized Kalshi NO leg leaves the gap unsized', () => {
+test('evaluateMulti: a Napoleon price never forms a gap (founder 2026-11-09: Bet105, Polymarket, Kalshi only)', () => {
   const { ms } = world([oev(9, 'Molcan, Alex', 'Droguet, Titouan')]); const m = { ...ms[0], pm: null, km: null };
   OW.all = []; const f = new BookFeed({ WS: OW, key: 'K', now: () => 1000 }); f.open();
   OW.all[0].onmessage({ data: JSON.stringify(upd(9, 'Bet105', '2.20', '1.70')) }); OW.all[0].onmessage({ data: JSON.stringify(upd(9, 'Napoleon Sports BE', '1.62', '2.35')) });
-  const e = evaluateMulti(m, venueQuotes(m, { books: new Books(), kalAt: null, bfeed: f, now: 1500 })).find((x) => x.dir === 'Bet105:A+Napoleon:B');
-  assert.ok(e.edge > 0, '1/2.20 + 1/2.35 < 1'); assert.equal(e.contracts, null); assert.equal(multiGapRow({ ...m, title: 'Paris: A vs B' }, e, {}).hasPm, false);
-  assert.equal(multiGapRow({ ...m, title: 'Paris: A vs B' }, e, {}).mkey, 'oddsapi:9');
+  const Q = venueQuotes(m, { books: new Books(), kalAt: null, bfeed: f, now: 1500 });
+  assert.deepEqual(Object.keys(Q), ['Bet105']); assert.equal(evaluateMulti(m, Q).length, 0, '1/2.20 + 1/2.35 < 1 but Napoleon is out (mutant: Napoleon kept)');
 });
 
 test('Kalshi × Polymarket rows carry the same legs (venue, price, after fee, stake, link) for the alert and the page', () => {

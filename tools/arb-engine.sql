@@ -7,8 +7,8 @@
 -- on both surnames + initials and a start within 24 h, exactly one candidate both ways, never a guess):
 --   Bet105     sharp       public.kibl_now_card (the Kibl stream), live while the worker heartbeat is <= 180 s old
 --   soft books config.soft_books, read from ten287_rec (odds-api.io recorder), live while that book's recorder answered
---              within 3 min. Founder 2026-11-06: arbitrage = Polymarket, Kalshi, Napoleon Sports BE and Bet105 only;
---              Superbet is out (its drop bot and recorder are untouched).
+--              within 3 min. Founder 2026-11-09: arbitrage = Polymarket, Kalshi and Bet105 only — Napoleon Sports BE
+--              is out (other settlement rules; its recorder and drop bot are untouched), as Superbet is (2026-11-06).
 --   Polymarket prediction  ten287_rec, same; liquidity = dollars at the best price (odds-api.io depth)
 --   Kalshi     prediction  kalshi_rec (public API recorder), live while it answered within 3 min; liquidity = ask × size;
 --                          its fixture = kalshi_bot.match_fx (Kalshi's own times are listing placeholders)
@@ -76,11 +76,13 @@ alter table arb.config add column if not exists live_cooldown interval not null 
 alter table arb.config add column if not exists live_hb_max   interval not null default interval '90 seconds';  -- worker heartbeat
 -- the odds-api.io bookmakers read as soft sources (founder 2026-11-05: Napoleon Sports BE beside Superbet); each must also
 -- be in ten287_rec.config.books or it has no ticks. A book's name here is the name its alerts print.
-alter table arb.config add column if not exists soft_books text[] not null default array['Napoleon Sports BE'];
-alter table arb.config alter column soft_books set default array['Napoleon Sports BE'];
+alter table arb.config add column if not exists soft_books text[] not null default '{}';
+alter table arb.config alter column soft_books set default '{}';
 -- founder 2026-11-06: Superbet leaves the arbitrage sources (Polymarket, Kalshi, Napoleon Sports BE, Bet105). Putting it
 -- back is an edit here, not a config change: every install takes it out again.
 update arb.config set soft_books = array_remove(soft_books, 'Superbet') where 'Superbet' = any(soft_books);
+-- founder 2026-11-09: Napoleon Sports BE leaves too (arbitrage = Polymarket, Kalshi, Bet105). Same rule: back only by an edit here.
+update arb.config set soft_books = array_remove(soft_books, 'Napoleon Sports BE') where 'Napoleon Sports BE' = any(soft_books);
 create table if not exists arb.live_state (
     id      boolean primary key default true check (id),
     at      timestamptz,                 -- the worker's last push (its heartbeat)
@@ -322,7 +324,10 @@ language sql stable security definer set search_path = pg_catalog, public as $$
     'live', case when l.at > now() - c.live_hb_max then
               (select coalesce(jsonb_agg(g order by (g->>'edge')::numeric desc), '[]'::jsonb) from jsonb_array_elements(l.gaps) g
                 where (g->>'edge')::numeric >= c.live_min
-                  and (c.min_liq is null or not coalesce((g->>'hasPm')::boolean, true) or (g->>'stake')::numeric >= c.min_liq))
+                  and (c.min_liq is null or not coalesce((g->>'hasPm')::boolean, true) or (g->>'stake')::numeric >= c.min_liq)
+                  -- founder 2026-11-09: Polymarket, Kalshi, Bet105 only (as arb_live_push)
+                  and not exists (select 1 from jsonb_array_elements(coalesce(g->'legs', '[]'::jsonb)) x
+                                   where coalesce(x->>'venue', '') not in ('Polymarket', 'Kalshi', 'Bet105')))
             end,
     'config', (o->'config') || jsonb_build_object('liveMin', c.live_min))
   from (select case when s.at > now() - interval '10 minutes' then s.opps else arb.opps() end as o
@@ -573,6 +578,10 @@ begin
     continue when arb.fixture_closed(g->>'boardStatus', null);
     -- ATP tour only: a Kalshi ATP event, or an odds-api.io ATP singles event the worker marks atp (never Challenger)
     continue when not (coalesce(g->>'kalshiEvent', '') like 'KXATPMATCH-%' or coalesce((g->>'atp')::boolean, false));
+    -- founder 2026-11-09: arbitrage = Polymarket, Kalshi, Bet105 only; a gap with any other leg (a worker still on the
+    -- old book list) is never sent
+    continue when exists (select 1 from jsonb_array_elements(coalesce(g->'legs', '[]'::jsonb)) l
+                           where coalesce(l->>'venue', '') not in ('Polymarket', 'Kalshi', 'Bet105'));
     k := 'live|' || coalesce(g->>'mkey', g->>'kalshiEvent') || '|' || (g->>'dir');
     continue when exists (select 1 from arb.alerts where akey = k and created_at > now() - c.live_cooldown);
     msg := arb.render_live(g); rid := arb.send(msg, 'live');

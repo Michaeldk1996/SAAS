@@ -315,6 +315,17 @@ export function boardPhase(fix) {
   const base = { status, score: sets || '0–0' };
   if (!/^set \d/i.test(status)) return { ...base, phase: null };                       // not in play (finished, interrupted, …)
   if (!isFinite(ga) || !isFinite(gb)) return { ...base, phase: null };
+  // founder 2026-11-09: the board can still say "Set 2" after the last point (Shelton v Alcaraz, 8 Nov 16:17Z: "6–7(5) 5–7",
+  // status Set 2, both alerts sent after the match). A set the score shows decided is a set break; one that gives a player
+  // the sets to win (3 at a Grand Slam main draw, else 2) is a finished match: no phase, no alert.
+  const done = (a, b) => (a >= 6 || b >= 6) && (Math.abs(a - b) >= 2 || Math.max(a, b) === 7);
+  if (done(ga, gb)) {
+    let wa = 0, wb = 0;
+    for (const x of sc) { const a = Number(String(x.score_first).split('.')[0]), b = Number(String(x.score_second).split('.')[0]); if (done(a, b)) { if (a > b) wa++; else wb++; } }
+    const slam = /australian open|roland garros|french open|wimbledon|us open/i.test(fix.tournament_name || '') && !/qualif/i.test((fix.tournament_name || '') + ' ' + (fix.tournament_round || ''));
+    if (Math.max(wa, wb) >= (slam ? 3 : 2)) return { ...base, phase: null };
+    return { ...base, phase: 'set' };
+  }
   const pts = String(fix.event_game_result || '').replace(/\s+/g, '');
   if (pts !== '' && pts !== '0-0') return { ...base, phase: 'point' };
   if (ga === 6 && gb === 6) return { ...base, phase: 'point' };                         // tiebreak: no time between points
@@ -376,7 +387,9 @@ export function summarise(eps, meta) {
 // a close drops every price (none is ever read from a dead feed) and the feed reconnects with backoff, then is reseeded.
 export const ODDS_API = 'https://api.odds-api.io/v3';
 export const ODDS_WS = 'wss://api.odds-api.io/v3/ws';
-export const BOOKS = { 'Bet105': 'Bet105', 'Napoleon Sports BE': 'Napoleon' };   // odds-api.io name → our venue name
+// founder 2026-11-09: arbitrage is Bet105 × Polymarket × Kalshi only — Napoleon settles on other rules and, measured 8 Nov,
+// kept its last in-play price after a match ended (Shelton v Alcaraz 1.04, 31 s stale): its messages are ignored.
+export const BOOKS = { 'Bet105': 'Bet105' };   // odds-api.io name → our venue name
 export const BOOK_LINK_HOME = { Bet105: 'https://app.bet105.ag', Napoleon: 'https://napoleonsports.be' };
 export const PM_VENUES = new Set(['Polymarket', 'Kalshi']);
 

@@ -120,9 +120,9 @@ try:
           out == '2.399|2.2|1.951', out)
     # founder 2026-11-06: arbitrage = Polymarket, Kalshi, Napoleon Sports BE, Bet105 — Superbet out on every install
     rc, out = q("select soft_books::text from arb.config")
-    check('install: soft books = Napoleon Sports BE only (Superbet out)', out == '{"Napoleon Sports BE"}', out)
+    check('install: no soft books (founder 2026-11-09: Napoleon out, as Superbet)', out == '{}', out)
     srcs0 = sorted(s['source'] for s in {f['first']: f for f in opps().get('fair', [])}.get('Q. Halys', {}).get('sources', []))
-    check('Superbet recorded but not a source after install', srcs0 == ['Bet105', 'Kalshi', 'Napoleon Sports BE', 'Polymarket'], srcs0)
+    check('Superbet and Napoleon recorded but not sources after install', srcs0 == ['Bet105', 'Kalshi', 'Polymarket'], srcs0)
     # the rest of this file was built with Superbet as the soft book: put it back for the fixtures below
     q("update arb.config set soft_books = array['Superbet', 'Napoleon Sports BE']")
     # Polymarket's match page (poly_bot.volume); a second same-surname slug a week away does not make it ambiguous
@@ -290,30 +290,31 @@ try:
     q("update arb.fx set rate_date = current_date")
     rc, out = q("select arb.render_live($j$" + json.dumps(gap()) + "$j$::jsonb)")
     check('the live alert shows euros (dollars beside)', '✅ Stake €207.37 ($230.41) on Alex Molcan' in out and 'pays €450.00 ($500.00) whoever wins → profit €27.00 ($30.00)' in out, out)
-    # bookmakers in the live list (founder 2026-11-08: Bet105 + Napoleon via the odds-api.io WebSocket)
+    # bookmakers in the live list (founder 2026-11-08); founder 2026-11-09: Bet105 is the only bookmaker (Napoleon out)
     q("update arb.config set live_min = 1")
     def bgap(**kw):
         g = {'match': 'Ben Shelton vs Carlos Alcaraz', 'event': 'Paris', 'kalshiEvent': None, 'mkey': 'oddsapi:76142722', 'atp': True,
-             'dir': 'Bet105:A+Napoleon:B', 'edge': 1.8, 'contracts': None, 'stake': None, 'hasPm': False, 'payout': None, 'profitUsd': None,
+             'dir': 'Bet105:A+Polymarket:B', 'edge': 1.8, 'contracts': 180, 'stake': 400, 'hasPm': True, 'payout': 180, 'profitUsd': 3.2,
              'inPlay': True, 'started': True, 'phase': 'game', 'score': '6–4 1–0', 'boardStatus': 'Set 2',
-             'legs': [{'venue': 'Bet105', 'name': 'Ben Shelton', 'group': 'book', 'dec': 2.2, 'eff': 2.2, 'stake': None, 'share': 51.6,
+             'legs': [{'venue': 'Bet105', 'name': 'Ben Shelton', 'group': 'book', 'dec': 2.2, 'eff': 2.2, 'stake': 206.4, 'share': 51.6,
                        'at': '2026-11-08T14:30:00Z', 'url': 'https://app.bet105.ag/event/51815223'},
-                      {'venue': 'Napoleon', 'name': 'Carlos Alcaraz', 'group': 'book', 'dec': 2.35, 'eff': 2.35, 'stake': None, 'share': 48.4,
-                       'at': '2026-11-08T14:30:01Z', 'url': 'https://napoleonsports.be/en/betting/sports/event/15834455'}]}
+                      {'venue': 'Polymarket', 'name': 'Carlos Alcaraz', 'group': 'prediction', 'dec': 2.35, 'eff': 2.3, 'stake': 193.6, 'share': 48.4,
+                       'at': '2026-11-08T14:30:01Z', 'url': 'https://polymarket.com/event/atp-shelton-alcaraz'}]}
         g.update(kw); return g
-    n0 = int(q("select count(*) from arb.alerts where kind = 'live'")[1])
-    rc, out = push([bgap(), bgap(mkey='oddsapi:2', atp=False), bgap(mkey='oddsapi:3', hasPm=True, stake=40, dir='Polymarket:A+Bet105:B'),
-                    bgap(mkey='oddsapi:4', hasPm=True, stake=400, dir='Polymarket:A+Bet105:B')])
-    check('bookmaker gaps post: a Bet105 × Napoleon gap with no limit; a prediction leg still needs $100; never a non-ATP one', rc == 0 and out == '2', out)
+    nap = bgap(mkey='oddsapi:5', dir='Bet105:A+Napoleon:B', hasPm=False, stake=None,
+               legs=[bgap()['legs'][0], {'venue': 'Napoleon', 'name': 'Carlos Alcaraz', 'group': 'book', 'dec': 2.35, 'eff': 2.35, 'stake': None,
+                                         'share': 48.4, 'at': '2026-11-08T14:30:01Z', 'url': 'https://napoleonsports.be/x'}])
+    rc, out = push([bgap(), bgap(mkey='oddsapi:2', atp=False), bgap(mkey='oddsapi:3', stake=40), nap])
+    check('bookmaker gaps post: a Bet105 × Polymarket gap with $100+; never under $100, never non-ATP, never a Napoleon leg (mutant: venue rule off)',
+          rc == 0 and out == '1', out)
     a = json.loads(q("select public.arb_now()", 'anon')[1])
-    check('arb_now(): a bookmaker-only gap is listed without a stake; the under-$100 prediction one is not',
-          sorted(g.get('mkey') or '' for g in a.get('live') or []) == ['oddsapi:2', 'oddsapi:4', 'oddsapi:76142722'], a.get('live'))
+    check('arb_now(): the under-$100 and the Napoleon gaps are not listed',
+          sorted(g.get('mkey') or '' for g in a.get('live') or []) == ['oddsapi:2', 'oddsapi:76142722'], a.get('live'))
     rc, out = push([bgap()]); check('the same bookmaker match + direction inside the cooldown posts nothing', out == '0', out)
-    rc, out = q("select message from arb.alerts where kind = 'live' and akey = 'live|oddsapi:76142722|Bet105:A+Napoleon:B'")
-    check('LIVE message with bookmaker legs: back each player, the split, both links, the retirement warning, both clocks',
-          '✅ Back Ben Shelton @ 2.2 on Bet105 · 51.6% of the total' in out and '🔗 https://app.bet105.ag/event/51815223' in out
-          and '✅ Back Carlos Alcaraz @ 2.35 on Napoleon · 48.4% of the total' in out and '(after fee' not in out
-          and '+1.80%' in out and 'retirement rule' in out and '🕒 Prices: Bet105 @' in out and '· Napoleon @' in out, out)
+    rc, out = q("select message from arb.alerts where kind = 'live' and akey = 'live|oddsapi:76142722|Bet105:A+Polymarket:B'")
+    check('LIVE message with a bookmaker leg: back each player, the link, the retirement warning, the clocks',
+          'Ben Shelton @ 2.2 on Bet105' in out and '🔗 https://app.bet105.ag/event/51815223' in out
+          and 'Carlos Alcaraz @ 2.35 on Polymarket' in out and 'Retirement rules differ' in out and '🕒 Prices: Bet105 @' in out, out)
     rc, out = q("select arb.render_live($j$" + json.dumps(gap()) + "$j$::jsonb)")
     check('a row from an older worker (no legs) still renders both prediction legs', '✅ Stake €207.37 ($230.41) on Alex Molcan @ 2.222 on Polymarket (after fee 2.17)' in out and '🕒 Prices: Polymarket @' in out, out)
     q("update public.kibl_now_price set written_at = now()")
