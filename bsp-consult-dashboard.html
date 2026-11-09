@@ -31415,13 +31415,13 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, profileRosterMap: () =
     if (visit && typeof _h2hPairs !== 'undefined') Object.keys(_h2hPairs).forEach(k => { if (_h2hPairs[k] && _h2hPairs[k].st === 'failed') delete _h2hPairs[k]; });   // TEN-437 (5)
     triggerLoads();
     ensureDna();
-    if (dataReady()) { build(); applyPendingPair(); render(); return; }
+    if (dataReady()) { build(); if (typeof applyPendingPair === 'function') applyPendingPair(); render(); return; }
     // data still loading — show empty/loading shell and poll briefly
     render();
     clearInterval(_waitTimer); _waited = 0;
     _waitTimer = setInterval(() => {
       _waited += 300;
-      if (dataReady()) { clearInterval(_waitTimer); build(); applyPendingPair(); render(); }
+      if (dataReady()) { clearInterval(_waitTimer); build(); if (typeof applyPendingPair === 'function') applyPendingPair(); render(); }
       else if (_waited > 9000) { clearInterval(_waitTimer); }
     }, 300);
   }
