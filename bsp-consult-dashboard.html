@@ -9994,7 +9994,7 @@ window.pp2ToggleWatch = function(key){
   const k = String(key);
   ppWatch.keys = ppWatch.keys.includes(k) ? ppWatch.keys.filter(x => x !== k) : [...ppWatch.keys, k];
   ppWatchPersist();
-  pgRenderWatchStrip();
+  if (typeof pgRenderWatchStrip === 'function') pgRenderWatchStrip();
   if (typeof renderPlayersIfShown === 'function') { try { renderPlayersIfShown(); } catch (e) {} }
 };
 // The Players page's watchlist strip: one mini card per watched player, in the order he was starred — rank and Elo,
@@ -21161,7 +21161,7 @@ document.querySelector('[data-page="matches"]').addEventListener('keydown', e =>
 }, true);
 if (window.BSP && BSP.onAuthChange){
   BSP.onAuthChange(u => { mxFavOnAuth(u).then(() => { if (matchesLoadedOnce) renderMatches(); }); });
-  BSP.onAuthChange(u => { ppWatchOnAuth(u).then(() => { pgRenderWatchStrip(); if (typeof ppState !== 'undefined' && ppState && ppState.key && typeof pp2RepaintIfOpen === 'function') pp2RepaintIfOpen(ppState.key); }); });
+  BSP.onAuthChange(u => { ppWatchOnAuth(u).then(() => { if (typeof pgRenderWatchStrip === 'function') pgRenderWatchStrip(); if (typeof ppState !== 'undefined' && ppState && ppState.key && typeof pp2RepaintIfOpen === 'function') pp2RepaintIfOpen(ppState.key); }); });
 }
 
 document.getElementById('mxModeToggle').addEventListener('click', e => {
@@ -21543,7 +21543,7 @@ function renderPlayers(filter){
   groups.forEach(g => g.players.sort(byRank));
   // Header stats read the whole draw, not the search-filtered list.
   pgRenderHeaderStats(field.length, new Set(field.map(p => p.tour || 'Other')).size);
-  pgRenderWatchStrip();
+  if (typeof pgRenderWatchStrip === 'function') pgRenderWatchStrip();   // guarded: tests slice renderPlayers alone
   const cardHtml = p => {
     const odds = p.odds;
     // Only players with a built profile (player-profiles.json) open a real page;
