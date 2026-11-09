@@ -217,6 +217,9 @@ function computeRatings(a) {
     serve = {
       firstInPct: R1(firstInPct), firstWonPct: R1(firstWonPct), secondWonPct: R1(secondWonPct),
       holdPct: R1(holdPct), acesPerMatch: R1(acesPerMatch), dfPerMatch: R1(dfPerMatch),
+      // Profile v2 (founder 2026-11-09): aces / double faults per SERVICE GAME for the Ratings tab (2 dp), so a
+      // best-of-5 season cannot inflate them. Display only — the house Serve rating above keeps its per-match terms.
+      acesPerSG: R2(a.aces / a.svGmTot), dfPerSG: R2(a.dfs / a.svGmTot),
       rating: R1(firstInPct + firstWonPct + secondWonPct + holdPct + acesPerMatch - dfPerMatch),
     };
   }

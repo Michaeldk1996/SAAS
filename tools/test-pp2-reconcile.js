@@ -2553,6 +2553,30 @@ mustFail('the headline check would catch a LABEL back in the headline slot', () 
 // +0.08, Slow below −0.08, ATP only — drawn Fast · Medium · Slow under "Faster courts … Slower courts" as the export
 // draws them. Every check below runs the shipped spdData / renderSpeedModal on the sampled players.
 const spdSample = () => SAMPLE.filter(p => I.speedRows(p).length && I.spdData(p).tn);
+// Profile v2 (founder 2026-11-09): the Career record — no Tier control, opens on Last 52 weeks, Record by season in the
+// export's column order, no helper sentence and no foot note (the methodology sits in the season panel's (?) cr2).
+check('profile v2 · Career record: no Tier control, opens on Last 52 weeks, season columns Hard · Clay · Grass · Indoors, notes in the (?)', () => {
+  I.resetState();
+  assert.strictEqual(I.state.careerScope, 'l52', 'the Career record does not open on Last 52 weeks');
+  let n = 0;
+  for (const p of SAMPLE.slice(0, 12)) {
+    Object.assign(I.state, { key: p.key, careerTab: 'record', careerScope: 'career', careerDrill: null, careerTier: 'atp', info: null });
+    const html = I.renderCareerModal(p, {});
+    assert(!/data-pp2="career-tier"/.test(html), `${p.name}: a Tier control is drawn`);
+    assert(/Record by season · all tiers/i.test(html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ')), `${p.name}: the record does not read every tier (Tier state ignored)`);
+    assert(/>Year<\/div>[\s\S]*?>Total<\/div>[\s\S]*?>Hard<\/div>[\s\S]*?>Clay<\/div>[\s\S]*?>Grass<\/div>[\s\S]*?>Indoors<\/div>[\s\S]*?>Surface not known<\/div>/.test(html),
+      `${p.name}: the season columns are not in the export's order`);
+    assert(!/Click any record to browse|vs all = surface win rate/.test(html), `${p.name}: a helper sentence or foot note survived`);
+    assert(/data-pp2="info" data-v="cr2"/.test(html), `${p.name}: Record by season carries no (?)`);
+    n++;
+  }
+  I.state.careerTier = 'all';
+  assert(n > 0, 'never ran');
+});
+mustFail('[neg] the Tier check would catch the retired Tier control', () => {
+  const html = '<button data-pp2="career-tier" data-v="atp">ATP</button>';
+  assert(!/data-pp2="career-tier"/.test(html), 'a Tier control is drawn');
+});
 checkCareer('bands run Fast · Medium · Slow under "Faster courts … Slower courts" (profile v2, the export)', () => {
   let n = 0;
   for (const p of spdSample()) {
@@ -5116,6 +5140,7 @@ function renderCareer(player, scope) {
     I.state.key = player.key;
     I.state.careerScope = scope || 'career';
     I.state.careerDrill = null;
+    I.state.info = 'cr2';   // profile v2: the window / residual notes live in Record by season's (?) — opened so they print
     return I.renderCareerModal(player, { archetype: null });
   } finally { Object.assign(I.state, saved); }
 }
@@ -5250,7 +5275,8 @@ check('item 3 · the bar is minimal: 6px track and fill, radius 3, ONE solid col
   const fills = (html.match(/height:6px;width:[\d.]+%;background:([^;]+);/g) || []);
   assert(fills.length >= 3, `only ${fills.length} bar fills rendered`);
   fills.forEach((f) => {
-    assert(/background:(var\(--bar\)|var\(--text-label\));/.test(f), `a fill is not one of the two solid colours: ${f}`);
+    // profile v2 (founder 2026-11-09, colours follow the export): the surface bars are the export's link blue
+    assert(/background:var\(--link\);/.test(f), `a fill is not the export's one solid colour: ${f}`);
   });
   // the ramp is GONE — no alpha-varying blue anywhere on a fill
   assert(!/width:[\d.]+%;background:(rgba\(91,155,255,|color-mix\(in srgb, var\(--bar\))/.test(html),
@@ -5318,30 +5344,21 @@ mustFail('[neg] the Win % check would catch the retired whole-number 19px rate',
     'the Hard rate is not 64.3%');
 });
 
-check('item 9 · the §9 sample gate is applied to the ROW rate', () => {
+check('item 9 · the §9 sample gate on the ROW rate (profile v2, founder 2026-11-09 "no mark"): a 5–9 rate prints white with no mark', () => {
   const html = renderCareer(CM_PLAYER);
-  // clay n=8 -> SMALL: greyed, and marked by the ONE small-sample mark (TEN-384 fix item 9, founder
-  // 2026-10-05: "small sample · n=X" everywhere, no asterisk) — on the row's hover and in the note.
-  // fx3 (founder D11): the mark sits UNDER the rate in the row (rate, then the mark, in one column), and the
-  // small-sample footnote line is gone.
-  assert(/white-space:nowrap;color:var\(--text-label\);"><span data-pp2-ratemark="8"[^>]*>75\.0%<span data-pp2-small="8"[^>]*>small sample \u00b7 n=8</.test(html),
-    'the 8-match Clay row is not greyed with "small sample · n=8" under its rate');
-  assert(!/\d%\*/.test(html) && !/\* 5\u20139/.test(html), 'an asterisk small-sample mark is back');
   const clayRow = html.slice(html.indexOf('data-pp2-srow="clay"'), html.indexOf('data-pp2-srow="grass"'));
-  assert(/title="small sample \u00b7 n=8"/.test(clayRow), 'the Clay row does not carry "small sample · n=8"');
-  assert(!/Clay small sample \u00b7 n=8/.test(html), 'the small-sample footnote line is back (D11: the mark replaces it)');
+  assert(/color:var\(--text\);">75\.0%</.test(clayRow), 'the 8-match Clay row is not 75.0% in --text');
+  assert(!/small sample|data-pp2-small|data-pp2-ratemark/.test(html), 'a small-sample mark survived');
+  assert(!/\d%\*/.test(html) && !/\* 5\u20139/.test(html), 'an asterisk small-sample mark is back');
   // grass n=4 -> THIN: the W–L alone, no rate (a dash)
   const grassRow = html.slice(html.indexOf('data-pp2-srow="grass"'), html.indexOf('data-pp2-srow="indoors"'));
   assert(!/\d+\.\d%/.test(grassRow), 'a 4-match row printed a rate');
   assert(/>2\u20132</.test(grassRow), 'the 4-match row lost its W–L');
-  // and a sub-5 row must not advertise a click
-  assert(!/data-pp2="career-surf" data-v="grass"/.test(html),
-    'the 4-match Grass row opens, against §9');
+  assert(!/data-pp2="career-surf" data-v="grass"/.test(html), 'the 4-match Grass row opens, against §9');
 });
-mustFail('[neg] the gate check would catch a small-sample rate painted white', () => {
-  const html = 'white-space:nowrap;color:var(--text);">75.0%<span>small sample</span>';
-  assert(/white-space:nowrap;color:var\(--text-label\);">75\.0%</.test(html),
-    'a small-sample rate rendered white');
+mustFail('[neg] the gate check would catch a small-sample mark', () => {
+  const html = 'white-space:nowrap;color:var(--text);">75.0%<span data-pp2-small="8">small sample · n=8</span>';
+  assert(!/small sample|data-pp2-small/.test(html), 'a small-sample mark survived');
 });
 mustFail('[neg] the mark check would catch the retired asterisk', () => {
   const html = 'white-space:nowrap;color:var(--text-label);">75.0%*</span> · * 5\u20139 matches, a small sample';
@@ -5371,8 +5388,8 @@ check('items 11-13,15 · the season table head, helper and footer are the file\'
   // TEN-376 Foundation: caps labels are Hanken var(--font-words) 10.5/700/0.10em/--text-label, never mono caps.
   assert(/font-family:var\(--font-words\);font-size:10\.5px;font-weight:700;letter-spacing:0\.10em;[^>]*color:var\(--text-label\);">Wins \/ losses</.test(html),
     'the WINS / LOSSES eyebrow is missing from the title line');
-  // 12 — the file's helper copy, not the invented one
-  assert(/Click any record to browse those matches/.test(html), 'the helper copy is not the file\'s');
+  // 12 — profile v2 (the export, 2026-11-09): no helper sentence under the title line
+  assert(!/Click any record to browse those matches/.test(html), 'the retired helper sentence is back');
   assert(!/every season on record from/.test(html.slice(0, html.indexOf('Record by season'))),
     'the invented helper copy is still in place');
   // 13 — head colours AND the 11px bottom padding that was missing live

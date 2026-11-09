@@ -4315,8 +4315,9 @@
       { f: 'firstInPct', label: 'First serve in', dp: 1, unit: '%' },
       { f: 'firstWonPct', label: 'First serve points won', dp: 1, unit: '%' },
       { f: 'secondWonPct', label: 'Second serve points won', dp: 1, unit: '%' },
-      { f: 'acesPerMatch', label: 'Aces per match', dp: 1, unit: '' },
-      { f: 'dfPerMatch', label: 'Double faults per match', dp: 1, unit: '', lower: true }
+      // profile v2 (founder 2026-11-09): per service game, 2 dp (dna-apitennis-ratings.js acesPerSG / dfPerSG)
+      { f: 'acesPerSG', label: 'Aces per service game', dp: 2, unit: '' },
+      { f: 'dfPerSG', label: 'Double faults per service game', dp: 2, unit: '', lower: true }
     ],
     return: [
       { f: 'ret1stWonPct', label: '1st serve return points won', dp: 1, unit: '%' },
@@ -4489,6 +4490,12 @@
   //   Note the borders differ from the HEAD control's (:68), which drops to
   //   radius 9/7 and 11px — two different segmented controls, not one reused.
   var CAREER_TABS = [['record', 'Record'], ['ratings', 'Ratings']];
+  var CR2_INFO = { what: 'His record season by season, by surface. Click any record for its matches.', defs: [
+    ['Total', 'Every match he played that season.'],
+    ['Indoors', 'A court type carved out of the surface columns, so Hard, Clay and Grass are outdoor only.'],
+    ['Surface not known', 'Matches with no clay, hard or grass surface on record (mostly Davis Cup ties). Every season sums to its total.'],
+    ['vs all', 'A surface win rate minus his all-surface rate, in points.'],
+    ['Source', 'Tennis Explorer counting, minus exhibitions, club matches, national championships and pro series.']] };
   // TEN-384 C1 · the Career record's first row, as the reference draws it: Record | Ratings on the tab
   // track at the left; caps WINDOW + Career | Last 52 and (Record tab only) caps TIER + All | ATP |
   // Challenger & ITF on small tracks at the right. The window used to sit in the modal header; the shell
@@ -4498,13 +4505,8 @@
     var tabs = recSegTrack(CAREER_TABS.map(function (t) {
       return recSegBtn('career-tab', t[0], t[1], tab === t[0], false);
     }).join(''), false);
-    var right = headScopeHtml();
-    if (tab === 'record') {
-      right += recLabelledSeg('Tier', CAREER_TIERS.map(function (t) {
-        return recSegBtn('career-tier', t[0], t[1], careerTier() === t[0], true);
-      }).join(''));
-    }
-    return recTabRow(tabs, right);
+    // profile v2 (founder 2026-11-09): the Tier control goes; the record reads every tier
+    return recTabRow(tabs, headScopeHtml());
   }
 
   // ── the WINDOW control, `Career | Last 52` — now in the tab row (TEN-384) ──
@@ -4522,7 +4524,7 @@
   var CAREER_TIERS = [['all', 'All'], ['atp', 'ATP'], ['chitf', 'Challenger & ITF']];
   var CAREER_NO_SPLIT = 'No tier split for this season: before 2021 we hold the season total only (All).';
   function careerTier() {
-    return state.careerTier === 'atp' || state.careerTier === 'chitf' ? state.careerTier : 'all';
+    return MK_V1 && (state.careerTier === 'atp' || state.careerTier === 'chitf') ? state.careerTier : 'all';   // v2: no Tier control
   }
   function careerTierWord(t) {
     return t === 'atp' ? 'ATP' : t === 'chitf' ? 'Challenger & ITF' : 'all tiers';
@@ -4894,15 +4896,11 @@
     var hg = gateFor(tn);
     if (hg === GATE.FULL || hg === GATE.SMALL) {
       heroRate = '<span style="font-size:14px;font-weight:700;color:' +
-        (hg === GATE.FULL ? 'var(--text)' : 'var(--text-label)') + ';"' +
-        (hg === GATE.SMALL ? ' title="' + smallSampleText(tn) + '"' : '') + '>' +
+        'var(--text)' + ';">' +
         allRate.toFixed(1) + '%</span>';
       // fx4 item 6 (founder D11): with a 5–9 career the mark goes UNDER the rate, not beside it — a column
       // whose first line is the rate, so the rate keeps the hero's baseline and the mark takes a second line.
-      if (hg === GATE.SMALL) {
-        heroRate = '<span data-pp2-ratemark="' + tn + '" style="display:inline-flex;flex-direction:column;' +
-          'align-items:flex-start;gap:2px;">' + heroRate + smallSampleHtml(tn) + '</span>';
-      }
+      // profile v2 (founder 2026-11-09): no small-sample mark — a 5–9 rate prints like any other
     }
     var scopeCaps = isL52 ? 'Last 52 weeks' : 'Career';
     var hero = '<div style="display:flex;align-items:baseline;gap:12px;">' +
@@ -4933,14 +4931,12 @@
       var can = rated;
       var why = noIndoor
         ? 'No court type on record'
-        : (n && !rated ? n + ' match' + (n === 1 ? '' : 'es') + ' ' + MIDDOT + ' under the five-match minimum'
-          : (g === GATE.SMALL ? smallSampleText(n) : ''));
+        : (n && !rated ? n + ' match' + (n === 1 ? '' : 'es') + ' ' + MIDDOT + ' under the five-match minimum' : '');
       var fill = barFillColour(n);
       var vs = (rated && allRate != null) ? pct - allRate : null;
       var lift = open ? 'background:var(--selected);' : '';
       // fx3 (D11): a 5–9 row's cells stretch, so they stay level on the first line and the mark sits under the rate.
-      var cellBase = 'padding:11px 0;border-bottom:1px solid var(--line);' + lift +
-        (g === GATE.SMALL ? 'align-self:stretch;' : '');
+      var cellBase = 'padding:11px 0;border-bottom:1px solid var(--line);' + lift;
       var shadow = function (first, last) {
         return open ? 'box-shadow:' + (first ? '-10px' : '-7px') + ' 0 0 0 var(--selected),' +
           (last ? '10px' : '7px') + ' 0 0 0 var(--selected);' : '';
@@ -4950,22 +4946,20 @@
       var tip = why ? ' title="' + esc(why) + '"' : '';
       return '<span' + attrs + tip + ' data-pp2-srow="' + s.id + '" style="' + cellBase + shadow(true, false) + cur +
           'font-size:12.5px;color:' + (n || !noIndoor ? 'var(--text)' : 'var(--text-label)') + ';">' + esc(s.label) + '</span>' +
-        '<span' + attrs + tip + ' style="' + cellBase + shadow(false, false) + cur + 'display:flex;align-self:stretch;' +
-          (g === GATE.SMALL ? 'align-items:flex-start;padding-top:16px;' : 'align-items:center;') + '">' +
+        '<span' + attrs + tip + ' style="' + cellBase + shadow(false, false) + cur + 'display:flex;align-self:stretch;align-items:center;">' +
           '<span style="display:block;flex:1;height:6px;border-radius:3px;background:var(--track);overflow:hidden;">' +
             (fill && pct != null ? '<span style="display:block;height:6px;width:' + pct.toFixed(1) + '%;background:' +
-              fill + ';"></span>' : '') + '</span></span>' +
+              (MK_V1 ? fill : 'var(--link)') + ';"></span>' : '') + '</span></span>' +   // v2: the export's link-blue bar
         '<span' + attrs + tip + ' style="' + cellBase + shadow(false, false) + cur + 'text-align:right;' +
           'font-family:\'IBM Plex Mono\',monospace;font-size:12.5px;color:var(--text-label);white-space:nowrap;">' +
           (n ? recordText(w, l) : DASH) + '</span>' +
         '<span' + attrs + tip + ' style="' + cellBase + shadow(false, false) + cur + 'text-align:right;' +
           'font-family:\'IBM Plex Mono\',monospace;font-size:12.5px;font-weight:700;white-space:nowrap;color:' +
-          (g === GATE.FULL ? 'var(--text)' : 'var(--text-label)') + ';">' +
-          (g === GATE.SMALL ? rateOverMark(pct.toFixed(1) + '%', n) : rated ? pct.toFixed(1) + '%' : DASH) + '</span>' +
+          (rated ? 'var(--text)' : 'var(--text-label)') + ';">' +
+          (rated ? pct.toFixed(1) + '%' : DASH) + '</span>' +
         '<span' + attrs + tip + ' style="' + cellBase + shadow(false, true) + cur + 'text-align:right;' +
           'font-family:\'IBM Plex Mono\',monospace;font-size:12.5px;font-weight:700;white-space:nowrap;color:' +
-          (vs == null || g !== GATE.FULL ? 'var(--text-label)'
-            : vs > 0.05 ? 'var(--pos)' : vs < -0.05 ? 'var(--neg)' : 'var(--text-label)') + ';">' +
+          (vs == null ? 'var(--text-label)' : signColour(Math.round(vs * 10) / 10)) + ';">' +
           (vs == null ? DASH : signed(vs, 1, 'pp')) + '</span>';
     }).join('');
 
@@ -5007,9 +5001,7 @@
       recCaps(esc(scopeCaps + ' ' + (isL52 ? '' : 'record ') + MIDDOT + ' ' + tierWord).replace(/ {2}/g, ' '),
         'display:block;margin-bottom:12px;') +
       hero +
-      '<div style="' + SGRID + '">' + shead + srows + '</div>' +
-      '<div style="font-size:11px;color:var(--text-label);margin-top:12px;line-height:1.5;">' +
-        noteBits.join(' ' + MIDDOT + ' ') + '</div>',
+      '<div style="' + SGRID + '">' + shead + srows + '</div>',
       'top', '22px 24px 24px');
 
     // ── C7 / C8 · Record by season — a joined panel under the card ─────────────
@@ -5028,10 +5020,10 @@
     var HEADS = [
       { label: 'Year', id: null },
       { label: 'Total', id: 'total' },
+      { label: 'Hard', id: 'hard' },   // profile v2: the export's order Hard · Clay · Grass · Indoors
       { label: 'Clay', id: 'clay' },
-      { label: 'Hard', id: 'hard' },
-      { label: 'Indoors', id: 'indoors' },
       { label: 'Grass', id: 'grass' },
+      { label: 'Indoors', id: 'indoors' },
       // TEN-449 (founder 2026-10-19, option C): every season sums to its total
       { label: 'Surface not known', id: 'unknown' }
     ];
@@ -5137,13 +5129,17 @@
       });
     }
 
+    // profile v2: every methodology line lives in the season panel's (?) — no helper sentence, no foot note
+    var cr2Notes = noteBits.slice(1).map(function (t) {   // the popover escapes: plain text, a hover's reason kept as its 2nd sentence
+      return String(t).replace(/<span title="([^"]*)">([^<]*)<\/span>/g, function (_, why, what) { return what + '. ' + why.replace(/&rsquo;|&#39;/g, '’'); })
+        .replace(/<[^>]+>/g, '');
+    })
+      .concat(recordSourceNote(p) ? [recordSourceNote(p)] : []);
     var season = recPanel(
-      '<div' + (recordSourceNote(p) ? ' title="' + esc(recordSourceNote(p)) + '"' : '') +
-        ' style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin:0 0 6px;">' +
+      '<div style="position:relative;">' + infoCorner('cr2', Object.assign({ notes: cr2Notes }, CR2_INFO)).replace('top:14px;right:14px', 'top:-4px;right:-10px') +
+      '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin:0 0 6px;padding-right:28px;">' +
         recCaps('Record by season ' + MIDDOT + ' ' + esc(tierWord)) + recCaps('Wins / losses') + '</div>' +
-      '<div style="font-size:12.5px;line-height:18.75px;color:var(--text-label);margin-bottom:14px;">' +
-        'Click any record to browse those matches ' + EMDASH + ' a surface cell for that surface ' +
-        'alone, the year for all of them.</div>' +
+      '<div style="height:14px;"></div></div>' +
       '<div style="display:grid;grid-template-columns:auto repeat(6,minmax(0,1fr));gap:0 14px;' +
         'align-items:center;">' + head + body + footer + surfDrill + '</div>',
       'bottom', '20px 24px 22px');
@@ -10703,7 +10699,7 @@
       return '<span style="position:sticky;top:0;z-index:1;background:var(--inner);' + MK_CAPS + 'text-align:' + (i >= 6 ? 'right' : 'left') + ';padding-bottom:7px;border-bottom:1px solid var(--edge-10);">' + h + '</span>';
     }).join('');
     var cell = function (html, st, m, wo) {
-      return '<span ' + (wo ? '' : sheetHook(m.sheetId || (m.date + '|' + m.opp))) + 'style="' + (wo ? '' : sheetCursor()) + 'padding:6px 0;border-top:1px solid var(--line);' + (st || '') + '">' + html + '</span>';
+      return '<span ' + (wo ? 'data-pp2-wo-row="1" ' : sheetHook(m.sheetId || (m.date + '|' + m.opp))) + 'style="' + (wo ? '' : sheetCursor()) + 'padding:6px 0;border-top:1px solid var(--line);' + (st || '') + '">' + html + '</span>';
     };
     var body = groups.map(function (g) {
       var spTxt = g.sp == null ? '' : '<span style="' + M + 'font-size:10.5px;color:var(--text-label);white-space:nowrap;">' + MIDDOT + ' speed ' + signed(g.sp - 1, 2, '') + '</span>';
@@ -13732,7 +13728,7 @@
     // it used to be Career|<current year>, which the file replaced. The two are
     // independent axes of one modal: switching tab must not reset the window.
     careerTab: 'record',
-    careerScope: 'career', splitScope: 'career', marketRole: 'all',
+    careerScope: 'l52', splitScope: 'career', marketRole: 'all',   // v2: the Career record opens on Last 52 weeks
     careerTier: 'all',   // TEN-384 · the Career record's Tier control (all | atp | chitf)
     // §5.8 Market edge. marketBand is "<group>:<bandId>" for the open drill;
     // marketSide is the cumulative chart's Back|Fade; marketSurf its surface
@@ -13863,7 +13859,7 @@
     state.key = String(key);
     state.ledgerOpen = false; state.ledgerExpanded = false;
     state.surfaces = []; state.priceFilters = []; state.modal = null;
-    state.careerScope = 'career'; state.careerDrill = null; state.careerTab = 'record'; state.careerTier = 'all';
+    state.careerScope = 'l52'; state.careerDrill = null; state.careerTab = 'record'; state.careerTier = 'all';
     state.splitScope = 'career'; state.marketRole = 'all'; state.lcRole = 'all';
     state.lcWin = 'career'; state.lcTier = 'all'; state.lcSurf = 'all'; state.lcSpeed = 'all'; state.lcDrill = null; state.lcDrillRes = null; state.mkLevel = 'main';
     state.drawDrill = null; state.drawFilter = 'all'; state.drawPage = 0;

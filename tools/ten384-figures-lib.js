@@ -76,7 +76,8 @@ function readers(I) {
     try { return fn(); } finally { Object.keys(I.state).forEach(k => delete I.state[k]); Object.assign(I.state, saved); }
   }
   function careerModal(p, scope, tier) {
-    return withState({ key: p.key, careerTab: 'record', careerScope: scope, careerTier: tier || 'all', careerDrill: null },
+    // profile v2 (2026-11-09): the window / residual notes live in Record by season's (?) cr2 — opened here so they print
+    return withState({ key: p.key, careerTab: 'record', careerScope: scope, careerTier: tier || 'all', careerDrill: null, info: 'cr2' },
       () => text(I.renderCareerModal(p, {})));
   }
   function readCareer(p) {

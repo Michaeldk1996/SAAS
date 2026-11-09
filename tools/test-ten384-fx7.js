@@ -101,12 +101,12 @@ function seasons(kind) {
 function seasonTableRow(I, p, year, tier) {
   const t = withState(I, { key: p.key, careerTab: 'record', careerScope: 'career', careerTier: tier || 'all', careerDrill: null },
     () => T(I.renderCareerModal(p, {})));
-  const i = t.indexOf('Year Total Clay Hard Indoors Grass');
+  const i = t.indexOf('Year Total Hard Clay Grass Indoors');   // profile v2: the export's column order
   assert(i >= 0, 'no season table');
   const m = new RegExp('\\b' + year + ' (\\S+) (\\S+) (\\S+) (\\S+) (\\S+)').exec(t.slice(i));
   assert(m, 'no ' + year + ' row in the season table');
   const c = s => (s === '—' ? '—' : s.replace('/', '–'));
-  return { total: c(m[1]), clay: c(m[2]), hard: c(m[3]), indoors: c(m[4]), grass: c(m[5]) };
+  return { total: c(m[1]), hard: c(m[2]), clay: c(m[3]), grass: c(m[4]), indoors: c(m[5]) };
 }
 function last52Row(I, p, tier) {
   const g = I.last52GridCells(p, tier || 'all');
@@ -122,7 +122,7 @@ function main() {
   const label = kind === 'ambiguous'
     ? 'a season where United Cup 1–1 and Laver Cup 1–1 both fit the indoor 1–1'
     : 'a season whose careerByYear row carries no indoor split';
-  ['all', 'atp'].forEach((tier) => {
+  ['all'].forEach((tier) => {   // profile v2 (founder 2026-11-09): the Career record has no Tier control
     H.check(`1 · ${label} [${tier}]: the Last 52 surface rows = the season table's 2026 row, surface by surface`, () => {
       const { I, p } = fxModule({ now: YEAR_END, ch: FX.careerHistory.concat(TEAM), profile: { careerByYear: seasons(kind) } });
       assert.strictEqual(I.last52Cutoff(), '2026-01-01', 'the window does not open on 1 Jan 2026');
@@ -182,7 +182,7 @@ H.check('1 · the season table is unchanged: every season row and tier = careerB
   let n = 0;
   ['ambiguous', 'nosplit'].forEach((kind) => {
     const { I, p } = fxModule({ now: YEAR_END, ch: FX.careerHistory.concat(TEAM), profile: { careerByYear: seasons(kind) } });
-    p.careerByYear.filter(y => y && y.total).forEach((y) => ['all', 'atp', 'chitf'].forEach((tier) => {
+    p.careerByYear.filter(y => y && y.total).forEach((y) => ['all'].forEach((tier) => {   // v2: no Tier control
       const want = expectedRow(y, tier);
       if (!want || (tier !== 'all' && !y[tier])) return;
       const got = seasonTableRow(I, p, String(y.year), tier);

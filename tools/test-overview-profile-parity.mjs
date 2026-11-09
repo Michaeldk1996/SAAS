@@ -16,21 +16,48 @@ import { overviewVM, profileWindow } from './ten334-overview-vm.mjs';
 const require = createRequire(import.meta.url);
 const HTML = readFileSync(new URL('../bsp-consult-dashboard.html', import.meta.url), 'utf8');
 const TIERS = ['all', 'atp', 'chitf'];
-const COLS = ['total', 'clay', 'hard', 'indoors', 'grass', 'unknown'];   // the profile's season-table order
+const COLS = ['total', 'hard', 'clay', 'grass', 'indoors', 'unknown'];   // the profile's season-table order (profile v2: the export's)
 const SURFS = ['clay', 'hard', 'indoors', 'grass'];
+const OV_COL_ORDER = ['total', 'clay', 'hard', 'indoors', 'grass', 'unknown'];   // the Match analysis Overview's own order (unchanged)
 const YEAR = String(new Date().getFullYear());
 const norm = s => (s == null ? null : String(s).replace(/[–/]/g, '-').trim());
 
 // ── the profile, rendered ──
+// Profile v2 (founder 2026-11-09) removed the Career record's Tier control: the profile RENDERS all tiers only. For ATP and
+// Challenger & ITF the profile side is its own calculation — careerTierCells / tierGridCells / rateText, the functions the
+// Overview calls through _internals — stated cell by cell exactly as the old tier view printed them.
+function profileFiguresComputed(I, p, tier) {
+  const wl = c => (c && (c.won || 0) + (c.lost || 0) ? `${c.won || 0}-${c.lost || 0}` : '—');
+  const cf = I.careerTierCells(p, tier), tot = cf.total || { won: 0, lost: 0 }, tn = tot.won + tot.lost;
+  const bars = {};
+  let sw = 0, sl = 0;
+  for (const s of SURFS) {
+    const c = cf[s], n = c ? (c.won || 0) + (c.lost || 0) : 0;
+    if (c) { sw += c.won || 0; sl += c.lost || 0; }
+    const r = I.rateText(c ? c.won : 0, c ? c.lost : 0);
+    bars[s] = { rec: n ? wl(c) : '—', rate: r === '—' ? null : r };
+  }
+  const resid = tot.won - sw + tot.lost - sl;
+  const seasons = {};
+  for (const y of (p.careerByYear || []).filter(y => y && y.total)) {
+    const g = I.tierGridCells(y, tier);
+    seasons[String(y.year)] = Object.fromEntries(COLS.map(c => [c, wl(g[c])]));
+  }
+  const hr = I.rateText(tot.won, tot.lost);
+  return { rec: tn ? `${tot.won}-${tot.lost}` : '—', rate: hr === '—' ? null : hr, bars, unknownN: resid > 0 ? resid : 0, seasons,
+    career: Object.fromEntries(COLS.map(c => [c, wl(cf[c])])), rateText: I.rateText };
+}
 function profileFigures(win, p, tier) {
   const I = win.PlayerProfileV2._internals;
-  Object.assign(I.state, { careerTab: 'record', careerScope: 'career', careerTier: tier, careerDrill: null });
+  if (tier !== 'all') return profileFiguresComputed(I, Object.assign({ key: p.key || 'fx' }, p), tier);
+  // the window / no-surface notes sit in Record by season's (?) cr2 since profile v2 — opened so they print
+  Object.assign(I.state, { careerTab: 'record', careerScope: 'career', careerTier: tier, careerDrill: null, info: 'cr2' });
   const h = I.renderCareerModal(p, { archetype: null });
   const hero = /font-size:31px;font-weight:800;[^>]*>([^<]*)<\/span>(?:<span[^>]*><span style="font-size:14px;font-weight:700;[^>]*>([\d.]+%)|<span style="font-size:14px;font-weight:700;[^>]*>([\d.]+%))?/.exec(h);
   const bars = {};
   for (const s of SURFS) {
     const a = h.indexOf(`data-pp2-srow="${s}"`), b = h.indexOf('data-pp2-srow=', a + 10);
-    const sl = h.slice(a, b < 0 ? h.indexOf('vs all = ', a) : b);
+    const sl = h.slice(a, b < 0 ? h.indexOf('Record by season', a) : b);
     const rec = />(\d+–\d+|—)<\/span>/.exec(sl);
     const rate = />(\d+\.\d%)/.exec(sl);
     bars[s] = { rec: norm(rec && rec[1]), rate: rate ? rate[1] : null };
@@ -73,7 +100,7 @@ function overviewFigures(src, key, p, tier) {
   for (const x of col.matchAll(/data-ov-cell="0\|(\d{4})\|(\w+)"[^>]*>([^<]*)</g)) (seasons[x[1]] = seasons[x[1]] || {})[x[2]] = norm(x[3]);
   const tot = col.slice(col.indexOf('class="ov-total"'));
   const tv = [...tot.matchAll(/<span style="font-family:'IBM Plex Mono'[^>]*>([^<]*)<\/span>/g)].map(x => norm(x[1]));
-  const career = Object.fromEntries(COLS.map((c, i) => [c, tv[i]]));
+  const career = Object.fromEntries(OV_COL_ORDER.map((c, i) => [c, tv[i]]));
   const cards = {};
   for (const s of SURFS) {
     const a = col.indexOf(`data-ov-cell="0|season|${s}"`);

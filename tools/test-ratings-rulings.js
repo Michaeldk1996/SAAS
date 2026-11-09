@@ -4,6 +4,8 @@
 // FOUNDER RULINGS 2026-09-19 — §5.9 Ratings.
 //
 // 1 · ACE / DOUBLE FAULT are per-match COUNTS, not rates.
+//   Profile v2 (founder 2026-11-09) supersedes it: aces / double faults PER SERVICE GAME (2 dp), from the builder's
+//   own service-game counts (dna-apitennis-ratings.js acesPerSG / dfPerSG) — still no %.
 //     "Relabel as what the store actually holds … 'Aces per match' and 'Double
 //      faults per match'. No % sign anywhere. Do not synthesise a service-point
 //      denominator to make the export's label true."
@@ -68,21 +70,22 @@ function ratingsHtml() {
 }
 
 // ── RULING 1 ────────────────────────────────────────────────────────────────
-check('RULING 1: the tiles are labelled "Aces per match" / "Double faults per match"', () => {
+check('RULING 1 (profile v2, founder 2026-11-09): the tiles are "Aces per service game" / "Double faults per service game", 2 dp', () => {
   const { M } = load();
   const serve = M._internals.DNA_TILES.serve;
-  const ace = serve.find(t => t.f === 'acesPerMatch');
-  const df = serve.find(t => t.f === 'dfPerMatch');
-  assert.ok(ace, 'no acesPerMatch tile');
-  assert.ok(df, 'no dfPerMatch tile');
-  assert.strictEqual(ace.label, 'Aces per match', `ace label is "${ace.label}"`);
-  assert.strictEqual(df.label, 'Double faults per match', `df label is "${df.label}"`);
+  const ace = serve.find(t => t.f === 'acesPerSG');
+  const df = serve.find(t => t.f === 'dfPerSG');
+  assert.ok(ace, 'no acesPerSG tile');
+  assert.ok(df, 'no dfPerSG tile');
+  assert.strictEqual(ace.label, 'Aces per service game', `ace label is "${ace.label}"`);
+  assert.strictEqual(df.label, 'Double faults per service game', `df label is "${df.label}"`);
+  assert.strictEqual(ace.dp, 2); assert.strictEqual(df.dp, 2);
 });
 
 check('RULING 1: neither count carries a unit — no % anywhere on them', () => {
   const { M } = load();
   const serve = M._internals.DNA_TILES.serve;
-  for (const f of ['acesPerMatch', 'dfPerMatch']) {
+  for (const f of ['acesPerSG', 'dfPerSG']) {
     const t = serve.find(x => x.f === f);
     assert.ok(!t.unit, `${f} carries unit "${t.unit}" — the ruling forbids a % on a per-match count`);
     assert.ok(!/%/.test(t.label), `${f} label carries a %: "${t.label}"`);
@@ -91,7 +94,7 @@ check('RULING 1: neither count carries a unit — no % anywhere on them', () => 
 
 check('RULING 1: the rendered panel prints no % beside either count', () => {
   const html = ratingsHtml();
-  for (const label of ['Aces per match', 'Double faults per match']) {
+  for (const label of ['Aces per service game', 'Double faults per service game']) {
     assert.ok(html.includes(label), `panel never prints "${label}"`);
     // the tile body runs value · delta · label · tour line; take a window around
     // the label and require no % in it.

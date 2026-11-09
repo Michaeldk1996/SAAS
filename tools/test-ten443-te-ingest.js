@@ -438,7 +438,10 @@ const yr = (p, y) => p.careerByYear.find((r) => String(r.year) === y);
     const NOTE = 'Counted as Tennis Explorer counts, minus exhibitions, club matches, national championships and pro series.';
     sb.careerRecordMeta = { asOf: '2026-10-18', refreshedAt: null };
     assert.strictEqual(I.recordSourceNote({ key: KEY }), NOTE + ' Tennis Explorer data as of 18 Oct.');
-    assert.ok(I.renderCareerModal(Object.assign({ key: KEY }, on.p)).includes('title="' + NOTE + ' Tennis Explorer data as of 18 Oct."'), 'the hover is on Record by season');
+    // profile v2 (2026-11-09): the note sits in Record by season's (?) cr2, no longer a title hover
+    I.state.info = 'cr2'; I.state.careerScope = 'career';
+    assert.ok(I.renderCareerModal(Object.assign({ key: KEY }, on.p)).includes(NOTE + ' Tennis Explorer data as of 18 Oct.'), 'the note is not in Record by season\'s (?)');
+    I.state.info = null;
     sb.careerRecordMeta = { asOf: '2026-10-18', refreshedAt: '2026-10-26T05:00:00.000Z' };
     assert.strictEqual(I.recordSourceNote({ key: KEY }), NOTE, 'the freshness clause goes once the refresh has run');
     sb.careerRecord[KEY] = null;

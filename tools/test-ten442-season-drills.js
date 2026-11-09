@@ -96,8 +96,8 @@ const CELLS = ['', 'clay', 'hard', 'indoors', 'grass'];
 function audit(I, p) {
   const bad = [];
   let opened = 0;
-  for (const tier of ['all', 'atp', 'chitf']) {
-    I.resetState();
+  for (const tier of ['all']) {   // profile v2 (founder 2026-11-09): the Career record has no Tier control
+    I.resetState(); I.state.careerScope = 'career'; I.state.info = 'cr2';
     I.state.careerTab = 'record'; I.state.careerScope = 'career'; I.state.careerTier = tier;
     const scopes = p.careerByYear.map((y) => ({ key: String(y.year), g: I.tierGridCells(y, tier) }));
     scopes.push({ key: 'career', g: I.careerTierCells(p, tier) });
@@ -157,15 +157,16 @@ function audit(I, p) {
 
   const base = audit(I, profile);
   check(`every opened drill paints exactly its cell's matches (${base.opened} drills opened)`, () => {
-    assert.ok(base.opened >= 30, 'too few drills opened — the fixture or the state drive is broken: ' + base.opened);
+    assert.ok(base.opened >= 15,   // one tier since profile v2 (was ≥ 30 over three)
+      'too few drills opened — the fixture or the state drive is broken: ' + base.opened);
     assert.deepStrictEqual(base.bad, []);
   });
   check('the 2025 Total lists the unsurfaced match, marked "No surface"', () => {
-    I.resetState(); I.state.careerDrill = { kind: 'cell', year: '2025', surf: '' };
+    I.resetState(); I.state.careerScope = 'career'; I.state.info = 'cr2'; I.state.careerDrill = { kind: 'cell', year: '2025', surf: '' };
     assert.ok(/No surface/.test(I.renderCareerModal(profile)));
   });
   check('the 2026 Indoors drill lists Montpellier-shape rows as Indoor, never as an empty panel', () => {
-    I.resetState(); I.state.careerDrill = { kind: 'cell', year: '2026', surf: 'indoors' };
+    I.resetState(); I.state.careerScope = 'career'; I.state.info = 'cr2'; I.state.careerDrill = { kind: 'cell', year: '2026', surf: 'indoors' };
     const html = I.renderCareerModal(profile);
     assert.strictEqual((html.match(/data-pp2-drill-row=/g) || []).length, 4);
     assert.ok(/Hard · Indoor · ATP/.test(html), 'group meta does not state surface · court · tier');
@@ -176,7 +177,7 @@ function audit(I, p) {
     // The shard as a pre-TEN-395 profile wrote it: no per-match court flag on any row.
     const stale = rows.map((r) => { const o = Object.assign({}, r); delete o.indoor; return o; });
     const Is = loadModule(profile, stale);
-    Is.resetState(); Is.state.careerDrill = { kind: 'cell', year: '2026', surf: 'indoors' };
+    Is.resetState(); Is.state.careerScope = 'career'; Is.state.info = 'cr2'; Is.state.careerDrill = { kind: 'cell', year: '2026', surf: 'indoors' };
     const html = Is.renderCareerModal(profile);
     const note = (/data-pp2-drill-note="1"[^>]*>([^<]*)</.exec(html) || [])[1] || '';
     const painted = (html.match(/data-pp2-drill-row=/g) || []).length;
@@ -194,7 +195,7 @@ function audit(I, p) {
   }
   check('stale shard: an unresolvable season states the gap and its reason, word for word', () => {
     const Is = loadModule(profile, rows.map((r) => { const o = Object.assign({}, r); delete o.indoor; return o; }));
-    const noteOf = (surf) => { Is.resetState(); Is.state.careerDrill = { kind: 'cell', year: '2024', surf };
+    const noteOf = (surf) => { Is.resetState(); Is.state.careerScope = 'career'; Is.state.info = 'cr2'; Is.state.careerDrill = { kind: 'cell', year: '2024', surf };
       const h = Is.renderCareerModal(profile);
       return [(h.match(/data-pp2-drill-row=/g) || []).length, (/data-pp2-drill-note="1"[^>]*>([^<]*)</.exec(h) || [])[1]]; };
     assert.deepStrictEqual(noteOf('indoors'), [0, '2 counted · 0 found in results · 2 missing · 4 matches have no court type on record yet']);
@@ -206,7 +207,7 @@ function audit(I, p) {
   // Founder 2026-10-22 · RENDER PATH: the walkover must be IN the match list, never dropped. Mutation: filter walkover rows
   // out of recordSpine / calSpineAll in player-profile-v2.js -> no WO row painted, this goes red.
   check('2026-10-22 · the 2025 walkover is painted in its season drill: WO under the date, the W marker, – scores, no count', () => {
-    const I2 = loadModule(profile, rows); I2.resetState(); I2.state.careerTab = 'record'; I2.state.careerScope = 'career';
+    const I2 = loadModule(profile, rows); I2.resetState(); I2.state.careerScope = 'career'; I2.state.info = 'cr2'; I2.state.careerTab = 'record'; I2.state.careerScope = 'career';
     I2.state.careerTier = 'all'; I2.state.careerDrill = { kind: 'cell', year: '2025', surf: '' };
     const html = I2.renderCareerModal(profile);
     assert.strictEqual((html.match(/data-pp2-drill-row="WO"/g) || []).length, 1, 'one walkover row listed');
@@ -219,7 +220,7 @@ function audit(I, p) {
     const pre = Object.assign({}, profile, { careerByYear: profile.careerByYear.concat([{ year: '2020', allTier: false,
       total: { won: 2, lost: 1 }, clay: { won: 2, lost: 1 }, hard: null, grass: null, indoor: null, atp: null, chitf: null }]) });
     const Ip = loadModule(pre, rows);
-    const noteOf = (year, surf) => { Ip.resetState(); Ip.state.careerDrill = { kind: 'cell', year, surf };
+    const noteOf = (year, surf) => { Ip.resetState(); Ip.state.careerScope = 'career'; Ip.state.info = 'cr2'; Ip.state.careerDrill = { kind: 'cell', year, surf };
       return (/data-pp2-drill-note="1"[^>]*>([^<]*)</.exec(Ip.renderCareerModal(pre)) || [])[1]; };
     const cut = String(new Date().getFullYear() - 5);
     assert.strictEqual(noteOf('2020', ''), '3 counted · 0 found in results · 3 not in database · Challenger/ITF results before ' + cut + ' not in database');
@@ -232,22 +233,22 @@ function audit(I, p) {
   check('the Career footnote reads "N Davis Cup matches with no surface — listed under the year total" from his own rows', () => {
     const dc = rows.map((r) => (r.tournament === 'Exhibition Cup' ? Object.assign({}, r, { tournament: 'ATP Davis Cup - World Group' }) : r));
     const Id = loadModule(profile, dc);
-    Id.resetState();
+    Id.resetState(); Id.state.careerScope = 'career'; Id.state.info = 'cr2';
     const html = Id.renderCareerModal(profile);
-    assert.ok(/>1 Davis Cup match with no surface — listed under the year total</.test(html), 'footnote: ' + (html.match(/>[^<>]*no surface[^<>]*</) || [''])[0]);
+    assert.ok(/>1 Davis Cup match with no surface — listed under the year total[.<]/.test(html), 'footnote: ' + (html.match(/>[^<>]*no surface[^<>]*</) || [''])[0]);
     // season by season: a stored no-surface row in a season whose total does not count it is not "listed"
     const moved = dc.map((r) => (/davis cup/i.test(r.tournament) ? Object.assign({}, r, { year: '2026', date: '2026-09-10' }) : r));
     const Im = loadModule(profile, moved);
-    Im.resetState();
-    assert.ok(/>1 match with no surface on record</.test(Im.renderCareerModal(profile)), 'a mis-seasoned row was called listed');
+    Im.resetState(); Im.state.careerScope = 'career'; Im.state.info = 'cr2';
+    assert.ok(/>1 match with no surface on record[.<]/.test(Im.renderCareerModal(profile)), 'a mis-seasoned row was called listed');
     // a non-Davis-Cup unsurfaced row is listed but not called Davis Cup
-    I.resetState();
-    assert.ok(/>1 match with no surface — listed under the year total</.test(I.renderCareerModal(profile)));
+    I.resetState(); I.state.careerScope = 'career'; I.state.info = 'cr2';
+    assert.ok(/>1 match with no surface — listed under the year total[.<]/.test(I.renderCareerModal(profile)));
   });
   check('a career-history shard that has not answered says "match list loading", never a count', () => {
     const sb = loadModule(profile, rows);
     delete global.window.careerHistory[KEY];
-    sb.resetState(); sb.state.careerDrill = { kind: 'cell', year: '2026', surf: 'indoors' };
+    sb.resetState(); sb.state.careerScope = 'career'; sb.state.info = 'cr2'; sb.state.careerDrill = { kind: 'cell', year: '2026', surf: 'indoors' };
     const note = (/data-pp2-drill-note="1"[^>]*>([^<]*)</.exec(sb.renderCareerModal(profile)) || [])[1];
     assert.strictEqual(note, 'match list loading');
   });
@@ -261,7 +262,6 @@ function audit(I, p) {
       "seasonIndoor: rowYear ? r.indoor === true : typeof r.indoor === 'boolean' ? r.indoor : null,", 'seasonIndoor: null,')],
     ['seasonCellOf stops carving Indoors out of the surfaces', (s) => s.replace(
       "if (court === 'Indoor') return 'indoors';\n    if (carved", "if (carved")],
-    ['drillScope skips the tier filter', (s) => s.replace("if (t && r.tier !== t) return;", '')],
   ];
   for (const [name, edit] of MUT) {
     check('negative control — ' + name + ' → the audit goes red', () => {
@@ -275,7 +275,7 @@ function audit(I, p) {
   const staleRows = rows.map((r) => { const o = Object.assign({}, r); delete o.indoor; return o; });
   const overList = (Ix) => {
     const out = [];
-    Ix.resetState();
+    Ix.resetState(); Ix.state.careerScope = 'career'; Ix.state.info = 'cr2';
     for (const y of profile.careerByYear) {
       const g = Ix.tierGridCells(y, 'all');
       for (const c of ['hard', 'indoors']) {

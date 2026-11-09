@@ -312,18 +312,17 @@ H.check('6 · names: "J-L. Struff" → "Struff J-L." (ledger / ribbon); mkOppNam
   assert.strictEqual(I.mkOppName('Cerundolo J.M.'), 'J. M. Cerundolo');
   assert.strictEqual(I.surnameOf('J-L. Struff'), 'Struff');
 });
-H.check('6 · Career hero with a 5–9 career: the small-sample mark sits UNDER the rate (one column), not beside it', () => {
+H.check('6 · Career hero with a 5–9 career (profile v2, founder 2026-11-09 "no mark"): the rate prints alone, white, no small-sample mark', () => {
   const src = fs.readFileSync(PP2, 'utf8');
   const i = src.indexOf('var heroRate = \'\';');
   const body = src.slice(i, src.indexOf('var scopeCaps', i));
-  // execute the real hero branch with a 7-match career
   // eslint-disable-next-line no-new-func
   const f = new Function('gateFor', 'GATE', 'tn', 'allRate', 'smallSampleText', 'smallSampleHtml', body + '\nreturn heroRate;');
   const GATE = { FULL: 'full', SMALL: 'small', THIN: 'thin', NONE: 'none' };
   const html = f(() => GATE.SMALL, GATE, 7, 71.4, n => 'small sample · n=' + n, n => '<span data-pp2-small="' + n + '">small sample · n=' + n + '</span>');
-  const col = /^<span data-pp2-ratemark="7" style="display:inline-flex;flex-direction:column;/.test(html);
-  assert(col, 'the rate and the mark are siblings in the hero row: ' + html);
-  assert(html.indexOf('71.4%') < html.indexOf('data-pp2-small'), 'the mark is not after (under) the rate');
+  assert(/71\.4%/.test(html), 'no rate: ' + html);
+  assert(!/small sample|data-pp2-small|data-pp2-ratemark/.test(html), 'a small-sample mark on the hero: ' + html);
+  assert(/color:var\(--text\)/.test(html), 'the 5–9 rate is not white');
 });
 
 H.done();

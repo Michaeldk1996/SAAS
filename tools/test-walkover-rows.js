@@ -89,10 +89,12 @@ H.check('B · RENDER: the 2025 record drill paints both 2025 walkovers (WO under
   assert.strictEqual((html.match(/data-pp2-drill-row="[WL]"/g) || []).length, y.total.won + y.total.lost, 'the list counts the cell');
 });
 H.check('B · RENDER: Court speed lists the walkover in its band and counts it nowhere', () => {
-  const I = B.I; I.resetState(); I.state.key = KEY; I.state.speedSurf = 'all';
-  const band = I.speedBands(B.p).find((b) => (b.listed || []).some((m) => m.date === '2025-08-22'));
+  // profile v2 (founder 2026-11-09): bands per edition (spdData); the walkover is listed with its WO chip
+  const I = B.I; I.resetState(); I.state.key = KEY; I.state.spdSurf = 'all';
+  const band = I.spdData(B.p).bands.find((b) => (b.listed || []).some((m) => m.date === '2025-08-22'));
   assert.ok(band, 'the 2025 Winston-Salem walkover is banded');
-  I.state.speedBand = band.band.id;
+  assert.ok(!band.ms.some((m) => m.date === '2025-08-22'), 'the walkover is counted in its band');
+  I.state.spdBand = band.key;
   const html = I.renderSpeedModal(B.p);
   assert.ok(/data-pp2-wo-row="1"/.test(html) && html.includes('Fucsovics'), 'painted in the band list');
   assert.ok(/walkovers?, not counted/.test(L.text(html)), 'the header says it is not counted');
