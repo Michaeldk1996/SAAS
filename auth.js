@@ -13,7 +13,7 @@
  *
  * Firestore user document: users/{uid}
  *   fullName, email, plan ('free'), oddsFormat ('decimal'),
- *   favouriteBookmakers [], favouriteMatches [] (TEN-403: starred match keys), timezone,
+ *   favouriteBookmakers [], favouriteMatches [] (TEN-403: starred match keys), watchPlayers [] (watched player keys), timezone,
  *   notifications { favouritePlayers, valuePicks, openingOdds, sharpMoney } (all false),
  *   createdAt (server timestamp)
  */
@@ -247,6 +247,7 @@
       timezoneMode: tzMode,
       favouriteBookmakers: Array.isArray(data.favouriteBookmakers) ? data.favouriteBookmakers : [],
       favouriteMatches: cleanMatchKeys(data.favouriteMatches),
+      watchPlayers: cleanMatchKeys(data.watchPlayers),   // profile v2 (founder 2026-11-09): watched player keys
       notifications: notif,
       createdAt: data.createdAt || null
     };
@@ -481,6 +482,8 @@
         if (Array.isArray(patch.favouriteBookmakers)) updates.favouriteBookmakers = patch.favouriteBookmakers;
         // TEN-403: the Today's Matches favourites (match keys), deduped, strings only, capped.
         if (Array.isArray(patch.favouriteMatches)) updates.favouriteMatches = cleanMatchKeys(patch.favouriteMatches);
+        // Profile v2 (founder 2026-11-09): the profile header's watchlist (api-tennis player keys), same cleaning.
+        if (Array.isArray(patch.watchPlayers)) updates.watchPlayers = cleanMatchKeys(patch.watchPlayers);
         if (patch.notifications && typeof patch.notifications === 'object') {
           var merged = Object.assign({}, (_cachedUser && _cachedUser.notifications) || defaultNotif());
           NOTIF_KEYS.forEach(function (k) {

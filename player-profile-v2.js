@@ -305,6 +305,15 @@
     // already carry an inline line-height, and an inline declaration outranks any
     // selector — so they are unaffected and only the inherited 1.5 is undone.
     '{line-height:normal;}' +
+    // Profile v2 (2026-11-09) hovers: the (?) icon, Compare with… and its hits, the star, the opponent link, the drill
+    // box's rows, Clear all.
+    '.pp2-qi:hover{border-color:var(--edge-24)!important;color:var(--text)!important;}' +
+    '.pp2-star:hover{background:var(--selected)!important;}' +
+    '.pp2-cmpbtn:hover{border-color:var(--edge-24)!important;}' +
+    '.pp2-cmphit:hover{background:var(--wash-4);}' +
+    '.pp2-ulink:hover{text-decoration-color:var(--text)!important;}' +
+    '.pp2-fbrow:hover>*{background:var(--wash-4);box-shadow:-6px 0 0 var(--wash-4),6px 0 0 var(--wash-4);}' +
+    '.pp2-clearall:hover{color:var(--text)!important;}' +
     // §5.3 item 7 — the file gives the tournament row a hover fill
     // (`style-hover="background:var(--inner)"`, Player Stat Boxes
     // .dc.html:489). An inline style cannot express :hover, so it lands here,
@@ -808,11 +817,26 @@
     // board's fixture store is not on the page this is a dash with the reason
     // the spec prescribes, never a fabricated "Tomorrow".
     var nx = ctx.nextMatch;
+    // Profile v2 (2026-11-09): the opponent is a link to Head to Head with the pair set; a third line carries the
+    // match card's price (subject first, mono 12.5/700) and its book in grey — a dash when the card has no price.
+    var oppHtml = nx && nx.opponent
+      ? (nx.opponentKey != null
+          ? '<a href="#head-to-head" data-pp2="h2h-open" data-v="' + esc(nx.opponentKey) + '" class="pp2-ulink" style="color:var(--text);' +
+            'font-weight:600;text-decoration:underline;text-decoration-color:color-mix(in srgb, var(--text) 30%, transparent);' +
+            'text-underline-offset:3px;">' + esc(initialSurname(nx.opponent)) + '</a>'
+          : '<span style="font-weight:600;color:var(--text);">' + esc(initialSurname(nx.opponent)) + '</span>')
+      : DASH;
+    var px = nx && nx.price;
     cells.push(cell('Next match',
       nx && nx.label ? esc(nx.label) : DASH,
       nx ? 'var(--text)' : DASH_COLOUR,
-      nx ? 'vs ' + (nx.opponent ? '<span style="font-weight:600;color:var(--text);">' + esc(initialSurname(nx.opponent)) + '</span>' : DASH)
-        : 'no fixture on record'));
+      nx ? 'vs ' + oppHtml : 'no fixture on record',
+      nx ? (px
+        ? '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:12.5px;font-weight:700;color:var(--text);">' +
+            esc(px.own) + ' ' + MIDDOT + ' ' + esc(px.opp) + '</span>' +
+            (px.book ? ' <span style="font-size:12px;color:var(--text-label);">' + esc(px.book) + '</span>' : '')
+        : '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:12.5px;font-weight:700;color:' + DASH_COLOUR + ';">' + DASH + '</span>')
+      : null));
 
     // Season
     var sN = (sWon || 0) + (sLost || 0);
@@ -831,18 +855,25 @@
       esc(ctx.archetype || DASH) + '</span>');
     meta.push('<span>' + esc(p.country || DASH) + '</span>');
     meta.push('<span>' + (p.age == null ? DASH : 'Age ' + esc(p.age)) + '</span>');
+    meta.push('<span>' + esc(handText(p)) + '</span>');   // profile v2: "R / 2HBH" (Tennis Abstract), else a dash
     meta.push('<span>Elo <span style="font-family:\'IBM Plex Mono\',monospace;color:' +
       (elo == null ? DASH_COLOUR : 'var(--text)') + ';">' + (elo == null ? DASH : esc(Math.round(Number(elo)))) +
       '</span></span>');
     return '' +
-      '<div class="pp2-head" style="border-bottom:1px solid var(--line);padding-bottom:26px;' +
-      'display:flex;align-items:flex-start;gap:28px;flex-wrap:wrap;">' +
+      '<div class="pp2-head" style="border-bottom:1px solid var(--edge-10);padding-bottom:26px;' +
+      'display:flex;align-items:center;gap:28px;flex-wrap:wrap;">' +
       renderAvatar(p, rank) +
       '<div style="flex:1;min-width:260px;display:flex;flex-direction:column;gap:10px;">' +
-        '<span class="pp2-name" style="font-size:40px;font-weight:800;letter-spacing:-0.8px;line-height:40px;' +
-          'white-space:nowrap;color:var(--text);">' + esc(p.name) + '</span>' +
-        '<span class="pp2-meta" style="font-size:14px;color:var(--text-label);">' +
-          meta.join(' ' + MIDDOT + ' ') + '</span>' +
+        '<div style="display:flex;align-items:center;gap:10px;position:relative;">' +
+          '<span class="pp2-name" style="font-size:40px;font-weight:800;letter-spacing:-0.02em;line-height:1;' +
+            'white-space:nowrap;color:var(--text);">' + esc(p.name) + '</span>' +
+          watchStarHtml(p) + compareButtonHtml() +
+          (state.cmpOpen ? comparePopoverHtml(p) : '') +
+        '</div>' +
+        '<span style="display:flex;align-items:center;gap:10px;position:relative;">' +
+          '<span class="pp2-meta" style="font-size:14px;color:var(--text-label);">' + meta.join(' ' + MIDDOT + ' ') + '</span>' +
+          infoIcon('pinfo', PAGE_INFO, 'About this page') +
+        '</span>' +
       '</div>' +
       // The four state cells sit on the avatar's baseline (reference: the strip's bottom = the avatar's
       // bottom), each with a 1px --line rule on its left that spans the cell's own text block only.
@@ -860,7 +891,7 @@
      * what the design capture shows (rule 54.5 CSS, text ink 50.0, ~3 above and
      * ~1.5 below).
      */
-    function cell(label, value, colour, sub) {
+    function cell(label, value, colour, sub, sub2) {
       return '' +
         '<div class="pp2-cell" style="display:flex;flex-direction:column;justify-content:flex-end;gap:6px;' +
           'padding:0 20px;border-left:1px solid var(--line);">' +
@@ -869,8 +900,74 @@
         '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:15px;font-weight:700;' +
           'color:' + colour + ';white-space:nowrap;">' + value + '</div>' +
         '<div style="font-size:12px;color:var(--text-label);white-space:nowrap;">' + sub + '</div>' +
+        (sub2 ? '<div style="white-space:nowrap;line-height:1.2;">' + sub2 + '</div>' : '') +
         '</div>';
     }
+  }
+
+  // Profile v2 (2026-11-09) header parts ─────────────────────────────────────
+  // "R / 2HBH": Tennis Abstract's hand + backhand, carried in his career-splits file (build-career-splits.js).
+  // Hand without backhand → "R"; nothing → a dash.
+  function handText(p) {
+    var cs = (window.careerSplits || {})[String(p.key)];
+    var h = cs && (cs.hand === 'R' || cs.hand === 'L') ? cs.hand : null;
+    var b = cs && (cs.backhand === 1 || cs.backhand === 2) ? cs.backhand : null;
+    if (!h) return DASH;
+    return b ? h + ' / ' + b + 'HBH' : h;
+  }
+  var PAGE_INFO = {
+    what: 'His profile: who he is, how he is priced for his next match, and eight drawers on his record.',
+    scope: 'Career and last 52 weeks ' + MIDDOT + ' all completed matches on record ' + MIDDOT +
+      ' prices from Pinnacle closing, Bet365 where Pinnacle is missing.'
+  };
+  var STAR_PATH = 'M10 2.8l2.2 4.6 5 .7-3.6 3.5.9 5L10 14.2l-4.5 2.4.9-5L2.8 8.1l5-.7z';
+  function watchStarHtml(p) {
+    var on = typeof window.pp2IsWatched === 'function' && window.pp2IsWatched(p.key);
+    var t = on ? 'Remove from watchlist' : 'Add to watchlist';
+    return '<button type="button" data-pp2="watch" class="pp2-star" title="' + t + '" aria-label="' + t + '" aria-pressed="' + on + '" ' +
+      'style="cursor:pointer;width:24px;height:24px;border-radius:7px;display:flex;align-items:center;justify-content:center;' +
+      'flex:none;margin-top:4px;padding:0;border:0;background:transparent;">' +
+      '<svg width="14" height="14" viewBox="0 0 20 20" fill="' + (on ? 'var(--text)' : 'none') + '" style="pointer-events:none;">' +
+      '<path d="' + STAR_PATH + '" stroke="' + (on ? 'var(--text)' : 'var(--text-label)') + '" stroke-width="1.5" stroke-linejoin="round"></path></svg></button>';
+  }
+  function compareButtonHtml() {
+    var on = state.cmpOpen;
+    return '<span data-pp2="cmp-toggle" role="button" class="pp2-cmpbtn" style="cursor:pointer;display:inline-flex;align-items:center;gap:7px;' +
+      'height:26px;padding:0 10px;border-radius:8px;box-sizing:border-box;border:1px solid ' + (on ? 'var(--edge-24)' : 'var(--edge-10)') + ';' +
+      'background:' + (on ? 'var(--selected)' : 'transparent') + ';font-size:12px;font-weight:700;color:var(--text);white-space:nowrap;' +
+      'user-select:none;margin-left:6px;margin-top:4px;"><svg width="13" height="13" viewBox="0 0 20 20" fill="none" style="pointer-events:none;">' +
+      '<path d="M4 6h12M4 10h12M4 14h7" stroke="var(--text-label)" stroke-width="1.6" stroke-linecap="round"></path></svg>Compare with…</span>';
+  }
+  function comparePopoverHtml(p) {
+    var q = state.cmpQ || '';
+    var hits = typeof window.pp2CompareRoster === 'function' ? window.pp2CompareRoster(q, p.key) : [];
+    var list = hits.map(function (r) {
+      return '<div data-pp2="cmp-pick" data-v="' + esc(r.key) + '" class="pp2-cmphit" style="display:flex;align-items:center;gap:10px;' +
+        'padding:8px 10px;border-radius:8px;cursor:pointer;">' +
+        '<span style="width:26px;height:26px;border-radius:50%;background:var(--selected);border:1px solid var(--edge-10);display:flex;' +
+          'align-items:center;justify-content:center;font-family:\'IBM Plex Mono\',monospace;font-size:10px;font-weight:700;color:var(--text);' +
+          'flex:none;box-sizing:border-box;pointer-events:none;">' + esc(initials(r.full || r.name)) + '</span>' +
+        '<span style="flex:1;min-width:0;font-size:13px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;' +
+          'text-overflow:ellipsis;pointer-events:none;">' + esc(r.name) + '</span>' +
+        '<span style="font-size:11.5px;color:var(--text-label);white-space:nowrap;pointer-events:none;">' + esc(r.meta) + '</span></div>';
+    }).join('');
+    return '<div data-pp2="cmp-close" style="position:fixed;inset:0;z-index:60;"></div>' +
+      '<div data-pp2="card" style="position:absolute;top:calc(100% + 8px);left:0;z-index:61;width:340px;background:var(--card);' +
+        'border:1px solid var(--edge-10);border-radius:14px;box-shadow:var(--shadow-pop);padding:10px;display:flex;flex-direction:column;' +
+        'gap:8px;box-sizing:border-box;cursor:default;">' +
+        '<label style="display:flex;align-items:center;gap:10px;background:var(--inner);border:1px solid var(--edge-6);border-radius:11px;' +
+          'padding:10px 13px;">' +
+          '<svg width="16" height="16" viewBox="0 0 20 20" fill="none" style="flex:none;"><circle cx="9" cy="9" r="6" stroke="var(--link)" ' +
+          'stroke-width="1.7"></circle><path d="m14 14 3 3" stroke="var(--link)" stroke-width="1.7" stroke-linecap="round"></path></svg>' +
+          '<input type="text" data-pp2="cmp-search" value="' + esc(q) + '" placeholder="Search any ATP player by name…" autocomplete="off" ' +
+            'spellcheck="false" style="flex:1;min-width:0;background:transparent;border:0;outline:none;font-family:inherit;font-size:13.5px;' +
+            'color:var(--text);">' +
+          (q ? '<span data-pp2="cmp-clear" style="cursor:pointer;font-size:11.5px;font-weight:600;color:var(--text-label);">Clear</span>' : '') +
+        '</label>' +
+        '<div style="display:flex;flex-direction:column;">' + (list ||
+          '<span style="padding:10px;font-size:12.5px;color:var(--text-label);">No player matches that name</span>') + '</div>' +
+        '<span style="padding:2px 10px 4px;font-size:11px;color:var(--text-label);">Pick a player to open Head to Head with both set</span>' +
+      '</div>';
   }
 
   // TEN-384: 104px, initials (or the photo, same chain as the Players cards) on the avatar tone, and the
@@ -3046,6 +3143,189 @@
       '</div>';
   }
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Profile v2 (founder handoff 2026-11-09, design_handoff_player_profile_v2) — the shared parts.
+  // Every design hex is read through tokens.json → legacyColourMap: #0E1019 / #0A0D14 → --card,
+  // #0C0E16 → --inner, #131623 → --selected, #8b96b5 → --text-label, #c6ccdb → --text-soft,
+  // #e7e9ee → --text, #5b9bff (text) → --link. No raw colour.
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  // (?) info icon + popover. One open at a time: state.info holds its id. Opens on hover (mouseover,
+  // see onOver) or click; × or a click outside closes it. All methodology lives here — no page footnotes.
+  // spec = { what, scope, notes: [text], defs: [[label, text]], width, align: 'left'|'right' }
+  function infoIcon(id, spec, title) {
+    var open = state.info === id;
+    var w = spec.width || 420, right = spec.align === 'right';
+    var icon = '<span data-pp2="info" data-v="' + esc(id) + '" title="' + esc(title || 'About this box') + '" ' +
+      'class="pp2-qi" style="cursor:pointer;flex:none;width:16px;height:16px;border-radius:50%;box-sizing:border-box;' +
+      'border:1px solid ' + (open ? 'var(--edge-24)' : 'var(--edge-16)') + ';color:' + (open ? 'var(--text)' : 'var(--text-label)') + ';' +
+      'display:flex;align-items:center;justify-content:center;font-family:\'IBM Plex Mono\',monospace;font-size:10px;' +
+      'font-weight:700;line-height:1;user-select:none;">?</span>';
+    if (!open) return icon;
+    var defs = (spec.defs || []).map(function (d) {
+      return '<div style="display:grid;grid-template-columns:112px minmax(0,1fr);gap:12px;padding:7px 0;' +
+        'border-bottom:1px solid var(--line);"><span style="font-size:12px;font-weight:700;color:var(--text);line-height:1.45;">' +
+        esc(d[0]) + '</span><span style="font-size:12px;color:var(--text-soft);line-height:1.45;text-wrap:pretty;">' + esc(d[1]) + '</span></div>';
+    }).join('');
+    var notes = (spec.notes || []).map(function (t) {
+      return '<span style="font-size:12px;color:var(--text-soft);line-height:1.5;text-wrap:pretty;">' + esc(t) + '</span>';
+    }).join('');
+    return icon +
+      '<div data-pp2="info-close" style="position:fixed;inset:0;z-index:70;"></div>' +
+      '<div data-pp2="card" style="position:absolute;top:calc(100% + 10px);' + (right ? 'right:0;' : 'left:0;') + 'z-index:71;' +
+        'width:' + w + 'px;max-width:calc(100vw - 48px);background:var(--card);border:1px solid var(--edge-10);border-radius:14px;' +
+        'box-shadow:var(--shadow-pop);padding:16px 18px 18px;display:flex;flex-direction:column;gap:10px;text-align:left;' +
+        'text-transform:none;letter-spacing:normal;font-family:var(--font-words);font-weight:400;white-space:normal;cursor:default;">' +
+        '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;">' +
+          '<span style="font-size:13px;font-weight:700;color:var(--text);line-height:1.45;text-wrap:pretty;">' + esc(spec.what || '') + '</span>' +
+          '<span data-pp2="info-close" style="flex:none;width:24px;height:24px;border-radius:7px;border:1px solid var(--edge-10);' +
+            'box-sizing:border-box;color:var(--text-label);cursor:pointer;display:flex;align-items:center;justify-content:center;">' +
+            '<svg width="11" height="11" viewBox="0 0 20 20" fill="none" style="pointer-events:none;"><path d="M5 5l10 10M15 5L5 15" ' +
+            'stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path></svg></span>' +
+        '</div>' +
+        (spec.scope ? '<span style="font-size:12px;color:var(--text-label);line-height:1.5;text-wrap:pretty;">' + esc(spec.scope) + '</span>' : '') +
+        (notes ? '<div style="display:flex;flex-direction:column;gap:6px;border-top:1px solid var(--edge-10);padding-top:10px;margin-top:2px;">' + notes + '</div>' : '') +
+        (defs ? '<div style="display:flex;flex-direction:column;border-top:1px solid var(--edge-10);margin-top:2px;">' + defs + '</div>' : '') +
+      '</div>';
+  }
+  // A card-corner (?) (the per-box placement): absolute at top/right 14px, popover right-aligned under it.
+  function infoCorner(id, spec) {
+    var s = Object.assign({ width: 400, align: 'right' }, spec);
+    return '<span style="position:absolute;top:14px;right:14px;z-index:2;display:flex;">' + infoIcon(id, s) + '</span>';
+  }
+
+  // The shared drill-down box (the design's floatBox): 72% backdrop, 900px card, title · code · meta,
+  // 4 tiles, optional pills, a sticky-headed match list whose rows open the match sheet.
+  // fb = { name, code, meta, tiles: [{ label, fig, figColor, sub, tail, tailColor }], pills: [{ hook, v, label, on }],
+  //        cols: 'grid-template-columns value', head: [{ label, align }], rows: [{ id, cells: [html] , res }] , empty }
+  function floatBoxHtml(fb) {
+    if (!fb) return '';
+    var tiles = (fb.tiles || []).map(function (t) {
+      return '<div style="background:var(--card);border:1px solid var(--edge-6);border-radius:10px;padding:11px 14px 12px;' +
+        'display:flex;flex-direction:column;gap:6px;min-width:0;">' +
+        '<span style="font-family:var(--font-words);font-size:10.5px;font-weight:700;letter-spacing:0.10em;text-transform:uppercase;' +
+          'color:var(--text-label);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + esc(t.label) + '</span>' +
+        '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:21px;font-weight:700;line-height:1;color:' +
+          (t.figColor || 'var(--text)') + ';">' + (t.fig == null ? DASH : t.fig) + '</span>' +
+        '<span style="font-size:11.5px;color:var(--text-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + (t.sub || '&nbsp;') + '</span>' +
+        '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:10px;color:' + (t.tailColor || 'var(--text-label)') + ';' +
+          'line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + (t.tail || '&nbsp;') + '</span>' +
+        '</div>';
+    }).join('');
+    var pills = fb.pills && fb.pills.length ? '<div style="display:flex;gap:3px;background:var(--card);border:1px solid var(--edge-6);' +
+      'border-radius:9px;padding:2px;width:fit-content;margin-bottom:12px;">' + fb.pills.map(function (s) {
+        return '<span data-pp2="' + esc(s.hook) + '" data-v="' + esc(s.v) + '" style="cursor:pointer;white-space:nowrap;padding:5px 12px;' +
+          'border-radius:7px;font-size:11px;font-weight:' + (s.on ? 700 : 600) + ';color:' + (s.on ? 'var(--text)' : 'var(--text-label)') + ';' +
+          'background:' + (s.on ? 'var(--selected)' : 'transparent') + ';border:1px solid ' + (s.on ? 'var(--edge-16)' : 'transparent') + ';">' +
+          esc(s.label) + '</span>';
+      }).join('') + '</div>' : '';
+    var head = (fb.head || []).map(function (h) {
+      return '<span style="position:sticky;top:0;z-index:1;background:var(--card);font-family:var(--font-words);font-size:10.5px;' +
+        'font-weight:700;letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);text-align:' + (h.align || 'left') + ';' +
+        'padding-bottom:8px;border-bottom:1px solid var(--edge-10);white-space:nowrap;">' + esc(h.label) + '</span>';
+    }).join('');
+    var rows = (fb.rows || []).map(function (r, i) {
+      var hook = r.id != null ? sheetHook(r.id) : '';
+      var cur = r.id != null ? sheetCursor() : '';
+      return '<div class="pp2-fbrow" ' + hook + 'style="display:contents;">' + r.cells.map(function (c) {
+        return '<span style="' + cur + 'padding:7px 0;border-top:' + (i ? '1px solid var(--line)' : '0') + ';min-width:0;' +
+          (c.style || '') + '">' + c.html + '</span>';
+      }).join('') + '</div>';
+    }).join('');
+    var list = (fb.rows || []).length
+      ? '<div style="max-height:calc(100vh - 380px);overflow-y:auto;padding-right:12px;">' +
+          '<div style="display:grid;grid-template-columns:' + fb.cols + ';gap:0 10px;align-items:start;">' + head + rows + '</div></div>'
+      : '<div style="padding:18px 0;font-size:12.5px;color:var(--text-label);">' + esc(fb.empty || 'No matches on record') + '</div>';
+    return '<div class="pp2-fb" data-pp2="fb-scrim" style="position:fixed;inset:0 0 0 var(--sf-side, 0px);z-index:64;' +
+      'background:color-mix(in srgb, var(--page) 72%, transparent);display:flex;align-items:flex-start;justify-content:center;' +
+      'padding:40px 24px;overflow-y:auto;clip-path:inset(0);">' +
+      '<div data-pp2="card" style="position:relative;width:100%;max-width:900px;max-height:calc(100vh - 80px);overflow-y:auto;' +
+        'background:var(--card);border:1px solid var(--edge-16);border-radius:14px;padding:20px 22px 22px;min-width:0;' +
+        'box-shadow:var(--shadow-modal);box-sizing:border-box;">' +
+        '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:16px;">' +
+          '<div style="display:flex;flex-direction:column;gap:4px;min-width:0;">' +
+            '<span style="display:inline-flex;align-items:baseline;gap:8px;">' +
+              '<span style="font-size:16px;font-weight:800;letter-spacing:-0.01em;color:var(--text);white-space:nowrap;">' + esc(fb.name) + '</span>' +
+              (fb.code ? '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;color:var(--text-label);">' + esc(fb.code) + '</span>' : '') +
+            '</span>' +
+            '<span style="font-size:12.5px;color:var(--text-label);">' + (fb.meta || '') + '</span>' +
+          '</div>' +
+          '<span data-pp2="fb-close" role="button" aria-label="Close" style="flex:none;width:32px;height:32px;border-radius:9px;' +
+            'background:var(--wash-5);border:1px solid var(--edge-6);color:var(--text-label);cursor:pointer;display:flex;' +
+            'align-items:center;justify-content:center;box-sizing:border-box;"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" ' +
+            'style="pointer-events:none;"><path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path></svg></span>' +
+        '</div>' +
+        (tiles ? '<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:14px;">' + tiles + '</div>' : '') +
+        pills + list +
+      '</div></div>';
+  }
+  // A result square for a float-box row: 8px, radius 2, --pos / --neg; a walkover has none.
+  function fbResCell(m) {
+    if (!m || m.walkover) return { html: '' };
+    return { html: '<span style="display:block;width:8px;height:8px;border-radius:2px;margin-top:4px;background:' +
+      (m.won ? 'var(--pos)' : 'var(--neg)') + ';"></span>' };
+  }
+
+  // The Filters trigger + its popover menu (the design's filterMenu): a sliders glyph and "Filters · n";
+  // a 3-column grid of option groups with cross-adjusted counts; foot "n of m matches" + Reset filters.
+  // groups = [{ key, title, cur, options: [[value, label]], count: function (value) -> n }]
+  function filtersTriggerHtml(id, groups, nIn, nAll) {
+    var open = state.fmOpen === id;
+    var active = groups.filter(function (g) { return g.cur !== 'all'; });
+    var lit = open || active.length;
+    var trig = '<span data-pp2="fm-toggle" data-v="' + esc(id) + '" style="display:inline-flex;align-items:center;gap:7px;cursor:pointer;' +
+      'white-space:nowrap;height:28px;padding:0 11px;border-radius:8px;box-sizing:border-box;font-size:12px;font-weight:700;' +
+      'color:' + (lit ? 'var(--text)' : 'var(--text-label)') + ';background:' + (lit ? 'var(--selected)' : 'transparent') + ';' +
+      'border:1px solid ' + (open ? 'var(--edge-24)' : active.length ? 'var(--edge-16)' : 'var(--edge-10)') + ';user-select:none;">' +
+      '<svg width="13" height="13" viewBox="0 0 20 20" fill="none" style="pointer-events:none;"><path d="M4 6h12M4 10h12M4 14h7" ' +
+      'stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path></svg>Filters' +
+      (active.length ? '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;">' + MIDDOT + ' ' + active.length + '</span>' : '') +
+      '</span>';
+    if (!open) return '<span style="position:relative;display:inline-flex;">' + trig + '</span>';
+    var cols = groups.map(function (g) {
+      return '<div style="display:flex;flex-direction:column;gap:2px;min-width:0;">' +
+        '<span style="font-family:var(--font-words);font-size:10.5px;font-weight:700;letter-spacing:0.10em;text-transform:uppercase;' +
+          'color:var(--text-label);padding:0 8px 4px;">' + esc(g.title) + '</span>' +
+        g.options.map(function (o) {
+          var on = g.cur === o[0], n = g.count(o[0]);
+          return '<span data-pp2="fm-set" data-g="' + esc(g.key) + '" data-v="' + esc(o[0]) + '" style="cursor:pointer;display:flex;' +
+            'align-items:center;gap:8px;padding:5px 8px;border-radius:7px;font-size:12.5px;font-weight:' + (on ? 700 : 500) + ';' +
+            'color:' + (on ? 'var(--text)' : 'var(--text-soft)') + ';background:' + (on ? 'var(--selected)' : 'transparent') + ';">' +
+            '<span style="flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + esc(o[1]) + '</span>' +
+            '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:var(--text-label);">' + (n == null ? DASH : n) + '</span>' +
+            '<span style="width:10px;font-size:11px;color:var(--text);">' + (on ? '✓' : '') + '</span></span>';
+        }).join('') + '</div>';
+    }).join('');
+    return '<span style="position:relative;display:inline-flex;">' + trig +
+      '<div data-pp2="fm-close" style="position:fixed;inset:0;z-index:68;"></div>' +
+      '<div data-pp2="card" style="position:absolute;top:calc(100% + 8px);left:0;z-index:69;width:620px;max-width:calc(100vw - 64px);' +
+        'background:var(--card);border:1px solid var(--edge-10);border-radius:14px;box-shadow:var(--shadow-pop);padding:14px;' +
+        'box-sizing:border-box;">' +
+        '<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px 18px;">' + cols + '</div>' +
+        '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;border-top:1px solid var(--edge-10);' +
+          'margin-top:12px;padding-top:10px;">' +
+          '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:var(--text-label);">' + nIn + ' of ' + nAll + ' matches</span>' +
+          '<span data-pp2="fm-reset" data-v="' + esc(id) + '" style="cursor:pointer;font-size:12px;font-weight:600;color:var(--link);">Reset filters</span>' +
+        '</div></div></span>';
+  }
+  // The Applied line under a filter row: caps "Applied" · a chip per active filter (× clears it) · Clear all · "n of m".
+  // Chips are blue (12% fill, 35% ring) as the export draws them — founder 2026-11-09, profile only.
+  function filtersAppliedHtml(id, groups, nIn, nAll) {
+    var active = groups.filter(function (g) { return g.cur !== 'all'; });
+    if (!active.length) return '';
+    return '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:-6px 0 16px;">' +
+      recCaps('Applied') +
+      active.map(function (g) {
+        var o = g.options.filter(function (x) { return x[0] === g.cur; })[0];
+        return '<span data-pp2="fm-set" data-g="' + esc(g.key) + '" data-v="all" style="cursor:pointer;display:inline-flex;align-items:center;' +
+          'gap:6px;padding:3px 8px;border-radius:7px;background:color-mix(in srgb, var(--bar) 12%, transparent);' +
+          'border:1px solid color-mix(in srgb, var(--bar) 35%, transparent);font-size:11.5px;font-weight:600;color:var(--text);">' + esc(o ? o[1] : g.cur) + '<span style="color:var(--text-label);">' + TIMES + '</span></span>';
+      }).join('') +
+      '<span data-pp2="fm-reset" data-v="' + esc(id) + '" class="pp2-clearall" style="cursor:pointer;font-size:11.5px;font-weight:600;color:var(--text-label);">Clear all</span>' +
+      '<span style="margin-left:auto;font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:var(--text-label);">' + nIn + ' of ' + nAll + ' matches</span>' +
+      '</div>';
+  }
+
   // ── TEN-384 · the in-modal controls, one builder for the record modals ─────
   // Tab track (Record | Ratings, Calendar | 2026): --card + --edge-6, r10, pad 3, gap 3; item 7/14 12px r8.
   // Small track (Window, Tier, Surface): --card + --edge-6, r9, pad 2, gap 3; item 5/12 11px r7.
@@ -4220,7 +4500,7 @@
 
   // ── the WINDOW control, `Career | Last 52` — now in the tab row (TEN-384) ──
   function headScopeHtml() {
-    return recLabelledSeg('Window', [['career', 'Career'], ['l52', 'Last 52']].map(function (t) {
+    return recLabelledSeg('Window', [['l52', 'Last 52 weeks'], ['career', 'Career']].map(function (t) {   // v2: recent first
       var on = (state.careerScope === 'l52' ? 'l52' : 'career') === t[0];
       return recSegBtn('career-scope', t[0], t[1], on, true, ' data-scope="' + t[0] + '"');
     }).join(''));
@@ -5896,7 +6176,7 @@
    */
   function drawGrainHtml() {
     var scope = state.splitScope === 'last52' ? 'last52' : 'career';
-    return drawSeg('split-scope', 'data-scope', [['career', 'Career'], ['last52', 'Last 52']], scope);
+    return drawSeg('split-scope', 'data-scope', [['last52', 'Last 52 weeks'], ['career', 'Career']], scope);   // v2: recent first
   }
 
   // ── Shard r2 (founder): why Level and By round sum short of Format ─────────
@@ -11209,8 +11489,14 @@
       body = '<div style="border:1px dashed var(--edge-6);border-radius:10px;padding:26px;' +
         'text-align:center;font-size:13px;color:var(--text-label);">Not built yet.</div>';
     }
-    return modalShell(k, p, ctx, body);
+    var fbHtml = '';
+    if (state.fb && FB_BUILD[state.fb.box]) {
+      try { fbHtml = floatBoxHtml(FB_BUILD[state.fb.box](p, state.fb.v, ctx)); } catch (e) { fbHtml = ''; }
+    }
+    return modalShell(k, p, ctx, body) + fbHtml;
   }
+  // Profile v2 · each box registers how its drill box is built from the clicked row's value: FB_BUILD[box](p, v, ctx).
+  var FB_BUILD = {};
 
   // ═══════════════════════════════════════════════════════════════════════════
   // §5.9 PLAYING PROFILE — hold/break heatmap
@@ -12065,7 +12351,10 @@
     // The three sub-controls are separate state for the same reason the
     // Career modal's two axes are: switching tab must not reset the set
     // filter, and switching set must not throw you back to Summary.
-    matchPage: null, mpTab: 'summary', mpSet: 'match', mpPointSet: null
+    matchPage: null, mpTab: 'summary', mpSet: 'match', mpPointSet: null,
+    // Profile v2 (2026-11-09): the open (?) popover id, the open Filters menu id, the open drill box, the
+    // Compare-with popover and its query. Each is one value, so only one of each can be open.
+    info: null, fmOpen: null, fb: null, cmpOpen: false, cmpQ: ''
   };
 
   function buildCtx(p) {
@@ -12188,6 +12477,20 @@
 
   // Every hook is a pure state write followed by one repaint. Nothing below
   // computes a figure — if a handler ever needs to, it belongs in a renderer.
+  // Each Filters menu's state keys, so Reset / Clear all puts every one back to 'all'. Boxes register theirs.
+  var FM_KEYS = {};
+  function focusCmp() {
+    var inp = mounted && mounted.querySelector('[data-pp2="cmp-search"]');
+    if (inp) { inp.focus(); try { inp.setSelectionRange(inp.value.length, inp.value.length); } catch (e) { /* ok */ } }
+  }
+  // The (?) icons open on hover too (the export's onMouseEnter); one open at a time.
+  function onOver(e) {
+    var el = e.target && e.target.closest ? e.target.closest('[data-pp2="info"]') : null;
+    if (!el || !mounted || !mounted.contains(el)) return;
+    var v = el.getAttribute('data-v');
+    if (state.info === v) return;
+    state.info = v; repaint();
+  }
   function onClick(e) {
     var el = e.target && e.target.closest ? e.target.closest('[data-pp2]') : null;
     if (!el || !mounted.contains(el)) return;
@@ -12208,7 +12511,27 @@
       return;
     }
 
+    if (kind === 'cmp-search' || kind === 'tourn-search') return;   // a text field: never a click action
     e.preventDefault();
+    // Profile v2 shared parts: the (?) popovers, the drill box, the Filters menus, Compare with…
+    if (kind === 'info') { state.info = state.info === v ? null : v; repaint(); return; }
+    if (kind === 'info-close') { state.info = null; repaint(); return; }
+    if (kind === 'fb-close' || (kind === 'fb-scrim' && e.target === el)) { state.fb = null; repaint(); return; }
+    if (kind === 'fb-scrim') return;
+    if (kind === 'fb-open') { state.fb = { box: el.getAttribute('data-box'), v: v }; state.info = null; state.fmOpen = null; repaint(); return; }
+    if (kind === 'fm-toggle') { state.fmOpen = state.fmOpen === v ? null : v; repaint(); return; }
+    if (kind === 'fm-close') { state.fmOpen = null; repaint(); return; }
+    if (kind === 'fm-set') { var fk = el.getAttribute('data-g'); if (fk && Object.prototype.hasOwnProperty.call(state, fk)) state[fk] = v; state.fb = null; repaint(); return; }
+    if (kind === 'fm-reset') { (FM_KEYS[v] || []).forEach(function (k) { state[k] = 'all'; }); state.fmOpen = null; state.fb = null; repaint(); return; }
+    if (kind === 'cmp-toggle') { state.cmpOpen = !state.cmpOpen; state.cmpQ = ''; repaint(); focusCmp(); return; }
+    if (kind === 'cmp-close') { state.cmpOpen = false; state.cmpQ = ''; repaint(); return; }
+    if (kind === 'cmp-clear') { state.cmpQ = ''; repaint(); focusCmp(); return; }
+    if (kind === 'cmp-pick' || kind === 'h2h-open') {
+      state.cmpOpen = false; state.cmpQ = '';
+      if (typeof window.sfGoToH2H === 'function') window.sfGoToH2H(state.key, v);
+      return;
+    }
+    if (kind === 'watch') { if (typeof window.pp2ToggleWatch === 'function') window.pp2ToggleWatch(state.key); repaint(); return; }
     if (kind === 'ledger') { state.ledgerOpen = !state.ledgerOpen; state.ledgerExpanded = false; }
     else if (kind === 'ledger-more') state.ledgerExpanded = !state.ledgerExpanded;
     else if (kind === 'ledger-surf') {
@@ -12218,7 +12541,7 @@
     }
     else if (kind === 'ledger-price') toggleIn(state.priceFilters, v);
     else if (kind === 'box') { state.modal = el.getAttribute('data-box'); state.drawDrill = null; if (state.modal === 'tourn') tournNeedJoin(); }
-    else if (kind === 'close' || kind === 'scrim') { state.modal = null; state.careerDrill = null; state.drawDrill = null; state.lcDrill = null; }
+    else if (kind === 'close' || kind === 'scrim') { state.modal = null; state.careerDrill = null; state.drawDrill = null; state.lcDrill = null; state.fb = null; state.info = null; state.fmOpen = null; }
     else if (kind === 'career-scope') { state.careerScope = el.getAttribute('data-scope'); state.careerDrill = null; }
     else if (kind === 'career-tier') { state.careerTier = v; state.careerDrill = null; }
     // The tab switch keeps the window (`careerScope`) — one control drives both
@@ -12363,6 +12686,9 @@
 
   function onInput(e) {
     var el = e.target;
+    if (el && el.getAttribute && el.getAttribute('data-pp2') === 'cmp-search') {
+      state.cmpQ = el.value || ''; repaint(); focusCmp(); return;
+    }
     if (!el || !el.getAttribute || el.getAttribute('data-pp2') !== 'tourn-search') return;
     state.tournQuery = el.value || '';
     repaint();
@@ -12378,11 +12704,13 @@
   // Esc is one layer in the global handler (esc-nav.js); each press closes one step, top first.
   // The step-3 sheet is its own, higher layer (fh-sheet), so this only ever sees the layers below it.
   (window.sfEscLayers = window.sfEscLayers || []).push({ id: 'pp2-layers', z: 72,
-    isOpen: function () { return !!(mounted && mounted.isConnected && mounted.offsetParent && (state.matchPage || state.heat || state.modal)); },
+    isOpen: function () { return !!(mounted && mounted.isConnected && mounted.offsetParent && (state.matchPage || state.heat || state.modal || state.fb || state.info || state.fmOpen || state.cmpOpen)); },
     close: escStep });
   // Not bound to the document any more; kept as the harness entry (tools/test-draw-record-drill.js).
   function onKey(e) { if (e && e.key === 'Escape') escStep(); }
   function escStep() {
+    if (state.info || state.fmOpen || state.cmpOpen) { state.info = null; state.fmOpen = null; state.cmpOpen = false; repaint(); return; }
+    if (state.fb) { state.fb = null; repaint(); return; }
     if (state.matchPage) { state.matchPage = null; repaint(); return; }
     if (state.heat) { state.heat = false; repaint(); return; }
     // Founder 2026-10-13 · Esc in the Draw record drill returns to the summary (Career / Last 52 kept).
@@ -12404,6 +12732,7 @@
       }
       container.addEventListener('click', onClick);
       container.addEventListener('input', onInput);
+      container.addEventListener('mouseover', onOver);
       // capture:true — `scroll` does not bubble, so a delegated listener on the
       // container never fires without it. This is what feeds the drill pager.
       container.addEventListener('scroll', onDrillScroll, true);

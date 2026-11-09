@@ -749,7 +749,11 @@ function markSharedCandidates(work) {
 function pageMeta(html) {
   const v = name => { const m = html.match(new RegExp('var ' + name + "\\s*=\\s*'([^']*)'")); return m ? m[1] : null; };
   const n = name => { const m = html.match(new RegExp('var ' + name + '\\s*=\\s*(\\d+)')); return m ? +m[1] : null; };
-  return { fullName: v('fullname'), atpId: v('atp_id'), dob: n('dob'), currentRank: n('currentrank'), country: v('country') };
+  // Founder 2026-11-09 (profile v2): the identity line's "R / 2HBH" — the page's own hand ('R' | 'L'; 'U' = unknown)
+  // and backhand ('1' | '2'; '' = unknown). Anything else is null, never a guess.
+  const hand = v('hand'), bh = v('backhand');
+  return { fullName: v('fullname'), atpId: v('atp_id'), dob: n('dob'), currentRank: n('currentrank'), country: v('country'),
+    hand: hand === 'R' || hand === 'L' ? hand : null, backhand: bh === '1' ? 1 : bh === '2' ? 2 : null };
 }
 function ageAt(dob, stamp) {
   if (!dob || !/^\d{8}$/.test(String(dob)) || !/^\d{8}$/.test(String(stamp))) return null;
@@ -970,7 +974,7 @@ async function main() {
       const cut52 = cutoff52(matches);
       const last52 = matches.filter(m => daysAgoStamp(m.date, cut52));
       players[t.pkey] = {
-        taId: c.id, fullName: c.full, rank: c.rank,
+        taId: c.id, fullName: c.full, rank: c.rank, hand: meta.hand, backhand: meta.backhand,
         matchesParsed: matches.length, last52Count: last52.length, cutoff52: cut52,
         career: splits(matches),
         last52: splits(last52),

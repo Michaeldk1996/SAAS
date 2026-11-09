@@ -9969,6 +9969,42 @@ function mxFavOnAuth(u){
     ? Promise.resolve(window.BSP.updateProfile({ favouriteMatches: merged })) : Promise.resolve(null);
   return write.then(() => { mxFavWriteLocal([]); return merged; }).catch(() => merged);
 }
+// Profile v2 (founder 2026-11-09): the PLAYER watchlist — the star beside the name on Player Profile. Same store
+// pattern as the match favourites above: signed in → Firestore users/{uid}.watchPlayers (BSP.updateProfile); signed
+// out → localStorage `stennisfy.watchPlayers`; signing in merges the local list into the account. Keys = api-tennis
+// player keys (strings). The Players page lists them (pgWatchStripHtml).
+const PP_WATCH_LS = 'stennisfy.watchPlayers';
+const ppWatch = { keys: ppWatchReadLocal(), uid: null };
+function ppWatchReadLocal(){ try { return mxFavClean(JSON.parse(localStorage.getItem(PP_WATCH_LS) || '[]')); } catch (e) { return []; } }
+function ppWatchWriteLocal(keys){ try { if (keys.length) localStorage.setItem(PP_WATCH_LS, JSON.stringify(keys)); else localStorage.removeItem(PP_WATCH_LS); } catch (e) {} }
+function ppWatchPersist(){
+  const keys = ppWatch.keys.slice();
+  if (ppWatch.uid && window.BSP && typeof window.BSP.updateProfile === 'function')
+    return Promise.resolve(window.BSP.updateProfile({ watchPlayers: keys })).catch(() => null);
+  ppWatchWriteLocal(keys);
+  return Promise.resolve(null);
+}
+window.pp2IsWatched = function(key){ return key != null && ppWatch.keys.includes(String(key)); };
+window.pp2WatchKeys = function(){ return ppWatch.keys.slice(); };
+window.pp2ToggleWatch = function(key){
+  if (key == null) return;
+  const k = String(key);
+  ppWatch.keys = ppWatch.keys.includes(k) ? ppWatch.keys.filter(x => x !== k) : [...ppWatch.keys, k];
+  ppWatchPersist();
+  if (typeof renderPlayersIfShown === 'function') { try { renderPlayersIfShown(); } catch (e) {} }
+};
+function ppWatchOnAuth(u){
+  const uid = u && u.uid ? u.uid : null;
+  const local = ppWatchReadLocal();
+  if (!uid || u.profileLoadFailed){ ppWatch.uid = null; ppWatch.keys = local; return Promise.resolve(ppWatch.keys); }
+  const account = mxFavClean(u.watchPlayers);
+  const merged = mxFavMerge(account, local);
+  ppWatch.uid = uid; ppWatch.keys = merged;
+  if (!local.length) return Promise.resolve(merged);
+  const write = (merged.length !== account.length && window.BSP && typeof window.BSP.updateProfile === 'function')
+    ? Promise.resolve(window.BSP.updateProfile({ watchPlayers: merged })) : Promise.resolve(null);
+  return write.then(() => { ppWatchWriteLocal([]); return merged; }).catch(() => merged);
+}
 // Settle-clear against the loaded board; rewrites the store only when something left.
 function mxFavSettleClear(list){
   if (!Array.isArray(list) || !list.length) return false;
@@ -21077,6 +21113,7 @@ document.querySelector('[data-page="matches"]').addEventListener('keydown', e =>
 }, true);
 if (window.BSP && BSP.onAuthChange){
   BSP.onAuthChange(u => { mxFavOnAuth(u).then(() => { if (matchesLoadedOnce) renderMatches(); }); });
+  BSP.onAuthChange(u => { ppWatchOnAuth(u).then(() => { if (typeof ppState !== 'undefined' && ppState && ppState.key && typeof pp2RepaintIfOpen === 'function') pp2RepaintIfOpen(ppState.key); }); });
 }
 
 document.getElementById('mxModeToggle').addEventListener('click', e => {
@@ -23717,7 +23754,17 @@ window.pp2NextMatchFor = function(key){
     opponentKey: best.side === 1 ? m.p2Key : m.p1Key,
     // bet105-line-prices: the match Derived lines prices (line-prices.js linePrice) — additive fields
     eventKey: typeof eventKeyOfMatch === 'function' ? eventKeyOfMatch(m) : null, date: m.date || null, tour: m.tour || null,
-    round: m.tournamentRound || null, qualifying: !!m.qualifying, live: !!m.live };
+    round: m.tournamentRound || null, qualifying: !!m.qualifying, live: !!m.live,
+    // Profile v2 (founder 2026-11-09): the cell's third line = the match card's Now pair (one price per match, the
+    // card's own book, 2 dp), the subject's price first; no pair → null and the line is a dash.
+    price: (() => {
+      let pr = null; try { pr = typeof _mcNowPair === 'function' ? _mcNowPair(m) : null; } catch (e) { pr = null; }
+      const ok = v => v != null && isFinite(Number(v)) && Number(v) >= 1.01;
+      if (!pr || !ok(pr.p1) || !ok(pr.p2)) return null;
+      const own = best.side === 1 ? pr.p1 : pr.p2, opp = best.side === 1 ? pr.p2 : pr.p1;
+      const bk = pr.book ? (MC_BOOK_NAMES[String(pr.book).toLowerCase()] || mxBookLabel(pr.book)) : null;
+      return { own: Number(own).toFixed(2), opp: Number(opp).toFixed(2), book: bk || null };
+    })() };
 };
 // TEN-384 · the header's "Elo N": the Players card's own source (pgEloFor over elo-ratings.json). The lookup
 // file is lazy; a profile opened before it lands repaints once it does.
@@ -24175,6 +24222,25 @@ function sfGoToProfile(key, show){
   finally { _sfProfileOpening = null; }
   if (show !== false) showPlayerProfile(key);
 }
+// Profile v2 (founder 2026-11-09): Player Profile → Head to Head with the pair set (Compare with…, the Next-match
+// opponent). The pair is handed over before the nav click so the page's first render already shows it.
+function sfGoToH2H(ka, kb){
+  if (window.H2HPage && typeof window.H2HPage.openPair === 'function') window.H2HPage.openPair(ka, kb);
+  try { document.querySelector('#mainNav button[data-tab="h2h"]').click(); } catch (e) {}
+}
+window.sfGoToH2H = sfGoToH2H;
+// The Compare-with popover's hits: up to 6 players of this week's standings with a profile (Head to Head's roster),
+// best rank first; the query matches any part of the name, accents folded. Meta = "IOC · No. N" (the design's).
+window.pp2CompareRoster = function(q, exceptKey){
+  const fold = t => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  const want = fold(q).trim();
+  const idx = (typeof playerIndex !== 'undefined' && Array.isArray(playerIndex)) ? playerIndex : [];
+  const ioc = c => { try { return (window.SfCountryIoc && window.SfCountryIoc.of) ? (window.SfCountryIoc.of(c) || c) : c; } catch (e) { return c; } };
+  const shown = r => { try { return typeof newsPlayerName === 'function' ? (newsPlayerName(r.key, r.name) || r.name) : r.name; } catch (e) { return r.name; } };
+  return idx.filter(r => r && r.hasProfile && String(r.key) !== String(exceptKey) && (!want || fold(r.name).includes(want) || fold(shown(r)).includes(want)))
+    .sort((a, b) => (Number(a.rank) || 1e9) - (Number(b.rank) || 1e9)).slice(0, 6)
+    .map(r => ({ key: String(r.key), name: shown(r), full: r.name, meta: [r.country ? ioc(r.country) : null, r.rank ? 'No. ' + r.rank : null].filter(Boolean).join(' · ') }));
+};
 function showPlayerProfileV2(key){
   const profile = playerProfiles[String(key)];
   if (!profile) return false;
@@ -31321,24 +31387,36 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, profileRosterMap: () =
       if (!built) { P = d.P; ROSTER = d.ROSTER; NK_COUNT = d.NK || {}; _ratings = null; built = true; }
     } catch (e) { console.error('H2H buildH2HData failed', e); if (!built) { P = {}; ROSTER = []; } }
   }
+  // Profile v2 (founder 2026-11-09): "Compare with…" on Player Profile opens this page with both players set.
+  // The pair waits until the roster is built (a cold page builds it on its first ensureInit).
+  let _pendingPair = null;
+  function openPair(ka, kb) { _pendingPair = [String(ka), String(kb)]; applyPendingPair(); }
+  function applyPendingPair() {
+    if (!_pendingPair || !built) return;
+    const [a, b] = _pendingPair; _pendingPair = null;
+    if (P[a]) enrich(a);
+    if (P[b]) enrich(b);
+    setState({ aSel: P[a] ? a : null, bSel: P[b] ? b : null, aOpen: false, bOpen: false, aQuery: '', bQuery: '' });
+    load();
+  }
   function ensureInit(visit) {
     bindDocClose();
     if (visit) _h2hDbAskAt = 0;   // TEN-402 R3 fix 1: a visit's first render that needs the join asks a failed one again
     if (visit && typeof _h2hPairs !== 'undefined') Object.keys(_h2hPairs).forEach(k => { if (_h2hPairs[k] && _h2hPairs[k].st === 'failed') delete _h2hPairs[k]; });   // TEN-437 (5)
     triggerLoads();
     ensureDna();
-    if (dataReady()) { build(); render(); return; }
+    if (dataReady()) { build(); applyPendingPair(); render(); return; }
     // data still loading — show empty/loading shell and poll briefly
     render();
     clearInterval(_waitTimer); _waited = 0;
     _waitTimer = setInterval(() => {
       _waited += 300;
-      if (dataReady()) { clearInterval(_waitTimer); build(); render(); }
+      if (dataReady()) { clearInterval(_waitTimer); build(); applyPendingPair(); render(); }
       else if (_waited > 9000) { clearInterval(_waitTimer); }
     }, 300);
   }
 
-  window.H2HPage = { render, ensureInit, _h2hRetry: h2hRetryPair, _debug: () => ({ P, ROSTER, state }), roundOf: h2hRoundOf,
+  window.H2HPage = { render, ensureInit, openPair, _h2hRetry: h2hRetryPair, _debug: () => ({ P, ROSTER, state }), roundOf: h2hRoundOf,
     // TEN-402 b: the Head-to-head record's handlers (inline onclick on shared-helper markup: the hot-lines table, rows)
     _open: h2hOpenMeeting,
     _h2hAllLines: () => setState(s2 => ({ h2hAllLines: !s2.h2hAllLines })),

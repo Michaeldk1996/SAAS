@@ -7,6 +7,41 @@ Newer rulings that also bind the profile: `modal-analysis.md` "Walkovers and ret
 "W/O received = win" rule is superseded on the profile too) and "Overview career spine"; `modal-market-edge.md`
 (player-profile Market edge basis).
 
+## Profile v2 — founder rulings 2026-11-09 (handoff `design_handoff_player_profile_v2`)
+The 2026-11-09 handoff (`Player Profile.dc.html`, `Player Stat Boxes LOCKED 2026-11-09.dc.html`) is the spec for the profile.
+Where a ruling below reverses an older one in this file, the older one is superseded (named in brackets).
+- **Hand / backhand** ("R / 2HBH") in the identity line, from api-tennis or Tennis Explorer; none on record = a dash.
+- **Aces / double faults per service game** = aces ÷ service games, DF ÷ service games (2 dp), from the stored counts.
+- **Calendar swings / event country:** the 12 swing codes and the catalog's event countries are enough; no more sources.
+- **Court speed (profile):** ATP only for now. Band per EDITION on Tennis Abstract's abstract speed, gap = speed − 1.00
+  (the tour average): Fast > +0.08 · Medium −0.08…+0.08 · Slow < −0.08; order Fast · Medium · Slow
+  [supersedes Q5's Slow ≤ 43 / Medium ≤ 68 on the profile; N4 still binds every other surface].
+- **Davis Cup** is one event, the venue per edition from Tennis Explorer or the api-tennis venue names.
+- **Opponent level** (Market edge / Calendar filters, Level & round "Opponent rank") = the opponent's Elo rank.
+- **Tour averages** per band and per row come from our own ratings / Database files, never hard-coded.
+- **Levels:** ATP 500 and ATP 250 are separate rows, linked by the tournament catalog's level.
+- **Derived lines field rates** are built for every filter the tab offers (`derived-field.json`).
+- **Watchlist:** the star in the header is real — stored per member (signed in: the account; signed out: this browser).
+- **Streaks tab is back** in Calendar record [supersedes TEN-384 Q1]; the 2026 tab and the fixed five-band Swing row go
+  [supersede fx6 item 5 and the 2026-tab ruling].
+- **Sign colour by sign only, as the export draws it:** no ±3 / noise dead zones and no one-green-one-red rule on the
+  profile [supersedes "vs Field dims within sampling noise" and "One green, one red per table"]; grey only at a rounded 0
+  or no sample.
+- **Money is always units (u), never % of bankroll** — the one point where the export is NOT followed.
+- **Favourite = the shorter closing price of the two in that match** (underdog = the longer); a favourite is offered the
+  minus handicaps and +1 / +1.5 [supersedes "favourite = price < 2.00" on the profile and "Bettable side only"].
+- **Level filter:** All · ATP · Challenger · ITF — ATP main draw and ATP qualifying are one ATP [supersedes Task E's split
+  on the profile].
+- **Small samples: no mark.** No "small sample · n=X" and no "under 5" tag; under the floor of 5 a row is grey, rates and
+  bars are dashes, sorted to the foot [supersedes fx3 D11 on the profile].
+- **Match sheet bars from the profile:** player A `#5b9bff`, player B `#e7e9ee`, by player, as the export draws them
+  [supersedes the leader / trailer bar rule for a sheet opened from the profile only].
+- **Ratings:** the house Serve / Return SUM stays (`house-ratings.js`), never a score out of 100.
+- **Renames / removals:** Draw record → "Level & round"; the Career record's Tier control goes; Market edge's "No price"
+  card goes (its count moves to the (?) note).
+- **Colours follow the export:** blue Applied chips and the export's surface hues are allowed on the profile (named
+  tokens in `tokens.css`, never raw hex in code).
+
 - **No legacy fallback (founder, 2026-10-21).** The TEN-206 renderer is the only player profile: the legacy
   full-page view (`buildPlayerProfileHtml`, `ppCareerYears`) and its `?pp2=0` / `stennisfy.flags.pp2` switch are
   retired. A profile that cannot paint — the module did not load, or its mount refused or threw — shows
