@@ -418,7 +418,9 @@ test('item 5 on the sheet: bars are white — the leader --viz-white-lead, the t
 });
 
 test('item 8: the tone is set only for a pop-up opened from this page; the frame adds --shadow-modal there; closers registered', () => {
-  assert.match(slice('fhSheetRender'), /_fhSheetToneNow = \(slot !== 'tab' && _fh && _fh\.m && _fh\.m\.h2hPage\) \? 'h2h' : null;/);
+  assert.match(slice('fhSheetRender'), /_fhSheetToneNow = \(slot !== 'tab' && _fh && _fh\.m && _fh\.m\.h2hPage\) \? 'h2h'/);
+  // profile v2 (2026-11-09): the profile's own sheet takes 'pp2' (bars by player), else null
+  assert.match(slice('fhSheetRender'), /: \(slot !== 'tab' && _fh && _fh\.sheet && _fh\.sheet === _fhPp2Mid\) \? 'pp2' : null;/);
   assert.match(slice('fhSheetRender'), /host\.innerHTML = fhSheetSeg\(tabs\) \+ body;\n  _fhSheetToneNow = null;/, 'reset after the paint');
   assert.match(slice('fhOpenSheet'), /\$\{_fh\.m && _fh\.m\.h2hPage \? ' box-shadow:var\(--shadow-modal\);' : ''\}/);
   assert.match(slice('fhOpenSheet'), /inset:0 0 0 var\(--sf-side, 0px\); z-index:110; background:var\(--backdrop\); backdrop-filter:blur\(3px\)/, 'scrim over the content area only');
@@ -489,6 +491,15 @@ test('review 2 item 6: lower-is-better rows light the SHORTER bar on the Head to
   assert.deepEqual(['Double faults', 'Unforced errors', 'Unforced errors / total points', 'Winners / unforced errors', 'Aces', 'Dominance ratio'].map(low), [true, true, true, false, false, false]);
 });
 
+// Profile v2 (founder 2026-11-09, "follow the design"): a sheet the Player Profile opens paints bars BY PLAYER —
+// A the export's link blue, B white — whoever leads; every other host keeps its rule.
+test('profile v2: the profile\'s sheet paints by player (A --link, B --text); Match analysis keeps the longer-bar pair', () => {
+  const ace = { label: 'Aces', kind: 'count', k: 30, a: cell(3), b: cell(9) };
+  assert.deepEqual(fills(rowHtml('pp2')(ace)), ['var(--link)', 'var(--text)'], 'A trails yet keeps the blue: by player');
+  assert.deepEqual(fills(rowHtml(null)(ace)), ['var(--bar-2)', 'var(--bar)'], 'control: Match analysis leader / trailer');
+  assert.match(slice('fhOpenSheet'), /fhSheetHeadHtml\(e, r, mid === _fhPp2Mid \? \{ noChips: true \} : undefined\)/, 'the profile sheet drops the set chips');
+});
+
 // Review 2 item 2: the Player Profile's hand-off (window.pp2OpenMatchSheet) never reuses the Head to Head page's sheet
 // state — its pseudo match carries h2hPage (white bars, Dominance emphasis, --shadow-modal). Runs the REAL opener and the
 // REAL fhStateFor / fhOpenSheet / fhCloseSheet with the DOM and the body painter stubbed; the tone is computed with
@@ -497,9 +508,9 @@ test('review 2 item 2: an H2H sheet opened and closed, then a profile recent-for
   const at = html.indexOf('window.pp2OpenMatchSheet = function(x){');
   let d = 0, i = html.indexOf('{', at); for (; i < html.length; i++) { if (html[i] === '{') d++; else if (html[i] === '}' && --d === 0) break; }
   const opener = html.slice(at, i + 1);
-  const toneLine = /_fhSheetToneNow = (\([^\n]*?\)) \? 'h2h' : null;/.exec(slice('fhSheetRender'))[1];
+  const toneLine = /_fhSheetToneNow = (\([^\n]*?\)) \? 'h2h'/.exec(slice('fhSheetRender'))[1];
   const run = new Function(`
-    let _fh = null, _fhSheetToneNow = null, painted = null;
+    let _fh = null, _fhSheetToneNow = null, painted = null, _fhPp2Mid = null;
     const host = { innerHTML: '', parentNode: null, classList: { add() {} }, isConnected: true, remove() {} };
     const document = { getElementById: id => (id === 'fhSheet' && host.parentNode ? host : null), querySelector: () => null,
       createElement: () => host, body: { appendChild: h => { h.parentNode = document.body; } }, querySelectorAll: () => [] };

@@ -44,7 +44,7 @@ const MUTANTS = [
   ['sheet: opens on Match, not Key stats', "\n    scope: 'key', nSets:", "\n    scope: 'match', nSets:"],
   ['sheet: tabs lose their slot', "onclick: `fhSheetScope('key','${sl}')` }];", "onclick: `fhSheetScope('key')` }];"],
   ['sheet: initials in rings (D5 undone)', "  const av = (name, key) => `<span class=\"fh-av\">${aAvatarHtml(name, key)}</span>`;", "  const av = (name, key) => `<span class=\"fh-av\">${fhEsc(fhIni(name))}</span>`;"],
-  ['sheet: inline copy keeps the set chips', "  const chips = o.inline ? '' : (r.sets || [])", "  const chips = (r.sets || [])"],
+  ['sheet: inline copy keeps the set chips', "  const chips = o.inline || o.noChips ? '' : (r.sets || [])", "  const chips = o.noChips ? '' : (r.sets || [])"],
   ['sheet: Match Stats tab back to the old stat sheet', "  if (hasPointLog) return maMsSheetHtml(m);\n", ''],
   ['sheet: Match Stats inline never filled', "buildMatchStatsSection(mv)); maMsSheetInit(mv);\n    // ruling 5", "buildMatchStatsSection(mv));\n    // ruling 5"],   // the carry-over view (2026-10-23)
   // TEN-336: the Market edge pop-up rows are maMatchRowsHtml rows; meRowOf hands each its opener

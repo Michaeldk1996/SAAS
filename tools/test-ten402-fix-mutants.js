@@ -88,8 +88,8 @@ const MUTANTS = [
     '  const st = _fh && !(_fh.m && _fh.m.h2hPage) ? _fh : fhStateFor({ pp2: true, key: x.subjectKey });',
     '  const st = _fh || fhStateFor({ pp2: true, key: x.subjectKey });'],
   ['review 2 item 6: the bright bar back on the longer bar',
-    "  const aCol = better ? (better === 'a' ? BAR : BAR2) : aW != null && bW != null && aW < bW ? BAR2 : BAR;\n  const bCol = better ? (better === 'b' ? BAR : BAR2) : aW != null && bW != null && bW < aW ? BAR2 : BAR;",
-    '  const aCol = aW != null && bW != null && aW < bW ? BAR2 : BAR, bCol = aW != null && bW != null && bW < aW ? BAR2 : BAR;'],
+    "  const aCol = pp2Tone ? 'var(--link)' : better ? (better === 'a' ? BAR : BAR2) : aW != null && bW != null && aW < bW ? BAR2 : BAR;\n  const bCol = pp2Tone ? 'var(--text)' : better ? (better === 'b' ? BAR : BAR2) : aW != null && bW != null && bW < aW ? BAR2 : BAR;",
+    "  const aCol = pp2Tone ? 'var(--link)' : aW != null && bW != null && aW < bW ? BAR2 : BAR, bCol = pp2Tone ? 'var(--text)' : aW != null && bW != null && bW < aW ? BAR2 : BAR;"],
   ['review 2 item 6: the site\'s lower-is-better list not read',
     "  return (typeof MATCH_STAT_ORDER !== 'undefined' ? MATCH_STAT_ORDER : []).some(", '  return [].some('],
   // ---- founder round 1 (2026-10-09), builder X: fixes 1, 2, 6 (test-ten402-r1x.mjs, test-ten402-a.mjs)

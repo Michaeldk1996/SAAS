@@ -16061,7 +16061,7 @@ function fhSheetHeadHtml(e, r, opts){
     : r.won == null ? '' : (r.won ? last(e.aName) + ' won ' + (scoreTxt || (r.pS + '-' + r.oS)) : last(e.bName) + ' won ' + (flipTxt || (r.oS + '-' + r.pS))) + retTag;
   const setsKnown = r.pS != null;
   const aC = !setsKnown ? FH_DASH : (r.won ? 'var(--text)' : 'var(--text-label)'), bC = !setsKnown ? FH_DASH : (r.won ? 'var(--text-label)' : 'var(--text)');   // DF L4870
-  const chips = o.inline ? '' : (r.sets || []).map(x => `<span style="${FH_MONO} font-size:12px; font-weight:700; color:var(--text); background:var(--page); border:1px solid var(--line); border-radius:6px; padding:3px 8px;">${x[0]}-${x[1]}</span>`).join('');
+  const chips = o.inline || o.noChips ? '' : (r.sets || []).map(x => `<span style="${FH_MONO} font-size:12px; font-weight:700; color:var(--text); background:var(--page); border:1px solid var(--line); border-radius:6px; padding:3px 8px;">${x[0]}-${x[1]}</span>`).join('');
   const badge = (v, c) => `<span class="fh-price" style="position:absolute; left:50%; bottom:-9px; transform:translateX(-50%); ${FH_MONO} font-size:10.5px; font-weight:700; color:${v == null ? FH_DASH : c}; background:var(--card); border:1px solid var(--line); border-radius:999px; padding:1px 7px; white-space:nowrap;">${v == null ? FH_DASHC : v.toFixed(2)}</span>`;
   const av = (name, key) => `<span class="fh-av">${aAvatarHtml(name, key)}</span>`;
   // date = the design's sheet meta exactly (DF mkSheet L4856 prints its source's date): a Form row DD.MM (P1 "… · 18.07",
@@ -16108,7 +16108,7 @@ function fhOpenSheet(mid){
   host.innerHTML = `<div style="position:fixed; inset:0 0 0 var(--sf-side, 0px); z-index:110; background:var(--backdrop); backdrop-filter:blur(3px); display:flex; align-items:flex-start; justify-content:center; padding:40px 24px; overflow-y:auto; font-family:'Hanken Grotesk',sans-serif; color:var(--text);">
       <div onclick="fhCloseSheet()" style="position:absolute; inset:0;"></div>
       <div style="position:relative; width:100%; max-width:760px; background:var(--card); border:1px solid var(--edge-10); border-radius:14px; padding:22px 24px 26px; display:flex; flex-direction:column; gap:16px;${_fh.m && _fh.m.h2hPage ? ' box-shadow:var(--shadow-modal);' : ''}">
-        ${fhSheetHeadHtml(e, r)}
+        ${fhSheetHeadHtml(e, r, mid === _fhPp2Mid ? { noChips: true } : undefined)}
         <div id="fhSheetBody" class="fh-sheet-body" style="display:flex; flex-direction:column; gap:16px;"></div>
       </div>
     </div>`;
@@ -16286,8 +16286,9 @@ function fhSheetRowHtml(s){
   const better = h2hTone ? fhSheetBetter(s) : null;
   // Head to Head (review 2, item 6): the bright bar is the BETTER figure's — lower-is-better rows (double faults,
   // unforced errors) light the shorter bar; a tie, a dash or a gated count falls back to the longer-bar rule.
-  const aCol = better ? (better === 'a' ? BAR : BAR2) : aW != null && bW != null && aW < bW ? BAR2 : BAR;
-  const bCol = better ? (better === 'b' ? BAR : BAR2) : aW != null && bW != null && bW < aW ? BAR2 : BAR;
+  const pp2Tone = typeof fhSheetTone === 'function' && fhSheetTone() === 'pp2';
+  const aCol = pp2Tone ? 'var(--link)' : better ? (better === 'a' ? BAR : BAR2) : aW != null && bW != null && aW < bW ? BAR2 : BAR;
+  const bCol = pp2Tone ? 'var(--text)' : better ? (better === 'b' ? BAR : BAR2) : aW != null && bW != null && bW < aW ? BAR2 : BAR;
   const fig = side => (!better || better === side ? { c: 'var(--text)', w: 700 } : { c: 'var(--text-label)', w: 500 });
   // gate (fhGateCell): small → grey value and bar · nopct → the count in the player's colour, no bar
   const val = (c, col, w) => `<span${c.gate ? ` data-ma-gate="${c.gate}"` : ''} style="${FH_MONO} font-size:15px; font-weight:${w || 700}; color:${c.gate === 'small' ? MA_GREY : c.v == null && !c.gate ? FH_DASH : col};">${fhEsc(c.txt)}</span>`;
@@ -16313,6 +16314,10 @@ function fhSheetRowHtml(s){
 // TEN-402: the sheet's tone. 'h2h' while fhSheetRender paints a pop-up opened from the Head to Head page (its pseudo match
 // carries h2hPage), else null — the Match analysis sheet, the Match Stats tab and the profile are unchanged.
 let _fhSheetToneNow = null;
+// Profile v2 (founder 2026-11-09, "follow the design"): a sheet the Player Profile opens paints its bars BY PLAYER —
+// player A the export's link blue, player B white — and drops the set chips under the big score. Only that sheet:
+// the mid pp2OpenMatchSheet opened (_fhPp2Mid); every other host keeps its own rule.
+let _fhPp2Mid = null;
 function fhSheetTone(){ return _fhSheetToneNow; }
 // The better of a sheet row's two figures: 'a' | 'b' | null (a tie as printed, a missing side or a gated count marks neither).
 // Lower is better on the site's own list (MATCH_STAT_ORDER's lowerBetter flag: Double Faults, Unforced Errors — and a row
@@ -16415,7 +16420,8 @@ function fhSheetBodyOf(slot){ return slot === 'tab' ? _maMsSheet : (_fh && _fh.s
 function fhSheetRender(slot){
   const S = fhSheetBodyOf(slot), host = document.getElementById(slot === 'tab' ? 'maMsSheetBody' : 'fhSheetBody');
   if (!S || !host) return;
-  _fhSheetToneNow = (slot !== 'tab' && _fh && _fh.m && _fh.m.h2hPage) ? 'h2h' : null;   // TEN-402: the Head to Head page's tone
+  _fhSheetToneNow = (slot !== 'tab' && _fh && _fh.m && _fh.m.h2hPage) ? 'h2h'   // TEN-402: the Head to Head page's tone
+    : (slot !== 'tab' && _fh && _fh.sheet && _fh.sheet === _fhPp2Mid) ? 'pp2' : null;   // profile v2: by player
   const tabs = fhSheetTabs(S);
   let body;
   if (S.scope === 'pbp'){
@@ -23700,6 +23706,7 @@ window.pp2OpenMatchSheet = function(x){
   // --shadow-modal) is never reused here — a sheet the H2H page opened and closed must not dress the profile's sheet.
   // An open Match analysis modal's state is still shared (unchanged).
   const st = _fh && !(_fh.m && _fh.m.h2hPage) ? _fh : fhStateFor({ pp2: true, key: x.subjectKey });
+  _fhPp2Mid = r.mid;   // profile v2: this sheet paints by player and drops the set chips
   st.sheetMap[r.mid] = { r, aName: x.subjectName, aKey: x.subjectKey, bName: x.oppName,
     bKey: x.row.opponentKey != null ? String(x.row.opponentKey) : null, noYear: true };
   fhOpenSheet(r.mid);
