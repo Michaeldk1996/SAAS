@@ -318,6 +318,25 @@ check('in-play rule: each kept row names the start it was checked against',
       [(r['event_key'], r['detail']['startKind']) for r in sorted(irows, key=lambda r: r['event_key'])]
       == [(72, 'verified (our close)'), (75, 'scheduled'), (77, 'scheduled')], irows)
 nrows, _ = T.te_rows(idocs, ifx.get)
+# founder 2026-11-09 ("Yes, accept them"): with only the scheduled time to check against, a later start on TE's own match page
+# (the saved page the batch read, by sha256) is the check for the lower levels; a verified start still decides
+pdocs = [{'batch': 'gap-x', 'complete': True, 'rows': [
+    dict(TX(91, pin=PIN('2024-03-01T12:40:00Z')), teId='9001', pageSha256='a' * 64),    # after scheduled 12:30, before TE 12:50 -> kept
+    dict(TX(92, pin=PIN('2024-03-01T12:55:00Z')), teId='9002', pageSha256='a' * 64),    # after TE's 12:50 too -> dropped
+    dict(TX(93, pin=PIN('2024-03-01T12:40:00Z')), teId='9003', pageSha256='b' * 64),    # TE's page is another copy -> dropped
+    dict(TX(94, pin=PIN('2024-03-01T12:40:00Z')), teId='9004', pageSha256='a' * 64),    # TE lists an EARLIER start -> dropped (scheduled)
+    dict(TX(95, pin=PIN('2026-09-28T10:05:00Z')), teId='9005', pageSha256='a' * 64, close={'startTs': '2026-09-28T10:00:00Z'})]}]  # verified decides
+pfx = {str(k): G(k, '2024-03-01', '12:30') for k in (91, 92, 93, 94)} | {'95': G(95, '2026-09-28', '09:00')}
+PST = {'9001': {'start': '2024-03-01T12:50:00Z', 'pageSha256': 'a' * 64}, '9002': {'start': '2024-03-01T12:50:00Z', 'pageSha256': 'a' * 64},
+       '9003': {'start': '2024-03-01T12:50:00Z', 'pageSha256': 'a' * 64}, '9004': {'start': '2024-03-01T12:00:00Z', 'pageSha256': 'a' * 64},
+       '9005': {'start': '2026-09-28T11:00:00Z', 'pageSha256': 'a' * 64}}
+prows, prep = T.te_rows(pdocs, pfx.get, page_start=T.te_page_start_of(PST))
+check('TE page start (2026-11-09): kept when the last change is before TE\'s later start (91); dropped after it (92), on another page copy (93), when TE lists an earlier start (94), and when a verified start says in play (95)',
+      [(r['event_key'], r['detail']['startKind'], r['detail']['startChecked']) for r in prows] == [(91, T.TE_PAGE_START_KIND, '2024-03-01T12:50:00Z')]
+      and prep.get('dropped: last change after the start') == 4, (prows, prep))
+check('TE page start: the read-time rule feeds the kept row (its startChecked is TE\'s start)', not T.te_in_play(dict(prows[0], id=1)) if prows else False)
+p0, _ = T.te_rows(pdocs, pfx.get)
+check('control: without the TE start times, 91 is dropped against the scheduled 12:30 (the rule before the ruling)', 91 not in [r['event_key'] for r in p0])
 # founder 2026-11-01 (Task A, "TE never-tried"): 'atp-nt' — an ATP main-draw match with an api-tennis fixture and no
 # Tennis-Data row — is a TE level: keyed on the event key, oriented by the players' api-tennis keys like every level here
 ndocs = [{'batch': 'atp-nt-01', 'complete': True, 'rows': [TX(81, lvl='atp-nt', ka='22', kb='11', pin=PIN('2026-10-27T09:55:00Z'))]}]
