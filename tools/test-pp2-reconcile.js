@@ -940,6 +940,7 @@ check('career modal total row = career box headline', () => {
   for (const p of SAMPLE) {
     const t = I.spineTotal(p);
     if (!t.n) continue;
+    I.state.careerScope = 'career';   // profile v2 opens on Last 52 weeks; the footer under test is the Career window's
     const html = I.renderCareerModal(p, {});
     // The footer "Career" row prints W/L; it must be the same pair as the tile.
     assert(html.includes('>' + t.won + '/' + t.lost + '<'),
