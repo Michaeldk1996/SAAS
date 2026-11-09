@@ -1972,10 +1972,11 @@
             // "over N matches" is gone from the body, not lost: the record IS n
             // (95-14 is 109 matches), and the sentence read as two claims where
             // there is one. Same reasoning that shortened the tiles in item 3.
-            'Wins ' + rateText(ins.won, ins.lost) + ' ' + esc(phrase) +
-            ' (' + esc(recordText(ins.won, ins.lost)) + ') against ' +
-            ins.baseline.toFixed(1) + '% ' + esc(ins.pop) + ' ' + EMDASH + ' ' +
-            signed(ins.gap, 1, 'pp') + '.' +
+            // profile v2 (founder 2026-11-09): plain sentences, no dashes, as the export writes them
+            // ("27.8% at Masters (10-26). His career rate is 41%. That is 13.3 points lower.")
+            esc(rateText(ins.won, ins.lost) + ' ' + phrase + ' (' + recordText(ins.won, ins.lost) + '). His rate ' +
+              ins.pop + ' is ' + ins.baseline.toFixed(1) + '%. That is ' + Math.abs(Math.round(ins.gap * 10) / 10).toFixed(1) +
+              ' points ' + (ins.gap > 0 ? 'higher' : 'lower') + '.') +
           '</div>' +
         '</div>';
     }).join('');

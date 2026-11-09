@@ -360,13 +360,11 @@ checkValues('item 5 · rendered insight titles are sentences and bodies carry ra
 });
 
 check('item 5 · the body states the split RATE, which README §6 requires', () => {
-  assert(/'Wins ' \+ rateText\(ins\.won, ins\.lost\)/.test(CODE),
+  // profile v2 (founder 2026-11-09): plain sentences — rate, record, his rate, the gap in points, higher / lower
+  assert(/esc\(rateText\(ins\.won, ins\.lost\) \+ ' ' \+ phrase/.test(CODE),
     'the insight body no longer leads with the split rate');
-  assert(/against ' \+\s*\n?\s*ins\.baseline\.toFixed\(1\)/.test(CODE.replace(/\s+/g, ' ')) ||
-    /ins\.baseline\.toFixed\(1\)/.test(CODE),
-    'the insight body no longer states the baseline it compares against');
-  assert(/signed\(ins\.gap, 1, 'pp'\)/.test(CODE),
-    'the insight body no longer states the signed gap');
+  assert(/ins\.baseline\.toFixed\(1\)/.test(CODE), 'the insight body no longer states the baseline it compares against');
+  assert(/' points ' \+ \(ins\.gap > 0 \? 'higher' : 'lower'\)/.test(CODE), 'the insight body no longer states the gap in points');
 });
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -484,8 +482,8 @@ const mutants = [
    "['Handles left-handers well',        'Handles left-handers well']",
    /reads the same up and down/],
   ['item 5 · the body stops printing the rate',
-   "'Wins ' + rateText(ins.won, ins.lost) + ' ' + esc(phrase) +",
-   "esc(phrase) +", /no longer leads with the split rate/],
+   "esc(rateText(ins.won, ins.lost) + ' ' + phrase + ' ('",
+   "esc(phrase + ' ('", /no longer leads with the split rate/],
   ['item 6 · the chip count cut to four',
    "var chips = rows.slice(-6).reverse();", "var chips = rows.slice(-4).reverse();",
    /emits 4 chips/],
@@ -560,7 +558,7 @@ function scoreAgainst(MI, MCODE) {
     if (!pair) throw new Error(`no insight title for "${id}"`);
     if (pair[0] === pair[1]) throw new Error(`"${id}" reads the same up and down`);
   }));
-  if (!/'Wins ' \+ rateText\(ins\.won, ins\.lost\)/.test(MCODE))
+  if (!/esc\(rateText\(ins\.won, ins\.lost\) \+ ' ' \+ phrase/.test(MCODE))
     throw new Error('the insight body no longer leads with the split rate');
   // item 6
   const nchips = (rib.match(/class="pp2-chip"/g) || []).length;
