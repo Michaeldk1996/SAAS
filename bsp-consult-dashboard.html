@@ -24232,6 +24232,14 @@ window.sfGoToH2H = sfGoToH2H;
 // Profile v2 (founder 2026-11-09): Record per tournament's event name opens that event on the Tournaments page — only
 // when the page holds it (its registry key, through the site's one event key); any other name stays plain text.
 // Profile v2 (2026-11-09) · Level & round splits an ATP tour event into ATP 500 / ATP 250 by the catalog's category.
+// Profile v2 (2026-11-09) · the Calendar record's swing and Country filter read the catalog's event country (ISO-2).
+window.pp2EventCountry = function(name){
+  try {
+    const k = sfEventKey(name);
+    const e = k && typeof TOURNAMENT_CATALOG !== 'undefined' ? TOURNAMENT_CATALOG.find(t => t.name === k) : null;
+    return e && e.country ? e.country : null;
+  } catch (_) { return null; }
+};
 window.pp2EventCategory = function(name){
   try {
     const k = sfEventKey(name);

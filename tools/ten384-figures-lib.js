@@ -91,7 +91,9 @@ function readers(I) {
     return { won: rec ? +rec[1] : null, lost: rec ? +rec[2] : null, undated: und ? num(und[1]) : 0, t };
   }
   function readCal(p) {
-    const h = withState({ key: p.key, calTab: 'calendar', calSurface: 'all', calCell: null }, () => I.renderSeasonModal(p));
+    // profile v2 (2026-11-09): the swing-grid Calendar, its (?) notes opened so the residual and priced clauses print
+    const st = { key: p.key, seasonTab: 'calendar', calWin: 'career', calSurf: 'all', calCellV2: null, calSpeed: 'all', calFmt: 'all', calBand: 'all', calArch: 'all', calCtry: 'all' };
+    const h = withState(Object.assign({ info: 'cal1' }, st), () => I.renderSeasonModal(p)) + withState(Object.assign({ info: 'cal2' }, st), () => I.renderSeasonModal(p));
     const t = text(h);
     const head = /Calendar form · career · all surfaces ([\d,]+) matches/i.exec(t);
     const und = /([\d,]+) (?:matches carry|match carries) no dated match row/.exec(t);
@@ -109,6 +111,7 @@ function readers(I) {
       return m ? { month: m[1], value: m[2], n: +m[3] } : null;
     };
     return {
+      priced: (/([\d,]+) of [\d,]+ matches · flat 1u/.exec(t) || [])[1], mkn: (/Market edge prices ([\d,]+) matches; ([\d,]+) of them/.exec(t) || []).slice(1),
       html: h, t, total: head ? num(head[1]) : null, undated: und ? num(und[1]) : 0, outside: out ? num(out[1]) : 0,
       n: row('n'), vs: row('Vs others'), best: tile('Best month'), worst: tile('Worst month'),
       yieldTile: (/Career yield ([+−]?[\d.]+%|—) ([\d,]+) priced/i.exec(t) || []).slice(1)
@@ -197,20 +200,25 @@ function playerChecks(I, R, p, mk, label, opts) {
       assert.strictEqual(I.undatedFor(p, 'all'), I.calResidual(p).undated, 'Last 52 and the Calendar read two undated figures');
       return got.map(([t, u]) => t + ' ' + u).join(' · ');
     } },
-    { name: `3 · ${L}: Best / Worst month tiles = footer VS OTHERS and N`, fn() {
+    // profile v2 (2026-11-09): the Best / Worst SWING tiles = a recompute of every swing's yield against the other swings
+    // (priced rows only, team events out, n >= 5 priced), done here from the module's own rows.
+    { name: `3 · ${L}: Best / Worst swing tiles = each swing's yield minus the other swings', recomputed`, fn() {
       const c = R.readCal(p);
-      ['best', 'worst'].forEach((w) => {
-        const tl = c[w];
-        assert(tl, `${w} month tile unreadable`);
-        const m = MONTHS.indexOf(tl.month);
-        assert(m >= 0, `${w} month "${tl.month}"`);
-        assert.strictEqual(tl.value, c.vs[m], `${w} ${tl.month}: tile ${tl.value}, footer ${c.vs[m]}`);
-        assert.strictEqual(String(tl.n), c.n[m], `${w} ${tl.month}: tile n=${tl.n}, footer N ${c.n[m]}`);
+      const rows = R.withState({ key: p.key, calWin: 'career', calSurf: 'all' }, () => I.calRows(p));
+      const by = {};
+      rows.forEach((x) => { if (x.sw === 'team' || x.r.cents == null) return; (by[x.sw] = by[x.sw] || []).push(x.r.cents); });
+      const tot = Object.values(by).reduce((a, v) => a.concat(v), []);
+      const sum = v => v.reduce((a, x) => a + x, 0);
+      const pp = Object.keys(by).filter(k => by[k].length >= 5).map((k) => {
+        const rest = tot.length - by[k].length;
+        return { k, n: by[k].length, pp: sum(by[k]) / by[k].length - (sum(tot) - sum(by[k])) / rest };
       });
-      const sumN = c.n.reduce((a, x) => a + num(x), 0);
-      const head = /([\d,]+) of ([\d,]+) matches · flat 1u/.exec(c.t);
-      assert(head && num(head[1]) === sumN, `Σ N ${sumN} ≠ the panel head's priced ${head && head[1]}`);
-      return `best ${c.best.month} ${c.best.value} n=${c.best.n} · worst ${c.worst.month} ${c.worst.value} n=${c.worst.n} · Σ N ${sumN}`;
+      assert(pp.length, 'no swing clears five priced — vacuous');
+      const best = pp.slice().sort((a, b) => b.pp - a.pp)[0], worst = pp.slice().sort((a, b) => a.pp - b.pp)[0];
+      const f = v => (Math.round(v * 10) / 10 > 0 ? '+' : Math.round(v * 10) / 10 < 0 ? '−' : '+') + Math.abs(Math.round(v * 10) / 10).toFixed(1) + 'pp n=';
+      assert(c.t.includes(f(best.pp) + best.n), `Best swing tile is not ${best.k} ${f(best.pp)}${best.n}`);
+      assert(c.t.includes(f(worst.pp) + worst.n), `Worst swing tile is not ${worst.k} ${f(worst.pp)}${worst.n}`);
+      return `best ${best.k} ${f(best.pp)}${best.n} · worst ${worst.k} ${f(worst.pp)}${worst.n}`;
     } },
     { name: `4 · ${L}: ledger head counts the window "See all N results" counts`, fn() {
       const { head, more } = R.readLedger(p);
@@ -234,18 +242,15 @@ function playerChecks(I, R, p, mk, label, opts) {
       assert.deepStrictEqual(bad.map(x => x.m.date + ' ' + x.m.opponent), [], `${bad.length} of ${priced} rows differ`);
       return `${priced} priced ledger rows, Court speed shows the same H / A`;
     } },
-    { name: `Y · ${L}: Calendar Career yield = Market edge box (same matches, same basis)`, fn() {
+    { name: `Y · ${L}: the Calendar's priced count + the stated unplaced = the Market edge box (same matches, same basis)`, fn() {
       const c = R.readCal(p), H = mk && mk.headline;
       assert(H && H.n, 'no Market edge headline');
-      assert.strictEqual(num(c.yieldTile[1]), H.n, `Calendar ${c.yieldTile[1]} priced, Market edge box ${H.n}`);
-      assert.strictEqual(c.yieldTile[0], fmt1(H.yield), `Calendar ${c.yieldTile[0]}, Market edge box ${H.yield}%`);
-      const sumN = c.n.reduce((a, x) => a + num(x), 0);
-      const un = /; (\d+) of them carr(?:y|ies) no dated career row/.exec(c.t);
-      assert.strictEqual(sumN + (un ? +un[1] : 0), H.n, `months rest on ${sumN}, ${un ? un[1] : 0} stated unplaced, box ${H.n}`);
-      // The shard's headline against its own rows (a builder check, not a page disagreement — both surfaces
-      // print the headline). On for the gate's players; the roster probe reports it separately.
+      assert(c.priced != null, 'the Calendar states no priced count');
+      const placed = num(c.priced), gap = c.mkn.length ? num(c.mkn[1]) : 0;
+      assert.strictEqual(placed + gap, H.n, `Calendar ${placed} priced + ${gap} stated unplaced ≠ Market edge box ${H.n}`);
+      if (gap) assert.strictEqual(num(c.mkn[0]), H.n, 'the note names another total');
       if (shardSelfCheck) assert.strictEqual(fmt1(boxYield(mk).y), fmt1(H.yield), 'the shard headline does not match its own rows');
-      return `Career yield ${c.yieldTile[0]} on ${c.yieldTile[1]} = Market edge ${H.yield.toFixed(2)}% on ${H.n} · months on ${sumN}`;
+      return `${placed} placed + ${gap} unplaced = Market edge ${H.n}`;
     } },
     { name: `J · ${L}: every Calendar row the join prices agrees with its Market edge row on the result`, fn() {
       const a = joinAudit(I, p);

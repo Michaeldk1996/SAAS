@@ -318,6 +318,7 @@
     '.pp2-mkcard:hover{background:var(--wash-4)!important;}.pp2-mkband:hover{background:var(--wash-4)!important;box-shadow:-10px 0 0 var(--wash-4),10px 0 0 var(--wash-4)!important;}.pp2-utab:hover{color:var(--text)!important;}' +
     '.pp2-fmrow:hover{background:var(--wash-5)!important;}.pp2-fmtrig:hover{border-color:var(--edge-24)!important;color:var(--text)!important;}' +
     '.pp2-splgrid:has(.pp2-splcell:hover){}' +
+    '.pp2-calc:hover{filter:brightness(1.6);}' +
     '.pp2-tlink:hover{text-decoration-color:color-mix(in srgb, var(--text) 45%, transparent)!important;}' +
     // §5.3 item 7 — the file gives the tournament row a hover fill
     // (`style-hover="background:var(--inner)"`, Player Stat Boxes
@@ -3294,6 +3295,7 @@
     var cols = groups.map(function (g) {
       return '<div style="display:flex;flex-direction:column;gap:2px;min-width:0;">' +
         '<span style="font-size:10.5px;font-weight:700;letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);padding:0 0 8px;">' + esc(g.title) + '</span>' +
+        (g.maxH ? '<div class="pp2-yscroll" style="display:flex;flex-direction:column;gap:2px;max-height:' + g.maxH + 'px;overflow-y:auto;">' : '') +
         g.options.map(function (o) {
           var on = g.cur === o[0], n = g.count(o[0]);
           return '<span data-pp2="fm-set" data-g="' + esc(g.key) + '" data-v="' + esc(o[0]) + '" class="pp2-fmrow" style="cursor:pointer;display:flex;' +
@@ -3304,7 +3306,7 @@
             'color:var(--text-label);font-weight:400;">' + (n == null ? DASH : n) + '</span>' +
             (on ? '<svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M1.5 5.5l2.2 2.2L8.5 2.8" stroke="var(--text)" stroke-width="1.6" ' +
               'stroke-linecap="round" stroke-linejoin="round"></path></svg>' : '') + '</span></span>';
-        }).join('') + '</div>';
+        }).join('') + (g.maxH ? '</div>' : '') + '</div>';
     }).join('');
     return '<span style="position:relative;display:inline-flex;">' + trig +
       '<div data-pp2="fm-close" style="position:fixed;inset:0;z-index:70;"></div>' +
@@ -6491,7 +6493,7 @@
       return base.concat([
         { html: r.price != null ? Number(r.price).toFixed(2) : pend ? '' : DASH, style: M + 'font-size:11px;color:var(--text-soft);text-align:right;' },
         { html: r.oppPrice != null ? Number(r.oppPrice).toFixed(2) : pend ? '' : DASH, style: M + 'font-size:11px;color:var(--text-label);text-align:right;' },
-        { html: pl == null ? (pend ? '' : DASH) : signed(pl, 2, 'u'), style: M + 'font-size:11.5px;font-weight:700;text-align:right;color:' + (pl == null ? 'var(--text-label)' : signColour(pl)) + ';' }]);
+        { html: pl == null ? (pend ? '' : r.settle === 'void' ? 'void' : DASH) : signed(pl, 2, 'u'), style: M + 'font-size:11.5px;font-weight:700;text-align:right;color:' + (pl == null ? 'var(--text-label)' : signColour(pl)) + ';' }]);
     }
     var sets = (r.sc.setsW || 0) + '–' + (r.sc.setsL || 0), gw = 0, gl = 0, tw = 0, tl = 0;
     (r.sc.sets || []).forEach(function (x) { gw += x.p; gl += x.o; if ((x.p === 7 && x.o === 6) || (x.p === 6 && x.o === 7)) { if (x.p > x.o) tw++; else tl++; } });
@@ -9578,7 +9580,540 @@
     }).join('')) : '';
     return recTabRow(tabs, right);
   }
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Profile v2 (founder 2026-11-09) · Calendar record = the export's calendar() + streaks(): Calendar · Streaks text tabs,
+  // Window (Last 52 weeks | Career) and Surface on the right, read by BOTH tabs; the Calendar tab = Filters · 4 tiles ·
+  // swing × season grid (Swing | Month) · By swing card; a cell opens the right-side drawer (matches grouped by
+  // tournament, P&L in units). Rows = the played career spine (calSpine), walkovers out of every figure.
+  // A swing is assigned from the match's own month, surface, court and the catalog's event country — the export's rule
+  // ("by the week they are played and the region"). Team events (Davis / Laver / United / ATP Cup, Hopman, Olympics)
+  // are muted and out of every yield.
+  var CAL_SW = [
+    { k: 'aus', name: 'Australian', code: 'AUS', surf: 'Hard' },
+    { k: 'me', name: 'Middle East', code: 'M·EAST', surf: 'Hard' },
+    { k: 'gold', name: 'Golden swing', code: 'GOLDEN', surf: 'Clay' },
+    { k: 'eei', name: 'Early Euro indoor', code: 'E·INDOOR', surf: 'Indoors' },
+    { k: 'sun', name: 'Sunshine double', code: 'SUNSHINE', surf: 'Hard' },
+    { k: 'eclay', name: 'Euro clay', code: 'EU CLAY', surf: 'Clay' },
+    { k: 'grass', name: 'Grass', code: 'GRASS', surf: 'Grass' },
+    { k: 'sclay', name: 'Summer clay', code: 'S·CLAY', surf: 'Clay' },
+    { k: 'nah', name: 'North American hard', code: 'NA HARD', surf: 'Hard' },
+    { k: 'asia', name: 'Asian swing', code: 'ASIA', surf: 'Hard' },
+    { k: 'ein', name: 'Euro indoor', code: 'EU INDOOR', surf: 'Indoors' },
+    { k: 'team', name: 'Team / other', code: 'TEAM', surf: 'Mixed', team: true }];
+  var CAL_MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  var CAL_MONF = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  var CAL_MDOM = ['Hard', 'Hard', 'Hard', 'Clay', 'Clay', 'Grass', 'Grass', 'Hard', 'Hard', 'Indoors', 'Indoors', 'Indoors'];
+  var CAL_SURFC = { Hard: 'var(--pp-surf-hard)', Clay: 'var(--pp-surf-clay)', Grass: 'var(--pp-surf-grass)', Indoors: 'var(--pp-surf-indoor)',
+    Mixed: 'color-mix(in srgb, var(--text) 14%, transparent)' };
+  var CAL_TEAM_RE = /davis cup|laver cup|united cup|atp cup|hopman|olympic/i;
+  var CAL_MIDEAST = { QA: 1, AE: 1, SA: 1, BH: 1, KW: 1, OM: 1 };
+  var CAL_AMERICAS = { US: 1, CA: 1, MX: 1, AR: 1, BR: 1, CL: 1, CO: 1, EC: 1, PE: 1, UY: 1, PY: 1, BO: 1 };
+  var CAL_FM_KEYS = ['calSpeed', 'calFmt', 'calBand', 'calArch', 'calCtry'];
+  function calCountryOf(r) {
+    var c = typeof window.pp2EventCountry === 'function' ? window.pp2EventCountry(r.tournament || r.event) : null;
+    return c ? String(c).toUpperCase() : null;
+  }
+  function calCountryName(cc) {
+    try { return new Intl.DisplayNames(['en'], { type: 'region' }).of(cc) || cc; } catch (e) { return cc; }
+  }
+  /** The swing a match belongs to: its month, surface, court and the event's country. */
+  function calSwingOf(r, cc) {
+    if (CAL_TEAM_RE.test(String(r.tournament || '') + ' ' + String(r.event || ''))) return 'team';
+    var m = r.mon, s = String(r.surface || '').toLowerCase(), indoor = String(r.court || '') === 'Indoor' || r.seasonIndoor === true;
+    if (s === 'grass') return 'grass';
+    if (s === 'clay') return m <= 2 ? 'gold' : m <= 5 ? 'eclay' : 'sclay';
+    if (indoor) return m <= 5 ? 'eei' : 'ein';
+    if (m === 0) return cc && !{ AU: 1, NZ: 1 }[cc] && CAL_MIDEAST[cc] ? 'me' : 'aus';
+    if (m === 1) return cc === 'AU' || cc === 'NZ' ? 'aus' : cc && CAL_AMERICAS[cc] ? 'sun' : 'me';
+    if (m <= 4) return cc && !CAL_AMERICAS[cc] && !CAL_MIDEAST[cc] ? 'asia' : 'sun';
+    if (m <= 7) return cc && !CAL_AMERICAS[cc] ? 'asia' : 'nah';
+    if (m === 8) return cc && CAL_AMERICAS[cc] ? 'nah' : 'asia';
+    return 'asia';
+  }
+  /** Every played spine row with its calendar facets (swing, country, speed band, format, price band, style). */
+  function calRows(p) {
+    var sp = calSpine(p), sr = speedRows(p);
+    if (calRows._sp === sp && calRows._sr === sr && calRows._v) return calRows._v;
+    var out = sp.map(function (r, i) {
+      var cc = calCountryOf(r), spd = sr[i] ? spdBandOf(spdEditionSpeed(sr[i])) : null;
+      return { r: r, i: i, cc: cc, sw: calSwingOf(r, cc), surf: r.seasonIndoor === true ? 'Indoors' : mkSurfOf(r), speed: spd,
+        fmt: r.level === 'Grand Slam' || (r.setGames && r.setGames.length >= 4) ? 'bo5' : 'bo3',
+        band: r.price != null ? mkBandIdx(+r.price) : -1, arch: styleArchetypeOf(mkOppName(r.opp)) || null };
+    });
+    calRows._sp = sp; calRows._sr = sr; calRows._v = out;
+    return out;
+  }
+  // one P&L cell rule for the Calendar drawer and the run detail: units, "void" for a retirement before the first set was
+  // completed (Pinnacle rules), blank while the price shard loads, else a dash
+  function calPlCell(r, pend) {
+    if (r.cents != null) return { t: signed(r.cents / 100, 2, 'u'), c: signColour(r.cents) };
+    if (pend) return { t: '', c: 'var(--text-label)' };
+    if (r.settle === 'void') return { t: 'void', c: 'var(--text-label)' };
+    return { t: DASH, c: 'var(--text-label)' };
+  }
+  function calWinOf() { return state.calWin === 'l52' ? 'l52' : 'career'; }
+  function calSurfOf() { return state.calSurf && state.calSurf !== 'all' ? state.calSurf : 'all'; }
+  function calInWindow(x) { var cut = calWinOf() === 'l52' ? mkCut('l52') : null; return !cut || String(x.r.date) >= cut; }
+  function calPass(x, skip) {
+    var ok = function (k, v) { return skip === k || !state[k] || state[k] === 'all' || String(v) === String(state[k]); };
+    return (skip === 'surf' || calSurfOf() === 'all' || x.surf === calSurfOf()) &&
+      ok('calSpeed', x.speed) && ok('calFmt', x.fmt) && ok('calBand', x.band) && ok('calArch', x.arch) && ok('calCtry', x.cc);
+  }
+  function calStat(list) {
+    var w = 0, l = 0, pc = 0, cents = 0;
+    list.forEach(function (x) { if (x.r.won) w++; else l++; if (x.r.cents != null) { pc++; cents += x.r.cents; } });
+    return { w: w, l: l, n: w + l, pct: w + l ? 100 * w / (w + l) : null, priced: pc, units: cents / 100, y: pc ? cents / pc : null };
+  }
+  function calFilterGroups(W0) {
+    var cnt = function (key, field) { return function (v) { return W0.filter(function (x) { return calPass(x, key) && (v === 'all' || String(x[field]) === String(v)); }).length; }; };
+    var cc = {};
+    W0.filter(function (x) { return calPass(x, 'calCtry'); }).forEach(function (x) { if (x.cc) cc[x.cc] = (cc[x.cc] || 0) + 1; });
+    var ccs = Object.keys(cc).sort(function (a, b) { return cc[b] - cc[a] || a.localeCompare(b); });
+    return [
+      { key: 'calSpeed', title: 'Court speed', cur: state.calSpeed || 'all', options: [['all', 'All speeds'], ['fast', 'Fast'], ['medium', 'Medium'], ['slow', 'Slow']], count: cnt('calSpeed', 'speed') },
+      { key: 'calFmt', title: 'Format', cur: state.calFmt || 'all', options: [['all', 'All formats'], ['bo3', 'Best of 3'], ['bo5', 'Best of 5']], count: cnt('calFmt', 'fmt') },
+      { key: 'calBand', title: 'His price', cur: state.calBand || 'all', options: [['all', 'All prices']].concat(MK_BANDS.map(function (b, i) {
+        return [String(i), b[2].replace('favourite', 'fav').replace('underdog', 'dog') + ' ' + b[1].replace(' – ', '–').replace(' +', '+')]; })),
+        count: cnt('calBand', 'band') },
+      { key: 'calArch', title: 'Opponent style', cur: state.calArch || 'all', options: [['all', 'All styles']].concat(STYLE_AXIS.map(function (a) {
+        return [a.label, a.label.replace('Big Server + First Strike', 'Big Server + FS').replace('Big Server + Complete Baseliner', 'Big Server + CB')]; })),
+        count: cnt('calArch', 'arch') },
+      { key: 'calCtry', title: 'Country', cur: state.calCtry || 'all', maxH: 196, options: [['all', 'All countries']].concat(ccs.map(function (c) { return [c, calCountryName(c)]; })),
+        count: cnt('calCtry', 'cc') }
+    ];
+  }
+  var CAL_INFO1 = { what: 'Where in the tennis calendar he wins, swing by swing and season by season.', defs: [
+    ['Swing', 'A stretch of the tour that shares region, surface and conditions, set from each match’s month, surface and the event’s country. Hover a code for the full name; the Month toggle shows the same seasons by month.'],
+    ['Cell', 'Wins and losses in that swing that season. Green means above .500, red below. Click a cell for its matches, grouped by tournament.'],
+    ['Swing opener', 'His win rate in the first event of every swing against the rest of the swing.'],
+    ['Best surface', 'The surface with his highest win rate, judged before the surface pill, against the other surfaces.'],
+    ['Team / other', 'Davis Cup, United Cup, Laver Cup, ATP Cup, Hopman Cup and the Olympics. Shown muted, left out of every yield figure.']] };
+  var CAL_INFO2 = { what: 'His yield in each swing, next to the other swings.', defs: [
+    ['Yield', 'Flat 1u on him at the closing price, Pinnacle first, Bet365 where Pinnacle is missing, across the priced matches only.'],
+    ['Vs others', 'The swing’s yield minus the yield of every other swing combined. Coloured by sign.'],
+    ['Dash', 'Rates show from five priced matches up. Under five, a dash with the count.'],
+    ['Consistent', 'Seasons the swing finished above .500, out of the seasons he actually played it.']] };
+  function calHeadRow(p) {
+    var tab = state.seasonTab === 'streaks' ? 'streaks' : 'calendar';
+    var tabs = '<div style="display:flex;gap:26px;">' + [['calendar', 'Calendar'], ['streaks', 'Streaks']].map(function (t) {
+      var on = tab === t[0];
+      return '<span data-pp2="cal-tab" data-v="' + t[0] + '" class="pp2-utab" style="cursor:pointer;white-space:nowrap;padding:10px 0 11px;font-size:13px;' +
+        'font-weight:' + (on ? 700 : 600) + ';color:' + (on ? 'var(--text)' : 'var(--text-label)') + ';box-shadow:inset 0 -2px 0 ' + (on ? 'var(--bar)' : 'transparent') + ';">' + t[1] + '</span>';
+    }).join('') + '</div>';
+    var win = recLabelledSeg('Window', [['l52', 'Last 52 weeks'], ['career', 'Career']].map(function (t) {
+      return recSegBtn('cal-win', t[0], t[1], calWinOf() === t[0], true); }).join(''));
+    var surf = recLabelledSeg('Surface', STY_SURFS.map(function (t) {
+      return recSegBtn('cal-surf', t[0], t[0] === 'all' ? 'All' : t[1], calSurfOf() === t[0], true); }).join(''));
+    return '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px 18px;flex-wrap:wrap;' +
+      'border-bottom:1px solid color-mix(in srgb, var(--text) 8%, transparent);margin:-6px 0 16px;">' + tabs +
+      '<div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding-bottom:8px;">' + win + surf + '</div></div>';
+  }
+  function calScopeText(nFilters) {
+    return (calWinOf() === 'career' ? 'career' : 'last 52 weeks') + ' ' + MIDDOT + ' ' + (calSurfOf() === 'all' ? 'all surfaces' : calSurfOf().toLowerCase()) +
+      (nFilters ? ' ' + MIDDOT + ' ' + nFilters + ' filter' + (nFilters > 1 ? 's' : '') : '');
+  }
+  function renderSeasonModalV2(p) {
+    if (!calSpine(p).length) {
+      if (!careerHistorySettled(p.key)) return calHeadRow(p) + speedEmptyBox('The career match store has not loaded, so the calendar cannot be drawn yet.');
+      return calHeadRow(p) + calEmpty('No dated career match rows on record, so there is no match to place in a calendar.');
+    }
+    return calHeadRow(p) + (state.seasonTab === 'streaks' ? renderStreaksV2(p) : renderCalendarV2(p));
+  }
+  function renderCalendarV2(p) {
+    FM_KEYS.cal = CAL_FM_KEYS;
+    var pend = shardPending(p);   // fx4 item 4 · while the price shard loads no yield, priced count or swing pick is claimed
+    var M_ = 'font-family:\'IBM Plex Mono\',monospace;';
+    var all = calRows(p), W0 = all.filter(calInWindow), M = W0.filter(function (x) { return calPass(x); });
+    // a spine with no per-match court column cannot split Indoors out: say so rather than draw an empty grid
+    if (calSurfOf() === 'Indoors' && !W0.some(function (x) { return x.r.court != null || x.r.seasonIndoor != null; })) {
+      return calEmpty('No per-match court type on record for these matches, so Indoors cannot be split out yet.');
+    }
+    var groups = calFilterGroups(W0), nAct = groups.filter(function (g) { return g.cur !== 'all'; }).length;
+    var view = state.calView === 'month' ? 'month' : 'swing';
+    var years = []; W0.forEach(function (x) { if (years.indexOf(x.r.year) < 0) years.push(x.r.year); });
+    years.sort(function (a, b) { return String(b).localeCompare(String(a)); });
+    var cols = view === 'swing'
+      ? CAL_SW.map(function (s) { return { key: 'sw|' + s.k, label: s.name, code: s.code, sub: s.team ? 'mixed' : s.surf.toLowerCase(), muted: !!s.team,
+        pred: function (x) { return x.sw === s.k; }, title: function (y) { return s.name + ' ' + MIDDOT + ' ' + y; } }; })
+      : CAL_MON.map(function (m, i) { return { key: 'm|' + i, label: CAL_MONF[i], code: m.toUpperCase(), sub: CAL_MDOM[i].toLowerCase(), muted: false,
+        pred: function (x) { return x.r.mon === i; }, title: function (y) { return CAL_MONF[i] + ' ' + y; } }; });
+    var cell = state.calCellV2 || null;
+    // ── tiles ──
+    var nonTeam = CAL_SW.filter(function (s) { return !s.team; });
+    var swStats = nonTeam.map(function (s) {
+      var ms = M.filter(function (x) { return x.sw === s.k; }), st = calStat(ms);
+      var oth = calStat(M.filter(function (x) { return x.sw !== s.k && x.sw !== 'team'; }));
+      var played = years.filter(function (y) { return ms.some(function (x) { return x.r.year === y; }); });
+      var above = played.filter(function (y) { var t = calStat(ms.filter(function (x) { return x.r.year === y; })); return t.w > t.l; });
+      return { s: s, ms: ms, st: st, pp: st.y != null && oth.y != null ? st.y - oth.y : null, played: played, above: above };
+    });
+    var rated = pend ? [] : swStats.filter(function (x) { return x.st.priced >= 5 && x.pp != null; });
+    var best = rated.slice().sort(function (a, b) { return b.pp - a.pp; })[0], worst = rated.slice().sort(function (a, b) { return a.pp - b.pp; })[0];
+    var pct = function (l) { var t = calStat(l); return t.n ? t.pct : null; };
+    var opener = [], rest = [];
+    years.forEach(function (y) { nonTeam.forEach(function (s) {
+      var ms = M.filter(function (x) { return x.r.year === y && x.sw === s.k; });
+      if (!ms.length) return;
+      var first = ms.slice().sort(function (a, b) { return String(a.r.date).localeCompare(String(b.r.date)); })[0].r.event;
+      ms.forEach(function (x) { (x.r.event === first ? opener : rest).push(x); });
+    }); });
+    var SP = W0.filter(function (x) { return calPass(x, 'surf'); });
+    var sStats = ['Hard', 'Clay', 'Grass', 'Indoors'].map(function (sf) {
+      var ms = SP.filter(function (x) { return x.surf === sf; }), o = SP.filter(function (x) { return x.surf !== sf; });
+      var st = calStat(ms);
+      return { sf: sf, st: st, pp: st.n && pct(o) != null ? st.pct - pct(o) : null };
+    }).filter(function (x) { return x.st.n >= 5; }).sort(function (a, b) { return b.st.pct - a.st.pct; });
+    var ppTxt = function (v) { return v == null ? '' : signed(Math.round(v * 10) / 10, 1, 'pp'); };
+    var swingTile = function (cap, x) { if (pend) return { cap: cap, value: '&nbsp;', size: 24, pp: '', meta: '', sub: '&nbsp;' }; return x
+      ? { cap: cap, value: x.s.name, size: x.s.name.length > 14 ? 17 : 20, pp: ppTxt(x.pp), ppColor: signColour(Math.round(x.pp * 10) / 10), meta: 'n=' + x.st.priced,
+          sub: x.above.length + ' of ' + x.played.length + ' seasons above .500' }
+      : { cap: cap, value: DASH, faint: true, size: 24, pp: '', meta: 'under 5 priced', sub: 'no swing qualifies' }; };
+    var bs = sStats[0], oP = pct(opener), rP = pct(rest);
+    var tiles = [
+      bs ? { cap: 'Best surface', value: bs.sf, size: 20, pp: ppTxt(bs.pp), ppColor: bs.pp == null ? null : signColour(Math.round(bs.pp * 10) / 10), meta: 'vs other surfaces',
+        sub: Math.round(bs.st.pct) + '% ' + MIDDOT + ' ' + recordText(bs.st.w, bs.st.l) + (bs.st.priced >= 5 ? ' ' + MIDDOT + ' yield ' + signed(bs.st.y, 1, '%') : '') }
+        : { cap: 'Best surface', value: DASH, faint: true, size: 24, pp: '', meta: 'under 5 matches', sub: 'no surface qualifies' },
+      swingTile('Best swing', best), swingTile('Worst swing', worst),
+      opener.length >= 5 && oP != null && rP != null ? { cap: 'Swing opener', value: Math.round(oP) + '%', size: 24, pp: ppTxt(oP - rP), ppColor: signColour(Math.round((oP - rP) * 10) / 10),
+        meta: 'vs rest ' + Math.round(rP) + '%', sub: 'first event of each swing ' + MIDDOT + ' n=' + opener.length }
+        : { cap: 'Swing opener', value: DASH, faint: true, size: 24, pp: '', meta: opener.length + ' opener matches', sub: 'needs 5 to show a rate' }];
+    var tilesHtml = '<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border:1px solid var(--edge-6);border-radius:12px;overflow:hidden;background:var(--inner);margin-bottom:20px;">' +
+      tiles.map(function (t, i) {
+        return '<div style="padding:14px 16px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:7px;min-width:0;border-left:1px solid ' + (i ? 'var(--edge-6)' : 'transparent') + ';">' +
+          recCaps(t.cap) +
+          '<span style="' + M_ + 'font-size:' + t.size + 'px;font-weight:700;line-height:1;color:' + (t.faint ? 'var(--text-label)' : 'var(--text)') + ';white-space:nowrap;">' + (t.value === '&nbsp;' ? t.value : esc(t.value)) + '</span>' +
+          '<span style="display:flex;align-items:baseline;justify-content:center;gap:5px;' + M_ + 'font-size:11px;white-space:nowrap;"><span style="font-weight:700;color:' + (t.ppColor || 'var(--text-label)') + ';">' + t.pp + '</span>' +
+            '<span style="color:var(--text-label);">' + esc(t.meta) + '</span></span>' +
+          '<span style="font-size:10.5px;color:var(--text-label);white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis;">' + (t.sub === '&nbsp;' ? t.sub : esc(t.sub)) + '</span></div>';
+      }).join('') + '</div>';
+    // ── the grid ──
+    var GCOLS = '56px repeat(' + cols.length + ',minmax(0,1fr)) 72px';
+    var heads = '<span style="align-self:end;' + 'padding:0 0 9px;border-bottom:1px solid var(--edge-10);">' + recCaps('Year') + '</span>' +
+      cols.map(function (c) {
+        return '<span title="' + esc(c.label) + '" style="align-self:end;display:flex;flex-direction:column;align-items:center;gap:3px;padding:0 2px 9px;border-bottom:1px solid var(--edge-10);min-width:0;">' +
+          '<span style="font-size:9.5px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:' + (c.muted ? 'var(--text-faint, var(--text-label))' : 'var(--text-label)') + ';white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis;border-bottom:1px dotted var(--edge-24);padding-bottom:1px;">' + esc(c.code) + '</span>' +
+          '<span style="' + M_ + 'font-size:9px;color:var(--text-label);opacity:0.7;white-space:nowrap;">' + esc(c.sub) + '</span></span>';
+      }).join('') +
+      '<span style="align-self:end;text-align:right;padding:0 0 9px;border-bottom:1px solid var(--edge-10);">' + recCaps('Season') + '</span>';
+    var body = years.map(function (y) {
+      var Y = M.filter(function (x) { return x.r.year === y; }), ty = calStat(Y);
+      return '<span style="' + M_ + 'font-size:12px;font-weight:700;color:var(--text);padding:7px 0;border-bottom:1px solid var(--line);">' + esc(y) + '</span>' +
+        cols.map(function (c) {
+          var ms = Y.filter(c.pred), key = c.key + '|' + y;
+          if (!ms.length) return '<span style="display:block;margin:3px 0;' + M_ + 'font-size:11.5px;text-align:center;color:var(--text-label);opacity:0.6;padding:5px 0;">' + MIDDOT + '</span>';
+          var t = calStat(ms), on = cell === key;
+          var bg = on ? 'var(--selected)' : c.muted ? 'transparent' : t.w > t.l ? 'color-mix(in srgb, var(--pos) 10%, transparent)' : t.w < t.l ? 'color-mix(in srgb, var(--neg) 10%, transparent)' : 'transparent';
+          return '<span data-pp2="cal-cell2" data-v="' + esc(key) + '" class="pp2-calc" title="' + esc(c.title(y) + ' ' + MIDDOT + ' ' + recordText(t.w, t.l)) + '" style="display:block;margin:3px 0;' + M_ +
+            'font-size:11.5px;font-variant-numeric:tabular-nums;text-align:center;color:' + (c.muted ? 'var(--text-label)' : 'var(--text)') + ';background:' + bg + ';' +
+            'outline:' + (on ? '1px solid var(--link)' : 'none') + ';outline-offset:-1px;border-radius:4px;padding:5px 0;cursor:pointer;">' + recordText(t.w, t.l) + '</span>';
+        }).join('') +
+        '<span style="' + M_ + 'font-size:12px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--text);text-align:right;padding:7px 0;border-bottom:1px solid var(--line);">' + (ty.n ? recordText(ty.w, ty.l) : DASH) + '</span>';
+    }).join('');
+    var tm = calStat(M);
+    var foot = '<span style="padding:10px 0 0;border-top:1px solid var(--edge-16);">' + recCaps('Career') + '</span>' +
+      cols.map(function (c) { var t = calStat(M.filter(c.pred));
+        return '<span style="' + M_ + 'font-size:11.5px;font-weight:700;font-variant-numeric:tabular-nums;text-align:center;color:' + (c.muted ? 'var(--text-label)' : 'var(--text)') + ';padding:10px 0 0;border-top:1px solid var(--edge-16);">' + (t.n ? recordText(t.w, t.l) : DASH) + '</span>'; }).join('') +
+      '<span style="' + M_ + 'font-size:12px;font-weight:700;text-align:right;color:var(--text);padding:10px 0 0;border-top:1px solid var(--edge-16);">' + (tm.n ? recordText(tm.w, tm.l) : DASH) + '</span>';
+    var viewSeg = '<span style="display:flex;gap:3px;background:var(--inner);border:1px solid var(--edge-6);border-radius:9px;padding:2px;flex:none;">' +
+      [['swing', 'Swing'], ['month', 'Month']].map(function (t) { var on = view === t[0];
+        return '<span data-pp2="cal-view" data-v="' + t[0] + '" style="cursor:pointer;white-space:nowrap;padding:4px 11px;border-radius:7px;font-size:11px;font-weight:' + (on ? 700 : 600) + ';' +
+          'color:' + (on ? 'var(--text)' : 'var(--text-label)') + ';background:' + (on ? 'var(--selected)' : 'transparent') + ';border:1px solid ' + (on ? 'var(--selected)' : 'transparent') + ';">' + t[1] + '</span>'; }).join('') + '</span>';
+    var card1 = '<div style="position:relative;background:var(--card);border:1px solid var(--edge-6);border-bottom:0;border-radius:16px 16px 0 0;padding:20px 24px 22px;">' +
+      infoCorner('cal1', Object.assign({ notes: calWinOf() === 'career' && calSurfOf() === 'all' && !nAct
+        ? [calResidualNote(calResidual(p)).replace(/<[^>]+>/g, '').trim()].filter(Boolean) : [] }, CAL_INFO1)).replace('top:14px;right:14px', 'top:16px;right:16px') +
+      '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:14px;padding-right:28px;">' +
+        recCaps('Calendar form ' + MIDDOT + ' ' + esc(calScopeText(nAct))) +
+        '<span style="display:inline-flex;align-items:center;gap:12px;"><span style="' + M_ + 'font-size:12px;color:var(--text-label);white-space:nowrap;">' +
+          M.length + ' matches' + (years.length ? ' ' + MIDDOT + ' ' + years[years.length - 1] + '–' + years[0] : '') + '</span>' + viewSeg + '</span></div>' +
+      tilesHtml +
+      '<div style="overflow-x:auto;"><div style="display:grid;grid-template-columns:' + GCOLS + ';gap:0 3px;align-items:center;min-width:900px;">' + heads + body + foot + '</div></div></div>';
+    // ── By swing ──
+    var maxPP = Math.max.apply(null, [1].concat(rated.map(function (x) { return Math.abs(x.pp); })));
+    var nC = CAL_SW.length, TC = '96px repeat(' + nC + ',minmax(0,1fr))', IN = 'repeat(' + nC + ',minmax(0,1fr))';
+    var rowsT = CAL_SW.map(function (s) {
+      if (s.team) {
+        var ms = M.filter(function (x) { return x.sw === 'team'; }), pl = years.filter(function (y) { return ms.some(function (x) { return x.r.year === y; }); });
+        var ab = pl.filter(function (y) { var t = calStat(ms.filter(function (x) { return x.r.year === y; })); return t.w > t.l; });
+        return { s: s, team: true, n: ms.length, played: pl, above: ab };
+      }
+      var x = swStats.filter(function (q) { return q.s.k === s.k; })[0];
+      return { s: s, x: x, ok: x.st.priced >= 5 && x.pp != null, n: x.st.priced, played: x.played, above: x.above };
+    });
+    var cellT = function (inner, extra) { return '<span style="' + M_ + 'font-size:11.5px;font-variant-numeric:tabular-nums;text-align:center;white-space:nowrap;padding:10px 0;border-top:1px solid var(--line);' + (extra || '') + '">' + inner + '</span>'; };
+    var bars = rowsT.map(function (r) {
+      var up = !r.team && r.ok && r.x.pp > 0 ? r.x.pp / maxPP * 100 : 0, dn = !r.team && r.ok && r.x.pp < 0 ? -r.x.pp / maxPP * 100 : 0;
+      var col = r.team || !r.ok ? 'transparent' : signColour(r.x.pp);
+      return '<span style="position:relative;display:flex;flex-direction:column;align-items:center;height:100%;">' +
+        '<span style="flex:1;width:100%;display:flex;align-items:flex-end;justify-content:center;"><span style="width:12px;height:' + up.toFixed(1) + '%;background:' + col + ';border-radius:2px 2px 0 0;"></span></span>' +
+        '<span style="flex:1;width:100%;display:flex;align-items:flex-start;justify-content:center;">' + (!r.team && !r.ok ? '<span style="width:5px;height:5px;margin-top:-2px;border-radius:50%;background:var(--text-label);opacity:0.6;"></span>' : '') +
+          '<span style="width:12px;height:' + dn.toFixed(1) + '%;background:' + col + ';border-radius:0 0 2px 2px;"></span></span></span>';
+    }).join('');
+    var card2 = '<div style="position:relative;background:var(--card);border:1px solid var(--edge-6);border-top:1px solid var(--edge-10);border-radius:0 0 16px 16px;padding:20px 24px 22px;">' +
+      infoCorner('cal2', Object.assign({ notes: (function () {
+        // the priced matches the Market edge box counts that the calendar cannot place on a dated career row
+        if (pend || calWinOf() !== 'career' || calSurfOf() !== 'all' || nAct) return [];
+        var mkn = ((marketFor(p.key) || {}).matches || []).filter(function (m) { return m.inBasis !== false && m.pl != null; }).length;
+        var gap = mkn - tm.priced;
+        return gap > 0 ? ['Market edge prices ' + mkn + ' matches; ' + gap + (gap === 1 ? ' of them carries' : ' of them carry') +
+          ' no dated career row the calendar can place, so the swings rest on ' + tm.priced + '.'] : [];
+      }()) }, CAL_INFO2)).replace('top:14px;right:14px', 'top:16px;right:16px') +
+      '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;padding-right:28px;">' + recCaps('By swing ' + MIDDOT + ' ' + esc(calScopeText(nAct))) +
+        '<span style="' + M_ + 'font-size:12px;color:var(--text-label);white-space:nowrap;">' + (pend ? '&nbsp;' : tm.priced + ' of ' + M.length + ' matches ' + MIDDOT + ' flat 1u') + '</span></div>' +
+      '<div style="display:grid;grid-template-columns:' + TC + ';gap:0 4px;align-items:end;">' +
+        '<span style="padding-bottom:6px;">' + recCaps('Vs other swings') + '</span>' +
+        '<span style="grid-column:2 / -1;position:relative;display:grid;grid-template-columns:' + IN + ';gap:0 4px;height:96px;border-bottom:1px solid var(--edge-6);">' +
+          '<span style="position:absolute;left:0;right:0;top:50%;height:1px;background:color-mix(in srgb, var(--text) 18%, transparent);"></span>' +
+          '<span style="position:absolute;right:0;top:2px;' + M_ + 'font-size:9.5px;color:var(--text-label);">+' + maxPP.toFixed(1) + '</span>' +
+          '<span style="position:absolute;right:0;bottom:2px;' + M_ + 'font-size:9.5px;color:var(--text-label);">' + MINUS + maxPP.toFixed(1) + '</span>' + bars + '</span>' +
+        '<span style="padding:10px 8px 8px 0;">' + recCaps('Surface') + '</span>' +
+        rowsT.map(function (r) { return '<span style="display:flex;flex-direction:column;align-items:center;gap:5px;padding:10px 2px 8px;">' +
+          '<span style="' + M_ + 'font-size:9px;color:var(--text-label);text-transform:lowercase;">' + (r.team ? 'mixed' : r.s.surf.toLowerCase()) + '</span>' +
+          '<span style="display:block;width:100%;height:3px;border-radius:2px;background:' + CAL_SURFC[r.team ? 'Mixed' : r.s.surf] + ';"></span></span>'; }).join('') +
+        '<span style="padding:10px 8px 10px 0;border-top:1px solid var(--edge-10);">' + recCaps('Swing') + '</span>' +
+        rowsT.map(function (r) { return '<span title="' + esc(r.s.name) + '" style="display:flex;justify-content:center;padding:10px 2px;border-top:1px solid var(--edge-10);">' +
+          '<span style="font-size:9.5px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;text-align:center;color:' + (r.team ? 'var(--text-label)' : 'var(--text)') + ';white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis;border-bottom:1px dotted var(--edge-24);padding-bottom:1px;">' + esc(r.s.code) + '</span></span>'; }).join('') +
+        '<span style="padding:10px 8px 10px 0;border-top:1px solid var(--line);">' + recCaps('n') + '</span>' +
+        rowsT.map(function (r) { return cellT(pend && !r.team ? '&nbsp;' : String(r.n), 'color:' + (r.team ? 'var(--text-label)' : 'var(--text-soft)') + ';'); }).join('') +
+        '<span style="padding:10px 8px 10px 0;border-top:1px solid var(--line);">' + recCaps('Yield') + '</span>' +
+        rowsT.map(function (r) { return cellT(pend && !r.team ? '&nbsp;' : r.team || !r.ok ? DASH : signed(r.x.st.y, 1, '%'), 'color:' + (r.team || !r.ok ? 'var(--text-label)' : 'var(--text)') + ';'); }).join('') +
+        '<span style="padding:10px 8px 10px 0;border-top:1px solid var(--line);">' + recCaps('Vs others') + '</span>' +
+        rowsT.map(function (r) {
+          if (r.team) return cellT('not in yield', 'font-size:9.5px;color:var(--text-label);');
+          if (pend) return cellT('&nbsp;');
+          return r.ok ? cellT(ppTxt(r.x.pp), 'font-size:12.5px;font-weight:700;color:' + signColour(Math.round(r.x.pp * 10) / 10) + ';')
+            : cellT(r.n ? DASH + ' ' + MIDDOT + ' ' + r.n : DASH, 'font-size:10.5px;color:var(--text-label);');
+        }).join('') +
+        '<span style="align-self:start;padding:10px 8px 10px 0;border-top:1px solid var(--line);">' + recCaps('Consistent') + '</span>' +
+        rowsT.map(function (r) { return '<span style="display:flex;flex-direction:column;align-items:center;gap:5px;padding:10px 2px;border-top:1px solid var(--line);">' +
+          '<span style="display:flex;gap:1px;width:100%;">' + r.played.map(function (y) { var a = r.above.indexOf(y) > -1;
+            return '<span style="flex:1;height:5px;border-radius:1px;background:' + (a ? (r.team ? 'color-mix(in srgb, var(--pos) 45%, transparent)' : 'var(--pos)') : 'color-mix(in srgb, var(--text) 14%, transparent)') + ';"></span>'; }).join('') + '</span>' +
+          '<span style="' + M_ + 'font-size:10px;color:var(--text);">' + (r.played.length ? r.above.length + '/' + r.played.length : DASH) + '</span>' +
+          '<span style="' + M_ + 'font-size:9px;color:var(--text-label);white-space:nowrap;">' + r.played.length + ' played</span></span>'; }).join('') +
+      '</div></div>';
+    var fr = '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;">' +
+      filtersTriggerHtml('cal', groups, M.length, W0.length) +
+      '<span style="' + M_ + 'font-size:11px;color:var(--text-label);white-space:nowrap;">' + M.length + ' of ' + W0.length + ' matches</span></div>' +
+      filtersAppliedHtml('cal', groups, M.length, W0.length);
+    return fr + card1 + card2 + calDrawerV2(p, M, cols, view);
+  }
+  // The right-side drawer: 520px, fixed to the viewport edge; matches grouped by tournament (earliest first).
+  function calDrawerV2(p, M, cols, view) {
+    var key = state.calCellV2;
+    if (!key) return '';
+    var parts = key.split('|'), y = parts[2], col = cols.filter(function (c) { return c.key === parts[0] + '|' + parts[1]; })[0];
+    if (!col) return '';
+    var ms = M.filter(function (x) { return x.r.year === y && col.pred(x); });
+    var M_ = 'font-family:\'IBM Plex Mono\',monospace;', st = calStat(ms), pend = shardPending(p);
+    // founder 2026-10-22: a walkover is a row in every match list, counted nowhere (no W–L, no price, no sheet)
+    var wos = calSpineAll(p).filter(function (r) { return r.wo && r.year === y; }).map(function (r) {
+      var cc = calCountryOf(r);
+      return { r: r, i: -1, cc: cc, sw: calSwingOf(r, cc), surf: mkSurfOf(r), wo: true };
+    }).filter(function (x) { return col.pred(x) && (calSurfOf() === 'all' || x.surf === calSurfOf()); });
+    var listed = ms.concat(wos);
+    var kicker = (view === 'swing' ? 'Swing' : 'Month') + ' ' + MIDDOT + ' ' + (calSurfOf() === 'all' ? 'all surfaces' : calSurfOf().toLowerCase());
+    var order = [];
+    listed.slice().sort(function (a, b) { return String(a.r.date).localeCompare(String(b.r.date)); }).forEach(function (x) { if (order.indexOf(x.r.event) < 0) order.push(x.r.event); });
+    var surfTxt = function (x) { return x.surf === 'Indoors' ? 'hard indoor' : x.surf === 'Hard' ? 'hard outdoor' : x.surf ? x.surf.toLowerCase() : 'no surface'; };
+    var groupsHtml = order.map(function (ev) {
+      var rs = listed.filter(function (x) { return x.r.event === ev; }).sort(function (a, b) { return String(a.r.date).localeCompare(String(b.r.date)) || a.i - b.i; });
+      var g = calStat(rs.filter(function (x) { return !x.wo; }));
+      return '<div style="display:flex;flex-direction:column;gap:2px;">' +
+        '<div style="display:flex;align-items:baseline;gap:10px;padding:0 0 6px;border-bottom:1px solid var(--edge-10);">' +
+          '<span style="font-size:13px;font-weight:700;color:var(--text);">' + esc(tournDisplayName(ev, null) || ev || DASH) + '</span>' +
+          '<span style="' + M_ + 'font-size:11px;color:var(--text-label);">' + recordText(g.w, g.l) + ' ' + MIDDOT + ' ' + esc(surfTxt(rs[0])) + '</span>' +
+          '<span style="margin-left:auto;' + M_ + 'font-size:11.5px;font-weight:700;color:' + (g.priced ? signColour(g.units) : 'var(--text-label)') + ';">' + (pend ? '' : g.priced ? signed(g.units, 2, 'u') : DASH) + '</span></div>' +
+        rs.map(function (x) {
+          var r = x.r, wo = !!x.wo, hook = wo ? 'data-pp2-wo-row="1" ' : sheetHook(r.sheetId), plc = calPlCell(r, pend);
+          var c = function (h, s) { return '<span ' + hook + 'style="' + (wo ? '' : 'cursor:pointer;') + 'padding:6px 0;border-bottom:1px solid var(--line);' + s + '">' + h + '</span>'; };
+          return '<div style="display:grid;grid-template-columns:14px 34px minmax(0,1fr) 92px 42px 42px 58px;gap:0 10px;align-items:center;">' +
+            c(wo ? '' : r.won ? 'W' : 'L', M_ + 'font-size:11px;font-weight:700;color:' + (r.won ? 'var(--pos)' : 'var(--neg)') + ';') +
+            c(esc(r.round || DASH), M_ + 'font-size:10.5px;color:var(--text-label);') +
+            c(esc(initialSurname(r.opp || '') || DASH), 'font-size:12.5px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;') +
+            c(wo ? 'WO' : esc(String(r.score || DASH).replace(/,\s*/g, ' ')), M_ + 'font-size:11px;color:var(--text-label);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;') +
+            c(wo ? '' : r.price != null ? Number(r.price).toFixed(2) : pend ? '' : DASH, M_ + 'font-size:11.5px;font-weight:700;text-align:right;color:var(--text);') +
+            c(wo ? '' : r.oppPrice != null ? Number(r.oppPrice).toFixed(2) : pend ? '' : DASH, M_ + 'font-size:11.5px;text-align:right;color:var(--text-label);') +
+            c(wo ? '' : plc.t, M_ + 'font-size:11.5px;text-align:right;color:' + plc.c + ';') + '</div>';
+        }).join('') + '</div>';
+    }).join('');
+    return '<div data-pp2-drawer="cal" style="position:fixed;top:0;right:0;bottom:0;width:520px;max-width:92vw;background:var(--card);border-left:1px solid var(--edge-16);' +
+      'box-shadow:var(--shadow-modal);z-index:66;display:flex;flex-direction:column;">' +
+      '<div style="display:flex;align-items:flex-start;gap:14px;padding:20px 22px 16px;border-bottom:1px solid var(--edge-10);">' +
+        '<div style="display:flex;flex-direction:column;gap:4px;min-width:0;">' + recCaps(esc(kicker)) +
+          '<span style="display:flex;align-items:baseline;gap:10px;"><span style="font-size:17px;font-weight:800;letter-spacing:-0.01em;white-space:nowrap;color:var(--text);">' +
+            esc(col.title(y).replace(/ · (\d{4})$/, ' · $1')) + '</span><span style="' + M_ + 'font-size:15px;font-weight:700;color:var(--text);">' + (ms.length ? recordText(st.w, st.l) : '') + '</span></span></div>' +
+        '<div style="margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;gap:4px;white-space:nowrap;">' +
+          '<span style="' + M_ + 'font-size:15px;font-weight:700;color:' + (st.priced ? signColour(st.units) : 'var(--text-label)') + ';">' + (ms.length && !pend ? (st.priced ? signed(st.units, 2, 'u') : DASH) : '&nbsp;') + '</span>' +
+          '<span style="' + M_ + 'font-size:11px;color:var(--text-label);">' + (ms.length && !pend ? (st.priced >= 5 ? signed(st.y, 1, '%') + ' yield' : DASH + ' yield') + ' ' + MIDDOT + ' ' + st.priced + ' priced' : '&nbsp;') + '</span></div>' +
+        '<span data-pp2="cal-cell2" data-v="" title="Close" style="flex:none;width:28px;height:28px;border-radius:8px;background:color-mix(in srgb, var(--text) 5%, transparent);border:1px solid var(--edge-6);' +
+          'color:var(--text-label);cursor:pointer;display:flex;align-items:center;justify-content:center;"><svg width="12" height="12" viewBox="0 0 20 20" fill="none" style="pointer-events:none;"><path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path></svg></span></div>' +
+      (listed.length ? '<div data-pp2-cal-drill="1" class="pp2-yscroll" style="flex:1;overflow-y:auto;padding:16px 22px 22px;display:flex;flex-direction:column;gap:18px;">' + groupsHtml + '</div>'
+        : '<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:40px 32px;text-align:center;">' +
+          '<span style="font-size:13.5px;font-weight:700;color:var(--text);">No matches here</span>' +
+          '<span style="font-size:12.5px;color:var(--text-label);line-height:1.5;">He did not play this part of the calendar in ' + esc(y) + '. Try another season, or widen the surface filter.</span></div>') +
+      '</div>';
+  }
+
+  // ── Streaks (founder 2026-11-09: back) — runs over his played matches in date order, the Calendar's Window + Surface ──
+  var RUN_INFO1 = { what: 'His longest winning and losing runs, and the run he is on now.', defs: [
+    ['Run', 'Consecutive wins or losses, across tournaments. A walkover does not break or extend a run.'],
+    ['Expected', 'From his own win rate and match count in this window, not a tour average.'],
+    ['Longest', 'The longest run of its kind on record, with where it started and ended.']] };
+  var RUN_INFO2 = { what: 'What usually happens in the match right after a run.', defs: [
+    ['State', 'The run he was on going into the match: after 1, 2, 3 or more wins or losses.'],
+    ['Next match', 'His record in the match that followed that state.'],
+    ['Vs career', 'Win rate in that state minus his win rate in this window, in points.'],
+    ['Yield', 'Flat 1u on him in those next matches, closing price, priced matches only.'],
+    ['Vs baseline', 'That yield minus the yield of backing him in every priced match.']] };
+  function streakSeq(p) {
+    return calRows(p).filter(function (x) { return calInWindow(x) && calPass(x); })
+      .slice().sort(function (a, b) { return String(a.r.date).localeCompare(String(b.r.date)) || a.i - b.i; });
+  }
+  function streakRuns(seq) {
+    var runs = [];
+    for (var i = 0; i < seq.length;) {
+      var j = i;
+      while (j < seq.length && seq[j].r.won === seq[i].r.won) j++;
+      runs.push({ won: seq[i].r.won, len: j - i, start: i, end: j - 1 });
+      i = j;
+    }
+    return runs;
+  }
+  function renderStreaksV2(p) {
+    var M_ = 'font-family:\'IBM Plex Mono\',monospace;';
+    var seq = streakSeq(p), runs = streakRuns(seq), n = seq.length;
+    var scope = calScopeText(0);
+    if (!n) return calEmpty('No matches in this window and surface.');
+    var wins = seq.filter(function (x) { return x.r.won; }).length, pr = Math.min(0.99, Math.max(0.01, wins / n));
+    var lg = Math.log(1 / pr), lgL = Math.log(1 / (1 - pr));
+    var expW = Math.max(1, Math.round(Math.log(n * (1 - pr)) / lg + 0.5772 / lg - 0.5));
+    var expL = Math.max(1, Math.round(Math.log(n * pr) / lgL + 0.5772 / lgL - 0.5));
+    var obs5 = runs.filter(function (x) { return x.len >= 5; }).length;
+    var exp5 = Math.round(n * (1 - pr) * Math.pow(pr, 5) + n * pr * Math.pow(1 - pr, 5));
+    var bestOf = function (won) { return runs.filter(function (x) { return x.won === won; }).sort(function (a, b) { return b.len - a.len || b.start - a.start; })[0]; };
+    var bw = bestOf(true), bl = bestOf(false);
+    var span = function (run) {
+      var a = seq[run.start].r, b = seq[run.end].r;
+      var ma = CAL_MON[a.mon], mb = CAL_MON[b.mon];
+      return a.year === b.year ? (ma === mb ? ma : ma + '–' + mb) + ' ' + a.year : ma + ' ' + a.year + '–' + mb + ' ' + b.year;
+    };
+    var cur = runs[runs.length - 1];
+    var strip = [
+      { cap: 'Runs of 5+', value: String(obs5), sub: 'expected ' + exp5 + ' ' + MIDDOT + ' ' + runs.length + ' runs' },
+      { cap: 'Longest win run', value: String(bw ? bw.len : 0), sub: bw ? span(bw) : DASH },
+      { cap: 'Longest loss run', value: String(bl ? bl.len : 0), sub: bl ? 'expected ' + expL + ' ' + MIDDOT + ' ' + span(bl) : DASH },
+      { cap: 'Expected longest', value: String(expW), sub: 'at ' + (pr * 100).toFixed(1) + '% over ' + n + ' matches ' + MIDDOT + ' now ' + (cur.won ? 'W' : 'L') + cur.len }];
+    var stripHtml = '<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border:1px solid var(--edge-6);border-radius:12px;overflow:hidden;background:var(--inner);margin-bottom:20px;">' +
+      strip.map(function (t, i) {
+        return '<div style="padding:14px 16px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:7px;min-width:0;border-left:1px solid ' + (i ? 'var(--edge-6)' : 'transparent') + ';">' +
+          recCaps(t.cap) + '<span style="' + M_ + 'font-size:24px;font-weight:700;line-height:1;color:var(--text);">' + esc(t.value) + '</span>' +
+          '<span style="font-size:11px;color:var(--text-label);">' + esc(t.sub) + '</span></div>';
+      }).join('') + '</div>';
+    var maxRun = runs.reduce(function (a, x) { return Math.max(a, x.len); }, 1), sel = state.runSel != null && runs[state.runSel] ? state.runSel : null;
+    var RW = 7;
+    var barsHtml = runs.map(function (x, i) {
+      var hh = Math.max(3, Math.round(x.len / maxRun * 68)), on = sel === i;
+      var col = x.won ? (on ? 'var(--pos)' : 'color-mix(in srgb, var(--pos) 62%, transparent)') : (on ? 'var(--neg)' : 'color-mix(in srgb, var(--neg) 55%, transparent)');
+      var up = x.won ? 68 - hh : 68, dn = x.won ? 68 : 68 - hh;
+      return '<span data-pp2="run-sel" data-v="' + i + '" title="' + (x.won ? 'W' : 'L') + x.len + ' ' + MIDDOT + ' ' + esc(span(x)) + '" style="width:6px;flex:none;height:100%;display:flex;flex-direction:column;cursor:pointer;">' +
+        '<span style="display:block;height:' + up + 'px;pointer-events:none;"></span><span style="display:block;height:' + hh + 'px;background:' + col + ';border-radius:1px;pointer-events:none;"></span>' +
+        '<span style="display:block;height:' + dn + 'px;pointer-events:none;"></span></span>';
+    }).join('');
+    var yrs = [];
+    runs.forEach(function (x) { var y = seq[x.start].r.year; var last = yrs[yrs.length - 1]; if (last && last.y === y) last.n++; else yrs.push({ y: y, n: 1 }); });
+    var yearsHtml = yrs.map(function (s) { var w = s.n * RW;
+      return '<span style="width:' + w + 'px;flex:none;box-sizing:border-box;border-left:1px solid var(--edge-6);padding:6px 0 0 5px;overflow:hidden;">' + (w >= 34 ? recCaps(esc(s.y)) : '') + '</span>'; }).join('');
+    var detail = '';
+    if (sel != null) {
+      var run = runs[sel], rs = seq.slice(run.start, run.end + 1), st = calStat(rs);
+      detail = '<div style="margin:12px 0 0;background:var(--inner);border:1px solid var(--edge-16);border-radius:10px;padding:12px 14px;">' +
+        '<div style="display:flex;align-items:baseline;gap:11px;margin-bottom:2px;"><span style="font-size:12.5px;font-weight:700;color:var(--text);">' +
+          (run.won ? 'Winning run' : 'Losing run') + ' ' + MIDDOT + ' ' + run.len + (run.len === 1 ? ' match' : ' matches') + '</span>' +
+          '<span style="' + M_ + 'font-size:10px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-label);">' + esc(span(run)) + '</span>' +
+          '<span style="margin-left:auto;' + M_ + 'font-size:15px;font-weight:700;color:' + (st.priced ? signColour(st.units) : 'var(--text-label)') + ';">' +
+            (st.priced ? signed(st.units, 2, 'u') + ' ' + MIDDOT + ' ' + st.priced + ' priced' : DASH) + '</span></div>' +
+        '<div style="display:grid;grid-template-columns:14px 36px minmax(0,1.1fr) minmax(0,1fr) 104px 48px 48px 56px;gap:0 14px;align-items:center;margin-top:10px;">' +
+          '<span></span>' + ['Rd', 'Event', 'Opponent', 'Score', 'Home', 'Away', 'P&amp;L'].map(function (h, k) {
+            return '<span style="padding-bottom:7px;' + (k >= 4 ? 'text-align:right;' : '') + '">' + recCaps(h) + '</span>'; }).join('') +
+          rs.map(function (x) {
+            var r = x.r, plc = calPlCell(r, shardPending(p)), hook = sheetHook(r.sheetId);
+            var c = function (h, s) { return '<span ' + hook + 'style="cursor:pointer;padding:6px 0;border-top:1px solid var(--line);' + s + '">' + h + '</span>'; };
+            return c(r.won ? 'W' : 'L', M_ + 'font-size:11px;font-weight:700;color:' + (r.won ? 'var(--pos)' : 'var(--neg)') + ';') +
+              c(esc(r.round || DASH), M_ + 'font-size:10.5px;color:var(--text-label);') +
+              c(esc(tournDisplayName(r.event, null) || r.event || DASH), M_ + 'font-size:11px;color:var(--text-label);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;') +
+              c(esc(initialSurname(r.opp || '') || DASH), 'font-size:12.5px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;') +
+              c(esc(String(r.score || DASH).replace(/,\s*/g, ' ')), M_ + 'font-size:11.5px;color:var(--text-label);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;') +
+              c(r.price != null ? Number(r.price).toFixed(2) : DASH, M_ + 'font-size:11.5px;font-weight:700;text-align:right;color:var(--text);') +
+              c(r.oppPrice != null ? Number(r.oppPrice).toFixed(2) : DASH, M_ + 'font-size:11.5px;text-align:right;color:var(--text-label);') +
+              c(plc.t, M_ + 'font-size:11.5px;text-align:right;color:' + plc.c + ';');
+          }).join('') + '</div></div>';
+    }
+    var card1 = '<div style="position:relative;background:var(--card);border:1px solid var(--edge-6);border-bottom:0;border-radius:16px 16px 0 0;padding:20px 24px 22px;">' +
+      infoCorner('run1', RUN_INFO1).replace('top:14px;right:14px', 'top:16px;right:16px') +
+      '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:14px;padding-right:28px;">' + recCaps('Runs ' + MIDDOT + ' ' + esc(scope)) +
+        '<span style="' + M_ + 'font-size:12px;color:var(--text-label);white-space:nowrap;">' + runs.length + ' runs ' + MIDDOT + ' longest ' + maxRun + '</span></div>' + stripHtml +
+      '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:0 0 8px;">' +
+        recCaps('Run timeline ' + MIDDOT + ' ' + esc(scope) + ' ' + MIDDOT + ' click a run for its matches') +
+        '<span style="display:inline-flex;gap:14px;">' +
+          '<span style="display:inline-flex;align-items:center;gap:6px;"><span style="width:8px;height:8px;border-radius:2px;background:color-mix(in srgb, var(--pos) 62%, transparent);"></span>' + recCaps('Wins up') + '</span>' +
+          '<span style="display:inline-flex;align-items:center;gap:6px;"><span style="width:8px;height:8px;border-radius:2px;background:color-mix(in srgb, var(--neg) 55%, transparent);"></span>' + recCaps('Losses down') + '</span></span></div>' +
+      '<div style="display:grid;grid-template-columns:28px minmax(0,1fr);gap:0 8px;">' +
+        '<span style="position:relative;height:140px;' + M_ + 'font-size:9.5px;color:var(--text-label);"><span style="position:absolute;right:0;top:0;">' + maxRun + '</span>' +
+          '<span style="position:absolute;right:0;top:50%;transform:translateY(-50%);">0</span><span style="position:absolute;right:0;bottom:0;">' + maxRun + '</span></span>' +
+        '<div class="pp2-yscroll" style="overflow-x:auto;padding-bottom:4px;"><div style="width:' + (runs.length * RW - 1) + 'px;">' +
+          '<div style="position:relative;display:flex;align-items:center;gap:1px;height:140px;"><span style="position:absolute;left:0;right:0;top:50%;height:1px;background:color-mix(in srgb, var(--text) 18%, transparent);"></span>' + barsHtml + '</div>' +
+          '<div style="display:flex;border-top:1px solid var(--edge-10);">' + yearsHtml + '</div></div></div></div>' + detail + '</div>';
+    // ── what follows a run ──
+    var base = calStat(seq);
+    var states = [['W1', true, 1], ['W2', true, 2], ['W3+', true, 3], ['L1', false, 1], ['L2', false, 2], ['L3+', false, 3]];
+    var after = {};
+    var runLen = 0, runWon = null;
+    seq.forEach(function (x) {
+      if (runWon != null) {
+        var k = (runWon ? 'W' : 'L') + (runLen >= 3 ? '3+' : String(runLen));
+        (after[k] = after[k] || []).push(x);
+      }
+      if (runWon === x.r.won) runLen++; else { runWon = x.r.won; runLen = 1; }
+    });
+    var G = '64px 92px 64px minmax(0,1fr) 72px 72px 80px 56px';
+    var cellB = function (h, s) { return '<span style="' + M_ + 'font-size:12px;font-variant-numeric:tabular-nums;text-align:right;padding:10px 0;border-top:1px solid var(--line);' + (s || '') + '">' + h + '</span>'; };
+    var row = function (lab, list) {
+      var st = calStat(list), ok = st.n >= 5, d = ok && base.pct != null ? Math.round((st.pct - base.pct) * 10) / 10 : null;
+      var vs = st.priced >= 5 && base.y != null ? Math.round((st.y - base.y) * 10) / 10 : null;
+      var tw = d == null ? 0 : Math.min(20, Math.abs(d)) / 20 * 50;
+      return '<span style="' + M_ + 'font-size:13px;font-weight:700;color:var(--text);padding:10px 0;border-top:1px solid var(--line);">' + lab + '</span>' +
+        cellB(st.n ? 'W' + st.w + '–L' + st.l : DASH, 'font-size:11.5px;color:var(--text-label);') +
+        cellB(ok ? st.pct.toFixed(1) + '%' : DASH, 'font-size:13px;font-weight:700;color:' + (ok ? 'var(--text)' : 'var(--text-label)') + ';') +
+        '<span style="position:relative;display:block;height:100%;min-height:26px;padding:10px 0;border-top:1px solid var(--line);">' +
+          '<span style="position:absolute;left:50%;top:10px;bottom:10px;width:1px;background:color-mix(in srgb, var(--text) 18%, transparent);"></span>' +
+          (d == null ? '' : '<span style="position:absolute;top:50%;height:6px;margin-top:-3px;left:' + (d < 0 ? 50 - tw : 50) + '%;width:' + tw + '%;background:' + signColour(d) + ';border-radius:3px;"></span>') + '</span>' +
+        cellB(d == null ? DASH : signed(d, 1, 'pp'), 'font-weight:700;color:' + (d == null ? 'var(--text-label)' : signColour(d)) + ';') +
+        cellB(st.priced >= 5 ? signed(st.y, 1, '%') : DASH, 'color:' + (st.priced >= 5 ? signColour(st.y) : 'var(--text-label)') + ';') +
+        cellB(vs == null ? DASH : signed(vs, 1, 'pp'), 'font-weight:700;color:' + (vs == null ? 'var(--text-label)' : signColour(vs)) + ';') +
+        cellB(String(st.priced), 'font-size:11.5px;color:var(--text-label);');
+    };
+    var headB = ['State', 'Next match', 'Win %', 'Vs career', 'pp', 'Yield', 'Vs baseline', 'Priced'].map(function (h, k) {
+      return '<span style="padding-bottom:8px;border-bottom:1px solid var(--edge-10);text-align:' + (k === 0 ? 'left' : k === 3 ? 'center' : 'right') + ';">' + recCaps(h) + '</span>'; }).join('');
+    var baseRow = '<span style="font-size:13px;font-weight:700;color:var(--text);padding:10px 0;border-bottom:1px solid var(--edge-10);">' + (calWinOf() === 'career' ? 'Career' : 'Window') + '</span>' +
+      '<span style="' + M_ + 'font-size:11.5px;color:var(--text-label);text-align:right;padding:10px 0;border-bottom:1px solid var(--edge-10);">W' + base.w + '–L' + base.l + '</span>' +
+      '<span style="' + M_ + 'font-size:13px;font-weight:700;color:var(--text);text-align:right;padding:10px 0;border-bottom:1px solid var(--edge-10);">' + (base.pct == null ? DASH : base.pct.toFixed(1) + '%') + '</span>' +
+      '<span style="position:relative;display:block;min-height:26px;padding:10px 0;border-bottom:1px solid var(--edge-10);"><span style="position:absolute;left:50%;top:10px;bottom:10px;width:1px;background:color-mix(in srgb, var(--text) 18%, transparent);"></span></span>' +
+      '<span style="' + M_ + 'font-size:12px;color:var(--text-label);text-align:right;padding:10px 0;border-bottom:1px solid var(--edge-10);">' + DASH + '</span>' +
+      '<span style="' + M_ + 'font-size:12px;color:var(--text);text-align:right;padding:10px 0;border-bottom:1px solid var(--edge-10);">' + (base.y == null ? DASH : signed(base.y, 1, '%')) + '</span>' +
+      '<span style="' + M_ + 'font-size:12px;color:var(--text-label);text-align:right;padding:10px 0;border-bottom:1px solid var(--edge-10);">' + DASH + '</span>' +
+      '<span style="' + M_ + 'font-size:11.5px;color:var(--text-label);text-align:right;padding:10px 0;border-bottom:1px solid var(--edge-10);">' + base.priced + '</span>';
+    var grp = function (lab) { return '<span style="grid-column:1 / -1;padding:14px 0 4px;">' + recCaps(lab, 'font-weight:800;') + '</span>'; };
+    var card2 = '<div style="position:relative;background:var(--card);border:1px solid var(--edge-6);border-top:1px solid var(--edge-10);border-radius:0 0 16px 16px;padding:20px 24px 22px;">' +
+      infoCorner('run2', RUN_INFO2).replace('top:14px;right:14px', 'top:16px;right:16px') +
+      '<div style="margin-bottom:14px;">' + recCaps('What follows a run ' + MIDDOT + ' ' + esc(scope)) + '</div>' +
+      '<div style="display:grid;grid-template-columns:' + G + ';gap:0 14px;width:100%;align-items:center;">' + headB + baseRow +
+        grp('After a win') + states.slice(0, 3).map(function (s) { return row(s[0], after[s[0]] || []); }).join('') +
+        grp('After a loss') + states.slice(3).map(function (s) { return row(s[0], after[s[0]] || []); }).join('') + '</div></div>';
+    return card1 + card2;
+  }
+
   function renderSeasonModal(p) {
+    if (!MK_V1) return renderSeasonModalV2(p);   // profile v2 (2026-11-09): swing grid + Streaks
     if (calTabOf() === CAL_SEASON) return calTabRow() + renderCal2026Tab(p);
     if (!calSpine(p).length) {
       // PENDING BEFORE EMPTY (the guard the Streaks tab carried, moved here with it): an unsettled lazy
@@ -13865,6 +14400,8 @@
     state.drawDrill = null; state.drawFilter = 'all'; state.drawPage = 0;
     state.tournQuery = ''; state.tournOpen = null;
     state.calTab = 'calendar'; state.calSurface = 'all'; state.calCell = null; state.cal26Month = null;
+    state.seasonTab = 'calendar'; state.calWin = 'career'; state.calSurf = 'all'; state.calView = 'swing'; state.calCellV2 = null; state.runSel = null;
+    state.calSpeed = 'all'; state.calFmt = 'all'; state.calBand = 'all'; state.calArch = 'all'; state.calCtry = 'all';
     state.speedSurf = 'all'; state.speedBand = null;
     state.styleRow = null;
     state.hbSurf = 'all';
@@ -14056,6 +14593,12 @@
     else if (kind === 'spd-surf') { state.spdSurf = v; state.spdBand = null; }
     else if (kind === 'spd-band') { state.spdBand = v; }
     else if (kind === 'spl-view') { state.splView = v; }
+    else if (kind === 'cal-tab') { state.seasonTab = v === 'streaks' ? 'streaks' : 'calendar'; state.calCellV2 = null; state.runSel = null; }
+    else if (kind === 'cal-win') { state.calWin = v === 'l52' ? 'l52' : 'career'; state.calCellV2 = null; state.runSel = null; }
+    else if (kind === 'cal-surf') { state.calSurf = v; state.calCellV2 = null; state.runSel = null; }
+    else if (kind === 'cal-view') { state.calView = v === 'month' ? 'month' : 'swing'; state.calCellV2 = null; }
+    else if (kind === 'cal-cell2') { state.calCellV2 = v && state.calCellV2 !== v ? v : null; }
+    else if (kind === 'run-sel') { state.runSel = state.runSel === +v ? null : +v; }
     else if (kind === 'tourn-row') { state.tournOpen = toggleVal(state.tournOpen, el.getAttribute('data-t')); tournNeedJoin(); }
     else if (kind === 'cal-tab') { state.calTab = v; state.calCell = null; }
     else if (kind === 'cal26-month') state.cal26Month = toggleVal(state.cal26Month, v);
@@ -14158,6 +14701,7 @@
   function escStep() {
     if (state.info || state.fmOpen || state.cmpOpen) { state.info = null; state.fmOpen = null; state.cmpOpen = false; repaint(); return; }
     if (state.fb) { state.fb = null; repaint(); return; }
+    if (state.calCellV2) { state.calCellV2 = null; repaint(); return; }   // v2: the Calendar drawer closes first
     if (state.matchPage) { state.matchPage = null; repaint(); return; }
     if (state.heat) { state.heat = false; repaint(); return; }
     // Founder 2026-10-13 · Esc in the Draw record drill returns to the summary (Career / Last 52 kept).
@@ -14201,7 +14745,7 @@
     // code path the page uses, rather than a copy that can drift
     _internals: {
       // Profile v2 (2026-11-09): the shared drill box, its per-box builders and the Match-up model
-      FB_BUILD: FB_BUILD, floatBoxHtml: floatBoxHtml, splModel: splModel, spdData: spdData, renderSpeedModalV2: renderSpeedModalV2, renderSplitsModalV2: renderSplitsModalV2, styData: styData, renderStylesModalV2: renderStylesModalV2,
+      FB_BUILD: FB_BUILD, floatBoxHtml: floatBoxHtml, calRows: calRows, calSwingOf: calSwingOf, renderSeasonModalV2: renderSeasonModalV2, streakSeq: streakSeq, streakRuns: streakRuns, splModel: splModel, spdData: spdData, renderSpeedModalV2: renderSpeedModalV2, renderSplitsModalV2: renderSplitsModalV2, styData: styData, renderStylesModalV2: renderStylesModalV2,
       mkBandIdx: mkBandIdx, styleArchetypeOf: styleArchetypeOf, renderLinesTabV2: renderLinesTabV2, renderMarketWinnerV2: renderMarketWinnerV2,
       recordRowsOf: recordRowsOf,
       countedSpine: countedSpine,

@@ -33,7 +33,7 @@ function voidChecks(I) {
   assert.strictEqual(v.price, 1.47, 'its close stays on the row');
   assert.strictEqual(v.cents, null, 'it carries no units');
   assert.strictEqual(v.settle, 'void');
-  I.resetState(); I.state.key = KEY; I.state.calTab = 'calendar'; I.state.calSurface = 'all'; I.state.calCell = '2021|7';
+  I.resetState(); I.state.key = KEY; Object.assign(I.state, { seasonTab: 'calendar', calWin: 'career', calSurf: 'all', calView: 'month', calCellV2: 'm|7|2021' });   // profile v2 drawer
   const t = L.text(I.renderSeasonModal(FX.profile));
   assert.ok(/Basilashvili/.test(t) && / void /.test(' ' + t + ' '), 'the month drill prints "void" on the row');
 }

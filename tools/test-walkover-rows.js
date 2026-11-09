@@ -100,7 +100,8 @@ H.check('B · RENDER: Court speed lists the walkover in its band and counts it n
   assert.ok(/walkovers?, not counted/.test(L.text(html)), 'the header says it is not counted');
 });
 H.check('B · RENDER: the Calendar month drill (Aug 2025) lists the walkover', () => {
-  const I = B.I; I.resetState(); I.state.key = KEY; I.state.calTab = 'calendar'; I.state.calSurface = 'all'; I.state.calCell = '2025|7';
+  // profile v2: the Calendar's month view, the drawer for August 2025
+  const I = B.I; I.resetState(); I.state.key = KEY; Object.assign(I.state, { seasonTab: 'calendar', calWin: 'career', calSurf: 'all', calView: 'month', calCellV2: 'm|7|2025' });
   const html = I.renderSeasonModal(B.p);
   assert.ok(/data-pp2-cal-drill="1"/.test(html), 'the month drill opened');
   assert.ok(/data-pp2-wo-row="1"/.test(html) && html.includes('Fucsovics'));

@@ -139,6 +139,12 @@
   --viz-clay:        #E8A84E;
   --viz-grass:       #5CCB84;
   --viz-indoor:      #DDE0EA;
+  /* Player Profile v2 (founder 2026-11-09, "colours follow the export"): the Stat Boxes export's surface hues, used by
+     the Calendar record's By swing surface band only. Hard = the export's #5b9bff, identical in day. */
+  --pp-surf-hard:    #5B9BFF;
+  --pp-surf-clay:    #D08A4B;
+  --pp-surf-grass:   #3DD68C;
+  --pp-surf-indoor:  #9AA4C7;
 
   /* Shadows (floating layers only; identical in day). menu = drop-downs, type-ahead, info popovers, slider marker;
      pop = floating pop-ups anchored to an element (odds hover, verify card); modal = centred modals / sheets. */

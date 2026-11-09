@@ -192,7 +192,8 @@ H.check('3 · no wrong merge: London Olympics ≠ Queen\'s Club; Melbourne ≠ A
 // 4 · the shard is loading: nothing that reads it claims anything
 // ════════════════════════════════════════════════════════════════════════════
 const PENDING = () => ({ marketEdgePending: { [FX.key]: true } });   // fresh per module: a landed shard deletes the mark
-function cal(I, p) { return withState(I, { key: p.key, calTab: 'calendar', calSurface: 'all', calCell: null }, () => I.renderSeasonModal(p)); }
+// profile v2 (founder 2026-11-09): the Calendar record is the swing grid + By swing card
+function cal(I, p) { return withState(I, { key: p.key, seasonTab: 'calendar', calWin: 'career', calSurf: 'all', calCellV2: null }, () => I.renderSeasonModal(p)); }
 H.check('4 · Calendar while the shard loads: no "no priced matches", no "None of these N matches carries a closing price", no yields', () => {
   const { I, W, p } = fxModule({ noShard: true, extra: PENDING() });
   const t = T(cal(I, p));
@@ -204,15 +205,17 @@ H.check('4 · Calendar while the shard loads: no "no priced matches", no "None o
   // the shard lands: the same tab paints its figures
   W.marketEdge[FX.key] = FX.marketEdge; delete W.marketEdgePending[FX.key];
   const t2 = T(cal(I, p));
-  assert(/[\d,]+ priced matches/.test(t2) && /of [\d,]+ matches · flat 1u/.test(t2), 'the landed tab has no priced figures: ' + t2.slice(0, 200));
-  return 'pending: no claim → landed: "' + (/Career yield \S+ [\d,]+ priced matches/.exec(t2) || [''])[0] + '"';
+  assert(/of [\d,]+ matches · flat 1u/.test(t2) && /BEST SWING (?!—)/i.test(t2), 'the landed tab has no priced figures: ' + t2.slice(0, 200));
+  return 'pending: no claim → landed: "' + (/[\d,]+ of [\d,]+ matches · flat 1u/.exec(t2) || [''])[0] + '"';
 });
 H.check('4 · the Calendar drill while the shard loads prints no "no priced match in this month" and no price dashes', () => {
   const { I, p } = fxModule({ noShard: true, extra: PENDING() });
-  const spine = I.calSpine(p); const r = spine[spine.length - 1];
-  const t = T(withState(I, { key: p.key, calTab: 'calendar', calSurface: 'all', calCell: r.year + '|' + r.mon }, () => I.renderSeasonModal(p)));
-  assert(/data-pp2-cal-drill|P&L|P&amp;L/.test(t) || /RD/.test(t), 'the drill did not render');
-  assert(!/no priced match in this month/.test(t), 'the drill claims no priced match');
+  const rows = I.calRows(p); const x = rows[rows.length - 1];
+  const h = withState(I, { key: p.key, seasonTab: 'calendar', calWin: 'career', calSurf: 'all', calView: 'swing', calCellV2: 'sw|' + x.sw + '|' + x.r.year }, () => I.renderSeasonModal(p));
+  assert(/data-pp2-cal-drill="1"/.test(h), 'the drawer did not render');
+  const t = T(h.slice(h.indexOf('data-pp2-drawer="cal"')));
+  assert(!/no priced match|0 priced|— yield/.test(t), 'the drawer claims a priced figure while loading: ' + t.slice(0, 200));
+  assert(!/[+−]\d+\.\d\du/.test(t), 'a units figure while loading');
 });
 H.check('4 · Court speed while the shard loads: no units and no H / A dashes', () => {
   const { I, W, p } = fxModule({ noShard: true, extra: PENDING() });

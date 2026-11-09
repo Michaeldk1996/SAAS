@@ -1638,6 +1638,8 @@ const CAL_P = {
 // gap the footnote has to disclose is 2 and is known exactly.
 const CAL_EXPECT = { grid: 25, spine: 27, gap: 2, priced: 13, seasons: 2 };
 
+const TXT = h => String(h).replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ');
+const CAL_FM = ['calSpeed', 'calFmt', 'calBand', 'calArch', 'calCtry'];
 function withCal(fn) {
   const savedCh = W.careerHistory;
   const savedMk = W.marketEdge;
@@ -1698,38 +1700,27 @@ check('item 2 · the yield layer counts ONLY the priced rows', () => withCal(() 
 // Seasons on record. The Best / Worst stretch tiles (and calStretches) are gone. The intent the stretch
 // check carried — no month reaches a tile under the n>=10 priced gate, never a 1-match −100% — is kept
 // on the month tiles, which are the only gated tiles left.
-check('Calendar tiles · Career yield · Best month · Worst month · Seasons on record, n>=10 gate', () => withCal(() => {
-  I.state.calTab = 'calendar'; I.state.calSurface = 'all'; I.state.calCell = null;
-  const rows = I.calSpineFiltered(CAL_P);
-  const info = I.calMonths(rows);
-  const html = I.renderSeasonModal(CAL_P);
-  ['Career yield', 'Best month', 'Worst month', 'Seasons on record'].forEach((cap) => {
-    assert(html.includes('>' + cap + '<'), `the ${cap} tile is missing`);
-  });
-  assert(!/Best stretch|Worst stretch/.test(html), 'a stretch tile survived the correction');
-  assert.strictEqual(I.calStretches, undefined, 'calStretches is still exported — stretch-only code survived');
-  // Career yield = the mean P&L per priced match: (8 × +0.50 + 1 × +0.50 − 4 × 1.00) / 13 = +3.8%.
-  const cy = info.careerY;
-  assert(Math.abs(cy - 100 * (9 * 0.5 - 4) / 13) < 1e-9, `career yield ${cy}`);
-  assert(html.includes('>+3.8%<'), 'the Career yield tile does not print +3.8%');
-  assert(html.includes(`>${CAL_EXPECT.priced} priced matches<`), 'Career yield support is not "N priced matches"');
-  // Seasons on record: 2 seasons, support "25 matches · 2 seasons".
-  assert(/>2<\/span><span style="font-size:11px;color:var\(--text-label\);">25 matches · 2 seasons</.test(html),
-    'Seasons on record is not "2" over "25 matches · 2 seasons"');
-  // The gate: only January (12 priced) clears n>=10; March (1 priced) must reach no tile.
-  const monthIdx = info.months.filter(x => x.priced >= 10 && x.pp != null);
-  assert(!monthIdx.some(x => x.m === 2), 'the 1-match March month cleared the n>=10 gate');
-  assert(html.includes('>January<'), 'the one eligible month (January) is not the Best month');
-  assert(!html.includes('>March<'), 'the 1-match March month reached a tile');
-  assert(html.includes('one month clears n=10 priced'), 'Worst month repeats the only eligible month');
-  // Colour: every tile VALUE is white; only the pp figure is signed-coloured.
-  const strip = html.slice(html.indexOf('>Career yield<'), html.indexOf('>Seasons on record<') + 400);
-  assert(!/font-size:24px;[^"]*color:var\(--(pos|neg)\)/.test(strip), 'a tile value took green/red');
-  assert(/data-pp2-cal="pp" style="font-weight:700;color:var\(--(pos|neg|text-label)\);"/.test(strip),
-    'the pp figure is not the coloured part');
-  console.log(`        tiles: Career yield ${cy.toFixed(1)}% · Best month January · Seasons 2; March gated out`);
+// profile v2 (founder 2026-11-09): the Calendar record is the export's swing grid + Streaks.
+check('profile v2 · the swing rule places the tour\'s own events where the export puts them', () => {
+  const R = (event, date, surface, court, cc) => [I.calSwingOf({ event, tournament: event, mon: +date.slice(5, 7) - 1, surface, court }, cc), event];
+  const got = [R('Australian Open', '2026-01-20', 'hard', 'Outdoor', 'AU'), R('Dubai', '2026-02-24', 'hard', 'Outdoor', 'AE'),
+    R('Rio de Janeiro', '2026-02-17', 'clay', 'Outdoor', 'BR'), R('Rotterdam', '2026-02-10', 'hard', 'Indoor', 'NL'),
+    R('Indian Wells', '2026-03-10', 'hard', 'Outdoor', 'US'), R('Madrid', '2026-05-01', 'clay', 'Outdoor', 'ES'),
+    R('Wimbledon', '2026-07-02', 'grass', 'Outdoor', 'GB'), R('Hamburg', '2026-07-20', 'clay', 'Outdoor', 'DE'),
+    R('Cincinnati', '2026-08-12', 'hard', 'Outdoor', 'US'), R('Shanghai', '2026-10-05', 'hard', 'Outdoor', 'CN'),
+    R('Paris Masters', '2026-11-01', 'hard', 'Indoor', 'FR'), R('Davis Cup', '2026-09-12', 'hard', 'Indoor', null)];
+  const want = ['aus', 'me', 'gold', 'eei', 'sun', 'eclay', 'grass', 'sclay', 'nah', 'asia', 'ein', 'team'];
+  assert.deepStrictEqual(got.map(g => g[0]), want, got.map(g => g[1] + ' → ' + g[0]).join(', '));
+});
+check('profile v2 · Calendar tiles: Best surface · Best swing · Worst swing · Swing opener, the swing pick gated at 5 priced', () => withCal(() => {
+  Object.assign(I.state, { key: '__cal', seasonTab: 'calendar', calWin: 'career', calSurf: 'all', calCellV2: null, info: null });
+  CAL_FM.forEach((k) => { I.state[k] = 'all'; });
+  const html = I.renderSeasonModal(CAL_P), t = TXT(html);
+  ['Best surface', 'Best swing', 'Worst swing', 'Swing opener'].forEach((cap) => assert(new RegExp('>' + cap + '<', 'i').test(html), `the ${cap} tile is missing`));
+  assert(!/Career yield|Best month|Seasons on record/.test(t), 'a retired v1 tile survived');
+  // AUS holds the 12 priced January 2025 matches (8 × +0.50 − 4 × 1.00 = 0.00u); Miami (1 priced) is under the gate
+  assert(/BEST SWING Australian [+−]?[\d.]+pp n=12/i.test(t), 'Best swing is not Australian on its 12 priced: ' + (/BEST SWING.{0,60}/i.exec(t) || [''])[0]);
 }));
-
 mustFail('[neg] the gate check would catch a 1-match month reaching a tile', () => withCal(() => {
   const info = I.calMonths(I.calSpineFiltered(CAL_P));
   const ungated = info.months.filter(x => x.priced > 0 && x.pp != null);
@@ -1754,28 +1745,12 @@ check('item 3 · the subtitle M is the GRID total and carries the span', () => w
   console.log(`        subtitle M=${sc.n} (grid) with span ${sc.from}–${sc.to}; spine is ${sc.m}`);
 }));
 
-check('the footnote discloses the spine gap rather than hiding it', () => withCal(() => {
-  I.state.calTab = 'calendar'; I.state.calSurface = 'all'; I.state.calCell = null;
-  const html = I.renderSeasonModal(CAL_P);
-  assert(html.includes(`the ${CAL_EXPECT.priced} priced`),
-    'the footnote never states the priced count');
-  // TEN-384 fix 3: the sentence now names the Market edge basis and the N row, then "The grid covers all M".
-  assert(html.includes(`The grid covers all ${CAL_EXPECT.grid}`),
-    'the footnote never states the grid total');
-  // FOUNDER 2026-09-18 — the clause is no longer a net. This fixture carries
-  // only ONE of the two populations (2 undated, 0 outside the window), so it can
-  // exercise at most half the rule; §14A below runs the fixture that carries
-  // BOTH and is the check that actually pins the ruling.
-  assert(html.includes(`${CAL_EXPECT.gap} matches carry no dated match row`),
-    `the ${CAL_EXPECT.gap} undated matches are not disclosed`);
-  assert(!html.includes('fewer than the grid'),
-    'the netted "fewer than the grid" clause is back in the footnote');
-  // Item 31 — the long archive paragraph is gone.
-  assert(!/qualifying and Challenger matches are absent by scope/.test(html),
-    'the cal-0 archive paragraph is still in the footnote');
-  console.log(`        footnote: ${CAL_EXPECT.priced} priced, grid ${CAL_EXPECT.grid}, gap ${CAL_EXPECT.gap} disclosed`);
+// profile v2 (founder 2026-11-09): the Calendar record is the export's swing grid + Streaks.
+check('profile v2 · By swing states its priced count over the matches it shows', () => withCal(() => {
+  Object.assign(I.state, { key: '__cal', seasonTab: 'calendar', calWin: 'career', calSurf: 'all', calCellV2: null });
+  const t = TXT(I.renderSeasonModal(CAL_P));
+  assert(t.includes(`${CAL_EXPECT.priced} of ${CAL_EXPECT.grid} matches · flat 1u`), 'the priced count is not stated: ' + (/BY SWING.{0,80}/i.exec(t) || [''])[0]);
 }));
-
 check('items 13 + 12 · empty months are a middot, and the tint is the file\'s flat 0.10', () => withCal(() => {
   I.state.calTab = 'calendar'; I.state.calSurface = 'all'; I.state.calCell = null;
   const html = I.renderSeasonModal(CAL_P);
@@ -1790,47 +1765,27 @@ check('items 13 + 12 · empty months are a middot, and the tint is the file\'s f
   console.log('        flat 0.10 tints, no ramp, empty months render ·');
 }));
 
-check('the drill opens, groups by event, and its P&L is the priced rows only', () => withCal(() => {
-  I.state.calTab = 'calendar'; I.state.calSurface = 'all';
-  I.state.calCell = '2026|0';                       // January 2026 — 12 rows, 0 priced
+// profile v2 (founder 2026-11-09): the Calendar record is the export's swing grid + Streaks.
+check('profile v2 · a grid cell opens the right-side drawer: grouped by event, its P&L the priced rows only', () => withCal(() => {
+  Object.assign(I.state, { key: '__cal', seasonTab: 'calendar', calWin: 'career', calSurf: 'all', calView: 'swing', calCellV2: 'sw|aus|2025' });
   let html = I.renderSeasonModal(CAL_P);
-  // TEN-384 K6: the drill is a panel inside the Calendar panel — --card + 1px --edge-6 (was --inner + --edge-10).
-  assert(html.includes('margin:12px 0 4px;background:var(--card);border:1px solid var(--edge-6);'), 'the drill did not open');
-  assert(html.includes('>Jan 2026<'), 'the drill header names the wrong month');   // TEN-384 K6: "Apr 2026" form
-  assert(html.includes('3–09') || html.includes('3–9'), 'the drill record is not 3-9');
-  assert(html.includes('no priced match in this month'),
-    'an unpriced month must say so, not print a 0.00u yield');
-  assert(html.includes('data-pp2="cal-cell-close"'), 'the drill has no close button');
-  assert(/>Score</.test(html), 'the drill has no SCORE column');
-  assert(/>Home</.test(html) && />Away</.test(html), 'the drill is missing HOME/AWAY');
-  assert(!/NaN|undefined|Infinity/.test(html), 'the drill leaked a non-number');
-
-  I.state.calCell = '2025|0';                       // January 2025 — 12 rows, all priced
+  assert(/data-pp2-cal-drill="1"/.test(html), 'the drawer did not open');
+  const d = html.slice(html.indexOf('data-pp2-drawer="cal"'));
+  assert(/>8–4</.test(d), 'the drawer record is not 8–4');
+  assert.strictEqual((d.match(/color:var\(--pos\);">W</g) || []).length, 8, 'eight wins listed');
+  assert(/>\+0\.00u</.test(d) && /12 priced/.test(d), "the drawer P&L is not +0.00u over 12 priced");
+  I.state.calCellV2 = 'sw|aus|2026';
   html = I.renderSeasonModal(CAL_P);
-  assert(html.includes('12 priced'), 'the drill does not state its priced count');
-  // 8 x +0.50 - 4 x 1.00 = 0.00u over 12 priced = +0.0%
-  assert(html.includes('+0.00u'), 'the drill total is not the recomputed +0.00u');
-  assert(!/\+0\.50u|−1\.00u/.test(html),
-    'a drill ROW still carries the "u" suffix the design drops (item 20)');
-  console.log('        drill: grouped, close button, SCORE/HOME/AWAY, priced count, no "u" on rows');
+  const d2 = html.slice(html.indexOf('data-pp2-drawer="cal"'));
+  assert(/>3–9</.test(d2) && /0 priced/.test(d2), 'the unpriced 2026 cell is not 3–9 over 0 priced');
+  I.state.calCellV2 = null;
 }));
-
-check('item 30 · CONSISTENT is one segment per season, not prose', () => withCal(() => {
-  I.state.calTab = 'calendar'; I.state.calSurface = 'all'; I.state.calCell = null;
-  const html = I.renderSeasonModal(CAL_P);
-  assert(html.includes('>1/2<'), `CONSISTENT should read 1/2 over ${CAL_EXPECT.seasons} seasons`);
-  assert(!/\d+ of \d+<\/div>/.test(html.split('Consistent')[1] || ''),
-    'CONSISTENT reverted to the "8 of 14" prose form');
-  // TEN-376: the filled segment is --bar at 62% (was rgba(91,155,255,0.62)).
-  assert(html.includes('color-mix(in srgb, var(--bar) 62%, transparent)'), 'no filled CONSISTENT segment rendered');
-  console.log('        CONSISTENT renders 1/2 as filled segments, one per season');
+// profile v2 (founder 2026-11-09): the Calendar record is the export's swing grid + Streaks.
+check('profile v2 · Consistent is one segment per season played: AUS 1/2 (2025 above .500, 2026 not)', () => withCal(() => {
+  Object.assign(I.state, { key: '__cal', seasonTab: 'calendar', calWin: 'career', calSurf: 'all', calCellV2: null });
+  const t = TXT(I.renderSeasonModal(CAL_P));
+  assert(/1\/2 2 played/.test(t), 'AUS does not read 1/2 · 2 played');
 }));
-
-// The findings strip is labelled "pp" and the file's own SW array is commented
-// "weighted to the career yield" — so the figure is a GAP against his own
-// career yield, not the raw surface yield. The two differ by a constant, so a
-// raw yield under a pp label reads plausibly and the spread (which cancels the
-// baseline) agrees either way. That is exactly why it needs pinning.
 check('item 24 · the findings strip is a pp gap, not a raw yield', () => withCal(() => {
   I.state.calSurface = 'all';
   const rows = I.calSpineFiltered(CAL_P);
@@ -1849,44 +1804,23 @@ check('item 24 · the findings strip is a pp gap, not a raw yield', () => withCa
   console.log(`        best swing = ${f[0].value.toFixed(2)}pp vs career, n=${f[0].n}`);
 }));
 
-check('a player with no priced match keeps the grid and dashes the yield layer', () => {
-  const savedCh = global.window.careerHistory;
-  const savedMk = global.window.marketEdge;
-  const savedSt = { ...I.state };
-  try {
-    global.window.careerHistory = Object.assign({}, CAREER_HIST, { __cal: CAL_SPINE });
-    global.window.marketEdge = Object.assign({}, MARKET, { __cal: { matches: [] } });
-    I.state.calTab = 'calendar'; I.state.calSurface = 'all'; I.state.calCell = null;
-    const rows = I.calSpineFiltered(CAL_P);
-    assert.strictEqual(rows.length, CAL_EXPECT.grid,
-      'the grid shrank when the price source went away — the two scopes are coupled');
-    const html = I.renderSeasonModal(CAL_P);
-    // TEN-384: the yield basis is the Market edge's (Pinnacle, else Bet365), named in the reason.
-    assert(html.includes('None of these ' + CAL_EXPECT.grid + ' matches carries a closing price (Pinnacle, else Bet365)'),
-      'the unpriced footnote does not say why every yield is a dash');
-    assert(!/across the 0 priced/.test(html), 'the footnote still reads "across the 0 priced matches"');
-    assert(!/NaN|undefined|Infinity/.test(html), 'the unpriced state leaked a non-number');
-    // Never a 0% where a dash belongs (§3).
-    assert(!/>[+−]0\.0%</.test(html), 'an unpriced month rendered 0.0% instead of a dash');
-    console.log(`        grid still ${rows.length} rows; every yield dashes with a stated reason`);
-  } finally {
-    global.window.careerHistory = savedCh;
-    global.window.marketEdge = savedMk;
-    Object.assign(I.state, savedSt);
-  }
-});
-
-check('items 24-27 · the footer rows the design requires are all present', () => withCal(() => {
-  I.state.calTab = 'calendar'; I.state.calSurface = 'all'; I.state.calCell = null;
-  const html = I.renderSeasonModal(CAL_P);
-  ['Best swing', 'Worst swing', 'Surface spread', 'Swing', 'Month', 'Yield',
-    'Vs other months', 'Consistent', 'Year'].forEach((label) => {
-    assert(html.includes('>' + label + '<'), `the footer is missing the ${label} row/label`);
-  });
-  assert(!/NaN|undefined|Infinity|\[object/.test(html), 'the footer leaked a non-number');
-  console.log('        findings strip + swing chart + MONTH/N/YIELD/VS/CONSISTENT all render');
+// profile v2 (founder 2026-11-09): the Calendar record is the export's swing grid + Streaks.
+check('profile v2 · a player with no priced match keeps the grid and dashes the yield layer', () => withCal(() => {
+  W.marketEdge = Object.assign({}, MARKET, { __cal: { matches: [] } });
+  Object.assign(I.state, { key: '__cal', seasonTab: 'calendar', calWin: 'career', calSurf: 'all', calCellV2: null });
+  const html = I.renderSeasonModal(CAL_P), t = TXT(html);
+  assert(/>8–4</.test(html), 'the grid lost its records');
+  assert(t.includes(`0 of ${CAL_EXPECT.grid} matches · flat 1u`), 'the priced count does not read 0');
+  const by = t.slice(t.search(/BY SWING/i));
+  assert(!/[+−]\d+\.\d%/.test(by.slice(by.search(/YIELD/i), by.search(/VS OTHERS/i))), 'a yield printed with nothing priced');
 }));
-
+// profile v2 (founder 2026-11-09): the Calendar record is the export's swing grid + Streaks.
+check('profile v2 · By swing carries every row the export draws', () => withCal(() => {
+  Object.assign(I.state, { key: '__cal', seasonTab: 'calendar', calWin: 'career', calSurf: 'all', calCellV2: null });
+  const html = I.renderSeasonModal(CAL_P);
+  ['Vs other swings', 'Surface', 'Swing', 'n', 'Yield', 'Vs others', 'Consistent'].forEach((r) => assert(new RegExp('>' + r + '<').test(html), `the ${r} row is missing`));
+  assert(/>not in yield</.test(html), 'Team / other is not marked out of the yield');
+}));
 // ── item 20 · the event display name ────────────────────────────────────────
 // Found by the CDP read-back, not by this file: the name vote keyed on
 // (year, opponent surname) and took the tournamentHistory owner without
@@ -1947,30 +1881,20 @@ mustFail('[neg] the name check would catch the pre-fix weak-key vote', () => {
   assert.notStrictEqual(alias, 'Halle', 'the weak-key vote is back');
 });
 
-check('the Indoors segment refuses rather than showing a partial grid', () => withCal(() => {
-  I.state.calTab = 'calendar'; I.state.calCell = null;
-  I.state.calSurface = 'indoors';
-  const html = I.renderSeasonModal(CAL_P);
-  assert(html.includes('No per-match court type on record'),
-    'the Indoors segment silently rendered a grid it has no source for');
-  assert.strictEqual(I.calSpineFiltered(CAL_P).length, 0,
-    'the Indoors segment returned rows — the court column does not exist on this spine');
-  // The surfaces that DO exist must still partition the grid exactly.
-  I.state.calSurface = 'all';
-  const all = I.calSpineFiltered(CAL_P).length;
-  const bySurf = ['hard', 'clay', 'grass'].reduce((a, s) => {
-    I.state.calSurface = s; return a + I.calSpineFiltered(CAL_P).length;
-  }, 0);
-  assert.strictEqual(bySurf, all, `surfaces hold ${bySurf} of ${all} — they must partition`);
-  console.log('        Indoors refuses with a stated reason; hard+clay+grass partition the grid');
+// profile v2 (founder 2026-11-09): the Calendar record is the export's swing grid + Streaks.
+check('profile v2 · Indoors refuses on a spine with no court column; the surfaces partition All', () => withCal(() => {
+  W.marketEdge = Object.assign({}, MARKET, { __cal: { matches: [] } });   // no archive join -> no court on any row
+  Object.assign(I.state, { key: '__cal', seasonTab: 'calendar', calWin: 'career', calSurf: 'Indoors', calCellV2: null });
+  assert(I.renderSeasonModal(CAL_P).includes('No per-match court type on record'), 'Indoors rendered a grid it has no source for');
+  const all = I.calRows(CAL_P).length;
+  const parts = ['Hard', 'Clay', 'Grass', 'Indoors'].reduce((a, sf) => a + I.calRows(CAL_P).filter(x => x.surf === sf).length, 0);
+  assert.strictEqual(parts, all, `surfaces hold ${parts} of ${all}`);
 }));
-
 check('every tab and segment renders without leaking NaN/undefined into the DOM', () => withCal(() => {
   let rendered = 0;
-  for (const tab of ['calendar', '2026']) {
-    for (const s of ['all', 'hard', 'clay', 'grass', 'indoors']) {
-      I.state.calTab = tab; I.state.calSurface = s;
-      I.state.calCell = null;
+  for (const tab of ['calendar', 'streaks']) {   // profile v2: Calendar · Streaks
+    for (const s of ['all', 'Hard', 'Clay', 'Grass', 'Indoors']) {
+      Object.assign(I.state, { key: '__cal', seasonTab: tab, calWin: 'career', calSurf: s, calCellV2: null });
       const html = I.renderSeasonModal(CAL_P);
       ['NaN', 'undefined', 'Infinity', '[object'].forEach((t) => {
         assert(!html.includes(t), `${tab}/${s}: "${t}" reached the DOM`);
@@ -2054,29 +1978,16 @@ mustFail('[neg] the cal-2 lock would catch the Calendar reverting to the archive
 // ── TEN-384 Q1 (founder, 2026-10-05) · tabs = Calendar (default) · 2026; Streaks REMOVED ──────────
 // The tab, its tiles, the run timeline, "What follows a run" and the code only it used are gone. The
 // 2026 tab's content ruling landed the same day (second card): it is pinned by the "2026 tab" checks below.
-check('TEN-384 Q1 · Calendar record tabs are Calendar · 2026 and Streaks is gone', () => withCal(() => {
-  assert.deepStrictEqual(I.CAL_TABS.map(t => t[0]), ['calendar', '2026'], 'the tab set is not Calendar · 2026');
-  I.state.calTab = 'calendar'; I.state.calSurface = 'all'; I.state.calCell = null;
+// profile v2 (founder 2026-11-09): the Calendar record is the export's swing grid + Streaks.
+check('profile v2 · Calendar record tabs are Calendar · Streaks; the 2026 tab and the fixed Swing row are gone', () => withCal(() => {
+  Object.assign(I.state, { key: '__cal', seasonTab: 'calendar', calWin: 'career', calSurf: 'all', calCellV2: null });
   const html = I.renderSeasonModal(CAL_P);
-  assert(/data-pp2="cal-tab" data-v="calendar"/.test(html) && /data-pp2="cal-tab" data-v="2026"/.test(html),
-    'the Calendar · 2026 tab buttons are not painted');
-  assert(!/data-v="streaks"|>Streaks</.test(html), 'a Streaks tab is still painted');
-  assert(!/Run timeline|What follows a run|Longest win run|Runs of 5\+/.test(html), 'Streaks content survived');
-  // The selected tab is the darker track's selected item (--inner + --edge-10, white 700).
-  assert(/data-v="calendar" style="[^"]*font-weight:700;[^"]*background:var\(--inner\);border:1px solid var\(--edge-10\)/.test(html),
-    'Calendar is not the selected (default) tab');
-  ['calRuns', 'renderStreakTab', 'expectedLongest', 'expectedRuns5', 'followStats', 'runSpan'].forEach((k) => {
-    assert.strictEqual(I[k], undefined, `${k} is still exported — Streaks-only code survived`);
-  });
-  const src = fs.readFileSync(path.join(ROOT, 'player-profile-v2.js'), 'utf8');
-  assert(!/kind === 'cal-run'|function renderStreakTab|function renderFollowsCard|pp2-xscroll/.test(src),
-    'Streaks-only code survived in the module');
-  I.state.calTab = '2026';
-  const t26 = I.renderSeasonModal(CAL_P);
-  assert(!/data-pp2-stub/.test(t26), 'the 2026 tab is still the stub — its content ruling has landed');
-  assert(/data-pp2-cal26="list"/.test(t26), 'the 2026 tab does not paint its month list');
-  assert(!/NaN|undefined|Infinity/.test(t26), 'the 2026 tab leaked a non-number');
-  console.log('        tabs Calendar · 2026; no Streaks tab, content or code; 2026 = the ruled season tab');
+  assert(/data-pp2="cal-tab" data-v="calendar"/.test(html) && /data-pp2="cal-tab" data-v="streaks"/.test(html), 'the Calendar · Streaks tabs are not painted');
+  assert(!/data-pp2="cal-tab" data-v="2026"/.test(html) && !/Month by month/.test(html), 'the 2026 tab survived');
+  I.state.seasonTab = 'streaks';
+  const st = TXT(I.renderSeasonModal(CAL_P));
+  assert(/RUNS OF 5\+/i.test(st) && /LONGEST WIN RUN 8/i.test(st), 'Streaks does not read its runs (longest win run 8): ' + st.slice(0, 200));
+  I.state.seasonTab = 'calendar';
 }));
 mustFail('[neg] the Q1 check would catch a Streaks tab coming back', () => {
   const html = '<button data-pp2="cal-tab" data-v="streaks">Streaks</button>';
@@ -2119,28 +2030,7 @@ function c26Tab() {
   I.state.calTab = '2026'; I.state.calSurface = 'all'; I.state.calCell = null;
   return I.renderSeasonModal(C26_P);
 }
-check('2026 tab · three white tiles: Win–loss, Win rate, Best result (computed off the career spine)', () => withC26(() => {
-  assert.strictEqual(I.CAL_SEASON, '2026');
-  assert.deepStrictEqual(I.CAL_TABS[1], ['2026', '2026'], 'the tab label is not the counted season');
-  I.state.cal26Month = null;
-  const html = c26Tab();
-  const rows = I.cal26Rows(C26_P);
-  assert.strictEqual(rows.length, 18, `the season holds ${rows.length} rows, not 18 (the 2025 row leaked or one dropped)`);
-  // Records count every match: the Laver Cup row the Form rule drops is IN the 15–3.
-  assert(/>Win–loss<\/span><span[^>]*color:var\(--text\);[^>]*>15–3</.test(html), 'Win–loss is not a white 15–3');
-  assert(html.includes('>2026 season<'), 'Win–loss support is not "2026 season"');
-  assert(/>Win rate<\/span><span[^>]*color:var\(--text\);[^>]*>83%</.test(html), 'Win rate is not a white 83%');
-  assert(html.includes('>18 matches<'), 'Win rate support is not "18 matches"');
-  assert(/>Best result<\/span><span[^>]*color:var\(--text\);[^>]*>Rotterdam</.test(html),
-    'Best result is not the Rotterdam title (depth beats prestige)');
-  assert(html.includes('>title · February<'), 'Best result support is not "title · February"');
-  assert(!/>Titles?</.test(html), 'a Titles tile is painted');
-  // NO grid row, priced strip or Swing row on this tab.
-  assert(!/data-pp2="cal-cell"|>Swing<|>Best swing<|>Vs other months<|>Yield<|flat 1u/.test(html),
-    'a Calendar-tab block (grid, priced strip or Swing row) leaked onto the 2026 tab');
-  assert(!/NaN|undefined|Infinity/.test(html), 'the 2026 tab leaked a non-number');
-  console.log('        15–3 · 83% · 18 matches · Rotterdam (title · February); Laver Cup counted; no grid/strip/swing');
-}));
+// profile v2 (founder 2026-11-09): the 2026 tab is retired — its checks went with it.
 mustFail('the 2026 tile check would catch the Form rule\'s exhibition cut applied to the record', () => withC26(() => {
   const rows = I.cal26Rows(C26_P).filter(r => r.event !== 'Laver Cup');
   assert.strictEqual(rows.length, 18, 'Laver Cup dropped from the season record');
@@ -2181,63 +2071,12 @@ function c26MonthRow(html, m) {
   const end = html.indexOf('data-pp2="cal26-month"', at + 10);
   return html.slice(at, end < 0 ? at + 3000 : end);
 }
-check('2026 tab · month list: one row per month played, Jan → latest, small-sample rule', () => withC26(() => {
-  I.state.cal26Month = null;
-  const html = c26Tab();
-  assert(html.includes('>Month by month · 2026<'), 'the caps label is not "Month by month · 2026"');
-  const order = [...html.matchAll(/data-pp2="cal26-month" data-v="(\d+)"/g)].map(x => +x[1]);
-  assert.deepStrictEqual(order, [0, 1, 2, 8], `month rows ${order} — must be the months played, Jan → latest`);
-  assert(/data-pp2-cal26="list" style="max-height:420px;overflow-y:auto;"/.test(html), 'the list does not scroll at 420px');
-  const jan = c26MonthRow(html, 0), feb = c26MonthRow(html, 1), mar = c26MonthRow(html, 2);
-  assert(/padding:11px 10px;/.test(jan), 'a month row is not padded 11×10');
-  assert(/border-top:1px solid var\(--edge-6\)/.test(feb), 'rows are not split by a 6% hairline');
-  assert(/font-size:13.5px;font-weight:700;color:var\(--text\);">January</.test(jan), 'the month name is not 13.5/700 white');
-  assert(jan.includes('>Adelaide · Australian Open<'), 'the grey note does not name the month\'s events');
-  assert(/>9–2</.test(jan) && /data-gate="full"[^>]*font-size:13.5px;font-weight:700;color:var\(--text\);">82%</.test(jan),
-    'January (n 11) is not a full-size white 82%');
-  assert(/>5–0</.test(feb) && /data-gate="small"/.test(feb) &&
-    /font-size:12.5px;font-weight:400;color:var\(--text-label\);">100%</.test(feb) && feb.includes('small sample · n=5'),
-    'February (n 5) is not the smaller grey rate with "small sample · n=5"');
-  assert(/>0–1</.test(mar) && /data-gate="thin"[^>]*>—</.test(mar) && !/%</.test(mar),
-    'March (n 1) shows a rate — under 5 is W–L only with a dash');
-  assert(/>›</.test(jan) || jan.includes('&rsaquo;'), 'the row has no › caret');
-  assert(/10 or more matches[^<]*5–9 is a small sample[^<]*under 5 shows the W–L only/.test(html),
-    'the footnote does not state the thresholds');
-  console.log('        rows Jan · Feb · Mar · Sep; 9–2 82% full · 5–0 small n=5 · 0–1 dash; footnote states 10 / 5–9 / <5');
-}));
+// profile v2 (founder 2026-11-09): the 2026 tab is retired — its checks went with it.
 mustFail('the month gate check would catch a 5-match month painted full', () => {
   const fake = '<div data-pp2="cal26-month" data-v="1"><span data-pp2-cal26="rate" data-gate="full">100%</span></div>';
   assert(/data-gate="small"/.test(c26MonthRow(fake, 1)), 'February painted full');
 });
-check('2026 tab · a month row opens its matches on the profile ledger grid; rows open the step-3 sheet', () => withC26(() => {
-  I.state.cal26Month = '0';
-  const html = c26Tab();
-  const jan = c26MonthRow(html, 0);
-  assert(/^data-pp2="cal26-month" data-v="0" style="[^"]*background:var\(--selected\);/.test(jan), 'the open row is not --selected');
-  assert(!/background:var\(--selected\)/.test(c26MonthRow(html, 1).split('data-pp2-cal26="panel"')[0]), 'a closed row is selected');
-  const pi = jan.indexOf('data-pp2-cal26="panel"');
-  assert(pi > -1, 'the month panel did not open under its row');
-  const panel = jan.slice(pi);
-  assert(/^data-pp2-cal26="panel" style="background:var\(--card\);border:1px solid var\(--edge-6\);/.test(panel),
-    'the open panel is not --card + 1px --edge-6');
-  assert(!/var\(--link\)|var\(--blue/.test(panel), 'the open panel carries a blue outline');
-  // The ledger's own head row and row builder: Date · W/L · Opponent · Rd · Sets · Set scores · H · A.
-  assert(panel.includes('class="pp2-ledger-head"'), 'the panel does not use the ledger head row');
-  const heads = [...panel.slice(panel.indexOf('pp2-ledger-head'), panel.indexOf('padding:12px 8px 6px'))
-    .matchAll(/text-align:(?:left|right);">([^<]+)</g)].map(x => x[1]);
-  assert.deepStrictEqual(heads, ['Date', 'Opponent', 'Rd', 'Sets', 'Set scores', 'H', 'A'], `heads ${heads}`);
-  const rowsN = (panel.match(/class="pp2-ledger-row"/g) || []).length;
-  assert.strictEqual(rowsN, 11, `the January panel holds ${rowsN} ledger rows, not 11`);
-  const ids = [...panel.matchAll(/data-pp2="sheet" data-v="([^"]+)"/g)].map(x => x[1]);
-  assert.strictEqual(ids.length, 11, 'a month row does not open the sheet');
-  const ctx = { ledgerRows: I.ledgerRows(C26_P) };
-  ids.forEach((id) => assert(I.sheetRowFor(C26_P, ctx, id), `sheet id ${id} resolves to no match — the click would open nothing`));
-  assert(panel.includes('>Australian Open<') && panel.includes('>Adelaide<'), 'the panel does not group by event');
-  // Closing: re-clicking the row toggles it shut (the same toggle the handler uses).
-  I.state.cal26Month = null;
-  assert(!c26Tab().includes('data-pp2-cal26="panel"'), 'the panel stayed open with no month selected');
-  console.log(`        January opens ${rowsN} ledger rows (8-column head), every id resolves to a sheet; open row --selected`);
-}));
+// profile v2 (founder 2026-11-09): the 2026 tab is retired — its checks went with it.
 mustFail('the drill check would catch a month panel that opens nothing', () => withC26(() => {
   I.state.cal26Month = '5';                        // June: not played
   assert(c26Tab().includes('data-pp2-cal26="panel"'), 'no panel');
@@ -3974,7 +3813,7 @@ check('the all-stores table covers every data store the module reads', () => {
     // list, not match data), Compare with… (pp2CompareRoster over the standings already covered by pp2LiveRank,
     // sfGoToH2H the hand-off) and the event link (pp2TournamentKey / pp2OpenTournament over the Tournaments registry)
     // — logic and navigation, no store of their own
-    'pp2IsWatched', 'pp2ToggleWatch', 'pp2CompareRoster', 'sfGoToH2H', 'pp2TournamentKey', 'pp2OpenTournament', 'pp2EventCategory',
+    'pp2IsWatched', 'pp2ToggleWatch', 'pp2CompareRoster', 'sfGoToH2H', 'pp2TournamentKey', 'pp2OpenTournament', 'pp2EventCategory', 'pp2EventCountry',
     // founder ruling 2026-10-20 item 1: the host's "Data paused" rule for a Mac-only feed (sfFeedPaused over the
     // career-splits-tour.json build date the page already loaded) — logic, no rows
     'sfFeedPaused',
@@ -6613,21 +6452,16 @@ check('the two residual populations are counted independently, not netted', () =
   console.log(`        ${r.undated} undated and ${r.outside} outside (${r.from}–${r.to}); the old net was 0`);
 }));
 
-check('BOTH clauses reach the rendered footnote, each with its own number', () => withRes(() => {
-  I.state.calTab = 'calendar'; I.state.calSurface = 'all'; I.state.calCell = null;
+// profile v2 (founder 2026-11-09): the Calendar record is the export's swing grid + Streaks.
+check('BOTH clauses reach the Calendar\'s (?) note, each with its own number', () => withRes(() => {
+  Object.assign(I.state, { seasonTab: 'calendar', calWin: 'career', calSurf: 'all', calCellV2: null, info: 'cal1' });
   const html = I.renderSeasonModal(RES_P);
-  assert(html.includes(`${RES_EXPECT.undated} matches carry no dated match row`),
-    'the undated clause is missing from the footnote');
-  assert(html.includes(`${RES_EXPECT.outside} dated matches fall outside the tile’s window`),
-    'the outside-the-window clause is missing from the footnote');
-  assert(html.includes(`(${RES_EXPECT.from}–${RES_EXPECT.to})`),
-    'the outside clause does not name the years it covers');
-  // The netting shapes, both directions, must be gone.
+  I.state.info = null;
+  assert(html.includes(`${RES_EXPECT.undated} matches carry no dated match row`), 'the undated clause is missing from the note');
+  assert(html.includes(`${RES_EXPECT.outside} dated matches fall outside the tile’s window`), 'the outside-the-window clause is missing from the note');
+  assert(html.includes(`(${RES_EXPECT.from}–${RES_EXPECT.to})`), 'the outside clause does not name the years it covers');
   assert(!html.includes('fewer than the grid'), 'the netted under-run clause is back');
-  assert(!/\d+ of them carry no dated match row/.test(html), 'the netted over-run clause is back');
-  console.log('        footnote states 8 undated · 8 outside (2013–2014), no net');
 }));
-
 check('a clause is omitted when its own count is zero', () => {
   const only = I.calResidualNote({ m: 10, undated: 4, outside: 0, from: null, to: null });
   assert(/4 matches carry no dated match row/.test(only), `undated clause missing: "${only}"`);
@@ -7440,22 +7274,7 @@ check('fix 11 · fx6 · the Swing row is the five fixed tour bands, whatever row
   ['calSwingSurface', 'calSwingTieBreak', 'calSwingIndoorSwing', 'CAL_SWING_TIE_ORDER', 'CAL_SWING_INDOOR_MONTHS']
     .forEach(k => assert.strictEqual(I[k], undefined, k + ' is still exported'));
 });
-check('fix 11 · fx6 · [fixture] Korda\'s Calendar paints the fixed bands (bar order, labels, December empty)', () => {
-  const { I: FI, p } = fx2FixturePlayerModule();
-  const saved = Object.assign({}, FI.state);
-  Object.assign(FI.state, { key: p.key, calTab: 'calendar', calSurface: 'all', calCell: null });
-  let html;
-  try { html = FI.renderSeasonModal(p); } finally { Object.keys(FI.state).forEach(k => delete FI.state[k]); Object.assign(FI.state, saved); }
-  const bars = [...html.matchAll(/data-pp2-swing="([a-z]*)" style="([^"]*)"/g)].map(m => [m[1], /background:([^;]+);/.exec(m[2])[1], /opacity:0\.75/.test(m[2]), /height:4px/.test(m[2])]);
-  assert.deepStrictEqual(bars.map(b => b[0]), ['hard', 'clay', 'grass', 'hard', 'indoors', '']);
-  assert.deepStrictEqual(bars.map(b => b[1]), SWING_FIXED.map(x => x[3]));
-  assert(bars.every(b => b[2] && b[3]), 'a bar lost its 4px / 75% look');
-  const spans = [...html.matchAll(/grid-column:span (\d+);[^>]*>\s*<span data-pp2-swing/g)].map(m => +m[1]);
-  assert.deepStrictEqual(spans, [3, 2, 2, 2, 2, 1]);
-  console.log('        ' + bars.map((b, i) => (b[0] || '·') + '×' + spans[i]).join(' '));
-});
-
-// item 13 · the "ATP " prefix: one name rule on every surface.
+// profile v2 (founder 2026-11-09): the fixed five-band Swing row is retired with its check.
 check('fix 13 · an event is named without its feed prefix, the same as the Calendar names it', () => {
   assert.strictEqual(I.eventName({ tournament: 'ATP Indian Wells' }), 'Indian Wells');
   assert.strictEqual(I.eventName({ tournament: 'Australian Open' }), 'Australian Open');
