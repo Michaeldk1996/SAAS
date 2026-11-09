@@ -314,6 +314,7 @@
     '.pp2-ulink:hover{text-decoration-color:var(--text)!important;}' +
     '.pp2-fbrow:hover>*{background:var(--wash-4);box-shadow:-6px 0 0 var(--wash-4),6px 0 0 var(--wash-4);}' +
     '.pp2-clearall:hover{color:var(--text)!important;}' +
+    '.pp2-styrow:hover{background:var(--wash-4)!important;}.pp2-stydot:hover{border-color:var(--link)!important;}' +
     '.pp2-tlink:hover{text-decoration-color:color-mix(in srgb, var(--text) 45%, transparent)!important;}' +
     // §5.3 item 7 — the file gives the tournament row a hover fill
     // (`style-hover="background:var(--inner)"`, Player Stat Boxes
@@ -1676,9 +1677,9 @@
       icon: 'M4 5h12v4a6 6 0 01-12 0V5ZM10 15v2M7 18h6' },
     { key: 'speed', title: 'Court speed record', size: 22,
       icon: 'M3 14c3-6 11-6 14 0M10 4v3M6 6l2 2M14 6l-2 2' },
-    { key: 'splits', title: 'Draw record', size: 20,
+    { key: 'splits', title: 'Level & round', size: 20,   // founder 2026-11-09: renamed from Draw record
       icon: 'M4 15V9M8 15V5M12 15v-4M16 15V7' },
-    { key: 'styles', title: 'Matchup record', size: 30,
+    { key: 'styles', title: 'Match-up record', size: 30,   // v2 export spelling
       icon: 'M10 3v14M4 7l6-4 6 4v6l-6 4-6-4Z' },
     { key: 'market', title: 'Market edge', size: 26,
       icon: 'M3 13l4-5 3 3 4-6 3 4M3 17h14' },
@@ -2991,8 +2992,9 @@
 
   var MODAL_WIDTH = {
     // TEN-384 Q4.6 · Record per tournament goes up to 1440px (the brief's words win over the reference's 1120).
-    career: 820, tourn: 1440, season: 1180, speed: 1120,
-    styles: 820, splits: 900, market: 1080, profile: 820
+    // Profile v2 (founder 2026-11-09): the export's drawer widths (modal.maxW) — supersedes Q4.6's 1440 for tourn.
+    career: 820, tourn: 1120, season: 1180, speed: 1120,
+    styles: 900, splits: 960, market: 1080, profile: 820
   };
   var CAREER_SUBTITLE = 'Record by surface and season, and his ratings against the field';
   function modalSubtitle(key, p, ctx) {
@@ -3043,14 +3045,14 @@
       // body. Both halves are applied — the header and the body still describe
       // each other.
       // Ruling 1 (founder 2026-10-20): frozen career-splits never read as current — the header says it is paused.
-      case 'splits': return 'Record and win rate by level, format, round and opponent' + splitsPausedSuffix();
+      case 'splits': return 'Record by round, level, opponent and format ' + MIDDOT + ' tiebreaks, hold and break rate' + splitsPausedSuffix();   // v2 export
       case 'market': return 'How the market has priced him, and what backing him flat has returned';
       case 'speed': return 'Win rate by court pace band';
       // TEN-228 item 5 · the file's own BOXES subtitle, verbatim and static
       // (`Player Stat Boxes.dc.html`:2935). The previous string was a truthful
       // hedge about coverage; the coverage fact now lives in the footnote, where
       // §5.6's own note already carries it.
-      case 'styles': return 'Win rate by opposing archetype ' + MIDDOT + ' minimum 5 matches';
+      case 'styles': return 'Record and win rate by the opponent’s playing style';   // v2 export
       // §5.9. The subtitle names the SOURCE's window, not a career span — this
       // modal is the only block on the page fed by the point-by-point rollup and
       // its horizon is shorter than the ledger's.
@@ -3115,7 +3117,7 @@
       'z-index:60;display:flex;align-items:flex-start;justify-content:center;' +
       'padding:28px 20px;overflow-y:auto;">' + MODAL_SHELL_CSS +
         '<div class="pp2-card" data-pp2="card" style="width:100%;max-width:' + (MODAL_WIDTH[key] || 900) + 'px;' +
-        'background:var(--card);border:1px solid var(--edge-10);border-radius:16px;overflow:hidden;">' +
+        'background:var(--card);border:1px solid var(--edge-16);border-radius:16px;overflow:hidden;">' +   // v2: 16% ring
           '<div style="display:flex;gap:13px;padding:20px 22px;align-items:center;' +
             'border-bottom:1px solid var(--line);">' +
             '<span style="width:34px;height:34px;border-radius:10px;flex:none;display:flex;align-items:center;' +
@@ -3199,6 +3201,8 @@
   // 4 tiles, optional pills, a sticky-headed match list whose rows open the match sheet.
   // fb = { name, code, meta, tiles: [{ label, fig, figColor, sub, tail, tailColor }], pills: [{ hook, v, label, on }],
   //        cols: 'grid-template-columns value', head: [{ label, align }], rows: [{ id, cells: [html] , res }] , empty }
+  // Each box registers how its drill box is built from the clicked row's value: FB_BUILD[box](p, v, ctx).
+  var FB_BUILD = {};
   function floatBoxHtml(fb) {
     if (!fb) return '';
     var tiles = (fb.tiles || []).map(function (t) {
@@ -10108,6 +10112,284 @@
     return g !== GATE.NONE && g !== GATE.THIN;
   }
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Profile v2 (founder 2026-11-09) · Match-up record — the export's styleSheet() / selectStyle():
+  // surface pills + window (Last 52 weeks · Career, default Career); a chart card (quiet dots sized by matches, the
+  // label above, dynamic y axis, a reference line at his overall rate in the filter labelled "his average · N%",
+  // group brackets Serve-first · Baseline · All court with dashed dividers); a sortable table card; a click on a dot,
+  // code or row opens the shared drill box (Win rate · On the price · Favourite · underdog · Deciding sets).
+  // Rows are the career spine joined to playing-styles.json (styleArchetypeOf — the same join as before), so every
+  // figure reconciles with the old modal. Units (u), never % of bankroll (founder 2026-11-09). Under 5 matches: grey,
+  // rates dashed, hollow dot, no mark (founder: "I need no mark").
+  var STY_FLOOR = 5;
+  var STY_GROUP = { 'Big Server': 'serve', 'Big Server + First Strike': 'serve', 'Big Server + Complete Baseliner': 'serve',
+    'Attacking Baseliner': 'base', 'Solid Baseliner': 'base', 'Counterpuncher': 'base', 'Solid Defender': 'base',
+    'All Court Elite': 'all' };
+  var STY_GROUP_LABEL = { serve: 'Serve-first', base: 'Baseline', all: 'All court' };
+  var STY_SURFS = [['all', 'All surfaces'], ['Hard', 'Hard'], ['Clay', 'Clay'], ['Grass', 'Grass'], ['Indoors', 'Indoors']];
+  var STY_INFO1 = { what: 'His win rate against each playing archetype, as dots.', defs: [
+    ['Dot', 'One archetype. Height is his win rate against it; the label above is the figure.'],
+    ['Hollow dot', 'Fewer than 5 matches. No rate, hover for the record.'],
+    ['His average', 'The line is his overall win rate in the current filter.'],
+    ['Brackets', 'Serve-first, baseline and all-court group the archetypes.'],
+    ['Click a dot', 'Opens the archetype box with tiles and every match.']] };
+  var STY_INFO2 = { what: 'The same archetypes as a table.', defs: [
+    ['W' + ENDASH + 'L', 'Wins and losses against that archetype.'],
+    ['Win %', 'Wins divided by matches. The bar shows the same figure.'],
+    ['Backing', 'Units won or lost backing him at a flat 1 unit on the priced matches, closing price.'],
+    ['Fewer than 5', 'The record is shown and no rate. These rows sit at the foot.'],
+    ['Heads', 'Click a column head to sort by it.']] };
+  // The spine row's surface bucket: Indoors is its own (an indoor court), Hard is outdoor hard.
+  function rowSurfBucket(m) {
+    var indoor = m.court ? String(m.court).toLowerCase() === 'indoor' : m.seasonIndoor === true;
+    if (indoor) return 'Indoors';
+    var s = String(m.surface || '').toLowerCase();
+    return s === 'hard' ? 'Hard' : s === 'clay' ? 'Clay' : s === 'grass' ? 'Grass' : null;
+  }
+  function l52Cut() { var d = new Date(Date.now() - 364 * 86400000); return d.toISOString().slice(0, 10); }
+  function styScope() {
+    var win = state.styWin || 'career', surf = state.stySurf || 'all';
+    return (win === 'l52' ? 'last 52 weeks' : 'career') + (surf === 'all' ? '' : ' ' + MIDDOT + ' ' + surf.toLowerCase());
+  }
+  function styData(p) {
+    var win = state.styWin || 'career', surf = state.stySurf || 'all', cut = win === 'l52' ? l52Cut() : null;
+    var rows = styleRows(p);
+    var data = STYLE_AXIS.map(function (a, i) {
+      var r = rows.filter(function (x) { return x.axis.label === a.label; })[0];
+      var ms = (r ? r.rows : []).filter(function (m) {
+        if (cut && String(m.date || '') < cut) return false;
+        return surf === 'all' || rowSurfBucket(m) === surf;
+      });
+      var w = ms.filter(function (m) { return m.won; }).length, n = ms.length, l = n - w;
+      var priced = ms.filter(function (m) { return m.cents != null; });
+      var cents = priced.reduce(function (s, m) { return s + m.cents; }, 0);
+      return { name: a.label, code: a.abbr, group: STY_GROUP[a.label] || 'base', order: i, w: w, l: l, n: n,
+        pct: n ? 100 * w / n : null, thin: n > 0 && n < STY_FLOOR, empty: n === 0, ms: ms,
+        priced: priced.length, units: priced.length ? cents / 100 : null };
+    });
+    var TW = data.reduce(function (s, d) { return s + d.w; }, 0), TN = data.reduce(function (s, d) { return s + d.n; }, 0);
+    return { data: data, TW: TW, TN: TN, avg: TN ? 100 * TW / TN : null };
+  }
+  function stySegPills(hook, opts, cur) {
+    return opts.map(function (o) {
+      var on = cur === o[0];
+      return '<span data-pp2="' + hook + '" data-v="' + esc(o[0]) + '" style="display:inline-flex;align-items:center;cursor:pointer;' +
+        'padding:6px 13px;border-radius:8px;font-size:11.5px;font-weight:' + (on ? 700 : 600) + ';color:' + (on ? 'var(--text)' : 'var(--text-label)') + ';' +
+        'background:' + (on ? 'var(--selected)' : 'transparent') + ';border:1px solid ' + (on ? 'var(--edge-16)' : 'var(--edge-10)') + ';white-space:nowrap;">' +
+        esc(o[1]) + '</span>';
+    }).join('');
+  }
+  function winSeg(hook, cur, withL24) {
+    var opts = withL24 ? [['l52', 'Last 52 weeks'], ['l24', 'Last 24 months'], ['career', 'Career']] : [['l52', 'Last 52 weeks'], ['career', 'Career']];
+    return '<span style="display:flex;gap:3px;background:var(--inner);border:1px solid var(--edge-6);border-radius:9px;padding:2px;flex:none;">' +
+      opts.map(function (o) {
+        var on = cur === o[0];
+        return '<span data-pp2="' + hook + '" data-v="' + o[0] + '" style="cursor:pointer;white-space:nowrap;padding:5px 12px;border-radius:7px;' +
+          'font-size:11px;font-weight:' + (on ? 700 : 600) + ';color:' + (on ? 'var(--text)' : 'var(--text-label)') + ';' +
+          'background:' + (on ? 'var(--selected)' : 'transparent') + ';border:1px solid ' + (on ? 'var(--edge-16)' : 'transparent') + ';">' + o[1] + '</span>';
+      }).join('') + '</span>';
+  }
+  function styChart(D) {
+    var pts = D.data.filter(function (d) { return !d.empty; });
+    if (!pts.length) return '<div style="padding:30px 0;text-align:center;font-size:12.5px;color:var(--text-label);">No archetyped opponent in this filter</div>';
+    var vals = pts.filter(function (d) { return !d.thin; }).map(function (d) { return d.pct; });
+    if (D.avg != null) vals.push(D.avg);
+    if (!vals.length) vals = [50];
+    var LO = Math.max(0, Math.floor((Math.min.apply(null, vals) - 8) / 10) * 10);
+    var HI = Math.min(100, Math.ceil((Math.max.apply(null, vals) + 8) / 10) * 10);
+    if (HI - LO < 30) { LO = Math.max(0, LO - 10); HI = Math.min(100, HI + 10); }
+    var top = function (v) { return ((1 - (v - LO) / (HI - LO)) * 100).toFixed(1) + '%'; };
+    var maxN = Math.max.apply(null, [1].concat(pts.map(function (d) { return d.n; })));
+    var xOf = function (i) { return pts.length > 1 ? 8 + 84 * i / (pts.length - 1) : 50; };
+    var sel = state.fb && state.fb.box === 'styles' ? state.fb.v : null;
+    var ticks = []; for (var t = LO; t <= HI; t += 10) ticks.push(t);
+    var dots = '', labels = '', codes = '';
+    pts.forEach(function (d, i) {
+      var size = Math.round(14 + d.n / maxN * 20), on = sel === d.name, x = xOf(i).toFixed(1) + '%';
+      var y = top(d.thin ? (D.avg != null ? D.avg : 50) : d.pct);
+      var tip = (d.thin ? '' : d.name + ' ' + MIDDOT + ' ') + recordText(d.w, d.l) + ' ' + MIDDOT + ' ' + d.n + (d.n === 1 ? ' match' : ' matches');
+      dots += '<span data-pp2="fb-open" data-box="styles" data-v="' + esc(d.name) + '" title="' + esc(tip) + '" class="pp2-stydot" style="cursor:pointer;' +
+        'position:absolute;left:' + x + ';top:' + y + ';transform:translate(-50%,-50%);width:' + size + 'px;height:' + size + 'px;border-radius:50%;' +
+        'box-sizing:border-box;background:' + (d.thin ? 'transparent' : on ? 'var(--link)' : 'color-mix(in srgb, var(--link) 14%, transparent)') + ';' +
+        'border:1px solid ' + (d.thin ? (on ? 'var(--text-soft)' : 'var(--text-label)') : on ? 'var(--link)' : 'color-mix(in srgb, var(--link) 55%, transparent)') + ';' +
+        'box-shadow:' + (on ? (d.thin ? '0 0 0 4px var(--wash-8, color-mix(in srgb, var(--text) 8%, transparent))' : '0 0 0 4px color-mix(in srgb, var(--link) 18%, transparent)') : 'none') + ';"></span>';
+      if (!d.thin) labels += '<span style="position:absolute;left:' + x + ';top:' + y + ';transform:translate(-50%,-50%) translateY(-' + (size / 2 + 12) +
+        'px);font-family:\'IBM Plex Mono\',monospace;font-size:11px;font-weight:700;color:' + (on ? 'var(--text)' : 'var(--text-soft)') + ';white-space:nowrap;' +
+        'pointer-events:none;">' + Math.round(d.pct) + '%</span>';
+      codes += '<span data-pp2="fb-open" data-box="styles" data-v="' + esc(d.name) + '" title="' + esc(tip) + '" style="cursor:pointer;position:absolute;left:' + x +
+        ';top:8px;transform:translateX(-50%);font-family:\'IBM Plex Mono\',monospace;font-size:10px;font-weight:' + (on ? 700 : 600) + ';letter-spacing:0.06em;' +
+        'color:' + (on ? 'var(--text)' : 'var(--text-label)') + ';white-space:nowrap;">' + esc(d.code) + '</span>';
+      d._x = xOf(i);
+    });
+    var groups = ['serve', 'base', 'all'].map(function (g) {
+      var xs = pts.filter(function (d) { return d.group === g; }).map(function (d) { return d._x; });
+      if (!xs.length) return null;
+      var l = Math.min.apply(null, xs) - 5, r = Math.max.apply(null, xs) + 5;
+      return { label: STY_GROUP_LABEL[g], l: l, r: r };
+    }).filter(Boolean);
+    var divs = groups.slice(1).map(function (g, i) {
+      return '<span style="position:absolute;left:' + ((groups[i].r + g.l) / 2).toFixed(1) + '%;top:0;bottom:0;width:1px;border-left:1px dashed var(--edge-10);"></span>';
+    }).join('');
+    var brackets = groups.map(function (g) {
+      return '<span style="position:absolute;left:' + g.l.toFixed(1) + '%;width:' + (g.r - g.l).toFixed(1) + '%;bottom:0;height:16px;' +
+        'border-top:1px solid color-mix(in srgb, var(--text) 14%, transparent);display:flex;justify-content:center;align-items:flex-end;">' +
+        '<span style="font-family:var(--font-words);font-size:9.5px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;' +
+        'color:var(--text-label);white-space:nowrap;background:var(--inner);padding:0 6px;transform:translateY(-9px);">' + g.label + '</span></span>';
+    }).join('');
+    return '<div style="display:grid;grid-template-columns:36px minmax(0,1fr);gap:0 10px;">' +
+      '<div style="position:relative;height:200px;">' + ticks.map(function (t) {
+        return '<span style="position:absolute;right:0;top:' + top(t) + ';transform:translateY(-50%);font-family:\'IBM Plex Mono\',monospace;' +
+          'font-size:10px;color:var(--text-label);">' + t + '%</span>';
+      }).join('') + '</div>' +
+      '<div style="position:relative;height:200px;border-left:1px solid var(--edge-10);border-bottom:1px solid var(--edge-10);">' +
+        ticks.map(function (t) { return '<span style="position:absolute;left:0;right:0;top:' + top(t) + ';height:1px;background:var(--line);"></span>'; }).join('') +
+        (D.avg != null ? '<span style="position:absolute;left:0;right:0;top:' + top(D.avg) + ';height:1px;background:color-mix(in srgb, var(--text) 18%, transparent);"></span>' +
+          '<span style="position:absolute;right:6px;top:' + top(D.avg) + ';transform:translateY(-130%);font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;' +
+          'color:var(--text-label);white-space:nowrap;">his average ' + MIDDOT + ' ' + Math.round(D.avg) + '%</span>' : '') +
+        divs + dots + labels +
+      '</div>' +
+      '<span></span>' +
+      '<div style="position:relative;height:54px;">' + codes + brackets + '</div>' +
+      '</div>';
+  }
+  function styTable(D) {
+    var so = state.stySort || { k: 'pct', d: -1 };
+    var keyOf = function (d) { return so.k === 'name' ? d.name : so.k === 'wl' ? d.w - d.l : so.k === 'n' ? d.n : so.k === 'u' ? (d.units == null ? -Infinity : d.units) : (d.pct == null ? -Infinity : d.pct); };
+    var list = D.data.slice().sort(function (a, b) {
+      var ta = a.thin || a.empty ? 1 : 0, tb = b.thin || b.empty ? 1 : 0;
+      if (ta !== tb) return ta - tb;
+      if (ta) return b.n - a.n;
+      var ka = keyOf(a), kb = keyOf(b);
+      if (ka === kb) return b.n - a.n;
+      return (ka < kb ? -1 : 1) * so.d;
+    });
+    var GRID = 'display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr) 56px 60px 52px 64px;gap:0 12px;align-items:center;';
+    var cols = [['Archetype', 'left', 'name'], ['', 'left'], ['W' + ENDASH + 'L', 'right', 'wl'], ['Matches', 'right', 'n'],
+      ['Win %', 'right', 'pct'], ['Backing', 'right', 'u']];
+    var head = '<div style="' + GRID + '">' + cols.map(function (c) {
+      var on = c[2] && so.k === c[2];
+      return '<span' + (c[2] ? ' data-pp2="sty-sort" data-v="' + c[2] + '"' : '') + ' style="display:flex;align-items:baseline;gap:5px;' +
+        'justify-content:' + (c[1] === 'right' ? 'flex-end' : 'flex-start') + ';cursor:' + (c[2] ? 'pointer' : 'default') + ';' +
+        'font-family:var(--font-words);font-size:10.5px;font-weight:700;letter-spacing:0.10em;text-transform:uppercase;' +
+        'color:' + (on ? 'var(--text)' : 'var(--text-label)') + ';padding-bottom:8px;border-bottom:1px solid var(--edge-10);white-space:nowrap;">' +
+        '<span style="pointer-events:none;">' + esc(c[0]) + '</span>' +
+        (c[2] ? '<span style="pointer-events:none;font-family:\'IBM Plex Mono\',monospace;font-size:10px;letter-spacing:0;color:' +
+          (on ? 'var(--text)' : 'color-mix(in srgb, var(--text-label) 45%, transparent)') + ';">' + (on ? (so.d < 0 ? '↓' : '↑') : '⇅') + '</span>' : '') +
+        '</span>';
+    }).join('') + '</div>';
+    var sel = state.fb && state.fb.box === 'styles' ? state.fb.v : null;
+    var MONO = 'font-family:\'IBM Plex Mono\',monospace;font-variant-numeric:tabular-nums;';
+    var cell = 'padding:11px 0;border-top:1px solid var(--line);';
+    var rows = list.map(function (d) {
+      var dim = d.thin || d.empty, on = sel === d.name;
+      return '<div ' + (d.empty ? '' : 'data-pp2="fb-open" data-box="styles" data-v="' + esc(d.name) + '" class="pp2-styrow" ') +
+        'style="' + GRID + 'padding:0 10px;margin:0 -10px;border-radius:8px;cursor:' + (d.empty ? 'default' : 'pointer') + ';' +
+        'background:' + (on ? 'var(--selected)' : 'transparent') + ';">' +
+        '<span style="display:inline-flex;align-items:baseline;gap:8px;min-width:0;' + cell + '"><span style="font-size:13px;font-weight:700;' +
+          'color:' + (dim ? 'var(--text-label)' : 'var(--text)') + ';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + esc(d.name) + '</span>' +
+          '<span style="' + MONO + 'font-size:10px;color:var(--text-label);flex:none;">' + esc(d.code) + '</span></span>' +
+        '<span style="' + cell + 'display:flex;align-items:center;"><span style="display:block;width:100%;height:6px;border-radius:3px;background:var(--track);overflow:hidden;">' +
+          '<span style="display:block;width:' + (dim ? 0 : d.pct).toFixed(1) + '%;height:100%;background:' + (on ? 'var(--link)' : 'var(--bar)') + ';"></span></span></span>' +
+        '<span style="' + MONO + cell + 'font-size:12px;color:var(--text-label);text-align:right;white-space:nowrap;">' + (d.n ? recordText(d.w, d.l) : DASH) + '</span>' +
+        '<span style="' + MONO + cell + 'font-size:12px;color:var(--text-label);text-align:right;">' + (d.n || DASH) + '</span>' +
+        '<span style="' + MONO + cell + 'font-size:13px;font-weight:700;text-align:right;color:' + (dim ? 'var(--text-label)' : 'var(--text)') + ';">' +
+          (dim ? DASH : Math.round(d.pct) + '%') + '</span>' +
+        '<span style="' + MONO + cell + 'font-size:12px;font-weight:600;text-align:right;color:' +
+          (STYLE_PEND || dim || d.units == null ? 'var(--text-label)' : signColour(d.units)) + ';">' +
+          (STYLE_PEND ? '&nbsp;' : dim || d.units == null ? DASH : signed(d.units, 2, 'u')) + '</span>' +
+        '</div>';
+    }).join('');
+    return head + rows;
+  }
+  function signColour(v) { var r = Math.round(v * 100) / 100; return r > 0 ? 'var(--pos)' : r < 0 ? 'var(--neg)' : 'var(--text-label)'; }
+  function renderStylesModalV2(p) {
+    var D = styData(p);
+    var scope = styScope();
+    var TU = D.data.reduce(function (s, d) { return s + (d.units != null && !d.thin ? d.units : 0); }, 0);
+    return '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px;">' +
+        '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">' + stySegPills('sty-surf', STY_SURFS, state.stySurf || 'all') + '</div>' +
+        winSeg('sty-win', state.styWin || 'career', false) +
+      '</div>' +
+      '<div style="position:relative;background:var(--inner);border:1px solid var(--edge-6);border-radius:12px;padding:14px 16px 12px;margin-bottom:12px;">' +
+        infoCorner('sty1', STY_INFO1) +
+        '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:12px;padding-right:28px;">' +
+          recCaps('Win rate by archetype') +
+          '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:var(--text-label);white-space:nowrap;">dot size = matches ' + MIDDOT + ' ' + esc(scope) + '</span>' +
+        '</div>' + styChart(D) +
+      '</div>' +
+      '<div style="position:relative;background:var(--inner);border:1px solid var(--edge-6);border-radius:12px;padding:14px 16px 4px;margin-bottom:12px;">' +
+        infoCorner('sty2', STY_INFO2) +
+        '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:12px;flex-wrap:wrap;padding-right:28px;">' +
+          recCaps('Record by archetype ' + MIDDOT + ' ' + esc(scope)) +
+          '<span style="display:inline-flex;align-items:baseline;gap:8px;font-family:\'IBM Plex Mono\',monospace;font-size:12px;color:var(--text-label);white-space:nowrap;">' +
+            recordText(D.TW, D.TN - D.TW) + ' ' + MIDDOT + ' ' + D.TN + ' matches' +
+            (STYLE_PEND ? '' : ' ' + MIDDOT + ' <span style="color:' + signColour(TU) + ';font-weight:700;">' + signed(TU, 2, 'u') + '</span>') +
+          '</span>' +
+        '</div>' + styTable(D) +
+      '</div>';
+  }
+  // The archetype drill box (the export's selBox): tiles + every match, latest first; rows open the match sheet.
+  var FB_LIST_COLS = '12px 64px minmax(0,1fr) minmax(0,0.8fr) 36px minmax(128px,auto) 46px 46px 54px';
+  function fbMatchHead() {
+    return [{ label: '' }, { label: 'Date' }, { label: 'Opponent' }, { label: 'Event' }, { label: 'Rd' }, { label: 'Score' },
+      { label: 'Price', align: 'right' }, { label: 'Opp', align: 'right' }, { label: 'P&L', align: 'right' }];
+  }
+  function fbDate(iso) { var s = String(iso || ''); return s.length >= 10 ? s.slice(8, 10) + '.' + s.slice(5, 7) + '.' + s.slice(2, 4) : DASH; }
+  function fbMatchRow(m) {
+    var M = 'font-family:\'IBM Plex Mono\',monospace;';
+    var pl = m.cents != null ? m.cents / 100 : null;
+    return { id: m.wo ? null : (m.sheetId || (m.date + '|' + m.opp)), cells: [
+      fbResCell(m),
+      { html: fbDate(m.date), style: M + 'font-size:11px;color:var(--text-label);white-space:nowrap;' },
+      { html: esc(initialSurname(m.opp || '') || DASH), style: 'font-size:12.5px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;' },
+      { html: esc(tournDisplayName(m.event, null) || DASH), style: 'font-size:12px;color:var(--text-label);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;' },
+      { html: esc(m.round || DASH), style: M + 'font-size:10.5px;color:var(--text-label);' },
+      { html: esc(String(m.score || DASH).replace(/,\s*/g, ' ')), style: M + 'font-size:11px;color:var(--text-label);white-space:nowrap;' },
+      { html: m.price != null ? Number(m.price).toFixed(2) : DASH, style: M + 'font-size:11px;color:var(--text-soft);text-align:right;' },
+      { html: m.oppPrice != null ? Number(m.oppPrice).toFixed(2) : DASH, style: M + 'font-size:11px;color:var(--text-label);text-align:right;' },
+      { html: pl == null ? DASH : signed(pl, 2, 'u'), style: M + 'font-size:11.5px;font-weight:700;text-align:right;color:' + (pl == null ? 'var(--text-label)' : signColour(pl)) + ';' }
+    ] };
+  }
+  function setsOfScore(m) {
+    var g = m.setGames;
+    if (Array.isArray(g) && g.length) return g.length;
+    var t = String(m.score || '').split(/,\s*|\s+/).filter(function (x) { return /\d+-\d+/.test(x); });
+    return t.length || null;
+  }
+  FB_BUILD.styles = function (p, name) {
+    var D = styData(p);
+    var d = D.data.filter(function (x) { return x.name === name; })[0];
+    if (!d || d.empty) return null;
+    var ms = d.ms.slice().sort(function (a, b) { return String(b.date).localeCompare(String(a.date)); });
+    var scope = styScope();
+    var pricedMs = ms.filter(function (m) { return m.price != null && m.oppPrice != null; });
+    var fav = pricedMs.filter(function (m) { return +m.price < +m.oppPrice; }), dog = pricedMs.filter(function (m) { return +m.price > +m.oppPrice; });
+    var wl = function (a) { var w = a.filter(function (m) { return m.won; }).length; return recordText(w, a.length - w); };
+    // best of 5 = a Grand Slam main-draw match or any match that went past 3 sets; decider = the last possible set
+    var bo5 = function (m) { var k = setsOfScore(m); return (k != null && k >= 4) || /grand slam/i.test(String(m.level || '')); };
+    var dec = ms.filter(function (m) { return !m.retired && setsOfScore(m) === (bo5(m) ? 5 : 3); });
+    var str = ms.filter(function (m) { return !m.retired && setsOfScore(m) === (bo5(m) ? 3 : 2); });
+    var oW = D.TW - d.w, oN = D.TN - d.n, oPct = oN ? 100 * oW / oN : null;
+    var gap = d.pct != null && oPct != null ? d.pct - oPct : null;
+    var tiles = d.thin ? [
+      { label: 'Win rate', fig: recordText(d.w, d.l), sub: d.n + ' matches', tail: 'fewer than 5 matches: no rate' },
+      { label: 'On the price', fig: d.priced + ' priced', sub: 'no return under 5 matches' },
+      { label: 'Favourite ' + MIDDOT + ' underdog', fig: wl(fav) + ' ' + MIDDOT + ' ' + wl(dog), sub: 'shorter ' + MIDDOT + ' longer closing price' },
+      { label: 'Deciding sets', fig: dec.length ? wl(dec) : DASH, sub: 'straight sets ' + (str.length ? wl(str) : DASH) }
+    ] : [
+      { label: 'Win rate', fig: Math.round(d.pct) + '%', sub: recordText(d.w, d.l) + ' ' + MIDDOT + ' ' + d.n + ' matches',
+        tail: gap == null ? '' : signed(gap, 1, 'pp') + ' vs other archetypes', tailColor: gap == null ? null : signColour(gap) },
+      { label: 'On the price', fig: d.units == null ? DASH : signed(d.units, 2, 'u'), figColor: d.units == null ? 'var(--text-label)' : signColour(d.units),
+        sub: d.priced ? 'ROI ' + signed(100 * d.units / d.priced, 1, '%') + ' ' + MIDDOT + ' ' + d.priced + ' priced' : 'no price on record' },
+      { label: 'Favourite ' + MIDDOT + ' underdog', fig: wl(fav) + ' ' + MIDDOT + ' ' + wl(dog), sub: 'shorter ' + MIDDOT + ' longer closing price',
+        tail: (pricedMs.length < ms.length ? (ms.length - pricedMs.length) + ' unpriced' : '') },
+      { label: 'Deciding sets', fig: dec.length ? wl(dec) : DASH, sub: 'straight sets ' + (str.length ? wl(str) : DASH), tail: 'went the distance' }
+    ];
+    return { name: d.name, code: d.code,
+      meta: recordText(d.w, d.l) + (d.thin ? '' : ' ' + MIDDOT + ' ' + Math.round(d.pct) + '%') + ' ' + MIDDOT + ' ' + d.n + ' matches ' + MIDDOT + ' ' + esc(scope),
+      tiles: tiles, cols: FB_LIST_COLS, head: fbMatchHead(), rows: ms.map(fbMatchRow) };
+  };
+
   function renderStylesModal(p) {
     var rows = styleRows(p);
     // PENDING BEFORE EMPTY — the same split §5.5 Court speed and §6.4 Streaks
@@ -10134,7 +10416,7 @@
     // fx4 item 4 · Backing reads the shard's closing prices: while it loads the units claim nothing.
     STYLE_PEND = shardPending(p);
     try {
-      return ANA_STYLE + renderStyleBubbles(rows) + renderStyleList(rows) + renderStyleNote(rows);
+      return ANA_STYLE + renderStylesModalV2(p);   // profile v2 (2026-11-09); the TEN-384 renderers stay for the box tile's helpers
     } finally { STYLE_PEND = false; }
   }
 
@@ -11567,8 +11849,7 @@
     }
     return modalShell(k, p, ctx, body) + fbHtml;
   }
-  // Profile v2 · each box registers how its drill box is built from the clicked row's value: FB_BUILD[box](p, v, ctx).
-  var FB_BUILD = {};
+
 
   // ═══════════════════════════════════════════════════════════════════════════
   // §5.9 PLAYING PROFILE — hold/break heatmap
@@ -12427,7 +12708,8 @@
     // Profile v2 (2026-11-09): the open (?) popover id, the open Filters menu id, the open drill box, the
     // Compare-with popover and its query. Each is one value, so only one of each can be open.
     info: null, fmOpen: null, fb: null, cmpOpen: false, cmpQ: '',
-    tourLevel: 'all', tourSurf: 'all', tourSort: { k: 'wl', d: -1 }
+    tourLevel: 'all', tourSurf: 'all', tourSort: { k: 'wl', d: -1 },
+    stySurf: 'all', styWin: 'career', stySort: { k: 'pct', d: -1 }
   };
 
   function buildCtx(p) {
@@ -12693,6 +12975,9 @@
       if (typeof window.pp2OpenTournament === 'function') window.pp2OpenTournament(v);
       return;
     }
+    else if (kind === 'sty-surf') { state.stySurf = v; state.fb = null; }
+    else if (kind === 'sty-win') { state.styWin = v; state.fb = null; }
+    else if (kind === 'sty-sort') { var sc = state.stySort || { k: 'pct', d: -1 }; state.stySort = sc.k === v ? { k: v, d: -sc.d } : { k: v, d: v === 'name' ? 1 : -1 }; }
     else if (kind === 'tourn-row') { state.tournOpen = toggleVal(state.tournOpen, el.getAttribute('data-t')); tournNeedJoin(); }
     else if (kind === 'cal-tab') { state.calTab = v; state.calCell = null; }
     else if (kind === 'cal26-month') state.cal26Month = toggleVal(state.cal26Month, v);

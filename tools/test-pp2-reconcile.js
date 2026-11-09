@@ -816,7 +816,7 @@ check('the eight boxes are the v7 set, in the v7 order', () => {
     ['career', 'season', 'tourn', 'speed', 'splits', 'styles', 'market', 'profile']);
   assert.deepStrictEqual(I.BOXES.map(b => b.title),
     ['Career record', 'Calendar record', 'Record per tournament', 'Court speed record',
-     'Draw record', 'Matchup record', 'Market edge', 'Live trading']);
+     'Level & round', 'Match-up record', 'Market edge', 'Live trading']);   // v2 (founder 2026-11-09)
 });
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -3420,18 +3420,18 @@ mustFail('the chrome check would catch the old card-row list coming back', () =>
     'X: item 21 · ledger tracks missing');
 });
 
-check('item 5 · the shell says "Matchup record" with the file\'s subtitle', () => {
+check('item 5 · the shell says "Match-up record" with the v2 file\'s subtitle', () => {
   // Deliberately NOT gated on the career store: the subtitle is a constant and
   // the title now comes from the box set, so this stays green with no spine.
   assert.strictEqual(I.modalSubtitle('styles', SAMPLE[0], {}),
-    'Win rate by opposing archetype · minimum 5 matches');
+    'Record and win rate by the opponent’s playing style');
   // v7 moved the title onto the box object and the MODAL_TITLE override map is
   // gone. The assertion is the same fact read from its new single source — and
   // this is now stronger, because it proves the TILE says it too.
   const styles = I.BOXES.filter(b => b.key === 'styles')[0];
-  assert.strictEqual(styles.title, 'Matchup record');
-  assert.strictEqual(I.MODAL_WIDTH.styles, 820, 'item 6 · the modal is not 820px');
-  console.log('        title, subtitle and 820px width all as specified');
+  assert.strictEqual(styles.title, 'Match-up record');
+  assert.strictEqual(I.MODAL_WIDTH.styles, 900, 'v2 · the modal is not the export\'s 900px');
+  console.log('        title, subtitle and 900px width all as specified');
 });
 mustFail('the shell check would catch the old subtitle', () => {
   assert.strictEqual('Win rate against each playing style Zverev\'s record covers',
