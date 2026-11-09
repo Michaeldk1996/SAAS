@@ -14169,8 +14169,16 @@
     };
     return '<div style="display:grid;' + SIT_TRACKS + 'align-items:flex-end;' +
       'padding:0 4px 8px;border-bottom:1px solid var(--line);margin-top:4px;">' +
-      '<div data-sit="head"' + (note ? ' title="' + esc(note) + '"' : '') + ' style="' + SIT_EYEBROW + '">' +
-        'Situational ' + MIDDOT + ' set-by-set data</div>' +
+      // profile v2: the export's inline (?) prof1 after the caps label; the coverage note rides in it
+      '<div data-sit="head"' + (note ? ' title="' + esc(note) + '"' : '') + ' style="' + SIT_EYEBROW + 'display:inline-flex;align-items:center;gap:8px;position:relative;">' +
+        '<span>Situational ' + MIDDOT + ' set-by-set data</span>' +
+        '<span style="position:relative;display:inline-flex;z-index:3;text-transform:none;letter-spacing:0;">' +
+          infoIcon('prof1', { width: 360, what: 'How his matches go from a given situation.', notes: note ? [note] : [], defs: [
+            ['Situation', 'A match state, such as after winning the first set or from a set down.'],
+            ['Record', 'Wins and losses from that situation.'],
+            ['Rate', 'Wins divided by matches from that situation.'],
+            ['Tour', 'The same rate across all rated players.'],
+            ['Data', 'Only matches with set-by-set data count here, not the full career.']] }) + '</span></div>' +
       h('Record') + h('Rate') + h('Tour') + h('Vs tour') + '</div>';
   }
 

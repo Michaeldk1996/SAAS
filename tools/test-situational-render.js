@@ -247,8 +247,10 @@ check('the head row renders ONCE, not once per group', () => {
 check('the table is named in its head row: caps "Situational · set-by-set data"', () => {
   const I = load(ROSTER, PBP_STORE);
   const html = I.renderSituational(SUBJECT);
-  assert.ok(/<div data-sit="head"[^>]*style="font-family:var\(--font-words\);font-size:10\.5px;font-weight:700;letter-spacing:0\.10em;text-transform:uppercase;color:var\(--text-label\);">Situational · set-by-set data<\/div>/.test(html),
+  // profile v2 (2026-11-09): the export's inline (?) prof1 follows the caps label in the same cell
+  assert.ok(/<div data-sit="head"[^>]*style="font-family:var\(--font-words\);font-size:10\.5px;font-weight:700;letter-spacing:0\.10em;text-transform:uppercase;color:var\(--text-label\);[^"]*"><span>Situational · set-by-set data<\/span>/.test(html),
     'the head row\'s first cell is not the caps "Situational · set-by-set data"');
+  assert.ok(/data-pp2="info" data-v="prof1"/.test(html), 'the (?) prof1 is not in the head row');
   assert.ok(!/font-size:20px;font-weight:800;">Situational</.test(html), 'the old 20px/800 title is still rendering');
 });
 
