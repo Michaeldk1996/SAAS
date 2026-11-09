@@ -314,12 +314,13 @@
     '.pp2-ulink:hover{text-decoration-color:var(--text)!important;}' +
     '.pp2-fbrow:hover>*{background:var(--wash-4);box-shadow:-6px 0 0 var(--wash-4),6px 0 0 var(--wash-4);}' +
     '.pp2-clearall:hover{color:var(--text)!important;}' +
+    '.pp2-tlink:hover{text-decoration-color:color-mix(in srgb, var(--text) 45%, transparent)!important;}' +
     // §5.3 item 7 — the file gives the tournament row a hover fill
     // (`style-hover="background:var(--inner)"`, Player Stat Boxes
     // .dc.html:489). An inline style cannot express :hover, so it lands here,
     // scoped to the one class that carries it. The selected row sets its own
     // inline background, which outranks this.
-    '.pp2-trow:hover{background:var(--tile-hover);}' +
+    '.pp2-trow:hover{background:color-mix(in srgb, var(--text) 6%, transparent)!important;}' +   // v2: hover 6% white
     // A1/A3 · the box grid's responsive steps and the box hover border. Both are
     // states an inline style cannot express, so they land here with the rest.
     // The grid had NO media queries at all before this — the four-column track
@@ -5579,7 +5580,38 @@
 
   // The per-tournament view every column and tile reads, so the list row and its
   // open detail cannot disagree.
-  function tournViews(p) {
+  // Profile v2 (founder 2026-11-09): Davis Cup is ONE event. The history store files every tie under its own name
+  // ("Davis Cup WG R1: AUS vs GER"); the rows fold into one "Davis Cup" row — records, matches, priced n and units
+  // summed, editions newest first (each tie keeps its own edition group).
+  function tournFoldDavis(views) {
+    var dc = views.filter(function (t) { return /^Davis Cup\b/i.test(t.name); });
+    if (dc.length < 2 && !(dc.length === 1 && dc[0].name !== 'Davis Cup')) return views;
+    var sum = function (k) { return dc.reduce(function (a, t) { return a + (t[k] || 0); }, 0); };
+    var priced = dc.filter(function (t) { return t.pinPl != null; });
+    var pending = dc.some(function (t) { return t.backingPending; });
+    var units = priced.length ? priced.reduce(function (a, t) { return a + t.pinPl; }, 0) : null;
+    var eds = [];
+    dc.forEach(function (t) { (t.editions || []).forEach(function (e) { eds.push(e); }); });
+    eds.sort(function (a, b) { return String(b.year).localeCompare(String(a.year)); });
+    var surfVotes = {};
+    dc.forEach(function (t) { if (t.surface) surfVotes[t.surface] = (surfVotes[t.surface] || 0) + t.n; });
+    var surf = Object.keys(surfVotes).sort(function (a, b) { return surfVotes[b] - surfVotes[a]; })[0] || null;
+    var merged = Object.assign({}, dc[0], {
+      name: 'Davis Cup', display: 'Davis Cup', level: null, surface: surf,
+      won: sum('won'), lost: sum('lost'), n: sum('n'), storedWon: sum('storedWon'), storedLost: sum('storedLost'),
+      reconciles: dc.every(function (t) { return t.reconciles; }),
+      best: null, titles: sum('titles'),
+      lastYear: eds.length ? eds[0].year : null, editions: eds,
+      pinPl: pending ? null : units, pinN: priced.reduce(function (a, t) { return a + (t.pinN || 0); }, 0),
+      pinTxt: pending || units == null ? null : signed(units, 1, 'u'), backingPending: pending,
+      daviesFolded: dc.map(function (t) { return t.name; })
+    });
+    var out = views.filter(function (t) { return !/^Davis Cup\b/i.test(t.name); });
+    out.push(merged);
+    return out;
+  }
+  function tournViews(p) { return tournFoldDavis(tournViewsRaw(p)); }
+  function tournViewsRaw(p) {
     var j = tournJoin(p);
     return tournHistOf(p).map(function (t) {
       var eds = tournEditionRows(p, t);
@@ -5731,96 +5763,138 @@
   // §5.3 Record per tournament — rebuilt to `Player Stat Boxes.dc.html`:475-541
   // (markup) and :2323-2430 (the row/tile model). Every length, colour and grid
   // track below is the file's own inline style.
+  // Profile v2 (founder 2026-11-09) · Record per tournament, the export's `tournaments()`: caps head + (?) ·
+  // level pills All · ATP · Challenger · ITF · surface pills · search; sortable heads Tournament / W–L / Win % /
+  // Backing (default W–L, most matches first; a second click flips; the active head white with ↓ / ↑, the
+  // others a faint ⇅); every row's 6px --bar on the 6% track, no 50% tick, no small-sample mark; the event
+  // name opens the Tournaments page. Backing stays in units (founder 2026-11-09: "Always show units").
+  var TOURN_LEVELS = [['all', 'All'], ['ATP', 'ATP'], ['Challenger', 'Challenger'], ['ITF', 'ITF']];
+  var TOURN_SURFS = [['all', 'All surfaces'], ['Hard', 'Hard'], ['Clay', 'Clay'], ['Grass', 'Grass'], ['Indoors', 'Indoors']];
+  var TOURN_INFO = {
+    what: 'His record at each tournament he has played, best record first.',
+    defs: [['W' + ENDASH + 'L', 'Main-draw wins and losses at that event across every edition.'],
+      ['Win %', 'Wins divided by matches at that event.'],
+      ['Backing', 'Units won or lost backing him at a flat 1 unit on every priced match there, closing price. A dash means no price on record.'],
+      ['Pills', 'Level and surface keep only the events that match. Search finds an event by name.'],
+      ['Tournament name', 'Opens the tournament page.']]
+  };
+  function tournLevelGroup(t) {
+    var lv = String(t.level || ''), nm = String(t.name || '');
+    if (/challenger/i.test(lv) || /\bCH\b|challenger/i.test(nm)) return 'Challenger';
+    if (/\bITF\b/i.test(lv) || /^M(15|25)\b|\bITF\b/i.test(nm)) return 'ITF';
+    return 'ATP';
+  }
+  function tournIsIndoor(t) {
+    var i = 0, o = 0;
+    (t.editions || []).forEach(function (e) { (e.matches || []).forEach(function (m) {
+      var c = String(m.court || m.indoorOutdoor || '').toLowerCase();
+      if (m.indoor === true || c === 'indoor') i++; else if (m.indoor === false || c === 'outdoor') o++;
+    }); });
+    return i > o;
+  }
+  function tournSortKey() { return state.tourSort || { k: 'wl', d: -1 }; }
+  function tournSorted(list) {
+    var so = tournSortKey();
+    var num = function (t) { return { n: t.n || 0, pct: t.n ? t.won / t.n : -1, roi: t.pinPl == null ? -Infinity : t.pinPl }; };
+    return list.slice().sort(function (a, b) {
+      if (so.k === 'name') return a.display.localeCompare(b.display) * so.d;
+      var A = num(a), B = num(b);
+      var v = so.k === 'wl' ? A.n - B.n : so.k === 'pct' ? A.pct - B.pct : A.roi - B.roi;
+      return (v || B.n - A.n || a.display.localeCompare(b.display)) * (v ? so.d : 1);
+    });
+  }
+  function tournPills(hook, opts, cur) {
+    return '<span style="display:flex;gap:3px;background:var(--inner);border:1px solid var(--edge-6);border-radius:9px;padding:2px;flex:none;">' +
+      opts.map(function (o) {
+        var on = cur === o[0];
+        return '<span data-pp2="' + hook + '" data-v="' + esc(o[0]) + '" style="cursor:pointer;white-space:nowrap;padding:5px 12px;' +
+          'border-radius:7px;font-size:11px;font-weight:' + (on ? 700 : 600) + ';color:' + (on ? 'var(--text)' : 'var(--text-label)') + ';' +
+          'background:' + (on ? 'var(--selected)' : 'transparent') + ';border:1px solid ' + (on ? 'var(--edge-16)' : 'transparent') + ';">' +
+          esc(o[1]) + '</span>';
+      }).join('') + '</span>';
+  }
   function renderTournModal(p) {
     var views = tournViews(p);
     var q = String(state.tournQuery || '').toLowerCase();
-    var shown = q
-      ? views.filter(function (t) {
-          return t.display.toLowerCase().indexOf(q) >= 0 || t.name.toLowerCase().indexOf(q) >= 0 ||
-            tournLevelMeta(t.level).toLowerCase().indexOf(q) >= 0;   // r3: "masters" still finds the Masters rows
-        })
-      : views;
+    var lvl = state.tourLevel || 'all', sf = state.tourSurf || 'all';
+    var shown = tournSorted(views.filter(function (t) {
+      if (q && !(t.display.toLowerCase().indexOf(q) >= 0 || t.name.toLowerCase().indexOf(q) >= 0 ||
+        tournLevelMeta(t.level).toLowerCase().indexOf(q) >= 0)) return false;
+      if (lvl !== 'all' && tournLevelGroup(t) !== lvl) return false;
+      if (sf === 'Indoors') return tournIsIndoor(t);
+      if (sf !== 'all') return t.surface === sf && !tournIsIndoor(t);
+      return true;
+    }));
 
-    // TEN-384 T2–T5 · the reference's table: Tournament · Surface · Best · W–L · Wins · losses (bar) ·
-    // Win % · Backing, gap 0 12, 12px right gutter for the scrollbar; caps heads over a --line rule.
-    var GRID = 'display:grid;grid-template-columns:minmax(0,1.2fr) 60px 72px 56px minmax(0,1fr) 52px 64px;' +
+    var GRID = 'display:grid;grid-template-columns:minmax(0,1.3fr) 64px 76px 56px minmax(120px,1fr) 56px 64px;' +
       'gap:0 12px;align-items:center;';
     var MONO = 'font-family:\'IBM Plex Mono\',monospace;font-variant-numeric:tabular-nums;';
-    var HEAD = [['Tournament', 'left'], ['Surface', 'left'], ['Best', 'left'],
-                ['W' + ENDASH + 'L', 'right'], ['Wins ' + MIDDOT + ' losses', 'left'], ['Win %', 'right'],
-                ['Backing', 'right']];
-    var head = '<div style="' + GRID + 'padding:0 12px 0 0;">' +
+    var so = tournSortKey();
+    var HEAD = [['Tournament', 'left', 'name', 'Sort A to Z'], ['Surface', 'left'], ['Best', 'left'],
+      ['W' + ENDASH + 'L', 'right', 'wl', 'Sort by matches played'], ['Wins ' + MIDDOT + ' losses', 'center'],
+      ['Win %', 'right', 'pct', 'Sort by win rate'], ['Backing', 'right', 'roi', 'Sort by flat-stake return']];
+    var head = '<div style="' + GRID + 'padding:0 10px;scrollbar-gutter:stable;overflow:hidden;">' +
       HEAD.map(function (h) {
-        return '<span style="font-family:var(--font-words);font-size:10.5px;font-weight:700;letter-spacing:0.10em;' +
-          'text-transform:uppercase;color:var(--text-label);text-align:' + h[1] + ';padding:0 0 8px;' +
-          'border-bottom:1px solid var(--line);white-space:nowrap;"' +
-          // TEN-325: Backing counts retirements, settled on the ATP result.
-          (h[0] === 'Backing' && window.MarketEdgeCore ? ' data-ret-note="profile-backing" title="' + esc(window.MarketEdgeCore.RET_SETTLE_NOTE) + '"' : '') +
-          '>' + esc(h[0]) + '</span>';
+        var on = h[2] && so.k === h[2];
+        var arrow = on ? (so.d < 0 ? '↓' : '↑') : (h[2] ? '⇅' : '');
+        return '<span' + (h[2] ? ' data-pp2="tourn-sort" data-v="' + h[2] + '"' : '') + ' title="' + esc(h[3] || '') + '" style="display:flex;' +
+          'align-items:baseline;gap:5px;justify-content:' + (h[1] === 'right' ? 'flex-end' : h[1] === 'center' ? 'center' : 'flex-start') + ';' +
+          'cursor:' + (h[2] ? 'pointer' : 'default') + ';font-family:var(--font-words);font-size:10.5px;font-weight:700;letter-spacing:0.10em;' +
+          'text-transform:uppercase;color:' + (on ? 'var(--text)' : 'var(--text-label)') + ';padding-bottom:8px;' +
+          'border-bottom:1px solid var(--edge-10);white-space:nowrap;"' +
+          (h[0] === 'Backing' && window.MarketEdgeCore ? ' data-ret-note="profile-backing"' : '') + '>' +
+          '<span style="pointer-events:none;">' + esc(h[0]) + '</span>' +
+          (arrow ? '<span style="pointer-events:none;font-family:\'IBM Plex Mono\',monospace;font-size:10px;letter-spacing:0;color:' +
+            (on ? 'var(--text)' : 'color-mix(in srgb, var(--text-label) 45%, transparent)') + ';">' + arrow + '</span>' : '') +
+          '</span>';
       }).join('') + '</div>';
 
     var rows = shown.map(function (t) {
       var open = state.tournOpen === t.name;
       var pin = t.pinN ? t.pinPl : null;
       var bp = tournBestParts(t.best);
-      var fill = barFillColour(t.n);
       var pct = t.n ? 100 * t.won / t.n : null;
-      var small = gateFor(t.n) === GATE.SMALL;
-      return '<div style="flex:none;">' +
+      var regKey = typeof window.pp2TournamentKey === 'function' ? window.pp2TournamentKey(t.name, t.display) : null;
+      var nameHtml = '<span ' + (regKey ? 'data-pp2="tourn-page" data-v="' + esc(regKey) + '" class="pp2-tlink" title="Open ' +
+          esc(t.display) + ' ' + RARROW + ' Tournaments" ' : '') +
+        'style="font-size:13.5px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;' +
+        (regKey ? 'cursor:pointer;text-decoration:underline;text-decoration-color:transparent;text-underline-offset:3px;' : '') + '">' +
+        esc(t.display) + '</span>';
+      return '<div style="flex:none;display:flex;flex-direction:column;">' +
         '<div class="pp2-trow" data-pp2="tourn-row" data-t="' + esc(t.name) + '" style="' + GRID +
-          (small ? 'align-items:start;' : '') +
-          'padding:11px 0;cursor:pointer;border-top:1px solid var(--line);' +
-          (open ? 'background:var(--selected);box-shadow:-10px 0 0 0 var(--selected),10px 0 0 0 var(--selected);' : '') + '">' +
-          // TEN-384 fx3 (founder D11) · ONE small-sample mark, "small sample · n=X", UNDER the win rate (fx2
-          // printed it after the event name). The row's cells sit on its first line; the mark takes a second
-          // line under the rate. No asterisk anywhere, no footnote line.
-          '<span style="display:flex;align-items:baseline;gap:8px;min-width:0;">' +
-          '<span style="font-size:13.5px;font-weight:700;white-space:nowrap;overflow:hidden;' +
-            'text-overflow:ellipsis;min-width:0;">' + esc(t.display) + '</span>' +
-          // TEN-402 r3 fix 2: the level is the row's meta, never part of the event name
-          (tournLevelMeta(t.level) ? '<span class="pp2-tlevel" style="flex:none;font-size:11.5px;font-weight:500;' +
-            'color:var(--text-label);white-space:nowrap;">' + esc(tournLevelMeta(t.level)) + '</span>' : '') + '</span>' +
-          '<span style="font-size:12px;color:var(--text-label);white-space:nowrap;">' +
-            (t.surface ? esc(t.surface) : DASH) + '</span>' +
-          '<span style="display:flex;align-items:baseline;gap:6px;white-space:nowrap;overflow:hidden;">' +
+          'padding:11px 10px;border-radius:8px;cursor:pointer;border-top:1px solid var(--line);' +
+          'background:' + (open ? 'var(--selected)' : 'transparent') + ';">' +
+          '<span style="display:flex;align-items:baseline;gap:8px;min-width:0;">' + nameHtml +
+          (tournLevelMeta(t.level) ? '<span class="pp2-tlevel" style="flex:none;font-size:12px;color:var(--text-label);white-space:nowrap;">' +
+            esc(tournLevelMeta(t.level)) + '</span>' : '') + '</span>' +
+          '<span style="font-size:12px;color:var(--text-label);white-space:nowrap;">' + (t.surface ? esc(t.surface) : DASH) + '</span>' +
+          '<span style="display:inline-flex;align-items:baseline;gap:6px;white-space:nowrap;overflow:hidden;">' +
             (bp ? '<span title="' + esc(bp.label) + '" style="' + MONO + 'font-size:12px;font-weight:700;color:var(--text);">' + esc(bp.code) + '</span>' +
               (bp.year ? '<span style="' + MONO + 'font-size:11px;color:var(--text-label);">' + esc(bp.year) + '</span>' : '')
               : '<span style="color:' + DASH_COLOUR + ';">' + DASH + '</span>') + '</span>' +
-          '<span style="' + MONO + 'font-size:12px;color:var(--text-label);text-align:right;white-space:nowrap;">' +
-            recordText(t.won, t.lost) + '</span>' +
-          // The bar is gated like every win-rate bar (barFillColour: --bar from 10, --text-label 5–9, none
-          // under 5); the 1px --bar-2 tick marks 50%.
-          '<span style="position:relative;display:flex;height:8px;border-radius:4px;overflow:hidden;' +
-            (small ? 'margin-top:5px;' : '') +
-            'background:color-mix(in srgb, var(--text) 10%, transparent);">' +
-            (fill && pct != null ? '<span style="width:' + pct.toFixed(1) + '%;background:' + fill + ';"></span>' : '') +
-            '<span style="position:absolute;top:0;bottom:0;left:50%;width:1px;background:var(--bar-2);"></span></span>' +
-          (function () {
-            var r = '<span style="' + MONO + 'font-size:13.5px;font-weight:700;text-align:right;' +
-              'white-space:nowrap;color:' + winRateColour(t.won, t.lost) + ';">' + rateText0(t.won, t.lost) + '</span>';
-            return small ? rateOverMark(r, t.n) : r;
-          }()) +
-          // Q3 · a SUPPRESSED row and a never-priced row both dash this column, and they are different
-          // facts, so the suppressed one is marked here, not only inside the detail.
-          '<span style="' + MONO + 'font-size:12px;font-weight:600;text-align:right;' +
-            'white-space:nowrap;color:' + (pin == null ? DASH_COLOUR : pin >= 0 ? 'var(--pos)' : 'var(--neg)') + ';"' +
-            (t.pricedImpossible ? ' title="Priced count (' + t.pricedClaimed + ') exceeds ' + t.n +
-              ' matches played — withdrawn pending the odds-join fix"' : '') + '>' +
-            (t.backingPending ? BACKING_PEND_HTML : pin == null ? DASH : t.pinTxt || signed(pin, 1, 'u')) +
-            (t.pricedImpossible
-              ? '<span style="font-size:9px;color:var(--neg);margin-left:4px;">!</span>' : '') + '</span>' +
+          '<span style="' + MONO + 'font-size:12px;color:var(--text-label);text-align:right;white-space:nowrap;">' + recordText(t.won, t.lost) + '</span>' +
+          '<span style="display:block;width:100%;height:6px;border-radius:3px;overflow:hidden;background:var(--track);">' +
+            (pct != null ? '<span style="display:block;height:100%;width:' + pct.toFixed(1) + '%;background:var(--bar);"></span>' : '') + '</span>' +
+          '<span style="' + MONO + 'font-size:13.5px;font-weight:700;text-align:right;white-space:nowrap;color:' +
+            (t.n ? 'var(--text)' : DASH_COLOUR) + ';">' + (t.n ? Math.round(pct) + '%' : DASH) + '</span>' +
+          '<span style="' + MONO + 'font-size:12px;font-weight:600;text-align:right;white-space:nowrap;color:' +
+            (pin == null ? 'var(--text-label)' : pin > 0 ? 'var(--pos)' : pin < 0 ? 'var(--neg)' : 'var(--text-label)') + ';">' +
+            (t.backingPending ? BACKING_PEND_HTML : pin == null ? DASH : t.pinTxt || signed(pin, 1, 'u')) + '</span>' +
         '</div>' +
         (open ? renderTournDetail(p, t) : '') +
         '</div>';
     }).join('');
 
-    // T2 · caps head left, a compact search right (220px, --inner, no edge, r9, 7/12, 14px icon, 12.5px).
-    // T3 · the helper sentence, the list footnote and the in-detail explainer are removed.
     return '' +
-      '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 14px;">' +
-        recCaps('Record per tournament ' + MIDDOT + ' career') +
-        '<label style="display:flex;align-items:center;gap:9px;width:220px;box-sizing:border-box;' +
-          'background:var(--inner);border:1px solid transparent;border-radius:9px;padding:7px 12px;">' +
+      '<div style="display:flex;align-items:center;gap:12px;margin:0 0 14px;">' +
+        '<span style="display:inline-flex;align-items:center;gap:8px;margin-right:auto;white-space:nowrap;">' +
+          recCaps('Record per tournament ' + MIDDOT + ' career') +
+          '<span style="position:relative;display:inline-flex;z-index:3;">' + infoIcon('tourn1', Object.assign({ width: 400 }, TOURN_INFO)) + '</span>' +
+        '</span>' +
+        tournPills('tourn-level', TOURN_LEVELS, lvl) +
+        tournPills('tourn-surf', TOURN_SURFS, sf) +
+        '<label style="display:flex;align-items:center;gap:9px;width:220px;box-sizing:border-box;flex:none;' +
+          'background:var(--inner);border:1px solid var(--edge-6);border-radius:9px;padding:7px 12px;">' +
           '<svg width="14" height="14" viewBox="0 0 20 20" fill="none" style="flex:none;">' +
             '<circle cx="9" cy="9" r="6" stroke="var(--text-label)" stroke-width="1.7"></circle>' +
             '<path d="m14 14 3 3" stroke="var(--text-label)" stroke-width="1.7" stroke-linecap="round"></path></svg>' +
@@ -5829,15 +5903,11 @@
             'border:0;outline:none;font-family:inherit;font-size:12.5px;color:var(--text);min-width:0;padding:1px 2px;"></label>' +
       '</div>' +
       head +
-      '<div style="max-height:calc(100vh - 250px);min-height:420px;overflow-y:auto;display:flex;' +
-        'flex-direction:column;padding:0 12px 0 0;">' +
-        // fx5 item 2 · while the tournament-history shard loads the list area stays empty (the frame keeps its
-        // min-height): no empty-state sentence until the shard has answered. A settled, genuinely empty shard
-        // says so; the search sentence is for a search that matched nothing.
+      '<div style="max-height:calc(100vh - 250px);min-height:420px;overflow-y:auto;display:flex;flex-direction:column;scrollbar-gutter:stable;">' +
         (shown.length ? rows : tournHistPending(p) ? '' :
           '<div style="border:1px dashed var(--edge-6);border-radius:10px;padding:26px;margin-top:12px;' +
           'text-align:center;font-size:13px;color:var(--text-label);">' +
-          (q ? 'No tournament matches that search.' : 'No tournaments on record.') + '</div>') +
+          (q || lvl !== 'all' || sf !== 'all' ? 'No tournament matches these filters.' : 'No tournaments on record.') + '</div>') +
       '</div>';
   }
 
@@ -12354,7 +12424,8 @@
     matchPage: null, mpTab: 'summary', mpSet: 'match', mpPointSet: null,
     // Profile v2 (2026-11-09): the open (?) popover id, the open Filters menu id, the open drill box, the
     // Compare-with popover and its query. Each is one value, so only one of each can be open.
-    info: null, fmOpen: null, fb: null, cmpOpen: false, cmpQ: ''
+    info: null, fmOpen: null, fb: null, cmpOpen: false, cmpQ: '',
+    tourLevel: 'all', tourSurf: 'all', tourSort: { k: 'wl', d: -1 }
   };
 
   function buildCtx(p) {
@@ -12609,6 +12680,17 @@
     else if (kind === 'market-band') state.marketBand = toggleVal(state.marketBand, el.getAttribute('data-band'));
     else if (kind === 'market-side') state.marketSide = el.getAttribute('data-side');
     else if (kind === 'market-surf') state.marketSurf = el.getAttribute('data-surf');
+    else if (kind === 'tourn-level') { state.tourLevel = v; state.tournOpen = null; }
+    else if (kind === 'tourn-surf') { state.tourSurf = v; state.tournOpen = null; }
+    else if (kind === 'tourn-sort') {
+      var cur = state.tourSort || { k: 'wl', d: -1 };
+      state.tourSort = cur.k === v ? { k: v, d: -cur.d } : { k: v, d: v === 'name' ? 1 : -1 };
+    }
+    else if (kind === 'tourn-page') {
+      e.stopPropagation();
+      if (typeof window.pp2OpenTournament === 'function') window.pp2OpenTournament(v);
+      return;
+    }
     else if (kind === 'tourn-row') { state.tournOpen = toggleVal(state.tournOpen, el.getAttribute('data-t')); tournNeedJoin(); }
     else if (kind === 'cal-tab') { state.calTab = v; state.calCell = null; }
     else if (kind === 'cal26-month') state.cal26Month = toggleVal(state.cal26Month, v);

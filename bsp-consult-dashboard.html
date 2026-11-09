@@ -24229,6 +24229,16 @@ function sfGoToH2H(ka, kb){
   try { document.querySelector('#mainNav button[data-tab="h2h"]').click(); } catch (e) {}
 }
 window.sfGoToH2H = sfGoToH2H;
+// Profile v2 (founder 2026-11-09): Record per tournament's event name opens that event on the Tournaments page — only
+// when the page holds it (its registry key, through the site's one event key); any other name stays plain text.
+window.pp2TournamentKey = function(name, display){
+  if (typeof newsTourRegistryKey !== 'function') return null;
+  const tries = [name, display];
+  if (typeof sfEventKey === 'function') { tries.push(sfEventKey(name)); tries.push(sfEventKey(display)); }
+  for (const t of tries) { const k = t ? newsTourRegistryKey(t) : null; if (k) return k; }
+  return null;
+};
+window.pp2OpenTournament = function(key){ if (key && typeof newsOpenTournament === 'function') newsOpenTournament(key); };
 // The Compare-with popover's hits: up to 6 players of this week's standings with a profile (Head to Head's roster),
 // best rank first; the query matches any part of the name, accents folded. Meta = "IOC · No. N" (the design's).
 window.pp2CompareRoster = function(q, exceptKey){
