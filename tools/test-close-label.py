@@ -26,7 +26,7 @@ def row(i, label, date, start_source, **k):
 H = P.ARCHIVE_LABEL
 rows = [row(1, H, '2026-09-20', P.CUT_SOURCE),                 # live-flip: a close
         row(2, H, '2026-09-21', P.TRUE_START_SOURCE),          # earlier-of from 17 Sep: a close
-        row(3, H, '2026-04-20', P.NO_FLIP_SOURCE),             # start alone: never
+        row(3, H, '2026-04-20', P.NO_FLIP_SOURCE),             # Oddspapi's own close (founder 2026-11-09): a close
         row(4, 'captured', '2026-07-20', 'oddspapi'),          # 12 Jul - 16 Sep captured: never
         row(5, 'captured', '2026-09-16', 'api-tennis-live'),   # the window's last day: never
         row(6, 'captured', '2026-09-18', 'api-tennis-live'),   # live-flip from 17 Sep: a close
@@ -34,11 +34,12 @@ rows = [row(1, H, '2026-09-20', P.CUT_SOURCE),                 # live-flip: a cl
         row(8, 'captured', '2026-09-22', None),                # no start source on record: never
         row(9, H, '2026-09-23', None)]                         # an archive row with no start source: never
 ex = {r['eventKey'] - 9000: r for r in P.export_rows(rows)}
-check('only the verified-start rows are exported as closes (1 live-flip, 2 earlier-of, 6 captured at our live-flip)', sorted(ex) == [1, 2, 6], sorted(ex))
-check('every exported close carries a verified start source',
-      all(r['startSource'] in (P.CUT_SOURCE, P.TRUE_START_SOURCE, *P.CAPTURED_VERIFIED_SOURCES) for r in ex.values()), ex)
+check("only closes at a verified start or Oddspapi's own start are exported (1 live-flip, 2 earlier-of, 3 Oddspapi, 6 captured)",
+      sorted(ex) == [1, 2, 3, 6], sorted(ex))
+check('every exported close carries a verified start source or Oddspapi\'s start',
+      all(r['startSource'] in (P.CUT_SOURCE, *P.ODDSPAPI_CUT_SOURCES, *P.CAPTURED_VERIFIED_SOURCES) for r in ex.values()), ex)
 check('each held-back row names its rule', [P.held_back_reason(r) for r in rows] ==
-      [None, None, 'start-alone', 'captured-before-live-flip', 'captured-before-live-flip', None, 'unverified-start', 'unverified-start', 'unverified-start'],
+      [None, None, None, 'captured-before-live-flip', 'captured-before-live-flip', None, 'unverified-start', 'unverified-start', 'unverified-start'],
       [P.held_back_reason(r) for r in rows])
 check('a held-back row is still an archive row (the export never removes it from the table): every rule carries its note',
       all(P.HELD_BACK_RULES.get(P.held_back_reason(r)) for r in rows if P.held_back(r)))

@@ -15,6 +15,8 @@ Commands
   backup                     today's dated copy into the private ops repo (never replaces an earlier day)
   derive-held                closes for held Pinnacle +30 payloads with NO live-flip row, cut at Oddspapi's trueStart
                              (founder 2026-10-16; default window 13-30 Apr: --from / --to YYYY-MM-DD, --dry-run)
+  derive-oddspapi            Oddspapi's own close (cut at its trueStart) for every held ATP / Challenger / ITF Men payload
+                             dated --from .. --to (exclusive), live-flip or not; --dry-run (founder 2026-11-09)
   restore DIR                rebuild every row from a checkout of the backups: verify each file's sha256, then write
                              restore SQL (--sql-out) and, with --apply, run it through the Management API
 Env: SUPABASE_URL, SUPABASE_SECRET_KEY (service_role: SELECT + INSERT only); backup: WORKFLOW_PAT; restore --apply:
@@ -521,6 +523,28 @@ def close_at(series, cut):
     return out, None
 
 
+def first_active(series, cut):
+    """Per side the FIRST active entry with a real price (>= 1.01) at or before `cut`; both sides or None."""
+    if cut is None:
+        return None
+    out = {}
+    for oc in ('121', '122'):
+        pre = [p for p in series.get(oc) or [] if iso_ms(p['createdAt']) <= cut and p.get('active') and _price(p) is not None]
+        if not pre:
+            return None
+        out[oc] = (_price(pre[0]), pre[0]['createdAt'])
+    return out
+
+
+def oddspapi_cut(ev):
+    """`ev` re-cut at Oddspapi's own start (founder ruling 2026-11-09): the gated trueStart, source ODDSPAPI_CLOSE_SOURCE;
+    the live-flip times stay in the event so the start check still records them. (None, reason) without a trueStart."""
+    cut, _src, reject = effective_cut(None, ev.get('trueStart'), ev.get('trueEnd'), ev.get('scheduled'))
+    if cut is None:
+        return None, reject or NO_TRUE_START
+    return dict(ev, cut=cut, cutSource=ODDSPAPI_CLOSE_SOURCE, trueStartReject=None), None
+
+
 def _price(p):
     try:
         v = float(p.get('price'))
@@ -538,7 +562,7 @@ def archive_close_row(ev, raw_id, fixture_id, series):
     a, b = (c['121'], c['122']) if ev['p1IsParticipant1'] else (c['122'], c['121'])
     close_ts = max(iso_ms(a[1]), iso_ms(b[1]))
     ts = ev.get('trueStart')
-    no_flip = ev.get('cutSource') == NO_FLIP_SOURCE
+    no_flip = ev.get('cutSource') == NO_FLIP_SOURCE or (ev.get('cutSource') == ODDSPAPI_CLOSE_SOURCE and not ev.get('liveFlipCut'))
     flip = None if no_flip else (ev.get('liveFlipCut') or ev['cut'])
     check = {'firstLive': ev.get('firstLive'), 'lastNotLive': ev.get('lastNotLive'), 'oddspapiTrueStart': ts.isoformat() if ts else None,
              'trueStartReject': ev.get('trueStartReject')}
@@ -561,15 +585,43 @@ def archive_close_row(ev, raw_id, fixture_id, series):
            'close_ts': close_ts.isoformat(), 'start_ts': ev['cut'].isoformat(), 'start_source': ev.get('cutSource') or CUT_SOURCE,
            'gap_to_start_s': round((ev['cut'] - close_ts).total_seconds(), 3), 'raw_id': raw_id,
            'detail': {'p1Ts': a[1], 'p2Ts': b[1], 'startCheck': check, 'apiTennis': ev.get('api') or {}}}
+    op = first_active(series, ev['cut'])
+    if op:                                                     # the first pre-start pair we hold: the card's Pinnacle Open
+        x, y = (op['121'], op['122']) if ev['p1IsParticipant1'] else (op['122'], op['121'])
+        row['detail']['open'] = [x[0], y[0], max(x[1], y[1])]
     row['dedupe_key'] = '|'.join(str(x) for x in (ARCHIVE_SOURCE, ARCHIVE_LABEL, row['event_key'], fixture_id, row['close_ts'], row['p1'], row['p2']))
     return row, None
 
 
+def is_oddspapi_close(r):
+    """Founder ruling 2026-11-09: the Pinnacle close is Oddspapi's own — the last active pinnacle+30 entry at or before
+    Oddspapi's trueStartTime. A row is that close when its cut is the trueStart (ODDSPAPI_CUT_SOURCES), or when it is a
+    live-flip close whose stored price at the trueStart (detail.startCheck.closeAtTrueStart) is its own price (the same
+    entry: the archive keeps one row per close, so no second row with the same price can be added)."""
+    if r.get('label') != ARCHIVE_LABEL or fill_cut(r):
+        return False
+    if r.get('start_source') in ODDSPAPI_CUT_SOURCES:
+        return True
+    d = r.get('detail') or {}
+    if isinstance(d, str):
+        try:
+            d = json.loads(d)
+        except ValueError:
+            return False
+    cat = r.get('cat') if r.get('cat') is not None else ((d.get('startCheck') or {}).get('closeAtTrueStart'))
+    try:
+        return bool(cat) and float(cat[0]) == float(r['p1']) and float(cat[1]) == float(r['p2'])
+    except (TypeError, ValueError, KeyError, IndexError):
+        return False
+
+
 def _close_rank(r):
-    """Which close an event shows: an archive close at a true start (2) > a captured close (1) > a fill-rule row (0,
-    founder ruling 2026-10-25: a fill row is re-cuttable — any true close for the event, from any later source, wins)."""
+    """Which close an event shows (founder ruling 2026-11-09): Oddspapi's own close (3) > an archive close at our
+    live-flip (2) > a captured close (1) > a fill-rule row (0, founder ruling 2026-10-25: re-cuttable)."""
     if fill_cut(r):
         return 0
+    if is_oddspapi_close(r):
+        return 3
     return 2 if r.get('label') == ARCHIVE_LABEL else 1
 
 
@@ -615,8 +667,6 @@ def plan_archive_closes(new_rows, held):
 CAPTURED_HELD_TO = '2026-09-16'
 VERIFIED_START_FROM = '2026-09-17'      # our live-flip log (live_flip_log) begins 17 Sep: no verified start exists before it
 HELD_BACK_RULES = {
-    'start-alone': 'cut at Oddspapi trueStart alone, no live-flip held (the TEN-437 derive-held rows of 13-30 Apr; founder '
-                   'ruling 2026-10-16, round 3 item 2: the start-alone cut was rejected on 1,211 matches, 48% exact)',
     'captured-before-live-flip': 'a captured close dated on or before 16 Sep 2026: the plain-Pinnacle series (12 Jul - 2 Sep) '
                    'was read from Oddspapi /v4/historical-odds every 3 h (298 of 408 closing prices first appeared after the '
                    'start) and the 7-13 Sep back-fill was pulled on 28 Sep; both cut at Oddspapi trueStart alone, no verified '
@@ -667,7 +717,7 @@ def verified_start(r):
     if fill_cut(r):
         return True
     if r.get('label') == ARCHIVE_LABEL:
-        return r.get('start_source') in (CUT_SOURCE, TRUE_START_SOURCE, FALSE_START_SOURCE)
+        return r.get('start_source') in (CUT_SOURCE,) + ODDSPAPI_CUT_SOURCES
     if r.get('label') == 'captured':
         return str(r.get('match_date') or '') >= VERIFIED_START_FROM and r.get('start_source') in CAPTURED_VERIFIED_SOURCES
     return False
@@ -675,8 +725,6 @@ def verified_start(r):
 
 def held_back_reason(r):
     """Why a close is held back (in the archive, never exported or shown as a close), or None. Rules: HELD_BACK_RULES."""
-    if r.get('start_source') == NO_FLIP_SOURCE:
-        return 'start-alone'
     if r.get('label') == 'captured' and str(r.get('match_date') or '') <= CAPTURED_HELD_TO:
         return 'captured-before-live-flip'
     if not verified_start(r):
@@ -702,7 +750,11 @@ def export_rows(rows):
                     'p1Name': r.get('p1_name'), 'p2Name': r.get('p2_name'), 'p1': float(r['p1']), 'p2': float(r['p2']),
                     'label': r['label'], 'source': r['source'], 'book': r['book'], 'closeTs': r.get('close_ts'),
                     'startTs': r.get('start_ts'), 'startSource': r.get('start_source'), 'gapToStartS': r.get('gap_to_start_s'), 'archiveId': r['id'],
-                    'apiTennis': ((r.get('detail') or {}).get('apiTennis')) or None})
+                    'apiTennis': ((r.get('detail') or {}).get('apiTennis')) or None,
+                    'oddspapiClose': is_oddspapi_close(r)})
+        op = (r.get('detail') or {}).get('open')
+        if op and len(op) == 3:
+            out[-1]['open'] = {'p1': float(op[0]), 'p2': float(op[1]), 'ts': op[2]}
         fc = fill_cut(r)
         if fc:                                                  # founder ruling 2026-10-25: the cut travels with the row
             out[-1]['closeCut'] = fc
@@ -868,6 +920,12 @@ NO_FLIP_SOURCE = 'oddspapi trueStart (no live-flip held)'
 # the start our own evidence points to (no point played at the flag), written only by cmd_false_starts_recut.
 FALSE_START_SOURCE = 'oddspapi trueStart (our live-flip superseded: false 0-0 start)'
 NO_TRUE_START = 'no Oddspapi trueStart'
+# Founder ruling 2026-11-09 ("just trust Oddspapi's closing odds"): the Pinnacle close is Oddspapi's own — the last active
+# pinnacle+30 entry at or before Oddspapi's trueStartTime (after resolve_start's sanity gate: an end before the start, a
+# match over 6 h, or no end and a start over 6 h before the schedule is broken data, not a start). Every start source whose
+# cut IS that trueStart is this close; it outranks a live-flip close and is never held back.
+ODDSPAPI_CLOSE_SOURCE = "oddspapi trueStart (Oddspapi's own close, founder 2026-11-09)"
+ODDSPAPI_CUT_SOURCES = (ODDSPAPI_CLOSE_SOURCE, NO_FLIP_SOURCE, TRUE_START_SOURCE, FALSE_START_SOURCE)
 
 
 def effective_cut(live_flip, true_start, true_end, sched):
@@ -1005,7 +1063,8 @@ def events_for(fl_rows, fixture_map, discovered, at_key, pull_only_unbound=False
         k1, k2 = at.get('first_player_key'), at.get('second_player_key')
         out.append({'event_key': ek, 'fixture_id': fx, 'p1IsParticipant1': p1first, 'cut': eff, 'cutSource': src,
                     'liveFlipCut': cut, 'trueStartReject': reject, 'firstLive': fl.get('first_live_seen_at'),
-                    'lastNotLive': fl.get('last_not_live_seen_at'), 'trueStart': ts, 'date': fl.get('event_date') or (flip or cut).date().isoformat(),
+                    'lastNotLive': fl.get('last_not_live_seen_at'), 'trueStart': ts, 'trueEnd': iso_ms(fxr.get('trueEndTime')),
+                    'scheduled': iso_ms(fxr.get('startTime')), 'date': fl.get('event_date') or (flip or cut).date().isoformat(),
                     'p1Name': a1, 'p2Name': a2, 'p1Key': int(k1) if str(k1 or '').isdigit() else None,
                     'p2Key': int(k2) if str(k2 or '').isdigit() else None, 'level': fl.get('event_type_type'), 'tour': fl.get('tournament_name'),
                     'api': {x: at.get(x) for x in ('event_winner', 'event_status', 'tournament_round', 'tournament_name', 'event_type_type',
@@ -1050,25 +1109,26 @@ def _at_start(f):
         return None
 
 
-def events_held(at_fixtures, fixtures, flip_keys, fixture_map=None, frm=HELD_FROM, to=HELD_TO):
+def events_held(at_fixtures, fixtures, flip_keys, fixture_map=None, frm=HELD_FROM, to=HELD_TO, levels=None, categories=None,
+                flips_by_key=None):
     """api-tennis ATP / Challenger singles fixtures (get_fixtures, timezone=UTC) dated in [frm, to) whose match has NO
     live_flip_log row -> events for archive_close_row, cut at Oddspapi's trueStart alone (effective_cut with no
     live-flip: the same gate; missing or rejected -> no close, counted). The Oddspapi fixture: the board map, else the
     held fixtures (`held_fixture_meta`) joined on BOTH surnames within 36 h of api-tennis's start, exactly one candidate;
     a fixture claimed by two api-tennis events is no one's. Returns (events, misses-by-reason, [(event_key, reason)])."""
     R = _load('roh', 'refresh-odds-history.py')
-    disc = [f for f in fixtures.values() if f.get('categoryName') in DISCOVERY_CATEGORIES]
+    disc = [f for f in fixtures.values() if f.get('categoryName') in (categories or DISCOVERY_CATEGORIES)]
     by_day, by_id = _fixtures_by_day(disc), {f['fixtureId']: f for f in disc}
     out, miss, why = [], collections.Counter(), []
     def m(ek, w):
         miss[w] += 1; why.append((ek, w))
     for f in at_fixtures:
-        if f.get('event_type_type') not in LEVELS:
+        if f.get('event_type_type') not in (levels or LEVELS):
             continue
         ek, ref = str(f.get('event_key')), _at_start(f)
         if ref is None or not (frm <= ref < to):
             continue
-        if ek in flip_keys:
+        if flips_by_key is None and ek in flip_keys:
             m(ek, 'live-flip row held (the live-flip derive owns it)'); continue
         if any(s in str(f.get('event_status') or '').lower() for s in NO_START_STATUSES):
             m(ek, 'api-tennis: never started (walkover / cancelled)'); continue
@@ -1085,9 +1145,13 @@ def events_held(at_fixtures, fixtures, flip_keys, fixture_map=None, frm=HELD_FRO
         fxr = by_id.get(fx) or fixtures.get(fx) or {}
         ts, te, sc = iso_ms(fxr.get('trueStartTime')), iso_ms(fxr.get('trueEndTime')), iso_ms(fxr.get('startTime'))
         cut, src, reject = effective_cut(None, ts, te, sc)
+        fl = (flips_by_key or {}).get(ek) or {}
+        if flips_by_key is not None and cut is not None:
+            src = ODDSPAPI_CLOSE_SOURCE                        # founder 2026-11-09: Oddspapi's own close, live-flip or not
         k1, k2 = f.get('first_player_key'), f.get('second_player_key')
-        out.append({'event_key': ek, 'fixture_id': fx, 'p1IsParticipant1': p1first, 'cut': cut, 'cutSource': src, 'liveFlipCut': None,
-                    'trueStartReject': reject, 'firstLive': None, 'lastNotLive': None, 'trueStart': ts, 'trueEnd': te, 'scheduled': sc,
+        out.append({'event_key': ek, 'fixture_id': fx, 'p1IsParticipant1': p1first, 'cut': cut, 'cutSource': src,
+                    'liveFlipCut': iso_ms(fl.get('last_not_live_seen_at')), 'trueStartReject': reject, 'firstLive': fl.get('first_live_seen_at'),
+                    'lastNotLive': fl.get('last_not_live_seen_at'), 'trueStart': ts, 'trueEnd': te, 'scheduled': sc,
                     'date': f.get('event_date'), 'p1Name': a1, 'p2Name': a2,
                     'p1Key': int(k1) if str(k1 or '').isdigit() else None, 'p2Key': int(k2) if str(k2 or '').isdigit() else None,
                     'level': f.get('event_type_type'), 'tour': f.get('tournament_name'), 'fixtureFrom': fxr.get('from'),
@@ -1122,6 +1186,62 @@ def derive_rows(events, raws):
                 rows.append(row); continue
         why[w] += 1; per.append((ev['event_key'], w))
     return rows, dict(why), per
+
+
+ODDSPAPI_LEVELS = LEVELS + ('Itf Men Singles',)   # founder 2026-11-09: ATP, Challenger and ITF Men
+
+
+def cmd_derive_oddspapi(frm, to, cache_path, dry_run=False):
+    """Founder ruling 2026-11-09: Oddspapi's own close for every ATP / Challenger / ITF Men singles match dated [frm, to)
+    whose Pinnacle +30 payload the archive holds — cut at the gated trueStart, live-flip or not. Each new close supersedes
+    the event's current one (append-only; a close equal to the held one adds nothing). Fixtures: the committed index,
+    the back-fill raw meta and the Oddspapi fixtures list (metered, one call per 6-day window, cached). --dry-run counts
+    and inserts nothing."""
+    A = _load('aor', 'archive-oddspapi-raw.py')
+    okey = os.environ.get('ODDSPAPI_KEY') or ''
+    idx = json.load(gzip.open(os.path.join(ROOT_DIR, FIXTURE_INDEX))).get('fixtures') or {}
+    fixtures = held_fixture_meta(idx, select_all(RAW, 'id,fixture_id,books,meta', 'meta->>trigger=eq.backfill'))
+    calls, used = 0, []
+    if okey:
+        used.append(A.meter(okey, 'before derive-oddspapi')[0])
+        disc, calls = discovery(max(frm, dt.datetime(2026, 9, 10, tzinfo=dt.timezone.utc)), to, cache_path, okey, itf=True)
+        used.append(A.meter(okey, 'after derive-oddspapi')[0])
+        for f in disc:                                          # the fixtures list carries trueStart for 17 Sep on
+            cur = fixtures.get(f['fixtureId'])
+            if not cur or not cur.get('trueStartTime'):
+                fixtures[f['fixtureId']] = {'fixtureId': f['fixtureId'], 'participant1Name': f.get('participant1Name'), 'participant2Name': f.get('participant2Name'),
+                                            'startTime': f.get('startTime'), 'trueStartTime': f.get('trueStartTime'), 'trueEndTime': (cur or {}).get('trueEndTime'),
+                                            'categoryName': f.get('categoryName'), 'from': 'oddspapi fixtures list'}
+    fl = flips(frm - dt.timedelta(days=2), to + dt.timedelta(days=2))
+    fbk = {str(x['event_key']): x for x in fl}
+    days = [(frm + dt.timedelta(days=i)).date().isoformat() for i in range((to - frm).days)]
+    at, failed = _at_keys(days)
+    evs, miss, _ = events_held(list(at.values()), fixtures, set(), _board_map(), frm, to, levels=ODDSPAPI_LEVELS,
+                               categories=BACKFILL_CATEGORIES, flips_by_key=fbk)
+    rows, notd = [], collections.Counter()
+    ids_all = [e['fixture_id'] for e in evs]
+    for i in range(0, len(ids_all), 200):                      # payloads read in slices: a season is thousands of fixtures
+        part = [e for e in evs if e['fixture_id'] in set(ids_all[i:i + 200])]
+        r, n, _ = derive_rows(part, raw_latest(ids_all[i:i + 200]))
+        rows += r
+        notd.update(n)
+    held = []
+    eks = sorted({str(r['event_key']) for r in rows})
+    for i in range(0, len(eks), 150):
+        held += select_all(CLOSE, 'id,event_key,label,dedupe_key,p1,p2,close_ts,supersedes', 'event_key=in.(' + ','.join(eks[i:i + 150]) + ')')
+    add = plan_archive_closes(rows, held)
+    ids = []
+    if not dry_run:
+        for i in range(0, len(add), 200):
+            ids += insert(CLOSE, add[i:i + 200], 'dedupe_key')
+    by_month = collections.Counter(str(r['match_date'])[:7] for r in add)
+    by_level = collections.Counter(((r.get('detail') or {}).get('apiTennis') or {}).get('event_type_type') for r in add)
+    rep = {'window': [frm.date().isoformat(), to.date().isoformat()], 'dryRun': dry_run, 'events': len(evs), 'unmapped': dict(miss),
+           'derived': len(rows), 'notDerived': dict(notd), 'wouldAdd' if dry_run else 'added': len(add) if dry_run else len(ids),
+           'corrections': sum(1 for r in add if r.get('supersedes')), 'byMonth': dict(sorted(by_month.items())), 'byLevel': dict(by_level),
+           'apiTennisDaysFailed': failed, 'oddspapiFixtureCalls': calls, 'meter': used}
+    print('### derive-oddspapi', json.dumps(rep))
+    return rep
 
 
 def cmd_derive_held(frm, to, dry_run=False):
@@ -1160,6 +1280,19 @@ BACKFILL_CATEGORIES = DISCOVERY_CATEGORIES + ('ITF Men',)
 DISCOVERY_VERSION = 3
 
 
+TRUE_START_REASK_H = 2          # a window holding a started fixture with no trueStart yet is asked again after 2 h
+TRUE_START_WAIT_H = 48          # ... for 48 h after its scheduled start (Oddspapi never fills some: not asked forever)
+
+
+def missing_true_start(fixtures, now):
+    """Any fixture that started 10 min – 48 h ago (by its schedule) and still has no Oddspapi trueStartTime."""
+    for f in fixtures or []:
+        st = iso_ms(f.get('startTime'))
+        if st and not f.get('trueStartTime') and dt.timedelta(minutes=10) <= now - st <= dt.timedelta(hours=TRUE_START_WAIT_H):
+            return True
+    return False
+
+
 def discovery(frm, to, cache_path, odds_key, max_age_h=6, itf=False):
     """Oddspapi tennis fixtures (the only METERED call here: /v4/fixtures, one per 6-day window), cached in
     `cache_path` so each window is asked once; the window holding `now` is re-asked once it is max_age_h old."""
@@ -1173,6 +1306,8 @@ def discovery(frm, to, cache_path, odds_key, max_age_h=6, itf=False):
         k = d.date().isoformat() + '/' + w_end.date().isoformat()
         hit = cache['windows'].get(k)
         fresh = hit and (w_end < now - dt.timedelta(days=1) or (now - iso_ms(hit['at'])).total_seconds() < max_age_h * 3600)
+        if fresh and (now - iso_ms(hit['at'])).total_seconds() >= TRUE_START_REASK_H * 3600 and missing_true_start(hit['fixtures'], now):
+            fresh = False                                   # founder 2026-11-09: the close is cut at Oddspapi's start
         if not fresh:
             b, e = A.api_get('/v4/fixtures', {'sportId': 12, 'from': d.strftime('%Y-%m-%dT00:00:00Z'), 'to': w_end.strftime('%Y-%m-%dT00:00:00Z')}, odds_key)
             calls += 1
@@ -1250,6 +1385,21 @@ def derive_and_add(events, raws):
     return {'derived': len(rows), 'added': len(ids), 'corrections': sum(1 for r in add if r.get('supersedes')), 'notDerived': why}, rows
 
 
+def close_targets(evs):
+    """Founder ruling 2026-11-09: each event's close is cut at Oddspapi's own start; an event with no trueStart yet keeps
+    its live-flip cut (a verified start) until Oddspapi's lands, and one with neither waits. Returns (events, waiting)."""
+    out, waiting = [], collections.Counter()
+    for ev in evs:
+        o, why = oddspapi_cut(ev)
+        if o is not None:
+            out.append(o)
+        elif ev.get('cut') is not None:
+            out.append(ev)
+        else:
+            waiting[f'waiting for Oddspapi trueStart ({why})'] += 1
+    return out, dict(waiting)
+
+
 def cmd_derive(days, cache_path):
     """Closes for every ATP / Challenger match our live poller saw start in the last `days` days, from the newest raw
     payload the archive holds for it (bucket or post-start pull)."""
@@ -1261,7 +1411,9 @@ def cmd_derive(days, cache_path):
     disc, calls = discovery(now - dt.timedelta(days=days + 1), now + dt.timedelta(days=1), cache_path, okey)
     used1, _ = A.meter(okey, 'after derive')
     at, failed = _at_keys({f['event_date'] for f in fl if f.get('event_date')})
-    evs, miss = events_for(fl, _board_map(), disc, at)
+    evs, miss = events_for(fl, _board_map(), disc, at, pull_only_unbound=True)
+    evs, why_cut = close_targets(evs)
+    miss.update(why_cut)
     rep, rows = derive_and_add(evs, raw_latest([e['fixture_id'] for e in evs]))
     sc = [r['detail']['startCheck'] for r in rows]
     rep.update({'flips': len(fl), 'events': len(evs), 'unmapped': miss, 'oddspapiFixtureCalls': calls, 'meter': [used0, used1],
@@ -1316,8 +1468,10 @@ def cmd_pull(budget_s, cache_path, hours=6):
     fl = list(flips(now - dt.timedelta(hours=hours)))
     done = set()
     for i in range(0, len(fl), 100):                       # chunked: a 30-day backlog is ~1,400 event keys
-        done |= {r['event_key'] for r in select_all(CLOSE, 'id,event_key', f'label=eq.{urllib.parse.quote(ARCHIVE_LABEL)}&event_key=in.('
-                                                    + ','.join(str(f['event_key']) for f in fl[i:i + 100]) + ')')}
+        done |= {r['event_key'] for r in select_all(CLOSE, 'id,event_key,label,start_source,p1,p2,cat:detail->startCheck->closeAtTrueStart',
+                                                    f'label=eq.{urllib.parse.quote(ARCHIVE_LABEL)}&event_key=in.('
+                                                    + ','.join(str(f['event_key']) for f in fl[i:i + 100]) + ')')
+                 if is_oddspapi_close(r)}                   # founder 2026-11-09: done once Oddspapi's own close is held
     fl = [f for f in fl if int(f['event_key']) not in done]
     disc, calls = discovery(now - dt.timedelta(hours=max(hours, 24) + 24), now + dt.timedelta(days=1), cache_path, okey) if fl else ([], 0)
     at, failed = _at_keys({f['event_date'] for f in fl if f.get('event_date')})
@@ -1343,6 +1497,7 @@ def cmd_pull(budget_s, cache_path, hours=6):
             return not p and ev['fixture_id'] not in has_pin and flag is not None and (now - flag).total_seconds() >= PULL_GAP_MIN * 60
         return len(p) < PULL_TRIES and (not p or (now - max(p)).total_seconds() >= PULL_GAP_MIN * 60)
     skipped = sum(1 for e in evs if not due(e))
+    evs_all = list(evs)
     evs = [e for e in evs if due(e)]
     counts = {'waitS': 0, 'http429': 0}
     pulled, raw_add, errs = {}, 0, {}
@@ -1361,9 +1516,14 @@ def cmd_pull(budget_s, cache_path, hours=6):
                                      'firstLive': ev.get('firstLive'), 'cutSource': ev.get('cutSource'), 'book': HIST_BOOK}}], 'fixture_id,payload_sha256')
         raw_add += len(ids)
         pulled[ev['fixture_id']] = ev
-    bound = {fx: ev for fx, ev in pulled.items() if ev['cut'] is not None}   # a pull-only event never yields a close
+    # founder ruling 2026-11-09: every mapped event with a Pinnacle +30 payload held (pulled now or earlier) gets its close
+    # at Oddspapi's own start; without a trueStart yet, a live-flip close where one exists (re-cut once the start lands)
+    held_now = set(pulled) | has_pin
+    targets, waiting = close_targets([e for e in evs_all if e['fixture_id'] in held_now])
+    bound = {e['fixture_id']: e for e in targets}
     rep, _ = derive_and_add(list(bound.values()), raw_latest(list(bound))) if bound else ({'derived': 0, 'added': 0}, [])
-    rep.update({'started': len(fl), 'mapped': len(evs) + skipped, 'pulledNoStart': len(pulled) - len(bound), 'notDueYet': skipped, 'unmapped': miss, 'pulled': len(pulled), 'rawAdded': raw_add, 'pullErrors': errs,
+    rep['waitingForTrueStart'] = waiting
+    rep.update({'started': len(fl), 'mapped': len(evs) + skipped, 'pulledNoStart': len(set(pulled) - set(bound)), 'notDueYet': skipped, 'unmapped': miss, 'pulled': len(pulled), 'rawAdded': raw_add, 'pullErrors': errs,
                 'keyWaitS': counts['waitS'], 'http429': counts['http429'], 'oddspapiFixtureCalls': calls, 'apiTennisDaysFailed': failed})
     print('### pull', json.dumps(rep))
     return rep
@@ -2139,6 +2299,10 @@ if __name__ == '__main__':
         day = lambda s: dt.datetime.fromisoformat(s).replace(tzinfo=dt.timezone.utc)
         cmd_derive_held(day(a[a.index('--from') + 1]) if '--from' in a else HELD_FROM, day(a[a.index('--to') + 1]) if '--to' in a else HELD_TO,
                         '--dry-run' in a)
+    elif a[0] == 'derive-oddspapi':
+        day = lambda s: dt.datetime.fromisoformat(s).replace(tzinfo=dt.timezone.utc)
+        cmd_derive_oddspapi(day(a[a.index('--from') + 1]), day(a[a.index('--to') + 1]),
+                            os.environ.get('PINARCH_FIXTURES', '.pinarch-fixtures.json'), '--dry-run' in a)
     elif a[0] == 'pull':
         cmd_pull(int(a[a.index('--budget') + 1]) if '--budget' in a else 480, os.environ.get('PINARCH_FIXTURES', '.pinarch-fixtures.json'),
                  int(a[a.index('--hours') + 1]) if '--hours' in a else 6)

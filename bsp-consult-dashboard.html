@@ -7365,8 +7365,26 @@ function _ocsOf(m){
               p1: s1, p2: s2 };
     }
   }
+  const pin = typeof mcOddspapiCloseOcs === 'function' ? mcOddspapiCloseOcs(m) : null;
+  if (pin) out = pin;
   m.__ocs = out; m.__ocsGen = OCS.gen;
   return out;
+}
+// Founder ruling 2026-11-09: Bet105 before, during and right after the match; once Oddspapi's own Pinnacle close is held
+// (m.pinClose.oddspapiClose, written by tools/apply-archive-pinclose.mjs from the archive export) the Completed card
+// switches WHOLE to Pinnacle — Open = the first pre-start pair we hold, Close = Oddspapi's close, one book, in the card
+// state's own Pinnacle shape (book 'pinnacle+30', the Oddspapi rung), so the card, the Move and the stats read it unchanged.
+function mcOddspapiCloseOcs(m){
+  const c = m && m.finalScore ? m.pinClose : null;
+  if (!c || c.oddspapiClose !== true || !c.open) return null;
+  const ok = v => typeof v === 'number' && v >= 1.01;
+  if (!ok(c.p1) || !ok(c.p2) || !ok(c.open.p1) || !ok(c.open.p2)) return null;
+  const st = Date.parse(c.startTs || ''), ct = Date.parse(c.p1At || c.p2At || '');
+  const w60 = isFinite(st) && isFinite(ct) && st - ct <= 3600000 && st >= ct;
+  const side = who => ({ open: c.open[who], openTs: c.open.ts || null, now: null, nowTs: null, close: c[who],
+                         closeTs: c[who + 'At'] || null, closeW60: w60 });
+  return { book: 'pinnacle+30', source: 'oddspapi-archive', label: 'Pinnacle close (Oddspapi)', tsKind: 'book-tick',
+           startTsSource: c.startBasis || null, startTs: c.startTs || null, closeTsKind: 'book-tick', p1: side('p1'), p2: side('p2') };
 }
 // The book this card is quoting, for the provenance line. Falls back to the
 // matches.json pin's own bookmaker so the label is never a guess.

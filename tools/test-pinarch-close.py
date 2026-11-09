@@ -57,22 +57,27 @@ ex = P.export_rows([captured | {'match_date': '2026-10-09', 'p1_key': 2849, 'p2_
                     dict(add[0], id=6, match_date='2026-10-09', p1_key=2849, p2_key=9999)])
 check('export: one row per event in the captured file\'s shape, labelled', len(ex) == 1 and ex[0]['p1'] == 1.229 and ex[0]['label'] == 'from Pinnacle history'
       and ex[0]['p1Key'] == 2849 and ex[0]['date'] == '2026-10-09', ex)
-# founder ruling 2026-10-16 (round 3, item 2): a close cut at Oddspapi's trueStart ALONE (no live-flip) is held back — in
-# the archive, never exported as a close; the event takes any other close it has, else none
+# founder ruling 2026-11-09 (replaces 2026-10-16 round 3 item 2): a close cut at Oddspapi's trueStart ALONE is Oddspapi's
+# own close — exported, and it outranks a captured or live-flip close of the same event
 base = dict(add[0], match_date='2026-04-20', p1_key=11, p2_key=22)
 nf = dict(base, id=20, event_key=7001, start_source=P.NO_FLIP_SOURCE)
 nf_cap = dict(captured, id=21, event_key=7002, match_date='2026-04-21', p1_key=11, p2_key=22, source='s', book='b')
 nf2 = dict(base, id=22, event_key=7002, start_source=P.NO_FLIP_SOURCE, supersedes=21)
 ok = dict(base, id=23, event_key=7003)
 exh = {r['eventKey']: r for r in P.export_rows([nf, nf_cap, nf2, ok])}
-check('hold-back: a trueStart-only close is never exported (its event has no close)', 7001 not in exh, sorted(exh))
-check('hold-back: an event whose trueStart-only close superseded a captured one of 21 Apr exports nothing (both held back since 2026-10-17)', 7002 not in exh, exh.get(7002))
+check("Oddspapi close: a trueStart-only close is exported", exh.get(7001, {}).get('startSource') == P.NO_FLIP_SOURCE and exh[7001]['oddspapiClose'], exh.get(7001))
+check("Oddspapi close: the trueStart-only close that superseded a captured one of 21 Apr is the event's export", exh.get(7002, {}).get('archiveId') == 22, exh.get(7002))
 exh2 = {r['eventKey']: r for r in P.export_rows([dict(nf_cap, match_date='2026-09-18', start_source='api-tennis-live'), dict(nf2, match_date='2026-09-18')])}
-check('hold-back: a trueStart-only close superseding a captured one of 18 Sep exports the captured close', exh2.get(7002, {}).get('label') == 'captured', exh2.get(7002))
+check("Oddspapi close: it beats a captured close at our live-flip (18 Sep)", exh2.get(7002, {}).get('archiveId') == 22, exh2.get(7002))
+lf = dict(base, id=24, event_key=7005, start_source=P.CUT_SOURCE)
+od = dict(base, id=25, event_key=7005, start_source=P.ODDSPAPI_CLOSE_SOURCE, p1=1.7, supersedes=None)
+lf_late = dict(base, id=26, event_key=7005, start_source=P.CUT_SOURCE, p1=1.8)
+check("Oddspapi close: it outranks a live-flip close of the same event, even a newer one", P.current_closes([lf, od, lf_late])[7005]['id'] == 25)
+same = dict(base, id=27, event_key=7006, start_source=P.CUT_SOURCE, detail={'startCheck': {'closeAtTrueStart': [base['p1'], base['p2'], 'x']}})
+check("Oddspapi close: a live-flip close whose price at the trueStart is its own price IS Oddspapi's close", P.is_oddspapi_close(same)
+      and not P.is_oddspapi_close(dict(same, detail={'startCheck': {'closeAtTrueStart': [9.9, base['p2'], 'x']}})))
 check('control: a close cut at the live-flip / earlier-of rule is exported unchanged', exh.get(7003, {}).get('p1') == base['p1'], exh.get(7003))
-check('control: without the hold-back the trueStart-only close WOULD be the export (the rule is what removes it)',
-      7001 in P.current_closes([nf, nf_cap, nf2, ok]) and P.current_closes([nf, nf_cap, nf2, ok])[7002]['id'] == 22)
-check('hold-back: the held-back rows are still archive rows (nothing deleted or rewritten)', P.held_back(nf) and P.held_back(nf2) and not P.held_back(ok))
+check("Oddspapi close: no hold-back reason on a trueStart-only close", not P.held_back(nf) and not P.held_back(nf2) and not P.held_back(ok))
 # founder ruling 2026-10-17 item 1: a CAPTURED close of a match on or before 16 Sep (cut at Oddspapi's start alone) is held
 # back — kept in the archive as its own source, never exported as a close; from 17 Sep (the live-flip / earlier-of era) it is
 cap_jul = dict(captured, id=30, event_key=7101, match_date='2026-07-20', p1_key=11, p2_key=22, source='s', book='b')
@@ -86,7 +91,7 @@ check('captured hold-back: 16 Sep (the last day of the window) is held back too'
 check('captured hold-back: 17 Sep (verified start era) is exported as captured', exc.get(7103, {}).get('label') == 'captured', exc.get(7103))
 check('captured hold-back: a live-flip archive close of the same July event is still exported', exc.get(7104, {}).get('label') == 'from Pinnacle history', exc.get(7104))
 check('captured hold-back: the rule is named, and the rows stay archive rows', P.held_back_reason(cap_jul) == 'captured-before-live-flip'
-      and P.held_back_reason(cap_sep17) is None and P.held_back_reason(nf) == 'start-alone')
+      and P.held_back_reason(cap_sep17) is None and P.held_back_reason(nf) is None)
 check('control: without the captured hold-back the July captured close WOULD be the export',
       7101 in P.current_closes([cap_jul, cap_sep16, cap_sep17]))
 # orientation through the event mapper
@@ -387,6 +392,26 @@ check('derive-held dispatch fails closed: "yes" = --dry-run, only "no" inserts, 
       'case "$DRY_RUN" in' in _dh and 'yes) python3 tools/pinarch.py derive-held --from "$FROM" --to "$TO" --dry-run ;;' in _dh
       and '*)   echo "dry_run must be exactly' in _dh and 'exit 2' in _dh and _dh.count('derive-held --from') == 2
       and "DRY_RUN: ${{ github.event.inputs.dry_run || 'yes' }}" in _dh, _dh[:300])
+# founder ruling 2026-11-09: derive-oddspapi — Oddspapi's own close for EVERY held payload, a live-flip match included, ITF Men too
+_do = _wf[_wf.index("if: env.MODE == 'derive-oddspapi'"):]
+_do = _do[:_do.index('      - name:')]
+check('derive-oddspapi dispatch fails closed: "yes" = --dry-run, only "no" inserts',
+      'yes) python3 tools/pinarch.py derive-oddspapi --from "$FROM" --to "$TO" --dry-run ;;' in _do and _do.count('derive-oddspapi --from') == 2
+      and '*)   echo "dry_run must be exactly' in _do and "DRY_RUN: ${{ github.event.inputs.dry_run || 'yes' }}" in _do, _do[:300])
+_fbk = {'12112003': {'event_key': '12112003', 'last_not_live_seen_at': '2026-04-20T14:00:30Z', 'first_live_seen_at': '2026-04-20T14:00:40Z'}}
+_itf = dict(atf[0], event_key=12112010, event_first_player='L. Lehecka', event_second_player='M. Mensik',
+            first_player_key=9, second_player_key=10, event_type_type='Itf Men Singles')
+_fxm2 = dict(fxm, idLM={'fixtureId': 'idLM', 'participant1Name': 'Lehecka, Jiri', 'participant2Name': 'Mensik, Jakub', 'startTime': '2026-04-20T16:00:00Z',
+                        'trueStartTime': '2026-04-20T16:04:00Z', 'categoryName': 'ITF Men'})
+oevs, omiss, _ = P.events_held(atf + [_itf], _fxm2, set(), None, P.HELD_FROM, P.HELD_TO, levels=P.ODDSPAPI_LEVELS,
+                               categories=P.BACKFILL_CATEGORIES, flips_by_key=_fbk)
+oby = {x['event_key']: x for x in oevs}
+check("derive-oddspapi: a live-flip match (Fritz) and an ITF Men match are included, cut at Oddspapi's start as Oddspapi's own close",
+      sorted(oby) == ['12112000', '12112003', '12112010'] and all(x['cutSource'] == P.ODDSPAPI_CLOSE_SOURCE for x in oevs)
+      and oby['12112003']['cut'] == T('2026-04-20T14:03:00Z') and oby['12112003']['liveFlipCut'] == T('2026-04-20T14:00:30Z')
+      and oby['12112010']['cut'] == T('2026-04-20T16:04:00Z'), (oevs, omiss))
+check('control: without the new flags the same call keeps the old derive-held scope (no live-flip match, no ITF)',
+      sorted(x['event_key'] for x in P.events_held(atf + [_itf], _fxm2, {'12112003'})[0]) == ['12112000'])
 
 # ── False 0-0 starts (founder brief 2026-10-27): recut_plan re-cuts an archive close at the gated trueStart ──────────
 # Berrettini shape: the current close (cut at the false 12:18:21 start) = 1.581 / 2.53; api-tennis first player is
@@ -427,7 +452,7 @@ check('recut workflow: dry run unless exactly "no"', 'yes) python3 tools/pinarch
 
 # founder 2026-11-03: the post-start pull reaches every started match; one with no verified live-flip start is pulled
 # ONCE (>= PULL_GAP_MIN after our flag) and no close is derived from it; a bound match is pulled and derived as before
-def _pull_run(flips_rows, prior_raw=None, now_s=None):
+def _pull_run(flips_rows, prior_raw=None, now_s=None, disc=None):
     Q = importlib.util.module_from_spec(spec); spec.loader.exec_module(Q)
     seen = {'hist': [], 'insert': [], 'derive': None}
     class A:
@@ -438,7 +463,7 @@ def _pull_run(flips_rows, prior_raw=None, now_s=None):
     Q.env = lambda k: 'k'
     Q.flips = lambda since, until=None: flips_rows
     Q.select_all = lambda *a, **k: []
-    Q.discovery = lambda *a, **k: ([], 0)
+    Q.discovery = lambda *a, **k: (disc or [], 0)
     Q._at_keys = lambda days: ({}, [])
     Q._board_map = lambda: {r['event_key']: {'fixtureId': 'fx' + r['event_key'], 'orient': 'same', 'p1': r['first_player']} for r in flips_rows}
     Q.rest = lambda m, path, *a, **k: (200, prior_raw or [], None)
@@ -450,6 +475,7 @@ def _pull_run(flips_rows, prior_raw=None, now_s=None):
     Q.raw_latest = lambda fxs: []
     def dera(evs, raws):
         seen['derive'] = [e['event_key'] for e in evs]
+        seen['cuts'] = {e['event_key']: (e['cutSource'], e['cut']) for e in evs}
         return {'derived': len(evs), 'added': 0}, []
     Q.derive_and_add = dera
     if now_s:
@@ -475,6 +501,44 @@ check('pull: an unbound match is not pulled until PULL_GAP_MIN after our live fl
       'fx1' not in seen['hist'], seen['hist'])
 rep, seen = _pull_run(FL, prior_raw=[{'fixture_id': 'fx1', 'pulled_at': '2026-11-02T10:40:00Z', 'source': 'oddspapi /v4/historical-odds', 'books': ['pinnacle+30']}], now_s=now_)
 check('pull: an unbound match is pulled once — never again once its payload is held', 'fx1' not in seen['hist'], seen['hist'])
+
+# founder ruling 2026-11-09: every pulled match with Oddspapi's trueStart gets Oddspapi's own close — bound or not; a
+# payload held from an earlier run is derived too; with no trueStart yet a verified match keeps its live-flip cut
+DISC = [{'fixtureId': 'fx1', 'participant1Name': 'Buse, Ignacio', 'participant2Name': 'Bergs, Zizou', 'startTime': '2026-11-02T10:00:00Z',
+         'trueStartTime': '2026-11-02T10:06:00Z', 'categoryName': 'ATP'},
+        {'fixtureId': 'fx2', 'participant1Name': 'Merida Aguilar, Daniel', 'participant2Name': 'Baez, Sebastian', 'startTime': '2026-11-02T11:30:00Z',
+         'trueStartTime': '2026-11-02T11:40:00Z', 'categoryName': 'ATP'}]
+rep, seen = _pull_run(FL, now_s=now_, disc=DISC)
+check("pull: both matches derive Oddspapi's own close at Oddspapi's start (founder 2026-11-09)",
+      sorted(seen['derive']) == ['1', '2'] and all(v[0] == P.ODDSPAPI_CLOSE_SOURCE for v in seen['cuts'].values())
+      and seen['cuts']['1'][1] == T('2026-11-02T10:06:00Z') and seen['cuts']['2'][1] == T('2026-11-02T11:40:00Z'), seen)
+rep, seen = _pull_run(FL, prior_raw=[{'fixture_id': 'fx1', 'pulled_at': '2026-11-02T10:40:00Z', 'source': 'oddspapi /v4/historical-odds', 'books': ['pinnacle+30']}],
+                      now_s=now_, disc=DISC)
+check("pull: a payload held from an earlier run is derived at Oddspapi's start once the start is known", '1' in (seen['derive'] or []) and 'fx1' not in seen['hist'], seen)
+rep, seen = _pull_run(FL, now_s=now_, disc=[dict(DISC[0], trueStartTime=None), dict(DISC[1], trueStartTime=None)])
+check("pull: no trueStart yet -> the verified match keeps its live-flip cut, the unbound one waits",
+      seen['derive'] == ['2'] and seen['cuts']['2'][0] == P.CUT_SOURCE and rep['waitingForTrueStart'], (seen, rep))
+_now = T('2026-11-02T12:00:00Z')
+check('discovery: a started fixture with no trueStart (10 min - 48 h) makes its window stale',
+      P.missing_true_start([{'startTime': '2026-11-02T11:00:00Z', 'trueStartTime': None}], _now)
+      and not P.missing_true_start([{'startTime': '2026-11-02T11:00:00Z', 'trueStartTime': '2026-11-02T11:05:00Z'}], _now)
+      and not P.missing_true_start([{'startTime': '2026-11-02T11:55:00Z', 'trueStartTime': None}], _now)
+      and not P.missing_true_start([{'startTime': '2026-10-30T11:00:00Z', 'trueStartTime': None}], _now))
+_ser = P.mw_series(json.dumps({'bookmakers': {'pinnacle+30': {'markets': {'121': {'outcomes': {
+    '121': {'players': {'0': [e('2026-11-02T08:00:00Z', 1.80), e('2026-11-02T10:05:00Z', 1.70), e('2026-11-02T10:20:00Z', 1.20)]}},
+    '122': {'players': {'0': [e('2026-11-02T08:00:00Z', 2.00), e('2026-11-02T10:05:00Z', 2.15), e('2026-11-02T10:20:00Z', 4.50)]}}}}}}}}).encode())
+_ev = {'event_key': '9', 'date': '2026-11-02', 'p1IsParticipant1': True, 'cut': T('2026-11-02T10:00:20Z'), 'cutSource': P.CUT_SOURCE,
+       'liveFlipCut': T('2026-11-02T10:00:20Z'), 'trueStart': T('2026-11-02T10:06:00Z'), 'trueEnd': T('2026-11-02T11:30:00Z'), 'scheduled': T('2026-11-02T10:00:00Z'), 'p1Key': 11, 'p2Key': 22}
+_o, _ = P.oddspapi_cut(_ev)
+_r, _ = P.archive_close_row(_o, 1, 'fx9', _ser)
+check("Oddspapi close: cut at the trueStart (1.70 / 2.15), never an entry after it (1.20 / 4.50); the open is the first pair",
+      _r['p1'] == 1.70 and _r['p2'] == 2.15 and _r['start_source'] == P.ODDSPAPI_CLOSE_SOURCE and _r['detail']['open'][:2] == [1.80, 2.00], _r)
+_lf, _ = P.archive_close_row(_ev, 1, 'fx9', _ser)
+check("control: the live-flip cut gives the earlier price (1.80 / 2.00), so the re-cut is what moves it", _lf['p1'] == 1.80, _lf)
+_x = P.export_rows([dict(_lf, id=1, label=P.ARCHIVE_LABEL), dict(_r, id=2, label=P.ARCHIVE_LABEL, supersedes=1)])
+check("export: Oddspapi's close is the event's export and carries its open", len(_x) == 1 and _x[0]['p1'] == 1.70 and _x[0]['oddspapiClose']
+      and _x[0]['open']['p1'] == 1.80 and _x[0]['open']['p2'] == 2.00, _x)
+check("Oddspapi close: no trueStart -> no re-cut (never the schedule)", P.oddspapi_cut(dict(_ev, trueStart=None))[0] is None)
 
 # Founder 2026-11-08: a captured close re-labelled at the verified start (earlierCut) is a NEW archive row (own key), so it
 # supersedes the held 'oddspapi' row; that row is held back, the new one exports as a captured close.

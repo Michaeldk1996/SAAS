@@ -47,23 +47,30 @@ Applies to `supabase/migrations/20261014120000_pinnacle_archive.sql`, `tools/pin
   then today's dated backup. A changed captured row or a changed bucket object is added as a new row with `supersedes`.
 - `derive` (in `daily`: the last 3 days; on dispatch: `--days N`) — for every ATP / Challenger singles match our live
   poller saw start (`live_flip_log`), the newest payload the archive holds for its Oddspapi fixture → one close row
-  labelled `from Pinnacle history` (rule: `odds.md` "Pinnacle closing source by period"). The fixture comes from the odds
+  labelled `from Pinnacle history`, cut at Oddspapi's own start (founder 2026-11-09, `odds.md` "The Pinnacle close is
+  Oddspapi's own close"); a match with no trueStart yet keeps its live-flip cut where it has one, else waits. The fixture comes from the odds
   loop's board map (`odds-fixture-map.json`: eventKey → fixtureId + orient), else from the Oddspapi fixtures list joined on
   BOTH surnames within 36 h (exactly one candidate; two or more, or none → no close, counted). Player keys are
   api-tennis's (`get_fixtures`, `timezone=UTC`). The Oddspapi fixtures list is the only METERED call (`/v4/fixtures`, one
-  per 6-day window, cached; re-asked every 6 h); the meter is printed before and after.
+  per 6-day window, cached; re-asked every 6 h, and every 2 h while a fixture that started 10 min – 48 h ago has no
+  trueStart yet); the meter is printed before and after.
+- `derive-oddspapi` (dispatch only; founder 2026-11-09) — Oddspapi's own close for every held `pinnacle+30` payload of an
+  ATP / Challenger / ITF Men singles match dated `from` .. `to` (exclusive), live-flip or not; each new close supersedes
+  the event's current one (a new row; an equal close adds nothing). Fixtures: the committed index, the back-fill raw meta
+  and the Oddspapi fixtures list (metered, one call per 6-day window from 10 Sep). `dry_run` yes (default) counts by month
+  and level and inserts nothing; only exactly `no` writes.
 - **Fill (founder ruling 2026-10-25, round 2 item 1.4)** — `.github/workflows/archive-fill-probe.yml` (dispatch only):
   `write=false` plans read-only (measurement, rule, fill rows, diff, digest; artifact `archive-fill-plan`); `write=true` +
   `plan_digest` inserts exactly that plan through `pinarch.insert` after a fresh no-collision read (artifact
   `archive-fill-write`). Its rows (`FILL_START_SOURCE` + `detail.closeCut`) export as closes (`pinarch.fill_cut`); rules:
   `odds.md` "The 13 Apr – 16 Sep ATP main-draw fill" (per-tier X, the "E" marker, re-cut by any true close). **Test:**
   `tools/test-archive-fill-probe.py`, `tools/test-early-cut-marker.mjs`.
-- **Held back (never exported, never deleted):** a `derive-held` close (rule `start-alone`; the fill rows above are not) and a `captured` close of a
+- **Held back (never exported, never deleted):** a `captured` close of a
   match on or before 16 Sep (rule `captured-before-live-flip`, founder ruling 2026-10-17 item 1: those 420 were cut at
   Oddspapi's start alone). `pinarch.py` `HELD_BACK_RULES` carries how each was made; the export's `heldBack.byRule`
   counts them (`odds.md` "held back").
-- `derive-held` (dispatch only; founder ruling 2026-10-16, TEN-437 item 6; **its closes are HELD BACK since founder round 3
-  item 2** — in the archive, never exported or shown, `odds.md` "held back") — closes for the held `pinnacle+30` payloads
+- `derive-held` (dispatch only; founder ruling 2026-10-16, TEN-437 item 6; its closes export since 2026-11-09 — they are
+  Oddspapi's own close; superseded in use by `derive-oddspapi`) — closes for the held `pinnacle+30` payloads
   whose match has **no `live_flip_log` row** (the back-fill, before 17 Sep). Window `from` / `to` (UTC days; default the
   ruled **13–30 Apr**; anything wider is not ruled), `dry_run` (default yes: counts, inserts nothing). Cut = Oddspapi's
   `trueStartTime` alone after the `resolve_start` gate; missing or rejected → no close, counted (`odds.md` "Pinnacle
@@ -81,9 +88,9 @@ Applies to `supabase/migrations/20261014120000_pinnacle_archive.sql`, `tools/pin
   then the close derived at once. A match whose close is not derivable yet is pulled again at most 4 times, 30 min apart.
   **Every started match, verified start or not (founder 2026-11-03).** A match with no live-flip lower bound (ATP tour
   matches flag "live" at the warm-up, so most have none: 54 of 61 ATP singles since 28 Oct) is pulled ONCE, at least 30
-  min after our live flag, never again once a Pinnacle +30 payload is held; its raw row's `meta.cutSource` says so and
-  NO close is derived from it here (`PULL_ONLY_SOURCE`) — the in-play close (`odds.md` "What a closing price is") reads
-  it. **Test:** `tools/test-pinarch-close.py` "pull: a match with NO verified start is pulled too".
+  min after our live flag, never again once a Pinnacle +30 payload is held; its raw row's `meta.cutSource` says so.
+  **Every mapped match with a payload held gets Oddspapi's own close** (founder 2026-11-09) as soon as its trueStart is
+  known — the pull derives it on the run that holds both; a match is done once Oddspapi's close is held. **Test:** `tools/test-pinarch-close.py` "pull: a match with NO verified start is pulled too".
   The captured close stays first on the page until the archive close supersedes it.
   **Its own slot (founder 2026-10-14 item 2):** the pull never waits for the odds loop's key gate (`loop_idle` / the
   :05–:14 window, `odds.md` "The loop wins the key"): the endpoint is free, so only Oddspapi's ~5 s cooldown applies

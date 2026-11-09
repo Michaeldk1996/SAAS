@@ -51,6 +51,40 @@ check('re-running is a no-op (the run re-applies every time; the captured pair s
   applyArchiveCloses(ms, rows); const st = applyArchiveCloses(ms, rows);
   assert.strictEqual(st.unchanged, 1); assert.strictEqual(ms[0].pinClose.captured.p1, 1.159);
 });
+// founder 2026-11-09: Oddspapi's own close carries the flag and its Open, oriented like the close (archive lists Atmane first)
+check("Oddspapi's own close: flag + Open on the card, oriented by player keys; a later run with the flag is not 'unchanged'", () => {
+  const ms = [card('past-12173548', 1110, 2030, [1.159, 6.03])];
+  applyArchiveCloses(ms, [row(12173548, 2030, 1110, 6.02, 1.16)]);
+  assert.strictEqual(ms[0].pinClose.oddspapiClose, undefined);
+  const od = Object.assign(row(12173548, 2030, 1110, 6.02, 1.16), { oddspapiClose: true, open: { p1: 5.1, p2: 1.2, ts: 'o' } });
+  const st = applyArchiveCloses(ms, [od]);
+  assert.strictEqual(st.replaced, 1); assert.strictEqual(ms[0].pinClose.oddspapiClose, true);
+  assert.deepStrictEqual(ms[0].pinClose.open, { p1: 1.2, p2: 5.1, ts: 'o' });
+  assert.strictEqual(applyArchiveCloses(ms, [od]).unchanged, 1);
+});
+// page: mcOddspapiCloseOcs (bsp-consult-dashboard.html) — the Completed card switches whole to Pinnacle
+{
+  const html = readFileSync(new URL('../bsp-consult-dashboard.html', import.meta.url), 'utf8');
+  const i = html.indexOf('function mcOddspapiCloseOcs(m){'), j = html.indexOf('\n}\n', i);
+  const fn = new Function(html.slice(i, j + 2) + '; return mcOddspapiCloseOcs;')();
+  const m = { finalScore: { sets: [] }, pinClose: { p1: 1.16, p2: 6.02, p1At: '2026-10-23T09:58:00Z', p2At: '2026-10-23T09:58:00Z',
+              startTs: '2026-10-23T10:02:00Z', startBasis: 'x', oddspapiClose: true, open: { p1: 1.2, p2: 5.1, ts: '2026-10-23T01:00:00Z' } } };
+  check('card: an Oddspapi close makes the Completed card Pinnacle — Open = first pair, Close = Oddspapi close, one book', () => {
+    const o = fn(m);
+    assert.strictEqual(o.book, 'pinnacle+30');
+    assert.deepStrictEqual([o.p1.open, o.p1.close, o.p2.open, o.p2.close, o.p1.closeW60], [1.2, 1.16, 5.1, 6.02, true]);
+  });
+  check('card: no switch before the match is finished, without the flag, or without an Open (Bet105 stays)', () => {
+    assert.strictEqual(fn(Object.assign({}, m, { finalScore: null })), null);
+    assert.strictEqual(fn({ finalScore: {}, pinClose: Object.assign({}, m.pinClose, { oddspapiClose: undefined }) }), null);
+    assert.strictEqual(fn({ finalScore: {}, pinClose: Object.assign({}, m.pinClose, { open: undefined }) }), null);
+    assert.strictEqual(fn({ finalScore: {}, pinClose: Object.assign({}, m.pinClose, { p1: 1.0 }) }), null);
+  });
+  check('card: the switch is wired into _ocsOf (every card reader goes through it)', () => {
+    const k = html.indexOf('function _ocsOf(m){'), e = html.indexOf('function mcOddspapiCloseOcs', k);
+    assert.ok(/const pin = typeof mcOddspapiCloseOcs === 'function' \? mcOddspapiCloseOcs\(m\) : null;\s*if \(pin\) out = pin;/.test(html.slice(k, e)));
+  });
+}
 // Mutation: the step placed before the export (or writing anything but matches.json) → red.
 check('pipeline.yml: the step runs after the archive export + Database feed, reads pinnacle-closes.json, writes matches.json', () => {
   const y = readFileSync(new URL('../.github/workflows/pipeline.yml', import.meta.url), 'utf8');

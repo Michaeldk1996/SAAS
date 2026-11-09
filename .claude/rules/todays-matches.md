@@ -24,6 +24,14 @@ except where a ruling below says otherwise. Colours are foundation tokens (`foun
   `role="button"` `tabindex="0"`, Enter/Space opens it, `--edge-16` hover edge (an open drawer keeps `--open-card`)
   and focus ring. The modal has no URL, so Cmd/Ctrl- and middle-click open nothing new. "See full analysis" stays as a
   secondary cue (its removal is Michael's call). **Test:** `test-match-card-click.mjs`.
+- **Completed card switches to Pinnacle once Oddspapi's close is held** (founder 2026-11-09, replacing "Open and Close
+  from the card's ONE book" for finished matches): until then the card shows its book (Bet105 by the ladder) as below;
+  once `m.pinClose.oddspapiClose` is on the card (`tools/apply-archive-pinclose.mjs`, from the archive export) the whole
+  card is Pinnacle — Open = the first pre-start pinnacle+30 pair the archive holds, Close = Oddspapi's own close
+  (`odds.md`), Move between them, one book — through `mcOddspapiCloseOcs` inside `_ocsOf`, so the card, the Move, the
+  tiles and the Match analysis header read the same pair. Pinnacle has no ledger in the odds pop-up ("No price history
+  for this book"). **Test:** `tools/test-apply-archive-pinclose.mjs` "card:" (no switch before the finish, without the
+  flag or without an Open).
 - **Completed card:** inset tiles (winner white 3.5% + 3px `--pos` 90% pill; loser name `--text-label` 600, never red).
   Surface `--text-soft`; round chip `--inner` + 10% inset edge, white (Q1). Score = sets-won tile (winner white 9% + 10% inset
   edge, white; loser white 4.5%, grey, no edge — Q1, README 7a) · 1px divider · one 24px cell per played set (won white 8% /

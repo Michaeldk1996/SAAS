@@ -157,8 +157,8 @@ def suite(M):
           and rep['supersedeList'][0]['supersedes'] == 7)
     check('diff: a close already held (same dedupe key) adds nothing', rep['sameCloseAlreadyHeld'] == 1)
     check('diff: proof — no candidate event or dedupe key is held, none supersedes', rep['proof']['noneOverwrites'] is True)
-    check('diff: a trueStart-alone candidate is held back if written (start-alone ruling)', rep['candidatesHeldBackIfWritten'].get('start-alone') == 1
-          and rep['candidatesThatWouldExportUnderCurrentRulings'] == 0)
+    check("diff: a trueStart-alone candidate exports if written (founder 2026-11-09: Oddspapi's own close is the close)",
+          rep['candidatesHeldBackIfWritten'].get('start-alone') is None and rep['candidatesThatWouldExportUnderCurrentRulings'] == 1)
 
     # ── per month
     recs = [dict(rec, month='2026-06')] * 31 + [dict(r8, month='2026-09', date='2026-09-01')] * 3
@@ -313,9 +313,9 @@ def fill_suite(M):
             dict(base, id=6, event_key=6, start_source=P.FILL_START_SOURCE, detail={'closeCut': 'trueStart-buffer'}),
             dict(base, id=7, event_key=7, start_source=P.FILL_START_SOURCE, detail={'closeCut': 'trueStart', 'x': 1}, label='captured')]
     ex = sorted(r['eventKey'] for r in P.export_rows(rows))
-    check('export: the fill-rule closes (trueStart, and buffered with bufferMin) export as closes', ex == [1, 2])
-    check('export: a start-alone derive-held row (no closeCut) is still held back as start-alone', P.held_back_reason(rows[2]) == 'start-alone')
-    check('export: a start-alone row claiming a closeCut is still held back (the source must be the fill\'s)', P.held_back_reason(rows[3]) == 'start-alone')
+    check("export: the fill-rule closes and Oddspapi's own closes (trueStart alone, founder 2026-11-09) export", ex == [1, 2, 3, 4])
+    check("export: a start-alone row is Oddspapi's own close: not held back, and it outranks a fill row",
+          P.held_back_reason(rows[2]) is None and P.held_back_reason(rows[3]) is None and P._close_rank(rows[2]) > P._close_rank(rows[0]))
     check('export: the fill source without closeCut, a buffer without bufferMin, a captured row -> held back',
           all(P.held_back(r) for r in rows[4:]))
     check('export: the fill candidates the plan builds would export', not P.held_back(f0) and not P.held_back(f10))
@@ -672,7 +672,8 @@ MUTANTS = [
     ('pinarch: fill closes not exempted from the hold-back', pin_mutant('    if fill_cut(r):\n        return True\n', '')),
     ('pinarch: the fill source alone exempts (no closeCut needed)', pin_mutant("    if c == 'trueStart':\n        return c", "    if True:\n        return c")),
     ('pinarch: a buffered cut without bufferMin exempts', pin_mutant(" and isinstance(d.get('bufferMin'), int) and not isinstance(d.get('bufferMin'), bool) and d['bufferMin'] > 0", '')),
-    ('pinarch: start-alone rows exempted too', pin_mutant("    if r.get('start_source') == NO_FLIP_SOURCE:\n        return 'start-alone'\n", '')),
+    ('pinarch: start-alone rows held back again', pin_mutant("    if r.get('label') == 'captured' and str(r.get('match_date') or '') <= CAPTURED_HELD_TO:",
+                                                         "    if r.get('start_source') == NO_FLIP_SOURCE:\n        return 'start-alone'\n    if r.get('label') == 'captured' and str(r.get('match_date') or '') <= CAPTURED_HELD_TO:")),
     ('per tier: pooled measurement used for every tier', src_mutant("out[t] = dict(fill_rule(st), tier=t, level=lv)", "out[t] = dict(fill_rule(meas['primary']), tier=t, level=lv)")),
     ('per tier: the tier not carried in the row', src_mutant("        row['detail']['tier'] = rule['tier']", "        pass")),
     ('per tier: the tier not in the digest', src_mutant("'tier': rule.get('tier'), 'rows': proj}", "'rows': proj}")),

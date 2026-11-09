@@ -8,6 +8,9 @@
 #   restore-check  rebuild every row from the backups into restore SQL and compare its counts with the live tables
 #   derive-held  archive closes for held Pinnacle +30 payloads whose match has NO live-flip row, cut at Oddspapi's
 #            trueStart (founder 2026-10-16; window from / to, default the ruled 13-30 Apr; dry_run inserts nothing)
+#   derive-oddspapi  Oddspapi's own close (founder 2026-11-09: the last active pinnacle+30 entry at or before Oddspapi's
+#            trueStart) for every held ATP / Challenger / ITF Men payload dated from .. to, live-flip or not; each new
+#            close supersedes the event's current one (append-only). dry_run 'yes' counts and inserts nothing
 #   daily    import + derive + backup (the schedule). Runs from main only.
 name: Pinnacle archive
 on:
@@ -16,7 +19,7 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: install | import | derive | derive-held | pull-backlog | backup | restore-check | false-starts-report | false-starts-ticks | false-starts-recut | daily
+        description: install | import | derive | derive-held | derive-oddspapi | pull-backlog | backup | restore-check | false-starts-report | false-starts-ticks | false-starts-recut | daily
         required: true
         default: daily
       days:
@@ -24,15 +27,15 @@ on:
         required: false
         default: '3'
       from:
-        description: derive-held — first day (UTC, inclusive); the ruling covers 2026-04-13 .. 2026-04-30
+        description: derive-held / derive-oddspapi — first day (UTC, inclusive); derive-held's ruling covers 2026-04-13 .. 2026-04-30
         required: false
         default: '2026-04-13'
       to:
-        description: derive-held — day after the last (UTC, exclusive)
+        description: derive-held / derive-oddspapi — day after the last (UTC, exclusive)
         required: false
         default: '2026-05-01'
       dry_run:
-        description: derive-held / false-starts-recut — 'yes' counts what it would add and inserts nothing
+        description: derive-held / derive-oddspapi / false-starts-recut — 'yes' counts what it would add and inserts nothing
         required: false
         default: 'yes'
 permissions:
@@ -106,6 +109,25 @@ jobs:
             yes) python3 tools/pinarch.py derive-held --from "$FROM" --to "$TO" --dry-run ;;
             no)  python3 tools/pinarch.py derive-held --from "$FROM" --to "$TO"
                  python3 tools/pinarch.py counts --record derive-held ;;
+            *)   echo "dry_run must be exactly 'yes' or 'no' (got '$DRY_RUN') — nothing run" >&2; exit 2 ;;
+          esac
+      - name: derive-oddspapi — Oddspapi's own close for every held payload in the window (founder 2026-11-09)
+        if: env.MODE == 'derive-oddspapi'
+        env:
+          ODDSPAPI_KEY: ${{ secrets.ODDSPAPI_KEY }}
+          API_TENNIS_KEY: ${{ secrets.API_TENNIS_KEY }}
+          GITHUB_TOKEN: ${{ github.token }}
+          PINARCH_FIXTURES: .pinarch-fixtures.json
+          DRY_RUN: ${{ github.event.inputs.dry_run || 'yes' }}
+          FROM: ${{ github.event.inputs.from || '2026-04-13' }}
+          TO: ${{ github.event.inputs.to || '2026-05-01' }}
+        run: |
+          set -euo pipefail
+          # fail closed: only the exact value "no" writes to the permanent archive; anything else is a dry run or an error
+          case "$DRY_RUN" in
+            yes) python3 tools/pinarch.py derive-oddspapi --from "$FROM" --to "$TO" --dry-run ;;
+            no)  python3 tools/pinarch.py derive-oddspapi --from "$FROM" --to "$TO"
+                 python3 tools/pinarch.py counts --record derive-oddspapi ;;
             *)   echo "dry_run must be exactly 'yes' or 'no' (got '$DRY_RUN') — nothing run" >&2; exit 2 ;;
           esac
       - name: pull-backlog — Pinnacle +30 history for started matches with no archive close, then their closes

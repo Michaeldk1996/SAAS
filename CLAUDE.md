@@ -165,7 +165,8 @@ Full source detail, book ladder, card and close rules: `.claude/rules/odds.md`.
 - **Missing = dash.** Never zero, never a plausible default, never a price from another book.
 - **Price floor:** strictly below 1.01 is suppressed. 1.01 itself is a real book minimum.
 - **Close = last price before the *actual* start** — never the scheduled time, which lands after the real start 58% of the time.
-- **"Close" (any wording) only at a verified start** (founder 2026-10-17): our live-flip, or the earlier-of rule from 17 Sep. A price cut at Oddspapi's start alone, start − 10, or any snapshot is never labelled a close; its hover says "not a confirmed close" (`tools/test-close-label.py`, `.claude/rules/odds.md`).
+- **The Pinnacle close is Oddspapi's own close** (founder 2026-11-09): the last active `pinnacle+30` entry at or before Oddspapi's `trueStartTime`, ATP / Challenger / ITF Men; Bet105 shows until it lands, then it is the match's price everywhere. **Test:** `tools/test-pinarch-close.py` "Oddspapi close" — `.claude/rules/odds.md`.
+- **"Close" (any wording) only at a verified start or Oddspapi's own start** (founder 2026-10-17, Oddspapi's start 2026-11-09): our live-flip, the earlier-of rule, or Oddspapi's trueStart. Start − 10 or any snapshot is never labelled a close; its hover says "not a confirmed close" (`tools/test-close-label.py`, `.claude/rules/odds.md`).
 - **Kibl timestamps are insert time, never book-post time.** Label them that way everywhere.
 - **Kibl has no history endpoint** — uncaptured prices are lost permanently. The archive must run daily.
 - **One price per match, on every page** (founder 2026-10-17, standing): every page and tab reads a match's price from

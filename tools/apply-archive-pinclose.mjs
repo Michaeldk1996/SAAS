@@ -37,12 +37,19 @@ export function applyArchiveCloses(matches, exportRows) {
     const p1 = same ? Number(r.p1) : Number(r.p2), p2 = same ? Number(r.p2) : Number(r.p1);
     if (!(p1 >= 1.01) || !(p2 >= 1.01)) { stats.belowFloor++; continue; }
     const prev = m.pinClose || null;
-    if (prev && prev.source === ARCHIVE_SOURCE && prev.p1 === p1 && prev.p2 === p2) { stats.unchanged++; continue; }
+    // founder 2026-11-09: Oddspapi's own close switches the Completed card to Pinnacle — its first pre-start pair rides
+    // along as the card's Open, oriented like the close
+    const od = r.oddspapiClose === true;
+    const op = od && r.open && Number(r.open.p1) >= 1.01 && Number(r.open.p2) >= 1.01
+      ? { p1: same ? Number(r.open.p1) : Number(r.open.p2), p2: same ? Number(r.open.p2) : Number(r.open.p1), ts: r.open.ts || null } : null;
+    if (prev && prev.source === ARCHIVE_SOURCE && prev.p1 === p1 && prev.p2 === p2 && !!prev.oddspapiClose === od
+        && JSON.stringify(prev.open || null) === JSON.stringify(op)) { stats.unchanged++; continue; }
     m.pinClose = {
       p1, p2, p1At: r.closeTs || null, p2At: r.closeTs || null, source: ARCHIVE_SOURCE,
       startTs: r.startTs || null, startBasis: r.startSource || 'archive', ageRefTs: r.startTs || null, archiveId: r.archiveId ?? null,
       captured: prev && prev.source !== ARCHIVE_SOURCE ? { p1: prev.p1, p2: prev.p2, source: prev.source || null } : (prev && prev.captured) || null,
     };
+    if (od) { m.pinClose.oddspapiClose = true; if (op) m.pinClose.open = op; stats.oddspapi = (stats.oddspapi || 0) + 1; }
     stats.replaced++;
   }
   return stats;
