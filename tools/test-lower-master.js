@@ -139,15 +139,29 @@ ok(!ntBy('Ace A.', 'Bee B.') && NT.x.meta.lower.ntHasTd === 1, 'atp-nt: a match 
 const mRows = NT.master.rows.filter(r => r[7] === 'Fils A.' && r[8] === 'Mpetshi Perricard G.');
 ok(mRows.length === 1 && !/[lt]/.test(mRows[0][14]), 'atp-nt: the master holds the match once, outside the team / lower flags (Market edge reads it)');
 ok(NT.base === B.base, 'atp-nt: the Database files are byte-identical (never a Database figure)');
-const ntAnchor = "    if (tk.length && !tk.every(k => tdUnpricedPairs.has(k))) { lower.ntHasTd = (lower.ntHasTd || 0) + 1; continue; }";
+// founder 2026-11-09: api-tennis files some ATP main draws as "<event> - Qualification" (Lyon (France) 2026); an archive close
+// of such a match must not come back as a second, 'atp-q' row of a match the Database already holds (the join dashes both)
+fs.writeFileSync(path.join(tmp, 'approx-q.csv'), [COLS].concat(approx.slice(1),
+  TEC({ date: '2026-05-21', level: 'atp-q', tournament: 'Geneva - Qualification', winner: 'Ace A.', loser: 'Bee B.', winnerKey: '25', loserKey: '26', psw: 1.45, psl: 2.7, eventKey: 704, source: 'Tennis Explorer · Pinnacle', comment: 'Completed' }),
+  TEC({ date: '2026-05-21', level: 'atp-q', tournament: 'Geneva - Qualification', winner: 'Qual Q.', loser: 'Fier F.', winnerKey: '27', loserKey: '28', psw: 1.5, psl: 2.6, eventKey: 705, source: 'Tennis Explorer · Pinnacle', comment: 'Completed' }),
+).join('\n') + '\n');
+const Q = build(Object.assign({}, FEEDS, { DB_YIELD_LOWER_APPROX: path.join(tmp, 'approx-q.csv') }));
+const qx = Q.x.xRows.map((x, i) => ({ x, n: Q.x.xNames[i] }));
+ok(!qx.find(o => o.n[0] === 'Ace A.' && o.n[1] === 'Bee B.') && Q.x.meta.lower.qHasTd === 1,
+   "atp-q: a 'qualifying' row of a match the Database holds (api-tennis's Lyon label) is dropped and counted, never a second row");
+ok(qx.find(o => o.n[0] === 'Qual Q.' && o.n[1] === 'Fier F.'), 'atp-q: a real qualifying match (no Database row) stays');
+const ntAnchor = "    if (tk.length && !tk.every(k => tdUnpricedPairs.has(k))) { if (nt) lower.ntHasTd = (lower.ntHasTd || 0) + 1; else lower.qHasTd = (lower.qHasTd || 0) + 1; continue; }";
 ok(src.split(ntAnchor).length === 2, 'atp-nt: the duplicate-guard mutant anchor is found exactly once');
 const mp3 = path.join(ROOT, '.mutant-lower-yield-nt.js');
 fs.writeFileSync(mp3, src.replace(ntAnchor, ''));
-let red3 = false;
+let red3 = false, red3q = false;
 try { const M = build(Object.assign({}, FEEDS, { DB_YIELD_LOWER_APPROX: path.join(tmp, 'approx-nt.csv') }), mp3);
-  red3 = M.x.xNames.some(n => n[0] === 'Ace A.' && n[1] === 'Bee B.'); }
+  red3 = M.x.xNames.some(n => n[0] === 'Ace A.' && n[1] === 'Bee B.');
+  const MQ = build(Object.assign({}, FEEDS, { DB_YIELD_LOWER_APPROX: path.join(tmp, 'approx-q.csv') }), mp3);
+  red3q = MQ.x.xNames.some(n => n[0] === 'Ace A.' && n[1] === 'Bee B.'); }
 finally { fs.unlinkSync(mp3); }
 ok(red3, 'MUTANT (no Tennis-Data guard) lets the Geneva match in twice — the duplicate check turns red');
+ok(red3q, "MUTANT (no Tennis-Data guard) lets the Lyon-style 'atp-q' copy in twice — the atp-q check turns red");
 // ── founder 2026-11-08 ("add them if it's also on tennis explorer"): a Tennis-Data row with NO price is a Database dash; an
 // atp-nt row of the same match is then the only price there is — kept (behind its usual flags), counted, never a Database figure
 const arch2 = path.join(tmp, 'odds-archive-2'); fs.mkdirSync(arch2);

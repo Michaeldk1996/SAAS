@@ -206,6 +206,10 @@ closes, odds performance and started-evidence.
   match over 6 h, or no end and a start over 6 h before the schedule is broken data, not a start); it is never moved
   earlier to our live flag or later to a schedule. ATP, Challenger and ITF Men (an ITF close travels `lower-closes` as
   book 3, like Challenger); back to 13 Apr 2026 (Oddspapi keeps ~185 days).
+- **One row per match when api-tennis labels a main draw "Qualification"** (Lyon (France) 2026): an archive close of such a
+  match reaches the Database twice — the archive feed's main-draw row and the lower-level `atp-q` row — and the join would
+  dash both. The `atp-nt` rule applies to `atp-q` too: a Database row of the same match wins, the copy is dropped and counted
+  (`build-database-yield.js` `lower.qHasTd`). **Test:** `tools/test-lower-master.js` "atp-q" (+ mutant).
 - **Until it lands, Bet105:** before, during and right after the match the card shows its Bet105 price (Today's Matches
   card ladder, unchanged). Once the Oddspapi close is held, it is the match's price on every page, and the Completed
   card switches whole to Pinnacle (`todays-matches.md`).

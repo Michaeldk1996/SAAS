@@ -741,11 +741,15 @@ for (const r of lowerBest.values()) {
     const dd = n => { const x = new Date(Date.UTC(Math.floor(dI / 10000), Math.floor(dI / 100) % 100 - 1, dI % 100 + n)); return x.toISOString().slice(0, 10).replace(/-/g, ''); };
     if ([-1, 0, 1].some(n => teamPairs.has(tdPairKey(dd(n), r.winner, r.loser)))) { lower.teamHasClose = (lower.teamHasClose || 0) + 1; continue; }
   }
-  if (nt) {
+  // founder 2026-11-09 (Oddspapi close for every match): api-tennis files some ATP main draws under "<event> - Qualification"
+  // (Lyon (France) 2026), so an archive close of such a match reaches the Database twice — the archive feed's main-draw row
+  // and the lower-level 'atp-q' row — and the join dashes both (two rows fit; Van Assche v Musetti, 23 Oct). The 'atp-nt'
+  // rule applies: a Database row of the same match wins, the 'atp-q' copy is dropped and counted (lower.qHasTd).
+  if (nt || r.level === 'atp-q') {
     const dd = n => { const x = new Date(Date.UTC(Math.floor(dI / 10000), Math.floor(dI / 100) % 100 - 1, dI % 100 + n)); return x.toISOString().slice(0, 10).replace(/-/g, ''); };
     const tk = [-1, 0, 1].map(n => tdPairKey(dd(n), r.winner, r.loser)).filter(k => tdPairs.has(k));
-    if (tk.length && !tk.every(k => tdUnpricedPairs.has(k))) { lower.ntHasTd = (lower.ntHasTd || 0) + 1; continue; }
-    if (tk.length) lower.ntFillsTdDash = (lower.ntFillsTdDash || 0) + 1;
+    if (tk.length && !tk.every(k => tdUnpricedPairs.has(k))) { if (nt) lower.ntHasTd = (lower.ntHasTd || 0) + 1; else lower.qHasTd = (lower.qHasTd || 0) + 1; continue; }
+    if (tk.length && nt) lower.ntFillsTdDash = (lower.ntFillsTdDash || 0) + 1;
   }
   xAtt.push([series, '', '', (r.comment || '').trim(), '', '']);
   const ntB = nt && (r.book === 6 || r.book === 7 || r.book === TE_B365_BOOK);   // a main-draw Bet365 price: the join's "B"
