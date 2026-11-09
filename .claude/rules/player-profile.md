@@ -42,6 +42,25 @@ Where a ruling below reverses an older one in this file, the older one is supers
 - **Colours follow the export:** blue Applied chips and the export's surface hues are allowed on the profile (named
   tokens in `tokens.css`, never raw hex in code).
 
+- **How the 2026-11-09 rulings are applied (implementation, each a test):**
+  - **Calendar swings** come from the match's own month, surface, court and the catalog's event country
+    (`calSwingOf`, `pp2EventCountry`): AO Jan → AUS, Dubai Feb → M·EAST, Rio Feb clay → GOLDEN, Rotterdam Feb indoor →
+    E·INDOOR, Indian Wells → SUNSHINE, Madrid → EU CLAY, Wimbledon → GRASS, Hamburg Jul → S·CLAY, Cincinnati → NA HARD,
+    Shanghai → ASIA, Paris Nov indoor → EU INDOOR, Davis / Laver / United / ATP Cup, Hopman, Olympics → TEAM (muted, out
+    of every yield). **Test:** `test-pp2-reconcile.js` "the swing rule places the tour's own events".
+  - **Opponent level** (Market edge, Calendar) = `pp2OppEloRank`: the opponent's rank in the weekly Elo snapshot strictly
+    before the match day, at most 7 days old, on `fhEloAt`'s namesake guards; no snapshot in that week → in no level but
+    All, the count stated in the Calendar's (?). The history loads only when one of the two boxes opens (`pp2EloNeed`).
+  - **Level & round** reads the per-match file (`splits-matches/<key>.json`, the Draw record drill's rows); By round uses
+    the draw's own rounds (Round of 128 … Finals), not the export's "First round"; ATP 500 / 250 by the catalog
+    (`pp2EventCategory`); an ATP Finals row only when he played it. **Test:** `tools/test-draw-record-drill.js` (+ 20 mutants).
+  - **The Players page watchlist** is a "Watchlist · N" strip above the search, in the Favourites strip's pattern (the
+    export draws no list). **Test:** `tools/test-pp2-watchlist.js`.
+  - **Tiles:** Career, Calendar and Court speed read the export's words; Record per tournament, Level & round, Match-up,
+    Market edge and Live trading keep their ruled copy (Q1/Q2, fx3 D10, the 2026-10-30 Bet365 count) until the founder
+    rules on the export's wording.
+  - **Not built (no source):** Davis Cup venue per edition — no store we read carries it; the row reads "Davis Cup".
+
 - **No legacy fallback (founder, 2026-10-21).** The TEN-206 renderer is the only player profile: the legacy
   full-page view (`buildPlayerProfileHtml`, `ppCareerYears`) and its `?pp2=0` / `stennisfy.flags.pp2` switch are
   retired. A profile that cannot paint — the module did not load, or its mount refused or threw — shows
