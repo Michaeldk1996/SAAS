@@ -3232,8 +3232,8 @@
     var rows = (fb.rows || []).map(function (r, i) {
       var hook = r.id != null ? sheetHook(r.id) : '';
       var cur = r.id != null ? sheetCursor() : '';
-      return '<div class="pp2-fbrow" ' + hook + 'style="display:contents;">' + r.cells.map(function (c) {
-        return '<span style="' + cur + 'padding:7px 0;border-top:' + (i ? '1px solid var(--line)' : '0') + ';min-width:0;' +
+      return '<div class="pp2-fbrow" ' + hook + (r.attr || '') + 'style="display:contents;">' + r.cells.map(function (c) {
+        return '<span ' + (r.attr || '') + 'style="' + cur + 'padding:7px 0;border-top:' + (i ? '1px solid var(--line)' : '0') + ';min-width:0;' +
           (c.style || '') + '">' + c.html + '</span>';
       }).join('') + '</div>';
     }).join('');
@@ -10161,11 +10161,15 @@
         if (cut && String(m.date || '') < cut) return false;
         return surf === 'all' || rowSurfBucket(m) === surf;
       });
+      var listed = (r ? r.listed || [] : []).filter(function (m) {
+        if (cut && String(m.date || '') < cut) return false;
+        return surf === 'all' || rowSurfBucket(m) === surf;
+      });
       var w = ms.filter(function (m) { return m.won; }).length, n = ms.length, l = n - w;
       var priced = ms.filter(function (m) { return m.cents != null; });
       var cents = priced.reduce(function (s, m) { return s + m.cents; }, 0);
       return { name: a.label, code: a.abbr, group: STY_GROUP[a.label] || 'base', order: i, w: w, l: l, n: n,
-        pct: n ? 100 * w / n : null, thin: n > 0 && n < STY_FLOOR, empty: n === 0, ms: ms,
+        pct: n ? 100 * w / n : null, thin: n > 0 && n < STY_FLOOR, empty: n === 0, ms: ms, listed: listed,
         priced: priced.length, units: priced.length ? cents / 100 : null };
     });
     var TW = data.reduce(function (s, d) { return s + d.w; }, 0), TN = data.reduce(function (s, d) { return s + d.n; }, 0);
@@ -10303,6 +10307,11 @@
     return head + rows;
   }
   function signColour(v) { var r = Math.round(v * 100) / 100; return r > 0 ? 'var(--pos)' : r < 0 ? 'var(--neg)' : 'var(--text-label)'; }
+  function styCoverageText(p) {
+    var rows = styleRows(p);
+    return (rows.total - rows.unlabelled) + ' of ' + rows.total + ' matches against a labelled opponent. Opponents with no ' +
+      'archetype on file are left out of every figure here.';
+  }
   function renderStylesModalV2(p) {
     var D = styData(p);
     var scope = styScope();
@@ -10319,7 +10328,8 @@
         '</div>' + styChart(D) +
       '</div>' +
       '<div style="position:relative;background:var(--inner);border:1px solid var(--edge-6);border-radius:12px;padding:14px 16px 4px;margin-bottom:12px;">' +
-        infoCorner('sty2', STY_INFO2) +
+        // The coverage fact lives in the (?) note (no page footnotes, v2): how many of his matches met a labelled opponent.
+        infoCorner('sty2', Object.assign({}, STY_INFO2, { notes: [styCoverageText(p)] })) +
         '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:12px;flex-wrap:wrap;padding-right:28px;">' +
           recCaps('Record by archetype ' + MIDDOT + ' ' + esc(scope)) +
           '<span style="display:inline-flex;align-items:baseline;gap:8px;font-family:\'IBM Plex Mono\',monospace;font-size:12px;color:var(--text-label);white-space:nowrap;">' +
@@ -10339,7 +10349,23 @@
   function fbMatchRow(m) {
     var M = 'font-family:\'IBM Plex Mono\',monospace;';
     var pl = m.cents != null ? m.cents / 100 : null;
-    return { id: m.wo ? null : (m.sheetId || (m.date + '|' + m.opp)), cells: [
+    // Founder 2026-10-22 / 2026-10-31: a walkover (or an unconfirmed Tennis Explorer row) is listed with "WO" and "–",
+    // no result square, no price, no units and no match-sheet hook; it is in no count.
+    if (m.wo || m.unconf) {
+      return { id: null, attr: 'data-pp2-wo-row="1" ', cells: [
+        { html: '' },
+        { html: fbDate(m.date), style: M + 'font-size:11px;color:var(--text-label);white-space:nowrap;' },
+        { html: esc(initialSurname(m.opp || '') || DASH), style: 'font-size:12.5px;color:var(--text-label);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;' },
+        { html: esc(tournDisplayName(m.event, null) || DASH), style: 'font-size:12px;color:var(--text-label);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;' },
+        { html: esc(m.round || DASH), style: M + 'font-size:10.5px;color:var(--text-label);' },
+        { html: m.wo ? '<span style="' + M + 'font-size:8.5px;padding:1px 5px;border-radius:4px;background:var(--wash-6, color-mix(in srgb, var(--text) 6%, transparent));border:1px solid var(--edge-10);color:var(--text-label);">WO</span>' : ENDASH,
+          style: M + 'font-size:11px;color:var(--text-label);white-space:nowrap;' },
+        { html: ENDASH, style: M + 'font-size:11px;color:var(--text-label);text-align:right;' },
+        { html: ENDASH, style: M + 'font-size:11px;color:var(--text-label);text-align:right;' },
+        { html: ENDASH, style: M + 'font-size:11.5px;color:var(--text-label);text-align:right;' }
+      ] };
+    }
+    return { id: m.sheetId || (m.date + '|' + m.opp), cells: [
       fbResCell(m),
       { html: fbDate(m.date), style: M + 'font-size:11px;color:var(--text-label);white-space:nowrap;' },
       { html: esc(initialSurname(m.opp || '') || DASH), style: 'font-size:12.5px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;' },
@@ -10362,6 +10388,7 @@
     var d = D.data.filter(function (x) { return x.name === name; })[0];
     if (!d || d.empty) return null;
     var ms = d.ms.slice().sort(function (a, b) { return String(b.date).localeCompare(String(a.date)); });
+    var all = d.ms.concat(d.listed || []).sort(function (a, b) { return String(b.date).localeCompare(String(a.date)); });
     var scope = styScope();
     var pricedMs = ms.filter(function (m) { return m.price != null && m.oppPrice != null; });
     var fav = pricedMs.filter(function (m) { return +m.price < +m.oppPrice; }), dog = pricedMs.filter(function (m) { return +m.price > +m.oppPrice; });
@@ -10388,7 +10415,7 @@
     ];
     return { name: d.name, code: d.code,
       meta: recordText(d.w, d.l) + (d.thin ? '' : ' ' + MIDDOT + ' ' + Math.round(d.pct) + '%') + ' ' + MIDDOT + ' ' + d.n + ' matches ' + MIDDOT + ' ' + esc(scope),
-      tiles: tiles, cols: FB_LIST_COLS, head: fbMatchHead(), rows: ms.map(fbMatchRow) };
+      tiles: tiles, cols: FB_LIST_COLS, head: fbMatchHead(), rows: all.map(fbMatchRow) };
   };
 
   function renderStylesModal(p) {
@@ -13123,6 +13150,8 @@
     // exported so the reconciliation check and the tests can call the same
     // code path the page uses, rather than a copy that can drift
     _internals: {
+      // Profile v2 (2026-11-09): the shared drill box, its per-box builders and the Match-up model
+      FB_BUILD: FB_BUILD, floatBoxHtml: floatBoxHtml, styData: styData, renderStylesModalV2: renderStylesModalV2,
       recordRowsOf: recordRowsOf,
       countedSpine: countedSpine,
       recordSourceNote: recordSourceNote,

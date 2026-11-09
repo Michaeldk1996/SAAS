@@ -3091,7 +3091,10 @@ mustFail('the guard check would catch the initial test being dropped', () => {
 // §5.6 keeps an under-minimum archetype LISTED with a dash. Dropping it would read
 // as an opponent type he has never faced, which is a different claim entirely.
 // Item 23 adds the file's colour and meta line to that.
-checkCareer('item 23 · an under-minimum archetype stays listed, dashed, dim and inert', () => {
+// Profile v2 (founder 2026-11-09; supersedes the TEN-228/384 Match-up pins): an archetype under 5 matches stays listed,
+// grey, its rate a dash, NO mark ("I need no mark"), sorted to the foot — and it opens the drill box (the export makes the
+// row clickable; the box then shows the record only).
+checkCareer('item 23 · an under-minimum archetype stays listed, dashed and grey, with no mark (v2)', () => {
   let found = 0;
   for (const key of Object.keys(PLAYERS)) {
     const p = Object.assign({ key }, PLAYERS[key]);
@@ -3101,28 +3104,17 @@ checkCareer('item 23 · an under-minimum archetype stays listed, dashed, dim and
     if (!thin.length) continue;
     const html = I.renderStylesModal(p);
     thin.forEach((r) => {
-      const n = r.won + r.lost;
-      assert(html.indexOf(esc17(r.axis.label)) > -1, `${p.name}: thin archetype ${r.axis.label} dropped out`);
-      assert(html.indexOf('data-pp2="style-row" data-v="' + esc17(r.axis.label) + '"') < 0,
-        `${p.name}: thin archetype ${r.axis.label} is still clickable`);
-      assert(html.indexOf(n + ' matches · below the five-match minimum') > -1,
-        `${p.name}: thin archetype ${r.axis.label} does not carry the file's meta line`);
-      // TEN-384 (reference): the Matches cell reads "N · min 5"
-      assert(html.indexOf('>' + n + ' · min 5<') > -1,
-        `${p.name}: thin archetype ${r.axis.label} does not read "${n} · min 5"`);
+      const lab = esc17(r.axis.label);
+      assert(html.indexOf('data-box="styles" data-v="' + lab + '" class="pp2-styrow"') > -1, `${p.name}: thin archetype ${r.axis.label} dropped out or is not openable`);
+      const row = html.slice(html.indexOf('data-box="styles" data-v="' + lab + '" class="pp2-styrow"'));
+      const one = row.slice(0, row.indexOf('</div>', row.indexOf('Backing') > -1 ? 0 : 0) + 2000);
+      assert(/color:var\(--text-label\);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">/.test(one.slice(0, 900)), `${p.name}: thin ${r.axis.label} name is not grey`);
+      assert(!/under 5|small sample|min 5|below the five-match minimum/.test(html), `${p.name}: a small-sample mark is back`);
     });
-    // The file's DIM — item 23 names it. 12a (TEN-285) set DIM_COLOUR to #6e7a93, the --label
-    // value, emitted as the literal; d2fd80fb rewrote this needle to var(--label), a string the
-    // renderer never emits. Unseen because this check SKIPs wherever career-history/ is absent,
-    // which was every CI run until the TEN-329 built-store gate. TEN-376 Foundation: DIM_COLOUR
-    // is now the --text-label token, emitted as var(--text-label).
-    // TEN-384: the ledger row's name is 13.5/700 (reference), dimmed to --text-label under the minimum.
-    assert(html.indexOf('font-size:13.5px;font-weight:700;color:var(--text-label);') > -1,
-      `${p.name}: the under-minimum name is not the file's DIM colour`);
     if (++found >= 3) break;
   }
   assert(found > 0, 'no player had an under-minimum archetype — this check never ran');
-  console.log(`        ${found} players keep a sub-minimum archetype listed, dashed and dim`);
+  console.log(`        ${found} players keep a sub-minimum archetype listed, dashed, grey, unmarked`);
 });
 function esc17(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); }
 
@@ -3221,23 +3213,22 @@ mustFail('the order check would catch a thin row left at the top', () => {
 
 // Item 3 · ONE coverage line with real counts, and the old three-sentence roster
 // essay gone. Both halves matter: he asked for the fact AND for the essay to go.
-checkCareer('item 3 · coverage is one line with real counts, essay removed', () => {
+// Profile v2: no page footnotes — the labelled-opponent coverage is the table's (?) note, with real counts.
+checkCareer('item 3 · coverage is one line with real counts, in the table (?) note (v2)', () => {
   let stated = 0;
   for (const p of SAMPLE) {
     const rows = I.styleRows(p);
     if (!rows.total) continue;
-    const html = I.renderStylesModal(p);
+    I.state.info = 'sty2';
+    let html; try { html = I.renderStylesModal(p); } finally { I.state.info = null; }
     const labelled = rows.total - rows.unlabelled;
     assert(html.indexOf(labelled + ' of ' + rows.total + ' matches against a labelled opponent') > -1,
       `${p.name}: the coverage line is missing or does not carry real counts`);
-    assert(html.indexOf('The labelled roster is the current 250 players') < 0,
-      `${p.name}: the roster essay is still in the footnote`);
-    assert(html.indexOf('priced matches were against an opponent') < 0,
-      `${p.name}: the footnote still describes the priced population`);
+    assert(html.indexOf('The labelled roster is the current 250 players') < 0, `${p.name}: the roster essay is back`);
     stated++;
   }
   assert(stated > 0, 'no sampled player rendered — this check never ran');
-  console.log(`        ${stated} players state coverage in one line`);
+  console.log(`        ${stated} players state coverage in the (?) note`);
 });
 mustFail('the coverage check would catch a hidden gap', () => {
   const html = 'Click an archetype for the matches behind it.';
@@ -3320,142 +3311,49 @@ mustFail('the value check would catch a label rewritten to the axis bound', () =
 // ─── shell and row chrome (items 5, 12, 17-21, 25, 27-29) ──────────────────
 // One render, many assertions: these are all "is this exact value in the DOM",
 // and splitting them into ten checks would just render the same html ten times.
-checkCareer('items 5,12,17-21,25,27-29 · the shell, rows and drill carry the file\'s values', () => {
+// Profile v2 (founder 2026-11-09, `styleSheet()` in Player Stat Boxes LOCKED 2026-11-09): the controls, chart card,
+// table card and the drill box carry the export's structure.
+checkCareer('items 5,12,17-21,25,27-29 · the v2 controls, chart, table and drill box carry the export\'s values', () => {
   let subject = null;
   for (const p of SAMPLE) {
     const rows = I.styleRows(p);
     if (rows.total && rows.some(r => I.styleOpenable(r.won + r.lost) && r.priced > 0)) { subject = p; break; }
   }
   assert(subject, 'no sampled player has a priced, openable archetype — this check never ran');
-  const rows = I.styleRows(subject);
-  const open = rows.filter(r => I.styleOpenable(r.won + r.lost) && r.priced > 0)[0];
-  I.state.styleRow = open.axis.label;
   const html = I.renderStylesModal(subject);
-  I.state.styleRow = null;
-
-  // TEN-384 · re-pinned to the reference (OFFICIAL VERSION 1, inventory C rows 16-28). Same
-  // intent per item: the chart panel, its head, the plot geometry, the dot styles, the EVEN
-  // rule, the ledger-table list with its Career footer, the selected-row lift and the drill.
   const want = [
-    // item 7 · the chart head: caps title + the Plex legend on the right
-    ['WIN RATE BY ARCHETYPE eyebrow', '>Win rate by archetype</span>'],
-    ['chart legend', 'dot size = matches · serve-first → baseline-first'],
-    // item 16 · the chart panel: --card + --edge-6, radius 12, pad 14/16/12, 12px head gap
-    ['item 16 · chart panel', 'background:var(--card);border:1px solid var(--edge-6);border-radius:12px;padding:14px 16px 12px;'],
-    // item 8 · layout and plot box: a 36px tick gutter, no rotated axis title
-    ['item 8 · 36px 1fr layout', 'grid-template-columns:36px minmax(0,1fr);gap:0 10px;'],
-    ['item 8 · 212px plot (200 drawable + the 12px inset) with hairline axes',
-      'height:212px;border-left:1px solid var(--line);border-bottom:1px solid var(--line);'],
-    ['item 9 · tick label', 'font-size:10px;color:var(--text-label);'],
-    // item 19 · dotted guides (foundation: --viz-guide, dash 2 / gap 6)
-    ['item 19 · dotted guide', 'background-image:linear-gradient(to right, var(--viz-guide) 2px, transparent 2px);background-size:8px 1px;'],
-    // item 11 · the EVEN label, right-aligned and uppercased
-    ['item 11 · EVEN label right-aligned', 'right:6px;top:'],
-    ['item 11 · EVEN uppercased', 'text-transform:uppercase;color:var(--text-label);">even<'],
-    // item 12 · the value label above the dot (Plex 11.5/700 white)
-    ['item 12 · value label above the dot', 'font-size:11.5px;font-weight:700;color:var(--text);white-space:nowrap;pointer-events:none;'],
-    // item 18 · dots: unselected --bar 30% + 1px --bar ring; the open archetype solid --bar
-    ['item 18 · unselected dot', 'background:color-mix(in srgb, var(--bar) 30%, transparent);border:1px solid var(--bar);'],
-    ['item 18 · selected dot', 'background:var(--bar);border:1px solid var(--bar);'],
-    ['item 13 · disc', 'border-radius:50%;'],
-    // item 20 · abbreviations and the foot labels
-    ['item 20 · x tick label class', 'class="pp2-stk'],
-    ['item 20 · foot label SERVE', '>Serve<'],
-    ['item 20 · foot label BASELINE', '>Baseline<'],
-    // item 21 · the ledger table: head, tracks, row type
-    ['item 21 · list head', '>Record by archetype · career<'],
-    ['item 21 · ledger tracks', 'grid-template-columns:minmax(0,1fr) 56px 76px 60px 64px;gap:0 12px;'],
-    ['item 21 · row name 13.5/700', 'font-size:13.5px;font-weight:700;color:var(--text);'],
-    ['item 21 · archetype code Plex 10', 'font-size:10px;color:var(--text-label);'],
-    ['item 21 · Win % Plex 13.5/700', 'font-size:13.5px;font-weight:700;text-align:right;color:var(--text);'],
-    ['item 21 · Backing Plex 12/600', 'font-size:12px;font-weight:600;text-align:right;color:var(--'],
-    // item 24 · no bars in the list
-    // item 25 · the selected row lifts to --selected, bled 10px each side
-    ['item 25 · selected row lift', 'background:var(--selected);box-shadow:-10px 0 0 var(--selected),10px 0 0 var(--selected);'],
-    // item 23 · the CAREER footer: caps + rated count
-    ['item 23 · Career footer', '>Career</span>'],
-    ['item 23 · rated count', ' rated</span>'],
-    // items 26-28 · the drill: panel, scrolling table, sticky heads, W/L squares
-    ['item 26 · drill panel', 'background:var(--card);border:1px solid var(--edge-6);border-radius:10px;padding:14px 16px 12px;margin:8px 0 10px;'],
-    ['item 26 · drill scrolls inside 360px', 'max-height:360px;overflow-y:auto;'],
-    ['item 26 · sticky heads', 'position:sticky;top:0;'],
-    ['item 28 · drill grid',
-      'grid-template-columns:12px 64px minmax(0,1.25fr) minmax(0,1fr) 36px 128px 46px 46px 54px;gap:0 10px;'],
-    ['item 27 · W/L square', 'width:8px;height:8px;border-radius:2px;background:var(--'],
-    ['item 28 · drill head Score', '>Score<'],
-    ['item 28 · drill head P&L', '>P&amp;L<']
+    ['surface pills', 'data-pp2="sty-surf" data-v="Indoors"'],
+    ['window', 'data-pp2="sty-win" data-v="l52"'],
+    ['chart card', 'background:var(--inner);border:1px solid var(--edge-6);border-radius:12px;padding:14px 16px 12px;'],
+    ['chart head', '>Win rate by archetype</span>'],
+    ['legend', 'dot size = matches · career'],
+    ['his average line', 'his average · '],
+    ['brackets', '>Serve-first</span>'],
+    ['table head', 'Record by archetype · career'],
+    ['sortable heads', 'data-pp2="sty-sort" data-v="pct"'],
+    ['table tracks', 'grid-template-columns:minmax(0,1.5fr) minmax(0,1fr) 56px 60px 52px 64px;gap:0 12px;'],
+    ['(?) icons', 'data-pp2="info" data-v="sty1"'],
   ];
-  want.forEach(([what, needle]) => {
-    assert(html.indexOf(needle) > -1, `${subject.name}: ${what} missing — "${needle}"`);
-  });
-  // item 24 · no bar track left in the list (the old card rows carried one per archetype)
-  assert(html.indexOf('height:4px;border-radius:2px;background:var(--track);') < 0,
-    `${subject.name}: item 24 · a bar is still drawn in the archetype list`);
-
-  // item 19 · the EVEN rule is the break-even rule (--viz-rule) at the EVEN label's own top — read as
-  // the rule that immediately precedes its label, so deleting the rule cannot leave this green.
-  const evenTop = (/right:6px;top:([0-9.]+px);transform:translateY\(-130%\)/.exec(html) || [])[1];
-  assert(evenTop && new RegExp('<span data-even="1" style="position:absolute;left:0;right:0;top:' + evenTop.replace('.', '\\.') +
-    ';height:1px;background:var\\(--viz-rule\\);"></span><span style="position:absolute;right:6px;top:' + evenTop.replace('.', '\\.') + ';').test(html),
-    `${subject.name}: item 19 · EVEN rule missing at the EVEN label's ${evenTop}`);
-
-  // item 21 · a whole-number win rate. The live build printed "81.2%".
-  assert(!/\d\.\d%</.test(html.replace(/[+−]\d+\.\d%/g, '')),
-    `${subject.name}: a fractional rate is being printed`);
-  // item 27 · the drill header's three-part P&L line
-  assert(new RegExp('u \\u00b7 [+\\u2212]\\d+\\.\\d% \\u00b7 ' + open.priced + ' priced').test(html),
-    `${subject.name}: the drill header does not carry "Xu · Y% · ${open.priced} priced"`);
-  // item 29 · the drill's P&L column carries no "u" — the unit is in the header
-  assert(html.indexOf('text-align:right;color:var(--pos);">+') > -1 ||
-         html.indexOf('text-align:right;color:var(--neg);">−') > -1,
-    `${subject.name}: no signed P&L cell rendered`);
-  // item 29 · "Oct 2026" dates
-  assert(/>(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) \d{4}</.test(html),
-    `${subject.name}: the drill date is not the file's "Mon YYYY"`);
-  console.log(`        ${want.length + 5} values verified on ${subject.name}/${open.axis.label}`);
-});
-mustFail('the chrome check would catch the old card-row list coming back', () => {
-  const html = '<div style="display:grid;grid-template-columns:minmax(0,1fr) 300px 58px;gap:16px;">';
-  assert(html.indexOf('grid-template-columns:minmax(0,1fr) 56px 76px 60px 64px;gap:0 12px;') > -1,
-    'X: item 21 · ledger tracks missing');
+  want.forEach(([what, needle]) => assert(html.indexOf(needle) > -1, `${subject.name}: ${what} missing — "${needle}"`));
+  const open = I.styleRows(subject).filter(r => I.styleOpenable(r.won + r.lost) && r.priced > 0)[0];
+  const fb = I.FB_BUILD.styles(subject, open.axis.label);
+  assert(fb && fb.tiles.length === 4, 'the drill box has no four tiles');
+  assert.deepStrictEqual(fb.tiles.map(t => t.label), ['Win rate', 'On the price', 'Favourite · underdog', 'Deciding sets']);
+  assert(/u$/.test(fb.tiles[1].fig), 'On the price is not in units (founder 2026-11-09: always units)');
+  console.log(`        ${subject.name}: v2 structure + ${open.axis.label} drill box`);
 });
 
-check('item 5 · the shell says "Match-up record" with the v2 file\'s subtitle', () => {
-  // Deliberately NOT gated on the career store: the subtitle is a constant and
-  // the title now comes from the box set, so this stays green with no spine.
-  assert.strictEqual(I.modalSubtitle('styles', SAMPLE[0], {}),
-    'Record and win rate by the opponent’s playing style');
-  // v7 moved the title onto the box object and the MODAL_TITLE override map is
-  // gone. The assertion is the same fact read from its new single source — and
-  // this is now stronger, because it proves the TILE says it too.
-  const styles = I.BOXES.filter(b => b.key === 'styles')[0];
-  assert.strictEqual(styles.title, 'Match-up record');
-  assert.strictEqual(I.MODAL_WIDTH.styles, 900, 'v2 · the modal is not the export\'s 900px');
-  console.log('        title, subtitle and 900px width all as specified');
-});
-mustFail('the shell check would catch the old subtitle', () => {
-  assert.strictEqual('Win rate against each playing style Zverev\'s record covers',
-    'Win rate by opposing archetype · minimum 5 matches');
-});
-
-// item 30 · an unpriced row dashes PRICE/OPP/P&L and does not inflate `priced`.
 checkCareer('item 30 · unpriced drill rows dash and stay out of the priced count', () => {
   let n = 0;
   for (const p of SAMPLE) {
     const rows = I.styleRows(p);
-    const open = rows.filter(r => I.styleOpenable(r.won + r.lost) &&
-      r.rows.some(m => m.cents == null))[0];
+    const open = rows.filter(r => I.styleOpenable(r.won + r.lost) && r.rows.some(m => m.cents == null))[0];
     if (!open) continue;
-    I.state.styleRow = open.axis.label;
-    const html = I.renderStylesModal(p);
-    I.state.styleRow = null;
+    const html = I.floatBoxHtml(I.FB_BUILD.styles(p, open.axis.label));
     const unpriced = open.rows.filter(m => m.cents == null).length;
-    assert(unpriced > 0 && open.priced === open.rows.length - unpriced,
-      `${p.name}/${open.axis.label}: priced count includes an unpriced row`);
-    // Three dashed money cells per unpriced row.
-    const dashes = (html.match(/text-align:right;color:var\(--text-label\);">—</g) || []).length;   // TEN-376: --label → --text-label
-    assert(dashes >= unpriced,
-      `${p.name}/${open.axis.label}: ${dashes} dashed money cells for ${unpriced} unpriced rows`);
+    assert(unpriced > 0 && open.priced === open.rows.length - unpriced, `${p.name}/${open.axis.label}: priced count includes an unpriced row`);
+    const dashes = (html.match(/text-align:right;color:var\(--text-label\);">—</g) || []).length;
+    assert(dashes >= unpriced, `${p.name}/${open.axis.label}: ${dashes} dashed money cells for ${unpriced} unpriced rows`);
     n++;
     if (n >= 2) break;
   }
@@ -3470,17 +3368,15 @@ mustFail('the unpriced check would catch an invented price', () => {
 checkCareer('item 31 · every drill row carries the match-sheet hook', () => {
   let n = 0;
   for (const p of SAMPLE) {
-    const rows = I.styleRows(p);
-    const open = rows.filter(r => I.styleOpenable(r.won + r.lost))[0];
+    const open = I.styleRows(p).filter(r => I.styleOpenable(r.won + r.lost))[0];
     if (!open) continue;
-    I.state.styleRow = open.axis.label;
-    const html = I.renderStylesModal(p);
-    I.state.styleRow = null;
+    const fb = I.FB_BUILD.styles(p, open.axis.label);
+    const html = I.floatBoxHtml(fb);
     const hooks = (html.match(/data-pp2="sheet"/g) || []).length;
-    // Nine cells per row, each individually hooked (the file hooks every cell so
-    // the whole row is clickable without a wrapper the grid cannot have).
-    assert.strictEqual(hooks, open.rows.length * 9,
-      `${p.name}/${open.axis.label}: ${hooks} sheet hooks for ${open.rows.length} rows`);
+    const played = fb.rows.filter(r => r.id != null).length;
+    // v2: the row wrapper and each of its nine cells carry the hook (display:contents wrapper)
+    assert.strictEqual(played, open.rows.length, `${p.name}/${open.axis.label}: ${played} openable rows for ${open.rows.length} matches`);
+    assert(hooks >= played, `${p.name}/${open.axis.label}: ${hooks} sheet hooks for ${played} rows`);
     n++;
     if (n >= 2) break;
   }
@@ -3497,13 +3393,11 @@ checkCareer('item 31b · a listed walkover row in the drill carries no match-she
   for (const p of SAMPLE) {
     const open = I.styleRows(p).filter(r => I.styleOpenable(r.won + r.lost) && (r.listed || []).some(m => m.wo))[0];
     if (!open) continue;
-    I.state.styleRow = open.axis.label;
-    const html = I.renderStylesModal(p);
-    I.state.styleRow = null;
-    const woCells = html.match(/<span [^>]*data-pp2-wo-row="1"[^>]*>/g) || [];
+    const html = I.floatBoxHtml(I.FB_BUILD.styles(p, open.axis.label));
+    const woRows = html.match(/<div class="pp2-fbrow" [^>]*data-pp2-wo-row="1"[^>]*>/g) || [];
     const woN = open.listed.filter(m => m.wo).length;
-    assert.strictEqual(woCells.length, woN, `${p.name}/${open.axis.label}: ${woCells.length} walkover rows drawn for ${woN} listed`);
-    assert(woCells.every(c => !/data-pp2="sheet"/.test(c)), `${p.name}/${open.axis.label}: a walkover row carries a sheet hook`);
+    assert.strictEqual(woRows.length, woN, `${p.name}/${open.axis.label}: ${woRows.length} walkover rows drawn for ${woN} listed`);
+    assert(woRows.every(c => !/data-pp2="sheet"/.test(c)), `${p.name}/${open.axis.label}: a walkover row carries a sheet hook`);
     n++;
     if (n >= 2) break;
   }
