@@ -3292,7 +3292,7 @@
   // The Filters trigger + its popover menu (the design's filterMenu): a sliders glyph and "Filters · n";
   // a 3-column grid of option groups with cross-adjusted counts; foot "n of m matches" + Reset filters.
   // groups = [{ key, title, cur, options: [[value, label]], count: function (value) -> n }]
-  function filtersTriggerHtml(id, groups, nIn, nAll) {
+  function filtersTriggerHtml(id, groups, nIn, nAll, width) {
     var open = state.fmOpen === id;
     var active = groups.filter(function (g) { return g.cur !== 'all'; });
     var lit = open || active.length;
@@ -3324,7 +3324,7 @@
     }).join('');
     return '<span style="position:relative;display:inline-flex;">' + trig +
       '<div data-pp2="fm-close" style="position:fixed;inset:0;z-index:70;"></div>' +
-      '<div data-pp2="card" style="position:absolute;top:calc(100% + 8px);left:0;z-index:71;width:520px;max-width:calc(100vw - 48px);' +
+      '<div data-pp2="card" style="position:absolute;top:calc(100% + 8px);left:0;z-index:71;width:' + (width || 520) + 'px;max-width:calc(100vw - 48px);' +
         'background:var(--card);border:1px solid var(--edge-10);border-radius:14px;box-shadow:var(--shadow-pop);padding:14px 16px 12px;' +
         'box-sizing:border-box;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px 18px;">' + cols +
         '<div style="grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--edge-10);' +
@@ -9906,7 +9906,7 @@
           '<span style="' + M_ + 'font-size:9px;color:var(--text-label);white-space:nowrap;">' + r.played.length + ' played</span></span>'; }).join('') +
       '</div></div>';
     var fr = '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;">' +
-      filtersTriggerHtml('cal', groups, M.length, W0.length) +
+      filtersTriggerHtml('cal', groups, M.length, W0.length, 620) +   // the export's Calendar menu is 620px
       '<span style="' + M_ + 'font-size:11px;color:var(--text-label);white-space:nowrap;">' + M.length + ' of ' + W0.length + ' matches</span></div>' +
       filtersAppliedHtml('cal', groups, M.length, W0.length);
     return fr + card1 + card2 + calDrawerV2(p, M, cols, view);
