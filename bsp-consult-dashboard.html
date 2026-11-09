@@ -14395,6 +14395,7 @@ function fhEloAt(hist, name, iso, owners){
 // pp2OppEloRank(name, iso) -> rank (1 = highest rating) or null.
 let _pp2EloHist = null, _pp2EloAsked = false;
 const _pp2EloSorted = new Map();
+if (typeof window !== 'undefined') {   // the block is also evaluated by tests with no window
 window.pp2EloNeed = function(){
   if (_pp2EloAsked) return;
   _pp2EloAsked = true;
@@ -14419,6 +14420,7 @@ window.pp2OppEloRank = function(name, iso){
   let r = 1; for (const v of sorted) { if (v > e.v) r++; else break; }
   return r;
 };
+}
 // Player colours. Shared with the player profile: --fh-pa / --fh-pb are the 12a periwinkle / text outside the modal
 // (dashboard :root) and the neutral D4 pair inside it (tokens.css (TEN-376; was the modal token file)).
 const FH_AC = 'var(--fh-pa)', FH_BC = 'var(--fh-pb)', FH_B2 = 'var(--text-soft)', FH_DASH = 'var(--text-label)';
