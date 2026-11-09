@@ -74,6 +74,10 @@ function shardMatch(m) {
     d: m.date, t: m.tournament || null, o: m.oppName || null, oc: m.oppCountry || null,
     rd: m.round, sc: m.score || '', wl: m.wl,
     sf: m.surface, lv: m.level, bo: m.bestof, orank: m.oppRank, oh: m.oppHand,
+    // Profile v2 (2026-11-09) · per-match serve counters for Level & round's Service view:
+    // [aces, dfs, svPts, svGames, bpSaved, bpFaced, oppSvGames, oppBpSaved, oppBpFaced]; absent when the row has none.
+    s: m.srv && m.opp ? [m.srv.aces, m.srv.dfs, m.srv.pts, m.srv.svGames, m.srv.bpSaved, m.srv.bpFaced,
+      m.opp.svGames, m.opp.bpSaved, m.opp.bpFaced] : undefined,
   };
 }
 const CACHE = process.env.SPLITS_CACHE_DIR || '/tmp/ta-cache';

@@ -263,7 +263,7 @@ Where a ruling below reverses an older one in this file, the older one is supers
     (`pp2HasProfile`); otherwise plain text.
   **Test:** `tools/test-draw-record-drill.js` (every player in the committed store reconciles, the pinned Zverev fixture,
   the drill, the sheet payloads, the host bridge through the real `h2hPriceJoin`) + `tools/test-draw-record-drill-mutants.js`
-  (17 mutants); `tools/test-ten384-r2-draw.js` (the chevron track, panel width unchanged).
+  (20 mutants, profile v2 2026-11-09: the Level & round cards and drill boxes; the old r2 footnote test is retired with its layout).
 - **TEN-384 fx4 (independent review, 2026-10-07).**
   - **Header rank = the Players card's rank:** live standings (`player-index.json`, the host's `playerIndex`, read by ONE function `pp2LiveRankOf`, bridged as `window.pp2LiveRank`), else the frozen `profile.rank` (`headerRank`). The landing repaints an open profile when the standings land. **Test:** `tools/test-ten384-fx4.js` item 2.
   - **Loading claims nothing, on every surface that reads the market-edge shard** (`shardPending`): Calendar Career yield / Best / Worst tiles, the findings strip, Vs-others bars, Swing row, n / Yield / Vs others rows, the By-month head count, the footnote's priced sentences and the cell drill's prices; Court speed units and H / A; Matchup Backing (list, Career, summary, drill); the ledger's unpriced H / A cells. Each keeps its box with `&nbsp;` and paints once. Record per tournament's tile is pending while the page's Backing join (`trProfileBacking`: career-history + the Database join rows) has not answered (`tournBackingPending`). Key insights read no shard figure. **Test:** `tools/test-ten384-fx4.js` item 4.

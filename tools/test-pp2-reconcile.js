@@ -1167,7 +1167,7 @@ check('splits box headline and the modal agree on the picked split', () => {
       `(${JSON.stringify(vals.splits.support)})`);
     assert(/[0-9]/.test(String(vals.splits.headline)),
       `${p.name}: splits headline carries no figure`);
-    const html = I.renderSplitsModal(p);
+    I.state.info = "spl1"; const html = I.renderSplitsModal(p); I.state.info = null;   // v2: the baseline sits in the (?) note
     assert(html.includes(bs.baseline.toFixed(1) + '%'),
       `${p.name}: modal does not disclose the baseline the headline was measured against`);
     shown++;
@@ -2549,194 +2549,110 @@ mustFail('the headline check would catch a LABEL back in the headline slot', () 
 // TEN-384 Q5 · the three bands are three tiles side by side, slowest to fastest under the reference's
 // "Slower courts … Faster courts" rule — so the order is the speed order, whatever the rates. (The
 // win-rate sort belonged to the retired vertical list.)
-checkCareer('bands run slowest to fastest: Slow · Medium · Fast (TEN-384 Q5)', () => {
+// Profile v2 (founder 2026-11-09): Court speed bands are per edition — that edition's abstract speed − 1.00, Fast above
+// +0.08, Slow below −0.08, ATP only — drawn Fast · Medium · Slow under "Faster courts … Slower courts" as the export
+// draws them. Every check below runs the shipped spdData / renderSpeedModal on the sampled players.
+const spdSample = () => SAMPLE.filter(p => I.speedRows(p).length && I.spdData(p).tn);
+checkCareer('bands run Fast · Medium · Slow under "Faster courts … Slower courts" (profile v2, the export)', () => {
   let n = 0;
-  for (const p of SAMPLE) {
-    if (!I.speedRows(p).length) continue;
-    assert.deepStrictEqual(I.speedBands(p).map(b => b.band.id), ['slow', 'med', 'fast'],
-      `${p.name}: the bands are not in speed order`);
+  for (const p of spdSample()) {
+    I.state.spdSurf = 'all'; I.state.spdBand = null;
+    assert.deepStrictEqual(I.spdData(p).bands.map(b => b.key), ['fast', 'medium', 'slow'], `${p.name}: the bands are not in the export's order`);
     const html = I.renderSpeedModal(p);
-    assert(/>Slower courts<[\s\S]*>Faster courts</.test(html), `${p.name}: the Slower … Faster rule is missing`);
+    assert(/Faster courts[\s\S]*Slower courts/.test(html), `${p.name}: the Faster … Slower rule is missing`);
     assert(/grid-template-columns:repeat\(3,minmax\(0,1fr\)\);gap:8px/.test(html), `${p.name}: the tiles are not three side by side`);
     n++;
   }
-  assert(n > 0, 'no sampled player had a speed row — this check never ran');
+  assert(n > 0, 'no sampled player had a rated ATP match — this check never ran');
 });
-mustFail('[neg] the order check would catch the retired win-rate sort', () => {
-  assert.deepStrictEqual(['fast', 'slow', 'med'], ['slow', 'med', 'fast'], 'the bands are not in speed order');
+mustFail('[neg] the order check would catch the retired Slow · Medium · Fast order', () => {
+  assert.deepStrictEqual(['slow', 'medium', 'fast'], ['fast', 'medium', 'slow'], 'the bands are not in the export\'s order');
 });
-
-// TEN-384 Q4.5 / Q5 · chips on the Darker track; an openable band is a clickable tile (7 / 16 / 24),
-// a sub-minimum band a stat box (--edge-6); the match panel spans the modal under the tiles.
-// A synthetic career whose events sit at rated venues in all three bands, so the layout check runs
-// with career-history/ absent (it is gitignored locally). Slow: Roland Garros 12-4; Medium and Fast:
-// whichever rated venues the committed map bands there. Built from the map itself, never assumed.
-const SPEED_FIX = (() => {
-  const rows = [];
-  if (!SPEED_MAP || !SPEED_MAP.venues) return null;
-  const byBand = { slow: [], med: [], fast: [] };
-  Object.keys(SPEED_MAP.venues).forEach((venue) => {
-    const b = I.speedBandFor(venue);
-    const guard = (SPEED_MAP.surfaceGuard || {})[venue];
-    const keep = guard && guard.keep ? String(guard.keep).split('/')[0] : null;
-    if (b && byBand[b.id] && !byBand[b.id].length) byBand[b.id].push({ venue, surface: keep && keep !== '?' ? keep.toLowerCase() : 'hard' });
-  });
-  const plan = [['slow', 12, 4], ['med', 6, 2], ['fast', 2, 1]];
-  plan.forEach(([id, w, l], k) => {
-    const v = byBand[id][0];
-    if (!v) return;
-    for (let i = 0; i < w + l; i++) {
-      rows.push({ year: '2025', date: `2025-0${k + 3}-${String(i + 1).padStart(2, '0')}`, surface: v.surface, level: 'atp',
-        tournament: v.venue, round: 'R32', opponent: `S${k}${i} Peed`, result: i < w ? '2 - 0' : '0 - 2', won: i < w });
+checkCareer('every band reconciles: its record is its matches, the three bands + unrated = every ATP match on the surface', () => {
+  let n = 0;
+  for (const p of spdSample()) {
+    for (const s of ['all', 'hard', 'clay', 'grass', 'indoor']) {
+      I.state.spdSurf = s;
+      const D = I.spdData(p);
+      D.bands.forEach(b => { assert.strictEqual(b.w + b.l, b.n); assert.strictEqual(b.ms.filter(m => m.won).length, b.w, `${p.name}/${s} ${b.key}`); });
+      assert.strictEqual(D.tn, D.bands.reduce((a, b) => a + b.n, 0));
+      n++;
     }
-  });
-  return { rows, picked: byBand };
-})();
-check('Court speed: chips on the Darker track, band tiles 7/24 or a 6% stat box, full-width panel', () => {
-  assert(SPEED_FIX && SPEED_FIX.rows.length, 'the synthetic speed career could not be built from the venue map');
-  const p = { key: '__spd', name: 'S. Peed', tournamentHistory: [],
-    careerByYear: [{ year: '2025', total: { won: 20, lost: 7 }, hard: { won: 20, lost: 7 } }] };
-  const savedCh = W.careerHistory;
-  W.careerHistory = Object.assign({}, CAREER_HIST, { __spd: SPEED_FIX.rows });
-  try {
-    I.state.speedSurf = 'all'; I.state.speedBand = null;
-    const bands = I.speedBands(p);
-    assert.deepStrictEqual(bands.map(b => b.band.id), ['slow', 'med', 'fast'], 'the bands are not in speed order');
-    const html = I.renderSpeedModal(p);
-    assert(/>Slower courts<[\s\S]*>Faster courts</.test(html), 'the Slower … Faster rule is missing');
-    assert(/grid-template-columns:repeat\(3,minmax\(0,1fr\)\);gap:8px/.test(html), 'the tiles are not three side by side');
-    assert(/<span style="display:flex;gap:3px;background:var\(--card\);border:1px solid var\(--edge-6\);border-radius:9px;padding:2px;flex:none;"><button type="button" data-pp2="speed-surf"/.test(html),
-      'the surface chips are not on the Darker track');
-    assert(!/color-mix\(in srgb, var\(--text\) 4\.5%, transparent\)/.test(html), 'the always-on idle chip edge survived');
-    const open = bands.filter(b => b.won + b.lost >= 5);
-    const thin = bands.filter(b => { const n = b.won + b.lost; return n > 0 && n < 5; });
-    assert(open.length && thin.length, `the fixture did not produce both states (open ${open.length}, thin ${thin.length})`);
-    open.forEach((b) => assert(new RegExp('data-pp2="speed-band" data-v="' + b.band.id + '"').test(html), `${b.band.label} does not open`));
-    thin.forEach((b) => {
-      assert(!new RegExp('data-pp2="speed-band" data-v="' + b.band.id + '"').test(html), `thin ${b.band.label} opens`);
-      assert(html.includes('>' + (b.won + b.lost) + ' matches · min 5<'), `thin ${b.band.label} does not read "n matches · min 5"`);
-    });
-    assert(/class="pp2-tile on" data-pp2="speed-band"[^>]*border:1px solid var\(--edge-24\)/.test(html),
-      'the selected band is not the --edge-24 clickable tile');
-    assert(/class="pp2-tile" data-pp2="speed-band"[^>]*border:1px solid var\(--edge-7\)/.test(html),
-      'an idle openable band is not the --edge-7 clickable tile: ' + (html.match(/data-pp2="speed-band"[^>]*>/g) || []).join(' | '));
-    assert(/border-radius:12px;background:var\(--card\);border:1px solid var\(--edge-6\);cursor:default;/.test(html),
-      'the sub-minimum band is not a --edge-6 stat box');
-    assert(/data-pp2-speed-panel="1" style="background:var\(--card\);border:1px solid var\(--edge-6\);border-radius:10px;padding:14px 16px 12px;/.test(html),
-      'the match panel is not the full-width --card + --edge-6 panel');
-    assert(!/grid-template-columns:268px/.test(html), 'the 268px band column survived');
-    assert(/data-pp2-speed-career="1"/.test(html) && html.includes('>' + (bands.reduce((a, b) => a + b.won + b.lost, 0)) + ' matches<'),
-      'the career summary is not in the chip row');
-    assert(!/NaN|undefined|\[object/.test(html), 'the modal leaked a non-number');
-    console.log(`        fixture bands ${bands.map(b => b.band.id + ' ' + b.won + '–' + b.lost).join(' · ')}`);
-  } finally { W.careerHistory = savedCh; I.state.speedBand = null; }
-});
-mustFail('[neg] the layout check would catch the retired 268px list', () => {
-  const html = '<div class="pp2-speed" style="display:grid;grid-template-columns:268px minmax(0,1fr);gap:18px;">';
-  assert(!/grid-template-columns:268px/.test(html), 'the 268px band column survived');
-});
-
-// A band under the five-match minimum shows its record and a dash, and does not
-// open. §5.5 keeps it listed: an absent band reads as a court he never played.
-checkCareer('a sub-minimum band dashes its rate and is not openable', () => {
-  let found = 0;
-  for (const p of Object.values(PLAYERS).slice(0, 120)) {
-    const pk = Object.assign({ key: Object.keys(PLAYERS).find(k => PLAYERS[k] === p) }, p);
-    if (!I.speedRows(pk).length) continue;
-    const bands = I.speedBands(pk);
-    const thin = bands.filter(b => { const n = b.won + b.lost; return n > 0 && n < 5; });
-    if (!thin.length) continue;
-    found++;
-    const html = I.renderSpeedModal(pk);
-    thin.forEach((b) => {
-      assert(html.indexOf('data-pp2="speed-band" data-v="' + b.band.id + '"') < 0,
-        `${p.name}: thin band ${b.band.label} (n=${b.won + b.lost}) is still clickable`);
-      assert.strictEqual(I.rateText(b.won, b.lost), '—',
-        `${p.name}: thin band ${b.band.label} printed a rate`);
-    });
-    if (found >= 3) break;
   }
-  assert(found > 0, 'no player in the scan had a sub-minimum band — this check never ran');
-  console.log(`        ${found} players with a sub-minimum band: listed, dashed, not openable`);
+  I.state.spdSurf = 'all';
+  assert(n > 0, 'never ran');
 });
-mustFail('the openability check would catch a clickable thin band', () => {
-  const html = '<div data-pp2="speed-band" data-v="fast">';
-  assert(html.indexOf('data-pp2="speed-band" data-v="fast"') < 0, 'thin band fast is still clickable');
-});
-
-// Units are the LISTED rows only, and the footer says so. The two scopes living
-// in one card is the design's own construction (speedTotal.unitsSub); what must
-// not happen is a units figure summed over an n the label does not state.
-// §8.1 SPLIT THESE TWO SCOPES. Before it, every row reaching this modal came from
-// the priced archive, so "listed rows" and "priced rows" were the same number and
-// the distinction could not be tested. Now the list is CAREER rows and units are
-// the Pinnacle-priced subset — so the invariant is no longer equality, it is:
-// priced is a strict subset, and the label names the subset it summed.
-checkCareer('the footer units are summed over the priced subset, and name their n', () => {
-  let split = 0;
-  for (const p of SAMPLE) {
-    if (!I.speedRows(p).length) continue;
-    I.state.speedSurf = 'all';
-    const bands = I.speedBands(p);
-    const priced = bands.reduce((n, b) => n + b.priced, 0);
-    const cents = bands.reduce((n, b) => n + b.cents, 0);
-    const rows = bands.reduce((n, b) => n + b.rows.length, 0);
-    const html = I.renderSpeedModal(p);
-    if (!priced) continue;
-    assert(html.indexOf('on ' + priced + ' priced') > -1,
-      `${p.name}: footer does not state its own n of ${priced}`);
-    assert(priced <= rows,
-      `${p.name}: ${priced} priced rows exceed the ${rows} banded rows they are drawn from`);
-    assert(Number.isInteger(cents), `${p.name}: units are not accumulated in whole cents`);
-    if (priced < rows) split++;
+checkCareer('a band with matches opens its drill box; an empty band opens nothing (no small-sample gate, ruling 2026-11-09)', () => {
+  let n = 0;
+  for (const p of spdSample()) {
+    I.state.spdSurf = 'all';
+    const D = I.spdData(p), html = I.renderSpeedModal(p);
+    D.bands.forEach(b => {
+      const hook = html.includes('data-pp2="spd-band" data-v="' + b.key + '"');
+      assert.strictEqual(hook, b.n > 0, `${p.name}: ${b.key} (n=${b.n}) ${hook ? 'opens' : 'does not open'}`);
+    });
+    n++;
   }
-  // Without this, the check would still pass if §8.1 silently regressed to the
-  // priced population and the two scopes collapsed back into one.
-  assert(split > 0, 'no sampled player has an unpriced banded row — the two scopes never diverged');
-  console.log(`        ${split} players carry banded rows the units correctly exclude`);
+  assert(n > 0, 'never ran');
 });
-mustFail('the footer check would catch units summed over an unstated n', () => {
-  const html = 'on 313 priced';
-  assert(html.indexOf('on ' + 250 + ' priced') > -1, 'footer does not state its own n of 250');
+checkCareer('band units are summed over its priced subset, and its drill box names that n', () => {
+  let split = 0, n = 0;
+  for (const p of spdSample()) {
+    I.state.spdSurf = 'all';
+    I.spdData(p).bands.forEach(b => {
+      if (!b.priced) return;
+      const cents = b.ms.filter(m => m.cents != null).reduce((a, m) => a + m.cents, 0);
+      assert.strictEqual(Math.round(b.units * 100), cents, `${p.name}: ${b.key} units are not the priced cents`);
+      assert(Number.isInteger(cents), 'units not in whole cents');
+      I.state.spdBand = b.key;
+      const fb = I.FB_BUILD.speed ? I.FB_BUILD.speed(p, b.key) : null;
+      const html = fb ? I.floatBoxHtml(fb) : I.renderSpeedModal(p);
+      assert(html.includes(b.priced + ' priced'), `${p.name}: ${b.key} does not name its ${b.priced} priced`);
+      if (b.priced < b.n) split++;
+      n++;
+    });
+  }
+  I.state.spdBand = null;
+  assert(n > 0, 'never ran');
+  assert(split > 0, 'no band carries an unpriced row — the two scopes never diverged');
 });
-
+mustFail('the units check would catch units summed over an unstated n', () => {
+  const html = 'ROI +3% · 313 priced';
+  assert(html.includes(250 + ' priced'), 'does not name its 250 priced');
+});
 check('every surface chip renders without leaking NaN/undefined', () => {
   let n = 0;
   for (const p of SAMPLE) {
-    for (const s of I.SPEED_SURFACES.map(x => x.id)) {
-      I.state.speedSurf = s;
+    for (const s of ['all', 'hard', 'clay', 'grass', 'indoor']) {
+      I.state.spdSurf = s;
       const html = I.renderSpeedModal(p);
       assert(!/undefined|NaN|\[object/.test(html), `${p.name}/${s}: DOM leak`);
       n++;
     }
   }
-  I.state.speedSurf = 'all';
+  I.state.spdSurf = 'all';
   console.log(`        ${n} chip renders clean`);
 });
-
-// The rows the modal cannot band must be visible in the DOM, not just in a
-// counter. This is the difference between a stated gap and a hidden one.
-checkCareer('unbanded rows are declared in the note, not silently absorbed', () => {
+// The ATP matches the modal cannot rate (no speed reading for that venue) are stated in its (?) note, not absorbed.
+checkCareer('unrated ATP matches are declared in the (?) note, not silently absorbed', () => {
   let stated = 0;
-  for (const p of SAMPLE) {
-    const total = I.speedRows(p).length;
-    if (!total) continue;
-    I.state.speedSurf = 'all';
-    const bands = I.speedBands(p);
-    if (!bands.unbanded) continue;
+  for (const p of spdSample()) {
+    I.state.spdSurf = 'all';
+    const D = I.spdData(p);
+    if (!D.unrated) continue;
+    I.state.info = 'spd1';
     const html = I.renderSpeedModal(p);
-    // §8.2 wording: the population is now CAREER matches, not priced ones.
-    assert(html.indexOf(bands.unbanded + ' of ' + total + ' matches sit at a venue') > -1,
-      `${p.name}: ${bands.unbanded} unbanded rows are not declared on the page`);
+    I.state.info = null;
+    assert(html.includes(D.unrated + ' ATP matches at a venue with no speed reading are left out'),
+      `${p.name}: ${D.unrated} unrated matches are not declared`);
     stated++;
   }
-  assert(stated > 0, 'no sampled player had unbanded rows — this check never ran');
-  console.log(`        ${stated} players declare their unbanded rows in the DOM`);
+  assert(stated > 0, 'no sampled player had unrated matches — this check never ran');
+  console.log(`        ${stated} players declare their unrated matches`);
 });
 mustFail('the declaration check would catch a silently absorbed gap', () => {
   const html = 'Units cover priced matches only.';
-  assert(html.indexOf('24 of 337 matches sit at a venue') > -1,
-    '24 unbanded rows are not declared on the page');
+  assert(html.includes('24 ATP matches at a venue with no speed reading are left out'), 'not declared');
 });
 
 // §8.4 / §8.5 — these two columns have DIFFERENT provenance and the difference is
@@ -4033,7 +3949,7 @@ check('the all-stores table covers every data store the module reads', () => {
     // list, not match data), Compare with… (pp2CompareRoster over the standings already covered by pp2LiveRank,
     // sfGoToH2H the hand-off) and the event link (pp2TournamentKey / pp2OpenTournament over the Tournaments registry)
     // — logic and navigation, no store of their own
-    'pp2IsWatched', 'pp2ToggleWatch', 'pp2CompareRoster', 'sfGoToH2H', 'pp2TournamentKey', 'pp2OpenTournament',
+    'pp2IsWatched', 'pp2ToggleWatch', 'pp2CompareRoster', 'sfGoToH2H', 'pp2TournamentKey', 'pp2OpenTournament', 'pp2EventCategory',
     // founder ruling 2026-10-20 item 1: the host's "Data paused" rule for a Mac-only feed (sfFeedPaused over the
     // career-splits-tour.json build date the page already loaded) — logic, no rows
     'sfFeedPaused',
@@ -6829,7 +6745,10 @@ check('Q1 · "best split" is POSITIVE-only, measured against the POOLED candidat
       `${p.name}: support line does not reproduce from the rows`);
     assert.strictEqual(vals.splits.headline, `${rate.toFixed(1)}%`,
       `${p.name}: headline rate does not reproduce from the rows`);
+    // profile v2 (2026-11-09): the gap and baseline the tile's pick was chosen on sit in Level & round's (?) note
+    I.state.info = 'spl1';
     const modalHtml = I.renderSplitsModal(p);
+    I.state.info = null;
     assert(modalHtml.includes(`${expectBase.toFixed(1)}%`),
       `${p.name}: the modal does not carry the baseline the gap is measured against`);
     assert(modalHtml.includes(pp),
