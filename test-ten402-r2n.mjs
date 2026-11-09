@@ -291,13 +291,15 @@ test('r3.2 Player Profile → Record per tournament: each row prints sfEventName
   assert.equal(I.tournLevelMeta('Masters 1000'), 'Masters 1000');
   assert.equal(I.tournLevelMeta('ATP 500'), 'ATP 500');
   for (const l of ['Grand Slam', 'Tour Finals', null]) assert.equal(I.tournLevelMeta(l), '', String(l));
-  // the list, rendered: S. Korda's 55 rows
+  // the list, rendered: S. Korda's 54 rows (Davis Cup folded)
   const st = I.state, saved = Object.assign({}, st);
   Object.assign(st, { key: p.key, modal: 'tourn', tournOpen: null, tournQuery: '' });
   let list; try { list = I.renderTournModal(p); } finally { Object.keys(st).forEach(k => delete st[k]); Object.assign(st, saved); }
   const rows = [...list.matchAll(/data-pp2="tourn-row" data-t="([^"]*)"[\s\S]*?min-width:0;">([^<]*)<\/span>(?:<span class="pp2-tlevel"[^>]*>([^<]*)<\/span>)?/g)]
     .map(x => ({ key: x[1].replace(/&#39;/g, "'").replace(/&amp;/g, '&'), name: x[2].replace(/&#39;/g, "'").replace(/&amp;/g, '&'), meta: x[3] || '' }));
-  assert.equal(rows.length, 55);
+  // Profile v2 (founder 2026-11-09): Davis Cup is ONE event — Korda's two ties fold into one row (55 → 54).
+  assert.equal(rows.length, 54);
+  assert.equal(rows.filter(r => /^Davis Cup/.test(r.key)).length, 1, 'Davis Cup is one row');
   const views = I.tournViews(p);
   for (const r of rows) {
     assert.equal(r.name, P.sfEventName(r.key), r.key);

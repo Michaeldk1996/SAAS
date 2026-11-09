@@ -84,7 +84,8 @@ const PP2_MUTANTS = [
   ['r3: the tier back in the profile row\'s name', '    if (one) return one;', "    if (one) return level && level !== 'Grand Slam' ? one + ' ' + level : one;"],
   ['r3: the profile row drops its level meta', "(tournLevelMeta(t.level) ? '<span class=\"pp2-tlevel\"", "(false ? '<span class=\"pp2-tlevel\""],
   ['r3: the year-end finals carry a level meta', "return !level || level === 'Grand Slam' || level === 'Tour Finals' ? '' : String(level);", "return !level || level === 'Grand Slam' ? '' : String(level);"],
-  ['r3: search forgets the tier', " ||\n            tournLevelMeta(t.level).toLowerCase().indexOf(q) >= 0;", ';'],
+  // Profile v2: the search test sits inside the level/surface filter (renderTournModal) — same rule, new line.
+  ['r3: search forgets the tier', " ||\n        tournLevelMeta(t.level).toLowerCase().indexOf(q) >= 0)) return false;", ')) return false;'],
 ];
 const SUITES = ['test-ten402-r2n.mjs'];
 const run = env => spawnSync(process.execPath, ['--test', ...SUITES.map(f => path.join(ROOT, f))], { env: Object.assign({}, process.env, env), encoding: 'utf8' });

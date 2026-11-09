@@ -5843,12 +5843,13 @@
       HEAD.map(function (h) {
         var on = h[2] && so.k === h[2];
         var arrow = on ? (so.d < 0 ? '↓' : '↑') : (h[2] ? '⇅' : '');
-        return '<span' + (h[2] ? ' data-pp2="tourn-sort" data-v="' + h[2] + '"' : '') + ' title="' + esc(h[3] || '') + '" style="display:flex;' +
+        return '<span' + (h[2] ? ' data-pp2="tourn-sort" data-v="' + h[2] + '"' : '') + ' ' + (h[0] === 'Backing' ? '' : 'title="' + esc(h[3] || '') + '" ') + 'style="display:flex;' +
           'align-items:baseline;gap:5px;justify-content:' + (h[1] === 'right' ? 'flex-end' : h[1] === 'center' ? 'center' : 'flex-start') + ';' +
           'cursor:' + (h[2] ? 'pointer' : 'default') + ';font-family:var(--font-words);font-size:10.5px;font-weight:700;letter-spacing:0.10em;' +
           'text-transform:uppercase;color:' + (on ? 'var(--text)' : 'var(--text-label)') + ';padding-bottom:8px;' +
           'border-bottom:1px solid var(--edge-10);white-space:nowrap;"' +
-          (h[0] === 'Backing' && window.MarketEdgeCore ? ' data-ret-note="profile-backing"' : '') + '>' +
+          // TEN-325: Backing counts retirements, settled on Pinnacle rules — the one note (RET_SETTLE_NOTE) on its head.
+          (h[0] === 'Backing' && window.MarketEdgeCore ? ' data-ret-note="profile-backing" title="' + esc(window.MarketEdgeCore.RET_SETTLE_NOTE) + '"' : '') + '>' +
           '<span style="pointer-events:none;">' + esc(h[0]) + '</span>' +
           (arrow ? '<span style="pointer-events:none;font-family:\'IBM Plex Mono\',monospace;font-size:10px;letter-spacing:0;color:' +
             (on ? 'var(--text)' : 'color-mix(in srgb, var(--text-label) 45%, transparent)') + ';">' + arrow + '</span>' : '') +

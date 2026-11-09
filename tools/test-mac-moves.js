@@ -51,7 +51,8 @@ check('a daily build 3 days old → paused, "Data paused · last updated 24 Oct 
 check('no build date → no claim (null), never a guessed state', paused(undefined, '2026-10-27T09:00:00Z') === null && paused('2026-10', '2026-10-27T09:00:00Z') === null);
 const v2 = fs.readFileSync(path.join(ROOT, 'player-profile-v2.js'), 'utf8');
 check('Draw record tile: the support line carries the paused text', v2.includes("esc(b.key === 'splits' && splitsPaused() ? splitsPaused().text"));
-check('Draw record modal: the header subtitle carries it', v2.includes("case 'splits': return 'Record and win rate by level, format, round and opponent' + splitsPausedSuffix();"));
+// Profile v2 (founder 2026-11-09): the drawer is "Level & round" with the export's subtitle; the paused suffix stays.
+check('Level & round modal: the header subtitle carries it', v2.includes("case 'splits': return 'Record by round, level, opponent and format ' + MIDDOT + ' tiebreaks, hold and break rate' + splitsPausedSuffix();"));
 check('legacy profile: Career + Last 52 weeks subtitles carry it', (html.match(/\$\{vsTier\}\$\{pausedNote\}/g) || []).length === 2);
 check('the profile loads the tour file (the build date) with his splits', html.includes('loadCareerSplitsTour().then(t => { if (t) pp2RepaintIfOpen(k); });'));
 
