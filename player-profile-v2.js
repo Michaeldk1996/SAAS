@@ -834,7 +834,7 @@
       nx ? 'vs ' + oppHtml : 'no fixture on record',
       nx ? (px
         ? '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:12.5px;font-weight:700;color:var(--text);">' +
-            esc(px.own) + ' ' + MIDDOT + ' ' + esc(px.opp) + '</span>' +
+            esc(px.own) + ' ' + MIDDOT + ' ' + esc(px.other) + '</span>' +
             (px.book ? ' <span style="font-size:12px;color:var(--text-label);">' + esc(px.book) + '</span>' : '')
         : '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:12.5px;font-weight:700;color:' + DASH_COLOUR + ';">' + DASH + '</span>')
       : null));
@@ -5604,7 +5604,9 @@
       lastYear: eds.length ? eds[0].year : null, editions: eds,
       pinPl: pending ? null : units, pinN: priced.reduce(function (a, t) { return a + (t.pinN || 0); }, 0),
       pinTxt: pending || units == null ? null : signed(units, 1, 'u'), backingPending: pending,
-      daviesFolded: dc.map(function (t) { return t.name; })
+      // a suppressed tie row (Q3) contributes its played record only — never a priced count
+      pricedImpossible: false, pricedClaimed: null,
+      davisFolded: dc.map(function (t) { return t.name; })
     });
     var out = views.filter(function (t) { return !/^Davis Cup\b/i.test(t.name); });
     out.push(merged);
@@ -5907,7 +5909,7 @@
         (shown.length ? rows : tournHistPending(p) ? '' :
           '<div style="border:1px dashed var(--edge-6);border-radius:10px;padding:26px;margin-top:12px;' +
           'text-align:center;font-size:13px;color:var(--text-label);">' +
-          (q || lvl !== 'all' || sf !== 'all' ? 'No tournament matches these filters.' : 'No tournaments on record.') + '</div>') +
+          (lvl !== 'all' || sf !== 'all' ? 'No tournament matches these filters.' : q ? 'No tournament matches that search.' : 'No tournaments on record.') + '</div>') +
       '</div>';
   }
 

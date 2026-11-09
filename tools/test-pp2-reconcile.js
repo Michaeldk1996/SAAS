@@ -4133,6 +4133,11 @@ check('the all-stores table covers every data store the module reads', () => {
     // founder 2026-10-16 (round 3, item 1): the host's one source wording for a price (fhSrcTitle, the Match analysis
     // Tournament tab's words) — Record per tournament's H / A hover reads it; a display function, no rows
     'fhSrcTitle',
+    // Profile v2 (founder 2026-11-09): the watchlist read/toggle (pp2IsWatched / pp2ToggleWatch — the member's own
+    // list, not match data), Compare with… (pp2CompareRoster over the standings already covered by pp2LiveRank,
+    // sfGoToH2H the hand-off) and the event link (pp2TournamentKey / pp2OpenTournament over the Tournaments registry)
+    // — logic and navigation, no store of their own
+    'pp2IsWatched', 'pp2ToggleWatch', 'pp2CompareRoster', 'sfGoToH2H', 'pp2TournamentKey', 'pp2OpenTournament',
     // founder ruling 2026-10-20 item 1: the host's "Data paused" rule for a Mac-only feed (sfFeedPaused over the
     // career-splits-tour.json build date the page already loaded) — logic, no rows
     'sfFeedPaused',
@@ -4848,9 +4853,11 @@ check('item 3 · the ribbon and ledger headlines are whole numbers, every other 
   // rate when no band / archetype clears ten, the same notation as the headline they replace. 12 → 14.
   // TEN-384 fx4 item 5: Record per tournament's overall fallback is his W–L over every event (pending the
   // founder's Backing-source answer), headlined by its whole-number rate like the other two. 14 → 15.
-  assert.strictEqual(calls, 15,
-    `rateText0 appears ${calls} times (expected 15: the definition + ribbon + ledger ` +
-    `header + 4 in §5.3 + the speed box headline + the styles box headline + the 2026 tab's ` +
+  // Profile v2 (founder 2026-11-09): Record per tournament's row prints its whole rate inline (Math.round), no
+  // rateText0 gate any more — 15 → 14.
+  assert.strictEqual(calls, 14,
+    `rateText0 appears ${calls} times (expected 14: the definition + ribbon + ledger ` +
+    `header + 3 in §5.3 + the speed box headline + the styles box headline + the 2026 tab's ` +
     `Win rate tile + its two month-row rates + the speed, styles and tournament OVERALL fallbacks)`);
 
   // The old guard here was "rateText must outnumber rateText0". v7 broke it
@@ -4868,7 +4875,8 @@ check('item 3 · the ribbon and ledger headlines are whole numbers, every other 
   const WHOLE_SURFACES = [
     'recent-form ribbon headline',
     'full ledger header',
-    '§5.3 list row win%', '§5.3 W–L tile sub', '§5.3 Grand Slam tile sub',
+    // Profile v2 (2026-11-09): the §5.3 list row rounds inline (no gate, no mark) — no longer a rateText0 site
+    '§5.3 W–L tile sub', '§5.3 Grand Slam tile sub',
     '§5.3 detail header meta',
     // ITEM 3 (2026-09-19) removed box 3's support win% — its fourth token is now
     // the priced n. ITEM 2 added box 4's headline, which leads with the band's
@@ -6112,7 +6120,8 @@ mustFail('[neg] the subtitle check would catch the rejected coverage wording', (
 check('§5.3 item 5 · the search field is the reference\'s compact control + 14px magnifier', () => {
   assert(/<svg width="14" height="14"[^>]*>\s*<circle cx="9" cy="9" r="6"/.test(T_HTML),
     'the 14px magnifier is missing');
-  assert(/<label style="display:flex;align-items:center;gap:9px;width:220px;box-sizing:border-box;background:var\(--inner\);border:1px solid transparent;border-radius:9px;padding:7px 12px;/.test(T_HTML),
+  // Profile v2: the export's field (#0C0E16 = --inner, 6% ring, r9, 7/12), flex:none beside the pills.
+  assert(/<label style="display:flex;align-items:center;gap:9px;width:220px;box-sizing:border-box;flex:none;background:var\(--inner\);border:1px solid var\(--edge-6\);border-radius:9px;padding:7px 12px;/.test(T_HTML),
     'the field is not the compact --inner control');
   assert(/placeholder="Search a tournament"/.test(T_HTML), 'the placeholder drifted');
   assert(/data-pp2="tourn-search"[^>]*font-size:12\.5px/.test(T_HTML), 'the input is not 12.5px');
@@ -6125,30 +6134,26 @@ mustFail('[neg] the search check would catch the retired full-width field', () =
 
 // TEN-384 T4/T5 · seven columns: the reference adds the Wins · losses bar (8px, white 10% track, r4,
 // gated --bar fill, a 1px --bar-2 tick at 50%).
-check('§5.3 items 6-7 · seven columns on the reference grid, with SURFACE, the bar and BACKING', () => {
-  const grid = 'grid-template-columns:minmax(0,1.2fr) 60px 72px 56px minmax(0,1fr) 52px 64px;gap:0 12px';
-  assert(T_HTML.indexOf(grid) > 0, 'the head/row grid tracks are not the reference\'s');
+// Profile v2 (founder 2026-11-09, `tournaments()` in Player Stat Boxes LOCKED 2026-11-09): the export's seven tracks,
+// padding 0 10px shared by head and rows, sortable heads, an always-on 6px --bar on --track (no 50% tick), the 6% white
+// row hover, the level and surface pills.
+check('§5.3 items 6-7 · seven columns on the v2 grid, with SURFACE, the bar and BACKING', () => {
+  const grid = 'grid-template-columns:minmax(0,1.3fr) 64px 76px 56px minmax(120px,1fr) 56px 64px;gap:0 12px';
+  assert(T_HTML.indexOf(grid) > 0, 'the head/row grid tracks are not the v2 export\'s');
   ['Tournament', 'Surface', 'Best', 'W–L', 'Wins · losses', 'Win %', 'Backing'].forEach((h) => {
     assert(T_HTML.indexOf('>' + h + '</span>') > 0, `the ${h} column head is missing`);
   });
-  assert(T_HTML.indexOf('>Seasons<') < 0, 'the SEASONS column was not removed');
-  // TEN-376 Foundation: caps labels are Hanken var(--font-words) 10.5/700/0.10em/--text-label; row hairlines
-  // are 1px --line; the hover fill is --tile-hover.
-  assert(/font-family:var\(--font-words\);font-size:10\.5px;font-weight:700;letter-spacing:0\.10em;text-transform:uppercase;color:var\(--text-label\);[^"]*border-bottom:1px solid var\(--line\)/.test(T_HTML),
-    'the head is not the foundation caps label over a --line rule');
-  assert(/padding:11px 0;cursor:pointer;border-top:1px solid var\(--line\)/.test(T_HTML),
-    'the row padding or border-top drifted');
-  assert(/height:8px;border-radius:4px;overflow:hidden;background:color-mix\(in srgb, var\(--text\) 10%, transparent\);/.test(T_HTML),
-    'the Wins · losses bar track is missing');
-  assert(/left:50%;width:1px;background:var\(--bar-2\)/.test(T_HTML), 'the 50% tick is missing');
-  assert(/\.pp2-trow:hover\{background:var\(--tile-hover\);\}/.test(PP2_SRC),
-    'the row has no hover fill');
+  ['name', 'wl', 'pct', 'roi'].forEach(k => assert(T_HTML.indexOf('data-pp2="tourn-sort" data-v="' + k + '"') > 0, `the ${k} head is not sortable`));
+  assert(/padding:11px 10px;border-radius:8px;cursor:pointer;border-top:1px solid var\(--line\)/.test(T_HTML), 'the row padding or border-top drifted');
+  assert(/height:6px;border-radius:3px;overflow:hidden;background:var\(--track\);/.test(T_HTML), 'the 6px bar track is missing');
+  assert(!/left:50%;width:1px;background:var\(--bar-2\)/.test(T_HTML), 'the 50% tick is back');
+  assert(/\.pp2-trow:hover\{background:color-mix\(in srgb, var\(--text\) 6%, transparent\)!important;\}/.test(PP2_SRC), 'the row has no 6% hover');
+  ['tourn-level', 'tourn-surf'].forEach(k => assert(T_HTML.indexOf('data-pp2="' + k + '"') > 0, `the ${k} pills are missing`));
 });
-mustFail('[neg] the column check would catch the shipped five-column table', () => {
-  const shipped = '<div style="display:grid;grid-template-columns:minmax(0,1.6fr) 74px 96px 56px 52px 58px;' +
-    'gap:0 14px;"><div>Tournament</div><div>Seasons</div></div>';
-  assert(shipped.indexOf('grid-template-columns:minmax(0,1.2fr) 60px 72px 56px minmax(0,1fr) 52px 64px;gap:0 12px') > 0,
-    'the head/row grid tracks are not the reference\'s');
+mustFail('[neg] the column check would catch the retired TEN-384 grid', () => {
+  const shipped = '<div style="display:grid;grid-template-columns:minmax(0,1.2fr) 60px 72px 56px minmax(0,1fr) 52px 64px;gap:0 12px;">';
+  assert(shipped.indexOf('grid-template-columns:minmax(0,1.3fr) 64px 76px 56px minmax(120px,1fr) 56px 64px;gap:0 12px') > 0,
+    'the head/row grid tracks are not the v2 export\'s');
 });
 
 check('§5.3 item 8 · best result carries the year of its most recent edition', () => {
@@ -6232,7 +6237,8 @@ check('§5.3 items 11-12 · the open row is highlighted and BACKING is the Tourn
   I.state.tournOpen = 'Australian Open';
   const open = I.renderTournModal(ZVEREV);
   // TEN-384 T6: selection is lift — the open row takes the --selected wash, spread ±10px; closed rows carry none.
-  assert(/data-pp2="tourn-row" data-t="Australian Open" style="[^"]*background:var\(--selected\);box-shadow:-10px 0 0 0 var\(--selected\),10px 0 0 0 var\(--selected\);/.test(open),
+  // Profile v2: the open row is the export's #131623 (= --selected), radius 8; closed rows are transparent.
+  assert(/data-pp2="tourn-row" data-t="Australian Open" style="[^"]*background:var\(--selected\);/.test(open),
     'the selected row carries no highlight');
   assert(!/data-pp2="tourn-row" data-t="Australian Open" style="[^"]*background:var\(--selected\);/.test(T_HTML),
     'a closed row carries the selected highlight');
@@ -7464,22 +7470,19 @@ check('fx3 item 7 · a profiled player with no career-splits entry reads "Splits
   console.log(`        ${none.length} profiled players without a splits entry, ${some.length} with`);
 });
 // D11 · the mark sits UNDER the rate in Record per tournament (fx2 printed it after the event name).
-check('fx3 D11 · Record per tournament prints "small sample · n=X" under the win rate, not after the name', () => withJoin(playedOf, () => {
+// Profile v2 (founder 2026-11-09, "I need no mark"; supersedes fx3 D11 on the profile): Record per tournament prints
+// no small-sample mark at all — no "small sample · n=X", no "under 5" tag — on any row.
+check('v2 · Record per tournament prints no small-sample mark on any row', () => withJoin(playedOf, () => {
   const p = SAMPLE[0];
   const html = I.renderTournModal(p);
   const rows = html.split('data-pp2="tourn-row"').slice(1);
-  const small = rows.filter(r => /data-pp2-small="[5-9]"/.test(r));
-  assert(small.length > 0, `${p.name}: no 5–9 row — the check would be vacuous`);
-  for (const r of small) {
-    const n = /data-pp2-small="(\d)"/.exec(r)[1];
-    assert(new RegExp('<span data-pp2-ratemark="' + n + '"[^>]*><span[^>]*>\\d+%</span><span data-pp2-small="' + n + '"').test(r),
-      'a 5–9 row\'s mark is not under its rate');
-    const name = r.slice(0, r.indexOf('</span></span>'));
-    assert(!/small sample/.test(name), 'the mark still follows the event name');
-  }
-  assert(!/5–9 matches/.test(html), 'a "5–9 matches" footnote line is back');
-  console.log(`        ${p.name}: ${small.length} small-sample rows, mark under the rate on each`);
+  assert(rows.length > 0, `${p.name}: no rows — the check would be vacuous`);
+  assert(!/small sample|data-pp2-small=|under 5/.test(html), 'a small-sample mark is back in Record per tournament');
+  console.log(`        ${p.name}: ${rows.length} rows, no small-sample mark`);
 }));
+mustFail('[neg] the no-mark check would catch the fx3 mark', () => {
+  assert(!/small sample/.test('<span data-pp2-small="7">small sample · n=7</span>'), 'a small-sample mark is back');
+});
 
 // item 9 · one mark, "small sample · n=X", no asterisk.
 // fx2 item 4: the source check only looked for a bare '*' literal, so `'">*</span>'` (Record per tournament's
@@ -7521,7 +7524,7 @@ function fx2FixturePlayerModule(src) {
     marketEdge: { [fx.key]: fx.marketEdge }, bet365History: fx.bet365History });
   return { I: m.I, p };
 }
-check('fix 9 · [fixture] no star glyph in any rendered modal; 5–9 rows read "small sample · n=X"', () => {
+check('fix 9 · [fixture] no star glyph in any rendered modal; 5–9 tournament rows carry no mark (v2)', () => {
   const { I: FI, p } = fx2FixturePlayerModule();
   const hits = fx2ModalStars(FI, p);
   assert.deepStrictEqual(hits, [], 'a star mark is rendered');
@@ -7531,12 +7534,13 @@ check('fix 9 · [fixture] no star glyph in any rendered modal; 5–9 rows read "
   FI.state.modal = 'tourn'; FI.state.key = p.key;
   const html = FI.renderTournModal(p);
   FI.state.modal = null;
-  small.forEach(t => assert(html.indexOf('data-pp2-small="' + t.n + '"') > 0, `${t.display} (n=${t.n}) carries no small-sample mark`));
+  // Profile v2 (founder 2026-11-09, "I need no mark"): the 5–9 rows carry NO mark now.
+  small.forEach(t => assert(html.indexOf('data-pp2-small="' + t.n + '"') < 0, `${t.display} (n=${t.n}) still carries a small-sample mark`));
   if (FI.calPpLine) {   // exported from fx2 on; the source check below covers a module that does not export it
     assert.strictEqual(FX2_LIB.text(FI.calPpLine(4.2, 7)).trim(), '+4.2pp small sample · n=7', 'calPpLine at n=7');
     assert(!fx2StarsIn(FI.calPpLine(4.2, 7)), 'calPpLine marks a 5–9 tile with a star');
   }
-  console.log(`        8 modals clean · ${small.length} Record-per-tournament rows at n 5–9 carry "small sample · n=X"`);
+  console.log(`        8 modals clean · ${small.length} Record-per-tournament rows at n 5–9, none marked (v2)`);
 });
 mustFail('fix 9 · the star check catches the bfa68f21 mark `">*</span>`', () => {
   const html = '<span style="color:var(--text-label);">78%<span style="font-size:9px;color:var(--text-label);">*</span></span>';

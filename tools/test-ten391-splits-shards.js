@@ -317,7 +317,10 @@ const notFound = () => Promise.resolve({ ok: false, status: 404, json: () => Pro
   });
   H.check('5 · the identity check: ATP id where held, else age vs date of birth', () => {
     const meta = B.pageMeta("var fullname = 'Hubert Hurkacz'\nvar currentrank = 39\nvar dob = 19970211\nvar atp_id = 'HB71'\n");
-    assert.deepStrictEqual(meta, { fullName: 'Hubert Hurkacz', atpId: 'HB71', dob: 19970211, currentRank: 39, country: null });
+    assert.deepStrictEqual(meta, { fullName: 'Hubert Hurkacz', atpId: 'HB71', dob: 19970211, currentRank: 39, country: null, hand: null, backhand: null });
+    // Profile v2 (founder 2026-11-09): the identity line's hand + backhand come from the same page's vars.
+    assert.deepStrictEqual((({ hand, backhand }) => ({ hand, backhand }))(B.pageMeta("var hand = 'R';\nvar backhand = '2';\n")), { hand: 'R', backhand: 2 });
+    assert.deepStrictEqual((({ hand, backhand }) => ({ hand, backhand }))(B.pageMeta("var hand = 'U';\nvar backhand = '';\n")), { hand: null, backhand: null }, 'unknown stays null, never a guess');
     assert.strictEqual(B.identityCheck(meta, { age: 29 }, 'HB71', '20261007').by, 'atp-id');
     assert.strictEqual(B.identityCheck(meta, { age: 19 }, 'XX99', '20261007').ok, false, 'a wrong ATP id AND a wrong age passed');
     assert.strictEqual(B.identityCheck(meta, {}, 'XX99', '20261007').ok, false, 'a wrong ATP id with no age to decide passed');

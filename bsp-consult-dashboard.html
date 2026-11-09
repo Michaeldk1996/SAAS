@@ -23763,7 +23763,7 @@ window.pp2NextMatchFor = function(key){
       if (!pr || !ok(pr.p1) || !ok(pr.p2)) return null;
       const own = best.side === 1 ? pr.p1 : pr.p2, opp = best.side === 1 ? pr.p2 : pr.p1;
       const bk = pr.book ? (MC_BOOK_NAMES[String(pr.book).toLowerCase()] || mxBookLabel(pr.book)) : null;
-      return { own: Number(own).toFixed(2), opp: Number(opp).toFixed(2), book: bk || null };
+      return { own: Number(own).toFixed(2), other: Number(opp).toFixed(2), book: bk || null };
     })() };
 };
 // TEN-384 · the header's "Elo N": the Players card's own source (pgEloFor over elo-ratings.json). The lookup
