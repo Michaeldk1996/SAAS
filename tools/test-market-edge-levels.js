@@ -57,38 +57,25 @@ H.check('every level: All = favourite + underdog + no price, and the W–L of ea
   }
   return 'five levels reconcile';
 });
-H.check('below the ATP main draw Match winner shows records only: no yield, no ROI, no units; it says why', () => {
-  for (const l of ['atpq', 'ch', 'itf', 'all']) {
-    const h = withState({ key: p.key, marketTab: 'winner', mkLevel: l }, () => I.renderMarketModal(p));
+// Profile v2 (founder 2026-11-09: "ATP becomes one"): Match winner's Level filter is All · ATP · Challenger · ITF in the
+// Filters menu. Challenger and ITF keep Task E's records-only panel (no yield, no ROI, no units); All and ATP show the
+// ATP main-draw shard's figures (the shard carries no other level).
+H.check('Challenger and ITF on Match winner show records only: no yield, no ROI, no units; it says why', () => {
+  for (const [lvl, l] of [['Challenger', 'ch'], ['ITF', 'itf']]) {
+    const h = withState({ key: p.key, marketTab: 'winner', mkLvl: lvl }, () => I.renderMarketModal(p));
     assert(new RegExp('data-mk-level="' + l + '"').test(h), l + ': no records panel');
-    assert(!/data-pp2-mk="bands"|data-role="favourite"/.test(h) && !/[+−-]\d+\.\d\du/.test(h), l + ': a yield / unit figure shows below the main draw');
-    assert(/Records only/.test(h) && /data-mk-level-card="none"/.test(h), l + ': no "Records only" note or No price card');
+    assert(!/class="pp2-mkband"|data-pp2="mk-role"/.test(h), l + ': a yield card or band shows below the main draw');
+    assert(/Records only/.test(h), l + ': no "Records only" note');
   }
-  return 'atpq · ch · itf · all';
+  return 'ch · itf';
 });
-H.check('ATP main draw (the default) keeps every Match winner figure: the role cards and bands equal the module before Task E', () => {
-  // the byte comparison needs the module before Task E: TASKE_BASE=<file> (run once at the land, 2 Nov 2026, against main
-  // d63d9747e: 0 changes). Without it the structural checks below still run.
+H.check('the default Match winner (All levels) is the v2 view: role strip, chart and the eight-band ladder', () => {
   const now0 = withState({ key: p.key, marketTab: 'winner' }, () => I.renderMarketModal(p));
-  assert(/data-pp2="mk-level" data-v="main" aria-pressed="true"/.test(now0), 'ATP main draw is not the default level');
-  assert(/data-pp2="market-role"/.test(now0) && /data-pp2-mk="bands"/.test(now0), 'the main-draw role cards / bands are gone');
-  assert(/data-mk-level-card="none"/.test(now0) && /% of total/.test(now0), 'no "No price · N · X% of total" beside the role cards');
-  if (!process.env.TASKE_BASE) return 'structure checked (byte comparison: set TASKE_BASE)';
-  const base = fs.readFileSync(process.env.TASKE_BASE, 'utf8');
-  const tmp = path.join(require('os').tmpdir(), 'pp2-pre-taskE-' + process.pid + '.js'); fs.writeFileSync(tmp, base);
-  try {
-    const O = load(tmp);
-    const now = withState({ key: p.key, marketTab: 'winner' }, () => I.renderMarketModal(p));
-    // the three additions, removed exactly: the level row, the No price card, the role grid's fourth column
-    const strip = (h) => h.replace(/<div style="display:flex;justify-content:flex-end;margin:-6px 0 14px;"><span data-pp2-seg="mk-level"[\s\S]*?<\/span><\/div>/, '')
-      .replace(/<span data-mk-level-card="none"[\s\S]*?ATP main-draw matches<\/span><\/span>/, '').replace('grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;">', 'grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;">');
-    const was = (() => { const s = Object.assign({}, O.I.state); Object.assign(O.I.state, { key: p.key, marketTab: 'winner' }); try { return O.I.renderMarketModal(O.p); } finally { Object.assign(O.I.state, s); } })();
-    const a = strip(now), b = was;
-    if (a !== b) { let i = 0; while (i < a.length && a[i] === b[i]) i++; assert.fail('the ATP main-draw view changed at ' + i + ': ' + JSON.stringify(a.slice(i - 40, i + 80)) + ' vs ' + JSON.stringify(b.slice(i - 40, i + 80))); }
-    assert(/data-pp2="mk-level" data-v="main" aria-pressed="true"/.test(now), 'ATP main draw is not the default level');
-    assert(/data-mk-level-card="none"/.test(now) && /% of total/.test(now), 'no "No price · N · X% of total" beside the role cards');
-    return '0 changes to the cards, bands and everything below; + the level control and No price';
-  } finally { fs.unlinkSync(tmp); }
+  assert((now0.match(/data-pp2="mk-role"/g) || []).length === 3, 'the three role cells are not there');
+  assert((now0.match(/class="pp2-mkband"/g) || []).length >= 1, 'the band ladder is gone');
+  assert(/data-pp2="fm-toggle" data-v="mk"/.test(now0), 'no Filters trigger');
+  assert(!/data-pp2="mk-level"/.test(now0), 'the Task E level segment is back');
+  return 'role strip + ladder + Filters';
 });
 H.check('Derived lines carries the same five levels and the No price card', () => {
   const h = withState({ key: p.key, marketTab: 'lines', lcTier: 'itf' }, () => I.renderLinesTab(p));

@@ -847,6 +847,22 @@ const EARLY_MIN = earlyMinutes.size ? [...earlyMinutes][0] : null;
 const EARLY_META = EARLY_MIN != null ? { earlyCut: { book: EARLY_BOOK, minutes: EARLY_MIN, mark: 'E', hover: earlyHover(EARLY_MIN),
   rule: 'founder ruling 2026-10-25: the 13 Apr - 16 Sep ATP main-draw fill, cut at Oddspapi trueStart minus the tier buffer; not a close' } } : {};
 const TB = baselinesOf(dbList, BOOK_COUNTS);
+// Profile v2 (founder 2026-11-09, Market edge band box): the tour's win rate and flat-1u yield in each of the eight
+// fixed bands of a side's OWN closing price — both sides of every figure row (the same rows as the yields above).
+// Bands: [1.01,1.21) [1.21,1.41) [1.41,1.65) [1.65,2.00) [2.00,2.50) [2.50,3.50) [3.50,6.00) [6.00,∞) (modal-market-edge.md).
+const BAND8 = [[1.01, 1.21], [1.21, 1.41], [1.41, 1.65], [1.65, 2.00], [2.00, 2.50], [2.50, 3.50], [3.50, 6.00], [6.00, Infinity]];
+function band8Of(list) {
+  const acc = BAND8.map(() => ({ n: 0, w: 0, pl: 0 }));
+  const add = (p, w) => {
+    const i = BAND8.findIndex(b => p >= b[0] - 1e-9 && p < b[1] - 1e-9);
+    if (i < 0) return;
+    acc[i].n++; if (w) acc[i].w++; acc[i].pl += w ? p - 1 : -1;
+  };
+  list.forEach(r => { add(r.fav, !!r.won); add(r.dog, !r.won); });
+  return acc.map((a, i) => ({ lo: BAND8[i][0], hi: BAND8[i][1] === Infinity ? null : BAND8[i][1], n: a.n,
+    winRate: a.n ? Math.round(1000 * a.w / a.n) / 10 : null, yield: a.n ? Math.round(10000 * a.pl / a.n) / 100 : null }));
+}
+const TB_BANDS = band8Of(dbList);
 
 // --- write artefacts --------------------------------------------------------
 const meta = {
@@ -1035,6 +1051,7 @@ writeAtomic(BASELINES_OUT, JSON.stringify({
   dateRange: [dateMin, dateMax],
   bookCounts: B.bookCounts,
   roles: { all: B.all, favourite: B.favourite, underdog: B.underdog },
+  bands8: TB_BANDS,   // profile v2: per own-price band, win rate % and yield % (flat 1u)
 }, null, 1) + '\n');
 
 // --- reconciliation + payload report ---------------------------------------

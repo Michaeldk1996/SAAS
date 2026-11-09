@@ -315,6 +315,8 @@
     '.pp2-fbrow:hover>*{background:var(--wash-4);box-shadow:-6px 0 0 var(--wash-4),6px 0 0 var(--wash-4);}' +
     '.pp2-clearall:hover{color:var(--text)!important;}' +
     '.pp2-styrow:hover{background:var(--wash-4)!important;}.pp2-stydot:hover{border-color:var(--link)!important;}' +
+    '.pp2-mkcard:hover{background:var(--wash-4)!important;}.pp2-mkband:hover{background:var(--wash-4)!important;box-shadow:-10px 0 0 var(--wash-4),10px 0 0 var(--wash-4)!important;}.pp2-utab:hover{color:var(--text)!important;}' +
+    '.pp2-fmrow:hover{background:var(--wash-5)!important;}.pp2-fmtrig:hover{border-color:var(--edge-24)!important;color:var(--text)!important;}' +
     '.pp2-tlink:hover{text-decoration-color:color-mix(in srgb, var(--text) 45%, transparent)!important;}' +
     // §5.3 item 7 — the file gives the tournament row a hover fill
     // (`style-hover="background:var(--inner)"`, Player Stat Boxes
@@ -3278,37 +3280,38 @@
     var open = state.fmOpen === id;
     var active = groups.filter(function (g) { return g.cur !== 'all'; });
     var lit = open || active.length;
-    var trig = '<span data-pp2="fm-toggle" data-v="' + esc(id) + '" style="display:inline-flex;align-items:center;gap:7px;cursor:pointer;' +
-      'white-space:nowrap;height:28px;padding:0 11px;border-radius:8px;box-sizing:border-box;font-size:12px;font-weight:700;' +
+    var trig = '<span data-pp2="fm-toggle" data-v="' + esc(id) + '" class="pp2-fmtrig" style="display:inline-flex;align-items:center;gap:8px;cursor:pointer;' +
+      'white-space:nowrap;padding:6px 11px 6px 12px;border-radius:8px;box-sizing:border-box;font-size:11.5px;font-weight:700;' +
       'color:' + (lit ? 'var(--text)' : 'var(--text-label)') + ';background:' + (lit ? 'var(--selected)' : 'transparent') + ';' +
       'border:1px solid ' + (open ? 'var(--edge-24)' : active.length ? 'var(--edge-16)' : 'var(--edge-10)') + ';user-select:none;">' +
-      '<svg width="13" height="13" viewBox="0 0 20 20" fill="none" style="pointer-events:none;"><path d="M4 6h12M4 10h12M4 14h7" ' +
-      'stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path></svg>Filters' +
-      (active.length ? '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;">' + MIDDOT + ' ' + active.length + '</span>' : '') +
-      '</span>';
+      '<svg width="11" height="11" viewBox="0 0 12 12" fill="none" style="pointer-events:none;"><path d="M1 2.5h10M3 6h6M5 9.5h2" ' +
+      'stroke="currentColor" stroke-width="1.4" stroke-linecap="round"></path></svg>Filters' +
+      (active.length ? '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:10px;font-weight:600;color:var(--text-label);pointer-events:none;">' + MIDDOT + ' ' + active.length + '</span>' : '') +
+      '<svg width="9" height="9" viewBox="0 0 10 10" fill="none" style="pointer-events:none;"><path d="M2 3.5l3 3 3-3" stroke="var(--text-label)" ' +
+      'stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>';
     if (!open) return '<span style="position:relative;display:inline-flex;">' + trig + '</span>';
     var cols = groups.map(function (g) {
       return '<div style="display:flex;flex-direction:column;gap:2px;min-width:0;">' +
-        '<span style="font-family:var(--font-words);font-size:10.5px;font-weight:700;letter-spacing:0.10em;text-transform:uppercase;' +
-          'color:var(--text-label);padding:0 8px 4px;">' + esc(g.title) + '</span>' +
+        '<span style="font-size:10.5px;font-weight:700;letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);padding:0 0 8px;">' + esc(g.title) + '</span>' +
         g.options.map(function (o) {
           var on = g.cur === o[0], n = g.count(o[0]);
-          return '<span data-pp2="fm-set" data-g="' + esc(g.key) + '" data-v="' + esc(o[0]) + '" style="cursor:pointer;display:flex;' +
-            'align-items:center;gap:8px;padding:5px 8px;border-radius:7px;font-size:12.5px;font-weight:' + (on ? 700 : 500) + ';' +
+          return '<span data-pp2="fm-set" data-g="' + esc(g.key) + '" data-v="' + esc(o[0]) + '" class="pp2-fmrow" style="cursor:pointer;display:flex;' +
+            'justify-content:space-between;align-items:center;gap:8px;padding:7px 8px;border-radius:7px;font-size:12px;font-weight:' + (on ? 700 : 500) + ';' +
             'color:' + (on ? 'var(--text)' : 'var(--text-soft)') + ';background:' + (on ? 'var(--selected)' : 'transparent') + ';">' +
-            '<span style="flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + esc(o[1]) + '</span>' +
-            '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:var(--text-label);">' + (n == null ? DASH : n) + '</span>' +
-            '<span style="width:10px;font-size:11px;color:var(--text);">' + (on ? '✓' : '') + '</span></span>';
+            '<span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;pointer-events:none;">' + esc(o[1]) + '</span>' +
+            '<span style="display:flex;gap:8px;align-items:center;pointer-events:none;"><span style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;' +
+            'color:var(--text-label);font-weight:400;">' + (n == null ? DASH : n) + '</span>' +
+            (on ? '<svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M1.5 5.5l2.2 2.2L8.5 2.8" stroke="var(--text)" stroke-width="1.6" ' +
+              'stroke-linecap="round" stroke-linejoin="round"></path></svg>' : '') + '</span></span>';
         }).join('') + '</div>';
     }).join('');
     return '<span style="position:relative;display:inline-flex;">' + trig +
-      '<div data-pp2="fm-close" style="position:fixed;inset:0;z-index:68;"></div>' +
-      '<div data-pp2="card" style="position:absolute;top:calc(100% + 8px);left:0;z-index:69;width:620px;max-width:calc(100vw - 64px);' +
-        'background:var(--card);border:1px solid var(--edge-10);border-radius:14px;box-shadow:var(--shadow-pop);padding:14px;' +
-        'box-sizing:border-box;">' +
-        '<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px 18px;">' + cols + '</div>' +
-        '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;border-top:1px solid var(--edge-10);' +
-          'margin-top:12px;padding-top:10px;">' +
+      '<div data-pp2="fm-close" style="position:fixed;inset:0;z-index:70;"></div>' +
+      '<div data-pp2="card" style="position:absolute;top:calc(100% + 8px);left:0;z-index:71;width:520px;max-width:calc(100vw - 48px);' +
+        'background:var(--card);border:1px solid var(--edge-10);border-radius:14px;box-shadow:var(--shadow-pop);padding:14px 16px 12px;' +
+        'box-sizing:border-box;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px 18px;">' + cols +
+        '<div style="grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--edge-10);' +
+          'margin-top:-4px;padding-top:10px;">' +
           '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:var(--text-label);">' + nIn + ' of ' + nAll + ' matches</span>' +
           '<span data-pp2="fm-reset" data-v="' + esc(id) + '" style="cursor:pointer;font-size:12px;font-weight:600;color:var(--link);">Reset filters</span>' +
         '</div></div></span>';
@@ -7544,6 +7547,335 @@
     return 'No priced matches on record.' + (d.unknown ? '' : marketTeamLine(d));
   }
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Profile v2 (founder 2026-11-09) · Market edge → Match winner, the export's marketEdge():
+  // underlined tabs; surface pills · divider · Filters (Format · Court speed · Level · Opponent style) … window
+  // Last 52 weeks · Last 24 months · Career; card 1 = role strip (All · As favourite · As underdog: yield white, gap vs
+  // tour by sign, sign bar) + the cumulative-return chart; card 2 = the flat eight-band ladder of his own closing price
+  // with a dashed hairline between 1.99 and 2.00; a band opens the shared drill box. Rows = the market-edge shard's
+  // basis rows (ruling B). Favourite = the shorter closing price of the two (founder 2026-11-09). Money in units.
+  // Opponent level is not offered: the shard carries no opponent rank (reported, not guessed).
+  var MK_BANDS = [
+    ['fav', '1.01 \u2013 1.20', 'Heavy favourite', 1.01, 1.21], ['fav', '1.21 \u2013 1.40', 'Clear favourite', 1.21, 1.41],
+    ['fav', '1.41 \u2013 1.64', 'Favourite', 1.41, 1.65], ['fav', '1.65 \u2013 1.99', 'Slight favourite', 1.65, 2.00],
+    ['dog', '2.00 \u2013 2.49', 'Slight underdog', 2.00, 2.50], ['dog', '2.50 \u2013 3.49', 'Underdog', 2.50, 3.50],
+    ['dog', '3.50 \u2013 5.99', 'Big underdog', 3.50, 6.00], ['dog', '6.00 +', 'Longshot', 6.00, Infinity]];
+  var MK_FLOOR = 5;
+  var MK_V1 = false;   // true = the TEN-384 Match winner view (kept for the tests that pin its helpers)
+  function mkBandIdx(price) {
+    for (var i = 0; i < MK_BANDS.length; i++) if (price >= MK_BANDS[i][3] - 1e-9 && price < MK_BANDS[i][4] - 1e-9) return i;
+    return -1;
+  }
+  // favourite = the shorter closing price of the two; an exact tie keeps the builder's role
+  function mkRoleOf(m) {
+    if (m.price != null && m.oppPrice != null && m.price !== m.oppPrice) return m.price < m.oppPrice ? 'fav' : 'dog';
+    return m.role === 'fav' || m.role === 'favourite' ? 'fav' : 'dog';
+  }
+  // Court speed from the row's abstract speed (Tennis Abstract, 1.00 = tour average): gap > +0.08 fast, < −0.08 slow.
+  function mkSpeedOf(m) {
+    if (m.speed == null || !isFinite(m.speed)) return null;
+    var g = m.speed - 1;
+    return g > 0.08 ? 'fast' : g < -0.08 ? 'slow' : 'medium';
+  }
+  function mkSurfOf(m) {
+    if (String(m.court || '').toLowerCase() === 'indoor') return 'Indoors';
+    var s = String(m.surface || '').toLowerCase();
+    return s === 'hard' ? 'Hard' : s === 'clay' ? 'Clay' : s === 'grass' ? 'Grass' : null;
+  }
+  function mkFmtOf(m) { return m.level === 'Grand Slam' ? 'bo5' : 'bo3'; }
+  function mkArchOf(m) { return styleArchetypeOf(mkOppName(m.opp)) || null; }
+  function mkCut(win) {
+    var days = win === 'l52' ? 364 : win === 'l24' ? 730 : null;
+    return days ? new Date(Date.now() - days * 86400000).toISOString().slice(0, 10) : null;
+  }
+  var MK_FM_KEYS = ['mkFmt', 'mkSpeed', 'mkLvl', 'mkArch'];
+  function mkFilterOk(m, o) {
+    o = o || {};
+    var f = o.mkFmt || state.mkFmt || 'all', sp = o.mkSpeed || state.mkSpeed || 'all', a = o.mkArch || state.mkArch || 'all';
+    if (f !== 'all' && mkFmtOf(m) !== f) return false;
+    if (sp !== 'all' && mkSpeedOf(m) !== sp) return false;
+    if (a !== 'all' && mkArchOf(m) !== a) return false;
+    return true;
+  }
+  function mkBase(mk) {
+    var cut = mkCut(state.mkWin || 'career'), surf = state.mkSurf || 'all';
+    return (mk.matches || []).filter(function (m) {
+      if (!m.inBasis || m.price == null) return false;
+      if (cut && String(m.date) < cut) return false;
+      return surf === 'all' || mkSurfOf(m) === surf;
+    });
+  }
+  function mkStat(ms) {
+    var n = ms.length, w = ms.filter(function (m) { return m.won; }).length;
+    var u = ms.reduce(function (a, m) { return a + (m.pl || 0); }, 0);
+    return { n: n, w: w, l: n - w, u: u, y: n ? 100 * u / n : null, win: n ? 100 * w / n : null };
+  }
+  function mkScopeTxt() {
+    var win = state.mkWin || 'career', surf = state.mkSurf || 'all';
+    var bits = [win === 'l52' ? 'last 52 weeks' : win === 'l24' ? 'last 24 months' : 'career'];
+    if (surf !== 'all') bits.push(surf.toLowerCase());
+    if ((state.mkFmt || 'all') !== 'all') bits.push('best of ' + (state.mkFmt === 'bo5' ? 5 : 3));
+    if ((state.mkSpeed || 'all') !== 'all') bits.push(state.mkSpeed + ' courts');
+    if ((state.mkArch || 'all') !== 'all') bits.push('vs ' + state.mkArch);
+    return bits.join(' ' + MIDDOT + ' ');
+  }
+  function mkUnderlineTabs() {
+    var cur = state.marketTab === 'lines' ? 'lines' : 'winner';
+    return '<div style="display:flex;gap:26px;border-bottom:1px solid color-mix(in srgb, var(--text) 8%, transparent);margin:-6px 0 16px;">' +
+      MARKET_TABS.map(function (t) {
+        var on = cur === t[0];
+        return '<span data-pp2="market-tab" data-v="' + t[0] + '" class="pp2-utab" style="cursor:pointer;padding:0 0 10px;font-size:13px;' +
+          'font-weight:' + (on ? 700 : 600) + ';color:' + (on ? 'var(--text)' : 'var(--text-label)') + ';box-shadow:inset 0 -2px 0 ' +
+          (on ? 'var(--bar)' : 'transparent') + ';white-space:nowrap;">' + t[1] + '</span>';
+      }).join('') + '</div>';
+  }
+  function mkFilterGroups(p, mk) {
+    var base = mkBase(mk);
+    var cnt = function (key) { return function (v) { var o = {}; o[key] = v; return base.filter(function (m) { return mkFilterOk(m, o); }).length; }; };
+    var lvl = state.mkLvl || 'all';
+    var lvlCount = function (v) {
+      if (v === 'all' || v === 'ATP') return base.filter(function (m) { return mkFilterOk(m); }).length;
+      try { var r = levelRecords(p, v === 'Challenger' ? 'ch' : 'itf'); return r && r.all ? r.all.n : null; } catch (e) { return null; }
+    };
+    return [
+      { key: 'mkFmt', title: 'Format', cur: state.mkFmt || 'all', options: [['all', 'All formats'], ['bo3', 'Best of 3'], ['bo5', 'Best of 5']], count: cnt('mkFmt') },
+      { key: 'mkSpeed', title: 'Court speed', cur: state.mkSpeed || 'all', options: [['all', 'All speeds'], ['fast', 'Fast'], ['medium', 'Medium'], ['slow', 'Slow']], count: cnt('mkSpeed') },
+      { key: 'mkLvl', title: 'Level', cur: lvl, options: [['all', 'All levels'], ['ATP', 'ATP'], ['Challenger', 'Challenger'], ['ITF', 'ITF']], count: lvlCount },
+      { key: 'mkArch', title: 'Opponent style', cur: state.mkArch || 'all', options: [['all', 'All styles']].concat(STYLE_AXIS.map(function (a) {
+        return [a.label, a.label.replace('Big Server + First Strike', 'Big Server + FS').replace('Big Server + Complete Baseliner', 'Big Server + CB')]; })),
+        count: cnt('mkArch') }
+    ];
+  }
+  function mkCardsAndChart(scoped) {
+    var filt = state.mkRole || 'all';
+    var TOURY = { all: tourBaselineFor('all'), fav: tourBaselineFor('favourite'), dog: tourBaselineFor('underdog') };
+    var cards = [['all', 'All matches'], ['fav', 'As favourite'], ['dog', 'As underdog']].map(function (c, i) {
+      var s = mkStat(scoped.filter(function (m) { return c[0] === 'all' || mkRoleOf(m) === c[0]; }));
+      var on = filt === c[0], has = s.n > 0, ty = TOURY[c[0]], gap = has && ty != null ? s.y - ty : null;
+      var pos = gap == null ? 50 : Math.max(4, Math.min(96, 50 + gap * 6));
+      var col = gap == null ? 'var(--text-label)' : signColour(gap);
+      return '<div data-pp2="mk-role" data-v="' + c[0] + '" class="pp2-mkcard" style="cursor:pointer;background:' + (on ? 'var(--selected)' : 'transparent') + ';' +
+        'border-right:' + (i < 2 ? '1px solid var(--edge-6)' : 'none') + ';box-shadow:inset 0 -2px 0 ' + (on ? 'var(--link)' : 'transparent') + ';' +
+        'padding:14px ' + (i === 2 ? '40px' : '18px') + ' 13px 18px;display:flex;flex-direction:column;gap:9px;min-width:0;">' +
+        '<span style="display:flex;align-items:baseline;justify-content:space-between;gap:8px;pointer-events:none;">' +
+          recCaps(c[1], 'color:' + (on ? 'var(--text)' : 'var(--text-label)') + ';white-space:nowrap;') +
+          '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:var(--text-label);white-space:nowrap;">' +
+            (has ? s.n + ' matches ' + MIDDOT + ' ' + recordText(s.w, s.l) : 'no matches') + '</span></span>' +
+        '<span style="display:flex;align-items:baseline;gap:10px;pointer-events:none;">' +
+          '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:26px;font-weight:700;line-height:1;color:' + (has ? 'var(--text)' : 'var(--text-label)') + ';">' +
+            (has ? signed(s.y, 2, '%') : DASH) + '</span>' +
+          (gap != null ? '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:12px;font-weight:700;color:' + col + ';">' + signed(gap, 1, 'pp') + '</span>' : '') +
+        '</span>' +
+        '<span style="position:relative;display:block;height:5px;border-radius:3px;background:var(--track);pointer-events:none;">' +
+          '<span style="position:absolute;left:50%;top:-3px;bottom:-3px;width:1px;background:color-mix(in srgb, var(--text) 18%, transparent);"></span>' +
+          '<span style="position:absolute;top:0;bottom:0;border-radius:3px;left:' + (gap == null || gap >= 0 ? 50 : pos).toFixed(1) + '%;width:' +
+            Math.abs(pos - 50).toFixed(1) + '%;background:' + col + ';opacity:0.85;"></span></span>' +
+        '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:var(--text-label);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none;">' +
+          (has ? 'vs tour ' + (ty == null ? DASH : signed(ty, 2, '%')) + ' ' + MIDDOT + ' flat 1u stake' : 'nothing priced in this filter') + '</span>' +
+        '</div>';
+    }).join('');
+    var pool = scoped.filter(function (m) { return filt === 'all' || mkRoleOf(m) === filt; })
+      .slice().sort(function (a, b) { return String(a.date).localeCompare(String(b.date)); });
+    var v = 0, cum = [0];
+    pool.forEach(function (m) { v += m.pl || 0; cum.push(v); });
+    var lo = Math.min.apply(null, cum), hi = Math.max.apply(null, cum), last = cum[cum.length - 1];
+    var pad = (hi - lo) * 0.1 + 0.6; lo -= pad; hi += pad;
+    var W = 1000, H = 300, Y = function (x) { return (1 - (x - lo) / (hi - lo)) * H; };
+    var X = function (i) { return cum.length > 1 ? i / (cum.length - 1) * W : 0; };
+    var line = cum.map(function (x, i) { return (i ? 'L' : 'M') + X(i).toFixed(1) + ' ' + Y(x).toFixed(1); }).join(' ');
+    var area = line + ' L' + X(cum.length - 1).toFixed(1) + ' ' + Y(0).toFixed(1) + ' L0 ' + Y(0).toFixed(1) + ' Z';
+    var span = hi - lo, step = span > 80 ? 20 : span > 40 ? 10 : span > 20 ? 5 : span > 10 ? 2 : 1, grid = '';
+    for (var g = Math.ceil(lo / step) * step; g <= hi; g += step) {
+      var gg = Math.round(g * 100) / 100;
+      grid += '<span style="position:absolute;right:0;top:' + (Y(gg) / H * 100).toFixed(2) + '%;transform:translateY(-50%);font-family:\'IBM Plex Mono\',monospace;' +
+        'font-size:10px;color:var(--text-label);white-space:nowrap;">' + (gg > 0 ? '+' : gg < 0 ? MINUS : '') + Math.abs(gg) + 'u</span>';
+    }
+    // x labels: real dates of the matches at even steps through the series (the line is drawn per match)
+    var ticks = '';
+    if (pool.length) {
+      var k = 5;
+      for (var t = 0; t <= k; t++) {
+        var idx = Math.min(pool.length - 1, Math.round(t / k * (pool.length - 1)));
+        var d = String(pool[idx].date || '');
+        var lab = (state.mkWin || 'career') === 'career' ? d.slice(0, 4) : ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][parseInt(d.slice(5, 7), 10) - 1] + ' ' + d.slice(2, 4);
+        ticks += '<span style="position:absolute;left:' + (t / k * 100).toFixed(1) + '%;top:5px;transform:translateX(-50%);' +
+          'font-family:var(--font-words);font-size:10.5px;font-weight:700;letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);white-space:nowrap;">' + esc(lab) + '</span>';
+      }
+    }
+    var roleWord = filt === 'fav' ? 'as favourite' : filt === 'dog' ? 'as underdog' : 'all matches';
+    var chart = '<div style="padding:14px 16px 12px;min-width:0;">' +
+      '<div style="display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:12px;flex-wrap:wrap;">' +
+        '<span style="display:flex;flex-direction:column;gap:5px;">' + recCaps('Cumulative return ' + MIDDOT + ' ' + roleWord + ' ' + MIDDOT + ' flat 1u stake') +
+          '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:var(--text-label);">' + pool.length + ' matches ' + MIDDOT + ' ' + esc(mkScopeTxt()) +
+          ' ' + MIDDOT + ' 1u per match at closing odds</span></span>' +
+        '<span style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;"><span style="font-family:\'IBM Plex Mono\',monospace;font-size:24px;' +
+          'font-weight:700;line-height:1;color:' + (pool.length ? signColour(last) : 'var(--text-label)') + ';">' + (pool.length ? signed(last, 1, 'u') : DASH) + '</span></span>' +
+      '</div>' +
+      (pool.length ? '<div style="display:flex;gap:10px;">' +
+        '<div style="position:relative;width:40px;height:240px;flex:none;">' + grid + '</div>' +
+        '<div style="position:relative;flex:1;height:240px;min-width:0;">' +
+          '<span style="position:absolute;left:0;right:0;top:' + (Y(0) / H * 100).toFixed(2) + '%;height:1px;background:color-mix(in srgb, var(--text) 18%, transparent);"></span>' +
+          '<svg viewBox="0 0 1000 300" preserveAspectRatio="none" style="position:absolute;inset:0;width:100%;height:100%;display:block;">' +
+            '<path d="' + area + '" fill="color-mix(in srgb, var(--link) 11%, transparent)"></path>' +
+            '<path d="' + line + '" fill="none" stroke="var(--link)" stroke-width="2" stroke-linejoin="round" vector-effect="non-scaling-stroke"></path></svg>' +
+          '<span style="position:absolute;right:-4px;top:' + (Y(last) / H * 100).toFixed(2) + '%;width:8px;height:8px;margin-top:-4px;border-radius:50%;' +
+            'background:var(--link);border:2px solid var(--inner);box-sizing:content-box;"></span>' +
+          '<span style="position:absolute;right:0;top:' + (Y(0) / H * 100).toFixed(2) + '%;transform:translateY(-130%);' + MK_CAPS + '">break even</span>' +
+        '</div></div>' +
+        '<div style="display:flex;gap:10px;margin-top:8px;"><span style="width:40px;flex:none;"></span><div style="position:relative;flex:1;height:16px;' +
+          'min-width:0;border-top:1px solid var(--edge-10);">' + ticks + '</div></div>'
+        : '<div style="padding:30px 0;text-align:center;font-size:12.5px;color:var(--text-label);">No priced match in this filter</div>') +
+      '</div>';
+    return { cards: cards, chart: chart, pool: pool };
+  }
+  var MK_INFO1 = { what: 'What backing him at a flat 1 unit at closing returned, in all matches, as favourite and as underdog, and how that return built up over time.', defs: [
+    ['Yield', 'Return per unit staked across every priced match in the filter.'],
+    ['+pp vs tour', 'His yield minus the flat-stake yield of all rated players at closing, which is the market margin.'],
+    ['Favourite', 'The shorter closing price of the two players.'],
+    ['Chart', 'Cumulative units at a flat 1 unit per match, for the selected tile and the active filters.']] };
+  var MK_INFO2 = { what: 'His record and return by how short his own closing price was.', defs: [
+    ['Band', 'His own closing price, grouped. A band says how short he was, not whether he was favourite.'],
+    ['Win %', 'Wins divided by matches in the band.'],
+    ['Yield', 'Return per unit staked at a flat 1 unit in the band; the bar shows it against break even.'],
+    ['Fewer than 5', 'The record is shown and no rate.'],
+    ['Click a band', 'Opens the band box: win rate and yield against the tour at the same price, the win rate the market expected, his losses and every match.']] };
+  function mkLadder(pool) {
+    var filt = state.mkRole || 'all';
+    var stats = MK_BANDS.map(function (B, i) {
+      return Object.assign({ i: i, B: B }, mkStat(pool.filter(function (m) { return mkBandIdx(m.price) === i; })));
+    });
+    var max = Math.max.apply(null, [1].concat(stats.filter(function (b) { return b.n >= MK_FLOOR; }).map(function (b) { return Math.abs(b.y); })));
+    var GRID = 'display:grid;grid-template-columns:minmax(150px,1.3fr) 64px 64px 64px minmax(120px,1fr) 70px;gap:0 12px;align-items:center;';
+    var heads = [['Band', 'left'], ['Matches', 'right'], ['W' + ENDASH + 'L', 'right'], ['Win %', 'right'], ['Yield vs break even', 'center'], ['Yield', 'right']];
+    var head = '<div style="' + GRID + '">' + heads.map(function (h) {
+      return '<span style="' + MK_CAPS + 'padding-bottom:8px;border-bottom:1px solid var(--edge-10);white-space:nowrap;text-align:' + h[1] + ';">' + h[0] + '</span>';
+    }).join('') + '</div>';
+    var sel = state.fb && state.fb.box === 'mkband' ? String(state.fb.v) : null;
+    var M = 'font-family:\'IBM Plex Mono\',monospace;';
+    var rows = stats.filter(function (b) { return filt === 'all' || b.B[0] === filt; }).map(function (b) {
+      var thin = b.n < MK_FLOOR, empty = !b.n, on = sel === String(b.i);
+      var half = thin ? 0 : Math.abs(b.y) / max * 46;
+      return '<div style="display:flex;flex-direction:column;">' +
+        (filt === 'all' && b.i === 4 ? '<div style="padding:6px 0 2px;"><span style="display:block;border-top:1px dashed color-mix(in srgb, var(--text) 18%, transparent);"></span></div>' : '') +
+        '<div ' + (empty ? '' : 'data-pp2="fb-open" data-box="mkband" data-v="' + b.i + '" ') + 'class="pp2-mkband" style="' + GRID + 'padding:9px 0;' +
+          'cursor:' + (empty ? 'default' : 'pointer') + ';background:' + (on ? 'var(--selected)' : 'transparent') + ';box-shadow:-10px 0 0 ' +
+          (on ? 'var(--selected)' : 'transparent') + ',10px 0 0 ' + (on ? 'var(--selected)' : 'transparent') + ';border-top:1px solid var(--line);">' +
+          '<span style="display:flex;align-items:baseline;gap:8px;min-width:0;pointer-events:none;"><span style="font-size:12.5px;font-weight:700;color:' +
+            (thin ? 'var(--text-label)' : 'var(--text)') + ';white-space:nowrap;">' + b.B[2] + '</span><span style="' + M + 'font-size:11px;color:var(--text-label);white-space:nowrap;">' + b.B[1] + '</span></span>' +
+          '<span style="' + M + 'font-size:12px;color:var(--text-label);text-align:right;">' + (empty ? DASH : b.n) + '</span>' +
+          '<span style="' + M + 'font-size:12px;color:var(--text-label);text-align:right;">' + (empty ? DASH : recordText(b.w, b.l)) + '</span>' +
+          '<span style="' + M + 'font-size:13px;font-weight:700;color:' + (thin ? 'var(--text-label)' : 'var(--text)') + ';text-align:right;">' + (thin ? DASH : b.win.toFixed(1) + '%') + '</span>' +
+          '<span style="position:relative;display:block;height:18px;pointer-events:none;"><span style="position:absolute;left:0;right:0;top:50%;height:5px;margin-top:-2.5px;' +
+            'border-radius:3px;background:var(--line);"></span><span style="position:absolute;left:50%;top:0;bottom:0;width:1px;background:color-mix(in srgb, var(--text) 18%, transparent);"></span>' +
+            (thin ? '' : '<span style="position:absolute;top:50%;height:5px;margin-top:-2.5px;left:' + (b.y >= 0 ? 50 : 50 - half).toFixed(1) + '%;width:' + half.toFixed(1) +
+              '%;background:' + signColour(b.y) + ';opacity:0.85;border-radius:3px;"></span>') + '</span>' +
+          '<span style="' + M + 'font-size:13px;font-weight:700;color:' + (thin ? 'var(--text-label)' : 'var(--text)') + ';text-align:right;">' + (thin ? DASH : signed(b.y, 1, '%')) + '</span>' +
+        '</div></div>';
+    }).join('');
+    var all = mkStat(pool), sorted = pool.map(function (m) { return m.price; }).sort(function (a, b) { return a - b; });
+    var med = sorted.length ? sorted[Math.floor(sorted.length / 2)] : null;
+    return '<div style="position:relative;background:var(--inner);border:1px solid var(--line);border-radius:12px;padding:14px 16px 12px;min-width:0;">' +
+      infoCorner('mk2', MK_INFO2) +
+      '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:12px;flex-wrap:wrap;padding-right:28px;">' +
+        recCaps('Price sensitivity ' + MIDDOT + ' his closing price ' + MIDDOT + ' ' + esc(mkScopeTxt())) +
+        '<span style="' + M + 'font-size:11px;color:var(--text-label);white-space:nowrap;">' +
+          (all.n ? all.n + ' matches ' + MIDDOT + ' ' + recordText(all.w, all.l) + ' ' + MIDDOT + ' median odds ' + med.toFixed(2) : 'no priced matches in this filter') + '</span>' +
+      '</div>' + head + '<div style="height:6px;"></div>' + rows + '</div>';
+  }
+  function mkFiltered(p, mk) {
+    return mkBase(mk).filter(function (m) { return mkFilterOk(m); });
+  }
+  function renderMarketWinnerV2(p, mk) {
+    var groups = mkFilterGroups(p, mk);
+    FM_KEYS.mk = MK_FM_KEYS;
+    var base = mkBase(mk), scoped = mkFiltered(p, mk);
+    var lvl = state.mkLvl || 'all';
+    var filterRow = '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;">' +
+      '<div style="display:flex;align-items:center;gap:8px;min-width:0;">' + stySegPills('mk-surf', STY_SURFS, state.mkSurf || 'all') +
+        '<span style="width:1px;height:18px;background:var(--edge-10);margin:0 4px;flex:none;"></span>' +
+        filtersTriggerHtml('mk', groups, scoped.length, base.length) + '</div>' +
+      winSeg('mk-win', state.mkWin || 'career', true) + '</div>';
+    var applied = filtersAppliedHtml('mk', groups, scoped.length, base.length);
+    if (lvl === 'Challenger' || lvl === 'ITF') {
+      return mkUnderlineTabs() + filterRow + applied + renderLevelRecords(p, lvl === 'Challenger' ? 'ch' : 'itf');
+    }
+    var cc = mkCardsAndChart(scoped);
+    return mkUnderlineTabs() + filterRow + applied +
+      '<div style="display:flex;flex-direction:column;gap:12px;">' +
+        '<div style="position:relative;background:var(--inner);border:1px solid var(--line);border-radius:12px;min-width:0;">' +
+          infoCorner('mk1', MK_INFO1) +
+          '<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-bottom:1px solid var(--edge-6);border-radius:12px 12px 0 0;overflow:hidden;">' +
+            cc.cards + '</div>' + cc.chart +
+        '</div>' +
+        mkLadder(cc.pool) +
+      '</div>';
+  }
+  // The band drill box (the export's sel): four tiles, every match latest first; rows open the match sheet when the row
+  // meets its career-history match (same price, same opponent surname, within 3 days).
+  function mkSpineRowOf(p, m) {
+    var spine = calSpine(p), sur = String(surnameOf(mkOppName(m.opp)) || '').toLowerCase(), t = Date.parse(m.date);
+    for (var i = 0; i < spine.length; i++) {
+      var r = spine[i];
+      if (r.price == null || Math.abs(r.price - m.price) > 1e-6) continue;
+      if (Math.abs(Date.parse(r.date) - t) > 3 * 86400000) continue;
+      if (String(surnameOf(r.opp || '') || '').toLowerCase() !== sur) continue;
+      return r;
+    }
+    return null;
+  }
+  (typeof FB_BUILD === 'object' ? FB_BUILD : {}).mkband = function (p, v) {
+    var mk = marketFor(p.key);
+    if (!mk) return null;
+    var i = parseInt(v, 10), B = MK_BANDS[i];
+    if (!B) return null;
+    var filt = state.mkRole || 'all';
+    var pool = mkFiltered(p, mk).filter(function (m) { return filt === 'all' || mkRoleOf(m) === filt; });
+    var ms = pool.filter(function (m) { return mkBandIdx(m.price) === i; }).sort(function (a, b) { return String(b.date).localeCompare(String(a.date)); });
+    var b = mkStat(ms), thin = b.n < MK_FLOOR;
+    if (!b.n) return null;
+    var tb = window.tourBaselines && window.tourBaselines.bands8 ? window.tourBaselines.bands8[i] : null;
+    var impl = ms.reduce(function (a, m) { return a + 1 / m.price; }, 0) / ms.length * 100;
+    var losses = ms.filter(function (m) { return !m.won; });
+    var shortest = losses.slice().sort(function (x, y) { return x.price - y.price; })[0];
+    var rng = B[1].replace(/ /g, '');
+    var pp = function (x) { return signed(x, 1, 'pp'); };
+    var lossTile = { label: 'Losses', fig: String(b.l),
+      sub: shortest ? 'shortest loss ' + shortest.price.toFixed(2) + ' ' + MIDDOT + ' ' + esc(mkOppName(shortest.opp)) + ', ' + esc(tournDisplayName(shortest.event, null) || '') : 'no loss in this band',
+      tail: losses.length ? 'last loss ' + fbDate(losses[0].date) : '' };
+    var tiles = thin ? [
+      { label: 'Record', fig: recordText(b.w, b.l), sub: b.n + ' matches', tail: 'too few matches for a rate' },
+      { label: 'On the price', fig: signed(b.u, 2, 'u'), figColor: signColour(b.u), sub: 'flat 1u per match', tail: b.n + ' priced' },
+      { label: 'Market expected', fig: Math.round(impl) + '%', sub: 'implied by his closing price', tail: 'no rate under ' + MK_FLOOR },
+      lossTile
+    ] : [
+      { label: 'Win rate', fig: b.win.toFixed(1) + '%', sub: recordText(b.w, b.l) + ' ' + MIDDOT + ' ' + b.n + ' matches',
+        tail: tb && tb.winRate != null ? pp(b.win - tb.winRate) + ' vs tour at ' + rng : 'tour at ' + rng + ' ' + DASH, tailColor: tb && tb.winRate != null ? signColour(b.win - tb.winRate) : null },
+      { label: 'On the price', fig: signed(b.y, 2, '%') + ' yield', sub: signed(b.u, 2, 'u') + ' ' + MIDDOT + ' flat 1u stake',
+        tail: tb && tb.yield != null ? pp(b.y - tb.yield) + ' vs tour at ' + rng : 'tour at ' + rng + ' ' + DASH, tailColor: tb && tb.yield != null ? signColour(b.y - tb.yield) : null },
+      { label: 'Market expected', fig: impl.toFixed(1) + '%', sub: 'implied by his closing price', tail: pp(b.win - impl) + ' actual vs implied', tailColor: signColour(b.win - impl) },
+      lossTile
+    ];
+    var M = 'font-family:\'IBM Plex Mono\',monospace;';
+    var rows = ms.map(function (m) {
+      var sr = mkSpineRowOf(p, m), id = sr ? (sr.sheetId || (sr.date + '|' + sr.opp)) : null;
+      var sc = sr && sr.score && sr.score !== DASH ? String(sr.score).replace(/,\s*/g, ' ') : '';
+      return { id: id, cells: [
+        { html: '<span style="display:block;width:8px;height:8px;border-radius:2px;margin-top:4px;background:' + (m.won ? 'var(--pos)' : 'var(--neg)') + ';"></span>' },
+        { html: fbDate(m.date), style: M + 'font-size:11px;color:var(--text-label);white-space:nowrap;' },
+        { html: esc(mkOppName(m.opp)), style: 'font-size:12.5px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;' },
+        { html: esc(tournDisplayName(m.event, null) || DASH), style: 'font-size:12px;color:var(--text-label);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;' },
+        { html: esc(shortRound(m.round)), style: M + 'font-size:10.5px;color:var(--text-label);' },
+        { html: esc(sc || (m.ret ? 'ret.' : DASH)), style: M + 'font-size:11px;color:var(--text-label);white-space:nowrap;' },
+        { html: m.price.toFixed(2), style: M + 'font-size:11px;color:var(--text-soft);text-align:right;' },
+        { html: m.oppPrice != null ? m.oppPrice.toFixed(2) : DASH, style: M + 'font-size:11px;color:var(--text-label);text-align:right;' },
+        { html: signed(m.pl || 0, 2, 'u'), style: M + 'font-size:11.5px;font-weight:700;text-align:right;color:' + signColour(m.pl || 0) + ';' }
+      ] };
+    });
+    return { name: B[2], code: B[1] + ' ' + MIDDOT + ' closing price',
+      meta: recordText(b.w, b.l) + (thin ? '' : ' ' + MIDDOT + ' ' + b.win.toFixed(1) + '%') + ' ' + MIDDOT + ' ' + b.n + ' matches ' + MIDDOT + ' ' + esc(mkScopeTxt()),
+      tiles: tiles, cols: FB_LIST_COLS, head: fbMatchHead(), rows: rows };
+  };
+
   function renderMarketModal(p) {
     var mk = marketFor(p.key);
     if (!mk && marketPending(p.key)) {
@@ -7557,6 +7889,8 @@
     }
     var mktTab = state.marketTab === 'lines' ? 'lines' : 'winner';
     if (mktTab === 'lines') return ANA_STYLE + marketTabsHtml() + renderLinesTab(p);
+    // Profile v2 (founder 2026-11-09): Match winner is the export's view; the TEN-384 view below stays for the box tile's helpers.
+    if (!MK_V1) return ANA_STYLE + renderMarketWinnerV2(p, mk);
     // Task E (founder 2026-11-01): the level filter on Match winner too. ATP main draw (the default) is the view as it was,
     // unchanged; every other level shows records only — no ROI, no favourite / underdog yield (founder 2026-11-01: "Records
     // only, no ROI": below the main draw the prices are mostly snapshots, not closes).
@@ -10383,7 +10717,7 @@
     var t = String(m.score || '').split(/,\s*|\s+/).filter(function (x) { return /\d+-\d+/.test(x); });
     return t.length || null;
   }
-  FB_BUILD.styles = function (p, name) {
+  (typeof FB_BUILD === 'object' ? FB_BUILD : {}).styles = function (p, name) {
     var D = styData(p);
     var d = D.data.filter(function (x) { return x.name === name; })[0];
     if (!d || d.empty) return null;
@@ -12737,7 +13071,8 @@
     // Compare-with popover and its query. Each is one value, so only one of each can be open.
     info: null, fmOpen: null, fb: null, cmpOpen: false, cmpQ: '',
     tourLevel: 'all', tourSurf: 'all', tourSort: { k: 'wl', d: -1 },
-    stySurf: 'all', styWin: 'career', stySort: { k: 'pct', d: -1 }
+    stySurf: 'all', styWin: 'career', stySort: { k: 'pct', d: -1 },
+    mkSurf: 'all', mkWin: 'career', mkRole: 'all', mkFmt: 'all', mkSpeed: 'all', mkLvl: 'all', mkArch: 'all'
   };
 
   function buildCtx(p) {
@@ -13006,6 +13341,9 @@
     else if (kind === 'sty-surf') { state.stySurf = v; state.fb = null; }
     else if (kind === 'sty-win') { state.styWin = v; state.fb = null; }
     else if (kind === 'sty-sort') { var sc = state.stySort || { k: 'pct', d: -1 }; state.stySort = sc.k === v ? { k: v, d: -sc.d } : { k: v, d: v === 'name' ? 1 : -1 }; }
+    else if (kind === 'mk-surf') { state.mkSurf = v; state.fb = null; }
+    else if (kind === 'mk-win') { state.mkWin = v; state.fb = null; }
+    else if (kind === 'mk-role') { state.mkRole = v === 'fav' || v === 'dog' ? v : 'all'; state.fb = null; }
     else if (kind === 'tourn-row') { state.tournOpen = toggleVal(state.tournOpen, el.getAttribute('data-t')); tournNeedJoin(); }
     else if (kind === 'cal-tab') { state.calTab = v; state.calCell = null; }
     else if (kind === 'cal26-month') state.cal26Month = toggleVal(state.cal26Month, v);

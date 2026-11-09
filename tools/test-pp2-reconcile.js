@@ -1457,7 +1457,8 @@ check('Q8 · the three role tiles print the baselines file', () => {
     const html = I.renderMarketModal(p);
     const f = fileTour(TB);
     [['all', f.all], ['favourite', f.fav], ['underdog', f.dog]].forEach(([id, v]) => {
-      const tile = html.slice(html.indexOf(`data-role="${id}"`));
+      // Profile v2: the role strip's cells (data-pp2="mk-role", data-v all | fav | dog) print "vs tour <figure>".
+      const tile = html.slice(html.indexOf(`data-pp2="mk-role" data-v="${id === 'favourite' ? 'fav' : id === 'underdog' ? 'dog' : 'all'}"`));
       assert(tile.slice(0, tile.indexOf('</div>')).includes('tour ' + fmtPct(100 * v)),
         `${p.name}: the ${id} tile does not print the Database figure "tour ${fmtPct(100 * v)}"`);
     });
@@ -1509,8 +1510,8 @@ check('Q8 · tour-baselines.json is published (pipeline.yml cp + assert) and reb
 // tour-baselines.json is absent.
 function mkBoxTour(support) { const m = /tour (\S+)$/.exec(support); return m ? m[1] : null; }
 function mkAllTileTour(html) {
-  const tile = html.slice(html.indexOf('data-role="all"'));
-  const m = /tour ([^<]+)<\/span>/.exec(tile.slice(0, tile.indexOf('</div>')));
+  const tile = html.slice(html.indexOf('data-pp2="mk-role" data-v="all"'));   // profile v2 role strip
+  const m = /vs tour ([^ <]+)/.exec(tile.slice(0, tile.indexOf('</div>')));
   return m ? m[1] : null;
 }
 check('Market edge box = All tile: the box support line prints the modal\'s All-tile tour figure', () => {
@@ -1561,7 +1562,8 @@ check('market box headline and the modal quote the same yield and n', () => {
     assert(vals.market.support.includes(mk.headline.n + ' priced'),
       `${p.name}: box does not carry the priced n`);
     const html = I.renderMarketModal(p);
-    assert(html.includes(mk.headline.n + ' priced'), `${p.name}: modal does not carry the priced n`);
+    // Profile v2: the role strip's All cell carries the priced n as "N matches · W–L" (every row is priced).
+    assert(html.includes(mk.headline.n + ' matches'), `${p.name}: modal does not carry the priced n`);
     assert(html.includes('closing'), `${p.name}: modal does not label the price basis`);
   }
 });
