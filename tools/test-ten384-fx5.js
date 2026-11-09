@@ -131,16 +131,15 @@ H.check('2 · a settled, genuinely empty shard still says "no matches on record"
   assert.strictEqual(v.support, 'no matches on record', JSON.stringify(v));
   assert(!v.pending);
 });
-H.check('2 · the season tile\'s titles count while the shard loads: support blank, not "— titles" then a number', () => {
+// profile v2 (the export, 2026-11-09): the season tile reads "46.7% win rate · 2026 season" — no titles clause, so it
+// never waits on the tournament-history shard.
+H.check('2 · the season tile reads its win rate and season, painted at once (no titles clause, nothing pending)', () => {
   const { I, p } = fxModule({ th: null, extra: TH_PENDING() });
   const v = I.buildBoxVals(p, { archetype: null });
   assert(v.season.headline != null, 'the season record is not held — the check would be vacuous');
+  assert(/^\d+\.\d% win rate · \d{4} season$/.test(v.season.support), 'season support: ' + v.season.support);
   const h = I.renderBoxes({ boxVals: { season: v.season } });
-  assert(!/titles/.test(T(h)), 'the season tile prints a titles clause while the shard loads: ' + T(h).slice(0, 200));
-  assert(/data-pp2-pending="support"/.test(h), 'the support line is not marked pending');
-  // landed: the titles clause paints
-  const { I: I2, p: p2 } = fxModule();
-  assert(/\d+ titles?$/.test(I2.buildBoxVals(p2, { archetype: null }).season.support));
+  assert(!/titles/.test(T(h)) && !/data-pp2-pending="support"/.test(h), 'a titles clause or a pending line on the season tile');
 });
 H.check('2 · Record per tournament modal while the shard loads: no empty-state sentence; settled empty: "No tournaments on record."', () => {
   const { I, p } = fxModule({ th: null, extra: TH_PENDING() });

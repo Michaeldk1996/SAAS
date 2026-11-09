@@ -928,8 +928,9 @@ check('career box headline = spine total, with the v7 support line', () => {
     if (!t.n) { assert.strictEqual(vals.career.headline, null); continue; }
     assert.strictEqual(vals.career.headline, t.won + '–' + t.lost,
       `${p.name}: box headline disagrees with the spine`);
-    assert(vals.career.support.endsWith(' all-time · by surface and by season'),
-      `${p.name}: career support is not the v7 string (${vals.career.support})`);
+    // profile v2 (the export, 2026-11-09): "54.4% · all-time · all surfaces"
+    assert(vals.career.support.endsWith(' · all-time · all surfaces'),
+      `${p.name}: career support is not the v2 string (${vals.career.support})`);
     // The rate is still the spine's own, not a re-derivation.
     assert(vals.career.support.startsWith(I.rateText(t.won, t.lost)),
       `${p.name}: career support rate disagrees with the spine`);
@@ -2358,13 +2359,12 @@ checkCareer('the Court speed headline is a band name or a dash, never a surface'
     // actually renders, plus the surface ban is asserted over the WHOLE tile
     // (headline and support), which is wider than the headline-only ban it
     // replaces: the "Grass courts" regression would fail here from either slot.
-    assert(/^[0-9]+%$/.test(h),
-      `${p.name}: Court speed headline "${h}" is not a whole-percent figure`);
+    // profile v2 (2026-11-09): "61% fast courts" / "his best speed band · 31–20 · career" — a per-edition band, never a surface
     const band = String(v.speed.support).split(' · ')[0];
     // fx3 (founder D10): no band above his rated-match rate at n >= 10 -> the OVERALL figure, "all rated courts".
-    if (band === 'all rated courts') { overall++; continue; }
-    assert(LABELS.indexOf(band) > -1,
-      `${p.name}: Court speed support leads with "${band}", not one of ${LABELS.join(' · ')}`);
+    if (band === 'all rated courts') { assert(/^[0-9]+%$/.test(h), `${p.name}: overall headline "${h}"`); overall++; continue; }
+    assert(/^[0-9]+% (fast|medium|slow) courts$/.test(h), `${p.name}: Court speed headline "${h}" is not "N% <band> courts"`);
+    assert.strictEqual(band, 'his best speed band', `${p.name}: Court speed support leads with "${band}"`);
     const tile = h + ' ' + v.speed.support;
     SURFACES.forEach(sf => assert(tile.indexOf(sf) < 0,
       `${p.name}: Court speed tile "${tile}" names a surface`));

@@ -2239,6 +2239,19 @@
     return best;
   }
 
+  // profile v2 (2026-11-09): the Court speed tile reads the per-edition bands the modal draws (Fast · Medium · Slow, ATP),
+  // on the §8.3 rule — the largest POSITIVE gap to his rate over every rated match, n >= 10 — in the export's words:
+  // "61% fast courts" / "his best speed band · 31–20 · career".
+  function speedTileV2(p) {
+    var sdV = (function () { var prev = state.spdSurf; state.spdSurf = 'all'; try { return spdData(p); } finally { state.spdSurf = prev; } }());
+    var allR = sdV.tn ? 100 * sdV.tw / sdV.tn : null;
+    var pick = sdV.bands.filter(function (b) { return b.n >= 10 && allR != null && b.pct > allR; })
+      .sort(function (a, b) { return (b.pct - allR) - (a.pct - allR) || b.n - a.n; })[0];
+    if (pick) return { headline: Math.round(pick.pct) + '% ' + pick.name.toLowerCase() + ' courts',
+      support: 'his best speed band ' + MIDDOT + ' ' + recordText(pick.w, pick.l) + ' ' + MIDDOT + ' career' };
+    if (sdV.tn) return { headline: Math.round(allR) + '%', support: 'all rated courts ' + MIDDOT + ' no band above it ' + MIDDOT + ' ' + recordText(sdV.tw, sdV.tn - sdV.tw) };
+    return { headline: null, support: 'no rated ATP courts on record' };
+  }
   function buildBoxVals(p, ctx) {
     var v = {};
 
@@ -2254,8 +2267,8 @@
     // names the modal's two axes instead.
     v.career = ct.n
       ? { headline: recordText(ct.won, ct.lost),
-          support: rateText(ct.won, ct.lost) + ' all-time ' + MIDDOT +
-            ' by surface and by season' }
+          // profile v2 (the export, 2026-11-09): "54.4% · all-time · all surfaces"
+          support: rateText(ct.won, ct.lost) + ' ' + MIDDOT + ' all-time ' + MIDDOT + ' all surfaces' }
       : { headline: null, support: 'no matches on record' };
 
     // 2 · Calendar record — current season. v7 moves this to slot 2 and rewrites
@@ -2271,9 +2284,9 @@
     // keeps its box blank (supportPending) rather than print "— titles" and then a number.
     v.season = (sw + sl)
       ? { headline: recordText(sw, sl),
-          supportPending: ti == null && tournHistPending(p),
-          support: currentYear() + ' season ' + MIDDOT + ' all surfaces ' + MIDDOT + ' ' +
-            (ti == null ? DASH + ' titles' : ti + (ti === 1 ? ' title' : ' titles')) }
+          // profile v2 (the export, 2026-11-09): "46.7% win rate · 2026 season"
+          support: (MK_V1 ? null : rateText(sw, sl) + ' win rate ' + MIDDOT + ' ' + currentYear() + ' season'),
+          supportPending: MK_V1 && ti == null && tournHistPending(p) }
       : { headline: null, support: 'no matches this season' };
 
     // 3 · Record per tournament — v7 moves this to slot 3 and replaces the
@@ -2369,7 +2382,7 @@
     // always one of the five PACE BANDS ... It is never a surface name"), and
     // the box is Court SPEED. The capture has regressed to the pre-ruling
     // behaviour, so the ruling wins and the label stays a band.
-    v.speed = speedBest
+    v.speed = !MK_V1 && speedRows(p).length ? speedTileV2(p) : speedBest
       ? { headline: rateText0(speedBest.band.won, speedBest.band.lost),
           support: speedBest.band.band.label + ' ' + MIDDOT + ' his best band ' + MIDDOT + ' ' +
             recordText(speedBest.band.won, speedBest.band.lost) }
