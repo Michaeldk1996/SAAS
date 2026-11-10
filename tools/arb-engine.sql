@@ -145,6 +145,11 @@ begin
      where f.event_type_type = 'Atp Singles' and f.start_utc > now() and f.start_utc < now() + c.horizon
        and not arb.fixture_closed(f.event_status, f.event_winner)
        and position('/' in coalesce(f.first_player, '') || coalesce(f.second_player, '')) = 0
+       -- a match that has STARTED is never a pre-match arbitrage, whatever its scheduled time (founder 2026-11-10: Sonego v
+       -- Halys went live 13:24:17, before its 13:30 slot; the ⚖️ ARB at 13:28 paired Bet105's 13:16 pre-match 2.08 with a
+       -- live Polymarket price). Started = our 10-s live poller's flip, or api-tennis already reporting a set / live.
+       and not exists (select 1 from public.live_flip_log l where l.event_key = f.event_key::text)
+       and coalesce(f.event_status, '') !~* '^set|live'
   ),
   -- Bet105 (Kibl stream): card key = board date | surname keys; live while the worker beats
   b105 as (
@@ -433,8 +438,13 @@ language sql stable as $$
          else '📏 The most the prediction-market book takes at this price; a smaller stake keeps the same split.' end,
     case when (a->>'retirementFlag')::boolean then
       '⚠️ Retirement rules differ: Kalshi / Polymarket pay the player who advances once a ball is played; a bookmaker may void the bet on a retirement.' end,
-    format('🕒 Prices: %s @ %s · %s @ %s', a->'legFirst'->>'source', arb.hhmm((a->'legFirst'->>'at')::timestamptz),
-           a->'legSecond'->>'source', arb.hhmm((a->'legSecond'->>'at')::timestamptz)))
+    -- each leg's clock says what it is: Bet105 comes from the Kibl stream, which sends only changes — its time is when the
+    -- price last CHANGED (still current: the stream was connected at send time); the others are their last update
+    format('🕒 Prices at %s UTC — %s · %s', arb.hhmm(now()),
+           case when a->'legFirst'->>'source' = 'Bet105' then format('Bet105 unchanged since %s (Kibl stream connected)', arb.hhmm((a->'legFirst'->>'at')::timestamptz))
+                else format('%s updated %s', a->'legFirst'->>'source', arb.hhmm((a->'legFirst'->>'at')::timestamptz)) end,
+           case when a->'legSecond'->>'source' = 'Bet105' then format('Bet105 unchanged since %s (Kibl stream connected)', arb.hhmm((a->'legSecond'->>'at')::timestamptz))
+                else format('%s updated %s', a->'legSecond'->>'source', arb.hhmm((a->'legSecond'->>'at')::timestamptz)) end))
 $$;
 
 create or replace function arb.render_div(d jsonb) returns text

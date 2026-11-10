@@ -52,6 +52,7 @@ create table public.kibl_now_card (card_key text primary key, book text, book_na
   b_side text, b_price numeric, b_at timestamptz, written_at timestamptz default now());
 create table public.kibl_now_price (card_key text, side_key text, kind text, written_at timestamptz default now());
 create table drops_live.flip (event_key text, live_at timestamptz, p1 text, p2 text);
+create table public.live_flip_log (event_key text primary key, first_live_seen_at timestamptz not null);
 create schema poly_bot;
 create table poly_bot.volume (slug text primary key, player_a text, player_b text, sk_a text, sk_b text, start_at timestamptz,
   volume numeric, volume_ml numeric, liquidity numeric, fetched_at timestamptz);
@@ -184,6 +185,9 @@ try:
           and '· liquidity $400\n🔗 https://kalshi.com/markets/kxatpmatch/atp-tennis-match/kx-hf\n✅ Back A. Fery' in msg
           and '🔗' not in msg.split('✅ Back A. Fery')[1]
           and '⚠️ Retirement rules differ' in msg, msg)
+    check('ARB message clocks: Bet105 says it is UNCHANGED since its last change (the stream sends only changes), the other leg its update',
+          '🕒 Prices at ' in msg and 'Bet105 unchanged since ' in msg and '(Kibl stream connected)' in msg and 'Kalshi updated ' in msg
+          and 'Bet105 @ ' not in msg.split('🕒')[1], msg)
     rc, msg = q("select message from arb.alerts where kind = 'divergence' and detail->>'source' = 'Superbet'")
     check('DIVERGENCE message', msg.startswith('📐 DIVERGENCE') and '🎯 Superbet: Q. Halys @ 2.2' in msg and '📏 Fair (Bet105, margin removed): 1.95 → +12.8% above fair' in msg, msg)
     rc, out = q("select delivery from arb.alerts limit 1"); check('no Vault secret → recorded, nothing sent', out == 'unsent: no vault secret', out)
@@ -226,6 +230,18 @@ try:
     w['status'] = None
     q("select public.drops_scope_ingest($j$" + json.dumps([w]).replace('__D1__', d1) + "$j$::jsonb, 'test')", 'service_role')
     o = opps(); check('CONTROL: the same fixture not closed → priced again', 'Q. Halys' in [f['first'] for f in o['fair']], o['fair'])
+    # founder 2026-11-10 (Sonego v Halys live 13:24, ⚖️ ARB at 13:28 off Bet105's pre-match price): a STARTED match is never
+    # pre-match, whatever its scheduled time
+    q("insert into public.live_flip_log values ('9001', now() - interval '4 minutes')")
+    o = opps(); check('a match our live poller saw start: no price, no divergence, no arb (mutant: scheduled time only)',
+          'Q. Halys' not in [f['first'] for f in o['fair']] and o['arbs'] == [], o)
+    q("delete from public.live_flip_log")
+    w['status'] = 'Set 1'
+    q("select public.drops_scope_ingest($j$" + json.dumps([w]).replace('__D1__', d1) + "$j$::jsonb, 'test')", 'service_role')
+    o = opps(); check('api-tennis already reporting a set → not pre-match', 'Q. Halys' not in [f['first'] for f in o['fair']], o['fair'])
+    w['status'] = None
+    q("select public.drops_scope_ingest($j$" + json.dumps([w]).replace('__D1__', d1) + "$j$::jsonb, 'test')", 'service_role')
+    o = opps(); check('CONTROL: no flip, not started → priced again', 'Q. Halys' in [f['first'] for f in o['fair']], o['fair'])
     q("update public.kibl_now_price set written_at = now() - interval '10 minutes'")
     o = opps(); check('a stale Bet105 heartbeat → no fair price, no divergence', o['fair'] == [] and o['divergences'] == [], o)
 
