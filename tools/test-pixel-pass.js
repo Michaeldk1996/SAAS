@@ -175,15 +175,15 @@ check('item 1 · each state cell carries its own --line border-left (step-4 refe
   const html = I.renderHeader(SUBJECT, HCTX);
   const cells = html.match(/class="pp2-cell" style="[^"]*"/g) || [];
   assert.strictEqual(cells.length, 4, `expected 4 state cells, found ${cells.length}`);
-  cells.forEach((c) => assert(/border-left:1px solid var\(--line\);/.test(c), `cell rule is not --line: ${c}`));
+  cells.forEach((c) => assert(/border-left:1px solid var\(--edge-6\);/.test(c), `cell rule is not the export's 6% (--edge-6): ${c}`));   // LOCKED 2026-11-07 :96
   assert(!/width:1px;align-self:stretch/.test(html), 'a sibling rule span is still painted — two rules per boundary');
 });
 
-check('item 1 · the strip does not stretch to the header row (cells sit on the avatar baseline)', () => {
+check('item 1 · the strip does not stretch to the header row (LOCKED 2026-11-07: centred in the row, cells bottom-aligned)', () => {
   const html = I.renderHeader(SUBJECT, HCTX);
   assert(!/flex:none;align-self:stretch;display:flex;align-items:stretch/.test(html),
     'the live-state strip still stretches to the header row — rules will run its full height');
-  assert(/flex:none;align-self:flex-end;display:flex;align-items:flex-end/.test(html),
+  assert(/flex:none;display:flex;align-items:flex-end;position:relative;/.test(html),
     'the live-state strip is not bottom-aligned on its own content');
 });
 
@@ -433,10 +433,10 @@ checkValues('item 7 · every tile figure is white, the tourn unit included (no s
 // is vacuous; the suite fails on a survivor exactly as it does on a red check.
 const mutants = [
   ['item 1 · cell rule removed (TEN-384: the rule is the cell\'s own border-left)',
-   "'padding:0 20px;border-left:1px solid var(--line);\">'", "'padding:0 20px;\">'", /cell rule is not --line/],
+   "'padding:0 20px;border-left:1px solid var(--edge-6);\">'", "'padding:0 20px;\">'", /cell rule is not/],
   ['item 1 · strip back to stretch',
-   "flex:none;align-self:flex-end;display:flex;align-items:flex-end;",
-   "flex:none;align-self:stretch;display:flex;align-items:stretch;",
+   "flex:none;display:flex;align-items:flex-end;position:relative;",
+   "flex:none;align-self:stretch;display:flex;align-items:stretch;position:relative;",
    /still stretches to the header row/],
   ['item 2 · speed headline back to the band label',
    "headline: rateText0(speedBest.band.won, speedBest.band.lost),",
@@ -499,7 +499,7 @@ function scoreAgainst(MI, MCODE) {
 
   // item 1
   (hdr.match(/class="pp2-cell" style="[^"]*"/g) || []).forEach((c) => {
-    if (!/border-left:1px solid var\(--line\);/.test(c)) throw new Error('cell rule is not --line');
+    if (!/border-left:1px solid var\(--edge-6\);/.test(c)) throw new Error('cell rule is not --edge-6');
   });
   if (/flex:none;align-self:stretch;display:flex;align-items:stretch/.test(hdr))
     throw new Error('the live-state strip still stretches to the header row');

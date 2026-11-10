@@ -883,7 +883,8 @@
       '</div>' +
       // The four state cells sit on the avatar's baseline (reference: the strip's bottom = the avatar's
       // bottom), each with a 1px --line rule on its left that spans the cell's own text block only.
-      '<div style="flex:none;align-self:flex-end;display:flex;align-items:flex-end;">' +
+      // founder 2026-11-10 (LOCKED 2026-11-07 export): the strip is centred in the header row, cells bottom-aligned
+      '<div style="flex:none;display:flex;align-items:flex-end;position:relative;">' +
         cells.join('') +
       '</div>' +
       '</div>';
@@ -900,7 +901,7 @@
     function cell(label, value, colour, sub, sub2) {
       return '' +
         '<div class="pp2-cell" style="display:flex;flex-direction:column;justify-content:flex-end;gap:6px;' +
-          'padding:0 20px;border-left:1px solid var(--line);">' +
+          'padding:0 20px;border-left:1px solid var(--edge-6);">' +
         '<div style="font-family:var(--font-words);font-size:10.5px;font-weight:700;' +
           'letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);white-space:nowrap;">' + label + '</div>' +
         '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:15px;font-weight:700;' +
@@ -3417,7 +3418,7 @@
       'class="pp2-qi" style="cursor:pointer;flex:none;width:16px;height:16px;border-radius:50%;box-sizing:border-box;' +
       'border:1px solid ' + (open ? 'var(--edge-24)' : 'var(--edge-16)') + ';color:' + (open ? 'var(--text)' : 'var(--text-label)') + ';' +
       'display:flex;align-items:center;justify-content:center;font-family:\'IBM Plex Mono\',monospace;font-size:10px;' +
-      'font-weight:700;line-height:1;user-select:none;">?</span>';
+      'font-weight:700;line-height:1;user-select:none;">' + (spec.glyph || '?') + '</span>';
     if (!open) return icon;
     var defs = (spec.defs || []).map(function (d) {
       return '<div style="display:grid;grid-template-columns:112px minmax(0,1fr);gap:12px;padding:7px 0;' +
@@ -4873,7 +4874,7 @@
       return { label: spec.label, value: DASH, delta: DASH,
         avg: avg == null ? DASH : dnaFmt(avg, spec.dp) + unit,
         color: DNA_FAINT, deltaColor: DNA_FAINT, weight: 600,
-        bd: 'color-mix(in srgb, var(--text) 4.5%, transparent)', mark: spec.lower ? '↓ better' : '' };
+        bd: 'color-mix(in srgb, var(--text) 4.5%, transparent)', mark: '' };   // the export never marks a tile (file :1801, :1812)
     }
     var d = v - avg;
     var above = spec.lower ? d < 0 : d > 0;
@@ -4886,7 +4887,7 @@
       color: 'var(--text)',
       deltaColor: level ? 'var(--text-label)' : (above ? DNA_GREEN : DNA_RED),
       weight: 700,
-      mark: spec.lower ? '↓ better' : '',
+      mark: '',
       bd: 'color-mix(in srgb, var(--text) 4.5%, transparent)'
     };
   }
@@ -4974,13 +4975,18 @@
     }).join('');
     var valueLabels = axes.map(function (a, i) {
       if (a.pct == null) return '';
-      // TEN-384 R3 · the chip sits on the vertex, as the reference draws it, held inside 0.82 of the
-      // radius so a near-100th-percentile vertex cannot push it into the axis label at 1.14.
-      var xy = dnaPt(i, Math.min(0.82, Math.max(0.3, a.pct / 100)));
-      return '<span style="position:absolute;left:' + (xy[0] + DNA_PAD).toFixed(1) + 'px;top:' +
-        xy[1].toFixed(1) + 'px;transform:translate(-50%,-50%);font-family:\'IBM Plex Mono\',monospace;' +
-        'font-size:10.5px;font-weight:700;color:var(--text);background:color-mix(in srgb, var(--page) 85%, transparent);padding:1px 4px;' +
-        'border-radius:4px;white-space:nowrap;z-index:2;">' + esc(dnaFmt(a.rating, a.dp)) + '</span>';
+      // founder 2026-11-10 (the export, file :1861): the figure sits just outside its vertex, pushed 9px outward along
+      // the spoke — above the top vertex, right of the right-hand ones, left of the left-hand ones; mono 11/700 on a chip.
+      // A vertex near the rim (above 85%) would put its figure on the axis name, so that figure sits just INSIDE the vertex.
+      var xy = dnaPt(i, a.pct / 100), rim = a.pct > 85, k = rim ? -9 : 9;
+      var ang = (-90 + i * 72) * Math.PI / 180, ox = Math.cos(ang) * k, oy = Math.sin(ang) * k;
+      var right = xy[0] > DNA_CX + 4;
+      var shift = i === 0 ? (rim ? 'translate(-50%,0)' : 'translate(-50%,-100%)')
+        : right ? (rim ? 'translate(-100%,-50%)' : 'translate(0,-50%)') : (rim ? 'translate(0,-50%)' : 'translate(-100%,-50%)');
+      return '<span style="position:absolute;left:' + (xy[0] + ox + DNA_PAD).toFixed(1) + 'px;top:' +
+        (xy[1] + oy).toFixed(1) + 'px;transform:' + shift + ';font-family:\'IBM Plex Mono\',monospace;' +
+        'font-size:11px;font-weight:700;color:var(--text);background:color-mix(in srgb, var(--inner) 90%, transparent);padding:1px 5px;' +
+        'border-radius:4px;white-space:nowrap;z-index:2;font-variant-numeric:tabular-nums;">' + esc(dnaFmt(a.rating, a.dp)) + '</span>';
     }).join('');
     var axisLabels = axes.map(function (a, i) {
       var xy = dnaPt(i, 1.14);
@@ -5921,6 +5927,11 @@
     var surfVotes = {};
     dc.forEach(function (t) { if (t.surface) surfVotes[t.surface] = (surfVotes[t.surface] || 0) + t.n; });
     var surf = Object.keys(surfVotes).sort(function (a, b) { return surfVotes[b] - surfVotes[a]; })[0] || null;
+    // the export (file :4246): a Davis Cup row played on more than one surface reads "Mixed"
+    var mSurf = {};
+    dc.forEach(function (t) { (t.editions || []).forEach(function (e) { (e.matches || []).forEach(function (m) {
+      if (m.surface) mSurf[String(m.surface).toLowerCase()] = 1; }); }); });
+    if (Object.keys(surfVotes).length > 1 || Object.keys(mSurf).length > 1) surf = 'Mixed';
     var merged = Object.assign({}, dc[0], {
       name: 'Davis Cup', display: 'Davis Cup', level: null, surface: surf,
       won: sum('won'), lost: sum('lost'), n: sum('n'), storedWon: sum('storedWon'), storedLost: sum('storedLost'),
@@ -6753,8 +6764,10 @@
       var g = Math.round((v - b) * 10) / 10;
       return { t: signed(g, 1, 'pp'), c: signColour(g) };
     };
-    if (view === 'sets') { var gs = gapCell(s.setPct, B.setPct); return [[pc(s.tbPct), 'var(--text)', 700], [pc(s.gamePct), 'var(--text-soft)'], [pc(s.setPct), 'var(--text-soft)'], [gs.t, gs.c, 700]]; }
-    if (view === 'service') { var gh = gapCell(s.hold, B.hold); return [[pc(s.acePct), 'var(--text-soft)'], [pc(s.dfPct), 'var(--text-soft)'], [pc(s.hold), 'var(--text)', 700], [pc(s.brk), 'var(--text-soft)'], [gh.t, gh.c, 700]]; }
+    // the export's emphasis (file :760-:800): Sets & games — tiebreaks and games grey, sets white bold; Service — aces and
+    // DF grey, holds and breaks white bold
+    if (view === 'sets') { var gs = gapCell(s.setPct, B.setPct); return [[pc(s.tbPct), 'var(--text-label)'], [pc(s.gamePct), 'var(--text-label)'], [pc(s.setPct), 'var(--text)', 700], [gs.t, gs.c, 700]]; }
+    if (view === 'service') { var gh = gapCell(s.hold, B.hold); return [[pc(s.acePct), 'var(--text-label)'], [pc(s.dfPct), 'var(--text-label)'], [pc(s.hold), 'var(--text)', 700], [pc(s.brk), 'var(--text)', 700], [gh.t, gh.c, 700]]; }
     var gw = gapCell(s.win, B.win);
     return [[s.n ? recordText(s.w, s.l) : DASH, 'var(--text-label)'], [pc(s.win), thin ? 'var(--text-label)' : 'var(--text)', 700], [gw.t, gw.c, 700]];
   }
@@ -6813,6 +6826,8 @@
         '<div class="pp2-splgrid" style="' + GRID + '">' + h + body + '</div></div>';
     }
     var extra = S.groups['Extra stats'].slice();
+    // the export lists "Over 3.5 sets" (and the tiebreak record) under Results only (file :776 / :800)
+    if (view !== 'results') extra = extra.filter(function (x) { return x.label !== 'Over 3.5 sets'; });
     if (view === 'results') {
       var T = B;   // the tiebreak record over the window
       var tbThin = T.tw + T.tl < SPL_FLOOR, tbP = T.tbPct;
@@ -8530,7 +8545,7 @@
     return '<div style="display:flex;gap:26px;border-bottom:1px solid color-mix(in srgb, var(--text) 8%, transparent);margin:-6px 0 16px;">' +
       MARKET_TABS.map(function (t) {
         var on = cur === t[0];
-        return '<span data-pp2="market-tab" data-v="' + t[0] + '" class="pp2-utab" style="cursor:pointer;padding:0 0 10px;font-size:13px;' +
+        return '<span data-pp2="market-tab" data-v="' + t[0] + '" class="pp2-utab" style="cursor:pointer;padding:10px 0 11px;font-size:13px;' +   // the export's tab (file :927)
           'font-weight:' + (on ? 700 : 600) + ';color:' + (on ? 'var(--text)' : 'var(--text-label)') + ';box-shadow:inset 0 -2px 0 ' +
           (on ? 'var(--bar)' : 'transparent') + ';white-space:nowrap;">' + t[1] + '</span>';
       }).join('') + '</div>';
@@ -8616,7 +8631,8 @@
           '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:var(--text-label);">' + pool.length + ' matches ' + MIDDOT + ' ' + esc(mkScopeTxt()) +
           ' ' + MIDDOT + ' 1u per match at closing odds</span></span>' +
         '<span style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;"><span style="font-family:\'IBM Plex Mono\',monospace;font-size:24px;' +
-          'font-weight:700;line-height:1;color:' + (pool.length ? signColour(last) : 'var(--text-label)') + ';">' + (pool.length ? signed(last, 1, 'u') : DASH) + '</span></span>' +
+          'font-weight:700;line-height:1;color:' + (pool.length ? signColour(last) : 'var(--text-label)') + ';">' + (pool.length ? signed(last, 1, 'u') : DASH) + '</span>' +
+          recCaps('Return ' + MIDDOT + ' flat 1u stake') + '</span>' +   // the export's caption (file :1071), in units
       '</div>' +
       (pool.length ? '<div style="display:flex;gap:10px;">' +
         '<div style="position:relative;width:40px;height:240px;flex:none;">' + grid + '</div>' +
@@ -10227,7 +10243,8 @@
         return gap > 0 ? ['Market edge prices ' + mkn + ' matches; ' + gap + (gap === 1 ? ' of them carries' : ' of them carry') +
           ' no dated career row the calendar can place, so the swings rest on ' + tm.priced + '.'] : [];
       }()) }, CAL_INFO2)).replace('top:14px;right:14px', 'top:16px;right:16px') +
-      '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;padding-right:28px;">' + recCaps('By swing ' + MIDDOT + ' ' + esc(calScopeText(nAct))) +
+      '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;padding-right:28px;">' + '<span style="display:inline-flex;align-items:center;gap:8px;position:relative;">' + recCaps('By swing ' + MIDDOT + ' ' + esc(calScopeText(nAct))) +
+        infoIcon('calI', CAL_SWING_INFO, 'How this is counted') + '</span>' +
         '<span style="' + M_ + 'font-size:12px;color:var(--text-label);white-space:nowrap;">' + (pend ? '&nbsp;' : tm.priced + ' of ' + M.length + ' matches ' + MIDDOT + ' flat 1u') + '</span></div>' +
       '<div style="display:grid;grid-template-columns:' + TC + ';gap:0 4px;align-items:end;">' +
         '<span style="padding-bottom:6px;">' + recCaps('Vs other swings') + '</span>' +
@@ -10267,6 +10284,14 @@
     return fr + card1 + card2 + calDrawerV2(p, M, cols, view);
   }
   // The right-side drawer: 520px, fixed to the viewport edge; matches grouped by tournament (earliest first).
+  // the export's "i" after By swing (file :287, defs :3879): how the swing figures are counted
+  var CAL_SWING_INFO = { glyph: 'i', width: 440, what: 'How the swing figures are counted', defs: [
+    ['Grid cell', 'Wins and losses in that swing that season. The tint marks a season above or below .500, it is not a yield.'],
+    ['Swing', 'Events are assigned to a swing by the week they are played and the region, so a swing lines up with surface, conditions and travel.'],
+    ['Yield', 'Flat 1u on him at the closing price, Pinnacle first, Bet365 where Pinnacle is missing, across the priced matches only.'],
+    ['Vs others', 'The swing\u2019s yield minus the yield of every other swing combined. Team events are left out of every yield figure.'],
+    ['Dash', 'Rates show from five priced matches up. Under five, a dash with the count.'],
+    ['Consistent', 'Seasons the swing finished above .500, out of the seasons he actually played it.']] };
   function calDrawerV2(p, M, cols, view) {
     var key = state.calCellV2;
     if (!key) return '';
@@ -10336,7 +10361,8 @@
   function renderStreaksV2(p) {
     var M_ = 'font-family:\'IBM Plex Mono\',monospace;';
     var seq = streakSeq(p), runs = streakRuns(seq), n = seq.length;
-    var scope = calScopeText(0);
+    // the export's Streaks headings name the window, and the surface only when one is picked ("Runs · career")
+    var scope = (calWinOf() === 'career' ? 'career' : 'last 52 weeks') + (calSurfOf() === 'all' ? '' : ' ' + MIDDOT + ' ' + calSurfOf().toLowerCase());
     if (!n) return calEmpty('No matches in this window and surface.');
     var wins = seq.filter(function (x) { return x.r.won; }).length, pr = Math.min(0.99, Math.max(0.01, wins / n));
     var lg = Math.log(1 / pr), lgL = Math.log(1 / (1 - pr));
@@ -10438,7 +10464,7 @@
       return '<span style="' + M_ + 'font-size:13px;font-weight:700;color:var(--text);padding:10px 0;border-top:1px solid var(--line);">' + lab + '</span>' +
         cellB(st.n ? 'W' + st.w + '–L' + st.l : DASH, 'font-size:11.5px;color:var(--text-label);') +
         cellB(ok ? st.pct.toFixed(1) + '%' : DASH, 'font-size:13px;font-weight:700;color:' + (ok ? 'var(--text)' : 'var(--text-label)') + ';') +
-        '<span style="position:relative;display:block;height:100%;min-height:26px;padding:10px 0;border-top:1px solid var(--line);">' +
+        '<span style="position:relative;display:block;box-sizing:content-box;height:100%;min-height:26px;padding:10px 0;border-top:1px solid var(--line);">' +
           '<span style="position:absolute;left:50%;top:10px;bottom:10px;width:1px;background:color-mix(in srgb, var(--text) 18%, transparent);"></span>' +
           (d == null ? '' : '<span style="position:absolute;top:50%;height:6px;margin-top:-3px;left:' + (d < 0 ? 50 - tw : 50) + '%;width:' + tw + '%;background:' + signColour(d) + ';border-radius:3px;"></span>') + '</span>' +
         cellB(d == null ? DASH : signed(d, 1, 'pp'), 'font-weight:700;color:' + (d == null ? 'var(--text-label)' : signColour(d)) + ';') +
@@ -10451,7 +10477,7 @@
     var baseRow = '<span style="font-size:13px;font-weight:700;color:var(--text);padding:10px 0;border-bottom:1px solid var(--edge-10);">' + (calWinOf() === 'career' ? 'Career' : 'Window') + '</span>' +
       '<span style="' + M_ + 'font-size:11.5px;color:var(--text-label);text-align:right;padding:10px 0;border-bottom:1px solid var(--edge-10);">W' + base.w + '–L' + base.l + '</span>' +
       '<span style="' + M_ + 'font-size:13px;font-weight:700;color:var(--text);text-align:right;padding:10px 0;border-bottom:1px solid var(--edge-10);">' + (base.pct == null ? DASH : base.pct.toFixed(1) + '%') + '</span>' +
-      '<span style="position:relative;display:block;min-height:26px;padding:10px 0;border-bottom:1px solid var(--edge-10);"><span style="position:absolute;left:50%;top:10px;bottom:10px;width:1px;background:color-mix(in srgb, var(--text) 18%, transparent);"></span></span>' +
+      '<span style="position:relative;display:block;box-sizing:content-box;min-height:26px;padding:10px 0;border-bottom:1px solid var(--edge-10);"><span style="position:absolute;left:50%;top:10px;bottom:10px;width:1px;background:color-mix(in srgb, var(--text) 18%, transparent);"></span></span>' +
       '<span style="' + M_ + 'font-size:12px;color:var(--text-label);text-align:right;padding:10px 0;border-bottom:1px solid var(--edge-10);">' + DASH + '</span>' +
       '<span style="' + M_ + 'font-size:12px;color:var(--text);text-align:right;padding:10px 0;border-bottom:1px solid var(--edge-10);">' + (base.y == null ? DASH : signed(base.y, 1, '%')) + '</span>' +
       '<span style="' + M_ + 'font-size:12px;color:var(--text-label);text-align:right;padding:10px 0;border-bottom:1px solid var(--edge-10);">' + DASH + '</span>' +
@@ -11525,10 +11551,14 @@
       : (withN.filter(function (b) { return b.key === 'fast'; })[0] || withN[0] || {}).key || null;   // the export opens on Fast
     var M = 'font-family:\'IBM Plex Mono\',monospace;';
     var top = '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px;">' +
-      '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">' + stySegPills('spd-surf', STY_SURFS, state.spdSurf || 'all') + '</div>' +
+      '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">' + stySegPills('spd-surf', [['all', 'All']].concat(STY_SURFS.slice(1)), state.spdSurf || 'all') + '</div>' +
       '<span style="display:inline-flex;align-items:baseline;gap:8px;' + M + 'font-size:12px;color:var(--text-label);white-space:nowrap;">' +
         recCaps('Career') + '<span style="color:var(--text);font-weight:700;">' + (D.tn ? recordText(D.tw, D.tn - D.tw) : DASH) + '</span><span>' + MIDDOT + '</span>' +
-        '<span style="color:var(--text);font-weight:700;">' + (D.tn ? Math.round(100 * D.tw / D.tn) + '%' : DASH) + '</span><span>' + MIDDOT + '</span><span>' + D.tn + ' matches</span></span>' +
+        '<span style="color:var(--text);font-weight:700;">' + (D.tn ? Math.round(100 * D.tw / D.tn) + '%' : DASH) + '</span><span>' + MIDDOT + '</span><span>' + D.tn + ' matches</span>' +
+        (function () {   // the export's total units after the count (file :660)
+          var u = null; D.bands.forEach(function (b) { if (b.units != null) u = (u || 0) + b.units; });
+          return spPend || u == null ? '' : '<span>' + MIDDOT + '</span><span style="font-weight:700;color:' + signColour(u) + ';">' + signed(u, 1, 'u') + '</span>';
+        }()) + '</span>' +
       '</div>';
     var tiles = D.bands.map(function (b) {
       var on = sel === b.key, empty = !b.n;
@@ -11585,7 +11615,7 @@
       idx[k].rows.push(m);
     });
     var GRID = 'display:grid;grid-template-columns:48px 12px minmax(0,1.1fr) 36px 40px minmax(0,1.3fr) 46px 46px;gap:0 10px;align-items:center;';
-    var head = ['Date', '', 'Opponent', 'Rd', 'Sets', 'Score', 'H', 'A'].map(function (h, i) {
+    var head = ['Date', '', 'Opponent', 'Rd', 'Sets', 'Set scores', 'H', 'A'].map(function (h, i) {
       return '<span style="position:sticky;top:0;z-index:1;background:var(--inner);' + MK_CAPS + 'text-align:' + (i >= 6 ? 'right' : 'left') + ';padding-bottom:7px;border-bottom:1px solid var(--edge-10);">' + h + '</span>';
     }).join('');
     var cell = function (html, st, m, wo) {
@@ -11599,12 +11629,12 @@
         g.rows.map(function (m) {
           var wo = !!(m.wo || m.unconf);
           var sets = wo ? '<span style="' + M + 'font-size:8.5px;padding:1px 5px;border-radius:4px;background:color-mix(in srgb, var(--text) 6%, transparent);border:1px solid var(--edge-10);color:var(--text-label);">WO</span>' : esc(m.sets || DASH);
-          return cell(fmtDotDate(m.date), M + 'font-size:11px;color:var(--text-label);white-space:nowrap;', m, wo) +
+          return cell(fmtDotDate(m.date) + '.', M + 'font-size:11px;color:var(--text-label);white-space:nowrap;', m, wo) +
             cell(wo ? '' : '<span style="display:block;width:8px;height:8px;border-radius:2px;margin-top:4px;background:' + (m.won ? 'var(--pos)' : 'var(--neg)') + ';"></span>', 'display:block;height:100%;', m, wo) +
             cell(esc(initialSurname(m.opp || '') || DASH), 'font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;', m, wo) +
             cell(esc(m.round || DASH), M + 'font-size:10.5px;color:var(--text-label);', m, wo) +
             cell(sets, M + 'font-size:11.5px;font-weight:700;color:' + (wo ? 'var(--text-label)' : m.won ? 'var(--pos)' : 'var(--neg)') + ';', m, wo) +
-            cell(wo ? '' : esc(String(m.score || DASH).replace(/,\s*/g, ' ')), M + 'font-size:11px;color:var(--text-label);white-space:nowrap;', m, wo) +
+            cell(wo ? '' : esc(String(m.score || DASH)), M + 'font-size:11px;color:var(--text-label);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;', m, wo) +
             cell(m.price != null ? Number(m.price).toFixed(2) : spPend ? '' : DASH, M + 'font-size:11px;color:var(--text-soft);text-align:right;', m, wo) +
             cell(m.oppPrice != null ? Number(m.oppPrice).toFixed(2) : spPend ? '' : DASH, M + 'font-size:11px;color:var(--text-label);text-align:right;', m, wo);
         }).join('');
@@ -11614,8 +11644,17 @@
       infoCorner('spd2', SPD_INFO2) +
       '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:12px;flex-wrap:wrap;padding-right:28px;">' +
         '<span style="display:inline-flex;align-items:baseline;gap:10px;">' + recCaps(b.name + ' courts ' + MIDDOT + ' career', 'white-space:nowrap;') +
-          '<span style="' + M + 'font-size:11.5px;color:var(--text-label);white-space:nowrap;">' + recordText(b.w, b.l) + ' ' + MIDDOT + ' ' + Math.round(b.pct) + '% ' + MIDDOT + ' ' + b.n + ' matches' +
-          (woN ? ' ' + MIDDOT + ' ' + woN + ' walkover' + (woN === 1 ? '' : 's') + ', not counted' : '') + '</span></span></div>' +
+          '<span style="' + M + 'font-size:11.5px;color:var(--text-label);white-space:nowrap;">' + recordText(b.w, b.l) + ' ' + MIDDOT + ' ' + Math.round(b.pct) + '% ' + MIDDOT + ' ' + b.n + ' matches</span>' +
+          // the export's head (file :698): the band's speed range left; the list count, walkovers and units right
+          (function () {
+            var sp = groups.map(function (g) { return g.sp; }).filter(function (v) { return v != null; });
+            return sp.length ? '<span style="' + M + 'font-size:10.5px;color:var(--text-label);white-space:nowrap;">speed ' + signed(Math.min.apply(null, sp) - 1, 2, '') +
+              ' to ' + signed(Math.max.apply(null, sp) - 1, 2, '') + '</span>' : '';
+          }()) + '</span>' +
+        '<span style="display:inline-flex;align-items:baseline;gap:8px;' + M + 'font-size:11px;color:var(--text-label);white-space:nowrap;">' +
+          'All ' + b.n + ' matches' + (woN ? ' ' + MIDDOT + ' ' + woN + ' walkover' + (woN === 1 ? '' : 's') + ', not counted' : '') +
+          (spPend || b.units == null ? '' : '<span style="font-size:11.5px;font-weight:700;color:' + signColour(b.units) + ';">' + signed(b.units, 1, 'u') + '</span>') +
+        '</span></div>' +
       '<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:14px;">' + tl + '</div>' +
       '<div style="max-height:calc(100vh - 560px);min-height:260px;overflow-y:auto;padding-right:12px;"><div style="' + GRID + '">' + head + body + '</div></div></div>';
     return top + bandsHtml + box;
@@ -12265,8 +12304,11 @@
         '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:12px;flex-wrap:wrap;padding-right:28px;">' +
           recCaps('Record by archetype ' + MIDDOT + ' ' + esc(scope)) +
           '<span style="display:inline-flex;align-items:baseline;gap:8px;font-family:\'IBM Plex Mono\',monospace;font-size:12px;color:var(--text-label);white-space:nowrap;">' +
-            recordText(D.TW, D.TN - D.TW) + ' ' + MIDDOT + ' ' + D.TN + ' matches' +
-            (STYLE_PEND ? '' : ' ' + MIDDOT + ' <span style="color:' + signColour(TU) + ';font-weight:700;">' + signed(TU, 2, 'u') + '</span>') +
+            // the export's line (file :551): record and rate white bold, the count grey, then the units
+            '<span style="color:var(--text);font-weight:700;">' + recordText(D.TW, D.TN - D.TW) + '</span><span>' + MIDDOT + '</span>' +
+            '<span style="color:var(--text);font-weight:700;">' + (D.TN ? Math.round(100 * D.TW / D.TN) + '%' : DASH) + '</span><span>' + MIDDOT + '</span>' +
+            '<span>' + D.TN + ' matches</span>' +
+            (STYLE_PEND ? '' : '<span>' + MIDDOT + '</span><span style="color:' + signColour(TU) + ';font-weight:700;">' + signed(TU, 2, 'u') + '</span>') +
           '</span>' +
         '</div>' + styTable(D) +
       '</div>';
@@ -14723,6 +14765,9 @@
         renderLedger(p, ctx) +
         renderBoxes(ctx) +
         renderInsights(p) +
+        // the export's page foot (LOCKED 2026-11-07 :467): a 6% rule and the wordmark, mono 11 grey, right-aligned
+        '<div class="pp2-foot" style="display:flex;align-items:center;justify-content:flex-end;border-top:1px solid var(--edge-6);' +
+          'padding-top:18px;font-size:11px;color:var(--text-label);"><span style="font-family:\'IBM Plex Mono\',monospace;">Stennisfy</span></div>' +
       '</div>' +
       renderModal(p, ctx) +
       renderHeatSheet(p) +

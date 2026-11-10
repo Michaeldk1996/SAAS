@@ -98,6 +98,15 @@ Where a ruling below reverses an older one in this file, the older one is supers
     Sets · Set scores · H · A) on `--inner` with a 10% rule, group rows 11/5 padding, match rows 6px.
   - **Court speed:** band tiles and the selected band's four tiles centre their values (founder; the export draws them
     left-aligned).
+  - **Side-by-side pass (founder 2026-11-10, "pixel-perfect"), each item read off the export's markup:** the header's state
+    strip is centred in the row (LOCKED 2026-11-07 :94) with 6% cell rules; the page ends on the export's foot (a 6% rule,
+    "Stennisfy" mono 11); Davis Cup's surface reads "Mixed" when its ties span surfaces; Court speed: the pills read "All",
+    the head shows the band's speed range left and "All N matches · … · ±Xu" right, the list "Set scores" with comma
+    scores and "DD.MM." dates, the top line ends on the total units; Match-up's line prints the win rate; Market edge's tabs
+    are 10/11px padded and the return carries "Return · flat 1u stake"; the DNA figure sits 9px outside its vertex (inside it
+    above 85%, so it never covers an axis name) and no tile carries a "↓ better" mark; Level & round's Sets & games bolds
+    Sets and Service bolds Holds and Breaks, and "Over 3.5 sets" is a Results row only; Streaks headings name the surface
+    only when one is picked; the Calendar's By swing carries the export's "i" (how the swing figures are counted).
 
 - **No legacy fallback (founder, 2026-10-21).** The TEN-206 renderer is the only player profile: the legacy
   full-page view (`buildPlayerProfileHtml`, `ppCareerYears`) and its `?pp2=0` / `stennisfy.flags.pp2` switch are
