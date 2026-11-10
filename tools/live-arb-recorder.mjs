@@ -377,105 +377,150 @@ export function summarise(eps, meta) {
     preMatch: { anyEdge: group((x) => !x.liveAny), edge1pct: group((x) => !x.liveAny && x.best.edge >= 1), edge1pctLasting5s: group((x) => !x.liveAny && x.best.edge >= 1 && x.durationS >= 5) } };
 }
 
-// ---------- bookmakers via odds-api.io (founder 2026-11-08: "implement the live arbitrage for bet105 and the prediction
-// markets, then napoleongames with bet105 and prediction markets") ----------
-// The odds-api.io WebSocket (paid add-on, key ODDS_API_IO_KEY) streams every match-winner change of the bookmakers selected
-// on the account (Bet105 + Napoleon Sports BE). Measured 8 Nov 01:11Z, 8 min: connects in 0.5 s, no drop; Napoleon's live
-// prices arrive 0.57 s (median) after the book's own updatedAt, p90 8.2 s. Its messages carry the event id, the book's
-// match link and no stake limit. Names and leagues come from GET /events (every 60 s); a price for a newly joined match is
-// seeded once from GET /odds/multi. A deleted / no_markets message (a suspended or pulled market) removes that price at once;
-// a close drops every price (none is ever read from a dead feed) and the feed reconnects with backoff, then is reseeded.
-export const ODDS_API = 'https://api.odds-api.io/v3';
-export const ODDS_WS = 'wss://api.odds-api.io/v3/ws';
-// founder 2026-11-09: arbitrage is Bet105 × Polymarket × Kalshi only — Napoleon settles on other rules and, measured 8 Nov,
-// kept its last in-play price after a match ended (Shelton v Alcaraz 1.04, 31 s stale): its messages are ignored.
-export const BOOKS = { 'Bet105': 'Bet105' };   // odds-api.io name → our venue name
-export const BOOK_LINK_HOME = { Bet105: 'https://app.bet105.ag', Napoleon: 'https://napoleonsports.be' };
+// ---------- Bet105 via Kibl (founder 2026-11-10: "use kibl for the arbitrage, we won't use odds-api.io for it anymore") ----------
+// Bet105 is Kibl feed 171. Pre-match prices are betting type 1; in-play prices are betting type 3 ("Live Fluid", entitled
+// 2026-11-10 — type 2 "Stop-N-Go" carries no prices). odds-api.io never carried Bet105 in play (measured 8 Nov), so the
+// worker now reads Bet105 only from Kibl's REST API (the RabbitMQ queue belongs to the kibl-stream worker on Fly: a second
+// consumer on it would split its messages). Login = Kibl's Cognito user (KIBL_USERNAME / KIBL_PASSWORD, as kibl_client.py).
+// One request at a time, at least KIBL_GAP_MS apart (kibl_client's 1.25 s floor). The in-play list is read every cycle
+// (≈ 2.5 s), the pre-match list every KIBL_PRE_EVERY cycles, the ATP fixture list every 5 min.
+// A price is a match-winner row (market type 1, full match = segment 1) flagged current, price ≥ 1.01 on both sides
+// (Kibl's 0.000 marker = suspended → no price). Sides: the fixture's two participant ids in ascending order are its first-
+// and second-named players (kibl-stream/card_join.py). A fixture with an in-play row is in play: then only its in-play
+// price counts, never the pre-match one Kibl keeps listing; a failed poll drops every price it would have refreshed.
+export const BOOKS = { 'Bet105': 'Bet105' };   // venue list (arbitrage = Bet105 × Polymarket × Kalshi, founder 2026-11-09)
+export const BOOK_LINK_HOME = { Bet105: 'https://app.bet105.ag' };
 export const PM_VENUES = new Set(['Polymarket', 'Kalshi']);
+export const KIBL_API = 'https://api.kibl.io/sports/get';
+export const KIBL_COGNITO = 'https://cognito-idp.us-west-2.amazonaws.com/';
+export const KIBL_CLIENT_ID = '3udv7qsqgju8c4riqvk72bqcl';   // published in Kibl's own tutorial (kibl_client.py)
+export const KIBL_FEED = 171, KIBL_ATP = 19;
+export const KIBL_GAP_MS = 1300, KIBL_CYCLE_MS = 2500, KIBL_PRE_EVERY = 12, KIBL_FX_MS = 300e3;
+export const KIBL_LIVE_MAX_MS = 15e3;   // an in-play price stands only while the poll that returned it is this fresh
 
-// "Surname, First" (odds-api.io) → "First Surname"
-export function oddsName(s) {
-  const t = String(s || '').trim(), i = t.indexOf(',');
-  return i < 0 ? t : (t.slice(i + 1).trim() + ' ' + t.slice(0, i).trim()).trim();
+// "1234 Soonwoo Kwon vs Alex Molcan" → ['Soonwoo Kwon', 'Alex Molcan']; doubles ('/'), no or two ' vs ' → null
+export function kiblNames(raw) {
+  if (typeof raw !== 'string') return null;
+  const low = raw.toLowerCase(), i = low.indexOf(' vs ');
+  if (i < 0 || low.indexOf(' vs ', i + 1) >= 0) return null;
+  let a = raw.slice(0, i).trim(), b = raw.slice(i + 4).trim();
+  if (/\//.test(a + b)) return null;
+  a = a.replace(/^\d+\s+/, '').trim();
+  return a && b ? [a, b] : null;
 }
-// odds-api.io tennis events → ATP singles only: league "ATP - City, Country[, Qualifying]"; never Doubles, Challenger, WTA,
-// UTR (founder 2026-11-02: ATP only). Live or not started.
-export function oddsEvents(list) {
+// /info/fixtures (ATP) → events for unify: { id, a, b, event, start, live:false }
+export function kiblFixtures(rows) {
   const out = [];
-  for (const e of list || []) {
-    const league = String((e && e.league && e.league.name) ?? (e && e.league) ?? '');
-    if (!/^ATP - /.test(league) || /doubles/i.test(league)) continue;
-    if (!e.home || !e.away || /\//.test(e.home + e.away)) continue;
-    if (e.status !== 'live' && e.status !== 'pending') continue;
-    out.push({ id: String(e.id), a: oddsName(e.home), b: oddsName(e.away), league, event: league.replace(/^ATP - /, '').split(',')[0].trim(),
-      start: Date.parse(e.date) || null, live: e.status === 'live' });
+  for (const f of rows || []) {
+    if (!f || f.fixture_id == null) continue;
+    const n = kiblNames(f.name); if (!n) continue;
+    out.push({ id: String(f.fixture_id), a: n[0], b: n[1], event: f.tournament_name || f.event_name || 'ATP', start: Date.parse(f.start_time) || null, live: false });
+  }
+  return out;
+}
+// Kibl's envelope {result: [...]} (or a bare list) → its list
+export function kiblList(payload) {
+  if (Array.isArray(payload)) return payload;
+  return (payload && ['result', 'data', 'results', 'items', 'records', 'markets', 'fixtures'].map((k) => payload[k]).find(Array.isArray)) || [];
+}
+// /info/markets → flat participant rows (the documented [{participants:[…]}] or already-flat rows); a nested row takes the
+// fixture / market fields it lacks from its parent
+const KIBL_INHERIT = ['fixture_id', 'market_id', 'market_type_id', 'segment_id', 'betting_type_id', 'feed_source_id', 'is_live'];
+export function kiblRows(payload) {
+  const out = [];
+  const take = (r, up) => {
+    if (!r || typeof r !== 'object') return;
+    const me = { ...r }; for (const k of KIBL_INHERIT) if (me[k] == null && up[k] != null) me[k] = up[k];
+    if ('market_type_id' in me && 'side_id' in me) { out.push(me); return; }
+    for (const k of ['participants', 'markets']) if (Array.isArray(r[k])) r[k].forEach((x) => take(x, me));
+  };
+  kiblList(payload).forEach((r) => take(r, {}));
+  return out;
+}
+// rows of one betting type → Map fixtureId → { home, away, upd } (home = lower participant id = first-named player)
+export function kiblQuotes(rows, bt) {
+  const byF = new Map();
+  for (const r of rows || []) {
+    if (!r || r.market_type_id !== 1 || r.segment_id !== 1 || r.betting_type_id !== bt) continue;
+    if (r.feed_source_id != null && Number(r.feed_source_id) !== KIBL_FEED) continue;
+    if (r.fixture_id == null || r.fixture_participant_id == null) continue;
+    const f = String(r.fixture_id); if (!byF.has(f)) byF.set(f, new Map());
+    const sides = byF.get(f), p = String(r.fixture_participant_id), cur = sides.get(p);
+    const rank = r.is_current ? 2 : r.is_opener ? 1 : 0; if (!rank) continue;
+    const ins = Date.parse(r.inserted_on) || 0;
+    if (!cur || rank > cur.rank || (rank === cur.rank && ins > cur.ins)) sides.set(p, { rank, ins, price: Number(r.price_decimal) });
+  }
+  const out = new Map();
+  for (const [f, sides] of byF) {
+    if (sides.size !== 2) continue;
+    const [h, a] = [...sides.keys()].sort((x, y) => Number(x) - Number(y)).map((k) => sides.get(k));
+    if (!(h.price >= 1.01) || !(a.price >= 1.01)) continue;   // the 0.000 suspension marker, or no price
+    if (1 / h.price + 1 / a.price < 0.99) continue;           // paying over 101% is no price
+    out.set(f, { home: h.price, away: a.price, upd: Math.max(h.ins, a.ins) || null });
   }
   return out;
 }
 
-export class BookFeed {
-  constructor({ WS, key, url = ODDS_WS, stopAt = Infinity, onMessage = () => {}, onDrop = () => {}, now = () => Date.now(), later = (f, ms) => setTimeout(f, ms) }) {
-    Object.assign(this, { WS, key, url, stopAt, onMessage, onDrop, now, later });
-    this.ws = null; this.q = new Map(); this.lastSeq = null; this.backoff = 2000;
-    this.stats = { msgs: 0, odds: 0, drops: 0, resyncs: 0, seeded: 0, lagMs: [] };
+export class KiblFeed {
+  constructor({ fetch: f = fetch, user, pass, clientId = KIBL_CLIENT_ID, now = () => Date.now(), sleep = (ms) => new Promise((r) => setTimeout(r, ms)), log = () => {} }) {
+    Object.assign(this, { f, user, pass, clientId, now, sleep, log });
+    this.token = null; this.tokenExp = 0; this.last = 0;
+    this.fx = []; this.live = new Map(); this.liveAt = null; this.pre = new Map(); this.preAt = null; this.fxAt = 0; this.cycles = 0;
+    this.stats = { calls: 0, errors: 0, livePolls: 0, prePolls: 0, liveFixtures: 0, lastError: null };
   }
-  wsUrl() {
-    const u = new URL(this.url);
-    u.searchParams.set('apiKey', this.key); u.searchParams.set('markets', 'ML'); u.searchParams.set('sport', 'tennis'); u.searchParams.set('channels', 'odds');
-    if (this.lastSeq != null) u.searchParams.set('lastSeq', String(this.lastSeq));
-    return u.toString();
+  async auth() {
+    const r = await this.f(KIBL_COGNITO, { method: 'POST', signal: AbortSignal.timeout(30e3),
+      headers: { 'Content-Type': 'application/x-amz-json-1.1', 'X-Amz-Target': 'AWSCognitoIdentityProviderService.InitiateAuth' },
+      body: JSON.stringify({ AuthFlow: 'USER_PASSWORD_AUTH', ClientId: this.clientId, AuthParameters: { USERNAME: this.user, PASSWORD: this.pass } }) });
+    if (!r.ok) throw new Error('kibl login HTTP ' + r.status);   // never the body or the credentials
+    const a = ((await r.json()) || {}).AuthenticationResult || {};
+    if (!a.AccessToken) throw new Error('kibl login: no token');
+    this.token = a.AccessToken; this.tokenExp = this.now() + (Number(a.ExpiresIn) || 3600) * 1000 - 120e3;
   }
-  open() {
-    if (this.ws || this.now() >= this.stopAt) return;
-    const me = new this.WS(this.wsUrl()); this.ws = me;
-    me.onopen = () => { if (this.ws === me) this.backoff = 2000; };
-    me.onmessage = (ev) => {
-      if (this.ws !== me) return;
-      let d; try { d = JSON.parse(typeof ev.data === 'string' ? ev.data : String(ev.data)); } catch { return; }
-      const t = this.now(); for (const x of [].concat(d)) this.apply(x, t);
-    };
-    me.onclose = () => {
-      if (this.ws !== me) return;
-      this.ws = null; this.q.clear(); this.stats.drops++; this.onDrop();
-      if (this.now() < this.stopAt) { const ms = this.backoff; this.backoff = Math.min(30000, this.backoff * 2); this.later(() => this.open(), ms); }
-    };
-    me.onerror = () => {};
+  async get(path, q, retry = true) {
+    const wait = KIBL_GAP_MS - (this.now() - this.last); if (wait > 0) await this.sleep(wait);
+    if (!this.token || this.now() >= this.tokenExp) await this.auth();
+    const u = new URL(KIBL_API + path); for (const [k, v] of Object.entries(q)) u.searchParams.set(k, String(v));
+    let r; try { r = await this.f(u, { signal: AbortSignal.timeout(20e3), headers: { Authorization: 'Bearer ' + this.token, Accept: 'application/json' } }); }
+    finally { this.last = this.now(); this.stats.calls++; }
+    if (r.status === 401 && retry) { this.token = null; return this.get(path, q, false); }
+    if (!r.ok) throw new Error('kibl ' + path + ' HTTP ' + r.status);
+    return r.json();
   }
-  set(k, h, a, t, upd, url, max) {
-    if (!(h > 1) || !(a > 1) || 1 / h + 1 / a < 0.99) { this.q.delete(k); return; }   // a 1.00 placeholder or a book paying over 101% is no price
-    this.q.set(k, { home: h, away: a, at: t, upd: upd ?? null, url: url || null, max: max != null && isFinite(Number(max)) ? Number(max) : null });
+  iso(ms) { return new Date(ms).toISOString().replace(/\.\d{3}Z$/, 'Z'); }
+  async markets(bt, from, to) {
+    return kiblRows(await this.get('/info/markets', { league_id: KIBL_ATP, betting_type_id: bt, feed_source_id: KIBL_FEED, start_time: this.iso(from), end_time: this.iso(to) }));
   }
-  apply(x, t) {
-    if (!x || typeof x !== 'object') return;
-    this.stats.msgs++;
-    if (x.type === 'resync_required') { this.stats.resyncs++; this.lastSeq = null; try { this.ws && this.ws.close(); } catch {} return; }
-    const venue = BOOKS[x.bookie]; if (!venue || x.id == null) return;
-    if (x.seq != null) this.lastSeq = x.seq;
-    const k = String(x.id) + '|' + venue;
-    if (x.type === 'deleted' || x.type === 'no_markets') { this.q.delete(k); this.onMessage(String(x.id), t); return; }
-    if (x.type !== 'updated' && x.type !== 'created') return;
-    const ml = (x.markets || []).find((m) => m && m.name === 'ML'); if (!ml) return;
-    const o = (ml.odds || [])[0] || {}, upd = Date.parse(ml.updatedAt) || null;
-    this.set(k, Number(o.home), Number(o.away), t, upd, x.url, o.max);
-    this.stats.odds++; if (upd) { this.stats.lagMs.push(t - upd); if (this.stats.lagMs.length > 5000) this.stats.lagMs.shift(); }
-    this.onMessage(String(x.id), t);
-  }
-  // GET /odds/multi rows → prices, never over a newer streamed one
-  seed(rows, t) {
-    for (const r of rows || []) for (const [bk, ms] of Object.entries((r && r.bookmakers) || {})) {
-      const venue = BOOKS[bk]; if (!venue) continue;
-      const ml = (ms || []).find((m) => m && m.name === 'ML'); if (!ml) continue;
-      const k = String(r.id) + '|' + venue, cur = this.q.get(k), upd = Date.parse(ml.updatedAt) || null;
-      if (cur && (cur.upd == null || upd == null || cur.upd >= upd)) continue;
-      const o = (ml.odds || [])[0] || {};
-      this.set(k, Number(o.home), Number(o.away), t, upd, (r.urls || {})[bk], o.max); this.stats.seeded++;
+  // one cycle: fixtures when due, the in-play list always, the pre-match list every KIBL_PRE_EVERY cycles
+  async cycle() {
+    const t = this.now(), err = (what, e) => { this.stats.errors++; this.stats.lastError = what + ': ' + String(e && e.message || e).slice(0, 120); if (this.stats.errors % 20 === 1) this.log(this.stats.lastError); };
+    if (t - this.fxAt >= KIBL_FX_MS || !this.fx.length) {
+      try { const p = await this.get('/info/fixtures', { league_id: KIBL_ATP, start_time: this.iso(t - 86400e3), end_time: this.iso(t + 3 * 86400e3) });
+        this.fx = kiblFixtures(kiblList(p)); this.fxAt = t; } catch (e) { err('fixtures', e); }
+    }
+    try { this.live = kiblQuotes(await this.markets(3, t - 8 * 3600e3, t + 3600e3), 3); this.liveAt = this.now(); this.stats.livePolls++; this.stats.liveFixtures = this.live.size; }
+    catch (e) { this.live = new Map(); this.liveAt = null; err('in-play', e); }
+    if (this.cycles++ % KIBL_PRE_EVERY === 0) {
+      try { this.pre = kiblQuotes(await this.markets(1, t - 2 * 3600e3, t + 48 * 3600e3), 1); this.preAt = this.now(); this.stats.prePolls++; }
+      catch (e) { this.pre = new Map(); this.preAt = null; err('pre-match', e); }
     }
   }
-  quote(id, venue) { return this.ws ? this.q.get(String(id) + '|' + venue) || null : null; }
-  stop() { this.stopAt = 0; const w = this.ws; this.ws = null; try { w && w.close(); } catch {} }
+  // events for unify, live = Kibl has an in-play price for it
+  events() { const fresh = this.liveAt != null && this.now() - this.liveAt <= KIBL_LIVE_MAX_MS; return this.fx.map((e) => ({ ...e, live: fresh && this.live.has(e.id) })); }
+  // the price to use now: in play → only the in-play one (fresh poll); otherwise the pre-match one
+  quote(id, venue) {
+    if (venue !== 'Bet105') return null;
+    const k = String(id), url = BOOK_LINK_HOME.Bet105;
+    if (this.live.has(k)) {
+      if (this.liveAt == null || this.now() - this.liveAt > KIBL_LIVE_MAX_MS) return null;
+      return { ...this.live.get(k), at: this.liveAt, live: true, url, max: null };
+    }
+    const q = this.pre.get(k); if (!q || this.preAt == null) return null;
+    return { ...q, at: this.preAt, live: false, url, max: null };
+  }
 }
 
-// Matches with a bookmaker price: an odds-api.io ATP event joined to the Kalshi × Polymarket pair, else to a Kalshi
+// Matches with a bookmaker price: a Kibl ATP fixture joined to the Kalshi × Polymarket pair, else to a Kalshi
 // event, else to a Polymarket match — both players by name, starts within 36 h, exactly one each way (never a guess).
 // Kalshi × Polymarket gaps stay on their own path (evaluate); here at least one leg is a bookmaker.
 export function unify(poly, kal, odds) {
@@ -529,10 +574,9 @@ export function venueQuotes(m, { books, kalAt, bfeed, now }) {
   const inPlay = !!m.odds && (m.odds.live || !!(m.pm && m.pm.live) || (m.odds.start != null && now >= m.odds.start));
   if (bfeed && m.odds) for (const venue of Object.values(BOOKS)) {
     const q = bfeed.quote(m.odds.id, venue); if (!q || now - q.at > STALE_MS.book) continue;
-    // in play only a price the book itself set in the last STALE_MS.book counts: odds-api.io keeps listing Bet105's last
-    // pre-match price after the start (Paris final 8 Nov: 4.07 / 1.28 from 13:57 still served at 14:12; Bet105 sends no
-    // in-play prices), and a fresh seed would otherwise date it now and pair it with live prediction prices
-    if (inPlay && (q.upd == null || now - q.upd > STALE_MS.book)) continue;
+    // once the match is under way only Kibl's in-play price (betting type 3) counts: Kibl keeps listing the last pre-match
+    // price after the start, and pairing it with live prediction prices would invent a gap
+    if (inPlay && !q.live) continue;
     const leg = (dec) => ({ cost: 1 / dec, dec, size: q.max != null ? q.max * dec : null, liq: q.max, at: q.at, url: q.url, group: 'book' });
     put(venue, 'A', leg(m.odds.aHome ? q.home : q.away)); put(venue, 'B', leg(m.odds.aHome ? q.away : q.home));
   }
@@ -561,7 +605,7 @@ const legRow = (l, contracts, cost) => ({ venue: l.venue, name: l.name, group: l
   stake: contracts == null ? null : +(contracts * l.cost).toFixed(2), share: +(l.cost / cost * 100).toFixed(1), at: new Date(l.at).toISOString(),
   url: l.url || null, how: l.how || null });
 export function multiGapRow(m, e, ctx) {
-  return { match: m.title.replace(/^[^:]*:\s*/, ''), event: m.odds ? m.odds.event : m.title.split(':')[0], mkey: m.km ? m.km.ev : 'oddsapi:' + m.odds.id,
+  return { match: m.title.replace(/^[^:]*:\s*/, ''), event: m.odds ? m.odds.event : m.title.split(':')[0], mkey: m.km ? m.km.ev : 'kibl:' + m.odds.id,
     kalshiEvent: m.km ? m.km.ev : null, atp: true, dir: e.dir, edge: e.edge, contracts: e.contracts, stake: e.stake,
     hasPm: e.legs.some((l) => l.group === 'prediction'), legs: e.legs.map((l) => legRow(l, e.contracts, e.cost)),
     payout: e.contracts == null ? null : +e.contracts.toFixed(2), profitUsd: e.contracts == null || e.stake == null ? null : +(e.contracts - e.stake).toFixed(2),
@@ -601,19 +645,22 @@ async function main() {
   const closest = new Map(), latest = new Map();
   const sbUrl0 = (process.env.SUPABASE_URL || '').replace(/\/$/, ''), sbKey0 = process.env.SUPABASE_SECRET_KEY || '';
   let poly = [], pairs = [], kal = [], kalAt = null;
-  // bookmakers (odds-api.io WebSocket) — on when ODDS_API_IO_KEY is set
-  let oddsEv = [], bmatches = []; const latestB = new Map(), seeded = new Set();
-  const oKey = (process.env.ODDS_API_IO_KEY || '').trim();
-  stats.bookFeed = oKey ? 'websocket' : 'off'; stats.bookMsgs = 0; stats.bookDrops = 0; stats.oddsErrors = 0; stats.oddsRefreshes = 0;
-  const oddsGet = async (path, q) => {
-    const u = new URL(ODDS_API + path); u.searchParams.set('apiKey', oKey); for (const [k, v] of Object.entries(q)) u.searchParams.set(k, v);
-    const r = await fetch(u, { signal: AbortSignal.timeout(20e3), headers: { 'User-Agent': 'stennisfy-live-arb' } });
-    if (!r.ok) throw new Error('odds-api.io ' + path + ' HTTP ' + r.status);   // never the URL: it carries the key
-    return r.json();
+  // Bet105 via Kibl (REST; founder 2026-11-10) — on when KIBL_USERNAME / KIBL_PASSWORD are set
+  let oddsEv = [], bmatches = []; const latestB = new Map();
+  const kUser = (process.env.KIBL_USERNAME || '').trim(), kPass = process.env.KIBL_PASSWORD || '';
+  stats.bookFeed = kUser && kPass ? 'kibl' : 'off';
+  const bfeed = stats.bookFeed === 'kibl' ? new KiblFeed({ user: kUser, pass: kPass, clientId: (process.env.KIBL_CLIENT_ID || '').trim() || KIBL_CLIENT_ID, log }) : null;
+  let fxSeen = -1;
+  const kiblLoop = async () => {
+    while (Date.now() < stop) {
+      const t = Date.now();
+      try { await bfeed.cycle(); } catch (e) { log('kibl cycle', String(e && e.message || e).slice(0, 160)); }
+      if (bfeed.fxAt !== fxSeen) { fxSeen = bfeed.fxAt; oddsEv = bfeed.events(); rejoin(); }
+      else { const ev = new Map(bfeed.events().map((e) => [e.id, e])); for (const m of bmatches) { const e = ev.get(m.odds.id); if (e) m.odds.live = e.live; } }
+      tickBooks(Date.now());
+      await new Promise((r) => setTimeout(r, Math.max(0, KIBL_CYCLE_MS - (Date.now() - t))));
+    }
   };
-  const bfeed = oKey ? new BookFeed({ WS: WebSocket, key: oKey, stopAt: stop,
-    onMessage: (id, now) => { stats.bookMsgs++; tickBooks(now); },
-    onDrop: () => { stats.bookDrops++; seeded.clear(); setTimeout(() => seedNew(), 5000); } }) : null;
 
   const feed = new PolyFeed({ WS: WebSocket, url: POLY_WS, books, stopAt: stop,
     onMessages: (k, now) => { stats.wsMessages += k; tick(now); }, onDrop: () => { stats.wsReconnects++; } });
@@ -629,7 +676,7 @@ async function main() {
   // every Polymarket match (not only the Kalshi pairs): the arbitrage needs the pairs, our Polymarket recorder needs all
   const subscribe = () => { feed.set(poly.flatMap((m) => [m.tokA, m.tokB]));
     if (kfeed) kfeed.set([...new Set([...pairs, ...bmatches.filter((m) => m.km)].flatMap((p) => (p.km.base || p.km).p.map((x) => x.ticker)))]); };
-  const shim = (m) => ({ key: m.key, pm: { title: m.title }, km: { ev: m.km ? m.km.ev : 'oddsapi:' + m.odds.id } });
+  const shim = (m) => ({ key: m.key, pm: { title: m.title }, km: { ev: m.km ? m.km.ev : 'kibl:' + m.odds.id } });
   const tickBooks = (now) => {
     for (const m of bmatches) {
       const inPlay = m.odds.live || !!(m.pm && m.pm.live);
@@ -663,25 +710,7 @@ async function main() {
     bmatches = bfeed ? unify(poly, kalshiMatches(kal), oddsEv) : [];
     for (const k of bBefore) if (!bmatches.some((m) => m.key === k)) { latestB.delete(k); for (const ok of [...E.open.keys()]) if (ok.startsWith(k + '|')) E.close(ok, Date.now()); }
     stats.bookMatchesMax = Math.max(stats.bookMatchesMax || 0, bmatches.length);
-    subscribe(); seedNew();
-  };
-  // a newly joined bookmaker match takes its current prices from GET /odds/multi once (the feed sends only changes)
-  const seedNew = async () => {
-    if (!bfeed) return;
-    const ids = [...new Set(bmatches.map((m) => m.odds.id))].filter((id) => !seeded.has(id));
-    for (let i = 0; i < ids.length; i += 10) {
-      const part = ids.slice(i, i + 10); part.forEach((id) => seeded.add(id));
-      try { const rows = await oddsGet('/odds/multi', { eventIds: part.join(','), bookmakers: Object.keys(BOOKS).join(',') }); bfeed.seed(Array.isArray(rows) ? rows : [], Date.now()); }
-      catch (e) { part.forEach((id) => seeded.delete(id)); stats.oddsErrors++; if (stats.oddsErrors % 20 === 1) log(e.message); }
-    }
-    tickBooks(Date.now());
-  };
-  const refreshOdds = async () => {
-    if (!bfeed) return;
-    try {
-      const [l, pd] = await Promise.all([oddsGet('/events', { sport: 'tennis', status: 'live' }), oddsGet('/events', { sport: 'tennis', status: 'pending' })]);
-      oddsEv = oddsEvents([...(Array.isArray(l) ? l : []), ...(Array.isArray(pd) ? pd : [])]); stats.oddsRefreshes++; rejoin();
-    } catch (e) { stats.oddsErrors++; if (stats.oddsErrors % 20 === 1) log(e.message); }
+    subscribe();
   };
   const refreshGamma = async () => { try { poly = polyMatches(await polyAll()); stats.gammaRefreshes++; rejoin(); } catch (e) { stats.gammaErrors++; log('gamma', e.message); } };
   const pollKalshi = async () => {
@@ -691,8 +720,8 @@ async function main() {
     } catch (e) { stats.kalshiErrors++; if (stats.kalshiErrors % 20 === 1) log('kalshi', e.message); }
   };
   await pollKalshi(); await refreshGamma();
-  if (bfeed) { bfeed.open(); await refreshOdds(); }
-  log(`start: ${poly.length} Polymarket matches, ${kalshiMatches(kal).length} Kalshi matches, ${pairs.length} joined; bookmakers ${stats.bookFeed}: ${oddsEv.length} ATP events, ${bmatches.length} joined`);
+  if (bfeed) { try { await bfeed.cycle(); } catch (e) { log('kibl', String(e && e.message || e).slice(0, 160)); } fxSeen = bfeed.fxAt; oddsEv = bfeed.events(); rejoin(); kiblLoop(); }
+  log(`start: ${poly.length} Polymarket matches, ${kalshiMatches(kal).length} Kalshi matches, ${pairs.length} joined; Bet105 ${stats.bookFeed}: ${oddsEv.length} ATP fixtures, ${bmatches.length} joined`);
   const push = arg('push', '') === '1';
   let board = [], boardAt = 0; stats.boardReads = 0; stats.boardErrors = 0;
   const readBoard = async () => {
@@ -713,11 +742,10 @@ async function main() {
     for (const [k, L] of latest) { if (!keys.has(k)) continue; const bd = boardOf(L.p, Date.now()); for (const e of L.ev) if (e.edge > 0) gaps.push(gapRow(L.p, e, { ...L, board: bd })); }
     const bkeys = new Set(bmatches.map((m) => m.key));
     for (const [k, L] of latestB) { if (!bkeys.has(k)) continue; const bd = boardOf({ pm: { a: L.m.a, b: L.m.b } }, Date.now()); for (const e of L.ev) if (e.edge > 0) gaps.push(multiGapRow(L.m, e, { ...L, board: bd })); }
-    const lag = bfeed ? [...bfeed.stats.lagMs].sort((a, b) => a - b) : [];
     const body = JSON.stringify({ p: { gaps, worker: { pairs: pairs.length, live: pairs.filter((p) => p.pm.live).length, kalshiPolls: stats.kalshiPolls,
       kalshiErrors: stats.kalshiErrors, kalshiFeed: stats.kalshiFeed, kalshiWsMessages: stats.kalshiWsMessages, kalshiWsDrops: stats.kalshiWsDrops, boardReads: stats.boardReads, boardErrors: stats.boardErrors, recPushes: stats.recPushes, recErrors: stats.recErrors, recTicks: stats.recTicks, wsMessages: stats.wsMessages, wsReconnects: stats.wsReconnects,
-      bookFeed: stats.bookFeed, bookMatches: bmatches.length, bookLive: bmatches.filter((m) => m.odds.live).length, bookMsgs: stats.bookMsgs, bookDrops: stats.bookDrops,
-      bookPrices: bfeed ? bfeed.q.size : 0, bookLagMsP50: lag.length ? lag[Math.floor(lag.length / 2)] : null, oddsErrors: stats.oddsErrors, run: process.env.GITHUB_RUN_ID || null } } });
+      bookFeed: stats.bookFeed, bookMatches: bmatches.length, bookLive: bmatches.filter((m) => m.odds.live).length,
+      kibl: bfeed ? { ...bfeed.stats, fixtures: bfeed.fx.length, prePrices: bfeed.pre.size, livePrices: bfeed.live.size, liveAt: bfeed.liveAt && new Date(bfeed.liveAt).toISOString() } : null, run: process.env.GITHUB_RUN_ID || null } } });
     try {
       const r = await fetch(sbUrl + '/rest/v1/rpc/arb_live_push', { method: 'POST', body, signal: AbortSignal.timeout(15e3),
         headers: { apikey: sbKey, Authorization: 'Bearer ' + sbKey, 'Content-Type': 'application/json' } });
@@ -741,15 +769,15 @@ async function main() {
   };
   const recT = push ? setInterval(doRec, 15e3) : null;
   const gT = setInterval(refreshGamma, 60e3);
-  const oT = bfeed ? setInterval(refreshOdds, 60e3) : null;
   const pingT = setInterval(() => { feed.ping(); }, 10e3);
-  const repT = setInterval(() => log(`pairs ${pairs.length} live ${pairs.filter((p) => p.pm.live).length} open ${E.open.size} closed ${eps.length} ws ${stats.wsMessages} books ${bmatches.length}/${stats.bookMsgs}/${stats.bookDrops} kalshi ${stats.kalshiPolls}/${stats.kalshiErrors} push ${stats.pushes}/${stats.pushErrors} posted ${stats.posted}`), 300e3);
+  const repT = setInterval(() => log(`pairs ${pairs.length} live ${pairs.filter((p) => p.pm.live).length} open ${E.open.size} closed ${eps.length} ws ${stats.wsMessages} bet105 ${bmatches.length}/${bfeed ? bfeed.live.size + ' live, ' + bfeed.stats.calls + ' calls, ' + bfeed.stats.errors + ' errors' : 'off'} kalshi ${stats.kalshiPolls}/${stats.kalshiErrors} push ${stats.pushes}/${stats.pushErrors} posted ${stats.posted}`), 300e3);
   log('kalshi prices: ' + stats.kalshiFeed);
   const pollMs = () => (kfeed && kfeed.ws && kfeed.ws.readyState === 1 && kfeed.book.size ? 30e3 : POLL_S * 1000);   // the list for new matches; prices from the feed
   while (Date.now() < stop) { const t = Date.now(); await pollKalshi(); await new Promise((r) => setTimeout(r, Math.max(0, pollMs() - (Date.now() - t)))); }
-  clearInterval(gT); if (oT) clearInterval(oT); if (bfeed) bfeed.stop(); clearInterval(pingT); if (pushT) clearInterval(pushT); if (recT) clearInterval(recT); if (boardT) clearInterval(boardT); clearInterval(repT); E.closeAll(Date.now()); feed.stop(); if (kfeed) kfeed.stop();
+  clearInterval(gT); clearInterval(pingT); if (pushT) clearInterval(pushT); if (recT) clearInterval(recT); if (boardT) clearInterval(boardT); clearInterval(repT); E.closeAll(Date.now()); feed.stop(); if (kfeed) kfeed.stop();
   const meta = { from: new Date(t0).toISOString(), to: new Date().toISOString(), minutes, pollS: POLL_S, fees: FEE,
     ...stats, liveMatchesSeen: stats.liveMatchesSeen.size, pairsSeen: stats.pairsSeen.size,
+    kibl: bfeed ? { ...bfeed.stats, fixtures: bfeed.fx.length, prePrices: bfeed.pre.size, livePrices: bfeed.live.size, joined: bmatches.length } : null,
     closestPerMatch: [...closest].map(([match, c]) => ({ match, ...c })).sort((a, b) => a.cost - b.cost).slice(0, 15) };
   const s = summarise(eps, meta);
   writeFileSync(`${out}/summary.json`, JSON.stringify(s, null, 2));

@@ -4,7 +4,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { generateKeyPairSync, createVerify, constants as CC } from 'node:crypto';
 import { samePlayer, polyMatches, kalshiMatches, joinPairs, kalshiFee, polyFee, Books, evaluate, Episodes, summarise, gapRow, PolyFeed, KalshiFeed, kalshiSign, boardPhase, boardFixture, setText, recRows,
-  oddsName, oddsEvents, BookFeed, unify, venueQuotes, evaluateMulti, multiGapRow, STALE_MS, BOOKS } from './live-arb-recorder.mjs';
+  kiblNames, kiblFixtures, kiblRows, kiblQuotes, KiblFeed, KIBL_GAP_MS, KIBL_LIVE_MAX_MS, BOOK_LINK_HOME, unify, venueQuotes, evaluateMulti, multiGapRow, STALE_MS, BOOKS } from './live-arb-recorder.mjs';
+import { readFileSync } from 'node:fs';
 
 const ev = (id, a, b, extra = {}) => ({ id, title: `X: ${a} vs ${b}`, live: false, ...extra,
   markets: [{ sportsMarketType: 'moneyline', outcomes: JSON.stringify([a, b]), clobTokenIds: JSON.stringify([id + 'A', id + 'B']), gameStartTime: '2026-11-02 12:00:00+00' }] });
@@ -241,96 +242,136 @@ test('our Polymarket recorder rows: every match with a live book, best ask + sha
   assert.equal(recRows(poly, b, 1000 + 120000 * 5 + 1).length, 0, 'a book silent beyond the window → no row (a dead feed is never recorded)');
 });
 
-// ---------- bookmakers via odds-api.io (founder 2026-11-08) ----------
-const oev = (id, home, away, league = 'ATP - Paris, France', status = 'live', date = '2026-11-02T12:00:00Z') => ({ id, home, away, league: { name: league }, status, date });
+// ---------- Bet105 via Kibl (founder 2026-11-10: Kibl for the arbitrage, odds-api.io out) ----------
+// a Kibl match-winner participant row (field names as kibl_client.py / kibl-stream read them)
+const kr = (fid, fp, price, bt = 3, extra = {}) => ({ fixture_id: fid, fixture_participant_id: fp, market_type_id: 1, segment_id: 1, side_id: fp % 2,
+  betting_type_id: bt, feed_source_id: 171, is_current: true, is_opener: false, price_decimal: price, inserted_on: '2026-11-10T10:00:00Z', ...extra });
+const kfx = (id, name, start = '2026-11-02T12:00:00Z') => ({ fixture_id: id, name, start_time: start, league_id: 19 });
 
-test('odds-api.io names and events: "Surname, First" turned round; ATP singles only (no doubles, Challenger, WTA, UTR), live or not started', () => {
-  assert.equal(oddsName('Montes-de la Torre, Inaki'), 'Inaki Montes-de la Torre'); assert.equal(oddsName('Alcaraz'), 'Alcaraz');
-  const e = oddsEvents([oev(1, 'Shelton, Ben', 'Alcaraz, Carlos'), oev(2, 'Halys Q / Herbert P-H', 'Harrison C / Skupski N', 'ATP - Paris, France, Doubles'),
-    oev(3, 'Kozlov, Stefan', 'Mayo, Aidan', 'Challenger - Champaign, USA'), oev(4, 'A, B', 'C, D', 'WTA - Tokyo, Japan'), oev(5, 'Sonego, Lorenzo', 'Gojo, Borna', 'ATP - Stockholm, Sweden, Qualifying', 'pending'),
-    oev(6, 'X, Y', 'Z, W', 'ATP - Paris, France', 'settled'), oev(7, 'P, Q', 'R, S', 'UTR Men - UTR PTT Saitama Men 12')]);
-  assert.deepEqual(e.map((x) => x.id), ['1', '5'], 'mutants: doubles kept, Challenger kept, settled kept');
-  assert.equal(e[0].a, 'Ben Shelton'); assert.equal(e[0].event, 'Paris'); assert.equal(e[0].live, true); assert.equal(e[1].event, 'Stockholm');
+test('Kibl names and fixtures: rotation number dropped, feed order kept; doubles and odd names refused', () => {
+  assert.deepEqual(kiblNames('6112 Soonwoo Kwon vs Alex Molcan'), ['Soonwoo Kwon', 'Alex Molcan']);
+  assert.equal(kiblNames('A/B vs C/D'), null, 'doubles (mutant: kept)'); assert.equal(kiblNames('Davis Cup'), null); assert.equal(kiblNames('A vs B vs C'), null);
+  const f = kiblFixtures([kfx(9, 'Alex Molcan vs Titouan Droguet'), kfx(10, 'X/Y vs Z/W'), { name: 'no id vs here' }]);
+  assert.deepEqual(f.map((x) => [x.id, x.a, x.b]), [['9', 'Alex Molcan', 'Titouan Droguet']]); assert.equal(f[0].start, Date.parse('2026-11-02T12:00:00Z'));
 });
 
-class OW { static all = []; constructor(u) { this.url = u; this.readyState = 1; OW.all.push(this); } send() {} close() { this.readyState = 3; } }
-const upd = (id, bookie, home, away, extra = {}) => ({ type: 'updated', seq: 5, id: String(id), bookie, url: 'https://x/' + id, markets: [{ name: 'ML', updatedAt: '2026-11-02T12:00:00Z', odds: [{ home, away }] }], ...extra });
-
-test('book feed: the key and filters on the socket URL, updates priced per book, deleted / no_markets remove, a dead feed has no price', () => {
-  OW.all = []; const timers = []; let drops = 0, msgs = 0; let now = 1000;
-  const f = new BookFeed({ WS: OW, key: 'K', later: (fn, ms) => timers.push([fn, ms]), onDrop: () => drops++, onMessage: () => msgs++, now: () => now });
-  f.open(); const w = OW.all[0]; const u = new URL(w.url);
-  assert.equal(u.searchParams.get('apiKey'), 'K'); assert.equal(u.searchParams.get('markets'), 'ML'); assert.equal(u.searchParams.get('sport'), 'tennis');
-  const m = (x) => w.onmessage({ data: JSON.stringify(x) });
-  m({ type: 'welcome' }); m(upd(7, 'Bet105', '1.80', '2.10')); m(upd(7, 'Napoleon Sports BE', '1.75', '2.15')); m(upd(7, 'Superbet', '9', '9'));
-  assert.equal(f.quote(7, 'Bet105').home, 1.8); assert.equal(f.quote(7, 'Napoleon'), null, 'Napoleon is not an arbitrage book (founder 2026-11-09; mutant: kept)'); assert.equal(f.q.size, 1, 'a book not ours is not kept');
-  assert.deepEqual(Object.values(BOOKS), ['Bet105'], 'arbitrage = Bet105 × Polymarket × Kalshi only');
-  assert.equal(f.quote(7, 'Bet105').url, 'https://x/7'); assert.equal(f.lastSeq, 5);
-  m(upd(7, 'Bet105', '1.00', '9.50')); assert.equal(f.quote(7, 'Bet105'), null, 'a 1.00 placeholder is no price (mutant: kept)');
-  m(upd(7, 'Bet105', '2.20', '2.20')); assert.equal(f.quote(7, 'Bet105'), null, 'a book paying over 101% is no price');
-  m({ type: 'no_markets', id: '7', bookie: 'Bet105' }); assert.equal(f.quote(7, 'Bet105'), null, 'a pulled market is gone at once (mutant: kept)');
-  m(upd(7, 'Bet105', '1.80', '2.10')); w.readyState = 3; w.onclose({});
-  assert.equal(f.quote(7, 'Bet105'), null, 'no price from a dead feed'); assert.equal(drops, 1); assert.equal(timers.length, 1); assert.equal(timers[0][1], 2000);
-  timers[0][0](); assert.equal(new URL(OW.all[1].url).searchParams.get('lastSeq'), '5', 'reconnects from the last sequence');
-  OW.all[1].onclose({}); assert.equal(timers[1][1], 4000, 'backoff doubles');
+test('Kibl prices: match winner, full match, the asked betting type, Bet105 only; current over opener; sides by participant id', () => {
+  const rows = [kr(9, 202, 2.4), kr(9, 101, 1.6),
+    kr(9, 101, 1.9, 3, { is_current: false, is_opener: true }), kr(9, 202, 9, 3, { market_type_id: 2 }), kr(9, 202, 9, 3, { segment_id: 2 }),
+    kr(9, 202, 9, 1), kr(9, 202, 9, 3, { feed_source_id: 43 }), kr(9, 101, 1.55, 3, { inserted_on: '2026-11-10T09:59:00Z' })];
+  const q = kiblQuotes(rows, 3).get('9');
+  assert.deepEqual([q.home, q.away], [1.6, 2.4], 'the lower participant id is the first-named player (mutant: row order)');
+  assert.equal(q.upd, Date.parse('2026-11-10T10:00:00Z'));
+  assert.equal(kiblQuotes([kr(9, 101, 1.9, 3, { is_current: false, is_opener: true }), kr(9, 202, 2.0, 3, { is_current: false, is_opener: true })], 3).get('9').home, 1.9, 'an unmoved line is listed as its opener');
+  assert.equal(kiblQuotes([kr(9, 101, 0, 3), kr(9, 202, 2.4)], 3).size, 0, "Kibl's 0.000 suspension marker = no price (mutant: kept)");
+  assert.equal(kiblQuotes([kr(9, 101, 1.6)], 3).size, 0, 'one side only = no price');
+  assert.equal(kiblQuotes([kr(9, 101, 2.2), kr(9, 202, 2.2)], 3).size, 0, 'paying over 101% is no price');
+  assert.equal(kiblQuotes(rows, 1).get('9'), undefined, 'a pre-match row never answers for in play');
+  const nested = kiblRows({ result: [{ fixture_id: 9, market_type_id: 1, segment_id: 1, betting_type_id: 3, participants: [
+    { fixture_participant_id: 101, side_id: 1, price_decimal: 1.6, is_current: true, inserted_on: '2026-11-10T10:00:00Z' },
+    { fixture_participant_id: 202, side_id: 2, price_decimal: 2.4, is_current: true, inserted_on: '2026-11-10T10:00:00Z' }] }] });
+  assert.equal(nested.length, 2); assert.equal(kiblQuotes(nested, 3).get('9').away, 2.4, 'nested rows take the fixture and market from their parent');
 });
 
-test('book feed seed: REST prices fill a match, never over a newer streamed price', () => {
-  OW.all = []; const f = new BookFeed({ WS: OW, key: 'K', now: () => 1 }); f.open(); const w = OW.all[0];
-  w.onmessage({ data: JSON.stringify(upd(8, 'Bet105', '1.50', '2.70', { markets: [{ name: 'ML', updatedAt: '2026-11-02T12:05:00Z', odds: [{ home: '1.50', away: '2.70' }] }] })) });
-  f.seed([{ id: 8, urls: { Bet105: 'u8', 'Napoleon Sports BE': 'n8' }, bookmakers: {
-    Bet105: [{ name: 'ML', updatedAt: '2026-11-02T12:00:00Z', odds: [{ home: '1.40', away: '2.90' }] }],
-    'Napoleon Sports BE': [{ name: 'ML', updatedAt: '2026-11-02T12:00:00Z', odds: [{ home: '1.45', away: '2.80' }] }] } }], 2);
-  assert.equal(f.quote(8, 'Bet105').home, 1.5, 'the streamed price is newer (mutant: seed overwrites)'); assert.equal(f.quote(8, 'Napoleon'), null, 'a seeded Napoleon price is not kept');
+// a fake Kibl: login, fixtures, markets by betting type; a fake clock
+function fakeKibl({ live = [], pre = [], fx = [kfx(9, 'Alex Molcan vs Titouan Droguet')], fail = {} } = {}) {
+  const calls = []; let t = 1_000_000;
+  const f = async (u, o) => {
+    const url = new URL(String(u)); calls.push({ at: t, path: url.pathname, q: Object.fromEntries(url.searchParams), auth: o.headers && o.headers.Authorization, body: o.body });
+    const ok = (j) => ({ ok: true, status: 200, json: async () => j });
+    if (String(u).includes('cognito')) return ok({ AuthenticationResult: { AccessToken: 'T' + calls.filter((c) => c.body).length, ExpiresIn: 3600 } });
+    const bt = url.searchParams.get('betting_type_id');
+    if (fail[bt || 'fx']) return { ok: false, status: fail[bt || 'fx'], json: async () => ({}) };
+    if (url.pathname.endsWith('/info/fixtures')) return ok({ result: fx });
+    return ok({ result: bt === '3' ? live : pre });
+  };
+  const feed = new KiblFeed({ fetch: f, user: 'u', pass: 'p', now: () => t, sleep: async (ms) => { t += ms; } });
+  return { feed, calls, tick: (ms) => { t += ms; }, now: () => t };
+}
+
+test('Kibl feed: one login, Bearer on every call, ≥ 1.3 s between calls, in-play every cycle and pre-match every 12th, ATP + Bet105 only', async () => {
+  const K = fakeKibl({ live: [kr(9, 101, 1.6), kr(9, 202, 2.4)], pre: [kr(9, 101, 1.8, 1), kr(9, 202, 2.0, 1)] });
+  for (let i = 0; i < 13; i++) { await K.feed.cycle(); K.tick(1000); }
+  const api = K.calls.filter((c) => !c.body), logins = K.calls.filter((c) => c.body);
+  assert.equal(logins.length, 1, 'one login for the run (mutant: login per call)'); assert.ok(!logins[0].body.includes('"u"') || JSON.parse(logins[0].body).AuthFlow === 'USER_PASSWORD_AUTH');
+  assert.ok(api.every((c) => c.auth === 'Bearer T1'));
+  for (let i = 1; i < api.length; i++) assert.ok(api[i].at - api[i - 1].at >= KIBL_GAP_MS, 'paced (mutant: no pause)');
+  const mk = api.filter((c) => c.path.endsWith('/info/markets'));
+  assert.equal(mk.filter((c) => c.q.betting_type_id === '3').length, 13, 'in-play read every cycle');
+  assert.equal(mk.filter((c) => c.q.betting_type_id === '1').length, 2, 'pre-match every KIBL_PRE_EVERY cycles');
+  assert.ok(mk.every((c) => c.q.league_id === '19' && c.q.feed_source_id === '171'), 'ATP league, Bet105 feed only');
+  assert.equal(api.filter((c) => c.path.endsWith('/info/fixtures')).length, 1, 'fixtures every 5 min, not every cycle');
 });
 
-// a world: one Kalshi × Polymarket pair (Molcan / Droguet) + odds-api.io events
-const world = (oddsList) => {
+test('Kibl feed: in play only the in-play price, while its poll is fresh; a failed in-play poll leaves no price; 401 logs in again', async () => {
+  const K = fakeKibl({ live: [kr(9, 101, 1.6), kr(9, 202, 2.4)], pre: [kr(9, 101, 1.8, 1), kr(9, 202, 2.0, 1), kr(8, 303, 1.5, 1), kr(8, 404, 2.6, 1)],
+    fx: [kfx(9, 'Alex Molcan vs Titouan Droguet'), kfx(8, 'Ben Shelton vs Carlos Alcaraz')] });
+  await K.feed.cycle();
+  const q9 = K.feed.quote(9, 'Bet105'); assert.equal(q9.live, true); assert.equal(q9.home, 1.6, 'in play the in-play price wins (mutant: pre-match)');
+  assert.equal(K.feed.quote(8, 'Bet105').live, false); assert.equal(K.feed.quote(8, 'Bet105').home, 1.5);
+  assert.equal(K.feed.quote(9, 'Napoleon'), null);
+  assert.deepEqual(K.feed.events().map((e) => [e.id, e.live]), [['9', true], ['8', false]]);
+  K.tick(KIBL_LIVE_MAX_MS + 1); assert.equal(K.feed.quote(9, 'Bet105'), null, 'an in-play price from an old poll is never used (mutant: kept)');
+  assert.equal(K.feed.events()[0].live, false);
+  const F = fakeKibl({ live: [kr(9, 101, 1.6), kr(9, 202, 2.4)], pre: [kr(9, 101, 1.8, 1), kr(9, 202, 2.0, 1)] });
+  await F.feed.cycle(); F.tick(2000);
+  F.feed.f = (orig => async (u, o) => (String(u).includes('betting_type_id=3') ? { ok: false, status: 500, json: async () => ({}) } : orig(u, o)))(F.feed.f);
+  await F.feed.cycle();
+  assert.equal(F.feed.quote(9, 'Bet105').live, false, 'the in-play poll failed: no in-play price (mutant: last one kept)');
+  assert.equal(F.feed.stats.errors, 1);
+  const A = fakeKibl({ live: [kr(9, 101, 1.6), kr(9, 202, 2.4)] }); let n401 = 1;
+  A.feed.f = (orig => async (u, o) => (!String(u).includes('cognito') && n401-- > 0 ? { ok: false, status: 401, json: async () => ({}) } : orig(u, o)))(A.feed.f);
+  await A.feed.cycle(); assert.equal(A.calls.filter((c) => c.body).length, 2, 'a 401 logs in again once'); assert.equal(A.feed.quote(9, 'Bet105').home, 1.6);
+});
+
+// a world: one Kalshi × Polymarket pair (Molcan / Droguet) + Kibl fixtures
+const world = (fx) => {
   const poly = polyMatches([ev('1', 'Alex Molcan', 'Titouan Droguet', { slug: 'atp-molcan-droguet' })]);
   const kal = kalshiMatches([km('K1', 'Titouan Droguet', 0.5, 50, 0.6), km('K1', 'Alex Molcan', 0.6, 50, 0.5)]);
-  return { poly, kal, ms: unify(poly, kal, oddsEvents(oddsList)) };
+  return { poly, kal, ms: unify(poly, kal, kiblFixtures(fx)) };
 };
-test('unify: an odds-api.io event joins the pair by both names either way round, within 36 h; ambiguity or no match → nothing', () => {
-  let { ms } = world([oev(9, 'Droguet, Titouan', 'Molcan, Alex')]);
-  assert.equal(ms.length, 1); assert.equal(ms[0].odds.aHome, false, 'home is Droguet = player B'); assert.ok(ms[0].pm && ms[0].km); assert.equal(ms[0].key, 'b:9');
-  assert.equal(world([oev(9, 'Droguet, Titouan', 'Molcan, Alex'), oev(10, 'Molcan, Alex', 'Droguet, Titouan')]).ms.length, 0, 'two events fit → none (mutant: first wins)');
-  assert.equal(world([oev(9, 'Droguet, Titouan', 'Molcan, Alex', 'ATP - Paris, France', 'pending', '2026-11-05T12:00:00Z')]).ms.length, 0, 'a rematch days later is another match');
-  assert.equal(world([oev(9, 'Droguet, Adam', 'Molcan, Alex')]).ms.length, 0, 'another initial refused');
+test('unify: a Kibl fixture joins the pair by both names either way round, within 36 h; ambiguity or no match → nothing', () => {
+  let { ms } = world([kfx(9, 'Titouan Droguet vs Alex Molcan')]);
+  assert.equal(ms.length, 1); assert.equal(ms[0].odds.aHome, false, 'first-named is Droguet = player B'); assert.ok(ms[0].pm && ms[0].km); assert.equal(ms[0].key, 'b:9');
+  assert.equal(world([kfx(9, 'Titouan Droguet vs Alex Molcan'), kfx(10, 'Alex Molcan vs Titouan Droguet')]).ms.length, 0, 'two fixtures fit → none (mutant: first wins)');
+  assert.equal(world([kfx(9, 'Titouan Droguet vs Alex Molcan', '2026-11-05T12:00:00Z')]).ms.length, 0, 'a rematch days later is another match');
+  assert.equal(world([kfx(9, 'Adam Droguet vs Alex Molcan')]).ms.length, 0, 'another initial refused');
 });
 
-test('evaluateMulti: every direction with a bookmaker leg after fees; Kalshi × Polymarket left to its own path; sizes from the prediction leg', () => {
-  const { ms } = world([oev(9, 'Molcan, Alex', 'Droguet, Titouan')]); const m = ms[0];
+// a stub feed with the KiblFeed quote shape
+const stubFeed = (q) => ({ quote: (id, venue) => (venue === 'Bet105' && q ? { url: BOOK_LINK_HOME.Bet105, max: null, ...q } : null) });
+
+test('evaluateMulti: every direction with a Bet105 leg after fees; Kalshi × Polymarket left to its own path; sizes from the prediction leg', () => {
+  const { ms } = world([kfx(9, 'Alex Molcan vs Titouan Droguet')]); const m = ms[0];
   const b = new Books(); b.snapshot('1A', [{ price: '0.45', size: '400' }], 1000); b.snapshot('1B', [{ price: '0.56', size: '300' }], 1000);
-  OW.all = []; const f = new BookFeed({ WS: OW, key: 'K', now: () => 1000 }); f.open();
-  OW.all[0].onmessage({ data: JSON.stringify(upd(9, 'Bet105', '1.60', '2.40')) });   // Bet105: Molcan 1.60, Droguet 2.40
-  const Q = venueQuotes(m, { books: b, kalAt: 1000, bfeed: f, now: 2000 });
+  const f = stubFeed({ home: 1.6, away: 2.4, at: 1000, upd: 1000, live: false });   // Bet105: Molcan 1.60, Droguet 2.40
+  const Q = venueQuotes({ ...m, odds: { ...m.odds, start: null } }, { books: b, kalAt: 1000, bfeed: f, now: 2000 });
   assert.deepEqual(Object.keys(Q).sort(), ['Bet105', 'Kalshi', 'Polymarket']);
   const ev2 = evaluateMulti(m, Q); const dirs = ev2.map((e) => e.dir).sort();
   assert.ok(!dirs.some((d) => d.includes('Polymarket') && d.includes('Kalshi')), 'no Kalshi × Polymarket here (mutant: double-counted)');
   const pb = ev2.find((e) => e.dir === 'Polymarket:A+Bet105:B');
   const cost = 0.45 + 0.05 * 0.45 * 0.55 + 1 / 2.4;
   assert.equal(pb.cost, +cost.toFixed(5)); assert.equal(pb.edge, +((1 / cost - 1) * 100).toFixed(3)); assert.ok(pb.edge > 0);
-  assert.equal(pb.contracts, 400, 'Polymarket shares cap it; the book publishes no limit'); assert.equal(pb.legs[1].url, 'https://x/9');
+  assert.equal(pb.contracts, 400, 'Polymarket shares cap it; the book publishes no limit'); assert.equal(pb.legs[1].url, 'https://app.bet105.ag');
   const g = multiGapRow(m, pb, { inPlay: true, started: true, board: { phase: 'game', score: '6–4 2–1', status: 'Set 2' } });
   assert.equal(g.mkey, 'KXATPMATCH-K1'); assert.equal(g.atp, true); assert.equal(g.hasPm, true); assert.equal(g.legs.length, 2);
-  assert.equal(g.legs[0].venue, 'Polymarket'); assert.equal(g.legs[0].url, 'https://polymarket.com/event/atp-molcan-droguet'); assert.equal(g.legs[1].venue, 'Bet105'); assert.equal(g.legs[1].dec, 2.4);
+  assert.equal(g.legs[0].venue, 'Polymarket'); assert.equal(g.legs[1].venue, 'Bet105'); assert.equal(g.legs[1].dec, 2.4);
   assert.equal(+(g.legs[0].stake + g.legs[1].stake).toFixed(1), +g.stake.toFixed(1)); assert.equal(g.phase, 'game');
-  const stale = venueQuotes(m, { books: b, kalAt: 1000, bfeed: f, now: 1000 + STALE_MS.book + 1 });
-  assert.ok(!stale.Bet105, 'a book price older than STALE_MS.book is not used');
-  const U = Date.parse('2026-11-02T12:00:00Z'), live = { ...m, odds: { ...m.odds, live: true } };
-  const f2 = new BookFeed({ WS: OW, key: 'K', now: () => U + 600e3 }); OW.all = []; f2.open(); OW.all[0].onmessage({ data: JSON.stringify(upd(9, 'Bet105', '1.60', '2.40')) });
-  assert.ok(!venueQuotes(live, { books: b, kalAt: null, bfeed: f2, now: U + 600e3 + 1000 }).Bet105, 'in play, a pre-match price received now but set 10 min ago by the book is not used (mutant: receive time only)');
-  assert.ok(venueQuotes({ ...m, odds: { ...m.odds, live: false, start: null } }, { books: b, kalAt: null, bfeed: f2, now: U + 600e3 + 1000 }).Bet105, 'pre-match the same price stands');
-  const f3 = new BookFeed({ WS: OW, key: 'K', now: () => U + 30e3 }); OW.all = []; f3.open(); OW.all[0].onmessage({ data: JSON.stringify(upd(9, 'Bet105', '1.60', '2.40')) });
-  assert.ok(venueQuotes(live, { books: b, kalAt: null, bfeed: f3, now: U + 31e3 }).Bet105, 'in play, a price the book set 31 s ago is used');
+  assert.equal(multiGapRow({ ...m, km: null }, pb, { inPlay: false, started: false, board: null }).mkey, 'kibl:9');
+  assert.ok(!venueQuotes(m, { books: b, kalAt: 1000, bfeed: stubFeed({ home: 1.6, away: 2.4, at: 1000, live: false }), now: 1000 + STALE_MS.book + 1 }).Bet105, 'a book price older than STALE_MS.book is not used');
+  const live = { ...m, odds: { ...m.odds, live: false } };   // pm start 12:00Z has passed at U
+  const U = Date.parse('2026-11-02T12:10:00Z');
+  assert.ok(!venueQuotes(live, { books: b, kalAt: null, bfeed: stubFeed({ home: 1.6, away: 2.4, at: U, live: false }), now: U }).Bet105,
+    'after the start a pre-match price is never paired with live prediction prices (mutant: used)');
+  assert.ok(venueQuotes(live, { books: b, kalAt: null, bfeed: stubFeed({ home: 1.6, away: 2.4, at: U, live: true }), now: U }).Bet105, 'in play the in-play price is used');
 });
 
-test('evaluateMulti: a Napoleon price never forms a gap (founder 2026-11-09: Bet105, Polymarket, Kalshi only)', () => {
-  const { ms } = world([oev(9, 'Molcan, Alex', 'Droguet, Titouan')]); const m = { ...ms[0], pm: null, km: null };
-  OW.all = []; const f = new BookFeed({ WS: OW, key: 'K', now: () => 1000 }); f.open();
-  OW.all[0].onmessage({ data: JSON.stringify(upd(9, 'Bet105', '2.20', '1.70')) }); OW.all[0].onmessage({ data: JSON.stringify(upd(9, 'Napoleon Sports BE', '1.62', '2.35')) });
-  const Q = venueQuotes(m, { books: new Books(), kalAt: null, bfeed: f, now: 1500 });
-  assert.deepEqual(Object.keys(Q), ['Bet105']); assert.equal(evaluateMulti(m, Q).length, 0, '1/2.20 + 1/2.35 < 1 but Napoleon is out (mutant: Napoleon kept)');
+test('odds-api.io is gone from live arbitrage: no odds-api.io call or key; the workflow passes the Kibl login', () => {
+  const src = readFileSync(new URL('./live-arb-recorder.mjs', import.meta.url), 'utf8');
+  assert.ok(!/api\.odds-api\.io|ODDS_API_IO_KEY|BookFeed/.test(src), 'no odds-api.io code path left (mutant: odds-api.io feed kept)');
+  assert.deepEqual(Object.values(BOOKS), ['Bet105'], 'arbitrage = Bet105 × Polymarket × Kalshi only');
+  const wf = readFileSync(new URL('../.github/workflows/live-arb.yml', import.meta.url), 'utf8');
+  assert.ok(!/ODDS_API_IO_KEY/.test(wf)); for (const k of ['KIBL_USERNAME', 'KIBL_PASSWORD']) assert.ok(wf.includes('secrets.' + k), k);
 });
 
 test('Kalshi × Polymarket rows carry the same legs (venue, price, after fee, stake, link) for the alert and the page', () => {

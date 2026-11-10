@@ -5,8 +5,9 @@ name: Live arbitrage (Kalshi x Polymarket)
 # and every 5 s pushes the current gaps after fees + a heartbeat to public.arb_live_push (tools/arb-engine.sql), which
 # feeds Dropping Odds → Arbitrage → Live and posts ⚡ LIVE ARB to the drop chat (>= 1% after fees, >= $100 to lock in,
 # once per match + direction per 10 min). Public endpoints only; the one write is that RPC (service key).
-# Bookmakers (founder 2026-11-08): Bet105 + Napoleon Sports BE live from the odds-api.io WebSocket (secret ODDS_API_IO_KEY,
-# the account's selected books); every direction with a bookmaker leg is checked beside Kalshi × Polymarket.
+# Bet105 (founder 2026-11-10): pre-match and in-play prices from Kibl's REST API (feed 171, betting types 1 and 3; secrets
+# KIBL_USERNAME / KIBL_PASSWORD); every direction with a Bet105 leg is checked beside Kalshi × Polymarket. odds-api.io is
+# no longer read for the arbitrage.
 #
 # Always on: each run records for 350 min and, as it starts, queues its successor (workflow_dispatch with the job's own
 # token — the one event GITHUB_TOKEN may trigger); the concurrency group holds that one pending run until the current one
@@ -52,8 +53,10 @@ jobs:
           # Kalshi's live websocket (founder 2026-11-03): set both on the repo to switch from polling to the feed.
           KALSHI_API_KEY_ID: ${{ secrets.KALSHI_API_KEY_ID }}
           KALSHI_PRIVATE_KEY: ${{ secrets.KALSHI_PRIVATE_KEY }}
-          # odds-api.io WebSocket (founder 2026-11-08): Bet105 + Napoleon live; without it the worker runs Kalshi × Polymarket only
-          ODDS_API_IO_KEY: ${{ secrets.ODDS_API_IO_KEY }}
+          # Bet105 via Kibl (founder 2026-11-10); without them the worker runs Kalshi × Polymarket only
+          KIBL_USERNAME: ${{ secrets.KIBL_USERNAME }}
+          KIBL_PASSWORD: ${{ secrets.KIBL_PASSWORD }}
+          KIBL_CLIENT_ID: ${{ secrets.KIBL_CLIENT_ID }}
         run: node tools/live-arb-recorder.mjs --minutes "${{ inputs.minutes || '350' }}" --out live-arb --push 1
       - uses: actions/upload-artifact@v4
         if: always()
