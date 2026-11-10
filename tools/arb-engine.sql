@@ -148,7 +148,7 @@ begin
        -- a match that has STARTED is never a pre-match arbitrage, whatever its scheduled time (founder 2026-11-10: Sonego v
        -- Halys went live 13:24:17, before its 13:30 slot; the ⚖️ ARB at 13:28 paired Bet105's 13:16 pre-match 2.08 with a
        -- live Polymarket price). Started = our 10-s live poller's flip, or api-tennis already reporting a set / live.
-       and not exists (select 1 from public.live_flip_log l where l.event_key = f.event_key::text)
+       and not exists (select 1 from public.live_flip_log_current l where l.event_key = f.event_key::text)
        and coalesce(f.event_status, '') !~* '^set|live'
   ),
   -- Bet105 (Kibl stream): card key = board date | surname keys; live while the worker beats

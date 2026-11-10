@@ -53,6 +53,9 @@ create table public.kibl_now_card (card_key text primary key, book text, book_na
 create table public.kibl_now_price (card_key text, side_key text, kind text, written_at timestamptz default now());
 create table drops_live.flip (event_key text, live_at timestamptz, p1 text, p2 text);
 create table public.live_flip_log (event_key text primary key, first_live_seen_at timestamptz not null);
+create table public.live_flip_log_superseded (event_key text primary key);
+create view public.live_flip_log_current as select f.* from public.live_flip_log f
+  where not exists (select 1 from public.live_flip_log_superseded s where s.event_key = f.event_key);
 create schema poly_bot;
 create table poly_bot.volume (slug text primary key, player_a text, player_b text, sk_a text, sk_b text, start_at timestamptz,
   volume numeric, volume_ml numeric, liquidity numeric, fetched_at timestamptz);
@@ -235,7 +238,9 @@ try:
     q("insert into public.live_flip_log values ('9001', now() - interval '4 minutes')")
     o = opps(); check('a match our live poller saw start: no price, no divergence, no arb (mutant: scheduled time only)',
           'Q. Halys' not in [f['first'] for f in o['fair']] and o['arbs'] == [], o)
-    q("delete from public.live_flip_log")
+    q("insert into public.live_flip_log_superseded values ('9001')")
+    o = opps(); check('a flip withdrawn as a false start (superseded) no longer blocks it', 'Q. Halys' in [f['first'] for f in o['fair']], o['fair'])
+    q("delete from public.live_flip_log_superseded"); q("delete from public.live_flip_log")
     w['status'] = 'Set 1'
     q("select public.drops_scope_ingest($j$" + json.dumps([w]).replace('__D1__', d1) + "$j$::jsonb, 'test')", 'service_role')
     o = opps(); check('api-tennis already reporting a set → not pre-match', 'Q. Halys' not in [f['first'] for f in o['fair']], o['fair'])
