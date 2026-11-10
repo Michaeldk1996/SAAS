@@ -89,10 +89,11 @@ Where a ruling below reverses an older one in this file, the older one is supers
   - **Ratings:** the paragraph under the tiles is removed (its data facts — matches in the window, Elo has no window, an
     estimated or missing axis — sit in the DNA (?)); the DNA draws two continuous lines: tour a solid `--text-label` 1.25
     line, the player a 2px `--bar` line over the export's top-down fill (34% → 6%) with ringed vertex dots; no dash.
-  - **Colours = the export as drawn, inside the profile only:** the mount carries `.pp2-x`, and `tokens.css` scopes the
-    export's values there (night): card #0E1019, inner #0C0E16, selected #131623, text-soft #C6CCDB, label #8B96B5, pos
-    #3DD68C, neg #E0616F, link #5B9BFF. One block; deleting it returns the profile to the foundation palette. Drawer icons
-    are `--link`. Tile strips sit on `--inner` (the export's darker strip).
+  - **Colours = the export as drawn, inside the profile only:** `tokens.css` names the export's values apart from the
+    foundation (`--pp-x-*`: card #0E1019, inner #0C0E16, selected #131623, text-soft #C6CCDB, label #8B96B5, pos #3DD68C,
+    neg #E0616F, link #5B9BFF — the foundation tokens themselves are untouched, `test-ten286-layout.mjs` locks them); the
+    profile mount carries `.pp2-x` and its own `PP2_PALETTE_CSS` maps them onto its surfaces (night only). Removing that
+    one mapping returns the profile to the foundation palette. Drawer icons are `--link`. Tile strips sit on `--inner`.
   - **Record per tournament detail = the export's panel:** `--inner` on `--edge-16`, the sticky head (Date · Opponent · Rd ·
     Sets · Set scores · H · A) on `--inner` with a 10% rule, group rows 11/5 padding, match rows 6px.
   - **Court speed:** band tiles and the selected band's four tiles centre their values (founder; the export draws them

@@ -171,18 +171,17 @@
 }
 
 /* Player Profile v2 — founder 2026-11-10 ("fix the colours to match the design export", ruling 2026-11-09 "colours
-   follow the design export"): inside the profile (its page and every drawer) the surfaces, greys and meaning colours
-   are the Player Stat Boxes export's own values, not the foundation mapping of them. Night only (the export draws
-   night); day keeps the foundation. One block: delete it and the profile reads the foundation palette again. */
-[data-theme="night"] .pp2-x,
-:root:not([data-theme]) .pp2-x {
-  --card:        #0E1019;
-  --inner:       #0C0E16;
-  --selected:    #131623;
-  --tile-hover:  #11141F;
-  --text-soft:   #C6CCDB;
-  --text-label:  #8B96B5;
-  --pos:         #3DD68C;
-  --neg:         #E0616F;
-  --link:        #5B9BFF;
+   follow the design export"): the Player Stat Boxes export's own values, named apart from the foundation tokens. The
+   profile maps them onto its surfaces inside .pp2-x (player-profile-v2.js PP2_PALETTE_CSS, night only); nothing else
+   reads them. Delete the mapping and the profile reads the foundation palette again. */
+:root {
+  --pp-x-card:       #0E1019;
+  --pp-x-inner:      #0C0E16;
+  --pp-x-selected:   #131623;
+  --pp-x-tile-hover: #11141F;
+  --pp-x-text-soft:  #C6CCDB;
+  --pp-x-text-label: #8B96B5;
+  --pp-x-pos:        #3DD68C;
+  --pp-x-neg:        #E0616F;
+  --pp-x-link:       #5B9BFF;
 }

@@ -14781,6 +14781,12 @@
   }
   function toggleVal(cur, id) { return String(cur) === String(id) ? null : id; }
 
+  // founder 2026-11-10: inside the profile the surfaces, greys and meaning colours are the export's (tokens.css --pp-x-*),
+  // night only (the export draws night); day keeps the foundation. Remove this and the profile reads the foundation.
+  var PP2_PALETTE_CSS = '<style>[data-theme="night"] .pp2-x, :root:not([data-theme]) .pp2-x {' +
+    ['card', 'inner', 'selected', 'tile-hover', 'text-soft', 'text-label', 'pos', 'neg', 'link'].map(function (t) {
+      return '--' + t + ':var(--pp-x-' + t + ');';
+    }).join('') + '}</style>';
   function repaint() {
     if (!mounted || !state.key) return;
     var p = profileFor(state.key);
@@ -14792,8 +14798,8 @@
     var hadSearch = active && active.getAttribute &&
       active.getAttribute('data-pp2') === 'tourn-search';
     var caret = hadSearch ? active.selectionStart : null;
-    if (mounted.classList && !mounted.classList.contains('pp2-x')) mounted.classList.add('pp2-x');   // the export's palette (tokens.css)
-    mounted.innerHTML = build(p);
+    if (mounted.classList && !mounted.classList.contains('pp2-x')) mounted.classList.add('pp2-x');   // the export's palette (tokens.css --pp-x-*)
+    mounted.innerHTML = PP2_PALETTE_CSS + build(p);
     if (hadSearch) {
       var next = mounted.querySelector('[data-pp2="tourn-search"]');
       if (next) {
@@ -15421,7 +15427,7 @@
       archetypeFor: archetypeFor,
       SPLIT_GROUPS: SPLIT_GROUPS,
       // TEN-384 fx2
-      renderModal: renderModal, modalShell: modalShell, MODAL_INFO: MODAL_INFO, calPpLine: calPpLine, headerRank: headerRank,
+      renderModal: renderModal, modalShell: modalShell, MODAL_INFO: MODAL_INFO, PP2_PALETTE_CSS: PP2_PALETTE_CSS, calPpLine: calPpLine, headerRank: headerRank,
       insightsEmptyText: insightsEmptyText, tournHistOf: tournHistOf,
       splitsPending: splitsPending, splitsNotBuilt: splitsNotBuilt,
       marketPending: marketPending, shardPending: shardPending, tournRecordAll: tournRecordAll,

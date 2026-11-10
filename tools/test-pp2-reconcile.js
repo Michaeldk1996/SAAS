@@ -1183,9 +1183,10 @@ check('founder 2026-11-10 · Ratings: no paragraph under the tiles; the DNA draw
 check('founder 2026-11-10 · the profile reads the export\'s palette: the mount carries .pp2-x and tokens.css scopes the export values to it', () => {
   assert(/mounted\.classList\.add\('pp2-x'\)/.test(fs.readFileSync(path.join(ROOT, 'player-profile-v2.js'), 'utf8')), 'the profile mount does not take the export palette class');
   const tok = fs.readFileSync(path.join(ROOT, 'tokens.css'), 'utf8');
-  const blk = tok.slice(tok.indexOf('.pp2-x'));
-  [['--card', '#0E1019'], ['--inner', '#0C0E16'], ['--selected', '#131623'], ['--text-label', '#8B96B5'], ['--pos', '#3DD68C'], ['--neg', '#E0616F']]
-    .forEach(([t, v]) => assert(new RegExp(t + ':\\s*' + v, 'i').test(blk), t + ' is not the export\'s ' + v));
+  [['card', '#0E1019'], ['inner', '#0C0E16'], ['selected', '#131623'], ['text-label', '#8B96B5'], ['pos', '#3DD68C'], ['neg', '#E0616F']]
+    .forEach(([t, v]) => assert(new RegExp('--pp-x-' + t + ':\\s*' + v, 'i').test(tok), '--pp-x-' + t + ' is not the export\'s ' + v));
+  const css = I.PP2_PALETTE_CSS || '';
+  assert(/\.pp2-x \{[^}]*--card:var\(--pp-x-card\)/.test(css) && /--text-label:var\(--pp-x-text-label\)/.test(css), 'the profile does not map the export palette onto its tokens');
 });
 
 check('the Level & round tile uses the export\'s words (founder 2026-11-10), never "biggest split"', () => {
