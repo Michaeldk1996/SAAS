@@ -93,7 +93,8 @@ try { const Mu = build(path.join(tmp, 'lower-base.csv'), path.join(tmp, 'main-te
   ok(hdr(x => x, { books: ['Pinnacle', 'Bet365'], bookCounts: { Pinnacle: 9, Bet365: 0 } }) === 'Pinnacle closing only'
     && hdr(x => x, { books: ['Pinnacle', 'Bet365'], bookCounts: { Pinnacle: 9, Bet365: 2 } }) === 'Pinnacle closing, else Bet365', 'header: "Pinnacle closing only" with no Bet365 row; control: "else Bet365" with one');
   ok(/' of ' \+ M\.priced\.length\.toLocaleString\('en-US'\) \+ ' on Bet365'/.test(html), 'Match analysis Market edge: "N of M on Bet365" in the Price sensitivity header');
-  ok(/mk\.headline\.book\.bet365 \+ ' of ' \+ mk\.headline\.n \+ ' on Bet365'/.test(pp), 'profile Market edge box: "N of M on Bet365"');
+  // founder 2026-11-10: the tile reads the export's words; the Bet365 count lives in the Market edge drawer's note
+  ok(/b365N \+ ' of ' \+ \(d\.favN \+ d\.dogN\)\.toLocaleString\('en-US'\) \+ ' priced on Bet365'/.test(pp), 'profile Market edge drawer: "N of M priced on Bet365"');
 }
 console.log(`\ntest-te-b365: ${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
