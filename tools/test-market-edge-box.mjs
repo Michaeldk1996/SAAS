@@ -120,7 +120,7 @@ const slice = (src, from, to) => { const a = src.indexOf(from), b = src.indexOf(
   const one = say({ main: 1, dashed: 1, priced: 0, team: 1, teamPriced: 0 });
   ok(/His 1 team-event match \(Davis Cup and the like\) is left out of Market edge/.test(one), 'one team event: "is", not "are" (' + one + ')');
   ok(say(null) === 'No priced matches on record.', 'no bridge answer: no reason claimed');
-  ok(/marketEmptyWhy\(p\.key\)\.pending \? \{ headline: null, support: null, pending: true \}/.test(prof), 'box: pending while the reason is loading (never "no priced matches on record" that then changes)');
+  ok(/marketEmptyWhy\(p\.key\)\.pending \? \{ headline: null, support: null, pending: true(?:, sizeAs: '[^']*')? \}/.test(prof), 'box: pending while the reason is loading (never "no priced matches on record" that then changes)');
   ok(/currentKey: function \(\) \{ return mounted && state\.key \? String\(state\.key\) : null; \}/.test(prof), 'module exports currentKey (the host\'s guard reads it)');
 }
 console.log(fails ? `\n${fails} check(s) failed` : '\nmarket-edge-box: all checks pass');
