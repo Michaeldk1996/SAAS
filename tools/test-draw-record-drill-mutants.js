@@ -21,6 +21,8 @@ const MUTANTS = [
   ['src', 'an empty row opens a box', "var hook = empty ? '' : 'data-pp2=\"fb-open\" data-box=\"'", "var hook = 'data-pp2=\"fb-open\" data-box=\"'"],
   ['src', 'a walkover row keeps the sheet hook', "return { id: null, hook: r.sc.wo ? '' : 'data-pp2=\"draw-sheet\" data-v=\"' + r.i", "return { id: null, hook: 'data-pp2=\"draw-sheet\" data-v=\"' + r.i"],
   ['src', 'Team events left out of Level', "if (m.lv === 'D') return 'Team events';", "if (m.lv === 'D') return null;"],
+  ['src', 'rounds numbered from his own first match (byes ignored)', "      var first = splDrawFirst(m), own = seen[String(m.t || '')];", "      var first = 9, own = seen[String(m.t || '')];"],
+  ['src', 'every Masters treated as a 56 draw', "    if (m.lv === 'M') return /indian wells|miami/i.test(t) || (y >= 2023 && /madrid|rome|shanghai/i.test(t)) ? 0 : 1;", "    if (m.lv === 'M') return 1;"],
   ['src', 'Masters rows filed as Grand Slams', "if (m.lv === 'M') return 'Masters 1000';", "if (m.lv === 'M') return 'Grand Slams';"],
   ['src', 'the tiebreak box lists every set', "        if (!((x.p === 7 && x.o === 6) || (x.p === 6 && x.o === 7))) return;\n        tbs.push(", "        tbs.push("],
   ['src', 'the W\u2013L cell wraps', "return cell(v[0], M + 'text-align:right;white-space:nowrap;font-size:'", "return cell(v[0], M + 'text-align:right;font-size:'"],

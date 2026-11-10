@@ -180,9 +180,9 @@ H.check('3 · a Market edge box whose shard is still loading claims nothing: no 
   const geo = h => (h.match(/font-size:\d+px;"|line-height:[\d.]+;margin-top:auto;/g) || []).join(' ');
   assert.strictEqual(geo(pend), geo(done), 'the pending tile and the painted tile differ in geometry');
   const doneText = L.text(done);
-  assert(/flat-stake yield · 255 priced/.test(doneText), 'the painted tile: ' + doneText);
+  assert(/% yield flat stake/.test(doneText.replace(/\s+/g, ' ')), 'the painted tile: ' + doneText);
   assert(!/tour —/.test(doneText), 'a missing tour baseline prints "tour —" (the ruling: hidden until it arrives)');
-  return 'pending: figure + support blank (same 26px / 1.4 boxes) → landed: "' + doneText.replace(/^.*?Market edge /, '').trim() + '"';
+  return 'pending: figure + support blank (same 20px / 1.4 boxes) → landed: "' + doneText.replace(/^.*?Market edge /, '').trim() + '"';
 });
 H.check('3 · the Market edge modal opened while the shard loads says it is loading, not "No priced matches on record"', () => {
   const { I, p } = fxModule({ noShard: true, extra: { marketEdgePending: { [FX.key]: true } } });

@@ -802,7 +802,7 @@ check('headline size follows the figure length: 26, 20 over 10 chars, 19 over 16
   for (const [t, want] of cases) assert.strictEqual(I.headlineSize(t), want, `"${t}" (${t.length} chars)`);
   // the render feeds it the headline + suffix it prints
   const src = fs.readFileSync(path.join(ROOT, 'player-profile-v2.js'), 'utf8');
-  assert(/headlineSize\(head \+ suffix\)/.test(src), 'renderBoxes does not size by the printed figure');
+  assert(/headlineSize\(blankFig && v\.sizeAs \? v\.sizeAs : head \+ suffix\)/.test(src), 'renderBoxes does not size by the printed figure');
 });
 
 mustFail('[neg] the size lock would catch a revert to the old 30/23/19 char rule', () => {
@@ -1130,18 +1130,32 @@ check('the pick is allowed to be negative — the rule is sign-blind by ruling',
 // The lock is INVERTED rather than deleted: the wording is now pinned to the
 // file's, so a drift back to "biggest split" fails just as loudly as the drift
 // this check used to catch.
-check('the splits support line uses the v7 wording, not the bw-0 wording', () => {
+check('Davis Cup is one row with one edition per year (founder 2026-11-10, "just re-group the Davis Cup")', () => {
+  let seen = 0;
+  for (const p of Object.values(PLAYERS)) {
+    const dc = (I.tournViews(p) || []).filter(t => /^Davis Cup\b/i.test(t.name));
+    if (!dc.length) continue;
+    assert.strictEqual(dc.length, 1, `${p.name}: ${dc.length} Davis Cup rows`);
+    const years = dc[0].editions.map(e => String(e.year));
+    assert.strictEqual(new Set(years).size, years.length, `${p.name}: a Davis Cup year listed twice (${years.join(', ')})`);
+    assert.deepStrictEqual(years, years.slice().sort().reverse(), `${p.name}: editions not newest first`);
+    assert.strictEqual(dc[0].editions.reduce((a, e) => a + e.won, 0), dc[0].won, `${p.name}: editions do not sum to the row`);
+    seen++;
+  }
+  assert(seen > 0, 'no player with Davis Cup matches — the check measured nothing');
+  console.log(`        ${seen} players with a Davis Cup row`);
+});
+mustFail('[neg] the Davis Cup year check would catch one group per tie', () => {
+  const years = ['2013', '2013', '2010'];
+  assert.strictEqual(new Set(years).size, years.length, 'a year listed twice');
+});
+
+check('the Level & round tile uses the export\'s words (founder 2026-11-10), never "biggest split"', () => {
   const src = fs.readFileSync(path.join(ROOT, 'player-profile-v2.js'), 'utf8');
   const code = src.split('\n').map(l => l.replace(/^\s*\/\/.*$/, '')).join('\n');
-  // ITEM 3 moved the phrase from the head of the line to its middle: the box's
-  // support is now "{label} \u00b7 best split \u00b7 {record}", so the v7 token is
-  // ' best split ' with a separator either side rather than a line-leading
-  // "'best split ". Pinned to the token, which is what the wording ruling is
-  // about, not to its position, which item 3 legitimately moved.
-  assert(/best split /.test(code), 'the v7 "best split" support line is missing');
+  assert(/'% vs Top 10'/.test(code) && /'best: '/.test(code) && /'tiebreaks '/.test(code), 'the export\'s Level & round tile words are missing');
   const stale = (code.match(/'[^'\n]*\bbiggest split\b[^'\n]*'/gi) || []);
-  assert.strictEqual(stale.length, 0,
-    `v7 regressed — user-facing text still says: ${stale.join(', ')}`);
+  assert.strictEqual(stale.length, 0, `user-facing text still says: ${stale.join(', ')}`);
 });
 
 mustFail('[neg] the wording lock would catch a revert to "biggest split"', () => {
@@ -1150,31 +1164,23 @@ mustFail('[neg] the wording lock would catch a revert to "biggest split"', () =>
   assert.strictEqual(stale.length, 0, 'lock is inert');
 });
 
-check('splits box headline and the modal agree on the picked split', () => {
+check('Level & round tile = his career vs Top 10 split (founder 2026-11-10): rate over "W–L · best: level R% · tiebreaks W–L"', () => {
   let shown = 0;
   for (const p of SAMPLE) {
-    const bs = I.biggestSplit(p);
+    const sc = ((W.careerSplits || {})[String(p.key)] || {}).career;
+    const t10 = sc && sc['vs. Top 10'];
     const vals = I.buildBoxVals(p, { archetype: null });
-    if (!bs) { assert.strictEqual(vals.splits.headline, null, `${p.name}: headline without a pick`); continue; }
-    // ITEM 2 (2026-09-19) · the headline is now the RATE and the label moved to
-    // the support line, so "the box and the modal agree on the picked split" is
-    // asserted over BOTH halves — the figure the box leads with and the label
-    // that qualifies it. This is strictly stronger than the old single equality:
-    // a box that picked a different split would previously have had to get the
-    // label wrong to fail; now getting either one wrong fails.
-    assert.strictEqual(vals.splits.headline, bs.pick.rate.toFixed(1) + '%',
-      `${p.name}: splits headline is not the picked split's rate`);
-    assert(String(vals.splits.support).indexOf(bs.pick.label) === 0,
-      `${p.name}: splits support does not lead with the picked split's label ` +
-      `(${JSON.stringify(vals.splits.support)})`);
-    assert(/[0-9]/.test(String(vals.splits.headline)),
-      `${p.name}: splits headline carries no figure`);
-    I.state.info = "spl1"; const html = I.renderSplitsModal(p); I.state.info = null;   // v2: the baseline sits in the (?) note
-    assert(html.includes(bs.baseline.toFixed(1) + '%'),
-      `${p.name}: modal does not disclose the baseline the headline was measured against`);
+    if (!t10 || !t10.M) continue;
+    assert.strictEqual(vals.splits.headline, (100 * t10.W / t10.M).toFixed(1) + '% vs Top 10', `${p.name}: ${vals.splits.headline}`);
+    if (!/Data paused/.test(String(vals.splits.support))) {
+      assert(String(vals.splits.support).indexOf(t10.W + '\u2013' + t10.L) === 0, `${p.name}: support ${vals.splits.support}`);
+      let tw = 0, tl = 0; ['Best of 5', 'Best of 3'].forEach(k => { if (sc[k]) { tw += sc[k].tbW || 0; tl += sc[k].tbL || 0; } });
+      if (tw + tl) assert(String(vals.splits.support).endsWith('tiebreaks ' + tw + '\u2013' + tl), `${p.name}: support ${vals.splits.support}`);
+    }
     shown++;
   }
-  console.log(`        ${shown} of ${SAMPLE.length} sample players have a biggest split`);
+  assert(shown > 0, 'no sample player carries a vs Top 10 split — the check measured nothing');
+  console.log(`        ${shown} of ${SAMPLE.length} sample players checked`);
 });
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -1510,7 +1516,7 @@ check('Q8 · tour-baselines.json is published (pipeline.yml cp + assert) and reb
 // TEN-384 (founder, 2026-10-05): the Market edge BOX support line quotes the SAME tour figure as the
 // modal's All tile — the Database-aggregate baseline — and dashes (never the shard's tour.all) if
 // tour-baselines.json is absent.
-function mkBoxTour(support) { const m = /tour (\S+)$/.exec(support); return m ? m[1] : null; }
+function mkBoxTour(support) { const m = /([+\u2212]\d+\.\d)pp vs tour/.exec(support); return m ? m[1] : null; }
 function mkAllTileTour(html) {
   const tile = html.slice(html.indexOf('data-pp2="mk-role" data-v="all"'));   // profile v2 role strip
   const m = /vs tour ([^ <]+)/.exec(tile.slice(0, tile.indexOf('</div>')));
@@ -1523,13 +1529,15 @@ check('Market edge box = All tile: the box support line prints the modal\'s All-
     assert(players.length, 'no sampled player has a market shard — this check never ran');
     W.tourBaselines = TB;
     I.state.marketTab = 'winner'; I.state.marketRole = 'all';
+    // founder 2026-11-10 (the export's words): the box prints his yield's GAP to that tour figure, "+6.6pp vs tour"
     const first = mkBoxTour(I.buildBoxVals(players[0], { archetype: null }).market.support);
+    const num = t => Number(String(t).replace('\u2212', '-').replace(/[%p]/g, ''));
     for (const p of players) {
       const box = mkBoxTour(I.buildBoxVals(p, { archetype: null }).market.support);
       const tile = mkAllTileTour(I.renderMarketModal(p));
       assert(box && tile, `${p.name}: box "${box}" / tile "${tile}" not found`);
-      assert.strictEqual(box, tile, `${p.name}: box says tour ${box}, the All tile says tour ${tile}`);
-      assert.notStrictEqual(box, '—', `${p.name}: the box dashed with the baseline loaded`);
+      const want = Math.round((MARKET[String(p.key)].headline.yield - num(tile)) * 10) / 10;
+      assert(Math.abs(num(box) - want) < 1e-9, `${p.name}: box says ${box} vs tour, the All tile's tour is ${tile} (want ${want})`);
     }
     // Absent (the file failed to load / not yet arrived): the tour clause is LEFT OUT — TEN-384 fx2 item 3,
     // founder: "the tour line hidden until the data arrives, with no dash" — never a dash, never the shard's
@@ -1539,7 +1547,7 @@ check('Market edge box = All tile: the box support line prints the modal\'s All-
       const sup = I.buildBoxVals(p, { archetype: null }).market.support;
       assert(!/tour/.test(sup) && sup.indexOf('—') < 0, `${p.name}: the box printed "${sup}" with no baselines file`);
     }
-    console.log(`        ${players.length} players: box tour = All tile tour (${first}); no tour clause (and no dash) with no baselines file`);
+    console.log(`        ${players.length} players: box gap = yield − All tile tour (${first}pp); no tour clause (and no dash) with no baselines file`);
   } finally { W.tourBaselines = saved; }
 });
 mustFail('box = tile would catch the box quoting the shard\'s tour.all', () => {
@@ -1561,8 +1569,11 @@ check('market box headline and the modal quote the same yield and n', () => {
       assert.strictEqual(vals.market.headline, null, `${p.name}: market headline without a shard`);
       continue;
     }
-    assert(vals.market.support.includes(mk.headline.n + ' priced'),
-      `${p.name}: box does not carry the priced n`);
+    // founder 2026-11-10 (the export's words): "−1.87% yield" over "flat stake · … · fav x% / dog y%" from the shard's roles
+    assert(/% yield$/.test(vals.market.headline), `${p.name}: headline ${vals.market.headline}`);
+    const R = mk.roles || {}, f = v => v == null ? '\u2014' : (v < 0 ? '\u2212' : '') + Math.abs(v).toFixed(1) + '%';
+    if (R.favourite && R.favourite.n && R.favourite.yield != null && R.underdog && R.underdog.n && R.underdog.yield != null)
+      assert(vals.market.support.includes('fav ' + f(R.favourite.yield) + ' / dog ' + f(R.underdog.yield)), `${p.name}: ${vals.market.support}`);
     const html = I.renderMarketModal(p);
     // Profile v2: the role strip's All cell carries the priced n as "N matches · W–L" (every row is priced).
     assert(html.includes(mk.headline.n + ' matches'), `${p.name}: modal does not carry the priced n`);
@@ -2417,22 +2428,29 @@ mustFail('the headline check would catch a LABEL back in the headline slot', () 
 const spdSample = () => SAMPLE.filter(p => I.speedRows(p).length && I.spdData(p).tn);
 // Profile v2 (founder 2026-11-09): the Career record — no Tier control, opens on Last 52 weeks, Record by season in the
 // export's column order, no helper sentence and no foot note (the methodology sits in the season panel's (?) cr2).
-check('profile v2 · Career record: no Tier control, opens on Last 52 weeks, season columns Hard · Clay · Grass · Indoors, notes in the (?)', () => {
+check('profile v2 · Career record: the Tier control as the design draws it (founder 2026-11-10), opens on Last 52 weeks, season columns Hard · Clay · Grass · Indoors, notes in the (?)', () => {
   I.resetState();
   assert.strictEqual(I.state.careerScope, 'l52', 'the Career record does not open on Last 52 weeks');
+  assert.strictEqual(I.state.careerTier, 'all', 'the Tier control does not open on All');
   let n = 0;
-  for (const p of SAMPLE.slice(0, 12)) {
-    Object.assign(I.state, { key: p.key, careerTab: 'record', careerScope: 'career', careerDrill: null, careerTier: 'atp', info: null });
-    const html = I.renderCareerModal(p, {});
-    assert(!/data-pp2="career-tier"/.test(html), `${p.name}: a Tier control is drawn`);
-    assert(/Record by season · all tiers/i.test(html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ')), `${p.name}: the record does not read every tier (Tier state ignored)`);
-    assert(/>Year<\/div>[\s\S]*?>Total<\/div>[\s\S]*?>Hard<\/div>[\s\S]*?>Clay<\/div>[\s\S]*?>Grass<\/div>[\s\S]*?>Indoors<\/div>[\s\S]*?>Surface not known<\/div>/.test(html),
-      `${p.name}: the season columns are not in the export's order`);
-    assert(!/Click any record to browse|vs all = surface win rate/.test(html), `${p.name}: a helper sentence or foot note survived`);
-    assert(/data-pp2="info" data-v="cr2"/.test(html), `${p.name}: Record by season carries no (?)`);
-    n++;
-  }
-  I.state.careerTier = 'all';
+  try {
+    for (const p of SAMPLE.slice(0, 12)) {
+      Object.assign(I.state, { key: p.key, careerTab: 'record', careerScope: 'career', careerDrill: null, careerTier: 'atp', info: null });
+      const html = I.renderCareerModal(p, {});
+      const tiers = (html.match(/data-pp2="career-tier" data-v="(\w+)"/g) || []).map(x => x.replace(/.*data-v="(\w+)"/, '$1'));
+      assert.deepStrictEqual(tiers, ['all', 'atp', 'chitf'], `${p.name}: the Tier control is not All · ATP · Challenger & ITF`);
+      const txt = html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
+      assert(txt.indexOf('WINDOW') < 0 || txt.indexOf('Window') < txt.indexOf('Tier'), `${p.name}: Tier is not after Window`);
+      assert(/Record by season · ATP/i.test(txt), `${p.name}: the ATP tier is not applied to the season table`);
+      assert(/>Year<\/div>[\s\S]*?>Total<\/div>[\s\S]*?>Hard<\/div>[\s\S]*?>Clay<\/div>[\s\S]*?>Grass<\/div>[\s\S]*?>Indoors<\/div>[\s\S]*?>Surface not known<\/div>/.test(html),
+        `${p.name}: the season columns are not in the export's order`);
+      assert(!/Click any record to browse|vs all = surface win rate/.test(html), `${p.name}: a helper sentence or foot note survived`);
+      assert(/data-pp2="info" data-v="cr2"/.test(html), `${p.name}: Record by season carries no (?)`);
+      Object.assign(I.state, { careerTab: 'ratings' });
+      assert(!/data-pp2="career-tier"/.test(I.renderCareerModal(p, {})), `${p.name}: the Tier control is on the Ratings tab`);
+      n++;
+    }
+  } finally { Object.assign(I.state, { careerTier: 'all', careerTab: 'record' }); }
   assert(n > 0, 'never ran');
 });
 mustFail('[neg] the Tier check would catch the retired Tier control', () => {
@@ -4553,9 +4571,11 @@ check('item 3 · the ribbon and ledger headlines are whole numbers, every other 
   // founder's Backing-source answer), headlined by its whole-number rate like the other two. 14 → 15.
   // Profile v2 (founder 2026-11-09): Record per tournament's row prints its whole rate inline (Math.round), no
   // rateText0 gate any more — 15 → 14.
-  assert.strictEqual(calls, 14,
-    `rateText0 appears ${calls} times (expected 14: the definition + ribbon + ledger ` +
-    `header + 3 in §5.3 + the speed box headline + the styles box headline + the 2026 tab's ` +
+  // Founder 2026-11-10 (the export's tile words): the tourn box support leads with its event's whole rate
+  // ("78% · best event · career") — 14 → 15.
+  assert.strictEqual(calls, 15,
+    `rateText0 appears ${calls} times (expected 15: the definition + ribbon + ledger ` +
+    `header + 3 in §5.3 + the speed box headline + the styles box headline + the tourn box support + the 2026 tab's ` +
     `Win rate tile + its two month-row rates + the speed, styles and tournament OVERALL fallbacks)`);
 
   // The old guard here was "rateText must outnumber rateText0". v7 broke it
@@ -4582,6 +4602,7 @@ check('item 3 · the ribbon and ledger headlines are whole numbers, every other 
     // modal it opens has always rounded it.
     'box 4 (speed) headline',            // item 2, 2026-09-19
     'box 6 (styles) headline',           // measured: the Matchup list rounds
+    'box 3 (tournament) support',        // founder 2026-11-10: "78% · best event · career"
     '2026 tab Win rate tile',            // TEN-384 founder: "78%"
     '2026 tab month row (full)', '2026 tab month row (small sample)',
     'box 4 (speed) OVERALL fallback', 'box 6 (styles) OVERALL fallback',  // fx3, founder D10
@@ -6565,17 +6586,6 @@ check('Q1 · "best split" is POSITIVE-only, measured against the POOLED candidat
       // across these splits, the modal's own baseline — never a dash and never a thin split.
       const eligible = I.rankedInsights(p, 'career', null, I.BOX_SPLIT_GROUPS).length;
       const pop = I.splitPopulation(p.key, 'career');
-      if (!SPLITS[p.key]) {
-        assert.strictEqual(vals.splits.headline, null, `${p.name}: headline without splits`);
-        assert.strictEqual(vals.splits.support, 'Splits not built for this player yet', `${p.name}: empty copy is "${vals.splits.support}"`);
-      } else if (expectBase == null || !pop || pop.n < 5) {
-        assert.strictEqual(vals.splits.headline, null, `${p.name}: headline without a population`);
-      } else {
-        assert.strictEqual(vals.splits.headline, expectBase.toFixed(1) + '%', `${p.name}: overall headline is not his rate across these splits`);
-        assert.strictEqual(vals.splits.support,
-          `all splits · ${!eligible ? 'none at 10+ matches' : 'no split above it'} · ${pop.won}–${pop.n - pop.won}`,
-          `${p.name}: overall copy is "${vals.splits.support}" (base=${expectBase}, eligible=${eligible})`);
-      }
       // And it must be dashed for the RIGHT reason: nothing positive, not
       // nothing at all. A player with a positive split and a dashed tile is the
       // bug this whole ruling exists to remove.
@@ -6594,13 +6604,6 @@ check('Q1 · "best split" is POSITIVE-only, measured against the POOLED candidat
     // that qualifies it. This is strictly stronger than the old single equality:
     // a box that picked a different split would previously have had to get the
     // label wrong to fail; now getting either one wrong fails.
-    assert.strictEqual(vals.splits.headline, bs.pick.rate.toFixed(1) + '%',
-      `${p.name}: splits headline is not the picked split's rate`);
-    assert(String(vals.splits.support).indexOf(bs.pick.label) === 0,
-      `${p.name}: splits support does not lead with the picked split's label ` +
-      `(${JSON.stringify(vals.splits.support)})`);
-    assert(/[0-9]/.test(String(vals.splits.headline)),
-      `${p.name}: splits headline carries no figure`);
     // Round 2's second half: the baseline is PRINTED, and the whole support line
     // is reconstructed here from the raw rows. If any of rate, gap, baseline or
     // record drifts, this string stops matching.
@@ -6614,11 +6617,6 @@ check('Q1 · "best split" is POSITIVE-only, measured against the POOLED candidat
     // moved to the modal and are reconstructed there. So this check still fails
     // if any of rate, gap, baseline or record drifts; it just reads them off
     // the two surfaces they now render on instead of one.
-    assert.strictEqual(vals.splits.support,
-      `${bs.pick.label} · best split · ${bs.pick.won}–${bs.pick.lost}`,
-      `${p.name}: support line does not reproduce from the rows`);
-    assert.strictEqual(vals.splits.headline, `${rate.toFixed(1)}%`,
-      `${p.name}: headline rate does not reproduce from the rows`);
     // profile v2 (2026-11-09): the gap and baseline the tile's pick was chosen on sit in Level & round's (?) note
     I.state.info = 'spl1';
     const modalHtml = I.renderSplitsModal(p);
@@ -6882,48 +6880,19 @@ mustFail('[neg] Q3 would catch an impossible pair reaching the tile', () => {
 });
 
 // Q8: fed the join's answer (every played match priced, units varying by event) so a pick is really made and ranked.
-check('Q2 · "best event" is PRICED-only (n>=10 priced), ranked on backing units', () => withJoin(playedOf, () => {
+check('Q2 · bestEvent (the modal\'s pick) is PRICED-only (n>=10 priced), ranked on backing units', () => withJoin(playedOf, () => {
   let picked = 0, dashed = 0;
   for (const p of SAMPLE) {
     const be = I.bestEvent(p);
     const vals = I.buildBoxVals(p, { archetype: null });
     if (!be) {
       dashed++;
-      // fx3 (founder D10): no event clears ten priced -> the OVERALL figure. fx4 item 5: until the founder answers
-      // the Backing-source question it is his W–L over every event, never a summed units figure; the fx3 summed
-      // path stays behind TOURN_TILE_SUMMED_UNITS and is checked with the flag on.
-      const views = I.tournViews(p) || [];
-      const won = views.reduce((a, t) => a + t.won, 0), lost = views.reduce((a, t) => a + t.lost, 0);
-      if (won + lost) {
-        assert.strictEqual(vals.tourn.support, `all events · ${won}–${lost}`, `${p.name}: overall support "${vals.tourn.support}"`);
-        assert.strictEqual(vals.tourn.headline, Math.round(100 * won / (won + lost)) + '%', `${p.name}: overall headline`);
-        assert(!vals.tourn.hlSuffix, `${p.name}: a units suffix on the W–L fallback`);
-      }
-      const pinN = views.reduce((a, t) => a + (t.pinN && t.pinPl != null ? t.pinN : 0), 0);
-      I.TOURN_TILE_SUMMED_UNITS = true;
-      const sv = I.buildBoxVals(p, { archetype: null }).tourn;
-      I.TOURN_TILE_SUMMED_UNITS = false;
-      if (!pinN) {
-        assert.strictEqual(sv.headline, null, `${p.name}: headline with nothing priced`);
-        assert.strictEqual(sv.support, 'no event with 10+ priced matches',
-          `${p.name}: empty copy is "${sv.support}"`);
-      } else {
-        const pl = Math.round(views.reduce((a, t) => a + (t.pinN && t.pinPl != null ? t.pinPl : 0), 0) * 10) / 10;
-        assert.strictEqual(sv.headline, (pl.toFixed(1).charAt(0) === '-' ? '\u2212' + pl.toFixed(1).slice(1) : '+' + pl.toFixed(1)), `${p.name}: overall headline is not the summed Backing`);
-        assert(String(sv.support).startsWith('all events · ') && sv.support.endsWith(`${pinN} priced`),
-          `${p.name}: overall support "${sv.support}"`);
-      }
+      // founder 2026-11-10: the tile no longer reads bestEvent (it reads the best win rate, test-ten384-fx4 item 5)
       continue;
     }
     picked++;
     assert(be.pinN >= 10, `${p.name}: picked ${be.display} on ${be.pinN} priced matches`);
     assert(be.pinPl != null, `${p.name}: picked an event with no units figure`);
-    // The phase-A defect this ruling removes: a named event with a dashed
-    // headline, because the winner was chosen on a record and priced on nothing.
-    assert(vals.tourn.headline != null,
-      `${p.name}: support names ${be.display} while the headline dashes`);
-    assert(vals.tourn.support.includes(`${be.pinN} priced`),
-      `${p.name}: the support line hides the priced n behind a wider record`);
     // Independent recompute over the same views.
     const best = (I.tournViews(p) || [])
       .filter(t => t.pinN >= 10 && t.pinPl != null)
@@ -7062,36 +7031,26 @@ checkCareer('fix 8 · the Matchup tile names the first n >= 10 row of the list, 
   console.log(`        ${scanned} players · ${walked} fell back past a 5–9 top row` +
     (walked ? '' : ' (none today — the fixture check above exercises the fallback)'));
 });
-check('fix 8 · the Live trading tile never headlines a sample under ten, and never says "small sample"', () => {
-  let fell = 0, scanned = 0;
+check('fix 8 · the Live trading tile headlines "set 1 → match" only from 10+ matches after winning set 1 (founder 2026-11-10 words), never "small sample"', () => {
+  let fell = 0, shown = 0, scanned = 0;
   for (const p of Object.values(PLAYERS).slice(0, 120)) {
     const v = I.boxValues(p, { rows: I.ledgerMatches(p) }).profile;
     scanned++;
-    assert(!/small sample/.test(v.support), `${p.name}: "${v.support}"`);
+    assert(!/small sample/.test(String(v.support)), `${p.name}: "${v.support}"`);
     if (!v.headline) continue;
-    const [w, l] = v.headline.split('–').map(Number);
-    assert(w + l >= 10, `${p.name}: Live trading headline ${v.headline} is n=${w + l}`);
-    if (!/^from a set down/.test(v.support)) fell++;
+    if (/set 1 \u2192 match$/.test(v.headline)) {
+      const m = /^(\d+)\u2013(\d+) after set 1/.exec(v.support);
+      assert(m && +m[1] + +m[2] >= 10, `${p.name}: "${v.headline}" over "${v.support}"`);
+      assert.strictEqual(v.headline, (100 * +m[1] / (+m[1] + +m[2])).toFixed(1) + '% set 1 \u2192 match', `${p.name}: headline rate`);
+      shown++;
+    } else {
+      assert(/^all matches with set scores/.test(v.support), `${p.name}: "${v.support}"`);
+      fell++;
+    }
   }
-  assert(fell > 0, `none of ${scanned} players fell back — the fallback was never exercised`);
-  console.log(`        ${scanned} players · ${fell} fell back to a Situational row`);
+  assert(shown > 0 && fell > 0, `shown ${shown}, fell back ${fell} — one branch unexercised`);
+  console.log(`        ${scanned} players · ${shown} set 1 → match · ${fell} overall fallback`);
 });
-check('fix 8 · the fallback is the Situational row the modal prints, with its own tour gap', () => {
-  const p = Object.values(PLAYERS).find((q) => {
-    const sd = I.boxValues(q, { rows: I.ledgerMatches(q) }).profile;
-    return sd.headline && !/^from a set down/.test(sd.support);
-  });
-  assert(p, 'no fallback subject');
-  const f = I.liveTileFallback(p);
-  const v = I.boxValues(p, { rows: I.ledgerMatches(p) }).profile;
-  assert.strictEqual(v.headline, f.w + '–' + f.l);
-  assert(v.support.startsWith(f.label + ' · '), `support "${v.support}" does not name "${f.label}"`);
-  assert(/pp (below|above) tour$/.test(v.support), `support "${v.support}" has no tour gap`);
-  assert(f.n >= 10);
-});
-
-// ── TEN-384 fx3 (founder fixes 2026-10-07) ─────────────────────────────────────────────────────────
-// D10 · a tile headline comes only from a split of n >= 10; with none, the tile shows the OVERALL figure.
 check('fx3 D10 · no tile headline from a split under ten; none qualifies -> the OVERALL figure, not a dash', () => {
   let overall = { styles: 0, profile: 0, splits: 0, speed: 0 }, scanned = 0;
   for (const p of Object.values(PLAYERS).slice(0, 200)) {
@@ -7109,13 +7068,11 @@ check('fx3 D10 · no tile headline from a split under ten; none qualifies -> the
     }
     // Live trading: the headline record is n >= 10, or the overall record over every set-scored match.
     if (v.profile.headline) {
-      const [w, l] = v.profile.headline.split('–').map(Number);
       if (/^all matches with set scores/.test(v.profile.support)) overall.profile++;
-      else assert(w + l >= 10, `${p.name}: Live trading headline ${v.profile.headline} is n=${w + l}`);
+      else { const m = /^(\d+)\u2013(\d+) after set 1/.exec(v.profile.support); assert(m && +m[1] + +m[2] >= 10, `${p.name}: Live trading ${v.profile.headline} / ${v.profile.support}`); }
     }
     // Draw record and Court speed: a named split / band is n >= 10; otherwise the overall line.
     if (v.splits.headline && /^all splits · /.test(v.splits.support)) overall.splits++;
-    else if (v.splits.headline) assert(I.bestSplit(p).pick.n >= 10, `${p.name}: Draw tile from a thin split`);
     if (v.speed.headline && /^all rated courts · /.test(v.speed.support)) overall.speed++;
   }
   assert(scanned > 50, 'too few players scanned');

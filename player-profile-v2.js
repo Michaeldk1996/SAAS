@@ -1725,7 +1725,8 @@
       var blankFig = pend || !!v.blankFigure;
       var head = blankFig ? '' : v.headline == null ? DASH : String(v.headline);
       var suffix = v.hlSuffix == null ? '' : String(v.hlSuffix);
-      var sz = headlineSize(head + suffix);
+      // a pending tile reserves the size of the figure it waits for (sizeAs), so nothing moves when it paints
+      var sz = headlineSize(blankFig && v.sizeAs ? v.sizeAs : head + suffix);
       return '' +
         '<div class="pp2-box" data-pp2="box" data-box="' + b.key + '" ' +
         'style="position:relative;background:var(--card);border:1px solid ' +
@@ -2102,6 +2103,62 @@
     return pinN ? { pl: Math.round(pl * 10) / 10, pinN: pinN, won: won, lost: lost } : null;
   }
 
+  // The Level & round tile (export shape). The file's levels are Grand Slams · Masters · Other Tours (ATP 500 and
+  // 250 pooled, Tennis Abstract's level A), printed as the modal names them.
+  var SPL_TILE_LEVELS = [['Grand Slams', 'Grand Slams'], ['Masters', 'Masters 1000'], ['Other Tours', 'ATP 500 & 250']];
+  function splitsTileV2(p) {
+    if (splitsPending(p.key) || splitsNotBuilt(p.key)) return null;
+    var sc = splitScope(p.key, 'career');
+    var t10 = sc && sc['vs. Top 10'];
+    if (!t10 || !t10.M) return null;
+    var best = null;
+    SPL_TILE_LEVELS.forEach(function (l) {
+      var c = sc[l[0]];
+      if (!c || c.M < 10) return;
+      var r = c.W / c.M;
+      if (!best || r > best.r || (r === best.r && c.M > best.n)) best = { label: l[1], r: r, n: c.M };
+    });
+    var tbW = 0, tbL = 0;
+    ['Best of 5', 'Best of 3'].forEach(function (k) { var c = sc[k]; if (c) { tbW += c.tbW || 0; tbL += c.tbL || 0; } });
+    var parts = [recordText(t10.W, t10.L)];
+    if (best) parts.push('best: ' + best.label + ' ' + (100 * best.r).toFixed(1) + '%');
+    if (tbW + tbL) parts.push('tiebreaks ' + recordText(tbW, tbL));
+    return { headline: (100 * t10.W / t10.M).toFixed(1) + '% vs Top 10', support: parts.join(' ' + MIDDOT + ' ') };
+  }
+  function styleAbbr(label) {
+    for (var i = 0; i < STYLE_AXIS.length; i++) if (STYLE_AXIS[i].label === label) return STYLE_AXIS[i].abbr;
+    return label;
+  }
+  function styleShort(label) {
+    return String(label).replace('Big Server + First Strike', 'Big Server + FS').replace('Big Server + Complete Baseliner', 'Big Server + CB');
+  }
+  // Won set 1 → the match: the rows fromASetDown scans, counted the other way.
+  function afterSet1(p) {
+    var won = 0, lost = 0;
+    ledgerMatches(p).forEach(function (m) {
+      var s0 = m && m.sets && m.sets[0];
+      if (!s0 || s0.p == null || s0.o == null || !counts(m)) return;
+      if (Number(s0.p) <= Number(s0.o)) return;
+      if (m.won) won += 1; else lost += 1;
+    });
+    return { won: won, lost: lost };
+  }
+  function profileHoldPct(p) {
+    var E = window.HoldBreakHeatmap, HB = window.holdbreak;
+    if (!E || !HB || !HB.players || !HB.players[String(p.key)]) return null;
+    var g = /(\d+(?:\.\d+)?)%/.exec(String(E.heatFor(HB, p.key, 'HOLD', 5, 'all').globalLabel || ''));
+    return g ? g[1] + '%' : null;
+  }
+  function bestEventByRate(p) {
+    var best = null;
+    (tournViews(p) || []).forEach(function (t) {
+      var n = t.won + t.lost;
+      if (n < 10) return;
+      var r = t.won / n;
+      if (!best || r > best.r || (r === best.r && n > best.n)) best = { display: t.display, won: t.won, lost: t.lost, n: n, r: r };
+    });
+    return best;
+  }
   function bestEvent(p) {
     var views = tournViews(p);
     var best = null;
@@ -2301,32 +2358,14 @@
     // P&L, the same `pinPl` the modal's "Backing him here" tile prints, so the tile
     // and the row it opens on cannot disagree -- and under the new gate the
     // headline can no longer dash while the support line names an event.
-    var be = bestEvent(p);
-    // fx4 item 4 · the per-event Backing (the page's row join, trProfileBacking) has not answered yet: the
-    // tile claims nothing — no "no event with 10+ priced matches", no fallback that the best event would
-    // replace a moment later — and paints once when the join lands.
-    v.tourn = tournBackingPending(p) ? { headline: null, support: null, pending: true }
-      : tournBackingFailed(p) ? { headline: null, support: BACKING_FAIL_TXT, failed: true }
+    // profile v2 (founder 2026-11-10, "use the new words"): the export's tile — "14–4 Cincinnati" over
+    // "78% · best event · career". The best event is the one with the highest win rate at 10+ matches (ties to the
+    // larger n), so the figure printed is the figure it was picked on; it needs no price, so it never waits on the join.
+    var be = bestEventByRate(p);
+    v.tourn = tournHistPending(p) ? { headline: null, support: null, pending: true, sizeAs: '00–0 Tournament' }
       : be
-      ? {
-          headline: signed(be.pinPl, 1),
-          hlSuffix: 'u',
-          hlSuffixColor: be.pinPl >= 0 ? 'var(--pos)' : 'var(--neg)',
-          // ITEM 3 (2026-09-19) · five tokens wrapped to two lines and made this
-          // row of cards 2.4 CSS taller than the other (measured: 142.4 v 140.0
-          // on T. Griekspoor). The export's shape is four:
-          //     Cincinnati · best event · 14-4 · 78%
-          //
-          // The token dropped is the RATE, not the priced count. Two reasons:
-          // the rate is recoverable from the record standing next to it (12-10
-          // IS 55%), whereas the priced n is the only thing on the tile that
-          // says what the +16.3u headline was struck over; and the founder's
-          // 2026-09-18 Q3 ruling is explicit — "keep '· N priced'". So the
-          // fourth token is the n, and the whole-number rate ruling (§5.3 item
-          // 9) now applies only where that rate still renders, in the modal.
-          support: be.display + ' ' + MIDDOT + ' best event ' + MIDDOT + ' ' +
-            recordText(be.won, be.lost) + ' ' + MIDDOT + ' ' + be.pinN + ' priced'
-        }
+      ? { headline: recordText(be.won, be.lost) + ' ' + be.display,
+          support: rateText0(be.won, be.lost) + ' ' + MIDDOT + ' best event ' + MIDDOT + ' career' }
       // TEN-384 fx3 (founder D10): no event clears ten priced -> the tile shows the OVERALL figure.
       // TEN-384 fx4 item 5: the founder's Backing-source question (match-closes vs Market edge rows) is open,
       // and a units figure SUMMED over every priced event can contradict the Market edge box. Until he
@@ -2437,20 +2476,11 @@
     // and §3's "every rate shows its record and n" is satisfied by the record.
     var bs = bestSplit(p);
     var bsBase = boxSplitBaseline(p, 'career');
-    // ITEM 2/3 (2026-09-19) · figure in the headline, label in the support, and
-    // the line comes down from five tokens to the design's three.
-    //
-    // WHAT MOVED OFF THE TILE, and why that is safe: the round-2 Q1 ruling asked
-    // for the baseline to be printed "so the gap is reproducible". That
-    // disclosure is not lost — the Draw record modal's legend carries the same
-    // pooled baseline, its record and its n, over the very rows the reader is
-    // looking at, which is a better place to check an arithmetic claim than a
-    // 10.5px line that wrapped to two. The tile keeps the rate and the record;
-    // one click has the gap.
-    v.splits = bs
-      ? { headline: bs.pick.rate.toFixed(1) + '%',
-          support: bs.pick.label + ' ' + MIDDOT + ' best split ' + MIDDOT + ' ' +
-            recordText(bs.pick.won, bs.pick.lost) }
+    // profile v2 (founder 2026-11-10, "use the new words"): the export's tile — "31.6% vs Top 10" over
+    // "6–13 · best: ATP 250 77.4% · tiebreaks 44–35" — read off his career-splits file (career scope): his record
+    // vs the top 10, the level with the best win rate at 10+ matches, his tiebreak record over every match.
+    var tl = splitsTileV2(p);
+    v.splits = tl ? tl
       // THREE different empty facts, three different sentences. Caught by reading
       // the rendered tile rather than the code: Giustino's splits store holds
       // eight tour matches, so the pooled baseline is a real 12.5% and the tile
@@ -2467,7 +2497,7 @@
       // rate across these splits (the modal's own baseline), never a dash (founder D10).
       // TEN-391: his splits file still in flight -> the pending tile (same box, no claim).
       : splitsPending(p.key)
-        ? { headline: null, support: null, pending: true }
+        ? { headline: null, support: null, pending: true, sizeAs: '00.0% vs Top 10' }
       : splitsNotBuilt(p.key)
         ? { headline: null, support: SPLITS_NOT_BUILT, blankFigure: true }
         : bsBase == null
@@ -2498,9 +2528,11 @@
       // notations, which is exactly the tile-vs-modal disagreement (d) exists to
       // catch. The Matchup list has always rounded (`Math.round(100*tw/tn)`),
       // and the export's own tile shows "74%", so the tile follows the modal.
-      ? { headline: rateText0(bm.won, bm.lost),
-          support: bm.label + ' ' + MIDDOT + ' his best archetype ' + MIDDOT + ' ' +
-            recordText(bm.won, bm.lost) }
+      // profile v2 (founder 2026-11-10, "use the new words"): "68% vs BS+FS" over
+      // "Big Server + FS · his best archetype · 23–11 · career".
+      ? { headline: rateText0(bm.won, bm.lost) + ' vs ' + styleAbbr(bm.label),
+          support: styleShort(bm.label) + ' ' + MIDDOT + ' his best archetype ' + MIDDOT + ' ' +
+            recordText(bm.won, bm.lost) + ' ' + MIDDOT + ' career' }
       // TEN-384 fx3 (founder D10): no archetype clears ten -> the OVERALL figure over every labelled
       // opponent (the modal's Career line), never a dash and never a thin row.
       : (function () {
@@ -2524,16 +2556,21 @@
     var tourAllBox = tourBaselineFor('all');
     // founder 2026-10-22 (containment): rows the identity gate dashed for an ambiguous archive name are said, with their count
     var idHidden = mk && mk.identityHidden > 0 ? ' ' + MIDDOT + ' ' + mk.identityHidden + (mk.identityHidden === 1 ? ' row' : ' rows') + ' hidden: identity unverified' : '';
-    v.market = marketPending(p.key) && !mk ? { headline: null, support: null, pending: true }
+    v.market = marketPending(p.key) && !mk ? { headline: null, support: null, pending: true, sizeAs: '−0.00% yield' }
       : mk && mk.headline && mk.headline.yield != null
-      ? { headline: neg(mk.headline.yield, 2, '%'),
-          // fx2 item 3 (founder: "the tour line hidden until the data arrives, with no dash and no layout
-          // shift"): no baseline yet -> the clause is left out (the line keeps its one-line box), never "tour —".
-          // founder 2026-10-30: how many of its matches are on Bet365 ("12 of 174 on Bet365"), when any are
-          support: 'flat-stake yield ' + MIDDOT + ' ' + mk.headline.n + ' priced' +
-            (mk.headline.book && mk.headline.book.bet365 ? ' ' + MIDDOT + ' ' + mk.headline.book.bet365 + ' of ' + mk.headline.n + ' on Bet365' : '') +
-            (tourAllBox == null ? '' : ' ' + MIDDOT + ' tour ' + neg(tourAllBox, 2, '%')) + idHidden }
-      : marketEmptyWhy(p.key).pending ? { headline: null, support: null, pending: true }
+      // profile v2 (founder 2026-11-10, "use the new words"): "−1.87% yield" over
+      // "flat stake · +1.9pp vs tour · fav −1.1% / dog −3.5%". The tour clause is left out until the baseline loads.
+      ? (function () {
+          var R = mk.roles || {}, fv = R.favourite && R.favourite.n ? R.favourite.yield : null, dg = R.underdog && R.underdog.n ? R.underdog.yield : null;
+          var parts = ['flat stake'];
+          if (tourAllBox != null) parts.push(signed(Math.round((mk.headline.yield - tourAllBox) * 10) / 10, 1, 'pp') + ' vs tour');
+          // both roles when both are priced (the export's "fav x% / dog y%"); one role alone otherwise, never a dash
+          if (fv != null && dg != null) parts.push('fav ' + neg(fv, 1, '%') + ' / dog ' + neg(dg, 1, '%'));
+          else if (fv != null) parts.push('fav ' + neg(fv, 1, '%'));
+          else if (dg != null) parts.push('dog ' + neg(dg, 1, '%'));
+          return { headline: neg(mk.headline.yield, 2, '%') + ' yield', support: parts.join(' ' + MIDDOT + ' ') + idHidden };
+        }())
+      : marketEmptyWhy(p.key).pending ? { headline: null, support: null, pending: true, sizeAs: '−0.00% yield' }
       : { headline: null, support: (marketEmptyWhy(p.key).dashed ? 'no confirmed closing prices' : 'no priced matches on record') + idHidden };
 
     // 8 · Live trading (was "Playing profile") — the headline CHANGES SUBJECT,
@@ -2557,37 +2594,19 @@
     // TEN-384 fix item 8 (founder 2026-10-05): a tile headline only from a split of n >= 10. Under
     // ten matches from a set down, the tile falls back to the next best in-play state: the
     // Situational row of n >= 10 with the largest gap to its tour figure (liveTileFallback).
+    // profile v2 (founder 2026-11-10, "use the new words"): "87.8% set 1 → match" over
+    // "36–5 after set 1 · 8–19 from a set down · hold 71.5%" — the same ordered-set rows fromASetDown reads, the
+    // headline only from 10+ matches after winning set 1; the hold clause is the heatmap's own all-sets figure.
+    var s1 = afterSet1(p);
     var sd = fromASetDown(p);
-    var sdFull = sd && sd.gate === GATE.FULL;
-    var lf = sdFull ? null : liveTileFallback(p);
-    v.profile = lf
-      ? { headline: recordText(lf.w, lf.l),
-          support: lf.label + ' ' + MIDDOT + ' ' + rateText(lf.w, lf.l) + ' ' + MIDDOT + ' ' +
-            Math.abs(Math.round(lf.gap * 10) / 10).toFixed(1) + 'pp ' + (lf.gap < 0 ? 'below' : 'above') + ' tour' }
-      : sdFull
-      ? { headline: recordText(sd.won, sd.lost),
-          // RULING item 6 (2026-09-19): the export's third clause is the TOUR
-          // GAP, and it is now computable — see tourFromASetDown(). The sample
-          // count it replaces moves into the modal, which is where the window
-          // was always stated. Where the pool is too thin to strike a tour
-          // figure the count comes back rather than a fabricated gap. (Fix item 8: this branch is
-          // n >= 10 only, so no small-sample clause can reach the tile.)
-          support: (function () {
-            var head = 'from a set down';
-            var rate = (100 * sd.won / sd.n);
-            var tour = tourFromASetDown();
-            var tail;
-            if (tour.pct == null) {
-              tail = sd.n + ' of ' + sd.scanned + ' with set scores';
-            } else {
-              var gap = rate - tour.pct;
-              // The export writes the direction in words ("below tour"), so the
-              // sign is carried by the word and the number stays unsigned.
-              tail = Math.abs(Math.round(gap * 10) / 10).toFixed(1) + 'pp ' +
-                (gap < 0 ? 'below' : 'above') + ' tour';
-            }
-            return head + ' ' + MIDDOT + ' ' + rateText(sd.won, sd.lost) + ' ' + MIDDOT + ' ' + tail;
-          })() }
+    v.profile = s1.won + s1.lost >= 10
+      ? (function () {
+          var parts = [recordText(s1.won, s1.lost) + ' after set 1'];
+          if (sd.n) parts.push(recordText(sd.won, sd.lost) + ' from a set down');
+          var h = profileHoldPct(p);
+          if (h != null) parts.push('hold ' + h);
+          return { headline: rateText(s1.won, s1.lost) + ' set 1 ' + RARROW + ' match', support: parts.join(' ' + MIDDOT + ' ') };
+        }())
       // TEN-384 fx3 (founder D10): no in-play state clears ten -> the OVERALL figure, his record over every
       // match with set-by-set scores (the population the in-play states are cut from), never a dash.
       : (function () {
@@ -4521,8 +4540,14 @@
     var tabs = recSegTrack(CAREER_TABS.map(function (t) {
       return recSegBtn('career-tab', t[0], t[1], tab === t[0], false);
     }).join(''), false);
-    // profile v2 (founder 2026-11-09): the Tier control goes; the record reads every tier
-    return recTabRow(tabs, headScopeHtml());
+    // founder 2026-11-10 ("follow the design"): the Tier control is back, after Window, on the Record tab only
+    var right = headScopeHtml();
+    if (tab === 'record') {
+      right += recLabelledSeg('Tier', CAREER_TIERS.map(function (t) {
+        return recSegBtn('career-tier', t[0], t[1], careerTier() === t[0], true);
+      }).join(''));
+    }
+    return recTabRow(tabs, right);
   }
 
   // ── the WINDOW control, `Career | Last 52` — now in the tab row (TEN-384) ──
@@ -4540,7 +4565,7 @@
   var CAREER_TIERS = [['all', 'All'], ['atp', 'ATP'], ['chitf', 'Challenger & ITF']];
   var CAREER_NO_SPLIT = 'No tier split for this season: before 2021 we hold the season total only (All).';
   function careerTier() {
-    return MK_V1 && (state.careerTier === 'atp' || state.careerTier === 'chitf') ? state.careerTier : 'all';   // v2: no Tier control
+    return state.careerTier === 'atp' || state.careerTier === 'chitf' ? state.careerTier : 'all';
   }
   function careerTierWord(t) {
     return t === 'atp' ? 'ATP' : t === 'chitf' ? 'Challenger & ITF' : 'all tiers';
@@ -5602,17 +5627,29 @@
   // open detail cannot disagree.
   // Profile v2 (founder 2026-11-09): Davis Cup is ONE event. The history store files every tie under its own name
   // ("Davis Cup WG R1: AUS vs GER"); the rows fold into one "Davis Cup" row — records, matches, priced n and units
-  // summed, editions newest first (each tie keeps its own edition group).
+  // summed; one edition per year (founder 2026-11-10), newest first.
   function tournFoldDavis(views) {
     var dc = views.filter(function (t) { return /^Davis Cup\b/i.test(t.name); });
-    if (dc.length < 2 && !(dc.length === 1 && dc[0].name !== 'Davis Cup')) return views;
+    if (!dc.length) return views;
     var sum = function (k) { return dc.reduce(function (a, t) { return a + (t[k] || 0); }, 0); };
     var priced = dc.filter(function (t) { return t.pinPl != null; });
     var pending = dc.some(function (t) { return t.backingPending; });
     var units = priced.length ? priced.reduce(function (a, t) { return a + t.pinPl; }, 0) : null;
-    var eds = [];
-    dc.forEach(function (t) { (t.editions || []).forEach(function (e) { eds.push(e); }); });
-    eds.sort(function (a, b) { return String(b.year).localeCompare(String(a.year)); });
+    // founder 2026-11-10 ("just re-group the Davis Cup"): one edition per YEAR — every tie of a season in one group,
+    // its matches newest first. The venue changes each edition and no source we hold carries it, so the group header
+    // reads "Davis Cup 2023" and its record only (no furthest round: a Davis Cup season has none on record).
+    var byYear = {};
+    dc.forEach(function (t) { (t.editions || []).forEach(function (e) {
+      var y = String(e.year);
+      var g = byYear[y] || (byYear[y] = { year: e.year, finish: null, davis: true, won: 0, lost: 0, matches: [] });
+      g.won += e.won || 0; g.lost += e.lost || 0;
+      (e.matches || []).forEach(function (m) { g.matches.push(m); });
+    }); });
+    var eds = Object.keys(byYear).map(function (y) {
+      var g = byYear[y];
+      g.matches.sort(function (a, b) { return String(b.date || '').localeCompare(String(a.date || '')); });
+      return g;
+    }).sort(function (a, b) { return String(b.year).localeCompare(String(a.year)); });
     var surfVotes = {};
     dc.forEach(function (t) { if (t.surface) surfVotes[t.surface] = (surfVotes[t.surface] || 0) + t.n; });
     var surf = Object.keys(surfVotes).sort(function (a, b) { return surfVotes[b] - surfVotes[a]; })[0] || null;
@@ -6063,7 +6100,7 @@
         '<span style="font-size:12.5px;font-weight:700;white-space:nowrap;">' +
           esc(t.display + ' ' + e.year) + '</span>' +
         '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:10px;color:var(--text-label);' +
-          'white-space:nowrap;">' + esc((e.finish || DASH) + ' ' + MIDDOT + ' ' +
+          'white-space:nowrap;">' + esc((e.davis ? '' : (e.finish || DASH) + ' ' + MIDDOT + ' ') +
           recordText(e.won, e.lost)) + '</span></span>';
       return grp + e.matches.map(function (m) {
         var wl = m.won ? 'var(--pos)' : 'var(--neg)';
@@ -6316,8 +6353,36 @@
   // the Draw record drill already prices on the site's one join (drawRowsFor) — so every drill reconciles with its row.
   // ATP 500 vs ATP 250 = the tournament catalog's level (pp2EventCategory); Service needs the file's per-match serve
   // counters (build-career-splits.js `s`), a dash until the file carries them. Units (u).
-  var SPL_ROUND = [['Round of 128', 'R128'], ['Round of 64', 'R64'], ['Round of 32', 'R32'], ['Round of 16', 'R16'],
+  // founder 2026-11-10 ("Best is Round 1, Round 2 etc"): rounds before the quarter-finals are numbered from the
+  // DRAW's first round, as the ATP numbers them — a seed's bye still counts as his Round 1. The file codes rounds by
+  // draw size (R128 … R16), so the draw's first round is read per event: a Grand Slam starts at R128, a 96-draw
+  // Masters (Indian Wells, Miami; Madrid, Rome, Shanghai from 2023) at R128, any other Masters at R64, every other
+  // event at R32 — or earlier where his own matches at that event ever reached an earlier round.
+  var SPL_ROUND = [['Round 1', 1], ['Round 2', 2], ['Round 3', 3], ['Round 4', 4],
     ['Quarter-finals', 'QF'], ['Semi-finals', 'SF'], ['Finals', 'F']];
+  var SPL_EARLY = ['R128', 'R64', 'R32', 'R16'];
+  function splDrawFirst(m) {
+    var t = String(m.t || ''), y = Number(String(m.d || '').slice(0, 4));
+    if (m.lv === 'G') return 0;
+    if (m.lv === 'M') return /indian wells|miami/i.test(t) || (y >= 2023 && /madrid|rome|shanghai/i.test(t)) ? 0 : 1;
+    return 2;
+  }
+  // The round a row is listed under: its own code from QF on, else its number from the draw's first round.
+  function splRoundKeyer(rows) {
+    var seen = {};
+    rows.forEach(function (r) {
+      var i = SPL_EARLY.indexOf(r.m.rd);
+      var k = String(r.m.t || '');
+      if (i >= 0 && (seen[k] == null || i < seen[k])) seen[k] = i;
+    });
+    return function (m) {
+      var i = SPL_EARLY.indexOf(m.rd);
+      if (i < 0) return m.rd;
+      var first = splDrawFirst(m), own = seen[String(m.t || '')];
+      if (own != null && own < first) first = own;
+      return Math.max(1, i - first + 1);
+    };
+  }
   var SPL_INFO1 = { what: 'His record by round, level, opponent rank and format, with tiebreaks and serve in the same row.', defs: [
     ['Group', 'Round reached, tournament level, opponent rank or extra stats. Opponent rank bands are cumulative (Top 20 includes Top 10) and use his opponent\'s ATP rank on the day.'],
     ['Win %', 'Wins divided by matches in that group.'],
@@ -6385,8 +6450,9 @@
     if (f.st !== 'ready') return { st: f.st };
     var all = drawRowsFor(p, f.d), scope = state.splitScope === 'last52' ? 'last52' : 'career', cut = f.d.cutoff52;
     var rows = all.rows.filter(function (r) { return scope !== 'last52' || String(r.m.d) >= String(cut); });
+    var rk = splRoundKeyer(all.rows);
     var groups = {
-      'By round': SPL_ROUND.map(function (x) { return [x[0], function (r) { return r.m.rd === x[1]; }]; }),
+      'By round': SPL_ROUND.map(function (x) { return [x[0], function (r) { return rk(r.m) === x[1]; }]; }),
       'Level': ['Grand Slams', 'Masters 1000', 'ATP 500', 'ATP 250', 'Challenger', 'Team events', 'ATP Finals']
         .map(function (l) { return [l, function (r) { return splLevelOf(r.m) === l; }]; }),
       'Opponent rank': [10, 20, 50, 100, 200].map(function (k) { return ['vs Top ' + k, function (r) { return r.m.orank != null && r.m.orank <= k; }]; }),
@@ -14787,7 +14853,7 @@
     // code path the page uses, rather than a copy that can drift
     _internals: {
       // Profile v2 (2026-11-09): the shared drill box, its per-box builders and the Match-up model
-      FB_BUILD: FB_BUILD, floatBoxHtml: floatBoxHtml, OPP_LEVELS: OPP_LEVELS, oppLevelOf: oppLevelOf, calRows: calRows, calSwingOf: calSwingOf, renderSeasonModalV2: renderSeasonModalV2, streakSeq: streakSeq, streakRuns: streakRuns, splModel: splModel, spdData: spdData, renderSpeedModalV2: renderSpeedModalV2, renderSplitsModalV2: renderSplitsModalV2, styData: styData, renderStylesModalV2: renderStylesModalV2,
+      FB_BUILD: FB_BUILD, floatBoxHtml: floatBoxHtml, OPP_LEVELS: OPP_LEVELS, oppLevelOf: oppLevelOf, calRows: calRows, calSwingOf: calSwingOf, renderSeasonModalV2: renderSeasonModalV2, streakSeq: streakSeq, streakRuns: streakRuns, splModel: splModel, splRoundKeyer: splRoundKeyer, spdData: spdData, renderSpeedModalV2: renderSpeedModalV2, renderSplitsModalV2: renderSplitsModalV2, styData: styData, renderStylesModalV2: renderStylesModalV2,
       mkBandIdx: mkBandIdx, styleArchetypeOf: styleArchetypeOf, renderLinesTabV2: renderLinesTabV2, renderMarketWinnerV2: renderMarketWinnerV2,
       recordRowsOf: recordRowsOf,
       countedSpine: countedSpine,

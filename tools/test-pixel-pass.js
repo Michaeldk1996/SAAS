@@ -223,11 +223,9 @@ check('item 2 · Court speed headlines a rate and supports with the band', () =>
     'the Court speed support does not lead with the band label');
 });
 
-check('item 2 · Draw record headlines a rate and supports with the split label', () => {
-  assert(/headline: bs\.pick\.rate\.toFixed\(1\) \+ '%'/.test(CODE),
-    'the Draw record headline is not the split rate');
-  assert(/support: bs\.pick\.label \+ ' ' \+ MIDDOT \+ ' best split '/.test(CODE),
-    'the Draw record support does not lead with the split label');
+check('item 2 · Level & round headlines his vs Top 10 rate (founder 2026-11-10: the export\'s words)', () => {
+  assert(/headline: \(100 \* t10\.W \/ t10\.M\)\.toFixed\(1\) \+ '% vs Top 10'/.test(CODE),
+    'the Level & round headline is not the vs Top 10 rate');
 });
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -268,26 +266,13 @@ check('item 3 · the fix is not an ellipsis and not a smaller font', () => {
     'a box support line truncates with an ellipsis');
 });
 
-check('item 3 · Record per tournament keeps its priced count (2026-09-18 Q3)', () => {
-  // The token dropped was the rate, not the n. Q3 is explicit that the priced
-  // count stays, and the +Xu headline is unreadable without it.
+check('item 3 · Record per tournament reads "R% · best event · career" (founder 2026-11-10), no priced clause', () => {
   const slice = builderSlice('tourn');
-  assert(/' priced'/.test(slice), 'the "N priced" clause is gone from the tourn support');
-  // fx4 item 5: the OVERALL W–L fallback headlines its rate (like the speed / styles fallbacks); no SUPPORT line
-  // in this builder may print one.
-  assert(!/support:[^\n]*rateText0\(/.test(slice),
-    'the tourn support prints a rate again — that is the fifth token that wrapped it');
-  // Four tokens: three MIDDOT separators in the support expression. TEN-384 fx3 (founder D10) adds the
-  // OVERALL fallback branch ("all events · W–L · N priced", three tokens) — counted apart, so a fifth token
-  // on the main line is still caught and the fallback cannot grow past the export's four either.
   const cut = slice.indexOf('tournOverall(p)');
-  const main = cut > 0 ? slice.slice(0, cut) : slice, fb = cut > 0 ? slice.slice(cut) : '';
-  const seps = (main.match(/MIDDOT/g) || []).length;
-  assert.strictEqual(seps, 3,
-    `the tourn support joins ${seps + 1} tokens; the export's shape is 4`);
-  assert(cut > 0 && /'all events '/.test(fb) && /' priced'/.test(fb), 'the D10 overall fallback lost its priced count');
-  assert(!/rateText0\(/.test(main), 'the main tourn line prints a rate again');
-  assert((fb.match(/MIDDOT/g) || []).length <= 3, 'the D10 overall fallback runs past four tokens');
+  const main = cut > 0 ? slice.slice(0, cut) : slice;
+  assert(/support: rateText0\(be\.won, be\.lost\) \+ ' ' \+ MIDDOT \+ ' best event ' \+ MIDDOT \+ ' career'/.test(main),
+    'the tourn support is not the export\'s "R% · best event · career"');
+  assert(!/' priced'/.test(main), 'a priced clause on the main tourn line');
 });
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -457,16 +442,16 @@ const mutants = [
    "headline: rateText0(speedBest.band.won, speedBest.band.lost),",
    "headline: speedBest.band.band.label,",
    /headlines a LABEL|not the band win rate/],
-  ['item 2 · splits headline back to the split label',
-   "headline: bs.pick.rate.toFixed(1) + '%',",
-   "headline: bs.pick.label,",
-   /headlines a LABEL|not the split rate/],
-  ['item 3 · the tourn rate token restored, making five',
-   "recordText(be.won, be.lost) + ' ' + MIDDOT + ' ' + be.pinN + ' priced'",
-   "recordText(be.won, be.lost) + ' ' + MIDDOT + ' ' + rateText0(be.won, be.lost) + ' ' + MIDDOT + ' ' + be.pinN + ' priced'",
-   /support runs to 5 tokens|prints a rate again|joins 5 tokens/],
-  ['item 3 · the priced clause dropped',
-   " + ' priced'", " + ''", /"N priced" clause is gone/],
+  ['item 2 · Level & round headline back to a label',
+   "headline: (100 * t10.W / t10.M).toFixed(1) + '% vs Top 10'",
+   "headline: 'vs Top 10'",
+   /headlines a LABEL|not the vs Top 10 rate/],
+  ['item 3 · the tourn "career" token dropped',
+   "' best event ' + MIDDOT + ' career' }", "' best event' }",
+   /not the export's words/],
+  ['item 3 · a priced clause back on the tourn line',
+   "' best event ' + MIDDOT + ' career' }", "' best event ' + MIDDOT + ' career' + ' priced' }",
+   /priced clause/],
   ['item 4 · one box given a different min-height',
    "border-radius:12px;padding:16px 16px 14px;display:flex;flex-direction:column;gap:8px;' +\n        'min-height:132px;",
    "border-radius:12px;padding:16px 16px 14px;display:flex;flex-direction:column;gap:8px;' +\n        'min-height:' + (b.key === 'speed' ? 160 : 132) + 'px;",
@@ -526,8 +511,8 @@ function scoreAgainst(MI, MCODE) {
   });
   if (!/headline: rateText0\(speedBest\.band\.won/.test(MCODE))
     throw new Error('the Court speed headline is not the band win rate');
-  if (!/headline: bs\.pick\.rate\.toFixed\(1\) \+ '%'/.test(MCODE))
-    throw new Error('the Draw record headline is not the split rate');
+  if (!/headline: \(100 \* t10\.W \/ t10\.M\)\.toFixed\(1\) \+ '% vs Top 10'/.test(MCODE))
+    throw new Error('the Level & round headline is not the vs Top 10 rate');
   // item 3
   Object.keys(v).forEach((k) => {
     const s2 = v[k] && v[k].support;
@@ -541,10 +526,9 @@ function scoreAgainst(MI, MCODE) {
     const sl0 = MCODE.slice(from, to > from ? to : from + 1200);
     const cut = sl0.indexOf('tournOverall(p)');   // fx3 D10: the overall fallback branch is scored apart
     const sl = cut > 0 ? sl0.slice(0, cut) : sl0;
-    if (!/' priced'/.test(sl)) throw new Error('the "N priced" clause is gone from the tourn support');
-    if (/rateText0\(/.test(sl)) throw new Error('the tourn support prints a rate again');
-    const seps = (sl.match(/MIDDOT/g) || []).length;
-    if (seps !== 3) throw new Error(`the tourn support joins ${seps + 1} tokens`);
+    if (!/support: rateText0\(be\.won, be\.lost\) \+ ' ' \+ MIDDOT \+ ' best event ' \+ MIDDOT \+ ' career'/.test(sl))
+      throw new Error('the tourn support is not the export\'s words');
+    if (/' priced'/.test(sl)) throw new Error('a priced clause on the tourn support');
   }
   // item 4
   const mins = Array.from(new Set(boxesHtml.match(/min-height:([0-9]+)px/g) || []));

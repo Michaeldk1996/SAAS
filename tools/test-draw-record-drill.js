@@ -120,8 +120,7 @@ H.check('A3 · every player in the committed store (career-splits/ + splits-matc
 // ── B · the summary (profile v2, founder 2026-11-09: Level & round, the export's splitsData) ─────────────────────
 // The four cards read the same per-match file the drills list, so every row's W–L IS its drill's; the rows that
 // share a Tennis Abstract split must also equal that split (the figures the old Draw record printed).
-const V2_TA = { 'By round|Round of 128': 'Round of 128', 'By round|Round of 64': 'Round of 64', 'By round|Round of 32': 'Round of 32',
-  'By round|Round of 16': 'Round of 16', 'By round|Quarter-finals': 'Quarter-finals', 'By round|Semi-finals': 'Semi-finals',
+const V2_TA = { 'By round|Quarter-finals': 'Quarter-finals', 'By round|Semi-finals': 'Semi-finals',
   'By round|Finals': 'Finals', 'Level|Grand Slams': 'Grand Slams', 'Level|Masters 1000': 'Masters', 'Opponent rank|vs Top 10': 'vs. Top 10',
   'Extra stats|vs Righties': 'vs. Righties', 'Extra stats|vs Lefties': 'vs. Lefties', 'Extra stats|Best of 5': 'Best of 5', 'Extra stats|Best of 3': 'Best of 3' };
 function box(I, v, which) { const fb = I.FB_BUILD[which || 'spl'](P, v); assert(fb, 'no box for ' + v); return fb; }
@@ -141,6 +140,36 @@ H.check('B1 · the four cards; every row with matches opens its drill box; the r
   });
   I.state.splitScope = 'career';
   assert(/>44–46</.test(I.renderSplitsModal(P)), 'Semi-finals W–L');
+});
+H.check('B1b · By round numbers rounds from the draw (founder 2026-11-10): Round 1–4 together = Tennis Abstract\'s Round of 16–128', () => {
+  const { I } = load();
+  ['career', 'last52'].forEach(scope => {
+    I.state.splitScope = scope;
+    const S = I.splModel(P), sc = FX.splits[scope];
+    const early = S.groups['By round'].filter(x => /^Round [1-4]$/.test(x.label));
+    assert.deepStrictEqual(S.groups['By round'].map(x => x.label),
+      ['Round 1', 'Round 2', 'Round 3', 'Round 4', 'Quarter-finals', 'Semi-finals', 'Finals']);
+    let W = 0, Lo = 0;
+    ['Round of 16', 'Round of 32', 'Round of 64', 'Round of 128'].forEach(r => { if (sc[r]) { W += sc[r].W; Lo += sc[r].L; } });
+    assert.strictEqual(early.reduce((a, x) => a + x.s.w, 0) + '–' + early.reduce((a, x) => a + x.s.l, 0), W + '–' + Lo, scope);
+  });
+  I.state.splitScope = 'career';
+});
+H.check('B1c · the draw\'s first round: a Slam R128, a 96-draw Masters R128, another Masters R64, a 250 R32 — a bye still counts', () => {
+  const { I } = load();
+  const rows = ms => ms.map(m => ({ m }));
+  const key = I.splRoundKeyer(rows([]));
+  assert.strictEqual(key({ t: 'Wimbledon', lv: 'G', rd: 'R128', d: '20250630' }), 1);
+  assert.strictEqual(key({ t: 'Wimbledon', lv: 'G', rd: 'R16', d: '20250630' }), 4);
+  assert.strictEqual(key({ t: 'Indian Wells Masters', lv: 'M', rd: 'R64', d: '20250306' }), 2, 'a 96-draw seed\'s first match');
+  assert.strictEqual(key({ t: 'Monte Carlo Masters', lv: 'M', rd: 'R32', d: '20250406' }), 2, 'a 56-draw seed\'s first match');
+  assert.strictEqual(key({ t: 'Rome Masters', lv: 'M', rd: 'R64', d: '20220509' }), 1, 'Rome was a 56 draw before 2023');
+  assert.strictEqual(key({ t: 'Rome Masters', lv: 'M', rd: 'R64', d: '20240509' }), 2, 'Rome is a 96 draw from 2023');
+  assert.strictEqual(key({ t: 'Stockholm', lv: 'A', rd: 'R16', d: '20251013' }), 2, 'a 28-draw seed\'s first match');
+  assert.strictEqual(key({ t: 'Stockholm', lv: 'A', rd: 'QF', d: '20251013' }), 'QF');
+  // his own earlier round at an event moves its first round back (a 48-draw 250 has an R64)
+  const k2 = I.splRoundKeyer(rows([{ t: 'Winston-Salem', lv: 'A', rd: 'R64', d: '20190818' }]));
+  assert.strictEqual(k2({ t: 'Winston-Salem', lv: 'A', rd: 'R32', d: '20210822' }), 2);
 });
 H.check('B2 · every view keeps the hooks; a row with no match (Challenger: not in this source) opens nothing', () => {
   const { I } = load();
@@ -199,8 +228,8 @@ H.check('C3 · prices pending → the tile and the price cells are blank (never 
 });
 H.check('C4 · newest first, every match of the row listed (no paging)', () => {
   const { I } = load();
-  const fb = box(I, 'By round|Round of 32');
-  const S = I.splModel(P), n = S.groups['By round'].find(x => x.label === 'Round of 32').rows.length;
+  const fb = box(I, 'By round|Round 2');
+  const S = I.splModel(P), n = S.groups['By round'].find(x => x.label === 'Round 2').rows.length;
   assert.strictEqual(fb.rows.length, n);
   const ds = fb.rows.map(r => r.cells[1].html);
   const iso = d => d.split('.').reverse().join('');

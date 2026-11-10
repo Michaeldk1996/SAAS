@@ -258,35 +258,33 @@ H.check('4 · the ledger while the shard loads: an unpriced H / A cell is blank,
   I2.state.key = null;
   assert.deepStrictEqual(h2.split('<span').slice(-2).map(c => L.text('<span' + c).trim()), ['—', '—']);
 });
-H.check('4 · Record per tournament tile while the Backing join has not answered: pending, never "no event with 10+ priced matches"', () => {
+H.check('4 · Record per tournament tile needs no price (founder 2026-11-10, the export\'s words): it paints while the Backing join has not answered', () => {
   const { I, p } = fxModule({ extra: { trProfileBacking: () => null } });
   const v = I.buildBoxVals(p, { archetype: null });
-  assert(v.tourn.pending === true, 'tile: ' + JSON.stringify(v.tourn));
-  assert(!/no event with 10\+ priced/.test(String(v.tourn.support)), v.tourn.support);
+  assert(v.tourn.pending !== true, 'tile waits on the Backing join: ' + JSON.stringify(v.tourn));
+  assert(!/priced/.test(String(v.tourn.support)), v.tourn.support);
 });
 
 // ════════════════════════════════════════════════════════════════════════════
-// 5 · Record per tournament fallback: overall W–L, not summed Backing units
+// 5 · Record per tournament tile: the export's words, the best win rate at 10+ matches
 // ════════════════════════════════════════════════════════════════════════════
-H.check('5 · no event clears ten priced → "all events · W–L" (rate headline), not a summed units figure; the flag restores it', () => {
-  // every event priced on 4 matches at +1.0u: no event reaches ten, so the tile falls back
-  const bk = () => ({ n: 4, units: 1, unitsTxt: '+1.0u', vm: null, vmTxt: null, nb: 0, rows: 4, small: false });
-  const { I, p } = fxModule({ extra: { trProfileBacking: bk } });
+H.check('5 · the tile is "W–L Event" / "R% · best event · career" for the best win rate at 10+ matches, else "all events · W–L"', () => {
+  const { I, p } = fxModule();
   const v = I.buildBoxVals(p, { archetype: null }).tourn;
   const views = I.tournViews(p);
-  const won = views.reduce((a, t) => a + t.won, 0), lost = views.reduce((a, t) => a + t.lost, 0);
-  assert(!v.hlSuffix && !/u$/.test(String(v.headline)), 'headline is a units figure: ' + v.headline);
-  assert(!/priced/.test(String(v.support)), 'support quotes a priced count: ' + v.support);
-  assert.strictEqual(v.support, 'all events · ' + won + '–' + lost);
-  assert.strictEqual(v.headline, Math.round(100 * won / (won + lost)) + '%');
-  // one flag restores the fx3 summed path, unchanged
+  let best = null;
+  views.forEach(t => { const n = t.won + t.lost; if (n < 10) return; const r = t.won / n;
+    if (!best || r > best.r || (r === best.r && n > best.n)) best = { t, r, n }; });
+  if (best) {
+    assert.strictEqual(v.headline, best.t.won + '–' + best.t.lost + ' ' + best.t.display);
+    assert.strictEqual(v.support, Math.round(100 * best.r) + '% · best event · career');
+  } else {
+    const won = views.reduce((a, t) => a + t.won, 0), lost = views.reduce((a, t) => a + t.lost, 0);
+    assert.strictEqual(v.support, 'all events · ' + won + '–' + lost);
+  }
+  assert(!v.hlSuffix, 'a units suffix on the tile');
   assert('TOURN_TILE_SUMMED_UNITS' in I, 'no TOURN_TILE_SUMMED_UNITS switch');
-  I.TOURN_TILE_SUMMED_UNITS = true;
-  const v2 = I.buildBoxVals(p, { archetype: null }).tourn;
-  I.TOURN_TILE_SUMMED_UNITS = false;
-  assert.strictEqual(v2.hlSuffix, 'u');
-  assert(/ priced$/.test(v2.support), v2.support);
-  return `fallback: ${v.headline} · ${v.support}   (flag on: ${v2.headline}u · ${v2.support})`;
+  return v.headline + ' · ' + v.support;
 });
 
 // ════════════════════════════════════════════════════════════════════════════

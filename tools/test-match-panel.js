@@ -386,80 +386,41 @@ check('the full-screen page carries the export’s own chrome', () => {
     'the page rendered while closed');
 });
 
-// ── item 6 · the Live trading support line ──────────────────────────────────
-check('box 8 prints the TOUR GAP, not the sample count', () => {
-  // A roster big enough to strike a pool: ten peers, each with one match lost
-  // from a set down.
-  const peers = { 4242: SUBJECT };
-  const setDownMatch = (d, won) => ({ date: d, opponent: 'X. Y', won, eventKey: null,
-    sets: [{ p: 3, o: 6 }, { p: 6, o: 4 }, { p: 6, o: 4 }], tournament: 'T', tier: 'atp' });
-  for (let i = 0; i < 12; i++) {
-    peers[9000 + i] = { key: 9000 + i, name: 'P' + i,
-      recentForm: { pct: 0, matches: [setDownMatch('2026-01-0' + (i % 9 + 1), i % 3 === 0)] } };
-  }
-  // The subject for the tile assertion needs to CLEAR the tile gate — TEN-384 fix item 8: a tile
-  // headline only from a split of n >= 10 (under ten it falls back to a Situational row). Twelve
-  // matches, so the ruling is what is being measured.
-  peers[9500] = { key: 9500, name: 'D. Downer', recentForm: { pct: 0, matches:
-    [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((i) =>
-      setDownMatch('2026-02-' + String(i).padStart(2, '0'), i % 2 === 0)) } };
-  const sandbox = { FEATURE_PP2: true, playerProfiles: { players: peers }, matchStats: null };
-  global.window = sandbox;
-  // eslint-disable-next-line no-new-func
-  new Function('window', fs.readFileSync(path.join(ROOT, 'player-profile-v2.js'), 'utf8'))(sandbox);
-  const I = sandbox.PlayerProfileV2._internals;
-  const tour = I.tourFromASetDown();
-  assert.ok(tour.pct != null, `a 13-player pool should strike a tour figure, got ${JSON.stringify(tour)}`);
-  assert.ok(tour.players >= 10, `pool too small: ${tour.players}`);
-  // Recompute the pool independently of the module's own accumulator.
-  let w = 0, l = 0;
-  Object.keys(peers).forEach((k) => {
-    (peers[k].recentForm.matches || []).forEach((m) => {
-      if (!m.sets || !m.sets.length) return;
-      const s0 = m.sets[0];
-      if (Number(s0.p) >= Number(s0.o)) return;
-      if (m.won) w++; else l++;
-    });
-  });
-  assert.strictEqual(Math.round(tour.pct * 10), Math.round((100 * w / (w + l)) * 10),
-    `module says ${tour.pct}, independent recompute says ${100 * w / (w + l)}`);
-
-  // The subject for THIS check must himself have been a set down — the fixture
-  // SUBJECT won his opening set, so box 8 correctly says he never was. Using him
-  // here would have read a true "no such match" as a failed ruling.
-  const downer = peers[9500];
-  const v = I.boxValues(downer, I.build(downer));
-  assert.ok(/pp (below|above) tour/.test(v.profile.support),
-    `the export's third clause is the tour gap, got: "${v.profile.support}"`);
-  assert.ok(!/with set scores/.test(v.profile.support),
-    `the sample count should have moved to the modal, got: "${v.profile.support}"`);
-});
-
-check('a pool too thin to strike a tour figure falls back to the count, never a fake gap', () => {
-  // The subject must HAVE from-a-set-down matches and clear the sample gate, or
-  // the tile says "he never was" and this check measures nothing — which is
-  // exactly what let a hardcoded "6.4pp below tour" survive the first version.
-  // Twelve: the tile gate is n >= 10 (TEN-384 fix item 8).
-  const lone = { key: 5555, name: 'L. Lone', recentForm: { pct: 0, matches: [1,2,3,4,5,6,7,8,9,10,11,12].map((i) => ({
-    date: '2026-03-' + String(i).padStart(2, '0'), opponent: 'X. Y', won: i % 2 === 0, eventKey: null,
-    sets: [{ p: 2, o: 6 }, { p: 6, o: 3 }, { p: 6, o: 4 }], tournament: 'T', tier: 'atp' })) } };
-  const sandbox = { FEATURE_PP2: true, playerProfiles: { players: { 5555: lone } }, matchStats: null };
+// ── item 6 · the Live trading tile (founder 2026-11-10: the export's words) ──
+function liveSubject(nAfter1, nDown) {
+  const ms = [];
+  for (let i = 0; i < nAfter1; i++) ms.push({ date: '2026-02-' + String(i + 1).padStart(2, '0'), opponent: 'X. Y', won: i % 4 !== 0,
+    eventKey: null, sets: [{ p: 6, o: 3 }, { p: 3, o: 6 }, { p: 6, o: 4 }], tournament: 'T', tier: 'atp' });
+  for (let i = 0; i < nDown; i++) ms.push({ date: '2026-03-' + String(i + 1).padStart(2, '0'), opponent: 'X. Z', won: i % 3 === 0,
+    eventKey: null, sets: [{ p: 2, o: 6 }, { p: 6, o: 3 }, { p: 6, o: 4 }], tournament: 'T', tier: 'atp' });
+  return { key: 5555, name: 'L. Lone', recentForm: { pct: 0, matches: ms } };
+}
+function liveTile(subj, extra) {
+  const sandbox = Object.assign({ FEATURE_PP2: true, playerProfiles: { players: { 5555: subj } }, matchStats: null }, extra || {});
   global.window = sandbox;
   // eslint-disable-next-line no-new-func
   new Function('window', fs.readFileSync(path.join(ROOT, 'player-profile-v2.js'), 'utf8'))(sandbox);
   const I = sandbox.PlayerProfileV2._internals;
   I.state.key = 5555;
-  const tour = I.tourFromASetDown();
-  assert.strictEqual(tour.pct, null, 'a one-player pool must not claim a tour rate');
-  const v = I.boxValues(lone, I.build(lone));
-  // The control that makes the next line mean something: the tile must be in the
-  // branch that WOULD print a gap if one could be struck.
-  assert.ok(/from a set down/.test(v.profile.support) && /%/.test(v.profile.support),
-    `the subject must have a real from-a-set-down rate for this to test anything: "${v.profile.support}"`);
-  assert.ok(!/pp (below|above) tour/.test(v.profile.support),
-    `invented a tour gap from a one-player pool: "${v.profile.support}"`);
-  assert.ok(/with set scores/.test(v.profile.support),
-    `the fallback must state its own sample instead: "${v.profile.support}"`);
+  return I.boxValues(subj, I.build(subj)).profile;
+}
+check('box 8 reads "R% set 1 → match" over "W–L after set 1 · W–L from a set down" (10+ after winning set 1)', () => {
+  const v = liveTile(liveSubject(12, 6));
+  // 12 after winning set 1: i % 4 !== 0 wins 9, loses 3 → 75.0%; 6 from a set down: i % 3 === 0 wins 2, loses 4
+  assert.strictEqual(v.headline, '75.0% set 1 \u2192 match');
+  assert.strictEqual(v.support, '9\u20133 after set 1 \u00b7 2\u20134 from a set down');
+});
+check('box 8 adds the heatmap\'s all-sets hold rate when it is held, and leaves it out when not', () => {
+  const HB = { players: { 5555: { serve: { all: {} } } } };
+  const hold = { heatFor: () => ({ globalLabel: 'HOLD 71.5%' }) };
+  const v = liveTile(liveSubject(12, 6), { holdbreak: HB, HoldBreakHeatmap: hold });
+  assert.ok(/ \u00b7 hold 71\.5%$/.test(v.support), v.support);
+  assert.ok(!/hold/.test(liveTile(liveSubject(12, 6)).support), 'a hold clause with no hold data');
+});
+check('under ten matches after winning set 1 the tile falls back to the overall set-scored record, never a thin rate', () => {
+  const v = liveTile(liveSubject(6, 6));
+  assert.ok(!/set 1 \u2192 match/.test(String(v.headline)), 'a headline from 6 matches: ' + v.headline);
+  assert.ok(/all matches with set scores/.test(v.support), v.support);
 });
 
 check('the Live trading modal states the window AND the tour population', () => {

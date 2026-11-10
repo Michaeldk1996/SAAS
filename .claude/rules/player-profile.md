@@ -37,8 +37,9 @@ Where a ruling below reverses an older one in this file, the older one is supers
 - **Match sheet bars from the profile:** player A `#5b9bff`, player B `#e7e9ee`, by player, as the export draws them
   [supersedes the leader / trailer bar rule for a sheet opened from the profile only].
 - **Ratings:** the house Serve / Return SUM stays (`house-ratings.js`), never a score out of 100.
-- **Renames / removals:** Draw record → "Level & round"; the Career record's Tier control goes; Market edge's "No price"
-  card goes (its count moves to the (?) note).
+- **Renames / removals:** Draw record → "Level & round"; Market edge's "No price" card goes (its count moves to the (?)
+  note). **The Career record's Tier control stays, as the design draws it** (founder 2026-11-10, "follow the design";
+  reverses the 2026-11-09 removal): All · ATP · Challenger & ITF after Window, on the Record tab only.
 - **Colours follow the export:** blue Applied chips and the export's surface hues are allowed on the profile (named
   tokens in `tokens.css`, never raw hex in code).
 
@@ -51,15 +52,28 @@ Where a ruling below reverses an older one in this file, the older one is supers
   - **Opponent level** (Market edge, Calendar) = `pp2OppEloRank`: the opponent's rank in the weekly Elo snapshot strictly
     before the match day, at most 7 days old, on `fhEloAt`'s namesake guards; no snapshot in that week → in no level but
     All, the count stated in the Calendar's (?). The history loads only when one of the two boxes opens (`pp2EloNeed`).
-  - **Level & round** reads the per-match file (`splits-matches/<key>.json`, the Draw record drill's rows); By round uses
-    the draw's own rounds (Round of 128 … Finals), not the export's "First round"; ATP 500 / 250 by the catalog
+  - **Level & round** reads the per-match file (`splits-matches/<key>.json`, the Draw record drill's rows). **By round
+    reads Round 1 · Round 2 · Round 3 · Round 4 · Quarter-finals · Semi-finals · Finals** (founder 2026-11-10, "Best is
+    Round 1, Round 2 etc"): rounds before the QF are numbered from the DRAW's first round (a seed's bye is his Round 1),
+    which is a Grand Slam's R128, a 96-draw Masters' R128 (Indian Wells, Miami; Madrid, Rome, Shanghai from 2023), any
+    other Masters' R64 and every other event's R32 — or earlier where his own matches at that event reached an earlier
+    round (`splRoundKeyer`). **Test:** does a 28-draw ATP 250 seed's first match (R16) read Round 2? It must. ATP 500 / 250 by the catalog
     (`pp2EventCategory`); an ATP Finals row only when he played it. **Test:** `tools/test-draw-record-drill.js` (+ 20 mutants).
   - **The Players page watchlist** is a "Watchlist · N" strip above the search, in the Favourites strip's pattern (the
     export draws no list). **Test:** `tools/test-pp2-watchlist.js`.
-  - **Tiles:** Career, Calendar and Court speed read the export's words; Record per tournament, Level & round, Match-up,
-    Market edge and Live trading keep their ruled copy (Q1/Q2, fx3 D10, the 2026-10-30 Bet365 count) until the founder
-    rules on the export's wording.
-  - **Not built (no source):** Davis Cup venue per edition — no store we read carries it; the row reads "Davis Cup".
+  - **Tiles: every tile reads the export's words** (founder 2026-11-10, "Now use the new words!"; supersedes Q1/Q2's
+    backing-units headline, the "best split" line and the 2026-10-30 "N of M on Bet365" count on the tiles only):
+    Record per tournament "14–4 Cincinnati" / "78% · best event · career" (the event with the best win rate at 10+
+    matches); Level & round "40.7% vs Top 10" / "61–89 · best: Grand Slams 77.1% · tiebreaks 248–161" (career-splits,
+    career scope; levels Grand Slams · Masters 1000 · ATP 500 & 250, 10+ matches); Match-up "81% vs AB" / "Attacking
+    Baseliner · his best archetype · 132–30 · career"; Market edge "2.60% yield" / "flat stake · +6.6pp vs tour · fav
+    0.3% / dog 12.6%" (the tour clause only once the baseline loads); Live trading "88.4% set 1 → match" / "61–8 after
+    set 1 · 4–10 from a set down · hold 88.3%" (10+ matches after winning set 1; hold = the heatmap's all-sets figure,
+    left out when not held). The fx3 D10 overall fallbacks, the pending / not-built states and the paused-splits suffix
+    (ruling 1, 2026-10-20) stay.
+  - **Davis Cup is one event, one edition per year** (founder 2026-11-10, "just re-group the Davis Cup"): every tie of
+    a season is one group, "Davis Cup 2023" + its record (no furthest round), matches newest first. No venue: no store
+    we read carries it. **Test:** does any year appear twice in the Davis Cup row's editions? It must not.
 
 - **No legacy fallback (founder, 2026-10-21).** The TEN-206 renderer is the only player profile: the legacy
   full-page view (`buildPlayerProfileHtml`, `ppCareerYears`) and its `?pp2=0` / `stennisfy.flags.pp2` switch are
@@ -282,7 +296,7 @@ Where a ruling below reverses an older one in this file, the older one is supers
     (`pp2HasProfile`); otherwise plain text.
   **Test:** `tools/test-draw-record-drill.js` (every player in the committed store reconciles, the pinned Zverev fixture,
   the drill, the sheet payloads, the host bridge through the real `h2hPriceJoin`) + `tools/test-draw-record-drill-mutants.js`
-  (20 mutants, profile v2 2026-11-09: the Level & round cards and drill boxes; the old r2 footnote test is retired with its layout).
+  (22 mutants, profile v2 2026-11-09: the Level & round cards and drill boxes; the old r2 footnote test is retired with its layout).
 - **TEN-384 fx4 (independent review, 2026-10-07).**
   - **Header rank = the Players card's rank:** live standings (`player-index.json`, the host's `playerIndex`, read by ONE function `pp2LiveRankOf`, bridged as `window.pp2LiveRank`), else the frozen `profile.rank` (`headerRank`). The landing repaints an open profile when the standings land. **Test:** `tools/test-ten384-fx4.js` item 2.
   - **Loading claims nothing, on every surface that reads the market-edge shard** (`shardPending`): Calendar Career yield / Best / Worst tiles, the findings strip, Vs-others bars, Swing row, n / Yield / Vs others rows, the By-month head count, the footnote's priced sentences and the cell drill's prices; Court speed units and H / A; Matchup Backing (list, Career, summary, drill); the ledger's unpriced H / A cells. Each keeps its box with `&nbsp;` and paints once. Record per tournament's tile is pending while the page's Backing join (`trProfileBacking`: career-history + the Database join rows) has not answered (`tournBackingPending`). Key insights read no shard figure. **Test:** `tools/test-ten384-fx4.js` item 4.
