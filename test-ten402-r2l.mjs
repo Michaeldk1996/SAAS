@@ -314,9 +314,11 @@ test('R2 · until the join lands Record per tournament is a neutral loading stat
   assert.match(tile, /^loading prices/, 'the tile reads "' + tile + '"');
   const nRows = t.editions.reduce((n, e) => n + e.matches.length, 0);
   assert.equal((det.match(PEND) || []).length, 1 + 2 * nRows, 'the tile + every row\'s H and A are pending');
-  // the box tile on the profile page claims nothing either
+  // founder 2026-11-10: the box tile reads the export's words ("W–L Event" / "R% · best event · career"): no price, so
+  // it never waits on the join and never prints a Backing figure
   const box = I.boxValues(p, { rows: I.ledgerMatches(p) }).tourn;
-  assert.equal(box.pending, true);
+  assert.ok(!box.pending, 'the tile waits on the join');
+  assert.ok(!box.hlSuffix && !/priced/.test(String(box.support)), JSON.stringify(box));
 });
 
 test('R2 · a failed join prints "—" / "prices unavailable" (control: no pending marker); a landed join prints the units', () => {
@@ -356,20 +358,13 @@ test('R2 · opening Record per tournament (or one of its events) asks the page f
 // ---------------------------------------------------------------- R3 fix 2 · the box on a failed join
 const FAILED = { failed: true, n: 0, units: 0, rows: 0, vm: null, nb: 0, unitsTxt: null, vmTxt: null, small: false };
 const playedIn = t => (t.editions || []).reduce((n, e) => n + (e.matches || []).length, 0);
-test('R3 fix 2 · a failed join: the Record per tournament box reads "—" / "prices unavailable", never another metric; landed → the Backing figure', () => {
-  const f = mod(FAILED);
-  const box = f.I.boxValues(f.p, { rows: f.I.ledgerMatches(f.p) }).tourn;
-  assert.equal(box.headline, null, 'the box printed a figure on a failed join: ' + box.headline);
-  assert.equal(box.support, 'prices unavailable');
-  assert.ok(!box.pending, 'a failed join is not pending');
-  // control: the same player with every event priced (n = its played count) headlines his best event's units
-  const ok = mod((k, nm, t) => ({ units: 2.5, n: playedIn(t), rows: playedIn(t), vm: null, nb: 0, unitsTxt: '+2.5u', vmTxt: null, small: false }));
-  const ob = ok.I.boxValues(ok.p, { rows: ok.I.ledgerMatches(ok.p) }).tourn;
-  assert.equal(ob.headline, '+2.5', JSON.stringify(ob));
-  assert.match(ob.support, /best event/);
-  // control 2: answered but no event clears ten priced → the W–L fallback is still the answer there (not "—")
-  const few = mod((k, nm, t) => ({ units: 1, n: 1, rows: 1, vm: null, nb: 0, unitsTxt: '+1.0u', vmTxt: null, small: true }));
-  assert.match(few.I.boxValues(few.p, { rows: few.I.ledgerMatches(few.p) }).tourn.support, /all events/);
+test('R3 fix 2 (founder 2026-11-10: the box shows no price) · the Record per tournament box is the same on a failed, a pending and a landed join', () => {
+  const read = pr => { const m = mod(pr); return JSON.stringify(m.I.boxValues(m.p, { rows: m.I.ledgerMatches(m.p) }).tourn); };
+  const failed = read(FAILED), pending = read(null);
+  const landed = read((k, nm, t) => ({ units: 2.5, n: playedIn(t), rows: playedIn(t), vm: null, nb: 0, unitsTxt: '+2.5u', vmTxt: null, small: false }));
+  assert.equal(failed, landed, 'a failed join changes the box');
+  assert.equal(pending, landed, 'a pending join changes the box');
+  assert.ok(!/prices unavailable|priced|"u"/.test(landed), landed);
 });
 
 // ---------------------------------------------------------------- R3 fix 3 · the profile rows carry the page's reason
