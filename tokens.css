@@ -169,3 +169,20 @@
   --r-badge:     5px;    /* FAV badge, round chip */
   --r-sidebar:   22px;   /* floating sidebar panel */
 }
+
+/* Player Profile v2 — founder 2026-11-10 ("fix the colours to match the design export", ruling 2026-11-09 "colours
+   follow the design export"): inside the profile (its page and every drawer) the surfaces, greys and meaning colours
+   are the Player Stat Boxes export's own values, not the foundation mapping of them. Night only (the export draws
+   night); day keeps the foundation. One block: delete it and the profile reads the foundation palette again. */
+[data-theme="night"] .pp2-x,
+:root:not([data-theme]) .pp2-x {
+  --card:        #0E1019;
+  --inner:       #0C0E16;
+  --selected:    #131623;
+  --tile-hover:  #11141F;
+  --text-soft:   #C6CCDB;
+  --text-label:  #8B96B5;
+  --pos:         #3DD68C;
+  --neg:         #E0616F;
+  --link:        #5B9BFF;
+}

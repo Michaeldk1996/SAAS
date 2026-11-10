@@ -16,7 +16,7 @@ Where a ruling below reverses an older one in this file, the older one is supers
 - **Court speed (profile):** ATP only for now. Band per EDITION on Tennis Abstract's abstract speed, gap = speed − 1.00
   (the tour average): Fast > +0.08 · Medium −0.08…+0.08 · Slow < −0.08; order Fast · Medium · Slow
   [supersedes Q5's Slow ≤ 43 / Medium ≤ 68 on the profile; N4 still binds every other surface].
-- **Davis Cup** is one event, the venue per edition from Tennis Explorer or the api-tennis venue names.
+- **Davis Cup** is one event, one edition per year (founder 2026-11-10, below); no venue — no source we read carries it.
 - **Opponent level** (Market edge / Calendar filters, Level & round "Opponent rank") = the opponent's Elo rank.
 - **Tour averages** per band and per row come from our own ratings / Database files, never hard-coded.
 - **Levels:** ATP 500 and ATP 250 are separate rows, linked by the tournament catalog's level.
@@ -74,6 +74,29 @@ Where a ruling below reverses an older one in this file, the older one is supers
   - **Davis Cup is one event, one edition per year** (founder 2026-11-10, "just re-group the Davis Cup"): every tie of
     a season is one group, "Davis Cup 2023" + its record (no furthest round), matches newest first. No venue: no store
     we read carries it. **Test:** does any year appear twice in the Davis Cup row's editions? It must not.
+
+- **Founder 2026-11-10 fixes (each one a test in `tools/test-pp2-reconcile.js` unless named):**
+  - **Career record opens on Career** (Window), Record tab, every time it opens; Ratings reads the same Window.
+  - **Every record opens a box, never a dropdown or a side panel:** a Career surface row, a Record-by-season cell (year,
+    total, surface, Career row) and a Calendar grid cell open the export's drill box (`drillBoxHtml`: 72% scrim, 820px
+    card on `--edge-16`, title "<scope> · W–L · N matches", sub "… grouped by tournament · click a match for its stats",
+    the match list under calc(100vh − 230px), the note + "H / A = closing price on him / the opponent"). The Calendar box
+    keeps a P&L column (flat 1u; a void retirement reads "void"). Esc, × and a scrim click close it.
+  - **A (?) after every drawer's subtitle** (`MODAL_INFO`, the export's pageInfo text), plus the DNA panel's (cr3). Text
+    the export gets wrong against a standing ruling is corrected, never shipped: the rating is the house sum (never "out of
+    100"); "tour" is the players we hold (never "the ATP field"); backing is Pinnacle else Bet365. Market edge's scope line
+    carries its real priced count.
+  - **Ratings:** the paragraph under the tiles is removed (its data facts — matches in the window, Elo has no window, an
+    estimated or missing axis — sit in the DNA (?)); the DNA draws two continuous lines: tour a solid `--text-label` 1.25
+    line, the player a 2px `--bar` line over the export's top-down fill (34% → 6%) with ringed vertex dots; no dash.
+  - **Colours = the export as drawn, inside the profile only:** the mount carries `.pp2-x`, and `tokens.css` scopes the
+    export's values there (night): card #0E1019, inner #0C0E16, selected #131623, text-soft #C6CCDB, label #8B96B5, pos
+    #3DD68C, neg #E0616F, link #5B9BFF. One block; deleting it returns the profile to the foundation palette. Drawer icons
+    are `--link`. Tile strips sit on `--inner` (the export's darker strip).
+  - **Record per tournament detail = the export's panel:** `--inner` on `--edge-16`, the sticky head (Date · Opponent · Rd ·
+    Sets · Set scores · H · A) on `--inner` with a 10% rule, group rows 11/5 padding, match rows 6px.
+  - **Court speed:** band tiles and the selected band's four tiles centre their values (founder; the export draws them
+    left-aligned).
 
 - **No legacy fallback (founder, 2026-10-21).** The TEN-206 renderer is the only player profile: the legacy
   full-page view (`buildPlayerProfileHtml`, `ppCareerYears`) and its `?pp2=0` / `stennisfy.flags.pp2` switch are

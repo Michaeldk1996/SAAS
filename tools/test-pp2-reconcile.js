@@ -1150,6 +1150,44 @@ mustFail('[neg] the Davis Cup year check would catch one group per tie', () => {
   assert.strictEqual(new Set(years).size, years.length, 'a year listed twice');
 });
 
+check('founder 2026-11-10 · every drawer header carries the export\'s (?) after its subtitle, opening its own explainer', () => {
+  const p = SAMPLE[0];
+  const keys = ['career', 'season', 'tourn', 'speed', 'splits', 'styles', 'market', 'profile'];
+  try {
+    keys.forEach((k) => {
+      I.state.info = null;
+      const shut = I.modalShell(k, p, {}, '');
+      assert(new RegExp('data-pp2="info" data-v="m-' + k + '"').test(shut), k + ': no (?) in the drawer header');
+      I.state.info = 'm-' + k;
+      const open = I.modalShell(k, p, {}, '').replace(/<[^>]+>/g, ' ');
+      assert(open.indexOf(I.MODAL_INFO[k].what.slice(0, 30)) >= 0, k + ': the explainer does not open with its text');
+    });
+    // the standing rulings the export's text contradicts are corrected, never shipped
+    assert(!/out of 100/.test(JSON.stringify(I.MODAL_INFO)), 'a "score out of 100" rating explainer shipped');
+    assert(!/ATP field average/.test(JSON.stringify(I.MODAL_INFO)), '"tour = the ATP field" shipped');
+  } finally { I.state.info = null; }
+});
+check('founder 2026-11-10 · Ratings: no paragraph under the tiles; the DNA draws two continuous lines (no dashed tour polygon)', () => {
+  let drawn = 0;
+  for (const p of SAMPLE.slice(0, 6)) {
+    Object.assign(I.state, { key: p.key, careerScope: 'career' });
+    const h = I.renderRatingsPanel(p);
+    assert(!/Ratings rest on|That count is read from the store/.test(h), p.name + ': the removed paragraph is back');
+    assert(!/stroke-dasharray/.test(h.slice(h.indexOf('<svg'), h.indexOf('</svg>') + 6)), p.name + ': a dashed line on the DNA');
+    if (!/Player DNA/.test(h)) continue;   // no ratings in this window: no panel to check
+    if (/url\(#pp2DnaFill\)/.test(h)) drawn++;
+    assert(/data-pp2="info" data-v="cr3"/.test(h), p.name + ': the DNA panel has no (?)');
+  }
+  assert(drawn > 0, 'no DNA shape drawn — the line check measured nothing');
+});
+check('founder 2026-11-10 · the profile reads the export\'s palette: the mount carries .pp2-x and tokens.css scopes the export values to it', () => {
+  assert(/mounted\.classList\.add\('pp2-x'\)/.test(fs.readFileSync(path.join(ROOT, 'player-profile-v2.js'), 'utf8')), 'the profile mount does not take the export palette class');
+  const tok = fs.readFileSync(path.join(ROOT, 'tokens.css'), 'utf8');
+  const blk = tok.slice(tok.indexOf('.pp2-x'));
+  [['--card', '#0E1019'], ['--inner', '#0C0E16'], ['--selected', '#131623'], ['--text-label', '#8B96B5'], ['--pos', '#3DD68C'], ['--neg', '#E0616F']]
+    .forEach(([t, v]) => assert(new RegExp(t + ':\\s*' + v, 'i').test(blk), t + ' is not the export\'s ' + v));
+});
+
 check('the Level & round tile uses the export\'s words (founder 2026-11-10), never "biggest split"', () => {
   const src = fs.readFileSync(path.join(ROOT, 'player-profile-v2.js'), 'utf8');
   const code = src.split('\n').map(l => l.replace(/^\s*\/\/.*$/, '')).join('\n');
@@ -1800,18 +1838,19 @@ check('items 13 + 12 · empty months are a middot, and the tint is the file\'s f
 }));
 
 // profile v2 (founder 2026-11-09): the Calendar record is the export's swing grid + Streaks.
-check('profile v2 · a grid cell opens the right-side drawer: grouped by event, its P&L the priced rows only', () => withCal(() => {
+check('profile v2 · a grid cell opens the drill box (founder 2026-11-10: a box, not a side panel): grouped by event, its P&L the priced rows only', () => withCal(() => {
   Object.assign(I.state, { key: '__cal', seasonTab: 'calendar', calWin: 'career', calSurf: 'all', calView: 'swing', calCellV2: 'sw|aus|2025' });
   let html = I.renderSeasonModal(CAL_P);
   assert(/data-pp2-cal-drill="1"/.test(html), 'the drawer did not open');
   const d = html.slice(html.indexOf('data-pp2-drawer="cal"'));
-  assert(/>8–4</.test(d), 'the drawer record is not 8–4');
-  assert.strictEqual((d.match(/color:var\(--pos\);">W</g) || []).length, 8, 'eight wins listed');
-  assert(/>\+0\.00u</.test(d) && /12 priced/.test(d), "the drawer P&L is not +0.00u over 12 priced");
+  assert(/data-pp2-drillbox="1"/.test(d) && !/position:fixed;top:0;right:0;bottom:0/.test(d), 'the cell opened a side panel, not the box');
+  assert(/· 8–4 · 12 matches</.test(d), 'the box record is not 8–4');
+  assert.strictEqual((d.match(/data-pp2-drill-row="W"/g) || []).length, 8, 'eight wins listed');
+  assert(/\+0\.00u/.test(d) && /12 priced/.test(d), "the box P&L is not +0.00u over 12 priced");
   I.state.calCellV2 = 'sw|aus|2026';
   html = I.renderSeasonModal(CAL_P);
   const d2 = html.slice(html.indexOf('data-pp2-drawer="cal"'));
-  assert(/>3–9</.test(d2) && /0 priced/.test(d2), 'the unpriced 2026 cell is not 3–9 over 0 priced');
+  assert(/· 3–9 · 12 matches</.test(d2) && !/priced/.test(d2.slice(0, d2.indexOf('grouped by tournament'))), 'the unpriced 2026 cell is not 3–9 with no priced clause');
   I.state.calCellV2 = null;
 }));
 // profile v2 (founder 2026-11-09): the Calendar record is the export's swing grid + Streaks.
@@ -2428,9 +2467,9 @@ mustFail('the headline check would catch a LABEL back in the headline slot', () 
 const spdSample = () => SAMPLE.filter(p => I.speedRows(p).length && I.spdData(p).tn);
 // Profile v2 (founder 2026-11-09): the Career record — no Tier control, opens on Last 52 weeks, Record by season in the
 // export's column order, no helper sentence and no foot note (the methodology sits in the season panel's (?) cr2).
-check('profile v2 · Career record: the Tier control as the design draws it (founder 2026-11-10), opens on Last 52 weeks, season columns Hard · Clay · Grass · Indoors, notes in the (?)', () => {
+check('profile v2 · Career record: the Tier control as the design draws it, opens on Career (founder 2026-11-10), season columns Hard · Clay · Grass · Indoors, notes in the (?)', () => {
   I.resetState();
-  assert.strictEqual(I.state.careerScope, 'l52', 'the Career record does not open on Last 52 weeks');
+  assert.strictEqual(I.state.careerScope, 'career', 'the Career record does not open on Career');
   assert.strictEqual(I.state.careerTier, 'all', 'the Tier control does not open on All');
   let n = 0;
   try {
@@ -5656,11 +5695,11 @@ check('item 18-19 · drill rows open the match sheet and reuse the LEDGER\'s pri
     indoorN = I.drillRows(withForm, 'indoors', null).length;
   });
   // the drill card itself
-  // TEN-384 C6: the drill is a panel inside the season panel — 1px --edge-6, r11 (was --inner + --edge-10).
-  assert(/background:var\(--card\);border:1px solid var\(--edge-6\);border-radius:11px;/.test(html), 'the drill card border is not the reference\'s');
-  assert(/grid-template-columns:46px 12px minmax\(0,1\.15fr\) 38px 40px minmax\(0,1\.35fr\) 48px 48px/.test(html),
+  // founder 2026-11-10: the drill is the export's box (drillModal) — an 820px card on --edge-16, r14, over a 72% scrim
+  assert(/max-width:820px;background:var\(--card\);border:1px solid var\(--edge-16\);border-radius:14px;/.test(html), 'the drill box is not the export\'s');
+  assert(/grid-template-columns:52px 12px minmax\(0,1\.15fr\) 40px 44px minmax\(0,1\.35fr\) 52px 52px/.test(html),
     'the drill grid tracks are not the file\'s');
-  assert(/max-height:340px;overflow-y:auto/.test(html), 'the drill list has no 340px scroll cap');
+  assert(/max-height:calc\(100vh - 230px\);min-height:200px;overflow-y:auto/.test(html), 'the drill list has no viewport scroll cap');
   ['Date', 'Opponent', 'Rd', 'Sets', 'Set scores'].forEach((h) => {
     assert(new RegExp('>' + h + '<').test(html), `the drill head is missing ${h}`);
   });
@@ -5984,9 +6023,10 @@ check('§5.3 items 13-14 · the detail is the file\'s container and carries the 
   I.state.tournOpen = 'Australian Open';
   const open = I.renderTournModal(ZVEREV);
   I.state.tournOpen = null;
-  // TEN-384 T6: the detail is a panel — --card + 1px --edge-6, r10 (was --inner + --edge-10).
-  assert(open.indexOf('background:var(--card);border:1px solid var(--edge-6);border-radius:10px;' +
-    'margin:7px 0 9px;padding:13px 15px;') > 0, 'the detail container drifted from the reference');
+  // founder 2026-11-10 (the export's detail, file :612): --inner + 1px --edge-16, r10, 8/10 margin, 14 16 12 padding
+  assert(open.indexOf('background:var(--inner);border:1px solid var(--edge-16);border-radius:10px;' +
+    'margin:8px 0 10px;padding:14px 16px 12px;') > 0, 'the detail container drifted from the reference');
+  assert(/position:sticky;top:0;z-index:1;background:var\(--inner\)[^"]*border-bottom:1px solid var\(--edge-10\);">Date</.test(open), 'the detail head row is not the export\'s sticky, ruled head');
   assert(/\d+–\d+ · \d+% · \d+ matches listed/.test(open), 'the header meta line is missing');
   assert(/>Australian Open · career</.test(open), 'the detail caps head is missing');
 });
@@ -6012,7 +6052,7 @@ check('§5.3 item 15 · five tiles, and a Slam\'s middle three differ from a non
   assert.deepStrictEqual(tiles(oHtml),
     ['W–L record', 'Best result', 'Sets won', 'Last played', 'Backing him here']);
   // TEN-384 T6: the five tiles are ONE joined strip (--card + 1px --edge-6, r12, --line dividers), figure mono 24/700.
-  assert(/grid-template-columns:repeat\(5,minmax\(0,1fr\)\);gap:0;background:var\(--card\);border:1px solid var\(--edge-6\);border-radius:12px;/.test(sHtml),
+  assert(/grid-template-columns:repeat\(5,minmax\(0,1fr\)\);gap:0;background:var\(--inner\);border:1px solid var\(--edge-6\);border-radius:12px;overflow:hidden;/.test(sHtml),
     'the tiles are not one joined 5-cell strip');
   assert(/padding:13px 12px;min-width:0;border-left:1px solid var\(--line\)/.test(sHtml), 'the strip cells lost their --line dividers');
   assert(/font-size:24px;font-weight:700/.test(sHtml), 'the tile figure is not mono 24/700');
@@ -6065,8 +6105,8 @@ check('§5.3 items 16-18 · the match grid is the file\'s, with DATE, SET SCORES
     assert(open.indexOf('>' + h + '</span>') > 0, `the ${h} match column head is missing`);
   });
   // TEN-376: the sticky head paints the modal --card surface (was --popup); W/L squares are --pos / --neg.
-  assert(/position:sticky;top:0;background:var\(--card\)/.test(open), 'the match head is not sticky');
-  assert(/width:8px;height:8px;border-radius:2px;background:(var\(--pos\)|var\(--neg\))/.test(open),
+  assert(/position:sticky;top:0;z-index:1;background:var\(--inner\)/.test(open), 'the match head is not sticky');   // founder 2026-11-10: the export's panel tone
+  assert(/width:8px;height:8px;border-radius:2px;(?:margin-top:4px;)?background:(var\(--pos\)|var\(--neg\))/.test(open),
     'the W/L marker is not the file\'s 8px radius-2 square');
 });
 mustFail('[neg] the match-grid check would catch the shipped four-column list', () => {
@@ -6082,7 +6122,7 @@ check('§5.3 item 18 · the opponent takes the FILE\'s name form, not the ledger
   // `Player Stat Boxes.dc.html`:2325 writes "J. Sinner" (initial-first) while
   // `Player Profile.dc.html`:838 writes the ledger's "Shelton B." The modal is
   // owned by the Stat Boxes file (README §12), so it carries the feed form.
-  const names = (open.match(/white-space:nowrap;padding:5px 0;">([^<]+)</g) || [])
+  const names = (open.match(/white-space:nowrap;padding:6px 0;">([^<]+)</g) || [])
     .map(x => x.replace(/.*">/, '').replace(/</, ''))
     .filter(x => /[A-Za-z]/.test(x) && !/^\d/.test(x));
   assert(names.length > 0, 'no opponent cell was found at all');
