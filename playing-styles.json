@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-09T01:50:27.483Z",
+  "generatedAt": "2026-11-10T04:14:29.656Z",
   "source": "tennis_atp (TML mirror) + Match Charting Project (rally/winner, R&D use only)",
   "window": "2000-2026",
   "note": "Each axis is a 0-100 percentile within the full classified field (50 = typical). MCP-dependent axes (counter/attacking/defender) fall back to base components and are flagged partial when a player has < 10 charted matches.",
@@ -1386,9 +1386,9 @@
       "badges": [],
       "pressure_score": null,
       "mcp_charted": 0,
-      "win_pct": 50,
+      "win_pct": 48.9,
       "clay_wr": 56,
-      "hard_wr": 50,
+      "hard_wr": 48,
       "grass_wr": 0,
       "top10_wins": 0,
       "archetype_label": "Solid Baseliner"
@@ -3288,6 +3288,24 @@
       "top10_wins": 0
     },
     {
+      "name": "T. Samuel",
+      "rank": 261,
+      "archetype_data_coverage": "partial",
+      "partial_axes": [
+        "counter_puncher",
+        "solid_defender"
+      ],
+      "badges": [],
+      "pressure_score": null,
+      "mcp_charted": 0,
+      "win_pct": 65,
+      "clay_wr": 75,
+      "hard_wr": 75,
+      "grass_wr": 43,
+      "top10_wins": 0,
+      "archetype_label": "Attacking Baseliner"
+    },
+    {
       "name": "A. Martin",
       "rank": 269,
       "archetype_data_coverage": "partial",
@@ -4374,7 +4392,7 @@
       "player_key": "1899"
     },
     {
-      "name": "J. Clarke",
+      "name": "Jay Clarke",
       "archetype_data_coverage": "challenger",
       "partial_axes": [],
       "badges": [],
@@ -4383,8 +4401,7 @@
       "hard_wr": 51,
       "grass_wr": 23,
       "matches": 218,
-      "source": "challenger",
-      "player_key": "1739"
+      "source": "challenger"
     },
     {
       "name": "Salvatore Caruso",
@@ -4655,7 +4672,7 @@
       "source": "challenger"
     },
     {
-      "name": "S. Kozlov",
+      "name": "Stefan Kozlov",
       "archetype_data_coverage": "challenger",
       "partial_axes": [],
       "badges": [],
@@ -4664,8 +4681,7 @@
       "hard_wr": 58,
       "grass_wr": 20,
       "matches": 197,
-      "source": "challenger",
-      "player_key": "1087"
+      "source": "challenger"
     },
     {
       "name": "O. Luz",
@@ -4753,7 +4769,7 @@
       "source": "challenger"
     },
     {
-      "name": "S. Napolitano",
+      "name": "Stefano Napolitano",
       "archetype_data_coverage": "challenger",
       "partial_axes": [],
       "badges": [],
@@ -4763,7 +4779,6 @@
       "grass_wr": 50,
       "matches": 194,
       "source": "challenger",
-      "player_key": "3915",
       "archetype_label": "Attacking Baseliner"
     },
     {
@@ -5170,7 +5185,7 @@
       "player_key": "2085"
     },
     {
-      "name": "H. Squire",
+      "name": "Henri Squire",
       "archetype_data_coverage": "challenger",
       "partial_axes": [],
       "badges": [],
@@ -5180,7 +5195,6 @@
       "grass_wr": 67,
       "matches": 164,
       "source": "challenger",
-      "player_key": "907",
       "archetype_label": "Big Server + First Strike"
     },
     {
@@ -6684,7 +6698,7 @@
       "source": "challenger"
     },
     {
-      "name": "O. Jasika",
+      "name": "Omar Jasika",
       "archetype_data_coverage": "challenger",
       "partial_axes": [],
       "badges": [],
@@ -6693,8 +6707,7 @@
       "hard_wr": 54,
       "grass_wr": 25,
       "matches": 105,
-      "source": "challenger",
-      "player_key": "1261"
+      "source": "challenger"
     },
     {
       "name": "P. Jubb",
@@ -7694,7 +7707,7 @@
       "player_key": "9230"
     },
     {
-      "name": "J. Paul",
+      "name": "Jakub Paul",
       "archetype_data_coverage": "challenger",
       "partial_axes": [],
       "badges": [],
@@ -7703,8 +7716,7 @@
       "hard_wr": 53,
       "grass_wr": null,
       "matches": 79,
-      "source": "challenger",
-      "player_key": "1966"
+      "source": "challenger"
     },
     {
       "name": "David Jorda Sanchis",
@@ -9616,7 +9628,7 @@
       "source": "challenger"
     },
     {
-      "name": "M. Cassone",
+      "name": "Murphy Cassone",
       "archetype_data_coverage": "challenger",
       "partial_axes": [],
       "badges": [],
@@ -9625,8 +9637,7 @@
       "hard_wr": 61,
       "grass_wr": null,
       "matches": 49,
-      "source": "challenger",
-      "player_key": "12744"
+      "source": "challenger"
     },
     {
       "name": "A. Andrade",
@@ -12699,7 +12710,7 @@
       "source": "challenger"
     },
     {
-      "name": "C. Rodesch",
+      "name": "Chris Rodesch",
       "archetype_data_coverage": "challenger",
       "partial_axes": [],
       "badges": [],
@@ -12709,7 +12720,6 @@
       "grass_wr": null,
       "matches": 21,
       "source": "challenger",
-      "player_key": "5980",
       "archetype_label": "Big Server + First Strike"
     },
     {
