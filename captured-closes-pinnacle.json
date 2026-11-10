@@ -1,31 +1,31 @@
 {
- "generatedAt": "2026-11-10T19:45:20.880Z",
+ "generatedAt": "2026-11-10T21:40:59.988Z",
  "source": "matches.json git history: oddsMovement.books.Pinnacle (Oddspapi pinnacle, to 2026-09-02) and oddsMovement.chart.books[\"Pinnacle +30s\"] (Oddspapi pinnacle+30, from 2026-09-23)",
  "rule": "each side = last tick at or before the actual start (the earlier of Oddspapi trueStart and the card-state start: Oddspapi, the live-flip lower bound, the Bet105 switch or the first point — founder 2026-11-08; a cut at Oddspapi start before a verified start counts at the verified start only when the same tick, seen within 60 min and within 1.5pp of the Bet105 close, else it stays held back); both sides required; dropped when no unique actual start. seenAt = our last capture read before the start that confirmed the close (founder 2026-10-28); age = start - (seenAt or at)",
  "scannedThrough": {
-  "commit": "e77b9bb76f277810d9d56c644fc6486a9222bc62",
-  "at": "2026-11-10T19:16:01Z"
+  "commit": "9f11b1821589b65783be4bfbd26b6f9c81a41979",
+  "at": "2026-11-10T21:13:57Z"
  },
- "commitsScanned": 6636,
+ "commitsScanned": 6638,
  "lastRun": {
-  "from": "2026-11-10T14:18:19Z",
-  "snapshots": 10,
-  "added": 0,
+  "from": "2026-11-10T19:16:01Z",
+  "snapshots": 3,
+  "added": 4,
   "replaced": 0,
   "seenBackfilled": 0,
   "earlierCutBackfilled": 0,
   "series": 30,
-  "kept": 22,
+  "kept": 26,
   "bySource": {
    "oddspapi": 5,
-   "bet105-switch": 12,
-   "first-point": 5
+   "bet105-switch": 15,
+   "first-point": 6
   },
   "byBook": {
-   "Pinnacle +30s": 22
+   "Pinnacle +30s": 26
   },
   "dropped": {
-   "noStart": 8
+   "noStart": 4
   }
  },
  "stats": {
@@ -15673,6 +15673,72 @@
    "seenAt": "2026-11-09T10:52:04.000Z"
   },
   {
+   "eventKey": 12178150,
+   "date": "2026-11-10",
+   "p1Key": 1902,
+   "p2Key": 2848,
+   "p1Name": "A. Rinderknech",
+   "p2Name": "M. Kecmanovic",
+   "p1": 1.571,
+   "p2": 2.55,
+   "at": "2026-11-10T14:25:22.981Z",
+   "trueStart": "2026-11-10T14:34:19.000Z",
+   "startSource": "bet105-switch",
+   "book": "Pinnacle +30s",
+   "round": "ATP Stockholm - 1/16-finals",
+   "qualifying": false,
+   "event": "ATP Stockholm",
+   "o1": 1.487,
+   "o2": 2.77,
+   "oAt": "2026-11-08T12:08:42.010Z",
+   "winner": "p2",
+   "seenAt": "2026-11-10T14:30:00.000Z"
+  },
+  {
+   "eventKey": 12178151,
+   "date": "2026-11-10",
+   "p1Key": 437,
+   "p2Key": 1064,
+   "p1Name": "H. Rune",
+   "p2Name": "Z. Bergs",
+   "p1": 1.606,
+   "p2": 2.46,
+   "at": "2026-11-10T17:13:50.678Z",
+   "trueStart": "2026-11-10T17:18:44.000Z",
+   "startSource": "bet105-switch",
+   "book": "Pinnacle +30s",
+   "round": "ATP Stockholm - 1/16-finals",
+   "qualifying": false,
+   "event": "ATP Stockholm",
+   "o1": 1.662,
+   "o2": 2.31,
+   "oAt": "2026-11-08T11:50:17.632Z",
+   "winner": null,
+   "seenAt": "2026-11-10T17:15:00.000Z"
+  },
+  {
+   "eventKey": 12178421,
+   "date": "2026-11-10",
+   "p1Key": 2843,
+   "p2Key": 1925,
+   "p1Name": "L. Sonego",
+   "p2Name": "Q. Halys",
+   "p1": 2.1,
+   "p2": 1.806,
+   "at": "2026-11-10T13:24:51.316Z",
+   "trueStart": "2026-11-10T13:28:27.000Z",
+   "startSource": "first-point",
+   "book": "Pinnacle +30s",
+   "round": "ATP Stockholm - 1/16-finals",
+   "qualifying": false,
+   "event": "ATP Stockholm",
+   "o1": 2.25,
+   "o2": 1.724,
+   "oAt": "2026-11-08T21:59:42.732Z",
+   "winner": "p1",
+   "seenAt": "2026-11-10T13:25:00.000Z"
+  },
+  {
    "eventKey": 12178504,
    "date": "2026-11-10",
    "p1Key": 10884,
@@ -15713,6 +15779,28 @@
    "o2": 2.15,
    "oAt": "2026-11-09T14:08:10.513Z",
    "winner": "p2"
+  },
+  {
+   "eventKey": 12178671,
+   "date": "2026-11-10",
+   "p1Key": 2849,
+   "p2Key": 15184,
+   "p1Name": "L. Musetti",
+   "p2Name": "T. Samuel",
+   "p1": 1.258,
+   "p2": 4.26,
+   "at": "2026-11-10T18:53:50.943Z",
+   "trueStart": "2026-11-10T19:01:52.000Z",
+   "startSource": "bet105-switch",
+   "book": "Pinnacle +30s",
+   "round": "ATP Stockholm - 1/8-finals",
+   "qualifying": false,
+   "event": "ATP Stockholm",
+   "o1": 1.294,
+   "o2": 3.82,
+   "oAt": "2026-11-10T09:05:17.494Z",
+   "winner": null,
+   "seenAt": "2026-11-10T18:55:00.000Z"
   }
  ]
 }
