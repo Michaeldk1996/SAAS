@@ -370,7 +370,7 @@ for h in re.findall(r'\blines\.(\w+)\(', src):
     hooks[h] = hooks.get(h, 0) + 1
 check('the loop touches lines through exactly these hooks: accept x1, tick x1, request_seed x1, summary x2 (heartbeats), '
       'checked x1 (after the connected heartbeat)', hooks == {'accept': 1, 'tick': 1, 'request_seed': 1, 'summary': 2, 'checked': 1}, hooks)
-check('checked() follows the CONNECTED heartbeat only', 'dict(where, lines=lines.summary())), log, enabled)\n                    lines.checked()' in src)
+check('checked() follows the CONNECTED heartbeat only', 'dict(where, lines=lines.summary(), live_ml=live.summary())), log, enabled)\n                    lines.checked()' in src)
 off = W._LinesOff('x')
 check('the stand-in is a no-op on every hook', off.accept({}) is None and off.tick() is None and off.request_seed() is None
       and off.summary() == {'off': 'x'})
