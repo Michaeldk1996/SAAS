@@ -1,31 +1,31 @@
 {
- "generatedAt": "2026-11-10T12:47:26.599Z",
+ "generatedAt": "2026-11-10T15:14:14.013Z",
  "source": "matches.json git history: oddsMovement.books.Pinnacle (Oddspapi pinnacle, to 2026-09-02) and oddsMovement.chart.books[\"Pinnacle +30s\"] (Oddspapi pinnacle+30, from 2026-09-23)",
  "rule": "each side = last tick at or before the actual start (the earlier of Oddspapi trueStart and the card-state start: Oddspapi, the live-flip lower bound, the Bet105 switch or the first point — founder 2026-11-08; a cut at Oddspapi start before a verified start counts at the verified start only when the same tick, seen within 60 min and within 1.5pp of the Bet105 close, else it stays held back); both sides required; dropped when no unique actual start. seenAt = our last capture read before the start that confirmed the close (founder 2026-10-28); age = start - (seenAt or at)",
  "scannedThrough": {
-  "commit": "c7059296d9d725e25156ec1b8970adf8f01ca909",
-  "at": "2026-11-10T12:30:12Z"
+  "commit": "1868307242e106c415f6bf340a0feff2eae80d90",
+  "at": "2026-11-10T14:18:19Z"
  },
- "commitsScanned": 6623,
+ "commitsScanned": 6627,
  "lastRun": {
-  "from": "2026-11-09T22:00:19Z",
-  "snapshots": 27,
-  "added": 2,
-  "replaced": 0,
+  "from": "2026-11-10T12:30:12Z",
+  "snapshots": 4,
+  "added": 0,
+  "replaced": 2,
   "seenBackfilled": 0,
   "earlierCutBackfilled": 0,
-  "series": 31,
-  "kept": 26,
+  "series": 30,
+  "kept": 22,
   "bySource": {
-   "bet105-switch": 13,
-   "oddspapi": 7,
-   "first-point": 6
+   "oddspapi": 5,
+   "bet105-switch": 12,
+   "first-point": 5
   },
   "byBook": {
-   "Pinnacle +30s": 26
+   "Pinnacle +30s": 22
   },
   "dropped": {
-   "noStart": 5
+   "noStart": 8
   }
  },
  "stats": {
@@ -15679,9 +15679,9 @@
    "p2Key": 388,
    "p1Name": "A. Michelsen",
    "p2Name": "J. M. Cerundolo",
-   "p1": 1.284,
-   "p2": 3.91,
-   "at": "2026-11-09T21:24:10.716Z",
+   "p1": 1.28,
+   "p2": 4.019,
+   "at": "2026-11-10T12:00:25.491Z",
    "trueStart": "2026-11-10T12:06:37.000Z",
    "startSource": "bet105-switch",
    "book": "Pinnacle +30s",
@@ -15691,8 +15691,7 @@
    "o1": 1.327,
    "o2": 3.69,
    "oAt": "2026-11-09T17:11:31.136Z",
-   "winner": null,
-   "seenAt": "2026-11-10T05:52:02.000Z"
+   "winner": null
   },
   {
    "eventKey": 12178513,
@@ -15701,9 +15700,9 @@
    "p2Key": 566,
    "p1Name": "A. Mannarino",
    "p2Name": "A. Shevchenko",
-   "p1": 1.781,
-   "p2": 2.12,
-   "at": "2026-11-10T05:21:37.519Z",
+   "p1": 1.714,
+   "p2": 2.24,
+   "at": "2026-11-10T12:02:08.196Z",
    "trueStart": "2026-11-10T12:02:22.000Z",
    "startSource": "bet105-switch",
    "book": "Pinnacle +30s",
@@ -15713,8 +15712,7 @@
    "o1": 1.757,
    "o2": 2.15,
    "oAt": "2026-11-09T14:08:10.513Z",
-   "winner": null,
-   "seenAt": "2026-11-10T05:52:02.000Z"
+   "winner": null
   }
  ]
 }
