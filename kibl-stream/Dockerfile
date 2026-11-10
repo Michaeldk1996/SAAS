@@ -36,7 +36,7 @@ RUN pip install --no-cache-dir 'pika==1.3.2'
 # line_engine defensively — an image without them still runs the Now prices — but then line prices are off.
 COPY archive-kibl.py kibl_client.py ten225_names.py line_prices.py ./
 COPY kibl-stream/sweep_bridge.py kibl-stream/consumer.py kibl-stream/card_join.py \
-     kibl-stream/now_worker.py kibl-stream/line_engine.py kibl-stream/cards_worker.py ./kibl-stream/
+     kibl-stream/now_worker.py kibl-stream/line_engine.py kibl-stream/cards_worker.py kibl-stream/live_ml.py ./kibl-stream/
 
 # Stage 3 (2026-11-03): the `cards` process clones main each cycle (git) and runs the card-state builder from it.
 RUN apt-get update && apt-get install -y --no-install-recommends git ca-certificates && rm -rf /var/lib/apt/lists/*

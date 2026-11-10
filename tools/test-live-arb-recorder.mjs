@@ -4,7 +4,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { generateKeyPairSync, createVerify, constants as CC } from 'node:crypto';
 import { samePlayer, polyMatches, kalshiMatches, joinPairs, kalshiFee, polyFee, Books, evaluate, Episodes, summarise, gapRow, PolyFeed, KalshiFeed, kalshiSign, boardPhase, boardFixture, setText, recRows,
-  kiblNames, kiblFixtures, kiblRows, kiblQuotes, KiblFeed, KIBL_GAP_MS, KIBL_LIVE_MAX_MS, BOOK_LINK_HOME, unify, venueQuotes, evaluateMulti, multiGapRow, STALE_MS, BOOKS } from './live-arb-recorder.mjs';
+  kiblNames, kiblFixtures, kiblRows, kiblQuotes, KiblFeed, kiblLiveQuotes, KIBL_GAP_MS, KIBL_LIVE_MAX_MS, KIBL_LIVE_ROW_MAX_MS, KIBL_STREAM_HB_MAX_MS, BOOK_LINK_HOME, unify, venueQuotes, evaluateMulti, multiGapRow, STALE_MS, BOOKS } from './live-arb-recorder.mjs';
 import { readFileSync } from 'node:fs';
 
 const ev = (id, a, b, extra = {}) => ({ id, title: `X: ${a} vs ${b}`, live: false, ...extra,
@@ -273,55 +273,71 @@ test('Kibl prices: match winner, full match, the asked betting type, Bet105 only
   assert.equal(nested.length, 2); assert.equal(kiblQuotes(nested, 3).get('9').away, 2.4, 'nested rows take the fixture and market from their parent');
 });
 
-// a fake Kibl: login, fixtures, markets by betting type; a fake clock
-function fakeKibl({ live = [], pre = [], fx = [kfx(9, 'Alex Molcan vs Titouan Droguet')], fail = {} } = {}) {
-  const calls = []; let t = 1_000_000;
+// a fake Kibl: login, fixtures, markets by betting type; the stream worker's table + heartbeat; a fake clock
+const lr = (fid, fp, price, ago = 5e3, extra = {}) => (t) => ({ fixture_id: fid, fixture_participant_id: fp, price, market_status_id: 1,
+  kibl_inserted_on: new Date(t - ago).toISOString(), ...extra });
+function fakeKibl({ live = [], pre = [], fx = [kfx(9, 'Alex Molcan vs Titouan Droguet')], beat = { connected: true, ago: 10e3 } } = {}) {
+  const calls = [], reads = []; let t = Date.parse('2026-11-10T12:00:00Z');
   const f = async (u, o) => {
     const url = new URL(String(u)); calls.push({ at: t, path: url.pathname, q: Object.fromEntries(url.searchParams), auth: o.headers && o.headers.Authorization, body: o.body });
     const ok = (j) => ({ ok: true, status: 200, json: async () => j });
     if (String(u).includes('cognito')) return ok({ AuthenticationResult: { AccessToken: 'T' + calls.filter((c) => c.body).length, ExpiresIn: 3600 } });
     const bt = url.searchParams.get('betting_type_id');
-    if (fail[bt || 'fx']) return { ok: false, status: fail[bt || 'fx'], json: async () => ({}) };
     if (url.pathname.endsWith('/info/fixtures')) return ok({ result: fx });
-    return ok({ result: bt === '3' ? live : pre });
+    return ok({ result: bt === '3' ? [] : pre });   // measured 10 Nov: REST never has an in-play row
   };
-  const feed = new KiblFeed({ fetch: f, user: 'u', pass: 'p', now: () => t, sleep: async (ms) => { t += ms; } });
-  return { feed, calls, tick: (ms) => { t += ms; }, now: () => t };
+  const K = { calls, reads, tick: (ms) => { t += ms; }, now: () => t, live, beat };
+  K.feed = new KiblFeed({ fetch: f, user: 'u', pass: 'p', now: () => t, sleep: async (ms) => { t += ms; },
+    liveRows: async (since) => { reads.push(since); return K.live.map((g) => g(t)); },
+    streamBeat: async () => (K.beat ? { connected: K.beat.connected, at: t - K.beat.ago } : null) });
+  return K;
 }
 
-test('Kibl feed: one login, Bearer on every call, ≥ 1.3 s between calls, in-play every cycle and pre-match every 12th, ATP + Bet105 only', async () => {
-  const K = fakeKibl({ live: [kr(9, 101, 1.6), kr(9, 202, 2.4)], pre: [kr(9, 101, 1.8, 1), kr(9, 202, 2.0, 1)] });
-  for (let i = 0; i < 13; i++) { await K.feed.cycle(); K.tick(1000); }
+test('Kibl in-play rows from the stream table: both sides open, priced and recent; suspended, closed, stale or one-sided → no price', () => {
+  const t = Date.parse('2026-11-10T12:00:00Z'), g = (...a) => lr(...a)(t);
+  const q = kiblLiveQuotes([g(9, 202, 2.4), g(9, 101, 1.6, 8e3)], t).get('9');
+  assert.deepEqual([q.home, q.away], [1.6, 2.4], 'the lower participant id is the first-named player (mutant: row order)'); assert.equal(q.upd, t - 5e3);
+  assert.equal(kiblLiveQuotes([g(9, 101, 0), g(9, 202, 2.4)], t).size, 0, 'a 0 price = suspended (mutant: kept)');
+  assert.equal(kiblLiveQuotes([g(9, 101, 1.6, 5e3, { market_status_id: 2 }), g(9, 202, 2.4)], t).size, 0, 'a market not open = no price (mutant: status ignored)');
+  assert.equal(kiblLiveQuotes([g(9, 101, 1.6, KIBL_LIVE_ROW_MAX_MS + 1), g(9, 202, 2.4)], t).size, 0, 'a side not re-priced for 10 min = no price (mutant: no age limit)');
+  assert.equal(kiblLiveQuotes([g(9, 101, 1.6)], t).size, 0, 'one side only'); assert.equal(kiblLiveQuotes([g(9, 101, 2.2), g(9, 202, 2.2)], t).size, 0, 'over 101%');
+});
+
+test('Kibl feed: one login, Bearer on every REST call, ≥ 1.3 s between REST calls; in play from the stream table every cycle, never REST; pre-match every 20th', async () => {
+  const K = fakeKibl({ live: [lr(9, 101, 1.6), lr(9, 202, 2.4)], pre: [kr(9, 101, 1.8, 1), kr(9, 202, 2.0, 1)] });
+  for (let i = 0; i < 21; i++) { await K.feed.cycle(); K.tick(1000); }
   const api = K.calls.filter((c) => !c.body), logins = K.calls.filter((c) => c.body);
-  assert.equal(logins.length, 1, 'one login for the run (mutant: login per call)'); assert.ok(!logins[0].body.includes('"u"') || JSON.parse(logins[0].body).AuthFlow === 'USER_PASSWORD_AUTH');
+  assert.equal(logins.length, 1, 'one login for the run (mutant: login per call)'); assert.equal(JSON.parse(logins[0].body).AuthFlow, 'USER_PASSWORD_AUTH');
   assert.ok(api.every((c) => c.auth === 'Bearer T1'));
   for (let i = 1; i < api.length; i++) assert.ok(api[i].at - api[i - 1].at >= KIBL_GAP_MS, 'paced (mutant: no pause)');
   const mk = api.filter((c) => c.path.endsWith('/info/markets'));
-  assert.equal(mk.filter((c) => c.q.betting_type_id === '3').length, 13, 'in-play read every cycle');
+  assert.equal(mk.filter((c) => c.q.betting_type_id === '3').length, 0, 'never asks REST for in-play (it has none)');
+  assert.equal(K.reads.length, 21, 'the stream table is read every cycle');
   assert.equal(mk.filter((c) => c.q.betting_type_id === '1').length, 2, 'pre-match every KIBL_PRE_EVERY cycles');
   assert.ok(mk.every((c) => c.q.league_id === '19' && c.q.feed_source_id === '171'), 'ATP league, Bet105 feed only');
   assert.equal(api.filter((c) => c.path.endsWith('/info/fixtures')).length, 1, 'fixtures every 5 min, not every cycle');
 });
 
-test('Kibl feed: in play only the in-play price, while its poll is fresh; a failed in-play poll leaves no price; 401 logs in again', async () => {
-  const K = fakeKibl({ live: [kr(9, 101, 1.6), kr(9, 202, 2.4)], pre: [kr(9, 101, 1.8, 1), kr(9, 202, 2.0, 1), kr(8, 303, 1.5, 1), kr(8, 404, 2.6, 1)],
+test('Kibl feed: in play only the in-play price, while fresh and while the stream worker is connected', async () => {
+  const K = fakeKibl({ live: [lr(9, 101, 1.6), lr(9, 202, 2.4)], pre: [kr(9, 101, 1.8, 1), kr(9, 202, 2.0, 1), kr(8, 303, 1.5, 1), kr(8, 404, 2.6, 1)],
     fx: [kfx(9, 'Alex Molcan vs Titouan Droguet'), kfx(8, 'Ben Shelton vs Carlos Alcaraz')] });
   await K.feed.cycle();
   const q9 = K.feed.quote(9, 'Bet105'); assert.equal(q9.live, true); assert.equal(q9.home, 1.6, 'in play the in-play price wins (mutant: pre-match)');
   assert.equal(K.feed.quote(8, 'Bet105').live, false); assert.equal(K.feed.quote(8, 'Bet105').home, 1.5);
   assert.equal(K.feed.quote(9, 'Napoleon'), null);
   assert.deepEqual(K.feed.events().map((e) => [e.id, e.live]), [['9', true], ['8', false]]);
-  K.tick(KIBL_LIVE_MAX_MS + 1); assert.equal(K.feed.quote(9, 'Bet105'), null, 'an in-play price from an old poll is never used (mutant: kept)');
+  K.tick(KIBL_LIVE_MAX_MS + 1); assert.equal(K.feed.quote(9, 'Bet105'), null, 'an in-play price from an old read is never used (mutant: kept)');
   assert.equal(K.feed.events()[0].live, false);
-  const F = fakeKibl({ live: [kr(9, 101, 1.6), kr(9, 202, 2.4)], pre: [kr(9, 101, 1.8, 1), kr(9, 202, 2.0, 1)] });
-  await F.feed.cycle(); F.tick(2000);
-  F.feed.f = (orig => async (u, o) => (String(u).includes('betting_type_id=3') ? { ok: false, status: 500, json: async () => ({}) } : orig(u, o)))(F.feed.f);
-  await F.feed.cycle();
-  assert.equal(F.feed.quote(9, 'Bet105').live, false, 'the in-play poll failed: no in-play price (mutant: last one kept)');
-  assert.equal(F.feed.stats.errors, 1);
-  const A = fakeKibl({ live: [kr(9, 101, 1.6), kr(9, 202, 2.4)] }); let n401 = 1;
+  const D = fakeKibl({ live: [lr(9, 101, 1.6), lr(9, 202, 2.4)], pre: [kr(9, 101, 1.8, 1), kr(9, 202, 2.0, 1)], beat: { connected: false, ago: 5e3 } });
+  await D.feed.cycle(); assert.equal(D.feed.quote(9, 'Bet105').live, false, 'stream worker disconnected → its table is not trusted (mutant: heartbeat ignored)');
+  const S = fakeKibl({ live: [lr(9, 101, 1.6), lr(9, 202, 2.4)], beat: { connected: true, ago: KIBL_STREAM_HB_MAX_MS + 1 } });
+  await S.feed.cycle(); assert.equal(S.feed.quote(9, 'Bet105'), null, 'stream heartbeat too old → no in-play price');
+  const F = fakeKibl({ live: [lr(9, 101, 1.6), lr(9, 202, 2.4)], pre: [kr(9, 101, 1.8, 1), kr(9, 202, 2.0, 1)] });
+  await F.feed.cycle(); F.tick(2000); F.feed.liveRows = async () => { throw new Error('HTTP 500'); };
+  await F.feed.cycle(); assert.equal(F.feed.quote(9, 'Bet105').live, false, 'a failed read leaves no in-play price (mutant: last one kept)');
+  const A = fakeKibl({ pre: [kr(9, 101, 1.8, 1), kr(9, 202, 2.0, 1)] }); let n401 = 1;
   A.feed.f = (orig => async (u, o) => (!String(u).includes('cognito') && n401-- > 0 ? { ok: false, status: 401, json: async () => ({}) } : orig(u, o)))(A.feed.f);
-  await A.feed.cycle(); assert.equal(A.calls.filter((c) => c.body).length, 2, 'a 401 logs in again once'); assert.equal(A.feed.quote(9, 'Bet105').home, 1.6);
+  await A.feed.cycle(); assert.equal(A.calls.filter((c) => c.body).length, 2, 'a 401 logs in again once'); assert.equal(A.feed.quote(9, 'Bet105').home, 1.8);
 });
 
 // a world: one Kalshi × Polymarket pair (Molcan / Droguet) + Kibl fixtures

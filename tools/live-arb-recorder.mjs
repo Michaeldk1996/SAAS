@@ -383,7 +383,11 @@ export function summarise(eps, meta) {
 // worker now reads Bet105 only from Kibl's REST API (the RabbitMQ queue belongs to the kibl-stream worker on Fly: a second
 // consumer on it would split its messages). Login = Kibl's Cognito user (KIBL_USERNAME / KIBL_PASSWORD, as kibl_client.py).
 // One request at a time, at least KIBL_GAP_MS apart (kibl_client's 1.25 s floor). The in-play list is read every cycle
-// (≈ 2.5 s), the pre-match list every KIBL_PRE_EVERY cycles, the ATP fixture list every 5 min.
+// (≈ 1.5 s), the pre-match list every KIBL_PRE_EVERY cycles, the ATP fixture list every 5 min.
+// IN PLAY (measured 10 Nov 12:17Z): Kibl's REST API returns no betting-type-3 row for any sport while matches are live —
+// in-play prices exist only on the push queue. The kibl-stream worker on Fly keeps the latest in-play match-winner row
+// per player in public.kibl_live_ml (kibl-stream/live_ml.py); this worker reads that table (service key) every cycle,
+// and trusts it only while the stream worker's heartbeat says it is connected and is under KIBL_STREAM_HB_MAX_MS old.
 // A price is a match-winner row (market type 1, full match = segment 1) flagged current, price ≥ 1.01 on both sides
 // (Kibl's 0.000 marker = suspended → no price). Sides: the fixture's two participant ids in ascending order are its first-
 // and second-named players (kibl-stream/card_join.py). A fixture with an in-play row is in play: then only its in-play
@@ -395,8 +399,32 @@ export const KIBL_API = 'https://api.kibl.io/sports/get';
 export const KIBL_COGNITO = 'https://cognito-idp.us-west-2.amazonaws.com/';
 export const KIBL_CLIENT_ID = '3udv7qsqgju8c4riqvk72bqcl';   // published in Kibl's own tutorial (kibl_client.py)
 export const KIBL_FEED = 171, KIBL_ATP = 19;
-export const KIBL_GAP_MS = 1300, KIBL_CYCLE_MS = 2500, KIBL_PRE_EVERY = 12, KIBL_FX_MS = 300e3;
-export const KIBL_LIVE_MAX_MS = 15e3;   // an in-play price stands only while the poll that returned it is this fresh
+export const KIBL_GAP_MS = 1300, KIBL_CYCLE_MS = 1500, KIBL_PRE_EVERY = 20, KIBL_FX_MS = 300e3;
+export const KIBL_LIVE_MAX_MS = 15e3;   // an in-play price stands only while the read that returned it is this fresh
+export const KIBL_LIVE_ROW_MAX_MS = 600e3;   // a side Bet105 has not re-priced for 10 min is no in-play price
+export const KIBL_STREAM_HB_MAX_MS = 150e3;  // the stream worker beats every 60 s
+// kibl_live_ml rows → Map fixtureId → { home, away, upd } (home = lower participant id); a suspended side (price below
+// 1.01, or a market status other than open = 1) or a side older than KIBL_LIVE_ROW_MAX_MS leaves the match unpriced
+export function kiblLiveQuotes(rows, now) {
+  const byF = new Map();
+  for (const r of rows || []) {
+    if (!r || r.fixture_id == null || r.fixture_participant_id == null) continue;
+    const f = String(r.fixture_id); if (!byF.has(f)) byF.set(f, new Map());
+    byF.get(f).set(String(r.fixture_participant_id), r);
+  }
+  const out = new Map();
+  for (const [f, sides] of byF) {
+    if (sides.size !== 2) continue;
+    const [h, a] = [...sides.keys()].sort((x, y) => Number(x) - Number(y)).map((k) => sides.get(k));
+    const ok = (x) => Number(x.price) >= 1.01 && (x.market_status_id == null || Number(x.market_status_id) === 1)
+      && now - (Date.parse(x.kibl_inserted_on) || 0) <= KIBL_LIVE_ROW_MAX_MS;
+    if (!ok(h) || !ok(a)) continue;
+    const hp = Number(h.price), ap = Number(a.price);
+    if (1 / hp + 1 / ap < 0.99) continue;
+    out.set(f, { home: hp, away: ap, upd: Math.max(Date.parse(h.kibl_inserted_on), Date.parse(a.kibl_inserted_on)) });
+  }
+  return out;
+}
 
 // "1234 Soonwoo Kwon vs Alex Molcan" → ['Soonwoo Kwon', 'Alex Molcan']; doubles ('/'), no or two ' vs ' → null
 export function kiblNames(raw) {
@@ -462,8 +490,9 @@ export function kiblQuotes(rows, bt) {
 }
 
 export class KiblFeed {
-  constructor({ fetch: f = fetch, user, pass, clientId = KIBL_CLIENT_ID, now = () => Date.now(), sleep = (ms) => new Promise((r) => setTimeout(r, ms)), log = () => {} }) {
-    Object.assign(this, { f, user, pass, clientId, now, sleep, log });
+  constructor({ fetch: f = fetch, user, pass, clientId = KIBL_CLIENT_ID, liveRows = null, streamBeat = null, now = () => Date.now(), sleep = (ms) => new Promise((r) => setTimeout(r, ms)), log = () => {} }) {
+    Object.assign(this, { f, user, pass, clientId, liveRows, streamBeat, now, sleep, log });
+    this.beat = null; this.beatAt = 0;
     this.token = null; this.tokenExp = 0; this.last = 0;
     this.fx = []; this.live = new Map(); this.liveAt = null; this.pre = new Map(); this.preAt = null; this.fxAt = 0; this.cycles = 0;
     this.stats = { calls: 0, errors: 0, livePolls: 0, prePolls: 0, liveFixtures: 0, lastError: null };
@@ -498,8 +527,15 @@ export class KiblFeed {
       try { const p = await this.get('/info/fixtures', { league_id: KIBL_ATP, start_time: this.iso(t - 86400e3), end_time: this.iso(t + 3 * 86400e3) });
         this.fx = kiblFixtures(kiblList(p)); this.fxAt = t; } catch (e) { err('fixtures', e); }
     }
-    try { this.live = kiblQuotes(await this.markets(3, t - 8 * 3600e3, t + 3600e3), 3); this.liveAt = this.now(); this.stats.livePolls++; this.stats.liveFixtures = this.live.size; }
-    catch (e) { this.live = new Map(); this.liveAt = null; err('in-play', e); }
+    // in play: the stream worker's table, trusted only while its heartbeat is connected and fresh
+    try {
+      if (!this.liveRows || !this.streamBeat) throw new Error('no in-play source');
+      if (t - this.beatAt >= 15e3 || !this.beat) { this.beat = await this.streamBeat(); this.beatAt = t; }
+      const b = this.beat;
+      if (!b || !b.connected || b.at == null || t - b.at > KIBL_STREAM_HB_MAX_MS) { this.stats.streamDown = (this.stats.streamDown || 0) + 1; throw new Error('stream worker not connected'); }
+      this.live = kiblLiveQuotes(await this.liveRows(t - KIBL_LIVE_ROW_MAX_MS), this.now()); this.liveAt = this.now();
+      this.stats.livePolls++; this.stats.liveFixtures = this.live.size;
+    } catch (e) { this.live = new Map(); this.liveAt = null; this.beat = null; err('in-play', e); }
     if (this.cycles++ % KIBL_PRE_EVERY === 0) {
       try { this.pre = kiblQuotes(await this.markets(1, t - 2 * 3600e3, t + 48 * 3600e3), 1); this.preAt = this.now(); this.stats.prePolls++; }
       catch (e) { this.pre = new Map(); this.preAt = null; err('pre-match', e); }
@@ -649,7 +685,17 @@ async function main() {
   let oddsEv = [], bmatches = []; const latestB = new Map();
   const kUser = (process.env.KIBL_USERNAME || '').trim(), kPass = process.env.KIBL_PASSWORD || '';
   stats.bookFeed = kUser && kPass ? 'kibl' : 'off';
-  const bfeed = stats.bookFeed === 'kibl' ? new KiblFeed({ user: kUser, pass: kPass, clientId: (process.env.KIBL_CLIENT_ID || '').trim() || KIBL_CLIENT_ID, log }) : null;
+  // in-play rows: the kibl-stream worker's table + its heartbeat (Supabase, service key)
+  const sbGet = async (path) => {
+    const r = await fetch(sbUrl0 + '/rest/v1/' + path, { signal: AbortSignal.timeout(8e3), headers: { apikey: sbKey0, Authorization: 'Bearer ' + sbKey0 } });
+    if (!r.ok) throw new Error('supabase ' + path.split('?')[0] + ' HTTP ' + r.status);
+    return r.json();
+  };
+  const sbOn = !!(sbUrl0 && sbKey0);
+  const bfeed = stats.bookFeed === 'kibl' ? new KiblFeed({ user: kUser, pass: kPass, clientId: (process.env.KIBL_CLIENT_ID || '').trim() || KIBL_CLIENT_ID, log,
+    liveRows: sbOn ? (since) => sbGet('kibl_live_ml?select=fixture_id,fixture_participant_id,price,market_status_id,kibl_inserted_on&kibl_inserted_on=gt.' + encodeURIComponent(new Date(since).toISOString())) : null,
+    streamBeat: sbOn ? async () => { const j = await sbGet('kibl_now_price?kind=eq.heartbeat&select=written_at,note'); const h = Array.isArray(j) && j[0];
+      return h ? { at: Date.parse(h.written_at), connected: !!(h.note && h.note.connected) } : null; } : null }) : null;
   let fxSeen = -1;
   const kiblLoop = async () => {
     while (Date.now() < stop) {

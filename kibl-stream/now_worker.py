@@ -40,6 +40,7 @@ sys.path.insert(0, os.path.join(HERE, ".."))
 import card_join as CJ  # noqa: E402
 import consumer as C    # noqa: E402
 import sweep_bridge as B  # noqa: E402  — the sweep's own row key, for history dedupe
+import live_ml as LM     # noqa: E402  — Bet105 in-play match winner for the live arbitrage (2026-11-10)
 try:
     # bet105 line prices ride the same stream (founder 2026-10-25). Imported defensively: an image that cannot load
     # it still runs the Now prices exactly as before.
@@ -419,6 +420,26 @@ def last_heartbeat_at(env):
         return None
 
 
+def flush_live(env, live, log, enabled):
+    """Upsert the in-play rows that changed; a failed write goes back to be retried."""
+    rows = live.drain()
+    if not rows:
+        return True
+    if not enabled:
+        for r in rows:
+            log(f"DRY live {r['fixture_id']} {r['fixture_participant_id']} {r['price']} @ {r['kibl_inserted_on']}")
+        return True
+    st, body = C.sb_request(env, "POST", f"/rest/v1/{LM.TABLE}?on_conflict=fixture_id,fixture_participant_id",
+                            rows, prefer="resolution=merge-duplicates,return=minimal")
+    if st not in (200, 201, 204):
+        log(f"::warning::live upsert HTTP {st}: {body[:200]}")
+        live.requeue(rows)
+        live.count["write_failed"] += len(rows)
+        return False
+    live.count["written"] += len(rows)
+    return True
+
+
 def prune(env, log, enabled):
     """Price rows for cards long gone. History is kept — it is the product."""
     if not enabled:
@@ -426,6 +447,8 @@ def prune(env, log, enabled):
     cutoff = urllib.parse.quote(iso(datetime.now(timezone.utc) - PRUNE_AFTER))
     C.sb_request(env, "DELETE", f"/rest/v1/{TABLE_NOW}?kind=eq.price&written_at=lt.{cutoff}")
     C.sb_request(env, "DELETE", f"/rest/v1/{TABLE_CARD}?written_at=lt.{cutoff}")
+    day = urllib.parse.quote(iso(datetime.now(timezone.utc) - timedelta(days=1)))
+    C.sb_request(env, "DELETE", f"/rest/v1/{LM.TABLE}?written_at=lt.{day}")
 
 
 def broker_rtt_ms(host, port, n=5):
@@ -559,6 +582,8 @@ def main(env=None, log=print):
         log(f"::warning::Kibl book tag {tag!r} is not one the card state uses — "
             "stream prices will not reach any card until they agree")
     eng = NowEngine(tag, name, fsid)
+    live = LM.LiveMl(fsid)
+    last_live = 0.0
     lines = start_lines(fsid, env, enabled, log, secrets)
     where = {"region": env.get("FLY_REGION") or None,
              "broker_rtt_ms": broker_rtt_ms(conn["host"], conn["port"])}
@@ -635,6 +660,7 @@ def main(env=None, log=print):
                         if isinstance(r, dict):
                             writes += eng.accept(r, rcv)
                             lines.accept(r)
+                            live.accept(r, rcv, method.routing_key)
                     if writes:
                         retry += flush(env, writes, log, enabled, eng)
                     # Ack everything, tennis or not: an unacked message counts
@@ -647,6 +673,9 @@ def main(env=None, log=print):
                     flush_cards(env, eng.card_rows(time.monotonic()), log, enabled, eng)
                 lines.tick()
                 t = time.time()
+                if live.dirty and t - last_live >= 0.5:
+                    flush_live(env, live, log, enabled)
+                    last_live = t
                 if pending_gap is not None and t - last_gap_try >= 10:
                     last_gap_try = t
                     if write_gap(env, pending_gap, log, enabled):
@@ -660,7 +689,7 @@ def main(env=None, log=print):
                 refresh()
                 if t - last_beat >= HEARTBEAT_EVERY_S:
                     write_hb(env, eng.heartbeat(datetime.now(timezone.utc), True,
-                                                dict(where, lines=lines.summary())), log, enabled)
+                                                dict(where, lines=lines.summary(), live_ml=live.summary())), log, enabled)
                     lines.checked()
                     last_beat = t
                 if t - last_prune >= 3600:

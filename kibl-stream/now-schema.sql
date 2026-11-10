@@ -335,3 +335,36 @@ as $fn$
 $fn$;
 revoke all on function public.bet365_history(text) from public;
 grant execute on function public.bet365_history(text) to anon, authenticated;
+
+-- Founder 2026-11-10: Bet105's IN-PLAY match-winner prices (Kibl betting type 3) for the live arbitrage. Kibl serves
+-- them only on the push queue (REST /info/markets betting_type_id=3 returned nothing for any sport while ATP
+-- Stockholm was live, 10 Nov 12:17Z), so the stream worker keeps the latest row per player here (kibl-stream/live_ml.py)
+-- and tools/live-arb-recorder.mjs reads it with the service key. A suspended market is kept as sent (price null / below
+-- 1.01). Server-side only: RLS on, no policy, no grant.
+create table if not exists public.kibl_live_ml (
+    fixture_id              bigint      not null,
+    fixture_participant_id  bigint      not null,
+    league_id               integer,
+    price                   numeric(9,3),
+    market_status_id        integer,
+    kibl_inserted_on        timestamptz not null,
+    received_at             timestamptz,
+    written_at              timestamptz not null default now(),
+    primary key (fixture_id, fixture_participant_id)
+);
+create index if not exists kibl_live_ml_written_idx on public.kibl_live_ml (written_at);
+-- newer-only per side by Kibl's clock: an overlapping worker during a deploy or a retried write never moves a side back
+create or replace function public.kibl_live_ml_newer() returns trigger
+language plpgsql as $$
+begin
+  if tg_op = 'UPDATE' and new.kibl_inserted_on <= old.kibl_inserted_on then
+    return null;
+  end if;
+  new.written_at := now();
+  return new;
+end $$;
+drop trigger if exists kibl_live_ml_newer on public.kibl_live_ml;
+create trigger kibl_live_ml_newer before insert or update on public.kibl_live_ml
+    for each row execute function public.kibl_live_ml_newer();
+alter table public.kibl_live_ml enable row level security;
+revoke all on public.kibl_live_ml from anon, authenticated;
