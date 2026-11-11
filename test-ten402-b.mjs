@@ -294,6 +294,28 @@ test('founder 2026-11-08: a team-event row joins a keyless archive career row ma
   assert.equal(r2[0].price ?? null, null, 'the other winner: a dash');
 });
 
+test('founder 2026-11-11: a team-event row prices a team-event career match only, never a tour match beside it', () => {
+  // Goffin, March 2016: the Davis Cup tie v Cilic (Sun 6 Mar, Tennis Explorer, flag t) and the Indian Wells QF v Cilic
+  // (Tennis-Data 17 Mar); the career rows are archive rows, dated at their event's start (4 and 7 Mar)
+  const base = { meta: { levels: ['Masters 1000'], surfaces: ['Hard'], rounds: ['Quarterfinals'], tournaments: ['BNP Paribas Open'] },
+    rows: [[20160310, 0, 0, 0, 0, 1.50, 2.60, 1, 0], [20160314, 0, 0, 0, 0, 1.40, 2.90, 1, 0], [20160317, 0, 0, 0, 0, 1.70, 2.32, 0, 0]], retRows: [] };   // the event runs 10–17 Mar
+  const nm = { names: [['Doe J.', 'Roe R.'], ['Moe M.', 'Poe P.'], ['Goffin D.', 'Cilic M.']], retNames: [] };
+  const xs = { xRows: [[20160306, null, '', '', 'Davis Cup', 1.71, 2.24, 0, 8, 't']], xNames: [['Goffin D.', 'Cilic M.']] };
+  const career = [
+    { date: '2016-03-04', won: true, opponent: 'M. Cilic', round: 'RR', tournament: 'Davis Cup WG R1: CRO vs BEL', eventKey: null, level: 'atp' },
+    { date: '2016-03-07', won: true, opponent: 'M. Cilic', round: 'QF', tournament: 'Indian Wells Masters', eventKey: null, level: 'atp' }];
+  const go = J => { const rows = career.map(r => ({ date: r.date, won: r.won, round: r.round, opp: r.opponent, tournament: r.tournament }));
+    priceJoin(rows, { full: 'D. Goffin' }, null, J, r => r.opp, JSON.parse(JSON.stringify(career))); return rows.map(r => [r.price ?? null, r.oppPrice ?? null]); };
+  const got = go(dbPriceJoinRows(base, nm, xs));
+  assert.deepEqual(got[1], [2.32, 1.70], 'Indian Wells QF keeps its own Pinnacle close (Goffin the underdog at 2.32)');
+  assert.deepEqual(got[0], [2.24, 1.71], 'the Davis Cup tie takes the Tennis Explorer price');
+  // control: with the tour row read as a team-event row, the Davis Cup price (a day from the event start) lands on Indian Wells
+  const ctl = new Function('fhDayNum', JOIN_SRC.replace("if (c.team && !m.row && !m.team) return;", '') + '\nreturn h2hPriceJoin;')(fhDayNum);
+  const rows = career.map(r => ({ date: r.date, won: r.won, round: r.round, opp: r.opponent }));
+  ctl(rows, { full: 'D. Goffin' }, null, dbPriceJoinRows(base, nm, xs), r => r.opp, JSON.parse(JSON.stringify(career)));
+  assert.deepEqual([rows[1].price, rows[1].oppPrice], [2.24, 1.71], 'control: without the rule Indian Wells shows the Davis Cup price (the bug)');
+});
+
 test('founder ruling 2026-10-18 (item 3): ATP qualifying, Challenger and ITF ride the era shard behind flag l and price through the ONE join, each with its source', () => {
   const base = { meta: { levels: ['Grand Slam'], surfaces: ['Hard'], rounds: ['The Final'], tournaments: ['Australian Open'] },
     rows: [[20250126, 0, 0, 0, 0, 1.40, 3.00, 1, 0]], retRows: [] };

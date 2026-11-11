@@ -92,6 +92,12 @@ no day work, checks or screenshots on this page until the founder reopens it.
     "start" is not its tie's; a keyless archive career row meets it on |match day − career date| within the price window,
     never start to start (`dbPriceJoinRows` `tIx`). Gojo v Rublev, Davis Cup Finals 2021 F = 5.92 / 1.17. **Test:**
     `test-ten402-b.mjs` "a team-event row joins" (control: the pre-fix join dashes it).
+    **It prices a team-event career match only** (founder 2026-11-11): a career row whose event is not a team event (Davis /
+    Laver / ATP / United / Hopman Cup, Olympics, Next Gen Finals, Asian Games, World Team Cup) never takes it. Goffin,
+    Indian Wells 2016 QF v Cilic (archive row dated 7 Mar) had taken the Davis Cup tie's 2.24 / 1.71 (6 Mar); it reads its
+    own Pinnacle close 2.32 / 1.70, and the tie its Tennis Explorer price. Measured over 741 players' histories: that one
+    match was the only one to move. **Test:** `test-ten402-b.mjs` "a team-event row prices a team-event career match only"
+    (control: without the rule Indian Wells shows the Davis Cup price).
   - **Names** (`h2hTdSame`): surname + initial; the surname-tail rule both ways — the archive's shorter name is the first
     or last word(s) of ours ("Mpetshi G." = G. Mpetshi Perricard, "Bautista R.", "Del Potro J.M."), a longer one must
     START with ours ("Ramos-Vinolas A." = A. Ramos; "Lopez San Martin A." is NOT A. Martin). The initial keeps brothers

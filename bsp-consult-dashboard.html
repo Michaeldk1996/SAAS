@@ -29555,6 +29555,9 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, profileRosterMap: () =
     const code = r => (/^(R\d+|QF|SF|F|RR|Q)$/.test(String(r || '')) ? String(r) : null);
     const clash = (x, y) => !!(x && y && x !== y);
     const W = H2H_PAGE_PRICE_WINDOW, MW = H2H_PAGE_MATCH_WINDOW, SW = H2H_PAGE_START_WINDOW, RW = H2H_PAGE_ROW_WINDOW;
+    // the career rows of a team event (the era rows behind flag t: Davis / Laver / ATP / United / Hopman Cup, Olympics,
+    // Next Gen Finals, Asian Games, World Team Cup): a team-event era row prices only these (founder 2026-11-11)
+    const TEAM = /davis cup|laver cup|atp cup|united cup|hopman cup|olympic|next ?gen|asian games|world team cup/i;
     // matches → their Database row (step 1 / 3): ms = [{ d, won, rd, k, ek, row }]; ek = dated on the match day, row = a
     // ledger row with no career match (step 3)
     const dbPairs = (ms, skip, anyRound) => {
@@ -29568,6 +29571,9 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, profileRosterMap: () =
           if (c.aWon !== m.won || (!anyRound && clash(m.rd, c.rd))) return;
           // a team-event row (c.team): its name is every tie of the year ("Davis Cup"), so no start to start — match day only
           if (m.ek ? dd < MW[0] || dd > MW[1] : dd < W[0] || dd > W[1] || (!m.row && !c.team && (ds < SW[0] || ds > SW[1]))) return;
+          // founder 2026-11-11: a team-event row prices a team-event career match only, never a tour match beside it
+          // (Goffin, Indian Wells 2016 QF v Cilic took the Davis Cup tie's price, dated a day from the event's start)
+          if (c.team && !m.row && !m.team) return;
           if (!same(m.k, c.k)) return;
           // match day to match day; a start-dated career row start to start; a ledger row of unknown kind (step 3) its own date
           out.push({ l: j, r: c.i, ad: Math.abs(m.ek || m.row || c.team ? dd : ds) });
@@ -29590,7 +29596,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, profileRosterMap: () =
       const k = key(x.opponent), id = d + '|' + k.s + '|' + x.won + '|' + (x.round || '');
       if (mSeen.has(id)) return;                                     // one match listed twice is one match
       mSeen.add(id);
-      meet.push({ d, won: x.won, rd: code(fhRoundCode(x.round, x.qualifying)), k, ek: x.eventKey != null, x });
+      meet.push({ d, won: x.won, rd: code(fhRoundCode(x.round, x.qualifying)), k, ek: x.eventKey != null, team: TEAM.test(String(x.tournament || '')), x });
     });
     M = h2hNearest(dbPairs(meet));
     // Founder ruling 2026-10-17 (ruling 2): a career match the strict pass left unpriced takes a Database row whose ROUND
