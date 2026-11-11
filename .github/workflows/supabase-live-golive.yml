@@ -124,7 +124,9 @@ jobs:
         run: |
           set -euo pipefail
           printf 'project_id = "%s"\n' "$PROJECT_REF" > supabase/config.toml
-          supabase functions deploy live-poller --project-ref "$PROJECT_REF" --no-verify-jwt
+          # --yes: the CLI now asks for confirmation and refuses without a terminal (run 43014009836, 2026-11-11: the deploy
+          # failed AFTER the function secret was rotated and BEFORE the scheduler got it, so every poll was refused).
+          supabase functions deploy live-poller --project-ref "$PROJECT_REF" --no-verify-jwt --yes
 
       - name: Write Vault secrets for the scheduler (Management API)
         run: |
