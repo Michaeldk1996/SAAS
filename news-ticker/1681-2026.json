@@ -2,8 +2,71 @@
  "tournament": "Stockholm",
  "tournamentKey": "1681",
  "season": "2026",
- "updatedAt": "2026-11-11T21:15:06.285Z",
+ "updatedAt": "2026-11-11T21:42:31.972Z",
  "items": [
+  {
+   "id": "report-12179122",
+   "type": "report",
+   "playerId": "437",
+   "opponentId": "2848",
+   "player": "H. Rune",
+   "opponent": "M. Kecmanovic",
+   "tournament": "Stockholm",
+   "tournamentKey": "1681",
+   "season": "2026",
+   "stage": "main draw",
+   "round": "second round",
+   "eventKey": "12179122",
+   "timestamp": "2026-11-11T21:09:07.255Z",
+   "timestampKind": "observed",
+   "observed": {
+    "endedAt": "2026-11-11T21:09:07.255Z",
+    "startedAt": "2026-11-11T19:46:13.473Z",
+    "minutes": 83
+   },
+   "category": "Statistics",
+   "text": "H. Rune beat M. Kecmanovic for the 4th time in 5 meetings, 2-6, 6-1, 6-4 in the second round in 83 minutes. H. Rune came from a set down. H. Rune won 7 games in a row. H. Rune: 9 aces, 41 winners, 28 unforced errors, saved 0 of 3 break points. M. Kecmanovic: 4 aces, 18 winners, 11 unforced errors, saved 1 of 5 break points.",
+   "fields": {
+    "score": "2-6, 6-1, 6-4",
+    "round": "second round",
+    "retired": false,
+    "h2h": {
+     "a": 4,
+     "b": 1,
+     "n": 5
+    },
+    "durationMinutes": 83,
+    "facts": {
+     "fromSetDown": true,
+     "longestRun": {
+      "side": "p2",
+      "n": 7
+     }
+    },
+    "winner": {
+     "aces": 9,
+     "winners": 41,
+     "unforcedErrors": 28,
+     "breakPointsSaved": 0,
+     "breakPointsFaced": 3,
+     "breakPointsSource": "box score"
+    },
+    "loser": {
+     "aces": 4,
+     "winners": 18,
+     "unforcedErrors": 11,
+     "breakPointsSaved": 1,
+     "breakPointsFaced": 5,
+     "breakPointsSource": "box score"
+    }
+   },
+   "sourceName": "Stennisfy match data (api-tennis box score and point-by-point)",
+   "sourceUrl": "pbp/12179122.json",
+   "language": "en",
+   "translated": false,
+   "sourceHash": "8d7c12b94e90b448",
+   "publishedAt": "2026-11-11T21:42:31.972Z"
+  },
   {
    "id": "report-12178945",
    "type": "report",
