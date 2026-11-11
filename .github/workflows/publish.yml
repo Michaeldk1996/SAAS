@@ -158,7 +158,10 @@ jobs:
     needs: assemble
     if: needs.assemble.outputs.ready == 'true' && needs.assemble.outputs.deploy == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    # 25 min (was 10): from 10 Nov 13:40Z GitHub held every deploy in "syncing_files" / "deployment_queued" past
+    # deploy-pages' own 10-min limit, so each one cancelled itself and the site stayed on its 13:31Z build (one success
+    # overnight). The step now waits up to 20 min; pipeline-stall-guard still cancels a publish stuck past that.
+    timeout-minutes: 25
     permissions:
       pages: write
       id-token: write
@@ -169,3 +172,5 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deploy
         uses: actions/deploy-pages@v4
+        with:
+          timeout: 1200000
