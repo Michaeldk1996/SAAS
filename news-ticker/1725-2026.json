@@ -1,0 +1,67 @@
+{
+ "tournament": "Paris",
+ "tournamentKey": "1725",
+ "season": "2026",
+ "updatedAt": "2026-11-11T18:39:24.726Z",
+ "items": [
+  {
+   "id": "report-12178223",
+   "type": "report",
+   "playerId": "2382",
+   "opponentId": "2973",
+   "player": "C. Alcaraz",
+   "opponent": "B. Shelton",
+   "tournament": "Paris",
+   "tournamentKey": "1725",
+   "season": "2026",
+   "stage": "main draw",
+   "round": "final",
+   "eventKey": "12178223",
+   "timestamp": "2026-11-08T14:20:00.000Z",
+   "timestampKind": "scheduled",
+   "observed": null,
+   "category": "Statistics",
+   "text": "C. Alcaraz beat B. Shelton for the 4th time in 5 meetings, 7-6, 7-5 in the final. Set 1 went to a tiebreak, won by C. Alcaraz. C. Alcaraz: 6 aces, 33 winners, 27 unforced errors, saved 6 of 7 break points. B. Shelton: 12 aces, 25 winners, 26 unforced errors, saved 3 of 5 break points.",
+   "fields": {
+    "score": "7-6, 7-5",
+    "round": "final",
+    "retired": false,
+    "h2h": {
+     "a": 4,
+     "b": 1,
+     "n": 5
+    },
+    "facts": {
+     "tiebreakSets": [
+      {
+       "set": 1,
+       "winner": "p2"
+      }
+     ]
+    },
+    "winner": {
+     "aces": 6,
+     "winners": 33,
+     "unforcedErrors": 27,
+     "breakPointsSaved": 6,
+     "breakPointsFaced": 7,
+     "breakPointsSource": "box score"
+    },
+    "loser": {
+     "aces": 12,
+     "winners": 25,
+     "unforcedErrors": 26,
+     "breakPointsSaved": 3,
+     "breakPointsFaced": 5,
+     "breakPointsSource": "box score"
+    }
+   },
+   "sourceName": "Stennisfy match data (api-tennis box score and point-by-point)",
+   "sourceUrl": "pbp/12178223.json",
+   "language": "en",
+   "translated": false,
+   "sourceHash": "e07185c45502deca",
+   "publishedAt": "2026-11-11T18:39:24.726Z"
+  }
+ ]
+}
