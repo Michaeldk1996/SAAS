@@ -91,7 +91,7 @@ export function reportText(m, w, l, opts = {}) {
   if (B.parts.length) { out.push(`${m[l]}: ${B.parts.join(', ')}.`); fields.loser = B.fields; }
   const used = { wue: !!(A.fields.winners != null || B.fields.winners != null), bpSides: [A, B].filter((x) => x.fields.breakPointsFaced != null).length,
     h2h: !!fields.h2h, pbp: !!pbp, duration: fields.durationMinutes != null };
-  return { text: out.join(' '), fields, used };
+  return { text: out.join(' '), sentences: out, fields, used };
 }
 
 // Our ONE H2H list (H2HCore.joinMeetings over both career-history shards), counted only when it already holds this
