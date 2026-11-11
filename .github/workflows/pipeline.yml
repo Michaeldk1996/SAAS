@@ -1313,6 +1313,7 @@ jobs:
           # Firestore (firestore.rules) — no picks file is published. Asserted below.
           cp picks-core.js picks-store.js picks-page.js picks-drawer.js picks-shell.js picks-page.css _site/
           cp bettracker-math.js bettracker-store.js bettracker-page.js bettracker-page.css bettracker-import.js bettracker-seed.js _site/
+          cp news-sample.json _site/ 2>/dev/null || true
           cp series.json _site/ 2>/dev/null || true
           cp trading-splits-index.json _site/ 2>/dev/null || true
           cp -r trading-splits _site/ 2>/dev/null || true
