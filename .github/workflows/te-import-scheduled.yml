@@ -39,7 +39,11 @@ jobs:
       # Pinnacle pair before the start for each played ATP main-draw / qualifying / Challenger match from 17 Sep with a held
       # payload (insert-only; a re-run adds 0). A failure fails the job and sends the FAILED line below. Self-heal (founder
       # 2026-11-06): a recent played match with no Oddspapi fixture or no payload held is mapped / pulled by this step itself.
+      # founder 2026-11-11 ("make sure our whole website has odds"): a failure here never stops the Tennis Explorer batches
+      # below — they are a separate source; the job still goes red afterwards and the FAILED alert names this step
       - name: Pinnacle (approx.) before the start (insert-only)
+        id: sched
+        continue-on-error: true
         env:
           API_TENNIS_KEY: ${{ secrets.API_TENNIS_KEY }}
           # the self-heal (founder 2026-11-06): one metered fixtures read when a recent match is unmapped, free history pulls
@@ -60,6 +64,11 @@ jobs:
             --data-urlencode "chat_id=${TELEGRAM_CHAT_ID}" --data-urlencode "text=${msg}")
           echo "Telegram: HTTP ${code}"; cat te-import-lines.txt
           [ "$code" = "200" ] || { echo "::error::batch line Telegram failed (HTTP ${code})"; exit 1; }
+      - name: The before-start step failed (the batches above still ran)
+        if: steps.sched.outcome == 'failure'
+        run: |
+          echo "::error::Pinnacle (approx.) before the start failed in this run; the Tennis Explorer batch import still ran"
+          exit 1
       - name: Alert — the scheduled import FAILED (Telegram)
         if: failure()
         run: |

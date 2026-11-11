@@ -806,6 +806,12 @@ check('self-heal: the pulled payload is stored insert-only as a back-fill row (s
       "'trigger': 'backfill', 'via': 'sched-heal'" in _hsrc and 'P.insert(P.RAW' in _hsrc
       and 'ODDSPAPI_KEY: ${{ secrets.ODDSPAPI_KEY }}' in open(os.path.join(HERE, '..', '.github', 'workflows', 'te-import-scheduled.yml')).read())
 
+# founder 2026-11-11: a before-start failure never skips the Tennis Explorer batch import, and the run still goes red
+_ts_wf = open(os.path.join(HERE, '..', '.github', 'workflows', 'te-import-scheduled.yml')).read()
+_i_s, _i_t, _i_f = _ts_wf.find('id: sched'), _ts_wf.find('te-import-new .te-store'), _ts_wf.find("if: steps.sched.outcome == 'failure'")
+check('scheduled import: the before-start step continues on error, the batch import runs after it, then the job fails red',
+      'id: sched\n        continue-on-error: true' in _ts_wf and 0 < _i_s < _i_t < _i_f < _ts_wf.find('if: failure()'))
+
 # founder 2026-11-06 ("price it about 30-45 minutes after the match"): today's finished matches are targets, and the
 # 15-minute run skips a match that already holds a before-start snapshot
 _fh = [{'event_key': 1, 'source': T.SCHED_SOURCE}, {'event_key': 2, 'source': 'api-tennis Pinnacle'}]
