@@ -49,6 +49,17 @@ jobs:
           node tools/news-ticker/ticker-alerts.mjs --test
           node tools/news-ticker/collect-quotes.mjs --test-alerts
 
+      - name: One-off — forget the cached articles whose quotes were never published (translation failed 11 Nov)
+        if: ${{ !inputs.test_alerts }}
+        run: |
+          node -e '
+          const fs=require("fs"),F="news-quotes/fetched.json",f=JSON.parse(fs.readFileSync(F,"utf8"));
+          const held=new Set();
+          for(const n of fs.readdirSync("news-quotes")){ if(!/^\d+-\d+\.json$/.test(n)) continue;
+            for(const x of JSON.parse(fs.readFileSync("news-quotes/"+n,"utf8")).items||[]){ held.add(x.sourceUrl); (x.alsoReportedBy||[]).forEach(a=>held.add(a.sourceUrl)); } }
+          let n=0; for(const u of Object.keys(f)) if(f[u].quotes>0 && !held.has(u)){ console.log("re-read: "+u); delete f[u]; n++; }
+          fs.writeFileSync(F,JSON.stringify(f,null,1)+"\n"); console.log(n+" cached articles forgotten");
+          '
       - name: Collect quotes
         if: ${{ !inputs.test_alerts }}
         env:
