@@ -1257,6 +1257,99 @@
     "output": 0
    },
    "alerts": []
+  },
+  {
+   "at": "2026-11-11T23:54:59.578Z",
+   "activeTournaments": [
+    "Stockholm"
+   ],
+   "tournaments": [
+    {
+     "name": "Stockholm",
+     "key": "1681",
+     "sources": [
+      {
+       "name": "ATP Tour daily report (via the official tournament site)",
+       "articles": 17,
+       "candidates": 8,
+       "robotsStatus": 200,
+       "skippedByRobots": 0,
+       "unnamed": 4
+      }
+     ],
+     "outlets": {
+      "read": 61,
+      "withCandidates": 4,
+      "blocked": [
+       "Fox Sports Australia: the site refuses a plain request",
+       "TenisovySvet.cz: the site refuses a plain request",
+       "ESPN: unexpected answer",
+       "Aftonbladet: unexpected answer"
+      ],
+      "articlesFetched": 8,
+      "paywalled": 0,
+      "unnamed": 27,
+      "byOutlet": [
+       {
+        "outlet": "TV 2 Sport",
+        "country": "Denmark",
+        "language": "da",
+        "fetched": 1,
+        "candidates": 2
+       },
+       {
+        "outlet": "B.T.",
+        "country": "Denmark",
+        "language": "da",
+        "fetched": 3,
+        "candidates": 7
+       },
+       {
+        "outlet": "SVT Sport",
+        "country": "Sweden",
+        "language": "sv",
+        "fetched": 2,
+        "candidates": 3
+       },
+       {
+        "outlet": "Expressen",
+        "country": "Sweden",
+        "language": "sv",
+        "fetched": 2,
+        "candidates": 3
+       }
+      ]
+     },
+     "counts": {
+      "candidates": 23,
+      "droppedNotVerbatim": 0,
+      "droppedNoPlayer": 1,
+      "droppedAmbiguous": 0,
+      "notTranslatedNoKey": 0,
+      "notTranslatedApiError": 0,
+      "droppedTranslationCheck": 0,
+      "droppedEnglishExists": 0,
+      "mergedSameQuote": 0,
+      "alreadyHeld": 0,
+      "items": 22,
+      "tokens": {
+       "input": 2447,
+       "output": 843
+      },
+      "modelError": null
+     },
+     "added": 15,
+     "held": 25,
+     "finishedMatches": 23,
+     "matchesWithWinnerQuote": 7
+    }
+   ],
+   "newItems": 15,
+   "tokens": {
+    "input": 2447,
+    "output": 843
+   },
+   "alerts": []
   }
  ]
 }
