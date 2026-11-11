@@ -52,7 +52,7 @@ function load(opts = {}) {
     function newsPlayerFor(){ throw new Error('the News page read a headline for a name'); }
     ${BLOCK}
     return { set data(v) { _newsData = v; }, set state(v) { _newsState = v; }, set cats(v) { _newsCats = v; }, set tour(v) { _newsTourKey = v; },
-      set hours(v) { _newsRangeHours = v; }, set q(v) { _newsSearch = v; }, set view(v) { _newsView = v; },
+      set ticker(v) { _newsTicker = v; }, set hours(v) { _newsRangeHours = v; }, set q(v) { _newsSearch = v; }, set view(v) { _newsView = v; },
       renderNews, newsToggleCat, newsSetView, newsWiden, newsToggleRow, newsWireItems, newsPageIntelItems, get hoursNow() { return _newsRangeHours; },
       get cats() { return _newsCats; } };
   `);
@@ -97,6 +97,33 @@ test('Data 2: only player-attributed articles show; the page never reads a headl
   assert.ok(/Alcaraz eases/.test(list) && /Sinner withdraws/.test(list) && /Djokovic draw/.test(list));
   assert.ok(!/Djokovic wins the title/.test(list), 'a tournament-only article came back');
   assert.ok(/Djokovic/.test(FEED().articles[2].title), 'control: the unattributed headline does name a player');
+});
+
+// News ticker (founder 2026-11-12: "it needs to be there in news") — mutation: drop newsTickerItems() from the list; print a
+// quote without its outlet link; show a ticker item that has no text.
+test('Ticker: match reports, quotes (outlet linked, translation marked) and status items sit in the feed with the articles', () => {
+  const at = h => new Date(Date.now() - h * H).toISOString();
+  const TK = [
+    { id: 'report-1', type: 'report', playerId: '437', opponentId: '2848', player: 'H. Rune', opponent: 'M. Kecmanovic', tournament: 'Stockholm', timestamp: at(1),
+      text: 'H. Rune beat M. Kecmanovic, 2-6, 6-1, 6-4 in the second round in 83 minutes.', fields: { score: '2-6, 6-1, 6-4' } },
+    { id: 'quote-1', type: 'quote', playerId: '437', opponentId: '2848', player: 'H. Rune', opponent: 'M. Kecmanovic', tournament: 'Stockholm', timestamp: at(0.5),
+      context: 'after beating M. Kecmanovic', text: 'I found my level.', translated: true, language: 'da', sourceName: 'BT', sourceUrl: 'https://www.bt.dk/tennis/x"y' },
+    { id: 'status-1', type: 'status', playerId: '1777', opponentId: '366', player: 'T. M. Etcheverry', opponent: 'T. A. Tirante', tournament: 'Stockholm', timestamp: at(2),
+      category: 'Withdrawals', text: 'T. M. Etcheverry gave a walkover to T. A. Tirante.' },
+    { id: 'quote-2', type: 'quote', playerId: '9', player: 'N. Body', tournament: 'Stockholm', timestamp: at(1), text: '' },           // no words: never shown
+  ];
+  const P = page({}, { ticker: TK }), h = P.get('newsList'), list = text(h);
+  assert.ok(/Alcaraz eases/.test(list), 'the articles left the feed');
+  assert.ok(/H\. Rune beat M\. Kecmanovic, 2-6, 6-1, 6-4/.test(list) && /in 83 minutes/.test(list), 'the match report is not in the feed');
+  assert.ok(/H\. Rune after beating M\. Kecmanovic/.test(list) && /“I found my level\.”/.test(list) && /Translated from Danish\./.test(list), 'the quote is not in the feed');
+  const q = card(h, 'tquote-1');
+  assert.match(q, /<a class="news-cardsource" href="https:\/\/www\.bt\.dk\/tennis\/x&quot;y" target="_blank" rel="noopener nofollow"[^>]*>BT<\/a>/, 'a quote must link its outlet (escaped)');
+  assert.ok(/gave a walkover/.test(list) && !/N\. Body/.test(list));
+  assert.deepEqual(stats(P).slice(0, 2).map(s => s[1]), ['6', '7']);
+  assert.match(text(page({}, { ticker: TK, cats: ['Quotes'] }).get('newsList')), /^[^“]*H\. Rune after beating[^“]*“I found my level\.” Translated from Danish\.$/);
+  assert.ok(/gave a walkover/.test(text(page({}, { ticker: TK, cats: ['Withdrawals & Injuries'] }).get('newsList'))));
+  const U = page({ feed: null, state: 'unavailable' }, { ticker: TK });   // the article feed down: the ticker still shows
+  assert.ok(/H\. Rune beat/.test(text(U.get('newsList'))));
 });
 
 // Data 3 — mutation: any "Sample" text in the page code or markup.

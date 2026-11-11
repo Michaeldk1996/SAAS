@@ -4823,6 +4823,8 @@ window.EntryListsTab = (function(){
   [data-page="news"] .news-entlink{ cursor:pointer; text-decoration:none; }
   [data-page="news"] .news-entlink:hover, [data-page="news"] .news-entlink:focus-visible{ outline:none; text-decoration:underline; }
   /* Real links (Read more / Show less, Try a wider date range., Clear search) = --link, underline on hover. */
+  [data-page="news"] a.news-cardsource{ text-decoration:none; }
+  [data-page="news"] a.news-cardsource:hover, [data-page="news"] a.news-cardsource:focus-visible{ outline:none; color:var(--text); text-decoration:underline; }
   [data-page="news"] .news-link{ padding:0; background:none; border:0; font-family:var(--font-words); font-size:inherit; font-weight:inherit; color:var(--link); cursor:pointer; }
   [data-page="news"] .news-link:hover, [data-page="news"] .news-link:focus-visible{ outline:none; text-decoration:underline; }
   [data-page="news"] .news-more{ align-self:flex-start; font-size:13px; font-weight:600; }
@@ -5353,11 +5355,12 @@ document.addEventListener('DOMContentLoaded', function () {
 const NEWS_WINDOWS = [[6, 'Last 6h'], [24, 'Last 24h'], [48, 'Last 48h'], [168, 'Last 7 days']];
 let _newsData = null;
 let _newsState = 'load';   // 'load' | 'ok' | 'unavailable' — the page's own fetch of news-feed.json
+let _newsTicker = [];      // the news ticker's items (match reports, player quotes, status) — news-ticker.json + its tournament files
 let _newsTourKey = '';     // selected event ('' = all tournaments) = newsTourKey(its printed name)
 
 // Categories are OUR mapping (newsClassify, title keywords): the feed carries no category field. Tour News is the
 // fallback bucket, so every article lands in exactly one of the four.
-const NEWS_CATEGORIES = ['Match Reports', 'Withdrawals & Injuries', 'Tour News', 'Draws & Schedules'];
+const NEWS_CATEGORIES = ['Match Reports', 'Quotes', 'Withdrawals & Injuries', 'Tour News', 'Draws & Schedules'];
 let _newsRangeHours = 168;  // Last 7 days (the reference's default)
 let _newsSearch = '';       // the query as typed; matched trimmed + lower case
 let _newsCats = [];         // multi-select; [] = All
@@ -5787,6 +5790,21 @@ async function loadNews(){
     else _newsState = 'ok';
   }
   renderNews();
+  loadNewsTicker();
+}
+// The news ticker (founder 2026-11-12: "it needs to be there in news"): our own match reports, the players' quotes
+// (verbatim, translated ones marked, each with its outlet and link) and status items. The index names the tournament
+// files; only those with an item in the last 8 days are read. A failed read shows no ticker item, never a placeholder.
+async function loadNewsTicker(){
+  try {
+    const res = await fetch('./news-ticker.json', { cache: 'no-cache' });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const ix = JSON.parse(await res.text()), since = Date.now() - 8 * 864e5;
+    const files = (ix.tournaments || []).filter(t => t && t.file && Date.parse(t.latestTimestamp) >= since).map(t => t.file);
+    const got = await Promise.all(files.map(f => fetch('./' + f, { cache: 'no-cache' }).then(r => r.ok ? r.json() : null).catch(() => null)));
+    _newsTicker = got.filter(Boolean).flatMap(d => Array.isArray(d.items) ? d.items : []);
+  } catch (err) { console.warn('news-ticker.json fetch failed:', err.message); }
+  renderNews();
 }
 
 // Event key for the tournament filter: the printed (canonical) name, slugged.
@@ -5977,6 +5995,37 @@ function newsWireItems(){
     };
   }).filter(x => x.players.length);
 }
+// Ticker items in the feed's shape. Report → "Match Reports" (title = the result, body = the report); quote → "Quotes"
+// (title = the player and the context, body = his words in curly quotes, source = the outlet, linked); status →
+// "Withdrawals & Injuries" (a walkover, withdrawal or retirement) or "Draws & Schedules" (qualifiers, lucky losers).
+function newsLangName(code){ try { return new Intl.DisplayNames(['en'], { type: 'language' }).of(String(code)) || ''; } catch (e) { return ''; } }
+function newsTickerItems(){
+  return (_newsTicker || []).filter(x => x && x.id && x.text && x.player).map(x => {
+    const P = (k, n) => (k != null && n) ? { key: String(k), name: newsPlayerName(String(k), n) } : null;
+    const both = [P(x.playerId, x.player), P(x.opponentId, x.opponent)].filter(p => p && p.name);
+    const tour = x.tournament ? (typeof sfEventName === 'function' ? sfEventName(x.tournament) : String(x.tournament)) : '';
+    const base = { kind: 'ticker', id: 't' + x.id, ts: Date.parse(x.timestamp), tour, tourKey: '', tourFrom: '' };
+    if (x.type === 'report'){
+      const score = x.fields && x.fields.score ? ', ' + x.fields.score : '';
+      return Object.assign(base, { players: both, title: both.length === 2 ? `${both[0].name} beat ${both[1].name}${score}` : String(x.text).split('. ')[0],
+        bodyParas: newsSplitParas(x.text), cat: 'Match Reports', source: 'Stennisfy' });
+    }
+    if (x.type === 'quote'){
+      const lang = x.translated ? newsLangName(x.language) : '';
+      return Object.assign(base, { tour: x.tournamentKey === 'tour' ? '' : tour, players: both.slice(0, 1), title: both[0].name + (x.context ? ' ' + x.context : (/injur/i.test(String(x.category)) ? ' on his fitness' : ' in the press')),
+        bodyParas: ['“' + String(x.text).trim() + '”'].concat(x.translated ? ['Translated' + (lang ? ' from ' + lang : '') + '.'] : []),
+        cat: /injur/i.test(String(x.category)) ? 'Withdrawals & Injuries' : 'Quotes', source: x.sourceName || '', sourceUrl: /^https?:\/\//.test(String(x.sourceUrl || '')) ? String(x.sourceUrl) : '' });
+    }
+    return Object.assign(base, { players: both, title: String(x.text), bodyParas: [], source: 'Stennisfy',
+      cat: /withdraw|injur|retire/i.test(String(x.category)) ? 'Withdrawals & Injuries' : 'Draws & Schedules' });
+  }).filter(x => x.players.length);
+}
+// The source in the meta line: a ticker quote links to the outlet's article (grey, underline on hover — never blue).
+function newsSourceHtml(it){
+  if (!it.source) return '';
+  return it.sourceUrl ? `<a class="news-cardsource" href="${newsAttr(it.sourceUrl)}" target="_blank" rel="noopener nofollow" onclick="event.stopPropagation()">${newsEscape(it.source)}</a>`
+    : `<span class="news-cardsource">${newsEscape(it.source)}</span>`;
+}
 // The founder's Post intel notes on this page: title = the first sentence (≤ 90 characters), body = the note, tag
 // "Stennisfy Intel", source "Stennisfy"; the player is plain text (never a link). A note without a player still shows.
 function newsPageIntelItems(){
@@ -6078,7 +6127,7 @@ function newsEmptyState(all){
 }
 // Widen to the first wider window that has results (so the click always changes the list).
 function newsWiden(){
-  const all = (_newsState === 'ok' ? newsWireItems() : []).concat(newsPageIntelItems());
+  const all = (_newsState === 'ok' ? newsWireItems() : []).concat(newsTickerItems(), newsPageIntelItems());
   const o = { tour: _newsTourKey, cats: _newsCats, q: _newsSearch.trim().toLowerCase() };
   const ws = NEWS_WINDOWS.map(w => w[0]).filter(h => h > _newsRangeHours);
   _newsRangeHours = ws.find(h => all.some(x => newsPasses(x, Object.assign({ hours: h }, o)))) || ws[ws.length - 1] || _newsRangeHours;
@@ -6094,7 +6143,7 @@ function renderNews(){
   newsRenderComposer();
   newsRenderStale();
   newsTip.hide();   // a re-render never leaves a stale title tip
-  const all = (_newsState === 'ok' ? newsWireItems() : []).concat(newsPageIntelItems());
+  const all = (_newsState === 'ok' ? newsWireItems() : []).concat(newsTickerItems(), newsPageIntelItems());
   newsAwaitEventDates();
   const inWin = all.filter(x => newsPasses(x, { hours: _newsRangeHours }));
   newsRenderTourDd(inWin, all);
@@ -6168,7 +6217,7 @@ function newsReadingCard(it, admin){
   const idA = newsAttr(it.id);
   return `<article class="news-card" data-id="${idA}">
       <div class="news-cardmeta">
-        <div class="news-cardmeta-l">${it.cat ? `<span class="news-cat">${newsEscape(it.cat)}</span>` : ''}${it.source ? `<span class="news-cardsource">${newsEscape(it.source)}</span>` : ''}${ents.map(e => `<span class="news-cardsep">·</span>${e}`).join('')}</div>
+        <div class="news-cardmeta-l">${it.cat ? `<span class="news-cat">${newsEscape(it.cat)}</span>` : ''}${newsSourceHtml(it)}${ents.map(e => `<span class="news-cardsep">·</span>${e}`).join('')}</div>
       </div>
       <h3 class="news-cardtitle"${newsTipAttr(it)}>${newsEscape(it.title)}</h3>
       ${paras.map(p => `<div class="news-para">${newsEscape(p)}</div>`).join('')}
