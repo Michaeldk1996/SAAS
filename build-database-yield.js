@@ -353,6 +353,10 @@ function processLine(c, col, season, fromFeed) {
     // resolving book, per row (TEN-384 option "me" = build-market-edge.js pickBook): Pinnacle
     // when both of its prices are valid, else Bet365 when both of its are; neither = dropped.
     let P = [num(c[col.psw]), num(c[col.psl])];
+    // founder 2026-11-11 ("find the closest price"; odds.md "Suspended market: overround > 20% suppresses and falls through
+    // the ladder"): a Tennis-Data Pinnacle pair over 115% is a broken pair (Marseille 2015 final, 1.58 / 1.58), not a price —
+    // treated as missing, so the match falls through to the next source instead of leaving the Database whole
+    if (validPrice(P[0]) && validPrice(P[1]) && (1 / P[0]) + (1 / P[1]) > 1.15) { P = [NaN, NaN]; bucket.pinBroken = (bucket.pinBroken || 0) + 1; }
     const B365 = [num(c[col.b365w]), num(c[col.b365l])];
     let archLabel = fromFeed ? (c[col.label] || '').trim() : null;   // our archive's own close: its label (3 / 4 below)
     if (!fromFeed && feedOn) {
@@ -889,6 +893,7 @@ const meta = {
     noResolvingBookPrice: bucket.noPrice,
     exactTie: bucket.tie,
     overroundGt115: bucket.overround,
+    pinnacleBrokenFellThrough: bucket.pinBroken || 0,   // founder 2026-11-11: a Pinnacle pair over 115% read as missing
     preWindow: bucket.preWindow,   // pre-2010 regime cut (otherwise-usable rows dropped by the window)
   },
   windowStart: WINDOW_START,

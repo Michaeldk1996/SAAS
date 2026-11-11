@@ -115,6 +115,11 @@ take styling from it, structure from the rules below.
 - Chips-and-search box `--inner`, no edge (`data-search`); chips `--inner` + white text, remove × grey; cap notes grey.
   Reset = white text.
 
+- **A broken Tennis-Data Pinnacle pair falls through** (founder 2026-11-11, "find the closest price"; odds.md "Suspended
+  market"): a `psw` / `psl` pair adding up to more than 115% (Marseille 2015 final, 1.58 / 1.58) is read as missing, so the
+  match takes the next source (our archive close, api-tennis, Bet365 as the join's "B") instead of leaving the Database
+  whole; `meta.exclusions.pinnacleBrokenFellThrough` counts them. **Test:** `tools/test-approx-pinnacle.mjs` "broken".
+
 ## Tour
 - **Test:** Favourites left | Underdogs right, each a panel (`--card` + `--edge-6`); rows Heavy favourite · Firm favourite ·
   Narrow favourite and Narrow underdog · Mid underdog · Long shot (founder fix 7, card ff586600, 2026-10-08 — replaces the

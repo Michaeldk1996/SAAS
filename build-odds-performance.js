@@ -313,6 +313,7 @@ const ARCHIVE_PAGE_SPELLINGS = {
   // keyed above too; listed so the page join's spelling never depends on whether he is in the eager profile file
   'Moroni G.M.': 'M. Moroni', 'Moroni G.': 'M. Moroni', 'Madaras D.': 'N. Madaras', 'Aragone JC': 'J. Aragone',
   'Aragone J.C.': 'J. Aragone', 'Wu T.L.': 'Wu Tung-Lin',
+  'Mukund S.': 'M. Sasikumar',                    // Sasikumar Mukund (founder 2026-11-11: Pune 2020 v T. Daniel, 1.40 / 3.18, unjoined)
   'Ali Mutawa J.M.': 'J. Al-Mutawa',              // Doha 2013 R1 v Safwat (founder brief 2026-10-19 item 1: the only ATP main-draw name miss)
   // founder ruling 2026-10-18 ("spellings: approved"): the archive names behind the Market edge rows that met no career
   // row (599 of 43,979, probe r27 on the live site, 18 Oct). Each value is the career rows' own spelling of that player,

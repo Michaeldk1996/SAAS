@@ -244,6 +244,8 @@ writeFileSync(join(d, 'odds-archive', '2026.csv'), H26 + [
   '2026-07-22,Generali Open,ATP250,Outdoor,Clay,1st Round,3,Odte O.,Ten N.,1,2,Completed,1.5,2.6,,',                 // start − 10 + TE: TE
   '2026-02-10,Dallas Open,ATP500,Indoor,Hard,2nd Round,3,Arch E.,Tee E.,1,2,Completed,1.5,2.6,,',                     // archive close + TE: the close
   '2026-02-11,Dallas Open,ATP500,Indoor,Hard,2nd Round,3,Early E.,Api E.,1,2,Completed,1.5,2.6,,',                    // E + api-tennis: E
+  // founder 2026-11-11: a Pinnacle pair over 115% (Marseille 2015 final 1.58 / 1.58) is broken: the match falls through to Bet365
+  '2026-01-12,Adelaide International,ATP250,Outdoor,Hard,1st Round,3,Broke B.,Pair P.,1,2,Completed,2.5,1.53,1.58,1.58',
 ].join('\n') + '\n');
 const AT = 'api-tennis Pinnacle', OD = 'oddspapi Pinnacle (start − 10)';
 writeFileSync(join(d, 'approx.csv'), 'date,tournament,winner,loser,psw,psl,eventKey,snapshotId,source,cutTs,gapToStartS\n' +
@@ -263,6 +265,8 @@ const run = env => { execFileSync('node', ['build-database-yield.js'], { cwd: d,
     .concat(x.xRows.map((r, i) => [r, i]).filter(([r]) => String(r[9] || '').includes('b')).map(([r, i]) => [x.xNames[i][0], [r[8], r[5], r[6], 'join']]))); };
 const R = run({ DB_YIELD_APPROX: join(d, 'approx.csv'), DB_YIELD_FEED: join(d, 'feed.csv') });
 check('builder: a Tennis-Data Pinnacle close is never replaced by a snapshot', JSON.stringify(R['Pin P.']) === JSON.stringify([0, 1.55, 2.62]), R['Pin P.']);
+check("founder 2026-11-11: a broken Tennis-Data Pinnacle pair (> 115%) falls through to Bet365 (the join's \"B\"), never drops the match",
+  JSON.stringify(R['Broke B.']) === JSON.stringify([1, 1.53, 2.5, 'join']), R['Broke B.']);
 check('builder: our archive\'s close outranks the snapshot, under its own code (3 = from Pinnacle history)', JSON.stringify(R['Arch A.']) === JSON.stringify([3, 1.48, 2.7]), R['Arch A.']);
 check('builder: a captured close from our archive is code 4, at its own price', JSON.stringify(R['Cap C.']) === JSON.stringify([4, 1.47, 2.72]), R['Cap C.']);
 const MB = JSON.parse(readFileSync(join(d, 'database-yield.json'), 'utf8')).meta;
