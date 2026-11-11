@@ -23,7 +23,8 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { verbatimIn, resolvePlayer, foldText } from './news-core.mjs';
-import { collectQuotes } from './quote-sources.mjs';
+import { collectQuotes, addContext } from './quote-sources.mjs';
+import { readOutlet, surnameOf, initialOf } from './outlet-reader.mjs';
 import { translateQuote } from './translate.mjs';
 import { mergeItems, dedupeQuotes, sameQuote } from './ticker-core.mjs';
 import { sendTelegram } from '../price-alert-send.mjs';
@@ -52,17 +53,19 @@ export function activeTournaments(board, nowIso) {
   return [...out.values()];
 }
 
-// Registry -> the source config quote-sources.mjs reads. Only "allowed" entries, for the host country and the home
-// countries of the players in the draw.
-export function siteConfig(registry, t, countries) {
-  const ts = (registry.tournamentSites || []).find((x) => String(x.tournamentKey) === t.key && x.status === 'allowed');
-  const want = new Set([...(countries || []), ts && ts.hostCountry].filter(Boolean).map(canonCountry));
-  const press = (registry.outlets || []).filter((o) => o.status === 'allowed' && o.adapter && want.has(canonCountry(o.country)))
-    .map((o) => ({ name: o.outlet, origin: o.adapter.origin, list: o.adapter.list, article: new RegExp(o.adapter.articlePattern, 'g'),
-      mention: new RegExp(`\\b${t.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i'), language: o.language, style: o.adapter.style }));
-  if (!ts && !press.length) return null;
-  return { ...(ts ? { name: ts.name, ownName: ts.ownName, origin: ts.origin, list: ts.list, feed: ts.feed, article: new RegExp(ts.articlePattern, 'g') } : {}), press };
+// Registry -> the tournament's own site (ATP daily reports are read there; ATP itself stays on the permission route).
+export function siteConfig(registry, t) {
+  const ts = (registry.tournamentSites || []).find((x) => String(x.tournamentKey) === t.key && x.status === 'allowed' && x.enabled !== false);
+  return ts ? { name: ts.name, ownName: ts.ownName, origin: ts.origin, list: ts.list, feed: ts.feed, article: new RegExp(ts.articlePattern, 'g'), hostCountry: ts.hostCountry, press: [] } : null;
 }
+// The outlets to read for a tournament: allowed and switched on, for the host country, the home countries of the
+// players in the draw, and the international group.
+export function outletsFor(registry, countries, hostCountry) {
+  const want = new Set([...(countries || []), hostCountry, 'INT'].filter(Boolean).map(canonCountry));
+  return (registry.outlets || []).filter((o) => o.status === 'allowed' && o.enabled !== false && (want.has(canonCountry(o.country)) || o.iso2 === 'INT'));
+}
+// Outlets switched off in the registry: their items are hidden on the next run (collector and feed build).
+export const switchedOff = (registry) => new Set([...(registry.outlets || []), ...(registry.tournamentSites || []).flatMap((x) => [{ ...x, outlet: x.name }, { ...x, outlet: x.ownName }])].filter((o) => o.enabled === false).map((o) => o.outlet));
 
 const quoteId = (playerId, originalText) => 'quote-' + crypto.createHash('sha1').update(String(playerId) + '|' + foldText(originalText).toLowerCase()).digest('hex').slice(0, 14);
 
@@ -76,7 +79,7 @@ export async function processTournament({ t, got, translate = translateQuote, kn
   for (const q of got.candidates) {
     c.candidates++;
     if (!(q.spans || [q.text]).every((sp) => verbatimIn(sp, q.sourceText))) { c.droppedNotVerbatim++; continue; }
-    const who = resolvePlayer(q.speaker, entrants);
+    const who = q.speakerKey && entrants.has(String(q.speakerKey)) ? { status: 'one', key: String(q.speakerKey) } : resolvePlayer(q.speaker, entrants);
     if (who.status !== 'one') { c[who.status === 'several' ? 'droppedAmbiguous' : 'droppedNoPlayer']++; continue; }
     const opp = q.opponent ? resolvePlayer(q.opponent, entrants) : null;
     ok.push({ q, key: who.key, opp: opp && opp.status === 'one' ? opp.key : null });
@@ -148,24 +151,43 @@ async function main() {
   const all = activeTournaments(board, nowIso), active = all.filter((t) => t.active || flag('force'));
   const run = { at: nowIso, activeTournaments: active.map((t) => t.name), tournaments: [], newItems: 0, tokens: { input: 0, output: 0 } };
   let modelError = null, translatedOk = false;
+  // article pages are fetched once: the URLs already read (kept 45 days)
+  const fetched = rd('news-quotes/fetched.json') || {}, sectionMemo = new Map(), fetchedBefore = JSON.stringify(fetched);
   for (const t of active) {
     const countries = [...new Set(t.cards.flatMap((m) => [countryOf.get(String(m.p1Key)), countryOf.get(String(m.p2Key))]).filter(Boolean))];
-    const site = siteConfig(registry, t, countries);
-    if (!site) { run.tournaments.push({ name: t.name, key: t.key, sources: 0, note: 'no allowed source in the registry for this tournament' }); continue; }
-    const first = Math.min(...t.cards.map((m) => Date.parse(m.date + 'T00:00:00Z')).filter(Number.isFinite));
+    const site = siteConfig(registry, t);
+    const outlets = outletsFor(registry, countries, site && site.hostCountry);
+    if (!site && !outlets.length) { run.tournaments.push({ name: t.name, key: t.key, sources: 0, note: 'no readable source in the registry for this tournament' }); continue; }
+    const first = Math.min(...t.cards.map((m) => Date.parse(m.date + 'T00:00:00Z')).filter(Number.isFinite)), since = first - 3 * 86400000;
     const main = t.cards.filter((m) => m.finalScore && m.finalScore.winner);
-    const got = await collectQuotes({ tournament: t.name, main, since: first - 3 * 86400000, site });
+    const got = site ? await collectQuotes({ tournament: t.name, main, since, site }) : { sources: [], candidates: [] };
+    // every other outlet, through the generic reader (a few at a time; each outlet's own requests stay sequential)
+    const players = [...new Map(t.cards.flatMap((m) => [[String(m.p1Key), m.p1], [String(m.p2Key), m.p2]])).entries()].map(([key, name]) => ({ key, name, surname: surnameOf(name), initial: initialOf(name) })).filter((p) => p.surname.length >= 3);
+    let oi = 0; const outletStats = [];
+    await Promise.all(Array.from({ length: 6 }, async () => {
+      while (oi < outlets.length) {
+        const o = outlets[oi++];
+        const r = await readOutlet({ outlet: o, players, tournamentName: t.name, cache: fetched, nowIso, since, sectionMemo });
+        for (const c of r.candidates) { c.speaker = (players.find((p) => p.key === c.speakerKey) || {}).name; addContext(c, main); got.candidates.push(c); }
+        outletStats.push(r.stats);
+      }
+    }));
     const file = `news-quotes/${t.key}-${t.season}.json`, held = rd(file);
-    const res = await processTournament({ t, got, known: (held && held.items) || [] });
+    const off = switchedOff(registry);
+    const heldItems = ((held && held.items) || []).filter((x) => !off.has(x.sourceName));
+    const res = await processTournament({ t, got, known: heldItems });
     if (res.counts.modelError) modelError = res.counts.modelError;
     if (res.items.some((x) => x.translated)) translatedOk = true;
-    const merged = mergeItems(held && held.items, res.items, nowIso);
-    if (merged.added || merged.revised || !held) wr(file, { tournament: t.name, tournamentKey: t.key, season: t.season, updatedAt: nowIso, items: merged.items });
+    const merged = mergeItems(heldItems, res.items, nowIso);
+    if (merged.added || merged.revised || !held || heldItems.length !== ((held && held.items) || []).length) wr(file, { tournament: t.name, tournamentKey: t.key, season: t.season, updatedAt: nowIso, items: merged.items });
     run.newItems += merged.added; run.tokens.input += res.counts.tokens.input; run.tokens.output += res.counts.tokens.output;
     const finished = main.filter((m) => !m.walkover), quoted = new Set(merged.items.filter((x) => x.won && x.eventKey).map((x) => x.eventKey));
     run.tournaments.push({ name: t.name, key: t.key, sources: got.sources.map((s) => ({ name: s.name, articles: s.articles, candidates: s.candidates, robotsStatus: s.robotsStatus, skippedByRobots: s.skippedByRobots, unnamed: s.unnamedSpeakerParagraphs })),
+      outlets: { read: outletStats.length, withCandidates: outletStats.filter((x) => x.candidates).length, blocked: outletStats.filter((x) => x.blocked).map((x) => `${x.outlet}: ${x.blocked}`), articlesFetched: outletStats.reduce((n, x) => n + x.fetched, 0), paywalled: outletStats.reduce((n, x) => n + x.paywalled, 0), unnamed: outletStats.reduce((n, x) => n + x.unnamed, 0), byOutlet: outletStats.filter((x) => x.candidates || x.fetched).map((x) => ({ outlet: x.outlet, country: x.country, language: x.language, fetched: x.fetched, candidates: x.candidates })) },
       counts: res.counts, added: merged.added, held: merged.items.length, finishedMatches: finished.length, matchesWithWinnerQuote: finished.filter((m) => quoted.has(String(m.id).split('-').slice(1).join('-'))).length });
   }
+  for (const [u, v] of Object.entries(fetched)) if (Date.parse(nowIso) - Date.parse(v.at) > 45 * 86400000) delete fetched[u];
+  if (JSON.stringify(fetched) !== fetchedBefore) wr('news-quotes/fetched.json', fetched);
   const { state, alerts } = dueAlerts(rd('news-quotes/state.json') || {}, { nowIso, anyActive: all.some((t) => t.active), itemsHeldOrNew: { newItems: run.newItems, translatedOk }, modelError });
   for (const text of alerts) { const r = await sendTelegram(text); console.log(`alert: ${r.ok ? 'sent' : 'NOT sent (' + r.why + ')'} — ${text}`); if (!r.ok) console.log('::error title=News ticker alert not sent::' + text); }
   run.alerts = alerts;

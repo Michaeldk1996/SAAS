@@ -72,7 +72,11 @@ export async function build({ nowIso, times }) {
     groups.get(id).cards.push(m);
   }
 
-  const summary = { tournaments: 0, finished: 0, reports: 0, reportErrors: [], status: 0, quotes: 0, added: 0, revised: 0, unchanged: 0, filesWritten: [], withObservedEnd: 0, withDuration: 0 };
+  // an outlet switched off in the registry ("enabled": false) has its quotes hidden from this run on — the one case an item leaves the feed
+  const reg = readJson('data/news-outlets.json') || {};
+  const off = new Set([...(reg.outlets || []), ...(reg.tournamentSites || []).flatMap((x) => [{ ...x, outlet: x.name }, { ...x, outlet: x.ownName }])].filter((o) => o.enabled === false).map((o) => o.outlet));
+  const hidden = (x) => x.type === 'quote' && off.has(x.sourceName);
+  const summary = { tournaments: 0, finished: 0, reports: 0, reportErrors: [], status: 0, quotes: 0, added: 0, revised: 0, unchanged: 0, filesWritten: [], withObservedEnd: 0, withDuration: 0, hiddenByOffSwitch: 0 };
   const touched = [];
   for (const g of groups.values()) {
     const file = fileOf(g.key, g.season);
@@ -115,12 +119,14 @@ export async function build({ nowIso, times }) {
       fresh.push({ ...s, tournamentKey: g.key, season: g.season, sourceUrl: 'matches.json' }); summary.status++;
     }
     const qf = readJson(`news-quotes/${g.key}-${g.season}.json`);
-    for (const q of (qf && qf.items) || []) { fresh.push(q); summary.quotes++; }
+    for (const q of (qf && qf.items) || []) { if (hidden(q)) continue; fresh.push(q); summary.quotes++; }
 
-    const merged = mergeItems(existing && existing.items, fresh, nowIso);
+    const kept = ((existing && existing.items) || []).filter((x) => !hidden(x)), dropped = ((existing && existing.items) || []).length - kept.length;
+    summary.hiddenByOffSwitch += dropped;
+    const merged = mergeItems(kept, fresh, nowIso);
     summary.added += merged.added; summary.revised += merged.revised; summary.unchanged += merged.unchanged; summary.tournaments++;
     touched.push({ key: g.key, season: g.season, name: g.name, items: merged.items });
-    if (merged.added || merged.revised || !existing) {
+    if (merged.added || merged.revised || dropped || !existing) {
       writeAtomic(file, { tournament: g.name, tournamentKey: g.key, season: g.season, updatedAt: nowIso, items: merged.items });
       summary.filesWritten.push(file);
     }

@@ -14,7 +14,8 @@ import { mergeItems, buildIndex, observedTimes, hashItem, dedupeQuotes, sameQuot
 import { build } from './news-ticker/build-news-ticker.mjs';
 import { pbpFacts } from './news-ticker/pbp-facts.mjs';
 import { daysWithoutReports } from './news-ticker/ticker-alerts.mjs';
-import { processTournament, dueAlerts, siteConfig, activeTournaments, SILENT_HOURS } from './news-ticker/collect-quotes.mjs';
+import { processTournament, dueAlerts, siteConfig, outletsFor, switchedOff, activeTournaments, SILENT_HOURS } from './news-ticker/collect-quotes.mjs';
+import { speakerIn, speechOf, technicalBlock, paywalled, sectionLinks, readOutlet, candidatesFromOutletArticle, UA } from './news-ticker/outlet-reader.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 let n = 0; const ok = async (name, fn) => { await fn(); n++; console.log('  ok  ' + name); };
@@ -157,17 +158,80 @@ await ok('quotes: the same quote from two outlets is one item (the second outlet
   assert.equal(sameQuote({ playerId: '1', text: a.text }, { playerId: '2', text: a.text }), false, 'another player saying the same words is another quote');
 });
 
-// ---- registry ----
+// ---- registry (Michael's ruling, 11 Nov 2026) ----
 const REG = JSON.parse(read('data/news-outlets.json'));
-await ok('registry: every outlet has a status, a reason and its robots / terms record; only "allowed" is ever fetched', () => {
-  assert.ok(REG.outlets.length >= 150);
-  for (const o of REG.outlets) { assert.ok(['allowed', 'blocked', 'unverified'].includes(o.status), o.outlet); assert.ok(o.country && o.language && o.reason && o.robots && o.terms, o.outlet); if (o.status === 'allowed') assert.ok(o.adapter && o.adapter.origin, o.outlet + ' needs an adapter'); }
-  const reg = { tournamentSites: [], outlets: [{ status: 'blocked', country: 'Sweden', outlet: 'X', language: 'sv', adapter: { origin: 'https://x', list: '/', articlePattern: 'a', style: 'dash' } },
-    { status: 'unverified', country: 'Sweden', outlet: 'Y', language: 'sv', adapter: { origin: 'https://y', list: '/', articlePattern: 'a', style: 'dash' } }] };
-  assert.equal(siteConfig(reg, T, ['Sweden']), null, 'blocked and unverified outlets are never turned into a source');
-  reg.outlets.push({ status: 'allowed', country: 'Sweden', outlet: 'Z', language: 'sv', adapter: { origin: 'https://z', list: '/', articlePattern: 'a', style: 'dash' } });
-  assert.deepEqual(siteConfig(reg, T, ['Sweden']).press.map((p) => p.name), ['Z']);
-  assert.equal(siteConfig(reg, T, ['Norway']), null, 'an outlet is read only for the host country or a home country in the draw');
+await ok('registry: every outlet keeps its robots / terms record; a readable one records the ruling; a blocked one is a technical block', () => {
+  assert.ok(REG.outlets.length >= 150); assert.match(REG.ruling, /allowed by Michael's ruling, 11 Nov 2026/);
+  for (const o of REG.outlets) {
+    assert.ok(['allowed', 'blocked', 'permission'].includes(o.status), o.outlet); assert.ok(o.country && o.language && o.reason && o.robots && o.terms && 'enabled' in o && o.statusBeforeRuling, o.outlet);
+    if (o.status === 'allowed') { assert.equal(o.allowedBy, "allowed by Michael's ruling, 11 Nov 2026", o.outlet); assert.equal(o.probe.http, 200, o.outlet); }
+    if (o.status === 'blocked') assert.equal(o.blockKind, 'technical', o.outlet);
+  }
+  assert.ok(REG.outlets.filter((o) => /atptour\.com/.test(o.sectionUrl)).every((o) => o.status === 'permission'), 'ATP stays on the permission route');
+  assert.ok(!REG.outlets.some((o) => /tennisform/i.test(JSON.stringify(o))) && !/tennisform/i.test(JSON.stringify(REG.tournamentSites)), 'no entry points at the excluded site');
+});
+await ok('registry: only allowed + switched-on outlets are read, for the host country, the draw\'s home countries and the international group', () => {
+  const reg = { outlets: [{ status: 'allowed', enabled: true, country: 'Sweden', outlet: 'A' }, { status: 'blocked', enabled: true, country: 'Sweden', outlet: 'B' },
+    { status: 'allowed', enabled: false, country: 'Sweden', outlet: 'C' }, { status: 'allowed', enabled: true, country: 'Norway', outlet: 'D' }, { status: 'allowed', enabled: true, country: 'INT', iso2: 'INT', outlet: 'E' },
+    { status: 'permission', enabled: true, country: 'INT', iso2: 'INT', outlet: 'ATP' }] };
+  assert.deepEqual(outletsFor(reg, ['Denmark'], 'Sweden').map((o) => o.outlet), ['A', 'E']);
+  assert.deepEqual([...switchedOff(reg)], ['C']);
+});
+await ok('technical blocks are never bypassed: 401/403/429, a CAPTCHA page, an empty page, a paywall all keep the page out', () => {
+  for (const st of [401, 402, 403, 429, 451, 503]) assert.ok(technicalBlock(st, 'x'.repeat(2000)), String(st));
+  assert.ok(technicalBlock(200, '<title>Just a moment...</title>' + 'x'.repeat(2000))); assert.ok(technicalBlock(200, 'short'));
+  assert.equal(technicalBlock(200, '<html>' + 'article '.repeat(300) + '</html>'), null);
+  assert.ok(paywalled('{"isAccessibleForFree":false}')); assert.ok(paywalled('<div class="article paywall">')); assert.equal(paywalled('<p>free text</p>'), false);
+  assert.ok(/plain client/.test(UA) && !/Mozilla|Chrome|Safari/.test(UA), 'one honest user agent, never a browser disguise');
+  for (const f of ['tools/news-ticker/outlet-reader.mjs', 'tools/news-ticker/collect-quotes.mjs', 'tools/news-ticker/quote-sources.mjs']) assert.ok(!/puppeteer|playwright|--headless|HttpsProxyAgent|socks/i.test(read(f)), f);
+});
+const PL = [{ key: '437', surname: 'rune', initial: 'h' }, { key: '1', surname: 'bergs', initial: 'z' }, { key: '2', surname: 'davidovich fokina', initial: 'a' }];
+await ok('speaker: exactly one field player directly at a said-word; a relative, a coach or a second player is nobody', () => {
+  const T2 = [['siger Aneke Rune', null, 'da'], ['siger Holger Rune', '437', 'da'], ['siger Rune', '437', 'da'], ['Rune said in his on-court interview.', '437', 'en'], ["Rune's coach said", null, 'en'],
+    ['Aneke Rune said', null, 'en'], ['Rune, who lifted the trophy in 2022, said', '437', 'en'], ['said the 23-year-old', null, 'en'], ['dijo Davidovich Fokina', '2', 'es'],
+    ['The coach of Rune said', null, 'en'], ['Bergs said Rune was too good', null, 'en'], ['sagde Runes mor', null, 'da'], ['said Rune', null, 'xx']];
+  for (const [t, exp, lang] of T2) assert.equal(speakerIn(t, PL, lang), exp, t);
+});
+await ok('speech: quotation marks, guillemets and dash-led lines all yield only the quoted words', () => {
+  assert.deepEqual(speechOf('– Det var en tuff match för mig i dag, säger Etcheverry.'), { spans: ['Det var en tuff match för mig i dag'], outside: 'säger Etcheverry' });
+  assert.deepEqual(speechOf('«Estoy muy contento con mi nivel de hoy», dijo Rune.').spans, ['Estoy muy contento con mi nivel de hoy']);
+  assert.deepEqual(speechOf('Rune called it "tough".').spans, []);
+});
+const ART = (body) => `<html><head><script type="application/ld+json">{"datePublished":"2026-11-10T20:00:00Z"}</script></head><body><article><p>Testville report.</p>${body}</article></body></html>`;
+await ok('an article yields candidates that carry the quoted words only (never article text), each attributed and dated', () => {
+  const g = candidatesFromOutletArticle({ url: 'https://o/x', outlet: 'Outlet', language: 'en', players: PL,
+    html: ART('<p>“I served really well and stayed calm today,” said Rune.</p><p>“It was not my day at all, honestly,” said the Belgian.</p><p>The match lasted two hours.</p>') });
+  assert.equal(g.candidates.length, 1); assert.equal(g.unnamed, 1);
+  const c = g.candidates[0]; assert.equal(c.speakerKey, '437'); assert.equal(c.text, 'I served really well and stayed calm today,'); assert.equal(c.timestamp, '2026-11-10T20:00:00.000Z');
+  assert.ok(!c.text.includes('The match lasted'));
+});
+await ok('polite rate: one section request per outlet per run; an article page is fetched once, ever; a blocked section is left alone', async () => {
+  const log = [];
+  const SECTION = '<html>' + 'x'.repeat(700) + '<a href="/tennis/rune-wins-in-testville-again">Rune wins in Testville</a><a href="/tennis/other-long-article-slug">Other news</a></html>';
+  const fetchFn = async (url) => { log.push(url); return { status: 200, url, text: async () => (url.endsWith('/tennis/') ? SECTION : ART('<p>“I served really well and stayed calm today,” said Rune.</p>') + 'x'.repeat(700)) }; };
+  const outlet = { outlet: 'Outlet', country: 'Sweden', language: 'en', status: 'allowed', enabled: true, sectionUrl: 'https://o.example/tennis/' };
+  const cache = {}, memo = new Map(), base = { outlet, players: PL, tournamentName: 'Testville', cache, nowIso: '2026-11-10T21:00:00Z', since: Date.parse('2026-11-05'), fetchFn, sectionMemo: memo };
+  const r1 = await readOutlet(base); assert.equal(r1.candidates.length, 1); assert.deepEqual([r1.stats.links, r1.stats.relevant, r1.stats.fetched], [2, 1, 1]);
+  const r2 = await readOutlet(base); assert.deepEqual([r2.stats.fetched, r2.stats.alreadyFetched, r2.candidates.length], [0, 1, 0]);
+  assert.deepEqual(log, ['https://o.example/tennis/', 'https://o.example/tennis/rune-wins-in-testville-again'], 'section once (memo), article once (cache)');
+  const blocked = await readOutlet({ ...base, sectionMemo: new Map(), fetchFn: async (url) => ({ status: 403, url, text: async () => '' }) });
+  assert.equal(blocked.stats.blocked, 'the site refuses a plain request'); assert.equal(blocked.candidates.length, 0);
+  const offR = await readOutlet({ ...base, outlet: { ...outlet, enabled: false }, sectionMemo: new Map(), fetchFn: async () => { throw new Error('must not fetch'); } });
+  assert.equal(offR.stats.blocked, 'not enabled');
+});
+await ok('section links: RSS items and HTML anchors, same site only, article slugs only', () => {
+  const rss = '<rss><channel><item><title>Rune wins</title><link>https://o.example/sport/rune-wins-in-stockholm</link><pubDate>Tue, 10 Nov 2026 20:00:00 GMT</pubDate></item><item><link>https://other.example/x-long-article-slug</link></item></channel></rss>';
+  assert.deepEqual(sectionLinks(rss, 'https://o.example/feed'), [{ url: 'https://o.example/sport/rune-wins-in-stockholm', title: 'Rune wins', published: '2026-11-10T20:00:00.000Z' }]);
+  assert.deepEqual(sectionLinks('<a href="/tennis/">Tennis</a><a href="/tennis/a-long-enough-article-slug">A</a>', 'https://o.example/').map((l) => l.url), ['https://o.example/tennis/a-long-enough-article-slug']);
+});
+await ok('off switch: an outlet set to "enabled": false loses its items from the feed on the next build; the others stay', () => {
+  const q = (id, src) => ({ id, type: 'quote', playerId: '1', tournament: 'Testville', tournamentKey: '77', season: '2026', timestamp: '2026-11-10T14:00:00.000Z', timestampKind: 'observed', category: 'Quotes', text: 'I played well ' + id, language: 'en', translated: false, sourceName: src, sourceUrl: 'https://s/' + id });
+  const files = { 'news-quotes/77-2026.json': { items: [q('quote-a', 'Outlet A'), q('quote-b', 'Outlet B')] }, 'data/news-outlets.json': { outlets: [{ outlet: 'Outlet A', enabled: true }, { outlet: 'Outlet B', enabled: true }] } };
+  const d = fixture([card({ id: 'past-100' })], { files });
+  runBuild(d, '2026-11-10T15:00:00.000Z'); assert.deepEqual(itemsOf(d).filter((x) => x.type === 'quote').map((x) => x.id).sort(), ['quote-a', 'quote-b']);
+  fs.writeFileSync(path.join(d, 'data/news-outlets.json'), JSON.stringify({ outlets: [{ outlet: 'Outlet A', enabled: true }, { outlet: 'Outlet B', enabled: false }] }));
+  const s2 = JSON.parse(runBuild(d, '2026-11-10T15:15:00.000Z')); assert.equal(s2.hiddenByOffSwitch, 1);
+  assert.deepEqual(itemsOf(d).filter((x) => x.type === 'quote').map((x) => x.id), ['quote-a']);
 });
 await ok('collector scope: a tournament is active with a card today (UTC) or a match finished yesterday; older boards are idle', () => {
   const b = { 0: card({ id: 'past-1', date: '2026-11-10' }), 1: card({ id: 'u-2', date: '2026-11-12', finalScore: null }) };

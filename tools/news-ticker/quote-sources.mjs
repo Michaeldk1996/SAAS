@@ -108,7 +108,7 @@ export function candidatesFromDashArticle({ url, html, sourceName, language }) {
 }
 
 // context from OUR results only: the speaker's latest completed main-draw match on the article's day or the day before
-function addContext(c, main) {
+export function addContext(c, main) {
   if (!c.day) return;
   const sur = c.speaker.split(' ').pop().toLowerCase();
   const prevDay = new Date(Date.parse(c.day + 'T00:00:00Z') - 86400000).toISOString().slice(0, 10);

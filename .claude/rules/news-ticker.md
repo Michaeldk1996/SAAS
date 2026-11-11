@@ -39,12 +39,26 @@ ticker page comes through Claude Design). Tests: `tools/test-news-ticker.mjs`, `
 ## Quotes
 - **A quote is verbatim from its source or it is not published.** The check runs on the original-language text of the
   fetched page; a failing item is dropped and counted, never repaired.
-- **Only outlets marked `allowed` in `data/news-outlets.json` are fetched.** allowed = robots.txt permits a generic
-  automated client and the outlet itself permits retrieval or reuse. A general "no reuse without consent" clause is
-  `unverified` until Michael rules. Changing a status is an edit to that file with the clause quoted.
-- Read for a tournament: its registry tournament site (ATP daily reports), the host country's allowed outlets and the
-  home countries' of the players in the draw.
-- Speaker = exactly one player of that tournament's field; a quote that names nobody is skipped.
+- **Outlet ruling (Michael, 11 Nov 2026, risk accepted):** the collector may read any outlet page served publicly to a
+  plain request, whatever its robots.txt or terms say. `data/news-outlets.json` keeps each outlet's clause and records
+  "allowed by Michael's ruling, 11 Nov 2026". Limits, each a test in `test-news-ticker-live.mjs`:
+  - **No bypassing a technical block:** 401 / 403 / 429, a CAPTCHA or bot-check page, a login or a paywall keeps the
+    page out. One honest user agent; no proxy, no browser disguise, no headless browser.
+  - **Only the quoted words, the speaker and the labelling context are kept.** Article text is never stored or
+    published. Every item carries the outlet name and the article link.
+  - **Polite rate:** one section request per outlet per run (every 30 minutes); an article page is fetched once
+    (`news-quotes/fetched.json`), at most 6 new articles per outlet per run.
+  - **Off switch:** `"enabled": false` on a registry entry stops collection and hides that outlet's items on the next
+    run (the one case an item leaves the feed).
+  - ATP stays on the permission route (read only through the tournament sites under `tournamentSites`). YouTube audio,
+    the Tennis TV stream and tennisformterminal.com stay out.
+  - `tools/news-ticker/probe-outlets.mjs --write` re-reads every section and sets `allowed` / `blocked` (technical).
+- Read for a tournament: its tournament site, the host country's outlets, the home countries' of the players in the
+  draw, and the international group.
+- **Speaker = exactly one player of that tournament's field, named directly at a said-word outside the quotation.** A
+  capitalised word before the surname must start with the player's initial ("siger Aneke Rune" is not H. Rune); a
+  possessive or "the coach of Rune" is nobody; two players at said-words is nobody; a language with no said-word list
+  yields nothing. A quote that names nobody is skipped.
 - Non-English quotes are translated in the pipeline only (key in Actions secrets), original kept, `translated: true`.
   Checks: same sentence count, every name and number present in the original. If the same quote exists in English, the
   English one is published only. Second-hand renderings (a Swedish print of English speech) are published, marked
