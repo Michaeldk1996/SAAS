@@ -1,0 +1,327 @@
+{
+ "runs": [
+  {
+   "at": "2026-11-11T15:14:44.831Z",
+   "activeTournaments": [
+    "Stockholm"
+   ],
+   "tournaments": [
+    {
+     "name": "Stockholm",
+     "key": "1681",
+     "sources": [
+      {
+       "name": "ATP Tour daily report (via the official tournament site)",
+       "articles": 14,
+       "candidates": 7,
+       "robotsStatus": 200,
+       "skippedByRobots": 0,
+       "unnamed": 4
+      }
+     ],
+     "outlets": {
+      "read": 61,
+      "withCandidates": 6,
+      "blocked": [
+       "Fox Sports Australia: the site refuses a plain request",
+       "TenisovySvet.cz: the site refuses a plain request",
+       "AS (Diario AS): the site refuses a plain request",
+       "Aftonbladet: unexpected answer",
+       "ESPN: unexpected answer"
+      ],
+      "articlesFetched": 136,
+      "paywalled": 13,
+      "unnamed": 97,
+      "byOutlet": [
+       {
+        "outlet": "RedGol",
+        "country": "Chile",
+        "language": "es",
+        "fetched": 1,
+        "candidates": 0
+       },
+       {
+        "outlet": "RTBF Sport",
+        "country": "Belgium",
+        "language": "fr",
+        "fetched": 1,
+        "candidates": 0
+       },
+       {
+        "outlet": "Olé",
+        "country": "Argentina",
+        "language": "es",
+        "fetched": 6,
+        "candidates": 0
+       },
+       {
+        "outlet": "La Nación",
+        "country": "Argentina",
+        "language": "es",
+        "fetched": 6,
+        "candidates": 0
+       },
+       {
+        "outlet": "Séptimo Game",
+        "country": "Chile",
+        "language": "es",
+        "fetched": 3,
+        "candidates": 0
+       },
+       {
+        "outlet": "Sporza (VRT)",
+        "country": "Belgium",
+        "language": "nl",
+        "fetched": 6,
+        "candidates": 0
+       },
+       {
+        "outlet": "La DH Les Sports+",
+        "country": "Belgium",
+        "language": "fr",
+        "fetched": 6,
+        "candidates": 0
+       },
+       {
+        "outlet": "We Love Tennis",
+        "country": "France",
+        "language": "fr",
+        "fetched": 1,
+        "candidates": 0
+       },
+       {
+        "outlet": "RMC Sport",
+        "country": "France",
+        "language": "fr",
+        "fetched": 6,
+        "candidates": 0
+       },
+       {
+        "outlet": "TV 2 Sport",
+        "country": "Denmark",
+        "language": "da",
+        "fetched": 6,
+        "candidates": 2
+       },
+       {
+        "outlet": "B.T.",
+        "country": "Denmark",
+        "language": "da",
+        "fetched": 6,
+        "candidates": 7
+       },
+       {
+        "outlet": "DR Sporten",
+        "country": "Denmark",
+        "language": "da",
+        "fetched": 6,
+        "candidates": 0
+       },
+       {
+        "outlet": "Sport1",
+        "country": "Germany",
+        "language": "de",
+        "fetched": 4,
+        "candidates": 0
+       },
+       {
+        "outlet": "Sportschau (ARD)",
+        "country": "Germany",
+        "language": "de",
+        "fetched": 2,
+        "candidates": 0
+       },
+       {
+        "outlet": "Tennis Actu",
+        "country": "France",
+        "language": "fr",
+        "fetched": 6,
+        "candidates": 0
+       },
+       {
+        "outlet": "tennis MAGAZIN",
+        "country": "Germany",
+        "language": "de",
+        "fetched": 2,
+        "candidates": 0
+       },
+       {
+        "outlet": "Tennishead",
+        "country": "INT",
+        "language": "en",
+        "fetched": 2,
+        "candidates": 0
+       },
+       {
+        "outlet": "Ubitennis",
+        "country": "INT",
+        "language": "en",
+        "fetched": 2,
+        "candidates": 1
+       },
+       {
+        "outlet": "SuperTennis (FITP)",
+        "country": "Italy",
+        "language": "it",
+        "fetched": 2,
+        "candidates": 0
+       },
+       {
+        "outlet": "TennisUpToDate",
+        "country": "INT",
+        "language": "en",
+        "fetched": 5,
+        "candidates": 1
+       },
+       {
+        "outlet": "Tennis Majors",
+        "country": "INT",
+        "language": "en",
+        "fetched": 6,
+        "candidates": 0
+       },
+       {
+        "outlet": "La Gazzetta dello Sport",
+        "country": "Italy",
+        "language": "it",
+        "fetched": 3,
+        "candidates": 0
+       },
+       {
+        "outlet": "ABC Color",
+        "country": "Paraguay",
+        "language": "es",
+        "fetched": 1,
+        "candidates": 0
+       },
+       {
+        "outlet": "Corriere dello Sport",
+        "country": "Italy",
+        "language": "it",
+        "fetched": 5,
+        "candidates": 0
+       },
+       {
+        "outlet": "Ubitennis",
+        "country": "Italy",
+        "language": "it",
+        "fetched": 6,
+        "candidates": 0
+       },
+       {
+        "outlet": "RTS Sport",
+        "country": "Serbia",
+        "language": "sr",
+        "fetched": 1,
+        "candidates": 0
+       },
+       {
+        "outlet": "Sports.kz",
+        "country": "Kazakhstan",
+        "language": "ru",
+        "fetched": 2,
+        "candidates": 0
+       },
+       {
+        "outlet": "Sport Klub",
+        "country": "Serbia",
+        "language": "sr",
+        "fetched": 2,
+        "candidates": 0
+       },
+       {
+        "outlet": "BBC Sport",
+        "country": "United Kingdom",
+        "language": "en",
+        "fetched": 1,
+        "candidates": 0
+       },
+       {
+        "outlet": "VG Sporten",
+        "country": "Norway",
+        "language": "no",
+        "fetched": 6,
+        "candidates": 0
+       },
+       {
+        "outlet": "LTA",
+        "country": "United Kingdom",
+        "language": "en",
+        "fetched": 1,
+        "candidates": 0
+       },
+       {
+        "outlet": "Marca",
+        "country": "Spain",
+        "language": "es",
+        "fetched": 4,
+        "candidates": 0
+       },
+       {
+        "outlet": "Sky Sports",
+        "country": "United Kingdom",
+        "language": "en",
+        "fetched": 2,
+        "candidates": 0
+       },
+       {
+        "outlet": "SVT Sport",
+        "country": "Sweden",
+        "language": "sv",
+        "fetched": 5,
+        "candidates": 3
+       },
+       {
+        "outlet": "Mundo Deportivo",
+        "country": "Spain",
+        "language": "es",
+        "fetched": 6,
+        "candidates": 0
+       },
+       {
+        "outlet": "Expressen",
+        "country": "Sweden",
+        "language": "sv",
+        "fetched": 6,
+        "candidates": 1
+       }
+      ]
+     },
+     "counts": {
+      "candidates": 22,
+      "droppedNotVerbatim": 0,
+      "droppedNoPlayer": 1,
+      "droppedAmbiguous": 0,
+      "notTranslatedNoKey": 0,
+      "notTranslatedApiError": 13,
+      "droppedTranslationCheck": 0,
+      "droppedEnglishExists": 0,
+      "mergedSameQuote": 0,
+      "alreadyHeld": 0,
+      "items": 8,
+      "tokens": {
+       "input": 0,
+       "output": 0
+      },
+      "modelError": {
+       "http": 400,
+       "detail": "HTTP 400 {\"type\":\"error\",\"error\":{\"type\":\"invalid_request_error\",\"message\":\"Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits.\"},\""
+      }
+     },
+     "added": 8,
+     "held": 8,
+     "finishedMatches": 18,
+     "matchesWithWinnerQuote": 3
+    }
+   ],
+   "newItems": 8,
+   "tokens": {
+    "input": 0,
+    "output": 0
+   },
+   "alerts": [
+    "News ticker: the translation model call failed (HTTP 400 HTTP 400 {\"type\":\"error\",\"error\":{\"type\":\"invalid_request_error\",\"message\":\"Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits.\"},\"). Non-English quotes are held back until it works again."
+   ]
+  }
+ ]
+}
