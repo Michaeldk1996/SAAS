@@ -5,6 +5,7 @@ name: mto-bot
 #            tools/mto-levels.sql; copy the source's key (and the MTO chat id, when the secret exists) into Vault; schedule
 #            the 10-second detector and the one-minute watch; one startup message to the MTO chat; the read-back.
 #   report   the read-back only (counts, never a row).
+#   weekly   send the weekly report now (it also goes out by itself every Monday 08:00 UTC, to the pipeline chat).
 #   rollback unschedule the detector and the watch (the archive stays).
 # Main only. Touches no other bot, no other chat and no existing Vault secret.
 on:
@@ -12,7 +13,7 @@ on:
     inputs:
       mode:
         type: choice
-        options: [report, install, rollback]
+        options: [report, install, rollback, weekly]
         default: report
 permissions:
   contents: read
@@ -34,7 +35,7 @@ jobs:
         if: inputs.mode == 'install'
         run: python3 tools/test-mto-bot-sql.py
       - name: Apply / roll back
-        if: inputs.mode != 'report'
+        if: inputs.mode == 'install' || inputs.mode == 'rollback'
         env:
           LIVETENNISAPI_KEY: ${{ secrets.LIVETENNISAPI_KEY }}
           TELEGRAM_MTO_CHAT_ID: ${{ secrets.TELEGRAM_MTO_CHAT_ID }}
@@ -50,7 +51,7 @@ jobs:
                   with urllib.request.urlopen(req, timeout=120) as r: return r.status, json.loads(r.read() or b'null')
               except urllib.error.HTTPError as e: return e.code, e.read()[:600].decode('utf8', 'replace')
           if os.environ['MODE'] == 'rollback':
-              st, r = sql("select cron.unschedule(jobname) from cron.job where jobname in ('mto-detector', 'mto-watch')")
+              st, r = sql("select cron.unschedule(jobname) from cron.job where jobname in ('mto-detector', 'mto-watch', 'mto-weekly')")
               print('rollback HTTP', st, r if st >= 400 else ''); sys.exit(1 if st >= 400 else 0)
           key = (os.environ.get('LIVETENNISAPI_KEY') or '').strip()
           if not key: print('::error::LIVETENNISAPI_KEY is not set: the detector would have no source'); sys.exit(1)
@@ -86,11 +87,24 @@ jobs:
               try:
                   with urllib.request.urlopen(req, timeout=120) as r: return r.status, json.loads(r.read() or b'null')
               except urllib.error.HTTPError as e: return e.code, e.read()[:600].decode('utf8', 'replace')
-          st, r = sql("select cron.schedule('mto-detector', '10 seconds', 'select mto_rec.tick()') a, cron.schedule('mto-watch', '* * * * *', 'select mto.watch_tick()') b")
+          st, r = sql("select cron.schedule('mto-detector', '10 seconds', 'select mto_rec.tick()') a, cron.schedule('mto-watch', '* * * * *', 'select mto.watch_tick()') b, cron.schedule('mto-weekly', '0 8 * * 1', 'select mto.weekly_send()') c")
           print('schedule HTTP', st, r)
           if st >= 400: sys.exit(1)
           st, r = sql("select mto.startup() as rid"); print('startup HTTP', st, r)
           if st >= 400: sys.exit(1)
+          PY
+      - name: Weekly report now
+        if: inputs.mode == 'weekly'
+        run: |
+          python3 - <<'PY'
+          import json, os, re, sys, urllib.request, urllib.error
+          ref = re.sub(r'^https://([^.]+)\..*$', r'\1', os.environ['SUPABASE_URL'].strip())
+          req = urllib.request.Request(f'https://api.supabase.com/v1/projects/{ref}/database/query',
+              data=json.dumps({'query': "select mto.weekly_send() r"}).encode(),
+              headers={'Authorization': 'Bearer ' + os.environ['SUPABASE_ACCESS_TOKEN'], 'Content-Type': 'application/json', 'User-Agent': 'mto-bot'})
+          try:
+              with urllib.request.urlopen(req, timeout=120) as r: print('weekly:', json.loads(r.read())[0]['r'])
+          except urllib.error.HTTPError as e: print('weekly HTTP', e.code, e.read()[:400].decode('utf8', 'replace')); sys.exit(1)
           PY
       - name: Read-back
         if: inputs.mode != 'rollback'
@@ -108,7 +122,7 @@ jobs:
           print(json.dumps(rep, indent=1))
           if os.environ['MODE'] == 'install':
               bad = []
-              if len([j for j in (rep.get('cron') or []) if j.get('active')]) != 2: bad.append('cron jobs not both active')
+              if len([j for j in (rep.get('cron') or []) if j.get('active')]) != 3: bad.append('cron jobs not all three active')
               if not rep.get('key'): bad.append('no source key in Vault')
               if ((rep.get('requests') or {}).get('ok') or 0) < 1: bad.append('no answer from the source recorded')
               if (rep.get('state') or {}).get('lastOkAt') is None: bad.append('the detector has not read its source')

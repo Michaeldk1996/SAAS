@@ -654,6 +654,54 @@ begin
   return null;
 end $$;
 
+-- THE WEEKLY REPORT (founder 2026-11-12): how many alerts failed to send. Population = every in-scope medical timeout
+-- called in the p_days before p_to (duplicates of one timeout out). Every count carries that denominator.
+create or replace function mto.weekly_text(p_to timestamptz default now(), p_days integer default 7) returns text language plpgsql stable as $$
+declare a timestamptz := p_to - make_interval(days => p_days); n integer; sent integer; first_try integer; resent integer;
+        failed integer; late integer; held integer; nochat integer; open_ integer; med numeric; lines text;
+begin
+  select count(*), count(*) filter (where delivery = 'sent'), count(*) filter (where delivery = 'sent' and send_tries <= 1),
+         count(*) filter (where delivery = 'sent' and send_tries > 1), count(*) filter (where delivery like 'failed:%'),
+         count(*) filter (where delivery like 'not sent:%'), count(*) filter (where delivery like 'held:%'),
+         count(*) filter (where delivery like 'unsent: no vault%'), count(*) filter (where delivery in ('unsent', 'queued')),
+         percentile_cont(0.5) within group (order by delay_s) filter (where delivery = 'sent' and delay_s is not null)
+    into n, sent, first_try, resent, failed, late, held, nochat, open_, med
+    from mto.archive where dup_of is null and coalesce(called_at, seen_at) >= a and coalesce(called_at, seen_at) < p_to;
+  select string_agg('• ' || to_char(coalesce(x.called_at, x.seen_at) at time zone 'UTC', 'DD Mon HH24:MI') || ' UTC · ' || mto.esc(x.p1) || ' v ' || mto.esc(x.p2)
+                    || ' · ' || mto.esc(left(x.delivery, 70)), chr(10) order by coalesce(x.called_at, x.seen_at))
+    into lines
+    from (select * from mto.archive where dup_of is null and coalesce(called_at, seen_at) >= a and coalesce(called_at, seen_at) < p_to
+             and delivery <> 'sent' and delivery not in ('unsent', 'queued') order by coalesce(called_at, seen_at) limit 25) x;
+  return concat_ws(chr(10),
+    '🩺 <b>MTO alerts — weekly report</b>',
+    to_char(a at time zone 'UTC', 'DD Mon') || ' – ' || to_char(p_to at time zone 'UTC', 'DD Mon HH24:MI') || ' UTC · ATP main draw + qualifying',
+    '',
+    'Medical timeouts detected: <b>' || n || '</b>',
+    'Posted: <b>' || sent || ' of ' || n || '</b>' || case when sent > 0 then ' (first try ' || first_try || ', after a resend ' || resent || ')' else '' end,
+    'FAILED to send: <b>' || failed || ' of ' || n || '</b>',
+    case when late > 0 then 'Seen too late to post: ' || late || ' of ' || n end,
+    case when held > 0 then 'Held (no single match on our board): ' || held || ' of ' || n end,
+    case when nochat > 0 then 'No chat configured: ' || nochat || ' of ' || n end,
+    case when open_ > 0 then 'Still sending: ' || open_ || ' of ' || n end,
+    'Median call → post: ' || coalesce(round(med)::text || ' s (n=' || sent || ')', '—'),
+    case when lines is not null then chr(10) || 'Not posted:' || chr(10) || lines end);
+end $$;
+
+-- sends it to the pipeline chat, at most once per 6 days (so a re-install or a double cron fire never repeats it)
+create or replace function mto.weekly_send() returns text language plpgsql as $$
+declare msg text; rid bigint;
+begin
+  perform pg_advisory_xact_lock(288312);
+  perform mto.settle();
+  if exists (select 1 from mto.watch_log where kind = 'weekly' and at > now() - interval '6 days' and delivery not like 'failed:%'
+               and delivery <> 'unsent: no vault secret') then return 'already sent'; end if;
+  msg := mto.weekly_text();
+  rid := mto.send(msg, 'pipeline_telegram_chat_id');
+  insert into mto.watch_log (kind, text, net_request_id, delivery)
+  values ('weekly', msg, rid, case when rid is null then 'unsent: no vault secret' else 'queued' end);
+  return case when rid is null then 'unsent' else 'queued' end;
+end $$;
+
 -- one startup message to the MTO chat, once
 create or replace function mto.startup() returns bigint language plpgsql as $$
 declare rid bigint; msg text;

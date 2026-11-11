@@ -51,6 +51,11 @@ Applies to `tools/mto-bot.sql` (schemas `mto_rec` + `mto`), `tools/mto-levels.mj
 - **Failure alert → the pipeline chat** (Vault `pipeline_telegram_chat_id`), from `mto.watch_tick()` every minute, **only
   while an ATP singles match is in play on our own live board**: no key, no successful read for 3 min, or the source's
   own data clock more than 5 min old. One message per incident, repeated every 3 h, then RECOVERED.
+- **Weekly report → the pipeline chat** (founder 2026-11-12), Monday 08:00 UTC (`mto-weekly`, `mto.weekly_send()`; on
+  demand: `mto-bot.yml` mode `weekly`): the medical timeouts detected in the last 7 days (in scope, duplicates out) and,
+  over that count, how many were posted (first try / after a resend), **failed to send**, seen too late, held; the
+  median call → post delay with its n; every one not posted named with its reason. At most one a week. **Test:** every
+  count shares one denominator; an empty week prints 0 and no median.
 
 ## Running it
 - `mto-bot.yml` (main only): `install` (test → apply → Vault → pg_cron `mto-detector` every 10 s + `mto-watch` every

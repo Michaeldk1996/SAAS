@@ -36,6 +36,8 @@ MUTANTS = [
     ('a timed-out send is never tried again', "when (r.status_code is null or r.status_code = 429 or r.status_code >= 500) and a.send_tries < 10", "when false"),
     ('the source is named in the post', "'⏱ ' || coalesce(to_char(a.called_at at time zone 'UTC', 'HH24:MI:SS') || ' UTC', '—'));", "'⏱ ' || coalesce(to_char(a.called_at at time zone 'UTC', 'HH24:MI:SS') || ' UTC', '—') || ' · Source: ' || a.source);"),
     ('a stale MTO is still resent', "> now() - (select resend_max_age from mto_rec.config) then 'unsent'", "> now() - interval '100 years' then 'unsent'"),
+    ('the weekly report counts a failed post as posted', "count(*) filter (where delivery like 'failed:%'),\n         count(*) filter (where delivery like 'not sent:%')", "0,\n         count(*) filter (where delivery like 'not sent:%')"),
+    ('the weekly report goes to the MTO chat', "msg := mto.weekly_text();\n  rid := mto.send(msg, 'pipeline_telegram_chat_id');", "msg := mto.weekly_text();\n  rid := mto.send(msg, 'mto_telegram_chat_id');"),
     ('a lost post is not reported', "if exists (select 1 from mto.archive where delivery like 'failed:%' and sent_at > now() - interval '15 minutes') then", "if false then"),
     ('the server is taken from the wrong side', "case srv when 1 then m.p1_name when 2 then m.p2_name end, dup,", "case srv when 2 then m.p1_name when 1 then m.p2_name end, dup,"),
 ]
@@ -303,9 +305,9 @@ try:
     tick()
     check('ten sends at most, then failed with its reason', tries() == 'failed: Timeout/10', tries())
     check('a send is given 5 s, so the next try is one tick away', one("select prosrc like '%timeout_milliseconds := 5000%' from pg_proc where proname = 'send' and pronamespace = 'mto'::regnamespace") == 't')
-    q("create temp table st_keep as select * from mto_rec.state; update mto_rec.state set last_ok_at = now(), watermark = now()")
+    q("create table public.st_keep as select * from mto_rec.state; update mto_rec.state set last_ok_at = now(), watermark = now()")
     lost = one("select coalesce(mto.problem(), 'none')")
-    q("update mto_rec.state s set last_ok_at = k.last_ok_at, watermark = k.watermark from st_keep k; drop table st_keep")
+    q("update mto_rec.state s set last_ok_at = k.last_ok_at, watermark = k.watermark from public.st_keep k; drop table public.st_keep")
     check('a post lost after every retry is a problem the watch reports',
           'NOT posted to Telegram after 10 tries' in lost and 'Casper Ruud' in lost and 'Carlos Alcaraz' in lost, lost)
     q("update mto_rec.config set resend_max_age = interval '2 minutes'")
@@ -337,6 +339,34 @@ try:
     q("update mto.archive set settled_at = null, final_result = null, result_asked_at = null where source_match_id = 216536")
     drain(None, {216536: live_m})
     check('a match still in play gets no result (asked again later)', one("select final_result is null and settled_at is null from mto.archive where source_event_id = 1759248") == 't')
+
+    # the weekly report: how many alerts failed to send, each count over the timeouts detected
+    q("create table public.arch_keep as select id, delivery, send_tries, called_at, delay_s from mto.archive")
+    q("update mto.archive set called_at = now() - interval '2 days', delivery = 'sent', send_tries = 1, delay_s = 40 where dup_of is null")
+    q("update mto.archive set send_tries = 3, delay_s = 60 where source_event_id = 1759248")
+    q("update mto.archive set delivery = 'failed: Timeout of 5000 ms reached', send_tries = 10 where source_match_id = 216324")
+    q("update mto.archive set called_at = now() - interval '9 days' where source_match_id = 216399")
+    nw = int(one("select count(*) from mto.archive where dup_of is null and called_at > now() - interval '7 days'"))
+    wk = one("select mto.weekly_text()")
+    check('weekly: detected, posted (first try / resend) and FAILED, each over the same denominator',
+          f'Medical timeouts detected: <b>{nw}</b>' in wk and f'Posted: <b>{nw - 1} of {nw}</b> (first try {nw - 2}, after a resend 1)' in wk
+          and f'FAILED to send: <b>1 of {nw}</b>' in wk, wk)
+    check('weekly: the failed one is named with its reason; a timeout 9 days old is outside the week',
+          'Casper Ruud' in wk.split('Not posted:')[1] and 'failed: Timeout of 5000 ms reached' in wk and 'Etcheverry' not in wk, wk)
+    check('weekly: median delay with its n', f'Median call → post: 40 s (n={nw - 1})' in wk, wk)
+    check('weekly: no source named', 'Live Tennis' not in wk and 'Source' not in wk, wk)
+    q("update mto.archive set called_at = now() - interval '30 days'")
+    wk0 = one("select mto.weekly_text()")
+    check('weekly: an empty week says 0 and gives no rate or median', 'Medical timeouts detected: <b>0</b>' in wk0 and 'FAILED to send: <b>0 of 0</b>' in wk0 and 'Median call → post: —' in wk0, wk0)
+    q("update mto.archive a set delivery = k.delivery, send_tries = k.send_tries, called_at = k.called_at, delay_s = k.delay_s from public.arch_keep k where k.id = a.id; drop table public.arch_keep")
+    q("delete from vault.decrypted_secrets where name = 'pipeline_telegram_chat_id'")
+    check('weekly: with no pipeline chat it is unsent, never another chat', one("select mto.weekly_send()") == 'unsent'
+          and one("select count(*) from net.calls where method = 'POST' and body->>'chat_id' <> 'MTOCHAT'") == '0')
+    q("insert into vault.decrypted_secrets values ('pipeline_telegram_chat_id', 'PIPECHAT')")
+    check('weekly: goes to the pipeline chat', one("select mto.weekly_send()") == 'queued'
+          and one("select body->>'chat_id' from net.calls where method = 'POST' order by id desc limit 1") == 'PIPECHAT')
+    check('weekly: not sent twice in a week', one("select mto.weekly_send()") == 'already sent')
+    q("delete from vault.decrypted_secrets where name = 'pipeline_telegram_chat_id'")
 
     # cadence
     q("update mto_rec.requests set processed_at = now() where processed_at is null")
