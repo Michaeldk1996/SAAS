@@ -4,7 +4,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { generateKeyPairSync, createVerify, constants as CC } from 'node:crypto';
 import { samePlayer, polyMatches, kalshiMatches, joinPairs, kalshiFee, polyFee, Books, evaluate, Episodes, summarise, gapRow, PolyFeed, KalshiFeed, kalshiSign, boardPhase, boardFixture, setText, recRows,
-  kiblNames, kiblFixtures, kiblRows, kiblQuotes, KiblFeed, kiblLiveQuotes, KIBL_GAP_MS, KIBL_LIVE_MAX_MS, KIBL_LIVE_ROW_MAX_MS, KIBL_STREAM_HB_MAX_MS, BOOK_LINK_HOME, unify, venueQuotes, evaluateMulti, multiGapRow, STALE_MS, BOOKS } from './live-arb-recorder.mjs';
+  kiblNames, kiblFixtures, kiblRows, kiblQuotes, KiblFeed, kiblLiveQuotes, gapChecks, CHECK_MAX_MS, KIBL_GAP_MS, KIBL_LIVE_MAX_MS, KIBL_LIVE_ROW_MAX_MS, KIBL_STREAM_HB_MAX_MS, BOOK_LINK_HOME, unify, venueQuotes, evaluateMulti, multiGapRow, STALE_MS, BOOKS } from './live-arb-recorder.mjs';
 import { readFileSync } from 'node:fs';
 
 const ev = (id, a, b, extra = {}) => ({ id, title: `X: ${a} vs ${b}`, live: false, ...extra,
@@ -303,16 +303,16 @@ test('Kibl in-play rows from the stream table: both sides open, priced and recen
   assert.equal(kiblLiveQuotes([g(9, 101, 1.6)], t).size, 0, 'one side only'); assert.equal(kiblLiveQuotes([g(9, 101, 2.2), g(9, 202, 2.2)], t).size, 0, 'over 101%');
 });
 
-test('Kibl feed: one login, Bearer on every REST call, ≥ 1.3 s between REST calls; in play from the stream table every cycle, never REST; pre-match every 20th', async () => {
+test('Kibl feed: one login, Bearer on every REST call, ≥ 1.3 s between REST calls; in play from the stream table every cycle, never REST; pre-match every 30th', async () => {
   const K = fakeKibl({ live: [lr(9, 101, 1.6), lr(9, 202, 2.4)], pre: [kr(9, 101, 1.8, 1), kr(9, 202, 2.0, 1)] });
-  for (let i = 0; i < 21; i++) { await K.feed.cycle(); K.tick(1000); }
+  for (let i = 0; i < 31; i++) { await K.feed.cycle(); K.tick(1000); }
   const api = K.calls.filter((c) => !c.body), logins = K.calls.filter((c) => c.body);
   assert.equal(logins.length, 1, 'one login for the run (mutant: login per call)'); assert.equal(JSON.parse(logins[0].body).AuthFlow, 'USER_PASSWORD_AUTH');
   assert.ok(api.every((c) => c.auth === 'Bearer T1'));
   for (let i = 1; i < api.length; i++) assert.ok(api[i].at - api[i - 1].at >= KIBL_GAP_MS, 'paced (mutant: no pause)');
   const mk = api.filter((c) => c.path.endsWith('/info/markets'));
   assert.equal(mk.filter((c) => c.q.betting_type_id === '3').length, 0, 'never asks REST for in-play (it has none)');
-  assert.equal(K.reads.length, 21, 'the stream table is read every cycle');
+  assert.equal(K.reads.length, 31, 'the stream table is read every cycle');
   assert.equal(mk.filter((c) => c.q.betting_type_id === '1').length, 2, 'pre-match every KIBL_PRE_EVERY cycles');
   assert.ok(mk.every((c) => c.q.league_id === '19' && c.q.feed_source_id === '171'), 'ATP league, Bet105 feed only');
   assert.equal(api.filter((c) => c.path.endsWith('/info/fixtures')).length, 1, 'fixtures every 5 min, not every cycle');
@@ -396,4 +396,46 @@ test('Kalshi × Polymarket rows carry the same legs (venue, price, after fee, st
   const g = gapRow(p, e, { inPlay: true, started: true, polyAt: 1000, kalAt: 1000 });
   assert.deepEqual(g.legs.map((l) => l.venue), ['Polymarket', 'Kalshi']); assert.equal(g.legs[0].dec, g.polyDec); assert.equal(g.legs[1].eff, g.kalEff);
   assert.equal(g.legs[0].stake, g.polyStake); assert.equal(g.legs[1].url, 'https://kalshi.com/markets/kxatpmatch/atp-tennis-match/kxatpmatch-k1'); assert.equal(g.mkey, 'KXATPMATCH-K1');
+});
+
+// ---------- founder 2026-11-10: every price in a signal is true at the moment it is sent ----------
+test('every leg carries when its venue set the price and when we checked it; Bet105 per side', () => {
+  const t = Date.parse('2026-11-10T15:43:38Z'), g = (...a) => lr(...a)(t);
+  const q = kiblLiveQuotes([g(9, 101, 1.6, 2e3), g(9, 202, 2.4, 9e3)], t).get('9');
+  assert.equal(q.hUpd, t - 2e3); assert.equal(q.aUpd, t - 9e3, 'each side keeps its own set time (mutant: one time for both)');
+  const { ms } = world([kfx(9, 'Titouan Droguet vs Alex Molcan')]); const m = ms[0];   // first-named Droguet = home = player B
+  const b = new Books(); b.snapshot('1A', [{ price: '0.45', size: '400' }], t - 30e3); b.snapshot('1B', [{ price: '0.56', size: '300' }], t - 30e3);
+  const Q = venueQuotes({ ...m, odds: { ...m.odds, start: null } }, { books: b, kalAt: null, now: t,
+    bfeed: stubFeed({ home: 2.4, away: 1.6, at: t - 500, hUpd: t - 9e3, aUpd: t - 2e3, live: false }) });
+  assert.equal(Q.Bet105.A.dec, 1.6); assert.equal(Q.Bet105.A.setAt, t - 2e3, 'player A (Molcan, away) takes the away set time (mutant: sides crossed)');
+  assert.equal(Q.Bet105.B.setAt, t - 9e3); assert.equal(Q.Bet105.A.checkedAt, t - 500, 'checked = our read of the stream table');
+  assert.equal(Q.Polymarket.A.checkedAt, t, 'a Polymarket order on the live websocket book is checked now'); assert.equal(Q.Polymarket.A.setAt, t - 30e3);
+  const e = evaluateMulti(m, Q).find((x) => x.dir === 'Polymarket:A+Bet105:B');
+  const row = multiGapRow(m, e, { inPlay: true, started: true, board: { phase: 'game', score: '6–4 2–1', status: 'Set 2' } });
+  assert.equal(row.legs[1].setAt, new Date(t - 9e3).toISOString()); assert.equal(row.legs[1].checkedAt, new Date(t - 500).toISOString());
+});
+
+test('gapChecks: sent only when every leg was checked in the last 3 s and the bookmaker set its price after the latest score change', () => {
+  const t = Date.parse('2026-11-10T15:43:38Z'), I = (ms) => new Date(t + ms).toISOString();
+  const row = (o = {}) => ({ computedAt: I(0), scoreAt: I(-20e3), legs: [
+    { venue: 'Bet105', group: 'book', setAt: I(-5e3), checkedAt: I(-800) },
+    { venue: 'Polymarket', group: 'prediction', setAt: I(-60e3), checkedAt: I(0) }], ...o });
+  assert.deepEqual(gapChecks(row(), t), [], 'true clocks pass');
+  assert.deepEqual(gapChecks(row({ scoreAt: I(-2e3) }), t), ['Bet105 set its price before the latest score change'],
+    'the Rinderknech set break case: Bet105 set 5 s ago but the score changed 2 s ago (mutant: no score rule)');
+  const stale = row(); stale.legs[0].checkedAt = I(-(CHECK_MAX_MS + 1));
+  assert.deepEqual(gapChecks(stale, t), ['Bet105 not checked in the last 3 s'], 'mutant: no read-age rule');
+  assert.deepEqual(gapChecks(row({ scoreAt: null }), t), ['score time unknown']);
+  const noSet = row(); noSet.legs[0].setAt = null; assert.deepEqual(gapChecks(noSet, t), ['Bet105 set time unknown']);
+  assert.deepEqual(gapChecks(row(), t + 6e3), ['computed too long ago']);
+  const pmOld = row(); pmOld.legs[1].setAt = I(-3600e3); assert.deepEqual(gapChecks(pmOld, t), [], 'a resting prediction-market order is fillable whatever its age');
+});
+
+test('the push re-evaluates the books at that moment, every 3 s, and stamps computed / score times + the checks', () => {
+  const src = readFileSync(new URL('./live-arb-recorder.mjs', import.meta.url), 'utf8');
+  const push = src.slice(src.indexOf('const doPush = async'), src.indexOf("const body = JSON.stringify({ p: { gaps"));
+  assert.ok(/const now = Date\.now\(\); tick\(now\);/.test(push), 'tick(now) before any row is built (mutant: an older evaluation pushed)');
+  assert.ok(push.includes('g.computedAt = computedAt; g.scoreAt = scoreAtOf(key, bd); g.checks = gapChecks(g, now);'));
+  assert.ok(src.includes('setInterval(doPush, 3e3)'), 'pushed every 3 s');
+  assert.ok(/scoreSeen\.set\(key, \{ score: bd\.score, at: boardAt \}\)/.test(src), 'score time = the board snapshot the new score first appeared in');
 });

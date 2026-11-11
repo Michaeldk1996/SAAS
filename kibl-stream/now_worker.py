@@ -429,8 +429,13 @@ def flush_live(env, live, log, enabled):
         for r in rows:
             log(f"DRY live {r['fixture_id']} {r['fixture_participant_id']} {r['price']} @ {r['kibl_inserted_on']}")
         return True
-    st, body = C.sb_request(env, "POST", f"/rest/v1/{LM.TABLE}?on_conflict=fixture_id,fixture_participant_id",
-                            rows, prefer="resolution=merge-duplicates,return=minimal")
+    # every change is kept too (founder 2026-11-10: each signal must be checkable afterwards against what Bet105 showed);
+    # idempotent on (fixture, player, Kibl time), so a retried batch never doubles a row
+    st, body = C.sb_request(env, "POST", f"/rest/v1/{LM.HISTORY}?on_conflict=fixture_id,fixture_participant_id,kibl_inserted_on",
+                            rows, prefer="resolution=ignore-duplicates,return=minimal")
+    if st in (200, 201, 204):
+        st, body = C.sb_request(env, "POST", f"/rest/v1/{LM.TABLE}?on_conflict=fixture_id,fixture_participant_id",
+                                rows, prefer="resolution=merge-duplicates,return=minimal")
     if st not in (200, 201, 204):
         log(f"::warning::live upsert HTTP {st}: {body[:200]}")
         live.requeue(rows)
@@ -449,6 +454,8 @@ def prune(env, log, enabled):
     C.sb_request(env, "DELETE", f"/rest/v1/{TABLE_CARD}?written_at=lt.{cutoff}")
     day = urllib.parse.quote(iso(datetime.now(timezone.utc) - timedelta(days=1)))
     C.sb_request(env, "DELETE", f"/rest/v1/{LM.TABLE}?written_at=lt.{day}")
+    month = urllib.parse.quote(iso(datetime.now(timezone.utc) - timedelta(days=30)))
+    C.sb_request(env, "DELETE", f"/rest/v1/{LM.HISTORY}?written_at=lt.{month}")
 
 
 def broker_rtt_ms(host, port, n=5):

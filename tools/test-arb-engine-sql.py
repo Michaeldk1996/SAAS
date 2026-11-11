@@ -49,7 +49,8 @@ create table ten287_rec.ticks (id bigserial primary key, book text not null, eve
   event_status text, src text);
 create table ten287_rec.requests (id bigint primary key, kind text, book text, fired_at timestamptz default now(), processed_at timestamptz, status_code int);
 create table public.kibl_now_card (card_key text primary key, book text, book_name text, a_side text, a_price numeric, a_at timestamptz,
-  b_side text, b_price numeric, b_at timestamptz, written_at timestamptz default now());
+  b_side text, b_price numeric, b_at timestamptz, written_at timestamptz default now(), fixture_id bigint);
+create table public.kibl_live_ml (fixture_id bigint, fixture_participant_id bigint, price numeric, kibl_inserted_on timestamptz);
 create table public.kibl_now_price (card_key text, side_key text, kind text, written_at timestamptz default now());
 create table drops_live.flip (event_key text, live_at timestamptz, p1 text, p2 text);
 create table public.live_flip_log (event_key text primary key, first_live_seen_at timestamptz not null);
@@ -188,6 +189,7 @@ try:
           and '· liquidity $400\n🔗 https://kalshi.com/markets/kxatpmatch/atp-tennis-match/kx-hf\n✅ Back A. Fery' in msg
           and '🔗' not in msg.split('✅ Back A. Fery')[1]
           and '⚠️ Retirement rules differ' in msg, msg)
+    check('the ARB clock line never doubles its zone ("UTC UTC")', 'UTC UTC' not in msg, msg)
     check('ARB message clocks: Bet105 says it is UNCHANGED since its last change (the stream sends only changes), the other leg its update',
           '🕒 Prices at ' in msg and 'Bet105 unchanged since ' in msg and '(Kibl stream connected)' in msg and 'Kalshi updated ' in msg
           and 'Bet105 @ ' not in msg.split('🕒')[1], msg)
@@ -247,10 +249,18 @@ try:
     w['status'] = None
     q("select public.drops_scope_ingest($j$" + json.dumps([w]).replace('__D1__', d1) + "$j$::jsonb, 'test')", 'service_role')
     o = opps(); check('CONTROL: no flip, not started → priced again', 'Q. Halys' in [f['first'] for f in o['fair']], o['fair'])
+    q(f"update public.kibl_now_card set fixture_id = 777 where card_key = '{d1}|fery|halys'")
+    q("insert into public.kibl_live_ml values (777, 1, 1.9, now())")
+    o = opps(); check('Bet105 already trading the match in play (Kibl type 3) → not pre-match (mutant: Kibl signal ignored)',
+          'Q. Halys' not in [f['first'] for f in o['fair']] and o['arbs'] == [], o['fair'])
+    q("delete from public.kibl_live_ml")
+    o = opps(); check('CONTROL: no in-play row → priced again', 'Q. Halys' in [f['first'] for f in o['fair']], o['fair'])
     q("update public.kibl_now_price set written_at = now() - interval '10 minutes'")
     o = opps(); check('a stale Bet105 heartbeat → no fair price, no divergence', o['fair'] == [] and o['divergences'] == [], o)
 
     # LIVE (founder 2026-11-02): the in-play Kalshi × Polymarket worker's push
+    import datetime as _dt
+    def T(sec=0): return (_dt.datetime.now(_dt.timezone.utc) + _dt.timedelta(seconds=sec)).strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3] + 'Z'
     def gap(**kw):
         g = {'match': 'Alex Molcan vs Titouan Droguet', 'event': 'Rolex Paris Masters', 'kalshiEvent': 'KXATPMATCH-26NOV02MOLDRO',
              'dir': 'polyA+kalshiB', 'polyName': 'Alex Molcan', 'kalName': 'Titouan Droguet', 'polyDec': 2.222, 'polyEff': 2.17,
@@ -258,7 +268,13 @@ try:
              'polyStake': 230.41, 'kalStake': 239.59, 'payout': 500, 'profitUsd': 30,
              'stakePoly': 48.2, 'stakeKalshi': 51.8, 'inPlay': True, 'started': True,
              'phase': 'changeover', 'score': '6–3 2–1', 'boardStatus': 'Set 2',
-             'polyAt': '2026-11-02T12:00:00Z', 'kalAt': '2026-11-02T12:00:01Z'}
+             'polyAt': '2026-11-02T12:00:00Z', 'kalAt': '2026-11-02T12:00:01Z',
+             # founder 2026-11-10: the clocks every live row carries (computed now, every leg checked now)
+             'computedAt': T(0), 'scoreAt': T(-20), 'checks': [],
+             'legs': [{'venue': 'Polymarket', 'name': 'Alex Molcan', 'group': 'prediction', 'dec': 2.222, 'eff': 2.17, 'liq': 900, 'stake': 230.41,
+                       'share': 48.2, 'at': T(-30), 'setAt': T(-30), 'checkedAt': T(0), 'url': 'https://polymarket.com/event/x', 'how': None},
+                      {'venue': 'Kalshi', 'name': 'Titouan Droguet', 'group': 'prediction', 'dec': 2.083, 'eff': 2.02, 'liq': 480, 'stake': 239.59,
+                       'share': 51.8, 'at': T(-1), 'setAt': T(-1), 'checkedAt': T(0), 'url': 'https://kalshi.com/x', 'how': 'yes'}]}
         g.update(kw); return g
     def push(gaps):
         return q("select public.arb_live_push($j$" + json.dumps({'gaps': gaps, 'worker': {'pairs': 3}}) + "$j$::jsonb)", 'service_role')
@@ -317,10 +333,11 @@ try:
         g = {'match': 'Ben Shelton vs Carlos Alcaraz', 'event': 'Paris', 'kalshiEvent': None, 'mkey': 'oddsapi:76142722', 'atp': True,
              'dir': 'Bet105:A+Polymarket:B', 'edge': 1.8, 'contracts': 180, 'stake': 400, 'hasPm': True, 'payout': 180, 'profitUsd': 3.2,
              'inPlay': True, 'started': True, 'phase': 'game', 'score': '6–4 1–0', 'boardStatus': 'Set 2',
+             'computedAt': T(0), 'scoreAt': T(-20), 'checks': [],
              'legs': [{'venue': 'Bet105', 'name': 'Ben Shelton', 'group': 'book', 'dec': 2.2, 'eff': 2.2, 'stake': 206.4, 'share': 51.6,
-                       'at': '2026-11-08T14:30:00Z', 'url': 'https://app.bet105.ag/event/51815223'},
+                       'at': T(-1), 'setAt': T(-5), 'checkedAt': T(-1), 'url': 'https://app.bet105.ag/event/51815223'},
                       {'venue': 'Polymarket', 'name': 'Carlos Alcaraz', 'group': 'prediction', 'dec': 2.35, 'eff': 2.3, 'stake': 193.6, 'share': 48.4,
-                       'at': '2026-11-08T14:30:01Z', 'url': 'https://polymarket.com/event/atp-shelton-alcaraz'}]}
+                       'at': T(-10), 'setAt': T(-10), 'checkedAt': T(0), 'url': 'https://polymarket.com/event/atp-shelton-alcaraz'}]}
         g.update(kw); return g
     nap = bgap(mkey='oddsapi:5', dir='Bet105:A+Napoleon:B', hasPm=False, stake=None,
                legs=[bgap()['legs'][0], {'venue': 'Napoleon', 'name': 'Carlos Alcaraz', 'group': 'book', 'dec': 2.35, 'eff': 2.35, 'stake': None,
@@ -335,8 +352,24 @@ try:
     rc, out = q("select message from arb.alerts where kind = 'live' and akey = 'live|oddsapi:76142722|Bet105:A+Polymarket:B'")
     check('LIVE message with a bookmaker leg: back each player, the link, the retirement warning, the clocks',
           'Ben Shelton @ 2.2 on Bet105' in out and '🔗 https://app.bet105.ag/event/51815223' in out
-          and 'Carlos Alcaraz @ 2.35 on Polymarket' in out and 'Retirement rules differ' in out and '🕒 Prices: Bet105 @' in out, out)
-    rc, out = q("select arb.render_live($j$" + json.dumps(gap()) + "$j$::jsonb)")
+          and 'Carlos Alcaraz @ 2.35 on Polymarket' in out and 'Retirement rules differ' in out
+          and '🕒 All prices checked at ' in out and ' · Bet105 set this price at ' in out and 'UTC UTC' not in out, out)
+    # founder 2026-11-10 ("it needs to be 100% true"): only prices that are true at the moment of sending
+    def legs_with(i, **kw):
+        L = [dict(x) for x in bgap()['legs']]; L[i].update(kw); return L
+    rc, out = push([bgap(mkey='kibl:t1', computedAt=T(-10)),
+                    bgap(mkey='kibl:t2', legs=legs_with(1, checkedAt=T(-5))),
+                    bgap(mkey='kibl:t3', legs=legs_with(0, setAt=T(-30))),
+                    bgap(mkey='kibl:t4', legs=legs_with(0, setAt=None)),
+                    bgap(mkey='kibl:t5', scoreAt=None),
+                    bgap(mkey='kibl:t6', checks=['Bet105 not checked in the last 3 s']),
+                    bgap(mkey='kibl:t7', legs=[bgap()['legs'][0]])])
+    check('never sent: a row computed 10 s ago, a leg read 5 s before it, a Bet105 price set before the latest score change or with no set '
+          'time, no score time, a worker check that failed, a single leg (mutants: each rule off)', rc == 0 and out == '0', out)
+    rc, out = push([bgap(mkey='kibl:t8')]); check('CONTROL: the same row with true clocks is sent', out == '1', out)
+    rc, out = q("select arb.hms('2026-11-10 15:43:36.797+00'::timestamptz)"); check('times to the second, UTC', out == '15:43:36 UTC', out)
+    old = {k: v for k, v in gap().items() if k not in ('legs', 'computedAt', 'scoreAt', 'checks')}
+    rc, out = q("select arb.render_live($j$" + json.dumps(old) + "$j$::jsonb)")
     check('a row from an older worker (no legs) still renders both prediction legs', '✅ Stake €207.37 ($230.41) on Alex Molcan @ 2.222 on Polymarket (after fee 2.17)' in out and '🕒 Prices: Polymarket @' in out, out)
     q("update public.kibl_now_price set written_at = now()")
     q("update arb.config set div_min = 50")

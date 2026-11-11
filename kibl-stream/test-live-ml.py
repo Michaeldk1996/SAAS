@@ -53,4 +53,13 @@ check("primary key (fixture_id, fixture_participant_id)" in blk, "one row per pl
 check("alter table public.kibl_live_ml enable row level security" in blk and "revoke all on public.kibl_live_ml from anon, authenticated" in blk,
       "server-side only (mutant: browser can read)")
 check("new.kibl_inserted_on <= old.kibl_inserted_on" in blk, "newer-only in the database too")
+hist = sql[sql.index("create table if not exists public.kibl_live_ml_history"):]
+check("unique (fixture_id, fixture_participant_id, kibl_inserted_on)" in hist, "history: one row per change, a retry never doubles it")
+check("alter table public.kibl_live_ml_history enable row level security" in hist and "revoke all on public.kibl_live_ml_history from anon, authenticated" in hist,
+      "history is server-side only")
+fl = src[src.index("def flush_live"):src.index("def prune")]
+check(fl.index("LM.HISTORY") < fl.index("LM.TABLE}?on_conflict"), "every batch goes to the history first, then the latest (mutant: history skipped)")
+check("resolution=ignore-duplicates" in fl and "live.requeue(rows)" in fl, "a failed batch is retried whole (history idempotent)")
+pr = src[src.index("def prune"):src.index("def broker_rtt_ms")]
+check("timedelta(days=30)" in pr and "LM.HISTORY" in pr, "history kept 30 days")
 print(f"\n{len(fails)} failure(s)"); sys.exit(1 if fails else 0)

@@ -74,6 +74,8 @@ alter table arb.config add column if not exists arb_max numeric default 10;   --
 alter table arb.config add column if not exists live_min      numeric  not null default 1;                      -- % after fees
 alter table arb.config add column if not exists live_cooldown interval not null default interval '10 minutes';  -- per match + direction
 alter table arb.config add column if not exists live_hb_max   interval not null default interval '90 seconds';  -- worker heartbeat
+-- founder 2026-11-10 ("it needs to be 100% true"): a live row older than this at push time is never sent
+alter table arb.config add column if not exists live_fresh    interval not null default interval '5 seconds';
 -- the odds-api.io bookmakers read as soft sources (founder 2026-11-05: Napoleon Sports BE beside Superbet); each must also
 -- be in ten287_rec.config.books or it has no ticks. A book's name here is the name its alerts print.
 alter table arb.config add column if not exists soft_books text[] not null default '{}';
@@ -256,7 +258,11 @@ begin
   select fx.event_key, fx.first_player, fx.second_player, fx.start_utc, q.src, q.g, q.pf, q.ps,
          arb.eff(q.src, q.pf), arb.eff(q.src, q.ps), q.lf, q.ls, q.at, q.u
     from q join fx using (event_key)
-   where q.pf >= 1.01 and q.ps >= 1.01;
+   where q.pf >= 1.01 and q.ps >= 1.01
+     -- Bet105 already trading it in play (Kibl betting type 3, kibl_live_ml): started, even before api-tennis flags it
+     and not exists (select 1 from b105j j join public.kibl_now_card k on k.card_key = j.card_key
+                       join public.kibl_live_ml m on m.fixture_id = k.fixture_id
+                      where j.event_key = fx.event_key);
 end $$;
 
 -- the opportunities now: fair per match, divergences and the best arbitrage per match
@@ -406,6 +412,8 @@ language sql immutable as $$
 $$;
 create or replace function arb.hhmm(p timestamptz) returns text
 language sql immutable as $$ select case when p is null then '—' else to_char(p at time zone 'UTC', 'HH24:MI') || ' UTC' end $$;
+create or replace function arb.hms(p timestamptz) returns text
+language sql immutable as $$ select case when p is null then '—' else to_char(p at time zone 'UTC', 'HH24:MI:SS') || ' UTC' end $$;
 create or replace function arb.feeword(p_source text) returns text
 language sql immutable as $$ select case when p_source in ('Kalshi', 'Polymarket') then ' (after fee ' else '' end $$;
 
@@ -440,7 +448,7 @@ language sql stable as $$
       '⚠️ Retirement rules differ: Kalshi / Polymarket pay the player who advances once a ball is played; a bookmaker may void the bet on a retirement.' end,
     -- each leg's clock says what it is: Bet105 comes from the Kibl stream, which sends only changes — its time is when the
     -- price last CHANGED (still current: the stream was connected at send time); the others are their last update
-    format('🕒 Prices at %s UTC — %s · %s', arb.hhmm(now()),
+    format('🕒 Prices at %s — %s · %s', arb.hhmm(now()),
            case when a->'legFirst'->>'source' = 'Bet105' then format('Bet105 unchanged since %s (Kibl stream connected)', arb.hhmm((a->'legFirst'->>'at')::timestamptz))
                 else format('%s updated %s', a->'legFirst'->>'source', arb.hhmm((a->'legFirst'->>'at')::timestamptz)) end,
            case when a->'legSecond'->>'source' = 'Bet105' then format('Bet105 unchanged since %s (Kibl stream connected)', arb.hhmm((a->'legSecond'->>'at')::timestamptz))
@@ -562,7 +570,12 @@ language sql stable as $$
     case when (select book and pm from f) then '⚠️ Retirement rules differ: Kalshi / Polymarket pay the player who advances once a ball is played; a bookmaker may void the bet on a retirement.'
          when (select book from f) then '⚠️ Check each bookmaker''s retirement rule: one may void the bet on a retirement while the other settles it.' end,
     '⚠️ Live prices move every point: check both before you bet.',
-    '🕒 Prices: ' || (select string_agg(format('%s @ %s', x->>'venue', arb.hhmm((x->>'at')::timestamptz)), ' · ' order by n) from l))
+    -- the moment every price above was checked, and when the bookmaker itself set its price (to the second)
+    case when g->>'computedAt' is not null
+         then '🕒 All prices checked at ' || arb.hms((g->>'computedAt')::timestamptz)
+              || coalesce((select string_agg(format(' · %s set this price at %s', x->>'venue', arb.hms((x->>'setAt')::timestamptz)), '' order by n)
+                             from l where x->>'group' = 'book' and x->>'setAt' is not null), '')
+         else '🕒 Prices: ' || (select string_agg(format('%s @ %s', x->>'venue', arb.hhmm((x->>'at')::timestamptz)), ' · ' order by n) from l) end)
 $$;
 
 -- the live worker's push (service role only): the current gaps + heartbeat; posts each new one >= live_min with
@@ -581,6 +594,18 @@ begin
     -- the dollars to lock in apply to a gap with a prediction-market leg; bookmakers publish no limit (founder 2026-11-08)
     continue when c.min_liq is not null and coalesce((g->>'hasPm')::boolean, true) and coalesce((g->>'stake')::numeric, 0) < c.min_liq;
     continue when not coalesce((g->>'started')::boolean, false);   -- before the start the 30-s engine covers it
+    -- founder 2026-11-10: every price in a signal is true when it is sent. The worker computed the row at most live_fresh ago;
+    -- every leg was read at most 3 s before that; a BOOKMAKER leg was set by the book after the latest score change on the
+    -- board (a price from before the game / set ended is about to be re-priced); the worker's own checks came back empty.
+    continue when (g->>'computedAt') is null or (g->>'computedAt')::timestamptz < now() - c.live_fresh;
+    continue when jsonb_array_length(coalesce(g->'legs', '[]'::jsonb)) < 2;
+    continue when exists (select 1 from jsonb_array_elements(g->'legs') l
+                           where (l->>'checkedAt') is null
+                              or (l->>'checkedAt')::timestamptz < (g->>'computedAt')::timestamptz - interval '3 seconds');
+    continue when exists (select 1 from jsonb_array_elements(g->'legs') l
+                           where l->>'group' = 'book' and ((l->>'setAt') is null or (g->>'scoreAt') is null
+                                                           or (l->>'setAt')::timestamptz < (g->>'scoreAt')::timestamptz));
+    continue when jsonb_array_length(coalesce(g->'checks', '[]'::jsonb)) > 0;
     -- only when there is time to place both bets (founder 2026-11-03): the live score board shows the game at 0–0 — a new
     -- game (the serve changes), a changeover (players sit, after an odd game) or a set break — never during points;
     -- and never on a match the board or api-tennis says is over or not being played (walkover, retirement …)

@@ -23,6 +23,7 @@ from datetime import datetime
 TENNIS_SPORT = 5
 LEAGUES = (19, 537)          # ATP, Challenger
 TABLE = "kibl_live_ml"
+HISTORY = "kibl_live_ml_history"   # every change, 30 days: the audit trail behind each arbitrage signal
 
 
 def routing_sport_league(key):

@@ -358,10 +358,10 @@ export function gapRow(pair, e, ctx) {
     legs: [
       { venue: 'Polymarket', name: e.polyName, group: 'prediction', dec: r2(1 / e.polyAsk), eff: r2(1 / polyCost), liq: r2(e.polySize * e.polyAsk),
         stake: e.contracts == null ? null : +(e.contracts * polyCost).toFixed(2), share: +(polyCost / e.cost * 100).toFixed(1),
-        at: new Date(ctx.polyAt).toISOString(), url: polyUrl(pair.pm), how: null },
+        at: new Date(ctx.polyAt).toISOString(), setAt: iso(ctx.polyAt), checkedAt: iso(ctx.now ?? ctx.polyAt), url: polyUrl(pair.pm), how: null },
       { venue: 'Kalshi', name: e.kalName, group: 'prediction', dec: r2(1 / e.kalAsk), eff: r2(1 / kalCost), liq: e.kalSize == null ? null : r2(e.kalSize * e.kalAsk),
         stake: e.contracts == null ? null : +(e.contracts * kalCost).toFixed(2), share: +(kalCost / e.cost * 100).toFixed(1),
-        at: new Date(ctx.kalAt).toISOString(), url: kalshiUrl(pair.km.ev), how: e.kalLeg } ] };
+        at: new Date(ctx.kalAt).toISOString(), setAt: iso(ctx.kalAt), checkedAt: iso(ctx.kalChecked ?? ctx.kalAt), url: kalshiUrl(pair.km.ev), how: e.kalLeg } ] };
 }
 
 export function summarise(eps, meta) {
@@ -399,7 +399,7 @@ export const KIBL_API = 'https://api.kibl.io/sports/get';
 export const KIBL_COGNITO = 'https://cognito-idp.us-west-2.amazonaws.com/';
 export const KIBL_CLIENT_ID = '3udv7qsqgju8c4riqvk72bqcl';   // published in Kibl's own tutorial (kibl_client.py)
 export const KIBL_FEED = 171, KIBL_ATP = 19;
-export const KIBL_GAP_MS = 1300, KIBL_CYCLE_MS = 1500, KIBL_PRE_EVERY = 20, KIBL_FX_MS = 300e3;
+export const KIBL_GAP_MS = 1300, KIBL_CYCLE_MS = 1000, KIBL_PRE_EVERY = 30, KIBL_FX_MS = 300e3;
 export const KIBL_LIVE_MAX_MS = 15e3;   // an in-play price stands only while the read that returned it is this fresh
 export const KIBL_LIVE_ROW_MAX_MS = 600e3;   // a side Bet105 has not re-priced for 10 min is no in-play price
 export const KIBL_STREAM_HB_MAX_MS = 150e3;  // the stream worker beats every 60 s
@@ -421,7 +421,8 @@ export function kiblLiveQuotes(rows, now) {
     if (!ok(h) || !ok(a)) continue;
     const hp = Number(h.price), ap = Number(a.price);
     if (1 / hp + 1 / ap < 0.99) continue;
-    out.set(f, { home: hp, away: ap, upd: Math.max(Date.parse(h.kibl_inserted_on), Date.parse(a.kibl_inserted_on)) });
+    const hu = Date.parse(h.kibl_inserted_on), au = Date.parse(a.kibl_inserted_on);
+    out.set(f, { home: hp, away: ap, upd: Math.max(hu, au), hUpd: hu, aUpd: au });
   }
   return out;
 }
@@ -484,7 +485,7 @@ export function kiblQuotes(rows, bt) {
     const [h, a] = [...sides.keys()].sort((x, y) => Number(x) - Number(y)).map((k) => sides.get(k));
     if (!(h.price >= 1.01) || !(a.price >= 1.01)) continue;   // the 0.000 suspension marker, or no price
     if (1 / h.price + 1 / a.price < 0.99) continue;           // paying over 101% is no price
-    out.set(f, { home: h.price, away: a.price, upd: Math.max(h.ins, a.ins) || null });
+    out.set(f, { home: h.price, away: a.price, upd: Math.max(h.ins, a.ins) || null, hUpd: h.ins || null, aUpd: a.ins || null });
   }
   return out;
 }
@@ -591,7 +592,7 @@ export function venueQuotes(m, { books, kalAt, bfeed, now }) {
     const pa = books.best(m.pm.tokA), pb = books.best(m.pm.tokB);
     const sane = !(pa && pb && pa.price + pb.price < 0.98);
     const leg = (x) => !sane || !x || !(x.price > 0 && x.price < 1) || x.at == null || now - x.at > STALE_MS.poly ? null :
-      { cost: x.price + polyFee(x.price), dec: 1 / x.price, size: x.size, liq: x.size * x.price, at: x.at, url: polyUrl(m.pm), group: 'prediction' };
+      { cost: x.price + polyFee(x.price), dec: 1 / x.price, size: x.size, liq: x.size * x.price, at: x.at, setAt: x.at, checkedAt: now, url: polyUrl(m.pm), group: 'prediction' };
     put('Polymarket', 'A', leg(pa)); put('Polymarket', 'B', leg(pb));
   }
   if (m.km) {
@@ -602,7 +603,8 @@ export function venueQuotes(m, { books, kalAt, bfeed, now }) {
         if (me.yesAsk > 0 && me.yesAsk < 1) legs.push({ price: me.yesAsk, size: me.yesSize, how: 'yes ' + me.ticker });
         if (other.noAsk > 0 && other.noAsk < 1) legs.push({ price: other.noAsk, size: other.noSize ?? null, how: 'no ' + other.ticker });
         legs.sort((x, y) => x.price - y.price); const l = legs[0]; if (!l) return null;
-        return { cost: l.price + kalshiFee(l.price), dec: 1 / l.price, size: l.size, liq: l.size == null ? null : l.size * l.price, at, how: l.how, url: kalshiUrl(m.km.ev), group: 'prediction' };
+        return { cost: l.price + kalshiFee(l.price), dec: 1 / l.price, size: l.size, liq: l.size == null ? null : l.size * l.price, at, setAt: at,
+          checkedAt: m.kalAt != null ? now : at, how: l.how, url: kalshiUrl(m.km.ev), group: 'prediction' };
       };
       put('Kalshi', 'A', kSide(m.aIs)); put('Kalshi', 'B', kSide(1 - m.aIs));
     }
@@ -613,8 +615,10 @@ export function venueQuotes(m, { books, kalAt, bfeed, now }) {
     // once the match is under way only Kibl's in-play price (betting type 3) counts: Kibl keeps listing the last pre-match
     // price after the start, and pairing it with live prediction prices would invent a gap
     if (inPlay && !q.live) continue;
-    const leg = (dec) => ({ cost: 1 / dec, dec, size: q.max != null ? q.max * dec : null, liq: q.max, at: q.at, url: q.url, group: 'book' });
-    put(venue, 'A', leg(m.odds.aHome ? q.home : q.away)); put(venue, 'B', leg(m.odds.aHome ? q.away : q.home));
+    // setAt = when the BOOK set this side's price (Kibl inserted_on); checkedAt = when we last read it (the stream table / REST)
+    const leg = (dec, setAt) => ({ cost: 1 / dec, dec, size: q.max != null ? q.max * dec : null, liq: q.max, at: q.at, setAt: setAt ?? q.upd ?? null,
+      checkedAt: q.at, url: q.url, group: 'book' });
+    put(venue, 'A', m.odds.aHome ? leg(q.home, q.hUpd) : leg(q.away, q.aUpd)); put(venue, 'B', m.odds.aHome ? leg(q.away, q.aUpd) : leg(q.home, q.hUpd));
   }
   return Q;
 }
@@ -637,9 +641,34 @@ export function evaluateMulti(m, Q) {
 }
 
 const r3 = (v) => (v == null || !isFinite(v) ? null : +v.toFixed(3));
+const iso = (t) => (t == null || !isFinite(t) ? null : new Date(t).toISOString());
 const legRow = (l, contracts, cost) => ({ venue: l.venue, name: l.name, group: l.group, dec: r3(l.dec), eff: r3(1 / l.cost), liq: l.liq == null ? null : r3(l.liq),
   stake: contracts == null ? null : +(contracts * l.cost).toFixed(2), share: +(l.cost / cost * 100).toFixed(1), at: new Date(l.at).toISOString(),
-  url: l.url || null, how: l.how || null });
+  setAt: iso(l.setAt), checkedAt: iso(l.checkedAt), url: l.url || null, how: l.how || null });
+
+// ---------- a signal is sent only when every price in it is true at that moment (founder 2026-11-10: "it needs to be 100% true and
+// the prices need to align with what we communicate") ----------
+// CHECK_MAX_MS: every leg read at most 3 s before the row was computed. A BOOKMAKER leg must also have been SET after the latest
+// score change on the board (scoreAt): a price the book set before the game / set ended is about to be re-priced — the
+// Rinderknech v Kecmanovic set break, 10 Nov 15:43–15:44, flipped direction within 26 s. A prediction-market leg is a resting order
+// on the live websocket book, fillable as shown, so its age is not a reason. The database (arb_live_push) re-checks the same.
+export const CHECK_MAX_MS = 3000;
+export function gapChecks(row, now = Date.now()) {
+  const why = [];
+  const c = Date.parse(row.computedAt);
+  if (!isFinite(c) || now - c > CHECK_MAX_MS + 2000) why.push('computed too long ago');
+  for (const l of row.legs || []) {
+    const k = Date.parse(l.checkedAt);
+    if (!isFinite(k) || (isFinite(c) && c - k > CHECK_MAX_MS)) why.push(l.venue + ' not checked in the last 3 s');
+    if (l.group === 'book') {
+      const st = Date.parse(l.setAt), sc = Date.parse(row.scoreAt);
+      if (!isFinite(st)) why.push(l.venue + ' set time unknown');
+      else if (!isFinite(sc)) why.push('score time unknown');
+      else if (st < sc) why.push(l.venue + ' set its price before the latest score change');
+    }
+  }
+  return why;
+}
 export function multiGapRow(m, e, ctx) {
   return { match: m.title.replace(/^[^:]*:\s*/, ''), event: m.odds ? m.odds.event : m.title.split(':')[0], mkey: m.km ? m.km.ev : 'kibl:' + m.odds.id,
     kalshiEvent: m.km ? m.km.ev : null, atp: true, dir: e.dir, edge: e.edge, contracts: e.contracts, stake: e.stake,
@@ -782,15 +811,34 @@ async function main() {
   const boardOf = (p, now) => (now - boardAt <= 30e3 ? boardPhase(boardFixture(p, board)) : null);   // a stale board → no phase → no alert
   const sbUrl = sbUrl0, sbKey = sbKey0;
   stats.pushes = 0; stats.pushErrors = 0; stats.posted = 0;
+  // when the board's score for a match last changed: the snapshot time (live_snapshot.updated_at) the new score first appeared in
+  const scoreSeen = new Map(); stats.gapsRefused = 0; stats.refusedWhy = {};
+  const scoreAtOf = (key, bd) => {
+    if (!bd || bd.score == null) return null;
+    const prev = scoreSeen.get(key);
+    if (!prev || prev.score !== bd.score) scoreSeen.set(key, { score: bd.score, at: boardAt });
+    return new Date(scoreSeen.get(key).at).toISOString();
+  };
   const doPush = async () => {
+    // re-evaluate every match from the books as they are NOW, so a pushed gap is never an older evaluation
+    const now = Date.now(); tick(now);
+    const computedAt = new Date(now).toISOString();
     const keys = new Set(pairs.map((p) => p.key));
     const gaps = [];
-    for (const [k, L] of latest) { if (!keys.has(k)) continue; const bd = boardOf(L.p, Date.now()); for (const e of L.ev) if (e.edge > 0) gaps.push(gapRow(L.p, e, { ...L, board: bd })); }
+    const stamp = (g, key, bd) => {
+      g.computedAt = computedAt; g.scoreAt = scoreAtOf(key, bd); g.checks = gapChecks(g, now);
+      if (g.checks.length) { stats.gapsRefused++; for (const w of g.checks) stats.refusedWhy[w] = (stats.refusedWhy[w] || 0) + 1; }
+      return g;
+    };
+    const kalLive = !!(kfeed && kfeed.ws && kfeed.ws.readyState === 1);
+    for (const [k, L] of latest) { if (!keys.has(k)) continue; const bd = boardOf(L.p, now);
+      for (const e of L.ev) if (e.edge > 0) gaps.push(stamp(gapRow(L.p, e, { ...L, board: bd, now, kalChecked: kalLive && L.p.kalAt != null ? now : L.kalAt }), k, bd)); }
     const bkeys = new Set(bmatches.map((m) => m.key));
-    for (const [k, L] of latestB) { if (!bkeys.has(k)) continue; const bd = boardOf({ pm: { a: L.m.a, b: L.m.b } }, Date.now()); for (const e of L.ev) if (e.edge > 0) gaps.push(multiGapRow(L.m, e, { ...L, board: bd })); }
+    for (const [k, L] of latestB) { if (!bkeys.has(k)) continue; const bd = boardOf({ pm: { a: L.m.a, b: L.m.b } }, now);
+      for (const e of L.ev) if (e.edge > 0) gaps.push(stamp(multiGapRow(L.m, e, { ...L, board: bd }), k, bd)); }
     const body = JSON.stringify({ p: { gaps, worker: { pairs: pairs.length, live: pairs.filter((p) => p.pm.live).length, kalshiPolls: stats.kalshiPolls,
       kalshiErrors: stats.kalshiErrors, kalshiFeed: stats.kalshiFeed, kalshiWsMessages: stats.kalshiWsMessages, kalshiWsDrops: stats.kalshiWsDrops, boardReads: stats.boardReads, boardErrors: stats.boardErrors, recPushes: stats.recPushes, recErrors: stats.recErrors, recTicks: stats.recTicks, wsMessages: stats.wsMessages, wsReconnects: stats.wsReconnects,
-      bookFeed: stats.bookFeed, bookMatches: bmatches.length, bookLive: bmatches.filter((m) => m.odds.live).length,
+      bookFeed: stats.bookFeed, bookMatches: bmatches.length, bookLive: bmatches.filter((m) => m.odds.live).length, gapsRefused: stats.gapsRefused, refusedWhy: stats.refusedWhy,
       kibl: bfeed ? { ...bfeed.stats, fixtures: bfeed.fx.length, prePrices: bfeed.pre.size, livePrices: bfeed.live.size, liveAt: bfeed.liveAt && new Date(bfeed.liveAt).toISOString() } : null, run: process.env.GITHUB_RUN_ID || null } } });
     try {
       const r = await fetch(sbUrl + '/rest/v1/rpc/arb_live_push', { method: 'POST', body, signal: AbortSignal.timeout(15e3),
@@ -802,7 +850,7 @@ async function main() {
   if (push && (!sbUrl || !sbKey)) { log('push asked for but SUPABASE_URL / SUPABASE_SECRET_KEY missing'); process.exit(1); }
   if (sbUrl0 && sbKey0) await readBoard();
   const boardT = sbUrl0 && sbKey0 ? setInterval(readBoard, 5e3) : null;
-  const pushT = push ? setInterval(doPush, 5e3) : null;
+  const pushT = push ? setInterval(doPush, 3e3) : null;   // every 3 s, each push re-evaluated at that moment
   stats.recPushes = 0; stats.recErrors = 0; stats.recTicks = 0;
   const doRec = async () => {
     const rows = recRows(poly, books, Date.now());

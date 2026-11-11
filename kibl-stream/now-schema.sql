@@ -368,3 +368,22 @@ create trigger kibl_live_ml_newer before insert or update on public.kibl_live_ml
     for each row execute function public.kibl_live_ml_newer();
 alter table public.kibl_live_ml enable row level security;
 revoke all on public.kibl_live_ml from anon, authenticated;
+
+-- Founder 2026-11-10 ("it needs to be 100% true"): every Bet105 in-play change, kept 30 days, so each live arbitrage signal can
+-- be checked afterwards against exactly what Bet105 showed. Written with kibl_live_ml (before it, same batch), idempotent on
+-- (fixture, player, Kibl time). Server-side only: RLS on, no policy, no grant.
+create table if not exists public.kibl_live_ml_history (
+    id                      bigserial   primary key,
+    fixture_id              bigint      not null,
+    fixture_participant_id  bigint      not null,
+    league_id               integer,
+    price                   numeric(9,3),
+    market_status_id        integer,
+    kibl_inserted_on        timestamptz not null,
+    received_at             timestamptz,
+    written_at              timestamptz not null default now(),
+    unique (fixture_id, fixture_participant_id, kibl_inserted_on)
+);
+create index if not exists kibl_live_ml_history_written_idx on public.kibl_live_ml_history (written_at);
+alter table public.kibl_live_ml_history enable row level security;
+revoke all on public.kibl_live_ml_history from anon, authenticated;
