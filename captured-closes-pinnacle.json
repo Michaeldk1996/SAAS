@@ -1,31 +1,31 @@
 {
- "generatedAt": "2026-11-11T00:34:31.378Z",
+ "generatedAt": "2026-11-11T18:16:54.392Z",
  "source": "matches.json git history: oddsMovement.books.Pinnacle (Oddspapi pinnacle, to 2026-09-02) and oddsMovement.chart.books[\"Pinnacle +30s\"] (Oddspapi pinnacle+30, from 2026-09-23)",
  "rule": "each side = last tick at or before the actual start (the earlier of Oddspapi trueStart and the card-state start: Oddspapi, the live-flip lower bound, the Bet105 switch or the first point — founder 2026-11-08; a cut at Oddspapi start before a verified start counts at the verified start only when the same tick, seen within 60 min and within 1.5pp of the Bet105 close, else it stays held back); both sides required; dropped when no unique actual start. seenAt = our last capture read before the start that confirmed the close (founder 2026-10-28); age = start - (seenAt or at)",
  "scannedThrough": {
-  "commit": "1c927a35c8d1e43e0f58936de41aaa2cc9a16d50",
-  "at": "2026-11-10T22:55:59Z"
+  "commit": "f71aae88a0a3b1e91857d402404ec216a3da04d2",
+  "at": "2026-11-11T17:45:26Z"
  },
- "commitsScanned": 6640,
+ "commitsScanned": 6671,
  "lastRun": {
-  "from": "2026-11-10T21:13:57Z",
-  "snapshots": 3,
-  "added": 0,
-  "replaced": 0,
+  "from": "2026-11-10T22:55:59Z",
+  "snapshots": 32,
+  "added": 1,
+  "replaced": 3,
   "seenBackfilled": 0,
   "earlierCutBackfilled": 0,
-  "series": 30,
-  "kept": 26,
+  "series": 23,
+  "kept": 17,
   "bySource": {
-   "oddspapi": 5,
-   "bet105-switch": 15,
-   "first-point": 6
+   "bet105-switch": 10,
+   "oddspapi": 4,
+   "first-point": 3
   },
   "byBook": {
-   "Pinnacle +30s": 26
+   "Pinnacle +30s": 17
   },
   "dropped": {
-   "noStart": 4
+   "noStart": 6
   }
  },
  "stats": {
@@ -15485,8 +15485,8 @@
    "p1": 3.5,
    "p2": 1.344,
    "at": "2026-11-08T12:24:32.325Z",
-   "trueStart": "2026-11-08T15:37:46.000Z",
-   "startSource": "bet105-switch",
+   "trueStart": "2026-11-08T15:29:44.751Z",
+   "startSource": "oddspapi",
    "book": "Pinnacle +30s",
    "round": "ATP Stockholm - 1/16-finals",
    "qualifying": false,
@@ -15495,7 +15495,15 @@
    "o2": 1.272,
    "oAt": "2026-11-07T19:21:10.774Z",
    "winner": "p2",
-   "seenAt": "2026-11-08T12:42:24.000Z"
+   "seenAt": "2026-11-08T12:42:24.000Z",
+   "earlierCutCheck": {
+    "verifiedStart": "2026-11-08T15:37:46.000Z",
+    "verifiedSource": "bet105-switch",
+    "failed": [
+     "not seen within 60 min of the start"
+    ],
+    "b105GapPP": -1.45
+   }
   },
   {
    "eventKey": 12178223,
@@ -15507,8 +15515,8 @@
    "p1": 4.09,
    "p2": 1.281,
    "at": "2026-11-08T12:42:33.716Z",
-   "trueStart": "2026-11-08T14:20:29.000Z",
-   "startSource": "first-point",
+   "trueStart": "2026-11-08T13:59:41.462Z",
+   "startSource": "oddspapi",
    "book": "Pinnacle +30s",
    "round": "ATP Paris - Final",
    "qualifying": false,
@@ -15516,7 +15524,15 @@
    "o1": 3.97,
    "o2": 1.294,
    "oAt": "2026-11-08T12:38:34.373Z",
-   "winner": "p2"
+   "winner": "p2",
+   "earlierCutCheck": {
+    "verifiedStart": "2026-11-08T14:20:29.000Z",
+    "verifiedSource": "first-point",
+    "failed": [
+     "not seen within 60 min of the start"
+    ],
+    "b105GapPP": 0
+   }
   },
   {
    "eventKey": 12178224,
@@ -15616,8 +15632,8 @@
    "p1": 1.317,
    "p2": 3.7,
    "at": "2026-11-09T10:14:04.835Z",
-   "trueStart": "2026-11-09T11:54:29.000Z",
-   "startSource": "first-point",
+   "trueStart": "2026-11-09T11:54:28.273Z",
+   "startSource": "oddspapi",
    "book": "Pinnacle +30s",
    "round": "ATP Stockholm - 1/16-finals",
    "qualifying": false,
@@ -15626,6 +15642,37 @@
    "o2": 3.59,
    "oAt": "2026-11-08T11:50:17.632Z",
    "winner": "p1",
+   "seenAt": "2026-11-09T10:52:04.000Z",
+   "earlierCutCheck": {
+    "verifiedStart": "2026-11-09T11:54:29.000Z",
+    "verifiedSource": "first-point",
+    "failed": [
+     "not seen within 60 min of the start",
+     "Bet105 close more than 1.5pp away"
+    ],
+    "b105GapPP": -1.78
+   }
+  },
+  {
+   "eventKey": 12178153,
+   "date": "2026-11-09",
+   "p1Key": 9217,
+   "p2Key": 1105,
+   "p1Name": "D. Vallejo",
+   "p2Name": "U. Humbert",
+   "p1": 2.98,
+   "p2": 1.44,
+   "at": "2026-11-09T09:07:05.315Z",
+   "trueStart": "2026-11-09T13:32:58.333Z",
+   "startSource": "oddspapi",
+   "book": "Pinnacle +30s",
+   "round": "ATP Stockholm - 1/16-finals",
+   "qualifying": false,
+   "event": "ATP Stockholm",
+   "o1": 2.98,
+   "o2": 1.432,
+   "oAt": "2026-11-08T12:39:00.330Z",
+   "winner": "p2",
    "seenAt": "2026-11-09T10:52:04.000Z"
   },
   {
