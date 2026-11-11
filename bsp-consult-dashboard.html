@@ -29556,8 +29556,8 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, profileRosterMap: () =
     const clash = (x, y) => !!(x && y && x !== y);
     const W = H2H_PAGE_PRICE_WINDOW, MW = H2H_PAGE_MATCH_WINDOW, SW = H2H_PAGE_START_WINDOW, RW = H2H_PAGE_ROW_WINDOW;
     // the career rows of a team event (the era rows behind flag t: Davis / Laver / ATP / United / Hopman Cup, Olympics,
-    // Next Gen Finals, Asian Games, World Team Cup): a team-event era row prices only these (founder 2026-11-11)
-    const TEAM = /davis cup|laver cup|atp cup|united cup|hopman cup|olympic|next ?gen|asian games|world team cup/i;
+    // Next Gen Finals, World Team Cup): a team-event era row prices only these (founder 2026-11-11)
+    const TEAM = /davis cup|laver cup|atp cup|united cup|hopman cup|olympic|next ?gen|world team cup/i;
     // matches → their Database row (step 1 / 3): ms = [{ d, won, rd, k, ek, row }]; ek = dated on the match day, row = a
     // ledger row with no career match (step 3)
     const dbPairs = (ms, skip, anyRound) => {

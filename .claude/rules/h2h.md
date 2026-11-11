@@ -93,7 +93,7 @@ no day work, checks or screenshots on this page until the founder reopens it.
     never start to start (`dbPriceJoinRows` `tIx`). Gojo v Rublev, Davis Cup Finals 2021 F = 5.92 / 1.17. **Test:**
     `test-ten402-b.mjs` "a team-event row joins" (control: the pre-fix join dashes it).
     **It prices a team-event career match only** (founder 2026-11-11): a career row whose event is not a team event (Davis /
-    Laver / ATP / United / Hopman Cup, Olympics, Next Gen Finals, Asian Games, World Team Cup) never takes it. Goffin,
+    Laver / ATP / United / Hopman Cup, Olympics, Next Gen Finals, World Team Cup) never takes it. Goffin,
     Indian Wells 2016 QF v Cilic (archive row dated 7 Mar) had taken the Davis Cup tie's 2.24 / 1.71 (6 Mar); it reads its
     own Pinnacle close 2.32 / 1.70, and the tie its Tennis Explorer price. Measured over 741 players' histories: that one
     match was the only one to move. **Test:** `test-ten402-b.mjs` "a team-event row prices a team-event career match only"
