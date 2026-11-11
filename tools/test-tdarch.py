@@ -643,6 +643,16 @@ check('pre-2021: ATP main draw is out of scope (founder: "Don\'t touch ATP main 
 xrows, xrep = T.te_pre21_rows([{'batch': 'team-01', 'source': T.TE_SOURCE, 'complete': True, 'rows': [PX(11, lv='pre-atp-x')]}],
                               {'11': pst['1']}, {'11': [('1064', H(1)), ('1748', H(0))]})
 check('team events: pre-atp-x is stored as atp-x, keyed by the negative TE match ID', [(r['event_key'], r['detail']['level']) for r in xrows] == [(-11, 'atp-x')], (xrows, xrep))
+# founder 2026-11-11 (Michael via the Pinnacle-close session: "any bookmaker … they don't come into the ROI database, just to have
+# a price"): an ATP main-draw match the site showed unpriced, by TE match ID (pre21-md-NN) -> atp-mdj, the Database build's
+# join-only flag j; the TE page start and the te-history result as every pre-2021 row; 'pre-atp' (no -md) stays out of scope
+mrows, mrep = T.te_pre21_rows([{'batch': 'pre21-md-01', 'source': T.TE_SOURCE, 'complete': True, 'rows': [PX(12, lv='pre-atp-md', kb=None), PX(13, lv='pre-atp-md', kb=None)]}],
+                              {'12': pst['1']}, {'12': [('1064', H(1))], '13': [('1064', H(1))]})
+check('ATP main draw (pre21-md): pre-atp-md is stored as atp-mdj, keyed by the negative TE match ID, the result from te-history',
+      [(r['event_key'], r['detail']['level'], r['winner'], r['price_winner']) for r in mrows] == [(-12, 'atp-mdj', 'Bergs Z.', 2.5)], (mrows, mrep))
+check('ATP main draw (pre21-md): no start on the TE page = not stored (the in-play rule as every pre-2021 row)', mrep.get('not stored: no start on the TE page') == 1, mrep)
+check('ATP main draw (pre21-md): the lower feed carries it as atp-mdj (the Database build keeps it join-only)',
+      [r['level'] for r in T.lower_feed_rows([dict(mrows[0], id=990)])] == ['atp-mdj'], mrows)
 with tempfile.TemporaryDirectory() as td:
     os.makedirs(os.path.join(td, T.PRE21_DIR))
     for n in ('pre21-01', 'team-01'):

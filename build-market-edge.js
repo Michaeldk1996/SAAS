@@ -512,6 +512,7 @@ function main() {
     if (flags.includes('t')) { stats.team += 1; return; }   // a team event: in the master, never in Market edge (as the Database)
     if (flags.includes('l')) { stats.lower = (stats.lower || 0) + 1; return; }   // ATP qualifying / Challenger / ITF (founder 2026-10-18): the join's, never Market edge's
     if (flags.includes('v')) { stats.otherBook = (stats.otherBook || 0) + 1; return; }   // founder 2026-11-03: a margin-free other book is never a yield / ROI
+    if (flags.includes('j')) { stats.joinOnly = (stats.joinOnly || 0) + 1; return; }   // founder 2026-11-11: an ATP main-draw TE price for the join only, never a yield / ROI
     const bk = DB_BOOK[m[ci.book]];
     if (!bk) throw new Error(`master: unknown book code ${m[ci.book]} on ${row.date} ${row.winner} v ${row.loser}`);
     stats.rows += 1;

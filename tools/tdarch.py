@@ -1993,7 +1993,11 @@ PRE21_STARTS = 'starts.json'
 # 'pre-atp-x' (founder 2026-11-01, team events "just in terms of pricing for market edge etc."): Davis Cup, Olympics, ATP /
 # United Cup, Laver Cup, Hopman Cup and Next Gen Finals by TE match ID (stennisfy-ops te-targets-team.mjs, batches team-NN in
 # the same folder) -> atp-x: the team flag t, priced on every surface, never a Database figure, ROI or favourite / underdog
-PRE21_LEVELS = {'pre-atp-q': 'atp-q', 'pre-ch': 'ch', 'pre-ch-q': 'ch-q', 'pre-atp-x': 'atp-x'}
+# 'pre-atp-md' (founder 2026-11-11, Michael via the Pinnacle-close session: "any bookmaker … they don't come into the ROI
+# database, just to have a price"): an ATP main-draw match the live site showed unpriced, by TE match ID (stennisfy-ops
+# te-targets pre21-md-NN) -> 'atp-mdj': the Database build's join-only flag j (never a Database figure, ROI, Market edge or
+# odds performance), dropped there when a priced Database row of the same match exists
+PRE21_LEVELS = {'pre-atp-q': 'atp-q', 'pre-ch': 'ch', 'pre-ch-q': 'ch-q', 'pre-atp-x': 'atp-x', 'pre-atp-md': 'atp-mdj'}
 PRE21_START_KIND = 'TE match page (no api-tennis fixture)'
 
 

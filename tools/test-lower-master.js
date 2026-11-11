@@ -150,7 +150,7 @@ const qx = Q.x.xRows.map((x, i) => ({ x, n: Q.x.xNames[i] }));
 ok(!qx.find(o => o.n[0] === 'Ace A.' && o.n[1] === 'Bee B.') && Q.x.meta.lower.qHasTd === 1,
    "atp-q: a 'qualifying' row of a match the Database holds (api-tennis's Lyon label) is dropped and counted, never a second row");
 ok(qx.find(o => o.n[0] === 'Qual Q.' && o.n[1] === 'Fier F.'), 'atp-q: a real qualifying match (no Database row) stays');
-const ntAnchor = "    if (tk.length && !tk.every(k => tdUnpricedPairs.has(k))) { if (nt) lower.ntHasTd = (lower.ntHasTd || 0) + 1; else lower.qHasTd = (lower.qHasTd || 0) + 1; continue; }";
+const ntAnchor = "    if (tk.length && !tk.every(k => tdUnpricedPairs.has(k))) { if (nt) lower.ntHasTd = (lower.ntHasTd || 0) + 1; else if (mj) lower.mdjHasTd = (lower.mdjHasTd || 0) + 1; else lower.qHasTd = (lower.qHasTd || 0) + 1; continue; }";
 ok(src.split(ntAnchor).length === 2, 'atp-nt: the duplicate-guard mutant anchor is found exactly once');
 const mp3 = path.join(ROOT, '.mutant-lower-yield-nt.js');
 fs.writeFileSync(mp3, src.replace(ntAnchor, ''));
@@ -184,6 +184,26 @@ try { const M = build(Object.assign({}, FEEDS, { DB_YIELD_ARCHIVE_DIR: arch2, DB
   redU = !M.x.xNames.some(n => n[0] === 'Cee C.' && n[1] === 'Dee D.'); }
 finally { fs.unlinkSync(mpU); }
 ok(redU, 'MUTANT (any Tennis-Data row wins, priced or not — the pre-2026-11-08 rule) drops the only price — red');
+// ── 'atp-mdj' (founder 2026-11-11, "they don't come into the ROI database, just to have a price"): an ATP main-draw match the
+// site showed unpriced, priced from its Tennis Explorer page by TE match ID — join-only flag j, never a Database figure, never
+// Market edge; a priced Tennis-Data row of the same match wins (dropped and counted)
+fs.writeFileSync(path.join(tmp, 'approx-mdj.csv'), [COLS].concat(approx.slice(1),
+  TEC({ date: '2026-05-22', level: 'atp-mdj', tournament: 'Geneva', winner: 'Cee C.', loser: 'Dee D.', winnerKey: '27', loserKey: '', psw: 1.8, psl: 2.05, eventKey: -3131910, source: 'Tennis Explorer · Pinnacle', comment: 'Completed' }),
+  TEC({ date: '2026-05-21', level: 'atp-mdj', tournament: 'Geneva', winner: 'Ace A.', loser: 'Bee B.', winnerKey: '25', loserKey: '', psw: 1.45, psl: 2.7, eventKey: -3131911, source: 'Tennis Explorer · other book · Interwetten', comment: 'Completed' }),
+).join('\n') + '\n');
+const MJ = build(Object.assign({}, FEEDS, { DB_YIELD_ARCHIVE_DIR: arch2, DB_YIELD_LOWER_APPROX: path.join(tmp, 'approx-mdj.csv') }));
+const mj = MJ.x.xRows.map((x, i) => ({ x, n: MJ.x.xNames[i] }));
+const mjCD = mj.filter(o => o.n[0] === 'Cee C.' && o.n[1] === 'Dee D.');
+ok(mjCD.length === 1 && mjCD[0].x[8] === 8 && mjCD[0].x[9] === 'j' && mjCD[0].x[1] == null, `atp-mdj: the Tennis Explorer price fills the Tennis-Data dash behind flag j only (got ${JSON.stringify(mjCD.map(o => o.x))})`);
+ok(!mj.some(o => o.n[0] === 'Ace A.' && o.n[1] === 'Bee B.') && MJ.x.meta.lower.mdjHasTd === 1, 'atp-mdj: a match the Database prices (Geneva, Ace v Bee) is never a second row — dropped and counted');
+ok(MJ.x.meta.counts.joinOnlyMainDraw === 1, 'atp-mdj: counted in the era meta');
+ok(MJ.base === N2b.base, 'atp-mdj: the Database files are byte-identical (never a Database figure, ROI untouched)');
+const mjM = MJ.master.rows.filter(r => r[7] === 'Cee C.' && r[8] === 'Dee D.');
+ok(mjM.length === 1 && /j/.test(mjM[0][14]), 'atp-mdj: the master carries the match with flag j');
+// Market edge and odds performance skip flag j (the readers' own filters)
+const meSrc = fs.readFileSync(path.join(ROOT, 'build-market-edge.js'), 'utf8'), opSrc = fs.readFileSync(path.join(ROOT, 'build-odds-performance.js'), 'utf8');
+ok(/if \(flags\.includes\('j'\)\) \{ stats\.joinOnly/.test(meSrc), 'atp-mdj: Market edge skips a flag-j master row');
+ok(/!\/\[tlj\]\/\.test\(String\(m\[MC\.flags\]/.test(opSrc), 'atp-mdj: odds performance skips a flag-j master row');
 // ── founder 2026-11-04 ("always find prices"): one match = one row, whatever the spelling or the key
 // (a) an atp-nt row whose names Tennis-Data spells another way (hyphen, a longer initial) is the same match: dropped
 fs.writeFileSync(path.join(tmp, 'approx-sp.csv'), [COLS].concat(approx.slice(1),

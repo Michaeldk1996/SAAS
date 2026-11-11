@@ -73,6 +73,15 @@ take styling from it, structure from the rules below.
   lines and every other page show it as "B" (`odds.md` "Price sources by page and level"). The Database header reads
   "Pinnacle closing only" while no Bet365 row is in its figures. `meta.bet365OutOfDatabase` counts the moved rows by year and
   book. Before 2010 (the `p` rows) nothing changes. **Test:** `tools/test-te-b365.js`, `tools/test-b365-window.mjs`.
+- **Join-only ATP main draw — flag `j` (founder 2026-11-11, relayed by the Pinnacle-close session: "look for other books …
+  we just need a price here since they don't come into the ROI database").** An ATP main-draw match the live site showed
+  unpriced may be priced from its Tennis Explorer page, by TE match ID (stennisfy-ops `pre21-md-NN` batches, level
+  `pre-atp-md` → `atp-mdj`; Pinnacle, else Bet365, else another book with its margin removed; the TE page start and the
+  te-history result, as every pre-2021 row). It rides the era shard behind `j`: read by the price join only — never a
+  Database figure, ROI, tour baseline, Market edge (`build-market-edge.js` skips `j`) or odds-performance row (`[tlj]`).
+  A priced Database row of the same match wins and the `j` row is dropped (`meta.lower.mdjHasTd`). **Test:** does a `j` row
+  change any Database file, ROI, baseline or Market edge yield? It must not — `tools/test-lower-master.js` "atp-mdj",
+  `tools/test-tdarch.py` "pre21-md".
 - **Retirements settle through settlement.js (founder ruling 2026-10-25, round 2 item 1.3; replaces the 2026-09-20 "void
   them" and 2026-10-08 "behind a flag, no Database figure" rulings).** Two rules, two functions, one module (`settlement.js`,
   UMD, `window.Settlement`): **yields / ROI / units → `settleBet`** (Pinnacle rules: a retirement after the first set was

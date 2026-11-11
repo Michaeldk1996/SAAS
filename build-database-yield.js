@@ -642,7 +642,13 @@ const LOWER_LEVEL_NAME = { 'atp-q': 'ATP Qualifying', ch: 'Challenger', 'ch-q': 
   // holds (tools/tdarch.py 'atp-nt'). An ATP main-draw era row: no 't' / 'l' flag (Market edge and the join read it), a
   // Bet365 price behind 'b' as every main-draw Bet365 row — never a Database figure. A Tennis-Data row of the same match
   // (a later drop-in) wins: this row is then dropped and counted (lower.ntHasTd).
-  'atp-nt': 'ATP' };
+  'atp-nt': 'ATP',
+  // founder 2026-11-11 (Michael, via the Pinnacle-close session: "we just need a price here since they don't come into the ROI
+  // database"): an ATP main-draw match the live site showed unpriced, priced from its Tennis Explorer page by TE match ID
+  // (tools/tdarch.py 'atp-mdj', the pre-2021 path: TE page start, te-history result). Behind the join-only flag 'j': read by the
+  // price join only — never a Database figure, ROI, tour baseline, Market edge or odds-performance row. The 'atp-nt' guard
+  // applies: a priced Database row of the same match wins and this row is dropped (lower.mdjHasTd).
+  'atp-mdj': 'ATP' };
 const LOWER_B365_TO = '2026-09-16';                               // from 17 Sep only a close prices these levels
 const lower = { files: {}, rows: 0, byLevel: {}, byBook: {}, dropped: 0, b365: { captures: 0, noCareerRow: 0, atpMainDraw: 0, kept: 0, after16Sep: 0 } };
 const lowerBest = new Map();
@@ -742,7 +748,7 @@ for (const r of lowerBest.values()) {
   const dI = parseInt(String(r.date).replace(/-/g, ''), 10);
   if (!Number.isFinite(dI) || !r.winner || !r.loser || !r.winner.trim() || !r.loser.trim()) { lower.dropped++; continue; }
   const isRet = RETIRED.has((r.comment || '').trim());
-  const tx = r.level === 'atp-x', nt = r.level === 'atp-nt', series = tx || nt ? '' : LOWER_LEVEL_NAME[r.level];
+  const tx = r.level === 'atp-x', nt = r.level === 'atp-nt', mj = r.level === 'atp-mdj', series = tx || nt || mj ? '' : LOWER_LEVEL_NAME[r.level];
   if (tx) {
     const dd = n => { const x = new Date(Date.UTC(Math.floor(dI / 10000), Math.floor(dI / 100) % 100 - 1, dI % 100 + n)); return x.toISOString().slice(0, 10).replace(/-/g, ''); };
     if ([-1, 0, 1].some(n => teamPairs.has(tdPairKey(dd(n), r.winner, r.loser)))) { lower.teamHasClose = (lower.teamHasClose || 0) + 1; continue; }
@@ -751,16 +757,16 @@ for (const r of lowerBest.values()) {
   // (Lyon (France) 2026), so an archive close of such a match reaches the Database twice — the archive feed's main-draw row
   // and the lower-level 'atp-q' row — and the join dashes both (two rows fit; Van Assche v Musetti, 23 Oct). The 'atp-nt'
   // rule applies: a Database row of the same match wins, the 'atp-q' copy is dropped and counted (lower.qHasTd).
-  if (nt || r.level === 'atp-q') {
+  if (nt || mj || r.level === 'atp-q') {
     const dd = n => { const x = new Date(Date.UTC(Math.floor(dI / 10000), Math.floor(dI / 100) % 100 - 1, dI % 100 + n)); return x.toISOString().slice(0, 10).replace(/-/g, ''); };
     const tk = [-1, 0, 1].map(n => tdPairKey(dd(n), r.winner, r.loser)).filter(k => tdPairs.has(k));
-    if (tk.length && !tk.every(k => tdUnpricedPairs.has(k))) { if (nt) lower.ntHasTd = (lower.ntHasTd || 0) + 1; else lower.qHasTd = (lower.qHasTd || 0) + 1; continue; }
+    if (tk.length && !tk.every(k => tdUnpricedPairs.has(k))) { if (nt) lower.ntHasTd = (lower.ntHasTd || 0) + 1; else if (mj) lower.mdjHasTd = (lower.mdjHasTd || 0) + 1; else lower.qHasTd = (lower.qHasTd || 0) + 1; continue; }
     if (tk.length && nt) lower.ntFillsTdDash = (lower.ntFillsTdDash || 0) + 1;
   }
   xAtt.push([series, '', '', (r.comment || '').trim(), '', '']);
   const ntB = nt && (r.book === 6 || r.book === 7 || r.book === TE_B365_BOOK);   // a main-draw Bet365 price: the join's "B"
-  xRaw.push([dI, tx || nt ? null : series, '', '', (r.tournament || '').trim(), Math.min(r.pw, r.pl), Math.max(r.pw, r.pl),
-    r.pw <= r.pl ? 1 : 0, r.book, r.winner.trim(), r.loser.trim(), (tx ? 't' : nt ? (ntB ? 'b' : '') : 'l') + (isOtherBook(r.book) ? 'v' : '') + (isRet ? 'r' : '') + (r.pw === r.pl ? 'e' : '')]);
+  xRaw.push([dI, tx || nt || mj ? null : series, '', '', (r.tournament || '').trim(), Math.min(r.pw, r.pl), Math.max(r.pw, r.pl),
+    r.pw <= r.pl ? 1 : 0, r.book, r.winner.trim(), r.loser.trim(), (tx ? 't' : nt ? (ntB ? 'b' : '') : mj ? 'j' : 'l') + (isOtherBook(r.book) ? 'v' : '') + (isRet ? 'r' : '') + (r.pw === r.pl ? 'e' : '')]);
   lower.rows++; lower.byLevel[r.level] = (lower.byLevel[r.level] || 0) + 1; lower.byBook[r.book] = (lower.byBook[r.book] || 0) + 1;
 }
 // founder ruling 2026-10-18 (item 5): the lower-level matches the import checked and could not price, with their reason —
@@ -1014,9 +1020,9 @@ writeAtomic(OUT_NAMES, JSON.stringify({ names, retNames, tieNames, aliases: name
 // the same file; its strings are its own (no Database dictionary is touched, so no Database picker gains an entry).
 const xCount = f => xRaw.filter(x => x[11].includes(f)).length;
 const X_META = { schema: 1, rule: 'Priced completed matches the master holds but the Database statistics leave out: before ' + WINDOW_START +
-  ' (flag p), team events (flag t), the lower levels (flag l) and the ATP main-draw matches with no Pinnacle price, priced on Bet365 (flag b, founder 2026-10-30), with r = a retirement (settled on the official ATP result) and e = an exact tie. Same book ' +
+  ' (flag p), team events (flag t), the lower levels (flag l) and the ATP main-draw matches with no Pinnacle price, priced on Bet365 (flag b, founder 2026-10-30), the ATP main-draw matches priced from Tennis Explorer for the join only (flag j, founder 2026-11-11), with r = a retirement (settled on the official ATP result) and e = an exact tie. Same book ' +
   'codes as database-yield.json. Read by the price join only; no Database figure, tour baseline or ROI reads it.',
-  counts: { all: xRaw.length, pre2010: xCount('p'), team: xCount('t'), lower: xCount('l'), mainDrawBet365: xCount('b'), retired: xCount('r'), ties: xCount('e'), teamDropped: feed.teamDropped }, lower };
+  counts: { all: xRaw.length, pre2010: xCount('p'), team: xCount('t'), lower: xCount('l'), mainDrawBet365: xCount('b'), joinOnlyMainDraw: xCount('j'), retired: xCount('r'), ties: xCount('e'), teamDropped: feed.teamDropped }, lower };
 writeAtomic(OUT_X, JSON.stringify({ meta: X_META,
   xRows: xRaw.map(x => [x[0], x[1], x[2], x[3], x[4], x[5], x[6], x[7], x[8], x[11]]), xNames: xRaw.map(x => [x[9], x[10]]), uRows: uRaw }));
 // …and the ONE master file every builder downstream reads (build-market-edge.js): every priced completed match, one row
