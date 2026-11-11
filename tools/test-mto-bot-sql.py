@@ -33,6 +33,10 @@ MUTANTS = [
     ('posts go to the drops chat', "msg := mto.render(a);\n    rid := mto.send(msg, 'mto_telegram_chat_id');", "msg := mto.render(a);\n    rid := mto.send(msg, 'ten287_telegram_chat_id');"),
     ('an old MTO is posted', 'if coalesce(a.called_at, a.seen_at) < v_at - cfg.post_max_age then', 'if false then'),
     ('the failure alert fires with no ATP match live', 'if p is not null and live and (', 'if p is not null and ('),
+    ('a timed-out send is never tried again', "when (r.status_code is null or r.status_code = 429 or r.status_code >= 500) and a.send_tries < 10", "when false"),
+    ('the source is named in the post', "'⏱ ' || coalesce(to_char(a.called_at at time zone 'UTC', 'HH24:MI:SS') || ' UTC', '—'));", "'⏱ ' || coalesce(to_char(a.called_at at time zone 'UTC', 'HH24:MI:SS') || ' UTC', '—') || ' · Source: ' || a.source);"),
+    ('a stale MTO is still resent', "> now() - (select resend_max_age from mto_rec.config) then 'unsent'", "> now() - interval '100 years' then 'unsent'"),
+    ('a lost post is not reported', "if exists (select 1 from mto.archive where delivery like 'failed:%' and sent_at > now() - interval '15 minutes') then", "if false then"),
     ('the server is taken from the wrong side', "case srv when 1 then m.p1_name when 2 then m.p2_name end, dup,", "case srv when 2 then m.p1_name when 1 then m.p2_name end, dup,"),
 ]
 if '--mutants' in sys.argv:
@@ -186,12 +190,17 @@ try:
           and a['called_at'].startswith('2026-11-08T12:20:21') and a['source'] == 'Live Tennis API', a)
     check('Montes v Sonego: the end row closed it (147 s)', a['duration_seconds'] == 147 and (a['ended_at'] or '').startswith('2026-11-08T12:22:48'), a)
     msg = a['message'] or ''
-    check('post: header + level, tournament, qualifying, round', msg.startswith('🩺 <b>MEDICAL TIMEOUT</b>\nATP 250 · Stockholm · Qualifying · Final\n'), msg)
-    check('post: MEDICAL tag on the player who called it, and only him',
-          '🇪🇸 Inaki Montes-De La Torre  🩺 <b>MEDICAL</b>\n' in msg and msg.count('🩺 <b>MEDICAL</b>') == 1, msg)
-    check('post: the server is marked', '🇮🇹 Lorenzo Sonego  ● serving' in msg and msg.count('● serving') == 1, msg)
-    check('post: set scores and game score at the call', 'Sets: <code>5–7, 0–0</code>   Game: <code>0–0</code>' in msg, msg)
-    check('post: the time of the call', '⏱ 12:20:21 UTC' in msg, msg)
+    check('post: line 1 = LIVE · MTO · who; line 2 = host flag, level, tournament, qualifying, round',
+          msg.startswith('🚨 <b>LIVE · MTO · Inaki Montes-De La Torre</b>\n🇸🇪 ATP 250 · Stockholm · Qualifying · Final\n\n'), msg)
+    check('post: MEDICAL tag on the player who called it, and only him, with his games per set',
+          '\n🇪🇸 Inaki Montes-De La Torre  5 0  🩺 <b>MEDICAL</b>\n' in msg and msg.count('🩺 <b>MEDICAL</b>') == 1, msg)
+    check('post: the server is marked, with his games', '\n🇮🇹 Lorenzo Sonego  7 0  ● serving\n' in msg and msg.count('● serving') == 1, msg)
+    check('post: the time of the call is its last line', msg.endswith('\n\n⏱ 12:20:21 UTC'), msg)
+    check('post: no source is named', 'Source' not in msg and 'Live Tennis' not in msg, msg)
+    check('round as the site prints it', one("select mto.round_short('1/8-finals') || '|' || mto.round_short('1/16-finals') || '|' || mto.round_short('Final') || '|' || mto.round_short('1/4-finals')") == 'R16|R32|Final|Quarter-finals')
+    check('score: a dash when not sent; game points only once a point is played; server and MEDICAL on one player',
+          one("select mto.side_score(null, null, 1) || '|' || mto.side_score('[[6],[5]]'::jsonb, '[\"0\",\"0\"]'::jsonb, 2) || '|' || mto.side_score('[[6,1],[5,2]]'::jsonb, '[\"30\",\"40\"]'::jsonb, 1)") == '—|5|6 1 (30)'
+          and '  6 6 0  ● serving · 🩺 <b>MEDICAL</b>' in (r4m := one("select mto.render(a) from mto.archive a where source_event_id = 1758566") and one("select mto.render(x) from (select (jsonb_populate_record(a, '{\"server_side\": 1, \"games\": [[6,6,0],[4,7,0]]}'::jsonb)).* from mto.archive a where source_event_id = 1758566) x")), r4m)
     check('no MTO chat in Vault: not sent, and never to the drops chat',
           a['delivery'] == 'unsent: no vault secret' and one("select count(*) from net.calls where method = 'POST'") == '0', a['delivery'])
 
@@ -231,7 +240,8 @@ try:
     drain(page(dict(real, id=9100003, at='2026-11-08T12:58:00Z', player=None, player_id=None, score=dict(real['score'], games=[[5, 4], [7, 2]]))))
     np = json.loads(one("select row_to_json(a) from mto.archive a where source_event_id = 9100003"))
     check('no player in the source: stored empty', np['player'] is None and np['opponent'] is None and np['player_side'] is None, np)
-    check('…and posted with no MEDICAL tag on either player', '🩺 <b>MEDICAL</b>' not in (np['message'] or '') and 'Player not stated by the source.' in np['message'], np['message'])
+    check('…and posted with no MEDICAL tag on either player', '🩺' not in (np['message'] or '') and 'Player not stated.' in np['message']
+          and np['message'].startswith('🚨 <b>LIVE · MTO</b>\n'), np['message'])
 
     # never inferred
     before = one("select count(*) from mto.archive")
@@ -270,6 +280,45 @@ try:
     check('queued, with its delay', one("select delivery || '/' || (delay_s is not null) from mto.archive where source_event_id = 1759248") == 'queued/true')
     q(f"insert into net._http_response (id, status_code, content) values ({p['id']}, 200, '{{}}')"); tick()
     check('Telegram said yes: sent', one("select delivery from mto.archive where source_event_id = 1759248") == 'sent')
+
+    # a send Telegram never answered is tried again (11 Nov 2026: Ruud's 17:53Z MTO was archived and never posted)
+    def last_post(): return json.loads(one("select row_to_json(c) from net.calls c where method = 'POST' order by id desc limit 1"))
+    def tries(): return one("select delivery || '/' || send_tries from mto.archive where source_match_id = 216324")
+    q("update mto_rec.config set resend_max_age = interval '100 years'")
+    q("update mto.archive set delivery = 'unsent', send_tries = 0 where source_match_id = 216324"); tick()
+    p1 = last_post()
+    q(f"insert into net._http_response (id, status_code, error_msg) values ({p1['id']}, null, 'Timeout of 10000 ms reached')"); tick()
+    p2 = last_post()
+    check('a timed-out send is sent again, the same text', p2['id'] != p1['id'] and p2['body']['text'] == p1['body']['text'] and tries() == 'queued/2', (p1['id'], p2['id'], tries()))
+    q(f"insert into net._http_response (id, status_code, content) values ({p2['id']}, 200, '{{}}')"); tick()
+    check('…and the retry that Telegram accepts is sent, once', tries() == 'sent/2' and last_post()['id'] == p2['id'], tries())
+    q("update mto.archive set delivery = 'unsent', send_tries = 0 where source_match_id = 216324"); tick()
+    p3 = last_post()
+    q(f"insert into net._http_response (id, status_code, content) values ({p3['id']}, 400, '{{}}')"); tick()
+    check('CONTROL: an HTTP 400 is our own fault: failed, not sent again', tries() == 'failed: HTTP 400/1' and last_post()['id'] == p3['id'], tries())
+    q("update mto.archive set delivery = 'unsent', send_tries = 0 where source_match_id = 216324")
+    for _ in range(14):
+        tick(); pp = last_post()
+        q(f"insert into net._http_response (id, status_code, error_msg) values ({pp['id']}, null, 'Timeout') on conflict (id) do nothing")
+    tick()
+    check('ten sends at most, then failed with its reason', tries() == 'failed: Timeout/10', tries())
+    check('a send is given 5 s, so the next try is one tick away', one("select prosrc like '%timeout_milliseconds := 5000%' from pg_proc where proname = 'send' and pronamespace = 'mto'::regnamespace") == 't')
+    q("create temp table st_keep as select * from mto_rec.state; update mto_rec.state set last_ok_at = now(), watermark = now()")
+    lost = one("select coalesce(mto.problem(), 'none')")
+    q("update mto_rec.state s set last_ok_at = k.last_ok_at, watermark = k.watermark from st_keep k; drop table st_keep")
+    check('a post lost after every retry is a problem the watch reports',
+          'NOT posted to Telegram after 10 tries' in lost and 'Casper Ruud' in lost and 'Carlos Alcaraz' in lost, lost)
+    q("update mto_rec.config set resend_max_age = interval '2 minutes'")
+    check('the resend window is 2 minutes after the call', one("select resend_max_age = interval '2 minutes' from mto_rec.config") == 't')
+    q("update mto.archive set delivery = 'unsent', send_tries = 0, called_at = now() - interval '90 seconds' where source_match_id = 216324"); tick()
+    p5 = last_post()
+    q(f"insert into net._http_response (id, status_code, error_msg) values ({p5['id']}, null, 'Timeout')"); tick()
+    check('a call 90 s old: a timed-out send is sent again', last_post()['id'] != p5['id'] and tries() == 'queued/2', tries())
+    q("update mto.archive set called_at = now() - interval '3 minutes' where source_match_id = 216324")
+    p6 = last_post()
+    q(f"insert into net._http_response (id, status_code, error_msg) values ({p6['id']}, null, 'Timeout')"); tick()
+    check('CONTROL: a call more than 2 min old is not sent again', last_post()['id'] == p6['id'] and tries() == 'failed: Timeout/2', tries())
+    q("update mto.archive set delivery = 'sent' where source_match_id = 216324")
     q("update mto_rec.config set post_max_age = interval '10 minutes'; update mto.archive set delivery = 'unsent' where source_event_id = 1758566")
     posts = one("select count(*) from net.calls where method = 'POST'"); tick()
     late = one("select delivery from mto.archive where source_event_id = 1758566")

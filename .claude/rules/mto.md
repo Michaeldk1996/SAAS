@@ -23,6 +23,17 @@ Applies to `tools/mto-bot.sql` (schemas `mto_rec` + `mto`), `tools/mto-levels.mj
   and score within 15 min is `duplicate` and never posted; a later MTO in the same match (another score) is a new post.
 - **The player is the source's or nobody.** **Test:** a row without `player` is posted with no MEDICAL tag and stored with
   `player` NULL. Never guessed.
+- **The post = the founder's layout (2026-11-12).** Line 1 "🚨 LIVE · MTO · {player}" (no name when the source gives
+  none), so a phone notification says it alone. Line 2 = the host country's flag, level, tournament, Qualifying, round as
+  the site prints it (1/8-finals → R16). Then one line per player in feed order: flag, name, his games per set ("6 0";
+  his points in brackets once a point is played in the game), "● serving", "🩺 MEDICAL". Last line = the call's UTC
+  time. **No source is named in any post** (the source is private). **Test:** the post holds no "Source" and no "Live
+  Tennis"; a score the source did not send is a dash.
+- **A send Telegram did not answer is tried again** (founder 2026-11-12; Ruud's 17:53Z MTO on 11 Nov was archived and
+  never posted: its one send timed out in the TLS handshake). **Test:** no answer, a 429 or a 5xx → sent again on the
+  next tick (a send is given 5 s, so about every 10 s), at most 10 sends, only while the call is under 2 min old
+  (`mto_rec.config.resend_max_age`, founder 2026-11-12); an HTTP 4xx is `failed` at once. A post still `failed` after that
+  is a watch problem: one alert in the pipeline chat naming the match.
 - **Late = archived, not posted.** An MTO first seen more than 10 min after the call (`mto_rec.config.post_max_age`) is
   stored with `delivery` "not sent: seen N min after the call".
 - **The archive row** (`mto.archive`, one per MTO, kept for good): our api-tennis match id (`event_key`), tournament, level,

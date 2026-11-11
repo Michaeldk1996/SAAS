@@ -33,6 +33,7 @@ create table if not exists mto_rec.config (
     idle_seconds  integer not null default 60,      -- poll cadence with no ATP singles match live on our board
     post_max_age  interval not null default interval '10 minutes'   -- an MTO seen later than this is archived, never posted
 );
+alter table mto_rec.config add column if not exists resend_max_age interval not null default interval '2 minutes';   -- a failed send is tried again only this long after the call
 insert into mto_rec.config (id) values (true) on conflict (id) do nothing;
 
 create table if not exists mto_rec.state (
@@ -101,6 +102,7 @@ create table if not exists mto.tournament_level (
     name_key  text primary key,
     level     text not null
 );
+alter table mto.tournament_level add column if not exists country text;   -- ISO-2 of the host country, from the same table
 
 -- THE ARCHIVE: one row per medical timeout, kept for good.
 create table if not exists mto.archive (
@@ -149,6 +151,7 @@ create table if not exists mto.archive (
     sent_at          timestamptz,
     delay_s          numeric                    -- sent_at - called_at
 );
+alter table mto.archive add column if not exists send_tries integer not null default 0;   -- Telegram sends tried
 create index if not exists marchive_match_idx on mto.archive (source_match_id, called_at);
 create index if not exists marchive_ek_idx on mto.archive (event_key);
 create index if not exists marchive_player_idx on mto.archive (player);
@@ -203,6 +206,33 @@ begin
             "hai":"HT","isl":"IS","alb":"AL","kos":"XK","lie":"LI","mlt":"MT","smr":"SM","and":"AD"}'::jsonb)->>lower(btrim(coalesce(p_ioc, '')));
   if iso is null then return ''; end if;
   return chr(127462 + ascii(substr(iso, 1, 1)) - 65) || chr(127462 + ascii(substr(iso, 2, 1)) - 65);
+end $$;
+
+-- an ISO-2 country -> its flag; anything else -> ''
+create or replace function mto.flag_iso(p_iso text) returns text language sql immutable as $$
+  select case when upper(btrim(coalesce(p_iso, ''))) ~ '^[A-Z]{2}$'
+              then chr(127462 + ascii(substr(upper(btrim(p_iso)), 1, 1)) - 65) || chr(127462 + ascii(substr(upper(btrim(p_iso)), 2, 1)) - 65)
+              else '' end $$;
+
+-- the round as the site prints it (maRoundName): 1/16-finals -> R32, 1/8 -> R16, 1/4 -> Quarter-finals, 1/2 -> Semi-finals
+create or replace function mto.round_short(p text) returns text language sql immutable as $$
+  select case lower(btrim(coalesce(p, ''))) when '1/16-finals' then 'R32' when '1/8-finals' then 'R16'
+              when '1/4-finals' then 'Quarter-finals' when '1/2-finals' then 'Semi-finals' else nullif(btrim(p), '') end $$;
+
+-- one player's score at the call: his games per set ("6 0"), and his points in the current game in brackets once a point
+-- has been played in it ("6 0 (30)"); unreadable games -> —
+create or replace function mto.side_score(p_games jsonb, p_points jsonb, p_side integer) returns text language plpgsql immutable as $$
+declare g text; pt text;
+begin
+  if jsonb_typeof(p_games) = 'array' and jsonb_array_length(p_games) = 2 and jsonb_typeof(p_games->(p_side - 1)) = 'array'
+     and jsonb_array_length(p_games->(p_side - 1)) > 0 then
+    select string_agg(x, ' ' order by o) into g from jsonb_array_elements_text(p_games->(p_side - 1)) with ordinality t(x, o);
+  end if;
+  if jsonb_typeof(p_points) = 'array' and jsonb_array_length(p_points) = 2
+     and not (coalesce(p_points->>0, '0') = '0' and coalesce(p_points->>1, '0') = '0') then
+    pt := p_points->>(p_side - 1);
+  end if;
+  return coalesce(g, '—') || coalesce(' (' || pt || ')', '');
 end $$;
 
 -- the level badge: the site's tournament table first, else the feed's own tier, else none
@@ -312,25 +342,23 @@ end $$;
 
 -- ── the archive row and its message ──────────────────────────────────────────────────────────────────────────────
 create or replace function mto.render(a mto.archive) returns text language plpgsql stable as $$
-declare head text; l1 text; l2 text; sc text; pt text;
+declare head text; tf text; l1 text; l2 text;
 begin
-  head := concat_ws(' · ', a.level, a.tournament, case when a.qualifying then 'Qualifying' end, a.round);
-  l1 := btrim(mto.flag(a.p1_country) || ' ' || mto.esc(a.p1)) || case when a.player_side = 1 then '  🩺 <b>MEDICAL</b>' else '' end
-        || case when a.server_side = 1 then '  ● serving' else '' end;
-  l2 := btrim(mto.flag(a.p2_country) || ' ' || mto.esc(a.p2)) || case when a.player_side = 2 then '  🩺 <b>MEDICAL</b>' else '' end
-        || case when a.server_side = 2 then '  ● serving' else '' end;
-  sc := mto.sets_text(a.games);
-  pt := case when jsonb_typeof(a.points) = 'array' and jsonb_array_length(a.points) = 2
-             then (a.points->>0) || '–' || (a.points->>1) end;
+  -- The founder's layout (2026-11-12). Line 1 is what a phone notification shows. No source is named.
+  select mto.flag_iso(l.country) into tf from mto.tournament_level l where l.name_key = lower(btrim(coalesce(a.tournament, '')));
+  head := btrim(coalesce(tf, '') || ' ' || mto.esc(concat_ws(' · ', a.level, a.tournament, case when a.qualifying then 'Qualifying' end, mto.round_short(a.round))));
+  l1 := btrim(mto.flag(a.p1_country) || ' ' || mto.esc(a.p1)) || '  ' || mto.side_score(a.games, a.points, 1)
+        || coalesce('  ' || nullif(concat_ws(' · ', case when a.server_side = 1 then '● serving' end, case when a.player_side = 1 then '🩺 <b>MEDICAL</b>' end), ''), '');
+  l2 := btrim(mto.flag(a.p2_country) || ' ' || mto.esc(a.p2)) || '  ' || mto.side_score(a.games, a.points, 2)
+        || coalesce('  ' || nullif(concat_ws(' · ', case when a.server_side = 2 then '● serving' end, case when a.player_side = 2 then '🩺 <b>MEDICAL</b>' end), ''), '');
   return concat_ws(chr(10),
-    '🩺 <b>MEDICAL TIMEOUT</b>',
-    nullif(mto.esc(head), ''),
+    '🚨 <b>' || concat_ws(' · ', 'LIVE', 'MTO', nullif(mto.esc(a.player), '')) || '</b>',
+    nullif(head, ''),
     '',
     l1, l2,
     '',
-    'Sets: <code>' || coalesce(sc, '—') || '</code>   Game: <code>' || coalesce(pt, '—') || '</code>',
-    case when a.player_side is null then 'Player not stated by the source.' end,
-    '⏱ ' || coalesce(to_char(a.called_at at time zone 'UTC', 'HH24:MI:SS') || ' UTC', '—') || ' · Source: ' || a.source);
+    case when a.player_side is null then 'Player not stated.' end,
+    '⏱ ' || coalesce(to_char(a.called_at at time zone 'UTC', 'HH24:MI:SS') || ' UTC', '—'));
 end $$;
 
 -- file one stated medical_timeout_start (the match row is known and ATP singles). Returns the archive id, or NULL.
@@ -411,12 +439,17 @@ begin
     url     := 'https://api.telegram.org/bot' || btrim(tok) || '/sendMessage',
     body    := jsonb_build_object('chat_id', btrim(chat), 'text', p_text, 'parse_mode', 'HTML', 'disable_web_page_preview', true),
     headers := '{"Content-Type": "application/json"}'::jsonb,
-    timeout_milliseconds := 10000);
+    timeout_milliseconds := 5000);     -- 5 s: a send Telegram does not answer is given up fast and sent again on the next tick
 end $$;
 
 create or replace function mto.settle() returns void language plpgsql as $$
 begin
+  -- a send Telegram never answered (a timeout, a network error), or answered 429 / 5xx, is tried again on the next tick
+  -- (about every 10 s), up to 10 sends, only while the call is under 2 min old (config.resend_max_age; founder 2026-11-12). (11 Nov 2026: Ruud's 17:53Z MTO was archived and never posted,
+  -- its one send timed out in the TLS handshake.) An HTTP 4xx is our own fault and is not retried.
   update mto.archive a set delivery = case when r.status_code between 200 and 299 then 'sent'
+                                           when (r.status_code is null or r.status_code = 429 or r.status_code >= 500) and a.send_tries < 10
+                                                and coalesce(a.called_at, a.seen_at) > now() - (select resend_max_age from mto_rec.config) then 'unsent'
                                            else 'failed: ' || coalesce('HTTP ' || r.status_code, r.error_msg, 'no response') end
     from net._http_response r where a.delivery = 'queued' and r.id = a.net_request_id;
   update mto.watch_log w set delivery = case when r.status_code between 200 and 299 then 'sent'
@@ -523,6 +556,7 @@ begin
     rid := mto.send(msg, 'mto_telegram_chat_id');
     update mto.archive set net_request_id = rid, message = msg, sent_at = case when rid is not null then v_at end,
            delay_s = case when rid is not null and a.called_at is not null then round(extract(epoch from (v_at - a.called_at))::numeric, 3) end,
+           send_tries = send_tries + case when rid is null then 0 else 1 end,
            delivery = case when rid is null then 'unsent: no vault secret' else 'queued' end
      where id = a.id;
   end loop;
@@ -582,6 +616,11 @@ begin
   end if;
   if st.watermark is not null and st.watermark < now() - interval '5 minutes' then
     return 'the source has gone silent: its own data clock is ' || round(extract(epoch from (now() - st.watermark)) / 60) || ' min old';
+  end if;
+  -- a post that failed after every retry: the founder must know (2026-11-12: "we can not afford losing those")
+  if exists (select 1 from mto.archive where delivery like 'failed:%' and sent_at > now() - interval '15 minutes') then
+    return (select 'a medical timeout was NOT posted to Telegram after ' || a.send_tries || ' tries: ' || a.p1 || ' v ' || a.p2 || ' (' || left(a.delivery, 80) || ')'
+              from mto.archive a where a.delivery like 'failed:%' and a.sent_at > now() - interval '15 minutes' order by a.id desc limit 1);
   end if;
   return null;
 end $$;
