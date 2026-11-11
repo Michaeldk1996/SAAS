@@ -107,11 +107,13 @@ const OC = [{ name: 'Tommy Paul', bid: 0.54, ask: 0.55, mid: 0.545 }, { name: 'B
 const prow = (venue, at, extra = {}) => ({ [`12177788|${venue}`]: { event_key: '12177788', venue, liquidity: '242649.08', outcomes: OC, read_at: at, started_at: null,
   flow: { byName: { 'Ben Shelton': 27512.4, 'Tommy Paul': 3700 }, trades: 430, at }, ...extra } });
 
-test('prediction rows: each player by surname, the mid scaled to 100% as fair odds, a $ chip under each price, "$X traded · N trades" under the name', () => {
+test('prediction rows: each player by surname, the mid scaled to 100% as fair odds; CHANGES_2026-11-11 A5: no chip, no line under the name, one sentence under the row', () => {
   const h = MK(prow('kalshi', '2026-11-06T11:59:10Z')).html(m, false);
-  assert.match(h, /<span class="mc-sg-name">Kalshi<\/span><\/span><span class="mc-sg-meta">\$31\.2k traded · 430 trades<\/span><\/span>/);
-  assert.match(h, /<span class="mc-sg-oa"><span class="mc-sg-o">2\.20<\/span><span class="mc-sg-chip">\$27\.5k<\/span><\/span><span class="mc-sg-pa">46%<\/span>/, 'Shelton (p1) = 0.455 → 2.20, though the venue lists Paul first; the trailing side grey');
-  assert.match(h, /<span class="mc-sg-pb lead">55%<\/span><span class="mc-sg-ob"><span class="mc-sg-o">1\.83<\/span><span class="mc-sg-chip lead">\$3\.7k<\/span>/, 'the leaning side lead');
+  assert.match(h, /<span class="mc-sg-name">Kalshi<\/span><\/span><\/span>/, 'nothing under the name');
+  assert.doesNotMatch(h, /mc-sg-chip|mc-sg-meta/, 'no boxed amounts under the prices');
+  assert.match(h, /<span class="mc-sg-trade">\$31\.2k traded · 430 trades · \$27\.5k on Shelton · \$3\.7k on Paul<\/span><\/div>/, '{total} traded · {n} trades · {A} on {surname A} · {B} on {surname B}');
+  assert.match(h, /<span class="mc-sg-oa"><span class="mc-sg-o">2\.20<\/span><\/span><span class="mc-sg-pa">46%<\/span>/, 'Shelton (p1) = 0.455 → 2.20, though the venue lists Paul first; the trailing side grey');
+  assert.match(h, /<span class="mc-sg-pb lead">55%<\/span><span class="mc-sg-ob"><span class="mc-sg-o">1\.83<\/span><\/span>/, 'the leaning side lead');
   assert.match(h, /live mid \(best bid and ask, both players scaled to 100%\) · read Fri 06 Nov, 11:59 · bid \/ ask Shelton 0\.45 \/ 0\.46, Paul 0\.54 \/ 0\.55 · traded Shelton \$27\.5k, Paul \$3\.7k[^"]*\$242\.6k resting \(read Fri 06 Nov, 11:59\) · not a bookmaker price/, 'resting liquidity in the hover only');
   assert.match(MK(prow('polymarket', '2026-11-06T11:59:10Z')).html(m, false), /title="Kalshi · no market for this match"/, 'the other venue: a dash row');
 });
@@ -129,12 +131,13 @@ test('prediction rows: no confident player match or no mid → a dash row (never
   assert.match(MK(noMid).html(m, false), /title="Kalshi · no price for both players/);
   const noFlow = { '12177788|kalshi': { ...prow('kalshi', '2026-11-06T11:59:10Z')['12177788|kalshi'], flow: null } };
   const h = MK(noFlow).html(m, false);
-  assert.doesNotMatch(h, /mc-sg-chip|mc-sg-meta/);
+  assert.doesNotMatch(h, /mc-sg-chip|mc-sg-meta|mc-sg-trade/, 'no traded sum → no sentence');
   assert.match(h, /<span class="mc-sg-o">2\.20<\/span><\/span>/);
 });
 test('Completed: the winner\'s side carries the lead on prediction rows too', () => {
   const fz = prow('kalshi', '2026-11-06T11:40:00Z', { started_at: '2026-11-06T11:40:30Z' });
   const h = MK(fz).html(m, true, 'a');
-  assert.match(h, /<span class="mc-sg-o lead">2\.20<\/span><span class="mc-sg-chip lead">\$27\.5k<\/span>/, 'Shelton won: his side lead although the market had him at 46%');
+  assert.match(h, /<span class="mc-sg-o lead">2\.20<\/span><\/span><span class="mc-sg-pa lead">/, 'Shelton won: his side lead although the market had him at 46%');
+  assert.match(h, /<span class="mc-sg-trade">\$31\.2k traded · 430 trades · \$27\.5k on Shelton · \$3\.7k on Paul<\/span>/, 'C4: the same sentence on Completed');
   assert.match(h, /<span class="a win" style="width:45\.5/);
 });

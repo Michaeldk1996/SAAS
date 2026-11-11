@@ -128,8 +128,10 @@ test('with no OCS row the matches.json marker alone decides', () => {
 });
 
 // ── the five tiers ───────────────────────────────────────────────────────────
-const moved   = { __pair: { o1: 6.5, o2: 1.091, n1: 9, n2: 1.061 } };   // +38.5% (score in %, one decimal, TEN-403 R1)
-const smaller = { __pair: { o1: 2.34, o2: 1.599, n1: 2.53, n2: 1.535 } }; // +8.1%
+// CHANGES_2026-11-11 B4: the score is the SHORTENING side's printed drop (one decimal, TEN-403 R1), never a drift.
+const moved   = { __pair: { o1: 9, o2: 1.061, n1: 6.5, n2: 1.091 } };   // p1 shortened −27.8% (p2 drifted +2.8%)
+const smaller = { __pair: { o1: 2.53, o2: 1.535, n1: 2.34, n2: 1.599 } }; // p1 shortened −7.5%
+const bigDrift = { __pair: { o1: 2.0, o2: 2.0, n1: 3.0, n2: 1.9 } };     // p1 drifted +50.0%, p2 shortened −5.0%
 const flat    = { __pair: { o1: 5.5, o2: 1.1, n1: 5.5, n2: 1.1 } };      // 0%
 const noMove  = { __now: { p1: 1.24, p2: null } };                       // priced, unpairable
 const unprice = {};                                                      // dash / dash
@@ -137,6 +139,8 @@ const unprice = {};                                                      // dash
 test('the five tiers rank in the founder\'s order', () => {
   const s = m => moveNowScore(m);
   assert.ok(s(moved) > s(smaller),  'largest move first');
+  assert.equal(s(bigDrift), 5, 'B4: a drift never ranks — the shortening side does');
+  assert.ok(s(smaller) > s(bigDrift), 'a +50% drift does not outrank a −7.5% drop');
   assert.ok(s(smaller) > s(flat),   'smaller moves above 0%');
   assert.ok(s(flat) > s(noMove),    '0% above no-move-computable');
   assert.ok(s(noMove) > s(unprice), 'no-move-computable above fully unpriced');
@@ -154,7 +158,7 @@ test('THE BUG THIS FIXES: unpriced and unpairable no longer tie', () => {
     .map(m => ({ m, sc: moveNowScore(m) }))
     .sort((a, b) => b.sc - a.sc);
   assert.deepEqual(sorted.map(x => x.sc.toFixed(1)),
-                   ['38.5', '8.1', '0.0', '-1.0', '-2.0']);
+                   ['27.8', '7.5', '0.0', '-1.0', '-2.0']);
 });
 
 test('a card priced on EITHER leg stays above a fully unpriced one', () => {

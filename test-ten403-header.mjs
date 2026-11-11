@@ -160,13 +160,16 @@ function checkLive(src) {
     if (m[1] !== label) return `label "${m[1]}" want "${label}" (ruling A wording kept)`;
   }
   // markup: the live column is the FIRST column of the stats row, before the four board stats
-  if (!/<div class="sfh__stats">\s*<div class="sfh__stat mx-datastatus" id="dataStatus">[\s\S]*?<\/div>\s*<div class="mx-hstats" id="mxHeaderStats"/.test(src)) return 'live column is not first in the stats row';
+  if (!/<div class="sfh__stats sfh__stats--c">\s*<div class="sfh__stat mx-datastatus" id="dataStatus">[\s\S]*?<\/div>\s*<div class="mx-hstats" id="mxHeaderStats"/.test(src)) return 'live column is not first in the stats row';
   if (!/\[data-page="matches"\] \.mx-hstats\{ display:contents; \}/.test(src)) return 'the four stats are not in the same row';
   // Completed: no live column; "Settled · <date>" + the zone ride in the grey sentence tail; Upcoming tail = the zone
   const chrome = slice(src, 'updateMatchesHeaderChrome');
-  if (!/const parts = \(completed \? \[`Settled · \$\{settledDateLabel\(\)\}`\] : \[\]\)\.concat\(tz \? \[tz\] : \[\]\);\n\s*tzEl\.textContent = parts\.length \? `· \$\{parts\.join\(' · '\)\}` : '';/.test(chrome)) return 'the sentence tail is not "· [Settled · date ·] zone"';
+  // CHANGES_2026-11-11 A1 / C1: no tail at all — the zone is the short offset after the date bar's ›, both views
+  if (!/mxPaintTzLabel\(\);/.test(chrome)) return 'the zone label is not painted with the chrome';
+  if (/id="tzLine"|Settled · \$\{settledDateLabel/.test(src)) return 'a sentence tail is back';
+  if (!/id="dayTabsRight"[^>]*>›<\/button>\s*<span class="mx-tzlabel" id="mxTzLabel"><\/span>/.test(src)) return 'the zone label is not right after the ›';
+  if (!/\.sfh__stats--c \.sfh__stat\{ align-items:center; \}/.test(src)) return 'A3: values are not centred under their labels';
   if (!/if \(completed\)\{\n[^\n]*\n\s*ds\.style\.display = 'none';/.test(chrome)) return 'Completed still shows the live column';
-  if (!/<span class="sfh__tail" id="tzLine"><\/span><\/p>/.test(src)) return 'no tail span inside the sentence line';
   return null;
 }
 

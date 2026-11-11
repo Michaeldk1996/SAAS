@@ -5,25 +5,35 @@ except where a ruling below says otherwise. Colours are foundation tokens (`foun
 
 - **Header card = the shared 35b page header** (founder shell refresh TEN-403, 2026-10-08; supersedes the 29px card, the
   separate status line and founder R3's "no dot"; values in `app-shell.md` "Page header (35b, TEN-403)"). One line under the
-  title: the sentence, then a `--text-label` tail — Upcoming `· Times in <zone>`, Completed `· Settled · <date> · Times in
-  <zone>`. Upcoming's **first stat column is the live clock**: caps label over a 7px `--pos` dot + the clock in Plex Mono
+  title: the sentence and nothing after it (CHANGES_2026-11-11 A1 / C1): Upcoming "Live odds across bookmakers for every
+  listed ATP match.", Completed "Every settled ATP match, with its odds from open to close." — no zone and no "Settled ·
+  <date>" tail; the zone is the date bar's label (below). Upcoming's **first stat column is the live clock**: caps label over a 7px `--pos` dot + the clock in Plex Mono
   15/700 `--text-soft`; the label keeps ruling A's words ("Live · oldest odds" / "Live · odds from … or older" / "Live ·
   loaded" — the clock is the OLDEST price on the board, never a wall clock; founder TEN-403 R2 2026-10-09 withdrew R1's
-  "Live · updated", and the tail carries no oldest-odds part); Completed draws no live column. Then four
-  stats — Upcoming `Matches · Tournaments · Books · Updated`, Completed `Settled · Tournaments · Upsets · Updated`; Matches/
-  Settled = cards rendered; Books = distinct bookmakers priced on them (card book + Now + Open books, one per
-  `mxBookLabel`); Upsets = the Upsets-tile rule (`mcUpsetRows`); Updated = newest odds observation among the prices shown (`mxOddsUpdatedAt`, the same set and clock as the oldest bound), HH:MM, `--text-soft`;
+  "Live · updated", and the tail carries no oldest-odds part); Completed draws no live column. Then the stats — Upcoming
+  `Matches · Tournaments` (CHANGES_2026-11-11 A3: Books and Updated removed; Next match / Prices moved were proposed and
+  rejected), Completed `Settled · Tournaments · Upsets · Updated`; each value **centred under its label**
+  (`.sfh__stats--c`, the component's centred variant); Matches/Settled = cards rendered; Upsets = the Upsets-tile rule (`mcUpsetRows`); Updated = newest odds observation among the prices shown (`mxOddsUpdatedAt`, the same set and clock as the oldest bound), HH:MM, `--text-soft`;
   no clock → grey `—`. **Test:** `test-ten403-header.mjs` (live column + tail), `test-ten225-header-clock.mjs` (oldest on the face, Updated never older), `test-ten377-todays-matches.mjs` (stats).
-- **Upcoming card:** both names `--text` (FAV badge carries the favourite); both form bars `--viz-lead`; surfaces neutral;
+- **Date bar zone label (CHANGES_2026-11-11 A2 / C1):** right after the ›, `margin-left:6px`, on both views: the short offset
+  of the zone the cards are printed in (`newsTz()` — the member's setting, else the browser's Intl zone), "GMT+8", "GMT−3"
+  (true minus), "GMT+5:30" (minutes only when non-zero), the full IANA name on hover; Plex 11 / 500 `--text-label`, nowrap,
+  default cursor, no box. **Test:** `test-todays-matches-1111.mjs` (`mxTzShort` over five zones + DST).
+- **Upcoming card header (CHANGES_2026-11-11 A8–A10):** start time Plex 11.5 / **700 `--text`**; surface **400** (its colour
+  kept); **no FAV badge** on any Upcoming card, standard or move view (Completed keeps its own); a next-day preview card
+  below the day divider shows the **time only** and its tournament name in full (`.mx-preview`). **Test:**
+  `test-todays-matches-1111.mjs`.
+- **Upcoming card:** both names `--text`; both form bars `--viz-lead`; surfaces neutral;
   head/foot hairlines and the column divider are white 3.5% (founder Q1, reference). Market Signal drawer = `--card` on a
   `--edge-6` rule, fav % white, bars `--viz-lead` + `--viz-second`.
-- **Whole-card click (founder 2026-10-22; replaces TEN-179's Match Stats landing):** clicking anywhere on a card opens
-  the Match analysis modal — an **Upcoming** card exactly as its "See full analysis" link does (Odds), a **Completed** card
-  on **Key factors**. Not a click: the star, the Market Signal chip and anything in its open drawer, "See full analysis"
-  (its own onclick — one open), names/avatars (profile route), any other button/link, a drag-selection. Every card is
-  `role="button"` `tabindex="0"`, Enter/Space opens it, `--edge-16` hover edge (an open drawer keeps `--open-card`)
-  and focus ring. The modal has no URL, so Cmd/Ctrl- and middle-click open nothing new. "See full analysis" stays as a
-  secondary cue (its removal is Michael's call). **Test:** `test-match-card-click.mjs`.
+- **Card click targets (CHANGES_2026-11-11 A4; replaces the 2026-10-22 whole-card click):** the card root has **no** click,
+  no pointer, no hover edge. The header row (surface · tournament · round · time · column labels) and each player row
+  (avatar, odds, implied, form) open the analysis — Upcoming on Key factors, Completed on its landing tab (`mxLandingTab`) —
+  with a pointer; the player **name** opens the profile (open question 4: keep?); the star toggles only; "Market Signal ▾"
+  opens / closes its panel only; "See full analysis →" opens the analysis; the footer's empty space, anything in the open
+  panel (except the Pro model row) and the odds-movement pop-up do nothing. The header row is the keyboard target
+  (`role="button"`, Enter/Space, focus ring). The bug it fixes: a click beside "Market Signal" opened the card.
+  **Test:** `test-match-card-click.mjs` (control: the pre-change page fails 9).
 - **Completed card switches to Pinnacle once Oddspapi's close is held** (founder 2026-11-09, replacing "Open and Close
   from the card's ONE book" for finished matches): until then the card shows its book (Bet105 by the ladder) as below;
   once `m.pinClose.oddspapiClose` is on the card (`tools/apply-archive-pinclose.mjs`, from the archive export) the whole
@@ -41,7 +51,7 @@ except where a ruling below says otherwise. Colours are foundation tokens (`foun
   lost 2.5%, one style always), each side's own tie-break points in the corner. Prices = `Open → Close · Move` on a
   38/14/42/44 grid, Open and Close from the card's ONE book (TEN-377 card 0b990217; `odds.md`); no journey bar; Close
   always white mono 15/700; Move signed on every row with both legs, older closes included (ruling 2 = stats only); no Move
-  for a vendor-pinned open or a missing leg; missing leg = grey "—"; the Move is THE move formula `mxMovePct` (2-dp prices as shown, one decimal, true minus; a genuine zero reads `±0.0%` grey — founder card 9b1c3aa1, 2026-10-09, replaces the whole-percent `oddsPctDelta`), and so is the Completed Biggest market move tile and its ranking: the tile and the "Biggest move" sort rank EVERY close the cards show, older closes included (founder TEN-403 414de0fe; `odds.md` → Numbers), so the tile is always the largest |Move| a card prints, with that card's player. The odds pop-up's open → close
+  for a vendor-pinned open or a missing leg; missing leg = grey "—"; the Move is THE move formula `mxMovePct` (2-dp prices as shown, one decimal, true minus; a genuine zero reads `±0.0%` grey — founder card 9b1c3aa1, 2026-10-09, replaces the whole-percent `oddsPctDelta`), and so is the Completed Biggest market move tile and its ranking: the tile and the "Biggest move" sort rank EVERY close the cards show, older closes included (founder TEN-403 414de0fe; `odds.md` → Numbers), so the tile is always the largest drop a card prints (CHANGES_2026-11-11 B4: shortening side only), with that card's player. The odds pop-up's open → close
   equals the card's exactly, for the book named in its header; Pinnacle's close is its own grey line. Footer and drawer rules 6% (Q1); drawer = one flat list, book names `--text-soft`, no
   liquidity; "See full analysis" 600. The "Showing … settled" context bar is removed.
 - **Card grid (founder 2026-10-03, replaces TEN-270 stretch):** `#matchlist` `align-items:start`. Closed cards in a row
@@ -52,7 +62,7 @@ except where a ruling below says otherwise. Colours are foundation tokens (`foun
   price · Tightest match on the 39b surface: `--card`, 1px `--edge-7`, radius 12, `--top-light`, padding 14/18/15, column
   gap 8, three equal columns at gap 12; caps title Hanken 10.5/700/0.10em grey. Biggest market move: title left + hint
   right (11/600) · open mono 22/700 grey → now mono 22/800 white · move mono 13/700 signed · one 12.5 grey line, player
-  name 700 white + "drifted"/"shortened" · v opponent · tournament round (ellipsis, never wraps). Shortest price: price
+  name 700 white + "shortened" · v opponent · tournament round (ellipsis, never wraps). Shortest price: price
   mono 22/800 white + name 14/700 white, then "v opponent · tournament round". Tightest match: two rows name 14/700 white
   + price mono 15/700 white (row gap 3), then `Tour R16 · 13:45` (tournament and round joined by a space, as the
   reference). Completed keeps its tiles (Biggest market move · Upsets · Value picks; reference: padding 15/19, no edge).
@@ -64,11 +74,19 @@ except where a ruling below says otherwise. Colours are foundation tokens (`foun
   `--card`), the hint reads `Showing open → now · biggest first` in white (off: `Show open → now`, grey). Every Upcoming
   card's head reads `Open · → · Now · Move` and its rows open mono 13/500 grey · grey → · now mono 19/800 white · move
   mono 12/700 signed, on `56px 14px 60px 48px` at gap 10 right-aligned (row = name · 1px divider · that block, gap 10).
-  The list re-orders by the larger |move| of the two players, then 0%, then `—` cards in time order, then unpriced cards;
+  The list re-orders by the **shortening side's** printed drop, biggest first (CHANGES_2026-11-11 B4: one definition of
+  "biggest move" — a drift never ranks; a card where no side shortened is the 0% tier), then `—` cards in time order, then
+  unpriced cards;
   **no card is dropped**. Click again → Odds · implied + Recent form in time order. The sort control reads `Sort: Move`
   while the view is on and `Sort: Time` when it is off (founder R1 nit; option text `Move`, internal key `drift`). The
   sort (`moveNowScore`) and the tile's pick rank on the SAME figure — the shown move below, not the unrounded
-  |now / open − 1| — ties by earlier start, then time string; the tile names a leg of the match the sort puts first.
+  |now / open − 1| — ties by earlier start, then time string; the tile names the player whose price shortened most, in the
+  match the sort puts first. **While the view is on** the tile's open → now line ends, right-aligned, in "{n} of {N} prices
+  moved" (B3): N = the day's cards with a measurable open → now pair, n = those whose shortening side fell 2%+
+  (`MX_MOVE_MIN`) on the printed prices; no pair at all = a dash; count Plex 700 `--text`, words 12.5 `--text-label`, nowrap;
+  tooltip "Matches where one side's price shortened 2% or more since open, out of matches with an open price" (wording and
+  rule are open question 1). The move view's card grid track is **480px** (`#matchlist.mx-mv`; standard 360px), its header
+  never wraps, carries no start time, and its tournament is `flex:none`, never cut (B2).
   Test: `test-ten403-matches.mjs` (order, columns, cells, tile = sort's first, "Sort: Move"; mutants: unrounded score,
   pre-R1 tile, "Drift"), `test-ten225-drift-order.mjs` (the five tiers).
 - **The move (TEN-403; R1 founder 2026-10-09 item 1):** `mxMovePct(open, now)` = (now₂ / open₂ − 1) × 100 where x₂ is
@@ -114,8 +132,10 @@ except where a ruling below says otherwise. Colours are foundation tokens (`foun
   start; the winner's side white 700; a white tick at Pinnacle's closing chance on every bar with data (none without a
   Pinnacle close); BEST ×2 = the book and the rating that gave the winner the highest chance (never a prediction market,
   never a blurred model). **Prediction rows:** the venue's mid for both players (`market_live_current`, joined by surname,
-  one each, else a dash), scaled to 100%, as fair odds; a `--sig-chip` chip under each price = money traded on that
-  player; "$X traded · N trades" under the name; resting liquidity in the hover only. Not a match price: no price join
+  one each, else a dash), scaled to 100%, as fair odds; nothing under the prices and nothing under the name — ONE sentence
+  under the row across every column (CHANGES_2026-11-11 A5 / C4): "$29.8k traded · 593 trades · $18.1k on Sonego · $11.7k
+  on Tabilo" (Hanken 10, `--text-label`, line-height 1.3, padding-top 2, `text-wrap: pretty`); no traded sum = no sentence;
+  a dash row never has one; resting liquidity in the hover only. Not a match price: no price join
   reads it. **Model row:** Pro = hover wash, click opens the Stennisfy Model page; not Pro = blurred + lock, no click.
   **Test:** `test-ten377-todays-matches.mjs` (the ledger, both views), `test-market-live-signal.mjs`,
   `test-polymarket-signal.mjs`, `tools/test-market-live-recorder.mjs`, `tools/test-market-live-sql.py`.
@@ -157,4 +177,15 @@ except where a ruling below says otherwise. Colours are foundation tokens (`foun
   layout. The tournament and surface filters still apply; with no search, the day and the split apply as before.
   **Test:** `test-matches-search.mjs` (the real `getFiltered`) + `tools/test-matches-search-mutants.js`.
 - **Tournament chips (review):** one row on both views — `All tournaments` first (clears the selection), then one chip per
-  event of the selected day.
+  event of the selected day. **Upcoming hides the row** when at most one chip besides All would show (a Qualifying chip
+  counts as a second; CHANGES_2026-11-11 A11). **Test:** `test-todays-matches-1111.mjs`.
+- **Bets today, empty (CHANGES_2026-11-11 A6):** one line, "0 bets today" — zero posted is a real 0; no second text, no
+  divider. Loading or a failed read keeps the figure a dash (never a 0 from a read that did not answer). **Test:**
+  `test-step15-matches.mjs`.
+- **Completed tiles (CHANGES_2026-11-11 C2 / C3):** Market read's 30-day label "Last 30 days · right in {won} of {moved}
+  moved matches" (`market-read-30d.json`: Pinnacle first Oddspapi tick → Pinnacle close within 60 min of the actual start,
+  30 days, Davis Cup out; moved = the shortening side fell 2%+; right = the shortened player won) and "· small sample"
+  under 3 moved (was "· thin"). Biggest market move = the **biggest drop** among the cards (B4: shortening side only, the
+  card's printed Move ranks), line 1 `{open} → {close}` + the drop as a whole percent with a true minus in `--neg`
+  ("−12%", Plex 12 / 600), line 2 `{name} shortened · v {opponent surname, particles kept} · {Tournament} {Round}`.
+  **Test:** `test-todays-matches-1111.mjs`, `test-ten403-matches.mjs`.

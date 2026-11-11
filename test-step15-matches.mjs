@@ -114,7 +114,8 @@ test('Market read (day): Pinnacle first price → Pinnacle close within 60 min, 
   assert.equal(R([pin(null, null, 'p1', 10, false)]).pending, true, 'a card whose shard is not in yet reads Loading, not —');
   assert.deepEqual([R([]).moved, R([]).best], [0, null], 'nothing moved → the tile prints —');
   const body = slice('renderMatches');
-  assert.match(body, /mr\.moved > 0 && mr\.moved < 3 \? '<span class="mc-story__thin">· thin<\/span>'/);
+  assert.match(body, /mr\.moved > 0 && mr\.moved < 3 \? '<span class="mc-story__thin">· small sample<\/span>'/, 'CHANGES_2026-11-11 C2: "· thin" → "· small sample"');
+  assert.match(body, /Last 30 days · right in \$\{roll\.won\} of \$\{roll\.moved\} moved matches/, 'C2: the 30-day label says what the numbers are');
   assert.match(body, /\$\{mr\.moved \? `\$\{mr\.won\} of \$\{mr\.moved\}` : '—'\}/, 'counts only, never %');
   // MUTANT: no minimum move → the flat card counts
   assert.equal(mk(html.replace('const MX_MOVE_MIN = 2.0;', 'const MX_MOVE_MIN = 0;'))(L).moved, 3);
@@ -258,7 +259,9 @@ test('Bets today (BETS_TODAY_TILE.md, LOCK 2026-10-30): row = selection · marke
   const adm = B([fritz], 'free', true); assert.doesNotMatch(adm, /is-blur/); assert.match(adm, /Open picks →/);
   const mxIsPro = new Function('window', 'isBspAdmin', `${slice('mxIsPro')} return mxIsPro();`);
   assert.equal(mxIsPro({ sfPlan: 'free' }, () => true), true); assert.equal(mxIsPro({ sfPlan: 'free' }, () => false), false); assert.equal(mxIsPro({ sfPlan: 'pro' }, () => false), true);
-  assert.match(B([], null), /mc-story__now">—<\/span>[\s\S]*No bets posted yet today/);
+  // CHANGES_2026-11-11 A6: zero posted is a real 0 on one line; loading / a failed read stays a dash
+  assert.match(B([], null), /mc-story__now">0<\/span><span class="mc-story__name">bets today<\/span><\/div><\/div><\/div>$/);
+  assert.doesNotMatch(B([], null), /No bets posted yet today/);
   assert.match(B([fritz], null), /bet today</, 'singular');
   // CSS: a long market truncates before the price; the price never wraps
   assert.match(html, /\.mc-story__betsel\{[^}]*white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0;/);

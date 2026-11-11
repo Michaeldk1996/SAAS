@@ -141,7 +141,7 @@ test('removed: the price-journey bar, its gradient and the "Showing … settled"
 // TEN-403 (founder shell refresh): the header card is the shared 35b page header — values locked in
 // test-ten403-header.mjs; here only that the board's stats sit in its stat row, after the live column.
 test('header card: the 35b header; live column first, then the four stats in the same .sfh__stats row', () => {
-  assert.match(html, /<div class="sfh__stats">\s*<div class="sfh__stat mx-datastatus" id="dataStatus">[\s\S]*?<\/div>\s*<div class="mx-hstats" id="mxHeaderStats"/);
+  assert.match(html, /<div class="sfh__stats sfh__stats--c">\s*<div class="sfh__stat mx-datastatus" id="dataStatus">[\s\S]*?<\/div>\s*<div class="mx-hstats" id="mxHeaderStats"/);
   assert.match(lastRule(`${M} .mx-hstats`), /display:contents/);
 });
 
@@ -194,10 +194,10 @@ test('header stats render: Upcoming and Completed labels, counts, Updated HH:MM,
     mcRenderHeaderStats(list); return el.innerHTML;`)(list, view, up, tz);
   const vals = h => [...h.matchAll(/sfh__l">([^<]*)<\/span><span class="sfh__v[^"]*">([^<]*)</g)].map(x => x[1] + '=' + x[2]);
   const up = [{ tour: 'ATP Tokyo', bookNow: { Pncl: {} } }, { tour: 'ATP Beijing', bookOpens: { Pinnacle: {}, Betano: {} } }];
-  assert.deepEqual(vals(run('upcoming', up, Date.parse('2026-10-03T02:10:05Z'))), ['Matches=2', 'Tournaments=2', 'Books=2', 'Updated=10:10']);
+  assert.deepEqual(vals(run('upcoming', up, Date.parse('2026-10-03T02:10:05Z'))), ['Matches=2', 'Tournaments=2'], 'CHANGES_2026-11-11 A3: Books and Updated removed');
   const done = [{ tour: 'ATP Tokyo', p1: 'A', p2: 'B', finalScore: { winner: 'p1' }, __pin: { p1: 3.9, p2: 1.3 } }, { tour: 'ATP Tokyo' }];
   assert.deepEqual(vals(run('completed', done, null)), ['Settled=1', 'Tournaments=1', 'Upsets=1', 'Updated=—'], 'no clock -> dash, a count of 0 stays 0');
-  assert.match(vals(run('upcoming', up, Date.parse('2026-10-03T02:10:05Z'), 'Not/AZone'))[3], /^Updated=\d\d:\d\d$/, 'a bad stored zone falls back, never throws');
+  assert.match(vals(run('completed', done, Date.parse('2026-10-03T02:10:05Z'), 'Not/AZone'))[3], /^Updated=\d\d:\d\d$/, 'a bad stored zone falls back, never throws');
 });
 
 // ── founder review ba49d5fc (2026-10-03) items 4–9 ──

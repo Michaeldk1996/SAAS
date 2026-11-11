@@ -835,7 +835,12 @@ window.sfEarlyFetch = function (u, init) {
   [data-page="matches"] .match-card.cmpl{ padding:0; overflow:visible; }
   /* TEN-179 item 4 (founder task 2026-09-11) — the whole completed card opens Key factors (2026-10-22); whole-card click
      (2026-10-22) — the whole upcoming card opens the analysis, as "See full analysis" does. Both need the affordance. */
-  [data-page="matches"] .match-card.mx-match{ cursor:pointer; }
+  [data-page="matches"] .match-card.mx-match{ cursor:default; }   /* CHANGES_2026-11-11 A4: the root is not a target */
+  [data-page="matches"] .match-card.mx-match .mc-head, [data-page="matches"] .match-card.mx-match .mc-players .mc-row{ cursor:pointer; }
+  /* A4: the name is the profile link (its own inline pointer once the profile is known); without one it is not a target */
+  [data-page="matches"] .match-card.mx-match .mc-players .mc-row .mc-name{ cursor:default; }
+  /* A4: the odds-movement pop-up is not a target */
+  [data-page="matches"] .phb{ cursor:default; }
   /* §1 (PASS 4) — card row vertical padding is 13px, read from the export source. */
   /* §3+§5 (PASS 5) — the row carries NO horizontal padding: the .match-card's own
      16px/18px padding already insets the row, and the export's player row sits flush to
@@ -1239,6 +1244,7 @@ window.sfEarlyFetch = function (u, init) {
   .sfh__stats{ display:flex; align-items:flex-end; gap:30px; flex:0 0 auto; }
   .sfh__stats:empty{ display:none; }
   .sfh__stat{ display:flex; flex-direction:column; align-items:flex-end; gap:4px; }
+  .sfh__stats--c .sfh__stat{ align-items:center; }   /* variant: each value centred under its label (Today's Matches, CHANGES_2026-11-11 A3) */
   .sfh__l{ font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label); line-height:normal; white-space:nowrap; }
   .sfh__v{ font-family:var(--font-nums); font-size:15px; font-weight:700; color:var(--text); line-height:normal; white-space:nowrap; }
   .sfh__v--soft{ color:var(--text-soft); }
@@ -2904,11 +2910,11 @@ window.sfPlanLocks(null);   // locked until the account says Edge / Pro: no unlo
       <h1 class="sfh__title mx-h1">Today's Matches</h1>
       <!-- TEN-403: ONE sentence on one line; the grey tail carries the member's zone (Upcoming) or
            "Settled · <date>" + zone (Completed), set by updateMatchesHeaderChrome. -->
-      <p class="sfh__sub"><span class="mx-subtitle">Live odds across bookmakers for every ATP match today. Analyst value picks updated daily.</span> <span class="sfh__tail" id="tzLine"></span></p>
+      <p class="sfh__sub"><span class="mx-subtitle">Live odds across bookmakers for every listed ATP match.</span></p>
     </div>
     <!-- TEN-403: first stat column = the live clock (dot + time, mxHeaderStatusHtml, Upcoming only), then the
          TEN-377 README §2 four stats (mcRenderHeaderStats; .mx-hstats is display:contents inside .sfh__stats). -->
-    <div class="sfh__stats">
+    <div class="sfh__stats sfh__stats--c">
       <div class="sfh__stat mx-datastatus" id="dataStatus"><span class="sfh__l">Loading…</span></div>
       <div class="mx-hstats" id="mxHeaderStats" aria-label="Board summary"></div>
     </div>
@@ -2944,6 +2950,7 @@ window.sfPlanLocks(null);   // locked until the account says Edge / Pro: no unlo
         </div>
       </div>
       <button class="mx-daytabschevron" id="dayTabsRight" aria-label="Next day" style="display:none">›</button>
+      <span class="mx-tzlabel" id="mxTzLabel"></span>
     </div>
     <!-- TEN-179 item 1 — the three summary boxes sit BELOW the date rail and ABOVE the
          filter row, in both modes. This moves them down from the PASS-3 position (under
@@ -5589,6 +5596,30 @@ function memberTzLabel(){
   } catch (e){}
   return `Times in ${tz}${off}`;
 }
+// CHANGES_2026-11-11 A2 / C1: the zone the cards are printed in, as a short offset after the date bar's › — "GMT+8",
+// "GMT−3" (true minus), "GMT+5:30" (minutes only when non-zero); the full IANA name in the hover. The zone is the one every
+// card time reads (newsTz: the member's setting, else the browser's own Intl zone), so the label never names a zone the
+// times are not in; the offset is that zone's own at this moment (its wall clock minus UTC).
+function mxTzShort(tz, now){
+  const d = now || new Date();
+  let mins;
+  try {
+    const p = new Intl.DateTimeFormat('en-US', { timeZone: tz, hourCycle: 'h23', year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric' })
+      .formatToParts(d).reduce((o, x) => (o[x.type] = x.value, o), {});
+    const wall = Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour, +p.minute);
+    mins = Math.round((wall - Math.floor(d.getTime() / 60000) * 60000) / 60000);
+  } catch (e) { mins = -d.getTimezoneOffset(); }
+  const a = Math.abs(mins);
+  return 'GMT' + (mins < 0 ? '\u2212' : '+') + Math.floor(a / 60) + (a % 60 ? ':' + String(a % 60).padStart(2, '0') : '');
+}
+function mxPaintTzLabel(){
+  const el = document.getElementById('mxTzLabel');
+  if (!el) return;
+  let tz = '';
+  try { tz = newsTz() || Intl.DateTimeFormat().resolvedOptions().timeZone; } catch (e) { tz = ''; }
+  el.textContent = tz ? mxTzShort(tz) : '';
+  el.title = tz || '';
+}
 
 // Feed freshness (TEN-8, 2026-08-02). The header used to tick a live wall clock
 // ("updated 14:28:03"), which lied: it reported the current time, never the
@@ -7066,7 +7097,10 @@ function buildTournamentFilters(){
   // nothing specific is picked; clicking it clears back to All), then one chip per event.
   // The chip carries an empty data-tournament as its sentinel.
   const allChip = `<button class="mx-chip${state.tournaments.size === 0 ? ' active' : ''}" data-tournament="" aria-pressed="${state.tournaments.size === 0}">All tournaments</button>`;
-  group.innerHTML = allChip + tournaments.map(t => {
+  // CHANGES_2026-11-11 A11 (Upcoming): one tournament (a Qualifying chip counts as a second) → no chip row at all.
+  const hideRow = !completed && tournaments.length <= 1;
+  group.hidden = hideRow;
+  group.innerHTML = hideRow ? '' : allChip + tournaments.map(t => {
     const active = state.tournaments.has(t);
     // The × on a selected chip removes just that tournament; clicking anywhere
     // on the chip toggles it the same way. No selections at all = show every one.
@@ -8596,7 +8630,10 @@ function moveNowScore(m){
   // put a card reading +4.4% above one reading +4.7%. Equal figures fall to the start-time tie-break.
   const a = mxMovePct(p.o1, p.n1), b = mxMovePct(p.o2, p.n2);
   if (!a || !b) return _mcHasAnyPrice(m) ? MOVE_NONE : MOVE_UNPRICED;
-  return Math.max(Math.abs(a.v), Math.abs(b.v));
+  // CHANGES_2026-11-11 B4: ONE "biggest move" — the SHORTENING side only (the card's printed Move of the side whose price
+  // fell the most), biggest drop first; a card where no side shortened scores 0 (the 0% tier).
+  const lo = Math.min(a.v, b.v);
+  return lo < 0 ? -lo : 0;
 }
 // TEN-179 item 3 (founder standing rule 2026-09-10): "Thin coverage flagged with the
 // count, not filled." Opening prices arrive per fixture — bet365 posts a market a median
@@ -8632,7 +8669,8 @@ function moveScore(m){
   const c1 = _mcCardCloseOf(m, 'p1'), c2 = _mcCardCloseOf(m, 'p2');
   // TEN-403 card 9b1c3aa1: ranked on THE move the card prints (mxMovePct: 2-dp prices as shown, one decimal), as a
   // fraction — never the unrounded quotes, which could put a +5.0% card above a +5.5% one.
-  const mv = (o, c) => { const d = (o != null && c != null) ? mxMovePct(o, c) : null; return d ? Math.abs(d.v) / 100 : 0; };
+  // CHANGES_2026-11-11 B4: the SHORTENING side only — the larger printed drop, 0 when neither side shortened.
+  const mv = (o, c) => { const d = (o != null && c != null) ? mxMovePct(o, c) : null; return d && d.v < 0 ? -d.v / 100 : 0; };
   return Math.max(mv(o1, c1), mv(o2, c2));
 }
 // Batch B — "Market got it wrong": the closing FAVOURITE lost. Ranked by how strong a
@@ -9090,7 +9128,7 @@ function impliedPct(price){
 // colour-coded initials (A = brand tint, B = neutral). Profile-link attrs preserved.
 function mcAvatarHtml(name, playerKey, side){
   const initials = playerInitials(name);
-  const attrs = profileLinkAttrs(playerKey, name);
+  const attrs = '';   // CHANGES_2026-11-11 A4: the avatar is part of the player row (opens the analysis); only the name opens the profile
   const img = playerPhotoImg(playerKey, name);
   // TEN-179 item 6 — initials sit in the wrapper UNDER the photo, so the circle is never blank.
   if (img) return `<span class="mc-avwrap ${side}"${attrs} data-init="${initials}">${img}</span>`;
@@ -9514,8 +9552,8 @@ function mcSigPredRows(m, done){
     let flowTxt = '';
     if (fa.length === 1 && fb.length === 1 && Number(f.trades) >= 0) {
       const ta = Number(fa[0][1]), tb = Number(fb[0][1]), n = Number(f.trades);
-      row.trA = mcSigK(ta); row.trB = mcSigK(tb);
-      row.meta = `${mcSigK(ta + tb)} traded · ${n.toLocaleString('en-US')} trade${n === 1 ? '' : 's'}`;
+      // CHANGES_2026-11-11 A5 / C4: one sentence under the row — no per-player chips, no line under the name.
+      row.trade = `${mcSigK(ta + tb)} traded · ${n.toLocaleString('en-US')} trade${n === 1 ? '' : 's'} · ${mcSigK(ta)} on ${mxSurname(m.p1)} · ${mcSigK(tb)} on ${mxSurname(m.p2)}`;
       flowTxt = ` · traded ${mxSurname(m.p1)} ${mcSigK(ta)}, ${mxSurname(m.p2)} ${mcSigK(tb)} (by the side that started each trade, summed ${mcSigClock(f.at)})`;
     }
     row.src = `${label} · ${done ? 'last mid before the start' : 'live mid'} (best bid and ask, both players scaled to 100%) · read ${mcSigClock(r.read_at)}${r.started_at && !done ? ' · last read before the start' : ''}`
@@ -9540,7 +9578,8 @@ function mcSigRowHtml(r, W, tick){
   if (r.go) cls.push('go');
   const go = r.go ? ` role="button" tabindex="0" data-sig-model="${psEsc(String(r.go))}"` : '';
   const name = `<span class="mc-sg-src"><span class="mc-sg-nl"><span class="mc-sg-name">${psEsc(r.label)}</span>${r.lock ? SIG_LOCK : ''}${r.best ? '<span class="mc-sg-best" title="Best · gave the winner the highest chance in its group (books / ratings)">BEST</span>' : ''}</span>`
-    + `${r.meta ? `<span class="mc-sg-meta">${r.meta}</span>` : ''}</span>`;
+    + `</span>`;
+  const trade = r.trade && !r.dash ? `<span class="mc-sg-trade">${psEsc(r.trade)}</span>` : '';
   const bl = r.blur ? ' is-blur' : '';
   if (r.dash) return `<div class="${cls.join(' ')}" title="${psEsc(r.src)}"${go}>${name}<span class="mc-sg-oa"><span class="mc-sg-o">${D}</span></span><span class="mc-sg-pa">${D}</span><span class="mc-sg-bar3"><span class="t"></span></span><span class="mc-sg-pb">${D}</span><span class="mc-sg-ob"><span class="mc-sg-o">${D}</span></span></div>`;
   // Leaning side (Upcoming: the ≥ 50% side) / winner's side (Completed) = white 700, the other grey 500.
@@ -9552,7 +9591,7 @@ function mcSigRowHtml(r, W, tick){
   return `<div class="${cls.join(' ')}" title="${psEsc(r.src)}"${go}>${name}`
     + `<span class="mc-sg-oa${bl}"><span class="mc-sg-o${W ? sa : ''}">${r.oA}</span>${chip(r.trA, sa)}</span><span class="mc-sg-pa${sa}${bl}">${Math.round(r.pa)}%</span>`
     + `<span class="mc-sg-bar3${bl}"><span class="t"><span class="a${winA}" style="width:${r.pa.toFixed(2)}%"></span><span class="b${winB}" style="width:${(100 - r.pa).toFixed(2)}%"></span></span>${tk}</span>`
-    + `<span class="mc-sg-pb${sb}${bl}">${Math.round(100 - r.pa)}%</span><span class="mc-sg-ob${bl}"><span class="mc-sg-o${W ? sb : ''}">${r.oB}</span>${chip(r.trB, sb)}</span></div>`;
+    + `<span class="mc-sg-pb${sb}${bl}">${Math.round(100 - r.pa)}%</span><span class="mc-sg-ob${bl}"><span class="mc-sg-o${W ? sb : ''}">${r.oB}</span>${chip(r.trB, sb)}</span>${trade}</div>`;
 }
 function mcSigBody(m){
   const surfCap = m.surface ? m.surface.charAt(0).toUpperCase() + m.surface.slice(1) : '';
@@ -9648,13 +9687,9 @@ function updateMatchesHeaderChrome(){
   const ds  = document.getElementById('dataStatus');
   // TEN-8: member timezone, shown once in the header. TEN-403: it is the grey tail of the one-line sentence
   // ("· Times in …"); Completed puts "Settled · <date>" in front of it (the old status line). Empty zone → no zone part.
-  const tzEl = document.getElementById('tzLine');
-  if (tzEl){
-    const tz = memberTzLabel();
-    // TEN-403 R2 (founder 2026-10-09): the tail ends at the zone; ruling A's bound is the live column itself.
-    const parts = (completed ? [`Settled · ${settledDateLabel()}`] : []).concat(tz ? [tz] : []);
-    tzEl.textContent = parts.length ? `· ${parts.join(' · ')}` : '';
-  }
+  // CHANGES_2026-11-11 A1 / A2 / C1: the sentence carries no zone and no "Settled · <date>"; the zone is the short
+  // offset label at the end of the date bar (mxTzLabel), both views.
+  mxPaintTzLabel();
   // §12 — sort options depend on the view. Completed offers result-oriented keys
   // (Time · Biggest upset · Largest drift · Closing value); Upcoming keeps its
   // existing keys. If the active sort isn't valid for the view, fall back to 'time'.
@@ -9669,8 +9704,8 @@ function updateMatchesHeaderChrome(){
   });
   if (h1)  h1.textContent  = completed ? 'Results' : "Today's Matches";
   if (sub) sub.textContent = completed
-    ? 'Every settled ATP match with its opening-to-closing odds journey.'   // TEN-179 — export copy verbatim
-    : 'Live odds across bookmakers for every ATP match today. Analyst value picks updated daily.';
+    ? 'Every settled ATP match, with its odds from open to close.'   // CHANGES_2026-11-11 C1
+    : 'Live odds across bookmakers for every listed ATP match.';      // CHANGES_2026-11-11 A1
   // §2 (Batch B, founder review 2026-08-08) — Results is a BACKWARD-looking rail:
   // no future days, Today is the rightmost tab, and the forward chevron is dead.
   // (Supersedes the PASS-5 "future tabs visible in both views" rule for Results only —
@@ -10262,8 +10297,10 @@ function mxStreakTileHtml(){
 let _mxPicks = null, _mxPicksP = null;
 function mxBetsEnsure(){
   if (_mxPicksP || !window.PicksShell || !window.PicksCore) return;
-  _mxPicksP = PicksShell.loadToday().catch(() => []).then(rows => {
-    _mxPicks = rows;
+  // A6: a failed read is not "0 bets" — it stays a dash (_mxPicks null) and is asked again on the next render.
+  _mxPicksP = PicksShell.loadToday().catch(() => null).then(rows => {
+    _mxPicks = Array.isArray(rows) ? rows : null;
+    if (_mxPicks == null) _mxPicksP = null;
     const el = document.querySelector('[data-mxtile="bets"]');
     if (el) el.outerHTML = mxBetsTileHtml();
   });
@@ -10287,7 +10324,7 @@ function mxBetsTileHtml(){
   const n = picks.length;
   const cue = `<span class="mc-story__bethead"><span class="mc-story__pro">PRO</span><span class="mc-story__hint${pro ? '' : ' mc-story__hint--cta'}">${pro ? 'Open picks →' : 'Unlock today’s picks →'}</span></span>`;
   const head = `<div class="mc-story__top"><span class="mc-story__lbl">Bets today</span>${cue}</div>`;
-  const count = `<div class="mc-story__betcount"><span class="mc-story__now">${n ? n : '—'}</span><span class="mc-story__name">${n === 1 ? 'bet today' : 'bets today'}</span></div>`;
+  const count = `<div class="mc-story__betcount"><span class="mc-story__now">${_mxPicks == null ? '—' : n}</span><span class="mc-story__name">${n === 1 ? 'bet today' : 'bets today'}</span></div>`;   // A6: zero posted is a real 0
   const row = p => {
     const real = pro && !p._teaser;
     const pl = PicksCore.pickedPlayer(p);
@@ -10298,7 +10335,7 @@ function mxBetsTileHtml(){
   const shown = n > 3 ? picks.slice(0, 2) : picks;
   const right = n
     ? `<div class="mc-story__betlist">${shown.map(row).join('')}${n > 3 ? `<div class="mc-story__betmore">+${n - 2} more bets →</div>` : ''}</div>`
-    : `<div class="mc-story__betlist mc-story__betlist--empty">${_mxPicks == null ? 'Loading…' : 'No bets posted yet today'}</div>`;
+    : _mxPicks == null ? `<div class="mc-story__betlist mc-story__betlist--empty">${_mxPicksP ? 'Loading…' : ''}</div>` : '';   // A6: one line, no second text
   return `<div class="mc-story mc-story--click mc-story--nav" data-mxtile="bets" data-mxsummary="bets" role="button" tabindex="0">${head}<div class="mc-story__betrow">${count}${right}</div></div>`;
 }
 // TEN-377 README §2 — the header card's four stats, over the SAME list the board renders.
@@ -10332,7 +10369,7 @@ function mcRenderHeaderStats(list){
   if (up != null) { try { hhmm = fmt((typeof newsTz === 'function' && newsTz()) || undefined); } catch (e) { hhmm = fmt(undefined); } }   // a bad stored zone never stops the board
   const stats = completed
     ? [['Settled', shown.length], ['Tournaments', tours], ['Upsets', mxUpsets(shown).list.length], ['Updated', hhmm]]   // step 15: the Upsets tile's rule
-    : [['Matches', shown.length], ['Tournaments', tours], ['Books', mcBoardBooks(shown)], ['Updated', hhmm]];
+    : [['Matches', shown.length], ['Tournaments', tours]];   // CHANGES_2026-11-11 A3: Books and Updated removed
   // TEN-403: the 35b header stat columns; the Updated clock reads --text-soft (reference), a dash reads grey.
   el.innerHTML = stats.map(([l, v]) => `<div class="sfh__stat"><span class="sfh__l">${l}</span><span class="sfh__v${v === '—' ? ' sfh__v--none' : l === 'Updated' ? ' sfh__v--soft' : ''}">${v}</span></div>`).join('');
 }
@@ -10342,6 +10379,11 @@ function mcRenderHeaderStats(list){
 // (_mcCardCloseOf; the 60-minute rule, TEN-253 ruling 2, does not filter it), through THE move formula mxMovePct
 // (2-dp prices as shown, one decimal — card 9b1c3aa1). The "Biggest move" sort (moveScore) ranks the same figure.
 // First card wins a tie (the list order). null when no card prints a non-zero Move.
+// A drop as a whole percent on the printed two-decimal prices: "−12%" (true minus). C3.
+function mxWholeDrop(o, c){
+  const o2 = Math.round(Number(Number(o).toFixed(2)) * 100), c2 = Math.round(Number(Number(c).toFixed(2)) * 100);
+  return '\u2212' + Math.round((o2 - c2) * 100 / o2) + '%';
+}
 function mxCompletedBiggestMove(list){
   let bmv = null;
   (Array.isArray(list) ? list : []).forEach(m => {
@@ -10350,8 +10392,8 @@ function mxCompletedBiggestMove(list){
       const o = _openDerivedOf(m, who), c = _mcCardCloseOf(m, who);
       if (o == null || c == null || o <= 0) return;
       const d = mxMovePct(o, c);
-      if (!d || d.v === 0) return;
-      if (!bmv || Math.abs(d.v) > Math.abs(bmv.d.v)) {
+      if (!d || !(d.v < 0)) return;   // CHANGES_2026-11-11 B4 / C3: the shortening side only
+      if (!bmv || d.v < bmv.d.v) {
         bmv = { o, c, d, who, name: who === 'p1' ? m.p1 : m.p2, opp: who === 'p1' ? m.p2 : m.p1,
                 tour: m.tour, round: mxRoundLabel(m), m };
       }
@@ -10795,7 +10837,10 @@ function renderMatches(){
     const daySpecific = ['today','yesterday','tomorrow','daymin2','daymin3','day2','day3'].includes(state.day);
     // Cross-date search shows every row's date (the list spans multiple days), so the
     // selected-day strip no longer names the card's day.
-    const showAltDate = (state.day === 'all' || state.day === 'past' || crossDateSearch() || (daySpecific && dayBucket !== state.day));
+    // CHANGES_2026-11-11 A10: a next-day preview card below the day divider shows the time only (the divider carries the
+    // date) and its tournament name in full.
+    const mxPreview = !isCompleted && dividersOn && daySpecific && dayBucket !== state.day;
+    const showAltDate = (state.day === 'all' || state.day === 'past' || crossDateSearch() || (daySpecific && dayBucket !== state.day && !mxPreview));
     // Export header ends with date-time (e.g. "2026-07-20 18:00") — the date is
     // always shown now, not just the bare time and not only when the day differs.
     // Review item 7: the export separates date and time with a plain space
@@ -10853,7 +10898,7 @@ function renderMatches(){
     // TEN-403 (founder Shell refresh, part 5): the favourites star is the first item in every
     // UPCOMING card header (the reference's Completed cards carry none).
     const headHtml = `
-      <div class="mc-head">
+      <div class="mc-head" role="button" tabindex="0" aria-label="Match analysis — ${psEsc(m.p1)} v ${psEsc(m.p2)}">
         ${isCompleted ? '' : mxFavStarHtml(m)}
         <span class="mc-surface ${m.surface}">${surfCap}</span>
         <span class="mc-tourn"${mxTierTitle(m) ? ` title="${psEsc(mxTierTitle(m))}"` : ''}>${mxEventName(m.tour)}</span>
@@ -10879,7 +10924,7 @@ function renderMatches(){
         </div>`
       : `<div class="mc-players up${mxDriftView() ? ' mv' : ''}">
           <div class="mc-row a">
-            <span class="mc-id">${mcAvatarHtml(m.p1, m.p1Key, 'a')}<span class="mc-nameline"><span class="mc-name"${profileLinkAttrs(m.p1Key, m.p1)}>${m.p1}${serve('p1')}</span>${p1IsFavorite ? '<span class="mc-fav-tag">FAV</span>' : ''}</span></span>
+            <span class="mc-id">${mcAvatarHtml(m.p1, m.p1Key, 'a')}<span class="mc-nameline"><span class="mc-name"${profileLinkAttrs(m.p1Key, m.p1)}>${m.p1}${serve('p1')}</span></span></span>
             ${mxDriftView()
               ? mcDriftCell(_openAnchorOf(m, 'p1'), mcDriftRight('p1'), openAnchorOnly,
                             { openTitle: _openTitle('p1'), nowTitle: _nowTitleFor('p1'), paired: mcPairedDrift, nowOlder: mcNowIsOlderClose })
@@ -10887,7 +10932,7 @@ function renderMatches(){
                 + mcFormBar(m.p1RecentForm)}
           </div>
           <div class="mc-row b">
-            <span class="mc-id">${mcAvatarHtml(m.p2, m.p2Key, 'b')}<span class="mc-nameline"><span class="mc-name"${profileLinkAttrs(m.p2Key, m.p2)}>${m.p2}${serve('p2')}</span>${(hasFavLine && !p1IsFavorite) ? '<span class="mc-fav-tag">FAV</span>' : ''}</span></span>
+            <span class="mc-id">${mcAvatarHtml(m.p2, m.p2Key, 'b')}<span class="mc-nameline"><span class="mc-name"${profileLinkAttrs(m.p2Key, m.p2)}>${m.p2}${serve('p2')}</span></span></span>
             ${mxDriftView()
               ? mcDriftCell(_openAnchorOf(m, 'p2'), mcDriftRight('p2'), openAnchorOnly,
                             { openTitle: _openTitle('p2'), nowTitle: _nowTitleFor('p2'), paired: mcPairedDrift, nowOlder: mcNowIsOlderClose })
@@ -10897,7 +10942,7 @@ function renderMatches(){
         </div>`;
     return `
     ${dividerHtml}
-    <article class="match-card mx-match${isCompleted ? ' cmpl' : ''}" data-id="${m.id}" data-ek="${eventKeyOfMatch(m)}" role="button" tabindex="0" aria-label="Match analysis — ${psEsc(m.p1)} v ${psEsc(m.p2)}">
+    <article class="match-card mx-match${isCompleted ? ' cmpl' : ''}${mxPreview ? ' mx-preview' : ''}" data-id="${m.id}" data-ek="${eventKeyOfMatch(m)}">
       ${headHtml}
       ${isCompleted ? '' : scoreLineHtml}
       ${playersHtml}
@@ -10923,8 +10968,9 @@ function renderMatches(){
     const panels = [];
     panels.push(sortTile('move', moveOn, tileHead('Biggest market move', moveOn ? 'Biggest first' : 'Sort by move')
       + (bmv
-          ? `<div class="mc-story__move"><span class="mc-story__od">${mxOddsTxt(bmv.o)} → ${mxOddsTxt(bmv.c)}</span><span class="mc-drift ${bmv.d.dir}">${bmv.d.text}</span></div>`
-            + `<div class="mc-story__ctx"><strong>${bmv.name}</strong> ${bmv.d.v > 0 ? 'drifted' : 'shortened'} · v ${bmv.opp}${bmv.tour ? ' · ' + mxEventName(bmv.tour) : ''}${bmv.round ? ' ' + bmv.round : ''}</div>`
+          // CHANGES_2026-11-11 C3: the move as a WHOLE percent with a true minus, red; the opponent by surname, particles kept.
+          ? `<div class="mc-story__move"><span class="mc-story__od">${mxOddsTxt(bmv.o)} → ${mxOddsTxt(bmv.c)}</span><span class="mc-drift neg" title="${psEsc(bmv.d.text)} on the prices shown">${mxWholeDrop(bmv.o, bmv.c)}</span></div>`
+            + `<div class="mc-story__ctx"><strong>${psEsc(bmv.name)}</strong> shortened · v ${psEsc(mxSurname(bmv.opp))}${bmv.tour ? ' · ' + mxEventName(bmv.tour) : ''}${bmv.round ? ' ' + bmv.round : ''}</div>`
           : empty('No market moves'))));
     // 2. Upsets — the favourite at the Pinnacle close lost (mxUpsets: within-60 closes only, TEN-253 ruling 2).
     const up = mxUpsets(filtered), upOn = state.sort === 'upset', u0 = up.list[0];
@@ -10939,9 +10985,9 @@ function renderMatches(){
     // player it shortened on won. Counts only. The 30-day line shows only when the archive file is loaded.
     const mr = mxMarketRead(filtered), roll = mxMarketRead30();
     panels.push(sortTile('move', moveOn, tileHead('Market read', '', roll
-        ? `<span class="mc-story__hint" title="${psEsc(roll.title)}">Last 30 days · ${roll.won} of ${roll.moved}</span>` : '')
+        ? `<span class="mc-story__hint" title="${psEsc(roll.title)}">Last 30 days · right in ${roll.won} of ${roll.moved} moved matches</span>` : '')
       + (mr.pending ? `<div class="mc-story__empty">Loading Pinnacle prices…</div>` : `<div class="mc-story__move"><span class="mc-story__od">${mr.moved ? `${mr.won} of ${mr.moved}` : '—'}</span>`
-        + `<span class="mc-story__mrclaim">the market was right</span>${mr.moved > 0 && mr.moved < 3 ? '<span class="mc-story__thin">· thin</span>' : ''}</div>`
+        + `<span class="mc-story__mrclaim">the market was right</span>${mr.moved > 0 && mr.moved < 3 ? '<span class="mc-story__thin">· small sample</span>' : ''}</div>`
       + `<div class="mc-story__ctx">${mr.best ? `Biggest call <strong>${psEsc(mxSurname(mr.best.name))}</strong> <span class="mc-story__mono">${mxOddsTxt(mr.best.o)} → ${mxOddsTxt(mr.best.c)}</span>` : ''}</div>`),
       ` title="${psEsc(mr.title)}"`));
     const stripHtml = `<div class="mc-story-strip">${panels.join('')}</div>`;
@@ -10954,26 +11000,33 @@ function renderMatches(){
 
     // 1. BIGGEST MARKET MOVE — unchanged (TEN-225 ruling 3 / TEN-403 R1): one resolver, `_mcOpenNowPair`, ranked on
     //    exactly what the move-view sort ranks on (moveNowScore), the sort's own tie-break.
-    let bmv = null, bmvPairs = 0;
+    // CHANGES_2026-11-11 B3: "{n} of {N} prices moved" — N = the day's matches with a measurable open → now pair (the
+    // card's one book, both sides: the pair every Move on the board is read from), n = those whose SHORTENING side fell
+    // MX_MOVE_MIN (2%) or more on the printed prices. No pair anywhere → a dash.
+    let bmv = null, bmvPairs = 0, movedN = 0;
     daySlate.forEach(m => {
       const p = _mcOpenNowPair(m);
       if (!p) return;
       bmvPairs++;
+      if (moveNowScore(m) >= MX_MOVE_MIN) movedN++;
       const s = moveNowScore(m);
       if (!(s > 0)) return;
       if (bmv && !(s > bmv.mag || (s === bmv.mag
             && ((cardStartMs(m) - cardStartMs(bmv.m)) || (m.time || '').localeCompare(bmv.m.time || '')) < 0))) return;
       const d1 = mxMovePct(p.o1, p.n1), d2 = mxMovePct(p.o2, p.n2);
-      const who = Math.abs(d2.v) > Math.abs(d1.v) ? 'p2' : 'p1';
+      const who = d2.v < d1.v ? 'p2' : 'p1';   // B4: the player whose price shortened most
       const d = who === 'p1' ? d1 : d2;
       bmv = { o: who === 'p1' ? p.o1 : p.o2, c: who === 'p1' ? p.n1 : p.n2, d, mag: s,
               name: who === 'p1' ? m.p1 : m.p2, opp: who === 'p1' ? m.p2 : m.p1,
               tour: m.tour, round: mxRoundLabel(m), m };
     });
     const driftOn = state.sort === 'drift';
+    const movedHtml = driftOn
+      ? `<span class="mc-story__moved" title="Matches where one side's price shortened 2% or more since open, out of matches with an open price"><span class="mc-story__movedn">${bmvPairs ? `${movedN} of ${bmvPairs}` : '—'}</span> prices moved</span>`
+      : '';
     panels.push(sortTile('drift', driftOn, tileHead('Biggest market move', driftOn ? 'Showing open → now · biggest first' : 'Show open → now')
       + (bmv
-          ? `<div class="mc-story__move"><span class="mc-story__open">${mxOddsTxt(bmv.o)}</span><span class="mc-story__arr">→</span><span class="mc-story__now">${mxOddsTxt(bmv.c)}</span><span class="mc-story__pct ${bmv.d.dir}">${bmv.d.text}</span></div>`
+          ? `<div class="mc-story__move"><span class="mc-story__open">${mxOddsTxt(bmv.o)}</span><span class="mc-story__arr">→</span><span class="mc-story__now">${mxOddsTxt(bmv.c)}</span><span class="mc-story__pct ${bmv.d.dir}">${bmv.d.text}</span>${movedHtml}</div>`
             + `<div class="mc-story__ctx"><strong>${bmv.name}</strong> ${bmv.d.v > 0 ? 'drifted' : 'shortened'} · v ${bmv.opp}${bmv.tour ? ' · ' + mxEventName(bmv.tour) : ''}${bmv.round ? ' ' + bmv.round : ''}</div>`
           : `<div class="mc-story__empty">${bmvPairs ? 'No market moves' : 'No opening prices on file'}</div>`)));
 
@@ -10990,6 +11043,7 @@ function renderMatches(){
     const stripHtml = panels.length ? `<div class="mc-story-strip mc-story-strip--up">${panels.join('')}</div>` : '';
     if (summarySlot) summarySlot.innerHTML = stripHtml;
   }
+  list.classList.toggle('mx-mv', mxDriftView());   // CHANGES_2026-11-11 B2: the move view's wider grid track
   list.innerHTML = cards.join('');
   // Step 15 §4: the Market Signal chip is on every card (books, Elo and model rows, each a dash when absent).
   document.querySelectorAll('.mx-msigchip[data-msig]').forEach(el => el.classList.add('has-signal'));
@@ -21226,14 +21280,22 @@ function mxOpenCard(card){
   const id = card && card.dataset.id;
   if (id) openAnalysisModal(id, 'key');
 }
+// CHANGES_2026-11-11 A4: the card root has no click and no pointer. Only the header row and the two player rows open the
+// analysis (mxOpenCard: Upcoming on Key factors, Completed on its landing tab); the name opens the profile, the star toggles,
+// the Market Signal chip opens its panel, "See full analysis" opens the analysis, the footer's empty space and the open panel
+// do nothing. The odds-movement pop-up lives outside the list, so its clicks never reach here.
+function mxCardZone(e, card){
+  const z = e.target.closest('.mc-head, .mc-row');
+  return z && card.contains(z) ? z : null;
+}
 // True when this click should be left to something else on the card.
-function mxCardClickInert(e, card){
+function mxCardClickInert(e, card, zone){
   // Real controls keep their own behaviour: the Market Signal chip (a <button>, which
   // expands in place) and the "See full analysis" link. `!== card` matters — the card
   // itself now carries role="button" for the keyboard path, so without it this selector
   // matches the card on EVERY click and the feature silently never fires.
   const ctl = e.target.closest('a, button, [role="button"], input, select, label');
-  if (ctl && ctl !== card) return true;
+  if (ctl && ctl !== card && ctl !== zone) return true;
   // The EXPANDED market-signal panel is built entirely from <div>/<span> (mcSigPanel), so
   // none of it matches the selector above. Without this the reader expands the panel and
   // their next click inside it drops the modal on top of what they just opened.
@@ -21243,7 +21305,7 @@ function mxCardClickInert(e, card){
   // deferred idle load). In the seconds before that, the same pixel would fall through to
   // the card and open Match Stats instead, so the same click has two destinations depending
   // on load timing. Excluding the name/avatar outright makes it one: profile, or nothing yet.
-  if (e.target.closest('.mc-name, .mc-av, .mc-avwrap')) return true;
+  if (e.target.closest('.mc-name')) return true;
   // Let the reader copy a price or a set score off the card without the modal snatching it.
   const sel = window.getSelection && window.getSelection();
   if (sel && !sel.isCollapsed && String(sel).trim()) return true;
@@ -21251,7 +21313,8 @@ function mxCardClickInert(e, card){
 }
 document.getElementById('matchlist').addEventListener('click', e => {
   const card = e.target.closest('.match-card.mx-match');
-  if (!card || mxCardClickInert(e, card)) return;
+  const zone = card && mxCardZone(e, card);
+  if (!zone || mxCardClickInert(e, card, zone)) return;
   mxOpenCard(card);
 });
 // Keyboard parity. The card is the primary action on both views, and its only other
@@ -21260,7 +21323,7 @@ document.getElementById('matchlist').addEventListener('click', e => {
 document.getElementById('matchlist').addEventListener('keydown', e => {
   if (e.key !== 'Enter' && e.key !== ' ') return;
   const card = e.target.closest('.match-card.mx-match');
-  if (!card || e.target !== card) return;    // a control inside the card keeps its own keys
+  if (!card || !e.target.classList.contains('mc-head') || !card.contains(e.target)) return;    // A4: the header row is the keyboard target
   e.preventDefault();
   mxOpenCard(card);
 });
@@ -37197,6 +37260,9 @@ if(document.querySelector('.tabpage[data-page="live"]')&&document.querySelector(
 
   /* tab + date row */
   [data-page="matches"] .mx-daytabsrow{ gap:12px; }
+  /* CHANGES_2026-11-11 A2 / C1: the zone label right after the › (row gap 12 + 6) */
+  [data-page="matches"] .mx-tzlabel{ margin-left:6px; font-family:var(--font-nums); font-size:11px; font-weight:500; color:var(--text-label); white-space:nowrap; cursor:default; }
+  [data-page="matches"] .mx-tzlabel:empty{ display:none; }
   [data-page="matches"] .mx-viewseg{ background:var(--card); border:1px solid var(--edge-6); border-radius:10px; padding:3px; gap:3px; }
   [data-page="matches"] .mx-viewseg button{ padding:7px 14px; border-radius:8px; border:1px solid transparent; font-size:12.5px; font-weight:600; color:var(--text-label); background:transparent; }
   [data-page="matches"] .mx-viewseg button:hover{ color:var(--text); }
@@ -37240,6 +37306,11 @@ if(document.querySelector('.tabpage[data-page="live"]')&&document.querySelector(
   [data-page="matches"] .mc-story__pct{ font-family:var(--font-nums); font-size:13px; font-weight:700; color:var(--text-label); }
   [data-page="matches"] .mc-story__pct.pos{ color:var(--pos); }
   [data-page="matches"] .mc-story__pct.neg{ color:var(--neg); }
+  /* CHANGES_2026-11-11 B3: the prices-moved count, right of the open → now line, move view only */
+  [data-page="matches"] .mc-story__moved{ margin-left:auto; white-space:nowrap; font-family:var(--font-words); font-size:12.5px; font-weight:400; color:var(--text-label); }
+  [data-page="matches"] .mc-story__movedn{ font-family:var(--font-nums); font-weight:700; color:var(--text); }
+  /* CHANGES_2026-11-11 C3: the Completed Biggest market move %, Plex 12 / 600 as the reference draws it */
+  [data-page="matches"] .mc-story-strip:not(.mc-story-strip--up) .mc-story__move .mc-drift{ font-size:12px; font-weight:600; }
   [data-page="matches"] .mc-story-strip--up .mc-story__name{ font-size:14px; font-weight:700; color:var(--text); }
   [data-page="matches"] .mc-story-strip--up .mc-story__ctx{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   [data-page="matches"] .mc-story-strip--up .mc-story__ctx strong{ color:var(--text); font-weight:700; }
@@ -37304,6 +37375,7 @@ if(document.querySelector('.tabpage[data-page="live"]')&&document.querySelector(
   /* filter row */
   [data-page="matches"] .mx-filterbar{ gap:12px; padding:0; }
   [data-page="matches"] .mx-chips{ gap:12px; }
+  [data-page="matches"] .mx-chips[hidden]{ display:none; }
   [data-page="matches"] .mx-chip{ padding:9px 16px; border-radius:10px; background:var(--inner); border:1px solid transparent; color:var(--text-label); font-weight:600; }
   [data-page="matches"] .mx-chip:hover{ color:var(--text); }
   [data-page="matches"] .mx-chip.active{ background:var(--inner); border-color:var(--edge-10); color:var(--text); }
@@ -37321,19 +37393,24 @@ if(document.querySelector('.tabpage[data-page="live"]')&&document.querySelector(
   /* match card */
   [data-page="matches"] .match-card{ border-radius:14px; border-width:1px; }
   [data-page="matches"] .match-card .mc-head{ padding:11px 16px; gap:9px; border-bottom:1px solid color-mix(in srgb, var(--text) 3.5%, transparent); }
-  [data-page="matches"] .match-card .mc-surface{ font-size:11.5px; font-weight:700; color:var(--text-soft); }
+  [data-page="matches"] .match-card .mc-surface{ font-size:11.5px; font-weight:400; color:var(--text-soft); }   /* CHANGES_2026-11-11 A8: 400 (was 700) */
   [data-page="matches"] .match-card .mc-tourn{ font-size:11px; font-weight:400; color:var(--text-label); }
   [data-page="matches"] .match-card .mc-round{ font-family:var(--sf-font-mono); font-size:10.5px; font-weight:600; color:var(--text-label); background:var(--inner);
     border:1px solid transparent; border-radius:5px; padding:2px 6px; }
-  [data-page="matches"] .match-card .mc-datetime{ font-family:var(--sf-font-mono); font-size:11.5px; color:var(--text-label); }
+  [data-page="matches"] .match-card .mc-datetime{ font-family:var(--sf-font-mono); font-size:11.5px; font-weight:700; color:var(--text); }   /* CHANGES_2026-11-11 A8: 700 white */
   [data-page="matches"] .match-card .mc-colhead-inline{ margin-right:0; margin-left:auto; flex:none; grid-template-columns:75px 68px; gap:0 8px; padding-left:14px; }
   [data-page="matches"] .match-card .mc-colhead-inline .lbl{ display:flex; justify-content:flex-end; white-space:nowrap; font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label); }
   [data-page="matches"] .match-card .mc-colhead-inline .lbl:first-child{ margin-right:-9px; }
   [data-page="matches"] .match-card:not(.cmpl) .mc-head{ flex-wrap:nowrap; gap:6px 7px; }
   /* founder 2026-10-30: the move view's head is one line — OPEN / NOW / MOVE on the surface · event · round line */
   [data-page="matches"] .match-card:not(.cmpl) .mc-head:has(.mc-colhead-drift){ flex-wrap:nowrap; gap:6px 9px; }
+  /* CHANGES_2026-11-11 B2: in the move view the tournament is never cut, and the grid drops a column (480px track) before a
+     header is squeezed; the standard view keeps 360px. */
+  [data-page="matches"] .match-card:not(.cmpl) .mc-head:has(.mc-colhead-drift) > .mc-tourn{ flex:none; }
+  [data-page="matches"] #matchlist.mx-mv{ grid-template-columns:repeat(auto-fill, minmax(480px, 1fr)); }
   [data-page="matches"] .match-card .mc-head > *{ flex:none; }
   [data-page="matches"] .match-card .mc-head > .mc-tourn{ flex:0 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  [data-page="matches"] .match-card.mx-preview .mc-head > .mc-tourn{ flex:none; overflow:visible; }   /* A10: never cut on a preview card */
   [data-page="matches"] .match-card .mc-head > .mc-datetime, [data-page="matches"] .match-card .mc-head > .mc-altdate-inl{ white-space:nowrap; }
   [data-page="matches"] .mc-players.up .mc-row{ grid-template-columns:minmax(0,1fr) 1px 75px 68px; gap:0 8px; padding:11px 16px; }
   [data-page="matches"] .mc-players.up .mc-row .mc-name{ white-space:nowrap; }
@@ -37387,8 +37464,9 @@ if(document.querySelector('.tabpage[data-page="live"]')&&document.querySelector(
   [data-page="matches"] .mx-hstats{ display:contents; }
 
   /* ── TEN-377 README §7: Completed card ("2b Inset tile" rows, "7a" score, Open → Close · Move) ── */
-  [data-page="matches"] .match-card.mx-match:not(.sig-open):hover{ border-color:var(--edge-16); }   /* whole-card click: both cards */
-  [data-page="matches"] .match-card.mx-match:focus-visible{ outline:2px solid var(--edge-16); outline-offset:2px; }
+  /* CHANGES_2026-11-11 A4: the card is no longer one target, so no whole-card hover edge (the reference draws none); the header
+     row is the keyboard target and carries the focus ring. */
+  [data-page="matches"] .match-card.mx-match .mc-head:focus-visible{ outline:2px solid var(--edge-16); outline-offset:-2px; }
   [data-page="matches"] .match-card.cmpl.sig-open{ border-color:var(--open-card); }
   [data-page="matches"] .match-card.cmpl .mc-head{ padding:12px 18px 10px; border-bottom:none; flex-wrap:nowrap; }
   [data-page="matches"] .match-card.cmpl .mc-surface{ font-weight:600; color:var(--text-soft); }   /* founder Q1: README, surfaces neutral */
@@ -37513,6 +37591,8 @@ if(document.querySelector('.tabpage[data-page="live"]')&&document.querySelector(
   [data-page="matches"] .mc-sg--led .mc-sg-name{ font-size:11.5px; color:var(--text-soft); }
   [data-page="matches"] .mc-sg--led.mc-sg--done .mc-sg-name{ color:var(--sig-soft); }
   [data-page="matches"] .mc-sg--led .mc-sg-meta{ font-family:var(--font-words); font-size:10px; color:var(--text-label); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  /* CHANGES_2026-11-11 A5 / C4: the traded-money sentence under a prediction-market row, across every column */
+  [data-page="matches"] .mc-sg--led .mc-sg-trade{ grid-column:1 / -1; font-family:var(--font-words); font-size:10px; color:var(--text-label); line-height:1.3; padding-top:2px; text-wrap:pretty; }
   [data-page="matches"] .mc-sg--led .mc-sg-lock{ flex:none; fill:none; stroke:var(--text-label); stroke-width:1.8; }
   [data-page="matches"] .mc-sg--led .mc-sg-oa, [data-page="matches"] .mc-sg--led .mc-sg-ob{ display:flex; flex-direction:column; gap:3px; min-width:0; }
   [data-page="matches"] .mc-sg--led .mc-sg-oa{ align-items:flex-end; }

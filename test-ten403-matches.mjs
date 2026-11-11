@@ -188,14 +188,15 @@ test('MUTANT: without the time tie-break the `—` cards keep feed order', () =>
 
 // ── TEN-403 R1 · the sort and the tile rank on the SHOWN move, tie → earlier start ──────────────
 test('TEN-403 R1: the sort ranks on the shown move — +4.7% (shows 1.28→1.34) above +4.4% (unrounded 4.6 vs 4.3 too), a tie keeps time order', () => {
-  // a: raw 1.284→1.343 = +4.6% unrounded, shows 1.28→1.34 = +4.7%; b: raw 1.374→1.437 = +4.59% unrounded, shows 1.37→1.44 = +5.1%
-  const a = card('a', 2, { o1: 1.284, o2: 3, n1: 1.343, n2: 3 });
-  const b = card('b', 3, { o1: 1.374, o2: 3, n1: 1.437, n2: 3 });
-  const c = card('c', 1, { o1: 1.28, o2: 3, n1: 1.34, n2: 3 });   // the same shown +4.7% as a, starts earlier
+  // CHANGES_2026-11-11 B4: the shortening side's printed drop. a: raw 1.343→1.284 = −4.39% unrounded, shows 1.34→1.28 = −4.5%;
+  // b: raw 1.437→1.374 = −4.38% unrounded, shows 1.44→1.37 = −4.9%; c: shows the same −4.5% as a, starts earlier
+  const a = card('a', 2, { o1: 1.343, o2: 3, n1: 1.284, n2: 3 });
+  const b = card('b', 3, { o1: 1.437, o2: 3, n1: 1.374, n2: 3 });
+  const c = card('c', 1, { o1: 1.34, o2: 3, n1: 1.28, n2: 3 });
   const out = sorter(html)([a, b, c]).map(m => m.id);
-  assert.deepEqual(out, ['b', 'c', 'a'], 'ranked on 5.1 > 4.7 = 4.7, the tie by start');
+  assert.deepEqual(out, ['b', 'c', 'a'], 'ranked on 4.9 > 4.5 = 4.5, the tie by start');
   // MUTANT: the old unrounded score splits the a/c tie on hidden digits and reorders a/b
-  const unrounded = html.replace('return Math.max(Math.abs(a.v), Math.abs(b.v));', 'return Math.max(Math.abs(p.n1 / p.o1 - 1), Math.abs(p.n2 / p.o2 - 1));');
+  const unrounded = html.replace('const lo = Math.min(a.v, b.v);', 'const lo = Math.min(p.n1 / p.o1 - 1, p.n2 / p.o2 - 1) * 100;');
   assert.notEqual(unrounded, html);
   assert.notDeepEqual(sorter(unrounded)([a, b, c]).map(m => m.id), out);
 });
@@ -203,10 +204,10 @@ test('TEN-403 R1: the sort ranks on the shown move — +4.7% (shows 1.28→1.34)
 // The tile's own code, cut out of renderMatches and run: it must name a leg of the match the sort puts first.
 const tileApi = src => {
   const body = slice('renderMatches', src);
-  const a = body.indexOf('    let bmv = null, bmvPairs = 0;'), b = body.indexOf('    const driftOn = state.sort === ');
+  const a = body.indexOf('    let bmv = null, bmvPairs = 0, movedN = 0;'), b = body.indexOf('    const driftOn = state.sort === ');
   assert.ok(a > 0 && b > a, 'tile block not found');
   return daySlate => new Function('daySlate', `
-    const MOVE_NONE = -1, MOVE_UNPRICED = -2;
+    const MOVE_NONE = -1, MOVE_UNPRICED = -2, MX_MOVE_MIN = 2.0;
     const _ocsOf = m => null, _mcNowPair = m => null, _openAnchorOf = () => null, _mcNowOf = () => null;
     const _mcOpenNowPair = m => m.__pair || null;
     const cardStartMs = m => m.__t;
@@ -218,15 +219,15 @@ const tileApi = src => {
 test('TEN-403 R1: the tile names a leg of the match the sort puts first (shown figure, start-time tie-break)', () => {
   const tile = tileApi(html);
   const mk = (id, t, pair) => Object.assign(card(id, t, pair), { p1: id + '-1', p2: id + '-2' });
-  // late: raw +4.6% unrounded but shows +4.7%; early: the same shown +4.7% on player 2, earlier start
-  const board = [mk('late', 9, { o1: 1.284, o2: 2, n1: 1.343, n2: 2 }), mk('early', 4, { o1: 2, o2: 1.28, n1: 2, n2: 1.34 }),
-                 // mid: shows 1.37 → 1.43 = +4.4%, but its unrounded quotes are +4.98% — the old tile's pick
-                 mk('mid', 1, { o1: 1.366, o2: 2, n1: 1.434, n2: 2 })];
+  // B4 (shortening side). late: raw −4.39% unrounded, shows −4.5%; early: the same shown −4.5% on player 2, earlier start
+  const board = [mk('late', 9, { o1: 1.343, o2: 2, n1: 1.284, n2: 2 }), mk('early', 4, { o1: 2, o2: 1.34, n1: 2, n2: 1.28 }),
+                 // mid: shows 1.43 → 1.37 = −4.2%, but its unrounded quotes are −4.74% — the old tile's pick
+                 mk('mid', 1, { o1: 1.434, o2: 2, n1: 1.366, n2: 2 })];
   const t = tile(board);
   const first = sorter(html)(board.slice())[0];
   assert.equal(t.m, first, 'the tile and the sort agree on the top match');
   assert.equal(t.name, 'early-2', 'the leg that carries the move');
-  assert.equal(t.d.text, '+4.7%');
+  assert.equal(t.d.text, '−4.5%');
   assert.equal(tile([mk('flat', 1, { o1: 1.5, o2: 2, n1: 1.5004, n2: 2.001 })]), null, 'a shown 0.0% board has no headline');
   // MUTANT: the pre-R1 tile ranked on the unrounded |c/o − 1| with no tie-break → names "late"
   const pre = html.replace('const s = moveNowScore(m);', 'const s = Math.max(Math.abs(p.n1 / p.o1 - 1), Math.abs(p.n2 / p.o2 - 1)) * 100;');
@@ -314,7 +315,7 @@ test('nothing is starred by default; star states and tooltips', () => {
   assert.match(idle, /class="mc-star" data-fav="1" title="Add to favourites" aria-label="Add to favourites" aria-pressed="false"/);
   F.mxFavToggle('1');
   assert.match(F.mxFavStarHtml({ id: 'upcoming-1' }), /class="mc-star is-on" data-fav="1" title="Remove from favourites"/);
-  assert.match(slice('renderMatches'), /<div class="mc-head">\s*\$\{isCompleted \? '' : mxFavStarHtml\(m\)\}\s*<span class="mc-surface/, 'the star is the FIRST item of an Upcoming header');
+  assert.match(slice('renderMatches'), /<div class="mc-head"[^>]*>\s*\$\{isCompleted \? '' : mxFavStarHtml\(m\)\}\s*<span class="mc-surface/, 'the star is the FIRST item of an Upcoming header');
   assert.match(lastRule(`${M} .match-card .mc-star`), /width:24px; height:24px; margin:-4px 0 -4px -6px; padding:0; border:0; border-radius:7px;/);
   assert.match(lastRule(`${M} .match-card .mc-star:hover`), /background:var\(--inner\)/);
   assert.match(lastRule(`${M} .mc-star path, ${M} .mx-favcard__star path`), /stroke:currentColor; stroke-width:1\.5/);
@@ -512,7 +513,7 @@ test('card 9b1c3aa1: Completed card Move and Completed Biggest-market-move tile 
   const j = slice('mcJourney');
   assert.match(j, /const d = mxMovePct\(open, close\);/, 'Completed card Move');
   assert.doesNotMatch(j, /oddsPctDelta\(/);
-  assert.match(slice('mxCompletedBiggestMove'), /const d = mxMovePct\(o, c\);\n\s*if \(!d \|\| d\.v === 0\) return;\n\s*if \(!bmv \|\| Math\.abs\(d\.v\) > Math\.abs\(bmv\.d\.v\)\) \{/, 'Completed tile ranks on the shown move');
+  assert.match(slice('mxCompletedBiggestMove'), /const d = mxMovePct\(o, c\);\n\s*if \(!d \|\| !\(d\.v < 0\)\) return;[^\n]*\n\s*if \(!bmv \|\| d\.v < bmv\.d\.v\) \{/, 'Completed tile ranks on the shown move, shortening side only (B4)');
   assert.equal((html.match(/oddsPctDelta\(/g) || []).length, 1, 'oddsPctDelta has no caller left (definition only)');
 });
 
@@ -554,7 +555,7 @@ function largestPrintedMove(A, board) {
     const t = /mc-px__move[^"]*">([^<]*)</.exec(h)[1];
     if (!t || t === '±0.0%') continue;
     const v = parseFloat(t.replace('−', '-').replace('+', ''));
-    if (!best || Math.abs(v) > Math.abs(best.v)) best = { v, text: t, name: who === 'p1' ? m.p1 : m.p2 };
+    if (v < 0 && (!best || v < best.v)) best = { v, text: t, name: who === 'p1' ? m.p1 : m.p2 };   // B4: the biggest printed DROP
   }
   return best;
 }
@@ -562,7 +563,7 @@ test('founder 414de0fe: the Completed tile = the largest |printed Move| among th
   const A = completedHarness();
   const card = largestPrintedMove(A, COMPLETED_BOARD), tile = A.mxCompletedBiggestMove(COMPLETED_BOARD);
   assert.deepEqual({ text: tile.d.text, name: tile.name }, { text: card.text, name: card.name });
-  assert.deepEqual({ text: tile.d.text, name: tile.name }, { text: '+16.4%', name: 'J. Sinner' }, 'the older-close +16.4% row wins');
+  assert.deepEqual({ text: tile.d.text, name: tile.name }, { text: '−13.8%', name: 'C. Alcaraz' }, 'B4: the biggest drop wins (an older close, −13.8%), never the +16.4% drift');
   assert.equal(A.mxCompletedBiggestMove([COMPLETED_BOARD[2]]), null, 'a vendor-pinned open prints no Move, so the tile has none');
 });
 test('MUTANT: a tile that skips older closes (the pre-414de0fe within-60 close) no longer matches the cards', () => {
