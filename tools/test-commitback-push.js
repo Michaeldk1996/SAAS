@@ -247,11 +247,11 @@ check('mutation: without `git reset -q` the next commit would sweep the build ou
 });
 
 // ── Wiring: every commit-back step in pipeline.yml goes through the script ───────
-check('pipeline.yml: all seven commit-back steps call tools/commitback-push.sh, none rebase inline', () => {
+check('pipeline.yml: all eight commit-back steps call tools/commitback-push.sh, none rebase inline', () => {
   const y = fs.readFileSync(path.join(ROOT, '.github/workflows/pipeline.yml'), 'utf8');
   // admin log, series outcomes, profile caches, match-stat floor, weather archive (TEN-304),
-  // tiebreak floor (TEN-318), captured Pinnacle closes (TEN-316)
-  assert.strictEqual((y.match(/^ +tools\/commitback-push\.sh \"/gm) || []).length, 7);   // TEN-316 added the captured-Pinnacle commit-back
+  // tiebreak floor (TEN-318), captured Pinnacle closes (TEN-316), news ticker (2026-11-11)
+  assert.strictEqual((y.match(/^ +tools\/commitback-push\.sh \"/gm) || []).length, 8);   // TEN-316 added the captured-Pinnacle commit-back; the news ticker added the eighth
   assert.ok(!/git pull --rebase/.test(y), 'an inline rebase loop is back');
 });
 
