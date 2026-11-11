@@ -76,6 +76,8 @@ alter table arb.config add column if not exists live_cooldown interval not null 
 alter table arb.config add column if not exists live_hb_max   interval not null default interval '90 seconds';  -- worker heartbeat
 -- founder 2026-11-10 ("it needs to be 100% true"): a live row older than this at push time is never sent
 alter table arb.config add column if not exists live_fresh    interval not null default interval '5 seconds';
+-- founder 2026-11-12: a Bet105 leg only while the Kibl stream worker is current (its position row in kibl_live_ml, fixture 0)
+alter table arb.config add column if not exists live_stream_lag interval not null default interval '5 seconds';
 -- the odds-api.io bookmakers read as soft sources (founder 2026-11-05: Napoleon Sports BE beside Superbet); each must also
 -- be in ten287_rec.config.books or it has no ticks. A book's name here is the name its alerts print.
 alter table arb.config add column if not exists soft_books text[] not null default '{}';
@@ -606,6 +608,14 @@ begin
                            where l->>'group' = 'book' and ((l->>'setAt') is null or (g->>'scoreAt') is null
                                                            or (l->>'setAt')::timestamptz < (g->>'scoreAt')::timestamptz));
     continue when jsonb_array_length(coalesce(g->'checks', '[]'::jsonb)) > 0;
+    -- founder 2026-11-12: both 11 Nov signals priced Bet105 from the stream worker's backlog (~2 min behind Kibl). A Bet105
+    -- leg needs the worker's stream position (fixture 0 / player 0) written within live_fresh and at most live_stream_lag
+    -- behind Kibl when it was written — read HERE, at send time, not trusted from the worker's row.
+    continue when exists (select 1 from jsonb_array_elements(g->'legs') l where l->>'venue' = 'Bet105')
+              and not exists (select 1 from public.kibl_live_ml s
+                               where s.fixture_id = 0 and s.fixture_participant_id = 0
+                                 and s.received_at >= now() - c.live_fresh
+                                 and s.received_at - s.kibl_inserted_on <= c.live_stream_lag);
     -- only when there is time to place both bets (founder 2026-11-03): the live score board shows the game at 0–0 — a new
     -- game (the serve changes), a changeover (players sit, after an odd game) or a set break — never during points;
     -- and never on a match the board or api-tennis says is over or not being played (walkover, retirement …)

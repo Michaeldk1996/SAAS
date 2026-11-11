@@ -208,9 +208,10 @@ W.C.sb_request = lambda *a, **k: (503, "down")
 ok(W.write_gap({}, W.gap_record(t0g, t0g + timedelta(seconds=130), "disconnect"), lambda *_: None, True) is False,
    "a failed gap write reports failure, so the caller keeps it and retries")
 W.C.sb_request = C_real
-ok("pending_gap, last_gap_try = row_g" in src and "if write_gap(env, pending_gap" in src,
+ok("pending_gap, last_gap_try = row_g" in src and 'wr.submit("gap", g, lambda g=g: write_gap(env, g' in src
+   and "pending_gap, last_gap_try = ctx, t" in src,
    "the worker retries a failed gap write instead of dropping it")
-ok(src.index("if method is not None:\n                    # Only a RECEIVED") < src.index("last_alive = datetime.now(timezone.utc)"),
+ok(src.index("if method is not None:\n                    # Only a RECEIVED") < src.index("last_alive = now_dt"),
    "last_alive moves only on a received message, not on an idle tick")
 
 print("\n5 · heartbeat")

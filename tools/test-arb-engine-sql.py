@@ -50,7 +50,7 @@ create table ten287_rec.ticks (id bigserial primary key, book text not null, eve
 create table ten287_rec.requests (id bigint primary key, kind text, book text, fired_at timestamptz default now(), processed_at timestamptz, status_code int);
 create table public.kibl_now_card (card_key text primary key, book text, book_name text, a_side text, a_price numeric, a_at timestamptz,
   b_side text, b_price numeric, b_at timestamptz, written_at timestamptz default now(), fixture_id bigint);
-create table public.kibl_live_ml (fixture_id bigint, fixture_participant_id bigint, price numeric, kibl_inserted_on timestamptz);
+create table public.kibl_live_ml (fixture_id bigint, fixture_participant_id bigint, price numeric, kibl_inserted_on timestamptz, received_at timestamptz);
 create table public.kibl_now_price (card_key text, side_key text, kind text, written_at timestamptz default now());
 create table drops_live.flip (event_key text, live_at timestamptz, p1 text, p2 text);
 create table public.live_flip_log (event_key text primary key, first_live_seen_at timestamptz not null);
@@ -342,6 +342,19 @@ try:
     nap = bgap(mkey='oddsapi:5', dir='Bet105:A+Napoleon:B', hasPm=False, stake=None,
                legs=[bgap()['legs'][0], {'venue': 'Napoleon', 'name': 'Carlos Alcaraz', 'group': 'book', 'dec': 2.35, 'eff': 2.35, 'stake': None,
                                          'share': 48.4, 'at': '2026-11-08T14:30:01Z', 'url': 'https://napoleonsports.be/x'}])
+    # founder 2026-11-12: a Bet105 leg needs the stream worker's position row (fixture 0): fresh and at most 5 s behind Kibl
+    def stream_pos(lag_s, age_s):
+        q("delete from public.kibl_live_ml where fixture_id = 0")
+        q(f"insert into public.kibl_live_ml values (0, 0, null, now() - interval '{age_s + lag_s} seconds', now() - interval '{age_s} seconds')")
+    q("delete from public.kibl_live_ml where fixture_id = 0")
+    rc, out = push([bgap(mkey='kibl:s0')]); check('no stream position → a Bet105 gap is never sent (mutant: stream gate off)', rc == 0 and out == '0', out)
+    stream_pos(104, 1)
+    rc, out = push([bgap(mkey='kibl:s1')]); check('stream 104 s behind Kibl (Sonego v Tabilo, 11 Nov) → not sent', out == '0', out)
+    stream_pos(1, 10)
+    rc, out = push([bgap(mkey='kibl:s2')]); check('stream position 10 s old (worker not writing) → not sent', out == '0', out)
+    stream_pos(6, 1)
+    rc, out = push([bgap(mkey='kibl:s3')]); check('6 s behind (just over live_stream_lag) → not sent', out == '0', out)
+    stream_pos(1, 1)
     rc, out = push([bgap(), bgap(mkey='oddsapi:2', atp=False), bgap(mkey='oddsapi:3', stake=40), nap])
     check('bookmaker gaps post: a Bet105 × Polymarket gap with $100+; never under $100, never non-ATP, never a Napoleon leg (mutant: venue rule off)',
           rc == 0 and out == '1', out)
@@ -366,6 +379,7 @@ try:
                     bgap(mkey='kibl:t7', legs=[bgap()['legs'][0]])])
     check('never sent: a row computed 10 s ago, a leg read 5 s before it, a Bet105 price set before the latest score change or with no set '
           'time, no score time, a worker check that failed, a single leg (mutants: each rule off)', rc == 0 and out == '0', out)
+    stream_pos(1, 1)
     rc, out = push([bgap(mkey='kibl:t8')]); check('CONTROL: the same row with true clocks is sent', out == '1', out)
     rc, out = q("select arb.hms('2026-11-10 15:43:36.797+00'::timestamptz)"); check('times to the second, UTC', out == '15:43:36 UTC', out)
     old = {k: v for k, v in gap().items() if k not in ('legs', 'computedAt', 'scoreAt', 'checks')}

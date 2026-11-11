@@ -27,7 +27,9 @@ counted, never sent — so a dry run cannot become a production write by default
 import collections
 import json
 import os
+import queue
 import sys
+import threading
 import time
 import urllib.parse
 import urllib.request
@@ -351,16 +353,27 @@ def flush_cards(env, rows, log, enabled, eng):
     """Upsert the due card rows. A failed row is re-marked due in 10 s; the retry
     is rebuilt from the engine's latest sides, so it can never write an older
     price over a newer one."""
-    if not rows:
-        return
+    if rows:
+        cards_landed(eng, rows, post_cards(env, rows, log, enabled))
+
+
+def post_cards(env, rows, log, enabled):
+    """The card upsert alone (no engine state: safe on the writer thread) -> did it land?"""
     if not enabled:
         for r in rows:
             log(f"DRY card {r['card_key']} {r['a_side']} {r['a_price']} / {r['b_side']} {r['b_price']}")
-        return
+        return True
     st, body = C.sb_request(env, "POST", f"/rest/v1/{TABLE_CARD}?on_conflict=card_key",
                             rows, prefer="resolution=merge-duplicates,return=minimal")
     if st not in (200, 201, 204):
         log(f"::warning::card upsert HTTP {st}: {body[:200]}")
+        return False
+    return True
+
+
+def cards_landed(eng, rows, ok):
+    """The consume loop's side of a card write: a failure re-marks the cards due in 10 s."""
+    if not ok:
         due = time.monotonic() + 10
         for r in rows:
             eng.dirty.setdefault(r["card_key"], due)
@@ -420,29 +433,86 @@ def last_heartbeat_at(env):
         return None
 
 
-def flush_live(env, live, log, enabled):
-    """Upsert the in-play rows that changed; a failed write goes back to be retried."""
+def flush_live(env, live, log, enabled, pos=None):
+    """Upsert the in-play rows that changed (+ the stream-position row); a failed write goes back to be retried."""
     rows = live.drain()
-    if not rows:
+    if not rows and pos is None:
         return True
+    return live_landed(live, rows, post_live(env, rows, pos, log, enabled))
+
+
+def post_live(env, rows, pos, log, enabled):
+    """The in-play write alone (no keeper state: safe on the writer thread) -> did it land? History first, then the
+    latest rows together with the stream-position row, so a fresh position always means the prices before it landed."""
     if not enabled:
         for r in rows:
             log(f"DRY live {r['fixture_id']} {r['fixture_participant_id']} {r['price']} @ {r['kibl_inserted_on']}")
         return True
-    # every change is kept too (founder 2026-11-10: each signal must be checkable afterwards against what Bet105 showed);
-    # idempotent on (fixture, player, Kibl time), so a retried batch never doubles a row
-    st, body = C.sb_request(env, "POST", f"/rest/v1/{LM.HISTORY}?on_conflict=fixture_id,fixture_participant_id,kibl_inserted_on",
-                            rows, prefer="resolution=ignore-duplicates,return=minimal")
-    if st in (200, 201, 204):
+    st = 204
+    if rows:
+        # every change is kept too (founder 2026-11-10: each signal must be checkable afterwards against what Bet105
+        # showed); idempotent on (fixture, player, Kibl time), so a retried batch never doubles a row
+        st, body = C.sb_request(env, "POST", f"/rest/v1/{LM.HISTORY}?on_conflict=fixture_id,fixture_participant_id,kibl_inserted_on",
+                                rows, prefer="resolution=ignore-duplicates,return=minimal")
+    latest = list(rows) + ([pos] if pos is not None else [])
+    if st in (200, 201, 204) and latest:
         st, body = C.sb_request(env, "POST", f"/rest/v1/{LM.TABLE}?on_conflict=fixture_id,fixture_participant_id",
-                                rows, prefer="resolution=merge-duplicates,return=minimal")
+                                latest, prefer="resolution=merge-duplicates,return=minimal")
     if st not in (200, 201, 204):
         log(f"::warning::live upsert HTTP {st}: {body[:200]}")
+        return False
+    return True
+
+
+def live_landed(live, rows, ok):
+    """The consume loop's side of an in-play write: a failed batch is retried whole (history is idempotent)."""
+    if not ok:
         live.requeue(rows)
         live.count["write_failed"] += len(rows)
         return False
     live.count["written"] += len(rows)
     return True
+
+
+class Writer:
+    """Every Supabase write runs HERE, on one thread, in submission order — never on the consume loop (founder
+    2026-11-12: on 11 Nov the loop wrote synchronously, each call up to a 30 s timeout, the RabbitMQ backlog grew to
+    ~2 min and both live arbitrage signals priced Bet105 from it). A job only does I/O; its result comes back to the
+    loop through `results()`, and only the loop touches engine state. One job per kind in flight (`busy`)."""
+
+    def __init__(self, log):
+        self.log, self.jobs, self.done, self.inflight = log, queue.Queue(), queue.Queue(), collections.Counter()
+        threading.Thread(target=self._run, name="supabase-writer", daemon=True).start()
+
+    def _run(self):
+        while True:
+            kind, ctx, fn = self.jobs.get()
+            try:
+                res = fn()
+            except Exception as e:  # noqa: BLE001 — a job never kills the writer
+                self.log(f"::warning::{kind} write raised {type(e).__name__}")
+                res = e
+            self.done.put((kind, ctx, res))
+
+    def submit(self, kind, ctx, fn):
+        self.inflight[kind] += 1
+        self.jobs.put((kind, ctx, fn))
+
+    def busy(self, kind):
+        return self.inflight[kind] > 0
+
+    def results(self):
+        out = []
+        while True:
+            try:
+                kind, ctx, res = self.done.get_nowait()
+            except queue.Empty:
+                return out
+            self.inflight[kind] -= 1
+            out.append((kind, ctx, res))
+
+    def backlog(self):
+        return self.jobs.qsize()
 
 
 def prune(env, log, enabled):
@@ -620,6 +690,9 @@ def main(env=None, log=print):
 
     attempt, last_beat, last_prune, connected = 0, 0.0, 0.0, False
     retry, last_retry = [], 0.0
+    wr = Writer(log)                 # every write in the loop goes through here (founder 2026-11-12) …
+    wl = Writer(log)                 # … except the in-play prices + stream position: their own thread, never behind a slow line write
+    pend, last_pos = [], 0.0         # Now/history rows waiting for the writer; last stream-position write
     # Gap bookkeeping: the restart gap runs from the previous run's last
     # heartbeat; a disconnect gap from the last loop turn while consuming.
     gap_from = last_heartbeat_at(env) if enabled else None
@@ -655,52 +728,91 @@ def main(env=None, log=print):
                 if method is not None:
                     # Only a RECEIVED message proves the stream was alive: an idle
                     # tick on a half-open socket is not (review round 5, finding 5).
-                    last_alive = datetime.now(timezone.utc)
-                    rcv = iso(datetime.now(timezone.utc))
+                    now_dt = datetime.now(timezone.utc)
+                    last_alive = now_dt
+                    rcv = iso(now_dt)
                     try:
                         payload = json.loads(body.decode("utf-8", "replace"))
                     except ValueError:
                         payload = None
                     rows = C.envelope_rows(payload) if payload is not None else None
-                    writes = []
+                    newest = ""
                     for r in rows or []:
                         if isinstance(r, dict):
-                            writes += eng.accept(r, rcv)
+                            pend += eng.accept(r, rcv)
                             lines.accept(r)
                             live.accept(r, rcv, method.routing_key)
-                    if writes:
-                        retry += flush(env, writes, log, enabled, eng)
+                            ins = r.get("inserted_on")
+                            if isinstance(ins, str) and ins > newest:
+                                newest = ins
+                    # the stream position: how far behind Kibl this loop is (founder 2026-11-12)
+                    live.see(newest or None, now_dt)
                     # Ack everything, tennis or not: an unacked message counts
                     # against the vendor's backlog cap.
                     channel.basic_ack(method.delivery_tag)
+                # Every write below is handed to the writer thread; the loop only
+                # reads back what landed (the loop is the only one touching state).
+                t = time.time()
+                for kind, ctx, res in wr.results() + wl.results():
+                    ok = res is True
+                    if kind in ("now", "retry"):
+                        failed = res if isinstance(res, list) else list(ctx)
+                        eng.count["write_failed"] += len(failed)
+                        eng.write_ok = not failed
+                        retry += failed
+                    elif kind == "cards":
+                        cards_landed(eng, ctx, ok)
+                    elif kind == "live":
+                        live_landed(live, ctx, ok)
+                    elif kind == "gap" and not ok:
+                        pending_gap, last_gap_try = ctx, t
+                if pend and not wr.busy("now"):
+                    batch, pend = pend, []
+                    wr.submit("now", batch, lambda b=batch: flush(env, b, log, enabled))
                 # Card rows whose coalescing window has closed. The loop turns at
                 # least once a second (inactivity_timeout), so a row waits
                 # COALESCE_S to ~COALESCE_S + 1 s.
-                if eng.dirty:
-                    flush_cards(env, eng.card_rows(time.monotonic()), log, enabled, eng)
-                lines.tick()
-                t = time.time()
-                if live.dirty and t - last_live >= 0.5:
-                    flush_live(env, live, log, enabled)
-                    last_live = t
-                if pending_gap is not None and t - last_gap_try >= 10:
+                if eng.dirty and not wr.busy("cards"):
+                    crow = eng.card_rows(time.monotonic())
+                    if crow:
+                        wr.submit("cards", crow, lambda c=crow: post_cards(env, c, log, enabled))
+                if not wr.busy("lines"):
+                    wr.submit("lines", None, lines.tick)
+                # in-play rows every 0.5 s, the stream position at least every second
+                if not wl.busy("live") and ((live.dirty and t - last_live >= 0.5) or t - last_pos >= 1.0):
+                    lrows = live.drain() if t - last_live >= 0.5 else []
+                    pos = live.position_row(iso(datetime.now(timezone.utc)))
+                    if lrows or pos is not None:
+                        wl.submit("live", lrows, lambda a=lrows, b=pos: post_live(env, a, b, log, enabled))
+                    if lrows:
+                        last_live = t
+                    last_pos = t
+                if pending_gap is not None and t - last_gap_try >= 10 and not wr.busy("gap"):
                     last_gap_try = t
-                    if write_gap(env, pending_gap, log, enabled):
-                        pending_gap = None
-                if retry and t - last_retry >= 10:
+                    g, pending_gap = pending_gap, None
+                    wr.submit("gap", g, lambda g=g: write_gap(env, g, log, enabled))
+                if retry and t - last_retry >= 10 and not wr.busy("retry"):
                     # Only rows still the newest for their side; a newer price
                     # that landed meanwhile is never overwritten by a retry.
-                    retry = [(k, r) for k, r in retry if k == "hist" or eng.still_latest(r)]
-                    retry = flush(env, retry, log, enabled, eng) if retry else []
+                    batch = [(k, r) for k, r in retry if k == "hist" or eng.still_latest(r)]
+                    retry = []
+                    if batch:
+                        wr.submit("retry", batch, lambda b=batch: flush(env, b, log, enabled))
                     last_retry = t
                 refresh()
-                if t - last_beat >= HEARTBEAT_EVERY_S:
-                    write_hb(env, eng.heartbeat(datetime.now(timezone.utc), True,
-                                                dict(where, lines=lines.summary(), live_ml=live.summary())), log, enabled)
-                    lines.checked()
+                if t - last_beat >= HEARTBEAT_EVERY_S and not wr.busy("hb"):
+                    note = dict(where, live_ml=live.summary(), writer_backlog=wr.backlog() + wl.backlog())
+                    hb = eng.heartbeat(datetime.now(timezone.utc), True, note)
+
+                    def beat(hb=hb):
+                        hb["note"]["lines"] = lines.summary()
+                        write_hb(env, hb, log, enabled)
+                        lines.checked()
+                        return True
+                    wr.submit("hb", None, beat)
                     last_beat = t
-                if t - last_prune >= 3600:
-                    prune(env, log, enabled)
+                if t - last_prune >= 3600 and not wr.busy("prune"):
+                    wr.submit("prune", None, lambda: prune(env, log, enabled))
                     last_prune = t
         except KeyboardInterrupt:
             return 0

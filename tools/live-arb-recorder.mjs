@@ -403,12 +403,27 @@ export const KIBL_GAP_MS = 1300, KIBL_CYCLE_MS = 1000, KIBL_PRE_EVERY = 30, KIBL
 export const KIBL_LIVE_MAX_MS = 15e3;   // an in-play price stands only while the read that returned it is this fresh
 export const KIBL_LIVE_ROW_MAX_MS = 600e3;   // a side Bet105 has not re-priced for 10 min is no in-play price
 export const KIBL_STREAM_HB_MAX_MS = 150e3;  // the stream worker beats every 60 s
+// founder 2026-11-12: both 11 Nov signals priced Bet105 from the stream worker's backlog (its newest price was up to ~2 min
+// behind Kibl). The worker writes its stream position into kibl_live_ml under fixture 0 / player 0 at least every second:
+// kibl_inserted_on = the newest Kibl time it has processed, received_at = when. No in-play price is used unless that row is
+// at most KIBL_STREAM_POS_MAX_MS old and the worker was at most KIBL_STREAM_LAG_MAX_MS behind Kibl.
+export const KIBL_STREAM_LAG_MAX_MS = 5e3, KIBL_STREAM_POS_MAX_MS = 5e3;
+export function kiblStreamCheck(rows, now) {
+  const p = (rows || []).find((r) => r && Number(r.fixture_id) === 0 && Number(r.fixture_participant_id) === 0);
+  if (!p) return { ok: false, why: 'no stream position', lagMs: null, ageMs: null };
+  const rcv = Date.parse(p.received_at), ins = Date.parse(p.kibl_inserted_on);
+  if (!isFinite(rcv) || !isFinite(ins)) return { ok: false, why: 'stream position unreadable', lagMs: null, ageMs: null };
+  const lagMs = rcv - ins, ageMs = now - rcv;
+  if (ageMs > KIBL_STREAM_POS_MAX_MS) return { ok: false, why: 'stream position ' + Math.round(ageMs / 1e3) + ' s old', lagMs, ageMs };
+  if (lagMs > KIBL_STREAM_LAG_MAX_MS) return { ok: false, why: 'stream ' + Math.round(lagMs / 1e3) + ' s behind Kibl', lagMs, ageMs };
+  return { ok: true, why: null, lagMs, ageMs };
+}
 // kibl_live_ml rows → Map fixtureId → { home, away, upd } (home = lower participant id); a suspended side (price below
 // 1.01, or a market status other than open = 1) or a side older than KIBL_LIVE_ROW_MAX_MS leaves the match unpriced
 export function kiblLiveQuotes(rows, now) {
   const byF = new Map();
   for (const r of rows || []) {
-    if (!r || r.fixture_id == null || r.fixture_participant_id == null) continue;
+    if (!r || r.fixture_id == null || r.fixture_participant_id == null || Number(r.fixture_id) === 0) continue;
     const f = String(r.fixture_id); if (!byF.has(f)) byF.set(f, new Map());
     byF.get(f).set(String(r.fixture_participant_id), r);
   }
@@ -534,7 +549,10 @@ export class KiblFeed {
       if (t - this.beatAt >= 15e3 || !this.beat) { this.beat = await this.streamBeat(); this.beatAt = t; }
       const b = this.beat;
       if (!b || !b.connected || b.at == null || t - b.at > KIBL_STREAM_HB_MAX_MS) { this.stats.streamDown = (this.stats.streamDown || 0) + 1; throw new Error('stream worker not connected'); }
-      this.live = kiblLiveQuotes(await this.liveRows(t - KIBL_LIVE_ROW_MAX_MS), this.now()); this.liveAt = this.now();
+      const rows = await this.liveRows(t - KIBL_LIVE_ROW_MAX_MS), sc = kiblStreamCheck(rows, this.now());
+      this.stats.streamLagMs = sc.lagMs;
+      if (!sc.ok) { this.stats.streamBehind = (this.stats.streamBehind || 0) + 1; throw new Error('stream not current: ' + sc.why); }
+      this.live = kiblLiveQuotes(rows, this.now()); this.liveAt = this.now();
       this.stats.livePolls++; this.stats.liveFixtures = this.live.size;
     } catch (e) { this.live = new Map(); this.liveAt = null; this.beat = null; err('in-play', e); }
     if (this.cycles++ % KIBL_PRE_EVERY === 0) {
@@ -722,7 +740,7 @@ async function main() {
   };
   const sbOn = !!(sbUrl0 && sbKey0);
   const bfeed = stats.bookFeed === 'kibl' ? new KiblFeed({ user: kUser, pass: kPass, clientId: (process.env.KIBL_CLIENT_ID || '').trim() || KIBL_CLIENT_ID, log,
-    liveRows: sbOn ? (since) => sbGet('kibl_live_ml?select=fixture_id,fixture_participant_id,price,market_status_id,kibl_inserted_on&kibl_inserted_on=gt.' + encodeURIComponent(new Date(since).toISOString())) : null,
+    liveRows: sbOn ? (since) => sbGet('kibl_live_ml?select=fixture_id,fixture_participant_id,price,market_status_id,kibl_inserted_on,received_at&kibl_inserted_on=gt.' + encodeURIComponent(new Date(since).toISOString())) : null,
     streamBeat: sbOn ? async () => { const j = await sbGet('kibl_now_price?kind=eq.heartbeat&select=written_at,note'); const h = Array.isArray(j) && j[0];
       return h ? { at: Date.parse(h.written_at), connected: !!(h.note && h.note.connected) } : null; } : null }) : null;
   let fxSeen = -1;

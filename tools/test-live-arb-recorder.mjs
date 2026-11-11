@@ -4,7 +4,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { generateKeyPairSync, createVerify, constants as CC } from 'node:crypto';
 import { samePlayer, polyMatches, kalshiMatches, joinPairs, kalshiFee, polyFee, Books, evaluate, Episodes, summarise, gapRow, PolyFeed, KalshiFeed, kalshiSign, boardPhase, boardFixture, setText, recRows,
-  kiblNames, kiblFixtures, kiblRows, kiblQuotes, KiblFeed, kiblLiveQuotes, gapChecks, CHECK_MAX_MS, KIBL_GAP_MS, KIBL_LIVE_MAX_MS, KIBL_LIVE_ROW_MAX_MS, KIBL_STREAM_HB_MAX_MS, BOOK_LINK_HOME, unify, venueQuotes, evaluateMulti, multiGapRow, STALE_MS, BOOKS } from './live-arb-recorder.mjs';
+  kiblNames, kiblFixtures, kiblRows, kiblQuotes, KiblFeed, kiblLiveQuotes, gapChecks, CHECK_MAX_MS, KIBL_GAP_MS, KIBL_LIVE_MAX_MS, KIBL_LIVE_ROW_MAX_MS, KIBL_STREAM_HB_MAX_MS, KIBL_STREAM_LAG_MAX_MS, KIBL_STREAM_POS_MAX_MS, kiblStreamCheck, BOOK_LINK_HOME, unify, venueQuotes, evaluateMulti, multiGapRow, STALE_MS, BOOKS } from './live-arb-recorder.mjs';
 import { readFileSync } from 'node:fs';
 
 const ev = (id, a, b, extra = {}) => ({ id, title: `X: ${a} vs ${b}`, live: false, ...extra,
@@ -276,7 +276,10 @@ test('Kibl prices: match winner, full match, the asked betting type, Bet105 only
 // a fake Kibl: login, fixtures, markets by betting type; the stream worker's table + heartbeat; a fake clock
 const lr = (fid, fp, price, ago = 5e3, extra = {}) => (t) => ({ fixture_id: fid, fixture_participant_id: fp, price, market_status_id: 1,
   kibl_inserted_on: new Date(t - ago).toISOString(), ...extra });
-function fakeKibl({ live = [], pre = [], fx = [kfx(9, 'Alex Molcan vs Titouan Droguet')], beat = { connected: true, ago: 10e3 } } = {}) {
+// the stream worker's position row (fixture 0): lag = how far behind Kibl, age = how old the row is
+const posRow = ({ lag = 1e3, age = 1e3 } = {}) => (t) => ({ fixture_id: 0, fixture_participant_id: 0, price: null, market_status_id: null,
+  kibl_inserted_on: new Date(t - age - lag).toISOString(), received_at: new Date(t - age).toISOString() });
+function fakeKibl({ live = [], pre = [], fx = [kfx(9, 'Alex Molcan vs Titouan Droguet')], beat = { connected: true, ago: 10e3 }, pos = {} } = {}) {
   const calls = [], reads = []; let t = Date.parse('2026-11-10T12:00:00Z');
   const f = async (u, o) => {
     const url = new URL(String(u)); calls.push({ at: t, path: url.pathname, q: Object.fromEntries(url.searchParams), auth: o.headers && o.headers.Authorization, body: o.body });
@@ -286,9 +289,9 @@ function fakeKibl({ live = [], pre = [], fx = [kfx(9, 'Alex Molcan vs Titouan Dr
     if (url.pathname.endsWith('/info/fixtures')) return ok({ result: fx });
     return ok({ result: bt === '3' ? [] : pre });   // measured 10 Nov: REST never has an in-play row
   };
-  const K = { calls, reads, tick: (ms) => { t += ms; }, now: () => t, live, beat };
+  const K = { calls, reads, tick: (ms) => { t += ms; }, now: () => t, live, beat, pos };
   K.feed = new KiblFeed({ fetch: f, user: 'u', pass: 'p', now: () => t, sleep: async (ms) => { t += ms; },
-    liveRows: async (since) => { reads.push(since); return K.live.map((g) => g(t)); },
+    liveRows: async (since) => { reads.push(since); return [...K.live, ...(K.pos ? [posRow(K.pos)] : [])].map((g) => g(t)); },
     streamBeat: async () => (K.beat ? { connected: K.beat.connected, at: t - K.beat.ago } : null) });
   return K;
 }
@@ -301,6 +304,27 @@ test('Kibl in-play rows from the stream table: both sides open, priced and recen
   assert.equal(kiblLiveQuotes([g(9, 101, 1.6, 5e3, { market_status_id: 2 }), g(9, 202, 2.4)], t).size, 0, 'a market not open = no price (mutant: status ignored)');
   assert.equal(kiblLiveQuotes([g(9, 101, 1.6, KIBL_LIVE_ROW_MAX_MS + 1), g(9, 202, 2.4)], t).size, 0, 'a side not re-priced for 10 min = no price (mutant: no age limit)');
   assert.equal(kiblLiveQuotes([g(9, 101, 1.6)], t).size, 0, 'one side only'); assert.equal(kiblLiveQuotes([g(9, 101, 2.2), g(9, 202, 2.2)], t).size, 0, 'over 101%');
+});
+
+test('Kibl in-play: only while the stream worker is current (founder 2026-11-12: both 11 Nov signals priced Bet105 from its ~2 min backlog)', async () => {
+  const t = Date.parse('2026-11-11T14:21:10Z'), P = (o) => posRow(o)(t);
+  assert.equal(kiblStreamCheck([P({ lag: 1e3, age: 1e3 })], t).ok, true);
+  const b = kiblStreamCheck([P({ lag: 104e3, age: 1e3 })], t);
+  assert.equal(b.ok, false, '104 s behind Kibl (Sonego v Tabilo) → no in-play price (mutant: lag ignored)'); assert.equal(b.lagMs, 104e3); assert.match(b.why, /104 s behind/);
+  assert.equal(kiblStreamCheck([P({ lag: KIBL_STREAM_LAG_MAX_MS + 1, age: 0 })], t).ok, false, 'just over the lag limit');
+  assert.equal(kiblStreamCheck([P({ lag: 0, age: KIBL_STREAM_POS_MAX_MS + 1 })], t).ok, false, 'a position row the worker stopped writing (mutant: age ignored)');
+  assert.equal(kiblStreamCheck([], t).ok, false, 'no position row → not current');
+  assert.equal(kiblLiveQuotes([P({}), lr(9, 101, 1.6)(t), lr(9, 202, 2.4)(t)], t).size, 1, 'the position row is never a fixture');
+  const K = fakeKibl({ live: [lr(9, 101, 1.6), lr(9, 202, 2.4)], pre: [kr(9, 101, 1.8, 1), kr(9, 202, 2.0, 1)], pos: { lag: 104e3, age: 1e3 } });
+  await K.feed.cycle();
+  assert.equal(K.feed.quote(9, 'Bet105').live, false, 'the feed takes no in-play price from a stream that is behind (mutant: check not wired)');
+  assert.equal(K.feed.stats.streamBehind, 1); assert.equal(K.feed.stats.streamLagMs, 104e3, 'the lag is in the worker stats');
+  K.pos = { lag: 1e3, age: 1e3 }; K.tick(2000); await K.feed.cycle();
+  assert.equal(K.feed.quote(9, 'Bet105').home, 1.6, 'CONTROL: current again → the in-play price is back');
+  const N = fakeKibl({ live: [lr(9, 101, 1.6), lr(9, 202, 2.4)], pos: null }); await N.feed.cycle();
+  assert.equal(N.feed.quote(9, 'Bet105'), null, 'an old worker that writes no position → no in-play price');
+  const src = readFileSync(new URL('./live-arb-recorder.mjs', import.meta.url), 'utf8');
+  assert.ok(src.includes('kibl_inserted_on,received_at&kibl_inserted_on=gt.'), 'the table read asks for received_at');
 });
 
 test('Kibl feed: one login, Bearer on every REST call, ≥ 1.3 s between REST calls; in play from the stream table every cycle, never REST; pre-match every 30th', async () => {

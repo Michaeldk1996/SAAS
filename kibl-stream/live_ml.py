@@ -24,6 +24,11 @@ TENNIS_SPORT = 5
 LEAGUES = (19, 537)          # ATP, Challenger
 TABLE = "kibl_live_ml"
 HISTORY = "kibl_live_ml_history"   # every change, 30 days: the audit trail behind each arbitrage signal
+# Stream position (founder 2026-11-12, after both 11 Nov signals priced Bet105 from a backlog up to ~2 min old): one row in
+# TABLE under this key carries the newest Kibl time the worker has PROCESSED (kibl_inserted_on) and when (received_at).
+# received_at - kibl_inserted_on is how far behind the stream the worker is; a reader trusts no in-play price while that
+# is large or the row itself is not fresh. Never a fixture (Kibl ids start at 1), never in HISTORY.
+POSITION_KEY = (0, 0)
 
 
 def routing_sport_league(key):
@@ -52,6 +57,29 @@ class LiveMl:
         self.latest = {}                         # (fixture, participant) -> inserted_on (datetime)
         self.dirty = {}                          # (fixture, participant) -> row to write
         self.count = collections.Counter()
+        self.pos = None                          # newest Kibl inserted_on processed, any sport / market (datetime)
+        self.pos_at = None                       # when (datetime, our clock)
+
+    def see(self, inserted_on, now):
+        """One processed message: its newest row's Kibl time. The position only moves forward."""
+        ts = _ts(inserted_on)
+        if ts is not None and (self.pos is None or ts > self.pos):
+            self.pos = ts
+        self.pos_at = now
+
+    def lag_s(self):
+        """How far behind Kibl the worker was at its last processed message (s), or None."""
+        if self.pos is None or self.pos_at is None:
+            return None
+        return round((self.pos_at - self.pos).total_seconds(), 1)
+
+    def position_row(self, now_iso):
+        """The stream-position row for TABLE, or None before any message."""
+        if self.pos is None:
+            return None
+        return {"fixture_id": POSITION_KEY[0], "fixture_participant_id": POSITION_KEY[1], "league_id": None,
+                "price": None, "market_status_id": None,
+                "kibl_inserted_on": self.pos.isoformat().replace("+00:00", "Z"), "received_at": now_iso}
 
     def accept(self, row, received_at, routing_key=None):
         if row.get("betting_type_id") != 3:
@@ -101,4 +129,4 @@ class LiveMl:
             self.dirty.setdefault(k, r)
 
     def summary(self):
-        return {"sides": len(self.latest), "counts": dict(self.count)}
+        return {"sides": len(self.latest), "stream_lag_s": self.lag_s(), "counts": dict(self.count)}

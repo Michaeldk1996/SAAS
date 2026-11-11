@@ -504,13 +504,16 @@ class LineDriver:
 
     The slow I/O — the read-back, the Kibl + api-tennis join, the REST seeds — runs on its OWN thread with its OWN Kibl
     client, so a slow api-tennis answer never holds up the stream loop the Now prices ride on. The stream loop only
-    calls accept / tick / summary: in-memory work plus the line write itself. One lock guards the engine."""
+    calls accept / tick / summary. accept only appends to an inbox (no lock, never waits): the worker runs tick — which
+    takes the inbox into the engine and writes — on its writer thread, so a slow line write never holds up the stream
+    loop the Bet105 prices ride on (founder 2026-11-12). One lock guards the engine."""
 
     def __init__(self, fsid, env, sb, kc_factory, write, log=print):
         self.env, self.sb, self.kc_factory, self.log = env, sb, kc_factory, log
         self.key = (env.get("API_TENNIS_KEY") or "").strip()
         self.eng = LineEngine(fsid, write=write, log=log)
         self.lock = threading.Lock()
+        self.inbox = collections.deque()            # stream rows not yet in the engine (append / popleft are thread-safe)
         self.state = {"map": 0.0, "seed": 0.0, "rb": 0.0, "live": 0.0, "written": False, "seed_now": False}
         self.disabled = None if self.key else "API_TENNIS_KEY not set — line prices off"
         self.kc = None
@@ -625,13 +628,21 @@ class LineDriver:
     def accept(self, row):
         if self.disabled or not self.state["written"]:
             return
-        with self.lock:
-            self.eng.accept(row)
+        # the engine's own first test, uncounted: only line markets wait in the inbox
+        if LP.MARKETS.get((row.get("market_type_id"), row.get("segment_id"))) is None:
+            return
+        self.inbox.append(row)
+
+    def _pump(self):
+        """Lock held: the inbox into the engine, in arrival order."""
+        while self.inbox:
+            self.eng.accept(self.inbox.popleft())
 
     def tick(self):
         if self.disabled or not self.state["written"]:
             return
         with self.lock:
+            self._pump()
             res = self.eng.flush(self.sb)
         if res and res.get("current") and not self.eng.write:
             self.log(f"DRY lines: {res['fixtures']} fixture(s) -> {res['current']} current, {res['ticks']} tick(s)")

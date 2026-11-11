@@ -41,7 +41,61 @@ check(L.drain()[0]["price"] == 1.8, "a failed write put back never overrides a n
 
 src = open(os.path.join(HERE, "now_worker.py")).read()
 check("live.accept(r, rcv, method.routing_key)" in src, "the consume loop feeds every row to the in-play keeper")
-check("flush_live(env, live, log, enabled)" in src and "live_ml=live.summary()" in src, "it is flushed and on the heartbeat")
+check("post_live(env, a, b, log, enabled)" in src and "live_ml=live.summary()" in src, "it is flushed and on the heartbeat")
+
+# ── founder 2026-11-12: the stream position (both 11 Nov signals priced Bet105 from a backlog up to ~2 min old) ──
+from datetime import datetime, timezone, timedelta
+P = LM.LiveMl(171)
+check(P.position_row("x") is None and P.lag_s() is None, "no position before any message")
+t0 = datetime(2026, 11, 11, 14, 21, 10, tzinfo=timezone.utc)
+P.see("2026-11-11T14:19:26.000Z", t0)
+check(P.lag_s() == 104.0, "lag = processed at − newest Kibl time (Sonego v Tabilo, 104 s)")
+P.see("2026-11-11T14:10:00.000Z", t0 + timedelta(seconds=1))
+check(P.pos == datetime(2026, 11, 11, 14, 19, 26, tzinfo=timezone.utc), "an older message never moves the position back")
+P.see(None, t0 + timedelta(seconds=2))
+check(P.lag_s() == 106.0, "a message with no Kibl time still stamps when the loop last ran")
+pr = P.position_row("2026-11-11T14:21:12Z")
+check((pr["fixture_id"], pr["fixture_participant_id"]) == LM.POSITION_KEY == (0, 0) and pr["price"] is None
+      and pr["kibl_inserted_on"] == "2026-11-11T14:19:26Z" and pr["received_at"] == "2026-11-11T14:21:12Z",
+      "the position row: key (0, 0), no price, Kibl time + when")
+check("stream_lag_s" in P.summary(), "the heartbeat carries the lag")
+import now_worker as W
+calls = []
+real = W.C.sb_request
+W.C.sb_request = lambda env, m, path, body=None, prefer=None: (calls.append((path, body)) or (201, ""))
+W.post_live({}, [{"fixture_id": 1, "fixture_participant_id": 2}], pr, lambda *_: None, True)
+check(LM.HISTORY in calls[0][0] and pr not in calls[0][1], "the position never goes to the history (mutant: position in history)")
+check(LM.TABLE + "?" in calls[1][0] and calls[1][1][-1] is pr, "it rides the latest upsert, after the prices it vouches for")
+calls.clear(); W.C.sb_request = lambda env, m, path, body=None, prefer=None: (calls.append((path, body)) or (503, "down"))
+check(W.post_live({}, [{"fixture_id": 1, "fixture_participant_id": 2}], pr, lambda *_: None, True) is False and len(calls) == 1,
+      "a failed history write writes no position (a fresh position always means the prices landed)")
+W.C.sb_request = real
+
+# the writer thread: the loop never waits on a write
+import threading, time as _t
+gate = threading.Event()
+wr = W.Writer(lambda *_: None)
+t1 = _t.monotonic(); wr.submit("now", ["x"], lambda: gate.wait(5) and [])
+check(_t.monotonic() - t1 < 0.05 and wr.busy("now"), "submit returns at once while the write is still running")
+gate.set()
+for _ in range(100):
+    res = wr.results()
+    if res: break
+    _t.sleep(0.01)
+check(res == [("now", ["x"], [])] and not wr.busy("now"), "the result comes back to the loop, kind + context")
+wr.submit("x", None, lambda: 1 / 0)
+for _ in range(100):
+    res = wr.results()
+    if res: break
+    _t.sleep(0.01)
+check(isinstance(res[0][2], ZeroDivisionError), "a job that raises never kills the writer")
+loop = src[src.index("if method is not None:\n                    # Only a RECEIVED"):src.index("except KeyboardInterrupt")]
+direct = [l.strip() for l in loop.splitlines()
+          if re.search(r"\b(flush|flush_cards|flush_live|post_live|post_cards|write_hb|write_gap|prune)\(env", l)
+          and "lambda" not in l and "def beat" not in l]
+direct = [l for l in direct if not l.startswith("write_hb(env, hb, log, enabled)")]
+check(direct == [], "the consume loop makes no Supabase call itself (mutant: a write back on the loop)")
+check('wl.submit("live"' in loop and 'wr.submit("live"' not in loop, "in-play prices have their own writer, never behind a line write")
 dock = open(os.path.join(HERE, "Dockerfile")).read()
 mods = set(re.findall(r"^import (\w+) as \w+\s+# noqa: E402", src, re.M))
 for m in sorted(mods):

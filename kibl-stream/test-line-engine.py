@@ -368,9 +368,24 @@ import re  # noqa: E402
 hooks = collections_counter = {}
 for h in re.findall(r'\blines\.(\w+)\(', src):
     hooks[h] = hooks.get(h, 0) + 1
-check('the loop touches lines through exactly these hooks: accept x1, tick x1, request_seed x1, summary x2 (heartbeats), '
-      'checked x1 (after the connected heartbeat)', hooks == {'accept': 1, 'tick': 1, 'request_seed': 1, 'summary': 2, 'checked': 1}, hooks)
-check('checked() follows the CONNECTED heartbeat only', 'dict(where, lines=lines.summary(), live_ml=live.summary())), log, enabled)\n                    lines.checked()' in src)
+check('the loop touches lines through exactly these hooks: accept x1, request_seed x1, summary x2 (heartbeats), '
+      'checked x1 (after the connected heartbeat); tick runs on the writer thread',
+      hooks == {'accept': 1, 'request_seed': 1, 'summary': 2, 'checked': 1}
+      and 'wr.submit("lines", None, lines.tick)' in src, hooks)
+check('checked() follows the CONNECTED heartbeat only',
+      'hb["note"]["lines"] = lines.summary()\n                        write_hb(env, hb, log, enabled)\n                        lines.checked()' in src
+      and 'eng.heartbeat(datetime.now(timezone.utc), True, note)' in src)
+# founder 2026-11-12: the stream loop never waits on the engine lock — accept only appends to the inbox
+import line_engine as LE2  # noqa: E402
+drv = LE2.LineDriver.__new__(LE2.LineDriver)
+drv.disabled, drv.state, drv.inbox = None, {'written': True}, __import__('collections').deque()
+class _NoLock:
+    def __enter__(self): raise AssertionError('accept took the lock')
+    def __exit__(self, *a): return False
+drv.lock = _NoLock()
+drv.accept(row(2, 1, 2, -2.5, 2.2, ins='2026-10-25T09:40:00Z'))
+drv.accept(row(4, 1, 2, 0.0, 2.2, ins='2026-10-25T09:40:00Z'))
+check('LineDriver.accept never takes the lock and queues only line markets (mutant: accept under the lock)', len(drv.inbox) == 1)
 off = W._LinesOff('x')
 check('the stand-in is a no-op on every hook', off.accept({}) is None and off.tick() is None and off.request_seed() is None
       and off.summary() == {'off': 'x'})
