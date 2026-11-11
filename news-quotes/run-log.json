@@ -724,6 +724,71 @@
     "output": 0
    },
    "alerts": []
+  },
+  {
+   "at": "2026-11-11T19:20:06.931Z",
+   "activeTournaments": [
+    "Stockholm"
+   ],
+   "tournaments": [
+    {
+     "name": "Stockholm",
+     "key": "1681",
+     "sources": [
+      {
+       "name": "ATP Tour daily report (via the official tournament site)",
+       "articles": 15,
+       "candidates": 8,
+       "robotsStatus": 200,
+       "skippedByRobots": 0,
+       "unnamed": 4
+      }
+     ],
+     "outlets": {
+      "read": 61,
+      "withCandidates": 0,
+      "blocked": [
+       "Fox Sports Australia: the site refuses a plain request",
+       "TenisovySvet.cz: the site refuses a plain request",
+       "AS (Diario AS): the site refuses a plain request",
+       "Aftonbladet: unexpected answer",
+       "ESPN: unexpected answer"
+      ],
+      "articlesFetched": 0,
+      "paywalled": 0,
+      "unnamed": 0,
+      "byOutlet": []
+     },
+     "counts": {
+      "candidates": 8,
+      "droppedNotVerbatim": 0,
+      "droppedNoPlayer": 1,
+      "droppedAmbiguous": 0,
+      "notTranslatedNoKey": 0,
+      "notTranslatedApiError": 0,
+      "droppedTranslationCheck": 0,
+      "droppedEnglishExists": 0,
+      "mergedSameQuote": 0,
+      "alreadyHeld": 0,
+      "items": 7,
+      "tokens": {
+       "input": 0,
+       "output": 0
+      },
+      "modelError": null
+     },
+     "added": 1,
+     "held": 9,
+     "finishedMatches": 21,
+     "matchesWithWinnerQuote": 4
+    }
+   ],
+   "newItems": 1,
+   "tokens": {
+    "input": 0,
+    "output": 0
+   },
+   "alerts": []
   }
  ]
 }
