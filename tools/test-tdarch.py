@@ -426,7 +426,7 @@ check('te-import report: an atp-md row (no detail.level) counts under the atp-md
 
 _imp, _run, calls = T.te_imported_batches, T.te_import_run, []
 try:
-    T.te_import_run = lambda store, dry_run=False: calls.append(store) or {'rows': brows, 'add': brows[:4], 'rep': brep, 'held': [], 'closed': set()}
+    T.te_import_run = lambda store, dry_run=False, only=None: calls.append((store, only)) or {'rows': brows, 'add': brows[:4], 'rep': brep, 'held': [], 'closed': set()}
     T.te_imported_batches = lambda: {'calib-01', 'ch-02'}
     out = os.path.join(td, 'lines.txt')
     check('te-import-new: every store batch already held -> no import and an empty lines file',
@@ -438,8 +438,59 @@ try:
     got = T.cmd_te_import_new(td, out)
     check('te-import-new: a batch the archive holds no row of -> one import, its line in the file (control: the held batch has none)',
           len(calls) == 1 and len(got) == 1 and got[0].startswith('TE batch ch-02:') and open(out).read() == got[0] + '\n', (calls, got))
+    check('te-import-new (founder 2026-11-11): a new batch is read ALONE, never every batch (the job outgrew 45 min re-reading all)',
+          calls[-1][1] == {'ch-02'}, calls)
+    _st, _ist = T.te_page_starts, T.te_imported_starts
+    try:
+        T.te_page_starts = lambda store: ({}, 'f' * 64); T.te_imported_starts = lambda: set()
+        calls.clear(); T.cmd_te_import_new(td, out)
+        check('te-import-new: a start-times file not read yet re-reads EVERY batch (only=None)', calls == [(td, None)], calls)
+    finally:
+        T.te_page_starts, T.te_imported_starts = _st, _ist
 finally:
     T.te_imported_batches, T.te_import_run = _imp, _run
+shutil.rmtree(td)
+# founder 2026-11-11: the batches an import read are recorded in its count row (teBatchesRead), so a batch whose every row is
+# refused is not "new" on every run; the start-times sha is recorded only when every batch was read
+_sa = T.P.select_all
+try:
+    def _sel(table, cols, flt=''):
+        if table == T.SNAPCOUNT: return [{'detail': {'teBatchesRead': ['gap-06', 'other-gap-06']}}, {'detail': {'guardOk': True}}]
+        return [{'detail': {'batch': 'ch-02'}}, {'detail': {}}]
+    T.P.select_all = _sel
+    check('imported batches = batches holding a row + batches an import read (a batch that stored nothing is not new again)',
+          T.te_imported_batches() == {'ch-02', 'gap-06', 'other-gap-06'}, T.te_imported_batches())
+    T.P.select_all = lambda table, cols, flt='': [{'detail': {'batch': 'ch-02'}}]
+    check('control: without the count rows the never-storing batch is new again', 'gap-06' not in T.te_imported_batches())
+finally:
+    T.P.select_all = _sa
+td = tempfile.mkdtemp(); os.makedirs(os.path.join(td, 'te-odds'))
+json.dump(dict(tdocs[0], batch='calib-01'), open(os.path.join(td, 'te-odds', 'calib-01.json'), 'w'))
+json.dump(dict(tdocs[0], batch='ch-02'), open(os.path.join(td, 'te-odds', 'ch-02.json'), 'w'))
+_keep = {n: getattr(T, n) for n in ('te_md_joiner', 'te_flip_starts', 'te_rows', 'plan_snapshots', 'te_coverage', 'te_coverage_lines', 'cmd_snapshot_counts', 'te_page_starts')}
+_kp = {n: getattr(T.P, n) for n in ('apitennis_fixture_fetcher', 'select_all', 'insert')}
+recorded, seen = [], []
+try:
+    os.environ.setdefault('API_TENNIS_KEY', 'test')
+    T.P.apitennis_fixture_fetcher = lambda k: (lambda eks: {})
+    T.te_md_joiner = lambda md: (lambda td_: (None, ''), [])
+    T.te_flip_starts = lambda eks: {}
+    T.te_rows = lambda docs, *a, **k: seen.append([d['batch'] for d in docs]) or ([], {})
+    T.P.select_all = lambda *a, **k: []
+    T.plan_snapshots = lambda rows, held: []
+    T.te_coverage = lambda *a: {'teWins': {}}
+    T.te_coverage_lines = lambda g: []
+    T.cmd_snapshot_counts = lambda job, extra=None: recorded.append(extra)
+    T.te_page_starts = lambda store: ({}, 'a' * 64)
+    T.te_import_run(td, only={'ch-02'})
+    check('te_import_run(only=...) reads only those batches and records them; no start-times sha on a partial read',
+          seen[-1] == ['ch-02'] and recorded[-1] == {'teBatchesRead': ['ch-02']}, (seen, recorded))
+    T.te_import_run(td)
+    check('te_import_run (full) reads every batch and records them with the start-times sha',
+          seen[-1] == ['calib-01', 'ch-02'] and recorded[-1] == {'teBatchesRead': ['calib-01', 'ch-02'], 'teStartsSha256': 'a' * 64}, (seen, recorded))
+finally:
+    for n, v in _keep.items(): setattr(T, n, v)
+    for n, v in _kp.items(): setattr(T.P, n, v)
 shutil.rmtree(td)
 # The single qualifying rule in the price import (founder 2026-10-30): an unflagged ATP word round before either player's first
 # "1/N-finals" round of the edition is ATP qualifying ('atp-q', a lower-level target); a main-draw run, a Davis Cup tie and a

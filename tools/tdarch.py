@@ -1856,10 +1856,13 @@ def te_level_counts(rows):
     return collections.Counter((r.get('detail') or {}).get('level') or TE_MD_LEVEL for r in rows)
 
 
-def te_import_run(store, dry_run=False):
-    """The te-import itself (insert-only; a changed price for a held match is a new row that supersedes the old one), with
+def te_import_run(store, dry_run=False, only=None):
+    """`only` (a set of batch ids): read just those batches (the scheduled import's new batches; founder 2026-11-11: re-reading
+    every batch each run outgrew the job's time limit). The te-import itself (insert-only; a changed price for a held match is a new row that supersedes the old one), with
     everything the report lines need. Env SUPABASE_URL / SUPABASE_SECRET_KEY, API_TENNIS_KEY (the current fixture per event)."""
     docs, skipped = te_docs(store)
+    if only is not None:
+        docs = [d for d in docs if d.get('batch') in only]
     if not docs:
         P.die(f'{store}/te-odds: no complete batch file — nothing to import' + (f' (partial: {", ".join(skipped)})' if skipped else ''))
     akey = os.environ.get('API_TENNIS_KEY') or P.die('API_TENNIS_KEY is not set')
@@ -1887,7 +1890,12 @@ def te_import_run(store, dry_run=False):
     for line in te_coverage_lines(gained):
         print(line)
     if not dry_run:
-        cmd_snapshot_counts('te-import', {'teStartsSha256': psha})
+        # the batches this import read are recorded, so a batch that stored no row is not "new" again next run; the start-times
+        # file counts as read only when every batch was read with it
+        extra = {'teBatchesRead': sorted({str(d.get('batch')) for d in docs})}
+        if only is None:
+            extra['teStartsSha256'] = psha
+        cmd_snapshot_counts('te-import', extra)
     return {'docs': docs, 'rows': rows, 'rep': rep, 'add': add, 'held': held, 'closed': closed, 'added': len(ids)}
 
 
@@ -1921,10 +1929,12 @@ def te_batch_lines(batches, rows, add, rep, held, closed):
 
 
 def te_imported_batches():
-    """The batch ids the snapshot table already holds Tennis Explorer rows for (detail.batch)."""
+    """The batch ids the snapshot table already holds Tennis Explorer rows for (detail.batch), plus every batch a te-import
+    has read (count rows' detail.teBatchesRead): a batch whose every row is refused stores nothing and is still not new."""
     import urllib.parse
     got = [g for s in TE_SOURCES for g in P.select_all(SNAP, 'detail', 'source=eq.' + urllib.parse.quote(s))]
-    return {(g.get('detail') or {}).get('batch') for g in got} - {None}
+    read = {b for g in P.select_all(SNAPCOUNT, 'detail', 'job=eq.te-import') for b in ((g.get('detail') or {}).get('teBatchesRead') or [])}
+    return ({(g.get('detail') or {}).get('batch') for g in got} | read) - {None}
 
 
 def te_imported_starts():
@@ -1957,7 +1967,7 @@ def cmd_te_import_new(store, out_path):
                                            'startsRead': not restart}))
     lines = []
     if new or restart:
-        r = te_import_run(store)
+        r = te_import_run(store, only=None if restart else set(new))
         lines = te_batch_lines(new, r['rows'], r['add'], r['rep'], r['held'], r['closed'])
         if restart:
             lines.append(te_starts_line(r['add']))
