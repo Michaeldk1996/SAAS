@@ -44,12 +44,13 @@ test('A8: start time Plex 11.5 / 700 white; surface 400', () => {
   assert.match(rule(`${M} .match-card .mc-datetime`), /font-size:11\.5px; font-weight:700; color:var\(--text\);/);
   assert.match(rule(`${M} .match-card .mc-surface`), /font-weight:400;/);
 });
-test('A9: no FAV badge on any Upcoming card; Completed keeps its own', () => {
+test('A9 + founder 2026-11-12: no FAV badge on any card, Upcoming or Results', () => {
   const r = slice('renderMatches');
   const up = r.slice(r.indexOf('<div class="mc-players up'), r.indexOf('return `', r.indexOf('<div class="mc-players up')));
   const done = r.slice(r.indexOf('<div class="mc-players cmpl">'), r.indexOf('<div class="mc-players up'));
   assert.doesNotMatch(up, /mc-fav-tag/);
-  assert.equal((done.match(/mc-fav-tag/g) || []).length, 2);
+  assert.doesNotMatch(done, /mc-fav-tag/);
+  assert.doesNotMatch(html, /\.mc-fav-tag\{/, 'its CSS is gone too');
 });
 test('A10: a preview card below the day divider shows the time only and its tournament in full', () => {
   const r = slice('renderMatches');
@@ -80,7 +81,7 @@ test('B2: the move view drops a column before a header is squeezed (480px track)
   assert.match(rule(`${M} #matchlist`), /minmax\(360px, 1fr\)/, 'the standard view keeps 360px');
   assert.match(rule(`${M} .match-card:not(.cmpl) .mc-head:has(.mc-colhead-drift) > .mc-tourn`), /flex:none;/);
 });
-test('B3: "{n} of {N} prices moved" — N = cards with an open → now pair, n = shortening side down 2%+; no pair = a dash', () => {
+test('B3: "{n} of {N} matches moved" (label ruled 2026-11-12) — N = cards with an open → now pair, n = shortening side down 2%+; no pair = a dash', () => {
   const body = slice('renderMatches');
   const a = body.indexOf('    let bmv = null, bmvPairs = 0, movedN = 0;'), b = body.indexOf('    const driftOn = state.sort === ');
   assert.ok(a > 0 && b > a);
@@ -98,7 +99,7 @@ test('B3: "{n} of {N} prices moved" — N = cards with an open → now pair, n =
     {},                                                    // no pair: not in N
   ];
   assert.deepEqual(run(slate), { movedN: 1, bmvPairs: 3 });
-  assert.match(body, /\$\{bmvPairs \? `\$\{movedN\} of \$\{bmvPairs\}` : '—'\}<\/span> prices moved/);
+  assert.match(body, /\$\{bmvPairs \? `\$\{movedN\} of \$\{bmvPairs\}` : '—'\}<\/span> matches moved/);
   assert.match(body, /const movedHtml = driftOn/, 'shown only while the move view is on');
   assert.match(body, /title="Matches where one side's price shortened 2% or more since open, out of matches with an open price"/);
   assert.match(rule(`${M} .mc-story__moved`), /margin-left:auto; white-space:nowrap; font-family:var\(--font-words\); font-size:12\.5px; font-weight:400; color:var\(--text-label\);/);

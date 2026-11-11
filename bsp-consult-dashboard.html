@@ -973,8 +973,7 @@ window.sfEarlyFetch = function (u, init) {
   [data-page="matches"] .mc-row.a .mc-name{ color:var(--text); }
   [data-page="matches"] .mc-row.b .mc-name{ color:var(--mc-player-b); }
   [data-page="matches"] .mc-name[onclick]:hover, [data-page="matches"] .mc-av[onclick]:hover{ text-decoration:underline; cursor:pointer; }
-  [data-page="matches"] .mc-fav-tag, [data-page="matches"] .mc-won{ font-family:var(--mx-font-mono); font-size:10px; font-weight:700; letter-spacing:0.04em; padding:1px 6px; border-radius:var(--mc-r-pill); flex:0 0 auto; }
-  [data-page="matches"] .mc-fav-tag{ border:1px solid var(--mc-border-hover); }
+  [data-page="matches"] .mc-won{ font-family:var(--mx-font-mono); font-size:10px; font-weight:700; letter-spacing:0.04em; padding:1px 6px; border-radius:var(--mc-r-pill); flex:0 0 auto; }
   [data-page="matches"] .mc-won{ color:var(--mc-pos); background:var(--mc-pos-bg); border:1px solid var(--mc-pos-bd); }
   [data-page="matches"] .mc-serve{ color:var(--text); font-size:13px; }
 
@@ -10959,13 +10958,13 @@ function renderMatches(){
     const playersHtml = isCompleted
       ? `<div class="mc-players cmpl">
           <div class="mc-row a${p1IsWinner ? ' winner' : ''}">
-            <span class="mc-id">${mcAvatarHtml(m.p1, m.p1Key, 'a')}<span class="mc-nameline"><span class="mc-name"${profileLinkAttrs(m.p1Key, m.p1)}>${m.p1}</span>${p1IsFavorite ? '<span class="mc-fav-tag">FAV</span>' : ''}</span></span>
+            <span class="mc-id">${mcAvatarHtml(m.p1, m.p1Key, 'a')}<span class="mc-nameline"><span class="mc-name"${profileLinkAttrs(m.p1Key, m.p1)}>${m.p1}</span></span></span>
             ${(m.retired || m.walkover || m.defaulted) ? mcTermCell(m, 'p1', boardSetCols) : mcSetCluster(finalScore, 'p1', false, boardSetCols)}
             <span class="mc-vdiv"></span>
             ${mcJourney(p1Open, p1Close, openAnchorOnly, { openTitle: _openTitle('p1'), closeTitle: _closeTitle('p1') })}
           </div>
           <div class="mc-row b${p2IsWinner ? ' winner' : ''}">
-            <span class="mc-id">${mcAvatarHtml(m.p2, m.p2Key, 'b')}<span class="mc-nameline"><span class="mc-name"${profileLinkAttrs(m.p2Key, m.p2)}>${m.p2}</span>${(hasFavLine && !p1IsFavorite) ? '<span class="mc-fav-tag">FAV</span>' : ''}</span></span>
+            <span class="mc-id">${mcAvatarHtml(m.p2, m.p2Key, 'b')}<span class="mc-nameline"><span class="mc-name"${profileLinkAttrs(m.p2Key, m.p2)}>${m.p2}</span></span></span>
             ${(m.retired || m.walkover || m.defaulted) ? mcTermCell(m, 'p2', boardSetCols) : mcSetCluster(finalScore, 'p2', false, boardSetCols)}
             <span class="mc-vdiv"></span>
             ${mcJourney(p2Open, p2Close, openAnchorOnly, { openTitle: _openTitle('p2'), closeTitle: _closeTitle('p2') })}
@@ -11049,7 +11048,7 @@ function renderMatches(){
 
     // 1. BIGGEST MARKET MOVE — unchanged (TEN-225 ruling 3 / TEN-403 R1): one resolver, `_mcOpenNowPair`, ranked on
     //    exactly what the move-view sort ranks on (moveNowScore), the sort's own tie-break.
-    // CHANGES_2026-11-11 B3: "{n} of {N} prices moved" — N = the day's matches with a measurable open → now pair (the
+    // CHANGES_2026-11-11 B3 (label ruled "matches moved", founder 2026-11-12): "{n} of {N} matches moved" — N = the day's matches with a measurable open → now pair (the
     // card's one book, both sides: the pair every Move on the board is read from), n = those whose SHORTENING side fell
     // MX_MOVE_MIN (2%) or more on the printed prices. No pair anywhere → a dash.
     let bmv = null, bmvPairs = 0, movedN = 0;
@@ -11071,7 +11070,7 @@ function renderMatches(){
     });
     const driftOn = state.sort === 'drift';
     const movedHtml = driftOn
-      ? `<span class="mc-story__moved" title="Matches where one side's price shortened 2% or more since open, out of matches with an open price"><span class="mc-story__movedn">${bmvPairs ? `${movedN} of ${bmvPairs}` : '—'}</span> prices moved</span>`
+      ? `<span class="mc-story__moved" title="Matches where one side's price shortened 2% or more since open, out of matches with an open price"><span class="mc-story__movedn">${bmvPairs ? `${movedN} of ${bmvPairs}` : '—'}</span> matches moved</span>`
       : '';
     panels.push(sortTile('drift', driftOn, tileHead('Biggest market move', driftOn ? 'Showing open → now · biggest first' : 'Show open → now')
       + (bmv
@@ -37287,7 +37286,6 @@ if(document.querySelector('.tabpage[data-page="live"]')&&document.querySelector(
   /* match card */
   [data-page="matches"] .match-card{ background:var(--card); border-color:transparent; box-shadow:var(--top-light); }
   [data-page="matches"] .match-card.sig-open{ border-color:var(--open-card); }
-  [data-page="matches"] .mc-fav-tag{ color:var(--text-label); background:var(--inner); border-color:transparent; }
   [data-page="matches"] .mc-avwrap.a, [data-page="matches"] .mc-av.a,
   [data-page="matches"] .mc-avwrap.b, [data-page="matches"] .mc-av.b{ background:var(--inner); border-color:var(--edge-6); color:var(--text-soft); }
   [data-page="matches"] .mc-msig, [data-page="matches"] .mc-msig.has-signal{ color:var(--text); }
@@ -37481,7 +37479,6 @@ if(document.querySelector('.tabpage[data-page="live"]')&&document.querySelector(
   [data-page="matches"] .match-card .mc-nameline{ display:flex; align-items:center; gap:8px; min-width:0; }
   /* TEN-377 README §6: both names --text (the favourite is told by the FAV badge, not by colour) */
   [data-page="matches"] .mc-players.up .mc-row .mc-name{ color:var(--text); }
-  [data-page="matches"] .match-card .mc-fav-tag{ font-family:var(--font-words); font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; border-radius:5px; padding:2px 6px; border:none; }
   /* README §6.1: the odds cell is the pop-up trigger — on hover it takes --inner (padding 4px 6px cancelled by margin) */
   [data-page="matches"] .match-card .mc-oddswrap{ gap:3px; justify-content:flex-end; align-items:baseline; padding:4px 6px; margin:-4px -6px; border-radius:7px; transition:background .12s; }
   [data-page="matches"] .match-card .mc-oddswrap .mc-implied{ min-width:20px; text-align:right; }

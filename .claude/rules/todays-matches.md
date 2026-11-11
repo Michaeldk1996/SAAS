@@ -20,7 +20,7 @@ except where a ruling below says otherwise. Colours are foundation tokens (`foun
   (true minus), "GMT+5:30" (minutes only when non-zero), the full IANA name on hover; Plex 11 / 500 `--text-label`, nowrap,
   default cursor, no box. **Test:** `test-todays-matches-1111.mjs` (`mxTzShort` over five zones + DST).
 - **Upcoming card header (CHANGES_2026-11-11 A8–A10):** start time Plex 11.5 / **700 `--text`**; surface **400** (its colour
-  kept); **no FAV badge** on any Upcoming card, standard or move view (Completed keeps its own); a next-day preview card
+  kept); **no FAV badge** on any card, Upcoming (standard or move view) or Results (founder 2026-11-12, extending A9 to Results); a next-day preview card
   below the day divider shows the **time only** and its tournament name in full (`.mx-preview`). **Test:**
   `test-todays-matches-1111.mjs`.
 - **Upcoming card:** both names `--text`; both form bars `--viz-lead`; surfaces neutral;
@@ -29,7 +29,7 @@ except where a ruling below says otherwise. Colours are foundation tokens (`foun
 - **Card click targets (CHANGES_2026-11-11 A4; replaces the 2026-10-22 whole-card click):** the card root has **no** click,
   no pointer, no hover edge. The header row (surface · tournament · round · time · column labels) and each player row
   (avatar, odds, implied, form) open the analysis — Upcoming on Key factors, Completed on its landing tab (`mxLandingTab`) —
-  with a pointer; the player **name** opens the profile (open question 4: keep?); the star toggles only; "Market Signal ▾"
+  with a pointer; the player **name** opens the profile (founder 2026-11-12: keep); the star toggles only; "Market Signal ▾"
   opens / closes its panel only; "See full analysis →" opens the analysis; the footer's empty space, anything in the open
   panel (except the Pro model row) and the odds-movement pop-up do nothing. The header row is the keyboard target
   (`role="button"`, Enter/Space, focus ring). The bug it fixes: a click beside "Market Signal" opened the card.
@@ -81,11 +81,11 @@ except where a ruling below says otherwise. Colours are foundation tokens (`foun
   while the view is on and `Sort: Time` when it is off (founder R1 nit; option text `Move`, internal key `drift`). The
   sort (`moveNowScore`) and the tile's pick rank on the SAME figure — the shown move below, not the unrounded
   |now / open − 1| — ties by earlier start, then time string; the tile names the player whose price shortened most, in the
-  match the sort puts first. **While the view is on** the tile's open → now line ends, right-aligned, in "{n} of {N} prices
-  moved" (B3): N = the day's cards with a measurable open → now pair, n = those whose shortening side fell 2%+
+  match the sort puts first. **While the view is on** the tile's open → now line ends, right-aligned, in "{n} of {N} matches
+  moved" (B3; label ruled by the founder 2026-11-12: a price that moves moves its opponent's too, so the unit is the match): N = the day's cards with a measurable open → now pair, n = those whose shortening side fell 2%+
   (`MX_MOVE_MIN`) on the printed prices; no pair at all = a dash; count Plex 700 `--text`, words 12.5 `--text-label`, nowrap;
-  tooltip "Matches where one side's price shortened 2% or more since open, out of matches with an open price" (wording and
-  rule are open question 1). The move view's card grid track is **480px** (`#matchlist.mx-mv`; standard 360px), its header
+  tooltip "Matches where one side's price shortened 2% or more since open, out of matches with an open price"; the
+  shortening-side 2% rule is kept (founder 2026-11-12). The move view's card grid track is **480px** (`#matchlist.mx-mv`; standard 360px), its header
   never wraps, carries no start time, and its tournament is `flex:none`, never cut (B2).
   Test: `test-ten403-matches.mjs` (order, columns, cells, tile = sort's first, "Sort: Move"; mutants: unrounded score,
   pre-R1 tile, "Drift"), `test-ten225-drift-order.mjs` (the five tiers).
@@ -188,4 +188,11 @@ except where a ruling below says otherwise. Colours are foundation tokens (`foun
   under 3 moved (was "· thin"). Biggest market move = the **biggest drop** among the cards (B4: shortening side only, the
   card's printed Move ranks), line 1 `{open} → {close}` + the drop as a whole percent with a true minus in `--neg`
   ("−12%", Plex 12 / 600), line 2 `{name} shortened · v {opponent surname, particles kept} · {Tournament} {Round}`.
-  **Test:** `test-todays-matches-1111.mjs`, `test-ten403-matches.mjs`.
+  **Test:** `test-todays-matches-1111.mjs`, `test-ten403-matches.mjs`. The 30-day figure stays on the page even below half
+  (founder 2026-11-12: 56 of 128 = 44% on 11 Nov, "Yes").
+- **Results keeps two columns (founder 2026-11-12, closes C5 "three columns"; FAV removed instead).** Measured 12 Nov at
+  1512px on the live grid: three columns make a 438.7px card whose row is 420.7px; after padding 20, gaps 36, the score
+  cluster, the 1px rule and the 150px Open · Close · Move block, the name gets **48.6px** on a best-of-3 card (cluster 121px)
+  and **nothing** on a best-of-5 card (cluster 175px: five 24px cells + 3px gaps). Names measured that day need up to 96px
+  ("M. Kecmanovic"; "A. de Minaur" 81px), so three columns would cut names at both formats. Two columns leave 274px (best-of-3)
+  / 220px (best-of-5). **Test:** a Results card name is never cut at 1512px (CLAUDE.md non-negotiable: names never truncated).
