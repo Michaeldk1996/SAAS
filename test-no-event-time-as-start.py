@@ -236,6 +236,11 @@ ALLOWED = {
     'tools/test-poly-recorder-sql.py': {
         "{'event_key': 7001, 'event_date': '2026-11-05', 'event_time': '12:00', 'first': 'A. Molcan', 'second': 'T. Droguet',",  # stub api-tennis fixture fed to the real drops_scope_ingest so our Polymarket recorder can tier a match; never read as a start (Polymarket recorder 2026-11-04)
     },
+    'tools/test-mto-bot-sql.py': {
+        'q("insert into drops_scope.fixture (event_key, event_date, event_time, start_utc, first_player, second_player, sk1, sk2, "',  # our real api-tennis fixture rows written to the scope table for the MTO test's ATP-only join; never read as a start (MTO bot 2026-11-11)
+        'f"{f[\'event_key\']}, \'{f[\'event_date\']}\', \'{f[\'event_time\']}\', (\'{f[\'event_date\']} {f[\'event_time\']}\')::timestamp at time zone \'UTC\', "',  # our real api-tennis fixture rows written to the scope table for the MTO test's ATP-only join; never read as a start (MTO bot 2026-11-11)
+        'q("insert into drops_scope.fixture (event_key, event_date, event_time, start_utc, first_player, second_player, sk1, sk2, event_type_type, event_qualification, tournament_name, tournament_round) "',  # our real api-tennis fixture rows written to the scope table for the MTO test's ATP-only join; never read as a start (MTO bot 2026-11-11)
+    },
     'tools/test-poly-drop-bot-sql.py': {
         "return {'event_key': ek, 'event_date': '__D0__', 'event_time': '12:00', 'first': a, 'second': b,",  # stub api-tennis fixture fed to the real drops_scope_ingest for the Polymarket bot's ATP-only scope; never read as a start (Polymarket bot 2026-11-01)
     },

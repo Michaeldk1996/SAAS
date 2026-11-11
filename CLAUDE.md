@@ -347,6 +347,7 @@ Surface-specific rulings moved out of this file so they load only when relevant:
 | Series (TEN-427) — slate = the Today's Matches day rule (Today + Tomorrow, the board card when it carries the match), Level / Day / already-played / Soonest predicates, the seven families (what counts, pool, caps, floors, lines), ledger prices = the Database join, card 2b, pop-up, Updated, copy; night only | `.claude/rules/series.md` |
 | News page (TEN-409) — one feed (news-feed.json), player-attributed only, no samples, header stats (Updated = feed refresh), filters, Reading / Compact, empty state, Post intel; night only | `.claude/rules/news.md` |
 | News ticker (2026-11-11) — live feed files, report template + point-by-point facts, observed end / duration, quote rules, outlet registry, alerts | `.claude/rules/news-ticker.md` |
+| MTO (medical timeout) Telegram alerts + archive — source, never inferred, ATP scope, one post per MTO, player never guessed, archive row, chats, failure alert | `.claude/rules/mto.md` |
 | Foundation — colour tokens, theme switch, surfaces, text greys, meaning colours, badges, charts, shadows, type (TEN-376) | `.claude/rules/foundation.md` |
 | Layout 12a — layout reference, logo, brand pages | `.claude/rules/theme-12a.md` |
 | Database page (TEN-399) — one price join, header, control bar, Tour / Tournament / Player layout, compare events, charts | `.claude/rules/database.md` |

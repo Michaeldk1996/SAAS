@@ -27,3 +27,7 @@
   from the repo secret by `ten270-stream-now.yml` action `schema` only when it exists.
 - **Until the secret exists every alert keeps its current chat — never dropped.** **Test:** `tools/test-telegram-routing.mjs`
   (controls: the old chat alone, and the pipeline chat with no fallback, are both caught).
+
+## MTO chat = medical timeouts only (founder brief 2026-11-11)
+- The drops chat stays drops-only: a medical-timeout post goes to its own chat (Vault `mto_telegram_chat_id`) and nowhere else; the
+  MTO bot's failure alert goes to the pipeline chat. Rules and test: `.claude/rules/mto.md`.
