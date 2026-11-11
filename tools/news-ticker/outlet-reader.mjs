@@ -155,7 +155,11 @@ async function get(url, fetchFn) {
 
 // Read one outlet for one tournament. cache: { [articleUrl]: { at, ... } } — mutated; an article in it is never fetched again.
 // -> { candidates, stats }
-export async function readOutlet({ outlet, players, tournamentName, cache, nowIso, since, fetchFn = fetch, sectionMemo = new Map() }) {
+// Tour-wide mode (founder 2026-11-12, press interviews for every ATP player): pass tournamentNames (may be empty). An
+// article then need not mention a tournament; each candidate carries `mentions` (the folded tournament names its
+// article names) so the caller can route it to a tournament or to the tour-wide file.
+export async function readOutlet({ outlet, players, tournamentName, tournamentNames = null, cache, nowIso, since, fetchFn = fetch, sectionMemo = new Map() }) {
+  const wide = Array.isArray(tournamentNames), tns = (wide ? tournamentNames : [tournamentName]).filter(Boolean).map(fold);
   const stats = { outlet: outlet.outlet, country: outlet.country, language: outlet.language, section: 0, links: 0, relevant: 0, fetched: 0, alreadyFetched: 0, blocked: null, paywalled: 0, offTopic: 0, tooOld: 0, candidates: 0, unnamed: 0 };
   if (outlet.enabled === false || outlet.status !== 'allowed') { stats.blocked = 'not enabled'; return { candidates: [], stats }; }
   // one section request per outlet per run, however many tournaments are on
@@ -166,27 +170,29 @@ export async function readOutlet({ outlet, players, tournamentName, cache, nowIs
   if (tb) { stats.blocked = tb; return { candidates: [], stats }; }
   const links = sectionLinks(sec.body, sec.url);
   stats.links = links.length;
-  const tn = fold(tournamentName);
   const rel = links.filter((l) => { let dec = l.url; try { dec = decodeURIComponent(l.url); } catch (e) { /* keep the raw URL */ }
-    const hay = fold(dec.replace(/[-_/]+/g, ' ') + ' ' + l.title); return hay.includes(tn) || players.some((p) => new RegExp(`\\b${esc(p.surname)}\\b`).test(hay)); });
+    const hay = fold(dec.replace(/[-_/]+/g, ' ') + ' ' + l.title); return tns.some((tn) => hay.includes(tn)) || players.some((p) => new RegExp(`\\b${esc(p.surname)}\\b`).test(hay)); });
   stats.relevant = rel.length;
   const candidates = [];
   for (const l of rel) {
-    if (cache[l.url]) { stats.alreadyFetched++; continue; }
+    // fetched once, ever — except an article whose quote could not be translated (model call failed): read again, at most RETRY_MAX times
+    const prev = cache[l.url];
+    if (prev && !prev.retranslate) { stats.alreadyFetched++; continue; }
     if (stats.fetched >= MAX_ARTICLES_PER_OUTLET) break;
     await sleep(1000);
     const a = await get(l.url, fetchFn);
     stats.fetched++;
-    cache[l.url] = { at: nowIso, http: a.status };
+    cache[l.url] = { at: nowIso, http: a.status, ...(prev && prev.tries ? { tries: prev.tries } : {}) };
     if (technicalBlock(a.status, a.body)) { cache[l.url].note = 'blocked'; continue; }
     if (paywalled(a.body)) { stats.paywalled++; cache[l.url].note = 'paywall'; continue; }
     const text = fold(a.body.replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>/gi, ' ').replace(/<[^>]+>/g, ' '));
-    if (!text.includes(tn)) { stats.offTopic++; cache[l.url].note = 'does not mention the tournament'; continue; }
+    const mentions = tns.filter((tn) => text.includes(tn));
+    if (!wide && !mentions.length) { stats.offTopic++; cache[l.url].note = 'does not mention the tournament'; continue; }
     const got = candidatesFromOutletArticle({ url: l.url, html: a.body, outlet: outlet.outlet, language: outlet.language, players, published: l.published });
     if (got.published && since && Date.parse(got.published) < since) { stats.tooOld++; cache[l.url].note = 'published before this edition'; continue; }
     stats.unnamed += got.unnamed; stats.candidates += got.candidates.length;
     cache[l.url].quotes = got.candidates.length;
-    for (const c of got.candidates) { if (!c.timestamp) { c.timestamp = nowIso; c.timestampKind = 'collected (the outlet shows no publication time)'; c.day = nowIso.slice(0, 10); } candidates.push(c); }
+    for (const c of got.candidates) { c.mentions = mentions; if (!c.timestamp) { c.timestamp = nowIso; c.timestampKind = 'collected (the outlet shows no publication time)'; c.day = nowIso.slice(0, 10); } candidates.push(c); }
   }
   return { candidates, stats };
 }

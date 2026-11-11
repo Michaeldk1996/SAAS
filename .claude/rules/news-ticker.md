@@ -66,6 +66,27 @@ ticker page comes through Claude Design). Tests: `tools/test-news-ticker.mjs`, `
 - ATP report text is published on Michael's word that ATP's written permission is being obtained (2026-11-11).
 - No X API (founder 2026-11-11); X commentary will be manual in a later task.
 
+## Tour-wide quotes: press interviews and injuries (founder 2026-11-12)
+- **The collector reads every allowed outlet on every run, for every ranked ATP player** (this week's top 200,
+  `player-index.json`, plus every player on a tournament board), tournament week or not. One pass; one section request
+  per outlet per run as before. **Test:** an article that names no tournament still yields its quote (control: the
+  tournament reader drops it) — `tools/test-news-ticker-live.mjs` "tour-wide".
+- **Routing.** A quote goes to a tournament's file when its speaker is in that field AND the article names the event
+  (published inside the edition); else to `news-quotes/tour-<season>.json` → `news-ticker/tour-<season>.json` ("ATP
+  Tour") when the speaker is ranked and the article is at most 3 days old; else nowhere. Every quote rule above
+  (verbatim on the original text, exactly one speaker, translation checks, one item per quote) applies unchanged.
+- **Tags** (`quoteCategory`): a quote whose English or original text names an injury → `Injuries`; one tied to a finished
+  match → `Quotes`; any other → `Interviews`. **Test:** "back" alone is not an injury; the original-language text counts.
+- **A standings name becomes "I. Surname" on its last word** (a particle kept: "A. De Minaur"). A double surname the
+  press writes in full is missed, never misattributed. A player on a board is matched on his card's name.
+- **A quote the model could not translate is retried:** its article is read again on a later run, at most `RETRY_MAX`
+  (6) times — the one exception to "an article page is fetched once". **Test:** "polite rate" (the re-read, once per failure).
+- **Not built (founder 2026-11-12):** ASAP Sports transcripts are dropped. Instagram goes through Meta's official API
+  only (Business Discovery), never the site.
+
+## On the News page (founder 2026-11-12: "it needs to be there in news")
+- Every ticker item shows on the News page with the articles: rules in `news.md` "Ticker items".
+
 ## Alerts — pipeline Telegram chat
 - A day with finished ATP matches and 0 reports (one message per day).
 - The quote job failing; no new quote for 24 hours while a tournament is on (one message per 24 hours).

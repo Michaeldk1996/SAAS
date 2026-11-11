@@ -34,6 +34,7 @@ const ROOT = path.resolve(HERE, '..', '..');
 const arg = (k, d) => { const i = process.argv.indexOf('--' + k); return i > 0 ? process.argv[i + 1] : d; };
 const flag = (k) => process.argv.includes('--' + k);
 export const SILENT_HOURS = 24;
+export const RETRY_MAX = 6;   // re-reads of one article while the translation call is failing
 export const MIN_GAP_MIN = 25;
 export const tooSoon = (lastMs, nowIso) => Number.isFinite(lastMs) && Date.parse(nowIso) - lastMs >= 0 && Date.parse(nowIso) - lastMs < MIN_GAP_MIN * 60000;
 
@@ -71,12 +72,37 @@ export const switchedOff = (registry) => new Set([...(registry.outlets || []), .
 
 const quoteId = (playerId, originalText) => 'quote-' + crypto.createHash('sha1').update(String(playerId) + '|' + foldText(originalText).toLowerCase()).digest('hex').slice(0, 14);
 
+// Tags (founder 2026-11-12): a quote about an injury is "Injuries"; one tied to a finished match stays "Quotes"; any
+// other is "Interviews". Read on the published English text and the original-language text.
+const INJURY = /\b(injur\w*|surgery|operat(?:ion|ed)|knee|wrist|shoulder|ankle|elbow|abdominal|muscle|torn|rehab\w*|pain|physio\w*|mri|fracture\w*|sprain\w*|strain\w*|skad\w*|lesi[oó]n\w*|lesionad\w*|bless(?:ure|é)\w*|infortun\w*|verletz\w*|les[aã]o|kontuzj\w*|zran\w*)\b/i;
+export const quoteCategory = (item) => INJURY.test(`${item.text || ''} ${item.originalText || ''}`) ? 'Injuries' : (item.eventKey ? 'Quotes' : 'Interviews');
+// The tour-wide field: every ranked ATP player down to TOUR_MAX_RANK (player-index.json = this week's standings).
+export const TOUR_MAX_RANK = 200, TOUR_KEY = 'tour', TOUR_NAME = 'ATP Tour', TOUR_DAYS = 3;
+export function tourPlayers(index) {
+  return ((index && index.players) || []).filter((p) => p && p.key != null && p.name && Number.isFinite(+p.rank) && +p.rank >= 1 && +p.rank <= TOUR_MAX_RANK)
+    .map((p) => {   // "I. Surname" from the standings' full name: the last word, with a particle before it kept ("A. De Minaur").
+      // A double surname the press writes in full ("Carreno Busta") is then missed, never misattributed; a player on a
+      // tournament board is matched on his card's own name instead.
+      const w = String(p.name).trim().split(/\s+/);
+      const sur = w.length > 2 && /^(de|del|della|di|da|van|von|der|la|le|mc|st)$/i.test(w[w.length - 2]) ? w.slice(-2).join(' ') : w[w.length - 1];
+      return { key: String(p.key), name: w.length > 1 ? `${w[0][0]}. ${sur}` : p.name };
+    });
+}
+// Where a tour-wide candidate belongs: a tournament whose field holds the speaker AND whose name the article mentions
+// (published inside that edition), else the tour-wide file (published in the last TOUR_DAYS days), else nowhere.
+export function routeCandidate(c, tournaments, tourKeys, nowIso) {
+  const ts = Date.parse(c.timestamp);
+  for (const t of tournaments) if (t.fieldKeys.has(String(c.speakerKey)) && (c.mentions || []).includes(t.folded) && !(Number.isFinite(ts) && ts < t.since)) return t.key;
+  if (tourKeys.has(String(c.speakerKey)) && !(Number.isFinite(ts) && ts < Date.parse(nowIso) - TOUR_DAYS * 86400000)) return TOUR_KEY;
+  return null;
+}
+
 // One tournament: candidates -> checked, translated, de-duplicated items. translate is injectable for the tests.
 export async function processTournament({ t, got, translate = translateQuote, known = [] }) {
   const entrants = new Map();
   t.cards.forEach((m) => { if (m.p1Key != null) entrants.set(String(m.p1Key), m.p1); if (m.p2Key != null) entrants.set(String(m.p2Key), m.p2); });
   const c = { candidates: 0, droppedNotVerbatim: 0, droppedNoPlayer: 0, droppedAmbiguous: 0, notTranslatedNoKey: 0, notTranslatedApiError: 0,
-    droppedTranslationCheck: 0, droppedEnglishExists: 0, mergedSameQuote: 0, alreadyHeld: 0, items: 0, tokens: { input: 0, output: 0 }, modelError: null };
+    droppedTranslationCheck: 0, droppedEnglishExists: 0, mergedSameQuote: 0, alreadyHeld: 0, items: 0, tokens: { input: 0, output: 0 }, modelError: null, retryUrls: [] };
   const ok = [];
   for (const q of got.candidates) {
     c.candidates++;
@@ -98,8 +124,8 @@ export async function processTournament({ t, got, translate = translateQuote, kn
       else {
         const tr = await translate(q.text, q.language);
         if (tr.usage) { c.tokens.input += tr.usage.input; c.tokens.output += tr.usage.output; }
-        if (tr.status === 'no-key') { c.notTranslatedNoKey++; continue; }
-        if (tr.status === 'api-error') { c.notTranslatedApiError++; c.modelError = c.modelError || { http: tr.http || null, detail: String(tr.detail || '').slice(0, 200) }; continue; }
+        if (tr.status === 'no-key') { c.notTranslatedNoKey++; c.retryUrls.push(q.sourceUrl); continue; }
+        if (tr.status === 'api-error') { c.notTranslatedApiError++; c.retryUrls.push(q.sourceUrl); c.modelError = c.modelError || { http: tr.http || null, detail: String(tr.detail || '').slice(0, 200) }; continue; }
         if (tr.status !== 'ok') { c.droppedTranslationCheck++; continue; }
         original = q.text; text = tr.text; translated = true; model = tr.model;
       }
@@ -112,6 +138,7 @@ export async function processTournament({ t, got, translate = translateQuote, kn
       sourceName: q.sourceName, sourceUrl: q.sourceUrl, verbatimCheck: 'passed', verbatimCheckedOn: 'the original-language text of the fetched page' });
   }
   const deduped = dedupeQuotes(out);
+  deduped.forEach((x) => { x.category = quoteCategory(x); });
   c.mergedSameQuote = out.length - deduped.length; c.items = deduped.length;
   return { items: deduped, counts: c };
 }
@@ -158,48 +185,64 @@ async function main() {
   let modelError = null, translatedOk = false;
   // article pages are fetched once: the URLs already read (kept 45 days)
   const fetched = rd('news-quotes/fetched.json') || {}, sectionMemo = new Map(), fetchedBefore = JSON.stringify(fetched);
-  for (const t of active) {
-    const countries = [...new Set(t.cards.flatMap((m) => [countryOf.get(String(m.p1Key)), countryOf.get(String(m.p2Key))]).filter(Boolean))];
-    const site = siteConfig(registry, t);
-    const outlets = outletsFor(registry, countries, site && site.hostCountry);
-    if (!site && !outlets.length) { run.tournaments.push({ name: t.name, key: t.key, sources: 0, note: 'no readable source in the registry for this tournament' }); continue; }
-    const first = Math.min(...t.cards.map((m) => Date.parse(m.date + 'T00:00:00Z')).filter(Number.isFinite)), since = first - 3 * 86400000;
-    const main = t.cards.filter((m) => m.finalScore && m.finalScore.winner);
-    const got = site ? await collectQuotes({ tournament: t.name, main, since, site }) : { sources: [], candidates: [] };
-    // every other outlet, through the generic reader (a few at a time; each outlet's own requests stay sequential)
-    const players = [...new Map(t.cards.flatMap((m) => [[String(m.p1Key), m.p1], [String(m.p2Key), m.p2]])).entries()].map(([key, name]) => ({ key, name, surname: surnameOf(name), initial: initialOf(name) })).filter((p) => p.surname.length >= 3);
-    let oi = 0; const outletStats = [];
-    await Promise.all(Array.from({ length: 6 }, async () => {
-      while (oi < outlets.length) {
-        const o = outlets[oi++];
-        const r = await readOutlet({ outlet: o, players, tournamentName: t.name, cache: fetched, nowIso, since, sectionMemo });
-        for (const c of r.candidates) { c.speaker = (players.find((p) => p.key === c.speakerKey) || {}).name; addContext(c, main); got.candidates.push(c); }
-        outletStats.push(r.stats);
+  // ---- one pass over every allowed outlet, for every tournament field and the tour-wide field ----
+  const foldName = (x) => String(x || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+  const tour = tourPlayers(index), tourKeys = new Set(tour.map((p) => p.key));
+  const mk = (pairs) => [...new Map(pairs).entries()].map(([key, name]) => ({ key, name, surname: surnameOf(name), initial: initialOf(name) })).filter((p) => p.surname.length >= 3);
+  const prep = active.map((t) => {
+    const first = Math.min(...t.cards.map((m) => Date.parse(m.date + 'T00:00:00Z')).filter(Number.isFinite));
+    return { t, key: t.key, folded: foldName(t.name), since: first - 3 * 86400000, fieldKeys: new Set(t.cards.flatMap((m) => [String(m.p1Key), String(m.p2Key)])),
+      main: t.cards.filter((m) => m.finalScore && m.finalScore.winner), site: siteConfig(registry, t), extra: [] };
+  });
+  const everyone = mk([...tour.map((p) => [p.key, p.name]), ...active.flatMap((t) => t.cards.flatMap((m) => [[String(m.p1Key), m.p1], [String(m.p2Key), m.p2]]))]);
+  const outlets = (registry.outlets || []).filter((o) => o.status === 'allowed' && o.enabled !== false);
+  const tourCandidates = [], outletStats = [];
+  let oi = 0;
+  await Promise.all(Array.from({ length: 6 }, async () => {
+    while (oi < outlets.length) {
+      const o = outlets[oi++];
+      const r = await readOutlet({ outlet: o, players: everyone, tournamentNames: prep.map((x) => x.t.name), cache: fetched, nowIso, since: Date.parse(nowIso) - 21 * 86400000, sectionMemo });
+      for (const c of r.candidates) {
+        c.speaker = (everyone.find((p) => p.key === c.speakerKey) || {}).name;
+        const to = routeCandidate(c, prep, tourKeys, nowIso), hit = prep.find((x) => x.key === to);
+        if (hit) { addContext(c, hit.main); hit.extra.push(c); } else if (to === TOUR_KEY) tourCandidates.push(c);
       }
-    }));
+      outletStats.push(r.stats);
+    }
+  }));
+  const off = switchedOff(registry);
+  run.outlets = { read: outletStats.length, withCandidates: outletStats.filter((x) => x.candidates).length, blocked: outletStats.filter((x) => x.blocked).map((x) => `${x.outlet}: ${x.blocked}`), articlesFetched: outletStats.reduce((n, x) => n + x.fetched, 0), paywalled: outletStats.reduce((n, x) => n + x.paywalled, 0), unnamed: outletStats.reduce((n, x) => n + x.unnamed, 0), byOutlet: outletStats.filter((x) => x.candidates || x.fetched).map((x) => ({ outlet: x.outlet, country: x.country, language: x.language, fetched: x.fetched, candidates: x.candidates })) };
+  const season = nowIso.slice(0, 4);
+  const jobs = prep.map((x) => ({ t: x.t, main: x.main, site: x.site, extra: x.extra }));
+  jobs.push({ t: { key: TOUR_KEY, season, name: TOUR_NAME, cards: tour.map((p) => ({ p1Key: p.key, p1: p.name })) }, main: [], site: null, extra: tourCandidates });
+  for (const { t, main, site, extra } of jobs) {
+    const got = site ? await collectQuotes({ tournament: t.name, main, since: prep.find((x) => x.t === t).since, site }) : { sources: [], candidates: [] };
+    got.candidates.push(...extra);
     const file = `news-quotes/${t.key}-${t.season}.json`, held = rd(file);
-    const off = switchedOff(registry);
     const heldItems = ((held && held.items) || []).filter((x) => !off.has(x.sourceName));
     const res = await processTournament({ t, got, known: heldItems });
     if (res.counts.modelError) modelError = res.counts.modelError;
+    // a quote the model could not translate is not lost: its article is read again on a later run (at most RETRY_MAX times)
+    for (const u of new Set(res.counts.retryUrls)) { const e = fetched[u]; if (e) { e.tries = (e.tries || 0) + 1; if (e.tries <= RETRY_MAX) e.retranslate = true; } }
+    res.counts.retryUrls = res.counts.retryUrls.length;
     if (res.items.some((x) => x.translated)) translatedOk = true;
     const merged = mergeItems(heldItems, res.items, nowIso);
-    if (merged.added || merged.revised || !held || heldItems.length !== ((held && held.items) || []).length) wr(file, { tournament: t.name, tournamentKey: t.key, season: t.season, updatedAt: nowIso, items: merged.items });
+    if (merged.added || merged.revised || (held && heldItems.length !== (held.items || []).length) || (!held && merged.items.length)) wr(file, { tournament: t.name, tournamentKey: t.key, season: t.season, updatedAt: nowIso, items: merged.items });
     run.newItems += merged.added; run.tokens.input += res.counts.tokens.input; run.tokens.output += res.counts.tokens.output;
     const finished = main.filter((m) => !m.walkover), quoted = new Set(merged.items.filter((x) => x.won && x.eventKey).map((x) => x.eventKey));
     run.tournaments.push({ name: t.name, key: t.key, sources: got.sources.map((s) => ({ name: s.name, articles: s.articles, candidates: s.candidates, robotsStatus: s.robotsStatus, skippedByRobots: s.skippedByRobots, unnamed: s.unnamedSpeakerParagraphs })),
-      outlets: { read: outletStats.length, withCandidates: outletStats.filter((x) => x.candidates).length, blocked: outletStats.filter((x) => x.blocked).map((x) => `${x.outlet}: ${x.blocked}`), articlesFetched: outletStats.reduce((n, x) => n + x.fetched, 0), paywalled: outletStats.reduce((n, x) => n + x.paywalled, 0), unnamed: outletStats.reduce((n, x) => n + x.unnamed, 0), byOutlet: outletStats.filter((x) => x.candidates || x.fetched).map((x) => ({ outlet: x.outlet, country: x.country, language: x.language, fetched: x.fetched, candidates: x.candidates })) },
-      counts: res.counts, added: merged.added, held: merged.items.length, finishedMatches: finished.length, matchesWithWinnerQuote: finished.filter((m) => quoted.has(String(m.id).split('-').slice(1).join('-'))).length });
+      fromOutlets: extra.length, counts: res.counts, added: merged.added, held: merged.items.length, byCategory: merged.items.reduce((a, x) => (a[x.category] = (a[x.category] || 0) + 1, a), {}),
+      finishedMatches: finished.length, matchesWithWinnerQuote: finished.filter((m) => quoted.has(String(m.id).split('-').slice(1).join('-'))).length });
   }
   for (const [u, v] of Object.entries(fetched)) if (Date.parse(nowIso) - Date.parse(v.at) > 45 * 86400000) delete fetched[u];
   if (JSON.stringify(fetched) !== fetchedBefore) wr('news-quotes/fetched.json', fetched);
   const { state, alerts } = dueAlerts(rd('news-quotes/state.json') || {}, { nowIso, anyActive: all.some((t) => t.active), itemsHeldOrNew: { newItems: run.newItems, translatedOk }, modelError });
   for (const text of alerts) { const r = await sendTelegram(text); console.log(`alert: ${r.ok ? 'sent' : 'NOT sent (' + r.why + ')'} — ${text}`); if (!r.ok) console.log('::error title=News ticker alert not sent::' + text); }
   run.alerts = alerts;
-  if (active.length) state.lastRunAt = nowIso;
+  state.lastRunAt = nowIso;   // the tour-wide pass reads outlets on every run
   if (JSON.stringify(state) !== JSON.stringify(rd('news-quotes/state.json') || {})) wr('news-quotes/state.json', state);
   const log = rd('news-quotes/run-log.json') || { runs: [] };
-  if (active.length) { log.runs.push(run); log.runs = log.runs.slice(-400); wr('news-quotes/run-log.json', log); }
+  { log.runs.push(run); log.runs = log.runs.slice(-400); wr('news-quotes/run-log.json', log); }
   console.log(JSON.stringify(run, null, 1));
 }
 

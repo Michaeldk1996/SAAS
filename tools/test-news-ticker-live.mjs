@@ -216,8 +216,44 @@ await ok('polite rate: one section request per outlet per run; an article page i
   assert.deepEqual(log, ['https://o.example/tennis/', 'https://o.example/tennis/rune-wins-in-testville-again'], 'section once (memo), article once (cache)');
   const blocked = await readOutlet({ ...base, sectionMemo: new Map(), fetchFn: async (url) => ({ status: 403, url, text: async () => '' }) });
   assert.equal(blocked.stats.blocked, 'the site refuses a plain request'); assert.equal(blocked.candidates.length, 0);
+  cache['https://o.example/tennis/rune-wins-in-testville-again'].retranslate = true; cache['https://o.example/tennis/rune-wins-in-testville-again'].tries = 2;   // its quote failed translation
+  const r3 = await readOutlet(base); assert.deepEqual([r3.stats.fetched, r3.candidates.length], [1, 1], 'an article whose quote was not translated is read again');
+  assert.deepEqual(cache['https://o.example/tennis/rune-wins-in-testville-again'].tries, 2); assert.ok(!cache['https://o.example/tennis/rune-wins-in-testville-again'].retranslate, 'and only once per failure');
   const offR = await readOutlet({ ...base, outlet: { ...outlet, enabled: false }, sectionMemo: new Map(), fetchFn: async () => { throw new Error('must not fetch'); } });
   assert.equal(offR.stats.blocked, 'not enabled');
+});
+// ---- tour-wide (founder 2026-11-12: press interviews and injuries for every ATP player, every day) ----
+await ok('tour-wide: an article that names no tournament still yields its quote; each candidate carries the tournaments its article mentions', async () => {
+  const SECTION = '<html>' + 'x'.repeat(700) + '<a href="/tennis/rune-on-his-long-road-back">Rune on his road back</a><a href="/tennis/other-long-article-slug">Other news</a></html>';
+  const PAGE = (b) => `<html><head><script type="application/ld+json">{"datePublished":"2026-11-10T20:00:00Z"}</script></head><body><article><p>An interview.</p>${b}</article></body></html>` + 'x'.repeat(700);
+  const body = { a: PAGE('<p>“My knee is finally pain free,” said Rune.</p>') };
+  const fetchFn = async (url) => ({ status: 200, url, text: async () => (url.endsWith('/tennis/') ? SECTION : body.a) });
+  const outlet = { outlet: 'Outlet', country: 'Denmark', language: 'en', status: 'allowed', enabled: true, sectionUrl: 'https://o.example/tennis/' };
+  const base = { outlet, players: PL, nowIso: '2026-11-10T21:00:00Z', since: Date.parse('2026-10-20'), fetchFn };
+  const narrow = await readOutlet({ ...base, tournamentName: 'Testville', cache: {}, sectionMemo: new Map() });
+  assert.equal(narrow.candidates.length, 0, 'control: the tournament reader drops an article that does not name the tournament');
+  const wide = await readOutlet({ ...base, tournamentNames: ['Testville'], cache: {}, sectionMemo: new Map() });
+  assert.equal(wide.candidates.length, 1); assert.deepEqual(wide.candidates[0].mentions, []);
+  body.a = PAGE('<p>Before Testville.</p><p>“My knee is finally pain free,” said Rune.</p>');
+  const named = await readOutlet({ ...base, tournamentNames: ['Testville'], cache: {}, sectionMemo: new Map() });
+  assert.deepEqual(named.candidates[0].mentions, ['testville']);
+});
+await ok('tour-wide: routing (field + article names the event -> that tournament; else a ranked player -> the tour file; else nowhere), field = top 200, tags', async () => {
+  const { routeCandidate, tourPlayers, quoteCategory, TOUR_MAX_RANK } = await import('./news-ticker/collect-quotes.mjs');
+  const now = '2026-11-10T21:00:00.000Z', T = [{ key: '77', folded: 'testville', since: Date.parse('2026-11-05'), fieldKeys: new Set(['1', '2']) }], tour = new Set(['1', '9']);
+  const c = (o) => ({ speakerKey: '1', mentions: ['testville'], timestamp: '2026-11-10T10:00:00Z', ...o });
+  assert.equal(routeCandidate(c({}), T, tour, now), '77');
+  assert.equal(routeCandidate(c({ mentions: [] }), T, tour, now), 'tour', 'in the field but the article is not about the event');
+  assert.equal(routeCandidate(c({ speakerKey: '9' }), T, tour, now), 'tour');
+  assert.equal(routeCandidate(c({ speakerKey: '2', mentions: [] }), T, tour, now), null, 'not ranked and not about the event');
+  assert.equal(routeCandidate(c({ speakerKey: '9', timestamp: '2026-11-06T10:00:00Z' }), T, tour, now), null, 'older than 3 days is not news');
+  assert.equal(routeCandidate(c({ timestamp: '2026-11-01T10:00:00Z' }), T, tour, now), null, 'published before the edition');
+  const P = tourPlayers({ players: [{ key: 1, name: 'Alexander Zverev', rank: 1 }, { key: 2, name: 'Old Timer', rank: TOUR_MAX_RANK + 1 }, { key: 3, name: 'No Rank', rank: null }, { key: 4, name: 'Juan Manuel Cerundolo', rank: 200 }, { key: 5, name: 'Alex De Minaur', rank: 7 }] });
+  assert.deepEqual(P, [{ key: '1', name: 'A. Zverev' }, { key: '4', name: 'J. Cerundolo' }, { key: '5', name: 'A. De Minaur' }]);
+  assert.equal(quoteCategory({ text: 'My knee is finally pain free.' }), 'Injuries');
+  assert.equal(quoteCategory({ text: 'I feel good.', originalText: 'Jag har varit skadad länge.' }), 'Injuries', 'the original-language text counts');
+  assert.equal(quoteCategory({ text: 'I served well.', eventKey: '5' }), 'Quotes');
+  assert.equal(quoteCategory({ text: 'I want to come back stronger next year.' }), 'Interviews', '"back" alone is not an injury');
 });
 await ok('section links: RSS items and HTML anchors, same site only, article slugs only', () => {
   const rss = '<rss><channel><item><title>Rune wins</title><link>https://o.example/sport/rune-wins-in-stockholm</link><pubDate>Tue, 10 Nov 2026 20:00:00 GMT</pubDate></item><item><link>https://other.example/x-long-article-slug</link></item></channel></rss>';
@@ -302,7 +338,7 @@ await ok('polite rate: the collector never collects twice inside 25 minutes', as
   assert.strictEqual(tooSoon(NaN, now), false, 'no earlier run on record');
   const src = read('tools/news-ticker/collect-quotes.mjs');
   assert.ok(/tooSoon\(lastRun, nowIso\)\) \{.*return; \}$/m.test(src) && src.indexOf('tooSoon(lastRun') < src.indexOf("getJson('matches.json')"), 'the gate sits before any request');
-  assert.ok(/if \(active\.length\) state\.lastRunAt = nowIso;/.test(src));
+  assert.ok(/\n  state\.lastRunAt = nowIso;/.test(src), 'every run reads outlets (the tour-wide pass), so every run stamps the gate');
 });
 await ok('observed times: the database read is retried before the run gives up on it', () => {
   const src = read('tools/news-ticker/build-news-ticker.mjs');

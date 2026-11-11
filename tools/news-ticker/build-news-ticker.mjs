@@ -140,6 +140,20 @@ export async function build({ nowIso, times }) {
     }
   }
 
+  // the tour-wide quotes (press interviews and injury quotes for every ranked ATP player, tied to no tournament field):
+  // news-quotes/tour-<season>.json -> news-ticker/tour-<season>.json, same merge, same off switch
+  for (const f of (fs.existsSync(path.join(DIR, 'news-quotes')) ? fs.readdirSync(path.join(DIR, 'news-quotes')) : []).filter((x) => /^tour-\d{4}\.json$/.test(x))) {
+    const qf = readJson(`news-quotes/${f}`), season = f.slice(5, 9), file = fileOf('tour', season), existing = readJson(file);
+    const fresh = ((qf && qf.items) || []).filter((q) => !hidden(q));
+    const kept = ((existing && existing.items) || []).filter((x) => !hidden(x)), dropped = ((existing && existing.items) || []).length - kept.length;
+    if (!fresh.length && !kept.length) continue;
+    summary.quotes += fresh.length; summary.hiddenByOffSwitch += dropped;
+    const merged = mergeItems(kept, fresh, nowIso);
+    summary.added += merged.added; summary.revised += merged.revised; summary.unchanged += merged.unchanged;
+    touched.push({ key: 'tour', season, name: 'ATP Tour', items: merged.items });
+    if (merged.added || merged.revised || dropped || !existing) { writeAtomic(file, { tournament: 'ATP Tour', tournamentKey: 'tour', season, updatedAt: nowIso, items: merged.items }); summary.filesWritten.push(file); }
+  }
+
   // the index covers every tournament file on disk (older editions included), not only this run's board
   const dir = path.join(DIR, 'news-ticker');
   const all = new Map(touched.map((t) => [fileOf(t.key, t.season), t]));

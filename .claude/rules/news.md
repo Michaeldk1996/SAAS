@@ -39,7 +39,7 @@ hexes are legacy, read through `tokens.json → legacyColourMap`). Night only. H
   **Test:** "Tournament: exactly one event named …". Follow-up TEN-413: the builder attaches the article's own event.
 - **Categories are our mapping** (`newsClassify`, title keywords; the feed has no category field): Withdrawals &
   Injuries, Draws & Schedules, Match Reports (strong / weak evidence), else Tour News — every article lands in one of the
-  four. Intel posts carry "Stennisfy Intel" and leave the list under any category filter.
+  four. Quotes holds ticker quotes only. Intel posts carry "Stennisfy Intel" and leave the list under any category filter.
 - **Header stats:** Articles = the list after every filter; Players = distinct players across it (by key); Updated =
   `generatedAt` of `news-feed.json` (HH:MM, member zone, `--text-soft`; hover = full date-time), **never the clock**.
 - **Source = the outlet's display name from ONE table** (`NEWS_SOURCE_NAMES`: espn-tennis → ESPN, tennis365 → Tennis365,
@@ -56,6 +56,21 @@ hexes are legacy, read through `tokens.json → legacyColourMap`). Night only. H
 - **Post intel:** founder only (`isBspAdmin`: admin allowlist, re-enforced by `firestore.rules`); notes live in Firestore
   `intel_notes`; every signed-in member reads them in the feed (and H2H's Latest news). Cap 5: Publish is disabled with
   an empty Update or at 5/5 (a new note); Edit / Delete on the founder's session only.
+
+## Ticker items (founder 2026-11-12: "it needs to be there in news, that's a bit our ticker")
+- **The feed = the articles + the news ticker's items** (`news-ticker.json` → the tournament files with an item in the
+  last 8 days; `loadNewsTicker`, `newsTickerItems`). This amends "One feed": the ticker is our own data and verbatim
+  player quotes, never a sample. A failed ticker read shows no ticker item; a failed article feed still shows the ticker.
+- **Report** → category Match Reports, title "{winner} beat {loser}, {score}", body = the report, source Stennisfy.
+  **Quote** → category **Quotes** (a fifth category chip), or Withdrawals & Injuries when tagged `Injuries`; title = the
+  player + the context ("after beating X"; "in the press" / "on his fitness" without one); body = his words in curly
+  quotes, then "Translated from {language}." on a translated one; **the source is the outlet's name, linked to its
+  article** (grey, underline on hover, never `--link`). **Status** → Withdrawals & Injuries (walkover, withdrawal,
+  retirement) or Draws & Schedules (qualifiers, lucky losers); title = the item's text.
+- An item with no text or no player is not shown. Names = the Player Profile name of the item's key; the event =
+  `sfEventName`; a tour-wide quote carries no event.
+- **Test:** `test-ten409-news.mjs` "Ticker" (report, linked + escaped quote source, translation line, category filters,
+  the ticker with the article feed down).
 
 ## Behaviour (keep)
 - Filters combine: tournament AND categories (multi-select, All clears) AND window (6h · 24h · 48h · 7 days, default 7
