@@ -46,7 +46,17 @@ jobs:
           REF=$(printf '%s' "$SUPABASE_URL" | sed -E 's#https?://([^./]+)\.supabase\.co/?.*#\1#')
           [ -n "$REF" ] && [ "$REF" != "$SUPABASE_URL" ] || { echo "::error::could not derive project ref from SUPABASE_URL"; exit 1; }
           FN_URL="${SUPABASE_URL%/}/functions/v1/live-poller"
-          POLLER_SECRET=$(openssl rand -hex 24)
+          # Keep the scheduler's existing secret (2026-11-11): a fresh one every run meant that a failure between "set the
+          # function secret" and "write it to Vault" left pg_cron sending the old secret, and every poll was refused
+          # (run 43014009836: poller down 11:41:48Z-11:50:00Z). A new secret is made only when Vault holds none.
+          EXISTING=$(printf '%s' "select decrypted_secret from vault.decrypted_secrets where name = 'POLLER_SECRET' limit 1" | jq -Rs '{query: .}' \
+            | curl -sS -X POST -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" -H "Content-Type: application/json" --data @- "$MGMT/v1/projects/$REF/database/query" \
+            | jq -r 'if type == "array" and length > 0 then (.[0].decrypted_secret // "") else "" end' 2>/dev/null || true)
+          if [ -n "$EXISTING" ] && [ "$EXISTING" != "null" ]; then
+            POLLER_SECRET="$EXISTING"; echo "Keeping the scheduler's existing poller secret (no rotation)."
+          else
+            POLLER_SECRET=$(openssl rand -hex 24); echo "No poller secret in Vault yet: generated one."
+          fi
           echo "::add-mask::$POLLER_SECRET"
           echo "PROJECT_REF=$REF"     >> "$GITHUB_ENV"
           echo "FN_URL=$FN_URL"       >> "$GITHUB_ENV"

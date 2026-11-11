@@ -31,6 +31,10 @@ check('the recorder call is inside an exception block', 'exception when others' 
 gl = open(os.path.join(ROOT, '.github', 'workflows', 'supabase-live-golive.yml')).read()
 i, j = gl.find('20261024000000_live_pbp_retention.sql'), gl.find('apply supabase/migrations/20261111090000_live_match_end.sql')
 check('go-live applies it after the retention migration', 0 < i < j)
+# the 2026-11-11 outage: the deploy step must not stop for a prompt, and go-live must not rotate a secret the scheduler holds
+check('go-live deploys the poller with --yes (no terminal prompt)', re.search(r'supabase functions deploy live-poller[^\n]*--yes', gl) is not None)
+k, r = gl.find("from vault.decrypted_secrets where name = 'POLLER_SECRET'"), gl.find('POLLER_SECRET=$(openssl rand -hex 24)')
+check('go-live keeps the existing poller secret; a new one only when Vault holds none', 0 < k < r and 'POLLER_SECRET="$EXISTING"' in gl)
 
 sys.path.insert(0, HERE)
 from _pinarch_pg import PG  # noqa: E402
