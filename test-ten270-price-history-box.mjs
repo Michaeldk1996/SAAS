@@ -406,3 +406,17 @@ test('TEN-403 R1: every pop-up price at 2 dp (open included); the Upcoming note 
   assert.doesNotMatch(src, line);
   assert.match(src.replace("notes.push(`Close seen", "notes.push(`Updated ${mono('x')}`); notes.push(`Close seen"), line, 'MUTANT: the line put back is caught');
 });
+
+// founder 2026-11-09: a Completed card that switched to Pinnacle (Oddspapi's own close) reads Pinnacle's history file
+test("Pinnacle card: a completed card with Oddspapi's close reads its pinnacle-ledger file; otherwise no history", () => {
+  const pin = { openingOdds: { bookmaker: 'pinnacle+30' }, finalScore: '6-4 6-4', pinClose: { oddspapiClose: true, p1: 1.5, p2: 2.6 } };
+  assert.equal(B.cardData(pin, 'p1').source, 'pinnacle');
+  assert.equal(B.cardData(pin, 'p1').historyAvailable, true);
+  assert.equal(B.cardData(Object.assign({}, pin, { pinClose: { p1: 1.5, p2: 2.6 } }), 'p1').source, null,
+    'a Pinnacle book without Oddspapi\'s close keeps "No price history for this book" (control)');
+  assert.equal(B.cardData(Object.assign({}, pin, { finalScore: null }), 'p1').source, null, 'never before the finish');
+  const doc = { p1: [['2026-11-08T09:00:00Z', 1.62], ['2026-11-08T11:58:00Z', 1.5], ['x', 1.4], ['2026-11-08T10:00:00Z', 1.0]], p2: [['2026-11-08T09:00:00Z', 2.3]] };
+  assert.deepEqual(B.pinLedgerRows(doc, 'p1').map(r => r.price), [1.62, 1.5], 'oldest first; a bad time or a sub-1.01 price is never a row');
+  assert.deepEqual(B.pinLedgerRows(doc, 'p2').map(r => r.price), [2.3]);
+  assert.deepEqual(B.pinLedgerRows(null, 'p1'), []);
+});

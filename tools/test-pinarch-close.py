@@ -396,7 +396,8 @@ check('derive-held dispatch fails closed: "yes" = --dry-run, only "no" inserts, 
 _do = _wf[_wf.index("if: env.MODE == 'derive-oddspapi'"):]
 _do = _do[:_do.index('      - name:')]
 check('derive-oddspapi dispatch fails closed: "yes" = --dry-run, only "no" inserts',
-      'yes) python3 tools/pinarch.py derive-oddspapi --from "$FROM" --to "$TO" --dry-run ;;' in _do and _do.count('derive-oddspapi --from') == 2
+      'yes) python3 tools/pinarch.py derive-oddspapi --from "$FROM" --to "$TO" --dry-run "${EXTRA[@]}" ;;' in _do and _do.count('derive-oddspapi --from') == 2
+      and "PULL: ${{ github.event.inputs.pull || 'no' }}" in _do and 'yes) EXTRA+=(--pull)' in _do
       and '*)   echo "dry_run must be exactly' in _do and "DRY_RUN: ${{ github.event.inputs.dry_run || 'yes' }}" in _do, _do[:300])
 _fbk = {'12112003': {'event_key': '12112003', 'last_not_live_seen_at': '2026-04-20T14:00:30Z', 'first_live_seen_at': '2026-04-20T14:00:40Z'}}
 _itf = dict(atf[0], event_key=12112010, event_first_player='L. Lehecka', event_second_player='M. Mensik',
@@ -581,6 +582,83 @@ try:
 finally:
     P.orient_given_first = _keep
 check('control: without the given-first join the ITF match finds no fixture (the gap of the 9 Nov dry runs)', _ie2 == [] and _im2.get('no Oddspapi fixture held') == 1, _im2)
+
+# founder 2026-11-09 ("find a solution and fix it"): derive-oddspapi --pull stores the free history of a matched fixture we
+# never pulled, then derives its close; a dry run never pulls; a fixture whose answer holds no pinnacle+30 stores nothing
+import collections
+def _dop_run(dry_run, pull, answer):
+    Q = importlib.util.module_from_spec(spec); spec.loader.exec_module(Q)
+    seen = {'hist': [], 'raw': [], 'close': []}
+    store = {}
+    Q.select_all = lambda *a, **k: []
+    Q.flips = lambda *a, **k: []
+    Q._at_keys = lambda days: ({'1': {'event_key': 1}}, [])
+    Q._board_map = lambda: {}
+    Q.held_fixture_meta = lambda *a, **k: {}
+    Q.events_held = lambda *a, **k: ([{'event_key': '1', 'fixture_id': 'fxP', 'p1IsParticipant1': True, 'cut': T('2026-06-22T10:10:33Z'),
+                                       'cutSource': Q.ODDSPAPI_CLOSE_SOURCE, 'liveFlipCut': None, 'trueStart': T('2026-06-22T10:10:33Z'),
+                                       'date': '2026-06-22', 'p1Key': 1, 'p2Key': 2, 'api': {}}], collections.Counter(), [])
+    Q.raw_latest = lambda ids: {f: store[f] for f in ids if f in store}
+    def hg(fid, key, counts):
+        seen['hist'].append(fid); return answer, None
+    Q.hist_get = hg
+    def ins(table, rows, conflict):
+        if table == Q.RAW:
+            seen['raw'].extend(rows)
+            for r in rows:
+                store[r['fixture_id']] = {'id': 9, 'payload_gz': '\\x' + __import__('gzip').compress(answer).hex()}
+        else:
+            seen['close'].extend(rows)
+        return [1] * len(rows)
+    Q.insert = ins
+    Q.json = json
+    old = {k: os.environ.get(k) for k in ('ODDSPAPI_KEY',)}
+    os.environ['ODDSPAPI_KEY'] = ''
+    Q._load = (lambda real: (lambda n, f: type('A', (), {'meter': staticmethod(lambda *a: (0, 0))}) if n == 'aor' else real(n, f)))(Q._load)
+    os.environ['ODDSPAPI_KEY'] = 'k'
+    try:
+        idx_open = Q.gzip.open
+        Q.gzip = type('G', (), {'open': staticmethod(lambda p: __import__('io').BytesIO(b'{"fixtures": {}}')), 'compress': __import__('gzip').compress,
+                                'decompress': __import__('gzip').decompress})
+        Q.discovery = lambda *a, **k: ([], 0)
+        rep = Q.cmd_derive_oddspapi(T('2026-06-22T00:00:00Z'), T('2026-06-23T00:00:00Z'), '/dev/null', dry_run=dry_run, pull=pull)
+    finally:
+        for k, v in old.items():
+            if v is None: os.environ.pop(k, None)
+            else: os.environ[k] = v
+    return rep, seen
+_ans = json.dumps({'bookmakers': {'pinnacle+30': {'markets': {'121': {'outcomes': {
+    '121': {'players': {'0': [e('2026-06-22T09:00:00Z', 1.40)]}}, '122': {'players': {'0': [e('2026-06-22T09:00:00Z', 3.00)]}}}}}}}}).encode()
+_r, _s = _dop_run(False, True, _ans)
+check('derive-oddspapi --pull: a matched fixture with no stored history is pulled, stored, and gets its close',
+      _s['hist'] == ['fxP'] and len(_s['raw']) == 1 and _s['raw'][0]['meta']['trigger'] == 'derive-oddspapi' and len(_s['close']) == 1
+      and _s['close'][0]['p1'] == 1.40 and _r['payloads']['pulled'] == 1, (_r, _s))
+_r, _s = _dop_run(True, True, _ans)
+check('derive-oddspapi --pull: a dry run never pulls (it counts the missing)', _s['hist'] == [] and _r['payloads']['missing'] == 1, _r)
+_r, _s = _dop_run(False, False, _ans)
+check('derive-oddspapi without --pull: nothing is pulled (control)', _s['hist'] == [] and _s['close'] == [], _r)
+_r, _s = _dop_run(False, True, json.dumps({'bookmakers': {'bet365': {}}}).encode())
+check('derive-oddspapi --pull: an answer with no pinnacle+30 stores no raw row', _s['raw'] == [] and _r['payloads']['errors'], _r)
+
+# founder 2026-11-09: the Completed card's pop-up shows Pinnacle's history — one file per card, oriented to the CARD,
+# cut at the close's own start, refused when the stored history does not reproduce the exported close
+_ls = P.mw_series(json.dumps({'bookmakers': {'pinnacle+30': {'markets': {'121': {'outcomes': {
+    '121': {'players': {'0': [e('2026-11-08T08:00:00Z', 1.80), e('2026-11-08T09:00:00Z', 1.80), e('2026-11-08T10:05:00Z', 1.70),
+                              e('2026-11-08T10:07:00Z', 1.65, active=False), e('2026-11-08T10:20:00Z', 1.20)]}},
+    '122': {'players': {'0': [e('2026-11-08T08:00:00Z', 2.00), e('2026-11-08T10:05:00Z', 2.15), e('2026-11-08T10:20:00Z', 4.50)]}}}}}}}}).encode())
+_row = {'eventKey': 77, 'archiveId': 5, 'p1': 1.70, 'p2': 2.15, 'p1Key': 11, 'p2Key': 22, 'startTs': '2026-11-08T10:10:00+00:00', 'closeTs': 'c'}
+_doc, _why = P.card_ledger(_row, {'p1Key': 22, 'p2Key': 11}, _ls)
+check('card ledger: oriented to the card (its p1 is the archive\'s p2), change-only, active only, ends on the close',
+      _doc and [x[1] for x in _doc['p1']] == [2.00, 2.15] and [x[1] for x in _doc['p2']] == [1.80, 1.70] and _doc['archiveId'] == 5, (_doc, _why))
+check('card ledger: nothing after the cut (the in-play 1.20 / 4.50 never listed)', all(x[1] not in (1.20, 4.50) for x in _doc['p1'] + _doc['p2']))
+check('card ledger: a close the history does not reproduce is refused', P.card_ledger(dict(_row, p1=1.99), {'p1Key': 11, 'p2Key': 22}, _ls)[0] is None)
+check('card ledger: another pair of players is refused', P.card_ledger(_row, {'p1Key': 11, 'p2Key': 99}, _ls)[1] == 'player keys differ from the card')
+_x2 = P.export_rows([dict(P.archive_close_row(_o, 31, 'fx9', _ser)[0], id=7, label=P.ARCHIVE_LABEL)])
+check('export: the row names its stored payload (rawId), so the pop-up file can be built', _x2 and _x2[0]['rawId'] == 31, _x2)
+_pl = open(os.path.join(HERE, '..', '.github', 'workflows', 'pipeline.yml')).read()
+check('pipeline: card-ledgers runs after the board cards take their close, and the files are published',
+      _pl.index('tools/pinarch.py card-ledgers pinnacle-closes.json matches.json pinnacle-ledger') > _pl.index('node tools/apply-archive-pinclose.mjs')
+      and 'cp -r pinnacle-ledger _site/' in _pl)
 
 print(f'\ntest-pinarch-close: {passed} passed, {failed} failed')
 sys.exit(1 if failed else 0)

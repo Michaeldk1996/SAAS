@@ -304,8 +304,8 @@ check('control: without the snapshot feed the same row is Bet365 (the join\'s "B
   check('TE on the ATP main draw: a start − 10 dash is priced on TE (never on the start − 10 snapshot)', JSON.stringify(T['Odte O.']) === JSON.stringify([8, 1.42, 2.85]), T['Odte O.']);
   check('TE on the ATP main draw: our archive close stays above TE; a start − 10 row with no TE stays a Database dash (its Bet365 the join\'s "B")',
     JSON.stringify(T['Arch E.']) === JSON.stringify([3, 1.49, 2.69]) && JSON.stringify(T['Ten T.']) === JSON.stringify([1, 1.5, 2.6, 'join']), JSON.stringify([T['Arch E.'], T['Ten T.']]));
-  check('ruling 1: E stays above api-tennis, and the overlap is counted (meta.approx.eOverApiTennis)',
-    JSON.stringify(T['Early E.']) === JSON.stringify([9, 1.44, 2.8]) && JSON.parse(readFileSync(join(d, 'database-yield.json'), 'utf8')).meta.approx.eOverApiTennis === 1,
+  check("founder 2026-11-11: api-tennis's Pinnacle (closer to the real close) prices a match that also has an E early cut; counted (meta.approx.apiOverE)",
+    JSON.stringify(T['Early E.']) === JSON.stringify([2, 1.6, 2.3]) && JSON.parse(readFileSync(join(d, 'database-yield.json'), 'utf8')).meta.approx.apiOverE === 1,
     JSON.stringify(T['Early E.']));
   check('control: with the feed that has no TE rows the same matches are Bet365 / a dash, as before',
     JSON.stringify(R['Tee T.']) === JSON.stringify([1, 1.5, 2.6, 'join']) && R['Dash D.'] === undefined && JSON.stringify(R['Odte O.']) === JSON.stringify([1, 1.5, 2.6, 'join']),

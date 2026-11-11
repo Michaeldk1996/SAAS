@@ -751,7 +751,7 @@ def export_rows(rows):
                     'label': r['label'], 'source': r['source'], 'book': r['book'], 'closeTs': r.get('close_ts'),
                     'startTs': r.get('start_ts'), 'startSource': r.get('start_source'), 'gapToStartS': r.get('gap_to_start_s'), 'archiveId': r['id'],
                     'apiTennis': ((r.get('detail') or {}).get('apiTennis')) or None,
-                    'oddspapiClose': is_oddspapi_close(r)})
+                    'oddspapiClose': is_oddspapi_close(r), 'rawId': r.get('raw_id')})
         op = (r.get('detail') or {}).get('open')
         if op and len(op) == 3:
             out[-1]['open'] = {'p1': float(op[0]), 'p2': float(op[1]), 'ts': op[2]}
@@ -829,8 +829,93 @@ def apitennis_fixture_fetcher(key, workers=16):
     return prefetch
 
 
+LEDGER_SITE = 'https://michaeldk1996.github.io/SAAS'
+
+
+def ledger_rows(series, cut, outcome):
+    """One side's Pinnacle history for the card pop-up: every ACTIVE entry (>= 1.01) at or before `cut`, a repeated price
+    left out (change-only), oldest first, as [ts, price]."""
+    out = []
+    for p in series.get(outcome) or []:
+        if iso_ms(p['createdAt']) > cut or not p.get('active') or _price(p) is None:
+            continue
+        if out and out[-1][1] == _price(p):
+            continue
+        out.append([p['createdAt'], _price(p)])
+    return out
+
+
+def card_ledger(row, card, series):
+    """The pop-up file for one finished card (founder 2026-11-09: its Pinnacle history, the card now being Pinnacle's): the
+    two sides oriented to the CARD's p1 / p2, cut at the close's own start, ending on the close itself. (doc, None) or
+    (None, reason): the series must reproduce the exported close at that cut, in one orientation or the other."""
+    cut = iso_ms(row.get('startTs'))
+    if cut is None:
+        return None, 'no start on the close'
+    c, why = close_at(series, cut)
+    if c is None:
+        return None, why
+    a, b = c['121'][0], c['122'][0]
+    if (a, b) == (float(row['p1']), float(row['p2'])):
+        r1, r2 = '121', '122'
+    elif (a, b) == (float(row['p2']), float(row['p1'])):
+        r1, r2 = '122', '121'
+    else:
+        return None, 'the stored history does not reproduce the close'
+    k1, k2, x1, x2 = str(card.get('p1Key')), str(card.get('p2Key')), str(row.get('p1Key')), str(row.get('p2Key'))
+    if (x1, x2) == (k1, k2):
+        c1, c2 = r1, r2
+    elif (x1, x2) == (k2, k1):
+        c1, c2 = r2, r1
+    else:
+        return None, 'player keys differ from the card'
+    return {'eventKey': row['eventKey'], 'archiveId': row.get('archiveId'), 'book': 'Pinnacle +30s (Oddspapi)', 'cut': cut.isoformat(),
+            'closeTs': row.get('closeTs'), 'p1': ledger_rows(series, cut, c1), 'p2': ledger_rows(series, cut, c2)}, None
+
+
+def cmd_card_ledgers(export_path, matches_path, out_dir, site=LEDGER_SITE):
+    """Founder 2026-11-09: the Completed card's odds pop-up shows Pinnacle's history once the card is Pinnacle's. For every
+    finished board card whose close is Oddspapi's own, one file `out_dir/{eventKey}.json` (read-only toward the archive:
+    one GET of the payload). A file the live site already serves for the same archive close is reused, never re-read."""
+    ex = json.load(open(export_path))
+    rows = {str(r['eventKey']): r for r in (ex.get('rows') or []) if r.get('oddspapiClose') and r.get('rawId')}
+    cards = json.load(open(matches_path))
+    os.makedirs(out_dir, exist_ok=True)
+    rep = collections.Counter()
+    for m in cards if isinstance(cards, list) else []:
+        if not (m and m.get('finalScore')):
+            continue
+        ek = re.search(r'(\d+)$', str(m.get('id') or ''))
+        r = rows.get(ek.group(1)) if ek else None
+        if r is None:
+            continue
+        ek = ek.group(1)
+        doc = None
+        try:
+            with urllib.request.urlopen(f'{site}/pinnacle-ledger/{ek}.json', timeout=20) as h:
+                old = json.loads(h.read())
+            if old.get('archiveId') == r.get('archiveId'):
+                doc = old; rep['reused from the site'] += 1
+        except Exception:                                     # noqa: BLE001 — not published yet / unreadable: build it
+            pass
+        if doc is None:
+            _, got, _ = rest('GET', f'/rest/v1/{RAW}?select=id,payload_gz&id=eq.{int(r["rawId"])}')
+            if not got:
+                rep['payload not found'] += 1; continue
+            doc, why = card_ledger(r, m, mw_series(gzip.decompress(unhex(got[0]['payload_gz']))))
+            if doc is None:
+                rep[why] += 1; continue
+            rep['built'] += 1
+        tmp = os.path.join(out_dir, ek + '.json.tmp')
+        with open(tmp, 'w') as fh:
+            json.dump(doc, fh)
+        os.replace(tmp, os.path.join(out_dir, ek + '.json'))
+    print('### card-ledgers', json.dumps(dict(rep)))
+    return dict(rep)
+
+
 def cmd_export(path):
-    rows = select_all(CLOSE, 'id,event_key,match_date,p1_key,p2_key,p1_name,p2_name,p1,p2,label,source,book,close_ts,start_ts,start_source,gap_to_start_s,supersedes,detail')
+    rows = select_all(CLOSE, 'id,event_key,match_date,p1_key,p2_key,p1_name,p2_name,p1,p2,label,source,book,close_ts,start_ts,start_source,gap_to_start_s,supersedes,detail,raw_id')
     out = export_rows(rows)
     akey = os.environ.get('API_TENNIS_KEY') or ''
     if akey:
@@ -1212,7 +1297,33 @@ def derive_rows(events, raws):
 ODDSPAPI_LEVELS = LEVELS + ('Itf Men Singles',)   # founder 2026-11-09: ATP, Challenger and ITF Men
 
 
-def cmd_derive_oddspapi(frm, to, cache_path, dry_run=False):
+def pull_payloads(fixture_ids, ev_by_fixture, key, counts):
+    """The free /v4/historical-odds (pinnacle+30) for each fixture, stored as a raw row (insert-only, meta.trigger
+    'derive-oddspapi'); the post-start pull's own cooldown and 429 rule (hist_get). Returns the fixture ids stored."""
+    if not key:
+        counts['errors']['no ODDSPAPI_KEY'] = len(fixture_ids)
+        return []
+    got = []
+    for fid in fixture_ids:
+        body, err = hist_get(fid, key, counts)
+        if body is None:
+            counts['errors'][str(err)] = counts['errors'].get(str(err), 0) + 1
+            continue
+        gz, raw_body, sha = payload_parts(body)
+        if HIST_BOOK not in books_of(raw_body):
+            counts['errors']['no pinnacle+30 in the answer'] = counts['errors'].get('no pinnacle+30 in the answer', 0) + 1
+            continue
+        ev = ev_by_fixture.get(fid) or {}
+        ids = insert(RAW, [{'fixture_id': fid, 'source': 'oddspapi /v4/historical-odds', 'pulled_at': dt.datetime.now(dt.timezone.utc).isoformat(),
+                            'books': books_of(raw_body), 'payload_gz': hexbytes(gz), 'payload_sha256': sha, 'body_bytes': len(raw_body),
+                            'meta': {'eventKey': ev.get('event_key'), 'trigger': 'derive-oddspapi', 'book': HIST_BOOK}}], 'fixture_id,payload_sha256')
+        counts['pulled'] += 1
+        counts['rawAdded'] += len(ids)
+        got.append(fid)
+    return got
+
+
+def cmd_derive_oddspapi(frm, to, cache_path, dry_run=False, pull=False, levels=None):
     """Founder ruling 2026-11-09: Oddspapi's own close for every ATP / Challenger / ITF Men singles match dated [frm, to)
     whose Pinnacle +30 payload the archive holds — cut at the gated trueStart, live-flip or not. Each new close supersedes
     the event's current one (append-only; a close equal to the held one adds nothing). Fixtures: the committed index,
@@ -1237,13 +1348,23 @@ def cmd_derive_oddspapi(frm, to, cache_path, dry_run=False):
     fbk = {str(x['event_key']): x for x in fl}
     days = [(frm + dt.timedelta(days=i)).date().isoformat() for i in range((to - frm).days)]
     at, failed = _at_keys(days)
-    evs, miss, _ = events_held(list(at.values()), fixtures, set(), _board_map(), frm, to, levels=ODDSPAPI_LEVELS,
+    evs, miss, _ = events_held(list(at.values()), fixtures, set(), _board_map(), frm, to, levels=levels or ODDSPAPI_LEVELS,
                                categories=BACKFILL_CATEGORIES, flips_by_key=fbk)
     rows, notd = [], collections.Counter()
     ids_all = [e['fixture_id'] for e in evs]
+    pulls = {'missing': 0, 'pulled': 0, 'rawAdded': 0, 'errors': {}, 'waitS': 0, 'http429': 0}
     for i in range(0, len(ids_all), 200):                      # payloads read in slices: a season is thousands of fixtures
         part = [e for e in evs if e['fixture_id'] in set(ids_all[i:i + 200])]
-        r, n, _ = derive_rows(part, raw_latest(ids_all[i:i + 200]))
+        raws = raw_latest(ids_all[i:i + 200])
+        # founder 2026-11-09 ("find a solution and fix it"): a matched fixture whose Pinnacle +30 history we never stored is
+        # pulled now — the endpoint is free and Oddspapi keeps ~185 days — then cut like the rest (--pull, never on a dry run)
+        missing = sorted({e['fixture_id'] for e in part if e['fixture_id'] not in raws})
+        pulls['missing'] += len(missing)
+        if pull and not dry_run and missing:
+            got = pull_payloads(missing, {e['fixture_id']: e for e in part}, os.environ.get('ODDSPAPI_KEY') or '', pulls)
+            if got:
+                raws.update(raw_latest(got))
+        r, n, _ = derive_rows(part, raws)
         rows += r
         notd.update(n)
     held = []
@@ -1260,7 +1381,7 @@ def cmd_derive_oddspapi(frm, to, cache_path, dry_run=False):
     rep = {'window': [frm.date().isoformat(), to.date().isoformat()], 'dryRun': dry_run, 'events': len(evs), 'unmapped': dict(miss),
            'derived': len(rows), 'notDerived': dict(notd), 'wouldAdd' if dry_run else 'added': len(add) if dry_run else len(ids),
            'corrections': sum(1 for r in add if r.get('supersedes')), 'byMonth': dict(sorted(by_month.items())), 'byLevel': dict(by_level),
-           'apiTennisDaysFailed': failed, 'oddspapiFixtureCalls': calls, 'meter': used}
+           'apiTennisDaysFailed': failed, 'oddspapiFixtureCalls': calls, 'meter': used, 'pull': pull, 'payloads': pulls}
     print('### derive-oddspapi', json.dumps(rep))
     return rep
 
@@ -2320,10 +2441,13 @@ if __name__ == '__main__':
         day = lambda s: dt.datetime.fromisoformat(s).replace(tzinfo=dt.timezone.utc)
         cmd_derive_held(day(a[a.index('--from') + 1]) if '--from' in a else HELD_FROM, day(a[a.index('--to') + 1]) if '--to' in a else HELD_TO,
                         '--dry-run' in a)
+    elif a[0] == 'card-ledgers':
+        cmd_card_ledgers(a[1], a[2], a[3])
     elif a[0] == 'derive-oddspapi':
         day = lambda s: dt.datetime.fromisoformat(s).replace(tzinfo=dt.timezone.utc)
         cmd_derive_oddspapi(day(a[a.index('--from') + 1]), day(a[a.index('--to') + 1]),
-                            os.environ.get('PINARCH_FIXTURES', '.pinarch-fixtures.json'), '--dry-run' in a)
+                            os.environ.get('PINARCH_FIXTURES', '.pinarch-fixtures.json'), '--dry-run' in a, '--pull' in a,
+                            tuple(a[a.index('--levels') + 1].split(',')) if '--levels' in a else None)
     elif a[0] == 'pull':
         cmd_pull(int(a[a.index('--budget') + 1]) if '--budget' in a else 480, os.environ.get('PINARCH_FIXTURES', '.pinarch-fixtures.json'),
                  int(a[a.index('--hours') + 1]) if '--hours' in a else 6)

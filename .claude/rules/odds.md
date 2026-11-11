@@ -320,6 +320,10 @@ closes, odds performance and started-evidence.
   stays held back. Only events with NO held close row are filled (append-only; nothing superseded).
   **Superseded where Oddspapi's own close is held** (founder 2026-11-09): `derive-oddspapi` adds it for every held payload
   and it outranks the fill row; the "E" mark remains only where no Oddspapi close can be cut.
+  **api-tennis's Pinnacle before E** (founder 2026-11-11, replacing 2026-10-30 ruling 1 "E stays before api-tennis"): where a
+  match has both, api-tennis's stored Pinnacle prices it — measured closer to a real close (median 0.08pp) than the E cut
+  (0.75pp from Oddspapi's close). `build-database-yield.js` `meta.approx.apiOverE` counts them. **Test:**
+  `tools/test-approx-pinnacle.mjs` "founder 2026-11-11".
   **Re-cuttable:** in `current_closes` a fill row ranks below every true close — an archive close at a verified start or a
   captured close beats it whatever their ids; a Tennis-Data Pinnacle close is never replaced (td-feed, the Database build).
   **Marked like "B":** a buffer-cut fill price is NOT a close. Export row `closeCut` / `bufferMin` → td-feed label

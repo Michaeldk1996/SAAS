@@ -672,6 +672,18 @@ jobs:
         run: |
           node tools/apply-archive-pinclose.mjs --closes pinnacle-closes.json --matches matches.json || echo "::warning::apply-archive-pinclose failed — board cards keep the captured close"
 
+      # Founder 2026-11-09: a Completed card that is Pinnacle's (Oddspapi's own close) shows Pinnacle's history in its odds
+      # pop-up — one file per finished board card, cut at the close's start (READ-ONLY toward the archive: a GET of the
+      # stored payload; a file the site already serves for the same close is reused). Best-effort: without it the pop-up
+      # says "Price history unavailable".
+      - name: Pinnacle history for the Completed cards' pop-up (best-effort)
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+        run: |
+          rm -rf pinnacle-ledger
+          python3 tools/pinarch.py card-ledgers pinnacle-closes.json matches.json pinnacle-ledger || echo "::warning::card-ledgers failed — the Completed cards' pop-up has no Pinnacle history this run"
+
       # Model value ledger (founder brief 2026-11-01): every model price this run made for an upcoming match, saved with the
       # bet105 / Pinnacle prices of the moment, its key snapshots marked, and finished matches settled (CLV vs this run's
       # Pinnacle close export, result, flat-1u profit at the bet105 price). Append-only Supabase tables, written only by
@@ -1147,6 +1159,8 @@ jobs:
           # which is exactly how the movement chart went missing for three days.
           cp odds-index.json _site/ 2>/dev/null || true
           cp -r odds _site/ 2>/dev/null || true
+          # founder 2026-11-09: the Completed cards' Pinnacle history (lazy, read when the odds pop-up opens)
+          cp -r pinnacle-ledger _site/ 2>/dev/null || true
           # TEN-304: Weather tab files (lazy, read when the tab opens).
           cp weather-index.json _site/ 2>/dev/null || true
           cp -r weather _site/ 2>/dev/null || true

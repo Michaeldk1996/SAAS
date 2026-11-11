@@ -38,6 +38,14 @@ on:
         description: derive-held / derive-oddspapi / false-starts-recut — 'yes' counts what it would add and inserts nothing
         required: false
         default: 'yes'
+      pull:
+        description: derive-oddspapi — 'yes' first pulls the free Pinnacle +30 history of matched fixtures we never stored (never on a dry run)
+        required: false
+        default: 'no'
+      levels:
+        description: derive-oddspapi — api-tennis levels, comma-separated (empty = ATP, Challenger and ITF Men)
+        required: false
+        default: ''
 permissions:
   contents: read
 concurrency:
@@ -121,12 +129,17 @@ jobs:
           DRY_RUN: ${{ github.event.inputs.dry_run || 'yes' }}
           FROM: ${{ github.event.inputs.from || '2026-04-13' }}
           TO: ${{ github.event.inputs.to || '2026-05-01' }}
+          PULL: ${{ github.event.inputs.pull || 'no' }}
+          LEVELS: ${{ github.event.inputs.levels }}
         run: |
           set -euo pipefail
+          EXTRA=()
+          case "$PULL" in yes) EXTRA+=(--pull) ;; no) ;; *) echo "pull must be exactly 'yes' or 'no' (got '$PULL') — nothing run" >&2; exit 2 ;; esac
+          if [ -n "$LEVELS" ]; then EXTRA+=(--levels "$LEVELS"); fi
           # fail closed: only the exact value "no" writes to the permanent archive; anything else is a dry run or an error
           case "$DRY_RUN" in
-            yes) python3 tools/pinarch.py derive-oddspapi --from "$FROM" --to "$TO" --dry-run ;;
-            no)  python3 tools/pinarch.py derive-oddspapi --from "$FROM" --to "$TO"
+            yes) python3 tools/pinarch.py derive-oddspapi --from "$FROM" --to "$TO" --dry-run "${EXTRA[@]}" ;;
+            no)  python3 tools/pinarch.py derive-oddspapi --from "$FROM" --to "$TO" "${EXTRA[@]}"
                  python3 tools/pinarch.py counts --record derive-oddspapi ;;
             *)   echo "dry_run must be exactly 'yes' or 'no' (got '$DRY_RUN') — nothing run" >&2; exit 2 ;;
           esac

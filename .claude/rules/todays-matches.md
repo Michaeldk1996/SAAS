@@ -29,8 +29,11 @@ except where a ruling below says otherwise. Colours are foundation tokens (`foun
   once `m.pinClose.oddspapiClose` is on the card (`tools/apply-archive-pinclose.mjs`, from the archive export) the whole
   card is Pinnacle — Open = the first pre-start pinnacle+30 pair the archive holds, Close = Oddspapi's own close
   (`odds.md`), Move between them, one book — through `mcOddspapiCloseOcs` inside `_ocsOf`, so the card, the Move, the
-  tiles and the Match analysis header read the same pair. Pinnacle has no ledger in the odds pop-up ("No price history
-  for this book"). **Test:** `tools/test-apply-archive-pinclose.mjs` "card:" (no switch before the finish, without the
+  tiles and the Match analysis header read the same pair. The odds pop-up lists Pinnacle's history (founder 2026-11-09):
+  the pipeline writes `pinnacle-ledger/{eventKey}.json` per finished card (`tools/pinarch.py card-ledgers`: the stored
+  pinnacle+30 payload, active entries change-only, cut at the close's start, oriented to the card; refused when it does not
+  reproduce the close), the pop-up's source `pinnacle` reads it (`price-history-box.js`); none published yet → "No price
+  history yet", unreadable → "Price history unavailable". **Test:** `tools/test-apply-archive-pinclose.mjs` "card:" (no switch before the finish, without the
   flag or without an Open).
 - **Completed card:** inset tiles (winner white 3.5% + 3px `--pos` 90% pill; loser name `--text-label` 600, never red).
   Surface `--text-soft`; round chip `--inner` + 10% inset edge, white (Q1). Score = sets-won tile (winner white 9% + 10% inset

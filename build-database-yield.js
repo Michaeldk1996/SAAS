@@ -293,7 +293,7 @@ if (feedOn) {
 }
 const feedUsedKeys = new Set();
 const approx = { map: new Map(), applied: 0, appliedBySource: { at: 0, od: 0, te: 0, tb: 0 }, tdHadPinnacle: 0, archiveFirst: 0, unmatched: 0, rows: 0, rowsBySource: { at: 0, od: 0, te: 0, tb: 0 },
-  teOverBet365: 0, teFilledDash: 0, teFilledOd10: 0, eOverApiTennis: 0, tbFilledDash: 0, tbFilledOd10: 0 };
+  teOverBet365: 0, teFilledDash: 0, teFilledOd10: 0, apiOverE: 0, tbFilledDash: 0, tbFilledOd10: 0 };
 const approxOn = fs.existsSync(APPROX_FEED);
 if (approxOn) {
   const lines = fs.readFileSync(APPROX_FEED, 'utf8').split(/\r?\n/).filter(Boolean);
@@ -371,11 +371,13 @@ function processLine(c, col, season, fromFeed) {
       if (ap) {
         approxUsed.add(ak);
         if (validPrice(num(c[col.psw])) && validPrice(num(c[col.psl]))) approx.tdHadPinnacle++;   // never over a Tennis-Data close
-        else if (validPrice(P[0]) && validPrice(P[1])) {                                             // never over our archive's close
-          approx.archiveFirst++;
-          // founder 2026-10-30 (ruling 1): E stays before api-tennis — count the matches where both exist (E wins)
-          if (archLabel && archBookOf(archLabel) === EARLY_BOOK && ap.at && validPrice(ap.at[0]) && validPrice(ap.at[1])) approx.eOverApiTennis++;
+        else if (archLabel && archBookOf(archLabel) === EARLY_BOOK && ap.at && validPrice(ap.at[0]) && validPrice(ap.at[1])) {
+          // founder 2026-11-11 (replaces 2026-10-30 ruling 1, "E stays before api-tennis"): the CLOSEST Pinnacle price wins —
+          // api-tennis's stored Pinnacle sits a median 0.08pp from a real close, the E early cut (>= 71 min before the start)
+          // 0.75pp from Oddspapi's close; where both exist, api-tennis prices the match
+          P = [NaN, NaN]; archLabel = null; AP = ap.at; APS = 'at'; approx.applied++; approx.appliedBySource.at++; approx.apiOverE++;
         }
+        else if (validPrice(P[0]) && validPrice(P[1])) approx.archiveFirst++;          // never over our archive's close
         else {
           // start - 10 first (founder 2026-10-17), then api-tennis; each only as a two-sided pair
           const pick = ['od', 'at'].find(k => ap[k] && validPrice(ap[k][0]) && validPrice(ap[k][1]));
@@ -942,7 +944,7 @@ const meta = {
         used: bookCount[TE_B365_BOOK], filledDash: approx.tbFilledDash, filledStart10Dash: approx.tbFilledOd10 },
     },
     rows: approx.rows, applied: approx.applied, tdHadPinnacle: approx.tdHadPinnacle, archiveFirst: approx.archiveFirst, unmatched: approx.unmatched,
-    eOverApiTennis: approx.eOverApiTennis,   // founder 2026-10-30: matches with both an E price and an api-tennis snapshot (E shown)
+    apiOverE: approx.apiOverE,   // founder 2026-11-11: matches with both an E price and an api-tennis snapshot (api-tennis shown)
   } } : {}),
   ...(feedOn ? { archiveFeed: {
     file: path.basename(FEED),

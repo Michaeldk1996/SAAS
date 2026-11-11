@@ -59,6 +59,10 @@ Applies to `supabase/migrations/20261014120000_pinnacle_archive.sql`, `tools/pin
   the event's current one (a new row; an equal close adds nothing). Fixtures: the committed index, the back-fill raw meta
   and the Oddspapi fixtures list (metered, one call per 6-day window from 10 Sep). `dry_run` yes (default) counts by month
   and level and inserts nothing; only exactly `no` writes.
+  **`pull=yes`** (founder 2026-11-09, "find a solution and fix it"): a matched fixture whose `pinnacle+30` history we never
+  stored is pulled first (the free `/v4/historical-odds`, the post-start pull's cooldown and 429 rule, raw `meta.trigger`
+  `derive-oddspapi`; an answer with no pinnacle+30 stores nothing), then cut like the rest; never on a dry run. `levels`
+  narrows the api-tennis levels (e.g. `Atp Singles`). Oddspapi keeps ~185 days, so what is not pulled in time is lost.
   **ITF names:** Oddspapi writes ITF players given-name first ("Zack Viiala", "Wihan Van Der Merwe"), ATP / Challenger as
   "Surname, Given"; the fixture join tries every surname split of a given-first name (`od_name_variants`,
   `orient_given_first`), still both players, ±36 h and exactly one candidate (measured 15 Jul 2026: 181 of 187 ITF matches

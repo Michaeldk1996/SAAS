@@ -281,6 +281,27 @@
   // would never show a newer 15-min capture (review finding 3). Resolves
   // {om} on success, null when the shard can't be read (never "no changes").
   const shardCache = new Map();
+  // founder 2026-11-09: one side of the card's Pinnacle history file ([ts, price], card orientation, already cut at the start)
+  function pinLedgerRows(doc, who) {
+    const out = [];
+    for (const pt of (doc && Array.isArray(doc[who])) ? doc[who] : []) {
+      const t = ms(pt && pt[0]), p = Number(pt && pt[1]);
+      if (t != null && p >= 1.01) out.push({ at: t, price: p });
+    }
+    return out.sort((a, b) => a.at - b.at);
+  }
+  const pinCache = new Map();
+  function fetchPinLedger(ek) {
+    if (!ek) return Promise.resolve(null);
+    const hit = pinCache.get(ek);
+    if (hit && Date.now() - hit.at < CACHE_TTL_MS) return hit.p;
+    const p = fetch(`./pinnacle-ledger/${encodeURIComponent(ek)}.json`, { cache: 'no-cache' })
+      .then(r => r.ok ? r.json().then(doc => ({ doc })) : (r.status === 404 ? { doc: null } : null))
+      .catch(() => null);
+    pinCache.set(ek, { at: Date.now(), p });
+    p.then(v => { if (v == null) pinCache.delete(ek); });
+    return p;
+  }
   function fetchShard(ek) {
     if (!ek) return Promise.resolve(null);
     const hit = shardCache.get(ek);
@@ -331,8 +352,12 @@
     let startMs = NaN;
     try { startMs = typeof cardStartMs === 'function' ? cardStartMs(m) : NaN; } catch (e) { startMs = NaN; }
     const upcoming = !completed && !m.live && (!isFinite(startMs) || Date.now() < startMs);
+    // founder 2026-11-09: a Completed card that switched to Pinnacle (Oddspapi's own close) reads Pinnacle's history,
+    // published per card by the pipeline (tools/pinarch.py card-ledgers) and cut at the close's start
+    const pinCard = completed && bk === 'pinnacle+30' && !!(m.pinClose && m.pinClose.oddspapiClose);
     const source = bk === 'bet105' ? 'rpc'
-      : (bk === 'bet365' ? (upcoming ? 'shard' : (completed ? 'archive' : null)) : null);
+      : (bk === 'bet365' ? (upcoming ? 'shard' : (completed ? 'archive' : null))
+        : (pinCard ? 'pinnacle' : null));
     // The card face's current price (same resolver); row 2 uses it unless the history holds a later tick.
     const now = pair && pair[who] != null && Number(pair[who]) >= 1.01 ? Number(pair[who]) : null;
     // The card's Close, from the card's own resolver, so the pop-up can never disagree with it.
@@ -424,8 +449,10 @@
     place(target);
     if (!card.historyAvailable) { b.innerHTML = html(model(card, [], [])); place(target); return; }
     let payload = null, shard = null;
-    let arch = null;
-    if (card.source === 'shard') {
+    let arch = null, pin = null;
+    if (card.source === 'pinnacle') {
+      pin = await fetchPinLedger(typeof eventKeyOfMatch === 'function' ? eventKeyOfMatch(m) : null);
+    } else if (card.source === 'shard') {
       shard = await fetchShard(typeof eventKeyOfMatch === 'function' ? eventKeyOfMatch(m) : null);
     } else if (card.source === 'archive') {
       arch = await loadArchive(card, who, () => fetchHistory(ocsKeyOf(m), 'bet365_history'));
@@ -441,6 +468,13 @@
       const cls = [...target.classList].find(c => PRICE_SEL.includes('.' + c));
       target = (again && again.querySelector(cls ? '.' + cls : PRICE_SEL)) || null;
       if (!target) { hide(); return; }
+    }
+    if (card.source === 'pinnacle') {
+      // a file that could not be read is "unavailable"; none published yet is "not recorded yet" — never "no change"
+      const rows = pin && pin.doc ? changesOnly(pinLedgerRows(pin.doc, who)) : [];
+      b.innerHTML = html(model(card, rows, []), !pin ? 'failed' : (!pin.doc ? 'notyet' : undefined));
+      place(target);
+      return;
     }
     if (arch) {
       b.innerHTML = arch.failed ? html(model(arch.card, [], []), 'failed') : html(model(arch.card, arch.rows, []));
@@ -500,7 +534,7 @@
   }
 
   // fetchHistory: also read by the Dropping Odds price-move box (TEN-427 Data 4: one Bet105 source for both charts)
-  const api = { archiveRows, loadArchive, ARCHIVE_NO_START, sideRows, shardRows, fetchShard, fetchHistory, changesOnly, gapRows, model, html, fmtWhen, fmtDelta, fmtPct, placeAt, cardData, stats, PRICE_SEL, _open: open };
+  const api = { pinLedgerRows, fetchPinLedger, archiveRows, loadArchive, ARCHIVE_NO_START, sideRows, shardRows, fetchShard, fetchHistory, changesOnly, gapRows, model, html, fmtWhen, fmtDelta, fmtPct, placeAt, cardData, stats, PRICE_SEL, _open: open };
   if (typeof window !== 'undefined') window.PriceHistoryBox = Object.assign(window.PriceHistoryBox || {}, api);
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })();

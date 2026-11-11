@@ -175,7 +175,7 @@ Full source detail, book ladder, card and close rules: `.claude/rules/odds.md`.
   and named in one Telegram for the run, never a reason to stop the site updating (founder 2026-10-18) — `.claude/rules/odds.md`.
 - **One task owns price sources.** Every change to which book, feed or cut prices a match goes through the price-source task only (founder 2026-10-16) — `.claude/rules/odds.md`.
 - **The source order on the ATP main draw, one source per match** (founder 2026-10-30): Tennis-Data Pinnacle > our
-  Pinnacle archive close > E > Pinnacle (approx.) api-tennis > Pinnacle (approx.) Tennis Explorer > a dash in the Database
+  Pinnacle archive close > Pinnacle (approx.) api-tennis > E (founder 2026-11-11: the closer price first) > Pinnacle (approx.) Tennis Explorer > a dash in the Database
   (Pinnacle only, founder 2026-10-30); Market edge, Derived lines and every other page add Bet365 (Tennis-Data, then
   Tennis Explorer) before the dash, marked "B" — the one allowed difference between pages; the
   start − 10 snapshot is never shown; a snapshot is never labelled a close — `.claude/rules/odds.md`.
