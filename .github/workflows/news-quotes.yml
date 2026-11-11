@@ -5,8 +5,8 @@ name: News ticker quotes
 # marked "allowed" in data/news-outlets.json are fetched. Its items are committed to news-quotes/ ([skip ci], data
 # bot); the pipeline folds them into the feed on its next run. Rules: .claude/rules/news-ticker.md.
 #
-# Alerts go to the pipeline Telegram chat: this job failing; a model call failing on credit or key (first failure);
-# no new quote for 24 hours while a tournament is on.
+# Alerts go to the pipeline Telegram chat: this job failing (job-fail-alert.yml watches it, one message per failure
+# streak); a model call failing on credit or key (first failure); no new quote for 24 hours while a tournament is on.
 
 on:
   schedule:
@@ -66,9 +66,3 @@ jobs:
             sleep $((i * 5))
           done
           echo "::error::could not push the quotes after 4 attempts"; exit 1
-
-      - name: Alert — the quote job failed (Telegram)
-        if: ${{ failure() }}
-        run: |
-          printf 'News ticker: the quote job failed (run %s). Quotes stop until it runs again.\n' "$GITHUB_RUN_ID" > /tmp/alert.txt
-          node tools/price-alert-send.mjs /tmp/alert.txt

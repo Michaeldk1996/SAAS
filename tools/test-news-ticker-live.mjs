@@ -296,7 +296,8 @@ await ok('wiring: the quote job runs every 30 minutes from main, the key only in
   const w = read('.github/workflows/news-quotes.yml');
   assert.ok(/cron: '7,37 \* \* \* \*'/.test(w)); assert.ok(/ref: main/.test(w));
   assert.ok(/ANTHROPIC_API_KEY: \$\{\{ secrets\.ANTHROPIC_API_KEY \}\}/.test(w)); assert.ok(/TELEGRAM_PIPELINE_CHAT_ID/.test(w));
-  assert.ok(/if: \$\{\{ failure\(\) \}\}[\s\S]*the quote job failed/.test(w)); assert.ok(/\[skip ci\]/.test(w));
+  assert.ok(/^      - 'News ticker quotes'$/m.test(read('.github/workflows/job-fail-alert.yml')) && /^name: News ticker quotes$/m.test(w), 'the job-failure alert watches it');
+  assert.ok(/\[skip ci\]/.test(w));
   for (const f of ['bsp-consult-dashboard.html', 'player-profile-v2.js']) assert.ok(!/api\.anthropic\.com|ANTHROPIC_API_KEY/.test(read(f)), f + ' must never call the model');
 });
 console.log(`news ticker live: ${n} checks passed`);

@@ -9,6 +9,7 @@ on:
     workflows:
       - 'Alert dry run'
       - 'BSP ASAP Sports readiness signal'
+      - 'News ticker quotes'
       - 'BSP daily DNA ratings refresh'
       - 'BSP data pipeline'
       - 'BSP odds capture loop'
