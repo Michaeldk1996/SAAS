@@ -1,19 +1,19 @@
 {
- "generatedAt": "2026-11-11T18:39:24.726Z",
+ "generatedAt": "2026-11-11T21:15:06.285Z",
  "tournaments": [
   {
    "key": "1681",
    "season": "2026",
    "name": "Stockholm",
    "file": "news-ticker/1681-2026.json",
-   "items": 35,
+   "items": 37,
    "byType": {
-    "report": 21,
-    "quote": 8,
+    "report": 22,
+    "quote": 9,
     "status": 6
    },
-   "latestTimestamp": "2026-11-11T16:48:48.007Z",
-   "updatedAt": "2026-11-11T18:39:24.726Z"
+   "latestTimestamp": "2026-11-11T19:27:55.487Z",
+   "updatedAt": "2026-11-11T21:15:06.285Z"
   },
   {
    "key": "1725",
@@ -29,6 +29,105 @@
   }
  ],
  "latest": [
+  {
+   "id": "report-12178945",
+   "type": "report",
+   "playerId": "566",
+   "opponentId": "430",
+   "player": "A. Shevchenko",
+   "opponent": "C. Ruud",
+   "tournament": "Stockholm",
+   "tournamentKey": "1681",
+   "season": "2026",
+   "stage": "main draw",
+   "round": "second round",
+   "eventKey": "12178945",
+   "timestamp": "2026-11-11T19:27:55.487Z",
+   "timestampKind": "observed",
+   "observed": {
+    "endedAt": "2026-11-11T19:27:55.487Z",
+    "startedAt": "2026-11-11T17:09:43.004Z",
+    "minutes": 138
+   },
+   "category": "Statistics",
+   "text": "A. Shevchenko beat C. Ruud for the 1st time in 3 meetings, 6-7, 6-4, 6-3 in the second round in 138 minutes. A. Shevchenko came from a set down. Set 1 went to a tiebreak, won by C. Ruud. A. Shevchenko was broken when serving for a set. A. Shevchenko: 13 aces, 50 winners, 20 unforced errors, saved 2 of 4 break points. C. Ruud: 10 aces, 43 winners, 30 unforced errors, saved 2 of 6 break points.",
+   "fields": {
+    "score": "6-7, 6-4, 6-3",
+    "round": "second round",
+    "retired": false,
+    "h2h": {
+     "a": 1,
+     "b": 2,
+     "n": 3
+    },
+    "durationMinutes": 138,
+    "facts": {
+     "fromSetDown": true,
+     "tiebreakSets": [
+      {
+       "set": 1,
+       "winner": "p2"
+      }
+     ],
+     "brokenForSet": {
+      "p1": 1
+     }
+    },
+    "winner": {
+     "aces": 13,
+     "winners": 50,
+     "unforcedErrors": 20,
+     "breakPointsSaved": 2,
+     "breakPointsFaced": 4,
+     "breakPointsSource": "box score"
+    },
+    "loser": {
+     "aces": 10,
+     "winners": 43,
+     "unforcedErrors": 30,
+     "breakPointsSaved": 2,
+     "breakPointsFaced": 6,
+     "breakPointsSource": "box score"
+    }
+   },
+   "sourceName": "Stennisfy match data (api-tennis box score and point-by-point)",
+   "sourceUrl": "pbp/12178945.json",
+   "language": "en",
+   "translated": false,
+   "sourceHash": "1b8fad7ca96e6e18",
+   "publishedAt": "2026-11-11T21:15:06.285Z",
+   "file": "news-ticker/1681-2026.json"
+  },
+  {
+   "id": "quote-209b74f9279c63",
+   "type": "quote",
+   "playerId": "2832",
+   "opponentId": "1103",
+   "player": "T. Fritz",
+   "opponent": "C. Norrie",
+   "tournament": "Stockholm",
+   "tournamentKey": "1681",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-11T18:57:00.000Z",
+   "timestampKind": "observed (the site's own publication time)",
+   "category": "Quotes",
+   "context": "after beating C. Norrie",
+   "eventKey": "12178503",
+   "won": true,
+   "text": "I feel like there were a lot of times in the first set when I lost some big points, I had some chances, … Towards the end of that set, I started winning some of those big points. I played really well, got the momentum and finished the set.",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "ATP Tour daily report (via the official tournament site)",
+   "sourceUrl": "https://www.stockholmopen.se/en/tournament/nyheter/stockholm-2026-wednesday-report",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "sourceHash": "11d0fc7d9bb7d9be",
+   "publishedAt": "2026-11-11T21:15:06.285Z",
+   "file": "news-ticker/1681-2026.json"
+  },
   {
    "id": "report-12178503",
    "type": "report",
