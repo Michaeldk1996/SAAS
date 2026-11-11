@@ -22,46 +22,75 @@ export function winnerScore(m, w) {
   return sets.map((s) => `${s[w]}-${s[l]}`).join(', ');
 }
 
-// One player's stat clause. Each part appears only when its stored field exists; `used` says which did.
-function statParts(ms, side, wueOk) {
-  const s = (ms && ms[side]) || {}, raw = s.raw || {}, parts = [], fields = {};
+// Break points for one side: the box score's own count when it has one, else the point-by-point count (pbp-facts).
+// -> { saved, faced, source } or null
+export function breakPoints(ms, side, pbp) {
+  const bp = ms && ms[side] && ms[side].raw && ms[side].raw['Service:Break Points Saved'];
+  if (bp && num(bp.won) != null && num(bp.total) != null && bp.total > 0) return { saved: bp.won, faced: bp.total, source: 'box score' };
+  const p = pbp && pbp.bp && pbp.bp[side];
+  if (p && num(p.faced) != null) return { saved: p.saved, faced: p.faced, source: 'point-by-point' };
+  return null;
+}
+
+// One player's stat clause. Each part appears only when its stored field exists.
+function statParts(ms, side, wueOk, pbp) {
+  const s = (ms && ms[side]) || {}, parts = [], fields = {};
   const aces = num(s['Service:Aces']);
   if (aces != null) { parts.push(`${aces} ${aces === 1 ? 'ace' : 'aces'}`); fields.aces = aces; }
   const w = num(s['Points:Winners']), ue = num(s['Points:Unforced errors']);
   if (wueOk && w != null && ue != null) { parts.push(`${w} winners`, `${ue} unforced errors`); fields.winners = w; fields.unforcedErrors = ue; }
-  const bp = raw['Service:Break Points Saved'];
-  if (bp && num(bp.won) != null && num(bp.total) != null && bp.total > 0) {
-    parts.push(`saved ${bp.won} of ${bp.total} break ${bp.total === 1 ? 'point' : 'points'}`);
-    fields.breakPointsSaved = bp.won; fields.breakPointsFaced = bp.total;
+  const bp = breakPoints(ms, side, pbp);
+  if (bp) {
+    parts.push(bp.faced === 0 ? 'faced no break points' : `saved ${bp.saved} of ${bp.faced} break ${bp.faced === 1 ? 'point' : 'points'}`);
+    fields.breakPointsSaved = bp.saved; fields.breakPointsFaced = bp.faced; fields.breakPointsSource = bp.source;
   }
   return { parts, fields };
 }
 
-// The fixed report template. h2h = { a, b, n } after this match (a = the winner's wins), or null (left out).
-export function reportText(m, w, l, h2h) {
+const ord = (n) => { const v = n % 100, s = ['th', 'st', 'nd', 'rd']; return n + (s[(v - 20) % 10] || s[v] || s[0]); };
+const times = (n) => (n === 1 ? '' : n === 2 ? ' twice' : ` ${n} times`);
+export const LONGEST_RUN_MIN = 4;   // a run shorter than this is not printed
+
+// The fixed report template (v2). Every clause is a stored field or a count of stored rows; a clause with nothing
+// behind it is not written. opts: { h2h: {a,b,n} after this match (a = winner's wins) | null, round: words | null,
+// pbp: pbpFacts() | null, score: scoreFacts() | null, duration: minutes | null (both ends observed) }
+export function reportText(m, w, l, opts = {}) {
+  const { h2h = null, pbp = null, score: sf = null, duration = null } = opts;
   const ms = m.matchStats || {};
   // winners / unforced errors all 0 on both sides = the feed did not track them (not a real zero)
   const tot = ['p1', 'p2'].reduce((t, k) => t + (num(ms[k] && ms[k]['Points:Winners']) || 0) + (num(ms[k] && ms[k]['Points:Unforced errors']) || 0), 0);
   const wueOk = tot > 0;
-  const score = winnerScore(m, w), round = roundWords(m.tournamentRound);
+  const score = winnerScore(m, w), round = opts.round !== undefined ? opts.round : roundWords(m.tournamentRound);
   const fields = { score, round, retired: !!m.retired };
   let s1 = `${m[w]} beat ${m[l]}`;
-  if (score) s1 += ` ${score}`;
+  if (h2h && h2h.n >= 1) { fields.h2h = h2h; s1 += h2h.n === 1 ? ' in their first meeting' : ` for the ${ord(h2h.a)} time in ${h2h.n} meetings`; }
+  if (score) s1 += `${fields.h2h ? ',' : ''} ${score}`;
   if (m.retired) s1 += ' (retirement)';
   if (round) s1 += ` in the ${round}`;
+  if (num(duration) != null) { s1 += ` in ${duration} minutes`; fields.durationMinutes = duration; }
   s1 += '.';
-  const out = [s1];
-  const A = statParts(ms, w, wueOk), B = statParts(ms, l, wueOk);
+  const out = [s1], facts = {};
+  if (sf && sf.fromSetDown) { out.push(`${m[w]} came from a set down.`); facts.fromSetDown = true; }
+  if (sf && sf.tiebreakSets && sf.tiebreakSets.length) {
+    facts.tiebreakSets = sf.tiebreakSets;
+    for (const t of sf.tiebreakSets) out.push(`Set ${t.set} went to a tiebreak, won by ${m[t.winner]}.`);
+  }
+  if (pbp) {
+    for (const k of [w, l]) {
+      const fm = pbp.brokenForMatch[k], fset = pbp.brokenForSet[k], f400 = pbp.brokenFrom400[k];
+      if (fm > 0) { out.push(`${m[k]} was broken${times(fm)} when serving for the match.`); (facts.brokenForMatch = facts.brokenForMatch || {})[k] = fm; }
+      if (fset > 0) { out.push(`${m[k]} was broken${times(fset)} when serving for a set.`); (facts.brokenForSet = facts.brokenForSet || {})[k] = fset; }
+      if (f400 > 0) { out.push(`${m[k]} was broken${times(f400)} from 40-0 up.`); (facts.brokenFrom400 = facts.brokenFrom400 || {})[k] = f400; }
+    }
+    if (pbp.opening) { const o = pbp.opening; out.push(`${m[o.side]} saved ${o.saved} break ${o.saved === 1 ? 'point' : 'points'} in the opening game.`); facts.openingGame = o; }
+    if (pbp.longestRun && pbp.longestRun.side && pbp.longestRun.n >= LONGEST_RUN_MIN) { out.push(`${m[pbp.longestRun.side]} won ${pbp.longestRun.n} games in a row.`); facts.longestRun = pbp.longestRun; }
+  }
+  if (Object.keys(facts).length) fields.facts = facts;
+  const A = statParts(ms, w, wueOk, pbp), B = statParts(ms, l, wueOk, pbp);
   if (A.parts.length) { out.push(`${m[w]}: ${A.parts.join(', ')}.`); fields.winner = A.fields; }
   if (B.parts.length) { out.push(`${m[l]}: ${B.parts.join(', ')}.`); fields.loser = B.fields; }
-  if (h2h && h2h.n >= 1) {
-    fields.h2h = h2h;
-    if (h2h.n === 1) out.push('It was their first meeting.');
-    else if (h2h.a === h2h.b) out.push(`Their head-to-head is level at ${h2h.a}–${h2h.b}.`);
-    else if (h2h.a > h2h.b) out.push(`${m[w]} leads their head-to-head ${h2h.a}–${h2h.b}.`);
-    else out.push(`${m[l]} leads their head-to-head ${h2h.b}–${h2h.a}.`);
-  }
-  const used = { wue: !!(A.fields.winners != null || B.fields.winners != null), bp: !!(A.fields.breakPointsFaced || B.fields.breakPointsFaced), h2h: !!fields.h2h };
+  const used = { wue: !!(A.fields.winners != null || B.fields.winners != null), bpSides: [A, B].filter((x) => x.fields.breakPointsFaced != null).length,
+    h2h: !!fields.h2h, pbp: !!pbp, duration: fields.durationMinutes != null };
   return { text: out.join(' '), fields, used };
 }
 
@@ -86,7 +115,7 @@ export function statusItems(cards, { ek, startIso, tournament, base }) {
   const mk = (m, id, playerSide, category, text, basis) => {
     const o = playerSide === 'p1' ? 'p2' : 'p1';
     return { id, type: 'status', playerId: String(m[playerSide + 'Key']), opponentId: String(m[o + 'Key']), player: m[playerSide], opponent: m[o],
-      tournament, round: roundWords(m.tournamentRound), timestamp: startIso(m), timestampKind: 'scheduled start of the match concerned',
+      tournament, round: roundWords(m.tournamentRound), timestamp: startIso(m), timestampKind: 'scheduled',
       category, text, basis, sourceName: 'Stennisfy match data (api-tennis fixture status)', sourceUrl: `${base}/matches.json`, sourceRef: m.id,
       language: 'en', translated: false };
   };

@@ -95,6 +95,9 @@ jobs:
           # poller writes the provider's final log into it. AFTER live_pbp_rpc.sql (it replaces that one-argument
           # write_live_pbp) and BEFORE the poller deploy (the new poller calls the two-argument form + the finals RPCs).
           apply supabase/migrations/20261024000000_live_pbp_retention.sql
+          # Match end recorder (founder brief 2026-11-11): AFTER the retention migration (it re-creates its write_live_pbp with
+          # the wrapped record_match_ends() call). Idempotent.
+          apply supabase/migrations/20261111090000_live_match_end.sql
 
       - name: Set Edge Function secrets (Management API)
         run: |

@@ -1,5 +1,5 @@
 {
- "generatedAt": "2026-11-11T07:58:49.888Z",
+ "generatedAt": "2026-11-11T10:10:33.278Z",
  "sample": true,
  "note": "Feasibility sample (news ticker). No page reads this file.",
  "tournament": "Stockholm",
@@ -12,43 +12,116 @@
   "played": 14,
   "withBoxScore": 14,
   "withWinnersUE": 14,
-  "withBreakPointCounts": 14,
+  "withPointByPoint": 14,
+  "pbpFactsUsable": 14,
+  "roundFromTournamentPage": 14,
   "withH2H": 14,
+  "withDuration": 0,
   "reports": 14,
   "status": 6,
-  "quotes": 0
+  "quotes": 6,
+  "commentary": 0,
+  "breakPoints": {
+   "sides": 28,
+   "fromBoxScore": 25,
+   "fromPointByPoint": 3,
+   "none": 0,
+   "bothSources": 24,
+   "mismatches": 1,
+   "mismatchList": [
+    "A. Mannarino (A. Mannarino v A. Shevchenko): box score 5/11, point-by-point 4/10"
+   ]
+  },
+  "facts": {
+   "fromSetDown": 0,
+   "tiebreakSets": 5,
+   "brokenForSetOrMatch": 1,
+   "brokenFrom400": 1,
+   "openingGameSaves": 2,
+   "longestRunPrinted": 8
+  }
  },
  "quoteRun": {
   "sources": [
    {
-    "name": "Stockholm Open (official tournament site)",
-    "list": "https://www.stockholmopen.se/en/tournament/nyheter",
+    "name": "ATP Tour daily report (via the official tournament site)",
+    "list": "https://www.stockholmopen.se/en/-/tournaments/news/latest?articlesToTake=60&articlesToSkip=0",
     "robotsStatus": 200,
-    "articles": 5,
-    "articlesWithQuotes": 1,
-    "unnamedSpeakerParagraphs": 1,
-    "skippedByRobots": 0
-   }
-  ],
-  "candidates": 1,
-  "published": 1,
-  "droppedNotVerbatim": 0,
-  "droppedNoPlayer": 0,
-  "droppedAmbiguous": 0,
-  "held": [
+    "listed": 60,
+    "articles": 14,
+    "atpReports": 3,
+    "articlesWithQuotes": 4,
+    "candidates": 7,
+    "duplicateOfAnotherUrl": 0,
+    "beforeWindow": 46,
+    "undatedSkipped": 0,
+    "unnamedSpeakerParagraphs": 4,
+    "skippedByRobots": 0,
+    "language": "en"
+   },
    {
-    "id": "quote-stockholm-2026-tuesday-report-52",
-    "playerId": "437",
-    "context": "after beating Z. Bergs",
-    "characters": 145,
-    "sourceUrl": "https://www.stockholmopen.se/en/tournament/nyheter/stockholm-2026-tuesday-report",
-    "verbatimCheck": "passed"
+    "name": "SVT Sport",
+    "list": "https://www.svt.se/sport/tennis/",
+    "robotsStatus": 200,
+    "listed": 18,
+    "articles": 18,
+    "articlesAboutTournament": 5,
+    "articlesWithQuotes": 2,
+    "candidates": 4,
+    "unnamedSpeakerParagraphs": 2,
+    "skippedByRobots": 0,
+    "language": "sv"
    }
   ],
-  "textHeld": true,
-  "playedMatchesWithWinnerQuote": "1 of 14"
+  "candidates": 11,
+  "published": 6,
+  "droppedNotVerbatim": 0,
+  "droppedNoPlayer": 2,
+  "droppedAmbiguous": 0,
+  "notTranslatedNoKey": 3,
+  "notTranslatedApiError": 0,
+  "droppedTranslationCheck": 0,
+  "translationFailures": [],
+  "droppedEnglishExists": 0,
+  "bySourceLanguage": {
+   "ATP Tour daily report (via the official tournament site) (en)": {
+    "quotes": 3,
+    "winnerMatches": [
+     "past-12178151",
+     "past-12178147"
+    ]
+   },
+   "Stockholm Open (official tournament site) (en)": {
+    "quotes": 3,
+    "winnerMatches": []
+   }
+  },
+  "playedMatchesWithWinnerQuote": "2 of 14"
  },
  "items": [
+  {
+   "id": "quote-stockholm-2026-tuesday-report-52",
+   "type": "quote",
+   "playerId": "437",
+   "opponentId": "1064",
+   "player": "H. Rune",
+   "opponent": "Z. Bergs",
+   "tournament": "Stockholm",
+   "round": null,
+   "timestamp": "2026-11-10T20:02:00.000Z",
+   "timestampKind": "observed (the site's own publication time)",
+   "category": "Quotes",
+   "context": "after beating Z. Bergs",
+   "text": "It's special coming back to Stockholm after last year. I choose to concentrate on the good memories, … It's such a nice court, such a nice event.",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "ATP Tour daily report (via the official tournament site)",
+   "sourceUrl": "https://www.stockholmopen.se/en/tournament/nyheter/stockholm-2026-tuesday-report",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page"
+  },
   {
    "id": "report-12178671",
    "type": "report",
@@ -57,35 +130,39 @@
    "player": "L. Musetti",
    "opponent": "T. Samuel",
    "tournament": "Stockholm",
-   "round": "round of 16",
+   "round": "second round",
    "timestamp": "2026-11-10T19:05:00.000Z",
-   "timestampKind": "scheduled start (no store holds the match end time)",
+   "timestampKind": "scheduled",
    "category": "Statistics",
-   "text": "L. Musetti beat T. Samuel 6-1, 6-4 in the round of 16. L. Musetti: 2 aces, 19 winners, 7 unforced errors. T. Samuel: 3 aces, 15 winners, 22 unforced errors, saved 4 of 7 break points. It was their first meeting.",
+   "text": "L. Musetti beat T. Samuel in their first meeting, 6-1, 6-4 in the second round. L. Musetti: 2 aces, 19 winners, 7 unforced errors, faced no break points. T. Samuel: 3 aces, 15 winners, 22 unforced errors, saved 4 of 7 break points.",
    "fields": {
     "score": "6-1, 6-4",
-    "round": "round of 16",
+    "round": "second round",
     "retired": false,
+    "h2h": {
+     "a": 1,
+     "b": 0,
+     "n": 1
+    },
     "winner": {
      "aces": 2,
      "winners": 19,
-     "unforcedErrors": 7
+     "unforcedErrors": 7,
+     "breakPointsSaved": 0,
+     "breakPointsFaced": 0,
+     "breakPointsSource": "point-by-point"
     },
     "loser": {
      "aces": 3,
      "winners": 15,
      "unforcedErrors": 22,
      "breakPointsSaved": 4,
-     "breakPointsFaced": 7
-    },
-    "h2h": {
-     "a": 1,
-     "b": 0,
-     "n": 1
+     "breakPointsFaced": 7,
+     "breakPointsSource": "box score"
     }
    },
-   "sourceName": "Stennisfy match data (api-tennis box score)",
-   "sourceUrl": "https://michaeldk1996.github.io/SAAS/#match=12178671",
+   "sourceName": "Stennisfy match data (api-tennis box score and point-by-point)",
+   "sourceUrl": "https://michaeldk1996.github.io/SAAS/pbp/12178671.json",
    "language": "en",
    "translated": false
   },
@@ -97,37 +174,45 @@
    "player": "H. Rune",
    "opponent": "Z. Bergs",
    "tournament": "Stockholm",
-   "round": "round of 32",
+   "round": "first round",
    "timestamp": "2026-11-10T17:20:00.000Z",
-   "timestampKind": "scheduled start (no store holds the match end time)",
+   "timestampKind": "scheduled",
    "category": "Statistics",
-   "text": "H. Rune beat Z. Bergs 6-3, 6-4 in the round of 32. H. Rune: 5 aces, 16 winners, 17 unforced errors, saved 5 of 5 break points. Z. Bergs: 8 aces, 21 winners, 28 unforced errors, saved 0 of 2 break points. H. Rune leads their head-to-head 2–0.",
+   "text": "H. Rune beat Z. Bergs for the 2nd time in 2 meetings, 6-3, 6-4 in the first round. H. Rune saved 4 break points in the opening game. H. Rune: 5 aces, 16 winners, 17 unforced errors, saved 5 of 5 break points. Z. Bergs: 8 aces, 21 winners, 28 unforced errors, saved 0 of 2 break points.",
    "fields": {
     "score": "6-3, 6-4",
-    "round": "round of 32",
+    "round": "first round",
     "retired": false,
+    "h2h": {
+     "a": 2,
+     "b": 0,
+     "n": 2
+    },
+    "facts": {
+     "openingGame": {
+      "side": "p1",
+      "saved": 4
+     }
+    },
     "winner": {
      "aces": 5,
      "winners": 16,
      "unforcedErrors": 17,
      "breakPointsSaved": 5,
-     "breakPointsFaced": 5
+     "breakPointsFaced": 5,
+     "breakPointsSource": "box score"
     },
     "loser": {
      "aces": 8,
      "winners": 21,
      "unforcedErrors": 28,
      "breakPointsSaved": 0,
-     "breakPointsFaced": 2
-    },
-    "h2h": {
-     "a": 2,
-     "b": 0,
-     "n": 2
+     "breakPointsFaced": 2,
+     "breakPointsSource": "box score"
     }
    },
-   "sourceName": "Stennisfy match data (api-tennis box score)",
-   "sourceUrl": "https://michaeldk1996.github.io/SAAS/#match=12178151",
+   "sourceName": "Stennisfy match data (api-tennis box score and point-by-point)",
+   "sourceUrl": "https://michaeldk1996.github.io/SAAS/pbp/12178151.json",
    "language": "en",
    "translated": false
   },
@@ -139,37 +224,58 @@
    "player": "M. Kecmanovic",
    "opponent": "A. Rinderknech",
    "tournament": "Stockholm",
-   "round": "round of 32",
+   "round": "first round",
    "timestamp": "2026-11-10T14:35:00.000Z",
-   "timestampKind": "scheduled start (no store holds the match end time)",
+   "timestampKind": "scheduled",
    "category": "Statistics",
-   "text": "M. Kecmanovic beat A. Rinderknech 7-6, 4-6, 6-4 in the round of 32. M. Kecmanovic: 6 aces, 31 winners, 14 unforced errors, saved 5 of 7 break points. A. Rinderknech: 14 aces, 62 winners, 39 unforced errors, saved 1 of 3 break points. A. Rinderknech leads their head-to-head 3–2.",
+   "text": "M. Kecmanovic beat A. Rinderknech for the 2nd time in 5 meetings, 7-6, 4-6, 6-4 in the first round. Set 1 went to a tiebreak, won by M. Kecmanovic. M. Kecmanovic was broken from 40-0 up. M. Kecmanovic saved 1 break point in the opening game. A. Rinderknech won 5 games in a row. M. Kecmanovic: 6 aces, 31 winners, 14 unforced errors, saved 5 of 7 break points. A. Rinderknech: 14 aces, 62 winners, 39 unforced errors, saved 1 of 3 break points.",
    "fields": {
     "score": "7-6, 4-6, 6-4",
-    "round": "round of 32",
+    "round": "first round",
     "retired": false,
+    "h2h": {
+     "a": 2,
+     "b": 3,
+     "n": 5
+    },
+    "facts": {
+     "tiebreakSets": [
+      {
+       "set": 1,
+       "winner": "p2"
+      }
+     ],
+     "brokenFrom400": {
+      "p2": 1
+     },
+     "openingGame": {
+      "side": "p2",
+      "saved": 1
+     },
+     "longestRun": {
+      "side": "p1",
+      "n": 5
+     }
+    },
     "winner": {
      "aces": 6,
      "winners": 31,
      "unforcedErrors": 14,
      "breakPointsSaved": 5,
-     "breakPointsFaced": 7
+     "breakPointsFaced": 7,
+     "breakPointsSource": "box score"
     },
     "loser": {
      "aces": 14,
      "winners": 62,
      "unforcedErrors": 39,
      "breakPointsSaved": 1,
-     "breakPointsFaced": 3
-    },
-    "h2h": {
-     "a": 2,
-     "b": 3,
-     "n": 5
+     "breakPointsFaced": 3,
+     "breakPointsSource": "box score"
     }
    },
-   "sourceName": "Stennisfy match data (api-tennis box score)",
-   "sourceUrl": "https://michaeldk1996.github.io/SAAS/#match=12178150",
+   "sourceName": "Stennisfy match data (api-tennis box score and point-by-point)",
+   "sourceUrl": "https://michaeldk1996.github.io/SAAS/pbp/12178150.json",
    "language": "en",
    "translated": false
   },
@@ -183,7 +289,7 @@
    "tournament": "Stockholm",
    "round": "round of 16",
    "timestamp": "2026-11-10T13:40:00.000Z",
-   "timestampKind": "scheduled start of the match concerned",
+   "timestampKind": "scheduled",
    "category": "Withdrawals",
    "text": "T. M. Etcheverry gave a walkover to T. A. Tirante in the main draw round of 16; the match was not played.",
    "basis": "api-tennis status \"Walk Over\"",
@@ -201,37 +307,47 @@
    "player": "L. Sonego",
    "opponent": "Q. Halys",
    "tournament": "Stockholm",
-   "round": "round of 32",
+   "round": "first round",
    "timestamp": "2026-11-10T13:30:00.000Z",
-   "timestampKind": "scheduled start (no store holds the match end time)",
+   "timestampKind": "scheduled",
    "category": "Statistics",
-   "text": "L. Sonego beat Q. Halys 6-4, 7-6 in the round of 32. L. Sonego: 11 aces, 29 winners, 6 unforced errors, saved 1 of 1 break point. Q. Halys: 12 aces, 25 winners, 21 unforced errors, saved 0 of 1 break point. L. Sonego leads their head-to-head 2–1.",
+   "text": "L. Sonego beat Q. Halys for the 2nd time in 3 meetings, 6-4, 7-6 in the first round. Set 2 went to a tiebreak, won by L. Sonego. L. Sonego: 11 aces, 29 winners, 6 unforced errors, saved 1 of 1 break point. Q. Halys: 12 aces, 25 winners, 21 unforced errors, saved 0 of 1 break point.",
    "fields": {
     "score": "6-4, 7-6",
-    "round": "round of 32",
+    "round": "first round",
     "retired": false,
+    "h2h": {
+     "a": 2,
+     "b": 1,
+     "n": 3
+    },
+    "facts": {
+     "tiebreakSets": [
+      {
+       "set": 2,
+       "winner": "p1"
+      }
+     ]
+    },
     "winner": {
      "aces": 11,
      "winners": 29,
      "unforcedErrors": 6,
      "breakPointsSaved": 1,
-     "breakPointsFaced": 1
+     "breakPointsFaced": 1,
+     "breakPointsSource": "box score"
     },
     "loser": {
      "aces": 12,
      "winners": 25,
      "unforcedErrors": 21,
      "breakPointsSaved": 0,
-     "breakPointsFaced": 1
-    },
-    "h2h": {
-     "a": 2,
-     "b": 1,
-     "n": 3
+     "breakPointsFaced": 1,
+     "breakPointsSource": "box score"
     }
    },
-   "sourceName": "Stennisfy match data (api-tennis box score)",
-   "sourceUrl": "https://michaeldk1996.github.io/SAAS/#match=12178421",
+   "sourceName": "Stennisfy match data (api-tennis box score and point-by-point)",
+   "sourceUrl": "https://michaeldk1996.github.io/SAAS/pbp/12178421.json",
    "language": "en",
    "translated": false
   },
@@ -243,37 +359,45 @@
    "player": "A. Michelsen",
    "opponent": "J. M. Cerundolo",
    "tournament": "Stockholm",
-   "round": "round of 16",
+   "round": "second round",
    "timestamp": "2026-11-10T12:10:00.000Z",
-   "timestampKind": "scheduled start (no store holds the match end time)",
+   "timestampKind": "scheduled",
    "category": "Statistics",
-   "text": "A. Michelsen beat J. M. Cerundolo 6-3, 6-2 in the round of 16. A. Michelsen: 3 aces, 19 winners, 9 unforced errors, saved 0 of 1 break point. J. M. Cerundolo: 3 aces, 16 winners, 26 unforced errors, saved 9 of 13 break points. Their head-to-head is level at 1–1.",
+   "text": "A. Michelsen beat J. M. Cerundolo for the 1st time in 2 meetings, 6-3, 6-2 in the second round. A. Michelsen won 4 games in a row. A. Michelsen: 3 aces, 19 winners, 9 unforced errors, saved 0 of 1 break point. J. M. Cerundolo: 3 aces, 16 winners, 26 unforced errors, saved 9 of 13 break points.",
    "fields": {
     "score": "6-3, 6-2",
-    "round": "round of 16",
+    "round": "second round",
     "retired": false,
+    "h2h": {
+     "a": 1,
+     "b": 1,
+     "n": 2
+    },
+    "facts": {
+     "longestRun": {
+      "side": "p1",
+      "n": 4
+     }
+    },
     "winner": {
      "aces": 3,
      "winners": 19,
      "unforcedErrors": 9,
      "breakPointsSaved": 0,
-     "breakPointsFaced": 1
+     "breakPointsFaced": 1,
+     "breakPointsSource": "box score"
     },
     "loser": {
      "aces": 3,
      "winners": 16,
      "unforcedErrors": 26,
      "breakPointsSaved": 9,
-     "breakPointsFaced": 13
-    },
-    "h2h": {
-     "a": 1,
-     "b": 1,
-     "n": 2
+     "breakPointsFaced": 13,
+     "breakPointsSource": "box score"
     }
    },
-   "sourceName": "Stennisfy match data (api-tennis box score)",
-   "sourceUrl": "https://michaeldk1996.github.io/SAAS/#match=12178504",
+   "sourceName": "Stennisfy match data (api-tennis box score and point-by-point)",
+   "sourceUrl": "https://michaeldk1996.github.io/SAAS/pbp/12178504.json",
    "language": "en",
    "translated": false
   },
@@ -285,37 +409,48 @@
    "player": "A. Shevchenko",
    "opponent": "A. Mannarino",
    "tournament": "Stockholm",
-   "round": "round of 32",
+   "round": "first round",
    "timestamp": "2026-11-10T12:05:00.000Z",
-   "timestampKind": "scheduled start (no store holds the match end time)",
+   "timestampKind": "scheduled",
    "category": "Statistics",
-   "text": "A. Shevchenko beat A. Mannarino 6-1, 6-3 in the round of 32. A. Shevchenko: 6 aces, 18 winners, 18 unforced errors, saved 0 of 2 break points. A. Mannarino: 1 ace, 5 winners, 20 unforced errors, saved 5 of 11 break points. Their head-to-head is level at 1–1.",
+   "text": "A. Shevchenko beat A. Mannarino for the 1st time in 2 meetings, 6-1, 6-3 in the first round. A. Shevchenko was broken when serving for the match. A. Shevchenko won 8 games in a row. A. Shevchenko: 6 aces, 18 winners, 18 unforced errors, saved 0 of 2 break points. A. Mannarino: 1 ace, 5 winners, 20 unforced errors, saved 5 of 11 break points.",
    "fields": {
     "score": "6-1, 6-3",
-    "round": "round of 32",
+    "round": "first round",
     "retired": false,
+    "h2h": {
+     "a": 1,
+     "b": 1,
+     "n": 2
+    },
+    "facts": {
+     "brokenForMatch": {
+      "p2": 1
+     },
+     "longestRun": {
+      "side": "p2",
+      "n": 8
+     }
+    },
     "winner": {
      "aces": 6,
      "winners": 18,
      "unforcedErrors": 18,
      "breakPointsSaved": 0,
-     "breakPointsFaced": 2
+     "breakPointsFaced": 2,
+     "breakPointsSource": "box score"
     },
     "loser": {
      "aces": 1,
      "winners": 5,
      "unforcedErrors": 20,
      "breakPointsSaved": 5,
-     "breakPointsFaced": 11
-    },
-    "h2h": {
-     "a": 1,
-     "b": 1,
-     "n": 2
+     "breakPointsFaced": 11,
+     "breakPointsSource": "box score"
     }
    },
-   "sourceName": "Stennisfy match data (api-tennis box score)",
-   "sourceUrl": "https://michaeldk1996.github.io/SAAS/#match=12178513",
+   "sourceName": "Stennisfy match data (api-tennis box score and point-by-point)",
+   "sourceUrl": "https://michaeldk1996.github.io/SAAS/pbp/12178513.json",
    "language": "en",
    "translated": false
   },
@@ -327,39 +462,93 @@
    "player": "T. Samuel",
    "opponent": "L. Borg",
    "tournament": "Stockholm",
-   "round": "round of 32",
+   "round": "first round",
    "timestamp": "2026-11-09T20:00:00.000Z",
-   "timestampKind": "scheduled start (no store holds the match end time)",
+   "timestampKind": "scheduled",
    "category": "Statistics",
-   "text": "T. Samuel beat L. Borg 6-3, 6-2 in the round of 32. T. Samuel: 4 aces, 19 winners, 21 unforced errors, saved 0 of 1 break point. L. Borg: 1 ace, 10 winners, 20 unforced errors, saved 7 of 11 break points. It was their first meeting.",
+   "text": "T. Samuel beat L. Borg in their first meeting, 6-3, 6-2 in the first round. T. Samuel won 5 games in a row. T. Samuel: 4 aces, 19 winners, 21 unforced errors, saved 0 of 1 break point. L. Borg: 1 ace, 10 winners, 20 unforced errors, saved 7 of 11 break points.",
    "fields": {
     "score": "6-3, 6-2",
-    "round": "round of 32",
+    "round": "first round",
     "retired": false,
+    "h2h": {
+     "a": 1,
+     "b": 0,
+     "n": 1
+    },
+    "facts": {
+     "longestRun": {
+      "side": "p2",
+      "n": 5
+     }
+    },
     "winner": {
      "aces": 4,
      "winners": 19,
      "unforcedErrors": 21,
      "breakPointsSaved": 0,
-     "breakPointsFaced": 1
+     "breakPointsFaced": 1,
+     "breakPointsSource": "box score"
     },
     "loser": {
      "aces": 1,
      "winners": 10,
      "unforcedErrors": 20,
      "breakPointsSaved": 7,
-     "breakPointsFaced": 11
-    },
-    "h2h": {
-     "a": 1,
-     "b": 0,
-     "n": 1
+     "breakPointsFaced": 11,
+     "breakPointsSource": "box score"
     }
    },
-   "sourceName": "Stennisfy match data (api-tennis box score)",
-   "sourceUrl": "https://michaeldk1996.github.io/SAAS/#match=12178420",
+   "sourceName": "Stennisfy match data (api-tennis box score and point-by-point)",
+   "sourceUrl": "https://michaeldk1996.github.io/SAAS/pbp/12178420.json",
    "language": "en",
    "translated": false
+  },
+  {
+   "id": "quote-norrie-duckworth-stockholm-2026-monday-52",
+   "type": "quote",
+   "playerId": "1103",
+   "opponentId": "1900",
+   "player": "C. Norrie",
+   "opponent": "J. Duckworth",
+   "tournament": "Stockholm",
+   "round": null,
+   "timestamp": "2026-11-09T17:45:00.000Z",
+   "timestampKind": "observed (the site's own publication time)",
+   "category": "Quotes",
+   "context": "after beating J. Duckworth",
+   "text": "I was really happy to enjoy the match, … Going in, I wasn't feeling my best. My main objective was to try and stay in Stockholm. I haven't really had a chance to explore, so that was a big motivation for me to win today. I let myself play. I didn't really care if I won or lost. I just wanted to enjoy the match.",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "ATP Tour daily report (via the official tournament site)",
+   "sourceUrl": "https://www.stockholmopen.se/en/tournament/nyheter/norrie-duckworth-stockholm-2026-monday",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page"
+  },
+  {
+   "id": "quote-norrie-duckworth-stockholm-2026-monday-53",
+   "type": "quote",
+   "playerId": "1103",
+   "opponentId": "1900",
+   "player": "C. Norrie",
+   "opponent": "J. Duckworth",
+   "tournament": "Stockholm",
+   "round": null,
+   "timestamp": "2026-11-09T17:45:00.000Z",
+   "timestampKind": "observed (the site's own publication time)",
+   "category": "Quotes",
+   "context": "after beating J. Duckworth",
+   "text": "I probably had one of my best serving days of the year, so we take that. It's nice to be playing this special tournament here in Stockholm.",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "ATP Tour daily report (via the official tournament site)",
+   "sourceUrl": "https://www.stockholmopen.se/en/tournament/nyheter/norrie-duckworth-stockholm-2026-monday",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page"
   },
   {
    "id": "report-12178148",
@@ -369,37 +558,118 @@
    "player": "T. M. Etcheverry",
    "opponent": "M. Dahlin",
    "tournament": "Stockholm",
-   "round": "round of 32",
+   "round": "first round",
    "timestamp": "2026-11-09T17:10:00.000Z",
-   "timestampKind": "scheduled start (no store holds the match end time)",
+   "timestampKind": "scheduled",
    "category": "Statistics",
-   "text": "T. M. Etcheverry beat M. Dahlin 6-4, 6-7, 6-3 in the round of 32. T. M. Etcheverry: 10 aces, 32 winners, 26 unforced errors. M. Dahlin: 9 aces, 32 winners, 26 unforced errors, saved 6 of 8 break points. It was their first meeting.",
+   "text": "T. M. Etcheverry beat M. Dahlin in their first meeting, 6-4, 6-7, 6-3 in the first round. Set 2 went to a tiebreak, won by M. Dahlin. T. M. Etcheverry: 10 aces, 32 winners, 26 unforced errors, faced no break points. M. Dahlin: 9 aces, 32 winners, 26 unforced errors, saved 6 of 8 break points.",
    "fields": {
     "score": "6-4, 6-7, 6-3",
-    "round": "round of 32",
+    "round": "first round",
     "retired": false,
+    "h2h": {
+     "a": 1,
+     "b": 0,
+     "n": 1
+    },
+    "facts": {
+     "tiebreakSets": [
+      {
+       "set": 2,
+       "winner": "p2"
+      }
+     ]
+    },
     "winner": {
      "aces": 10,
      "winners": 32,
-     "unforcedErrors": 26
+     "unforcedErrors": 26,
+     "breakPointsSaved": 0,
+     "breakPointsFaced": 0,
+     "breakPointsSource": "point-by-point"
     },
     "loser": {
      "aces": 9,
      "winners": 32,
      "unforcedErrors": 26,
      "breakPointsSaved": 6,
-     "breakPointsFaced": 8
-    },
-    "h2h": {
-     "a": 1,
-     "b": 0,
-     "n": 1
+     "breakPointsFaced": 8,
+     "breakPointsSource": "box score"
     }
    },
-   "sourceName": "Stennisfy match data (api-tennis box score)",
-   "sourceUrl": "https://michaeldk1996.github.io/SAAS/#match=12178148",
+   "sourceName": "Stennisfy match data (api-tennis box score and point-by-point)",
+   "sourceUrl": "https://michaeldk1996.github.io/SAAS/pbp/12178148.json",
    "language": "en",
    "translated": false
+  },
+  {
+   "id": "quote-rune-stockholm-2026-preview-feature-56",
+   "type": "quote",
+   "playerId": "437",
+   "opponentId": null,
+   "player": "H. Rune",
+   "opponent": null,
+   "tournament": "Stockholm",
+   "round": null,
+   "timestamp": "2026-11-09T16:50:00.000Z",
+   "timestampKind": "observed (the site's own publication time)",
+   "category": "Quotes",
+   "context": null,
+   "text": "It was so important for me to get those wins in Basel, getting wins against good players at this level on the ATP Tour, … Even though I got the wins at the Davis Cup, this was another confidence booster and gave me the belief that I can still do it.",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "Stockholm Open (official tournament site)",
+   "sourceUrl": "https://www.stockholmopen.se/en/tournament/nyheter/rune-stockholm-2026-preview-feature",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page"
+  },
+  {
+   "id": "quote-rune-stockholm-2026-preview-feature-57",
+   "type": "quote",
+   "playerId": "437",
+   "opponentId": null,
+   "player": "H. Rune",
+   "opponent": null,
+   "tournament": "Stockholm",
+   "round": null,
+   "timestamp": "2026-11-09T16:50:00.000Z",
+   "timestampKind": "observed (the site's own publication time)",
+   "category": "Quotes",
+   "context": null,
+   "text": "We're just going to keep building, and I think getting those matches under my belt before next year is crucial for me.",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "Stockholm Open (official tournament site)",
+   "sourceUrl": "https://www.stockholmopen.se/en/tournament/nyheter/rune-stockholm-2026-preview-feature",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page"
+  },
+  {
+   "id": "quote-rune-stockholm-2026-preview-feature-63",
+   "type": "quote",
+   "playerId": "437",
+   "opponentId": null,
+   "player": "H. Rune",
+   "opponent": null,
+   "tournament": "Stockholm",
+   "round": null,
+   "timestamp": "2026-11-09T16:50:00.000Z",
+   "timestampKind": "observed (the site's own publication time)",
+   "category": "Quotes",
+   "context": null,
+   "text": "It's going to be a different feeling, … Obviously, it's going to be a bit overwhelming as well, even though I've already gone through my comeback and getting back to the Tour. But I think that's part of it. It's not Stockholm's fault that I got injured. I love the tournament and have great memories of winning there in the past. I just want to come back, give a massive effort and hopefully do well.",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "Stockholm Open (official tournament site)",
+   "sourceUrl": "https://www.stockholmopen.se/en/tournament/nyheter/rune-stockholm-2026-preview-feature",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page"
   },
   {
    "id": "report-12178153",
@@ -409,37 +679,45 @@
    "player": "U. Humbert",
    "opponent": "D. Vallejo",
    "tournament": "Stockholm",
-   "round": "round of 32",
+   "round": "first round",
    "timestamp": "2026-11-09T13:30:00.000Z",
-   "timestampKind": "scheduled start (no store holds the match end time)",
+   "timestampKind": "scheduled",
    "category": "Statistics",
-   "text": "U. Humbert beat D. Vallejo 6-4, 6-3 in the round of 32. U. Humbert: 4 aces, 26 winners, 34 unforced errors, saved 8 of 11 break points. D. Vallejo: 0 aces, 6 winners, 16 unforced errors, saved 3 of 9 break points. It was their first meeting.",
+   "text": "U. Humbert beat D. Vallejo in their first meeting, 6-4, 6-3 in the first round. U. Humbert won 5 games in a row. U. Humbert: 4 aces, 26 winners, 34 unforced errors, saved 8 of 11 break points. D. Vallejo: 0 aces, 6 winners, 16 unforced errors, saved 3 of 9 break points.",
    "fields": {
     "score": "6-4, 6-3",
-    "round": "round of 32",
+    "round": "first round",
     "retired": false,
+    "h2h": {
+     "a": 1,
+     "b": 0,
+     "n": 1
+    },
+    "facts": {
+     "longestRun": {
+      "side": "p2",
+      "n": 5
+     }
+    },
     "winner": {
      "aces": 4,
      "winners": 26,
      "unforcedErrors": 34,
      "breakPointsSaved": 8,
-     "breakPointsFaced": 11
+     "breakPointsFaced": 11,
+     "breakPointsSource": "box score"
     },
     "loser": {
      "aces": 0,
      "winners": 6,
      "unforcedErrors": 16,
      "breakPointsSaved": 3,
-     "breakPointsFaced": 9
-    },
-    "h2h": {
-     "a": 1,
-     "b": 0,
-     "n": 1
+     "breakPointsFaced": 9,
+     "breakPointsSource": "box score"
     }
    },
-   "sourceName": "Stennisfy match data (api-tennis box score)",
-   "sourceUrl": "https://michaeldk1996.github.io/SAAS/#match=12178153",
+   "sourceName": "Stennisfy match data (api-tennis box score and point-by-point)",
+   "sourceUrl": "https://michaeldk1996.github.io/SAAS/pbp/12178153.json",
    "language": "en",
    "translated": false
   },
@@ -451,37 +729,39 @@
    "player": "B. Gojo",
    "opponent": "T. Machac",
    "tournament": "Stockholm",
-   "round": "round of 32",
+   "round": "first round",
    "timestamp": "2026-11-09T13:15:00.000Z",
-   "timestampKind": "scheduled start (no store holds the match end time)",
+   "timestampKind": "scheduled",
    "category": "Statistics",
-   "text": "B. Gojo beat T. Machac 6-3, 6-4 in the round of 32. B. Gojo: 14 aces, 31 winners, 15 unforced errors, saved 6 of 6 break points. T. Machac: 0 aces, 18 winners, 13 unforced errors, saved 4 of 6 break points. It was their first meeting.",
+   "text": "B. Gojo beat T. Machac in their first meeting, 6-3, 6-4 in the first round. B. Gojo: 14 aces, 31 winners, 15 unforced errors, saved 6 of 6 break points. T. Machac: 0 aces, 18 winners, 13 unforced errors, saved 4 of 6 break points.",
    "fields": {
     "score": "6-3, 6-4",
-    "round": "round of 32",
+    "round": "first round",
     "retired": false,
+    "h2h": {
+     "a": 1,
+     "b": 0,
+     "n": 1
+    },
     "winner": {
      "aces": 14,
      "winners": 31,
      "unforcedErrors": 15,
      "breakPointsSaved": 6,
-     "breakPointsFaced": 6
+     "breakPointsFaced": 6,
+     "breakPointsSource": "box score"
     },
     "loser": {
      "aces": 0,
      "winners": 18,
      "unforcedErrors": 13,
      "breakPointsSaved": 4,
-     "breakPointsFaced": 6
-    },
-    "h2h": {
-     "a": 1,
-     "b": 0,
-     "n": 1
+     "breakPointsFaced": 6,
+     "breakPointsSource": "box score"
     }
    },
-   "sourceName": "Stennisfy match data (api-tennis box score)",
-   "sourceUrl": "https://michaeldk1996.github.io/SAAS/#match=12178419",
+   "sourceName": "Stennisfy match data (api-tennis box score and point-by-point)",
+   "sourceUrl": "https://michaeldk1996.github.io/SAAS/pbp/12178419.json",
    "language": "en",
    "translated": false
   },
@@ -493,37 +773,45 @@
    "player": "C. Norrie",
    "opponent": "J. Duckworth",
    "tournament": "Stockholm",
-   "round": "round of 32",
+   "round": "first round",
    "timestamp": "2026-11-09T12:10:00.000Z",
-   "timestampKind": "scheduled start (no store holds the match end time)",
+   "timestampKind": "scheduled",
    "category": "Statistics",
-   "text": "C. Norrie beat J. Duckworth 7-5, 6-0 in the round of 32. C. Norrie: 10 aces, 23 winners, 8 unforced errors, saved 1 of 1 break point. J. Duckworth: 3 aces, 17 winners, 28 unforced errors, saved 3 of 7 break points. C. Norrie leads their head-to-head 2–0.",
+   "text": "C. Norrie beat J. Duckworth for the 2nd time in 2 meetings, 7-5, 6-0 in the first round. C. Norrie won 9 games in a row. C. Norrie: 10 aces, 23 winners, 8 unforced errors, saved 1 of 1 break point. J. Duckworth: 3 aces, 17 winners, 28 unforced errors, saved 3 of 7 break points.",
    "fields": {
     "score": "7-5, 6-0",
-    "round": "round of 32",
+    "round": "first round",
     "retired": false,
+    "h2h": {
+     "a": 2,
+     "b": 0,
+     "n": 2
+    },
+    "facts": {
+     "longestRun": {
+      "side": "p2",
+      "n": 9
+     }
+    },
     "winner": {
      "aces": 10,
      "winners": 23,
      "unforcedErrors": 8,
      "breakPointsSaved": 1,
-     "breakPointsFaced": 1
+     "breakPointsFaced": 1,
+     "breakPointsSource": "box score"
     },
     "loser": {
      "aces": 3,
      "winners": 17,
      "unforcedErrors": 28,
      "breakPointsSaved": 3,
-     "breakPointsFaced": 7
-    },
-    "h2h": {
-     "a": 2,
-     "b": 0,
-     "n": 2
+     "breakPointsFaced": 7,
+     "breakPointsSource": "box score"
     }
    },
-   "sourceName": "Stennisfy match data (api-tennis box score)",
-   "sourceUrl": "https://michaeldk1996.github.io/SAAS/#match=12178147",
+   "sourceName": "Stennisfy match data (api-tennis box score and point-by-point)",
+   "sourceUrl": "https://michaeldk1996.github.io/SAAS/pbp/12178147.json",
    "language": "en",
    "translated": false
   },
@@ -535,37 +823,45 @@
    "player": "A. Michelsen",
    "opponent": "Y. Hanfmann",
    "tournament": "Stockholm",
-   "round": "round of 32",
+   "round": "first round",
    "timestamp": "2026-11-09T11:55:00.000Z",
-   "timestampKind": "scheduled start (no store holds the match end time)",
+   "timestampKind": "scheduled",
    "category": "Statistics",
-   "text": "A. Michelsen beat Y. Hanfmann 6-2, 6-3 in the round of 32. A. Michelsen: 6 aces, 23 winners, 11 unforced errors, saved 1 of 1 break point. Y. Hanfmann: 3 aces, 13 winners, 19 unforced errors, saved 2 of 5 break points. It was their first meeting.",
+   "text": "A. Michelsen beat Y. Hanfmann in their first meeting, 6-2, 6-3 in the first round. A. Michelsen won 5 games in a row. A. Michelsen: 6 aces, 23 winners, 11 unforced errors, saved 1 of 1 break point. Y. Hanfmann: 3 aces, 13 winners, 19 unforced errors, saved 2 of 5 break points.",
    "fields": {
     "score": "6-2, 6-3",
-    "round": "round of 32",
+    "round": "first round",
     "retired": false,
+    "h2h": {
+     "a": 1,
+     "b": 0,
+     "n": 1
+    },
+    "facts": {
+     "longestRun": {
+      "side": "p1",
+      "n": 5
+     }
+    },
     "winner": {
      "aces": 6,
      "winners": 23,
      "unforcedErrors": 11,
      "breakPointsSaved": 1,
-     "breakPointsFaced": 1
+     "breakPointsFaced": 1,
+     "breakPointsSource": "box score"
     },
     "loser": {
      "aces": 3,
      "winners": 13,
      "unforcedErrors": 19,
      "breakPointsSaved": 2,
-     "breakPointsFaced": 5
-    },
-    "h2h": {
-     "a": 1,
-     "b": 0,
-     "n": 1
+     "breakPointsFaced": 5,
+     "breakPointsSource": "box score"
     }
    },
-   "sourceName": "Stennisfy match data (api-tennis box score)",
-   "sourceUrl": "https://michaeldk1996.github.io/SAAS/#match=12178149",
+   "sourceName": "Stennisfy match data (api-tennis box score and point-by-point)",
+   "sourceUrl": "https://michaeldk1996.github.io/SAAS/pbp/12178149.json",
    "language": "en",
    "translated": false
   },
@@ -577,35 +873,47 @@
    "player": "T. A. Tirante",
    "opponent": "J. Munar",
    "tournament": "Stockholm",
-   "round": "round of 32",
+   "round": "first round",
    "timestamp": "2026-11-08T17:40:00.000Z",
-   "timestampKind": "scheduled start (no store holds the match end time)",
+   "timestampKind": "scheduled",
    "category": "Statistics",
-   "text": "T. A. Tirante beat J. Munar 7-6, 6-3 in the round of 32. T. A. Tirante: 16 aces, 36 winners, 24 unforced errors. J. Munar: 4 aces, 17 winners, 12 unforced errors, saved 1 of 2 break points. It was their first meeting.",
+   "text": "T. A. Tirante beat J. Munar in their first meeting, 7-6, 6-3 in the first round. Set 1 went to a tiebreak, won by T. A. Tirante. T. A. Tirante: 16 aces, 36 winners, 24 unforced errors, faced no break points. J. Munar: 4 aces, 17 winners, 12 unforced errors, saved 1 of 2 break points.",
    "fields": {
     "score": "7-6, 6-3",
-    "round": "round of 32",
+    "round": "first round",
     "retired": false,
+    "h2h": {
+     "a": 1,
+     "b": 0,
+     "n": 1
+    },
+    "facts": {
+     "tiebreakSets": [
+      {
+       "set": 1,
+       "winner": "p1"
+      }
+     ]
+    },
     "winner": {
      "aces": 16,
      "winners": 36,
-     "unforcedErrors": 24
+     "unforcedErrors": 24,
+     "breakPointsSaved": 0,
+     "breakPointsFaced": 0,
+     "breakPointsSource": "point-by-point"
     },
     "loser": {
      "aces": 4,
      "winners": 17,
      "unforcedErrors": 12,
      "breakPointsSaved": 1,
-     "breakPointsFaced": 2
-    },
-    "h2h": {
-     "a": 1,
-     "b": 0,
-     "n": 1
+     "breakPointsFaced": 2,
+     "breakPointsSource": "box score"
     }
    },
-   "sourceName": "Stennisfy match data (api-tennis box score)",
-   "sourceUrl": "https://michaeldk1996.github.io/SAAS/#match=12178152",
+   "sourceName": "Stennisfy match data (api-tennis box score and point-by-point)",
+   "sourceUrl": "https://michaeldk1996.github.io/SAAS/pbp/12178152.json",
    "language": "en",
    "translated": false
   },
@@ -617,37 +925,51 @@
    "player": "J. M. Cerundolo",
    "opponent": "E. Ymer",
    "tournament": "Stockholm",
-   "round": "round of 32",
+   "round": "first round",
    "timestamp": "2026-11-08T15:40:00.000Z",
-   "timestampKind": "scheduled start (no store holds the match end time)",
+   "timestampKind": "scheduled",
    "category": "Statistics",
-   "text": "J. M. Cerundolo beat E. Ymer 6-1, 7-6 in the round of 32. J. M. Cerundolo: 2 aces, 12 winners, 18 unforced errors, saved 1 of 1 break point. E. Ymer: 8 aces, 22 winners, 38 unforced errors, saved 2 of 5 break points. It was their first meeting.",
+   "text": "J. M. Cerundolo beat E. Ymer in their first meeting, 6-1, 7-6 in the first round. Set 2 went to a tiebreak, won by J. M. Cerundolo. J. M. Cerundolo won 5 games in a row. J. M. Cerundolo: 2 aces, 12 winners, 18 unforced errors, saved 1 of 1 break point. E. Ymer: 8 aces, 22 winners, 38 unforced errors, saved 2 of 5 break points.",
    "fields": {
     "score": "6-1, 7-6",
-    "round": "round of 32",
+    "round": "first round",
     "retired": false,
+    "h2h": {
+     "a": 1,
+     "b": 0,
+     "n": 1
+    },
+    "facts": {
+     "tiebreakSets": [
+      {
+       "set": 2,
+       "winner": "p2"
+      }
+     ],
+     "longestRun": {
+      "side": "p2",
+      "n": 5
+     }
+    },
     "winner": {
      "aces": 2,
      "winners": 12,
      "unforcedErrors": 18,
      "breakPointsSaved": 1,
-     "breakPointsFaced": 1
+     "breakPointsFaced": 1,
+     "breakPointsSource": "box score"
     },
     "loser": {
      "aces": 8,
      "winners": 22,
      "unforcedErrors": 38,
      "breakPointsSaved": 2,
-     "breakPointsFaced": 5
-    },
-    "h2h": {
-     "a": 1,
-     "b": 0,
-     "n": 1
+     "breakPointsFaced": 5,
+     "breakPointsSource": "box score"
     }
    },
-   "sourceName": "Stennisfy match data (api-tennis box score)",
-   "sourceUrl": "https://michaeldk1996.github.io/SAAS/#match=12178154",
+   "sourceName": "Stennisfy match data (api-tennis box score and point-by-point)",
+   "sourceUrl": "https://michaeldk1996.github.io/SAAS/pbp/12178154.json",
    "language": "en",
    "translated": false
   },
@@ -661,7 +983,7 @@
    "tournament": "Stockholm",
    "round": "final",
    "timestamp": "2026-11-08T13:20:00.000Z",
-   "timestampKind": "scheduled start of the match concerned",
+   "timestampKind": "scheduled",
    "category": "Qualifying",
    "text": "A. Shevchenko qualified for the main draw, beating J. Fearnley 6-2, 6-4 in the final qualifying round.",
    "basis": "won the qualifying final (api-tennis result)",
@@ -681,7 +1003,7 @@
    "tournament": "Stockholm",
    "round": "final",
    "timestamp": "2026-11-08T13:10:00.000Z",
-   "timestampKind": "scheduled start of the match concerned",
+   "timestampKind": "scheduled",
    "category": "Qualifying",
    "text": "A. Mannarino lost in the final qualifying round and has a main-draw match: a lucky loser.",
    "basis": "derived: lost the qualifying final, then listed in a main-draw fixture (api-tennis does not flag lucky losers)",
@@ -701,7 +1023,7 @@
    "tournament": "Stockholm",
    "round": "final",
    "timestamp": "2026-11-08T13:10:00.000Z",
-   "timestampKind": "scheduled start of the match concerned",
+   "timestampKind": "scheduled",
    "category": "Qualifying",
    "text": "T. Samuel qualified for the main draw, beating A. Mannarino 3-6, 7-5, 6-1 in the final qualifying round.",
    "basis": "won the qualifying final (api-tennis result)",
@@ -721,7 +1043,7 @@
    "tournament": "Stockholm",
    "round": "final",
    "timestamp": "2026-11-08T11:10:00.000Z",
-   "timestampKind": "scheduled start of the match concerned",
+   "timestampKind": "scheduled",
    "category": "Qualifying",
    "text": "B. Gojo qualified for the main draw, beating N. Basilashvili 6-3, 7-6 in the final qualifying round.",
    "basis": "won the qualifying final (api-tennis result)",
@@ -741,7 +1063,7 @@
    "tournament": "Stockholm",
    "round": "final",
    "timestamp": "2026-11-08T11:10:00.000Z",
-   "timestampKind": "scheduled start of the match concerned",
+   "timestampKind": "scheduled",
    "category": "Qualifying",
    "text": "L. Sonego qualified for the main draw, beating I. Montes-De La Torre 7-5, 6-3 in the final qualifying round.",
    "basis": "won the qualifying final (api-tennis result)",

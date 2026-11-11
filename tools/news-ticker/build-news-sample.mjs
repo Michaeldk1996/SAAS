@@ -15,13 +15,15 @@
  * in a clone with the gitignored stores absent.
  *
  * Usage: node tools/news-ticker/build-news-sample.mjs [--tournament Stockholm] [--base <site url>] [--out news-sample.json]
- *        [--no-quotes] [--hold-quotes  run and verify the quotes but leave their text out of the file]
+ *        [--no-quotes]
  */
 import fs from 'node:fs';
 import path from 'node:path';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
-import { reportText, statusItems, h2hAfter, verbatimIn, resolvePlayer, winnerScore, roundWords } from './news-core.mjs';
+import { reportText, statusItems, h2hAfter, verbatimIn, resolvePlayer, roundWords, breakPoints } from './news-core.mjs';
+import { pbpFacts, scoreFacts } from './pbp-facts.mjs';
+import { translateQuote } from './translate.mjs';
 
 const require = createRequire(import.meta.url);
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -67,8 +69,20 @@ async function main() {
   const shard = async (k) => { const s = String(k); if (!(s in shards)) shards[s] = await getJson(`career-history/${s}.json`); return shards[s]; };
 
   const items = [];
-  const counts = { tournament, mainDrawCompleted: main.length, walkovers: 0, played: 0, withBoxScore: 0, withWinnersUE: 0,
-    withBreakPointCounts: 0, withH2H: 0, reports: 0, status: 0, quotes: 0 };
+  // Round names = the tournament page's own (tournament-progression.json: R1, R2 … QF, SF, F for this draw)
+  const prog = await getJson('tournament-progression.json');
+  const progT = prog && (Array.isArray(prog.tournaments) ? prog.tournaments : Object.values(prog.tournaments || {})).find((t) => new RegExp(`\\b${TOUR}\\b`, 'i').test(t.feedName || ''));
+  const PAGE_ROUND = { R1: 'first round', R2: 'second round', R3: 'third round', R4: 'fourth round', QF: 'quarter-finals', SF: 'semi-finals', F: 'final' };
+  const pageRound = (m, side) => {
+    const p = progT && (progT.players || []).find((x) => String(x.playerKey) === String(m[side + 'Key']));
+    const o = side === 'p1' ? 'p2' : 'p1';
+    const r = p && (p.rounds || []).filter((x) => x.opponent === m[o]);
+    return r && r.length === 1 && PAGE_ROUND[r[0].round] ? { code: r[0].round, words: PAGE_ROUND[r[0].round] } : null;
+  };
+  const counts = { tournament, mainDrawCompleted: main.length, walkovers: 0, played: 0, withBoxScore: 0, withWinnersUE: 0, withPointByPoint: 0,
+    pbpFactsUsable: 0, roundFromTournamentPage: 0, withH2H: 0, withDuration: 0, reports: 0, status: 0, quotes: 0, commentary: 0,
+    breakPoints: { sides: 0, fromBoxScore: 0, fromPointByPoint: 0, none: 0, bothSources: 0, mismatches: 0, mismatchList: [] },
+    facts: { fromSetDown: 0, tiebreakSets: 0, brokenForSetOrMatch: 0, brokenFrom400: 0, openingGameSaves: 0, longestRunPrinted: 0 } };
 
   // ---- reports -------------------------------------------------------------------------------------------------
   for (const m of main) {
@@ -76,20 +90,38 @@ async function main() {
     counts.played++;
     const w = m.finalScore.winner, l = w === 'p1' ? 'p2' : 'p1';
     const ms = m.matchStats || {};
-    const hasBox = !!(ms.p1 && ms.p2 && Object.keys(ms.p1).length > 3);
-    if (hasBox) counts.withBoxScore++;
+    if (ms.p1 && ms.p2 && Object.keys(ms.p1).length > 3) counts.withBoxScore++;
+    const shardPbp = await getJson(`pbp/${ek(m)}.json`);
+    if (shardPbp) counts.withPointByPoint++;
+    const pbp = shardPbp ? pbpFacts(shardPbp, m.finalScore, 3) : null;
+    if (pbp) counts.pbpFactsUsable++;
+    for (const k of ['p1', 'p2']) {
+      const B = counts.breakPoints; B.sides++;
+      const box = ms[k] && ms[k].raw && ms[k].raw['Service:Break Points Saved'], pp = pbp && pbp.bp[k];
+      const used = breakPoints(ms, k, pbp);
+      if (!used) B.none++; else if (used.source === 'box score') B.fromBoxScore++; else B.fromPointByPoint++;
+      if (box && box.total > 0 && pp) { B.bothSources++; if (box.total !== pp.faced || box.won !== pp.saved) { B.mismatches++; B.mismatchList.push(`${m[k]} (${m.p1} v ${m.p2}): box score ${box.won}/${box.total}, point-by-point ${pp.saved}/${pp.faced}`); } }
+    }
     const [sa, sb] = [await shard(m[w + 'Key']), await shard(m[l + 'Key'])];
     const h2h = h2hAfter(H2HCore, m, w, l, sa, sb, names, ek(m));
     if (h2h) counts.withH2H++;
-    const rep = reportText(m, w, l, h2h);
+    const pr = pageRound(m, w) || pageRound(m, l);
+    if (pr) counts.roundFromTournamentPage++;
+    const rep = reportText(m, w, l, { h2h, pbp, score: scoreFacts(m.finalScore, w), round: pr ? pr.words : roundWords(m.tournamentRound), duration: null });
     if (rep.used.wue) counts.withWinnersUE++;
-    if (rep.used.bp) counts.withBreakPointCounts++;
+    const f = rep.fields.facts || {};
+    if (f.fromSetDown) counts.facts.fromSetDown++;
+    if (f.tiebreakSets) counts.facts.tiebreakSets += f.tiebreakSets.length;
+    if (f.brokenForSet || f.brokenForMatch) counts.facts.brokenForSetOrMatch++;
+    if (f.brokenFrom400) counts.facts.brokenFrom400++;
+    if (f.openingGame) counts.facts.openingGameSaves++;
+    if (f.longestRun) counts.facts.longestRunPrinted++;
     items.push({
       id: `report-${ek(m)}`, type: 'report', playerId: String(m[w + 'Key']), opponentId: String(m[l + 'Key']),
-      player: m[w], opponent: m[l], tournament, round: roundWords(m.tournamentRound), timestamp: startIso(m),
-      timestampKind: 'scheduled start (no store holds the match end time)', category: 'Statistics',
-      text: rep.text, fields: rep.fields, sourceName: 'Stennisfy match data (api-tennis box score)',
-      sourceUrl: `${BASE}/#match=${ek(m)}`, language: 'en', translated: false,
+      player: m[w], opponent: m[l], tournament, round: rep.fields.round, timestamp: startIso(m),
+      timestampKind: 'scheduled', category: 'Statistics',
+      text: rep.text, fields: rep.fields, sourceName: 'Stennisfy match data (api-tennis box score and point-by-point)',
+      sourceUrl: `${BASE}/pbp/${ek(m)}.json`, language: 'en', translated: false,
     });
     counts.reports++;
   }
@@ -98,34 +130,53 @@ async function main() {
   for (const s of statusItems(cards, { ek, startIso, tournament, base: BASE })) { items.push(s); counts.status++; }
 
   // ---- quotes --------------------------------------------------------------------------------------------------
-  const quoteRun = { sources: [], candidates: 0, published: 0, droppedNotVerbatim: 0, droppedNoPlayer: 0, droppedAmbiguous: 0, held: [] };
-  const HOLD = flag('hold-quotes'), winnersQuoted = { won: new Set(), lost: new Set() };
+  const quoteRun = { sources: [], candidates: 0, published: 0, droppedNotVerbatim: 0, droppedNoPlayer: 0, droppedAmbiguous: 0, notTranslatedNoKey: 0, notTranslatedApiError: 0, droppedTranslationCheck: 0, translationFailures: [], droppedEnglishExists: 0, bySourceLanguage: {} };
+  const winnersQuoted = { won: new Set(), lost: new Set() };
   if (!flag('no-quotes')) {
     const { collectQuotes } = await import('./quote-sources.mjs');
     const entrants = new Map();
     cards.forEach((m) => { if (m.p1Key != null) entrants.set(String(m.p1Key), m.p1); if (m.p2Key != null) entrants.set(String(m.p2Key), m.p2); });
-    const got = await collectQuotes({ tournament, cards, main });
+    // the tournament window opens 3 days before the first card we hold (qualifying weekend, pre-event media day)
+    const first = Math.min(...cards.map((m) => Date.parse(m.date + 'T00:00:00Z')).filter(Number.isFinite));
+    const got = await collectQuotes({ tournament, cards, main, since: first - 3 * 86400000 });
     quoteRun.sources = got.sources;
+    const pending = [];
     for (const q of got.candidates) {
       quoteRun.candidates++;
-      if (!(q.spans || [q.text]).every((sp) => verbatimIn(sp, q.sourceText))) { quoteRun.droppedNotVerbatim++; continue; }
+      if (!(q.spans || [q.text]).every((sp) => verbatimIn(sp, q.sourceText))) { quoteRun.droppedNotVerbatim++; continue; }   // on the ORIGINAL-language text
       const who = resolvePlayer(q.speaker, entrants);
       if (who.status !== 'one') { quoteRun[who.status === 'several' ? 'droppedAmbiguous' : 'droppedNoPlayer']++; continue; }
       const opp = q.opponent ? resolvePlayer(q.opponent, entrants) : null;
+      pending.push({ q, who, opp });
+    }
+    // English first; a translated quote that says the same as an English one by the same player is dropped (the English wins)
+    const words = (t) => new Set(String(t).toLowerCase().match(/[a-z']{3,}/g) || []);
+    const overlap = (a, b) => { const A = words(a), B = words(b); let n = 0; A.forEach((w) => { if (B.has(w)) n++; }); return A.size && B.size ? n / Math.min(A.size, B.size) : 0; };
+    const english = [];
+    for (const { q, who, opp } of pending.sort((x, y) => (x.q.language === 'en' ? 0 : 1) - (y.q.language === 'en' ? 0 : 1))) {
+      let text = q.text, original = null, translated = false, model = null;
+      if (q.language !== 'en') {
+        const tr = await translateQuote(q.text, q.language);
+        if (tr.status === 'no-key') { quoteRun.notTranslatedNoKey++; continue; }
+        if (tr.status === 'api-error') { quoteRun.notTranslatedApiError++; quoteRun.translationFailures.push(`${q.speaker} (${q.sourceName}): ${String(tr.detail).slice(0, 160)}`); continue; }
+        if (tr.status !== 'ok') { quoteRun.droppedTranslationCheck++; quoteRun.translationFailures.push(`${q.speaker} (${q.sourceName}): ${tr.detail || tr.status}`); continue; }
+        if (english.some((e) => e.key === who.key && overlap(e.text, tr.text) >= 0.6)) { quoteRun.droppedEnglishExists++; continue; }
+        original = q.text; text = tr.text; translated = true; model = tr.model;
+      } else english.push({ key: who.key, text });
       if (q.matchId) winnersQuoted[q.won ? 'won' : 'lost'].add(q.matchId);
-      if (HOLD) { quoteRun.held.push({ id: `quote-${q.id}`, playerId: who.key, context: q.context || null, characters: q.text.length, sourceUrl: q.sourceUrl, verbatimCheck: 'passed' }); quoteRun.published++; continue; }
+      const bySrc = (quoteRun.bySourceLanguage[`${q.sourceName} (${q.language})`] = quoteRun.bySourceLanguage[`${q.sourceName} (${q.language})`] || { quotes: 0, winnerMatches: [] });
+      bySrc.quotes++; if (q.matchId && q.won && !bySrc.winnerMatches.includes(q.matchId)) bySrc.winnerMatches.push(q.matchId);
       items.push({
         id: `quote-${q.id}`, type: 'quote', playerId: who.key, opponentId: opp && opp.status === 'one' ? opp.key : null,
         player: entrants.get(who.key), opponent: opp && opp.status === 'one' ? entrants.get(opp.key) : null,
-        tournament, round: q.round || null, timestamp: q.timestamp, timestampKind: q.timestampKind, category: q.category || 'Quotes',
-        context: q.context || null, text: q.text, sourceName: q.sourceName, sourceUrl: q.sourceUrl,
-        language: q.language || 'en', translated: false, verbatimCheck: 'passed',
+        tournament, round: null, timestamp: q.timestamp, timestampKind: q.timestampKind, category: 'Quotes',
+        context: q.context || null, text, originalText: original, language: q.language, translated, translationModel: model,
+        sourceName: q.sourceName, sourceUrl: q.sourceUrl, verbatimCheck: 'passed', verbatimCheckedOn: 'the original-language text of the fetched page',
       });
       quoteRun.published++; counts.quotes++;
     }
   }
 
-  quoteRun.textHeld = HOLD;
   quoteRun.playedMatchesWithWinnerQuote = `${winnersQuoted.won.size} of ${counts.played}`;
   items.sort((a, b) => String(b.timestamp || '').localeCompare(String(a.timestamp || '')) || a.id.localeCompare(b.id));
   const out = { generatedAt: new Date().toISOString(), sample: true, note: 'Feasibility sample (news ticker). No page reads this file.',
