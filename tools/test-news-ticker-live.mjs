@@ -222,6 +222,46 @@ await ok('polite rate: one section request per outlet per run; an article page i
   const offR = await readOutlet({ ...base, outlet: { ...outlet, enabled: false }, sectionMemo: new Map(), fetchFn: async () => { throw new Error('must not fetch'); } });
   assert.equal(offR.stats.blocked, 'not enabled');
 });
+// ---- reports in the founder's voice (founder 2026-11-12): every rewritten sentence checked against its own facts ----
+await ok("voice: a rewrite passes only when every number, name and word is in that sentence's facts; a failing sentence keeps the template", async () => {
+  const { checkSentence, mergeChecked, playerRef, humaniseReport, VOCAB } = await import('./news-ticker/humanise.mjs');
+  const P = [playerRef('H. Rune', 'Holger Rune'), playerRef('M. Kecmanovic', 'Miomir Kecmanovic')];
+  const T = ['H. Rune beat M. Kecmanovic for the 4th time in 5 meetings, 2-6, 6-1, 6-4 in the second round in 83 minutes.', 'H. Rune came from a set down.', 'H. Rune won 7 games in a row.',
+    'H. Rune: 9 aces, 41 winners, 28 unforced errors, saved 0 of 3 break points.', 'M. Kecmanovic: 4 aces, 18 winners, 11 unforced errors, saved 1 of 5 break points.'];
+  const R = ['Holger Rune beat Miomir Kecmanovic for the 4th time in 5 meetings, 2–6, 6–1, 6–4 in R2 in 83 minutes.', 'He came from a set down.', 'He won 7 games in a row along the way.',
+    'Rune hit 9 aces and 41 winners, with 28 unforced errors, and saved 0 of 3 break points.', 'Kecmanovic hit 4 aces and 18 winners, made 11 unforced errors and saved 1 of 5 break points.'];
+  const good = mergeChecked(T, R, P);
+  assert.deepEqual([good.passed, good.total, good.failures], [5, 5, []]); assert.equal(good.text, R.join(' '));
+  const bad = [
+    [0, 'Holger Rune beat Miomir Kecmanovic for the 4th time in 5 meetings, 6–2, 6–1, 6–4 in R2 in 83 minutes.', /score/],          // a set score turned round
+    [0, 'Miomir Kecmanovic lost to Holger Rune 2–6, 6–1, 6–4 in R2.', /swapped/],
+    [0, 'Holger Rune beat Miomir Kecmanovic 2–6, 6–1, 6–4 in R3 in 83 minutes.', /round/],
+    [1, 'Rune looked tired but came from a set down.', /looked/], [1, 'Rune felt good and came from a set down.', /felt/],
+    [2, 'Kecmanovic won 7 games in a row.', /not in this fact/], [2, 'He won 8 games in a row.', /8 game/],
+    [3, 'Rune hit 41 aces and 9 winners.', /41 ace/],                                                                              // right numbers, wrong stat
+    [3, 'Rune was not clutch, saving 0 of 3 break points.', /not in the facts/], [3, 'Rune was solid with 9 aces.', /solid/],
+    [3, 'H. Rune hit 9 aces.', /initial/], [4, 'He hit 4 aces and 18 winners.', /"he"/],                                           // "He" would read as Rune
+    [3, 'Rune hit 9 aces and saved none of 3 break points.', /none/], [3, 'Rune hit 9 aces. He hit 41 winners.', /one sentence/],
+    [3, 'Rune hit 41 winners, more than double.', /more/], [1, 'Rune came from a set down!', /exclamation/], [1, '', /empty/],
+  ];
+  for (const [i, t, why] of bad) { const r = checkSentence(T[i], t, { players: P, prevSubject: P[0] }); assert.equal(r.ok, false, t); assert.match(r.why, why, t); }
+  for (const w of ['looked', 'felt', 'seemed', 'solid', 'clutch', 'shaky', 'deserved', 'lucky', 'only', 'just', 'none', 'all', 'twice', 'saved', 'converted', 'faced', 'not', 'no', 'more', 'than']) assert.ok(!VOCAB.has(w), `"${w}" must not be free vocabulary`);
+  // one failing sentence -> that sentence only falls back; the count says so
+  const mixed = mergeChecked(T, [R[0], 'Rune looked tired but came from a set down.', R[2], R[3], R[4]], P);
+  assert.deepEqual([mixed.passed, mixed.total, mixed.failures.map((f) => f.i)], [4, 5, [1]]);
+  assert.equal(mixed.text, [R[0], T[1], 'He won 7 games in a row along the way.', R[3], R[4]].join(' '));
+  // the report call: no key -> nothing rewritten; a model answer of the wrong length -> nothing rewritten
+  const base = { sentences: T, winner: { card: 'H. Rune', full: 'Holger Rune' }, loser: { card: 'M. Kecmanovic', full: 'Miomir Kecmanovic' } };
+  assert.equal((await humaniseReport(base, { apiKey: '' })).status, 'no-key');
+  const short = await humaniseReport(base, { apiKey: 'k', fetchFn: async () => ({ ok: true, json: async () => ({ stop_reason: 'end_turn', content: [{ type: 'text', text: '["one"]' }], usage: { input_tokens: 5, output_tokens: 2 } }) }) });
+  assert.equal(short.status, 'bad-output');
+  const full = await humaniseReport(base, { apiKey: 'k', fetchFn: async (u, o) => { const b = JSON.parse(o.body); assert.equal(b.model, 'claude-opus-5-5'); assert.deepEqual(JSON.parse(b.messages[0].content).names, { winner: 'Holger Rune', loser: 'Miomir Kecmanovic' });
+    return { ok: true, json: async () => ({ stop_reason: 'end_turn', content: [{ type: 'thinking', thinking: '' }, { type: 'text', text: JSON.stringify(R) }], usage: { input_tokens: 400, output_tokens: 120 } }) }; } });
+  assert.equal(full.status, 'ok'); assert.deepEqual([full.voice.passed, full.voice.total], [5, 5]); assert.equal(full.text, R.join(' '));
+  const w = read('.github/workflows/pipeline.yml');
+  assert.match(w, /name: Build news ticker \(best-effort\)\n\s+env:\n\s+ANTHROPIC_API_KEY: \$\{\{ secrets\.ANTHROPIC_API_KEY \}\}/, 'the key reaches the build from Actions secrets only');
+  assert.ok(!/sk-ant-/.test(read('tools/news-ticker/humanise.mjs')));
+});
 // ---- tour-wide (founder 2026-11-12: press interviews and injuries for every ATP player, every day) ----
 await ok('tour-wide: an article that names no tournament still yields its quote; each candidate carries the tournaments its article mentions', async () => {
   const SECTION = '<html>' + 'x'.repeat(700) + '<a href="/tennis/rune-on-his-long-road-back">Rune on his road back</a><a href="/tennis/other-long-article-slug">Other news</a></html>';

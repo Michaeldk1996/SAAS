@@ -929,6 +929,7 @@ jobs:
       # changed. Observed start / end come from the live poller's tables (read-only). Rules: .claude/rules/news-ticker.md.
       - name: Build news ticker (best-effort)
         env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}   # match reports in the founder's voice (pipeline only; no key = the template text)
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
         run: |

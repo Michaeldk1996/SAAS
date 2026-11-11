@@ -14,6 +14,7 @@
  * Usage: node tools/news-ticker/build-news-ticker.mjs [--dir .] [--now ISO] [--no-times]
  * Exit 0 always writes what it could; exit 1 only when the board itself cannot be read.
  */
+import { humaniseReport, VOICE_VERSION } from './humanise.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 import { createRequire } from 'node:module';
@@ -56,7 +57,9 @@ async function supabaseRows(table, select, keys) {
   return out;
 }
 
-export async function build({ nowIso, times }) {
+export async function build({ nowIso, times, rewrite = null, apiKey = process.env.ANTHROPIC_API_KEY }) {
+  const voiceOn = !!(rewrite || apiKey), VOICE_MAX_CALLS = Number(process.env.NEWS_REPORT_MAX_CALLS || 40);
+  let voiceCalls = 0;
   const { berlinWallMs } = require(path.join(ROOT, 'berlin-time.js'));
   const H2HCore = require(path.join(ROOT, 'h2h-core.js'));
   const board = readJson('matches.json');
@@ -65,6 +68,16 @@ export async function build({ nowIso, times }) {
     && !/\//.test(String(m.p1) + String(m.p2)));                       // singles only (a doubles pair is "A / B")
   const index = readJson('player-index.json');
   const names = ((index && index.players) || []).map((p) => p && p.name).filter(Boolean);
+  // A player's full name for a report's first mention: the standings name, used only when it reads "Given … Surname"
+  // with the card's own surname last and the card's initial first (api-tennis scrambles some multi-part names).
+  const fullByKey = new Map(((index && index.players) || []).filter((p) => p && p.key != null && p.name).map((p) => [String(p.key), String(p.name).trim()]));
+  const fullName = (key, card) => {
+    const f = fullByKey.get(String(key)); if (!f) return null;
+    const lc = (x) => String(x).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    const c = lc(card).replace(/\./g, ' ').split(/\s+/).filter(Boolean); let i = 0; while (i < c.length - 1 && c[i].length <= 2) i++;
+    const sur = c.slice(i).join(' ');
+    return sur && lc(f).endsWith(' ' + sur) && lc(f)[0] === c[0][0] && lc(f).split(/\s+/).length === sur.split(' ').length + 1 ? f : null;
+  };
   const prog = readJson('tournament-progression.json');
   const progs = prog ? (Array.isArray(prog.tournaments) ? prog.tournaments : Object.values(prog.tournaments || {})) : [];
   const startIso = (m) => { const t = berlinWallMs(m.date, m.time); return Number.isFinite(t) ? new Date(t).toISOString() : null; };
@@ -84,7 +97,7 @@ export async function build({ nowIso, times }) {
   const reg = readJson('data/news-outlets.json') || {};
   const off = new Set([...(reg.outlets || []), ...(reg.tournamentSites || []).flatMap((x) => [{ ...x, outlet: x.name }, { ...x, outlet: x.ownName }])].filter((o) => o.enabled === false).map((o) => o.outlet));
   const hidden = (x) => x.type === 'quote' && off.has(x.sourceName);
-  const summary = { tournaments: 0, finished: 0, reports: 0, reportErrors: [], status: 0, quotes: 0, added: 0, revised: 0, unchanged: 0, filesWritten: [], withObservedEnd: 0, withDuration: 0, hiddenByOffSwitch: 0 };
+  const summary = { voice: { rewritten: 0, reused: 0, notRewritten: 0, errors: 0, lastError: null, tokens: { input: 0, output: 0 }, reportsFullyInVoice: 0, reportsTotal: 0, sentencesPassed: 0, sentencesTotal: 0 }, tournaments: 0, finished: 0, reports: 0, reportErrors: [], status: 0, quotes: 0, added: 0, revised: 0, unchanged: 0, filesWritten: [], withObservedEnd: 0, withDuration: 0, hiddenByOffSwitch: 0 };
   const touched = [];
   for (const g of groups.values()) {
     const file = fileOf(g.key, g.season);
@@ -113,12 +126,23 @@ export async function build({ nowIso, times }) {
         const stage = m.qualifying ? 'qualifying' : null;
         const rw = m.qualifying ? `${roundWords(m.tournamentRound) === 'final' ? 'final round' : roundWords(m.tournamentRound)} of qualifying` : (pageRound(m, w) || pageRound(m, l) || roundWords(m.tournamentRound));
         const rep = reportText(m, w, l, { h2h, pbp, score: scoreFacts(m.finalScore, w), round: rw, duration: obs && obs.minutes != null ? obs.minutes : null });
+        // Michael's voice: the template sentences rewritten one for one, each checked against its own facts; a sentence
+        // that fails keeps the template wording. Done once per report: a stored rewrite of the same template is reused.
+        let text = rep.text, voice = null;
+        if (prev && prev.voice && prev.voice.version === VOICE_VERSION && prev.templateText === rep.text) { text = prev.text; voice = prev.voice; summary.voice.reused++; }
+        else if (voiceOn && voiceCalls < VOICE_MAX_CALLS) {
+          voiceCalls++;
+          const h = await humaniseReport({ sentences: rep.sentences, winner: { card: m[w], full: fullName(m[w + 'Key'], m[w]) }, loser: { card: m[l], full: fullName(m[l + 'Key'], m[l]) } }, { rewrite, apiKey });
+          if (h.usage) { summary.voice.tokens.input += h.usage.input; summary.voice.tokens.output += h.usage.output; }
+          if (h.status === 'ok') { text = h.text; voice = h.voice; summary.voice.rewritten++; }
+          else { summary.voice.errors++; summary.voice.lastError = `${h.status}${h.detail ? ': ' + h.detail : ''}`; }
+        } else summary.voice.notRewritten++;
         if (obs && obs.endedAt) summary.withObservedEnd++;
         if (rep.used.duration) summary.withDuration++;
         fresh.push({ id, type: 'report', playerId: String(m[w + 'Key']), opponentId: String(m[l + 'Key']), player: m[w], opponent: m[l],
           tournament: g.name, tournamentKey: g.key, season: g.season, stage: stage || 'main draw', round: rep.fields.round, eventKey: ek(m),
           timestamp: obs && obs.endedAt ? obs.endedAt : startIso(m), timestampKind: obs && obs.endedAt ? 'observed' : 'scheduled',
-          observed: obs || null, category: 'Statistics', text: rep.text, fields: rep.fields,
+          observed: obs || null, category: 'Statistics', text, ...(voice ? { templateText: rep.text, voice } : {}), fields: rep.fields,
           sourceName: 'Stennisfy match data (api-tennis box score and point-by-point)', sourceUrl: `pbp/${ek(m)}.json`, language: 'en', translated: false });
         summary.reports++;
       } catch (e) { summary.reportErrors.push(`${m.id}: ${e && e.message}`); }
@@ -134,6 +158,10 @@ export async function build({ nowIso, times }) {
     const merged = mergeItems(kept, fresh, nowIso);
     summary.added += merged.added; summary.revised += merged.revised; summary.unchanged += merged.unchanged; summary.tournaments++;
     touched.push({ key: g.key, season: g.season, name: g.name, items: merged.items });
+    for (const x of merged.items) if (x.type === 'report') {
+      summary.voice.reportsTotal++;
+      if (x.voice) { summary.voice.sentencesPassed += x.voice.passed; summary.voice.sentencesTotal += x.voice.total; if (x.voice.passed === x.voice.total) summary.voice.reportsFullyInVoice++; }
+    }
     if (merged.added || merged.revised || dropped || !existing) {
       writeAtomic(file, { tournament: g.name, tournamentKey: g.key, season: g.season, updatedAt: nowIso, items: merged.items });
       summary.filesWritten.push(file);
