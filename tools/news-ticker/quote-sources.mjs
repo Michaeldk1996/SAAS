@@ -124,12 +124,14 @@ function addContext(c, main) {
   c.matchId = m.id; c.won = won;
 }
 
-export async function collectQuotes({ tournament, main, since }) {
-  const site = SITES[tournament];
+// `site` (optional) = a config built from data/news-outlets.json by collect-quotes.mjs; without it, the sample's SITES.
+export async function collectQuotes({ tournament, main, since, site: cfg }) {
+  const site = cfg || SITES[tournament];
   if (!site) return { sources: [{ name: 'none configured for ' + tournament, articles: 0 }], candidates: [] };
   const sources = [], candidates = [], seen = new Set();
   const push = (c) => { const k = c.speaker + '|' + c.text; if (seen.has(k)) return false; seen.add(k); addContext(c, main); candidates.push(c); return true; };
 
+  if (site.origin) {
   // 1. the tournament site: every article of its own news feed (ATP daily reports included), then the list page
   const robots = await get(site.origin + '/robots.txt');
   const src = { name: site.name, list: site.origin + site.feed, robotsStatus: robots.status, listed: 0, articles: 0, atpReports: 0, articlesWithQuotes: 0, candidates: 0,
@@ -162,6 +164,8 @@ export async function collectQuotes({ tournament, main, since }) {
     }
   }
   sources.push(src);
+
+  }
 
   // 2. press sections
   for (const pr of site.press || []) {

@@ -923,6 +923,28 @@ jobs:
           node build-weather.js || rc=$?
           node tools/step-check.mjs --step "Build weather files (best-effort)" --rc "$rc" --since "$t0" --exists weather-index.json
 
+      # News ticker (founder brief 2026-11-11): match reports and status items for every finished ATP singles match, built
+      # from the files this run has just written, plus the quotes the collector committed (news-quotes/). One permanent
+      # file per tournament edition + a small index; a file is rewritten only when an item was added or its source data
+      # changed. Observed start / end come from the live poller's tables (read-only). Rules: .claude/rules/news-ticker.md.
+      - name: Build news ticker (best-effort)
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+        run: |
+          t0=$(date +%s); rc=0
+          node tools/news-ticker/build-news-ticker.mjs || rc=$?
+          node tools/step-check.mjs --step "Build news ticker (best-effort)" --rc "$rc" --since "$t0" --exists news-ticker.json
+
+      # A day with finished ATP matches and 0 reports written: one Telegram per day (pipeline chat). Runs when the build
+      # above crashed too. Never fails the run.
+      - name: Alert — a day of finished matches with no reports (Telegram)
+        if: ${{ always() }}
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_PIPELINE_CHAT_ID || secrets.TELEGRAM_CHAT_ID }}
+        run: node tools/news-ticker/ticker-alerts.mjs || echo "::error::news ticker alert check did not run"
+
       - name: Assemble site
         run: |
           mkdir -p _site
@@ -1314,6 +1336,9 @@ jobs:
           cp picks-core.js picks-store.js picks-page.js picks-drawer.js picks-shell.js picks-page.css _site/
           cp bettracker-math.js bettracker-store.js bettracker-page.js bettracker-page.css bettracker-import.js bettracker-seed.js _site/
           cp news-sample.json _site/ 2>/dev/null || true
+          # News ticker: the index, the per-tournament files and this run's build summary (alert state stays in the repo)
+          cp news-ticker.json news-ticker-run.json _site/ 2>/dev/null || true
+          if [ -d news-ticker ]; then mkdir -p _site/news-ticker && cp news-ticker/*-[0-9][0-9][0-9][0-9].json _site/news-ticker/ 2>/dev/null || true; fi
           cp series.json _site/ 2>/dev/null || true
           cp trading-splits-index.json _site/ 2>/dev/null || true
           cp -r trading-splits _site/ 2>/dev/null || true
@@ -2026,6 +2051,20 @@ jobs:
           git config user.email "bsp-weather-bot@users.noreply.github.com"
           COMMITBACK_OWNED="admin-log.json series-outcomes.json player-profiles-cache.json.gz player-tournament-history.json.gz historical-match-stats.floor.json pbp-tiebreak-floor.json $(git ls-files -co --exclude-standard -- weather/archive | tr '\n' ' ')" \
             tools/commitback-push.sh "chore(weather): archive pre-start forecasts [skip ci]" weather/archive
+
+      # News ticker: items are kept permanently, so the per-tournament files and the index are committed back (only if
+      # changed). One writer (this job). A failed push self-heals next run: the items are rebuilt from the same sources.
+      - name: Commit news ticker (only if changed)
+        continue-on-error: true
+        run: |
+          if [ -z "$(git status --porcelain -- news-ticker news-ticker.json)" ]; then
+            echo "News ticker unchanged — nothing to commit."
+            exit 0
+          fi
+          git config user.name "bsp-bot"
+          git config user.email "bsp-bot@users.noreply.github.com"
+          COMMITBACK_OWNED="admin-log.json series-outcomes.json player-profiles-cache.json.gz player-tournament-history.json.gz historical-match-stats.floor.json pbp-tiebreak-floor.json news-ticker.json $(git ls-files -co --exclude-standard -- news-ticker | tr '\n' ' ')" \
+            tools/commitback-push.sh "chore(news): ticker items [skip ci]" news-ticker news-ticker.json
 
       # TEN-316: the captured Pinnacle closes accumulate across runs (the board drops a finished match
       # within days), so the merged file is committed back. Only-if-changed: the builder rewrites it only

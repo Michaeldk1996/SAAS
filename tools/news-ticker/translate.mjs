@@ -45,11 +45,12 @@ export async function translateQuote(text, language, apiKey = process.env.ANTHRO
     system: 'You translate one direct quotation by a tennis player into English. Translate sentence by sentence: the same number of sentences, in the same order. Keep every name and every number exactly as written. Add nothing, explain nothing, drop nothing. Output only the English translation, with no quotation marks around it.',
     messages: [{ role: 'user', content: `Source language: ${language}\n\n${text}` }] };
   const res = await fetchFn(API_URL, { method: 'POST', headers: { 'content-type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' }, body: JSON.stringify(body) });
-  if (!res.ok) { const t = res.text ? await res.text().catch(() => '') : ''; return { status: 'api-error', text: null, detail: `HTTP ${res.status} ${String(t).slice(0, 240)}` }; }
+  if (!res.ok) { const t = res.text ? await res.text().catch(() => '') : ''; return { status: 'api-error', http: res.status, text: null, detail: `HTTP ${res.status} ${String(t).slice(0, 240)}` }; }
   const data = await res.json();
   if (data.stop_reason === 'refusal' || data.stop_reason === 'max_tokens') return { status: 'api-error', text: null, detail: `stop_reason ${data.stop_reason}` };
   const block = (data.content || []).find((b) => b.type === 'text');
   const out = block ? String(block.text).trim().replace(/^["“]|["”]$/g, '') : '';
   const v = translationOk(text, out);
-  return v.ok ? { status: 'ok', text: out, model: MODEL } : { status: 'failed-check', text: null, detail: v.reason };
+  const usage = data.usage ? { input: data.usage.input_tokens || 0, output: data.usage.output_tokens || 0 } : null;
+  return v.ok ? { status: 'ok', text: out, model: MODEL, usage } : { status: 'failed-check', text: null, detail: v.reason, usage };
 }

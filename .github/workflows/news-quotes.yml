@@ -1,0 +1,74 @@
+name: News ticker quotes
+
+# News ticker (founder brief 2026-11-11): the quote collector, on its own schedule. Every 30 minutes it reads the
+# deployed board and does work only while an ATP tournament has a match today (or finished yesterday). Only outlets
+# marked "allowed" in data/news-outlets.json are fetched. Its items are committed to news-quotes/ ([skip ci], data
+# bot); the pipeline folds them into the feed on its next run. Rules: .claude/rules/news-ticker.md.
+#
+# Alerts go to the pipeline Telegram chat: this job failing; a model call failing on credit or key (first failure);
+# no new quote for 24 hours while a tournament is on.
+
+on:
+  schedule:
+    - cron: '7,37 * * * *'
+  workflow_dispatch:
+    inputs:
+      test_alerts:
+        description: 'Send the three marked TEST alerts to the pipeline chat and stop'
+        type: boolean
+        default: false
+
+concurrency:
+  group: news-quotes
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  quotes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_PIPELINE_CHAT_ID || secrets.TELEGRAM_CHAT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Test alerts (dispatch only)
+        if: ${{ inputs.test_alerts }}
+        run: |
+          node tools/news-ticker/ticker-alerts.mjs --test
+          node tools/news-ticker/collect-quotes.mjs --test-alerts
+
+      - name: Collect quotes
+        if: ${{ !inputs.test_alerts }}
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: node tools/news-ticker/collect-quotes.mjs
+
+      - name: Commit quotes (only if changed)
+        if: ${{ !inputs.test_alerts }}
+        run: |
+          set -euo pipefail
+          if [ -z "$(git status --porcelain -- news-quotes)" ]; then echo "no change"; exit 0; fi
+          git config user.name "bsp-bot"
+          git config user.email "bsp-bot@users.noreply.github.com"
+          git add -A -- news-quotes
+          git commit -q -m "chore(news): quotes [skip ci]"
+          for i in 1 2 3 4; do
+            if git pull -q --rebase origin main && git push -q origin HEAD:main; then echo "pushed"; exit 0; fi
+            sleep $((i * 5))
+          done
+          echo "::error::could not push the quotes after 4 attempts"; exit 1
+
+      - name: Alert — the quote job failed (Telegram)
+        if: ${{ failure() }}
+        run: |
+          printf 'News ticker: the quote job failed (run %s). Quotes stop until it runs again.\n' "$GITHUB_RUN_ID" > /tmp/alert.txt
+          node tools/price-alert-send.mjs /tmp/alert.txt
