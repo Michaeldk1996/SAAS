@@ -1170,6 +1170,93 @@
     "output": 0
    },
    "alerts": []
+  },
+  {
+   "at": "2026-11-11T23:24:51.018Z",
+   "activeTournaments": [
+    "Stockholm"
+   ],
+   "tournaments": [
+    {
+     "name": "Stockholm",
+     "key": "1681",
+     "sources": [
+      {
+       "name": "ATP Tour daily report (via the official tournament site)",
+       "articles": 17,
+       "candidates": 8,
+       "robotsStatus": 200,
+       "skippedByRobots": 0,
+       "unnamed": 4
+      }
+     ],
+     "outlets": {
+      "read": 61,
+      "withCandidates": 0,
+      "blocked": [
+       "Fox Sports Australia: the site refuses a plain request",
+       "TenisovySvet.cz: the site refuses a plain request",
+       "AS (Diario AS): the site refuses a plain request",
+       "ESPN: unexpected answer",
+       "Aftonbladet: unexpected answer"
+      ],
+      "articlesFetched": 3,
+      "paywalled": 1,
+      "unnamed": 1,
+      "byOutlet": [
+       {
+        "outlet": "Olé",
+        "country": "Argentina",
+        "language": "es",
+        "fetched": 1,
+        "candidates": 0
+       },
+       {
+        "outlet": "TV 2 Sport",
+        "country": "Denmark",
+        "language": "da",
+        "fetched": 1,
+        "candidates": 0
+       },
+       {
+        "outlet": "Tennis Actu",
+        "country": "France",
+        "language": "fr",
+        "fetched": 1,
+        "candidates": 0
+       }
+      ]
+     },
+     "counts": {
+      "candidates": 8,
+      "droppedNotVerbatim": 0,
+      "droppedNoPlayer": 1,
+      "droppedAmbiguous": 0,
+      "notTranslatedNoKey": 0,
+      "notTranslatedApiError": 0,
+      "droppedTranslationCheck": 0,
+      "droppedEnglishExists": 0,
+      "mergedSameQuote": 0,
+      "alreadyHeld": 0,
+      "items": 7,
+      "tokens": {
+       "input": 0,
+       "output": 0
+      },
+      "modelError": null
+     },
+     "added": 0,
+     "held": 10,
+     "finishedMatches": 23,
+     "matchesWithWinnerQuote": 5
+    }
+   ],
+   "newItems": 0,
+   "tokens": {
+    "input": 0,
+    "output": 0
+   },
+   "alerts": []
   }
  ]
 }
