@@ -290,7 +290,23 @@ await ok('wiring: the feed is built in the pipeline before the site is assembled
   assert.ok(/cp news-ticker\.json news-ticker-run\.json _site\//.test(p) && /cp news-ticker\/\*-\[0-9\]/.test(p));
   assert.ok(/node tools\/news-ticker\/ticker-alerts\.mjs/.test(p));
   const alertStep = p.slice(al, a); assert.ok(/TELEGRAM_PIPELINE_CHAT_ID/.test(alertStep) && /if: \$\{\{ always\(\) \}\}/.test(alertStep));
+  const cs = p.slice(c, p.indexOf('- name:', c + 10)); assert.ok(/if: \$\{\{ !cancelled\(\) \}\}/.test(cs), 'items are committed even when a later check failed the run');
   const lane = read('tools/deploy-lane.mjs'); assert.ok(/DATA_DIRS\.push\('news-ticker\/', 'news-quotes\/'\)/.test(lane) && /DATA_FILES\.add\('news-ticker\.json'\)/.test(lane));
+});
+await ok('polite rate: the collector never collects twice inside 25 minutes', async () => {
+  const { tooSoon, MIN_GAP_MIN } = await import('./news-ticker/collect-quotes.mjs');
+  const now = '2026-11-11T12:00:00.000Z', ago = (m) => Date.parse(now) - m * 60000;
+  assert.strictEqual(MIN_GAP_MIN, 25);
+  assert.strictEqual(tooSoon(ago(10), now), true); assert.strictEqual(tooSoon(ago(24.9), now), true);
+  assert.strictEqual(tooSoon(ago(25), now), false); assert.strictEqual(tooSoon(ago(31), now), false);
+  assert.strictEqual(tooSoon(NaN, now), false, 'no earlier run on record');
+  const src = read('tools/news-ticker/collect-quotes.mjs');
+  assert.ok(/tooSoon\(lastRun, nowIso\)\) \{.*return; \}$/m.test(src) && src.indexOf('tooSoon(lastRun') < src.indexOf("getJson('matches.json')"), 'the gate sits before any request');
+  assert.ok(/if \(active\.length\) state\.lastRunAt = nowIso;/.test(src));
+});
+await ok('observed times: the database read is retried before the run gives up on it', () => {
+  const src = read('tools/news-ticker/build-news-ticker.mjs');
+  assert.ok(/for \(let t = 0; t < 3 && !rows; t\+\+\)/.test(src) && /AbortSignal\.timeout\(45000\)/.test(src));
 });
 await ok('wiring: the quote job runs every 30 minutes from main, the key only in Actions secrets, and alerts when it fails', () => {
   const w = read('.github/workflows/news-quotes.yml');
@@ -298,6 +314,9 @@ await ok('wiring: the quote job runs every 30 minutes from main, the key only in
   assert.ok(/ANTHROPIC_API_KEY: \$\{\{ secrets\.ANTHROPIC_API_KEY \}\}/.test(w)); assert.ok(/TELEGRAM_PIPELINE_CHAT_ID/.test(w));
   assert.ok(/^      - 'News ticker quotes'$/m.test(read('.github/workflows/job-fail-alert.yml')) && /^name: News ticker quotes$/m.test(w), 'the job-failure alert watches it');
   assert.ok(/\[skip ci\]/.test(w));
+  // the cadence does not depend on GitHub's schedule: each run starts the next, 30 minutes after it began
+  assert.ok(/actions: write/.test(w) && /STARTED \+ 1800/.test(w) && /gh workflow run news-quotes\.yml --ref main/.test(w) && /select\(\.id != \$GITHUB_RUN_ID\)/.test(w));
+  const chain = w.slice(w.indexOf('- name: Start the next run')); assert.ok(/if: \$\{\{ !cancelled\(\) \}\}/.test(chain), 'a failed collection still starts the next run');
   for (const f of ['bsp-consult-dashboard.html', 'player-profile-v2.js']) assert.ok(!/api\.anthropic\.com|ANTHROPIC_API_KEY/.test(read(f)), f + ' must never call the model');
 });
 console.log(`news ticker live: ${n} checks passed`);

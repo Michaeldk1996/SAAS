@@ -24,15 +24,18 @@ concurrency:
 
 permissions:
   contents: write
+  actions: write       # the last step starts the next run (GitHub's own schedule fired 0 times in this repo's first 2.5 h)
 
 jobs:
   quotes:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 50
     env:
       TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
       TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_PIPELINE_CHAT_ID || secrets.TELEGRAM_CHAT_ID }}
     steps:
+      - name: Note the start time
+        run: echo "STARTED=$(date +%s)" >> "$GITHUB_ENV"
       - uses: actions/checkout@v4
         with:
           ref: main
@@ -66,3 +69,23 @@ jobs:
             sleep $((i * 5))
           done
           echo "::error::could not push the quotes after 4 attempts"; exit 1
+
+      # The 30-minute cadence. GitHub's schedule is throttled in this repository, so each run starts the next one:
+      # it waits until 30 minutes after its own start, then dispatches this workflow unless another run is already
+      # waiting (the schedule's, or a hand dispatch). The schedule stays as the restart if a chain ever breaks; the
+      # collector itself refuses to collect twice inside 25 minutes.
+      - name: Start the next run 30 minutes after this one began
+        if: ${{ !cancelled() }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          wait=$(( STARTED + 1800 - $(date +%s) ))
+          if [ "$wait" -gt 0 ]; then sleep "$wait"; fi
+          others=$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/news-quotes.yml/runs?per_page=30" --jq "[.workflow_runs[] | select(.id != $GITHUB_RUN_ID) | select(.status != \"completed\")] | length")
+          if [ "$others" = "0" ]; then
+            gh workflow run news-quotes.yml --ref main -R "$GITHUB_REPOSITORY"
+            echo "next run dispatched"
+          else
+            echo "another run is already waiting ($others) — nothing dispatched"
+          fi

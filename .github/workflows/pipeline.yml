@@ -2055,6 +2055,9 @@ jobs:
       # News ticker: items are kept permanently, so the per-tournament files and the index are committed back (only if
       # changed). One writer (this job). A failed push self-heals next run: the items are rebuilt from the same sources.
       - name: Commit news ticker (only if changed)
+        # Runs even when a later check (e.g. the freshness assert) failed the job: the items were already uploaded with
+        # the site, and an uncommitted item would be re-stamped as new by the next run (items are permanent).
+        if: ${{ !cancelled() }}
         continue-on-error: true
         run: |
           if [ -z "$(git status --porcelain -- news-ticker news-ticker.json)" ]; then

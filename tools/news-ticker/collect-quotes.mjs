@@ -34,6 +34,8 @@ const ROOT = path.resolve(HERE, '..', '..');
 const arg = (k, d) => { const i = process.argv.indexOf('--' + k); return i > 0 ? process.argv[i + 1] : d; };
 const flag = (k) => process.argv.includes('--' + k);
 export const SILENT_HOURS = 24;
+export const MIN_GAP_MIN = 25;
+export const tooSoon = (lastMs, nowIso) => Number.isFinite(lastMs) && Date.parse(nowIso) - lastMs >= 0 && Date.parse(nowIso) - lastMs < MIN_GAP_MIN * 60000;
 
 const COUNTRY_ALIAS = { 'United States': 'USA', US: 'USA', 'Great Britain': 'United Kingdom', UK: 'United Kingdom', Czechia: 'Czech Republic' };
 const canonCountry = (c) => COUNTRY_ALIAS[c] || c;
@@ -145,6 +147,9 @@ async function main() {
 
   const registry = rd('data/news-outlets.json');
   if (!registry) throw new Error('data/news-outlets.json is missing');
+  // Polite rate (ruling limit c): never two collections inside 25 minutes, whatever started this run.
+  const lastRun = Date.parse(((rd('news-quotes/state.json') || {}).lastRunAt) || '');
+  if (!flag('force') && tooSoon(lastRun, nowIso)) { console.log(`quote collector: skipped — the last collection was ${Math.round((Date.parse(nowIso) - lastRun) / 60000)} min ago (minimum ${MIN_GAP_MIN})`); return; }
   const board = await getJson('matches.json');
   const index = await getJson('player-index.json');
   const countryOf = new Map(((index && index.players) || []).map((p) => [String(p.key), p.country]));
@@ -191,6 +196,7 @@ async function main() {
   const { state, alerts } = dueAlerts(rd('news-quotes/state.json') || {}, { nowIso, anyActive: all.some((t) => t.active), itemsHeldOrNew: { newItems: run.newItems, translatedOk }, modelError });
   for (const text of alerts) { const r = await sendTelegram(text); console.log(`alert: ${r.ok ? 'sent' : 'NOT sent (' + r.why + ')'} — ${text}`); if (!r.ok) console.log('::error title=News ticker alert not sent::' + text); }
   run.alerts = alerts;
+  if (active.length) state.lastRunAt = nowIso;
   if (JSON.stringify(state) !== JSON.stringify(rd('news-quotes/state.json') || {})) wr('news-quotes/state.json', state);
   const log = rd('news-quotes/run-log.json') || { runs: [] };
   if (active.length) { log.runs.push(run); log.runs = log.runs.slice(-400); wr('news-quotes/run-log.json', log); }

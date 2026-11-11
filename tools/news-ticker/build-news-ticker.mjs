@@ -41,9 +41,17 @@ async function supabaseRows(table, select, keys) {
   const out = [];
   for (let i = 0; i < keys.length; i += 80) {
     const q = `${url.replace(/\/$/, '')}/rest/v1/${table}?select=${select}&event_key=in.(${keys.slice(i, i + 80).map((k) => `"${k}"`).join(',')})`;
-    const r = await fetch(q, { headers: { apikey: key, Authorization: `Bearer ${key}` }, signal: AbortSignal.timeout(20000) });
-    if (!r.ok) throw new Error(`${table}: HTTP ${r.status}`);
-    out.push(...await r.json());
+    // three tries: a slow database must not cost a report its observed times (the read is small and idempotent)
+    let rows = null, err = null;
+    for (let t = 0; t < 3 && !rows; t++) {
+      try {
+        const r = await fetch(q, { headers: { apikey: key, Authorization: `Bearer ${key}` }, signal: AbortSignal.timeout(45000) });
+        if (!r.ok) throw new Error(`${table}: HTTP ${r.status}`);
+        rows = await r.json();
+      } catch (e) { err = e; }
+    }
+    if (!rows) throw err;
+    out.push(...rows);
   }
   return out;
 }
