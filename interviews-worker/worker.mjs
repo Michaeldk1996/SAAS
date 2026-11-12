@@ -56,15 +56,30 @@ async function oneClip(c, i) {
   let dur = 0;
   for (let k = 0; k < 60; k++) { dur = await ev('(document.querySelector("video")||{}).duration || 0').catch(() => 0); if (dur > 1) break; await sleep(500); }
   if (!dur) return { ...c, ok: false, error: 'no playable video' };
-  const rec = spawn('ffmpeg', ['-y', '-f', 'pulse', '-i', 'rec.monitor', '-t', String(Math.ceil(dur + 2)), '-ac', '1', '-ar', '16000', wav], { stdio: 'ignore' });
+  // record until the clip has really finished playing (a stalled or buffering player must not cut the recording short)
+  const rec = spawn('ffmpeg', ['-y', '-f', 'pulse', '-i', 'rec.monitor', '-ac', '1', '-ar', '16000', wav], { stdio: 'ignore' });
+  const recDone = new Promise((res) => rec.on('exit', res));
+  await sleep(400);
   await ev('(() => { const v = document.querySelector("video"); if (v) { v.muted = false; v.currentTime = 0; v.play(); } return true; })()');
-  await new Promise((res) => rec.on('exit', res));
+  const t0 = Date.now(); let pos = 0, ended = false;
+  while (Date.now() - t0 < (dur * 4 + 30) * 1000) {
+    await sleep(1000);
+    const st = await ev('(() => { const v = document.querySelector("video"); return v ? [v.currentTime, v.ended, v.paused] : null; })()').catch(() => null);
+    if (!st) continue;
+    pos = st[0]; ended = !!st[1] || pos >= dur - 0.4;
+    if (ended) break;
+    if (st[2]) await ev('(() => { const v = document.querySelector("video"); if (v) v.play(); return true; })()').catch(() => {});
+  }
+  await sleep(1200);
+  rec.kill('SIGINT'); await recDone;
+  const wall = Math.round((Date.now() - t0) / 1000);
+  if (!ended) return { ...c, ok: false, error: `playback did not finish (reached ${Math.round(pos)}s of ${Math.round(dur)}s in ${wall}s)` };
   const bytes = fs.existsSync(wav) ? fs.statSync(wav).size : 0;
   if (bytes < 2000) return { ...c, ok: false, error: 'no audio captured' };
   const py = spawnSync('python3', [path.join(HERE, 'transcribe.py'), wav, MODEL], { encoding: 'utf8', maxBuffer: 1 << 24 });
   try { fs.unlinkSync(wav); } catch (e) {}
   if (py.status !== 0) return { ...c, ok: false, error: 'transcribe: ' + (py.stderr || '').slice(-200) };
-  return { ...c, ok: true, duration: Math.round(dur), transcript: py.stdout.trim() };
+  return { ...c, ok: true, duration: Math.round(dur), playedIn: wall, transcript: py.stdout.trim() };
 }
 
 const results = [];
@@ -74,11 +89,12 @@ for (let i = 0; i < clips.length; i++) {
   let r;
   try { r = await oneClip(c, i); } catch (e) { r = { ...c, ok: false, error: String(e).slice(0, 200) }; }
   results.push(r);
-  console.log('  ' + (r.ok ? `ok · ${r.duration}s · ${r.transcript.length} chars` : 'FAILED · ' + r.error));
+  console.log('  ' + (r.ok ? `ok · ${r.duration}s (played in ${r.playedIn}s) · ${r.transcript.length} chars` : 'FAILED · ' + r.error));
   if (r.ok) { console.log('  --- TRANSCRIPT ---'); console.log('  ' + r.transcript); }
 }
 
 console.log('\n===RESULTS_JSON_START===');
 console.log(JSON.stringify({ model: MODEL, count: results.length, ok: results.filter((r) => r.ok).length, results }));
 console.log('===RESULTS_JSON_END===');
+await sleep(25000);   // let the log stream flush before the machine stops
 process.exit(0);
