@@ -17,7 +17,22 @@ ticker page comes through Claude Design). Tests: `tools/test-news-ticker.mjs`, `
 - An item whose match left the board is kept. Nothing is removed.
 - Built inside every pipeline run from the files that run wrote; committed back (`bsp-bot`, `[skip ci]`).
 
-## Match reports — template fill only, no model wording
+## Match reports — the template is the facts; the wording is Michael's voice, checked sentence by sentence (founder 2026-11-12)
+- **The template report stays the source of truth** (`reportText`: one sentence per stored fact group). A model rewrites
+  the sentences one for one in the founder's voice (`humanise.mjs`, pipeline only, key from Actions secrets); this
+  replaces "template fill only, no model wording". Voice guide: Michael's PDF (never committed, never published).
+- **Every rewritten sentence is checked against the template sentence it replaces** (`checkSentence`, a whitelist):
+  every number, score, ordinal and "X of Y" is in that sentence with the same word after it, scores in the same order;
+  only that sentence's players, in the same order; "He" only for the one player the sentence is about; every other word
+  is the template sentence's own, a player's name, or `VOCAB` (neutral connecting words: no judgement, quantity or stat
+  verb). So no "looked", "felt", rating or opinion can pass. **A sentence that fails keeps the template wording** (the
+  card name as the full name in sentence 1, the surname after). **Test:** `tools/test-news-ticker-live.mjs` "voice"
+  (17 bad rewrites each refused for its reason; one failing sentence falls back alone).
+- **No commentary line** ("clutch", "solid"…): the founder's fact rule of 12 Nov outranks the voice guide's section.
+- **Done once per report.** The item stores `templateText` + `voice {version, model, passed, total, failures}`; a later
+  run reuses the stored rewrite while the template is unchanged. No key or a failed call = the template text, retried
+  next run. `news-ticker-run.json` `voice` gives reports fully in voice X of Y and sentences passed.
+- **Full name at first mention** = the standings name, only when it reads given name + the card's surname.
 - Every number is a stored field or a count of stored rows; a clause with nothing behind it is not written.
   **Test:** no box score and no point log → the first sentence alone; a null is never printed as 0.
 - **Break points:** the box score's count, else the point-by-point count. "faced no break points" prints only from a
