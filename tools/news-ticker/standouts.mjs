@@ -64,7 +64,10 @@ export function standoutUnits(ms, side, name, base, { bp = null, wueOk = true } 
         field: { metric: 'firstIn', value: x, baseline: y, scope: base.scope, surface: base.surface, n: base.matches } });
     }
     cands.sort((a, b) => b.score - a.score);
-    out.push(...cands.slice(0, 2));
+    // the baseline is named in full once per player; his next figure reads "his usual 51%" (the same baseline)
+    const top = cands.slice(0, 2);
+    if (top[1]) top[1].text = top[1].text.replace(` ${base.label}.`, '.').replace(/ his (\d+)%\.$/, ' his usual $1%.');
+    out.push(...top);
   }
   if (bp) {
     const { saved, faced } = bp;

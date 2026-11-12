@@ -283,7 +283,7 @@ await ok('standouts: a rate is reported only when it is far from the player\'s o
     { 'Service:1st serve points won': { won: 32, total: 36 }, 'Service:2nd serve points won': { won: 8, total: 20 } }), 'p1', 'H. Rune', B, { bp: { saved: 2, faced: 4 } });
   assert.deepEqual(u.map((x) => [x.text, x.tone]), [
     ['H. Rune won 89% of his first-serve points (32 of 36), above his 74% on hard over the last 52 weeks.', 'good'],
-    ['H. Rune won 40% of his second-serve points (8 of 20), below his 54% on hard over the last 52 weeks.', 'bad']], 'first-in 64 v 62 and 2 of 4 break points and 4 aces are not news');
+    ['H. Rune won 40% of his second-serve points (8 of 20), below his usual 54%.', 'bad']], 'first-in 64 v 62 and 2 of 4 break points and 4 aces are not news');
   assert.deepEqual(u[0].field, { metric: 'firstWon', value: 89, won: 32, total: 36, baseline: 74, scope: 'last52', surface: 'Hard', n: 47 });
   // close to the baseline, or too few points in the match: nothing
   assert.deepEqual(standoutUnits(ms({ 'Service:1st serve points won': 80 }, { 'Service:1st serve points won': { won: 28, total: 35 } }), 'p1', 'X', B), [], '80 v 74 is inside the 8-point gap');
