@@ -68,3 +68,13 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', mountAll); else mountAll();
   window.sfTheme.mountSwitch = mountAll;
 })();
+
+/* First paint (2026-11-12): the dashboard hides <body> until html.sf-css-ready (its <head> rule `sf-first-paint`), because
+   its page styles sit at the end of the file. DOMContentLoaded = the parser has passed every style block. Fallback 8 s. */
+(function () {
+  if (typeof document === 'undefined' || !document.documentElement || !document.documentElement.classList || !document.addEventListener) return;
+  function ready() { document.documentElement.classList.add('sf-css-ready'); }
+  if (document.readyState && document.readyState !== 'loading') ready();
+  else document.addEventListener('DOMContentLoaded', ready);
+  setTimeout(ready, 8000);
+})();

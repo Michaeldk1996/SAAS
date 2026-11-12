@@ -5,6 +5,11 @@
 <!-- TEN-376 foundation: theme first (sets data-theme before paint), then the one colour file. -->
 <script src="./theme.js"></script>
 <link rel="stylesheet" href="./tokens.css">
+<!-- First paint (2026-11-12): the Matches page's own look (theme-12a, layout-12a, match-analysis-*) is parsed only at
+     the end of this file, while the board can already draw from the early fetches below. Keep the page hidden until the
+     parser has passed those last style blocks (theme.js sets the class on DOMContentLoaded); the page glow on <html>
+     stays visible. Fallback: shown after 8 s whatever happens (theme.js). -->
+<style id="sf-first-paint">html:not(.sf-css-ready) body{ visibility:hidden; }</style>
 <!-- Page speed (2026-11-07): the first Matches paint awaits matches.json, model-output.json and the photo index, which
      loadMatches() used to request only after the 2 MB page script below had downloaded and run. Start them here, with
      the same URL and cache mode; each loader takes its early answer once (sfEarlyFetch), every later refresh fetches as
