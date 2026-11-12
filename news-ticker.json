@@ -1,19 +1,19 @@
 {
- "generatedAt": "2026-11-12T22:26:28.919Z",
+ "generatedAt": "2026-11-12T23:42:25.282Z",
  "tournaments": [
   {
    "key": "1681",
    "season": "2026",
    "name": "Stockholm",
    "file": "news-ticker/1681-2026.json",
-   "items": 99,
+   "items": 100,
    "byType": {
+    "quote": 67,
     "report": 26,
-    "quote": 66,
     "status": 7
    },
-   "latestTimestamp": "2026-11-12T21:59:54.915Z",
-   "updatedAt": "2026-11-12T22:26:28.919Z"
+   "latestTimestamp": "2026-11-12T22:10:00.000Z",
+   "updatedAt": "2026-11-12T23:42:25.282Z"
   },
   {
    "key": "tour",
@@ -51,6 +51,36 @@
   }
  ],
  "latest": [
+  {
+   "id": "quote-4f48086019aaa8",
+   "type": "quote",
+   "playerId": "2849",
+   "opponentId": "1105",
+   "player": "L. Musetti",
+   "opponent": "U. Humbert",
+   "tournament": "Stockholm",
+   "tournamentKey": "1681",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-12T22:10:00.000Z",
+   "timestampKind": "observed (the site's own publication time)",
+   "category": "Quotes",
+   "context": "after beating U. Humbert",
+   "eventKey": "12179396",
+   "won": true,
+   "text": "It was a really tough match. We both served pretty well, … So, it was not easy to find a way out. The key to the match was to have a [positive] reaction after losing the second set and [trailing by] a break at the beginning of the third set.",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "ATP Tour daily report (via the official tournament site)",
+   "sourceUrl": "https://www.stockholmopen.se/en/tournament/nyheter/stockholm-2026-thursday-report-qfs",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "sourceHash": "3243e5f70f100d0e",
+   "publishedAt": "2026-11-12T23:42:25.282Z",
+   "file": "news-ticker/1681-2026.json"
+  },
   {
    "id": "report-12179396",
    "type": "report",
@@ -1936,36 +1966,6 @@
    "publishedAt": "2026-11-11T18:39:24.726Z",
    "revisedAt": "2026-11-12T07:17:47.163Z",
    "revision": 2,
-   "file": "news-ticker/1681-2026.json"
-  },
-  {
-   "id": "quote-d32b5af09899b6",
-   "type": "quote",
-   "playerId": "430",
-   "opponentId": null,
-   "player": "C. Ruud",
-   "opponent": null,
-   "tournament": "Stockholm",
-   "tournamentKey": "1681",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-11T13:26:15.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Quotes",
-   "context": null,
-   "eventKey": null,
-   "won": null,
-   "text": "I am looking very much forward to working with David Ferrer. It is going to be really exciting and fun to be challenged in a new way. I am really hoping it can be a fantastic partnership. David is an amazing guy and we all know how good of a tennis player he was when I played, so I am really excited and I am looking forward to it,",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "Ubitennis",
-   "sourceUrl": "https://www.ubitennis.net/2026/11/casper-ruud-confident-new-coach-ferrer-will-help-boost-grand-slam-chances/",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "sourceHash": "384a1f4334050737",
-   "publishedAt": "2026-11-11T18:39:24.726Z",
    "file": "news-ticker/1681-2026.json"
   }
  ]
