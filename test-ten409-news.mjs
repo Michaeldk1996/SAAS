@@ -106,8 +106,11 @@ test('Ticker: match reports, quotes (outlet linked, translation marked) and stat
   const TK = [
     { id: 'report-1', type: 'report', playerId: '437', opponentId: '2848', player: 'H. Rune', opponent: 'M. Kecmanovic', tournament: 'Stockholm', timestamp: at(1),
       text: 'H. Rune beat M. Kecmanovic, 2-6, 6-1, 6-4 in the second round in 83 minutes.', fields: { score: '2-6, 6-1, 6-4' } },
-    { id: 'quote-1', type: 'quote', playerId: '437', opponentId: '2848', player: 'H. Rune', opponent: 'M. Kecmanovic', tournament: 'Stockholm', timestamp: at(0.5),
-      context: 'after beating M. Kecmanovic', text: 'I found my level.', translated: true, language: 'da', sourceName: 'BT', sourceUrl: 'https://www.bt.dk/tennis/x"y' },
+    { id: 'quote-1', type: 'quote', playerId: '437', opponentId: '2848', player: 'H. Rune', opponent: 'M. Kecmanovic', tournament: 'Stockholm', timestamp: at(0.5), eventKey: '77',
+      context: 'after beating M. Kecmanovic', text: 'I found my level today and I kept believing in the third set.', translated: true, language: 'da', sourceName: 'BT', sourceUrl: 'https://www.bt.dk/tennis/x"y' },
+    { id: 'quote-3', type: 'quote', playerId: '437', player: 'H. Rune', tournament: 'Stockholm', timestamp: at(0.4), eventKey: '77', text: 'The crowd carried me.', sourceName: 'ATP', sourceUrl: 'https://atp.example/a' },
+    { id: 'quote-4', type: 'quote', playerId: '437', player: 'H. Rune', tournament: 'Stockholm', timestamp: at(0.3), eventKey: '77', text: 'I found my level today', sourceName: 'SVT', sourceUrl: 'https://svt.example/b' },   // the same statement, shorter, from a second outlet
+    { id: 'quote-5', type: 'quote', playerId: '437', player: 'H. Rune', tournament: 'ATP Tour', tournamentKey: 'tour', timestamp: at(0.2), category: 'Injuries', text: 'My knee is fine again.', sourceName: 'TSN', sourceUrl: 'https://tsn.example/c' },
     { id: 'status-1', type: 'status', playerId: '1777', opponentId: '366', player: 'T. M. Etcheverry', opponent: 'T. A. Tirante', tournament: 'Stockholm', timestamp: at(2),
       category: 'Withdrawals', text: 'T. M. Etcheverry gave a walkover to T. A. Tirante.' },
     { id: 'quote-2', type: 'quote', playerId: '9', player: 'N. Body', tournament: 'Stockholm', timestamp: at(1), text: '' },           // no words: never shown
@@ -115,13 +118,20 @@ test('Ticker: match reports, quotes (outlet linked, translation marked) and stat
   const P = page({}, { ticker: TK }), h = P.get('newsList'), list = text(h);
   assert.ok(/Alcaraz eases/.test(list), 'the articles left the feed');
   assert.ok(/H\. Rune beat M\. Kecmanovic, 2-6, 6-1, 6-4/.test(list) && /in 83 minutes/.test(list), 'the match report is not in the feed');
-  assert.ok(/H\. Rune after beating M\. Kecmanovic/.test(list) && /“I found my level\.”/.test(list) && /Translated from Danish\./.test(list), 'the quote is not in the feed');
+  // one card for everything he said about the match: the fullest quote first, each with its outlet; the shorter copy of
+  // the same statement is not printed twice, its outlet joins the longer one
   const q = card(h, 'tquote-1');
-  assert.match(q, /<a class="news-cardsource" href="https:\/\/www\.bt\.dk\/tennis\/x&quot;y" target="_blank" rel="noopener nofollow"[^>]*>BT<\/a>/, 'a quote must link its outlet (escaped)');
+  assert.ok(/H\. Rune after beating M\. Kecmanovic/.test(text(q)), 'one card per player per match, titled with the context');
+  assert.equal((q.match(/class="news-para"/g) || []).length, 2, 'two statements, not three: ' + text(q));
+  assert.ok(text(q).indexOf('“I found my level today and I kept believing in the third set.”') < text(q).indexOf('“The crowd carried me.”'));
+  assert.match(q, /<a class="news-cardsource" href="https:\/\/www\.bt\.dk\/tennis\/x&quot;y" target="_blank" rel="noopener nofollow"[^>]*>BT<\/a>, <a class="news-cardsource" href="https:\/\/svt\.example\/b"[^>]*>SVT<\/a> · translated from Danish/, 'each quote links its outlet(s), escaped; the translation is marked');
+  assert.match(q, /“The crowd carried me\.” <span class="news-qsrc"><a class="news-cardsource" href="https:\/\/atp\.example\/a"/);
+  assert.ok(!/tquote-3|tquote-4/.test(h), 'no separate cards for the same match');
   assert.ok(/gave a walkover/.test(list) && !/N\. Body/.test(list));
-  assert.deepEqual(stats(P).slice(0, 2).map(s => s[1]), ['6', '7']);
-  assert.match(text(page({}, { ticker: TK, cats: ['Quotes'] }).get('newsList')), /^[^“]*H\. Rune after beating[^“]*“I found my level\.” Translated from Danish\.$/);
-  assert.ok(/gave a walkover/.test(text(page({}, { ticker: TK, cats: ['Withdrawals & Injuries'] }).get('newsList'))));
+  assert.deepEqual(stats(P).slice(0, 2).map(s => s[1]), ['7', '7']);
+  assert.match(text(page({}, { ticker: TK, cats: ['Quotes'] }).get('newsList')), /H\. Rune after beating M\. Kecmanovic “I found my level today[^“]*“The crowd carried me\.” ATP$/);
+  const inj = text(page({}, { ticker: TK, cats: ['Withdrawals & Injuries'] }).get('newsList'));
+  assert.ok(/gave a walkover/.test(inj) && /H\. Rune on his fitness “My knee is fine again\.” TSN/.test(inj), 'an injury quote keeps its own card under Withdrawals & Injuries');
   const U = page({ feed: null, state: 'unavailable' }, { ticker: TK });   // the article feed down: the ticker still shows
   assert.ok(/H\. Rune beat/.test(text(U.get('newsList'))));
 });

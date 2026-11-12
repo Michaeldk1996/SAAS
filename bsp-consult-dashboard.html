@@ -4827,6 +4827,7 @@ window.EntryListsTab = (function(){
   [data-page="news"] .news-entlink{ cursor:pointer; text-decoration:none; }
   [data-page="news"] .news-entlink:hover, [data-page="news"] .news-entlink:focus-visible{ outline:none; text-decoration:underline; }
   /* Real links (Read more / Show less, Try a wider date range., Clear search) = --link, underline on hover. */
+  [data-page="news"] .news-qsrc{ font-size:12px; color:var(--text-label); white-space:nowrap; }
   [data-page="news"] a.news-cardsource{ text-decoration:none; }
   [data-page="news"] a.news-cardsource:hover, [data-page="news"] a.news-cardsource:focus-visible{ outline:none; color:var(--text); text-decoration:underline; }
   [data-page="news"] .news-link{ padding:0; background:none; border:0; font-family:var(--font-words); font-size:inherit; font-weight:inherit; color:var(--link); cursor:pointer; }
@@ -6014,16 +6015,57 @@ function newsTickerItems(){
       return Object.assign(base, { players: both, title: both.length === 2 ? `${both[0].name} beat ${both[1].name}${score}` : String(x.text).split('. ')[0],
         bodyParas: newsSplitParas(x.text), cat: 'Match Reports', source: 'Stennisfy' });
     }
-    if (x.type === 'quote'){
-      const lang = x.translated ? newsLangName(x.language) : '';
-      return Object.assign(base, { tour: x.tournamentKey === 'tour' ? '' : tour, players: both.slice(0, 1), title: both[0].name + (x.context ? ' ' + x.context : (/injur/i.test(String(x.category)) ? ' on his fitness' : ' in the press')),
-        bodyParas: ['“' + String(x.text).trim() + '”'].concat(x.translated ? ['Translated' + (lang ? ' from ' + lang : '') + '.'] : []),
-        cat: /injur/i.test(String(x.category)) ? 'Withdrawals & Injuries' : 'Quotes', source: x.sourceName || '', sourceUrl: /^https?:\/\//.test(String(x.sourceUrl || '')) ? String(x.sourceUrl) : '' });
-    }
+    if (x.type === 'quote') return null;   // quotes are grouped below: one card per player per match
     return Object.assign(base, { players: both, title: String(x.text), bodyParas: [], source: 'Stennisfy',
       cat: /withdraw|injur|retire/i.test(String(x.category)) ? 'Withdrawals & Injuries' : 'Draws & Schedules' });
-  }).filter(x => x.players.length);
+  }).filter(x => x && x.players.length).concat(newsQuoteCards(_newsTicker || []));
 }
+// Quotes: ONE card per player per match (founder 2026-11-12: "list all what he said in one reading") — every quote
+// we hold from that player about that match, the fullest first, each followed by its outlet (linked) and, when
+// translated, the language it was said in. A quote whose words are already inside a longer one of the same card (the same
+// statement carried by a second outlet) is not printed twice: its outlet is listed on the longer one. A quote tied to no
+// match (interviews, injuries) groups by player and day. Injury quotes keep their own card under Withdrawals & Injuries.
+function newsQuoteCards(items){
+  const groups = new Map();
+  for (const x of items){
+    if (!x || x.type !== 'quote' || !x.id || !x.text || !x.player || x.playerId == null) continue;
+    const ts = Date.parse(x.timestamp), inj = /injur/i.test(String(x.category));
+    const key = x.playerId + '|' + (x.eventKey ? 'm' + x.eventKey : 'd' + (isFinite(ts) ? localDayKey(ts) : '')) + '|' + (inj ? 'i' : 'q');
+    if (!groups.has(key)) groups.set(key, { inj, list: [] });
+    groups.get(key).list.push(x);
+  }
+  const words = t => new Set(String(t).toLowerCase().match(/[a-z'’]{3,}/g) || []);
+  const link = q => /^https?:\/\//.test(String(q.sourceUrl || ''))
+    ? `<a class="news-cardsource" href="${newsAttr(q.sourceUrl)}" target="_blank" rel="noopener nofollow" onclick="event.stopPropagation()">${newsEscape(q.sourceName || 'source')}</a>`
+    : newsEscape(q.sourceName || '');
+  const out = [];
+  for (const g of groups.values()){
+    const list = g.list.slice().sort((a, b) => String(b.text).length - String(a.text).length || String(a.id).localeCompare(String(b.id)));
+    const kept = [];
+    for (const q of list){
+      const w = words(q.text);
+      const host = kept.find(k => { let n = 0; w.forEach(x => { if (k.w.has(x)) n++; }); return w.size && n / w.size >= 0.8; });
+      if (host){ if (host.q.sourceUrl !== q.sourceUrl) host.also.push(q); } else kept.push({ q, w, also: [] });
+    }
+    const first = kept[0].q, name = newsPlayerName(String(first.playerId), first.player);
+    const ctx = (g.list.find(q => q.context) || {}).context;
+    const tsMax = Math.max.apply(null, g.list.map(q => Date.parse(q.timestamp)).filter(isFinite));
+    const tour = first.tournament && first.tournamentKey !== 'tour' ? (typeof sfEventName === 'function' ? sfEventName(first.tournament) : String(first.tournament)) : '';
+    const outlets = []; g.list.forEach(q => { if (q.sourceName && outlets.indexOf(q.sourceName) < 0) outlets.push(q.sourceName); });
+    out.push({ kind: 'ticker', id: 't' + first.id, ts: isFinite(tsMax) ? tsMax : NaN, tour, tourKey: '', tourFrom: '',
+      players: name ? [{ key: String(first.playerId), name }] : [],
+      title: name + (ctx ? ' ' + ctx : (g.inj ? ' on his fitness' : ' in the press')),
+      bodyParas: kept.map(k => '“' + String(k.q.text).trim() + '”'),
+      parasHtml: kept.map(k => {
+        const lang = k.q.translated ? newsLangName(k.q.language) : '';
+        return newsEscape('“' + String(k.q.text).trim() + '”') + ' <span class="news-qsrc">' + [k.q].concat(k.also).map(link).join(', ')
+          + (k.q.translated ? ' · translated' + (lang ? ' from ' + newsEscape(lang) : '') : '') + '</span>';
+      }),
+      cat: g.inj ? 'Withdrawals & Injuries' : 'Quotes', source: outlets.join(', '), sourceUrl: '' });
+  }
+  return out.filter(x => x.players.length);
+}
+const newsParaHtml = (it, p, i) => (it.parasHtml && it.parasHtml[i] != null ? it.parasHtml[i] : newsEscape(p));
 // The source in the meta line: a ticker quote links to the outlet's article (grey, underline on hover — never blue).
 function newsSourceHtml(it){
   if (!it.source) return '';
@@ -6224,7 +6266,7 @@ function newsReadingCard(it, admin){
         <div class="news-cardmeta-l">${it.cat ? `<span class="news-cat">${newsEscape(it.cat)}</span>` : ''}${newsSourceHtml(it)}${ents.map(e => `<span class="news-cardsep">·</span>${e}`).join('')}</div>
       </div>
       <h3 class="news-cardtitle"${newsTipAttr(it)}>${newsEscape(it.title)}</h3>
-      ${paras.map(p => `<div class="news-para">${newsEscape(p)}</div>`).join('')}
+      ${paras.map((p, i) => `<div class="news-para">${newsParaHtml(it, p, i)}</div>`).join('')}
       ${hasMore ? `<button type="button" class="news-link news-more" data-id="${idA}" onclick="newsToggleMore(this.dataset.id)">${expanded ? 'Show less' : 'Read more'}</button>` : ''}
       ${it.kind === 'intel' && admin ? newsIntelActsHtml(it) : ''}
     </article>`;
@@ -6241,7 +6283,7 @@ function newsCompactRow(it, admin){
   const hasMore = it.bodyParas.length > NEWS_PREVIEW_PARAS, expanded = !!_newsMore[it.id];
   const paras = hasMore && !expanded ? it.bodyParas.slice(0, NEWS_PREVIEW_PARAS) : it.bodyParas;
   const body = open
-    ? `<div class="news-rbody" onclick="event.stopPropagation()">${paras.map(x => `<div class="news-para">${newsEscape(x)}</div>`).join('')}`
+    ? `<div class="news-rbody" onclick="event.stopPropagation()">${paras.map((x, i) => `<div class="news-para">${newsParaHtml(it, x, i)}</div>`).join('')}`
       + (hasMore ? `<button type="button" class="news-link news-more" data-id="${idA}" onclick="event.stopPropagation();newsToggleMore(this.dataset.id)">${expanded ? 'Show less' : 'Read more'}</button>` : '')
       + `${it.kind === 'intel' && admin ? newsIntelActsHtml(it) : ''}</div>`
     : '';

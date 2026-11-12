@@ -67,6 +67,12 @@ hexes are legacy, read through `tokens.json → legacyColourMap`). Night only. H
   quotes, then "Translated from {language}." on a translated one; **the source is the outlet's name, linked to its
   article** (grey, underline on hover, never `--link`). **Status** → Withdrawals & Injuries (walkover, withdrawal,
   retirement) or Draws & Schedules (qualifiers, lucky losers); title = the item's text.
+- **Quotes are one card per player per match** (founder 2026-11-12: "list all what he said in one reading";
+  `newsQuoteCards`): every quote we hold from that player about that match, the fullest first, each followed by its
+  outlet (linked) and "· translated from {language}" where it applies. A quote whose words are at least 80% inside a
+  longer one on the same card (the same statement from a second outlet) is not printed twice; its outlet is listed on
+  the longer one. A quote tied to no match groups by player and day; injury quotes keep their own card under
+  Withdrawals & Injuries. The words stay verbatim — never merged into one paraphrase.
 - An item with no text or no player is not shown. Names = the Player Profile name of the item's key; the event =
   `sfEventName`; a tour-wide quote carries no event.
 - **Test:** `test-ten409-news.mjs` "Ticker" (report, linked + escaped quote source, translation line, category filters,
