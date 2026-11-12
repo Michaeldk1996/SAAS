@@ -11140,9 +11140,14 @@ function renderMatches(){
   }
   list.classList.toggle('mx-mv', mxDriftView());   // CHANGES_2026-11-11 B2: the move view's wider grid track
   list.innerHTML = cards.join('');
+  // founder 2026-11-12: a light Upcoming day (MX_FEW_CARDS or fewer cards) takes the move view's wider track, so the cards
+  // grow to two per row; a fuller day keeps the standard 360px track. Completed keeps its own 525px rule.
+  const upCards = list.querySelectorAll('.match-card:not(.cmpl)').length;
+  list.classList.toggle('mx-few', !mxDriftView() && upCards > 0 && upCards <= MX_FEW_CARDS);
   // Step 15 §4: the Market Signal chip is on every card (books, Elo and model rows, each a dash when absent).
   document.querySelectorAll('.mx-msigchip[data-msig]').forEach(el => el.classList.add('has-signal'));
 }
+const MX_FEW_CARDS = 4;   // founder 2026-11-12: Upcoming with this many cards or fewer uses the wide (move-view) track
 function toggleFav(id){ openModal(); }
 // Market Signal disclosure: expand/collapse the panel in place on its own card.
 // Never navigates — the chevron flip + selected border are driven by .sig-open.
@@ -37507,7 +37512,7 @@ if(document.querySelector('.tabpage[data-page="live"]')&&document.querySelector(
   /* CHANGES_2026-11-11 B2: in the move view the tournament is never cut, and the grid drops a column (480px track) before a
      header is squeezed; the standard view keeps 360px. */
   [data-page="matches"] .match-card:not(.cmpl) .mc-head:has(.mc-colhead-drift) > .mc-tourn{ flex:none; }
-  [data-page="matches"] #matchlist.mx-mv{ grid-template-columns:repeat(auto-fill, minmax(480px, 1fr)); }
+  [data-page="matches"] #matchlist.mx-mv, [data-page="matches"] #matchlist.mx-few{ grid-template-columns:repeat(auto-fill, minmax(480px, 1fr)); }
   [data-page="matches"] .match-card .mc-head > *{ flex:none; }
   [data-page="matches"] .match-card .mc-head > .mc-tourn{ flex:0 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   [data-page="matches"] .match-card.mx-preview .mc-head > .mc-tourn{ flex:none; overflow:visible; }   /* A10: never cut on a preview card */

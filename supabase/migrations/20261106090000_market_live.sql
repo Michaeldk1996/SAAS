@@ -25,6 +25,11 @@ create table if not exists public.market_live_current (
 -- Traded money (founder 2026-11-07): {byName: {player: dollars}, trades, at} summed over every trade on the match-winner
 -- market up to `at`. Sent every minute with the last good sum; a minute without one keeps the stored sum.
 alter table public.market_live_current add column if not exists flow jsonb;
+-- The last reads before the current one (founder 2026-11-12: "make sure it's always there"): newest first, at most
+-- 30 entries of {read_at, liquidity, outcomes, flow}. The live flag reaches us seconds to minutes after the
+-- real start, so the newest read is often taken after it; the freeze then takes the newest read from BEFORE our live
+-- sighting out of this list, instead of dropping the whole row (measured 12 Nov: 24 of 34 frozen rows of 9–11 Nov empty).
+alter table public.market_live_current add column if not exists recent jsonb;
 create table if not exists public.market_live_beat (
   id       int         primary key default 1 check (id = 1),
   beat_at  timestamptz not null,
@@ -49,17 +54,30 @@ returns jsonb language plpgsql security definer set search_path = public, pg_tem
 declare w int := 0; f int := 0;
 begin
   -- Freeze once play is seen (live_flip_log_current: the log minus the superseded false starts — every reader of a
-  -- live-flip start reads the view). started_at = the poll before the flag (first sighting wins, never moved). A read
-  -- taken AFTER that poll could be in play, and with no lower bound (play already on the board at the first sighting,
-  -- ruling 2026-10-27) nothing proves any read was pre-match: either way the figure and prices are dropped (null), so
-  -- the page falls back to the pipeline file — never an in-play read labelled pre-start. A bare flag
+  -- live-flip start reads the view). started_at = the poll before the flag (first sighting wins, never moved). The frozen
+  -- value is the newest read taken at or before that poll: the current read, else the newest of `recent` (founder
+  -- 2026-11-12); read_at becomes that read's time. A read taken AFTER that poll could be in play and is never kept; with
+  -- no read before it, or no lower bound (play already on the board at the first sighting, ruling 2026-10-27), nothing
+  -- proves a pre-match read: the figure and prices are dropped (null) — never an in-play read labelled pre-start. A bare flag
   -- (live_flip_pending) only pauses the writes below; a flag that leaves the live board before play resumes them.
+  with pick as (
+    select c.event_key, c.venue, coalesce(l.last_not_live_seen_at, l.first_live_seen_at) st, l.last_not_live_seen_at lb,
+           case when l.last_not_live_seen_at is null then null
+                when c.read_at <= l.last_not_live_seen_at
+                  then jsonb_build_object('read_at', c.read_at, 'liquidity', c.liquidity, 'outcomes', c.outcomes, 'flow', c.flow)
+                else (select e from jsonb_array_elements(case when jsonb_typeof(c.recent) = 'array' then c.recent else '[]'::jsonb end) e
+                       where (e->>'read_at')::timestamptz <= l.last_not_live_seen_at
+                       order by (e->>'read_at')::timestamptz desc limit 1) end snap
+      from public.market_live_current c join public.live_flip_log_current l on l.event_key = c.event_key
+     where c.started_at is null
+  )
   update public.market_live_current c
-     set started_at = coalesce(l.last_not_live_seen_at, l.first_live_seen_at),
-         liquidity  = case when l.last_not_live_seen_at is not null and c.read_at <= l.last_not_live_seen_at then c.liquidity end,
-         outcomes   = case when l.last_not_live_seen_at is not null and c.read_at <= l.last_not_live_seen_at then c.outcomes end,
-         flow       = case when l.last_not_live_seen_at is not null and (c.flow->>'at')::timestamptz <= l.last_not_live_seen_at then c.flow end
-    from public.live_flip_log_current l where l.event_key = c.event_key and c.started_at is null;
+     set started_at = p.st,
+         liquidity  = (p.snap->>'liquidity')::numeric,
+         outcomes   = case when jsonb_typeof(p.snap->'outcomes') = 'array' then p.snap->'outcomes' end,
+         flow       = case when jsonb_typeof(p.snap->'flow') = 'object' and (p.snap->'flow'->>'at')::timestamptz <= p.lb then p.snap->'flow' end,
+         read_at    = coalesce((p.snap->>'read_at')::timestamptz, c.read_at)
+    from pick p where p.event_key = c.event_key and p.venue = c.venue and c.started_at is null;
   get diagnostics f = row_count;
 
   with r as (
@@ -81,7 +99,11 @@ begin
      and not exists (select 1 from public.live_flip_pending p where p.event_key = r.ek)
   on conflict (event_key, venue) do update
      set ref = excluded.ref, liquidity = excluded.liquidity, outcomes = excluded.outcomes, flow = coalesce(excluded.flow, c.flow),
-         status = excluded.status, read_at = excluded.read_at
+         status = excluded.status, read_at = excluded.read_at,
+         recent = (select jsonb_agg(e order by i) from jsonb_array_elements(
+                     jsonb_build_array(jsonb_build_object('read_at', c.read_at, 'liquidity', c.liquidity, 'outcomes', c.outcomes, 'flow', c.flow))
+                     || case when jsonb_typeof(c.recent) = 'array' then c.recent else '[]'::jsonb end) with ordinality t(e, i)
+                    where i <= 30)
    where c.started_at is null and excluded.read_at > c.read_at;
   get diagnostics w = row_count;
 

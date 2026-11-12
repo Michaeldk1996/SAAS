@@ -77,9 +77,20 @@ test('A11: Upcoming hides the chip row when at most one chip besides All would s
 });
 test('B2: the move view drops a column before a header is squeezed (480px track); the tournament never cut; no start time', () => {
   assert.match(slice('renderMatches'), /list\.classList\.toggle\('mx-mv', mxDriftView\(\)\);/);
-  assert.match(rule(`${M} #matchlist.mx-mv`), /grid-template-columns:repeat\(auto-fill, minmax\(480px, 1fr\)\);/);
+  assert.match(rule(`${M} #matchlist.mx-mv, ${M} #matchlist.mx-few`), /grid-template-columns:repeat\(auto-fill, minmax\(480px, 1fr\)\);/);
   assert.match(rule(`${M} #matchlist`), /minmax\(360px, 1fr\)/, 'the standard view keeps 360px');
   assert.match(rule(`${M} .match-card:not(.cmpl) .mc-head:has(.mc-colhead-drift) > .mc-tourn`), /flex:none;/);
+});
+test('founder 2026-11-12: a light Upcoming day (4 cards or fewer) takes the move view\'s wide track; a fuller day keeps 360px', () => {
+  assert.match(html, /const MX_FEW_CARDS = 4;/);
+  const r = slice('renderMatches');
+  assert.match(r, /const upCards = list\.querySelectorAll\('\.match-card:not\(\.cmpl\)'\)\.length;/);
+  assert.match(r, /list\.classList\.toggle\('mx-few', !mxDriftView\(\) && upCards > 0 && upCards <= MX_FEW_CARDS\);/);
+  // the class is set after the cards are in the list (it counts them), and never on Completed (cmpl cards are not counted)
+  assert.ok(r.indexOf("toggle('mx-few'") > r.indexOf("list.innerHTML = cards.join('')"));
+  const few = (n, drift) => !drift && n > 0 && n <= 4;
+  assert.deepEqual([0, 1, 4, 5, 9].map(n => few(n, false)), [false, true, true, false, false]);
+  assert.equal(few(3, true), false, 'the move view keeps its own class');
 });
 test('B3: "{n} of {N} matches moved" (label ruled 2026-11-12) — N = cards with an open → now pair, n = shortening side down 2%+; no pair = a dash', () => {
   const body = slice('renderMatches');

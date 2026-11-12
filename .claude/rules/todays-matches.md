@@ -57,6 +57,9 @@ except where a ruling below says otherwise. Colours are foundation tokens (`foun
 - **Card grid (founder 2026-10-03, replaces TEN-270 stretch):** `#matchlist` `align-items:start`. Closed cards in a row
   line up because they share one structure; a card that could grow is fixed inside the card, never by stretching the row.
   An open Market Signal grows only its own card. Same on Completed.
+  **Light days are wide (founder 2026-11-12):** Upcoming with `MX_FEW_CARDS` (4) cards or fewer takes the move view's
+  480px track (`#matchlist.mx-few`: two per row at 1512, as Biggest market move draws them); 5 or more keep the 360px
+  track (three per row). Completed keeps its 525px rule. **Test:** `test-todays-matches-1111.mjs` "a light Upcoming day".
 - **Insight tiles (TEN-403 Shell refresh, reference "39b", replaces the review 2026-10-03 line):** always three tiles,
   same size, both views, below the date row and above the filter / search row. Upcoming = Biggest market move · Shortest
   price · Tightest match on the 39b surface: `--card`, 1px `--edge-7`, radius 12, `--top-light`, padding 14/18/15, column
@@ -135,7 +138,12 @@ except where a ruling below says otherwise. Colours are foundation tokens (`foun
   one each, else a dash), scaled to 100%, as fair odds; nothing under the prices and nothing under the name — ONE sentence
   under the row across every column (CHANGES_2026-11-11 A5 / C4): "$29.8k traded · 593 trades · $18.1k on Sonego · $11.7k
   on Tabilo" (Hanken 10, `--text-label`, line-height 1.3, padding-top 2, `text-wrap: pretty`); no traded sum = no sentence;
-  a dash row never has one; resting liquidity in the hover only. Not a match price: no price join
+  a dash row never has one; resting liquidity in the hover only. **A finished match keeps its last pre-start read**
+  (founder 2026-11-12, "make sure it's always there"): `market_live_current.recent` holds each row's 30 earlier one-minute
+  reads, and the freeze takes the newest read at or before our live sighting's lower bound (its own `read_at`), never a
+  read after it; only with no read before the start (or no lower bound) is the row a dash. Before this, the freeze kept
+  only the newest read and dropped it when it came after the sighting: 24 of 34 frozen rows of 9–11 Nov were empty.
+  **Test:** `tools/test-market-live-sql.py` (founder 2026-11-12 checks; CONTROL: the freeze without the list loses it). Not a match price: no price join
   reads it. **Model row:** Pro = hover wash, click opens the Stennisfy Model page; not Pro = blurred + lock, no click.
   **Test:** `test-ten377-todays-matches.mjs` (the ledger, both views), `test-market-live-signal.mjs`,
   `test-polymarket-signal.mjs`, `tools/test-market-live-recorder.mjs`, `tools/test-market-live-sql.py`.
