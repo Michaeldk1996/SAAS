@@ -6,6 +6,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN python3 -m venv /opt/venv && /opt/venv/bin/pip install --no-cache-dir faster-whisper
 ENV PATH=/opt/venv/bin:$PATH CHROME_BIN=/usr/bin/chromium PULSE_SERVER=unix:/tmp/pulse-socket
 WORKDIR /app
-COPY interviews-worker ./interviews-worker
+COPY . ./interviews-worker
 RUN chmod +x interviews-worker/entrypoint.sh
 CMD ["interviews-worker/entrypoint.sh"]
