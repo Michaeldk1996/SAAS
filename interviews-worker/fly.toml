@@ -5,4 +5,4 @@ primary_region = "lhr"
   dockerfile = "Dockerfile"
 
 [env]
-  WHISPER_MODEL = "base.en"
+  WHISPER_MODEL = "small.en"
