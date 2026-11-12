@@ -1,17 +1,17 @@
 {
- "generatedAt": "2026-11-12T11:27:42.022Z",
+ "generatedAt": "2026-11-12T11:51:39.787Z",
  "tournaments": [
   {
    "key": "tour",
    "season": "2026",
    "name": "ATP Tour",
    "file": "news-ticker/tour-2026.json",
-   "items": 23,
+   "items": 24,
    "byType": {
-    "quote": 23
+    "quote": 24
    },
-   "latestTimestamp": "2026-11-12T10:11:05.000Z",
-   "updatedAt": "2026-11-12T11:27:42.022Z"
+   "latestTimestamp": "2026-11-12T10:48:53.000Z",
+   "updatedAt": "2026-11-12T11:51:39.787Z"
   },
   {
    "key": "1681",
@@ -41,6 +41,36 @@
   }
  ],
  "latest": [
+  {
+   "id": "quote-a733179800055d",
+   "type": "quote",
+   "playerId": "2072",
+   "opponentId": null,
+   "player": "J. Sinner",
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-12T10:48:53.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Injuries",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "We have returned to Monaco and now we are working every day, trying to regain muscle mass",
+   "originalText": "Hemos vuelto a Mónaco y ahora estamos trabajando todos los días, intentando recuperar masa muscular",
+   "language": "es",
+   "translated": true,
+   "translationModel": "claude-opus-5-5",
+   "sourceName": "Mundo Deportivo",
+   "sourceUrl": "https://www.mundodeportivo.com/tenis/20261112/1004250170/sinner-me-extirparon-amigdalas-semanas-he-perdido-peso-quiza-note-cara-seca.html",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "sourceHash": "5aef34ce210b4c7a",
+   "publishedAt": "2026-11-12T11:51:39.787Z",
+   "file": "news-ticker/tour-2026.json"
+  },
   {
    "id": "quote-b9f32ffc46dd73",
    "type": "quote",
@@ -2198,36 +2228,6 @@
    "revisedAt": "2026-11-12T07:17:47.163Z",
    "revision": 2,
    "file": "news-ticker/1681-2026.json"
-  },
-  {
-   "id": "quote-3b1ee22786599e",
-   "type": "quote",
-   "playerId": "2072",
-   "opponentId": null,
-   "player": "J. Sinner",
-   "opponent": null,
-   "tournament": "ATP Tour",
-   "tournamentKey": "tour",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-10T12:00:00.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Interviews",
-   "context": null,
-   "eventKey": null,
-   "won": null,
-   "text": "When I announced that my season was over, Berrettini and Draper got in touch straight away,",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "Sky Sports",
-   "sourceUrl": "https://www.skysports.com/tennis/news/12110/13610594/jannik-sinner-world-no-2-confirms-aim-to-return-to-tennis-at-australian-open-after-lengthy-absence-with-knee-injury",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "sourceHash": "7580c00f5b9242e6",
-   "publishedAt": "2026-11-12T03:03:12.953Z",
-   "file": "news-ticker/tour-2026.json"
   }
  ]
 }
