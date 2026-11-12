@@ -22,7 +22,6 @@ export const RULES = [
 ];
 export const FIRST_IN = { id: 'firstIn', stat: 'Service:1st serve percentage', base: ['serve', 'firstInPct'], gap: 8 };
 export const NOTABLE = { aces: 10, doubleFaults: 5, winners: 30, unforcedErrors: 30, bpAllOrNone: 3, bpMany: 8 };
-export const MAX_PER_PLAYER = 3;
 
 const num = (v) => (typeof v === 'number' && Number.isFinite(v) ? v : null);
 const SURF = { hard: 'Hard', clay: 'Clay', grass: 'Grass' };
@@ -42,45 +41,66 @@ export function baselineFor(ratings, key, surface) {
   return null;
 }
 
-// -> [{ text, tone: 'good'|'bad'|null, kind, field }] for one player (name = the card name), strongest first
+const join = (parts) => (parts.length <= 1 ? parts.join('') : parts.slice(0, -1).join(', ') + ' and ' + parts[parts.length - 1]);
+const toneOf = (tones) => { const g = tones.includes('good'), b = tones.includes('bad'); return g && !b ? 'good' : (b && !g ? 'bad' : null); };
+
+// One player's sentences (name = the card name), each grouping the numbers that belong together (founder 2026-11-12:
+// "He served well with 14 aces and XX% first serve points won"):
+//   serve      aces (10+), first serves in (standout), first-serve points won (always, once the serve is news; with the
+//              baseline when it is a standout), second-serve points won (standout), double faults (5+)
+//   return     first / second-serve return points won (standouts)
+//   pressure   break points (none faced; all or none saved from 3+; 8+ faced)
+//   rally      winners and unforced errors (30+ of either)
+// The baseline is named in full the first time a player's figure is compared with it; after that it is "his usual N%".
+// -> [{ text, tone: 'good'|'bad'|null, kind: 'serve'|'return'|'bp'|'count', fields: [...] }]
 export function standoutUnits(ms, side, name, base, { bp = null, wueOk = true } = {}) {
   const s = (ms && ms[side]) || {}, raw = s.raw || {}, out = [];
-  if (base) {
-    const cands = [];
-    for (const r of RULES) {
-      const v = num(s[r.stat]), c = raw[r.stat], b = num(base.node[r.base[0]] && base.node[r.base[0]][r.base[1]]);
-      if (v == null || b == null || !c || num(c.total) == null || c.total < r.minPts) continue;
-      const x = Math.round(v), y = Math.round(b), d = x - y;
-      if (Math.abs(d) < r.gap) continue;
-      cands.push({ score: Math.abs(d) / r.gap, tone: (d > 0) === r.higherGood ? 'good' : 'bad', kind: 'rate',
-        text: `${name} won ${x}% ${r.what} (${c.won} of ${c.total}), ${d > 0 ? 'above' : 'below'} his ${y}% ${base.label}.`,
-        field: { metric: r.id, value: x, won: c.won, total: c.total, baseline: y, scope: base.scope, surface: base.surface, n: base.matches } });
-    }
-    const fi = num(s[FIRST_IN.stat]), fb = num(base.node.serve && base.node.serve.firstInPct);
-    if (fi != null && fb != null && Math.abs(Math.round(fi) - Math.round(fb)) >= FIRST_IN.gap) {
-      const x = Math.round(fi), y = Math.round(fb);
-      cands.push({ score: Math.abs(x - y) / FIRST_IN.gap, tone: x > y ? 'good' : 'bad', kind: 'rate',
-        text: `${name} landed ${x}% of his first serves, ${x > y ? 'above' : 'below'} his ${y}% ${base.label}.`,
-        field: { metric: 'firstIn', value: x, baseline: y, scope: base.scope, surface: base.surface, n: base.matches } });
-    }
-    cands.sort((a, b) => b.score - a.score);
-    // the baseline is named in full once per player; his next figure reads "his usual 51%" (the same baseline)
-    const top = cands.slice(0, 2);
-    if (top[1]) top[1].text = top[1].text.replace(` ${base.label}.`, '.').replace(/ his (\d+)%\.$/, ' his usual $1%.');
-    out.push(...top);
-  }
-  if (bp) {
-    const { saved, faced } = bp;
-    if (faced === 0) out.push({ tone: 'good', kind: 'bp', text: `${name} faced no break points.`, field: { metric: 'breakPoints', saved, faced } });
-    else if (faced >= NOTABLE.bpAllOrNone && (saved === faced || saved === 0)) out.push({ tone: saved === faced ? 'good' : 'bad', kind: 'bp', text: `${name} saved ${saved} of ${faced} break points.`, field: { metric: 'breakPoints', saved, faced } });
-    else if (faced >= NOTABLE.bpMany) out.push({ tone: null, kind: 'bp', text: `${name} saved ${saved} of ${faced} break points.`, field: { metric: 'breakPoints', saved, faced } });
-  }
+  let named = false;
+  const vs = (x, y) => { const t = `${x > y ? 'above' : 'below'} his ${named ? 'usual ' : ''}${y}%${named ? '' : ' ' + base.label}`; named = true; return t; };
+  const rate = (r) => {   // -> { x, y, d, c, standout } | null
+    const v = num(s[r.stat]), c = raw[r.stat];
+    if (v == null || !c || num(c.total) == null || c.total < r.minPts) return null;
+    const b = base ? num(base.node[r.base[0]] && base.node[r.base[0]][r.base[1]]) : null, x = Math.round(v), y = b == null ? null : Math.round(b);
+    return { x, y, c, standout: y != null && Math.abs(x - y) >= r.gap, good: y != null && x > y };
+  };
+  const R = Object.fromEntries(RULES.map((r) => [r.id, rate(r)]));
+  const fi = num(s[FIRST_IN.stat]), fb = base ? num(base.node.serve && base.node.serve.firstInPct) : null;
+  const firstIn = fi != null && fb != null && Math.abs(Math.round(fi) - Math.round(fb)) >= FIRST_IN.gap ? { x: Math.round(fi), y: Math.round(fb) } : null;
   const aces = num(s['Service:Aces']), df = num(s['Service:Double Faults']);
-  if (aces != null && aces >= NOTABLE.aces) out.push({ tone: 'good', kind: 'count', text: `${name} hit ${aces} aces.`, field: { metric: 'aces', value: aces } });
-  if (df != null && df >= NOTABLE.doubleFaults) out.push({ tone: 'bad', kind: 'count', text: `${name} made ${df} double faults.`, field: { metric: 'doubleFaults', value: df } });
+  const bigAces = aces != null && aces >= NOTABLE.aces, manyDf = df != null && df >= NOTABLE.doubleFaults;
+  const meta = (metric, o) => ({ metric, ...o, ...(base && o.baseline != null ? { scope: base.scope, surface: base.surface, n: base.matches } : {}) });
+
+  // ---- serve ----
+  if (bigAces || manyDf || firstIn || (R.firstWon && R.firstWon.standout) || (R.secondWon && R.secondWon.standout)) {
+    const parts = [], tones = [], fields = [];
+    if (bigAces) { parts.push(`hit ${aces} aces`); tones.push('good'); fields.push(meta('aces', { value: aces })); }
+    if (firstIn) { parts.push(`landed ${firstIn.x}% of his first serves, ${vs(firstIn.x, firstIn.y)}`); tones.push(firstIn.x > firstIn.y ? 'good' : 'bad'); fields.push(meta('firstIn', { value: firstIn.x, baseline: firstIn.y })); }
+    if (R.firstWon) { const r = R.firstWon; parts.push(`won ${r.x}% of his first-serve points (${r.c.won} of ${r.c.total})${r.standout ? ', ' + vs(r.x, r.y) : ''}`); if (r.standout) tones.push(r.good ? 'good' : 'bad');
+      fields.push(meta('firstWon', { value: r.x, won: r.c.won, total: r.c.total, ...(r.standout ? { baseline: r.y } : {}) })); }
+    if (R.secondWon && R.secondWon.standout) { const r = R.secondWon; parts.push(`won ${r.x}% of his second-serve points (${r.c.won} of ${r.c.total}), ${vs(r.x, r.y)}`); tones.push(r.good ? 'good' : 'bad');
+      fields.push(meta('secondWon', { value: r.x, won: r.c.won, total: r.c.total, baseline: r.y })); }
+    if (manyDf) { parts.push(`made ${df} double faults`); tones.push('bad'); fields.push(meta('doubleFaults', { value: df })); }
+    out.push({ text: `${name} ${join(parts)}.`, tone: toneOf(tones), kind: 'serve', fields });
+  }
+  // ---- return ----
+  const rets = [['ret1Won', 'first-serve return'], ['ret2Won', 'second-serve return']].filter(([id]) => R[id] && R[id].standout);
+  if (rets.length) {
+    const parts = [], tones = [], fields = [];
+    for (const [id, what] of rets) { const r = R[id]; parts.push(`${parts.length ? '' : 'won '}${r.x}% of the points on ${what} (${r.c.won} of ${r.c.total}), ${vs(r.x, r.y)}`); tones.push(r.good ? 'good' : 'bad');
+      fields.push(meta(id, { value: r.x, won: r.c.won, total: r.c.total, baseline: r.y })); }
+    out.push({ text: `${name} ${join(parts)}.`, tone: toneOf(tones), kind: 'return', fields });
+  }
+  // ---- pressure ----
+  if (bp) {
+    const { saved, faced } = bp, f = [{ metric: 'breakPoints', saved, faced }];
+    if (faced === 0) out.push({ tone: 'good', kind: 'bp', text: `${name} faced no break points.`, fields: f });
+    else if (faced >= NOTABLE.bpAllOrNone && (saved === faced || saved === 0)) out.push({ tone: saved === faced ? 'good' : 'bad', kind: 'bp', text: `${name} saved ${saved} of ${faced} break points.`, fields: f });
+    else if (faced >= NOTABLE.bpMany) out.push({ tone: null, kind: 'bp', text: `${name} saved ${saved} of ${faced} break points.`, fields: f });
+  }
+  // ---- rally ----
   const w = num(s['Points:Winners']), ue = num(s['Points:Unforced errors']);
   if (wueOk && w != null && ue != null && (w >= NOTABLE.winners || ue >= NOTABLE.unforcedErrors)) {
-    out.push({ tone: w > ue ? 'good' : (ue > w ? 'bad' : null), kind: 'count', text: `${name} hit ${w} winners and made ${ue} unforced errors.`, field: { metric: 'winnersErrors', winners: w, unforcedErrors: ue } });
+    out.push({ tone: w > ue ? 'good' : (ue > w ? 'bad' : null), kind: 'count', text: `${name} hit ${w} winners and made ${ue} unforced errors.`, fields: [{ metric: 'winnersErrors', winners: w, unforcedErrors: ue }] });
   }
-  return out.slice(0, MAX_PER_PLAYER);
+  return out;
 }

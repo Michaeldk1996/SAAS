@@ -279,18 +279,24 @@ await ok('standouts: a rate is reported only when it is far from the player\'s o
   assert.equal(baselineFor(RT, 1, 'hard'), null); assert.equal(baselineFor(null, 437, 'hard'), null);
   const ms = (o, raw) => ({ p1: { ...o, raw } });
   const B = baselineFor(RT, 437, 'hard');
-  const u = standoutUnits(ms({ 'Service:1st serve points won': 88.9, 'Service:2nd serve points won': 40, 'Service:1st serve percentage': 64, 'Service:Aces': 4 },
+  const u = standoutUnits(ms({ 'Service:1st serve points won': 88.9, 'Service:2nd serve points won': 40, 'Service:1st serve percentage': 64, 'Service:Aces': 14 },
     { 'Service:1st serve points won': { won: 32, total: 36 }, 'Service:2nd serve points won': { won: 8, total: 20 } }), 'p1', 'H. Rune', B, { bp: { saved: 2, faced: 4 } });
-  assert.deepEqual(u.map((x) => [x.text, x.tone]), [
-    ['H. Rune won 89% of his first-serve points (32 of 36), above his 74% on hard over the last 52 weeks.', 'good'],
-    ['H. Rune won 40% of his second-serve points (8 of 20), below his usual 54%.', 'bad']], 'first-in 64 v 62 and 2 of 4 break points and 4 aces are not news');
-  assert.deepEqual(u[0].field, { metric: 'firstWon', value: 89, won: 32, total: 36, baseline: 74, scope: 'last52', surface: 'Hard', n: 47 });
-  // close to the baseline, or too few points in the match: nothing
+  assert.deepEqual(u.map((x) => [x.text, x.tone, x.kind]), [
+    ['H. Rune hit 14 aces, won 89% of his first-serve points (32 of 36), above his 74% on hard over the last 52 weeks and won 40% of his second-serve points (8 of 20), below his usual 54%.', null, 'serve']],
+    'the serve numbers sit in one sentence; the baseline is named once; first-in 64 v 62 and 2 of 4 break points are not news; good + bad = no tone');
+  assert.deepEqual(u[0].fields[1], { metric: 'firstWon', value: 89, won: 32, total: 36, baseline: 74, scope: 'last52', surface: 'Hard', n: 47 });
+  // aces make the serve news: first-serve points won rides along without a comparison when it is close to his baseline
+  const a = standoutUnits(ms({ 'Service:1st serve points won': 80, 'Service:Aces': 14 }, { 'Service:1st serve points won': { won: 28, total: 35 } }), 'p1', 'B. Gojo', B);
+  assert.deepEqual(a.map((x) => [x.text, x.tone]), [['B. Gojo hit 14 aces and won 80% of his first-serve points (28 of 35).', 'good']]);
+  // close to the baseline with nothing else, or too few points in the match: nothing
   assert.deepEqual(standoutUnits(ms({ 'Service:1st serve points won': 80 }, { 'Service:1st serve points won': { won: 28, total: 35 } }), 'p1', 'X', B), [], '80 v 74 is inside the 8-point gap');
   assert.deepEqual(standoutUnits(ms({ 'Service:1st serve points won': 100 }, { 'Service:1st serve points won': { won: 10, total: 10 } }), 'p1', 'X', B), [], '10 points is too few');
+  // return: both figures in one sentence
+  const r = standoutUnits(ms({ 'Return:1st return points won': 47.2, 'Return:2nd return points won': 70 }, { 'Return:1st return points won': { won: 17, total: 36 }, 'Return:2nd return points won': { won: 14, total: 20 } }), 'p1', 'C. N', B);
+  assert.deepEqual(r.map((x) => [x.text, x.tone, x.kind]), [['C. N won 47% of the points on first-serve return (17 of 36), above his 29% on hard over the last 52 weeks and 70% of the points on second-serve return (14 of 20), above his usual 50%.', 'good', 'return']]);
   // counts that say something by themselves, with or without a baseline
   const c = standoutUnits(ms({ 'Service:Aces': 13, 'Service:Double Faults': 6, 'Points:Winners': 50, 'Points:Unforced errors': 20 }, {}), 'p1', 'A. S', null, { bp: { saved: 0, faced: 3 } });
-  assert.deepEqual(c.map((x) => [x.text, x.tone, x.kind]), [['A. S saved 0 of 3 break points.', 'bad', 'bp'], ['A. S hit 13 aces.', 'good', 'count'], ['A. S made 6 double faults.', 'bad', 'count']], 'at most 3 a player');
+  assert.deepEqual(c.map((x) => [x.text, x.tone, x.kind]), [['A. S hit 13 aces and made 6 double faults.', null, 'serve'], ['A. S saved 0 of 3 break points.', 'bad', 'bp'], ['A. S hit 50 winners and made 20 unforced errors.', 'good', 'count']]);
   assert.deepEqual(standoutUnits(ms({ 'Service:Aces': 9, 'Service:Double Faults': 4, 'Points:Winners': 29, 'Points:Unforced errors': 29 }, {}), 'p1', 'X', null, { bp: { saved: 3, faced: 7 } }), []);
   assert.deepEqual(standoutUnits(ms({}, {}), 'p1', 'X', null, { bp: { saved: 0, faced: 0 } }).map((x) => x.text), ['X faced no break points.']);
 });
@@ -310,6 +316,10 @@ await ok('voice: an opinion word passes only in a sentence the code gave that to
   assert.ok(!chk(Bp, 'Rune was clutch, he saved 0 of 3 break points.', 'bad', 'bp'), 'a good word in a bad sentence needs "not"');
   assert.ok(!chk(Bp, 'Rune did not hold, he saved 0 of 3 break points.', 'bad', 'bp'));
   assert.ok(chk('H. Rune saved 4 of 4 break points.', 'Rune was clutch and saved 4 of 4 break points.', 'good', 'bp'));
+  const G = 'B. Gojo hit 14 aces and won 80% of his first-serve points (41 of 51).';
+  assert.ok(chk(G, 'Gojo served well with 14 aces and won 80% of his first-serve points (41 of 51).', 'good', 'serve'), 'the founder\'s own example shape');
+  assert.ok(!chk(G, 'Gojo served well with 14 aces and won 80% of his first-serve points (41 of 15).', 'good', 'serve'));
+  assert.ok(!chk(G, 'Gojo served well with 80 aces and won 14% of his first-serve points (41 of 51).', 'good', 'serve'), 'the two numbers swapped');
 });
 // ---- tour-wide (founder 2026-11-12: press interviews and injuries for every ATP player, every day) ----
 await ok('tour-wide: an article that names no tournament still yields its quote; each candidate carries the tournaments its article mentions', async () => {

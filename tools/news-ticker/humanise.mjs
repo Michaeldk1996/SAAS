@@ -22,7 +22,7 @@ export const VOICE_VERSION = 2;   // bump to have every stored report rewritten 
 export const VOCAB = new Set(('a an the and but then while with in on at of to for from by as it its he his him who that this their they both was were is had has did ' +
   'beat match set sets game games round final meeting meetings time minutes after before against along way also now still so ' +
   'hit made came went got took finished ended first second third fourth fifth opening ' +
-  'aces ace winners winner unforced errors error double faults fault break point points tiebreak tiebreaks row down up serve serving').split(/\s+/));
+  'served returned return returning aces ace winners winner unforced errors error double faults fault break point points tiebreak tiebreaks row down up serve serving').split(/\s+/));
 // Opinion words (founder 2026-11-12: ratings and opinions are allowed) — only in a sentence the code gave a tone, and
 // only the words of that tone, so a judgement always sits beside the number that shows it. "clutch" is for break points.
 export const TONE_WORDS = { good: new Set(['strong', 'solid', 'clean', 'sharp', 'well', 'good', 'better', 'clutch']),
@@ -48,7 +48,8 @@ const mentions = (text, p) => new RegExp(`(^|[^A-Za-z])${p.surname.replace(/[.*+
 
 // number -> the word after it ("9|aces", "0|of", "83|minutes"), scores taken out first
 function numberKeys(s) {
-  const t = tokens(norm(s).replace(SCORE, ' '));
+  // a number that closes a bracket — "(28 of 36)" — is keyed on the bracket, not on whatever word follows it
+  const t = norm(s).replace(SCORE, ' ').match(/[A-Za-z][A-Za-z'-]*|\d+(?:st|nd|rd|th)?|\)/g) || [];
   const out = [];
   t.forEach((w, i) => { if (/^\d/.test(w)) out.push(`${w}|${(t[i + 1] || '').toLowerCase().replace(/s$/, '')}`); });
   return out;
@@ -119,7 +120,8 @@ Rules, all strict:
 - Plain past tense, no exclamation marks, no hyphen in a score. A short sentence stays short: never pad it (no "in the match", "during the match", "in this match").
 - Words: you may use only the words of the original sentence, the players' names, and these connecting words: ${[...VOCAB].join(' ')}. Any other word makes the sentence invalid.
 - Judgement: "tones" gives each sentence good, bad or none. In a GOOD sentence you may add one of: strong, solid, clean, sharp, well, better (and "clutch" only when its kind is "bp"). In a BAD sentence one of: shaky, poor, weak, error-prone, low, worse (and "not clutch" only when its kind is "bp"). In a sentence with tone none: no judgement word at all. Keep "above" / "below" and both percentages exactly as given, with the same words after each number.
-- These sentences are what stood out in the match, so word them like a person who watched the numbers, not like a list. Vary how sentences open, and do not use a judgement word in every sentence: at most two in the whole report. Never put a word between a bracket like "(17 of 36)" and "above" / "below". "his usual 51%" stays "his usual 51%".
+- These sentences are what stood out in the match, so word them like a person who watched the numbers, not like a list. Vary how sentences open, and do not use a judgement word in every sentence: at most two in the whole report. "his usual 51%" stays "his usual 51%".
+- A sentence may carry several numbers that belong together (aces, first-serve points won). Keep them in one sentence, for example: He served well with 14 aces and won 78% of his first-serve points (28 of 36).
 - Preferred wording: "came from a set down", "got broken", "won 7 games in a row", "saved 2 of 3 break points", "hit 9 aces and 41 winners", "made 28 unforced errors", "went to a tiebreak".`;
 
 // -> { status: 'ok'|'no-key'|'api-error'|'bad-output', sentences?: string[], usage?, detail? }
