@@ -4522,14 +4522,7 @@
     return ' <span data-pp2-notcounted="1" title="Not in Tennis Explorer, not counted in this record" ' +
       'style="color:var(--text-label);">' + MIDDOT + ' not in Tennis Explorer, not counted</span>';
   }
-  // TEN-449 provisional (founder 2026-10-19, amends ruling 2A) · an api-tennis row dated on or after the day we read his
-  // TE current-season page: counted, and says it is provisional until Tennis Explorer lists it.
-  function provisionalMark(r) {
-    if (!r || !r.provisional) return '';
-    var t = MIDDOT + ' provisional ' + MIDDOT + ' api-tennis, not yet in Tennis Explorer (read ' + fmtDayMonth(r.provisional) + ')';
-    return ' <span data-pp2-provisional="1" title="' + esc('Counted provisionally: api-tennis has this match, Tennis Explorer ' +
-      'did not list it yet when read on ' + fmtDayMonth(r.provisional)) + '" style="color:var(--text-label);">' + esc(t) + '</span>';
-  }
+
   function conflictMark(r) {
     if (!r || !r.conflicts || !r.conflicts.length) return '';
     var parts = r.conflicts.map(function (c) {

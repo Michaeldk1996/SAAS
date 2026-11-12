@@ -649,7 +649,7 @@ const yr = (p, y) => p.careerByYear.find((r) => String(r.year) === y);
     check('TEN-449 provisional · GOLDEN mutant: a merge writing the provisional flag onto a shared row is caught', () => {
       assert.ok(provMutant && /changed .*shared career-history rows/.test(provMutant.message), String(provMutant));
     });
-    check('TEN-449 provisional · page: the drill marks each provisional row; the hover counts them (only when N > 0)', () => {
+    check('TEN-449 provisional · page (v3 clean-up 2026-11-12): no row carries the provisional text; the hover still counts them (only when N > 0)', () => {
       const sb = { FEATURE_PP2: true, playerProfiles: { players: { [KEY]: pOn.p } }, careerHistory: { [KEY]: pOn.matches },
         careerRecord: { [KEY]: pOn.recFile.record }, careerRecordMeta: { asOf: '2026-10-17', refreshedAt: null }, TournamentIdentity: require('../tournament-identity.js') };
       global.window = sb;
@@ -658,8 +658,10 @@ const yr = (p, y) => p.careerByYear.find((r) => String(r.year) === y);
       I.resetState(); I.state.careerTab = 'record'; I.state.careerScope = 'career'; I.state.careerTier = 'all';
       I.state.careerDrill = { kind: 'cell', year: '2026', surf: '' };
       const html = I.renderCareerModal(Object.assign({ key: KEY }, pOn.p));
-      assert.strictEqual((html.match(/data-pp2-provisional="1"/g) || []).length, 2, 'two provisional marks');
-      assert.ok(html.includes('· provisional · api-tennis, not yet in Tennis Explorer (read 18 Oct)'), 'the mark text');
+      // founder 2026-11-12 (profile clean-ups item 3): the on-screen row text is gone; the rows and the reconciliation stay
+      assert.strictEqual((html.match(/data-pp2-provisional="1"/g) || []).length, 0, 'a provisional mark is still drawn');
+      assert.ok(!/not yet in Tennis Explorer/.test(html), 'the provisional text is still on a row');
+      assert.ok((html.match(/data-pp2-drill-row="[WL]"/g) || []).length >= 2, 'the provisional rows left the drill');
       const NOTE = 'Counted as Tennis Explorer counts, minus exhibitions, club matches, national championships and pro series.';
       assert.strictEqual(I.recordSourceNote({ key: KEY }), NOTE + ' Tennis Explorer data as of 17 Oct. Includes 2 matches since 18 Oct from api-tennis, provisional until Tennis Explorer lists them.');
       sb.careerRecordMeta = { asOf: '2026-10-17', refreshedAt: '2026-10-26T05:00:00.000Z' };
