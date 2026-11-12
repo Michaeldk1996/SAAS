@@ -1,0 +1,8 @@
+app = "stennisfy-interviews"
+primary_region = "lhr"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  WHISPER_MODEL = "base.en"
