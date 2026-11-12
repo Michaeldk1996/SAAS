@@ -1,20 +1,20 @@
 {
- "generatedAt": "2026-11-12T20:53:01.164Z",
+ "generatedAt": "2026-11-12T21:56:49.014Z",
  "source": "matches.json git history: oddsMovement.books.Pinnacle (Oddspapi pinnacle, to 2026-09-02) and oddsMovement.chart.books[\"Pinnacle +30s\"] (Oddspapi pinnacle+30, from 2026-09-23)",
  "rule": "each side = last tick at or before the actual start (the earlier of Oddspapi trueStart and the card-state start: Oddspapi, the live-flip lower bound, the Bet105 switch or the first point — founder 2026-11-08; a cut at Oddspapi start before a verified start counts at the verified start only when the same tick, seen within 60 min and within 1.5pp of the Bet105 close, else it stays held back); both sides required; dropped when no unique actual start. seenAt = our last capture read before the start that confirmed the close (founder 2026-10-28); age = start - (seenAt or at)",
  "scannedThrough": {
-  "commit": "23461bdd286c51b46b73d9772d9f0a29410b03d3",
-  "at": "2026-11-12T20:39:23Z"
+  "commit": "418e213a87610303067e435d6180da8bb641bcdb",
+  "at": "2026-11-12T21:45:10Z"
  },
- "commitsScanned": 6724,
+ "commitsScanned": 6730,
  "lastRun": {
-  "from": "2026-11-12T18:30:08Z",
-  "snapshots": 3,
+  "from": "2026-11-12T20:39:23Z",
+  "snapshots": 7,
   "added": 0,
-  "replaced": 0,
+  "replaced": 1,
   "seenBackfilled": 0,
   "earlierCutBackfilled": 0,
-  "series": 22,
+  "series": 23,
   "kept": 20,
   "bySource": {
    "bet105-switch": 15,
@@ -25,7 +25,7 @@
    "Pinnacle +30s": 20
   },
   "dropped": {
-   "noStart": 2
+   "noStart": 3
   }
  },
  "stats": {
@@ -15997,7 +15997,7 @@
    "p2Name": "U. Humbert",
    "p1": 1.543,
    "p2": 2.66,
-   "at": "2026-11-12T14:07:20.317Z",
+   "at": "2026-11-12T19:17:36.352Z",
    "trueStart": "2026-11-12T19:26:31.000Z",
    "startSource": "bet105-switch",
    "book": "Pinnacle +30s",
@@ -16007,8 +16007,7 @@
    "o1": 1.471,
    "o2": 2.86,
    "oAt": "2026-11-11T20:03:19.126Z",
-   "winner": null,
-   "seenAt": "2026-11-12T14:34:21.000Z"
+   "winner": null
   },
   {
    "eventKey": 12179510,
