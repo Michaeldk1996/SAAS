@@ -9560,7 +9560,8 @@ function loadMarketLive(){
   const since = new Date(Date.now() - 4 * 86400e3).toISOString();   // the Completed rail reaches three days back
   // The traded-money column arrives with the recorder's next schema apply: until then the same read without it.
   const rowsOf = cols => get(`market_live_current?select=${cols}&read_at=gte.${encodeURIComponent(since)}`);
-  mktLiveP = Promise.all([rowsOf('event_key,venue,liquidity,outcomes,flow,read_at,started_at').then(r => r || rowsOf('event_key,venue,liquidity,outcomes,read_at,started_at')), get('market_live_beat?select=beat_at')])
+  // founder 2026-11-12: + backfill (the rebuilt-from-history mark); without the column yet, the read without it.
+  mktLiveP = Promise.all([rowsOf('event_key,venue,liquidity,outcomes,flow,backfill,read_at,started_at').then(r => r || rowsOf('event_key,venue,liquidity,outcomes,flow,read_at,started_at')).then(r => r || rowsOf('event_key,venue,liquidity,outcomes,read_at,started_at')), get('market_live_beat?select=beat_at')])
     .then(([rows, beat]) => {
       if (Array.isArray(rows)) { const by = {}; for (const r of rows) by[r.event_key + '|' + r.venue] = r; mktLive.byEvent = by; }
       if (Array.isArray(beat)) mktLive.beatAt = beat[0] ? Date.parse(beat[0].beat_at) : NaN;
@@ -9652,7 +9653,7 @@ function mcSigPredRows(m, done){
       flowTxt = ` · traded ${mxSurname(m.p1)} ${mcSigK(ta)}, ${mxSurname(m.p2)} ${mcSigK(tb)} (by the side that started each trade, summed ${mcSigClock(f.at)})`;
     }
     row.src = `${label} · ${done ? 'last mid before the start' : 'live mid'} (best bid and ask, both players scaled to 100%) · read ${mcSigClock(r.read_at)}${r.started_at && !done ? ' · last read before the start' : ''}`
-      + ` · bid / ask ${mxSurname(m.p1)} ${ba(a)}, ${mxSurname(m.p2)} ${ba(b)}${flowTxt}${rest} · not a bookmaker price: no margin, a trade pays the spread and a fee`;
+      + ` · bid / ask ${mxSurname(m.p1)} ${ba(a)}, ${mxSurname(m.p2)} ${ba(b)}${flowTxt}${rest}${r.backfill ? ' · rebuilt after the match from the venue\'s own price and trade history up to the start' : ''} · not a bookmaker price: no margin, a trade pays the spread and a fee`;
     return row;
   });
 }

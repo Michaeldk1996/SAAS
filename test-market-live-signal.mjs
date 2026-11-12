@@ -61,7 +61,7 @@ test('the drawer starts the per-minute poll; the loader reads the table and the 
   assert.match(slice('mcSigLiveStart'), /setInterval\(mcSigLiveTick, 60e3\)/);
   assert.match(slice('mcSigLiveTick'), /document\.hidden\) \{ clearInterval\(mktLiveTimer\)/, 'stops when no drawer is open or the tab is hidden');
   const l = slice('loadMarketLive');
-  assert.match(l, /rowsOf\('event_key,venue,liquidity,outcomes,flow,read_at,started_at'\)\.then\(r => r \|\| rowsOf\('event_key,venue,liquidity,outcomes,read_at,started_at'\)\)/, 'without the traded column yet: the same read without it');
+  assert.match(l, /rowsOf\('event_key,venue,liquidity,outcomes,flow,backfill,read_at,started_at'\)\.then\(r => r \|\| rowsOf\('event_key,venue,liquidity,outcomes,flow,read_at,started_at'\)\)\.then\(r => r \|\| rowsOf\('event_key,venue,liquidity,outcomes,read_at,started_at'\)\)/, 'without the backfill / traded columns yet: the same read without them');
   assert.match(l, /market_live_beat\?select=beat_at/);
   assert.match(l, /window\.SUPABASE_ANON_KEY/);
   assert.match(html, /document\.addEventListener\('visibilitychange', \(\) => \{ if \(!document\.hidden && document\.querySelector\('\.match-card\.sig-open'\)\) mcSigLiveStart\(\); \}\);/, 'resumes when the tab comes back');
@@ -86,7 +86,16 @@ test('the loader: placeholder config reads nothing; real config reads the table 
     if (u.includes('flow')) return { ok: false, json: async () => ({}) };
     return { ok: true, json: async () => u.includes('market_live_beat') ? [] : [{ event_key: '2', venue: 'kalshi', liquidity: '7', read_at: '2026-11-06T11:59:00Z', started_at: null }] };
   });
-  assert.equal(urls2.length, 3, 'a 400 on the new column → one retry without it');
+  assert.equal(urls2.length, 4, 'a 400 on the flow column → retries down to the read without it (backfill, then flow)');
+  // founder 2026-11-12: a table without the backfill column yet → one retry without it, flow kept
+  const urls3 = [];
+  await L({ SUPABASE_URL: 'https://x.supabase.co/', SUPABASE_ANON_KEY: 'pk' }, async (u) => {
+    urls3.push(u);
+    if (u.includes('backfill')) return { ok: false, json: async () => ({}) };
+    return { ok: true, json: async () => u.includes('market_live_beat') ? [] : [] };
+  });
+  assert.equal(urls3.length, 3, 'a 400 on the backfill column → one retry without it');
+  assert.ok(urls3.some((u) => u.includes('flow') && !u.includes('backfill')), 'the retry keeps the traded column');
   assert.equal(fb.byEvent['2|kalshi'].liquidity, '7');
   assert.ok(urls[0].startsWith('https://x.supabase.co/rest/v1/market_live_current?'));
   assert.equal(got.byEvent['1|kalshi'].liquidity, '5');
@@ -123,6 +132,15 @@ test('prediction rows: Upcoming shows the current read (a frozen one says so); C
   assert.match(MK(fz).html(m, true), /last mid before the start/, 'Completed reads the frozen row');
   assert.match(MK(prow('kalshi', '2026-11-06T11:59:10Z')).html(m, true), /title="Kalshi · no read stored from before the start/, 'Completed never shows an unfrozen read');
   assert.match(MK({ '12177788|kalshi': { ...fz['12177788|kalshi'], outcomes: null, liquidity: null } }).html(m, true), /no price read before the start/);
+});
+test('founder 2026-11-12: a backfilled row shows its prices and traded money, and its hover says it was rebuilt from the venue history', () => {
+  const bf = prow('kalshi', '2026-11-06T11:40:00Z', { started_at: '2026-11-06T11:40:30Z', liquidity: null, backfill: { source: 'venue history at or before the start' } });
+  const h = MK(bf).html(m, true);
+  assert.match(h, /<span class="mc-sg-trade">\$31\.2k traded · 430 trades/, 'the traded sentence shows');
+  assert.match(h, /last mid before the start[^"]*rebuilt after the match from the venue's own price and trade history up to the start · not a bookmaker price/);
+  assert.doesNotMatch(h, /resting/, 'no resting liquidity is rebuilt: none in the hover');
+  const own = prow('kalshi', '2026-11-06T11:40:00Z', { started_at: '2026-11-06T11:40:30Z' });
+  assert.doesNotMatch(MK(own).html(m, true), /rebuilt after the match/, 'a row the recorder froze itself never says rebuilt');
 });
 test('prediction rows: no confident player match or no mid → a dash row (never a guess); no traded sum → no chips', () => {
   const twoSame = { '12177788|kalshi': { ...prow('kalshi', '2026-11-06T11:59:10Z')['12177788|kalshi'], outcomes: [{ name: 'Ben Shelton', mid: 0.5 }, { name: 'Tom Shelton', mid: 0.5 }] } };

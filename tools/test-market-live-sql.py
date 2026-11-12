@@ -127,6 +127,27 @@ try:
     rc, out = push([dict(row('11', 1, '2026-11-06T14:00:00Z'), flow={'byName': {}, 'trades': 1, 'at': '2026-13-40T99:00'})])
     check('a malformed stamp is dropped, never an error', rc == 0 and fl('11') == 'null', out)
 
+    # backfill (founder 2026-11-12): fills only an emptied frozen row, only with figures from at or before its start
+    def bf(rows, role='service_role'):
+        return q("select public.market_live_backfill($j$" + json.dumps(rows) + "$j$::jsonb)", role)
+    OC = [{'name': 'A', 'bid': 0.4, 'ask': 0.41, 'mid': 0.405}, {'name': 'B', 'bid': None, 'ask': None, 'mid': 0.595}]
+    rc, out = bf([{'event_key': '12', 'venue': 'kalshi', 'outcomes': OC, 'read_at': '2026-11-06T11:04:00Z',
+                   'flow': {'byName': {'A': 3, 'B': 4}, 'trades': 2, 'at': '2026-11-06T11:04:30Z'}}])
+    check('backfill fills an emptied frozen row', rc == 0 and '"filled": 1' in out, out)
+    rc, out = q("select outcomes->0->>'mid' || '|' || (flow->>'trades') || '|' || to_char(read_at at time zone 'UTC', 'HH24:MI') || '|' || (backfill->>'source') from public.market_live_current where event_key = '12' and venue = 'kalshi'")
+    check('... with its prices, traded money, read time and the backfill mark', out == '0.405|2|11:04|venue history at or before the start', out)
+    rc, out = bf([{'event_key': '6', 'venue': 'kalshi', 'outcomes': OC, 'read_at': '2026-11-06T11:03:00Z',
+                   'flow': {'byName': {'A': 1, 'B': 1}, 'trades': 1, 'at': '2026-11-06T11:01:00Z'}}])
+    rc, out = q("select coalesce(outcomes::text, 'null') || '|' || coalesce(flow->>'trades', 'null') from public.market_live_current where event_key = '6' and venue = 'kalshi'")
+    check('a backfilled price read after the start is refused; a sum before it is kept', out == 'null|1', out)
+    rc, out = bf([{'event_key': '5', 'venue': 'kalshi', 'outcomes': OC, 'read_at': '2026-11-06T10:59:00Z', 'flow': None}])
+    check('a row the recorder froze with its own read is never touched', '"filled": 0' in out and liq('5').startswith('800|'), out + liq('5'))
+    rc, out = bf([{'event_key': '1300', 'venue': 'kalshi', 'outcomes': OC, 'read_at': '2026-11-06T10:59:00Z'}])
+    check('backfill never creates a row', '"filled": 0' in out, out)
+    for role in ('anon', 'authenticated'):
+        rc, out = bf([{'event_key': '12', 'venue': 'polymarket', 'outcomes': OC, 'read_at': '2026-11-06T11:00:00Z'}], role)
+        check(f'{role} cannot backfill', rc != 0, out)
+
     rc, out = q("select note->>'t' from public.market_live_beat where id = 1")
     check('the beat is written', out == '1', out)
 

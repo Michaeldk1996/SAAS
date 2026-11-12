@@ -30,6 +30,9 @@ alter table public.market_live_current add column if not exists flow jsonb;
 -- real start, so the newest read is often taken after it; the freeze then takes the newest read from BEFORE our live
 -- sighting out of this list, instead of dropping the whole row (measured 12 Nov: 24 of 34 frozen rows of 9–11 Nov empty).
 alter table public.market_live_current add column if not exists recent jsonb;
+-- Set only by market_live_backfill: {source, at} — the row's prices and traded money were rebuilt after the match from
+-- the venue's own history at or before the start (tools/market-live-backfill.mjs), not read live by the recorder.
+alter table public.market_live_current add column if not exists backfill jsonb;
 create table if not exists public.market_live_beat (
   id       int         primary key default 1 check (id = 1),
   beat_at  timestamptz not null,
@@ -114,5 +117,35 @@ begin
 end $$;
 revoke all on function public.market_live_push(jsonb, jsonb) from public, anon, authenticated;
 grant execute on function public.market_live_push(jsonb, jsonb) to service_role;
+
+-- Backfill (founder 2026-11-12, "Yes, backfill"): fills ONLY a frozen row the old freeze emptied (started_at set, no
+-- prices, no traded money) with figures rebuilt from the venue's own history. A price whose read_at is after the start
+-- is refused (the prices stay null), and so is a traded sum stamped after it. A row the recorder froze with its own
+-- read is never touched. p_rows = [{event_key, venue, outcomes, read_at, flow}]. Returns {filled}.
+create or replace function public.market_live_backfill(p_rows jsonb)
+returns jsonb language plpgsql security definer set search_path = public, pg_temp as $$
+declare n int := 0;
+begin
+  with x as (
+    select distinct on (e->>'event_key', e->>'venue') e->>'event_key' ek, e->>'venue' v,
+           case when jsonb_typeof(e->'outcomes') = 'array' then e->'outcomes' end oc,
+           case when e->>'read_at' ~ '^\d{4}-\d\d-\d\dT\d\d:\d\d' then (e->>'read_at')::timestamptz end ra,
+           case when jsonb_typeof(e->'flow') = 'object' and jsonb_typeof(e->'flow'->'byName') = 'object'
+                 and e->'flow'->>'at' ~ '^\d{4}-\d\d-\d\dT\d\d:\d\d' then e->'flow' end fl
+      from jsonb_array_elements(coalesce(p_rows, '[]'::jsonb)) e
+  )
+  update public.market_live_current c
+     set outcomes = case when x.oc is not null and x.ra is not null and x.ra <= c.started_at then x.oc end,
+         read_at  = case when x.oc is not null and x.ra is not null and x.ra <= c.started_at then x.ra else c.read_at end,
+         flow     = case when x.fl is not null and (x.fl->>'at')::timestamptz <= c.started_at then x.fl end,
+         backfill = jsonb_build_object('source', 'venue history at or before the start', 'at', now())
+    from x
+   where c.event_key = x.ek and c.venue = x.v and c.started_at is not null and c.outcomes is null and c.flow is null
+     and ((x.oc is not null and x.ra is not null and x.ra <= c.started_at) or (x.fl is not null and (x.fl->>'at')::timestamptz <= c.started_at));
+  get diagnostics n = row_count;
+  return jsonb_build_object('filled', n);
+end $$;
+revoke all on function public.market_live_backfill(jsonb) from public, anon, authenticated;
+grant execute on function public.market_live_backfill(jsonb) to service_role;
 -- PostgREST caches the schema: without this a changed signature or column 404s (PGRST202) until its next reload.
 notify pgrst, 'reload schema';

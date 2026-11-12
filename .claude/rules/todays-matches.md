@@ -143,7 +143,18 @@ except where a ruling below says otherwise. Colours are foundation tokens (`foun
   reads, and the freeze takes the newest read at or before our live sighting's lower bound (its own `read_at`), never a
   read after it; only with no read before the start (or no lower bound) is the row a dash. Before this, the freeze kept
   only the newest read and dropped it when it came after the sighting: 24 of 34 frozen rows of 9–11 Nov were empty.
-  **Test:** `tools/test-market-live-sql.py` (founder 2026-11-12 checks; CONTROL: the freeze without the list loses it). Not a match price: no price join
+  **Test:** `tools/test-market-live-sql.py` (founder 2026-11-12 checks; CONTROL: the freeze without the list loses it).
+  **Backfill of the rows the old freeze emptied** (founder 2026-11-12, "Yes, backfill"): `tools/market-live-backfill.mjs`
+  (`market-live-backfill.yml`, dispatch, main only) rebuilds each frozen row with no prices and no traded money from the
+  venue's own history AT OR BEFORE `started_at`: Kalshi = the last one-minute candle's yes bid / ask close (the recorder's
+  mid) + every trade created by then; Polymarket = the last `/prices-history` point (its midpoint; bid / ask null) + every
+  trade by then; the recorder's side rules; a price point older than 30 min before the start is not used. Resting
+  liquidity is not in either history: none. `market_live_backfill` fills only such rows, refuses any figure stamped after
+  the start, and marks them `backfill`; the hover adds "rebuilt after the match from the venue's own price and trade
+  history up to the start". Method check on the 12 rows the recorder froze intact (12 Nov): prices equal on 9, within
+  1.15 points on 3 (a different minute); traded money cut at the stored sum's own stamp equal on 9 of 12, the rest 1–12
+  trades more (trades the venue published after the recorder summed). **Test:** `tools/test-market-live-backfill.mjs`,
+  `tools/test-market-live-sql.py` (backfill checks), `test-market-live-signal.mjs` ("backfilled row"). Not a match price: no price join
   reads it. **Model row:** Pro = hover wash, click opens the Stennisfy Model page; not Pro = blurred + lock, no click.
   **Test:** `test-ten377-todays-matches.mjs` (the ledger, both views), `test-market-live-signal.mjs`,
   `test-polymarket-signal.mjs`, `tools/test-market-live-recorder.mjs`, `tools/test-market-live-sql.py`.

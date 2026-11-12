@@ -1,0 +1,57 @@
+name: Prediction-market backfill (emptied frozen rows)
+
+# Founder 2026-11-12 ("Yes, backfill"): rebuilds the Kalshi / Polymarket rows the old freeze emptied (started_at set, no
+# prices, no traded money) from the venues' own history at or before the start — tools/market-live-backfill.mjs — and
+# writes them through public.market_live_backfill (service role), which fills only such rows and refuses any figure from
+# after the start. Dispatch only, main only. mode=plan prints what it would write; mode=write writes it.
+# The schema step is the recorder's (additive, idempotent), so the function exists before the write.
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'plan (no write) or write'
+        default: 'plan'
+
+permissions:
+  contents: read
+
+jobs:
+  backfill:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Apply the schema (additive, idempotent)
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          python3 - <<'PY'
+          import json, os, re, sys, urllib.request, urllib.error
+          ref = re.sub(r'^https://([^.]+)\..*$', r'\1', os.environ['SUPABASE_URL'].strip())
+          q = open('supabase/migrations/20261106090000_market_live.sql').read()
+          req = urllib.request.Request(f'https://api.supabase.com/v1/projects/{ref}/database/query',
+              data=json.dumps({'query': q}).encode(), headers={'Authorization': 'Bearer ' + os.environ['SUPABASE_ACCESS_TOKEN'],
+              'Content-Type': 'application/json', 'User-Agent': 'market-live-backfill'})
+          try:
+              urllib.request.urlopen(req, timeout=120).read(); print('schema applied')
+          except urllib.error.HTTPError as e:
+              print(f'::error::schema apply failed: HTTP {e.code} {e.read()[:300]!r}'); sys.exit(1)
+          PY
+      - name: Check the method on the intact rows (no write)
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+        run: node tools/market-live-backfill.mjs --check
+      - name: Rebuild the emptied rows
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          MODE: ${{ inputs.mode }}
+        run: |
+          if [ "$MODE" = "write" ]; then node tools/market-live-backfill.mjs --write; else node tools/market-live-backfill.mjs --plan; fi
