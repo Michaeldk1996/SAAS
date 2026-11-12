@@ -60,7 +60,9 @@ export function reportText(m, w, l, opts = {}) {
   const ms = m.matchStats || {};
   // winners / unforced errors all 0 on both sides = the feed did not track them (not a real zero)
   const tot = ['p1', 'p2'].reduce((t, k) => t + (num(ms[k] && ms[k]['Points:Winners']) || 0) + (num(ms[k] && ms[k]['Points:Unforced errors']) || 0), 0);
-  const wueOk = tot > 0;
+  // the same winners AND unforced-error counts on both sides is the feed repeating one player's line, not a match fact
+  const same = ['Points:Winners', 'Points:Unforced errors'].every((k) => num(ms.p1 && ms.p1[k]) != null && num(ms.p1 && ms.p1[k]) === num(ms.p2 && ms.p2[k]));
+  const wueOk = tot > 0 && !same;
   const score = winnerScore(m, w), round = opts.round !== undefined ? opts.round : roundWords(m.tournamentRound);
   const fields = { score, round, retired: !!m.retired };
   let s1 = `${m[w]} beat ${m[l]}`;
@@ -95,7 +97,7 @@ export function reportText(m, w, l, opts = {}) {
     [l]: standoutUnits(ms, l, m[l], opts.baselines[l] || null, { bp: breakPoints(ms, l, pbp), wueOk }) } : null;
   if (U && U[w].length + U[l].length > 0) {
     fields.standouts = [];
-    for (const k of [w, l]) for (const u of U[k]) { out.push(u.text); tones.push(u.tone); kinds.push(u.kind); fields.standouts.push({ player: k === w ? 'winner' : 'loser', tone: u.tone, ...u.field }); }
+    for (const k of [w, l]) for (const u of U[k]) { out.push(u.text); tones.push(u.tone); kinds.push(u.kind); for (const f of u.fields) fields.standouts.push({ player: k === w ? 'winner' : 'loser', tone: u.tone, ...f }); }
     if (A.parts.length) fields.winner = A.fields;
     if (B.parts.length) fields.loser = B.fields;
   } else {
