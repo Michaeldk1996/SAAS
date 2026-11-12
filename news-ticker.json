@@ -1,31 +1,31 @@
 {
- "generatedAt": "2026-11-12T12:56:48.568Z",
+ "generatedAt": "2026-11-12T14:22:24.864Z",
  "tournaments": [
-  {
-   "key": "tour",
-   "season": "2026",
-   "name": "ATP Tour",
-   "file": "news-ticker/tour-2026.json",
-   "items": 28,
-   "byType": {
-    "quote": 28
-   },
-   "latestTimestamp": "2026-11-12T10:48:53.000Z",
-   "updatedAt": "2026-11-12T12:56:48.568Z"
-  },
   {
    "key": "1681",
    "season": "2026",
    "name": "Stockholm",
    "file": "news-ticker/1681-2026.json",
-   "items": 54,
+   "items": 55,
    "byType": {
+    "report": 24,
     "quote": 25,
-    "report": 23,
     "status": 6
    },
-   "latestTimestamp": "2026-11-12T02:55:58.268Z",
-   "updatedAt": "2026-11-12T07:17:47.163Z"
+   "latestTimestamp": "2026-11-12T14:03:08.697Z",
+   "updatedAt": "2026-11-12T14:22:24.864Z"
+  },
+  {
+   "key": "tour",
+   "season": "2026",
+   "name": "ATP Tour",
+   "file": "news-ticker/tour-2026.json",
+   "items": 30,
+   "byType": {
+    "quote": 30
+   },
+   "latestTimestamp": "2026-11-12T13:54:45.025Z",
+   "updatedAt": "2026-11-12T14:22:24.864Z"
   },
   {
    "key": "1725",
@@ -51,6 +51,160 @@
   }
  ],
  "latest": [
+  {
+   "id": "report-12179386",
+   "type": "report",
+   "playerId": "2982",
+   "opponentId": "10884",
+   "player": "A. Tabilo",
+   "opponent": "A. Michelsen",
+   "tournament": "Stockholm",
+   "tournamentKey": "1681",
+   "season": "2026",
+   "stage": "main draw",
+   "round": "quarter-finals",
+   "eventKey": "12179386",
+   "timestamp": "2026-11-12T14:03:08.697Z",
+   "timestampKind": "observed",
+   "observed": {
+    "endedAt": "2026-11-12T14:03:08.697Z",
+    "startedAt": "2026-11-12T12:09:15.523Z",
+    "minutes": 114
+   },
+   "category": "Statistics",
+   "text": "Alejandro Tabilo beat Alex Michelsen for the 1st time in 2 meetings, 7–5, 7–6 in the QF. Set 2 went to a tiebreak, won by Tabilo. Tabilo returned well against the second serve, winning 60% of the points (15 of 25), compared with his 50% average on hard in his career. He hit 31 winners and made 27 unforced errors.",
+   "templateText": "A. Tabilo beat A. Michelsen for the 1st time in 2 meetings, 7-5, 7-6 in the quarter-finals. Set 2 went to a tiebreak, won by A. Tabilo. A. Tabilo won 60% of the points against the second serve (15 of 25), compared with his 50% average on hard in his career. A. Tabilo hit 31 winners and made 27 unforced errors.",
+   "voice": {
+    "version": 4,
+    "model": "claude-opus-5-5",
+    "passed": 4,
+    "total": 4,
+    "failures": []
+   },
+   "fields": {
+    "score": "7-5, 7-6",
+    "round": "quarter-finals",
+    "retired": false,
+    "h2h": {
+     "a": 1,
+     "b": 1,
+     "n": 2
+    },
+    "durationMinutes": 114,
+    "facts": {
+     "tiebreakSets": [
+      {
+       "set": 2,
+       "winner": "p2"
+      }
+     ]
+    },
+    "standouts": [
+     {
+      "player": "winner",
+      "tone": "good",
+      "metric": "ret2Won",
+      "value": 60,
+      "won": 15,
+      "total": 25,
+      "baseline": 50,
+      "scope": "career",
+      "surface": "Hard",
+      "n": 77
+     },
+     {
+      "player": "winner",
+      "tone": "good",
+      "metric": "winnersErrors",
+      "winners": 31,
+      "unforcedErrors": 27
+     }
+    ],
+    "winner": {
+     "aces": 5,
+     "winners": 31,
+     "unforcedErrors": 27,
+     "breakPointsSaved": 6,
+     "breakPointsFaced": 7,
+     "breakPointsSource": "box score"
+    },
+    "loser": {
+     "aces": 8,
+     "winners": 24,
+     "unforcedErrors": 26,
+     "breakPointsSaved": 2,
+     "breakPointsFaced": 4,
+     "breakPointsSource": "box score"
+    }
+   },
+   "sourceName": "Stennisfy match data (api-tennis box score and point-by-point)",
+   "sourceUrl": "pbp/12179386.json",
+   "language": "en",
+   "translated": false,
+   "sourceHash": "343a3b6f97d5aed8",
+   "publishedAt": "2026-11-12T14:22:24.864Z",
+   "file": "news-ticker/1681-2026.json"
+  },
+  {
+   "id": "quote-5582025187afcf",
+   "type": "quote",
+   "playerId": "1079",
+   "opponentId": null,
+   "player": "D. Dzumhur",
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-12T13:54:45.025Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Injuries",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "Injuries kept me away from the court a lot, there were problems last year. For example, I played the US Open without training, and all of that affects form and results. I was coming back from an injury at the time",
+   "originalText": "Povrede su me dosta odvojile od terena, bilo je problema u prošloj godini. Recimo, US Open sam igrao bez treninga, a sve to utiče na formu i rezultate. Izlazio sam tada iz povrede",
+   "language": "bs",
+   "translated": true,
+   "translationModel": "claude-opus-5-5",
+   "sourceName": "Sport1.ba (Oslobodjenje)",
+   "sourceUrl": "https://www.oslobodjenje.ba/sport/ostali-sportovi/tenis/damir-dzumhur-zavrsam-devetu-godinu-zaredom-u-top-100-ponosan-sam-na-to/",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "sourceHash": "808365bb8fad2f9f",
+   "publishedAt": "2026-11-12T14:22:24.864Z",
+   "file": "news-ticker/tour-2026.json"
+  },
+  {
+   "id": "quote-6bc75830035e69",
+   "type": "quote",
+   "playerId": "1079",
+   "opponentId": null,
+   "player": "D. Dzumhur",
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-12T13:54:45.025Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "A good year is behind me. What makes me especially happy is that I finished in the TOP 100 for the ninth year in a row. Few tennis players from this region can boast of that achievement",
+   "originalText": "Iza mene je dobra godina. Ono što me posebno raduje jeste to da sam devetu godinu zaredom završio u TOP 100. Malo se tenisera s ovih prostora može pohvaliti tim uspjehom",
+   "language": "bs",
+   "translated": true,
+   "translationModel": "claude-opus-5-5",
+   "sourceName": "Sport1.ba (Oslobodjenje)",
+   "sourceUrl": "https://www.oslobodjenje.ba/sport/ostali-sportovi/tenis/damir-dzumhur-zavrsam-devetu-godinu-zaredom-u-top-100-ponosan-sam-na-to/",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "sourceHash": "451a14bd9011a4fa",
+   "publishedAt": "2026-11-12T14:22:24.864Z",
+   "file": "news-ticker/tour-2026.json"
+  },
   {
    "id": "quote-a733179800055d",
    "type": "quote",
@@ -1979,265 +2133,6 @@
    "sourceHash": "c898da0c7e45b5e5",
    "publishedAt": "2026-11-12T03:03:12.953Z",
    "file": "news-ticker/tour-2026.json"
-  },
-  {
-   "id": "quote-5116856308ff69",
-   "type": "quote",
-   "playerId": "2072",
-   "opponentId": null,
-   "player": "J. Sinner",
-   "opponent": null,
-   "tournament": "ATP Tour",
-   "tournamentKey": "tour",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-10T12:52:37.988Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Interviews",
-   "context": null,
-   "eventKey": null,
-   "won": null,
-   "text": "Magnus is someone very similar to Darren, though, of course, everyone is different,",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "TSN",
-   "sourceUrl": "https://www.tsn.ca/tennis/article/sinner-plans-late-december-return-at-saudi-exhibition-ahead-of-australian-open/",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "sourceHash": "cfc37e3bce00a5ed",
-   "publishedAt": "2026-11-12T03:03:12.953Z",
-   "file": "news-ticker/tour-2026.json"
-  },
-  {
-   "id": "report-12178504",
-   "type": "report",
-   "playerId": "10884",
-   "opponentId": "388",
-   "player": "A. Michelsen",
-   "opponent": "J. M. Cerundolo",
-   "tournament": "Stockholm",
-   "tournamentKey": "1681",
-   "season": "2026",
-   "stage": "main draw",
-   "round": "second round",
-   "eventKey": "12178504",
-   "timestamp": "2026-11-10T12:10:00.000Z",
-   "timestampKind": "scheduled",
-   "observed": null,
-   "category": "Statistics",
-   "text": "Alex Michelsen beat Cerundolo for the 1st time in 2 meetings, 6–3, 6–2 in R2. After being broken in the second set, Michelsen won 4 games in a row. Michelsen served well, winning 77% of his first-serve points (24 of 31), compared with his 69% average on hard over the last 52 weeks, and 69% of his second-serve points (11 of 16), compared with his usual 49%. He returned well, winning 42% of the points against the first serve (17 of 41), compared with his usual 30%, and 71% of the points against the second serve (17 of 24), compared with his usual 52%.",
-   "templateText": "A. Michelsen beat J. M. Cerundolo for the 1st time in 2 meetings, 6-3, 6-2 in the second round. A. Michelsen won 4 games in a row straight after being broken in the second set. A. Michelsen won 77% of his first-serve points (24 of 31), compared with his 69% average on hard over the last 52 weeks and won 69% of his second-serve points (11 of 16), compared with his usual 49%. A. Michelsen won 42% of the points against the first serve (17 of 41), compared with his usual 30% and 71% of the points against the second serve (17 of 24), compared with his usual 52%.",
-   "voice": {
-    "version": 4,
-    "model": "claude-opus-5-5",
-    "passed": 4,
-    "total": 4,
-    "failures": []
-   },
-   "fields": {
-    "score": "6-3, 6-2",
-    "round": "second round",
-    "retired": false,
-    "h2h": {
-     "a": 1,
-     "b": 1,
-     "n": 2
-    },
-    "facts": {
-     "longestRun": {
-      "side": "p1",
-      "n": 4,
-      "set": 2,
-      "from": {
-       "me": 2,
-       "opp": 2
-      },
-      "afterBeingBroken": true,
-      "toTheEnd": true
-     }
-    },
-    "standouts": [
-     {
-      "player": "winner",
-      "tone": "good",
-      "metric": "firstWon",
-      "value": 77,
-      "won": 24,
-      "total": 31,
-      "baseline": 69,
-      "scope": "last52",
-      "surface": "Hard",
-      "n": 33
-     },
-     {
-      "player": "winner",
-      "tone": "good",
-      "metric": "secondWon",
-      "value": 69,
-      "won": 11,
-      "total": 16,
-      "baseline": 49,
-      "scope": "last52",
-      "surface": "Hard",
-      "n": 33
-     },
-     {
-      "player": "winner",
-      "tone": "good",
-      "metric": "ret1Won",
-      "value": 42,
-      "won": 17,
-      "total": 41,
-      "baseline": 30,
-      "scope": "last52",
-      "surface": "Hard",
-      "n": 33
-     },
-     {
-      "player": "winner",
-      "tone": "good",
-      "metric": "ret2Won",
-      "value": 71,
-      "won": 17,
-      "total": 24,
-      "baseline": 52,
-      "scope": "last52",
-      "surface": "Hard",
-      "n": 33
-     }
-    ],
-    "winner": {
-     "aces": 3,
-     "winners": 19,
-     "unforcedErrors": 9,
-     "breakPointsSaved": 0,
-     "breakPointsFaced": 1,
-     "breakPointsSource": "box score"
-    },
-    "loser": {
-     "aces": 3,
-     "winners": 16,
-     "unforcedErrors": 26,
-     "breakPointsSaved": 9,
-     "breakPointsFaced": 13,
-     "breakPointsSource": "box score"
-    }
-   },
-   "sourceName": "Stennisfy match data (api-tennis box score and point-by-point)",
-   "sourceUrl": "pbp/12178504.json",
-   "language": "en",
-   "translated": false,
-   "sourceHash": "8cad5270f024cf60",
-   "publishedAt": "2026-11-11T18:39:24.726Z",
-   "revisedAt": "2026-11-12T07:17:47.163Z",
-   "revision": 2,
-   "file": "news-ticker/1681-2026.json"
-  },
-  {
-   "id": "report-12178513",
-   "type": "report",
-   "playerId": "566",
-   "opponentId": "438",
-   "player": "A. Shevchenko",
-   "opponent": "A. Mannarino",
-   "tournament": "Stockholm",
-   "tournamentKey": "1681",
-   "season": "2026",
-   "stage": "main draw",
-   "round": "first round",
-   "eventKey": "12178513",
-   "timestamp": "2026-11-10T12:05:00.000Z",
-   "timestampKind": "scheduled",
-   "observed": null,
-   "category": "Statistics",
-   "text": "Alexander Shevchenko beat Adrian Mannarino for the 1st time in 2 meetings, 6–1, 6–3 in R1. Shevchenko got broken when serving for the match. From 2–1 in the first set, he won 8 games in a row. Shevchenko was particularly strong on return, winning 55% of the points against the first serve (16 of 29), compared with his 27% average on hard in his career, and 77% of the points against the second serve (10 of 13), compared with his usual 49%.",
-   "templateText": "A. Shevchenko beat A. Mannarino for the 1st time in 2 meetings, 6-1, 6-3 in the first round. A. Shevchenko was broken when serving for the match. A. Shevchenko won 8 games in a row from 2-1 in the first set. A. Shevchenko won 55% of the points against the first serve (16 of 29), compared with his 27% average on hard in his career and 77% of the points against the second serve (10 of 13), compared with his usual 49%.",
-   "voice": {
-    "version": 4,
-    "model": "claude-opus-5-5",
-    "passed": 4,
-    "total": 4,
-    "failures": []
-   },
-   "fields": {
-    "score": "6-1, 6-3",
-    "round": "first round",
-    "retired": false,
-    "h2h": {
-     "a": 1,
-     "b": 1,
-     "n": 2
-    },
-    "facts": {
-     "brokenForMatch": {
-      "p2": 1
-     },
-     "longestRun": {
-      "side": "p2",
-      "n": 8,
-      "set": 1,
-      "from": {
-       "me": 2,
-       "opp": 1
-      },
-      "afterBeingBroken": false,
-      "toTheEnd": false
-     }
-    },
-    "standouts": [
-     {
-      "player": "winner",
-      "tone": "good",
-      "metric": "ret1Won",
-      "value": 55,
-      "won": 16,
-      "total": 29,
-      "baseline": 27,
-      "scope": "career",
-      "surface": "Hard",
-      "n": 76
-     },
-     {
-      "player": "winner",
-      "tone": "good",
-      "metric": "ret2Won",
-      "value": 77,
-      "won": 10,
-      "total": 13,
-      "baseline": 49,
-      "scope": "career",
-      "surface": "Hard",
-      "n": 76
-     }
-    ],
-    "winner": {
-     "aces": 6,
-     "winners": 18,
-     "unforcedErrors": 18,
-     "breakPointsSaved": 0,
-     "breakPointsFaced": 2,
-     "breakPointsSource": "box score"
-    },
-    "loser": {
-     "aces": 1,
-     "winners": 5,
-     "unforcedErrors": 20,
-     "breakPointsSaved": 5,
-     "breakPointsFaced": 11,
-     "breakPointsSource": "box score"
-    }
-   },
-   "sourceName": "Stennisfy match data (api-tennis box score and point-by-point)",
-   "sourceUrl": "pbp/12178513.json",
-   "language": "en",
-   "translated": false,
-   "sourceHash": "dd41c1f460db6736",
-   "publishedAt": "2026-11-11T18:39:24.726Z",
-   "revisedAt": "2026-11-12T07:17:47.163Z",
-   "revision": 2,
-   "file": "news-ticker/1681-2026.json"
   }
  ]
 }

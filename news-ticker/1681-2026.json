@@ -2,8 +2,101 @@
  "tournament": "Stockholm",
  "tournamentKey": "1681",
  "season": "2026",
- "updatedAt": "2026-11-12T07:17:47.163Z",
+ "updatedAt": "2026-11-12T14:22:24.864Z",
  "items": [
+  {
+   "id": "report-12179386",
+   "type": "report",
+   "playerId": "2982",
+   "opponentId": "10884",
+   "player": "A. Tabilo",
+   "opponent": "A. Michelsen",
+   "tournament": "Stockholm",
+   "tournamentKey": "1681",
+   "season": "2026",
+   "stage": "main draw",
+   "round": "quarter-finals",
+   "eventKey": "12179386",
+   "timestamp": "2026-11-12T14:03:08.697Z",
+   "timestampKind": "observed",
+   "observed": {
+    "endedAt": "2026-11-12T14:03:08.697Z",
+    "startedAt": "2026-11-12T12:09:15.523Z",
+    "minutes": 114
+   },
+   "category": "Statistics",
+   "text": "Alejandro Tabilo beat Alex Michelsen for the 1st time in 2 meetings, 7–5, 7–6 in the QF. Set 2 went to a tiebreak, won by Tabilo. Tabilo returned well against the second serve, winning 60% of the points (15 of 25), compared with his 50% average on hard in his career. He hit 31 winners and made 27 unforced errors.",
+   "templateText": "A. Tabilo beat A. Michelsen for the 1st time in 2 meetings, 7-5, 7-6 in the quarter-finals. Set 2 went to a tiebreak, won by A. Tabilo. A. Tabilo won 60% of the points against the second serve (15 of 25), compared with his 50% average on hard in his career. A. Tabilo hit 31 winners and made 27 unforced errors.",
+   "voice": {
+    "version": 4,
+    "model": "claude-opus-5-5",
+    "passed": 4,
+    "total": 4,
+    "failures": []
+   },
+   "fields": {
+    "score": "7-5, 7-6",
+    "round": "quarter-finals",
+    "retired": false,
+    "h2h": {
+     "a": 1,
+     "b": 1,
+     "n": 2
+    },
+    "durationMinutes": 114,
+    "facts": {
+     "tiebreakSets": [
+      {
+       "set": 2,
+       "winner": "p2"
+      }
+     ]
+    },
+    "standouts": [
+     {
+      "player": "winner",
+      "tone": "good",
+      "metric": "ret2Won",
+      "value": 60,
+      "won": 15,
+      "total": 25,
+      "baseline": 50,
+      "scope": "career",
+      "surface": "Hard",
+      "n": 77
+     },
+     {
+      "player": "winner",
+      "tone": "good",
+      "metric": "winnersErrors",
+      "winners": 31,
+      "unforcedErrors": 27
+     }
+    ],
+    "winner": {
+     "aces": 5,
+     "winners": 31,
+     "unforcedErrors": 27,
+     "breakPointsSaved": 6,
+     "breakPointsFaced": 7,
+     "breakPointsSource": "box score"
+    },
+    "loser": {
+     "aces": 8,
+     "winners": 24,
+     "unforcedErrors": 26,
+     "breakPointsSaved": 2,
+     "breakPointsFaced": 4,
+     "breakPointsSource": "box score"
+    }
+   },
+   "sourceName": "Stennisfy match data (api-tennis box score and point-by-point)",
+   "sourceUrl": "pbp/12179386.json",
+   "language": "en",
+   "translated": false,
+   "sourceHash": "343a3b6f97d5aed8",
+   "publishedAt": "2026-11-12T14:22:24.864Z"
+  },
   {
    "id": "quote-68b64c79571fa4",
    "type": "quote",
