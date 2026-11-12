@@ -765,7 +765,7 @@ begin
     'watch', (select jsonb_build_object('openSince', open_since, 'problem', problem) from mto.watch));
   begin
     out := out || jsonb_build_object('cron', (select coalesce(jsonb_agg(jsonb_build_object('job', jobname, 'schedule', schedule, 'active', active)), '[]'::jsonb)
-                                               from cron.job where jobname in ('mto-detector', 'mto-watch')));
+                                               from cron.job where jobname in ('mto-detector', 'mto-watch', 'mto-weekly')));
   exception when others then out := out || jsonb_build_object('cron', null);
   end;
   return out;

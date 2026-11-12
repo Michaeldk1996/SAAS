@@ -29,5 +29,11 @@ fs.writeFileSync(out, 'KEEP'); r = run('nope'); check('…and leaves an existing
 const wf = fs.readFileSync(path.join(HERE, '..', '.github/workflows/pipeline.yml'), 'utf8');
 check('pipeline builds it and copies it into the site', wf.includes('node tools/build-mto-matches.mjs') && /cp mto-matches\.json _site\//.test(wf));
 check('matches.json is not written by the builder', !/matches\.json'/.test(fs.readFileSync(path.join(HERE, 'build-mto-matches.mjs'), 'utf8').replace(/mto-matches\.json/g, '')));
+// the install's read-back must see every job the install schedules (12 Nov 2026: it listed 2 of 3 and went red)
+const bot = fs.readFileSync(path.join(HERE, '..', '.github/workflows/mto-bot.yml'), 'utf8'), sqlSrc = fs.readFileSync(path.join(HERE, 'mto-bot.sql'), 'utf8');
+const jobs = [...bot.matchAll(/cron\.schedule\('([a-z-]+)'/g)].map(m => m[1]);
+const listed = (sqlSrc.match(/from cron\.job where jobname in \(([^)]*)\)/) || [])[1] || '';
+check('the read-back lists every scheduled job, and the install expects that many', jobs.length === 3 && jobs.every(j => listed.includes(`'${j}'`))
+  && bot.includes(`!= ${jobs.length}: bad.append`) && jobs.every(j => bot.split("cron.unschedule")[1].includes(`'${j}'`)), [jobs, listed]);
 fs.rmSync(tmp, { recursive: true, force: true });
 console.log(`\ntest-mto-matches: ${pass} passed, ${fail} failed`); process.exit(fail ? 1 : 0);
