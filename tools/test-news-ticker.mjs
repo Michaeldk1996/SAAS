@@ -51,7 +51,9 @@ await ok('report: head-to-head reads "for the Nth time in M meetings" from the c
 });
 await ok('report: duration prints only when handed one (both ends observed)', () => {
   assert.ok(!/minutes/.test(reportText(card(), 'p1', 'p2', { duration: null }).text));
-  assert.ok(/in the round of 16 in 71 minutes\./.test(reportText(card(), 'p1', 'p2', { duration: 71 }).text));
+  // founder 2026-11-12: printed only when it is news (a straight-sets win inside 60 minutes, or 180+); always stored
+  assert.ok(/in the round of 16 in just 58 minutes\./.test(reportText(card(), 'p1', 'p2', { duration: 58 }).text));
+  const d71 = reportText(card(), 'p1', 'p2', { duration: 71 }); assert.ok(!/minutes/.test(d71.text)); assert.equal(d71.fields.durationMinutes, 71);
 });
 await ok('report: no rating or opinion words in any output', () => {
   const t = reportText(card(), 'p1', 'p2', { h2h: { a: 2, b: 0, n: 2 } }).text;
@@ -70,7 +72,7 @@ await ok('pbp: break points are counted off the score, never 40-40; saved = face
   const rows = [g1, g2, G(3, 'p1', 'p1', '3 - 0', HOLD1), G(4, 'p2', 'p1', '4 - 0', HOLD1), G(5, 'p1', 'p1', '5 - 0', HOLD1), G(6, 'p2', 'p1', '6 - 0', HOLD1)];
   const f = pbpFacts({ sets: [setOf(rows)] }, { sets: [{ p1: 6, p2: 0 }] });
   assert.deepEqual(f.bp.p1, { faced: 3, saved: 3 }); assert.deepEqual(f.bp.p2, { faced: 3, saved: 0 });
-  assert.deepEqual(f.opening, { side: 'p1', saved: 3 }); assert.deepEqual(f.longestRun, { side: 'p1', n: 6 });
+  assert.deepEqual(f.opening, { side: 'p1', saved: 3 }); assert.deepEqual(f.longestRun, { side: 'p1', n: 6, set: 1, from: { me: 0, opp: 0 }, afterBeingBroken: false, toTheEnd: true });
 });
 await ok('pbp: a garbled or gapped game gives that side no count (never a guess); the other side keeps its own', () => {
   const bad = G(1, 'p1', 'p1', '1 - 0', ['15 - 0', '40 - 0']);   // a missing point
@@ -110,7 +112,10 @@ await ok('pbp: tiebreak sets from the final score; a tied longest run names nobo
   const base = { bp: { p1: null, p2: null }, brokenForMatch: { p1: 0, p2: 0 }, brokenForSet: { p1: 0, p2: 0 }, brokenFrom400: { p1: 0, p2: 0 }, opening: null };
   assert.ok(!/in a row/.test(reportText(card(), 'p1', 'p2', { pbp: { ...base, longestRun: { side: null, n: 5 } } }).text));
   assert.ok(!/in a row/.test(reportText(card(), 'p1', 'p2', { pbp: { ...base, longestRun: { side: 'p1', n: 3 } } }).text));
-  assert.ok(/A\. One won 4 games in a row\./.test(reportText(card(), 'p1', 'p2', { pbp: { ...base, longestRun: { side: 'p1', n: 4 } } }).text));
+  // founder 2026-11-12: a run is printed only with its turning point (from behind, after being broken, the end of the match) or at 7+
+  assert.ok(!/in a row/.test(reportText(card(), 'p1', 'p2', { pbp: { ...base, longestRun: { side: 'p1', n: 4 } } }).text));
+  assert.ok(/A\. One won 4 games in a row from 1-3 down in the first set\./.test(reportText(card(), 'p1', 'p2', { pbp: { ...base, longestRun: { side: 'p1', n: 4, set: 1, from: { me: 1, opp: 3 } } } }).text));
+  assert.ok(/A\. One won 7 games in a row\./.test(reportText(card(), 'p1', 'p2', { pbp: { ...base, longestRun: { side: 'p1', n: 7 } } }).text));
 });
 await ok('strictGame: deuce cycles pass; a list not ending on the winner\'s game point fails', () => {
   assert.equal(strictGame(G(1, 'p1', 'p1', '1 - 0', ['15 - 0', '30 - 0', '40 - 0'])).ok, true);

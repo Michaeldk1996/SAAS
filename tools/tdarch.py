@@ -2128,8 +2128,10 @@ def cmd_te_pre21_import(store, dry_run=False):
     if not docs:
         P.die(f'{store}/{PRE21_DIR}: no complete pre21 batch file')
     hist = te_pre21_history(store)
-    held = P.select_all(SNAP, 'id,dedupe_key,source,match_date,tournament,winner,loser,supersedes,event_key')
-    lower = P.select_all(SNAP, 'id,match_date,wk:detail->>winnerKey,lk:detail->>loserKey', 'match_date=lt.2021-01-03')
+    # one read in id order; a match_date filter on an id-ordered page scans the whole table per page and times out (57014, 11 Nov)
+    held = P.select_all(SNAP, 'id,dedupe_key,source,match_date,tournament,winner,loser,supersedes,event_key,'
+                              'wk:detail->>winnerKey,lk:detail->>loserKey')
+    lower = [h for h in held if str(h.get('match_date') or '')[:10] < '2021-01-03']
     rows, rep = te_pre21_rows(docs, starts, hist, te_pre21_priced_index(lower))
     add = plan_snapshots(rows, held)
     ids = []

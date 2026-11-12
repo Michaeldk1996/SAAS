@@ -670,6 +670,26 @@ check('control: a start read from a different page (sha256 differs) is no start 
 pf = T.lower_feed_rows([dict(r, id=1000 + i) for i, r in enumerate(prows)])
 check('pre-2021: the lower feed carries them unchanged (level, both keys, negative event key, the TE source)',
       sorted((r['eventKey'], r['level'], r['source']) for r in pf) == sorted((r['event_key'], r['detail']['level'], T.TE_SOURCE) for r in prows) and len(pf) == len(prows), pf)
+# 11 Nov (run 43121730549: statement timeout 57014): the import reads the snapshot table ONCE, unfiltered in id order; a
+# match_date filter on an id-ordered page scans the whole table per page. The pre-2021 lookup is cut from that one read.
+_ks = {n: getattr(T, n) for n in ('te_pre21_docs', 'te_pre21_history', 'te_pre21_rows', 'plan_snapshots', 'te_pre21_priced_index')}
+_ksa, _calls, _seen = T.P.select_all, [], {}
+try:
+    T.te_pre21_docs = lambda s: ([{'batch': 'pre21-01'}], {})
+    T.te_pre21_history = lambda s: {}
+    T.te_pre21_rows = lambda d, st, h, priced: ([], {})
+    T.plan_snapshots = lambda rows, held: []
+    T.te_pre21_priced_index = lambda lower: _seen.setdefault('lower', lower)
+    T.P.select_all = lambda table, cols, filt='', page=1000: _calls.append((cols, filt)) or [
+        {'id': 1, 'match_date': '2016-10-16', 'wk': '1064', 'lk': '1748'}, {'id': 2, 'match_date': '2024-05-01', 'wk': '1', 'lk': '2'}]
+    with contextlib.redirect_stdout(io.StringIO()):
+        T.cmd_te_pre21_import('unused', True)
+finally:
+    for n, f in _ks.items(): setattr(T, n, f)
+    T.P.select_all = _ksa
+check('pre-2021 import: one unfiltered read of the snapshot table (no match_date filter: it timed out, 57014), the pre-2021 lookup cut from it',
+      len(_calls) == 1 and _calls[0][1] == '' and 'wk:detail->>winnerKey' in _calls[0][0]
+      and [r['id'] for r in _seen.get('lower', [])] == [1], (_calls, _seen))
 pix = T.te_pre21_priced_index([{'wk': '1064', 'lk': '1748', 'match_date': '2016-10-16'}])
 check('pre-2021: the already-priced lookup is the same two keys +-1 day, either order', pix('1748', '1064', '2016-10-15') and not pix('1748', '1064', '2016-10-13') and not pix('1064', '', '2016-10-16'))
 check('names: a hyphenated initial is dotted as Tennis-Data writes it (Struff J.L., Herbert P.H.); plain initials unchanged',
