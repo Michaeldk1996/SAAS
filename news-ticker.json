@@ -1,19 +1,19 @@
 {
- "generatedAt": "2026-11-12T18:48:47.677Z",
+ "generatedAt": "2026-11-12T22:26:28.919Z",
  "tournaments": [
   {
    "key": "1681",
    "season": "2026",
    "name": "Stockholm",
    "file": "news-ticker/1681-2026.json",
-   "items": 98,
+   "items": 99,
    "byType": {
+    "report": 26,
     "quote": 66,
-    "status": 7,
-    "report": 25
+    "status": 7
    },
-   "latestTimestamp": "2026-11-12T18:30:00.000Z",
-   "updatedAt": "2026-11-12T18:48:47.677Z"
+   "latestTimestamp": "2026-11-12T21:59:54.915Z",
+   "updatedAt": "2026-11-12T22:26:28.919Z"
   },
   {
    "key": "tour",
@@ -51,6 +51,100 @@
   }
  ],
  "latest": [
+  {
+   "id": "report-12179396",
+   "type": "report",
+   "playerId": "2849",
+   "opponentId": "1105",
+   "player": "L. Musetti",
+   "opponent": "U. Humbert",
+   "tournament": "Stockholm",
+   "tournamentKey": "1681",
+   "season": "2026",
+   "stage": "main draw",
+   "round": "quarter-finals",
+   "eventKey": "12179396",
+   "timestamp": "2026-11-12T21:59:54.915Z",
+   "timestampKind": "observed",
+   "observed": {
+    "endedAt": "2026-11-12T21:59:54.915Z",
+    "startedAt": "2026-11-12T19:30:57.352Z",
+    "minutes": 149
+   },
+   "category": "Statistics",
+   "text": "Lorenzo Musetti beat Ugo Humbert in their first meeting, 7–6, 3–6, 6–4 in the QF. Set 1 went to a tiebreak, won by Musetti. Humbert struggled on his first serve, winning 69% of the points (45 of 65), compared with his 77% average on hard over the last 52 weeks, and made 43 unforced errors against 28 winners.",
+   "templateText": "L. Musetti beat U. Humbert in their first meeting, 7-6, 3-6, 6-4 in the quarter-finals. Set 1 went to a tiebreak, won by L. Musetti. U. Humbert struggled on his first serve, winning only 69% of the points (45 of 65), compared with his 77% average on hard over the last 52 weeks and made 43 unforced errors against 28 winners.",
+   "voice": {
+    "version": 4,
+    "model": "claude-opus-5-5",
+    "passed": 3,
+    "total": 3,
+    "failures": []
+   },
+   "fields": {
+    "score": "7-6, 3-6, 6-4",
+    "round": "quarter-finals",
+    "retired": false,
+    "h2h": {
+     "a": 1,
+     "b": 0,
+     "n": 1
+    },
+    "durationMinutes": 149,
+    "facts": {
+     "tiebreakSets": [
+      {
+       "set": 1,
+       "winner": "p1"
+      }
+     ]
+    },
+    "standouts": [
+     {
+      "player": "loser",
+      "tone": "bad",
+      "metric": "firstWon",
+      "value": 69,
+      "won": 45,
+      "total": 65,
+      "baseline": 77,
+      "scope": "last52",
+      "surface": "Hard",
+      "n": 30
+     },
+     {
+      "player": "loser",
+      "tone": "bad",
+      "metric": "winnersErrors",
+      "winners": 28,
+      "unforcedErrors": 43
+     }
+    ],
+    "winner": {
+     "aces": 6,
+     "winners": 26,
+     "unforcedErrors": 23,
+     "breakPointsSaved": 3,
+     "breakPointsFaced": 5,
+     "breakPointsSource": "box score"
+    },
+    "loser": {
+     "aces": 13,
+     "winners": 28,
+     "unforcedErrors": 43,
+     "breakPointsSaved": 2,
+     "breakPointsFaced": 4,
+     "breakPointsSource": "box score"
+    }
+   },
+   "sourceName": "Stennisfy match data (api-tennis box score and point-by-point)",
+   "sourceUrl": "pbp/12179396.json",
+   "language": "en",
+   "translated": false,
+   "sourceHash": "e9d4a6bd480072d8",
+   "publishedAt": "2026-11-12T22:26:28.919Z",
+   "file": "news-ticker/1681-2026.json"
+  },
   {
    "id": "quote-68b64c79571fa4",
    "type": "quote",
@@ -1873,36 +1967,6 @@
    "sourceHash": "384a1f4334050737",
    "publishedAt": "2026-11-11T18:39:24.726Z",
    "file": "news-ticker/1681-2026.json"
-  },
-  {
-   "id": "quote-ef9b26479a7740",
-   "type": "quote",
-   "playerId": "1980",
-   "opponentId": null,
-   "player": "A. Zverev",
-   "opponent": null,
-   "tournament": "ATP Tour",
-   "tournamentKey": "tour",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-11T10:32:00.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Interviews",
-   "context": null,
-   "eventKey": null,
-   "won": null,
-   "text": "I think he's talking a lot of nonsense, as always",
-   "originalText": "Je pense qu’il raconte beau­coup de bêtises, comme toujours",
-   "language": "fr",
-   "translated": true,
-   "translationModel": "claude-opus-5-5",
-   "sourceName": "We Love Tennis",
-   "sourceUrl": "https://www.welovetennis.fr/atp/attaque-par-zverev-boris-becker-lui-repond-on-dit-des-choses-spontanement-sous-le-coup-de-lemotion-et-la-je-me-dis-les-gars-reflechissez-un-peu",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "sourceHash": "426a0886d2ff6672",
-   "publishedAt": "2026-11-12T03:29:21.268Z",
-   "file": "news-ticker/tour-2026.json"
   }
  ]
 }
