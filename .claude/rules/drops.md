@@ -137,9 +137,18 @@ answers on card 37612d3d (TEN-294 doc `design`). Suite: `test-ten294-drops.mjs`.
   (1%), ≥ `min_liq` ($100) to lock in, the match has started (Polymarket `live` or its start passed; before the start the
   30-s engine covers it) and the Kalshi event is `KXATPMATCH-`, once per match + direction per `live_cooldown` (10 min).
   `arb_now()` carries `live` only while the last push is ≤ `live_hb_max` (90 s) old; otherwise the page draws no live
-  section (no feed-status text). Bet105 joins when Kibl serves in-play lines (measured 2 Nov 01:05Z: 0 in-play rows for
-  every sport on feed 171; founder asking Kibl). **Test:** `tools/test-live-arb-recorder.mjs`, `tools/test-arb-engine-sql.py`
+  section (no feed-status text). Bet105's in-play prices come from the Kibl stream (rule below). **Test:** `tools/test-live-arb-recorder.mjs`, `tools/test-arb-engine-sql.py`
   ("LIVE"), `test-arb-page.mjs` ("live section").
+- **No Bet105 leg while the Kibl stream is behind** (founder 2026-11-12, "Pause and fix", after both 11 Nov live signals
+  were false: the Fly worker read Kibl up to ~2 min late). Bet105's in-play prices come only from the Fly worker
+  (`kibl-stream/now_worker.py` → `kibl_live_ml`), which writes off its consume loop and keeps one stream-position row there
+  (`fixture_id` 0, `fixture_participant_id` 0: `kibl_inserted_on` = the newest Kibl time read, `received_at` = when the worker
+  read it), written at least every second after the price history. **Test:** a gap with a Bet105 leg is refused twice
+  unless that row is ≤ 5 s old and `received_at − kibl_inserted_on` ≤ 5 s — in the recorder (`kiblStreamCheck`:
+  no in-play Bet105 price at all) and in `arb_live_push` (`arb.config.live_stream_lag` 5 s, `live_fresh` 5 s);
+  `tools/test-live-arb-recorder.mjs` ("Kibl in-play: only while the stream worker is current"), `tools/test-arb-engine-sql.py` (four refusals + control),
+  `kibl-stream/test-live-ml.py` (position row, no database call in the loop). Pause switch: `arb.config.live_min` 1000
+  (normal 1). Measured after the deploy (12 Nov 02:27–04:00Z): position lag 0.02–1.0 s, history ≤ 1.1 s a minute.
 - **NoVig: not built** (founder 2026-11-01 "try NoVig as possible"): its prices and book need a signed key from a NoVig account
   (`docs.novig.com`, Ed25519 / P-256); the only keyless route lists market types (ATP: MONEY, SPREAD, TOTAL). Two ways in: a
   NoVig account key, or NoVig as an odds-api.io slot (odds-api.io lists "NoVig", active).
