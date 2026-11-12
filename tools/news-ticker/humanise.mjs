@@ -15,7 +15,7 @@
 // Pipeline only: the key is ANTHROPIC_API_KEY from GitHub Actions secrets, never in the browser or a published file.
 const API_URL = 'https://api.anthropic.com/v1/messages';
 export const REPORT_MODEL = process.env.NEWS_REPORT_MODEL || 'claude-opus-5-5';
-export const VOICE_VERSION = 1;   // bump to have every stored report rewritten again
+export const VOICE_VERSION = 2;   // bump to have every stored report rewritten again
 
 // Neutral connecting words a rewrite may add. No judgement word, no quantity word (none / all / twice / double / half),
 // no stat verb (saved, converted, faced, broke): those may appear only where the template sentence already has them.
@@ -23,6 +23,11 @@ export const VOCAB = new Set(('a an the and but then while with in on at of to f
   'beat match set sets game games round final meeting meetings time minutes after before against along way also now still so ' +
   'hit made came went got took finished ended first second third fourth fifth opening ' +
   'aces ace winners winner unforced errors error double faults fault break point points tiebreak tiebreaks row down up serve serving').split(/\s+/));
+// Opinion words (founder 2026-11-12: ratings and opinions are allowed) — only in a sentence the code gave a tone, and
+// only the words of that tone, so a judgement always sits beside the number that shows it. "clutch" is for break points.
+export const TONE_WORDS = { good: new Set(['strong', 'solid', 'clean', 'sharp', 'well', 'good', 'better', 'clearly', 'clutch']),
+  bad: new Set(['shaky', 'poor', 'weak', 'error-prone', 'worse', 'bad', 'low', 'clearly', 'not', 'clutch', 'solid', 'clean', 'sharp', 'good']) };
+const NEGATED = new Set(['clutch', 'solid', 'clean', 'sharp', 'good']);
 const ROUND_CODE = [[/\bfirst round\b/, 'R1'], [/\bsecond round\b/, 'R2'], [/\bthird round\b/, 'R3'], [/\bfourth round\b/, 'R4'],
   [/\bquarter-?finals?\b/, 'QF'], [/\bsemi-?finals?\b/, 'SF']];
 
@@ -89,7 +94,15 @@ export function checkSentence(src, out, ctx) {
     if (/^\d/.test(w)) continue;
     const lw = w.toLowerCase();
     if (srcWords.has(lw) || nameWords.has(lw) || VOCAB.has(lw)) continue;
+    if (ctx.tone && TONE_WORDS[ctx.tone].has(lw) && (lw !== 'clutch' || ctx.kind === 'bp')) continue;
     return { ok: false, why: `"${w}" is not in the facts` };
+  }
+  if (ctx.tone === 'bad') {   // a good word in a bad sentence only as "not clutch" / "not solid"; "not" only before one
+    const t = tokens(body).map((w) => w.toLowerCase());
+    for (let i = 0; i < t.length; i++) {
+      if (NEGATED.has(t[i]) && !srcWords.has(t[i]) && t[i - 1] !== 'not') return { ok: false, why: `"${t[i]}" in a sentence about a weak number` };
+      if (t[i] === 'not' && !srcWords.has('not') && !NEGATED.has(t[i + 1])) return { ok: false, why: '"not" with nothing to negate' };
+    }
   }
   return { ok: true, why: null };
 }
@@ -105,13 +118,15 @@ Rules, all strict:
 - Keep the two players in the same order as in the original sentence.
 - Plain past tense, no exclamation marks, no hyphen in a score. A short sentence stays short: never pad it (no "in the match", "during the match", "in this match").
 - Words: you may use only the words of the original sentence, the players' names, and these connecting words: ${[...VOCAB].join(' ')}. Any other word makes the sentence invalid.
+- Judgement: "tones" gives each sentence good, bad or none. In a GOOD sentence you may add one of: strong, solid, clean, sharp, well, clearly, better (and "clutch" only when its kind is "bp"). In a BAD sentence one of: shaky, poor, weak, error-prone, low, worse, clearly (and "not clutch" only when its kind is "bp"). In a sentence with tone none: no judgement word at all. Keep "above" / "below" and both percentages exactly as given, with the same words after each number.
+- These sentences are what stood out in the match, so word them like a person who watched the numbers, not like a list. Vary how sentences open.
 - Preferred wording: "came from a set down", "got broken", "won 7 games in a row", "saved 2 of 3 break points", "hit 9 aces and 41 winners", "made 28 unforced errors", "went to a tiebreak".`;
 
 // -> { status: 'ok'|'no-key'|'api-error'|'bad-output', sentences?: string[], usage?, detail? }
-export async function rewriteSentences(sentences, names, apiKey = process.env.ANTHROPIC_API_KEY, fetchFn = fetch) {
+export async function rewriteSentences(sentences, names, apiKey = process.env.ANTHROPIC_API_KEY, fetchFn = fetch, tones = [], kinds = []) {
   if (!apiKey) return { status: 'no-key' };
   const body = { model: REPORT_MODEL, max_tokens: 4000, output_config: { effort: 'low' }, system: SYSTEM(),
-    messages: [{ role: 'user', content: JSON.stringify({ names, sentences }) }] };
+    messages: [{ role: 'user', content: JSON.stringify(tones.some((t) => t && t !== 'none') ? { names, sentences, tones, kinds } : { names, sentences }) }] };
   let res;
   try { res = await fetchFn(API_URL, { method: 'POST', headers: { 'content-type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' }, body: JSON.stringify(body), signal: AbortSignal.timeout(90000) }); }
   catch (e) { return { status: 'api-error', detail: String(e && e.message || e).slice(0, 200) }; }
@@ -137,12 +152,12 @@ export function plainNames(src, players, first) {
 }
 
 // The checked merge. -> { text, passed, total, failures: [{ i, why }] }
-export function mergeChecked(template, rewritten, players) {
+export function mergeChecked(template, rewritten, players, tones = [], kinds = []) {
   const out = [], failures = [];
   let prevSubject = null;
   template.forEach((src, i) => {
     const cand = String(rewritten[i] || '').trim();
-    const r = checkSentence(src, cand, { players, prevSubject });
+    const r = checkSentence(src, cand, { players, prevSubject, tone: tones[i] || null, kind: kinds[i] || null });
     const final = r.ok ? cand : plainNames(src, players, i === 0);
     if (!r.ok) failures.push({ i, why: r.why });
     out.push(final);
@@ -153,12 +168,12 @@ export function mergeChecked(template, rewritten, players) {
 }
 
 // One report. -> { status, text?, voice?: { version, model, passed, total, failures }, usage?, detail? }
-export async function humaniseReport({ sentences, winner, loser }, opts = {}) {
+export async function humaniseReport({ sentences, tones = [], kinds = [], winner, loser }, opts = {}) {
   const players = [playerRef(winner.card, winner.full), playerRef(loser.card, loser.full)];
   const names = { winner: winner.full || players[0].surname, loser: loser.full || players[1].surname };
-  const r = await (opts.rewrite || rewriteSentences)(sentences, names, opts.apiKey, opts.fetchFn);
+  const r = await (opts.rewrite || rewriteSentences)(sentences, names, opts.apiKey, opts.fetchFn, sentences.map((x, i) => tones[i] || 'none'), sentences.map((x, i) => kinds[i] || 'none'));
   if (r.status !== 'ok') return { status: r.status, detail: r.detail || null, http: r.http || null, usage: r.usage || null };
-  const m = mergeChecked(sentences, r.sentences, players);
+  const m = mergeChecked(sentences, r.sentences, players, tones, kinds);
   return { status: 'ok', text: m.text, usage: r.usage || null,
     voice: { version: VOICE_VERSION, model: r.model || null, passed: m.passed, total: m.total, failures: m.failures } };
 }

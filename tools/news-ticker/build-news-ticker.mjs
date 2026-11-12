@@ -15,6 +15,7 @@
  * Exit 0 always writes what it could; exit 1 only when the board itself cannot be read.
  */
 import { humaniseReport, VOICE_VERSION } from './humanise.mjs';
+import { baselineFor } from './standouts.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 import { createRequire } from 'node:module';
@@ -67,6 +68,7 @@ export async function build({ nowIso, times, rewrite = null, apiKey = process.en
   const cards = Object.values(board).filter((m) => m && m.tourBadge === 'ATP' && m.tournamentKey != null && m.p1Key != null && m.p2Key != null
     && !/\//.test(String(m.p1) + String(m.p2)));                       // singles only (a doubles pair is "A / B")
   const index = readJson('player-index.json');
+  const ratings = readJson('surface-ratings.json');   // each player's own baseline (Database → Ratings store); absent = no comparison
   const names = ((index && index.players) || []).map((p) => p && p.name).filter(Boolean);
   // A player's full name for a report's first mention: the standings name, used only when it reads "Given … Surname"
   // with the card's own surname last and the card's initial first (api-tennis scrambles some multi-part names).
@@ -125,14 +127,15 @@ export async function build({ nowIso, times, rewrite = null, apiKey = process.en
         const obs = (times && times.get(ek(m))) || (prev && prev.observed) || null;
         const stage = m.qualifying ? 'qualifying' : null;
         const rw = m.qualifying ? `${roundWords(m.tournamentRound) === 'final' ? 'final round' : roundWords(m.tournamentRound)} of qualifying` : (pageRound(m, w) || pageRound(m, l) || roundWords(m.tournamentRound));
-        const rep = reportText(m, w, l, { h2h, pbp, score: scoreFacts(m.finalScore, w), round: rw, duration: obs && obs.minutes != null ? obs.minutes : null });
+        const baselines = { [w]: baselineFor(ratings, m[w + 'Key'], m.surface), [l]: baselineFor(ratings, m[l + 'Key'], m.surface) };
+        const rep = reportText(m, w, l, { baselines, h2h, pbp, score: scoreFacts(m.finalScore, w), round: rw, duration: obs && obs.minutes != null ? obs.minutes : null });
         // Michael's voice: the template sentences rewritten one for one, each checked against its own facts; a sentence
         // that fails keeps the template wording. Done once per report: a stored rewrite of the same template is reused.
         let text = rep.text, voice = null;
         if (prev && prev.voice && prev.voice.version === VOICE_VERSION && prev.templateText === rep.text) { text = prev.text; voice = prev.voice; summary.voice.reused++; }
         else if (voiceOn && voiceCalls < VOICE_MAX_CALLS) {
           voiceCalls++;
-          const h = await humaniseReport({ sentences: rep.sentences, winner: { card: m[w], full: fullName(m[w + 'Key'], m[w]) }, loser: { card: m[l], full: fullName(m[l + 'Key'], m[l]) } }, { rewrite, apiKey });
+          const h = await humaniseReport({ sentences: rep.sentences, tones: rep.tones, kinds: rep.kinds, winner: { card: m[w], full: fullName(m[w + 'Key'], m[w]) }, loser: { card: m[l], full: fullName(m[l + 'Key'], m[l]) } }, { rewrite, apiKey });
           if (h.usage) { summary.voice.tokens.input += h.usage.input; summary.voice.tokens.output += h.usage.output; }
           if (h.status === 'ok') { text = h.text; voice = h.voice; summary.voice.rewritten++; }
           else { summary.voice.errors++; summary.voice.lastError = `${h.status}${h.detail ? ': ' + h.detail : ''}`; }
