@@ -195,3 +195,6 @@ derived-field.json
 derived-field.json.tmp
 market-read-30d.json
 news-ticker-run.json
+
+# built every pipeline run from the MTO archive, never committed
+mto-matches.json

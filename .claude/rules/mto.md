@@ -42,7 +42,11 @@ Applies to `tools/mto-bot.sql` (schemas `mto_rec` + `mto`), `tools/mto-levels.mj
   Level = the site's own tournament table (`tools/mto-levels.sql`, generated from `TOURNAMENT_CATALOG`; `--check` in
   `npm test`), else the feed's tier, else none. A missing value is NULL, never a default.
 - **Site:** `public.mto_export()` (service role) = every in-scope MTO keyed by api-tennis match id; a match with none is
-  absent. Not yet published or drawn on any page.
+  absent. `tools/build-mto-matches.mjs` writes it every pipeline run as the site file **`mto-matches.json`**
+  (`{generatedAt, count, matchCount, matches: {eventKey: [...]}}`: who called it, the score and server at the call, its
+  end and duration, the final result, `retired`); `matches.json` is not touched, and **no source is named** in it. A
+  failed read writes nothing (never an empty file). **Test:** `tools/test-mto-matches.mjs` (the three real MTOs of 11
+  Nov). Not drawn on any page yet: the display is on the handoff list (founder ruling 2).
 
 ## Telegram
 - **The MTO chat only** (repo secret `TELEGRAM_MTO_CHAT_ID` → Vault `mto_telegram_chat_id`), through the drop bot's token

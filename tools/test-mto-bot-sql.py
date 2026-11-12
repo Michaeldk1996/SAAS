@@ -406,6 +406,7 @@ try:
           ex.get('12178198', [{}])[0].get('player') == 'Inaki Montes-De La Torre' and ex['12178198'][0]['games'] == [[5, 0], [7, 0]]
           and ex['12178198'][0]['server'] == 'Lorenzo Sonego', ex.get('12178198'))
     check('export: duplicates are left out, a second MTO stays', [r['calledAt'][:16] for r in ex['12178198']] == ['2026-11-08T12:20', '2026-11-08T12:50', '2026-11-08T12:58'], ex.get('12178198'))
+    check('export: no source is named (the file is public, the source is private)', 'source' not in json.dumps(ex).lower() and 'Live Tennis' not in json.dumps(ex), ex.get('12178198'))
     check('export: a match with no MTO is absent (no empty entry)', all(len(v) > 0 for v in ex.values()) and '9002' not in ex, list(ex))
     rc, out = q("select public.mto_export()", 'anon'); check('export is not readable by the publishable key', rc != 0, out)
     rc, out = q("select mto.report(24)"); rep = json.loads(out) if rc == 0 else {}

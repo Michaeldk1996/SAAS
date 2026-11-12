@@ -937,6 +937,17 @@ jobs:
           node tools/news-ticker/build-news-ticker.mjs || rc=$?
           node tools/step-check.mjs --step "Build news ticker (best-effort)" --rc "$rc" --since "$t0" --exists news-ticker.json
 
+      # Medical timeouts on the match record (founder ruling 2026-11-11): every MTO in the archive, keyed by our match id,
+      # as its own site file. matches.json is not touched. A failed read writes nothing. Rules: .claude/rules/mto.md.
+      - name: Build MTO match records (best-effort)
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+        run: |
+          t0=$(date +%s); rc=0
+          node tools/build-mto-matches.mjs || rc=$?
+          node tools/step-check.mjs --step "Build MTO match records (best-effort)" --rc "$rc" --since "$t0" --exists mto-matches.json
+
       # A day with finished ATP matches and 0 reports written: one Telegram per day (pipeline chat). Runs when the build
       # above crashed too. Never fails the run.
       - name: Alert — a day of finished matches with no reports (Telegram)
@@ -1339,6 +1350,7 @@ jobs:
           cp news-sample.json _site/ 2>/dev/null || true
           # News ticker: the index, the per-tournament files and this run's build summary (alert state stays in the repo)
           cp news-ticker.json news-ticker-run.json _site/ 2>/dev/null || true
+          cp mto-matches.json _site/ 2>/dev/null || true
           if [ -d news-ticker ]; then mkdir -p _site/news-ticker && cp news-ticker/*-[0-9][0-9][0-9][0-9].json _site/news-ticker/ 2>/dev/null || true; fi
           cp series.json _site/ 2>/dev/null || true
           cp trading-splits-index.json _site/ 2>/dev/null || true

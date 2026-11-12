@@ -727,7 +727,8 @@ create or replace function public.mto_export() returns jsonb language sql stable
     select a.event_key, jsonb_agg(jsonb_build_object(
              'calledAt', a.called_at, 'player', a.player, 'opponent', a.opponent, 'p1', a.p1, 'p2', a.p2,
              'games', a.games, 'points', a.points, 'server', a.server, 'endedAt', a.ended_at,
-             'durationSeconds', a.duration_seconds, 'source', a.source) order by a.called_at, a.id) as rows
+             'durationSeconds', a.duration_seconds, 'playerSide', a.player_side, 'serverSide', a.server_side,
+             'finalResult', a.final_result, 'retired', a.retired) order by a.called_at, a.id) as rows
       from mto.archive a
      where a.event_key is not null and a.scope = 'post' and a.dup_of is null
      group by a.event_key) x $$;
