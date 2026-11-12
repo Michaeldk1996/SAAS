@@ -1,6 +1,18 @@
 {
- "generatedAt": "2026-11-12T03:29:21.268Z",
+ "generatedAt": "2026-11-12T03:50:38.805Z",
  "tournaments": [
+  {
+   "key": "tour",
+   "season": "2026",
+   "name": "ATP Tour",
+   "file": "news-ticker/tour-2026.json",
+   "items": 32,
+   "byType": {
+    "quote": 32
+   },
+   "latestTimestamp": "2026-11-12T03:26:07.692Z",
+   "updatedAt": "2026-11-12T03:50:38.805Z"
+  },
   {
    "key": "1681",
    "season": "2026",
@@ -13,18 +25,6 @@
     "status": 6
    },
    "latestTimestamp": "2026-11-12T02:55:58.268Z",
-   "updatedAt": "2026-11-12T03:29:21.268Z"
-  },
-  {
-   "key": "tour",
-   "season": "2026",
-   "name": "ATP Tour",
-   "file": "news-ticker/tour-2026.json",
-   "items": 31,
-   "byType": {
-    "quote": 31
-   },
-   "latestTimestamp": "2026-11-12T02:25:52.065Z",
    "updatedAt": "2026-11-12T03:29:21.268Z"
   },
   {
@@ -41,6 +41,36 @@
   }
  ],
  "latest": [
+  {
+   "id": "quote-f0fa26e863b23d",
+   "type": "quote",
+   "playerId": "1304",
+   "opponentId": null,
+   "player": "J. Kym",
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-12T03:26:07.692Z",
+   "timestampKind": "collected (the outlet shows no publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "I was incredibly lucky",
+   "originalText": "Ich hatte ein riesen Schwein",
+   "language": "de",
+   "translated": true,
+   "translationModel": "claude-opus-5-5",
+   "sourceName": "SRF Sport",
+   "sourceUrl": "https://www.srf.ch/sport/tennis/atp-tour/in-basel-auf-rekordkurs-nach-ueberstandenem-deja-vu-kym-gegen-trainingspartner-lehecka",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "sourceHash": "c723589edc0e03d6",
+   "publishedAt": "2026-11-12T03:50:38.805Z",
+   "file": "news-ticker/tour-2026.json"
+  },
   {
    "id": "quote-68b64c79571fa4",
    "type": "quote",
@@ -2221,36 +2251,6 @@
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the original-language text of the fetched page",
    "sourceHash": "cfc37e3bce00a5ed",
-   "publishedAt": "2026-11-12T03:03:12.953Z",
-   "file": "news-ticker/tour-2026.json"
-  },
-  {
-   "id": "quote-56ad402611021a",
-   "type": "quote",
-   "playerId": "2072",
-   "opponentId": null,
-   "player": "J. Sinner",
-   "opponent": null,
-   "tournament": "ATP Tour",
-   "tournamentKey": "tour",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-10T12:52:37.988Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Interviews",
-   "context": null,
-   "eventKey": null,
-   "won": null,
-   "text": "What I’ll miss most about Darren is definitely the personal part. We hit it off right from the start, and over time he became almost like a second father to me … whenever I faced difficult moments he was always one of the first people I would call.",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "TSN",
-   "sourceUrl": "https://www.tsn.ca/tennis/article/sinner-plans-late-december-return-at-saudi-exhibition-ahead-of-australian-open/",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "sourceHash": "ade59c136a9c385f",
    "publishedAt": "2026-11-12T03:03:12.953Z",
    "file": "news-ticker/tour-2026.json"
   }
