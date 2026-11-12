@@ -83,8 +83,13 @@ ticker page comes through Claude Design). Tests: `tools/test-news-ticker.mjs`, `
     (`news-quotes/fetched.json`), at most 6 new articles per outlet per run.
   - **Off switch:** `"enabled": false` on a registry entry stops collection and hides that outlet's items on the next
     run (the one case an item leaves the feed).
-  - ATP stays on the permission route (read only through the tournament sites under `tournamentSites`). YouTube audio,
-    the Tennis TV stream and tennisformterminal.com stay out.
+  - **ATP is allowed (founder 2026-11-12: "we can use them now, we have an agreement" — it covers both ATP's website
+    articles and ATP video / press conferences).** This replaces "ATP stays on the permission route; YouTube audio and
+    the Tennis TV stream stay out". Still in force: no bypassing a technical block (atptour.com answered 403 to a plain
+    request on 12 Nov, so it is not read until ATP gives a feed or the founder rules a route), no login is ever entered,
+    and a quote is word for word or not published (a transcription route needs the founder's ruling first).
+    tennisformterminal.com stays out: nothing is fetched or copied from it; examples the founder pastes are read for
+    format only.
   - `tools/news-ticker/probe-outlets.mjs --write` re-reads every section and sets `allowed` / `blocked` (technical).
 - Read for a tournament: its tournament site, the host country's outlets, the home countries' of the players in the
   draw, and the international group.
