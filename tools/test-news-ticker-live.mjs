@@ -316,10 +316,10 @@ await ok('voice: an opinion word passes only in a sentence the code gave that to
   assert.ok(!chk(Bp, 'Rune was clutch, he saved 0 of 3 break points.', 'bad', 'bp'), 'a good word in a bad sentence needs "not"');
   assert.ok(!chk(Bp, 'Rune did not hold, he saved 0 of 3 break points.', 'bad', 'bp'));
   assert.ok(chk('H. Rune saved 4 of 4 break points.', 'Rune was clutch and saved 4 of 4 break points.', 'good', 'bp'));
-  const G = 'B. Gojo hit 14 aces and won 80% of his first-serve points (41 of 51).';
-  assert.ok(chk(G, 'Gojo served well with 14 aces and won 80% of his first-serve points (41 of 51).', 'good', 'serve'), 'the founder\'s own example shape');
-  assert.ok(!chk(G, 'Gojo served well with 14 aces and won 80% of his first-serve points (41 of 15).', 'good', 'serve'));
-  assert.ok(!chk(G, 'Gojo served well with 80 aces and won 14% of his first-serve points (41 of 51).', 'good', 'serve'), 'the two numbers swapped');
+  const G = 'H. Rune hit 14 aces and won 80% of his first-serve points (41 of 51).';
+  assert.ok(chk(G, 'Rune served well with 14 aces and won 80% of his first-serve points (41 of 51).', 'good', 'serve'), 'the founder\'s own example shape');
+  assert.ok(!chk(G, 'Rune served well with 14 aces and won 80% of his first-serve points (41 of 15).', 'good', 'serve'));
+  assert.ok(!chk(G, 'Rune served well with 80 aces and won 14% of his first-serve points (41 of 51).', 'good', 'serve'), 'the two numbers swapped');
 });
 // ---- tour-wide (founder 2026-11-12: press interviews and injuries for every ATP player, every day) ----
 await ok('tour-wide: an article that names no tournament still yields its quote; each candidate carries the tournaments its article mentions', async () => {
