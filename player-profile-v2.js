@@ -2579,7 +2579,9 @@
           var lead = fv == null && dg == null ? null : dg == null || (fv != null && Math.abs(fv) > Math.abs(dg)) ? 'fav' : 'dog';
           var parts = ['overall ' + neg(mk.headline.yield, 2, '%') + ' yield'];
           // TEN-384 fx2 item 3 holds: while the baselines file has not arrived the tour clause is left out (no dash)
-          if (tourAllBox != null) parts.push(signed(Math.round((mk.headline.yield - tourAllBox) * 10) / 10, 1, 'pp') + ' vs tour');
+          // the gap is taken to the tour figure AS THE MODAL'S ALL TILE PRINTS IT (2 dp): 12 Nov 2026 Alcaraz's unrounded
+          // baseline put the box at +9.1 while the tile's −3.95% gives +9.2, and the pre-publish reconcile gate held the data
+          if (tourAllBox != null) parts.push(signed(Math.round((mk.headline.yield - Number(tourAllBox.toFixed(2))) * 10) / 10, 1, 'pp') + ' vs tour');
           if (lead === 'fav' && dg != null) parts.push('dog ' + neg(dg, 1, '%'));
           if (lead === 'dog' && fv != null) parts.push('fav ' + neg(fv, 1, '%'));
           if (!lead) return { headline: neg(mk.headline.yield, 2, '%') + ' yield', support: parts.slice(1).join(' ' + MIDDOT + ' ') + idHidden };
