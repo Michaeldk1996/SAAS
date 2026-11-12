@@ -94,7 +94,7 @@ export function checkSentence(src, out, ctx) {
   return { ok: true, why: null };
 }
 
-const SYSTEM = `You rewrite the sentences of a short ATP match report in the voice of Stennisfy's founder. You receive a JSON array of sentences. Return ONLY a JSON array of the same length: element i is your rewrite of sentence i, using only the facts in sentence i.
+const SYSTEM = () => `You rewrite the sentences of a short ATP match report in the voice of Stennisfy's founder. You receive a JSON array of sentences. Return ONLY a JSON array of the same length: element i is your rewrite of sentence i, using only the facts in sentence i.
 
 Rules, all strict:
 - One sentence in, one sentence out. Never move a fact to another sentence, never merge, never drop a sentence.
@@ -103,13 +103,14 @@ Rules, all strict:
 - Sentence 1: the winner's full name, then the loser's full name, as given in "names". Scores with en dashes (6–2), unchanged and in the same order. The round as R1, R2, R3, R4, QF or SF when it is one of those; otherwise as written.
 - After sentence 1: surname only, never an initial ("Rune", not "H. Rune"). Use "He" only when the sentence is about one player and the sentence before it started with that same player.
 - Keep the two players in the same order as in the original sentence.
-- Plain past tense, 8 to 20 words, no exclamation marks, no hyphen in a score.
+- Plain past tense, no exclamation marks, no hyphen in a score. A short sentence stays short: never pad it (no "in the match", "during the match", "in this match").
+- Words: you may use only the words of the original sentence, the players' names, and these connecting words: ${[...VOCAB].join(' ')}. Any other word makes the sentence invalid.
 - Preferred wording: "came from a set down", "got broken", "won 7 games in a row", "saved 2 of 3 break points", "hit 9 aces and 41 winners", "made 28 unforced errors", "went to a tiebreak".`;
 
 // -> { status: 'ok'|'no-key'|'api-error'|'bad-output', sentences?: string[], usage?, detail? }
 export async function rewriteSentences(sentences, names, apiKey = process.env.ANTHROPIC_API_KEY, fetchFn = fetch) {
   if (!apiKey) return { status: 'no-key' };
-  const body = { model: REPORT_MODEL, max_tokens: 4000, output_config: { effort: 'low' }, system: SYSTEM,
+  const body = { model: REPORT_MODEL, max_tokens: 4000, output_config: { effort: 'low' }, system: SYSTEM(),
     messages: [{ role: 'user', content: JSON.stringify({ names, sentences }) }] };
   let res;
   try { res = await fetchFn(API_URL, { method: 'POST', headers: { 'content-type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' }, body: JSON.stringify(body), signal: AbortSignal.timeout(90000) }); }
@@ -126,6 +127,15 @@ export async function rewriteSentences(sentences, names, apiKey = process.env.AN
   return { status: 'ok', sentences: arr, usage, model: REPORT_MODEL };
 }
 
+// A template sentence that stands in for a failed rewrite keeps its wording; only the card name ("H. Rune") becomes
+// the full name (first sentence) or the surname — the same player, no fact added.
+const cap = (w) => w.replace(/(^|[ -])([a-z])/g, (m, a, b) => a + b.toUpperCase());
+export function plainNames(src, players, first) {
+  let t = src;
+  for (const p of players) { if (!p.card || !t.includes(p.card)) continue; const sur = p.card.replace(/^(?:[A-Za-z]{1,3}\.\s*)+/, ''); t = t.split(p.card).join(first && p.full ? p.full : (sur || p.card)); }
+  return t;
+}
+
 // The checked merge. -> { text, passed, total, failures: [{ i, why }] }
 export function mergeChecked(template, rewritten, players) {
   const out = [], failures = [];
@@ -133,7 +143,7 @@ export function mergeChecked(template, rewritten, players) {
   template.forEach((src, i) => {
     const cand = String(rewritten[i] || '').trim();
     const r = checkSentence(src, cand, { players, prevSubject });
-    const final = r.ok ? cand : src;
+    const final = r.ok ? cand : plainNames(src, players, i === 0);
     if (!r.ok) failures.push({ i, why: r.why });
     out.push(final);
     const firstNamed = players.map((p) => [norm(final).toLowerCase().indexOf(p.surname.toLowerCase()), p]).filter(([n]) => n >= 0).sort((x, y) => x[0] - y[0])[0];

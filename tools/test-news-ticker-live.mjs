@@ -249,7 +249,10 @@ await ok("voice: a rewrite passes only when every number, name and word is in th
   // one failing sentence -> that sentence only falls back; the count says so
   const mixed = mergeChecked(T, [R[0], 'Rune looked tired but came from a set down.', R[2], R[3], R[4]], P);
   assert.deepEqual([mixed.passed, mixed.total, mixed.failures.map((f) => f.i)], [4, 5, [1]]);
-  assert.equal(mixed.text, [R[0], T[1], 'He won 7 games in a row along the way.', R[3], R[4]].join(' '));
+  assert.equal(mixed.text, [R[0], 'Rune came from a set down.', 'He won 7 games in a row along the way.', R[3], R[4]].join(' '), 'the stand-in is the template sentence, the card name as a surname');
+  const allBad = mergeChecked(T, T.map(() => 'x'), P);
+  assert.equal(allBad.text.split('. ')[0], 'Holger Rune beat Miomir Kecmanovic for the 4th time in 5 meetings, 2-6, 6-1, 6-4 in the second round in 83 minutes');
+  assert.ok(!/H\. Rune|M\. Kecmanovic/.test(allBad.text) && allBad.passed === 0);
   // the report call: no key -> nothing rewritten; a model answer of the wrong length -> nothing rewritten
   const base = { sentences: T, winner: { card: 'H. Rune', full: 'Holger Rune' }, loser: { card: 'M. Kecmanovic', full: 'Miomir Kecmanovic' } };
   assert.equal((await humaniseReport(base, { apiKey: '' })).status, 'no-key');
