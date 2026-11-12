@@ -1,3 +1,4 @@
+import { standoutUnits } from './standouts.mjs';
 // News ticker sample — the pure rules (no network, no clock). Tested by tools/test-news-ticker.mjs.
 import { createRequire } from 'node:module';
 const require = createRequire(import.meta.url);
@@ -87,11 +88,23 @@ export function reportText(m, w, l, opts = {}) {
   }
   if (Object.keys(facts).length) fields.facts = facts;
   const A = statParts(ms, w, wueOk, pbp), B = statParts(ms, l, wueOk, pbp);
-  if (A.parts.length) { out.push(`${m[w]}: ${A.parts.join(', ')}.`); fields.winner = A.fields; }
-  if (B.parts.length) { out.push(`${m[l]}: ${B.parts.join(', ')}.`); fields.loser = B.fields; }
+  const tones = out.map(() => null), kinds = out.map(() => null);
+  // What stood out (standouts.mjs): each player's rates against his own baseline + the counts that say something. When
+  // there is at least one, the full stat line is not printed; with none (no baseline, nothing notable) it still is.
+  const U = opts.baselines ? { [w]: standoutUnits(ms, w, m[w], opts.baselines[w] || null, { bp: breakPoints(ms, w, pbp), wueOk }),
+    [l]: standoutUnits(ms, l, m[l], opts.baselines[l] || null, { bp: breakPoints(ms, l, pbp), wueOk }) } : null;
+  if (U && U[w].length + U[l].length > 0) {
+    fields.standouts = [];
+    for (const k of [w, l]) for (const u of U[k]) { out.push(u.text); tones.push(u.tone); kinds.push(u.kind); fields.standouts.push({ player: k === w ? 'winner' : 'loser', tone: u.tone, ...u.field }); }
+    if (A.parts.length) fields.winner = A.fields;
+    if (B.parts.length) fields.loser = B.fields;
+  } else {
+    if (A.parts.length) { out.push(`${m[w]}: ${A.parts.join(', ')}.`); tones.push(null); kinds.push(null); fields.winner = A.fields; }
+    if (B.parts.length) { out.push(`${m[l]}: ${B.parts.join(', ')}.`); tones.push(null); kinds.push(null); fields.loser = B.fields; }
+  }
   const used = { wue: !!(A.fields.winners != null || B.fields.winners != null), bpSides: [A, B].filter((x) => x.fields.breakPointsFaced != null).length,
     h2h: !!fields.h2h, pbp: !!pbp, duration: fields.durationMinutes != null };
-  return { text: out.join(' '), sentences: out, fields, used };
+  return { text: out.join(' '), sentences: out, tones, kinds, fields, used };
 }
 
 // Our ONE H2H list (H2HCore.joinMeetings over both career-history shards), counted only when it already holds this

@@ -82,7 +82,7 @@ await ok('build: one report per finished match; a walkover gets a status item an
   assert.equal(s.reports, 1); const it = itemsOf(d);
   assert.deepEqual(it.map((x) => x.id).sort(), ['report-100', 'status-wo-101']);
   assert.ok(!it.some((x) => /faced no break points/.test(x.text) && x.id !== 'report-100'));
-  assert.match(it.find((x) => x.id === 'report-100').text, /A\. One: 2 aces, 19 winners, 7 unforced errors, faced no break points\./);
+  assert.match(it.find((x) => x.id === 'report-100').text, /A\. One faced no break points\. B\. Two saved 4 of 10 break points\.$/, 'what stood out, not the full stat line');
   assert.ok(!/break point/.test(it.find((x) => x.id === 'status-wo-101').text));
 });
 await ok('build: a missing or empty point log never prints "faced no break points" (blank box score stays blank)', () => {
@@ -90,7 +90,7 @@ await ok('build: a missing or empty point log never prints "faced no break point
     const d = fixture([card({ id: 'past-100' })], { pbp });
     runBuild(d, '2026-11-10T15:00:00.000Z');
     const t = itemsOf(d)[0].text;
-    assert.ok(!/faced no break points/.test(t), JSON.stringify(pbp) + ' -> ' + t); assert.match(t, /A\. One: 2 aces, 19 winners, 7 unforced errors\./);
+    assert.ok(!/faced no break points/.test(t), JSON.stringify(pbp) + ' -> ' + t); assert.ok(!/A\. One (faced|saved)/.test(t), 'no break-point claim for the player whose count is blank: ' + t);
   }
   assert.equal(pbpFacts({ sets: [] }, { sets: [{ p1: 6, p2: 0 }] }), null); assert.equal(pbpFacts({ sets: [{ games: [] }] }, { sets: [{ p1: 6, p2: 0 }] }), null);
 });
@@ -264,6 +264,52 @@ await ok("voice: a rewrite passes only when every number, name and word is in th
   const w = read('.github/workflows/pipeline.yml');
   assert.match(w, /name: Build news ticker \(best-effort\)\n\s+env:\n\s+ANTHROPIC_API_KEY: \$\{\{ secrets\.ANTHROPIC_API_KEY \}\}/, 'the key reaches the build from Actions secrets only');
   assert.ok(!/sk-ant-/.test(read('tools/news-ticker/humanise.mjs')));
+});
+// ---- what stood out (founder 2026-11-12: compare with the player's own baseline; don't repeat every statistic) ----
+await ok('standouts: a rate is reported only when it is far from the player\'s own baseline on enough points; counts only when they say something', async () => {
+  const { standoutUnits, baselineFor, MIN_BASE } = await import('./news-ticker/standouts.mjs');
+  const node = (n, over = {}) => ({ sample: { matches: n }, serve: { firstInPct: 62.4, firstWonPct: 73.9, secondWonPct: 54.2, ...over }, return: { ret1stWonPct: 29, ret2ndWonPct: 49.6 } });
+  const RT = { players: [{ key: '437', surfaces: { Hard: { last52: node(47), career: node(174) }, Clay: { last52: node(9), career: node(40, { firstWonPct: 70 }) }, All: { last52: node(60) } } },
+    { key: '9', surfaces: { Hard: { last52: node(12), career: node(20) }, All: { last52: node(29) } } }] };
+  assert.equal(MIN_BASE, 30);
+  assert.deepEqual([baselineFor(RT, 437, 'hard').label, baselineFor(RT, 437, 'hard').matches], ['on hard over the last 52 weeks', 47]);
+  assert.equal(baselineFor(RT, 437, 'clay').label, 'on clay in his career', 'a thin 52-week sample falls back to the career on that surface');
+  assert.equal(baselineFor(RT, 437, 'carpet').label, 'on all surfaces over the last 52 weeks');
+  assert.equal(baselineFor(RT, 9, 'hard'), null, 'under 30 matches everywhere: no comparison, never a guess');
+  assert.equal(baselineFor(RT, 1, 'hard'), null); assert.equal(baselineFor(null, 437, 'hard'), null);
+  const ms = (o, raw) => ({ p1: { ...o, raw } });
+  const B = baselineFor(RT, 437, 'hard');
+  const u = standoutUnits(ms({ 'Service:1st serve points won': 88.9, 'Service:2nd serve points won': 40, 'Service:1st serve percentage': 64, 'Service:Aces': 4 },
+    { 'Service:1st serve points won': { won: 32, total: 36 }, 'Service:2nd serve points won': { won: 8, total: 20 } }), 'p1', 'H. Rune', B, { bp: { saved: 2, faced: 4 } });
+  assert.deepEqual(u.map((x) => [x.text, x.tone]), [
+    ['H. Rune won 89% of his first-serve points (32 of 36), above his 74% on hard over the last 52 weeks.', 'good'],
+    ['H. Rune won 40% of his second-serve points (8 of 20), below his 54% on hard over the last 52 weeks.', 'bad']], 'first-in 64 v 62 and 2 of 4 break points and 4 aces are not news');
+  assert.deepEqual(u[0].field, { metric: 'firstWon', value: 89, won: 32, total: 36, baseline: 74, scope: 'last52', surface: 'Hard', n: 47 });
+  // close to the baseline, or too few points in the match: nothing
+  assert.deepEqual(standoutUnits(ms({ 'Service:1st serve points won': 80 }, { 'Service:1st serve points won': { won: 28, total: 35 } }), 'p1', 'X', B), [], '80 v 74 is inside the 8-point gap');
+  assert.deepEqual(standoutUnits(ms({ 'Service:1st serve points won': 100 }, { 'Service:1st serve points won': { won: 10, total: 10 } }), 'p1', 'X', B), [], '10 points is too few');
+  // counts that say something by themselves, with or without a baseline
+  const c = standoutUnits(ms({ 'Service:Aces': 13, 'Service:Double Faults': 6, 'Points:Winners': 50, 'Points:Unforced errors': 20 }, {}), 'p1', 'A. S', null, { bp: { saved: 0, faced: 3 } });
+  assert.deepEqual(c.map((x) => [x.text, x.tone, x.kind]), [['A. S saved 0 of 3 break points.', 'bad', 'bp'], ['A. S hit 13 aces.', 'good', 'count'], ['A. S made 6 double faults.', 'bad', 'count']], 'at most 3 a player');
+  assert.deepEqual(standoutUnits(ms({ 'Service:Aces': 9, 'Service:Double Faults': 4, 'Points:Winners': 29, 'Points:Unforced errors': 29 }, {}), 'p1', 'X', null, { bp: { saved: 3, faced: 7 } }), []);
+  assert.deepEqual(standoutUnits(ms({}, {}), 'p1', 'X', null, { bp: { saved: 0, faced: 0 } }).map((x) => x.text), ['X faced no break points.']);
+});
+await ok('voice: an opinion word passes only in a sentence the code gave that tone, beside its number; "clutch" only for break points', async () => {
+  const { checkSentence, playerRef } = await import('./news-ticker/humanise.mjs');
+  const P = [playerRef('H. Rune', 'Holger Rune'), playerRef('M. Kecmanovic', 'Miomir Kecmanovic')];
+  const S = 'H. Rune won 89% of his first-serve points (32 of 36), above his 74% on hard over the last 52 weeks.';
+  const chk = (src, out, tone, kind) => checkSentence(src, out, { players: P, prevSubject: P[0], tone, kind }).ok;
+  assert.ok(chk(S, 'Rune was strong on serve: he won 89% of his first-serve points (32 of 36), above his 74% on hard over the last 52 weeks.', 'good', 'rate'));
+  assert.ok(!chk(S, 'Rune was strong on serve: he won 89% of his first-serve points (32 of 36), above his 74% on hard over the last 52 weeks.', null, 'rate'), 'no tone, no judgement');
+  assert.ok(!chk(S, 'Rune was shaky: he won 89% of his first-serve points (32 of 36), above his 74% on hard over the last 52 weeks.', 'good', 'rate'), 'a bad word on a good number');
+  assert.ok(!chk(S, 'Rune was clutch: he won 89% of his first-serve points (32 of 36), above his 74% on hard over the last 52 weeks.', 'good', 'rate'), 'clutch is for break points');
+  assert.ok(!chk(S, 'Rune won 89% of his first-serve points (32 of 36), above his 71% on hard over the last 52 weeks.', 'good', 'rate'), 'the baseline changed');
+  assert.ok(!chk(S, 'Rune won 89% of his first-serve points (32 of 36), below his 74% on hard over the last 52 weeks.', 'good', 'rate'), 'above turned into below');
+  const Bp = 'H. Rune saved 0 of 3 break points.';
+  assert.ok(chk(Bp, 'Rune was not clutch, he saved 0 of 3 break points.', 'bad', 'bp'));
+  assert.ok(!chk(Bp, 'Rune was clutch, he saved 0 of 3 break points.', 'bad', 'bp'), 'a good word in a bad sentence needs "not"');
+  assert.ok(!chk(Bp, 'Rune did not hold, he saved 0 of 3 break points.', 'bad', 'bp'));
+  assert.ok(chk('H. Rune saved 4 of 4 break points.', 'Rune was clutch and saved 4 of 4 break points.', 'good', 'bp'));
 });
 // ---- tour-wide (founder 2026-11-12: press interviews and injuries for every ATP player, every day) ----
 await ok('tour-wide: an article that names no tournament still yields its quote; each candidate carries the tournaments its article mentions', async () => {
