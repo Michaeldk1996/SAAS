@@ -2,8 +2,150 @@
  "tournament": "Stockholm",
  "tournamentKey": "1681",
  "season": "2026",
- "updatedAt": "2026-11-12T16:27:56.516Z",
+ "updatedAt": "2026-11-12T17:27:19.503Z",
  "items": [
+  {
+   "id": "report-12179510",
+   "type": "report",
+   "playerId": "366",
+   "opponentId": "566",
+   "player": "T. A. Tirante",
+   "opponent": "A. Shevchenko",
+   "tournament": "Stockholm",
+   "tournamentKey": "1681",
+   "season": "2026",
+   "stage": "main draw",
+   "round": "quarter-finals",
+   "eventKey": "12179510",
+   "timestamp": "2026-11-12T17:10:51.028Z",
+   "timestampKind": "observed",
+   "observed": {
+    "endedAt": "2026-11-12T17:10:51.028Z",
+    "startedAt": "2026-11-12T14:21:50.483Z",
+    "minutes": 169
+   },
+   "category": "Statistics",
+   "text": "Tirante beat Alexander Shevchenko 7–6, 6–7, 6–3 in the QF in their first meeting. Tirante won the first set in a tiebreak. Shevchenko took the second set in a tiebreak. Tirante served well with 20 aces and won 86% of his first-serve points (56 of 65). He saved 3 of 3 break points. Along the way, he hit 47 winners and made 41 unforced errors. Shevchenko made 37 unforced errors against 27 winners.",
+   "templateText": "T. A. Tirante beat A. Shevchenko in their first meeting, 7-6, 6-7, 6-3 in the quarter-finals. Set 1 went to a tiebreak, won by T. A. Tirante. Set 2 went to a tiebreak, won by A. Shevchenko. T. A. Tirante hit 20 aces and won 86% of his first-serve points (56 of 65). T. A. Tirante saved 3 of 3 break points. T. A. Tirante hit 47 winners and made 41 unforced errors. A. Shevchenko made 37 unforced errors against 27 winners.",
+   "voice": {
+    "version": 4,
+    "model": "claude-opus-5-5",
+    "passed": 7,
+    "total": 7,
+    "failures": []
+   },
+   "fields": {
+    "score": "7-6, 6-7, 6-3",
+    "round": "quarter-finals",
+    "retired": false,
+    "h2h": {
+     "a": 1,
+     "b": 0,
+     "n": 1
+    },
+    "durationMinutes": 169,
+    "facts": {
+     "tiebreakSets": [
+      {
+       "set": 1,
+       "winner": "p1"
+      },
+      {
+       "set": 2,
+       "winner": "p2"
+      }
+     ]
+    },
+    "standouts": [
+     {
+      "player": "winner",
+      "tone": "good",
+      "metric": "aces",
+      "value": 20
+     },
+     {
+      "player": "winner",
+      "tone": "good",
+      "metric": "firstWon",
+      "value": 86,
+      "won": 56,
+      "total": 65
+     },
+     {
+      "player": "winner",
+      "tone": "good",
+      "metric": "breakPoints",
+      "saved": 3,
+      "faced": 3
+     },
+     {
+      "player": "winner",
+      "tone": "good",
+      "metric": "winnersErrors",
+      "winners": 47,
+      "unforcedErrors": 41
+     },
+     {
+      "player": "loser",
+      "tone": "bad",
+      "metric": "winnersErrors",
+      "winners": 27,
+      "unforcedErrors": 37
+     }
+    ],
+    "winner": {
+     "aces": 20,
+     "winners": 47,
+     "unforcedErrors": 41,
+     "breakPointsSaved": 3,
+     "breakPointsFaced": 3,
+     "breakPointsSource": "box score"
+    },
+    "loser": {
+     "aces": 8,
+     "winners": 27,
+     "unforcedErrors": 37,
+     "breakPointsSaved": 4,
+     "breakPointsFaced": 5,
+     "breakPointsSource": "box score"
+    }
+   },
+   "sourceName": "Stennisfy match data (api-tennis box score and point-by-point)",
+   "sourceUrl": "pbp/12179510.json",
+   "language": "en",
+   "translated": false,
+   "sourceHash": "1dc4a45cb5d326b1",
+   "publishedAt": "2026-11-12T17:27:19.503Z"
+  },
+  {
+   "id": "quote-021fb9860edec8",
+   "type": "quote",
+   "playerId": "2849",
+   "opponentId": null,
+   "player": "L. Musetti",
+   "opponent": null,
+   "tournament": "Stockholm",
+   "tournamentKey": "1681",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-12T16:51:00.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Injuries",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "It's been a difficult year for him. I know he worked extremely hard during his rehabilitation and did everything he could to get back in shape as quickly as possible. I'm really happy for him. He's a very hard worker and I know that everyone on the tour was affected when he suffered that serious injury. So it's really nice to see him smiling again and winning a match. I wish him all the best",
+   "originalText": "Cela a été une année diffi­cile pour lui. Je sais qu’il a énor­mé­ment travaillé pendant sa réédu­ca­tion et qu’il a tout fait pour retrouver sa forme le plus rapi­de­ment possible. Je suis vrai­ment heureux pour lui. C’est un très gros travailleur et je sais que tout le monde sur le circuit a été touché lors­qu’il a subi cette grave bles­sure. C’est donc vrai­ment agréable de le voir sourire à nouveau et remporter un match. Je lui souhaite le meilleur",
+   "language": "fr",
+   "translated": true,
+   "translationModel": "claude-opus-5-5",
+   "sourceName": "We Love Tennis",
+   "sourceUrl": "https://www.welovetennis.fr/atp/musetti-rend-hommage-a-ce-top-10-apres-sa-grave-blessure-cest-un-tres-gros-travailleur-et-je-sais-que-tout-le-monde-sur-le-circuit-a-ete-touche-lorsquil-a-subi-cette-grave-blessure",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "sourceHash": "a2ee0ec298c1059e",
+   "publishedAt": "2026-11-12T17:27:19.503Z"
+  },
   {
    "id": "report-12179386",
    "type": "report",
