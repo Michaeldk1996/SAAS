@@ -1,6 +1,18 @@
 {
- "generatedAt": "2026-11-12T07:17:47.163Z",
+ "generatedAt": "2026-11-12T11:27:42.022Z",
  "tournaments": [
+  {
+   "key": "tour",
+   "season": "2026",
+   "name": "ATP Tour",
+   "file": "news-ticker/tour-2026.json",
+   "items": 23,
+   "byType": {
+    "quote": 23
+   },
+   "latestTimestamp": "2026-11-12T10:11:05.000Z",
+   "updatedAt": "2026-11-12T11:27:42.022Z"
+  },
   {
    "key": "1681",
    "season": "2026",
@@ -16,18 +28,6 @@
    "updatedAt": "2026-11-12T07:17:47.163Z"
   },
   {
-   "key": "tour",
-   "season": "2026",
-   "name": "ATP Tour",
-   "file": "news-ticker/tour-2026.json",
-   "items": 22,
-   "byType": {
-    "quote": 22
-   },
-   "latestTimestamp": "2026-11-11T19:23:12.000Z",
-   "updatedAt": "2026-11-12T03:29:21.268Z"
-  },
-  {
    "key": "1725",
    "season": "2026",
    "name": "Paris",
@@ -41,6 +41,36 @@
   }
  ],
  "latest": [
+  {
+   "id": "quote-b9f32ffc46dd73",
+   "type": "quote",
+   "playerId": "430",
+   "opponentId": null,
+   "player": "C. Ruud",
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-12T10:11:05.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "I think the plan is, as some of the players have been told about, that first of all, there will be a new Masters event in Saudi Arabia from 2028 as we all know ,",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "Ubitennis",
+   "sourceUrl": "https://www.ubitennis.net/2026/11/atp-pondering-buying-out-events-to-cut-season-length-says-casper-ruud/",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "sourceHash": "6313dadd318f969b",
+   "publishedAt": "2026-11-12T11:27:42.022Z",
+   "file": "news-ticker/tour-2026.json"
+  },
   {
    "id": "quote-68b64c79571fa4",
    "type": "quote",
@@ -2196,36 +2226,6 @@
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the original-language text of the fetched page",
    "sourceHash": "7580c00f5b9242e6",
-   "publishedAt": "2026-11-12T03:03:12.953Z",
-   "file": "news-ticker/tour-2026.json"
-  },
-  {
-   "id": "quote-6e1f0bb060b55d",
-   "type": "quote",
-   "playerId": "2072",
-   "opponentId": null,
-   "player": "J. Sinner",
-   "opponent": null,
-   "tournament": "ATP Tour",
-   "tournamentKey": "tour",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-10T12:00:00.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Interviews",
-   "context": null,
-   "eventKey": null,
-   "won": null,
-   "text": "For me, tennis is not a job. I continue to play because I enjoy it.",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "Sky Sports",
-   "sourceUrl": "https://www.skysports.com/tennis/news/12110/13610594/jannik-sinner-world-no-2-confirms-aim-to-return-to-tennis-at-australian-open-after-lengthy-absence-with-knee-injury",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "sourceHash": "8ecdcf751dac4cca",
    "publishedAt": "2026-11-12T03:03:12.953Z",
    "file": "news-ticker/tour-2026.json"
   }
