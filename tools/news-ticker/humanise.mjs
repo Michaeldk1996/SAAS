@@ -15,7 +15,7 @@
 // Pipeline only: the key is ANTHROPIC_API_KEY from GitHub Actions secrets, never in the browser or a published file.
 const API_URL = 'https://api.anthropic.com/v1/messages';
 export const REPORT_MODEL = process.env.NEWS_REPORT_MODEL || 'claude-opus-5-5';
-export const VOICE_VERSION = 3;   // bump to have every stored report rewritten again
+export const VOICE_VERSION = 4;   // bump to have every stored report rewritten again
 
 // Neutral connecting words a rewrite may add. No judgement word, no quantity word (none / all / twice / double / half),
 // no stat verb (saved, converted, faced, broke): those may appear only where the template sentence already has them.
@@ -121,6 +121,7 @@ Rules, all strict:
 - Words: you may use only the words of the original sentence, the players' names, and these connecting words: ${[...VOCAB].join(' ')}. Any other word makes the sentence invalid.
 - Good wording for a figure against the player's own average: "Fritz was particularly solid against the first serve, winning 42% of the points (20 of 48), compared with his 27% average on hard over the last 52 weeks." Keep "compared with his …% average …" or "compared with his usual …%" exactly as given.
 - The last sentence about the loser says only what went wrong for him; keep it short.
+- Keep "something to watch in the next round" as the point of its sentence (for example: "His first-serve percentage is something to watch in the next round.").
 - Judgement: "tones" gives each sentence good, bad or none. In a GOOD sentence you may add one of: strong, solid, clean, sharp, well, better, particularly, especially (and "clutch" only when its kind is "bp"). In a BAD sentence one of: shaky, poor, weak, error-prone, low, worse, struggled, particularly (and "not clutch" only when its kind is "bp"). In a sentence with tone none: no judgement word at all. Keep both percentages exactly as given, with the same words after each number.
 - These sentences are what stood out in the match, so word them like a person who watched the numbers, not like a list. Vary how sentences open, and do not use a judgement word in every sentence: at most two in the whole report. "his usual 51%" stays "his usual 51%".
 - A sentence may carry several numbers that belong together (aces, first-serve points won). Keep them in one sentence, for example: He served well with 14 aces and won 78% of his first-serve points (28 of 36).

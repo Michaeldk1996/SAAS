@@ -306,11 +306,25 @@ await ok('standouts: a rate is reported only when it is far from the player\'s o
   // the loser (founder: "just say what really went wrong … without losing too much time on him"): one sentence, his
   // two worst numbers; his 12 aces, his good return and his 4 of 7 break points are not in it
   const L = (o, raw, extra) => standoutUnits(ms(o, raw), 'p1', 'C. Norrie', B, { loser: true, ...extra });
-  assert.deepEqual(show(L({ 'Service:1st serve points won': 58.3, 'Service:2nd serve points won': 40, 'Service:Double Faults': 6, 'Service:Aces': 12, 'Return:1st return points won': 45 },
-    { 'Service:1st serve points won': { won: 28, total: 48 }, 'Service:2nd serve points won': { won: 8, total: 20 }, 'Return:1st return points won': { won: 18, total: 40 } }, { bp: { saved: 4, faced: 7 } })),
-    [['C. Norrie won 58% of his first-serve points (28 of 48), compared with his 74% average on hard over the last 52 weeks and won 40% of his second-serve points (8 of 20), compared with his usual 54%.', 'bad', 'loser']]);
+  const LS = { 'Service:1st serve points won': 58.3, 'Service:2nd serve points won': 40, 'Service:Double Faults': 6, 'Service:Aces': 12, 'Return:1st return points won': 45, 'Return:2nd return points won': 38 };
+  const LR = { 'Service:1st serve points won': { won: 28, total: 48 }, 'Service:2nd serve points won': { won: 8, total: 20 }, 'Return:1st return points won': { won: 18, total: 40 }, 'Return:2nd return points won': { won: 12, total: 32 } };
+  assert.deepEqual(show(L(LS, LR, { bp: { saved: 4, faced: 7 } })),
+    [['C. Norrie struggled on his first serve, winning only 58% of the points (28 of 48), compared with his 74% average on hard over the last 52 weeks and on his second serve, winning only 40% of the points (8 of 20), compared with his usual 54%.', 'bad', 'loser']],
+    'serve first; his 12 aces, his 4 of 7 break points and a second-serve return 12 points off (not twice the gap) are not in it');
+  // a figure the winner's sentence already told is not told again from the loser's side
+  assert.deepEqual(show(L(LS, LR, { skip: new Set(['firstWon']) })),
+    [['C. Norrie struggled on his second serve, winning only 40% of the points (8 of 20), compared with his 54% average on hard over the last 52 weeks and made 6 double faults.', 'bad', 'loser']]);
+  // a return figure is the loser's story only when it is really far off (twice the gap: 20 points on second-serve return)
+  assert.deepEqual(show(L({ 'Return:2nd return points won': 28 }, { 'Return:2nd return points won': { won: 9, total: 32 } })),
+    [['C. Norrie struggled against the second serve, winning only 28% of the points (9 of 32), compared with his 50% average on hard over the last 52 weeks.', 'bad', 'loser']]);
   assert.deepEqual(L({ 'Service:Aces': 12, 'Return:1st return points won': 45 }, { 'Return:1st return points won': { won: 18, total: 40 } }, { bp: { saved: 4, faced: 7 } }), [], 'nothing went wrong enough: no sentence');
   assert.deepEqual(show(standoutUnits(ms({}, {}), 'p1', 'X', null, { loser: true, bp: { saved: 0, faced: 4 } })), [['X saved 0 of 4 break points.', 'bad', 'bp']]);
+  // the winner plays again: his serve figure furthest below his average is "something to watch" (not after a final)
+  const wms = ms({ 'Service:1st serve percentage': 53, 'Service:1st serve points won': 78 }, { 'Service:1st serve points won': { won: 28, total: 36 } });
+  assert.deepEqual(show(standoutUnits(wms, 'p1', 'H. Rune', B, { watch: true })), [
+    ['H. Rune landed 53% of his first serves, compared with his 62% average on hard over the last 52 weeks and won 78% of his first-serve points (28 of 36).', 'bad', 'serve'],
+    ["H. Rune's first-serve percentage is something to watch in the next round.", 'bad', 'watch']]);
+  assert.equal(standoutUnits(wms, 'p1', 'H. Rune', B, { watch: false }).length, 1, 'no next round after a final');
 });
 await ok('voice: an opinion word passes only in a sentence the code gave that tone, beside its number; "clutch" only for break points', async () => {
   const { checkSentence, playerRef } = await import('./news-ticker/humanise.mjs');
@@ -348,6 +362,13 @@ await ok('report: only what matters is printed — a quick or very long duration
   assert.ok(!/games in a row/.test(t({ pbp: pbp({ side: 'p1', n: 5, set: 1, from: { me: 2, opp: 1 }, afterBeingBroken: false, toTheEnd: false }) }).text), 'a run with no turning point is not printed');
   assert.match(t({ pbp: pbp({ side: 'p1', n: 4, set: 2, from: { me: 2, opp: 2 }, afterBeingBroken: true, toTheEnd: false }) }).text, /won 4 games in a row straight after being broken in the second set\./);
   assert.match(t({ pbp: pbp({ side: 'p1', n: 6, set: 2, from: { me: 0, opp: 3 }, afterBeingBroken: false, toTheEnd: true }) }).text, /won the last 6 games of the match\./);
+  // mirrored figures: the winner's 80% of first-serve points won is not repeated as the loser's 20% against the first serve
+  const node = { sample: { matches: 40 }, serve: { firstInPct: 62, firstWonPct: 70, secondWonPct: 52 }, return: { ret1stWonPct: 40, ret2ndWonPct: 50 } };
+  const mm = { ...m, matchStats: { p1: { 'Service:1st serve points won': 80, 'Service:Aces': 14, raw: { 'Service:1st serve points won': { won: 41, total: 51 } } }, p2: { 'Return:1st return points won': 20, raw: { 'Return:1st return points won': { won: 10, total: 51 } } } } };
+  const rr = reportText(mm, 'p1', 'p2', { baselines: { p1: { node, label: 'on hard over the last 52 weeks', scope: 'last52', surface: 'Hard', matches: 40 }, p2: { node, label: 'on hard over the last 52 weeks', scope: 'last52', surface: 'Hard', matches: 40 } } });
+  assert.match(rr.text, /T\. Fritz hit 14 aces and won 80% of his first-serve points \(41 of 51\), compared with his 70% average/); assert.equal(rr.text.split('C. Norrie').length - 1, 1, 'the mirror of the winner\'s figure is not told: ' + rr.text);
+  const noW = reportText({ ...mm, matchStats: { p1: {}, p2: mm.matchStats.p2 } }, 'p1', 'p2', { baselines: { p1: null, p2: { node, label: 'on hard over the last 52 weeks', scope: 'last52', surface: 'Hard', matches: 40 } } });
+  assert.match(noW.text, /C\. Norrie struggled against the first serve, winning only 20% of the points \(10 of 51\)/, 'control: told when the winner\'s sentence did not carry it');
   assert.match(t({ pbp: pbp({ side: 'p1', n: 8, set: 1, from: { me: 4, opp: 3 }, afterBeingBroken: false, toTheEnd: false }) }).text, /won 8 games in a row from 4-3 in the first set\./);
 });
 // ---- tour-wide (founder 2026-11-12: press interviews and injuries for every ATP player, every day) ----
