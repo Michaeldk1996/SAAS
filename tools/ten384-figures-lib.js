@@ -215,10 +215,17 @@ function playerChecks(I, R, p, mk, label, opts) {
       });
       assert(pp.length, 'no swing clears five priced — vacuous');
       const best = pp.slice().sort((a, b) => b.pp - a.pp)[0], worst = pp.slice().sort((a, b) => a.pp - b.pp)[0];
-      const f = v => (Math.round(v * 10) / 10 > 0 ? '+' : Math.round(v * 10) / 10 < 0 ? '−' : '+') + Math.abs(Math.round(v * 10) / 10).toFixed(1) + 'pp n=';
-      assert(c.t.includes(f(best.pp) + best.n), `Best swing tile is not ${best.k} ${f(best.pp)}${best.n}`);
-      assert(c.t.includes(f(worst.pp) + worst.n), `Worst swing tile is not ${worst.k} ${f(worst.pp)}${worst.n}`);
-      return `best ${best.k} ${f(best.pp)}${best.n} · worst ${worst.k} ${f(worst.pp)}${worst.n}`;
+      // v3 D2 (2026-11-12): the tile prints the picked swing's own yield over "N priced" (the pick is still the gap to the
+      // other swings); read each tile's own slice of the strip
+      const yld = k => { const y = sum(by[k]) / by[k].length, r = Math.round(y * 10) / 10; return (r < 0 ? '−' : '+') + Math.abs(r).toFixed(1) + '%'; };
+      // each tile is found after the previous one (the opened (?) also names "Swing opener" ahead of the strip)
+      const t = c.t.replace(/\s+/g, ' '), at = (re, from) => { const k = t.slice(from).search(re); return k < 0 ? -1 : from + k; };
+      const bi = at(/BEST SWING/i, 0), wi = at(/WORST SWING/i, bi), oi = at(/SWING OPENER/i, wi);
+      assert(bi >= 0 && wi > bi && oi > wi, 'the swing tiles are not in order');
+      const bs = t.slice(bi, wi), ws = t.slice(wi, oi);
+      assert(bs.includes(yld(best.k) + ' Yield ' + best.n + ' priced'), `Best swing tile is not ${best.k} ${yld(best.k)} over ${best.n} priced: ${bs}`);
+      assert(ws.includes(yld(worst.k) + ' Yield ' + worst.n + ' priced'), `Worst swing tile is not ${worst.k} ${yld(worst.k)} over ${worst.n} priced: ${ws}`);
+      return `best ${best.k} ${yld(best.k)} n=${best.n} · worst ${worst.k} ${yld(worst.k)} n=${worst.n}`;
     } },
     { name: `4 · ${L}: ledger head counts the window "See all N results" counts`, fn() {
       const { head, more } = R.readLedger(p);

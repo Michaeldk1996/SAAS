@@ -69,102 +69,94 @@ function ratingsHtml() {
   return html;
 }
 
-// ── RULING 1 ────────────────────────────────────────────────────────────────
-check('RULING 1 (profile v2, founder 2026-11-09): the tiles are "Aces per service game" / "Double faults per service game", 2 dp', () => {
+// ── RULING 1 (v3, founder 2026-11-12, Ratings brief point 4 — replaces profile v2's per-service-game tiles) ──
+// The Serve boxes are the six terms of the Serve rating in the rating's own unit: aces and double faults PER MATCH.
+check('RULING 1 (v3): the count tiles are "Aces per match" / "Double faults per match", 2 dp, no unit', () => {
   const { M } = load();
   const serve = M._internals.DNA_TILES.serve;
-  const ace = serve.find(t => t.f === 'acesPerSG');
-  const df = serve.find(t => t.f === 'dfPerSG');
-  assert.ok(ace, 'no acesPerSG tile');
-  assert.ok(df, 'no dfPerSG tile');
-  assert.strictEqual(ace.label, 'Aces per service game', `ace label is "${ace.label}"`);
-  assert.strictEqual(df.label, 'Double faults per service game', `df label is "${df.label}"`);
+  assert.deepStrictEqual(serve.map(t => t.f), ['firstInPct', 'firstWonPct', 'secondWonPct', 'holdPct', 'acesPerMatch', 'dfPerMatch'],
+    'the Serve boxes are not the six terms of the Serve rating');
+  const ace = serve.find(t => t.f === 'acesPerMatch'), df = serve.find(t => t.f === 'dfPerMatch');
+  assert.strictEqual(ace.label, 'Aces per match'); assert.strictEqual(df.label, 'Double faults per match');
   assert.strictEqual(ace.dp, 2); assert.strictEqual(df.dp, 2);
+  assert.ok(!ace.unit && !df.unit, 'a count carries a unit');
+  assert.ok(df.lower === true, 'double faults are not lower-is-better');
 });
-
-check('RULING 1: neither count carries a unit — no % anywhere on them', () => {
-  const { M } = load();
-  const serve = M._internals.DNA_TILES.serve;
-  for (const f of ['acesPerSG', 'dfPerSG']) {
-    const t = serve.find(x => x.f === f);
-    assert.ok(!t.unit, `${f} carries unit "${t.unit}" — the ruling forbids a % on a per-match count`);
-    assert.ok(!/%/.test(t.label), `${f} label carries a %: "${t.label}"`);
+check('RULING 1 (v3): the six terms reproduce the Serve rating the store holds (the unit is the rating\'s own)', () => {
+  let n = 0;
+  for (const r of ROWS) {
+    const s = r.surfaces && r.surfaces.All && r.surfaces.All.last52 && r.surfaces.All.last52.serve;
+    if (!s || s.rating == null || [s.firstInPct, s.firstWonPct, s.secondWonPct, s.holdPct, s.acesPerMatch, s.dfPerMatch].some(v => v == null)) continue;
+    const sum = s.firstInPct + s.firstWonPct + s.secondWonPct + s.holdPct + s.acesPerMatch - s.dfPerMatch;
+    assert.ok(Math.abs(sum - s.rating) <= 0.35, `${r.name}: terms sum to ${sum.toFixed(2)}, rating ${s.rating}`);   // each term is stored to 1 dp
+    n++;
   }
+  assert.ok(n > 50, `only ${n} players compared — vacuous`);
 });
-
 check('RULING 1: the rendered panel prints no % beside either count', () => {
   const html = ratingsHtml();
-  for (const label of ['Aces per service game', 'Double faults per service game']) {
+  for (const label of ['Aces per match', 'Double faults per match']) {
     assert.ok(html.includes(label), `panel never prints "${label}"`);
-    // the tile body runs value · delta · label · tour line; take a window around
-    // the label and require no % in it.
-    // TEN-376: colours are now color-mix(in srgb, var(--token) N%, transparent) — a CSS
-    // opacity, not a printed value. Drop those (and only those) before the window is cut,
-    // so the check still reads what the tile PRINTS.
     const printed = html.replace(/color-mix\(in srgb, var\(--[\w-]+\) [\d.]+%, transparent\)/g, 'color-mix()');
     const i = printed.indexOf(label);
     const tile = printed.slice(Math.max(0, i - 700), i + 400);
-    assert.ok(!/\d%/.test(tile),
-      `a % appears inside the "${label}" tile — the store holds a per-match count, not a rate`);
+    // the box reads value · Δ · label · "ATP average X" — only the neighbouring boxes may carry a %
+    const own = tile.slice(tile.lastIndexOf('data-pp2-dnabox'), tile.indexOf('</div></div>', tile.lastIndexOf('data-pp2-dnabox')));
+    assert.ok(!/\d%/.test(own), `a % appears inside the "${label}" box`);
   }
 });
 
 check('CONTROL: the percentage tiles DO still carry their %', () => {
   const { M } = load();
   const t = M._internals.DNA_TILES.serve.find(x => x.f === 'firstInPct');
-  assert.strictEqual(t.unit, '%',
-    'First serve in lost its % — the ruling drops the unit from the two COUNTS only');
+  assert.strictEqual(t.unit, '%', 'First serve in lost its %');
 });
 
-// ── RULING 2 ────────────────────────────────────────────────────────────────
-check('RULING 2: the panel no longer claims the ATP field', () => {
-  const html = ratingsHtml();
-  assert.ok(!/percentile vs the ATP field/.test(html),
-    'the panel still reads "percentile vs the ATP field" — the pool is the rated players, not the tour');
-});
-
-check('RULING 2: it says in plain words that tour = the N players we rate', () => {
-  const html = ratingsHtml();
-  assert.ok(/not the ATP field/.test(html),
-    'the panel never says "not the ATP field" — the ruling asks for it in plain words');
-  assert.ok(/players we (rate|hold a rating)/.test(html),
-    'the panel never names the pool as the players we rate');
-});
-
-check('RULING 2: the N printed is the real count, read from the store', () => {
-  const { M } = load();
-  const I = M._internals;
-  const stats = I.dnaTourStats('last52');
-  assert.ok(stats && stats.serve && stats.serve.n > 0, 'no tour stats computed');
-  const n = stats.serve.n;
-  // Recompute independently of the module: count rows carrying a serve rating.
-  const expect = ROWS.filter(r => {
-    const s = r.surfaces && r.surfaces.All && r.surfaces.All.last52;
-    return s && s.serve && s.serve.rating != null;
-  }).length;
-  assert.strictEqual(n, expect,
-    `tour N is ${n} but an independent count of the store says ${expect}`);
-  const html = ratingsHtml();
-  assert.ok(new RegExp('\\b' + n + '\\b').test(html),
-    `the panel never prints the real N (${n})`);
-});
-
-check('CONTROL: N is not a constant — it tracks the store it is given', () => {
-  const half = ROWS.slice(0, Math.max(2, Math.floor(ROWS.length / 2)));
+// ── RULING 2 (v3, Ratings brief points 1 + 8 — replaces "tour = the N players we rate") ──
+// "ATP average" = players with at least 10 ATP main-draw matches in the window; the (?) states each window's real N.
+function withMd(rows) {
+  const out = JSON.parse(JSON.stringify(rows));
+  out.forEach((r, i) => ['last52', 'sinceBase'].forEach(sc => {
+    const smp = r.surfaces && r.surfaces.All && r.surfaces.All[sc] && r.surfaces.All[sc].sample;
+    if (smp) smp.mdMatches = i % 4 === 0 ? 3 : smp.matches;
+  }));
+  return out;
+}
+function loadRows(rows) {
   const players = { [SUBJECT_KEY]: { key: SUBJECT_KEY, name: 'T. Subject', rank: 1 } };
-  const sandbox = {
-    FEATURE_PP2: true, playerProfiles: { players }, courtSpeedMap: {},
-    dnaRatings: {
-      byKey: Object.fromEntries(half.map(r => [String(r.playerKey), r])),
-      players: half, meta: RAW._meta || {}
-    }
-  };
+  const sandbox = { FEATURE_PP2: true, playerProfiles: { players }, courtSpeedMap: {},
+    dnaRatings: { byKey: Object.fromEntries(rows.map(r => [String(r.playerKey), r])), players: rows, meta: RAW._meta || {} } };
   global.window = sandbox;
   new Function('window', fs.readFileSync(path.join(ROOT, 'player-profile-v2.js'), 'utf8'))(sandbox); // eslint-disable-line no-new-func
-  const small = sandbox.PlayerProfileV2._internals.dnaTourStats('last52');
-  const full = load().M._internals.dnaTourStats('last52');
-  assert.ok(small.serve.n < full.serve.n,
-    `halving the store left N unchanged (${small.serve.n} vs ${full.serve.n}) — it is hardcoded somewhere`);
+  return { I: sandbox.PlayerProfileV2._internals, player: players[SUBJECT_KEY] };
+}
+check('RULING 2 (v3): the panel says "ATP average", never "tour" or "the players we rate"', () => {
+  const html = ratingsHtml();
+  assert.ok(/ATP average/.test(html) && /Δ vs ATP/.test(html), 'the panel does not name the ATP average');
+  assert.ok(!/Tour average|tour average|Δ vs tour|players we rate/.test(html), 'a v2 "tour" label survived');
+});
+check('RULING 2 (v3): the (?) prints each window\'s real ATP-group N, counted from the store', () => {
+  const rows = withMd(ROWS);
+  const { I, player } = loadRows(rows);
+  const count = sc => rows.filter(r => { const smp = r.surfaces && r.surfaces.All && r.surfaces.All[sc] && r.surfaces.All[sc].sample; return smp && smp.mdMatches >= 10; }).length;
+  const n52 = count('last52'), nC = count('sinceBase');
+  assert.ok(n52 > 10 && nC > 10, 'vacuous groups');
+  I.state.info = 'cr3';
+  const html = I.renderRatingsPanel(player);
+  I.state.info = null;
+  assert.ok(html.includes(n52 + ' players in the last 52 weeks / ' + nC + ' players across their careers'), 'the (?) does not print the real N per window');
+  assert.ok(/Qualifying, Challenger and ITF matches do not count towards the 10/.test(html), 'the population is not stated');
+});
+check('CONTROL: N is not a constant — it tracks the store it is given', () => {
+  const rows = withMd(ROWS), half = rows.slice(0, Math.max(2, Math.floor(rows.length / 2)));
+  const small = loadRows(half).I.dnaTourStats('last52'), full = loadRows(rows).I.dnaTourStats('last52');
+  assert.ok(small._n < full._n, `halving the store left N unchanged (${small._n} vs ${full._n}) — it is hardcoded somewhere`);
+});
+check('CONTROL: a store with no main-draw counts prints no N and no average (never the old rated pool)', () => {
+  const { I, player } = loadRows(ROWS.map(r => JSON.parse(JSON.stringify(r, (k, v) => k === 'mdMatches' ? undefined : v))));
+  assert.strictEqual(I.dnaTourStats('last52'), null);
+  const html = I.renderRatingsPanel(player);
+  assert.ok(/The ATP comparison group is not built yet/.test(html), 'no not-built state');
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
