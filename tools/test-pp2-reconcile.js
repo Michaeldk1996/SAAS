@@ -2461,10 +2461,11 @@ checkCareer('the Court speed headline is a band name or a dash, never a surface'
     // fx3 (founder D10): no band above his rated-match rate at n >= 10 -> the OVERALL figure, "all rated courts".
     if (band === 'all rated courts') { assert(/^[0-9]+%$/.test(h), `${p.name}: overall headline "${h}"`); overall++; continue; }
     assert(/^[0-9]+% (fast|medium|slow) courts$/.test(h), `${p.name}: Court speed headline "${h}" is not "N% <band> courts"`);
-    assert.strictEqual(band, 'his best speed band', `${p.name}: Court speed support leads with "${band}"`);
-    const tile = h + ' ' + v.speed.support;
-    SURFACES.forEach(sf => assert(tile.indexOf(sf) < 0,
-      `${p.name}: Court speed tile "${tile}" names a surface`));
+    // v3 A2 (2026-11-12): "33–13 · best surface: clay 283–198" — the band's record, then his best surface (the one
+    // place a surface is named; never the headline)
+    assert(/^\d+–\d+ · best surface: ((hard|clay|grass|indoors) \d+–\d+|—)$/.test(String(v.speed.support)), `${p.name}: Court speed support "${v.speed.support}"`);
+    SURFACES.forEach(sf => assert(h.indexOf(sf) < 0 && h.toLowerCase().indexOf(sf.toLowerCase() + ' ') !== 0,
+      `${p.name}: Court speed headline "${h}" names a surface`));
   }
   assert(headlined > 0, 'no player produced a Court speed headline — this check never ran');
   console.log(`        ${headlined - overall} band headlines, ${overall} overall (D10), ${dashed} dashes, 0 surface names ` +
@@ -3210,7 +3211,9 @@ checkCareer('items 5,12,17-21,25,27-29 · the v2 controls, chart, table and dril
   const want = [
     ['surface pills', 'data-pp2="sty-surf" data-v="Indoors"'],
     ['window', 'data-pp2="sty-win" data-v="l52"'],
-    ['chart card', 'background:var(--inner);border:1px solid var(--edge-6);border-radius:12px;padding:14px 16px 12px;'],
+    // v3 B2: the chart card sits under the joined band (no top edge, r 0 0 12 12)
+    ['joined band', 'data-pp2-band="joined"'],
+    ['chart card', 'background:var(--inner);border:1px solid var(--line);border-top:0;border-radius:0 0 12px 12px;padding:14px 16px 12px;'],
     ['chart head', '>Win rate by archetype</span>'],
     ['legend', 'dot size = matches · career'],
     ['his average line', 'his average · '],
