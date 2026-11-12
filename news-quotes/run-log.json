@@ -5736,6 +5736,211 @@
     ]
    },
    "alerts": []
+  },
+  {
+   "at": "2026-11-12T13:58:21.828Z",
+   "activeTournaments": [
+    "Stockholm"
+   ],
+   "tournaments": [
+    {
+     "name": "Stockholm",
+     "key": "1681",
+     "sources": [
+      {
+       "name": "ATP Tour daily report (via the official tournament site)",
+       "articles": 16,
+       "candidates": 8,
+       "robotsStatus": 200,
+       "skippedByRobots": 0,
+       "unnamed": 4
+      }
+     ],
+     "fromOutlets": 0,
+     "counts": {
+      "candidates": 8,
+      "droppedNotVerbatim": 0,
+      "droppedNoPlayer": 1,
+      "droppedAmbiguous": 0,
+      "notTranslatedNoKey": 0,
+      "notTranslatedApiError": 0,
+      "droppedTranslationCheck": 0,
+      "droppedEnglishExists": 0,
+      "mergedSameQuote": 0,
+      "alreadyHeld": 0,
+      "items": 7,
+      "tokens": {
+       "input": 0,
+       "output": 0
+      },
+      "modelError": null,
+      "retryUrls": 0
+     },
+     "added": 0,
+     "held": 25,
+     "byCategory": {
+      "Interviews": 3,
+      "Quotes": 21,
+      "Injuries": 1
+     },
+     "finishedMatches": 17,
+     "matchesWithWinnerQuote": 6
+    },
+    {
+     "name": "ATP Tour",
+     "key": "tour",
+     "sources": [],
+     "fromOutlets": 8,
+     "counts": {
+      "candidates": 8,
+      "droppedNotVerbatim": 0,
+      "droppedNoPlayer": 0,
+      "droppedAmbiguous": 0,
+      "notTranslatedNoKey": 0,
+      "notTranslatedApiError": 0,
+      "droppedTranslationCheck": 2,
+      "droppedEnglishExists": 0,
+      "mergedSameQuote": 0,
+      "alreadyHeld": 0,
+      "items": 6,
+      "tokens": {
+       "input": 838,
+       "output": 711
+      },
+      "modelError": null,
+      "retryUrls": 0
+     },
+     "added": 2,
+     "held": 30,
+     "byCategory": {
+      "Injuries": 3,
+      "Interviews": 27
+     },
+     "finishedMatches": 0,
+     "matchesWithWinnerQuote": 0
+    }
+   ],
+   "newItems": 2,
+   "tokens": {
+    "input": 838,
+    "output": 711
+   },
+   "atpInbox": {
+    "held": 4,
+    "routed": 4
+   },
+   "outlets": {
+    "read": 131,
+    "withCandidates": 1,
+    "blocked": [
+     "Fox Sports Australia: the site refuses a plain request",
+     "El Deber: the site refuses a plain request",
+     "Tenniskafe: the site refuses a plain request",
+     "TenisovySvet.cz: the site refuses a plain request",
+     "The Indian Express: the site refuses a plain request",
+     "ESPN México (Tenis): unexpected answer",
+     "AS (Diario AS): the site refuses a plain request",
+     "Aftonbladet: unexpected answer",
+     "ESPN: unexpected answer"
+    ],
+    "articlesFetched": 13,
+    "paywalled": 0,
+    "unnamed": 7,
+    "byOutlet": [
+     {
+      "outlet": "Sport1.ba (Oslobodjenje)",
+      "country": "Bosnia and Herzegovina",
+      "language": "bs",
+      "fetched": 1,
+      "candidates": 4
+     },
+     {
+      "outlet": "RMC Sport",
+      "country": "France",
+      "language": "fr",
+      "fetched": 1,
+      "candidates": 0
+     },
+     {
+      "outlet": "We Love Tennis",
+      "country": "France",
+      "language": "fr",
+      "fetched": 1,
+      "candidates": 0
+     },
+     {
+      "outlet": "Tennisnews.gr",
+      "country": "Greece",
+      "language": "el",
+      "fetched": 1,
+      "candidates": 0
+     },
+     {
+      "outlet": "Tennis365",
+      "country": "INT",
+      "language": "en",
+      "fetched": 1,
+      "candidates": 0
+     },
+     {
+      "outlet": "SuperTennis (FITP)",
+      "country": "Italy",
+      "language": "it",
+      "fetched": 1,
+      "candidates": 0
+     },
+     {
+      "outlet": "ABC Color",
+      "country": "Paraguay",
+      "language": "es",
+      "fetched": 1,
+      "candidates": 0
+     },
+     {
+      "outlet": "WP SportoweFakty",
+      "country": "Poland",
+      "language": "pl",
+      "fetched": 1,
+      "candidates": 0
+     },
+     {
+      "outlet": "Digi Sport",
+      "country": "Romania",
+      "language": "ro",
+      "fetched": 1,
+      "candidates": 0
+     },
+     {
+      "outlet": "Sportnet (SME)",
+      "country": "Slovakia",
+      "language": "sk",
+      "fetched": 1,
+      "candidates": 0
+     },
+     {
+      "outlet": "Sport.sk",
+      "country": "Slovakia",
+      "language": "sk",
+      "fetched": 1,
+      "candidates": 0
+     },
+     {
+      "outlet": "Sport Aktuality",
+      "country": "Slovakia",
+      "language": "sk",
+      "fetched": 1,
+      "candidates": 0
+     },
+     {
+      "outlet": "Tuoi Tre",
+      "country": "Vietnam",
+      "language": "vi",
+      "fetched": 1,
+      "candidates": 0
+     }
+    ]
+   },
+   "alerts": []
   }
  ]
 }
