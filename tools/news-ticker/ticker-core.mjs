@@ -67,6 +67,21 @@ export function observedTimes(flip, end) {
   return out;
 }
 
+// Tour-wide quotes (interviews, injuries): only from an article that states its own publication time (an undated page
+// can be months old and would read as today's news), and at most TOUR_PER_ARTICLE quotes of one player from one
+// article, the earliest-listed first — one long interview must not fill the feed.
+export const TOUR_PER_ARTICLE = 2;
+export function tourKeep(items) {
+  const seen = new Map(), out = [];
+  for (const x of items || []) {
+    if (!/^observed/.test(String(x.timestampKind || ''))) continue;
+    const k = `${x.sourceUrl}|${x.playerId}`, n = seen.get(k) || 0;
+    if (n >= TOUR_PER_ARTICLE) continue;
+    seen.set(k, n + 1); out.push(x);
+  }
+  return out;
+}
+
 // Same quote from two outlets = one item. Same player, and the English texts share most of their words.
 const words = (t) => new Set(String(t).toLowerCase().match(/[a-z'’]{3,}/g) || []);
 export function sameQuote(a, b) {

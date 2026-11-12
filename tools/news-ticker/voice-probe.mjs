@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 // Read-only measurement: build the standout report for every finished ATP match on the live board, have it worded in the
-// founder's voice and print how many sentences / reports pass the fact check. Writes nothing. The point log is not
-// read here (so "games in a row" and the like are missing); head-to-head, round and duration come from the live feed.
+// founder's voice and print how many sentences / reports pass the fact check. Writes nothing. Head-to-head, round and
+// duration come from the live feed.
 import { humaniseReport } from './humanise.mjs';
 import { reportText } from './news-core.mjs';
-import { scoreFacts } from './pbp-facts.mjs';
+import { scoreFacts, pbpFacts } from './pbp-facts.mjs';
 import { baselineFor } from './standouts.mjs';
 const i = process.argv.indexOf('--base'), BASE = (i > 0 ? process.argv[i + 1] : 'https://michaeldk1996.github.io/SAAS').replace(/\/$/, '');
 const get = async (p) => (await fetch(`${BASE}/${p}`, { signal: AbortSignal.timeout(90000) })).json();
@@ -24,7 +24,8 @@ for (const m of Object.values(board)) {
   const w = m.finalScore.winner, l = w === 'p1' ? 'p2' : 'p1', ek = String(m.id).split('-').slice(1).join('-'), it = feed.get(ek) || {};
   const baselines = { [w]: baselineFor(ratings, m[w + 'Key'], m.surface), [l]: baselineFor(ratings, m[l + 'Key'], m.surface) };
   out.players += 2; out.withBaseline += (baselines[w] ? 1 : 0) + (baselines[l] ? 1 : 0);
-  const rep = reportText(m, w, l, { baselines, h2h: (it.fields && it.fields.h2h) || null, score: scoreFacts(m.finalScore, w), round: (it.fields && it.fields.round) || undefined, duration: it.observed && it.observed.minutes != null ? it.observed.minutes : null });
+  let pbp = null; try { pbp = pbpFacts(await get(`pbp/${ek}.json`), m.finalScore, 3); } catch (e) { /* no point log */ }
+  const rep = reportText(m, w, l, { baselines, pbp, h2h: (it.fields && it.fields.h2h) || null, score: scoreFacts(m.finalScore, w), round: (it.fields && it.fields.round) || undefined, duration: it.observed && it.observed.minutes != null ? it.observed.minutes : null });
   if (rep.fields.standouts) out.withStandouts++;
   if (dry) { out.reports++; out.items.push({ id: ek, text: rep.text }); continue; }
   const h = await humaniseReport({ sentences: rep.sentences, tones: rep.tones, kinds: rep.kinds, winner: { card: m[w], full: fullName(m[w + 'Key'], m[w]) }, loser: { card: m[l], full: fullName(m[l + 'Key'], m[l]) } });

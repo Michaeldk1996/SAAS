@@ -22,7 +22,7 @@ import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import { reportText, statusItems, h2hAfter, roundWords, breakPoints } from './news-core.mjs';
 import { pbpFacts, scoreFacts } from './pbp-facts.mjs';
-import { mergeItems, buildIndex, fileOf, observedTimes } from './ticker-core.mjs';
+import { mergeItems, buildIndex, fileOf, observedTimes, tourKeep } from './ticker-core.mjs';
 
 const require = createRequire(import.meta.url);
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -175,8 +175,9 @@ export async function build({ nowIso, times, rewrite = null, apiKey = process.en
   // news-quotes/tour-<season>.json -> news-ticker/tour-<season>.json, same merge, same off switch
   for (const f of (fs.existsSync(path.join(DIR, 'news-quotes')) ? fs.readdirSync(path.join(DIR, 'news-quotes')) : []).filter((x) => /^tour-\d{4}\.json$/.test(x))) {
     const qf = readJson(`news-quotes/${f}`), season = f.slice(5, 9), file = fileOf('tour', season), existing = readJson(file);
-    const fresh = ((qf && qf.items) || []).filter((q) => !hidden(q));
-    const kept = ((existing && existing.items) || []).filter((x) => !hidden(x)), dropped = ((existing && existing.items) || []).length - kept.length;
+    const fresh = tourKeep(((qf && qf.items) || []).filter((q) => !hidden(q)));
+    // an item the tour rule no longer admits (undated article, more than 2 from one article) leaves the feed
+    const kept = ((existing && existing.items) || []).filter((x) => !hidden(x) && fresh.some((f) => f.id === x.id)), dropped = ((existing && existing.items) || []).length - kept.length;
     if (!fresh.length && !kept.length) continue;
     summary.quotes += fresh.length; summary.hiddenByOffSwitch += dropped;
     const merged = mergeItems(kept, fresh, nowIso);

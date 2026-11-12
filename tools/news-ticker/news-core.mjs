@@ -51,6 +51,9 @@ function statParts(ms, side, wueOk, pbp) {
 const ord = (n) => { const v = n % 100, s = ['th', 'st', 'nd', 'rd']; return n + (s[(v - 20) % 10] || s[v] || s[0]); };
 const times = (n) => (n === 1 ? '' : n === 2 ? ' twice' : ` ${n} times`);
 export const LONGEST_RUN_MIN = 4;   // a run shorter than this is not printed
+export const RUN_ALWAYS = 7;        // a run this long is printed even without a turning point
+export const QUICK_MIN = 60, LONG_MIN = 180;   // minutes: when a duration is worth printing
+const SET_WORD = { 1: 'first', 2: 'second', 3: 'third', 4: 'fourth', 5: 'fifth' };
 
 // The fixed report template (v2). Every clause is a stored field or a count of stored rows; a clause with nothing
 // behind it is not written. opts: { h2h: {a,b,n} after this match (a = winner's wins) | null, round: words | null,
@@ -70,7 +73,14 @@ export function reportText(m, w, l, opts = {}) {
   if (score) s1 += `${fields.h2h ? ',' : ''} ${score}`;
   if (m.retired) s1 += ' (retirement)';
   if (round) s1 += ` in the ${round}`;
-  if (num(duration) != null) { s1 += ` in ${duration} minutes`; fields.durationMinutes = duration; }
+  // the duration is always stored; it is PRINTED only when it says something (founder 2026-11-12: "58 minutes should
+  // be mentioned, 84 minutes is not an added value"): a straight-sets best-of-three inside QUICK_MIN, or a match of LONG_MIN+
+  if (num(duration) != null) {
+    fields.durationMinutes = duration;
+    const nSets = ((m.finalScore && m.finalScore.sets) || []).length;
+    if (nSets === 2 && duration <= QUICK_MIN) { s1 += ` in just ${duration} minutes`; fields.durationPrinted = 'quick'; }
+    else if (duration >= LONG_MIN) { s1 += ` in ${duration} minutes`; fields.durationPrinted = 'long'; }
+  }
   s1 += '.';
   const out = [s1], facts = {};
   if (sf && sf.fromSetDown) { out.push(`${m[w]} came from a set down.`); facts.fromSetDown = true; }
@@ -82,11 +92,26 @@ export function reportText(m, w, l, opts = {}) {
     for (const k of [w, l]) {
       const fm = pbp.brokenForMatch[k], fset = pbp.brokenForSet[k], f400 = pbp.brokenFrom400[k];
       if (fm > 0) { out.push(`${m[k]} was broken${times(fm)} when serving for the match.`); (facts.brokenForMatch = facts.brokenForMatch || {})[k] = fm; }
-      if (fset > 0) { out.push(`${m[k]} was broken${times(fset)} when serving for a set.`); (facts.brokenForSet = facts.brokenForSet || {})[k] = fset; }
+      if (fset > 0) {   // which set: "serving for the first set" (founder 2026-11-12)
+        const at = (pbp.brokenForSetAt && pbp.brokenForSetAt[k]) || [];
+        if (at.length === fset && new Set(at).size === fset) for (const n of at) out.push(`${m[k]} was broken when serving for the ${SET_WORD[n] || `set ${n}`} set.`);
+        else out.push(`${m[k]} was broken${times(fset)} when serving for a set.`);
+        (facts.brokenForSet = facts.brokenForSet || {})[k] = fset; if (at.length) (facts.brokenForSetAt = facts.brokenForSetAt || {})[k] = at;
+      }
       if (f400 > 0) { out.push(`${m[k]} was broken${times(f400)} from 40-0 up.`); (facts.brokenFrom400 = facts.brokenFrom400 || {})[k] = f400; }
     }
     if (pbp.opening) { const o = pbp.opening; out.push(`${m[o.side]} saved ${o.saved} break ${o.saved === 1 ? 'point' : 'points'} in the opening game.`); facts.openingGame = o; }
-    if (pbp.longestRun && pbp.longestRun.side && pbp.longestRun.n >= LONGEST_RUN_MIN) { out.push(`${m[pbp.longestRun.side]} won ${pbp.longestRun.n} games in a row.`); facts.longestRun = pbp.longestRun; }
+    // a run of games is printed only with what makes it matter: where it started (founder 2026-11-12: "5 games in a
+    // row … you don't know when and it looks a bit lost there")
+    const lr = pbp.longestRun;
+    if (lr && lr.side && lr.n >= LONGEST_RUN_MIN) {
+      facts.longestRun = lr;
+      const who = m[lr.side], setW = lr.set ? SET_WORD[lr.set] : null;
+      if (lr.toTheEnd && lr.n >= 5) out.push(`${who} won the last ${lr.n} games of the match.`);
+      else if (setW && lr.from && lr.from.me < lr.from.opp) out.push(`${who} won ${lr.n} games in a row from ${lr.from.me}-${lr.from.opp} down in the ${setW} set.`);
+      else if (setW && lr.afterBeingBroken) out.push(`${who} won ${lr.n} games in a row straight after being broken in the ${setW} set.`);
+      else if (lr.n >= RUN_ALWAYS) out.push(setW && lr.from ? `${who} won ${lr.n} games in a row from ${lr.from.me}-${lr.from.opp} in the ${setW} set.` : `${who} won ${lr.n} games in a row.`);
+    }
   }
   if (Object.keys(facts).length) fields.facts = facts;
   const A = statParts(ms, w, wueOk, pbp), B = statParts(ms, l, wueOk, pbp);
@@ -94,7 +119,7 @@ export function reportText(m, w, l, opts = {}) {
   // What stood out (standouts.mjs): each player's rates against his own baseline + the counts that say something. When
   // there is at least one, the full stat line is not printed; with none (no baseline, nothing notable) it still is.
   const U = opts.baselines ? { [w]: standoutUnits(ms, w, m[w], opts.baselines[w] || null, { bp: breakPoints(ms, w, pbp), wueOk }),
-    [l]: standoutUnits(ms, l, m[l], opts.baselines[l] || null, { bp: breakPoints(ms, l, pbp), wueOk }) } : null;
+    [l]: standoutUnits(ms, l, m[l], opts.baselines[l] || null, { bp: breakPoints(ms, l, pbp), wueOk, loser: true }) } : null;
   if (U && U[w].length + U[l].length > 0) {
     fields.standouts = [];
     for (const k of [w, l]) for (const u of U[k]) { out.push(u.text); tones.push(u.tone); kinds.push(u.kind); for (const f of u.fields) fields.standouts.push({ player: k === w ? 'winner' : 'loser', tone: u.tone, ...f }); }

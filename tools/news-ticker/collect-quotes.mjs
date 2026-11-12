@@ -26,7 +26,7 @@ import { verbatimIn, resolvePlayer, foldText } from './news-core.mjs';
 import { collectQuotes, addContext } from './quote-sources.mjs';
 import { readOutlet, surnameOf, initialOf } from './outlet-reader.mjs';
 import { translateQuote } from './translate.mjs';
-import { mergeItems, dedupeQuotes, sameQuote } from './ticker-core.mjs';
+import { mergeItems, dedupeQuotes, sameQuote, tourKeep } from './ticker-core.mjs';
 import { sendTelegram } from '../price-alert-send.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -93,7 +93,7 @@ export function tourPlayers(index) {
 export function routeCandidate(c, tournaments, tourKeys, nowIso) {
   const ts = Date.parse(c.timestamp);
   for (const t of tournaments) if (t.fieldKeys.has(String(c.speakerKey)) && (c.mentions || []).includes(t.folded) && !(Number.isFinite(ts) && ts < t.since)) return t.key;
-  if (tourKeys.has(String(c.speakerKey)) && !(Number.isFinite(ts) && ts < Date.parse(nowIso) - TOUR_DAYS * 86400000)) return TOUR_KEY;
+  if (tourKeys.has(String(c.speakerKey)) && /^observed/.test(String(c.timestampKind || '')) && !(Number.isFinite(ts) && ts < Date.parse(nowIso) - TOUR_DAYS * 86400000)) return TOUR_KEY;
   return null;
 }
 
@@ -226,8 +226,11 @@ async function main() {
     for (const u of new Set(res.counts.retryUrls)) { const e = fetched[u]; if (e) { e.tries = (e.tries || 0) + 1; if (e.tries <= RETRY_MAX) e.retranslate = true; } }
     res.counts.retryUrls = res.counts.retryUrls.length;
     if (res.items.some((x) => x.translated)) translatedOk = true;
-    const merged = mergeItems(heldItems, res.items, nowIso);
-    if (merged.added || merged.revised || (held && heldItems.length !== (held.items || []).length) || (!held && merged.items.length)) wr(file, { tournament: t.name, tournamentKey: t.key, season: t.season, updatedAt: nowIso, items: merged.items });
+    // tour-wide: dated articles only, at most two quotes a player per article (ticker-core tourKeep), counted over what is held too
+    const tourWide = t.key === TOUR_KEY, baseItems = tourWide ? tourKeep(heldItems) : heldItems;
+    const keepIds = tourWide ? new Set(tourKeep([...baseItems, ...res.items.filter((r) => !baseItems.some((h) => h.id === r.id))]).map((x) => x.id)) : null;
+    const merged = mergeItems(baseItems, tourWide ? res.items.filter((r) => keepIds.has(r.id)) : res.items, nowIso);
+    if (merged.added || merged.revised || (tourWide && merged.items.length !== heldItems.length) || (held && heldItems.length !== (held.items || []).length) || (!held && merged.items.length)) wr(file, { tournament: t.name, tournamentKey: t.key, season: t.season, updatedAt: nowIso, items: merged.items });
     run.newItems += merged.added; run.tokens.input += res.counts.tokens.input; run.tokens.output += res.counts.tokens.output;
     const finished = main.filter((m) => !m.walkover), quoted = new Set(merged.items.filter((x) => x.won && x.eventKey).map((x) => x.eventKey));
     run.tournaments.push({ name: t.name, key: t.key, sources: got.sources.map((s) => ({ name: s.name, articles: s.articles, candidates: s.candidates, robotsStatus: s.robotsStatus, skippedByRobots: s.skippedByRobots, unnamed: s.unnamedSpeakerParagraphs })),
