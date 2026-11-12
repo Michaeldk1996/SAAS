@@ -2333,6 +2333,411 @@
     ]
    },
    "alerts": []
+  },
+  {
+   "at": "2026-11-12T02:55:58.268Z",
+   "activeTournaments": [
+    "Stockholm"
+   ],
+   "tournaments": [
+    {
+     "name": "Stockholm",
+     "key": "1681",
+     "sources": [
+      {
+       "name": "ATP Tour daily report (via the official tournament site)",
+       "articles": 16,
+       "candidates": 8,
+       "robotsStatus": 200,
+       "skippedByRobots": 0,
+       "unnamed": 4
+      }
+     ],
+     "fromOutlets": 1,
+     "counts": {
+      "candidates": 9,
+      "droppedNotVerbatim": 0,
+      "droppedNoPlayer": 1,
+      "droppedAmbiguous": 0,
+      "notTranslatedNoKey": 0,
+      "notTranslatedApiError": 0,
+      "droppedTranslationCheck": 0,
+      "droppedEnglishExists": 0,
+      "mergedSameQuote": 0,
+      "alreadyHeld": 0,
+      "items": 8,
+      "tokens": {
+       "input": 0,
+       "output": 0
+      },
+      "modelError": null,
+      "retryUrls": 0
+     },
+     "added": 0,
+     "held": 25,
+     "byCategory": {
+      "Interviews": 3,
+      "Quotes": 21,
+      "Injuries": 1
+     },
+     "finishedMatches": 17,
+     "matchesWithWinnerQuote": 6
+    },
+    {
+     "name": "ATP Tour",
+     "key": "tour",
+     "sources": [],
+     "fromOutlets": 7,
+     "counts": {
+      "candidates": 7,
+      "droppedNotVerbatim": 0,
+      "droppedNoPlayer": 0,
+      "droppedAmbiguous": 0,
+      "notTranslatedNoKey": 0,
+      "notTranslatedApiError": 0,
+      "droppedTranslationCheck": 1,
+      "droppedEnglishExists": 0,
+      "mergedSameQuote": 0,
+      "alreadyHeld": 0,
+      "items": 6,
+      "tokens": {
+       "input": 1217,
+       "output": 511
+      },
+      "modelError": null,
+      "retryUrls": 0
+     },
+     "added": 6,
+     "held": 31,
+     "byCategory": {
+      "Injuries": 2,
+      "Interviews": 29
+     },
+     "finishedMatches": 0,
+     "matchesWithWinnerQuote": 0
+    }
+   ],
+   "newItems": 6,
+   "tokens": {
+    "input": 1217,
+    "output": 511
+   },
+   "outlets": {
+    "read": 131,
+    "withCandidates": 13,
+    "blocked": [
+     "Fox Sports Australia: the site refuses a plain request",
+     "El Deber: the site refuses a plain request",
+     "Tenniskafe: the site refuses a plain request",
+     "TenisovySvet.cz: the site refuses a plain request",
+     "The Indian Express: the site refuses a plain request",
+     "ESPN México (Tenis): unexpected answer",
+     "AS (Diario AS): the site refuses a plain request",
+     "Aftonbladet: unexpected answer",
+     "Sport.sk: unexpected answer",
+     "ESPN: unexpected answer"
+    ],
+    "articlesFetched": 195,
+    "paywalled": 32,
+    "unnamed": 270,
+    "byOutlet": [
+     {
+      "outlet": "tennisnet.com",
+      "country": "Austria",
+      "language": "de",
+      "fetched": 3,
+      "candidates": 4
+     },
+     {
+      "outlet": "The Sydney Morning Herald",
+      "country": "Australia",
+      "language": "en",
+      "fetched": 4,
+      "candidates": 0
+     },
+     {
+      "outlet": "La Nación",
+      "country": "Argentina",
+      "language": "es",
+      "fetched": 6,
+      "candidates": 0
+     },
+     {
+      "outlet": "RTBF Sport",
+      "country": "Belgium",
+      "language": "fr",
+      "fetched": 4,
+      "candidates": 0
+     },
+     {
+      "outlet": "La DH Les Sports+",
+      "country": "Belgium",
+      "language": "fr",
+      "fetched": 6,
+      "candidates": 1
+     },
+     {
+      "outlet": "Lance!",
+      "country": "Brazil",
+      "language": "pt",
+      "fetched": 6,
+      "candidates": 0
+     },
+     {
+      "outlet": "Sporza (VRT)",
+      "country": "Belgium",
+      "language": "nl",
+      "fetched": 5,
+      "candidates": 1
+     },
+     {
+      "outlet": "Séptimo Game",
+      "country": "Chile",
+      "language": "es",
+      "fetched": 2,
+      "candidates": 0
+     },
+     {
+      "outlet": "Gong.bg",
+      "country": "Bulgaria",
+      "language": "bg",
+      "fetched": 4,
+      "candidates": 0
+     },
+     {
+      "outlet": "iSport.cz",
+      "country": "Czech Republic",
+      "language": "cs",
+      "fetched": 2,
+      "candidates": 0
+     },
+     {
+      "outlet": "El Tiempo",
+      "country": "Colombia",
+      "language": "es",
+      "fetched": 6,
+      "candidates": 0
+     },
+     {
+      "outlet": "We Love Tennis",
+      "country": "France",
+      "language": "fr",
+      "fetched": 3,
+      "candidates": 1
+     },
+     {
+      "outlet": "RMC Sport",
+      "country": "France",
+      "language": "fr",
+      "fetched": 6,
+      "candidates": 2
+     },
+     {
+      "outlet": "Ilta-Sanomat",
+      "country": "Finland",
+      "language": "fi",
+      "fetched": 6,
+      "candidates": 0
+     },
+     {
+      "outlet": "Tennis Actu",
+      "country": "France",
+      "language": "fr",
+      "fetched": 6,
+      "candidates": 0
+     },
+     {
+      "outlet": "Tennis.com",
+      "country": "INT",
+      "language": "en",
+      "fetched": 1,
+      "candidates": 0
+     },
+     {
+      "outlet": "Sport1",
+      "country": "Germany",
+      "language": "de",
+      "fetched": 6,
+      "candidates": 0
+     },
+     {
+      "outlet": "Ubitennis",
+      "country": "INT",
+      "language": "en",
+      "fetched": 1,
+      "candidates": 0
+     },
+     {
+      "outlet": "TennisUpToDate",
+      "country": "INT",
+      "language": "en",
+      "fetched": 3,
+      "candidates": 1
+     },
+     {
+      "outlet": "Hindustan Times",
+      "country": "India",
+      "language": "en",
+      "fetched": 6,
+      "candidates": 9
+     },
+     {
+      "outlet": "The Times of India",
+      "country": "India",
+      "language": "en",
+      "fetched": 6,
+      "candidates": 0
+     },
+     {
+      "outlet": "Corriere dello Sport",
+      "country": "Italy",
+      "language": "it",
+      "fetched": 6,
+      "candidates": 0
+     },
+     {
+      "outlet": "SuperTennis (FITP)",
+      "country": "Italy",
+      "language": "it",
+      "fetched": 6,
+      "candidates": 0
+     },
+     {
+      "outlet": "Ubitennis",
+      "country": "Italy",
+      "language": "it",
+      "fetched": 6,
+      "candidates": 1
+     },
+     {
+      "outlet": "La Gazzetta dello Sport",
+      "country": "Italy",
+      "language": "it",
+      "fetched": 6,
+      "candidates": 0
+     },
+     {
+      "outlet": "Nemzeti Sport",
+      "country": "Hungary",
+      "language": "hu",
+      "fetched": 6,
+      "candidates": 0
+     },
+     {
+      "outlet": "VG Sporten",
+      "country": "Norway",
+      "language": "no",
+      "fetched": 2,
+      "candidates": 0
+     },
+     {
+      "outlet": "NOS Sport",
+      "country": "Netherlands",
+      "language": "nl",
+      "fetched": 6,
+      "candidates": 1
+     },
+     {
+      "outlet": "RPP Noticias",
+      "country": "Peru",
+      "language": "es",
+      "fetched": 4,
+      "candidates": 2
+     },
+     {
+      "outlet": "Sport Klub",
+      "country": "Serbia",
+      "language": "sr",
+      "fetched": 2,
+      "candidates": 0
+     },
+     {
+      "outlet": "Bola Amarela",
+      "country": "Portugal",
+      "language": "pt",
+      "fetched": 6,
+      "candidates": 0
+     },
+     {
+      "outlet": "SVT Sport",
+      "country": "Sweden",
+      "language": "sv",
+      "fetched": 1,
+      "candidates": 0
+     },
+     {
+      "outlet": "Marca",
+      "country": "Spain",
+      "language": "es",
+      "fetched": 6,
+      "candidates": 0
+     },
+     {
+      "outlet": "Mundo Deportivo",
+      "country": "Spain",
+      "language": "es",
+      "fetched": 6,
+      "candidates": 2
+     },
+     {
+      "outlet": "Expressen",
+      "country": "Sweden",
+      "language": "sv",
+      "fetched": 5,
+      "candidates": 0
+     },
+     {
+      "outlet": "Khaleej Times",
+      "country": "United Arab Emirates",
+      "language": "en",
+      "fetched": 3,
+      "candidates": 1
+     },
+     {
+      "outlet": "RTS Sport",
+      "country": "Switzerland",
+      "language": "fr",
+      "fetched": 6,
+      "candidates": 0
+     },
+     {
+      "outlet": "SRF Sport",
+      "country": "Switzerland",
+      "language": "de",
+      "fetched": 6,
+      "candidates": 0
+     },
+     {
+      "outlet": "Sports Illustrated",
+      "country": "USA",
+      "language": "en",
+      "fetched": 2,
+      "candidates": 0
+     },
+     {
+      "outlet": "BBC Sport",
+      "country": "United Kingdom",
+      "language": "en",
+      "fetched": 6,
+      "candidates": 11
+     },
+     {
+      "outlet": "The National",
+      "country": "United Arab Emirates",
+      "language": "en",
+      "fetched": 6,
+      "candidates": 0
+     },
+     {
+      "outlet": "VnExpress",
+      "country": "Vietnam",
+      "language": "vi",
+      "fetched": 6,
+      "candidates": 0
+     }
+    ]
+   },
+   "alerts": []
   }
  ]
 }
