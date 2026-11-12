@@ -132,11 +132,14 @@ except where a ruling below says otherwise. Colours are foundation tokens (`foun
   over the bar). A missing source is a dash row with its reason in the hover. **Upcoming:** the books' opens, Elo / model
   fair odds, the venue's current mid; the leaning side (≥ 50%) white 700. **Completed (founder 2026-11-12: "add all values
   as they are in upcoming", every row filled where a source exists):** closes; Bet105 = the card close when Bet105 is the
-  card's book, else the Kibl series' last price at or before our live sighting (the card state's `startTs` — no start, no
-  price, never a scheduled cut); Elo / Elo {surface} = the weekly Tennis Abstract report dated strictly before the match
+  card's book, else the Kibl series' last price at or before our live sighting (the card state's `startTs`); with no live
+  sighting, the series' last price (the series is pre-match only), its hover "not a confirmed close" — never a scheduled
+  cut; a dash only when Kibl recorded no Bet105 price; Elo / Elo {surface} = the weekly Tennis Abstract report dated strictly before the match
   day, at most 7 days old (`fhEloAt`, the Form tab's rule; overall from `elo-history.json`, the surface rating from that
-  report's own `surface` map — stored by `tools/build-elo-history.mjs` from 12 Nov 2026 — else from `elo-ratings.json`
-  only when it is the same report, same `taLastUpdate`; a player that report no longer lists takes his last record
+  report's own `surface` map — stored by `tools/build-elo-history.mjs` from 12 Nov 2026, and filled once for the reports
+  of 29 Sep – 10 Nov from the stored copy of `elo-ratings.json` with the same label and identical overall ratings — else from `elo-ratings.json`
+  only when it is the same report, same `taLastUpdate`; a name whose initial key the report lacks takes the report's only player of that surname (the Upcoming
+  row's fallback; two or more → dash); a player that report no longer lists takes his last record
   (`lastKnown`, the Upcoming rule) only when that record's report is dated before the match day, marked stale in the
   hover; anything else is a dash with its reason, never today's rating for
   a past match); the model only from a read frozen before the start; a prediction row only from a read the database froze

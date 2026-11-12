@@ -298,12 +298,24 @@ test('founder design 2026-11-07 (CHANGES §2–§3): Market Signal = ONE ledger,
   const st = S({ plan: 'pro', hist: H3, elo: lk('2026-09-21') }).mcSigBody(done);
   assert.match(st, /report of 2026-10-20 · win % → fair odds · T\. M\. Etcheverry: not in the current Tennis Abstract report — rating from its 21 Sep 2026 report \(stale\)"[\s\S]*?1\.56/);
   assert.equal((S({ plan: 'pro', hist: H3, elo: lk('2026-10-27') }).mcSigBody(done).match(/class="mc-sg-row mc-sg-lr(?: rule)? dash(?: go)?"/g) || []).length, 4, 'CONTROL: a last record dated after the match → Elo rows dash');
+  // The Upcoming surname fallback: a report holding exactly one player of that surname (any initial) serves him; two → dash.
+  const H4 = { conflicts: {}, snapshots: [{ asOf: '2026-10-20', taLastUpdate: '2026-10-19', ratings: { 'berrettini|m': 1900, 'etcheverry|x': 1800 }, ambiguous: [],
+    surface: { hard: { 'berrettini|m': 1950, 'etcheverry|x': 1800 }, clay: {}, grass: {} } }] };
+  assert.match(S({ plan: 'pro', hist: H4 }).mcSigBody(done), /report of 2026-10-20 · win % → fair odds">[\s\S]*?1\.56/);
+  H4.snapshots[0].ratings['etcheverry|y'] = 1700;
+  assert.equal((S({ plan: 'pro', hist: H4 }).mcSigBody(done).match(/class="mc-sg-row mc-sg-lr(?: rule)? dash(?: go)?"/g) || []).length, 4, 'CONTROL: two players of that surname → Elo rows dash');
   // Bet105 when it is not the card's book: the Kibl series' last price at or before our live sighting (the card state's start)
   const ser = { Bet105: { p1: [['2026-10-26T10:00:00Z', 1.70], ['2026-10-26T11:58:00Z', 1.66], ['2026-10-26T12:05:00Z', 1.30]], p2: [['2026-10-26T10:00:00Z', 2.20], ['2026-10-26T11:59:00Z', 2.30]] } };
   const nb = Object.assign({}, done, { __ocs: { book: 'pinnacle+30', startTs: '2026-10-26T12:00:00Z', p1: {}, p2: {} }, oddsMovement: { chart: { books: ser } } });
   const nbH = S({ plan: 'pro' }).mcSigBody(nb);
   assert.match(nbH, /title="Bet105 \(Kibl\) · last price before the start \(our live sighting [^)]*\) · Kibl insert time"[\s\S]*?<span class="mc-sg-o lead">1\.66<\/span>[\s\S]*?2\.30</, '1.66 / 2.30, never the 12:05 in-play 1.30');
-  assert.match(S({ plan: 'pro' }).mcSigBody(Object.assign({}, nb, { __ocs: { book: 'pinnacle+30', p1: {}, p2: {} } })), /title="Bet105 · no verified start for this match"/, 'CONTROL: no start → dash, never a scheduled cut');
+  // No live sighting: the series is pre-match only, so its last price is shown, labelled not a confirmed close.
+  const ns = S({ plan: 'pro' }).mcSigBody(Object.assign({}, nb, { __ocs: { book: 'pinnacle+30', p1: {}, p2: {} },
+    oddsMovement: { chart: { books: { Bet105: { p1: ser.Bet105.p1.slice(0, 2), p2: ser.Bet105.p2 } } } } }));
+  assert.match(ns, /title="Bet105 \(Kibl\) · last pre-match price recorded [^"]* · no live sighting of the start, not a confirmed close · Kibl insert time"[\s\S]*?1\.66/);
+  assert.doesNotMatch(ns, /Bet105[^"]*close · Kibl insert time"[^>]*>[\s\S]{0,200}last price before the start/, 'never labelled a close');
+  const none = S({ plan: 'pro' }).mcSigBody(Object.assign({}, nb, { oddsMovement: { chart: { books: {} } } }));
+  assert.match(none, /title="Bet105 · no Bet105 price for this match"/, 'no series → dash');
   const dFree = S().mcSigBody(done);
   assert.doesNotMatch(dFree, /Stennisfy Model<\/span>(?:<svg[^]*?<\/svg>)?<span class="mc-sg-best"/, 'a blurred model never carries BEST');
   const dFreeNoElo = S({ hist: null }).mcSigBody(done);

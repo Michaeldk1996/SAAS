@@ -9472,9 +9472,19 @@ function mcSigEloPre(m, slot){
   // (elo-ratings.json lastKnown, exact key — the Upcoming row's rule) only when that report is itself dated before the
   // match day; the hover says so (stale), as on Upcoming.
   const one = name => {
-    const e = fhEloAt(h, name, day, null);
+    let e = fhEloAt(h, name, day, null);
+    // The Upcoming row's surname fallback (mcSigEloRec → bySurnameElo): a name whose initial key the report lacks takes
+    // the report's ONLY player with that surname ("D. Vallejo" = "Adolfo Daniel Vallejo", vallejo|a); two or more → none.
+    let key = fhEloKey(name);
+    if (e.v == null && /^not in the Elo report/.test(e.why || '') && key) {
+      const snap0 = h.snapshots.find(x => x.asOf === (e.why.match(/(\d{4}-\d\d-\d\d)$/) || [])[1]);
+      const sur = key.split('|')[0], hits = snap0 ? Object.keys(snap0.ratings).filter(k => k.split('|')[0] === sur) : [];
+      if (hits.length === 1 && !(snap0.ambiguous || []).includes(hits[0]) && !(h.conflicts && h.conflicts[hits[0]])) {
+        key = hits[0]; e = { v: snap0.ratings[key], asOf: snap0.asOf };
+      }
+    }
     if (e.v != null) {
-      const snap = h.snapshots.find(x => x.asOf === e.asOf), k = fhEloKey(name);
+      const snap = h.snapshots.find(x => x.asOf === e.asOf), k = key;
       let sv = null;
       if (slot !== 'all') {
         if (snap && snap.surface && snap.surface[slot]) sv = snap.surface[slot][k];
@@ -9769,12 +9779,17 @@ function mcSigBody(m){
     // Bet105: the card close when Bet105 is the card's book; else the Kibl series' last price at or before our live
     // sighting (the card state's start, a verified start) — the price the Bet105 row of Upcoming would read at the off.
     const st105 = o && Date.parse(o.startTs || ''), bS = ch['Bet105'];
-    const bl1 = Number.isFinite(st105) && bS ? mcSigLastBefore(bS.p1, st105) : null, bl2 = Number.isFinite(st105) && bS ? mcSigLastBefore(bS.p2, st105) : null;
+    // No verified start: the series is pre-match only (Kibl rows with is_live false, odds.md "Bet105" chart line), so its
+    // last price is still a pre-match price — shown, and its hover says it is not a confirmed close (founder 2026-11-12:
+    // "make sure the cards always have the price there").
+    const cut105 = Number.isFinite(st105) ? st105 : Infinity;
+    const bl1 = bS ? mcSigLastBefore(bS.p1, cut105) : null, bl2 = bS ? mcSigLastBefore(bS.p2, cut105) : null;
     const b105card = ocsBook === 'bet105' ? mcSigPair(o.p1.close, o.p2.close) : null;
     const b105 = b105card || (bl1 && bl2 ? mcSigPair(bl1.v, bl2.v) : null);
     const b105Src = b105card ? 'Bet105 (Kibl) · the card close · Kibl insert time'
-      : b105 ? `Bet105 (Kibl) · last price before the start (our live sighting ${mcSigClock(o.startTs)}) · Kibl insert time`
-      : !bS ? 'Bet105 · no Bet105 price for this match' : !Number.isFinite(st105) ? 'Bet105 · no verified start for this match' : 'Bet105 · no Bet105 price before the start';
+      : b105 && Number.isFinite(st105) ? `Bet105 (Kibl) · last price before the start (our live sighting ${mcSigClock(o.startTs)}) · Kibl insert time`
+      : b105 ? `Bet105 (Kibl) · last pre-match price recorded ${mcSigClock(bl1.at > bl2.at ? bl1.at : bl2.at)} · no live sighting of the start, not a confirmed close · Kibl insert time`
+      : !bS ? 'Bet105 · no Bet105 price for this match' : 'Bet105 · no Bet105 price before the start';
     const eA = mcSigEloPre(m, 'all'), eS = slot ? mcSigEloPre(m, slot) : { p: null, why: 'no match surface' };
     const j = (mxJClose(m, 'p1') != null && mxJClose(m, 'p2') != null) ? mcSigPair(mxJClose(m, 'p1'), mxJClose(m, 'p2')) : null;
     const pinAge = mxPinCloseAgeMin(m, W === 'a' ? 'p1' : 'p2');

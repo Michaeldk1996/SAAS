@@ -950,6 +950,13 @@ test('elo-history: an unchanged weekly report adds nothing; a new one appends; h
   assert.equal(appendSnapshot(h, { ratings: { 'a|b': 1820 }, elo: { 'a|b': { all: { rating: 1820 }, hard: { rating: 1790 }, clay: { rating: null } } } }, '2026-08-17'), true);
   assert.deepEqual(h.snapshots[2].surface, { hard: { 'a|b': 1790 }, clay: {}, grass: {} });
   assert.equal(h.snapshots[1].surface, undefined, 'earlier weeks untouched');
+  // the one-off fill takes a surface map only from a version that is provably the same report (label AND ratings)
+  const { fillSurface } = await import('./tools/build-elo-history.mjs');
+  const h2 = { snapshots: [{ asOf: '2026-11-03', taLastUpdate: '2026-11-02', ratings: { 'a|b': 1800 } }, { asOf: '2026-11-10', taLastUpdate: '2026-11-09', ratings: { 'a|b': 1810 } }] };
+  const v = (lab, r, hard) => ({ taLastUpdate: lab, ratings: { 'a|b': r }, elo: { 'a|b': { hard: { rating: hard } } } });
+  assert.deepEqual(fillSurface(h2, [v('2026-11-02', 1800, 1777), v('2026-11-09', 1999, 1700)]), ['2026-11-03'], 'same label but other ratings → no fill');
+  assert.equal(h2.snapshots[0].surface.hard['a|b'], 1777); assert.equal(h2.snapshots[1].surface, undefined);
+  assert.equal(h2.snapshots[0].ratings['a|b'], 1800, 'ratings untouched');
 });
 test('elo retry (founder 2026-09-24): an unchanged Monday report triggers a Tuesday retry; a new Tuesday report is stored with Tuesday\'s asOf and stops the retries', async () => {
   const { appendSnapshot, shouldFetch } = await import('./tools/build-elo-history.mjs');

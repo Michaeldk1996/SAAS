@@ -70,6 +70,20 @@ export function surfaceOf(store) {
     for (const s of Object.keys(out)) if (r && r[s] && Number(r[s].rating) > 0) out[s][k] = Number(r[s].rating);
   return Object.values(out).some(o => Object.keys(o).length) ? out : null;
 }
+// One-off fill (founder 2026-11-12): a snapshot stored before surface maps existed takes the surface map of a stored
+// version of elo-ratings.json that is PROVABLY the same report — the same Tennis Abstract label AND every overall rating
+// equal. Nothing else is touched (ratings, labels, dates); a snapshot with no such version keeps no map. Returns the
+// asOf of every snapshot filled.
+export function fillSurface(hist, versions) {
+  const filled = [];
+  for (const snap of hist.snapshots) {
+    if (snap.surface || !snap.taLastUpdate) continue;
+    const v = versions.find(st => st && st.taLastUpdate === snap.taLastUpdate && sameRatings(snap.ratings, st.ratings));
+    const surface = v ? surfaceOf(v) : null;
+    if (surface) { snap.surface = surface; filled.push(snap.asOf); }
+  }
+  return filled;
+}
 export function appendSnapshot(hist, store, asOf, source = 'live') {
   const ratings = store && store.ratings;
   if (!ratings || !Object.keys(ratings).length) throw new Error('elo-ratings.json has no ratings');
@@ -137,6 +151,15 @@ if (args[0] === '--from-git') {
   }
   write(hist);
   console.log(`elo-history: backfilled ${added} distinct snapshots from ${log.length} commits (${hist.snapshots.map(s => s.asOf).join(', ')}).`);
+} else if (args[0] === '--surface-from-git') {
+  const repo = args[1] || ROOT;
+  const git = (...a) => execFileSync('git', ['-C', repo, ...a], { maxBuffer: 1 << 30 }).toString();
+  const shas = git('log', '--format=%H', 'origin/main', '--', 'elo-ratings.json').trim().split('\n').filter(Boolean);
+  const versions = shas.map(sha => { try { return JSON.parse(git('show', `${sha}:elo-ratings.json`)); } catch (e) { return null; } });
+  const hist = load();
+  const filled = fillSurface(hist, versions);
+  if (filled.length) write(hist);
+  console.log(`elo-history: surface maps filled for ${filled.length} of ${hist.snapshots.length} snapshots (${filled.join(', ')}).`);
 } else if (args[0] === '--append') {
   const store = JSON.parse(fs.readFileSync(SRC, 'utf8'));
   const hist = load() || empty();
