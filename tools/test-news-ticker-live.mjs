@@ -82,7 +82,7 @@ await ok('build: one report per finished match; a walkover gets a status item an
   assert.equal(s.reports, 1); const it = itemsOf(d);
   assert.deepEqual(it.map((x) => x.id).sort(), ['report-100', 'status-wo-101']);
   assert.ok(!it.some((x) => /faced no break points/.test(x.text) && x.id !== 'report-100'));
-  assert.match(it.find((x) => x.id === 'report-100').text, /A\. One faced no break points\. B\. Two saved 4 of 10 break points\.$/, 'what stood out, not the full stat line');
+  assert.match(it.find((x) => x.id === 'report-100').text, /A\. One won the last 12 games of the match\. A\. One faced no break points\.$/, 'what stood out; nothing about the loser when nothing of his was bad enough');
   assert.ok(!/break point/.test(it.find((x) => x.id === 'status-wo-101').text));
 });
 await ok('build: a missing or empty point log never prints "faced no break points" (blank box score stays blank)', () => {
@@ -98,8 +98,8 @@ await ok('build: timestamp is the observed end and the text carries the duration
   const d = fixture([card({ id: 'past-100' })]);
   runBuild(d, '2026-11-10T15:00:00.000Z');
   let it = itemsOf(d)[0]; assert.equal(it.timestampKind, 'scheduled'); assert.equal(it.timestamp, '2026-11-10T12:00:00.000Z'); assert.ok(!/minutes/.test(it.text));
-  runBuild(d, '2026-11-10T15:15:00.000Z', new Map([['100', { endedAt: '2026-11-10T13:19:10.000Z', startedAt: '2026-11-10T12:08:10.000Z', minutes: 71 }]]));
-  it = itemsOf(d)[0]; assert.equal(it.timestampKind, 'observed'); assert.equal(it.timestamp, '2026-11-10T13:19:10.000Z'); assert.match(it.text, /in the round of 16 in 71 minutes\./);
+  runBuild(d, '2026-11-10T15:15:00.000Z', new Map([['100', { endedAt: '2026-11-10T13:19:10.000Z', startedAt: '2026-11-10T12:08:10.000Z', minutes: 58 }]]));
+  it = itemsOf(d)[0]; assert.equal(it.timestampKind, 'observed'); assert.equal(it.timestamp, '2026-11-10T13:19:10.000Z'); assert.match(it.text, /in the round of 16 in just 58 minutes\./);
   assert.equal(it.revision, 1); assert.equal(it.publishedAt, '2026-11-10T15:00:00.000Z');
   // a later run whose times read failed keeps the observed end (never downgrades), and rewrites nothing
   const before = fs.readFileSync(path.join(d, 'news-ticker', '77-2026.json'), 'utf8');
@@ -279,38 +279,51 @@ await ok('standouts: a rate is reported only when it is far from the player\'s o
   assert.equal(baselineFor(RT, 1, 'hard'), null); assert.equal(baselineFor(null, 437, 'hard'), null);
   const ms = (o, raw) => ({ p1: { ...o, raw } });
   const B = baselineFor(RT, 437, 'hard');
+  const show = (u) => u.map((x) => [x.text, x.tone, x.kind]);
   const u = standoutUnits(ms({ 'Service:1st serve points won': 88.9, 'Service:2nd serve points won': 40, 'Service:1st serve percentage': 64, 'Service:Aces': 14 },
     { 'Service:1st serve points won': { won: 32, total: 36 }, 'Service:2nd serve points won': { won: 8, total: 20 } }), 'p1', 'H. Rune', B, { bp: { saved: 2, faced: 4 } });
-  assert.deepEqual(u.map((x) => [x.text, x.tone, x.kind]), [
-    ['H. Rune hit 14 aces, won 89% of his first-serve points (32 of 36), above his 74% on hard over the last 52 weeks and won 40% of his second-serve points (8 of 20), below his usual 54%.', null, 'serve']],
+  assert.deepEqual(show(u), [['H. Rune hit 14 aces, won 89% of his first-serve points (32 of 36), compared with his 74% average on hard over the last 52 weeks and won 40% of his second-serve points (8 of 20), compared with his usual 54%.', null, 'serve']],
     'the serve numbers sit in one sentence; the baseline is named once; first-in 64 v 62 and 2 of 4 break points are not news; good + bad = no tone');
   assert.deepEqual(u[0].fields[1], { metric: 'firstWon', value: 89, won: 32, total: 36, baseline: 74, scope: 'last52', surface: 'Hard', n: 47 });
   // aces make the serve news: first-serve points won rides along without a comparison when it is close to his baseline
-  const a = standoutUnits(ms({ 'Service:1st serve points won': 80, 'Service:Aces': 14 }, { 'Service:1st serve points won': { won: 28, total: 35 } }), 'p1', 'B. Gojo', B);
-  assert.deepEqual(a.map((x) => [x.text, x.tone]), [['B. Gojo hit 14 aces and won 80% of his first-serve points (28 of 35).', 'good']]);
+  assert.deepEqual(show(standoutUnits(ms({ 'Service:1st serve points won': 80, 'Service:Aces': 14 }, { 'Service:1st serve points won': { won: 28, total: 35 } }), 'p1', 'B. Gojo', B)),
+    [['B. Gojo hit 14 aces and won 80% of his first-serve points (28 of 35).', 'good', 'serve']]);
+  // "he only lost 7 points on serve" (founder): 10 or fewer from 30+ served, split by serve when the two counts add up
+  const few = (won, total) => standoutUnits(ms({ 'Service:1st serve points won': 88, 'Service:Aces': 3 }, { 'Service:1st serve points won': { won: 29, total: 33 }, 'Service:2nd serve points won': { won: 12, total: 15 }, 'Points:Service Points Won': { won, total } }), 'p1', 'T. Fritz', B);
+  assert.deepEqual(show(few(41, 48)), [['T. Fritz lost only 7 points on serve (4 on his first serve, 3 on his second) and won 88% of his first-serve points (29 of 33), compared with his 74% average on hard over the last 52 weeks.', 'good', 'serve']]);
+  assert.ok(!/lost only/.test(few(37, 48)[0].text), '11 points lost is not "only"'); assert.ok(!/lost only/.test(few(20, 22)[0].text), 'too few points served');
   // close to the baseline with nothing else, or too few points in the match: nothing
   assert.deepEqual(standoutUnits(ms({ 'Service:1st serve points won': 80 }, { 'Service:1st serve points won': { won: 28, total: 35 } }), 'p1', 'X', B), [], '80 v 74 is inside the 8-point gap');
   assert.deepEqual(standoutUnits(ms({ 'Service:1st serve points won': 100 }, { 'Service:1st serve points won': { won: 10, total: 10 } }), 'p1', 'X', B), [], '10 points is too few');
   // return: both figures in one sentence
-  const r = standoutUnits(ms({ 'Return:1st return points won': 47.2, 'Return:2nd return points won': 70 }, { 'Return:1st return points won': { won: 17, total: 36 }, 'Return:2nd return points won': { won: 14, total: 20 } }), 'p1', 'C. N', B);
-  assert.deepEqual(r.map((x) => [x.text, x.tone, x.kind]), [['C. N won 47% of the points on first-serve return (17 of 36), above his 29% on hard over the last 52 weeks and 70% of the points on second-serve return (14 of 20), above his usual 50%.', 'good', 'return']]);
+  assert.deepEqual(show(standoutUnits(ms({ 'Return:1st return points won': 47.2, 'Return:2nd return points won': 70 }, { 'Return:1st return points won': { won: 17, total: 36 }, 'Return:2nd return points won': { won: 14, total: 20 } }), 'p1', 'C. N', B)),
+    [['C. N won 47% of the points against the first serve (17 of 36), compared with his 29% average on hard over the last 52 weeks and 70% of the points against the second serve (14 of 20), compared with his usual 50%.', 'good', 'return']]);
   // counts that say something by themselves, with or without a baseline
-  const c = standoutUnits(ms({ 'Service:Aces': 13, 'Service:Double Faults': 6, 'Points:Winners': 50, 'Points:Unforced errors': 20 }, {}), 'p1', 'A. S', null, { bp: { saved: 0, faced: 3 } });
-  assert.deepEqual(c.map((x) => [x.text, x.tone, x.kind]), [['A. S hit 13 aces and made 6 double faults.', null, 'serve'], ['A. S saved 0 of 3 break points.', 'bad', 'bp'], ['A. S hit 50 winners and made 20 unforced errors.', 'good', 'count']]);
+  assert.deepEqual(show(standoutUnits(ms({ 'Service:Aces': 13, 'Service:Double Faults': 6, 'Points:Winners': 50, 'Points:Unforced errors': 20 }, {}), 'p1', 'A. S', null, { bp: { saved: 0, faced: 3 } })),
+    [['A. S hit 13 aces and made 6 double faults.', null, 'serve'], ['A. S saved 0 of 3 break points.', 'bad', 'bp'], ['A. S hit 50 winners and made 20 unforced errors.', 'good', 'count']]);
   assert.deepEqual(standoutUnits(ms({ 'Service:Aces': 9, 'Service:Double Faults': 4, 'Points:Winners': 29, 'Points:Unforced errors': 29 }, {}), 'p1', 'X', null, { bp: { saved: 3, faced: 7 } }), []);
   assert.deepEqual(standoutUnits(ms({}, {}), 'p1', 'X', null, { bp: { saved: 0, faced: 0 } }).map((x) => x.text), ['X faced no break points.']);
+  // the loser (founder: "just say what really went wrong … without losing too much time on him"): one sentence, his
+  // two worst numbers; his 12 aces, his good return and his 4 of 7 break points are not in it
+  const L = (o, raw, extra) => standoutUnits(ms(o, raw), 'p1', 'C. Norrie', B, { loser: true, ...extra });
+  assert.deepEqual(show(L({ 'Service:1st serve points won': 58.3, 'Service:2nd serve points won': 40, 'Service:Double Faults': 6, 'Service:Aces': 12, 'Return:1st return points won': 45 },
+    { 'Service:1st serve points won': { won: 28, total: 48 }, 'Service:2nd serve points won': { won: 8, total: 20 }, 'Return:1st return points won': { won: 18, total: 40 } }, { bp: { saved: 4, faced: 7 } })),
+    [['C. Norrie won 58% of his first-serve points (28 of 48), compared with his 74% average on hard over the last 52 weeks and won 40% of his second-serve points (8 of 20), compared with his usual 54%.', 'bad', 'loser']]);
+  assert.deepEqual(L({ 'Service:Aces': 12, 'Return:1st return points won': 45 }, { 'Return:1st return points won': { won: 18, total: 40 } }, { bp: { saved: 4, faced: 7 } }), [], 'nothing went wrong enough: no sentence');
+  assert.deepEqual(show(standoutUnits(ms({}, {}), 'p1', 'X', null, { loser: true, bp: { saved: 0, faced: 4 } })), [['X saved 0 of 4 break points.', 'bad', 'bp']]);
 });
 await ok('voice: an opinion word passes only in a sentence the code gave that tone, beside its number; "clutch" only for break points', async () => {
   const { checkSentence, playerRef } = await import('./news-ticker/humanise.mjs');
   const P = [playerRef('H. Rune', 'Holger Rune'), playerRef('M. Kecmanovic', 'Miomir Kecmanovic')];
-  const S = 'H. Rune won 89% of his first-serve points (32 of 36), above his 74% on hard over the last 52 weeks.';
+  const S = 'H. Rune won 89% of his first-serve points (32 of 36), compared with his 74% average on hard over the last 52 weeks.';
   const chk = (src, out, tone, kind) => checkSentence(src, out, { players: P, prevSubject: P[0], tone, kind }).ok;
-  assert.ok(chk(S, 'Rune was strong on serve: he won 89% of his first-serve points (32 of 36), above his 74% on hard over the last 52 weeks.', 'good', 'rate'));
-  assert.ok(!chk(S, 'Rune was strong on serve: he won 89% of his first-serve points (32 of 36), above his 74% on hard over the last 52 weeks.', null, 'rate'), 'no tone, no judgement');
-  assert.ok(!chk(S, 'Rune was shaky: he won 89% of his first-serve points (32 of 36), above his 74% on hard over the last 52 weeks.', 'good', 'rate'), 'a bad word on a good number');
-  assert.ok(!chk(S, 'Rune was clutch: he won 89% of his first-serve points (32 of 36), above his 74% on hard over the last 52 weeks.', 'good', 'rate'), 'clutch is for break points');
-  assert.ok(!chk(S, 'Rune won 89% of his first-serve points (32 of 36), above his 71% on hard over the last 52 weeks.', 'good', 'rate'), 'the baseline changed');
-  assert.ok(!chk(S, 'Rune won 89% of his first-serve points (32 of 36), below his 74% on hard over the last 52 weeks.', 'good', 'rate'), 'above turned into below');
+  assert.ok(chk(S, 'Rune was strong on serve: he won 89% of his first-serve points (32 of 36), compared with his 74% average on hard over the last 52 weeks.', 'good', 'rate'));
+  assert.ok(!chk(S, 'Rune was strong on serve: he won 89% of his first-serve points (32 of 36), compared with his 74% average on hard over the last 52 weeks.', null, 'rate'), 'no tone, no judgement');
+  assert.ok(!chk(S, 'Rune was shaky: he won 89% of his first-serve points (32 of 36), compared with his 74% average on hard over the last 52 weeks.', 'good', 'rate'), 'a bad word on a good number');
+  assert.ok(!chk(S, 'Rune was clutch: he won 89% of his first-serve points (32 of 36), compared with his 74% average on hard over the last 52 weeks.', 'good', 'rate'), 'clutch is for break points');
+  assert.ok(!chk(S, 'Rune won 89% of his first-serve points (32 of 36), compared with his 71% average on hard over the last 52 weeks.', 'good', 'rate'), 'the baseline changed');
+  assert.ok(!chk(S, 'Rune won 89% of his first-serve points (32 of 36), well below his 74% average on hard over the last 52 weeks.', 'good', 'rate'), 'a direction the facts do not state');
+  assert.ok(chk(S, 'Rune was particularly solid on serve, winning 89% of his first-serve points (32 of 36), compared with his 74% average on hard over the last 52 weeks.', 'good', 'rate'), 'the founder\'s own wording');
   const Bp = 'H. Rune saved 0 of 3 break points.';
   assert.ok(chk(Bp, 'Rune was not clutch, he saved 0 of 3 break points.', 'bad', 'bp'));
   assert.ok(!chk(Bp, 'Rune was clutch, he saved 0 of 3 break points.', 'bad', 'bp'), 'a good word in a bad sentence needs "not"');
@@ -320,6 +333,22 @@ await ok('voice: an opinion word passes only in a sentence the code gave that to
   assert.ok(chk(G, 'Rune served well with 14 aces and won 80% of his first-serve points (41 of 51).', 'good', 'serve'), 'the founder\'s own example shape');
   assert.ok(!chk(G, 'Rune served well with 14 aces and won 80% of his first-serve points (41 of 15).', 'good', 'serve'));
   assert.ok(!chk(G, 'Rune served well with 80 aces and won 14% of his first-serve points (41 of 51).', 'good', 'serve'), 'the two numbers swapped');
+});
+await ok('report: only what matters is printed — a quick or very long duration, the set a player failed to serve out, a run of games with its turning point', async () => {
+  const { reportText } = await import('./news-ticker/news-core.mjs');
+  const m = { p1: 'T. Fritz', p2: 'C. Norrie', tournamentRound: '1/8-finals', finalScore: { winner: 'p1', sets: [{ p1: 7, p2: 5 }, { p1: 6, p2: 3 }] }, matchStats: {} };
+  const pbp = (run) => ({ brokenForMatch: { p1: 0, p2: 0 }, brokenForSet: { p1: 0, p2: 1 }, brokenForSetAt: { p1: [], p2: [1] }, brokenFrom400: { p1: 0, p2: 0 }, opening: null, longestRun: run, bp: { p1: null, p2: null } });
+  const t = (o) => reportText(m, 'p1', 'p2', o);
+  assert.ok(!/minutes/.test(t({ duration: 84 }).text), '84 minutes is not news'); assert.equal(t({ duration: 84 }).fields.durationMinutes, 84, 'but it is stored');
+  assert.match(t({ duration: 58 }).text, /in just 58 minutes\./); assert.match(t({ duration: 185 }).text, /in 185 minutes\./);
+  const three = { ...m, finalScore: { winner: 'p1', sets: [{ p1: 6, p2: 0 }, { p1: 0, p2: 6 }, { p1: 6, p2: 0 }] } };
+  assert.ok(!/minutes/.test(reportText(three, 'p1', 'p2', { duration: 58 }).text), '"just" is for a straight-sets win only');
+  const r1 = t({ pbp: pbp({ side: 'p1', n: 5, set: 1, from: { me: 3, opp: 5 }, afterBeingBroken: false, toTheEnd: false }) }).text;
+  assert.match(r1, /C\. Norrie was broken when serving for the first set\. T\. Fritz won 5 games in a row from 3-5 down in the first set\./, r1);
+  assert.ok(!/games in a row/.test(t({ pbp: pbp({ side: 'p1', n: 5, set: 1, from: { me: 2, opp: 1 }, afterBeingBroken: false, toTheEnd: false }) }).text), 'a run with no turning point is not printed');
+  assert.match(t({ pbp: pbp({ side: 'p1', n: 4, set: 2, from: { me: 2, opp: 2 }, afterBeingBroken: true, toTheEnd: false }) }).text, /won 4 games in a row straight after being broken in the second set\./);
+  assert.match(t({ pbp: pbp({ side: 'p1', n: 6, set: 2, from: { me: 0, opp: 3 }, afterBeingBroken: false, toTheEnd: true }) }).text, /won the last 6 games of the match\./);
+  assert.match(t({ pbp: pbp({ side: 'p1', n: 8, set: 1, from: { me: 4, opp: 3 }, afterBeingBroken: false, toTheEnd: false }) }).text, /won 8 games in a row from 4-3 in the first set\./);
 });
 // ---- tour-wide (founder 2026-11-12: press interviews and injuries for every ATP player, every day) ----
 await ok('tour-wide: an article that names no tournament still yields its quote; each candidate carries the tournaments its article mentions', async () => {

@@ -64,6 +64,8 @@ export function pbpFacts(shard, finalScore, bestOf = 3) {
   const side = { p1: { faced: 0, lostGames: 0, strict: true, games: 0, brokenForSet: 0, brokenForMatch: 0, brokenFrom400: 0 },
     p2: { faced: 0, lostGames: 0, strict: true, games: 0, brokenForSet: 0, brokenForMatch: 0, brokenFrom400: 0 } };
   const order = [];                      // game winners in playing order (tiebreak = one game)
+  const ctx = [];                        // per game in `order`: { set, before: {p1,p2} set score before it, server | null (tiebreak) }
+  const forSetAt = { p1: [], p2: [] }, forMatchAt = { p1: [], p2: [] };   // the set numbers of each "broken when serving for …"
   const setsWon = { p1: 0, p2: 0 };
   let opening = null;
   for (let i = 0; i < shard.sets.length; i++) {
@@ -78,7 +80,7 @@ export function pbpFacts(shard, finalScore, bestOf = 3) {
       const broken = g.winner !== g.server;
       s.games++; if (broken) s.lostGames++;
       const forSet = (lead === 5 && trail <= 4) || (lead === 6 && trail === 5);
-      if (forSet && broken) { if (setsWon[g.server] === setsToWin - 1) s.brokenForMatch++; else s.brokenForSet++; }
+      if (forSet && broken) { if (setsWon[g.server] === setsToWin - 1) { s.brokenForMatch++; forMatchAt[g.server].push(i + 1); } else { s.brokenForSet++; forSetAt[g.server].push(i + 1); } }
       const st = strictGame(g);
       if (!st.ok) s.strict = false;
       else {
@@ -87,18 +89,18 @@ export function pbpFacts(shard, finalScore, bestOf = 3) {
         if (broken && st.scores.some((sc) => sc[g.server] === 3 && sc[other(g.server)] === 0)) s.brokenFrom400++;
         if (i === 0 && j === 0 && bps >= 1 && !broken) opening = { side: g.server, saved: bps };
       }
-      order.push(g.winner); prev = h;
+      order.push(g.winner); ctx.push({ set: i + 1, before: prev, server: g.server }); prev = h;
     }
     const f = fs[i];
     const tb = (f.p1 === 7 && f.p2 === 6) || (f.p1 === 6 && f.p2 === 7);
     if (tb) {
       if (prev.p1 !== 6 || prev.p2 !== 6) return null;
-      order.push(f.p1 > f.p2 ? 'p1' : 'p2');
+      order.push(f.p1 > f.p2 ? 'p1' : 'p2'); ctx.push({ set: i + 1, before: prev, server: null });
     } else if (prev.p1 !== f.p1 || prev.p2 !== f.p2) return null;   // the games must add up to the set score
     setsWon[f.p1 > f.p2 ? 'p1' : 'p2']++;
   }
   let run = { side: null, n: 0 }, cur = { side: null, n: 0 };
-  for (const w of order) { cur = w === cur.side ? { side: w, n: cur.n + 1 } : { side: w, n: 1 }; if (cur.n > run.n) run = cur; }
+  order.forEach((w, idx) => { cur = w === cur.side ? { side: w, n: cur.n + 1, start: cur.start } : { side: w, n: 1, start: idx }; if (cur.n > run.n) run = cur; });
   // a tie for the longest run names nobody
   let ties = 0, c2 = { side: null, n: 0 };
   for (const w of order) { c2 = w === c2.side ? { side: w, n: c2.n + 1 } : { side: w, n: 1 }; if (c2.n === run.n) ties++; }
@@ -107,7 +109,17 @@ export function pbpFacts(shard, finalScore, bestOf = 3) {
   return { bp: { p1: bp('p1'), p2: bp('p2') }, opening,
     brokenForSet: { p1: side.p1.brokenForSet, p2: side.p2.brokenForSet }, brokenForMatch: { p1: side.p1.brokenForMatch, p2: side.p2.brokenForMatch },
     brokenFrom400: { p1: side.p1.strict ? side.p1.brokenFrom400 : null, p2: side.p2.strict ? side.p2.brokenFrom400 : null },
-    longestRun: ties === 1 ? run : { side: null, n: run.n }, games: order.length };
+    brokenForSetAt: forSetAt, brokenForMatchAt: forMatchAt,
+    longestRun: ties === 1 ? { side: run.side, n: run.n, ...runContext(run, order, ctx) } : { side: null, n: run.n }, games: order.length };
+}
+
+// Where the longest run happened: the set and the set score when it began (from the runner's side), whether it began
+// straight after he lost his own serve, and whether it ran to the end of the match.
+function runContext(run, order, ctx) {
+  const first = ctx[run.start], k = run.side, o = other(k), prevGame = run.start > 0 ? ctx[run.start - 1] : null;
+  return { set: first.set, from: { me: first.before[k], opp: first.before[o] },
+    afterBeingBroken: !!(prevGame && prevGame.set === first.set && prevGame.server === k && order[run.start - 1] === o),
+    toTheEnd: run.start + run.n === order.length };
 }
 
 // Facts that need only the final set scores.

@@ -28,10 +28,28 @@ ticker page comes through Claude Design). Tests: `tools/test-news-ticker.mjs`, `
   verb). So no "looked", "felt", rating or opinion can pass. **A sentence that fails keeps the template wording** (the
   card name as the full name in sentence 1, the surname after). **Test:** `tools/test-news-ticker-live.mjs` "voice"
   (17 bad rewrites each refused for its reason; one failing sentence falls back alone).
-- **No commentary line** ("clutch", "solid"…): the founder's fact rule of 12 Nov outranks the voice guide's section.
 - **Done once per report.** The item stores `templateText` + `voice {version, model, passed, total, failures}`; a later
   run reuses the stored rewrite while the template is unchanged. No key or a failed call = the template text, retried
   next run. `news-ticker-run.json` `voice` gives reports fully in voice X of Y and sentences passed.
+- **Only what matters is printed (founder 2026-11-12).** The duration is always stored but printed only for a
+  straight-sets win inside 60 minutes ("in just 58 minutes") or a match of 180+. "Broken when serving for the first
+  set" names the set. A run of games is printed only with its turning point — from behind in the set ("from 3-5 down in
+  the first set"), straight after being broken, the last 5+ games of the match — or at 7+. **Test:** "report: only what
+  matters is printed".
+- **What stood out, against the player's own baseline** (`standouts.mjs`; baseline = `surface-ratings.json`, his last 52
+  weeks on the surface, else his career there, else last 52 on all surfaces, each from 30 matches; none = no
+  comparison). A serve / return rate is news at 8 points from the baseline (10 on second serve / second-serve return),
+  on enough points; counts are news by themselves (10+ aces, 5+ double faults, 30+ winners or errors, break points
+  none faced / all or none saved from 3 / 8+ faced, 10 or fewer points lost on serve from 30+). Related figures share
+  one sentence (serve, return, pressure, rally; at most 3 in the serve sentence); the baseline is named once per
+  player, then "his usual N%". With nothing standing out the old stat line prints. The thresholds are the builder's
+  defaults: the founder ruled "not tighter" (2026-11-12).
+- **The loser gets one sentence: what went wrong** — at most his two worst numbers, nothing neutral or good; nothing
+  bad enough = no sentence. **Test:** "standouts".
+- **Opinion words are allowed (founder 2026-11-12), tied to a number:** each standout sentence carries a tone (good /
+  bad / none) set by the code; a good-tone sentence may use strong, solid, clean, sharp, well, better, particularly
+  (clutch only on break points); a bad-tone one shaky, poor, weak, error-prone, low, worse, struggled ("not clutch" on
+  break points); no tone = no judgement word. **Test:** "voice: an opinion word passes only…".
 - **Full name at first mention** = the standings name, only when it reads given name + the card's surname.
 - Every number is a stored field or a count of stored rows; a clause with nothing behind it is not written.
   **Test:** no box score and no point log → the first sentence alone; a null is never printed as 0.

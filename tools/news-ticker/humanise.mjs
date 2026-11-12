@@ -15,7 +15,7 @@
 // Pipeline only: the key is ANTHROPIC_API_KEY from GitHub Actions secrets, never in the browser or a published file.
 const API_URL = 'https://api.anthropic.com/v1/messages';
 export const REPORT_MODEL = process.env.NEWS_REPORT_MODEL || 'claude-opus-5-5';
-export const VOICE_VERSION = 2;   // bump to have every stored report rewritten again
+export const VOICE_VERSION = 3;   // bump to have every stored report rewritten again
 
 // Neutral connecting words a rewrite may add. No judgement word, no quantity word (none / all / twice / double / half),
 // no stat verb (saved, converted, faced, broke): those may appear only where the template sentence already has them.
@@ -25,8 +25,8 @@ export const VOCAB = new Set(('a an the and but then while with in on at of to f
   'served returned return returning landed landing winning hitting making saving aces ace winners winner unforced errors error double faults fault break point points tiebreak tiebreaks row down up serve serving').split(/\s+/));
 // Opinion words (founder 2026-11-12: ratings and opinions are allowed) — only in a sentence the code gave a tone, and
 // only the words of that tone, so a judgement always sits beside the number that shows it. "clutch" is for break points.
-export const TONE_WORDS = { good: new Set(['strong', 'solid', 'clean', 'sharp', 'well', 'good', 'better', 'clutch']),
-  bad: new Set(['shaky', 'poor', 'weak', 'error-prone', 'worse', 'bad', 'low', 'not', 'clutch', 'solid', 'clean', 'sharp', 'good']) };
+export const TONE_WORDS = { good: new Set(['strong', 'solid', 'clean', 'sharp', 'well', 'good', 'better', 'clutch', 'particularly', 'especially']),
+  bad: new Set(['shaky', 'poor', 'weak', 'error-prone', 'worse', 'bad', 'low', 'particularly', 'especially', 'struggled', 'not', 'clutch', 'solid', 'clean', 'sharp', 'good']) };
 const NEGATED = new Set(['clutch', 'solid', 'clean', 'sharp', 'good']);
 const ROUND_CODE = [[/\bfirst round\b/, 'R1'], [/\bsecond round\b/, 'R2'], [/\bthird round\b/, 'R3'], [/\bfourth round\b/, 'R4'],
   [/\bquarter-?finals?\b/, 'QF'], [/\bsemi-?finals?\b/, 'SF']];
@@ -119,7 +119,9 @@ Rules, all strict:
 - Keep the two players in the same order as in the original sentence.
 - Plain past tense, no exclamation marks, no hyphen in a score. A short sentence stays short: never pad it (no "in the match", "during the match", "in this match").
 - Words: you may use only the words of the original sentence, the players' names, and these connecting words: ${[...VOCAB].join(' ')}. Any other word makes the sentence invalid.
-- Judgement: "tones" gives each sentence good, bad or none. In a GOOD sentence you may add one of: strong, solid, clean, sharp, well, better (and "clutch" only when its kind is "bp"). In a BAD sentence one of: shaky, poor, weak, error-prone, low, worse (and "not clutch" only when its kind is "bp"). In a sentence with tone none: no judgement word at all. Keep "above" / "below" and both percentages exactly as given, with the same words after each number.
+- Good wording for a figure against the player's own average: "Fritz was particularly solid against the first serve, winning 42% of the points (20 of 48), compared with his 27% average on hard over the last 52 weeks." Keep "compared with his …% average …" or "compared with his usual …%" exactly as given.
+- The last sentence about the loser says only what went wrong for him; keep it short.
+- Judgement: "tones" gives each sentence good, bad or none. In a GOOD sentence you may add one of: strong, solid, clean, sharp, well, better, particularly, especially (and "clutch" only when its kind is "bp"). In a BAD sentence one of: shaky, poor, weak, error-prone, low, worse, struggled, particularly (and "not clutch" only when its kind is "bp"). In a sentence with tone none: no judgement word at all. Keep both percentages exactly as given, with the same words after each number.
 - These sentences are what stood out in the match, so word them like a person who watched the numbers, not like a list. Vary how sentences open, and do not use a judgement word in every sentence: at most two in the whole report. "his usual 51%" stays "his usual 51%".
 - A sentence may carry several numbers that belong together (aces, first-serve points won). Keep them in one sentence, for example: He served well with 14 aces and won 78% of his first-serve points (28 of 36).
 - Preferred wording: "came from a set down", "got broken", "won 7 games in a row", "saved 2 of 3 break points", "hit 9 aces and 41 winners", "made 28 unforced errors", "went to a tiebreak".`;
