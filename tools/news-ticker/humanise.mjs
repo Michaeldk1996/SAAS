@@ -22,7 +22,7 @@ export const VOICE_VERSION = 2;   // bump to have every stored report rewritten 
 export const VOCAB = new Set(('a an the and but then while with in on at of to for from by as it its he his him who that this their they both was were is had has did ' +
   'beat match set sets game games round final meeting meetings time minutes after before against along way also now still so ' +
   'hit made came went got took finished ended first second third fourth fifth opening ' +
-  'served returned return returning aces ace winners winner unforced errors error double faults fault break point points tiebreak tiebreaks row down up serve serving').split(/\s+/));
+  'served returned return returning landed landing winning hitting making saving aces ace winners winner unforced errors error double faults fault break point points tiebreak tiebreaks row down up serve serving').split(/\s+/));
 // Opinion words (founder 2026-11-12: ratings and opinions are allowed) — only in a sentence the code gave a tone, and
 // only the words of that tone, so a judgement always sits beside the number that shows it. "clutch" is for break points.
 export const TONE_WORDS = { good: new Set(['strong', 'solid', 'clean', 'sharp', 'well', 'good', 'better', 'clutch']),
@@ -62,7 +62,7 @@ export function checkSentence(src, out, ctx) {
   if (/[!?]/.test(o)) return { ok: false, why: 'exclamation or question mark' };
   if (/(^|\s)[A-Z]\.(\s|$)/.test(o)) return { ok: false, why: 'an initial ("H. Rune")' };
   if ((o.match(/[.…](\s|$)/g) || []).length > 1) return { ok: false, why: 'more than one sentence' };
-  if (tokens(o).length > 45) return { ok: false, why: 'too long' };
+  if (tokens(o).length > 70) return { ok: false, why: 'too long' };
   // round code: allowed only as the code of the round words the template sentence has
   let body = o;
   const codes = body.match(/\b(?:R\d+|QF|SF)\b/g) || [];
