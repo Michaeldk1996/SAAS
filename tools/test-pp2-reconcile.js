@@ -1168,17 +1168,23 @@ check('founder 2026-11-10 · every drawer header carries the export\'s (?) after
   } finally { I.state.info = null; }
 });
 check('founder 2026-11-10 · Ratings: no paragraph under the tiles; the DNA draws two continuous lines (no dashed tour polygon)', () => {
-  let drawn = 0;
+  let drawn = 0, noGroup = 0;
   for (const p of SAMPLE.slice(0, 6)) {
     Object.assign(I.state, { key: p.key, careerScope: 'career' });
     const h = I.renderRatingsPanel(p);
     assert(!/Ratings rest on|That count is read from the store/.test(h), p.name + ': the removed paragraph is back');
     assert(!/stroke-dasharray/.test(h.slice(h.indexOf('<svg'), h.indexOf('</svg>') + 6)), p.name + ': a dashed line on the DNA');
     if (!/Player DNA/.test(h)) continue;   // no ratings in this window: no panel to check
-    if (/url\(#pp2DnaFill\)/.test(h)) drawn++;
+    if (/data-pp2-atpavg="1"/.test(h)) drawn++;
+    else if (/The ATP comparison group is not built yet/.test(h)) noGroup++;
     assert(/data-pp2="info" data-v="cr3"/.test(h), p.name + ': the DNA panel has no (?)');
   }
-  assert(drawn > 0, 'no DNA shape drawn — the line check measured nothing');
+  // v3 (2026-11-12): the shape needs the ATP group (the ratings file's main-draw counts, written by dna-ratings.yml).
+  // A file without them shows the explicit "not built yet" state, never a shape on the old rated pool.
+  const carries = ((W.dnaRatings || {}).players || []).some(r => r.surfaces && r.surfaces.All && r.surfaces.All.sinceBase &&
+    r.surfaces.All.sinceBase.sample && r.surfaces.All.sinceBase.sample.mdMatches != null);
+  if (carries) assert(drawn > 0, 'no DNA shape drawn — the line check measured nothing');
+  else { assert(noGroup > 0 && drawn === 0, 'a ratings file with no main-draw counts drew a shape'); console.log('        SKIP shape: the ratings file carries no main-draw counts yet (' + noGroup + ' panels show the not-built state)'); }
 });
 check('founder 2026-11-10 · the profile reads the export\'s palette: the mount carries .pp2-x and tokens.css scopes the export values to it', () => {
   assert(/mounted\.classList\.add\('pp2-x'\)/.test(fs.readFileSync(path.join(ROOT, 'player-profile-v2.js'), 'utf8')), 'the profile mount does not take the export palette class');
@@ -1192,7 +1198,7 @@ check('founder 2026-11-10 · the profile reads the export\'s palette: the mount 
 check('the Level & round tile uses the export\'s words (founder 2026-11-10), never "biggest split"', () => {
   const src = fs.readFileSync(path.join(ROOT, 'player-profile-v2.js'), 'utf8');
   const code = src.split('\n').map(l => l.replace(/^\s*\/\/.*$/, '')).join('\n');
-  assert(/'% vs Top 10'/.test(code) && /'best: '/.test(code) && /'tiebreaks '/.test(code), 'the export\'s Level & round tile words are missing');
+  assert(/'% vs Top 10'/.test(code) && /'best: '/.test(code) && /'vs tour '/.test(code), 'the export\'s Level & round tile words are missing');
   const stale = (code.match(/'[^'\n]*\bbiggest split\b[^'\n]*'/gi) || []);
   assert.strictEqual(stale.length, 0, `user-facing text still says: ${stale.join(', ')}`);
 });
@@ -1203,7 +1209,7 @@ mustFail('[neg] the wording lock would catch a revert to "biggest split"', () =>
   assert.strictEqual(stale.length, 0, 'lock is inert');
 });
 
-check('Level & round tile = his career vs Top 10 split (founder 2026-11-10): rate over "W–L · best: level R% · tiebreaks W–L"', () => {
+check('Level & round tile = his career vs Top 10 split (v3 A2, 2026-11-12): rate over "W–L · vs tour — · best: level R%", no tiebreaks', () => {
   let shown = 0;
   for (const p of SAMPLE) {
     const sc = ((W.careerSplits || {})[String(p.key)] || {}).career;
@@ -1213,8 +1219,9 @@ check('Level & round tile = his career vs Top 10 split (founder 2026-11-10): rat
     assert.strictEqual(vals.splits.headline, (100 * t10.W / t10.M).toFixed(1) + '% vs Top 10', `${p.name}: ${vals.splits.headline}`);
     if (!/Data paused/.test(String(vals.splits.support))) {
       assert(String(vals.splits.support).indexOf(t10.W + '\u2013' + t10.L) === 0, `${p.name}: support ${vals.splits.support}`);
-      let tw = 0, tl = 0; ['Best of 5', 'Best of 3'].forEach(k => { if (sc[k]) { tw += sc[k].tbW || 0; tl += sc[k].tbL || 0; } });
-      if (tw + tl) assert(String(vals.splits.support).endsWith('tiebreaks ' + tw + '\u2013' + tl), `${p.name}: support ${vals.splits.support}`);
+      // no store holds the tour's own win rate against the top 10: the comparison is a dash, and no tiebreaks in the tile
+      assert(String(vals.splits.support).indexOf(t10.W + '\u2013' + t10.L + ' \u00b7 vs tour \u2014') === 0, `${p.name}: support ${vals.splits.support}`);
+      assert(!/tiebreaks/.test(String(vals.splits.support)), `${p.name}: tiebreaks are back in the tile`);
     }
     shown++;
   }
@@ -1608,11 +1615,17 @@ check('market box headline and the modal quote the same yield and n', () => {
       assert.strictEqual(vals.market.headline, null, `${p.name}: market headline without a shard`);
       continue;
     }
-    // founder 2026-11-10 (the export's words): "−1.87% yield" over "flat stake · … · fav x% / dog y%" from the shard's roles
-    assert(/% yield$/.test(vals.market.headline), `${p.name}: headline ${vals.market.headline}`);
+    // v3 A2 (2026-11-12): the headline is the role yield furthest from zero ("−3.5% as underdog"); the overall yield,
+    // vs tour and the other role sit in the subline ("overall −1.67% yield · +1.9pp vs tour · fav −1.1%").
     const R = mk.roles || {}, f = v => v == null ? '\u2014' : (v < 0 ? '\u2212' : '') + Math.abs(v).toFixed(1) + '%';
-    if (R.favourite && R.favourite.n && R.favourite.yield != null && R.underdog && R.underdog.n && R.underdog.yield != null)
-      assert(vals.market.support.includes('fav ' + f(R.favourite.yield) + ' / dog ' + f(R.underdog.yield)), `${p.name}: ${vals.market.support}`);
+    const fv = R.favourite && R.favourite.n ? R.favourite.yield : null, dg = R.underdog && R.underdog.n ? R.underdog.yield : null;
+    if (fv == null && dg == null) { assert(/% yield$/.test(vals.market.headline), `${p.name}: headline ${vals.market.headline}`); continue; }
+    const lead = dg == null || (fv != null && Math.abs(fv) > Math.abs(dg)) ? 'fav' : 'dog';
+    assert.strictEqual(vals.market.headline, f(lead === 'fav' ? fv : dg) + (lead === 'fav' ? ' as favourite' : ' as underdog'), `${p.name}`);
+    const ov = (mk.headline.yield < 0 ? '\u2212' : '') + Math.abs(mk.headline.yield).toFixed(2) + '%';
+    assert(vals.market.support.indexOf('overall ' + ov + ' yield') === 0, `${p.name}: ${vals.market.support}`);
+    if (lead === 'fav' && dg != null) assert(vals.market.support.includes('dog ' + f(dg)), `${p.name}: ${vals.market.support}`);
+    if (lead === 'dog' && fv != null) assert(vals.market.support.includes('fav ' + f(fv)), `${p.name}: ${vals.market.support}`);
     const html = I.renderMarketModal(p);
     // Profile v2: the role strip's All cell carries the priced n as "N matches · W–L" (every row is priced).
     assert(html.includes(mk.headline.n + ' matches'), `${p.name}: modal does not carry the priced n`);
@@ -1792,7 +1805,8 @@ check('profile v2 · Calendar tiles: Best surface · Best swing · Worst swing �
   ['Best surface', 'Best swing', 'Worst swing', 'Swing opener'].forEach((cap) => assert(new RegExp('>' + cap + '<', 'i').test(html), `the ${cap} tile is missing`));
   assert(!/Career yield|Best month|Seasons on record/.test(t), 'a retired v1 tile survived');
   // AUS holds the 12 priced January 2025 matches (8 × +0.50 − 4 × 1.00 = 0.00u); Miami (1 priced) is under the gate
-  assert(/BEST SWING Australian [+−]?[\d.]+pp n=12/i.test(t), 'Best swing is not Australian on its 12 priced: ' + (/BEST SWING.{0,60}/i.exec(t) || [''])[0]);
+  // v3 D2: name 16/700 · Win rate | Yield columns ("n priced" under the yield) · one grey line
+  assert(/BEST SWING Australian \d+% Win rate 11–13 [+−]?[\d.]+% Yield 12 priced/i.test(t), 'Best swing is not Australian on its 12 priced: ' + (/BEST SWING.{0,80}/i.exec(t) || [''])[0]);
 }));
 mustFail('[neg] the gate check would catch a 1-match month reaching a tile', () => withCal(() => {
   const info = I.calMonths(I.calSpineFiltered(CAL_P));
@@ -1855,10 +1869,11 @@ check('profile v2 · a grid cell opens the drill box (founder 2026-11-10: a box,
   I.state.calCellV2 = null;
 }));
 // profile v2 (founder 2026-11-09): the Calendar record is the export's swing grid + Streaks.
-check('profile v2 · Consistent is one segment per season played: AUS 1/2 (2025 above .500, 2026 not)', () => withCal(() => {
+check('v3 D3 · Winning seasons is one tick per season played: AUS 1 of 2 (2025 above .500, 2026 not)', () => withCal(() => {
   Object.assign(I.state, { key: '__cal', seasonTab: 'calendar', calWin: 'career', calSurf: 'all', calCellV2: null });
   const t = TXT(I.renderSeasonModal(CAL_P));
-  assert(/1\/2 2 played/.test(t), 'AUS does not read 1/2 · 2 played');
+  assert(/WINNING SEASONS 1 of 2/i.test(t), 'AUS does not read 1 of 2: ' + (/WINNING SEASONS.{0,40}/i.exec(t) || [''])[0]);
+  assert(!/never .500|above \.500 /.test(t.replace(/seasons above/g, '')), 'a tile says .500');
 }));
 check('item 24 · the findings strip is a pp gap, not a raw yield', () => withCal(() => {
   I.state.calSurface = 'all';
@@ -1892,8 +1907,15 @@ check('profile v2 · a player with no priced match keeps the grid and dashes the
 check('profile v2 · By swing carries every row the export draws', () => withCal(() => {
   Object.assign(I.state, { key: '__cal', seasonTab: 'calendar', calWin: 'career', calSurf: 'all', calCellV2: null });
   const html = I.renderSeasonModal(CAL_P);
-  ['Vs other swings', 'Surface', 'Swing', 'n', 'Yield', 'Vs others', 'Consistent'].forEach((r) => assert(new RegExp('>' + r + '<').test(html), `the ${r} row is missing`));
+  // v3 D3: Swing view = one aligned table with the season grid — no Surface / Swing rows of its own
+  ['Vs other swings', 'Win rate', 'Priced matches', 'Yield', 'Vs others', 'Winning seasons'].forEach((r) => assert(new RegExp('>' + r + '<').test(html), `the ${r} row is missing`));
+  assert(!/>Surface<\/span>/.test(html.slice(html.indexOf('Vs other swings'))) && !/>Swing<\/span>/.test(html.slice(html.indexOf('Vs other swings'))), 'the Swing view kept its own Surface / Swing rows');
   assert(/>not in yield</.test(html), 'Team / other is not marked out of the yield');
+  // Month view keeps them
+  I.state.calView = 'month';
+  const hm = I.renderSeasonModal(CAL_P);
+  I.state.calView = 'swing';
+  ['Surface', 'Swing'].forEach((r) => assert(new RegExp('>' + r + '</span>').test(hm.slice(hm.indexOf('Vs other swings'))), `the Month view lost its ${r} row`));
 }));
 // ── item 20 · the event display name ────────────────────────────────────────
 // Found by the CDP read-back, not by this file: the name vote keyed on
@@ -2055,12 +2077,14 @@ mustFail('[neg] the cal-2 lock would catch the Calendar reverting to the archive
 // profile v2 (founder 2026-11-09): the Calendar record is the export's swing grid + Streaks.
 check('profile v2 · Calendar record tabs are Calendar · Streaks; the 2026 tab and the fixed Swing row are gone', () => withCal(() => {
   Object.assign(I.state, { key: '__cal', seasonTab: 'calendar', calWin: 'career', calSurf: 'all', calCellV2: null });
-  const html = I.renderSeasonModal(CAL_P);
-  assert(/data-pp2="cal-tab" data-v="calendar"/.test(html) && /data-pp2="cal-tab" data-v="streaks"/.test(html), 'the Calendar · Streaks tabs are not painted');
+  const html = I.renderSeasonModal(CAL_P), shell = I.modalShell('season', CAL_P, {}, html);
+  // v3 B1: the pages are ONE sliding switch in the drawer header (no tab row in the body)
+  assert(/data-pp2-pgsw="season"/.test(shell) && /data-pp2="cal-tab" data-v="calendar"/.test(shell) && /data-pp2="cal-tab" data-v="streaks"/.test(shell), 'the Calendar · Streaks switch is not painted');
+  assert(!/data-pp2="cal-tab"/.test(html), 'a tab row is still drawn in the body');
   assert(!/data-pp2="cal-tab" data-v="2026"/.test(html) && !/Month by month/.test(html), 'the 2026 tab survived');
   I.state.seasonTab = 'streaks';
   const st = TXT(I.renderSeasonModal(CAL_P));
-  assert(/RUNS OF 5\+/i.test(st) && /LONGEST WIN RUN 8/i.test(st), 'Streaks does not read its runs (longest win run 8): ' + st.slice(0, 200));
+  assert(/LONGEST WIN RUN W8/i.test(st) && !/RUNS OF 5\+|EXPECTED LONGEST/i.test(st), 'Streaks does not read its runs (longest win run W8): ' + st.slice(0, 200));
   I.state.seasonTab = 'calendar';
 }));
 mustFail('[neg] the Q1 check would catch a Streaks tab coming back', () => {
@@ -5293,9 +5317,12 @@ mustFail('[neg] the mark check would catch the retired asterisk', () => {
 check('item 10 · the career card carries the reference\'s panel and table grid', () => {
   const html = renderCareer(CM_PLAYER);
   assert(/grid-template-columns:64px minmax\(0,1fr\) 64px 60px 68px;gap:0 14px/.test(html), 'grid tracks drifted');
-  assert(/background:var\(--card\);border:1px solid var\(--edge-6\);border-bottom:0;border-radius:16px 16px 0 0;padding:22px 24px 24px/.test(html),
-    'the card is not the joined --card + --edge-6 top panel');
-  assert(/border-radius:0 0 16px 16px;padding:20px 24px 22px/.test(html), 'the season panel is not joined under it');
+  // v3 C1/C2: the band (--card, r16 top) sits on the card; the card is the middle panel (side edges only, 22/24/20);
+  // the season panel joins under it on a 10% rule
+  assert(/data-pp2-band="joined-card"[^>]*background:var\(--card\)/.test(html), 'the Window · Tier band does not sit on the card');
+  assert(/background:var\(--card\);border:1px solid var\(--edge-6\);border-top:0;border-bottom:0;border-radius:0;padding:22px 24px 20px/.test(html),
+    'the card is not the joined --card + --edge-6 middle panel');
+  assert(/border-top-color:var\(--edge-10\);border-radius:0 0 16px 16px;padding:20px 24px 22px/.test(html), 'the season panel is not joined under it');
   ['Surface', 'Wins · losses', 'W–L', 'Win %', 'vs all'].forEach((h) => {
     assert(html.includes('>' + h + '<'), `the table head is missing ${h}`);
   });

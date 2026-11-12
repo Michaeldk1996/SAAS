@@ -163,27 +163,52 @@ for (const [fname, holder] of [['mdnaEloPctFromPop', '_mdna'], ['eloPctFromPop',
   });
 }
 
-check('player-profile-v2: tour polygon pct = rank of the tour mean in the published population', () => {
-  const SUBJECT = ROWS.find(r => r.surfaces.All.last52.serve && r.surfaces.All.last52.sample.matches >= 10);
+// v3 (founder 2026-11-12, Ratings brief points 1–3): the "ATP average" is the mean over players with at least 10 ATP
+// main-draw matches in the window (the builder's sample.mdMatches); the radar runs from that group's lowest figure
+// (centre) to its highest (edge); every Δ is the shown figure minus the shown average. A store without main-draw
+// counts has no ATP group: every average reads a dash, never the old rated pool.
+function loadProfile(rows) {
+  const SUBJECT = rows.find(r => r.surfaces.All.last52.serve && r.surfaces.All.last52.sample.matches >= 10);
   const players = { [SUBJECT.playerKey]: { key: SUBJECT.playerKey, name: 'T. Subject', rank: 1 } };
-  const sandbox = {
-    FEATURE_PP2: true, playerProfiles: { players }, courtSpeedMap: {},
-    dnaRatings: { byKey: Object.fromEntries(ROWS.map(r => [String(r.playerKey), r])), players: ROWS, meta: META },
-  };
+  const sandbox = { FEATURE_PP2: true, playerProfiles: { players }, courtSpeedMap: {},
+    dnaRatings: { byKey: Object.fromEntries(rows.map(r => [String(r.playerKey), r])), players: rows, meta: META } };
   global.window = sandbox;
   new Function('window', fs.readFileSync(path.join(ROOT, 'player-profile-v2.js'), 'utf8'))(sandbox); // eslint-disable-line no-new-func
-  const m = sandbox.PlayerProfileV2._internals.dnaModel(players[SUBJECT.playerKey]);
-  const scope = m.scope;
+  return { I: sandbox.PlayerProfileV2._internals, subj: players[SUBJECT.playerKey], SUBJECT };
+}
+check('player-profile-v2 (v3): ATP average = mean over players with 10+ main-draw matches; radar = lowest..highest', () => {
+  // a deterministic main-draw count: every third rated player falls under 10 in every window
+  const rows = JSON.parse(JSON.stringify(ROWS));
+  rows.forEach((r, i) => ['last52', 'sinceBase'].forEach(sc => {
+    const smp = r.surfaces.All[sc] && r.surfaces.All[sc].sample;
+    if (smp) smp.mdMatches = i % 3 === 0 ? 4 : smp.matches;
+  }));
+  const { I, subj, SUBJECT } = loadProfile(rows);
+  const m = I.dnaModel(subj), scope = m.scope;
+  const pool = rows.filter(r => { const smp = r.surfaces.All[scope] && r.surfaces.All[scope].sample; return smp && smp.mdMatches >= 10; });
+  assert.ok(pool.length > 20 && pool.length < rows.length, `pool ${pool.length} of ${rows.length}`);
   let n = 0;
   for (const a of m.axes) {
-    const vals = a.key === 'elo' ? META.eloPercentiles.All.values : META.percentiles[scope].All[a.key].values;
-    if (a.tour == null) continue;
-    assert.ok(Math.abs(a.tourPct - 100 * rank(vals, a.tour) / 100) < 0.051, `${a.key}: tourPct ${a.tourPct} vs rank ${rank(vals, a.tour)}`);
-    if (a.key === 'elo') assert.strictEqual(+a.pct.toFixed(1), SUBJECT.surfaces.All.elo.pct);
-    else assert.strictEqual(a.pct, SUBJECT.surfaces.All[scope][a.key].pct);
+    const vals = pool.map(r => a.key === 'elo' ? (r.surfaces.All.elo || {}).rating : (r.surfaces.All[scope][a.key] || {}).rating).filter(v => v != null);
+    if (!vals.length) continue;
+    const mean = vals.reduce((x, y) => x + y, 0) / vals.length, lo = Math.min(...vals), hi = Math.max(...vals);
+    assert.ok(Math.abs(a.tour - mean) < 1e-9, `${a.key}: mean ${a.tour} vs ${mean}`);
+    assert.strictEqual(a.lo, lo); assert.strictEqual(a.hi, hi);
+    if (a.rating != null) {
+      assert.ok(Math.abs(a.frac - Math.max(0, Math.min(1, (a.rating - lo) / (hi - lo)))) < 1e-9, `${a.key} frac`);
+      const k = Math.pow(10, a.dp), shown = Math.round(a.rating * k) / k - Math.round(mean * k) / k;
+      assert.strictEqual(a.delta, Math.round(shown * k) / k, `${a.key}: Δ is not the shown figure minus the shown average`);
+    }
     n++;
   }
   assert.ok(n >= 4, `only ${n} axes compared`);
+  assert.ok(SUBJECT, 'no subject');
+});
+check('player-profile-v2 (v3): no main-draw counts in the store -> no ATP group, every average a dash (control)', () => {
+  const { I, subj } = loadProfile(ROWS.map(r => JSON.parse(JSON.stringify(r, (k, v) => k === 'mdMatches' ? undefined : v))));
+  const m = I.dnaModel(subj);
+  assert.strictEqual(m.atpN, null);
+  m.axes.forEach(a => { assert.strictEqual(a.tour, null, `${a.key} has an average with no ATP group`); assert.strictEqual(a.delta, null); });
 });
 
 // ── 5. the roster fails closed ────────────────────────────────────────────────

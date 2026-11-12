@@ -16667,7 +16667,7 @@ function fhSheetStatsHtml(joined, emptyMsg){
   const drCell = d => (d.txt === FH_DASHC ? { v: null, txt: d.txt } : { v: Number(d.txt), txt: d.txt });
   const drBetter = typeof fhSheetTone === 'function' && fhSheetTone() === 'h2h' ? fhSheetBetter({ label: 'Dominance ratio', a: drCell(M.dr[0]), b: drCell(M.dr[1]) }) : null;
   const drFig = (i, side) => (M.dr[i].txt === FH_DASHC ? `font-weight:700; color:${FH_DASH};` : !drBetter || drBetter === side ? 'font-weight:700; color:var(--text);' : 'font-weight:500; color:var(--text-label);');
-  const dr = `<div style="display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); align-items:center; gap:14px; background:var(--page); border:1px solid var(--line); border-radius:10px; padding:16px 20px;">
+  const dr = `<div style="display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); align-items:center; gap:14px; background:var(--inner); border:1px solid var(--line); border-radius:10px; padding:16px 20px;">
       <span class="fh-dr-a" title="${fhEsc(M.dr[0].title)}" style="${FH_MONO} font-size:24px; ${drFig(0, 'a')}">${M.dr[0].txt}</span>
       <span style="font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label);">Dominance ratio</span>
       <span class="fh-dr-b" title="${fhEsc(M.dr[1].title)}" style="${FH_MONO} font-size:24px; ${drFig(1, 'b')} text-align:right;">${M.dr[1].txt}</span>

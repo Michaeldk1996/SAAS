@@ -163,7 +163,7 @@ function scoreOutcome(scores, isFirst, eventWinner) {
 // ---- per-player accumulators -------------------------------------------------
 function newAgg() {
   return {
-    matches: 0, svMatches: 0,
+    matches: 0, svMatches: 0, mdMatches: 0, qualUnknown: 0,
     firstInTot: 0, firstWon: 0, secondWon: 0, secondTot: 0,
     svcPWon: 0, svpt: 0, svGmWon: 0, svGmTot: 0, aces: 0, dfs: 0,
     retPWon: 0, retPTot: 0, ret1Won: 0, ret1Tot: 0, ret2Won: 0, ret2Tot: 0,
@@ -171,9 +171,11 @@ function newAgg() {
     tbPlayed: 0, tbWon: 0, decPlayed: 0, decWon: 0,
   };
 }
-function add(agg, b, sc) {
+function add(agg, b, sc, md) {
   agg.matches++;
   agg.svMatches++;
+  if (md === true) agg.mdMatches++;
+  else if (md == null) agg.qualUnknown++;
   if (b.firstInTot != null) agg.firstInTot += b.firstInTot;
   if (b.firstWon != null) agg.firstWon += b.firstWon;
   if (b.secondWon != null) agg.secondWon += b.secondWon;
@@ -251,7 +253,7 @@ function computeRatings(a) {
   }
   return {
     serve, return: ret, underPressure: null, dominanceRatio: dom,
-    sample: { matches: a.matches, svpt: a.svpt, bpFaced: a.bpSavedTot, bpChances: a.bpConvTot, tbPlayed: a.tbPlayed, decPlayed: a.decPlayed },
+    sample: { matches: a.matches, mdMatches: a.mdMatches, qualUnknown: a.qualUnknown, svpt: a.svpt, bpFaced: a.bpSavedTot, bpChances: a.bpConvTot, tbPlayed: a.tbPlayed, decPlayed: a.decPlayed },
   };
 }
 
@@ -287,6 +289,9 @@ function slimFixture(f) {
     event_type_type: f.event_type_type, tournament_key: f.tournament_key,
     first_player_key: f.first_player_key, second_player_key: f.second_player_key,
     event_winner: f.event_winner, scores: f.scores,
+    // profile v3 Ratings (founder 2026-11-12): the feed's own qualifying flag, so the page's ATP average can be taken over
+    // players with 10+ ATP MAIN-DRAW matches in the window ("True" = qualifying, "False" = main draw).
+    event_qualification: f.event_qualification,
     statistics: Array.isArray(f.statistics) ? f.statistics.filter(s => s.stat_period === 'match') : [],
   };
 }
@@ -328,7 +333,7 @@ async function loadBoxScores(key, today) {
   if (!fs.existsSync(BOX_DIR)) fs.mkdirSync(BOX_DIR, { recursive: true });
   const windows = weekWindows(STATS_FLOOR, today);
   const fresh = dayMs(today) - REFETCH_DAYS * 86400000;
-  const fileOf = w => path.join(BOX_DIR, `265-${w.start}_${w.stop}.json`);
+  const fileOf = w => path.join(BOX_DIR, `265q-${w.start}_${w.stop}.json`);
   const need = windows.filter(w => !fs.existsSync(fileOf(w)) || dayMs(w.stop) >= fresh);
   const failures = [];
   const empty = [];
@@ -387,8 +392,10 @@ function ingest(fixtures, surfaceOf) {
       const block = statBlock(matchRows, pk);
       if (!block || !block.serveOk) continue;
       const score = scoreOutcome(f.scores, isFirst, f.event_winner);
+      // main draw = the feed says "False"; "True" is qualifying; anything else is unknown (never counted as main draw)
+      const md = f.event_qualification === 'False' ? true : f.event_qualification === 'True' ? false : null;
       if (!contribs.has(pk)) contribs.set(pk, []);
-      contribs.get(pk).push({ date, surface, block, score });
+      contribs.get(pk).push({ date, surface, block, score, md });
       ingested++;
       if (!surface) noSurface++;
     }
@@ -411,11 +418,11 @@ function ratePlayers(contribs, roster) {
 
     for (const c of list) {
       const inL52 = cutoffMs != null && dayMs(c.date) >= cutoffMs;
-      add(scopes.sinceBase.All, c.block, c.score);
-      if (c.surface) add(scopes.sinceBase[c.surface], c.block, c.score);
+      add(scopes.sinceBase.All, c.block, c.score, c.md);
+      if (c.surface) add(scopes.sinceBase[c.surface], c.block, c.score, c.md);
       if (inL52) {
-        add(scopes.last52.All, c.block, c.score);
-        if (c.surface) add(scopes.last52[c.surface], c.block, c.score);
+        add(scopes.last52.All, c.block, c.score, c.md);
+        if (c.surface) add(scopes.last52[c.surface], c.block, c.score, c.md);
       }
     }
 

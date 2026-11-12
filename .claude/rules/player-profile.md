@@ -366,3 +366,44 @@ Where a ruling below reverses an older one in this file, the older one is supers
   `tools/test-ten442-season-drills.js` (fixtures → `buildAllTierYearly` / `playerMatchHistory` / the shard writer →
   the painted modal; six mutations must go red). Roster form: `tools/probe-ten442-season-drills.js` (report only — it
   measures data convergence, not wiring).
+
+## Profile v3 (founder handoff 2026-11-12, `design_handoff_player_profile_v3`, CHANGES_2026-11-11_to_12)
+Supersedes the v2 items it names; everything else stays v2. Reference: `Player Profile.dc.html` + `Player Stat Boxes.dc.html`.
+- **Drawer pages = ONE sliding switch in the header** (B1), left of ✕: track `--inner` + 6% ring r11 pad 3, cells 116×34
+  13px (600 grey / 700 white), thumb `--selected` + 14% ring r8 sliding 240ms. Career record Record · Ratings · Calendar
+  record Calendar · Streaks · Market edge Match winner · Derived lines · Level & round Results · Sets & games · Service.
+  **Test:** no underlined tab row and no Level & round view toggle in any drawer body (`pageSwitchHtml`).
+- **Filters = a band of pills** (B2, `bandBox` / `bandPill`): pill 6×13 r8 11.5px, off 600 grey on an 8% ring, on 700
+  white on `--selected` + 16%; groups split by a 1×18 10% divider; no caps labels, no tracks. Joined band (r12 top, the
+  card below loses its top edge): Career record (Record `--card` r16, Ratings `--inner` + 8%), Match-up record, Market
+  edge (Applied chips inside). Standalone (r12, mb16): Calendar record (`--card`), Record per tournament, Court speed,
+  Level & round (its Window pills moved into the band). The reference's 1.25px rings are drawn 1px (foundation).
+- **Tiles (A2): one subline, no chips.** Court speed "33–13 · best surface: clay 283–198"; Level & round "W–L · vs tour —
+  · best: L R%" (no tour vs-Top-10 figure exists → dash; no tiebreaks); Market edge headline = the role yield furthest
+  from zero ("−3.5% as underdog"), subline "overall X% yield · +Ypp vs tour · fav Z%" (no baselines file yet → the tour
+  clause left out, TEN-384 fx2 item 3); Live trading "36–5 after set 1 · 8–19 from a set down · +Ypp vs tour" (the
+  Situational "Won set 1 → won match" row against its tour column), no hold rate.
+- **Identity line (A3, option 1c):** style badge (`--selected`, 12% inset ring, r6, 12.5/700) then white 14/600 items split
+  by 1×12 14% hairlines; Elo Plex Mono 700. **Next match (A4):** the prices join the "vs opponent" line (three lines).
+- **Ratings (C3).** ATP average = mean over players with ≥ 10 ATP **main-draw** matches in the window
+  (`dna-apitennis-ratings.json` `sample.mdMatches`, the feed's own `event_qualification`; qualifying, Challenger, ITF and
+  an unknown flag do not count). No counts in the file → no ATP group: every average / Δ / scale is a dash ("not built
+  yet"), never the old rated pool. Radar: lowest ATP player at the centre, highest at the edge; the ATP average one solid
+  `--text-soft` 1.5px line above the fill; corner labels "304 · ATP best 331"; no vertex chips. Every Δ = the shown figure
+  minus the shown average (both rounded first); a zero gap is a grey "0". Serve boxes = the six terms of the Serve rating
+  in its own unit (aces and double faults **per match**, the builder's `lockedFormulas.serve`); Break points converted is
+  one figure (Return's) in both groups; a rate on fewer than 5 of its own count is a dash. Ratings opens on Last 52 weeks
+  unless the window was picked in the drawer. **Test:** `tools/test-dna-percentiles.js` (v3 checks + the no-counts control).
+- **Calendar (D1–D3):** band Window · Surface read by both pages; Filters at its right end (Calendar only, popover
+  right). Tiles: name 16/700 · Win rate | Yield (sign) · one grey line; Swing view Best surface · Best swing · Worst swing ·
+  Swing opener, Month view Best surface · Best month · Worst month · Round 1 record; never ".500". One aligned table:
+  Swing view `128px repeat(12) 72px` shared by the grid and By swing (By swing drops its Surface / Swing rows), Month view
+  `56px …`; the two scroll together; season totals behind one continuous 6% hairline; both indoor swings code EU INDOOR
+  (hover names which). Cut-offs `CAL_MIN` 5 / `CAL_THIN` 10 (thin: bar 30%, "thin" tag, grey count and Vs others).
+- **Streaks (D4):** four tiles Back him · Fade him · Longest win run · Longest losing run; the timeline opens at the
+  latest end, a hover lights one bar (no repaint), a click opens the six-tile run box; two ladders (W1 → W2 …) with
+  Chance (loss rows = share of next matches lost) and a verdict on `STK_MINP` (30) priced / `STK_EDGE` (1pp). Streaks
+  reads Window + Surface only, never the Calendar Filters. Cut-off values are placeholders until the founder sets them.
+- **Clean-ups:** the match sheet's Dominance ratio card = `--inner` + 5% ring (the section bands' token); no
+  "provisional · api-tennis" text on any match row (the flag stays on the data). The "Surface not known" column STAYS:
+  the feasibility check found 97 matches with no surface (35 of 350 profiles, 12 Nov 2026), and the brief says stop.

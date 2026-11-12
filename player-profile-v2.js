@@ -836,13 +836,14 @@
     cells.push(cell('Next match',
       nx && nx.label ? esc(nx.label) : DASH,
       nx ? 'var(--text)' : DASH_COLOUR,
-      nx ? 'vs ' + oppHtml : 'no fixture on record',
-      nx ? (px
-        ? '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:12.5px;font-weight:700;color:var(--text);">' +
+      // v3 A4: the prices join the "vs opponent" line, so every header cell is three lines, bottom-aligned
+      nx ? 'vs ' + oppHtml + ' ' + MIDDOT + ' ' + (px
+        ? '<span style="font-family:\'IBM Plex Mono\',monospace;font-weight:700;color:var(--text);">' +
             esc(px.own) + ' ' + MIDDOT + ' ' + esc(px.other) + '</span>' +
-            (px.book ? ' <span style="font-size:12px;color:var(--text-label);">' + esc(px.book) + '</span>' : '')
-        : '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:12.5px;font-weight:700;color:' + DASH_COLOUR + ';">' + DASH + '</span>')
-      : null));
+            (px.book ? ' <span style="color:var(--text-label);">' + esc(px.book) + '</span>' : '')
+        : '<span style="font-family:\'IBM Plex Mono\',monospace;font-weight:700;color:' + DASH_COLOUR + ';">' + DASH + '</span>')
+        : 'no fixture on record',
+      null));
 
     // Season
     var sN = (sWon || 0) + (sLost || 0);
@@ -856,15 +857,19 @@
     // on the avatar badge. Elo is the Players card's own source (pgEloFor over elo-ratings.json, through
     // the host's pp2EloFor bridge); absent -> the part is left out rather than printed as a guess.
     var elo = typeof window.pp2EloFor === 'function' ? window.pp2EloFor(p.name) : null;
-    var meta = [];
-    meta.push('<span style="font-weight:700;color:' + (ctx.archetype ? 'var(--text)' : DASH_COLOUR) + ';">' +
-      esc(ctx.archetype || DASH) + '</span>');
-    meta.push('<span>' + esc(p.country || DASH) + '</span>');
-    meta.push('<span>' + (p.age == null ? DASH : 'Age ' + esc(p.age)) + '</span>');
-    meta.push('<span>' + esc(handText(p)) + '</span>');   // profile v2: "R / 2HBH" (Tennis Abstract), else a dash
-    meta.push('<span>Elo <span style="font-family:\'IBM Plex Mono\',monospace;color:' +
-      (elo == null ? DASH_COLOUR : 'var(--text)') + ';">' + (elo == null ? DASH : esc(Math.round(Number(elo)))) +
-      '</span></span>');
+    // v3 A3 (option 1c): the playing style in a badge (--selected, 12% inset ring, r6, 12.5/700), then the rest of the
+    // line white 14/600 split by 1px x 12px hairlines (14%); the Elo figure Plex Mono 700. The badge and the country
+    // sit side by side (no hairline between them), as the reference draws it.
+    var HAIR = '<span aria-hidden="true" style="width:1px;height:12px;background:' + EDGE_14 + ';"></span>';
+    var badge = '<span class="pp2-style-badge" style="font-size:12.5px;font-weight:700;padding:3px 9px;border-radius:6px;background:var(--selected);' +
+      'box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--text) 12%, transparent);white-space:nowrap;flex:none;color:' +
+      (ctx.archetype ? 'var(--text)' : DASH_COLOUR) + ';">' + esc(ctx.archetype || DASH) + '</span>';
+    var meta = [
+      '<span>' + esc(p.country || DASH) + '</span>',
+      '<span>' + (p.age == null ? DASH : 'Age ' + esc(p.age)) + '</span>',
+      '<span>' + esc(handText(p)) + '</span>',   // profile v2: "R / 2HBH" (Tennis Abstract), else a dash
+      '<span>Elo <span style="font-family:\'IBM Plex Mono\',monospace;font-weight:700;color:' +
+        (elo == null ? DASH_COLOUR : 'var(--text)') + ';">' + (elo == null ? DASH : esc(Math.round(Number(elo)))) + '</span></span>'];
     return '' +
       '<div class="pp2-head" style="border-bottom:1px solid var(--edge-10);padding-bottom:26px;' +
       'display:flex;align-items:center;gap:28px;flex-wrap:wrap;">' +
@@ -877,7 +882,8 @@
           (state.cmpOpen ? comparePopoverHtml(p) : '') +
         '</div>' +
         '<span style="display:flex;align-items:center;gap:10px;position:relative;">' +
-          '<span class="pp2-meta" style="font-size:14px;color:var(--text-label);">' + meta.join(' ' + MIDDOT + ' ') + '</span>' +
+          '<span class="pp2-meta" style="display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;font-size:14px;font-weight:600;color:var(--text);">' +
+            badge + meta.join(HAIR) + '</span>' +
           infoIcon('pinfo', PAGE_INFO, 'About this page') +
         '</span>' +
       '</div>' +
@@ -2119,11 +2125,10 @@
       var r = c.W / c.M;
       if (!best || r > best.r || (r === best.r && c.M > best.n)) best = { label: l[1], r: r, n: c.M };
     });
-    var tbW = 0, tbL = 0;
-    ['Best of 5', 'Best of 3'].forEach(function (k) { var c = sc[k]; if (c) { tbW += c.tbW || 0; tbL += c.tbL || 0; } });
-    var parts = [recordText(t10.W, t10.L)];
+    // v3 A2: "6–13 · +4.2pp vs tour · best: ATP 250 77.4%" — no tiebreaks in the tile. No store holds the tour's own
+    // win rate against the top 10, so the comparison reads a dash (never a figure of our own making).
+    var parts = [recordText(t10.W, t10.L), 'vs tour ' + DASH];
     if (best) parts.push('best: ' + best.label + ' ' + (100 * best.r).toFixed(1) + '%');
-    if (tbW + tbL) parts.push('tiebreaks ' + recordText(tbW, tbL));
     return { headline: (100 * t10.W / t10.M).toFixed(1) + '% vs Top 10', support: parts.join(' ' + MIDDOT + ' ') };
   }
   function styleAbbr(label) {
@@ -2305,8 +2310,14 @@
     var allR = sdV.tn ? 100 * sdV.tw / sdV.tn : null;
     var pick = sdV.bands.filter(function (b) { return b.n >= 10 && allR != null && b.pct > allR; })
       .sort(function (a, b) { return (b.pct - allR) - (a.pct - allR) || b.n - a.n; })[0];
+    // v3 A2: the band's record, then his best surface with its record (the Career record's carved cells, 10+ matches)
+    var bs = null, cc = careerTierCells(p, 'all');
+    [['hard', 'hard'], ['clay', 'clay'], ['grass', 'grass'], ['indoors', 'indoors']].forEach(function (sx) {
+      var c = cc[sx[0]], n = c ? (c.won || 0) + (c.lost || 0) : 0;
+      if (n >= 10 && (!bs || c.won / n > bs.r)) bs = { name: sx[1], r: c.won / n, w: c.won, l: c.lost };
+    });
     if (pick) return { headline: Math.round(pick.pct) + '% ' + pick.name.toLowerCase() + ' courts',
-      support: 'his best speed band ' + MIDDOT + ' ' + recordText(pick.w, pick.l) + ' ' + MIDDOT + ' career' };
+      support: recordText(pick.w, pick.l) + ' ' + MIDDOT + ' best surface: ' + (bs ? bs.name + ' ' + recordText(bs.w, bs.l) : DASH) };
     if (sdV.tn) return { headline: Math.round(allR) + '%', support: 'all rated courts ' + MIDDOT + ' no band above it ' + MIDDOT + ' ' + recordText(sdV.tw, sdV.tn - sdV.tw) };
     return { headline: null, support: 'no rated ATP courts on record' };
   }
@@ -2557,21 +2568,25 @@
     var tourAllBox = tourBaselineFor('all');
     // founder 2026-10-22 (containment): rows the identity gate dashed for an ambiguous archive name are said, with their count
     var idHidden = mk && mk.identityHidden > 0 ? ' ' + MIDDOT + ' ' + mk.identityHidden + (mk.identityHidden === 1 ? ' row' : ' rows') + ' hidden: identity unverified' : '';
-    v.market = marketPending(p.key) && !mk ? { headline: null, support: null, pending: true, sizeAs: '−0.00% yield' }
+    v.market = marketPending(p.key) && !mk ? { headline: null, support: null, pending: true, sizeAs: '−0.0% as underdog' }
       : mk && mk.headline && mk.headline.yield != null
       // profile v2 (founder 2026-11-10, "use the new words"): "−1.87% yield" over
       // "flat stake · +1.9pp vs tour · fav −1.1% / dog −3.5%". The tour clause is left out until the baseline loads.
       ? (function () {
           var R = mk.roles || {}, fv = R.favourite && R.favourite.n ? R.favourite.yield : null, dg = R.underdog && R.underdog.n ? R.underdog.yield : null;
-          var parts = ['flat stake'];
+          // v3 A2: "−3.5% as underdog" over "overall −1.67% yield · +1.9pp vs tour · fav −1.1%" — the headline is the role
+          // yield furthest from zero; with one role priced, that role; with neither, the overall yield as before.
+          var lead = fv == null && dg == null ? null : dg == null || (fv != null && Math.abs(fv) > Math.abs(dg)) ? 'fav' : 'dog';
+          var parts = ['overall ' + neg(mk.headline.yield, 2, '%') + ' yield'];
+          // TEN-384 fx2 item 3 holds: while the baselines file has not arrived the tour clause is left out (no dash)
           if (tourAllBox != null) parts.push(signed(Math.round((mk.headline.yield - tourAllBox) * 10) / 10, 1, 'pp') + ' vs tour');
-          // both roles when both are priced (the export's "fav x% / dog y%"); one role alone otherwise, never a dash
-          if (fv != null && dg != null) parts.push('fav ' + neg(fv, 1, '%') + ' / dog ' + neg(dg, 1, '%'));
-          else if (fv != null) parts.push('fav ' + neg(fv, 1, '%'));
-          else if (dg != null) parts.push('dog ' + neg(dg, 1, '%'));
-          return { headline: neg(mk.headline.yield, 2, '%') + ' yield', support: parts.join(' ' + MIDDOT + ' ') + idHidden };
+          if (lead === 'fav' && dg != null) parts.push('dog ' + neg(dg, 1, '%'));
+          if (lead === 'dog' && fv != null) parts.push('fav ' + neg(fv, 1, '%'));
+          if (!lead) return { headline: neg(mk.headline.yield, 2, '%') + ' yield', support: parts.slice(1).join(' ' + MIDDOT + ' ') + idHidden };
+          return { headline: neg(lead === 'fav' ? fv : dg, 1, '%') + (lead === 'fav' ? ' as favourite' : ' as underdog'),
+            support: parts.join(' ' + MIDDOT + ' ') + idHidden };
         }())
-      : marketEmptyWhy(p.key).pending ? { headline: null, support: null, pending: true, sizeAs: '−0.00% yield' }
+      : marketEmptyWhy(p.key).pending ? { headline: null, support: null, pending: true, sizeAs: '−0.0% as underdog' }
       : { headline: null, support: (marketEmptyWhy(p.key).dashed ? 'no confirmed closing prices' : 'no priced matches on record') + idHidden };
 
     // 8 · Live trading (was "Playing profile") — the headline CHANGES SUBJECT,
@@ -2604,8 +2619,9 @@
       ? (function () {
           var parts = [recordText(s1.won, s1.lost) + ' after set 1'];
           if (sd.n) parts.push(recordText(sd.won, sd.lost) + ' from a set down');
-          var h = profileHoldPct(p);
-          if (h != null) parts.push('hold ' + h);
+          // v3 A2: no hold rate; the comparison is the modal's own "Won set 1 -> won match" row against its tour column
+          var sr = sitSetCounts(p).rows.wonS1WonMatch, tw = sitTour().rows.wonS1WonMatch, srn = sr ? sr.w + sr.l : 0;
+          parts.push((srn && tw != null ? signed(Math.round((100 * sr.w / srn - tw) * 10) / 10, 1, 'pp') : DASH) + ' vs tour');
           return { headline: rateText(s1.won, s1.lost) + ' set 1 ' + RARROW + ' match', support: parts.join(' ' + MIDDOT + ' ') };
         }())
       // TEN-384 fx3 (founder D10): no in-play state clears ten -> the OVERALL figure, his record over every
@@ -3379,19 +3395,18 @@
               '<svg width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="currentColor" ' +
               'stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="' +
               (box.icon || '') + '"/></svg></span>' +
-            '<div style="flex:1;min-width:0;">' +
+            '<div style="' + (PAGE_SWITCH[key] ? 'min-width:0;' : 'flex:1;min-width:0;') + '">' +
               '<div style="font-size:17px;font-weight:800;letter-spacing:-0.17px;">' + esc(title) + '</div>' +
               '<div style="display:flex;align-items:center;gap:8px;margin-top:2px;position:relative;">' +
                 '<span style="font-size:12.5px;color:var(--text-label);">' + esc(modalSubtitle(key, p, ctx)) + '</span>' +
                 (modalInfoSpec(key, p) ? infoIcon('m-' + key, modalInfoSpec(key, p), 'About this drawer') : '') + '</div>' +
             '</div>' +
-            // The Draw record's "Career | Last 52" grain sits in the header (the reference's slot); its
-            // builder lives in the Draw section (ana) — the shell only places it.
-            (key === 'splits' && typeof drawGrainHtml === 'function' ? drawGrainHtml() : '') +
+            // v3 B1 · the pages sit in the header as one sliding switch (Level & round's window moved into its band)
+            pageSwitchHtml(key) +
             '<button type="button" data-pp2="close" aria-label="Close" style="width:32px;height:32px;' +
               'border-radius:9px;background:var(--wash-5);border:1px solid var(--line);padding:0;' +
               'color:var(--text-label);cursor:pointer;flex:none;display:flex;align-items:center;' +
-              'justify-content:center;' + (key === 'splits' ? 'margin-left:12px;' : 'margin-left:auto;') + '">' +
+              'justify-content:center;margin-left:auto;">' +
               '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">' +
               '<path d="M3.5 3.5l7 7M10.5 3.5l-7 7" stroke="currentColor" stroke-width="1.6" ' +
               'stroke-linecap="round"></path></svg></button>' +
@@ -3529,20 +3544,21 @@
   // The Filters trigger + its popover menu (the design's filterMenu): a sliders glyph and "Filters · n";
   // a 3-column grid of option groups with cross-adjusted counts; foot "n of m matches" + Reset filters.
   // groups = [{ key, title, cur, options: [[value, label]], count: function (value) -> n }]
-  function filtersTriggerHtml(id, groups, nIn, nAll, width) {
+  function filtersTriggerHtml(id, groups, nIn, nAll, width, alignRight) {
     var open = state.fmOpen === id;
     var active = groups.filter(function (g) { return g.cur !== 'all'; });
     var lit = open || active.length;
     var trig = '<span data-pp2="fm-toggle" data-v="' + esc(id) + '" class="pp2-fmtrig" style="display:inline-flex;align-items:center;gap:8px;cursor:pointer;' +
       'white-space:nowrap;padding:6px 11px 6px 12px;border-radius:8px;box-sizing:border-box;font-size:11.5px;font-weight:700;' +
       'color:' + (lit ? 'var(--text)' : 'var(--text-label)') + ';background:' + (lit ? 'var(--selected)' : 'transparent') + ';' +
-      'border:1px solid ' + (open ? 'var(--edge-24)' : active.length ? 'var(--edge-16)' : 'var(--edge-10)') + ';user-select:none;">' +
+      'border:1px solid ' + (open ? 'var(--edge-24)' : active.length ? 'var(--edge-16)' : EDGE_8) + ';user-select:none;">' +
       '<svg width="11" height="11" viewBox="0 0 12 12" fill="none" style="pointer-events:none;"><path d="M1 2.5h10M3 6h6M5 9.5h2" ' +
       'stroke="currentColor" stroke-width="1.4" stroke-linecap="round"></path></svg>Filters' +
       (active.length ? '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:10px;font-weight:600;color:var(--text-label);pointer-events:none;">' + MIDDOT + ' ' + active.length + '</span>' : '') +
       '<svg width="9" height="9" viewBox="0 0 10 10" fill="none" style="pointer-events:none;"><path d="M2 3.5l3 3 3-3" stroke="var(--text-label)" ' +
       'stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>';
-    if (!open) return '<span style="position:relative;display:inline-flex;">' + trig + '</span>';
+    var wrapStyle = 'position:relative;display:inline-flex;' + (alignRight ? 'margin-left:auto;' : '');
+    if (!open) return '<span style="' + wrapStyle + '">' + trig + '</span>';
     var cols = groups.map(function (g) {
       return '<div style="display:flex;flex-direction:column;gap:2px;min-width:0;">' +
         '<span style="font-size:10.5px;font-weight:700;letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);padding:0 0 8px;">' + esc(g.title) + '</span>' +
@@ -3559,9 +3575,9 @@
               'stroke-linecap="round" stroke-linejoin="round"></path></svg>' : '') + '</span></span>';
         }).join('') + (g.maxH ? '</div>' : '') + '</div>';
     }).join('');
-    return '<span style="position:relative;display:inline-flex;">' + trig +
+    return '<span style="' + wrapStyle + '">' + trig +
       '<div data-pp2="fm-close" style="position:fixed;inset:0;z-index:70;"></div>' +
-      '<div data-pp2="card" style="position:absolute;top:calc(100% + 8px);left:0;z-index:71;width:' + (width || 520) + 'px;max-width:calc(100vw - 48px);' +
+      '<div data-pp2="card" style="position:absolute;top:calc(100% + 8px);' + (alignRight ? 'right:0;' : 'left:0;') + 'z-index:71;width:' + (width || 520) + 'px;max-width:calc(100vw - 48px);' +
         'background:var(--card);border:1px solid var(--edge-10);border-radius:14px;box-shadow:var(--shadow-pop);padding:14px 16px 12px;' +
         'box-sizing:border-box;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px 18px;">' + cols +
         '<div style="grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--edge-10);' +
@@ -3621,12 +3637,82 @@
       (right ? '<span style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">' + right + '</span>' : '') +
       '</div>';
   }
+  // ── Profile v3 (handoff 2026-11-12, CHANGES B) · the drawer chrome ─────────────────────────────────
+  // B2 · filters are a band of pills: no caps labels, no segmented tracks. Pill 6px 13px, radius 8, 11.5px;
+  // off 600 --text-label on an 8% ring, on 700 --text on --selected with a 16% ring. Groups split by a 1px x 18px
+  // 10% divider. `offEdge` keeps the reference's 6% ring where it draws one (Market edge surfaces).
+  var EDGE_8 = 'color-mix(in srgb, var(--text) 8%, transparent)';
+  var EDGE_14 = 'color-mix(in srgb, var(--text) 14%, transparent)';
+  function bandPill(hook, v, label, on, attr, offEdge) {
+    return '<span data-pp2="' + esc(hook) + '" data-v="' + esc(v) + '"' + (attr || '') + ' role="button" aria-pressed="' +
+      (on ? 'true' : 'false') + '" style="display:inline-flex;align-items:center;cursor:pointer;white-space:nowrap;' +
+      'padding:6px 13px;border-radius:8px;font-size:11.5px;font-weight:' + (on ? 700 : 600) + ';' +
+      'color:' + (on ? 'var(--text)' : 'var(--text-label)') + ';background:' + (on ? 'var(--selected)' : 'transparent') + ';' +
+      'border:1px solid ' + (on ? 'var(--edge-16)' : (offEdge || EDGE_8)) + ';">' + esc(label) + '</span>';
+  }
+  function bandPills(hook, items, cur, attrOf, offEdge) {
+    return '<span style="display:flex;gap:8px;flex-wrap:wrap;">' + items.map(function (t) {
+      return bandPill(hook, t[0], t[1], cur === t[0], attrOf ? attrOf(t) : '', offEdge);
+    }).join('') + '</span>';
+  }
+  function bandDiv(m) {
+    return '<span style="width:1px;height:18px;background:var(--edge-10);margin:' + (m || '0 6px') + ';flex:none;"></span>';
+  }
+  // The band itself. kind: 'joined' (--inner, 5% ring, r12 top, sits on the card it changes), 'joined-card'
+  // (Career record · Record: --card, 6% ring, r16 top), 'joined-8' (Career record · Ratings: --inner, 8% ring, r12 top),
+  // 'standalone' (--inner, 5% ring, r12, margin-bottom 16), 'standalone-card' (Calendar record: --card, 6% ring, r12).
+  // The reference's 1.25px rings are drawn 1px (foundation: every edge 1px).
+  function bandBox(inner, kind, extra) {
+    var k = kind || 'standalone';
+    var bg = k === 'joined-card' || k === 'standalone-card' ? 'var(--card)' : 'var(--inner)';
+    var ring = k === 'joined-card' || k === 'standalone-card' ? 'var(--edge-6)' : k === 'joined-8' ? EDGE_8 : 'var(--line)';
+    var joined = k.indexOf('joined') === 0;
+    return '<div data-pp2-band="' + k + '" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 16px;' +
+      'background:' + bg + ';border:1px solid ' + ring + ';' +
+      (joined ? 'border-bottom:1px solid var(--edge-6);border-radius:' + (k === 'joined-card' ? '16px 16px' : '12px 12px') + ' 0 0;'
+        : 'border-radius:12px;margin-bottom:' + (k === 'standalone-card' ? 16 : 16) + 'px;') + (extra || '') + '">' + inner + '</div>';
+  }
+  // B1 · the drawer's pages are ONE sliding switch in the header, left of the close button: track --inner + 6% ring,
+  // radius 11, padding 3; cells 116 x 34, 13px (600 --text-label off, 700 --text on); thumb --selected + 14% ring,
+  // radius 8, sliding 240ms. The repaint replaces the node, so the thumb is drawn at the page it left and moved to the
+  // new one on the next frame (pp2PgThumb in repaint).
+  var PAGE_SWITCH = {
+    career: function () { return { hook: 'career-tab', tabs: [['record', 'Record'], ['ratings', 'Ratings']], cur: state.careerTab === 'ratings' ? 'ratings' : 'record' }; },
+    season: function () { return { hook: 'cal-tab', tabs: [['calendar', 'Calendar'], ['streaks', 'Streaks']], cur: state.seasonTab === 'streaks' ? 'streaks' : 'calendar' }; },
+    market: function () { return { hook: 'market-tab', tabs: [['winner', 'Match winner'], ['lines', 'Derived lines']], cur: state.marketTab === 'lines' ? 'lines' : 'winner' }; },
+    splits: function () { return { hook: 'spl-view', tabs: [['results', 'Results'], ['sets', 'Sets & games'], ['service', 'Service']],
+      cur: state.splView === 'sets' || state.splView === 'service' ? state.splView : 'results' }; }
+  };
+  function pageSwitchHtml(key) {
+    var spec = PAGE_SWITCH[key] && PAGE_SWITCH[key]();
+    if (!spec) return '';
+    var i = 0;
+    spec.tabs.forEach(function (t, k) { if (t[0] === spec.cur) i = k; });
+    var prev = state.pgThumb && state.pgThumb[key] != null ? state.pgThumb[key] : i;
+    (state.pgThumb || (state.pgThumb = {}))[key] = i;
+    return '<div style="flex:1;display:flex;justify-content:flex-end;margin-right:12px;">' +
+      '<div data-pp2-pgsw="' + esc(key) + '" style="position:relative;display:grid;grid-template-columns:repeat(' + spec.tabs.length + ',116px);' +
+        'background:var(--inner);border:1px solid var(--edge-6);border-radius:11px;padding:3px;">' +
+        '<span class="pp2-pgthumb" data-to="' + (i * 116) + '" style="position:absolute;top:3px;left:3px;width:116px;height:34px;' +
+          'box-sizing:border-box;border-radius:8px;background:var(--selected);border:1px solid ' + EDGE_14 + ';' +
+          'transform:translateX(' + (prev * 116) + 'px);transition:transform .24s cubic-bezier(.3,.7,.2,1);"></span>' +
+        spec.tabs.map(function (t) {
+          var on = t[0] === spec.cur;
+          return '<span data-pp2="' + spec.hook + '" data-v="' + t[0] + '" role="tab" aria-selected="' + (on ? 'true' : 'false') + '" ' +
+            'class="pp2-utab" style="position:relative;cursor:pointer;height:34px;display:flex;align-items:center;' +
+            'justify-content:center;white-space:nowrap;font-size:13px;font-weight:' + (on ? 700 : 600) + ';' +
+            'color:' + (on ? 'var(--text)' : 'var(--text-label)') + ';transition:color .18s;">' + t[1] + '</span>';
+        }).join('') +
+      '</div></div>';
+  }
   // A panel inside the modal: --card + 1px --edge-6. `pos` joins two panels into one block the way the
   // reference does ('top' r16 16 0 0 with no bottom edge, 'bottom' r 0 0 16 16, else r16).
   function recPanel(inner, pos, pad) {
-    var r = pos === 'top' ? '16px 16px 0 0' : pos === 'bottom' ? '0 0 16px 16px' : '16px';
+    var r = pos === 'top' ? '16px 16px 0 0' : pos === 'bottom' ? '0 0 16px 16px' : pos === 'mid' ? '0' : '16px';
     return '<div style="background:var(--card);border:1px solid var(--edge-6);' +
-      (pos === 'top' ? 'border-bottom:0;' : '') + 'border-radius:' + r + ';padding:' + (pad || '20px 24px 22px') +
+      (pos === 'top' ? 'border-bottom:0;' : pos === 'mid' ? 'border-top:0;border-bottom:0;' : '') +
+      (pos === 'bottom-ruled' ? 'border-top-color:var(--edge-10);' : '') +
+      'border-radius:' + (pos === 'bottom-ruled' ? '0 0 16px 16px' : r) + ';padding:' + (pad || '20px 24px 22px') +
       ';min-width:0;">' + inner + '</div>';
   }
   // Panel head: caps label left, mono 12 meta right (margin-bottom 14).
@@ -4493,9 +4579,9 @@
           : cell('font-family:\'IBM Plex Mono\',monospace;font-size:12px;font-weight:700;color:' + (r.sets ? wl : DASH_COLOUR) +
              ';padding:5px 0;', esc(r.sets || DASH))) +
         cell('font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;color:var(--text-label);' +
-             'white-space:nowrap;padding:5px 0;', esc(scoreWithStatus(r, r.setScores)) + conflictMark(r) + notCountedMark(r) +
+             'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;padding:5px 0;', esc(scoreWithStatus(r, r.setScores)) + conflictMark(r) + notCountedMark(r) +
                // founder 2026-10-23 · a Derived line's drill shows no provisional source label (the field stays on the row)
-               (pg.neutral ? '' : provisionalMark(r))) +
+               '') +   // v3 clean-up (founder 2026-11-12): no provisional source text on a match row; row.provisional stays
         // A Derived line's drill swaps the two price columns for its own (lineDrillTail): margin and result.
         (pg.tail ? pg.tail(r, cell) :
         cell('font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;font-weight:700;color:var(--text);' +
@@ -4610,21 +4696,25 @@
       { f: 'firstInPct', label: 'First serve in', dp: 1, unit: '%' },
       { f: 'firstWonPct', label: 'First serve points won', dp: 1, unit: '%' },
       { f: 'secondWonPct', label: 'Second serve points won', dp: 1, unit: '%' },
-      // profile v2 (founder 2026-11-09): per service game, 2 dp (dna-apitennis-ratings.js acesPerSG / dfPerSG)
-      { f: 'acesPerSG', label: 'Aces per service game', dp: 2, unit: '' },
-      { f: 'dfPerSG', label: 'Double faults per service game', dp: 2, unit: '', lower: true }
+      // v3 C3 (Ratings brief point 4): the six terms of the Serve rating, in the rating's own unit. The rating is
+      // %1stIn + %1stWon + %2ndWon + hold% + aces per match − double faults per match (dna-apitennis-ratings.js
+      // `_meta.lockedFormulas.serve`), so the two count boxes are per match, 2 dp.
+      { f: 'holdPct', label: 'Service games won', dp: 1, unit: '%' },
+      { f: 'acesPerMatch', label: 'Aces per match', dp: 2, unit: '' },
+      { f: 'dfPerMatch', label: 'Double faults per match', dp: 2, unit: '', lower: true }
     ],
     return: [
       { f: 'ret1stWonPct', label: '1st serve return points won', dp: 1, unit: '%' },
       { f: 'ret2ndWonPct', label: '2nd serve return points won', dp: 1, unit: '%' },
       { f: 'returnGamesWonPct', label: 'Return games won', dp: 1, unit: '%' },
-      { f: 'bpConvPct', label: 'Break points converted', dp: 1, unit: '%' }
+      { f: 'bpConvPct', label: 'Break points converted', dp: 1, unit: '%', of: 'bpChances' }
     ],
     underPressure: [
-      { f: 'bpConvPct', label: 'Break points converted', dp: 1, unit: '%' },
-      { f: 'bpSavedPct', label: 'Break points saved', dp: 1, unit: '%' },
-      { f: 'tbWinPct', label: 'Tie breaks won', dp: 1, unit: '%' },
-      { f: 'decWinPct', label: 'Deciding sets won', dp: 1, unit: '%' }
+      // one figure in both groups (Ratings brief point 7): Under pressure reads Return's converted rate and its average
+      { f: 'bpConvPct', label: 'Break points converted', dp: 1, unit: '%', of: 'bpChances', from: 'return' },
+      { f: 'bpSavedPct', label: 'Break points saved', dp: 1, unit: '%', of: 'bpFaced' },
+      { f: 'tbWinPct', label: 'Tie breaks won', dp: 1, unit: '%', of: 'tbPlayed' },
+      { f: 'decWinPct', label: 'Deciding sets won', dp: 1, unit: '%', of: 'decPlayed' }
     ]
   };
 
@@ -4643,18 +4733,42 @@
   // panel is the MEAN over the rated pool at the same surface and scope, computed
   // here from the file's own player rows. n is carried with it and printed.
   var _dnaTour = {};
-  function dnaTourStats(scope) {
+  // v3 C3 (founder 2026-11-12, Ratings brief point 1) · "ATP average" = the mean over the players with at least
+  // DNA_ATP_MIN ATP main-draw matches in the selected window (qualifying, Challenger and ITF do not count towards it).
+  // The count is the builder's `sample.mdMatches` (dna-apitennis-ratings.js, the feed's own qualifying flag). A store
+  // that does not carry it yet has no ATP group: every average, Δ and scale reads a dash, never the old rated pool.
+  var DNA_ATP_MIN = 10;
+  function dnaAtpPool(scope) {
     var st = dnaStore();
     if (!st || !st.players) return null;
-    if (_dnaTour[scope]) return _dnaTour[scope];
+    var carries = false;
+    var rows = st.players.filter(function (row) {
+      var sc = row.surfaces && row.surfaces[DNA_SURFACE] && row.surfaces[DNA_SURFACE][scope];
+      var md = sc && sc.sample ? sc.sample.mdMatches : null;
+      if (md != null) carries = true;
+      return md != null && md >= DNA_ATP_MIN;
+    });
+    return carries ? rows : null;
+  }
+  function dnaInAtpPool(rec, scope) {
+    var sc = rec && rec.surfaces && rec.surfaces[DNA_SURFACE] && rec.surfaces[DNA_SURFACE][scope];
+    var md = sc && sc.sample ? sc.sample.mdMatches : null;
+    return md != null && md >= DNA_ATP_MIN;
+  }
+  // { key: { mean, n, min, max } } over the ATP group; null when the store carries no main-draw counts.
+  var _dnaTourOf = null;
+  function dnaTourStats(scope) {
+    if (_dnaTourOf !== dnaStore()) { _dnaTour = {}; _dnaTourOf = dnaStore(); }   // a reloaded store recomputes
+    if (_dnaTour[scope] !== undefined) return _dnaTour[scope];
+    var pool = dnaAtpPool(scope);
+    if (!pool) { if (dnaStore()) _dnaTour[scope] = null; return null; }
     var acc = {};
     function push(k, v) {
       if (v == null || !isFinite(v)) return;
-      (acc[k] || (acc[k] = [])).push(v);
+      (acc[k] || (acc[k] = [])).push(+v);
     }
-    st.players.forEach(function (row) {
-      var sf = row.surfaces && row.surfaces[DNA_SURFACE];
-      if (!sf) return;
+    pool.forEach(function (row) {
+      var sf = row.surfaces[DNA_SURFACE];
       var sc = sf[scope] || {};
       DNA_AXES.forEach(function (ax) {
         if (ax.key === 'elo') {
@@ -4665,18 +4779,26 @@
         if (node && node.rating != null) push(ax.key, node.rating);
         if (node) {
           (DNA_TILES[ax.key] || []).forEach(function (t) {
-            push(ax.key + '.' + t.f, node[t.f]);
+            if (dnaRateShown(t, sc)) push(ax.key + '.' + t.f, node[t.f]);
           });
         }
       });
     });
-    var out = {};
+    var out = { _n: pool.length };
     Object.keys(acc).forEach(function (k) {
       var v = acc[k];
-      out[k] = { mean: v.reduce(function (a, b) { return a + b; }, 0) / v.length, n: v.length };
+      out[k] = { mean: v.reduce(function (a, b) { return a + b; }, 0) / v.length, n: v.length,
+        min: Math.min.apply(null, v), max: Math.max.apply(null, v) };
     });
     _dnaTour[scope] = out;
     return out;
+  }
+  // A rate built on fewer than 5 is a dash (Ratings brief point 5): each rate's own count where the store holds one.
+  var DNA_RATE_MIN = 5;
+  function dnaRateShown(spec, sc) {
+    var smp = (sc && sc.sample) || {};
+    var n = spec.of ? smp[spec.of] : null;
+    return n == null || n >= DNA_RATE_MIN;
   }
 
   // TEN-319 (founder D6): the radar plots a TRUE percentile rank within a stated
@@ -4737,15 +4859,20 @@
       }
       var t = tour[ax.key] || null;
       var tPct = t ? dnaPctFromPop(scope, ax.key, t.mean) : null;
+      // v3 C3 point 2 · the radar's scale: lowest ATP player at the centre, highest at the edge (fraction of the range)
+      var span = t && t.max > t.min ? t.max - t.min : null;
+      var fr = function (v) { return v == null || span == null ? null : Math.max(0, Math.min(1, (v - t.min) / span)); };
       return {
         key: ax.key, label: ax.label, dp: ax.dp,
         rating: rating, pct: pct,
         tour: t ? t.mean : null, tourN: t ? t.n : null, tourPct: tPct,
-        delta: (rating != null && t) ? rating - t.mean : null,
+        lo: t ? t.min : null, hi: t ? t.max : null, frac: fr(rating), tourFrac: t ? fr(t.mean) : null,
+        outside: rating != null && t != null && (rating < t.min || rating > t.max),
+        delta: dnaDelta(rating, t ? t.mean : null, ax.dp),
         scoped: ax.key !== 'elo'
       };
     });
-    var drawable = axes.filter(function (a) { return a.pct != null; }).length;
+    var drawable = axes.filter(function (a) { return a.frac != null; }).length;
     return {
       state: matches >= DNA_FLOOR && drawable ? 'ok' : (drawable ? 'thin' : 'thin'),
       scope: scope, matches: matches, axes: axes,
@@ -4753,7 +4880,8 @@
       sinceBaseMatches: ((sf && sf.sinceBase && sf.sinceBase.sample && sf.sinceBase.sample.matches) || 0),
       latest: rec.latestMatch || null,
       meta: st.meta || {},
-      node: sc, tourStats: tour
+      node: sc, tourStats: tour, atpN: tour && tour._n != null ? tour._n : null, inAtp: dnaInAtpPool(rec, scope),
+      scopeOther: scope === 'last52' ? 'sinceBase' : 'last52'
     };
   }
 
@@ -4795,19 +4923,14 @@
   // track at the left; caps WINDOW + Career | Last 52 and (Record tab only) caps TIER + All | ATP |
   // Challenger & ITF on small tracks at the right. The window used to sit in the modal header; the shell
   // no longer carries it. One window drives both tabs (the radar's scope under Ratings).
+  // v3 C1 · the pages moved to the header switch; the band sits on the card it changes: Window pills · divider · Tier
+  // pills (Record only). Ground follows the page: Record --card r16 top, Ratings --inner + 8% ring r12 top.
   function careerTabsHtml() {
     var tab = state.careerTab === 'ratings' ? 'ratings' : 'record';
-    var tabs = recSegTrack(CAREER_TABS.map(function (t) {
-      return recSegBtn('career-tab', t[0], t[1], tab === t[0], false);
-    }).join(''), false);
-    // founder 2026-11-10 ("follow the design"): the Tier control is back, after Window, on the Record tab only
-    var right = headScopeHtml();
-    if (tab === 'record') {
-      right += recLabelledSeg('Tier', CAREER_TIERS.map(function (t) {
-        return recSegBtn('career-tier', t[0], t[1], careerTier() === t[0], true);
-      }).join(''));
-    }
-    return recTabRow(tabs, right);
+    var win = bandPills('career-scope', [['l52', 'Last 52 weeks'], ['career', 'Career']], state.careerScope === 'l52' ? 'l52' : 'career',
+      function (t) { return ' data-scope="' + t[0] + '"'; });
+    var tier = tab === 'record' ? bandDiv() + bandPills('career-tier', CAREER_TIERS, careerTier()) : '';
+    return bandBox(win + tier, tab === 'ratings' ? 'joined-8' : 'joined-card');
   }
 
   // ── the WINDOW control, `Career | Last 52` — now in the tab row (TEN-384) ──
@@ -4866,260 +4989,186 @@
     return t === 'atp' ? 'atp' : 'chitf';
   }
 
-  // ── the tiles (`metric()` :2251-2263 verbatim, with the null branch kept) ──
+  // ── v3 C3 · the Ratings page (founder 2026-11-12, PROMPT_RATINGS_TAB + CHANGES C3) ─────────────────────
+  // Every Δ is the shown figure minus the shown average (both rounded to the decimals on screen, then subtracted).
+  function dnaRound(v, dp) { var k = Math.pow(10, dp); return Math.round(v * k) / k; }
+  function dnaDelta(v, avg, dp) {
+    if (v == null || avg == null || !isFinite(v) || !isFinite(avg)) return null;
+    return dnaRound(dnaRound(v, dp) - dnaRound(avg, dp), dp);
+  }
   var DNA_GREEN = 'var(--pos)', DNA_RED = 'var(--neg)', DNA_FAINT = 'var(--text-label)';
-  function dnaTile(spec, v, avg) {
-    var unit = spec.unit || '';
-    if (v == null || avg == null) {
-      return { label: spec.label, value: DASH, delta: DASH,
-        avg: avg == null ? DASH : dnaFmt(avg, spec.dp) + unit,
-        color: DNA_FAINT, deltaColor: DNA_FAINT, weight: 600,
-        bd: 'color-mix(in srgb, var(--text) 4.5%, transparent)', mark: '' };   // the export never marks a tile (file :1801, :1812)
-    }
-    var d = v - avg;
-    var above = spec.lower ? d < 0 : d > 0;
-    var level = Math.abs(d) < 0.15;
-    return {
-      label: spec.label,
-      value: (+v).toFixed(1) + unit,
-      delta: (d >= 0 ? '+' : MINUS) + Math.abs(d).toFixed(1),
-      avg: (+avg).toFixed(1) + unit,
-      color: 'var(--text)',
-      deltaColor: level ? 'var(--text-label)' : (above ? DNA_GREEN : DNA_RED),
-      weight: 700,
-      mark: '',
-      bd: 'color-mix(in srgb, var(--text) 4.5%, transparent)'
-    };
+  // Δ text + colour: a gap of exactly zero is a grey "0"; green better than the average, red worse (lower-is-better flips).
+  function dnaDeltaParts(d, dp, lower) {
+    if (d == null) return { txt: DASH, col: DNA_FAINT };
+    if (d === 0) return { txt: '0', col: DNA_FAINT };
+    var better = lower ? d < 0 : d > 0;
+    return { txt: (d > 0 ? '+' : MINUS) + Math.abs(d).toFixed(dp), col: better ? DNA_GREEN : DNA_RED };
   }
-  function dnaTileHtml(t) {
-    // TEN-384 R5 · a stat box inside the modal = --card + 1px --edge-6 (was --inner + 4.5%).
-    return '<div style="background:var(--card);border:1px solid var(--edge-6);border-radius:10px;' +
-      'padding:14px 15px;display:flex;flex-direction:column;align-items:center;text-align:center;">' +
+  // A box (1d): ground --card, 6% ring, r10, padding 14 12, centred: value mono 21/700 + Δ mono 15/700 · label 12.5/600
+  // soft · "ATP average X" mono 10.5 grey. No sample-count line. A rate under 5 (or no ATP group) is a dash.
+  function dnaBoxHtml(spec, v, avg) {
+    var has = v != null && isFinite(v);
+    var dp = spec.dp, unit = spec.unit || '';
+    var d = dnaDeltaParts(has ? dnaDelta(v, avg, dp) : null, dp, spec.lower);
+    return '<div data-pp2-dnabox="' + esc(spec.f) + '" style="background:var(--card);border:1px solid var(--edge-6);border-radius:10px;' +
+      'padding:14px 12px;display:flex;flex-direction:column;align-items:center;text-align:center;min-width:0;">' +
       '<div style="display:flex;align-items:baseline;justify-content:center;gap:8px;">' +
-        '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:21px;font-weight:' + t.weight +
-          ';color:' + t.color + ';">' + esc(t.value) + '</span>' +
-        '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:15px;font-weight:700;' +
-          'color:' + t.deltaColor + ';">' + esc(t.delta) + '</span>' +
+        '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:21px;font-weight:700;color:' + (has ? 'var(--text)' : DNA_FAINT) + ';">' +
+          (has ? (+v).toFixed(dp) + unit : DASH) + '</span>' +
+        '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:15px;font-weight:700;color:' + d.col + ';">' + esc(d.txt) + '</span>' +
       '</div>' +
-      '<div style="font-size:12.5px;font-weight:600;color:var(--text-soft);margin-top:6px;">' + esc(t.label) + '</div>' +
+      '<div style="font-size:12.5px;font-weight:600;color:var(--text-soft);margin-top:6px;">' + esc(spec.label) + '</div>' +
       '<div style="display:flex;align-items:baseline;justify-content:center;gap:8px;margin-top:4px;">' +
-        '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;color:var(--text-label);">' +
-          'tour average ' + esc(t.avg) + '</span>' +
-        '<span style="font-family:var(--font-words);font-size:10.5px;font-weight:700;' +
-          'letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);">' + esc(t.mark) + '</span>' +
-      '</div>' +
-    '</div>';
+        '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;color:var(--text-label);">ATP average ' +
+          (avg == null ? DASH : esc((+avg).toFixed(dp) + unit)) + '</span>' +
+      '</div></div>';
   }
-  function dnaGroupHtml(label, tiles, first) {
-    return '<div style="font-family:var(--font-words);font-size:10.5px;font-weight:700;' +
-      'letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);margin:' +
-      (first ? '0 0 11px' : '22px 0 11px') + ';">' + esc(label) + '</div>' +
-      '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(216px,1fr));gap:10px;">' +
-      tiles.map(dnaTileHtml).join('') + '</div>';
+  // A group frame: --inner + 8% ring, r12, padding 14 16 16, centred caps heading in soft ink (margin-bottom 12).
+  function dnaGroupFrame(label, boxes, cols, span) {
+    return '<div style="' + (span ? 'grid-column:1/-1;' : 'display:flex;flex-direction:column;') + 'background:var(--inner);' +
+      'border:1px solid ' + EDGE_8 + ';border-radius:12px;padding:14px 16px 16px;min-width:0;">' +
+      '<div style="text-align:center;font-family:var(--font-words);font-size:10.5px;font-weight:700;letter-spacing:0.10em;' +
+        'text-transform:uppercase;color:var(--text-soft);margin-bottom:12px;">' + esc(label) + '</div>' +
+      '<div style="' + (span ? '' : 'flex:1;') + 'display:grid;grid-template-columns:repeat(' + cols + ',minmax(0,1fr));' +
+        (span ? '' : 'grid-auto-rows:1fr;') + 'gap:10px;">' + boxes + '</div></div>';
   }
 
-  // ── §5.2C the rendered panel ──────────────────────────────────────────────
-  // The DNA panel's (?) — the export's cr3 text; "Rating" is the house sum (standing ruling), never a score out of 100.
-  var CR3_INFO = { what: 'His main ratings next to the tour, on the window you picked.', width: 420, defs: [
-    ['Rating', 'The house rating for serve, return and play under pressure: his percentages and counts summed, from his match statistics.'],
-    ['Vs tour', 'His rating minus the average of all rated players. Green is better than the tour, red is worse.'],
-    ['Per service game', 'Aces and double faults are counted per service game, so five-set matches do not inflate them.'],
-    ['Window', 'Last 52 weeks or career. The toggle at the top of the drawer sets it.']] };
+  // The DNA panel's (?) — the founder's (?) text, sentence case, with the ATP group's real count per window.
+  function cr3Info(m) {
+    var nOf = function (scope) { var t = dnaTourStats(scope); return t && t._n != null ? t._n : null; };
+    var n52 = nOf('last52'), nC = nOf('sinceBase');
+    return { what: 'His main ratings next to the ATP average, on the window you picked.', width: 440, defs: [
+      ['ATP average', 'The average of players with at least ' + DNA_ATP_MIN + ' ATP main-draw matches in the window: ' +
+        (n52 == null ? DASH : n52) + ' players in the last 52 weeks / ' + (nC == null ? DASH : nC) +
+        ' players across their careers. Qualifying, Challenger and ITF matches do not count towards the ' + DNA_ATP_MIN + '.'],
+      ['Δ vs ATP', 'His figure minus the ATP average, both as shown on screen. Green is better than the average, red is worse.'],
+      ['Chart scale', 'Each axis runs from the lowest ATP player at the centre to the highest at the edge. The best figure is ' +
+        'printed at the end of each axis, and the grey line is the ATP average.'],
+      ['Double faults', 'Fewer is better, so a negative gap is green.'],
+      ['Serve boxes', 'The six terms of the Serve rating: first serve in, first serve points won, second serve points won and ' +
+        'service games won, plus aces per match, minus double faults per match.'],
+      ['Per match', 'The Serve rating counts aces and double faults per match, so the two boxes show them per match.'],
+      ['Thin samples', 'A rate built on fewer than ' + DNA_RATE_MIN + ' shows a dash.'],
+      ['Window', 'Last 52 weeks or career.']] };
+  }
   function renderRatingsPanel(p) {
     var m = dnaModel(p);
     var sn = shortName(p);
+    // The band sits on this panel (joined): side and bottom 8% ring, r 0 0 12 12.
+    var PANEL = 'position:relative;background:var(--inner);border:1px solid ' + EDGE_8 + ';border-top:0;border-radius:0 0 12px 12px;' +
+      'padding:18px 20px 16px;margin-bottom:20px;display:flex;flex-direction:column;gap:14px;';
     function stateBox(msg) {
-      return '<div style="border:1px dashed var(--edge-6);border-radius:10px;padding:26px;' +
-        'text-align:center;font-size:13px;color:' + DASH_COLOUR + ';line-height:1.6;">' + msg + '</div>';
+      return '<div style="' + PANEL + '"><div style="padding:26px;text-align:center;font-size:13px;color:' + DASH_COLOUR +
+        ';line-height:1.6;">' + msg + '</div></div>';
     }
-    if (m.state === 'no-store') {
-      // Not loaded is not the same statement as not rated. §3.
-      return stateBox('Ratings have not loaded.');
-    }
+    if (m.state === 'no-store') return stateBox('Ratings have not loaded.');   // not loaded is not "not rated"
     if (m.state === 'unrated') {
       return stateBox(esc(sn) + ' is not in the rated pool, so no rating can be shown.' +
-        (m.rated && m.roster
-          ? '<br>The ratings cover ' + m.rated + ' players of the ' + m.roster + '-player roster — ' +
-            'entry needs more than 10 matches in the api-tennis box-score cache.'
-          : ''));
+        (m.rated && m.roster ? '<br>The ratings cover ' + m.rated + ' players of the ' + m.roster + '-player roster.' : ''));
     }
-
-    var scopeWord = m.scope === 'last52' ? 'Last 52 weeks' : 'Career';
     var axes = m.axes;
-
-    // The radar draws only where the axis HAS a percentile; a missing axis
-    // collapses to the centre on the file's geometry, which would read as "worst
-    // on tour". Those axes are dropped from the polygon and dashed in the table
-    // instead, and the note says how many.
-    var missing = axes.filter(function (a) { return a.pct == null; });
-    var playerPoly = dnaPoly(axes.map(function (a) { return a.pct == null ? 0 : a.pct / 100; }));
-    // ★ DEVIATION, REPORTED — the file draws the tour polygon at a FLAT 0.5 ring
-    //   (:1292 `poly(AX.map(() => 0.5))`). Our percentile scale is p2->0/p98->100
-    //   over the rated pool, on which the tour MEAN does not land on 0.5: measured
-    //   on the All node it runs 43.1 (dominance ratio, career) to 57.7 (under
-    //   pressure, last 52). Drawing the flat ring would put a player who is exactly
-    //   average on dominance ratio OUTSIDE the "tour average" polygon. So the ring
-    //   is drawn at each axis's true tour-mean percentile and the deviation is in
-    //   the report for the founder to rule on.
-    var tourPoly = dnaPoly(axes.map(function (a) {
-      return a.tourPct == null ? 0.5 : a.tourPct / 100;
-    }));
+    var noGroup = m.atpN == null;
+    var CAPS = 'font-family:var(--font-words);font-size:10.5px;font-weight:700;letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);';
+    var MONO = 'font-family:\'IBM Plex Mono\',monospace;';
+    // ── the radar (1b): 640 x 300 box; the 336 x 272 web at (152, 28); rings 1 / .75 / .5 / .25 and spokes at 8% ──
+    var OX = 152, OY = 28;
     var web = [1, 0.75, 0.5, 0.25].map(function (k) {
-      return '<polygon points="' + dnaPoly(axes.map(function () { return k; })) + '" fill="none" ' +
-        'stroke=color-mix(in srgb, var(--edge-16) 50%, transparent)" stroke-width="1" vector-effect="non-scaling-stroke"></polygon>';
+      return '<polygon points="' + dnaPoly(axes.map(function () { return k; })) + '" fill="none" stroke="' + EDGE_8 + '" ' +
+        'stroke-width="1" vector-effect="non-scaling-stroke"></polygon>';
     }).join('');
     var spokes = axes.map(function (a, i) {
       var xy = dnaPt(i, 1);
-      return '<line x1="' + DNA_CX + '" y1="' + DNA_CY + '" x2="' + xy[0].toFixed(1) + '" y2="' +
-        xy[1].toFixed(1) + '" stroke="color-mix(in srgb, var(--edge-16) 50%, transparent)" stroke-width="1"></line>';
+      return '<line x1="' + DNA_CX + '" y1="' + DNA_CY + '" x2="' + xy[0].toFixed(1) + '" y2="' + xy[1].toFixed(1) + '" ' +
+        'stroke="' + EDGE_8 + '" stroke-width="1"></line>';
     }).join('');
-    var valueLabels = axes.map(function (a, i) {
-      if (a.pct == null) return '';
-      // founder 2026-11-10 (the export, file :1861): the figure sits just outside its vertex, pushed 9px outward along
-      // the spoke — above the top vertex, right of the right-hand ones, left of the left-hand ones; mono 11/700 on a chip.
-      // A vertex near the rim (above 85%) would put its figure on the axis name, so that figure sits just INSIDE the vertex.
-      var xy = dnaPt(i, a.pct / 100), rim = a.pct > 85, k = rim ? -9 : 9;
-      var ang = (-90 + i * 72) * Math.PI / 180, ox = Math.cos(ang) * k, oy = Math.sin(ang) * k;
+    var draw = !noGroup && axes.every(function (a) { return a.frac != null; });
+    var playerPoly = draw ? dnaPoly(axes.map(function (a) { return a.frac; })) : '';
+    var atpPoly = draw ? dnaPoly(axes.map(function (a) { return a.tourFrac; })) : '';
+    var dots = draw ? axes.map(function (a, i) {
+      var xy = dnaPt(i, a.frac);
+      return '<circle cx="' + xy[0].toFixed(1) + '" cy="' + xy[1].toFixed(1) + '" r="3" fill="var(--card)" stroke="var(--bar)" stroke-width="2"></circle>';
+    }).join('') : '';
+    // Corner labels, two lines: caps axis name, then "304 · ATP best 331" (his figure mono 12.5/700 white, the rest 11 grey).
+    var labels = axes.map(function (a, i) {
+      var top = i === 0;
+      var xy = dnaPt(i, top ? 1.07 : 1.14);
       var right = xy[0] > DNA_CX + 4;
-      var shift = i === 0 ? (rim ? 'translate(-50%,0)' : 'translate(-50%,-100%)')
-        : right ? (rim ? 'translate(-100%,-50%)' : 'translate(0,-50%)') : (rim ? 'translate(0,-50%)' : 'translate(-100%,-50%)');
-      return '<span style="position:absolute;left:' + (xy[0] + ox + DNA_PAD).toFixed(1) + 'px;top:' +
-        (xy[1] + oy).toFixed(1) + 'px;transform:' + shift + ';font-family:\'IBM Plex Mono\',monospace;' +
-        'font-size:11px;font-weight:700;color:var(--text);background:color-mix(in srgb, var(--inner) 90%, transparent);padding:1px 5px;' +
-        'border-radius:4px;white-space:nowrap;z-index:2;font-variant-numeric:tabular-nums;">' + esc(dnaFmt(a.rating, a.dp)) + '</span>';
+      var tf = top ? 'translate(-50%,-100%)' : right ? 'translate(8px,-50%)' : 'translate(-100%,-50%) translateX(-8px)';
+      var al = top ? 'center' : right ? 'flex-start' : 'flex-end';
+      return '<span style="position:absolute;left:' + (xy[0] + OX).toFixed(1) + 'px;top:' + (xy[1] + OY).toFixed(1) + 'px;' +
+        'transform:' + tf + ';display:flex;flex-direction:column;gap:3px;align-items:' + al + ';white-space:nowrap;">' +
+        '<span style="' + CAPS + '">' + esc(a.label) + '</span>' +
+        '<span style="' + MONO + 'font-size:11px;color:var(--text-label);font-variant-numeric:tabular-nums;">' +
+          '<span style="font-size:12.5px;font-weight:700;color:var(--text);">' + esc(dnaFmt(a.rating, a.dp)) + '</span>' +
+          ' ' + MIDDOT + ' ATP best ' + esc(a.hi == null ? DASH : dnaFmt(a.hi, a.dp)) + '</span></span>';
     }).join('');
-    var axisLabels = axes.map(function (a, i) {
-      var xy = dnaPt(i, 1.14);
-      var shift = i === 0 ? 'translate(-50%,-130%)'
-        : xy[0] > DNA_CX + 4 ? 'translate(8px,-50%)'
-        : xy[0] < DNA_CX - 4 ? 'translate(-100%,-50%) translateX(-8px)' : 'translate(-50%,20%)';
-      return '<span style="position:absolute;left:' + (xy[0] + DNA_PAD).toFixed(1) + 'px;top:' +
-        xy[1].toFixed(1) + 'px;transform:' + shift + ';font-family:var(--font-words);' +
-        'font-size:10.5px;font-weight:700;letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);' +
-        'white-space:nowrap;">' + esc(a.label) + '</span>';
-    }).join('');
+    var chart = '<div style="position:relative;width:640px;max-width:100%;height:300px;margin:0 auto;">' + labels +
+      '<svg width="336" height="272" viewBox="0 0 336 272" fill="none" style="display:block;position:absolute;left:' + OX + 'px;top:' + OY + 'px;">' +
+        '<defs><linearGradient id="pp2DnaFill" x1="0" y1="0" x2="0" y2="1">' +
+          '<stop offset="0" stop-color="var(--bar)" stop-opacity="0.34"></stop>' +
+          '<stop offset="1" stop-color="var(--bar)" stop-opacity="0.06"></stop></linearGradient></defs>' +
+        web + spokes +
+        (draw ? '<polygon points="' + playerPoly + '" fill="url(#pp2DnaFill)" stroke="var(--bar)" stroke-width="2" stroke-linejoin="round"></polygon>' +
+          // the ATP average: ONE solid line, soft ink 1.5px, no fill, drawn above the player's fill
+          '<polygon data-pp2-atpavg="1" points="' + atpPoly + '" fill="none" stroke="var(--text-soft)" stroke-width="1.5" stroke-linejoin="round"></polygon>' + dots : '') +
+      '</svg>' +
+      (draw ? '' : '<div style="position:absolute;left:' + OX + 'px;top:' + OY + 'px;width:336px;height:272px;display:flex;align-items:center;' +
+        'justify-content:center;text-align:center;font-size:12.5px;color:' + DASH_COLOUR + ';line-height:1.6;padding:0 60px;box-sizing:border-box;">' +
+        (noGroup ? 'The ATP comparison group is not built yet.' : 'Not every axis has a figure in this window.') + '</div>') +
+      '</div>';
 
-    var HEADCELL = 'font-family:var(--font-words);font-size:10.5px;font-weight:700;' +
-      'letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);';
+    var HEAD = CAPS;
     var CELL = 'padding:7px 0;border-top:1px solid var(--line);';
     var rows = axes.map(function (a) {
-      // The file's own "level" band, scaled by the axis's decimal place (:1315).
-      var lvl = a.delta != null && Math.abs(a.delta) < (a.dp === 2 ? 0.02 : 0.5);
-      var deltaTxt = a.delta == null ? DASH
-        : lvl ? DASH
-        : (a.delta > 0 ? '+' : MINUS) + dnaFmt(Math.abs(a.delta), a.dp);
-      var deltaCol = (a.delta == null || lvl) ? 'var(--text-label)' : (a.delta > 0 ? DNA_GREEN : DNA_RED);
+      var d = dnaDeltaParts(a.delta, a.dp, false);
       return '<span style="font-size:12px;color:var(--text-label);' + CELL + '">' + esc(a.label) + '</span>' +
-        '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:12px;font-weight:400;' +
-          'color:' + (a.rating == null ? DASH_COLOUR : 'var(--text)') + ';text-align:right;' + CELL + '">' +
+        '<span style="' + MONO + 'font-size:12px;font-weight:400;color:' + (a.rating == null ? DASH_COLOUR : 'var(--text)') + ';text-align:right;' + CELL + '">' +
           esc(dnaFmt(a.rating, a.dp)) + '</span>' +
-        '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:12px;font-weight:700;' +
-          'color:' + deltaCol + ';text-align:right;' + CELL + '">' + esc(deltaTxt) + '</span>' +
-        '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;font-weight:400;' +
-          'color:var(--text-label);text-align:right;' + CELL + '">' + esc(dnaFmt(a.tour, a.dp)) + '</span>';
+        '<span style="' + MONO + 'font-size:12px;font-weight:700;color:' + d.col + ';text-align:right;' + CELL + '">' + esc(d.txt) + '</span>' +
+        '<span style="' + MONO + 'font-size:11px;font-weight:400;color:var(--text-label);text-align:right;' + CELL + '">' + esc(dnaFmt(a.tour, a.dp)) + '</span>';
     }).join('');
 
-    var tourN = (axes[0] && axes[0].tourN) || null;
-    // Every clause here is a measured fact about THIS panel, not boilerplate: the
-    // window, the pool the average is taken over, what Elo does not do, and what
-    // is missing. §3 forbids a rounded constant; this is what replaces it.
-    //
-    // ── FOUNDER RULING 2026-09-19 · what "tour" means, in plain words ─────────
-    // "Compute it over the … rated players and SAY SO on the page, in the
-    //  footnote, in plain words: the average of the N players we rate, not the
-    //  ATP field. State the real N at render time, not … hardcoded."
-    //
-    // This clause previously read "percentile vs the ATP field", which is the
-    // claim the ruling forbids: the pool is the players carrying a DNA row, not
-    // the tour. `tourN` is counted in dnaTourStats() by walking the live store
-    // every render, so it moves as the store grows and is never a constant.
-    // The TOUR column header and the tiles' "tour average X" line have no room
-    // for the caveat, so the footnote below carries it for them.
-    var note = scopeWord +
-      (tourN ? ' ' + MIDDOT + ' tour figures are the average of the ' + tourN +
-        ' players we rate, not the ATP field' : '') +
-      ' ' + MIDDOT + ' Δ is his figure minus that average, in rating points';
-    // founder 2026-11-10: the paragraph under the tiles is removed; its data facts (the window's match count, Elo
-    // has no window, what is estimated or missing) sit in the DNA panel's (?).
-    var footNotes = [m.matches + ' match' + (m.matches === 1 ? '' : 'es') + ' with box scores in this window.',
+    var notes = [m.matches + ' match' + (m.matches === 1 ? '' : 'es') + ' with box scores in this window.',
       'Elo carries no window: it reads the same under Career and Last 52 weeks.']
       .concat(m.estimated ? ['Under pressure is estimated from three of its four terms.'] : [])
-      .concat(missing.length ? [missing.length + ' of the five axes ' + (missing.length === 1 ? 'has' : 'have') +
-        ' no rating in this window and ' + (missing.length === 1 ? 'is' : 'are') + ' left off the shape.'] : []);
-    var playerDots = axes.map(function (a, i) {
-      if (a.pct == null) return '';
-      var xy = dnaPt(i, a.pct / 100);
-      return '<circle cx="' + xy[0].toFixed(1) + '" cy="' + xy[1].toFixed(1) + '" r="3" fill="var(--card)" stroke="var(--bar)" stroke-width="2"></circle>';
-    }).join('');
-    var thin = m.state === 'thin';
-    var shape = thin
-      ? '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;' +
-          'text-align:center;font-size:12.5px;color:' + DASH_COLOUR + ';line-height:1.6;padding:0 40px;">' +
-          m.matches + ' match' + (m.matches === 1 ? '' : 'es') + ' in this window — under the ' +
-          DNA_FLOOR + '-match floor, so no shape is drawn.</div>'
-      : axisLabels + valueLabels +
-        '<svg width="336" height="272" viewBox="0 0 336 272" fill="none" ' +
-          'style="display:block;position:absolute;left:60px;top:0;">' + web + spokes +
-          // founder 2026-11-10 ("two continuous lines, not lines with gaps"): the export's DNA — the tour polygon a
-          // solid grey 1.25 line, the player's a 2px --bar line over the export's top-down blue fill (34% → 6%), a
-          // ringed dot on each of his vertices.
-          '<defs><linearGradient id="pp2DnaFill" x1="0" y1="0" x2="0" y2="1">' +
-            '<stop offset="0" stop-color="var(--bar)" stop-opacity="0.34"></stop>' +
-            '<stop offset="1" stop-color="var(--bar)" stop-opacity="0.06"></stop></linearGradient></defs>' +
-          '<polygon points="' + tourPoly + '" fill="none" stroke="var(--text-label)" stroke-width="1.25" ' +
-            'stroke-linejoin="round"></polygon>' +
-          '<polygon points="' + playerPoly + '" fill="url(#pp2DnaFill)" stroke="var(--bar)" ' +
-            'stroke-width="2" stroke-linejoin="round"></polygon>' +
-          playerDots +
-        '</svg>';
+      .concat(!noGroup && !m.inAtp ? [esc(sn) + ' has fewer than ' + DNA_ATP_MIN + ' ATP main-draw matches in this window, so he is not in the ATP group; ' +
+        'a figure outside its range sits on the centre or the edge.'] : [])
+      .concat(noGroup ? ['The ATP group needs each player’s main-draw match count, which this ratings file does not carry yet.'] : []);
 
-    var tiles = '';
-    var node = m.node || {};
-    var ts = m.tourStats || {};
-    ['serve', 'return', 'underPressure'].forEach(function (ax, gi) {
-      var label = ax === 'serve' ? 'Serve' : ax === 'return' ? 'Return' : 'Under pressure';
-      var src = node[ax] || {};
-      var list = DNA_TILES[ax].map(function (spec) {
-        var t = ts[ax + '.' + spec.f];
-        return dnaTile(spec, src[spec.f] == null ? null : src[spec.f], t ? t.mean : null);
-      });
-      tiles += dnaGroupHtml(label, list, gi === 0);
-    });
-
-    return '' +
-      // TEN-384 R1 · the DNA panel = --card + --edge-6 (a panel inside the modal), r12, 18/20/16.
-      '<div style="position:relative;background:var(--card);border:1px solid var(--edge-6);border-radius:12px;' +
-        'padding:18px 20px 16px;margin-bottom:20px;display:flex;flex-direction:column;gap:14px;">' +
-        infoCorner('cr3', Object.assign({ notes: footNotes }, CR3_INFO)) +
+    var node = m.node || {}, ts = m.tourStats || {};
+    function boxes(ax) {
+      return DNA_TILES[ax].map(function (spec) {
+        var a2 = spec.from || ax, s2 = node[a2] || {};
+        var t = ts[a2 + '.' + spec.f];
+        var v = s2[spec.f] != null && dnaRateShown(spec, node) ? s2[spec.f] : null;
+        return dnaBoxHtml(spec, v, t ? t.mean : null);
+      }).join('');
+    }
+    return '<div style="' + PANEL + '">' +
+        infoCorner('cr3', Object.assign({ notes: notes }, cr3Info(m))) +
         '<div style="display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;padding-right:28px;">' +
-          '<span style="' + HEADCELL + '">Player DNA</span>' +
+          '<span style="' + HEAD + '">Player DNA</span>' +
+          '<span style="' + MONO + 'font-size:11px;color:var(--text-label);">centre = lowest ATP player ' + MIDDOT + ' edge = highest</span>' +
           '<span style="display:flex;align-items:center;gap:14px;margin-left:auto;">' +
-            '<span style="display:flex;align-items:center;gap:6px;">' +
-              '<span style="width:14px;height:2px;background:var(--bar);"></span>' +
-              '<span style="font-family:var(--font-words);font-size:10.5px;font-weight:700;' +
-                'letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);">' + esc(sn) + '</span>' +
-            '</span>' +
-            '<span style="display:flex;align-items:center;gap:6px;">' +
-              '<span style="width:14px;height:1px;background:var(--text-label);"></span>' +
-              '<span style="font-family:var(--font-words);font-size:10.5px;font-weight:700;' +
-                'letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);">Tour average</span>' +
-            '</span>' +
+            '<span style="display:flex;align-items:center;gap:6px;"><span style="width:14px;height:2px;background:var(--bar);"></span>' +
+              '<span style="' + CAPS + '">' + esc(sn) + '</span></span>' +
+            '<span style="display:flex;align-items:center;gap:6px;"><span style="width:14px;height:2px;background:var(--text-soft);"></span>' +
+              '<span style="' + CAPS + '">ATP average</span></span>' +
           '</span>' +
+        '</div>' + chart +
+        '<div style="display:grid;grid-template-columns:minmax(0,1fr) 74px 70px 84px;gap:0 12px;align-items:center;' +
+          'border-top:1px solid var(--edge-6);padding-top:10px;">' +
+          '<span style="' + HEAD + '">Raw rating</span>' +
+          '<span style="' + HEAD + 'text-align:right;">Player</span>' +
+          '<span style="' + HEAD + 'text-align:right;">Δ vs ATP</span>' +
+          '<span style="' + HEAD + 'text-align:right;white-space:nowrap;">ATP average</span>' + rows +
         '</div>' +
-        '<div style="position:relative;width:456px;max-width:100%;height:272px;margin:0 auto;">' +
-          shape + '</div>' +
-        '<div style="display:grid;grid-template-columns:minmax(0,1fr) 74px 70px 62px;gap:0 12px;' +
-          'align-items:center;border-top:1px solid var(--line);padding-top:10px;">' +
-          '<span style="' + HEADCELL + '">Raw rating</span>' +
-          '<span style="' + HEADCELL + 'text-align:right;">Player</span>' +
-          '<span style="' + HEADCELL + 'text-align:right;">Δ vs tour</span>' +
-          '<span style="' + HEADCELL + 'text-align:right;">Tour</span>' +
-          rows +
-        '</div>' +
-        '<div style="font-family:var(--font-words);font-size:10.5px;font-weight:700;' +
-          'letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);">' + esc(note) + '</div>' +
       '</div>' +
-      tiles;
+      '<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;">' +
+        dnaGroupFrame('Serve', boxes('serve'), 3, true) +
+        dnaGroupFrame('Return', boxes('return'), 2, false) +
+        dnaGroupFrame('Under pressure', boxes('underPressure'), 2, false) +
+      '</div>';
   }
 
   // §5.2 Career record — surface rows over the spine + Record by season.
@@ -5314,7 +5363,7 @@
         'display:block;margin-bottom:12px;') +
       hero +
       '<div style="' + SGRID + '">' + shead + srows + '</div>',
-      'top', '22px 24px 24px');
+      'mid', '22px 24px 20px');
 
     // ── C7 / C8 · Record by season — a joined panel under the card ─────────────
     var years = spineYears(p).slice().sort(function (a, b) {
@@ -5457,7 +5506,7 @@
       '<div style="height:14px;"></div></div>' +
       '<div style="display:grid;grid-template-columns:auto repeat(6,minmax(0,1fr));gap:0 14px;' +
         'align-items:center;">' + head + body + footer + surfDrill + '</div>',
-      'bottom', '20px 24px 22px');
+      'bottom-ruled', '20px 24px 22px');
 
     return careerTabsHtml() + card + season + drillBox;
   }
@@ -6106,7 +6155,7 @@
   // Backing (default W–L, most matches first; a second click flips; the active head white with ↓ / ↑, the
   // others a faint ⇅); every row's 6px --bar on the 6% track, no 50% tick, no small-sample mark; the event
   // name opens the Tournaments page. Backing stays in units (founder 2026-11-09: "Always show units").
-  var TOURN_LEVELS = [['all', 'All'], ['ATP', 'ATP'], ['Challenger', 'Challenger'], ['ITF', 'ITF']];
+  var TOURN_LEVELS = [['all', 'All levels'], ['ATP', 'ATP'], ['Challenger', 'Challenger'], ['ITF', 'ITF']];
   var TOURN_SURFS = [['all', 'All surfaces'], ['Hard', 'Hard'], ['Clay', 'Clay'], ['Grass', 'Grass'], ['Indoors', 'Indoors']];
   var TOURN_INFO = {
     what: 'His record at each tournament he has played, best record first.',
@@ -6141,16 +6190,7 @@
       return (v || B.n - A.n || a.display.localeCompare(b.display)) * (v ? so.d : 1);
     });
   }
-  function tournPills(hook, opts, cur) {
-    return '<span style="display:flex;gap:3px;background:var(--inner);border:1px solid var(--edge-6);border-radius:9px;padding:2px;flex:none;">' +
-      opts.map(function (o) {
-        var on = cur === o[0];
-        return '<span data-pp2="' + hook + '" data-v="' + esc(o[0]) + '" style="cursor:pointer;white-space:nowrap;padding:5px 12px;' +
-          'border-radius:7px;font-size:11px;font-weight:' + (on ? 700 : 600) + ';color:' + (on ? 'var(--text)' : 'var(--text-label)') + ';' +
-          'background:' + (on ? 'var(--selected)' : 'transparent') + ';border:1px solid ' + (on ? 'var(--edge-16)' : 'transparent') + ';">' +
-          esc(o[1]) + '</span>';
-      }).join('') + '</span>';
-  }
+  function tournPills(hook, opts, cur) { return bandPills(hook, opts, cur); }   // v3 B2 · a band of pills
   function renderTournModal(p) {
     var views = tournViews(p);
     var q = String(state.tournQuery || '').toLowerCase();
@@ -6225,12 +6265,13 @@
     }).join('');
 
     return '' +
-      '<div style="display:flex;align-items:center;gap:12px;margin:0 0 14px;">' +
+      '<div data-pp2-band="standalone" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:0 0 14px;padding:10px 16px;' +
+        'background:var(--inner);border:1px solid var(--line);border-radius:12px;">' +
         '<span style="display:inline-flex;align-items:center;gap:8px;margin-right:auto;white-space:nowrap;">' +
           recCaps('Record per tournament ' + MIDDOT + ' career') +
           '<span style="position:relative;display:inline-flex;z-index:3;">' + infoIcon('tourn1', Object.assign({ width: 400 }, TOURN_INFO)) + '</span>' +
         '</span>' +
-        tournPills('tourn-level', TOURN_LEVELS, lvl) +
+        tournPills('tourn-level', TOURN_LEVELS, lvl) + bandDiv() +
         tournPills('tourn-surf', TOURN_SURFS, sf) +
         '<label style="display:flex;align-items:center;gap:9px;width:220px;box-sizing:border-box;flex:none;' +
           'background:var(--inner);border:1px solid var(--edge-6);border-radius:9px;padding:7px 12px;">' +
@@ -6793,15 +6834,13 @@
       : view === 'sets'
         ? recCaps(scopeLabel + ' ' + MIDDOT + ' sets') + '<span style="color:var(--text);font-weight:700;">' + recordText(B.sw, B.sl) + ' ' + MIDDOT + '</span><span style="color:var(--text);font-weight:700;">' + (B.setPct == null ? DASH : B.setPct.toFixed(1) + '%') + ' ' + MIDDOT + '</span><span>' + B.n + ' matches</span>'
         : recCaps(scopeLabel) + '<span style="color:var(--text);font-weight:700;">' + recordText(B.w, B.l) + ' ' + MIDDOT + '</span><span style="color:var(--text);font-weight:700;">' + (B.win == null ? DASH : B.win.toFixed(1) + '%') + ' ' + MIDDOT + '</span><span>' + B.n + ' matches</span>';
-    var views = [['results', 'Results'], ['sets', 'Sets & games'], ['service', 'Service']];
-    var head = '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">' +
+    // v3 B1/B2 · the pages (Results · Sets & games · Service) are the header switch; the window moved into this band
+    var head = '<div data-pp2-band="standalone" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;' +
+        'padding:10px 16px;background:var(--inner);border:1px solid var(--line);border-radius:12px;">' +
       '<span style="display:inline-flex;align-items:center;gap:8px;' + M + 'font-size:12px;color:var(--text-label);white-space:nowrap;position:relative;">' + baseTxt +
         '<span style="position:relative;display:inline-flex;z-index:3;">' + infoIcon('spl1', splInfo1(p)) + '</span></span>' +
-      '<span style="display:flex;gap:3px;background:var(--inner);border:1px solid var(--edge-6);border-radius:9px;padding:2px;">' + views.map(function (v) {
-        var on = view === v[0];
-        return '<span data-pp2="spl-view" data-v="' + v[0] + '" style="cursor:pointer;white-space:nowrap;padding:5px 12px;border-radius:7px;font-size:11px;font-weight:' + (on ? 700 : 600) + ';' +
-          'color:' + (on ? 'var(--text)' : 'var(--text-label)') + ';background:' + (on ? 'var(--selected)' : 'transparent') + ';border:1px solid ' + (on ? 'var(--edge-16)' : 'transparent') + ';">' + v[1] + '</span>';
-      }).join('') + '</span></div>';
+      bandPills('split-scope', [['last52', 'Last 52 weeks'], ['career', 'Career']], state.splitScope === 'last52' ? 'last52' : 'career',
+        function (t) { return ' data-scope="' + t[0] + '"'; }) + '</div>';
     var cols = splCols(view);
     var GRID = 'display:grid;grid-template-columns:minmax(0,1fr) ' + cols.map(function (c) { return c[1] + 'px'; }).join(' ') + ';gap:0 8px;align-items:center;';
     var sel = state.fb && (state.fb.box === 'spl' || state.fb.box === 'spltb') ? state.fb.v : null;
@@ -7990,13 +8029,11 @@
     ];
     // Format is a two-way choice with one always on: Best of 3 reads as no filter (the default)
     var fGroups = groups.map(function (g) { return g.key === 'lcFmt' ? Object.assign({}, g, { cur: fmt === 'bo5' ? 'bo5' : 'all', options: [['all', 'Best of 3'], ['bo5', 'Best of 5']] }) : g; });
-    var filterRow = '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;">' +
-      '<div style="display:flex;align-items:center;gap:8px;min-width:0;">' +
-        stySegPills('lc-surf', [['all', 'All surfaces'], ['hard', 'Hard'], ['clay', 'Clay'], ['grass', 'Grass'], ['indoors', 'Indoors']], O.surf) +
-        '<span style="width:1px;height:18px;background:var(--edge-10);margin:0 4px;flex:none;"></span>' +
-        filtersTriggerHtml('lc', fGroups, d.all, base) + '</div>' +
-      winSeg('lc-win', O.win, true) + '</div>';
-    var applied = filtersAppliedHtml('lc', fGroups, d.all, base);
+    var filterRow = mkBandHtml('<div style="display:flex;align-items:center;gap:8px;min-width:0;">' +
+        stySegPills('lc-surf', [['all', 'All surfaces'], ['hard', 'Hard'], ['clay', 'Clay'], ['grass', 'Grass'], ['indoors', 'Indoors']], O.surf, 'var(--edge-6)') +
+        bandDiv('0 4px') + filtersTriggerHtml('lc', fGroups, d.all, base) + '</div>',
+      winSeg('lc-win', O.win, true), filtersAppliedHtml('lc', fGroups, d.all, base));
+    var applied = '';
     var pct = function (a, b) { return b ? Math.round(100 * a / b) + '%' : DASH; };
     var poolOf = function (r) { return r === 'all' ? d.pool : d.pool.filter(function (m) { return m.role === r; }); };
     var cards = [['all', 'All matches', d.all, 'set scores on record'], ['fav', 'As favourite', d.favN, pct(d.favN, d.all) + ' of ' + d.all + ' ' + MIDDOT + ' shorter closing price'],
@@ -8054,9 +8091,9 @@
         esc(g.title) + '</span><span style="font-size:11.5px;color:var(--text-label);line-height:1.4;text-wrap:pretty;">' + esc(g.note || '') + '</span></div>' + rows;
     }).join('');
     var total = d.n, retN = d.retiredHere || 0;
-    return mkUnderlineTabs() + filterRow + applied +
-      '<div style="position:relative;background:var(--inner);border:1px solid var(--line);border-radius:12px;min-width:0;">' +
-        '<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-bottom:1px solid var(--edge-6);border-radius:12px 12px 0 0;overflow:hidden;">' + cards + '</div>' +
+    return filterRow + applied +
+      '<div style="position:relative;background:var(--inner);border:1px solid var(--line);' + JOIN_TOP + 'min-width:0;">' +
+        '<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-bottom:1px solid var(--edge-6);overflow:hidden;">' + cards + '</div>' +
         '<div style="position:relative;padding:14px 16px 12px;min-width:0;">' +
           infoCorner('ln1', LC_INFO1) +
           '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:4px;flex-wrap:wrap;padding-right:28px;">' +
@@ -8540,16 +8577,7 @@
     if ((state.mkArch || 'all') !== 'all') bits.push('vs ' + state.mkArch);
     return bits.join(' ' + MIDDOT + ' ');
   }
-  function mkUnderlineTabs() {
-    var cur = state.marketTab === 'lines' ? 'lines' : 'winner';
-    return '<div style="display:flex;gap:26px;border-bottom:1px solid color-mix(in srgb, var(--text) 8%, transparent);margin:-6px 0 16px;">' +
-      MARKET_TABS.map(function (t) {
-        var on = cur === t[0];
-        return '<span data-pp2="market-tab" data-v="' + t[0] + '" class="pp2-utab" style="cursor:pointer;padding:10px 0 11px;font-size:13px;' +   // the export's tab (file :927)
-          'font-weight:' + (on ? 700 : 600) + ';color:' + (on ? 'var(--text)' : 'var(--text-label)') + ';box-shadow:inset 0 -2px 0 ' +
-          (on ? 'var(--bar)' : 'transparent') + ';white-space:nowrap;">' + t[1] + '</span>';
-      }).join('') + '</div>';
-  }
+
   function mkFilterGroups(p, mk) {
     var base = mkBase(mk);
     var cnt = function (key) { return function (v) { var o = {}; o[key] = v; return base.filter(function (m) { return mkFilterOk(m, o); }).length; }; };
@@ -8714,21 +8742,18 @@
     FM_KEYS.mk = MK_FM_KEYS;
     var base = mkBase(mk), scoped = mkFiltered(p, mk);
     var lvl = state.mkLvl || 'all';
-    var filterRow = '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;">' +
-      '<div style="display:flex;align-items:center;gap:8px;min-width:0;">' + stySegPills('mk-surf', STY_SURFS, state.mkSurf || 'all') +
-        '<span style="width:1px;height:18px;background:var(--edge-10);margin:0 4px;flex:none;"></span>' +
-        filtersTriggerHtml('mk', groups, scoped.length, base.length) + '</div>' +
-      winSeg('mk-win', state.mkWin || 'career', true) + '</div>';
-    var applied = filtersAppliedHtml('mk', groups, scoped.length, base.length);
+    var bandL = '<div style="display:flex;align-items:center;gap:8px;min-width:0;">' + stySegPills('mk-surf', STY_SURFS, state.mkSurf || 'all', 'var(--edge-6)') +
+        bandDiv('0 4px') + filtersTriggerHtml('mk', groups, scoped.length, base.length) + '</div>';
+    var bandR = winSeg('mk-win', state.mkWin || 'career', true), appliedMk = filtersAppliedHtml('mk', groups, scoped.length, base.length);
     if (lvl === 'Challenger' || lvl === 'ITF') {
-      return mkUnderlineTabs() + filterRow + applied + renderLevelRecords(p, lvl === 'Challenger' ? 'ch' : 'itf');
+      return mkBandHtml(bandL, bandR, appliedMk, 'standalone') + renderLevelRecords(p, lvl === 'Challenger' ? 'ch' : 'itf');
     }
     var cc = mkCardsAndChart(scoped);
-    return mkUnderlineTabs() + filterRow + applied +
+    return mkBandHtml(bandL, bandR, appliedMk) +
       '<div style="display:flex;flex-direction:column;gap:12px;">' +
-        '<div style="position:relative;background:var(--inner);border:1px solid var(--line);border-radius:12px;min-width:0;">' +
+        '<div style="position:relative;background:var(--inner);border:1px solid var(--line);' + JOIN_TOP + 'min-width:0;">' +
           infoCorner('mk1', MK_INFO1) +
-          '<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-bottom:1px solid var(--edge-6);border-radius:12px 12px 0 0;overflow:hidden;">' +
+          '<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-bottom:1px solid var(--edge-6);overflow:hidden;">' +
             cc.cards + '</div>' + cc.chart +
         '</div>' +
         mkLadder(cc.pool) +
@@ -9965,18 +9990,20 @@
   // A swing is assigned from the match's own month, surface, court and the catalog's event country — the export's rule
   // ("by the week they are played and the region"). Team events (Davis / Laver / United / ATP Cup, Hopman, Olympics)
   // are muted and out of every yield.
+  // v3 D (founder sets the final values): a rate shows from CAL_MIN priced matches; CAL_MIN..CAL_THIN-1 is a thin sample.
+  var CAL_MIN = 5, CAL_THIN = 10;
   var CAL_SW = [
     { k: 'aus', name: 'Australian', code: 'AUS', surf: 'Hard' },
     { k: 'me', name: 'Middle East', code: 'M·EAST', surf: 'Hard' },
     { k: 'gold', name: 'Golden swing', code: 'GOLDEN', surf: 'Clay' },
-    { k: 'eei', name: 'Early Euro indoor', code: 'E·INDOOR', surf: 'Indoors' },
+    { k: 'eei', name: 'Early Euro indoor', code: 'EU INDOOR', hover: 'Euro indoor \u00b7 February', surf: 'Indoors' },
     { k: 'sun', name: 'Sunshine double', code: 'SUNSHINE', surf: 'Hard' },
     { k: 'eclay', name: 'Euro clay', code: 'EU CLAY', surf: 'Clay' },
     { k: 'grass', name: 'Grass', code: 'GRASS', surf: 'Grass' },
     { k: 'sclay', name: 'Summer clay', code: 'S·CLAY', surf: 'Clay' },
     { k: 'nah', name: 'North American hard', code: 'NA HARD', surf: 'Hard' },
     { k: 'asia', name: 'Asian swing', code: 'ASIA', surf: 'Hard' },
-    { k: 'ein', name: 'Euro indoor', code: 'EU INDOOR', surf: 'Indoors' },
+    { k: 'ein', name: 'Euro indoor', code: 'EU INDOOR', hover: 'Euro indoor \u00b7 autumn', surf: 'Indoors' },
     { k: 'team', name: 'Team / other', code: 'TEAM', surf: 'Mixed', team: true }];
   var CAL_MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   var CAL_MONF = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -10074,20 +10101,12 @@
     ['Vs others', 'The swing’s yield minus the yield of every other swing combined. Coloured by sign.'],
     ['Dash', 'Rates show from five priced matches up. Under five, a dash with the count.'],
     ['Consistent', 'Seasons the swing finished above .500, out of the seasons he actually played it.']] };
-  function calHeadRow(p) {
-    var tab = state.seasonTab === 'streaks' ? 'streaks' : 'calendar';
-    var tabs = '<div style="display:flex;gap:26px;">' + [['calendar', 'Calendar'], ['streaks', 'Streaks']].map(function (t) {
-      var on = tab === t[0];
-      return '<span data-pp2="cal-tab" data-v="' + t[0] + '" class="pp2-utab" style="cursor:pointer;white-space:nowrap;padding:10px 0 11px;font-size:13px;' +
-        'font-weight:' + (on ? 700 : 600) + ';color:' + (on ? 'var(--text)' : 'var(--text-label)') + ';box-shadow:inset 0 -2px 0 ' + (on ? 'var(--bar)' : 'transparent') + ';">' + t[1] + '</span>';
-    }).join('') + '</div>';
-    var win = recLabelledSeg('Window', [['l52', 'Last 52 weeks'], ['career', 'Career']].map(function (t) {
-      return recSegBtn('cal-win', t[0], t[1], calWinOf() === t[0], true); }).join(''));
-    var surf = recLabelledSeg('Surface', STY_SURFS.map(function (t) {
-      return recSegBtn('cal-surf', t[0], t[0] === 'all' ? 'All' : t[1], calSurfOf() === t[0], true); }).join(''));
-    return '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px 18px;flex-wrap:wrap;' +
-      'border-bottom:1px solid color-mix(in srgb, var(--text) 8%, transparent);margin:-6px 0 16px;">' + tabs +
-      '<div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding-bottom:8px;">' + win + surf + '</div></div>';
+  // v3 D1 · the pages moved to the header switch. One standalone band (--card + 6% ring, r12), read by BOTH pages:
+  // Window pills · divider · Surface pills; the Calendar page's Filters trigger at its right end, popover anchored right.
+  function calHeadRow(p, right) {
+    return bandBox(bandPills('cal-win', [['l52', 'Last 52 weeks'], ['career', 'Career']], calWinOf()) + bandDiv() +
+      bandPills('cal-surf', STY_SURFS.map(function (t) { return [t[0], t[0] === 'all' ? 'All' : t[1]]; }), calSurfOf()) +
+      (right || ''), 'standalone-card');
   }
   function calScopeText(nFilters) {
     return (calWinOf() === 'career' ? 'career' : 'last 52 weeks') + ' ' + MIDDOT + ' ' + (calSurfOf() === 'all' ? 'all surfaces' : calSurfOf().toLowerCase()) +
@@ -10098,7 +10117,7 @@
       if (!careerHistorySettled(p.key)) return calHeadRow(p) + speedEmptyBox('The career match store has not loaded, so the calendar cannot be drawn yet.');
       return calHeadRow(p) + calEmpty('No dated career match rows on record, so there is no match to place in a calendar.');
     }
-    return calHeadRow(p) + (state.seasonTab === 'streaks' ? renderStreaksV2(p) : renderCalendarV2(p));
+    return state.seasonTab === 'streaks' ? calHeadRow(p) + renderStreaksV2(p) : renderCalendarV2(p);
   }
   function renderCalendarV2(p) {
     FM_KEYS.cal = CAL_FM_KEYS;
@@ -10108,99 +10127,142 @@
     var all = calRows(p), W0 = all.filter(calInWindow), M = W0.filter(function (x) { return calPass(x); });
     // a spine with no per-match court column cannot split Indoors out: say so rather than draw an empty grid
     if (calSurfOf() === 'Indoors' && !W0.some(function (x) { return x.r.court != null || x.r.seasonIndoor != null; })) {
-      return calEmpty('No per-match court type on record for these matches, so Indoors cannot be split out yet.');
+      return calHeadRow(p) + calEmpty('No per-match court type on record for these matches, so Indoors cannot be split out yet.');
     }
     var groups = calFilterGroups(W0), nAct = groups.filter(function (g) { return g.cur !== 'all'; }).length;
     var view = state.calView === 'month' ? 'month' : 'swing';
     var years = []; W0.forEach(function (x) { if (years.indexOf(x.r.year) < 0) years.push(x.r.year); });
     years.sort(function (a, b) { return String(b).localeCompare(String(a)); });
     var cols = view === 'swing'
-      ? CAL_SW.map(function (s) { return { key: 'sw|' + s.k, label: s.name, code: s.code, sub: s.team ? 'mixed' : s.surf.toLowerCase(), muted: !!s.team,
+      ? CAL_SW.map(function (s) { return { key: 'sw|' + s.k, label: s.name, hover: s.hover, code: s.code, sub: s.team ? 'mixed' : s.surf.toLowerCase(), muted: !!s.team,
         pred: function (x) { return x.sw === s.k; }, title: function (y) { return s.name + ' ' + MIDDOT + ' ' + y; } }; })
       : CAL_MON.map(function (m, i) { return { key: 'm|' + i, label: CAL_MONF[i], code: m.toUpperCase(), sub: CAL_MDOM[i].toLowerCase(), muted: false,
         pred: function (x) { return x.r.mon === i; }, title: function (y) { return CAL_MONF[i] + ' ' + y; } }; });
     var cell = state.calCellV2 || null;
-    // ── tiles ──
+    // ── tiles (v3 D2) ──
     var nonTeam = CAL_SW.filter(function (s) { return !s.team; });
+    var seasonsOf = function (ms) {
+      var played = years.filter(function (y) { return ms.some(function (x) { return x.r.year === y; }); });
+      var above = played.filter(function (y) { var t = calStat(ms.filter(function (x) { return x.r.year === y; })); return t.w > t.l; });
+      return { played: played, above: above };
+    };
     var swStats = nonTeam.map(function (s) {
       var ms = M.filter(function (x) { return x.sw === s.k; }), st = calStat(ms);
       var oth = calStat(M.filter(function (x) { return x.sw !== s.k && x.sw !== 'team'; }));
-      var played = years.filter(function (y) { return ms.some(function (x) { return x.r.year === y; }); });
-      var above = played.filter(function (y) { var t = calStat(ms.filter(function (x) { return x.r.year === y; })); return t.w > t.l; });
-      return { s: s, ms: ms, st: st, pp: st.y != null && oth.y != null ? st.y - oth.y : null, played: played, above: above };
+      var ss = seasonsOf(ms);
+      return { s: s, ms: ms, st: st, pp: st.y != null && oth.y != null ? st.y - oth.y : null, played: ss.played, above: ss.above };
     });
-    var rated = pend ? [] : swStats.filter(function (x) { return x.st.priced >= 5 && x.pp != null; });
-    var best = rated.slice().sort(function (a, b) { return b.pp - a.pp; })[0], worst = rated.slice().sort(function (a, b) { return a.pp - b.pp; })[0];
-    var pct = function (l) { var t = calStat(l); return t.n ? t.pct : null; };
-    var opener = [], rest = [];
-    years.forEach(function (y) { nonTeam.forEach(function (s) {
-      var ms = M.filter(function (x) { return x.r.year === y && x.sw === s.k; });
-      if (!ms.length) return;
-      var first = ms.slice().sort(function (a, b) { return String(a.r.date).localeCompare(String(b.r.date)); })[0].r.event;
-      ms.forEach(function (x) { (x.r.event === first ? opener : rest).push(x); });
-    }); });
+    var rated = pend ? [] : swStats.filter(function (x) { return x.st.priced >= CAL_MIN && x.pp != null; });
+    var pickOf = function (list, dir) { return list.slice().sort(function (a, b) { return dir * (b.pp - a.pp); })[0]; };
+    // month view: the same picks over calendar months (team events out, as the swings)
+    var moStats = CAL_MON.map(function (m, i) {
+      var ms = M.filter(function (x) { return x.r.mon === i && x.sw !== 'team'; }), st = calStat(ms);
+      var oth = calStat(M.filter(function (x) { return x.r.mon !== i && x.sw !== 'team'; }));
+      var ss = seasonsOf(ms);
+      return { name: CAL_MONF[i], st: st, pp: st.y != null && oth.y != null ? st.y - oth.y : null, played: ss.played, above: ss.above };
+    });
+    var moRated = pend ? [] : moStats.filter(function (x) { return x.st.priced >= CAL_MIN && x.pp != null; });
+    var opener = [], rest = [], r1 = [], later = [];
+    years.forEach(function (y) {
+      nonTeam.forEach(function (s) {
+        var ms = M.filter(function (x) { return x.r.year === y && x.sw === s.k; });
+        if (!ms.length) return;
+        var first = ms.slice().sort(function (a, b) { return String(a.r.date).localeCompare(String(b.r.date)); })[0].r.event;
+        ms.forEach(function (x) { (x.r.event === first ? opener : rest).push(x); });
+      });
+      // "Round 1 record" = his first match at each event that season (a bye's first match included)
+      var byEv = {};
+      M.filter(function (x) { return x.r.year === y && x.sw !== 'team'; }).forEach(function (x) { (byEv[x.r.event] || (byEv[x.r.event] = [])).push(x); });
+      Object.keys(byEv).forEach(function (ev) {
+        var l = byEv[ev].slice().sort(function (a, b) { return String(a.r.date).localeCompare(String(b.r.date)) || a.i - b.i; });
+        l.forEach(function (x, k) { (k ? later : r1).push(x); });
+      });
+    });
     var SP = W0.filter(function (x) { return calPass(x, 'surf'); });
     var sStats = ['Hard', 'Clay', 'Grass', 'Indoors'].map(function (sf) {
-      var ms = SP.filter(function (x) { return x.surf === sf; }), o = SP.filter(function (x) { return x.surf !== sf; });
+      var ms = SP.filter(function (x) { return x.surf === sf; }), o = calStat(SP.filter(function (x) { return x.surf !== sf; }));
       var st = calStat(ms);
-      return { sf: sf, st: st, pp: st.n && pct(o) != null ? st.pct - pct(o) : null };
-    }).filter(function (x) { return x.st.n >= 5; }).sort(function (a, b) { return b.st.pct - a.st.pct; });
+      return { sf: sf, st: st, pp: st.n && o.n ? st.pct - o.pct : null };
+    }).filter(function (x) { return x.st.n >= CAL_MIN; }).sort(function (a, b) { return b.st.pct - a.st.pct; });
+    var wordPct = function (v) { return Math.round(v) + '%'; };
     var ppTxt = function (v) { return v == null ? '' : signed(Math.round(v * 10) / 10, 1, 'pp'); };
-    var swingTile = function (cap, x) { if (pend) return { cap: cap, value: '&nbsp;', size: 24, pp: '', meta: '', sub: '&nbsp;' }; return x
-      ? { cap: cap, value: x.s.name, size: x.s.name.length > 14 ? 17 : 20, pp: ppTxt(x.pp), ppColor: signColour(Math.round(x.pp * 10) / 10), meta: 'n=' + x.st.priced,
-          sub: x.above.length + ' of ' + x.played.length + ' seasons above .500' }
-      : { cap: cap, value: DASH, faint: true, size: 24, pp: '', meta: 'under 5 priced', sub: 'no swing qualifies' }; };
-    var bs = sStats[0], oP = pct(opener), rP = pct(rest);
+    var yieldTxt = function (st) { return st.priced >= CAL_MIN && st.y != null ? signed(st.y, 1, '%') : DASH; };
+    var tile = function (cap, name, st, line) {
+      if (pend) return { cap: cap, name: name || '&nbsp;', pend: true, line: '&nbsp;' };
+      return { cap: cap, name: name, st: st, line: line };
+    };
+    var seasonsLine = function (x) { return x.played.length ? 'winning record in ' + x.above.length + ' of ' + x.played.length + ' seasons' : ''; };
+    var bs = sStats[0];
+    var restSt = calStat(rest), laterSt = calStat(later);
     var tiles = [
-      bs ? { cap: 'Best surface', value: bs.sf, size: 20, pp: ppTxt(bs.pp), ppColor: bs.pp == null ? null : signColour(Math.round(bs.pp * 10) / 10), meta: 'vs other surfaces',
-        sub: Math.round(bs.st.pct) + '% ' + MIDDOT + ' ' + recordText(bs.st.w, bs.st.l) + (bs.st.priced >= 5 ? ' ' + MIDDOT + ' yield ' + signed(bs.st.y, 1, '%') : '') }
-        : { cap: 'Best surface', value: DASH, faint: true, size: 24, pp: '', meta: 'under 5 matches', sub: 'no surface qualifies' },
-      swingTile('Best swing', best), swingTile('Worst swing', worst),
-      opener.length >= 5 && oP != null && rP != null ? { cap: 'Swing opener', value: Math.round(oP) + '%', size: 24, pp: ppTxt(oP - rP), ppColor: signColour(Math.round((oP - rP) * 10) / 10),
-        meta: 'vs rest ' + Math.round(rP) + '%', sub: 'first event of each swing ' + MIDDOT + ' n=' + opener.length }
-        : { cap: 'Swing opener', value: DASH, faint: true, size: 24, pp: '', meta: opener.length + ' opener matches', sub: 'needs 5 to show a rate' }];
-    var tilesHtml = '<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border:1px solid var(--edge-6);border-radius:12px;overflow:hidden;background:var(--inner);margin-bottom:20px;">' +
+      bs ? tile('Best surface', bs.sf, bs.st, bs.pp == null ? '' : signed(Math.round(bs.pp * 10) / 10, 1, 'pp') + ' win rate vs other surfaces')
+        : tile('Best surface', DASH, null, 'no surface with ' + CAL_MIN + ' matches')];
+    if (view === 'swing') {
+      var bw = pickOf(rated, 1), ww = pickOf(rated, -1);
+      tiles.push(bw ? tile('Best swing', bw.s.name, bw.st, seasonsLine(bw)) : tile('Best swing', DASH, null, 'no swing with ' + CAL_MIN + ' priced'));
+      tiles.push(ww ? tile('Worst swing', ww.s.name, ww.st, seasonsLine(ww)) : tile('Worst swing', DASH, null, 'no swing with ' + CAL_MIN + ' priced'));
+      tiles.push(tile('Swing opener', 'First event of a swing', opener.length ? calStat(opener) : null,
+        restSt.n ? 'rest of the swing: ' + wordPct(restSt.pct) + ' win rate' + (restSt.priced >= CAL_MIN && restSt.y != null ? ' ' + MIDDOT + ' ' + signed(restSt.y, 1, '%') + ' yield' : '') : ''));
+    } else {
+      var bm = pickOf(moRated, 1), wm = pickOf(moRated, -1);
+      tiles.push(bm ? tile('Best month', bm.name, bm.st, seasonsLine(bm)) : tile('Best month', DASH, null, 'no month with ' + CAL_MIN + ' priced'));
+      tiles.push(wm ? tile('Worst month', wm.name, wm.st, seasonsLine(wm)) : tile('Worst month', DASH, null, 'no month with ' + CAL_MIN + ' priced'));
+      tiles.push(tile('Round 1 record', 'First match at an event', r1.length ? calStat(r1) : null,
+        laterSt.n ? 'later rounds: ' + wordPct(laterSt.pct) + ' win rate' + (laterSt.priced >= CAL_MIN && laterSt.y != null ? ' ' + MIDDOT + ' ' + signed(laterSt.y, 1, '%') + ' yield' : '') : ''));
+    }
+    var col2 = function (big, bigCol, label, sub, first) {
+      return '<div style="display:flex;flex-direction:column;align-items:center;gap:3px;min-width:0;border-left:1px solid ' + (first ? 'transparent' : 'var(--edge-6)') + ';">' +
+        '<span style="' + M_ + 'font-size:19px;font-weight:700;line-height:1;color:' + bigCol + ';">' + big + '</span>' +
+        '<span style="font-size:11px;color:var(--text-soft);">' + label + '</span>' +
+        '<span style="' + M_ + 'font-size:10.5px;color:var(--text-label);white-space:nowrap;">' + sub + '</span></div>';
+    };
+    var tilesHtml = '<div data-pp2-caltiles="1" style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border:1px solid var(--edge-6);border-radius:12px;overflow:hidden;background:var(--card);margin-bottom:20px;">' +
       tiles.map(function (t, i) {
-        return '<div style="padding:14px 16px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:7px;min-width:0;border-left:1px solid ' + (i ? 'var(--edge-6)' : 'transparent') + ';">' +
+        var st = t.st, wr = st && st.n >= CAL_MIN ? wordPct(st.pct) : DASH;
+        var yTxt = st ? yieldTxt(st) : DASH, yCol = yTxt === DASH ? 'var(--text-label)' : signColour(Math.round(st.y * 10) / 10);
+        return '<div style="padding:14px 16px 13px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:9px;min-width:0;border-left:1px solid ' + (i ? 'var(--edge-6)' : 'transparent') + ';">' +
           recCaps(t.cap) +
-          '<span style="' + M_ + 'font-size:' + t.size + 'px;font-weight:700;line-height:1;color:' + (t.faint ? 'var(--text-label)' : 'var(--text)') + ';white-space:nowrap;">' + (t.value === '&nbsp;' ? t.value : esc(t.value)) + '</span>' +
-          '<span style="display:flex;align-items:baseline;justify-content:center;gap:5px;' + M_ + 'font-size:11px;white-space:nowrap;"><span style="font-weight:700;color:' + (t.ppColor || 'var(--text-label)') + ';">' + t.pp + '</span>' +
-            '<span style="color:var(--text-label);">' + esc(t.meta) + '</span></span>' +
-          '<span style="font-size:10.5px;color:var(--text-label);white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis;">' + (t.sub === '&nbsp;' ? t.sub : esc(t.sub)) + '</span></div>';
+          '<span style="font-size:16px;font-weight:700;line-height:1.1;color:' + (t.name === DASH ? 'var(--text-label)' : 'var(--text)') + ';max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + (t.name === '&nbsp;' ? t.name : esc(t.name)) + '</span>' +
+          '<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));width:100%;border-top:1px solid var(--edge-6);padding-top:10px;">' +
+            (t.pend ? col2('&nbsp;', 'var(--text)', 'Win rate', '&nbsp;', true) + col2('&nbsp;', 'var(--text)', 'Yield', '&nbsp;', false)
+              : col2(wr, wr === DASH ? 'var(--text-label)' : 'var(--text)', 'Win rate', st ? recordText(st.w, st.l) : DASH, true) +
+                col2(yTxt, yCol, 'Yield', st ? st.priced + ' priced' : DASH, false)) +
+          '</div>' +
+          '<span style="font-size:10.5px;color:var(--text-label);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + (t.line === '&nbsp;' ? t.line : esc(t.line || '')) + '&nbsp;</span></div>';
       }).join('') + '</div>';
     // ── the grid ──
-    var GCOLS = '56px repeat(' + cols.length + ',minmax(0,1fr)) 72px';
+    var GCOLS = (view === 'swing' ? '128px' : '56px') + ' repeat(' + cols.length + ',minmax(0,1fr)) 72px', MINW = view === 'swing' ? 972 : 900;
     var heads = '<span style="align-self:end;' + 'padding:0 0 9px;border-bottom:1px solid var(--edge-10);">' + recCaps('Year') + '</span>' +
       cols.map(function (c) {
-        return '<span title="' + esc(c.label) + '" style="align-self:end;display:flex;flex-direction:column;align-items:center;gap:3px;padding:0 2px 9px;border-bottom:1px solid var(--edge-10);min-width:0;">' +
+        return '<span title="' + esc(c.hover || c.label) + '" style="align-self:end;display:flex;flex-direction:column;align-items:center;gap:3px;padding:0 2px 9px;border-bottom:1px solid var(--edge-10);min-width:0;cursor:default;">' +
           '<span style="font-size:9.5px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:' + (c.muted ? 'var(--text-faint, var(--text-label))' : 'var(--text-label)') + ';white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis;border-bottom:1px dotted var(--edge-24);padding-bottom:1px;">' + esc(c.code) + '</span>' +
           '<span style="' + M_ + 'font-size:9px;color:var(--text-label);opacity:0.7;white-space:nowrap;">' + esc(c.sub) + '</span></span>';
       }).join('') +
       '<span style="align-self:end;text-align:right;padding:0 0 9px;border-bottom:1px solid var(--edge-10);">' + recCaps('Season') + '</span>';
     var body = years.map(function (y) {
       var Y = M.filter(function (x) { return x.r.year === y; }), ty = calStat(Y);
-      return '<span style="' + M_ + 'font-size:12px;font-weight:700;color:var(--text);padding:7px 0;border-bottom:1px solid var(--line);">' + esc(y) + '</span>' +
+      return '<span style="' + M_ + 'font-size:12px;font-weight:700;color:var(--text);padding:7px 0;">' + esc(y) + '</span>' +
         cols.map(function (c) {
           var ms = Y.filter(c.pred), key = c.key + '|' + y;
-          if (!ms.length) return '<span style="display:block;margin:3px 0;' + M_ + 'font-size:11.5px;text-align:center;color:var(--text-label);opacity:0.6;padding:5px 0;">' + MIDDOT + '</span>';
+          if (!ms.length) return '<span style="display:block;margin:3px 0;' + M_ + 'font-size:11.5px;text-align:center;color:var(--text-label);opacity:0.6;padding:5px 0;border-radius:4px;cursor:default;">' + MIDDOT + '</span>';
           var t = calStat(ms), on = cell === key;
           var bg = on ? 'var(--selected)' : c.muted ? 'transparent' : t.w > t.l ? 'color-mix(in srgb, var(--pos) 10%, transparent)' : t.w < t.l ? 'color-mix(in srgb, var(--neg) 10%, transparent)' : 'transparent';
           return '<span data-pp2="cal-cell2" data-v="' + esc(key) + '" class="pp2-calc" title="' + esc(c.title(y) + ' ' + MIDDOT + ' ' + recordText(t.w, t.l)) + '" style="display:block;margin:3px 0;' + M_ +
             'font-size:11.5px;font-variant-numeric:tabular-nums;text-align:center;color:' + (c.muted ? 'var(--text-label)' : 'var(--text)') + ';background:' + bg + ';' +
             'outline:' + (on ? '1px solid var(--link)' : 'none') + ';outline-offset:-1px;border-radius:4px;padding:5px 0;cursor:pointer;">' + recordText(t.w, t.l) + '</span>';
         }).join('') +
-        '<span style="' + M_ + 'font-size:12px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--text);text-align:right;padding:7px 0;border-bottom:1px solid var(--line);">' + (ty.n ? recordText(ty.w, ty.l) : DASH) + '</span>';
+        '<span style="' + M_ + 'font-size:12px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--text);align-self:stretch;display:flex;align-items:center;justify-content:flex-end;margin-left:5px;border-left:1px solid var(--edge-6);">' + (ty.n ? recordText(ty.w, ty.l) : DASH) + '</span>';
     }).join('');
     var tm = calStat(M);
-    var foot = '<span style="padding:10px 0 0;border-top:1px solid var(--edge-16);">' + recCaps('Career') + '</span>' +
+    var foot = '<span style="padding:10px 0 0;border-top:1px solid ' + EDGE_14 + ';">' + recCaps('Career') + '</span>' +
       cols.map(function (c) { var t = calStat(M.filter(c.pred));
-        return '<span style="' + M_ + 'font-size:11.5px;font-weight:700;font-variant-numeric:tabular-nums;text-align:center;color:' + (c.muted ? 'var(--text-label)' : 'var(--text)') + ';padding:10px 0 0;border-top:1px solid var(--edge-16);">' + (t.n ? recordText(t.w, t.l) : DASH) + '</span>'; }).join('') +
-      '<span style="' + M_ + 'font-size:12px;font-weight:700;text-align:right;color:var(--text);padding:10px 0 0;border-top:1px solid var(--edge-16);">' + (tm.n ? recordText(tm.w, tm.l) : DASH) + '</span>';
+        return '<span style="' + M_ + 'font-size:11.5px;font-weight:700;font-variant-numeric:tabular-nums;text-align:center;color:' + (c.muted ? 'var(--text-label)' : 'var(--text)') + ';padding:10px 0 0;border-top:1px solid ' + EDGE_14 + ';">' + (t.n ? recordText(t.w, t.l) : DASH) + '</span>'; }).join('') +
+      '<span style="' + M_ + 'font-size:12px;font-weight:700;text-align:right;color:var(--text);padding:10px 0 0;border-top:1px solid ' + EDGE_14 + ';">' + (tm.n ? recordText(tm.w, tm.l) : DASH) + '</span>';
     var viewSeg = '<span style="display:flex;gap:3px;background:var(--inner);border:1px solid var(--edge-6);border-radius:9px;padding:2px;flex:none;">' +
       [['swing', 'Swing'], ['month', 'Month']].map(function (t) { var on = view === t[0];
         return '<span data-pp2="cal-view" data-v="' + t[0] + '" style="cursor:pointer;white-space:nowrap;padding:4px 11px;border-radius:7px;font-size:11px;font-weight:' + (on ? 700 : 600) + ';' +
           'color:' + (on ? 'var(--text)' : 'var(--text-label)') + ';background:' + (on ? 'var(--selected)' : 'transparent') + ';border:1px solid ' + (on ? 'var(--selected)' : 'transparent') + ';">' + t[1] + '</span>'; }).join('') + '</span>';
-    var card1 = '<div style="position:relative;background:var(--card);border:1px solid var(--edge-6);border-bottom:0;border-radius:16px 16px 0 0;padding:20px 24px 22px;">' +
+    var card1 = '<div style="position:relative;background:var(--card);border:1px solid var(--edge-6);border-bottom:0;border-radius:16px 16px 0 0;padding:20px 24px 18px;">' +
       infoCorner('cal1', Object.assign({ notes: (calWinOf() === 'career' && calSurfOf() === 'all' && !nAct
         ? [calResidualNote(calResidual(p)).replace(/<[^>]+>/g, '').trim()].filter(Boolean) : []).concat((function () {
           if (!(typeof window.pp2EloReady === 'function' && window.pp2EloReady())) return [];
@@ -10212,29 +10274,86 @@
         '<span style="display:inline-flex;align-items:center;gap:12px;"><span style="' + M_ + 'font-size:12px;color:var(--text-label);white-space:nowrap;">' +
           M.length + ' matches' + (years.length ? ' ' + MIDDOT + ' ' + years[years.length - 1] + '–' + years[0] : '') + '</span>' + viewSeg + '</span></div>' +
       tilesHtml +
-      '<div style="overflow-x:auto;"><div style="display:grid;grid-template-columns:' + GCOLS + ';gap:0 3px;align-items:center;min-width:900px;">' + heads + body + foot + '</div></div></div>';
-    // ── By swing ──
+      '<div data-pp2-calsc="a" style="overflow-x:auto;"><div style="display:grid;grid-template-columns:' + GCOLS + ';gap:0 4px;align-items:center;min-width:' + MINW + 'px;">' + heads + body + foot + '</div></div></div>';
+    // ── By swing (v3 D3) — one aligned table with the season grid in the Swing view ──
     var maxPP = Math.max.apply(null, [1].concat(rated.map(function (x) { return Math.abs(x.pp); })));
-    var nC = CAL_SW.length, TC = '96px repeat(' + nC + ',minmax(0,1fr))', IN = 'repeat(' + nC + ',minmax(0,1fr))';
+    var nC = CAL_SW.length, swingV = view === 'swing';
+    var TCA = '128px repeat(' + nC + ',minmax(0,1fr))' + (swingV ? ' 72px' : ''), IN = 'repeat(' + nC + ',minmax(0,1fr))';
     var rowsT = CAL_SW.map(function (s) {
       if (s.team) {
-        var ms = M.filter(function (x) { return x.sw === 'team'; }), pl = years.filter(function (y) { return ms.some(function (x) { return x.r.year === y; }); });
-        var ab = pl.filter(function (y) { var t = calStat(ms.filter(function (x) { return x.r.year === y; })); return t.w > t.l; });
-        return { s: s, team: true, n: ms.length, played: pl, above: ab };
+        var ms = M.filter(function (x) { return x.sw === 'team'; }), ss = seasonsOf(ms), t = calStat(ms);
+        return { s: s, team: true, m: t, played: ss.played, above: ss.above };
       }
       var x = swStats.filter(function (q) { return q.s.k === s.k; })[0];
-      return { s: s, x: x, ok: x.st.priced >= 5 && x.pp != null, n: x.st.priced, played: x.played, above: x.above };
+      return { s: s, x: x, m: x.st, ok: x.st.priced >= CAL_MIN && x.pp != null, n: x.st.priced, played: x.played, above: x.above };
     });
-    var cellT = function (inner, extra) { return '<span style="' + M_ + 'font-size:11.5px;font-variant-numeric:tabular-nums;text-align:center;white-space:nowrap;padding:10px 0;border-top:1px solid var(--line);' + (extra || '') + '">' + inner + '</span>'; };
+    var LAB = 'font-family:var(--font-words);font-size:10.5px;font-weight:700;letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);grid-column:1;';
+    var RULE = 'border-top:1px solid var(--line);';
     var bars = rowsT.map(function (r) {
-      var up = !r.team && r.ok && r.x.pp > 0 ? r.x.pp / maxPP * 100 : 0, dn = !r.team && r.ok && r.x.pp < 0 ? -r.x.pp / maxPP * 100 : 0;
-      var col = r.team || !r.ok ? 'transparent' : signColour(r.x.pp);
+      var ok = !r.team && r.ok, thin = ok && r.n < CAL_THIN;
+      var up = ok && r.x.pp > 0 ? r.x.pp / maxPP * 100 : 0, dn = ok && r.x.pp < 0 ? -r.x.pp / maxPP * 100 : 0;
+      var col = ok ? signColour(r.x.pp) : 'transparent', op = thin ? 0.3 : 1;
       return '<span style="position:relative;display:flex;flex-direction:column;align-items:center;height:100%;">' +
-        '<span style="flex:1;width:100%;display:flex;align-items:flex-end;justify-content:center;"><span style="width:12px;height:' + up.toFixed(1) + '%;background:' + col + ';border-radius:2px 2px 0 0;"></span></span>' +
+        '<span style="flex:1;width:100%;display:flex;align-items:flex-end;justify-content:center;"><span style="width:12px;height:' + up.toFixed(1) + '%;background:' + col + ';opacity:' + op + ';border-radius:2px 2px 0 0;"></span></span>' +
         '<span style="flex:1;width:100%;display:flex;align-items:flex-start;justify-content:center;">' + (!r.team && !r.ok ? '<span style="width:5px;height:5px;margin-top:-2px;border-radius:50%;background:var(--text-label);opacity:0.6;"></span>' : '') +
-          '<span style="width:12px;height:' + dn.toFixed(1) + '%;background:' + col + ';border-radius:0 0 2px 2px;"></span></span></span>';
+          '<span style="width:12px;height:' + dn.toFixed(1) + '%;background:' + col + ';opacity:' + op + ';border-radius:0 0 2px 2px;"></span></span></span>';
     }).join('');
-    var card2 = '<div style="position:relative;background:var(--card);border:1px solid var(--edge-6);border-top:1px solid var(--edge-10);border-radius:0 0 16px 16px;padding:20px 24px 22px;">' +
+    var FAINT = 'color-mix(in srgb, var(--text-label) 60%, transparent)';
+    var cellsOf = function (fn) { return rowsT.map(fn).join(''); };
+    var codeRows = swingV ? '' :
+      '<span style="' + LAB + 'padding:10px 8px 8px 0;">Surface</span>' +
+      cellsOf(function (r) { return '<span style="display:flex;flex-direction:column;align-items:center;gap:5px;padding:10px 2px 8px;">' +
+        '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:9px;color:var(--text-label);text-transform:lowercase;">' + (r.team ? 'mixed' : r.s.surf.toLowerCase()) + '</span>' +
+        '<span style="display:block;width:100%;height:3px;border-radius:2px;background:' + CAL_SURFC[r.team ? 'Mixed' : r.s.surf] + ';"></span></span>'; }) +
+      '<span style="' + LAB + 'padding:10px 8px 10px 0;border-top:1px solid var(--edge-10);align-self:stretch;display:flex;align-items:center;">Swing</span>' +
+      cellsOf(function (r) { return '<span title="' + esc(r.s.hover || r.s.name) + '" style="display:flex;justify-content:center;align-items:center;align-self:stretch;padding:10px 2px;border-top:1px solid var(--edge-10);cursor:default;">' +
+        '<span style="font-size:9.5px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;text-align:center;color:' + (r.team ? 'var(--text-label)' : 'var(--text)') + ';white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis;border-bottom:1px dotted var(--edge-24);padding-bottom:1px;">' + esc(r.s.code) + '</span></span>'; });
+    var winRow = '<span style="' + LAB + 'padding:10px 8px 10px 0;' + RULE + 'align-self:stretch;display:flex;align-items:center;">Win rate</span>' +
+      cellsOf(function (r) {
+        var okW = r.m.n >= CAL_MIN;
+        var wr = okW ? Math.round(r.m.pct) + '%' : DASH;
+        var wrC = r.team ? 'var(--text-label)' : okW ? 'var(--text)' : FAINT, wlC = r.team || !okW ? FAINT : 'var(--text-label)';
+        return '<span style="display:flex;flex-direction:column;align-items:center;justify-content:center;align-self:stretch;gap:3px;padding:10px 0;' + RULE + '">' +
+          '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;font-weight:700;font-variant-numeric:tabular-nums;color:' + wrC + ';">' + wr + '</span>' +
+          '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;font-variant-numeric:tabular-nums;white-space:nowrap;color:' + wlC + ';">' + (r.m.n ? recordText(r.m.w, r.m.l) : '&nbsp;') + '</span></span>';
+      });
+    var pricedRow = '<span style="' + LAB + 'white-space:nowrap;padding:10px 8px 10px 0;' + RULE + 'align-self:stretch;display:flex;align-items:center;">Priced matches</span>' +
+      cellsOf(function (r) {
+        var thin = !r.team && r.ok && r.n < CAL_THIN;
+        var nTxt = r.team ? DASH : pend ? '&nbsp;' : String(r.n);
+        var nC2 = r.team ? FAINT : thin ? 'var(--text-label)' : 'var(--text-soft)';
+        return '<span style="display:flex;flex-direction:column;align-items:center;justify-content:center;align-self:stretch;gap:3px;padding:10px 0;' + RULE + '">' +
+          '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;font-variant-numeric:tabular-nums;color:' + nC2 + ';">' + nTxt + '</span>' +
+          (thin && !pend ? '<span style="font-size:8.5px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-label);white-space:nowrap;">thin</span>' : '') + '</span>';
+      });
+    var cellT = function (inner, extra) { return '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;font-variant-numeric:tabular-nums;text-align:center;white-space:nowrap;padding:10px 0;' + RULE + (extra || '') + '">' + inner + '</span>'; };
+    var yieldRow = '<span style="' + LAB + 'padding:10px 8px 10px 0;' + RULE + '">Yield</span>' +
+      cellsOf(function (r) {
+        if (r.team) return cellT(DASH, 'color:' + FAINT + ';');
+        if (pend) return cellT('&nbsp;');
+        return r.ok ? cellT(signed(r.x.st.y, 1, '%'), 'color:var(--text);') : cellT(DASH, 'color:' + FAINT + ';');
+      });
+    var vsRow = '<span style="' + LAB + 'padding:10px 8px 10px 0;' + RULE + '">Vs others</span>' +
+      cellsOf(function (r) {
+        if (r.team) return cellT('not in yield', 'font-size:9.5px;font-weight:700;color:' + FAINT + ';');
+        if (pend) return cellT('&nbsp;');
+        if (!r.ok) return cellT(r.n ? DASH + ' ' + MIDDOT + ' ' + r.n : DASH, 'font-size:10.5px;font-weight:700;color:' + FAINT + ';');
+        var thin = r.n < CAL_THIN;
+        return cellT(ppTxt(r.x.pp), 'font-size:12.5px;font-weight:700;color:' + (thin ? 'var(--text-label)' : signColour(Math.round(r.x.pp * 10) / 10)) + ';');
+      });
+    var consRow = '<span style="' + LAB + 'align-self:start;padding:10px 8px 10px 0;white-space:nowrap;' + RULE + '">Winning seasons</span>' +
+      cellsOf(function (r) {
+        return '<span style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 2px;' + RULE + '">' +
+          '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;font-variant-numeric:tabular-nums;color:var(--text);white-space:nowrap;">' +
+            (r.played.length ? r.above.length + ' of ' + r.played.length : DASH) + '</span>' +
+          '<span style="display:flex;justify-content:center;gap:1px;">' + r.played.map(function (y) {
+            var a = r.above.indexOf(y) > -1;
+            return '<span style="flex:none;width:3px;height:3px;border-radius:1px;background:' +
+              (a ? (r.team ? 'color-mix(in srgb, var(--pos) 45%, transparent)' : 'var(--pos)') : (r.team ? 'var(--edge-10)' : EDGE_14)) + ';"></span>';
+          }).join('') + '</span></span>';
+      });
+    // the two cards read as one in the Swing view: card 2 has no top edge; its caption carries a 10% hairline
+    var card2 = '<div style="position:relative;background:var(--card);border:1px solid var(--edge-6);border-top:0;border-radius:0 0 16px 16px;padding:0 24px 22px;">' +
       infoCorner('cal2', Object.assign({ notes: (function () {
         // the priced matches the Market edge box counts that the calendar cannot place on a dated career row
         if (pend || calWinOf() !== 'career' || calSurfOf() !== 'all' || nAct) return [];
@@ -10243,45 +10362,20 @@
         return gap > 0 ? ['Market edge prices ' + mkn + ' matches; ' + gap + (gap === 1 ? ' of them carries' : ' of them carry') +
           ' no dated career row the calendar can place, so the swings rest on ' + tm.priced + '.'] : [];
       }()) }, CAL_INFO2)).replace('top:14px;right:14px', 'top:16px;right:16px') +
-      '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;padding-right:28px;">' + '<span style="display:inline-flex;align-items:center;gap:8px;position:relative;">' + recCaps('By swing ' + MIDDOT + ' ' + esc(calScopeText(nAct))) +
-        infoIcon('calI', CAL_SWING_INFO, 'How this is counted') + '</span>' +
+      '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;padding:16px 28px 0 0;border-top:1px solid var(--edge-10);">' +
+        '<span style="display:inline-flex;align-items:center;gap:8px;position:relative;">' + recCaps('By swing ' + MIDDOT + ' ' + esc(calScopeText(nAct))) +
+          infoIcon('calI', CAL_SWING_INFO, 'How this is counted') + '</span>' +
         '<span style="' + M_ + 'font-size:12px;color:var(--text-label);white-space:nowrap;">' + (pend ? '&nbsp;' : tm.priced + ' of ' + M.length + ' matches ' + MIDDOT + ' flat 1u') + '</span></div>' +
-      '<div style="display:grid;grid-template-columns:' + TC + ';gap:0 4px;align-items:end;">' +
-        '<span style="padding-bottom:6px;">' + recCaps('Vs other swings') + '</span>' +
-        '<span style="grid-column:2 / -1;position:relative;display:grid;grid-template-columns:' + IN + ';gap:0 4px;height:96px;border-bottom:1px solid var(--edge-6);">' +
+      '<div data-pp2-calsc="b" style="overflow-x:auto;"><div style="display:grid;grid-template-columns:' + TCA + ';gap:0 4px;align-items:end;min-width:' + MINW + 'px;">' +
+        '<span style="' + LAB + 'padding-bottom:6px;">Vs other swings</span>' +
+        '<span style="grid-column:' + (swingV ? '2 / ' + (nC + 2) : '2 / -1') + ';position:relative;display:grid;grid-template-columns:' + IN + ';gap:0 4px;height:96px;border-bottom:1px solid var(--edge-6);">' +
           '<span style="position:absolute;left:0;right:0;top:50%;height:1px;background:color-mix(in srgb, var(--text) 18%, transparent);"></span>' +
           '<span style="position:absolute;right:0;top:2px;' + M_ + 'font-size:9.5px;color:var(--text-label);">+' + maxPP.toFixed(1) + '</span>' +
           '<span style="position:absolute;right:0;bottom:2px;' + M_ + 'font-size:9.5px;color:var(--text-label);">' + MINUS + maxPP.toFixed(1) + '</span>' + bars + '</span>' +
-        '<span style="padding:10px 8px 8px 0;">' + recCaps('Surface') + '</span>' +
-        rowsT.map(function (r) { return '<span style="display:flex;flex-direction:column;align-items:center;gap:5px;padding:10px 2px 8px;">' +
-          '<span style="' + M_ + 'font-size:9px;color:var(--text-label);text-transform:lowercase;">' + (r.team ? 'mixed' : r.s.surf.toLowerCase()) + '</span>' +
-          '<span style="display:block;width:100%;height:3px;border-radius:2px;background:' + CAL_SURFC[r.team ? 'Mixed' : r.s.surf] + ';"></span></span>'; }).join('') +
-        '<span style="padding:10px 8px 10px 0;border-top:1px solid var(--edge-10);">' + recCaps('Swing') + '</span>' +
-        rowsT.map(function (r) { return '<span title="' + esc(r.s.name) + '" style="display:flex;justify-content:center;padding:10px 2px;border-top:1px solid var(--edge-10);">' +
-          '<span style="font-size:9.5px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;text-align:center;color:' + (r.team ? 'var(--text-label)' : 'var(--text)') + ';white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis;border-bottom:1px dotted var(--edge-24);padding-bottom:1px;">' + esc(r.s.code) + '</span></span>'; }).join('') +
-        '<span style="padding:10px 8px 10px 0;border-top:1px solid var(--line);">' + recCaps('n') + '</span>' +
-        rowsT.map(function (r) { return cellT(pend && !r.team ? '&nbsp;' : String(r.n), 'color:' + (r.team ? 'var(--text-label)' : 'var(--text-soft)') + ';'); }).join('') +
-        '<span style="padding:10px 8px 10px 0;border-top:1px solid var(--line);">' + recCaps('Yield') + '</span>' +
-        rowsT.map(function (r) { return cellT(pend && !r.team ? '&nbsp;' : r.team || !r.ok ? DASH : signed(r.x.st.y, 1, '%'), 'color:' + (r.team || !r.ok ? 'var(--text-label)' : 'var(--text)') + ';'); }).join('') +
-        '<span style="padding:10px 8px 10px 0;border-top:1px solid var(--line);">' + recCaps('Vs others') + '</span>' +
-        rowsT.map(function (r) {
-          if (r.team) return cellT('not in yield', 'font-size:9.5px;color:var(--text-label);');
-          if (pend) return cellT('&nbsp;');
-          return r.ok ? cellT(ppTxt(r.x.pp), 'font-size:12.5px;font-weight:700;color:' + signColour(Math.round(r.x.pp * 10) / 10) + ';')
-            : cellT(r.n ? DASH + ' ' + MIDDOT + ' ' + r.n : DASH, 'font-size:10.5px;color:var(--text-label);');
-        }).join('') +
-        '<span style="align-self:start;padding:10px 8px 10px 0;border-top:1px solid var(--line);">' + recCaps('Consistent') + '</span>' +
-        rowsT.map(function (r) { return '<span style="display:flex;flex-direction:column;align-items:center;gap:5px;padding:10px 2px;border-top:1px solid var(--line);">' +
-          '<span style="display:flex;gap:1px;width:100%;">' + r.played.map(function (y) { var a = r.above.indexOf(y) > -1;
-            return '<span style="flex:1;height:5px;border-radius:1px;background:' + (a ? (r.team ? 'color-mix(in srgb, var(--pos) 45%, transparent)' : 'var(--pos)') : 'color-mix(in srgb, var(--text) 14%, transparent)') + ';"></span>'; }).join('') + '</span>' +
-          '<span style="' + M_ + 'font-size:10px;color:var(--text);">' + (r.played.length ? r.above.length + '/' + r.played.length : DASH) + '</span>' +
-          '<span style="' + M_ + 'font-size:9px;color:var(--text-label);white-space:nowrap;">' + r.played.length + ' played</span></span>'; }).join('') +
-      '</div></div>';
-    var fr = '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;">' +
-      filtersTriggerHtml('cal', groups, M.length, W0.length, 620) +   // the export's Calendar menu is 620px
-      '<span style="' + M_ + 'font-size:11px;color:var(--text-label);white-space:nowrap;">' + M.length + ' of ' + W0.length + ' matches</span></div>' +
-      filtersAppliedHtml('cal', groups, M.length, W0.length);
-    return fr + card1 + card2 + calDrawerV2(p, M, cols, view);
+        codeRows + winRow + pricedRow + yieldRow + vsRow + consRow +
+      '</div></div></div>';
+    var trig = filtersTriggerHtml('cal', groups, M.length, W0.length, 620, true);   // the export's Calendar menu is 620px, anchored right
+    return calHeadRow(p, trig) + filtersAppliedHtml('cal', groups, M.length, W0.length) + card1 + card2 + calDrawerV2(p, M, cols, view);
   }
   // The right-side drawer: 520px, fixed to the viewport edge; matches grouped by tournament (earliest first).
   // the export's "i" after By swing (file :287, defs :3879): how the swing figures are counted
@@ -10333,19 +10427,26 @@
     }).replace('class="pp2-drillbox"', 'class="pp2-drillbox" data-pp2-drawer="cal" data-pp2-cal-drill="1"');
   }
 
-  // ── Streaks (founder 2026-11-09: back) — runs over his played matches in date order, the Calendar's Window + Surface ──
-  var RUN_INFO1 = { what: 'His longest winning and losing runs, and the run he is on now.', defs: [
+  // ── Streaks (v3 D4, founder 2026-11-12) — runs over his played matches in date order, read on the Calendar band's
+  // Window + Surface only (the Calendar page's Filters do not reach it). Cut-offs are named constants Michael sets:
+  // a state needs STK_MINP priced matches, and a yield gap beyond STK_EDGE pp, to earn a verdict.
+  var STK_MINP = 30, STK_EDGE = 1;
+  var STK_NAMES = { W1: 'After 1 win', W2: 'After 2 wins', 'W3+': 'After 3+ wins', L1: 'After 1 loss', L2: 'After 2 losses', 'L3+': 'After 3+ losses' };
+  var STK_NEXT = { W1: 'W2', W2: 'W3', 'W3+': 'W4+', L1: 'L2', L2: 'L3', 'L3+': 'L4+' };
+  var RUN_INFO1 = { what: 'When to back him, when to fade him, and his longest winning and losing runs.', defs: [
     ['Run', 'Consecutive wins or losses, across tournaments. A walkover does not break or extend a run.'],
-    ['Expected', 'From his own win rate and match count in this window, not a tour average.'],
+    ['Back him', 'The state after which backing him in the next match has paid best against backing him in every match.'],
+    ['Fade him', 'The state after which it has paid worst.'],
     ['Longest', 'The longest run of its kind on record, with where it started and ended.']] };
   var RUN_INFO2 = { what: 'What usually happens in the match right after a run.', defs: [
     ['State', 'The run he was on going into the match: after 1, 2, 3 or more wins or losses.'],
     ['Next match', 'His record in the match that followed that state.'],
-    ['Vs career', 'Win rate in that state minus his win rate in this window, in points.'],
-    ['Yield', 'Flat 1u on him in those next matches, closing price, priced matches only.'],
-    ['Vs baseline', 'That yield minus the yield of backing him in every priced match.']] };
+    ['Chance', 'How often the run went on: another win after wins, another loss after losses. The tick marks 50%.'],
+    ['Yield', 'Flat 1u on him in those next matches at the closing price, priced matches only.'],
+    ['Verdict', 'Back him when that yield is more than ' + STK_EDGE + 'pp above the yield of backing him in every priced match, fade him when more than ' +
+      STK_EDGE + 'pp below. Needs ' + STK_MINP + ' priced matches.']] };
   function streakSeq(p) {
-    return calRows(p).filter(function (x) { return calInWindow(x) && calPass(x); })
+    return calRows(p).filter(function (x) { return calInWindow(x) && (calSurfOf() === 'all' || x.surf === calSurfOf()); })
       .slice().sort(function (a, b) { return String(a.r.date).localeCompare(String(b.r.date)) || a.i - b.i; });
   }
   function streakRuns(seq) {
@@ -10358,95 +10459,9 @@
     }
     return runs;
   }
-  function renderStreaksV2(p) {
-    var M_ = 'font-family:\'IBM Plex Mono\',monospace;';
-    var seq = streakSeq(p), runs = streakRuns(seq), n = seq.length;
-    // the export's Streaks headings name the window, and the surface only when one is picked ("Runs · career")
-    var scope = (calWinOf() === 'career' ? 'career' : 'last 52 weeks') + (calSurfOf() === 'all' ? '' : ' ' + MIDDOT + ' ' + calSurfOf().toLowerCase());
-    if (!n) return calEmpty('No matches in this window and surface.');
-    var wins = seq.filter(function (x) { return x.r.won; }).length, pr = Math.min(0.99, Math.max(0.01, wins / n));
-    var lg = Math.log(1 / pr), lgL = Math.log(1 / (1 - pr));
-    var expW = Math.max(1, Math.round(Math.log(n * (1 - pr)) / lg + 0.5772 / lg - 0.5));
-    var expL = Math.max(1, Math.round(Math.log(n * pr) / lgL + 0.5772 / lgL - 0.5));
-    var obs5 = runs.filter(function (x) { return x.len >= 5; }).length;
-    var exp5 = Math.round(n * (1 - pr) * Math.pow(pr, 5) + n * pr * Math.pow(1 - pr, 5));
-    var bestOf = function (won) { return runs.filter(function (x) { return x.won === won; }).sort(function (a, b) { return b.len - a.len || b.start - a.start; })[0]; };
-    var bw = bestOf(true), bl = bestOf(false);
-    var span = function (run) {
-      var a = seq[run.start].r, b = seq[run.end].r;
-      var ma = CAL_MON[a.mon], mb = CAL_MON[b.mon];
-      return a.year === b.year ? (ma === mb ? ma : ma + '–' + mb) + ' ' + a.year : ma + ' ' + a.year + '–' + mb + ' ' + b.year;
-    };
-    var cur = runs[runs.length - 1];
-    var strip = [
-      { cap: 'Runs of 5+', value: String(obs5), sub: 'expected ' + exp5 + ' ' + MIDDOT + ' ' + runs.length + ' runs' },
-      { cap: 'Longest win run', value: String(bw ? bw.len : 0), sub: bw ? span(bw) : DASH },
-      { cap: 'Longest loss run', value: String(bl ? bl.len : 0), sub: bl ? 'expected ' + expL + ' ' + MIDDOT + ' ' + span(bl) : DASH },
-      { cap: 'Expected longest', value: String(expW), sub: 'at ' + (pr * 100).toFixed(1) + '% over ' + n + ' matches ' + MIDDOT + ' now ' + (cur.won ? 'W' : 'L') + cur.len }];
-    var stripHtml = '<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border:1px solid var(--edge-6);border-radius:12px;overflow:hidden;background:var(--inner);margin-bottom:20px;">' +
-      strip.map(function (t, i) {
-        return '<div style="padding:14px 16px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:7px;min-width:0;border-left:1px solid ' + (i ? 'var(--edge-6)' : 'transparent') + ';">' +
-          recCaps(t.cap) + '<span style="' + M_ + 'font-size:24px;font-weight:700;line-height:1;color:var(--text);">' + esc(t.value) + '</span>' +
-          '<span style="font-size:11px;color:var(--text-label);">' + esc(t.sub) + '</span></div>';
-      }).join('') + '</div>';
-    var maxRun = runs.reduce(function (a, x) { return Math.max(a, x.len); }, 1), sel = state.runSel != null && runs[state.runSel] ? state.runSel : null;
-    var RW = 7;
-    var barsHtml = runs.map(function (x, i) {
-      var hh = Math.max(3, Math.round(x.len / maxRun * 68)), on = sel === i;
-      var col = x.won ? (on ? 'var(--pos)' : 'color-mix(in srgb, var(--pos) 62%, transparent)') : (on ? 'var(--neg)' : 'color-mix(in srgb, var(--neg) 55%, transparent)');
-      var up = x.won ? 68 - hh : 68, dn = x.won ? 68 : 68 - hh;
-      return '<span data-pp2="run-sel" data-v="' + i + '" title="' + (x.won ? 'W' : 'L') + x.len + ' ' + MIDDOT + ' ' + esc(span(x)) + '" style="width:6px;flex:none;height:100%;display:flex;flex-direction:column;cursor:pointer;">' +
-        '<span style="display:block;height:' + up + 'px;pointer-events:none;"></span><span style="display:block;height:' + hh + 'px;background:' + col + ';border-radius:1px;pointer-events:none;"></span>' +
-        '<span style="display:block;height:' + dn + 'px;pointer-events:none;"></span></span>';
-    }).join('');
-    var yrs = [];
-    runs.forEach(function (x) { var y = seq[x.start].r.year; var last = yrs[yrs.length - 1]; if (last && last.y === y) last.n++; else yrs.push({ y: y, n: 1 }); });
-    var yearsHtml = yrs.map(function (s) { var w = s.n * RW;
-      return '<span style="width:' + w + 'px;flex:none;box-sizing:border-box;border-left:1px solid var(--edge-6);padding:6px 0 0 5px;overflow:hidden;">' + (w >= 34 ? recCaps(esc(s.y)) : '') + '</span>'; }).join('');
-    var detail = '';
-    if (sel != null) {
-      var run = runs[sel], rs = seq.slice(run.start, run.end + 1), st = calStat(rs);
-      detail = '<div style="margin:12px 0 0;background:var(--inner);border:1px solid var(--edge-16);border-radius:10px;padding:12px 14px;">' +
-        '<div style="display:flex;align-items:baseline;gap:11px;margin-bottom:2px;"><span style="font-size:12.5px;font-weight:700;color:var(--text);">' +
-          (run.won ? 'Winning run' : 'Losing run') + ' ' + MIDDOT + ' ' + run.len + (run.len === 1 ? ' match' : ' matches') + '</span>' +
-          '<span style="' + M_ + 'font-size:10px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-label);">' + esc(span(run)) + '</span>' +
-          '<span style="margin-left:auto;' + M_ + 'font-size:15px;font-weight:700;color:' + (st.priced ? signColour(st.units) : 'var(--text-label)') + ';">' +
-            (st.priced ? signed(st.units, 2, 'u') + ' ' + MIDDOT + ' ' + st.priced + ' priced' : DASH) + '</span></div>' +
-        '<div style="display:grid;grid-template-columns:14px 36px minmax(0,1.1fr) minmax(0,1fr) 104px 48px 48px 56px;gap:0 14px;align-items:center;margin-top:10px;">' +
-          '<span></span>' + ['Rd', 'Event', 'Opponent', 'Score', 'Home', 'Away', 'P&amp;L'].map(function (h, k) {
-            return '<span style="padding-bottom:7px;' + (k >= 4 ? 'text-align:right;' : '') + '">' + recCaps(h) + '</span>'; }).join('') +
-          rs.map(function (x) {
-            var r = x.r, plc = calPlCell(r, shardPending(p)), hook = sheetHook(r.sheetId);
-            var c = function (h, s) { return '<span ' + hook + 'style="cursor:pointer;padding:6px 0;border-top:1px solid var(--line);' + s + '">' + h + '</span>'; };
-            return c(r.won ? 'W' : 'L', M_ + 'font-size:11px;font-weight:700;color:' + (r.won ? 'var(--pos)' : 'var(--neg)') + ';') +
-              c(esc(r.round || DASH), M_ + 'font-size:10.5px;color:var(--text-label);') +
-              c(esc(tournDisplayName(r.event, null) || r.event || DASH), M_ + 'font-size:11px;color:var(--text-label);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;') +
-              c(esc(initialSurname(r.opp || '') || DASH), 'font-size:12.5px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;') +
-              c(esc(String(r.score || DASH).replace(/,\s*/g, ' ')), M_ + 'font-size:11.5px;color:var(--text-label);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;') +
-              c(r.price != null ? Number(r.price).toFixed(2) : DASH, M_ + 'font-size:11.5px;font-weight:700;text-align:right;color:var(--text);') +
-              c(r.oppPrice != null ? Number(r.oppPrice).toFixed(2) : DASH, M_ + 'font-size:11.5px;text-align:right;color:var(--text-label);') +
-              c(plc.t, M_ + 'font-size:11.5px;text-align:right;color:' + plc.c + ';');
-          }).join('') + '</div></div>';
-    }
-    var card1 = '<div style="position:relative;background:var(--card);border:1px solid var(--edge-6);border-bottom:0;border-radius:16px 16px 0 0;padding:20px 24px 22px;">' +
-      infoCorner('run1', RUN_INFO1).replace('top:14px;right:14px', 'top:16px;right:16px') +
-      '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:14px;padding-right:28px;">' + recCaps('Runs ' + MIDDOT + ' ' + esc(scope)) +
-        '<span style="' + M_ + 'font-size:12px;color:var(--text-label);white-space:nowrap;">' + runs.length + ' runs ' + MIDDOT + ' longest ' + maxRun + '</span></div>' + stripHtml +
-      '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:0 0 8px;">' +
-        recCaps('Run timeline ' + MIDDOT + ' ' + esc(scope) + ' ' + MIDDOT + ' click a run for its matches') +
-        '<span style="display:inline-flex;gap:14px;">' +
-          '<span style="display:inline-flex;align-items:center;gap:6px;"><span style="width:8px;height:8px;border-radius:2px;background:color-mix(in srgb, var(--pos) 62%, transparent);"></span>' + recCaps('Wins up') + '</span>' +
-          '<span style="display:inline-flex;align-items:center;gap:6px;"><span style="width:8px;height:8px;border-radius:2px;background:color-mix(in srgb, var(--neg) 55%, transparent);"></span>' + recCaps('Losses down') + '</span></span></div>' +
-      '<div style="display:grid;grid-template-columns:28px minmax(0,1fr);gap:0 8px;">' +
-        '<span style="position:relative;height:140px;' + M_ + 'font-size:9.5px;color:var(--text-label);"><span style="position:absolute;right:0;top:0;">' + maxRun + '</span>' +
-          '<span style="position:absolute;right:0;top:50%;transform:translateY(-50%);">0</span><span style="position:absolute;right:0;bottom:0;">' + maxRun + '</span></span>' +
-        '<div class="pp2-yscroll" style="overflow-x:auto;padding-bottom:4px;"><div style="width:' + (runs.length * RW - 1) + 'px;">' +
-          '<div style="position:relative;display:flex;align-items:center;gap:1px;height:140px;"><span style="position:absolute;left:0;right:0;top:50%;height:1px;background:color-mix(in srgb, var(--text) 18%, transparent);"></span>' + barsHtml + '</div>' +
-          '<div style="display:flex;border-top:1px solid var(--edge-10);">' + yearsHtml + '</div></div></div></div>' + detail + '</div>';
-    // ── what follows a run ──
-    var base = calStat(seq);
-    var states = [['W1', true, 1], ['W2', true, 2], ['W3+', true, 3], ['L1', false, 1], ['L2', false, 2], ['L3+', false, 3]];
-    var after = {};
+  // The whole model: states, each state's next matches, its verdict against the window's every-priced-match yield.
+  function stkModel(p) {
+    var seq = streakSeq(p), runs = streakRuns(seq), base = calStat(seq), after = {};
     var runLen = 0, runWon = null;
     seq.forEach(function (x) {
       if (runWon != null) {
@@ -10455,41 +10470,202 @@
       }
       if (runWon === x.r.won) runLen++; else { runWon = x.r.won; runLen = 1; }
     });
-    var G = '64px 92px 64px minmax(0,1fr) 72px 72px 80px 56px';
-    var cellB = function (h, s) { return '<span style="' + M_ + 'font-size:12px;font-variant-numeric:tabular-nums;text-align:right;padding:10px 0;border-top:1px solid var(--line);' + (s || '') + '">' + h + '</span>'; };
-    var row = function (lab, list) {
-      var st = calStat(list), ok = st.n >= 5, d = ok && base.pct != null ? Math.round((st.pct - base.pct) * 10) / 10 : null;
-      var vs = st.priced >= 5 && base.y != null ? Math.round((st.y - base.y) * 10) / 10 : null;
-      var tw = d == null ? 0 : Math.min(20, Math.abs(d)) / 20 * 50;
-      return '<span style="' + M_ + 'font-size:13px;font-weight:700;color:var(--text);padding:10px 0;border-top:1px solid var(--line);">' + lab + '</span>' +
-        cellB(st.n ? 'W' + st.w + '–L' + st.l : DASH, 'font-size:11.5px;color:var(--text-label);') +
-        cellB(ok ? st.pct.toFixed(1) + '%' : DASH, 'font-size:13px;font-weight:700;color:' + (ok ? 'var(--text)' : 'var(--text-label)') + ';') +
-        '<span style="position:relative;display:block;box-sizing:content-box;height:100%;min-height:26px;padding:10px 0;border-top:1px solid var(--line);">' +
-          '<span style="position:absolute;left:50%;top:10px;bottom:10px;width:1px;background:color-mix(in srgb, var(--text) 18%, transparent);"></span>' +
-          (d == null ? '' : '<span style="position:absolute;top:50%;height:6px;margin-top:-3px;left:' + (d < 0 ? 50 - tw : 50) + '%;width:' + tw + '%;background:' + signColour(d) + ';border-radius:3px;"></span>') + '</span>' +
-        cellB(d == null ? DASH : signed(d, 1, 'pp'), 'font-weight:700;color:' + (d == null ? 'var(--text-label)' : signColour(d)) + ';') +
-        cellB(st.priced >= 5 ? signed(st.y, 1, '%') : DASH, 'color:' + (st.priced >= 5 ? signColour(st.y) : 'var(--text-label)') + ';') +
-        cellB(vs == null ? DASH : signed(vs, 1, 'pp'), 'font-weight:700;color:' + (vs == null ? 'var(--text-label)' : signColour(vs)) + ';') +
-        cellB(String(st.priced), 'font-size:11.5px;color:var(--text-label);');
+    var vd = {};
+    Object.keys(STK_NAMES).forEach(function (k) {
+      var st = calStat(after[k] || []);
+      var vs = st.priced && st.y != null && base.y != null ? Math.round((st.y - base.y) * 10) / 10 : null;
+      var v = st.priced < STK_MINP || vs == null ? 'few' : vs > STK_EDGE ? 'back' : vs < -STK_EDGE ? 'fade' : 'none';
+      vd[k] = { k: k, st: st, vs: vs, v: v, label: { few: 'Too few matches', back: 'Back him', fade: 'Fade him', none: 'No edge' }[v],
+        color: v === 'back' ? 'var(--pos)' : v === 'fade' ? 'var(--neg)' : 'var(--text-label)',
+        note: v === 'few' ? st.priced + ' priced' : signed(vs, 1, 'pp') + ' yield' };
+    });
+    return { seq: seq, runs: runs, base: base, after: after, vd: vd };
+  }
+  function stkSpan(seq, run) {
+    var a = seq[run.start].r, b = seq[run.end].r, ma = CAL_MON[a.mon], mb = CAL_MON[b.mon];
+    return a.year === b.year ? (ma === mb ? ma : ma + ENDASH + mb) + ' ' + a.year : ma + ' ' + a.year + ENDASH + mb + ' ' + b.year;
+  }
+  function renderStreaksV2(p) {
+    var M_ = 'font-family:\'IBM Plex Mono\',monospace;';
+    var S = stkModel(p), seq = S.seq, runs = S.runs, n = seq.length, pend = shardPending(p);
+    var scope = (calWinOf() === 'career' ? 'career' : 'last 52 weeks') + (calSurfOf() === 'all' ? '' : ' ' + MIDDOT + ' ' + calSurfOf().toLowerCase());
+    if (!n) return calEmpty('No matches in this window and surface.');
+    var maxRun = runs.reduce(function (a, x) { return Math.max(a, x.len); }, 1);
+    var bestOf = function (won) { return runs.filter(function (x) { return x.won === won; }).sort(function (a, b) { return b.len - a.len || b.start - a.start; })[0]; };
+    var bw = bestOf(true), bl = bestOf(false);
+    // ── the four tiles: Back him / Fade him = the state whose next-match yield sits furthest above / below the window's ──
+    var pickT = function (dir) {
+      if (pend) return { value: '&nbsp;', fig: '', sub: '&nbsp;' };
+      var c = Object.keys(S.vd).map(function (k) { return S.vd[k]; }).filter(function (x) { return x.v !== 'few'; })
+        .sort(function (a, b) { return (b.vs - a.vs) * dir; })[0];
+      if (!c || c.vs * dir <= STK_EDGE) return { value: DASH, faint: true, fig: '', sub: 'no state stands out' };
+      return { value: esc(STK_NAMES[c.k]), fig: signed(c.vs, 1, 'pp'), figColor: dir > 0 ? 'var(--pos)' : 'var(--neg)', sub: 'yield vs ' + (calWinOf() === 'career' ? 'career' : 'the window') };
     };
-    var headB = ['State', 'Next match', 'Win %', 'Vs career', 'pp', 'Yield', 'Vs baseline', 'Priced'].map(function (h, k) {
-      return '<span style="padding-bottom:8px;border-bottom:1px solid var(--edge-10);text-align:' + (k === 0 ? 'left' : k === 3 ? 'center' : 'right') + ';">' + recCaps(h) + '</span>'; }).join('');
-    var baseRow = '<span style="font-size:13px;font-weight:700;color:var(--text);padding:10px 0;border-bottom:1px solid var(--edge-10);">' + (calWinOf() === 'career' ? 'Career' : 'Window') + '</span>' +
-      '<span style="' + M_ + 'font-size:11.5px;color:var(--text-label);text-align:right;padding:10px 0;border-bottom:1px solid var(--edge-10);">W' + base.w + '–L' + base.l + '</span>' +
-      '<span style="' + M_ + 'font-size:13px;font-weight:700;color:var(--text);text-align:right;padding:10px 0;border-bottom:1px solid var(--edge-10);">' + (base.pct == null ? DASH : base.pct.toFixed(1) + '%') + '</span>' +
-      '<span style="position:relative;display:block;box-sizing:content-box;min-height:26px;padding:10px 0;border-bottom:1px solid var(--edge-10);"><span style="position:absolute;left:50%;top:10px;bottom:10px;width:1px;background:color-mix(in srgb, var(--text) 18%, transparent);"></span></span>' +
-      '<span style="' + M_ + 'font-size:12px;color:var(--text-label);text-align:right;padding:10px 0;border-bottom:1px solid var(--edge-10);">' + DASH + '</span>' +
-      '<span style="' + M_ + 'font-size:12px;color:var(--text);text-align:right;padding:10px 0;border-bottom:1px solid var(--edge-10);">' + (base.y == null ? DASH : signed(base.y, 1, '%')) + '</span>' +
-      '<span style="' + M_ + 'font-size:12px;color:var(--text-label);text-align:right;padding:10px 0;border-bottom:1px solid var(--edge-10);">' + DASH + '</span>' +
-      '<span style="' + M_ + 'font-size:11.5px;color:var(--text-label);text-align:right;padding:10px 0;border-bottom:1px solid var(--edge-10);">' + base.priced + '</span>';
-    var grp = function (lab) { return '<span style="grid-column:1 / -1;padding:14px 0 4px;">' + recCaps(lab, 'font-weight:800;') + '</span>'; };
-    var card2 = '<div style="position:relative;background:var(--card);border:1px solid var(--edge-6);border-top:1px solid var(--edge-10);border-radius:0 0 16px 16px;padding:20px 24px 22px;">' +
-      infoCorner('run2', RUN_INFO2).replace('top:14px;right:14px', 'top:16px;right:16px') +
-      '<div style="margin-bottom:14px;">' + recCaps('What follows a run ' + MIDDOT + ' ' + esc(scope)) + '</div>' +
-      '<div style="display:grid;grid-template-columns:' + G + ';gap:0 14px;width:100%;align-items:center;">' + headB + baseRow +
-        grp('After a win') + states.slice(0, 3).map(function (s) { return row(s[0], after[s[0]] || []); }).join('') +
-        grp('After a loss') + states.slice(3).map(function (s) { return row(s[0], after[s[0]] || []); }).join('') + '</div></div>';
-    return card1 + card2;
+    var TILE = 'background:var(--card);border:1px solid var(--edge-6);border-radius:12px;padding:13px 12px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:7px;min-width:0;';
+    var wordTile = function (cap, t) {
+      return '<div style="' + TILE + '">' + recCaps(cap) +
+        '<span style="font-size:16px;font-weight:700;line-height:20px;color:' + (t.faint ? 'var(--text-label)' : 'var(--text)') + ';">' + t.value + '</span>' +
+        '<span style="font-size:11px;color:var(--text-label);line-height:19px;white-space:nowrap;">' +
+          (t.fig ? '<span style="' + M_ + 'font-weight:600;color:' + t.figColor + ';">' + t.fig + '</span> ' : '') + t.sub + '</span></div>';
+    };
+    var runTile = function (cap, run, letter) {
+      return '<div style="' + TILE + '">' + recCaps(cap) +
+        '<span style="' + M_ + 'font-size:20px;font-weight:700;line-height:20px;color:' + (run ? 'var(--text)' : 'var(--text-label)') + ';">' + (run ? letter + run.len : DASH) + '</span>' +
+        '<span style="font-size:11px;color:var(--text-label);line-height:19px;">' + (run ? esc(stkSpan(seq, run)) : DASH) + '</span></div>';
+    };
+    var tiles = '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-bottom:20px;">' +
+      wordTile('Back him', pickT(1)) + wordTile('Fade him', pickT(-1)) + runTile('Longest win run', bw, 'W') + runTile('Longest losing run', bl, 'L') + '</div>';
+    // ── the run timeline: one 6px bar per run, 1px apart; height = run ÷ longest × 68 (min 3); wins up, losses down ──
+    var RW = 7, specW = runs.length * RW - 1;
+    var barsHtml = runs.map(function (x, i) {
+      var hh = Math.max(3, Math.round(x.len / maxRun * 68));
+      var up = x.won ? 68 - hh : 68, dn = x.won ? 68 : 68 - hh;
+      return '<span data-pp2="run-sel" data-pp2-run="' + i + '" data-v="' + i + '" data-tip="' + (x.won ? 'W' : 'L') + x.len + '|' + esc(stkSpan(seq, x)) + '" ' +
+        'style="width:6px;flex:none;height:100%;display:flex;flex-direction:column;cursor:pointer;">' +
+        '<span style="display:block;height:' + up + 'px;pointer-events:none;"></span>' +
+        '<span class="pp2-runbar" data-won="' + (x.won ? 1 : 0) + '" style="display:block;height:' + hh + 'px;background:' +
+          (x.won ? 'color-mix(in srgb, var(--pos) 62%, transparent)' : 'color-mix(in srgb, var(--neg) 55%, transparent)') + ';border-radius:1px;box-shadow:none;pointer-events:none;"></span>' +
+        '<span style="display:block;height:' + dn + 'px;pointer-events:none;"></span></span>';
+    }).join('');
+    // the year axis: each year's width = the runs that start in it; too narrow (< 34px) for a label = blank
+    var yrs = [];
+    runs.forEach(function (x) { var y = seq[x.start].r.year, last = yrs[yrs.length - 1]; if (last && last.y === y) last.n++; else yrs.push({ y: y, n: 1 }); });
+    var yearsHtml = yrs.map(function (s) {
+      var w = s.n * RW;
+      return '<span style="width:' + w + 'px;flex:none;box-sizing:border-box;border-left:1px solid ' + EDGE_8 + ';font-family:var(--font-words);font-size:10.5px;' +
+        'font-weight:700;letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);padding:6px 0 0 5px;overflow:hidden;white-space:nowrap;">' + (w >= 34 ? esc(s.y) : '') + '</span>';
+    }).join('');
+    var firstYear = seq[0].r.year;
+    var timeline = '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:0 0 8px;">' +
+        recCaps('Run timeline ' + MIDDOT + ' one bar per run') +
+        '<span style="display:inline-flex;gap:14px;">' +
+          '<span style="display:inline-flex;align-items:center;gap:6px;"><span style="width:8px;height:8px;border-radius:2px;background:color-mix(in srgb, var(--pos) 62%, transparent);"></span>' + recCaps('Wins up') + '</span>' +
+          '<span style="display:inline-flex;align-items:center;gap:6px;"><span style="width:8px;height:8px;border-radius:2px;background:color-mix(in srgb, var(--neg) 55%, transparent);"></span>' + recCaps('Losses down') + '</span></span></div>' +
+      '<div style="display:grid;grid-template-columns:28px minmax(0,1fr);gap:0 8px;margin-bottom:22px;">' +
+        '<span style="position:relative;height:140px;margin-top:30px;' + M_ + 'font-size:9.5px;color:var(--text-label);"><span style="position:absolute;right:0;top:0;">' + maxRun + '</span>' +
+          '<span style="position:absolute;right:0;top:50%;transform:translateY(-50%);">0</span><span style="position:absolute;right:0;bottom:0;">' + maxRun + '</span></span>' +
+        '<div style="position:relative;min-width:0;">' +
+          '<div data-pp2-runsc="1" data-specw="' + specW + '" style="overflow-x:auto;padding-bottom:4px;"><div style="position:relative;width:' + specW + 'px;padding-top:30px;">' +
+            // the hover tip: one element, filled and moved by the pointer handler (no repaint), hidden until a bar is under it
+            '<span data-pp2-runtip="1" style="display:none;position:absolute;top:0;left:0;transform:translateX(-50%);z-index:2;pointer-events:none;white-space:nowrap;' +
+              'background:var(--selected);border:1px solid color-mix(in srgb, var(--text) 18%, transparent);border-radius:7px;padding:5px 9px;box-shadow:var(--shadow-menu);' +
+              M_ + 'font-size:11px;color:var(--text-soft);"></span>' +
+            '<div data-pp2-runbars="1" style="position:relative;display:flex;align-items:center;gap:1px;height:140px;">' +
+              '<span style="position:absolute;left:0;right:0;top:50%;height:1px;background:color-mix(in srgb, var(--text) 18%, transparent);"></span>' + barsHtml + '</div>' +
+            '<div style="display:flex;border-top:1px solid var(--edge-10);">' + yearsHtml + '</div></div></div>' +
+          // while not at the start: a 72px fade and the chip that scrolls back by 80% of the width (shown by onRunScroll)
+          '<span data-pp2-runfade="1" style="display:none;position:absolute;left:0;top:30px;height:140px;width:72px;pointer-events:none;' +
+            'background:linear-gradient(90deg, var(--card) 0%, color-mix(in srgb, var(--card) 0%, transparent) 100%);"></span>' +
+          '<span data-pp2="run-earlier" class="pp2-runchip" style="display:none;position:absolute;left:0;top:0;cursor:pointer;white-space:nowrap;background:var(--selected);' +
+            'border:1px solid var(--edge-16);border-radius:7px;padding:5px 10px;font-size:11px;font-weight:600;color:var(--text-soft);">' +
+            '← Scroll for earlier years ' + MIDDOT + ' back to ' + esc(firstYear) + '</span>' +
+        '</div></div>';
+    // ── what follows a run: two ladders ──
+    var ladRow = function (k, i) {
+      var v = S.vd[k], st = v.st, win = k.charAt(0) === 'W';
+      var ch = st.n ? (win ? st.pct : 100 - st.pct) : null;
+      return '<div style="display:flex;flex-direction:column;gap:8px;padding:12px 0;border-top:1px solid ' + (i ? 'var(--line)' : 'transparent') + ';">' +
+        '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px;">' +
+          '<span style="' + M_ + 'font-size:14px;font-weight:700;color:var(--text);white-space:nowrap;">' + k + ' <span style="color:var(--text-label);font-weight:400;">→</span> ' + STK_NEXT[k] + '</span>' +
+          '<span style="' + M_ + 'font-size:18px;font-weight:700;line-height:1;color:' + (ch == null ? 'var(--text-label)' : 'var(--text)') + ';">' + (ch == null ? DASH : ch.toFixed(1) + '%') + '</span></div>' +
+        '<span style="position:relative;display:block;height:6px;border-radius:3px;background:var(--line);">' +
+          (ch == null ? '' : '<span style="position:absolute;left:0;top:0;bottom:0;width:' + ch.toFixed(1) + '%;background:' +
+            (win ? 'color-mix(in srgb, var(--pos) 62%, transparent)' : 'color-mix(in srgb, var(--neg) 55%, transparent)') + ';border-radius:3px;"></span>') +
+          '<span style="position:absolute;left:50%;top:-3px;bottom:-3px;width:1px;background:color-mix(in srgb, var(--text) 32%, transparent);"></span></span>' +
+        '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">' +
+          '<span style="' + M_ + 'font-size:11px;color:var(--text-label);white-space:nowrap;">' + (st.n ? recordText(st.w, st.l) : DASH) + ' next match</span>' +
+          '<span style="display:flex;align-items:center;gap:8px;white-space:nowrap;">' +
+            (pend ? '&nbsp;' : '<span style="' + M_ + 'font-size:10.5px;color:var(--text-label);">' + v.note + '</span>' +
+              '<span style="font-size:11.5px;font-weight:600;color:' + v.color + ';">' + v.label + '</span>') + '</span></div></div>';
+    };
+    var ladder = function (title, keys) {
+      return '<div style="background:var(--card);border:1px solid var(--edge-6);border-radius:12px;padding:14px 16px 4px;min-width:0;">' +
+        '<div style="font-family:var(--font-words);font-size:10.5px;font-weight:800;letter-spacing:0.10em;text-transform:uppercase;color:var(--text-soft);' +
+          'padding-bottom:10px;border-bottom:1px solid var(--edge-10);">' + title + '</div>' + keys.map(ladRow).join('') + '</div>';
+    };
+    var follows = '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;">' +
+        recCaps('What follows a run') + '<span style="position:relative;z-index:3;display:inline-flex;">' + infoIcon('run2', Object.assign({ align: 'right', width: 420 }, RUN_INFO2)) + '</span></div>' +
+      '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:10px;">' +
+        ladder('After a win', ['W1', 'W2', 'W3+']) + ladder('After a loss', ['L1', 'L2', 'L3+']) + '</div>';
+    var card = '<div style="position:relative;background:var(--card);border:1px solid var(--edge-6);border-radius:16px;padding:20px 24px 22px;">' +
+      infoCorner('run1', RUN_INFO1).replace('top:14px;right:14px', 'top:16px;right:16px') +
+      '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:14px;padding-right:28px;">' + recCaps('Runs ' + MIDDOT + ' ' + esc(scope)) +
+        '<span style="' + M_ + 'font-size:12px;color:var(--text-label);white-space:nowrap;">' + runs.length + ' runs ' + MIDDOT + ' longest ' + maxRun + '</span></div>' +
+      tiles + timeline + follows + '</div>';
+    return card + stkRunBox(p, S, scope);
+  }
+  // The run box (a bar's click): the float-box chrome, six centred tiles, one read line, the run's matches.
+  function stkRunBox(p, S, scope) {
+    var idx = state.runSel, run = idx != null ? S.runs[idx] : null;
+    if (!run) return '';
+    var seq = S.seq, pend = shardPending(p), L = run.won ? 'W' : 'L';
+    var k = L + (run.len >= 3 ? '3+' : run.len), v = S.vd[k], st = v.st, nm = STK_NAMES[k].replace('After ', '');
+    var winWord = calWinOf() === 'career' ? 'career' : 'the window';
+    var base = S.base, dd = st.n && base.pct != null ? Math.round((st.pct - base.pct) * 10) / 10 : null;
+    var same = S.runs.filter(function (x) { return x.won === run.won && x.len >= run.len; }), went = same.filter(function (x) { return x.len > run.len; }).length;
+    var nxt = S.runs[idx + 1], endM = nxt ? seq[nxt.start] : null, endR = endM ? endM.r : null;
+    var col = function (x) { return x > 0 ? 'var(--pos)' : x < 0 ? 'var(--neg)' : 'var(--text-label)'; };
+    var few = v.v === 'few';
+    var tiles = [
+      { label: 'Run', fig: L + run.len, figColor: run.won ? 'var(--pos)' : 'var(--neg)', sub: stkSpan(seq, run),
+        tail: run.len === 1 ? (run.won ? 'a single win' : 'a single loss') : run.len + (run.won ? ' wins in a row' : ' losses in a row') },
+      { label: 'Runs this long', fig: String(same.length), sub: (same.length === 1 ? 'run of ' : 'runs of ') + L + run.len + '+', tail: went + ' went on to ' + L + (run.len + 1) },
+      !endR ? { label: 'How the run ended', fig: 'Still on', sub: 'the run he carries into his next match', tail: '' }
+        : { label: 'How the run ended', fig: (endR.won ? 'Won' : 'Lost') + (endR.price != null ? ' at ' + Number(endR.price).toFixed(2) : ''),
+          figColor: endR.won ? 'var(--pos)' : 'var(--neg)',
+          sub: endR.opp ? (endR.won ? 'beat ' : 'to ') + initialSurname(endR.opp) + (endR.round ? ' ' + MIDDOT + ' ' + endR.round : '') : 'match not on record',
+          tail: endR.opp ? [tournDisplayName(endR.event, null) || endR.event, CAL_MON[endR.mon] + ' ' + endR.year].filter(Boolean).join(' ' + MIDDOT + ' ') : '' },
+      { label: 'Next match after ' + nm, fig: st.n ? st.pct.toFixed(1) + '%' : DASH, sub: st.n ? recordText(st.w, st.l) : DASH,
+        tail: dd == null ? '' : signed(dd, 1, 'pp') + ' vs ' + winWord + ' ' + base.pct.toFixed(1) + '%' },
+      { label: 'Yield after ' + nm, fig: pend ? '&nbsp;' : st.priced && st.y != null ? signed(st.y, 1, '%') : DASH, figColor: few || !st.priced ? 'var(--text-label)' : col(st.y),
+        sub: pend ? '&nbsp;' : st.priced + ' priced', tail: pend || v.vs == null ? '' : signed(v.vs, 1, 'pp') + ' vs ' + winWord, tailColor: few ? 'var(--text-label)' : col(v.vs) },
+      { label: 'Verdict', fig: pend ? '&nbsp;' : few ? 'Too few' : v.label, figColor: v.color, sub: few ? 'matches to judge' : 'in the match after ' + nm, tail: few || pend ? '' : v.note }];
+    var read = pend ? '' : few ? 'Only ' + st.priced + ' priced matches after ' + nm + ', too few to judge.'
+      : 'Backing him in the match after ' + nm + ' has returned ' + (Math.abs(v.vs) <= STK_EDGE ? 'about the same as'
+        : Math.abs(v.vs).toFixed(1) + 'pp ' + (v.vs > 0 ? 'more' : 'less') + ' than') + ' backing him in every match.';
+    var M_ = 'font-family:\'IBM Plex Mono\',monospace;';
+    var tilesHtml = '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px;margin-bottom:14px;">' + tiles.map(function (t) {
+      return '<div style="background:var(--card);border:1px solid var(--edge-6);border-radius:12px;padding:13px 12px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:7px;min-width:0;">' +
+        '<span style="font-family:var(--font-words);font-size:10.5px;font-weight:700;letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + esc(t.label) + '</span>' +
+        '<span style="' + M_ + 'font-size:21px;font-weight:700;line-height:1;color:' + (t.figColor || 'var(--text)') + ';">' + (t.fig === '&nbsp;' ? t.fig : esc(t.fig)) + '</span>' +
+        '<span style="font-size:11.5px;color:var(--text-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;">' + (t.sub === '&nbsp;' ? t.sub : esc(t.sub || '')) + '&nbsp;</span>' +
+        '<span style="' + M_ + 'font-size:10px;color:' + (t.tailColor || 'var(--text-label)') + ';line-height:1.4;white-space:normal;text-wrap:pretty;">' + esc(t.tail || '') + '&nbsp;</span></div>';
+    }).join('') + '</div>';
+    // the run's matches: result square · Date · Opponent · Event · Rd · Score · Price · Opp · P&L; a row opens the match sheet
+    var GRID = 'display:grid;grid-template-columns:12px 64px minmax(0,1fr) minmax(0,0.8fr) 36px minmax(128px,auto) 46px 46px 54px;gap:0 10px;align-items:center;';
+    var heads = [['', 'left'], ['Date', 'left'], ['Opponent', 'left'], ['Event', 'left'], ['Rd', 'left'], ['Score', 'left'], ['Price', 'right'], ['Opp', 'right'], ['P&L', 'right']].map(function (h) {
+      return '<span style="position:sticky;top:0;background:var(--card);font-family:var(--font-words);font-size:10.5px;font-weight:700;letter-spacing:0.10em;text-transform:uppercase;' +
+        'color:var(--text-label);text-align:' + h[1] + ';padding-bottom:8px;border-bottom:1px solid color-mix(in srgb, var(--text) 12%, transparent);">' + esc(h[0]) + '</span>';
+    }).join('');
+    var rows = seq.slice(run.start, run.end + 1).map(function (x) {
+      var r = x.r, plc = calPlCell(r, pend), hook = sheetHook(r.sheetId);
+      var c = function (h, s) { return '<span ' + hook + 'style="cursor:pointer;padding:7px 0;border-top:1px solid var(--line);' + s + '">' + h + '</span>'; };
+      return c('<span style="display:block;width:8px;height:8px;border-radius:2px;margin-top:4px;background:' + (r.won ? 'var(--pos)' : 'var(--neg)') + ';"></span>', 'display:block;height:100%;box-sizing:border-box;') +
+        c(esc(CAL_MON[r.mon] + ' ' + r.year), M_ + 'font-size:11px;color:var(--text-label);white-space:nowrap;') +
+        c(esc(initialSurname(r.opp || '') || DASH), 'font-size:12.5px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;') +
+        c(esc(tournDisplayName(r.event, null) || r.event || DASH), 'font-size:12px;color:var(--text-label);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;') +
+        c(esc(r.round || DASH), M_ + 'font-size:10.5px;color:var(--text-label);') +
+        c(esc(String(r.score || DASH).replace(/,\s*/g, ' ')), M_ + 'font-size:11px;color:var(--text-label);white-space:nowrap;') +
+        c(r.price != null ? Number(r.price).toFixed(2) : pend ? '' : DASH, M_ + 'font-size:11px;color:var(--text-soft);text-align:right;') +
+        c(r.oppPrice != null ? Number(r.oppPrice).toFixed(2) : pend ? '' : DASH, M_ + 'font-size:11px;color:var(--text-label);text-align:right;') +
+        c(plc.t, M_ + 'font-size:11px;text-align:right;color:' + plc.c + ';');
+    }).join('');
+    return '<div class="pp2-fb" data-pp2="run-scrim" style="position:fixed;inset:0 0 0 var(--sf-side, 0px);z-index:64;' +
+      'background:var(--backdrop);display:flex;align-items:flex-start;justify-content:center;padding:40px 24px;overflow-y:auto;clip-path:inset(0);">' +
+      '<div data-pp2="card" style="position:relative;width:100%;max-width:900px;max-height:calc(100vh - 80px);overflow-y:auto;background:var(--card);' +
+        'border:1px solid var(--edge-16);border-radius:14px;padding:20px 22px 22px;min-width:0;box-shadow:var(--shadow-modal);box-sizing:border-box;">' +
+        '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:16px;">' +
+          '<div style="display:flex;flex-direction:column;gap:4px;min-width:0;">' +
+            '<span style="font-size:16px;font-weight:800;letter-spacing:-0.01em;color:var(--text);white-space:nowrap;">' + (run.won ? 'Winning run' : 'Losing run') + ' ' + MIDDOT + ' ' +
+              run.len + (run.len === 1 ? ' match' : ' matches') + '</span>' +
+            '<span style="font-size:12.5px;color:var(--text-label);">' + esc(stkSpan(seq, run) + ' ' + MIDDOT + ' ' + scope) + '</span></div>' +
+          '<span data-pp2="run-close" role="button" aria-label="Close" style="flex:none;width:32px;height:32px;border-radius:9px;background:var(--wash-5);border:1px solid var(--edge-6);' +
+            'color:var(--text-label);cursor:pointer;display:flex;align-items:center;justify-content:center;box-sizing:border-box;"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" ' +
+            'style="pointer-events:none;"><path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path></svg></span></div>' +
+        tilesHtml +
+        (read ? '<div style="font-size:11.5px;color:var(--text-label);line-height:1.5;margin:-6px 0 12px;">' + esc(read) + '</div>' : '') +
+        '<div style="max-height:320px;overflow-y:auto;padding-right:12px;"><div style="' + GRID + '">' + heads + rows + '</div></div>' +
+      '</div></div>';
   }
 
   function renderSeasonModal(p) {
@@ -11550,7 +11726,8 @@
     var sel = state.spdBand && D.bands.some(function (b) { return b.key === state.spdBand && b.n; }) ? state.spdBand
       : (withN.filter(function (b) { return b.key === 'fast'; })[0] || withN[0] || {}).key || null;   // the export opens on Fast
     var M = 'font-family:\'IBM Plex Mono\',monospace;';
-    var top = '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px;">' +
+    var top = '<div data-pp2-band="standalone" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px;' +
+      'padding:10px 16px;background:var(--inner);border:1px solid var(--line);border-radius:12px;">' +
       '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">' + stySegPills('spd-surf', [['all', 'All']].concat(STY_SURFS.slice(1)), state.spdSurf || 'all') + '</div>' +
       '<span style="display:inline-flex;align-items:baseline;gap:8px;' + M + 'font-size:12px;color:var(--text-label);white-space:nowrap;">' +
         recCaps('Career') + '<span style="color:var(--text);font-weight:700;">' + (D.tn ? recordText(D.tw, D.tn - D.tw) : DASH) + '</span><span>' + MIDDOT + '</span>' +
@@ -12146,25 +12323,19 @@
     var TW = data.reduce(function (s, d) { return s + d.w; }, 0), TN = data.reduce(function (s, d) { return s + d.n; }, 0);
     return { data: data, TW: TW, TN: TN, avg: TN ? 100 * TW / TN : null };
   }
-  function stySegPills(hook, opts, cur) {
-    return opts.map(function (o) {
-      var on = cur === o[0];
-      return '<span data-pp2="' + hook + '" data-v="' + esc(o[0]) + '" style="display:inline-flex;align-items:center;cursor:pointer;' +
-        'padding:6px 13px;border-radius:8px;font-size:11.5px;font-weight:' + (on ? 700 : 600) + ';color:' + (on ? 'var(--text)' : 'var(--text-label)') + ';' +
-        'background:' + (on ? 'var(--selected)' : 'transparent') + ';border:1px solid ' + (on ? 'var(--edge-16)' : 'var(--edge-10)') + ';white-space:nowrap;">' +
-        esc(o[1]) + '</span>';
-    }).join('');
+  function stySegPills(hook, opts, cur, offEdge) {   // v3 B2 · band pills (Market edge draws its surfaces on a 6% ring)
+    return opts.map(function (o) { return bandPill(hook, o[0], o[1], cur === o[0], '', offEdge); }).join('');
   }
-  function winSeg(hook, cur, withL24) {
+  function winSeg(hook, cur, withL24) {   // v3 B2 · the window as pills, no track
     var opts = withL24 ? [['l52', 'Last 52 weeks'], ['l24', 'Last 24 months'], ['career', 'Career']] : [['l52', 'Last 52 weeks'], ['career', 'Career']];
-    return '<span style="display:flex;gap:3px;background:var(--inner);border:1px solid var(--edge-6);border-radius:9px;padding:2px;flex:none;">' +
-      opts.map(function (o) {
-        var on = cur === o[0];
-        return '<span data-pp2="' + hook + '" data-v="' + o[0] + '" style="cursor:pointer;white-space:nowrap;padding:5px 12px;border-radius:7px;' +
-          'font-size:11px;font-weight:' + (on ? 700 : 600) + ';color:' + (on ? 'var(--text)' : 'var(--text-label)') + ';' +
-          'background:' + (on ? 'var(--selected)' : 'transparent') + ';border:1px solid ' + (on ? 'var(--edge-16)' : 'transparent') + ';">' + o[1] + '</span>';
-      }).join('') + '</span>';
+    return '<span style="display:flex;gap:8px;flex:none;">' + opts.map(function (o) { return bandPill(hook, o[0], o[1], cur === o[0]); }).join('') + '</span>';
   }
+  // v3 B2 · the joined band of Market edge (both pages): surfaces · divider · Filters left, window right, Applied inside.
+  function mkBandHtml(left, right, applied, kind) {
+    return bandBox('<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;">' + left + right + '</div>' +
+      (applied ? applied.replace('margin:-6px 0 16px;', 'margin:0;') : ''), kind || 'joined', 'flex-direction:column;align-items:stretch;gap:10px;');
+  }
+  var JOIN_TOP = 'border-top:0;border-radius:0 0 12px 12px;';
   function styChart(D) {
     var pts = D.data.filter(function (d) { return !d.empty; });
     if (!pts.length) return '<div style="padding:30px 0;text-align:center;font-size:12.5px;color:var(--text-label);">No archetyped opponent in this filter</div>';
@@ -12287,11 +12458,9 @@
     var D = styData(p);
     var scope = styScope();
     var TU = D.data.reduce(function (s, d) { return s + (d.units != null && !d.thin ? d.units : 0); }, 0);
-    return '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px;">' +
-        '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">' + stySegPills('sty-surf', STY_SURFS, state.stySurf || 'all') + '</div>' +
-        winSeg('sty-win', state.styWin || 'career', false) +
-      '</div>' +
-      '<div style="position:relative;background:var(--inner);border:1px solid var(--edge-6);border-radius:12px;padding:14px 16px 12px;margin-bottom:12px;">' +
+    return bandBox('<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">' + stySegPills('sty-surf', STY_SURFS, state.stySurf || 'all') + '</div>' +
+        winSeg('sty-win', state.styWin || 'career', false), 'joined', 'justify-content:space-between;gap:12px;') +
+      '<div style="position:relative;background:var(--inner);border:1px solid var(--line);' + JOIN_TOP + 'padding:14px 16px 12px;margin-bottom:12px;">' +
         infoCorner('sty1', STY_INFO1) +
         '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:12px;padding-right:28px;">' +
           recCaps('Win rate by archetype') +
@@ -14808,7 +14977,7 @@
     state.drawDrill = null; state.drawFilter = 'all'; state.drawPage = 0;
     state.tournQuery = ''; state.tournOpen = null;
     state.calTab = 'calendar'; state.calSurface = 'all'; state.calCell = null; state.cal26Month = null;
-    state.seasonTab = 'calendar'; state.calWin = 'career'; state.calSurf = 'all'; state.calView = 'swing'; state.calCellV2 = null; state.runSel = null;
+    state.seasonTab = 'calendar'; state.calWin = 'career'; state.calSurf = 'all'; state.calView = 'swing'; state.calCellV2 = null; state.runSel = null; state.runScroll = null;
     state.calSpeed = 'all'; state.calFmt = 'all'; state.calBand = 'all'; state.calArch = 'all'; state.calOpp = 'all'; state.calCtry = 'all'; state.mkOpp = 'all';
     state.speedSurf = 'all'; state.speedBand = null;
     state.styleRow = null;
@@ -14845,6 +15014,10 @@
     var caret = hadSearch ? active.selectionStart : null;
     if (mounted.classList && !mounted.classList.contains('pp2-x')) mounted.classList.add('pp2-x');   // the export's palette (tokens.css --pp-x-*)
     mounted.innerHTML = PP2_PALETTE_CSS + build(p);
+    pp2PgThumb(mounted);
+    _runHov = null;
+    var rsc = mounted.querySelector('[data-pp2-runsc]');
+    if (rsc) { rsc.scrollLeft = state.runScroll == null ? rsc.scrollWidth : state.runScroll; runScrollUi(rsc); }
     if (hadSearch) {
       var next = mounted.querySelector('[data-pp2="tourn-search"]');
       if (next) {
@@ -14852,6 +15025,31 @@
         if (caret != null) { try { next.setSelectionRange(caret, caret); } catch (e) { /* non-text input */ } }
       }
     }
+  }
+
+  // v3 D3 · the season grid and By swing sit in their own horizontal scrollers and scroll together.
+  function runScrollUi(sc) {
+    var notStart = sc.scrollLeft >= 8 && +sc.getAttribute('data-specw') > 760, wrap = sc.parentNode;
+    var chip = wrap && wrap.querySelector('[data-pp2="run-earlier"]'), fade = wrap && wrap.querySelector('[data-pp2-runfade]');
+    if (chip) chip.style.display = notStart ? 'inline-block' : 'none';
+    if (fade) fade.style.display = notStart ? 'block' : 'none';
+  }
+  function onCalSync(e) {
+    var t = e.target;
+    if (t && t.getAttribute && t.getAttribute('data-pp2-runsc')) { state.runScroll = t.scrollLeft; runScrollUi(t); return; }
+    var k = t && t.getAttribute ? t.getAttribute('data-pp2-calsc') : null;
+    if (!k || !mounted) return;
+    var o = mounted.querySelector('[data-pp2-calsc="' + (k === 'a' ? 'b' : 'a') + '"]');
+    if (o && o.scrollLeft !== t.scrollLeft) o.scrollLeft = t.scrollLeft;
+  }
+  // v3 B1 · move the page switch's thumb from the page it left to the new one (the repaint drew it at the old one).
+  function pp2PgThumb(root) {
+    var th = root && root.querySelector ? root.querySelector('.pp2-pgthumb') : null;
+    if (!th) return;
+    var to = 'translateX(' + th.getAttribute('data-to') + 'px)';
+    if (th.style.transform === to) return;
+    var go = function () { th.style.transform = to; };
+    if (typeof requestAnimationFrame === 'function') requestAnimationFrame(function () { requestAnimationFrame(go); }); else go();
   }
 
   // Every hook is a pure state write followed by one repaint. Nothing below
@@ -14863,7 +15061,30 @@
     if (inp) { inp.focus(); try { inp.setSelectionRange(inp.value.length, inp.value.length); } catch (e) { /* ok */ } }
   }
   // The (?) icons open on hover too (the export's onMouseEnter); one open at a time.
+  // v3 D4 · a timeline bar under the pointer: that bar only goes full colour with a 1px 85% ring, and the tip above it
+  // names the run and its months. Painted in place: a repaint would throw away the timeline's scroll.
+  var _runHov = null;
+  function runHover(bar) {
+    if (_runHov === bar) return;
+    if (_runHov && _runHov.isConnected) {
+      var ob = _runHov.querySelector('.pp2-runbar');
+      if (ob) { ob.style.background = ob.getAttribute('data-won') === '1' ? 'color-mix(in srgb, var(--pos) 62%, transparent)' : 'color-mix(in srgb, var(--neg) 55%, transparent)'; ob.style.boxShadow = 'none'; }
+    }
+    _runHov = bar;
+    var sc = mounted && mounted.querySelector('[data-pp2-runsc]'), tip = sc && sc.querySelector('[data-pp2-runtip]');
+    if (!bar) { if (tip) tip.style.display = 'none'; return; }
+    var b = bar.querySelector('.pp2-runbar'), won = b && b.getAttribute('data-won') === '1';
+    if (b) { b.style.background = won ? 'var(--pos)' : 'var(--neg)'; b.style.boxShadow = '0 0 0 1px color-mix(in srgb, var(--text) 85%, transparent)'; }
+    if (tip) {
+      var t = (bar.getAttribute('data-tip') || '').split('|'), i = +bar.getAttribute('data-pp2-run'), specW = +sc.getAttribute('data-specw');
+      tip.innerHTML = '<span style="font-weight:700;color:' + (won ? 'var(--pos)' : 'var(--neg)') + ';">' + esc(t[0]) + '</span> ' + MIDDOT + ' ' + esc(t[1] || '');
+      tip.style.left = Math.max(70, Math.min(Math.max(70, specW - 70), i * 7 + 3)) + 'px';
+      tip.style.display = 'block';
+    }
+  }
   function onOver(e) {
+    var bar = e.target && e.target.closest ? e.target.closest('[data-pp2-run]') : null;
+    if (bar || _runHov) runHover(bar && mounted && mounted.contains(bar) ? bar : null);
     var el = e.target && e.target.closest ? e.target.closest('[data-pp2="info"]') : null;
     if (!el || !mounted || !mounted.contains(el)) return;
     var v = el.getAttribute('data-v');
@@ -14896,6 +15117,13 @@
     if (kind === 'info') { state.info = state.info === v ? null : v; repaint(); return; }
     if (kind === 'info-close') { state.info = null; repaint(); return; }
     if (kind === 'fb-close' || (kind === 'fb-scrim' && e.target === el)) { state.fb = null; repaint(); return; }
+    if (kind === 'run-close' || (kind === 'run-scrim' && e.target === el)) { state.runSel = null; repaint(); return; }
+    if (kind === 'run-scrim') return;
+    if (kind === 'run-earlier') {   // back by 80% of the visible width; no repaint
+      var rsc = mounted.querySelector('[data-pp2-runsc]');
+      if (rsc) { if (rsc.scrollBy) rsc.scrollBy({ left: -rsc.clientWidth * 0.8, behavior: 'smooth' }); else rsc.scrollLeft -= rsc.clientWidth * 0.8; }
+      return;
+    }
     if (kind === 'fb-scrim') return;
     if (kind === 'fb-open') { state.fb = { box: el.getAttribute('data-box'), v: v }; state.info = null; state.fmOpen = null; state.lcDrillRes = null; repaint(); return; }
     if (kind === 'fm-toggle') { state.fmOpen = state.fmOpen === v ? null : v; repaint(); return; }
@@ -14920,16 +15148,20 @@
     }
     else if (kind === 'ledger-price') toggleIn(state.priceFilters, v);
     else if (kind === 'box') {
-      state.modal = el.getAttribute('data-box'); state.drawDrill = null; if (state.modal === 'tourn') tournNeedJoin();
+      state.modal = el.getAttribute('data-box'); state.drawDrill = null; state.pgThumb = {}; if (state.modal === 'tourn') tournNeedJoin();
       // founder 2026-11-10: the Career record opens on Career, its Record tab, every time
-      if (state.modal === 'career') { state.careerScope = 'career'; state.careerTab = 'record'; state.careerDrill = null; }
+      if (state.modal === 'career') { state.careerScope = 'career'; state.careerTab = 'record'; state.careerDrill = null; state.crWinPicked = false; }
     }
     else if (kind === 'close' || kind === 'scrim') { state.modal = null; state.careerDrill = null; state.drawDrill = null; state.lcDrill = null; state.fb = null; state.info = null; state.fmOpen = null; }
-    else if (kind === 'career-scope') { state.careerScope = el.getAttribute('data-scope'); state.careerDrill = null; }
+    else if (kind === 'career-scope') { state.careerScope = el.getAttribute('data-scope'); state.careerDrill = null; state.crWinPicked = true; }
     else if (kind === 'career-tier') { state.careerTier = v; state.careerDrill = null; }
     // The tab switch keeps the window (`careerScope`) — one control drives both
     // tabs, so resetting it here would silently re-scope the radar on a tab click.
-    else if (kind === 'career-tab') { state.careerTab = v; state.careerDrill = null; }
+    else if (kind === 'career-tab') {
+      state.careerTab = v; state.careerDrill = null;
+      // v3 (Ratings brief point 9): Ratings opens on Last 52 weeks, unless the window was picked in this drawer
+      if (v === 'ratings' && !state.crWinPicked) state.careerScope = 'l52';
+    }
     // §5.8 — the Market edge tab row. Switching tabs closes any open band drill,
     // which belongs to the Match winner tab; the Bo3|Bo5 grain is left alone, so
     // coming back to Derived lines finds the format the reader left it on.
@@ -15012,12 +15244,12 @@
     else if (kind === 'spd-surf') { state.spdSurf = v; state.spdBand = null; }
     else if (kind === 'spd-band') { state.spdBand = v; }
     else if (kind === 'spl-view') { state.splView = v; }
-    else if (kind === 'cal-tab') { state.seasonTab = v === 'streaks' ? 'streaks' : 'calendar'; state.calCellV2 = null; state.runSel = null; }
-    else if (kind === 'cal-win') { state.calWin = v === 'l52' ? 'l52' : 'career'; state.calCellV2 = null; state.runSel = null; }
-    else if (kind === 'cal-surf') { state.calSurf = v; state.calCellV2 = null; state.runSel = null; }
+    else if (kind === 'cal-tab') { state.seasonTab = v === 'streaks' ? 'streaks' : 'calendar'; state.calCellV2 = null; state.runSel = null; state.runScroll = null; }
+    else if (kind === 'cal-win') { state.calWin = v === 'l52' ? 'l52' : 'career'; state.calCellV2 = null; state.runSel = null; state.runScroll = null; }
+    else if (kind === 'cal-surf') { state.calSurf = v; state.calCellV2 = null; state.runSel = null; state.runScroll = null; }
     else if (kind === 'cal-view') { state.calView = v === 'month' ? 'month' : 'swing'; state.calCellV2 = null; }
     else if (kind === 'cal-cell2') { state.calCellV2 = v && state.calCellV2 !== v ? v : null; }
-    else if (kind === 'run-sel') { state.runSel = state.runSel === +v ? null : +v; }
+    else if (kind === 'run-sel') { state.runSel = +v; _runHov = null; }
     else if (kind === 'tourn-row') { state.tournOpen = toggleVal(state.tournOpen, el.getAttribute('data-t')); tournNeedJoin(); }
     else if (kind === 'cal-tab') { state.calTab = v; state.calCell = null; }
     else if (kind === 'cal26-month') state.cal26Month = toggleVal(state.cal26Month, v);
@@ -15140,6 +15372,7 @@
         mounted.removeEventListener('click', onClick);
         mounted.removeEventListener('input', onInput);
         mounted.removeEventListener('scroll', onDrillScroll, true);
+        mounted.removeEventListener('scroll', onCalSync, true);
       }
       container.addEventListener('click', onClick);
       container.addEventListener('input', onInput);
@@ -15147,6 +15380,7 @@
       // capture:true — `scroll` does not bubble, so a delegated listener on the
       // container never fires without it. This is what feeds the drill pager.
       container.addEventListener('scroll', onDrillScroll, true);
+      container.addEventListener('scroll', onCalSync, true);   // v3 D3 · the Calendar's two grids scroll together
       mounted = container;
     }
     resetState(key);

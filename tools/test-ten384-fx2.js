@@ -180,7 +180,8 @@ H.check('3 · a Market edge box whose shard is still loading claims nothing: no 
   const geo = h => (h.match(/font-size:\d+px;"|line-height:[\d.]+;margin-top:auto;/g) || []).join(' ');
   assert.strictEqual(geo(pend), geo(done), 'the pending tile and the painted tile differ in geometry');
   const doneText = L.text(done);
-  assert(/% yield flat stake/.test(doneText.replace(/\s+/g, ' ')), 'the painted tile: ' + doneText);
+  // v3 A2: the role furthest from zero over "overall X% yield · …"
+  assert(/% as (underdog|favourite) overall [+−]?[\d.]+% yield/.test(doneText.replace(/\s+/g, ' ')), 'the painted tile: ' + doneText);
   assert(!/tour —/.test(doneText), 'a missing tour baseline prints "tour —" (the ruling: hidden until it arrives)');
   return 'pending: figure + support blank (same 20px / 1.4 boxes) → landed: "' + doneText.replace(/^.*?Market edge /, '').trim() + '"';
 });

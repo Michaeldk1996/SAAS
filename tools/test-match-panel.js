@@ -404,17 +404,18 @@ function liveTile(subj, extra) {
   I.state.key = 5555;
   return I.boxValues(subj, I.build(subj)).profile;
 }
-check('box 8 reads "R% set 1 → match" over "W–L after set 1 · W–L from a set down" (10+ after winning set 1)', () => {
+check('box 8 reads "R% set 1 → match" over "W–L after set 1 · W–L from a set down · vs tour" (10+ after winning set 1)', () => {
   const v = liveTile(liveSubject(12, 6));
   // 12 after winning set 1: i % 4 !== 0 wins 9, loses 3 → 75.0%; 6 from a set down: i % 3 === 0 wins 2, loses 4
   assert.strictEqual(v.headline, '75.0% set 1 \u2192 match');
-  assert.strictEqual(v.support, '9\u20133 after set 1 \u00b7 2\u20134 from a set down');
+  assert.ok(v.support.indexOf('9\u20133 after set 1 \u00b7 2\u20134 from a set down \u00b7 ') === 0, v.support);
+  assert.ok(/ vs tour$/.test(v.support), 'v3 A2: the comparison sits in the subline: ' + v.support);
 });
-check('box 8 adds the heatmap\'s all-sets hold rate when it is held, and leaves it out when not', () => {
+check('v3 A2: box 8 carries no hold rate, whether or not the heatmap holds one', () => {
   const HB = { players: { 5555: { serve: { all: {} } } } };
   const hold = { heatFor: () => ({ globalLabel: 'HOLD 71.5%' }) };
   const v = liveTile(liveSubject(12, 6), { holdbreak: HB, HoldBreakHeatmap: hold });
-  assert.ok(/ \u00b7 hold 71\.5%$/.test(v.support), v.support);
+  assert.ok(!/hold/.test(v.support), 'a hold clause is back: ' + v.support);
   assert.ok(!/hold/.test(liveTile(liveSubject(12, 6)).support), 'a hold clause with no hold data');
 });
 check('under ten matches after winning set 1 the tile falls back to the overall set-scored record, never a thin rate', () => {
