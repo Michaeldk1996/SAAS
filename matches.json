@@ -6270,6 +6270,14 @@
               [
                 "2026-11-12T01:00:56.246Z",
                 1.282
+              ],
+              [
+                "2026-11-12T01:57:54.903Z",
+                1.265
+              ],
+              [
+                "2026-11-12T01:57:59.903Z",
+                1.264
               ]
             ],
             "p2": [
@@ -6312,6 +6320,10 @@
               [
                 "2026-11-12T01:03:40.949Z",
                 3.94
+              ],
+              [
+                "2026-11-12T01:57:54.922Z",
+                4.11
               ]
             ]
           },
@@ -6371,7 +6383,7 @@
             "source": "Kibl",
             "group": "sharp",
             "clock": "Kibl insert",
-            "checkedAt": "2026-11-12T01:44:18.000Z"
+            "checkedAt": "2026-11-12T01:59:23.000Z"
           },
           "Pinnacle (api-tennis)": {
             "source": "api-tennis",
@@ -6440,13 +6452,13 @@
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-11-12T01:44:11.251Z"
+            "checkedAt": "2026-11-12T01:57:12.474Z"
           },
           "Napoleon Sports BE (odds-api.io)": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-11-12T01:44:11.251Z"
+            "checkedAt": "2026-11-12T01:57:12.474Z"
           }
         }
       }
@@ -9492,6 +9504,10 @@
               [
                 "2026-11-11T23:33:10.378Z",
                 1.49
+              ],
+              [
+                "2026-11-12T01:58:20.701Z",
+                1.495
               ]
             ],
             "p2": [
@@ -9562,6 +9578,10 @@
               [
                 "2026-11-11T23:33:10.386Z",
                 2.75
+              ],
+              [
+                "2026-11-12T01:58:20.718Z",
+                2.74
               ]
             ]
           },
@@ -9621,7 +9641,7 @@
             "source": "Kibl",
             "group": "sharp",
             "clock": "Kibl insert",
-            "checkedAt": "2026-11-12T01:44:18.000Z"
+            "checkedAt": "2026-11-12T01:59:23.000Z"
           },
           "Pinnacle (api-tennis)": {
             "source": "api-tennis",
@@ -9690,13 +9710,13 @@
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-11-12T01:44:11.251Z"
+            "checkedAt": "2026-11-12T01:57:12.474Z"
           },
           "Napoleon Sports BE (odds-api.io)": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-11-12T01:44:11.251Z"
+            "checkedAt": "2026-11-12T01:57:12.474Z"
           }
         }
       }
@@ -12351,14 +12371,72 @@
     "tournamentKey": "1681",
     "oddsMovement": {
       "chart": {
-        "books": {},
+        "books": {
+          "Bet105": {
+            "p1": [
+              [
+                "2026-11-12T01:58:54.638Z",
+                1.87
+              ],
+              [
+                "2026-11-12T01:59:15.410Z",
+                1.901
+              ],
+              [
+                "2026-11-12T01:59:34.581Z",
+                1.952
+              ],
+              [
+                "2026-11-12T01:59:36.647Z",
+                1.99
+              ],
+              [
+                "2026-11-12T01:59:36.771Z",
+                1.952
+              ],
+              [
+                "2026-11-12T01:59:37.699Z",
+                1.99
+              ]
+            ],
+            "p2": [
+              [
+                "2026-11-12T01:58:54.668Z",
+                2.01
+              ],
+              [
+                "2026-11-12T01:59:15.422Z",
+                1.971
+              ],
+              [
+                "2026-11-12T01:59:34.589Z",
+                1.917
+              ],
+              [
+                "2026-11-12T01:59:36.658Z",
+                1.885
+              ],
+              [
+                "2026-11-12T01:59:36.778Z",
+                1.917
+              ],
+              [
+                "2026-11-12T01:59:37.709Z",
+                1.885
+              ],
+              [
+                "2026-11-12T01:59:52.191Z",
+                1.877
+              ]
+            ]
+          }
+        },
         "meta": {
           "Bet105": {
             "source": "Kibl",
             "group": "sharp",
             "clock": "Kibl insert",
-            "note": "no Bet105 fixture matched",
-            "checkedAt": "2026-11-12T01:44:18.000Z"
+            "checkedAt": "2026-11-12T01:59:23.000Z"
           },
           "Pinnacle (api-tennis)": {
             "source": "api-tennis",
@@ -12428,14 +12506,14 @@
             "group": "soft",
             "clock": "vendor updatedAt",
             "note": "no recorded event matched",
-            "checkedAt": "2026-11-12T01:44:11.251Z"
+            "checkedAt": "2026-11-12T01:57:12.474Z"
           },
           "Napoleon Sports BE (odds-api.io)": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
             "note": "no recorded event matched",
-            "checkedAt": "2026-11-12T01:44:11.251Z"
+            "checkedAt": "2026-11-12T01:57:12.474Z"
           }
         }
       }
@@ -114935,7 +115013,7 @@
             "group": "sharp",
             "clock": "Kibl insert",
             "note": "no Bet105 fixture matched",
-            "checkedAt": "2026-11-12T01:44:18.000Z"
+            "checkedAt": "2026-11-12T01:59:23.000Z"
           },
           "Pinnacle (api-tennis)": {
             "source": "api-tennis",
