@@ -163,11 +163,12 @@ const REG = JSON.parse(read('data/news-outlets.json'));
 await ok('registry: every outlet keeps its robots / terms record; a readable one records the ruling; a blocked one is a technical block', () => {
   assert.ok(REG.outlets.length >= 150); assert.match(REG.ruling, /allowed by Michael's ruling, 11 Nov 2026/);
   for (const o of REG.outlets) {
-    assert.ok(['allowed', 'blocked', 'permission'].includes(o.status), o.outlet); assert.ok(o.country && o.language && o.reason && o.robots && o.terms && 'enabled' in o && o.statusBeforeRuling, o.outlet);
+    assert.ok(['allowed', 'blocked', 'permission', 'browser'].includes(o.status), o.outlet); assert.ok(o.country && o.language && o.reason && o.robots && o.terms && 'enabled' in o && o.statusBeforeRuling, o.outlet);
     if (o.status === 'allowed') { assert.equal(o.allowedBy, "allowed by Michael's ruling, 11 Nov 2026", o.outlet); assert.equal(o.probe.http, 200, o.outlet); }
     if (o.status === 'blocked') assert.equal(o.blockKind, 'technical', o.outlet);
   }
-  assert.ok(REG.outlets.filter((o) => /atptour\.com/.test(o.sectionUrl)).every((o) => o.status === 'permission'), 'ATP stays on the permission route');
+  assert.ok(REG.outlets.filter((o) => /atptour\.com/.test(o.sectionUrl)).every((o) => o.status === 'browser' && /agreement with ATP/.test(o.note)), 'ATP is read by the Mac reader only (status browser), never by the plain collector');
+  assert.deepEqual(REG.outlets.filter((o) => o.status === 'browser').map((o) => o.outlet), ['ATP Tour'], 'the browser route is ATP only (the agreement); every other blocked outlet stays out');
   assert.ok(!REG.outlets.some((o) => /tennisform/i.test(JSON.stringify(o))) && !/tennisform/i.test(JSON.stringify(REG.tournamentSites)), 'no entry points at the excluded site');
 });
 await ok('registry: only allowed + switched-on outlets are read, for the host country, the draw\'s home countries and the international group', () => {
@@ -370,6 +371,30 @@ await ok('report: only what matters is printed — a quick or very long duration
   const noW = reportText({ ...mm, matchStats: { p1: {}, p2: mm.matchStats.p2 } }, 'p1', 'p2', { baselines: { p1: null, p2: { node, label: 'on hard over the last 52 weeks', scope: 'last52', surface: 'Hard', matches: 40 } } });
   assert.match(noW.text, /C\. Norrie struggled against the first serve, winning only 20% of the points \(10 of 51\)/, 'control: told when the winner\'s sentence did not carry it');
   assert.match(t({ pbp: pbp({ side: 'p1', n: 8, set: 1, from: { me: 4, opp: 3 }, afterBeingBroken: false, toTheEnd: false }) }).text, /won 8 games in a row from 4-3 in the first set\./);
+});
+// ---- the ATP reader (founder 2026-11-12: agreement with ATP; atptour.com only opens in a real browser, on the Mac) ----
+await ok('ATP reader: the inbox holds quotes checked word for word on the page and never the page text; the collector takes them as checked, from atptour.com only', async () => {
+  const { inboxRows, mergeInbox, INBOX_DAYS } = await import('./news-ticker/atp-reader.mjs');
+  const page = 'Fritz was pleased. “I played really well, got the momentum and finished the set,” said Fritz. More article text here.';
+  const cand = (text, over = {}) => ({ id: 'ATP Tour-3', speakerKey: 2832, spans: [text], text, sourceText: page, sourceName: 'ATP Tour', sourceUrl: 'https://www.atptour.com/en/news/stockholm-2026-wednesday-report',
+    timestamp: '2026-11-11T16:00:00.000Z', timestampKind: "observed (the outlet's own publication time)", day: '2026-11-11', language: 'en', mentions: ['stockholm'], ...over });
+  const rows = inboxRows([cand('I played really well, got the momentum and finished the set,'), cand('I played brilliantly and finished the set,', { id: 'ATP Tour-4' })], '2026-11-12T04:00:00.000Z');
+  assert.equal(rows.length, 1, 'a quote that is not word for word on the page is not kept');
+  assert.ok(!('sourceText' in rows[0]) && !JSON.stringify(rows).includes('More article text'), 'article text never enters the inbox');
+  assert.equal(rows[0].speakerKey, '2832'); assert.match(rows[0].verbatim, /checked on the fetched page/);
+  const m1 = mergeInbox(null, rows, '2026-11-12T04:00:00.000Z'), m2 = mergeInbox(m1, rows, '2026-11-12T04:30:00.000Z');
+  assert.equal(m2.candidates.length, 1, 'the same quote is held once'); assert.equal(INBOX_DAYS, 14);
+  assert.equal(mergeInbox(m1, [], '2026-11-27T05:00:00.000Z').candidates.length, 0, 'rows leave after 14 days');
+  // the collector: a pre-checked ATP row becomes an item without page text; without the flag the same row is dropped
+  const t = { key: '77', season: '2026', name: 'Testville', cards: [{ p1Key: '2832', p1: 'T. Fritz', p2Key: '1103', p2: 'C. Norrie' }] };
+  const pre = await processTournament({ t, got: { candidates: [{ ...rows[0], preVerified: true, speaker: 'T. Fritz' }] } });
+  assert.equal(pre.items.length, 1); assert.equal(pre.items[0].sourceName, 'ATP Tour'); assert.match(pre.items[0].verbatimCheckedOn, /ATP reader/);
+  const raw = await processTournament({ t, got: { candidates: [{ ...rows[0], speaker: 'T. Fritz' }] } });
+  assert.deepEqual([raw.items.length, raw.counts.droppedNotVerbatim], [0, 1], 'control: no flag, no page text -> not published');
+  const src = read('tools/news-ticker/collect-quotes.mjs');
+  assert.ok(/preVerified: true/.test(src) && /\^https:\\\/\\\/www\\\.atptour\\\.com\\\//.test(src), 'only atptour.com rows from the inbox are taken as checked');
+  const rd = read('tools/news-ticker/atp-reader.mjs');
+  assert.ok(!/--headless/.test(rd) && /enabled === false/.test(rd), 'a normal window; the registry off switch stops it');
 });
 // ---- tour-wide (founder 2026-11-12: press interviews and injuries for every ATP player, every day) ----
 await ok('tour-wide: an article that names no tournament still yields its quote; each candidate carries the tournaments its article mentions', async () => {

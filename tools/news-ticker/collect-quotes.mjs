@@ -106,7 +106,8 @@ export async function processTournament({ t, got, translate = translateQuote, kn
   const ok = [];
   for (const q of got.candidates) {
     c.candidates++;
-    if (!(q.spans || [q.text]).every((sp) => verbatimIn(sp, q.sourceText))) { c.droppedNotVerbatim++; continue; }
+    // an ATP-reader candidate was checked word for word on the page where it was read (the Mac); its page text is never stored
+    if (!q.preVerified && !(q.spans || [q.text]).every((sp) => verbatimIn(sp, q.sourceText))) { c.droppedNotVerbatim++; continue; }
     const who = q.speakerKey && entrants.has(String(q.speakerKey)) ? { status: 'one', key: String(q.speakerKey) } : resolvePlayer(q.speaker, entrants);
     if (who.status !== 'one') { c[who.status === 'several' ? 'droppedAmbiguous' : 'droppedNoPlayer']++; continue; }
     const opp = q.opponent ? resolvePlayer(q.opponent, entrants) : null;
@@ -135,7 +136,7 @@ export async function processTournament({ t, got, translate = translateQuote, kn
       tournament: t.name, tournamentKey: t.key, season: t.season, round: null, timestamp: q.timestamp, timestampKind: q.timestampKind,
       category: 'Quotes', context: q.context || null, eventKey: q.matchId ? String(q.matchId).split('-').slice(1).join('-') : null, won: q.matchId ? !!q.won : null,
       text, originalText: original, language: q.language, translated, translationModel: model,
-      sourceName: q.sourceName, sourceUrl: q.sourceUrl, verbatimCheck: 'passed', verbatimCheckedOn: 'the original-language text of the fetched page' });
+      sourceName: q.sourceName, sourceUrl: q.sourceUrl, verbatimCheck: 'passed', verbatimCheckedOn: q.preVerified ? 'the fetched ATP page, by the ATP reader' : 'the original-language text of the fetched page' });
   }
   const deduped = dedupeQuotes(out);
   deduped.forEach((x) => { x.category = quoteCategory(x); });
@@ -210,6 +211,15 @@ async function main() {
       outletStats.push(r.stats);
     }
   }));
+  // the ATP reader's inbox (tools/news-ticker/atp-reader.mjs, on the Mac: atptour.com only opens in a real browser)
+  const inbox = ((rd('news-quotes/inbox-atp.json') || {}).candidates || []).filter((c) => c && c.id && c.text && c.speakerKey != null && /^https:\/\/www\.atptour\.com\//.test(String(c.sourceUrl)));
+  let inboxUsed = 0;
+  for (const row of inbox) {
+    const c = { ...row, preVerified: true, speaker: (everyone.find((p) => p.key === String(row.speakerKey)) || {}).name };
+    const to = routeCandidate(c, prep, tourKeys, nowIso), hit = prep.find((x) => x.key === to);
+    if (hit) { addContext(c, hit.main); hit.extra.push(c); inboxUsed++; } else if (to === TOUR_KEY) { tourCandidates.push(c); inboxUsed++; }
+  }
+  run.atpInbox = { held: inbox.length, routed: inboxUsed };
   const off = switchedOff(registry);
   run.outlets = { read: outletStats.length, withCandidates: outletStats.filter((x) => x.candidates).length, blocked: outletStats.filter((x) => x.blocked).map((x) => `${x.outlet}: ${x.blocked}`), articlesFetched: outletStats.reduce((n, x) => n + x.fetched, 0), paywalled: outletStats.reduce((n, x) => n + x.paywalled, 0), unnamed: outletStats.reduce((n, x) => n + x.unnamed, 0), byOutlet: outletStats.filter((x) => x.candidates || x.fetched).map((x) => ({ outlet: x.outlet, country: x.country, language: x.language, fetched: x.fetched, candidates: x.candidates })) };
   const season = nowIso.slice(0, 4);

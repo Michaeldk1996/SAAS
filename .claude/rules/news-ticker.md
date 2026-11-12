@@ -86,7 +86,11 @@ ticker page comes through Claude Design). Tests: `tools/test-news-ticker.mjs`, `
   - **ATP is allowed (founder 2026-11-12: "we can use them now, we have an agreement" — it covers both ATP's website
     articles and ATP video / press conferences).** This replaces "ATP stays on the permission route; YouTube audio and
     the Tennis TV stream stay out". Still in force: no bypassing a technical block (atptour.com answered 403 to a plain
-    request on 12 Nov, so it is not read until ATP gives a feed or the founder rules a route), no login is ever entered,
+    request; founder 2026-11-12: "we do work around technical blocks, find a solution" — so ATP, and only ATP, is read
+    by `tools/news-ticker/atp-reader.mjs` through a normal Chrome window on the Mac, the headshot job's route; registry
+    status `browser`. It stores quoted words checked word for word on the page in `news-quotes/inbox-atp.json`, never
+    article text; the collector takes those rows as checked, from atptour.com only. **Test:** "ATP reader"). Every other
+    blocked outlet stays out. No login is ever entered,
     and a quote is word for word or not published (a transcription route needs the founder's ruling first).
     tennisformterminal.com stays out: nothing is fetched or copied from it; examples the founder pastes are read for
     format only.

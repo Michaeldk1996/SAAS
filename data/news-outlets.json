@@ -2671,7 +2671,7 @@
    "sectionUrl": "https://www.atptour.com/en/news",
    "kind": "html",
    "quoteStyle": "quotation marks",
-   "status": "permission",
+   "status": "browser",
    "reason": "ATP stays on the permission route (read only through the tournament sites listed under tournamentSites).",
    "robots": {
     "url": "https://www.atptour.com/robots.txt",
@@ -2688,7 +2688,8 @@
    "checked": "2026-11-11",
    "statusBeforeRuling": "unverified",
    "reasonBeforeRuling": "robots.txt and the news section both answer HTTP 403 to a plain non-browser client, so neither robots nor terms could be read.",
-   "enabled": true
+   "enabled": true,
+   "note": "allowed by Michael's agreement with ATP (12 Nov 2026). atptour.com answers 403 to a plain request, so it is read only by tools/news-ticker/atp-reader.mjs through a normal Chrome window on the Mac, never by the collector."
   },
   {
    "country": "INT",
