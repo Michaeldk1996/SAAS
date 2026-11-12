@@ -1,19 +1,19 @@
 {
- "generatedAt": "2026-11-12T17:27:19.503Z",
+ "generatedAt": "2026-11-12T17:48:35.655Z",
  "tournaments": [
   {
    "key": "1681",
    "season": "2026",
    "name": "Stockholm",
    "file": "news-ticker/1681-2026.json",
-   "items": 95,
+   "items": 96,
    "byType": {
+    "status": 7,
     "report": 25,
-    "quote": 64,
-    "status": 6
+    "quote": 64
    },
-   "latestTimestamp": "2026-11-12T17:10:51.028Z",
-   "updatedAt": "2026-11-12T17:27:19.503Z"
+   "latestTimestamp": "2026-11-12T17:30:00.000Z",
+   "updatedAt": "2026-11-12T17:48:35.655Z"
   },
   {
    "key": "tour",
@@ -51,6 +51,31 @@
   }
  ],
  "latest": [
+  {
+   "id": "status-wo-12179560",
+   "type": "status",
+   "playerId": "437",
+   "opponentId": "2832",
+   "player": "H. Rune",
+   "opponent": "T. Fritz",
+   "tournament": "Stockholm",
+   "round": "quarter-finals",
+   "timestamp": "2026-11-12T17:30:00.000Z",
+   "timestampKind": "scheduled",
+   "category": "Withdrawals",
+   "text": "H. Rune gave a walkover to T. Fritz in the main draw quarter-finals; the match was not played.",
+   "basis": "api-tennis status \"Walk Over\"",
+   "sourceName": "Stennisfy match data (api-tennis fixture status)",
+   "sourceUrl": "matches.json",
+   "sourceRef": "past-12179560",
+   "language": "en",
+   "translated": false,
+   "tournamentKey": "1681",
+   "season": "2026",
+   "sourceHash": "b10d1ac0d390e013",
+   "publishedAt": "2026-11-12T17:48:35.655Z",
+   "file": "news-ticker/1681-2026.json"
+  },
   {
    "id": "report-12179510",
    "type": "report",
@@ -1871,38 +1896,6 @@
    "sourceHash": "ecbf63811ebf1b76",
    "publishedAt": "2026-11-12T03:03:12.953Z",
    "file": "news-ticker/tour-2026.json"
-  },
-  {
-   "id": "quote-06eef627f4e28a",
-   "type": "quote",
-   "playerId": "2849",
-   "opponentId": "15184",
-   "player": "L. Musetti",
-   "opponent": "T. Samuel",
-   "tournament": "Stockholm",
-   "tournamentKey": "1681",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-10T20:26:00.000Z",
-   "timestampKind": "observed (Tennis TV published the clip then)",
-   "category": "Injuries",
-   "context": "after beating T. Samuel",
-   "eventKey": "12178671",
-   "won": true,
-   "text": "It's been a tough year for all the injuries, but now finally getting back in a good shape, so happy for that.",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "On-court interview",
-   "sourceUrl": "https://www.tennistv.com/videos/4607542/stockholm-2026-r2-lorenzo-musetti-interview",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the clip's audio, transcribed by the interviews worker",
-   "interview": "on-court",
-   "topic": "On his injuries",
-   "sourceHash": "ce493c6c9aa328ff",
-   "publishedAt": "2026-11-12T16:27:56.516Z",
-   "file": "news-ticker/1681-2026.json"
   }
  ]
 }
