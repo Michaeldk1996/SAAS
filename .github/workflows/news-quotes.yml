@@ -30,17 +30,23 @@ jobs:
           flyctl deploy --build-only --push -a stennisfy-interviews --image-label probe 2>&1 | tee /tmp/b.log
           echo "image=registry.fly.io/stennisfy-interviews:probe" >> "$GITHUB_OUTPUT"
       - name: Run one clip
+        shell: bash
         run: |
-          set -o pipefail
-          flyctl machine run "${{ steps.build.outputs.image }}" -a stennisfy-interviews \
+          set +e
+          OUT=$(flyctl machine run "${{ steps.build.outputs.image }}" -a stennisfy-interviews \
             --vm-cpus 2 --vm-memory 4096 --restart no --env CLIP_URL="${{ inputs.clip }}" \
-            --env TENNISTV_EMAIL="${{ secrets.TENNISTV_EMAIL }}" --env TENNISTV_PASSWORD="${{ secrets.TENNISTV_PASSWORD }}" \
-            2>&1 | tee /tmp/run.log
-          MID=$(grep -oE 'Machine [0-9a-f]+' /tmp/run.log | head -1 | awk '{print $2}')
-          echo "machine $MID"
-          timeout 420 flyctl logs -a stennisfy-interviews 2>&1 | tee /tmp/logs.txt &
-          LP=$!
-          for i in $(seq 1 42); do grep -q 'TRANSCRIPT\|process exited\|error' /tmp/logs.txt 2>/dev/null && break; sleep 10; done
-          sleep 3; kill $LP 2>/dev/null || true
-          echo "=== captured ==="; sed -n '1,200p' /tmp/logs.txt
-          [ -n "$MID" ] && flyctl machine destroy "$MID" -a stennisfy-interviews --force 2>/dev/null || true
+            --env TENNISTV_EMAIL="${{ secrets.TENNISTV_EMAIL }}" --env TENNISTV_PASSWORD="${{ secrets.TENNISTV_PASSWORD }}" 2>&1)
+          echo "$OUT"
+          MID=$(echo "$OUT" | grep -oE 'Machine ID: [0-9a-f]+' | awk '{print $3}')
+          echo "MID=$MID"
+          for i in $(seq 1 36); do
+            ST=$(flyctl machine status "$MID" -a stennisfy-interviews 2>/dev/null | grep -iE 'state' | head -1)
+            echo "poll $i: $ST"
+            echo "$ST" | grep -qiE "stopped|destroyed|failed" && break
+            sleep 10
+          done
+          echo "=== logs ==="
+          timeout 90 flyctl logs -a stennisfy-interviews 2>&1 | tee /tmp/logs.txt
+          echo "=== grep ==="
+          grep -nE "TRANSCRIPT|signed in|duration|recorded|transcrib|no playable|no audio|login failed|Error" /tmp/logs.txt || true
+          flyctl machine destroy "$MID" -a stennisfy-interviews --force 2>/dev/null || true
