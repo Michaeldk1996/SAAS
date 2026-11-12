@@ -33,7 +33,7 @@ jobs:
         run: |
           set -o pipefail
           flyctl machine run "${{ steps.build.outputs.image }}" -a stennisfy-interviews \
-            --vm-memory 4096 --restart no --env CLIP_URL="${{ inputs.clip }}" \
+            --vm-cpus 2 --vm-memory 4096 --restart no --env CLIP_URL="${{ inputs.clip }}" \
             --env TENNISTV_EMAIL="${{ secrets.TENNISTV_EMAIL }}" --env TENNISTV_PASSWORD="${{ secrets.TENNISTV_PASSWORD }}" \
             2>&1 | tee /tmp/run.log
           MID=$(grep -oE 'Machine [0-9a-f]+' /tmp/run.log | head -1 | awk '{print $2}')
