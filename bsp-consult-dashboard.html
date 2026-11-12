@@ -4828,6 +4828,7 @@ window.EntryListsTab = (function(){
   [data-page="news"] .news-entlink:hover, [data-page="news"] .news-entlink:focus-visible{ outline:none; text-decoration:underline; }
   /* Real links (Read more / Show less, Try a wider date range., Clear search) = --link, underline on hover. */
   [data-page="news"] .news-qsrc{ font-size:12px; color:var(--text-label); white-space:nowrap; }
+  [data-page="news"] .news-qtopic{ color:var(--text); font-weight:600; }
   [data-page="news"] a.news-cardsource{ text-decoration:none; }
   [data-page="news"] a.news-cardsource:hover, [data-page="news"] a.news-cardsource:focus-visible{ outline:none; color:var(--text); text-decoration:underline; }
   [data-page="news"] .news-link{ padding:0; background:none; border:0; font-family:var(--font-words); font-size:inherit; font-weight:inherit; color:var(--link); cursor:pointer; }
@@ -6055,10 +6056,11 @@ function newsQuoteCards(items){
     out.push({ kind: 'ticker', id: 't' + first.id, ts: isFinite(tsMax) ? tsMax : NaN, tour, tourKey: '', tourFrom: '',
       players: name ? [{ key: String(first.playerId), name }] : [],
       title: name + (ctx ? ' ' + ctx : (g.inj ? ' on his fitness' : ' in the press')),
-      bodyParas: kept.map(k => '“' + String(k.q.text).trim() + '”'),
+      bodyParas: kept.map(k => (k.q.topic ? k.q.topic + ': ' : '') + '“' + String(k.q.text).trim() + '”'),
       parasHtml: kept.map(k => {
         const lang = k.q.translated ? newsLangName(k.q.language) : '';
-        return newsEscape('“' + String(k.q.text).trim() + '”') + ' <span class="news-qsrc">' + [k.q].concat(k.also).map(link).join(', ')
+        // an on-court answer carries its topic ("On the first set") in front of the quote
+        return (k.q.topic ? '<span class="news-qtopic">' + newsEscape(k.q.topic) + ':</span> ' : '') + newsEscape('“' + String(k.q.text).trim() + '”') + ' <span class="news-qsrc">' + [k.q].concat(k.also).map(link).join(', ')
           + (k.q.translated ? ' · translated' + (lang ? ' from ' + newsEscape(lang) : '') : '') + '</span>';
       }),
       cat: g.inj ? 'Withdrawals & Injuries' : 'Quotes', source: outlets.join(', '), sourceUrl: '' });

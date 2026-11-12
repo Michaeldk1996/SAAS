@@ -396,6 +396,23 @@ await ok('ATP reader: the inbox holds quotes checked word for word on the page a
   const rd = read('tools/news-ticker/atp-reader.mjs');
   assert.ok(!/--headless/.test(rd) && /enabled === false/.test(rd), 'a normal window; the registry off switch stops it');
 });
+// ---- Tennis TV on-court interviews (founder 2026-11-12): one inbox row per answer, with its topic ----
+await ok('on-court interview inbox: an answer becomes an item that keeps its topic and reads "On-court interview"; only tennistv.com clip rows are taken', async () => {
+  const t = { key: '77', season: '2026', name: 'Testville', cards: [{ p1Key: '437', p1: 'H. Rune', p2Key: '2848', p2: 'M. Kecmanovic' }] };
+  const row = { id: 'ttv|4607963|1', speakerKey: '437', text: 'I think I was just a bit overwhelmed. He played pretty fast.', topic: 'On the first set', interview: 'on-court',
+    sourceName: 'On-court interview', sourceUrl: 'https://www.tennistv.com/videos/4607963/stockholm-2026-r2-rune-interview', language: 'en',
+    checkedOn: "the clip's audio, transcribed by the interviews worker", timestamp: '2026-11-11T21:16:00.000Z', timestampKind: 'observed (the clip was published then)', mentions: ['testville'] };
+  const r = await processTournament({ t, got: { candidates: [{ ...row, preVerified: true, speaker: 'H. Rune' }] } });
+  assert.equal(r.items.length, 1);
+  assert.deepEqual([r.items[0].topic, r.items[0].interview, r.items[0].sourceName, r.items[0].translated], ['On the first set', 'on-court', 'On-court interview', false]);
+  assert.match(r.items[0].verbatimCheckedOn, /clip's audio/);
+  const plain = await processTournament({ t, got: { candidates: [{ ...row, topic: undefined, interview: undefined, preVerified: true, speaker: 'H. Rune' }] } });
+  assert.ok(!('topic' in plain.items[0]) && !('interview' in plain.items[0]), 'control: a row without a topic gets no topic field');
+  const src = read('tools/news-ticker/collect-quotes.mjs');
+  assert.ok(/inbox-ttv\.json/.test(src) && /tennistv\\\.com\\\/videos/.test(src), 'the interview inbox takes Tennis TV clip rows only');
+  const page = read('bsp-consult-dashboard.html');
+  assert.ok(/news-qtopic/.test(page) && /k\.q\.topic \? k\.q\.topic \+ ': '/.test(page), 'the card prints the topic in front of the answer');
+});
 // ---- tour-wide (founder 2026-11-12: press interviews and injuries for every ATP player, every day) ----
 await ok('tour-wide: an article that names no tournament still yields its quote; each candidate carries the tournaments its article mentions', async () => {
   const SECTION = '<html>' + 'x'.repeat(700) + '<a href="/tennis/rune-on-his-long-road-back">Rune on his road back</a><a href="/tennis/other-long-article-slug">Other news</a></html>';

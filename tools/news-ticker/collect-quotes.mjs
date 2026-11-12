@@ -136,7 +136,8 @@ export async function processTournament({ t, got, translate = translateQuote, kn
       tournament: t.name, tournamentKey: t.key, season: t.season, round: null, timestamp: q.timestamp, timestampKind: q.timestampKind,
       category: 'Quotes', context: q.context || null, eventKey: q.matchId ? String(q.matchId).split('-').slice(1).join('-') : null, won: q.matchId ? !!q.won : null,
       text, originalText: original, language: q.language, translated, translationModel: model,
-      sourceName: q.sourceName, sourceUrl: q.sourceUrl, verbatimCheck: 'passed', verbatimCheckedOn: q.preVerified ? 'the fetched ATP page, by the ATP reader' : 'the original-language text of the fetched page' });
+      sourceName: q.sourceName, sourceUrl: q.sourceUrl, verbatimCheck: 'passed', verbatimCheckedOn: q.checkedOn || (q.preVerified ? 'the fetched ATP page, by the ATP reader' : 'the original-language text of the fetched page'),
+      ...(q.interview ? { interview: q.interview } : {}), ...(q.topic ? { topic: String(q.topic).slice(0, 60) } : {}) });
   }
   const deduped = dedupeQuotes(out);
   deduped.forEach((x) => { x.category = quoteCategory(x); });
@@ -211,14 +212,21 @@ async function main() {
       outletStats.push(r.stats);
     }
   }));
-  // the ATP reader's inbox (tools/news-ticker/atp-reader.mjs, on the Mac: atptour.com only opens in a real browser)
-  const inbox = ((rd('news-quotes/inbox-atp.json') || {}).candidates || []).filter((c) => c && c.id && c.text && c.speakerKey != null && /^https:\/\/www\.atptour\.com\//.test(String(c.sourceUrl)));
-  let inboxUsed = 0;
-  for (const row of inbox) {
+  // Two inboxes of quotes that were checked where they were read: the ATP reader's (tools/news-ticker/atp-reader.mjs, on
+  // the Mac: atptour.com only opens in a real browser) and the interviews worker's (interviews-worker/, Tennis TV's
+  // on-court interviews: the player's answers as transcribed from the clip's audio, one row per answer with its topic).
+  const readInbox = (file, host) => ((rd(file) || {}).candidates || []).filter((c) => c && c.id && c.text && c.speakerKey != null && host.test(String(c.sourceUrl)));
+  const inbox = readInbox('news-quotes/inbox-atp.json', /^https:\/\/www\.atptour\.com\//);
+  const ttvInbox = readInbox('news-quotes/inbox-ttv.json', /^https:\/\/www\.tennistv\.com\/videos\//)
+    .map((c) => ({ ...c, interview: 'on-court', sourceName: 'On-court interview', language: 'en', checkedOn: "the clip's audio, transcribed by the interviews worker" }));
+  let inboxUsed = 0, ttvUsed = 0;
+  for (const row of inbox.concat(ttvInbox)) {
     const c = { ...row, preVerified: true, speaker: (everyone.find((p) => p.key === String(row.speakerKey)) || {}).name };
     const to = routeCandidate(c, prep, tourKeys, nowIso), hit = prep.find((x) => x.key === to);
-    if (hit) { addContext(c, hit.main); hit.extra.push(c); inboxUsed++; } else if (to === TOUR_KEY) { tourCandidates.push(c); inboxUsed++; }
+    const used = () => { if (c.interview) ttvUsed++; else inboxUsed++; };
+    if (hit) { addContext(c, hit.main); hit.extra.push(c); used(); } else if (to === TOUR_KEY) { tourCandidates.push(c); used(); }
   }
+  run.ttvInbox = { held: ttvInbox.length, routed: ttvUsed };
   run.atpInbox = { held: inbox.length, routed: inboxUsed };
   const off = switchedOff(registry);
   run.outlets = { read: outletStats.length, withCandidates: outletStats.filter((x) => x.candidates).length, blocked: outletStats.filter((x) => x.blocked).map((x) => `${x.outlet}: ${x.blocked}`), articlesFetched: outletStats.reduce((n, x) => n + x.fetched, 0), paywalled: outletStats.reduce((n, x) => n + x.paywalled, 0), unnamed: outletStats.reduce((n, x) => n + x.unnamed, 0), byOutlet: outletStats.filter((x) => x.candidates || x.fetched).map((x) => ({ outlet: x.outlet, country: x.country, language: x.language, fetched: x.fetched, candidates: x.candidates })) };

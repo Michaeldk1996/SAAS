@@ -133,3 +133,9 @@ ticker page comes through Claude Design). Tests: `tools/test-news-ticker.mjs`, `
 - A day with finished ATP matches and 0 reports (one message per day).
 - The quote job failing; no new quote for 24 hours while a tournament is on (one message per 24 hours).
 - A model call failing on credit or key, on the first failure of a streak.
+
+## Tennis TV on-court interviews (founder 2026-11-12)
+- **Source:** Tennis TV's on-court interview clips, under the founder's agreement with ATP. `interviews-worker/` (a Fly machine, no Mac) signs in, plays each clip in a real browser, records the audio it plays and transcribes it. It records until the clip has finished playing; a clip that did not finish is not kept.
+- **What is published:** the player's answers only, one inbox row per answer in `news-quotes/inbox-ttv.json` (tennistv.com clip URLs only), each with a topic ("On the first set"). The interviewer's questions are never published. Obvious mis-hearings of names and tennis words are corrected (founder: "fix obvious transcription mistakes"); an answer that is not clearly heard is left out, never guessed.
+- **On the News page:** the answers join the player's one card for that match; each reads `On the first set: "…"` with the source "On-court interview" linking to the clip. **Test:** `tools/test-news-ticker-live.mjs` "on-court interview inbox".
+- **Timing (measured on 12 Stockholm clips, 8–11 Nov 2026):** Tennis TV posts the clip 7–24 minutes after match point, median 9. 12 of 19 played matches had one.
