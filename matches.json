@@ -2730,17 +2730,11 @@
         }
       ]
     },
-    "live": true,
-    "liveStatus": "Set 1",
-    "liveScore": [
-      {
-        "set": 1,
-        "p1": 5,
-        "p2": 6
-      }
-    ],
-    "liveGameScore": "30 - 15",
-    "liveServer": "p1",
+    "live": false,
+    "liveStatus": null,
+    "liveScore": null,
+    "liveGameScore": null,
+    "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/10884_a-michelsen.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2982_a-tabilo.jpg",
     "tournamentKey": "1681",
@@ -3466,7 +3460,27 @@
       "edgeVsPinnacleP1": -0.0871,
       "edgeVsPinnacleP2": 0.0871,
       "ts": "2026-11-12T13:04:09.319Z"
-    }
+    },
+    "retired": false,
+    "walkover": false,
+    "finalScore": {
+      "display": "5-7, 6-7(2)",
+      "sets": [
+        {
+          "p1": 5,
+          "p2": 7
+        },
+        {
+          "p1": 6,
+          "p2": 7
+        }
+      ],
+      "p1Sets": 0,
+      "p2Sets": 2,
+      "winner": "p2"
+    },
+    "interrupted": false,
+    "partialScore": null
   },
   {
     "id": "upcoming-12179396",
@@ -6213,11 +6227,11 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
+    "live": true,
+    "liveStatus": "Set 2",
     "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "liveGameScore": "30 - 40",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/2849_l-musetti.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1105_u-humbert.jpg",
     "tournamentKey": "1681",
@@ -7607,7 +7621,10 @@
       "edgeVsPinnacleP1": 0.0045,
       "edgeVsPinnacleP2": -0.0045,
       "ts": "2026-11-12T13:04:09.319Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12179510",
@@ -11192,7 +11209,31 @@
       "edgeVsPinnacleP1": 0.097,
       "edgeVsPinnacleP2": -0.097,
       "ts": "2026-11-12T05:04:44.774Z"
-    }
+    },
+    "retired": false,
+    "walkover": false,
+    "finalScore": {
+      "display": "7-6(5), 6-7(5), 6-3",
+      "sets": [
+        {
+          "p1": 7,
+          "p2": 6
+        },
+        {
+          "p1": 6,
+          "p2": 7
+        },
+        {
+          "p1": 6,
+          "p2": 3
+        }
+      ],
+      "p1Sets": 2,
+      "p2Sets": 1,
+      "winner": "p1"
+    },
+    "interrupted": false,
+    "partialScore": null
   },
   {
     "id": "upcoming-12179560",
@@ -14679,7 +14720,23 @@
       "p2": 2.63,
       "ts": "2026-11-12T05:04:44.845Z",
       "vfP1": 0.6307
-    }
+    },
+    "retired": false,
+    "walkover": true,
+    "finalScore": {
+      "display": "0-0",
+      "sets": [
+        {
+          "p1": 0,
+          "p2": 0
+        }
+      ],
+      "p1Sets": 0,
+      "p2Sets": 0,
+      "winner": "p1"
+    },
+    "interrupted": false,
+    "partialScore": null
   },
   {
     "id": "past-12178147",
