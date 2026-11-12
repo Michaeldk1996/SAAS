@@ -2730,11 +2730,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 4,
+        "p2": 5
+      }
+    ],
+    "liveGameScore": "15 - 15",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/10884_a-michelsen.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2982_a-tabilo.jpg",
     "tournamentKey": "1681",
@@ -3252,7 +3258,10 @@
         "seenAt": "2026-11-12T05:04:44.844Z",
         "since": "2026-11-11T20:59:57.245Z"
       }
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12179396",
@@ -19787,7 +19796,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-4, 6-7(6), 6-3",
+      "display": "6-4, 6-7, 6-3",
       "sets": [
         {
           "p1": 6,
@@ -39771,7 +39780,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-7(4), 6-4, 4-6",
+      "display": "6-7, 6-4, 4-6",
       "sets": [
         {
           "p1": 6,
@@ -49395,7 +49404,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-4, 7-6(4)",
+      "display": "6-4, 7-6",
       "sets": [
         {
           "p1": 6,
@@ -78718,7 +78727,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-7(5), 6-4, 6-3",
+      "display": "6-7, 6-4, 6-3",
       "sets": [
         {
           "p1": 6,
@@ -83233,7 +83242,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-7(2), 7-6(7), 5-7",
+      "display": "6-7, 7-6, 5-7",
       "sets": [
         {
           "p1": 6,
