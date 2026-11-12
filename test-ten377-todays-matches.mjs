@@ -210,17 +210,25 @@ test('review 4/8: Completed and Upcoming always draw three tiles; an empty tile 
   assert.match(body, /const stripHtml = `<div class="mc-story-strip">\$\{panels\.join\(''\)\}<\/div>`;/, 'Completed strip is unconditional');
 });
 test('founder design 2026-11-07 (CHANGES §2–§3): Market Signal = ONE ledger, eight rows in order, dash rows for every missing source, nothing constant', () => {
-  const S = (opts = {}) => new Function('opts', `
+  // The weekly Elo history before the Completed match (26 Oct): a snapshot of 20 Oct (used), one of 26 Oct (the match day —
+  // never used: strictly before the match day).
+  const HIST = { conflicts: {}, snapshots: [
+    { asOf: '2026-10-20', taLastUpdate: '2026-10-19', ratings: { 'berrettini|m': 1900, 'etcheverry|t': 1800 }, ambiguous: [],
+      surface: { hard: { 'berrettini|m': 1950, 'etcheverry|t': 1800 }, clay: {}, grass: {} } },
+    { asOf: '2026-10-26', taLastUpdate: '2026-10-26', ratings: { 'berrettini|m': 1500, 'etcheverry|t': 2400 }, ambiguous: [] }] };
+  const S = (opts = {}) => new Function('opts', 'HIST', `
     const window = { sfPlan: opts.plan || null };
     const eloRatings = opts.elo === undefined ? { taLastUpdate: '2026-10-26', elo: {
       'rublev|a': { all: { rating: 2000 }, hard: { rating: 1950 } }, 'safiullin|r': { all: { rating: 1900 }, hard: { rating: null } } } } : opts.elo;
     const _ocsOf = m => m.__ocs || null, _mcPinClose = m => m.__pin || null, mxPinCloseAgeMin = () => 12;
     const mxJClose = (m, who) => (m.__j ? m.__j[who] : null), cardStartMs = m => m.__start, newsTz = () => 'UTC';
+    const FH_ELO_MAX_AGE_DAYS = 7; let _mcSigEloHist = 'hist' in opts ? opts.hist : HIST;
+    ${slice('fhDayNum')} ${slice('fhEloKey')} ${slice('fhEloAt')} ${slice('mcSigEloPre')} ${slice('mcSigEloPreTitle')} ${slice('mcSigLastBefore')}
     ${slice('psEsc')} ${slice('psEloNorm')} ${slice('mxOddsTxt')} ${slice('mxSurname')} ${slice('mxIsPro')} ${slice('eventKeyOfMatch')} ${slice('ocsNfd')}
     ${slice('mcSigReady')} ${slice('mcSigPanel')} ${slice('mcSigPair')} ${slice('mcSigImp')} ${slice('mcSigFirst')} ${slice('mcSigClock')}
     ${slice('mcSigEloRec')} ${slice('mcSigEloLast')} ${slice('mcSigEloStaleText')} ${slice('mcSigEloP')} ${slice('mcSigFair')} ${slice('mcSigElo')} ${slice('mcSigEloTitle')} ${slice('mcSigModelP')}
     ${slice('mcSigPolyUsd')} ${slice('mcSigLiqRec')} ${slice('mcSigSurKey')} ${slice('mcSigK')} ${slice('mcSigLast')} ${slice('mcSigPredRows')} ${slice('mcSigModelDress')} ${slice('mcSigRowHtml')} ${slice('mcSigBody')}
-    return { mcSigPanel, mcSigBody };`)(opts);
+    return { mcSigPanel, mcSigBody };`)(opts, HIST);
   const names = h => [...h.matchAll(/mc-sg-name">([^<]*)</g)].map(x => x[1]);
   const EIGHT = ['Pinnacle', 'Bet105', 'Bet365', 'Elo Overall', 'Elo Hard', 'Stennisfy Model', 'Kalshi', 'Polymarket'];
   const up = { id: 'u1', p1: 'A. Rublev', p2: 'R. Safiullin', surface: 'hard', _oddsLoaded: true,
@@ -250,7 +258,7 @@ test('founder design 2026-11-07 (CHANGES §2–§3): Market Signal = ONE ledger,
   assert.doesNotMatch(bare, />0\.00<|>0%</);
   assert.match(S().mcSigPanel({ id: 'u3', p1: 'A', p2: 'B' }), /Loading…/, 'not drawn before its sources load');
   // Completed (CHANGES §3): both players at the close, the winner's side lead, the Pinnacle close as a tick, BEST ×2
-  const done = { id: 'c1', p1: 'M. Berrettini', p2: 'T. M. Etcheverry', surface: 'hard', finalScore: { winner: 'p1' }, __start: Date.parse('2026-10-26T12:00:00Z'),
+  const done = { id: 'c1', p1: 'M. Berrettini', p2: 'T. M. Etcheverry', surface: 'hard', date: '2026-10-26', _oddsLoaded: true, finalScore: { winner: 'p1' }, __start: Date.parse('2026-10-26T12:00:00Z'),
     __pin: { p1: 1.58, p2: 2.6, source: 'Oddspapi' }, __ocs: { book: 'bet105', p1: { close: 1.575 }, p2: { close: 2.51 } }, __j: { p1: 1.53, p2: 2.5 },
     valueSnapshot: { fairP1: 0.64, fairP2: 0.36, ts: '2026-10-26T01:00:00Z' } };
   const d = S({ plan: 'pro' }).mcSigBody(done);
@@ -259,22 +267,57 @@ test('founder design 2026-11-07 (CHANGES §2–§3): Market Signal = ONE ledger,
   assert.deepEqual(names(d), EIGHT);
   assert.equal((d.match(/mc-sg-best"[^>]*>BEST/g) || []).length, 2, 'one BEST among the books, one among the ratings');
   assert.match(d, /Pinnacle<\/span><span class="mc-sg-best"/, 'the book that gave the winner the highest chance (Pinnacle 62.2% > Bet365 62.0% > Bet105 61.4%)');
-  assert.match(d, /Stennisfy Model<\/span><span class="mc-sg-best"/, 'the only rating with a value');
+  assert.match(d, /Elo Hard<\/span><span class="mc-sg-best"/, 'the rating that gave the winner the highest chance (hElo 70.3% > Elo 64.0% = model 64%)');
+  // founder 2026-11-12: Elo on a finished match = the weekly report BEFORE the match day (20 Oct), never the match day's
+  assert.match(d, /title="Tennis Abstract weekly report before the match · Elo \(all surfaces\) · report of 2026-10-20 · win % → fair odds">[\s\S]*?<span class="mc-sg-o lead">1\.56</, 'Elo 1900 v 1800 → 64.0% → 1.56');
+  assert.match(d, /report of 2026-10-20 · win % → fair odds">[\s\S]*?Elo Hard[\s\S]*?<span class="mc-sg-o lead">1\.42</, 'hElo 1950 v 1800 → 70.3% → 1.42');
   assert.match(d, /<span class="mc-sg-o lead">1\.58<\/span>/, 'winner\'s odds white 700');
   assert.match(d, /<span class="mc-sg-o">2\.60<\/span>/, 'loser\'s grey 500');
   const ticks = [...d.matchAll(/class="tk" style="left:([0-9.]+)%"/g)].map(x => x[1]);
-  assert.equal(ticks.length, 4, 'a tick on every row with data (3 books + the model)');
+  assert.equal(ticks.length, 6, 'a tick on every row with data (3 books + Elo + Elo Hard + the model)');
   assert.ok(ticks.every(t => t === ticks[0]) && Math.abs(Number(ticks[0]) - 62.2) < 0.1, 'all at the Pinnacle close');
   assert.match(d, /<span class="a win" style="width:62\.2/);
-  assert.equal((d.match(/class="mc-sg-row mc-sg-lr(?: rule)? dash(?: go)?"/g) || []).length, 4, 'Elo Overall + Elo Hard (no pre-match snapshot) + Kalshi + Polymarket');
+  assert.equal((d.match(/class="mc-sg-row mc-sg-lr(?: rule)? dash(?: go)?"/g) || []).length, 2, 'only Kalshi + Polymarket (no market) dash');
+  // CONTROL: no snapshot before the match day within 7 days → both Elo rows dash with the reason; no history → dash.
+  const early = S({ plan: 'pro' }).mcSigBody(Object.assign({}, done, { date: '2026-10-20' }));
+  assert.equal((early.match(/class="mc-sg-row mc-sg-lr(?: rule)? dash(?: go)?"/g) || []).length, 4, 'match on the first snapshot\'s day: Elo + Elo Hard dash');
+  assert.match(early, /before the first Elo snapshot \(2026-10-20\)/);
+  const noHist = S({ plan: 'pro', hist: null }).mcSigBody(done);
+  assert.match(noHist, /title="Tennis Abstract weekly report before the match · Elo \(all surfaces\) · win % → fair odds · Elo history not loaded"/);
+  assert.match(S({ hist: undefined }).mcSigPanel(done), /Loading…/, 'Completed waits for the Elo history');
+  // A report with no surface map: the surface comes from elo-ratings.json only when it IS that report (same label).
+  const H2 = { conflicts: {}, snapshots: [{ asOf: '2026-10-20', taLastUpdate: '2026-10-19', ratings: HIST.snapshots[0].ratings, ambiguous: [] }] };
+  const curSame = { taLastUpdate: '2026-10-19', elo: { 'berrettini|m': { hard: { rating: 1950 } }, 'etcheverry|t': { hard: { rating: 1800 } } } };
+  assert.match(S({ plan: 'pro', hist: H2, elo: curSame }).mcSigBody(done), /Elo Hard[\s\S]*?<span class="mc-sg-o lead">1\.42</, 'same report → its surface rating');
+  const curLater = Object.assign({}, curSame, { taLastUpdate: '2026-10-26' });
+  assert.match(S({ plan: 'pro', hist: H2, elo: curLater }).mcSigBody(done), /no hard rating in the Tennis Abstract report of 2026-10-20/, 'a later report is never read for a past match');
+  // A player the report before the match no longer lists: his last record (lastKnown) when that report predates the
+  // match day, marked stale in the hover (the Upcoming rule); a last record from after the match is never read.
+  const lk = r => ({ taLastUpdate: '2026-10-26', elo: {}, lastKnown: { 'etcheverry|t': { all: { rating: 1800 }, hard: { rating: 1800 }, report: r, fetched: r } } });
+  const H3 = { conflicts: {}, snapshots: [{ asOf: '2026-10-20', taLastUpdate: '2026-10-19', ratings: { 'berrettini|m': 1900 }, ambiguous: [], surface: { hard: { 'berrettini|m': 1950 }, clay: {}, grass: {} } }] };
+  const st = S({ plan: 'pro', hist: H3, elo: lk('2026-09-21') }).mcSigBody(done);
+  assert.match(st, /report of 2026-10-20 · win % → fair odds · T\. M\. Etcheverry: not in the current Tennis Abstract report — rating from its 21 Sep 2026 report \(stale\)"[\s\S]*?1\.56/);
+  assert.equal((S({ plan: 'pro', hist: H3, elo: lk('2026-10-27') }).mcSigBody(done).match(/class="mc-sg-row mc-sg-lr(?: rule)? dash(?: go)?"/g) || []).length, 4, 'CONTROL: a last record dated after the match → Elo rows dash');
+  // Bet105 when it is not the card's book: the Kibl series' last price at or before our live sighting (the card state's start)
+  const ser = { Bet105: { p1: [['2026-10-26T10:00:00Z', 1.70], ['2026-10-26T11:58:00Z', 1.66], ['2026-10-26T12:05:00Z', 1.30]], p2: [['2026-10-26T10:00:00Z', 2.20], ['2026-10-26T11:59:00Z', 2.30]] } };
+  const nb = Object.assign({}, done, { __ocs: { book: 'pinnacle+30', startTs: '2026-10-26T12:00:00Z', p1: {}, p2: {} }, oddsMovement: { chart: { books: ser } } });
+  const nbH = S({ plan: 'pro' }).mcSigBody(nb);
+  assert.match(nbH, /title="Bet105 \(Kibl\) · last price before the start \(our live sighting [^)]*\) · Kibl insert time"[\s\S]*?<span class="mc-sg-o lead">1\.66<\/span>[\s\S]*?2\.30</, '1.66 / 2.30, never the 12:05 in-play 1.30');
+  assert.match(S({ plan: 'pro' }).mcSigBody(Object.assign({}, nb, { __ocs: { book: 'pinnacle+30', p1: {}, p2: {} } })), /title="Bet105 · no verified start for this match"/, 'CONTROL: no start → dash, never a scheduled cut');
   const dFree = S().mcSigBody(done);
-  assert.equal((dFree.match(/mc-sg-best"[^>]*>BEST/g) || []).length, 1, 'a blurred model never carries BEST');
+  assert.doesNotMatch(dFree, /Stennisfy Model<\/span>(?:<svg[^]*?<\/svg>)?<span class="mc-sg-best"/, 'a blurred model never carries BEST');
+  const dFreeNoElo = S({ hist: null }).mcSigBody(done);
+  assert.equal((dFreeNoElo.match(/mc-sg-best"[^>]*>BEST/g) || []).length, 1, 'with the Elo rows dashed and the model blurred, the ratings group has no BEST');
   assert.match(dFree, /is-blur/, 'non-Pro: the model is blurred on Completed too');
   const late = S({ plan: 'pro' }).mcSigBody(Object.assign({}, done, { valueSnapshot: { fairP1: 0.6, fairP2: 0.4, ts: '2026-10-26T13:00:00Z' } }));
-  assert.equal((late.match(/class="mc-sg-row mc-sg-lr(?: rule)? dash(?: go)?"/g) || []).length, 5, 'a model read frozen after the start is not a pre-match snapshot');
+  assert.equal((late.match(/class="mc-sg-row mc-sg-lr(?: rule)? dash(?: go)?"/g) || []).length, 3, 'a model read frozen after the start is not a pre-match snapshot');
   const noPin = S({ plan: 'pro' }).mcSigBody(Object.assign({}, done, { __pin: null }));
   assert.doesNotMatch(noPin, /class="tk"/, 'no Pinnacle close → no tick anywhere');
   assert.match(noPin, /title="No Pinnacle close stored for this match"/);
+});
+test('founder 2026-11-12: the Completed Market Signal drawer takes the Upcoming drawer\'s tone (--card), never the black panel', () => {
+  assert.match(lastRule(`${M} .match-card.cmpl .mc-sigpanel`), /background:var\(--card\)/);
+  assert.doesNotMatch(html, /--sig-done-panel/);
 });
 test('review 6/7/9: grid start; white caret in the reference font stack; one chip row with All first on both views', () => {
   assert.match(lastRule(`${M} .match-card .mc-msig .chev`), /font-family:'Hanken Grotesk', sans-serif;[^}]*color:var\(--text\)/);

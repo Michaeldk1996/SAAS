@@ -27,7 +27,7 @@ const S = (vol) => new Function('vol', `
   ${slice('eventKeyOfMatch')} ${slice('psEsc')} ${slice('psEloNorm')} ${slice('mxOddsTxt')} ${slice('mxSurname')} ${slice('mxIsPro')}
   ${slice('mcSigReady')} ${slice('mcSigPair')} ${slice('mcSigImp')} ${slice('mcSigFirst')} ${slice('mcSigClock')}
   ${slice('mcSigEloRec')} ${slice('mcSigEloLast')} ${slice('mcSigEloStaleText')} ${slice('mcSigEloP')} ${slice('mcSigFair')} ${slice('mcSigElo')}
-  ${slice('mcSigEloTitle')} ${slice('mcSigModelP')} ${slice('mcSigPolyUsd')} ${slice('mcSigLiqRec')} ${slice('mcSigPolyHtml')} ${slice('ocsNfd')} ${slice('mcSigSurKey')} ${slice('mcSigK')} ${slice('mcSigLast')} ${slice('mcSigPredRows')} ${slice('mcSigModelDress')} ${slice('mcSigRowHtml')} ${slice('mcSigBody')}
+  ${slice('mcSigEloTitle')} ${slice('mcSigModelP')} ${slice('mcSigPolyUsd')} ${slice('mcSigLiqRec')} ${slice('mcSigPolyHtml')} ${slice('ocsNfd')} ${slice('mcSigSurKey')} ${slice('mcSigK')} ${slice('mcSigLast')} ${slice('mcSigPredRows')} ${slice('mcSigModelDress')} ${slice('mcSigRowHtml')} ${slice('fhDayNum')} ${slice('fhEloKey')} ${slice('fhEloAt')} ${slice('mcSigEloPre')} ${slice('mcSigEloPreTitle')} ${slice('mcSigLastBefore')} const FH_ELO_MAX_AGE_DAYS = 7; let _mcSigEloHist = null; ${slice('mcSigBody')}
   return { mcSigBody };`)(vol);
 const VOL = { generatedAt: '2026-11-01T10:05:00Z', byEvent: { '12166001': { slug: 'atp-tirante-bellucc-2026-11-01', volume: 1851.213744, volumeMl: 1700.5, liquidity: 22090.2256, liquidityAt: '2026-11-01T09:55:00Z' } } };
 const up = { id: 'upcoming-12166001', p1: 'T. A. Tirante', p2: 'M. Bellucci', surface: 'hard', _oddsLoaded: true };
@@ -76,7 +76,7 @@ const SK = (vol, kvol) => new Function('vol', 'kvol', `
   ${slice('eventKeyOfMatch')} ${slice('psEsc')} ${slice('psEloNorm')} ${slice('mxOddsTxt')} ${slice('mxSurname')} ${slice('mxIsPro')}
   ${slice('mcSigReady')} ${slice('mcSigPair')} ${slice('mcSigImp')} ${slice('mcSigFirst')} ${slice('mcSigClock')}
   ${slice('mcSigEloRec')} ${slice('mcSigEloLast')} ${slice('mcSigEloStaleText')} ${slice('mcSigEloP')} ${slice('mcSigFair')} ${slice('mcSigElo')}
-  ${slice('mcSigEloTitle')} ${slice('mcSigModelP')} ${slice('mcSigPolyUsd')} ${slice('mcSigLiqRec')} ${slice('mcSigPolyHtml')} ${slice('mcSigKalshiHtml')} ${slice('ocsNfd')} ${slice('mcSigSurKey')} ${slice('mcSigK')} ${slice('mcSigLast')} ${slice('mcSigPredRows')} ${slice('mcSigModelDress')} ${slice('mcSigRowHtml')} ${slice('mcSigBody')}
+  ${slice('mcSigEloTitle')} ${slice('mcSigModelP')} ${slice('mcSigPolyUsd')} ${slice('mcSigLiqRec')} ${slice('mcSigPolyHtml')} ${slice('mcSigKalshiHtml')} ${slice('ocsNfd')} ${slice('mcSigSurKey')} ${slice('mcSigK')} ${slice('mcSigLast')} ${slice('mcSigPredRows')} ${slice('mcSigModelDress')} ${slice('mcSigRowHtml')} ${slice('fhDayNum')} ${slice('fhEloKey')} ${slice('fhEloAt')} ${slice('mcSigEloPre')} ${slice('mcSigEloPreTitle')} ${slice('mcSigLastBefore')} const FH_ELO_MAX_AGE_DAYS = 7; let _mcSigEloHist = null; ${slice('mcSigBody')}
   return { mcSigBody };`)(vol, kvol);
 const KV = { generatedAt: '2026-11-01T10:05:00Z', byEvent: { '12166001': { event: 'KXATPMATCH-26NOV01TIRBEL', contracts: 5590.03, liquidity: 431220.5 } } };
 test('Kalshi sits before Polymarket, behind the second hairline; its liquidity rides in the hover', () => {

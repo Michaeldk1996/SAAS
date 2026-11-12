@@ -945,6 +945,11 @@ test('elo-history: an unchanged weekly report adds nothing; a new one appends; h
   assert.equal(appendSnapshot(h, { ratings: { 'a|b': 1815 }, ambiguous: [] }, '2026-08-03'), true, 'a same-day re-scrape replaces that day');
   assert.equal(h.snapshots.length, 2); assert.equal(h.snapshots[1].ratings['a|b'], 1815); assert.equal(h.snapshots[0].ratings['a|b'], 1800, 'earlier weeks untouched');
   assert.throws(() => appendSnapshot(h, { ratings: {} }, '2026-08-10'), /no ratings/);
+  // founder 2026-11-12: each new report also stores its surface Elo (exact keys), so a finished match reads the surface
+  // rating it had before the match; a store without surface ratings adds no map (never an empty one).
+  assert.equal(appendSnapshot(h, { ratings: { 'a|b': 1820 }, elo: { 'a|b': { all: { rating: 1820 }, hard: { rating: 1790 }, clay: { rating: null } } } }, '2026-08-17'), true);
+  assert.deepEqual(h.snapshots[2].surface, { hard: { 'a|b': 1790 }, clay: {}, grass: {} });
+  assert.equal(h.snapshots[1].surface, undefined, 'earlier weeks untouched');
 });
 test('elo retry (founder 2026-09-24): an unchanged Monday report triggers a Tuesday retry; a new Tuesday report is stored with Tuesday\'s asOf and stops the retries', async () => {
   const { appendSnapshot, shouldFetch } = await import('./tools/build-elo-history.mjs');

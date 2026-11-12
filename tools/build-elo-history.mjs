@@ -62,6 +62,14 @@ export function isNewReport(last, store) {
   if (last.taLastUpdate && store.taLastUpdate) return store.taLastUpdate > last.taLastUpdate;
   return !sameRatings(last.ratings, store.ratings);
 }
+export function surfaceOf(store) {
+  const e = store && store.elo;
+  if (!e || typeof e !== 'object') return null;
+  const out = { hard: {}, clay: {}, grass: {} };
+  for (const [k, r] of Object.entries(e))
+    for (const s of Object.keys(out)) if (r && r[s] && Number(r[s].rating) > 0) out[s][k] = Number(r[s].rating);
+  return Object.values(out).some(o => Object.keys(o).length) ? out : null;
+}
 export function appendSnapshot(hist, store, asOf, source = 'live') {
   const ratings = store && store.ratings;
   if (!ratings || !Object.keys(ratings).length) throw new Error('elo-ratings.json has no ratings');
@@ -71,6 +79,10 @@ export function appendSnapshot(hist, store, asOf, source = 'live') {
   const amb = Array.isArray(store.ambiguous) ? store.ambiguous : KNOWN_AMBIGUOUS_2026_09_24;
   const snap = { asOf, generatedAt: store.generatedAt || null, ratings, ambiguous: [...new Set(amb)].sort(),
     taLastUpdate: store.taLastUpdate || null, source, players: Object.keys(ratings).length };
+  // Surface Elo per report (founder 2026-11-12: a finished match's Market Signal shows the surface Elo it had before the
+  // match): {hard|clay|grass: {eloKey: rating}} from the same file, exact keys only. Stored from 12 Nov 2026 on.
+  const surface = surfaceOf(store);
+  if (surface) snap.surface = surface;
   // A new report fetched on the same day as the last stored one (possible only for unlabelled
   // snapshots) replaces that day's snapshot. Earlier days are never touched. A report TA corrects
   // under an unchanged label is NOT a new report (ruling 2026-09-24: the label decides); --append

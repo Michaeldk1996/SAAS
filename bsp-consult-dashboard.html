@@ -9447,11 +9447,70 @@ function mxTierTitle(m){
 //     (m.valueSnapshot fairP1/P2, the price Key factors shows) → fair odds; blurred unless Pro.
 //   Completed ("Price on {winner}", option 1a): what each source had on the WINNER — bar (chance) · odds · chance.
 //     Books = closes (Pinnacle close m.pinClose · Bet105 = the card close when Bet105 is the card's book · Bet365 =
-//     api-tennis stored close, ATP / Challenger). Elo = stored pre-match snapshot only: none is stored → dash rows.
+//     api-tennis stored close, ATP / Challenger). Elo = the weekly report before the match (mcSigEloPre).
 //     Model = m.valueSnapshot when it was frozen before the start. BEST: highest odds on the winner among the books,
 //     highest chance among Elo / Elo surface / Model; dash rows never take it. Not blurred.
 // Removed: the "A vs B" header, Says, the agreement line, Consensus, liquidity, Betfair, Polymarket, Kalshi.
-function mcSigReady(m){ return !!(m.finalScore || (m._oddsLoaded && eloRatings && eloRatings.elo)); }
+// Completed (founder 2026-11-12, "add all values as they are in upcoming"): the drawer waits for the odds shard (the
+// Bet105 series) and the weekly Elo history (the pre-match ratings) as Upcoming waits for its sources.
+let _mcSigEloHist;   // undefined = not asked yet · null = failed / unavailable · object = elo-history.json
+function mcSigReady(m){
+  if (m.finalScore) return !!m._oddsLoaded && _mcSigEloHist !== undefined;
+  return !!(m._oddsLoaded && eloRatings && eloRatings.elo);
+}
+// Elo as it stood BEFORE a finished match: the latest weekly Tennis Abstract snapshot dated strictly before the match day,
+// at most FH_ELO_MAX_AGE_DAYS old — fhEloAt's own rule and guards (namesake, shared name key), the Form tab's Elo. Overall
+// from that snapshot; a surface rating from the snapshot's own surface map (stored from 12 Nov 2026), else from
+// elo-ratings.json only when that file IS the same Tennis Abstract report (same taLastUpdate). Anything else is a dash
+// with its reason — never today's rating for a past match.
+function mcSigEloPre(m, slot){
+  const h = _mcSigEloHist;
+  if (!h) return { p: null, why: 'Elo history not loaded' };
+  const day = m.date || '', d = fhDayNum(day);
+  const stale = [];
+  // One player: his rating in the report before the match; a player that report no longer lists takes his LAST record
+  // (elo-ratings.json lastKnown, exact key — the Upcoming row's rule) only when that report is itself dated before the
+  // match day; the hover says so (stale), as on Upcoming.
+  const one = name => {
+    const e = fhEloAt(h, name, day, null);
+    if (e.v != null) {
+      const snap = h.snapshots.find(x => x.asOf === e.asOf), k = fhEloKey(name);
+      let sv = null;
+      if (slot !== 'all') {
+        if (snap && snap.surface && snap.surface[slot]) sv = snap.surface[slot][k];
+        else {
+          const cur = eloRatings && eloRatings.elo && snap && snap.taLastUpdate && eloRatings.taLastUpdate === snap.taLastUpdate ? eloRatings.elo[k] : null;
+          sv = cur && cur[slot] ? cur[slot].rating : null;
+        }
+      }
+      return { v: slot === 'all' ? e.v : sv, asOf: e.asOf, why: slot === 'all' ? '' : `no ${slot} rating in the Tennis Abstract report of ${e.asOf}` };
+    }
+    const l = /^not in the Elo report/.test(e.why || '') ? mcSigEloLast(name) : null;
+    const rd = l ? fhDayNum(l.report || l.fetched) : null;
+    if (l && rd != null && d != null && rd < d) {
+      stale.push({ name, report: l.report, fetched: l.fetched });
+      const r = l[slot] && l[slot].rating;
+      return { v: r > 0 ? r : null, asOf: null, why: `no ${slot === 'all' ? 'Elo' : slot} rating in ${name}'s last report` };
+    }
+    return { v: null, why: e.why };
+  };
+  const a = one(m.p1), b = one(m.p2);
+  if (!(a.v > 0) || !(b.v > 0)) return { p: null, why: !(a.v > 0) ? a.why : b.why };
+  return { p: 100 * mcSigEloP(a.v, b.v), why: '', asOf: a.asOf || b.asOf, stale };
+}
+function mcSigEloPreTitle(slot, surfCap, r){
+  const what = slot === 'all' ? 'Elo (all surfaces)' : ({ Hard: 'hElo', Clay: 'cElo', Grass: 'gElo' }[surfCap] || 'surface Elo');
+  return `Tennis Abstract weekly report before the match · ${what}${r && r.asOf ? ' · report of ' + r.asOf : ''} · win % → fair odds`;
+}
+// The last price of a chart series at or before `ms` (a price ≥ 1.01); null when none.
+function mcSigLastBefore(series, ms){
+  let best = null;
+  for (const pt of Array.isArray(series) ? series : []) {
+    const t = Date.parse(pt && pt[0]), v = Number(pt && pt[1]);
+    if (Number.isFinite(t) && t <= ms && v >= 1.01) best = { v, at: pt[0] };
+  }
+  return best;
+}
 function mcSigPanel(m){
   return `<div class="mc-sigpanel" data-sigfor="${psEsc(String(m.id))}">${mcSigReady(m) ? mcSigBody(m) : '<div class="mc-sg-wait">Loading…</div>'}</div>`;
 }
@@ -9707,15 +9766,24 @@ function mcSigBody(m){
   if (done) {
     W = m.finalScore.winner === 'p2' ? 'b' : 'a';
     const pin = _mcPinClose(m);
-    const b105 = ocsBook === 'bet105' ? mcSigPair(o.p1.close, o.p2.close) : null;
+    // Bet105: the card close when Bet105 is the card's book; else the Kibl series' last price at or before our live
+    // sighting (the card state's start, a verified start) — the price the Bet105 row of Upcoming would read at the off.
+    const st105 = o && Date.parse(o.startTs || ''), bS = ch['Bet105'];
+    const bl1 = Number.isFinite(st105) && bS ? mcSigLastBefore(bS.p1, st105) : null, bl2 = Number.isFinite(st105) && bS ? mcSigLastBefore(bS.p2, st105) : null;
+    const b105card = ocsBook === 'bet105' ? mcSigPair(o.p1.close, o.p2.close) : null;
+    const b105 = b105card || (bl1 && bl2 ? mcSigPair(bl1.v, bl2.v) : null);
+    const b105Src = b105card ? 'Bet105 (Kibl) · the card close · Kibl insert time'
+      : b105 ? `Bet105 (Kibl) · last price before the start (our live sighting ${mcSigClock(o.startTs)}) · Kibl insert time`
+      : !bS ? 'Bet105 · no Bet105 price for this match' : !Number.isFinite(st105) ? 'Bet105 · no verified start for this match' : 'Bet105 · no Bet105 price before the start';
+    const eA = mcSigEloPre(m, 'all'), eS = slot ? mcSigEloPre(m, slot) : { p: null, why: 'no match surface' };
     const j = (mxJClose(m, 'p1') != null && mxJClose(m, 'p2') != null) ? mcSigPair(mxJClose(m, 'p1'), mxJClose(m, 'p2')) : null;
     const pinAge = mxPinCloseAgeMin(m, W === 'a' ? 'p1' : 'p2');
     rows = [
       bookRow('Pinnacle', pin ? mcSigPair(pin.p1, pin.p2) : null, pin ? `Pinnacle close (${pin.source || 'Oddspapi Pinnacle +30s'}) · last price before the start${pinAge != null ? ` · ${pinAge} min before` : ''}` : 'Pinnacle · no close for this match'),
-      bookRow('Bet105', b105, b105 ? 'Bet105 (Kibl) · the card close · Kibl insert time' : (o ? 'Bet105 · not the card book for this match' : 'Bet105 · no close for this match')),
+      bookRow('Bet105', b105, b105Src),
       bookRow('Bet365', j, j ? 'Bet365 (api-tennis) · stored last odds before start · no timestamp, no lag check' : 'Bet365 · no close for this match'),
-      estRow('Elo Overall', { p: null, why: 'no pre-match Elo snapshot stored' }, 'Tennis Abstract · stored pre-match Elo (all surfaces)'),
-      estRow(surfLabel, { p: null, why: 'no pre-match Elo snapshot stored' }, 'Tennis Abstract · stored pre-match surface Elo'),
+      estRow('Elo Overall', eA, mcSigEloPreTitle('all', surfCap, eA)),
+      estRow(surfLabel, eS, mcSigEloPreTitle(slot, surfCap, eS)),
       mcSigModelDress(estRow('Stennisfy Model', mcSigModelP(m, true), 'Stennisfy model · stored pre-match output'), m, pro),
     ];
   } else {
@@ -11163,8 +11231,10 @@ function toggleSig(btn){
   });
   if (m) mcSigLiveStart();   // the per-minute prediction-market reads (founder 2026-11-06)
   if (!m || mcSigReady(m)) return;
-  Promise.all([ensureOddsMovement(m), (eloRatings && eloRatings.elo) ? null : loadEloRatings()].map(x => Promise.resolve(x).catch(() => null)))
+  const eh = m.finalScore && _mcSigEloHist === undefined ? fhLoadEloHistory().then(h => { _mcSigEloHist = h || null; }) : null;
+  Promise.all([ensureOddsMovement(m), (eloRatings && eloRatings.elo) ? null : loadEloRatings(), eh].map(x => Promise.resolve(x).catch(() => null)))
     .then(() => {
+      if (m.finalScore && _mcSigEloHist === undefined) _mcSigEloHist = null;   // a failed read is a dash, not "still loading"
       if (!m._oddsLoaded) m._oddsLoaded = true;   // a failed shard read is "no series", not "still loading"
       const panel = card.querySelector('.mc-sigpanel');
       if (panel && card.isConnected) panel.innerHTML = mcSigBody(m);
@@ -37676,7 +37746,7 @@ if(document.querySelector('.tabpage[data-page="live"]')&&document.querySelector(
   [data-page="matches"] .mc-sg-flow{ font-family:var(--font-words); font-size:10.5px; line-height:1.4; color:var(--text-label); margin:-5px 0 0 15px; cursor:default; }
   [data-page="matches"] .mc-sg-flow b{ font-family:var(--font-nums); font-weight:700; color:var(--text-soft); }
   /* Market Signal ledger (founder design 2026-11-07, CHANGES §2 Upcoming / §3 Completed) */
-  [data-page="matches"] .match-card.cmpl .mc-sigpanel{ background:var(--sig-done-panel); border-top:1px solid var(--edge-6); }
+  [data-page="matches"] .match-card.cmpl .mc-sigpanel{ background:var(--card); border-top:1px solid var(--edge-6); }   /* founder 2026-11-12: the Upcoming drawer's tone */
   [data-page="matches"] .mc-sg--led{ gap:0; }
   [data-page="matches"] .mc-sg--led .mc-sg-rows{ display:flex; flex-direction:column; }
   [data-page="matches"] .mc-sg--led .mc-sg-row{ display:grid; grid-template-columns:128px 44px 30px minmax(0,1fr) 30px 44px; gap:0 8px; align-items:center; min-height:30px; padding:4px 0; box-sizing:border-box; border-top:0; }

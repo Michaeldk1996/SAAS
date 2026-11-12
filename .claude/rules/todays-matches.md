@@ -130,9 +130,20 @@ except where a ruling below says otherwise. Colours are foundation tokens (`foun
   hairline only before Elo Overall and before Kalshi; no group heads. Header = SOURCE (Completed "SOURCE · AT CLOSE") and
   each player's last name token centred over his two columns (Completed: winner `--text`, loser grey, "| = Pinnacle close"
   over the bar). A missing source is a dash row with its reason in the hover. **Upcoming:** the books' opens, Elo / model
-  fair odds, the venue's current mid; the leaning side (≥ 50%) white 700. **Completed:** closes, stored pre-match Elo /
-  model only (no Elo snapshot is stored today → dash), a prediction row only from a read the database froze before the
-  start; the winner's side white 700; a white tick at Pinnacle's closing chance on every bar with data (none without a
+  fair odds, the venue's current mid; the leaning side (≥ 50%) white 700. **Completed (founder 2026-11-12: "add all values
+  as they are in upcoming", every row filled where a source exists):** closes; Bet105 = the card close when Bet105 is the
+  card's book, else the Kibl series' last price at or before our live sighting (the card state's `startTs` — no start, no
+  price, never a scheduled cut); Elo / Elo {surface} = the weekly Tennis Abstract report dated strictly before the match
+  day, at most 7 days old (`fhEloAt`, the Form tab's rule; overall from `elo-history.json`, the surface rating from that
+  report's own `surface` map — stored by `tools/build-elo-history.mjs` from 12 Nov 2026 — else from `elo-ratings.json`
+  only when it is the same report, same `taLastUpdate`; a player that report no longer lists takes his last record
+  (`lastKnown`, the Upcoming rule) only when that record's report is dated before the match day, marked stale in the
+  hover; anything else is a dash with its reason, never today's rating for
+  a past match); the model only from a read frozen before the start; a prediction row only from a read the database froze
+  before the start; the drawer is `--card`, the Upcoming drawer's tone (founder 2026-11-12, replacing `--sig-done-panel`);
+  **Test:** `test-ten377-todays-matches.mjs` "Market Signal = ONE ledger" (Elo from the report before the match day, the
+  match-day report never read, the later report never read for a surface, Bet105 cut at the live sighting) and "the
+  Completed Market Signal drawer takes the Upcoming drawer's tone"; the winner's side white 700; a white tick at Pinnacle's closing chance on every bar with data (none without a
   Pinnacle close); BEST ×2 = the book and the rating that gave the winner the highest chance (never a prediction market,
   never a blurred model). **Prediction rows:** the venue's mid for both players (`market_live_current`, joined by surname,
   one each, else a dash), scaled to 100%, as fair odds; nothing under the prices and nothing under the name — ONE sentence
