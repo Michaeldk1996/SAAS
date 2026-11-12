@@ -44,13 +44,20 @@ jobs:
         run: |
           set +e
           CLIPS=$(cat /tmp/clips.json)
-          OUT=$(flyctl machine run "${{ steps.build.outputs.image }}" -a stennisfy-interviews \
-            --vm-cpus 2 --vm-memory 4096 --restart no \
-            --env CLIP_URLS="$CLIPS" \
-            --env TENNISTV_EMAIL="${{ secrets.TENNISTV_EMAIL }}" --env TENNISTV_PASSWORD="${{ secrets.TENNISTV_PASSWORD }}" 2>&1)
-          echo "$OUT"
-          MID=$(echo "$OUT" | grep -oE 'Machine ID: [0-9a-f]+' | awk '{print $3}')
+          # the registry can take a few seconds to serve a just-pushed image: retry the launch
+          MID=""
+          for try in 1 2 3 4 5 6; do
+            OUT=$(flyctl machine run "${{ steps.build.outputs.image }}" -a stennisfy-interviews \
+              --vm-cpus 2 --vm-memory 4096 --restart no \
+              --env CLIP_URLS="$CLIPS" \
+              --env TENNISTV_EMAIL="${{ secrets.TENNISTV_EMAIL }}" --env TENNISTV_PASSWORD="${{ secrets.TENNISTV_PASSWORD }}" 2>&1)
+            echo "$OUT"
+            MID=$(echo "$OUT" | grep -oE 'Machine ID: [0-9a-f]+' | awk '{print $3}')
+            [ -n "$MID" ] && break
+            echo "launch attempt $try failed; waiting 30s"; sleep 30
+          done
           echo "MID=$MID"
+          if [ -z "$MID" ]; then echo "::error::the machine never launched"; exit 1; fi
           # capture logs continuously so nothing ages out of the retention window during the long run
           ( flyctl logs -a stennisfy-interviews -i "$MID" > /tmp/logs.txt 2>&1 ) &
           LOGPID=$!
