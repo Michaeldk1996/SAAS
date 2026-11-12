@@ -1,17 +1,17 @@
 {
- "generatedAt": "2026-11-12T03:50:38.805Z",
+ "generatedAt": "2026-11-12T05:15:51.233Z",
  "tournaments": [
   {
    "key": "tour",
    "season": "2026",
    "name": "ATP Tour",
    "file": "news-ticker/tour-2026.json",
-   "items": 32,
+   "items": 33,
    "byType": {
-    "quote": 32
+    "quote": 33
    },
-   "latestTimestamp": "2026-11-12T03:26:07.692Z",
-   "updatedAt": "2026-11-12T03:50:38.805Z"
+   "latestTimestamp": "2026-11-12T04:56:35.170Z",
+   "updatedAt": "2026-11-12T05:15:51.233Z"
   },
   {
    "key": "1681",
@@ -41,6 +41,36 @@
   }
  ],
  "latest": [
+  {
+   "id": "quote-559e8fadadd35d",
+   "type": "quote",
+   "playerId": "2168",
+   "opponentId": null,
+   "player": "S. Wawrinka",
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-12T04:56:35.170Z",
+   "timestampKind": "collected (the outlet shows no publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "After that, we'll see how things go from there.",
+   "originalText": "Danach werden wir sehen, wie es weitergeht",
+   "language": "de",
+   "translated": true,
+   "translationModel": "claude-opus-5-5",
+   "sourceName": "SRF Sport",
+   "sourceUrl": "https://www.srf.ch/sport/tennis/atp-tour/vor-seinem-letzten-turnier-wawrinka-ich-freue-mich-auf-alle-emotionen",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "sourceHash": "a470919258e43a3e",
+   "publishedAt": "2026-11-12T05:15:51.233Z",
+   "file": "news-ticker/tour-2026.json"
+  },
   {
    "id": "quote-f0fa26e863b23d",
    "type": "quote",
@@ -2221,36 +2251,6 @@
     }
    ],
    "sourceHash": "c898da0c7e45b5e5",
-   "publishedAt": "2026-11-12T03:03:12.953Z",
-   "file": "news-ticker/tour-2026.json"
-  },
-  {
-   "id": "quote-5116856308ff69",
-   "type": "quote",
-   "playerId": "2072",
-   "opponentId": null,
-   "player": "J. Sinner",
-   "opponent": null,
-   "tournament": "ATP Tour",
-   "tournamentKey": "tour",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-10T12:52:37.988Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Interviews",
-   "context": null,
-   "eventKey": null,
-   "won": null,
-   "text": "Magnus is someone very similar to Darren, though, of course, everyone is different,",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "TSN",
-   "sourceUrl": "https://www.tsn.ca/tennis/article/sinner-plans-late-december-return-at-saudi-exhibition-ahead-of-australian-open/",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "sourceHash": "cfc37e3bce00a5ed",
    "publishedAt": "2026-11-12T03:03:12.953Z",
    "file": "news-ticker/tour-2026.json"
   }
