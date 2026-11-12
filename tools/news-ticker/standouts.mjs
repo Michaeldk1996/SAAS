@@ -23,6 +23,7 @@ export const RULES = [
 export const FIRST_IN = { id: 'firstIn', stat: 'Service:1st serve percentage', base: ['serve', 'firstInPct'], gap: 8 };
 export const SERVE_LOST_MAX = 10, SERVE_PTS_MIN = 30;   // "lost only N points on serve": at most 10, from 30+ served
 export const SERVE_MAX = 3;   // figures in one serve sentence
+export const LOSER_RETURN_FACTOR = 2;   // a loser's return figure is news only at twice the usual gap
 export const LOSER_MAX = 2;   // the loser gets ONE sentence: at most his two worst numbers
 export const NOTABLE = { aces: 10, doubleFaults: 5, winners: 30, unforcedErrors: 30, bpAllOrNone: 3, bpMany: 8 };
 
@@ -44,6 +45,7 @@ export function baselineFor(ratings, key, surface) {
   return null;
 }
 
+const WATCH = { firstIn: 'first-serve percentage', firstWon: 'first serve', secondWon: 'second serve', doubleFaults: 'double-fault count' };
 const join = (parts) => (parts.length <= 1 ? parts.join('') : parts.slice(0, -1).join(', ') + ' and ' + parts[parts.length - 1]);
 const toneOf = (tones) => { const g = tones.includes('good'), b = tones.includes('bad'); return g && !b ? 'good' : (b && !g ? 'bad' : null); };
 
@@ -56,8 +58,8 @@ const toneOf = (tones) => { const g = tones.includes('good'), b = tones.includes
 //   rally      winners and unforced errors (30+ of either)
 // The baseline is named in full the first time a player's figure is compared with it; after that it is "his usual N%".
 // -> [{ text, tone: 'good'|'bad'|null, kind: 'serve'|'return'|'bp'|'count', fields: [...] }]
-export function standoutUnits(ms, side, name, base, { bp = null, wueOk = true, loser = false } = {}) {
-  if (loser) return loserUnit(ms, side, name, base, { bp, wueOk });
+export function standoutUnits(ms, side, name, base, { bp = null, wueOk = true, loser = false, skip = new Set(), watch = false } = {}) {
+  if (loser) return loserUnit(ms, side, name, base, { bp, wueOk, skip });
   const s = (ms && ms[side]) || {}, raw = s.raw || {}, out = [];
   let named = false;
   // "compared with his 27% average on hard over the last 52 weeks"; after the first time, "compared with his usual 51%"
@@ -97,6 +99,9 @@ export function standoutUnits(ms, side, name, base, { bp = null, wueOk = true, l
     if (manyDf) c.push({ w: 4 + df / 100, tone: 'bad', make: () => `made ${df} double faults`, field: meta('doubleFaults', { value: df }) });
     const keep = new Set([...c].sort((x, y) => y.w - x.w).slice(0, SERVE_MAX)), kept = c.filter((x) => keep.has(x));
     out.push({ text: `${name} ${join(kept.map((x) => x.make()))}.`, tone: toneOf(kept.map((x) => x.tone).filter(Boolean)), kind: 'serve', fields: kept.map((x) => x.field) });
+    // the winner plays again: his serve figure furthest below his own average is "something to watch" (founder 2026-11-12)
+    const weak = kept.filter((x) => x.tone === 'bad' && WATCH[x.field.metric]).sort((x, y) => y.w - x.w)[0];
+    if (watch && weak) out.push({ text: `${name}'s ${WATCH[weak.field.metric]} is something to watch in the next round.`, tone: 'bad', kind: 'watch', fields: [{ metric: 'watch', of: weak.field.metric }] });
   }
   // ---- return ----
   const rets = [['ret1Won', 'against the first serve'], ['ret2Won', 'against the second serve']].filter(([id]) => R[id] && R[id].standout);
@@ -124,30 +129,35 @@ export function standoutUnits(ms, side, name, base, { bp = null, wueOk = true, l
 // The loser (founder 2026-11-12: "just say what really went wrong for the loser without losing too much time on him"):
 // ONE sentence, his worst numbers only — at most LOSER_MAX, the furthest below his own baseline first. Nothing that went
 // well, nothing neutral. No bad number = no sentence.
-function loserUnit(ms, side, name, base, { bp = null, wueOk = true } = {}) {
+function loserUnit(ms, side, name, base, { bp = null, wueOk = true, skip = new Set() } = {}) {
   const s = (ms && ms[side]) || {}, raw = s.raw || {}, cands = [];
-  const WHAT = { firstWon: 'of his first-serve points', secondWon: 'of his second-serve points', ret1Won: 'of the points against the first serve', ret2Won: 'of the points against the second serve' };
+  // "struggled on his second serve, winning only 41% of the points (7 of 17)" — the serve comes first; a return figure
+  // is his story only when it is really far off (twice the usual gap)
+  const WHERE = { firstWon: 'on his first serve', secondWon: 'on his second serve', ret1Won: 'against the first serve', ret2Won: 'against the second serve' };
   if (base) {
     for (const r of RULES) {
+      if (skip.has(r.id)) continue;
       const v = num(s[r.stat]), c = raw[r.stat], b = num(base.node[r.base[0]] && base.node[r.base[0]][r.base[1]]);
       if (v == null || b == null || !c || num(c.total) == null || c.total < r.minPts) continue;
-      const x = Math.round(v), y = Math.round(b);
-      if (y - x < r.gap) continue;
-      cands.push({ score: (y - x) / r.gap, y, clause: `won ${x}% ${WHAT[r.id]} (${c.won} of ${c.total})`, field: { metric: r.id, value: x, won: c.won, total: c.total, baseline: y, scope: base.scope, surface: base.surface, n: base.matches } });
+      const x = Math.round(v), y = Math.round(b), isReturn = /^ret/.test(r.id);
+      if (y - x < r.gap * (isReturn ? LOSER_RETURN_FACTOR : 1)) continue;
+      cands.push({ score: (y - x) / r.gap + (isReturn ? 0 : 10), y, rate: true, clause: `${WHERE[r.id]}, winning only ${x}% of the points (${c.won} of ${c.total})`,
+        field: { metric: r.id, value: x, won: c.won, total: c.total, baseline: y, scope: base.scope, surface: base.surface, n: base.matches } });
     }
     const fi = num(s[FIRST_IN.stat]), fb = num(base.node.serve && base.node.serve.firstInPct);
-    if (fi != null && fb != null && Math.round(fb) - Math.round(fi) >= FIRST_IN.gap) cands.push({ score: (Math.round(fb) - Math.round(fi)) / FIRST_IN.gap, y: Math.round(fb), clause: `landed ${Math.round(fi)}% of his first serves`,
+    if (fi != null && fb != null && Math.round(fb) - Math.round(fi) >= FIRST_IN.gap) cands.push({ score: (Math.round(fb) - Math.round(fi)) / FIRST_IN.gap + 10, y: Math.round(fb), rate: true, clause: `to land his first serve, at only ${Math.round(fi)}%`,
       field: { metric: 'firstIn', value: Math.round(fi), baseline: Math.round(fb), scope: base.scope, surface: base.surface, n: base.matches } });
   }
   const df = num(s['Service:Double Faults']);
-  if (df != null && df >= NOTABLE.doubleFaults) cands.push({ score: df / NOTABLE.doubleFaults, clause: `made ${df} double faults`, field: { metric: 'doubleFaults', value: df } });
-  if (bp && bp.faced >= NOTABLE.bpAllOrNone && bp.saved === 0) cands.push({ score: 1.5, clause: `saved ${bp.saved} of ${bp.faced} break points`, kind: 'bp', field: { metric: 'breakPoints', saved: bp.saved, faced: bp.faced } });
+  if (df != null && df >= NOTABLE.doubleFaults) cands.push({ score: df / NOTABLE.doubleFaults + 5, clause: `made ${df} double faults`, field: { metric: 'doubleFaults', value: df } });
+  if (bp && bp.faced >= NOTABLE.bpAllOrNone && bp.saved === 0) cands.push({ score: 6.5, clause: `saved ${bp.saved} of ${bp.faced} break points`, kind: 'bp', field: { metric: 'breakPoints', saved: bp.saved, faced: bp.faced } });
   const w = num(s['Points:Winners']), ue = num(s['Points:Unforced errors']);
-  if (wueOk && w != null && ue != null && ue >= NOTABLE.unforcedErrors && ue > w) cands.push({ score: ue / NOTABLE.unforcedErrors, clause: `made ${ue} unforced errors against ${w} winners`, field: { metric: 'winnersErrors', winners: w, unforcedErrors: ue } });
+  if (wueOk && w != null && ue != null && ue >= NOTABLE.unforcedErrors && ue > w) cands.push({ score: ue / NOTABLE.unforcedErrors + 5, clause: `made ${ue} unforced errors against ${w} winners`, field: { metric: 'winnersErrors', winners: w, unforcedErrors: ue } });
   if (!cands.length) return [];
   cands.sort((a, b) => b.score - a.score);
-  const top = cands.slice(0, LOSER_MAX);
+  const top = cands.slice(0, LOSER_MAX).sort((a, b) => (b.rate ? 1 : 0) - (a.rate ? 1 : 0));   // the "struggled …" figures first, then a count
   let named = false;
-  const parts = top.map((c) => { if (c.y == null) return c.clause; const t = named ? `${c.clause}, compared with his usual ${c.y}%` : `${c.clause}, compared with his ${c.y}% average ${base.label}`; named = true; return t; });
+  const vs = (c) => { const t = named ? `, compared with his usual ${c.y}%` : `, compared with his ${c.y}% average ${base.label}`; named = true; return t; };
+  const parts = top.map((c, i) => (c.rate ? `${i === 0 ? 'struggled ' : ''}${c.clause}${vs(c)}` : c.clause));
   return [{ text: `${name} ${join(parts)}.`, tone: 'bad', kind: top.length === 1 && top[0].kind === 'bp' ? 'bp' : 'loser', fields: top.map((c) => c.field) }];
 }

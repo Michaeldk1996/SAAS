@@ -118,8 +118,15 @@ export function reportText(m, w, l, opts = {}) {
   const tones = out.map(() => null), kinds = out.map(() => null);
   // What stood out (standouts.mjs): each player's rates against his own baseline + the counts that say something. When
   // there is at least one, the full stat line is not printed; with none (no baseline, nothing notable) it still is.
-  const U = opts.baselines ? { [w]: standoutUnits(ms, w, m[w], opts.baselines[w] || null, { bp: breakPoints(ms, w, pbp), wueOk }),
-    [l]: standoutUnits(ms, l, m[l], opts.baselines[l] || null, { bp: breakPoints(ms, l, pbp), wueOk, loser: true }) } : null;
+  // the winner first; a figure of his is not told again from the loser's side (his 80% of first-serve points won IS the
+  // loser's 20% against the first serve). The winner plays again unless this was the final: "something to watch".
+  const MIRROR = { firstWon: 'ret1Won', secondWon: 'ret2Won', ret1Won: 'firstWon', ret2Won: 'secondWon' };
+  let U = null;
+  if (opts.baselines) {
+    const uw = standoutUnits(ms, w, m[w], opts.baselines[w] || null, { bp: breakPoints(ms, w, pbp), wueOk, watch: round !== 'final' });
+    const skip = new Set(uw.flatMap((u) => u.fields.map((f) => MIRROR[f.metric]).filter(Boolean)));
+    U = { [w]: uw, [l]: standoutUnits(ms, l, m[l], opts.baselines[l] || null, { bp: breakPoints(ms, l, pbp), wueOk, loser: true, skip }) };
+  }
   if (U && U[w].length + U[l].length > 0) {
     fields.standouts = [];
     for (const k of [w, l]) for (const u of U[k]) { out.push(u.text); tones.push(u.tone); kinds.push(u.kind); for (const f of u.fields) fields.standouts.push({ player: k === w ? 'winner' : 'loser', tone: u.tone, ...f }); }
