@@ -1,17 +1,17 @@
 {
- "generatedAt": "2026-11-13T08:32:12.634Z",
+ "generatedAt": "2026-11-13T09:12:18.799Z",
  "tournaments": [
   {
    "key": "tour",
    "season": "2026",
    "name": "ATP Tour",
    "file": "news-ticker/tour-2026.json",
-   "items": 37,
+   "items": 38,
    "byType": {
-    "quote": 37
+    "quote": 38
    },
-   "latestTimestamp": "2026-11-13T03:00:00.000Z",
-   "updatedAt": "2026-11-13T08:32:12.634Z"
+   "latestTimestamp": "2026-11-13T08:00:47.000Z",
+   "updatedAt": "2026-11-13T09:12:18.799Z"
   },
   {
    "key": "1681",
@@ -25,7 +25,7 @@
     "status": 7
    },
    "latestTimestamp": "2026-11-12T22:59:16.000Z",
-   "updatedAt": "2026-11-13T08:12:25.247Z"
+   "updatedAt": "2026-11-13T09:12:18.799Z"
   },
   {
    "key": "1725",
@@ -51,6 +51,37 @@
   }
  ],
  "latest": [
+  {
+   "id": "quote-0cac71b5826360",
+   "type": "quote",
+   "playerId": "372",
+   "opponentId": null,
+   "player": "F. Cobolli",
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-13T08:00:47.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "We always said that if Juan Carlos were free, we would try to contact him. I even tried to send him a text message, but I never did",
+   "originalText": "Siempre dijimos que si Juan Carlos estuviera libre, intentaríamos contactarlo. Incluso intenté enviarle un mensaje de texto, pero nunca lo hice",
+   "language": "es",
+   "translated": true,
+   "translationModel": "claude-opus-5-5",
+   "sourceName": "Mundo Deportivo",
+   "sourceUrl": "https://www.mundodeportivo.com/tenis/20261113/1004250501/flavio-cobolli-finalista-roland-garros-sobre-ferrero-ancelotti-guardiola-siempre-ayuda-jugadores-mejorar-probamos-otros-entrenadores-nunca-momento-adecuado.html",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On hoping to hire Juan Carlos Ferrero as coach",
+   "sourceHash": "0e66ac0435500e43",
+   "publishedAt": "2026-11-13T09:12:18.799Z",
+   "file": "news-ticker/tour-2026.json"
+  },
   {
    "id": "quote-30218ddb08b83d",
    "type": "quote",
@@ -265,8 +296,12 @@
     "minutes": 149
    },
    "category": "Statistics",
-   "text": "Lorenzo Musetti beat Ugo Humbert in their first meeting, 7–6, 3–6, 6–4 in the QF. Set 1 went to a tiebreak, won by Musetti. Humbert struggled on his first serve, winning 69% of the points (45 of 65), compared with his 77% average on hard over the last 52 weeks, and made 43 unforced errors against 28 winners. U. Humbert made 39 unforced errors, 20 of them on the backhand, against 22 for L. Musetti. U. Humbert came to the net 31 times and won 18 of those points. L. Musetti took a medical timeout at 0–0 in the second set. After the match he said: \"It's been a tough year for all the injuries, but now finally getting back in a good shape, so happy for that.\"",
-   "baseText": "Lorenzo Musetti beat Ugo Humbert in their first meeting, 7–6, 3–6, 6–4 in the QF. Set 1 went to a tiebreak, won by Musetti. Humbert struggled on his first serve, winning 69% of the points (45 of 65), compared with his 77% average on hard over the last 52 weeks, and made 43 unforced errors against 28 winners.",
+   "text": "Musetti beat Humbert in their first meeting, 7–6, 3–6, 6–4 in the QF. Musetti won the first set in a tiebreak. Humbert struggled on his first serve, winning 69% of the points (45 of 65), compared with his 77% average on hard over the last 52 weeks, and made 43 unforced errors against 28 winners. Humbert ended with an 8.3 serve quality and 39% unreturned serves.\n\nPhysically, it is something to follow. Musetti took a medical timeout at 0–0 in the second set. Musetti after the match: \"It's been a tough year for all the injuries, but now finally getting back in a good shape, so happy for that.\" Something to follow up for the next round.\n\nMusetti: performance rating 8.2 | W: 26 / UE: 23 | DR: 1.06\n\nHumbert: performance rating 7.4 | W: 28 / UE: 43 | DR: 0.95",
+   "baseText": "Musetti beat Humbert in their first meeting, 7–6, 3–6, 6–4 in the QF. Musetti won the first set in a tiebreak. Humbert struggled on his first serve, winning 69% of the points (45 of 65), compared with his 77% average on hard over the last 52 weeks, and made 43 unforced errors against 28 winners.",
+   "rating": [
+    "Musetti: performance rating 8.2 | W: 26 / UE: 23 | DR: 1.06",
+    "Humbert: performance rating 7.4 | W: 28 / UE: 43 | DR: 0.95"
+   ],
    "shotStats": {
     "p1": {
      "performance": 8.2,
@@ -327,11 +362,14 @@
     "agreed": "6 of 6 serve figures within 3 points of ours; set scores and break points equal"
    },
    "mto": [
-    "L. Musetti took a medical timeout at 0–0 in the second set. After the match he said: \"It's been a tough year for all the injuries, but now finally getting back in a good shape, so happy for that.\""
+    "Physically, it is something to follow.",
+    "Musetti took a medical timeout at 0–0 in the second set.",
+    "Musetti after the match: \"It's been a tough year for all the injuries, but now finally getting back in a good shape, so happy for that.\"",
+    "Something to follow up for the next round."
    ],
    "templateText": "L. Musetti beat U. Humbert in their first meeting, 7-6, 3-6, 6-4 in the quarter-finals. Set 1 went to a tiebreak, won by L. Musetti. U. Humbert struggled on his first serve, winning only 69% of the points (45 of 65), compared with his 77% average on hard over the last 52 weeks and made 43 unforced errors against 28 winners.",
    "voice": {
-    "version": 4,
+    "version": 5,
     "model": "claude-opus-5-5",
     "passed": 3,
     "total": 3,
@@ -397,10 +435,10 @@
    "sourceUrl": "pbp/12179396.json",
    "language": "en",
    "translated": false,
-   "sourceHash": "cee703105cedccc9",
+   "sourceHash": "8e71a5601812f263",
    "publishedAt": "2026-11-12T22:26:28.919Z",
-   "revisedAt": "2026-11-13T06:58:05.140Z",
-   "revision": 2,
+   "revisedAt": "2026-11-13T09:12:18.799Z",
+   "revision": 3,
    "file": "news-ticker/1681-2026.json"
   },
   {
@@ -710,8 +748,12 @@
     "minutes": 169
    },
    "category": "Statistics",
-   "text": "Tirante beat Alexander Shevchenko 7–6, 6–7, 6–3 in the QF in their first meeting. Tirante won the first set in a tiebreak. Shevchenko took the second set in a tiebreak. Tirante served well with 20 aces and won 86% of his first-serve points (56 of 65). He saved 3 of 3 break points. Along the way, he hit 47 winners and made 41 unforced errors. Shevchenko made 37 unforced errors against 27 winners. T. A. Tirante hit 20 forehand winners. A. Shevchenko came to the net 20 times and won 16 of those points. T. A. Tirante took a medical timeout at 2–3 in the second set.",
-   "baseText": "Tirante beat Alexander Shevchenko 7–6, 6–7, 6–3 in the QF in their first meeting. Tirante won the first set in a tiebreak. Shevchenko took the second set in a tiebreak. Tirante served well with 20 aces and won 86% of his first-serve points (56 of 65). He saved 3 of 3 break points. Along the way, he hit 47 winners and made 41 unforced errors. Shevchenko made 37 unforced errors against 27 winners.",
+   "text": "Tirante beat Shevchenko in their first meeting, 7–6, 6–7, 6–3 in the QF. Set 1 went to a tiebreak, won by Tirante. Set 2 went to a tiebreak, won by Shevchenko. Tirante served well with 20 aces and won 86% of his first-serve points (56 of 65). He saved 3 of 3 break points. Along the way, Tirante hit 47 winners and made 41 unforced errors. Shevchenko was error-prone, with 37 unforced errors against 27 winners.\n\nPhysically, it is something to follow. Tirante took a medical timeout at 2–3 in the second set. We do not know the reason. Something to follow up for the next round.\n\nTirante: performance rating 7.6 | W: 47 / UE: 41 | DR: 0.91\n\nShevchenko: performance rating 7.2 | W: 27 / UE: 37 | DR: 1.10",
+   "baseText": "Tirante beat Shevchenko in their first meeting, 7–6, 6–7, 6–3 in the QF. Set 1 went to a tiebreak, won by Tirante. Set 2 went to a tiebreak, won by Shevchenko. Tirante served well with 20 aces and won 86% of his first-serve points (56 of 65). He saved 3 of 3 break points. Along the way, Tirante hit 47 winners and made 41 unforced errors. Shevchenko was error-prone, with 37 unforced errors against 27 winners.",
+   "rating": [
+    "Tirante: performance rating 7.6 | W: 47 / UE: 41 | DR: 0.91",
+    "Shevchenko: performance rating 7.2 | W: 27 / UE: 37 | DR: 1.10"
+   ],
    "shotStats": {
     "p1": {
      "performance": 7.6,
@@ -772,11 +814,14 @@
     "agreed": "6 of 6 serve figures within 3 points of ours; set scores and break points equal"
    },
    "mto": [
-    "T. A. Tirante took a medical timeout at 2–3 in the second set."
+    "Physically, it is something to follow.",
+    "Tirante took a medical timeout at 2–3 in the second set.",
+    "We do not know the reason.",
+    "Something to follow up for the next round."
    ],
    "templateText": "T. A. Tirante beat A. Shevchenko in their first meeting, 7-6, 6-7, 6-3 in the quarter-finals. Set 1 went to a tiebreak, won by T. A. Tirante. Set 2 went to a tiebreak, won by A. Shevchenko. T. A. Tirante hit 20 aces and won 86% of his first-serve points (56 of 65). T. A. Tirante saved 3 of 3 break points. T. A. Tirante hit 47 winners and made 41 unforced errors. A. Shevchenko made 37 unforced errors against 27 winners.",
    "voice": {
-    "version": 4,
+    "version": 5,
     "model": "claude-opus-5-5",
     "passed": 7,
     "total": 7,
@@ -862,10 +907,10 @@
    "sourceUrl": "pbp/12179510.json",
    "language": "en",
    "translated": false,
-   "sourceHash": "db077afbf87960d0",
+   "sourceHash": "ab7cbe1e7c51b0ee",
    "publishedAt": "2026-11-12T17:27:19.503Z",
-   "revisedAt": "2026-11-13T06:58:05.140Z",
-   "revision": 2,
+   "revisedAt": "2026-11-13T09:12:18.799Z",
+   "revision": 3,
    "file": "news-ticker/1681-2026.json"
   },
   {
@@ -1052,8 +1097,12 @@
     "minutes": 114
    },
    "category": "Statistics",
-   "text": "Alejandro Tabilo beat Alex Michelsen for the 1st time in 2 meetings, 7–5, 7–6 in the QF. Set 2 went to a tiebreak, won by Tabilo. Tabilo returned well against the second serve, winning 60% of the points (15 of 25), compared with his 50% average on hard in his career. He hit 31 winners and made 27 unforced errors. A. Tabilo hit 19 forehand winners. A. Tabilo came to the net 24 times and won 20 of those points.",
-   "baseText": "Alejandro Tabilo beat Alex Michelsen for the 1st time in 2 meetings, 7–5, 7–6 in the QF. Set 2 went to a tiebreak, won by Tabilo. Tabilo returned well against the second serve, winning 60% of the points (15 of 25), compared with his 50% average on hard in his career. He hit 31 winners and made 27 unforced errors.",
+   "text": "Tabilo beat Michelsen for the 1st time in 2 meetings, 7–5, 7–6 in the QF. Set 2 went to a tiebreak, won by Tabilo. Tabilo returned well against the second serve, winning 60% of the points (15 of 25), compared with his 50% average on hard in his career. He hit 31 winners and made 27 unforced errors.\n\nTabilo: performance rating 8.1 | W: 31 / UE: 27 | DR: 1.02\n\nMichelsen: performance rating 7.5 | W: 24 / UE: 26 | DR: 0.98",
+   "baseText": "Tabilo beat Michelsen for the 1st time in 2 meetings, 7–5, 7–6 in the QF. Set 2 went to a tiebreak, won by Tabilo. Tabilo returned well against the second serve, winning 60% of the points (15 of 25), compared with his 50% average on hard in his career. He hit 31 winners and made 27 unforced errors.",
+   "rating": [
+    "Tabilo: performance rating 8.1 | W: 31 / UE: 27 | DR: 1.02",
+    "Michelsen: performance rating 7.5 | W: 24 / UE: 26 | DR: 0.98"
+   ],
    "shotStats": {
     "p1": {
      "performance": 7.5,
@@ -1115,7 +1164,7 @@
    },
    "templateText": "A. Tabilo beat A. Michelsen for the 1st time in 2 meetings, 7-5, 7-6 in the quarter-finals. Set 2 went to a tiebreak, won by A. Tabilo. A. Tabilo won 60% of the points against the second serve (15 of 25), compared with his 50% average on hard in his career. A. Tabilo hit 31 winners and made 27 unforced errors.",
    "voice": {
-    "version": 4,
+    "version": 5,
     "model": "claude-opus-5-5",
     "passed": 4,
     "total": 4,
@@ -1181,10 +1230,10 @@
    "sourceUrl": "pbp/12179386.json",
    "language": "en",
    "translated": false,
-   "sourceHash": "a52f0ae891639291",
+   "sourceHash": "4ebe1066734115fe",
    "publishedAt": "2026-11-12T14:22:24.864Z",
-   "revisedAt": "2026-11-13T06:58:05.140Z",
-   "revision": 1,
+   "revisedAt": "2026-11-13T09:12:18.799Z",
+   "revision": 2,
    "file": "news-ticker/1681-2026.json"
   },
   {
@@ -1501,8 +1550,12 @@
     "minutes": 83
    },
    "category": "Statistics",
-   "text": "Holger Rune beat Miomir Kecmanovic for the 4th time in 5 meetings, 2–6, 6–1, 6–4 in R2. He came from a set down. From 1–1 in the second set, Rune won 7 games in a row. Rune served well, landing 71% of his first serves, compared with his 62% average on hard over the last 52 weeks, and won 70% of his first-serve points (33 of 47). Against the second serve, Rune won 61% of the points (11 of 18), compared with his usual 50%. Rune saved 0 of 3 break points. He hit 41 winners and made 28 unforced errors. H. Rune made 27 unforced errors, 17 of them on the forehand, against 9 for M. Kecmanovic. H. Rune hit 24 forehand winners.",
-   "baseText": "Holger Rune beat Miomir Kecmanovic for the 4th time in 5 meetings, 2–6, 6–1, 6–4 in R2. He came from a set down. From 1–1 in the second set, Rune won 7 games in a row. Rune served well, landing 71% of his first serves, compared with his 62% average on hard over the last 52 weeks, and won 70% of his first-serve points (33 of 47). Against the second serve, Rune won 61% of the points (11 of 18), compared with his usual 50%. Rune saved 0 of 3 break points. He hit 41 winners and made 28 unforced errors.",
+   "text": "Rune beat Kecmanovic for the 4th time in 5 meetings, 2–6, 6–1, 6–4 in R2. Rune came from a set down. He won 7 games in a row from 1–1 in the second set. Rune served well, landing 71% of his first serves, compared with his 62% average on hard over the last 52 weeks, and won 70% of his first-serve points (33 of 47). Against the second serve, Rune was strong, winning 61% of the points (11 of 18), compared with his usual 50%. Rune saved 0 of 3 break points. He hit 41 winners and made 28 unforced errors.\n\nRune: performance rating 8.5 | W: 41 / UE: 28 | DR: 1.13\n\nKecmanovic: performance rating 7.7 | W: 18 / UE: 11 | DR: 0.88",
+   "baseText": "Rune beat Kecmanovic for the 4th time in 5 meetings, 2–6, 6–1, 6–4 in R2. Rune came from a set down. He won 7 games in a row from 1–1 in the second set. Rune served well, landing 71% of his first serves, compared with his 62% average on hard over the last 52 weeks, and won 70% of his first-serve points (33 of 47). Against the second serve, Rune was strong, winning 61% of the points (11 of 18), compared with his usual 50%. Rune saved 0 of 3 break points. He hit 41 winners and made 28 unforced errors.",
+   "rating": [
+    "Rune: performance rating 8.5 | W: 41 / UE: 28 | DR: 1.13",
+    "Kecmanovic: performance rating 7.7 | W: 18 / UE: 11 | DR: 0.88"
+   ],
    "shotStats": {
     "p1": {
      "performance": 7.7,
@@ -1564,7 +1617,7 @@
    },
    "templateText": "H. Rune beat M. Kecmanovic for the 4th time in 5 meetings, 2-6, 6-1, 6-4 in the second round. H. Rune came from a set down. H. Rune won 7 games in a row from 1-1 in the second set. H. Rune landed 71% of his first serves, compared with his 62% average on hard over the last 52 weeks and won 70% of his first-serve points (33 of 47). H. Rune won 61% of the points against the second serve (11 of 18), compared with his usual 50%. H. Rune saved 0 of 3 break points. H. Rune hit 41 winners and made 28 unforced errors.",
    "voice": {
-    "version": 4,
+    "version": 5,
     "model": "claude-opus-5-5",
     "passed": 7,
     "total": 7,
@@ -1661,10 +1714,10 @@
    "sourceUrl": "pbp/12179122.json",
    "language": "en",
    "translated": false,
-   "sourceHash": "84a77962a6330619",
+   "sourceHash": "8e1d10cbd656d679",
    "publishedAt": "2026-11-11T21:42:31.972Z",
-   "revisedAt": "2026-11-13T06:58:05.140Z",
-   "revision": 3,
+   "revisedAt": "2026-11-13T09:12:18.799Z",
+   "revision": 4,
    "file": "news-ticker/1681-2026.json"
   },
   {
@@ -1787,8 +1840,12 @@
     "minutes": 138
    },
    "category": "Statistics",
-   "text": "Alexander Shevchenko beat Casper Ruud for the 1st time in 3 meetings, 6–7, 6–4, 6–3 in R2. He came from a set down. The first set went to a tiebreak, won by Ruud. Shevchenko got broken when serving for the first set. He served well, hitting 13 aces and winning 79% of his first-serve points (48 of 61), compared with his 70% average on hard in his career. Against the first serve, Shevchenko won 13% of the points (7 of 56), compared with his usual 27%, and 61% of the points against the second serve (23 of 38), compared with his usual 49%. Shevchenko hit 50 winners and made 20 unforced errors. Ruud struggled to land his first serve, at 60%, compared with his 68% average on hard over the last 52 weeks. C. Ruud made 26 unforced errors, 16 of them on the forehand, against 16 for A. Shevchenko. A. Shevchenko hit 22 forehand winners. C. Ruud took a medical timeout at 5–6 in the first set. C. Ruud took a medical timeout at 0–0 in the second set.",
-   "baseText": "Alexander Shevchenko beat Casper Ruud for the 1st time in 3 meetings, 6–7, 6–4, 6–3 in R2. He came from a set down. The first set went to a tiebreak, won by Ruud. Shevchenko got broken when serving for the first set. He served well, hitting 13 aces and winning 79% of his first-serve points (48 of 61), compared with his 70% average on hard in his career. Against the first serve, Shevchenko won 13% of the points (7 of 56), compared with his usual 27%, and 61% of the points against the second serve (23 of 38), compared with his usual 49%. Shevchenko hit 50 winners and made 20 unforced errors. Ruud struggled to land his first serve, at 60%, compared with his 68% average on hard over the last 52 weeks.",
+   "text": "Shevchenko beat Ruud for the 1st time in 3 meetings, 6–7, 6–4, 6–3 in R2. He came from a set down. Ruud won the first set in a tiebreak. Shevchenko got broken when serving for the first set. He served well, hitting 13 aces and winning 79% of his first-serve points (48 of 61), compared with his 70% average on hard in his career. On return, Shevchenko won 13% of the points against the first serve (7 of 56), compared with his usual 27%, and 61% of the points against the second serve (23 of 38), compared with his usual 49%. Along the way, Shevchenko hit 50 winners and made 20 unforced errors. Ruud struggled to land his first serve, at 60%, compared with his 68% average on hard over the last 52 weeks. Shevchenko was clearly the better player from the baseline (46–35).\n\nPhysically, it is something to follow. Ruud took two medical timeouts: at 5–6 in the first set and at 0–0 in the second set. We do not know the reason. Maybe something to follow up for the next tournaments of Ruud.\n\nShevchenko: performance rating 8.6 | W: 50 / UE: 20 | DR: 1.09\n\nRuud: performance rating 8.0 | W: 43 / UE: 30 | DR: 0.92",
+   "baseText": "Shevchenko beat Ruud for the 1st time in 3 meetings, 6–7, 6–4, 6–3 in R2. He came from a set down. Ruud won the first set in a tiebreak. Shevchenko got broken when serving for the first set. He served well, hitting 13 aces and winning 79% of his first-serve points (48 of 61), compared with his 70% average on hard in his career. On return, Shevchenko won 13% of the points against the first serve (7 of 56), compared with his usual 27%, and 61% of the points against the second serve (23 of 38), compared with his usual 49%. Along the way, Shevchenko hit 50 winners and made 20 unforced errors. Ruud struggled to land his first serve, at 60%, compared with his 68% average on hard over the last 52 weeks.",
+   "rating": [
+    "Shevchenko: performance rating 8.6 | W: 50 / UE: 20 | DR: 1.09",
+    "Ruud: performance rating 8.0 | W: 43 / UE: 30 | DR: 0.92"
+   ],
    "shotStats": {
     "p1": {
      "performance": 8.6,
@@ -1849,12 +1906,14 @@
     "agreed": "6 of 6 serve figures within 3 points of ours; set scores and break points equal"
    },
    "mto": [
-    "C. Ruud took a medical timeout at 5–6 in the first set.",
-    "C. Ruud took a medical timeout at 0–0 in the second set."
+    "Physically, it is something to follow.",
+    "Ruud took two medical timeouts: at 5–6 in the first set and at 0–0 in the second set.",
+    "We do not know the reason.",
+    "Maybe something to follow up for the next tournaments of Ruud."
    ],
    "templateText": "A. Shevchenko beat C. Ruud for the 1st time in 3 meetings, 6-7, 6-4, 6-3 in the second round. A. Shevchenko came from a set down. Set 1 went to a tiebreak, won by C. Ruud. A. Shevchenko was broken when serving for the first set. A. Shevchenko hit 13 aces and won 79% of his first-serve points (48 of 61), compared with his 70% average on hard in his career. A. Shevchenko won 13% of the points against the first serve (7 of 56), compared with his usual 27% and 61% of the points against the second serve (23 of 38), compared with his usual 49%. A. Shevchenko hit 50 winners and made 20 unforced errors. C. Ruud struggled to land his first serve, at only 60%, compared with his 68% average on hard over the last 52 weeks.",
    "voice": {
-    "version": 4,
+    "version": 5,
     "model": "claude-opus-5-5",
     "passed": 8,
     "total": 8,
@@ -1969,10 +2028,10 @@
    "sourceUrl": "pbp/12178945.json",
    "language": "en",
    "translated": false,
-   "sourceHash": "a01aeda5668d016d",
+   "sourceHash": "795a3490f2c29467",
    "publishedAt": "2026-11-11T21:15:06.285Z",
-   "revisedAt": "2026-11-13T06:58:05.140Z",
-   "revision": 4,
+   "revisedAt": "2026-11-13T09:12:18.799Z",
+   "revision": 5,
    "file": "news-ticker/1681-2026.json"
   },
   {
@@ -2038,39 +2097,6 @@
    "publishedAt": "2026-11-12T03:03:12.953Z",
    "topic": "On a newcomer accepting the team's existing methods",
    "revisedAt": "2026-11-13T07:43:17.649Z",
-   "revision": 1,
-   "file": "news-ticker/tour-2026.json"
-  },
-  {
-   "id": "quote-c2cd699681d090",
-   "type": "quote",
-   "playerId": "2072",
-   "opponentId": null,
-   "player": "J. Sinner",
-   "opponent": null,
-   "tournament": "ATP Tour",
-   "tournamentKey": "tour",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-11T19:05:00.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Interviews",
-   "context": null,
-   "eventKey": null,
-   "won": null,
-   "text": "The truth is that for the first time in my career I don't have things under my own control",
-   "originalText": "Die Wahrheit ist, dass ich zum ersten Mal in meiner Karriere die Dinge nicht selbst unter Kontrolle habe",
-   "language": "de",
-   "translated": true,
-   "translationModel": "claude-opus-5-5",
-   "sourceName": "tennisnet.com",
-   "sourceUrl": "https://www.tennisnet.com/news/atp-sinners-wendepunkt-zwischen-kontrollverlust-und-angriffslust",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "sourceHash": "81c14c987c7e41ca",
-   "publishedAt": "2026-11-12T03:03:12.953Z",
-   "topic": "On lacking control for the first time ever",
-   "revisedAt": "2026-11-13T08:12:25.247Z",
    "revision": 1,
    "file": "news-ticker/tour-2026.json"
   }
