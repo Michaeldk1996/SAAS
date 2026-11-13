@@ -119,18 +119,15 @@ if (process.env.DISCOVER_URL) {
   const DOCS = `[document, ...[...document.querySelectorAll('iframe')].map((f) => { try { return f.contentDocument; } catch (e) { return null; } }).filter(Boolean)]`;
   const frameText = async () => ev(`(() => ${DOCS}.map((d) => (d.body ? d.body.innerText : '').replace(/\\s+/g, ' ').slice(0, 6000)))()`);
   const findIn = async (re) => ev(`(() => { const fr = [null, ...document.querySelectorAll('iframe')]; for (const f of fr) { let d; try { d = f ? f.contentDocument : document; } catch (e) { continue; } if (!d) continue; const off = f ? f.getBoundingClientRect() : { x: 0, y: 0 }; const e = [...d.querySelectorAll('body *')].find((x) => x.children.length === 0 && ${re}.test((x.textContent || '').trim()) && x.getBoundingClientRect().width > 0); if (e) { const r = e.getBoundingClientRect(); return [off.x + r.x + r.width / 2, off.y + r.y + r.height / 2]; } } return null; })()`);
-  for (const fx of [0.933, 0.95, 0.972]) {
-    await send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: vr[0] + vr[2] / 2 + fx * 10, y: vr[1] + vr[3] / 2 }); await sleep(700);
-    await clickXY(vr[0] + vr[2] * fx, vr[1] + vr[3] * 0.281); await sleep(4000);
-    const t = (await frameText()) || [];
-    console.log('discover: clicked bars at', fx, '· panel open', /live stats|head 2 head|insights/i.test(t.join(' ')));
-    if (/live stats|head 2 head|insights/i.test(t.join(' '))) break;
-  }
-  await shot('d1_panel');
-  console.log('discover: STATS tab text', JSON.stringify(await frameText()));
-  const ins = await findIn('/^insights$/i');
-  console.log('discover: INSIGHTS tab at', JSON.stringify(ins));
-  if (ins) { await clickXY(ins[0], ins[1]); await sleep(5000); await shot('d2_insights'); console.log('discover: INSIGHTS text', JSON.stringify(await frameText())); }
+  // the overlay is a cross-origin iframe over the whole player: positions are fractions of ITS box; its text cannot be
+  // read from the page, so the panel is kept as pictures
+  const fr = await ev(`(() => { const f = [...document.querySelectorAll('iframe')].map((x) => x.getBoundingClientRect()).filter((r) => r.width > 600).sort((a, b) => b.width - a.width)[0]; return f ? [f.x, f.y, f.width, f.height] : null; })()`);
+  console.log('discover: overlay box', JSON.stringify(fr));
+  const at = (fx, fy) => [fr[0] + fr[2] * fx, fr[1] + fr[3] * fy];
+  const hover = async () => { const [x, y] = at(0.5, 0.5); await send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: x + Math.random() * 8, y }); await sleep(700); };
+  await hover(); { const [x, y] = at(0.933, 0.281); await clickXY(x, y); } await sleep(5000); await shot('d1_panel');
+  { const [x, y] = at(0.89, 0.081); await clickXY(x, y); } await sleep(5000); await shot('d2_insights_0');
+  for (let k = 1; k <= 4; k++) { const [x, y] = at(0.89, 0.6); await send('Input.dispatchMouseEvent', { type: 'mouseWheel', x, y, deltaX: 0, deltaY: 330 }); await sleep(1500); await shot('d2_insights_' + k); }
   console.log('discover: iframes', JSON.stringify(await ev(`[...document.querySelectorAll('iframe')].map((f) => (f.src || f.id || f.className || '').slice(0, 160) + ' ' + Math.round(f.getBoundingClientRect().width) + 'x' + Math.round(f.getBoundingClientRect().height) + ' sameOrigin=' + (() => { try { return !!f.contentDocument; } catch (e) { return false; } })())`)));
   console.log('discover: requests after opening', JSON.stringify([...new Set(reqs.slice(before))].slice(0, 60)));
   spawnSync('tar', ['-czf', '/tmp/frames.tgz', '-C', '/tmp', 'frames']);
