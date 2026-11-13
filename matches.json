@@ -2744,22 +2744,11 @@
         }
       ]
     },
-    "live": true,
-    "liveStatus": "Set 2",
-    "liveScore": [
-      {
-        "set": 1,
-        "p1": 7.7,
-        "p2": 6.5
-      },
-      {
-        "set": 2,
-        "p1": 2,
-        "p2": 5
-      }
-    ],
-    "liveGameScore": "30 - 30",
-    "liveServer": "p1",
+    "live": false,
+    "liveStatus": null,
+    "liveScore": null,
+    "liveGameScore": null,
+    "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/2849_l-musetti.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1105_u-humbert.jpg",
     "tournamentKey": "1681",
@@ -4593,7 +4582,31 @@
       "edgeVsPinnacleP1": 0.0045,
       "edgeVsPinnacleP2": -0.0045,
       "ts": "2026-11-12T13:04:09.319Z"
-    }
+    },
+    "retired": false,
+    "walkover": false,
+    "finalScore": {
+      "display": "7-6(5), 3-6, 6-4",
+      "sets": [
+        {
+          "p1": 7,
+          "p2": 6
+        },
+        {
+          "p1": 3,
+          "p2": 6
+        },
+        {
+          "p1": 6,
+          "p2": 4
+        }
+      ],
+      "p1Sets": 2,
+      "p2Sets": 1,
+      "winner": "p1"
+    },
+    "interrupted": false,
+    "partialScore": null
   },
   {
     "id": "upcoming-12179750",
