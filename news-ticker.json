@@ -1,6 +1,18 @@
 {
- "generatedAt": "2026-11-13T07:43:17.649Z",
+ "generatedAt": "2026-11-13T08:12:25.247Z",
  "tournaments": [
+  {
+   "key": "tour",
+   "season": "2026",
+   "name": "ATP Tour",
+   "file": "news-ticker/tour-2026.json",
+   "items": 37,
+   "byType": {
+    "quote": 37
+   },
+   "latestTimestamp": "2026-11-13T03:00:00.000Z",
+   "updatedAt": "2026-11-13T08:12:25.247Z"
+  },
   {
    "key": "1681",
    "season": "2026",
@@ -13,19 +25,7 @@
     "status": 7
    },
    "latestTimestamp": "2026-11-12T22:59:16.000Z",
-   "updatedAt": "2026-11-13T07:43:17.649Z"
-  },
-  {
-   "key": "tour",
-   "season": "2026",
-   "name": "ATP Tour",
-   "file": "news-ticker/tour-2026.json",
-   "items": 36,
-   "byType": {
-    "quote": 36
-   },
-   "latestTimestamp": "2026-11-12T18:43:35.346Z",
-   "updatedAt": "2026-11-13T07:43:17.649Z"
+   "updatedAt": "2026-11-13T08:12:25.247Z"
   },
   {
    "key": "1725",
@@ -51,6 +51,37 @@
   }
  ],
  "latest": [
+  {
+   "id": "quote-30218ddb08b83d",
+   "type": "quote",
+   "playerId": "1894",
+   "opponentId": null,
+   "player": "T. Paul",
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-13T03:00:00.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "Dubai is one of my favourite cities, one of the most beautiful cities,",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "The National",
+   "sourceUrl": "https://www.thenationalnews.com/sport/combat-sports/2026/11/13/jake-paul-in-dubai-boxings-biggest-disruptor-brings-his-ambitious-brand-to-the-uae/",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On Dubai hosting his Christmas Eve fight",
+   "sourceHash": "625bdaa6bba70f34",
+   "publishedAt": "2026-11-13T08:12:25.247Z",
+   "file": "news-ticker/tour-2026.json"
+  },
   {
    "id": "quote-78abe536e5ac8e",
    "type": "quote",
@@ -2036,42 +2067,12 @@
    "sourceUrl": "https://www.tennisnet.com/news/atp-sinners-wendepunkt-zwischen-kontrollverlust-und-angriffslust",
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the original-language text of the fetched page",
-   "sourceHash": "0de86694ec62f1c3",
+   "sourceHash": "81c14c987c7e41ca",
    "publishedAt": "2026-11-12T03:03:12.953Z",
-   "file": "news-ticker/tour-2026.json"
-  },
-  {
-   "id": "quote-209b74f9279c63",
-   "type": "quote",
-   "playerId": "2832",
-   "opponentId": "1103",
-   "player": "T. Fritz",
-   "opponent": "C. Norrie",
-   "tournament": "Stockholm",
-   "tournamentKey": "1681",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-11T18:57:00.000Z",
-   "timestampKind": "observed (the site's own publication time)",
-   "category": "Quotes",
-   "context": "after beating C. Norrie",
-   "eventKey": "12178503",
-   "won": true,
-   "text": "I feel like there were a lot of times in the first set when I lost some big points, I had some chances, … Towards the end of that set, I started winning some of those big points. I played really well, got the momentum and finished the set.",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "ATP Tour daily report (via the official tournament site)",
-   "sourceUrl": "https://www.stockholmopen.se/en/tournament/nyheter/stockholm-2026-wednesday-report",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "sourceHash": "1967aef683b54cb7",
-   "publishedAt": "2026-11-11T21:15:06.285Z",
-   "topic": "On turning the first set around",
-   "revisedAt": "2026-11-13T07:43:17.649Z",
+   "topic": "On lacking control for the first time ever",
+   "revisedAt": "2026-11-13T08:12:25.247Z",
    "revision": 1,
-   "file": "news-ticker/1681-2026.json"
+   "file": "news-ticker/tour-2026.json"
   }
  ]
 }
