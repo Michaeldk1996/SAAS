@@ -1,31 +1,31 @@
 {
- "generatedAt": "2026-11-13T14:10:57.222Z",
+ "generatedAt": "2026-11-13T16:44:40.867Z",
  "source": "matches.json git history: oddsMovement.books.Pinnacle (Oddspapi pinnacle, to 2026-09-02) and oddsMovement.chart.books[\"Pinnacle +30s\"] (Oddspapi pinnacle+30, from 2026-09-23)",
  "rule": "each side = last tick at or before the actual start (the earlier of Oddspapi trueStart and the card-state start: Oddspapi, the live-flip lower bound, the Bet105 switch or the first point — founder 2026-11-08; a cut at Oddspapi start before a verified start counts at the verified start only when the same tick, seen within 60 min and within 1.5pp of the Bet105 close, else it stays held back); both sides required; dropped when no unique actual start. seenAt = our last capture read before the start that confirmed the close (founder 2026-10-28); age = start - (seenAt or at)",
  "scannedThrough": {
-  "commit": "ef7f39793fbabcbfa478af9759205b9dc7459b6e",
-  "at": "2026-11-13T14:00:23Z"
+  "commit": "badd398826eaafd39bf08b8badf51e7c24b0dc07",
+  "at": "2026-11-13T15:15:14Z"
  },
- "commitsScanned": 6771,
+ "commitsScanned": 6777,
  "lastRun": {
-  "from": "2026-11-13T13:30:13Z",
-  "snapshots": 5,
-  "added": 0,
-  "replaced": 1,
+  "from": "2026-11-13T14:00:23Z",
+  "snapshots": 7,
+  "added": 1,
+  "replaced": 0,
   "seenBackfilled": 0,
   "earlierCutBackfilled": 0,
   "series": 18,
-  "kept": 15,
+  "kept": 16,
   "bySource": {
-   "bet105-switch": 12,
+   "bet105-switch": 13,
    "first-point": 2,
    "oddspapi": 1
   },
   "byBook": {
-   "Pinnacle +30s": 15
+   "Pinnacle +30s": 16
   },
   "dropped": {
-   "noStart": 3
+   "noStart": 2
   }
  },
  "stats": {
@@ -16051,6 +16051,28 @@
    "o2": 2.15,
    "oAt": "2026-11-12T20:46:37.793Z",
    "winner": null
+  },
+  {
+   "eventKey": 12179838,
+   "date": "2026-11-13",
+   "p1Key": 2832,
+   "p2Key": 2849,
+   "p1Name": "T. Fritz",
+   "p2Name": "L. Musetti",
+   "p1": 1.666,
+   "p2": 2.36,
+   "at": "2026-11-13T13:47:30.097Z",
+   "trueStart": "2026-11-13T16:02:27.000Z",
+   "startSource": "bet105-switch",
+   "book": "Pinnacle +30s",
+   "round": "ATP Stockholm - Semi-finals",
+   "qualifying": false,
+   "event": "ATP Stockholm",
+   "o1": 1.531,
+   "o2": 2.66,
+   "oAt": "2026-11-13T00:06:17.515Z",
+   "winner": null,
+   "seenAt": "2026-11-13T13:52:46.000Z"
   }
  ]
 }
