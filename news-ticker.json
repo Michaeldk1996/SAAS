@@ -1,31 +1,31 @@
 {
- "generatedAt": "2026-11-13T20:41:38.767Z",
+ "generatedAt": "2026-11-13T23:52:23.101Z",
  "tournaments": [
   {
    "key": "tour",
    "season": "2026",
    "name": "ATP Tour",
    "file": "news-ticker/tour-2026.json",
-   "items": 52,
+   "items": 53,
    "byType": {
-    "quote": 52
+    "quote": 53
    },
    "latestTimestamp": "2026-11-13T20:00:00.000Z",
-   "updatedAt": "2026-11-13T20:41:38.767Z"
+   "updatedAt": "2026-11-13T23:52:23.101Z"
   },
   {
    "key": "1681",
    "season": "2026",
    "name": "Stockholm",
    "file": "news-ticker/1681-2026.json",
-   "items": 122,
+   "items": 123,
    "byType": {
-    "quote": 87,
+    "quote": 88,
     "report": 28,
     "status": 7
    },
    "latestTimestamp": "2026-11-13T19:25:44.000Z",
-   "updatedAt": "2026-11-13T20:41:38.767Z"
+   "updatedAt": "2026-11-13T23:52:23.101Z"
   },
   {
    "key": "1725",
@@ -300,6 +300,38 @@
    "file": "news-ticker/tour-2026.json"
   },
   {
+   "id": "quote-e377c74361112a",
+   "type": "quote",
+   "playerId": "2832",
+   "opponentId": "2849",
+   "player": "T. Fritz",
+   "opponent": "L. Musetti",
+   "tournament": "Stockholm",
+   "tournamentKey": "1681",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-13T17:20:00.000Z",
+   "timestampKind": "observed (Tennis TV published the clip then)",
+   "category": "Quotes",
+   "context": "after beating L. Musetti",
+   "eventKey": "12179838",
+   "won": true,
+   "text": "But the short answer is I just was a lot more aggressive and took on a lot more shots that are a bit uncomfortable for me. But I felt like against him, I have to if I wanted to win.",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "On-court interview",
+   "sourceUrl": "https://www.tennistv.com/videos/4608832/stockholm-2026-sf-taylor-fritz-interview",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the clip's audio, transcribed by the interviews worker",
+   "interview": "on-court",
+   "topic": "On what he changed",
+   "sourceHash": "8ec6e696d3d28739",
+   "publishedAt": "2026-11-13T23:52:23.101Z",
+   "file": "news-ticker/1681-2026.json"
+  },
+  {
    "id": "report-12179838",
    "type": "report",
    "playerId": "2832",
@@ -504,8 +536,17 @@
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the original-language text of the fetched page",
    "topic": "On avenging his Lyon final loss to Musetti",
-   "sourceHash": "c643ed5c0626a7ae",
+   "alsoReportedBy": [
+    {
+     "sourceName": "On-court interview",
+     "sourceUrl": "https://www.tennistv.com/videos/4608832/stockholm-2026-sf-taylor-fritz-interview",
+     "language": "en"
+    }
+   ],
+   "sourceHash": "ac0917b377576e64",
    "publishedAt": "2026-11-13T18:20:32.080Z",
+   "revisedAt": "2026-11-13T23:52:23.101Z",
+   "revision": 1,
    "file": "news-ticker/1681-2026.json"
   },
   {
@@ -970,6 +1011,37 @@
    "revisedAt": "2026-11-13T20:41:38.767Z",
    "revision": 2,
    "file": "news-ticker/1681-2026.json"
+  },
+  {
+   "id": "quote-4055f5fe362d3a",
+   "type": "quote",
+   "playerId": "2072",
+   "opponentId": null,
+   "player": "J. Sinner",
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-13T14:31:37.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "The truth is that for the first time in my career I'm not in control of the situation. It's strange, a feeling I don't like",
+   "originalText": "Die Wahrheit ist, dass ich zum ersten Mal in meiner Karriere nicht die Kontrolle über die Situation habe. Das ist seltsam, ein Gefühl, das mir nicht gefällt",
+   "language": "de",
+   "translated": true,
+   "translationModel": "claude-opus-5-5",
+   "sourceName": "tennis MAGAZIN",
+   "sourceUrl": "https://www.tennismagazin.de/news/schwierigste-phase-seiner-karriere-jannik-sinner-und-der-grosse-umbruch/",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On losing control amid knee and tonsil problems",
+   "sourceHash": "8010bb069db8ec0d",
+   "publishedAt": "2026-11-13T23:52:23.101Z",
+   "file": "news-ticker/tour-2026.json"
   },
   {
    "id": "quote-47d31e04920035",
@@ -1676,225 +1748,6 @@
    "topic": "On the match",
    "sourceHash": "4128546b709c404c",
    "publishedAt": "2026-11-13T07:43:17.649Z",
-   "file": "news-ticker/1681-2026.json"
-  },
-  {
-   "id": "report-12179510",
-   "type": "report",
-   "playerId": "366",
-   "opponentId": "566",
-   "player": "T. A. Tirante",
-   "opponent": "A. Shevchenko",
-   "tournament": "Stockholm",
-   "tournamentKey": "1681",
-   "season": "2026",
-   "stage": "main draw",
-   "round": "quarter-finals",
-   "eventKey": "12179510",
-   "timestamp": "2026-11-12T17:10:51.028Z",
-   "timestampKind": "observed",
-   "observed": {
-    "endedAt": "2026-11-12T17:10:51.028Z",
-    "startedAt": "2026-11-12T14:21:50.483Z",
-    "minutes": 169
-   },
-   "category": "Statistics",
-   "text": "Tirante beat Shevchenko in their first meeting, 7–6, 6–7, 6–3 in the QF. Set 1 went to a tiebreak, won by Tirante. Set 2 went to a tiebreak, won by Shevchenko. Tirante served well with 20 aces and won 86% of his first-serve points (56 of 65). He saved 3 of 3 break points. Along the way, Tirante hit 47 winners and made 41 unforced errors. Shevchenko was error-prone, with 37 unforced errors against 27 winners.\n\nPhysically, it is something to follow. Tirante took a medical timeout at 2–3 in the second set. We do not know the reason. Something to follow up for the next round.\n\nTirante: performance rating 7.6 | W: 47 / UE: 41 | DR: 0.91\n\nShevchenko: performance rating 7.2 | W: 27 / UE: 37 | DR: 1.10",
-   "baseText": "Tirante beat Shevchenko in their first meeting, 7–6, 6–7, 6–3 in the QF. Set 1 went to a tiebreak, won by Tirante. Set 2 went to a tiebreak, won by Shevchenko. Tirante served well with 20 aces and won 86% of his first-serve points (56 of 65). He saved 3 of 3 break points. Along the way, Tirante hit 47 winners and made 41 unforced errors. Shevchenko was error-prone, with 37 unforced errors against 27 winners.",
-   "rating": [
-    "Tirante: performance rating 7.6 | W: 47 / UE: 41 | DR: 0.91",
-    "Shevchenko: performance rating 7.2 | W: 27 / UE: 37 | DR: 1.10"
-   ],
-   "shotStats": {
-    "p1": {
-     "performance": 7.6,
-     "serveQuality": 8.4,
-     "unreturnedPct": 26,
-     "firstInPct": 56,
-     "firstWonPct": 86,
-     "secondWonPct": 54,
-     "secondSpeed": 160,
-     "returnQuality": 6.6,
-     "fhWinners": 20,
-     "bhWinners": 7,
-     "fhUnforced": 28,
-     "bhUnforced": 10,
-     "forcedErrors": 40,
-     "baselineWon": 60,
-     "under9Won": 102,
-     "over9Won": 8,
-     "bpWon": [
-      1,
-      5
-     ],
-     "netWon": [
-      14,
-      18
-     ]
-    },
-    "p2": {
-     "performance": 7.2,
-     "serveQuality": 8,
-     "unreturnedPct": 27,
-     "firstInPct": 72,
-     "firstWonPct": 77,
-     "secondWonPct": 68,
-     "secondSpeed": 157,
-     "returnQuality": 7.5,
-     "fhWinners": 12,
-     "bhWinners": 7,
-     "fhUnforced": 19,
-     "bhUnforced": 16,
-     "forcedErrors": 26,
-     "baselineWon": 58,
-     "under9Won": 96,
-     "over9Won": 12,
-     "bpWon": [
-      0,
-      3
-     ],
-     "netWon": [
-      16,
-      20
-     ]
-    },
-    "postedAt": "2026-11-12T17:49:59.000Z",
-    "readAt": "2026-11-13T06:34:56.105Z",
-    "sourceName": "ATP broadcast match statistics (via @ATP_Entry)",
-    "sourceUrl": "https://x.com/ATP_Entry/status/2120937163487629537",
-    "agreed": "6 of 6 serve figures within 3 points of ours; set scores and break points equal"
-   },
-   "mto": [
-    "Physically, it is something to follow.",
-    "Tirante took a medical timeout at 2–3 in the second set.",
-    "We do not know the reason.",
-    "Something to follow up for the next round."
-   ],
-   "templateText": "T. A. Tirante beat A. Shevchenko in their first meeting, 7-6, 6-7, 6-3 in the quarter-finals. Set 1 went to a tiebreak, won by T. A. Tirante. Set 2 went to a tiebreak, won by A. Shevchenko. T. A. Tirante hit 20 aces and won 86% of his first-serve points (56 of 65). T. A. Tirante saved 3 of 3 break points. T. A. Tirante hit 47 winners and made 41 unforced errors. A. Shevchenko made 37 unforced errors against 27 winners.",
-   "voice": {
-    "version": 5,
-    "model": "claude-opus-5-5",
-    "passed": 7,
-    "total": 7,
-    "failures": []
-   },
-   "fields": {
-    "score": "7-6, 6-7, 6-3",
-    "round": "quarter-finals",
-    "retired": false,
-    "h2h": {
-     "a": 1,
-     "b": 0,
-     "n": 1
-    },
-    "durationMinutes": 169,
-    "facts": {
-     "tiebreakSets": [
-      {
-       "set": 1,
-       "winner": "p1"
-      },
-      {
-       "set": 2,
-       "winner": "p2"
-      }
-     ]
-    },
-    "standouts": [
-     {
-      "player": "winner",
-      "tone": "good",
-      "metric": "aces",
-      "value": 20
-     },
-     {
-      "player": "winner",
-      "tone": "good",
-      "metric": "firstWon",
-      "value": 86,
-      "won": 56,
-      "total": 65
-     },
-     {
-      "player": "winner",
-      "tone": "good",
-      "metric": "breakPoints",
-      "saved": 3,
-      "faced": 3
-     },
-     {
-      "player": "winner",
-      "tone": "good",
-      "metric": "winnersErrors",
-      "winners": 47,
-      "unforcedErrors": 41
-     },
-     {
-      "player": "loser",
-      "tone": "bad",
-      "metric": "winnersErrors",
-      "winners": 27,
-      "unforcedErrors": 37
-     }
-    ],
-    "winner": {
-     "aces": 20,
-     "winners": 47,
-     "unforcedErrors": 41,
-     "breakPointsSaved": 3,
-     "breakPointsFaced": 3,
-     "breakPointsSource": "box score"
-    },
-    "loser": {
-     "aces": 8,
-     "winners": 27,
-     "unforcedErrors": 37,
-     "breakPointsSaved": 4,
-     "breakPointsFaced": 5,
-     "breakPointsSource": "box score"
-    }
-   },
-   "sourceName": "Stennisfy match data (api-tennis box score and point-by-point)",
-   "sourceUrl": "pbp/12179510.json",
-   "language": "en",
-   "translated": false,
-   "sourceHash": "ab7cbe1e7c51b0ee",
-   "publishedAt": "2026-11-12T17:27:19.503Z",
-   "revisedAt": "2026-11-13T09:12:18.799Z",
-   "revision": 3,
-   "file": "news-ticker/1681-2026.json"
-  },
-  {
-   "id": "quote-021fb9860edec8",
-   "type": "quote",
-   "playerId": "2849",
-   "opponentId": null,
-   "player": "L. Musetti",
-   "opponent": null,
-   "tournament": "Stockholm",
-   "tournamentKey": "1681",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-12T16:51:00.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Injuries",
-   "context": null,
-   "eventKey": null,
-   "won": null,
-   "text": "It's been a difficult year for him. I know he worked extremely hard during his rehabilitation and did everything he could to get back in shape as quickly as possible. I'm really happy for him. He's a very hard worker and I know that everyone on the tour was affected when he suffered that serious injury. So it's really nice to see him smiling again and winning a match. I wish him all the best",
-   "originalText": "Cela a été une année diffi­cile pour lui. Je sais qu’il a énor­mé­ment travaillé pendant sa réédu­ca­tion et qu’il a tout fait pour retrouver sa forme le plus rapi­de­ment possible. Je suis vrai­ment heureux pour lui. C’est un très gros travailleur et je sais que tout le monde sur le circuit a été touché lors­qu’il a subi cette grave bles­sure. C’est donc vrai­ment agréable de le voir sourire à nouveau et remporter un match. Je lui souhaite le meilleur",
-   "language": "fr",
-   "translated": true,
-   "translationModel": "claude-opus-5-5",
-   "sourceName": "We Love Tennis",
-   "sourceUrl": "https://www.welovetennis.fr/atp/musetti-rend-hommage-a-ce-top-10-apres-sa-grave-blessure-cest-un-tres-gros-travailleur-et-je-sais-que-tout-le-monde-sur-le-circuit-a-ete-touche-lorsquil-a-subi-cette-grave-blessure",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "sourceHash": "a8e140e3ce2b1c0d",
-   "publishedAt": "2026-11-12T17:27:19.503Z",
-   "topic": "On a fellow player's comeback from injury",
-   "revisedAt": "2026-11-13T07:43:17.649Z",
-   "revision": 1,
    "file": "news-ticker/1681-2026.json"
   }
  ]

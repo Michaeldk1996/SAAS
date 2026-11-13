@@ -2,7 +2,7 @@
  "tournament": "Stockholm",
  "tournamentKey": "1681",
  "season": "2026",
- "updatedAt": "2026-11-13T20:41:38.767Z",
+ "updatedAt": "2026-11-13T23:52:23.101Z",
  "items": [
   {
    "id": "quote-6696883514bec5",
@@ -63,6 +63,37 @@
    "topic": "On his recent Lyon final loss to Musetti",
    "sourceHash": "74fb7c3678d2c805",
    "publishedAt": "2026-11-13T19:53:22.427Z"
+  },
+  {
+   "id": "quote-e377c74361112a",
+   "type": "quote",
+   "playerId": "2832",
+   "opponentId": "2849",
+   "player": "T. Fritz",
+   "opponent": "L. Musetti",
+   "tournament": "Stockholm",
+   "tournamentKey": "1681",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-13T17:20:00.000Z",
+   "timestampKind": "observed (Tennis TV published the clip then)",
+   "category": "Quotes",
+   "context": "after beating L. Musetti",
+   "eventKey": "12179838",
+   "won": true,
+   "text": "But the short answer is I just was a lot more aggressive and took on a lot more shots that are a bit uncomfortable for me. But I felt like against him, I have to if I wanted to win.",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "On-court interview",
+   "sourceUrl": "https://www.tennistv.com/videos/4608832/stockholm-2026-sf-taylor-fritz-interview",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the clip's audio, transcribed by the interviews worker",
+   "interview": "on-court",
+   "topic": "On what he changed",
+   "sourceHash": "8ec6e696d3d28739",
+   "publishedAt": "2026-11-13T23:52:23.101Z"
   },
   {
    "id": "report-12179838",
@@ -268,8 +299,17 @@
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the original-language text of the fetched page",
    "topic": "On avenging his Lyon final loss to Musetti",
-   "sourceHash": "c643ed5c0626a7ae",
-   "publishedAt": "2026-11-13T18:20:32.080Z"
+   "alsoReportedBy": [
+    {
+     "sourceName": "On-court interview",
+     "sourceUrl": "https://www.tennistv.com/videos/4608832/stockholm-2026-sf-taylor-fritz-interview",
+     "language": "en"
+    }
+   ],
+   "sourceHash": "ac0917b377576e64",
+   "publishedAt": "2026-11-13T18:20:32.080Z",
+   "revisedAt": "2026-11-13T23:52:23.101Z",
+   "revision": 1
   },
   {
    "id": "quote-430d2eb676002c",
