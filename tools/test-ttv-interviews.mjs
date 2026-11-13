@@ -86,17 +86,19 @@ await ok('highlights: the clip is tied to the one finished match of those two pl
 });
 await ok('commentary: a summary is kept only when its numbers and names are in the transcript; never a quotation; nothing to say = nothing', async () => {
   const P = ['L.', 'Musetti', 'U.', 'Humbert'];
-  assert.ok(commentaryOk('The commentators praised the defending of Musetti and noted the strapping under his right knee. Humbert had 4 break points he could not take.', HT, P));
-  assert.ok(!commentaryOk('The commentators said Musetti saved 7 break points and praised his defending all match long.', HT, P), 'a number that was never said');
-  assert.ok(!commentaryOk('The commentators compared the defending of Musetti with Djokovic at his best in this match today.', HT, P), 'a name that was never said');
+  assert.ok(commentaryOk('Musetti defended very well and played with strapping under his right knee. Humbert had 4 break points he could not take.', HT, P));
+  assert.ok(!commentaryOk('Musetti saved 7 break points and defended very well all match long in this one.', HT, P), 'a number that was never said');
+  assert.ok(!commentaryOk('The defending of Musetti was like Djokovic at his best in this match today.', HT, P), 'a name that was never said');
+  // founder 2026-11-13: our own observation — the source is never named, never first person
+  for (const t of ['The commentators praised the defending of Musetti and noted the strapping under his right knee.', 'According to the commentary, Musetti defended very well in the first set.', 'I thought Musetti defended very well and Humbert missed his chances.', 'We saw Musetti defend very well and Humbert miss his chances today.']) assert.ok(!commentaryOk(t, HT, P), t);
   assert.ok(!commentaryOk('They called it "absolutely remarkable defending" from Musetti in the first set of this match.', HT, P), 'a quotation');
   const reply = (text) => async () => ({ ok: true, json: async () => ({ content: [{ type: 'text', text }] }) });
-  const good = await summariseCommentary(HT, ['L. Musetti', 'U. Humbert'], 'k', reply('The commentators praised the defending of Musetti and noted the strapping under his right knee.'));
+  const good = await summariseCommentary(HT, ['L. Musetti', 'U. Humbert'], 'k', reply('Musetti defended very well and played with strapping under his right knee.'));
   assert.equal(good.status, 'ok');
   assert.equal((await summariseCommentary(HT, ['L. Musetti', 'U. Humbert'], 'k', reply('NONE'))).status, 'nothing');
-  assert.equal((await summariseCommentary(HT, ['L. Musetti', 'U. Humbert'], 'k', reply('Musetti hit 40 winners according to the commentators in this long match.'))).status, 'failed-check');
+  assert.equal((await summariseCommentary(HT, ['L. Musetti', 'U. Humbert'], 'k', reply('Musetti hit 40 winners and defended very well in this long match.'))).status, 'failed-check');
   assert.equal((await summariseCommentary(HT, ['a', 'b'], '')).status, 'no-key');
   const b = fs.readFileSync(new URL('./news-ticker/build-news-ticker.mjs', import.meta.url), 'utf8');
-  assert.ok(/From the commentary: \$\{cm\.text\}/.test(b), 'the report says where the lines come from');
+  assert.ok(!/From the commentary|commentators/.test(b.replace(/\/\/.*$/gm, '')) && /cm && cm\.text \? cm\.text : null/.test(b), 'its own paragraph in the report, with no source named');
 });
 console.log(`ttv interviews: ${n} checks passed`);

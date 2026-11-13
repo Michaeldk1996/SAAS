@@ -15,7 +15,7 @@
 // Pipeline only: the key is ANTHROPIC_API_KEY from GitHub Actions secrets, never in the browser or a published file.
 const API_URL = 'https://api.anthropic.com/v1/messages';
 export const REPORT_MODEL = process.env.NEWS_REPORT_MODEL || 'claude-opus-5-5';
-export const VOICE_VERSION = 4;   // bump to have every stored report rewritten again
+export const VOICE_VERSION = 5;   // bump to have every stored report rewritten again
 
 // Neutral connecting words a rewrite may add. No judgement word, no quantity word (none / all / twice / double / half),
 // no stat verb (saved, converted, faced, broke): those may appear only where the template sentence already has them.
@@ -35,6 +35,9 @@ const fold = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '');
 const norm = (s) => fold(s).replace(/[–—]/g, '-').replace(/[’‘]/g, "'").replace(/\s+/g, ' ').trim();
 const SCORE = /\b\d{1,2}-\d{1,2}(?:\(\d+\))?(?![\w-])/g;
 const tokens = (s) => norm(s).match(/[A-Za-z][A-Za-z'-]*|\d+(?:st|nd|rd|th)?/g) || [];
+
+// "T. A. Tirante" -> "Tirante", "A. De Minaur" -> "De Minaur" (founder 2026-11-13: surnames only, also at first mention)
+export const surnameOf = (card) => String(card || '').trim().replace(/^(?:[A-Za-z]{1,3}(?:-[A-Za-z]{1,3})?\.\s*)+/, '') || String(card || '').trim();
 
 // "I. Surname" card name + (optional) full name -> the words that may name this player
 export function playerRef(card, full) {
@@ -114,8 +117,9 @@ Rules, all strict:
 - One sentence in, one sentence out. Never move a fact to another sentence, never merge, never drop a sentence.
 - Use only the facts in that sentence. Add nothing: no cause, mood, opinion, rating or judgement, no comparison between numbers, no "looked", "felt", "solid", "clutch", "only", "just".
 - Keep every number as a digit with the same word after it (9 aces, 41 winners, 28 unforced errors, 83 minutes, 0 of 3 break points, the 4th time in 5 meetings). You may leave a number out of a stat sentence, but keep at least two.
-- Sentence 1: the winner's full name, then the loser's full name, as given in "names". Scores with en dashes (6–2), unchanged and in the same order. The round as R1, R2, R3, R4, QF or SF when it is one of those; otherwise as written.
-- After sentence 1: surname only, never an initial ("Rune", not "H. Rune"). Use "He" only when the sentence is about one player and the sentence before it started with that same player.
+- Sentence 1: the winner, then the loser, each by SURNAME ONLY as given in "names". Scores with en dashes (6–2), unchanged and in the same order. The round as R1, R2, R3, R4, QF or SF when it is one of those; otherwise as written.
+- Every sentence: surname only, never a first name, never an initial ("Rune", not "Holger Rune", not "H. Rune"). Use "He" only when the sentence is about one player and the sentence before it started with that same player.
+- Simple words everybody understands. No idioms, no "I", "me" or "we", and never name where a number comes from.
 - Keep the two players in the same order as in the original sentence.
 - Plain past tense, no exclamation marks, no hyphen in a score. A short sentence stays short: never pad it (no "in the match", "during the match", "in this match").
 - Words: you may use only the words of the original sentence, the players' names, and these connecting words: ${[...VOCAB].join(' ')}. Any other word makes the sentence invalid.
@@ -152,7 +156,7 @@ export async function rewriteSentences(sentences, names, apiKey = process.env.AN
 const cap = (w) => w.replace(/(^|[ -])([a-z])/g, (m, a, b) => a + b.toUpperCase());
 export function plainNames(src, players, first) {
   let t = src;
-  for (const p of players) { if (!p.card || !t.includes(p.card)) continue; const sur = p.card.replace(/^(?:[A-Za-z]{1,3}\.\s*)+/, ''); t = t.split(p.card).join(first && p.full ? p.full : (sur || p.card)); }
+  for (const p of players) { if (!p.card || !t.includes(p.card)) continue; t = t.split(p.card).join(surnameOf(p.card)); }
   return t;
 }
 
@@ -175,7 +179,7 @@ export function mergeChecked(template, rewritten, players, tones = [], kinds = [
 // One report. -> { status, text?, voice?: { version, model, passed, total, failures }, usage?, detail? }
 export async function humaniseReport({ sentences, tones = [], kinds = [], winner, loser }, opts = {}) {
   const players = [playerRef(winner.card, winner.full), playerRef(loser.card, loser.full)];
-  const names = { winner: winner.full || players[0].surname, loser: loser.full || players[1].surname };
+  const names = { winner: surnameOf(winner.card), loser: surnameOf(loser.card) };
   const r = await (opts.rewrite || rewriteSentences)(sentences, names, opts.apiKey, opts.fetchFn, sentences.map((x, i) => tones[i] || 'none'), sentences.map((x, i) => kinds[i] || 'none'));
   if (r.status !== 'ok') return { status: r.status, detail: r.detail || null, http: r.http || null, usage: r.usage || null };
   const m = mergeChecked(sentences, r.sentences, players, tones, kinds);

@@ -11,6 +11,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { surnameOf } from './humanise.mjs';
+
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '..', '..');
 export const X_USER = '1549708186885701632';   // @ATP_Entry (the id is cached: a user lookup is billed)
@@ -117,30 +119,48 @@ export function verifyCard(card, m) {
     if (bp && rb && (bp[0] !== rb.won || bp[1] !== rb.total)) return { ok: false, why: `break points differ for ${m[k]} (card ${bp.join('/')}, ours ${rb.won}/${rb.total})` };
   }
   if (checked < 4 || close < checked - 1) return { ok: false, why: `only ${close} of ${checked} serve figures agree with ours` };
-  return { ok: true, why: null, byPlayer: by, checked, close };
+  // winners / unforced errors: the card splits them by wing, ours are totals (founder 2026-11-13). They reconcile as
+  // W = aces + forehand + backhand winners, UE = forehand + backhand unforced + double faults. Recorded, never a reason
+  // to drop a card: the report prints OUR totals, not the card's wings.
+  const wue = { compared: 0, maxDiff: null };
+  for (const k of ['p1', 'p2']) {
+    const st = (m.matchStats || {})[k] || {}, c = by[k], n = (v) => (typeof v === 'number' && Number.isFinite(v) ? v : null);
+    const pairs = [[n(st['Points:Winners']), [n(st['Service:Aces']), c.fhWinners, c.bhWinners]], [n(st['Points:Unforced errors']), [n(st['Service:Double Faults']), c.fhUnforced, c.bhUnforced]]];
+    for (const [ours2, parts] of pairs) { if (ours2 == null || parts.some((v) => v == null)) continue; const d = Math.abs(ours2 - parts.reduce((t, v) => t + v, 0)); wue.compared++; wue.maxDiff = Math.max(wue.maxDiff == null ? 0 : wue.maxDiff, d); }
+  }
+  return { ok: true, why: null, byPlayer: by, checked, close, wue };
 }
 
-// Report sentences from a verified card (at most two): the numbers our own box score cannot give.
-// Printed only when they say something: errors piled on one wing, a big forehand day, real net traffic, the long rallies.
+// Report sentences from a verified card (founder 2026-11-13: "serve quality, unreturned serves, return quality,
+// performance rating, and … high difference of over 9 shots won, and also from the baseline"). The performance rating
+// goes on the closing line (news-core ratingLines). Written as our own observation: the card is never named.
+// A number is printed only when it says something; the loser gets one sentence at most.
+export const SQ_HIGH = 8.5, UNRET_HIGH = 35, RQ_HIGH = 8, RQ_LOW = 6, BASELINE_GAP = 10, LONG_GAP = 6;
+const q1 = (v) => v.toFixed(1), art = (v) => (/^(8|11|18)/.test(q1(v)) ? 'an' : 'a');
 export function shotSentences(m, w, l, entry) {
   if (!entry || !entry.p1 || !entry.p2) return [];
   const out = [], c = { [w]: entry[w], [l]: entry[l] };
-  const ue = (k) => (c[k].fhUnforced != null && c[k].bhUnforced != null ? c[k].fhUnforced + c[k].bhUnforced : null);
-  for (const k of [l, w]) {                       // the errors that decided it: the loser's first
-    const t = ue(k), o = ue(k === w ? l : w);
-    if (t == null || o == null || t < 25 || t < o + 8) continue;
-    const wing = c[k].bhUnforced >= c[k].fhUnforced ? ['backhand', c[k].bhUnforced] : ['forehand', c[k].fhUnforced];
-    out.push(`${m[k]} made ${t} unforced errors, ${wing[1]} of them on the ${wing[0]}, against ${o} for ${m[k === w ? l : w]}.`);
-    break;
-  }
-  if (c[w].fhWinners != null && c[w].fhWinners >= 15) out.push(`${m[w]} hit ${c[w].fhWinners} forehand winners.`);
   for (const k of [w, l]) {
-    const n = c[k].netWon;
-    if (out.length < 2 && n && n[1] >= 20) out.push(`${m[k]} came to the net ${n[1]} times and won ${n[0]} of those points.`);
+    const x = c[k], name = surnameOf(m[k]), mine = [];
+    const sq = x.serveQuality, un = x.unreturnedPct, rq = x.returnQuality;
+    if ((sq != null && sq >= SQ_HIGH) || (un != null && un >= UNRET_HIGH)) {
+      const bits = [];
+      if (sq != null) bits.push(`${art(sq)} ${q1(sq)} serve quality`);
+      if (un != null) bits.push(`${un}% unreturned serves`);
+      mine.push(`${name} ended with ${bits.join(' and ')}.`);
+    }
+    if (rq != null && rq >= RQ_HIGH) mine.push(mine.length ? `He also returned very well, with ${art(rq)} ${q1(rq)} return quality.` : `${name} returned very well, with ${art(rq)} ${q1(rq)} return quality.`);
+    else if (rq != null && rq < RQ_LOW) {   // a strong serve day and a weak return day are one sentence: that contrast is the story
+      if (mine.length) mine[0] = `${mine[0].slice(0, -1)}, but it was not his best return performance, with a return quality of ${q1(rq)}.`;
+      else mine.push(`It was not the best return performance of ${name}, with a return quality of ${q1(rq)}.`);
+    }
+    out.push(...(k === l ? mine.slice(0, 1) : mine));
   }
-  const a = c[w].over9Won, b = c[l].over9Won;
-  if (out.length < 2 && a != null && b != null && a + b >= 12 && Math.abs(a - b) >= 3) out.push(`${m[a > b ? w : l]} won the long rallies ${Math.max(a, b)}–${Math.min(a, b)}.`);
-  return out.slice(0, 2);
+  const gap = (key, min) => { const a = c[w][key], b = c[l][key]; return a != null && b != null && Math.abs(a - b) >= min ? { k: a > b ? w : l, hi: Math.max(a, b), lo: Math.min(a, b) } : null; };
+  const base = gap('baselineWon', BASELINE_GAP), long = gap('over9Won', LONG_GAP);
+  if (base) out.push(`${surnameOf(m[base.k])} was clearly the better player from the baseline (${base.hi}–${base.lo}).`);
+  if (long) out.push(`${surnameOf(m[long.k])} won the long rallies ${long.hi}–${long.lo}.`);
+  return out;
 }
 
 const rd = (f, d) => { try { return JSON.parse(fs.readFileSync(f, 'utf8')); } catch (e) { return d; } };
@@ -186,7 +206,7 @@ async function main() {
     if (rc.status === 'no-key' || rc.status === 'api-error' || rc.status === 'image-error') { if (x.tries < MAX_TRIES) pending.push({ ...x, tries: x.tries + 1 }); console.log(`  ${pp.winner} v ${pp.loser}: ${rc.status} ${rc.detail || ''}`); continue; }
     const v = rc.status === 'ok' ? verifyCard(rc.card, m) : { ok: false, why: rc.status };
     if (!v.ok) { sum.rejected++; console.log(`  REJECTED ${pp.winner} v ${pp.loser}: ${v.why}`); (state.rejected = state.rejected || []).push({ id: x.id, at: x.at, why: v.why }); state.rejected = state.rejected.slice(-50); continue; }
-    store.byMatch[ek] = { p1: v.byPlayer.p1, p2: v.byPlayer.p2, postedAt: x.at, readAt: nowIso, sourceName: 'ATP broadcast match statistics (via @ATP_Entry)', sourceUrl: `https://x.com/ATP_Entry/status/${x.id}`, agreed: `${v.close} of ${v.checked} serve figures within ${PCT_TOL} points of ours; set scores and break points equal` };
+    store.byMatch[ek] = { p1: v.byPlayer.p1, p2: v.byPlayer.p2, postedAt: x.at, readAt: nowIso, sourceName: 'ATP broadcast match statistics (via @ATP_Entry)', sourceUrl: `https://x.com/ATP_Entry/status/${x.id}`, agreed: `${v.close} of ${v.checked} serve figures within ${PCT_TOL} points of ours; set scores and break points equal`, ...(v.wue && v.wue.compared ? { wue: v.wue } : {}) };
     sum.kept++;
   }
   const cut = Date.parse(nowIso) - 60 * 86400000;

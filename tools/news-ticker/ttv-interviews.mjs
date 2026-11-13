@@ -110,6 +110,7 @@ export function pickHighlights(feed, state, cards, nowIso) {
 export function commentaryOk(text, transcript, players) {
   const t = String(text || '').trim();
   if (t.length < 40 || t.length > 420 || /["“”]/.test(t)) return false;
+  if (/commentat|commentary|broadcast|\b(I|we|me|my|our)\b/i.test(t)) return false;   // our own observation: no source named, no first person (founder 2026-11-13)
   const hay = fold(transcript), allowed = fold((players || []).join(' '));
   for (const n of t.match(/\d+(?:[.,]\d+)?/g) || []) if (!hay.includes(n)) return false;
   const re = /(^|[.!?]\s+)?(\p{Lu}[\p{L}'’-]+)/gu;
@@ -121,10 +122,11 @@ export function commentaryOk(text, transcript, players) {
   }
   return true;
 }
-const HL_SYSTEM = `You are given a rough transcript of TV commentary over the highlights of one tennis match (it jumps between points and has mis-heard words). Write what the commentators said about the match in two or three plain sentences for a news feed.
+const HL_SYSTEM = `You are given a rough transcript of TV commentary over the highlights of one tennis match (it jumps between points and has mis-heard words). Write what happened in the match in two or three plain sentences for a match report, as plain observations of the match.
 Rules:
 - Only what the commentators actually said: how each player played, turning points, physical problems, reasons they gave. Nothing from your own knowledge.
-- Plain everyday English, no quotation marks, no hype. Refer to the players by surname.
+- Simple words everybody understands, no idioms, no quotation marks, no hype. Refer to the players by surname only.
+- Never mention the commentators, the commentary, the broadcast or the highlights, and never write "I" or "we": state each point as a fact of the match ("Ruud struggled behind his second serve.").
 - Use a number or a name only if it is clearly in the transcript. If a word looks mis-heard, leave that part out.
 - If the transcript carries nothing worth reporting, reply with exactly: NONE`;
 export async function summariseCommentary(transcript, players, apiKey = process.env.ANTHROPIC_API_KEY, fetchFn = fetch) {

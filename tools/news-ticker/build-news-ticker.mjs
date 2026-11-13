@@ -14,13 +14,13 @@
  * Usage: node tools/news-ticker/build-news-ticker.mjs [--dir .] [--now ISO] [--no-times]
  * Exit 0 always writes what it could; exit 1 only when the board itself cannot be read.
  */
-import { humaniseReport, VOICE_VERSION } from './humanise.mjs';
+import { humaniseReport, VOICE_VERSION, plainNames } from './humanise.mjs';
 import { baselineFor } from './standouts.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
-import { reportText, statusItems, h2hAfter, roundWords, breakPoints, mtoSentences } from './news-core.mjs';
+import { reportText, statusItems, h2hAfter, roundWords, breakPoints, mtoSentences, ratingLines } from './news-core.mjs';
 import { shotSentences } from './match-cards.mjs';
 import { pbpFacts, scoreFacts } from './pbp-facts.mjs';
 import { mergeItems, buildIndex, fileOf, observedTimes, tourKeep } from './ticker-core.mjs';
@@ -71,16 +71,6 @@ export async function build({ nowIso, times, rewrite = null, apiKey = process.en
   const index = readJson('player-index.json');
   const ratings = readJson('surface-ratings.json');   // each player's own baseline (Database → Ratings store); absent = no comparison
   const names = ((index && index.players) || []).map((p) => p && p.name).filter(Boolean);
-  // A player's full name for a report's first mention: the standings name, used only when it reads "Given … Surname"
-  // with the card's own surname last and the card's initial first (api-tennis scrambles some multi-part names).
-  const fullByKey = new Map(((index && index.players) || []).filter((p) => p && p.key != null && p.name).map((p) => [String(p.key), String(p.name).trim()]));
-  const fullName = (key, card) => {
-    const f = fullByKey.get(String(key)); if (!f) return null;
-    const lc = (x) => String(x).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-    const c = lc(card).replace(/\./g, ' ').split(/\s+/).filter(Boolean); let i = 0; while (i < c.length - 1 && c[i].length <= 2) i++;
-    const sur = c.slice(i).join(' ');
-    return sur && lc(f).endsWith(' ' + sur) && lc(f)[0] === c[0][0] && lc(f).split(/\s+/).length === sur.split(' ').length + 1 ? f : null;
-  };
   const prog = readJson('tournament-progression.json');
   const progs = prog ? (Array.isArray(prog.tournaments) ? prog.tournaments : Object.values(prog.tournaments || {})) : [];
   const startIso = (m) => { const t = berlinWallMs(m.date, m.time); return Number.isFinite(t) ? new Date(t).toISOString() : null; };
@@ -137,31 +127,35 @@ export async function build({ nowIso, times, rewrite = null, apiKey = process.en
         const rep = reportText(m, w, l, { baselines, h2h, pbp, score: scoreFacts(m.finalScore, w), round: rw, duration: obs && obs.minutes != null ? obs.minutes : null });
         // Michael's voice: the template sentences rewritten one for one, each checked against its own facts; a sentence
         // that fails keeps the template wording. Done once per report: a stored rewrite of the same template is reused.
-        let text = rep.text, voice = null;
+        // surnames only, also when the voice step did not run (founder 2026-11-13); the template keeps the card names
+        let text = plainNames(rep.text, [{ card: m[w] }, { card: m[l] }]), voice = null;
         if (prev && prev.voice && prev.voice.version === VOICE_VERSION && prev.templateText === rep.text) { text = prev.baseText || prev.text; voice = prev.voice; summary.voice.reused++; }
         else if (voiceOn && voiceCalls < VOICE_MAX_CALLS) {
           voiceCalls++;
-          const h = await humaniseReport({ sentences: rep.sentences, tones: rep.tones, kinds: rep.kinds, winner: { card: m[w], full: fullName(m[w + 'Key'], m[w]) }, loser: { card: m[l], full: fullName(m[l + 'Key'], m[l]) } }, { rewrite, apiKey });
+          const h = await humaniseReport({ sentences: rep.sentences, tones: rep.tones, kinds: rep.kinds, winner: { card: m[w], full: null }, loser: { card: m[l], full: null } }, { rewrite, apiKey });
           if (h.usage) { summary.voice.tokens.input += h.usage.input; summary.voice.tokens.output += h.usage.output; }
           if (h.status === 'ok') { text = h.text; voice = h.voice; summary.voice.rewritten++; }
           else { summary.voice.errors++; summary.voice.lastError = `${h.status}${h.detail ? ': ' + h.detail : ''}`; }
         } else summary.voice.notRewritten++;
-        // medical timeouts (the MTO archive) and what the player said about his body on court: added after the voice step,
-        // never rewritten by it
+        // After the voice step, never rewritten by it (founder 2026-11-13): the card's serve and return numbers join the
+        // main paragraph; then what was seen in the match, the physical paragraph, and one closing line per player.
+        // Nothing here names a source, and nothing is from after the match.
         const baseText = text;
-        // shot-level numbers from the broadcast's statistics card (verified against our own score and serve figures)
         const shot = shotSentences(m, w, l, cardsByMatch[ek(m)]);
-        if (shot.length) { text = `${text} ${shot.join(' ')}`; summary.withShotStats = (summary.withShotStats || 0) + 1; }
-        const mto = mtoSentences(m, mtoByMatch[ek(m)], quoteItems);
-        if (mto.length) { text = `${text} ${mto.join(' ')}`; summary.withMto = (summary.withMto || 0) + 1; }
+        if (shot.length) summary.withShotStats = (summary.withShotStats || 0) + 1;
+        const mto = mtoSentences(m, mtoByMatch[ek(m)], quoteItems, { winner: w, final: rw === 'final' });
+        if (mto.length) summary.withMto = (summary.withMto || 0) + 1;
         const cm = commentaryByMatch[ek(m)];
-        if (cm && cm.text) { text = `${text} From the commentary: ${cm.text}`; summary.withCommentary = (summary.withCommentary || 0) + 1; }
+        if (cm && cm.text) summary.withCommentary = (summary.withCommentary || 0) + 1;
+        const rating = ratingLines(m, w, l, cardsByMatch[ek(m)]);
+        if (rating.length) summary.withRatingLine = (summary.withRatingLine || 0) + 1;
+        text = [[text, ...shot].join(' '), cm && cm.text ? cm.text : null, mto.length ? mto.join(' ') : null, ...rating].filter(Boolean).join('\n\n');
         if (obs && obs.endedAt) summary.withObservedEnd++;
         if (rep.used.duration) summary.withDuration++;
         fresh.push({ id, type: 'report', playerId: String(m[w + 'Key']), opponentId: String(m[l + 'Key']), player: m[w], opponent: m[l],
           tournament: g.name, tournamentKey: g.key, season: g.season, stage: stage || 'main draw', round: rep.fields.round, eventKey: ek(m),
           timestamp: obs && obs.endedAt ? obs.endedAt : startIso(m), timestampKind: obs && obs.endedAt ? 'observed' : 'scheduled',
-          observed: obs || null, category: 'Statistics', text, ...(mto.length || shot.length || (cm && cm.text) ? { baseText } : {}), ...(cardsByMatch[ek(m)] ? { shotStats: cardsByMatch[ek(m)] } : {}), ...(mto.length ? { mto } : {}), ...(cm && cm.text ? { commentary: { text: cm.text, sourceName: cm.sourceName, sourceUrl: cm.sourceUrl } } : {}), ...(voice ? { templateText: rep.text, voice } : {}), fields: rep.fields,
+          observed: obs || null, category: 'Statistics', text, ...(text !== baseText ? { baseText } : {}), ...(rating.length ? { rating } : {}), ...(cardsByMatch[ek(m)] ? { shotStats: cardsByMatch[ek(m)] } : {}), ...(mto.length ? { mto } : {}), ...(cm && cm.text ? { commentary: { text: cm.text, sourceName: cm.sourceName, sourceUrl: cm.sourceUrl } } : {}), ...(voice ? { templateText: rep.text, voice } : {}), fields: rep.fields,
           sourceName: 'Stennisfy match data (api-tennis box score and point-by-point)', sourceUrl: `pbp/${ek(m)}.json`, language: 'en', translated: false });
         summary.reports++;
       } catch (e) { summary.reportErrors.push(`${m.id}: ${e && e.message}`); }

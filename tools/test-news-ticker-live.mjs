@@ -82,7 +82,7 @@ await ok('build: one report per finished match; a walkover gets a status item an
   assert.equal(s.reports, 1); const it = itemsOf(d);
   assert.deepEqual(it.map((x) => x.id).sort(), ['report-100', 'status-wo-101']);
   assert.ok(!it.some((x) => /faced no break points/.test(x.text) && x.id !== 'report-100'));
-  assert.match(it.find((x) => x.id === 'report-100').text, /A\. One won the last 12 games of the match\. A\. One faced no break points\.$/, 'what stood out; nothing about the loser when nothing of his was bad enough');
+  assert.match(it.find((x) => x.id === 'report-100').text, /^One beat Two 6-0, 6-0 in the round of 16\. One won the last 12 games of the match\. One faced no break points\.\n\nOne: W: 19 \/ UE: 7\n\nTwo: W: 5 \/ UE: 20$/, 'what stood out; nothing about the loser when nothing of his was bad enough; then one closing line per player, winner first');
   assert.ok(!/break point/.test(it.find((x) => x.id === 'status-wo-101').text));
 });
 await ok('build: a missing or empty point log never prints "faced no break points" (blank box score stays blank)', () => {
@@ -226,17 +226,17 @@ await ok('polite rate: one section request per outlet per run; an article page i
 // ---- reports in the founder's voice (founder 2026-11-12): every rewritten sentence checked against its own facts ----
 await ok("voice: a rewrite passes only when every number, name and word is in that sentence's facts; a failing sentence keeps the template", async () => {
   const { checkSentence, mergeChecked, playerRef, humaniseReport, VOCAB } = await import('./news-ticker/humanise.mjs');
-  const P = [playerRef('H. Rune', 'Holger Rune'), playerRef('M. Kecmanovic', 'Miomir Kecmanovic')];
+  const P = [playerRef('H. Rune', null), playerRef('M. Kecmanovic', null)];
   const T = ['H. Rune beat M. Kecmanovic for the 4th time in 5 meetings, 2-6, 6-1, 6-4 in the second round in 83 minutes.', 'H. Rune came from a set down.', 'H. Rune won 7 games in a row.',
     'H. Rune: 9 aces, 41 winners, 28 unforced errors, saved 0 of 3 break points.', 'M. Kecmanovic: 4 aces, 18 winners, 11 unforced errors, saved 1 of 5 break points.'];
-  const R = ['Holger Rune beat Miomir Kecmanovic for the 4th time in 5 meetings, 2–6, 6–1, 6–4 in R2 in 83 minutes.', 'He came from a set down.', 'He won 7 games in a row along the way.',
+  const R = ['Rune beat Kecmanovic for the 4th time in 5 meetings, 2–6, 6–1, 6–4 in R2 in 83 minutes.', 'He came from a set down.', 'He won 7 games in a row along the way.',
     'Rune hit 9 aces and 41 winners, with 28 unforced errors, and saved 0 of 3 break points.', 'Kecmanovic hit 4 aces and 18 winners, made 11 unforced errors and saved 1 of 5 break points.'];
   const good = mergeChecked(T, R, P);
   assert.deepEqual([good.passed, good.total, good.failures], [5, 5, []]); assert.equal(good.text, R.join(' '));
   const bad = [
-    [0, 'Holger Rune beat Miomir Kecmanovic for the 4th time in 5 meetings, 6–2, 6–1, 6–4 in R2 in 83 minutes.', /score/],          // a set score turned round
-    [0, 'Miomir Kecmanovic lost to Holger Rune 2–6, 6–1, 6–4 in R2.', /swapped/],
-    [0, 'Holger Rune beat Miomir Kecmanovic 2–6, 6–1, 6–4 in R3 in 83 minutes.', /round/],
+    [0, 'Rune beat Kecmanovic for the 4th time in 5 meetings, 6–2, 6–1, 6–4 in R2 in 83 minutes.', /score/],          // a set score turned round
+    [0, 'Kecmanovic lost to Rune 2–6, 6–1, 6–4 in R2.', /swapped/],
+    [0, 'Rune beat Kecmanovic 2–6, 6–1, 6–4 in R3 in 83 minutes.', /round/],
     [1, 'Rune looked tired but came from a set down.', /looked/], [1, 'Rune felt good and came from a set down.', /felt/],
     [2, 'Kecmanovic won 7 games in a row.', /not in this fact/], [2, 'He won 8 games in a row.', /8 game/],
     [3, 'Rune hit 41 aces and 9 winners.', /41 ace/],                                                                              // right numbers, wrong stat
@@ -245,6 +245,9 @@ await ok("voice: a rewrite passes only when every number, name and word is in th
     [3, 'Rune hit 9 aces and saved none of 3 break points.', /none/], [3, 'Rune hit 9 aces. He hit 41 winners.', /one sentence/],
     [3, 'Rune hit 41 winners, more than double.', /more/], [1, 'Rune came from a set down!', /exclamation/], [1, '', /empty/],
   ];
+  // founder 2026-11-13: surnames only, also at first mention — a first name is not in the facts
+  { const r = checkSentence(T[0], 'Holger Rune beat Miomir Kecmanovic for the 4th time in 5 meetings, 2–6, 6–1, 6–4 in R2 in 83 minutes.', { players: P, prevSubject: null }); assert.equal(r.ok, false); assert.match(r.why, /Holger/); }
+  { const { surnameOf } = await import('./news-ticker/humanise.mjs'); assert.deepEqual(['T. A. Tirante', 'A. De Minaur', 'J-L. Struff', 'Rune'].map(surnameOf), ['Tirante', 'De Minaur', 'Struff', 'Rune']); }
   for (const [i, t, why] of bad) { const r = checkSentence(T[i], t, { players: P, prevSubject: P[0] }); assert.equal(r.ok, false, t); assert.match(r.why, why, t); }
   for (const w of ['looked', 'felt', 'seemed', 'solid', 'clutch', 'shaky', 'deserved', 'lucky', 'only', 'just', 'none', 'all', 'twice', 'saved', 'converted', 'faced', 'not', 'no', 'more', 'than']) assert.ok(!VOCAB.has(w), `"${w}" must not be free vocabulary`);
   // one failing sentence -> that sentence only falls back; the count says so
@@ -252,14 +255,14 @@ await ok("voice: a rewrite passes only when every number, name and word is in th
   assert.deepEqual([mixed.passed, mixed.total, mixed.failures.map((f) => f.i)], [4, 5, [1]]);
   assert.equal(mixed.text, [R[0], 'Rune came from a set down.', 'He won 7 games in a row along the way.', R[3], R[4]].join(' '), 'the stand-in is the template sentence, the card name as a surname');
   const allBad = mergeChecked(T, T.map(() => 'x'), P);
-  assert.equal(allBad.text.split('. ')[0], 'Holger Rune beat Miomir Kecmanovic for the 4th time in 5 meetings, 2-6, 6-1, 6-4 in the second round in 83 minutes');
+  assert.equal(allBad.text.split('. ')[0], 'Rune beat Kecmanovic for the 4th time in 5 meetings, 2-6, 6-1, 6-4 in the second round in 83 minutes');
   assert.ok(!/H\. Rune|M\. Kecmanovic/.test(allBad.text) && allBad.passed === 0);
   // the report call: no key -> nothing rewritten; a model answer of the wrong length -> nothing rewritten
-  const base = { sentences: T, winner: { card: 'H. Rune', full: 'Holger Rune' }, loser: { card: 'M. Kecmanovic', full: 'Miomir Kecmanovic' } };
+  const base = { sentences: T, winner: { card: 'H. Rune', full: null }, loser: { card: 'M. Kecmanovic', full: null } };
   assert.equal((await humaniseReport(base, { apiKey: '' })).status, 'no-key');
   const short = await humaniseReport(base, { apiKey: 'k', fetchFn: async () => ({ ok: true, json: async () => ({ stop_reason: 'end_turn', content: [{ type: 'text', text: '["one"]' }], usage: { input_tokens: 5, output_tokens: 2 } }) }) });
   assert.equal(short.status, 'bad-output');
-  const full = await humaniseReport(base, { apiKey: 'k', fetchFn: async (u, o) => { const b = JSON.parse(o.body); assert.equal(b.model, 'claude-opus-5-5'); assert.deepEqual(JSON.parse(b.messages[0].content).names, { winner: 'Holger Rune', loser: 'Miomir Kecmanovic' });
+  const full = await humaniseReport(base, { apiKey: 'k', fetchFn: async (u, o) => { const b = JSON.parse(o.body); assert.equal(b.model, 'claude-opus-5-5'); assert.deepEqual(JSON.parse(b.messages[0].content).names, { winner: 'Rune', loser: 'Kecmanovic' });
     return { ok: true, json: async () => ({ stop_reason: 'end_turn', content: [{ type: 'thinking', thinking: '' }, { type: 'text', text: JSON.stringify(R) }], usage: { input_tokens: 400, output_tokens: 120 } }) }; } });
   assert.equal(full.status, 'ok'); assert.deepEqual([full.voice.passed, full.voice.total], [5, 5]); assert.equal(full.text, R.join(' '));
   const w = read('.github/workflows/pipeline.yml');
@@ -449,17 +452,21 @@ await ok('a medical timeout is named with its set and score; his on-court words 
   const { mtoSentences } = await import('./news-ticker/news-core.mjs');
   const m = { p1: 'T. A. Tirante', p1Key: 366, p2: 'A. Shevchenko', p2Key: 566 };
   const row = { calledAt: '2026-11-12T15:42:41+00:00', player: 'Thiago Agustin Tirante', playerSide: 1, games: [[7, 2], [6, 3]], retired: false };   // the real row of 12 Nov
-  assert.deepEqual(mtoSentences(m, [row], []), ['T. A. Tirante took a medical timeout at 2–3 in the second set.']);
-  assert.deepEqual(mtoSentences({ p1: 'U. Humbert', p1Key: 1105, p2: 'B. Gojo', p2Key: 377 }, [{ calledAt: 'x', player: 'Borna Gojo', playerSide: 2, games: [[5], [2]], retired: false }]),
-    ['B. Gojo took a medical timeout at 2–5 in the first set.'], 'the caller on side 2 reads his own games first');
+  // founder 2026-11-13: the physical paragraph — opener, the timeout, his words or "We do not know the reason.", what to follow
+  assert.deepEqual(mtoSentences(m, [row], [], { winner: 'p1' }), ['Physically, it is something to follow.', 'Tirante took a medical timeout at 2–3 in the second set.', 'We do not know the reason.', 'Something to follow up for the next round.']);
+  assert.deepEqual(mtoSentences(m, [row], [], { winner: 'p2' }).slice(-1), ['Maybe something to follow up for the next tournaments of Tirante.'], 'the player who is out has no next round');
+  assert.deepEqual(mtoSentences(m, [row], [], { winner: 'p1', final: true }).slice(-1), ['We do not know the reason.'], 'the winner of the final has no next round either');
+  assert.deepEqual(mtoSentences({ p1: 'U. Humbert', p1Key: 1105, p2: 'B. Gojo', p2Key: 377 }, [{ calledAt: 'x', player: 'Borna Gojo', playerSide: 2, games: [[5], [2]], retired: false }], [], { winner: 'p1' })[1],
+    'Gojo took a medical timeout at 2–5 in the first set.', 'the caller on side 2 reads his own games first');
+  assert.deepEqual(mtoSentences(m, [row, { ...row, calledAt: '2026-11-12T15:50:00+00:00', games: [[7, 3], [6, 3]] }], [], { winner: 'p2' })[1], 'Tirante took two medical timeouts: at 2–3 in the second set and at 3–3 in the second set.');
   const q = [{ id: 'a', interview: 'on-court', playerId: '366', topic: 'On his hand', text: 'It was a blister, nothing more.' }, { id: 'b', interview: 'on-court', playerId: '366', topic: 'On the match', text: 'Very tough.' },
     { id: 'c', interview: 'on-court', playerId: '566', topic: 'On his physical condition', text: 'I felt fine.' }, { id: 'd', playerId: '366', topic: 'On his injury', text: 'A press quote.' }];
-  assert.deepEqual(mtoSentences(m, [row], q), ['T. A. Tirante took a medical timeout at 2–3 in the second set. After the match he said: "It was a blister, nothing more."'],
-    'only HIS on-court answer about his body; never the opponent\'s, a press quote or an answer about the match');
+  assert.deepEqual(mtoSentences(m, [row], q, { winner: 'p1' }), ['Physically, it is something to follow.', 'Tirante took a medical timeout at 2–3 in the second set.', 'Tirante after the match: "It was a blister, nothing more."', 'Something to follow up for the next round.'],
+    'only HIS on-court answer about his body, word for word; never the opponent\'s, a press quote or an answer about the match; no "we do not know" beside his own words');
   assert.deepEqual(mtoSentences(m, [{ ...row, player: 'Someone Else' }], q), [], 'a caller who is not one of the two players: no sentence');
   assert.deepEqual(mtoSentences(m, null, q), [], 'no timeout on record: no sentence');
   const b = read('tools/news-ticker/build-news-ticker.mjs'), wf = read('.github/workflows/pipeline.yml');
-  assert.ok(/mtoSentences\(m, mtoByMatch\[ek\(m\)\], quoteItems\)/.test(b) && /prev\.baseText \|\| prev\.text/.test(b), 'added after the voice step, never rewritten or doubled');
+  assert.ok(/mtoSentences\(m, mtoByMatch\[ek\(m\)\], quoteItems, \{ winner: w, final: rw === 'final' \}\)/.test(b) && /prev\.baseText \|\| prev\.text/.test(b), 'added after the voice step, never rewritten or doubled');
   assert.ok(wf.indexOf('node tools/build-mto-matches.mjs') < wf.indexOf('node tools/news-ticker/build-news-ticker.mjs'), 'the timeouts are read before the reports are written');
 });
 // ---- tour-wide (founder 2026-11-12: press interviews and injuries for every ATP player, every day) ----

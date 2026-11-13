@@ -1,4 +1,5 @@
 import { standoutUnits } from './standouts.mjs';
+import { surnameOf } from './humanise.mjs';
 // News ticker sample — the pure rules (no network, no clock). Tested by tools/test-news-ticker.mjs.
 import { createRequire } from 'node:module';
 const require = createRequire(import.meta.url);
@@ -64,9 +65,12 @@ const SET_WORD = { 1: 'first', 2: 'second', 3: 'third', 4: 'fourth', 5: 'fifth' 
 // he called it. The reason is not in our data and is never guessed. When the same player spoke about his body in the
 // on-court interview, his words follow, word for word.
 export const MTO_BODY = /\b(physical|body|injur|fitness|health|pain|hand|wrist|arm|shoulder|back|leg|knee|ankle|foot|hip|blister|cramp)/i;
-export function mtoSentences(m, rows, quotes = []) {
-  const out = [], last = (x) => String(x || '').trim().split(/\s+/).pop().toLowerCase();
-  const seenQuote = new Set();
+// The physical paragraph (founder 2026-11-13): "Physically, it is something to follow." + each timeout + the player's
+// own words about his body, or "We do not know the reason." + what to follow: the next round for the winner (not after
+// a final), the next tournaments for the player who is out. opts: { winner: 'p1'|'p2', final: bool }.
+export function mtoSentences(m, rows, quotes = [], opts = {}) {
+  const last = (x) => String(x || '').trim().split(/\s+/).pop().toLowerCase();
+  const seenQuote = new Set(), by = new Map();
   for (const r of (rows || []).slice().sort((a, b) => String(a.calledAt).localeCompare(String(b.calledAt))).slice(0, 3)) {
     if (!r || r.retired || ![1, 2].includes(r.playerSide) || !Array.isArray(r.games) || r.games.length !== 2) continue;
     const sides = ['p1', 'p2'].filter((k) => last(m[k]) === last(r.player));
@@ -75,10 +79,51 @@ export function mtoSentences(m, rows, quotes = []) {
     if (!Array.isArray(mine) || !Array.isArray(theirs) || !mine.length || mine.length !== theirs.length) continue;
     const n = mine.length, own = mine[n - 1], opp = theirs[n - 1];
     if (!Number.isInteger(own) || !Number.isInteger(opp) || !SET_WORD[n]) continue;
-    let s = `${m[k]} took a medical timeout at ${own}–${opp} in the ${SET_WORD[n]} set.`;
+    if (!by.has(k)) by.set(k, []);
+    by.get(k).push(`at ${own}–${opp} in the ${SET_WORD[n]} set`);
+  }
+  if (!by.size) return [];
+  const out = ['Physically, it is something to follow.'];
+  for (const [k, at] of by) {
+    const name = surnameOf(m[k]);
+    out.push(at.length === 1 ? `${name} took a medical timeout ${at[0]}.` : `${name} took ${at.length === 2 ? 'two' : 'three'} medical timeouts: ${at.slice(0, -1).join(', ')} and ${at[at.length - 1]}.`);
     const q = (quotes || []).find((x) => x && x.interview === 'on-court' && String(x.playerId) === String(m[k + 'Key']) && MTO_BODY.test(String(x.topic || '')) && String(x.text || '').length <= 260 && !seenQuote.has(x.id));
-    if (q) { seenQuote.add(q.id); s += ` After the match he said: "${String(q.text).trim()}"`; }
-    out.push(s);
+    if (q) { seenQuote.add(q.id); out.push(`${name} after the match: "${String(q.text).trim()}"`); }
+    else out.push('We do not know the reason.');
+    if (opts.winner) {
+      if (k !== opts.winner) out.push(`Maybe something to follow up for the next tournaments of ${name}.`);
+      else if (!opts.final) out.push('Something to follow up for the next round.');
+    }
+  }
+  return out;
+}
+
+// winners / unforced errors all 0 on both sides = the feed did not track them; the same two counts on both sides = the
+// feed repeating one player's line. Either way they are not printed.
+export function wueUsable(ms) {
+  const tot = ['p1', 'p2'].reduce((t, k) => t + (num(ms && ms[k] && ms[k]['Points:Winners']) || 0) + (num(ms && ms[k] && ms[k]['Points:Unforced errors']) || 0), 0);
+  const same = ['Points:Winners', 'Points:Unforced errors'].every((k) => num(ms && ms.p1 && ms.p1[k]) != null && num(ms.p1[k]) === num(ms && ms.p2 && ms.p2[k]));
+  return tot > 0 && !same;
+}
+// Dominance ratio from our own box score: return points won % ÷ (100 − service points won %). null when a part is missing.
+export function dominanceRatio(st) {
+  const r = num(st && st['Points:Return Points Won']), s = num(st && st['Points:Service Points Won']);
+  return r == null || s == null || s >= 100 ? null : r / (100 - s);
+}
+// The closing line per player, winner first (founder 2026-11-13): "Fritz: performance rating 8.8 | W: 31 / UE: 17 | DR: 1.40".
+// The rating is the broadcast card's (card = the verified card entry or null); winners, unforced errors and the dominance
+// ratio are OURS (api-tennis). A part with nothing behind it is left out; a player with no part gets no line.
+export function ratingLines(m, w, l, card) {
+  const ms = m.matchStats || {}, ok = wueUsable(ms), out = [];
+  for (const k of [w, l]) {
+    const st = ms[k] || {}, parts = [];
+    const perf = card && card[k] ? num(card[k].performance) : null;
+    if (perf != null && perf > 0 && perf <= 10) parts.push(`performance rating ${perf.toFixed(1)}`);
+    const W = num(st['Points:Winners']), U = num(st['Points:Unforced errors']);
+    if (ok && W != null && U != null) parts.push(`W: ${W} / UE: ${U}`);
+    const dr = dominanceRatio(st);
+    if (dr != null) parts.push(`DR: ${dr.toFixed(2)}`);
+    if (parts.length) out.push(`${surnameOf(m[k])}: ${parts.join(' | ')}`);
   }
   return out;
 }
@@ -86,11 +131,7 @@ export function mtoSentences(m, rows, quotes = []) {
 export function reportText(m, w, l, opts = {}) {
   const { h2h = null, pbp = null, score: sf = null, duration = null } = opts;
   const ms = m.matchStats || {};
-  // winners / unforced errors all 0 on both sides = the feed did not track them (not a real zero)
-  const tot = ['p1', 'p2'].reduce((t, k) => t + (num(ms[k] && ms[k]['Points:Winners']) || 0) + (num(ms[k] && ms[k]['Points:Unforced errors']) || 0), 0);
-  // the same winners AND unforced-error counts on both sides is the feed repeating one player's line, not a match fact
-  const same = ['Points:Winners', 'Points:Unforced errors'].every((k) => num(ms.p1 && ms.p1[k]) != null && num(ms.p1 && ms.p1[k]) === num(ms.p2 && ms.p2[k]));
-  const wueOk = tot > 0 && !same;
+  const wueOk = wueUsable(ms);
   const score = winnerScore(m, w), round = opts.round !== undefined ? opts.round : roundWords(m.tournamentRound);
   const fields = { score, round, retired: !!m.retired };
   let s1 = `${m[w]} beat ${m[l]}`;

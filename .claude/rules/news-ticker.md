@@ -26,7 +26,7 @@ ticker page comes through Claude Design). Tests: `tools/test-news-ticker.mjs`, `
   only that sentence's players, in the same order; "He" only for the one player the sentence is about; every other word
   is the template sentence's own, a player's name, or `VOCAB` (neutral connecting words: no judgement, quantity or stat
   verb). So no "looked", "felt", rating or opinion can pass. **A sentence that fails keeps the template wording** (the
-  card name as the full name in sentence 1, the surname after). **Test:** `tools/test-news-ticker-live.mjs` "voice"
+  card name as the surname). **Test:** `tools/test-news-ticker-live.mjs` "voice"
   (17 bad rewrites each refused for its reason; one failing sentence falls back alone).
 - **Done once per report.** The item stores `templateText` + `voice {version, model, passed, total, failures}`; a later
   run reuses the stored rewrite while the template is unchanged. No key or a failed call = the template text, retried
@@ -50,7 +50,17 @@ ticker page comes through Claude Design). Tests: `tools/test-news-ticker.mjs`, `
   bad / none) set by the code; a good-tone sentence may use strong, solid, clean, sharp, well, better, particularly
   (clutch only on break points); a bad-tone one shaky, poor, weak, error-prone, low, worse, struggled ("not clutch" on
   break points); no tone = no judgement word. **Test:** "voice: an opinion word passes only…".
-- **Full name at first mention** = the standings name, only when it reads given name + the card's surname.
+- **Surnames only, also at first mention** (founder 2026-11-13; replaces "full name at first mention"): "Fritz beat
+  Norrie", never "Taylor Fritz" or "T. Fritz" (`surnameOf`: "A. De Minaur" → "De Minaur", "J-L. Struff" → "Struff").
+  A first name in a rewrite is not in the facts and fails the check; a report the voice step did not reach prints the
+  template with surnames. **Test:** `tools/test-news-ticker-live.mjs` "voice" (a first-name rewrite refused).
+- **A report is paragraphs** (blank line between): the match, what was seen, the physical paragraph, then one closing
+  line per player. **Nothing in it names a source** (no "the card", "the commentators") and **nothing is from after
+  the match**. Simple words, no idioms, never "I" or "we".
+- **Closing line per player, winner first** (founder 2026-11-13): `Fritz: performance rating 8.8 | W: 31 / UE: 17 |
+  DR: 1.40`. The rating is the broadcast card's; winners, unforced errors and the dominance ratio (return points won %
+  ÷ (100 − service points won %)) are OURS (api-tennis). A missing part is left out; nothing to print = no line
+  (`ratingLines`). **Test:** `tools/test-match-cards.mjs` "closing line per player".
 - Every number is a stored field or a count of stored rows; a clause with nothing behind it is not written.
   **Test:** no box score and no point log → the first sentence alone; a null is never printed as 0.
 - **Break points:** the box score's count, else the point-by-point count. "faced no break points" prints only from a
@@ -60,7 +70,6 @@ ticker page comes through Claude Design). Tests: `tools/test-news-ticker.mjs`, `
 - Point-by-point fact definitions are in `tools/news-ticker/pbp-facts.mjs` (header). **Longest run prints at 4 or more**
   (founder 2026-11-11), never when tied.
 - Head-to-head reads "for the Nth time in M meetings" from the one H2H list (`h2h-core.js`); main draw only.
-- No rating, no opinion line, no commentary.
 
 ## Times
 - **Timestamp = the observed match end; where none was observed, the scheduled start, labelled `scheduled`.**
@@ -145,12 +154,25 @@ ticker page comes through Claude Design). Tests: `tools/test-news-ticker.mjs`, `
 - **Every quote says what it is about.** A press quote carries a topic label ("On a possible ATP tournament in Copenhagen") written by the model from the quote and the article text around it, shown in front of the quotation marks. It is our label, never the player's words; the quote itself is untouched. Asked once per quote; a label that is not "On …" (≤ 60 characters) is not used. Quotes held from before are labelled 12 per tournament per run.
 - **Order inside a card:** the on-court interview first, in the order of the match (the start and first set, moments in the match, the match as a whole, his game, his body, his season, the tournament, what is next: `newsTopicRank`), then what he told the press, oldest first. Never the longest quote first.
 - **A withdrawal is named.** A quote dated on the day the speaker gave a walkover reads "after withdrawing before his match against X" (his opponent's: "after X withdrew before their match"), from our own fixture status. **Test:** `tools/test-news-ticker-live.mjs` "a press quote gets a topic label…" and "card order…".
-- **Medical timeouts in the match report (founder 2026-11-13).** Every timeout in `mto-matches.json` (the MTO archive, built before the ticker in `pipeline.yml`) is one sentence at the end of the report: who, and the score in the set when he called it ("T. A. Tirante took a medical timeout at 2–3 in the second set."). The reason is not in our data and is never stated or guessed. When the same player spoke about his body in the on-court interview for that match, his words follow, word for word (`mtoSentences`, `MTO_BODY`). The sentence is added after the voice step and is never rewritten. **Test:** `tools/test-news-ticker-live.mjs` "a medical timeout is named…".
-- **Commentary (founder 2026-11-13).** The same job transcribes each finished match's 10-minute Tennis TV highlights (`video-type:match-highlights`, at most 2 per run) and a model sums up what the commentators said in two or three plain sentences. It is our summary, never a quotation: it is kept only when every number in it is in the transcript and every name is in the transcript or is one of the two players (`commentaryOk`); "nothing worth reporting" publishes nothing. Stored in `news-quotes/commentary.json` by match id; the match report ends with "From the commentary: …", added after the voice step. **Test:** `tools/test-ttv-interviews.mjs` "commentary…".
-
-## Shot-level numbers: the broadcast's Match Statistics card (founder 2026-11-13)
-- **Source:** the ATP broadcast graphic that @ATP_Entry posts on X after each match (founder: "it's fine, we have an agreement"). Measured 8–12 Nov 2026 on 22 played Stockholm matches: 21 had a card; median 35 minutes after match point, 19 of 21 within two hours.
-- **Cost rule:** X bills per post read. `tools/news-ticker/match-cards.mjs` reads ONLY posts newer than `lastSeenId`, one page a run, and refuses to run without a `lastSeenId` (never a back-fill: the July catch-up read 2,000 posts). **Test:** `tools/test-match-cards.mjs` "wiring".
-- **A card is used only when it agrees with us:** the players are this match's, the set scores equal ours exactly, break points won equal ours, and the first-serve and second-serve percentages are within 3 points of our box score (none off by more than 6). Anything else is rejected and logged, never repaired. A value the model could not read is a blank.
-- **In the report:** at most two sentences, only when they say something (unforced errors piled on one wing, 15+ forehand winners, 20+ net approaches, the long rallies), added after the voice step. The image is never stored or shown.
-- **Walkover reason:** the result post's "W.O. (Left Calf)" is added to our walkover status line as "Reason given: left calf." Never guessed.
+- **The physical paragraph (founder 2026-11-13; replaces "one sentence at the end").** A match with a timeout in
+  `mto-matches.json` (the MTO archive, built before the ticker in `pipeline.yml`) gets its own paragraph: "Physically,
+  it is something to follow." + who called it and the score in the set ("Ruud took two medical timeouts: at 5–6 in the
+  first set and at 0–0 in the second set.") + his own on-court words about his body, word for word, or "We do not know
+  the reason." (the reason is not in our data and is never guessed) + what to follow: "Something to follow up for the
+  next round." for the winner (not after a final), "Maybe something to follow up for the next tournaments of X." for
+  the player who is out (`mtoSentences`, `MTO_BODY`). Added after the voice step, never rewritten. **Test:**
+  `tools/test-news-ticker-live.mjs` "a medical timeout is named…".
+- **From the broadcast card (founder 2026-11-13: "serve quality, unreturned serves, return quality, performance rating,
+  and … high difference of over 9 shots won, and also from the baseline").** Printed only when it says something
+  (`shotSentences`; thresholds are the builder's, not ruled): a serve quality from 8.5 or 35%+ unreturned serves; a
+  return quality from 8.0 ("returned very well") or under 6.0 ("not his best return performance"); a baseline gap of
+  10+ points; a long-rally (over 9 shots) gap of 6+. The loser gets one sentence at most. Wing winners / errors and net
+  points are not printed. The card is verified against our score, serve figures and break points as before; its wing
+  counts are also compared with our totals (W = aces + forehand + backhand winners, UE = forehand + backhand unforced +
+  double faults) and the gap is stored — never a reason to drop a card. **Test:** `tools/test-match-cards.mjs`.
+- **What was seen in the match (founder 2026-11-13; replaces "From the commentary: …").** The same job transcribes each
+  finished match's 10-minute Tennis TV highlights (`video-type:match-highlights`, at most 2 per run) and a model writes
+  two or three plain sentences of what happened. It is our own observation: kept only when every number in it is in the
+  transcript, every name is in the transcript or is one of the two players, and it names no source and no "I" / "we"
+  (`commentaryOk`); "nothing worth reporting" publishes nothing. Stored in `news-quotes/commentary.json` by match id;
+  it is its own paragraph in the report. **Test:** `tools/test-ttv-interviews.mjs` "commentary…".
