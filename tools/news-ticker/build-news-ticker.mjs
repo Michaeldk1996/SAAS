@@ -21,6 +21,7 @@ import path from 'node:path';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import { reportText, statusItems, h2hAfter, roundWords, breakPoints, mtoSentences } from './news-core.mjs';
+import { shotSentences } from './match-cards.mjs';
 import { pbpFacts, scoreFacts } from './pbp-facts.mjs';
 import { mergeItems, buildIndex, fileOf, observedTimes, tourKeep } from './ticker-core.mjs';
 
@@ -102,6 +103,8 @@ export async function build({ nowIso, times, rewrite = null, apiKey = process.en
   const summary = { voice: { rewritten: 0, reused: 0, notRewritten: 0, errors: 0, lastError: null, tokens: { input: 0, output: 0 }, reportsFullyInVoice: 0, reportsTotal: 0, sentencesPassed: 0, sentencesTotal: 0 }, tournaments: 0, finished: 0, reports: 0, reportErrors: [], status: 0, quotes: 0, added: 0, revised: 0, unchanged: 0, filesWritten: [], withObservedEnd: 0, withDuration: 0, hiddenByOffSwitch: 0 };
   const touched = [];
   const commentaryByMatch = ((readJson('news-quotes/commentary.json') || {}).byMatch) || {};   // what the TV commentators said (ttv-interviews.mjs)
+  const walkoverReasons = ((readJson('news-quotes/match-cards.json') || {}).walkovers) || {};   // "W.O. (Left Calf)" on the official result post
+  const cardsByMatch = ((readJson('news-quotes/match-cards.json') || {}).byMatch) || {};   // the broadcast's shot-level numbers (match-cards.mjs)
   const mtoByMatch = ((readJson('mto-matches.json') || {}).matches) || {};   // absent file = no timeout sentence (never a guess)
   for (const g of groups.values()) {
     const file = fileOf(g.key, g.season);
@@ -145,8 +148,11 @@ export async function build({ nowIso, times, rewrite = null, apiKey = process.en
         } else summary.voice.notRewritten++;
         // medical timeouts (the MTO archive) and what the player said about his body on court: added after the voice step,
         // never rewritten by it
-        const mto = mtoSentences(m, mtoByMatch[ek(m)], quoteItems);
         const baseText = text;
+        // shot-level numbers from the broadcast's statistics card (verified against our own score and serve figures)
+        const shot = shotSentences(m, w, l, cardsByMatch[ek(m)]);
+        if (shot.length) { text = `${text} ${shot.join(' ')}`; summary.withShotStats = (summary.withShotStats || 0) + 1; }
+        const mto = mtoSentences(m, mtoByMatch[ek(m)], quoteItems);
         if (mto.length) { text = `${text} ${mto.join(' ')}`; summary.withMto = (summary.withMto || 0) + 1; }
         const cm = commentaryByMatch[ek(m)];
         if (cm && cm.text) { text = `${text} From the commentary: ${cm.text}`; summary.withCommentary = (summary.withCommentary || 0) + 1; }
@@ -155,13 +161,16 @@ export async function build({ nowIso, times, rewrite = null, apiKey = process.en
         fresh.push({ id, type: 'report', playerId: String(m[w + 'Key']), opponentId: String(m[l + 'Key']), player: m[w], opponent: m[l],
           tournament: g.name, tournamentKey: g.key, season: g.season, stage: stage || 'main draw', round: rep.fields.round, eventKey: ek(m),
           timestamp: obs && obs.endedAt ? obs.endedAt : startIso(m), timestampKind: obs && obs.endedAt ? 'observed' : 'scheduled',
-          observed: obs || null, category: 'Statistics', text, ...(mto.length || (cm && cm.text) ? { baseText } : {}), ...(mto.length ? { mto } : {}), ...(cm && cm.text ? { commentary: { text: cm.text, sourceName: cm.sourceName, sourceUrl: cm.sourceUrl } } : {}), ...(voice ? { templateText: rep.text, voice } : {}), fields: rep.fields,
+          observed: obs || null, category: 'Statistics', text, ...(mto.length || shot.length || (cm && cm.text) ? { baseText } : {}), ...(cardsByMatch[ek(m)] ? { shotStats: cardsByMatch[ek(m)] } : {}), ...(mto.length ? { mto } : {}), ...(cm && cm.text ? { commentary: { text: cm.text, sourceName: cm.sourceName, sourceUrl: cm.sourceUrl } } : {}), ...(voice ? { templateText: rep.text, voice } : {}), fields: rep.fields,
           sourceName: 'Stennisfy match data (api-tennis box score and point-by-point)', sourceUrl: `pbp/${ek(m)}.json`, language: 'en', translated: false });
         summary.reports++;
       } catch (e) { summary.reportErrors.push(`${m.id}: ${e && e.message}`); }
     }
     for (const s of statusItems(g.cards, { ek, startIso, tournament: g.name, base: '' })) {
-      fresh.push({ ...s, tournamentKey: g.key, season: g.season, sourceUrl: 'matches.json' }); summary.status++;
+      // a walkover's reason, when the official result post gave one (never guessed)
+      const wr = /^status-wo-(.+)$/.exec(String(s.id)), why = wr && walkoverReasons[wr[1]];
+      const st = why && why.reason ? { ...s, text: `${s.text} Reason given: ${String(why.reason).toLowerCase()}.`, reason: why.reason } : s;
+      fresh.push({ ...st, tournamentKey: g.key, season: g.season, sourceUrl: 'matches.json' }); summary.status++;
     }
     const qf = readJson(`news-quotes/${g.key}-${g.season}.json`);
     for (const q of (qf && qf.items) || []) { if (hidden(q)) continue; fresh.push(q); summary.quotes++; }

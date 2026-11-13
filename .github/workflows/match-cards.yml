@@ -1,0 +1,39 @@
+name: News ticker match cards
+# The broadcast's "Match Statistics" card, posted by @ATP_Entry after each match (founder 2026-11-13). Every 15 minutes:
+# read ONLY the posts newer than the last one seen (X bills per post read), have a model read each card, keep a card
+# only when it agrees with our own score and serve figures, and commit news-quotes/match-cards.json. The match reports
+# (pipeline.yml) take the shot-level numbers from that file. Rules: .claude/rules/news-ticker.md.
+on:
+  schedule:
+    - cron: '4-59/15 * * * *'
+  workflow_dispatch:
+concurrency:
+  group: news-match-cards
+  cancel-in-progress: false
+permissions:
+  contents: write
+jobs:
+  cards:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Read new cards
+        env:
+          X_BEARER_TOKEN: ${{ secrets.X_BEARER_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: node tools/news-ticker/match-cards.mjs
+      - name: Commit
+        run: |
+          if [ -z "$(git status --porcelain -- news-quotes/match-cards.json news-quotes/match-cards-state.json)" ]; then echo "nothing to commit"; exit 0; fi
+          git add -- news-quotes/match-cards-state.json; [ -f news-quotes/match-cards.json ] && git add -- news-quotes/match-cards.json
+          git -c user.name='bsp-bot' -c user.email='bsp-bot@users.noreply.github.com' commit -q -m "chore(news): match statistics cards [skip ci]"
+          for attempt in 1 2 3 4; do
+            git push --quiet origin HEAD:main && exit 0
+            git fetch --quiet origin main && git rebase --quiet origin/main || { git rebase --abort; exit 1; }
+          done
+          exit 1
