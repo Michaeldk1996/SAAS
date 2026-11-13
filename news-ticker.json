@@ -1,17 +1,17 @@
 {
- "generatedAt": "2026-11-13T18:43:33.043Z",
+ "generatedAt": "2026-11-13T19:29:24.383Z",
  "tournaments": [
   {
    "key": "tour",
    "season": "2026",
    "name": "ATP Tour",
    "file": "news-ticker/tour-2026.json",
-   "items": 42,
+   "items": 43,
    "byType": {
-    "quote": 42
+    "quote": 43
    },
-   "latestTimestamp": "2026-11-13T18:13:33.000Z",
-   "updatedAt": "2026-11-13T18:43:33.043Z"
+   "latestTimestamp": "2026-11-13T18:42:36.000Z",
+   "updatedAt": "2026-11-13T19:29:24.383Z"
   },
   {
    "key": "1681",
@@ -51,6 +51,37 @@
   }
  ],
  "latest": [
+  {
+   "id": "quote-96abf0cab7188d",
+   "type": "quote",
+   "playerId": "2973",
+   "opponentId": null,
+   "player": "B. Shelton",
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-13T18:42:36.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "He is here for the dinner dedicated to the former world number 1s and will stay a few days to work with me, before the official start of our collaboration during the winter preparation",
+   "originalText": "È qui anche per la cena dedicata agli ex numeri 1 del mondo e si fermerà qualche giorno per lavorare insieme a me, prima dell&#8217;inizio ufficiale della nostra collaborazione durante la preparazione invernale",
+   "language": "it",
+   "translated": true,
+   "translationModel": "claude-opus-5-5",
+   "sourceName": "Ubitennis",
+   "sourceUrl": "https://www.ubitennis.com/blog/2026/11/13/atp-finals-zverev-non-sono-un-robot-ero-stanco-mentalmente-shelton-con-ferrero-il-vero-lavoro-iniziera-in-inverno/",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On Juan Carlos Ferrero joining his coaching team",
+   "sourceHash": "b5f60ba7b0ab668e",
+   "publishedAt": "2026-11-13T19:29:24.383Z",
+   "file": "news-ticker/tour-2026.json"
+  },
   {
    "id": "quote-d0aad41c95bb05",
    "type": "quote",
@@ -1872,39 +1903,6 @@
    "revisedAt": "2026-11-13T09:12:18.799Z",
    "revision": 2,
    "file": "news-ticker/1681-2026.json"
-  },
-  {
-   "id": "quote-5582025187afcf",
-   "type": "quote",
-   "playerId": "1079",
-   "opponentId": null,
-   "player": "D. Dzumhur",
-   "opponent": null,
-   "tournament": "ATP Tour",
-   "tournamentKey": "tour",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-12T13:54:45.025Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Injuries",
-   "context": null,
-   "eventKey": null,
-   "won": null,
-   "text": "Injuries kept me away from the court a lot, there were problems last year. For example, I played the US Open without training, and all of that affects form and results. I was coming back from an injury at the time",
-   "originalText": "Povrede su me dosta odvojile od terena, bilo je problema u prošloj godini. Recimo, US Open sam igrao bez treninga, a sve to utiče na formu i rezultate. Izlazio sam tada iz povrede",
-   "language": "bs",
-   "translated": true,
-   "translationModel": "claude-opus-5-5",
-   "sourceName": "Sport1.ba (Oslobodjenje)",
-   "sourceUrl": "https://www.oslobodjenje.ba/sport/ostali-sportovi/tenis/damir-dzumhur-zavrsavam-devetu-godinu-zaredom-u-top-100-ponosan-sam-na-to/",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "sourceHash": "63d7bdf4e632106f",
-   "publishedAt": "2026-11-12T14:22:24.864Z",
-   "revisedAt": "2026-11-13T07:43:17.649Z",
-   "revision": 2,
-   "topic": "On how injuries affected his form and results",
-   "file": "news-ticker/tour-2026.json"
   }
  ]
 }
