@@ -1,6 +1,20 @@
 {
- "generatedAt": "2026-11-13T13:53:19.089Z",
+ "generatedAt": "2026-11-13T15:26:52.221Z",
  "tournaments": [
+  {
+   "key": "1681",
+   "season": "2026",
+   "name": "Stockholm",
+   "file": "news-ticker/1681-2026.json",
+   "items": 111,
+   "byType": {
+    "report": 27,
+    "quote": 77,
+    "status": 7
+   },
+   "latestTimestamp": "2026-11-13T14:56:33.967Z",
+   "updatedAt": "2026-11-13T15:26:52.221Z"
+  },
   {
    "key": "tour",
    "season": "2026",
@@ -12,20 +26,6 @@
    },
    "latestTimestamp": "2026-11-13T13:09:55.000Z",
    "updatedAt": "2026-11-13T13:53:19.089Z"
-  },
-  {
-   "key": "1681",
-   "season": "2026",
-   "name": "Stockholm",
-   "file": "news-ticker/1681-2026.json",
-   "items": 110,
-   "byType": {
-    "quote": 77,
-    "report": 26,
-    "status": 7
-   },
-   "latestTimestamp": "2026-11-13T09:51:56.000Z",
-   "updatedAt": "2026-11-13T10:53:28.081Z"
   },
   {
    "key": "1725",
@@ -51,6 +51,116 @@
   }
  ],
  "latest": [
+  {
+   "id": "report-12179750",
+   "type": "report",
+   "playerId": "366",
+   "opponentId": "2982",
+   "player": "T. A. Tirante",
+   "opponent": "A. Tabilo",
+   "tournament": "Stockholm",
+   "tournamentKey": "1681",
+   "season": "2026",
+   "stage": "main draw",
+   "round": "semi-finals",
+   "eventKey": "12179750",
+   "timestamp": "2026-11-13T14:56:33.967Z",
+   "timestampKind": "observed",
+   "observed": {
+    "endedAt": "2026-11-13T14:56:33.967Z",
+    "startedAt": "2026-11-13T13:10:41.154Z",
+    "minutes": 106
+   },
+   "category": "Statistics",
+   "text": "Tirante beat Tabilo for the 1st time in 3 meetings, 7–5, 7–6 in the SF. Set 2 went to a tiebreak, won by Tirante. Tirante got broken when serving for the match. He served well with 14 aces and won 88% of his first-serve points (37 of 42). He hit 35 winners and made 20 unforced errors.\n\nPhysically, it is something to follow. Tirante took a medical timeout at 1–2 in the second set. We do not know the reason. Something to follow up for the next round.\n\nTirante: W: 35 / UE: 20 | DR: 1.16\n\nTabilo: W: 25 / UE: 23 | DR: 0.86",
+   "baseText": "Tirante beat Tabilo for the 1st time in 3 meetings, 7–5, 7–6 in the SF. Set 2 went to a tiebreak, won by Tirante. Tirante got broken when serving for the match. He served well with 14 aces and won 88% of his first-serve points (37 of 42). He hit 35 winners and made 20 unforced errors.",
+   "rating": [
+    "Tirante: W: 35 / UE: 20 | DR: 1.16",
+    "Tabilo: W: 25 / UE: 23 | DR: 0.86"
+   ],
+   "mto": [
+    "Physically, it is something to follow.",
+    "Tirante took a medical timeout at 1–2 in the second set.",
+    "We do not know the reason.",
+    "Something to follow up for the next round."
+   ],
+   "templateText": "T. A. Tirante beat A. Tabilo for the 1st time in 3 meetings, 7-5, 7-6 in the semi-finals. Set 2 went to a tiebreak, won by T. A. Tirante. T. A. Tirante was broken when serving for the match. T. A. Tirante hit 14 aces and won 88% of his first-serve points (37 of 42). T. A. Tirante hit 35 winners and made 20 unforced errors.",
+   "voice": {
+    "version": 5,
+    "model": "claude-opus-5-5",
+    "passed": 5,
+    "total": 5,
+    "failures": []
+   },
+   "fields": {
+    "score": "7-5, 7-6",
+    "round": "semi-finals",
+    "retired": false,
+    "h2h": {
+     "a": 1,
+     "b": 2,
+     "n": 3
+    },
+    "durationMinutes": 106,
+    "facts": {
+     "tiebreakSets": [
+      {
+       "set": 2,
+       "winner": "p2"
+      }
+     ],
+     "brokenForMatch": {
+      "p2": 1
+     }
+    },
+    "standouts": [
+     {
+      "player": "winner",
+      "tone": "good",
+      "metric": "aces",
+      "value": 14
+     },
+     {
+      "player": "winner",
+      "tone": "good",
+      "metric": "firstWon",
+      "value": 88,
+      "won": 37,
+      "total": 42
+     },
+     {
+      "player": "winner",
+      "tone": "good",
+      "metric": "winnersErrors",
+      "winners": 35,
+      "unforcedErrors": 20
+     }
+    ],
+    "winner": {
+     "aces": 14,
+     "winners": 35,
+     "unforcedErrors": 20,
+     "breakPointsSaved": 3,
+     "breakPointsFaced": 4,
+     "breakPointsSource": "box score"
+    },
+    "loser": {
+     "aces": 5,
+     "winners": 25,
+     "unforcedErrors": 23,
+     "breakPointsSaved": 0,
+     "breakPointsFaced": 2,
+     "breakPointsSource": "box score"
+    }
+   },
+   "sourceName": "Stennisfy match data (api-tennis box score and point-by-point)",
+   "sourceUrl": "pbp/12179750.json",
+   "language": "en",
+   "translated": false,
+   "sourceHash": "f6a0f0831615ccc4",
+   "publishedAt": "2026-11-13T15:26:52.221Z",
+   "file": "news-ticker/1681-2026.json"
+  },
   {
    "id": "quote-47d31e04920035",
    "type": "quote",
@@ -2064,39 +2174,6 @@
    "revisedAt": "2026-11-13T09:12:18.799Z",
    "revision": 5,
    "file": "news-ticker/1681-2026.json"
-  },
-  {
-   "id": "quote-90cffd1b11a610",
-   "type": "quote",
-   "playerId": "3317",
-   "opponentId": null,
-   "player": "R. Hijikata",
-   "opponent": null,
-   "tournament": "ATP Tour",
-   "tournamentKey": "tour",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-11T19:23:12.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Interviews",
-   "context": null,
-   "eventKey": null,
-   "won": null,
-   "text": "Putting on the green and gold is probably the biggest honour you can have as an Australian athlete,",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "Tennis Majors",
-   "sourceUrl": "https://www.tennismajors.com/others-news/united-cup/raducanu-to-end-injury-layoff-at-united-cup-shelton-leads-team-usa-with-gauff-866688.html",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "sourceHash": "1803b441def75df4",
-   "publishedAt": "2026-11-12T03:03:12.953Z",
-   "topic": "On representing Australia in green and gold",
-   "revisedAt": "2026-11-13T07:43:17.649Z",
-   "revision": 1,
-   "file": "news-ticker/tour-2026.json"
   }
  ]
 }
