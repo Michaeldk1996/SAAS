@@ -126,8 +126,8 @@ if (process.env.DISCOVER_URL) {
   const at = (fx, fy) => [fr[0] + fr[2] * fx, fr[1] + fr[3] * fy];
   const hover = async () => { const [x, y] = at(0.5, 0.5); await send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: x + Math.random() * 8, y }); await sleep(700); };
   await hover(); { const [x, y] = at(0.933, 0.281); await clickXY(x, y); } await sleep(5000); await shot('d1_panel');
-  { const [x, y] = at(0.89, 0.081); await clickXY(x, y); } await sleep(5000); await shot('d2_insights_0');
-  for (let k = 1; k <= 4; k++) { const [x, y] = at(0.89, 0.6); await send('Input.dispatchMouseEvent', { type: 'mouseWheel', x, y, deltaX: 0, deltaY: 330 }); await sleep(1500); await shot('d2_insights_' + k); }
+  { const [x, y] = at(0.773, 0.115); await clickXY(x, y); } await sleep(5000); await shot('d2_insights_0');
+  for (let k = 1; k <= 7; k++) { const [x, y] = at(0.773, 0.6); await send('Input.dispatchMouseEvent', { type: 'mouseWheel', x, y, deltaX: 0, deltaY: 330 }); await sleep(1500); await shot('d2_insights_' + k); }
   console.log('discover: iframes', JSON.stringify(await ev(`[...document.querySelectorAll('iframe')].map((f) => (f.src || f.id || f.className || '').slice(0, 160) + ' ' + Math.round(f.getBoundingClientRect().width) + 'x' + Math.round(f.getBoundingClientRect().height) + ' sameOrigin=' + (() => { try { return !!f.contentDocument; } catch (e) { return false; } })())`)));
   console.log('discover: requests after opening', JSON.stringify([...new Set(reqs.slice(before))].slice(0, 60)));
   spawnSync('tar', ['-czf', '/tmp/frames.tgz', '-C', '/tmp', 'frames']);
