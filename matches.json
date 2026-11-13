@@ -3009,17 +3009,11 @@
         }
       ]
     },
-    "live": true,
-    "liveStatus": "Set 1",
-    "liveScore": [
-      {
-        "set": 1,
-        "p1": 0,
-        "p2": 0
-      }
-    ],
-    "liveGameScore": "0 - 0",
-    "liveServer": "p1",
+    "live": false,
+    "liveStatus": null,
+    "liveScore": null,
+    "liveGameScore": null,
+    "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/2982_a-tabilo.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/366_t-a-tirante.jpg",
     "tournamentKey": "1681",
@@ -5337,7 +5331,27 @@
       "edgeVsPinnacleP1": -0.0085,
       "edgeVsPinnacleP2": 0.0085,
       "ts": "2026-11-13T04:28:56.150Z"
-    }
+    },
+    "retired": false,
+    "walkover": false,
+    "finalScore": {
+      "display": "5-7, 6-7(1)",
+      "sets": [
+        {
+          "p1": 5,
+          "p2": 7
+        },
+        {
+          "p1": 6,
+          "p2": 7
+        }
+      ],
+      "p1Sets": 0,
+      "p2Sets": 2,
+      "winner": "p2"
+    },
+    "interrupted": false,
+    "partialScore": null
   },
   {
     "id": "upcoming-12179838",
@@ -8323,11 +8337,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 2",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 6,
+        "p2": 4
+      }
+    ],
+    "liveGameScore": "0 - 0",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/2832_t-fritz.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2849_l-musetti.jpg",
     "tournamentKey": "1681",
@@ -9077,7 +9097,10 @@
       "edgeVsPinnacleP1": -0.0264,
       "edgeVsPinnacleP2": 0.0264,
       "ts": "2026-11-13T04:28:56.150Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12179703",
