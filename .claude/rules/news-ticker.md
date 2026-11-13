@@ -21,6 +21,34 @@ ticker page comes through Claude Design). Tests: `tools/test-news-ticker.mjs`, `
   **Test:** `tools/test-news-ticker-live.mjs` "a report whose match left the board…".
 - Built inside every pipeline run from the files that run wrote; committed back (`bsp-bot`, `[skip ci]`).
 
+## Match reports — written automatically as a full report, from the fact sheet only (founder 2026-11-14)
+
+"The goal is to make it automatic": the published report reads like the founder's hand-written ones — what kind of match
+it was, the match in playing order, the numbers that explain it, one or two quotes, "All in all," and the next opponent.
+`tools/news-ticker/compose.mjs`; pipeline only (key from Actions secrets).
+- **The fact sheet is the only source** (`factSheet`): the result, head to head, the breaks / break points / set and match
+  points in playing order (`setStory`, only when the whole point log agrees with the final score), the box score per
+  match and per set, the shot numbers the card rule allows, what was seen in the match, the winner's earlier rounds and
+  the next opponent's (`pathLines`), and the two players' own quotes about this match (`matchQuotes`).
+- **Published only when it passes the check** (`checkComposed`). **Test:** is every number, score, capitalised name and
+  quotation of the text on the sheet? A quotation is word for word, whole sentences, with its speaker named in the words
+  leading into it; a word about a shot, the body, nerves, a title, a season or the conditions (`RISKY`) needs a sheet line
+  with that word (a quote does not count); no first person, no named source, no initial, no question, one "(!!!)" at
+  most; the last paragraph starts "All in all,". One retry with the reasons; a second failure keeps the older report
+  (template + voice, below) and the same facts are not sent again. The check cannot read meaning: it keeps anything NEW
+  out of the text.
+- **Written once per fact sheet** (`composed {version, sheetHash, status, runs, body}` on the item): new facts (a later
+  quote, the next opponent) write it again, at most `MAX_COMPOSE_RUNS` (3) times and only within `COMPOSE_FRESH_HOURS`
+  (36) of the match; `COMPOSE_VERSION` rewrites every report on file. A run writes at most `NEWS_COMPOSE_MAX_CALLS` (6)
+  reports, 2 of them kept for matches that have just finished.
+- **Added by code, never by the model:** the physical paragraph (before the verdict) and the closing line per player
+  (`assemble`).
+- **Test:** `tools/test-news-compose.mjs` (a real match frozen from the live site; every "refuses" check is a mutant of a
+  passing text). Read-only measurement on live data: `tools/news-ticker/compose-probe.mjs`.
+
+The sections below describe the older report (template + sentence-by-sentence voice). It is what a report falls back to
+when the full report could not be written or did not pass its check.
+
 ## Match reports — the template is the facts; the wording is Michael's voice, checked sentence by sentence (founder 2026-11-12)
 - **The template report stays the source of truth** (`reportText`: one sentence per stored fact group). A model rewrites
   the sentences one for one in the founder's voice (`humanise.mjs`, pipeline only, key from Actions secrets); this

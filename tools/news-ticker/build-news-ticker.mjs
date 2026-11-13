@@ -24,6 +24,7 @@ import { reportText, statusItems, h2hAfter, roundWords, breakPoints, mtoSentence
 import { shotSentences } from './match-cards.mjs';
 import { pbpFacts, scoreFacts } from './pbp-facts.mjs';
 import { mergeItems, buildIndex, fileOf, observedTimes, tourKeep } from './ticker-core.mjs';
+import { factSheet, composeReport, assemble, pathLines, matchQuotes, roundCode, COMPOSE_VERSION, MAX_COMPOSE_RUNS, COMPOSE_FRESH_HOURS } from './compose.mjs';
 
 const require = createRequire(import.meta.url);
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -59,9 +60,13 @@ async function supabaseRows(table, select, keys) {
   return out;
 }
 
-export async function build({ nowIso, times, rewrite = null, apiKey = process.env.ANTHROPIC_API_KEY }) {
+export async function build({ nowIso, times, rewrite = null, writer = null, apiKey = process.env.ANTHROPIC_API_KEY }) {
+  const composeOn = !!(writer || apiKey) && process.env.NEWS_REPORT_COMPOSE !== '0';
   const voiceOn = !!(rewrite || apiKey), VOICE_MAX_CALLS = Number(process.env.NEWS_REPORT_MAX_CALLS || 40);
-  let voiceCalls = 0;
+  let voiceCalls = 0, composeCalls = 0;
+  // a full report takes about 20 seconds to write: a run writes at most this many, and keeps 2 of them for matches that
+  // have just finished (older reports on file are brought up to date over the next runs)
+  const COMPOSE_MAX = Number(process.env.NEWS_COMPOSE_MAX_CALLS || 6);
   const { berlinWallMs } = require(path.join(ROOT, 'berlin-time.js'));
   const H2HCore = require(path.join(ROOT, 'h2h-core.js'));
   const board = readJson('matches.json');
@@ -71,6 +76,10 @@ export async function build({ nowIso, times, rewrite = null, apiKey = process.en
   const index = readJson('player-index.json');
   const ratings = readJson('surface-ratings.json');   // each player's own baseline (Database → Ratings store); absent = no comparison
   const names = ((index && index.players) || []).map((p) => p && p.name).filter(Boolean);
+  // every ranked player's surname words: a report may name only the players on its own fact sheet (compose.mjs)
+  const surnames = new Set(names.flatMap((n) => String(n).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().split(/[\s-]+/).slice(1)).filter((x) => x.length >= 4));
+  const styleRows = ((readJson('playing-styles.json') || {}).players) || [];
+  const styleOf = (card) => { const r = styleRows.filter((p) => p && p.name === card && p.archetype_label); return r.length === 1 ? String(r[0].archetype_label).toLowerCase() : null; };
   const prog = readJson('tournament-progression.json');
   const progs = prog ? (Array.isArray(prog.tournaments) ? prog.tournaments : Object.values(prog.tournaments || {})) : [];
   const startIso = (m) => { const t = berlinWallMs(m.date, m.time); return Number.isFinite(t) ? new Date(t).toISOString() : null; };
@@ -122,6 +131,11 @@ export async function build({ nowIso, times, rewrite = null, apiKey = process.en
       const r = p && (p.rounds || []).filter((x) => x.opponent === m[o]);
       return r && r.length === 1 && PAGE_ROUND[r[0].round] ? PAGE_ROUND[r[0].round] : null;
     };
+    // a card the draw page cannot place (a walkover has no row there) takes the page round of the other cards of its own feed round
+    const feedRound = new Map();
+    for (const c of g.cards.concat(g.offBoard || [])) { if (c.qualifying) continue; const pr = pageRound(c, 'p1') || pageRound(c, 'p2'); if (pr) feedRound.set(String(c.tournamentRound), pr); }
+    const rwOf = (m) => (m.qualifying ? `${roundWords(m.tournamentRound) === 'final' ? 'final round' : roundWords(m.tournamentRound)} of qualifying` : (pageRound(m, m.finalScore && m.finalScore.winner ? m.finalScore.winner : 'p1') || pageRound(m, 'p2') || pageRound(m, 'p1') || feedRound.get(String(m.tournamentRound)) || roundWords(m.tournamentRound)));
+    const allCards = g.cards.concat(g.offBoard || []);
     const fresh = [];
     const done = g.cards.filter((m) => m.finalScore && m.finalScore.winner).concat(g.offBoard || []);
     for (const m of done) {
@@ -143,18 +157,23 @@ export async function build({ nowIso, times, rewrite = null, apiKey = process.en
         // that fails keeps the template wording. Done once per report: a stored rewrite of the same template is reused.
         // surnames only, also when the voice step did not run (founder 2026-11-13); the template keeps the card names
         let text = plainNames(rep.text, [{ card: m[w] }, { card: m[l] }]), voice = null;
-        if (prev && prev.voice && prev.voice.version === VOICE_VERSION && prev.templateText === rep.text) { text = prev.baseText || prev.text; voice = prev.voice; summary.voice.reused++; }
-        else if (voiceOn && voiceCalls < VOICE_MAX_CALLS) {
-          voiceCalls++;
-          const h = await humaniseReport({ sentences: rep.sentences, tones: rep.tones, kinds: rep.kinds, winner: { card: m[w], full: null }, loser: { card: m[l], full: null } }, { rewrite, apiKey });
-          if (h.usage) { summary.voice.tokens.input += h.usage.input; summary.voice.tokens.output += h.usage.output; }
-          if (h.status === 'ok') { text = h.text; voice = h.voice; summary.voice.rewritten++; }
-          else { summary.voice.errors++; summary.voice.lastError = `${h.status}${h.detail ? ': ' + h.detail : ''}`; }
-        } else summary.voice.notRewritten++;
+        // the sentence-by-sentence voice step is the fallback of the full report below: it runs only for a report the
+        // full writer did not produce (no call is spent on a text nobody reads)
+        const voiceStep = async () => {
+          if (prev && prev.voice && prev.voice.version === VOICE_VERSION && prev.templateText === rep.text) { text = prev.voiceText || prev.baseText || prev.text; voice = prev.voice; summary.voice.reused++; }
+          else if (voiceOn && voiceCalls < VOICE_MAX_CALLS) {
+            voiceCalls++;
+            const h = await humaniseReport({ sentences: rep.sentences, tones: rep.tones, kinds: rep.kinds, winner: { card: m[w], full: null }, loser: { card: m[l], full: null } }, { rewrite, apiKey });
+            if (h.usage) { summary.voice.tokens.input += h.usage.input; summary.voice.tokens.output += h.usage.output; }
+            if (h.status === 'ok') { text = h.text; voice = h.voice; summary.voice.rewritten++; }
+            else { summary.voice.errors++; summary.voice.lastError = `${h.status}${h.detail ? ': ' + h.detail : ''}`; }
+          } else summary.voice.notRewritten++;
+        };
+        if (!composeOn) await voiceStep();
         // After the voice step, never rewritten by it (founder 2026-11-13): the card's serve and return numbers join the
         // main paragraph; then what was seen in the match, the physical paragraph, and one closing line per player.
         // Nothing here names a source, and nothing is from after the match.
-        const baseText = text;
+        let baseText = null;
         const shot = shotSentences(m, w, l, cardsByMatch[ek(m)]);
         if (shot.length) summary.withShotStats = (summary.withShotStats || 0) + 1;
         const mto = mtoSentences(m, mtoByMatch[ek(m)], quoteItems, { winner: w, final: rw === 'final' });
@@ -163,13 +182,40 @@ export async function build({ nowIso, times, rewrite = null, apiKey = process.en
         if (cm && cm.text) summary.withCommentary = (summary.withCommentary || 0) + 1;
         const rating = ratingLines(m, w, l, cardsByMatch[ek(m)]);
         if (rating.length) summary.withRatingLine = (summary.withRatingLine || 0) + 1;
-        text = [[text, ...shot].join(' '), cm && cm.text ? cm.text : null, mto.length ? mto.join(' ') : null, ...rating].filter(Boolean).join('\n\n');
+        // The full report (founder 2026-11-14: "the goal is to make it automatic"): written from the fact sheet and
+        // published only when every number, name and quotation in it is on that sheet (compose.mjs). Written once per
+        // sheet; a sheet that failed is not tried again until its facts change. No key, a failed check or the call
+        // cap = the report above (template + voice), exactly as before.
+        let composed = null;
+        if (composeOn) {
+          const sheet = factSheet({ m, w, l, rep, shard: sp, round: rw, duration: obs && obs.minutes != null ? obs.minutes : null, card: cardsByMatch[ek(m)] || null,
+            commentary: cm && cm.text ? cm.text : null, quotes: matchQuotes(m, ek(m), quoteItems, mto.join(' ')), hasMto: mto.length > 0,
+            path: pathLines(m, w, allCards, (c) => roundCode(rwOf(c)), rw === 'final'), styles: { [w]: styleOf(m[w]), [l]: styleOf(m[l]) } });
+          const pc = prev && prev.composed && prev.composed.version === COMPOSE_VERSION ? prev.composed : null;
+          const ageH = (Date.parse(nowIso) - Date.parse(obs && obs.endedAt ? obs.endedAt : startIso(m))) / 3600000;
+          const frozen = pc && (pc.sheetHash === sheet.hash || (pc.runs || 0) >= MAX_COMPOSE_RUNS || !(ageH <= COMPOSE_FRESH_HOURS));
+          if (frozen) composed = pc;
+          else if (composeCalls < (ageH <= COMPOSE_FRESH_HOURS ? COMPOSE_MAX : COMPOSE_MAX - 2)) {
+            composeCalls++;
+            const c = await composeReport(sheet, { writer, apiKey, surnames });
+            if (c.usage) { summary.voice.tokens.input += c.usage.input; summary.voice.tokens.output += c.usage.output; }
+            if (c.status === 'ok') { composed = { version: COMPOSE_VERSION, sheetHash: sheet.hash, status: 'ok', model: c.model, tries: c.tries, runs: ((pc && pc.runs) || 0) + 1, body: c.text }; summary.composed = (summary.composed || 0) + 1; }
+            else if (c.status === 'failed-check') { composed = { version: COMPOSE_VERSION, sheetHash: sheet.hash, status: 'failed-check', tries: c.tries, runs: ((pc && pc.runs) || 0) + 1, failures: c.failures.slice(0, 8), ...(pc && pc.body ? { body: pc.body, status: 'ok', keptAfterFailedRewrite: true } : {}) }; summary.composeFailed = (summary.composeFailed || 0) + 1; summary.composeFailures = (summary.composeFailures || []).concat(`${ek(m)}: ${c.failures.slice(0, 3).join(' | ')}`).slice(0, 10); }
+            else { composed = pc; summary.voice.errors++; summary.voice.lastError = `compose ${c.status}${c.detail ? ': ' + c.detail : ''}`; }
+          } else composed = pc;
+        }
+        if (composed && composed.body) { baseText = composed.body; text = assemble(composed.body, mto, rating); summary.reportsComposed = (summary.reportsComposed || 0) + 1; }
+        else {
+          if (composeOn) await voiceStep();
+          baseText = text;
+          text = [[text, ...shot].join(' '), cm && cm.text ? cm.text : null, mto.length ? mto.join(' ') : null, ...rating].filter(Boolean).join('\n\n');
+        }
         if (obs && obs.endedAt) summary.withObservedEnd++;
         if (rep.used.duration) summary.withDuration++;
         fresh.push({ id, type: 'report', playerId: String(m[w + 'Key']), opponentId: String(m[l + 'Key']), player: m[w], opponent: m[l],
           tournament: g.name, tournamentKey: g.key, season: g.season, stage: stage || 'main draw', round: rep.fields.round, eventKey: ek(m),
           timestamp: obs && obs.endedAt ? obs.endedAt : startIso(m), timestampKind: obs && obs.endedAt ? 'observed' : 'scheduled',
-          observed: obs || null, category: 'Statistics', text, ...(text !== baseText ? { baseText } : {}), ...(rating.length ? { rating } : {}), ...(cardsByMatch[ek(m)] ? { shotStats: cardsByMatch[ek(m)] } : {}), ...(mto.length ? { mto } : {}), ...(cm && cm.text ? { commentary: { text: cm.text, sourceName: cm.sourceName, sourceUrl: cm.sourceUrl } } : {}), ...(voice ? { templateText: rep.text, voice } : {}), fields: rep.fields,
+          observed: obs || null, category: 'Statistics', text, ...(text !== baseText ? { baseText } : {}), ...(rating.length ? { rating } : {}), ...(cardsByMatch[ek(m)] ? { shotStats: cardsByMatch[ek(m)] } : {}), ...(mto.length ? { mto } : {}), ...(cm && cm.text ? { commentary: { text: cm.text, sourceName: cm.sourceName, sourceUrl: cm.sourceUrl } } : {}), ...(voice ? { templateText: rep.text, voice, voiceText: composed && composed.body ? (prev && prev.voiceText) || null : baseText } : {}), ...(composed ? { composed } : {}), fields: rep.fields,
           sourceName: 'Stennisfy match data (api-tennis box score and point-by-point)', sourceUrl: `pbp/${ek(m)}.json`, language: 'en', translated: false });
         summary.reports++;
       } catch (e) { summary.reportErrors.push(`${m.id}: ${e && e.message}`); }
