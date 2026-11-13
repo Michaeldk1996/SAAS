@@ -2,7 +2,7 @@
  "tournament": "Stockholm",
  "tournamentKey": "1681",
  "season": "2026",
- "updatedAt": "2026-11-13T07:14:34.090Z",
+ "updatedAt": "2026-11-13T07:44:46.173Z",
  "items": [
   {
    "id": "quote-78abe536e5ac8e",
@@ -153,9 +153,11 @@
    "sourceUrl": "https://www.stockholmopen.se/en/tournament/nyheter/stockholm-2026-thursday-report-qfs",
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the original-language text of the fetched page",
-   "sourceHash": "3243e5f70f100d0e",
+   "topic": "On rallying after losing the second set",
+   "sourceHash": "37e75a4eb8d42268",
    "publishedAt": "2026-11-12T23:02:09.160Z",
-   "topic": "On rallying after losing the second set"
+   "revisedAt": "2026-11-13T07:44:46.173Z",
+   "revision": 1
   },
   {
    "id": "quote-68b64c79571fa4",
@@ -554,9 +556,11 @@
    "sourceUrl": "https://www.stockholmopen.se/en/tournament/nyheter/stockholm-2026-wednesday-report",
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the original-language text of the fetched page",
-   "sourceHash": "139311e8f624c791",
+   "topic": "On a career-best win over Casper",
+   "sourceHash": "75340ad393c36a74",
    "publishedAt": "2026-11-11T21:54:12.439Z",
-   "topic": "On a career-best win over Casper"
+   "revisedAt": "2026-11-13T07:44:46.173Z",
+   "revision": 1
   },
   {
    "id": "quote-ca7432a558cda6",
@@ -675,10 +679,17 @@
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the fetched ATP page, by the ATP reader",
    "topic": "On beating a friend in a tough match",
-   "sourceHash": "8cfec93247545184",
+   "alsoReportedBy": [
+    {
+     "sourceName": "ATP Tour daily report (via the official tournament site)",
+     "sourceUrl": "https://www.stockholmopen.se/en/tournament/nyheter/stockholm-2026-thursday-report-qfs",
+     "language": "en"
+    }
+   ],
+   "sourceHash": "0cd26b2bca8d913e",
    "publishedAt": "2026-11-12T18:30:14.350Z",
-   "revisedAt": "2026-11-13T07:14:34.090Z",
-   "revision": 1
+   "revisedAt": "2026-11-13T07:44:46.173Z",
+   "revision": 2
   },
   {
    "id": "quote-4285a4f67ab766",
@@ -921,7 +932,8 @@
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the original-language text of the fetched page",
    "sourceHash": "cf9712cd6fb84e3e",
-   "publishedAt": "2026-11-11T23:54:59.578Z"
+   "publishedAt": "2026-11-11T23:54:59.578Z",
+   "topic": "On hosting a tennis tournament in Copenhagen"
   },
   {
    "id": "quote-06eef627f4e28a",
@@ -1043,7 +1055,8 @@
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the original-language text of the fetched page",
    "sourceHash": "93ea2c7d2564ebc7",
-   "publishedAt": "2026-11-11T15:14:44.831Z"
+   "publishedAt": "2026-11-11T15:14:44.831Z",
+   "topic": "On returning to Stockholm after last year"
   },
   {
    "id": "quote-282dd3d4905f55",
@@ -1073,10 +1086,17 @@
    "verbatimCheckedOn": "the clip's audio, transcribed by the interviews worker",
    "interview": "on-court",
    "topic": "On coming back to Stockholm",
-   "sourceHash": "8bb98198f46920b6",
+   "alsoReportedBy": [
+    {
+     "sourceName": "ATP Tour daily report (via the official tournament site)",
+     "sourceUrl": "https://www.stockholmopen.se/en/tournament/nyheter/stockholm-2026-tuesday-report",
+     "language": "en"
+    }
+   ],
+   "sourceHash": "5e99ebbf7d81e04d",
    "publishedAt": "2026-11-12T15:59:12.115Z",
-   "revisedAt": "2026-11-13T07:14:34.090Z",
-   "revision": 1
+   "revisedAt": "2026-11-13T07:44:46.173Z",
+   "revision": 2
   },
   {
    "id": "quote-a7567efb800112",
@@ -1353,7 +1373,8 @@
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the original-language text of the fetched page",
    "sourceHash": "990d171f3417f0a8",
-   "publishedAt": "2026-11-11T23:54:59.578Z"
+   "publishedAt": "2026-11-11T23:54:59.578Z",
+   "topic": "On wanting to emulate another player's comeback"
   },
   {
    "id": "quote-522e21f43f5bbf",
@@ -1382,7 +1403,8 @@
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the original-language text of the fetched page",
    "sourceHash": "626b3653ad3efbb1",
-   "publishedAt": "2026-11-11T23:54:59.578Z"
+   "publishedAt": "2026-11-11T23:54:59.578Z",
+   "topic": "On his 2022 title at this tournament"
   },
   {
    "id": "quote-d083786f1d07c8",
@@ -1411,7 +1433,8 @@
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the original-language text of the fetched page",
    "sourceHash": "a827660127848a08",
-   "publishedAt": "2026-11-11T23:54:59.578Z"
+   "publishedAt": "2026-11-11T23:54:59.578Z",
+   "topic": "On returning to the Stockholm tournament"
   },
   {
    "id": "quote-f55af9af85aa91",
@@ -1440,7 +1463,8 @@
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the original-language text of the fetched page",
    "sourceHash": "e0e9dedee540f4f3",
-   "publishedAt": "2026-11-11T23:54:59.578Z"
+   "publishedAt": "2026-11-11T23:54:59.578Z",
+   "topic": "On a fellow player's return to the Tour"
   },
   {
    "id": "quote-2cd1ae4e09130b",
@@ -1700,7 +1724,8 @@
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the original-language text of the fetched page",
    "sourceHash": "ee24388bd5fc5288",
-   "publishedAt": "2026-11-11T23:54:59.578Z"
+   "publishedAt": "2026-11-11T23:54:59.578Z",
+   "topic": "On the match and the fantastic atmosphere"
   },
   {
    "id": "quote-cbe6db5b2926d6",
@@ -1729,7 +1754,8 @@
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the original-language text of the fetched page",
    "sourceHash": "50b34437769455f4",
-   "publishedAt": "2026-11-11T23:54:59.578Z"
+   "publishedAt": "2026-11-11T23:54:59.578Z",
+   "topic": "On his talented young opponent's future"
   },
   {
    "id": "quote-9b7fd32a33f59d",
@@ -1757,10 +1783,11 @@
    "sourceUrl": "https://www.stockholmopen.se/en/tournament/nyheter/norrie-duckworth-stockholm-2026-monday",
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the original-language text of the fetched page",
-   "sourceHash": "50251b473bc50e2b",
+   "topic": "On his relaxed mindset beating Duckworth",
+   "sourceHash": "03bd31024fa08422",
    "publishedAt": "2026-11-11T15:14:44.831Z",
-   "revisedAt": "2026-11-13T01:02:48.077Z",
-   "revision": 1
+   "revisedAt": "2026-11-13T07:44:46.173Z",
+   "revision": 2
   },
   {
    "id": "quote-f6887591f3ec08",
@@ -1788,10 +1815,11 @@
    "sourceUrl": "https://www.stockholmopen.se/en/tournament/nyheter/norrie-duckworth-stockholm-2026-monday",
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the original-language text of the fetched page",
-   "sourceHash": "08a2ba7ba92bc9d3",
+   "topic": "On his serving and playing in Stockholm",
+   "sourceHash": "a3616e59d9bd6ce5",
    "publishedAt": "2026-11-11T15:14:44.831Z",
-   "revisedAt": "2026-11-13T01:02:48.077Z",
-   "revision": 1
+   "revisedAt": "2026-11-13T07:44:46.173Z",
+   "revision": 2
   },
   {
    "id": "quote-60b2ccd7e15531",
@@ -1819,10 +1847,11 @@
    "sourceUrl": "https://www.stockholmopen.se/en/tournament/nyheter/rune-stockholm-2026-preview-feature",
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the original-language text of the fetched page",
-   "sourceHash": "cd517db5a792ebef",
+   "topic": "On building match play before next season",
+   "sourceHash": "a6e0bad859caba8a",
    "publishedAt": "2026-11-11T15:14:44.831Z",
-   "revisedAt": "2026-11-12T02:25:52.065Z",
-   "revision": 1
+   "revisedAt": "2026-11-13T07:44:46.173Z",
+   "revision": 2
   },
   {
    "id": "quote-7a1c383f60c9e7",
@@ -1850,10 +1879,11 @@
    "sourceUrl": "https://www.stockholmopen.se/en/tournament/nyheter/rune-stockholm-2026-preview-feature",
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the original-language text of the fetched page",
-   "sourceHash": "46dbd871d0198c3f",
+   "topic": "On returning to Stockholm, where he was injured",
+   "sourceHash": "c5929924934a8a89",
    "publishedAt": "2026-11-11T15:14:44.831Z",
-   "revisedAt": "2026-11-12T02:25:52.065Z",
-   "revision": 1
+   "revisedAt": "2026-11-13T07:44:46.173Z",
+   "revision": 2
   },
   {
    "id": "quote-eb5a4f0ad97428",
@@ -1881,10 +1911,11 @@
    "sourceUrl": "https://www.stockholmopen.se/en/tournament/nyheter/rune-stockholm-2026-preview-feature",
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the original-language text of the fetched page",
-   "sourceHash": "138be55028827aa7",
+   "topic": "On his comeback wins in Basel",
+   "sourceHash": "59678099dc27e63e",
    "publishedAt": "2026-11-11T15:14:44.831Z",
-   "revisedAt": "2026-11-12T02:25:52.065Z",
-   "revision": 1
+   "revisedAt": "2026-11-13T07:44:46.173Z",
+   "revision": 2
   },
   {
    "id": "quote-529f691cda696a",
@@ -2266,7 +2297,8 @@
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the original-language text of the fetched page",
    "sourceHash": "1f59a7395a3f77da",
-   "publishedAt": "2026-11-11T23:54:59.578Z"
+   "publishedAt": "2026-11-11T23:54:59.578Z",
+   "topic": "On choosing to play the Stockholm tournament"
   },
   {
    "id": "quote-9649a6585611a7",
@@ -2295,7 +2327,8 @@
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the original-language text of the fetched page",
    "sourceHash": "a69bb658a1288f23",
-   "publishedAt": "2026-11-11T23:54:59.578Z"
+   "publishedAt": "2026-11-11T23:54:59.578Z",
+   "topic": "On his fitness for the season's final tournament"
   },
   {
    "id": "quote-b835f64df01dbd",
@@ -2324,7 +2357,8 @@
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the original-language text of the fetched page",
    "sourceHash": "031d1c2c8e479267",
-   "publishedAt": "2026-11-11T23:54:59.578Z"
+   "publishedAt": "2026-11-11T23:54:59.578Z",
+   "topic": "On returning to the tournament after last year"
   },
   {
    "id": "quote-754e02f16e4802",
@@ -2353,7 +2387,8 @@
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the original-language text of the fetched page",
    "sourceHash": "f5dade8d6ca0956a",
-   "publishedAt": "2026-11-11T23:54:59.578Z"
+   "publishedAt": "2026-11-11T23:54:59.578Z",
+   "topic": "On mental strength and trusting own game"
   }
  ]
 }
