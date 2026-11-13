@@ -61,7 +61,7 @@ test('the drawer starts the per-minute poll; the loader reads the table and the 
   assert.match(slice('mcSigLiveStart'), /setInterval\(mcSigLiveTick, 60e3\)/);
   assert.match(slice('mcSigLiveTick'), /document\.hidden\) \{ clearInterval\(mktLiveTimer\)/, 'stops when no drawer is open or the tab is hidden');
   const l = slice('loadMarketLive');
-  assert.match(l, /rowsOf\('event_key,venue,liquidity,outcomes,flow,backfill,read_at,started_at'\)\.then\(r => r \|\| rowsOf\('event_key,venue,liquidity,outcomes,flow,read_at,started_at'\)\)\.then\(r => r \|\| rowsOf\('event_key,venue,liquidity,outcomes,read_at,started_at'\)\)/, 'without the backfill / traded columns yet: the same read without them');
+  assert.match(l, /rowsOf\('event_key,venue,liquidity,outcomes,flow,backfill,cut,read_at,started_at'\)\.then\(r => r \|\| rowsOf\('event_key,venue,liquidity,outcomes,flow,backfill,read_at,started_at'\)\)\.then\(r => r \|\| rowsOf\('event_key,venue,liquidity,outcomes,flow,read_at,started_at'\)\)\.then\(r => r \|\| rowsOf\('event_key,venue,liquidity,outcomes,read_at,started_at'\)\)/, 'without the backfill / traded columns yet: the same read without them');
   assert.match(l, /market_live_beat\?select=beat_at/);
   assert.match(l, /window\.SUPABASE_ANON_KEY/);
   assert.match(html, /document\.addEventListener\('visibilitychange', \(\) => \{ if \(!document\.hidden && document\.querySelector\('\.match-card\.sig-open'\)\) mcSigLiveStart\(\); \}\);/, 'resumes when the tab comes back');
@@ -86,7 +86,7 @@ test('the loader: placeholder config reads nothing; real config reads the table 
     if (u.includes('flow')) return { ok: false, json: async () => ({}) };
     return { ok: true, json: async () => u.includes('market_live_beat') ? [] : [{ event_key: '2', venue: 'kalshi', liquidity: '7', read_at: '2026-11-06T11:59:00Z', started_at: null }] };
   });
-  assert.equal(urls2.length, 4, 'a 400 on the flow column → retries down to the read without it (backfill, then flow)');
+  assert.equal(urls2.length, 5, 'a 400 on the flow column → retries down to the read without it (cut, backfill, then flow)');
   // founder 2026-11-12: a table without the backfill column yet → one retry without it, flow kept
   const urls3 = [];
   await L({ SUPABASE_URL: 'https://x.supabase.co/', SUPABASE_ANON_KEY: 'pk' }, async (u) => {
@@ -94,7 +94,16 @@ test('the loader: placeholder config reads nothing; real config reads the table 
     if (u.includes('backfill')) return { ok: false, json: async () => ({}) };
     return { ok: true, json: async () => u.includes('market_live_beat') ? [] : [] };
   });
-  assert.equal(urls3.length, 3, 'a 400 on the backfill column → one retry without it');
+  assert.equal(urls3.length, 4, 'a 400 on the backfill column → retries without cut, then without backfill');
+  // founder 2026-11-12: a table without the cut column yet → one retry without it, backfill and flow kept
+  const urls4 = [];
+  await L({ SUPABASE_URL: 'https://x.supabase.co/', SUPABASE_ANON_KEY: 'pk' }, async (u) => {
+    urls4.push(u);
+    if (u.includes('cut')) return { ok: false, json: async () => ({}) };
+    return { ok: true, json: async () => [] };
+  });
+  assert.equal(urls4.length, 3, 'a 400 on the cut column → one retry without it');
+  assert.ok(urls4.some((u) => u.includes('backfill') && !u.includes('cut')));
   assert.ok(urls3.some((u) => u.includes('flow') && !u.includes('backfill')), 'the retry keeps the traded column');
   assert.equal(fb.byEvent['2|kalshi'].liquidity, '7');
   assert.ok(urls[0].startsWith('https://x.supabase.co/rest/v1/market_live_current?'));
@@ -141,6 +150,10 @@ test('founder 2026-11-12: a backfilled row shows its prices and traded money, an
   assert.doesNotMatch(h, /resting/, 'no resting liquidity is rebuilt: none in the hover');
   const own = prow('kalshi', '2026-11-06T11:40:00Z', { started_at: '2026-11-06T11:40:30Z' });
   assert.doesNotMatch(MK(own).html(m, true), /rebuilt after the match/, 'a row the recorder froze itself never says rebuilt');
+  // a row cut at our first live sighting (no verified start) shows its prices and says so in the hover
+  const fl = prow('kalshi', '2026-11-06T11:40:00Z', { started_at: '2026-11-06T11:40:30Z', cut: 'first live sighting' });
+  assert.match(MK(fl).html(m, true), /last mid before the start[^"]*taken before our first live sighting; the start time is not verified/);
+  assert.doesNotMatch(MK(own).html(m, true), /first live sighting/, 'a row cut at the poll before the flag never says it');
 });
 test('prediction rows: no confident player match or no mid → a dash row (never a guess); no traded sum → no chips', () => {
   const twoSame = { '12177788|kalshi': { ...prow('kalshi', '2026-11-06T11:59:10Z')['12177788|kalshi'], outcomes: [{ name: 'Ben Shelton', mid: 0.5 }, { name: 'Tom Shelton', mid: 0.5 }] } };

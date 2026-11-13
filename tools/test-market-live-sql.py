@@ -100,11 +100,27 @@ try:
     for i in range(1, 40): push([row('13', 100 + i, f'2026-11-06T15:{i:02d}:00Z')])
     rc, out = q("select jsonb_array_length(recent) || '|' || (recent->0->>'liquidity') from public.market_live_current where event_key = '13' and venue = 'kalshi'")
     check('the read list keeps the 30 newest earlier reads, newest first', out == '30|138', out)
-    # no lower bound (play already on the board at the first sighting): nothing proves a pre-match read
+    # no lower bound (founder 2026-11-12; measured 12 Nov: play seen 13–21 min after the flag on all 3 matches frozen
+    # that day): the cut is our first live sighting — the last read taken before it is kept, and the row names the cut
     push([row('6', 900, '2026-11-06T11:00:00Z')])
     q("insert into public.live_flip_log values ('6', '2026-11-06T11:02:00Z', null)")
     push([])
-    check('no lower bound: the figure is dropped', liq('6') == 'null|2026-11-06 11:02:00', liq('6'))
+    check('no lower bound: the last read before our first live sighting is kept', liq('6') == '900|2026-11-06 11:02:00', liq('6'))
+    rc, out = q("select cut from public.market_live_current where event_key = '6' and venue = 'kalshi'")
+    check('... and the row says the cut was the first live sighting', out == 'first live sighting', out)
+    rc, out = q("select cut from public.market_live_current where event_key = '5' and venue = 'kalshi'")
+    check('a row cut at the poll before the flag says so', out == 'poll before the flag', out)
+    # ... but a read taken AFTER the first live sighting is never kept (could be in play)
+    q("insert into public.market_live_current (event_key, venue, liquidity, outcomes, read_at) values ('15', 'kalshi', 950, '[]'::jsonb, '2026-11-06T11:03:00Z')")
+    q("insert into public.live_flip_log values ('15', '2026-11-06T11:02:00Z', null)")
+    push([])
+    check('no lower bound, read after the first live sighting: dropped', liq('15') == 'null|2026-11-06 11:02:00', liq('15'))
+    # a row frozen before the cut column existed gets its cut named from the log, once
+    q("insert into public.market_live_current (event_key, venue, liquidity, read_at, started_at) values ('16', 'kalshi', 5, '2026-11-06T09:00:00Z', '2026-11-06T09:01:00Z')")
+    q("insert into public.live_flip_log values ('16', '2026-11-06T09:01:00Z', null)")
+    push([])
+    rc, out = q("select cut from public.market_live_current where event_key = '16'")
+    check('an older frozen row gets its cut named', out == 'first live sighting', out)
 
     # traded money (founder 2026-11-07): kept with its stamp, kept when a minute sends none, dropped at the freeze when
     # summed after the lower bound, refused when stamped after the read
@@ -136,9 +152,9 @@ try:
     check('backfill fills an emptied frozen row', rc == 0 and '"filled": 1' in out, out)
     rc, out = q("select outcomes->0->>'mid' || '|' || (flow->>'trades') || '|' || to_char(read_at at time zone 'UTC', 'HH24:MI') || '|' || (backfill->>'source') from public.market_live_current where event_key = '12' and venue = 'kalshi'")
     check('... with its prices, traded money, read time and the backfill mark', out == '0.405|2|11:04|venue history at or before the start', out)
-    rc, out = bf([{'event_key': '6', 'venue': 'kalshi', 'outcomes': OC, 'read_at': '2026-11-06T11:03:00Z',
+    rc, out = bf([{'event_key': '15', 'venue': 'kalshi', 'outcomes': OC, 'read_at': '2026-11-06T11:03:00Z',
                    'flow': {'byName': {'A': 1, 'B': 1}, 'trades': 1, 'at': '2026-11-06T11:01:00Z'}}])
-    rc, out = q("select coalesce(outcomes::text, 'null') || '|' || coalesce(flow->>'trades', 'null') from public.market_live_current where event_key = '6' and venue = 'kalshi'")
+    rc, out = q("select coalesce(outcomes::text, 'null') || '|' || coalesce(flow->>'trades', 'null') from public.market_live_current where event_key = '15' and venue = 'kalshi'")
     check('a backfilled price read after the start is refused; a sum before it is kept', out == 'null|1', out)
     rc, out = bf([{'event_key': '5', 'venue': 'kalshi', 'outcomes': OC, 'read_at': '2026-11-06T10:59:00Z', 'flow': None}])
     check('a row the recorder froze with its own read is never touched', '"filled": 0' in out and liq('5').startswith('800|'), out + liq('5'))
@@ -188,6 +204,15 @@ try:
     q("insert into public.live_flip_log values ('14', '2026-11-06T16:01:20Z', '2026-11-06T16:00:30Z')")
     q("select public.market_live_push_ctl3('[]'::jsonb)")
     check('CONTROL: without the read list the pre-start read is lost (null)', liq('14').startswith('null|'), liq('14'))
+    # CONTROL: the freeze before 2026-11-12's no-lower-bound fix (a null lower bound drops the read) loses row 6's read
+    nolb = (fn.replace('public.market_live_push(', 'public.market_live_push_ctl4(')
+              .replace("when coalesce(l.last_not_live_seen_at, l.first_live_seen_at) is null then null", "when l.last_not_live_seen_at is null then null"))
+    check('CONTROL: the no-lower-bound mutant differs', 'when l.last_not_live_seen_at is null then null' in nolb)
+    rc, out = q(nolb); check('CONTROL: no-lower-bound mutant applies', rc == 0, out)
+    q("select public.market_live_push_ctl4($j$" + json.dumps([row('17', 600, '2026-11-06T17:00:00Z')]) + "$j$::jsonb)")
+    q("insert into public.live_flip_log values ('17', '2026-11-06T17:02:00Z', null)")
+    q("select public.market_live_push_ctl4('[]'::jsonb)")
+    check('CONTROL: dropping on no lower bound loses the pre-start read', liq('17').startswith('null|'), liq('17'))
 finally:
     pg.close()
 print(f'test-market-live-sql: {passed} passed, {failed} failed')

@@ -33,6 +33,11 @@ alter table public.market_live_current add column if not exists recent jsonb;
 -- Set only by market_live_backfill: {source, at} — the row's prices and traded money were rebuilt after the match from
 -- the venue's own history at or before the start (tools/market-live-backfill.mjs), not read live by the recorder.
 alter table public.market_live_current add column if not exists backfill jsonb;
+-- Which instant froze the row (founder 2026-11-12): 'poll before the flag' (our live sighting's lower bound — a verified
+-- start) or 'first live sighting' (no lower bound: play was seen more than 5 min after the flag, or was already on the
+-- board at the first sighting — the start is not verified, so the read kept is the last one taken before the match was
+-- first listed live). Null on a row frozen before this column existed.
+alter table public.market_live_current add column if not exists cut text;
 create table if not exists public.market_live_beat (
   id       int         primary key default 1 check (id = 1),
   beat_at  timestamptz not null,
@@ -63,13 +68,18 @@ begin
   -- no read before it, or no lower bound (play already on the board at the first sighting, ruling 2026-10-27), nothing
   -- proves a pre-match read: the figure and prices are dropped (null) — never an in-play read labelled pre-start. A bare flag
   -- (live_flip_pending) only pauses the writes below; a flag that leaves the live board before play resumes them.
+  -- No lower bound (founder 2026-11-12, measured 12 Nov: all 3 matches frozen that day had play seen 13–21 min after
+  -- the flag): the cut is our FIRST live sighting — the recorder never writes after the flag, so a read at or before it
+  -- was taken while the match was not listed live; the row says so (cut = 'first live sighting').
   with pick as (
-    select c.event_key, c.venue, coalesce(l.last_not_live_seen_at, l.first_live_seen_at) st, l.last_not_live_seen_at lb,
-           case when l.last_not_live_seen_at is null then null
-                when c.read_at <= l.last_not_live_seen_at
+    select c.event_key, c.venue, coalesce(l.last_not_live_seen_at, l.first_live_seen_at) st,
+           coalesce(l.last_not_live_seen_at, l.first_live_seen_at) lb,
+           case when l.last_not_live_seen_at is null then 'first live sighting' else 'poll before the flag' end ck,
+           case when coalesce(l.last_not_live_seen_at, l.first_live_seen_at) is null then null
+                when c.read_at <= coalesce(l.last_not_live_seen_at, l.first_live_seen_at)
                   then jsonb_build_object('read_at', c.read_at, 'liquidity', c.liquidity, 'outcomes', c.outcomes, 'flow', c.flow)
                 else (select e from jsonb_array_elements(case when jsonb_typeof(c.recent) = 'array' then c.recent else '[]'::jsonb end) e
-                       where (e->>'read_at')::timestamptz <= l.last_not_live_seen_at
+                       where (e->>'read_at')::timestamptz <= coalesce(l.last_not_live_seen_at, l.first_live_seen_at)
                        order by (e->>'read_at')::timestamptz desc limit 1) end snap
       from public.market_live_current c join public.live_flip_log_current l on l.event_key = c.event_key
      where c.started_at is null
@@ -79,9 +89,15 @@ begin
          liquidity  = (p.snap->>'liquidity')::numeric,
          outcomes   = case when jsonb_typeof(p.snap->'outcomes') = 'array' then p.snap->'outcomes' end,
          flow       = case when jsonb_typeof(p.snap->'flow') = 'object' and (p.snap->'flow'->>'at')::timestamptz <= p.lb then p.snap->'flow' end,
-         read_at    = coalesce((p.snap->>'read_at')::timestamptz, c.read_at)
+         read_at    = coalesce((p.snap->>'read_at')::timestamptz, c.read_at),
+         cut        = p.ck
     from pick p where p.event_key = c.event_key and p.venue = c.venue and c.started_at is null;
   get diagnostics f = row_count;
+  -- Rows frozen before the column existed: name their cut from the same log (idempotent; never touches a named cut).
+  update public.market_live_current c
+     set cut = case when l.last_not_live_seen_at is null then 'first live sighting' else 'poll before the flag' end
+    from public.live_flip_log_current l
+   where l.event_key = c.event_key and c.started_at is not null and c.cut is null;
 
   with r as (
     select distinct on (x->>'event_key', x->>'venue')

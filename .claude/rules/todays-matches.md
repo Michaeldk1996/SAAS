@@ -155,9 +155,14 @@ except where a ruling below says otherwise. Colours are foundation tokens (`foun
   a dash row never has one; resting liquidity in the hover only. **A finished match keeps its last pre-start read**
   (founder 2026-11-12, "make sure it's always there"): `market_live_current.recent` holds each row's 30 earlier one-minute
   reads, and the freeze takes the newest read at or before our live sighting's lower bound (its own `read_at`), never a
-  read after it; only with no read before the start (or no lower bound) is the row a dash. Before this, the freeze kept
+  read after it. **No lower bound** (play seen more than 5 min after the flag, or already on the board at the first
+  sighting — measured 12 Nov: all 3 matches frozen that day, play seen 13–21 min after the flag): the cut is our FIRST
+  live sighting (the recorder writes nothing once a match is flagged), the row's `cut` says `first live sighting` and its
+  hover "taken before our first live sighting; the start time is not verified" — the same cut the backfill used for 55
+  rows. Only with no read before the cut is the row a dash. Before this, the freeze kept
   only the newest read and dropped it when it came after the sighting: 24 of 34 frozen rows of 9–11 Nov were empty.
-  **Test:** `tools/test-market-live-sql.py` (founder 2026-11-12 checks; CONTROL: the freeze without the list loses it).
+  **Test:** `tools/test-market-live-sql.py` (founder 2026-11-12 checks; CONTROLS: the freeze without the list loses it,
+  and dropping on no lower bound loses it).
   **Backfill of the rows the old freeze emptied** (founder 2026-11-12, "Yes, backfill"): `tools/market-live-backfill.mjs`
   (`market-live-backfill.yml`, dispatch, main only) rebuilds each frozen row with no prices and no traded money from the
   venue's own history AT OR BEFORE `started_at`: Kalshi = the last one-minute candle's yes bid / ask close (the recorder's
