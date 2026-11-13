@@ -1,0 +1,92 @@
+name: News ticker interviews
+# Tennis TV on-court interviews, automatic (founder 2026-11-12). Every 5 minutes: read Tennis TV's clip feed; when a new
+# singles interview of a player on our board is listed, a Fly machine plays and transcribes it (interviews-worker/), the
+# answers are split out and checked word for word (tools/news-ticker/ttv-interviews.mjs) and committed to
+# news-quotes/inbox-ttv.json. The quote collector (news-quotes.yml) publishes them. A run with nothing new ends in seconds.
+on:
+  schedule:
+    - cron: '2-59/5 * * * *'
+  workflow_dispatch:
+concurrency:
+  group: news-interviews
+  cancel-in-progress: false
+permissions:
+  contents: write
+jobs:
+  interviews:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN_ORG }}
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_PIPELINE_CHAT_ID || secrets.TELEGRAM_CHAT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: New clips
+        id: list
+        run: |
+          node tools/news-ticker/ttv-interviews.mjs list --out /tmp/clips.json
+          echo "count=$(node -e 'console.log(JSON.parse(require("fs").readFileSync("/tmp/clips.json","utf8")).length)')" >> "$GITHUB_OUTPUT"
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+        if: steps.list.outputs.count != '0'
+      - name: Build the worker image
+        if: steps.list.outputs.count != '0'
+        working-directory: interviews-worker
+        run: |
+          flyctl apps create stennisfy-interviews --org personal 2>/dev/null || true
+          flyctl deploy --build-only --push -a stennisfy-interviews --image-label auto --build-arg WHISPER_MODEL=small.en
+      - name: Play and transcribe
+        if: steps.list.outputs.count != '0'
+        shell: bash
+        run: |
+          set +e
+          CLIPS=$(cat /tmp/clips.json)
+          MID=""
+          # the registry can take a few seconds to serve a just-pushed image: retry the launch
+          for try in 1 2 3 4 5 6; do
+            OUT=$(flyctl machine run registry.fly.io/stennisfy-interviews:auto -a stennisfy-interviews \
+              --vm-cpu-kind performance --vm-cpus 2 --vm-memory 4096 --restart no \
+              --env CLIP_URLS="$CLIPS" \
+              --env TENNISTV_EMAIL="${{ secrets.TENNISTV_EMAIL }}" --env TENNISTV_PASSWORD="${{ secrets.TENNISTV_PASSWORD }}" 2>&1)
+            MID=$(echo "$OUT" | grep -oE 'Machine ID: [0-9a-f]+' | awk '{print $3}')
+            [ -n "$MID" ] && break
+            echo "launch attempt $try failed"; echo "$OUT" | tail -3; sleep 30
+          done
+          if [ -z "$MID" ]; then echo "::error::the machine never launched"; : > /tmp/logs.txt; exit 0; fi
+          ( flyctl logs -a stennisfy-interviews -i "$MID" > /tmp/logs.txt 2>&1 ) &
+          LOGPID=$!
+          for i in $(seq 1 150); do
+            ST=$(flyctl machine status "$MID" -a stennisfy-interviews 2>/dev/null | grep -iE 'state' | head -1)
+            echo "$ST" | grep -qiE "stopped|destroyed|failed" && break
+            sleep 15
+          done
+          sleep 20; kill "$LOGPID" 2>/dev/null
+          flyctl machine destroy "$MID" -a stennisfy-interviews --force 2>/dev/null
+          grep -aE "\[[0-9]+/[0-9]+\]|ok ·|FAILED|sign-in" /tmp/logs.txt | sed -E 's/\x1b\[[0-9;]*m//g; s/^.*\[info\]//' || true
+      - name: Answers
+        if: steps.list.outputs.count != '0'
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: node tools/news-ticker/ttv-interviews.mjs ingest --clips /tmp/clips.json --log /tmp/logs.txt | tee /tmp/ingest.txt
+      - name: Commit
+        if: steps.list.outputs.count != '0'
+        run: |
+          if [ -z "$(git status --porcelain -- news-quotes/inbox-ttv.json news-quotes/ttv-state.json)" ]; then echo "nothing to commit"; exit 0; fi
+          git add -- news-quotes/inbox-ttv.json news-quotes/ttv-state.json
+          git -c user.name='bsp-bot' -c user.email='bsp-bot@users.noreply.github.com' commit -q -m "chore(news): Tennis TV interview answers [skip ci]"
+          for attempt in 1 2 3 4; do
+            git push --quiet origin HEAD:main && exit 0
+            git fetch --quiet origin main && git rebase --quiet origin/main || { git rebase --abort; exit 1; }
+          done
+          exit 1
+      - name: Alert on a failed clip or a failed run
+        if: always() && steps.list.outputs.count != '0'
+        run: |
+          if [ "${{ job.status }}" != "success" ] || grep -q "FAILED" /tmp/ingest.txt 2>/dev/null; then
+            MSG="Tennis TV interviews: a clip could not be published. $(grep -m3 'FAILED' /tmp/ingest.txt 2>/dev/null | tr '\n' ' ')"
+            node -e 'import("./tools/price-alert-send.mjs").then(m=>m.sendTelegram(process.argv[1])).catch(e=>console.log("::error::alert not sent",e))' "$MSG" || echo "::error::alert not sent"
+          fi
