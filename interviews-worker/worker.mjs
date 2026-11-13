@@ -131,7 +131,8 @@ if (process.env.FRAME_CLIPS) {
     if (!dur) { console.log('  FAILED · no playable video'); continue; }
     // Seek the way a viewer does: show the controls, click the player's own seek bar. Setting the video element's time
     // directly leaves the player frozen (it never fetches the new position).
-    await ev('(() => { const v = document.querySelector("video"); v.muted = true; v.play(); v.scrollIntoView({ block: "center" }); return true; })()');
+    // the cookie banner covers the lower half of the player (and its seek bar): decline it first
+    await ev('(() => { const b = [...document.querySelectorAll("button")].find((x) => /reject all/i.test(x.textContent || "")); if (b) b.click(); const v = document.querySelector("video"); v.muted = true; v.play(); v.scrollIntoView({ block: "center" }); return !!b; })()');
     await sleep(4000);
     const target = Math.max(0, dur - TAIL);
     let ready = false, at = 0;
