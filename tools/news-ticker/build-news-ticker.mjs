@@ -85,6 +85,20 @@ export async function build({ nowIso, times, rewrite = null, apiKey = process.en
     if (!groups.has(id)) groups.set(id, { key: String(m.tournamentKey), season, name: tournamentName(m), cards: [] });
     groups.get(id).cards.push(m);
   }
+  // A report already published keeps following the current rules while its match data is on file (founder 2026-11-13:
+  // "Yes, rewrite them"): a finished main-draw match that left the board is rebuilt from the draw store's frozen copy
+  // of its board row (draw-matches.json, 16 days). Only a match whose report is already in that tournament's file —
+  // the store never adds a report, a status item or a tournament.
+  const onBoard = new Set(cards.map(ek));
+  for (const r of Object.values((readJson('draw-matches.json') || {}).matches || {})) {
+    const m = r && r.match;
+    if (!m || m.tourBadge !== 'ATP' || m.tournamentKey == null || m.p1Key == null || m.p2Key == null || /\//.test(String(m.p1) + String(m.p2)) || !m.finalScore || !m.finalScore.winner || onBoard.has(ek(m))) continue;
+    const season = String(m.date || '').slice(0, 4); if (!/^\d{4}$/.test(season)) continue;
+    const id = `${m.tournamentKey}|${season}`, file = readJson(fileOf(String(m.tournamentKey), season));
+    if (!file || !(file.items || []).some((x) => x.id === `report-${ek(m)}`)) continue;
+    if (!groups.has(id)) groups.set(id, { key: String(m.tournamentKey), season, name: file.tournament || tournamentName(m), cards: [] });
+    (groups.get(id).offBoard = groups.get(id).offBoard || []).push(m); onBoard.add(ek(m));
+  }
 
   // an outlet switched off in the registry ("enabled": false) has its quotes hidden from this run on — the one case an item leaves the feed
   const reg = readJson('data/news-outlets.json') || {};
@@ -109,7 +123,7 @@ export async function build({ nowIso, times, rewrite = null, apiKey = process.en
       return r && r.length === 1 && PAGE_ROUND[r[0].round] ? PAGE_ROUND[r[0].round] : null;
     };
     const fresh = [];
-    const done = g.cards.filter((m) => m.finalScore && m.finalScore.winner);
+    const done = g.cards.filter((m) => m.finalScore && m.finalScore.winner).concat(g.offBoard || []);
     for (const m of done) {
       if (m.walkover) continue;
       summary.finished++;
@@ -160,6 +174,16 @@ export async function build({ nowIso, times, rewrite = null, apiKey = process.en
         summary.reports++;
       } catch (e) { summary.reportErrors.push(`${m.id}: ${e && e.message}`); }
     }
+    // a stored report whose match data is gone (off the board, not in the draw store) cannot be rebuilt: only its
+    // names follow the surname rule; every fact and word stays as published
+    { const built = new Set(fresh.map((x) => x.id));
+      for (const x of (existing && existing.items) || []) {
+        if (x.type !== 'report' || built.has(x.id) || !x.player || !x.opponent) continue;
+        const t = plainNames(String(x.text), [{ card: x.player }, { card: x.opponent }]);
+        if (t === x.text) continue;
+        const { sourceHash, publishedAt, revisedAt, revision, ...rest } = x;
+        fresh.push({ ...rest, text: t }); summary.namesOnly = (summary.namesOnly || 0) + 1;
+      } }
     for (const s of statusItems(g.cards, { ek, startIso, tournament: g.name, base: '' })) {
       // a walkover's reason, when the official result post gave one (never guessed)
       const wr = /^status-wo-(.+)$/.exec(String(s.id)), why = wr && walkoverReasons[wr[1]];

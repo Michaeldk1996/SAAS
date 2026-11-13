@@ -14,7 +14,11 @@ ticker page comes through Claude Design). Tests: `tools/test-news-ticker.mjs`, `
   `news-ticker.json` is the index (one line per tournament + the newest 40 items). The site never loads the history.
 - **An item, once published, is never rewritten unless its source data changed.** **Test:** a second build on the same
   inputs writes no file; a changed input rewrites that item only, keeps `publishedAt`, stamps `revisedAt` + `revision`.
-- An item whose match left the board is kept. Nothing is removed.
+- An item whose match left the board is kept. Nothing is removed. **A published report keeps following the current
+  report rules while its match data is on file** (founder 2026-11-13): a finished main-draw match off the board is
+  rebuilt from the draw store's frozen board row (`draw-matches.json`, 16 days); a report with no data left
+  (qualifying) only has its names turned into surnames. The store never adds a report, a status item or a tournament.
+  **Test:** `tools/test-news-ticker-live.mjs` "a report whose match left the board…".
 - Built inside every pipeline run from the files that run wrote; committed back (`bsp-bot`, `[skip ci]`).
 
 ## Match reports — the template is the facts; the wording is Michael's voice, checked sentence by sentence (founder 2026-11-12)

@@ -85,6 +85,25 @@ await ok('build: one report per finished match; a walkover gets a status item an
   assert.match(it.find((x) => x.id === 'report-100').text, /^One beat Two 6-0, 6-0 in the round of 16\. One won the last 12 games of the match\. One faced no break points\.\n\nOne: W: 19 \/ UE: 7\n\nTwo: W: 5 \/ UE: 20$/, 'what stood out; nothing about the loser when nothing of his was bad enough; then one closing line per player, winner first');
   assert.ok(!/break point/.test(it.find((x) => x.id === 'status-wo-101').text));
 });
+// founder 2026-11-13 ("Yes, rewrite them"): a published report follows the current rules while its match data is on file
+await ok('build: a report whose match left the board is rebuilt from the draw store; one with no data left gets surnames only; the store never adds a report or a tournament', () => {
+  const off = card({ id: 'past-200', p1: 'C. Three', p2: 'D. Four', p1Key: 3, p2Key: 4 }), other = card({ id: 'past-300', tournamentKey: 88, tour: 'ATP Elsewhere', p1: 'E. Five', p2: 'F. Six', p1Key: 5, p2Key: 6 });
+  const never = card({ id: 'past-201', p1: 'G. Seven', p2: 'H. Eight', p1Key: 7, p2Key: 8 });
+  const old = (id, o) => ({ id, type: 'report', timestamp: '2026-11-08T10:00:00.000Z', publishedAt: 'T0', sourceHash: 'old', ...o });
+  const store = { v: 1, matches: Object.fromEntries([off, other, never].map((m) => [m.id.slice(5), { id: m.id, match: m }])) };
+  const d = fixture([card({ id: 'past-100' })], { files: { 'draw-matches.json': store, 'news-ticker/77-2026.json': { tournament: 'Testville', tournamentKey: '77', season: '2026', items: [
+    old('report-200', { player: 'C. Three', opponent: 'D. Four', text: 'C. Three beat D. Four 6-0, 6-0 in the round of 16.' }),
+    old('report-900', { player: 'J. M. Nine', opponent: 'K. Ten', text: 'J. M. Nine beat K. Ten 6-4, 6-4 in the final round of qualifying. J. M. Nine: 3 aces.', fields: { score: '6-4, 6-4' } })] } } });
+  const s = JSON.parse(runBuild(d, '2026-11-13T10:00:00.000Z')), it = itemsOf(d), by = (id) => it.find((x) => x.id === id);
+  assert.deepEqual(it.map((x) => x.id).sort(), ['report-100', 'report-200', 'report-900'], 'report-201 was never published and report-300 has no tournament file: the store adds neither');
+  assert.ok(!fs.existsSync(path.join(d, 'news-ticker', '88-2026.json')));
+  assert.match(by('report-200').text, /^Three beat Four 6-0, 6-0 in the round of 16\..*\n\nThree: W: 19 \/ UE: 7\n\nFour: W: 5 \/ UE: 20$/s, 'rebuilt in full from the frozen board row');
+  assert.deepEqual([by('report-200').publishedAt, by('report-200').revision], ['T0', 1]);
+  assert.equal(by('report-900').text, 'Nine beat Ten 6-4, 6-4 in the final round of qualifying. Nine: 3 aces.', 'no data left: the names only, every fact as published');
+  assert.deepEqual([by('report-900').publishedAt, by('report-900').revision, s.namesOnly], ['T0', 1, 1]);
+  const again = JSON.parse(runBuild(d, '2026-11-13T11:00:00.000Z'));
+  assert.deepEqual([again.revised, again.added, again.namesOnly || 0], [0, 0, 0], 'a second run changes nothing');
+});
 await ok('build: a missing or empty point log never prints "faced no break points" (blank box score stays blank)', () => {
   for (const pbp of [{}, { 100: { sets: [] } }, { 100: { sets: [{ games: [] }, { games: [] }] } }]) {
     const d = fixture([card({ id: 'past-100' })], { pbp });
