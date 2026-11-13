@@ -1,19 +1,19 @@
 {
- "generatedAt": "2026-11-13T15:26:52.221Z",
+ "generatedAt": "2026-11-13T17:21:12.943Z",
  "tournaments": [
   {
    "key": "1681",
    "season": "2026",
    "name": "Stockholm",
    "file": "news-ticker/1681-2026.json",
-   "items": 111,
+   "items": 113,
    "byType": {
+    "quote": 79,
     "report": 27,
-    "quote": 77,
     "status": 7
    },
-   "latestTimestamp": "2026-11-13T14:56:33.967Z",
-   "updatedAt": "2026-11-13T15:26:52.221Z"
+   "latestTimestamp": "2026-11-13T16:05:00.000Z",
+   "updatedAt": "2026-11-13T17:21:12.943Z"
   },
   {
    "key": "tour",
@@ -51,6 +51,68 @@
   }
  ],
  "latest": [
+  {
+   "id": "quote-430d2eb676002c",
+   "type": "quote",
+   "playerId": "366",
+   "opponentId": "2982",
+   "player": "T. A. Tirante",
+   "opponent": "A. Tabilo",
+   "tournament": "Stockholm",
+   "tournamentKey": "1681",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-13T16:05:00.000Z",
+   "timestampKind": "observed (the site's own publication time)",
+   "category": "Quotes",
+   "context": "after beating A. Tabilo",
+   "eventKey": "12179750",
+   "won": true,
+   "text": "I am very happy I am going to play my first ATP final, … Actually, I am very happy to play it here. This is my third semi-final, and my first one was in Bastad, so I think Sweden [is a good place for me].",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "ATP Tour daily report (via the official tournament site)",
+   "sourceUrl": "https://www.stockholmopen.se/en/tournament/nyheter/fritz-musetti-tabilo-tirante-stockholm-2026-sfs",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On reaching his first ATP final in Sweden",
+   "sourceHash": "60a0467f0bd20958",
+   "publishedAt": "2026-11-13T17:21:12.943Z",
+   "file": "news-ticker/1681-2026.json"
+  },
+  {
+   "id": "quote-d06acc59d5bda0",
+   "type": "quote",
+   "playerId": "366",
+   "opponentId": "2982",
+   "player": "T. A. Tirante",
+   "opponent": "A. Tabilo",
+   "tournament": "Stockholm",
+   "tournamentKey": "1681",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-13T16:05:00.000Z",
+   "timestampKind": "observed (the site's own publication time)",
+   "category": "Quotes",
+   "context": "after beating A. Tabilo",
+   "eventKey": "12179750",
+   "won": true,
+   "text": "You always have nerves in matches, and playing a semi-final in front of a lot of people is very special for me, … At important moments you start [to feel it]. I think I didn't play a good game [at 5-4], but I kept believing in myself and my team to close it out in the tie-break.",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "ATP Tour daily report (via the official tournament site)",
+   "sourceUrl": "https://www.stockholmopen.se/en/tournament/nyheter/fritz-musetti-tabilo-tirante-stockholm-2026-sfs",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On his nerves closing out the semi-final",
+   "sourceHash": "9752d601998ebd1f",
+   "publishedAt": "2026-11-13T17:21:12.943Z",
+   "file": "news-ticker/1681-2026.json"
+  },
   {
    "id": "report-12179750",
    "type": "report",
@@ -1925,254 +1987,6 @@
    "topic": "On his aggressive play throughout the match",
    "revisedAt": "2026-11-13T07:43:17.649Z",
    "revision": 1,
-   "file": "news-ticker/1681-2026.json"
-  },
-  {
-   "id": "quote-f9be877de95ecf",
-   "type": "quote",
-   "playerId": "566",
-   "opponentId": "430",
-   "player": "A. Shevchenko",
-   "opponent": "C. Ruud",
-   "tournament": "Stockholm",
-   "tournamentKey": "1681",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-11T19:29:04.966Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Quotes",
-   "context": "after beating C. Ruud",
-   "eventKey": "12178945",
-   "won": true,
-   "text": "One of my biggest victories",
-   "originalText": "En av mina största segrar",
-   "language": "sv",
-   "translated": true,
-   "translationModel": "claude-opus-5-5",
-   "sourceName": "Expressen",
-   "sourceUrl": "https://www.expressen.se/sport/tennis/casper-ruud-utslagen-ur-stockholm-open-/",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "sourceHash": "89982723b445069d",
-   "publishedAt": "2026-11-12T00:24:09.270Z",
-   "topic": "On one of the biggest career victories",
-   "revisedAt": "2026-11-13T07:43:17.649Z",
-   "revision": 1,
-   "file": "news-ticker/1681-2026.json"
-  },
-  {
-   "id": "report-12178945",
-   "type": "report",
-   "playerId": "566",
-   "opponentId": "430",
-   "player": "A. Shevchenko",
-   "opponent": "C. Ruud",
-   "tournament": "Stockholm",
-   "tournamentKey": "1681",
-   "season": "2026",
-   "stage": "main draw",
-   "round": "second round",
-   "eventKey": "12178945",
-   "timestamp": "2026-11-11T19:27:55.487Z",
-   "timestampKind": "observed",
-   "observed": {
-    "endedAt": "2026-11-11T19:27:55.487Z",
-    "startedAt": "2026-11-11T17:09:43.004Z",
-    "minutes": 138
-   },
-   "category": "Statistics",
-   "text": "Shevchenko beat Ruud for the 1st time in 3 meetings, 6–7, 6–4, 6–3 in R2. He came from a set down. Ruud won the first set in a tiebreak. Shevchenko got broken when serving for the first set. He served well, hitting 13 aces and winning 79% of his first-serve points (48 of 61), compared with his 70% average on hard in his career. On return, Shevchenko won 13% of the points against the first serve (7 of 56), compared with his usual 27%, and 61% of the points against the second serve (23 of 38), compared with his usual 49%. Along the way, Shevchenko hit 50 winners and made 20 unforced errors. Ruud struggled to land his first serve, at 60%, compared with his 68% average on hard over the last 52 weeks. Shevchenko was clearly the better player from the baseline (46–35).\n\nPhysically, it is something to follow. Ruud took two medical timeouts: at 5–6 in the first set and at 0–0 in the second set. We do not know the reason. Maybe something to follow up for the next tournaments of Ruud.\n\nShevchenko: performance rating 8.6 | W: 50 / UE: 20 | DR: 1.09\n\nRuud: performance rating 8.0 | W: 43 / UE: 30 | DR: 0.92",
-   "baseText": "Shevchenko beat Ruud for the 1st time in 3 meetings, 6–7, 6–4, 6–3 in R2. He came from a set down. Ruud won the first set in a tiebreak. Shevchenko got broken when serving for the first set. He served well, hitting 13 aces and winning 79% of his first-serve points (48 of 61), compared with his 70% average on hard in his career. On return, Shevchenko won 13% of the points against the first serve (7 of 56), compared with his usual 27%, and 61% of the points against the second serve (23 of 38), compared with his usual 49%. Along the way, Shevchenko hit 50 winners and made 20 unforced errors. Ruud struggled to land his first serve, at 60%, compared with his 68% average on hard over the last 52 weeks.",
-   "rating": [
-    "Shevchenko: performance rating 8.6 | W: 50 / UE: 20 | DR: 1.09",
-    "Ruud: performance rating 8.0 | W: 43 / UE: 30 | DR: 0.92"
-   ],
-   "shotStats": {
-    "p1": {
-     "performance": 8.6,
-     "serveQuality": 8.3,
-     "unreturnedPct": 34,
-     "firstInPct": 64,
-     "firstWonPct": 79,
-     "secondWonPct": 57,
-     "secondSpeed": 156,
-     "returnQuality": 6.9,
-     "fhWinners": 22,
-     "bhWinners": 15,
-     "fhUnforced": 10,
-     "bhUnforced": 6,
-     "forcedErrors": 29,
-     "baselineWon": 46,
-     "under9Won": 90,
-     "over9Won": 8,
-     "bpWon": [
-      4,
-      6
-     ],
-     "netWon": [
-      9,
-      16
-     ]
-    },
-    "p2": {
-     "performance": 8,
-     "serveQuality": 8.2,
-     "unreturnedPct": 28,
-     "firstInPct": 60,
-     "firstWonPct": 88,
-     "secondWonPct": 39,
-     "secondSpeed": 165,
-     "returnQuality": 7.3,
-     "fhWinners": 26,
-     "bhWinners": 7,
-     "fhUnforced": 16,
-     "bhUnforced": 10,
-     "forcedErrors": 18,
-     "baselineWon": 35,
-     "under9Won": 87,
-     "over9Won": 5,
-     "bpWon": [
-      2,
-      4
-     ],
-     "netWon": [
-      21,
-      29
-     ]
-    },
-    "postedAt": "2026-11-11T19:40:04.000Z",
-    "readAt": "2026-11-13T06:34:56.105Z",
-    "sourceName": "ATP broadcast match statistics (via @ATP_Entry)",
-    "sourceUrl": "https://x.com/ATP_Entry/status/2120602478614032833",
-    "agreed": "6 of 6 serve figures within 3 points of ours; set scores and break points equal"
-   },
-   "mto": [
-    "Physically, it is something to follow.",
-    "Ruud took two medical timeouts: at 5–6 in the first set and at 0–0 in the second set.",
-    "We do not know the reason.",
-    "Maybe something to follow up for the next tournaments of Ruud."
-   ],
-   "templateText": "A. Shevchenko beat C. Ruud for the 1st time in 3 meetings, 6-7, 6-4, 6-3 in the second round. A. Shevchenko came from a set down. Set 1 went to a tiebreak, won by C. Ruud. A. Shevchenko was broken when serving for the first set. A. Shevchenko hit 13 aces and won 79% of his first-serve points (48 of 61), compared with his 70% average on hard in his career. A. Shevchenko won 13% of the points against the first serve (7 of 56), compared with his usual 27% and 61% of the points against the second serve (23 of 38), compared with his usual 49%. A. Shevchenko hit 50 winners and made 20 unforced errors. C. Ruud struggled to land his first serve, at only 60%, compared with his 68% average on hard over the last 52 weeks.",
-   "voice": {
-    "version": 5,
-    "model": "claude-opus-5-5",
-    "passed": 8,
-    "total": 8,
-    "failures": []
-   },
-   "fields": {
-    "score": "6-7, 6-4, 6-3",
-    "round": "second round",
-    "retired": false,
-    "h2h": {
-     "a": 1,
-     "b": 2,
-     "n": 3
-    },
-    "durationMinutes": 138,
-    "facts": {
-     "fromSetDown": true,
-     "tiebreakSets": [
-      {
-       "set": 1,
-       "winner": "p2"
-      }
-     ],
-     "brokenForSet": {
-      "p1": 1
-     },
-     "brokenForSetAt": {
-      "p1": [
-       1
-      ]
-     }
-    },
-    "standouts": [
-     {
-      "player": "winner",
-      "tone": "good",
-      "metric": "aces",
-      "value": 13
-     },
-     {
-      "player": "winner",
-      "tone": "good",
-      "metric": "firstWon",
-      "value": 79,
-      "won": 48,
-      "total": 61,
-      "baseline": 70,
-      "scope": "career",
-      "surface": "Hard",
-      "n": 76
-     },
-     {
-      "player": "winner",
-      "tone": null,
-      "metric": "ret1Won",
-      "value": 13,
-      "won": 7,
-      "total": 56,
-      "baseline": 27,
-      "scope": "career",
-      "surface": "Hard",
-      "n": 76
-     },
-     {
-      "player": "winner",
-      "tone": null,
-      "metric": "ret2Won",
-      "value": 61,
-      "won": 23,
-      "total": 38,
-      "baseline": 49,
-      "scope": "career",
-      "surface": "Hard",
-      "n": 76
-     },
-     {
-      "player": "winner",
-      "tone": "good",
-      "metric": "winnersErrors",
-      "winners": 50,
-      "unforcedErrors": 20
-     },
-     {
-      "player": "loser",
-      "tone": "bad",
-      "metric": "firstIn",
-      "value": 60,
-      "baseline": 68,
-      "scope": "last52",
-      "surface": "Hard",
-      "n": 36
-     }
-    ],
-    "winner": {
-     "aces": 13,
-     "winners": 50,
-     "unforcedErrors": 20,
-     "breakPointsSaved": 2,
-     "breakPointsFaced": 4,
-     "breakPointsSource": "box score"
-    },
-    "loser": {
-     "aces": 10,
-     "winners": 43,
-     "unforcedErrors": 30,
-     "breakPointsSaved": 2,
-     "breakPointsFaced": 6,
-     "breakPointsSource": "box score"
-    }
-   },
-   "sourceName": "Stennisfy match data (api-tennis box score and point-by-point)",
-   "sourceUrl": "pbp/12178945.json",
-   "language": "en",
-   "translated": false,
-   "sourceHash": "795a3490f2c29467",
-   "publishedAt": "2026-11-11T21:15:06.285Z",
-   "revisedAt": "2026-11-13T09:12:18.799Z",
-   "revision": 5,
    "file": "news-ticker/1681-2026.json"
   }
  ]
