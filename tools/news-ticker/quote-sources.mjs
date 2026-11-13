@@ -112,14 +112,18 @@ export function addContext(c, main) {
   if (!c.day) return;
   const sur = c.speaker.split(' ').pop().toLowerCase();
   const prevDay = new Date(Date.parse(c.day + 'T00:00:00Z') - 86400000).toISOString().slice(0, 10);
-  const mine = main.filter((m) => !m.walkover && ['p1', 'p2'].some((k) => String(m[k]).toLowerCase().endsWith(' ' + sur)));
-  let ms = mine.filter((m) => m.date === c.day);
+  const all = main.filter((m) => ['p1', 'p2'].some((k) => String(m[k]).toLowerCase().endsWith(' ' + sur)));
+  // a walkover on the article's own day is the news (he withdrew, or his opponent did): it wins over yesterday's match
+  const wo = all.filter((m) => m.walkover && m.date === c.day && m.finalScore && m.finalScore.winner);
+  const mine = all.filter((m) => !m.walkover);
+  let ms = wo.length === 1 ? wo : mine.filter((m) => m.date === c.day);
   if (!ms.length) ms = mine.filter((m) => m.date === prevDay);
   if (ms.length !== 1) return;
   const m = ms[0], w = m.finalScore.winner, l = w === 'p1' ? 'p2' : 'p1';
   const won = String(m[w]).toLowerCase().endsWith(' ' + sur);
   c.opponent = won ? m[l] : m[w];
-  c.context = `${won ? 'after beating' : 'after losing to'} ${c.opponent}`;
+  c.context = m.walkover ? (won ? `after ${c.opponent} withdrew before their match` : `after withdrawing before his match against ${c.opponent}`)
+    : `${won ? 'after beating' : 'after losing to'} ${c.opponent}`;
   c.contextBasis = 'our result for the speaker on or just before the article date';
   c.matchId = m.id; c.won = won;
 }

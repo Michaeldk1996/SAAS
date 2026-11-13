@@ -413,6 +413,37 @@ await ok('on-court interview inbox: an answer becomes an item that keeps its top
   const page = read('bsp-consult-dashboard.html');
   assert.ok(/news-qtopic/.test(page) && /k\.q\.topic \? k\.q\.topic \+ ': '/.test(page), 'the card prints the topic in front of the answer');
 });
+// ---- reading a card (founder 2026-11-13): context for every quote, the interview in match order, a withdrawal named ----
+await ok('a press quote gets a topic label, asked once; a label that is not "On …" is not used; a walkover day reads as a withdrawal', async () => {
+  const { topicOk } = await import('./news-ticker/translate.mjs');
+  assert.ok(topicOk('On a possible ATP tournament in Copenhagen') && !topicOk('He talks about Copenhagen') && !topicOk('On "this"') && !topicOk('On ' + 'x'.repeat(70)));
+  const t = { key: '77', season: '2026', name: 'Testville', cards: [{ p1Key: '437', p1: 'H. Rune', p2Key: '2832', p2: 'T. Fritz' }] };
+  const q = { id: 'a-1', speaker: 'H. Rune', spans: ['There is 100 percent potential for it, he said about it.'], text: 'There is 100 percent potential for it, he said about it.',
+    sourceText: 'Asked about an ATP event in Copenhagen: There is 100 percent potential for it, he said about it. More.', sourceName: 'B.T.', sourceUrl: 'https://bt.dk/x', language: 'en', timestamp: '2026-11-11T10:00:00.000Z', timestampKind: 'observed' };
+  let calls = 0, saw = '';
+  const topicOf = async (text, around) => { calls++; saw = around; return { status: 'ok', topic: 'On an ATP tournament in Copenhagen' }; };
+  const r = await processTournament({ t, got: { candidates: [q] }, topicOf });
+  assert.equal(r.items[0].topic, 'On an ATP tournament in Copenhagen'); assert.match(saw, /Asked about an ATP event in Copenhagen/); assert.equal(r.items[0].text, q.text, 'the quote itself is untouched');
+  await processTournament({ t, got: { candidates: [q] }, known: r.items, topicOf });
+  assert.equal(calls, 1, 'a held quote keeps its label: the model is not asked again');
+  const none = await processTournament({ t, got: { candidates: [q] }, topicOf: async () => ({ status: 'failed-check', topic: null }) });
+  assert.ok(!('topic' in none.items[0]), 'control: no label, no topic field');
+  const { addContext } = await import('./news-ticker/quote-sources.mjs');
+  const main = [{ id: 'past-1', date: '2026-11-11', p1: 'M. Kecmanovic', p2: 'H. Rune', finalScore: { winner: 'p2' } }, { id: 'past-2', date: '2026-11-12', p1: 'T. Fritz', p2: 'H. Rune', walkover: true, finalScore: { winner: 'p1' } }];
+  const c = { speaker: 'H. Rune', day: '2026-11-12' }; addContext(c, main);
+  assert.equal(c.context, 'after withdrawing before his match against T. Fritz'); assert.equal(c.matchId, 'past-2');
+  const f = { speaker: 'T. Fritz', day: '2026-11-12' }; addContext(f, main); assert.equal(f.context, 'after H. Rune withdrew before their match');
+  const y = { speaker: 'H. Rune', day: '2026-11-11' }; addContext(y, main); assert.equal(y.context, 'after beating M. Kecmanovic', 'control: a played match keeps its wording');
+});
+await ok('card order: the on-court interview first, in the order of the match (first set, the match, his body, what is next), then the press', () => {
+  const page = read('bsp-consult-dashboard.html');
+  const i = page.indexOf('function newsTopicRank'), j = page.indexOf('function newsQuoteCards');
+  const rank = new Function(page.slice(i, j) + '; return newsTopicRank;')();
+  const order = ['On playing Fritz next', 'On his physical condition', 'On the match', 'On the first set'].sort((a, b) => rank(a) - rank(b));
+  assert.deepEqual(order, ['On the first set', 'On the match', 'On his physical condition', 'On playing Fritz next']);
+  assert.ok(rank('On losing his lead in the second set') < rank('On the match') && rank('On Stockholm') < rank('On winning a first title'));
+  assert.match(page, /\(a\.q\.interview \? 0 : 1\) - \(b\.q\.interview \? 0 : 1\)/, 'the interview leads the card; the longest quote no longer does');
+});
 // ---- tour-wide (founder 2026-11-12: press interviews and injuries for every ATP player, every day) ----
 await ok('tour-wide: an article that names no tournament still yields its quote; each candidate carries the tournaments its article mentions', async () => {
   const SECTION = '<html>' + 'x'.repeat(700) + '<a href="/tennis/rune-on-his-long-road-back">Rune on his road back</a><a href="/tennis/other-long-article-slug">Other news</a></html>';

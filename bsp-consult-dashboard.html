@@ -6026,6 +6026,18 @@ function newsTickerItems(){
 // translated, the language it was said in. A quote whose words are already inside a longer one of the same card (the same
 // statement carried by a second outlet) is not printed twice: its outlet is listed on the longer one. A quote tied to no
 // match (interviews, injuries) groups by player and day. Injury quotes keep their own card under Withdrawals & Injuries.
+// Where an on-court answer sits in its card, by its topic (lower = earlier).
+function newsTopicRank(topic){
+  const t = String(topic || '').toLowerCase();
+  if (/\b(start|beginning|opening|first set)\b/.test(t)) return 1;
+  if (/\b(second set|third set|tiebreak|match point|set point|lead|break|comeback|turn)/.test(t)) return 2;
+  if (/\bnext\b|\bfinal\b|\btitle\b|all the way|\bahead\b/.test(t)) return 8;
+  if (/\bmatch\b|\bwin\b|\bopponent\b|^on playing /.test(t)) return 3;
+  if (/\b(serve|return|forehand|backhand|tennis|game|level)\b/.test(t)) return 4;
+  if (/\b(physical|body|injur|fitness|health|condition)/.test(t)) return 5;
+  if (/\b(season|year|form|week|progress|ranking|career)\b/.test(t)) return 6;
+  return 7;   // the tournament, the city, the crowd, the surface, anything else
+}
 function newsQuoteCards(items){
   const groups = new Map();
   for (const x of items){
@@ -6048,6 +6060,12 @@ function newsQuoteCards(items){
       const host = kept.find(k => { let n = 0; w.forEach(x => { if (k.w.has(x)) n++; }); return w.size && n / w.size >= 0.8; });
       if (host){ if (host.q.sourceUrl !== q.sourceUrl) host.also.push(q); } else kept.push({ q, w, also: [] });
     }
+    // Reading order (founder 2026-11-13): the on-court interview first, in the order of the match — the start and the
+    // first set, moments in the match, the match as a whole, his game, his body, his season, the tournament, what is
+    // next — then what he told the press, oldest first. The fullest quote no longer leads.
+    kept.sort((a, b) => (a.q.interview ? 0 : 1) - (b.q.interview ? 0 : 1)
+      || (a.q.interview ? newsTopicRank(a.q.topic) - newsTopicRank(b.q.topic) : 0)
+      || String(a.q.timestamp || '').localeCompare(String(b.q.timestamp || '')) || String(a.q.id).localeCompare(String(b.q.id)));
     const first = kept[0].q, name = newsPlayerName(String(first.playerId), first.player);
     const ctx = (g.list.find(q => q.context) || {}).context;
     const tsMax = Math.max.apply(null, g.list.map(q => Date.parse(q.timestamp)).filter(isFinite));

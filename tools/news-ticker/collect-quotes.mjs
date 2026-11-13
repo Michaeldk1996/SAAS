@@ -25,7 +25,7 @@ import { fileURLToPath } from 'node:url';
 import { verbatimIn, resolvePlayer, foldText } from './news-core.mjs';
 import { collectQuotes, addContext } from './quote-sources.mjs';
 import { readOutlet, surnameOf, initialOf } from './outlet-reader.mjs';
-import { translateQuote } from './translate.mjs';
+import { translateQuote, topicQuote } from './translate.mjs';
 import { mergeItems, dedupeQuotes, sameQuote, tourKeep } from './ticker-core.mjs';
 import { sendTelegram } from '../price-alert-send.mjs';
 
@@ -36,6 +36,7 @@ const flag = (k) => process.argv.includes('--' + k);
 export const SILENT_HOURS = 24;
 export const RETRY_MAX = 6;   // re-reads of one article while the translation call is failing
 export const MIN_GAP_MIN = 25;
+export const TOPIC_BACKFILL = 12;   // held quotes labelled per tournament per run
 export const tooSoon = (lastMs, nowIso) => Number.isFinite(lastMs) && Date.parse(nowIso) - lastMs >= 0 && Date.parse(nowIso) - lastMs < MIN_GAP_MIN * 60000;
 
 const COUNTRY_ALIAS = { 'United States': 'USA', US: 'USA', 'Great Britain': 'United Kingdom', UK: 'United Kingdom', Czechia: 'Czech Republic' };
@@ -98,7 +99,7 @@ export function routeCandidate(c, tournaments, tourKeys, nowIso) {
 }
 
 // One tournament: candidates -> checked, translated, de-duplicated items. translate is injectable for the tests.
-export async function processTournament({ t, got, translate = translateQuote, known = [] }) {
+export async function processTournament({ t, got, translate = translateQuote, known = [], topicOf = topicQuote }) {
   const entrants = new Map();
   t.cards.forEach((m) => { if (m.p1Key != null) entrants.set(String(m.p1Key), m.p1); if (m.p2Key != null) entrants.set(String(m.p2Key), m.p2); });
   const c = { candidates: 0, droppedNotVerbatim: 0, droppedNoPlayer: 0, droppedAmbiguous: 0, notTranslatedNoKey: 0, notTranslatedApiError: 0,
@@ -132,12 +133,20 @@ export async function processTournament({ t, got, translate = translateQuote, kn
       }
       if (out.some((e) => e.language === 'en' && sameQuote(e, { playerId: key, text }))) { c.droppedEnglishExists++; continue; }
     }
+    // what the quote is about, for a reader who has not seen the article: asked once per quote (a held item keeps its label)
+    let topic = q.topic || (heldById.get(id) || {}).topic || null;
+    if (!topic) {
+      const at = q.sourceText ? q.sourceText.indexOf((q.spans || [q.text])[0]) : -1;
+      const tp = await topicOf(q.text, at >= 0 ? q.sourceText.slice(Math.max(0, at - 700), at + q.text.length + 300) : '');
+      if (tp.usage) { c.tokens.input += tp.usage.input; c.tokens.output += tp.usage.output; }
+      if (tp.status === 'ok') { topic = tp.topic; c.topicsAdded = (c.topicsAdded || 0) + 1; }
+    }
     out.push({ id, type: 'quote', playerId: key, opponentId: opp, player: entrants.get(key), opponent: opp ? entrants.get(opp) : null,
       tournament: t.name, tournamentKey: t.key, season: t.season, round: null, timestamp: q.timestamp, timestampKind: q.timestampKind,
       category: 'Quotes', context: q.context || null, eventKey: q.matchId ? String(q.matchId).split('-').slice(1).join('-') : null, won: q.matchId ? !!q.won : null,
       text, originalText: original, language: q.language, translated, translationModel: model,
       sourceName: q.sourceName, sourceUrl: q.sourceUrl, verbatimCheck: 'passed', verbatimCheckedOn: q.checkedOn || (q.preVerified ? 'the fetched ATP page, by the ATP reader' : 'the original-language text of the fetched page'),
-      ...(q.interview ? { interview: q.interview } : {}), ...(q.topic ? { topic: String(q.topic).slice(0, 60) } : {}) });
+      ...(q.interview ? { interview: q.interview } : {}), ...(topic ? { topic: String(topic).slice(0, 60) } : {}) });
   }
   const deduped = dedupeQuotes(out);
   deduped.forEach((x) => { x.category = quoteCategory(x); });
@@ -248,7 +257,18 @@ async function main() {
     const tourWide = t.key === TOUR_KEY, baseItems = tourWide ? tourKeep(heldItems) : heldItems;
     const keepIds = tourWide ? new Set(tourKeep([...baseItems, ...res.items.filter((r) => !baseItems.some((h) => h.id === r.id))]).map((x) => x.id)) : null;
     const merged = mergeItems(baseItems, tourWide ? res.items.filter((r) => keepIds.has(r.id)) : res.items, nowIso);
-    if (merged.added || merged.revised || (tourWide && merged.items.length !== heldItems.length) || (held && heldItems.length !== (held.items || []).length) || (!held && merged.items.length)) wr(file, { tournament: t.name, tournamentKey: t.key, season: t.season, updatedAt: nowIso, items: merged.items });
+    // quotes held from before the labels existed (their articles are not read again): label a few each run, from the quote alone
+    let labelled = 0;
+    for (const x of merged.items) {
+      if (labelled >= TOPIC_BACKFILL) break;
+      if (x.type !== 'quote' || x.topic || x.topicTried) continue;
+      const tp = await topicQuote(x.text, '');
+      if (tp.status === 'no-key' || tp.status === 'api-error') break;
+      if (tp.usage) { run.tokens.input += tp.usage.input; run.tokens.output += tp.usage.output; }
+      if (tp.status === 'ok') x.topic = tp.topic; else x.topicTried = true;
+      labelled++;
+    }
+    if (labelled || merged.added || merged.revised || (tourWide && merged.items.length !== heldItems.length) || (held && heldItems.length !== (held.items || []).length) || (!held && merged.items.length)) wr(file, { tournament: t.name, tournamentKey: t.key, season: t.season, updatedAt: nowIso, items: merged.items });
     run.newItems += merged.added; run.tokens.input += res.counts.tokens.input; run.tokens.output += res.counts.tokens.output;
     const finished = main.filter((m) => !m.walkover), quoted = new Set(merged.items.filter((x) => x.won && x.eventKey).map((x) => x.eventKey));
     run.tournaments.push({ name: t.name, key: t.key, sources: got.sources.map((s) => ({ name: s.name, articles: s.articles, candidates: s.candidates, robotsStatus: s.robotsStatus, skippedByRobots: s.skippedByRobots, unnamed: s.unnamedSpeakerParagraphs })),
