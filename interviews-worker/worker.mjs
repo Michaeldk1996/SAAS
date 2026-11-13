@@ -19,7 +19,7 @@ let clips = [];
 if (process.env.CLIP_URLS) { try { clips = JSON.parse(process.env.CLIP_URLS); } catch (e) { console.error('CLIP_URLS not JSON'); process.exit(2); } }
 else if (process.env.CLIP_URL) clips = [{ url: process.env.CLIP_URL }];
 clips = clips.map((c) => (typeof c === 'string' ? { url: c } : c)).filter((c) => c && c.url);
-if (!clips.length) { console.error('no clips (set CLIP_URLS or CLIP_URL)'); process.exit(2); }
+if (!clips.length && !process.env.FRAME_CLIPS) { console.error('no clips (set CLIP_URLS or CLIP_URL)'); process.exit(2); }
 
 const work = fs.mkdtempSync(path.join(os.tmpdir(), 'ttv-'));
 
@@ -80,6 +80,39 @@ async function oneClip(c, i) {
   try { fs.unlinkSync(wav); } catch (e) {}
   if (py.status !== 0) return { ...c, ok: false, error: 'transcribe: ' + (py.stderr || '').slice(-200) };
   return { ...c, ok: true, duration: Math.round(dur), playedIn: wall, transcript: py.stdout.trim() };
+}
+
+// FRAMES mode (a test, founder 2026-11-13): the end of a full replay carries the broadcast's stats panel. Seek to the
+// last TAIL seconds, play, and keep one picture of the player every STEP seconds in /tmp/frames. No audio is recorded.
+if (process.env.FRAME_CLIPS) {
+  const list = JSON.parse(process.env.FRAME_CLIPS), TAIL = +(process.env.FRAME_TAIL || 420), STEP = +(process.env.FRAME_STEP || 6);
+  fs.mkdirSync('/tmp/frames', { recursive: true });
+  for (let n = 0; n < list.length; n++) {
+    const c = list[n];
+    console.log(`[frames ${n + 1}/${list.length}] ${c.slug || c.url}`);
+    await send('Page.navigate', { url: c.url });
+    let dur = 0;
+    for (let k = 0; k < 80; k++) { dur = await ev('(document.querySelector("video")||{}).duration || 0').catch(() => 0); if (dur > 1) break; await sleep(500); }
+    if (!dur) { console.log('  FAILED · no playable video'); continue; }
+    await ev(`(() => { const v = document.querySelector("video"); v.muted = true; v.currentTime = Math.max(0, v.duration - ${TAIL}); v.play(); return true; })()`);
+    let ready = false;
+    for (let k = 0; k < 90 && !ready; k++) { await sleep(1000); ready = await ev('(() => { const v = document.querySelector("video"); return !v.seeking && v.readyState >= 3; })()').catch(() => false); }
+    console.log(`  duration ${Math.round(dur)}s · seek ${ready ? 'ok' : 'NOT ready'}`);
+    await ev('(() => { const v = document.querySelector("video"); v.scrollIntoView({ block: "center" }); return true; })()');
+    let i = 0;
+    for (;;) {
+      const st = await ev('(() => { const v = document.querySelector("video"); const r = v.getBoundingClientRect(); return [v.currentTime, v.ended, r.x, r.y, r.width, r.height]; })()').catch(() => null);
+      if (!st || st[1] || st[0] >= dur - 1 || i > TAIL / STEP + 10) break;
+      const shot = await send('Page.captureScreenshot', { format: 'jpeg', quality: 60, clip: { x: st[2], y: st[3], width: st[4], height: st[5], scale: 1 } });
+      if (shot.result && shot.result.data) fs.writeFileSync(`/tmp/frames/c${n + 1}_${String(i).padStart(3, '0')}_${Math.round(st[0])}s.jpg`, Buffer.from(shot.result.data, 'base64'));
+      i++; await sleep(STEP * 1000);
+    }
+    console.log(`  ${i} frames kept`);
+  }
+  spawnSync('tar', ['-czf', '/tmp/frames.tgz', '-C', '/tmp', 'frames']);
+  console.log('FRAMES_READY ' + (fs.existsSync('/tmp/frames.tgz') ? fs.statSync('/tmp/frames.tgz').size : 0));
+  await sleep(+(process.env.FRAME_HOLD || 600) * 1000);   // stay up so the workflow can fetch the file
+  process.exit(0);
 }
 
 const results = [];

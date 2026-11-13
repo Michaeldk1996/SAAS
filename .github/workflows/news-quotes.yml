@@ -2,10 +2,9 @@ name: News ticker quotes
 on:
   workflow_dispatch:
     inputs:
-      clips:
-        description: JSON array of {url,slug,round} clips to transcribe
-        required: false
-        default: ''
+      frames:
+        description: JSON array of {url,slug} replays whose last minutes are captured as frames
+        required: true
 concurrency:
   group: news-ttv-deploy
   cancel-in-progress: false
@@ -14,75 +13,49 @@ permissions:
 jobs:
   quotes:
     runs-on: ubuntu-latest
-    timeout-minutes: 80
+    timeout-minutes: 60
     env:
       FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN_ORG }}
     steps:
       - uses: actions/checkout@v4
       - uses: superfly/flyctl-actions/setup-flyctl@master
-      - name: Ensure app
-        run: flyctl apps create stennisfy-interviews --org personal 2>/dev/null || echo "app exists"
-      - name: Stage secrets
-        run: flyctl secrets set --stage -a stennisfy-interviews TENNISTV_EMAIL="${{ secrets.TENNISTV_EMAIL }}" TENNISTV_PASSWORD="${{ secrets.TENNISTV_PASSWORD }}"
       - name: Build & push image
-        id: build
         working-directory: interviews-worker
-        run: |
-          flyctl deploy --build-only --push -a stennisfy-interviews --image-label batch \
-            --build-arg WHISPER_MODEL=small.en 2>&1 | tee /tmp/b.log
-          echo "image=registry.fly.io/stennisfy-interviews:batch" >> "$GITHUB_OUTPUT"
-      - name: Clip list
-        id: clips
-        shell: bash
-        run: |
-          CL='${{ inputs.clips }}'
-          if [ -z "$CL" ]; then CL=$(cat interviews-worker/stockholm-yesterday.json); fi
-          echo "$CL" > /tmp/clips.json
-          echo "count=$(node -e 'console.log(JSON.parse(require("fs").readFileSync("/tmp/clips.json","utf8")).length)')"
-      - name: Run batch
+        run: flyctl deploy --build-only --push -a stennisfy-interviews --image-label frames --build-arg WHISPER_MODEL=small.en 2>&1 | tail -5
+      - name: Capture frames
         shell: bash
         run: |
           set +e
-          CLIPS=$(cat /tmp/clips.json)
-          # the registry can take a few seconds to serve a just-pushed image: retry the launch
           MID=""
           for try in 1 2 3 4 5 6; do
-            OUT=$(flyctl machine run "${{ steps.build.outputs.image }}" -a stennisfy-interviews \
+            OUT=$(flyctl machine run registry.fly.io/stennisfy-interviews:frames -a stennisfy-interviews \
               --vm-cpu-kind performance --vm-cpus 2 --vm-memory 4096 --restart no \
-              --env CLIP_URLS="$CLIPS" \
+              --env FRAME_CLIPS='${{ inputs.frames }}' \
               --env TENNISTV_EMAIL="${{ secrets.TENNISTV_EMAIL }}" --env TENNISTV_PASSWORD="${{ secrets.TENNISTV_PASSWORD }}" 2>&1)
-            echo "$OUT"
             MID=$(echo "$OUT" | grep -oE 'Machine ID: [0-9a-f]+' | awk '{print $3}')
             [ -n "$MID" ] && break
-            echo "launch attempt $try failed; waiting 30s"; sleep 30
+            echo "launch attempt $try failed"; echo "$OUT" | tail -3; sleep 30
           done
-          echo "MID=$MID"
-          if [ -z "$MID" ]; then echo "::error::the machine never launched"; exit 1; fi
-          # capture logs continuously so nothing ages out of the retention window during the long run
+          echo "MID=$MID"; [ -z "$MID" ] && exit 1
           ( flyctl logs -a stennisfy-interviews -i "$MID" > /tmp/logs.txt 2>&1 ) &
           LOGPID=$!
-          for i in $(seq 1 200); do
+          for i in $(seq 1 160); do
+            grep -q "FRAMES_READY" /tmp/logs.txt && break
             ST=$(flyctl machine status "$MID" -a stennisfy-interviews 2>/dev/null | grep -iE 'state' | head -1)
-            echo "poll $i: $ST"
             echo "$ST" | grep -qiE "stopped|destroyed|failed" && break
-            sleep 20
+            sleep 15
           done
-          sleep 30
-          kill "$LOGPID" 2>/dev/null || true
-          flyctl machine destroy "$MID" -a stennisfy-interviews --force 2>/dev/null || true
-          echo "=== extract results ==="
-          awk '/===RESULTS_JSON_START===/{f=1;next}/===RESULTS_JSON_END===/{f=0}f' /tmp/logs.txt | tr -d '\r' > /tmp/results.json
-          if [ -s /tmp/results.json ]; then
-            node -e 'const r=JSON.parse(require("fs").readFileSync("/tmp/results.json","utf8"));console.log("transcribed",r.ok,"of",r.count,"·",r.model)'
-          else
-            echo "no results JSON found; dumping tail of logs"; tail -80 /tmp/logs.txt
-          fi
-      - name: Upload transcripts
+          sed -E 's/\x1b\[[0-9;]*m//g; s/^.*\[info\]//' /tmp/logs.txt | grep -aE "frames|duration|FAILED|sign-in|FRAMES_READY"
+          flyctl ssh console -a stennisfy-interviews --machine "$MID" -C "base64 -w0 /tmp/frames.tgz" > /tmp/frames.b64 2>/tmp/ssh.err
+          tail -3 /tmp/ssh.err
+          base64 -d /tmp/frames.b64 > /tmp/frames.tgz 2>/dev/null; ls -la /tmp/frames.tgz
+          kill "$LOGPID" 2>/dev/null
+          flyctl machine destroy "$MID" -a stennisfy-interviews --force 2>/dev/null
+      - uses: actions/upload-artifact@v4
         if: always()
-        uses: actions/upload-artifact@v4
         with:
-          name: interview-transcripts
+          name: replay-frames
           path: |
-            /tmp/results.json
+            /tmp/frames.tgz
             /tmp/logs.txt
           if-no-files-found: warn
