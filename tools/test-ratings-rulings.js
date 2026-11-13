@@ -69,33 +69,34 @@ function ratingsHtml() {
   return html;
 }
 
-// ── RULING 1 (v3, founder 2026-11-12, Ratings brief point 4 — replaces profile v2's per-service-game tiles) ──
-// The Serve boxes are the six terms of the Serve rating in the rating's own unit: aces and double faults PER MATCH.
-check('RULING 1 (v3): the count tiles are "Aces per match" / "Double faults per match", 2 dp, no unit', () => {
+// ── RULING 1 (founder 2026-11-13 — "we have the service games, so count it") ──
+// Aces and double faults per SERVICE GAME (the builder's acesPerSG / dfPerSG = window aces ÷ service games), 2 dp.
+check('RULING 1: the count tiles are "Aces per service game" / "Double faults per service game", 2 dp, no unit', () => {
   const { M } = load();
   const serve = M._internals.DNA_TILES.serve;
-  assert.deepStrictEqual(serve.map(t => t.f), ['firstInPct', 'firstWonPct', 'secondWonPct', 'holdPct', 'acesPerMatch', 'dfPerMatch'],
-    'the Serve boxes are not the six terms of the Serve rating');
-  const ace = serve.find(t => t.f === 'acesPerMatch'), df = serve.find(t => t.f === 'dfPerMatch');
-  assert.strictEqual(ace.label, 'Aces per match'); assert.strictEqual(df.label, 'Double faults per match');
+  assert.deepStrictEqual(serve.map(t => t.f), ['firstInPct', 'firstWonPct', 'secondWonPct', 'holdPct', 'acesPerSG', 'dfPerSG'],
+    'the Serve boxes are not the four rates + the two per-service-game counts');
+  const ace = serve.find(t => t.f === 'acesPerSG'), df = serve.find(t => t.f === 'dfPerSG');
+  assert.strictEqual(ace.label, 'Aces per service game'); assert.strictEqual(df.label, 'Double faults per service game');
   assert.strictEqual(ace.dp, 2); assert.strictEqual(df.dp, 2);
   assert.ok(!ace.unit && !df.unit, 'a count carries a unit');
   assert.ok(df.lower === true, 'double faults are not lower-is-better');
 });
-check('RULING 1 (v3): the six terms reproduce the Serve rating the store holds (the unit is the rating\'s own)', () => {
+check('RULING 1: the per-service-game counts are the per-match counts over the service games (a count, not a guess)', () => {
   let n = 0;
   for (const r of ROWS) {
     const s = r.surfaces && r.surfaces.All && r.surfaces.All.last52 && r.surfaces.All.last52.serve;
-    if (!s || s.rating == null || [s.firstInPct, s.firstWonPct, s.secondWonPct, s.holdPct, s.acesPerMatch, s.dfPerMatch].some(v => v == null)) continue;
-    const sum = s.firstInPct + s.firstWonPct + s.secondWonPct + s.holdPct + s.acesPerMatch - s.dfPerMatch;
-    assert.ok(Math.abs(sum - s.rating) <= 0.35, `${r.name}: terms sum to ${sum.toFixed(2)}, rating ${s.rating}`);   // each term is stored to 1 dp
+    if (!s || s.acesPerSG == null || s.acesPerMatch == null || !s.acesPerSG) continue;
+    // service games per match = acesPerMatch / acesPerSG; a tour player serves 8–16 games a best-of-3 match, up to ~25 with five-setters
+    const sgPerMatch = s.acesPerMatch / s.acesPerSG;
+    assert.ok(sgPerMatch > 6 && sgPerMatch < 26, `${r.name}: ${sgPerMatch.toFixed(1)} service games a match`);
     n++;
   }
   assert.ok(n > 50, `only ${n} players compared — vacuous`);
 });
 check('RULING 1: the rendered panel prints no % beside either count', () => {
   const html = ratingsHtml();
-  for (const label of ['Aces per match', 'Double faults per match']) {
+  for (const label of ['Aces per service game', 'Double faults per service game']) {
     assert.ok(html.includes(label), `panel never prints "${label}"`);
     const printed = html.replace(/color-mix\(in srgb, var\(--[\w-]+\) [\d.]+%, transparent\)/g, 'color-mix()');
     const i = printed.indexOf(label);

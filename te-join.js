@@ -402,9 +402,15 @@ function fillTeamSurfaces(rows, table, key, diag) {
   const T = table && table.rows;
   if (!T || key == null) return;
   for (const r of rows) {
-    if (r.surface || r.indoor === true || r.walkover || r.unconfirmed) continue;
+    // Founder 2026-11-13 ("find these surfaces out"): a CARPET row is also filled, indoor flag only — carpet is a surface
+    // the table has no column for, so without its court class it fell into "Surface not known". Its surface is never changed.
+    const carpet = r.surface === 'carpet';
+    if ((r.surface && !carpet) || r.indoor === true || r.walkover || r.unconfirmed) continue;
     const v = T[`${key}|${r.date}|${ourSurname(r.opponent)}`];
     if (!v || !v[0]) continue;
+    // A carpet row is touched only where the table states its court class; where the table's source (Wikipedia, first in
+    // its order) names another surface it wins — 3 rows: BUL v CYP 2011 and CZE v SUI 2007, hard indoors per the tie box.
+    if (carpet && v[1] !== 1 && v[1] !== 0) continue;
     r.surface = v[0];
     if (v[1] === 1) r.indoor = true; else if (v[1] === 0) r.indoor = false;
     diag.teamSurfaceFilled = (diag.teamSurfaceFilled || 0) + 1;

@@ -161,8 +161,8 @@ check('the Live trading modal body is the launcher, not the inlined grid', () =>
 });
 
 // ── the reference's entry tile (TEN-384, inventory C row 47) ────────────────
-// A clickable tile (--card + --edge-7, radius 12, pad 13/15; hover lives in the
-// .pp2-atile rule), a 30px icon tile on --selected with a --line edge, title
+// A clickable tile (--card + a 1.25px --line ring, the export's; radius 12, pad 13/15; hover lives in the
+// .pp2-atile rule), a 30px icon tile on --selected with an --edge-16 edge, title
 // 13.5/700, a Hanken 11.5 sentence, and ONE mono figure "Hold 87.1%" — no
 // "Open ›", no caps pill.
 check('the launcher matches the reference\'s entry tile', () => {
@@ -170,8 +170,8 @@ check('the launcher matches the reference\'s entry tile', () => {
   const html = I.hbLauncherHtml(SUBJECT);
   const want = [
     ['class="pp2-atile"', 'clickable-tile class (hover rule)'],
-    ['background:var(--card);border:1px solid var(--edge-7);border-radius:12px;padding:13px 15px;', 'tile chrome'],
-    ['width:30px;height:30px;border-radius:9px;box-sizing:border-box;background:var(--selected);border:1px solid var(--line);', 'icon tile'],
+    ['background:var(--card);border:1.25px solid var(--line);border-radius:12px;padding:13px 15px;', 'tile chrome (the export\'s 1.25px 5% ring, founder 2026-11-13)'],
+    ['width:30px;height:30px;border-radius:9px;box-sizing:border-box;background:var(--selected);border:1px solid var(--edge-16);', 'icon tile (the export\'s 16% edge)'],
     ['font-size:13.5px;font-weight:700;color:var(--text);">Hold / break heatmap<', 'title 13.5/700, spaced slash'],
     ['font-size:11.5px;color:var(--text-label);">Hold and break rate by service-game pair, set by set<', 'the reference sentence'],
     ["font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:700;color:var(--text);\">Hold ", 'one mono figure'],

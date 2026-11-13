@@ -80,6 +80,16 @@ Where this file conflicts with `modal-analysis.md` (TEN-312, 2026-09-28), that f
     any row with no court type). Where the two sources disagree the row stays blank unless a third source settles it (AUT v
     FIN and CYP v THA 2025: press reports confirm Wikipedia's clay). **Test:** does any filled row replace a surface, move an
     indoor row, or carry an indoor flag no source stated? It must not — `tools/test-team-surfaces.js`.
+    **Extended (founder 2026-11-13, "find these surfaces out"):** (a) the same table fills a FEED fixture whose tournament
+    carries no surface (`bsp-pipeline.js` `fixtureSurface` / `fixtureTeamCourt`, either player's side; a tournament surface
+    always wins), so players with no Tennis Explorer record get it too; (b) a CARPET row with no court class takes the
+    table's (indoor → Indoors), and where the table's source (Wikipedia, first in its order) names another surface it wins
+    (BUL v CYP 2011, CZE v SUI 2007: hard indoors, Sackmann says carpet); (c) sources beyond Wikipedia / Tennis Abstract are
+    named in the file (Sackmann's pinned copy, FISU, a cited press report). Measured 13 Nov on the 97 rows left: 81 resolved;
+    16 have no source that states a surface — the "Int. crossklinik Tennis Open Basel" (16–19 Jul 2020, a Swiss national
+    prize-money event api-tennis files as "Basel Open", 10 rows) and the 2023 World University Games men's singles (Chengdu,
+    6 rows) — so the column stays. **Test:** a carpet row with a stated court class leaves "Surface not known"; one without
+    stays; a feed fixture with a tournament surface keeps it — `tools/test-team-surfaces.js`.
   - **The career record is its own population, in its own file (payload B, founder TEN-449, 2026-10-19).** The TE
     merge never changes the career-history files H2H, Lines, the model and every other reader take — not a byte.
     The record is an overlay on them (`te-join.js` `recordLayer`) in `career-record/<key>.json` (+

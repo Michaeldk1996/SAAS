@@ -44,6 +44,31 @@ const vals = Object.entries(F.rows);
 ok(vals.length >= 2400 && vals.length === F.counts.rows, `the research file holds ${vals.length} entries`);
 ok(vals.every(([k, v]) => /^\d+\|\d{4}-\d\d-\d\d\|[a-z]+$/.test(k) && ['hard', 'clay', 'grass', 'carpet'].includes(v[0]) && [1, 0, null].includes(v[1]) && typeof F.sources[v[2]] === 'string'),
   'every entry: key = player|date|surname, a real surface, indoor 1/0/null, a named source');
-ok(F.sources.every(s => /^(Wikipedia: |Tennis Abstract \(TML\): )/.test(s)), 'every source is Wikipedia or Tennis Abstract, named');
+ok(F.sources.every(s => /^(Wikipedia: |Tennis Abstract \(TML\): |Sackmann tennis_atp |FISU, |Avondhu Press )/.test(s)), 'every source is named (Wikipedia, Tennis Abstract, Sackmann, FISU or a cited press report)');
+ok(F.sources.every(s => !/\/Users\//.test(s)), 'no source names a local path');
+
+// Founder 2026-11-13 ("find these surfaces out"): a CARPET row with no court class takes the table's (indoor → Indoors),
+// and where the table's source names another surface it wins; a carpet row the table gives no court class stays.
+const ct = { rows: { '9|2006-04-07|safin': ['carpet', 1, 0], '9|2007-09-21|berdych': ['hard', 1, 0], '9|2009-03-06|balazs': ['carpet', null, 0] } };
+const r4 = [{ date: '2006-04-07', opponent: 'M. Safin', surface: 'carpet' }, { date: '2007-09-21', opponent: 'T. Berdych', surface: 'carpet' },
+  { date: '2009-03-06', opponent: 'A. Balazs', surface: 'carpet' }, { date: '2006-04-07', opponent: 'M. Safin', surface: 'clay' }];
+T.fillTeamSurfaces(r4, ct, '9', {});
+ok(r4[0].surface === 'carpet' && r4[0].indoor === true, 'a carpet row takes its stated court class (indoor → the Indoors column)');
+ok(r4[1].surface === 'hard' && r4[1].indoor === true, 'a carpet row the table\'s source calls hard (indoors) becomes hard');
+ok(r4[2].surface === 'carpet' && !('indoor' in r4[2]), 'no court class in the table: the carpet row is left as it was');
+ok(r4[3].surface === 'clay' && !('indoor' in r4[3]), 'a clay row is never touched');
+// the feed side: a fixture whose tournament has no surface reads the same table, either player's side; a tournament surface wins
+const P = require('../bsp-pipeline.js');
+const fx = (a, b, d, key) => ({ first_player_key: a, second_player_key: b, event_first_player: 'X. ' + a, event_second_player: 'Y. Safin', event_date: d, tournament_key: key, tournament_name: 'Davis Cup' });
+if (typeof P.fixtureSurface === 'function') {
+  const map = new Map([['500', 'clay']]);
+  const rowsT = require('../team-event-surfaces.json').rows; const k = Object.keys(rowsT)[0].split('|');
+  const f1 = { first_player_key: k[0], second_player_key: '0', event_first_player: 'A. Bee', event_second_player: 'Z. ' + k[2], event_date: k[1], tournament_key: '1', tournament_name: 'Davis Cup' };
+  ok(P.fixtureSurface(f1, new Map()) === rowsT[Object.keys(rowsT)[0]][0], 'a feed fixture with no tournament surface takes the table\'s');
+  const f2 = Object.assign({}, f1, { first_player_key: '0', second_player_key: k[0], event_first_player: 'Z. ' + k[2], event_second_player: 'A. Bee' });
+  ok(P.fixtureSurface(f2, new Map()) === rowsT[Object.keys(rowsT)[0]][0], 'either side of the fixture finds it');
+  ok(P.fixtureSurface(Object.assign({}, f1, { tournament_key: '500' }), map) === 'clay', 'a tournament surface always wins');
+  ok(P.fixtureSurface(Object.assign({}, f1, { event_date: '1999-01-01' }), new Map()) == null, 'another day: no surface');
+} else ok(false, 'bsp-pipeline.js exports fixtureSurface');
 console.log(`\ntest-team-surfaces: ${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

@@ -3213,7 +3213,7 @@ checkCareer('items 5,12,17-21,25,27-29 · the v2 controls, chart, table and dril
     ['window', 'data-pp2="sty-win" data-v="l52"'],
     // v3 B2: the chart card sits under the joined band (no top edge, r 0 0 12 12)
     ['joined band', 'data-pp2-band="joined"'],
-    ['chart card', 'background:var(--inner);border:1px solid var(--line);border-top:0;border-radius:0 0 12px 12px;padding:14px 16px 12px;'],
+    ['chart card', 'background:var(--inner);border:1.25px solid var(--line);border-top:0;border-radius:0 0 12px 12px;padding:14px 16px 12px;'],
     ['chart head', '>Win rate by archetype</span>'],
     ['legend', 'dot size = matches · career'],
     ['his average line', 'his average · '],
@@ -5323,7 +5323,7 @@ check('item 10 · the career card carries the reference\'s panel and table grid'
   // v3 C1/C2: the band (--card, r16 top) sits on the card; the card is the middle panel (side edges only, 22/24/20);
   // the season panel joins under it on a 10% rule
   assert(/data-pp2-band="joined-card"[^>]*background:var\(--card\)/.test(html), 'the Window · Tier band does not sit on the card');
-  assert(/background:var\(--card\);border:1px solid var\(--edge-6\);border-top:0;border-bottom:0;border-radius:0;padding:22px 24px 20px/.test(html),
+  assert(/background:var\(--card\);border:1\.25px solid var\(--edge-6\);border-top:0;border-bottom:0;border-radius:0;padding:22px 24px 20px/.test(html),
     'the card is not the joined --card + --edge-6 middle panel');
   assert(/border-top-color:var\(--edge-10\);border-radius:0 0 16px 16px;padding:20px 24px 22px/.test(html), 'the season panel is not joined under it');
   ['Surface', 'Wins · losses', 'W–L', 'Win %', 'vs all'].forEach((h) => {
@@ -5903,7 +5903,7 @@ check('§5.3 item 5 · the search field is the reference\'s compact control + 14
   assert(/<svg width="14" height="14"[^>]*>\s*<circle cx="9" cy="9" r="6"/.test(T_HTML),
     'the 14px magnifier is missing');
   // Profile v2: the export's field (#0C0E16 = --inner, 6% ring, r9, 7/12), flex:none beside the pills.
-  assert(/<label style="display:flex;align-items:center;gap:9px;width:220px;box-sizing:border-box;flex:none;background:var\(--inner\);border:1px solid var\(--edge-6\);border-radius:9px;padding:7px 12px;/.test(T_HTML),
+  assert(/<label style="display:flex;align-items:center;gap:9px;width:220px;box-sizing:border-box;flex:none;background:var\(--inner\);border:1\.25px solid var\(--edge-6\);border-radius:9px;padding:7px 12px;/.test(T_HTML),
     'the field is not the compact --inner control');
   assert(/placeholder="Search a tournament"/.test(T_HTML), 'the placeholder drifted');
   assert(/data-pp2="tourn-search"[^>]*font-size:12\.5px/.test(T_HTML), 'the input is not 12.5px');
@@ -6083,7 +6083,7 @@ check('§5.3 item 15 · five tiles, and a Slam\'s middle three differ from a non
   assert.deepStrictEqual(tiles(oHtml),
     ['W–L record', 'Best result', 'Sets won', 'Last played', 'Backing him here']);
   // TEN-384 T6: the five tiles are ONE joined strip (--card + 1px --edge-6, r12, --line dividers), figure mono 24/700.
-  assert(/grid-template-columns:repeat\(5,minmax\(0,1fr\)\);gap:0;background:var\(--inner\);border:1px solid var\(--edge-6\);border-radius:12px;overflow:hidden;/.test(sHtml),
+  assert(/grid-template-columns:repeat\(5,minmax\(0,1fr\)\);gap:0;background:var\(--inner\);border:1\.25px solid var\(--edge-6\);border-radius:12px;overflow:hidden;/.test(sHtml),
     'the tiles are not one joined 5-cell strip');
   assert(/padding:13px 12px;min-width:0;border-left:1px solid var\(--line\)/.test(sHtml), 'the strip cells lost their --line dividers');
   assert(/font-size:24px;font-weight:700/.test(sHtml), 'the tile figure is not mono 24/700');

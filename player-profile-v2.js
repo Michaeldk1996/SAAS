@@ -968,7 +968,7 @@
       '<div data-pp2="card" style="position:absolute;top:calc(100% + 8px);left:0;z-index:61;width:340px;background:var(--card);' +
         'border:1px solid var(--edge-10);border-radius:14px;box-shadow:var(--shadow-pop);padding:10px;display:flex;flex-direction:column;' +
         'gap:8px;box-sizing:border-box;cursor:default;">' +
-        '<label style="display:flex;align-items:center;gap:10px;background:var(--inner);border:1px solid var(--edge-6);border-radius:11px;' +
+        '<label style="display:flex;align-items:center;gap:10px;background:var(--inner);border:1.25px solid var(--edge-6);border-radius:11px;' +
           'padding:10px 13px;">' +
           '<svg width="16" height="16" viewBox="0 0 20 20" fill="none" style="flex:none;"><circle cx="9" cy="9" r="6" stroke="var(--link)" ' +
           'stroke-width="1.7"></circle><path d="m14 14 3 3" stroke="var(--link)" stroke-width="1.7" stroke-linecap="round"></path></svg>' +
@@ -1058,7 +1058,7 @@
 
     return '' +
       // TEN-384: a top-level card — --card + --top-light, no outline.
-      '<div class="pp2-ribbon" style="background:var(--card);box-shadow:var(--top-light);border:1px solid transparent;' +
+      '<div class="pp2-ribbon" style="background:var(--card);box-shadow:var(--top-light);border:1.25px solid var(--edge-6);' +   // founder 2026-11-13: the export's ring
       'border-radius:12px;' +
       'padding:16px 22px;display:grid;grid-template-columns:auto minmax(180px,1.2fr) auto minmax(0,2fr) auto;' +
       'gap:22px;align-items:center;">' +
@@ -1368,7 +1368,7 @@
   // Founder Q4 (2026-10-05): the ledger filters sit on the Darker track (track --card + --edge-6; selected
   // --inner + --edge-10, white 700; idle grey) and the head rule is --edge-10.
   var LEDGER_FILTER_TRACK = 'align-self:flex-start;gap:2px;padding:2px;border-radius:9px;' +
-    'background:var(--card);border:1px solid var(--edge-6);';
+    'background:var(--card);border:1.25px solid var(--edge-6);';
   var LEDGER_HEAD_RULE = 'var(--edge-10)';
   // Founder Q3: the open row's wash = --selected.
   var LEDGER_OPEN_TONE = 'var(--selected)';
@@ -1492,7 +1492,7 @@
         foot = '<div style="display:flex;justify-content:center;padding-top:16px;">' +
           '<span data-pp2="ledger-more" style="display:flex;align-items:center;gap:9px;font-size:13px;' +
             'font-weight:700;color:' + (state.ledgerExpanded ? 'var(--text)' : 'var(--link)') + ';' +
-            'padding:10px 18px;border:1px solid var(--line);border-radius:11px;cursor:pointer;">' +
+            'padding:10px 18px;border:1.25px solid var(--line);border-radius:11px;cursor:pointer;">' +
             (state.ledgerExpanded ? 'Show the last ' + LEDGER_CAP : 'See all ' + ordered.length + ' results') +
           '</span></div>';
       }
@@ -1736,7 +1736,7 @@
       var sz = headlineSize(blankFig && v.sizeAs ? v.sizeAs : head + suffix);
       return '' +
         '<div class="pp2-box" data-pp2="box" data-box="' + b.key + '" ' +
-        'style="position:relative;background:var(--card);border:1px solid ' +
+        'style="position:relative;background:var(--card);border:1.25px solid ' +
           (state.modal === b.key ? TILE_EDGE_SELECTED : TILE_EDGE) + ';' +
         'border-radius:12px;padding:16px 16px 14px;display:flex;flex-direction:column;gap:8px;' +
         'min-height:132px;box-sizing:border-box;cursor:pointer;transition:border-color .14s,background .14s;">' +
@@ -1929,7 +1929,7 @@
     if (!list.length) {
       return '<div><div style="font-size:22px;font-weight:800;letter-spacing:-0.015em;' +
         'margin-bottom:16px;">Key insights</div>' +
-        '<div style="background:var(--card);box-shadow:var(--top-light);border-radius:12px;padding:26px;' +
+        '<div style="background:var(--card);box-shadow:var(--top-light);border:1.25px solid var(--edge-6);border-radius:12px;padding:26px;' +
         'text-align:center;font-size:13px;color:var(--text-label);">' + insightsEmptyText(p) + '</div></div>';
     }
     var cards = list.map(function (ins) {
@@ -1960,7 +1960,7 @@
         '<div data-insight="' + esc(ins.id) + '" ' +
         // A top-level card: --card + --top-light, no outline.
         'style="height:100%;box-sizing:border-box;background:var(--card);box-shadow:var(--top-light);' +
-        'border:1px solid transparent;' +
+        'border:1.25px solid var(--edge-6);' +   // founder 2026-11-13: the export's 1.25px 6% ring
         'border-radius:12px;padding:24px 24px 26px;display:flex;flex-direction:column;gap:16px;">' +
           '<div style="width:36px;height:36px;border-radius:13px;display:flex;align-items:center;' +
             'justify-content:center;background:' + INSIGHT_ICON_TONE + ';color:var(--text);">' +
@@ -3406,7 +3406,7 @@
             // v3 B1 · the pages sit in the header as one sliding switch (Level & round's window moved into its band)
             pageSwitchHtml(key) +
             '<button type="button" data-pp2="close" aria-label="Close" style="width:32px;height:32px;' +
-              'border-radius:9px;background:var(--wash-5);border:1px solid var(--line);padding:0;' +
+              'border-radius:9px;background:var(--wash-5);border:1.25px solid var(--edge-6);padding:0;' +
               'color:var(--text-label);cursor:pointer;flex:none;display:flex;align-items:center;' +
               'justify-content:center;margin-left:auto;">' +
               '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">' +
@@ -3489,7 +3489,7 @@
           'line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + (t.tail || '&nbsp;') + '</span>' +
         '</div>';
     }).join('');
-    var pills = fb.pills && fb.pills.length ? '<div style="display:flex;gap:3px;background:var(--card);border:1px solid var(--edge-6);' +
+    var pills = fb.pills && fb.pills.length ? '<div style="display:flex;gap:3px;background:var(--card);border:1.25px solid var(--edge-6);' +
       'border-radius:9px;padding:2px;width:fit-content;margin-bottom:12px;">' + fb.pills.map(function (s) {
         return '<span data-pp2="' + esc(s.hook) + '" data-v="' + esc(s.v) + '" style="cursor:pointer;white-space:nowrap;padding:5px 12px;' +
           'border-radius:7px;font-size:11px;font-weight:' + (s.on ? 700 : 600) + ';color:' + (s.on ? 'var(--text)' : 'var(--text-label)') + ';' +
@@ -3528,7 +3528,7 @@
             '<span style="font-size:12.5px;color:var(--text-label);">' + (fb.meta || '') + '</span>' +
           '</div>' +
           '<span data-pp2="fb-close" role="button" aria-label="Close" style="flex:none;width:32px;height:32px;border-radius:9px;' +
-            'background:var(--wash-5);border:1px solid var(--edge-6);color:var(--text-label);cursor:pointer;display:flex;' +
+            'background:var(--wash-5);border:1.25px solid var(--edge-6);color:var(--text-label);cursor:pointer;display:flex;' +
             'align-items:center;justify-content:center;box-sizing:border-box;"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" ' +
             'style="pointer-events:none;"><path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path></svg></span>' +
         '</div>' +
@@ -3620,7 +3620,7 @@
       'border:1px solid ' + (on ? 'var(--edge-10)' : 'transparent') + ';">' + esc(label) + '</button>';
   }
   function recSegTrack(inner, small) {
-    return '<span style="display:flex;gap:3px;background:var(--card);border:1px solid var(--edge-6);' +
+    return '<span style="display:flex;gap:3px;background:var(--card);border:1.25px solid var(--edge-6);' +
       'border-radius:' + (small ? 9 : 10) + 'px;padding:' + (small ? 2 : 3) + 'px;flex:none;">' + inner + '</span>';
   }
   function recCaps(text, extra) {
@@ -3669,8 +3669,10 @@
     var bg = k === 'joined-card' || k === 'standalone-card' ? 'var(--card)' : 'var(--inner)';
     var ring = k === 'joined-card' || k === 'standalone-card' ? 'var(--edge-6)' : k === 'joined-8' ? EDGE_8 : 'var(--line)';
     var joined = k.indexOf('joined') === 0;
+    // the export's rings are 1.25px (the Ratings band's 8% ring is 1px); a joined band's bottom rule is 1px 6%
+    var bw = k === 'joined-8' ? '1px' : '1.25px';
     return '<div data-pp2-band="' + k + '" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 16px;' +
-      'background:' + bg + ';border:1px solid ' + ring + ';' +
+      'background:' + bg + ';border:' + bw + ' solid ' + ring + ';' +
       (joined ? 'border-bottom:1px solid var(--edge-6);border-radius:' + (k === 'joined-card' ? '16px 16px' : '12px 12px') + ' 0 0;'
         : 'border-radius:12px;margin-bottom:' + (k === 'standalone-card' ? 16 : 16) + 'px;') + (extra || '') + '">' + inner + '</div>';
   }
@@ -3694,7 +3696,7 @@
     (state.pgThumb || (state.pgThumb = {}))[key] = i;
     return '<div style="flex:1;display:flex;justify-content:flex-end;margin-right:12px;">' +
       '<div data-pp2-pgsw="' + esc(key) + '" style="position:relative;display:grid;grid-template-columns:repeat(' + spec.tabs.length + ',116px);' +
-        'background:var(--inner);border:1px solid var(--edge-6);border-radius:11px;padding:3px;">' +
+        'background:var(--inner);border:1.25px solid var(--edge-6);border-radius:11px;padding:3px;">' +
         '<span class="pp2-pgthumb" data-to="' + (i * 116) + '" style="position:absolute;top:3px;left:3px;width:116px;height:34px;' +
           'box-sizing:border-box;border-radius:8px;background:var(--selected);border:1px solid ' + EDGE_14 + ';' +
           'transform:translateX(' + (prev * 116) + 'px);transition:transform .24s cubic-bezier(.3,.7,.2,1);"></span>' +
@@ -3711,7 +3713,7 @@
   // reference does ('top' r16 16 0 0 with no bottom edge, 'bottom' r 0 0 16 16, else r16).
   function recPanel(inner, pos, pad) {
     var r = pos === 'top' ? '16px 16px 0 0' : pos === 'bottom' ? '0 0 16px 16px' : pos === 'mid' ? '0' : '16px';
-    return '<div style="background:var(--card);border:1px solid var(--edge-6);' +
+    return '<div style="background:var(--card);border:1.25px solid var(--edge-6);' +
       (pos === 'top' ? 'border-bottom:0;' : pos === 'mid' ? 'border-top:0;border-bottom:0;' : '') +
       (pos === 'bottom-ruled' ? 'border-top-color:var(--edge-10);' : '') +
       'border-radius:' + (pos === 'bottom-ruled' ? '0 0 16px 16px' : r) + ';padding:' + (pad || '20px 24px 22px') +
@@ -3727,7 +3729,7 @@
   // A joined strip of tiles: one --card + --edge-6 r12 box, cells divided by --line.
   function recTileStrip(cells, mb) {
     return '<div style="display:grid;grid-template-columns:repeat(' + cells.length + ',minmax(0,1fr));gap:0;' +
-      'background:var(--inner);border:1px solid var(--edge-6);border-radius:12px;overflow:hidden;' +   // the export's darker strip
+      'background:var(--inner);border:1.25px solid var(--edge-6);border-radius:12px;overflow:hidden;' +   // the export's darker strip
       (mb == null ? 'margin-bottom:20px;' : 'margin-bottom:' + mb + 'px;') + '">' +
       cells.map(function (c, i) {
         return '<div style="display:flex;flex-direction:column;align-items:center;text-align:center;gap:7px;' +
@@ -4451,7 +4453,7 @@
         'text-align:' + h[1] + ';padding:0 0 7px;">' + esc(h[0]) + '</div>';
     }).join('');
     return '<div ' + (o.attr || '') + 'style="grid-column:1 / -1;background:var(--card);' +
-      'border:1px solid var(--edge-6);border-radius:11px;' +
+      'border:1.25px solid var(--edge-6);border-radius:11px;' +
       'padding:15px 17px;margin:10px 0 14px;">' +
       '<div style="display:flex;align-items:center;gap:12px;margin-bottom:11px;">' +
         '<div style="font-size:14px;font-weight:700;white-space:nowrap;">' + esc(o.title) + '</div>' +
@@ -4495,7 +4497,7 @@
               'grouped by tournament ' + MIDDOT + ' click a match for its stats') + '</span>' +
           '</div>' +
           '<span data-pp2="' + o.close + '" role="button" aria-label="Close" class="pp2-fbclose" style="flex:none;width:32px;height:32px;' +
-            'border-radius:9px;background:var(--wash-5);border:1px solid var(--edge-6);color:var(--text-label);cursor:pointer;display:flex;' +
+            'border-radius:9px;background:var(--wash-5);border:1.25px solid var(--edge-6);color:var(--text-label);cursor:pointer;display:flex;' +
             'align-items:center;justify-content:center;box-sizing:border-box;"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" ' +
             'style="pointer-events:none;"><path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path></svg></span>' +
         '</div>' +
@@ -4691,12 +4693,12 @@
       { f: 'firstInPct', label: 'First serve in', dp: 1, unit: '%' },
       { f: 'firstWonPct', label: 'First serve points won', dp: 1, unit: '%' },
       { f: 'secondWonPct', label: 'Second serve points won', dp: 1, unit: '%' },
-      // v3 C3 (Ratings brief point 4): the six terms of the Serve rating, in the rating's own unit. The rating is
-      // %1stIn + %1stWon + %2ndWon + hold% + aces per match − double faults per match (dna-apitennis-ratings.js
-      // `_meta.lockedFormulas.serve`), so the two count boxes are per match, 2 dp.
+      // v3 C3 (Ratings brief point 4): the terms of the Serve rating, with Service games won. Founder 2026-11-13: aces and
+      // double faults are counted PER SERVICE GAME ("we have the service games, so count it"): the builder's acesPerSG /
+      // dfPerSG = the window's aces (double faults) ÷ its service games, 2 dp. The rating itself is unchanged.
       { f: 'holdPct', label: 'Service games won', dp: 1, unit: '%' },
-      { f: 'acesPerMatch', label: 'Aces per match', dp: 2, unit: '' },
-      { f: 'dfPerMatch', label: 'Double faults per match', dp: 2, unit: '', lower: true }
+      { f: 'acesPerSG', label: 'Aces per service game', dp: 2, unit: '' },
+      { f: 'dfPerSG', label: 'Double faults per service game', dp: 2, unit: '', lower: true }
     ],
     return: [
       { f: 'ret1stWonPct', label: '1st serve return points won', dp: 1, unit: '%' },
@@ -5040,9 +5042,9 @@
       ['Chart scale', 'Each axis runs from the lowest ATP player at the centre to the highest at the edge. The best figure is ' +
         'printed at the end of each axis, and the grey line is the ATP average.'],
       ['Double faults', 'Fewer is better, so a negative gap is green.'],
-      ['Serve boxes', 'The six terms of the Serve rating: first serve in, first serve points won, second serve points won and ' +
-        'service games won, plus aces per match, minus double faults per match.'],
-      ['Per match', 'The Serve rating counts aces and double faults per match, so the two boxes show them per match.'],
+      ['Serve boxes', 'First serve in, first serve points won, second serve points won and service games won, with aces and ' +
+        'double faults per service game.'],
+      ['Per service game', 'Aces and double faults are counted per service game, so five-set matches do not inflate them.'],
       ['Thin samples', 'A rate built on fewer than ' + DNA_RATE_MIN + ' shows a dash.'],
       ['Window', 'Last 52 weeks or career.']] };
   }
@@ -6261,7 +6263,7 @@
 
     return '' +
       '<div data-pp2-band="standalone" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:0 0 14px;padding:10px 16px;' +
-        'background:var(--inner);border:1px solid var(--line);border-radius:12px;">' +
+        'background:var(--inner);border:1.25px solid var(--line);border-radius:12px;">' +
         '<span style="display:inline-flex;align-items:center;gap:8px;margin-right:auto;white-space:nowrap;">' +
           recCaps('Record per tournament ' + MIDDOT + ' career') +
           '<span style="position:relative;display:inline-flex;z-index:3;">' + infoIcon('tourn1', Object.assign({ width: 400 }, TOURN_INFO)) + '</span>' +
@@ -6269,7 +6271,7 @@
         tournPills('tourn-level', TOURN_LEVELS, lvl) + bandDiv() +
         tournPills('tourn-surf', TOURN_SURFS, sf) +
         '<label style="display:flex;align-items:center;gap:9px;width:220px;box-sizing:border-box;flex:none;' +
-          'background:var(--inner);border:1px solid var(--edge-6);border-radius:9px;padding:7px 12px;">' +
+          'background:var(--inner);border:1.25px solid var(--edge-6);border-radius:9px;padding:7px 12px;">' +
           '<svg width="14" height="14" viewBox="0 0 20 20" fill="none" style="flex:none;">' +
             '<circle cx="9" cy="9" r="6" stroke="var(--text-label)" stroke-width="1.7"></circle>' +
             '<path d="m14 14 3 3" stroke="var(--text-label)" stroke-width="1.7" stroke-linecap="round"></path></svg>' +
@@ -6601,7 +6603,7 @@
   // selected --inner + --edge-10, white 700; idle --text-label 600, no edge.
   function drawSeg(hook, attr, items, active) {
     return '<span data-pp2-seg="' + hook + '" style="display:inline-flex;flex:none;gap:3px;padding:2px;' +
-      'background:var(--card);border:1px solid var(--edge-6);border-radius:9px;">' +
+      'background:var(--card);border:1.25px solid var(--edge-6);border-radius:9px;">' +
       items.map(function (it) {
         var on = it[0] === active;
         return '<button type="button" data-pp2="' + hook + '" ' + attr + '="' + it[0] + '" ' +
@@ -6831,7 +6833,7 @@
         : recCaps(scopeLabel) + '<span style="color:var(--text);font-weight:700;">' + recordText(B.w, B.l) + ' ' + MIDDOT + '</span><span style="color:var(--text);font-weight:700;">' + (B.win == null ? DASH : B.win.toFixed(1) + '%') + ' ' + MIDDOT + '</span><span>' + B.n + ' matches</span>';
     // v3 B1/B2 · the pages (Results · Sets & games · Service) are the header switch; the window moved into this band
     var head = '<div data-pp2-band="standalone" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;' +
-        'padding:10px 16px;background:var(--inner);border:1px solid var(--line);border-radius:12px;">' +
+        'padding:10px 16px;background:var(--inner);border:1.25px solid var(--line);border-radius:12px;">' +
       '<span style="display:inline-flex;align-items:center;gap:8px;' + M + 'font-size:12px;color:var(--text-label);white-space:nowrap;position:relative;">' + baseTxt +
         '<span style="position:relative;display:inline-flex;z-index:3;">' + infoIcon('spl1', splInfo1(p)) + '</span></span>' +
       bandPills('split-scope', [['last52', 'Last 52 weeks'], ['career', 'Career']], state.splitScope === 'last52' ? 'last52' : 'career',
@@ -6856,7 +6858,7 @@
         return cell(esc(x.label), 'font-size:12.5px;font-weight:700;color:' + (thin ? 'var(--text-label)' : 'var(--text)') + ';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;') +
           vals.map(function (v) { return cell(v[0], M + 'text-align:right;white-space:nowrap;font-size:' + (v[2] ? 12.5 : 11.5) + 'px;font-weight:' + (v[2] || 400) + ';color:' + v[1] + ';'); }).join('');
       }).join('');
-      return '<div style="background:var(--inner);border:1px solid var(--line);border-radius:12px;padding:12px 14px 5px;">' +
+      return '<div style="background:var(--inner);border:1.25px solid var(--line);border-radius:12px;padding:12px 14px 5px;">' +
         '<div class="pp2-splgrid" style="' + GRID + '">' + h + body + '</div></div>';
     }
     var extra = S.groups['Extra stats'].slice();
@@ -7125,7 +7127,7 @@
         DRAW_CHEVRON + '</span></span>';
     }
     function panel(g) {
-      return '<div data-pp2-draw="' + g.id + '" style="background:var(--card);border:1px solid var(--edge-6);' +
+      return '<div data-pp2-draw="' + g.id + '" style="background:var(--card);border:1.25px solid var(--edge-6);' +
         'border-radius:12px;padding:14px 14px 6px;">' +
         '<div style="display:grid;grid-template-columns:' + tracks + ';gap:0 8px;align-items:center;min-width:0;">' +
           headCell(g.label, true) + heads.map(function (h) { return headCell(h, false); }).join('') +
@@ -7302,7 +7304,7 @@
     var MONO = STYLE_MONO;
     var back = '<button type="button" class="pp2-dback" data-pp2="draw-back" aria-label="Back to the Draw record" ' +
       'style="width:32px;height:32px;flex:none;display:inline-flex;align-items:center;justify-content:center;' +
-      'border-radius:9px;background:var(--inner);border:1px solid var(--line);color:var(--text);cursor:pointer;padding:0;">' +
+      'border-radius:9px;background:var(--inner);border:1.25px solid var(--line);color:var(--text);cursor:pointer;padding:0;">' +
       '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M8.5 2.5L4 7l4.5 4.5" ' +
       'stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>';
     var crumb = '<span style="display:flex;align-items:center;gap:8px;min-width:0;font-size:13px;">' +
@@ -7400,7 +7402,7 @@
   }
   function drawPageBtn(dir, label, on) {
     return '<button type="button" ' + (on ? 'data-pp2="draw-page" data-v="' + dir + '" ' : 'disabled ') +
-      'style="padding:5px 11px;border-radius:8px;border:1px solid var(--line);background:var(--inner);font-size:11.5px;' +
+      'style="padding:5px 11px;border-radius:8px;border:1.25px solid var(--line);background:var(--inner);font-size:11.5px;' +
       'font-weight:700;color:' + (on ? 'var(--text)' : 'var(--text-label)') + ';opacity:' + (on ? 1 : 0.45) + ';' +
       'cursor:' + (on ? 'pointer' : 'default') + ';">' + esc(label) + '</button>';
   }
@@ -7895,7 +7897,7 @@
   // selection never changes a button's width and nothing beside or after it moves.
   function mkSeg(hook, items, active, steady) {
     return '<span data-pp2-seg="' + hook + '" style="display:inline-flex;flex:none;gap:3px;padding:2px;' +
-      'background:var(--card);border:1px solid var(--edge-6);border-radius:9px;">' +
+      'background:var(--card);border:1.25px solid var(--edge-6);border-radius:9px;">' +
       items.map(function (t) {
         var on = active === t[0];
         return '<button type="button" data-pp2="' + hook + '" data-v="' + t[0] + '" ' +
@@ -8087,7 +8089,7 @@
     }).join('');
     var total = d.n, retN = d.retiredHere || 0;
     return filterRow + applied +
-      '<div style="position:relative;background:var(--inner);border:1px solid var(--line);' + JOIN_TOP + 'min-width:0;">' +
+      '<div style="position:relative;background:var(--inner);border:1.25px solid var(--line);' + JOIN_TOP + 'min-width:0;">' +
         '<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-bottom:1px solid var(--edge-6);overflow:hidden;">' + cards + '</div>' +
         '<div style="position:relative;padding:14px 16px 12px;min-width:0;">' +
           infoCorner('ln1', LC_INFO1) +
@@ -8720,7 +8722,7 @@
     }).join('');
     var all = mkStat(pool), sorted = pool.map(function (m) { return m.price; }).sort(function (a, b) { return a - b; });
     var med = sorted.length ? sorted[Math.floor(sorted.length / 2)] : null;
-    return '<div style="position:relative;background:var(--inner);border:1px solid var(--line);border-radius:12px;padding:14px 16px 12px;min-width:0;">' +
+    return '<div style="position:relative;background:var(--inner);border:1.25px solid var(--line);border-radius:12px;padding:14px 16px 12px;min-width:0;">' +
       infoCorner('mk2', MK_INFO2) +
       '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:12px;flex-wrap:wrap;padding-right:28px;">' +
         recCaps('Price sensitivity ' + MIDDOT + ' his closing price ' + MIDDOT + ' ' + esc(mkScopeTxt())) +
@@ -8746,7 +8748,7 @@
     var cc = mkCardsAndChart(scoped);
     return mkBandHtml(bandL, bandR, appliedMk) +
       '<div style="display:flex;flex-direction:column;gap:12px;">' +
-        '<div style="position:relative;background:var(--inner);border:1px solid var(--line);' + JOIN_TOP + 'min-width:0;">' +
+        '<div style="position:relative;background:var(--inner);border:1.25px solid var(--line);' + JOIN_TOP + 'min-width:0;">' +
           infoCorner('mk1', MK_INFO1) +
           '<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-bottom:1px solid var(--edge-6);overflow:hidden;">' +
             cc.cards + '</div>' + cc.chart +
@@ -9192,7 +9194,7 @@
             '</div>' +
           '</div>';
       }
-      return '<div data-pp2-mk="chart" style="background:var(--card);border:1px solid var(--edge-6);border-radius:12px;' +
+      return '<div data-pp2-mk="chart" style="background:var(--card);border:1.25px solid var(--edge-6);border-radius:12px;' +
         'padding:14px 16px 12px;min-width:0;">' +
         '<div style="display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:12px;">' +
           '<span style="display:flex;flex-direction:column;gap:5px;">' +
@@ -10211,7 +10213,7 @@
         '<span style="font-size:11px;color:var(--text-soft);">' + label + '</span>' +
         '<span style="' + M_ + 'font-size:10.5px;color:var(--text-label);white-space:nowrap;">' + sub + '</span></div>';
     };
-    var tilesHtml = '<div data-pp2-caltiles="1" style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border:1px solid var(--edge-6);border-radius:12px;overflow:hidden;background:var(--card);margin-bottom:20px;">' +
+    var tilesHtml = '<div data-pp2-caltiles="1" style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border:1.25px solid var(--edge-6);border-radius:12px;overflow:hidden;background:var(--card);margin-bottom:20px;">' +
       tiles.map(function (t, i) {
         var st = t.st, wr = st && st.n >= CAL_MIN ? wordPct(st.pct) : DASH;
         var yTxt = st ? yieldTxt(st) : DASH, yCol = yTxt === DASH ? 'var(--text-label)' : signColour(Math.round(st.y * 10) / 10);
@@ -10253,11 +10255,11 @@
       cols.map(function (c) { var t = calStat(M.filter(c.pred));
         return '<span style="' + M_ + 'font-size:11.5px;font-weight:700;font-variant-numeric:tabular-nums;text-align:center;color:' + (c.muted ? 'var(--text-label)' : 'var(--text)') + ';padding:10px 0 0;border-top:1px solid ' + EDGE_14 + ';">' + (t.n ? recordText(t.w, t.l) : DASH) + '</span>'; }).join('') +
       '<span style="' + M_ + 'font-size:12px;font-weight:700;text-align:right;color:var(--text);padding:10px 0 0;border-top:1px solid ' + EDGE_14 + ';">' + (tm.n ? recordText(tm.w, tm.l) : DASH) + '</span>';
-    var viewSeg = '<span style="display:flex;gap:3px;background:var(--inner);border:1px solid var(--edge-6);border-radius:9px;padding:2px;flex:none;">' +
+    var viewSeg = '<span style="display:flex;gap:3px;background:var(--inner);border:1.25px solid var(--edge-6);border-radius:9px;padding:2px;flex:none;">' +
       [['swing', 'Swing'], ['month', 'Month']].map(function (t) { var on = view === t[0];
         return '<span data-pp2="cal-view" data-v="' + t[0] + '" style="cursor:pointer;white-space:nowrap;padding:4px 11px;border-radius:7px;font-size:11px;font-weight:' + (on ? 700 : 600) + ';' +
           'color:' + (on ? 'var(--text)' : 'var(--text-label)') + ';background:' + (on ? 'var(--selected)' : 'transparent') + ';border:1px solid ' + (on ? 'var(--selected)' : 'transparent') + ';">' + t[1] + '</span>'; }).join('') + '</span>';
-    var card1 = '<div style="position:relative;background:var(--card);border:1px solid var(--edge-6);border-bottom:0;border-radius:16px 16px 0 0;padding:20px 24px 18px;">' +
+    var card1 = '<div style="position:relative;background:var(--card);border:1.25px solid var(--edge-6);border-bottom:0;border-radius:16px 16px 0 0;padding:20px 24px 18px;">' +
       infoCorner('cal1', Object.assign({ notes: (calWinOf() === 'career' && calSurfOf() === 'all' && !nAct
         ? [calResidualNote(calResidual(p)).replace(/<[^>]+>/g, '').trim()].filter(Boolean) : []).concat((function () {
           if (!(typeof window.pp2EloReady === 'function' && window.pp2EloReady())) return [];
@@ -10348,7 +10350,7 @@
           }).join('') + '</span></span>';
       });
     // the two cards read as one in the Swing view: card 2 has no top edge; its caption carries a 10% hairline
-    var card2 = '<div style="position:relative;background:var(--card);border:1px solid var(--edge-6);border-top:0;border-radius:0 0 16px 16px;padding:0 24px 22px;">' +
+    var card2 = '<div style="position:relative;background:var(--card);border:1.25px solid var(--edge-6);border-top:0;border-radius:0 0 16px 16px;padding:0 24px 22px;">' +
       infoCorner('cal2', Object.assign({ notes: (function () {
         // the priced matches the Market edge box counts that the calendar cannot place on a dated career row
         if (pend || calWinOf() !== 'career' || calSurfOf() !== 'all' || nAct) return [];
@@ -10496,7 +10498,7 @@
       if (!c || c.vs * dir <= STK_EDGE) return { value: DASH, faint: true, fig: '', sub: 'no state stands out' };
       return { value: esc(STK_NAMES[c.k]), fig: signed(c.vs, 1, 'pp'), figColor: dir > 0 ? 'var(--pos)' : 'var(--neg)', sub: 'yield vs ' + (calWinOf() === 'career' ? 'career' : 'the window') };
     };
-    var TILE = 'background:var(--card);border:1px solid var(--edge-6);border-radius:12px;padding:13px 12px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:7px;min-width:0;';
+    var TILE = 'background:var(--card);border:1.25px solid var(--edge-6);border-radius:12px;padding:13px 12px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:7px;min-width:0;';
     var wordTile = function (cap, t) {
       return '<div style="' + TILE + '">' + recCaps(cap) +
         '<span style="font-size:16px;font-weight:700;line-height:20px;color:' + (t.faint ? 'var(--text-label)' : 'var(--text)') + ';">' + t.value + '</span>' +
@@ -10574,7 +10576,7 @@
               '<span style="font-size:11.5px;font-weight:600;color:' + v.color + ';">' + v.label + '</span>') + '</span></div></div>';
     };
     var ladder = function (title, keys) {
-      return '<div style="background:var(--card);border:1px solid var(--edge-6);border-radius:12px;padding:14px 16px 4px;min-width:0;">' +
+      return '<div style="background:var(--card);border:1.25px solid var(--edge-6);border-radius:12px;padding:14px 16px 4px;min-width:0;">' +
         '<div style="font-family:var(--font-words);font-size:10.5px;font-weight:800;letter-spacing:0.10em;text-transform:uppercase;color:var(--text-soft);' +
           'padding-bottom:10px;border-bottom:1px solid var(--edge-10);">' + title + '</div>' + keys.map(ladRow).join('') + '</div>';
     };
@@ -10582,7 +10584,7 @@
         recCaps('What follows a run') + '<span style="position:relative;z-index:3;display:inline-flex;">' + infoIcon('run2', Object.assign({ align: 'right', width: 420 }, RUN_INFO2)) + '</span></div>' +
       '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:10px;">' +
         ladder('After a win', ['W1', 'W2', 'W3+']) + ladder('After a loss', ['L1', 'L2', 'L3+']) + '</div>';
-    var card = '<div style="position:relative;background:var(--card);border:1px solid var(--edge-6);border-radius:16px;padding:20px 24px 22px;">' +
+    var card = '<div style="position:relative;background:var(--card);border:1.25px solid var(--edge-6);border-radius:16px;padding:20px 24px 22px;">' +
       infoCorner('run1', RUN_INFO1).replace('top:14px;right:14px', 'top:16px;right:16px') +
       '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:14px;padding-right:28px;">' + recCaps('Runs ' + MIDDOT + ' ' + esc(scope)) +
         '<span style="' + M_ + 'font-size:12px;color:var(--text-label);white-space:nowrap;">' + runs.length + ' runs ' + MIDDOT + ' longest ' + maxRun + '</span></div>' +
@@ -10620,7 +10622,7 @@
         : Math.abs(v.vs).toFixed(1) + 'pp ' + (v.vs > 0 ? 'more' : 'less') + ' than') + ' backing him in every match.';
     var M_ = 'font-family:\'IBM Plex Mono\',monospace;';
     var tilesHtml = '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px;margin-bottom:14px;">' + tiles.map(function (t) {
-      return '<div style="background:var(--card);border:1px solid var(--edge-6);border-radius:12px;padding:13px 12px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:7px;min-width:0;">' +
+      return '<div style="background:var(--card);border:1.25px solid var(--edge-6);border-radius:12px;padding:13px 12px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:7px;min-width:0;">' +
         '<span style="font-family:var(--font-words);font-size:10.5px;font-weight:700;letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + esc(t.label) + '</span>' +
         '<span style="' + M_ + 'font-size:21px;font-weight:700;line-height:1;color:' + (t.figColor || 'var(--text)') + ';">' + (t.fig === '&nbsp;' ? t.fig : esc(t.fig)) + '</span>' +
         '<span style="font-size:11.5px;color:var(--text-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;">' + (t.sub === '&nbsp;' ? t.sub : esc(t.sub || '')) + '&nbsp;</span>' +
@@ -10654,7 +10656,7 @@
             '<span style="font-size:16px;font-weight:800;letter-spacing:-0.01em;color:var(--text);white-space:nowrap;">' + (run.won ? 'Winning run' : 'Losing run') + ' ' + MIDDOT + ' ' +
               run.len + (run.len === 1 ? ' match' : ' matches') + '</span>' +
             '<span style="font-size:12.5px;color:var(--text-label);">' + esc(stkSpan(seq, run) + ' ' + MIDDOT + ' ' + scope) + '</span></div>' +
-          '<span data-pp2="run-close" role="button" aria-label="Close" style="flex:none;width:32px;height:32px;border-radius:9px;background:var(--wash-5);border:1px solid var(--edge-6);' +
+          '<span data-pp2="run-close" role="button" aria-label="Close" style="flex:none;width:32px;height:32px;border-radius:9px;background:var(--wash-5);border:1.25px solid var(--edge-6);' +
             'color:var(--text-label);cursor:pointer;display:flex;align-items:center;justify-content:center;box-sizing:border-box;"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" ' +
             'style="pointer-events:none;"><path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path></svg></span></div>' +
         tilesHtml +
@@ -11193,7 +11195,7 @@
           (dPend ? '&nbsp;' : esc(totalLine)) + '</span>' +
         '<button type="button" data-pp2="cal-cell-close" aria-label="Close" style="align-self:center;margin-left:4px;' +
           'width:28px;height:28px;border-radius:8px;background:var(--wash-5);padding:0;' +
-          'border:1px solid var(--line);color:var(--text-label);cursor:pointer;display:flex;' +
+          'border:1.25px solid var(--line);color:var(--text-label);cursor:pointer;display:flex;' +
           'align-items:center;justify-content:center;">' +
           '<svg width="12" height="12" viewBox="0 0 20 20" fill="none"><path d="M5 5l10 10M15 5L5 15" ' +
           'stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path></svg></button></div>' +
@@ -11722,7 +11724,7 @@
       : (withN.filter(function (b) { return b.key === 'fast'; })[0] || withN[0] || {}).key || null;   // the export opens on Fast
     var M = 'font-family:\'IBM Plex Mono\',monospace;';
     var top = '<div data-pp2-band="standalone" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px;' +
-      'padding:10px 16px;background:var(--inner);border:1px solid var(--line);border-radius:12px;">' +
+      'padding:10px 16px;background:var(--inner);border:1.25px solid var(--line);border-radius:12px;">' +
       '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">' + stySegPills('spd-surf', [['all', 'All']].concat(STY_SURFS.slice(1)), state.spdSurf || 'all') + '</div>' +
       '<span style="display:inline-flex;align-items:baseline;gap:8px;' + M + 'font-size:12px;color:var(--text-label);white-space:nowrap;">' +
         recCaps('Career') + '<span style="color:var(--text);font-weight:700;">' + (D.tn ? recordText(D.tw, D.tn - D.tw) : DASH) + '</span><span>' + MIDDOT + '</span>' +
@@ -11735,7 +11737,7 @@
     var tiles = D.bands.map(function (b) {
       var on = sel === b.key, empty = !b.n;
       return '<div ' + (empty ? '' : 'data-pp2="spd-band" data-v="' + b.key + '" ') + 'style="cursor:' + (empty ? 'default' : 'pointer') + ';background:' +
-        (on ? 'var(--selected)' : 'var(--inner)') + ';border:1px solid ' + (on ? 'var(--edge-16)' : 'var(--line)') + ';border-radius:12px;padding:12px 14px 13px;' +
+        (on ? 'var(--selected)' : 'var(--inner)') + ';border:1.25px solid ' + (on ? 'var(--edge-16)' : 'var(--line)') + ';border-radius:12px;padding:12px 14px 13px;' +
         // founder 2026-11-10: the values sit centred in the box
         'display:flex;flex-direction:column;align-items:center;text-align:center;gap:9px;min-width:0;">' +
         '<span style="display:flex;align-items:baseline;justify-content:center;gap:8px;pointer-events:none;">' +
@@ -12455,14 +12457,14 @@
     var TU = D.data.reduce(function (s, d) { return s + (d.units != null && !d.thin ? d.units : 0); }, 0);
     return bandBox('<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">' + stySegPills('sty-surf', STY_SURFS, state.stySurf || 'all') + '</div>' +
         winSeg('sty-win', state.styWin || 'career', false), 'joined', 'justify-content:space-between;gap:12px;') +
-      '<div style="position:relative;background:var(--inner);border:1px solid var(--line);' + JOIN_TOP + 'padding:14px 16px 12px;margin-bottom:12px;">' +
+      '<div style="position:relative;background:var(--inner);border:1.25px solid var(--line);' + JOIN_TOP + 'padding:14px 16px 12px;margin-bottom:12px;">' +
         infoCorner('sty1', STY_INFO1) +
         '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:12px;padding-right:28px;">' +
           recCaps('Win rate by archetype') +
           '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:var(--text-label);white-space:nowrap;">dot size = matches ' + MIDDOT + ' ' + esc(scope) + '</span>' +
         '</div>' + styChart(D) +
       '</div>' +
-      '<div style="position:relative;background:var(--inner);border:1px solid var(--edge-6);border-radius:12px;padding:14px 16px 4px;margin-bottom:12px;">' +
+      '<div style="position:relative;background:var(--inner);border:1.25px solid var(--edge-6);border-radius:12px;padding:14px 16px 4px;margin-bottom:12px;">' +
         // The coverage fact lives in the (?) note (no page footnotes, v2): how many of his matches met a labelled opponent.
         infoCorner('sty2', Object.assign({}, STY_INFO2, { notes: [styCoverageText(p)] })) +
         '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:12px;flex-wrap:wrap;padding-right:28px;">' +
@@ -12648,7 +12650,7 @@
    */
   function renderStyleBubbles(rows) {
     var plotted = rows.filter(function (r) { return styleOpenable(r.won + r.lost); });
-    var card = 'background:var(--card);border:1px solid var(--edge-6);border-radius:12px;' +
+    var card = 'background:var(--card);border:1.25px solid var(--edge-6);border-radius:12px;' +
       'padding:14px 16px 12px;margin-bottom:16px;display:flex;flex-direction:column;gap:12px;min-width:0;';
     if (!plotted.length) {
       return '<div style="' + card + '">' + styleEyebrow() +
@@ -13880,7 +13882,7 @@
         }).join('') +
       '</div>') : '';
     return mpSeg(segs, 'mp-point-set', sel) +
-      '<div style="background:var(--card);border:1px solid var(--edge-6);border-radius:9px;' +
+      '<div style="background:var(--card);border:1.25px solid var(--edge-6);border-radius:9px;' +
         'text-align:center;font-size:10.5px;font-family:var(--font-words); letter-spacing:0.10em; text-transform:uppercase; font-weight:700;' +
         'color:var(--text);padding:11px;margin:10px 0 4px;">SET ' + esc(String(sel)) + ' ' + MIDDOT + ' ' +
         nGames + ' GAMES</div>' +
@@ -13929,7 +13931,7 @@
     }
 
     return '<div style="margin:4px 0 10px;padding:16px 16px 8px;background:var(--card);' +
-      'border:1px solid var(--edge-6);border-radius:12px;">' +
+      'border:1.25px solid var(--edge-6);border-radius:12px;">' +
       (tabs.length > 1
         ? '<div style="margin-bottom:14px;">' + mpSeg(tabs, 'mp-tab', tab.id) + '</div>'
         : '') +
@@ -14174,7 +14176,7 @@
    *  pad 3, gap 3; selected --inner + --edge-10, white 700; idle --text-label 600. */
   function hbSegHtml(hook, items, active) {
     return '<span data-pp2-seg="' + hook + '" style="display:inline-flex;gap:3px;background:var(--card);' +
-      'border:1px solid var(--edge-6);border-radius:9px;padding:3px;">' +
+      'border:1.25px solid var(--edge-6);border-radius:9px;padding:3px;">' +
       items.map(function (it) {
         var on = it.id === active;
         return '<button type="button" data-pp2="' + hook + '" data-v="' + esc(it.id) + '" ' +
@@ -14271,7 +14273,7 @@
     }
     function pairSub(q) { return q ? q.label + ' ' + MIDDOT + ' ' + q.w + '/' + q.n : 'no pair on 10+ games'; }
     return '<div data-hb="strip" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));' +
-      'background:var(--card);border:1px solid var(--edge-6);border-radius:12px;overflow:hidden;">' +
+      'background:var(--card);border:1.25px solid var(--edge-6);border-radius:12px;overflow:hidden;">' +
       cell((mode === 'break' ? 'Break' : 'Hold') + ' rate ' + MIDDOT + ' all', st.rate,
         st.n ? st.won + '/' + st.n + ' games' : DASH, true) +
       cell('Best pair', st.best ? st.best.pct + '%' : DASH, pairSub(st.best)) +
@@ -14360,7 +14362,7 @@
               '<div style="display:flex;align-items:center;gap:12px;">' +
                 hbSegHtml('hb-mode', HB_MODES, mode) +
                 '<button type="button" data-pp2="heat-close" aria-label="Close" ' +
-                  'style="background:var(--selected);border:1px solid var(--line);' +
+                  'style="background:var(--selected);border:1.25px solid var(--line);' +
                   'border-radius:8px;width:30px;height:30px;color:var(--text-label);font-size:15px;line-height:1;' +
                   'cursor:pointer;flex:none;">' + TIMES + '</button>' +
               '</div>' +
@@ -14434,10 +14436,10 @@
     return '' + ANA_STYLE +
       '<div data-pp2="heat" class="pp2-atile" style="cursor:pointer;display:flex;align-items:center;' +
         'justify-content:space-between;gap:14px;background:var(--card);' +
-        'border:1px solid var(--edge-7);border-radius:12px;padding:13px 15px;">' +
+        'border:1.25px solid var(--line);border-radius:12px;padding:13px 15px;">' +   // the export's 1.25px 5% ring
         '<span style="display:flex;align-items:center;gap:11px;min-width:0;">' +
           '<span style="width:30px;height:30px;border-radius:9px;box-sizing:border-box;' +
-            'background:var(--selected);border:1px solid var(--line);' +
+            'background:var(--selected);border:1px solid var(--edge-16);' +
             'display:flex;align-items:center;justify-content:center;flex:none;color:var(--text);">' +
             '<svg width="12" height="12" viewBox="0 0 12 12" fill="none">' +
               '<rect x="0.8" y="0.8" width="4" height="4" stroke="currentColor" stroke-width="1.2"/>' +

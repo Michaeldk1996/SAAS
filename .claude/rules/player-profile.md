@@ -390,8 +390,9 @@ Supersedes the v2 items it names; everything else stays v2. Reference: `Player P
   an unknown flag do not count). No counts in the file → no ATP group: every average / Δ / scale is a dash ("not built
   yet"), never the old rated pool. Radar: lowest ATP player at the centre, highest at the edge; the ATP average one solid
   `--text-soft` 1.5px line above the fill; corner labels "304 · ATP best 331"; no vertex chips. Every Δ = the shown figure
-  minus the shown average (both rounded first); a zero gap is a grey "0". Serve boxes = the six terms of the Serve rating
-  in its own unit (aces and double faults **per match**, the builder's `lockedFormulas.serve`); Break points converted is
+  minus the shown average (both rounded first); a zero gap is a grey "0". Serve boxes = first serve in, first / second serve
+  points won, service games won, aces and double faults **per service game** (founder 2026-11-13: "we have the service
+  games, so count it"; the builder's `acesPerSG` / `dfPerSG`; the Serve rating's formula is unchanged); Break points converted is
   one figure (Return's) in both groups; a rate on fewer than 5 of its own count is a dash. Ratings opens on Last 52 weeks
   unless the window was picked in the drawer. **Test:** `tools/test-dna-percentiles.js` (v3 checks + the no-counts control).
 - **Calendar (D1–D3):** band Window · Surface read by both pages; Filters at its right end (Calendar only, popover

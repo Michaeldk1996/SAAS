@@ -113,11 +113,11 @@ function sheet(mod, opts) {
 const TOK = {
   allCell: 'data-hb="all" style="display:flex;flex-direction:column;align-items:center;gap:1px;border-radius:9px;padding:10px 0;' +
     'background:color-mix(in srgb, var(--text) 3%, transparent);border:1px solid var(--line);',
-  seg: 'gap:3px;background:var(--card);border:1px solid var(--edge-6);border-radius:9px;padding:3px;',
+  seg: 'gap:3px;background:var(--card);border:1.25px solid var(--edge-6);border-radius:9px;padding:3px;',
   tracks: 'grid-template-columns:132px 78px 10px repeat(5,minmax(0,1fr));gap:8px 7px;',
   rule: 'width:1px;height:34px;background:var(--edge-10);',
   strip: 'data-hb="strip" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));' +
-    'background:var(--card);border:1px solid var(--edge-6);border-radius:12px;overflow:hidden;',
+    'background:var(--card);border:1.25px solid var(--edge-6);border-radius:12px;overflow:hidden;',
   tint: (hue, f, e) => `background:color-mix(in srgb, var(--${hue}) ${f}%, transparent);` +
     `border:1px solid color-mix(in srgb, var(--${hue}) ${e}%, transparent);`,
   neutral: 'background:color-mix(in srgb, var(--text) 3%, transparent);border:1px solid var(--line);',
