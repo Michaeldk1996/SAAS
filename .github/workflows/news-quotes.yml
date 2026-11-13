@@ -6,6 +6,10 @@ on:
         description: JSON array of {url,slug} replays whose last minutes are captured as frames
         required: false
         default: ''
+      discover:
+        description: one replay URL whose in-player stats panel is opened and read
+        required: false
+        default: ''
       clips:
         description: JSON array of {url,slug} clips to transcribe (audio)
         required: false
@@ -32,7 +36,7 @@ jobs:
           for try in 1 2 3 4 5 6; do
             OUT=$(flyctl machine run registry.fly.io/stennisfy-interviews:frames-${{ github.run_id }} -a stennisfy-interviews \
               --vm-cpu-kind performance --vm-cpus 2 --vm-memory 4096 --restart no \
-              ${{ inputs.clips != '' && format('--env CLIP_URLS=''{0}''', inputs.clips) || format('--env FRAME_CLIPS=''{0}'' --env FRAME_TAIL=540', inputs.frames) }} \
+              ${{ inputs.discover != '' && format('--env DISCOVER_URL={0}', inputs.discover) || inputs.clips != '' && format('--env CLIP_URLS=''{0}''', inputs.clips) || format('--env FRAME_CLIPS=''{0}'' --env FRAME_TAIL=540', inputs.frames) }} \
               --env TENNISTV_EMAIL="${{ secrets.TENNISTV_EMAIL }}" --env TENNISTV_PASSWORD="${{ secrets.TENNISTV_PASSWORD }}" 2>&1)
             MID=$(echo "$OUT" | grep -oE 'Machine ID: [0-9a-f]+' | awk '{print $3}')
             [ -n "$MID" ] && break
