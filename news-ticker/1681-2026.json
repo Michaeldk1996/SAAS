@@ -2,7 +2,7 @@
  "tournament": "Stockholm",
  "tournamentKey": "1681",
  "season": "2026",
- "updatedAt": "2026-11-13T18:02:25.921Z",
+ "updatedAt": "2026-11-13T18:20:32.080Z",
  "items": [
   {
    "id": "report-12179838",
@@ -117,6 +117,36 @@
    "publishedAt": "2026-11-13T17:40:01.077Z"
   },
   {
+   "id": "quote-0e7286586d2397",
+   "type": "quote",
+   "playerId": "2832",
+   "opponentId": "2849",
+   "player": "T. Fritz",
+   "opponent": "L. Musetti",
+   "tournament": "Stockholm",
+   "tournamentKey": "1681",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-13T17:10:00.000Z",
+   "timestampKind": "observed (the site's own publication time)",
+   "category": "Quotes",
+   "context": "after beating L. Musetti",
+   "eventKey": "12179838",
+   "won": true,
+   "text": "I just lost to Lorenzo in a final not too long ago, so I knew I had to change a lot of things and play a certain type of way. I executed what I wanted to do really well.",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "ATP Tour daily report (via the official tournament site)",
+   "sourceUrl": "https://www.stockholmopen.se/en/tournament/nyheter/fritz-musetti-tabilo-tirante-stockholm-2026-sfs",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On avenging his Lyon final loss to Musetti",
+   "sourceHash": "c643ed5c0626a7ae",
+   "publishedAt": "2026-11-13T18:20:32.080Z"
+  },
+  {
    "id": "quote-430d2eb676002c",
    "type": "quote",
    "playerId": "366",
@@ -127,7 +157,7 @@
    "tournamentKey": "1681",
    "season": "2026",
    "round": null,
-   "timestamp": "2026-11-13T16:05:00.000Z",
+   "timestamp": "2026-11-13T17:10:00.000Z",
    "timestampKind": "observed (the site's own publication time)",
    "category": "Quotes",
    "context": "after beating A. Tabilo",
@@ -143,8 +173,10 @@
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the original-language text of the fetched page",
    "topic": "On reaching his first ATP final in Sweden",
-   "sourceHash": "60a0467f0bd20958",
-   "publishedAt": "2026-11-13T17:21:12.943Z"
+   "sourceHash": "a7244ef1bd811fda",
+   "publishedAt": "2026-11-13T17:21:12.943Z",
+   "revisedAt": "2026-11-13T18:20:32.080Z",
+   "revision": 1
   },
   {
    "id": "quote-d06acc59d5bda0",
@@ -157,7 +189,7 @@
    "tournamentKey": "1681",
    "season": "2026",
    "round": null,
-   "timestamp": "2026-11-13T16:05:00.000Z",
+   "timestamp": "2026-11-13T17:10:00.000Z",
    "timestampKind": "observed (the site's own publication time)",
    "category": "Quotes",
    "context": "after beating A. Tabilo",
@@ -173,8 +205,10 @@
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the original-language text of the fetched page",
    "topic": "On his nerves closing out the semi-final",
-   "sourceHash": "9752d601998ebd1f",
-   "publishedAt": "2026-11-13T17:21:12.943Z"
+   "sourceHash": "560172b21b5e2af5",
+   "publishedAt": "2026-11-13T17:21:12.943Z",
+   "revisedAt": "2026-11-13T18:20:32.080Z",
+   "revision": 1
   },
   {
    "id": "report-12179750",
@@ -2840,12 +2874,17 @@
    "timestampKind": "scheduled",
    "observed": null,
    "category": "Statistics",
-   "text": "Musetti beat Samuel in their first meeting, 6–1, 6–4 in R2. He served well and lost 10 points on serve (7 on his first serve, 3 on his second) and won 80% of his second-serve points (12 of 15), compared with his 57% average on hard over the last 52 weeks. Musetti returned well against the second serve, winning 72% of the points (13 of 18), compared with his usual 53%. He faced no break points.\n\nMusetti: W: 19 / UE: 7 | DR: 2.14\n\nSamuel: W: 15 / UE: 22 | DR: 0.47",
+   "text": "Musetti beat Samuel in their first meeting, 6–1, 6–4 in R2. He served well and lost 10 points on serve (7 on his first serve, 3 on his second) and won 80% of his second-serve points (12 of 15), compared with his 57% average on hard over the last 52 weeks. Musetti returned well against the second serve, winning 72% of the points (13 of 18), compared with his usual 53%. He faced no break points.\n\nMusetti won 6-1 6-4 in 71 minutes, starting brilliantly and striking the ball cleanly off both forehand and backhand, with several strong volleys. Samuel had already played three matches during the week. He made some solid defensive plays but could not match Musetti, who took the first set and then broke early in the second, helped by a ball that clipped the net and dropped over.\n\nMusetti: W: 19 / UE: 7 | DR: 2.14\n\nSamuel: W: 15 / UE: 22 | DR: 0.47",
    "baseText": "Musetti beat Samuel in their first meeting, 6–1, 6–4 in R2. He served well and lost 10 points on serve (7 on his first serve, 3 on his second) and won 80% of his second-serve points (12 of 15), compared with his 57% average on hard over the last 52 weeks. Musetti returned well against the second serve, winning 72% of the points (13 of 18), compared with his usual 53%. He faced no break points.",
    "rating": [
     "Musetti: W: 19 / UE: 7 | DR: 2.14",
     "Samuel: W: 15 / UE: 22 | DR: 0.47"
    ],
+   "commentary": {
+    "text": "Musetti won 6-1 6-4 in 71 minutes, starting brilliantly and striking the ball cleanly off both forehand and backhand, with several strong volleys. Samuel had already played three matches during the week. He made some solid defensive plays but could not match Musetti, who took the first set and then broke early in the second, helped by a ball that clipped the net and dropped over.",
+    "sourceName": "Tennis TV highlights commentary",
+    "sourceUrl": "https://www.tennistv.com/videos/4607548/stockholm-2026-r2-musetti-samuel-highlights"
+   },
    "templateText": "L. Musetti beat T. Samuel in their first meeting, 6-1, 6-4 in the second round. L. Musetti lost only 10 points on serve (7 on his first serve, 3 on his second) and won 80% of his second-serve points (12 of 15), compared with his 57% average on hard over the last 52 weeks. L. Musetti won 72% of the points against the second serve (13 of 18), compared with his usual 53%. L. Musetti faced no break points.",
    "voice": {
     "version": 5,
@@ -2924,10 +2963,10 @@
    "sourceUrl": "pbp/12178671.json",
    "language": "en",
    "translated": false,
-   "sourceHash": "04c1ed16c67f81e2",
+   "sourceHash": "f93a76e79ecf4abe",
    "publishedAt": "2026-11-11T18:39:24.726Z",
-   "revisedAt": "2026-11-13T09:12:18.799Z",
-   "revision": 3
+   "revisedAt": "2026-11-13T18:20:32.080Z",
+   "revision": 4
   },
   {
    "id": "quote-282dd3d4905f55",
