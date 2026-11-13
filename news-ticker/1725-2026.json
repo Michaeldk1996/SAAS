@@ -2,7 +2,7 @@
  "tournament": "Paris",
  "tournamentKey": "1725",
  "season": "2026",
- "updatedAt": "2026-11-11T18:39:24.726Z",
+ "updatedAt": "2026-11-13T10:53:28.081Z",
  "items": [
   {
    "id": "report-12178223",
@@ -21,7 +21,20 @@
    "timestampKind": "scheduled",
    "observed": null,
    "category": "Statistics",
-   "text": "C. Alcaraz beat B. Shelton for the 4th time in 5 meetings, 7-6, 7-5 in the final. Set 1 went to a tiebreak, won by C. Alcaraz. C. Alcaraz: 6 aces, 33 winners, 27 unforced errors, saved 6 of 7 break points. B. Shelton: 12 aces, 25 winners, 26 unforced errors, saved 3 of 5 break points.",
+   "text": "Alcaraz beat Shelton for the 4th time in 5 meetings, 7–6, 7–5 in the final. Set 1 went to a tiebreak, won by Alcaraz. Alcaraz served well, landing 72% of his first serves, compared with his 64% average on hard over the last 52 weeks, and won 71% of his first-serve points (40 of 56). He hit 33 winners and made 27 unforced errors. Shelton struggled on his first serve, winning 64% of the points (33 of 52), compared with his 76% average on hard over the last 52 weeks.\n\nAlcaraz: W: 33 / UE: 27 | DR: 1.25\n\nShelton: W: 25 / UE: 26 | DR: 0.80",
+   "baseText": "Alcaraz beat Shelton for the 4th time in 5 meetings, 7–6, 7–5 in the final. Set 1 went to a tiebreak, won by Alcaraz. Alcaraz served well, landing 72% of his first serves, compared with his 64% average on hard over the last 52 weeks, and won 71% of his first-serve points (40 of 56). He hit 33 winners and made 27 unforced errors. Shelton struggled on his first serve, winning 64% of the points (33 of 52), compared with his 76% average on hard over the last 52 weeks.",
+   "rating": [
+    "Alcaraz: W: 33 / UE: 27 | DR: 1.25",
+    "Shelton: W: 25 / UE: 26 | DR: 0.80"
+   ],
+   "templateText": "C. Alcaraz beat B. Shelton for the 4th time in 5 meetings, 7-6, 7-5 in the final. Set 1 went to a tiebreak, won by C. Alcaraz. C. Alcaraz landed 72% of his first serves, compared with his 64% average on hard over the last 52 weeks and won 71% of his first-serve points (40 of 56). C. Alcaraz hit 33 winners and made 27 unforced errors. B. Shelton struggled on his first serve, winning only 64% of the points (33 of 52), compared with his 76% average on hard over the last 52 weeks.",
+   "voice": {
+    "version": 5,
+    "model": "claude-opus-5-5",
+    "passed": 5,
+    "total": 5,
+    "failures": []
+   },
    "fields": {
     "score": "7-6, 7-5",
     "round": "final",
@@ -39,6 +52,45 @@
       }
      ]
     },
+    "standouts": [
+     {
+      "player": "winner",
+      "tone": "good",
+      "metric": "firstIn",
+      "value": 72,
+      "baseline": 64,
+      "scope": "last52",
+      "surface": "Hard",
+      "n": 49
+     },
+     {
+      "player": "winner",
+      "tone": "good",
+      "metric": "firstWon",
+      "value": 71,
+      "won": 40,
+      "total": 56
+     },
+     {
+      "player": "winner",
+      "tone": "good",
+      "metric": "winnersErrors",
+      "winners": 33,
+      "unforcedErrors": 27
+     },
+     {
+      "player": "loser",
+      "tone": "bad",
+      "metric": "firstWon",
+      "value": 64,
+      "won": 33,
+      "total": 52,
+      "baseline": 76,
+      "scope": "last52",
+      "surface": "Hard",
+      "n": 37
+     }
+    ],
     "winner": {
      "aces": 6,
      "winners": 33,
@@ -60,8 +112,10 @@
    "sourceUrl": "pbp/12178223.json",
    "language": "en",
    "translated": false,
-   "sourceHash": "e07185c45502deca",
-   "publishedAt": "2026-11-11T18:39:24.726Z"
+   "sourceHash": "5cc533a78cab1aa9",
+   "publishedAt": "2026-11-11T18:39:24.726Z",
+   "revisedAt": "2026-11-13T10:53:28.081Z",
+   "revision": 1
   }
  ]
 }

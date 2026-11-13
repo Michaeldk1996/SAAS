@@ -2,8 +2,38 @@
  "tournament": "Stockholm",
  "tournamentKey": "1681",
  "season": "2026",
- "updatedAt": "2026-11-13T09:12:18.799Z",
+ "updatedAt": "2026-11-13T10:53:28.081Z",
  "items": [
+  {
+   "id": "quote-691a82bac9d8b7",
+   "type": "quote",
+   "playerId": "430",
+   "opponentId": null,
+   "player": "C. Ruud",
+   "opponent": null,
+   "tournament": "Stockholm",
+   "tournamentKey": "1681",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-13T09:51:56.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "Many players support these plans … Being in a high position in the rankings helps",
+   "originalText": "Molti giocatori appoggiano questi piani … Essere in una posizione elevata in classifica aiuta",
+   "language": "it",
+   "translated": true,
+   "translationModel": "claude-opus-5-5",
+   "sourceName": "Ubitennis",
+   "sourceUrl": "https://www.ubitennis.com/blog/2026/11/13/atp-stoccolma-ruud-rivela-i-piani-dellatp-alcuni-tornei-scompariranno/",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On ATP plans to eliminate some tournaments",
+   "sourceHash": "ac6bb4d44b885c0a",
+   "publishedAt": "2026-11-13T10:53:28.081Z"
+  },
   {
    "id": "quote-78abe536e5ac8e",
    "type": "quote",
@@ -3907,10 +3937,15 @@
    "timestampKind": "scheduled",
    "observed": null,
    "category": "Statistics",
-   "text": "Toby Samuel beat Leo Borg 6–3, 6–2 in R1, in their first meeting. Samuel won the last 5 games of the match. Borg struggled on serve and made 6 double faults.",
+   "text": "Samuel beat Borg in their first meeting, 6–3, 6–2 in R1. Samuel won the last 5 games. Borg struggled with 6 double faults.\n\nSamuel: W: 19 / UE: 21 | DR: 1.61\n\nBorg: W: 10 / UE: 20 | DR: 0.62",
+   "baseText": "Samuel beat Borg in their first meeting, 6–3, 6–2 in R1. Samuel won the last 5 games. Borg struggled with 6 double faults.",
+   "rating": [
+    "Samuel: W: 19 / UE: 21 | DR: 1.61",
+    "Borg: W: 10 / UE: 20 | DR: 0.62"
+   ],
    "templateText": "T. Samuel beat L. Borg in their first meeting, 6-3, 6-2 in the first round. T. Samuel won the last 5 games of the match. L. Borg made 6 double faults.",
    "voice": {
-    "version": 4,
+    "version": 5,
     "model": "claude-opus-5-5",
     "passed": 3,
     "total": 3,
@@ -3967,10 +4002,10 @@
    "sourceUrl": "pbp/12178420.json",
    "language": "en",
    "translated": false,
-   "sourceHash": "162309cc631766d7",
+   "sourceHash": "4a388d3708b1f595",
    "publishedAt": "2026-11-11T18:39:24.726Z",
-   "revisedAt": "2026-11-12T07:17:47.163Z",
-   "revision": 2
+   "revisedAt": "2026-11-13T10:53:28.081Z",
+   "revision": 3
   },
   {
    "id": "quote-4393dd69b1066f",
@@ -4117,10 +4152,15 @@
    "timestampKind": "scheduled",
    "observed": null,
    "category": "Statistics",
-   "text": "Etcheverry beat Max Dahlin in their first meeting, 6–4, 6–7, 6–3 in R1. Set 2 went to a tiebreak, won by Dahlin. Etcheverry served well, hitting 10 aces and landing 85% of his first serves, compared with his 65% average on hard over the last 52 weeks, and won 62% of his second-serve points (8 of 13), compared with his usual 51%. He faced no break points.",
+   "text": "Etcheverry beat Dahlin in their first meeting, 6–4, 6–7, 6–3 in R1. Set 2 went to a tiebreak, won by Dahlin. Etcheverry served well, hitting 10 aces and landing 85% of his first serves, compared with his 65% average on hard over the last 52 weeks, and won 62% of his second-serve points (8 of 13), compared with his usual 51%. He faced no break points.\n\nEtcheverry: DR: 1.52\n\nDahlin: DR: 0.66",
+   "baseText": "Etcheverry beat Dahlin in their first meeting, 6–4, 6–7, 6–3 in R1. Set 2 went to a tiebreak, won by Dahlin. Etcheverry served well, hitting 10 aces and landing 85% of his first serves, compared with his 65% average on hard over the last 52 weeks, and won 62% of his second-serve points (8 of 13), compared with his usual 51%. He faced no break points.",
+   "rating": [
+    "Etcheverry: DR: 1.52",
+    "Dahlin: DR: 0.66"
+   ],
    "templateText": "T. M. Etcheverry beat M. Dahlin in their first meeting, 6-4, 6-7, 6-3 in the first round. Set 2 went to a tiebreak, won by M. Dahlin. T. M. Etcheverry hit 10 aces, landed 85% of his first serves, compared with his 65% average on hard over the last 52 weeks and won 62% of his second-serve points (8 of 13), compared with his usual 51%. T. M. Etcheverry faced no break points.",
    "voice": {
-    "version": 4,
+    "version": 5,
     "model": "claude-opus-5-5",
     "passed": 4,
     "total": 4,
@@ -4197,10 +4237,10 @@
    "sourceUrl": "pbp/12178148.json",
    "language": "en",
    "translated": false,
-   "sourceHash": "0096bba6d8796ff5",
+   "sourceHash": "742b56fa6d9e5837",
    "publishedAt": "2026-11-11T18:39:24.726Z",
-   "revisedAt": "2026-11-12T07:17:47.163Z",
-   "revision": 2
+   "revisedAt": "2026-11-13T10:53:28.081Z",
+   "revision": 3
   },
   {
    "id": "quote-60b2ccd7e15531",
@@ -4414,10 +4454,15 @@
    "timestampKind": "scheduled",
    "observed": null,
    "category": "Statistics",
-   "text": "Ugo Humbert beat Vallejo 6–4, 6–3 in R1, their first meeting. Humbert won the last 5 games of the match. He landed 48% of his first serves, compared with his 61% average on hard over the last 52 weeks, won 76% of his first-serve points (22 of 29) and won 44% of his second-serve points (14 of 32), compared with his usual 54%. His first-serve percentage is something to watch in the next round. On return, Humbert did particularly well, winning 49% of the points against the first serve (16 of 33), compared with his usual 27%. Humbert saved 8 of 11 break points. He hit 26 winners and made 34 unforced errors.",
+   "text": "Humbert beat Vallejo 6–4, 6–3 in their first meeting in R1. He won the last 5 games. He struggled on serve, landing 48% of his first serves, compared with his 61% average on hard over the last 52 weeks, winning 76% of his first-serve points (22 of 29) and 44% of his second-serve points (14 of 32), compared with his usual 54%. Humbert's first-serve percentage is something to watch in the next round. He was solid against the first serve, winning 49% of the points (16 of 33), compared with his usual 27%. He saved 8 of 11 break points. He hit 26 winners and made 34 unforced errors.\n\nHumbert: W: 26 / UE: 34 | DR: 1.24\n\nVallejo: W: 6 / UE: 16 | DR: 0.81",
+   "baseText": "Humbert beat Vallejo 6–4, 6–3 in their first meeting in R1. He won the last 5 games. He struggled on serve, landing 48% of his first serves, compared with his 61% average on hard over the last 52 weeks, winning 76% of his first-serve points (22 of 29) and 44% of his second-serve points (14 of 32), compared with his usual 54%. Humbert's first-serve percentage is something to watch in the next round. He was solid against the first serve, winning 49% of the points (16 of 33), compared with his usual 27%. He saved 8 of 11 break points. He hit 26 winners and made 34 unforced errors.",
+   "rating": [
+    "Humbert: W: 26 / UE: 34 | DR: 1.24",
+    "Vallejo: W: 6 / UE: 16 | DR: 0.81"
+   ],
    "templateText": "U. Humbert beat D. Vallejo in their first meeting, 6-4, 6-3 in the first round. U. Humbert won the last 5 games of the match. U. Humbert landed 48% of his first serves, compared with his 61% average on hard over the last 52 weeks, won 76% of his first-serve points (22 of 29) and won 44% of his second-serve points (14 of 32), compared with his usual 54%. U. Humbert's first-serve percentage is something to watch in the next round. U. Humbert won 49% of the points against the first serve (16 of 33), compared with his usual 27%. U. Humbert saved 8 of 11 break points. U. Humbert hit 26 winners and made 34 unforced errors.",
    "voice": {
-    "version": 4,
+    "version": 5,
     "model": "claude-opus-5-5",
     "passed": 7,
     "total": 7,
@@ -4530,10 +4575,10 @@
    "sourceUrl": "pbp/12178153.json",
    "language": "en",
    "translated": false,
-   "sourceHash": "918fa2284061401d",
+   "sourceHash": "b21c00858d4b5bb9",
    "publishedAt": "2026-11-11T18:39:24.726Z",
-   "revisedAt": "2026-11-12T07:17:47.163Z",
-   "revision": 2
+   "revisedAt": "2026-11-13T10:53:28.081Z",
+   "revision": 3
   },
   {
    "id": "quote-0e87f38bcceece",
@@ -4651,10 +4696,15 @@
    "timestampKind": "scheduled",
    "observed": null,
    "category": "Statistics",
-   "text": "Borna Gojo beat Tomas Machac 6–3, 6–4 in R1, their first meeting. Gojo served well, hitting 14 aces and winning 80% of his first-serve points (41 of 51). He saved 6 of 6 break points. Along the way, Gojo hit 31 winners and made 15 unforced errors.",
+   "text": "Gojo beat Machac 6–3, 6–4 in R1, their first meeting. Gojo served well, hitting 14 aces and winning 80% of his first-serve points (41 of 51). He was clutch, saving 6 of 6 break points. Along the way, Gojo hit 31 winners and made 15 unforced errors.\n\nGojo: W: 31 / UE: 15 | DR: 1.05\n\nMachac: W: 18 / UE: 13 | DR: 0.96",
+   "baseText": "Gojo beat Machac 6–3, 6–4 in R1, their first meeting. Gojo served well, hitting 14 aces and winning 80% of his first-serve points (41 of 51). He was clutch, saving 6 of 6 break points. Along the way, Gojo hit 31 winners and made 15 unforced errors.",
+   "rating": [
+    "Gojo: W: 31 / UE: 15 | DR: 1.05",
+    "Machac: W: 18 / UE: 13 | DR: 0.96"
+   ],
    "templateText": "B. Gojo beat T. Machac in their first meeting, 6-3, 6-4 in the first round. B. Gojo hit 14 aces and won 80% of his first-serve points (41 of 51). B. Gojo saved 6 of 6 break points. B. Gojo hit 31 winners and made 15 unforced errors.",
    "voice": {
-    "version": 4,
+    "version": 5,
     "model": "claude-opus-5-5",
     "passed": 4,
     "total": 4,
@@ -4720,10 +4770,10 @@
    "sourceUrl": "pbp/12178419.json",
    "language": "en",
    "translated": false,
-   "sourceHash": "b93b20ee48cea8e3",
+   "sourceHash": "38290414432ed12c",
    "publishedAt": "2026-11-11T18:39:24.726Z",
-   "revisedAt": "2026-11-12T07:17:47.163Z",
-   "revision": 2
+   "revisedAt": "2026-11-13T10:53:28.081Z",
+   "revision": 3
   },
   {
    "id": "report-12178147",
@@ -4742,14 +4792,24 @@
    "timestampKind": "scheduled",
    "observed": null,
    "category": "Statistics",
-   "text": "Cameron Norrie beat James Duckworth for the 2nd time in 2 meetings, 7–5, 6–0 in R1. Norrie won the last 9 games of the match. He lost 8 points on serve (4 on his first serve, 4 on his second), hit 10 aces and won 89% of his first-serve points (33 of 37), compared with his 72% average on hard over the last 52 weeks. Against the first serve, Norrie returned well, winning 47% of the points (17 of 36), compared with his usual 25%.",
+   "text": "Norrie beat Duckworth for the 2nd time in 2 meetings, 7–5, 6–0 in R1. He won the last 9 games of the match. Norrie lost only 8 points on serve (4 on his first serve, 4 on his second), hit 10 aces and won 89% of his first-serve points (33 of 37), compared with his 72% average on hard over the last 52 weeks. Against the first serve, Norrie was sharp, winning 47% of the points (17 of 36), compared with his usual 25%.\n\nNorrie: W: 23 / UE: 8 | DR: 2.70\n\nDuckworth: W: 17 / UE: 28 | DR: 0.37",
+   "baseText": "Norrie beat Duckworth for the 2nd time in 2 meetings, 7–5, 6–0 in R1. He won the last 9 games of the match. Norrie lost only 8 points on serve (4 on his first serve, 4 on his second), hit 10 aces and won 89% of his first-serve points (33 of 37), compared with his 72% average on hard over the last 52 weeks. Against the first serve, Norrie was sharp, winning 47% of the points (17 of 36), compared with his usual 25%.",
+   "rating": [
+    "Norrie: W: 23 / UE: 8 | DR: 2.70",
+    "Duckworth: W: 17 / UE: 28 | DR: 0.37"
+   ],
    "templateText": "C. Norrie beat J. Duckworth for the 2nd time in 2 meetings, 7-5, 6-0 in the first round. C. Norrie won the last 9 games of the match. C. Norrie lost only 8 points on serve (4 on his first serve, 4 on his second), hit 10 aces and won 89% of his first-serve points (33 of 37), compared with his 72% average on hard over the last 52 weeks. C. Norrie won 47% of the points against the first serve (17 of 36), compared with his usual 25%.",
    "voice": {
-    "version": 4,
+    "version": 5,
     "model": "claude-opus-5-5",
-    "passed": 4,
+    "passed": 3,
     "total": 4,
-    "failures": []
+    "failures": [
+     {
+      "i": 2,
+      "why": "\"losing\" is not in the facts"
+     }
+    ]
    },
    "fields": {
     "score": "7-5, 6-0",
@@ -4833,10 +4893,10 @@
    "sourceUrl": "pbp/12178147.json",
    "language": "en",
    "translated": false,
-   "sourceHash": "88d6ff8df11ad9a0",
+   "sourceHash": "3211f723e0ba8af2",
    "publishedAt": "2026-11-11T18:39:24.726Z",
-   "revisedAt": "2026-11-12T07:17:47.163Z",
-   "revision": 2
+   "revisedAt": "2026-11-13T10:53:28.081Z",
+   "revision": 3
   },
   {
    "id": "report-12178149",
@@ -4855,10 +4915,15 @@
    "timestampKind": "scheduled",
    "observed": null,
    "category": "Statistics",
-   "text": "Alex Michelsen beat Yannick Hanfmann in their first meeting, 6–2, 6–3 in R1. Michelsen served well, landing 75% of his first serves, compared with his 65% average on hard over the last 52 weeks, winning 81% of his first-serve points (29 of 36), compared with his usual 69%, and winning 67% of his second-serve points (8 of 12), compared with his usual 49%. Hanfmann struggled on his second serve, winning 41% of the points (7 of 17), compared with his 51% average on hard in his career.",
+   "text": "Michelsen beat Hanfmann in their first meeting, 6–2, 6–3 in R1. Michelsen served well, landing 75% of his first serves, compared with his 65% average on hard over the last 52 weeks, and won 81% of his first-serve points (29 of 36), compared with his usual 69%, and 67% of his second-serve points (8 of 12), compared with his usual 49%. Hanfmann struggled on his second serve, winning 41% of the points (7 of 17), compared with his 51% average on hard in his career.\n\nMichelsen: W: 23 / UE: 11 | DR: 1.90\n\nHanfmann: W: 13 / UE: 19 | DR: 0.53",
+   "baseText": "Michelsen beat Hanfmann in their first meeting, 6–2, 6–3 in R1. Michelsen served well, landing 75% of his first serves, compared with his 65% average on hard over the last 52 weeks, and won 81% of his first-serve points (29 of 36), compared with his usual 69%, and 67% of his second-serve points (8 of 12), compared with his usual 49%. Hanfmann struggled on his second serve, winning 41% of the points (7 of 17), compared with his 51% average on hard in his career.",
+   "rating": [
+    "Michelsen: W: 23 / UE: 11 | DR: 1.90",
+    "Hanfmann: W: 13 / UE: 19 | DR: 0.53"
+   ],
    "templateText": "A. Michelsen beat Y. Hanfmann in their first meeting, 6-2, 6-3 in the first round. A. Michelsen landed 75% of his first serves, compared with his 65% average on hard over the last 52 weeks, won 81% of his first-serve points (29 of 36), compared with his usual 69% and won 67% of his second-serve points (8 of 12), compared with his usual 49%. Y. Hanfmann struggled on his second serve, winning only 41% of the points (7 of 17), compared with his 51% average on hard in his career.",
    "voice": {
-    "version": 4,
+    "version": 5,
     "model": "claude-opus-5-5",
     "passed": 3,
     "total": 3,
@@ -4955,10 +5020,10 @@
    "sourceUrl": "pbp/12178149.json",
    "language": "en",
    "translated": false,
-   "sourceHash": "081b67e714579b4e",
+   "sourceHash": "7e3dec1e7e4dc11c",
    "publishedAt": "2026-11-11T18:39:24.726Z",
-   "revisedAt": "2026-11-12T07:17:47.163Z",
-   "revision": 2
+   "revisedAt": "2026-11-13T10:53:28.081Z",
+   "revision": 3
   },
   {
    "id": "quote-4d3c0106eaf621",
@@ -5132,7 +5197,20 @@
    "timestampKind": "scheduled",
    "observed": null,
    "category": "Statistics",
-   "text": "T. A. Tirante beat J. Munar in their first meeting, 7-6, 6-3 in the first round. Set 1 went to a tiebreak, won by T. A. Tirante. T. A. Tirante: 16 aces, 36 winners, 24 unforced errors, faced no break points. J. Munar: 4 aces, 17 winners, 12 unforced errors, saved 1 of 2 break points.",
+   "text": "Tirante beat Munar 7–6, 6–3 in R1, their first meeting. Set 1 went to a tiebreak, and Tirante won it. Tirante served well with 16 aces and won 85% of his first-serve points (35 of 41). He faced no break points. Tirante also hit 36 winners and made 24 unforced errors. Munar struggled on his first serve, winning 64% of the points (21 of 33), compared with his 73% average on hard over the last 52 weeks, and landing his first serve at 57%, compared with his usual 65%.\n\nTirante: W: 36 / UE: 24 | DR: 1.17\n\nMunar: W: 17 / UE: 12 | DR: 0.86",
+   "baseText": "Tirante beat Munar 7–6, 6–3 in R1, their first meeting. Set 1 went to a tiebreak, and Tirante won it. Tirante served well with 16 aces and won 85% of his first-serve points (35 of 41). He faced no break points. Tirante also hit 36 winners and made 24 unforced errors. Munar struggled on his first serve, winning 64% of the points (21 of 33), compared with his 73% average on hard over the last 52 weeks, and landing his first serve at 57%, compared with his usual 65%.",
+   "rating": [
+    "Tirante: W: 36 / UE: 24 | DR: 1.17",
+    "Munar: W: 17 / UE: 12 | DR: 0.86"
+   ],
+   "templateText": "T. A. Tirante beat J. Munar in their first meeting, 7-6, 6-3 in the first round. Set 1 went to a tiebreak, won by T. A. Tirante. T. A. Tirante hit 16 aces and won 85% of his first-serve points (35 of 41). T. A. Tirante faced no break points. T. A. Tirante hit 36 winners and made 24 unforced errors. J. Munar struggled on his first serve, winning only 64% of the points (21 of 33), compared with his 73% average on hard over the last 52 weeks and to land his first serve, at only 57%, compared with his usual 65%.",
+   "voice": {
+    "version": 5,
+    "model": "claude-opus-5-5",
+    "passed": 6,
+    "total": 6,
+    "failures": []
+   },
    "fields": {
     "score": "7-6, 6-3",
     "round": "first round",
@@ -5150,6 +5228,58 @@
       }
      ]
     },
+    "standouts": [
+     {
+      "player": "winner",
+      "tone": "good",
+      "metric": "aces",
+      "value": 16
+     },
+     {
+      "player": "winner",
+      "tone": "good",
+      "metric": "firstWon",
+      "value": 85,
+      "won": 35,
+      "total": 41
+     },
+     {
+      "player": "winner",
+      "tone": "good",
+      "metric": "breakPoints",
+      "saved": 0,
+      "faced": 0
+     },
+     {
+      "player": "winner",
+      "tone": "good",
+      "metric": "winnersErrors",
+      "winners": 36,
+      "unforcedErrors": 24
+     },
+     {
+      "player": "loser",
+      "tone": "bad",
+      "metric": "firstWon",
+      "value": 64,
+      "won": 21,
+      "total": 33,
+      "baseline": 73,
+      "scope": "last52",
+      "surface": "Hard",
+      "n": 38
+     },
+     {
+      "player": "loser",
+      "tone": "bad",
+      "metric": "firstIn",
+      "value": 57,
+      "baseline": 65,
+      "scope": "last52",
+      "surface": "Hard",
+      "n": 38
+     }
+    ],
     "winner": {
      "aces": 16,
      "winners": 36,
@@ -5171,8 +5301,10 @@
    "sourceUrl": "pbp/12178152.json",
    "language": "en",
    "translated": false,
-   "sourceHash": "e334548fea800019",
-   "publishedAt": "2026-11-11T18:39:24.726Z"
+   "sourceHash": "51c1100d1d5e264f",
+   "publishedAt": "2026-11-11T18:39:24.726Z",
+   "revisedAt": "2026-11-13T10:53:28.081Z",
+   "revision": 1
   },
   {
    "id": "quote-424d711c32ed26",
@@ -5287,7 +5419,20 @@
    "timestampKind": "scheduled",
    "observed": null,
    "category": "Statistics",
-   "text": "J. M. Cerundolo beat E. Ymer in their first meeting, 6-1, 7-6 in the first round. Set 2 went to a tiebreak, won by J. M. Cerundolo. J. M. Cerundolo won 5 games in a row. J. M. Cerundolo: 2 aces, 12 winners, 18 unforced errors, saved 1 of 1 break point. E. Ymer: 8 aces, 22 winners, 38 unforced errors, saved 2 of 5 break points.",
+   "text": "Cerundolo beat Ymer 6–1, 7–6 in R1, their first meeting. Set 2 went to a tiebreak, won by Cerundolo. Ymer struggled against the second serve, winning 23% of the points (6 of 26), compared with his 48% average on hard in his career, and made 38 unforced errors against 22 winners.\n\nCerundolo: W: 12 / UE: 18 | DR: 1.39\n\nYmer: W: 22 / UE: 38 | DR: 0.72",
+   "baseText": "Cerundolo beat Ymer 6–1, 7–6 in R1, their first meeting. Set 2 went to a tiebreak, won by Cerundolo. Ymer struggled against the second serve, winning 23% of the points (6 of 26), compared with his 48% average on hard in his career, and made 38 unforced errors against 22 winners.",
+   "rating": [
+    "Cerundolo: W: 12 / UE: 18 | DR: 1.39",
+    "Ymer: W: 22 / UE: 38 | DR: 0.72"
+   ],
+   "templateText": "J. M. Cerundolo beat E. Ymer in their first meeting, 6-1, 7-6 in the first round. Set 2 went to a tiebreak, won by J. M. Cerundolo. E. Ymer struggled against the second serve, winning only 23% of the points (6 of 26), compared with his 48% average on hard in his career and made 38 unforced errors against 22 winners.",
+   "voice": {
+    "version": 5,
+    "model": "claude-opus-5-5",
+    "passed": 3,
+    "total": 3,
+    "failures": []
+   },
    "fields": {
     "score": "6-1, 7-6",
     "round": "first round",
@@ -5306,9 +5451,37 @@
      ],
      "longestRun": {
       "side": "p2",
-      "n": 5
+      "n": 5,
+      "set": 1,
+      "from": {
+       "me": 2,
+       "opp": 1
+      },
+      "afterBeingBroken": false,
+      "toTheEnd": false
      }
     },
+    "standouts": [
+     {
+      "player": "loser",
+      "tone": "bad",
+      "metric": "ret2Won",
+      "value": 23,
+      "won": 6,
+      "total": 26,
+      "baseline": 48,
+      "scope": "career",
+      "surface": "Hard",
+      "n": 70
+     },
+     {
+      "player": "loser",
+      "tone": "bad",
+      "metric": "winnersErrors",
+      "winners": 22,
+      "unforcedErrors": 38
+     }
+    ],
     "winner": {
      "aces": 2,
      "winners": 12,
@@ -5330,8 +5503,10 @@
    "sourceUrl": "pbp/12178154.json",
    "language": "en",
    "translated": false,
-   "sourceHash": "345ffd8fbd2b9bec",
-   "publishedAt": "2026-11-11T18:39:24.726Z"
+   "sourceHash": "e763850a6d0b3117",
+   "publishedAt": "2026-11-11T18:39:24.726Z",
+   "revisedAt": "2026-11-13T10:53:28.081Z",
+   "revision": 1
   },
   {
    "id": "report-12178224",
@@ -5350,7 +5525,7 @@
    "timestampKind": "scheduled",
    "observed": null,
    "category": "Statistics",
-   "text": "A. Shevchenko beat J. Fearnley 6-2, 6-4 in the final round of qualifying. A. Shevchenko: 4 aces, saved 1 of 1 break point. J. Fearnley: 3 aces, saved 0 of 3 break points.",
+   "text": "Shevchenko beat Fearnley 6-2, 6-4 in the final round of qualifying. Shevchenko: 4 aces, saved 1 of 1 break point. Fearnley: 3 aces, saved 0 of 3 break points.",
    "fields": {
     "score": "6-2, 6-4",
     "round": "final round of qualifying",
@@ -5372,8 +5547,10 @@
    "sourceUrl": "pbp/12178224.json",
    "language": "en",
    "translated": false,
-   "sourceHash": "32e506b2e1a4f919",
-   "publishedAt": "2026-11-11T18:39:24.726Z"
+   "sourceHash": "40f19b6a871f0946",
+   "publishedAt": "2026-11-11T18:39:24.726Z",
+   "revisedAt": "2026-11-13T10:53:28.081Z",
+   "revision": 1
   },
   {
    "id": "status-q-12178224",
@@ -5416,7 +5593,7 @@
    "timestampKind": "scheduled",
    "observed": null,
    "category": "Statistics",
-   "text": "T. Samuel beat A. Mannarino 3-6, 7-5, 6-1 in the final round of qualifying. T. Samuel came from a set down. T. Samuel was broken when serving for the match. T. Samuel was broken when serving for a set. T. Samuel won 7 games in a row. T. Samuel: 6 aces, saved 6 of 10 break points. A. Mannarino: 1 ace, saved 3 of 9 break points.",
+   "text": "Samuel beat Mannarino 3-6, 7-5, 6-1 in the final round of qualifying. Samuel came from a set down. Samuel was broken when serving for the match. Samuel was broken when serving for a set. Samuel won 7 games in a row. Samuel: 6 aces, saved 6 of 10 break points. Mannarino: 1 ace, saved 3 of 9 break points.",
    "fields": {
     "score": "3-6, 7-5, 6-1",
     "round": "final round of qualifying",
@@ -5451,8 +5628,10 @@
    "sourceUrl": "pbp/12178225.json",
    "language": "en",
    "translated": false,
-   "sourceHash": "66369067f645dcaa",
-   "publishedAt": "2026-11-11T18:39:24.726Z"
+   "sourceHash": "463ad802aecac576",
+   "publishedAt": "2026-11-11T18:39:24.726Z",
+   "revisedAt": "2026-11-13T10:53:28.081Z",
+   "revision": 1
   },
   {
    "id": "status-ll-12178225",
@@ -5519,7 +5698,7 @@
    "timestampKind": "scheduled",
    "observed": null,
    "category": "Statistics",
-   "text": "B. Gojo beat N. Basilashvili 6-3, 7-6 in the final round of qualifying. Set 2 went to a tiebreak, won by B. Gojo. B. Gojo: 18 aces, saved 7 of 8 break points. N. Basilashvili: 11 aces, saved 2 of 4 break points.",
+   "text": "Gojo beat Basilashvili 6-3, 7-6 in the final round of qualifying. Set 2 went to a tiebreak, won by Gojo. Gojo: 18 aces, saved 7 of 8 break points. Basilashvili: 11 aces, saved 2 of 4 break points.",
    "fields": {
     "score": "6-3, 7-6",
     "round": "final round of qualifying",
@@ -5549,8 +5728,10 @@
    "sourceUrl": "pbp/12178166.json",
    "language": "en",
    "translated": false,
-   "sourceHash": "130c0aeb895206d9",
-   "publishedAt": "2026-11-11T18:39:24.726Z"
+   "sourceHash": "92bf30b8a6d2a1a2",
+   "publishedAt": "2026-11-11T18:39:24.726Z",
+   "revisedAt": "2026-11-13T10:53:28.081Z",
+   "revision": 1
   },
   {
    "id": "report-12178198",
@@ -5569,7 +5750,7 @@
    "timestampKind": "scheduled",
    "observed": null,
    "category": "Statistics",
-   "text": "L. Sonego beat I. Montes-De La Torre 7-5, 6-3 in the final round of qualifying. L. Sonego won 5 games in a row. L. Sonego: 7 aces, saved 4 of 5 break points. I. Montes-De La Torre: 2 aces, saved 1 of 4 break points.",
+   "text": "Sonego beat Montes-De La Torre 7-5, 6-3 in the final round of qualifying. Sonego won 5 games in a row. Sonego: 7 aces, saved 4 of 5 break points. Montes-De La Torre: 2 aces, saved 1 of 4 break points.",
    "fields": {
     "score": "7-5, 6-3",
     "round": "final round of qualifying",
@@ -5597,8 +5778,10 @@
    "sourceUrl": "pbp/12178198.json",
    "language": "en",
    "translated": false,
-   "sourceHash": "3f48bd1dbc089657",
-   "publishedAt": "2026-11-11T18:39:24.726Z"
+   "sourceHash": "91deb4d552d944ce",
+   "publishedAt": "2026-11-11T18:39:24.726Z",
+   "revisedAt": "2026-11-13T10:53:28.081Z",
+   "revision": 1
   },
   {
    "id": "status-q-12178166",
