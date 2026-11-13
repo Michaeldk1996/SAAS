@@ -1,31 +1,31 @@
 {
- "generatedAt": "2026-11-13T17:21:12.943Z",
+ "generatedAt": "2026-11-13T17:40:01.077Z",
  "tournaments": [
   {
    "key": "1681",
    "season": "2026",
    "name": "Stockholm",
    "file": "news-ticker/1681-2026.json",
-   "items": 113,
+   "items": 114,
    "byType": {
+    "report": 28,
     "quote": 79,
-    "report": 27,
     "status": 7
    },
-   "latestTimestamp": "2026-11-13T16:05:00.000Z",
-   "updatedAt": "2026-11-13T17:21:12.943Z"
+   "latestTimestamp": "2026-11-13T17:13:00.227Z",
+   "updatedAt": "2026-11-13T17:40:01.077Z"
   },
   {
    "key": "tour",
    "season": "2026",
    "name": "ATP Tour",
    "file": "news-ticker/tour-2026.json",
-   "items": 38,
+   "items": 40,
    "byType": {
-    "quote": 38
+    "quote": 40
    },
-   "latestTimestamp": "2026-11-13T13:09:55.000Z",
-   "updatedAt": "2026-11-13T13:53:19.089Z"
+   "latestTimestamp": "2026-11-13T17:00:00.000Z",
+   "updatedAt": "2026-11-13T17:40:01.077Z"
   },
   {
    "key": "1725",
@@ -51,6 +51,181 @@
   }
  ],
  "latest": [
+  {
+   "id": "report-12179838",
+   "type": "report",
+   "playerId": "2832",
+   "opponentId": "2849",
+   "player": "T. Fritz",
+   "opponent": "L. Musetti",
+   "tournament": "Stockholm",
+   "tournamentKey": "1681",
+   "season": "2026",
+   "stage": "main draw",
+   "round": "semi-finals",
+   "eventKey": "12179838",
+   "timestamp": "2026-11-13T17:13:00.227Z",
+   "timestampKind": "observed",
+   "observed": {
+    "endedAt": "2026-11-13T17:13:00.227Z",
+    "startedAt": "2026-11-13T16:09:52.181Z",
+    "minutes": 63
+   },
+   "category": "Statistics",
+   "text": "Fritz beat Musetti for the 4th time in 9 meetings, 6–4, 6–2 in the SF. In the second set, Fritz won 5 games in a row from 0–1 down. On serve, Fritz lost 9 points (6 on his first serve, 3 on his second) and won 77% of his second-serve points (10 of 13), compared with his 53% average on hard over the last 52 weeks. Against the second serve, Fritz was sharp, winning 67% of the points (10 of 15), compared with his usual 53%.\n\nFritz: W: 26 / UE: 12 | DR: 2.10\n\nMusetti: W: 12 / UE: 9 | DR: 0.48",
+   "baseText": "Fritz beat Musetti for the 4th time in 9 meetings, 6–4, 6–2 in the SF. In the second set, Fritz won 5 games in a row from 0–1 down. On serve, Fritz lost 9 points (6 on his first serve, 3 on his second) and won 77% of his second-serve points (10 of 13), compared with his 53% average on hard over the last 52 weeks. Against the second serve, Fritz was sharp, winning 67% of the points (10 of 15), compared with his usual 53%.",
+   "rating": [
+    "Fritz: W: 26 / UE: 12 | DR: 2.10",
+    "Musetti: W: 12 / UE: 9 | DR: 0.48"
+   ],
+   "templateText": "T. Fritz beat L. Musetti for the 4th time in 9 meetings, 6-4, 6-2 in the semi-finals. T. Fritz won 5 games in a row from 0-1 down in the second set. T. Fritz lost only 9 points on serve (6 on his first serve, 3 on his second) and won 77% of his second-serve points (10 of 13), compared with his 53% average on hard over the last 52 weeks. T. Fritz won 67% of the points against the second serve (10 of 15), compared with his usual 53%.",
+   "voice": {
+    "version": 5,
+    "model": "claude-opus-5-5",
+    "passed": 4,
+    "total": 4,
+    "failures": []
+   },
+   "fields": {
+    "score": "6-4, 6-2",
+    "round": "semi-finals",
+    "retired": false,
+    "h2h": {
+     "a": 4,
+     "b": 5,
+     "n": 9
+    },
+    "durationMinutes": 63,
+    "facts": {
+     "longestRun": {
+      "side": "p1",
+      "n": 5,
+      "set": 2,
+      "from": {
+       "me": 0,
+       "opp": 1
+      },
+      "afterBeingBroken": false,
+      "toTheEnd": false
+     }
+    },
+    "standouts": [
+     {
+      "player": "winner",
+      "tone": "good",
+      "metric": "servePointsLost",
+      "value": 9,
+      "total": 45
+     },
+     {
+      "player": "winner",
+      "tone": "good",
+      "metric": "secondWon",
+      "value": 77,
+      "won": 10,
+      "total": 13,
+      "baseline": 53,
+      "scope": "last52",
+      "surface": "Hard",
+      "n": 53
+     },
+     {
+      "player": "winner",
+      "tone": "good",
+      "metric": "ret2Won",
+      "value": 67,
+      "won": 10,
+      "total": 15,
+      "baseline": 53,
+      "scope": "last52",
+      "surface": "Hard",
+      "n": 53
+     }
+    ],
+    "winner": {
+     "aces": 7,
+     "winners": 26,
+     "unforcedErrors": 12
+    },
+    "loser": {
+     "aces": 3,
+     "winners": 12,
+     "unforcedErrors": 9,
+     "breakPointsSaved": 1,
+     "breakPointsFaced": 4,
+     "breakPointsSource": "box score"
+    }
+   },
+   "sourceName": "Stennisfy match data (api-tennis box score and point-by-point)",
+   "sourceUrl": "pbp/12179838.json",
+   "language": "en",
+   "translated": false,
+   "sourceHash": "c89b9355a6973315",
+   "publishedAt": "2026-11-13T17:40:01.077Z",
+   "file": "news-ticker/1681-2026.json"
+  },
+  {
+   "id": "quote-c17f836c062fb6",
+   "type": "quote",
+   "playerId": "431",
+   "opponentId": null,
+   "player": "D. Shapovalov",
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-13T17:00:00.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Injuries",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "During my match against Khachanov in Paris, I sustained an adductor injury, … Given the seriousness of the injury, I unfortunately haven't had enough time to heal to be fully ready to compete in the Davis Cup Finals. I always love representing my country so I'm extremely disappointed.",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "TennisUpToDate",
+   "sourceUrl": "https://tennisuptodate.com/atp/canada-dealt-major-davis-cup-blow-as-shapovalov-and-diallo-withdraw-ahead-of-czechia-clash",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On withdrawing from Davis Cup Finals with adductor injury",
+   "sourceHash": "ae85933f7d5a1944",
+   "publishedAt": "2026-11-13T17:40:01.077Z",
+   "file": "news-ticker/tour-2026.json"
+  },
+  {
+   "id": "quote-39c86f2646e728",
+   "type": "quote",
+   "playerId": "1980",
+   "opponentId": null,
+   "player": "A. Zverev",
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-13T16:44:00.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "to play both, what else am I supposed to do?",
+   "originalText": "beide anzutreten, was soll ich sonst tun?",
+   "language": "de",
+   "translated": true,
+   "translationModel": "claude-opus-5-5",
+   "sourceName": "tennisnet.com",
+   "sourceUrl": "https://www.tennisnet.com/news/ready-to-rumble-zverevs-hoffnung-auf-die-revanche-gegen-alcaraz",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On his winless 2026 record against Alcaraz and Sinner",
+   "sourceHash": "5435129360c637c5",
+   "publishedAt": "2026-11-13T17:40:01.077Z",
+   "file": "news-ticker/tour-2026.json"
+  },
   {
    "id": "quote-430d2eb676002c",
    "type": "quote",
@@ -1730,263 +1905,6 @@
    "topic": "On playing Fritz next",
    "sourceHash": "4753619aef43c277",
    "publishedAt": "2026-11-12T16:27:56.516Z",
-   "file": "news-ticker/1681-2026.json"
-  },
-  {
-   "id": "report-12179122",
-   "type": "report",
-   "playerId": "437",
-   "opponentId": "2848",
-   "player": "H. Rune",
-   "opponent": "M. Kecmanovic",
-   "tournament": "Stockholm",
-   "tournamentKey": "1681",
-   "season": "2026",
-   "stage": "main draw",
-   "round": "second round",
-   "eventKey": "12179122",
-   "timestamp": "2026-11-11T21:09:07.255Z",
-   "timestampKind": "observed",
-   "observed": {
-    "endedAt": "2026-11-11T21:09:07.255Z",
-    "startedAt": "2026-11-11T19:46:13.473Z",
-    "minutes": 83
-   },
-   "category": "Statistics",
-   "text": "Rune beat Kecmanovic for the 4th time in 5 meetings, 2–6, 6–1, 6–4 in R2. Rune came from a set down. He won 7 games in a row from 1–1 in the second set. Rune served well, landing 71% of his first serves, compared with his 62% average on hard over the last 52 weeks, and won 70% of his first-serve points (33 of 47). Against the second serve, Rune was strong, winning 61% of the points (11 of 18), compared with his usual 50%. Rune saved 0 of 3 break points. He hit 41 winners and made 28 unforced errors.\n\nRune: performance rating 8.5 | W: 41 / UE: 28 | DR: 1.13\n\nKecmanovic: performance rating 7.7 | W: 18 / UE: 11 | DR: 0.88",
-   "baseText": "Rune beat Kecmanovic for the 4th time in 5 meetings, 2–6, 6–1, 6–4 in R2. Rune came from a set down. He won 7 games in a row from 1–1 in the second set. Rune served well, landing 71% of his first serves, compared with his 62% average on hard over the last 52 weeks, and won 70% of his first-serve points (33 of 47). Against the second serve, Rune was strong, winning 61% of the points (11 of 18), compared with his usual 50%. Rune saved 0 of 3 break points. He hit 41 winners and made 28 unforced errors.",
-   "rating": [
-    "Rune: performance rating 8.5 | W: 41 / UE: 28 | DR: 1.13",
-    "Kecmanovic: performance rating 7.7 | W: 18 / UE: 11 | DR: 0.88"
-   ],
-   "shotStats": {
-    "p1": {
-     "performance": 7.7,
-     "serveQuality": 7.8,
-     "unreturnedPct": 28,
-     "firstInPct": 73,
-     "firstWonPct": 69,
-     "secondWonPct": 39,
-     "secondSpeed": 162,
-     "returnQuality": 7.5,
-     "fhWinners": 8,
-     "bhWinners": 5,
-     "fhUnforced": 5,
-     "bhUnforced": 4,
-     "forcedErrors": 17,
-     "baselineWon": 33,
-     "under9Won": 62,
-     "over9Won": 1,
-     "bpWon": [
-      3,
-      3
-     ],
-     "netWon": [
-      6,
-      9
-     ]
-    },
-    "p2": {
-     "performance": 8.5,
-     "serveQuality": 8.3,
-     "unreturnedPct": 26,
-     "firstInPct": 71,
-     "firstWonPct": 70,
-     "secondWonPct": 53,
-     "secondSpeed": 163,
-     "returnQuality": 6.9,
-     "fhWinners": 24,
-     "bhWinners": 8,
-     "fhUnforced": 17,
-     "bhUnforced": 10,
-     "forcedErrors": 17,
-     "baselineWon": 38,
-     "under9Won": 65,
-     "over9Won": 4,
-     "bpWon": [
-      4,
-      5
-     ],
-     "netWon": [
-      7,
-      11
-     ]
-    },
-    "postedAt": "2026-11-11T21:15:21.000Z",
-    "readAt": "2026-11-13T06:34:56.105Z",
-    "sourceName": "ATP broadcast match statistics (via @ATP_Entry)",
-    "sourceUrl": "https://x.com/ATP_Entry/status/2120626459333087624",
-    "agreed": "6 of 6 serve figures within 3 points of ours; set scores and break points equal"
-   },
-   "templateText": "H. Rune beat M. Kecmanovic for the 4th time in 5 meetings, 2-6, 6-1, 6-4 in the second round. H. Rune came from a set down. H. Rune won 7 games in a row from 1-1 in the second set. H. Rune landed 71% of his first serves, compared with his 62% average on hard over the last 52 weeks and won 70% of his first-serve points (33 of 47). H. Rune won 61% of the points against the second serve (11 of 18), compared with his usual 50%. H. Rune saved 0 of 3 break points. H. Rune hit 41 winners and made 28 unforced errors.",
-   "voice": {
-    "version": 5,
-    "model": "claude-opus-5-5",
-    "passed": 7,
-    "total": 7,
-    "failures": []
-   },
-   "fields": {
-    "score": "2-6, 6-1, 6-4",
-    "round": "second round",
-    "retired": false,
-    "h2h": {
-     "a": 4,
-     "b": 1,
-     "n": 5
-    },
-    "durationMinutes": 83,
-    "facts": {
-     "fromSetDown": true,
-     "longestRun": {
-      "side": "p2",
-      "n": 7,
-      "set": 2,
-      "from": {
-       "me": 1,
-       "opp": 1
-      },
-      "afterBeingBroken": false,
-      "toTheEnd": false
-     }
-    },
-    "standouts": [
-     {
-      "player": "winner",
-      "tone": "good",
-      "metric": "firstIn",
-      "value": 71,
-      "baseline": 62,
-      "scope": "last52",
-      "surface": "Hard",
-      "n": 47
-     },
-     {
-      "player": "winner",
-      "tone": "good",
-      "metric": "firstWon",
-      "value": 70,
-      "won": 33,
-      "total": 47
-     },
-     {
-      "player": "winner",
-      "tone": "good",
-      "metric": "ret2Won",
-      "value": 61,
-      "won": 11,
-      "total": 18,
-      "baseline": 50,
-      "scope": "last52",
-      "surface": "Hard",
-      "n": 47
-     },
-     {
-      "player": "winner",
-      "tone": "bad",
-      "metric": "breakPoints",
-      "saved": 0,
-      "faced": 3
-     },
-     {
-      "player": "winner",
-      "tone": "good",
-      "metric": "winnersErrors",
-      "winners": 41,
-      "unforcedErrors": 28
-     }
-    ],
-    "winner": {
-     "aces": 9,
-     "winners": 41,
-     "unforcedErrors": 28,
-     "breakPointsSaved": 0,
-     "breakPointsFaced": 3,
-     "breakPointsSource": "box score"
-    },
-    "loser": {
-     "aces": 4,
-     "winners": 18,
-     "unforcedErrors": 11,
-     "breakPointsSaved": 1,
-     "breakPointsFaced": 5,
-     "breakPointsSource": "box score"
-    }
-   },
-   "sourceName": "Stennisfy match data (api-tennis box score and point-by-point)",
-   "sourceUrl": "pbp/12179122.json",
-   "language": "en",
-   "translated": false,
-   "sourceHash": "8e1d10cbd656d679",
-   "publishedAt": "2026-11-11T21:42:31.972Z",
-   "revisedAt": "2026-11-13T09:12:18.799Z",
-   "revision": 4,
-   "file": "news-ticker/1681-2026.json"
-  },
-  {
-   "id": "quote-1087d75c287127",
-   "type": "quote",
-   "playerId": "566",
-   "opponentId": "430",
-   "player": "A. Shevchenko",
-   "opponent": "C. Ruud",
-   "tournament": "Stockholm",
-   "tournamentKey": "1681",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-11T20:02:00.000Z",
-   "timestampKind": "observed (the site's own publication time)",
-   "category": "Quotes",
-   "context": "after beating C. Ruud",
-   "eventKey": "12178945",
-   "won": true,
-   "text": "It's one of the biggest [wins of my career], that's for sure, … To win against Casper, he's a super solid player and I think he's an even better person. I think it was a great level match. I'm really happy with my level today. I believed in myself. It was good that I had matches in qualies, I got used to the courts. Today is a great day for me.",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "ATP Tour daily report (via the official tournament site)",
-   "sourceUrl": "https://www.stockholmopen.se/en/tournament/nyheter/stockholm-2026-wednesday-report",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "sourceHash": "75340ad393c36a74",
-   "publishedAt": "2026-11-11T22:41:50.700Z",
-   "topic": "On a career-best win over Casper",
-   "revisedAt": "2026-11-13T07:43:17.649Z",
-   "revision": 1,
-   "file": "news-ticker/1681-2026.json"
-  },
-  {
-   "id": "quote-ca7432a558cda6",
-   "type": "quote",
-   "playerId": "566",
-   "opponentId": "430",
-   "player": "A. Shevchenko",
-   "opponent": "C. Ruud",
-   "tournament": "Stockholm",
-   "tournamentKey": "1681",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-11T19:29:04.966Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Quotes",
-   "context": "after beating C. Ruud",
-   "eventKey": "12178945",
-   "won": true,
-   "text": "I played at a good level. I kept being aggressive the whole match. I'm really happy now",
-   "originalText": "Jag spelade på en bra nivå. Jag fortsatte vara aggressiv hela matchen. Jag är verkligen glad nu",
-   "language": "sv",
-   "translated": true,
-   "translationModel": "claude-opus-5-5",
-   "sourceName": "Expressen",
-   "sourceUrl": "https://www.expressen.se/sport/tennis/casper-ruud-utslagen-ur-stockholm-open-/",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "sourceHash": "0e5563f5518dbc3d",
-   "publishedAt": "2026-11-12T00:24:09.270Z",
-   "topic": "On his aggressive play throughout the match",
-   "revisedAt": "2026-11-13T07:43:17.649Z",
-   "revision": 1,
    "file": "news-ticker/1681-2026.json"
   }
  ]

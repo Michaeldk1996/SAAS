@@ -2,8 +2,120 @@
  "tournament": "Stockholm",
  "tournamentKey": "1681",
  "season": "2026",
- "updatedAt": "2026-11-13T17:21:12.943Z",
+ "updatedAt": "2026-11-13T17:40:01.077Z",
  "items": [
+  {
+   "id": "report-12179838",
+   "type": "report",
+   "playerId": "2832",
+   "opponentId": "2849",
+   "player": "T. Fritz",
+   "opponent": "L. Musetti",
+   "tournament": "Stockholm",
+   "tournamentKey": "1681",
+   "season": "2026",
+   "stage": "main draw",
+   "round": "semi-finals",
+   "eventKey": "12179838",
+   "timestamp": "2026-11-13T17:13:00.227Z",
+   "timestampKind": "observed",
+   "observed": {
+    "endedAt": "2026-11-13T17:13:00.227Z",
+    "startedAt": "2026-11-13T16:09:52.181Z",
+    "minutes": 63
+   },
+   "category": "Statistics",
+   "text": "Fritz beat Musetti for the 4th time in 9 meetings, 6–4, 6–2 in the SF. In the second set, Fritz won 5 games in a row from 0–1 down. On serve, Fritz lost 9 points (6 on his first serve, 3 on his second) and won 77% of his second-serve points (10 of 13), compared with his 53% average on hard over the last 52 weeks. Against the second serve, Fritz was sharp, winning 67% of the points (10 of 15), compared with his usual 53%.\n\nFritz: W: 26 / UE: 12 | DR: 2.10\n\nMusetti: W: 12 / UE: 9 | DR: 0.48",
+   "baseText": "Fritz beat Musetti for the 4th time in 9 meetings, 6–4, 6–2 in the SF. In the second set, Fritz won 5 games in a row from 0–1 down. On serve, Fritz lost 9 points (6 on his first serve, 3 on his second) and won 77% of his second-serve points (10 of 13), compared with his 53% average on hard over the last 52 weeks. Against the second serve, Fritz was sharp, winning 67% of the points (10 of 15), compared with his usual 53%.",
+   "rating": [
+    "Fritz: W: 26 / UE: 12 | DR: 2.10",
+    "Musetti: W: 12 / UE: 9 | DR: 0.48"
+   ],
+   "templateText": "T. Fritz beat L. Musetti for the 4th time in 9 meetings, 6-4, 6-2 in the semi-finals. T. Fritz won 5 games in a row from 0-1 down in the second set. T. Fritz lost only 9 points on serve (6 on his first serve, 3 on his second) and won 77% of his second-serve points (10 of 13), compared with his 53% average on hard over the last 52 weeks. T. Fritz won 67% of the points against the second serve (10 of 15), compared with his usual 53%.",
+   "voice": {
+    "version": 5,
+    "model": "claude-opus-5-5",
+    "passed": 4,
+    "total": 4,
+    "failures": []
+   },
+   "fields": {
+    "score": "6-4, 6-2",
+    "round": "semi-finals",
+    "retired": false,
+    "h2h": {
+     "a": 4,
+     "b": 5,
+     "n": 9
+    },
+    "durationMinutes": 63,
+    "facts": {
+     "longestRun": {
+      "side": "p1",
+      "n": 5,
+      "set": 2,
+      "from": {
+       "me": 0,
+       "opp": 1
+      },
+      "afterBeingBroken": false,
+      "toTheEnd": false
+     }
+    },
+    "standouts": [
+     {
+      "player": "winner",
+      "tone": "good",
+      "metric": "servePointsLost",
+      "value": 9,
+      "total": 45
+     },
+     {
+      "player": "winner",
+      "tone": "good",
+      "metric": "secondWon",
+      "value": 77,
+      "won": 10,
+      "total": 13,
+      "baseline": 53,
+      "scope": "last52",
+      "surface": "Hard",
+      "n": 53
+     },
+     {
+      "player": "winner",
+      "tone": "good",
+      "metric": "ret2Won",
+      "value": 67,
+      "won": 10,
+      "total": 15,
+      "baseline": 53,
+      "scope": "last52",
+      "surface": "Hard",
+      "n": 53
+     }
+    ],
+    "winner": {
+     "aces": 7,
+     "winners": 26,
+     "unforcedErrors": 12
+    },
+    "loser": {
+     "aces": 3,
+     "winners": 12,
+     "unforcedErrors": 9,
+     "breakPointsSaved": 1,
+     "breakPointsFaced": 4,
+     "breakPointsSource": "box score"
+    }
+   },
+   "sourceName": "Stennisfy match data (api-tennis box score and point-by-point)",
+   "sourceUrl": "pbp/12179838.json",
+   "language": "en",
+   "translated": false,
+   "sourceHash": "c89b9355a6973315",
+   "publishedAt": "2026-11-13T17:40:01.077Z"
+  },
   {
    "id": "quote-430d2eb676002c",
    "type": "quote",
