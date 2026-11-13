@@ -2,7 +2,7 @@
  "tournament": "Stockholm",
  "tournamentKey": "1681",
  "season": "2026",
- "updatedAt": "2026-11-13T20:22:21.729Z",
+ "updatedAt": "2026-11-13T20:41:38.767Z",
  "items": [
   {
    "id": "quote-6696883514bec5",
@@ -85,12 +85,75 @@
     "minutes": 63
    },
    "category": "Statistics",
-   "text": "Fritz beat Musetti for the 4th time in 9 meetings, 6–4, 6–2 in the SF. In the second set, Fritz won 5 games in a row from 0–1 down. On serve, Fritz lost 9 points (6 on his first serve, 3 on his second) and won 77% of his second-serve points (10 of 13), compared with his 53% average on hard over the last 52 weeks. Against the second serve, Fritz was sharp, winning 67% of the points (10 of 15), compared with his usual 53%.\n\nFritz: W: 26 / UE: 12 | DR: 2.10\n\nMusetti: W: 12 / UE: 9 | DR: 0.48",
+   "text": "Fritz beat Musetti for the 4th time in 9 meetings, 6–4, 6–2 in the SF. In the second set, Fritz won 5 games in a row from 0–1 down. On serve, Fritz lost 9 points (6 on his first serve, 3 on his second) and won 77% of his second-serve points (10 of 13), compared with his 53% average on hard over the last 52 weeks. Against the second serve, Fritz was sharp, winning 67% of the points (10 of 15), compared with his usual 53%. Fritz ended with a 9.4 serve quality and 41% unreturned serves. Musetti ended with an 8.0 serve quality and 35% unreturned serves.\n\nFritz: performance rating 9.4 | W: 26 / UE: 12 | DR: 2.10\n\nMusetti: performance rating 7.8 | W: 12 / UE: 9 | DR: 0.48",
    "baseText": "Fritz beat Musetti for the 4th time in 9 meetings, 6–4, 6–2 in the SF. In the second set, Fritz won 5 games in a row from 0–1 down. On serve, Fritz lost 9 points (6 on his first serve, 3 on his second) and won 77% of his second-serve points (10 of 13), compared with his 53% average on hard over the last 52 weeks. Against the second serve, Fritz was sharp, winning 67% of the points (10 of 15), compared with his usual 53%.",
    "rating": [
-    "Fritz: W: 26 / UE: 12 | DR: 2.10",
-    "Musetti: W: 12 / UE: 9 | DR: 0.48"
+    "Fritz: performance rating 9.4 | W: 26 / UE: 12 | DR: 2.10",
+    "Musetti: performance rating 7.8 | W: 12 / UE: 9 | DR: 0.48"
    ],
+   "shotStats": {
+    "p1": {
+     "performance": 9.4,
+     "serveQuality": 9.4,
+     "unreturnedPct": 41,
+     "firstInPct": 71,
+     "firstWonPct": 81,
+     "secondWonPct": 77,
+     "secondSpeed": 176,
+     "returnQuality": 7.3,
+     "fhWinners": 13,
+     "bhWinners": 6,
+     "fhUnforced": 6,
+     "bhUnforced": 5,
+     "forcedErrors": 14,
+     "baselineWon": 21,
+     "under9Won": 53,
+     "over9Won": 4,
+     "bpWon": [
+      3,
+      4
+     ],
+     "netWon": [
+      11,
+      14
+     ]
+    },
+    "p2": {
+     "performance": 7.8,
+     "serveQuality": 8,
+     "unreturnedPct": 35,
+     "firstInPct": 70,
+     "firstWonPct": 69,
+     "secondWonPct": 33,
+     "secondSpeed": 152,
+     "returnQuality": 8,
+     "fhWinners": 7,
+     "bhWinners": 2,
+     "fhUnforced": 5,
+     "bhUnforced": 3,
+     "forcedErrors": 22,
+     "baselineWon": 14,
+     "under9Won": 37,
+     "over9Won": 1,
+     "bpWon": [
+      0,
+      0
+     ],
+     "netWon": [
+      2,
+      8
+     ]
+    },
+    "postedAt": "2026-11-13T17:18:33.000Z",
+    "readAt": "2026-11-13T20:26:31.907Z",
+    "sourceName": "ATP broadcast match statistics (via @ATP_Entry)",
+    "sourceUrl": "https://x.com/ATP_Entry/status/2121291639104639383",
+    "agreed": "6 of 6 serve figures within 3 points of ours; set scores and break points equal",
+    "wue": {
+     "compared": 4,
+     "maxDiff": 0
+    }
+   },
    "templateText": "T. Fritz beat L. Musetti for the 4th time in 9 meetings, 6-4, 6-2 in the semi-finals. T. Fritz won 5 games in a row from 0-1 down in the second set. T. Fritz lost only 9 points on serve (6 on his first serve, 3 on his second) and won 77% of his second-serve points (10 of 13), compared with his 53% average on hard over the last 52 weeks. T. Fritz won 67% of the points against the second serve (10 of 15), compared with his usual 53%.",
    "voice": {
     "version": 5,
@@ -173,8 +236,10 @@
    "sourceUrl": "pbp/12179838.json",
    "language": "en",
    "translated": false,
-   "sourceHash": "c89b9355a6973315",
-   "publishedAt": "2026-11-13T17:40:01.077Z"
+   "sourceHash": "2c9ea1aa3ef83c92",
+   "publishedAt": "2026-11-13T17:40:01.077Z",
+   "revisedAt": "2026-11-13T20:41:38.767Z",
+   "revision": 1
   },
   {
    "id": "quote-0e7286586d2397",
@@ -446,12 +511,75 @@
     "minutes": 106
    },
    "category": "Statistics",
-   "text": "Tirante beat Tabilo for the 1st time in 3 meetings, 7–5, 7–6 in the SF. Set 2 went to a tiebreak, won by Tirante. Tirante got broken when serving for the match. He served well with 14 aces and won 90% of his first-serve points (36 of 40). Tirante hit 35 winners while making 20 unforced errors.\n\nPhysically, it is something to follow. Tirante took a medical timeout at 1–2 in the second set. We do not know the reason. Something to follow up for the next round.\n\nTirante: W: 35 / UE: 20 | DR: 1.16\n\nTabilo: W: 25 / UE: 23 | DR: 0.86",
+   "text": "Tirante beat Tabilo for the 1st time in 3 meetings, 7–5, 7–6 in the SF. Set 2 went to a tiebreak, won by Tirante. Tirante got broken when serving for the match. He served well with 14 aces and won 90% of his first-serve points (36 of 40). Tirante hit 35 winners while making 20 unforced errors. Tirante ended with an 8.8 serve quality and 37% unreturned serves.\n\nPhysically, it is something to follow. Tirante took a medical timeout at 1–2 in the second set. We do not know the reason. Something to follow up for the next round.\n\nTirante: performance rating 8.0 | W: 35 / UE: 20 | DR: 1.16\n\nTabilo: performance rating 7.6 | W: 25 / UE: 23 | DR: 0.86",
    "baseText": "Tirante beat Tabilo for the 1st time in 3 meetings, 7–5, 7–6 in the SF. Set 2 went to a tiebreak, won by Tirante. Tirante got broken when serving for the match. He served well with 14 aces and won 90% of his first-serve points (36 of 40). Tirante hit 35 winners while making 20 unforced errors.",
    "rating": [
-    "Tirante: W: 35 / UE: 20 | DR: 1.16",
-    "Tabilo: W: 25 / UE: 23 | DR: 0.86"
+    "Tirante: performance rating 8.0 | W: 35 / UE: 20 | DR: 1.16",
+    "Tabilo: performance rating 7.6 | W: 25 / UE: 23 | DR: 0.86"
    ],
+   "shotStats": {
+    "p1": {
+     "performance": 7.6,
+     "serveQuality": 8.3,
+     "unreturnedPct": 29,
+     "firstInPct": 71,
+     "firstWonPct": 68,
+     "secondWonPct": 60,
+     "secondSpeed": 149,
+     "returnQuality": 7.3,
+     "fhWinners": 11,
+     "bhWinners": 9,
+     "fhUnforced": 15,
+     "bhUnforced": 8,
+     "forcedErrors": 16,
+     "baselineWon": 30,
+     "under9Won": 63,
+     "over9Won": 4,
+     "bpWon": [
+      1,
+      4
+     ],
+     "netWon": [
+      13,
+      22
+     ]
+    },
+    "p2": {
+     "performance": 8,
+     "serveQuality": 8.8,
+     "unreturnedPct": 37,
+     "firstInPct": 56,
+     "firstWonPct": 90,
+     "secondWonPct": 45,
+     "secondSpeed": 163,
+     "returnQuality": 6.2,
+     "fhWinners": 13,
+     "bhWinners": 8,
+     "fhUnforced": 10,
+     "bhUnforced": 10,
+     "forcedErrors": 22,
+     "baselineWon": 31,
+     "under9Won": 66,
+     "over9Won": 8,
+     "bpWon": [
+      2,
+      2
+     ],
+     "netWon": [
+      9,
+      11
+     ]
+    },
+    "postedAt": "2026-11-13T15:32:35.000Z",
+    "readAt": "2026-11-13T20:26:31.907Z",
+    "sourceName": "ATP broadcast match statistics (via @ATP_Entry)",
+    "sourceUrl": "https://x.com/ATP_Entry/status/2121264974647509088",
+    "agreed": "6 of 6 serve figures within 3 points of ours; set scores and break points equal",
+    "wue": {
+     "compared": 4,
+     "maxDiff": 0
+    }
+   },
    "mto": [
     "Physically, it is something to follow.",
     "Tirante took a medical timeout at 1–2 in the second set.",
@@ -531,10 +659,10 @@
    "sourceUrl": "pbp/12179750.json",
    "language": "en",
    "translated": false,
-   "sourceHash": "c470affef0f84502",
+   "sourceHash": "f8f552b20504d1c2",
    "publishedAt": "2026-11-13T15:26:52.221Z",
-   "revisedAt": "2026-11-13T18:02:25.921Z",
-   "revision": 1
+   "revisedAt": "2026-11-13T20:41:38.767Z",
+   "revision": 2
   },
   {
    "id": "quote-691a82bac9d8b7",
