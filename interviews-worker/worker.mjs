@@ -115,23 +115,23 @@ if (process.env.DISCOVER_URL) {
   const icons = await ev(`(() => { const v = document.querySelector('video').getBoundingClientRect(); return [...document.querySelectorAll('button, [role=button], a, div[class*=button], li')].map((e) => { const r = e.getBoundingClientRect(); return { cls: String(e.className).slice(0, 90), aria: e.getAttribute('aria-label') || e.title || '', x: Math.round(r.x + r.width / 2), y: Math.round(r.y + r.height / 2), w: Math.round(r.width), h: Math.round(r.height) }; }).filter((o) => o.w > 12 && o.w < 90 && o.h > 12 && o.h < 90 && o.x > v.x + v.width * 0.8 && o.y > v.y && o.y < v.y + v.height); })()`);
   console.log('discover: right-edge controls', JSON.stringify(icons));
   const before = reqs.length;
-  const first = (icons || []).find((o) => /stat|chart|insight/i.test(o.cls + ' ' + o.aria)) || (icons || [])[0];
-  if (first) { await clickXY(first.x, first.y); console.log('discover: clicked', JSON.stringify(first)); }
-  await sleep(4000);
-  const panelOpen = await ev(`/live stats|shot quality|head 2 head/i.test(document.body.innerText || '') || [...document.querySelectorAll('iframe')].length`);
-  console.log('discover: after first click, panel words / iframes:', JSON.stringify(panelOpen), JSON.stringify(await ev(`[...document.querySelectorAll('iframe')].map((f) => (f.src || '').slice(0, 160) + ' ' + Math.round(f.getBoundingClientRect().width) + 'x' + Math.round(f.getBoundingClientRect().height))`)));
-  if (!(await ev(`/live stats|head 2 head/i.test(document.body.innerText || '')`))) {
-    await send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: vr[0] + vr[2] / 2 + 3, y: vr[1] + vr[3] / 2 + 3 }); await sleep(700);
-    await clickXY(vr[0] + vr[2] * 0.972, vr[1] + vr[3] * 0.415); console.log('discover: clicked the bars position'); await sleep(4000); await shot('d1b_bars_position');
+  // The stats controls live in an overlay iframe over the player (same origin): bars icon at ~93% across, ~28% down.
+  const DOCS = `[document, ...[...document.querySelectorAll('iframe')].map((f) => { try { return f.contentDocument; } catch (e) { return null; } }).filter(Boolean)]`;
+  const frameText = async () => ev(`(() => ${DOCS}.map((d) => (d.body ? d.body.innerText : '').replace(/\\s+/g, ' ').slice(0, 6000)))()`);
+  const findIn = async (re) => ev(`(() => { const fr = [null, ...document.querySelectorAll('iframe')]; for (const f of fr) { let d; try { d = f ? f.contentDocument : document; } catch (e) { continue; } if (!d) continue; const off = f ? f.getBoundingClientRect() : { x: 0, y: 0 }; const e = [...d.querySelectorAll('body *')].find((x) => x.children.length === 0 && ${re}.test((x.textContent || '').trim()) && x.getBoundingClientRect().width > 0); if (e) { const r = e.getBoundingClientRect(); return [off.x + r.x + r.width / 2, off.y + r.y + r.height / 2]; } } return null; })()`);
+  for (const fx of [0.933, 0.95, 0.972]) {
+    await send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: vr[0] + vr[2] / 2 + fx * 10, y: vr[1] + vr[3] / 2 }); await sleep(700);
+    await clickXY(vr[0] + vr[2] * fx, vr[1] + vr[3] * 0.281); await sleep(4000);
+    const t = (await frameText()) || [];
+    console.log('discover: clicked bars at', fx, '· panel open', /live stats|head 2 head|insights/i.test(t.join(' ')));
+    if (/live stats|head 2 head|insights/i.test(t.join(' '))) break;
   }
-  await sleep(5000); await shot('d1_after_first_icon');
-  const dump = async (label) => { const t = await ev(`(() => [...document.querySelectorAll('body *')].filter((e) => e.children.length === 0 && /shot quality|balance of power|steal|conversion|insights|live stats|head 2 head/i.test(e.textContent || '')).map((e) => { let p = e; for (let i = 0; i < 6 && p.parentElement; i++) p = p.parentElement; return String(p.className).slice(0, 60) + ' :: ' + (p.innerText || '').replace(/\\s+/g, ' ').slice(0, 900); }).filter((v, i, a) => a.indexOf(v) === i).slice(0, 4))()`); console.log('discover: ' + label, JSON.stringify(t)); };
-  await dump('panel text after first icon');
-  const ins = await ev(`(() => { const e = [...document.querySelectorAll('body *')].find((x) => x.children.length === 0 && /^insights$/i.test((x.textContent || '').trim()) && x.getBoundingClientRect().width > 0); if (!e) return null; const r = e.getBoundingClientRect(); return [r.x + r.width / 2, r.y + r.height / 2]; })()`);
+  await shot('d1_panel');
+  console.log('discover: STATS tab text', JSON.stringify(await frameText()));
+  const ins = await findIn('/^insights$/i');
   console.log('discover: INSIGHTS tab at', JSON.stringify(ins));
-  if (ins) { await clickXY(ins[0], ins[1]); await sleep(5000); await shot('d2_insights'); await dump('panel text on INSIGHTS'); }
-  const full = await ev(`(() => { const e = [...document.querySelectorAll('body *')].find((x) => x.children.length === 0 && /^shot quality$/i.test((x.textContent || '').trim())); if (!e) return null; let p = e; for (let i = 0; i < 8 && p.parentElement && (p.innerText || '').length < 1500; i++) p = p.parentElement; return String(p.className).slice(0, 80) + ' :: ' + p.innerText.replace(/\\s+/g, ' ').slice(0, 2500); })()`);
-  console.log('discover: INSIGHTS full text', JSON.stringify(full));
+  if (ins) { await clickXY(ins[0], ins[1]); await sleep(5000); await shot('d2_insights'); console.log('discover: INSIGHTS text', JSON.stringify(await frameText())); }
+  console.log('discover: iframes', JSON.stringify(await ev(`[...document.querySelectorAll('iframe')].map((f) => (f.src || f.id || f.className || '').slice(0, 160) + ' ' + Math.round(f.getBoundingClientRect().width) + 'x' + Math.round(f.getBoundingClientRect().height) + ' sameOrigin=' + (() => { try { return !!f.contentDocument; } catch (e) { return false; } })())`)));
   console.log('discover: requests after opening', JSON.stringify([...new Set(reqs.slice(before))].slice(0, 60)));
   spawnSync('tar', ['-czf', '/tmp/frames.tgz', '-C', '/tmp', 'frames']);
   console.log('FRAMES_READY ' + (fs.existsSync('/tmp/frames.tgz') ? fs.statSync('/tmp/frames.tgz').size : 0));
