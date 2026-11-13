@@ -94,11 +94,26 @@ if (process.env.FRAME_CLIPS) {
     let dur = 0;
     for (let k = 0; k < 80; k++) { dur = await ev('(document.querySelector("video")||{}).duration || 0').catch(() => 0); if (dur > 1) break; await sleep(500); }
     if (!dur) { console.log('  FAILED · no playable video'); continue; }
-    await ev(`(() => { const v = document.querySelector("video"); v.muted = true; v.currentTime = Math.max(0, v.duration - ${TAIL}); v.play(); return true; })()`);
-    let ready = false;
-    for (let k = 0; k < 90 && !ready; k++) { await sleep(1000); ready = await ev('(() => { const v = document.querySelector("video"); return !v.seeking && v.readyState >= 3; })()').catch(() => false); }
-    console.log(`  duration ${Math.round(dur)}s · seek ${ready ? 'ok' : 'NOT ready'}`);
-    await ev('(() => { const v = document.querySelector("video"); v.scrollIntoView({ block: "center" }); return true; })()');
+    // Seek the way a viewer does: show the controls, click the player's own seek bar. Setting the video element's time
+    // directly leaves the player frozen (it never fetches the new position).
+    await ev('(() => { const v = document.querySelector("video"); v.muted = true; v.play(); v.scrollIntoView({ block: "center" }); return true; })()');
+    await sleep(4000);
+    const target = Math.max(0, dur - TAIL);
+    let ready = false, at = 0;
+    for (let attempt = 0; attempt < 4 && !ready; attempt++) {
+      const vr = await ev('(() => { const r = document.querySelector("video").getBoundingClientRect(); return [r.x, r.y, r.width, r.height]; })()');
+      await send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: vr[0] + vr[2] / 2, y: vr[1] + vr[3] / 2 });
+      await sleep(600);
+      const sb = await ev('(() => { const e = document.querySelector(".bmpui-seekbar") || document.querySelector(".bmpui-ui-seekbar"); if (!e) return null; const r = e.getBoundingClientRect(); return [r.x, r.y, r.width, r.height]; })()');
+      if (!sb || sb[2] < 50) { console.log('  seek bar not found', JSON.stringify(sb)); await sleep(2000); continue; }
+      const x = sb[0] + sb[2] * (target / dur), y = sb[1] + sb[3] / 2;
+      await send('Input.dispatchMouseEvent', { type: 'mouseMoved', x, y });
+      await send('Input.dispatchMouseEvent', { type: 'mousePressed', x, y, button: 'left', clickCount: 1 });
+      await send('Input.dispatchMouseEvent', { type: 'mouseReleased', x, y, button: 'left', clickCount: 1 });
+      for (let k = 0; k < 45; k++) { await sleep(1000); const st = await ev('(() => { const v = document.querySelector("video"); return [v.currentTime, v.seeking, v.readyState]; })()').catch(() => null); if (st) { at = st[0]; if (Math.abs(st[0] - target) < 240 && !st[1] && st[2] >= 3) { ready = true; break; } } }
+      console.log(`  seek attempt ${attempt + 1}: at ${Math.round(at)}s of ${Math.round(dur)}s · ${ready ? 'ok' : 'not yet'}`);
+    }
+    await ev('(() => { const v = document.querySelector("video"); if (v.paused) v.play(); return true; })()');
     let i = 0;
     for (;;) {
       const st = await ev('(() => { const v = document.querySelector("video"); const r = v.getBoundingClientRect(); return [v.currentTime, v.ended, r.x, r.y, r.width, r.height]; })()').catch(() => null);
