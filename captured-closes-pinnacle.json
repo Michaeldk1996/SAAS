@@ -1,17 +1,17 @@
 {
- "generatedAt": "2026-11-13T13:41:44.864Z",
+ "generatedAt": "2026-11-13T14:10:57.222Z",
  "source": "matches.json git history: oddsMovement.books.Pinnacle (Oddspapi pinnacle, to 2026-09-02) and oddsMovement.chart.books[\"Pinnacle +30s\"] (Oddspapi pinnacle+30, from 2026-09-23)",
  "rule": "each side = last tick at or before the actual start (the earlier of Oddspapi trueStart and the card-state start: Oddspapi, the live-flip lower bound, the Bet105 switch or the first point — founder 2026-11-08; a cut at Oddspapi start before a verified start counts at the verified start only when the same tick, seen within 60 min and within 1.5pp of the Bet105 close, else it stays held back); both sides required; dropped when no unique actual start. seenAt = our last capture read before the start that confirmed the close (founder 2026-10-28); age = start - (seenAt or at)",
  "scannedThrough": {
-  "commit": "0c988b8fc19fa7a982016973a5809fd7af8eb5ea",
-  "at": "2026-11-13T13:30:13Z"
+  "commit": "ef7f39793fbabcbfa478af9759205b9dc7459b6e",
+  "at": "2026-11-13T14:00:23Z"
  },
- "commitsScanned": 6767,
+ "commitsScanned": 6771,
  "lastRun": {
-  "from": "2026-11-13T01:45:11Z",
-  "snapshots": 20,
-  "added": 1,
-  "replaced": 0,
+  "from": "2026-11-13T13:30:13Z",
+  "snapshots": 5,
+  "added": 0,
+  "replaced": 1,
   "seenBackfilled": 0,
   "earlierCutBackfilled": 0,
   "series": 18,
@@ -16038,9 +16038,9 @@
    "p2Key": 366,
    "p1Name": "A. Tabilo",
    "p2Name": "T. A. Tirante",
-   "p1": 1.704,
-   "p2": 2.26,
-   "at": "2026-11-13T04:29:32.876Z",
+   "p1": 1.662,
+   "p2": 2.36,
+   "at": "2026-11-13T12:45:53.756Z",
    "trueStart": "2026-11-13T13:10:41.000Z",
    "startSource": "first-point",
    "book": "Pinnacle +30s",
@@ -16050,8 +16050,7 @@
    "o1": 1.775,
    "o2": 2.15,
    "oAt": "2026-11-12T20:46:37.793Z",
-   "winner": null,
-   "seenAt": "2026-11-13T04:56:35.000Z"
+   "winner": null
   }
  ]
 }
