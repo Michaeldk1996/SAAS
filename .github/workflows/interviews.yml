@@ -75,8 +75,8 @@ jobs:
       - name: Commit
         if: steps.list.outputs.count != '0'
         run: |
-          if [ -z "$(git status --porcelain -- news-quotes/inbox-ttv.json news-quotes/ttv-state.json)" ]; then echo "nothing to commit"; exit 0; fi
-          git add -- news-quotes/inbox-ttv.json news-quotes/ttv-state.json
+          if [ -z "$(git status --porcelain -- news-quotes/inbox-ttv.json news-quotes/ttv-state.json news-quotes/commentary.json)" ]; then echo "nothing to commit"; exit 0; fi
+          git add -- news-quotes/inbox-ttv.json news-quotes/ttv-state.json; [ -f news-quotes/commentary.json ] && git add -- news-quotes/commentary.json
           git -c user.name='bsp-bot' -c user.email='bsp-bot@users.noreply.github.com' commit -q -m "chore(news): Tennis TV interview answers [skip ci]"
           for attempt in 1 2 3 4; do
             git push --quiet origin HEAD:main && exit 0

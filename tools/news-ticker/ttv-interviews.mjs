@@ -11,6 +11,8 @@ import { fileURLToPath } from 'node:url';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '..', '..');
+export const HL_FEED = 'https://api.tennistv.com/content/atpmedia/VIDEO/EN?tagNames=video-type:match-highlights&pageSize=30';
+export const MAX_HIGHLIGHTS = 2;   // per run: a highlights clip plays for ten minutes
 export const FEED = 'https://api.tennistv.com/content/atpmedia/VIDEO/EN?tagNames=video-type:interviews&pageSize=30';
 export const CLIP_DAYS = 3;        // a clip older than this is never picked up
 export const MAX_CLIPS = 8;        // per run
@@ -72,6 +74,72 @@ export function pickClips(feed, state, cards, nowIso) {
   }
   out.sort((a, b) => a.date.localeCompare(b.date));
   return { clips: out.slice(0, MAX_CLIPS), skipped };
+}
+
+// "Stockholm 2026 QF Musetti Humbert Highlights" -> the finished match of those two players on our board (exactly one).
+export function resolveHighlights(clip, cards) {
+  const m = /^(.+?)\s+(20\d\d)\s+(R\d|QF|SF|F|Final|RR)\s+(.+?)\s+highlights\s*$/i.exec(String(clip.title || '').trim());
+  if (!m) return null;
+  const tour = fold(m[1]), names = words(m[4]);
+  const hits = (cards || []).filter((c) => fold(c.tour).includes(tour) && c.finalScore && c.finalScore.winner && !c.walkover
+    && ['p1', 'p2'].every((k) => { const sur = words(c[k]).split(' ').filter((x) => x.length > 1).join(' '); return sur && (' ' + names + ' ').includes(' ' + sur + ' '); }));
+  if (hits.length !== 1) return null;
+  const c = hits[0];
+  return { eventKey: String(c.id).split('-').slice(1).join('-'), p1: c.p1, p2: c.p2, tournament: m[1].trim(), round: m[3].toUpperCase() };
+}
+export function pickHighlights(feed, state, cards, nowIso) {
+  const out = [], now = Date.parse(nowIso);
+  for (const c of (feed && feed.content) || []) {
+    const tags = (c.tags || []).map((x) => x.label);
+    if (!tags.includes('video-type:match-highlights') || !tags.includes('match-type:singles')) continue;
+    const ts = Date.parse(c.date);
+    if (!Number.isFinite(ts) || now - ts > CLIP_DAYS * 86400000) continue;
+    const st = (state.clips || {})['hl' + c.id];
+    if (st && (st.status === 'done' || (st.tries || 0) >= MAX_TRIES)) continue;
+    const who = resolveHighlights(c, cards);
+    if (!who) continue;
+    out.push({ id: 'hl' + c.id, kind: 'highlights', url: `https://www.tennistv.com/videos/${c.id}/${c.titleUrlSegment}`, slug: `${who.p1} v ${who.p2} highlights`, round: who.round,
+      title: c.title, date: new Date(ts).toISOString(), eventKey: who.eventKey, p1: who.p1, p2: who.p2, tournament: who.tournament });
+  }
+  out.sort((a, b) => a.date.localeCompare(b.date));
+  return out.slice(0, MAX_HIGHLIGHTS);
+}
+
+// What the commentators said, in two or three plain sentences. OURS, a summary, never a quotation. The check: every
+// number in it is in the transcript, and every capitalised name is in the transcript or is one of the two players.
+export function commentaryOk(text, transcript, players) {
+  const t = String(text || '').trim();
+  if (t.length < 40 || t.length > 420 || /["“”]/.test(t)) return false;
+  const hay = fold(transcript), allowed = fold((players || []).join(' '));
+  for (const n of t.match(/\d+(?:[.,]\d+)?/g) || []) if (!hay.includes(n)) return false;
+  const re = /(^|[.!?]\s+)?(\p{Lu}[\p{L}'’-]+)/gu;
+  let m;
+  while ((m = re.exec(t))) {
+    if (m[1] !== undefined || m.index === 0) continue;                 // a sentence opener is not a name
+    const w = fold(m[2]);
+    if (!hay.includes(w) && !allowed.includes(w)) return false;
+  }
+  return true;
+}
+const HL_SYSTEM = `You are given a rough transcript of TV commentary over the highlights of one tennis match (it jumps between points and has mis-heard words). Write what the commentators said about the match in two or three plain sentences for a news feed.
+Rules:
+- Only what the commentators actually said: how each player played, turning points, physical problems, reasons they gave. Nothing from your own knowledge.
+- Plain everyday English, no quotation marks, no hype. Refer to the players by surname.
+- Use a number or a name only if it is clearly in the transcript. If a word looks mis-heard, leave that part out.
+- If the transcript carries nothing worth reporting, reply with exactly: NONE`;
+export async function summariseCommentary(transcript, players, apiKey = process.env.ANTHROPIC_API_KEY, fetchFn = fetch) {
+  if (!apiKey) return { status: 'no-key', text: null };
+  const body = { model: MODEL, max_tokens: 600, output_config: { effort: 'low' }, system: HL_SYSTEM,
+    messages: [{ role: 'user', content: `Players: ${players.join(' v ')}\n\nCommentary transcript:\n${String(transcript).slice(0, 12000)}` }] };
+  let res;
+  try { res = await fetchFn(API_URL, { method: 'POST', headers: { 'content-type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' }, body: JSON.stringify(body) }); }
+  catch (e) { return { status: 'api-error', text: null, detail: String(e).slice(0, 200) }; }
+  if (!res.ok) return { status: 'api-error', text: null, detail: `HTTP ${res.status}` };
+  const data = await res.json();
+  const block = (data.content || []).find((b) => b.type === 'text');
+  const out = block ? String(block.text).trim() : '';
+  if (out === 'NONE') return { status: 'nothing', text: null };
+  return commentaryOk(out, transcript, players.flatMap((p) => String(p).split(/\s+/))) ? { status: 'ok', text: out, model: MODEL } : { status: 'failed-check', text: null };
 }
 
 // Mis-hearings the transcriber makes on tennis words. Applied to the transcript before anything reads it; listed here
@@ -167,21 +235,34 @@ async function main() {
     const feed = await (await fetch(FEED, { headers: { 'user-agent': 'Mozilla/5.0 (stennisfy news ticker)' } })).json();
     let cards = await (await fetch(BASE + '/matches.json')).json(); cards = Array.isArray(cards) ? cards : cards.matches || [];
     const r = pickClips(feed, state, cards, nowIso);
-    fs.writeFileSync(arg('out', '/tmp/clips.json'), JSON.stringify(r.clips));
-    console.log(`ttv interviews: ${r.clips.length} new clip(s) · skipped ${JSON.stringify(r.skipped)}`);
+    let hl = [];
+    try { hl = pickHighlights(await (await fetch(HL_FEED, { headers: { 'user-agent': 'Mozilla/5.0 (stennisfy news ticker)' } })).json(), state, cards, nowIso); }
+    catch (e) { console.log('ttv highlights: the feed could not be read (' + String(e.message || e).slice(0, 80) + ')'); }
+    fs.writeFileSync(arg('out', '/tmp/clips.json'), JSON.stringify(r.clips.concat(hl)));
+    console.log(`ttv interviews: ${r.clips.length} new clip(s) · skipped ${JSON.stringify(r.skipped)} · ${hl.length} highlights clip(s) for commentary`);
     r.clips.forEach((c) => console.log(`  ${c.id} ${c.title} -> ${c.slug} (${c.speakerKey})`));
+    hl.forEach((c) => console.log(`  ${c.id} ${c.title} -> match ${c.eventKey}`));
     return;
   }
   if (mode === 'ingest') {
     const clips = rd(arg('clips', '/tmp/clips.json'), []);
     const res = parseWorkerLog(fs.readFileSync(arg('log', '/tmp/logs.txt'), 'utf8'));
     const byUrl = new Map(((res && res.results) || []).map((x) => [x.url, x]));
-    let rows = [], done = 0, failed = 0, dropped = 0;
+    let rows = [], done = 0, failed = 0, dropped = 0, commented = 0;
+    const commentaryFile = path.join(DIR, 'news-quotes/commentary.json');
+    const commentary = rd(commentaryFile, { byMatch: {} });
     for (const c of clips) {
       const st = state.clips[c.id] || (state.clips[c.id] = { tries: 0 });
       st.tries = (st.tries || 0) + 1; st.at = nowIso; st.title = c.title;
       const r = byUrl.get(c.url);
       if (!r || !r.ok || !r.transcript) { st.status = 'failed'; st.error = r ? r.error : 'no result from the worker'; failed++; continue; }
+      if (c.kind === 'highlights') {
+        const cm = await summariseCommentary(correct(r.transcript), [c.p1, c.p2]);
+        if (cm.status === 'no-key' || cm.status === 'api-error') { st.status = 'failed'; st.error = 'commentary: ' + cm.status + (cm.detail ? ' ' + cm.detail : ''); failed++; continue; }
+        if (cm.status === 'ok') { commentary.byMatch[c.eventKey] = { text: cm.text, sourceUrl: c.url, sourceName: 'Tennis TV highlights commentary', clipPublishedAt: c.date, at: nowIso }; commented++; }
+        st.status = 'done'; st.commentary = cm.status; delete st.error; done++;
+        continue;
+      }
       const sp = await splitInterview(correct(r.transcript), c.slug);
       if (sp.status !== 'ok') { st.status = 'failed'; st.error = 'split: ' + sp.status + (sp.detail ? ' ' + sp.detail : ''); failed++; continue; }
       rows = rows.concat(rowsFor(c, sp.answers, nowIso)); dropped += sp.dropped || 0;
@@ -189,8 +270,10 @@ async function main() {
     }
     const cut = Date.parse(nowIso) - 30 * 86400000;
     for (const k of Object.keys(state.clips)) if (Date.parse(state.clips[k].at) < cut) delete state.clips[k];
+    for (const k of Object.keys(commentary.byMatch)) if (Date.parse(commentary.byMatch[k].at) < cut) delete commentary.byMatch[k];
+    if (commented) { commentary.updatedAt = nowIso; wr(commentaryFile, commentary); }
     wr(inboxFile, mergeInbox(rd(inboxFile, null), rows, nowIso)); wr(stateFile, state);
-    console.log(`ttv interviews: ${done} clip(s) done, ${failed} failed, ${rows.length} answer(s) added, ${dropped} answer(s) dropped by the word check`);
+    console.log(`ttv interviews: ${done} clip(s) done, ${failed} failed, ${rows.length} answer(s) added, ${dropped} answer(s) dropped by the word check, ${commented} commentary summar${commented === 1 ? 'y' : 'ies'}`);
     if (failed) for (const c of clips) if (state.clips[c.id].status === 'failed') console.log(`  FAILED ${c.id} ${c.title}: ${state.clips[c.id].error} (try ${state.clips[c.id].tries} of ${MAX_TRIES})`);
     return;
   }

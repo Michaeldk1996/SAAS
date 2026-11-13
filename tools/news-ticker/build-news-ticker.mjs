@@ -101,6 +101,7 @@ export async function build({ nowIso, times, rewrite = null, apiKey = process.en
   const hidden = (x) => x.type === 'quote' && off.has(x.sourceName);
   const summary = { voice: { rewritten: 0, reused: 0, notRewritten: 0, errors: 0, lastError: null, tokens: { input: 0, output: 0 }, reportsFullyInVoice: 0, reportsTotal: 0, sentencesPassed: 0, sentencesTotal: 0 }, tournaments: 0, finished: 0, reports: 0, reportErrors: [], status: 0, quotes: 0, added: 0, revised: 0, unchanged: 0, filesWritten: [], withObservedEnd: 0, withDuration: 0, hiddenByOffSwitch: 0 };
   const touched = [];
+  const commentaryByMatch = ((readJson('news-quotes/commentary.json') || {}).byMatch) || {};   // what the TV commentators said (ttv-interviews.mjs)
   const mtoByMatch = ((readJson('mto-matches.json') || {}).matches) || {};   // absent file = no timeout sentence (never a guess)
   for (const g of groups.values()) {
     const file = fileOf(g.key, g.season);
@@ -147,12 +148,14 @@ export async function build({ nowIso, times, rewrite = null, apiKey = process.en
         const mto = mtoSentences(m, mtoByMatch[ek(m)], quoteItems);
         const baseText = text;
         if (mto.length) { text = `${text} ${mto.join(' ')}`; summary.withMto = (summary.withMto || 0) + 1; }
+        const cm = commentaryByMatch[ek(m)];
+        if (cm && cm.text) { text = `${text} From the commentary: ${cm.text}`; summary.withCommentary = (summary.withCommentary || 0) + 1; }
         if (obs && obs.endedAt) summary.withObservedEnd++;
         if (rep.used.duration) summary.withDuration++;
         fresh.push({ id, type: 'report', playerId: String(m[w + 'Key']), opponentId: String(m[l + 'Key']), player: m[w], opponent: m[l],
           tournament: g.name, tournamentKey: g.key, season: g.season, stage: stage || 'main draw', round: rep.fields.round, eventKey: ek(m),
           timestamp: obs && obs.endedAt ? obs.endedAt : startIso(m), timestampKind: obs && obs.endedAt ? 'observed' : 'scheduled',
-          observed: obs || null, category: 'Statistics', text, ...(mto.length ? { baseText, mto } : {}), ...(voice ? { templateText: rep.text, voice } : {}), fields: rep.fields,
+          observed: obs || null, category: 'Statistics', text, ...(mto.length || (cm && cm.text) ? { baseText } : {}), ...(mto.length ? { mto } : {}), ...(cm && cm.text ? { commentary: { text: cm.text, sourceName: cm.sourceName, sourceUrl: cm.sourceUrl } } : {}), ...(voice ? { templateText: rep.text, voice } : {}), fields: rep.fields,
           sourceName: 'Stennisfy match data (api-tennis box score and point-by-point)', sourceUrl: `pbp/${ek(m)}.json`, language: 'en', translated: false });
         summary.reports++;
       } catch (e) { summary.reportErrors.push(`${m.id}: ${e && e.message}`); }

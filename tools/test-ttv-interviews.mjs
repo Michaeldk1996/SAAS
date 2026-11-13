@@ -1,7 +1,7 @@
 // Tennis TV on-court interviews, automatic (tools/news-ticker/ttv-interviews.mjs + .github/workflows/interviews.yml).
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import { parseTitle, resolveClip, pickClips, correct, checkAnswer, splitInterview, rowsFor, mergeInbox, parseWorkerLog, MAX_TRIES, CLIP_DAYS } from './news-ticker/ttv-interviews.mjs';
+import { resolveHighlights, pickHighlights, commentaryOk, summariseCommentary, MAX_HIGHLIGHTS, parseTitle, resolveClip, pickClips, correct, checkAnswer, splitInterview, rowsFor, mergeInbox, parseWorkerLog, MAX_TRIES, CLIP_DAYS } from './news-ticker/ttv-interviews.mjs';
 let n = 0; const ok = async (name, fn) => { await fn(); n++; console.log('  ok  ' + name); };
 const cards = [{ tour: 'ATP Stockholm', p1: 'T. A. Tirante', p1Key: 366, p2: 'A. Shevchenko', p2Key: 566 }, { tour: 'ATP Stockholm', p1: 'H. Rune', p1Key: 437, p2: 'T. Fritz', p2Key: 2832 },
   { tour: 'ATP Stockholm', p1: 'J. M. Cerundolo', p1Key: 388, p2: 'F. Cerundolo', p2Key: 9999 }, { tour: 'ATP Metz', p1: 'A. Rune', p1Key: 1, p2: 'B. Other', p2Key: 2 }];
@@ -71,5 +71,32 @@ await ok('wiring: every 5 minutes from main, keys only from Actions secrets, ans
   assert.ok(!/TENNISTV_|sk-ant/.test(src), 'no credential in the script');
   const wk = fs.readFileSync(new URL('../interviews-worker/worker.mjs', import.meta.url), 'utf8');
   assert.ok(/playback did not finish/.test(wk) && /sign-in attempt/.test(wk), 'the worker keeps only a clip that played to its end, and retries the sign-in');
+});
+// ---- commentary (founder 2026-11-13: "find what commentators say of a game and summarise it simply") ----
+const HT = 'So welcome back everyone. Still got that little bit of strapping underneath the right knee. Absolutely remarkable defending from Lorenzo Musetti. He had 4 break points he could not take them. Still has not faced a break point. Great set of tennis from Humbert.';
+await ok('highlights: the clip is tied to the one finished match of those two players; a walkover or an unfinished match is not a match', () => {
+  const cs = [{ id: 'past-12179396', tour: 'ATP Stockholm', p1: 'L. Musetti', p2: 'U. Humbert', finalScore: { winner: 'p1' } }, { id: 'past-12179560', tour: 'ATP Stockholm', p1: 'T. Fritz', p2: 'H. Rune', walkover: true, finalScore: { winner: 'p1' } },
+    { id: 'upcoming-1', tour: 'ATP Stockholm', p1: 'L. Musetti', p2: 'T. Fritz' }];
+  assert.deepEqual(resolveHighlights({ title: 'Stockholm 2026 QF Musetti Humbert Highlights' }, cs), { eventKey: '12179396', p1: 'L. Musetti', p2: 'U. Humbert', tournament: 'Stockholm', round: 'QF' });
+  assert.equal(resolveHighlights({ title: 'Stockholm 2026 QF Fritz Rune Highlights' }, cs), null);
+  assert.equal(resolveHighlights({ title: 'Stockholm 2026 SF Musetti Fritz Highlights' }, cs), null);
+  const feed = { content: [1, 2, 3].map((i) => ({ id: i, title: 'Stockholm 2026 QF Musetti Humbert Highlights', date: '2026-11-12T22:1' + i + ':00Z', titleUrlSegment: 'x' + i, tags: [{ label: 'video-type:match-highlights' }, { label: 'match-type:singles' }] })) };
+  const got = pickHighlights(feed, { clips: { hl1: { status: 'done' } } }, cs, '2026-11-13T00:00:00.000Z');
+  assert.deepEqual(got.map((c) => c.id), ['hl2', 'hl3']); assert.equal(MAX_HIGHLIGHTS, 2); assert.equal(got[0].kind, 'highlights');
+});
+await ok('commentary: a summary is kept only when its numbers and names are in the transcript; never a quotation; nothing to say = nothing', async () => {
+  const P = ['L.', 'Musetti', 'U.', 'Humbert'];
+  assert.ok(commentaryOk('The commentators praised the defending of Musetti and noted the strapping under his right knee. Humbert had 4 break points he could not take.', HT, P));
+  assert.ok(!commentaryOk('The commentators said Musetti saved 7 break points and praised his defending all match long.', HT, P), 'a number that was never said');
+  assert.ok(!commentaryOk('The commentators compared the defending of Musetti with Djokovic at his best in this match today.', HT, P), 'a name that was never said');
+  assert.ok(!commentaryOk('They called it "absolutely remarkable defending" from Musetti in the first set of this match.', HT, P), 'a quotation');
+  const reply = (text) => async () => ({ ok: true, json: async () => ({ content: [{ type: 'text', text }] }) });
+  const good = await summariseCommentary(HT, ['L. Musetti', 'U. Humbert'], 'k', reply('The commentators praised the defending of Musetti and noted the strapping under his right knee.'));
+  assert.equal(good.status, 'ok');
+  assert.equal((await summariseCommentary(HT, ['L. Musetti', 'U. Humbert'], 'k', reply('NONE'))).status, 'nothing');
+  assert.equal((await summariseCommentary(HT, ['L. Musetti', 'U. Humbert'], 'k', reply('Musetti hit 40 winners according to the commentators in this long match.'))).status, 'failed-check');
+  assert.equal((await summariseCommentary(HT, ['a', 'b'], '')).status, 'no-key');
+  const b = fs.readFileSync(new URL('./news-ticker/build-news-ticker.mjs', import.meta.url), 'utf8');
+  assert.ok(/From the commentary: \$\{cm\.text\}/.test(b), 'the report says where the lines come from');
 });
 console.log(`ttv interviews: ${n} checks passed`);
