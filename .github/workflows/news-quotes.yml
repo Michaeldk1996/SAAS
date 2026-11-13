@@ -21,14 +21,14 @@ jobs:
       - uses: superfly/flyctl-actions/setup-flyctl@master
       - name: Build & push image
         working-directory: interviews-worker
-        run: flyctl deploy --build-only --push -a stennisfy-interviews --image-label frames --build-arg WHISPER_MODEL=small.en 2>&1 | tail -5
+        run: flyctl deploy --build-only --push -a stennisfy-interviews --image-label frames-${{ github.run_id }} --build-arg WHISPER_MODEL=small.en 2>&1 | tail -5
       - name: Capture frames
         shell: bash
         run: |
           set +e
           MID=""
           for try in 1 2 3 4 5 6; do
-            OUT=$(flyctl machine run registry.fly.io/stennisfy-interviews:frames -a stennisfy-interviews \
+            OUT=$(flyctl machine run registry.fly.io/stennisfy-interviews:frames-${{ github.run_id }} -a stennisfy-interviews \
               --vm-cpu-kind performance --vm-cpus 2 --vm-memory 4096 --restart no \
               --env FRAME_CLIPS='${{ inputs.frames }}' \
               --env TENNISTV_EMAIL="${{ secrets.TENNISTV_EMAIL }}" --env TENNISTV_PASSWORD="${{ secrets.TENNISTV_PASSWORD }}" 2>&1)
