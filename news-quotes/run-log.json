@@ -13683,6 +13683,189 @@
     ]
    },
    "alerts": []
+  },
+  {
+   "at": "2026-11-13T20:19:26.938Z",
+   "activeTournaments": [
+    "Stockholm"
+   ],
+   "tournaments": [
+    {
+     "name": "Stockholm",
+     "key": "1681",
+     "sources": [
+      {
+       "name": "ATP Tour daily report (via the official tournament site)",
+       "articles": 23,
+       "candidates": 12,
+       "robotsStatus": 200,
+       "skippedByRobots": 0,
+       "unnamed": 4
+      }
+     ],
+     "fromOutlets": 52,
+     "counts": {
+      "candidates": 64,
+      "droppedNotVerbatim": 0,
+      "droppedNoPlayer": 0,
+      "droppedAmbiguous": 0,
+      "notTranslatedNoKey": 0,
+      "notTranslatedApiError": 0,
+      "droppedTranslationCheck": 0,
+      "droppedEnglishExists": 0,
+      "mergedSameQuote": 2,
+      "alreadyHeld": 0,
+      "items": 62,
+      "tokens": {
+       "input": 0,
+       "output": 0
+      },
+      "modelError": null,
+      "retryUrls": 0
+     },
+     "added": 0,
+     "held": 87,
+     "byCategory": {
+      "Quotes": 57,
+      "Interviews": 24,
+      "Injuries": 6
+     },
+     "finishedMatches": 16,
+     "matchesWithWinnerQuote": 13
+    },
+    {
+     "name": "ATP Tour",
+     "key": "tour",
+     "sources": [],
+     "fromOutlets": 12,
+     "counts": {
+      "candidates": 12,
+      "droppedNotVerbatim": 0,
+      "droppedNoPlayer": 0,
+      "droppedAmbiguous": 0,
+      "notTranslatedNoKey": 0,
+      "notTranslatedApiError": 0,
+      "droppedTranslationCheck": 0,
+      "droppedEnglishExists": 0,
+      "mergedSameQuote": 0,
+      "alreadyHeld": 0,
+      "items": 12,
+      "tokens": {
+       "input": 3740,
+       "output": 546
+      },
+      "modelError": null,
+      "retryUrls": 0,
+      "topicsAdded": 10
+     },
+     "added": 5,
+     "held": 52,
+     "byCategory": {
+      "Interviews": 46,
+      "Injuries": 6
+     },
+     "finishedMatches": 0,
+     "matchesWithWinnerQuote": 0
+    }
+   ],
+   "newItems": 5,
+   "tokens": {
+    "input": 3740,
+    "output": 546
+   },
+   "ttvInbox": {
+    "held": 51,
+    "routed": 51
+   },
+   "atpInbox": {
+    "held": 12,
+    "routed": 8
+   },
+   "outlets": {
+    "read": 131,
+    "withCandidates": 1,
+    "blocked": [
+     "Fox Sports Australia: the site refuses a plain request",
+     "El Deber: the site refuses a plain request",
+     "Tenniskafe: the site refuses a plain request",
+     "TenisovySvet.cz: the site refuses a plain request",
+     "The Indian Express: the site refuses a plain request",
+     "ESPN México (Tenis): unexpected answer",
+     "Monaco Tribune: server error",
+     "NRK Sport: unexpected answer",
+     "Aftonbladet: unexpected answer",
+     "ESPN: unexpected answer"
+    ],
+    "articlesFetched": 9,
+    "paywalled": 0,
+    "unnamed": 6,
+    "byOutlet": [
+     {
+      "outlet": "LAOLA1",
+      "country": "Austria",
+      "language": "de",
+      "fetched": 1,
+      "candidates": 0
+     },
+     {
+      "outlet": "tennisnet.com",
+      "country": "Austria",
+      "language": "de",
+      "fetched": 1,
+      "candidates": 0
+     },
+     {
+      "outlet": "TenisBrasil",
+      "country": "Brazil",
+      "language": "pt",
+      "fetched": 1,
+      "candidates": 0
+     },
+     {
+      "outlet": "Tennis Actu",
+      "country": "France",
+      "language": "fr",
+      "fetched": 1,
+      "candidates": 0
+     },
+     {
+      "outlet": "The Times of India",
+      "country": "India",
+      "language": "en",
+      "fetched": 1,
+      "candidates": 0
+     },
+     {
+      "outlet": "Tennis365",
+      "country": "INT",
+      "language": "en",
+      "fetched": 1,
+      "candidates": 0
+     },
+     {
+      "outlet": "Corriere dello Sport",
+      "country": "Italy",
+      "language": "it",
+      "fetched": 1,
+      "candidates": 0
+     },
+     {
+      "outlet": "Bola Amarela",
+      "country": "Portugal",
+      "language": "pt",
+      "fetched": 1,
+      "candidates": 0
+     },
+     {
+      "outlet": "SuperSport",
+      "country": "South Africa",
+      "language": "en",
+      "fetched": 1,
+      "candidates": 5
+     }
+    ]
+   },
+   "alerts": []
   }
  ]
 }
