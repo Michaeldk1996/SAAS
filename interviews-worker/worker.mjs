@@ -132,6 +132,7 @@ if (process.env.DISCOVER_URL) {
   if (ins) { await clickXY(ins[0], ins[1]); await sleep(5000); await shot('d2_insights'); await dump('panel text on INSIGHTS'); }
   const full = await ev(`(() => { const e = [...document.querySelectorAll('body *')].find((x) => x.children.length === 0 && /^shot quality$/i.test((x.textContent || '').trim())); if (!e) return null; let p = e; for (let i = 0; i < 8 && p.parentElement && (p.innerText || '').length < 1500; i++) p = p.parentElement; return String(p.className).slice(0, 80) + ' :: ' + p.innerText.replace(/\\s+/g, ' ').slice(0, 2500); })()`);
   console.log('discover: INSIGHTS full text', JSON.stringify(full));
+  console.log('discover: requests after opening', JSON.stringify([...new Set(reqs.slice(before))].slice(0, 60)));
   spawnSync('tar', ['-czf', '/tmp/frames.tgz', '-C', '/tmp', 'frames']);
   console.log('FRAMES_READY ' + (fs.existsSync('/tmp/frames.tgz') ? fs.statSync('/tmp/frames.tgz').size : 0));
   await sleep(300000);
