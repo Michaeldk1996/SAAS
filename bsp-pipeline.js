@@ -778,7 +778,7 @@ function buildAllTierYearly(fixtures, playerKey, playerStats, currentYear, surfa
     // Additive: the surface buckets above are left counting indoor matches, so
     // no existing consumer moves. Indoor is recorded a second time, per surface,
     // purely so the grid can subtract it.
-    if ((courtMap && courtMap.get(String(f.tournament_key)) === 'indoor') || fixtureTeamIndoor(f, surfaceMap)) {
+    if ((courtMap && courtMap.get(String(f.tournament_key)) === 'indoor') || (typeof fixtureTeamIndoor === 'function' && fixtureTeamIndoor(f, surfaceMap))) {
       bucket.indoor.total[won ? 'won' : 'lost']++;
       if (surface && bucket.indoor[surface]) bucket.indoor[surface][won ? 'won' : 'lost']++;
     }
@@ -977,7 +977,7 @@ function playerMatchHistory(fixtures, playerKey, currentYear, surfaceMap, courtM
     // table counts it. `indoor: false` = not in the table's Indoors (an outdoor court, or a key the map lacks — the
     // table counts that under its surface too). Absent when the map is empty (a cache that predates court capture):
     // the table then carries no indoor split either.
-    const indoor = courtMap && courtMap.size ? (courtMap.get(String(f.tournament_key)) === 'indoor' || fixtureTeamIndoor(f, surfaceMap)) : null;
+    const indoor = courtMap && courtMap.size ? (courtMap.get(String(f.tournament_key)) === 'indoor' || (typeof fixtureTeamIndoor === 'function' && fixtureTeamIndoor(f, surfaceMap))) : null;
     // TEN-437 D3: the opponent's api-tennis key — the identity a one-sided H2H row is credited on (h2h-core), carried
     // from the fixture itself. Rows of a profile cached before this line carry none until it rebuilds (14-day TTL).
     const oppKey = isFirst ? f.second_player_key : f.first_player_key;
@@ -1096,7 +1096,7 @@ function olympicSurface(name, date) {
 // The surface of one fixture: the per-key map, except an Olympic edition (above).
 function fixtureSurface(f, surfaceMap) {
   return olympicSurface(f && f.tournament_name, f && f.event_date) || surfaceMap.get(String(f.tournament_key))
-    || (fixtureTeamCourt(f) || [])[0] || null;
+    || (typeof fixtureTeamCourt === 'function' ? (fixtureTeamCourt(f) || [])[0] : null) || null;   // typeof: tests slice this function alone
 }
 // Founder 2026-11-08 / 2026-11-13 ("find these surfaces out"): a fixture whose tournament carries no surface (a Davis Cup
 // tie — one api-tennis key for every tie — or an ITF / Challenger event get_tournaments leaves blank) takes the researched
