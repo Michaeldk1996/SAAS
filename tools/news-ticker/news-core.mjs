@@ -58,6 +58,31 @@ const SET_WORD = { 1: 'first', 2: 'second', 3: 'third', 4: 'fourth', 5: 'fifth' 
 // The fixed report template (v2). Every clause is a stored field or a count of stored rows; a clause with nothing
 // behind it is not written. opts: { h2h: {a,b,n} after this match (a = winner's wins) | null, round: words | null,
 // pbp: pbpFacts() | null, score: scoreFacts() | null, duration: minutes | null (both ends observed) }
+// Medical timeouts (founder 2026-11-13: "we have now an mto bot, so those things need to be communicated in the match
+// report"). rows = mto-matches.json's rows for this match (the MTO archive, keyed by the api-tennis match id); quotes =
+// the on-court interview answers we hold for this match. One sentence per timeout: who, and the score in the set when
+// he called it. The reason is not in our data and is never guessed. When the same player spoke about his body in the
+// on-court interview, his words follow, word for word.
+export const MTO_BODY = /\b(physical|body|injur|fitness|health|pain|hand|wrist|arm|shoulder|back|leg|knee|ankle|foot|hip|blister|cramp)/i;
+export function mtoSentences(m, rows, quotes = []) {
+  const out = [], last = (x) => String(x || '').trim().split(/\s+/).pop().toLowerCase();
+  const seenQuote = new Set();
+  for (const r of (rows || []).slice().sort((a, b) => String(a.calledAt).localeCompare(String(b.calledAt))).slice(0, 3)) {
+    if (!r || r.retired || ![1, 2].includes(r.playerSide) || !Array.isArray(r.games) || r.games.length !== 2) continue;
+    const sides = ['p1', 'p2'].filter((k) => last(m[k]) === last(r.player));
+    if (sides.length !== 1) continue;                                   // the caller must be exactly one of the two players
+    const k = sides[0], mine = r.games[r.playerSide - 1], theirs = r.games[2 - r.playerSide];
+    if (!Array.isArray(mine) || !Array.isArray(theirs) || !mine.length || mine.length !== theirs.length) continue;
+    const n = mine.length, own = mine[n - 1], opp = theirs[n - 1];
+    if (!Number.isInteger(own) || !Number.isInteger(opp) || !SET_WORD[n]) continue;
+    let s = `${m[k]} took a medical timeout at ${own}–${opp} in the ${SET_WORD[n]} set.`;
+    const q = (quotes || []).find((x) => x && x.interview === 'on-court' && String(x.playerId) === String(m[k + 'Key']) && MTO_BODY.test(String(x.topic || '')) && String(x.text || '').length <= 260 && !seenQuote.has(x.id));
+    if (q) { seenQuote.add(q.id); s += ` After the match he said: "${String(q.text).trim()}"`; }
+    out.push(s);
+  }
+  return out;
+}
+
 export function reportText(m, w, l, opts = {}) {
   const { h2h = null, pbp = null, score: sf = null, duration = null } = opts;
   const ms = m.matchStats || {};

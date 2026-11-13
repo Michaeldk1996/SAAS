@@ -923,6 +923,17 @@ jobs:
           node build-weather.js || rc=$?
           node tools/step-check.mjs --step "Build weather files (best-effort)" --rc "$rc" --since "$t0" --exists weather-index.json
 
+      # Medical timeouts on the match record (founder ruling 2026-11-11): every MTO in the archive, keyed by our match id,
+      # as its own site file. Built BEFORE the news ticker, whose match reports name each timeout. matches.json is not touched. A failed read writes nothing. Rules: .claude/rules/mto.md.
+      - name: Build MTO match records (best-effort)
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+        run: |
+          t0=$(date +%s); rc=0
+          node tools/build-mto-matches.mjs || rc=$?
+          node tools/step-check.mjs --step "Build MTO match records (best-effort)" --rc "$rc" --since "$t0" --exists mto-matches.json
+
       # News ticker (founder brief 2026-11-11): match reports and status items for every finished ATP singles match, built
       # from the files this run has just written, plus the quotes the collector committed (news-quotes/). One permanent
       # file per tournament edition + a small index; a file is rewritten only when an item was added or its source data
@@ -936,17 +947,6 @@ jobs:
           t0=$(date +%s); rc=0
           node tools/news-ticker/build-news-ticker.mjs || rc=$?
           node tools/step-check.mjs --step "Build news ticker (best-effort)" --rc "$rc" --since "$t0" --exists news-ticker.json
-
-      # Medical timeouts on the match record (founder ruling 2026-11-11): every MTO in the archive, keyed by our match id,
-      # as its own site file. matches.json is not touched. A failed read writes nothing. Rules: .claude/rules/mto.md.
-      - name: Build MTO match records (best-effort)
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
-        run: |
-          t0=$(date +%s); rc=0
-          node tools/build-mto-matches.mjs || rc=$?
-          node tools/step-check.mjs --step "Build MTO match records (best-effort)" --rc "$rc" --since "$t0" --exists mto-matches.json
 
       # A day with finished ATP matches and 0 reports written: one Telegram per day (pipeline chat). Runs when the build
       # above crashed too. Never fails the run.

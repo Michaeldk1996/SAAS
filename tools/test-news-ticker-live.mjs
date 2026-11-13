@@ -444,6 +444,24 @@ await ok('card order: the on-court interview first, in the order of the match (f
   assert.ok(rank('On losing his lead in the second set') < rank('On the match') && rank('On Stockholm') < rank('On winning a first title'));
   assert.match(page, /\(a\.q\.interview \? 0 : 1\) - \(b\.q\.interview \? 0 : 1\)/, 'the interview leads the card; the longest quote no longer does');
 });
+// ---- medical timeouts in the match report (founder 2026-11-13) ----
+await ok('a medical timeout is named with its set and score; his on-court words about his body follow; nothing is guessed', async () => {
+  const { mtoSentences } = await import('./news-ticker/news-core.mjs');
+  const m = { p1: 'T. A. Tirante', p1Key: 366, p2: 'A. Shevchenko', p2Key: 566 };
+  const row = { calledAt: '2026-11-12T15:42:41+00:00', player: 'Thiago Agustin Tirante', playerSide: 1, games: [[7, 2], [6, 3]], retired: false };   // the real row of 12 Nov
+  assert.deepEqual(mtoSentences(m, [row], []), ['T. A. Tirante took a medical timeout at 2–3 in the second set.']);
+  assert.deepEqual(mtoSentences({ p1: 'U. Humbert', p1Key: 1105, p2: 'B. Gojo', p2Key: 377 }, [{ calledAt: 'x', player: 'Borna Gojo', playerSide: 2, games: [[5], [2]], retired: false }]),
+    ['B. Gojo took a medical timeout at 2–5 in the first set.'], 'the caller on side 2 reads his own games first');
+  const q = [{ id: 'a', interview: 'on-court', playerId: '366', topic: 'On his hand', text: 'It was a blister, nothing more.' }, { id: 'b', interview: 'on-court', playerId: '366', topic: 'On the match', text: 'Very tough.' },
+    { id: 'c', interview: 'on-court', playerId: '566', topic: 'On his physical condition', text: 'I felt fine.' }, { id: 'd', playerId: '366', topic: 'On his injury', text: 'A press quote.' }];
+  assert.deepEqual(mtoSentences(m, [row], q), ['T. A. Tirante took a medical timeout at 2–3 in the second set. After the match he said: "It was a blister, nothing more."'],
+    'only HIS on-court answer about his body; never the opponent\'s, a press quote or an answer about the match');
+  assert.deepEqual(mtoSentences(m, [{ ...row, player: 'Someone Else' }], q), [], 'a caller who is not one of the two players: no sentence');
+  assert.deepEqual(mtoSentences(m, null, q), [], 'no timeout on record: no sentence');
+  const b = read('tools/news-ticker/build-news-ticker.mjs'), wf = read('.github/workflows/pipeline.yml');
+  assert.ok(/mtoSentences\(m, mtoByMatch\[ek\(m\)\], quoteItems\)/.test(b) && /prev\.baseText \|\| prev\.text/.test(b), 'added after the voice step, never rewritten or doubled');
+  assert.ok(wf.indexOf('node tools/build-mto-matches.mjs') < wf.indexOf('node tools/news-ticker/build-news-ticker.mjs'), 'the timeouts are read before the reports are written');
+});
 // ---- tour-wide (founder 2026-11-12: press interviews and injuries for every ATP player, every day) ----
 await ok('tour-wide: an article that names no tournament still yields its quote; each candidate carries the tournaments its article mentions', async () => {
   const SECTION = '<html>' + 'x'.repeat(700) + '<a href="/tennis/rune-on-his-long-road-back">Rune on his road back</a><a href="/tennis/other-long-article-slug">Other news</a></html>';

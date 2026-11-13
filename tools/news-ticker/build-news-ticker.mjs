@@ -20,7 +20,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
-import { reportText, statusItems, h2hAfter, roundWords, breakPoints } from './news-core.mjs';
+import { reportText, statusItems, h2hAfter, roundWords, breakPoints, mtoSentences } from './news-core.mjs';
 import { pbpFacts, scoreFacts } from './pbp-facts.mjs';
 import { mergeItems, buildIndex, fileOf, observedTimes, tourKeep } from './ticker-core.mjs';
 
@@ -101,10 +101,12 @@ export async function build({ nowIso, times, rewrite = null, apiKey = process.en
   const hidden = (x) => x.type === 'quote' && off.has(x.sourceName);
   const summary = { voice: { rewritten: 0, reused: 0, notRewritten: 0, errors: 0, lastError: null, tokens: { input: 0, output: 0 }, reportsFullyInVoice: 0, reportsTotal: 0, sentencesPassed: 0, sentencesTotal: 0 }, tournaments: 0, finished: 0, reports: 0, reportErrors: [], status: 0, quotes: 0, added: 0, revised: 0, unchanged: 0, filesWritten: [], withObservedEnd: 0, withDuration: 0, hiddenByOffSwitch: 0 };
   const touched = [];
+  const mtoByMatch = ((readJson('mto-matches.json') || {}).matches) || {};   // absent file = no timeout sentence (never a guess)
   for (const g of groups.values()) {
     const file = fileOf(g.key, g.season);
     const existing = readJson(file);
     const old = new Map(((existing && existing.items) || []).map((x) => [x.id, x]));
+    const quoteItems = ((readJson(`news-quotes/${g.key}-${g.season}.json`) || {}).items) || [];
     const progT = progs.find((t) => new RegExp(`^${g.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i').test(t.feedName || ''));
     const pageRound = (m, side) => {
       const p = progT && (progT.players || []).find((x) => String(x.playerKey) === String(m[side + 'Key']));
@@ -132,7 +134,7 @@ export async function build({ nowIso, times, rewrite = null, apiKey = process.en
         // Michael's voice: the template sentences rewritten one for one, each checked against its own facts; a sentence
         // that fails keeps the template wording. Done once per report: a stored rewrite of the same template is reused.
         let text = rep.text, voice = null;
-        if (prev && prev.voice && prev.voice.version === VOICE_VERSION && prev.templateText === rep.text) { text = prev.text; voice = prev.voice; summary.voice.reused++; }
+        if (prev && prev.voice && prev.voice.version === VOICE_VERSION && prev.templateText === rep.text) { text = prev.baseText || prev.text; voice = prev.voice; summary.voice.reused++; }
         else if (voiceOn && voiceCalls < VOICE_MAX_CALLS) {
           voiceCalls++;
           const h = await humaniseReport({ sentences: rep.sentences, tones: rep.tones, kinds: rep.kinds, winner: { card: m[w], full: fullName(m[w + 'Key'], m[w]) }, loser: { card: m[l], full: fullName(m[l + 'Key'], m[l]) } }, { rewrite, apiKey });
@@ -140,12 +142,17 @@ export async function build({ nowIso, times, rewrite = null, apiKey = process.en
           if (h.status === 'ok') { text = h.text; voice = h.voice; summary.voice.rewritten++; }
           else { summary.voice.errors++; summary.voice.lastError = `${h.status}${h.detail ? ': ' + h.detail : ''}`; }
         } else summary.voice.notRewritten++;
+        // medical timeouts (the MTO archive) and what the player said about his body on court: added after the voice step,
+        // never rewritten by it
+        const mto = mtoSentences(m, mtoByMatch[ek(m)], quoteItems);
+        const baseText = text;
+        if (mto.length) { text = `${text} ${mto.join(' ')}`; summary.withMto = (summary.withMto || 0) + 1; }
         if (obs && obs.endedAt) summary.withObservedEnd++;
         if (rep.used.duration) summary.withDuration++;
         fresh.push({ id, type: 'report', playerId: String(m[w + 'Key']), opponentId: String(m[l + 'Key']), player: m[w], opponent: m[l],
           tournament: g.name, tournamentKey: g.key, season: g.season, stage: stage || 'main draw', round: rep.fields.round, eventKey: ek(m),
           timestamp: obs && obs.endedAt ? obs.endedAt : startIso(m), timestampKind: obs && obs.endedAt ? 'observed' : 'scheduled',
-          observed: obs || null, category: 'Statistics', text, ...(voice ? { templateText: rep.text, voice } : {}), fields: rep.fields,
+          observed: obs || null, category: 'Statistics', text, ...(mto.length ? { baseText, mto } : {}), ...(voice ? { templateText: rep.text, voice } : {}), fields: rep.fields,
           sourceName: 'Stennisfy match data (api-tennis box score and point-by-point)', sourceUrl: `pbp/${ek(m)}.json`, language: 'en', translated: false });
         summary.reports++;
       } catch (e) { summary.reportErrors.push(`${m.id}: ${e && e.message}`); }
