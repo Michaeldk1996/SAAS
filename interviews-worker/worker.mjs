@@ -19,7 +19,7 @@ let clips = [];
 if (process.env.CLIP_URLS) { try { clips = JSON.parse(process.env.CLIP_URLS); } catch (e) { console.error('CLIP_URLS not JSON'); process.exit(2); } }
 else if (process.env.CLIP_URL) clips = [{ url: process.env.CLIP_URL }];
 clips = clips.map((c) => (typeof c === 'string' ? { url: c } : c)).filter((c) => c && c.url);
-if (!clips.length && !process.env.FRAME_CLIPS) { console.error('no clips (set CLIP_URLS or CLIP_URL)'); process.exit(2); }
+if (!clips.length && !process.env.FRAME_CLIPS && !process.env.DISCOVER_URL) { console.error('no clips (set CLIP_URLS or CLIP_URL)'); process.exit(2); }
 
 const work = fs.mkdtempSync(path.join(os.tmpdir(), 'ttv-'));
 
@@ -80,6 +80,41 @@ async function oneClip(c, i) {
   try { fs.unlinkSync(wav); } catch (e) {}
   if (py.status !== 0) return { ...c, ok: false, error: 'transcribe: ' + (py.stderr || '').slice(-200) };
   return { ...c, ok: true, duration: Math.round(dur), playedIn: wall, transcript: py.stdout.trim() };
+}
+
+// DISCOVER mode (a test): open the in-player stats panel of one replay and print what it holds and what it loads.
+if (process.env.DISCOVER_URL) {
+  const shot = async (name) => { const r = await send('Page.captureScreenshot', { format: 'jpeg', quality: 70 }); fs.mkdirSync('/tmp/frames', { recursive: true }); if (r.result && r.result.data) fs.writeFileSync('/tmp/frames/' + name + '.jpg', Buffer.from(r.result.data, 'base64')); };
+  const clickXY = async (x, y) => { await send('Input.dispatchMouseEvent', { type: 'mouseMoved', x, y }); await send('Input.dispatchMouseEvent', { type: 'mousePressed', x, y, button: 'left', clickCount: 1 }); await send('Input.dispatchMouseEvent', { type: 'mouseReleased', x, y, button: 'left', clickCount: 1 }); };
+  await send('Network.enable');
+  const reqs = [];
+  const prev = sock.onmessage;
+  sock.onmessage = (e) => { const m = JSON.parse(e.data); if (m.method === 'Network.requestWillBeSent') { const u = m.params.request.url; if (!/\.m4s|google|facebook|bing|taboola|tiktok|onetrust|clarity|doubleclick|exponea|twitter|reddit|litix|\.png|\.jpg|\.woff|\.css|resources\/v/.test(u)) reqs.push(u.slice(0, 200)); } prev(e); };
+  await send('Page.navigate', { url: process.env.DISCOVER_URL });
+  let dur = 0;
+  for (let k = 0; k < 80; k++) { dur = await ev('(document.querySelector("video")||{}).duration || 0').catch(() => 0); if (dur > 1) break; await sleep(500); }
+  console.log('discover: duration', Math.round(dur));
+  await ev('(() => { const b = [...document.querySelectorAll("button")].find((x) => /reject all/i.test(x.textContent || "")); if (b) b.click(); const v = document.querySelector("video"); if (v) { v.muted = true; v.play(); v.scrollIntoView({ block: "center" }); } return !!b; })()').then((r) => console.log('discover: cookie banner rejected', r));
+  await sleep(4000);
+  const vr = await ev('(() => { const r = document.querySelector("video").getBoundingClientRect(); return [r.x, r.y, r.width, r.height]; })()');
+  await send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: vr[0] + vr[2] / 2, y: vr[1] + vr[3] / 2 });
+  await sleep(800); await shot('d0_player');
+  const icons = await ev(`(() => { const v = document.querySelector('video').getBoundingClientRect(); return [...document.querySelectorAll('button, [role=button], a, div[class*=button], li')].map((e) => { const r = e.getBoundingClientRect(); return { cls: String(e.className).slice(0, 90), aria: e.getAttribute('aria-label') || e.title || '', x: Math.round(r.x + r.width / 2), y: Math.round(r.y + r.height / 2), w: Math.round(r.width), h: Math.round(r.height) }; }).filter((o) => o.w > 12 && o.w < 90 && o.h > 12 && o.h < 90 && o.x > v.x + v.width * 0.8 && o.y > v.y && o.y < v.y + v.height); })()`);
+  console.log('discover: right-edge controls', JSON.stringify(icons));
+  const before = reqs.length;
+  const first = (icons || []).find((o) => /stat|chart|insight/i.test(o.cls + ' ' + o.aria)) || (icons || [])[0];
+  if (first) { await clickXY(first.x, first.y); console.log('discover: clicked', JSON.stringify(first)); }
+  await sleep(5000); await shot('d1_after_first_icon');
+  const dump = async (label) => { const t = await ev(`(() => [...document.querySelectorAll('body *')].filter((e) => e.children.length === 0 && /shot quality|balance of power|steal|conversion|insights|live stats|head 2 head/i.test(e.textContent || '')).map((e) => { let p = e; for (let i = 0; i < 6 && p.parentElement; i++) p = p.parentElement; return String(p.className).slice(0, 60) + ' :: ' + (p.innerText || '').replace(/\\s+/g, ' ').slice(0, 900); }).filter((v, i, a) => a.indexOf(v) === i).slice(0, 4))()`); console.log('discover: ' + label, JSON.stringify(t)); };
+  await dump('panel text after first icon');
+  const ins = await ev(`(() => { const e = [...document.querySelectorAll('body *')].find((x) => x.children.length === 0 && /^insights$/i.test((x.textContent || '').trim()) && x.getBoundingClientRect().width > 0); if (!e) return null; const r = e.getBoundingClientRect(); return [r.x + r.width / 2, r.y + r.height / 2]; })()`);
+  console.log('discover: INSIGHTS tab at', JSON.stringify(ins));
+  if (ins) { await clickXY(ins[0], ins[1]); await sleep(5000); await shot('d2_insights'); await dump('panel text on INSIGHTS'); }
+  console.log('discover: requests after opening', JSON.stringify([...new Set(reqs.slice(before))].slice(0, 40)));
+  spawnSync('tar', ['-czf', '/tmp/frames.tgz', '-C', '/tmp', 'frames']);
+  console.log('FRAMES_READY ' + (fs.existsSync('/tmp/frames.tgz') ? fs.statSync('/tmp/frames.tgz').size : 0));
+  await sleep(300000);
+  process.exit(0);
 }
 
 // FRAMES mode (a test, founder 2026-11-13): the end of a full replay carries the broadcast's stats panel. Seek to the

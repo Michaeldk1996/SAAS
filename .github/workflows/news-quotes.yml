@@ -30,7 +30,7 @@ jobs:
           for try in 1 2 3 4 5 6; do
             OUT=$(flyctl machine run registry.fly.io/stennisfy-interviews:frames-${{ github.run_id }} -a stennisfy-interviews \
               --vm-cpu-kind performance --vm-cpus 2 --vm-memory 4096 --restart no \
-              --env FRAME_CLIPS='${{ inputs.frames }}' \
+              --env DISCOVER_URL='https://www.tennistv.com/videos/4608411/stockholm-2026-qf-musetti-humbert' \
               --env TENNISTV_EMAIL="${{ secrets.TENNISTV_EMAIL }}" --env TENNISTV_PASSWORD="${{ secrets.TENNISTV_PASSWORD }}" 2>&1)
             MID=$(echo "$OUT" | grep -oE 'Machine ID: [0-9a-f]+' | awk '{print $3}')
             [ -n "$MID" ] && break
@@ -45,7 +45,7 @@ jobs:
             echo "$ST" | grep -qiE "stopped|destroyed|failed" && break
             sleep 15
           done
-          sed -E 's/\x1b\[[0-9;]*m//g; s/^.*\[info\]//' /tmp/logs.txt | grep -aE "frames|duration|FAILED|sign-in|FRAMES_READY"
+          sed -E 's/\x1b\[[0-9;]*m//g; s/^.*\[info\]//' /tmp/logs.txt | grep -aE "discover|FAILED|sign-in|FRAMES_READY"
           flyctl ssh console -a stennisfy-interviews --machine "$MID" -C "base64 -w0 /tmp/frames.tgz" > /tmp/frames.b64 2>/tmp/ssh.err
           tail -3 /tmp/ssh.err
           base64 -d /tmp/frames.b64 > /tmp/frames.tgz 2>/dev/null; ls -la /tmp/frames.tgz
