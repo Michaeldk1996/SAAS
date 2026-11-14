@@ -1,6 +1,18 @@
 {
- "generatedAt": "2026-11-14T19:46:54.419Z",
+ "generatedAt": "2026-11-14T21:09:13.853Z",
  "tournaments": [
+  {
+   "key": "tour",
+   "season": "2026",
+   "name": "ATP Tour",
+   "file": "news-ticker/tour-2026.json",
+   "items": 65,
+   "byType": {
+    "quote": 65
+   },
+   "latestTimestamp": "2026-11-14T20:24:00.000Z",
+   "updatedAt": "2026-11-14T21:09:13.853Z"
+  },
   {
    "key": "1681",
    "season": "2026",
@@ -14,18 +26,6 @@
    },
    "latestTimestamp": "2026-11-14T16:03:27.000Z",
    "updatedAt": "2026-11-14T19:46:54.419Z"
-  },
-  {
-   "key": "tour",
-   "season": "2026",
-   "name": "ATP Tour",
-   "file": "news-ticker/tour-2026.json",
-   "items": 64,
-   "byType": {
-    "quote": 64
-   },
-   "latestTimestamp": "2026-11-14T14:30:02.000Z",
-   "updatedAt": "2026-11-14T15:43:24.367Z"
   },
   {
    "key": "1725",
@@ -51,6 +51,37 @@
   }
  ],
  "latest": [
+  {
+   "id": "quote-3b120e0fa8b308",
+   "type": "quote",
+   "playerId": "1980",
+   "opponentId": null,
+   "player": "A. Zverev",
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-14T20:24:00.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "They’re not going to drop the case if you’re guilty at the end of the day. I don’t know what translations you have, but that’s what it means. Done. We move on. I never ever want to hear another question about the subject again. That goes out to everybody, … First of all, this isn’t that kind of interview. Secondly, you know that the accusations have been proven false? … I did everything I could, and my innocence has been proven.",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "The Times of India",
+   "sourceUrl": "https://timesofindia.indiatimes.com/sports/tennis/top-stories/current-world-no-1-alexander-zverev-faces-fresh-lawsuit-from-ex-girlfriend-over-domestic-abuse-allegations-ahead-of-atp-finals/articleshow/135842173.cms",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On the discontinued domestic abuse case against him",
+   "sourceHash": "8085f81ef562790e",
+   "publishedAt": "2026-11-14T21:09:13.853Z",
+   "file": "news-ticker/tour-2026.json"
+  },
   {
    "id": "quote-d297a576fe51d4",
    "type": "quote",
@@ -1596,38 +1627,6 @@
    "interview": "on-court",
    "topic": "On reaching his first final",
    "sourceHash": "9c230841ed499a5b",
-   "publishedAt": "2026-11-13T18:43:33.043Z",
-   "file": "news-ticker/1681-2026.json"
-  },
-  {
-   "id": "quote-f8eefa9e8e6b3c",
-   "type": "quote",
-   "playerId": "366",
-   "opponentId": "2982",
-   "player": "T. A. Tirante",
-   "opponent": "A. Tabilo",
-   "tournament": "Stockholm",
-   "tournamentKey": "1681",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-13T15:15:00.000Z",
-   "timestampKind": "observed (Tennis TV published the clip then)",
-   "category": "Quotes",
-   "context": "after beating A. Tabilo",
-   "eventKey": "12179750",
-   "won": true,
-   "text": "Sweden is a little bit part of my home, my heart, because I think I play a really good level.",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "On-court interview",
-   "sourceUrl": "https://www.tennistv.com/videos/4608795/stockholm-2026-sf-thiago-agustin-tirante-interview",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the clip's audio, transcribed by the interviews worker",
-   "interview": "on-court",
-   "topic": "On his feelings for Sweden",
-   "sourceHash": "508d0dc7ca5b34e0",
    "publishedAt": "2026-11-13T18:43:33.043Z",
    "file": "news-ticker/1681-2026.json"
   }
