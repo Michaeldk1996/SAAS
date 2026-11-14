@@ -23,7 +23,7 @@ const require = createRequire(import.meta.url);
 const PI = require('../../pbp-integrity.js');
 
 const API_URL = 'https://api.anthropic.com/v1/messages';
-export const COMPOSE_VERSION = 3;        // bump to have every report on file written again
+export const COMPOSE_VERSION = 2;        // bump to have every report on file written again
 export const MAX_COMPOSE_RUNS = 3;       // a report is written at most this many times (later quotes, the next opponent)
 export const COMPOSE_FRESH_HOURS = 36;   // after this, new data no longer rewrites a report
 export const MAX_QUOTES = 6, QUOTE_MAX_CHARS = 520, QUOTES_IN_TEXT = 3;
