@@ -151,7 +151,7 @@ export function shotSentences(m, w, l, entry) {
     }
     if (rq != null && rq >= RQ_HIGH) mine.push(mine.length ? `He also returned very well, with ${art(rq)} ${q1(rq)} return quality.` : `${name} returned very well, with ${art(rq)} ${q1(rq)} return quality.`);
     else if (rq != null && rq < RQ_LOW) {   // a strong serve day and a weak return day are one sentence: that contrast is the story
-      if (mine.length) mine[0] = `${mine[0].slice(0, -1)}, but it was not his best return performance, with a return quality of ${q1(rq)}.`;
+      if (mine.length) mine[0] = `${mine[0].slice(0, -1)} but it was not his best return performance, with a return quality of ${q1(rq)}.`;
       else mine.push(`It was not the best return performance of ${name}, with a return quality of ${q1(rq)}.`);
     }
     out.push(...(k === l ? mine.slice(0, 1) : mine));

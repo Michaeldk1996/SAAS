@@ -195,15 +195,17 @@ export function factSheet({ m, w, l, rep, shard = null, round = null, duration =
     // the counts per wing, and a wing is named his best shot / his weak side only on a clear gap
     for (const k of [w, l]) {
       const x = card[k], N = surnameOf(m[k]), fw = num(x.fhWinners), bw = num(x.bhWinners), fu = num(x.fhUnforced), bu = num(x.bhUnforced);
-      if (fw != null && bw != null) {
-        c.push(`${N}: ${pl(fw, 'forehand winner')}, ${pl(bw, 'backhand winner')}.`);
-        const hi = Math.max(fw, bw), lo = Math.min(fw, bw);
-        if (hi >= BEST_SHOT_MIN && hi >= BEST_SHOT_RATIO * lo) c.push(`The ${fw > bw ? 'forehand' : 'backhand'} was the best shot of ${N}.`);
-      }
-      if (fu != null && bu != null) {
-        c.push(`${N}: ${pl(fu, 'forehand unforced error')}, ${pl(bu, 'backhand unforced error')}.`);
-        const hi = Math.max(fu, bu), lo = Math.min(fu, bu);
-        if (hi >= WEAK_SIDE_MIN && hi >= BEST_SHOT_RATIO * lo) c.push(`Most of the unforced errors of ${N} came from the ${fu > bu ? 'forehand' : 'backhand'}.`);
+      if (fw != null && bw != null) c.push(`${N}: ${pl(fw, 'forehand winner')}, ${pl(bw, 'backhand winner')}.`);
+      if (fu != null && bu != null) c.push(`${N}: ${pl(fu, 'forehand unforced error')}, ${pl(bu, 'backhand unforced error')}.`);
+      const clear = (a, b2, min) => a != null && b2 != null && Math.max(a, b2) >= min && Math.max(a, b2) >= BEST_SHOT_RATIO * Math.min(a, b2);
+      const best = clear(fw, bw, BEST_SHOT_MIN) ? (fw > bw ? 'forehand' : 'backhand') : null, weak = clear(fu, bu, WEAK_SIDE_MIN) ? (fu > bu ? 'forehand' : 'backhand') : null;
+      // the wording changes from match to match so the reports do not repeat one sentence (founder 2026-11-14)
+      const pick = (arr) => arr[parseInt(crypto.createHash('sha256').update(`${m.id}|${k}`).digest('hex').slice(0, 6), 16) % arr.length];
+      if (best && best === weak) c.push(pick([`It was all or nothing on the ${best} of ${N}: most of his winners and most of his unforced errors came from that wing.`,
+        `${N} played high risk and high reward on the ${best}: most of his winners and most of his unforced errors came from that wing.`]));
+      else {
+        if (best) c.push(pick([`The ${best} was the best shot of ${N}.`, `${N} did most of his damage with the ${best}.`, `The ${best} of ${N} made the difference in the rallies.`, `Most of the winners of ${N} came from the ${best}.`, `The ${best} was the big weapon of ${N}.`]));
+        if (weak) c.push(pick([`Most of the unforced errors of ${N} came from the ${weak}.`, `The ${weak} of ${N} was not reliable.`, `${N} missed too much on the ${weak}.`]));
       }
     }
     add('SHOT NUMBERS', c);
@@ -269,6 +271,7 @@ export function checkComposed(text, sheet, { surnames = new Set() } = {}) {
   if (/\?/.test(body) || /!/.test(body.replace('(!!!)', ''))) fail.push('a question mark or exclamation mark (only one "(!!!)" is allowed)');
   if (/(^|\s)[A-Z]\.\s/.test(body)) fail.push('an initial before a name');
   if (/[*#_]|^\s*[-•]/m.test(body)) fail.push('markdown or a list');
+  if (/,\s+(but|and)\b/i.test(body)) fail.push(`a comma before "${/,\s+(but|and)\b/i.exec(body)[1].toLowerCase()}" (write it without the comma, or start a new sentence)`);
   // scores and numbers
   const rev = (p) => p.replace(/^(\d+)-(\d+)$/, '$2-$1');   // the same score told from the other player's side
   for (const p of body.match(PAIR) || []) if (!ix.pairs.has(p) && !ix.pairs.has(rev(p))) fail.push(`score "${p}" is not on the sheet`);
@@ -297,7 +300,7 @@ What the report looks like:
 - 4 to 7 short paragraphs, separated by one blank line. Plain text: no title, no headings, no bullet points, no bold.
 - Paragraph 1: one or two sentences. Who beat whom and what kind of match it was (for example: straight sets but the first set could have gone the other way; a comeback from a set down; one single break of serve in the whole match). Not the score.
 - Then tell the match in playing order, one short paragraph per set or per phase: who broke first, the break points and set points that were saved, who served for a set and got broken, runs of games, the tiebreaks, and how the level of a player changed from set to set when the per-set numbers show it.
-- One paragraph with the numbers that explain the result, 3 to 5 sentences and at most 7 numbers in it; pick the few that explain why he won and leave the rest out: serve quality, unreturned serves and return quality when the sheet has them, the serve and return percentages that stood out, who was better from the baseline, and the best shot of a player when the sheet names it ("The forehand was his best shot: 24 forehand winners."), or the side his errors came from. Percentages only, never the counts behind them ("won 94% of the points behind his first serve", not "(29 of 31)"). Compare a number with a player's own average only when the sheet gives that average, and only when the gap is big.
+- One paragraph with the numbers that explain the result, 3 to 5 sentences and at most 7 numbers in it; pick the few that explain why he won and leave the rest out: serve quality, unreturned serves and return quality when the sheet has them, the serve and return percentages that stood out, who was better from the baseline, and what the sheet says about his forehand or backhand, with the number of winners or errors. Follow the wording of that sheet line and do not turn every one into "was his best shot". Percentages only, never the counts behind them ("won 94% of the points behind his first serve", not "(29 of 31)"). Compare a number with a player's own average only when the sheet gives that average, and only when the gap is big.
 - One or two quotes when the list has good ones (prefer the ones about this match: a turning point, how he played, how his body felt), each in its own paragraph or at the end of the paragraph it belongs to, introduced like: Fritz on that first set: "..." or simply Tabilo: "..."
 - Last paragraph: it starts with "All in all," and gives a short verdict in one or two sentences. Then the next opponent when the sheet names him ("Next is Rune, who ...") with what the sheet says about his week. After a final: the title.
 
@@ -309,6 +312,7 @@ Hard rules:
 - Never say where anything comes from: no "the stats", "the data", "the card", "the commentators", "the highlights", "in his interview", "according to".
 - Never write about a shot (forehand, backhand, volley, net), the body (injury, pain, tired, fresh), nerves, the crowd, the court speed or the balls unless a line of the fact sheet says so. A quote does not count as a line of the fact sheet.
 - No "I", "me", "my", "we" or "our" outside a quote. No questions. No exclamation marks, except "(!!!)" at most once, straight after one number that is truly exceptional.
+- Never put a comma before "but" or before "and". Write "He broke for 3–1 but got broken straight back" and "He served well and returned even better", or start a new sentence.
 - Simple words everybody understands. No idioms, no sports-page phrases ("sealed the deal", "punched his ticket", "dug deep", "clinical"). Short sentences. Past tense for what happened.
 - Write little about the loser: what he did well in one sentence when the numbers show it, and what went wrong.
 - The playing style of a player may be used once, and only in the form "against a counterpuncher like Norrie" or "Gojo is a big server", only when the sheet gives it. Never call a player by his style in the verdict.
@@ -320,15 +324,15 @@ The founder's own phrases, use them where they fit: "The first set could easily 
 Two reports the founder wrote, for the voice only (never reuse their facts):
 
 ---
-Fritz is into the quarter-finals in straight sets, but the first set could easily have gone the other way.
+Fritz is into the quarter-finals in straight sets but the first set could easily have gone the other way.
 
-Norrie started better. He broke in the third game. Fritz was struggling to find his first serve (49% in the first set) and lost a few big points. Norrie led 5–3 and had two set points. Fritz saved both, and from there the match turned completely: he won five games in a row, breaking Norrie when he served for the set at 5–4 and again at 6–5.
+Norrie started better. He broke in the third game. Fritz was struggling to find his first serve (49% in the first set) and lost a few big points. Norrie led 5–3 and had two set points. Fritz saved both and from there the match turned completely: he won five games in a row, breaking Norrie when he served for the set at 5–4 and again at 6–5.
 
 Fritz on that first set: "I feel like there were a lot of times in the first set when I lost some big points, I had some chances."
 
 The second set was a different Fritz. His first serve went up to 71% and he won 94% of the points behind it. He broke at 4–3 and served out the match in the next game, finishing with his 13th ace.
 
-Fritz ended with an 8.8 serve quality and 40% unreturned serves. He also returned very well, with an 8.4 return quality, as he was able to create 7 break points against a counterpuncher like Norrie. Norrie did not get many free points on his serve, only 20% of his serves did not come back, and Fritz was clearly the better player from the baseline (36–22).
+Fritz ended with an 8.8 serve quality and 40% unreturned serves. He also returned very well, with an 8.4 return quality, as he was able to create 7 break points against a counterpuncher like Norrie. Norrie did not get many free points on his serve, only 20% of his serves did not come back and Fritz was clearly the better player from the baseline (36–22).
 
 All in all, a very convincing second set after a slow start. Next is Rune, who came back from a set down against Kecmanovic.
 ---
@@ -336,9 +340,9 @@ Humbert won in straight sets against Gojo, without playing his best tennis.
 
 The first set was over quickly. Humbert broke twice at the start and led 4–0. Gojo really struggled behind his second serve and made 4 double faults, so Humbert always had chances on return. He converted 4 of his 5 break points in the match.
 
-The second set was closer. Gojo broke first and led 3–1, with his only break point of the match. Humbert broke straight back, and then again at 4–4 before serving it out. It was not a clean set from Humbert, with 15 unforced errors for 8 winners, and his first serve percentage was low the whole match (55%).
+The second set was closer. Gojo broke first and led 3–1, with his only break point of the match. Humbert broke straight back and then again at 4–4 before serving it out. It was not a clean set from Humbert, with 15 unforced errors for 8 winners and his first serve percentage was low the whole match (55%).
 
-All in all, an easy scoreline, but Humbert will need to serve better in the next round. Next is Musetti, who had a bye and beat Samuel in straight sets in his only match so far.
+All in all, an easy scoreline but Humbert will need to serve better in the next round. Next is Musetti, who had a bye and beat Samuel in straight sets in his only match so far.
 ---
 
 Reply with the report text only.`;

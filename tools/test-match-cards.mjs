@@ -45,7 +45,7 @@ await ok('report sentences: serve quality, unreturned serves, return quality and
   assert.deepEqual(shotSentences(M, 'p1', 'p2', E({ serveQuality: 8.8, unreturnedPct: 40, returnQuality: 8.4, baselineWon: 36, over9Won: 10 }, { serveQuality: 7.4, unreturnedPct: 20, returnQuality: 6.9, baselineWon: 22, over9Won: 4 })),
     ['Musetti ended with an 8.8 serve quality and 40% unreturned serves.', 'He also returned very well, with an 8.4 return quality.', 'Musetti was clearly the better player from the baseline (36–22).', 'Musetti won the long rallies 10–4.']);
   // the loser: one sentence at most; a strong serve with a weak return is one sentence (the real Sonego card: 9.0 and 5.8)
-  assert.deepEqual(shotSentences(M, 'p1', 'p2', E({}, { serveQuality: 9, unreturnedPct: 31, returnQuality: 5.8 })), ['Humbert ended with a 9.0 serve quality and 31% unreturned serves, but it was not his best return performance, with a return quality of 5.8.']);
+  assert.deepEqual(shotSentences(M, 'p1', 'p2', E({}, { serveQuality: 9, unreturnedPct: 31, returnQuality: 5.8 })), ['Humbert ended with a 9.0 serve quality and 31% unreturned serves but it was not his best return performance, with a return quality of 5.8.']);
   assert.deepEqual(shotSentences(M, 'p1', 'p2', E({ returnQuality: 5.4 }, {})), ['It was not the best return performance of Musetti, with a return quality of 5.4.']);
   assert.deepEqual(shotSentences(M, 'p1', 'p2', E({ baselineWon: 39 }, { baselineWon: 31, over9Won: 6 })), [], 'gaps of 8 and 5 are small: not mentioned');
   assert.deepEqual(shotSentences(M, 'p1', 'p2', E({ serveQuality: null, unreturnedPct: 36 }, {})), ['Musetti ended with 36% unreturned serves.'], 'a blank number is left out, never printed');

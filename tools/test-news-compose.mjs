@@ -24,11 +24,11 @@ const SHEET = factSheet({ m: M, w, l, rep: null, shard: FX.pbp, round: 'semi-fin
 const SUR = new Set(['sinner', 'alcaraz', 'fritz', 'musetti', 'tirante']);
 const GOOD = `Fritz is into the final after a very convincing win over Musetti in straight sets.
 
-The first set was decided by one break. Fritz broke for 2–1 and that was enough. He was not perfect in that set, with 11 unforced errors for 14 winners, but he served it out.
+The first set was decided by one break. Fritz broke for 2–1 and that was enough. He was not perfect in that set, with 11 unforced errors for 14 winners. He still served it out.
 
 The second set was a different Fritz. He broke for 2–1 and again for 4–1. His first serve went up to 83% and he made only 1 unforced error in the whole set (!!!). Musetti really struggled behind his second serve.
 
-Fritz ended with a 9.4 serve quality and 41% unreturned serves, and he won 77% of his second-serve points.
+Fritz ended with a 9.4 serve quality and 41% unreturned serves. He also won 77% of his second-serve points.
 
 Fritz: "I just lost to Lorenzo in a final not too long ago, so I knew I had to change a lot of things and play a certain type of way. I executed what I wanted to do really well."
 
@@ -41,10 +41,11 @@ await ok('the sheet carries the result, the breaks in playing order, both box sc
   const t = SHEET.text;
   for (const s of ['Fritz beat Musetti 6–4, 6–2 in the SF.', 'First set: Fritz won it 6–4.', 'Fritz broke for 2–1.', 'Fritz broke for 2–1 (he needed 2 break points in that game).', 'Fritz broke for 4–1.',
     'Fritz in the second set: 2 aces, 0 double faults, first serve in 83%', 'Fritz: serve quality 9.4, 41% unreturned serves, return quality 7.3', 'Next for Fritz: Tirante in the final.',
-    'got a walkover from Rune in the QF', 'beat Tabilo 7–5, 7–6 in the SF', 'Fritz: 13 forehand winners, 6 backhand winners.', 'The forehand was the best shot of Fritz.', 'Musetti: 7 forehand winners, 2 backhand winners.']) yes(t.includes(s), `missing: ${s}`);
+    'got a walkover from Rune in the QF', 'beat Tabilo 7–5, 7–6 in the SF', 'Fritz: 13 forehand winners, 6 backhand winners.', 'Musetti: 7 forehand winners, 2 backhand winners.']) yes(t.includes(s), `missing: ${s}`);
   yes(!/dominance ratio|performance/.test(t), 'the closing-line figures are not sheet facts');
-  yes(!/best shot of Musetti|errors of (Fritz|Musetti) came/.test(t), 'no best shot under 10 winners, no weak side under 12 errors');
-  eq(check(GOOD.replace('but he served it out', 'and the forehand was his best shot with 13 forehand winners')).failures, [], 'the forehand may be named when the sheet names it');
+  yes(/(best shot of Fritz|Fritz did most of his damage with the forehand|forehand of Fritz made the difference|winners of Fritz came from the forehand|forehand was the big weapon of Fritz)/.test(t), 'the forehand of Fritz is named (13 to 6), in one of the wordings');
+  yes(!/(of|with the) Musetti|Musetti (did|missed|played)|backhand of|errors of Fritz|all or nothing/.test(t.split('## SHOT NUMBERS')[1].split('##')[0].replace(/^Musetti: .*$/gm, '')), 'no best shot under 10 winners, no weak side under 12 errors');
+  eq(check(GOOD.replace('He still served it out', 'His forehand did the damage with 13 forehand winners')).failures, [], 'the forehand may be named when the sheet names it');
 });
 await ok('a point log that does not add up to the final score gives no playing-order lines (never half a story)', () => {
   const bad = JSON.parse(JSON.stringify(FX.pbp)); bad.sets[0].games.pop();
@@ -90,15 +91,32 @@ await ok('refuses a quotation that is not word for word, one cut mid-sentence, a
   refuses(GOOD.replace('Fritz: "I just', 'He said: "I just').replace('All in all, a very dominant performance from Fritz', 'All in all, a very dominant performance'), /speaker/);
 });
 await ok('refuses a shot, the body or a title that no line of the sheet carries — a quote does not count', () => {
-  refuses(GOOD.replace('but he served it out', 'but he hit a great volley'), /"volley"/);
+  refuses(GOOD.replace('He still served it out', 'He hit a great volley'), /"volley"/);
   refuses(GOOD.replace('He broke for 2–1 and again', 'Musetti looked tired. He broke for 2–1 and again'), /"tired"/);
   refuses(GOOD.replace('Next is Tirante', 'It would be his first title of the year. Next is Tirante'), /"title"|"year"/);
+});
+await ok('refuses a comma before "but" or "and" (founder 2026-11-14) — outside a quotation only', () => {
+  refuses(GOOD.replace('He still served it out.', 'He was not perfect, but he served it out.'), /comma before "but"/);
+  refuses(GOOD.replace('He broke for 2–1 and again for 4–1.', 'He broke for 2–1, and again for 4–1.'), /comma before "and"/);
+});
+await ok('a wing with most of the winners AND most of the errors is "all or nothing" / "high risk and high reward", and the wording changes from match to match', () => {
+  const card = JSON.parse(JSON.stringify(FX.card)); card.p1.fhWinners = 20; card.p1.bhWinners = 8; card.p1.fhUnforced = 18; card.p1.bhUnforced = 9;
+  const seen = new Set();
+  for (let i = 0; i < 12; i++) {
+    const t = factSheet({ m: { ...M, id: 'past-' + i }, w, l, rep: null, card, quotes: [] }).text;
+    const line = t.split('\n').find((x) => /all or nothing on the forehand of Fritz|Fritz played high risk and high reward on the forehand/.test(x));
+    yes(line, 'the all-or-nothing line'); yes(!/best shot of Fritz|damage with/.test(t), 'not also a plain best-shot line'); seen.add(line.slice(0, 20));
+  }
+  yes(seen.size === 2, 'both wordings appear across matches');
+  const plain = new Set();
+  for (let i = 0; i < 30; i++) plain.add(factSheet({ m: { ...M, id: 'past-' + i }, w, l, rep: null, card: FX.card, quotes: [] }).text.split('\n').find((x) => /forehand/.test(x) && /Fritz/.test(x) && !/^Fritz: /.test(x)));
+  yes(plain.size >= 4, `the best-shot line has several wordings (${plain.size})`);
 });
 await ok('refuses first person, a named source, an initial, a question, markdown and a missing "All in all"', () => {
   refuses(GOOD.replace('The second set was a different Fritz.', 'I think the second set was a different Fritz.'), /first person/);
   refuses(GOOD.replace('Fritz ended with', 'According to the data, Fritz ended with'), /names a source/);
   refuses(GOOD.replace('win over Musetti', 'win over L. Musetti'), /initial/);
-  refuses(GOOD.replace('but he served it out.', 'but did he care?'), /question mark/);
+  refuses(GOOD.replace('He still served it out.', 'Did he care?'), /question mark/);
   refuses(GOOD.replace('The first set was', '**The first set** was'), /markdown/);
   refuses(GOOD.replace('All in all, a', 'In short, a'), /All in all/);
 });
