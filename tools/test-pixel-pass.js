@@ -404,7 +404,7 @@ check('item 6 · a player with fewer than six results emits what he has, never p
 // modals). The per-box `size` field and `hlSuffixColor` are no longer read by the render.
 const FIG_SIZE = (n) => n > 16 ? 19 : n > 10 ? 20 : 26;
 function figuresOf(html) {
-  return (html.match(/font-weight:700;color:var\(--(?:text|text-label)\);line-height:1;white-space:nowrap;font-size:(\d+)px;">([^<]*)</g) || [])
+  return (html.match(/font-weight:700;color:var\(--(?:text|text-label)\);line-height:1(?:\.1)?;white-space:nowrap;font-size:(\d+)px;">([^<]*)</g) || [])
     .map((f) => { const m = /font-size:(\d+)px;">([^<]*)</.exec(f); return { px: +m[1], text: m[2] }; });
 }
 check('item 7 · each tile figure is 26px, 20px over 10 characters, 19px over 16', () => {

@@ -24524,6 +24524,21 @@ function pp2StartLoads(key){
   loadPp2SpeedMap(key);
   loadPp2Dna();
   pp2LoadSplits(key);
+  loadPp2Mto(key);
+}
+// Profile v4 §1 (handoff 2026-11-14) · the MTO badge reads the site's mto-matches.json (tools/build-mto-matches.mjs,
+// every pipeline run: the medical time-outs keyed by api-tennis event key). Once per session; a 404 or a failed read is
+// "no file" (window.pp2MtoMatches null → no badge), never an empty claim. The module joins each one to his career
+// history by event key (player-profile-v2.js mtoRowsFor).
+let _pp2MtoLoad = null;
+function loadPp2Mto(key){
+  if (!_pp2MtoLoad) {
+    _pp2MtoLoad = fetch('./mto-matches.json', { cache: 'no-cache' })
+      .then(r => r.ok ? r.json() : null)
+      .then(j => { window.pp2MtoMatches = j && j.matches ? j : null; return window.pp2MtoMatches; })
+      .catch(() => { _pp2MtoLoad = null; window.pp2MtoMatches = null; return null; });
+  }
+  return _pp2MtoLoad.then(v => { if (v) pp2RepaintIfOpen(String(key)); return v; });
 }
 // TEN-391 · his career-splits file (career-splits/<key>.json), started at click time with the
 // other loads. Draw record, its modal and Key insights read it; while it is in flight they paint

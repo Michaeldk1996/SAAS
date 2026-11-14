@@ -225,9 +225,11 @@ H.check('4 · Court speed while the shard loads: no units and no H / A dashes', 
   assert(!/on \d+ priced/.test(t), 'a priced count while loading');
   assert(!/matches · —/.test(t) && !/(Slow|Medium|Fast) —/.test(t), 'a units dash while loading: ' + t.slice(0, 300));
   assert(!/ — — /.test(t), 'an unpriced H / A pair dashes while loading');
+  // v4 §0.5 (handoff 2026-11-14): the money figure is yield % (1 dp), never raw units — none of it while loading
+  assert(!/[+−]\d+\.\d%/.test(t), 'a yield figure while loading');
   W.marketEdge[FX.key] = FX.marketEdge; delete W.marketEdgePending[FX.key];
   const t2 = T(withState(I, { key: p.key, speedSurf: 'all', speedBand: null }, () => I.renderSpeedModal(p)));
-  assert(/[+−]\d+\.\du/.test(t2), 'the landed modal prints no units');
+  assert(/[+−]\d+\.\d%/.test(t2), 'the landed modal prints no yield %');
 });
 H.check('4 · Matchup Backing while the shard loads: no units, no "0 priced"', () => {
   const styles = { players: [] };
@@ -237,11 +239,13 @@ H.check('4 · Matchup Backing while the shard loads: no units, no "0 priced"', (
   const open = { key: p.key, styleRow: 'Attacking Baseliner' };
   const t = T(withState(I, open, () => I.renderStylesModal(p)));
   assert(/Attacking Baseliner/.test(t), 'no archetype row rendered — the check would be vacuous');
+  // v4 §0.5 / §7 (handoff 2026-11-14): the money figure is the yield %, never raw units as the headline.
   assert(!/[+−]\d+\.\d\du\b/.test(t), 'a Backing figure while loading');
+  assert(!/[+−]\d+\.\d%/.test(t), 'a yield figure while loading');
   assert(!/0 priced/.test(t), 'the drill claims 0 priced while loading');
   W.marketEdge[FX.key] = FX.marketEdge; delete W.marketEdgePending[FX.key];
   const t2 = T(withState(I, open, () => I.renderStylesModal(p)));
-  assert(/[+−]\d+\.\d\du/.test(t2), 'the landed modal prints no Backing');
+  assert(/[+−]\d+\.\d%\s*yield backing him/.test(t2), 'the landed modal prints no yield backing him');
 });
 H.check('4 · the ledger while the shard loads: an unpriced H / A cell is blank, not a dash', () => {
   const { I, p } = fxModule({ noShard: true, extra: PENDING() });

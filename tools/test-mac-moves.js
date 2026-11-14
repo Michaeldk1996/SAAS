@@ -50,9 +50,11 @@ const p = paused('20261024', '2026-10-27T09:00:00Z');
 check('a daily build 3 days old → paused, "Data paused · last updated 24 Oct 2026"', p.paused === true && p.text === 'Data paused · last updated 24 Oct 2026', JSON.stringify(p));
 check('no build date → no claim (null), never a guessed state', paused(undefined, '2026-10-27T09:00:00Z') === null && paused('2026-10', '2026-10-27T09:00:00Z') === null);
 const v2 = fs.readFileSync(path.join(ROOT, 'player-profile-v2.js'), 'utf8');
-check('Draw record tile: the support line carries the paused text', v2.includes("esc(b.key === 'splits' && splitsPaused() ? splitsPaused().text"));
+// Profile v4 §0.6 (handoff 2026-11-14): internal status never shows on the profile — the paused text left it.
+check('Level & round tile: no paused text on the profile (v4 §0.6)', !/splitsPaused|sfFeedPaused|Data paused/.test(v2.replace(/\/\/[^\n]*/g, '')));
 // Profile v2 (founder 2026-11-09): the drawer is "Level & round" with the export's subtitle; the paused suffix stays.
-check('Level & round modal: the header subtitle carries it', v2.includes("case 'splits': return 'Record by round, level, opponent and format ' + MIDDOT + ' tiebreaks, hold and break rate' + splitsPausedSuffix();"));
+// Profile v4 §6: the subtitle is the v4 export's (Player Stat Boxes.dc.html:5729), still with no status suffix.
+check('Level & round modal: the header subtitle carries no status suffix (v4 §0.6)', v2.includes("case 'splits': return 'Record by round, level, opponent and format';"));
 check('legacy profile: Career + Last 52 weeks subtitles carry it', (html.match(/\$\{vsTier\}\$\{pausedNote\}/g) || []).length === 2);
 check('the profile loads the tour file (the build date) with his splits', html.includes('loadCareerSplitsTour().then(t => { if (t) pp2RepaintIfOpen(k); });'));
 

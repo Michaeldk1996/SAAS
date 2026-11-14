@@ -1565,7 +1565,8 @@ check('Q8 · tour-baselines.json is published (pipeline.yml cp + assert) and reb
 function mkBoxTour(support) { const m = /([+\u2212]\d+\.\d)pp vs tour/.exec(support); return m ? m[1] : null; }
 function mkAllTileTour(html) {
   const tile = html.slice(html.indexOf('data-pp2="mk-role" data-v="all"'));   // profile v2 role strip
-  const m = /vs tour ([^ <]+)/.exec(tile.slice(0, tile.indexOf('</div>')));
+  // v4 §8.1 (handoff 2026-11-14): the subline reads "tour −x.xx%" (v2 read "vs tour … · flat 1u stake")
+  const m = /(?:vs )?tour ([^ <]+)/.exec(tile.slice(0, tile.indexOf('</div>')));
   return m ? m[1] : null;
 }
 check('Market edge box = All tile: the box support line prints the modal\'s All-tile tour figure', () => {
@@ -1629,7 +1630,9 @@ check('market box headline and the modal quote the same yield and n', () => {
     const html = I.renderMarketModal(p);
     // Profile v2: the role strip's All cell carries the priced n as "N matches · W–L" (every row is priced).
     assert(html.includes(mk.headline.n + ' matches'), `${p.name}: modal does not carry the priced n`);
-    assert(html.includes('closing'), `${p.name}: modal does not label the price basis`);
+    // v4 §0.4 (handoff 2026-11-14): no caption on the page; the price basis is stated in the box's (?) popover
+    const savedInfo = I.state.info; I.state.info = 'mk1';
+    try { assert(I.renderMarketModal(p).includes('closing'), `${p.name}: modal does not label the price basis`); } finally { I.state.info = savedInfo; }
   }
 });
 
@@ -2522,14 +2525,18 @@ mustFail('[neg] the Tier check would catch the retired Tier control', () => {
   const html = '<button data-pp2="career-tier" data-v="atp">ATP</button>';
   assert(!/data-pp2="career-tier"/.test(html), 'a Tier control is drawn');
 });
-checkCareer('bands run Fast · Medium · Slow under "Faster courts … Slower courts" (profile v2, the export)', () => {
+// v4 §5 (handoff 2026-11-14) replaces the "Faster courts … Slower courts" axis line with a 16px spacer; order kept.
+checkCareer('bands run Fast · Medium · Slow, three side by side under a 16px spacer, no Faster / Slower axis line (v4 §5)', () => {
   let n = 0;
   for (const p of spdSample()) {
     I.state.spdSurf = 'all'; I.state.spdBand = null;
     assert.deepStrictEqual(I.spdData(p).bands.map(b => b.key), ['fast', 'medium', 'slow'], `${p.name}: the bands are not in the export's order`);
     const html = I.renderSpeedModal(p);
-    assert(/Faster courts[\s\S]*Slower courts/.test(html), `${p.name}: the Faster … Slower rule is missing`);
-    assert(/grid-template-columns:repeat\(3,minmax\(0,1fr\)\);gap:8px/.test(html), `${p.name}: the tiles are not three side by side`);
+    assert(!/Faster courts|Slower courts/.test(html), `${p.name}: the retired Faster … Slower axis line is drawn`);
+    assert(/<div style="height:16px;"><\/div><div style="display:grid;grid-template-columns:repeat\(3,minmax\(0,1fr\)\);gap:8px;">/.test(html), `${p.name}: the tiles are not three side by side under the 16px spacer`);
+    const grid = html.slice(html.indexOf('<div style="height:16px;">'));
+    const order = ['Fast', 'Medium', 'Slow'].map(k => grid.indexOf('>' + k + '</span>'));
+    assert(order[0] > -1 && order[0] < order[1] && order[1] < order[2], `${p.name}: the band tiles are not drawn Fast · Medium · Slow`);
     n++;
   }
   assert(n > 0, 'no sampled player had a rated ATP match — this check never ran');
@@ -2551,14 +2558,22 @@ checkCareer('every band reconciles: its record is its matches, the three bands +
   I.state.spdSurf = 'all';
   assert(n > 0, 'never ran');
 });
-checkCareer('a band with matches opens its drill box; an empty band opens nothing (no small-sample gate, ruling 2026-11-09)', () => {
-  let n = 0;
+// v4 §5 (handoff 2026-11-14) supersedes the 2026-11-09 "no small-sample gate": a band under PP4.SPEED_FLOOR matches is a
+// dash + "n matches · min 5" and opens nothing.
+checkCareer('a band at the floor or above opens its matches; under the floor it shows a dash + "n matches · min 5" and opens nothing (v4 §5)', () => {
+  let n = 0, thin = 0;
+  const FLOOR = I.PP4.SPEED_FLOOR;
   for (const p of spdSample()) {
     I.state.spdSurf = 'all';
     const D = I.spdData(p), html = I.renderSpeedModal(p);
     D.bands.forEach(b => {
       const hook = html.includes('data-pp2="spd-band" data-v="' + b.key + '"');
-      assert.strictEqual(hook, b.n > 0, `${p.name}: ${b.key} (n=${b.n}) ${hook ? 'opens' : 'does not open'}`);
+      assert.strictEqual(hook, b.n >= FLOOR, `${p.name}: ${b.key} (n=${b.n}) ${hook ? 'opens' : 'does not open'}`);
+      if (b.n && b.n < FLOOR) {
+        thin++;
+        assert(html.includes(b.n + (b.n === 1 ? ' match' : ' matches') + ' · min ' + FLOOR), `${p.name}: thin ${b.key} does not say "${b.n} matches · min ${FLOOR}"`);
+        assert(!html.includes('>' + Math.round(b.pct) + '%</span>') || D.bands.some(x => x !== b && x.n >= FLOOR && Math.round(x.pct) === Math.round(b.pct)), `${p.name}: thin ${b.key} prints a rate`);
+      }
     });
     n++;
   }
@@ -2569,7 +2584,7 @@ checkCareer('band units are summed over its priced subset, and its drill box nam
   for (const p of spdSample()) {
     I.state.spdSurf = 'all';
     I.spdData(p).bands.forEach(b => {
-      if (!b.priced) return;
+      if (!b.priced || b.n < I.PP4.SPEED_FLOOR) return;   // v4 §5: a band under the floor opens no detail card
       const cents = b.ms.filter(m => m.cents != null).reduce((a, m) => a + m.cents, 0);
       assert.strictEqual(Math.round(b.units * 100), cents, `${p.name}: ${b.key} units are not the priced cents`);
       assert(Number.isInteger(cents), 'units not in whole cents');
@@ -3101,12 +3116,12 @@ mustFail('the order check would catch a thin row left at the top', () => {
 // Item 3 · ONE coverage line with real counts, and the old three-sentence roster
 // essay gone. Both halves matter: he asked for the fact AND for the essay to go.
 // Profile v2: no page footnotes — the labelled-opponent coverage is the table's (?) note, with real counts.
-checkCareer('item 3 · coverage is one line with real counts, in the table (?) note (v2)', () => {
+checkCareer('item 3 · coverage is one line with real counts, in the (?) note (v2; v4 one (?))', () => {
   let stated = 0;
   for (const p of SAMPLE) {
     const rows = I.styleRows(p);
     if (!rows.total) continue;
-    I.state.info = 'sty2';
+    I.state.info = 'sty1';   // v4 §7: the table card's (?) is hidden; the coverage note sits in the drawer's one (?)
     let html; try { html = I.renderStylesModal(p); } finally { I.state.info = null; }
     const labelled = rows.total - rows.unlabelled;
     assert(html.indexOf(labelled + ' of ' + rows.total + ' matches against a labelled opponent') > -1,
@@ -3211,24 +3226,27 @@ checkCareer('items 5,12,17-21,25,27-29 · the v2 controls, chart, table and dril
   const want = [
     ['surface pills', 'data-pp2="sty-surf" data-v="Indoors"'],
     ['window', 'data-pp2="sty-win" data-v="l52"'],
-    // v3 B2: the chart card sits under the joined band (no top edge, r 0 0 12 12)
-    ['joined band', 'data-pp2-band="joined"'],
-    ['chart card', 'background:var(--inner);border:1.25px solid var(--line);border-top:0;border-radius:0 0 12px 12px;padding:14px 16px 12px;'],
+    // v4 §7 (handoff 2026-11-14, replaces v3 B2): the band joins the card on the card tone (r16), the chart card is
+    // the card tone with the 6% ring, padded 22/24/18; no "dot size = matches" caption (§0.4); one table head line.
+    ['joined band', 'data-pp2-band="joined-card"'],
+    ['chart card', 'background:var(--card);border:1.25px solid var(--edge-6);border-top:0;border-radius:0 0 16px 16px;padding:22px 24px 18px;'],
     ['chart head', '>Win rate by archetype</span>'],
-    ['legend', 'dot size = matches · career'],
     ['his average line', 'his average · '],
     ['brackets', '>Serve-first</span>'],
-    ['table head', 'Record by archetype · career'],
+    ['table head', '>Record by archetype</span>'],
     ['sortable heads', 'data-pp2="sty-sort" data-v="pct"'],
-    ['table tracks', 'grid-template-columns:minmax(0,1.5fr) minmax(0,1fr) 56px 60px 52px 64px;gap:0 12px;'],
+    ['table tracks', 'grid-template-columns:minmax(0,1.5fr) minmax(0,1fr) 56px 60px 52px 76px 64px;gap:0 12px;'],
     ['(?) icons', 'data-pp2="info" data-v="sty1"'],
   ];
+  assert(html.indexOf('dot size = matches') < 0, `${subject.name}: the v3 unit caption is back (v4 §0.4)`);
   want.forEach(([what, needle]) => assert(html.indexOf(needle) > -1, `${subject.name}: ${what} missing — "${needle}"`));
   const open = I.styleRows(subject).filter(r => I.styleOpenable(r.won + r.lost) && r.priced > 0)[0];
   const fb = I.FB_BUILD.styles(subject, open.axis.label);
   assert(fb && fb.tiles.length === 4, 'the drill box has no four tiles');
-  assert.deepStrictEqual(fb.tiles.map(t => t.label), ['Win rate', 'On the price', 'Favourite · underdog', 'Deciding sets']);
-  assert(/u$/.test(fb.tiles[1].fig), 'On the price is not in units (founder 2026-11-09: always units)');
+  assert.deepStrictEqual(fb.tiles.map(t => t.label), ['Win rate', 'Yield backing him', 'Favourite · underdog', 'Deciding sets']);
+  // v4 §0.5 (handoff 2026-11-14): the headline money figure is the yield %; the units stay in the sub line.
+  assert(/%$/.test(fb.tiles[1].fig), 'Yield backing him is not a yield %');
+  assert(/ priced · [+−]\d+\.\d\d units$/.test(fb.tiles[1].sub), 'the yield tile does not state its priced count and units');
   console.log(`        ${subject.name}: v2 structure + ${open.axis.label} drill box`);
 });
 
@@ -3415,6 +3433,39 @@ const STORES = [
           return I.mpAvailable({ eventKey: 5 }).stats ? 1 : 0; }) },
     ];
   })(),
+  {
+    // Profile v4 §1 (handoff 2026-11-14): the MTO badge's store, mto-matches.json, published as window.pp2MtoMatches by
+    // the host (loadPp2Mto). Measured through the module's own join (mtoRowsFor) with a feed + career row built by
+    // construction: one time-out in one of his matches must come back as one row.
+    name: 'pp2MtoMatches',
+    file: 'mto-matches.json',
+    resolve: () => {
+      const saved = [W.pp2MtoMatches, W.careerHistory];
+      try {
+        W.pp2MtoMatches = { matches: { 7: [{ calledAt: new Date(Date.now() - 864e5).toISOString(), player: 'Zed Testplayer', opponent: 'Ann Other', playerSide: 1, games: [[3], [2]] }] } };
+        W.careerHistory = Object.assign({}, W.careerHistory, { zz1: [{ date: '2026-11-01', tournament: 'Test', round: '1/8-finals', opponent: 'A. Other', won: true, eventKey: 7, sets: [{ p: 6, o: 3 }] }] });
+        return I.mtoRowsFor({ key: 'zz1', name: 'Z. Testplayer' }).length;
+      } finally { W.pp2MtoMatches = saved[0]; W.careerHistory = saved[1]; }
+    },
+    universe: () => 1,
+    floor: 1,
+  },
+  {
+    // Profile v4 §6: Level & round's tour figures = career-splits-tour.json's pooled win–loss (host careerSplitsTour,
+    // loaded with his splits file). Measured through the module's accessor (splTourFor) on a pool built by construction.
+    name: 'careerSplitsTour',
+    file: 'career-splits-tour.json',
+    resolve: () => {
+      const saved = W.careerSplitsTour;
+      try {
+        W.careerSplitsTour = { pooled: { a: { career: { 'Grand Slams': { M: 10, W: 6 } } }, b: { career: { 'Grand Slams': { M: 10, W: 4 } } } } };
+        const t = I.splTourFor('Grand Slams', 'career');
+        return t && Math.abs(t.rate - 50) < 1e-9 && t.M === 20 ? 1 : 0;
+      } finally { W.careerSplitsTour = saved; }
+    },
+    universe: () => 1,
+    floor: 1,
+  },
   {
     // TEN-384 · founder Q8: the Market edge tour baselines are the Database's Tour aggregates,
     // shipped as tour-baselines.json and published on window.tourBaselines with the profile data.
@@ -3921,9 +3972,9 @@ check('the all-stores table covers every data store the module reads', () => {
     // sfGoToH2H the hand-off) and the event link (pp2TournamentKey / pp2OpenTournament over the Tournaments registry)
     // — logic and navigation, no store of their own
     'pp2IsWatched', 'pp2ToggleWatch', 'pp2CompareRoster', 'sfGoToH2H', 'pp2TournamentKey', 'pp2OpenTournament', 'pp2EventCategory', 'pp2EventCountry', 'pp2EloNeed', 'pp2EloReady', 'pp2OppEloRank',
-    // founder ruling 2026-10-20 item 1: the host's "Data paused" rule for a Mac-only feed (sfFeedPaused over the
-    // career-splits-tour.json build date the page already loaded) — logic, no rows
-    'sfFeedPaused',
+    // (sfFeedPaused left the profile with v4 §0.6, handoff 2026-11-14: no internal status text on the page)
+    // Profile v4 §6: the host's tour-pool loader for Level & round (loadCareerSplitsTour, typeof-guarded) — a trigger
+    'loadCareerSplitsTour',
     // market-edge-stale (founder 2026-10-29): why the Market edge box is empty (pp2MarketDashed over the page's loaded
     // Database join + career-history; tools/test-market-edge-stale.mjs) — logic, no rows
     'pp2MarketDashed']);
@@ -4061,11 +4112,12 @@ check('the surface chips read their own node and change the figures', () => {
   });
   assert(subject, 'no covered player has clay figures distinct from all — the check would be immune');
   I.state.modal = 'profile'; I.state.heat = true;
-  I.state.hbSurf = 'all';
+  // Profile v4 §9: the heatmap box reads the drawer band's Surface (state.ltSurf), not its own control.
+  I.state.ltSurf = 'all';
   const all = I.renderHeatSheet(PLAYERS[subject]);
-  I.state.hbSurf = 'clay';
+  I.state.ltSurf = 'clay';
   const clay = I.renderHeatSheet(PLAYERS[subject]);
-  I.state.hbSurf = 'all'; I.state.heat = false;
+  I.state.ltSurf = 'all'; I.state.heat = false;
   assert.notStrictEqual(all, clay, `${PLAYERS[subject].name}: the clay chip rendered the all-surfaces grid`);
   // The surface label moved from a trailing "clay only" pill into the export's
   // single context chip ("Clay · last 24M"), which is item 5 of the rebuild.
@@ -5195,7 +5247,8 @@ check('item 6 · every surface ROW equals its own season-table COLUMN', () => {
   assert.deepStrictEqual(g.clay, { won: 6, lost: 2 });
   assert.deepStrictEqual(g.indoors, { won: 5, lost: 3 });
   // the ROW's W–L cell must quote the same carved pair, not the raw bucket
-  const wl = (lab) => { const m = new RegExp('data-v="' + lab + '"[^>]*white-space:nowrap;">(\\d+\u2013\\d+)<').exec(html); return m && m[1]; };
+  // v4: the row is one grid; its W–L cell follows the row's name cell (data-pp2-srow)
+  const wl = (lab) => { const m = new RegExp('data-pp2-srow="' + lab + '"[\\s\\S]*?white-space:nowrap;color:var\\(--text-label\\);">(\\d+\u2013\\d+)<').exec(html); return m && m[1]; };
   assert.strictEqual(wl('hard'), '9\u20135', 'the Hard row is not the carved record');
   assert(!html.includes('>13\u20137<'), 'the Hard row still shows the RAW bucket');
   // and the four rows + footnote must sum to the career total
@@ -5222,11 +5275,11 @@ check('item 3 · the bar is minimal: 6px track and fill, radius 3, ONE solid col
   // TEN-376: --bar-track renamed --track; the fill is --bar (full) / --text-label (small sample).
   const tracks = (html.match(/height:6px;border-radius:3px;background:var\(--track\);/g) || []);
   assert(tracks.length >= 4, `only ${tracks.length} minimal tracks rendered (expected one per surface row)`);
-  const fills = (html.match(/height:6px;width:[\d.]+%;background:([^;]+);/g) || []);
+  const fills = (html.match(/data-pp2-sbar="\w+"[^>]*><span style="display:block;height:100%;width:[\d.]+%;background:([^;]+);/g) || []);
   assert(fills.length >= 3, `only ${fills.length} bar fills rendered`);
   fills.forEach((f) => {
-    // profile v2 (founder 2026-11-09, colours follow the export): the surface bars are the export's link blue
-    assert(/background:var\(--link\);/.test(f), `a fill is not the export's one solid colour: ${f}`);
+    // v4 §0.1 / §2 (handoff 2026-11-14): with no match list open every surface bar is the one neutral colour
+    assert(/background:var\(--pp-x-bar-neutral\);/.test(f), `a fill is not the neutral bar: ${f}`);
   });
   // the ramp is GONE — no alpha-varying blue anywhere on a fill
   assert(!/width:[\d.]+%;background:(rgba\(91,155,255,|color-mix\(in srgb, var\(--bar\))/.test(html),
@@ -5902,9 +5955,9 @@ mustFail('[neg] the subtitle check would catch the rejected coverage wording', (
 check('§5.3 item 5 · the search field is the reference\'s compact control + 14px magnifier', () => {
   assert(/<svg width="14" height="14"[^>]*>\s*<circle cx="9" cy="9" r="6"/.test(T_HTML),
     'the 14px magnifier is missing');
-  // Profile v2: the export's field (#0C0E16 = --inner, 6% ring, r9, 7/12), flex:none beside the pills.
-  assert(/<label style="display:flex;align-items:center;gap:9px;width:220px;box-sizing:border-box;flex:none;background:var\(--inner\);border:1\.25px solid var\(--edge-6\);border-radius:9px;padding:7px 12px;/.test(T_HTML),
-    'the field is not the compact --inner control');
+  // v4 §4 (handoff 2026-11-14): the field is transparent on an 8% ring, r8, 6/12, flex:none beside the pills.
+  assert(/<label style="display:flex;align-items:center;gap:9px;width:220px;box-sizing:border-box;flex:none;background:transparent;border:1px solid color-mix\(in srgb, var\(--text\) 8%, transparent\);border-radius:8px;padding:6px 12px;/.test(T_HTML),
+    'the field is not the v4 transparent control on an 8% ring');
   assert(/placeholder="Search a tournament"/.test(T_HTML), 'the placeholder drifted');
   assert(/data-pp2="tourn-search"[^>]*font-size:12\.5px/.test(T_HTML), 'the input is not 12.5px');
 });
@@ -5927,8 +5980,12 @@ check('§5.3 items 6-7 · seven columns on the v2 grid, with SURFACE, the bar an
   });
   ['name', 'wl', 'pct', 'roi'].forEach(k => assert(T_HTML.indexOf('data-pp2="tourn-sort" data-v="' + k + '"') > 0, `the ${k} head is not sortable`));
   assert(/padding:11px 10px;border-radius:8px;cursor:pointer;border-top:1px solid var\(--line\)/.test(T_HTML), 'the row padding or border-top drifted');
-  assert(/height:6px;border-radius:3px;overflow:hidden;background:var\(--track\);/.test(T_HTML), 'the 6px bar track is missing');
-  assert(!/left:50%;width:1px;background:var\(--bar-2\)/.test(T_HTML), 'the 50% tick is back');
+  assert(/data-pp2-tbar="1"[^>]*height:6px;\s*border-radius:3px;background:var\(--track\);/.test(T_HTML) ||
+    /data-pp2-tbar="1"[^>]*height:6px;border-radius:3px;background:var\(--track\);/.test(T_HTML), 'the 6px bar track is missing');
+  // v4 §4 / §0.1: a 1x12 tick at 50% (white 35%); every closed row's fill is the neutral bar, never blue.
+  assert(/left:50%;top:-3px;width:1px;height:12px;background:color-mix\(in srgb, var\(--text\) 35%, transparent\)/.test(T_HTML), 'the 50% tick is missing');
+  assert(/background:var\(--pp-x-bar-neutral\);/.test(T_HTML), 'a closed row\'s bar is not the neutral bar');
+  assert(!/border-radius:3px;width:[\d.]+%;background:var\(--pp-x-link\)/.test(T_HTML), 'a closed row\'s bar is blue');
   assert(/\.pp2-trow:hover\{background:color-mix\(in srgb, var\(--text\) 6%, transparent\)!important;\}/.test(PP2_SRC), 'the row has no 6% hover');
   ['tourn-level', 'tourn-surf'].forEach(k => assert(T_HTML.indexOf('data-pp2="' + k + '"') > 0, `the ${k} pills are missing`));
 });
@@ -6054,10 +6111,10 @@ check('§5.3 items 13-14 · the detail is the file\'s container and carries the 
   I.state.tournOpen = 'Australian Open';
   const open = I.renderTournModal(ZVEREV);
   I.state.tournOpen = null;
-  // founder 2026-11-10 (the export's detail, file :612): --inner + 1px --edge-16, r10, 8/10 margin, 14 16 12 padding
-  assert(open.indexOf('background:var(--inner);border:1px solid var(--edge-16);border-radius:10px;' +
-    'margin:8px 0 10px;padding:14px 16px 12px;') > 0, 'the detail container drifted from the reference');
-  assert(/position:sticky;top:0;z-index:1;background:var\(--inner\)[^"]*border-bottom:1px solid var\(--edge-10\);">Date</.test(open), 'the detail head row is not the export\'s sticky, ruled head');
+  // v4 §4 (handoff 2026-11-14): --card on a 1.25px 10% ring, r12, 6/12 margin, 16 16 12 padding
+  assert(open.indexOf('background:var(--card);border:1.25px solid var(--edge-10);border-radius:12px;' +
+    'margin:6px 0 12px;padding:16px 16px 12px;') > 0, 'the detail container drifted from the reference');
+  assert(/position:sticky;top:0;z-index:1;align-self:stretch;min-height:14px;background:var\(--card\)[^"]*border-bottom:1px solid var\(--edge-10\);">Date</.test(open), 'the detail head row is not the v4 sticky --card head');
   assert(/\d+–\d+ · \d+% · \d+ matches listed/.test(open), 'the header meta line is missing');
   assert(/>Australian Open · career</.test(open), 'the detail caps head is missing');
 });
@@ -6078,20 +6135,21 @@ check('§5.3 item 15 · five tiles, and a Slam\'s middle three differ from a non
   const tiles = h => (h.match(/font-family:var\(--font-words\);font-size:10\.5px;font-weight:700;letter-spacing:0\.10em;text-transform:uppercase;color:var\(--text-label\);[^"]*">([^<]+)</g) || [])
     .map(x => x.replace(/.*">/, '').replace(/</, '')).filter(x => !/ · career$/.test(x));
   assert.deepStrictEqual(tiles(sHtml),
-    ['W–L record', 'Grand Slam career', 'Over 3.5 sets · this event',
-     'Over 3.5 sets · other majors', 'Backing him here']);
+    ['W–L record', 'Grand Slam career', 'Over 3.5 sets · here',
+     'Over 3.5 · other majors', 'Backing him here']);
   assert.deepStrictEqual(tiles(oHtml),
     ['W–L record', 'Best result', 'Sets won', 'Last played', 'Backing him here']);
-  // TEN-384 T6: the five tiles are ONE joined strip (--card + 1px --edge-6, r12, --line dividers), figure mono 24/700.
-  assert(/grid-template-columns:repeat\(5,minmax\(0,1fr\)\);gap:0;background:var\(--inner\);border:1\.25px solid var\(--edge-6\);border-radius:12px;overflow:hidden;/.test(sHtml),
-    'the tiles are not one joined 5-cell strip');
-  assert(/padding:13px 12px;min-width:0;border-left:1px solid var\(--line\)/.test(sHtml), 'the strip cells lost their --line dividers');
+  // v4 §4 (handoff 2026-11-14): five SEPARATE --card tiles on the card ring, r12, gap 8 (was one joined strip).
+  assert(/data-pp2-tourn-tiles="1" style="display:grid;grid-template-columns:repeat\(5,minmax\(0,1fr\)\);gap:8px;margin-bottom:14px;"/.test(sHtml),
+    'the tiles are not a 5-column grid, gap 8');
+  assert((sHtml.match(/padding:13px 10px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:7px;min-width:0;background:var\(--card\);border:1\.25px solid var\(--edge-6\);border-radius:12px;/g) || []).length === 5,
+    'the five tiles are not separate --card tiles on the card ring');
   assert(/font-size:24px;font-weight:700/.test(sHtml), 'the tile figure is not mono 24/700');
 });
-mustFail('[neg] the tile check would catch the retired separate tiles', () => {
-  const shipped = '<div style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;">';
-  assert(/grid-template-columns:repeat\(5,minmax\(0,1fr\)\);gap:0;background:var\(--card\)/.test(shipped),
-    'the tiles are not one joined 5-cell strip');
+mustFail('[neg] the tile check would catch the v3 joined strip', () => {
+  const shipped = '<div style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:0;background:var(--inner);border:1.25px solid var(--edge-6);border-radius:12px;overflow:hidden;">';
+  assert(/data-pp2-tourn-tiles="1" style="display:grid;grid-template-columns:repeat\(5,minmax\(0,1fr\)\);gap:8px;/.test(shipped),
+    'the tiles are not a 5-column grid, gap 8');
 });
 
 check('§5.3 item 15 · Over 3.5 counts only completed main-draw Slam matches', () => {
@@ -6130,20 +6188,21 @@ check('§5.3 items 16-18 · the match grid is the file\'s, with DATE, SET SCORES
   I.state.tournOpen = 'Australian Open';
   const open = I.renderTournModal(ZVEREV);
   I.state.tournOpen = null;
-  assert(open.indexOf('grid-template-columns:48px 12px minmax(0,1.1fr) 36px 40px ' +
-    'minmax(0,1.3fr) 46px 46px;gap:0 10px') > 0, 'the match grid tracks are not the file\'s');
+  // v4 §4: no column gap, cells padded 10px left, the grid pulled 10px left
+  assert(open.indexOf('grid-template-columns:58px 22px minmax(0,1.1fr) 46px 50px ' +
+    'minmax(0,1.3fr) 56px 56px;gap:0;align-items:center;margin-left:-10px;') > 0, 'the match grid tracks are not the v4 file\'s');
   ['Date', 'Opponent', 'Rd', 'Sets', 'Set scores', 'H', 'A'].forEach((h) => {
     assert(open.indexOf('>' + h + '</span>') > 0, `the ${h} match column head is missing`);
   });
   // TEN-376: the sticky head paints the modal --card surface (was --popup); W/L squares are --pos / --neg.
-  assert(/position:sticky;top:0;z-index:1;background:var\(--inner\)/.test(open), 'the match head is not sticky');   // founder 2026-11-10: the export's panel tone
+  assert(/position:sticky;top:0;z-index:1;align-self:stretch;min-height:14px;background:var\(--card\)/.test(open), 'the match head is not sticky');   // v4: the box's own --card tone
   assert(/width:8px;height:8px;border-radius:2px;(?:margin-top:4px;)?background:(var\(--pos\)|var\(--neg\))/.test(open),
     'the W/L marker is not the file\'s 8px radius-2 square');
 });
 mustFail('[neg] the match-grid check would catch the shipped four-column list', () => {
   const shipped = 'grid-template-columns:12px 36px minmax(0,1.3fr) 60px;gap:0 12px';
-  assert(shipped.indexOf('grid-template-columns:48px 12px minmax(0,1.1fr) 36px 40px ' +
-    'minmax(0,1.3fr) 46px 46px;gap:0 10px') > 0, 'the match grid tracks are not the file\'s');
+  assert(shipped.indexOf('grid-template-columns:58px 22px minmax(0,1.1fr) 46px 50px ' +
+    'minmax(0,1.3fr) 56px 56px;gap:0;align-items:center;margin-left:-10px;') > 0, 'the match grid tracks are not the v4 file\'s');
 });
 
 check('§5.3 item 18 · the opponent takes the FILE\'s name form, not the ledger\'s', () => {
@@ -6153,7 +6212,7 @@ check('§5.3 item 18 · the opponent takes the FILE\'s name form, not the ledger
   // `Player Stat Boxes.dc.html`:2325 writes "J. Sinner" (initial-first) while
   // `Player Profile.dc.html`:838 writes the ledger's "Shelton B." The modal is
   // owned by the Stat Boxes file (README §12), so it carries the feed form.
-  const names = (open.match(/white-space:nowrap;padding:6px 0;">([^<]+)</g) || [])
+  const names = (open.match(/white-space:nowrap;padding:6px 0 6px 10px;">([^<]+)</g) || [])
     .map(x => x.replace(/.*">/, '').replace(/</, ''))
     .filter(x => /[A-Za-z]/.test(x) && !/^\d/.test(x));
   assert(names.length > 0, 'no opponent cell was found at all');
@@ -6213,8 +6272,88 @@ mustFail('[neg] the ordering check would catch a draw-order list', () => {
   assert.deepStrictEqual(d, d.slice().sort((a, b) => a - b), 'matches are not final-first');
 });
 
+// ── Profile v4 (handoff 2026-11-14, CHANGES §0.1 · §0.2 · §2 · §3 · §4) ─────────────────────────────────────────────
+const V4_TOURN_OPEN = (() => { I.state.tournOpen = 'Australian Open'; const h = I.renderTournModal(ZVEREV); I.state.tournOpen = null; return h; })();
+function v4TournChrome(html) {
+  // §4: the band is --card on the 6% card ring, padded 20px 24px
+  assert(/data-pp2-band="standalone" style="[^"]*padding:20px 24px;background:var\(--card\);border:1\.25px solid var\(--edge-6\);border-radius:12px;/.test(html),
+    'the filter band is not --card + card ring, padded 20/24');
+  // §4: header + list in ONE --card card: the head is its top (no bottom edge, r16 top), the list its bottom (no top edge, r16 bottom)
+  assert(/data-pp2-tourn-head="1"[^>]*background:var\(--card\);border:1\.25px solid var\(--edge-6\);border-bottom:0;border-radius:16px 16px 0 0;/.test(html),
+    'the column header is not the top of the one --card card');
+  assert(/data-pp2-tourn-list="1"[^>]*background:var\(--card\);border:1\.25px solid var\(--edge-6\);border-top:0;border-radius:0 0 16px 16px;padding:0 14px 10px;/.test(html),
+    'the list is not the bottom of the one --card card');
+  // §4: the header draws no rule of its own
+  const head = html.slice(html.indexOf('data-pp2-tourn-head="1"'), html.indexOf('data-pp2-tourn-list="1"'));
+  assert(!/border-bottom:1px/.test(head), 'the column header still draws its own rule');
+  // §4: W–L in soft ink
+  assert(/font-size:12px;color:var\(--text-soft\);text-align:right;white-space:nowrap;">\d+–\d+</.test(html), 'the W–L is not soft ink');
+}
+check('v4 §4 · Record per tournament: band, one card, no header rule, W–L soft ink', () => v4TournChrome(T_HTML));
+mustFail('[neg] the v4 §4 check would catch the v3 standalone header and --inner band', () => {
+  const v3 = '<div data-pp2-band="standalone" style="display:flex;padding:10px 16px;background:var(--inner);border:1.25px solid var(--line);border-radius:12px;">' +
+    '<div style="display:grid;padding:0 10px;"><span style="padding-bottom:8px;border-bottom:1px solid var(--edge-10);">Tournament</span></div>' +
+    '<div style="max-height:calc(100vh - 250px);"><span style="font-size:12px;color:var(--text-label);text-align:right;white-space:nowrap;">16–5</span></div>';
+  v4TournChrome(v3);
+});
+check('v4 §0.1 · Record per tournament: the bar is neutral, blue only on the open tournament', () => {
+  const row = h => h.slice(h.indexOf('data-t="Australian Open"'), h.indexOf('data-pp2-tourn-detail') > 0 ? h.indexOf('data-pp2-tourn-detail') : h.indexOf('data-t="Australian Open"') + 4000);
+  assert(/border-radius:3px;width:[\d.]+%;background:var\(--pp-x-link\);/.test(row(V4_TOURN_OPEN)), 'the open tournament\'s bar is not blue');
+  assert(/border-radius:3px;width:[\d.]+%;background:var\(--pp-x-bar-neutral\);/.test(row(T_HTML)), 'the closed tournament\'s bar is not neutral');
+  const others = V4_TOURN_OPEN.replace(row(V4_TOURN_OPEN), '');
+  assert(!/border-radius:3px;width:[\d.]+%;background:var\(--pp-x-link\);/.test(others), 'a tournament that is not open has a blue bar');
+  assert(!/background:var\(--bar\);/.test(T_HTML.slice(T_HTML.indexOf('data-pp2-tourn-list'))), 'a row bar still reads --bar (value-tinted blue)');
+});
+mustFail('[neg] the §0.1 check would catch the v3 always-blue bar', () => {
+  const v3 = 'data-t="Australian Open" ...<span style="display:block;height:100%;width:76.2%;background:var(--bar);"></span>';
+  assert(/border-radius:3px;width:[\d.]+%;background:var\(--pp-x-bar-neutral\);/.test(v3), 'the closed tournament\'s bar is not neutral');
+});
+check('v4 §2 · Career record: surface bars neutral, blue for the surface whose match list is open', () => {
+  const closed = renderCareer(CM_PLAYER);
+  assert(/data-pp2-sbar="idle"[^>]*><span style="display:block;height:100%;width:[\d.]+%;background:var\(--pp-x-bar-neutral\);/.test(closed),
+    'a closed surface row\'s bar is not the neutral bar');
+  assert(!/data-pp2-sbar="open"/.test(closed), 'a surface reads open with no drill');
+  const saved = { ...I.state };
+  let open;
+  try {
+    Object.assign(I.state, { key: CM_PLAYER.key, careerScope: 'career', careerTab: 'record', careerDrill: { kind: 'surface', surf: 'hard' }, info: null });
+    open = I.renderCareerModal(CM_PLAYER, { archetype: null });
+  } finally { Object.assign(I.state, saved); }
+  assert(/data-pp2-sbar="open"[^>]*><span style="display:block;height:100%;width:[\d.]+%;background:var\(--pp-x-link\);/.test(open),
+    'the open surface\'s bar is not blue');
+  assert((open.match(/data-pp2-sbar="open"/g) || []).length === 1, 'more than one surface bar is blue');
+  // the row is the reference's: one grid per surface, bled 6px, r6, hairline, hover class
+  assert(/class="pp2-csrow" style="display:grid;grid-template-columns:64px minmax\(0,1fr\) 64px 60px 68px;gap:0 14px;align-items:center;padding:11px 6px;margin:0 -6px;border-radius:6px;border-bottom:1px solid var\(--line\);/.test(closed),
+    'a surface row is not the reference\'s row grid');
+  assert(/\.pp2-csrow:hover\{background:color-mix\(in srgb, var\(--text\) 6%, transparent\);\}/.test(PP2_SRC), 'the surface row has no 6% hover');
+  assert(/data-pp2-shead="1" style="[^"]*padding-bottom:8px;border-bottom:1px solid var\(--edge-10\);/.test(closed), 'the surface head is not on a 10% rule');
+});
+mustFail('[neg] the §2 check would catch the v3 always-blue surface bar', () => {
+  const v3 = '<span data-pp2-sbar="idle" style="x"><span style="display:block;height:100%;width:67.6%;background:var(--link);"></span></span>';
+  assert(/data-pp2-sbar="idle"[^>]*><span style="display:block;height:100%;width:[\d.]+%;background:var\(--pp-x-bar-neutral\);/.test(v3), 'neutral');
+});
+check('v4 §3 · Calendar record: the Melbourne summer events are in the Australian swing', () => {
+  const sv = W.pp2EventCountry;
+  try {
+    W.pp2EventCountry = () => null;   // the catalog has no country for them (measured on the live page, 14 Nov 2026)
+    ['Murray River Open', 'Great Ocean Road Open', 'Melbourne (Summer Set)', 'Melbourne'].forEach((t) => {
+      const r = { tournament: t, mon: 1, surface: 'hard' };
+      const cc = I.calCountryOf(r);
+      assert.strictEqual(cc, 'AU', t + ' is not placed in Australia');
+      assert.strictEqual(I.calSwingOf(r, cc), 'aus', t + ' (February) is not in the Australian swing');
+    });
+    // control: an unknown February hard event still follows the Middle East rule
+    const r = { tournament: 'Some Event', mon: 1, surface: 'hard' };
+    assert.strictEqual(I.calSwingOf(r, I.calCountryOf(r)), 'me', 'the February fallback moved');
+  } finally { W.pp2EventCountry = sv; }
+});
+mustFail('[neg] the swing check would catch the pre-fix rule (no country for Murray River Open)', () => {
+  const r = { tournament: 'Murray River Open', mon: 1, surface: 'hard' };
+  assert.strictEqual(I.calSwingOf(r, null), 'aus', 'Murray River Open is not in the Australian swing');
+});
+
 check('§5.3 item 20 · both lists scroll under the file\'s caps', () => {
-  assert(T_HTML.indexOf('max-height:calc(100vh - 250px);min-height:420px;overflow-y:auto') > 0,
+  assert(T_HTML.indexOf('max-height:calc(100vh - 270px);min-height:420px;overflow-y:auto') > 0,
     'the tournament list has no scroll cap');
   I.state.tournOpen = 'Australian Open';
   const open = I.renderTournModal(ZVEREV);
@@ -7273,9 +7412,10 @@ check('fix 9 · one small-sample mark: "small sample · n=X", and no asterisk an
   assert(!/'\*'/.test(PP2_SRC), 'an asterisk mark literal is back in player-profile-v2.js');
   assert(!/>\*<\/span>/.test(PP2_SRC), 'a `>*</span>` mark is back in player-profile-v2.js');
   assert(!/\* 5–9|'\* 5' \+ ENDASH/.test(PP2_SRC), 'the asterisk footnote is back');
-  const sit = I.sitRowHtml('Win first set', { w: 4, l: 3 }, 50);
-  assert(sit.includes('small sample · n=7'), 'the Situational 5–9 slot does not read "small sample · n=7"');
-  assert(!I.sitRowHtml('Win first set', { w: 8, l: 4 }, 50).includes('small sample'), 'a 12-match row was marked');
+  // Profile v4 §0.4 (handoff 2026-11-14): Live trading carries no sample caption at all — a thin row is grey, its
+  // sample reads from the record ("4 of 7"). The v3 "small sample · n=7" slot is gone (tools/test-situational-render.js).
+  assert(!/sitRowHtml|small sample · n=' \+/.test(PP2_SRC.slice(PP2_SRC.indexOf('function ltModel'), PP2_SRC.indexOf('function renderHeatSheet'))),
+    'a sample caption is back in the Live trading drawer');
 });
 mustFail('[neg] the mark check would catch the old bare "small sample" slot', () => {
   const sit = '<span>small sample</span>';

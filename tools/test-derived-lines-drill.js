@@ -294,8 +294,13 @@ function shapeChecks(A, shape) {
       ['Set handicap', 'Total games'].forEach((fam) => assert.deepStrictEqual(lab(c, fam), lab(all, fam), ctx + ' ' + fam));
       assert(!c.groups.some((g) => g.title === 'Match shape'), ctx + ': Match shape is back');
       const html = withState(I, { key: p.key, marketTab: 'lines', lcFmt: f, lcRole: role, lcWin: win, lcTier: tier }, () => I.renderLinesTabV2(p));
-      const shown = (html.match(/data-lc-line="([^"]+)"/g) || []).map((x) => x.slice(14, -1));
-      assert.deepStrictEqual(shown, rowsOf(c).map((r) => r.label), ctx + ' rendered lines');
+      // v4 §8.2 (handoff 2026-11-14): every line of the format is a chip; the offered ones are live, a line not offered
+      // to a favourite stays as an outlined, faint chip (data-lc-off) with no figure — the offered set is unchanged.
+      const chips = (html.match(/data-lc-chip="[^"]+"[^>]*/g) || []);
+      const live = chips.filter((x) => !/data-lc-off/.test(x)).map((x) => /data-lc-chip="([^"]+)"/.exec(x)[1]);
+      const off = chips.filter((x) => /data-lc-off/.test(x)).map((x) => /data-lc-chip="([^"]+)"/.exec(x)[1]);
+      assert.deepStrictEqual(live.slice().sort(), rowsOf(c).map((r) => r.label).sort(), ctx + ' rendered lines');
+      assert.deepStrictEqual(off.slice().sort(), ghAll.filter((l) => gh.indexOf(l) < 0).sort(), ctx + ' not-offered chips');
       k++;
     });
     return k + ' tables';

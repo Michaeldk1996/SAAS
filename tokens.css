@@ -183,4 +183,14 @@
   --pp-x-pos:        #3DD68C;
   --pp-x-neg:        #E0616F;
   --pp-x-link:       #5B9BFF;
+  /* Profile v4 (handoff 2026-11-14, CHANGES §0.1): every win-rate / record bar is this neutral until the member clicks
+     its item (then --pp-x-link); the faint grey is the export's fourth text tone. */
+  --pp-x-bar-neutral: #4A5470;
+  --pp-x-faint:       #5B6480;
+  --pp-x-ink-muted:   #6B7390;   /* Match-up thin dot ring + bracket labels (§7), Market edge Price sensitivity heads + "under 5" tag (§8.1) */
+  --pp-x-edge-12:     rgba(255, 255, 255, 0.12);   /* popover rings (MTO), section rules */
+  --pp-x-edge-20:     rgba(255, 255, 255, 0.20);   /* a popover close button's hover ring */
+  --pp-x-shadow-pop:  0 18px 48px rgba(0, 0, 0, 0.55);   /* the export's popover shadow, no inset ring */
+  --pp-x-track:       #0A0D14;   /* v4 Live trading: the situation box's All / Happened / Did not track */
+  --pp-x-shadow-box:  0 30px 80px rgba(0, 0, 0, 0.6);   /* v4 Live trading: the situation record / heatmap box shadow */
 }

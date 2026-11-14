@@ -184,10 +184,14 @@ H.check('B2 · every view keeps the hooks; a row with no match (Challenger: not 
 H.check('B3 · W–L cells never wrap (a 4-digit career record stays on one line)', () => {
   const { I } = load();
   const h = I.renderSplitsModal(P);
-  const cell = />582–240<|>[0-9]+–[0-9]+</.exec(h);
-  assert(cell, 'no W–L cell');
-  const before = h.slice(0, cell.index);
-  assert(/white-space:nowrap;[^"]*"\s*$/.test(before.slice(before.lastIndexOf('style="'))) || /white-space:nowrap/.test(before.slice(before.lastIndexOf('<span'))), 'W–L cell wraps');
+  // v4 §6: the band and every row's W–L cell (the band's 20px record is the first one)
+  const re = />[0-9]+–[0-9]+</g; let cell, n = 0;
+  while ((cell = re.exec(h))) {
+    const before = h.slice(0, cell.index);
+    assert(/white-space:nowrap/.test(before.slice(before.lastIndexOf('<span'))), 'W–L cell wraps at ' + h.slice(cell.index, cell.index + 12));
+    n++;
+  }
+  assert(n > 10, 'no W–L cells (' + n + ')');
 });
 H.check('B4 · Level and By round partition the counted matches (Team events / ATP Finals rows; round robin is the only round left out)', () => {
   const { I } = load();
@@ -369,6 +373,125 @@ H.check('E2 · the match file loads lazily: requested by opening a row (pp2DrawN
   assert((HTML.match(/pp2DrawNeed\(/g) || []).length === 1, 'the page itself never calls it');
   const src = fs.readFileSync(SRC, 'utf8');
   assert(/function renderSplitsModalV2\(p\) \{\s*if \(typeof window\.pp2DrawNeed === 'function'\) window\.pp2DrawNeed\(p\.key\);/.test(src), 'opening Level & round asks for it');
+});
+
+// ── F · Profile v4 §6 (handoff 2026-11-14): Level & round rebuilt — boxes, blocks, tour figures ─────────────────
+// Every tour figure in the reference is a placeholder. The only tour record the page holds is career-splits-tour.json
+// `pooled` (win–loss per category per tracked player); a row with no category there, and every sets / hold / break /
+// aces tour figure, is a dash.
+const POOL = { pooled: {
+  a: { career: { 'Grand Slams': { M: 100, W: 50 }, 'Masters': { M: 200, W: 80 }, 'vs. Top 10': { M: 100, W: 30 }, 'Quarter-finals': { M: 50, W: 25 } },
+       last52: { 'Grand Slams': { M: 10, W: 5 } } },
+  b: { career: { 'Grand Slams': { M: 100, W: 50 }, 'Masters': { M: 0, W: 0 } } } } };
+const cellsOf = (h, label) => {
+  const i = h.indexOf('data-pp2-splrow="' + label + '"'); assert(i > 0, 'row ' + label);
+  const row = h.slice(i, h.indexOf('</div>', i));
+  return { row, cells: (row.match(/text-align:right;white-space:nowrap;">([^<]*)</g) || []).map(x => x.replace(/^.*">/, '').replace(/<$/, '')) };
+};
+const boxesOf = h => (h.match(/data-pp2-splbox="[^"]+"/g) || []).map(x => x.slice(17, -1));
+H.check('F1 · v4 structure: 1180 drawer, band 20/24, boxes (4 · 4 · 3), four blocks in two columns, 36px rows, the export\'s column heads', () => {
+  const { I } = load();
+  assert.strictEqual(I.MODAL_WIDTH.splits, 1180, 'drawer width');
+  const want = { results: ['Strongest level', 'Weakest level', 'Best round', 'vs Top 10'], sets: ['Tiebreaks', 'Sets won', 'Strongest situation', 'Weakest situation'],
+    service: ['Hold', 'Return games won', 'Aces'] };
+  const heads = { results: 'W–L Win % vs his avg vs tour', sets: 'Tiebreaks won TB per match Games won Sets won Sets vs his avg Sets vs tour',
+    service: 'Aces % DF % Service held Return won Hold vs his avg Hold vs tour' };
+  Object.keys(want).forEach(v => {
+    I.state.splView = v;
+    const h = I.renderSplitsModal(P);
+    assert(/data-pp2-band="standalone" style="[^"]*padding:20px 24px;/.test(h), 'band padding ' + v);
+    assert.deepStrictEqual(boxesOf(h), want[v], 'boxes ' + v);
+    assert.strictEqual((h.match(/data-pp2-splsec=/g) || []).length, 4, 'four blocks ' + v);
+    assert(/grid-template-columns:repeat\(2,minmax\(0,1fr\)\);gap:12px;/.test(h), '2-column grid ' + v);
+    assert(T(h).includes(heads[v]), 'column heads ' + v);
+    assert(/class="pp2-splrow" style="[^"]*min-height:36px;/.test(h), '36px rows ' + v);
+  });
+  I.state.splView = 'results';
+});
+H.check('F2 · no placeholder tour figure: without the tour file every vs tour cell is a dash and no box claims a gap', () => {
+  const { I } = load();
+  ['results', 'sets', 'service'].forEach(v => {
+    I.state.splView = v;
+    const h = I.renderSplitsModal(P), t = T(h);
+    assert(!/vs tour\s+[+−]|tour (50\.0|76\.0|22\.0|4\.9|44\.0|48\.5|27\.4)%/.test(t), 'a placeholder tour figure on ' + v);
+    ['Grand Slams', 'Quarter-finals', 'vs Top 10', 'Best of 5'].forEach(r => { const c = cellsOf(h, r).cells; assert.strictEqual(c[c.length - 1], '—', r + ' vs tour on ' + v); });
+  });
+  I.state.splView = 'results';
+});
+H.check('F3 · the tour figure = Σ wins ÷ Σ matches of every tracked player in that category and window; rows without one are dashes', () => {
+  const m = load(); m.W.careerSplitsTour = POOL;
+  const h = m.I.renderSplitsModal(P), S = m.I.splModel(P);
+  const gs = S.groups.Level.find(x => x.label === 'Grand Slams').s, ms = S.groups.Level.find(x => x.label === 'Masters 1000').s;
+  const pp = v => { const r = Math.round(v * 10) / 10; return (r > 0 ? '+' : r < 0 ? '−' : '') + Math.abs(r).toFixed(1) + 'pp'; };
+  assert.strictEqual(cellsOf(h, 'Grand Slams').cells[3], pp(gs.win - 50), 'GS vs 100/200 = 50%');
+  assert.strictEqual(cellsOf(h, 'Masters 1000').cells[3], pp(ms.win - 40), 'Masters vs 80/200 = 40% (a 0-match row adds nothing)');
+  ['Round 1', 'ATP 250', 'vs Top 20', 'Over 3.5 sets', 'Tiebreak record'].forEach(r => assert.strictEqual(cellsOf(h, r).cells[3], '—', r));
+  // the boxes: largest gap among rows with ≥ MINB matches and a tour figure
+  const t = T(h);
+  assert(/Strongest level\s+Matches ›\s+Masters 1000/.test(t) && /Weakest level\s+Matches ›\s+Grand Slams/.test(t), t.slice(0, 400));
+  assert(/Best round\s+Matches ›\s+Quarter-finals/.test(t) && /tour 50\.0%/.test(t) && /tour 30\.0%/.test(t), 'best round / vs Top 10 tour');
+  m.I.state.splitScope = 'last52';
+  const h2 = m.I.renderSplitsModal(P);
+  assert.strictEqual(cellsOf(h2, 'Masters 1000').cells[3], '—', 'last 52 reads the last52 pool only');
+  m.I.state.splitScope = 'career';
+});
+H.check('F4 · vs tour is coloured bold, grey under MINB (' + 15 + '); vs his avg is grey 11px regular', () => {
+  const m = load(); m.W.careerSplitsTour = { pooled: { a: { last52: { 'Finals': { M: 100, W: 50 }, 'Grand Slams': { M: 100, W: 50 } } } } };
+  m.I.state.splitScope = 'last52';
+  const h = m.I.renderSplitsModal(P), S = m.I.splModel(P);
+  const fin = S.groups['By round'].find(x => x.label === 'Finals').s, gs = S.groups.Level.find(x => x.label === 'Grand Slams').s;
+  assert(fin.n >= 5 && fin.n < 15 && gs.n >= 15, 'fixture: Finals ' + fin.n + ', Grand Slams ' + gs.n);
+  const tc = r => { const row = cellsOf(h, r).row; return /font-size:12\.5px;font-weight:700;color:([^;]+);/.exec(row.slice(row.lastIndexOf('<span')))[1]; };
+  assert.strictEqual(tc('Finals'), 'var(--text-label)', 'Finals ' + fin.n + ' matches: grey');
+  assert(/var\(--(pos|neg)\)/.test(tc('Grand Slams')), 'Grand Slams coloured');
+  assert(/font-size:11px;color:var\(--text-label\);text-align:right;white-space:nowrap;">[+−]?\d/.test(cellsOf(h, 'Grand Slams').row), 'vs his avg grey 11px');
+  m.I.state.splitScope = 'career';
+});
+H.check('F5 · a zero-match row shows dashes, a grey label, and opens nothing', () => {
+  const { I } = load();
+  const c = cellsOf(I.renderSplitsModal(P), 'Challenger');
+  assert(c.cells.every(x => x === '—'), c.cells.join(' '));
+  assert(!/data-pp2="fb-open"/.test(c.row) && /cursor:default/.test(c.row) && /color:var\(--text-label\)/.test(c.row));
+});
+H.check('F6 · §0.1 a box bar is neutral until clicked; the last box clicked stays blue after its match box closes', () => {
+  const m = load(); m.W.careerSplitsTour = POOL;
+  const bar = (h, label) => { const i = h.indexOf('data-pp2-splbox="' + label + '"'); return /data-pp2-splbar style="[^"]*background:([^;]+);/.exec(h.slice(i))[1]; };
+  let h = m.I.renderSplitsModal(P);
+  boxesOf(h).forEach(b => assert.strictEqual(bar(h, b), 'var(--pp-x-bar-neutral)', b + ' before a click'));
+  const v = /data-box="splbox" data-v="([^"]+)" data-pp2-splbox="Best round"/.exec(h)[1];
+  m.I.state.fb = { box: 'splbox', v: v };
+  assert(m.I.FB_BUILD.splbox(P, v).name === 'Quarter-finals', 'the box opens its row');
+  h = m.I.renderSplitsModal(P);
+  assert.strictEqual(bar(h, 'Best round'), 'var(--pp-x-link)', 'blue while open');
+  m.I.state.fb = null;
+  h = m.I.renderSplitsModal(P);
+  assert.strictEqual(bar(h, 'Best round'), 'var(--pp-x-link)', 'still blue after close');
+  assert.strictEqual(bar(h, 'Strongest level'), 'var(--pp-x-bar-neutral)', 'the others stay neutral');
+});
+H.check('F7 · Sets & games: no tour sets figure exists, so the situation boxes rank nothing (dash + reason); the overall boxes open All matches', () => {
+  const m = load(); m.W.careerSplitsTour = POOL; m.I.state.splView = 'sets';
+  const h = m.I.renderSplitsModal(P), t = T(h);
+  assert(/Strongest situation\s+—\s+—\s+no row with 15\+ matches has a tour figure/.test(t) && /Weakest situation\s+—\s+—\s+no row with 15\+ matches has a tour figure/.test(t), t.slice(0, 600));
+  const v = /data-box="splbox" data-v="([^"]+)" data-pp2-splbox="Sets won"/.exec(h)[1];
+  const fb = m.I.FB_BUILD.splbox(P, v);
+  assert.strictEqual(fb.name, 'All matches'); assert.strictEqual(fb.rows.length, m.I.splModel(P).rows.length);
+  const tb = /data-box="splbox" data-v="([^"]+)" data-pp2-splbox="Tiebreaks"/.exec(h)[1];
+  assert.strictEqual(m.I.FB_BUILD.splbox(P, tb).name, 'Tiebreak record');
+  m.I.state.splView = 'results';
+});
+H.check('F8 · match box: Grand Slams 4th tile = Over 3.5 sets; Tour average = the pool (a dash without one); Service tiles renamed', () => {
+  const m = load(); m.W.careerSplitsTour = POOL;
+  let fb = box(m.I, 'Level|Grand Slams');
+  const o35 = m.I.splModel(P).groups['Extra stats'].find(x => x.label === 'Over 3.5 sets').s;
+  assert.strictEqual(fb.tiles[3].label, 'Over 3.5 sets'); assert.strictEqual(fb.tiles[3].fig, o35.w + '–' + o35.l);
+  assert.strictEqual(fb.tiles[1].fig, '50.0%', 'tour = the pool');
+  fb = box(m.I, 'Level|ATP 250');
+  assert.strictEqual(fb.tiles[1].fig, '—'); assert.strictEqual(fb.tiles[3].label, 'Last 10 here');
+  m.I.state.splView = 'service';
+  fb = box(m.I, 'Level|Grand Slams');
+  assert.deepStrictEqual(fb.tiles.slice(0, 2).map(x => x.label), ['Service games held', 'Return games won']);
+  m.I.state.splView = 'results';
+  assert(!/vs tour at 50/.test(JSON.stringify(box(m.I, '', 'spltb').tiles)), 'tiebreak box: no 50% tour placeholder');
 });
 
 H.done();

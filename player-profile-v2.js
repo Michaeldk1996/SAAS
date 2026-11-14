@@ -35,6 +35,27 @@
 
   if (!window.FEATURE_PP2) return;
 
+  // ─── Profile v4 (handoff 2026-11-14) · the cut-offs Michael sets, in ONE place ──────────────────────────────
+  // Placeholder values from the handoff; every drawer reads them from here, never a literal of its own.
+  var PP4 = {
+    STK_MINP: 30,          // Streaks: priced matches a run state needs before it earns a verdict
+    STK_EDGE: 1,           // Streaks: yield gap (pp) beyond which a state is Back him / Fade him
+    CAL_MIN: 5,            // Calendar: priced matches before a rate shows
+    CAL_THIN: 10,          // Calendar: below this a shown rate is a thin sample
+    SPEED_FLOOR: 5,        // Court speed: a band under this many matches shows a dash
+    ALT_CUT_M: 500,        // Court speed: venue altitude (m) at or above which a match is "Altitude"
+    SPL_MINB: 15,          // Level & round: matches a row needs to be a summary box / coloured vs tour
+    HB_MIN: 10,            // Live trading heatmap: games a cell needs before it shows a rate and a colour
+    MTO_WINDOW_MONTHS: 12, // MTO badge: medical time-outs within this many months
+    LC_FIELD_DOT_PP: 1,    // Derived lines: white dot when his cover rate is this many pp above the field
+    LC_TINT_FULL_PP: 35,   // Derived lines: a chip's tint is full strength this many pp from 50%
+    LC_REL_VERY: 8,        // Derived lines: "Covers n in 10" — very reliable from 8,
+    LC_REL_OK: 6,          //   reliable from 6,
+    LC_REL_COIN: 4         //   coin flip from 4, else unreliable
+  };
+  // §0.1 · a win-rate / record bar is neutral unless the member clicked its item, then blue. Never by value.
+  function pp4Bar(selected) { return selected ? 'var(--pp-x-link)' : 'var(--pp-x-bar-neutral)'; }
+
   // ─── typography constants the spec fixes (README §3 data rules) ─────────────
   var MINUS = '−';   // U+2212, never a hyphen
   var ENDASH = '–';  // ranges
@@ -314,10 +335,16 @@
     '.pp2-ulink:hover{text-decoration-color:var(--text)!important;}' +
     '.pp2-fbrow:hover>*{background:var(--wash-4);box-shadow:-6px 0 0 var(--wash-4),6px 0 0 var(--wash-4);}' +
     '.pp2-clearall:hover{color:var(--text)!important;}' +
-    '.pp2-styrow:hover{background:var(--wash-4)!important;}.pp2-stydot:hover{border-color:var(--link)!important;}' +
-    '.pp2-mkcard:hover{background:var(--wash-4)!important;}.pp2-mkband:hover{background:var(--wash-4)!important;box-shadow:-10px 0 0 var(--wash-4),10px 0 0 var(--wash-4)!important;}.pp2-utab:hover{color:var(--text)!important;}' +
+    // v4 §7 · Match-up record hovers: a row = inset 4% white wash edge to edge; a summary tile lifts; a hovered dot takes the
+    // selected look (blue fill + ring + 4px halo; a thin sample keeps its hollow look with the soft ring), its label and code white.
+    '.pp2-styrow[data-pp2]:hover{box-shadow:inset 0 0 0 100px var(--wash-4);}' +
+    '.pp2-stytile:hover{border-color:color-mix(in srgb, var(--text) 22%, transparent)!important;transform:translateY(-1px);}' +
+    '.pp2-stydot.pp2-hov{background:var(--link)!important;border-color:var(--link)!important;box-shadow:0 0 0 4px color-mix(in srgb, var(--link) 18%, transparent)!important;}' +
+    '.pp2-stydot-thin.pp2-hov{background:var(--card)!important;border-color:var(--text-soft)!important;box-shadow:0 0 0 4px color-mix(in srgb, var(--text) 8%, transparent)!important;}' +
+    '.pp2-stylab.pp2-hov{color:var(--text)!important;}.pp2-stycode.pp2-hov{color:var(--text)!important;font-weight:700!important;}' +
+    '.pp2-mkcard:hover{background:var(--wash-4)!important;}.pp2-mkps:hover{box-shadow:inset 0 0 0 100px var(--wash-4);}.pp2-lchip:hover{filter:brightness(1.35);}.pp2-mkband:hover{background:var(--wash-4)!important;box-shadow:-10px 0 0 var(--wash-4),10px 0 0 var(--wash-4)!important;}.pp2-utab:hover{color:var(--text)!important;}' +
     '.pp2-fmrow:hover{background:var(--wash-5)!important;}.pp2-fmtrig:hover{border-color:var(--edge-24)!important;color:var(--text)!important;}' +
-    '.pp2-splgrid:has(.pp2-splcell:hover){}' +
+    '.pp2-splbox:hover{border-color:var(--edge-16)!important;background:var(--selected)!important;}.pp2-splrow:hover{background:var(--line)!important;}' +   // v4 §6
     '.pp2-calc:hover{filter:brightness(1.6);}' +
     '.pp2-tlink:hover{text-decoration-color:color-mix(in srgb, var(--text) 45%, transparent)!important;}' +
     // §5.3 item 7 — the file gives the tournament row a hover fill
@@ -326,6 +353,12 @@
     // scoped to the one class that carries it. The selected row sets its own
     // inline background, which outranks this.
     '.pp2-trow:hover{background:color-mix(in srgb, var(--text) 6%, transparent)!important;}' +   // v2: hover 6% white
+    '.pp2-csrow:hover{background:color-mix(in srgb, var(--text) 6%, transparent);}' +   // v4: Career record surface row hover
+    // v4 §4 · the reference's 9px scrollbar (thumb white 13%) on the tournament head, list and match list, so the
+    // stable gutter they reserve is the reference's width and the head's columns line up with the rows.
+    '.pp2-tscroll::-webkit-scrollbar{width:9px;height:9px;}' +
+    '.pp2-tscroll::-webkit-scrollbar-thumb{background:color-mix(in srgb, var(--text) 13%, transparent);border-radius:5px;}' +
+    '.pp2-tscroll::-webkit-scrollbar-track{background:transparent;}' +
     // A1/A3 · the box grid's responsive steps and the box hover border. Both are
     // states an inline style cannot express, so they land here with the rest.
     // The grid had NO media queries at all before this — the four-column track
@@ -341,7 +374,11 @@
     '@media (max-width:1100px){.pp2-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;}}' +
     '@media (max-width:720px){.pp2-grid{grid-template-columns:minmax(0,1fr)!important;}}' +
     // TEN-384: clickable tile hover = --tile-hover + --edge-16; ribbon chip hover = --edge-24.
-    '.pp2-box:hover{background:var(--tile-hover)!important;border-color:var(--edge-16)!important;}' +
+    // v4 reference: a tile's hover lifts its ring to 16% only (style-hover border-color), no background change
+    '.pp2-box:hover{border-color:var(--edge-16)!important;}' +
+    // v4 §1 · the MTO badge's ring goes full red on hover; the popover's close button goes ink with a 20% ring
+    '.pp2-mto:hover{border-color:var(--neg)!important;}' +
+    '.pp2-mtox:hover{color:var(--text)!important;border-color:var(--pp-x-edge-20)!important;}' +
     '.pp2-chip:hover{border-color:var(--edge-24)!important;}' +
     // §5.2B — every clickable record in the Career modal's season table. The
     // design file gives these cells `cursor:{{ y.cursor }}` but NO style-hover,
@@ -988,6 +1025,87 @@
   // --edge-16 hairline; the badge keeps its 3px ring, in --page. Initials stay white.
   var AVATAR_TONE = 'var(--selected)';
   var RANK_TONE = 'var(--selected)';
+  // ── Profile v4 §1 (handoff 2026-11-14) · medical time-outs ─────────────────────────────────────────────────
+  // Source: the site's mto-matches.json (host loadPp2Mto → window.pp2MtoMatches), one entry per time-out keyed by
+  // api-tennis event key. Identity: the event key must be one of HIS career-history matches; within that one match
+  // the time-out is his when the feed's caller ends with his surname and its "opponent" with that row's opponent's
+  // (both, or the row is left out — never a roster-wide name guess). It gives the match, the set and the game score
+  // when it was called: never a body part or a reason, and none is ever shown. Window = PP4.MTO_WINDOW_MONTHS.
+  var MON3 = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  function mtoFold(x) { return String(x || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z ]+/g, ' ').replace(/\s+/g, ' ').trim(); }
+  function mtoSurname(name) { return mtoFold(String(name || '').replace(/^(\s*[A-Za-z]{1,3}(-[A-Za-z]{1,2})?\.\s*)+/, '')); }
+  function mtoIsHim(full, short) { var f = mtoFold(full), s = mtoSurname(short); return !!s && (f === s || f.slice(-(s.length + 1)) === ' ' + s); }
+  function mtoRowsFor(p, nowMs) {
+    var feed = window.pp2MtoMatches, ch = careerHistoryFor(p.key);
+    if (!feed || !feed.matches || !ch || !ch.length) return [];
+    var byEk = {};
+    ch.forEach(function (r) { if (r && r.eventKey != null) byEk[String(r.eventKey)] = r; });
+    var now = nowMs == null ? Date.now() : nowMs;
+    var cut = new Date(now); cut.setUTCMonth(cut.getUTCMonth() - PP4.MTO_WINDOW_MONTHS);
+    var out = [];
+    Object.keys(feed.matches).forEach(function (ek) {
+      var row = byEk[ek];
+      if (!row) return;
+      (feed.matches[ek] || []).forEach(function (m) {
+        var at = Date.parse(m && m.calledAt);
+        if (!isFinite(at) || at < cut.getTime() || at > now) return;
+        if (!mtoIsHim(m.player, p.name) || !mtoIsHim(m.opponent, row.opponent)) return;
+        // the set and game score at the call, read from HIS side: games = [[side-1 games per set], [side-2 games per set]]
+        var g = m.games, me = m.playerSide === 1 ? 0 : m.playerSide === 2 ? 1 : -1, taken = null;
+        if (me >= 0 && g && g[0] && g[1] && g[0].length && g[0].length === g[1].length) {
+          var k = g[0].length - 1, a = g[me][k], b = g[1 - me][k];
+          if (isFinite(a) && isFinite(b)) taken = 'Taken in set ' + (k + 1) + ' at ' + a + ENDASH + b;
+        }
+        var sets = (row.sets || []).filter(function (x) { return x && isFinite(x.p) && isFinite(x.o); })
+          .map(function (x) { return x.p + '-' + x.o; }).join(' ');
+        var d = /^(\d{4})-(\d{2})-(\d{2})/.exec(row.date || '');
+        out.push({ at: at, date: d ? (+d[3]) + ' ' + MON3[+d[2] - 1] + ' ' + d[1] : DASH, vs: row.opponent ? initialSurname(row.opponent) : DASH,
+          event: eventName(row, p) + (roundLabel(row) !== DASH ? ' ' + roundLabel(row) : ''), taken: taken || DASH,
+          won: row.won === true ? true : row.won === false ? false : null, score: sets || DASH });
+      });
+    });
+    return out.sort(function (x, y) { return y.at - x.at; });
+  }
+  function renderMto(p) {
+    var rows = mtoRowsFor(p);
+    if (!rows.length) return '';
+    var badge = '<span data-pp2="mto-toggle" class="pp2-mto" title="Medical time-outs" role="button" aria-expanded="' + (state.mtoOpen ? 'true' : 'false') + '" ' +
+      'style="cursor:pointer;user-select:none;position:absolute;top:-2px;right:-14px;display:inline-flex;align-items:center;gap:6px;' +
+      'background:var(--selected);color:var(--text);font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;font-weight:700;' +
+      'border-radius:999px;padding:3px 9px 3px 7px;border:1px solid color-mix(in srgb, var(--neg) 55%, transparent);' +
+      'box-shadow:0 0 0 3px var(--inner);white-space:nowrap;z-index:2;"><span style="width:7px;height:7px;border-radius:50%;background:var(--neg);"></span>MTO</span>';
+    if (!state.mtoOpen) return badge;
+    var list = rows.map(function (m) {
+      return '<div style="position:relative;display:grid;grid-template-columns:9px minmax(0,1fr) auto;gap:0 14px;align-items:start;white-space:nowrap;">' +
+        '<span style="margin-top:3px;width:9px;height:9px;border-radius:50%;background:var(--neg);box-shadow:0 0 0 3px var(--card);"></span>' +
+        '<span style="display:flex;flex-direction:column;gap:4px;min-width:0;">' +
+          '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-label);">' + esc(m.date) + '</span>' +
+          '<span style="display:flex;align-items:baseline;gap:8px;"><span style="font-size:13.5px;font-weight:700;color:var(--text);">v ' + esc(m.vs) + '</span>' +
+            '<span style="font-size:12px;color:var(--text-label);">' + esc(m.event) + '</span></span>' +
+          '<span style="font-size:12px;color:var(--text-soft);">' + esc(m.taken) + '</span>' +
+        '</span>' +
+        '<span style="display:inline-flex;align-items:center;gap:7px;margin-top:18px;font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;color:var(--text-soft);">' +
+          (m.won == null ? '' : '<span style="width:8px;height:8px;border-radius:2px;background:' + (m.won ? 'var(--pos)' : 'var(--neg)') + ';"></span>') + esc(m.score) + '</span>' +
+      '</div>';
+    }).join('');
+    return badge +
+      '<div data-pp2="mto-close" style="position:fixed;inset:0;z-index:60;"></div>' +
+      '<div class="pp2-mtopop" role="dialog" aria-label="Medical time-outs" style="position:absolute;top:30px;left:62px;z-index:61;width:420px;max-width:calc(100vw - 48px);' +
+        'box-sizing:border-box;background:var(--card);border:1px solid var(--pp-x-edge-12);border-radius:14px;' +
+        'box-shadow:var(--pp-x-shadow-pop);padding:18px 20px 18px;display:flex;flex-direction:column;gap:16px;text-align:left;">' +
+        '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">' +
+          '<span style="display:flex;align-items:baseline;gap:10px;"><span style="font-size:15px;font-weight:800;color:var(--text);">Medical time-outs</span>' +
+            '<span style="font-size:12px;color:var(--text-label);">' + rows.length + ' in the last ' + PP4.MTO_WINDOW_MONTHS + ' months</span></span>' +
+          '<span data-pp2="mto-close" class="pp2-mtox" role="button" aria-label="Close" style="flex:none;width:24px;height:24px;box-sizing:border-box;border-radius:7px;border:1px solid ' + EDGE_8 + ';' +
+            'color:var(--text-label);cursor:pointer;display:flex;align-items:center;justify-content:center;">' +
+            '<svg width="11" height="11" viewBox="0 0 20 20" fill="none" style="pointer-events:none;"><path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path></svg></span>' +
+        '</div>' +
+        '<div style="position:relative;display:flex;flex-direction:column;gap:18px;">' +
+          '<span style="position:absolute;left:4px;top:8px;bottom:40px;width:1px;background:var(--pp-x-edge-12);"></span>' + list +
+        '</div>' +
+      '</div>';
+  }
+
   function renderAvatar(p, rank) {
     // the dashboard's one resolver (playerPhotoUrl): the ATP headshot by player ID, else the initials alone
     var photo = typeof window.playerPhotoUrl === 'function' ? window.playerPhotoUrl(p.key, 'l') : null;   // the 256 px header size
@@ -1005,7 +1123,8 @@
       (rank ? '<div class="pp2-rank" style="position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);' +
         'background:' + RANK_TONE + ';color:var(--text);font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;' +
         'font-weight:700;border-radius:999px;padding:3px 10px;border:1px solid var(--edge-16);white-space:nowrap;' +
-        'box-shadow:0 0 0 3px var(--page);">No. ' + esc(rank) + '</div>' : '') +
+        'box-shadow:0 0 0 3px var(--inner);">No. ' + esc(rank) + '</div>' : '') +
+      renderMto(p) +
       '</div>';
   }
 
@@ -1058,7 +1177,7 @@
 
     return '' +
       // TEN-384: a top-level card — --card + --top-light, no outline.
-      '<div class="pp2-ribbon" style="background:var(--card);box-shadow:var(--top-light);border:1.25px solid var(--edge-6);' +   // founder 2026-11-13: the export's ring
+      '<div class="pp2-ribbon" style="background:var(--card);border:1.25px solid var(--edge-6);' +   // v4: no top-light inset   // founder 2026-11-13: the export's ring
       'border-radius:12px;' +
       'padding:16px 22px;display:grid;grid-template-columns:auto minmax(180px,1.2fr) auto minmax(0,2fr) auto;' +
       'gap:22px;align-items:center;">' +
@@ -1500,8 +1619,9 @@
 
     return '' +
       // A top-level card: --card + --top-light, no outline (the 1px transparent edge keeps the box size).
-      '<div class="pp2-ledger" style="background:var(--card);box-shadow:var(--top-light);' +
-        'border:1px solid transparent;border-radius:12px;padding:22px 24px;display:flex;flex-direction:column;">' +
+      // v4 reference: --card + 1.25px 6% ring, no top-light inset
+      '<div class="pp2-ledger" style="background:var(--card);' +
+        'border:1.25px solid var(--edge-6);border-radius:12px;padding:22px 24px;display:flex;flex-direction:column;">' +
         head +
         '<div class="pp2-ledger-filters" style="display:flex;flex-wrap:wrap;margin-bottom:16px;' +
           LEDGER_FILTER_TRACK + '">' + chips + '</div>' +
@@ -1712,12 +1832,11 @@
   // the figure (mono 700, white — every tile, the unit included), and the 11.5px support line pinned to
   // the bottom. Founder Q4: the clickable tile — --edge-7 at rest, hover --tile-hover + --edge-16 (PP2_STYLE),
   // selected (its modal open) --edge-24.
-  var TILE_EDGE = 'var(--edge-7)';
+  var TILE_EDGE = 'var(--edge-6)';   // v4 reference: the tile ring is 1.25px 6% white
   var TILE_EDGE_SELECTED = 'var(--edge-24)';
-  // Ruling 1 (founder 2026-10-20): career-splits (Draw record) can only be built on the Mac; when it stops updating the
-  // host's sfFeedPaused says so and the tile's support line + the modal header carry "Data paused · last updated …".
-  function splitsPaused() { var f = typeof window !== 'undefined' && typeof window.sfFeedPaused === 'function' ? window.sfFeedPaused('careerSplits') : null; return f && f.paused ? f : null; }
-  function splitsPausedSuffix() { var f = splitsPaused(); return f ? ' ' + MIDDOT + ' ' + f.text : ''; }
+  // v4 §0.6 (handoff 2026-11-14, supersedes ruling 1 of 2026-10-20 on the profile): no internal status text — no
+  // "Data paused · updated …" — anywhere a member can see it. A stale Mac-only feed is the founder's alert
+  // (tools/check-feed-freshness.mjs), never a line on the page.
   function renderBoxes(ctx) {
     var vals = ctx.boxVals;
     var cards = BOXES.map(function (b) {
@@ -1751,10 +1870,10 @@
             '<path d="' + b.icon + '"/></svg>' +
         '</div>' +
         '<div' + (pend ? ' data-pp2-pending="figure"' : '') + ' style="font-family:\'IBM Plex Mono\',monospace;font-weight:700;color:' +
-          (v.headline == null ? DASH_COLOUR : 'var(--text)') + ';line-height:1;white-space:nowrap;' +
+          (v.headline == null ? DASH_COLOUR : 'var(--text)') + ';line-height:1.1;white-space:nowrap;' +   // v4 reference: 1.1
           'font-size:' + sz + 'px;">' + (blankFig ? '&nbsp;' : esc(head) + esc(suffix)) + '</div>' +
         '<div' + (pend || v.supportPending ? ' data-pp2-pending="support"' : '') + ' style="font-size:11.5px;color:var(--text-label);line-height:1.4;margin-top:auto;">' +
-          (pend || v.supportPending ? '&nbsp;' : esc(b.key === 'splits' && splitsPaused() ? splitsPaused().text : (v.support == null ? DASH : v.support))) + '</div>' +
+          (pend || v.supportPending ? '&nbsp;' : esc(v.support == null ? DASH : v.support)) + '</div>' +
         '</div>';
     }).join('');
 
@@ -1929,7 +2048,7 @@
     if (!list.length) {
       return '<div><div style="font-size:22px;font-weight:800;letter-spacing:-0.015em;' +
         'margin-bottom:16px;">Key insights</div>' +
-        '<div style="background:var(--card);box-shadow:var(--top-light);border:1.25px solid var(--edge-6);border-radius:12px;padding:26px;' +
+        '<div style="background:var(--card);border:1.25px solid var(--edge-6);border-radius:12px;padding:26px;' +
         'text-align:center;font-size:13px;color:var(--text-label);">' + insightsEmptyText(p) + '</div></div>';
     }
     var cards = list.map(function (ins) {
@@ -1959,7 +2078,7 @@
         // reads as a painted hook and fails the check on markup that is correct.
         '<div data-insight="' + esc(ins.id) + '" ' +
         // A top-level card: --card + --top-light, no outline.
-        'style="height:100%;box-sizing:border-box;background:var(--card);box-shadow:var(--top-light);' +
+        'style="height:100%;box-sizing:border-box;background:var(--card);' +   // v4: no top-light inset
         'border:1.25px solid var(--edge-6);' +   // founder 2026-11-13: the export's 1.25px 6% ring
         'border-radius:12px;padding:24px 24px 26px;display:flex;flex-direction:column;gap:16px;">' +
           '<div style="width:36px;height:36px;border-radius:13px;display:flex;align-items:center;' +
@@ -3050,7 +3169,7 @@
     // TEN-384 Q4.6 · Record per tournament goes up to 1440px (the brief's words win over the reference's 1120).
     // Profile v2 (founder 2026-11-09): the export's drawer widths (modal.maxW) — supersedes Q4.6's 1440 for tourn.
     career: 820, tourn: 1120, season: 1180, speed: 1120,
-    styles: 900, splits: 960, market: 1080, profile: 820
+    styles: 900, splits: 1180, market: 1080, profile: 1080   // v4 §6: Level & round 1180 · v4 §9: Live trading 1080
   };
   var CAREER_SUBTITLE = 'Record by surface and season, and his ratings against the field';
   function modalSubtitle(key, p, ctx) {
@@ -3101,7 +3220,7 @@
       // body. Both halves are applied — the header and the body still describe
       // each other.
       // Ruling 1 (founder 2026-10-20): frozen career-splits never read as current — the header says it is paused.
-      case 'splits': return 'Record by round, level, opponent and format ' + MIDDOT + ' tiebreaks, hold and break rate' + splitsPausedSuffix();   // v2 export
+      case 'splits': return 'Record by round, level, opponent and format';   // v4 export (Player Stat Boxes.dc.html:5729)
       case 'market': return 'How the market has priced him, and what backing him flat has returned';
       case 'speed': return 'Win rate by court pace band';
       // TEN-228 item 5 · the file's own BOXES subtitle, verbatim and static
@@ -3164,6 +3283,12 @@
     '.pp2-drow:hover>*:last-child{box-shadow:-8px 0 0 var(--tile-hover),6px 0 0 var(--tile-hover);}' +
     '.pp2-dback:hover{background:var(--tile-hover)!important;border-color:var(--edge-16)!important;}' +
     '.pp2-dopp{cursor:pointer;}.pp2-dopp:hover{text-decoration:underline;}' +
+    // v4 §5 · Court speed: a band tile lifts its ring on hover; a match row fills edge to edge (no column gap)
+    '.pp2-spdband{transition:border-color .15s ease,background .15s ease;}.pp2-spdband[data-pp2]:hover{border-color:var(--edge-16)!important;}' +
+    '.pp2-spdrow:not(.wo):hover>*{background:var(--tile-hover);}' +
+    '.pp2-fmsel:hover{border-color:color-mix(in srgb, var(--text) 30%, transparent)!important;}' +
+    '.pp2-fmchip:hover{border-color:color-mix(in srgb, var(--bar) 70%, transparent)!important;}' +
+    '.pp2-spdclear:hover{border-color:color-mix(in srgb, var(--text) 30%, transparent)!important;}' +
     '</style>';
   // founder 2026-11-10 ("each box and each page has one"): the (?) after every drawer's subtitle — the export's
   // pageInfo texts (Player Stat Boxes LOCKED 2026-11-09), corrected only where a standing ruling says otherwise (the
@@ -3381,6 +3506,14 @@
     }
     return spec;
   }
+  // v4 (additive) · the sample beside a drawer's title (the export's modal.titleCount): a drawer opts in by registering
+  // MODAL_TITLE_COUNT[key] = function (p) -> text; '' or no entry draws nothing (every other drawer unchanged).
+  var MODAL_TITLE_COUNT = { speed: function (p) { return spdTitleCount(p); } };
+  function modalTitleCountHtml(key, p) {
+    var t = MODAL_TITLE_COUNT[key] ? MODAL_TITLE_COUNT[key](p) : '';
+    return t ? '<span data-pp2-titlecount="' + esc(key) + '" style="margin-left:12px;font-family:\'IBM Plex Mono\',monospace;font-size:12px;font-weight:400;' +
+      'letter-spacing:0;color:var(--text-label);white-space:nowrap;">' + esc(t) + '</span>' : '';
+  }
   function modalShell(key, p, ctx, body) {
     var box = BOXES.filter(function (b) { return b.key === key; })[0] || {};
     var title = box.title || '';
@@ -3398,7 +3531,7 @@
               'stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="' +
               (box.icon || '') + '"/></svg></span>' +
             '<div style="' + (PAGE_SWITCH[key] ? 'min-width:0;' : 'flex:1;min-width:0;') + '">' +
-              '<div style="font-size:17px;font-weight:800;letter-spacing:-0.17px;">' + esc(title) + '</div>' +
+              '<div style="font-size:17px;font-weight:800;letter-spacing:-0.17px;">' + esc(title) + modalTitleCountHtml(key, p) + '</div>' +
               '<div style="display:flex;align-items:center;gap:8px;margin-top:2px;position:relative;">' +
                 '<span style="font-size:12.5px;color:var(--text-label);">' + esc(modalSubtitle(key, p, ctx)) + '</span>' +
                 (modalInfoSpec(key, p) ? infoIcon('m-' + key, modalInfoSpec(key, p), 'About this drawer') : '') + '</div>' +
@@ -3437,8 +3570,11 @@
       'display:flex;align-items:center;justify-content:center;font-family:\'IBM Plex Mono\',monospace;font-size:10px;' +
       'font-weight:700;line-height:1;user-select:none;">' + (spec.glyph || '?') + '</span>';
     if (!open) return icon;
+    // spec.v4 (additive, handoff 2026-11-14 box popover): 104px label column, 12% ring, the export's popover shadow,
+    // padding 14/16/16, gap 8, 8px below the icon, an 8% rule over the definitions.
+    var v4 = !!spec.v4;
     var defs = (spec.defs || []).map(function (d) {
-      return '<div style="display:grid;grid-template-columns:112px minmax(0,1fr);gap:12px;padding:7px 0;' +
+      return '<div style="display:grid;grid-template-columns:' + (v4 ? 104 : 112) + 'px minmax(0,1fr);gap:12px;padding:7px 0;' +
         'border-bottom:1px solid var(--line);"><span style="font-size:12px;font-weight:700;color:var(--text);line-height:1.45;">' +
         esc(d[0]) + '</span><span style="font-size:12px;color:var(--text-soft);line-height:1.45;text-wrap:pretty;">' + esc(d[1]) + '</span></div>';
     }).join('');
@@ -3447,9 +3583,9 @@
     }).join('');
     return icon +
       '<div data-pp2="info-close" style="position:fixed;inset:0;z-index:70;"></div>' +
-      '<div data-pp2="card" style="position:absolute;top:calc(100% + 10px);' + (right ? 'right:0;' : 'left:0;') + 'z-index:71;' +
-        'width:' + w + 'px;max-width:calc(100vw - 48px);background:var(--card);border:1px solid var(--edge-10);border-radius:14px;' +
-        'box-shadow:var(--shadow-pop);padding:16px 18px 18px;display:flex;flex-direction:column;gap:10px;text-align:left;' +
+      '<div data-pp2="card" style="position:absolute;top:calc(100% + ' + (v4 ? 8 : 10) + 'px);' + (right ? 'right:0;' : 'left:0;') + 'z-index:71;' +
+        'width:' + w + 'px;max-width:calc(100vw - 48px);background:var(--card);border:1px solid ' + (v4 ? 'var(--pp-x-edge-12)' : 'var(--edge-10)') + ';border-radius:14px;' +
+        'box-shadow:' + (v4 ? 'var(--pp-x-shadow-pop)' : 'var(--shadow-pop)') + ';padding:' + (spec.pad || (v4 ? '14px 16px 16px' : '16px 18px 18px')) + ';display:flex;flex-direction:column;gap:' + (spec.gap || (v4 ? 8 : 10)) + 'px;text-align:left;' +
         'text-transform:none;letter-spacing:normal;font-family:var(--font-words);font-weight:400;white-space:normal;cursor:default;">' +
         '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;">' +
           '<span style="font-size:13px;font-weight:700;color:var(--text);line-height:1.45;text-wrap:pretty;">' + esc(spec.what || '') + '</span>' +
@@ -3460,7 +3596,7 @@
         '</div>' +
         (spec.scope ? '<span style="font-size:12px;color:var(--text-label);line-height:1.5;text-wrap:pretty;">' + esc(spec.scope) + '</span>' : '') +
         (notes ? '<div style="display:flex;flex-direction:column;gap:6px;border-top:1px solid var(--edge-10);padding-top:10px;margin-top:2px;">' + notes + '</div>' : '') +
-        (defs ? '<div style="display:flex;flex-direction:column;border-top:1px solid var(--edge-10);margin-top:2px;">' + defs + '</div>' : '') +
+        (defs ? '<div style="display:flex;flex-direction:column;border-top:1px solid ' + (v4 ? EDGE_8 : 'var(--edge-10)') + ';' + (v4 ? '' : 'margin-top:2px;') + '">' + defs + '</div>' : '') +
       '</div>';
   }
   // A card-corner (?) (the per-box placement): absolute at top/right 14px, popover right-aligned under it.
@@ -3477,8 +3613,11 @@
   var FB_BUILD = {};
   function floatBoxHtml(fb) {
     if (!fb) return '';
+    // fb.tileRing (additive, v4 §7 Match-up record): tiles on the card ring (1.25px 6%, radius 12) and the tail line wraps.
+    // fb.lineNormal (additive): the card's line-height is the reference's `normal` (rows 32px), not the page's 1.5.
+    var tRing = !!fb.tileRing;
     var tiles = (fb.tiles || []).map(function (t) {
-      return '<div style="background:var(--card);border:1px solid var(--edge-6);border-radius:10px;padding:11px 14px 12px;' +
+      return '<div style="background:var(--card);border:' + (tRing ? '1.25px' : '1px') + ' solid var(--edge-6);border-radius:' + (tRing ? 12 : 10) + 'px;padding:11px 14px 12px;' +
         'display:flex;flex-direction:column;gap:6px;min-width:0;">' +
         '<span style="font-family:var(--font-words);font-size:10.5px;font-weight:700;letter-spacing:0.10em;text-transform:uppercase;' +
           'color:var(--text-label);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + esc(t.label) + '</span>' +
@@ -3486,7 +3625,7 @@
           (t.figColor || 'var(--text)') + ';">' + (t.fig == null ? DASH : t.fig) + '</span>' +
         '<span style="font-size:11.5px;color:var(--text-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + (t.sub || '&nbsp;') + '</span>' +
         '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:10px;color:' + (t.tailColor || 'var(--text-label)') + ';' +
-          'line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + (t.tail || '&nbsp;') + '</span>' +
+          'line-height:1.4;' + (tRing ? 'white-space:normal;text-wrap:pretty;' : 'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;') + '">' + (t.tail || '&nbsp;') + '</span>' +
         '</div>';
     }).join('');
     var pills = fb.pills && fb.pills.length ? '<div style="display:flex;gap:3px;background:var(--card);border:1.25px solid var(--edge-6);' +
@@ -3518,7 +3657,7 @@
       'padding:40px 24px;overflow-y:auto;clip-path:inset(0);">' +
       '<div data-pp2="card" style="position:relative;width:100%;max-width:900px;max-height:calc(100vh - 80px);overflow-y:auto;' +
         'background:var(--card);border:1px solid var(--edge-16);border-radius:14px;padding:20px 22px 22px;min-width:0;' +
-        'box-shadow:var(--shadow-modal);box-sizing:border-box;">' +
+        'box-shadow:var(--shadow-modal);box-sizing:border-box;' + (fb.lineNormal ? 'line-height:normal;' : '') + '">' +
         '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:16px;">' +
           '<div style="display:flex;flex-direction:column;gap:4px;min-width:0;">' +
             '<span style="display:inline-flex;align-items:baseline;gap:8px;">' +
@@ -3546,24 +3685,47 @@
   // The Filters trigger + its popover menu (the design's filterMenu): a sliders glyph and "Filters · n";
   // a 3-column grid of option groups with cross-adjusted counts; foot "n of m matches" + Reset filters.
   // groups = [{ key, title, cur, options: [[value, label]], count: function (value) -> n }]
-  function filtersTriggerHtml(id, groups, nIn, nAll, width, alignRight) {
+  // v4 (handoff 2026-11-14, Court speed §5 · the shared filter bar) · additive option `o`, default unchanged:
+  //   o.v4    the v4 trigger (idle --text-soft on an 8% ring; open --selected + 22% ring; any hidden filter on = blue
+  //           12% fill + 35% ring, "· n" in ink 700) and popover (12% ring, the export's shadow, gap 18)
+  //   o.foot  the popover foot's left text (default "nIn of nAll matches")
+  //   a group may carry g.hint (grey line under its options) and g.select (a drop-down: the current label in a field,
+  //   the options in a 10% ringed list that opens on click — state.fmSel holds the open group, kind 'fm-sel').
+  function filtersTriggerHtml(id, groups, nIn, nAll, width, alignRight, o) {
+    o = o || {};
+    var v4 = !!o.v4;
     var open = state.fmOpen === id;
     var active = groups.filter(function (g) { return g.cur !== 'all'; });
     var lit = open || active.length;
+    var BLUE12 = 'color-mix(in srgb, var(--bar) 12%, transparent)', BLUE35 = 'color-mix(in srgb, var(--bar) 35%, transparent)';
     var trig = '<span data-pp2="fm-toggle" data-v="' + esc(id) + '" class="pp2-fmtrig" style="display:inline-flex;align-items:center;gap:8px;cursor:pointer;' +
       'white-space:nowrap;padding:6px 11px 6px 12px;border-radius:8px;box-sizing:border-box;font-size:11.5px;font-weight:700;' +
-      'color:' + (lit ? 'var(--text)' : 'var(--text-label)') + ';background:' + (lit ? 'var(--selected)' : 'transparent') + ';' +
-      'border:1px solid ' + (open ? 'var(--edge-24)' : active.length ? 'var(--edge-16)' : EDGE_8) + ';user-select:none;">' +
+      (v4
+        ? 'color:' + (lit ? 'var(--text)' : 'var(--text-soft)') + ';background:' + (active.length ? BLUE12 : open ? 'var(--selected)' : 'transparent') + ';' +
+          'border:1px solid ' + (active.length ? BLUE35 : open ? 'color-mix(in srgb, var(--text) 22%, transparent)' : EDGE_8) + ';user-select:none;">'
+        : 'color:' + (lit ? 'var(--text)' : 'var(--text-label)') + ';background:' + (lit ? 'var(--selected)' : 'transparent') + ';' +
+          'border:1px solid ' + (open ? 'var(--edge-24)' : active.length ? 'var(--edge-16)' : EDGE_8) + ';user-select:none;">') +
       '<svg width="11" height="11" viewBox="0 0 12 12" fill="none" style="pointer-events:none;"><path d="M1 2.5h10M3 6h6M5 9.5h2" ' +
       'stroke="currentColor" stroke-width="1.4" stroke-linecap="round"></path></svg>Filters' +
-      (active.length ? '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:10px;font-weight:600;color:var(--text-label);pointer-events:none;">' + MIDDOT + ' ' + active.length + '</span>' : '') +
+      (active.length ? '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:' + (v4 ? '10.5px;font-weight:700;color:var(--text)' : '10px;font-weight:600;color:var(--text-label)') + ';pointer-events:none;">' + MIDDOT + ' ' + active.length + '</span>' : '') +
       '<svg width="9" height="9" viewBox="0 0 10 10" fill="none" style="pointer-events:none;"><path d="M2 3.5l3 3 3-3" stroke="var(--text-label)" ' +
       'stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>';
     var wrapStyle = 'position:relative;display:inline-flex;' + (alignRight ? 'margin-left:auto;' : '');
     if (!open) return '<span style="' + wrapStyle + '">' + trig + '</span>';
     var cols = groups.map(function (g) {
+      var selOpen = g.select && state.fmSel === id + '|' + g.key;
+      var curOpt = g.select ? g.options.filter(function (x) { return x[0] === g.cur; })[0] : null;
       return '<div style="display:flex;flex-direction:column;gap:2px;min-width:0;">' +
         '<span style="font-size:10.5px;font-weight:700;letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);padding:0 0 8px;">' + esc(g.title) + '</span>' +
+        (g.select ? '<span data-pp2="fm-sel" data-v="' + esc(id + '|' + g.key) + '" class="pp2-fmsel" style="display:flex;align-items:center;justify-content:space-between;gap:8px;' +
+          'cursor:pointer;margin:0 0 6px;padding:7px 9px 7px 10px;border-radius:7px;background:var(--inner);border:1px solid ' +
+          (selOpen ? 'color-mix(in srgb, var(--text) 22%, transparent)' : EDGE_8) + ';font-size:12px;font-weight:600;color:var(--text);">' +
+          '<span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none;">' + esc(curOpt ? curOpt[1] : g.cur) + '</span>' +
+          '<svg width="9" height="9" viewBox="0 0 10 10" fill="none" style="pointer-events:none;flex:none;"><path d="M2 3.5l3 3 3-3" stroke="var(--text-soft)" stroke-width="1.5" ' +
+          'stroke-linecap="round" stroke-linejoin="round"></path></svg></span>' : '') +
+        // the export wraps every option list in a 9px-radius box: a 10% ring + 4px for a drop-down, transparent + 0 otherwise
+        (g.select && !selOpen ? '' : (g.select || v4 ? '<div style="display:flex;flex-direction:column;gap:2px;border:1px solid ' + (g.select ? 'var(--edge-10)' : 'transparent') +
+          ';border-radius:9px;padding:' + (g.select ? '4px' : '0') + ';">' : '') +
         (g.maxH ? '<div class="pp2-yscroll" style="display:flex;flex-direction:column;gap:2px;max-height:' + g.maxH + 'px;overflow-y:auto;">' : '') +
         g.options.map(function (o) {
           var on = g.cur === o[0], n = g.count(o[0]);
@@ -3575,24 +3737,42 @@
             'color:var(--text-label);font-weight:400;">' + (n == null ? DASH : n) + '</span>' +
             (on ? '<svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M1.5 5.5l2.2 2.2L8.5 2.8" stroke="var(--text)" stroke-width="1.6" ' +
               'stroke-linecap="round" stroke-linejoin="round"></path></svg>' : '') + '</span></span>';
-        }).join('') + (g.maxH ? '</div>' : '') + '</div>';
+        }).join('') + (g.maxH ? '</div>' : '') + (g.select || v4 ? '</div>' : '')) +
+        (g.hint ? '<span style="font-size:11px;color:var(--text-label);line-height:1.45;padding:8px 8px 0;text-wrap:pretty;">' + esc(g.hint) + '</span>' : '') + '</div>';
     }).join('');
     return '<span style="' + wrapStyle + '">' + trig +
       '<div data-pp2="fm-close" style="position:fixed;inset:0;z-index:70;"></div>' +
       '<div data-pp2="card" style="position:absolute;top:calc(100% + 8px);' + (alignRight ? 'right:0;' : 'left:0;') + 'z-index:71;width:' + (width || 520) + 'px;max-width:calc(100vw - 48px);' +
-        'background:var(--card);border:1px solid var(--edge-10);border-radius:14px;box-shadow:var(--shadow-pop);padding:14px 16px 12px;' +
-        'box-sizing:border-box;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px 18px;">' + cols +
-        '<div style="grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--edge-10);' +
+        'background:var(--card);border:1px solid ' + (v4 ? 'var(--pp-x-edge-12)' : 'var(--edge-10)') + ';border-radius:14px;box-shadow:' + (v4 ? 'var(--pp-x-shadow-pop)' : 'var(--shadow-pop)') + ';padding:14px 16px 12px;' +
+        'box-sizing:border-box;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:' + (v4 ? '18px' : '16px 18px') + ';align-items:start;">' + cols +
+        '<div style="grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;border-top:1px solid ' + (v4 ? EDGE_8 : 'var(--edge-10)') + ';' +
           'margin-top:-4px;padding-top:10px;">' +
-          '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:var(--text-label);">' + nIn + ' of ' + nAll + ' matches</span>' +
+          '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:var(--text-label);">' + (o.foot != null ? esc(o.foot) : nIn + ' of ' + nAll + ' matches') + '</span>' +
           '<span data-pp2="fm-reset" data-v="' + esc(id) + '" style="cursor:pointer;font-size:12px;font-weight:600;color:var(--link);">Reset filters</span>' +
         '</div></div></span>';
   }
   // The Applied line under a filter row: caps "Applied" · a chip per active filter (× clears it) · Clear all · "n of m".
   // Chips are blue (12% fill, 35% ring) as the export draws them — founder 2026-11-09, profile only.
-  function filtersAppliedHtml(id, groups, nIn, nAll) {
+  // v4 · additive option `o`: o.v4 = the export's chip (4/7/4/10 padding, 11px, an SVG ×), "Clear all" 11px with a 4px
+  // lead, no "n of m" on the right (the sample sits beside the drawer title); g.chipPrefix prefixes a chip's label.
+  function filtersAppliedHtml(id, groups, nIn, nAll, o) {
     var active = groups.filter(function (g) { return g.cur !== 'all'; });
     if (!active.length) return '';
+    if (o && o.v4) {
+      return '<div data-pp2-applied="' + esc(id) + '" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:-6px 0 16px;">' +
+        recCaps('Applied', 'margin-right:2px;') +
+        active.map(function (g) {
+          var x = g.options.filter(function (y) { return y[0] === g.cur; })[0];
+          return '<span data-pp2="fm-set" data-g="' + esc(g.key) + '" data-v="all" title="Remove" class="pp2-fmchip" style="cursor:pointer;display:inline-flex;align-items:center;' +
+            'gap:6px;padding:4px 7px 4px 10px;border-radius:7px;background:color-mix(in srgb, var(--bar) 12%, transparent);' +
+            'border:1px solid color-mix(in srgb, var(--bar) 35%, transparent);font-size:11px;font-weight:600;color:var(--text);white-space:nowrap;">' +
+            esc((g.chipPrefix || '') + (x ? x[1] : g.cur)) +
+            '<svg width="9" height="9" viewBox="0 0 10 10" fill="none" style="pointer-events:none;"><path d="M2 2l6 6M8 2L2 8" stroke="var(--text-soft)" ' +
+            'stroke-width="1.4" stroke-linecap="round"></path></svg></span>';
+        }).join('') +
+        '<span data-pp2="fm-reset" data-v="' + esc(id) + '" class="pp2-clearall" style="cursor:pointer;font-size:11px;font-weight:600;color:var(--text-label);margin-left:4px;">Clear all</span>' +
+        '</div>';
+    }
     return '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:-6px 0 16px;">' +
       recCaps('Applied') +
       active.map(function (g) {
@@ -3671,7 +3851,8 @@
     var joined = k.indexOf('joined') === 0;
     // the export's rings are 1.25px (the Ratings band's 8% ring is 1px); a joined band's bottom rule is 1px 6%
     var bw = k === 'joined-8' ? '1px' : '1.25px';
-    return '<div data-pp2-band="' + k + '" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 16px;' +
+    // v4 §0.2 (handoff 2026-11-14): every drawer's filter band is padded 20px 24px (was 10px 16px).
+    return '<div data-pp2-band="' + k + '" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:20px 24px;' +
       'background:' + bg + ';border:' + bw + ' solid ' + ring + ';' +
       (joined ? 'border-bottom:1px solid var(--edge-6);border-radius:' + (k === 'joined-card' ? '16px 16px' : '12px 12px') + ' 0 0;'
         : 'border-radius:12px;margin-bottom:' + (k === 'standalone-card' ? 16 : 16) + 'px;') + (extra || '') + '">' + inner + '</div>';
@@ -5148,7 +5329,8 @@
           '<span style="' + MONO + 'font-size:11px;color:var(--text-label);">centre = lowest ATP player ' + MIDDOT + ' edge = highest</span>' +
           '<span style="display:flex;align-items:center;gap:14px;margin-left:auto;">' +
             '<span style="display:flex;align-items:center;gap:6px;"><span style="width:14px;height:2px;background:var(--bar);"></span>' +
-              '<span style="' + CAPS + '">' + esc(sn) + '</span></span>' +
+              // v4 reference: the legend names him as the profile does ("P. Martinez"), not by surname alone
+              '<span style="' + CAPS + '">' + esc(p && p.name || sn) + '</span></span>' +
             '<span style="display:flex;align-items:center;gap:6px;"><span style="width:14px;height:2px;background:var(--text-soft);"></span>' +
               '<span style="' + CAPS + '">ATP average</span></span>' +
           '</span>' +
@@ -5270,14 +5452,18 @@
         'color:var(--text-label);white-space:nowrap;">' + (tn ? tn.toLocaleString('en-US') + ' matches' : DASH) +
       '</span></div>';
 
-    var SGRID = 'display:grid;grid-template-columns:64px minmax(0,1fr) 64px 60px 68px;gap:0 14px;' +
-      'align-items:center;margin-top:20px;';
+    // v4 (handoff 2026-11-14, Player Stat Boxes careerCard): ONE head grid on a 10% rule, then one grid per surface
+    // row (padding 11px 6px, bled -6px, radius 6, 5% hairline, 6% white hover — .pp2-csrow). §0.1 / §2: the bar is
+    // neutral, blue only for the surface whose match list is open (state.careerDrill).
+    var SCOLS = 'display:grid;grid-template-columns:64px minmax(0,1fr) 64px 60px 68px;gap:0 14px;align-items:center;';
     var SHEAD = 'font-family:var(--font-words);font-size:10.5px;font-weight:700;letter-spacing:0.10em;' +
-      'text-transform:uppercase;color:var(--text-label);padding:0 0 8px;border-bottom:1px solid var(--line);';
-    var shead = [['Surface', 'left'], ['Wins ' + MIDDOT + ' losses', 'left'], ['W' + ENDASH + 'L', 'right'],
+      'text-transform:uppercase;color:var(--text-label);';
+    var shead = '<div data-pp2-shead="1" style="' + SCOLS + 'margin-top:20px;padding-bottom:8px;border-bottom:1px solid var(--edge-10);">' +
+      [['Surface', 'left'], ['Wins ' + MIDDOT + ' losses', 'left'], ['W' + ENDASH + 'L', 'right'],
       ['Win %', 'right'], ['vs all', 'right']].map(function (h) {
         return '<span style="' + SHEAD + 'text-align:' + h[1] + ';">' + h[0] + '</span>';
-      }).join('');
+      }).join('') + '</div>';
+    var MONO_N = 'font-family:\'IBM Plex Mono\',monospace;font-variant-numeric:tabular-nums;text-align:right;font-size:12.5px;';
     var srows = CAREER_ROWS.map(function (s) {
       var c = cells[s.id];
       var noIndoor = s.id === 'indoors' && !isL52 && c === null;
@@ -5292,33 +5478,21 @@
         : (n && !rated ? n + ' match' + (n === 1 ? '' : 'es') + ' ' + MIDDOT + ' under the five-match minimum' : '');
       var fill = barFillColour(n);
       var vs = (rated && allRate != null) ? pct - allRate : null;
-      var lift = open ? 'background:var(--selected);' : '';
-      // fx3 (D11): a 5–9 row's cells stretch, so they stay level on the first line and the mark sits under the rate.
-      var cellBase = 'padding:11px 0;border-bottom:1px solid var(--line);' + lift;
-      var shadow = function (first, last) {
-        return open ? 'box-shadow:' + (first ? '-10px' : '-7px') + ' 0 0 0 var(--selected),' +
-          (last ? '10px' : '7px') + ' 0 0 0 var(--selected);' : '';
-      };
       var attrs = can ? ' data-pp2="career-surf" data-v="' + s.id + '"' : '';
-      var cur = can ? 'cursor:pointer;' : '';
       var tip = why ? ' title="' + esc(why) + '"' : '';
-      return '<span' + attrs + tip + ' data-pp2-srow="' + s.id + '" style="' + cellBase + shadow(true, false) + cur +
-          'font-size:12.5px;color:' + (n || !noIndoor ? 'var(--text)' : 'var(--text-label)') + ';">' + esc(s.label) + '</span>' +
-        '<span' + attrs + tip + ' style="' + cellBase + shadow(false, false) + cur + 'display:flex;align-self:stretch;align-items:center;">' +
-          '<span style="display:block;flex:1;height:6px;border-radius:3px;background:var(--track);overflow:hidden;">' +
-            (fill && pct != null ? '<span style="display:block;height:6px;width:' + pct.toFixed(1) + '%;background:' +
-              (MK_V1 ? fill : 'var(--link)') + ';"></span>' : '') + '</span></span>' +   // v2: the export's link-blue bar
-        '<span' + attrs + tip + ' style="' + cellBase + shadow(false, false) + cur + 'text-align:right;' +
-          'font-family:\'IBM Plex Mono\',monospace;font-size:12.5px;color:var(--text-label);white-space:nowrap;">' +
-          (n ? recordText(w, l) : DASH) + '</span>' +
-        '<span' + attrs + tip + ' style="' + cellBase + shadow(false, false) + cur + 'text-align:right;' +
-          'font-family:\'IBM Plex Mono\',monospace;font-size:12.5px;font-weight:700;white-space:nowrap;color:' +
-          (rated ? 'var(--text)' : 'var(--text-label)') + ';">' +
+      return '<div' + attrs + tip + (can ? ' class="pp2-csrow"' : '') + ' style="' + SCOLS +
+          'padding:11px 6px;margin:0 -6px;border-radius:6px;border-bottom:1px solid var(--line);' + (can ? 'cursor:pointer;' : '') + '">' +
+        '<span data-pp2-srow="' + s.id + '" style="font-size:12.5px;color:' + (n || !noIndoor ? 'var(--text)' : 'var(--text-label)') + ';">' + esc(s.label) + '</span>' +
+        '<span data-pp2-sbar="' + (open ? 'open' : 'idle') + '" style="display:block;width:100%;height:6px;border-radius:3px;background:var(--track);overflow:hidden;">' +
+          (fill && pct != null ? '<span style="display:block;height:100%;width:' + pct.toFixed(1) + '%;background:' +
+            (MK_V1 ? fill : pp4Bar(open)) + ';"></span>' : '') + '</span>' +
+        '<span style="' + MONO_N + 'white-space:nowrap;color:var(--text-label);">' + (n ? recordText(w, l) : DASH) + '</span>' +
+        '<span style="' + MONO_N + 'font-weight:700;white-space:nowrap;color:' + (rated ? 'var(--text)' : 'var(--text-label)') + ';">' +
           (rated ? pct.toFixed(1) + '%' : DASH) + '</span>' +
-        '<span' + attrs + tip + ' style="' + cellBase + shadow(false, true) + cur + 'text-align:right;' +
-          'font-family:\'IBM Plex Mono\',monospace;font-size:12.5px;font-weight:700;white-space:nowrap;color:' +
+        '<span style="' + MONO_N + 'font-weight:700;white-space:nowrap;color:' +
           (vs == null ? 'var(--text-label)' : signColour(Math.round(vs * 10) / 10)) + ';">' +
-          (vs == null ? DASH : signed(vs, 1, 'pp')) + '</span>';
+          (vs == null ? DASH : signed(vs, 1, 'pp')) + '</span>' +
+        '</div>';
     }).join('');
 
     // fx3 (D11): no small-sample footnote line — the mark sits under the rate in the row itself.
@@ -5359,7 +5533,7 @@
       recCaps(esc(scopeCaps + ' ' + (isL52 ? '' : 'record ') + MIDDOT + ' ' + tierWord).replace(/ {2}/g, ' '),
         'display:block;margin-bottom:12px;') +
       hero +
-      '<div style="' + SGRID + '">' + shead + srows + '</div>',
+      shead + srows,
       'mid', '22px 24px 20px');
 
     // ── C7 / C8 · Record by season — a joined panel under the card ─────────────
@@ -5385,6 +5559,9 @@
       // TEN-449 (founder 2026-10-19, option C): every season sums to its total
       { label: 'Surface not known', id: 'unknown' }
     ];
+    // v3 C2 (CONFIRM) · the reference drops "Surface not known" only if live data holds no unknown-surface match.
+    // Measured on the deployed profiles 14 Nov 2026: 512 such matches across 119 of 741 profile players (216 of 7,414
+    // seasons), so the column stays (TEN-449 option C) and the removal is reported to the founder, not built.
     var unknownTip = 'Matches in no other column: no clay, hard or grass surface on record (Tennis Explorer lists most ' +
       'Davis Cup ties as "Not set"; an outdoor carpet match lands here too). Total less Clay, Hard, Indoors and Grass, ' +
       'so every season sums to its total.';
@@ -6208,15 +6385,19 @@
     var HEAD = [['Tournament', 'left', 'name', 'Sort A to Z'], ['Surface', 'left'], ['Best', 'left'],
       ['W' + ENDASH + 'L', 'right', 'wl', 'Sort by matches played'], ['Wins ' + MIDDOT + ' losses', 'center'],
       ['Win %', 'right', 'pct', 'Sort by win rate'], ['Backing', 'right', 'roi', 'Sort by flat-stake return']];
-    var head = '<div style="' + GRID + 'padding:0 10px;scrollbar-gutter:stable;overflow:hidden;">' +
+    // v4 §4 (handoff 2026-11-14): the column header and the list sit in ONE --card card (6% ring, radius 16); the
+    // header is its top half (padding 16 24 0, no bottom edge) and draws no rule of its own — the first row's 5%
+    // hairline is the only line between them.
+    var head = '<div data-pp2-tourn-head="1" class="pp2-tscroll" style="' + GRID + 'padding:16px 24px 0;overflow-y:auto;scrollbar-gutter:stable;' +
+      'background:var(--card);border:1.25px solid var(--edge-6);border-bottom:0;border-radius:16px 16px 0 0;">' +
       HEAD.map(function (h) {
         var on = h[2] && so.k === h[2];
         var arrow = on ? (so.d < 0 ? '↓' : '↑') : (h[2] ? '⇅' : '');
         return '<span' + (h[2] ? ' data-pp2="tourn-sort" data-v="' + h[2] + '"' : '') + ' ' + (h[0] === 'Backing' ? '' : 'title="' + esc(h[3] || '') + '" ') + 'style="display:flex;' +
           'align-items:baseline;gap:5px;justify-content:' + (h[1] === 'right' ? 'flex-end' : h[1] === 'center' ? 'center' : 'flex-start') + ';' +
           'cursor:' + (h[2] ? 'pointer' : 'default') + ';font-family:var(--font-words);font-size:10.5px;font-weight:700;letter-spacing:0.10em;' +
-          'text-transform:uppercase;color:' + (on ? 'var(--text)' : 'var(--text-label)') + ';padding-bottom:8px;' +
-          'border-bottom:1px solid var(--edge-10);white-space:nowrap;"' +
+          'text-transform:uppercase;color:' + (on ? 'var(--text)' : 'var(--text-label)') + ';padding-bottom:10px;' +
+          'white-space:nowrap;"' +
           // TEN-325: Backing counts retirements, settled on Pinnacle rules — the one note (RET_SETTLE_NOTE) on its head.
           (h[0] === 'Backing' && window.MarketEdgeCore ? ' data-ret-note="profile-backing" title="' + esc(window.MarketEdgeCore.RET_SETTLE_NOTE) + '"' : '') + '>' +
           '<span style="pointer-events:none;">' + esc(h[0]) + '</span>' +
@@ -6248,9 +6429,14 @@
             (bp ? '<span title="' + esc(bp.label) + '" style="' + MONO + 'font-size:12px;font-weight:700;color:var(--text);">' + esc(bp.code) + '</span>' +
               (bp.year ? '<span style="' + MONO + 'font-size:11px;color:var(--text-label);">' + esc(bp.year) + '</span>' : '')
               : '<span style="color:' + DASH_COLOUR + ';">' + DASH + '</span>') + '</span>' +
-          '<span style="' + MONO + 'font-size:12px;color:var(--text-label);text-align:right;white-space:nowrap;">' + recordText(t.won, t.lost) + '</span>' +
-          '<span style="display:block;width:100%;height:6px;border-radius:3px;overflow:hidden;background:var(--track);">' +
-            (pct != null ? '<span style="display:block;height:100%;width:' + pct.toFixed(1) + '%;background:var(--bar);"></span>' : '') + '</span>' +
+          // v4 §4: W–L in soft ink; §0.1 the bar is neutral, blue only on the open tournament; a 1x12 tick marks 50%.
+          '<span style="' + MONO + 'font-size:12px;color:var(--text-soft);text-align:right;white-space:nowrap;">' + recordText(t.won, t.lost) + '</span>' +
+          '<span data-pp2-tbar="1" title="Win rate ' + MIDDOT + ' tick = 50%" style="position:relative;display:block;width:100%;height:6px;' +
+            'border-radius:3px;background:var(--track);">' +
+            (pct != null ? '<span style="display:block;height:100%;border-radius:3px;width:' + pct.toFixed(1) + '%;background:' +
+              pp4Bar(open) + ';"></span>' : '') +
+            '<span style="position:absolute;left:50%;top:-3px;width:1px;height:12px;' +
+              'background:color-mix(in srgb, var(--text) 35%, transparent);"></span></span>' +
           '<span style="' + MONO + 'font-size:13.5px;font-weight:700;text-align:right;white-space:nowrap;color:' +
             (t.n ? 'var(--text)' : DASH_COLOUR) + ';">' + (t.n ? Math.round(pct) + '%' : DASH) + '</span>' +
           '<span style="' + MONO + 'font-size:12px;font-weight:600;text-align:right;white-space:nowrap;color:' +
@@ -6262,8 +6448,9 @@
     }).join('');
 
     return '' +
-      '<div data-pp2-band="standalone" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:0 0 14px;padding:10px 16px;' +
-        'background:var(--inner);border:1.25px solid var(--line);border-radius:12px;">' +
+      // v4 §4 / §0.2: the band is --card on the 6% card ring, padded 20px 24px.
+      '<div data-pp2-band="standalone" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:0 0 14px;padding:20px 24px;' +
+        'background:var(--card);border:1.25px solid var(--edge-6);border-radius:12px;">' +
         '<span style="display:inline-flex;align-items:center;gap:8px;margin-right:auto;white-space:nowrap;">' +
           recCaps('Record per tournament ' + MIDDOT + ' career') +
           '<span style="position:relative;display:inline-flex;z-index:3;">' + infoIcon('tourn1', Object.assign({ width: 400 }, TOURN_INFO)) + '</span>' +
@@ -6271,7 +6458,7 @@
         tournPills('tourn-level', TOURN_LEVELS, lvl) + bandDiv() +
         tournPills('tourn-surf', TOURN_SURFS, sf) +
         '<label style="display:flex;align-items:center;gap:9px;width:220px;box-sizing:border-box;flex:none;' +
-          'background:var(--inner);border:1.25px solid var(--edge-6);border-radius:9px;padding:7px 12px;">' +
+          'background:transparent;border:1px solid ' + EDGE_8 + ';border-radius:8px;padding:6px 12px;">' +
           '<svg width="14" height="14" viewBox="0 0 20 20" fill="none" style="flex:none;">' +
             '<circle cx="9" cy="9" r="6" stroke="var(--text-label)" stroke-width="1.7"></circle>' +
             '<path d="m14 14 3 3" stroke="var(--text-label)" stroke-width="1.7" stroke-linecap="round"></path></svg>' +
@@ -6280,9 +6467,12 @@
             'border:0;outline:none;font-family:inherit;font-size:12.5px;color:var(--text);min-width:0;padding:1px 2px;"></label>' +
       '</div>' +
       head +
-      '<div style="max-height:calc(100vh - 250px);min-height:420px;overflow-y:auto;display:flex;flex-direction:column;scrollbar-gutter:stable;">' +
+      '<div data-pp2-tourn-list="1" class="pp2-tscroll" style="max-height:calc(100vh - 270px);min-height:420px;overflow-y:auto;display:flex;' +
+        'flex-direction:column;scrollbar-gutter:stable;background:var(--card);border:1.25px solid var(--edge-6);border-top:0;' +
+        'border-radius:0 0 16px 16px;padding:0 14px 10px;">' +
         (shown.length ? rows : tournHistPending(p) ? '' :
-          '<div style="border:1px dashed var(--edge-6);border-radius:10px;padding:26px;margin-top:12px;' +
+          // inside the one list card: a plain line, no second container (DESIGN GAP: the reference draws an empty card)
+          '<div data-pp2-tourn-empty="1" style="border-top:1px solid var(--line);padding:26px;' +
           'text-align:center;font-size:13px;color:var(--text-label);">' +
           (lvl !== 'all' || sf !== 'all' ? 'No tournament matches these filters.' : q ? 'No tournament matches that search.' : 'No tournaments on record.') + '</div>') +
       '</div>';
@@ -6364,14 +6554,14 @@
         tile('Grand Slam career', recordText(sw, sl),
           rateText0(sw, sl) + ' ' + MIDDOT + ' ' + slams.length +
           (slams.length === 1 ? ' major' : ' majors') + ' on record'),
-        tile('Over 3.5 sets ' + MIDDOT + ' this event',
+        tile('Over 3.5 sets ' + MIDDOT + ' here',
           here.pct == null ? DASH : Math.round(here.pct) + '%',
           here.tot ? here.over + ' of ' + here.tot + ' matches went over'
                    : 'no completed match with a readable score'),
-        tile('Over 3.5 sets ' + MIDDOT + ' other majors',
+        tile('Over 3.5 ' + MIDDOT + ' other majors',
           oPct == null ? DASH : Math.round(oPct) + '%',
-          oTot ? oOver + ' of ' + oTot + ' went over ' + MIDDOT + ' ' +
-                 (gap == null ? DASH : signed(gap, 1, 'pp')) + ' vs this event'
+          oTot ? oOver + ' of ' + oTot + ' ' + MIDDOT + ' ' +
+                 (gap == null ? DASH : signed(gap, 1, 'pp')) + ' vs here'
                : 'no other major on record'),
         backTile
       ];
@@ -6400,21 +6590,25 @@
     }
 
     // ── the match grid (file :512-536) ──────────────────────────────────────
-    var MGRID = 'display:grid;grid-template-columns:48px 12px minmax(0,1.1fr) 36px 40px ' +
-      'minmax(0,1.3fr) 46px 46px;gap:0 10px;align-items:center;';
+    // v4 §4: no column gap — every cell carries a 10px left pad, so the head rule and the row hairlines run unbroken
+    // and a row's hover fills edge to edge; the grid sits 10px left so the first column's text keeps its line.
+    var MGRID = 'display:grid;grid-template-columns:58px 22px minmax(0,1.1fr) 46px 50px ' +
+      'minmax(0,1.3fr) 56px 56px;gap:0;align-items:center;margin-left:-10px;';
     var MHEAD = [['Date', 'left'], ['', 'left'], ['Opponent', 'left'], ['Rd', 'left'],
                  ['Sets', 'left'], ['Set scores', 'left'], ['H', 'right'], ['A', 'right']];
     var mhead = MHEAD.map(function (h) {
       // Caps labels are Hanken, never mono caps (foundation).
       // founder 2026-11-10: the export's head — sticky on the panel tone, on a 10% rule (file :623)
-      return '<span style="position:sticky;top:0;z-index:1;background:var(--inner);font-family:var(--font-words);' +
-        'font-size:10.5px;letter-spacing:0.10em;text-transform:uppercase;font-weight:700;color:var(--text-label);' +
-        'text-align:' + h[1] + ';padding-bottom:7px;border-bottom:1px solid var(--edge-10);">' + esc(h[0]) + '</span>';
+      // v4 §4: the sticky head is --card (the box's own ground), 9px under the label, on a 10% rule
+      return '<span style="position:sticky;top:0;z-index:1;align-self:stretch;min-height:14px;background:var(--card);' +
+        'font-family:var(--font-words);font-size:10.5px;letter-spacing:0.10em;text-transform:uppercase;font-weight:700;' +
+        'color:var(--text-label);text-align:' + h[1] + ';white-space:nowrap;padding:0 0 9px 10px;' +
+        'border-bottom:1px solid var(--edge-10);">' + esc(h[0]) + '</span>';
     }).join('');
 
     var body = t.editions.map(function (e) {
       var grp = '<span style="grid-column:1 / -1;display:flex;align-items:baseline;gap:10px;' +
-        'padding:11px 0 5px;">' +
+        'padding:11px 0 5px 10px;">' +
         '<span style="font-size:12.5px;font-weight:700;white-space:nowrap;">' +
           esc(t.display + ' ' + e.year) + '</span>' +
         '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;color:var(--text-label);' +
@@ -6429,13 +6623,14 @@
         var cur = hook ? sheetCursor() : '';
         // TEN-384 · every row sits on a --line rule, as the reference's match list does.
         var cell = function (style, txt) {
-          return '<span ' + hook + 'style="' + cur + 'border-top:1px solid var(--line);' + style + '">' + txt + '</span>';
+          return '<span ' + hook + 'style="' + cur + 'align-self:stretch;line-height:16px;border-top:1px solid var(--line);' +
+            style.replace(/padding:6px 0;/g, 'padding:6px 0 6px 10px;') + '">' + txt + '</span>';
         };
         return '' +
           cell('font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:var(--text-label);padding:6px 0;',
                woDateHtml(m, m.date ? fmtDotDate(m.date) + '.' : DASH)) +
-          cell('display:block;align-self:stretch;padding:6px 0;',
-               '<span ' + (m.walkover ? 'data-pp2-wo-row="1" ' : '') + 'style="display:block;width:8px;height:8px;border-radius:2px;margin-top:4px;background:' + markerFill(m) + ';"></span>') +
+          cell('display:flex;align-items:center;padding:6px 0;',
+               '<span ' + (m.walkover ? 'data-pp2-wo-row="1" ' : '') + 'style="display:block;width:8px;height:8px;border-radius:2px;background:' + markerFill(m) + ';"></span>') +
           // ⚠️ NAME FORM — the export contradicts itself and the file wins here.
           // `Player Profile.dc.html`:838 writes the LEDGER's opponent surname-
           // first ("Shelton B."), which is what correction-pass items 4/8 ruled
@@ -6464,16 +6659,22 @@
     // TEN-384 T6 · the detail is a panel (--card + --edge-6, r10): caps "<Event> · career" + mono meta, the
     // five tiles as one joined strip, the match grid. The explainer footnote is removed; the one line that
     // stays is the stored-record disagreement, which is a data disclosure, not an explainer.
-    return '<div data-pp2-tourn-detail="1" style="background:var(--inner);border:1px solid var(--edge-16);border-radius:10px;' +
-      'margin:8px 0 10px;padding:14px 16px 12px;">' +
+    // v4 §4: the open tournament's box is --card on a 10% ring (1.25px), radius 12; its five tiles are separate
+    // --card tiles on the card ring, gap 8.
+    return '<div data-pp2-tourn-detail="1" style="background:var(--card);border:1.25px solid var(--edge-10);border-radius:12px;' +
+      'margin:6px 0 12px;padding:16px 16px 12px;">' +
       '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:12px;">' +
         recCaps(esc(t.display) + ' ' + MIDDOT + ' career', 'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;') +
         '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;color:var(--text-label);' +
           'white-space:nowrap;flex:none;">' + esc(recordText(t.won, t.lost) + ' ' + MIDDOT + ' ' +
           rateText0(t.won, t.lost) + ' ' + MIDDOT + ' ' + n + ' matches listed') + '</span>' +
       '</div>' +
-      recTileStrip(tiles, 14) +
-      '<div style="max-height:calc(100vh - 430px);min-height:300px;overflow-y:auto;padding-right:12px;scrollbar-gutter:stable;">' +
+      '<div data-pp2-tourn-tiles="1" style="display:grid;grid-template-columns:repeat(' + tiles.length + ',minmax(0,1fr));gap:8px;margin-bottom:14px;">' +
+        tiles.map(function (c) {
+          return '<div style="padding:13px 10px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:7px;' +
+            'min-width:0;background:var(--card);border:1.25px solid var(--edge-6);border-radius:12px;">' + c.html + '</div>';
+        }).join('') + '</div>' +
+      '<div class="pp2-tscroll" style="max-height:calc(100vh - 430px);min-height:300px;overflow-y:auto;padding-right:12px;scrollbar-gutter:stable;">' +
         '<div style="' + MGRID + '">' + mhead + body + '</div>' +
       '</div>' +
       (t.reconciles ? '' : '<div style="font-size:11px;color:var(--text-label);line-height:1.5;margin-top:10px;">' +
@@ -6701,19 +6902,6 @@
       return Math.max(1, i - first + 1);
     };
   }
-  var SPL_INFO1 = { what: 'His record by round, level, opponent rank and format, with tiebreaks and serve in the same row.', defs: [
-    ['Group', 'Round reached, tournament level, opponent rank or extra stats. Opponent rank bands are cumulative (Top 20 includes Top 10) and use his opponent\'s ATP rank on the day.'],
-    ['Win %', 'Wins divided by matches in that group.'],
-    ['Vs avg', 'That figure minus his own figure across the window, in points.'],
-    ['Tiebreaks', 'Tiebreaks won as a share of tiebreaks played.'],
-    ['Hold', 'Service games held as a share of his service games.'],
-    ['Break', 'Return games won as a share of his return games.'],
-    ['Source', 'Tour-level matches from Tennis Abstract. Challenger matches are not in this source. An ATP tour event the catalog does not list counts as ATP 250.']] };
-  var SPL_INFO2 = { what: 'Extra stats: his record by opponent hand and match format, and his tiebreak record.', defs: [
-    ['W' + '–' + 'L', 'Tiebreaks won and lost in the window.'],
-    ['Vs tour', 'His rate minus the tour average of 50%, in points.'],
-    ['Deciding set', 'A tiebreak in the final possible set, so it settles the match.'],
-    ['Over 3.5 sets', 'His best-of-5 matches that went to a fourth or fifth set, and his record in them.']] };
   function splLevelOf(m) {
     if (m.lv === 'G') return 'Grand Slams';
     if (m.lv === 'M') return 'Masters 1000';
@@ -6753,15 +6941,6 @@
     s.acePct = s.pts ? 100 * s.aces / s.pts : null;
     s.dfPct = s.pts ? 100 * s.dfs / s.pts : null;
     return s;
-  }
-  function splInfo1(p) {
-    var bs = bestSplit(p), notes = [];
-    if (bs) {
-      var g = 100 * bs.pick.won / bs.pick.n - bs.baseline;
-      notes.push('The box tile shows his best split: ' + bs.pick.label + ', ' + signed(Math.round(g * 10) / 10, 1, 'pp') +
-        ' over his ' + bs.baseline.toFixed(1) + '% across these splits.');
-    }
-    return Object.assign({ width: 400, notes: notes }, SPL_INFO1);
   }
   function splModel(p) {
     var f = typeof window.pp2DrawMatches === 'function' ? window.pp2DrawMatches(p.key) : { st: 'none' };
@@ -6809,74 +6988,254 @@
     var gw = gapCell(s.win, B.win);
     return [[s.n ? recordText(s.w, s.l) : DASH, 'var(--text-label)'], [pc(s.win), thin ? 'var(--text-label)' : 'var(--text)', 700], [gw.t, gw.c, 700]];
   }
+  // ── Profile v4 §6 (handoff 2026-11-14) · Level & round ─────────────────────────────────────────────────────────────
+  // Tour figures: the reference's per-level / per-rank / hold / break / aces numbers are placeholders. The only tour
+  // record the page holds is career-splits-tour.json `pooled` (one slim {M, W} row per category per tracked player, the
+  // same Tennis Abstract rows his own file is built from, career and his own last 52 weeks). A row's tour figure = the
+  // pooled record of every tracked player in that category, Σ wins ÷ Σ matches, in the same window. Rows the pool has no
+  // category for (Rounds 1–4, ATP 500 / 250, Challenger, Team events, ATP Finals, Top 20–200, Over 3.5 sets) and every
+  // sets / tiebreak / hold / break / aces figure (the pool carries win–loss only) are a dash.
+  var SPL_TOUR_CAT = { 'Grand Slams': 'Grand Slams', 'Masters 1000': 'Masters', 'Quarter-finals': 'Quarter-finals',
+    'Semi-finals': 'Semi-finals', 'Finals': 'Finals', 'vs Top 10': 'vs. Top 10', 'vs Righties': 'vs. Righties',
+    'vs Lefties': 'vs. Lefties', 'Best of 5': 'Best of 5', 'Best of 3': 'Best of 3' };
+  function splTourFile() {
+    try { if (typeof careerSplitsTour !== 'undefined' && careerSplitsTour) return careerSplitsTour; } catch (e) { /* not on this page */ }
+    return window.careerSplitsTour || null;
+  }
+  var splTourMemo = { f: null, v: null };
+  function splTourPool() {
+    var f = splTourFile();
+    if (!f || !f.pooled) return null;
+    if (splTourMemo.f === f) return splTourMemo.v;
+    var out = { career: {}, last52: {}, players: 0 };
+    Object.keys(f.pooled).forEach(function (k) {
+      var p = f.pooled[k] || {};
+      out.players++;
+      ['career', 'last52'].forEach(function (w) {
+        var rows = p[w] || {};
+        Object.keys(rows).forEach(function (c) {
+          var r = rows[c];
+          if (!r || !(r.M > 0) || r.W == null) return;
+          var a = out[w][c] || (out[w][c] = { M: 0, W: 0, players: 0 });
+          a.M += r.M; a.W += r.W; a.players++;
+        });
+      });
+    });
+    splTourMemo = { f: f, v: out };
+    return out;
+  }
+  // { rate, M, players } for a row label in a window, or null (no category / no pool)
+  function splTourFor(label, scope) {
+    var cat = SPL_TOUR_CAT[label], pool = splTourPool();
+    if (!cat || !pool) return null;
+    var a = pool[scope === 'last52' ? 'last52' : 'career'][cat];
+    return a && a.M ? { rate: 100 * a.W / a.M, M: a.M, players: a.players } : null;
+  }
+  // "+4.2pp" / "−0.7pp" / "0.0pp" on the 1-dp rounded gap (the export's pp())
+  function splPp(v) {
+    if (v == null || !isFinite(v)) return DASH;
+    var r = Math.round(v * 10) / 10;
+    return (r > 0 ? '+' : r < 0 ? MINUS : '') + Math.abs(r).toFixed(1) + 'pp';
+  }
+  function splPpColour(v) { var r = Math.round(v * 10) / 10; return r > 0 ? 'var(--pos)' : r < 0 ? 'var(--neg)' : 'var(--text-label)'; }
+  var SPL_INFO1 = { what: 'His record by round, level, opponent hand, opponent rank and format, with tiebreaks and serve in the same row.', defs: [
+    ['Group', 'Round reached, tournament level, opponent rank or extra stats. By round and Level each cover every match in the window; Opponent rank bands are cumulative (Top 20 includes Top 10) and use his opponent\'s ATP rank on the day.'],
+    ['Win %', 'Wins divided by matches in that group.'],
+    ['vs his avg', 'The row minus his own figure for the whole window, in points. Results compares win %, Sets & games compares sets won, Service compares hold. Grey: later rounds and stronger opponents are harder for everyone.'],
+    ['vs tour', 'The row minus the pooled record of every player we track in the same situation and window, in points. Green above, red below; grey under ' + PP4.SPL_MINB + ' matches; a dash where we hold no tour figure.'],
+    ['Boxes', 'The boxes pick the largest gaps vs tour among rows with ' + PP4.SPL_MINB + '+ matches and a tour figure. Click a box for its matches.'],
+    ['Tiebreaks', 'Tiebreaks won and lost in those matches, then won as a share of tiebreaks played.'],
+    ['Hold', 'Service games held as a share of his service games.'],
+    ['Break', 'Return games won as a share of his return games.'],
+    ['Window', 'Last 52 weeks or career, from the pills on the right.'],
+    ['Source', 'Tour-level matches from Tennis Abstract; no Challenger matches. An event the catalog does not list counts as ATP 250.']] };
+  var SPL_INFO2 = { what: 'Extra stats: his record by opponent hand and match format, and his tiebreak record. Click the tiebreak row for every tiebreak, deciding-set and first-set tiebreaks and his last ten.', defs: [
+    ['W' + ENDASH + 'L', 'Tiebreaks won and lost in the window.'],
+    ['Win %', 'Won as a share of tiebreaks played.'],
+    ['vs tour', 'A dash for the tiebreak record and Over 3.5 sets: we hold no tour figure for them.'],
+    ['Deciding set', 'A tiebreak in the final possible set, so it settles the match.'],
+    ['Over 3.5 sets', 'His best-of-5 matches that went to a fourth or fifth set, and his record in them.']] };
+  // the profile tile's best split and the gap it was picked on (kept from v2: the tile and the drawer agree)
+  function splInfo1(p) {
+    var bs = p ? bestSplit(p) : null, notes = [];
+    if (bs) {
+      var g = 100 * bs.pick.won / bs.pick.n - bs.baseline;
+      notes.push('The box tile shows his best split: ' + bs.pick.label + ', ' + signed(Math.round(g * 10) / 10, 1, 'pp') +
+        ' over his ' + bs.baseline.toFixed(1) + '% across these splits.');
+    }
+    return Object.assign({ width: 400, notes: notes }, SPL_INFO1);
+  }
+  var SPL_COLS = { results: 'minmax(124px,1fr) 84px 72px 84px 84px', sets: 'minmax(104px,1fr) 80px 70px 64px 54px 84px 68px',
+    service: 'minmax(104px,1fr) 52px 46px 76px 72px 90px 76px' };
+  var SPL_HEADS = { results: [['W' + ENDASH + 'L'], ['Win %'], ['vs his avg'], ['vs tour', 1]],
+    sets: [['Tiebreaks won'], ['TB per match'], ['Games won'], ['Sets won'], ['Sets vs his avg'], ['Sets vs tour', 1]],
+    service: [['Aces %'], ['DF %'], ['Service held'], ['Return won'], ['Hold vs his avg'], ['Hold vs tour', 1]] };
+  // one row's cells: [kind, text, colour]; kinds d (dim 12 grey), k (key 12.5/600 white), h (his 11 grey), t (tour 12.5/700)
+  function splRowCellsV4(view, x, B, tour, tourPend) {
+    var s = x.s, n = s.n, thin = n < SPL_FLOOR, none = !n;
+    var width = view === 'results' ? 4 : 6;
+    if (none) { var e = []; for (var i = 0; i < width; i++) e.push(['d', DASH]); return e; }
+    var pc = function (v) { return thin || v == null ? DASH : v.toFixed(1) + '%'; };
+    var his = function (v, b) { return thin || v == null || b == null ? DASH : splPp(v - b); };
+    var tourCell = function (v) {
+      if (tourPend) return ['t', '', 'var(--text-label)'];
+      if (thin || v == null || !tour) return ['t', DASH, 'var(--text-label)'];
+      return ['t', splPp(v - tour.rate), n < PP4.SPL_MINB ? 'var(--text-label)' : splPpColour(v - tour.rate)];
+    };
+    if (x.tb) {   // the tiebreak record (Results only): W–L · won % · vs his win % · no tour figure
+      return [['d', recordText(s.w, s.l)], ['k', pc(s.win)], ['h', his(s.win, B.win)], ['t', DASH, 'var(--text-label)']];
+    }
+    if (view === 'sets') {
+      return [['k', pc(s.tbPct)], ['d', thin ? DASH : ((s.tw + s.tl) / n).toFixed(2)], ['k', pc(s.gamePct)], ['k', pc(s.setPct)],
+        ['h', his(s.setPct, B.setPct)], ['t', DASH, 'var(--text-label)']];
+    }
+    if (view === 'service') {
+      return [['d', pc(s.acePct)], ['d', pc(s.dfPct)], ['k', pc(s.hold)], ['k', pc(s.brk)], ['h', his(s.hold, B.hold)], ['t', DASH, 'var(--text-label)']];
+    }
+    return [['d', recordText(s.w, s.l)], ['k', pc(s.win)], ['h', his(s.win, B.win)], tourCell(s.win)];
+  }
+  // the band: caps scope · 20px figure · descriptor · matches · (?) left, the Window pills right (reference modal.isSplits)
+  function splBandHtml(base, scope, p) {
+    return '<div data-pp2-band="standalone" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;' +
+        'padding:20px 24px;background:var(--inner);border:1.25px solid var(--line);border-radius:12px;">' +
+      '<span style="display:inline-flex;align-items:center;gap:8px;font-family:\'IBM Plex Mono\',monospace;font-size:12px;color:var(--text-label);white-space:nowrap;position:relative;">' +
+        recCaps(base.label) +
+        '<span data-pp2-splbase style="color:var(--text);font-weight:700;font-size:20px;line-height:1;margin-left:4px;white-space:nowrap;">' + base.rec + '</span>' +
+        '<span style="color:var(--text-soft);font-size:12.5px;">' + base.pct + '</span><span>' + base.n + '</span>' +
+        '<span style="position:relative;display:inline-flex;z-index:3;">' + infoIcon('spl1', splInfo1(p)) + '</span></span>' +
+      bandPills('split-scope', [['last52', 'Last 52 weeks'], ['career', 'Career']], scope,
+        function (t) { return ' data-scope="' + t[0] + '"'; }) + '</div>';
+  }
   function renderSplitsModalV2(p) {
     if (typeof window.pp2DrawNeed === 'function') window.pp2DrawNeed(p.key);
     var S = splModel(p);
     if (S.st !== 'ready') {
       // while his per-match file loads the header still states the population the box tile measures against
-      var pop = splitPopulation(p.key, state.splitScope === 'last52' ? 'last52' : 'career');
-      var popHead = pop ? '<div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;font-family:\'IBM Plex Mono\',monospace;font-size:12px;color:var(--text-label);white-space:nowrap;">' +
-        recCaps(state.splitScope === 'last52' ? 'Last 52 weeks' : 'Career') +
-        '<span style="color:var(--text);font-weight:700;">' + recordText(pop.won, pop.n - pop.won) + ' ' + MIDDOT + '</span>' +
-        '<span style="color:var(--text);font-weight:700;">' + pop.rate.toFixed(1) + '% ' + MIDDOT + '</span><span>' + pop.n + ' matches</span>' +
-        '<span style="position:relative;display:inline-flex;z-index:3;">' + infoIcon('spl1', splInfo1(p)) + '</span></div>' : '';
-      return popHead + '<div style="border:1px dashed var(--edge-10);border-radius:10px;padding:26px;text-align:center;font-size:13px;color:var(--text-label);">' +
-        (S.st === 'failed' ? 'The match list did not load. Try again in a moment.' : S.st === 'none' ? 'No match list on file for this player yet.' : 'Loading his matches.') + '</div>';
+      // while his per-match file loads the band still states the population the box tile measures against
+      var sc0 = state.splitScope === 'last52' ? 'last52' : 'career', pop = splitPopulation(p.key, sc0);
+      var popHead = pop ? splBandHtml({ label: sc0 === 'last52' ? 'Last 52 weeks' : 'Career', rec: recordText(pop.won, pop.n - pop.won),
+        pct: pop.rate.toFixed(1) + '% win rate', n: pop.n + ' matches' }, sc0, p) : '';
+      return '<div style="display:flex;flex-direction:column;gap:16px;">' + popHead + '<div style="border:1px dashed var(--edge-10);border-radius:10px;padding:26px;text-align:center;font-size:13px;color:var(--text-label);">' +
+        (S.st === 'failed' ? 'The match list did not load. Try again in a moment.' : S.st === 'none' ? 'No match list on file for this player yet.' : 'Loading his matches.') + '</div></div>';
     }
     var view = state.splView === 'sets' || state.splView === 'service' ? state.splView : 'results';
-    var B = S.base, M = 'font-family:\'IBM Plex Mono\',monospace;';
-    var scopeLabel = S.scope === 'last52' ? 'Last 52 weeks' : 'Career';
-    var baseTxt = view === 'service'
-      ? recCaps(scopeLabel + ' ' + MIDDOT + ' service') + '<span style="color:var(--text);font-weight:700;">hold ' + (B.hold == null ? DASH : B.hold.toFixed(1) + '%') + '</span><span>' + MIDDOT + ' ' + B.n + ' matches</span>'
+    var B = S.base, M = 'font-family:\'IBM Plex Mono\',monospace;', scope = S.scope;
+    var scopeLabel = scope === 'last52' ? 'Last 52 weeks' : 'Career';
+    // the tour file loads with his career-splits file (pp2LoadSplits); until it answers the tour cells are blank, never a
+    // dash; a load that failed (no promise left in flight) reads as a dash
+    var tourPend = !splTourFile();
+    if (tourPend && typeof window.loadCareerSplitsTour === 'function') window.loadCareerSplitsTour().then(function (t) { if (t && state.modal === 'splits') repaint(); });
+    try { if (tourPend && (typeof _careerSplitsTourLoad === 'undefined' || !_careerSplitsTourLoad)) tourPend = false; } catch (e) { tourPend = false; }
+    // the box the member clicked last stays blue after its match box closes (§0.1)
+    if (state.fb && state.fb.box === 'splbox') state.splPick = String(state.fb.v).split('~').slice(0, 2).join('~');
+    var openKey = state.fb ? (state.fb.box === 'splbox' ? String(state.fb.v).split('~')[2] : state.fb.box === 'spl' ? 'spl:' + state.fb.v : state.fb.box === 'spltb' ? 'spltb:' : null) : null;
+
+    // ── band: caps scope · 20px figure · descriptor · matches · (?) | Window pills ──
+    var base = view === 'service'
+      ? { label: scopeLabel + ' ' + MIDDOT + ' service', rec: B.hold == null ? DASH : B.hold.toFixed(1) + '%', pct: 'held ' + MIDDOT + ' ' + (B.brk == null ? DASH : B.brk.toFixed(1) + '%') + ' return games won', n: B.svN + ' matches' }
       : view === 'sets'
-        ? recCaps(scopeLabel + ' ' + MIDDOT + ' sets') + '<span style="color:var(--text);font-weight:700;">' + recordText(B.sw, B.sl) + ' ' + MIDDOT + '</span><span style="color:var(--text);font-weight:700;">' + (B.setPct == null ? DASH : B.setPct.toFixed(1) + '%') + ' ' + MIDDOT + '</span><span>' + B.n + ' matches</span>'
-        : recCaps(scopeLabel) + '<span style="color:var(--text);font-weight:700;">' + recordText(B.w, B.l) + ' ' + MIDDOT + '</span><span style="color:var(--text);font-weight:700;">' + (B.win == null ? DASH : B.win.toFixed(1) + '%') + ' ' + MIDDOT + '</span><span>' + B.n + ' matches</span>';
-    // v3 B1/B2 · the pages (Results · Sets & games · Service) are the header switch; the window moved into this band
-    var head = '<div data-pp2-band="standalone" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;' +
-        'padding:10px 16px;background:var(--inner);border:1.25px solid var(--line);border-radius:12px;">' +
-      '<span style="display:inline-flex;align-items:center;gap:8px;' + M + 'font-size:12px;color:var(--text-label);white-space:nowrap;position:relative;">' + baseTxt +
-        '<span style="position:relative;display:inline-flex;z-index:3;">' + infoIcon('spl1', splInfo1(p)) + '</span></span>' +
-      bandPills('split-scope', [['last52', 'Last 52 weeks'], ['career', 'Career']], state.splitScope === 'last52' ? 'last52' : 'career',
-        function (t) { return ' data-scope="' + t[0] + '"'; }) + '</div>';
-    var cols = splCols(view);
-    var GRID = 'display:grid;grid-template-columns:minmax(0,1fr) ' + cols.map(function (c) { return c[1] + 'px'; }).join(' ') + ';gap:0 8px;align-items:center;';
-    var sel = state.fb && (state.fb.box === 'spl' || state.fb.box === 'spltb') ? state.fb.v : null;
-    function card(group, items, extra) {
-      var h = '<span style="display:flex;align-items:center;gap:8px;padding-bottom:8px;border-bottom:1px solid var(--edge-10);">' +
-        recCaps(group, 'font-weight:800;white-space:nowrap;') +
-        (extra ? '<span style="position:relative;display:inline-flex;z-index:3;">' + infoIcon('spl2', Object.assign({ width: 400 }, SPL_INFO2)) + '</span>' : '') + '</span>' +
-        cols.map(function (c) { return '<span style="' + MK_CAPS + 'text-align:right;padding-bottom:8px;border-bottom:1px solid var(--edge-10);white-space:nowrap;">' + c[0] + '</span>'; }).join('');
-      var body = items.map(function (x) {
-        var s = x.s, empty = !s.n, thin = s.n < SPL_FLOOR, key = x.group + '|' + x.label, on = sel === key;
-        var hook = empty ? '' : 'data-pp2="fb-open" data-box="' + (x.tb ? 'spltb' : 'spl') + '" data-v="' + esc(key) + '" ';
-        var bg = on ? 'var(--selected)' : 'transparent';
-        var cell = function (html, st) {
-          return '<span ' + hook + 'class="pp2-splcell" style="cursor:' + (empty ? 'default' : 'pointer') + ';background:' + bg + ';box-shadow:-6px 0 0 ' + bg + ',6px 0 0 ' + bg + ';' +
-            'padding:6px 0;border-top:1px solid var(--line);' + st + '">' + html + '</span>';
-        };
-        var vals = x.tb ? x.tbCells : splCells(view, s, B, thin);
-        return cell(esc(x.label), 'font-size:12.5px;font-weight:700;color:' + (thin ? 'var(--text-label)' : 'var(--text)') + ';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;') +
-          vals.map(function (v) { return cell(v[0], M + 'text-align:right;white-space:nowrap;font-size:' + (v[2] ? 12.5 : 11.5) + 'px;font-weight:' + (v[2] || 400) + ';color:' + v[1] + ';'); }).join('');
-      }).join('');
-      return '<div style="background:var(--inner);border:1.25px solid var(--line);border-radius:12px;padding:12px 14px 5px;">' +
-        '<div class="pp2-splgrid" style="' + GRID + '">' + h + body + '</div></div>';
-    }
+        ? { label: scopeLabel + ' ' + MIDDOT + ' sets', rec: recordText(B.sw, B.sl), pct: (B.setPct == null ? DASH : B.setPct.toFixed(1) + '%') + ' sets won', n: B.n + ' matches' }
+        : { label: scopeLabel, rec: recordText(B.w, B.l), pct: (B.win == null ? DASH : B.win.toFixed(1) + '%') + ' win rate', n: B.n + ' matches' };
+    var head = splBandHtml(base, scope, p);
+
+    // ── rows ──
     var extra = S.groups['Extra stats'].slice();
-    // the export lists "Over 3.5 sets" (and the tiebreak record) under Results only (file :776 / :800)
     if (view !== 'results') extra = extra.filter(function (x) { return x.label !== 'Over 3.5 sets'; });
-    if (view === 'results') {
-      var T = B;   // the tiebreak record over the window
-      var tbThin = T.tw + T.tl < SPL_FLOOR, tbP = T.tbPct;
-      var tbGap = tbThin || tbP == null ? null : Math.round((tbP - 50) * 10) / 10;
-      extra.push({ group: 'Extra stats', label: 'Tiebreak record', tb: true, s: { n: T.tw + T.tl, w: T.tw, l: T.tl },
-        tbCells: [[T.tw + T.tl ? recordText(T.tw, T.tl) : DASH, 'var(--text-label)'], [tbThin || tbP == null ? DASH : tbP.toFixed(1) + '%', 'var(--text)', 700],
-          [tbGap == null ? DASH : signed(tbGap, 1, 'pp'), tbGap == null ? 'var(--text-label)' : signColour(tbGap), 700]] });
+    else extra.push({ group: 'Extra stats', label: 'Tiebreak record', tb: true, s: { n: B.tw + B.tl, w: B.tw, l: B.tl, win: B.tw + B.tl ? 100 * B.tw / (B.tw + B.tl) : null } });
+    var GROUPS = [['By round', S.groups['By round']], ['Level', S.groups['Level']], ['Opponent rank', S.groups['Opponent rank']], ['Extra stats', extra]];
+    var COLS = SPL_COLS[view];
+    var CELL = { d: M + 'font-size:12px;color:var(--text-label);', k: M + 'font-size:12.5px;font-weight:600;color:var(--text);',
+      h: M + 'font-size:11px;color:var(--text-label);', t: M + 'font-size:12.5px;font-weight:700;' };
+    var infos = [];
+    function section(group, items) {
+      var hd = '<div style="display:grid;grid-template-columns:' + COLS + ';align-items:center;padding-bottom:11px;border-bottom:1px solid var(--edge-10);">' +
+        '<span style="display:flex;align-items:center;gap:8px;">' + recCaps(group, 'color:var(--text-soft);white-space:nowrap;') +
+          (group === 'Extra stats' ? '<span style="position:relative;display:inline-flex;z-index:3;">' + infoIcon('spl2', Object.assign({ width: 400 }, SPL_INFO2)) + '</span>' : '') + '</span>' +
+        SPL_HEADS[view].map(function (h) {
+          return '<span style="text-align:right;font-size:10.5px;font-weight:' + (h[1] ? 800 : 700) + ';color:' + (h[1] ? 'var(--text)' : 'var(--text-label)') + ';white-space:nowrap;">' + h[0] + '</span>';
+        }).join('') + '</div>';
+      var rows = items.map(function (x) {
+        var n = x.s.n, none = !n, tour = x.tb ? null : splTourFor(x.label, scope);
+        var target = x.tb ? 'spltb:' : 'spl:' + x.group + '|' + x.label, on = openKey === target;
+        if (!x.tb && n >= PP4.SPL_MINB) infos.push({ x: x, tour: tour, target: target });
+        var hook = none ? '' : 'data-pp2="fb-open" data-box="' + (x.tb ? 'spltb' : 'spl') + '" data-v="' + esc(x.tb ? 'Extra stats|Tiebreak record' : x.group + '|' + x.label) + '" ';
+        return '<div ' + hook + 'data-pp2-splrow="' + esc(x.label) + '" class="pp2-splrow" style="display:grid;grid-template-columns:' + COLS + ';align-items:center;min-height:36px;' +
+          'border-top:1px solid var(--line);margin:0 -8px;padding:0 8px;border-radius:6px;cursor:' + (none ? 'default' : 'pointer') + ';' +
+          'background:' + (on ? 'var(--selected)' : 'transparent') + ';">' +
+          '<span style="font-size:13px;font-weight:600;color:' + (none ? 'var(--text-label)' : 'var(--text)') + ';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + esc(x.label) + '</span>' +
+          splRowCellsV4(view, x, B, tour, tourPend).map(function (c) {
+            var col = c[2] || (c[1] === DASH ? 'var(--text-label)' : '');   // a dash is grey whatever its column
+            return '<span style="' + CELL[c[0]] + (col ? 'color:' + col + ';' : '') + 'text-align:right;white-space:nowrap;">' + (c[1] === '' ? '&nbsp;' : c[1]) + '</span>';
+          }).join('') + '</div>';
+      }).join('');
+      return '<div data-pp2-splsec="' + esc(group) + '" style="background:var(--card);border:1.25px solid var(--edge-6);border-radius:14px;padding:13px 16px 6px;">' + hd + rows + '</div>';
     }
+    var secHtml = GROUPS.map(function (g) { return section(g[0], g[1]); });
+
+    // ── summary boxes: picked by the largest gap vs tour among rows with ≥ MINB matches and a tour figure ──
+    var withTour = infos.filter(function (i) { return i.tour && i.x.s.win != null; });
+    var gapOf = function (i) { return i.x.s.win - i.tour.rate; };
+    var pick = function (list, dir) { return list.slice().sort(function (a, b) { return dir * (gapOf(b) - gapOf(a)); })[0] || null; };
+    var pcw = function (v) { return Math.max(0, Math.min(100, v)) + '%'; };
+    function box(label, name, val, tourRate, max, sub, target) {
+      var key = view + '~' + label, sel = state.splPick === key, hasT = tourRate != null && !tourPend;
+      return { label: label, name: name, fig: val == null ? DASH : val.toFixed(1) + '%', gap: hasT && val != null ? splPp(val - tourRate) : '',
+        gapColor: hasT && val != null ? splPpColour(val - tourRate) : 'var(--text-label)', gapTail: hasT && val != null ? 'vs tour' : '',
+        sub: sub, tour: tourPend ? '' : 'tour ' + (hasT ? tourRate.toFixed(1) + '%' : DASH), barW: val == null ? '0%' : pcw(100 * val / max),
+        tickX: hasT ? pcw(100 * tourRate / max) : '0%', tickOp: hasT ? 1 : 0, cue: target ? 'Matches ' + RANGLE : '', barColor: pp4Bar(sel),
+        v: target ? key + '~' + target : null };
+    }
+    function nob(label, why) { return { label: label, name: DASH, fig: DASH, gap: '', gapColor: 'var(--text-label)', gapTail: '', sub: why, tour: '', barW: '0%', tickX: '0%', tickOp: 0, cue: '', barColor: pp4Bar(false), v: null }; }
+    var minbWhy = 'no row has ' + PP4.SPL_MINB + ' matches', tourWhy = 'no row with ' + PP4.SPL_MINB + '+ matches has a tour figure';
+    function winBox(label, list, dir, name) {
+      if (!list.length) return nob(label, minbWhy);
+      var t = list.filter(function (i) { return i.tour; });
+      if (!t.length) return nob(label, tourWhy);
+      var i = pick(t, dir);
+      return box(label, name || i.x.label, i.x.s.win, i.tour.rate, 100, recordText(i.x.s.w, i.x.s.l), i.target);
+    }
+    var lv = infos.filter(function (i) { return i.x.group === 'Level'; }), rd = infos.filter(function (i) { return i.x.group === 'By round'; });
+    var boxes;
+    if (view === 'results') {
+      var t10 = infos.filter(function (i) { return i.x.label === 'vs Top 10'; })[0];
+      boxes = [winBox('Strongest level', lv, 1), winBox('Weakest level', lv, -1), winBox('Best round', rd, 1),
+        t10 ? box('vs Top 10', 'Top 10 opponents', t10.x.s.win, t10.tour ? t10.tour.rate : null, 100, recordText(t10.x.s.w, t10.x.s.l), t10.target) : nob('vs Top 10', minbWhy)];
+    } else if (view === 'sets') {
+      var tbN = B.tw + B.tl;
+      // sets won has no tour figure on any row (the tour pool is win–loss only), so no situation can be ranked vs tour
+      var sitWhy = infos.length ? tourWhy : minbWhy;
+      boxes = [tbN ? box('Tiebreaks', 'Tiebreaks won', 100 * B.tw / tbN, null, 100, recordText(B.tw, B.tl) + ' ' + MIDDOT + ' ' + (tbN / B.n).toFixed(2) + ' per match', 'spltb:') : nob('Tiebreaks', 'no tiebreak played'),
+        box('Sets won', 'All sets', B.setPct, null, 100, recordText(B.sw, B.sl), 'spl:Overall|All matches'),
+        nob('Strongest situation', sitWhy), nob('Weakest situation', sitWhy)];
+    } else {
+      var svSub = B.svN + ' matches';
+      boxes = [box('Hold', 'Service games held', B.hold, null, 100, svSub, B.svN ? 'spl:Overall|All matches' : null),
+        box('Return games won', 'Opponents' + '’' + ' service games won', B.brk, null, 40, svSub, B.svN ? 'spl:Overall|All matches' : null),
+        box('Aces', 'Aces per 100 serve points', B.acePct, null, 12, svSub, B.svN ? 'spl:Overall|All matches' : null)];
+    }
+    var boxHtml = '<div style="display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:10px;">' + boxes.map(function (b) {
+      return '<div ' + (b.v ? 'data-pp2="fb-open" data-box="splbox" data-v="' + esc(b.v) + '" ' : '') + 'data-pp2-splbox="' + esc(b.label) + '" class="pp2-splbox" ' +
+        'style="cursor:' + (b.v ? 'pointer' : 'default') + ';background:var(--card);border:1.25px solid var(--edge-6);border-radius:12px;padding:14px 16px 13px;' +
+        'display:flex;flex-direction:column;gap:6px;min-width:0;transition:border-color 120ms, background 120ms;">' +
+        '<span style="display:flex;align-items:baseline;justify-content:space-between;gap:8px;">' + recCaps(esc(b.label), 'white-space:nowrap;') +
+          '<span style="font-size:11px;font-weight:600;color:var(--text-label);white-space:nowrap;">' + b.cue + '</span></span>' +
+        '<span style="font-size:15px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + esc(b.name) + '</span>' +
+        '<span style="display:flex;align-items:baseline;gap:10px;white-space:nowrap;margin-top:4px;">' +
+          '<span style="' + M + 'font-size:26px;font-weight:700;line-height:1;color:var(--text);">' + b.fig + '</span>' +
+          '<span style="' + M + 'font-size:13px;font-weight:700;color:' + b.gapColor + ';">' + (b.gap || '&nbsp;') + '</span>' +
+          '<span style="font-size:11px;color:var(--text-label);">' + b.gapTail + '</span></span>' +
+        '<span style="position:relative;display:block;height:4px;border-radius:2px;background:var(--edge-7);margin:7px 0 3px;">' +
+          '<span data-pp2-splbar style="position:absolute;left:0;top:0;bottom:0;width:' + b.barW + ';border-radius:2px;background:' + b.barColor + ';"></span>' +
+          '<span data-pp2-spltick style="position:absolute;left:' + b.tickX + ';top:-3px;bottom:-3px;width:2px;margin-left:-1px;background:var(--text);opacity:' + b.tickOp + ';"></span></span>' +
+        '<span style="display:flex;align-items:baseline;justify-content:space-between;gap:8px;' + M + 'font-size:10.5px;color:var(--text-label);white-space:nowrap;">' +
+          '<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + b.sub + '</span><span>' + b.tour + '</span></span>' +
+        '</div>';
+    }).join('') + '</div>';
+
     return '<div style="display:flex;flex-direction:column;gap:16px;">' + head +
-      '<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;align-items:start;">' +
-        '<div style="display:flex;flex-direction:column;gap:10px;">' + card('By round', S.groups['By round']) + card('Opponent rank', S.groups['Opponent rank']) + '</div>' +
-        '<div style="display:flex;flex-direction:column;gap:10px;">' + card('Level', S.groups['Level']) + card('Extra stats', extra, true) + '</div>' +
-      '</div></div>';
+      '<div style="overflow-x:auto;"><div style="min-width:1136px;display:flex;flex-direction:column;gap:16px;">' + boxHtml +
+        '<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;align-items:start;">' + secHtml.join('') + '</div>' +
+      '</div></div></div>';
   }
   function splRowCells(r, view, join) {
     var M = 'font-family:\'IBM Plex Mono\',monospace;', m = r.m, wo = r.sc.wo;
@@ -6909,6 +7268,8 @@
     var S = splModel(p);
     if (S.st !== 'ready') return null;
     var parts = String(v).split('|'), g = S.groups[parts[0]], x = g ? g.filter(function (r) { return r.label === parts[1]; })[0] : null;
+    // v4 §6 · the overall boxes (Sets won · Hold · Return games won · Aces) open every match in the window
+    if (parts[0] === 'Overall') x = { group: 'Overall', label: 'All matches', rows: S.rows, s: S.base };
     if (!x || !x.s.n) return null;
     var view = state.splView === 'sets' || state.splView === 'service' ? state.splView : 'results';
     var s = x.s, B = S.base, thin = s.n < SPL_FLOOR, isOwnBase = x.group === 'Extra stats' || x.group === 'Opponent rank';
@@ -6922,7 +7283,8 @@
     var tiles;
     if (view === 'results') {
       var gapV = isOwnBase ? pp(s.win, B.win) : pp(s.win, O.win);
-      var symmetric = x.group === 'By round' || x.group === 'Level' || x.label === 'Best of 5' || x.label === 'Best of 3' || x.label === 'Over 3.5 sets';
+      var tourT = splTourFor(x.label, S.scope);
+      var o35 = (S.groups['Extra stats'] || []).filter(function (r) { return r.label === 'Over 3.5 sets'; })[0];
       var priced = counted.filter(function (r) { return r.cents != null; }), units = priced.reduce(function (a, r) { return a + r.cents; }, 0) / 100;
       var fav = priced.filter(function (r) { return r.oppPrice != null && +r.price < +r.oppPrice; }), dog = priced.filter(function (r) { return r.oppPrice != null && +r.price > +r.oppPrice; });
       var wl = function (a) { var w = a.filter(function (r) { return r.won; }).length; return recordText(w, a.length - w); };
@@ -6931,14 +7293,19 @@
       tiles = [
         thin ? { label: 'Record', fig: recordText(s.w, s.l), sub: s.n + ' matches', tail: 'too few matches for a rate' }
           : tile('Win rate', s.win.toFixed(1) + '%', recordText(s.w, s.l) + ' ' + MIDDOT + ' ' + s.n + ' matches', gapV, isOwnBase ? 'vs his ' + scopeLabel.toLowerCase() + ' rate' : 'vs his other rows'),
-        symmetric ? tile('Tour average', '50.0%', 'win rate of rated players here', thin ? null : pp(s.win, 50), 'his rate vs tour')
+        // v4 §6 · the tour figure is the tracked players' pooled record in this row (splTourFor); never the 50% placeholder
+        tourT ? tile('Tour average', tourT.rate.toFixed(1) + '%', 'win rate of tracked players here', thin ? null : pp(s.win, tourT.rate), 'his rate vs tour')
           : { label: 'Tour average', fig: DASH, figColor: 'var(--text-label)', sub: 'no tour figure for this row', tail: '' },
         S.join === 'pending' ? { label: 'On the price', fig: '<span data-pp2-pending="spl-pl">&nbsp;</span>', sub: '&nbsp;', tail: '' }
           : S.join !== 'ready' ? { label: 'On the price', fig: DASH, figColor: 'var(--text-label)', sub: 'prices unavailable', tail: '' }
           : { label: 'On the price', fig: priced.length ? signed(100 * units / priced.length, 1, '%') + ' yield' : DASH,
             sub: priced.length ? signed(units, 2, 'u') + ' ' + MIDDOT + ' flat 1u on ' + priced.length + ' of ' + counted.length + ' priced' : 'no price on record',
             tail: 'fav ' + wl(fav) + ' ' + MIDDOT + ' dog ' + wl(dog) },
-        { label: 'Last 10 here', fig: recordText(l10W, l10.length - l10W), figColor: l10.length ? (l10W / l10.length >= 0.5 ? 'var(--pos)' : 'var(--neg)') : null,
+        // v4 §6 · the Grand Slams row's 4th tile is his Over 3.5 sets record (best-of-5 matches that went 4 or 5 sets)
+        x.label === 'Grand Slams' && o35
+          ? { label: 'Over 3.5 sets', fig: o35.s.n ? recordText(o35.s.w, o35.s.l) : DASH, figColor: o35.s.n ? null : 'var(--text-label)', sub: 'record when it went 4 or 5 sets',
+            tail: o35.s.n >= SPL_FLOOR ? o35.s.win.toFixed(1) + '% won' : o35.s.n ? o35.s.n + ' matches' : 'no match went 4 or 5 sets' }
+          : { label: 'Last 10 here', fig: recordText(l10W, l10.length - l10W), figColor: l10.length ? (l10W / l10.length >= 0.5 ? 'var(--pos)' : 'var(--neg)') : null,
           sub: 'his latest ' + l10.length + ' in this row', tail: counted[0] ? run + ' ' + (counted[0].won ? 'won' : 'lost') + ' in a row ' + MIDDOT + ' last ' + fbDate(counted[0].date) : '' }
       ];
     } else if (view === 'sets') {
@@ -6954,8 +7321,8 @@
       ];
     } else {
       tiles = [
-        tile('Hold rate', s.hold == null ? DASH : s.hold.toFixed(1) + '%', s.sv ? s.held + ' of ' + s.sv + ' service games held' : 'no serve counts in the file yet', pp(s.hold, B.hold), 'vs his ' + scopeLabel.toLowerCase() + ' rate'),
-        tile('Break rate', s.brk == null ? DASH : s.brk.toFixed(1) + '%', s.ret ? s.broke + ' of ' + s.ret + ' return games won' : 'no serve counts in the file yet', pp(s.brk, B.brk), 'vs his ' + scopeLabel.toLowerCase() + ' rate'),
+        tile('Service games held', s.hold == null ? DASH : s.hold.toFixed(1) + '%', s.sv ? s.held + ' of ' + s.sv + ' service games held' : 'no serve counts in the file yet', pp(s.hold, B.hold), 'vs his ' + scopeLabel.toLowerCase() + ' rate'),
+        tile('Return games won', s.brk == null ? DASH : s.brk.toFixed(1) + '%', s.ret ? s.broke + ' of ' + s.ret + ' return games won' : 'no serve counts in the file yet', pp(s.brk, B.brk), 'vs his ' + scopeLabel.toLowerCase() + ' rate'),
         { label: 'Aces & double faults', fig: s.acePct == null ? DASH : s.acePct.toFixed(1) + '%', sub: 'aces per service point ' + MIDDOT + ' DF ' + (s.dfPct == null ? DASH : s.dfPct.toFixed(1) + '%'),
           tail: s.dfs ? (s.aces / s.dfs).toFixed(1) + ' aces per double fault' : '' },
         { label: 'Serve vs return', fig: s.hold == null || s.brk == null ? DASH : signed(s.hold + s.brk - 100, 1, 'pp'), figColor: s.hold == null || s.brk == null ? null : signColour(s.hold + s.brk - 100),
@@ -6969,6 +7336,13 @@
       meta: recordText(s.w, s.l) + (thin ? '' : ' ' + MIDDOT + ' ' + s.win.toFixed(1) + '%') + ' ' + MIDDOT + ' ' + s.n + ' matches ' + MIDDOT + ' ' + scopeLabel.toLowerCase(),
       tiles: tiles, cols: FB_LIST_COLS, head: head,
       rows: list.map(function (r) { return { id: null, hook: r.sc.wo ? '' : 'data-pp2="draw-sheet" data-v="' + r.i + '" ', attr: r.sc.wo ? 'data-pp2-wo-row="1" ' : '', cells: splRowCells(r, view, S.join) }; }) };
+  };
+  // v4 §6 · a summary box opens the row it names: v = view~label~target, target 'spl:group|label' or 'spltb:'
+  (typeof FB_BUILD === 'object' ? FB_BUILD : {}).splbox = function (p, v) {
+    var t = String(v).split('~')[2] || '', i = t.indexOf(':');
+    if (i < 0) return null;
+    var kind = t.slice(0, i), arg = t.slice(i + 1);
+    return kind === 'spltb' ? FB_BUILD.spltb(p) : kind === 'spl' ? FB_BUILD.spl(p, arg) : null;
   };
   // the tiebreak box: every tiebreak in the window, deciding-set and first-set tiebreaks, his last ten
   (typeof FB_BUILD === 'object' ? FB_BUILD : {}).spltb = function (p) {
@@ -6992,18 +7366,19 @@
     var pct = N ? 100 * W / N : null, gap = pct == null ? null : Math.round((pct - 50) * 10) / 10;
     var M = 'font-family:\'IBM Plex Mono\',monospace;';
     var shown = tbs.filter(function (t) { return LIST === 'all' || (LIST === 'won') === t.won; });
-    return { name: 'Tiebreak record', code: 'Extra stats',
-      meta: recordText(W, N - W) + (pct == null ? '' : ' ' + MIDDOT + ' ' + pct.toFixed(1) + '%') + ' ' + MIDDOT + ' ' + N + ' tiebreaks ' + MIDDOT + ' ' + (S.scope === 'last52' ? 'last 52 weeks' : 'career'),
+    // v4 §6 (reference tbBox): code = the window, meta ends on the matches behind the tiebreaks
+    return { name: 'Tiebreak record', code: S.scope === 'last52' ? 'Last 52 weeks' : 'Career',
+      meta: recordText(W, N - W) + (pct == null ? '' : ' ' + MIDDOT + ' ' + pct.toFixed(1) + '%') + ' ' + MIDDOT + ' ' + N + ' tiebreaks ' + MIDDOT + ' ' + S.base.n + ' matches',
       tiles: [
-        { label: 'Tiebreaks won', fig: pct == null ? DASH : pct.toFixed(1) + '%', sub: recordText(W, N - W) + ' ' + MIDDOT + ' ' + N + ' tiebreaks', tail: gap == null ? '' : signed(gap, 1, 'pp') + ' vs tour at 50%', tailColor: gap == null ? null : signColour(gap) },
+        { label: 'Tiebreaks won', fig: pct == null ? DASH : pct.toFixed(1) + '%', sub: recordText(W, N - W) + ' ' + MIDDOT + ' ' + N + ' tiebreaks', tail: '' },   // v4 §6: no tour tiebreak figure is held (the 50% was a placeholder)
         { label: 'Deciding-set tiebreaks', fig: dec.length ? Math.round(100 * decW / dec.length) + '%' : DASH, sub: recordText(decW, dec.length - decW) + ' ' + MIDDOT + ' ' + dec.length + ' played', tail: 'the tiebreak that settles the match' },
         { label: 'First-set tiebreaks', fig: first.length ? Math.round(100 * firstW / first.length) + '%' : DASH, sub: recordText(firstW, first.length - firstW) + ' ' + MIDDOT + ' ' + first.length + ' played',
           tail: firstW ? 'won the match ' + firstMatchW + ' of ' + firstW + ' after winning it' : '' },
         { label: 'Last 10', fig: recordText(l10W, l10.length - l10W), figColor: l10.length ? (l10W * 2 >= l10.length ? 'var(--pos)' : 'var(--neg)') : null, sub: 'his latest ' + l10.length + ' tiebreaks',
           tail: tbs[0] ? 'last ' + fbDate(tbs[0].r.date) + ' ' + MIDDOT + ' ' + initialSurname(tbs[0].r.opp || '') : '' }
       ],
-      pills: [['all', 'All ' + N], ['won', 'Won ' + W], ['lost', 'Lost ' + (N - W)]].map(function (x) { return { hook: 'lc-drill-res', v: x[0], label: x[1], on: LIST === x[0] }; }),
-      cols: FB_LIST_COLS,
+      pills: [['all', 'All ' + MIDDOT + ' ' + N], ['won', 'Won ' + MIDDOT + ' ' + W], ['lost', 'Lost ' + MIDDOT + ' ' + (N - W)]].map(function (x) { return { hook: 'lc-drill-res', v: x[0], label: x[1], on: LIST === x[0] }; }),
+      cols: FB_LIST_COLS.replace(/46px 46px 54px$/, '60px 40px 54px'),   // v4: '7–6(11)' on one line
       head: [{ label: '' }, { label: 'Date' }, { label: 'Opponent' }, { label: 'Event' }, { label: 'Rd' }, { label: 'Score' }, { label: 'TB', align: 'right' }, { label: 'Set', align: 'right' }, { label: 'Result', align: 'right' }],
       rows: shown.map(function (t) {
         var r = t.r;
@@ -7014,7 +7389,9 @@
           { html: esc(tournDisplayName(r.m.t, null) || DASH), style: 'font-size:12px;color:var(--text-label);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;' },
           { html: esc(r.round || r.m.rd || DASH), style: M + 'font-size:10.5px;color:var(--text-label);' },
           { html: esc(r.sc.text || DASH), style: M + 'font-size:11px;color:var(--text-label);white-space:nowrap;' },
-          { html: t.x.p + '–' + t.x.o + (t.tb != null ? '(' + t.tb + ')' : ''), style: M + 'font-size:11px;color:var(--text-soft);text-align:right;' },
+          // the set as the file holds it, the loser's tiebreak points in brackets (the winner's are not stored: a Slam's
+          // deciding-set tiebreak runs to 10, so they cannot be derived). One line: the TB column is widened below.
+          { html: t.x.p + '–' + t.x.o + (t.tb != null ? '(' + t.tb + ')' : ''), style: M + 'font-size:11px;color:var(--text-soft);text-align:right;white-space:nowrap;' },
           { html: t.set, style: M + 'font-size:11px;color:var(--text-label);text-align:right;' },
           { html: t.won ? 'Won' : 'Lost', style: M + 'font-size:11px;font-weight:700;text-align:right;color:' + (t.won ? 'var(--pos)' : 'var(--neg)') + ';' }
         ] };
@@ -8007,6 +8384,188 @@
     if (d.speed !== 'all') bits.push(d.speed + ' courts');
     return bits.join(' ' + MIDDOT + ' ');
   }
+  // ── Profile v4 (handoff 2026-11-14, CHANGES §8.2) · Derived lines, the reference's `modal.linesOn` block ───────────
+  // One card under the joined band: the role strip (grid minmax(0,1fr) minmax(0,1fr) 340px, so the favourite | underdog
+  // divider runs on into the panel's left border) over a body grid minmax(0,1fr) 340px. Left: "Cover rate by line ·
+  // scope" + every line as a 40px chip — Games handicap (Minus / Plus rows), Total games (Over / Under), Set handicap
+  // (wide tiles). Chip colour = HIS cover rate, diverging around 50%, full strength PP4.LC_TINT_FULL_PP away; a white
+  // dot = PP4.LC_FIELD_DOT_PP or more above the field (and outside the field's sampling noise, founder 2026-10-23);
+  // grey = under MK_FLOOR matches; outlined + faint = not offered to a favourite; a white ring = the picked line.
+  // Right (340px): the picked line. A chip click only picks; the default pick is the rated line with the largest gap
+  // above the field; the pick survives filter changes (state.lcPick). The population, the field file, the bettable side,
+  // the dimming and the one-green / one-red rule are the founder's (player-profile.md "Derived lines"), unchanged.
+  var LC_INFO1_V4 = { what: 'How often his matches landed on each derived line, from the set scores on record.', defs: [
+    ['Line', 'A games handicap, set handicap or total built from the final score, not a bet he placed.'],
+    ['Cover rate', 'Matches that landed on his side of the line divided by completed matches in the filter.'],
+    ['Field', 'How often the tracked players as a whole cover the same line under the same filters.'],
+    ['Vs field', 'His cover rate minus the field, in points. Green on the line furthest above the field, red on the one furthest below; a gap inside the field’s sampling noise stays grey.'],
+    ['Push', 'A whole-number line that lands exactly on the margin or total. Pushes count in neither the covers nor the misses.'],
+    ['Favourite', 'The player with the shorter closing price in that match; the underdog is the longer.'],
+    ['Retired', 'Matches ending in a retirement are left out of every line.'],
+    ['Colour', 'How often he covers the line himself: green = most of the time, red = rarely, faint = close to half. A grey tile has under ' + MK_FLOOR + ' matches.'],
+    ['Dot', 'A white dot on a tile = his cover rate is also at least ' + PP4.LC_FIELD_DOT_PP + ' point above the field, outside its sampling noise.'],
+    ['Click a line', 'Shows that line in the panel: what it needs, his cover rate, reliability, record, latest matches and the gap to the field. "See the matches" opens every match on it.'],
+    ['Reliability', 'How many of 10 matches he covers this line, read as a score.']] };
+  // a chip's colour from his cover rate: green above 50%, red below, alpha 10% → 85% at PP4.LC_TINT_FULL_PP away
+  function lcTint(rate) {
+    var a = 10 + 75 * Math.min(1, Math.abs(rate - 50) / PP4.LC_TINT_FULL_PP);
+    return 'color-mix(in srgb, var(' + (rate >= 50 ? '--pos' : '--neg') + ') ' + a.toFixed(0) + '%, transparent)';
+  }
+  // "Covers 7 in 10 · reliable" — the reference's cut-offs (PP4.LC_REL_*)
+  function lcReliability(rate) {
+    var in10 = Math.round(rate / 10);
+    var word = in10 >= PP4.LC_REL_VERY ? 'very reliable' : in10 >= PP4.LC_REL_OK ? 'reliable' : in10 >= PP4.LC_REL_COIN ? 'coin flip' : 'unreliable';
+    return { in10: in10, word: word, colour: in10 >= PP4.LC_REL_OK ? 'var(--pos)' : in10 >= PP4.LC_REL_COIN ? 'var(--text)' : 'var(--neg)' };
+  }
+  // one plain sentence for what the line needs (the reference's meanOf), with the push note on whole lines
+  function lcMeaning(spec, fmt) {
+    var kind = spec[1], m = spec[2], dir = spec[3], half = m % 1 !== 0, n = Math.floor(m), v = dir < 0 ? -m : m;
+    if (kind === 'sh') return fmt === 'bo3' ? (v < 0 ? 'Covers when he wins in straight sets, 2–0.' : 'Covers when he wins at least one set.')
+      : v === -2.5 ? 'Covers when he wins in straight sets, 3–0.' : v === -1.5 ? 'Covers when he wins 3–0 or 3–1.'
+      : v === 1.5 ? 'Covers when he wins at least two sets.' : 'Covers when he wins at least one set.';
+    if (kind === 'tg' && dir > 0) return 'Covers when the match has ' + (n + 1) + ' games or more.' + (half ? '' : ' Exactly ' + m + ' is a push.');
+    if (kind === 'tg') return 'Covers when the match has ' + (half ? n : n - 1) + ' games or fewer.' + (half ? '' : ' Exactly ' + m + ' is a push.');
+    if (v < 0) return 'Covers when he wins at least ' + (n + 1) + ' more games than his opponent.' + (half ? '' : ' Exactly ' + m + ' more is a push.');
+    var k = half ? n : n - 1;
+    return (k === 0 ? 'Covers when he wins at least as many games as his opponent.'
+      : 'Covers when he finishes level, ahead, or no more than ' + k + (k === 1 ? ' game' : ' games') + ' behind on games.') +
+      (half ? '' : ' Exactly ' + m + ' behind is a push.');
+  }
+  function lcSetNote(spec, fmt) {
+    var v = spec[3] < 0 ? -spec[2] : spec[2];
+    return fmt === 'bo3' ? (v < 0 ? 'Wins 2–0' : 'Wins a set') : v === -2.5 ? 'Wins 3–0' : v === -1.5 ? 'Wins 3–0 or 3–1' : v === 1.5 ? 'Wins two sets' : 'Wins a set';
+  }
+  function lcChipLabel(spec) {
+    var m = String(spec[2]);
+    return spec[1] === 'tg' ? m : (spec[3] < 0 ? MINUS : '+') + m;
+  }
+  /** Every line of the format with its figures under the current filters (offered or not), the family it sits in, the
+   *  field figure, the gap, and the panel's facts. Shared by the grid, the panel and the default pick. */
+  function lcLineModel(d, fmt) {
+    var def = LINE_DEFS[fmt] || LINE_DEFS.bo3, rowOf = {}, famOf = {};
+    d.groups.forEach(function (g) { g.rows.forEach(function (r) { rowOf[r.label] = r; famOf[r.label] = g.title; }); });
+    var bw = lcBestWorst(d, fmt), lines = [];
+    def.groups.forEach(function (g) { g[1].forEach(function (spec) {
+      var r = rowOf[spec[0]] || null, rn = r ? r.n - (r.voids || 0) : 0, rated = !!r && rn >= MK_FLOOR && r.rate != null;
+      var vf = r ? lcVsField(d, fmt, r) : { fl: null, gap: null, dimmed: false };
+      lines.push({ spec: spec, label: spec[0], fam: g[0], row: r, offered: !!r, rn: rn, rated: rated,
+        fl: vf.fl, gap: rated ? vf.gap : null, dimmed: vf.dimmed, mark: bw[spec[0]] || null });
+    }); });
+    var pickable = lines.filter(function (x) { return x.offered && x.row.n > 0; });
+    var withGap = lines.filter(function (x) { return x.rated && x.gap != null; });
+    var rated = lines.filter(function (x) { return x.rated; });
+    var def0 = withGap.length ? withGap.reduce(function (b, x) { return x.gap > b.gap ? x : b; })
+      : rated.length ? rated.reduce(function (b, x) { return x.row.rate > b.row.rate ? x : b; }) : pickable[0] || null;
+    var picked = state.lcPick && pickable.filter(function (x) { return x.label === state.lcPick; })[0] || def0;
+    return { lines: lines, picked: picked };
+  }
+  function lcChipHtml(x, picked, note) {
+    var off = !x.offered, thin = !off && !x.rated, live = !off && x.row.n > 0, on = picked && picked.label === x.label;
+    var dot = !off && x.rated && x.gap != null && !x.dimmed && x.gap >= PP4.LC_FIELD_DOT_PP;
+    var bg = off ? 'transparent' : thin ? 'color-mix(in srgb, var(--text) 4%, transparent)' : lcTint(x.row.rate);
+    var ink = off ? 'var(--pp-x-bar-neutral)' : thin ? 'var(--text-label)' : 'var(--text)';
+    var ring = on ? '0 0 0 2px var(--text)' : off ? 'inset 0 0 0 1px var(--edge-6)' : 'none';
+    var title = off ? 'Not offered to a favourite' : x.label + (thin ? ' · under ' + MK_FLOOR + ' matches' : ' · covers ' + x.row.rate.toFixed(1) + '%');
+    var dotHtml = '<span style="display:' + (dot ? 'block' : 'none') + ';position:absolute;top:4px;right:4px;width:4px;height:4px;border-radius:50%;' +
+      'background:var(--text);opacity:0.85;pointer-events:none;"' + (dot ? ' data-lc-dot' : '') + '></span>';
+    var attrs = (live ? 'data-pp2="lc-pick" data-v="' + esc(x.label) + '" ' : '') + 'data-lc-chip="' + esc(x.label) + '"' + (on ? ' data-lc-picked' : '') +
+      (off ? ' data-lc-off' : thin ? ' data-lc-thin' : '') + ' title="' + esc(title) + '" class="pp2-lchip" ';
+    var box = 'min-width:0;height:40px;border-radius:8px;background:' + bg + ';box-shadow:' + ring + ';cursor:' + (live ? 'pointer' : 'default') + ';' +
+      'display:flex;align-items:center;position:relative;';
+    var M = 'font-family:\'IBM Plex Mono\',monospace;font-size:12px;font-weight:600;color:' + ink + ';white-space:nowrap;pointer-events:none;';
+    if (note != null) return '<span ' + attrs + 'style="' + box + 'padding:0 16px;justify-content:space-between;gap:12px;overflow:hidden;">' +
+      '<span style="' + M + '">' + lcChipLabel(x.spec) + '</span><span style="font-size:12.5px;font-weight:600;color:' + ink + ';white-space:nowrap;' +
+      'overflow:hidden;text-overflow:ellipsis;pointer-events:none;">' + esc(note) + '</span>' + dotHtml + '</span>';
+    return '<span ' + attrs + 'style="' + box + 'justify-content:center;' + M.replace('pointer-events:none;', '') + '">' + lcChipLabel(x.spec) + dotHtml + '</span>';
+  }
+  function lcGridHtml(model, fmt) {
+    var picked = model.picked, CAPS = MK_CAPS + 'white-space:nowrap;';
+    var byFam = function (f, dir) { return model.lines.filter(function (x) { return x.fam === f && (dir == null || x.spec[3] === dir); }); };
+    // a ladder block: magnitudes ascending in both rows (−1 … −4.5 over +1 … +4.5; Over 20 … over Under 20 …)
+    var block = function (fam, labels, first) {
+      var rowsL = byFam(fam, -1).slice().sort(function (a, b) { return a.spec[2] - b.spec[2]; });
+      var rowsR = byFam(fam, 1).slice().sort(function (a, b) { return a.spec[2] - b.spec[2]; });
+      var top = fam === 'Total games' ? rowsR : rowsL, bot = fam === 'Total games' ? rowsL : rowsR;
+      var cols = '52px repeat(' + top.length + ',minmax(0,1fr))';
+      var row = function (lab, xs) {
+        return '<div style="display:grid;grid-template-columns:' + cols + ';gap:6px;align-items:center;"><span style="' + CAPS + '">' + lab + '</span>' +
+          xs.map(function (x) { return lcChipHtml(x, picked); }).join('') + '</div>';
+      };
+      return '<div data-lc-block="' + esc(fam) + '" style="display:flex;flex-direction:column;gap:6px;margin-top:' + (first ? 0 : 26) + 'px;padding-top:' + (first ? 0 : 26) + 'px;' +
+        'border-top:' + (first ? '0' : '1px solid var(--edge-6)') + ';">' +
+        '<div style="display:grid;grid-template-columns:52px minmax(0,1fr);gap:6px;padding-bottom:8px;"><span style="grid-column:2;font-size:15px;font-weight:700;' +
+          'color:var(--text);white-space:nowrap;">' + fam + '</span></div>' +
+        row(labels[0], top) + row(labels[1], bot) + '</div>';
+    };
+    var sets = byFam('Set handicap', -1).slice().sort(function (a, b) { return b.spec[2] - a.spec[2]; })
+      .concat(byFam('Set handicap', 1).slice().sort(function (a, b) { return a.spec[2] - b.spec[2]; }));
+    return block('Games handicap', ['Minus', 'Plus'], true) + block('Total games', ['Over', 'Under'], false) +
+      '<div data-lc-block="Set handicap" style="display:flex;flex-direction:column;gap:6px;margin-top:26px;padding-top:26px;border-top:1px solid var(--edge-6);">' +
+        '<div style="display:grid;grid-template-columns:52px minmax(0,1fr);gap:6px;padding-bottom:8px;"><span style="grid-column:2;font-size:15px;font-weight:700;' +
+          'color:var(--text);white-space:nowrap;">Set handicap</span></div>' +
+        '<div style="display:grid;grid-template-columns:52px repeat(' + sets.length + ',minmax(0,1fr));gap:6px;align-items:center;"><span></span>' +
+          sets.map(function (x) { return lcChipHtml(x, picked, lcSetNote(x.spec, fmt)); }).join('') + '</div></div>' +
+      // the reference draws this key under the grid (its block outranks CHANGES §0.3 "no colour legends"; flagged)
+      '<div data-lc-legend style="margin-top:auto;padding-top:28px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:11.5px;color:var(--text-label);">' +
+        '<span>rarely covers</span><span style="width:120px;height:8px;border-radius:4px;background:linear-gradient(90deg,' +
+          'color-mix(in srgb, var(--neg) 85%, transparent),color-mix(in srgb, var(--neg) 10%, transparent) 48%,' +
+          'color-mix(in srgb, var(--pos) 10%, transparent) 52%,color-mix(in srgb, var(--pos) 85%, transparent));"></span>' +
+        '<span>covers most of the time</span><span style="margin-left:14px;display:inline-flex;align-items:center;gap:7px;">' +
+          '<span style="width:5px;height:5px;border-radius:50%;background:var(--text);"></span>also above the field</span></div>';
+  }
+  function lcPanelHtml(model, fmt) {
+    var x = model.picked, CAPS = MK_CAPS + 'white-space:nowrap;', M = 'font-family:\'IBM Plex Mono\',monospace;';
+    var wrap = function (inner) {
+      return '<div data-lc-panel style="border-left:1px solid var(--edge-6);background:color-mix(in srgb, var(--text) 1.8%, transparent);' +
+        'border-radius:0 0 15px 0;padding:22px 24px 24px;display:flex;flex-direction:column;gap:20px;min-width:0;">' + inner + '</div>';
+    };
+    var head = function (market, sw, name, mean) {
+      return '<div style="display:flex;flex-direction:column;gap:6px;"><span style="' + CAPS + '">' + esc(market) + '</span>' +
+        '<span style="display:flex;align-items:center;gap:10px;"><span style="flex:none;width:12px;height:12px;border-radius:4px;background:' + sw + ';' +
+          'box-shadow:0 0 0 2px var(--text);"></span><span data-lc-pickname style="font-size:22px;font-weight:700;color:var(--text);">' + esc(name) + '</span></span>' +
+        '<span style="font-size:13px;color:var(--text-soft);line-height:1.5;text-wrap:pretty;">' + esc(mean) + '</span></div>';
+    };
+    var fact = function (k, v) {
+      return '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:11px 0;border-bottom:1px solid var(--edge-6);">' +
+        '<span style="font-size:12.5px;color:var(--text-label);">' + k + '</span><span style="' + M + 'font-size:12.5px;font-weight:600;color:var(--text);white-space:nowrap;">' + v + '</span></div>';
+    };
+    var btn = function (label, attrs) {
+      return '<span ' + (attrs || '') + 'class="pp2-lcbtn" style="margin-top:auto;display:flex;align-items:center;justify-content:center;height:40px;border-radius:10px;' +
+        'background:var(--selected);border:1px solid var(--edge-16);font-size:13px;font-weight:700;color:var(--text);cursor:' + (attrs ? 'pointer' : 'default') + ';">' + label + '</span>';
+    };
+    if (!x) return wrap(head('', 'transparent', 'No line to show', 'No completed match in this filter.') +
+      '<div style="display:flex;flex-direction:column;gap:8px;"><span style="' + M + 'font-size:36px;font-weight:700;line-height:1;color:var(--text);">' + DASH + '</span></div>' +
+      btn('No matches'));
+    var r = x.row, rn = x.rn, thin10 = !!r.thin;
+    var rated = r.members.filter(function (m) { return m.res === 'cover' || m.res === 'miss'; })
+      .sort(function (a, b) { return String(b.m.r.date).localeCompare(String(a.m.r.date)); });
+    var l20 = rated.slice(0, 20), c20 = l20.filter(function (m) { return m.res === 'cover'; }).length;
+    var longMiss = 0, cur = 0;
+    rated.forEach(function (m) { if (m.res === 'miss') { cur++; if (cur > longMiss) longMiss = cur; } else cur = 0; });
+    var rel = x.rated ? lcReliability(r.rate) : null;
+    // founder 2026-10-23: a rate on fewer than 10 matches is shown, dimmed; under MK_FLOOR there is no rate
+    var rateTxt = x.rated ? r.rate.toFixed(1) + '%' : DASH;
+    var rateInk = x.rated && !thin10 ? 'var(--text)' : 'var(--text-label)';
+    var word = x.rated ? 'Covers ' + rel.in10 + ' in 10 ' + MIDDOT + ' ' + rel.word : 'Too few matches for a rate';
+    var wordInk = !x.rated ? 'var(--text-label)' : thin10 ? 'var(--text-label)' : rel.colour;
+    var ppInk = x.gap == null ? 'var(--text-label)' : x.mark === 'pos' ? 'var(--pos)' : x.mark === 'neg' ? 'var(--neg)' : x.dimmed ? 'var(--text-label)' : 'var(--text)';
+    return wrap(head(x.fam, x.rated ? lcTint(r.rate) : 'color-mix(in srgb, var(--text) 4%, transparent)', x.label, lcMeaning(x.spec, fmt)) +
+      '<div style="display:flex;flex-direction:column;gap:8px;"><span data-lc-rate style="' + M + 'font-size:36px;font-weight:700;line-height:1;color:' + rateInk + ';">' + rateTxt + '</span>' +
+        '<span data-lc-word style="font-size:13.5px;font-weight:700;color:' + wordInk + ';">' + word + '</span></div>' +
+      '<span style="position:relative;display:block;height:8px;border-radius:4px;background:var(--line);">' +
+        '<span style="position:absolute;left:0;top:0;bottom:0;width:' + (x.rated ? r.rate.toFixed(1) : 0) + '%;border-radius:4px;background:' + wordInk + ';' +
+          (thin10 ? 'opacity:0.4;' : '') + '"></span>' +
+        '<span style="position:absolute;left:50%;top:-3px;bottom:-3px;width:1px;background:var(--text-soft);"></span></span>' +
+      '<div style="display:flex;flex-direction:column;border-top:1px solid var(--edge-6);">' +
+        fact('Record', rn ? recordText(r.hit, rn - r.hit) + (r.voids ? ' ' + MIDDOT + ' ' + r.voids + ' pushed' : '') : DASH) +
+        fact('Last ' + l20.length, l20.length ? recordText(c20, l20.length - c20) : DASH) +
+        fact('Longest run of misses', rn ? String(longMiss) : DASH) + '</div>' +
+      '<div style="display:flex;flex-direction:column;gap:10px;"><span style="' + CAPS + '">Against the field</span>' +
+        '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px;">' +
+          '<span data-lc-pp style="' + M + 'font-size:17px;font-weight:700;color:' + ppInk + ';">' + (x.gap == null ? DASH : signed(x.gap, 1, 'pp')) + '</span>' +
+          '<span style="' + M + 'font-size:12px;color:var(--text-label);white-space:nowrap;">' + (x.fl ? 'field covers ' + x.fl.rate.toFixed(1) + '%' : 'field ' + DASH) + '</span></div></div>' +
+      btn('See the ' + r.n + ' matches ' + RANGLE, 'data-pp2="fb-open" data-box="lcline" data-v="' + esc(x.label) + '" '));
+  }
   function renderLinesTabV2(p) {
     FM_KEYS.lc = LC_FM_KEYS;
     if (typeof window.pp2FieldNeed === 'function') window.pp2FieldNeed();   // derived-field.json, one fetch per session
@@ -8028,77 +8587,41 @@
     // Format is a two-way choice with one always on: Best of 3 reads as no filter (the default)
     var fGroups = groups.map(function (g) { return g.key === 'lcFmt' ? Object.assign({}, g, { cur: fmt === 'bo5' ? 'bo5' : 'all', options: [['all', 'Best of 3'], ['bo5', 'Best of 5']] }) : g; });
     var filterRow = mkBandHtml('<div style="display:flex;align-items:center;gap:8px;min-width:0;">' +
-        stySegPills('lc-surf', [['all', 'All surfaces'], ['hard', 'Hard'], ['clay', 'Clay'], ['grass', 'Grass'], ['indoors', 'Indoors']], O.surf, 'var(--edge-6)') +
+        stySegPills('lc-surf', [['all', 'All surfaces'], ['hard', 'Hard'], ['clay', 'Clay'], ['grass', 'Grass'], ['indoors', 'Indoors']], O.surf) +
         bandDiv('0 4px') + filtersTriggerHtml('lc', fGroups, d.all, base) + '</div>',
       winSeg('lc-win', O.win, true), filtersAppliedHtml('lc', fGroups, d.all, base));
-    var applied = '';
     var pct = function (a, b) { return b ? Math.round(100 * a / b) + '%' : DASH; };
     var poolOf = function (r) { return r === 'all' ? d.pool : d.pool.filter(function (m) { return m.role === r; }); };
+    var M = 'font-family:\'IBM Plex Mono\',monospace;';
     var cards = [['all', 'All matches', d.all, 'set scores on record'], ['fav', 'As favourite', d.favN, pct(d.favN, d.all) + ' of ' + d.all + ' ' + MIDDOT + ' shorter closing price'],
       ['dog', 'As underdog', d.dogN, pct(d.dogN, d.all) + ' of ' + d.all + ' ' + MIDDOT + ' longer closing price']].map(function (c, i) {
       var on = role === c[0], ms = poolOf(c[0]), w = ms.filter(function (m) { return m.sc && m.sc.w > m.sc.l; }).length;
-      return '<div data-pp2="lc-role" data-v="' + c[0] + '" class="pp2-mkcard" style="cursor:pointer;background:' + (on ? 'var(--selected)' : 'transparent') + ';' +
-        'border-right:' + (i < 2 ? '1px solid var(--edge-6)' : '0') + ';box-shadow:inset 0 -2px 0 ' + (on ? 'var(--bar)' : 'transparent') + ';' +
-        'padding:14px 18px 13px;display:flex;flex-direction:column;gap:9px;min-width:0;">' +
+      return '<div data-pp2="lc-role" data-v="' + c[0] + '" class="pp2-mkcard" aria-pressed="' + (on ? 'true' : 'false') + '" style="cursor:pointer;' +
+        'background:' + (on ? 'var(--selected)' : 'transparent') + ';border-right:' + (i < 2 ? '1px solid var(--edge-6)' : '0') + ';' +
+        'box-shadow:inset 0 -2px 0 ' + (on ? 'var(--bar)' : 'transparent') + ';padding:20px 24px;display:flex;flex-direction:column;gap:10px;min-width:0;">' +
         '<span style="display:flex;align-items:baseline;justify-content:space-between;gap:8px;pointer-events:none;">' +
-          recCaps(c[1], 'color:' + (on ? 'var(--text)' : 'var(--text-label)') + ';white-space:nowrap;') +
-          '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:var(--text-label);white-space:nowrap;">' + (ms.length ? recordText(w, ms.length - w) : DASH) + '</span></span>' +
-        '<span style="display:flex;align-items:baseline;gap:10px;pointer-events:none;"><span style="font-family:\'IBM Plex Mono\',monospace;font-size:26px;font-weight:700;' +
-          'line-height:1;color:var(--text);">' + c[2] + '</span><span style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:var(--text-label);">matches</span></span>' +
-        '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:var(--text-label);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none;">' + esc(c[3]) + '</span>' +
+          '<span style="' + MK_CAPS + 'white-space:nowrap;color:' + (on ? 'var(--text)' : 'var(--text-label)') + ';">' + c[1] + '</span>' +
+          '<span style="' + M + 'font-size:11px;color:var(--text-label);white-space:nowrap;">' + (ms.length ? recordText(w, ms.length - w) : DASH) + '</span></span>' +
+        '<span style="display:flex;align-items:baseline;gap:10px;pointer-events:none;"><span style="' + M + 'font-size:26px;font-weight:700;' +
+          'line-height:1;color:var(--text);">' + c[2] + '</span><span style="' + M + 'font-size:11px;color:var(--text-label);">matches</span></span>' +
+        '<span style="' + M + 'font-size:11px;color:var(--text-label);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none;">' + esc(c[3]) + '</span>' +
         '</div>';
     }).join('');
-    // Rows: rate over covered + not covered (pushes out); field and vs field from derived-field.json; colour by sign
-    var stats = [];
-    d.groups.forEach(function (g) { g.rows.forEach(function (r) {
-      var rn = r.n - (r.voids || 0), fld = lcFieldOf(d, fmt, r.label);
-      var gap = rn >= MK_FLOOR && fld && r.rate != null ? Math.round((r.rate - fld.rate) * 10) / 10 : null;
-      stats.push({ r: r, rn: rn, fld: fld, gap: gap });
-    }); });
-    var vsMax = Math.max.apply(null, [1].concat(stats.filter(function (x) { return x.gap != null; }).map(function (x) { return Math.abs(x.gap); })));
-    var GRID = 'display:grid;grid-template-columns:minmax(150px,1.1fr) minmax(170px,1fr) 64px 72px 64px 72px;gap:0 12px;align-items:center;';
-    var M = 'font-family:\'IBM Plex Mono\',monospace;';
-    var sel = state.fb && state.fb.box === 'lcline' ? state.fb.v : null;
-    var head = '<div style="' + GRID + 'margin-top:8px;">' + [['Line', 'left'], ['Cover rate vs field', 'center'], ['Rate', 'right'], ['Record', 'right'], ['Field', 'right'], ['Vs field', 'right']].map(function (h) {
-      return '<span style="' + MK_CAPS + 'padding-bottom:8px;border-bottom:1px solid var(--edge-10);white-space:nowrap;text-align:' + h[1] + ';">' + h[0] + '</span>';
-    }).join('') + '</div>';
-    var si = 0;
-    var fam = d.groups.map(function (g) {
-      var rows = g.rows.map(function (r) {
-        var x = stats[si++], thin = x.rn < MK_FLOOR, on = sel === r.label, clickable = r.n > 0 || r.retired > 0;
-        var half = x.gap == null ? 0 : Math.abs(x.gap) / vsMax * 46;
-        var push = r.voidable && r.voids ? r.voids + ' pushed' : '';
-        return '<div ' + (clickable ? 'data-pp2="fb-open" data-box="lcline" data-v="' + esc(r.label) + '" ' : '') + 'class="pp2-mkband" style="' + GRID + 'padding:9px 0;' +
-          'cursor:' + (clickable ? 'pointer' : 'default') + ';background:' + (on ? 'var(--selected)' : 'transparent') + ';box-shadow:-10px 0 0 ' + (on ? 'var(--selected)' : 'transparent') +
-          ',10px 0 0 ' + (on ? 'var(--selected)' : 'transparent') + ';border-top:1px solid var(--line);">' +
-          '<span style="display:flex;align-items:baseline;gap:8px;min-width:0;pointer-events:none;"><span data-lc-line="' + esc(r.label) + '" style="font-size:12.5px;font-weight:700;color:' +
-            (thin ? 'var(--text-label)' : 'var(--text)') + ';white-space:nowrap;">' + esc(r.label) + '</span>' +
-            (push ? '<span style="' + M + 'font-size:9.5px;color:var(--text-label);white-space:nowrap;">' + push + '</span>' : '') + '</span>' +
-          '<span style="position:relative;display:block;height:18px;pointer-events:none;"><span style="position:absolute;left:0;right:0;top:50%;height:5px;margin-top:-2.5px;border-radius:3px;' +
-            'background:var(--line);"></span><span style="position:absolute;left:50%;top:0;bottom:0;width:1px;background:color-mix(in srgb, var(--text) 18%, transparent);"></span>' +
-            (x.gap == null ? '' : '<span style="position:absolute;top:50%;height:5px;margin-top:-2.5px;left:' + (x.gap >= 0 ? 50 : 50 - half).toFixed(1) + '%;width:' + half.toFixed(1) +
-              '%;background:' + signColour(x.gap) + ';opacity:0.85;border-radius:3px;"></span>') + '</span>' +
-          '<span style="' + M + 'font-size:13px;font-weight:700;color:' + (thin ? 'var(--text-label)' : 'var(--text)') + ';text-align:right;">' + (thin || r.rate == null ? DASH : r.rate.toFixed(1) + '%') + '</span>' +
-          '<span style="' + M + 'font-size:12px;color:var(--text);text-align:right;">' + (x.rn ? recordText(r.hit, x.rn - r.hit) : DASH) + '</span>' +
-          '<span style="' + M + 'font-size:12px;color:var(--text);text-align:right;">' + (x.fld ? x.fld.rate.toFixed(1) + '%' : DASH) + '</span>' +
-          '<span style="' + M + 'font-size:12.5px;font-weight:700;color:' + (x.gap == null ? 'var(--text-label)' : signColour(x.gap)) + ';text-align:right;">' +
-            (x.gap == null ? DASH : signed(x.gap, 1, 'pp')) + '</span>' +
-          '</div>';
-      }).join('');
-      return '<div style="display:flex;align-items:baseline;gap:10px;padding:14px 0 6px;flex-wrap:wrap;"><span style="' + MK_CAPS + 'font-weight:800;color:var(--text);white-space:nowrap;">' +
-        esc(g.title) + '</span><span style="font-size:11.5px;color:var(--text-label);line-height:1.4;text-wrap:pretty;">' + esc(g.note || '') + '</span></div>' + rows;
-    }).join('');
+    var model = lcLineModel(d, fmt);
     var total = d.n, retN = d.retiredHere || 0;
-    return filterRow + applied +
-      '<div style="position:relative;background:var(--inner);border:1.25px solid var(--line);' + JOIN_TOP + 'min-width:0;">' +
-        '<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-bottom:1px solid var(--edge-6);overflow:hidden;">' + cards + '</div>' +
-        '<div style="position:relative;padding:14px 16px 12px;min-width:0;">' +
-          infoCorner('ln1', LC_INFO1) +
-          '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:4px;flex-wrap:wrap;padding-right:28px;">' +
-            recCaps('Coverage by line ' + MIDDOT + ' ' + esc(lcScopeTxt(d, fmt))) +
-            '<span style="' + M + 'font-size:11px;color:var(--text-label);white-space:nowrap;">' + total + ' matches' + (retN ? ' ' + MIDDOT + ' ' + retN + ' retired, not counted' : '') + '</span></div>' +
-          head + fam +
-        '</div></div>';
+    return filterRow +
+      '<div data-lc-v4 style="position:relative;background:var(--card);border:1.25px solid var(--edge-6);border-top:0;border-radius:0 0 16px 16px;min-width:0;">' +
+        '<div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) 340px;border-bottom:1px solid var(--edge-6);">' + cards + '</div>' +
+        '<div style="position:relative;min-width:0;">' +
+          '<span style="position:absolute;top:22px;right:364px;z-index:3;display:flex;">' + infoIcon('ln1', Object.assign({ width: 400, align: 'right' }, LC_INFO1_V4)) + '</span>' +
+          '<div style="display:grid;grid-template-columns:minmax(0,1fr) 340px;">' +
+            '<div style="display:flex;flex-direction:column;min-width:0;padding:22px 24px 24px;">' +
+              '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:22px;flex-wrap:wrap;padding-right:28px;">' +
+                '<span style="' + MK_CAPS + '">Cover rate by line ' + MIDDOT + ' ' + esc(lcScopeTxt(d, fmt)) + '</span>' +
+                '<span style="' + M + 'font-size:11px;color:var(--text-label);white-space:nowrap;">' + total + ' matches' + (retN ? ' ' + MIDDOT + ' ' + retN + ' retired, not counted' : '') + '</span></div>' +
+              lcGridHtml(model, fmt) +
+            '</div>' + lcPanelHtml(model, fmt) +
+          '</div></div></div>';
   }
   // the row's score from its own sets (his games first), else the stored score text, else a dash
   function lcScoreOf(m) {
@@ -8141,7 +8664,7 @@
     var favM = played.filter(function (x) { return x.m.role === 'fav'; }), dogM = played.filter(function (x) { return x.m.role === 'dog'; });
     var in10 = rn ? Math.round(row.rate / 10) : null, longMiss = 0, cur = 0;
     rated.slice().reverse().forEach(function (x) { if (x.res === 'miss') { cur++; if (cur > longMiss) longMiss = cur; } else cur = 0; });
-    var relWord = in10 == null ? '' : in10 >= 8 ? 'very reliable' : in10 >= 6 ? 'reliable' : in10 >= 4 ? 'coin flip' : 'unreliable';
+    var relWord = in10 == null ? '' : lcReliability(row.rate).word;
     var avgLabel = isT ? 'Average total' : kind === 'gh' ? 'Average games margin' : 'Average sets margin';
     var tiles = thin ? [
       { label: 'Record', fig: rn ? recOf(rated) : DASH, sub: rn + ' matches', tail: 'too few matches for a rate' },
@@ -8155,7 +8678,7 @@
         tail: d20 == null ? '' : signed(d20, 1, 'pp') + ' vs his rate here', tailColor: d20 == null ? null : signColour(d20) },
       { label: avgLabel, fig: fmtAvg(favM), sub: 'as favourite ' + MIDDOT + ' ' + favM.length + ' matches', tail: fmtAvg(dogM) + ' as underdog ' + MIDDOT + ' ' + dogM.length + ' matches' },
       { label: 'Reliability', fig: in10 + ' in 10', sub: 'covers this line ' + MIDDOT + ' ' + rn + ' matches', tail: relWord + ' ' + MIDDOT + ' longest miss streak ' + longMiss,
-        tailColor: in10 >= 6 ? 'var(--pos)' : in10 >= 4 ? 'var(--text)' : 'var(--neg)' }
+        tailColor: lcReliability(row.rate).colour }
     ];
     var n = { all: all.length, cover: row.hit, miss: rn - row.hit, void: row.voids || 0, retired: row.retired || 0 };
     var pills = [['all', 'All'], ['cover', 'Covered'], ['miss', 'Missed'], ['void', 'Pushed'], ['retired', 'Retired']]
@@ -8606,32 +9129,46 @@
       { key: 'mkOpp', title: 'Opponent level', cur: state.mkOpp || 'all', options: OPP_LEVELS, count: cnt('mkOpp') }
     ];
   }
+  // ── Profile v4 (handoff 2026-11-14, CHANGES §8.1) · Match winner, the reference's `modal.isMarket` block ──────────
+  // One card under the joined band (--card, 1.25px 6% ring, radius 0 0 16 16): the role strip (cells padded 20/24, meta
+  // "n matches", yield white, the gap to the tour by sign, a 4px bar per §0.1 — blue only on the selected role, neutral
+  // otherwise — and "tour −x.xx%") over the cumulative-return chart (padding 24, one head line). Below it, 16px apart,
+  // Price sensitivity: ONE full-width card (LOCKED layout, padding 22/24/6), one group per role shown.
+  // Money: the P&L is 1 unit per match; at a flat 1% of bankroll per match one unit IS one % of bankroll, so the
+  // chart and the yields print % (§0.5: yield %, never raw units as the headline). No figure changes.
+  // (spelled out, not MK_CAPS + …: tools/test-market-edge-box.mjs runs this stretch of the module on its own)
+  var MK_CELL_CAPS = 'font-family:var(--font-words);font-size:10.5px;font-weight:700;letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);white-space:nowrap;';
+  function mkInfoAt(id, spec, top, right) {
+    return '<span style="position:absolute;top:' + top + 'px;right:' + right + 'px;z-index:3;display:flex;">' +
+      infoIcon(id, Object.assign({ width: 400, align: 'right' }, spec)) + '</span>';
+  }
   function mkCardsAndChart(scoped) {
     var filt = state.mkRole || 'all';
     var TOURY = { all: tourBaselineFor('all'), fav: tourBaselineFor('favourite'), dog: tourBaselineFor('underdog') };
+    var M = 'font-family:\'IBM Plex Mono\',monospace;';
     var cards = [['all', 'All matches'], ['fav', 'As favourite'], ['dog', 'As underdog']].map(function (c, i) {
       var s = mkStat(scoped.filter(function (m) { return c[0] === 'all' || mkRoleOf(m) === c[0]; }));
-      var on = filt === c[0], has = s.n > 0, ty = TOURY[c[0]], gap = has && ty != null ? s.y - ty : null;
+      // a role under MK_FLOOR priced matches shows its count and no yield (the Price sensitivity group's own rule)
+      var on = filt === c[0], has = s.n >= MK_FLOOR, ty = TOURY[c[0]], gap = has && ty != null ? s.y - ty : null;
       var pos = gap == null ? 50 : Math.max(4, Math.min(96, 50 + gap * 6));
-      var col = gap == null ? 'var(--text-label)' : signColour(gap);
-      return '<div data-pp2="mk-role" data-v="' + c[0] + '" class="pp2-mkcard" style="cursor:pointer;background:' + (on ? 'var(--selected)' : 'transparent') + ';' +
-        'border-right:' + (i < 2 ? '1px solid var(--edge-6)' : 'none') + ';box-shadow:inset 0 -2px 0 ' + (on ? 'var(--link)' : 'transparent') + ';' +
-        'padding:14px ' + (i === 2 ? '40px' : '18px') + ' 13px 18px;display:flex;flex-direction:column;gap:9px;min-width:0;">' +
+      return '<div data-pp2="mk-role" data-v="' + c[0] + '" class="pp2-mkcard" aria-pressed="' + (on ? 'true' : 'false') + '" style="cursor:pointer;' +
+        'background:' + (on ? 'var(--selected)' : 'transparent') + ';border-right:' + (i < 2 ? '1px solid var(--edge-6)' : 'none') + ';' +
+        'box-shadow:inset 0 -2px 0 ' + (on ? 'var(--link)' : 'transparent') + ';padding:20px ' + (i === 2 ? '48px' : '24px') + ' 20px 24px;' +
+        'display:flex;flex-direction:column;gap:12px;min-width:0;">' +
         '<span style="display:flex;align-items:baseline;justify-content:space-between;gap:8px;pointer-events:none;">' +
-          recCaps(c[1], 'color:' + (on ? 'var(--text)' : 'var(--text-label)') + ';white-space:nowrap;') +
-          '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:var(--text-label);white-space:nowrap;">' +
-            (has ? s.n + ' matches ' + MIDDOT + ' ' + recordText(s.w, s.l) : 'no matches') + '</span></span>' +
+          '<span style="' + MK_CELL_CAPS + 'color:' + (on ? 'var(--text)' : 'var(--text-label)') + ';">' + c[1] + '</span>' +
+          '<span data-mk-meta style="' + M + 'font-size:11px;color:var(--text-label);white-space:nowrap;">' + (s.n ? s.n + (s.n === 1 ? ' match' : ' matches') : 'no matches') + '</span></span>' +
         '<span style="display:flex;align-items:baseline;gap:10px;pointer-events:none;">' +
-          '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:26px;font-weight:700;line-height:1;color:' + (has ? 'var(--text)' : 'var(--text-label)') + ';">' +
+          '<span data-mk-yield style="' + M + 'font-size:26px;font-weight:700;line-height:1;color:' + (has ? 'var(--text)' : 'var(--pp-x-faint)') + ';">' +
             (has ? signed(s.y, 2, '%') : DASH) + '</span>' +
-          (gap != null ? '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:12px;font-weight:700;color:' + col + ';">' + signed(gap, 1, 'pp') + '</span>' : '') +
-        '</span>' +
-        '<span style="position:relative;display:block;height:5px;border-radius:3px;background:var(--track);pointer-events:none;">' +
+          '<span data-mk-gap style="' + M + 'font-size:12px;font-weight:700;color:' + (gap == null ? 'var(--text-label)' : signColour(gap)) + ';">' +
+            (gap == null ? '' : signed(gap, 1, 'pp')) + '</span></span>' +
+        '<span style="position:relative;display:block;height:4px;border-radius:2px;background:var(--track);pointer-events:none;">' +
           '<span style="position:absolute;left:50%;top:-3px;bottom:-3px;width:1px;background:color-mix(in srgb, var(--text) 18%, transparent);"></span>' +
-          '<span style="position:absolute;top:0;bottom:0;border-radius:3px;left:' + (gap == null || gap >= 0 ? 50 : pos).toFixed(1) + '%;width:' +
-            Math.abs(pos - 50).toFixed(1) + '%;background:' + col + ';opacity:0.85;"></span></span>' +
-        '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:var(--text-label);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none;">' +
-          (has ? 'vs tour ' + (ty == null ? DASH : signed(ty, 2, '%')) + ' ' + MIDDOT + ' flat 1u stake' : 'nothing priced in this filter') + '</span>' +
+          '<span data-mk-bar style="position:absolute;top:0;bottom:0;border-radius:2px;left:' + (gap == null || gap >= 0 ? 50 : pos).toFixed(1) + '%;width:' +
+            (gap == null ? 0 : Math.abs(pos - 50)).toFixed(1) + '%;background:' + pp4Bar(on) + ';"></span></span>' +
+        '<span data-mk-sub style="font-size:11.5px;color:var(--text-label);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none;">' +
+          (s.n ? 'tour ' + (ty == null ? DASH : signed(ty, 2, '%')) : 'nothing priced in this filter') + '</span>' +
         '</div>';
     }).join('');
     var pool = scoped.filter(function (m) { return filt === 'all' || mkRoleOf(m) === filt; })
@@ -8647,30 +9184,30 @@
     var span = hi - lo, step = span > 80 ? 20 : span > 40 ? 10 : span > 20 ? 5 : span > 10 ? 2 : 1, grid = '';
     for (var g = Math.ceil(lo / step) * step; g <= hi; g += step) {
       var gg = Math.round(g * 100) / 100;
-      grid += '<span style="position:absolute;right:0;top:' + (Y(gg) / H * 100).toFixed(2) + '%;transform:translateY(-50%);font-family:\'IBM Plex Mono\',monospace;' +
-        'font-size:10px;color:var(--text-label);white-space:nowrap;">' + (gg > 0 ? '+' : gg < 0 ? MINUS : '') + Math.abs(gg) + 'u</span>';
+      grid += '<span style="position:absolute;right:0;top:' + (Y(gg) / H * 100).toFixed(2) + '%;transform:translateY(-50%);' + M +
+        'font-size:10px;color:var(--text-label);white-space:nowrap;">' + (gg > 0 ? '+' : gg < 0 ? MINUS : '') + Math.abs(gg) + '%</span>';
     }
     // x labels: real dates of the matches at even steps through the series (the line is drawn per match)
     var ticks = '';
     if (pool.length) {
-      var k = 5;
+      var k = 5, lastLab = null;
       for (var t = 0; t <= k; t++) {
         var idx = Math.min(pool.length - 1, Math.round(t / k * (pool.length - 1)));
         var d = String(pool[idx].date || '');
         var lab = (state.mkWin || 'career') === 'career' ? d.slice(0, 4) : ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][parseInt(d.slice(5, 7), 10) - 1] + ' ' + d.slice(2, 4);
-        ticks += '<span style="position:absolute;left:' + (t / k * 100).toFixed(1) + '%;top:5px;transform:translateX(-50%);' +
-          'font-family:var(--font-words);font-size:10.5px;font-weight:700;letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);white-space:nowrap;">' + esc(lab) + '</span>';
+        if (lab === lastLab) continue;   // a short series repeats a month: each label once
+        lastLab = lab;
+        ticks += '<span style="position:absolute;left:' + (t / k * 100).toFixed(1) + '%;top:5px;transform:translateX(-50%);' + MK_CELL_CAPS + '">' + esc(lab) + '</span>';
       }
     }
     var roleWord = filt === 'fav' ? 'as favourite' : filt === 'dog' ? 'as underdog' : 'all matches';
-    var chart = '<div style="padding:14px 16px 12px;min-width:0;">' +
-      '<div style="display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:12px;flex-wrap:wrap;">' +
-        '<span style="display:flex;flex-direction:column;gap:5px;">' + recCaps('Cumulative return ' + MIDDOT + ' ' + roleWord + ' ' + MIDDOT + ' flat 1u stake') +
-          '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:var(--text-label);">' + pool.length + ' matches ' + MIDDOT + ' ' + esc(mkScopeTxt()) +
-          ' ' + MIDDOT + ' 1u per match at closing odds</span></span>' +
-        '<span style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;"><span style="font-family:\'IBM Plex Mono\',monospace;font-size:24px;' +
-          'font-weight:700;line-height:1;color:' + (pool.length ? signColour(last) : 'var(--text-label)') + ';">' + (pool.length ? signed(last, 1, 'u') : DASH) + '</span>' +
-          recCaps('Return ' + MIDDOT + ' flat 1u stake') + '</span>' +   // the export's caption (file :1071), in units
+    var chart = '<div data-mk-chart style="padding:24px 24px 20px;min-width:0;">' +
+      '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:20px;flex-wrap:wrap;">' +
+        '<span style="display:inline-flex;align-items:baseline;gap:12px;flex-wrap:wrap;">' +
+          '<span style="' + MK_CAPS + '">Cumulative return ' + MIDDOT + ' ' + roleWord + '</span>' +
+          '<span style="font-size:12px;color:var(--text-label);">' + pool.length + ' matches</span></span>' +
+        '<span data-mk-total style="' + M + 'font-size:22px;font-weight:700;line-height:1;color:' + (pool.length ? signColour(last) : 'var(--pp-x-faint)') + ';">' +
+          (pool.length ? signed(last, 1, '%') : DASH) + '</span>' +
       '</div>' +
       (pool.length ? '<div style="display:flex;gap:10px;">' +
         '<div style="position:relative;width:40px;height:240px;flex:none;">' + grid + '</div>' +
@@ -8680,8 +9217,8 @@
             '<path d="' + area + '" fill="color-mix(in srgb, var(--link) 11%, transparent)"></path>' +
             '<path d="' + line + '" fill="none" stroke="var(--link)" stroke-width="2" stroke-linejoin="round" vector-effect="non-scaling-stroke"></path></svg>' +
           '<span style="position:absolute;right:-4px;top:' + (Y(last) / H * 100).toFixed(2) + '%;width:8px;height:8px;margin-top:-4px;border-radius:50%;' +
-            'background:var(--link);border:2px solid var(--inner);box-sizing:content-box;"></span>' +
-          '<span style="position:absolute;right:0;top:' + (Y(0) / H * 100).toFixed(2) + '%;transform:translateY(-130%);' + MK_CAPS + '">break even</span>' +
+            'background:var(--link);border:2px solid var(--card);"></span>' +
+          '<span style="position:absolute;right:0;top:' + (Y(0) / H * 100).toFixed(2) + '%;transform:translateY(-130%);font-size:11px;color:var(--text-label);">break even</span>' +
         '</div></div>' +
         '<div style="display:flex;gap:10px;margin-top:8px;"><span style="width:40px;flex:none;"></span><div style="position:relative;flex:1;height:16px;' +
           'min-width:0;border-top:1px solid var(--edge-10);">' + ticks + '</div></div>'
@@ -8689,59 +9226,75 @@
       '</div>';
     return { cards: cards, chart: chart, pool: pool };
   }
-  var MK_INFO1 = { what: 'What backing him at a flat 1 unit at closing returned, in all matches, as favourite and as underdog, and how that return built up over time.', defs: [
+  var MK_INFO1 = { what: 'What backing him at a flat 1% of bankroll at closing returned, in all matches, as favourite and as underdog, and how that return built up over time.', defs: [
     ['Yield', 'Return per unit staked across every priced match in the filter.'],
     ['+pp vs tour', 'His yield minus the flat-stake yield of all rated players at closing, which is the market margin.'],
     ['Favourite', 'The shorter closing price of the two players.'],
-    ['Chart', 'Cumulative units at a flat 1 unit per match, for the selected tile and the active filters.']] };
+    ['Chart', 'Cumulative % of bankroll at a flat 1% stake per match, for the selected role and the active filters.']] };
   var MK_INFO2 = { what: 'His record and return by how short his own closing price was.', defs: [
     ['Band', 'His own closing price, grouped. A band says how short he was, not whether he was favourite.'],
     ['Win %', 'Wins divided by matches in the band.'],
-    ['Yield', 'Return per unit staked at a flat 1 unit in the band; the bar shows it against break even.'],
-    ['Fewer than 5', 'The record is shown and no rate.'],
+    ['Yield', 'Return per unit staked at a flat 1% of bankroll in the band; the bar shows it against break even.'],
+    ['Under ' + MK_FLOOR, 'Fewer than ' + MK_FLOOR + ' matches: the record is shown and no rate.'],
     ['Click a band', 'Opens the band box: win rate and yield against the tour at the same price, the win rate the market expected, his losses and every match.']] };
+  // Price sensitivity · LOCKED (§8.1): per role group a title line (role 17/700 · "W–L · win % won" grey mono · role
+  // yield 17px by sign), caps heads Price · W–L · Win % · Yield vs break even · Yield, band rows of 58px on the grid
+  // minmax(120px,200px) 64px 64px minmax(0,1fr) 68px gap 20, an 8px green / red bar on a 4px 5% track around a soft-ink
+  // zero tick, one scale across every shown band (max half-width 46%), the second group after a full-bleed 10% hairline
+  // + 26px. No total row. A role under MK_FLOOR matches = a dash.
+  var MK_PS_COLS = 'display:grid;grid-template-columns:minmax(120px,200px) 64px 64px minmax(0,1fr) 68px;gap:0 20px;';
   function mkLadder(pool) {
     var filt = state.mkRole || 'all';
     var stats = MK_BANDS.map(function (B, i) {
       return Object.assign({ i: i, B: B }, mkStat(pool.filter(function (m) { return mkBandIdx(m.price) === i; })));
     });
     var max = Math.max.apply(null, [1].concat(stats.filter(function (b) { return b.n >= MK_FLOOR; }).map(function (b) { return Math.abs(b.y); })));
-    var GRID = 'display:grid;grid-template-columns:minmax(150px,1.3fr) 64px 64px 64px minmax(120px,1fr) 70px;gap:0 12px;align-items:center;';
-    var heads = [['Band', 'left'], ['Matches', 'right'], ['W' + ENDASH + 'L', 'right'], ['Win %', 'right'], ['Yield vs break even', 'center'], ['Yield', 'right']];
-    var head = '<div style="' + GRID + '">' + heads.map(function (h) {
-      return '<span style="' + MK_CAPS + 'padding-bottom:8px;border-bottom:1px solid var(--edge-10);white-space:nowrap;text-align:' + h[1] + ';">' + h[0] + '</span>';
-    }).join('') + '</div>';
     var sel = state.fb && state.fb.box === 'mkband' ? String(state.fb.v) : null;
     var M = 'font-family:\'IBM Plex Mono\',monospace;';
-    var rows = stats.filter(function (b) { return filt === 'all' || b.B[0] === filt; }).map(function (b) {
-      var thin = b.n < MK_FLOOR, empty = !b.n, on = sel === String(b.i);
-      var half = thin ? 0 : Math.abs(b.y) / max * 46;
-      return '<div style="display:flex;flex-direction:column;">' +
-        (filt === 'all' && b.i === MK_FIRST_DOG ? '<div style="padding:6px 0 2px;"><span style="display:block;border-top:1px dashed color-mix(in srgb, var(--text) 18%, transparent);"></span></div>' : '') +
-        '<div ' + (empty ? '' : 'data-pp2="fb-open" data-box="mkband" data-v="' + b.i + '" ') + 'class="pp2-mkband" style="' + GRID + 'padding:9px 0;' +
-          'cursor:' + (empty ? 'default' : 'pointer') + ';background:' + (on ? 'var(--selected)' : 'transparent') + ';box-shadow:-10px 0 0 ' +
-          (on ? 'var(--selected)' : 'transparent') + ',10px 0 0 ' + (on ? 'var(--selected)' : 'transparent') + ';border-top:1px solid var(--line);">' +
-          '<span style="display:flex;align-items:baseline;gap:8px;min-width:0;pointer-events:none;"><span style="font-size:12.5px;font-weight:700;color:' +
-            (thin ? 'var(--text-label)' : 'var(--text)') + ';white-space:nowrap;">' + b.B[2] + '</span><span style="' + M + 'font-size:11px;color:var(--text-label);white-space:nowrap;">' + b.B[1] + '</span></span>' +
-          '<span style="' + M + 'font-size:12px;color:var(--text-label);text-align:right;">' + (empty ? DASH : b.n) + '</span>' +
-          '<span style="' + M + 'font-size:12px;color:var(--text-label);text-align:right;">' + (empty ? DASH : recordText(b.w, b.l)) + '</span>' +
-          '<span style="' + M + 'font-size:13px;font-weight:700;color:' + (thin ? 'var(--text-label)' : 'var(--text)') + ';text-align:right;">' + (thin ? DASH : b.win.toFixed(1) + '%') + '</span>' +
-          '<span style="position:relative;display:block;height:18px;pointer-events:none;"><span style="position:absolute;left:0;right:0;top:50%;height:5px;margin-top:-2.5px;' +
-            'border-radius:3px;background:var(--line);"></span><span style="position:absolute;left:50%;top:0;bottom:0;width:1px;background:color-mix(in srgb, var(--text) 18%, transparent);"></span>' +
-            (thin ? '' : '<span style="position:absolute;top:50%;height:5px;margin-top:-2.5px;left:' + (b.y >= 0 ? 50 : 50 - half).toFixed(1) + '%;width:' + half.toFixed(1) +
-              '%;background:' + signColour(b.y) + ';opacity:0.85;border-radius:3px;"></span>') + '</span>' +
-          '<span style="' + M + 'font-size:13px;font-weight:700;color:' + (thin ? 'var(--text-label)' : 'var(--text)') + ';text-align:right;">' + (thin ? DASH : signed(b.y, 1, '%')) + '</span>' +
-        '</div></div>';
+    var roles = filt === 'all' ? ['fav', 'dog'] : [filt];
+    var groups = roles.map(function (key, gi) {
+      // All matches: the two groups split by the band's side of 2.00 (the rows sum to the group). A picked role: the pool
+      // is already that role (the shorter price of the two), so its group is the whole pool and a band on the other side
+      // of 2.00 that holds one of its matches (both prices over 2.00, say) is listed too, never dropped.
+      var gs = mkStat(filt !== 'all' ? pool : pool.filter(function (m) { var bi = mkBandIdx(m.price); return bi >= 0 && MK_BANDS[bi][0] === key; })), ok = gs.n >= MK_FLOOR;
+      var rec = !gs.n ? 'no matches' : recordText(gs.w, gs.l) + ' ' + MIDDOT + ' ' + (ok ? gs.win.toFixed(1) + '% won' : 'under ' + MK_FLOOR);
+      var rows = stats.filter(function (b) { return b.B[0] === key || (filt !== 'all' && b.n > 0); }).map(function (b) {
+        var thin = b.n < MK_FLOOR, empty = !b.n, on = sel === String(b.i);
+        var half = thin ? 0 : Math.abs(b.y) / max * 46;
+        return '<div ' + (empty ? '' : 'data-pp2="fb-open" data-box="mkband" data-v="' + b.i + '" ') + 'data-mk-band="' + b.i + '" class="pp2-mkps" style="' + MK_PS_COLS +
+          'align-items:center;box-sizing:border-box;min-height:58px;margin:0 -24px;padding:8px 24px;cursor:' + (empty ? 'default' : 'pointer') + ';' +
+          'background:' + (on ? 'var(--selected)' : 'transparent') + ';border-top:1px solid var(--line);">' +
+          '<span style="display:flex;flex-direction:column;gap:4px;min-width:0;pointer-events:none;">' +
+            '<span style="' + M + 'font-size:14.5px;font-weight:700;line-height:1.1;color:' + (thin ? 'var(--text-label)' : 'var(--text)') + ';white-space:nowrap;">' + b.B[1] + '</span>' +
+            '<span style="display:flex;align-items:baseline;gap:8px;min-width:0;"><span style="font-size:12px;line-height:1.2;color:var(--text-label);white-space:nowrap;' +
+              'overflow:hidden;text-overflow:ellipsis;">' + b.B[2] + '</span><span style="' + M + 'font-size:9.5px;color:var(--pp-x-ink-muted);white-space:nowrap;">' +
+              (empty || !thin ? '' : 'under ' + MK_FLOOR) + '</span></span></span>' +
+          '<span style="' + M + 'font-size:12px;color:var(--text-soft);text-align:right;pointer-events:none;">' + (empty ? DASH : recordText(b.w, b.l)) + '</span>' +
+          '<span style="' + M + 'font-size:12px;color:var(--text-soft);text-align:right;pointer-events:none;">' + (thin ? DASH : b.win.toFixed(1) + '%') + '</span>' +
+          '<span style="position:relative;display:block;height:20px;pointer-events:none;">' +
+            '<span style="position:absolute;left:0;right:0;top:8px;height:4px;border-radius:2px;background:var(--line);"></span>' +
+            (thin ? '' : '<span data-mk-psbar style="position:absolute;top:6px;height:8px;border-radius:2px;background:' + (b.y >= 0 ? 'var(--pos)' : 'var(--neg)') + ';' +
+              'left:' + (b.y >= 0 ? 50 : 50 - half).toFixed(1) + '%;width:' + half.toFixed(1) + '%;"></span>') +
+            '<span style="position:absolute;left:50%;top:1px;width:1.5px;margin-left:-0.75px;height:18px;background:var(--text-soft);"></span></span>' +
+          '<span style="' + M + 'font-size:14px;font-weight:700;text-align:right;pointer-events:none;color:' + (thin ? 'var(--pp-x-faint)' : (b.y >= 0 ? 'var(--pos)' : 'var(--neg)')) + ';">' +
+            (thin ? DASH : signed(b.y, 1, '%')) + '</span>' +
+          '</div>';
+      }).join('');
+      return '<div data-mk-psgroup="' + key + '" style="display:flex;flex-direction:column;min-width:0;margin:0 -24px;padding:' + (gi ? '26px' : '0') + ' 24px 0;' +
+          'border-top:1px solid ' + (gi ? 'var(--edge-10)' : 'transparent') + ';">' +
+        '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px;flex-wrap:wrap;">' +
+          '<span style="font-size:17px;font-weight:700;letter-spacing:-0.01em;color:var(--text);">' + (key === 'fav' ? 'As favourite' : 'As underdog') + '</span>' +
+          '<span style="display:flex;align-items:baseline;gap:14px;"><span style="' + M + 'font-size:12px;color:var(--text-label);white-space:nowrap;">' + rec + '</span>' +
+            '<span data-mk-pssum style="' + M + 'font-size:17px;font-weight:700;color:' + (!ok ? 'var(--pp-x-faint)' : (gs.y >= 0 ? 'var(--pos)' : 'var(--neg)')) + ';">' +
+              (ok ? signed(gs.y, 1, '%') : DASH) + '</span></span></div>' +
+        '<div style="' + MK_PS_COLS + 'align-items:baseline;padding:18px 0 12px;' + MK_CELL_CAPS + 'color:var(--pp-x-ink-muted);">' +
+          '<span>Price</span><span style="text-align:right;">W' + ENDASH + 'L</span><span style="text-align:right;">Win %</span>' +
+          '<span style="text-align:center;overflow:hidden;text-overflow:ellipsis;">Yield vs break even</span><span style="text-align:right;">Yield</span></div>' +
+        rows + '</div>';
     }).join('');
-    var all = mkStat(pool), sorted = pool.map(function (m) { return m.price; }).sort(function (a, b) { return a - b; });
-    var med = sorted.length ? sorted[Math.floor(sorted.length / 2)] : null;
-    return '<div style="position:relative;background:var(--inner);border:1.25px solid var(--line);border-radius:12px;padding:14px 16px 12px;min-width:0;">' +
-      infoCorner('mk2', MK_INFO2) +
-      '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:12px;flex-wrap:wrap;padding-right:28px;">' +
-        recCaps('Price sensitivity ' + MIDDOT + ' his closing price ' + MIDDOT + ' ' + esc(mkScopeTxt())) +
-        '<span style="' + M + 'font-size:11px;color:var(--text-label);white-space:nowrap;">' +
-          (all.n ? all.n + ' matches ' + MIDDOT + ' ' + recordText(all.w, all.l) + ' ' + MIDDOT + ' median odds ' + med.toFixed(2) : 'no priced matches in this filter') + '</span>' +
-      '</div>' + head + '<div style="height:6px;"></div>' + rows + '</div>';
+    return '<div data-mk-ps style="position:relative;min-width:0;background:var(--card);border:1.25px solid var(--edge-6);border-radius:16px;padding:22px 24px 6px;">' +
+      '<div style="padding-bottom:22px;' + MK_CAPS + '">Price sensitivity</div>' +
+      mkInfoAt('mk2', MK_INFO2, 18, 20) + groups + '</div>';
   }
   function mkFiltered(p, mk) {
     return mkBase(mk).filter(function (m) { return mkFilterOk(m); });
@@ -8754,19 +9307,22 @@
     var lvl = state.mkLvl || 'all';
     var bandL = '<div style="display:flex;align-items:center;gap:8px;min-width:0;">' + stySegPills('mk-surf', STY_SURFS, state.mkSurf || 'all', 'var(--edge-6)') +
         bandDiv('0 4px') + filtersTriggerHtml('mk', groups, scoped.length, base.length) + '</div>';
-    var bandR = winSeg('mk-win', state.mkWin || 'career', true), appliedMk = filtersAppliedHtml('mk', groups, scoped.length, base.length);
+    // the reference draws Match winner's off pills (surfaces and window) on a 6% ring; Derived lines keeps the 8% one
+    var bandR = '<span style="display:flex;gap:8px;flex:none;">' + [['l52', 'Last 52 weeks'], ['l24', 'Last 24 months'], ['career', 'Career']].map(function (o) {
+      return bandPill('mk-win', o[0], o[1], (state.mkWin || 'career') === o[0], '', 'var(--edge-6)'); }).join('') + '</span>';
+    var appliedMk = filtersAppliedHtml('mk', groups, scoped.length, base.length);
     if (lvl === 'Challenger' || lvl === 'ITF') {
-      return mkBandHtml(bandL, bandR, appliedMk, 'standalone') + renderLevelRecords(p, lvl === 'Challenger' ? 'ch' : 'itf');
+      return mkBandHtml(bandL, bandR, appliedMk, 'standalone-card') + renderLevelRecords(p, lvl === 'Challenger' ? 'ch' : 'itf');
     }
     var cc = mkCardsAndChart(scoped);
-    return mkBandHtml(bandL, bandR, appliedMk) +
-      '<div style="display:flex;flex-direction:column;gap:12px;">' +
-        '<div style="position:relative;background:var(--inner);border:1.25px solid var(--line);' + JOIN_TOP + 'min-width:0;">' +
-          infoCorner('mk1', MK_INFO1) +
-          '<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-bottom:1px solid var(--edge-6);overflow:hidden;">' +
+    return '<div data-mk-v4 style="display:flex;flex-direction:column;gap:16px;">' +
+      '<div style="display:flex;flex-direction:column;">' + mkBandHtml(bandL, bandR, appliedMk) +
+        '<div style="position:relative;background:var(--card);border:1.25px solid var(--edge-6);border-top:0;border-radius:0 0 16px 16px;min-width:0;">' +
+          mkInfoAt('mk1', MK_INFO1, 18, 20) +
+          '<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-bottom:1px solid var(--edge-6);">' +
             cc.cards + '</div>' + cc.chart +
-        '</div>' +
-        mkLadder(cc.pool) +
+        '</div></div>' +
+      mkLadder(cc.pool) +
       '</div>';
   }
   // The band drill box (the export's sel): four tiles, every match latest first; rows open the match sheet when the row
@@ -8803,13 +9359,13 @@
       tail: losses.length ? 'last loss ' + fbDate(losses[0].date) : '' };
     var tiles = thin ? [
       { label: 'Record', fig: recordText(b.w, b.l), sub: b.n + ' matches', tail: 'too few matches for a rate' },
-      { label: 'On the price', fig: signed(b.u, 2, 'u'), figColor: signColour(b.u), sub: 'flat 1u per match', tail: b.n + ' priced' },
+      { label: 'On the price', fig: signed(b.u, 1, '%'), figColor: signColour(b.u), sub: 'flat 1% of bankroll per match', tail: b.n + ' priced' },
       { label: 'Market expected', fig: Math.round(impl) + '%', sub: 'implied by his closing price', tail: 'no rate under ' + MK_FLOOR },
       lossTile
     ] : [
       { label: 'Win rate', fig: b.win.toFixed(1) + '%', sub: recordText(b.w, b.l) + ' ' + MIDDOT + ' ' + b.n + ' matches',
         tail: tb && tb.winRate != null ? pp(b.win - tb.winRate) + ' vs tour at ' + rng : 'tour at ' + rng + ' ' + DASH, tailColor: tb && tb.winRate != null ? signColour(b.win - tb.winRate) : null },
-      { label: 'On the price', fig: signed(b.y, 2, '%') + ' yield', sub: signed(b.u, 2, 'u') + ' ' + MIDDOT + ' flat 1u stake',
+      { label: 'On the price', fig: signed(b.y, 2, '%') + ' yield', sub: signed(b.u, 1, '%') + ' of bankroll ' + MIDDOT + ' flat 1% stake',
         tail: tb && tb.yield != null ? pp(b.y - tb.yield) + ' vs tour at ' + rng : 'tour at ' + rng + ' ' + DASH, tailColor: tb && tb.yield != null ? signColour(b.y - tb.yield) : null },
       { label: 'Market expected', fig: impl.toFixed(1) + '%', sub: 'implied by his closing price', tail: pp(b.win - impl) + ' actual vs implied', tailColor: signColour(b.win - impl) },
       lossTile
@@ -8827,7 +9383,7 @@
         { html: esc(sc || (m.ret ? 'ret.' : DASH)), style: M + 'font-size:11px;color:var(--text-label);white-space:nowrap;' },
         { html: m.price.toFixed(2), style: M + 'font-size:11px;color:var(--text-soft);text-align:right;' },
         { html: m.oppPrice != null ? m.oppPrice.toFixed(2) : DASH, style: M + 'font-size:11px;color:var(--text-label);text-align:right;' },
-        { html: signed(m.pl || 0, 2, 'u'), style: M + 'font-size:11.5px;font-weight:700;text-align:right;color:' + signColour(m.pl || 0) + ';' }
+        { html: signed(m.pl || 0, 2, '%'), style: M + 'font-size:11.5px;font-weight:700;text-align:right;color:' + signColour(m.pl || 0) + ';' }
       ] };
     });
     return { name: B[2], code: B[1] + ' ' + MIDDOT + ' closing price',
@@ -10001,7 +10557,7 @@
   // ("by the week they are played and the region"). Team events (Davis / Laver / United / ATP Cup, Hopman, Olympics)
   // are muted and out of every yield.
   // v3 D (founder sets the final values): a rate shows from CAL_MIN priced matches; CAL_MIN..CAL_THIN-1 is a thin sample.
-  var CAL_MIN = 5, CAL_THIN = 10;
+  var CAL_MIN = PP4.CAL_MIN, CAL_THIN = PP4.CAL_THIN;
   var CAL_SW = [
     { k: 'aus', name: 'Australian', code: 'AUS', surf: 'Hard' },
     { k: 'me', name: 'Middle East', code: 'M·EAST', surf: 'Hard' },
@@ -10024,8 +10580,15 @@
   var CAL_MIDEAST = { QA: 1, AE: 1, SA: 1, BH: 1, KW: 1, OM: 1 };
   var CAL_AMERICAS = { US: 1, CA: 1, MX: 1, AR: 1, BR: 1, CL: 1, CO: 1, EC: 1, PE: 1, UY: 1, PY: 1, BO: 1 };
   var CAL_FM_KEYS = ['calSpeed', 'calFmt', 'calBand', 'calArch', 'calOpp', 'calCtry'];
+  // v4 (handoff 2026-11-14): the Melbourne summer events are Australian. The event catalog has no country for them, so
+  // in February (Murray River Open / Great Ocean Road Open, 31 Jan – 6 Feb 2021) the swing rule put them in the Middle
+  // East; they are named here, by event, and only where the catalog is silent.
+  var CAL_AU_EVENT_RE = /murray river|great ocean road|summer set|^melbourne\b/i;
   function calCountryOf(r) {
-    var c = typeof window.pp2EventCountry === 'function' ? window.pp2EventCountry(r.tournament || r.event) : null;
+    var nm = r.tournament || r.event;
+    var c = typeof window.pp2EventCountry === 'function' ? window.pp2EventCountry(nm) : null;
+    if (!c && CAL_AU_EVENT_RE.test(String(nm || ''))) c = 'AU';
+    if (!c && r.event && r.event !== nm && CAL_AU_EVENT_RE.test(String(r.event))) c = 'AU';
     return c ? String(c).toUpperCase() : null;
   }
   function calCountryName(cc) {
@@ -10440,7 +11003,7 @@
   // ── Streaks (v3 D4, founder 2026-11-12) — runs over his played matches in date order, read on the Calendar band's
   // Window + Surface only (the Calendar page's Filters do not reach it). Cut-offs are named constants Michael sets:
   // a state needs STK_MINP priced matches, and a yield gap beyond STK_EDGE pp, to earn a verdict.
-  var STK_MINP = 30, STK_EDGE = 1;
+  var STK_MINP = PP4.STK_MINP, STK_EDGE = PP4.STK_EDGE;
   var STK_NAMES = { W1: 'After 1 win', W2: 'After 2 wins', 'W3+': 'After 3+ wins', L1: 'After 1 loss', L2: 'After 2 losses', 'L3+': 'After 3+ losses' };
   var STK_NEXT = { W1: 'W2', W2: 'W3', 'W3+': 'W4+', L1: 'L2', L2: 'L3', 'L3+': 'L4+' };
   var RUN_INFO1 = { what: 'When to back him, when to fade him, and his longest winning and losing runs.', defs: [
@@ -11681,14 +12244,19 @@
   var SPD_INFO1 = { what: 'How he does on fast, medium and slow courts.', defs: [
     ['Band', 'Set per edition from the measured court speed: fast above +0.08, slow below −0.08, medium between. A season the court sheet has no reading for takes the venue\'s current reading.'],
     ['Figure', 'His win rate in that band. The small line is his record.'],
-    ['Signed figure', 'Units won or lost backing him at a flat 1 unit on his priced matches in that band.'],
+    ['Signed figure', 'Yield: return per unit staked at a flat stake on his priced matches in that band, closing price.'],
     ['Population', 'ATP matches at a rated venue. Challenger, ITF and unrated venues are left out for now.'],
-    ['Click a band', 'Opens its tiles and every match in it.']] };
+    ['Click a band', 'Opens its tiles and every match in it.'],
+    ['Filters', 'Window and surface sit in the bar. Price role, altitude and opponent archetype sit behind Filters. Every figure follows them, and the gap then compares with his unfiltered rate in that band.'],
+    ['Thin sample', 'A band with fewer than ' + PP4.SPEED_FLOOR + ' matches shows a dash and the count, never a rate.'],
+    ['Bar', 'His win rate from 0 to 100%. The tick marks 50%.']] };
   var SPD_INFO2 = { what: 'The selected band in detail.', defs: [
     ['Win rate', 'Wins divided by matches in the band, and the gap to his other courts.'],
-    ['On the price', 'Units at a flat 1 unit, closing price, with the number of priced matches.'],
-    ['Favourite · underdog', 'His record when the market had him shorter, and when it had him longer.'],
+    ['Vs tour', 'His win rate in the band minus the tour average on those courts. No tour figure is held yet, so it shows a dash.'],
+    ['On the price', 'Yield at a flat stake, closing price, with the number of priced matches.'],
+    ['As favourite', 'His record when the market had him shorter, and when it had him longer.'],
     ['Deciding sets', 'His record in matches that went the distance.'],
+    ['Altitude', 'The venue\'s height above sea level. Altitude = venues at ' + PP4.ALT_CUT_M + ' m or higher.'],
     ['WO', 'A walkover. Listed, not counted in any figure.']] };
   function spdEditionSpeed(r) {
     if (!r.venue) return null;
@@ -11709,10 +12277,36 @@
     if (surf === 'Indoors') return String(r.court || '') === 'Indoor';
     return String(r.surface || '').toLowerCase() === surf.toLowerCase() && String(r.court || '') !== 'Indoor';
   }
-  function spdData(p) {
-    var surf = state.spdSurf || 'all';
-    var rows = speedRows(p).filter(function (r) { return spdIsAtp(r) && spdSurfOk(r, surf); });
-    var listed = speedRowsListed(p).filter(function (r) { return spdIsAtp(r) && spdSurfOk(r, surf); });
+  // v4 §5 · the venue's altitude (m) from the court sheet (COURT_CONDITIONS[venue].altitude), else null — never guessed.
+  function spdAltOf(r) {
+    if (!r || !r.venue) return null;
+    var s = speedScheme(), c = s && s.cc ? s.cc[r.venue] : null;
+    var a = c && c.altitude != null ? +c.altitude : null;
+    return a != null && isFinite(a) ? a : null;
+  }
+  // The current filter: Window + Surface in the bar, Price role / Altitude / Opponent archetype behind Filters.
+  function spdFilter() {
+    return { win: state.spdWin === 'l52' ? 'l52' : 'career', surf: state.spdSurf || 'all',
+      role: state.spdRole || 'all', alt: state.spdAlt || 'all', arch: state.spdArch || 'all' };
+  }
+  function spdRoleOf(r) {
+    if (r.price == null || r.oppPrice == null) return null;
+    return +r.price < +r.oppPrice ? 'fav' : +r.price > +r.oppPrice ? 'dog' : null;
+  }
+  function spdRowOk(r, f, cut) {
+    if (!spdSurfOk(r, f.surf)) return false;
+    if (f.win === 'l52' && !(String(r.date || '') >= cut)) return false;
+    if (f.role !== 'all' && spdRoleOf(r) !== f.role) return false;
+    if (f.alt !== 'all') { var a = spdAltOf(r); if (a == null || (a >= PP4.ALT_CUT_M ? 'alt' : 'sea') !== f.alt) return false; }
+    if (f.arch !== 'all' && styleArchetypeOf(r.opp) !== f.arch) return false;
+    return true;
+  }
+  // `f` omitted = the pre-v4 behaviour (surface only, from state.spdSurf): the profile page's tile reads it that way.
+  function spdData(p, f) {
+    f = f || { win: 'career', surf: state.spdSurf || 'all', role: 'all', alt: 'all', arch: 'all' };
+    var cut = last52Cutoff();
+    var rows = speedRows(p).filter(function (r) { return spdIsAtp(r) && spdRowOk(r, f, cut); });
+    var listed = speedRowsListed(p).filter(function (r) { return spdIsAtp(r) && spdRowOk(r, f, cut); });
     var unrated = 0;
     var by = { fast: [], medium: [], slow: [] }, lby = { fast: [], medium: [], slow: [] };
     rows.forEach(function (r) { var b = spdBandOf(spdEditionSpeed(r)); if (b) by[b].push(r); else unrated++; });
@@ -11726,125 +12320,226 @@
     var tw = bands.reduce(function (s, b) { return s + b.w; }, 0), tn = bands.reduce(function (s, b) { return s + b.n; }, 0);
     return { bands: bands, tw: tw, tn: tn, unrated: unrated };
   }
+  // The rated pool every Filters count is read from: ATP, banded, walkovers out (they are counted nowhere).
+  function spdPool(p) {
+    return speedRows(p).filter(function (r) { return spdIsAtp(r) && spdBandOf(spdEditionSpeed(r)); });
+  }
+  var SPD_ROLES = [['all', 'All'], ['fav', 'As favourite'], ['dog', 'As underdog']];
+  var SPD_ALTS = [['all', 'All'], ['sea', 'Sea level'], ['alt', 'Altitude']];
+  var SPD_FM_KEYS = ['spdRole', 'spdAlt', 'spdArch'];
+  // v4 §5 · the drawer title's sample: "n of m matches" when anything narrows it, else "m matches".
+  function spdTitleCount(p) {
+    if (!speedRows(p).length) return '';
+    var f = spdFilter(), all = spdPool(p).length;
+    var on = f.win !== 'career' || f.surf !== 'all' || f.role !== 'all' || f.alt !== 'all' || f.arch !== 'all';
+    return on ? spdData(p, f).tn + ' of ' + all + ' matches' : all + ' matches';
+  }
+
+  // ═══ v4 · the shared filter bar (Court speed is the first drawer to carry it; Live trading mirrors it) ═══════════
+  // cfg = { id,                       filter-menu id (FM_KEYS[id] lists the hidden keys Reset / Clear all clear)
+  //         winHook, win, wins,       window pills (default Last 52 weeks | Career)
+  //         surfHook, surf, surfs,    surface pills ([[value, label]])
+  //         groups,                   hidden-filter groups for filtersTriggerHtml (key = state key, cur, options, count,
+  //                                   optional hint / select / chipPrefix)
+  //         nIn, nAll, foot,          the popover foot (foot = its text)
+  //         width }                   popover width (620)
+  // Returns { band, applied }: the standalone card band (radius 12, 20/24) and the Applied row under it (hidden filters
+  // only — Window and Surface already show in the bar).
+  function pp4FilterBar(cfg) {
+    var wins = cfg.wins || [['l52', 'Last 52 weeks'], ['career', 'Career']];
+    var inner = bandPills(cfg.winHook, wins, cfg.win) + bandDiv() + bandPills(cfg.surfHook, cfg.surfs, cfg.surf) +
+      filtersTriggerHtml(cfg.id, cfg.groups, cfg.nIn, cfg.nAll, cfg.width || 620, true, { v4: true, foot: cfg.foot });
+    return { band: bandBox(inner, 'standalone-card'), applied: filtersAppliedHtml(cfg.id, cfg.groups, cfg.nIn, cfg.nAll, { v4: true }) };
+  }
+
   function renderSpeedModalV2(p) {
-    var spPend = shardPending(p);   // fx4 item 4 · units and H / A claim nothing while the price shard loads
+    var spPend = shardPending(p);   // fx4 item 4 · yields and H / A claim nothing while the price shard loads
     // §5.5 kept: PENDING before EMPTY — a zero row count from an unsettled store is a network fact, not a player fact
     if (!speedRows(p).length && !careerHistorySettled(p.key)) return speedEmptyBox('The career match store has not loaded, so no court can be rated yet.');
     if (!speedRows(p).length) return speedEmptyBox('No matches on record, so no court can be rated.');
-    var D = spdData(p);
-    var withN = D.bands.filter(function (b) { return b.n > 0; });
-    var sel = state.spdBand && D.bands.some(function (b) { return b.key === state.spdBand && b.n; }) ? state.spdBand
-      : (withN.filter(function (b) { return b.key === 'fast'; })[0] || withN[0] || {}).key || null;   // the export opens on Fast
+    FM_KEYS.spd = SPD_FM_KEYS;
+    var F = spdFilter(), cut = last52Cutoff(), FLOOR = PP4.SPEED_FLOOR;
+    var hidden = F.role !== 'all' || F.alt !== 'all' || F.arch !== 'all';
+    var narrowed = F.win !== 'career' || hidden;   // the gap compares with the unfiltered band ("pp vs unfiltered")
+    var D = spdData(p, F);
+    var U = narrowed ? spdData(p, { win: 'career', surf: F.surf, role: 'all', alt: 'all', arch: 'all' }) : null;
+    var pool = spdPool(p), poolAll = pool.length;
     var M = 'font-family:\'IBM Plex Mono\',monospace;';
-    var top = '<div data-pp2-band="standalone" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px;' +
-      'padding:10px 16px;background:var(--inner);border:1.25px solid var(--line);border-radius:12px;">' +
-      '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">' + stySegPills('spd-surf', [['all', 'All']].concat(STY_SURFS.slice(1)), state.spdSurf || 'all') + '</div>' +
-      '<span style="display:inline-flex;align-items:baseline;gap:8px;' + M + 'font-size:12px;color:var(--text-label);white-space:nowrap;">' +
-        recCaps('Career') + '<span style="color:var(--text);font-weight:700;">' + (D.tn ? recordText(D.tw, D.tn - D.tw) : DASH) + '</span><span>' + MIDDOT + '</span>' +
-        '<span style="color:var(--text);font-weight:700;">' + (D.tn ? Math.round(100 * D.tw / D.tn) + '%' : DASH) + '</span><span>' + MIDDOT + '</span><span>' + D.tn + ' matches</span>' +
-        (function () {   // the export's total units after the count (file :660)
-          var u = null; D.bands.forEach(function (b) { if (b.units != null) u = (u || 0) + b.units; });
-          return spPend || u == null ? '' : '<span>' + MIDDOT + '</span><span style="font-weight:700;color:' + signColour(u) + ';">' + signed(u, 1, 'u') + '</span>';
-        }()) + '</span>' +
-      '</div>';
-    var tiles = D.bands.map(function (b) {
-      var on = sel === b.key, empty = !b.n;
-      return '<div ' + (empty ? '' : 'data-pp2="spd-band" data-v="' + b.key + '" ') + 'style="cursor:' + (empty ? 'default' : 'pointer') + ';background:' +
-        (on ? 'var(--selected)' : 'var(--inner)') + ';border:1.25px solid ' + (on ? 'var(--edge-16)' : 'var(--line)') + ';border-radius:12px;padding:12px 14px 13px;' +
-        // founder 2026-11-10: the values sit centred in the box
-        'display:flex;flex-direction:column;align-items:center;text-align:center;gap:9px;min-width:0;">' +
-        '<span style="display:flex;align-items:baseline;justify-content:center;gap:8px;pointer-events:none;">' +
-          recCaps(b.name, 'color:' + (empty ? 'var(--text-label)' : on ? 'var(--text)' : 'var(--text-soft)') + ';white-space:nowrap;') +
-          '<span style="' + M + 'font-size:11.5px;font-weight:700;color:' + (b.units == null ? 'var(--text-label)' : signColour(b.units)) + ';white-space:nowrap;">' +
-            (spPend ? '&nbsp;' : b.units == null ? DASH : signed(b.units, 1, 'u')) + '</span></span>' +
-        '<span style="' + M + 'font-size:24px;font-weight:700;line-height:1;color:' + (empty ? 'var(--text-label)' : 'var(--text)') + ';pointer-events:none;">' +
-          (empty ? DASH : Math.round(b.pct) + '%') + '</span>' +
-        '<span style="' + M + 'font-size:11px;color:var(--text-label);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none;">' +
-          (empty ? 'no matches here' : recordText(b.w, b.l) + ' ' + MIDDOT + ' ' + b.n + ' matches') + '</span></div>';
+    var countOf = function (k, v) {
+      var g = Object.assign({}, F); g[k] = v;
+      return pool.filter(function (r) { return spdRowOk(r, g, cut); }).length;
+    };
+    var archOpts = [['all', 'All archetypes']].concat(STYLE_AXIS.map(function (a) { return [a.label, a.label]; }));
+    var groups = [
+      { key: 'spdRole', title: 'Price role', cur: F.role, options: SPD_ROLES, count: function (v) { return countOf('role', v); } },
+      { key: 'spdAlt', title: 'Altitude', cur: F.alt, options: SPD_ALTS, count: function (v) { return countOf('alt', v); },
+        hint: 'Altitude = venues at ' + PP4.ALT_CUT_M + ' m or higher.' },
+      { key: 'spdArch', title: 'Opponent archetype', cur: F.arch, options: archOpts, count: function (v) { return countOf('arch', v); },
+        select: true, chipPrefix: 'Opponent: ' }
+    ];
+    var bar = pp4FilterBar({ id: 'spd', winHook: 'spd-win', win: F.win, surfHook: 'spd-surf', surf: F.surf,
+      surfs: [['all', 'All'], ['Hard', 'Hard'], ['Clay', 'Clay'], ['Grass', 'Grass'], ['Indoors', 'Indoors']],
+      groups: groups, nIn: D.tn, nAll: poolAll, foot: spdTitleCount(p) });
+
+    // the bands, Fast · Medium · Slow (the export's bandsSpeed order)
+    var openable = D.bands.filter(function (b) { return b.n >= FLOOR; });
+    var selKey = state.spdBand && openable.some(function (b) { return b.key === state.spdBand; }) ? state.spdBand
+      : (openable.filter(function (b) { return b.key === 'fast'; })[0] || openable[0] ||
+         D.bands.slice().sort(function (a, b) { return b.n - a.n; }).filter(function (b) { return b.n; })[0] || {}).key || null;
+    var gapOf = function (b) {
+      if (b.n < FLOOR) return null;
+      if (narrowed) {
+        var ub = U.bands.filter(function (x) { return x.key === b.key; })[0];
+        return ub && ub.n >= FLOOR ? b.pct - ub.pct : null;
+      }
+      var oN = D.tn - b.n;
+      return oN ? b.pct - 100 * (D.tw - b.w) / oN : null;
+    };
+    var gapWord = narrowed ? 'unfiltered' : 'his other courts';
+    var gapCol = function (g) { return g == null || Math.abs(g) < 0.05 ? 'var(--text-label)' : g > 0 ? 'var(--pos)' : 'var(--neg)'; };
+    var yieldOf = function (b) { return b.priced ? 100 * b.units / b.priced : null; };
+    var tiles = SPD_BANDS.map(function (B) {
+      var b = D.bands.filter(function (x) { return x.key === B[0]; })[0];
+      var thin = b.n < FLOOR, empty = !b.n, on = selKey === b.key && !thin;
+      var g = gapOf(b), gTxt = g == null ? '' : signed(g, 1, 'pp');
+      var y = yieldOf(b);
+      return '<div ' + (thin ? '' : 'data-pp2="spd-band" data-v="' + b.key + '" ') + 'class="pp2-spdband' + (on ? ' on' : '') + '" style="cursor:' + (thin ? 'default' : 'pointer') + ';' +
+        'background:' + (on ? 'var(--selected)' : 'var(--card)') + ';border:1.25px solid ' + (on ? 'var(--edge-16)' : 'var(--edge-6)') + ';border-radius:12px;' +
+        'padding:14px 16px 15px;display:flex;flex-direction:column;gap:12px;min-width:0;box-sizing:border-box;">' +
+        '<span style="display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:3px 8px;pointer-events:none;">' +
+          '<span style="font-size:13px;font-weight:700;color:' + (thin ? 'var(--text-label)' : on ? 'var(--text)' : 'var(--text-soft)') + ';white-space:nowrap;">' + b.name + '</span></span>' +
+        '<span style="display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 10px;min-width:0;pointer-events:none;">' +
+          '<span style="' + M + 'font-size:28px;font-weight:700;line-height:1;color:' + (thin ? 'var(--text-label)' : 'var(--text)') + ';">' + (thin ? DASH : Math.round(b.pct) + '%') + '</span>' +
+          (gTxt ? '<span style="' + M + 'font-size:11px;color:' + gapCol(g) + ';white-space:nowrap;pointer-events:auto;" title="' + esc(gTxt + ' vs ' + gapWord) + '">' + gTxt + '</span>' : '') + '</span>' +
+        '<span style="position:relative;display:block;height:6px;border-radius:3px;background:var(--edge-6);pointer-events:none;">' +
+          '<span style="position:absolute;left:0;top:0;bottom:0;width:' + (thin ? 0 : Math.round(b.pct)) + '%;border-radius:3px;background:' + pp4Bar(on) + ';"></span>' +
+          '<span style="position:absolute;left:50%;top:-2px;bottom:-2px;width:1px;background:color-mix(in srgb, var(--text) 35%, transparent);"></span></span>' +
+        '<span style="display:flex;align-items:baseline;justify-content:space-between;gap:10px;' + M + 'font-size:11.5px;white-space:nowrap;min-width:0;pointer-events:none;">' +
+          '<span style="color:var(--text-soft);">' + (empty ? 'no matches here' : thin ? b.n + (b.n === 1 ? ' match' : ' matches') + ' ' + MIDDOT + ' min ' + FLOOR
+            : recordText(b.w, b.l) + ' ' + MIDDOT + ' ' + b.n + ' matches') + '</span>' +
+          // a band under the floor shows its count only, never a rate — its yield is a rate too
+          '<span style="color:var(--text-label);">' + (spPend ? '&nbsp;' : y == null || thin ? DASH : signed(y, 1, '%')) + '</span></span>' +
+        '</div>';
     }).join('');
-    var bandsHtml = '<div style="margin-bottom:16px;position:relative;">' +
-      '<span style="position:absolute;top:-1px;right:0;z-index:3;display:flex;">' + infoIcon('spd1', Object.assign({ width: 400, align: 'right', notes: D.unrated ? [D.unrated + ' ATP matches at a venue with no speed reading are left out.'] : [] }, SPD_INFO1)) + '</span>' +
-      '<div style="display:flex;justify-content:space-between;padding-bottom:8px;margin-bottom:10px;border-bottom:1px solid var(--edge-10);padding-right:26px;">' +
-        recCaps('Faster courts') + recCaps('Slower courts') + '</div>' +
+    var tPriced = 0, tCents = 0;
+    D.bands.forEach(function (b) { if (b.priced) { tPriced += b.priced; tCents += b.units * 100; } });
+    var tYield = tPriced ? tCents / tPriced : null;
+    var head = '<div style="display:flex;align-items:baseline;gap:6px 16px;flex-wrap:wrap;padding-right:30px;">' +
+      recCaps((F.win === 'l52' ? 'Last 52 weeks' : 'Career') + (F.surf === 'all' ? '' : ' ' + MIDDOT + ' ' + F.surf), 'white-space:nowrap;') +
+      '<span style="' + M + 'font-size:22px;font-weight:700;line-height:1;color:var(--text);white-space:nowrap;">' + (D.tn ? recordText(D.tw, D.tn - D.tw) : DASH) + '</span>' +
+      '<span style="display:inline-flex;align-items:baseline;gap:6px;white-space:nowrap;"><span style="' + M + 'font-size:13px;font-weight:700;color:var(--text);">' +
+        (D.tn ? Math.round(100 * D.tw / D.tn) + '%' : DASH) + '</span><span style="font-size:11.5px;color:var(--text-label);">win rate</span></span>' +
+      '<span style="margin-left:auto;display:inline-flex;align-items:baseline;gap:6px;white-space:nowrap;"><span data-pp2-spd-yield="1" style="' + M + 'font-size:13px;font-weight:700;color:' +
+        (tYield == null ? 'var(--text-label)' : signColour(tYield)) + ';">' + (spPend ? '&nbsp;' : tYield == null ? DASH : signed(tYield, 1, '%')) + '</span>' +
+        '<span style="font-size:11.5px;color:var(--text-label);">on the price</span></span></div>';
+    // its (?) popover must paint over the detail card's own (?) (both sit in z-3 corners): lift the card while it is open
+    var card1 = '<div data-pp2-spd="summary" style="margin-bottom:16px;position:relative;' + (state.info === 'spd1' ? 'z-index:4;' : '') + 'background:var(--card);border:1.25px solid var(--edge-6);border-radius:16px;padding:18px 20px 20px;">' +
+      '<span style="position:absolute;top:20px;right:20px;z-index:3;display:flex;">' + infoIcon('spd1', Object.assign({ width: 400, align: 'right',
+        notes: D.unrated ? [D.unrated + ' ATP matches at a venue with no speed reading are left out.'] : [] }, SPD_INFO1)) + '</span>' +
+      head + '<div style="height:16px;"></div>' +
       '<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;">' + tiles + '</div></div>';
-    var b = D.bands.filter(function (x) { return x.key === sel; })[0];
-    if (!b) return top + bandsHtml + '<div style="border:1px dashed var(--edge-10);border-radius:10px;padding:26px;text-align:center;font-size:13px;color:var(--text-label);">No rated ATP matches on record' + ((state.spdSurf || 'all') === 'all' ? '' : ' on this surface') + '.</div>';
-    // tiles
-    var pricedMs = b.ms.filter(function (m) { return m.price != null && m.oppPrice != null; });
-    var fav = pricedMs.filter(function (m) { return +m.price < +m.oppPrice; }), dog = pricedMs.filter(function (m) { return +m.price > +m.oppPrice; });
+
+    if (!D.tn) {   // every band empty under these filters: Clear all resets Window and Surface too; no detail card
+      return bar.band + bar.applied + card1 +
+        '<div data-pp2-spd="none" style="border:1px dashed color-mix(in srgb, var(--text) 14%, transparent);border-radius:16px;padding:44px 24px;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;">' +
+          '<span style="font-size:15px;font-weight:700;color:var(--text);">No matches for these filters</span>' +
+          '<span style="font-size:12.5px;color:var(--text-label);">' + esc(spdTitleCount(p)) + ' fit. Remove a filter or start again.</span>' +
+          '<span data-pp2="spd-clearall" class="pp2-spdclear" style="margin-top:8px;cursor:pointer;padding:8px 16px;border-radius:9px;font-size:12px;font-weight:700;color:var(--text);' +
+            'background:var(--selected);border:1px solid var(--edge-16);">Clear all</span></div>';
+    }
+
+    var b = D.bands.filter(function (x) { return x.key === selKey; })[0];
+    var thinSel = b.n < FLOOR;
+    var scope = (F.win === 'l52' ? 'last 52 weeks' : 'career') + (F.surf !== 'all' ? ' ' + MIDDOT + ' ' + F.surf.toLowerCase() : '') +
+      (F.role !== 'all' ? ' ' + MIDDOT + ' ' + (F.role === 'fav' ? 'as favourite' : 'as underdog') : '') +
+      (F.alt !== 'all' ? ' ' + MIDDOT + ' ' + (F.alt === 'alt' ? 'altitude' : 'sea level') : '') +
+      (F.arch !== 'all' ? ' ' + MIDDOT + ' vs ' + F.arch : '');
+    // five tiles (none under the floor)
+    var played = b.ms;
+    var fav = played.filter(function (m) { return spdRoleOf(m) === 'fav'; }), dog = played.filter(function (m) { return spdRoleOf(m) === 'dog'; });
     var wl = function (a) { var w = a.filter(function (m) { return m.won; }).length; return recordText(w, a.length - w); };
     var bo5 = function (m) { var k = setsOfScore(m); return (k != null && k >= 4) || /grand slam/i.test(String(m.level || '')); };
-    var dec = b.ms.filter(function (m) { return !m.retired && setsOfScore(m) === (bo5(m) ? 5 : 3); });
-    var str = b.ms.filter(function (m) { return !m.retired && setsOfScore(m) === (bo5(m) ? 3 : 2); });
+    var dec = played.filter(function (m) { return !m.retired && setsOfScore(m) === (bo5(m) ? 5 : 3); });
+    var str = played.filter(function (m) { return !m.retired && setsOfScore(m) === (bo5(m) ? 3 : 2); });
     var decW = dec.filter(function (m) { return m.won; }).length;
-    var oW = D.tw - b.w, oN = D.tn - b.n, gap = oN ? b.pct - 100 * oW / oN : null;
-    var tl = [
-      { label: 'Win rate', fig: Math.round(b.pct) + '%', sub: recordText(b.w, b.l) + ' ' + MIDDOT + ' ' + b.n + ' matches',
-        tail: gap == null ? '' : signed(gap, 1, 'pp') + ' vs his other courts', tailColor: gap == null ? null : signColour(gap) },
-      { label: 'On the price', fig: spPend ? '&nbsp;' : b.units == null ? DASH : signed(b.units, 1, 'u'), figColor: b.units == null ? 'var(--text-label)' : signColour(b.units),
-        sub: b.priced ? 'flat 1u on every priced match' : 'no prices kept', tail: b.priced ? 'ROI ' + signed(100 * b.units / b.priced, 0, '%') + ' ' + MIDDOT + ' ' + b.priced + ' priced' : '' },
-      { label: 'Favourite ' + MIDDOT + ' underdog', fig: wl(fav), sub: 'as favourite ' + MIDDOT + ' ' + fav.length + ' matches', tail: wl(dog) + ' as underdog ' + MIDDOT + ' ' + dog.length + ' matches' },
+    var g = gapOf(b), gTxt = g == null ? '' : signed(g, 1, 'pp');
+    var y = yieldOf(b);
+    var tl = thinSel ? '' : [
+      { label: 'Win rate', fig: Math.round(b.pct) + '%', sub: recordText(b.w, b.l),
+        tail: gTxt ? gTxt + (narrowed ? ' vs all' : ' vs others') : '', tailTitle: gTxt ? gTxt + ' vs ' + gapWord : '', tailColor: gapCol(g) },
+      // no tour figure is held for a court-speed band (the export's 50% is a placeholder): a dash, never a number
+      { label: 'Vs tour', fig: DASH, figColor: 'var(--text-label)', sub: 'no tour figure',
+        tail: F.role !== 'all' || F.arch !== 'all' ? 'for these filters' : 'on ' + b.name.toLowerCase() + ' courts' },
+      { label: 'On the price', fig: spPend ? '&nbsp;' : y == null ? DASH : signed(y, 1, '%'), figColor: y == null ? 'var(--text-label)' : signColour(y),
+        sub: b.priced ? 'yield' : 'no prices kept', tail: b.priced ? b.priced + ' priced' : '' },
+      { label: 'As favourite', fig: fav.length ? wl(fav) : DASH, figColor: fav.length ? null : 'var(--text-label)', sub: fav.length + ' matches', tail: wl(dog) + ' as underdog' },
       { label: 'Deciding sets', fig: dec.length ? recordText(decW, dec.length - decW) : DASH, figColor: dec.length ? null : 'var(--text-label)',
-        sub: dec.length ? Math.round(100 * decW / dec.length) + '% when it goes the distance' : 'none yet', tail: str.length ? wl(str) + ' in straight sets' : '' }
+        sub: dec.length ? Math.round(100 * decW / dec.length) + '% won' : 'none yet', tail: str.length ? wl(str) + ' straight sets' : '' }
     ].map(function (t) {
-      return '<div style="background:var(--card);border:1px solid var(--edge-6);border-radius:10px;padding:11px 14px 12px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;min-width:0;">' +
-        recCaps(t.label, 'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;') +
+      return '<div style="background:var(--card);border:1.25px solid var(--edge-6);border-radius:12px;padding:12px 14px 13px;display:flex;flex-direction:column;gap:6px;min-width:0;">' +
+        recCaps(t.label, 'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;') +
         '<span style="' + M + 'font-size:21px;font-weight:700;line-height:1;color:' + (t.figColor || 'var(--text)') + ';">' + t.fig + '</span>' +
-        '<span style="font-size:11.5px;color:var(--text-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;">' + t.sub + '</span>' +
-        '<span style="' + M + 'font-size:10.5px;color:' + (t.tailColor || 'var(--text-label)') + ';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;">' + (t.tail || '&nbsp;') + '</span></div>';
+        '<span style="font-size:11.5px;color:var(--text-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + t.sub + '</span>' +
+        '<span style="' + M + 'font-size:10.5px;color:' + (t.tailColor || 'var(--text-label)') + ';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"' +
+          (t.tailTitle ? ' title="' + esc(t.tailTitle) + '"' : '') + '>' + (t.tail || '&nbsp;') + '</span></div>';
     }).join('');
-    // matches grouped by edition (event + year), newest first; walkovers listed with a WO chip
-    var all = b.ms.concat(b.listed).sort(function (x, y) { return String(y.date).localeCompare(String(x.date)); });
-    var groups = [], idx = {};
+    // matches grouped by edition (event + year), newest first; walkovers listed with a WO tag and counted nowhere
+    var all = b.ms.concat(b.listed).sort(function (x, z) { return String(z.date).localeCompare(String(x.date)); });
+    var groupsE = [], idx = {};
     all.forEach(function (m) {
       var k = (m.event || '') + '|' + String(m.date || '').slice(0, 4);
-      if (!idx[k]) { idx[k] = { event: m.event, year: String(m.date || '').slice(0, 4), rows: [], sp: spdEditionSpeed(m), surface: m.surface, level: m.level }; groups.push(idx[k]); }
+      if (!idx[k]) {
+        idx[k] = { event: m.event, year: String(m.date || '').slice(0, 4), rows: [], sp: spdEditionSpeed(m), alt: spdAltOf(m),
+          surf: String(m.court || '') === 'Indoor' ? 'Indoors' : m.surface ? m.surface.charAt(0).toUpperCase() + m.surface.slice(1) : null, level: m.level };
+        groupsE.push(idx[k]);
+      }
       idx[k].rows.push(m);
     });
-    var GRID = 'display:grid;grid-template-columns:48px 12px minmax(0,1.1fr) 36px 40px minmax(0,1.3fr) 46px 46px;gap:0 10px;align-items:center;';
-    var head = ['Date', '', 'Opponent', 'Rd', 'Sets', 'Set scores', 'H', 'A'].map(function (h, i) {
-      return '<span style="position:sticky;top:0;z-index:1;background:var(--inner);' + MK_CAPS + 'text-align:' + (i >= 6 ? 'right' : 'left') + ';padding-bottom:7px;border-bottom:1px solid var(--edge-10);">' + h + '</span>';
+    var GRID = 'display:grid;grid-template-columns:58px 22px minmax(0,1.1fr) 46px 50px minmax(0,1.3fr) 52px 52px;gap:0;align-items:stretch;';
+    var head2 = ['Date', '', 'Opponent', 'Rd', 'Sets', 'Set scores', 'H', 'A'].map(function (h, i) {
+      return '<span style="position:sticky;top:0;z-index:2;background:var(--card);font-family:var(--font-words);font-size:10.5px;font-weight:700;letter-spacing:0.10em;' +
+        'text-transform:uppercase;color:var(--text-label);text-align:' + (i >= 6 ? 'right' : 'left') + ';padding:2px 0 9px;border-bottom:1px solid var(--edge-10);white-space:nowrap;">' + h + '</span>';
     }).join('');
-    var cell = function (html, st, m, wo) {
-      return '<span ' + (wo ? 'data-pp2-wo-row="1" ' : sheetHook(m.sheetId || (m.date + '|' + m.opp))) + 'style="' + (wo ? '' : sheetCursor()) + 'padding:6px 0;border-top:1px solid var(--line);' + (st || '') + '">' + html + '</span>';
-    };
-    var body = groups.map(function (g) {
-      var spTxt = g.sp == null ? '' : '<span style="' + M + 'font-size:10.5px;color:var(--text-label);white-space:nowrap;">' + MIDDOT + ' speed ' + signed(g.sp - 1, 2, '') + '</span>';
-      return '<span style="grid-column:1 / -1;display:flex;align-items:baseline;gap:10px;padding:11px 0 5px;"><span style="font-size:12.5px;font-weight:700;white-space:nowrap;">' +
-          esc((tournDisplayName(g.event, null) || DASH) + ' ' + g.year) + '</span><span style="' + M + 'font-size:10.5px;color:var(--text-label);white-space:nowrap;">' +
-          esc([g.surface ? g.surface.charAt(0).toUpperCase() + g.surface.slice(1) : null, g.level].filter(Boolean).join(' ' + MIDDOT + ' ')) + '</span>' + spTxt + '</span>' +
-        g.rows.map(function (m) {
-          var wo = !!(m.wo || m.unconf);
-          var sets = wo ? '<span style="' + M + 'font-size:8.5px;padding:1px 5px;border-radius:4px;background:color-mix(in srgb, var(--text) 6%, transparent);border:1px solid var(--edge-10);color:var(--text-label);">WO</span>' : esc(m.sets || DASH);
-          return cell(fmtDotDate(m.date) + '.', M + 'font-size:11px;color:var(--text-label);white-space:nowrap;', m, wo) +
-            cell(wo ? '' : '<span style="display:block;width:8px;height:8px;border-radius:2px;margin-top:4px;background:' + (m.won ? 'var(--pos)' : 'var(--neg)') + ';"></span>', 'display:block;height:100%;', m, wo) +
-            cell(esc(initialSurname(m.opp || '') || DASH), 'font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;', m, wo) +
-            cell(esc(m.round || DASH), M + 'font-size:10.5px;color:var(--text-label);', m, wo) +
-            cell(sets, M + 'font-size:11.5px;font-weight:700;color:' + (wo ? 'var(--text-label)' : m.won ? 'var(--pos)' : 'var(--neg)') + ';', m, wo) +
-            cell(wo ? '' : esc(String(m.score || DASH)), M + 'font-size:11px;color:var(--text-label);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;', m, wo) +
-            cell(m.price != null ? Number(m.price).toFixed(2) : spPend ? '' : DASH, M + 'font-size:11px;color:var(--text-soft);text-align:right;', m, wo) +
-            cell(m.oppPrice != null ? Number(m.oppPrice).toFixed(2) : spPend ? '' : DASH, M + 'font-size:11px;color:var(--text-label);text-align:right;', m, wo);
+    var CELL = 'padding:7px 0;border-top:1px solid var(--line);display:flex;align-items:center;';
+    var body = groupsE.map(function (G) {
+      var right = (G.sp != null ? '<span style="display:inline-flex;gap:6px;"><span>speed</span><span style="color:var(--text-soft);font-weight:700;">' + signed(G.sp - 1, 2, '') + '</span></span>' : '') +
+        (G.alt != null ? '<span style="display:inline-flex;gap:6px;"><span>altitude</span><span style="color:var(--text-soft);font-weight:700;">' + Number(G.alt).toLocaleString('en-US') + ' m</span></span>' : '');
+      return '<span data-pp2-spdgroup="1" style="grid-column:1 / -1;display:flex;align-items:baseline;gap:10px;padding:16px 0 8px;min-width:0;">' +
+          '<span style="font-size:13px;font-weight:700;color:var(--text);white-space:nowrap;">' + esc((tournDisplayName(G.event, null) || DASH) + ' ' + G.year) + '</span>' +
+          '<span style="font-size:11.5px;color:var(--text-label);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + esc([G.surf, G.level].filter(Boolean).join(' ' + MIDDOT + ' ')) + '</span>' +
+          (right ? '<span style="margin-left:auto;display:inline-flex;align-items:baseline;gap:14px;' + M + 'font-size:10.5px;color:var(--text-label);white-space:nowrap;">' + right + '</span>' : '') +
+        '</span>' +
+        G.rows.map(function (m) {
+          var wo = !!m.wo, unconf = !wo && !!m.unconf, quiet = wo || unconf;
+          var hook = quiet ? '' : sheetHook(m.sheetId || (m.date + '|' + m.opp));
+          var cur = quiet ? '' : sheetCursor();
+          var c = function (html, st) { return '<span ' + hook + 'style="' + cur + CELL + (st || '') + '">' + html + '</span>'; };
+          var dot = unconf ? '' : '<span title="' + (wo ? (m.won ? 'Walkover in his favour ' + MIDDOT + ' opponent withdrew' : 'Walkover against him ' + MIDDOT + ' he withdrew') : (m.won ? 'Won' : 'Lost')) +
+            '" style="display:block;width:8px;height:8px;border-radius:2px;background:' + (m.won ? 'var(--pos)' : 'var(--neg)') + ';"></span>';
+          var sets = unconf ? ENDASH : wo ? '<span style="display:inline-flex;align-items:center;height:16px;padding:0 5px;border-radius:4px;box-sizing:border-box;background:var(--edge-6);border:1px solid var(--edge-10);' +
+            M + 'font-size:8.5px;font-weight:700;letter-spacing:0.06em;color:var(--text-label);white-space:nowrap;">WO</span>' : esc(m.sets || DASH);
+          return '<div class="pp2-spdrow' + (quiet ? ' wo' : '') + '"' + (wo ? ' data-pp2-wo-row="1"' : '') + ' style="display:contents;">' +
+            c(fmtDotDate(m.date) + '.', M + 'font-size:11px;color:var(--text-label);white-space:nowrap;') +
+            c(dot) +
+            c('<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(initialSurname(m.opp || '') || DASH) + '</span>', 'font-size:12.5px;min-width:0;padding-right:10px;') +
+            c(esc(m.round || DASH), M + 'font-size:10.5px;color:var(--text-label);') +
+            c(sets, M + 'font-size:11.5px;font-weight:600;color:var(--text-soft);') +
+            c('<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + (quiet ? '' : esc(String(m.score || DASH))) + '</span>', M + 'font-size:11px;color:var(--text-label);min-width:0;padding-right:10px;') +
+            c(m.price != null ? Number(m.price).toFixed(2) : spPend ? '' : DASH, M + 'font-size:11px;color:var(--text-soft);justify-content:flex-end;') +
+            c(m.oppPrice != null ? Number(m.oppPrice).toFixed(2) : spPend ? '' : DASH, M + 'font-size:11px;color:var(--text-label);justify-content:flex-end;') +
+            '</div>';
         }).join('');
     }).join('');
     var woN = b.listed.filter(function (m) { return m.wo; }).length;
-    var box = '<div style="position:relative;background:var(--inner);border:1px solid var(--edge-16);border-radius:10px;padding:14px 16px 12px;min-width:0;">' +
-      infoCorner('spd2', SPD_INFO2) +
-      '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:12px;flex-wrap:wrap;padding-right:28px;">' +
-        '<span style="display:inline-flex;align-items:baseline;gap:10px;">' + recCaps(b.name + ' courts ' + MIDDOT + ' career', 'white-space:nowrap;') +
-          '<span style="' + M + 'font-size:11.5px;color:var(--text-label);white-space:nowrap;">' + recordText(b.w, b.l) + ' ' + MIDDOT + ' ' + Math.round(b.pct) + '% ' + MIDDOT + ' ' + b.n + ' matches</span>' +
-          // the export's head (file :698): the band's speed range left; the list count, walkovers and units right
-          (function () {
-            var sp = groups.map(function (g) { return g.sp; }).filter(function (v) { return v != null; });
-            return sp.length ? '<span style="' + M + 'font-size:10.5px;color:var(--text-label);white-space:nowrap;">speed ' + signed(Math.min.apply(null, sp) - 1, 2, '') +
-              ' to ' + signed(Math.max.apply(null, sp) - 1, 2, '') + '</span>' : '';
-          }()) + '</span>' +
-        '<span style="display:inline-flex;align-items:baseline;gap:8px;' + M + 'font-size:11px;color:var(--text-label);white-space:nowrap;">' +
-          'All ' + b.n + ' matches' + (woN ? ' ' + MIDDOT + ' ' + woN + ' walkover' + (woN === 1 ? '' : 's') + ', not counted' : '') +
-          (spPend || b.units == null ? '' : '<span style="font-size:11.5px;font-weight:700;color:' + signColour(b.units) + ';">' + signed(b.units, 1, 'u') + '</span>') +
-        '</span></div>' +
-      '<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:14px;">' + tl + '</div>' +
-      '<div style="max-height:calc(100vh - 560px);min-height:260px;overflow-y:auto;padding-right:12px;"><div style="' + GRID + '">' + head + body + '</div></div></div>';
-    return top + bandsHtml + box;
+    var box = '<div data-pp2-spd="detail" style="position:relative;background:var(--card);border:1.25px solid var(--edge-6);border-radius:16px;padding:18px 20px 16px;min-width:0;">' +
+      '<span style="position:absolute;top:18px;right:20px;z-index:3;display:flex;">' + infoIcon('spd2', Object.assign({ width: 400, align: 'right' }, SPD_INFO2)) + '</span>' +
+      '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:6px 12px;margin-bottom:14px;flex-wrap:wrap;padding-right:30px;">' +
+        recCaps(esc(b.name + ' courts ' + MIDDOT + ' ' + scope), 'white-space:nowrap;') +
+        '<span style="' + M + 'font-size:11px;color:var(--text-label);white-space:nowrap;">' +
+          'All ' + b.n + ' matches' + (woN ? ' ' + MIDDOT + ' ' + woN + ' walkover' + (woN === 1 ? '' : 's') + ', not counted' : '') + '</span></div>' +
+      (tl ? '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-bottom:14px;">' + tl + '</div>' : '') +
+      '<div style="max-height:calc(100vh - 560px);min-height:260px;overflow-y:auto;padding-right:12px;"><div style="' + GRID + '">' + head2 + body + '</div></div></div>';
+    return bar.band + bar.applied + card1 + box;
   }
 
   function renderSpeedModal(p) {
@@ -12286,17 +12981,21 @@
     'All Court Elite': 'all' };
   var STY_GROUP_LABEL = { serve: 'Serve-first', base: 'Baseline', all: 'All court' };
   var STY_SURFS = [['all', 'All surfaces'], ['Hard', 'Hard'], ['Clay', 'Clay'], ['Grass', 'Grass'], ['Indoors', 'Indoors']];
+  // v4 §7 (handoff 2026-11-14) · the drawer's one (?) (the table card's is hidden in the reference): every definition
+  // lives here, no captions on the page (§0.4). The coverage fact is its note.
   var STY_INFO1 = { what: 'His win rate against each playing archetype, as dots.', defs: [
     ['Dot', 'One archetype. Height is his win rate against it; the label above is the figure.'],
-    ['Hollow dot', 'Fewer than 5 matches. No rate, hover for the record.'],
+    ['Hollow dot', 'Fewer than ' + STY_FLOOR + ' matches. No rate, hover for the record.'],
     ['His average', 'The line is his overall win rate in the current filter.'],
     ['Brackets', 'Serve-first, baseline and all-court group the archetypes.'],
-    ['Click a dot', 'Opens the archetype box with tiles and every match.']] };
-  var STY_INFO2 = { what: 'The same archetypes as a table.', defs: [
+    ['Click a dot', 'Opens the archetype box with tiles and every match. The two tiles and every table row open it too.'],
+    ['Dot size', 'The more matches against that archetype, the larger the dot.'],
+    ['Toughest', 'All Court Elite is the toughest match-up for almost every player. When it is his worst, the box shows his toughest outside the elite; his All Court Elite record is in the table.'],
     ['W' + ENDASH + 'L', 'Wins and losses against that archetype.'],
-    ['Win %', 'Wins divided by matches. The bar shows the same figure.'],
-    ['Backing', 'Units won or lost backing him at a flat 1 unit on the priced matches, closing price.'],
-    ['Fewer than 5', 'The record is shown and no rate. These rows sit at the foot.'],
+    ['vs his avg', 'Win rate against that archetype minus his average across all archetypes. The white tick on each bar is that average.'],
+    ['Yield', 'Yield backing him: profit per unit staked, 1 unit on him at closing price, every priced match. Comparable between small and large rows.'],
+    ['Retirements', 'Matches that ended by retirement are included in every record and yield here. Each one is marked ret. after its score in the match list. They are left out of deciding sets and straight sets.'],
+    ['Under ' + STY_FLOOR, 'Fewer than ' + STY_FLOOR + ' matches: the record is shown and no rate. These rows sit at the foot.'],
     ['Heads', 'Click a column head to sort by it.']] };
   // The spine row's surface bucket: Indoors is its own (an indoor court), Hard is outdoor hard.
   function rowSurfBucket(m) {
@@ -12341,11 +13040,29 @@
     return '<span style="display:flex;gap:8px;flex:none;">' + opts.map(function (o) { return bandPill(hook, o[0], o[1], cur === o[0]); }).join('') + '</span>';
   }
   // v3 B2 · the joined band of Market edge (both pages): surfaces · divider · Filters left, window right, Applied inside.
+  // v4 §8 · the band is joined to the card it changes: --card, 1.25px 6% ring, radius 16 16 0 0, padding 20/24, gap 14 to
+  // the Applied row (the reference's `modal.isMarket` / `modal.linesOn` band).
   function mkBandHtml(left, right, applied, kind) {
     return bandBox('<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;">' + left + right + '</div>' +
-      (applied ? applied.replace('margin:-6px 0 16px;', 'margin:0;') : ''), kind || 'joined', 'flex-direction:column;align-items:stretch;gap:10px;');
+      (applied ? applied.replace('margin:-6px 0 16px;', 'margin:0;') : ''), kind || 'joined-card', 'flex-direction:column;align-items:stretch;gap:14px;');
   }
   var JOIN_TOP = 'border-top:0;border-radius:0 0 12px 12px;';
+  // v4 §7 · the styles drawer's colours. Every value is a token or a token mix (no raw colour):
+  //   dot fill = the link blue at 14% over the card (the export's value exactly), its ring the link at 55%, the stem 40%;
+  //   thin dot = the card with a muted ring (--pp-x-ink-muted); the axis 12% white; the row tick 85% ink.
+  var STY_C = {
+    dot: 'color-mix(in srgb, var(--link) 14%, var(--card))', dotBd: 'color-mix(in srgb, var(--link) 55%, transparent)',
+    stem: 'color-mix(in srgb, var(--link) 40%, transparent)', stemThin: 'var(--edge-10)', muted: 'var(--pp-x-ink-muted)',
+    axis: 'var(--pp-x-edge-12)', avgLine: 'color-mix(in srgb, var(--text) 18%, transparent)',
+    bracket: 'color-mix(in srgb, var(--text) 14%, transparent)', rowTick: 'color-mix(in srgb, var(--text) 85%, transparent)'
+  };
+  var STY_MONO = 'font-family:\'IBM Plex Mono\',monospace;';
+  // Yield backing him (§0.5): profit per unit staked, 1 unit on him at closing price, every priced match (1 decimal).
+  function styYield(d) { return d && d.priced ? 100 * d.units / d.priced : null; }
+  function styPct(v) { return signed(v, 1, '%'); }
+  function styGapColour(g) { return g == null ? 'var(--pp-x-faint)' : Math.abs(g) < 0.05 ? 'var(--text-label)' : g >= 0 ? 'var(--pos)' : 'var(--neg)'; }
+  // The figures the design rounds: a rate to a whole per cent, the gap = that rate minus his (unrounded) average.
+  function styGap(d, avg) { return d.pct == null || avg == null ? null : Math.round(d.pct) - avg; }
   function styChart(D) {
     var pts = D.data.filter(function (d) { return !d.empty; });
     if (!pts.length) return '<div style="padding:30px 0;text-align:center;font-size:12.5px;color:var(--text-label);">No archetyped opponent in this filter</div>';
@@ -12355,27 +13072,37 @@
     var LO = Math.max(0, Math.floor((Math.min.apply(null, vals) - 8) / 10) * 10);
     var HI = Math.min(100, Math.ceil((Math.max.apply(null, vals) + 8) / 10) * 10);
     if (HI - LO < 30) { LO = Math.max(0, LO - 10); HI = Math.min(100, HI + 10); }
-    var top = function (v) { return ((1 - (v - LO) / (HI - LO)) * 100).toFixed(1) + '%'; };
+    var frac = function (v) { return 1 - (v - LO) / (HI - LO); };
+    var top = function (v) { return (frac(v) * 100).toFixed(1) + '%'; };
     var maxN = Math.max.apply(null, [1].concat(pts.map(function (d) { return d.n; })));
     var xOf = function (i) { return pts.length > 1 ? 8 + 84 * i / (pts.length - 1) : 50; };
     var sel = state.fb && state.fb.box === 'styles' ? state.fb.v : null;
     var ticks = []; for (var t = LO; t <= HI; t += 10) ticks.push(t);
-    var dots = '', labels = '', codes = '';
+    var marks = '', codes = '';
     pts.forEach(function (d, i) {
       var size = Math.round(14 + d.n / maxN * 20), on = sel === d.name, x = xOf(i).toFixed(1) + '%';
-      var y = top(d.thin ? (D.avg != null ? D.avg : 50) : d.pct);
+      // A thin sample keeps its rate off the page: its hollow dot sits on his average (no height, no stem length).
+      var yv = d.thin ? (D.avg != null ? D.avg : 50) : d.pct;
+      var y = top(yv);
       var tip = (d.thin ? '' : d.name + ' ' + MIDDOT + ' ') + recordText(d.w, d.l) + ' ' + MIDDOT + ' ' + d.n + (d.n === 1 ? ' match' : ' matches');
-      dots += '<span data-pp2="fb-open" data-box="styles" data-v="' + esc(d.name) + '" title="' + esc(tip) + '" class="pp2-stydot" style="cursor:pointer;' +
+      var cls = 'pp2-stydot' + (d.thin ? ' pp2-stydot-thin' : '') + (on ? ' pp2-on' : '');
+      if (D.avg != null) {
+        var a = frac(D.avg), b = frac(yv);
+        marks += '<span style="position:absolute;left:' + x + ';top:' + (Math.min(a, b) * 100) + '%;height:' + (Math.abs(a - b) * 100) + '%;width:1px;' +
+          'background:' + (d.thin ? STY_C.stemThin : STY_C.stem) + ';pointer-events:none;"></span>';
+      }
+      marks += '<span data-pp2="fb-open" data-box="styles" data-v="' + esc(d.name) + '" data-sty-i="' + i + '" title="' + esc(tip) + '" class="' + cls + '" style="cursor:pointer;' +
         'position:absolute;left:' + x + ';top:' + y + ';transform:translate(-50%,-50%);width:' + size + 'px;height:' + size + 'px;border-radius:50%;' +
-        'box-sizing:border-box;background:' + (d.thin ? 'transparent' : on ? 'var(--link)' : 'color-mix(in srgb, var(--link) 14%, transparent)') + ';' +
-        'border:1px solid ' + (d.thin ? (on ? 'var(--text-soft)' : 'var(--text-label)') : on ? 'var(--link)' : 'color-mix(in srgb, var(--link) 55%, transparent)') + ';' +
-        'box-shadow:' + (on ? (d.thin ? '0 0 0 4px var(--wash-8, color-mix(in srgb, var(--text) 8%, transparent))' : '0 0 0 4px color-mix(in srgb, var(--link) 18%, transparent)') : 'none') + ';"></span>';
-      if (!d.thin) labels += '<span style="position:absolute;left:' + x + ';top:' + y + ';transform:translate(-50%,-50%) translateY(-' + (size / 2 + 12) +
-        'px);font-family:\'IBM Plex Mono\',monospace;font-size:11px;font-weight:700;color:' + (on ? 'var(--text)' : 'var(--text-soft)') + ';white-space:nowrap;' +
-        'pointer-events:none;">' + Math.round(d.pct) + '%</span>';
-      codes += '<span data-pp2="fb-open" data-box="styles" data-v="' + esc(d.name) + '" title="' + esc(tip) + '" style="cursor:pointer;position:absolute;left:' + x +
-        ';top:8px;transform:translateX(-50%);font-family:\'IBM Plex Mono\',monospace;font-size:10px;font-weight:' + (on ? 700 : 600) + ';letter-spacing:0.06em;' +
-        'color:' + (on ? 'var(--text)' : 'var(--text-label)') + ';white-space:nowrap;">' + esc(d.code) + '</span>';
+        'box-sizing:border-box;background:' + (d.thin ? 'var(--card)' : on ? 'var(--link)' : STY_C.dot) + ';' +
+        'border:1px solid ' + (d.thin ? (on ? 'var(--text-soft)' : STY_C.muted) : on ? 'var(--link)' : STY_C.dotBd) + ';' +
+        'box-shadow:' + (on ? (d.thin ? '0 0 0 4px var(--wash-8, color-mix(in srgb, var(--text) 8%, transparent))' : '0 0 0 4px color-mix(in srgb, var(--link) 18%, transparent)') : 'none') + ';' +
+        'transition:background .12s, border-color .12s, box-shadow .12s;"></span>';
+      if (!d.thin) marks += '<span data-sty-i="' + i + '" class="pp2-stylab' + (on ? ' pp2-on' : '') + '" style="position:absolute;left:' + x + ';top:' + y + ';' +
+        'transform:translate(-50%,-50%) translateY(-' + (size / 2 + 12) + 'px);' + STY_MONO + 'font-size:11px;font-weight:700;' +
+        'color:' + (on ? 'var(--text)' : 'var(--text-soft)') + ';white-space:nowrap;pointer-events:none;">' + Math.round(d.pct) + '%</span>';
+      codes += '<span data-pp2="fb-open" data-box="styles" data-v="' + esc(d.name) + '" data-sty-i="' + i + '" title="' + esc(tip) + '" class="pp2-stycode' + (on ? ' pp2-on' : '') + '" ' +
+        'style="cursor:pointer;position:absolute;left:' + x + ';top:8px;transform:translateX(-50%);' + STY_MONO + 'font-size:10px;' +
+        'font-weight:' + (on ? 700 : 600) + ';letter-spacing:0.06em;color:' + (on ? 'var(--text)' : 'var(--text-label)') + ';white-space:nowrap;">' + esc(d.code) + '</span>';
       d._x = xOf(i);
     });
     var groups = ['serve', 'base', 'all'].map(function (g) {
@@ -12389,29 +13116,32 @@
     }).join('');
     var brackets = groups.map(function (g) {
       return '<span style="position:absolute;left:' + g.l.toFixed(1) + '%;width:' + (g.r - g.l).toFixed(1) + '%;bottom:0;height:16px;' +
-        'border-top:1px solid color-mix(in srgb, var(--text) 14%, transparent);display:flex;justify-content:center;align-items:flex-end;">' +
+        'border-top:1px solid ' + STY_C.bracket + ';display:flex;justify-content:center;align-items:flex-end;">' +
         '<span style="font-family:var(--font-words);font-size:9.5px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;' +
-        'color:var(--text-label);white-space:nowrap;background:var(--inner);padding:0 6px;transform:translateY(-9px);">' + g.label + '</span></span>';
+        'color:' + STY_C.muted + ';white-space:nowrap;background:var(--card);padding:0 6px;transform:translateY(-9px);">' + g.label + '</span></span>';
     }).join('');
-    return '<div style="display:grid;grid-template-columns:36px minmax(0,1fr);gap:0 10px;">' +
+    return '<div class="pp2-stychart" style="display:grid;grid-template-columns:36px minmax(0,1fr);gap:0 10px;">' +
       '<div style="position:relative;height:200px;">' + ticks.map(function (t) {
-        return '<span style="position:absolute;right:0;top:' + top(t) + ';transform:translateY(-50%);font-family:\'IBM Plex Mono\',monospace;' +
+        return '<span style="position:absolute;right:0;top:' + top(t) + ';transform:translateY(-50%);' + STY_MONO +
           'font-size:10px;color:var(--text-label);">' + t + '%</span>';
       }).join('') + '</div>' +
-      '<div style="position:relative;height:200px;border-left:1px solid var(--edge-10);border-bottom:1px solid var(--edge-10);">' +
+      '<div style="position:relative;height:200px;border-left:1px solid ' + STY_C.axis + ';border-bottom:1px solid ' + STY_C.axis + ';">' +
         ticks.map(function (t) { return '<span style="position:absolute;left:0;right:0;top:' + top(t) + ';height:1px;background:var(--line);"></span>'; }).join('') +
-        (D.avg != null ? '<span style="position:absolute;left:0;right:0;top:' + top(D.avg) + ';height:1px;background:color-mix(in srgb, var(--text) 18%, transparent);"></span>' +
-          '<span style="position:absolute;right:6px;top:' + top(D.avg) + ';transform:translateY(-130%);font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;' +
+        (D.avg != null ? '<span style="position:absolute;left:0;right:0;top:' + top(D.avg) + ';height:1px;background:' + STY_C.avgLine + ';"></span>' +
+          '<span style="position:absolute;right:6px;top:' + top(D.avg) + ';transform:translateY(-130%);' + STY_MONO + 'font-size:10.5px;' +
           'color:var(--text-label);white-space:nowrap;">his average ' + MIDDOT + ' ' + Math.round(D.avg) + '%</span>' : '') +
-        divs + dots + labels +
+        divs + marks +
       '</div>' +
       '<span></span>' +
       '<div style="position:relative;height:54px;">' + codes + brackets + '</div>' +
       '</div>';
   }
+  // The table (v4 §7): one header line; bar · W–L · matches · win % · vs his avg (not sortable) · Yield. Rows 48px,
+  // hairlines and hover edge to edge (the rows bleed 24px into the card's padding); only the gap is coloured.
+  var STY_GRID = 'display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr) 56px 60px 52px 76px 64px;gap:0 12px;align-items:center;';
   function styTable(D) {
     var so = state.stySort || { k: 'pct', d: -1 };
-    var keyOf = function (d) { return so.k === 'name' ? d.name : so.k === 'wl' ? d.w - d.l : so.k === 'n' ? d.n : so.k === 'u' ? (d.units == null ? -Infinity : d.units) : (d.pct == null ? -Infinity : d.pct); };
+    var keyOf = function (d) { return so.k === 'name' ? d.name : so.k === 'wl' ? d.w - d.l : so.k === 'n' ? d.n : so.k === 'u' ? (d.priced ? styYield(d) : -Infinity) : (d.pct == null ? -Infinity : d.pct); };
     var list = D.data.slice().sort(function (a, b) {
       var ta = a.thin || a.empty ? 1 : 0, tb = b.thin || b.empty ? 1 : 0;
       if (ta !== tb) return ta - tb;
@@ -12420,40 +13150,47 @@
       if (ka === kb) return b.n - a.n;
       return (ka < kb ? -1 : 1) * so.d;
     });
-    var GRID = 'display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr) 56px 60px 52px 64px;gap:0 12px;align-items:center;';
-    var cols = [['Archetype', 'left', 'name'], ['', 'left'], ['W' + ENDASH + 'L', 'right', 'wl'], ['Matches', 'right', 'n'],
-      ['Win %', 'right', 'pct'], ['Backing', 'right', 'u']];
-    var head = '<div style="' + GRID + '">' + cols.map(function (c) {
+    var cols = [['Record by archetype', 'left', 'name', 'Sort A to Z'], ['Win rate', 'left'], ['W' + ENDASH + 'L', 'right', 'wl', 'Sort by wins minus losses'],
+      ['Matches', 'right', 'n', 'Sort by matches played'], ['Win %', 'right', 'pct', 'Sort by win rate'],
+      ['vs his avg', 'right', null, 'Win rate minus his average across all archetypes'],
+      ['Yield', 'right', 'u', 'Yield backing him: 1 unit on him at closing price, every priced match. Click to sort']];
+    var head = '<div style="' + STY_GRID + 'margin:0 -24px;padding:0 24px;border-bottom:1px solid var(--edge-10);">' + cols.map(function (c) {
       var on = c[2] && so.k === c[2];
-      return '<span' + (c[2] ? ' data-pp2="sty-sort" data-v="' + c[2] + '"' : '') + ' style="display:flex;align-items:baseline;gap:5px;' +
+      return '<span' + (c[2] ? ' data-pp2="sty-sort" data-v="' + c[2] + '"' : '') + ' title="' + esc(c[3] || '') + '" style="display:flex;align-items:baseline;gap:5px;' +
         'justify-content:' + (c[1] === 'right' ? 'flex-end' : 'flex-start') + ';cursor:' + (c[2] ? 'pointer' : 'default') + ';' +
         'font-family:var(--font-words);font-size:10.5px;font-weight:700;letter-spacing:0.10em;text-transform:uppercase;' +
-        'color:' + (on ? 'var(--text)' : 'var(--text-label)') + ';padding-bottom:8px;border-bottom:1px solid var(--edge-10);white-space:nowrap;">' +
+        'color:' + (on ? 'var(--text)' : 'var(--text-label)') + ';padding-bottom:14px;white-space:nowrap;">' +
         '<span style="pointer-events:none;">' + esc(c[0]) + '</span>' +
-        (c[2] ? '<span style="pointer-events:none;font-family:\'IBM Plex Mono\',monospace;font-size:10px;letter-spacing:0;color:' +
-          (on ? 'var(--text)' : 'color-mix(in srgb, var(--text-label) 45%, transparent)') + ';">' + (on ? (so.d < 0 ? '↓' : '↑') : '⇅') + '</span>' : '') +
+        '<span style="pointer-events:none;' + STY_MONO + 'font-size:10px;letter-spacing:0;color:' +
+          (on ? 'var(--text)' : 'color-mix(in srgb, var(--text-label) 45%, transparent)') + ';">' + (on ? (so.d < 0 ? '↓' : '↑') : c[2] ? '⇅' : '') + '</span>' +
         '</span>';
     }).join('') + '</div>';
     var sel = state.fb && state.fb.box === 'styles' ? state.fb.v : null;
-    var MONO = 'font-family:\'IBM Plex Mono\',monospace;font-variant-numeric:tabular-nums;';
-    var cell = 'padding:11px 0;border-top:1px solid var(--line);';
-    var rows = list.map(function (d) {
-      var dim = d.thin || d.empty, on = sel === d.name;
-      return '<div ' + (d.empty ? '' : 'data-pp2="fb-open" data-box="styles" data-v="' + esc(d.name) + '" class="pp2-styrow" ') +
-        'style="' + GRID + 'padding:0 10px;margin:0 -10px;border-radius:8px;cursor:' + (d.empty ? 'default' : 'pointer') + ';' +
-        'background:' + (on ? 'var(--selected)' : 'transparent') + ';">' +
-        '<span style="display:inline-flex;align-items:baseline;gap:8px;min-width:0;' + cell + '"><span style="font-size:13px;font-weight:700;' +
+    var MONO = STY_MONO + 'font-variant-numeric:tabular-nums;';
+    var avgLeft = D.avg == null ? null : 'calc(' + D.avg.toFixed(1) + '% - 1px)';   // no matches: no tick
+    var rows = list.map(function (d, i) {
+      var dim = d.thin || d.empty, on = sel === d.name, gp = dim ? null : styGap(d, D.avg), y = styYield(d);
+      return '<div ' + (d.empty ? '' : 'data-pp2="fb-open" data-box="styles" data-v="' + esc(d.name) + '" ') + 'class="pp2-styrow" ' +
+        'style="' + STY_GRID + 'min-height:48px;padding:0 24px;margin:0 -24px;border-top:' + (i ? '1px solid var(--line)' : '0') + ';' +
+        'cursor:' + (d.empty ? 'default' : 'pointer') + ';background:' + (on ? 'var(--selected)' : 'transparent') + ';">' +
+        '<span style="display:inline-flex;align-items:baseline;gap:8px;min-width:0;"><span style="font-size:13px;font-weight:700;' +
           'color:' + (dim ? 'var(--text-label)' : 'var(--text)') + ';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + esc(d.name) + '</span>' +
-          '<span style="' + MONO + 'font-size:10px;color:var(--text-label);flex:none;">' + esc(d.code) + '</span></span>' +
-        '<span style="' + cell + 'display:flex;align-items:center;"><span style="display:block;width:100%;height:6px;border-radius:3px;background:var(--track);overflow:hidden;">' +
-          '<span style="display:block;width:' + (dim ? 0 : d.pct).toFixed(1) + '%;height:100%;background:' + (on ? 'var(--link)' : 'var(--bar)') + ';"></span></span></span>' +
-        '<span style="' + MONO + cell + 'font-size:12px;color:var(--text-label);text-align:right;white-space:nowrap;">' + (d.n ? recordText(d.w, d.l) : DASH) + '</span>' +
-        '<span style="' + MONO + cell + 'font-size:12px;color:var(--text-label);text-align:right;">' + (d.n || DASH) + '</span>' +
-        '<span style="' + MONO + cell + 'font-size:13px;font-weight:700;text-align:right;color:' + (dim ? 'var(--text-label)' : 'var(--text)') + ';">' +
+          '<span style="' + MONO + 'font-size:10px;color:var(--text-label);flex:none;">' + esc(d.code) + '</span>' +
+          // no "under 5" tag: founder 2026-11-09 "I need no mark" (the reference's r.tag is not built)
+          '</span>' +
+        '<span style="position:relative;display:block;width:100%;height:6px;border-radius:3px;background:var(--edge-6);">' +
+          '<span style="position:absolute;left:0;top:0;bottom:0;width:' + (dim ? 0 : d.pct).toFixed(1) + '%;border-radius:3px;background:' + pp4Bar(on) + ';"></span>' +
+          (D.avg == null ? '' : '<span title="his average" style="position:absolute;left:' + avgLeft + ';top:-3px;bottom:-3px;width:2px;background:' + STY_C.rowTick + ';"></span>') + '</span>' +
+        '<span style="' + MONO + 'font-size:12px;color:var(--text-soft);text-align:right;">' + recordText(d.w, d.l) + '</span>' +   // 0–0 is a genuine zero
+
+        '<span style="' + MONO + 'font-size:12px;color:var(--text-label);text-align:right;white-space:nowrap;">' + d.n + '</span>' +
+        '<span style="' + MONO + 'font-size:13px;font-weight:700;text-align:right;color:' + (dim ? 'var(--pp-x-faint)' : 'var(--text)') + ';">' +
           (dim ? DASH : Math.round(d.pct) + '%') + '</span>' +
-        '<span style="' + MONO + cell + 'font-size:12px;font-weight:600;text-align:right;color:' +
-          (STYLE_PEND || dim || d.units == null ? 'var(--text-label)' : signColour(d.units)) + ';">' +
-          (STYLE_PEND ? '&nbsp;' : dim || d.units == null ? DASH : signed(d.units, 2, 'u')) + '</span>' +
+        '<span style="' + MONO + 'font-size:12px;font-weight:700;text-align:right;white-space:nowrap;color:' + styGapColour(gp) + ';">' +
+          (gp == null ? DASH : signed(gp, 1, 'pp')) + '</span>' +
+        '<span style="' + MONO + 'font-size:12px;font-weight:600;text-align:right;color:' +
+          (STYLE_PEND || dim || y == null ? 'var(--pp-x-faint)' : 'var(--text-soft)') + ';">' +
+          (STYLE_PEND ? '&nbsp;' : dim || y == null ? DASH : styPct(y)) + '</span>' +
         '</div>';
     }).join('');
     return head + rows;
@@ -12464,32 +13201,71 @@
     return (rows.total - rows.unlabelled) + ' of ' + rows.total + ' matches against a labelled opponent. Opponents with no ' +
       'archetype on file are left out of every figure here.';
   }
+  // v4 §7 · the two summary tiles: Best match-up · Toughest (rated archetypes only: n >= STY_FLOOR). When his worst
+  // rated archetype is All Court Elite the second reads "Toughest outside the elite" and shows the next worst.
+  // Hidden with fewer than 2 rated. A click selects the archetype (opens its box).
+  function styTiles(D) {
+    var rated = D.data.filter(function (d) { return !d.thin && !d.empty; });
+    if (rated.length < 2 || D.avg == null) return [];
+    var best = rated.reduce(function (a, d) { return d.pct > a.pct || (d.pct === a.pct && d.n > a.n) ? d : a; });
+    var worstOf = function (arr) { return arr.reduce(function (a, d) { return d.pct < a.pct || (d.pct === a.pct && d.n > a.n) ? d : a; }); };
+    var worst = worstOf(rated), rest = rated.filter(function (d) { return d.code !== 'ACE'; });
+    var tough = worst.code === 'ACE' && rest.length ? { label: 'Toughest outside the elite', d: worstOf(rest) } : { label: 'Toughest match-up', d: worst };
+    return [{ label: 'Best match-up', d: best }, tough];
+  }
+  function styTileHtml(t, D) {
+    var d = t.d, sel = state.fb && state.fb.box === 'styles' ? state.fb.v : null, on = sel === d.name;
+    var g = styGap(d, D.avg), y = styYield(d);
+    return '<div data-pp2="fb-open" data-box="styles" data-v="' + esc(d.name) + '" title="' + esc(signed(g, 1, 'pp') + ' vs his average across all archetypes') + '" ' +
+      'class="pp2-stytile" style="cursor:pointer;display:flex;flex-direction:column;gap:10px;min-width:0;padding:16px 18px;border-radius:12px;' +
+      'background:' + (on ? 'var(--selected)' : 'var(--card)') + ';border:1.25px solid ' + (on ? 'var(--edge-16)' : 'var(--edge-6)') + ';' +
+      'transition:border-color .15s, transform .15s;">' +
+      recCaps(esc(t.label), 'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none;') +
+      '<span style="display:flex;align-items:baseline;gap:8px;min-width:0;pointer-events:none;"><span style="font-size:13px;font-weight:700;color:var(--text);' +
+        'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + esc(d.name) + '</span><span style="' + STY_MONO + 'font-size:10px;color:var(--text-label);flex:none;">' +
+        esc(d.code) + '</span></span>' +
+      '<span style="display:flex;align-items:baseline;gap:10px;pointer-events:none;"><span style="' + STY_MONO + 'font-size:26px;font-weight:700;color:var(--text);line-height:1;">' +
+        Math.round(d.pct) + '%</span><span style="' + STY_MONO + 'font-size:12px;font-weight:700;color:' + styGapColour(g) + ';white-space:nowrap;">' + signed(g, 1, 'pp') + '</span></span>' +
+      '<span style="position:relative;display:block;height:4px;border-radius:2px;background:var(--edge-6);pointer-events:none;">' +
+        '<span style="position:absolute;left:0;top:0;bottom:0;width:' + d.pct.toFixed(1) + '%;border-radius:2px;background:' + pp4Bar(on) + ';"></span>' +
+        '<span style="position:absolute;left:calc(' + D.avg.toFixed(1) + '% - 1px);top:-3px;bottom:-3px;width:2px;background:var(--text);"></span></span>' +
+      '<span style="display:flex;align-items:baseline;justify-content:space-between;gap:8px;' + STY_MONO + 'font-size:11.5px;color:var(--text-label);white-space:nowrap;pointer-events:none;">' +
+        '<span>' + recordText(d.w, d.l) + ' ' + MIDDOT + ' ' + d.n + ' matches</span><span>' + (STYLE_PEND ? '&nbsp;' : y == null ? DASH : styPct(y) + ' yield') + '</span></span>' +
+      '</div>';
+  }
   function renderStylesModalV2(p) {
     var D = styData(p);
     var scope = styScope();
-    var TU = D.data.reduce(function (s, d) { return s + (d.units != null && !d.thin ? d.units : 0); }, 0);
+    // the headline yield: every rated archetype's priced matches pooled (thin rows out, as the table's own figures)
+    var TU = 0, TP = 0;
+    D.data.forEach(function (d) { if (!d.thin && d.priced) { TU += d.units; TP += d.priced; } });
+    var TY = TP ? 100 * TU / TP : null;
+    var tiles = styTiles(D);
+    var summary = '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px 16px;flex-wrap:wrap;margin-bottom:20px;padding-right:32px;">' +
+        '<span style="display:inline-flex;align-items:baseline;gap:12px;flex-wrap:wrap;">' + recCaps(esc(scope)) +
+          '<span style="' + STY_MONO + 'font-size:22px;font-weight:700;color:var(--text);line-height:1;">' + (D.TN ? recordText(D.TW, D.TN - D.TW) : DASH) + '</span>' +
+          (D.TN ? '<span style="font-size:13px;font-weight:600;color:var(--text);">' + Math.round(100 * D.TW / D.TN) + '% win rate</span>' : '') +
+          '<span style="font-size:12px;color:var(--text-label);">' + D.TN + (D.TN === 1 ? ' match' : ' matches') + '</span></span>' +
+        '<span style="display:inline-flex;align-items:baseline;gap:6px;white-space:nowrap;">' +
+          '<span style="' + STY_MONO + 'font-size:13px;font-weight:700;color:' + (STYLE_PEND || TY == null ? 'var(--pp-x-faint)' : styGapColour(TY)) + ';">' +
+            (STYLE_PEND ? '&nbsp;' : TY == null ? DASH : styPct(TY)) + '</span>' +
+          '<span style="font-size:12px;color:var(--text-label);">yield backing him</span></span>' +
+      '</div>';
     return bandBox('<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">' + stySegPills('sty-surf', STY_SURFS, state.stySurf || 'all') + '</div>' +
-        winSeg('sty-win', state.styWin || 'career', false), 'joined', 'justify-content:space-between;gap:12px;') +
-      '<div style="position:relative;background:var(--inner);border:1.25px solid var(--line);' + JOIN_TOP + 'padding:14px 16px 12px;margin-bottom:12px;">' +
-        infoCorner('sty1', STY_INFO1) +
-        '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:12px;padding-right:28px;">' +
-          recCaps('Win rate by archetype') +
-          '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:var(--text-label);white-space:nowrap;">dot size = matches ' + MIDDOT + ' ' + esc(scope) + '</span>' +
-        '</div>' + styChart(D) +
+        winSeg('sty-win', state.styWin || 'career', false), 'joined-card', 'justify-content:space-between;gap:12px;') +
+      '<div data-pp2-sty="card" style="position:relative;background:var(--card);border:1.25px solid var(--edge-6);border-top:0;border-radius:0 0 16px 16px;' +
+        'padding:22px 24px 18px;margin-bottom:16px;">' +
+        '<span style="position:absolute;top:20px;right:20px;z-index:3;display:flex;">' +
+          infoIcon('sty1', Object.assign({ width: 400, align: 'right', v4: true }, STY_INFO1, { notes: [styCoverageText(p)] })) + '</span>' +
+        summary +
+        (tiles.length ? '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:28px;">' +
+          tiles.map(function (t) { return styTileHtml(t, D); }).join('') + '</div>' : '') +
+        '<div style="margin-bottom:16px;font-size:16px;">' + recCaps('Win rate by archetype') + '</div>' +   // the reference's 16px strut: a 21px line
+
+        styChart(D) +
       '</div>' +
-      '<div style="position:relative;background:var(--inner);border:1.25px solid var(--edge-6);border-radius:12px;padding:14px 16px 4px;margin-bottom:12px;">' +
-        // The coverage fact lives in the (?) note (no page footnotes, v2): how many of his matches met a labelled opponent.
-        infoCorner('sty2', Object.assign({}, STY_INFO2, { notes: [styCoverageText(p)] })) +
-        '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:12px;flex-wrap:wrap;padding-right:28px;">' +
-          recCaps('Record by archetype ' + MIDDOT + ' ' + esc(scope)) +
-          '<span style="display:inline-flex;align-items:baseline;gap:8px;font-family:\'IBM Plex Mono\',monospace;font-size:12px;color:var(--text-label);white-space:nowrap;">' +
-            // the export's line (file :551): record and rate white bold, the count grey, then the units
-            '<span style="color:var(--text);font-weight:700;">' + recordText(D.TW, D.TN - D.TW) + '</span><span>' + MIDDOT + '</span>' +
-            '<span style="color:var(--text);font-weight:700;">' + (D.TN ? Math.round(100 * D.TW / D.TN) + '%' : DASH) + '</span><span>' + MIDDOT + '</span>' +
-            '<span>' + D.TN + ' matches</span>' +
-            (STYLE_PEND ? '' : '<span>' + MIDDOT + '</span><span style="color:' + signColour(TU) + ';font-weight:700;">' + signed(TU, 2, 'u') + '</span>') +
-          '</span>' +
-        '</div>' + styTable(D) +
+      '<div data-pp2-sty="table" style="position:relative;background:var(--card);border:1.25px solid var(--edge-6);border-radius:16px;padding:20px 24px 8px;margin-bottom:16px;">' +
+        styTable(D) +
       '</div>';
   }
   // The archetype drill box (the export's selBox): tiles + every match, latest first; rows open the match sheet.
@@ -12552,23 +13328,43 @@
     var str = ms.filter(function (m) { return !m.retired && setsOfScore(m) === (bo5(m) ? 3 : 2); });
     var oW = D.TW - d.w, oN = D.TN - d.n, oPct = oN ? 100 * oW / oN : null;
     var gap = d.pct != null && oPct != null ? d.pct - oPct : null;
+    var y = styYield(d), F = STY_FLOOR;
+    var units = d.units == null ? '' : signed(d.units, 2, ' units');
+    var decW = dec.filter(function (m) { return m.won; }).length;
+    var nm = function (k) { return k + (k === 1 ? ' match' : ' matches'); };
+    var favTile = { label: 'Favourite ' + MIDDOT + ' underdog', fig: wl(fav), sub: 'as favourite ' + MIDDOT + ' ' + nm(fav.length),
+      tail: wl(dog) + ' as underdog ' + MIDDOT + ' ' + nm(dog.length) };
+    var yTail = '1 unit on him at closing price, every priced match';
+    // v4 §7 · the archetype box. Retirements count in the record and the yield, never in deciding / straight sets.
     var tiles = d.thin ? [
-      { label: 'Win rate', fig: recordText(d.w, d.l), sub: d.n + ' matches', tail: 'fewer than 5 matches: no rate' },
-      { label: 'On the price', fig: d.priced + ' priced', sub: 'no return under 5 matches' },
-      { label: 'Favourite ' + MIDDOT + ' underdog', fig: wl(fav) + ' ' + MIDDOT + ' ' + wl(dog), sub: 'shorter ' + MIDDOT + ' longer closing price' },
-      { label: 'Deciding sets', fig: dec.length ? wl(dec) : DASH, sub: 'straight sets ' + (str.length ? wl(str) : DASH) }
+      { label: 'Win rate', fig: recordText(d.w, d.l), sub: nm(d.n) + ' ' + MIDDOT + ' under ' + F },
+      { label: 'Yield backing him', fig: DASH, figColor: 'var(--pp-x-faint)', sub: d.priced + ' priced ' + MIDDOT + ' no yield under ' + F + ' matches', tail: yTail, tailColor: 'var(--text-soft)' },
+      favTile,
+      { label: 'Deciding sets', fig: dec.length ? wl(dec) : DASH, figColor: dec.length ? null : 'var(--pp-x-faint)', sub: str.length ? wl(str) + ' in straight sets' : '' }
     ] : [
-      { label: 'Win rate', fig: Math.round(d.pct) + '%', sub: recordText(d.w, d.l) + ' ' + MIDDOT + ' ' + d.n + ' matches',
-        tail: gap == null ? '' : signed(gap, 1, 'pp') + ' vs other archetypes', tailColor: gap == null ? null : signColour(gap) },
-      { label: 'On the price', fig: d.units == null ? DASH : signed(d.units, 2, 'u'), figColor: d.units == null ? 'var(--text-label)' : signColour(d.units),
-        sub: d.priced ? 'ROI ' + signed(100 * d.units / d.priced, 1, '%') + ' ' + MIDDOT + ' ' + d.priced + ' priced' : 'no price on record' },
-      { label: 'Favourite ' + MIDDOT + ' underdog', fig: wl(fav) + ' ' + MIDDOT + ' ' + wl(dog), sub: 'shorter ' + MIDDOT + ' longer closing price',
-        tail: (pricedMs.length < ms.length ? (ms.length - pricedMs.length) + ' unpriced' : '') },
-      { label: 'Deciding sets', fig: dec.length ? wl(dec) : DASH, sub: 'straight sets ' + (str.length ? wl(str) : DASH), tail: 'went the distance' }
+      { label: 'Win rate', fig: Math.round(d.pct) + '%', sub: recordText(d.w, d.l) + ' ' + MIDDOT + ' ' + nm(d.n),
+        tail: gap == null ? '' : signed(gap, 1, 'pp') + ' vs other archetypes', tailColor: gap == null ? null : styGapColour(gap) },
+      { label: 'Yield backing him', fig: STYLE_PEND ? '&nbsp;' : y == null ? DASH : styPct(y), figColor: y == null ? 'var(--pp-x-faint)' : y >= 0 ? 'var(--pos)' : 'var(--neg)',
+        sub: STYLE_PEND ? '' : d.priced ? d.priced + ' priced ' + MIDDOT + ' ' + units : 'no prices kept', tail: yTail, tailColor: 'var(--text-soft)' },
+      favTile,
+      // A rate only from STY_FLOOR deciders on (thin samples: count, no rate).
+      { label: 'Deciding sets', fig: dec.length ? recordText(decW, dec.length - decW) : DASH, figColor: dec.length ? null : 'var(--pp-x-faint)',
+        sub: !dec.length ? 'none yet' : dec.length >= F ? Math.round(100 * decW / dec.length) + '% when it goes the distance' : nm(dec.length) + ' went the distance',
+        tail: str.length ? wl(str) + ' in straight sets' : '' }
     ];
-    return { name: d.name, code: d.code,
-      meta: recordText(d.w, d.l) + (d.thin ? '' : ' ' + MIDDOT + ' ' + Math.round(d.pct) + '%') + ' ' + MIDDOT + ' ' + d.n + ' matches ' + MIDDOT + ' ' + esc(scope),
-      tiles: tiles, cols: FB_LIST_COLS, head: fbMatchHead(), rows: all.map(fbMatchRow) };
+    var rowOf = function (m) {
+      var r = fbMatchRow(m);
+      // muted italic "ret." after the score (the shared row prints the score alone)
+      if (m.retired && !m.wo && !m.unconf && r.cells[5]) {
+        var sc = String(m.score || DASH).replace(/,\s*/g, ' ').replace(/\s*ret\.?$/i, '');
+        r.cells[5] = { html: esc(sc) + '<span title="Match ended by retirement" style="margin-left:6px;font-style:italic;color:' + STY_C.muted + ';">ret.</span>',
+          style: r.cells[5].style };
+      }
+      return r;
+    };
+    return { name: d.name, code: d.code, tileRing: true, lineNormal: true,
+      meta: recordText(d.w, d.l) + (d.thin ? '' : ' ' + MIDDOT + ' ' + Math.round(d.pct) + '%') + ' ' + MIDDOT + ' ' + nm(d.n) + ' ' + MIDDOT + ' ' + esc(scope),
+      tiles: tiles, cols: FB_LIST_COLS, head: fbMatchHead(), rows: all.map(rowOf) };
   };
 
   function renderStylesModal(p) {
@@ -14294,104 +15090,6 @@
       '</div>';
   }
 
-  /**
-   * The heatmap pop-up, built to the reference's sheet (760, --card + --edge-10,
-   * radius 14, pad 22/24/24, --shadow-modal):
-   *   header  caps eyebrow "All surfaces · last 24 months · N service games",
-   *           title 18/800, sub "C. Alcaraz · how often he held serve in each game
-   *           pair, overall and by set"; right: Hold | Break + close
-   *   strip   Hold rate · all / Best pair / Weakest pair
-   *   grid    Game pair · All sets · Set 1–5
-   * PARKED (founder Q6): our surface filter (All / Hard / Clay / Grass) has no home
-   * in the reference. It stays, in the same darker-track chrome, under Hold | Break.
-   * The old legend footnote is removed (reference has none); the 85/70 threshold
-   * copy went with the absolute band it described.
-   */
-  function renderHeatSheet(p) {
-    if (!state.heat) return '';
-    var E = hbEngine();
-    var HB = hbStore();
-    var mode = state.hbMode === 'break' ? 'break' : 'hold';
-    var surf = state.hbSurf || 'all';
-    var sn = shortName(p);
-    var model = null;
-
-    var body;
-    if (!E || !HB) {
-      body = '<div style="border:1px dashed var(--edge-6);border-radius:10px;padding:26px;' +
-        'text-align:center;font-size:13px;color:' + DASH_COLOUR + ';">Hold/break data is not loaded.</div>';
-    } else {
-      var cov = hbCoverage(p);
-      if (!cov) {
-        // Ruling 7: a player outside the rollup has NO per-game data. Say it in
-        // words — sixty dashes read as a rendering fault, not as an absence.
-        var rosterN = (HB.meta && HB.meta.players) || null;
-        var winN = (HB.meta && HB.meta.windowMonths) || null;
-        body = '<div style="border:1px dashed var(--edge-6);border-radius:10px;padding:26px;' +
-          'text-align:center;font-size:13px;color:' + DASH_COLOUR + ';line-height:1.6;">' +
-          esc(sn) + ' has no point-by-point data on record, so holds and breaks by game cannot be shown.' +
-          (rosterN && winN ? '<br>The rollup covers ' + rosterN + ' players over the last ' +
-            winN + ' months.' : '') + '</div>';
-      } else {
-        model = E.heatFor(HB, p.key, mode === 'break' ? 'BREAK' : 'HOLD', HB_BEST_OF, surf);
-        body = hbStripHtml(model, mode) + hbGridHtml(model, mode);
-      }
-    }
-
-    // The eyebrow reads the LIVE filter, the shard's own window and the games the
-    // grid actually rests on (Σ n of the six pairs' all-sets fractions).
-    var scopeSurf = surf === 'all' ? 'All surfaces'
-      : (surf.charAt(0).toUpperCase() + surf.slice(1));
-    var win = (HB && HB.meta && HB.meta.windowMonths) || null;
-    var games = model ? hbStripModel(model).n : null;
-    // The parse coverage the old footnote stated (matches reached, service games,
-    // span), kept on the eyebrow's tooltip: the reference has no footnote, and
-    // the count — never the career total — must stay reachable.
-    var cv = E && HB ? hbCoverage(p) : null;
-    var covTip = cv ? 'Parsed from ' + cv.matches + ' of ' + sn + '’s matches ' + MIDDOT + ' ' + cv.svcGames +
-      ' service games' + (cv.from && cv.to ? ' ' + MIDDOT + ' ' + cv.from + ' ' + ENDASH + ' ' + cv.to : '') : '';
-    var eyebrow = scopeSurf + (win ? ' ' + MIDDOT + ' last ' + win + ' months' : '') +
-      (games ? ' ' + MIDDOT + ' ' + games.toLocaleString('en-US') + ' ' + (mode === 'break' ? 'return' : 'service') + ' games' : '');
-
-    return '' +
-      '<div class="pp2-sheet" data-pp2="heat-scrim" style="position:fixed;inset:0 0 0 var(--sf-side, 0px);z-index:80;' +
-        'background:var(--backdrop); backdrop-filter:blur(3px);display:flex;align-items:flex-start;justify-content:center;' +
-        'padding:40px 24px;overflow-y:auto;">' +
-        '<div style="position:relative;width:100%;max-width:760px;background:var(--card);' +
-          'border:1px solid var(--edge-10);border-radius:14px;padding:22px 24px 24px;box-shadow:var(--shadow-modal);' +
-          'display:flex;flex-direction:column;gap:16px;">' +
-
-          '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;">' +
-            '<div style="display:flex;flex-direction:column;gap:6px;min-width:0;">' +
-              '<span data-hb="eyebrow"' + (covTip ? ' title="' + esc(covTip) + '"' : '') + ' style="font-family:var(--font-words);font-size:10.5px;font-weight:700;' +
-                'letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);">' + esc(eyebrow) + '</span>' +
-              '<span style="font-size:18px;font-weight:800;letter-spacing:-0.015em;color:var(--text);">' +
-                'Hold / break heatmap</span>' +
-              '<span style="font-size:12.5px;color:var(--text-label);">' + esc(p.name || sn) + ' ' + MIDDOT +
-                ' how often he ' + (mode === 'break' ? 'broke serve' : 'held serve') +
-                ' in each game pair, overall and by set</span>' +
-            '</div>' +
-            '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;flex:none;">' +
-              '<div style="display:flex;align-items:center;gap:12px;">' +
-                hbSegHtml('hb-mode', HB_MODES, mode) +
-                '<button type="button" data-pp2="heat-close" aria-label="Close" ' +
-                  'style="background:var(--selected);border:1.25px solid var(--line);' +
-                  'border-radius:8px;width:30px;height:30px;color:var(--text-label);font-size:15px;line-height:1;' +
-                  'cursor:pointer;flex:none;">' + TIMES + '</button>' +
-              '</div>' +
-              // Founder Q6 (TEN-384): Hold | Break only. The surface filter's code
-              // path (state.hbSurf, the 'hb-surf' handler, HB_SURFACES) is kept;
-              // the control is simply not rendered while HB_SHOW_SURF is off.
-              (HB_SHOW_SURF ? hbSegHtml('hb-surf', HB_SURFACES, surf) : '') +
-            '</div>' +
-          '</div>' +
-
-          body +
-        '</div>' +
-      '</div>';
-  }
-
-
   // ───────────────────────────────────────────────────────────────────────────
   // BUILD ITEM 2 · heatmap launcher + overlay
   //
@@ -14580,33 +15278,45 @@
     return rec && rec.rows ? rec : null;
   }
 
+  // Per-set outcomes for one match: the set rows it is ELIGIBLE for, each with whether it happened. One predicate for
+  // the counts (sitSetCounts, the Live trading v4 table) and the situation record box's match list, so a list can never
+  // disagree with its row. Returns null for a match that does not count (no sets, walkover). `bo5` overrides the
+  // best-of-five read when the caller knows it (v4: the career-history row's own event).
+  function sitSetEvents(m) {
+    var sets = m && m.sets;
+    if (!Array.isArray(sets) || !sets.length) return null;
+    if (m.walkover) return null;                      // no play, no set to win
+    function tookSet(i) {
+      var s = sets[i];
+      if (!s || s.p == null || s.o == null) return null;
+      if (s.p === s.o) return null;
+      return s.p > s.o;
+    }
+    var ev = [];
+    var s1 = tookSet(0), s2 = tookSet(1), s3 = tookSet(2);
+    if (s1 !== null) ev.push(['winSet1', s1]);
+    if (s2 !== null) ev.push(['winSet2', s2]);
+    if (s3 !== null) ev.push(['winSet3', s3]);
+    if (s1 === true) ev.push(['wonS1WonMatch', !!m.won]);
+    if (s1 === false && s2 !== null) ev.push(['lostS1WonS2', s2]);
+    var bo5 = m.bo5 != null ? !!m.bo5 : (sets.length >= 4 || SIT_SLAM.test(String(m.tournament || '').trim()));
+    if (s1 === true && !bo5) ev.push(['wonS1Won20', !!m.won && sets.length === 2]);
+    return ev;
+  }
   // Per-set outcomes for one player, counted into the six set rows.
   function sitSetCounts(p) {
-    var ms = (p && p.recentForm && p.recentForm.matches) || [];
+    return sitSetCountsOf((p && p.recentForm && p.recentForm.matches) || []);
+  }
+  function sitSetCountsOf(ms) {
     var rows = {}, n = 0;
-    function add(id, won) {
-      var r = rows[id] || (rows[id] = { w: 0, l: 0 });
-      if (won) r.w++; else r.l++;
-    }
     ms.forEach(function (m) {
-      var sets = m && m.sets;
-      if (!Array.isArray(sets) || !sets.length) return;
-      if (m.walkover) return;                       // no play, no set to win
+      var ev = sitSetEvents(m);
+      if (!ev) return;
       n++;
-      function tookSet(i) {
-        var s = sets[i];
-        if (!s || s.p == null || s.o == null) return null;
-        if (s.p === s.o) return null;
-        return s.p > s.o;
-      }
-      var s1 = tookSet(0), s2 = tookSet(1), s3 = tookSet(2);
-      if (s1 !== null) add('winSet1', s1);
-      if (s2 !== null) add('winSet2', s2);
-      if (s3 !== null) add('winSet3', s3);
-      if (s1 === true) add('wonS1WonMatch', !!m.won);
-      if (s1 === false && s2 !== null) add('lostS1WonS2', s2);
-      var bo5 = sets.length >= 4 || SIT_SLAM.test(String(m.tournament || '').trim());
-      if (s1 === true && !bo5) add('wonS1Won20', !!m.won && sets.length === 2);
+      ev.forEach(function (e) {
+        var r = rows[e[0]] || (rows[e[0]] = { w: 0, l: 0 });
+        if (e[1]) r.w++; else r.l++;
+      });
     });
     return { n: n, rows: rows };
   }
@@ -14649,160 +15359,606 @@
     return out;
   }
 
-  // One row, painted to the reference (TEN-384): label Hanken 13/600 white with a
-  // 9.5/700 caps SMALL-SAMPLE slot under it; Record Plex 12 label; Rate Plex 14/700
-  // white; Tour Plex 12 label; Vs tour Plex 12.5/600 signed; 8px rows on --line.
-  // The sample ladder is unchanged: n<5 shows the raw record and dashes the rate
-  // (slot "n < 5"); 5-9 greys the rate and marks "small sample"; a missing tour
-  // figure dashes BOTH tour columns, never a zero and never a blank.
-  function sitRowHtml(label, rec, tourPct) {
-    var w = rec ? rec.w : 0, l = rec ? rec.l : 0, n = w + l;
-    var hard = n < 5, soft = n >= 5 && n < 10;
-    var rate = n ? (w / n) * 100 : null;
-    var r1 = function (v) { return Math.round(v * 10) / 10; };
-    var vs = (!hard && rate != null && tourPct != null) ? rate - tourPct : null;
-    var vsR = vs == null ? null : r1(vs);
-    // fx3 (founder D11): the small-sample mark sits UNDER the rate, not in the label's slot; the slot keeps
-    // "n < 5" (and stays in the markup, empty, as before). A 5–9 row's cells stretch so its
-    // figures share the label's first line and the mark takes the second.
-    var slot = hard && n ? 'n < 5' : '';
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Profile v4 (handoff 2026-11-14, CHANGES §9) · LIVE TRADING
+  // Reference: Player Stat Boxes.dc.html `modal.isProfile` + `liveTrading()` (design study: Live Trading Fixes
+  // Mockup v3a). Drawer 1080. Band (Window · Surface · Filters) → three tiles on the drawer ground (Strongest spot ·
+  // Weakest spot · Hold / break heatmap) → card "Record by situation" (group rail, one head line, Record "45 of 53",
+  // Vs his norm / Vs tour). Strongest / Weakest open the situation record box; the heatmap tile opens the heatmap.
+  //
+  // DATA — what each figure rests on (nothing estimated; a figure the scope cannot honour is a dash):
+  //  · SET rows (Set outcomes, the three set-score rows of After set one): career-history (calSpine, the profile's
+  //    dated career spine) inside the Window / Surface / Filters scope, counted by the SAME per-match predicate as
+  //    before (sitSetEvents). v3 read recentForm (this season only), which no Window could honour.
+  //  · POINT-BY-POINT rows (Break of serve, Serving for the set, "Lost set 1, first break in set 2"): situational.json,
+  //    per-player totals over the last 24 months, all surfaces, no per-match list. They are honoured ONLY at Last 24
+  //    months · All surfaces · no filter; any other scope dashes them (it is not their population). A player the store
+  //    does not hold has no such rows (not a dash: not a row), as before.
+  //  · Vs tour: set rows = sitTour() (the roster's pooled set rows, ruling 2); pbp rows = situational.json `tour`.
+  //  · Vs his norm: set-outcome rows = his set win rate over the same in-scope matches; hold / break rows = his hold,
+  //    broken (100 − hold) or break rate from holdbreak.json (24 months, the surface node). Rows with no natural norm
+  //    (Get the first break, Broken then break back, every After set one row) are a dash (CHANGES §9 CONFIRM).
+  //  · Heatmap: holdbreak.json, last 24 months, nodes all / clay / grass. Honoured at Last 24 months with no filter on
+  //    All surfaces, Clay or Grass; Hard (the page carves Indoor out, the store's hard node does not) and Indoor dash.
+  var LT_WIN = [['w52', 'Last 52 weeks'], ['m24', 'Last 24 months'], ['career', 'Career']];
+  var LT_SURF = [['all', 'All surfaces'], ['hard', 'Hard'], ['clay', 'Clay'], ['grass', 'Grass'], ['indoor', 'Indoor']];
+  var LT_FM_KEYS = ['ltRole', 'ltFmt', 'ltLvl', 'ltArch'];
+  var LT_LVL = [['all', 'All'], ['gs', 'Grand Slams'], ['m1000', 'Masters 1000'], ['500', 'ATP 500'], ['250', 'ATP 250']];
+  // [rowId, norm key | null, { inv: lower is better, hb: hold / break row (bold = vs his norm), note }]
+  var LT_ROW = {
+    winSet1: ['sets', {}], winSet2: ['sets', {}], winSet3: ['sets', {}],
+    brokenFirstSvc: ['broken', { inv: 1, hb: 1 }], firstBreak: [null, {}],
+    brokenBack: ['broken', { inv: 1, hb: 1 }], breakBack: [null, {}],
+    wonS1WonMatch: [null, {}], lostS1WonS2: [null, {}], wonS1Won20: [null, { note: 'Best of 3 only' }],
+    lostS1FirstBreakS2: [null, {}],
+    holdWinSet: ['hold', { hb: 1 }], holdStaySet: ['hold', { hb: 1 }], breakOppServing: ['brk', { hb: 1 }]
+  };
+  var LT_GREY50 = 'color-mix(in srgb, var(--text-label) 50%, transparent)';
+  var LT_CAPS = 'font-family:var(--font-words);font-size:10.5px;font-weight:700;letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);';
+  var LT_MONO = "font-family:'IBM Plex Mono',monospace;";
+  var LT_X14 = '<svg width="14" height="14" viewBox="0 0 20 20" fill="none" style="pointer-events:none;"><path d="M5 5l10 10M15 5L5 15" ' +
+    'stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path></svg>';
+  var LT_STYLE = '<style>' +
+    '.pp2-lttile{transition:border-color .15s,transform .15s;}' +
+    '.pp2-lttile:hover{border-color:color-mix(in srgb, var(--text) 22%, transparent)!important;transform:translateY(-1px);}' +
+    '.pp2-ltx:hover{color:var(--text)!important;border-color:var(--pp-x-edge-20)!important;}' +
+    '.pp2-ltpill:hover{border-color:color-mix(in srgb, var(--text) 30%, transparent)!important;}' +
+    '.pp2-ltdone:hover,.pp2-ltchip:hover{border-color:color-mix(in srgb, var(--text) 40%, transparent)!important;}' +
+    '.pp2-ltclear:hover{color:var(--text)!important;}' +
+    '</style>';
 
-    var cell = function (txt, colour, size, weight, markN) {
-      return '<div style="text-align:right;font-family:\'IBM Plex Mono\',monospace;' +
-        // nowrap (shard r2): the Record cell is a W–L, and an en dash is a line-break opportunity.
-        'font-size:' + size + ';color:' + colour + ';padding:8px 0;white-space:nowrap;' + SIT_CELLBD +
-        (soft ? 'align-self:stretch;' : '') +
-        (weight ? 'font-weight:' + weight + ';' : '') + '">' +
-        (markN ? rateOverMark(esc(txt), markN) : esc(txt)) + '</div>';
-    };
-
-    return '' +
-      '<div style="display:grid;' + SIT_TRACKS + 'align-items:center;">' +
-        // 19px left indent hangs each label under the group header's chevron.
-        '<div style="display:flex;flex-direction:column;gap:2px;min-width:0;' +
-          'padding:8px 4px 8px 19px;' + SIT_CELLBD + (soft ? 'align-self:stretch;' : '') + '">' +
-          '<span style="font-size:13px;font-weight:600;color:' + (hard ? SIT_DIM : 'var(--text)') + ';' +
-            'overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(label) + '</span>' +
-          // The slot is always present (empty when the sample is full), as in the
-          // reference, so every row keeps the same 2px gap and height.
-          '<span style="font-family:var(--font-words);font-size:9.5px;font-weight:700;' +
-            'line-height:1.2;letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);' +
-            'white-space:nowrap;">' + esc(slot) + '</span>' +
-        '</div>' +
-        cell(n ? w + ENDASH + l : DASH, SIT_MUT, '12px') +
-        cell(hard || rate == null ? DASH : rate.toFixed(1) + '%',
-          hard ? SIT_DIM : (soft ? SIT_MUT : SIT_BRIGHT), '14px', hard ? 400 : 700, soft ? n : 0) +
-        cell(tourPct == null ? DASH : Math.round(tourPct) + '%', SIT_DIM, '12px') +
-        cell(vsR == null ? DASH
-          : (vsR > 0 ? '+' : vsR < 0 ? MINUS : '') + Math.abs(vsR).toFixed(1) + 'pp',
-          vsR == null ? SIT_DIM : (vsR > 0 ? SIT_GREEN : vsR < 0 ? SIT_RED : SIT_MUT),
-          '12.5px', 600) +
-      '</div>';
+  function ltState() {
+    return { win: state.ltWin || 'm24', surf: state.ltSurf || 'all', role: state.ltRole || 'all', fmt: state.ltFmt || 'all',
+      lvl: state.ltLvl || 'all', arch: state.ltArch || 'all' };
   }
-
-  // ONE head row for the whole table. TEN-384: the reference names the table in
-  // the head row's first cell ("Situational · set-by-set data") instead of a 20px
-  // title above it. `note` (the former footnote, the founder's wording verbatim:
-  // what population the rows rest on and who "tour" is) rides on that cell as a
-  // tooltip — the reference has no footnote, and the caveat must stay reachable.
-  function sitHeadHtml(note) {
-    var h = function (t) {
-      return '<div style="text-align:right;' + SIT_EYEBROW + '">' + t + '</div>';
-    };
-    return '<div style="display:grid;' + SIT_TRACKS + 'align-items:flex-end;' +
-      'padding:0 4px 8px;border-bottom:1px solid var(--line);margin-top:4px;">' +
-      // profile v2: the export's inline (?) prof1 after the caps label; the coverage note rides in it
-      '<div data-sit="head"' + (note ? ' title="' + esc(note) + '"' : '') + ' style="' + SIT_EYEBROW + 'display:inline-flex;align-items:center;gap:8px;position:relative;">' +
-        '<span>Situational ' + MIDDOT + ' set-by-set data</span>' +
-        '<span style="position:relative;display:inline-flex;z-index:3;text-transform:none;letter-spacing:0;">' +
-          infoIcon('prof1', { width: 360, what: 'How his matches go from a given situation.', notes: note ? [note] : [], defs: [
-            ['Situation', 'A match state, such as after winning the first set or from a set down.'],
-            ['Record', 'Wins and losses from that situation.'],
-            ['Rate', 'Wins divided by matches from that situation.'],
-            ['Tour', 'The same rate across all rated players.'],
-            ['Data', 'Only matches with set-by-set data count here, not the full career.']] }) + '</span></div>' +
-      h('Record') + h('Rate') + h('Tour') + h('Vs tour') + '</div>';
+  function ltFiltersOn(S) { return S.role !== 'all' || S.fmt !== 'all' || S.lvl !== 'all' || S.arch !== 'all'; }
+  function ltBo5(r) {
+    var n = r.setGames ? r.setGames.length : 0;
+    return n >= 4 || (!r.qual && SIT_SLAM.test(String(r.event || '').trim()));
   }
-
-  function renderSituational(p) {
-    var set = sitSetCounts(p);
-    var pbp = sitPbpFor(p);
-    var tour = sitTour();
-    var open = state.sitOpen || {};
-
-    var groups = SIT_GROUPS.map(function (g) {
-      var title = g[0];
-      // A row is only present when its SOURCE is held for this player. A row
-      // whose source is absent is not a dash — it is not a row.
-      var rows = g[1].filter(function (r) {
-        return r[2] === 'set' ? set.n > 0 : !!pbp;
-      });
-      return { title: title, rows: rows };
-    }).filter(function (g) { return g.rows.length > 0; });
-
-    // Nothing at all. Said in words, with no empty table.
-    if (!groups.length) {
-      return '<div style="border:1px dashed var(--edge-6);border-radius:12px;padding:18px;' +
-        'font-size:12.5px;color:' + DASH_COLOUR + ';">' +
-        esc(shortName(p)) + ' has no set-by-set or point-by-point data on record, so in-play ' +
-        'states cannot be shown.</div>';
+  function ltLvlOf(r) {
+    var l = String(r.level || '');
+    if (/grand slam/i.test(l)) return 'gs';
+    if (/masters|1000/i.test(l)) return 'm1000';
+    if (/500/.test(l)) return '500';
+    if (/250/.test(l)) return '250';
+    return null;
+  }
+  // Favourite = the shorter of the two closing prices (founder 2026-11-09), on the row's own close: the Market edge basis
+  // ('close') or the site's one join ('closes'); a bet365 pre-match capture ('prematch') is display only, never a role.
+  function ltRoleOf(r) {
+    if (r.priceBasis !== 'close' && r.priceBasis !== 'closes') return null;
+    if (r.price == null || r.oppPrice == null) return null;
+    if (r.price !== r.oppPrice) return r.price < r.oppPrice ? 'fav' : 'dog';
+    return r.role === 'fav' || r.role === 'favourite' ? 'fav' : r.role ? 'dog' : null;
+  }
+  function ltSurfOk(r, surf) {
+    if (surf === 'all') return true;
+    if (surf === 'indoor') return r.seasonIndoor === true;
+    if (r.seasonIndoor === true) return false;
+    return r.surface === surf;
+  }
+  /** The window + surface scope of the career spine (rows with set scores only: the set rows' population). */
+  function ltScoped(p, S) {
+    var cut = S.win === 'w52' ? mkCut('l52') : S.win === 'm24' ? mkCut('l24') : null;
+    return calSpine(p).filter(function (r) {
+      if (!r.setGames || !r.setGames.length || r.notCounted) return false;
+      if (cut && String(r.date) < cut) return false;
+      return ltSurfOk(r, S.surf);
+    });
+  }
+  function ltPass(r, S, skip) {
+    if (skip !== 'role' && S.role !== 'all' && ltRoleOf(r) !== S.role) return false;
+    if (skip !== 'fmt' && S.fmt !== 'all' && (ltBo5(r) ? 'bo5' : 'bo3') !== S.fmt) return false;
+    if (skip !== 'lvl' && S.lvl !== 'all' && ltLvlOf(r) !== S.lvl) return false;
+    if (skip !== 'arch' && S.arch !== 'all' && styleArchetypeOf(mkOppName(r.opp)) !== S.arch) return false;
+    return true;
+  }
+  function ltEvents(r) {
+    return sitSetEvents({ sets: r.setGames, won: r.won, walkover: false, bo5: ltBo5(r) });
+  }
+  function ltPct1(v) { return v == null ? DASH : v.toFixed(1) + '%'; }
+  function ltBaseTxt(v) { return v == null ? '' : (Math.round(v * 10) / 10) + '%'; }
+  function ltPP(v) { var r = Math.round(v * 10) / 10; return (r > 0 ? '+' : r < 0 ? MINUS : '') + Math.abs(r).toFixed(1) + 'pp'; }
+  /** His hold / break over the heatmap store at a surface node: { hold: {w,n,pct}, brk: {w,n,pct} } or null. */
+  function ltHoldBreak(p, node) {
+    var E = hbEngine(), HB = hbStore();
+    if (!E || !HB || !hbCoverage(p)) return null;
+    function one(metric) {
+      var st = hbStripModel(E.heatFor(HB, p.key, metric, HB_BEST_OF, node));
+      return st.n ? { w: st.won, n: st.n, pct: 100 * st.won / st.n, model: st } : null;
     }
-
-    var body = groups.map(function (g) {
-      var on = open[g.title] == null ? true : !!open[g.title];
-      var rows = on ? g.rows.map(function (r) {
-        var id = r[0], label = r[1], src = r[2];
-        var rec = src === 'set' ? set.rows[id] : (pbp.rows[id] || null);
-        return sitRowHtml(label, rec, tour.rows[id] == null ? null : tour.rows[id]);
-      }).join('') : '';
-      return '' +
-        '<div style="display:flex;flex-direction:column;margin-top:-14px;">' +
-          '<button type="button" data-pp2="sit-toggle" data-v="' + esc(g.title) + '" ' +
-            'aria-expanded="' + (on ? 'true' : 'false') + '" ' +
-            'style="display:flex;align-items:center;gap:9px;width:100%;background:none;' +
-            'border:0;border-top:1px solid var(--line);padding:10px 4px 6px;' +
-            'cursor:pointer;text-align:left;' + SIT_EYEBROW + 'font-weight:800;">' +
-            '<svg width="10" height="10" viewBox="0 0 10 10" fill="none" style="flex:none;' +
-              'transform:rotate(' + (on ? '90deg' : '0deg') + ');transition:transform .14s ease;">' +
-              '<path d="M3 1l4 4-4 4" stroke="var(--text-label)" stroke-width="1.6" ' +
-              'stroke-linecap="round" stroke-linejoin="round"/></svg>' +
-            esc(g.title) +
-          '</button>' +
-          (on ? rows : '') +
-        '</div>';
-    }).join('');
-
-    // The former footnote, the founder's wording verbatim (rows rest on the
-    // matches with set-by-set data, not the career figure; counted per match;
-    // tour = the players we hold, read at render time). TEN-384 removes the
-    // visible footnote (the reference has none); it rides on the head as a title.
-    var srcBits = [];
-    if (set.n) srcBits.push(set.n + ' matches with set-by-set data');
-    if (pbp && pbp.matches != null) srcBits.push(pbp.matches + ' with point-by-point data');
-    var note = 'These rows rest on the ' + srcBits.join(' and ') + ' we hold for ' +
-      shortName(p) + ', not the full career figure shown in Career record. ' +
-      'Situations are counted per match, so a match can appear in several rows. ' +
-      (tour.players
-        ? 'Tour figures are the average of the ' + tour.players + ' players we hold set-by-set ' +
-          'data for' + (tour.pbpPlayers ? ' (' + tour.pbpPlayers + ' for the point-by-point rows)' : '') +
-          ', not the ATP field. '
-        : '') +
-      'Fewer than 5 matches shows the record only; 5' + ENDASH + '9 is marked a small sample. ' +
-      'Nothing here is estimated.';
-
-    // Each group pulls itself up by the parent's 14px gap (the reference's
-    // margin:-14px), so the head row and the first group header sit flush.
-    return sitHeadHtml(note) + body;
+    return { hold: one('HOLD'), brk: one('BREAK') };
+  }
+  function ltHeatNode(S) {
+    if (S.win !== 'm24' || ltFiltersOn(S)) return null;
+    return S.surf === 'all' || S.surf === 'clay' || S.surf === 'grass' ? S.surf : null;
   }
 
-  // The Live trading modal body: the heatmap launcher, then the Situational
-  // table. The grid itself is a click away in the layer above.
+  /** The whole drawer's model: rows, groups, tiles, counts. Pure over the stores + state. */
+  function ltModel(p) {
+    var S = ltState();
+    var settled = careerHistorySettled(p.key);
+    var scoped = settled ? ltScoped(p, S) : [];
+    var rows = scoped.filter(function (r) { return ltPass(r, S); });
+    var set = sitSetCountsOf(rows.map(function (r) { return { sets: r.setGames, won: r.won, bo5: ltBo5(r) }; }));
+    var sw = 0, sp = 0;
+    rows.forEach(function (r) {
+      r.setGames.forEach(function (s) { if (s.p == null || s.o == null || s.p === s.o) return; sp++; if (s.p > s.o) sw++; });
+    });
+    var pbp = sitPbpFor(p);
+    var pbpOk = !!pbp && S.win === 'm24' && S.surf === 'all' && !ltFiltersOn(S);
+    var hbNode = ltHeatNode(S);
+    // His hold / break norm: the pbp rows are all-surfaces, so the all-surfaces node is their norm.
+    var hb = pbpOk ? ltHoldBreak(p, 'all') : null;
+    var NORM = {
+      sets: sp ? { word: 'sets won', v: 100 * sw / sp } : null,
+      hold: hb && hb.hold ? { word: 'hold', v: hb.hold.pct } : null,
+      broken: hb && hb.hold ? { word: 'broken', v: 100 - hb.hold.pct } : null,
+      brk: hb && hb.brk ? { word: 'break', v: hb.brk.pct } : null
+    };
+    var tour = sitTour();
+    var cand = [];
+    function gapCell(gap, inv, lead, base, thin, tip) {
+      if (gap == null) return { txt: DASH, base: '', color: LT_GREY50, size: '12.5px', weight: 400, edge: null, tip: tip };
+      var r = Math.round(gap * 10) / 10, e = inv ? -r : r;
+      return { txt: ltPP(gap), base: base, color: thin || e === 0 ? 'var(--text-label)' : e > 0 ? 'var(--pos)' : 'var(--neg)',
+        size: lead ? '13.5px' : '12px', weight: lead ? 700 : 400, edge: e, tip: tip };
+    }
+    // A row whose SOURCE is absent for this player is not a row (TEN-206 item 3): set rows need set scores somewhere in
+    // his career-history (until it has answered they stay, dashed: loading claims nothing); pbp rows need his pbp record.
+    var hasSet = !settled || calSpine(p).some(function (r) { return r.setGames && r.setGames.length && !r.notCounted; });
+    var groups = SIT_GROUPS.map(function (g) {
+      var out = g[1].filter(function (r) { return r[2] === 'set' ? hasSet : !!pbp; }).map(function (r) {
+        var id = r[0], label = r[1], src = r[2], spec = LT_ROW[id] || [null, {}], f = spec[1];
+        var held = src === 'set' ? settled : pbpOk;
+        var rec = !held ? null : src === 'set' ? (set.rows[id] || { w: 0, l: 0 }) : (pbp.rows[id] || null);
+        var w = rec ? rec.w : 0, n = rec ? rec.w + rec.l : 0;
+        var rate = n ? 100 * w / n : null, hard = n < 5, thin = n < 10;
+        var nm = spec[0] ? NORM[spec[0]] : null;
+        var tv = tour.rows[id] == null ? null : tour.rows[id];
+        var why = src === 'pbp' && !pbpOk ? 'Point-by-point rows are held for the last 24 months, all surfaces, with no filter' : null;
+        var N = gapCell(!held || hard || !nm ? null : rate - nm.v, f.inv, !!f.hb, nm ? ltBaseTxt(nm.v) : '', thin,
+          why || (nm ? 'His ' + nm.word + ' rate: ' + ltBaseTxt(nm.v) : spec[0] ? 'No norm held for this scope' : 'No norm defined for this row'));
+        var T = gapCell(!held || hard || tv == null ? null : rate - tv, f.inv, !f.hb, tv == null ? '' : ltBaseTxt(tv), thin,
+          why || (tv == null ? 'No tour rate held for this row' : 'Tour rate: ' + ltBaseTxt(tv)));
+        var key = f.hb ? N : T;
+        var row = { id: id, label: label, src: src, note: f.note || '', inv: !!f.inv, hb: !!f.hb, held: held, w: w, n: n,
+          rate: rate, thin: thin, why: why,
+          rec: held && rec && n ? w + ' of ' + n.toLocaleString('en-US') : DASH,
+          rateTxt: !held || hard || rate == null ? DASH : rate.toFixed(1) + '%',
+          rateColor: !held || thin ? 'var(--text-label)' : 'var(--text)', N: N, T: T, key: key,
+          base: f.hb ? (nm ? nm.v : null) : tv, against: f.hb ? 'vs his norm' : 'vs tour',
+          baseTxt: (f.hb ? 'norm ' : 'tour ') + key.base };
+        if (held && !thin && key.edge != null) cand.push(row);
+        return row;
+      });
+      return { title: g[0], rows: out };
+    }).filter(function (g) { return g.rows.length; });
+    var srt = cand.slice().sort(function (a, b) { return b.key.edge - a.key.edge || b.n - a.n; });
+    var heat = hbNode ? ltHoldBreak(p, hbNode) : null;
+    var nAll = scoped.length, nIn = rows.length;
+    return { S: S, settled: settled, scoped: scoped, rows: rows, set: set, pbp: pbp, pbpOk: pbpOk, groups: groups,
+      best: srt.length > 1 ? srt[0] : null, worst: srt.length > 1 ? srt[srt.length - 1] : null,
+      hbNode: hbNode, heat: heat, cov: hbCoverage(p), nAll: nAll, nIn: nIn, filtered: ltFiltersOn(S) };
+  }
+  function ltScopeTxt(S) {
+    return LT_WIN.filter(function (t) { return t[0] === S.win; })[0][1] + ' ' + MIDDOT + ' ' +
+      LT_SURF.filter(function (t) { return t[0] === S.surf; })[0][1];
+  }
+  /** The sample beside the drawer title: "83 matches · 2,196 service games"; "n of N matches" when filtered. */
+  function ltTitleCount(p) {
+    var M = ltModel(p);
+    if (!M.settled) return '';
+    if (M.filtered) return M.nIn + ' of ' + M.nAll + ' matches';
+    var sg = M.heat && M.heat.hold ? M.heat.hold.n : null;
+    return M.nAll + ' matches' + (sg ? ' ' + MIDDOT + ' ' + sg.toLocaleString('en-US') + ' service games' : '');
+  }
+
+  // ── the reusable v4 filter bar (§9 band + the 620px Filters popover + the Applied line) ─────────────────
+  // opts = { id, tabs: [{ hook, items: [[v, label]], cur }], groups: [{ key, title, cur, options: [[v, label]],
+  //          count(v) }], width } — tab groups are split by the 1 x 20 10% separator; `groups` feed the popover.
+  // The popover reuses the shared fm-toggle / fm-set / fm-reset / fm-close hooks (FM_KEYS[id]); Done = fm-close.
+  function pp4PillHtml(hook, v, label, on, extra) {
+    return '<span data-pp2="' + esc(hook) + '" data-v="' + esc(v) + '"' + (extra || '') + ' role="button" aria-pressed="' + (on ? 'true' : 'false') +
+      '" style="cursor:pointer;padding:6px 13px;border-radius:8px;font-size:11.5px;font-weight:' + (on ? 700 : 600) + ';' +
+      'color:' + (on ? 'var(--text)' : 'var(--text-label)') + ';background:' + (on ? 'var(--selected)' : 'transparent') + ';' +
+      'border:1px solid ' + (on ? 'var(--edge-16)' : EDGE_8) + ';white-space:nowrap;">' + esc(label) + '</span>';
+  }
+  function pp4FilterBarHtml(o) {
+    var active = (o.groups || []).filter(function (g) { return g.cur !== 'all'; });
+    var open = state.fmOpen === o.id, on = active.length > 0;
+    var tabs = (o.tabs || []).map(function (t) {
+      return '<span style="display:flex;gap:6px;">' + t.items.map(function (it) { return pp4PillHtml(t.hook, it[0], it[1], t.cur === it[0]); }).join('') + '</span>';
+    }).join('<span style="width:1px;height:20px;background:var(--edge-10);"></span>');
+    var trig = '<span data-pp2="fm-toggle" data-v="' + esc(o.id) + '" class="pp2-ltpill" style="cursor:pointer;display:inline-flex;align-items:center;gap:8px;' +
+      'padding:6px 13px;border-radius:8px;font-size:11.5px;font-weight:700;white-space:nowrap;color:' + (on ? 'var(--link)' : 'var(--text)') + ';' +
+      'background:' + (on ? 'color-mix(in srgb, var(--link) 10%, transparent)' : 'transparent') + ';' +
+      'border:1px solid ' + (on ? 'color-mix(in srgb, var(--link) 45%, transparent)' : 'var(--edge-16)') + ';">' +
+      '<svg width="12" height="12" viewBox="0 0 12 12" fill="none" style="pointer-events:none;"><path d="M1 3h10M3 6h6M5 9h2" stroke="currentColor" ' +
+      'stroke-width="1.5" stroke-linecap="round"></path></svg><span style="pointer-events:none;">Filters' + (on ? ' ' + MIDDOT + ' ' + active.length : '') + '</span></span>';
+    var pop = '';
+    if (open) {
+      pop = '<div data-pp2="fm-close" style="position:fixed;inset:0;z-index:8;"></div>' +
+        '<div data-pp2="card" data-pp4-pop="' + esc(o.id) + '" style="position:absolute;top:calc(100% + 10px);right:0;z-index:9;width:' + (o.width || 620) + 'px;' +
+          'max-width:calc(100vw - 48px);box-sizing:border-box;background:var(--card);border:1px solid var(--pp-x-edge-12);border-radius:14px;' +
+          'box-shadow:var(--pp-x-shadow-pop);padding:20px 22px;display:flex;flex-direction:column;gap:20px;cursor:default;">' +
+          o.groups.map(function (g) {
+            return '<div style="display:flex;flex-direction:column;gap:10px;"><span style="font-size:10.5px;font-weight:700;letter-spacing:0.10em;' +
+              'text-transform:uppercase;color:var(--text-label);">' + esc(g.title) + '</span><div style="display:flex;flex-wrap:wrap;gap:6px;">' +
+              g.options.map(function (op) {
+                var sel = g.cur === op[0], n = g.count(op[0]);
+                return '<span data-pp2="fm-set" data-g="' + esc(g.key) + '" data-v="' + esc(op[0]) + '" style="cursor:pointer;display:inline-flex;' +
+                  'align-items:baseline;gap:7px;padding:7px 12px;border-radius:8px;font-size:12px;font-weight:' + (sel ? 700 : 600) + ';' +
+                  'color:' + (sel ? 'var(--text)' : 'var(--text-label)') + ';background:' + (sel ? 'var(--selected)' : 'transparent') + ';' +
+                  'border:1px solid ' + (sel ? 'var(--edge-16)' : EDGE_8) + ';white-space:nowrap;"><span style="pointer-events:none;">' + esc(op[1]) +
+                  '</span><span style="pointer-events:none;' + LT_MONO + 'font-size:10.5px;color:var(--text-label);">' + (n == null ? DASH : n) + '</span></span>';
+              }).join('') + '</div></div>';
+          }).join('') +
+          '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding-top:16px;border-top:1px solid ' + EDGE_8 + ';">' +
+            '<span data-pp2="fm-reset" data-v="' + esc(o.id) + '" class="pp2-ltclear" style="cursor:pointer;font-size:12px;font-weight:600;color:var(--text-label);">Clear all</span>' +
+            '<span data-pp2="fm-close" class="pp2-ltdone" style="cursor:pointer;padding:8px 18px;border-radius:9px;background:var(--selected);' +
+              'border:1px solid var(--edge-16);font-size:12.5px;font-weight:700;color:var(--text);">Done</span></div>' +
+        '</div>';
+    }
+    var band = '<div data-pp2-band="pp4" style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:20px 24px;background:var(--card);' +
+      'border:1.25px solid var(--edge-6);border-radius:16px;">' + tabs +
+      '<span style="margin-left:auto;position:relative;display:flex;">' + trig + pop + '</span></div>';
+    var chips = !on ? '' : '<div data-pp4-applied="' + esc(o.id) + '" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:-2px;padding:0 4px;">' +
+      '<span style="font-size:10.5px;font-weight:700;letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);">Applied</span>' +
+      active.map(function (g) {
+        var op = g.options.filter(function (x) { return x[0] === g.cur; })[0];
+        return '<span data-pp2="fm-set" data-g="' + esc(g.key) + '" data-v="all" class="pp2-ltchip" style="cursor:pointer;display:inline-flex;align-items:center;gap:7px;' +
+          'padding:5px 10px;border-radius:8px;font-size:11.5px;font-weight:600;color:var(--text);background:var(--selected);border:1px solid var(--edge-16);">' +
+          '<span style="pointer-events:none;">' + esc(op ? (g.chip ? g.chip(op) : op[1]) : g.cur) + '</span><span style="pointer-events:none;color:var(--text-label);">' + TIMES + '</span></span>';
+      }).join('') +
+      '<span data-pp2="fm-reset" data-v="' + esc(o.id) + '" class="pp2-ltclear" style="cursor:pointer;font-size:11.5px;font-weight:600;color:var(--text-label);margin-left:4px;">Clear all</span>' +
+      '</div>';
+    return band + chips;
+  }
+
+  function ltFilterGroups(p, M) {
+    var S = M.S, base = M.scoped;
+    function cnt(k) {
+      return function (v) {
+        var o = Object.assign({}, S); o[k] = v;
+        return base.filter(function (r) { return ltPass(r, o); }).length;
+      };
+    }
+    return [
+      { key: 'ltRole', title: 'Price role', cur: S.role, options: [['all', 'All'], ['fav', 'As favourite'], ['dog', 'As underdog']], count: cnt('role') },
+      { key: 'ltFmt', title: 'Format', cur: S.fmt, options: [['all', 'All'], ['bo3', 'Best of 3'], ['bo5', 'Best of 5']], count: cnt('fmt') },
+      { key: 'ltLvl', title: 'Level', cur: S.lvl, options: LT_LVL, count: cnt('lvl') },
+      { key: 'ltArch', title: 'Opponent archetype', cur: S.arch, options: [['all', 'All']].concat(STYLE_AXIS.map(function (a) { return [a.label, a.label]; })),
+        count: cnt('arch') }
+    ];
+  }
+
+  // ── tiles ───────────────────────────────────────────────────────────────────
+  var LT_TILE = 'cursor:pointer;display:flex;flex-direction:column;gap:10px;min-width:0;padding:18px 20px;border-radius:14px;' +
+    'background:var(--card);border:1.25px solid var(--edge-6);box-sizing:border-box;';
+  function ltTileHtml(cap, r) {
+    if (!r) {
+      return '<div style="' + LT_TILE + 'cursor:default;">' +
+        '<span style="' + LT_CAPS + '">' + esc(cap) + '</span>' +
+        '<span style="font-size:13px;font-weight:700;color:var(--text-label);">' + DASH + '</span>' +
+        '<span style="font-size:12px;color:var(--text-label);">No situation on 10+ matches in this scope</span></div>';
+    }
+    var picked = state.ltPicked === r.id;
+    return '<div data-pp2="lt-tile" data-v="' + esc(r.id) + '" class="pp2-lttile" style="' + LT_TILE + '">' +
+      '<span style="display:flex;justify-content:space-between;gap:8px;pointer-events:none;"><span style="' + LT_CAPS + '">' + esc(cap) +
+        '</span><span style="font-size:11.5px;font-weight:600;color:var(--text-label);white-space:nowrap;">Matches ›</span></span>' +
+      '<span style="font-size:13px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none;">' + esc(r.label) + '</span>' +
+      '<span style="display:flex;align-items:baseline;gap:10px;pointer-events:none;"><span style="' + LT_MONO + 'font-size:26px;font-weight:700;line-height:1;color:var(--text);">' +
+        esc(r.rate.toFixed(1) + '%') + '</span><span style="' + LT_MONO + 'font-size:12px;font-weight:700;color:' +
+        (r.key.edge > 0 ? 'var(--pos)' : r.key.edge < 0 ? 'var(--neg)' : 'var(--text-label)') + ';white-space:nowrap;">' + esc(r.key.txt) + '</span>' +
+        '<span style="font-size:12px;color:var(--text-label);white-space:nowrap;">' + esc(r.against) + '</span></span>' +
+      '<span style="position:relative;display:block;height:4px;border-radius:2px;background:var(--line);pointer-events:none;">' +
+        '<span data-lt-bar="' + (picked ? 'on' : 'off') + '" style="position:absolute;left:0;top:0;bottom:0;width:' + r.rate.toFixed(1) + '%;border-radius:2px;background:' + pp4Bar(picked) + ';"></span>' +
+        (r.base == null ? '' : '<span style="position:absolute;left:' + Math.max(0, Math.min(100, r.base)).toFixed(1) + '%;top:-3px;bottom:-3px;width:2px;background:var(--text);"></span>') +
+      '</span>' +
+      '<span style="display:flex;justify-content:space-between;gap:8px;' + LT_MONO + 'font-size:11.5px;color:var(--text-label);white-space:nowrap;pointer-events:none;">' +
+        '<span>' + esc(r.w + ' of ' + r.n) + '</span><span>' + esc(r.baseTxt) + '</span></span>' +
+    '</div>';
+  }
+  function ltHeatTileHtml(p, M) {
+    var sn = shortName(p);
+    if (!hbEngine() || !hbStore() || !M.cov) {
+      var why = !hbEngine() || !hbStore() ? 'Hold/break data is not loaded.'
+        : sn + ' has no point-by-point data on record, so holds and breaks by game cannot be shown.';
+      return '<div title="' + esc(why) + '" style="' + LT_TILE + 'cursor:default;">' +
+        '<span style="' + LT_CAPS + '">Hold / break heatmap</span>' +
+        '<span style="font-size:13px;font-weight:700;color:var(--text-label);">No point-by-point data</span>' +
+        '<span style="' + LT_MONO + 'font-size:26px;font-weight:700;line-height:1;color:var(--text-label);">' + DASH + '</span></div>';
+    }
+    var h = M.heat && M.heat.hold, b = M.heat && M.heat.brk, picked = state.ltPicked === 'heat';
+    var pct = h ? h.pct.toFixed(1) + '%' : DASH;
+    return '<div data-pp2="heat" class="pp2-lttile" style="' + LT_TILE + '"' + (h ? '' : ' title="Held for the last 24 months only, on all surfaces, clay or grass, with no other filter"') + '>' +
+      '<span style="display:flex;justify-content:space-between;gap:8px;pointer-events:none;"><span style="' + LT_CAPS + '">Hold / break heatmap</span>' +
+        '<span style="font-size:11.5px;font-weight:600;color:var(--text-label);">Open ›</span></span>' +
+      '<span style="font-size:13px;font-weight:700;color:var(--text);pointer-events:none;">By game pair, set by set</span>' +
+      '<span style="display:flex;align-items:baseline;gap:10px;pointer-events:none;"><span style="' + LT_MONO + 'font-size:26px;font-weight:700;line-height:1;color:' +
+        (h ? 'var(--text)' : 'var(--text-label)') + ';">' + pct + '</span><span style="font-size:12px;color:var(--text-label);">service games held</span></span>' +
+      '<span style="position:relative;display:block;height:4px;border-radius:2px;background:var(--line);pointer-events:none;">' +
+        (h ? '<span data-lt-bar="' + (picked ? 'on' : 'off') + '" style="position:absolute;left:0;top:0;bottom:0;width:' + pct + ';border-radius:2px;background:' + pp4Bar(picked) + ';"></span>' : '') +
+      '</span>' +
+      '<span style="display:flex;justify-content:space-between;gap:8px;' + LT_MONO + 'font-size:11.5px;color:var(--text-label);white-space:nowrap;pointer-events:none;">' +
+        '<span>' + (h ? esc(h.w.toLocaleString('en-US') + ' of ' + h.n.toLocaleString('en-US') + ' games') : DASH) + '</span>' +
+        '<span>' + (b ? 'breaks ' + b.pct.toFixed(1) + '%' : '') + '</span></span>' +
+    '</div>';
+  }
+
+  // ── the card: Record by situation ───────────────────────────────────────────
+  var LT_COLS = 'minmax(0,1fr) 92px 72px 92px 92px';
+  function ltGapHtml(c) {
+    return '<span title="' + esc(c.tip || '') + '" style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;">' +
+      '<span style="' + LT_MONO + 'font-size:' + c.size + ';font-weight:' + c.weight + ';color:' + c.color + ';">' + esc(c.txt) + '</span>' +
+      '<span style="' + LT_MONO + 'font-size:10.5px;color:var(--text-label);white-space:nowrap;">' + esc(c.base) + '</span></span>';
+  }
+  function ltInfoSpec(p, M) {
+    var pbpN = M.pbp ? M.pbp.matches : null;
+    return { width: 400, pad: '14px 16px 16px', gap: 8, what: 'What each record is counted on.', defs: [
+      ['Record', 'Times it happened, out of the times it could have: "45 of 53" = held 45 of the 53 service games where the score came up.'],
+      ['Set outcomes', 'Counted per match with set scores, in the window, surface and filters chosen.'],
+      ['Break of serve', 'Counted per match, per break or per time he was broken, depending on the row, over his last 24 months with point-by-point data' +
+        (pbpN ? ' (' + pbpN + ' matches)' : '') + '.'],
+      ['After set one', 'Counted per match that reached that state.'],
+      ['Serving for the set', 'Counted per service game where the score came up, over the same 24 months.'],
+      ['Vs his norm', 'His rate in the situation minus his own usual rate: sets won for set rows, hold / break for serve rows. Dash = no norm for that row.'],
+      ['Vs tour', 'His rate minus the same rate across the players we hold this data for, not the ATP field.'],
+      ['Colour', 'Green is good for him, red is bad, whatever the sign.']] };
+  }
+  function ltCardHtml(p, M) {
+    var open = state.sitOpen || {};
+    var noteTip = 'These rows rest on the ' + M.set.n + ' matches with set-by-set data' +
+      (M.pbp && M.pbp.matches != null ? ' and ' + M.pbp.matches + ' with point-by-point data' : '') + ' we hold for ' + shortName(p) +
+      ', not the full career figure shown in Career record. Situations are counted per match, so a match can appear in several rows. ' +
+      'Nothing here is estimated.';
+    var head = '<div style="display:grid;grid-template-columns:190px ' + LT_COLS + ';gap:0 20px;align-items:baseline;padding:24px 0 12px;">' +
+      '<span></span>' + ['Situation', 'Record', 'Rate', 'Vs his norm', 'Vs tour'].map(function (h, i) {
+        return '<span style="' + LT_CAPS + 'text-align:' + (i ? 'right' : 'left') + ';">' + h + '</span>';
+      }).join('') + '</div>';
+    var body = M.groups.map(function (g) {
+      var on = open[g.title] == null ? true : !!open[g.title];
+      return '<div style="display:grid;grid-template-columns:190px minmax(0,1fr);gap:0 20px;margin:0 -24px;padding:0 24px;border-top:1px solid var(--edge-10);">' +
+        '<div data-pp2="sit-toggle" data-v="' + esc(g.title) + '" role="button" aria-expanded="' + (on ? 'true' : 'false') + '" ' +
+          'style="cursor:pointer;display:flex;align-items:center;gap:10px;height:54px;align-self:start;">' +
+          '<span style="font-size:15px;font-weight:700;color:var(--text);white-space:nowrap;pointer-events:none;">' + esc(g.title) + '</span>' +
+          '<svg width="10" height="10" viewBox="0 0 10 10" fill="none" style="transform:rotate(' + (on ? '90deg' : '0deg') + ');transition:transform .14s ease;flex:none;pointer-events:none;">' +
+            '<path d="M3 1l4 4-4 4" stroke="var(--text-label)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>' +
+        '<div style="display:flex;flex-direction:column;margin-bottom:-1px;min-width:0;">' +
+        (on ? g.rows.map(function (r) {
+          return '<div data-lt-row="' + esc(r.id) + '" style="display:grid;grid-template-columns:' + LT_COLS + ';gap:0 20px;align-items:center;height:54px;border-bottom:1px solid var(--line);"' +
+            (r.why ? ' title="' + esc(r.why) + '"' : '') + '>' +
+            '<span style="display:flex;align-items:baseline;gap:10px;min-width:0;"><span style="font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' +
+              esc(r.label) + '</span>' + (r.note ? '<span style="font-size:11.5px;color:var(--text-label);white-space:nowrap;">' + esc(r.note) + '</span>' : '') + '</span>' +
+            '<span style="' + LT_MONO + 'font-size:12.5px;color:var(--text-soft);text-align:right;">' + esc(r.rec) + '</span>' +
+            '<span style="' + LT_MONO + 'font-size:14px;font-weight:700;color:' + r.rateColor + ';text-align:right;">' + esc(r.rateTxt) + '</span>' +
+            ltGapHtml(r.N) + ltGapHtml(r.T) + '</div>';
+        }).join('') : '') + '</div></div>';
+    }).join('');
+    return '<div data-lt="card" style="display:flex;flex-direction:column;background:var(--card);border:1.25px solid var(--edge-6);border-radius:16px;overflow:hidden;padding:24px 24px 8px;">' +
+      '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px;"><span style="display:inline-flex;align-items:center;gap:10px;position:relative;">' +
+        '<span data-sit="head" title="' + esc(noteTip) + '" style="font-size:16px;font-weight:800;letter-spacing:-0.01em;color:var(--text);">Record by situation</span>' +
+        infoIcon('lt-sit', ltInfoSpec(p, M), 'About these figures') + '</span></div>' +
+      head + body + '</div>';
+  }
+
+  // ── the situation record box (Strongest / Weakest) ──────────────────────────
+  function ltBoxShell(inner, scrim) {
+    return '<div class="pp2-lt-box" data-pp2="' + scrim + '" style="position:fixed;inset:0 0 0 var(--sf-side, 0px);z-index:70;' +
+      'background:color-mix(in srgb, var(--page) 72%, transparent);display:flex;align-items:flex-start;justify-content:center;padding:40px 24px;' +
+      'overflow-y:auto;box-sizing:border-box;font-family:var(--font-words);line-height:normal;color:var(--text);clip-path:inset(0);">' + inner + '</div>';
+  }
+  var LT_CLOSE = function (hook) {
+    return '<span data-pp2="' + hook + '" role="button" aria-label="Close" class="pp2-ltx" style="flex:none;width:32px;height:32px;border-radius:9px;' +
+      'background:var(--wash-5);border:1.25px solid var(--edge-6);color:var(--text-label);cursor:pointer;display:flex;align-items:center;' +
+      'justify-content:center;box-sizing:border-box;">' + LT_X14 + '</span>';
+  };
+  function ltSpotBoxHtml(p, M) {
+    var id = state.ltBox;
+    if (!id || id === 'heat') return '';
+    var r = null;
+    M.groups.forEach(function (g) { g.rows.forEach(function (x) { if (x.id === id) r = x; }); });
+    if (!r) return '';
+    var S = M.S, f = state.ltSpotF || 'all';
+    function tile(cap, value, sub, color) {
+      return '<div style="background:var(--card);border:1.25px solid var(--edge-6);border-radius:12px;padding:13px 12px;display:flex;flex-direction:column;' +
+        'align-items:center;text-align:center;gap:7px;min-width:0;"><span style="' + LT_CAPS + 'max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' +
+        esc(cap) + '</span><span style="' + LT_MONO + 'font-size:21px;font-weight:700;line-height:1;color:' + (color || 'var(--text)') + ';">' + esc(value) + '</span>' +
+        '<span style="font-size:11.5px;color:var(--text-soft);white-space:nowrap;">' + esc(sub) + '</span></div>';
+    }
+    function edgeCol(c) { return c.edge == null || c.edge === 0 ? 'var(--text-label)' : c.edge > 0 ? 'var(--pos)' : 'var(--neg)'; }
+    var tiles = tile('Record', r.held ? r.w + ' of ' + r.n : DASH, 'times it happened') +
+      tile('Rate', r.rateTxt, r.held ? 'of ' + r.n : '') +
+      tile('Vs his norm', r.N.txt, r.N.base ? 'his norm ' + r.N.base : 'no norm defined', edgeCol(r.N)) +
+      tile('Vs tour', r.T.txt, r.T.base ? 'tour ' + r.T.base : 'no tour rate', edgeCol(r.T));
+    var pills = '<div style="display:flex;gap:3px;background:var(--pp-x-track);border:1.25px solid var(--edge-6);border-radius:9px;padding:2px;width:fit-content;margin-bottom:12px;">' +
+      [['all', 'All'], ['yes', 'Happened'], ['no', 'Did not']].map(function (s) {
+        var on = f === s[0];
+        return '<span data-pp2="lt-spotf" data-v="' + s[0] + '" style="cursor:pointer;white-space:nowrap;padding:5px 12px;border-radius:7px;font-size:11px;' +
+          'font-weight:' + (on ? 700 : 600) + ';color:' + (on ? 'var(--text)' : 'var(--text-label)') + ';background:' + (on ? 'var(--selected)' : 'transparent') + ';' +
+          'border:1px solid ' + (on ? 'var(--edge-16)' : 'transparent') + ';">' + s[1] + '</span>';
+      }).join('') + '</div>';
+    var list;
+    if (r.src !== 'set') {
+      list = '<div style="padding:18px 0;font-size:12.5px;color:var(--text-label);">This row is counted from the point-by-point store, which keeps his totals, not a match list.</div>';
+    } else {
+      var MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      var items = M.rows.map(function (m) {
+        var ev = ltEvents(m), hit = null;
+        (ev || []).forEach(function (e) { if (e[0] === r.id) hit = e[1]; });
+        return hit == null ? null : { m: m, hit: hit };
+      }).filter(Boolean).sort(function (a, b) { return a.m.date < b.m.date ? 1 : a.m.date > b.m.date ? -1 : 0; })
+        .filter(function (x) { return f === 'all' || (f === 'yes') === x.hit; });
+      var C = 'padding:7px 0;border-top:1px solid var(--line);';
+      var head = [['', 'left'], ['Date', 'left'], ['Opponent', 'left'], ['Event', 'left'], ['Rd', 'left'], ['Score', 'left'], ['Happened', 'right']].map(function (h) {
+        return '<span style="' + LT_CAPS + 'text-align:' + h[1] + ';padding-bottom:8px;border-bottom:1px solid var(--pp-x-edge-12);white-space:nowrap;">' + h[0] + '</span>';
+      }).join('');
+      var body = items.map(function (x) {
+        var m = x.m, d = String(m.date), good = r.inv ? !x.hit : x.hit;
+        var dt = d.slice(8, 10) + ' ' + MON[+d.slice(5, 7) - 1] + ' ' + d.slice(2, 4);
+        return '<span style="' + C + 'display:block;height:100%;box-sizing:border-box;"><span title="' + (m.won ? 'Won the match' : 'Lost the match') +
+            '" style="display:block;width:8px;height:8px;border-radius:2px;background:' + (m.won ? 'var(--pos)' : 'var(--neg)') + ';margin-top:4px;"></span></span>' +
+          '<span style="' + C + LT_MONO + 'font-size:11px;color:var(--text-label);white-space:nowrap;">' + esc(dt) + '</span>' +
+          '<span style="' + C + 'font-size:12.5px;color:var(--text);overflow-wrap:anywhere;">' + esc(m.opp ? initialSurname(m.opp) : DASH) + '</span>' +
+          '<span style="' + C + 'font-size:12px;color:var(--text-label);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(m.event || DASH) + '</span>' +
+          '<span style="' + C + LT_MONO + 'font-size:10.5px;color:var(--text-label);">' + esc(m.round || DASH) + '</span>' +
+          '<span style="' + C + LT_MONO + 'font-size:11px;color:var(--text-label);white-space:nowrap;">' + esc(setScoreText({ sets: m.setGames }, ' ')) + '</span>' +
+          '<span style="' + C + LT_MONO + 'font-size:11.5px;font-weight:700;color:' + (good ? 'var(--pos)' : 'var(--neg)') + ';text-align:right;">' + (x.hit ? 'Yes' : 'No') + '</span>';
+      }).join('');
+      list = items.length
+        ? '<div style="display:grid;grid-template-columns:12px 64px minmax(0,1fr) minmax(0,0.8fr) 36px minmax(128px,auto) 64px;gap:0 10px;align-items:center;">' + head + body + '</div>'
+        : '<div style="padding:18px 0;font-size:12.5px;color:var(--text-label);">No matches</div>';
+    }
+    var scope = ltScopeTxt(S) + ltAppliedTxt(M);
+    return ltBoxShell('<div data-pp2="card" data-lt-box="spot" style="position:relative;width:860px;max-width:100%;background:var(--card);border:1px solid var(--edge-16);' +
+      'border-radius:14px;padding:20px 22px 22px;box-sizing:border-box;box-shadow:var(--pp-x-shadow-box);cursor:default;">' +
+      '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:16px;">' +
+        '<div style="display:flex;flex-direction:column;gap:4px;min-width:0;"><span style="font-size:16px;font-weight:800;letter-spacing:-0.01em;white-space:nowrap;">' +
+          esc(r.label) + '</span><span style="font-size:12.5px;color:var(--text-label);">' + esc(scope) + '</span></div>' + LT_CLOSE('lt-close') + '</div>' +
+      '<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:14px;">' + tiles + '</div>' +
+      (r.src === 'set' ? pills : '') + list + '</div>', 'lt-scrim');
+  }
+  function ltAppliedTxt(M) {
+    if (!M.filtered) return '';
+    var bits = [];
+    ltFilterGroups(null, M).forEach(function (g) {
+      if (g.cur === 'all') return;
+      var o = g.options.filter(function (x) { return x[0] === g.cur; })[0];
+      bits.push(o ? (g.key === 'ltArch' ? 'vs ' + o[1] : o[1]) : g.cur);
+    });
+    return bits.length ? ' ' + MIDDOT + ' ' + bits.join(' ' + MIDDOT + ' ') : '';
+  }
+
+  // ── the drawer body ────────────────────────────────────────────────────────
+  function renderSituational(p) {
+    var M = ltModel(p);
+    if (!M.groups.length) {
+      return '<div style="border:1px dashed var(--edge-6);border-radius:12px;padding:18px;font-size:12.5px;color:' + DASH_COLOUR + ';">' +
+        esc(shortName(p)) + ' has no set-by-set or point-by-point data on record, so in-play states cannot be shown.</div>';
+    }
+    return ltCardHtml(p, M);
+  }
+  MODAL_TITLE_COUNT.profile = ltTitleCount;
   function renderProfileModal(p) {
-    // TEN-384: launcher, then the Situational table, in one 14px-gap column (the
-    // reference's body). The footnotes (Situational's and the box-8 set-down note)
-    // are removed — the reference has none; setDownNote() stays for its callers.
-    return '<div style="display:flex;flex-direction:column;gap:14px;">' +
-      hbLauncherHtml(p) + renderSituational(p) + '</div>';
+    FM_KEYS.lt = LT_FM_KEYS;
+    var M = ltModel(p);
+    var bar = pp4FilterBarHtml({ id: 'lt', tabs: [
+      { hook: 'lt-win', items: LT_WIN, cur: M.S.win },
+      { hook: 'lt-surf', items: LT_SURF, cur: M.S.surf }], groups: ltFilterGroups(p, M) });
+    var tiles = '<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;">' +
+      ltTileHtml('Strongest spot', M.best) + ltTileHtml('Weakest spot', M.worst) + ltHeatTileHtml(p, M) + '</div>';
+    return LT_STYLE + '<div data-lt="body" style="display:flex;flex-direction:column;gap:16px;">' + bar + tiles +
+      (M.groups.length ? ltCardHtml(p, M) : renderSituational(p)) + '</div>' + ltSpotBoxHtml(p, M);
+  }
+
+  // ── the heatmap box (v4 · same chrome as the situation box) ─────────────────
+  // Every cell = rate over "n of m"; under PP4.HB_MIN games = the count only, no rate, no colour; Set 4 / Set 5 heads say
+  // "best of 5 only"; the gap sits in the hover title. The colour band is the engine's (founder TEN-417: neutral within
+  // ±3 inclusive, green from +4, red from −4) — this renderer only reads its `tag`.
+  function ltHeatCounts(p, mode, node) {
+    var HB = hbStore(), pl = HB && HB.players ? HB.players[String(p.key)] : null;
+    var side = pl ? pl[mode === 'break' ? 'return' : 'serve'] : null;
+    return side ? side[node] || null : null;
+  }
+  function renderHeatSheet(p) {
+    if (!state.heat) return '';
+    var E = hbEngine(), HB = hbStore();
+    var mode = state.hbMode === 'break' ? 'break' : 'hold';
+    var M = ltModel(p), S = M.S, node = M.hbNode;
+    var sn = shortName(p), MIN = PP4.HB_MIN;
+    var cov = E && HB ? hbCoverage(p) : null;
+    var model = E && HB && cov && node ? E.heatFor(HB, p.key, mode === 'break' ? 'BREAK' : 'HOLD', HB_BEST_OF, node) : null;
+    var st = model ? hbStripModel(model) : null;
+    var counts = model ? ltHeatCounts(p, mode, node) : null;
+    var games = st ? st.n : null;
+    var covTip = cov ? 'Parsed from ' + cov.matches + ' of ' + sn + '’s matches ' + MIDDOT + ' ' + cov.svcGames + ' service games' +
+      (cov.from && cov.to ? ' ' + MIDDOT + ' ' + cov.from + ' ' + ENDASH + ' ' + cov.to : '') : '';
+    var eyebrow = ltScopeTxt(S) + (node === 'all' && cov ? ' ' + MIDDOT + ' ' + cov.matches + ' matches' : '') +
+      (games ? ' ' + MIDDOT + ' ' + games.toLocaleString('en-US') + ' ' + (mode === 'break' ? 'return' : 'service') + ' games' : '');
+    var body;
+    if (!E || !HB) body = '<div style="padding:26px;text-align:center;font-size:13px;color:var(--text-label);">Hold/break data is not loaded.</div>';
+    else if (!cov) {
+      var rosterN = (HB.meta && HB.meta.players) || null, winN = (HB.meta && HB.meta.windowMonths) || null;
+      body = '<div style="padding:26px;text-align:center;font-size:13px;color:var(--text-label);line-height:1.6;">' + esc(sn) +
+        ' has no point-by-point data on record, so holds and breaks by game cannot be shown.' +
+        (rosterN && winN ? '<br>The rollup covers ' + rosterN + ' players over the last ' + winN + ' months.' : '') + '</div>';
+    } else if (!model) {
+      body = '<div style="padding:26px;text-align:center;font-size:13px;color:var(--text-label);line-height:1.6;">The heatmap is held for the last 24 months only, ' +
+        'on all surfaces, clay or grass, with no other filter.</div>';
+    } else {
+      var tile = function (cap, value, sub) {
+        return '<div style="padding:13px 16px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;border:1.25px solid var(--edge-6);border-radius:12px;">' +
+          '<span style="' + LT_CAPS + '">' + esc(cap) + '</span><span style="' + LT_MONO + 'font-size:20px;font-weight:700;color:' + (value === DASH ? 'var(--text-label)' : 'var(--text)') + ';">' +
+          esc(value) + '</span><span style="' + LT_MONO + 'font-size:11.5px;color:var(--text-label);">' + esc(sub) + '</span></div>';
+      };
+      var pairSub = function (q) { return q ? q.label + ' ' + MIDDOT + ' ' + q.w + ' of ' + q.n : 'no pair on ' + MIN + '+ games'; };
+      var tiles = '<div data-hb="strip" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;">' +
+        tile((mode === 'break' ? 'Break' : 'Hold') + ' rate ' + MIDDOT + ' all', st.n ? (100 * st.won / st.n).toFixed(1) + '%' : DASH,
+          st.n ? st.won.toLocaleString('en-US') + ' of ' + st.n.toLocaleString('en-US') + ' games' : DASH) +
+        tile('Best pair', st.best ? st.best.pct + '%' : DASH, pairSub(st.best)) +
+        tile('Weakest pair', st.worst ? st.worst.pct + '%' : DASH, pairSub(st.worst)) + '</div>';
+      var heads = '<span></span>' + [['All sets', ''], ['Set 1', ''], ['Set 2', ''], ['Set 3', ''], ['Set 4', 'best of 5 only'], ['Set 5', 'best of 5 only']].map(function (h) {
+        return '<span style="display:flex;flex-direction:column;align-items:center;gap:2px;padding-bottom:4px;"><span style="' + LT_CAPS + '">' + h[0] +
+          '</span><span style="font-size:10.5px;color:var(--text-label);height:13px;">' + h[1] + '</span></span>';
+      }).join('');
+      var CELL = 'display:flex;flex-direction:column;justify-content:center;gap:3px;height:52px;border-radius:8px;box-sizing:border-box;';
+      var SUB = LT_MONO + 'font-size:10.5px;color:var(--text-label);white-space:nowrap;';
+      var cells = model.rows.map(function (r, i) {
+        var b = String(i + 1);
+        var gm = /^(\d+)\/(\d+)$/.exec(String(r.gFrac || ''));
+        var label = '<span data-hb="pair" style="' + CELL + 'align-items:flex-start;background:transparent;border:1px solid transparent;">' +
+          '<span style="font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;">' + esc(hbPairLabel(r.bucket)) + '</span>' +
+          '<span style="' + SUB + '">' + esc(hbPairSub(r.sub, mode)) + '</span></span>';
+        var all = gm
+          ? '<span data-hb="all" style="' + CELL + 'align-items:center;background:color-mix(in srgb, var(--text) 3%, transparent);border:1px solid color-mix(in srgb, var(--text) 7%, transparent);">' +
+            '<span style="' + LT_MONO + 'font-size:14px;font-weight:700;color:var(--text);white-space:nowrap;">' + esc(r.gPct) + '</span><span style="' + SUB + '">' + gm[1] + ' of ' + gm[2] + '</span></span>'
+          : '<span data-hb="all" style="' + CELL + 'align-items:center;border:1px solid var(--line);"><span style="' + LT_MONO + 'font-size:12px;color:' + LT_GREY50 + ';">' + DASH + '</span></span>';
+        var sets = r.cells.map(function (c, j) {
+          var k = counts && counts[String(j + 1)] ? counts[String(j + 1)][b] : null;
+          var w = k ? k.won || 0 : 0, n = k ? k.n || 0 : 0;
+          var tipHead = hbPairLabel(r.bucket) + ' ' + MIDDOT + ' Set ' + (j + 1);
+          if (!n) return '<span data-pp2="hb-cell" data-tier="none" title="' + esc(tipHead + ' ' + MIDDOT + ' no games') + '" style="' + CELL + 'align-items:center;border:1px solid var(--line);">' +
+            '<span style="' + LT_MONO + 'font-size:12px;color:' + LT_GREY50 + ';">' + DASH + '</span></span>';
+          if (n < MIN) return '<span data-pp2="hb-cell" data-tier="count" title="' + esc(tipHead + ' ' + MIDDOT + ' under ' + MIN + ' games: count only') + '" style="' + CELL +
+            'align-items:center;border:1px solid color-mix(in srgb, var(--text) 7%, transparent);"><span style="' + LT_MONO + 'font-size:12px;font-weight:500;color:var(--text-label);white-space:nowrap;">' +
+            w + ' of ' + n + '</span></span>';
+          var hue = c.tag === 'up' ? 'var(--pos)' : c.tag === 'down' ? 'var(--neg)' : null;
+          var gapTxt = E.gapText ? E.gapText(c.gap) : '';
+          return '<span data-pp2="hb-cell" data-tier="full" data-tag="' + esc(c.tag || 'even') + '" title="' + esc(tipHead + ' ' + MIDDOT + ' ' + gapTxt + ' vs this pair across all sets') + '" style="' + CELL +
+            'align-items:center;background:' + (hue ? 'color-mix(in srgb, ' + hue + ' 16%, transparent)' : 'color-mix(in srgb, var(--text) 3%, transparent)') + ';' +
+            'border:1px solid ' + (hue ? 'color-mix(in srgb, ' + hue + ' 40%, transparent)' : 'color-mix(in srgb, var(--text) 7%, transparent)') + ';">' +
+            '<span style="' + LT_MONO + 'font-size:14px;font-weight:700;color:' + (hue || 'var(--text)') + ';white-space:nowrap;">' + Math.round(100 * w / n) + '%</span>' +
+            '<span style="' + SUB + '">' + w + ' of ' + n + '</span></span>';
+        }).join('');
+        return label + all + sets;
+      }).join('');
+      var sw = function (bg, bd) { return '<span style="width:12px;height:12px;border-radius:3px;box-sizing:border-box;' + (bg ? 'background:' + bg + ';' : '') + 'border:1px solid ' + bd + ';"></span>'; };
+      var legend = '<div style="display:flex;align-items:center;gap:18px;flex-wrap:wrap;font-size:12px;color:var(--text-label);">' +
+        '<span style="display:flex;align-items:center;gap:7px;">' + sw('color-mix(in srgb, var(--pos) 16%, transparent)', 'color-mix(in srgb, var(--pos) 40%, transparent)') + '4+ pts above this pair across all sets</span>' +
+        '<span style="display:flex;align-items:center;gap:7px;">' + sw('color-mix(in srgb, var(--neg) 16%, transparent)', 'color-mix(in srgb, var(--neg) 40%, transparent)') + '4+ pts below</span>' +
+        '<span style="display:flex;align-items:center;gap:7px;">' + sw(null, 'var(--edge-10)') + 'Under ' + MIN + ' games: count only, no rate, no colour</span></div>';
+      body = tiles + '<div class="pp2-hb-grid" style="display:grid;grid-template-columns:150px repeat(6,minmax(0,1fr));gap:6px;align-items:stretch;">' + heads + cells + '</div>' + legend;
+    }
+    var modes = '<span data-pp2-seg="hb-mode" style="display:flex;gap:3px;border:1.25px solid var(--edge-6);border-radius:9px;padding:3px;">' +
+      HB_MODES.map(function (t) {
+        var on = t.id === mode;
+        return '<span data-pp2="hb-mode" data-v="' + t.id + '" style="cursor:pointer;padding:5px 14px;border-radius:7px;font-size:11.5px;font-weight:' + (on ? 700 : 600) + ';' +
+          'color:' + (on ? 'var(--text)' : 'var(--text-label)') + ';background:' + (on ? 'var(--selected)' : 'transparent') + ';border:1px solid ' + (on ? 'var(--edge-16)' : 'transparent') + ';">' +
+          t.label + '</span>';
+      }).join('') + '</span>';
+    return ltBoxShell('<div data-pp2="card" data-lt-box="heat" style="position:relative;width:860px;max-width:100%;background:var(--card);border:1px solid var(--edge-16);' +
+      'border-radius:14px;padding:20px 22px 22px;box-shadow:var(--pp-x-shadow-box);display:flex;flex-direction:column;gap:18px;box-sizing:border-box;cursor:default;">' +
+      '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;">' +
+        '<div style="display:flex;flex-direction:column;gap:6px;">' +
+          '<span data-hb="eyebrow"' + (covTip ? ' title="' + esc(covTip) + '"' : '') + ' style="' + LT_CAPS + '">' + esc(eyebrow) + '</span>' +
+          '<span style="font-size:18px;font-weight:800;letter-spacing:-0.015em;">Hold / break heatmap</span>' +
+          '<span style="font-size:12.5px;color:var(--text-label);">' + esc(p.name || sn) + ' ' + MIDDOT + ' how often he ' + (mode === 'break' ? 'broke serve' : 'held serve') +
+            ' in each game pair, overall and by set</span>' +
+        '</div>' +
+        '<div style="display:flex;align-items:center;gap:12px;">' + modes + LT_CLOSE('heat-close') + '</div>' +
+      '</div>' + body + '</div>', 'heat-scrim');
   }
 
   /**
@@ -14896,11 +16052,16 @@
     matchPage: null, mpTab: 'summary', mpSet: 'match', mpPointSet: null,
     // Profile v2 (2026-11-09): the open (?) popover id, the open Filters menu id, the open drill box, the
     // Compare-with popover and its query. Each is one value, so only one of each can be open.
-    info: null, fmOpen: null, fb: null, cmpOpen: false, cmpQ: '',
+    info: null, fmOpen: null, fb: null, cmpOpen: false, cmpQ: '', mtoOpen: false,
     tourLevel: 'all', tourSurf: 'all', tourSort: { k: 'wl', d: -1 },
     stySurf: 'all', styWin: 'career', stySort: { k: 'pct', d: -1 },
     mkSurf: 'all', mkWin: 'career', mkRole: 'all', mkFmt: 'all', mkSpeed: 'all', mkLvl: 'all', mkArch: 'all',
-    lcBandF: 'all', lcArch: 'all', spdSurf: 'all', spdBand: null
+    lcBandF: 'all', lcArch: 'all', spdSurf: 'all', spdBand: null,
+    // v4 §5 · Court speed's shared filter bar: Window (default Career) and the three hidden filters; fmSel = the open
+    // drop-down group inside a Filters popover ('<menu id>|<group key>')
+    spdWin: 'career', spdRole: 'all', spdAlt: 'all', spdArch: 'all', fmSel: null,
+    // v4 §9 Live trading: Window · Surface · the four Filters groups, the open box ('heat' is state.heat) and the last-clicked tile
+    ltWin: 'm24', ltSurf: 'all', ltRole: 'all', ltFmt: 'all', ltLvl: 'all', ltArch: 'all', ltBox: null, ltPicked: null, ltSpotF: 'all'
   };
 
   function buildCtx(p) {
@@ -14990,6 +16151,8 @@
     state.seasonTab = 'calendar'; state.calWin = 'career'; state.calSurf = 'all'; state.calView = 'swing'; state.calCellV2 = null; state.runSel = null; state.runScroll = null;
     state.calSpeed = 'all'; state.calFmt = 'all'; state.calBand = 'all'; state.calArch = 'all'; state.calOpp = 'all'; state.calCtry = 'all'; state.mkOpp = 'all';
     state.speedSurf = 'all'; state.speedBand = null;
+    // v4 §5 · a new player opens Court speed on Career, no filters
+    state.spdSurf = 'all'; state.spdBand = null; state.spdWin = 'career'; state.spdRole = 'all'; state.spdAlt = 'all'; state.spdArch = 'all'; state.fmSel = null;
     state.styleRow = null;
     state.hbSurf = 'all';
     state.hbMode = 'hold';
@@ -15092,7 +16255,19 @@
       tip.style.display = 'block';
     }
   }
+  // v4 §7 · Match-up record: hovering a dot (or its code) gives that point the selected look, no repaint.
+  function styHover(e) {
+    if (!mounted) return;
+    var el = e.target && e.target.closest ? e.target.closest('.pp2-stychart [data-sty-i]') : null;
+    var i = el && mounted.contains(el) ? el.getAttribute('data-sty-i') : null;
+    var prev = mounted.querySelectorAll('.pp2-stychart .pp2-hov');
+    for (var k = 0; k < prev.length; k++) if (prev[k].getAttribute('data-sty-i') !== i) prev[k].classList.remove('pp2-hov');
+    if (i == null) return;
+    var pts = mounted.querySelectorAll('.pp2-stychart [data-sty-i="' + i + '"]');
+    for (var j = 0; j < pts.length; j++) pts[j].classList.add('pp2-hov');
+  }
   function onOver(e) {
+    styHover(e);
     var bar = e.target && e.target.closest ? e.target.closest('[data-pp2-run]') : null;
     if (bar || _runHov) runHover(bar && mounted && mounted.contains(bar) ? bar : null);
     var el = e.target && e.target.closest ? e.target.closest('[data-pp2="info"]') : null;
@@ -15136,10 +16311,13 @@
     }
     if (kind === 'fb-scrim') return;
     if (kind === 'fb-open') { state.fb = { box: el.getAttribute('data-box'), v: v }; state.info = null; state.fmOpen = null; state.lcDrillRes = null; repaint(); return; }
-    if (kind === 'fm-toggle') { state.fmOpen = state.fmOpen === v ? null : v; repaint(); return; }
-    if (kind === 'fm-close') { state.fmOpen = null; repaint(); return; }
-    if (kind === 'fm-set') { var fk = el.getAttribute('data-g'); if (fk && Object.prototype.hasOwnProperty.call(state, fk)) state[fk] = v; state.fb = null; repaint(); return; }
-    if (kind === 'fm-reset') { (FM_KEYS[v] || []).forEach(function (k) { state[k] = 'all'; }); state.fmOpen = null; state.fb = null; repaint(); return; }
+    if (kind === 'mto-toggle') { state.mtoOpen = !state.mtoOpen; repaint(); return; }
+    if (kind === 'mto-close') { state.mtoOpen = false; repaint(); return; }
+    if (kind === 'fm-toggle') { state.fmOpen = state.fmOpen === v ? null : v; state.fmSel = null; repaint(); return; }
+    if (kind === 'fm-close') { state.fmOpen = null; state.fmSel = null; repaint(); return; }
+    if (kind === 'fm-sel') { state.fmSel = state.fmSel === v ? null : v; repaint(); return; }   // v4 · a drop-down group in the popover
+    if (kind === 'fm-set') { var fk = el.getAttribute('data-g'); if (fk && Object.prototype.hasOwnProperty.call(state, fk)) state[fk] = v; state.fb = null; state.fmSel = null; repaint(); return; }
+    if (kind === 'fm-reset') { (FM_KEYS[v] || []).forEach(function (k) { state[k] = 'all'; }); state.fmOpen = null; state.fmSel = null; state.fb = null; repaint(); return; }
     if (kind === 'cmp-toggle') { state.cmpOpen = !state.cmpOpen; state.cmpQ = ''; repaint(); focusCmp(); return; }
     if (kind === 'cmp-close') { state.cmpOpen = false; state.cmpQ = ''; repaint(); return; }
     if (kind === 'cmp-clear') { state.cmpQ = ''; repaint(); focusCmp(); return; }
@@ -15162,7 +16340,7 @@
       // founder 2026-11-10: the Career record opens on Career, its Record tab, every time
       if (state.modal === 'career') { state.careerScope = 'career'; state.careerTab = 'record'; state.careerDrill = null; state.crWinPicked = false; }
     }
-    else if (kind === 'close' || kind === 'scrim') { state.modal = null; state.careerDrill = null; state.drawDrill = null; state.lcDrill = null; state.fb = null; state.info = null; state.fmOpen = null; }
+    else if (kind === 'close' || kind === 'scrim') { state.modal = null; state.careerDrill = null; state.drawDrill = null; state.lcDrill = null; state.fb = null; state.info = null; state.fmOpen = null; state.ltBox = null; state.heat = false; }
     else if (kind === 'career-scope') { state.careerScope = el.getAttribute('data-scope'); state.careerDrill = null; state.crWinPicked = true; }
     else if (kind === 'career-tier') { state.careerTier = v; state.careerDrill = null; }
     // The tab switch keeps the window (`careerScope`) — one control drives both
@@ -15179,6 +16357,8 @@
     else if (kind === 'lc-fmt') { state.lcFmt = v; }
     // TEN-384 · the Derived-lines role tiles filter the ledger.
     else if (kind === 'lc-role') { state.lcRole = (v === 'fav' || v === 'dog') ? v : 'all'; }
+    // v4 §8.2 · a chip only picks its line for the panel; the pick survives filter changes
+    else if (kind === 'lc-pick') { state.lcPick = v; }
     // Brief 2026-10-21 · Window and Tier re-cut every figure on the tab; an open line drill stays open and follows.
     else if (kind === 'lc-win') { state.lcWin = lcWindowOf(v); }
     else if (kind === 'lc-tier') { state.lcTier = lcTierOf(v); }
@@ -15252,6 +16432,9 @@
     else if (kind === 'mk-win') { state.mkWin = v; state.fb = null; }
     else if (kind === 'mk-role') { state.mkRole = v === 'fav' || v === 'dog' ? v : 'all'; state.fb = null; }
     else if (kind === 'spd-surf') { state.spdSurf = v; state.spdBand = null; }
+    else if (kind === 'spd-win') { state.spdWin = v === 'l52' ? 'l52' : 'career'; }
+    // v4 §5 · the empty state's Clear all: the hidden filters AND Window + Surface
+    else if (kind === 'spd-clearall') { state.spdRole = 'all'; state.spdAlt = 'all'; state.spdArch = 'all'; state.spdWin = 'career'; state.spdSurf = 'all'; state.spdBand = null; state.fmOpen = null; state.fmSel = null; }
     else if (kind === 'spd-band') { state.spdBand = v; }
     else if (kind === 'spl-view') { state.splView = v; }
     else if (kind === 'cal-tab') { state.seasonTab = v === 'streaks' ? 'streaks' : 'calendar'; state.calCellV2 = null; state.runSel = null; state.runScroll = null; }
@@ -15284,7 +16467,14 @@
     else if (kind === 'hb-mode') state.hbMode = (v === 'break' ? 'break' : 'hold');
     // Build item 2. The surface chips live inside the layer, so 'hb-surf'
     // repaints with state.heat still true and the grid stays open.
-    else if (kind === 'heat') state.heat = true;
+    else if (kind === 'heat') { state.heat = true; state.ltPicked = 'heat'; state.ltBox = null; }
+    // v4 §9 Live trading: the band, the two situation tiles (last clicked stays blue after its box closes), the box
+    else if (kind === 'lt-win') { state.ltWin = v === 'w52' || v === 'career' ? v : 'm24'; state.fmOpen = null; }
+    else if (kind === 'lt-surf') { state.ltSurf = v; state.fmOpen = null; }
+    else if (kind === 'lt-tile') { state.ltBox = v; state.ltPicked = v; state.ltSpotF = 'all'; state.heat = false; }
+    else if (kind === 'lt-close' || (kind === 'lt-scrim' && e.target === el)) state.ltBox = null;
+    else if (kind === 'lt-scrim') return;
+    else if (kind === 'lt-spotf') state.ltSpotF = v === 'yes' || v === 'no' ? v : 'all';
     else if (kind === 'heat-close' || kind === 'heat-scrim') state.heat = false;
     // Item 3. Groups default OPEN, so the stored value is only ever a close.
     else if (kind === 'sit-toggle') {
@@ -15408,8 +16598,9 @@
     // exported so the reconciliation check and the tests can call the same
     // code path the page uses, rather than a copy that can drift
     _internals: {
+      PP4: PP4, pp4Bar: pp4Bar, mtoRowsFor: mtoRowsFor, renderMto: renderMto, renderAvatar: renderAvatar, splTourFor: splTourFor,
       // Profile v2 (2026-11-09): the shared drill box, its per-box builders and the Match-up model
-      FB_BUILD: FB_BUILD, floatBoxHtml: floatBoxHtml, OPP_LEVELS: OPP_LEVELS, oppLevelOf: oppLevelOf, calRows: calRows, calSwingOf: calSwingOf, renderSeasonModalV2: renderSeasonModalV2, streakSeq: streakSeq, streakRuns: streakRuns, splModel: splModel, splRoundKeyer: splRoundKeyer, spdData: spdData, renderSpeedModalV2: renderSpeedModalV2, renderSplitsModalV2: renderSplitsModalV2, styData: styData, renderStylesModalV2: renderStylesModalV2,
+      FB_BUILD: FB_BUILD, floatBoxHtml: floatBoxHtml, OPP_LEVELS: OPP_LEVELS, oppLevelOf: oppLevelOf, calRows: calRows, calSwingOf: calSwingOf, calCountryOf: calCountryOf, renderSeasonModalV2: renderSeasonModalV2, streakSeq: streakSeq, streakRuns: streakRuns, splModel: splModel, splRoundKeyer: splRoundKeyer, spdData: spdData, renderSpeedModalV2: renderSpeedModalV2, PP4: PP4, spdTitleCount: spdTitleCount, spdFilter: spdFilter, spdRowOk: spdRowOk, spdAltOf: spdAltOf, spdPool: spdPool, pp4FilterBar: pp4FilterBar, MODAL_TITLE_COUNT: MODAL_TITLE_COUNT, renderSplitsModalV2: renderSplitsModalV2, styData: styData, renderStylesModalV2: renderStylesModalV2,
       mkBandIdx: mkBandIdx, MK_BANDS: MK_BANDS, mkTourBand: mkTourBand, styleArchetypeOf: styleArchetypeOf, renderLinesTabV2: renderLinesTabV2, renderMarketWinnerV2: renderMarketWinnerV2,
       recordRowsOf: recordRowsOf,
       countedSpine: countedSpine,
@@ -15689,7 +16880,11 @@
       renderSituational: renderSituational,
       sitSetCounts: sitSetCounts,
       sitTour: sitTour,
-      sitRowHtml: sitRowHtml,
+      sitSetEvents: sitSetEvents,
+      sitSetCountsOf: sitSetCountsOf,
+      ltModel: ltModel,
+      ltTitleCount: ltTitleCount,
+      pp4FilterBarHtml: pp4FilterBarHtml,
       sitPbpFor: sitPbpFor,
       SIT_GROUPS: SIT_GROUPS,
       hbLauncherHtml: hbLauncherHtml,

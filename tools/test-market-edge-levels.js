@@ -64,7 +64,7 @@ H.check('Challenger and ITF on Match winner show records only: no yield, no ROI,
   for (const [lvl, l] of [['Challenger', 'ch'], ['ITF', 'itf']]) {
     const h = withState({ key: p.key, marketTab: 'winner', mkLvl: lvl }, () => I.renderMarketModal(p));
     assert(new RegExp('data-mk-level="' + l + '"').test(h), l + ': no records panel');
-    assert(!/class="pp2-mkband"|data-pp2="mk-role"/.test(h), l + ': a yield card or band shows below the main draw');
+    assert(!/class="pp2-mkband"|class="pp2-mkps"|data-pp2="mk-role"/.test(h), l + ': a yield card or band shows below the main draw');
     assert(/Records only/.test(h), l + ': no "Records only" note');
   }
   return 'ch · itf';
@@ -72,7 +72,9 @@ H.check('Challenger and ITF on Match winner show records only: no yield, no ROI,
 H.check('the default Match winner (All levels) is the v2 view: role strip, chart and the eight-band ladder', () => {
   const now0 = withState({ key: p.key, marketTab: 'winner' }, () => I.renderMarketModal(p));
   assert((now0.match(/data-pp2="mk-role"/g) || []).length === 3, 'the three role cells are not there');
-  assert((now0.match(/class="pp2-mkband"/g) || []).length >= 1, 'the band ladder is gone');
+  // v4 §8.1 · Price sensitivity: one row per MK_BANDS band, in two role groups
+  assert((now0.match(/data-mk-band="\d+"/g) || []).length >= 8, 'the band ladder is gone');
+  assert((now0.match(/data-mk-psgroup="(fav|dog)"/g) || []).length === 2, 'Price sensitivity is not two role groups');
   assert(/data-pp2="fm-toggle" data-v="mk"/.test(now0), 'no Filters trigger');
   assert(!/data-pp2="mk-level"/.test(now0), 'the Task E level segment is back');
   return 'role strip + ladder + Filters';

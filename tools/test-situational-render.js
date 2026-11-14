@@ -1,20 +1,26 @@
 #!/usr/bin/env node
 'use strict';
-// BUILD ITEM 3 · the Situational panel, asserted against RENDERED MARKUP.
+// Live trading · "Record by situation" (Profile v4, handoff 2026-11-14, CHANGES §9), asserted on RENDERED MARKUP.
 //
-// The ruling this locks: "The rows render ONLY where that player's shard carries
-// the data. Where a player has none, omit the whole group — no block of dashes,
-// no empty table." Reported correction, measured on the deployed store: it is the
-// POINT-BY-POINT rows that 260 of 575 players have none of, and the per-set rows
-// that all 575 carry — so the conditionality is attached to the pbp rows. These
-// checks assert the omission behaviour whichever source is missing.
+// Kept from build item 3 / TEN-384 (data rules the v4 handoff does not touch):
+//   · the rows render ONLY where the player's store carries them: no point-by-point store → the pbp rows are not
+//     rows (whole pbp groups omitted), never a block of dashes; nothing at all → a sentence, no empty table;
+//   · a missing tour figure is a dash, never 0; under 5 the record shows and the rate dashes; walkovers never count;
+//   · the founder's coverage wording rides on the table head; a closed group keeps its header.
+// v4 (replaces the TEN-384 layout pins): one head line Situation · Record · Rate · Vs his norm · Vs tour; Record reads
+// "w of n"; no sample captions (§0.4); gap figures green / red only, bold 13.5 for the one to read (vs his norm on hold /
+// break rows, vs tour elsewhere); lower-is-better rows inverted; rows with no natural norm dash; the pbp rows dash
+// (with the reason) under any scope their 24-month all-surfaces store cannot honour; Strongest / Weakest tiles with
+// the neutral bar until clicked (§0.1); Filters counts + Applied chips; the title sample "n of N matches".
 
 const fs = require('fs');
 const path = require('path');
+const vm = require('vm');
 const assert = require('assert');
 
 const ROOT = path.join(__dirname, '..');
 const DASH = '—';
+const SRC = fs.readFileSync(path.join(ROOT, 'player-profile-v2.js'), 'utf8');
 
 let pass = 0, fail = 0;
 function check(name, fn) {
@@ -22,30 +28,27 @@ function check(name, fn) {
   catch (e) { console.log(`  FAIL ${name}\n       ${e.message}`); fail++; }
 }
 
-// ── a roster built by construction, so no check can pass by luck ────────────
-function match(sets, won, extra) {
-  return Object.assign({ sets: sets, won: won, tournament: 'Somewhere', tier: 'atp' }, extra || {});
+// ── a career-history built by construction, dated inside the last 52 weeks / 24 months / older ───────────
+const DAY = 86400000;
+const iso = d => new Date(Date.now() - d * DAY).toISOString().slice(0, 10);
+function ch(daysAgo, sets, won, extra) {
+  return Object.assign({ year: iso(daysAgo).slice(0, 4), date: iso(daysAgo), surface: 'hard', level: 'atp', tournament: 'Somewhere',
+    round: 'R32', opponent: 'X. Opp', oppKey: '99', result: won ? '2 - 0' : '0 - 2', won: won, src: 'fixtures', indoor: false, sets: sets }, extra || {});
 }
-// 12 matches: won set 1 in 8 of them, won the match in 9.
-function makeForm(n, winFirst) {
+const W2 = [{ p: 6, o: 4 }, { p: 6, o: 3 }];
+const L3 = [{ p: 4, o: 6 }, { p: 6, o: 3 }, { p: 4, o: 6 }];
+// 24 matches inside 52 weeks (14 won 2–0, 10 lost in three), 10 more 400–700 days back on clay, 6 career-only.
+function makeHistory() {
   const out = [];
-  for (let i = 0; i < n; i++) {
-    const first = i < winFirst;
-    out.push(first
-      ? match([{ p: 6, o: 4 }, { p: 6, o: 3 }], true)
-      : match([{ p: 4, o: 6 }, { p: 6, o: 3 }, { p: 4, o: 6 }], false));
-  }
-  return { pct: 0, matches: out };
+  for (let i = 0; i < 24; i++) out.push(i < 14 ? ch(10 + i * 7, W2, true) : ch(10 + i * 7, L3, false));
+  for (let i = 0; i < 10; i++) out.push(ch(400 + i * 30, W2, true, { surface: 'clay' }));
+  for (let i = 0; i < 6; i++) out.push(ch(900 + i * 30, L3, false));
+  return out;
 }
-
-// 24 matches, 14 won from the front and 10 from behind, so ALL SIX set rows
-// clear n>=10: winSet3 and lostS1WonS2 are the two that only the come-from-
-// behind matches feed, and at 12/8 they landed on n=4 and dashed honestly —
-// which would have made check 1 read a real thin sample as a failed omission.
-const SUBJECT = { key: 1, name: 'A. Subject', recentForm: makeForm(24, 14) };
-const PEER = { key: 2, name: 'B. Peer', recentForm: makeForm(20, 10) };
-const THIN = { key: 3, name: 'C. Thin', recentForm: makeForm(3, 2) };
-const NOFORM = { key: 4, name: 'D. Noform', recentForm: { pct: 0, matches: [] } };
+const SUBJECT = { key: 1, name: 'A. Subject', recentForm: { matches: [] } };
+const THIN = { key: 3, name: 'C. Thin', recentForm: { matches: [] } };
+const NONE = { key: 4, name: 'D. None', recentForm: { matches: [] } };
+const PEER = { key: 2, name: 'B. Peer', recentForm: { matches: makeHistory().slice(0, 20).map(r => ({ sets: r.sets, won: r.won, tournament: 'Somewhere' })) } };
 
 const PBP_STORE = {
   meta: { players: 2, windowMonths: 24 },
@@ -54,205 +57,212 @@ const PBP_STORE = {
     breakBack: { pct: 40 }, lostS1FirstBreakS2: { pct: 33 }, holdWinSet: { pct: 80 },
     holdStaySet: { pct: 77 }, breakOppServing: { pct: null },
   },
-  players: {
-    1: {
-      matches: 40,
-      rows: {
-        brokenFirstSvc: { w: 8, l: 32 }, firstBreak: { w: 21, l: 13 },
-        brokenBack: { w: 3, l: 9 }, breakBack: { w: 18, l: 26 },
-        lostS1FirstBreakS2: { w: 7, l: 10 }, holdWinSet: { w: 17, l: 5 },
-        holdStaySet: { w: 14, l: 6 }, breakOppServing: { w: 6, l: 14 },
-      },
-    },
-  },
+  players: { 1: { matches: 40, rows: {
+    brokenFirstSvc: { w: 4, l: 36 }, firstBreak: { w: 21, l: 13 }, brokenBack: { w: 3, l: 9 }, breakBack: { w: 18, l: 26 },
+    lostS1FirstBreakS2: { w: 7, l: 10 }, holdWinSet: { w: 17, l: 5 }, holdStaySet: { w: 14, l: 6 }, breakOppServing: { w: 6, l: 14 } } } },
 };
+// hold 80% (every service-game cell 8 of 10), break 25% (every return-game cell 2 of 8)
+function hbSide(w, n) { const s = {}; for (let st = 1; st <= 3; st++) { s[st] = {}; for (let b = 1; b <= 6; b++) s[st][b] = { won: w, n: n, pct: 100 * w / n }; } return { all: s }; }
+const HB = { meta: { windowMonths: 24, players: 1, coverage: { from: '2024-11-13', to: '2026-11-12' } },
+  players: { 1: { name: 'A. Subject', matches: 40, svcGames: 180, serve: hbSide(8, 10), return: hbSide(2, 8) } } };
 
-function load(players, situational) {
-  const map = {};
-  players.forEach((p) => { map[String(p.key)] = p; });
-  const sandbox = { FEATURE_PP2: true, playerProfiles: { players: map } };
-  if (situational) sandbox.situational = situational;
+function load(opts) {
+  const o = opts || {};
+  const sandbox = { FEATURE_PP2: true, playerProfiles: { players: { 1: SUBJECT, 2: PEER, 3: THIN, 4: NONE } },
+    careerHistory: { 1: makeHistory(), 3: [ch(20, W2, true), ch(30, L3, false), ch(40, W2, true)], 4: [] } };
+  if (o.pbp !== false) sandbox.situational = PBP_STORE;
+  if (o.hb !== false) {
+    const ctx = { window: {}, console }; ctx.self = ctx.window; vm.createContext(ctx);
+    vm.runInContext(fs.readFileSync(path.join(ROOT, 'holdbreak-heatmap.js'), 'utf8'), ctx);
+    sandbox.HoldBreakHeatmap = ctx.window.HoldBreakHeatmap; sandbox.holdbreak = HB;
+  }
   global.window = sandbox;
-  new Function('window', fs.readFileSync(path.join(ROOT, 'player-profile-v2.js'), 'utf8'))(sandbox);
+  new Function('window', o.src || SRC)(sandbox);
   return sandbox.PlayerProfileV2._internals;
 }
+function rowsOf(html) {
+  const out = {};
+  const re = /<div data-lt-row="(\w+)"[^>]*>([\s\S]*?)<\/span><\/span><\/div>/g; let m;
+  while ((m = re.exec(html))) out[m[1]] = m[2];
+  return out;
+}
+const text = h => h.replace(/<[^>]+>/g, '|').replace(/\|+/g, '|');
 
-const ROSTER = [SUBJECT, PEER, THIN, NOFORM];
+console.log('\nLive trading · Record by situation (Profile v4)\n');
 
-console.log('\nsituational panel (build item 3)\n');
-
-// ── 1. no pbp store: those groups are GONE, not dashed ──────────────────────
-check('with no point-by-point store the pbp groups are omitted, not dashed', () => {
-  const I = load(ROSTER);
+check('no point-by-point store: the pbp groups are omitted, not dashed', () => {
+  const I = load({ pbp: false });
   const html = I.renderSituational(SUBJECT);
-  assert.ok(!/Break of serve/.test(html), 'the all-pbp group "Break of serve" still rendered');
-  assert.ok(!/Serving for the set/.test(html), 'the all-pbp group "Serving for the set" still rendered');
-  assert.ok(/Set outcomes/.test(html), 'the set group should render');
-  assert.ok(/After set one/.test(html), 'the mixed group should render its set rows');
-  assert.ok(!/first break in set 2/.test(html), 'the pbp row inside a mixed group should be dropped');
-  // Every set row clears n>=10 for this subject, so there is no honest thin
-  // sample to dash: any dash here is a pbp row that was rendered instead of
-  // omitted.
-  const dashes = (html.match(new RegExp(DASH, 'g')) || []).length;
-  assert.strictEqual(dashes, 0, `an omitted group must leave no dashes behind, found ${dashes}`);
+  assert(!/Break of serve/.test(html) && !/Serving for the set/.test(html), 'an all-pbp group still rendered');
+  assert(/Set outcomes/.test(html) && /After set one/.test(html), 'the set groups must render');
+  assert(!/first break in set 2/.test(html), 'the pbp row inside a mixed group must be dropped');
 });
 
-// ── 2. with the store, all four groups and all fourteen rows ────────────────
-check('with the store present all 4 groups and all 14 rows render', () => {
-  const I = load(ROSTER, PBP_STORE);
+check('with the store all 4 groups and 14 rows render, one head line', () => {
+  const I = load();
   const html = I.renderSituational(SUBJECT);
-  const groups = (html.match(/data-pp2="sit-toggle"/g) || []).length;
-  assert.strictEqual(groups, 4, `expected 4 groups, got ${groups}`);
-  let rows = 0;
-  I.SIT_GROUPS.forEach(([, rs]) => rs.forEach(([, label]) => {
-    if (html.includes(label.replace(/&/g, '&amp;'))) rows++;
-  }));
-  assert.strictEqual(rows, 14, `expected 14 labelled rows, got ${rows}`);
+  assert.strictEqual(Object.keys(rowsOf(html)).length, 14);
+  const heads = html.match(/>Situation<|>Record<|>Rate<|>Vs his norm<|>Vs tour</g) || [];
+  assert.deepStrictEqual(heads, ['>Situation<', '>Record<', '>Rate<', '>Vs his norm<', '>Vs tour<'], 'the head line must render once, in order');
 });
 
-// ── 3. a missing tour figure dashes BOTH tour columns ───────────────────────
-check('a row with no tour comparison dashes BOTH tour columns, never 0, never blank', () => {
-  const I = load(ROSTER, PBP_STORE);
-  // breakOppServing carries pct:null in the store above.
-  const row = I.sitRowHtml('Break opp. serving for set', { w: 6, l: 14 }, null);
-  const txt = [];
-  const re = /text-align:right[^"]*"[^>]*>([^<]*)</g;
-  let m;
-  while ((m = re.exec(row)) !== null) txt.push(m[1]);
-  assert.strictEqual(txt.length, 4, `expected 4 numeric cells, got ${txt.length}: ${JSON.stringify(txt)}`);
-  assert.strictEqual(txt[2], DASH, `TOUR should be a dash, got "${txt[2]}"`);
-  assert.strictEqual(txt[3], DASH, `VS TOUR should be a dash, got "${txt[3]}"`);
-  assert.ok(!/0%|0\.0pp/.test(txt[2] + txt[3]), 'a missing tour figure rendered as a zero');
-  assert.ok(txt[0].length > 0 && txt[1].length > 0, 'record and rate must still render');
+check('Record reads "w of n" and there is no sample caption anywhere (§0.4)', () => {
+  const I = load();
+  const r = rowsOf(I.renderSituational(SUBJECT));
+  assert(/>24 of 34</.test(r.winSet1), 'Win first set (last 24 months) is not "24 of 34": ' + text(r.winSet1));
+  assert(/>4 of 40</.test(r.brokenFirstSvc), 'a pbp row record is not "w of n"');
+  const all = I.renderProfileModal(SUBJECT);
+  assert(!/small sample|n &lt; 5|n < 5/.test(all), 'a sample caption is rendered');
 });
 
-// ── 4. the sample ladder ────────────────────────────────────────────────────
-check('under 5 shows the record and dashes the rate; 5-9 is marked a small sample', () => {
-  const I = load(ROSTER, PBP_STORE);
-  const hard = I.sitRowHtml('x', { w: 2, l: 2 }, 50);
-  assert.ok(hard.includes('2' + '–' + '2'), 'a thin row must still show its record');
-  assert.ok(hard.includes(DASH), 'a thin row must dash the rate');
-  assert.ok(!/%\s*<\/div>/.test(hard.replace(/50%/, '')), 'a thin row must not print a rate');
-  const soft = I.sitRowHtml('x', { w: 4, l: 3 }, 50);
-  assert.ok(/small sample/.test(soft), 'a 5-9 row must be marked a small sample');
-  const full = I.sitRowHtml('x', { w: 8, l: 4 }, 50);
-  assert.ok(!/small sample/.test(full), 'a 10+ row must NOT be marked a small sample');
-  assert.ok(/66\.7%/.test(full), 'a full row must print its rate');
+check('under 5 the record shows and the rate dashes; thin rows are grey', () => {
+  const I = load();
+  const r = rowsOf(I.renderSituational(THIN));
+  assert(/>2 of 3</.test(r.winSet1), 'the thin record is not shown');
+  assert(r.winSet1.includes('font-weight:700;color:var(--text-label);text-align:right;">' + DASH), 'the thin rate is not a grey dash');
 });
 
-// ── 5. the tour population is read at RENDER time ───────────────────────────
-// The control that stops "tour" being a hardcoded number: halve the roster and
-// the stated population must fall with it.
-check('the stated tour population is read from the roster at render time', () => {
-  const big = load(ROSTER).renderSituational(SUBJECT);
-  const small = load([SUBJECT, PEER]).renderSituational(SUBJECT);
-  const nBig = /average of the (\d+) players/.exec(big);
-  const nSmall = /average of the (\d+) players/.exec(small);
-  assert.ok(nBig && nSmall, 'the footnote must state the population');
-  assert.ok(Number(nBig[1]) > Number(nSmall[1]),
-    `population did not fall with the roster: ${nBig[1]} vs ${nSmall[1]}`);
-  assert.ok(!/\b575\b/.test(small), 'the population looks hardcoded');
+check('a missing tour figure dashes Vs tour, never 0', () => {
+  const I = load();
+  const r = rowsOf(I.renderSituational(SUBJECT));
+  const t = text(r.breakOppServing);
+  assert(/\|—\|/.test(t), 'breakOppServing has no dash');
+  assert(!/0\.0pp|\|0%\|/.test(t), 'a missing tour figure rendered as zero');
 });
 
-// ── 6. the founder's footnote wording is carried verbatim ───────────────────
-check('the footnote keeps the ruled wording', () => {
-  const I = load(ROSTER, PBP_STORE);
+check('rows with no natural norm dash Vs his norm (first break, break back, After set one)', () => {
+  const I = load();
+  const r = rowsOf(I.renderSituational(SUBJECT));
+  ['firstBreak', 'breakBack', 'wonS1WonMatch', 'lostS1WonS2', 'wonS1Won20', 'lostS1FirstBreakS2'].forEach(id => {
+    assert(/title="No norm defined for this row"[^>]*><span[^>]*>—</.test(r[id]), id + ' carries a norm');
+  });
+  assert(/title="His sets won rate: [\d.]+%"/.test(r.winSet1), 'Win first set has no sets-won norm');
+});
+
+check('bold = vs his norm on hold / break rows, vs tour elsewhere; lower-is-better inverted', () => {
+  const I = load();
+  const r = rowsOf(I.renderSituational(SUBJECT));
+  // brokenFirstSvc 10.0% vs his broken norm 20.0% (hold 80%): −10.0pp, GOOD for him → green, bold
+  assert(/font-size:13\.5px;font-weight:700;color:var\(--pos\);">−10\.0pp/.test(r.brokenFirstSvc), 'inverted row not green / bold: ' + text(r.brokenFirstSvc));
+  assert(/font-size:12px;font-weight:400;color:var\(--pos\);">−10\.0pp/.test(r.brokenFirstSvc), 'its vs tour (−10.0 vs 20%) is not regular green');
+  // holdWinSet 77.3% vs hold norm 80% → red bold
+  assert(/font-size:13\.5px;font-weight:700;color:var\(--neg\);">−2\.7pp/.test(r.holdWinSet), 'hold row vs his norm not bold red');
+  // Win first set: vs his norm regular, vs tour bold
+  const cells = r.winSet1.split('title="');
+  assert(/font-size:12px;font-weight:400/.test(cells[1]) && /^Tour rate[\s\S]*font-size:13\.5px;font-weight:700/.test(cells[2]),
+    'Win first set: vs tour is not the bold figure');
+});
+
+check('Window re-derives the set rows; any scope the pbp store cannot honour dashes the pbp rows with its reason', () => {
+  const I = load();
+  I.state.ltWin = 'w52';
+  let html = I.renderSituational(SUBJECT), r = rowsOf(html);
+  assert(/>14 of 24</.test(r.winSet1), 'last 52 weeks');
+  assert(/data-lt-row="brokenFirstSvc"[^>]*title="Point-by-point rows are held for the last 24 months/.test(html), 'pbp rows give no reason on Last 52');
+  assert(!/>4 of 40</.test(r.brokenFirstSvc), 'a pbp record read under Last 52 weeks');
+  I.state.ltWin = 'career';
+  r = rowsOf(I.renderSituational(SUBJECT));
+  assert(/>24 of 40</.test(r.winSet1), 'career is not 24 of 40: ' + text(r.winSet1));
+  I.state.ltWin = 'm24'; I.state.ltSurf = 'clay';
+  r = rowsOf(I.renderSituational(SUBJECT));
+  assert(/>10 of 10</.test(r.winSet1), 'clay is not 10 of 10');
+  I.state.ltSurf = 'all';
+});
+
+check('Filters: per-option counts, Applied chips, the title sample "n of N matches"', () => {
+  const I = load();
+  I.state.fmOpen = 'lt';
+  let html = I.renderProfileModal(SUBJECT);
+  assert(/data-pp4-pop="lt"[^>]*width:620px/.test(html), 'the 620px popover is not open');
+  ['Price role', 'Format', 'Level', 'Opponent archetype'].forEach(g => assert(html.includes('>' + g + '<'), 'group ' + g + ' missing'));
+  assert(/data-g="ltFmt" data-v="bo3"[^>]*>[\s\S]*?>34<\/span>/.test(html), 'Best of 3 count is not 34');
+  assert(/>Done</.test(html) && /data-pp2="fm-reset" data-v="lt"/.test(html), 'Clear all / Done missing');
+  I.state.fmOpen = null; I.state.ltFmt = 'bo5';
+  html = I.renderProfileModal(SUBJECT);
+  assert(/data-pp4-applied="lt"[\s\S]*>Best of 5</.test(html), 'no Applied chip');
+  assert.strictEqual(I.ltTitleCount(SUBJECT), '0 of 34 matches');
+  I.state.ltFmt = 'all';
+  assert.strictEqual(I.ltTitleCount(SUBJECT), '34 matches · 180 service games');
+});
+
+check('tiles: Strongest / Weakest from the key gaps, neutral bar until clicked (§0.1)', () => {
+  const I = load();
+  I.state.ltPicked = null;
+  let html = I.renderProfileModal(SUBJECT);
+  assert(/>Strongest spot</.test(html) && />Weakest spot</.test(html), 'tiles missing');
+  assert(!/data-lt-bar="on"/.test(html) && /data-lt-bar="off"[^>]*background:var\(--pp-x-bar-neutral\)/.test(html), 'a bar is blue before any click');
+  const id = /data-pp2="lt-tile" data-v="(\w+)"/.exec(html)[1];
+  I.state.ltPicked = id; I.state.ltBox = null;
+  html = I.renderProfileModal(SUBJECT);
+  assert(/data-lt-bar="on"[^>]*background:var\(--pp-x-link\)/.test(html), 'the last-clicked tile is not blue after its box closed');
+  I.state.ltPicked = null;
+});
+
+check('the situation box lists the matches behind a set row: All = n, Happened = w', () => {
+  const I = load();
+  I.state.ltBox = 'winSet1';
+  const html = I.renderProfileModal(SUBJECT);
+  assert(/data-lt-box="spot"/.test(html) && /width:860px/.test(html), 'the 860px box is not open');
+  assert.strictEqual((html.match(/>Yes</g) || []).length, 24);
+  assert.strictEqual((html.match(/>No</g) || []).length, 10);
+  I.state.ltSpotF = 'yes';
+  assert.strictEqual((I.renderProfileModal(SUBJECT).match(/>No</g) || []).length, 0);
+  I.state.ltSpotF = 'all'; I.state.ltBox = null;
+});
+
+check('the founder coverage wording rides on the table head', () => {
+  const I = load();
   const html = I.renderSituational(SUBJECT);
-  assert.ok(/not the full career figure shown in Career record/.test(html),
-    'the footnote must say the rows are not the career figure');
-  assert.ok(/counted per match, so a match can appear in several rows/.test(html),
-    'the footnote must say situations are counted per match');
-  assert.ok(/matches with set-by-set data/.test(html), 'the footnote must state the set-by-set N');
-  // TEN-384 (row 53): the reference has no visible footnote; the ruled wording rides on the
-  // head cell's tooltip so the caveat stays reachable — and is NOT a paragraph under the table.
-  assert.ok(/<div data-sit="head" title="These rows rest on the [^"]*not the full career figure/.test(html),
-    'the ruled wording is not on the Situational head\'s tooltip');
-  assert.ok(!/<div style="font-size:11\.5px;color:var\(--text-label\);line-height:1\.6;">These rows rest/.test(html),
-    'the visible footnote paragraph is still rendering');
+  assert(/data-sit="head" title="These rows rest on the [^"]*not the full career figure shown in Career record/.test(html));
+  assert(/counted per match, so a match can appear in several rows/.test(html));
 });
 
-// ── 7. a player with nothing gets words, not an empty table ─────────────────
 check('a player with no data at all gets a sentence, not an empty table', () => {
-  const I = load(ROSTER);
-  const html = I.renderSituational(NOFORM);
-  assert.ok(!/data-pp2="sit-toggle"/.test(html), 'rendered a group for a player with no data');
-  assert.ok(/no set-by-set or point-by-point data on record/.test(html),
-    'should say in words why there is nothing');
+  const I = load({ pbp: false });
+  const html = I.renderSituational(NONE);
+  assert(!/data-pp2="sit-toggle"/.test(html));
+  assert(/no set-by-set or point-by-point data on record/.test(html));
 });
 
-// ── 8. walkovers are out of the denominator ─────────────────────────────────
 check('a walkover is excluded from the set counts', () => {
-  const I = load(ROSTER);
-  const base = I.sitSetCounts(SUBJECT).n;
-  const withWo = {
-    key: 9, name: 'E. Wo',
-    recentForm: { pct: 0, matches: SUBJECT.recentForm.matches.concat([
-      match([{ p: 6, o: 0 }], true, { walkover: true })]) },
-  };
-  assert.strictEqual(I.sitSetCounts(withWo).n, base,
-    'a walkover was counted as a match with set-by-set data');
+  const I = load();
+  const base = I.sitSetCountsOf([{ sets: W2, won: true }]).n;
+  assert.strictEqual(I.sitSetCountsOf([{ sets: W2, won: true }, { sets: [{ p: 6, o: 0 }], won: true, walkover: true }]).n, base);
 });
 
-// ── 9. closing a group hides its rows ───────────────────────────────────────
 check('a closed group hides its rows but keeps its header', () => {
-  const I = load(ROSTER, PBP_STORE);
+  const I = load();
   I.state.sitOpen = { 'Set outcomes': false };
   const html = I.renderSituational(SUBJECT);
   I.state.sitOpen = null;
-  assert.ok(/Set outcomes/.test(html), 'the closed group must keep its header');
-  assert.ok(!/Win first set/.test(html), 'a closed group must not render its rows');
-  assert.ok(/Break of serve/.test(html), 'closing one group must not close the others');
+  assert(/Set outcomes/.test(html) && !/Win first set/.test(html) && /Break of serve/.test(html));
 });
 
-// ── the export's own geometry (Player Stat Boxes.dc.html:919 head, :933 rows) ──
-// Measured against the founder's screenshot before this was written: our build
-// had `1fr 62px 74px 62px 72px` at `gap:10px`, which put RATE 12px, TOUR 14px and
-// VS TOUR 10px wider than the design and shifted every numeric column. The
-// screenshot's own column right-edges (916.0 / 983.5 / 1037.0 / 1104.5 CSS at a
-// 1680-wide viewport rendered at 90%) reproduce from 62/62/48/62 and do not
-// reproduce from 62/74/62/72.
-// TEN-384: the reference's tracks (inventory C row 49) — label · Record 64 · Rate 64 · Tour 56 · Vs tour 72.
-const TRACKS = 'grid-template-columns:minmax(0,1fr) 64px 64px 56px 72px;gap:0 12px;';
-
-check('rows and head use the export\'s grid tracks', () => {
-  const I = load(ROSTER, PBP_STORE);
-  const html = I.renderSituational(SUBJECT);
-  const n = html.split(TRACKS).length - 1;
-  // 1 head + one grid PER ROW (14). The export nests each group's cells in a
-  // single per-group grid; we emit a grid per row. With identical tracks and no
-  // row gap the two lay out the same, because every row resolves minmax(0,1fr)
-  // against the same container width — so this is a structural difference with
-  // no geometric one, and the per-row form is what keeps a row's five cells
-  // together when a group is collapsed.
-  assert.strictEqual(n, 15, `expected 15 grids on the export tracks (1 head + 14 rows), found ${n}`);
-  assert.ok(!/62px 74px 62px 72px/.test(html), 'the pre-export track widths are still being emitted');
-  assert.ok(!/minmax\(0,1fr\) 62px 62px 48px 62px/.test(html), 'the TEN-206 export tracks are still being emitted');
-  assert.ok(!/gap:10px/.test(html.split('Situational')[1] || ''), 'the 10px gap is still being emitted');
+// ── mutants: each must turn one of the probes red ─────────────────────────────
+const MUT = [
+  ['inversion dropped', 'var r = Math.round(gap * 10) / 10, e = inv ? -r : r;', 'var r = Math.round(gap * 10) / 10, e = r;'],
+  ['bold rule swapped', 'var N = gapCell(!held || hard || !nm ? null : rate - nm.v, f.inv, !!f.hb,', 'var N = gapCell(!held || hard || !nm ? null : rate - nm.v, f.inv, !f.hb,'],
+  ['pbp rows read under every scope', "var pbpOk = !!pbp && S.win === 'm24' && S.surf === 'all' && !ltFiltersOn(S);", 'var pbpOk = !!pbp;'],
+  ['the window ignored', "var cut = S.win === 'w52' ? mkCut('l52') : S.win === 'm24' ? mkCut('l24') : null;", 'var cut = null;'],
+  ['bars blue by default', "'%;border-radius:2px;background:' + pp4Bar(picked) + ';\"></span>' +\n        (r.base == null", "'%;border-radius:2px;background:' + pp4Bar(true) + ';\"></span>' +\n        (r.base == null"],
+  ['record back to W–L', "rec: held && rec && n ? w + ' of ' + n.toLocaleString('en-US') : DASH,", "rec: held && rec && n ? w + '–' + (n - w) : DASH,"],
+];
+console.log('\n  mutation controls\n');
+let survived = 0;
+MUT.forEach(([name, from, to]) => {
+  if (SRC.indexOf(from) < 0) { console.log('  SURVIVED ' + name + ' (target not in source)'); survived++; return; }
+  const src2 = SRC.replace(from, to);
+  const L = o => load(Object.assign({}, o, { src: src2 }));
+  let red = 0;
+  const run = (fn) => { try { fn(); } catch (e) { red++; } };
+  run(() => { const r = rowsOf(L().renderSituational(SUBJECT));
+    if (!/font-size:13\.5px;font-weight:700;color:var\(--pos\);">−10\.0pp/.test(r.brokenFirstSvc) || !/>4 of 40</.test(r.brokenFirstSvc)) throw 0; });
+  run(() => { const I = L(); I.state.ltWin = 'w52'; const r = rowsOf(I.renderSituational(SUBJECT)); if (/>4 of 40</.test(r.brokenFirstSvc)) throw 0;
+    if (!/>14 of 24</.test(r.winSet1)) throw 0;
+    I.state.ltWin = 'career'; if (!/>24 of 40</.test(rowsOf(I.renderSituational(SUBJECT)).winSet1)) throw 0; });
+  run(() => { const I = L(); I.state.ltPicked = null; if (/data-lt-bar="on"|data-lt-bar="off"[^>]*background:var\(--pp-x-link\)/.test(I.renderProfileModal(SUBJECT))) throw 0; });
+  if (red) console.log('  caught   ' + name); else { console.log('  SURVIVED ' + name); survived++; }
 });
 
-check('the head row renders ONCE, not once per group', () => {
-  const I = load(ROSTER, PBP_STORE);
-  const html = I.renderSituational(SUBJECT);
-  // TEN-376 Foundation: the head's 0.33px --line-soft rule is now 1px --line
-  // (all edges 1px; 12a --line-soft → --line). Anchored on the head row's own
-  // padding + rule so a row hairline elsewhere cannot be counted as a head.
-  const heads = html.split('padding:0 4px 8px;border-bottom:1px solid var(--line);').length - 1;
-  assert.strictEqual(heads, 1, `the column head renders ${heads} times; the export renders it once`);
-  const recs = html.split('>Record<').length - 1;
-  assert.strictEqual(recs, 1, `"Record" appears ${recs} times in the head`);
-});
-
-// TEN-384 (inventory C row 48): the reference names the table in the head row's FIRST CELL,
-// caps "Situational · set-by-set data", instead of a 20px/800 title above it.
-check('the table is named in its head row: caps "Situational · set-by-set data"', () => {
-  const I = load(ROSTER, PBP_STORE);
-  const html = I.renderSituational(SUBJECT);
-  // profile v2 (2026-11-09): the export's inline (?) prof1 follows the caps label in the same cell
-  assert.ok(/<div data-sit="head"[^>]*style="font-family:var\(--font-words\);font-size:10\.5px;font-weight:700;letter-spacing:0\.10em;text-transform:uppercase;color:var\(--text-label\);[^"]*"><span>Situational · set-by-set data<\/span>/.test(html),
-    'the head row\'s first cell is not the caps "Situational · set-by-set data"');
-  assert.ok(/data-pp2="info" data-v="prof1"/.test(html), 'the (?) prof1 is not in the head row');
-  assert.ok(!/font-size:20px;font-weight:800;">Situational</.test(html), 'the old 20px/800 title is still rendering');
-});
-
-console.log(`\nsituational panel: ${pass} pass, ${fail} fail`);
-if (fail) { console.error(`FAILED: ${fail} check(s)`); process.exit(1); }
+console.log(`\nsituational panel (v4): ${pass} pass, ${fail} fail, ${survived} mutant(s) survived`);
+if (fail || survived) { console.error('FAILED'); process.exit(1); }
