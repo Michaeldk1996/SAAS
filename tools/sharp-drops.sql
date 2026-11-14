@@ -26,12 +26,14 @@ create table if not exists sharp_bot.config (
     cooldown_min     integer not null default 5,
     max_overround    numeric not null default 0.20,
     kalshi_fee       numeric not null default 0.07,
+    load_hours       integer not null default 12,       -- price history loaded each tick: the price before a drop can be hours old
     token_secret     text    not null default 'sharp_telegram_bot_token',
     fallback_secret  text    not null default 'ten287_telegram_bot_token',
     tg_offset        bigint  not null default 0,
     last_scan_at     timestamptz
 );
 insert into sharp_bot.config (id) values (true) on conflict (id) do nothing;
+alter table sharp_bot.config add column if not exists load_hours integer not null default 12;
 
 -- One row per member. Settings columns are written ONLY by public.sharp_members_upsert (the Firestore sync); the chat
 -- columns ONLY by the bot (Telegram /start, /stop).
@@ -232,7 +234,7 @@ begin
     select t.fixture_id, t.side_id, t.price, t.at, t.known_at,
            r.price as ref_price,
            o.price as other_price,
-           (select count(*) from pg_temp.tsd s where s.fixture_id = t.fixture_id and s.side_id = t.side_id
+           (select count(distinct s.at) from pg_temp.tsd s where s.fixture_id = t.fixture_id and s.side_id = t.side_id
               and s.at > t.at - make_interval(mins => cfg.lookback_min) and s.at <= t.at) as steps
       from pg_temp.tsd t
       cross join lateral (select x.price from pg_temp.tsd x where x.fixture_id = t.fixture_id and x.side_id = t.side_id
@@ -478,7 +480,7 @@ language plpgsql as $$
 declare n_t integer; n_a integer; n_d integer; n_l integer;
 begin
   if not pg_try_advisory_xact_lock(288401) then return '{"skipped":true}'::jsonb; end if;
-  n_t := sharp_bot.load_ticks(now() - interval '45 minutes', now());
+  n_t := sharp_bot.load_ticks(now() - make_interval(hours => (select load_hours from sharp_bot.config)), now());
   n_a := sharp_bot.scan(now());
   n_d := sharp_bot.deliver(now());
   begin n_l := sharp_bot.tg_poll(); exception when others then n_l := -1; end;

@@ -203,6 +203,17 @@ try:
     rc, out = q("delete from sharp_bot.grades"); check('grades are append-only', rc != 0, out)
     rc, out = q("select public.sharp_feed(30)::text", 'anon'); check('the page feed answers anon', rc == 0 and '"result": "W"' in out, out[:300])
     rc, out = q("select sharp_bot.tick()"); check('tick() runs end to end', rc == 0 and '"alerts"' in out, out)
+    # the price before a drop is often hours old (a quiet pre-match market): tick() must still see it
+    q("select public.drops_scope_ingest($j$" + json.dumps([fixture(7010, 'O. Old', 'P. Price', 'Atp Singles', 100)]) + "$j$::jsonb, 'test')", 'service_role')
+    kibl(10, 19, 'Otto Old', 'Pete Price', 100)
+    tick(10, 2, 150, 1.70); tick(10, 3, 150, 2.20); tick(10, 2, 1, 1.66)
+    tick(10, 2, 1, 1.66, known_lag_s=20)              # the poller re-sees the same price: not a second step
+    q("update sharp_bot.config set last_scan_at = now() - interval '5 minutes'")
+    rc, out = q("select sharp_bot.tick()")
+    check('tick(): a price unchanged for 2.5 hours, then a 2.4% drop → an alert', alerts(10) == '2:ATP', out + ' | ' + alerts(10))
+    rc, out = q("select steps from sharp_bot.alerts where fixture_id = 10"); check('a re-sighting of the same price is not a second step', out == '1', out)
+    rc, out = q("select sharp_bot.load_ticks(now() - interval '12 hours', now()) - sharp_bot.load_ticks(now() - interval '1 hour', now())")
+    check('CONTROL: a 1-hour load drops exactly the two 2.5-hour-old prices (what the 45-minute window missed)', out.split('\n')[0] == '2', repr(out))
     rc, out = q("select sharp_bot.report(48)"); check('report', rc == 0 and '"graded": 3' in out, out)
 finally:
     pg.close()
