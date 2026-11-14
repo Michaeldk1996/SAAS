@@ -276,7 +276,7 @@ export function factSheet({ m, w, l, rep, shard = null, round = null, duration =
   add('THE TOURNAMENT', path);
   if (physical.length) add('PHYSICAL (a paragraph with these facts is added just before your last paragraph: do not write that paragraph, but name the doubt again in one sentence of "All in all")', physical);
   const cs = m.courtSpeed && m.courtSpeed.category ? String(m.courtSpeed.category).toLowerCase() : null;
-  if (cs && m.venue && m.venue.city) add('CONDITIONS', [`The court in ${m.venue.city} plays ${cs === 'medium' ? 'at a medium pace' : cs} this year${m.venue.indoor ? ', indoors' : ''}.`]);
+  if (cs && m.venue && m.venue.city) add('CONDITIONS', [`The court in ${m.venue.city} plays ${cs === 'medium' ? 'at a medium pace' : cs}${m.venue.indoor ? ', indoors' : ''} (our court-speed reading${m.courtSpeed.abstractSpeedYear ? ` from ${m.courtSpeed.abstractSpeedYear}` : ''}; do not print the year).`]);
   // the founder's phrases: each report is offered a few of them, so no sentence returns in every report
   const ph = PHRASES.map((x, i) => [crypto.createHash('sha256').update(`${m.id}|${i}`).digest('hex'), x]).sort((x, y) => x[0].localeCompare(y[0])).slice(0, 4).map((x) => x[1]);
   add('WORDING (phrases of the founder you may use here, two at most; none is required)', ph);
