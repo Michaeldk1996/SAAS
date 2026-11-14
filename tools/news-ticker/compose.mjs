@@ -201,7 +201,7 @@ export function physicalParagraph(m, rows, { winner = null, final = false, quote
     const what = at.length === 1 ? `${N} called the physio ${at[0]}` : `${N} called the physio ${at.length === 2 ? 'twice' : 'three times'}: ${at.slice(0, -1).join(', ')} and ${at[at.length - 1]}`;
     const q = (quotes || []).find((x) => x && x.interview === 'on-court' && String(x.playerId) === String(m[k + 'Key']) && /\b(physical|body|injur|fitness|health|pain|hand|wrist|arm|shoulder|back|leg|knee|ankle|foot|hip|blister|cramp)/i.test(String(x.topic || '')) && String(x.text || '').length <= 260);
     sentences.push(pick(PHYSICAL_OPENERS, k)(N));
-    sentences.push(`${what}${pattern ? `, ${pattern}` : ''}.`);
+    sentences.push(`${what.replace(N, 'He')}${pattern ? `, ${pattern}` : ''}.`);   // the opener has just named him
     sentences.push(q ? `${N} after the match: "${String(q.text).trim()}"` : 'We do not know the reason yet.');
     if (winner && k !== winner) sentences.push(`Something to follow for the next tournaments of ${N}.`);
     facts.push(`${what}${pattern ? `, ${pattern}` : ''}. The reason is not known.${winner && k === winner && !final ? ` It is the one doubt about ${N} before his next match.` : ''}`);

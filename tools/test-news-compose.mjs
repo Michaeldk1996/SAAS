@@ -125,9 +125,9 @@ await ok('the physical paragraph: where in the set, the pattern across rounds, a
   const T = FX.cards.find((c) => c.id === 'past-12179750');
   const row = (g) => [{ calledAt: '2026-11-13T14:10:19+00:00', player: 'Thiago Agustin Tirante', playerSide: 1, games: g, retired: false }];
   const one = physicalParagraph(T, row([[7, 1], [5, 2]]), { winner: 'p2' });
-  yes(one.sentences.join(' ').includes('Tirante called the physio early in the second set.') && one.sentences.includes('We do not know the reason yet.'), one.sentences.join(' '));
+  yes(one.sentences.join(' ').includes('He called the physio early in the second set.') && one.sentences.includes('We do not know the reason yet.'), one.sentences.join(' '));
   const two = physicalParagraph(T, row([[7, 1], [5, 2]]), { winner: 'p2', earlier: { p2: [{ rows: [] }, { rows: row([[7, 2], [6, 3]]) }] } });
-  yes(two.sentences.join(' ').includes('Tirante called the physio early in the second set, his second medical timeout in two matches.'), two.sentences.join(' '));
+  yes(two.sentences.join(' ').includes('He called the physio early in the second set, his second medical timeout in two matches.'), two.sentences.join(' '));
   yes(two.facts[0].includes('his second medical timeout in two matches') && two.facts[0].includes('the one doubt about Tirante before his next match'));
   yes(!physicalParagraph(T, row([[7, 1], [5, 2]]), { winner: 'p2', earlier: { p2: [{ rows: row([[7, 2], [6, 3]]) }, { rows: [] }] } }).sentences.join(' ').includes('in two matches'), 'a match without a timeout in between ends the pattern');
   eq(physicalParagraph(T, [], {}).sentences, []);
