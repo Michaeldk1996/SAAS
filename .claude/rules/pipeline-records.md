@@ -90,6 +90,14 @@ Where this file conflicts with `modal-analysis.md` (TEN-312, 2026-09-28), that f
     prize-money event api-tennis files as "Basel Open", 10 rows) and the 2023 World University Games men's singles (Chengdu,
     6 rows) — so the column stays. **Test:** a carpet row with a stated court class leaves "Surface not known"; one without
     stays; a feed fixture with a tournament surface keeps it — `tools/test-team-surfaces.js`.
+    **Extended (founder 2026-11-14, "find these surfaces, do some research and fix it"):** (a) an event name that ends in
+    its court ("Buenos Aires 3 (Argentina), Clay", "Baton Rouge (Usa), Hard (Indoor)") fills a blank surface and court class
+    (`nameSurface`, before the table; a map surface still wins); (b) the last 312 rows with no surface (Davis Cup zone
+    round-robins and ties 2017, 2021–26; seven ITF weeks) are in the table from Wikipedia tie boxes, zone summaries and ITF
+    season pages, indoor only where stated; (c) a cached profile built before `SURFACE_FILL_AT` that still holds a match on no
+    surface is rebuilt (`profileCacheStaleBySurface`, within the per-run budget — no schema bump). The profile shows the
+    column only for a player who still has such a match (`player-profile.md` "Follow the design"). **Test:**
+    `tools/test-surface-fill.js` (the name rule, a map surface wins, a full profile is not rebuilt, no rebuild loop).
   - **The career record is its own population, in its own file (payload B, founder TEN-449, 2026-10-19).** The TE
     merge never changes the career-history files H2H, Lines, the model and every other reader take — not a byte.
     The record is an overlay on them (`te-join.js` `recordLayer`) in `career-record/<key>.json` (+

@@ -9,7 +9,7 @@
 //       eight archetype names; every option's count = the rows the filter would keep
 //   3 · a hidden filter on: "Filters · 1" in blue, an Applied chip + Clear all, "n of m matches" beside the title, and the
 //       band gap reads "vs unfiltered"
-//   4 · Vs tour is a dash (no tour figure held), never the export's placeholder 50%; the money figure is a yield %, never u
+//   4 · Vs tour = band win rate − 50% (founder 2026-11-14 follow design), a dash under Price role / archetype; money in units
 //   5 · the detail card: five tiles in the export's order, the match grid with no column gap, the group line's speed and
 //       altitude, a result bullet on the walkover row
 //   6 · a band under PP4.SPEED_FLOOR: a dash + "n matches · min 5", no rate, no click; all bands empty: "No matches for
@@ -74,12 +74,14 @@ const checks = {
     assert(/^\d+ of \d+ matches$/.test(title), 'the title sample is not "n of m matches": ' + title);
     assert(/vs unfiltered/.test(html), 'the gap does not compare with the unfiltered band');
   },
-  money(html) {
+  // founder 2026-11-14 ("follow design", "use units"): Vs tour = band win rate − the tour average 50% (a dash with Price
+  // role or Opponent archetype on); every money figure in units
+  money(html, filtered) {
     const t = T(html);
-    assert(!/tour average 50%/.test(t) && !/Vs tour[^A-Z]*[+−]\d/.test(t), 'Vs tour shows a figure (the export\'s 50% is a placeholder)');
-    assert(/VS TOUR|Vs tour/.test(t) && /no tour figure/.test(t), 'Vs tour is not a dash with "no tour figure"');
-    assert(!/[+−]\d+\.\du\b/.test(t), 'a raw-units figure is printed (§0.5: yield %)');
-    assert(/on the price/.test(t), 'no summary yield');
+    if (filtered) assert(/VS TOUR|Vs tour/.test(t) && /no tour figure/.test(t) && /for these filters/.test(t), 'Vs tour is not a dash "for these filters"');
+    else assert(/tour average 50%/.test(t) && /[+−]?\d+\.\dpp/.test(t), 'Vs tour does not print the gap to the tour average 50%');
+    assert(/[+−]\d+\.\du\b/.test(t) && /on the price/.test(t), 'no units figure on the price');
+    assert(!/[+−]\d+\.\d%\s*on the price/.test(t), 'the summary is a yield %, not units');
   },
   detail(html) {
     const labels = (html.match(/data-pp2-spd="detail"[\s\S]*?(?=<div style="max-height)/) || [''])[0];
@@ -104,9 +106,13 @@ H.check('3 · a hidden filter on: "Filters · 1" blue, Applied chip, "n of m" ti
   const html = render({ spdRole: 'fav' });
   checks.filterOn(html, (I.MODAL_TITLE_COUNT || {}).speed(p));
 });
-H.check('4 · Vs tour is a dash, never 50%; the money figure is a yield %', () => {
-  checks.money(render());
-  checks.money(render({ spdRole: 'fav' }));
+H.check('4 · Vs tour = band win rate − 50% (dash under Price role); money in units', () => {
+  I.resetState(KEY);
+  const D = I.spdData(p, I.spdFilter());
+  const band = D.bands.find(b => b.n >= 5);
+  assert(band, 'vacuous: no band at the floor');
+  checks.money(render({ spdBand: band.key }));
+  checks.money(render({ spdBand: band.key, spdRole: 'fav' }), true);
   assert(/for these filters/.test(T(render({ spdRole: 'fav' }))), 'Vs tour does not say "for these filters" with Price role on');
 });
 H.check('5 · the detail card: five tiles, the grid, the group line; a walkover row carries a result bullet', () => {
@@ -155,8 +161,8 @@ const V3 = '<div data-pp2-band="standalone" style="padding:10px 16px;"><span dat
   '<span>Faster courts</span><div data-pp2-spd="summary"></div><span>+1.7u</span><span>Favourite · underdog</span>' +
   '<div style="display:grid;grid-template-columns:48px 12px minmax(0,1.1fr) 36px 40px minmax(0,1.3fr) 46px 46px;gap:0 10px;">';
 H.mustFail('CONTROL · the v3 band (surfaces only, no Window, no Filters) fails the bar check', () => checks.bar(V3));
-H.mustFail('CONTROL · a raw-units figure fails the money check', () => checks.money(V3 + '<span>Vs tour</span><span>no tour figure</span><span>on the price</span>'));
-H.mustFail('CONTROL · the export\'s 50% placeholder fails the money check', () => checks.money('<span>Vs tour</span><span>+22.0pp</span><span>tour average 50%</span><span>on the price</span>'));
+H.mustFail('CONTROL · a yield % on the price fails the money check', () => checks.money('<span>Vs tour</span><span>+22.0pp</span><span>tour average 50%</span><span>+4.1%</span><span>on the price</span>'));
+H.mustFail('CONTROL · a dash Vs tour with no filter on fails the money check', () => checks.money('<span>Vs tour</span><span>no tour figure</span><span>+1.70u</span><span>on the price</span>'));
 H.mustFail('CONTROL · the v3 four tiles and 10px-gap grid fail the detail check', () => checks.detail('<div data-pp2-spd="detail"><span>Win rate</span><span>On the price</span><span>Favourite · underdog</span><span>Deciding sets</span></div><div style="max-height">' + V3));
 H.mustFail('CONTROL · a grey trigger with no Applied row fails the filter-on check', () => checks.filterOn(render({ spdRole: 'all' }), '725 matches'));
 H.done();

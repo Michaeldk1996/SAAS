@@ -5583,9 +5583,10 @@
       // TEN-449 (founder 2026-10-19, option C): every season sums to its total
       { label: 'Surface not known', id: 'unknown' }
     ];
-    // v3 C2 (CONFIRM) · the reference drops "Surface not known" only if live data holds no unknown-surface match.
-    // Measured on the deployed profiles 14 Nov 2026: 512 such matches across 119 of 741 profile players (216 of 7,414
-    // seasons), so the column stays (TEN-449 option C) and the removal is reported to the founder, not built.
+    // Founder 2026-11-14: the column shows only for a player who has a match on no surface in this view (tier); a player
+    // whose every match has a surface gets the reference's five surface columns. Arithmetic on his own cells, nothing guessed.
+    var hasUnknown = years.some(function (y) { var u = tierGridCells(y, tier).unknown; return !!u && (u.won || 0) + (u.lost || 0) > 0; });
+    if (!hasUnknown) HEADS = HEADS.filter(function (h) { return h.id !== 'unknown'; });
     var unknownTip = 'Matches in no other column: no clay, hard or grass surface on record (Tennis Explorer lists most ' +
       'Davis Cup ties as "Not set"; an outdoor carpet match lands here too). Total less Clay, Hard, Indoors and Grass, ' +
       'so every season sums to its total.';
@@ -5702,7 +5703,7 @@
       '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin:0 0 6px;padding-right:28px;">' +
         recCaps('Record by season ' + MIDDOT + ' ' + esc(tierWord)) + recCaps('Wins / losses') + '</div>' +
       '<div style="height:14px;"></div></div>' +
-      '<div style="display:grid;grid-template-columns:auto repeat(6,minmax(0,1fr));gap:0 14px;' +
+      '<div style="display:grid;grid-template-columns:auto repeat(' + (HEADS.length - 1) + ',minmax(0,1fr));gap:0 14px;' +
         'align-items:center;">' + head + body + footer + surfDrill + '</div>',
       'bottom-ruled', '20px 24px 22px');
 
@@ -6060,8 +6061,35 @@
   // Canadian Open, "Cup" → ATP Cup; an ATP 250 keeps its city). The tier is no longer part of the name: it is the
   // row's own field (`level`), printed as the row's meta (tournLevelMeta). Display only: t.name stays the key
   // (state.tournOpen, data-t, the joins). Off the page (no sfEventName) the old map is the fallback.
+  // Founder 2026-11-14 ("fix it"): Tennis-Data rows (Market edge, the match lists) name an event by its sponsor ("Western &
+  // Southern Financial Group Masters"). The Database page's own name map (DatabaseTab.tdCity) gives its city, and the site's
+  // one event name follows from the city ("Cincinnati Open"). A name the map shares between events by season (TOURN_SPLIT)
+  // needs the row's date and is left as it is; Astana is its own venue (tournaments.md: lineage = same venue), never Almaty.
+  // OLD_SPONSOR_CITY = sponsor names of pre-2010 seasons the Database map does not carry (each one event, one city).
+  var OLD_SPONSOR_CITY = {
+    'Pacific Life Open': 'Indian Wells', 'NASDAQ-100 Open': 'Miami', 'Stella Artois': "Queen's Club", 'Madrid Masters': 'Madrid',
+    'Hamburg TMS': 'Hamburg', 'International German Open': 'Hamburg', 'Davidoff Swiss Indoors': 'Basel',
+    'AIG Japan Open Tennis Championships': 'Tokyo', 'Japan Open': 'Tokyo', 'Open Seat Godo': 'Barcelona',
+    'Open Sabadell Atlántico 2008': 'Barcelona', "Campionati Internazional d'Italia": 'Rome', 'Telecom Italia Masters Roma': 'Rome',
+    'Rogers Cup': 'Canada', 'Finals - Turin': 'ATP Finals', 'ATP Finals - Turin': 'ATP Finals', 'ATP Shanghai': 'Shanghai',
+    'ATP Marrakech': 'Marrakech', 'Next Generation Adelaide International': 'Adelaide', 'AAPT Championships': 'Adelaide',
+    'adidas International': 'Sydney', 'Countrywide Classic': 'Los Angeles', 'Austrian Open': 'Kitzbuhel',
+    'Catella Swedish Open': 'Bastad', 'Swedish Open': 'Bastad', 'Ordina Open': 's-Hertogenbosch'
+  };
+  var SPONSOR_NOT_CITY = { 'Astana Open': true };
+  function sponsorCity(name) {
+    var n = String(name || '');
+    if (!n || SPONSOR_NOT_CITY[n]) return null;
+    if (Object.prototype.hasOwnProperty.call(OLD_SPONSOR_CITY, n)) return OLD_SPONSOR_CITY[n];
+    return typeof window.sfSponsorCity === 'function' ? window.sfSponsorCity(n) || null : null;
+  }
   function tournDisplayName(name, level) {
-    var one = typeof window.sfEventName === 'function' ? window.sfEventName(name) : null;
+    var sf = typeof window.sfEventName === 'function' ? window.sfEventName : null;
+    var one = sf ? sf(name) : null;
+    var known = typeof window.sfEventKey === 'function' ? !!window.sfEventKey(name) : !!(one && one !== name);
+    if (one && known) return one;
+    var city = sponsorCity(name);
+    if (city && city !== name) return (sf && sf(city)) || city;
     if (one) return one;
     var base = EVENT_DISPLAY[name];
     if (!base) { EVENT_DISPLAY_UNKNOWN[name] = true; base = String(name || ''); }
@@ -6495,10 +6523,11 @@
         'flex-direction:column;scrollbar-gutter:stable;background:var(--card);border:1.25px solid var(--edge-6);border-top:0;' +
         'border-radius:0 0 16px 16px;padding:0 14px 10px;">' +
         (shown.length ? rows : tournHistPending(p) ? '' :
-          // inside the one list card: a plain line, no second container (DESIGN GAP: the reference draws an empty card)
-          '<div data-pp2-tourn-empty="1" style="border-top:1px solid var(--line);padding:26px;' +
-          'text-align:center;font-size:13px;color:var(--text-label);">' +
-          (lvl !== 'all' || sf !== 'all' ? 'No tournament matches these filters.' : q ? 'No tournament matches that search.' : 'No tournaments on record.') + '</div>') +
+          // a search or filter that matches nothing: the list card stays, empty, as the reference draws it (founder
+          // 2026-11-14 "follow design"); a player with no tournament at all still says so
+          (q || lvl !== 'all' || sf !== 'all' ? '<div data-pp2-tourn-empty="1"></div>'
+            : '<div data-pp2-tourn-empty="1" style="border-top:1px solid var(--line);padding:26px;text-align:center;font-size:13px;' +
+              'color:var(--text-label);">No tournaments on record.</div>')) +
       '</div>';
   }
 
@@ -7317,13 +7346,14 @@
       tiles = [
         thin ? { label: 'Record', fig: recordText(s.w, s.l), sub: s.n + ' matches', tail: 'too few matches for a rate' }
           : tile('Win rate', s.win.toFixed(1) + '%', recordText(s.w, s.l) + ' ' + MIDDOT + ' ' + s.n + ' matches', gapV, isOwnBase ? 'vs his ' + scopeLabel.toLowerCase() + ' rate' : 'vs his other rows'),
-        // v4 §6 · the tour figure is the tracked players' pooled record in this row (splTourFor); never the 50% placeholder
-        tourT ? tile('Tour average', tourT.rate.toFixed(1) + '%', 'win rate of tracked players here', thin ? null : pp(s.win, tourT.rate), 'his rate vs tour')
-          : { label: 'Tour average', fig: DASH, figColor: 'var(--text-label)', sub: 'no tour figure for this row', tail: '' },
+        // v4 §6 (founder 2026-11-14 "follow design") · the reference: the tracked players' pooled record in this row
+        // (splTourFor), else 50% (a two-sided row is 50% by construction)
+        (function () { var ta = tourT ? tourT.rate : 50;
+          return tile('Tour average', ta.toFixed(1) + '%', 'win rate of rated players here', thin ? null : pp(s.win, ta), 'his rate vs tour'); })(),
         S.join === 'pending' ? { label: 'On the price', fig: '<span data-pp2-pending="spl-pl">&nbsp;</span>', sub: '&nbsp;', tail: '' }
           : S.join !== 'ready' ? { label: 'On the price', fig: DASH, figColor: 'var(--text-label)', sub: 'prices unavailable', tail: '' }
-          : { label: 'On the price', fig: priced.length ? signed(100 * units / priced.length, 1, '%') + ' yield' : DASH,
-            sub: priced.length ? signed(units, 2, 'u') + ' ' + MIDDOT + ' flat 1u on ' + priced.length + ' of ' + counted.length + ' priced' : 'no price on record',
+          : { label: 'On the price', fig: priced.length ? signed(units, 2, 'u') : DASH,
+            sub: priced.length ? signed(100 * units / priced.length, 1, '%') + ' yield ' + MIDDOT + ' flat 1u on ' + priced.length + ' of ' + counted.length + ' priced' : 'no price on record',
             tail: 'fav ' + wl(fav) + ' ' + MIDDOT + ' dog ' + wl(dog) },
         // v4 §6 · the Grand Slams row's 4th tile is his Over 3.5 sets record (best-of-5 matches that went 4 or 5 sets)
         x.label === 'Grand Slams' && o35
@@ -9184,7 +9214,7 @@
           '<span data-mk-meta style="' + M + 'font-size:11px;color:var(--text-label);white-space:nowrap;">' + (s.n ? s.n + (s.n === 1 ? ' match' : ' matches') : 'no matches') + '</span></span>' +
         '<span style="display:flex;align-items:baseline;gap:10px;pointer-events:none;">' +
           '<span data-mk-yield style="' + M + 'font-size:26px;font-weight:700;line-height:1;color:' + (has ? 'var(--text)' : 'var(--pp-x-faint)') + ';">' +
-            (has ? signed(s.y, 2, '%') : DASH) + '</span>' +
+            (has ? signed(s.u, 2, 'u') : DASH) + '</span>' +   // founder 2026-11-14: money in units (the gap and the tour stay yields)
           '<span data-mk-gap style="' + M + 'font-size:12px;font-weight:700;color:' + (gap == null ? 'var(--text-label)' : signColour(gap)) + ';">' +
             (gap == null ? '' : signed(gap, 1, 'pp')) + '</span></span>' +
         '<span style="position:relative;display:block;height:4px;border-radius:2px;background:var(--track);pointer-events:none;">' +
@@ -9209,7 +9239,7 @@
     for (var g = Math.ceil(lo / step) * step; g <= hi; g += step) {
       var gg = Math.round(g * 100) / 100;
       grid += '<span style="position:absolute;right:0;top:' + (Y(gg) / H * 100).toFixed(2) + '%;transform:translateY(-50%);' + M +
-        'font-size:10px;color:var(--text-label);white-space:nowrap;">' + (gg > 0 ? '+' : gg < 0 ? MINUS : '') + Math.abs(gg) + '%</span>';
+        'font-size:10px;color:var(--text-label);white-space:nowrap;">' + (gg > 0 ? '+' : gg < 0 ? MINUS : '') + Math.abs(gg) + 'u</span>';   // founder 2026-11-14: units
     }
     // x labels: real dates of the matches at even steps through the series (the line is drawn per match)
     var ticks = '';
@@ -9231,7 +9261,7 @@
           '<span style="' + MK_CAPS + '">Cumulative return ' + MIDDOT + ' ' + roleWord + '</span>' +
           '<span style="font-size:12px;color:var(--text-label);">' + pool.length + ' matches</span></span>' +
         '<span data-mk-total style="' + M + 'font-size:22px;font-weight:700;line-height:1;color:' + (pool.length ? signColour(last) : 'var(--pp-x-faint)') + ';">' +
-          (pool.length ? signed(last, 1, '%') : DASH) + '</span>' +
+          (pool.length ? signed(last, 1, 'u') : DASH) + '</span>' +
       '</div>' +
       (pool.length ? '<div style="display:flex;gap:10px;">' +
         '<div style="position:relative;width:40px;height:240px;flex:none;">' + grid + '</div>' +
@@ -9250,15 +9280,15 @@
       '</div>';
     return { cards: cards, chart: chart, pool: pool };
   }
-  var MK_INFO1 = { what: 'What backing him at a flat 1% of bankroll at closing returned, in all matches, as favourite and as underdog, and how that return built up over time.', defs: [
-    ['Yield', 'Return per unit staked across every priced match in the filter.'],
+  var MK_INFO1 = { what: 'What backing him at a flat 1 unit at closing returned, in all matches, as favourite and as underdog, and how that return built up over time.', defs: [
+    ['Units', 'Units won or lost at 1 unit on him, every priced match in the filter; the yield (return per unit staked) sits under it.'],
     ['+pp vs tour', 'His yield minus the flat-stake yield of all rated players at closing, which is the market margin.'],
     ['Favourite', 'The shorter closing price of the two players.'],
-    ['Chart', 'Cumulative % of bankroll at a flat 1% stake per match, for the selected role and the active filters.']] };
+    ['Chart', 'Cumulative units at a flat 1 unit per match, for the selected role and the active filters.']] };
   var MK_INFO2 = { what: 'His record and return by how short his own closing price was.', defs: [
     ['Band', 'His own closing price, grouped. A band says how short he was, not whether he was favourite.'],
     ['Win %', 'Wins divided by matches in the band.'],
-    ['Yield', 'Return per unit staked at a flat 1% of bankroll in the band; the bar shows it against break even.'],
+    ['Yield', 'Return per unit staked at a flat 1 unit in the band; the bar shows it against break even.'],
     ['Under ' + MK_FLOOR, 'Fewer than ' + MK_FLOOR + ' matches: the record is shown and no rate.'],
     ['Click a band', 'Opens the band box: win rate and yield against the tour at the same price, the win rate the market expected, his losses and every match.']] };
   // Price sensitivity · LOCKED (§8.1): per role group a title line (role 17/700 · "W–L · win % won" grey mono · role
@@ -9383,13 +9413,13 @@
       tail: losses.length ? 'last loss ' + fbDate(losses[0].date) : '' };
     var tiles = thin ? [
       { label: 'Record', fig: recordText(b.w, b.l), sub: b.n + ' matches', tail: 'too few matches for a rate' },
-      { label: 'On the price', fig: signed(b.u, 1, '%'), figColor: signColour(b.u), sub: 'flat 1% of bankroll per match', tail: b.n + ' priced' },
+      { label: 'On the price', fig: signed(b.u, 2, 'u'), figColor: signColour(b.u), sub: 'flat 1u stake', tail: b.n + ' priced' },
       { label: 'Market expected', fig: Math.round(impl) + '%', sub: 'implied by his closing price', tail: 'no rate under ' + MK_FLOOR },
       lossTile
     ] : [
       { label: 'Win rate', fig: b.win.toFixed(1) + '%', sub: recordText(b.w, b.l) + ' ' + MIDDOT + ' ' + b.n + ' matches',
         tail: tb && tb.winRate != null ? pp(b.win - tb.winRate) + ' vs tour at ' + rng : 'tour at ' + rng + ' ' + DASH, tailColor: tb && tb.winRate != null ? signColour(b.win - tb.winRate) : null },
-      { label: 'On the price', fig: signed(b.y, 2, '%') + ' yield', sub: signed(b.u, 1, '%') + ' of bankroll ' + MIDDOT + ' flat 1% stake',
+      { label: 'On the price', fig: signed(b.u, 2, 'u'), sub: signed(b.y, 1, '%') + ' yield ' + MIDDOT + ' flat 1u stake',
         tail: tb && tb.yield != null ? pp(b.y - tb.yield) + ' vs tour at ' + rng : 'tour at ' + rng + ' ' + DASH, tailColor: tb && tb.yield != null ? signColour(b.y - tb.yield) : null },
       { label: 'Market expected', fig: impl.toFixed(1) + '%', sub: 'implied by his closing price', tail: pp(b.win - impl) + ' actual vs implied', tailColor: signColour(b.win - impl) },
       lossTile
@@ -9407,7 +9437,7 @@
         { html: esc(sc || (m.ret ? 'ret.' : DASH)), style: M + 'font-size:11px;color:var(--text-label);white-space:nowrap;' },
         { html: m.price.toFixed(2), style: M + 'font-size:11px;color:var(--text-soft);text-align:right;' },
         { html: m.oppPrice != null ? m.oppPrice.toFixed(2) : DASH, style: M + 'font-size:11px;color:var(--text-label);text-align:right;' },
-        { html: signed(m.pl || 0, 2, '%'), style: M + 'font-size:11.5px;font-weight:700;text-align:right;color:' + signColour(m.pl || 0) + ';' }
+        { html: signed(m.pl || 0, 2, 'u'), style: M + 'font-size:11.5px;font-weight:700;text-align:right;color:' + signColour(m.pl || 0) + ';' }
       ] };
     });
     return { name: B[2], code: B[1] + ' ' + MIDDOT + ' closing price',
@@ -12271,7 +12301,7 @@
   var SPD_INFO1 = { what: 'How he does on fast, medium and slow courts.', defs: [
     ['Band', 'Set per edition from the measured court speed: fast above +0.08, slow below −0.08, medium between. A season the court sheet has no reading for takes the venue\'s current reading.'],
     ['Figure', 'His win rate in that band. The small line is his record.'],
-    ['Signed figure', 'Yield: return per unit staked at a flat stake on his priced matches in that band, closing price.'],
+    ['Signed figure', 'Units won or lost at 1 unit on him, closing price, on his priced matches in that band.'],
     ['Population', 'ATP matches at a rated venue. Challenger, ITF and unrated venues are left out for now.'],
     ['Click a band', 'Opens its tiles and every match in it.'],
     ['Filters', 'Window and surface sit in the bar. Price role, altitude and opponent archetype sit behind Filters. Every figure follows them, and the gap then compares with his unfiltered rate in that band.'],
@@ -12280,7 +12310,7 @@
   var SPD_INFO2 = { what: 'The selected band in detail.', defs: [
     ['Win rate', 'Wins divided by matches in the band, and the gap to his other courts.'],
     ['Vs tour', 'His win rate in the band minus the tour average on those courts. No tour figure is held yet, so it shows a dash.'],
-    ['On the price', 'Yield at a flat stake, closing price, with the number of priced matches.'],
+    ['On the price', 'Units at 1 unit on him, closing price, with the yield and the number of priced matches.'],
     ['As favourite', 'His record when the market had him shorter, and when it had him longer.'],
     ['Deciding sets', 'His record in matches that went the distance.'],
     ['Altitude', 'The venue\'s height above sea level. Altitude = venues at ' + PP4.ALT_CUT_M + ' m or higher.'],
@@ -12445,7 +12475,7 @@
           '<span style="color:var(--text-soft);">' + (empty ? 'no matches here' : thin ? b.n + (b.n === 1 ? ' match' : ' matches') + ' ' + MIDDOT + ' min ' + FLOOR
             : recordText(b.w, b.l) + ' ' + MIDDOT + ' ' + b.n + ' matches') + '</span>' +
           // a band under the floor shows its count only, never a rate — its yield is a rate too
-          '<span style="color:var(--text-label);">' + (spPend ? '&nbsp;' : y == null || thin ? DASH : signed(y, 1, '%')) + '</span></span>' +
+          '<span style="color:var(--text-label);">' + (spPend ? '&nbsp;' : y == null || thin ? DASH : signed(b.units, 1, 'u')) + '</span></span>' +   // founder 2026-11-14: units
         '</div>';
     }).join('');
     var tPriced = 0, tCents = 0;
@@ -12457,7 +12487,7 @@
       '<span style="display:inline-flex;align-items:baseline;gap:6px;white-space:nowrap;"><span style="' + M + 'font-size:13px;font-weight:700;color:var(--text);">' +
         (D.tn ? Math.round(100 * D.tw / D.tn) + '%' : DASH) + '</span><span style="font-size:11.5px;color:var(--text-label);">win rate</span></span>' +
       '<span style="margin-left:auto;display:inline-flex;align-items:baseline;gap:6px;white-space:nowrap;"><span data-pp2-spd-yield="1" style="' + M + 'font-size:13px;font-weight:700;color:' +
-        (tYield == null ? 'var(--text-label)' : signColour(tYield)) + ';">' + (spPend ? '&nbsp;' : tYield == null ? DASH : signed(tYield, 1, '%')) + '</span>' +
+        (tYield == null ? 'var(--text-label)' : signColour(tYield)) + ';">' + (spPend ? '&nbsp;' : tYield == null ? DASH : signed(tCents / 100, 1, 'u')) + '</span>' +
         '<span style="font-size:11.5px;color:var(--text-label);">on the price</span></span></div>';
     // its (?) popover must paint over the detail card's own (?) (both sit in z-3 corners): lift the card while it is open
     var card1 = '<div data-pp2-spd="summary" style="margin-bottom:16px;position:relative;' + (state.info === 'spd1' ? 'z-index:4;' : '') + 'background:var(--card);border:1.25px solid var(--edge-6);border-radius:16px;padding:18px 20px 20px;">' +
@@ -12494,11 +12524,15 @@
     var tl = thinSel ? '' : [
       { label: 'Win rate', fig: Math.round(b.pct) + '%', sub: recordText(b.w, b.l),
         tail: gTxt ? gTxt + (narrowed ? ' vs all' : ' vs others') : '', tailTitle: gTxt ? gTxt + ' vs ' + gapWord : '', tailColor: gapCol(g) },
-      // no tour figure is held for a court-speed band (the export's 50% is a placeholder): a dash, never a number
-      { label: 'Vs tour', fig: DASH, figColor: 'var(--text-label)', sub: 'no tour figure',
-        tail: F.role !== 'all' || F.arch !== 'all' ? 'for these filters' : 'on ' + b.name.toLowerCase() + ' courts' },
-      { label: 'On the price', fig: spPend ? '&nbsp;' : y == null ? DASH : signed(y, 1, '%'), figColor: y == null ? 'var(--text-label)' : signColour(y),
-        sub: b.priced ? 'yield' : 'no prices kept', tail: b.priced ? b.priced + ' priced' : '' },
+      // founder 2026-11-14 ("follow design"): band win rate − the tour average 50% (every match has one winner and one
+      // loser, so the whole tour wins 50% in any band); a dash with Price role or Opponent archetype on, as the reference
+      (F.role !== 'all' || F.arch !== 'all')
+        ? { label: 'Vs tour', fig: DASH, figColor: 'var(--text-label)', sub: 'no tour figure', tail: 'for these filters' }
+        : (function () { var tg = Math.round(b.pct) - 50;   // the printed win rate − 50, as the reference
+            return { label: 'Vs tour', fig: signed(tg, 1, 'pp'), figColor: Math.abs(tg) < 0.05 ? 'var(--text)' : tg > 0 ? 'var(--pos)' : 'var(--neg)',
+              sub: 'tour average 50%', tail: 'on ' + b.name.toLowerCase() + ' courts' }; })(),
+      { label: 'On the price', fig: spPend ? '&nbsp;' : y == null ? DASH : signed(b.units, 2, 'u'), figColor: y == null ? 'var(--text-label)' : signColour(b.units),
+        sub: b.priced ? signed(y, 1, '%') + ' yield' : 'no prices kept', tail: b.priced ? b.priced + ' priced' : '' },   // founder 2026-11-14: units
       { label: 'As favourite', fig: fav.length ? wl(fav) : DASH, figColor: fav.length ? null : 'var(--text-label)', sub: fav.length + ' matches', tail: wl(dog) + ' as underdog' },
       { label: 'Deciding sets', fig: dec.length ? recordText(decW, dec.length - decW) : DASH, figColor: dec.length ? null : 'var(--text-label)',
         sub: dec.length ? Math.round(100 * decW / dec.length) + '% won' : 'none yet', tail: str.length ? wl(str) + ' straight sets' : '' }
@@ -13002,7 +13036,7 @@
   // code or row opens the shared drill box (Win rate · On the price · Favourite · underdog · Deciding sets).
   // Rows are the career spine joined to playing-styles.json (styleArchetypeOf — the same join as before), so every
   // figure reconciles with the old modal. Units (u), never % of bankroll (founder 2026-11-09). Under 5 matches: grey,
-  // rates dashed, hollow dot, no mark (founder: "I need no mark").
+  // rates dashed, a hollow dot at its own rate, an "under 5" tag (founder 2026-11-14, "follow design").
   var STY_FLOOR = 5;
   var STY_GROUP = { 'Big Server': 'serve', 'Big Server + First Strike': 'serve', 'Big Server + Complete Baseliner': 'serve',
     'Attacking Baseliner': 'base', 'Solid Baseliner': 'base', 'Counterpuncher': 'base', 'Solid Defender': 'base',
@@ -13021,7 +13055,7 @@
     ['Toughest', 'All Court Elite is the toughest match-up for almost every player. When it is his worst, the box shows his toughest outside the elite; his All Court Elite record is in the table.'],
     ['W' + ENDASH + 'L', 'Wins and losses against that archetype.'],
     ['vs his avg', 'Win rate against that archetype minus his average across all archetypes. The white tick on each bar is that average.'],
-    ['Yield', 'Yield backing him: profit per unit staked, 1 unit on him at closing price, every priced match. Comparable between small and large rows.'],
+    ['Backing', 'Units won or lost at 1 unit on him at closing price, every priced match.'],
     ['Retirements', 'Matches that ended by retirement are included in every record and yield here. Each one is marked ret. after its score in the match list. They are left out of deciding sets and straight sets.'],
     ['Under ' + STY_FLOOR, 'Fewer than ' + STY_FLOOR + ' matches: the record is shown and no rate. These rows sit at the foot.'],
     ['Heads', 'Click a column head to sort by it.']] };
@@ -13088,13 +13122,15 @@
   // Yield backing him (§0.5): profit per unit staked, 1 unit on him at closing price, every priced match (1 decimal).
   function styYield(d) { return d && d.priced ? 100 * d.units / d.priced : null; }
   function styPct(v) { return signed(v, 1, '%'); }
+  // founder 2026-11-14 ("use units"): every money figure on this drawer prints units; the yield rides as the sub-line
+  function styU(u) { return signed(u, 2, 'u'); }
   function styGapColour(g) { return g == null ? 'var(--pp-x-faint)' : Math.abs(g) < 0.05 ? 'var(--text-label)' : g >= 0 ? 'var(--pos)' : 'var(--neg)'; }
   // The figures the design rounds: a rate to a whole per cent, the gap = that rate minus his (unrounded) average.
   function styGap(d, avg) { return d.pct == null || avg == null ? null : Math.round(d.pct) - avg; }
   function styChart(D) {
     var pts = D.data.filter(function (d) { return !d.empty; });
     if (!pts.length) return '<div style="padding:30px 0;text-align:center;font-size:12.5px;color:var(--text-label);">No archetyped opponent in this filter</div>';
-    var vals = pts.filter(function (d) { return !d.thin; }).map(function (d) { return d.pct; });
+    var vals = pts.map(function (d) { return d.pct; });   // v4 (founder 2026-11-14 "follow design"): thin dots plotted too
     if (D.avg != null) vals.push(D.avg);
     if (!vals.length) vals = [50];
     var LO = Math.max(0, Math.floor((Math.min.apply(null, vals) - 8) / 10) * 10);
@@ -13109,8 +13145,8 @@
     var marks = '', codes = '';
     pts.forEach(function (d, i) {
       var size = Math.round(14 + d.n / maxN * 20), on = sel === d.name, x = xOf(i).toFixed(1) + '%';
-      // A thin sample keeps its rate off the page: its hollow dot sits on his average (no height, no stem length).
-      var yv = d.thin ? (D.avg != null ? D.avg : 50) : d.pct;
+      // A thin sample: a hollow dot at its own rate, a faint stem and no value label (the reference; founder 2026-11-14).
+      var yv = d.pct;
       var y = top(yv);
       var tip = (d.thin ? '' : d.name + ' ' + MIDDOT + ' ') + recordText(d.w, d.l) + ' ' + MIDDOT + ' ' + d.n + (d.n === 1 ? ' match' : ' matches');
       var cls = 'pp2-stydot' + (d.thin ? ' pp2-stydot-thin' : '') + (on ? ' pp2-on' : '');
@@ -13169,7 +13205,7 @@
   var STY_GRID = 'display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr) 56px 60px 52px 76px 64px;gap:0 12px;align-items:center;';
   function styTable(D) {
     var so = state.stySort || { k: 'pct', d: -1 };
-    var keyOf = function (d) { return so.k === 'name' ? d.name : so.k === 'wl' ? d.w - d.l : so.k === 'n' ? d.n : so.k === 'u' ? (d.priced ? styYield(d) : -Infinity) : (d.pct == null ? -Infinity : d.pct); };
+    var keyOf = function (d) { return so.k === 'name' ? d.name : so.k === 'wl' ? d.w - d.l : so.k === 'n' ? d.n : so.k === 'u' ? (d.priced ? d.units : -Infinity) : (d.pct == null ? -Infinity : d.pct); };
     var list = D.data.slice().sort(function (a, b) {
       var ta = a.thin || a.empty ? 1 : 0, tb = b.thin || b.empty ? 1 : 0;
       if (ta !== tb) return ta - tb;
@@ -13181,7 +13217,7 @@
     var cols = [['Record by archetype', 'left', 'name', 'Sort A to Z'], ['Win rate', 'left'], ['W' + ENDASH + 'L', 'right', 'wl', 'Sort by wins minus losses'],
       ['Matches', 'right', 'n', 'Sort by matches played'], ['Win %', 'right', 'pct', 'Sort by win rate'],
       ['vs his avg', 'right', null, 'Win rate minus his average across all archetypes'],
-      ['Yield', 'right', 'u', 'Yield backing him: 1 unit on him at closing price, every priced match. Click to sort']];
+      ['Backing', 'right', 'u', 'Backing him: units at 1 unit on him at closing price, every priced match. Click to sort']];
     var head = '<div style="' + STY_GRID + 'margin:0 -24px;padding:0 24px;border-bottom:1px solid var(--edge-10);">' + cols.map(function (c) {
       var on = c[2] && so.k === c[2];
       return '<span' + (c[2] ? ' data-pp2="sty-sort" data-v="' + c[2] + '"' : '') + ' title="' + esc(c[3] || '') + '" style="display:flex;align-items:baseline;gap:5px;' +
@@ -13204,7 +13240,8 @@
         '<span style="display:inline-flex;align-items:baseline;gap:8px;min-width:0;"><span style="font-size:13px;font-weight:700;' +
           'color:' + (dim ? 'var(--text-label)' : 'var(--text)') + ';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + esc(d.name) + '</span>' +
           '<span style="' + MONO + 'font-size:10px;color:var(--text-label);flex:none;">' + esc(d.code) + '</span>' +
-          // no "under 5" tag: founder 2026-11-09 "I need no mark" (the reference's r.tag is not built)
+          // v4 · the reference's "under 5" tag on a thin row (founder 2026-11-14 "follow design", replaces 2026-11-09)
+          (d.thin ? '<span class="pp2-stytag" style="' + MONO + 'font-size:9.5px;color:var(--pp-x-ink-muted);flex:none;white-space:nowrap;">under ' + STY_FLOOR + '</span>' : '') +
           '</span>' +
         '<span style="position:relative;display:block;width:100%;height:6px;border-radius:3px;background:var(--edge-6);">' +
           '<span style="position:absolute;left:0;top:0;bottom:0;width:' + (dim ? 0 : d.pct).toFixed(1) + '%;border-radius:3px;background:' + pp4Bar(on) + ';"></span>' +
@@ -13218,7 +13255,7 @@
           (gp == null ? DASH : signed(gp, 1, 'pp')) + '</span>' +
         '<span style="' + MONO + 'font-size:12px;font-weight:600;text-align:right;color:' +
           (STYLE_PEND || dim || y == null ? 'var(--pp-x-faint)' : 'var(--text-soft)') + ';">' +
-          (STYLE_PEND ? '&nbsp;' : dim || y == null ? DASH : styPct(y)) + '</span>' +
+          (STYLE_PEND ? '&nbsp;' : dim || y == null ? DASH : styU(d.units)) + '</span>' +
         '</div>';
     }).join('');
     return head + rows;
@@ -13258,7 +13295,7 @@
         '<span style="position:absolute;left:0;top:0;bottom:0;width:' + d.pct.toFixed(1) + '%;border-radius:2px;background:' + pp4Bar(on) + ';"></span>' +
         '<span style="position:absolute;left:calc(' + D.avg.toFixed(1) + '% - 1px);top:-3px;bottom:-3px;width:2px;background:var(--text);"></span></span>' +
       '<span style="display:flex;align-items:baseline;justify-content:space-between;gap:8px;' + STY_MONO + 'font-size:11.5px;color:var(--text-label);white-space:nowrap;pointer-events:none;">' +
-        '<span>' + recordText(d.w, d.l) + ' ' + MIDDOT + ' ' + d.n + ' matches</span><span>' + (STYLE_PEND ? '&nbsp;' : y == null ? DASH : styPct(y) + ' yield') + '</span></span>' +
+        '<span>' + recordText(d.w, d.l) + ' ' + MIDDOT + ' ' + d.n + ' matches</span><span>' + (STYLE_PEND ? '&nbsp;' : y == null ? DASH : styU(d.units)) + '</span></span>' +
       '</div>';
   }
   function renderStylesModalV2(p) {
@@ -13276,8 +13313,8 @@
           '<span style="font-size:12px;color:var(--text-label);">' + D.TN + (D.TN === 1 ? ' match' : ' matches') + '</span></span>' +
         '<span style="display:inline-flex;align-items:baseline;gap:6px;white-space:nowrap;">' +
           '<span style="' + STY_MONO + 'font-size:13px;font-weight:700;color:' + (STYLE_PEND || TY == null ? 'var(--pp-x-faint)' : styGapColour(TY)) + ';">' +
-            (STYLE_PEND ? '&nbsp;' : TY == null ? DASH : styPct(TY)) + '</span>' +
-          '<span style="font-size:12px;color:var(--text-label);">yield backing him</span></span>' +
+            (STYLE_PEND ? '&nbsp;' : TY == null ? DASH : styU(TU)) + '</span>' +
+          '<span style="font-size:12px;color:var(--text-label);">backing him</span></span>' +
       '</div>';
     return bandBox('<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">' + stySegPills('sty-surf', STY_SURFS, state.stySurf || 'all') + '</div>' +
         winSeg('sty-win', state.styWin || 'career', false), 'joined-card', 'justify-content:space-between;gap:12px;') +
@@ -13366,14 +13403,14 @@
     // v4 §7 · the archetype box. Retirements count in the record and the yield, never in deciding / straight sets.
     var tiles = d.thin ? [
       { label: 'Win rate', fig: recordText(d.w, d.l), sub: nm(d.n) + ' ' + MIDDOT + ' under ' + F },
-      { label: 'Yield backing him', fig: DASH, figColor: 'var(--pp-x-faint)', sub: d.priced + ' priced ' + MIDDOT + ' no yield under ' + F + ' matches', tail: yTail, tailColor: 'var(--text-soft)' },
+      { label: 'Backing him', fig: DASH, figColor: 'var(--pp-x-faint)', sub: d.priced + ' priced ' + MIDDOT + ' no figure under ' + F + ' matches', tail: yTail, tailColor: 'var(--text-soft)' },
       favTile,
       { label: 'Deciding sets', fig: dec.length ? wl(dec) : DASH, figColor: dec.length ? null : 'var(--pp-x-faint)', sub: str.length ? wl(str) + ' in straight sets' : '' }
     ] : [
       { label: 'Win rate', fig: Math.round(d.pct) + '%', sub: recordText(d.w, d.l) + ' ' + MIDDOT + ' ' + nm(d.n),
         tail: gap == null ? '' : signed(gap, 1, 'pp') + ' vs other archetypes', tailColor: gap == null ? null : styGapColour(gap) },
-      { label: 'Yield backing him', fig: STYLE_PEND ? '&nbsp;' : y == null ? DASH : styPct(y), figColor: y == null ? 'var(--pp-x-faint)' : y >= 0 ? 'var(--pos)' : 'var(--neg)',
-        sub: STYLE_PEND ? '' : d.priced ? d.priced + ' priced ' + MIDDOT + ' ' + units : 'no prices kept', tail: yTail, tailColor: 'var(--text-soft)' },
+      { label: 'Backing him', fig: STYLE_PEND ? '&nbsp;' : y == null ? DASH : styU(d.units), figColor: y == null ? 'var(--pp-x-faint)' : d.units >= 0 ? 'var(--pos)' : 'var(--neg)',
+        sub: STYLE_PEND ? '' : d.priced ? d.priced + ' priced ' + MIDDOT + ' ' + styPct(y) + ' yield' : 'no prices kept', tail: yTail, tailColor: 'var(--text-soft)' },
       favTile,
       // A rate only from STY_FLOOR deciders on (thin samples: count, no rate).
       { label: 'Deciding sets', fig: dec.length ? recordText(decW, dec.length - decW) : DASH, figColor: dec.length ? null : 'var(--pp-x-faint)',

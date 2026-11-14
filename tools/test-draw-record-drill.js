@@ -217,7 +217,8 @@ H.check('C2 · On the price = Σ flat 1u over the counted priced rows, with its 
   const S = I.splModel(P), rows = S.groups['By round'].find(x => x.label === 'Semi-finals').rows.filter(r => !r.sc.wo);
   const pr = rows.filter(r => r.cents != null), sum = pr.reduce((a, r) => a + r.cents, 0);
   const want = (sum < 0 ? '−' : '+') + (Math.abs(sum) / 100).toFixed(2) + 'u';
-  assert(t.sub.startsWith(want) && t.sub.includes('on ' + pr.length + ' of 90 priced'), t.sub + ' vs ' + want);
+  // founder 2026-11-14 ("use units"): the units are the figure, the yield and the priced count the sub line
+  assert(t.fig === want && t.sub.includes('on ' + pr.length + ' of 90 priced'), t.fig + ' / ' + t.sub + ' vs ' + want);
   return t.fig + ' · ' + t.sub;
 });
 H.check('C3 · prices pending → the tile and the price cells are blank (never 0, never —); failed → "prices unavailable"', () => {
@@ -479,14 +480,14 @@ H.check('F7 · Sets & games: no tour sets figure exists, so the situation boxes 
   assert.strictEqual(m.I.FB_BUILD.splbox(P, tb).name, 'Tiebreak record');
   m.I.state.splView = 'results';
 });
-H.check('F8 · match box: Grand Slams 4th tile = Over 3.5 sets; Tour average = the pool (a dash without one); Service tiles renamed', () => {
+H.check('F8 · match box: Grand Slams 4th tile = Over 3.5 sets; Tour average = the pool, else 50% (founder 2026-11-14: follow design); Service tiles renamed', () => {
   const m = load(); m.W.careerSplitsTour = POOL;
   let fb = box(m.I, 'Level|Grand Slams');
   const o35 = m.I.splModel(P).groups['Extra stats'].find(x => x.label === 'Over 3.5 sets').s;
   assert.strictEqual(fb.tiles[3].label, 'Over 3.5 sets'); assert.strictEqual(fb.tiles[3].fig, o35.w + '–' + o35.l);
   assert.strictEqual(fb.tiles[1].fig, '50.0%', 'tour = the pool');
   fb = box(m.I, 'Level|ATP 250');
-  assert.strictEqual(fb.tiles[1].fig, '—'); assert.strictEqual(fb.tiles[3].label, 'Last 10 here');
+  assert.strictEqual(fb.tiles[1].fig, '50.0%', 'no pooled figure: the reference\'s 50%'); assert.strictEqual(fb.tiles[3].label, 'Last 10 here');
   m.I.state.splView = 'service';
   fb = box(m.I, 'Level|Grand Slams');
   assert.deepStrictEqual(fb.tiles.slice(0, 2).map(x => x.label), ['Service games held', 'Return games won']);

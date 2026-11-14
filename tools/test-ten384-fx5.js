@@ -148,8 +148,9 @@ H.check('2 · Record per tournament modal while the shard loads: no empty-state 
   const { I: I2, p: p2 } = fxModule({ th: [] });
   const t2 = T(withState(I2, { key: p2.key, tournQuery: '', tournOpen: null }, () => I2.renderTournModal(p2)));
   assert(/No tournaments on record\./.test(t2), 'settled empty: ' + t2.slice(-120));
-  const t3 = T(withState(I2, { key: p2.key, tournQuery: 'zzz', tournOpen: null }, () => I2.renderTournModal(p2)));
-  assert(/No tournament matches that search\./.test(t3));
+  // founder 2026-11-14 ("follow design"): a search that matches nothing leaves the list card empty, as the reference draws it
+  const h3 = withState(I2, { key: p2.key, tournQuery: 'zzz', tournOpen: null }, () => I2.renderTournModal(p2));
+  assert(/data-pp2-tourn-empty="1"><\/div>/.test(h3) && !/No tournament/.test(T(h3)), 'search empty: an empty list card, no sentence');
 });
 H.check('2 · a career drill while its shard loads lists nothing and says it is loading (TEN-442: the career-history shard)', () => {
   // TEN-442 · season drills list the dated career-history store, so THAT shard is the one whose absence means

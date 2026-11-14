@@ -2284,9 +2284,11 @@ check('the rendered grid shows the Indoors column and the dash, in the DOM', () 
     I.state.careerScope = 'career';
     const html = I.renderCareerModal(IND_PLAYER, { archetype: null });
     assert(html.includes('Indoors'), 'the header has no Indoors column');
-    // seven columns now: auto + repeat(6) — TEN-449 added "Surface not known"
-    assert(/repeat\(6,minmax\(0,1fr\)\)/.test(html),
-      'the grid track count did not widen to six data columns');
+    // auto + one track per data column: six with "Surface not known", five for a player whose every match has a surface
+    // (founder 2026-11-14) — the track count always equals the head count
+    const heads = (html.match(/>Surface not known<\/div>/) ? 6 : 5);
+    assert(new RegExp('repeat\\(' + heads + ',minmax\\(0,1fr\\)\\)').test(html),
+      'the grid track count does not match its ' + heads + ' data columns');
     // the carved hard cell (7/7) must be painted, and the raw 11/9 must NOT be
     assert(html.includes('>7/7<'), 'the carved Hard cell is not in the DOM');
     assert(!html.includes('>11/9<'), 'the DOM still shows the uncarved Hard record');
@@ -2510,8 +2512,11 @@ check('profile v2 · Career record: the Tier control as the design draws it, ope
       const txt = html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
       assert(txt.indexOf('WINDOW') < 0 || txt.indexOf('Window') < txt.indexOf('Tier'), `${p.name}: Tier is not after Window`);
       assert(/Record by season · ATP/i.test(txt), `${p.name}: the ATP tier is not applied to the season table`);
-      assert(/>Year<\/div>[\s\S]*?>Total<\/div>[\s\S]*?>Hard<\/div>[\s\S]*?>Clay<\/div>[\s\S]*?>Grass<\/div>[\s\S]*?>Indoors<\/div>[\s\S]*?>Surface not known<\/div>/.test(html),
+      assert(/>Year<\/div>[\s\S]*?>Total<\/div>[\s\S]*?>Hard<\/div>[\s\S]*?>Clay<\/div>[\s\S]*?>Grass<\/div>[\s\S]*?>Indoors<\/div>/.test(html),
         `${p.name}: the season columns are not in the export's order`);
+      // founder 2026-11-14: "Surface not known" only for a player with a match on no surface in this tier
+      const unk = I.spineYears(p).some(y => { const u = I.tierGridCells(y, 'atp').unknown; return u && u.won + u.lost > 0; });
+      assert(/>Surface not known<\/div>/.test(html) === unk, `${p.name}: "Surface not known" ${unk ? 'missing' : 'shown with nothing in it'}`);
       assert(!/Click any record to browse|vs all = surface win rate/.test(html), `${p.name}: a helper sentence or foot note survived`);
       assert(/data-pp2="info" data-v="cr2"/.test(html), `${p.name}: Record by season carries no (?)`);
       Object.assign(I.state, { careerTab: 'ratings' });
@@ -2996,7 +3001,7 @@ mustFail('the guard check would catch the initial test being dropped', () => {
 // Profile v2 (founder 2026-11-09; supersedes the TEN-228/384 Match-up pins): an archetype under 5 matches stays listed,
 // grey, its rate a dash, NO mark ("I need no mark"), sorted to the foot — and it opens the drill box (the export makes the
 // row clickable; the box then shows the record only).
-checkCareer('item 23 · an under-minimum archetype stays listed, dashed and grey, with no mark (v2)', () => {
+checkCareer('item 23 · an under-minimum archetype stays listed, dashed and grey, with the "under 5" tag (founder 2026-11-14)', () => {
   let found = 0;
   for (const key of Object.keys(PLAYERS)) {
     const p = Object.assign({ key }, PLAYERS[key]);
@@ -3011,7 +3016,8 @@ checkCareer('item 23 · an under-minimum archetype stays listed, dashed and grey
       const row = html.slice(html.indexOf('data-box="styles" data-v="' + lab + '" class="pp2-styrow"'));
       const one = row.slice(0, row.indexOf('</div>', row.indexOf('Backing') > -1 ? 0 : 0) + 2000);
       assert(/color:var\(--text-label\);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">/.test(one.slice(0, 900)), `${p.name}: thin ${r.axis.label} name is not grey`);
-      assert(!/under 5|small sample|min 5|below the five-match minimum/.test(html), `${p.name}: a small-sample mark is back`);
+      // founder 2026-11-14 ("follow design"): the thin row carries the reference's "under 5" tag
+      assert(/class="pp2-stytag"[^>]*>under 5</.test(one.slice(0, 1600)), `${p.name}: thin ${r.axis.label} has no "under 5" tag`);
     });
     if (++found >= 3) break;
   }
@@ -3243,10 +3249,10 @@ checkCareer('items 5,12,17-21,25,27-29 · the v2 controls, chart, table and dril
   const open = I.styleRows(subject).filter(r => I.styleOpenable(r.won + r.lost) && r.priced > 0)[0];
   const fb = I.FB_BUILD.styles(subject, open.axis.label);
   assert(fb && fb.tiles.length === 4, 'the drill box has no four tiles');
-  assert.deepStrictEqual(fb.tiles.map(t => t.label), ['Win rate', 'Yield backing him', 'Favourite · underdog', 'Deciding sets']);
-  // v4 §0.5 (handoff 2026-11-14): the headline money figure is the yield %; the units stay in the sub line.
-  assert(/%$/.test(fb.tiles[1].fig), 'Yield backing him is not a yield %');
-  assert(/ priced · [+−]\d+\.\d\d units$/.test(fb.tiles[1].sub), 'the yield tile does not state its priced count and units');
+  assert.deepStrictEqual(fb.tiles.map(t => t.label), ['Win rate', 'Backing him', 'Favourite · underdog', 'Deciding sets']);
+  // founder 2026-11-14 ("use units"): the headline money figure is units; the yield % rides in the sub line.
+  assert(/^[+−]\d+\.\d\du$/.test(fb.tiles[1].fig), 'Backing him is not in units');
+  assert(/ priced · [+−]\d+\.\d% yield$/.test(fb.tiles[1].sub), 'the backing tile does not state its priced count and yield');
   console.log(`        ${subject.name}: v2 structure + ${open.axis.label} drill box`);
 });
 
@@ -3956,6 +3962,9 @@ check('the all-stores table covers every data store the module reads', () => {
     'trPxAfterOfEdition',
     // TEN-402 r3: the page's one event name (sfEventName — Record per tournament prints it) — a display function, no rows
     'sfEventName',
+    // founder 2026-11-14: the profile's event names also read the Database page's sponsor → city map (sfSponsorCity over
+    // DatabaseTab.tdCity, a static name table) and the site event key (sfEventKey) — name lookups, no rows
+    'sfSponsorCity', 'sfEventKey',
     // Draw record drill-in (founder 2026-10-13): the host's lazy per-match file (pp2DrawNeed asks, pp2DrawMatches reads
     // its state; the rows reconcile with careerSplits — tools/test-draw-record-drill.js A3, every player), the one
     // price join over the page's already-loaded Database rows + career-history (pp2DrawJoin), and the opponent profile

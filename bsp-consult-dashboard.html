@@ -36275,6 +36275,9 @@ window.DatabaseTab = (function(){
   // the city the Database page groups a Tennis-Data event name under ("Adelaide International 2" → "Adelaide 2"), read by the
   // price join's event test (founder brief 2026-10-19 item 1); null for a name it does not list
   function tdCity(n){ return Object.prototype.hasOwnProperty.call(TOURN_SPLIT, n) ? TOURN_SPLIT[n] : Object.prototype.hasOwnProperty.call(TOURN_COMMON, n) ? TOURN_COMMON[n] : null; }
+  // The player profile's event names (founder 2026-11-14): a Tennis-Data sponsor name → its city, by this page's own name
+  // map; a name TOURN_SPLIT shares between events by season needs the row's date, so it reads null here.
+  window.sfSponsorCity = function (n) { return Object.prototype.hasOwnProperty.call(TOURN_SPLIT, n) ? null : tdCity(n); };
   return { mount: mount, init: init, instanceCount: function(){ return INSTANCES.length; }, priceRows: priceRows, tdCity: tdCity };
 })();
 </script>

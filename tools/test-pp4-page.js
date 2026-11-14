@@ -120,6 +120,26 @@ const html = fs.readFileSync(path.join(ROOT, 'bsp-consult-dashboard.html'), 'utf
 check('host: the profile loads mto-matches.json once per session, a failed read is "no file"', () =>
   /function loadPp2Mto\(key\)/.test(html) && /fetch\('\.\/mto-matches\.json'/.test(html) && /loadPp2Mto\(key\);\n\}/.test(html) || 'loader');
 
+// ── founder 2026-11-14 rulings ──────────────────────────────────────────────
+{
+  const E = { sfEventKey: n => ({ Cincinnati: 'Cincinnati', 'US Open': 'US Open' })[n] || null,
+    sfEventName: n => ({ Cincinnati: 'Cincinnati Open' })[n] || n,
+    sfSponsorCity: n => ({ 'Western & Southern Financial Group Masters': 'Cincinnati', 'Astana Open': 'Almaty' })[n] || null };
+  const I = load(SRC, E);
+  const W = global.window; global.window = Object.assign({}, E);
+  let names;
+  try { names = ['Western & Southern Financial Group Masters', 'US Open', 'Astana Open', 'Some Unknown Cup'].map(n => I.tournDisplayName(n, null)); }
+  finally { if (W === undefined) delete global.window; else global.window = W; }
+  check('event names: a Tennis-Data sponsor name prints its event ("Cincinnati Open"); Astana stays Astana; an unknown name stays as written', () =>
+    JSON.stringify(names) === JSON.stringify(['Cincinnati Open', 'US Open', 'Astana Open', 'Some Unknown Cup']) || JSON.stringify(names));
+}
+check('Match-up: a thin dot sits at its own rate (hollow, no label), as the reference', () =>
+  /var yv = d\.pct;/.test(SRC) && /var vals = pts\.map\(function \(d\) \{ return d\.pct; \}\);/.test(SRC) || 'thin dot');
+check('Record per tournament: a search that matches nothing leaves the list card empty (the reference); no sentence', () =>
+  /\(q \|\| lvl !== 'all' \|\| sf !== 'all' \? '<div data-pp2-tourn-empty="1"><\/div>'/.test(SRC) && !/No tournament matches that search/.test(SRC) || 'tourn empty');
+check('Money in units (founder 2026-11-14): no match-list P&L or drawer headline prints a %', () =>
+  !/signed\(m\.pl \|\| 0, 2, '%'\)/.test(SRC) && !/fig: signed\(b\.u, 1, '%'\)/.test(SRC) && /\(has \? signed\(s\.u, 2, 'u'\) : DASH\)/.test(SRC) || 'units');
+
 // ── mutants: each must turn a check red ─────────────────────────────────────
 const MUT = [
   ['window ignored', s => s.replace('if (!isFinite(at) || at < cut.getTime() || at > now) return;', 'if (!isFinite(at)) return;')],

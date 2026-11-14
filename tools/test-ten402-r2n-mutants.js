@@ -80,7 +80,7 @@ const MUTANTS = [
 // The profile module (player-profile-v2.js, TEN402_PP2): Record per tournament.
 const PP2_SRC = fs.readFileSync(path.join(ROOT, 'player-profile-v2.js'), 'utf8');
 const PP2_MUTANTS = [
-  ['r3: the profile row ignores the page\'s one name', "    var one = typeof window.sfEventName === 'function' ? window.sfEventName(name) : null;", '    var one = null;'],
+  ['r3: the profile row ignores the page\'s one name', "    var sf = typeof window.sfEventName === 'function' ? window.sfEventName : null;", '    var sf = null;'],
   ['r3: the tier back in the profile row\'s name', '    if (one) return one;', "    if (one) return level && level !== 'Grand Slam' ? one + ' ' + level : one;"],
   ['r3: the profile row drops its level meta', "(tournLevelMeta(t.level) ? '<span class=\"pp2-tlevel\"", "(false ? '<span class=\"pp2-tlevel\""],
   ['r3: the year-end finals carry a level meta', "return !level || level === 'Grand Slam' || level === 'Tour Finals' ? '' : String(level);", "return !level || level === 'Grand Slam' ? '' : String(level);"],

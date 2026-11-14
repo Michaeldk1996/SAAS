@@ -56,12 +56,12 @@ H.check('8.1 no placeholder tour figure: with no tour-baselines file the subline
   assert(!/3\.79%|2\.14%|5\.44%/.test(h), 'the reference placeholder tour figure');
   return 'dashed without the file, the file\'s own figures with it';
 });
-H.check('8.1 chart: padding 24, one head line (caps title + n matches, total right), "break even" in sentence case, % not units', () => {
+H.check('8.1 chart: padding 24, one head line (caps title + n matches, total right), "break even" in sentence case, units (founder 2026-11-14)', () => {
   const h = win(), ch = /<div data-mk-chart[\s\S]*$/.exec(h)[0];
   assert(/data-mk-chart style="padding:24px 24px 20px;/.test(h), 'chart padding');
   assert(/>break even<\/span>/.test(ch) && !/text-transform:uppercase;[^"]*">break even/.test(ch), 'break even caps');
-  assert(/data-mk-total[^>]*>([+−]\d+\.\d%|—)</.test(ch), 'total in %');
-  assert(!/RETURN · FLAT|Return · flat/i.test(T(ch)) && !/\du</.test(ch), 'units / second caption on the chart');
+  assert(/data-mk-total[^>]*>([+−]\d+\.\du|—)</.test(ch), 'total in units');
+  assert(!/RETURN · FLAT|Return · flat/i.test(T(ch)) && !/white-space:nowrap;">[+−]?[\d.]+%<\/span>/.test(ch), 'second caption or a % axis on the chart');
   return 'one head line';
 });
 H.check('8.1 Price sensitivity (LOCKED): one card 22/24/6, two role groups on All, one on a picked role, 58px rows on the locked grid, no Matches column, no total row', () => {

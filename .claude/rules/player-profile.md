@@ -423,12 +423,20 @@ Supersedes the v3 values it restates. Reference = `Player Stat Boxes.dc.html` / 
 - **§1 MTO badge** = `mto-matches.json` joined to HIS career history by api-tennis event key; within that match the caller
   must end with his surname and the feed's opponent with that row's opponent (else no row). Set + game score from his
   side; never a body part, reason or source. No time-out in the window → no badge.
-- **Tour figures are real or a dash, never the export's placeholders** (50%, hold 76, break 22, aces 4.9, per level / rank):
-  Court speed Vs tour = dash (no per-band tour figure); Level & round = the tracked-player pool of
-  `career-splits-tour.json` where it holds the category (10 of 27 rows), else dash; Market edge = `tour-baselines.json`
-  (whole tour since 2010 — the band box's foot line says so, never "same window and surface").
+- **Tour figures follow the design** (founder 2026-11-14, replaces "real or a dash"): Court speed Vs tour = the band's win
+  rate − the tour average 50% (true by construction: every match has one winner and one loser), a dash with Price role or
+  Opponent archetype on; Level & round Tour average = the tracked-player pool of `career-splits-tour.json` where it holds
+  the category, else 50% (the reference); Market edge = `tour-baselines.json` (whole tour since 2010, the band box's foot
+  line says so). The hold / break / aces placeholders are never printed.
+- **Money is units on every drawer** (founder 2026-11-14 "use units", replaces v4 §0.5 yield %): Court speed, Match-up,
+  Market edge (strip, chart, band box), Level & round and Record per tournament print units (`+3.25u`); a yield % rides
+  only as a sub-line. Price sensitivity keeps its locked yield columns. **Test:** a drawer headline money figure in % is wrong.
 - **A (?) popover is never cut off:** a drawer clips its content (as drawn) except while one of its (?) popovers is open.
 - **The row that opened the match box is raised** (`--selected`) while the box is open (Court speed).
-- **Kept against the export, by earlier rulings:** Record by season keeps "Surface not known" while any live match has no
-  surface (512 on 14 Nov); Match-up thin rows carry no "under 5" mark (2026-11-09); Live trading / Level & round boxes
-  centre on the content area (foundation R6.5); Backing column on Record per tournament stays units (the one Database join).
+- **Follow the design** (founder 2026-11-14, replaces the kept divergences): Record by season shows "Surface not known"
+  only for a player who has a match on no surface in the shown tier (else the reference's five columns); a Match-up thin
+  row carries the reference's "under 5" tag and its hollow dot sits at its own rate; a Record per tournament search that
+  matches nothing leaves the list card empty; the Live trading situation / heatmap boxes sit where the reference puts them in
+  their drawer (110px in). Record per tournament's tiebreak box keeps "7–6(11)" (only the loser's points are stored).
+- **Event names in the match lists** (founder 2026-11-14): a Tennis-Data sponsor name prints the site's one event name
+  through the Database page's sponsor → city map (`sfSponsorCity`; a season-split name and Astana stay as written).

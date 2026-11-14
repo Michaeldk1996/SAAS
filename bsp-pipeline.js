@@ -1096,7 +1096,16 @@ function olympicSurface(name, date) {
 // The surface of one fixture: the per-key map, except an Olympic edition (above).
 function fixtureSurface(f, surfaceMap) {
   return olympicSurface(f && f.tournament_name, f && f.event_date) || surfaceMap.get(String(f.tournament_key))
+    || (typeof nameSurface === 'function' ? (nameSurface(f && f.tournament_name) || [])[0] : null)
     || (typeof fixtureTeamCourt === 'function' ? (fixtureTeamCourt(f) || [])[0] : null) || null;   // typeof: tests slice this function alone
+}
+// Founder 2026-11-14 ("find these surfaces and fix it"): api-tennis names many ITF / Challenger events with their court
+// at the end — "Buenos Aires 3 (Argentina), Clay", "Baton Rouge (Usa), Hard (Indoor)" — while get_tournaments leaves
+// the key's surface blank. That suffix is the feed's own statement of the court, so it fills a blank surface (never
+// replaces a map surface). Returns [surface, indoor 1 | 0] or null; carpet is not a surface here (null).
+function nameSurface(name) {
+  const m = /,\s*(Clay|Hard|Grass)\s*(\(\s*Indoor\s*\))?\s*$/i.exec(String(name || ''));
+  return m ? [m[1].toLowerCase(), m[2] ? 1 : 0] : null;
 }
 // Founder 2026-11-08 / 2026-11-13 ("find these surfaces out"): a fixture whose tournament carries no surface (a Davis Cup
 // tie — one api-tennis key for every tie — or an ITF / Challenger event get_tournaments leaves blank) takes the researched
@@ -1111,7 +1120,8 @@ function fixtureTeamCourt(f) {
   return v && v[0] ? v : null;
 }
 const fixtureTeamIndoor = (f, surfaceMap) => !(surfaceMap && surfaceMap.get(String(f.tournament_key)))
-  && !olympicSurface(f && f.tournament_name, f && f.event_date) && (fixtureTeamCourt(f) || [])[1] === 1;
+  && !olympicSurface(f && f.tournament_name, f && f.event_date)
+  && ((nameSurface(f && f.tournament_name) || fixtureTeamCourt(f) || [])[1] === 1);
 function correctTournamentSurface(t) {
   const name = String(t.tournament_name || '').trim().toLowerCase();
   const type = String(t.event_type_type || '').toLowerCase();
@@ -6251,6 +6261,24 @@ function profileCacheStaleByBoard(cached, lastBoardDate) {
   return built <= String(lastBoardDate).slice(0, 10);
 }
 
+// Founder 2026-11-14 ("find these surfaces and fix it"): the surfaces filled on 2026-11-14 (event names that carry their
+// court, and the researched rows added to team-event-surfaces.json) reach a cached profile only when it rebuilds. A profile
+// built before SURFACE_FILL_AT that still holds a season with matches on no surface is stale, so only those players
+// (119 of 741 on 14 Nov) rebuild, within the normal per-run budget — no schema bump, no full-cache rebuild. Once rebuilt
+// (builtAt after the date) it is never re-flagged. Pure, exported, locked by tools/test-surface-fill.js.
+const SURFACE_FILL_AT = '2026-11-14T12:00:00Z';
+function profileHasUnknownSurface(profile) {
+  return !!(profile && (profile.careerByYear || []).some(function (y) {
+    if (!y || !y.total) return false;
+    const n = (r) => (r ? (r.won || 0) + (r.lost || 0) : 0);
+    return n(y.total) > n(y.clay) + n(y.hard) + n(y.grass);
+  }));
+}
+function profileCacheStaleBySurface(cached) {
+  if (!cached || !cached.builtAt || !cached.profile) return false;
+  return new Date(cached.builtAt).getTime() < Date.parse(SURFACE_FILL_AT) && profileHasUnknownSurface(cached.profile);
+}
+
 async function buildPlayerProfiles(matches, surfaceMap) {
   const seedPlayers = new Map(); // key -> name (today's fixtures)
   for (const m of matches) {
@@ -6273,7 +6301,8 @@ async function buildPlayerProfiles(matches, surfaceMap) {
   // And a cached entry built before a board match of that player (a captured close dated after builtAt)
   // is stale whatever its age: it cannot hold that match.
   const lastBoardDate = boardMatchDatesByPlayer();
-  const staleByBoard = (key, cached) => profileCacheStaleByBoard(cached, lastBoardDate.get(String(key)));
+  const staleByBoard = (key, cached) => profileCacheStaleByBoard(cached, lastBoardDate.get(String(key)))
+    || profileCacheStaleBySurface(cached);
 
   // Pass 1 — seed players, always fresh. Collect their opponents along the way.
   for (const [key, name] of seedPlayers) {
@@ -8494,7 +8523,7 @@ module.exports = { profileRoster, writeProfileShardsAtomic, applyQualifyingRule,
   NEXTGEN_TOURNAMENT_KEY, CAREER_HISTORY_INDEX_PATH,
   writeTournamentHistoryShards, profilesWithoutTournamentHistory,
   TOURNAMENT_HISTORY_SHARD_DIR, TOURNAMENT_HISTORY_INDEX_PATH,
-  fetchPlayerCareerHistory, boardMatchDatesByPlayer, profileCacheStaleByBoard, deriveSlamBoxes, dedupeByPlayerKeyPair, historyCacheFresh,
+  fetchPlayerCareerHistory, boardMatchDatesByPlayer, profileCacheStaleByBoard, profileCacheStaleBySurface, profileHasUnknownSurface, SURFACE_FILL_AT, nameSurface, deriveSlamBoxes, dedupeByPlayerKeyPair, historyCacheFresh,
   TOURNAMENT_HISTORY_SCHEMA_VERSION,
   // TEN-206 search/shard split. loadAtpStandings is exported alongside the two
   // writers because the index is built from the rows it keeps as a side effect —
