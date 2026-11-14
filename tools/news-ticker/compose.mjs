@@ -23,11 +23,11 @@ const require = createRequire(import.meta.url);
 const PI = require('../../pbp-integrity.js');
 
 const API_URL = 'https://api.anthropic.com/v1/messages';
-export const COMPOSE_VERSION = 2;        // bump to have every report on file written again
+export const COMPOSE_VERSION = 3;        // bump to have every report on file written again
 export const MAX_COMPOSE_RUNS = 3;       // a report is written at most this many times (later quotes, the next opponent)
 export const COMPOSE_FRESH_HOURS = 36;   // after this, new data no longer rewrites a report
 export const MAX_QUOTES = 6, QUOTE_MAX_CHARS = 520, QUOTES_IN_TEXT = 3;
-export const WORDS_MIN = 70, WORDS_MAX = 520;
+export const WORDS_MIN = 70, WORDS_MAX = 330;   // the founder's own reports run to about 270 words (2026-11-14: "without making it longer")
 export const STAT_NUMBERS_MAX = 4;       // percentages and quality figures in one report (founder 2026-11-14: "one number per idea")
 export const SHORT_WORDS = 7, SHORT_RUN = 3;   // three sentences of 7 words or fewer in a row read like a machine
 export const PHRASES = ['The first set could easily have gone the other way.', 'From there the match turned completely.', 'It was the same story in the second set.', 'That was the moment of the match.',
@@ -210,7 +210,7 @@ export function physicalParagraph(m, rows, { winner = null, final = false, quote
     sentences.push(`${what.replace(N, 'He')}${pattern ? `, ${pattern}` : ''}.`);   // the opener has just named him
     sentences.push(q ? `${N} after the match: "${String(q.text).trim()}"` : 'We do not know the reason yet.');
     if (winner && k !== winner) sentences.push(`Something to follow for the next tournaments of ${N}.`);
-    facts.push(`${what}${pattern ? `, ${pattern}` : ''}. The reason is not known${confirmed ? '' : ' and nothing confirms a physical problem: say only that it is something to follow, never that he is hurt or not fit'}.${winner && k === winner && !final ? ` In "All in all", mention that it is already his ${ORD_WORD[total] || ''} medical timeout${matches >= 2 ? ' this week' : ''}.`.replace('his  medical', 'a medical') : ''}`);
+    facts.push(`${what}${pattern ? `, ${pattern}` : ''}. The reason is not known${confirmed ? '' : ' and nothing confirms a physical problem: say only that it is something to follow, never that he is hurt or not fit'}.${winner && k === winner && !final ? (matches >= 2 ? ` In "All in all", mention that it is already his ${ORD_WORD[total] || 'next'} medical timeout this week.` : ' In "All in all", mention the medical timeout in a few words as something to follow.') : ''}`);
   }
   return { sentences, facts };
 }
@@ -282,7 +282,9 @@ export function factSheet({ m, w, l, rep, shard = null, round = null, duration =
   add('THE TOURNAMENT', path);
   if (physical.length) add('PHYSICAL (a paragraph with these facts is added just before your last paragraph: do not write that paragraph, but name the doubt again in one sentence of "All in all")', physical);
   const cs = m.courtSpeed && m.courtSpeed.category ? String(m.courtSpeed.category).toLowerCase() : null;
-  if (cs && m.venue && m.venue.city) add('CONDITIONS', [`The court in ${m.venue.city} plays ${cs === 'medium' ? 'at a medium pace' : cs}${m.venue.indoor ? ', indoors' : ''} (our court-speed reading${m.courtSpeed.abstractSpeedYear ? ` from ${m.courtSpeed.abstractSpeedYear}` : ''}; do not print the year).`]);
+  // the same court line in every report of a tournament would be the repeated sentence the founder does not want:
+  // one report in three is offered it (by match id)
+  if (cs && m.venue && m.venue.city && parseInt(crypto.createHash('sha256').update(`${m.id}|conditions`).digest('hex').slice(0, 6), 16) % 3 === 0) add('CONDITIONS', [`The court in ${m.venue.city} plays ${cs === 'medium' ? 'at a medium pace' : cs}${m.venue.indoor ? ', indoors' : ''} (our court-speed reading${m.courtSpeed.abstractSpeedYear ? ` from ${m.courtSpeed.abstractSpeedYear}` : ''}; do not print the year).`]);
   // the founder's phrases: each report is offered a few of them, so no sentence returns in every report
   const ph = PHRASES.map((x, i) => [crypto.createHash('sha256').update(`${m.id}|${i}`).digest('hex'), x]).sort((x, y) => x[0].localeCompare(y[0])).slice(0, 4).map((x) => x[1]);
   add('WORDING (phrases of the founder you may use here, two at most; none is required)', ph);
@@ -404,7 +406,8 @@ Hard rules:
 - Simple words everybody understands. No idioms, no sports-page phrases ("sealed the deal", "punched his ticket", "dug deep", "clinical"). Past tense for what happened.
 - Do not print a ranking, a dominance ratio or a performance rating.
 - The WORDING section of the sheet offers a few phrases of the founder. Use two of them at most, only where they fit. Do not use any other stock phrase twice.
-- 170 to 300 words when the sheet has the match in playing order; 80 to 150 words when it does not.
+- Length: 200 to 280 words when the sheet has the match in playing order, never more than 300; 80 to 150 words when it does not. When the sheet has a SEEN IN THE MATCH section, build the story on it and on the playing order together and cut numbers to make room: the report must not get longer.
+- Use what was SEEN IN THE MATCH for how each player played (shots, tactics, net play, how he looked) and keep the claims it makes about a player's season or career to one short clause at most.
 
 The founder's own report of one match, as the model for voice, shape and how few numbers it uses (never reuse its facts; the paragraph about the body was added separately there too):
 

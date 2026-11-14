@@ -149,7 +149,7 @@ export async function summariseCommentary(transcript, players, apiKey = process.
   if (!res.ok) return { status: 'api-error', text: null, detail: `HTTP ${res.status}` };
   const data = await res.json();
   const block = (data.content || []).find((b) => b.type === 'text');
-  const out = block ? String(block.text).trim() : '';
+  const out = (block ? String(block.text).trim() : '').replace(/,(\s+(?:but|and)\b)/g, '$1');   // no comma before "but" / "and" (founder 2026-11-14)
   if (out === 'NONE') return { status: 'nothing', text: null };
   const ck = commentaryCheck(out, transcript, players.flatMap((p) => String(p).split(/\s+/)));
   return ck.ok ? { status: 'ok', text: out, model: MODEL, notes: ck.notes } : { status: 'failed-check', text: null, why: ck.why, rejected: out.slice(0, COMMENTARY_MAX_CHARS) };
