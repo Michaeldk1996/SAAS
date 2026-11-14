@@ -12,13 +12,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 1.53,
+      "p2": 2.5,
+      "bookmaker": "bet365"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 1.62,
+        "bookmaker": "Betfair"
+      },
+      "p2": {
+        "price": 2.52,
+        "bookmaker": "Pncl"
+      }
     },
     "tournamentRound": null,
     "qualifying": false,
@@ -2590,13 +2596,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 1.44,
+      "p2": 2.75,
+      "bookmaker": "bet365"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 1.45,
+        "bookmaker": "1xBet"
+      },
+      "p2": {
+        "price": 2.99,
+        "bookmaker": "Pncl"
+      }
     },
     "tournamentRound": null,
     "qualifying": false,
@@ -38995,7 +39007,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-7, 6-4, 4-6",
+      "display": "6-7(4), 6-4, 4-6",
       "sets": [
         {
           "p1": 6,
@@ -48663,7 +48675,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-4, 7-6",
+      "display": "6-4, 7-6(4)",
       "sets": [
         {
           "p1": 6,
@@ -90964,7 +90976,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "5-7, 6-7",
+      "display": "5-7, 6-7(2)",
       "sets": [
         {
           "p1": 5,
@@ -94907,7 +94919,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6, 3-6, 6-4",
+      "display": "7-6(5), 3-6, 6-4",
       "sets": [
         {
           "p1": 7,
@@ -100028,7 +100040,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6, 6-7, 6-3",
+      "display": "7-6(5), 6-7(5), 6-3",
       "sets": [
         {
           "p1": 7,
