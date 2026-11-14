@@ -41,8 +41,10 @@ await ok('the sheet carries the result, the breaks in playing order, both box sc
   const t = SHEET.text;
   for (const s of ['Fritz beat Musetti 6–4, 6–2 in the SF.', 'First set: Fritz won it 6–4.', 'Fritz broke for 2–1.', 'Fritz broke for 2–1 (he needed 2 break points in that game).', 'Fritz broke for 4–1.',
     'Fritz in the second set: 2 aces, 0 double faults, first serve in 83%', 'Fritz: serve quality 9.4, 41% unreturned serves, return quality 7.3', 'Next for Fritz: Tirante in the final.',
-    'got a walkover from Rune in the QF', 'beat Tabilo 7–5, 7–6 in the SF']) yes(t.includes(s), `missing: ${s}`);
+    'got a walkover from Rune in the QF', 'beat Tabilo 7–5, 7–6 in the SF', 'Fritz: 13 forehand winners, 6 backhand winners.', 'The forehand was the best shot of Fritz.', 'Musetti: 7 forehand winners, 2 backhand winners.']) yes(t.includes(s), `missing: ${s}`);
   yes(!/dominance ratio|performance/.test(t), 'the closing-line figures are not sheet facts');
+  yes(!/best shot of Musetti|errors of (Fritz|Musetti) came/.test(t), 'no best shot under 10 winners, no weak side under 12 errors');
+  eq(check(GOOD.replace('but he served it out', 'and the forehand was his best shot with 13 forehand winners')).failures, [], 'the forehand may be named when the sheet names it');
 });
 await ok('a point log that does not add up to the final score gives no playing-order lines (never half a story)', () => {
   const bad = JSON.parse(JSON.stringify(FX.pbp)); bad.sets[0].games.pop();
@@ -87,7 +89,7 @@ await ok('refuses a quotation that is not word for word, one cut mid-sentence, a
   refuses(GOOD.replace('Fritz: "I just', 'He said: "I just').replace('All in all, a very dominant performance from Fritz', 'All in all, a very dominant performance'), /speaker/);
 });
 await ok('refuses a shot, the body or a title that no line of the sheet carries — a quote does not count', () => {
-  refuses(GOOD.replace('but he served it out', 'but his forehand was the best shot'), /"forehand"/);
+  refuses(GOOD.replace('but he served it out', 'but he hit a great volley'), /"volley"/);
   refuses(GOOD.replace('He broke for 2–1 and again', 'Musetti looked tired. He broke for 2–1 and again'), /"tired"/);
   refuses(GOOD.replace('Next is Tirante', 'It would be his first title of the year. Next is Tirante'), /"title"|"year"/);
 });

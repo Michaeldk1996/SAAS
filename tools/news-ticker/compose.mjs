@@ -28,6 +28,8 @@ export const MAX_COMPOSE_RUNS = 3;       // a report is written at most this man
 export const COMPOSE_FRESH_HOURS = 36;   // after this, new data no longer rewrites a report
 export const MAX_QUOTES = 6, QUOTE_MAX_CHARS = 520, QUOTES_IN_TEXT = 3;
 export const WORDS_MIN = 70, WORDS_MAX = 520;
+// a wing is "his best shot" from 10 winners and 1.5 times the other wing; "most of his errors" from 12 and 1.5 times
+export const BEST_SHOT_MIN = 10, WEAK_SIDE_MIN = 12, BEST_SHOT_RATIO = 1.5;
 
 const num = (v) => (typeof v === 'number' && Number.isFinite(v) ? v : null);
 const other = (k) => (k === 'p1' ? 'p2' : 'p1');
@@ -189,6 +191,21 @@ export function factSheet({ m, w, l, rep, shard = null, round = null, duration =
       if (p.length) c.push(`${surnameOf(m[k])}: ${p.join(', ')} (quality figures are out of 10).`);
     }
     c.push(...shotSentences(m, w, l, card).filter((s) => /baseline|long rallies/.test(s)));
+    // forehand and backhand (founder 2026-11-14: "then you must say it, especially if you have the forehand winners"):
+    // the counts per wing, and a wing is named his best shot / his weak side only on a clear gap
+    for (const k of [w, l]) {
+      const x = card[k], N = surnameOf(m[k]), fw = num(x.fhWinners), bw = num(x.bhWinners), fu = num(x.fhUnforced), bu = num(x.bhUnforced);
+      if (fw != null && bw != null) {
+        c.push(`${N}: ${pl(fw, 'forehand winner')}, ${pl(bw, 'backhand winner')}.`);
+        const hi = Math.max(fw, bw), lo = Math.min(fw, bw);
+        if (hi >= BEST_SHOT_MIN && hi >= BEST_SHOT_RATIO * lo) c.push(`The ${fw > bw ? 'forehand' : 'backhand'} was the best shot of ${N}.`);
+      }
+      if (fu != null && bu != null) {
+        c.push(`${N}: ${pl(fu, 'forehand unforced error')}, ${pl(bu, 'backhand unforced error')}.`);
+        const hi = Math.max(fu, bu), lo = Math.min(fu, bu);
+        if (hi >= WEAK_SIDE_MIN && hi >= BEST_SHOT_RATIO * lo) c.push(`Most of the unforced errors of ${N} came from the ${fu > bu ? 'forehand' : 'backhand'}.`);
+      }
+    }
     add('SHOT NUMBERS', c);
   }
   if (commentary) add('SEEN IN THE MATCH (observations; never name where they come from)', [String(commentary).trim()]);
@@ -280,7 +297,7 @@ What the report looks like:
 - 4 to 7 short paragraphs, separated by one blank line. Plain text: no title, no headings, no bullet points, no bold.
 - Paragraph 1: one or two sentences. Who beat whom and what kind of match it was (for example: straight sets but the first set could have gone the other way; a comeback from a set down; one single break of serve in the whole match). Not the score.
 - Then tell the match in playing order, one short paragraph per set or per phase: who broke first, the break points and set points that were saved, who served for a set and got broken, runs of games, the tiebreaks, and how the level of a player changed from set to set when the per-set numbers show it.
-- One paragraph with the numbers that explain the result, 3 to 5 sentences and at most 7 numbers in it; pick the few that explain why he won and leave the rest out: serve quality, unreturned serves and return quality when the sheet has them, the serve and return percentages that stood out, who was better from the baseline. Percentages only, never the counts behind them ("won 94% of the points behind his first serve", not "(29 of 31)"). Compare a number with a player's own average only when the sheet gives that average, and only when the gap is big.
+- One paragraph with the numbers that explain the result, 3 to 5 sentences and at most 7 numbers in it; pick the few that explain why he won and leave the rest out: serve quality, unreturned serves and return quality when the sheet has them, the serve and return percentages that stood out, who was better from the baseline, and the best shot of a player when the sheet names it ("The forehand was his best shot: 24 forehand winners."), or the side his errors came from. Percentages only, never the counts behind them ("won 94% of the points behind his first serve", not "(29 of 31)"). Compare a number with a player's own average only when the sheet gives that average, and only when the gap is big.
 - One or two quotes when the list has good ones (prefer the ones about this match: a turning point, how he played, how his body felt), each in its own paragraph or at the end of the paragraph it belongs to, introduced like: Fritz on that first set: "..." or simply Tabilo: "..."
 - Last paragraph: it starts with "All in all," and gives a short verdict in one or two sentences. Then the next opponent when the sheet names him ("Next is Rune, who ...") with what the sheet says about his week. After a final: the title.
 

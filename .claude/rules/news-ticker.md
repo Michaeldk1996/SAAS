@@ -28,7 +28,7 @@ it was, the match in playing order, the numbers that explain it, one or two quot
 `tools/news-ticker/compose.mjs`; pipeline only (key from Actions secrets).
 - **The fact sheet is the only source** (`factSheet`): the result, head to head, the breaks / break points / set and match
   points in playing order (`setStory`, only when the whole point log agrees with the final score), the box score per
-  match and per set, the shot numbers the card rule allows, what was seen in the match, the winner's earlier rounds and
+  match and per set, the shot numbers (serve quality, unreturned serves, return quality, baseline and long-rally gaps, and — founder 2026-11-14 — forehand / backhand winners and unforced errors, with "the best shot" named from 10 winners and 1.5 times the other wing, "most of his errors" from 12 and 1.5 times; thresholds are ours, `BEST_SHOT_*`), what was seen in the match, the winner's earlier rounds and
   the next opponent's (`pathLines`), and the two players' own quotes about this match (`matchQuotes`).
 - **Published only when it passes the check** (`checkComposed`). **Test:** is every number, score, capitalised name and
   quotation of the text on the sheet? A quotation is word for word, whole sentences, with its speaker named in the words
