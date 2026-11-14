@@ -3269,6 +3269,9 @@
   // no edge until it is hovered. The CSS lives here, with the shell, so the eight modals share one copy.
   var MODAL_SHELL_CSS = '<style>' +
     '.pp2-card button,.pp2-card input{font-family:inherit;}' +
+    // v4: a drawer clips its content (overflow hidden, as the export draws it); while one of its (?) popovers is open
+    // the drawer stops clipping, so a definition list longer than the drawer runs past its foot into the scrolling scrim
+    '.pp2-card:has([data-pp2-infopop]){overflow:visible!important;}' +
     '.pp2-seg-idle{border-color:transparent!important;}' +
     '.pp2-seg-idle:hover{border-color:var(--line)!important;}' +
     '.pp2-tile{transition:background .12s ease,border-color .12s ease;}' +
@@ -3583,7 +3586,7 @@
     }).join('');
     return icon +
       '<div data-pp2="info-close" style="position:fixed;inset:0;z-index:70;"></div>' +
-      '<div data-pp2="card" style="position:absolute;top:calc(100% + ' + (v4 ? 8 : 10) + 'px);' + (right ? 'right:0;' : 'left:0;') + 'z-index:71;' +
+      '<div data-pp2="card" data-pp2-infopop="1" style="position:absolute;top:calc(100% + ' + (v4 ? 8 : 10) + 'px);' + (right ? 'right:0;' : 'left:0;') + 'z-index:71;' +
         'width:' + w + 'px;max-width:calc(100vw - 48px);background:var(--card);border:1px solid ' + (v4 ? 'var(--pp-x-edge-12)' : 'var(--edge-10)') + ';border-radius:14px;' +
         'box-shadow:' + (v4 ? 'var(--pp-x-shadow-pop)' : 'var(--shadow-pop)') + ';padding:' + (spec.pad || (v4 ? '14px 16px 16px' : '16px 18px 18px')) + ';display:flex;flex-direction:column;gap:' + (spec.gap || (v4 ? 8 : 10)) + 'px;text-align:left;' +
         'text-transform:none;letter-spacing:normal;font-family:var(--font-words);font-weight:400;white-space:normal;cursor:default;">' +

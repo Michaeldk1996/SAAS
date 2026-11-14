@@ -98,6 +98,8 @@ check('page: ribbon, ledger and insight cards carry no top-light inset', () => {
   const parts = [grab(/class="pp2-ribbon" style="[^\n]*/), grab(/class="pp2-ledger" style="[^\n]*\n[^\n]*/), grab(/data-insight="[\s\S]{0,400}/)].map(x => x.replace(/\/\/[^\n]*/g, ''));
   return parts.every(x => x && !/top-light/.test(x)) || 'top-light still on ' + parts.map(x => /top-light/.test(x)).join(',');
 });
+check('drawer: stops clipping while a (?) popover is open, so a long definition list is never cut off', () =>
+  /'\.pp2-card:has\(\[data-pp2-infopop\]\)\{overflow:visible!important;\}'/.test(SRC) && /data-pp2="card" data-pp2-infopop="1"/.test(SRC) || 'popover clipping rule');
 const tok = fs.readFileSync(path.join(ROOT, 'tokens.css'), 'utf8');
 check('tokens: the v4 profile colours are named once in tokens.css', () =>
   /--pp-x-bar-neutral:\s*#4A5470/i.test(tok) && /--pp-x-faint:\s*#5B6480/i.test(tok) && /--pp-x-shadow-pop:\s*0 18px 48px rgba\(0, 0, 0, 0\.55\)/.test(tok) || 'tokens');
