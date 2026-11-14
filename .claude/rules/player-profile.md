@@ -408,3 +408,27 @@ Supersedes the v2 items it names; everything else stays v2. Reference: `Player P
 - **Clean-ups:** the match sheet's Dominance ratio card = `--inner` + 5% ring (the section bands' token); no
   "provisional · api-tennis" text on any match row (the flag stays on the data). The "Surface not known" column STAYS:
   the feasibility check found 97 matches with no surface (35 of 350 profiles, 12 Nov 2026), and the brief says stop.
+
+## Profile v4 (handoff `design_handoff_player_profile_v4`, founder brief 2026-11-14)
+Supersedes the v3 values it restates. Reference = `Player Stat Boxes.dc.html` / `Player Profile.dc.html` inline styles at
+1440px; CHANGES 13–14 > 11–12. **Test:** `tools/test-pp4-page.js` (+ `test-pp4-speed/-styles/-market.js`).
+- **Cut-offs in ONE place** (`PP4`, top of `player-profile-v2.js`, founder's placeholders until he sets them): Streaks
+  `STK_MINP` 30 · `STK_EDGE` 1pp · Calendar `CAL_MIN` 5 · `CAL_THIN` 10 · Court speed `SPEED_FLOOR` 5 · `ALT_CUT_M` 500 ·
+  Level & round `SPL_MINB` 15 · heatmap `HB_MIN` 10 · MTO window 12 months · Derived lines dot `LC_FIELD_DOT_PP` 1.
+  **Test:** a drawer that reads a literal cut-off instead of `PP4` is wrong.
+- **§0.1 bars are neutral (`--pp-x-bar-neutral` #4A5470) unless the member clicked that item, then blue (`pp4Bar`).** Never
+  tinted by value. Exceptions: Price sensitivity bars (signed) and Derived lines chips (cover rate).
+- **§0.6 no internal status on the profile** (supersedes ruling 1 of 2026-10-20 here): no "Data paused · updated …"; a stale
+  Mac feed is the founder's alert (`tools/check-feed-freshness.mjs`).
+- **§1 MTO badge** = `mto-matches.json` joined to HIS career history by api-tennis event key; within that match the caller
+  must end with his surname and the feed's opponent with that row's opponent (else no row). Set + game score from his
+  side; never a body part, reason or source. No time-out in the window → no badge.
+- **Tour figures are real or a dash, never the export's placeholders** (50%, hold 76, break 22, aces 4.9, per level / rank):
+  Court speed Vs tour = dash (no per-band tour figure); Level & round = the tracked-player pool of
+  `career-splits-tour.json` where it holds the category (10 of 27 rows), else dash; Market edge = `tour-baselines.json`
+  (whole tour since 2010 — the band box's foot line says so, never "same window and surface").
+- **A (?) popover is never cut off:** a drawer clips its content (as drawn) except while one of its (?) popovers is open.
+- **The row that opened the match box is raised** (`--selected`) while the box is open (Court speed).
+- **Kept against the export, by earlier rulings:** Record by season keeps "Surface not known" while any live match has no
+  surface (512 on 14 Nov); Match-up thin rows carry no "under 5" mark (2026-11-09); Live trading / Level & round boxes
+  centre on the content area (foundation R6.5); Backing column on Record per tournament stays units (the one Database join).
