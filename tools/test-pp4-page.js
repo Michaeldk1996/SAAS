@@ -100,6 +100,10 @@ check('page: ribbon, ledger and insight cards carry no top-light inset', () => {
 });
 check('drawer: stops clipping while a (?) popover is open, so a long definition list is never cut off', () =>
   /'\.pp2-card:has\(\[data-pp2-infopop\]\)\{overflow:visible!important;\}'/.test(SRC) && /data-pp2="card" data-pp2-infopop="1"/.test(SRC) || 'popover clipping rule');
+check('Filters menus: Market edge, Derived lines and Calendar draw the export\'s menu (o.x), Market edge chips v4 with the count', () =>
+  /filtersTriggerHtml\('mk', [^\n]*\{ x: true, noEllipsis: true \}\)/.test(SRC) && /filtersTriggerHtml\('lc', [^\n]*\{ x: true, noEllipsis: true \}\)/.test(SRC) &&
+  /filtersTriggerHtml\('cal', [^\n]*\{ x: true, gap: '18px 18px', gutter: true \}\)/.test(SRC) &&
+  /filtersAppliedHtml\('mk', [^\n]*\{ v4: true, count: true \}\)/.test(SRC) && /var\(--pp-x-shadow-pop6\)/.test(SRC) || 'menu variant');
 const tok = fs.readFileSync(path.join(ROOT, 'tokens.css'), 'utf8');
 check('tokens: the v4 profile colours are named once in tokens.css', () =>
   /--pp-x-bar-neutral:\s*#4A5470/i.test(tok) && /--pp-x-faint:\s*#5B6480/i.test(tok) && /--pp-x-shadow-pop:\s*0 18px 48px rgba\(0, 0, 0, 0\.55\)/.test(tok) || 'tokens');
