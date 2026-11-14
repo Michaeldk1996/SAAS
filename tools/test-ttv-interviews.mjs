@@ -110,4 +110,9 @@ await ok('commentary: refused only for a quotation, a named source, first person
   const b = fs.readFileSync(new URL('./news-ticker/build-news-ticker.mjs', import.meta.url), 'utf8');
   assert.ok(!/From the commentary|commentators/.test(b.replace(/\/\/.*$/gm, '')) && /cm && cm\.text \? cm\.text : null/.test(b), 'its own paragraph in the report, with no source named');
 });
+await ok('the clip job starts its own next run (GitHub\'s schedule started it 3 times in 20 hours): the chain step, its permission, main only', () => {
+  const y = fs.readFileSync(new URL('../.github/workflows/interviews.yml', import.meta.url), 'utf8');
+  assert.ok(/actions: write/.test(y) && /gh workflow run interviews\.yml --ref main/.test(y) && /STARTED \+ 300/.test(y) && /if: \$\{\{ !cancelled\(\) \}\}/.test(y));
+  assert.ok(/if: github\.ref == 'refs\/heads\/main'/.test(y) && /select\(\.status != \\"completed\\"\)/.test(y), 'only from main, and never a second chain beside a waiting run');
+});
 console.log(`ttv interviews: ${n} checks passed`);

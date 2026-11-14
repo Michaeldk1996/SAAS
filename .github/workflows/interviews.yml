@@ -12,6 +12,7 @@ concurrency:
   cancel-in-progress: false
 permissions:
   contents: write
+  actions: write       # the last step starts the next run (GitHub's schedule started this job 3 times in 20 hours on 13 Nov)
 jobs:
   interviews:
     if: github.ref == 'refs/heads/main'
@@ -22,6 +23,8 @@ jobs:
       TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
       TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_PIPELINE_CHAT_ID || secrets.TELEGRAM_CHAT_ID }}
     steps:
+      - name: Start time
+        run: echo "STARTED=$(date +%s)" >> "$GITHUB_ENV"
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
@@ -90,4 +93,24 @@ jobs:
           if [ "${{ job.status }}" != "success" ] || grep -q "FAILED" /tmp/ingest.txt 2>/dev/null; then
             MSG="Tennis TV interviews: a clip could not be published. $(grep -m3 'FAILED' /tmp/ingest.txt 2>/dev/null | tr '\n' ' ')"
             node -e 'import("./tools/price-alert-send.mjs").then(m=>m.sendTelegram(process.argv[1])).catch(e=>console.log("::error::alert not sent",e))' "$MSG" || echo "::error::alert not sent"
+          fi
+
+      # The 5-minute cadence (founder 2026-11-14: "we need to fix this"). GitHub's schedule is throttled in this
+      # repository: on 13 Nov it started this job 3 times in 20 hours, so 6 of 19 highlights clips were read. Each run
+      # now starts the next one: it waits until 5 minutes after its own start, then dispatches this workflow unless
+      # another run is already waiting. The schedule stays as the restart if a chain ever breaks.
+      - name: Start the next run 5 minutes after this one began
+        if: ${{ !cancelled() }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          wait=$(( STARTED + 300 - $(date +%s) ))
+          if [ "$wait" -gt 0 ]; then sleep "$wait"; fi
+          others=$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/interviews.yml/runs?per_page=30" --jq "[.workflow_runs[] | select(.id != $GITHUB_RUN_ID) | select(.status != \"completed\")] | length")
+          if [ "$others" = "0" ]; then
+            gh workflow run interviews.yml --ref main -R "$GITHUB_REPOSITORY"
+            echo "next run dispatched"
+          else
+            echo "another run is already waiting ($others) — nothing dispatched"
           fi

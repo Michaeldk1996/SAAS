@@ -24,7 +24,7 @@ import { reportText, statusItems, h2hAfter, roundWords, breakPoints, mtoSentence
 import { shotSentences } from './match-cards.mjs';
 import { pbpFacts, scoreFacts } from './pbp-facts.mjs';
 import { mergeItems, buildIndex, fileOf, observedTimes, tourKeep } from './ticker-core.mjs';
-import { factSheet, composeReport, assemble, pathLines, matchQuotes, roundCode, COMPOSE_VERSION, MAX_COMPOSE_RUNS, COMPOSE_FRESH_HOURS } from './compose.mjs';
+import { factSheet, composeReport, assemble, pathLines, physicalParagraph, matchQuotes, roundCode, COMPOSE_VERSION, MAX_COMPOSE_RUNS, COMPOSE_FRESH_HOURS } from './compose.mjs';
 
 const require = createRequire(import.meta.url);
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -186,10 +186,14 @@ export async function build({ nowIso, times, rewrite = null, writer = null, apiK
         // published only when every number, name and quotation in it is on that sheet (compose.mjs). Written once per
         // sheet; a sheet that failed is not tried again until its facts change. No key, a failed check or the call
         // cap = the report above (template + voice), exactly as before.
-        let composed = null;
+        let composed = null, phys = { sentences: [], facts: [] };
         if (composeOn) {
+          // the same player's earlier matches here, in order, with their medical timeouts ("his second in two matches")
+          const sk = (c) => `${c.date || ''} ${c.time || '99:99'}`, earlier = {};
+          for (const k of [w, l]) earlier[k] = allCards.filter((c) => c.id !== m.id && [c.p1Key, c.p2Key].map(String).includes(String(m[k + 'Key'])) && sk(c) < sk(m) && c.finalScore && !c.walkover).sort((a, b) => sk(a).localeCompare(sk(b))).map((c) => ({ rows: mtoByMatch[ek(c)] || [] }));
+          phys = physicalParagraph(m, mtoByMatch[ek(m)], { winner: w, final: rw === 'final', quotes: quoteItems, earlier });
           const sheet = factSheet({ m, w, l, rep, shard: sp, round: rw, duration: obs && obs.minutes != null ? obs.minutes : null, card: cardsByMatch[ek(m)] || null,
-            commentary: cm && cm.text ? cm.text : null, quotes: matchQuotes(m, ek(m), quoteItems, mto.join(' ')), hasMto: mto.length > 0,
+            commentary: cm && cm.text ? cm.text : null, quotes: matchQuotes(m, ek(m), quoteItems, phys.sentences.join(' ')), physical: phys.facts,
             path: pathLines(m, w, allCards, (c) => roundCode(rwOf(c)), rw === 'final'), styles: { [w]: styleOf(m[w]), [l]: styleOf(m[l]) } });
           const pc = prev && prev.composed && prev.composed.version === COMPOSE_VERSION ? prev.composed : null;
           const ageH = (Date.parse(nowIso) - Date.parse(obs && obs.endedAt ? obs.endedAt : startIso(m))) / 3600000;
@@ -204,7 +208,7 @@ export async function build({ nowIso, times, rewrite = null, writer = null, apiK
             else { composed = pc; summary.voice.errors++; summary.voice.lastError = `compose ${c.status}${c.detail ? ': ' + c.detail : ''}`; }
           } else composed = pc;
         }
-        if (composed && composed.body) { baseText = composed.body; text = assemble(composed.body, mto, rating); summary.reportsComposed = (summary.reportsComposed || 0) + 1; }
+        if (composed && composed.body) { baseText = composed.body; text = assemble(composed.body, phys.sentences, rating); summary.reportsComposed = (summary.reportsComposed || 0) + 1; }
         else {
           if (composeOn) await voiceStep();
           baseText = text;

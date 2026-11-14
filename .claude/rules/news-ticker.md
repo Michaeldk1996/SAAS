@@ -41,6 +41,19 @@ it was, the match in playing order, the numbers that explain it, one or two quot
   quote, the next opponent) write it again, at most `MAX_COMPOSE_RUNS` (3) times and only within `COMPOSE_FRESH_HOURS`
   (36) of the match; `COMPOSE_VERSION` rewrites every report on file. A run writes at most `NEWS_COMPOSE_MAX_CALLS` (6)
   reports, 2 of them kept for matches that have just finished.
+- **The founder's review of Tirante – Tabilo (2026-11-14) — each is a check or a sheet rule:** the score of every set
+  and the round are in the first sentence; no three sentences of 7 words or fewer in a row; at most `STAT_NUMBERS_MAX`
+  (4) percentages and quality figures ("one number per idea, never two numbers for the same thing"); winners and
+  errors per set are not on the sheet (they live on the closing line); a quote sits inside the paragraph it explains,
+  its speaker named earlier in that paragraph; a player's week is told in order and WITHOUT scores (`pathLines`:
+  "beat Norrie in straight sets (R2)", sets dropped, tiebreaks), and a walkover is said to rest him only when it was
+  his last round; the court's pace is a sheet line (`m.courtSpeed.category`, never a word of ours); each report is
+  offered 4 of the founder's phrases (`PHRASES`, by match id) so no sentence returns in every report.
+- **The physical paragraph** (`physicalParagraph`): its opener rotates (`PHYSICAL_OPENERS`); the timeout is told by
+  where in the set it came (early / in the middle of / late), not by the game score; the same player's earlier rounds
+  are read for the pattern ("his second medical timeout in two matches" = timeouts in consecutive matches ending with
+  this one); "We do not know the reason yet." unless he spoke about his body on court. Its facts are also a sheet
+  section, so "All in all" names the doubt again.
 - **Added by code, never by the model:** the physical paragraph (before the verdict) and the closing line per player
   (`assemble`).
 - **Test:** `tools/test-news-compose.mjs` (a real match frozen from the live site; every "refuses" check is a mutant of a
