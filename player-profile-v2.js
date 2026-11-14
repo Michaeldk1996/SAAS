@@ -3697,6 +3697,10 @@
   function filtersTriggerHtml(id, groups, nIn, nAll, width, alignRight, o) {
     o = o || {};
     var v4 = !!o.v4;
+    // o.x (v4 handoff, additive): the export's filterMenu as Market edge, Derived lines and Calendar draw it — a 12% popover
+    // ring, a plain 0.6 shadow, an 8% foot rule, the trigger's open ring at 22%; o.gap the grid gap; o.noEllipsis = labels
+    // never cut (Market edge / Derived lines write them nowrap with no ellipsis)
+    var X = !!o.x;
     var open = state.fmOpen === id;
     var active = groups.filter(function (g) { return g.cur !== 'all'; });
     var lit = open || active.length;
@@ -3707,7 +3711,7 @@
         ? 'color:' + (lit ? 'var(--text)' : 'var(--text-soft)') + ';background:' + (active.length ? BLUE12 : open ? 'var(--selected)' : 'transparent') + ';' +
           'border:1px solid ' + (active.length ? BLUE35 : open ? 'color-mix(in srgb, var(--text) 22%, transparent)' : EDGE_8) + ';user-select:none;">'
         : 'color:' + (lit ? 'var(--text)' : 'var(--text-label)') + ';background:' + (lit ? 'var(--selected)' : 'transparent') + ';' +
-          'border:1px solid ' + (open ? 'var(--edge-24)' : active.length ? 'var(--edge-16)' : EDGE_8) + ';user-select:none;">') +
+          'border:1px solid ' + (open ? (X ? 'color-mix(in srgb, var(--text) 22%, transparent)' : 'var(--edge-24)') : active.length ? 'var(--edge-16)' : EDGE_8) + ';user-select:none;">') +
       '<svg width="11" height="11" viewBox="0 0 12 12" fill="none" style="pointer-events:none;"><path d="M1 2.5h10M3 6h6M5 9.5h2" ' +
       'stroke="currentColor" stroke-width="1.4" stroke-linecap="round"></path></svg>Filters' +
       (active.length ? '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:' + (v4 ? '10.5px;font-weight:700;color:var(--text)' : '10px;font-weight:600;color:var(--text-label)') + ';pointer-events:none;">' + MIDDOT + ' ' + active.length + '</span>' : '') +
@@ -3715,6 +3719,7 @@
       'stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>';
     var wrapStyle = 'position:relative;display:inline-flex;' + (alignRight ? 'margin-left:auto;' : '');
     if (!open) return '<span style="' + wrapStyle + '">' + trig + '</span>';
+    var NOELL = !!o.noEllipsis;
     var cols = groups.map(function (g) {
       var selOpen = g.select && state.fmSel === id + '|' + g.key;
       var curOpt = g.select ? g.options.filter(function (x) { return x[0] === g.cur; })[0] : null;
@@ -3729,26 +3734,27 @@
         // the export wraps every option list in a 9px-radius box: a 10% ring + 4px for a drop-down, transparent + 0 otherwise
         (g.select && !selOpen ? '' : (g.select || v4 ? '<div style="display:flex;flex-direction:column;gap:2px;border:1px solid ' + (g.select ? 'var(--edge-10)' : 'transparent') +
           ';border-radius:9px;padding:' + (g.select ? '4px' : '0') + ';">' : '') +
-        (g.maxH ? '<div class="pp2-yscroll" style="display:flex;flex-direction:column;gap:2px;max-height:' + g.maxH + 'px;overflow-y:auto;">' : '') +
+        // o.gutter (Calendar): the export wraps every option list in a scroller that keeps a stable scrollbar gutter
+        (g.maxH || o.gutter ? '<div class="pp2-yscroll pp2-tscroll" style="display:flex;flex-direction:column;gap:2px;' + (g.maxH ? 'max-height:' + g.maxH + 'px;' : '') + 'overflow-y:auto;' + (o.gutter ? 'scrollbar-gutter:stable;' : '') + '">' : '') +
         g.options.map(function (o) {
           var on = g.cur === o[0], n = g.count(o[0]);
           return '<span data-pp2="fm-set" data-g="' + esc(g.key) + '" data-v="' + esc(o[0]) + '" class="pp2-fmrow" style="cursor:pointer;display:flex;' +
             'justify-content:space-between;align-items:center;gap:8px;padding:7px 8px;border-radius:7px;font-size:12px;font-weight:' + (on ? 700 : 500) + ';' +
             'color:' + (on ? 'var(--text)' : 'var(--text-soft)') + ';background:' + (on ? 'var(--selected)' : 'transparent') + ';">' +
-            '<span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;pointer-events:none;">' + esc(o[1]) + '</span>' +
+            '<span style="white-space:nowrap;' + (NOELL ? '' : 'overflow:hidden;text-overflow:ellipsis;min-width:0;') + 'pointer-events:none;">' + esc(o[1]) + '</span>' +
             '<span style="display:flex;gap:8px;align-items:center;pointer-events:none;"><span style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;' +
             'color:var(--text-label);font-weight:400;">' + (n == null ? DASH : n) + '</span>' +
             (on ? '<svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M1.5 5.5l2.2 2.2L8.5 2.8" stroke="var(--text)" stroke-width="1.6" ' +
               'stroke-linecap="round" stroke-linejoin="round"></path></svg>' : '') + '</span></span>';
-        }).join('') + (g.maxH ? '</div>' : '') + (g.select || v4 ? '</div>' : '')) +
+        }).join('') + (g.maxH || o.gutter ? '</div>' : '') + (g.select || v4 ? '</div>' : '')) +
         (g.hint ? '<span style="font-size:11px;color:var(--text-label);line-height:1.45;padding:8px 8px 0;text-wrap:pretty;">' + esc(g.hint) + '</span>' : '') + '</div>';
     }).join('');
     return '<span style="' + wrapStyle + '">' + trig +
       '<div data-pp2="fm-close" style="position:fixed;inset:0;z-index:70;"></div>' +
       '<div data-pp2="card" style="position:absolute;top:calc(100% + 8px);' + (alignRight ? 'right:0;' : 'left:0;') + 'z-index:71;width:' + (width || 520) + 'px;max-width:calc(100vw - 48px);' +
-        'background:var(--card);border:1px solid ' + (v4 ? 'var(--pp-x-edge-12)' : 'var(--edge-10)') + ';border-radius:14px;box-shadow:' + (v4 ? 'var(--pp-x-shadow-pop)' : 'var(--shadow-pop)') + ';padding:14px 16px 12px;' +
-        'box-sizing:border-box;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:' + (v4 ? '18px' : '16px 18px') + ';align-items:start;">' + cols +
-        '<div style="grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;border-top:1px solid ' + (v4 ? EDGE_8 : 'var(--edge-10)') + ';' +
+        'background:var(--card);border:1px solid ' + (v4 || X ? 'var(--pp-x-edge-12)' : 'var(--edge-10)') + ';border-radius:14px;box-shadow:' + (v4 ? 'var(--pp-x-shadow-pop)' : X ? 'var(--pp-x-shadow-pop6)' : 'var(--shadow-pop)') + ';padding:14px 16px 12px;' +
+        'box-sizing:border-box;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:' + (o.gap || (v4 ? '18px' : '16px 18px')) + ';align-items:start;">' + cols +
+        '<div style="grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;border-top:1px solid ' + (v4 || X ? EDGE_8 : 'var(--edge-10)') + ';' +
           'margin-top:-4px;padding-top:10px;">' +
           '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:var(--text-label);">' + (o.foot != null ? esc(o.foot) : nIn + ' of ' + nAll + ' matches') + '</span>' +
           '<span data-pp2="fm-reset" data-v="' + esc(id) + '" style="cursor:pointer;font-size:12px;font-weight:600;color:var(--link);">Reset filters</span>' +
@@ -3774,6 +3780,8 @@
             'stroke-width="1.4" stroke-linecap="round"></path></svg></span>';
         }).join('') +
         '<span data-pp2="fm-reset" data-v="' + esc(id) + '" class="pp2-clearall" style="cursor:pointer;font-size:11px;font-weight:600;color:var(--text-label);margin-left:4px;">Clear all</span>' +
+        // o.count (Market edge, Derived lines): the export keeps "n of m matches" at the row's right end
+        (o.count ? '<span style="margin-left:auto;font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:var(--text-label);white-space:nowrap;">' + nIn + ' of ' + nAll + ' matches</span>' : '') +
         '</div>';
     }
     return '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:-6px 0 16px;">' +
@@ -8591,8 +8599,8 @@
     var fGroups = groups.map(function (g) { return g.key === 'lcFmt' ? Object.assign({}, g, { cur: fmt === 'bo5' ? 'bo5' : 'all', options: [['all', 'Best of 3'], ['bo5', 'Best of 5']] }) : g; });
     var filterRow = mkBandHtml('<div style="display:flex;align-items:center;gap:8px;min-width:0;">' +
         stySegPills('lc-surf', [['all', 'All surfaces'], ['hard', 'Hard'], ['clay', 'Clay'], ['grass', 'Grass'], ['indoors', 'Indoors']], O.surf) +
-        bandDiv('0 4px') + filtersTriggerHtml('lc', fGroups, d.all, base) + '</div>',
-      winSeg('lc-win', O.win, true), filtersAppliedHtml('lc', fGroups, d.all, base));
+        bandDiv('0 4px') + filtersTriggerHtml('lc', fGroups, d.all, base, null, false, { x: true, noEllipsis: true }) + '</div>',
+      winSeg('lc-win', O.win, true), filtersAppliedHtml('lc', fGroups, d.all, base, { v4: true, count: true }));
     var pct = function (a, b) { return b ? Math.round(100 * a / b) + '%' : DASH; };
     var poolOf = function (r) { return r === 'all' ? d.pool : d.pool.filter(function (m) { return m.role === r; }); };
     var M = 'font-family:\'IBM Plex Mono\',monospace;';
@@ -9309,11 +9317,11 @@
     var base = mkBase(mk), scoped = mkFiltered(p, mk);
     var lvl = state.mkLvl || 'all';
     var bandL = '<div style="display:flex;align-items:center;gap:8px;min-width:0;">' + stySegPills('mk-surf', STY_SURFS, state.mkSurf || 'all', 'var(--edge-6)') +
-        bandDiv('0 4px') + filtersTriggerHtml('mk', groups, scoped.length, base.length) + '</div>';
+        bandDiv('0 4px') + filtersTriggerHtml('mk', groups, scoped.length, base.length, null, false, { x: true, noEllipsis: true }) + '</div>';
     // the reference draws Match winner's off pills (surfaces and window) on a 6% ring; Derived lines keeps the 8% one
     var bandR = '<span style="display:flex;gap:8px;flex:none;">' + [['l52', 'Last 52 weeks'], ['l24', 'Last 24 months'], ['career', 'Career']].map(function (o) {
       return bandPill('mk-win', o[0], o[1], (state.mkWin || 'career') === o[0], '', 'var(--edge-6)'); }).join('') + '</span>';
-    var appliedMk = filtersAppliedHtml('mk', groups, scoped.length, base.length);
+    var appliedMk = filtersAppliedHtml('mk', groups, scoped.length, base.length, { v4: true, count: true });
     if (lvl === 'Challenger' || lvl === 'ITF') {
       return mkBandHtml(bandL, bandR, appliedMk, 'standalone-card') + renderLevelRecords(p, lvl === 'Challenger' ? 'ch' : 'itf');
     }
@@ -10950,7 +10958,7 @@
           '<span style="position:absolute;right:0;bottom:2px;' + M_ + 'font-size:9.5px;color:var(--text-label);">' + MINUS + maxPP.toFixed(1) + '</span>' + bars + '</span>' +
         codeRows + winRow + pricedRow + yieldRow + vsRow + consRow +
       '</div></div></div>';
-    var trig = filtersTriggerHtml('cal', groups, M.length, W0.length, 620, true);   // the export's Calendar menu is 620px, anchored right
+    var trig = filtersTriggerHtml('cal', groups, M.length, W0.length, 620, true, { x: true, gap: '18px 18px', gutter: true });   // the export's Calendar menu is 620px, anchored right
     return calHeadRow(p, trig) + filtersAppliedHtml('cal', groups, M.length, W0.length) + card1 + card2 + calDrawerV2(p, M, cols, view);
   }
   // The right-side drawer: 520px, fixed to the viewport edge; matches grouped by tournament (earliest first).
