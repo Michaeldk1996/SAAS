@@ -2694,18 +2694,26 @@
       // profile v2 (founder 2026-11-10, "use the new words"): "−1.87% yield" over
       // "flat stake · +1.9pp vs tour · fav −1.1% / dog −3.5%". The tour clause is left out until the baseline loads.
       ? (function () {
-          var R = mk.roles || {}, fv = R.favourite && R.favourite.n ? R.favourite.yield : null, dg = R.underdog && R.underdog.n ? R.underdog.yield : null;
+          // data review 2026-11-14: the box quotes the Market edge drawer's own figures — mkStat over the career rows the
+          // drawer reads (the shard's `yield` is rounded to 1 dp, so printing it to 2 dp read 2.60% for Zverev's
+          // 19.50u / 763 = 2.56%) — and a role leads only on 10+ priced matches (never a 7-match "173.9% as underdog")
+          var rowsAll = (mk.matches || []).filter(function (m) { return m.inBasis && m.price != null; });
+          var sAll = mkStat(rowsAll);
+          var sRole = function (k) { return mkStat(rowsAll.filter(function (m) { return mkRoleOf(m) === k; })); };
+          var sF = sRole('fav'), sD = sRole('dog');
+          var fv = sF.n >= PP4.CAL_THIN ? sF.y : null, dg = sD.n >= PP4.CAL_THIN ? sD.y : null;
+          var allY = rowsAll.length ? sAll.y : mk.headline.yield;
           // v3 A2: "−3.5% as underdog" over "overall −1.67% yield · +1.9pp vs tour · fav −1.1%" — the headline is the role
           // yield furthest from zero; with one role priced, that role; with neither, the overall yield as before.
           var lead = fv == null && dg == null ? null : dg == null || (fv != null && Math.abs(fv) > Math.abs(dg)) ? 'fav' : 'dog';
-          var parts = ['overall ' + neg(mk.headline.yield, 2, '%') + ' yield'];
+          var parts = ['overall ' + neg(allY, 2, '%') + ' yield'];
           // TEN-384 fx2 item 3 holds: while the baselines file has not arrived the tour clause is left out (no dash)
           // the gap is taken to the tour figure AS THE MODAL'S ALL TILE PRINTS IT (2 dp): 12 Nov 2026 Alcaraz's unrounded
           // baseline put the box at +9.1 while the tile's −3.95% gives +9.2, and the pre-publish reconcile gate held the data
-          if (tourAllBox != null) parts.push(signed(Math.round((mk.headline.yield - Number(tourAllBox.toFixed(2))) * 10) / 10, 1, 'pp') + ' vs tour');
+          if (tourAllBox != null) parts.push(signed(Math.round((allY - Number(tourAllBox.toFixed(2))) * 10) / 10, 1, 'pp') + ' vs tour');
           if (lead === 'fav' && dg != null) parts.push('dog ' + neg(dg, 1, '%'));
           if (lead === 'dog' && fv != null) parts.push('fav ' + neg(fv, 1, '%'));
-          if (!lead) return { headline: neg(mk.headline.yield, 2, '%') + ' yield', support: parts.slice(1).join(' ' + MIDDOT + ' ') + idHidden };
+          if (!lead) return { headline: neg(allY, 2, '%') + ' yield', support: parts.slice(1).join(' ' + MIDDOT + ' ') + idHidden };
           return { headline: neg(lead === 'fav' ? fv : dg, 1, '%') + (lead === 'fav' ? ' as favourite' : ' as underdog'),
             support: parts.join(' ' + MIDDOT + ' ') + idHidden };
         }())
@@ -16915,7 +16923,7 @@
       renderTournDetail: renderTournDetail,
       tournJoin: tournJoin,
       tournViews: tournViews,
-      tournDisplayName: tournDisplayName,
+      tournDisplayName: tournDisplayName, mkStat: mkStat, mkRoleOf: mkRoleOf,
       tournLevelMeta: tournLevelMeta,
       over35Of: over35Of,
       winRateColour: winRateColour,

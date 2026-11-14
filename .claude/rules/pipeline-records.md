@@ -19,7 +19,8 @@ Where this file conflicts with `modal-analysis.md` (TEN-312, 2026-09-28), that f
     Commonwealth) and the **wildcard and pre-qualifying play-offs** (Rome pre-qualification, AO Wildcard Playoff,
     AO WC Playoff Asia-Pacific), in the Challenger/ITF tier. No `event_qualification`/main-draw gate in any
     archive-record builder.
-  - **Not counted:** walkovers (rule below); **junior events** (api-tennis `event_type_type` "Boys Singles" /
+  - **Not counted:** walkovers (rule below); an exhibition Tennis Explorer files under a tour category, named in
+    `te-join.js` `TE_EXHIBITION_EVENTS` (the Miami Invitational, 9 Dec 2025 — data review 2026-11-14); **junior events** (api-tennis `event_type_type` "Boys Singles" /
     "Girls Singles", `isCountedSinglesFixture` — decide on the event type, never the name: of the 1,464
     junior rows at a Slam, 943 carry a plain Slam name, and 31 more are "Pardubicka juniorka"; TEN-444);
     **women's events** ("Itf Women Singles", "Challenger Women Singles", "Wta Singles") that a name collision

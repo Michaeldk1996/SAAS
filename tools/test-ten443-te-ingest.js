@@ -742,6 +742,17 @@ const yr = (p, y) => p.careerByYear.find((r) => String(r.year) === y);
       assert.strictEqual(merge([CILIC()], [], '2026-10-18T07:43:00Z', '2986').st('M. Cilic'), 'counted');
     });
   }
+  // data review 2026-11-14: an exhibition TE files under a tour category (Miami Invitational, "ATP") is never counted
+  check('an exhibition Tennis Explorer files as "ATP" (Miami Invitational) is not added to the record; a real ATP row is', () => {
+    const TJ = require('../te-join.js');
+    const teRec = { dob: '20030505', rows: [
+      { date: '2025-12-09', season: 2025, opp: 'Fonseca J.', event: 'Miami Invitational', cat: 'ATP', won: true, sets: [{ w: 7, l: 5 }, { w: 2, l: 6 }, { w: 10, l: 8 }] },
+      { date: '2025-10-20', season: 2025, opp: 'Zeta Z.', event: 'Some ATP 250', cat: 'ATP', won: true, sets: [{ w: 6, l: 4 }, { w: 6, l: 4 }] }] };
+    const m = TJ.applyTeHistory([], teRec, {});
+    assert.ok(!m.rows.some((r) => r.tournament === 'Miami Invitational'), 'the Miami Invitational is counted');
+    assert.ok(m.rows.some((r) => r.tournament === 'Some ATP 250'), 'control: a real ATP TE-only row is not added (the check would be vacuous)');
+    assert.strictEqual(m.diag.exhibitionsSkipped, 1);
+  });
   load(false);
   console.log(`\nTEN-443 TE ingest: ${pass} passed, ${fail} failed`);
   process.exit(fail ? 1 : 0);

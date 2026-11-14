@@ -175,6 +175,12 @@ function teOnlyRow(t, flag) {
 // TE "Other" events that count (founder ruling TEN-449, 2026-10-19), by exact TE event name: the multi-sport games and
 // the wildcard / pre-qualifying play-offs. Pro series and invitationals, and national championships and tours (an
 // exhibition/club class since 2026-10-17), stay out; an "Other" event not named here stays out until it is ruled on.
+// Data review 2026-11-14 (founder: "review all the data"): Tennis Explorer files a few exhibitions under a tour category.
+// They are exhibitions all the same (TEN-443: exhibitions are never counted). Named by TE's exact event name; one per line.
+const TE_EXHIBITION_EVENTS = new Set([
+  'Miami Invitational'   // 9 Dec 2025, Alcaraz v Fonseca, loanDepot park: a one-night exhibition, TE category "ATP"
+]);
+const isTeExhibition = (t) => t.cat === 'Exhibition' || TE_EXHIBITION_EVENTS.has(String(t.event || '').trim());
 const OTHER_COUNTED = new Set(['Pan American Games', 'African Games', 'World University Games', 'Mediterranean Games',
   'Commonwealth Games', 'Rome - pre-qualification', 'AO Wildcard Playoff - Australia', 'AO WC Playoff - Asia-Pacific']);
 
@@ -298,7 +304,7 @@ function applyTeHistory(rows, teRec, opts = {}) {
     // TE's `wo` is an empty score, not a walkover (founder 2026-10-22, ruling 3): our row's explicit status stands — a
     // played row of ours counts (Gasquet d. Verdasco, Buenos Aires 2004), a walkover of ours stays a walkover row. The
     // disagreement stays on the row as a 'walkover' conflict.
-    if (t.cat === 'Exhibition') r.teExhibition = true;
+    if (isTeExhibition(t)) r.teExhibition = true;
     // an 'Other' TE event that pairs with an api-tennis or archive row: the official source proves the event; kept,
     // counted and flagged (`teOther`) so the classification gap is visible
     if (t.cat === 'Other') { r.teOther = t.event; diag.otherKeptByPair = (diag.otherKeptByPair || 0) + 1; }
@@ -310,7 +316,7 @@ function applyTeHistory(rows, teRec, opts = {}) {
   // uncounted 'Other' events are decided first, whatever their score.
   const resolveEmpty = typeof opts.resolveEmpty === 'function' ? opts.resolveEmpty : () => ({ verdict: null });
   for (const t of teOnly) {
-    if (t.cat === 'Exhibition') { diag.exhibitionsSkipped++; continue; }
+    if (isTeExhibition(t)) { diag.exhibitionsSkipped++; continue; }
     // 'Other': counted only for a class the founder ruled in (OTHER_COUNTED); every other one is listed, not counted
     if (t.cat === 'Other' && OTHER_COUNTED.has(t.event)) diag.otherCounted = (diag.otherCounted || 0) + 1;
     else if (t.cat === 'Other') { diag.otherSkipped = (diag.otherSkipped || 0) + 1; (diag.otherEvents = diag.otherEvents || {})[t.event] = ((diag.otherEvents || {})[t.event] || 0) + 1; continue; }

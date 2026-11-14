@@ -438,5 +438,8 @@ Supersedes the v3 values it restates. Reference = `Player Stat Boxes.dc.html` / 
   row carries the reference's "under 5" tag and its hollow dot sits at its own rate; a Record per tournament search that
   matches nothing leaves the list card empty; the Live trading situation / heatmap boxes sit where the reference puts them in
   their drawer (110px in). Record per tournament's tiebreak box keeps "7–6(11)" (only the loser's points are stored).
+- **Market edge page box = the drawer's figures** (data review 2026-11-14): its yields are the drawer's own (units ÷ priced over
+  the career rows, never the shard's 1-dp `yield` printed to 2 dp) and a role leads the headline only on 10+ priced
+  matches (else the overall yield). **Test:** `test-pp2-reconcile.js` "market box headline and the modal quote the same yield".
 - **Event names in the match lists** (founder 2026-11-14): a Tennis-Data sponsor name prints the site's one event name
   through the Database page's sponsor → city map (`sfSponsorCity`; a season-split name and Astana stay as written).

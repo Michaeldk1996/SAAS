@@ -1583,7 +1583,10 @@ check('Market edge box = All tile: the box support line prints the modal\'s All-
       const box = mkBoxTour(I.buildBoxVals(p, { archetype: null }).market.support);
       const tile = mkAllTileTour(I.renderMarketModal(p));
       assert(box && tile, `${p.name}: box "${box}" / tile "${tile}" not found`);
-      const want = Math.round((MARKET[String(p.key)].headline.yield - num(tile)) * 10) / 10;
+      // data review 2026-11-14: the box's yield is the drawer's own (mkStat over its career rows), not the shard's rounded one
+      const rows = (MARKET[String(p.key)].matches || []).filter(m => m.inBasis && m.price != null);
+      const y = rows.length ? I.mkStat(rows).y : MARKET[String(p.key)].headline.yield;
+      const want = Math.round((y - num(tile)) * 10) / 10;
       assert(Math.abs(num(box) - want) < 1e-9, `${p.name}: box says ${box} vs tour, the All tile's tour is ${tile} (want ${want})`);
     }
     // Absent (the file failed to load / not yet arrived): the tour clause is LEFT OUT — TEN-384 fx2 item 3,
@@ -1618,12 +1621,17 @@ check('market box headline and the modal quote the same yield and n', () => {
     }
     // v3 A2 (2026-11-12): the headline is the role yield furthest from zero ("−3.5% as underdog"); the overall yield,
     // vs tour and the other role sit in the subline ("overall −1.67% yield · +1.9pp vs tour · fav −1.1%").
-    const R = mk.roles || {}, f = v => v == null ? '\u2014' : (v < 0 ? '\u2212' : '') + Math.abs(v).toFixed(1) + '%';
-    const fv = R.favourite && R.favourite.n ? R.favourite.yield : null, dg = R.underdog && R.underdog.n ? R.underdog.yield : null;
+    // data review 2026-11-14: the drawer's own figures (mkStat over its career rows); a role leads only on 10+ priced matches
+    const f = v => v == null ? '\u2014' : (v < 0 ? '\u2212' : '') + Math.abs(v).toFixed(1) + '%';
+    const rows = (mk.matches || []).filter(m => m.inBasis && m.price != null);
+    const sR = k => I.mkStat(rows.filter(m => I.mkRoleOf(m) === k));
+    const sF = sR('fav'), sD = sR('dog');
+    const fv = sF.n >= 10 ? sF.y : null, dg = sD.n >= 10 ? sD.y : null;
+    const allY = rows.length ? I.mkStat(rows).y : mk.headline.yield;
     if (fv == null && dg == null) { assert(/% yield$/.test(vals.market.headline), `${p.name}: headline ${vals.market.headline}`); continue; }
     const lead = dg == null || (fv != null && Math.abs(fv) > Math.abs(dg)) ? 'fav' : 'dog';
     assert.strictEqual(vals.market.headline, f(lead === 'fav' ? fv : dg) + (lead === 'fav' ? ' as favourite' : ' as underdog'), `${p.name}`);
-    const ov = (mk.headline.yield < 0 ? '\u2212' : '') + Math.abs(mk.headline.yield).toFixed(2) + '%';
+    const ov = (allY < 0 ? '\u2212' : '') + Math.abs(allY).toFixed(2) + '%';
     assert(vals.market.support.indexOf('overall ' + ov + ' yield') === 0, `${p.name}: ${vals.market.support}`);
     if (lead === 'fav' && dg != null) assert(vals.market.support.includes('dog ' + f(dg)), `${p.name}: ${vals.market.support}`);
     if (lead === 'dog' && fv != null) assert(vals.market.support.includes('fav ' + f(fv)), `${p.name}: ${vals.market.support}`);
