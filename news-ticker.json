@@ -1,17 +1,17 @@
 {
- "generatedAt": "2026-11-14T14:00:06.614Z",
+ "generatedAt": "2026-11-14T14:18:13.897Z",
  "tournaments": [
   {
    "key": "tour",
    "season": "2026",
    "name": "ATP Tour",
    "file": "news-ticker/tour-2026.json",
-   "items": 60,
+   "items": 61,
    "byType": {
-    "quote": 60
+    "quote": 61
    },
-   "latestTimestamp": "2026-11-14T13:00:00.000Z",
-   "updatedAt": "2026-11-14T14:00:06.614Z"
+   "latestTimestamp": "2026-11-14T13:46:19.000Z",
+   "updatedAt": "2026-11-14T14:18:13.897Z"
   },
   {
    "key": "1681",
@@ -51,6 +51,37 @@
   }
  ],
  "latest": [
+  {
+   "id": "quote-74899a9a78880b",
+   "type": "quote",
+   "playerId": "2382",
+   "opponentId": null,
+   "player": "C. Alcaraz",
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-14T13:46:19.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "They are exercises to hit, or try to hit, the ball in the sweet spot of the racket, bringing the hand forward … Here the ball travels very fast and you have very little time. If you try to play like on clay, trying to get the ball high over the net, in the end they put you under pressure",
+   "originalText": "Sono esercizi per colpire, o cercare di colpire, la palla nel punto ideale della racchetta, portando la mano in avanti … Qui la palla viaggia molto velocemente e hai pochissimo margine di tempo. Se provi a giocare come sulla terra battuta, cercando di far passare la palla alta sopra la rete, alla fine ti mettono sotto pressione",
+   "language": "it",
+   "translated": true,
+   "translationModel": "claude-opus-5-5",
+   "sourceName": "La Gazzetta dello Sport",
+   "sourceUrl": "https://video.gazzetta.it/video-alcaraz-perche-si-allena-con-una-racchetta-senza-corde-a-torino/7ffa9752-7cb7-4d4e-ab8f-95aa8bbe1xlk",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On practicing with a stringless racket in Turin",
+   "sourceHash": "173ed130c658c81e",
+   "publishedAt": "2026-11-14T14:18:13.897Z",
+   "file": "news-ticker/tour-2026.json"
+  },
   {
    "id": "quote-e5b8edb48e6251",
    "type": "quote",
@@ -1591,178 +1622,6 @@
    "topic": "On rallying after losing the second set",
    "revisedAt": "2026-11-13T07:43:17.649Z",
    "revision": 1,
-   "file": "news-ticker/1681-2026.json"
-  },
-  {
-   "id": "report-12179396",
-   "type": "report",
-   "playerId": "2849",
-   "opponentId": "1105",
-   "player": "L. Musetti",
-   "opponent": "U. Humbert",
-   "tournament": "Stockholm",
-   "tournamentKey": "1681",
-   "season": "2026",
-   "stage": "main draw",
-   "round": "quarter-finals",
-   "eventKey": "12179396",
-   "timestamp": "2026-11-12T21:59:54.915Z",
-   "timestampKind": "observed",
-   "observed": {
-    "endedAt": "2026-11-12T21:59:54.915Z",
-    "startedAt": "2026-11-12T19:30:57.352Z",
-    "minutes": 149
-   },
-   "category": "Statistics",
-   "text": "Musetti beat Humbert 7–6, 3–6, 6–4 in the QF in their first meeting. It was a long fight of 2h29 between an attacker and a defender, with Musetti coming back from a break down in the deciding set.\n\nThe first set lasted about an hour without a single break of serve. Musetti saved 1 break point to hold for 3–2 and then won the tiebreak, in a set that could easily have gone the other way. He saved 2 more break points to hold for 1–1 in the second set but Humbert broke for 4–2 and took it 6–3.\n\nThe moment of the match came at the start of the third set, when Humbert broke for 1–0 and Musetti broke straight back for 1–1. Musetti said it simply: \"The reaction was the key\". Humbert saved 2 break points to hold for 2–2 and stayed with him until the very end, when Musetti broke for 6–4 to win the match, with an outstanding lob bringing up match point.\n\nMusetti won it with his defence. He stayed deep behind the baseline, sent back almost everything Humbert hit and still found winners when he had the chance, 9 of them off the backhand.\n\nHumbert attacked throughout, hitting the ball very hard at times and mixing in a delicate change of pace. His first serve let him down, though: he won only 69% of the points behind it, far below his 77% average on hard. That made the difference in the end.\n\nMusetti did not look 100%. He called the physio early in the second set. Musetti after the match: \"It's been a tough year for all the injuries, but now finally getting back in a good shape, so happy for that.\"\n\nAll in all, a patient win from Musetti, built on the defence and counterpunching that worked well on the medium-paced indoor court in Stockholm. His early medical timeout and the strapping under his right knee are things to follow. Next is Fritz, who has not dropped a set this week, beat Norrie in straight sets and then did not play his QF after a walkover from Rune.\n\nMusetti: performance rating 8.2 | W: 26 / UE: 23 | DR: 1.06\n\nHumbert: performance rating 7.4 | W: 28 / UE: 43 | DR: 0.95",
-   "baseText": "Musetti beat Humbert 7–6, 3–6, 6–4 in the QF in their first meeting. It was a long fight of 2h29 between an attacker and a defender, with Musetti coming back from a break down in the deciding set.\n\nThe first set lasted about an hour without a single break of serve. Musetti saved 1 break point to hold for 3–2 and then won the tiebreak, in a set that could easily have gone the other way. He saved 2 more break points to hold for 1–1 in the second set but Humbert broke for 4–2 and took it 6–3.\n\nThe moment of the match came at the start of the third set, when Humbert broke for 1–0 and Musetti broke straight back for 1–1. Musetti said it simply: \"The reaction was the key\". Humbert saved 2 break points to hold for 2–2 and stayed with him until the very end, when Musetti broke for 6–4 to win the match, with an outstanding lob bringing up match point.\n\nMusetti won it with his defence. He stayed deep behind the baseline, sent back almost everything Humbert hit and still found winners when he had the chance, 9 of them off the backhand.\n\nHumbert attacked throughout, hitting the ball very hard at times and mixing in a delicate change of pace. His first serve let him down, though: he won only 69% of the points behind it, far below his 77% average on hard. That made the difference in the end.\n\nAll in all, a patient win from Musetti, built on the defence and counterpunching that worked well on the medium-paced indoor court in Stockholm. His early medical timeout and the strapping under his right knee are things to follow. Next is Fritz, who has not dropped a set this week, beat Norrie in straight sets and then did not play his QF after a walkover from Rune.",
-   "rating": [
-    "Musetti: performance rating 8.2 | W: 26 / UE: 23 | DR: 1.06",
-    "Humbert: performance rating 7.4 | W: 28 / UE: 43 | DR: 0.95"
-   ],
-   "shotStats": {
-    "p1": {
-     "performance": 8.2,
-     "serveQuality": 8.1,
-     "unreturnedPct": 33,
-     "firstInPct": 70,
-     "firstWonPct": 74,
-     "secondWonPct": 48,
-     "secondSpeed": 158,
-     "returnQuality": 6,
-     "fhWinners": 9,
-     "bhWinners": 9,
-     "fhUnforced": 10,
-     "bhUnforced": 12,
-     "forcedErrors": 47,
-     "baselineWon": 47,
-     "under9Won": 90,
-     "over9Won": 11,
-     "bpWon": [
-      2,
-      4
-     ],
-     "netWon": [
-      4,
-      4
-     ]
-    },
-    "p2": {
-     "performance": 7.4,
-     "serveQuality": 8.3,
-     "unreturnedPct": 39,
-     "firstInPct": 63,
-     "firstWonPct": 70,
-     "secondWonPct": 54,
-     "secondSpeed": 166,
-     "returnQuality": 6.7,
-     "fhWinners": 11,
-     "bhWinners": 4,
-     "fhUnforced": 19,
-     "bhUnforced": 20,
-     "forcedErrors": 32,
-     "baselineWon": 41,
-     "under9Won": 90,
-     "over9Won": 8,
-     "bpWon": [
-      2,
-      5
-     ],
-     "netWon": [
-      18,
-      31
-     ]
-    },
-    "postedAt": "2026-11-12T22:08:27.000Z",
-    "readAt": "2026-11-13T06:34:56.105Z",
-    "sourceName": "ATP broadcast match statistics (via @ATP_Entry)",
-    "sourceUrl": "https://x.com/ATP_Entry/status/2121002207839424920",
-    "agreed": "6 of 6 serve figures within 3 points of ours; set scores and break points equal"
-   },
-   "mto": [
-    "Physically, it is something to follow.",
-    "Musetti took a medical timeout at 0–0 in the second set.",
-    "Musetti after the match: \"It's been a tough year for all the injuries, but now finally getting back in a good shape, so happy for that.\"",
-    "Something to follow up for the next round."
-   ],
-   "commentary": {
-    "text": "Musetti played with strapping under his right knee. Humbert attacked throughout, hitting the ball very hard at times and mixing in a delicate change of pace, while Musetti defended from deep behind the baseline and still found winners, several of them off the backhand. The first set lasted about an hour and the match went to a deciding set in Stockholm. Musetti won to reach the semifinals, with an outstanding lob bringing up match point.",
-    "sourceName": "Tennis TV highlights commentary",
-    "sourceUrl": "https://www.tennistv.com/videos/4608418/stockholm-2026-qf-musetti-humbert-highlights"
-   },
-   "composed": {
-    "version": 2,
-    "sheetHash": "3044483cf881cfec",
-    "status": "ok",
-    "model": "claude-opus-5-5",
-    "tries": 2,
-    "runs": 2,
-    "body": "Musetti beat Humbert 7–6, 3–6, 6–4 in the QF in their first meeting. It was a long fight of 2h29 between an attacker and a defender, with Musetti coming back from a break down in the deciding set.\n\nThe first set lasted about an hour without a single break of serve. Musetti saved 1 break point to hold for 3–2 and then won the tiebreak, in a set that could easily have gone the other way. He saved 2 more break points to hold for 1–1 in the second set but Humbert broke for 4–2 and took it 6–3.\n\nThe moment of the match came at the start of the third set, when Humbert broke for 1–0 and Musetti broke straight back for 1–1. Musetti said it simply: \"The reaction was the key\". Humbert saved 2 break points to hold for 2–2 and stayed with him until the very end, when Musetti broke for 6–4 to win the match, with an outstanding lob bringing up match point.\n\nMusetti won it with his defence. He stayed deep behind the baseline, sent back almost everything Humbert hit and still found winners when he had the chance, 9 of them off the backhand.\n\nHumbert attacked throughout, hitting the ball very hard at times and mixing in a delicate change of pace. His first serve let him down, though: he won only 69% of the points behind it, far below his 77% average on hard. That made the difference in the end.\n\nAll in all, a patient win from Musetti, built on the defence and counterpunching that worked well on the medium-paced indoor court in Stockholm. His early medical timeout and the strapping under his right knee are things to follow. Next is Fritz, who has not dropped a set this week, beat Norrie in straight sets and then did not play his QF after a walkover from Rune."
-   },
-   "fields": {
-    "score": "7-6, 3-6, 6-4",
-    "round": "quarter-finals",
-    "retired": false,
-    "h2h": {
-     "a": 1,
-     "b": 0,
-     "n": 1
-    },
-    "durationMinutes": 149,
-    "facts": {
-     "tiebreakSets": [
-      {
-       "set": 1,
-       "winner": "p1"
-      }
-     ]
-    },
-    "standouts": [
-     {
-      "player": "loser",
-      "tone": "bad",
-      "metric": "firstWon",
-      "value": 69,
-      "won": 45,
-      "total": 65,
-      "baseline": 77,
-      "scope": "last52",
-      "surface": "Hard",
-      "n": 30
-     },
-     {
-      "player": "loser",
-      "tone": "bad",
-      "metric": "winnersErrors",
-      "winners": 28,
-      "unforcedErrors": 43
-     }
-    ],
-    "winner": {
-     "aces": 6,
-     "winners": 26,
-     "unforcedErrors": 23,
-     "breakPointsSaved": 3,
-     "breakPointsFaced": 5,
-     "breakPointsSource": "box score"
-    },
-    "loser": {
-     "aces": 13,
-     "winners": 28,
-     "unforcedErrors": 43,
-     "breakPointsSaved": 2,
-     "breakPointsFaced": 4,
-     "breakPointsSource": "box score"
-    }
-   },
-   "sourceName": "Stennisfy match data (api-tennis box score and point-by-point)",
-   "sourceUrl": "pbp/12179396.json",
-   "language": "en",
-   "translated": false,
-   "sourceHash": "88eb362c99ebc6e0",
-   "publishedAt": "2026-11-12T22:26:28.919Z",
-   "revisedAt": "2026-11-14T06:54:31.012Z",
-   "revision": 6,
    "file": "news-ticker/1681-2026.json"
   }
  ]
