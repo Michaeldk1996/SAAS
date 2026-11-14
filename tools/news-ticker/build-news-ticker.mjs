@@ -191,7 +191,7 @@ export async function build({ nowIso, times, rewrite = null, writer = null, apiK
           // the same player's earlier matches here, in order, with their medical timeouts ("his second in two matches")
           const sk = (c) => `${c.date || ''} ${c.time || '99:99'}`, earlier = {};
           for (const k of [w, l]) earlier[k] = allCards.filter((c) => c.id !== m.id && [c.p1Key, c.p2Key].map(String).includes(String(m[k + 'Key'])) && sk(c) < sk(m) && c.finalScore && !c.walkover).sort((a, b) => sk(a).localeCompare(sk(b))).map((c) => ({ rows: mtoByMatch[ek(c)] || [] }));
-          phys = physicalParagraph(m, mtoByMatch[ek(m)], { winner: w, final: rw === 'final', quotes: quoteItems, earlier });
+          phys = physicalParagraph(m, mtoByMatch[ek(m)], { winner: w, final: rw === 'final', quotes: quoteItems, earlier, seen: cm && cm.text ? cm.text : null });
           const sheet = factSheet({ m, w, l, rep, shard: sp, round: rw, duration: obs && obs.minutes != null ? obs.minutes : null, card: cardsByMatch[ek(m)] || null,
             commentary: cm && cm.text ? cm.text : null, quotes: matchQuotes(m, ek(m), quoteItems, phys.sentences.join(' ')), physical: phys.facts,
             path: pathLines(m, w, allCards, (c) => roundCode(rwOf(c)), rw === 'final'), styles: { [w]: styleOf(m[w]), [l]: styleOf(m[l]) } });

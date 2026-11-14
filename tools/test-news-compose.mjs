@@ -128,11 +128,16 @@ await ok('the physical paragraph: where in the set, the pattern across rounds, a
   yes(one.sentences.join(' ').includes('He called the physio early in the second set.') && one.sentences.includes('We do not know the reason yet.'), one.sentences.join(' '));
   const two = physicalParagraph(T, row([[7, 1], [5, 2]]), { winner: 'p2', earlier: { p2: [{ rows: [] }, { rows: row([[7, 2], [6, 3]]) }] } });
   yes(two.sentences.join(' ').includes('He called the physio early in the second set, his second medical timeout in two matches.'), two.sentences.join(' '));
-  yes(two.facts[0].includes('his second medical timeout in two matches') && two.facts[0].includes('the one doubt about Tirante before his next match'));
+  yes(two.facts[0].includes('his second medical timeout in two matches') && two.facts[0].includes('nothing confirms a physical problem') && two.facts[0].includes('already his second medical timeout this week'), two.facts[0]);
+  // founder 2026-11-14: a timeout is something to follow, never "he did not look 100%" unless it is confirmed
+  for (let i = 0; i < 40; i++) yes(!/100%|worry|question mark/.test(physicalParagraph({ ...T, id: 'past-' + i }, row([[7, 1], [5, 2]]), {}).sentences.join(' ')), 'no assumption in the opener');
+  const said = physicalParagraph(T, row([[7, 1], [5, 2]]), { winner: 'p2', seen: 'Tirante was struggling with his back and needed treatment in the second set.' });
+  eq(said.sentences[0], 'Tirante did not look 100%.'); yes(!said.facts[0].includes('nothing confirms'));
+  yes(!/100%/.test(physicalParagraph(T, row([[7, 1], [5, 2]]), { seen: 'Tabilo needed treatment on his back.' }).sentences.join(' ')), 'what was seen about the OTHER player confirms nothing');
   yes(!physicalParagraph(T, row([[7, 1], [5, 2]]), { winner: 'p2', earlier: { p2: [{ rows: row([[7, 2], [6, 3]]) }, { rows: [] }] } }).sentences.join(' ').includes('in two matches'), 'a match without a timeout in between ends the pattern');
   eq(physicalParagraph(T, [], {}).sentences, []);
   const openers = new Set(); for (let i = 0; i < 40; i++) openers.add(physicalParagraph({ ...T, id: 'past-' + i }, row([[7, 1], [5, 2]]), {}).sentences[0]);
-  yes(openers.size >= 4, `the opener changes from report to report (${openers.size})`);
+  yes(openers.size >= 3, `the opener changes from report to report (${openers.size})`);
   yes(/late in the first set/.test(physicalParagraph(T, row([[5], [6]]), {}).sentences.join(' ')) && /in the middle of the first set/.test(physicalParagraph(T, row([[3], [2]]), {}).sentences.join(' ')));
 });
 await ok('refuses first person, a named source, an initial, a question, markdown and a missing "All in all"', () => {

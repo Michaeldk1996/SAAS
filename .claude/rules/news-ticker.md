@@ -49,7 +49,7 @@ it was, the match in playing order, the numbers that explain it, one or two quot
   "beat Norrie in straight sets (R2)", sets dropped, tiebreaks), and a walkover is said to rest him only when it was
   his last round; the court's pace is a sheet line (`m.courtSpeed.category`, never a word of ours); each report is
   offered 4 of the founder's phrases (`PHRASES`, by match id) so no sentence returns in every report.
-- **The physical paragraph** (`physicalParagraph`): its opener rotates (`PHYSICAL_OPENERS`); the timeout is told by
+- **The physical paragraph** (`physicalParagraph`): a medical timeout is something to follow, never proof of a problem (founder 2026-11-14: "some players just take MTOs for other reasons") — **Test:** does the paragraph or "All in all" say he was hurt, unfit or "did not look 100%"? Only when he spoke about his body on court or what was seen in the match says so about HIM (`PHYSICAL_CONFIRMED`); otherwise it only says it is to follow and counts the timeouts ("already his second medical timeout this week"). Its opener rotates (`PHYSICAL_OPENERS`); the timeout is told by
   where in the set it came (early / in the middle of / late), not by the game score; the same player's earlier rounds
   are read for the pattern ("his second medical timeout in two matches" = timeouts in consecutive matches ending with
   this one); "We do not know the reason yet." unless he spoke about his body on court. Its facts are also a sheet

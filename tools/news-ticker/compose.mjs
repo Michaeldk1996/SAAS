@@ -174,8 +174,13 @@ export function pathLines(m, w, all, rc, isFinal) {
 // rows = mto-matches.json's rows for this match; earlier = [{ rows }] for the SAME player's earlier matches here, in
 // order (the caller builds it per player). -> { sentences: string[], facts: string[] (for the fact sheet) }
 const ORD_WORD = { 1: 'first', 2: 'second', 3: 'third', 4: 'fourth', 5: 'fifth' }, NUM_WORD = { 2: 'two', 3: 'three', 4: 'four', 5: 'five' };
-export const PHYSICAL_OPENERS = [(N) => `One question mark is the body of ${N}.`, (N) => `The only worry for ${N} is physical.`, (N) => `The fitness of ${N} is the thing to watch.`, (N) => `${N} did not look 100%.`, (N) => `Physically, ${N} is something to follow.`];
-export function physicalParagraph(m, rows, { winner = null, final = false, quotes = [], earlier = {} } = {}) {
+// A medical timeout is something to follow, not proof of a problem (founder 2026-11-14: "some players just take MTOs
+// for other reasons"): the opener never says how he looked. "did not look 100%" is used only when it is confirmed —
+// he spoke about his body on court, or what was seen in the match says so.
+export const PHYSICAL_OPENERS = [(N) => `One thing to follow is the body of ${N}.`, (N) => `There is one physical point to follow for ${N}.`, (N) => `The fitness of ${N} is the thing to watch.`, (N) => `Physically, ${N} is something to follow.`];
+export const PHYSICAL_CONFIRMED = (N) => `${N} did not look 100%.`;
+const BODY_SEEN = /\b(injur|physio|trainer|treatment|limp|strapp|taped?|cramp|pain|struggl\w* (?:physically|with his)|not (?:moving|100)|hampered|bothered)/i;
+export function physicalParagraph(m, rows, { winner = null, final = false, quotes = [], earlier = {}, seen = null } = {}) {
   const last = (x) => String(x || '').trim().split(/\s+/).pop().toLowerCase(), mine = (k, rs) => (rs || []).filter((r) => r && !r.retired && last(r.player) === last(m[k]));
   const by = new Map();
   for (const r of (rows || []).slice().sort((a, b) => String(a.calledAt).localeCompare(String(b.calledAt))).slice(0, 3)) {
@@ -200,11 +205,12 @@ export function physicalParagraph(m, rows, { winner = null, final = false, quote
     const pattern = matches >= 2 && ORD_WORD[total] && NUM_WORD[matches] ? `his ${ORD_WORD[total]} medical timeout in ${NUM_WORD[matches]} matches` : null;
     const what = at.length === 1 ? `${N} called the physio ${at[0]}` : `${N} called the physio ${at.length === 2 ? 'twice' : 'three times'}: ${at.slice(0, -1).join(', ')} and ${at[at.length - 1]}`;
     const q = (quotes || []).find((x) => x && x.interview === 'on-court' && String(x.playerId) === String(m[k + 'Key']) && /\b(physical|body|injur|fitness|health|pain|hand|wrist|arm|shoulder|back|leg|knee|ankle|foot|hip|blister|cramp)/i.test(String(x.topic || '')) && String(x.text || '').length <= 260);
-    sentences.push(pick(PHYSICAL_OPENERS, k)(N));
+    const confirmed = !!q || (seen && BODY_SEEN.test(String(seen)) && new RegExp(`\\b${N.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`).test(String(seen)));
+    sentences.push(confirmed ? PHYSICAL_CONFIRMED(N) : pick(PHYSICAL_OPENERS, k)(N));
     sentences.push(`${what.replace(N, 'He')}${pattern ? `, ${pattern}` : ''}.`);   // the opener has just named him
     sentences.push(q ? `${N} after the match: "${String(q.text).trim()}"` : 'We do not know the reason yet.');
     if (winner && k !== winner) sentences.push(`Something to follow for the next tournaments of ${N}.`);
-    facts.push(`${what}${pattern ? `, ${pattern}` : ''}. The reason is not known.${winner && k === winner && !final ? ` It is the one doubt about ${N} before his next match.` : ''}`);
+    facts.push(`${what}${pattern ? `, ${pattern}` : ''}. The reason is not known${confirmed ? '' : ' and nothing confirms a physical problem: say only that it is something to follow, never that he is hurt or not fit'}.${winner && k === winner && !final ? ` In "All in all", mention that it is already his ${ORD_WORD[total] || ''} medical timeout${matches >= 2 ? ' this week' : ''}.`.replace('his  medical', 'a medical') : ''}`);
   }
   return { sentences, facts };
 }
