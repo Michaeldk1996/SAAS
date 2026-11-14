@@ -16453,7 +16453,7 @@ function fhOpenSheet(mid){
 }
 // DF L4715 rowBg: the Form row whose sheet is open carries the selected wash (blue .1 → --seg-active) until it closes.
 // The open meeting's row takes the shared row's selected shade (DF rowBg, L4480 / maMatchRowsHtml).
-function fhMarkRow(mid){ document.querySelectorAll('#analysisModal .ma-row-open').forEach(el => el.classList.remove('ma-row-open')); document.querySelectorAll('#aSectionForm .fh-frow, #aSectionH2H .fh-h2row, #aSectionTournament .tr-row, #h2hRoot .h2hp-row').forEach(el => { el.style.background = mid && el.getAttribute('data-fh-mid') === mid ? 'var(--selected)' : 'transparent'; }); }
+function fhMarkRow(mid){ if (!mid) document.querySelectorAll('.pp2-rowopen').forEach(el => el.classList.remove('pp2-rowopen')); document.querySelectorAll('#analysisModal .ma-row-open').forEach(el => el.classList.remove('ma-row-open')); document.querySelectorAll('#aSectionForm .fh-frow, #aSectionH2H .fh-h2row, #aSectionTournament .tr-row, #h2hRoot .h2hp-row').forEach(el => { el.style.background = mid && el.getAttribute('data-fh-mid') === mid ? 'var(--selected)' : 'transparent'; }); }
 function fhCloseSheet(){ const h = document.getElementById('fhSheet'); if (h) h.innerHTML = ''; if (_fh){ _fh.sheet = null; _fh.sheetBody = null; } fhMarkRow(null); }
 // =====================================================================
 // MATCH STATS SHEET BODY (TEN-263, founder rulings 2026-09-24): one segmented control

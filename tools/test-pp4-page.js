@@ -104,6 +104,15 @@ check('Filters menus: Market edge, Derived lines and Calendar draw the export\'s
   /filtersTriggerHtml\('mk', [^\n]*\{ x: true, noEllipsis: true \}\)/.test(SRC) && /filtersTriggerHtml\('lc', [^\n]*\{ x: true, noEllipsis: true \}\)/.test(SRC) &&
   /filtersTriggerHtml\('cal', [^\n]*\{ x: true, gap: '18px 18px', gutter: true \}\)/.test(SRC) &&
   /filtersAppliedHtml\('mk', [^\n]*\{ v4: true, count: true \}\)/.test(SRC) && /var\(--pp-x-shadow-pop6\)/.test(SRC) || 'menu variant');
+check('Court speed: the row that opened the match box is raised while the box is open; the host clears it on close', () =>
+  /state\.sheetRow = v;/.test(SRC) && /'\.pp2-spdrow\.pp2-rowopen>\*\{background:var\(--selected\)!important;\}'/.test(SRC) &&
+  /state\.sheetRow === \(m\.sheetId \|\| \(m\.date \+ '\|' \+ m\.opp\)\) && sheetOnScreen\(\)/.test(SRC) &&
+  /function fhMarkRow\(mid\)\{ if \(!mid\) document\.querySelectorAll\('\.pp2-rowopen'\)/.test(fs.readFileSync(path.join(ROOT, 'bsp-consult-dashboard.html'), 'utf8')) || 'row mark');
+check('Market edge band box: the foot names the tour figure\'s real population (whole tour since 2010), never "same window"', () =>
+  /tour at this band = every priced ATP main-tour match since 2010 with a closing price in ' \+ B\[1\]/.test(SRC) && !/same window and surface as the drawer/.test(SRC) &&
+  /data-pp2-fbfoot="1"/.test(SRC) || 'band foot');
+check('Calendar Country: the export\'s search field, filtering in place, with "No country matches"', () =>
+  /search: true, searchPh: 'Type a country…', noHits: 'No country matches'/.test(SRC) && /data-pp4-search/.test(SRC) && /oninput="\(function\(i\)/.test(SRC) || 'country search');
 const tok = fs.readFileSync(path.join(ROOT, 'tokens.css'), 'utf8');
 check('tokens: the v4 profile colours are named once in tokens.css', () =>
   /--pp-x-bar-neutral:\s*#4A5470/i.test(tok) && /--pp-x-faint:\s*#5B6480/i.test(tok) && /--pp-x-shadow-pop:\s*0 18px 48px rgba\(0, 0, 0, 0\.55\)/.test(tok) || 'tokens');

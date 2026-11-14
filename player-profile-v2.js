@@ -509,6 +509,8 @@
   function sheetHook(id) {
     return MATCH_SHEET_BUILT ? 'data-pp2="sheet" data-v="' + esc(id) + '" ' : '';
   }
+  // is the host's match sheet on screen now? (fhSheet holds markup while it is open; fhCloseSheet empties it)
+  function sheetOnScreen() { try { var h = document.getElementById('fhSheet'); return !!(h && h.innerHTML); } catch (e) { return false; } }
   function sheetCursor() { return MATCH_SHEET_BUILT ? 'cursor:pointer;' : ''; }
   // Short name for templated copy: the export hard-codes "Jodar's" in helper
   // text; production must substitute the real player's short name.
@@ -3289,6 +3291,7 @@
     // v4 §5 · Court speed: a band tile lifts its ring on hover; a match row fills edge to edge (no column gap)
     '.pp2-spdband{transition:border-color .15s ease,background .15s ease;}.pp2-spdband[data-pp2]:hover{border-color:var(--edge-16)!important;}' +
     '.pp2-spdrow:not(.wo):hover>*{background:var(--tile-hover);}' +
+    '.pp2-spdrow.pp2-rowopen>*{background:var(--selected)!important;}' +
     '.pp2-fmsel:hover{border-color:color-mix(in srgb, var(--text) 30%, transparent)!important;}' +
     '.pp2-fmchip:hover{border-color:color-mix(in srgb, var(--bar) 70%, transparent)!important;}' +
     '.pp2-spdclear:hover{border-color:color-mix(in srgb, var(--text) 30%, transparent)!important;}' +
@@ -3675,6 +3678,8 @@
             'style="pointer-events:none;"><path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path></svg></span>' +
         '</div>' +
         (tiles ? '<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:14px;">' + tiles + '</div>' : '') +
+        // fb.foot (additive, v4 §8.1 band box): one grey line under the tiles saying what the tour figure is
+        (fb.foot ? '<div data-pp2-fbfoot="1" style="font-size:11.5px;color:var(--text-label);line-height:1.5;margin:-6px 0 12px;">' + esc(fb.foot) + '</div>' : '') +
         pills + list +
       '</div></div>';
   }
@@ -3723,8 +3728,16 @@
     var cols = groups.map(function (g) {
       var selOpen = g.select && state.fmSel === id + '|' + g.key;
       var curOpt = g.select ? g.options.filter(function (x) { return x[0] === g.cur; })[0] : null;
-      return '<div style="display:flex;flex-direction:column;gap:2px;min-width:0;">' +
-        '<span style="font-size:10.5px;font-weight:700;letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);padding:0 0 8px;">' + esc(g.title) + '</span>' +
+      // g.search (v4, Calendar Country): the export's search field over the list. Typing filters the rows in place (no
+      // repaint, so the field keeps focus); "No country matches" when none fits. g.searchPh = the placeholder.
+      var srch = g.search ? '<span style="display:flex;align-items:center;gap:7px;margin:0 0 6px;padding:6px 9px;border-radius:7px;background:var(--inner);border:1px solid ' + EDGE_8 + ';">' +
+          '<svg width="11" height="11" viewBox="0 0 12 12" fill="none" style="flex:none;"><circle cx="5.2" cy="5.2" r="3.6" stroke="var(--text-label)" stroke-width="1.3"></circle>' +
+          '<path d="M8 8l2.6 2.6" stroke="var(--text-label)" stroke-width="1.3" stroke-linecap="round"></path></svg>' +
+          '<input type="text" data-pp4-q="1" placeholder="' + esc(g.searchPh || 'Type to search…') + '" autocomplete="off" oninput="(function(i){var q=i.value.trim().toLowerCase(),b=i.closest(\'[data-pp4-search]\'),n=0;b.querySelectorAll(\'[data-pp2=fm-set]\').forEach(function(r){var all=r.getAttribute(\'data-v\')===\'all\',ok=!q||all||r.firstElementChild.textContent.toLowerCase().indexOf(q)>=0;r.style.display=ok?\'\':\'none\';if(ok&&!all)n++;});var h=b.querySelector(\'[data-pp4-nohits]\');if(h)h.style.display=n?\'none\':\'\';})(this)" ' +
+          'style="flex:1;min-width:0;background:transparent;border:0;outline:0;font-family:\'Hanken Grotesk\',sans-serif;font-size:12px;color:var(--text);"></span>' +
+          '<span data-pp4-nohits="1" style="display:' + (g.options.length < 2 ? 'block' : 'none') + ';font-size:11.5px;color:var(--pp-x-faint);padding:6px 8px;">' + esc(g.noHits || 'No matches') + '</span>' : '';
+      return '<div' + (g.search ? ' data-pp4-search="1"' : '') + ' style="display:flex;flex-direction:column;gap:2px;min-width:0;">' +
+        '<span style="font-size:10.5px;font-weight:700;letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);padding:0 0 8px;">' + esc(g.title) + '</span>' + srch +
         (g.select ? '<span data-pp2="fm-sel" data-v="' + esc(id + '|' + g.key) + '" class="pp2-fmsel" style="display:flex;align-items:center;justify-content:space-between;gap:8px;' +
           'cursor:pointer;margin:0 0 6px;padding:7px 9px 7px 10px;border-radius:7px;background:var(--inner);border:1px solid ' +
           (selOpen ? 'color-mix(in srgb, var(--text) 22%, transparent)' : EDGE_8) + ';font-size:12px;font-weight:600;color:var(--text);">' +
@@ -3740,7 +3753,7 @@
           var on = g.cur === o[0], n = g.count(o[0]);
           return '<span data-pp2="fm-set" data-g="' + esc(g.key) + '" data-v="' + esc(o[0]) + '" class="pp2-fmrow" style="cursor:pointer;display:flex;' +
             'justify-content:space-between;align-items:center;gap:8px;padding:7px 8px;border-radius:7px;font-size:12px;font-weight:' + (on ? 700 : 500) + ';' +
-            'color:' + (on ? 'var(--text)' : 'var(--text-soft)') + ';background:' + (on ? 'var(--selected)' : 'transparent') + ';">' +
+            'color:' + (on ? 'var(--text)' : X && n === 0 ? 'var(--pp-x-faint)' : 'var(--text-soft)') + ';background:' + (on ? 'var(--selected)' : 'transparent') + ';">' +
             '<span style="white-space:nowrap;' + (NOELL ? '' : 'overflow:hidden;text-overflow:ellipsis;min-width:0;') + 'pointer-events:none;">' + esc(o[1]) + '</span>' +
             '<span style="display:flex;gap:8px;align-items:center;pointer-events:none;"><span style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;' +
             'color:var(--text-label);font-weight:400;">' + (n == null ? DASH : n) + '</span>' +
@@ -9399,7 +9412,10 @@
     });
     return { name: B[2], code: B[1] + ' ' + MIDDOT + ' closing price',
       meta: recordText(b.w, b.l) + (thin ? '' : ' ' + MIDDOT + ' ' + b.win.toFixed(1) + '%') + ' ' + MIDDOT + ' ' + b.n + ' matches ' + MIDDOT + ' ' + esc(mkScopeTxt()),
-      tiles: tiles, cols: FB_LIST_COLS, head: fbMatchHead(), rows: rows };
+      tiles: tiles, cols: FB_LIST_COLS, head: fbMatchHead(), rows: rows,
+      // the tour figure is the whole tour's (tour-baselines.json: every priced ATP main-draw match since 2010 at a closing
+      // price in this band), not this drawer's window or surface — the line says so, never the export's "same window"
+      foot: thin || !tb ? '' : 'tour at this band = every priced ATP main-tour match since 2010 with a closing price in ' + B[1] + ' ' + MIDDOT + ' all surfaces' };
   };
 
   function renderMarketModal(p) {
@@ -10670,7 +10686,7 @@
         return [a.label, a.label.replace('Big Server + First Strike', 'Big Server + FS').replace('Big Server + Complete Baseliner', 'Big Server + CB')]; })),
         count: cnt('calArch', 'arch') },
       { key: 'calOpp', title: 'Opponent level', cur: state.calOpp || 'all', options: OPP_LEVELS, count: cnt('calOpp', 'lvl') },
-      { key: 'calCtry', title: 'Country', cur: state.calCtry || 'all', maxH: 196, options: [['all', 'All countries']].concat(ccs.map(function (c) { return [c, calCountryName(c)]; })),
+      { key: 'calCtry', title: 'Country', cur: state.calCtry || 'all', maxH: 196, search: true, searchPh: 'Type a country…', noHits: 'No country matches', options: [['all', 'All countries']].concat(ccs.map(function (c) { return [c, calCountryName(c)]; })),
         count: cnt('calCtry', 'cc') }
     ];
   }
@@ -12529,7 +12545,8 @@
             '" style="display:block;width:8px;height:8px;border-radius:2px;background:' + (m.won ? 'var(--pos)' : 'var(--neg)') + ';"></span>';
           var sets = unconf ? ENDASH : wo ? '<span style="display:inline-flex;align-items:center;height:16px;padding:0 5px;border-radius:4px;box-sizing:border-box;background:var(--edge-6);border:1px solid var(--edge-10);' +
             M + 'font-size:8.5px;font-weight:700;letter-spacing:0.06em;color:var(--text-label);white-space:nowrap;">WO</span>' : esc(m.sets || DASH);
-          return '<div class="pp2-spdrow' + (quiet ? ' wo' : '') + '"' + (wo ? ' data-pp2-wo-row="1"' : '') + ' style="display:contents;">' +
+          var rowOpen = !quiet && state.sheetRow === (m.sheetId || (m.date + '|' + m.opp)) && sheetOnScreen();
+          return '<div class="pp2-spdrow' + (quiet ? ' wo' : '') + (rowOpen ? ' pp2-rowopen' : '') + '"' + (wo ? ' data-pp2-wo-row="1"' : '') + ' style="display:contents;">' +
             c(fmtDotDate(m.date) + '.', M + 'font-size:11px;color:var(--text-label);white-space:nowrap;') +
             c(dot) +
             c('<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(initialSurname(m.opp || '') || DASH) + '</span>', 'font-size:12.5px;min-width:0;padding-right:10px;') +
@@ -16496,7 +16513,17 @@
     // stats shard; the sheet paints its own "no stats on record" state until it
     // lands rather than blocking the open.
     // TEN-384: the step-3 sheet opens through the host (openMatchSheet repaints for the open-row wash).
-    else if (kind === 'sheet') { openMatchSheet(v); return; }
+    else if (kind === 'sheet') {
+      // v4 §5 / §13: the row that opened the match box is raised (--selected) while the box is open; the host's close
+      // (fhCloseSheet -> fhMarkRow(null)) clears the mark. Court speed rows are display:contents, so the cells carry it.
+      state.sheetRow = v;
+      try {
+        document.querySelectorAll('.pp2-rowopen').forEach(function (x) { x.classList.remove('pp2-rowopen'); });
+        var rw = el.closest && el.closest('.pp2-spdrow');
+        if (rw) rw.classList.add('pp2-rowopen');
+      } catch (e) { /* no DOM */ }
+      openMatchSheet(v); return;
+    }
     // §8.2 the full-screen match page. It opens FROM the sheet and replaces it:
     // two stacked full-viewport layers over one match would leave the reader
     // closing the same match twice. Opening resets the panel's two sub-controls,
