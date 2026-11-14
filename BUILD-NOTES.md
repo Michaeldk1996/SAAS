@@ -2304,3 +2304,10 @@ SF, 6-2 3-0 ret.); the set scores are already from the player's side, so the cor
 - Team events left the streak engine (Database rule + the Olympics). The before/after diff was taken by recording the
   live api-tennis answers once and replaying them through both builders (control: the old builder replayed = recorded).
 - The design's boxes keep their 1px ring outside the stated size (content-box): matching that closed every 1–2px drift.
+
+## 2026-11-14 — Market edge: ten price bands (founder)
+The eight bands mixed two regimes in 1.41–1.64: on 82,162 priced sides (2010–2026, Pinnacle closing else Bet365) favourites
+priced 1.01–1.50 win 1.3–2.6 points more than their no-vig price (yield ≈ −0.6%), from 1.51 to 1.85 they win 0.5–1 point less
+(yield ≈ −3.8%); the flip holds in 2010–17 and 2018–26 alike. Underdogs 2.00–2.99 are fair (≈ −2%), 3.00+ lose to the price
+(−7%, −11% at 4.00, −20% at 6.00+). New edges 1.21 / 1.36 / 1.51 / 1.71 / 2.00 / 2.50 / 3.00 / 4.00 / 6.00: the regime cuts
+plus resolution cuts keeping ~10% of matches per band (a 568-match career gets ~40–80 per band instead of 17–25).

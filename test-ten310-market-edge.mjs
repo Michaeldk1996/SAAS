@@ -78,7 +78,7 @@ function load(ui) {
   return [['2072', 'J. Sinner'], ['2382', 'C. Alcaraz']].map(([k, n]) => ui.meRowsFor(rd(`career-history-${k}.json`).matches, ui.fhParseCloses(rd(`match-closes-${k}.json`)), k, n));
 }
 // Independent oracle for the mutation check: its own band edges and its own P&L, from the rows.
-const EDGES = [1.01, 1.21, 1.41, 1.65, 2.0, 2.5, 3.5, 6.0, Infinity];
+const EDGES = [1.01, 1.21, 1.36, 1.51, 1.71, 2.0, 2.5, 3.0, 4.0, 6.0, Infinity];   // the ten bands (founder 2026-11-14)
 function oracle(rows, scope, refDay) {
   // ruling 4 (2026-10-22), the oracle's OWN copy of Pinnacle's rule: a retirement counts only when its first set finished
   const firstDone = (r) => { const s = r.fs ? null : (r.sets || [])[0]; if (r.fs) return r.fs === 'c'; if (!s) return false;
@@ -94,8 +94,8 @@ function oracle(rows, scope, refDay) {
 // Checks 1–5 for one render, one player, one scope. Throws AssertionError on any mismatch.
 function checkPlayer(ui, R, k, rows, scope) {
   const core = ui.core, refDay = Date.UTC(2026, 8, 27) / 86400000, i = k === 'a' ? 0 : 1;
-  const bands = [0, 1, 2, 3, 4, 5, 6, 7].map((b) => bandRow(R, k + b));
-  assert.ok(bands.every(Boolean), 'eight band rows');
+  const bands = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((b) => bandRow(R, k + b));
+  assert.ok(bands.every(Boolean), 'ten band rows');
   const O = oracle(rows, scope, refDay);
   // the oracle: every band's record and 1u stake
   bands.forEach((b, j) => {
@@ -189,7 +189,8 @@ function settlementChecks(ui) {
   assert.equal(M.priced.length, 3, 'ruling A: both retirements are priced matches');
   assert.equal(Math.round(M.units * 100), -10, 'settled at the close: +0.50 (retired win at 1.50) −1 (he retired) +0.40 = −0.10u');
   const b = M.bands[core.bandOf(1.5)];
-  assert.deepEqual([b.n, b.plCents], [1, 50], 'a retired win at 1.50 adds 1 to its band and +0.50u');
+  // the ten bands (2026-11-14): 1.40 and 1.50 share 1.36 – 1.50, so the band holds the retired win (+0.50) and the 1.40 win (+0.40)
+  assert.deepEqual([b.n, b.plCents], [2, 90], 'a retired win at 1.50 adds 1 to its band and +0.50u');
   assert.deepEqual(M.bo3.map((r) => r.date), ['2026-03-05'], 'Derived lines: a retirement never counts, even with a complete-looking score');
   assert.equal(core.whyNotBo3(rows[0]), 'retired');
   // the Match winner view reads the profile rows: a profile row marked ret is settled and keeps its mark
@@ -272,8 +273,10 @@ test('§6 check 7: one-line mutants of the band bucketing / P&L make checks 1–
 test('§4 edge cases: half-open bands, 2.00 is underdog, match-tiebreak is not a set, floors, dashes', () => {
   const ui = buildUI(), core = ui.core;
   assert.equal(core.bandOf(1.205), 0); assert.equal(core.bandOf(1.21), 1); assert.equal(core.bandOf(1.2), 0);
-  assert.equal(core.bandOf(1.649), 2); assert.equal(core.bandOf(1.65), 3); assert.equal(core.bandOf(1.999), 3);
-  assert.equal(core.bandOf(2.0), 4); assert.equal(core.isFavPrice(2.0), false); assert.equal(core.bandOf(6.0), 7);
+  assert.equal(core.bandOf(1.355), 1); assert.equal(core.bandOf(1.36), 2); assert.equal(core.bandOf(1.505), 2); assert.equal(core.bandOf(1.51), 3);
+  assert.equal(core.bandOf(1.705), 3); assert.equal(core.bandOf(1.71), 4); assert.equal(core.bandOf(1.999), 4);
+  assert.equal(core.bandOf(2.0), 5); assert.equal(core.isFavPrice(2.0), false); assert.equal(core.bandOf(2.999), 6); assert.equal(core.bandOf(3.0), 7);
+  assert.equal(core.bandOf(3.999), 7); assert.equal(core.bandOf(4.0), 8); assert.equal(core.bandOf(5.999), 8); assert.equal(core.bandOf(6.0), 9);
   assert.equal(core.bandOf(1.0), -1); assert.equal(core.bandOf(null), -1);
   // career rows → rows: a 10-8 match-tiebreak decider is a non-standard format, never a tiebreak set
   const ch = [
@@ -293,14 +296,14 @@ test('§4 edge cases: half-open bands, 2.00 is underdog, match-tiebreak is not a
   // founder 2026-10-22: a walkover row is listed elsewhere and is in no Market edge population (meRowsFor drops it)
   assert.equal(rows.length, 3); assert.ok(!rows.some(r => r.wo));
   assert.equal(core.whyNotPriced({ wo: true, price: 2, oppPrice: 1.8, book: 'P' }), 'walkover');
-  assert.equal(rows[0].price, 2.0); assert.equal(core.bandOf(rows[0].price), 4, '2.00 sits in the underdog ladder');
+  assert.equal(rows[0].price, 2.0); assert.equal(core.bandOf(rows[0].price), 5, '2.00 sits in the underdog ladder');
   // render: thin samples, n = 0 bands, one player with no priced matches, no header price
   const empty = Object.assign([], { notTour: 0 });
   const m = { id: 'x', p1: 'A. Test', p2: 'B. None', p1Key: 9, p2Key: 10, date: '2026-09-27', tour: 'ATP Chengdu', tourBadge: 'ATP', bestOdds: { p1: { price: 1.21 }, p2: { price: 4.4 } } };
   const R = ui.render(m, { meView: 'winner' }, [rows, empty]);
   const b1 = bandRow(R, 'a0');   // the 1.205 row: 1.01 – 1.20
   assert.deepEqual([b1.w, b1.l, b1.won], [1, 0, '—'], 'n < 5: W–L kept, Won dashed'); assert.equal(b1.uTxt, '—', 'TEN-380 review item 6: 1u dashed with Won and Edge under n = 5');
-  assert.ok(bandRow(R, 'a1').today && bandRow(R, 'a1').w + bandRow(R, 'a1').l === 0, 'header 1.21 = TODAY on 1.21 – 1.40');
+  assert.ok(bandRow(R, 'a1').today && bandRow(R, 'a1').w + bandRow(R, 'a1').l === 0, 'header 1.21 = TODAY on 1.21 – 1.35');
   const b0 = bandRow(R, 'b0');
   assert.deepEqual([b0.w, b0.l, b0.won, b0.uTxt, b0.clickable], [0, 0, '—', '—', false]);
   // TEN-380 review item 6: the 1u dash is the sample gate's, so it matches the Won and Edge dashes beside it
@@ -427,7 +430,7 @@ test('R7: Derived lines only on a standard best-of-3 match — format from match
     assert.equal(RL.html.includes('data-me-line='), bo3, `${name}: line rows`);
     assert.ok(RL.html.includes('>Derived lines<'), `${name}: the view is not switched`);
     const RW = ui.render(m, { meView: 'winner' }, rows);          // Match winner is unchanged for every format
-    assert.equal((RW.html.match(/data-me-band="/g) || []).length, 16, `${name}: bands render`);
+    assert.equal((RW.html.match(/data-me-band="/g) || []).length, 20, `${name}: bands render`);
     assert.ok(/\d+ priced/.test(RW.html), `${name}: chart legend renders`);
   }
   // the format gate outranks the price gate: a Slam with no header price still says best-of-3
@@ -452,7 +455,7 @@ test('ruling B: tab Match winner = the profile shard, band by band (Sinner, Alca
     assert.equal(leg[i].n, P.headline.n, `${k}: N priced = profile headline n`);
     assert.ok(Math.abs(leg[i].end - P.headline.units) <= 0.05 + 1e-9, `${k}: legend end ${leg[i].end} vs profile ${P.headline.units}`);
     const pb = P.bands.favourite.concat(P.bands.underdog);
-    assert.equal(pb.length, 8);
+    assert.equal(pb.length, 10);
     pb.forEach((b, j) => {
       const t = bandRow(R, k + j);
       assert.equal(t.w, b.wins, `${k}${j} wins`); assert.equal(t.l, b.losses, `${k}${j} losses`);

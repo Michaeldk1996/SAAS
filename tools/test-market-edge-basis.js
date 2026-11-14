@@ -64,8 +64,8 @@ function checkShard(name, s) {
     if (m.band == null || m.role !== expectRole) { bad.push(`${name}: row ${m.date} price ${m.price} role ${m.role} band ${m.band} — role must follow the band (price < 2.00 = favourite)`); break; }
     if (Math.abs(m.price - 2.0) > 0.006 && (m.price < 2.0) !== (m.role === 'fav')) { bad.push(`${name}: row ${m.date} price ${m.price} is ${m.role} — favourite is price < 2.00`); break; }
     // the stamp is the core's band for the price (rows at a band edge may differ only by the 2dp rounding)
-    const ids = ['f101_120', 'f121_140', 'f141_164', 'f165_199', 'd200_249', 'd250_349', 'd350_599', 'd600_up'];
-    const EDGES = [1.21, 1.41, 1.65, 2.0, 2.5, 3.5, 6.0];
+    const ids = ['f101_120', 'f121_135', 'f136_150', 'f151_170', 'f171_199', 'd200_249', 'd250_299', 'd300_399', 'd400_599', 'd600_up'];
+    const EDGES = [1.21, 1.36, 1.51, 1.71, 2.0, 2.5, 3.0, 4.0, 6.0];
     if (m.band !== ids[core.bandOf(m.price)] && !EDGES.some((e) => Math.abs(m.price - e) < 0.006)) { bad.push(`${name}: row ${m.date} price ${m.price} stamped ${m.band}, the core says ${ids[core.bandOf(m.price)]}`); break; }
   }
   // reconciliation: favourite + underdog = headline; no level role any more; bands cover the headline
@@ -142,7 +142,7 @@ function controls() {
     ['the cumulative curve drawn over a wider population', (s) => { s.curve.push({ d: '2030-01-01', c: 0 }); }],
     ['a priced row left out of the basis', (s) => { s.matches[0].inBasis = false; }],
     ['a row stamped into the neighbouring band', (s) => {
-      const m = s.matches.find((x) => x.band === 'f121_140' && x.price > 1.25 && x.price < 1.35); m.band = 'f101_120'; m.role = 'fav';
+      const m = s.matches.find((x) => x.band === 'f121_135' && x.price > 1.25 && x.price < 1.35); m.band = 'f101_120'; m.role = 'fav';
     }],
     ['a row given the opponent-relative role (a 2.10 favourite)', (s) => {
       const m = s.matches.find((x) => x.price >= 2.1); m.role = 'fav';

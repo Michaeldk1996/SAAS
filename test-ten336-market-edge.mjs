@@ -214,7 +214,11 @@ test('TEN-380 derived lines: highlighted cells --wash-4 with no edge, "In band" 
   const R = ui.render(M, { meView: 'lines' }, rows);
   const card = R.html.slice(R.html.indexOf('me-card me-lines'));
   const hi = card.match(/background:var\(--wash-4\); border:1px solid transparent;/g) || [];
-  assert.equal(hi.length, 4, 'two highlighted cells per player');
+  // the two most covered In band cells per player, counted among cells that carry a rate (ten bands, 2026-11-14: a narrower
+  // band can leave a player with fewer gated rates); never a vacuous pass — at least one player lights two cells
+  const want = R.MM.map((m) => Math.min(2, m.lines.rows.filter((r) => r.bPct != null).length));
+  assert.ok(want.some((n) => n === 2), 'fixture: a player with two rated In band cells');
+  assert.equal(hi.length, want.reduce((x, y) => x + y, 0), 'two highlighted cells per player (of those with a rate)');
   assert.ok(!/background:var\(--inner\); border:1px solid var\(--edge-10\); border-radius:6px; padding:3px 8px/.test(card));
   assert.equal((card.match(/color:var\(--link\);">In band</g) || []).length, 2);
   const metas = [...card.matchAll(/class="me-pmeta"[^>]*>in band <span[^>]*>([^<]*)<\/span> · n=(\d+)</g)].map((m) => [m[1], +m[2]]);

@@ -113,25 +113,27 @@ const GATE_FULL = 10;
 const GATE_SMALL = 5;
 
 /**
- * Price bands — the 8-band ladder (founder ruling 2026-09-18), ids and labels unchanged.
+ * Price bands — the 10-band ladder (founder ruling 2026-11-14; replaces the 8-band ladder of 2026-09-18).
  *
  * ★ TEN-310 ruling (2026-09-27): "Both use this tab's rules." A row's band is decided by its own price
- *   alone, through market-edge-core.js `bandOf` — half-open [1.01,1.21) [1.21,1.41) [1.41,1.65)
- *   [1.65,2.00) | [2.00,2.50) [2.50,3.50) [3.50,6.00) [6.00,∞) — and its role follows: favourite =
+ *   alone, through market-edge-core.js `bandOf` — half-open [1.01,1.21) [1.21,1.36) [1.36,1.51)
+ *   [1.51,1.71) [1.71,2.00) | [2.00,2.50) [2.50,3.00) [3.00,4.00) [4.00,6.00) [6.00,∞) — and its role follows: favourite =
  *   price < 2.00, underdog = 2.00 and above. This replaces "role = the shorter price" and the outer
  *   catch-all bands it needed; no row can sit outside its band's printed range any more, so
  *   `bandStraddle` is 0 by construction.
  */
 const FAV_BANDS = [
   { id: 'f101_120', label: '1.01 – 1.20' },
-  { id: 'f121_140', label: '1.21 – 1.40' },
-  { id: 'f141_164', label: '1.41 – 1.64' },
-  { id: 'f165_199', label: '1.65 – 1.99' },
+  { id: 'f121_135', label: '1.21 – 1.35' },
+  { id: 'f136_150', label: '1.36 – 1.50' },
+  { id: 'f151_170', label: '1.51 – 1.70' },
+  { id: 'f171_199', label: '1.71 – 1.99' },
 ];
 const DOG_BANDS = [
   { id: 'd200_249', label: '2.00 – 2.49' },
-  { id: 'd250_349', label: '2.50 – 3.49' },
-  { id: 'd350_599', label: '3.50 – 5.99' },
+  { id: 'd250_299', label: '2.50 – 2.99' },
+  { id: 'd300_399', label: '3.00 – 3.99' },
+  { id: 'd400_599', label: '4.00 – 5.99' },
   { id: 'd600_up', label: '6.00 +' },
 ];
 const PRICE_BANDS = { fav: FAV_BANDS, dog: DOG_BANDS };
@@ -139,7 +141,8 @@ const PRICE_BANDS = { fav: FAV_BANDS, dog: DOG_BANDS };
 function bandFor(price) {
   const i = core.bandOf(price);
   if (i < 0) return null;
-  return i < 4 ? { role: 'fav', band: FAV_BANDS[i] } : { role: 'dog', band: DOG_BANDS[i - 4] };
+  const nf = FAV_BANDS.length;
+  return i < nf ? { role: 'fav', band: FAV_BANDS[i] } : { role: 'dog', band: DOG_BANDS[i - nf] };
 }
 
 const num = (v) => {

@@ -25,18 +25,22 @@
   const ME_THIN_FLOOR = 5;
   const ME_NEEDS = 'sumPrice';
 
-  // The eight bands, half-open [lo, hi) in thousandths, so no price can fall between two bands
-  // (1.205 is in 1.01 – 1.20; 1.21 is in 1.21 – 1.40). Favourite = price < 2.00; 2.00 is underdog.
+  // The ten bands (founder 2026-11-14, measured on 82,162 priced sides 2010–2026: favourites beat their no-vig price
+  // up to 1.50 and lose to it from 1.51, underdogs are fair to 2.99 and lose to it from 3.00), half-open [lo, hi) in
+  // thousandths, so no price can fall between two bands (1.205 is in 1.01 – 1.20; 1.21 is in 1.21 – 1.35).
+  // Favourite = price < 2.00; 2.00 is underdog.
   // `mid` is the design's midpoint (label ends averaged, 6.00 + = 7.5) — kept only for the
   // §4.2 comparison, never rendered.
   const BANDS = [
     { gk: 'fav', label: '1.01 – 1.20', lo: 1010, hi: 1210, mid: (1.01 + 1.20) / 2 },
-    { gk: 'fav', label: '1.21 – 1.40', lo: 1210, hi: 1410, mid: (1.21 + 1.40) / 2 },
-    { gk: 'fav', label: '1.41 – 1.64', lo: 1410, hi: 1650, mid: (1.41 + 1.64) / 2 },
-    { gk: 'fav', label: '1.65 – 1.99', lo: 1650, hi: 2000, mid: (1.65 + 1.99) / 2 },
+    { gk: 'fav', label: '1.21 – 1.35', lo: 1210, hi: 1360, mid: (1.21 + 1.35) / 2 },
+    { gk: 'fav', label: '1.36 – 1.50', lo: 1360, hi: 1510, mid: (1.36 + 1.50) / 2 },
+    { gk: 'fav', label: '1.51 – 1.70', lo: 1510, hi: 1710, mid: (1.51 + 1.70) / 2 },
+    { gk: 'fav', label: '1.71 – 1.99', lo: 1710, hi: 2000, mid: (1.71 + 1.99) / 2 },
     { gk: 'dog', label: '2.00 – 2.49', lo: 2000, hi: 2500, mid: (2.00 + 2.49) / 2 },
-    { gk: 'dog', label: '2.50 – 3.49', lo: 2500, hi: 3500, mid: (2.50 + 3.49) / 2 },
-    { gk: 'dog', label: '3.50 – 5.99', lo: 3500, hi: 6000, mid: (3.50 + 5.99) / 2 },
+    { gk: 'dog', label: '2.50 – 2.99', lo: 2500, hi: 3000, mid: (2.50 + 2.99) / 2 },
+    { gk: 'dog', label: '3.00 – 3.99', lo: 3000, hi: 4000, mid: (3.00 + 3.99) / 2 },
+    { gk: 'dog', label: '4.00 – 5.99', lo: 4000, hi: 6000, mid: (4.00 + 5.99) / 2 },
     { gk: 'dog', label: '6.00 +', lo: 6000, hi: Infinity, mid: 7.5 },
   ];
   const milli = (p) => Math.round(Number(p) * 1000);

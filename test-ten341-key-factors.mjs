@@ -496,12 +496,12 @@ function meRows(price, wins, n){
 // Mutation: the tiles read another band than today's, or the top-2 lines lose their wash.
 test('Market edge: today\'s price and band, the band\'s record / won / edge / 1u flat, the derived lines with the top two on --wash-4', () => {
   setup();
-  const m = match({ id: 'up-20', bestOdds: { p1: { price: 1.54 }, p2: { price: 2.62 } }, tourBadge: 'ATP' });
+  const m = match({ id: 'up-20', bestOdds: { p1: { price: 1.45 }, p2: { price: 2.62 } }, tourBadge: 'ATP' });   // 1.45 shares 1.36 – 1.50 with the 1.50 rows (ten bands, 2026-11-14)
   const E = S.meStateFor(m);
   E.state = ['ready', 'none']; E.data = [meRows(1.5, 7, 10), null];
   const h = S.kfMeCard(m), t = text(h);
   assert.match(head(h), /^Market edge · today's price band Career · closing odds ›$/);
-  assert.match(t, /J\. Sinner Today 1\.54 Band 1\.41 – 1\.64 Record 7–3 10 priced Won 70\.0% needs 66\.7% Edge \+3\.3pp won − needs At 1u flat \+0\.5u yield \+5\.0%/);
+  assert.match(t, /J\. Sinner Today 1\.45 Band 1\.36 – 1\.50 Record 7–3 10 priced Won 70\.0% needs 66\.7% Edge \+3\.3pp won − needs At 1u flat \+0\.5u yield \+5\.0%/);
   assert.match(t, /C\. Alcaraz Today 2\.62 Band — Record — Won — Edge — won − needs At 1u flat — yield — Derived lines All In band Δ No history on file for this player\./);
   assert.equal((h.match(/kf-me-line kf-me-top/g) || []).length, 2, 'the two most covered in-band lines');
   assert.match(h, /kf-me-top" style="[^"]*background:var\(--wash-4\);/);

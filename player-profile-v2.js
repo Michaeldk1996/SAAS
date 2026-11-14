@@ -2952,14 +2952,14 @@
     var MEC = window.MarketEdgeCore;
     if (MEC) {
       var i = MEC.bandOf(price);
-      var ids = ['f101_120', 'f121_140', 'f141_164', 'f165_199', 'd200_249', 'd250_349', 'd350_599', 'd600_up'];
+      var ids = ['f101_120', 'f121_135', 'f136_150', 'f151_170', 'f171_199', 'd200_249', 'd250_299', 'd300_399', 'd400_599', 'd600_up'];
       return i < 0 ? null : ids[i];
     }
     if (role === 'fav') {
-      return price <= 1.2 ? 'f101_120' : price <= 1.4 ? 'f121_140' : price <= 1.64 ? 'f141_164' : 'f165_199';
+      return price < 1.21 ? 'f101_120' : price < 1.36 ? 'f121_135' : price < 1.51 ? 'f136_150' : price < 1.71 ? 'f151_170' : 'f171_199';
     }
     if (role === 'dog') {
-      return price < 2.5 ? 'd200_249' : price < 3.5 ? 'd250_349' : price < 6.0 ? 'd350_599' : 'd600_up';
+      return price < 2.5 ? 'd200_249' : price < 3.0 ? 'd250_299' : price < 4.0 ? 'd300_399' : price < 6.0 ? 'd400_599' : 'd600_up';
     }
     return null;
   }
@@ -7828,7 +7828,7 @@
     // is not in the table at all (nor in its Vs avg baseline), never a dash.
     var groups = def.groups.map(function (gr) {
       // Profile v2: a favourite is not offered plus GAMES lines above +1.5; an underdog sees every line (founder 2026-11-09).
-      var favRole = sel === 'fav' || (sel === 'all' && o.band && /^b[0-3]$/.test(o.band));
+      var favRole = sel === 'fav' || (sel === 'all' && o.band && /^b[0-4]$/.test(o.band));
       var rows = gr[1].filter(function (spec) {
         return !(favRole && spec[1] === 'gh' && spec[3] > 0 && spec[2] > 1.5);
       }).map(function (spec) {
@@ -7981,8 +7981,9 @@
   // Rate · Record · Field · Vs field) with the families as section heads and their one-sentence notes; a line opens the
   // shared drill box. Colour by sign only (Vs field and its bar); every other figure white.
   var LC_FM_KEYS = ['lcFmt', 'lcSpeed', 'lcTier', 'lcBandF', 'lcArch'];
-  var LC_BAND_OPTS = [['all', 'All prices'], ['b0', 'Heavy fav 1.01–1.20'], ['b1', 'Clear fav 1.21–1.40'], ['b2', 'Fav 1.41–1.64'],
-    ['b3', 'Slight fav 1.65–1.99'], ['b4', 'Slight dog 2.00–2.49'], ['b5', 'Dog 2.50–3.49'], ['b6', 'Big dog 3.50–5.99'], ['b7', 'Longshot 6.00+']];
+  var LC_BAND_OPTS = [['all', 'All prices'], ['b0', 'Heavy fav 1.01–1.20'], ['b1', 'Clear fav 1.21–1.35'], ['b2', 'Fav 1.36–1.50'],
+    ['b3', 'Slight fav 1.51–1.70'], ['b4', 'Coin-flip fav 1.71–1.99'], ['b5', 'Slight dog 2.00–2.49'], ['b6', 'Dog 2.50–2.99'],
+    ['b7', 'Big dog 3.00–3.99'], ['b8', 'Long dog 4.00–5.99'], ['b9', 'Longshot 6.00+']];
   var LC_INFO1 = { what: 'How often his matches landed on each derived line, from the set scores on record.', defs: [
     ['Line', 'A games handicap, set handicap or total built from the final score, not a bet he placed.'],
     ['Cover rate', 'Matches that landed on his side of the line divided by completed matches in the filter. The bar is his gap to the field: green to the right when he covers more often, red to the left when less.'],
@@ -8496,17 +8497,29 @@
   // Profile v2 (founder 2026-11-09) · Market edge → Match winner, the export's marketEdge():
   // underlined tabs; surface pills · divider · Filters (Format · Court speed · Level · Opponent style) … window
   // Last 52 weeks · Last 24 months · Career; card 1 = role strip (All · As favourite · As underdog: yield white, gap vs
-  // tour by sign, sign bar) + the cumulative-return chart; card 2 = the flat eight-band ladder of his own closing price
+  // tour by sign, sign bar) + the cumulative-return chart; card 2 = the flat ten-band ladder (founder 2026-11-14) of his own closing price
   // with a dashed hairline between 1.99 and 2.00; a band opens the shared drill box. Rows = the market-edge shard's
   // basis rows (ruling B). Favourite = the shorter closing price of the two (founder 2026-11-09). Money in units.
   // Opponent level is not offered: the shard carries no opponent rank (reported, not guessed).
   var MK_BANDS = [
-    ['fav', '1.01 \u2013 1.20', 'Heavy favourite', 1.01, 1.21], ['fav', '1.21 \u2013 1.40', 'Clear favourite', 1.21, 1.41],
-    ['fav', '1.41 \u2013 1.64', 'Favourite', 1.41, 1.65], ['fav', '1.65 \u2013 1.99', 'Slight favourite', 1.65, 2.00],
-    ['dog', '2.00 \u2013 2.49', 'Slight underdog', 2.00, 2.50], ['dog', '2.50 \u2013 3.49', 'Underdog', 2.50, 3.50],
-    ['dog', '3.50 \u2013 5.99', 'Big underdog', 3.50, 6.00], ['dog', '6.00 +', 'Longshot', 6.00, Infinity]];
+    ['fav', '1.01 \u2013 1.20', 'Heavy favourite', 1.01, 1.21], ['fav', '1.21 \u2013 1.35', 'Clear favourite', 1.21, 1.36],
+    ['fav', '1.36 \u2013 1.50', 'Favourite', 1.36, 1.51], ['fav', '1.51 \u2013 1.70', 'Slight favourite', 1.51, 1.71],
+    ['fav', '1.71 \u2013 1.99', 'Near coin-flip', 1.71, 2.00],
+    ['dog', '2.00 \u2013 2.49', 'Slight underdog', 2.00, 2.50], ['dog', '2.50 \u2013 2.99', 'Underdog', 2.50, 3.00],
+    ['dog', '3.00 \u2013 3.99', 'Big underdog', 3.00, 4.00], ['dog', '4.00 \u2013 5.99', 'Long underdog', 4.00, 6.00],
+    ['dog', '6.00 +', 'Longshot', 6.00, Infinity]];
+  var MK_FIRST_DOG = 5;   // index of the 2.00 band: the dashed hairline sits above it
   var MK_FLOOR = 5;
   var MK_V1 = false;   // true = the TEN-384 Match winner view (kept for the tests that pin its helpers)
+  function mkTourBand(B) {
+    var all = window.tourBaselines && window.tourBaselines.bands8;
+    if (!all) return null;
+    for (var j = 0; j < all.length; j++) {
+      var t = all[j];
+      if (t && Math.abs(t.lo - B[3]) < 1e-9 && (B[4] === Infinity ? t.hi == null : Math.abs(t.hi - B[4]) < 1e-9)) return t;
+    }
+    return null;
+  }
   function mkBandIdx(price) {
     for (var i = 0; i < MK_BANDS.length; i++) if (price >= MK_BANDS[i][3] - 1e-9 && price < MK_BANDS[i][4] - 1e-9) return i;
     return -1;
@@ -8704,7 +8717,7 @@
       var thin = b.n < MK_FLOOR, empty = !b.n, on = sel === String(b.i);
       var half = thin ? 0 : Math.abs(b.y) / max * 46;
       return '<div style="display:flex;flex-direction:column;">' +
-        (filt === 'all' && b.i === 4 ? '<div style="padding:6px 0 2px;"><span style="display:block;border-top:1px dashed color-mix(in srgb, var(--text) 18%, transparent);"></span></div>' : '') +
+        (filt === 'all' && b.i === MK_FIRST_DOG ? '<div style="padding:6px 0 2px;"><span style="display:block;border-top:1px dashed color-mix(in srgb, var(--text) 18%, transparent);"></span></div>' : '') +
         '<div ' + (empty ? '' : 'data-pp2="fb-open" data-box="mkband" data-v="' + b.i + '" ') + 'class="pp2-mkband" style="' + GRID + 'padding:9px 0;' +
           'cursor:' + (empty ? 'default' : 'pointer') + ';background:' + (on ? 'var(--selected)' : 'transparent') + ';box-shadow:-10px 0 0 ' +
           (on ? 'var(--selected)' : 'transparent') + ',10px 0 0 ' + (on ? 'var(--selected)' : 'transparent') + ';border-top:1px solid var(--line);">' +
@@ -8779,7 +8792,7 @@
     var ms = pool.filter(function (m) { return mkBandIdx(m.price) === i; }).sort(function (a, b) { return String(b.date).localeCompare(String(a.date)); });
     var b = mkStat(ms), thin = b.n < MK_FLOOR;
     if (!b.n) return null;
-    var tb = window.tourBaselines && window.tourBaselines.bands8 ? window.tourBaselines.bands8[i] : null;
+    var tb = mkTourBand(B);
     var impl = ms.reduce(function (a, m) { return a + 1 / m.price; }, 0) / ms.length * 100;
     var losses = ms.filter(function (m) { return !m.won; });
     var shortest = losses.slice().sort(function (x, y) { return x.price - y.price; })[0];
@@ -15397,7 +15410,7 @@
     _internals: {
       // Profile v2 (2026-11-09): the shared drill box, its per-box builders and the Match-up model
       FB_BUILD: FB_BUILD, floatBoxHtml: floatBoxHtml, OPP_LEVELS: OPP_LEVELS, oppLevelOf: oppLevelOf, calRows: calRows, calSwingOf: calSwingOf, renderSeasonModalV2: renderSeasonModalV2, streakSeq: streakSeq, streakRuns: streakRuns, splModel: splModel, splRoundKeyer: splRoundKeyer, spdData: spdData, renderSpeedModalV2: renderSpeedModalV2, renderSplitsModalV2: renderSplitsModalV2, styData: styData, renderStylesModalV2: renderStylesModalV2,
-      mkBandIdx: mkBandIdx, styleArchetypeOf: styleArchetypeOf, renderLinesTabV2: renderLinesTabV2, renderMarketWinnerV2: renderMarketWinnerV2,
+      mkBandIdx: mkBandIdx, MK_BANDS: MK_BANDS, mkTourBand: mkTourBand, styleArchetypeOf: styleArchetypeOf, renderLinesTabV2: renderLinesTabV2, renderMarketWinnerV2: renderMarketWinnerV2,
       recordRowsOf: recordRowsOf,
       countedSpine: countedSpine,
       recordSourceNote: recordSourceNote,

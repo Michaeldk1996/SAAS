@@ -23,8 +23,17 @@ Applies to the TEN-310 block in `bsp-consult-dashboard.html` (`me*` functions, `
 - **Today's price = the modal header's price** (`aHeaderOdds`, which also fills the header pills). No header price
   (completed / live / suspended, or no odds) → no TODAY band and the Derived lines card reads "Derived lines need
   today's price."; Match winner still renders.
-- **Bands** are half-open in thousandths: [1.01,1.21) [1.21,1.41) [1.41,1.65) [1.65,2.00) | [2.00,2.50) [2.50,3.50)
-  [3.50,6.00) [6.00,∞). Favourite = price < 2.00; **2.00 is underdog**. **Test:** 1.205 → 1.01 – 1.20, 2.00 → 2.00 – 2.49.
+- **Bands = the ten (founder 2026-11-14, replacing the eight of 2026-09-18)**, half-open in thousandths: [1.01,1.21)
+  [1.21,1.36) [1.36,1.51) [1.51,1.71) [1.71,2.00) | [2.00,2.50) [2.50,3.00) [3.00,4.00) [4.00,6.00) [6.00,∞). Names (profile):
+  Heavy favourite · Clear favourite · Favourite · Slight favourite · Near coin-flip | Slight underdog · Underdog · Big
+  underdog · Long underdog · Longshot. One ladder in `market-edge-core.js` `BANDS`, mirrored by `build-market-edge.js`
+  (shard ids), `build-database-yield.js` (`tour-baselines.json` `bands8`, each entry with its lo / hi) and the profile's
+  `MK_BANDS`; the profile takes a band's tour figure only from the baselines entry with the SAME edges, never by index
+  (`mkTourBand`). Why these edges (measured on 82,162 priced sides 2010–2026, stable in both 2010–17 and 2018–26):
+  favourites beat their no-vig price up to 1.50 and lose to it from 1.51; underdogs are fair to 2.99 and lose to it from
+  3.00, worse at 4.00 and 6.00; the other cuts keep ~10% of matches in each band. Favourite = price < 2.00; **2.00 is
+  underdog**. **Test:** 1.205 → 1.01 – 1.20, 1.505 → 1.36 – 1.50, 1.51 → 1.51 – 1.70, 2.00 → 2.00 – 2.49, 3.00 → 3.00 – 3.99
+  (`test-ten310-market-edge.mjs`).
 
 ## Sheet and footnote (TEN-312, founder 2026-09-28)
 - **Every pop-up row opens the match stats sheet** — the "stats on file" click condition (`meSheetOk`) is dropped; where no stats exist the sheet shows the wired header and "Match stats not available for this match".
