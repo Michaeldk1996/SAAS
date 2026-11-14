@@ -50,6 +50,7 @@ on:
       - 'feed-freshness'
       - 'playing-styles'
       - 'points-to-defend'
+      - 'sharp-drops'
     types: [completed]
 permissions:
   actions: read

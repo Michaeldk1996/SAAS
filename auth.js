@@ -248,6 +248,8 @@
       favouriteBookmakers: Array.isArray(data.favouriteBookmakers) ? data.favouriteBookmakers : [],
       favouriteMatches: cleanMatchKeys(data.favouriteMatches),
       watchPlayers: cleanMatchKeys(data.watchPlayers),   // profile v2 (founder 2026-11-09): watched player keys
+      // Sharp drop alerts (founder 2026-11-14): the member's settings, link code and the bot's link state (written by the sync)
+      sharpDrops: data.sharpDrops && typeof data.sharpDrops === 'object' ? data.sharpDrops : null,
       notifications: notif,
       createdAt: data.createdAt || null
     };
@@ -484,6 +486,15 @@
         if (Array.isArray(patch.favouriteMatches)) updates.favouriteMatches = cleanMatchKeys(patch.favouriteMatches);
         // Profile v2 (founder 2026-11-09): the profile header's watchlist (api-tennis player keys), same cleaning.
         if (Array.isArray(patch.watchPlayers)) updates.watchPlayers = cleanMatchKeys(patch.watchPlayers);
+        // Sharp drop alerts (founder 2026-11-14): settings cleaned by the one core (sharp-drops-core.js), a link code of the
+        // core's shape, an IANA zone. The bot's own link state (sharpDrops.telegram) is written only by the server sync.
+        if (patch.sharpDrops && typeof patch.sharpDrops === 'object' && global.SharpDropsCore) {
+          var sd = { v: 1, settings: global.SharpDropsCore.normalize(patch.sharpDrops.settings),
+                     updatedAt: global.firebase.firestore.FieldValue.serverTimestamp() };
+          if (typeof patch.sharpDrops.linkCode === 'string' && /^SFY-[A-HJ-NP-Z2-9]{6}$/.test(patch.sharpDrops.linkCode)) sd.linkCode = patch.sharpDrops.linkCode;
+          if (isValidIana(patch.sharpDrops.tz)) sd.tz = patch.sharpDrops.tz;
+          updates.sharpDrops = sd;
+        }
         if (patch.notifications && typeof patch.notifications === 'object') {
           var merged = Object.assign({}, (_cachedUser && _cachedUser.notifications) || defaultNotif());
           NOTIF_KEYS.forEach(function (k) {

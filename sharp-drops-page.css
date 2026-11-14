@@ -1,0 +1,61 @@
+/* sharp-drops-page.css — Sharp drop alerts (beta, founder 2026-11-14). Site tokens only (tokens.css, foundation.md):
+ * cards --card + --top-light, controls --inner, the darker track for segments, green / red only on signed figures and
+ * W / L marks, blue only as --link. No design export yet: Claude Design redraws it before members see it.
+ * Scoped under [data-page="sharp"]. */
+[data-page="sharp"].tabpage.active { display: block; line-height: normal; }
+[data-page="sharp"] .sd-page { max-width: 1360px; margin: 0 auto; padding: 30px 24px 60px; display: flex; flex-direction: column; gap: 16px;
+  color: var(--text); font-family: var(--font-words); font-size: 14px; }
+[data-page="sharp"] .sd-page *, [data-page="sharp"] .sd-page *::before, [data-page="sharp"] .sd-page *::after { box-sizing: border-box; }
+[data-page="sharp"] .sd-cols { display: grid; grid-template-columns: minmax(0, 360px) minmax(0, 1fr); gap: 16px; align-items: start; }
+@media (max-width: 980px) { [data-page="sharp"] .sd-cols { grid-template-columns: 1fr; } }
+[data-page="sharp"] .sd-card { background: var(--card); box-shadow: var(--top-light); border-radius: 16px; padding: 20px 22px; min-width: 0;
+  display: flex; flex-direction: column; gap: 12px; }
+[data-page="sharp"] .sd-cap { font-family: var(--font-words); font-size: 10.5px; font-weight: 700; letter-spacing: 0.10em; text-transform: uppercase; color: var(--text-label); }
+[data-page="sharp"] .sd-note { font-size: 12px; color: var(--text-label); margin: 0; }
+[data-page="sharp"] .sd-muted { color: var(--text-label); font-size: 12px; }
+[data-page="sharp"] .sd-state { margin: 0; font-size: 14px; font-weight: 600; color: var(--text-soft); }
+[data-page="sharp"] .sd-state.is-on { color: var(--text); }
+[data-page="sharp"] .sd-code { display: flex; align-items: center; gap: 10px; background: var(--inner); border-radius: 10px; padding: 10px 12px; }
+[data-page="sharp"] .sd-code code { font-family: var(--font-nums); font-size: 14px; font-weight: 700; color: var(--text); user-select: all; flex: 1; min-width: 0; overflow-wrap: anywhere; }
+[data-page="sharp"] .sd-link { color: var(--link); text-decoration: none; font-weight: 700; }
+[data-page="sharp"] .sd-link:hover { text-decoration: underline; }
+[data-page="sharp"] .sd-set { gap: 18px; }
+[data-page="sharp"] .sd-field { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+[data-page="sharp"] .sd-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+[data-page="sharp"] .sd-row--top { justify-content: space-between; }
+[data-page="sharp"] .sd-grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+@media (max-width: 640px) { [data-page="sharp"] .sd-grid2 { grid-template-columns: 1fr; } }
+[data-page="sharp"] .sd-seg { display: flex; flex-wrap: wrap; gap: 4px; background: var(--card); border: 1px solid var(--edge-6); border-radius: 10px; padding: 3px; }
+[data-page="sharp"] .sd-seg button { flex: 1 1 auto; font: 600 12.5px var(--font-words); color: var(--text-label); background: transparent;
+  border: 1px solid transparent; border-radius: 8px; padding: 6px 10px; cursor: pointer; white-space: nowrap; }
+[data-page="sharp"] .sd-seg button[aria-pressed="true"] { background: var(--inner); border-color: var(--edge-10); color: var(--text); font-weight: 700; }
+[data-page="sharp"] .sd-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+[data-page="sharp"] .sd-chip { font: 600 12.5px var(--font-words); color: var(--text-label); background: var(--inner); border: 1px solid transparent;
+  border-radius: 8px; padding: 6px 10px; cursor: pointer; }
+[data-page="sharp"] .sd-chip[aria-pressed="true"] { color: var(--text); background: var(--selected); border-color: var(--edge-16); }
+[data-page="sharp"] .sd-chip:disabled { opacity: 0.45; cursor: not-allowed; }
+[data-page="sharp"] .sd-chip small { font-weight: 500; color: var(--text-label); margin-left: 3px; }
+[data-page="sharp"] .sd-input { font: 500 13px var(--font-nums); color: var(--text); background: var(--inner); border: 1px solid transparent; border-radius: 8px;
+  padding: 7px 9px; width: 100%; min-width: 0; }
+[data-page="sharp"] .sd-row .sd-input { width: auto; flex: 1; }
+[data-page="sharp"] .sd-input:focus, [data-page="sharp"] button:focus-visible { outline: none; border-color: var(--edge-16); box-shadow: 0 0 0 2px var(--edge-16); }
+[data-page="sharp"] .sd-toggle { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--text-soft); cursor: pointer; }
+[data-page="sharp"] .sd-toggle input { accent-color: var(--bar); width: 16px; height: 16px; }
+[data-page="sharp"] .sd-btn { font: 700 13px var(--font-words); color: var(--text); background: var(--inner); border: 1px solid var(--edge-10);
+  border-radius: 10px; padding: 9px 14px; cursor: pointer; }
+[data-page="sharp"] .sd-btn:hover:not(:disabled) { border-color: var(--edge-16); }
+[data-page="sharp"] .sd-btn:disabled { opacity: 0.45; cursor: default; }
+[data-page="sharp"] .sd-btn--quiet { background: transparent; border-color: transparent; color: var(--text-label); font-weight: 600; padding: 6px 8px; }
+[data-page="sharp"] .sd-btn--quiet:hover:not(:disabled) { color: var(--text); border-color: transparent; }
+[data-page="sharp"] .sd-scroll { overflow-x: auto; }
+[data-page="sharp"] .sd-table { width: 100%; border-collapse: collapse; font-size: 12.5px; min-width: 900px; }
+[data-page="sharp"] .sd-table th { font-size: 10.5px; font-weight: 700; letter-spacing: 0.10em; text-transform: uppercase; color: var(--text-label);
+  text-align: left; padding: 8px; border-bottom: 1px solid var(--edge-10); white-space: nowrap; }
+[data-page="sharp"] .sd-table td { padding: 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+[data-page="sharp"] .sd-table .n { text-align: right; font-family: var(--font-nums); white-space: nowrap; }
+[data-page="sharp"] .sd-pos { color: var(--pos); }
+[data-page="sharp"] .sd-neg { color: var(--neg); }
+[data-page="sharp"] .sd-res { display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 5px; font: 700 11px var(--font-nums); color: var(--text); }
+[data-page="sharp"] .sd-res--W { background: var(--pos); }
+[data-page="sharp"] .sd-res--L { background: var(--neg); }
+[data-page="sharp"] .sd-empty { margin: 0; padding: 24px 0; text-align: center; color: var(--text-label); }

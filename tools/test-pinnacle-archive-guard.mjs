@@ -19,7 +19,9 @@ const ALLOWED = new Set([MIGRATION, 'tools/pinarch.py', 'tools/pinarch-guard.mjs
   // founder brief 2026-10-28: the line-summary loader's GET-only reader of the post-start payloads (scanned like the rest)
   'tools/line_summary_archive.py', 'tools/test-line-summary-live.py',
   // name the table in comments only (they read the export file, never the table): scanned for write paths like the rest
-  'build-match-closes.js', '.github/workflows/pipeline.yml']);
+  'build-match-closes.js', '.github/workflows/pipeline.yml',
+  // Sharp drop alerts (founder 2026-11-14): grade() READS the current close of an event (select only; scanned like the rest)
+  'tools/sharp-drops.sql', 'tools/test-sharp-drops-sql.py']);
 const isDoc = f => /^\.claude\/rules\/.*\.md$/.test(f) || f === 'CLAUDE.md';
 
 export function faults(file, text) {

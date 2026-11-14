@@ -389,6 +389,8 @@ window.sfEarlyFetch = function (u, init) {
 <link rel="stylesheet" href="./drops-page.css">
 <!-- Picks page, read-only (export design_handoff_picks, LOCKED 2026-10-27). Scoped under [data-page="picks"]. -->
 <link rel="stylesheet" href="./picks-page.css">
+<!-- Sharp drop alerts (beta, founder 2026-11-14): #sharp, admins only. Scoped under [data-page="sharp"]. -->
+<link rel="stylesheet" href="./sharp-drops-page.css">
 <!-- Bet Tracker (export design_handoff_bet_tracker, LOCKED 2026-10-28). Night only; scoped under [data-page="tracker"]. -->
 <link rel="stylesheet" href="./bettracker-page.css">
 <style>
@@ -3022,6 +3024,8 @@ window.sfPlanLocks(null);   // locked until the account says Edge / Pro: no unlo
 <div class="tabpage" data-page="picks"><div id="picksRoot"></div></div>
 <!-- Bet Tracker: the Betting rail row (#trackerTabBtn) and the #tracker deep link (bettracker-page.js). -->
 <div class="tabpage" data-page="tracker"><div id="trackerRoot"></div></div>
+<!-- Sharp drop alerts (beta): the #sharp deep link, admins only, no rail row yet (sharp-drops-page.js). -->
+<div class="tabpage" data-page="sharp"><div id="sharpRoot"></div></div>
 
 <!-- SERIES TAB (TEN-168) — current-streak cards; all rendering owned by series.js,
      gated on FEATURE_SERIES. Styling is in series.css ([data-page="series"] .sr-*). -->
@@ -36395,6 +36399,8 @@ window.DatabaseTab = (function(){
 <script src="picks-core.js" defer></script>
 <script src="picks-store.js" defer></script>
 <script src="picks-page.js" defer></script>
+<script src="sharp-drops-core.js" defer></script>
+<script src="sharp-drops-page.js" defer></script>
 <script src="picks-drawer.js" defer></script>
 <script src="picks-shell.js" defer></script>
 <script src="bettracker-math.js" defer></script>

@@ -1,0 +1,96 @@
+name: sharp-drops
+# Sharp drop alerts (founder 2026-11-14) — tools/sharp-drops.sql, rules in .claude/rules/sharp-drops.md.
+#   sync      (every 10 min) members' settings Firestore → sharp_bot.members; Telegram link state back to Firestore.
+#             Beta: admins only (SHARP_BETA=1).
+#   install   the throwaway-Postgres test first; apply tools/sharp-drops.sql (additive, idempotent, schema sharp_bot);
+#             schedule sharp-bot-tick (20 s) and sharp-bot-grade (15 min); the read-back. Sends nothing: config.live stays false.
+#   live-on   config.live = true (alerts reach linked members).    live-off   config.live = false.
+#   report    the read-back only.                                   rollback   unschedule both jobs (tables stay).
+# Main only. Changes no other bot, no Telegram secret, no Firestore rule.
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+    inputs:
+      mode:
+        type: choice
+        options: [report, sync, install, live-on, live-off, rollback]
+        default: report
+permissions:
+  contents: read
+concurrency:
+  group: sharp-drops
+  cancel-in-progress: false
+jobs:
+  sharp:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      MODE: ${{ inputs.mode || 'sync' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '24' }
+      - name: SQL test (throwaway Postgres)
+        if: env.MODE == 'install'
+        run: python3 tools/test-sharp-drops-sql.py
+      - name: Apply / switch / roll back
+        if: env.MODE != 'report' && env.MODE != 'sync'
+        run: |
+          python3 - <<'PY'
+          import json, os, re, sys, urllib.request, urllib.error
+          ref = re.sub(r'^https://([^.]+)\..*$', r'\1', os.environ['SUPABASE_URL'].strip())
+          def sql(q):
+              req = urllib.request.Request(f'https://api.supabase.com/v1/projects/{ref}/database/query',
+                  data=json.dumps({'query': q}).encode(), headers={'Authorization': 'Bearer ' + os.environ['SUPABASE_ACCESS_TOKEN'],
+                  'Content-Type': 'application/json', 'User-Agent': 'sharp-drops'})
+              try:
+                  with urllib.request.urlopen(req, timeout=120) as r: return r.status, json.loads(r.read() or b'null')
+              except urllib.error.HTTPError as e: return e.code, e.read()[:600].decode('utf8', 'replace')
+          mode = os.environ['MODE']
+          if mode == 'rollback':
+              st, r = sql("select cron.unschedule(jobname) from cron.job where jobname in ('sharp-bot-tick', 'sharp-bot-grade')")
+              print('rollback HTTP', st, r if st >= 400 else ''); sys.exit(1 if st >= 400 else 0)
+          if mode in ('live-on', 'live-off'):
+              st, r = sql(f"update sharp_bot.config set live = {'true' if mode == 'live-on' else 'false'} where id; select live from sharp_bot.config")
+              print(mode, 'HTTP', st, r); sys.exit(1 if st >= 400 else 0)
+          st, r = sql(open('tools/sharp-drops.sql').read()); print('apply HTTP', st)
+          if st >= 400: print(r); sys.exit(1)
+          st, r = sql("select cron.schedule('sharp-bot-tick', '20 seconds', 'select sharp_bot.tick()') a, "
+                      "cron.schedule('sharp-bot-grade', '*/15 * * * *', 'select sharp_bot.grade()') b"); print('schedule HTTP', st, r)
+          if st >= 400: sys.exit(1)
+          PY
+      - name: Member sync
+        if: env.MODE == 'sync' || env.MODE == 'install'
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          SHARP_BETA: '1'
+        run: |
+          if [ -z "$FIREBASE_SERVICE_ACCOUNT" ]; then echo "::error::FIREBASE_SERVICE_ACCOUNT is not set — no sync"; exit 1; fi
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$RUNNER_TEMP/firebase-sa.json"
+          npm install --no-save --no-audit --no-fund firebase-admin@12 > /dev/null 2>&1
+          rc=0; GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/firebase-sa.json" node tools/sharp-members-sync.mjs || rc=$?
+          rm -f "$RUNNER_TEMP/firebase-sa.json"; exit $rc
+      - name: Read-back
+        if: env.MODE != 'rollback' && env.MODE != 'sync'
+        run: |
+          [ "$MODE" = install ] && sleep 60
+          python3 - <<'PY'
+          import json, os, re, sys, urllib.request, urllib.error
+          ref = re.sub(r'^https://([^.]+)\..*$', r'\1', os.environ['SUPABASE_URL'].strip())
+          q = ("select sharp_bot.report(24) r, (select coalesce(json_agg(json_build_object('job', jobname, 'active', active)), '[]') "
+               "from cron.job where jobname like 'sharp-bot-%') cron")
+          req = urllib.request.Request(f'https://api.supabase.com/v1/projects/{ref}/database/query',
+              data=json.dumps({'query': q}).encode(), headers={'Authorization': 'Bearer ' + os.environ['SUPABASE_ACCESS_TOKEN'],
+              'Content-Type': 'application/json', 'User-Agent': 'sharp-drops'})
+          try:
+              with urllib.request.urlopen(req, timeout=120) as r: row = json.loads(r.read())[0]
+          except urllib.error.HTTPError as e: print('read-back HTTP', e.code, e.read()[:400].decode('utf8', 'replace')); sys.exit(1)
+          print(json.dumps(row, indent=1))
+          if os.environ['MODE'] == 'install' and len([j for j in (row.get('cron') or []) if j.get('active')]) != 2:
+              print('::error::sharp-bot jobs not both active'); sys.exit(1)
+          PY
