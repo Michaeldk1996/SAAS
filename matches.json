@@ -3049,17 +3049,11 @@
         }
       ]
     },
-    "live": true,
-    "liveStatus": "Set 1",
-    "liveScore": [
-      {
-        "set": 1,
-        "p1": 1,
-        "p2": 0
-      }
-    ],
-    "liveGameScore": "0 - 0",
-    "liveServer": "p2",
+    "live": false,
+    "liveStatus": null,
+    "liveScore": null,
+    "liveGameScore": null,
+    "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/2832_t-fritz.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/366_t-a-tirante.jpg",
     "tournamentKey": "1681",
@@ -3705,7 +3699,31 @@
       "edgeVsPinnacleP1": -0.042,
       "edgeVsPinnacleP2": 0.042,
       "ts": "2026-11-14T02:11:45.355Z"
-    }
+    },
+    "retired": false,
+    "walkover": false,
+    "finalScore": {
+      "display": "6-2, 4-6, 7-6(3)",
+      "sets": [
+        {
+          "p1": 6,
+          "p2": 2
+        },
+        {
+          "p1": 4,
+          "p2": 6
+        },
+        {
+          "p1": 7,
+          "p2": 6
+        }
+      ],
+      "p1Sets": 2,
+      "p2Sets": 1,
+      "winner": "p1"
+    },
+    "interrupted": false,
+    "partialScore": null
   },
   {
     "id": "upcoming-12179703",
@@ -51476,7 +51494,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-7(5), 6-4, 6-3",
+      "display": "6-7, 6-4, 6-3",
       "sets": [
         {
           "p1": 6,
@@ -55935,7 +55953,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-7(2), 7-6(7), 5-7",
+      "display": "6-7, 7-6, 5-7",
       "sets": [
         {
           "p1": 6,
@@ -64110,7 +64128,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "5-7, 6-7(2)",
+      "display": "5-7, 6-7",
       "sets": [
         {
           "p1": 5,
@@ -68053,7 +68071,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6(5), 3-6, 6-4",
+      "display": "7-6, 3-6, 6-4",
       "sets": [
         {
           "p1": 7,
@@ -73174,7 +73192,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6(5), 6-7(5), 6-3",
+      "display": "7-6, 6-7, 6-3",
       "sets": [
         {
           "p1": 7,
@@ -81222,7 +81240,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "5-7, 6-7(1)",
+      "display": "5-7, 6-7",
       "sets": [
         {
           "p1": 5,
