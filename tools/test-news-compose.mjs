@@ -72,6 +72,7 @@ await ok('quotes: only this match, only its two players, the longest version of 
 
 console.log('the check');
 await ok('a report with only sheet facts passes', () => { const c = check(GOOD); eq(c.failures, []); });
+await ok('a possessive is the same name ("Musetti\'s second serve")', () => eq(check(GOOD.replace('Musetti really struggled behind his second serve', "Musetti's second serve was a problem")).failures, []));
 await ok('refuses a number that is not on the sheet', () => refuses(GOOD.replace('9.4 serve quality', '9.6 serve quality'), /number "9\.6"/));
 await ok('refuses a score that is not on the sheet (the same score from the other side passes)', () => { refuses(GOOD.replace('again for 4–1', 'again for 5–1'), /score "5-1"/); eq(check(GOOD.replace('again for 4–1', 'again to lead 4–1 (Musetti at 1–4)')).failures, []); });
 await ok('refuses a count written as a word when the sheet does not have it (a count the sheet has may be a word)', () => {

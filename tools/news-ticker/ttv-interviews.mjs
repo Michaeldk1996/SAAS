@@ -12,7 +12,8 @@ import { fileURLToPath } from 'node:url';
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '..', '..');
 export const HL_FEED = 'https://api.tennistv.com/content/atpmedia/VIDEO/EN?tagNames=video-type:match-highlights&pageSize=30';
-export const MAX_HIGHLIGHTS = 2;   // per run: a highlights clip plays for ten minutes
+export const MAX_HIGHLIGHTS = 3;   // per run: a highlights clip plays for ten minutes
+export const COMMENTARY_VERSION = 2;   // bump: a clip whose summary an older, stricter check rejected is read again once
 export const FEED = 'https://api.tennistv.com/content/atpmedia/VIDEO/EN?tagNames=video-type:interviews&pageSize=30';
 export const CLIP_DAYS = 3;        // a clip older than this is never picked up
 export const MAX_CLIPS = 8;        // per run
@@ -95,7 +96,8 @@ export function pickHighlights(feed, state, cards, nowIso) {
     const ts = Date.parse(c.date);
     if (!Number.isFinite(ts) || now - ts > CLIP_DAYS * 86400000) continue;
     const st = (state.clips || {})['hl' + c.id];
-    if (st && (st.status === 'done' || (st.tries || 0) >= MAX_TRIES)) continue;
+    const again = st && st.status === 'done' && st.commentary === 'failed-check' && (st.commentaryVersion || 1) < COMMENTARY_VERSION;
+    if (st && !again && (st.status === 'done' || (st.tries || 0) >= MAX_TRIES)) continue;
     const who = resolveHighlights(c, cards);
     if (!who) continue;
     out.push({ id: 'hl' + c.id, kind: 'highlights', url: `https://www.tennistv.com/videos/${c.id}/${c.titleUrlSegment}`, slug: `${who.p1} v ${who.p2} highlights`, round: who.round,
@@ -107,22 +109,30 @@ export function pickHighlights(feed, state, cards, nowIso) {
 
 // What the commentators said, in two or three plain sentences. OURS, a summary, never a quotation. The check: every
 // number in it is in the transcript, and every capitalised name is in the transcript or is one of the two players.
-export function commentaryOk(text, transcript, players) {
-  const t = String(text || '').trim();
-  if (t.length < 40 || t.length > 420 || /["“”]/.test(t)) return false;
-  if (/commentat|commentary|broadcast|\b(I|we|me|my|our)\b/i.test(t)) return false;   // our own observation: no source named, no first person (founder 2026-11-13)
+// The check (founder 2026-11-14: "don't make it so strict and check all the info you receive, from there on we decide
+// how strict we will become"). Refused only: a quotation, a named source or first person, or a text that is too short
+// or too long. A number or a name the transcript does not carry is no longer a refusal: it is listed in `notes`, kept
+// beside the summary, so we can read what was heard and decide the rule from real output.
+export const COMMENTARY_MAX_CHARS = 900;
+export function commentaryCheck(text, transcript, players) {
+  const t = String(text || '').trim(), notes = [];
+  if (t.length < 40) return { ok: false, why: 'too short', notes };
+  if (t.length > COMMENTARY_MAX_CHARS) return { ok: false, why: 'too long', notes };
+  if (/["“”]/.test(t)) return { ok: false, why: 'a quotation', notes };
+  if (/commentat|commentary|broadcast|highlights|\b(I|we|me|my|our)\b/i.test(t)) return { ok: false, why: 'names a source or uses first person', notes };
   const hay = fold(transcript), allowed = fold((players || []).join(' '));
-  for (const n of t.match(/\d+(?:[.,]\d+)?/g) || []) if (!hay.includes(n)) return false;
+  for (const n of t.match(/\d+(?:[.,]\d+)?/g) || []) if (!hay.includes(n)) notes.push(`number ${n} was not heard in the transcript`);
   const re = /(^|[.!?]\s+)?(\p{Lu}[\p{L}'’-]+)/gu;
   let m;
   while ((m = re.exec(t))) {
     if (m[1] !== undefined || m.index === 0) continue;                 // a sentence opener is not a name
-    const w = fold(m[2]);
-    if (!hay.includes(w) && !allowed.includes(w)) return false;
+    const w = fold(m[2]).replace(/['’]s$/, '');
+    if (!hay.includes(w) && !allowed.includes(w)) notes.push(`name ${m[2]} was not heard in the transcript`);
   }
-  return true;
+  return { ok: true, why: null, notes: [...new Set(notes)] };
 }
-const HL_SYSTEM = `You are given a rough transcript of TV commentary over the highlights of one tennis match (it jumps between points and has mis-heard words). Write what happened in the match in two or three plain sentences for a match report, as plain observations of the match.
+export const commentaryOk = (text, transcript, players) => commentaryCheck(text, transcript, players).ok;
+const HL_SYSTEM = `You are given a rough transcript of TV commentary over the highlights of one tennis match (it jumps between points and has mis-heard words). Write what happened in the match in three to six plain sentences for a match report, as plain observations of the match: how each player played, which shot worked or did not (forehand, backhand, serve, return, net), the turning points, how each player looked physically, and the conditions if they were mentioned.
 Rules:
 - Only what the commentators actually said: how each player played, turning points, physical problems, reasons they gave. Nothing from your own knowledge.
 - Simple words everybody understands, no idioms, no quotation marks, no hype. Refer to the players by surname only.
@@ -131,7 +141,7 @@ Rules:
 - If the transcript carries nothing worth reporting, reply with exactly: NONE`;
 export async function summariseCommentary(transcript, players, apiKey = process.env.ANTHROPIC_API_KEY, fetchFn = fetch) {
   if (!apiKey) return { status: 'no-key', text: null };
-  const body = { model: MODEL, max_tokens: 600, output_config: { effort: 'low' }, system: HL_SYSTEM,
+  const body = { model: MODEL, max_tokens: 900, output_config: { effort: 'low' }, system: HL_SYSTEM,
     messages: [{ role: 'user', content: `Players: ${players.join(' v ')}\n\nCommentary transcript:\n${String(transcript).slice(0, 12000)}` }] };
   let res;
   try { res = await fetchFn(API_URL, { method: 'POST', headers: { 'content-type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' }, body: JSON.stringify(body) }); }
@@ -141,7 +151,8 @@ export async function summariseCommentary(transcript, players, apiKey = process.
   const block = (data.content || []).find((b) => b.type === 'text');
   const out = block ? String(block.text).trim() : '';
   if (out === 'NONE') return { status: 'nothing', text: null };
-  return commentaryOk(out, transcript, players.flatMap((p) => String(p).split(/\s+/))) ? { status: 'ok', text: out, model: MODEL } : { status: 'failed-check', text: null };
+  const ck = commentaryCheck(out, transcript, players.flatMap((p) => String(p).split(/\s+/)));
+  return ck.ok ? { status: 'ok', text: out, model: MODEL, notes: ck.notes } : { status: 'failed-check', text: null, why: ck.why, rejected: out.slice(0, COMMENTARY_MAX_CHARS) };
 }
 
 // Mis-hearings the transcriber makes on tennis words. Applied to the transcript before anything reads it; listed here
@@ -261,8 +272,8 @@ async function main() {
       if (c.kind === 'highlights') {
         const cm = await summariseCommentary(correct(r.transcript), [c.p1, c.p2]);
         if (cm.status === 'no-key' || cm.status === 'api-error') { st.status = 'failed'; st.error = 'commentary: ' + cm.status + (cm.detail ? ' ' + cm.detail : ''); failed++; continue; }
-        if (cm.status === 'ok') { commentary.byMatch[c.eventKey] = { text: cm.text, sourceUrl: c.url, sourceName: 'Tennis TV highlights commentary', clipPublishedAt: c.date, at: nowIso }; commented++; }
-        st.status = 'done'; st.commentary = cm.status; delete st.error; done++;
+        if (cm.status === 'ok') { commentary.byMatch[c.eventKey] = { text: cm.text, sourceUrl: c.url, sourceName: 'Tennis TV highlights commentary', clipPublishedAt: c.date, at: nowIso, ...(cm.notes && cm.notes.length ? { notHeard: cm.notes } : {}) }; commented++; }
+        st.status = 'done'; st.commentary = cm.status; st.commentaryVersion = COMMENTARY_VERSION; if (cm.status === 'failed-check') { st.commentaryWhy = cm.why; st.commentaryRejected = cm.rejected; } else { delete st.commentaryWhy; delete st.commentaryRejected; } delete st.error; done++;
         continue;
       }
       const sp = await splitInterview(correct(r.transcript), c.slug);

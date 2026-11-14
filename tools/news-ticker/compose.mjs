@@ -279,7 +279,7 @@ export function checkComposed(text, sheet, { surnames = new Set() } = {}) {
   // names: a capitalised word inside a sentence must be on the sheet; any player's surname must be on the sheet
   const OK_CAPS = new Set(['qf', 'sf', 'all', 'next', 'quote']);
   for (const mm of body.matchAll(/(^|[.!?:]\s+|\n\s*)?(\p{Lu}[\p{L}'-]+)/gu)) {
-    const w = mm[2].toLowerCase(), opener = mm[1] !== undefined || mm.index === 0;
+    const w = mm[2].toLowerCase().replace(/'s$/, ''), opener = mm[1] !== undefined || mm.index === 0;   // "Dahlin's" is Dahlin
     if (ix.caps.has(w) || OK_CAPS.has(w)) continue;
     if (opener && !surnames.has(w)) continue;
     fail.push(`"${mm[2]}" is not on the sheet`);

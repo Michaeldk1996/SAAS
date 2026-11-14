@@ -202,9 +202,14 @@ when the full report could not be written or did not pass its check.
   points are not printed. The card is verified against our score, serve figures and break points as before; its wing
   counts are also compared with our totals (W = aces + forehand + backhand winners, UE = forehand + backhand unforced +
   double faults) and the gap is stored — never a reason to drop a card. **Test:** `tools/test-match-cards.mjs`.
-- **What was seen in the match (founder 2026-11-13; replaces "From the commentary: …").** The same job transcribes each
-  finished match's 10-minute Tennis TV highlights (`video-type:match-highlights`, at most 2 per run) and a model writes
-  two or three plain sentences of what happened. It is our own observation: kept only when every number in it is in the
-  transcript, every name is in the transcript or is one of the two players, and it names no source and no "I" / "we"
-  (`commentaryOk`); "nothing worth reporting" publishes nothing. Stored in `news-quotes/commentary.json` by match id;
-  it is its own paragraph in the report. **Test:** `tools/test-ttv-interviews.mjs` "commentary…".
+- **What was seen in the match (founder 2026-11-13; check loosened 2026-11-14: "don't make it so strict and check all
+  the info you receive, from there on we decide how strict we will become").** The same job transcribes each finished
+  match's 10-minute Tennis TV highlights (`video-type:match-highlights`, at most 3 per run) and a model writes three to
+  six plain sentences of what happened (how each played, which shot worked, turning points, the body, conditions). It
+  is our own observation. **Test:** refused only for a quotation, a named source, "I" / "we", or its length
+  (`commentaryCheck`); a number or a name the transcript does not carry is KEPT and listed beside the summary
+  (`notHeard` in `news-quotes/commentary.json`), and a refused summary is kept with its reason in the clip's state
+  (`commentaryRejected`, `commentaryWhy`) so it can be read. A clip an older check refused is read again once
+  (`COMMENTARY_VERSION`). "Nothing worth reporting" publishes nothing. The summary is a fact-sheet line of the full
+  report (and its own paragraph in the fallback report). The strictness is to be re-ruled from this output.
+  **Test:** `tools/test-ttv-interviews.mjs` "commentary…".

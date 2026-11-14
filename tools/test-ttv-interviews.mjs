@@ -1,7 +1,7 @@
 // Tennis TV on-court interviews, automatic (tools/news-ticker/ttv-interviews.mjs + .github/workflows/interviews.yml).
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import { resolveHighlights, pickHighlights, commentaryOk, summariseCommentary, MAX_HIGHLIGHTS, parseTitle, resolveClip, pickClips, correct, checkAnswer, splitInterview, rowsFor, mergeInbox, parseWorkerLog, MAX_TRIES, CLIP_DAYS } from './news-ticker/ttv-interviews.mjs';
+import { resolveHighlights, pickHighlights, commentaryOk, commentaryCheck, summariseCommentary, MAX_HIGHLIGHTS, parseTitle, resolveClip, pickClips, correct, checkAnswer, splitInterview, rowsFor, mergeInbox, parseWorkerLog, MAX_TRIES, CLIP_DAYS } from './news-ticker/ttv-interviews.mjs';
 let n = 0; const ok = async (name, fn) => { await fn(); n++; console.log('  ok  ' + name); };
 const cards = [{ tour: 'ATP Stockholm', p1: 'T. A. Tirante', p1Key: 366, p2: 'A. Shevchenko', p2Key: 566 }, { tour: 'ATP Stockholm', p1: 'H. Rune', p1Key: 437, p2: 'T. Fritz', p2Key: 2832 },
   { tour: 'ATP Stockholm', p1: 'J. M. Cerundolo', p1Key: 388, p2: 'F. Cerundolo', p2Key: 9999 }, { tour: 'ATP Metz', p1: 'A. Rune', p1Key: 1, p2: 'B. Other', p2Key: 2 }];
@@ -82,13 +82,19 @@ await ok('highlights: the clip is tied to the one finished match of those two pl
   assert.equal(resolveHighlights({ title: 'Stockholm 2026 SF Musetti Fritz Highlights' }, cs), null);
   const feed = { content: [1, 2, 3].map((i) => ({ id: i, title: 'Stockholm 2026 QF Musetti Humbert Highlights', date: '2026-11-12T22:1' + i + ':00Z', titleUrlSegment: 'x' + i, tags: [{ label: 'video-type:match-highlights' }, { label: 'match-type:singles' }] })) };
   const got = pickHighlights(feed, { clips: { hl1: { status: 'done' } } }, cs, '2026-11-13T00:00:00.000Z');
-  assert.deepEqual(got.map((c) => c.id), ['hl2', 'hl3']); assert.equal(MAX_HIGHLIGHTS, 2); assert.equal(got[0].kind, 'highlights');
+  assert.deepEqual(got.map((c) => c.id), ['hl2', 'hl3']); assert.equal(MAX_HIGHLIGHTS, 3); assert.equal(got[0].kind, 'highlights');
+  // a clip whose summary the older, stricter check refused is read again once (founder 2026-11-14); never a second time
+  assert.deepEqual(pickHighlights(feed, { clips: { hl1: { status: 'done', commentary: 'failed-check' }, hl2: { status: 'done', commentary: 'failed-check', commentaryVersion: 2 }, hl3: { status: 'done', commentary: 'ok' } } }, cs, '2026-11-13T00:00:00.000Z').map((c) => c.id), ['hl1']);
 });
-await ok('commentary: a summary is kept only when its numbers and names are in the transcript; never a quotation; nothing to say = nothing', async () => {
+await ok('commentary: refused only for a quotation, a named source, first person or its length; a number or name that was not heard is kept as a note (founder 2026-11-14); nothing to say = nothing', async () => {
   const P = ['L.', 'Musetti', 'U.', 'Humbert'];
   assert.ok(commentaryOk('Musetti defended very well and played with strapping under his right knee. Humbert had 4 break points he could not take.', HT, P));
-  assert.ok(!commentaryOk('Musetti saved 7 break points and defended very well all match long in this one.', HT, P), 'a number that was never said');
-  assert.ok(!commentaryOk('The defending of Musetti was like Djokovic at his best in this match today.', HT, P), 'a name that was never said');
+  assert.deepEqual(commentaryCheck('Musetti defended very well and played with strapping under his right knee. Humbert had 4 break points he could not take.', HT, P).notes, []);
+  const n7 = commentaryCheck('Musetti saved 7 break points and defended very well all match long in this one.', HT, P);
+  assert.ok(n7.ok && n7.notes.length === 1 && /number 7/.test(n7.notes[0]), 'a number that was never said: kept, with a note');
+  const nd = commentaryCheck('The defending of Musetti was like Djokovic at his best in this match today.', HT, P);
+  assert.ok(nd.ok && /Djokovic/.test(nd.notes.join()), 'a name that was never said: kept, with a note');
+  assert.ok(!commentaryOk('x'.repeat(901) + ' Musetti', HT, P) && !commentaryOk('Too short.', HT, P));
   // founder 2026-11-13: our own observation — the source is never named, never first person
   for (const t of ['The commentators praised the defending of Musetti and noted the strapping under his right knee.', 'According to the commentary, Musetti defended very well in the first set.', 'I thought Musetti defended very well and Humbert missed his chances.', 'We saw Musetti defend very well and Humbert miss his chances today.']) assert.ok(!commentaryOk(t, HT, P), t);
   assert.ok(!commentaryOk('They called it "absolutely remarkable defending" from Musetti in the first set of this match.', HT, P), 'a quotation');
@@ -96,7 +102,10 @@ await ok('commentary: a summary is kept only when its numbers and names are in t
   const good = await summariseCommentary(HT, ['L. Musetti', 'U. Humbert'], 'k', reply('Musetti defended very well and played with strapping under his right knee.'));
   assert.equal(good.status, 'ok');
   assert.equal((await summariseCommentary(HT, ['L. Musetti', 'U. Humbert'], 'k', reply('NONE'))).status, 'nothing');
-  assert.equal((await summariseCommentary(HT, ['L. Musetti', 'U. Humbert'], 'k', reply('Musetti hit 40 winners and defended very well in this long match.'))).status, 'failed-check');
+  const loose = await summariseCommentary(HT, ['L. Musetti', 'U. Humbert'], 'k', reply('Musetti hit 40 winners and defended very well in this long match.'));
+  assert.equal(loose.status, 'ok'); assert.ok(/number 40/.test(loose.notes.join()));
+  const rej = await summariseCommentary(HT, ['L. Musetti', 'U. Humbert'], 'k', reply('The commentators praised the defending of Musetti in this long match.'));
+  assert.equal(rej.status, 'failed-check'); assert.ok(rej.why && rej.rejected, 'a refused summary is kept with its reason, to be read');
   assert.equal((await summariseCommentary(HT, ['a', 'b'], '')).status, 'no-key');
   const b = fs.readFileSync(new URL('./news-ticker/build-news-ticker.mjs', import.meta.url), 'utf8');
   assert.ok(!/From the commentary|commentators/.test(b.replace(/\/\/.*$/gm, '')) && /cm && cm\.text \? cm\.text : null/.test(b), 'its own paragraph in the report, with no source named');
