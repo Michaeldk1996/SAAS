@@ -1,19 +1,19 @@
 {
- "generatedAt": "2026-11-14T15:43:24.367Z",
+ "generatedAt": "2026-11-14T16:54:47.306Z",
  "tournaments": [
   {
    "key": "1681",
    "season": "2026",
    "name": "Stockholm",
    "file": "news-ticker/1681-2026.json",
-   "items": 130,
+   "items": 131,
    "byType": {
-    "quote": 94,
+    "quote": 95,
     "report": 29,
     "status": 7
    },
-   "latestTimestamp": "2026-11-14T14:33:00.000Z",
-   "updatedAt": "2026-11-14T15:43:24.367Z"
+   "latestTimestamp": "2026-11-14T16:03:27.000Z",
+   "updatedAt": "2026-11-14T16:54:47.306Z"
   },
   {
    "key": "tour",
@@ -51,6 +51,37 @@
   }
  ],
  "latest": [
+  {
+   "id": "quote-d297a576fe51d4",
+   "type": "quote",
+   "playerId": "2832",
+   "opponentId": "366",
+   "player": "T. Fritz",
+   "opponent": "T. A. Tirante",
+   "tournament": "Stockholm",
+   "tournamentKey": "1681",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-14T16:03:27.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Quotes",
+   "context": "after beating T. A. Tirante",
+   "eventKey": "12179948",
+   "won": true,
+   "text": "But I knew that I would feel better if I came here to play. I'm glad that I did that and got the maximum out of it.",
+   "originalText": "Maar ik wist dat ik me beter zou voelen als ik hier kwam spelen. Ik ben blij dat ik dat gedaan heb en er het maximale uit heb gehaald.",
+   "language": "nl",
+   "translated": true,
+   "translationModel": "claude-opus-5-5",
+   "sourceName": "Sporza (VRT)",
+   "sourceUrl": "https://sporza.be/nl/matches/tennis/2026-11/taylor-fritz-thiago-tirante-taylor-fritz-spoelt-gemiste-atp-finals-door-met-titel-in-stockholm-na-thriller~1794671532460/",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On choosing to play after Paris setback",
+   "sourceHash": "6a6d1182c4f3cb44",
+   "publishedAt": "2026-11-14T16:54:47.306Z",
+   "file": "news-ticker/1681-2026.json"
+  },
   {
    "id": "quote-39e909fee82206",
    "type": "quote",
@@ -198,20 +229,20 @@
     "minutes": 132
    },
    "category": "Statistics",
-   "text": "Fritz beat Tirante 6–2, 4–6, 7–6 in the final to win the title and the head to head is now 1–1. It looked like an easy match after one set. It turned into a tight fight decided in a tiebreak.\n\nFritz was the better player early on. He broke for 3–1 and Tirante saved a set point at 5–2 on his own serve. Fritz took the second break point in that game to win the set 6–2. Tirante was broken twice in that set, once even from 40-0 up.\n\nFrom there the match turned completely. Tirante saved a break point to hold for 1–1, broke for 4–3 and held on to take the set 6–4. In the third set nobody broke serve and Fritz won the tiebreak 7–3. Fritz described it himself: \"It was a stressful match, … I came out and was playing really well but then let some opportunities slip. He played a good game, a good defensive game and I made a couple of mistakes. He was playing well, has a big serve and it kind of changed the match. I had a hard time breaking after that and it turned into a really tight match.\"\n\nFritz won it with his serve, above all the second serve. He won 73% of the points behind it, far above his 53% average on hard and Tirante found no way to attack it.\n\nTirante was the equal of Fritz for two sets but the first set cost him the match. He really struggled behind his second serve there and won only 17% of those points.\n\nAll in all, a tense win from Fritz on an indoor hard court, built on the serve that makes a big server and complete baseliner like him so dangerous. He dropped only this 1 set all week. He beat Norrie, got a walkover from Rune and beat Musetti in straight sets on the way and now he takes the title. In his words: \"It feels, it feels nice.\"\n\nFritz: W: 22 / UE: 21 | DR: 1.30\n\nTirante: W: 35 / UE: 36 | DR: 0.77",
-   "baseText": "Fritz beat Tirante 6–2, 4–6, 7–6 in the final to win the title and the head to head is now 1–1. It looked like an easy match after one set. It turned into a tight fight decided in a tiebreak.\n\nFritz was the better player early on. He broke for 3–1 and Tirante saved a set point at 5–2 on his own serve. Fritz took the second break point in that game to win the set 6–2. Tirante was broken twice in that set, once even from 40-0 up.\n\nFrom there the match turned completely. Tirante saved a break point to hold for 1–1, broke for 4–3 and held on to take the set 6–4. In the third set nobody broke serve and Fritz won the tiebreak 7–3. Fritz described it himself: \"It was a stressful match, … I came out and was playing really well but then let some opportunities slip. He played a good game, a good defensive game and I made a couple of mistakes. He was playing well, has a big serve and it kind of changed the match. I had a hard time breaking after that and it turned into a really tight match.\"\n\nFritz won it with his serve, above all the second serve. He won 73% of the points behind it, far above his 53% average on hard and Tirante found no way to attack it.\n\nTirante was the equal of Fritz for two sets but the first set cost him the match. He really struggled behind his second serve there and won only 17% of those points.\n\nAll in all, a tense win from Fritz on an indoor hard court, built on the serve that makes a big server and complete baseliner like him so dangerous. He dropped only this 1 set all week. He beat Norrie, got a walkover from Rune and beat Musetti in straight sets on the way and now he takes the title. In his words: \"It feels, it feels nice.\"",
+   "text": "Fritz beat Tirante 6–2, 4–6, 7–6 in the final, which leaves them at 1 win each in their head to head. Fritz controlled the start, lost the thread for a set and then won a tight decider without a single break of serve.\n\nFritz broke for 3–1 in the first set. Tirante saved a set point at 5–2 on his own serve but Fritz needed only 2 break points in that game to break again for 6–2. The second set went the other way: Tirante saved a break point to hold for 1–1, broke for 4–3 and took the set 6–4. Fritz knows he let it slip: \"It was a stressful match, … I came out and was playing really well but then let some opportunities slip.\"\n\nThe third set had no break of serve at all, so it came down to the tiebreak. Fritz was the steadier player there and took it 7–3.\n\nFritz won this final with his serve, especially the second one. He won 73% of the points behind his second serve, far above his 53% average on hard, so Tirante rarely got a chance to attack it.\n\nTirante kept the score close with his own serve in the last two sets. In the first set, though, he really struggled behind his second serve and won only 17% of those points. That set was gone before the match turned.\n\nAll in all, a deserved title for Fritz, built on a strong start and a serve that held firm when the final got tight, which is what makes a big server and complete baseliner like him so dangerous. He beat Norrie in straight sets, got a walkover from Rune in the QF and beat Musetti in straight sets and this was the only set he dropped all week. On the title he said: \"I have lost a lot of indoor finals but at the same time I didn't look too much into it, because when I won Tokyo, it was pretty much indoors as the roof was closed a lot, … It feels good to get that one now.\"\n\nFritz: W: 22 / UE: 21 | DR: 1.30\n\nTirante: W: 35 / UE: 36 | DR: 0.77",
+   "baseText": "Fritz beat Tirante 6–2, 4–6, 7–6 in the final, which leaves them at 1 win each in their head to head. Fritz controlled the start, lost the thread for a set and then won a tight decider without a single break of serve.\n\nFritz broke for 3–1 in the first set. Tirante saved a set point at 5–2 on his own serve but Fritz needed only 2 break points in that game to break again for 6–2. The second set went the other way: Tirante saved a break point to hold for 1–1, broke for 4–3 and took the set 6–4. Fritz knows he let it slip: \"It was a stressful match, … I came out and was playing really well but then let some opportunities slip.\"\n\nThe third set had no break of serve at all, so it came down to the tiebreak. Fritz was the steadier player there and took it 7–3.\n\nFritz won this final with his serve, especially the second one. He won 73% of the points behind his second serve, far above his 53% average on hard, so Tirante rarely got a chance to attack it.\n\nTirante kept the score close with his own serve in the last two sets. In the first set, though, he really struggled behind his second serve and won only 17% of those points. That set was gone before the match turned.\n\nAll in all, a deserved title for Fritz, built on a strong start and a serve that held firm when the final got tight, which is what makes a big server and complete baseliner like him so dangerous. He beat Norrie in straight sets, got a walkover from Rune in the QF and beat Musetti in straight sets and this was the only set he dropped all week. On the title he said: \"I have lost a lot of indoor finals but at the same time I didn't look too much into it, because when I won Tokyo, it was pretty much indoors as the roof was closed a lot, … It feels good to get that one now.\"",
    "rating": [
     "Fritz: W: 22 / UE: 21 | DR: 1.30",
     "Tirante: W: 35 / UE: 36 | DR: 0.77"
    ],
    "composed": {
     "version": 2,
-    "sheetHash": "366c54a09b333ad3",
+    "sheetHash": "b4300625ee180027",
     "status": "ok",
     "model": "claude-opus-5-5",
     "tries": 1,
-    "runs": 2,
-    "body": "Fritz beat Tirante 6–2, 4–6, 7–6 in the final to win the title and the head to head is now 1–1. It looked like an easy match after one set. It turned into a tight fight decided in a tiebreak.\n\nFritz was the better player early on. He broke for 3–1 and Tirante saved a set point at 5–2 on his own serve. Fritz took the second break point in that game to win the set 6–2. Tirante was broken twice in that set, once even from 40-0 up.\n\nFrom there the match turned completely. Tirante saved a break point to hold for 1–1, broke for 4–3 and held on to take the set 6–4. In the third set nobody broke serve and Fritz won the tiebreak 7–3. Fritz described it himself: \"It was a stressful match, … I came out and was playing really well but then let some opportunities slip. He played a good game, a good defensive game and I made a couple of mistakes. He was playing well, has a big serve and it kind of changed the match. I had a hard time breaking after that and it turned into a really tight match.\"\n\nFritz won it with his serve, above all the second serve. He won 73% of the points behind it, far above his 53% average on hard and Tirante found no way to attack it.\n\nTirante was the equal of Fritz for two sets but the first set cost him the match. He really struggled behind his second serve there and won only 17% of those points.\n\nAll in all, a tense win from Fritz on an indoor hard court, built on the serve that makes a big server and complete baseliner like him so dangerous. He dropped only this 1 set all week. He beat Norrie, got a walkover from Rune and beat Musetti in straight sets on the way and now he takes the title. In his words: \"It feels, it feels nice.\""
+    "runs": 3,
+    "body": "Fritz beat Tirante 6–2, 4–6, 7–6 in the final, which leaves them at 1 win each in their head to head. Fritz controlled the start, lost the thread for a set and then won a tight decider without a single break of serve.\n\nFritz broke for 3–1 in the first set. Tirante saved a set point at 5–2 on his own serve but Fritz needed only 2 break points in that game to break again for 6–2. The second set went the other way: Tirante saved a break point to hold for 1–1, broke for 4–3 and took the set 6–4. Fritz knows he let it slip: \"It was a stressful match, … I came out and was playing really well but then let some opportunities slip.\"\n\nThe third set had no break of serve at all, so it came down to the tiebreak. Fritz was the steadier player there and took it 7–3.\n\nFritz won this final with his serve, especially the second one. He won 73% of the points behind his second serve, far above his 53% average on hard, so Tirante rarely got a chance to attack it.\n\nTirante kept the score close with his own serve in the last two sets. In the first set, though, he really struggled behind his second serve and won only 17% of those points. That set was gone before the match turned.\n\nAll in all, a deserved title for Fritz, built on a strong start and a serve that held firm when the final got tight, which is what makes a big server and complete baseliner like him so dangerous. He beat Norrie in straight sets, got a walkover from Rune in the QF and beat Musetti in straight sets and this was the only set he dropped all week. On the title he said: \"I have lost a lot of indoor finals but at the same time I didn't look too much into it, because when I won Tokyo, it was pretty much indoors as the roof was closed a lot, … It feels good to get that one now.\""
    },
    "fields": {
     "score": "6-2, 4-6, 7-6",
@@ -296,10 +327,10 @@
    "sourceUrl": "pbp/12179948.json",
    "language": "en",
    "translated": false,
-   "sourceHash": "d34378af2184d815",
+   "sourceHash": "c89b9f0576a4fe76",
    "publishedAt": "2026-11-14T14:44:36.468Z",
-   "revisedAt": "2026-11-14T15:43:24.367Z",
-   "revision": 1,
+   "revisedAt": "2026-11-14T16:54:47.306Z",
+   "revision": 2,
    "file": "news-ticker/1681-2026.json"
   },
   {
@@ -1535,187 +1566,6 @@
    "topic": "On his feelings for Sweden",
    "sourceHash": "508d0dc7ca5b34e0",
    "publishedAt": "2026-11-13T18:43:33.043Z",
-   "file": "news-ticker/1681-2026.json"
-  },
-  {
-   "id": "report-12179750",
-   "type": "report",
-   "playerId": "366",
-   "opponentId": "2982",
-   "player": "T. A. Tirante",
-   "opponent": "A. Tabilo",
-   "tournament": "Stockholm",
-   "tournamentKey": "1681",
-   "season": "2026",
-   "stage": "main draw",
-   "round": "semi-finals",
-   "eventKey": "12179750",
-   "timestamp": "2026-11-13T14:56:33.967Z",
-   "timestampKind": "observed",
-   "observed": {
-    "endedAt": "2026-11-13T14:56:33.967Z",
-    "startedAt": "2026-11-13T13:10:41.154Z",
-    "minutes": 106
-   },
-   "category": "Statistics",
-   "text": "Tirante beat Tabilo 7–5, 7–6 in the SF in Stockholm to reach his first tour-level final at his third attempt, which makes the head to head Tirante 1, Tabilo 2. It was a match of two tight sets decided by very few points and he even got broken when he served for the match.\n\nThe first set could easily have gone the other way. Tirante got the only break for 6–5, then faced 3 break points when he served for the set. He saved all 3 and held for 7–5. In the second set he broke for 5–4. Nerves got to him when he served for the match and Tabilo broke straight back for 5–5. He stayed calm after that and took the tiebreak 7–1. He has now played 4 tiebreaks this week. On that game at 5–4, Tirante said: \"Well, always we have nervous all the matches … I think I keep believing in me, in my team\"\n\nThe serve won him this match. Tirante won 90% of his first-serve points (!!!) and was dominant on serve from the start. He also moved forward at the earliest chance and was excellent at the net, while most of his winners came from the forehand. He knows where his danger lies: \"With the forehand and with the serve there is a very danger for them.\"\n\nTabilo showed good touch and used the whole court. At times his shot choices were unclear, some of his volleys were not good enough and his forehand was not reliable.\n\nPhysically, Tirante is something to follow. He called the physio early in the second set, his second medical timeout in two matches. We do not know the reason yet.\n\nAll in all, Tirante stayed calm in the big moments and won it with his serve and his forehand, the weapons of an attacking baseliner who also likes to finish at the net. The one thing to follow is physical, as it is already his second medical timeout this week. Next is Fritz, who has not dropped a set this week. He beat Norrie in straight sets, got a walkover from Rune in the QF and then beat Musetti in straight sets in the SF.\n\nTirante: performance rating 8.0 | W: 35 / UE: 20 | DR: 1.16\n\nTabilo: performance rating 7.6 | W: 25 / UE: 23 | DR: 0.86",
-   "baseText": "Tirante beat Tabilo 7–5, 7–6 in the SF in Stockholm to reach his first tour-level final at his third attempt, which makes the head to head Tirante 1, Tabilo 2. It was a match of two tight sets decided by very few points and he even got broken when he served for the match.\n\nThe first set could easily have gone the other way. Tirante got the only break for 6–5, then faced 3 break points when he served for the set. He saved all 3 and held for 7–5. In the second set he broke for 5–4. Nerves got to him when he served for the match and Tabilo broke straight back for 5–5. He stayed calm after that and took the tiebreak 7–1. He has now played 4 tiebreaks this week. On that game at 5–4, Tirante said: \"Well, always we have nervous all the matches … I think I keep believing in me, in my team\"\n\nThe serve won him this match. Tirante won 90% of his first-serve points (!!!) and was dominant on serve from the start. He also moved forward at the earliest chance and was excellent at the net, while most of his winners came from the forehand. He knows where his danger lies: \"With the forehand and with the serve there is a very danger for them.\"\n\nTabilo showed good touch and used the whole court. At times his shot choices were unclear, some of his volleys were not good enough and his forehand was not reliable.\n\nAll in all, Tirante stayed calm in the big moments and won it with his serve and his forehand, the weapons of an attacking baseliner who also likes to finish at the net. The one thing to follow is physical, as it is already his second medical timeout this week. Next is Fritz, who has not dropped a set this week. He beat Norrie in straight sets, got a walkover from Rune in the QF and then beat Musetti in straight sets in the SF.",
-   "rating": [
-    "Tirante: performance rating 8.0 | W: 35 / UE: 20 | DR: 1.16",
-    "Tabilo: performance rating 7.6 | W: 25 / UE: 23 | DR: 0.86"
-   ],
-   "shotStats": {
-    "p1": {
-     "performance": 7.6,
-     "serveQuality": 8.3,
-     "unreturnedPct": 29,
-     "firstInPct": 71,
-     "firstWonPct": 68,
-     "secondWonPct": 60,
-     "secondSpeed": 149,
-     "returnQuality": 7.3,
-     "fhWinners": 11,
-     "bhWinners": 9,
-     "fhUnforced": 15,
-     "bhUnforced": 8,
-     "forcedErrors": 16,
-     "baselineWon": 30,
-     "under9Won": 63,
-     "over9Won": 4,
-     "bpWon": [
-      1,
-      4
-     ],
-     "netWon": [
-      13,
-      22
-     ]
-    },
-    "p2": {
-     "performance": 8,
-     "serveQuality": 8.8,
-     "unreturnedPct": 37,
-     "firstInPct": 56,
-     "firstWonPct": 90,
-     "secondWonPct": 45,
-     "secondSpeed": 163,
-     "returnQuality": 6.2,
-     "fhWinners": 13,
-     "bhWinners": 8,
-     "fhUnforced": 10,
-     "bhUnforced": 10,
-     "forcedErrors": 22,
-     "baselineWon": 31,
-     "under9Won": 66,
-     "over9Won": 8,
-     "bpWon": [
-      2,
-      2
-     ],
-     "netWon": [
-      9,
-      11
-     ]
-    },
-    "postedAt": "2026-11-13T15:32:35.000Z",
-    "readAt": "2026-11-13T20:26:31.907Z",
-    "sourceName": "ATP broadcast match statistics (via @ATP_Entry)",
-    "sourceUrl": "https://x.com/ATP_Entry/status/2121264974647509088",
-    "agreed": "6 of 6 serve figures within 3 points of ours; set scores and break points equal",
-    "wue": {
-     "compared": 4,
-     "maxDiff": 0
-    }
-   },
-   "mto": [
-    "Physically, it is something to follow.",
-    "Tirante took a medical timeout at 1–2 in the second set.",
-    "We do not know the reason.",
-    "Something to follow up for the next round."
-   ],
-   "commentary": {
-    "text": "Tirante beat Tabilo 7-5, 7-6 in Stockholm to reach his first tour-level final, at his third attempt. Tirante was dominant on serve early, dropping just one point in his first service games and his net play was excellent as he moved forward at the earliest chance and finished points there. Tabilo showed good touch and used the whole court but at times his shot choices were unclear and some of his volleys were not good enough to win the point. A single break of serve decided the first set. In the second set Tirante had a chance to serve out the match but could not take it because of nerves, then won the tiebreak.",
-    "sourceName": "Tennis TV highlights commentary",
-    "sourceUrl": "https://www.tennistv.com/videos/4608794/stockholm-2026-sf-tabilo-tirante-highlights"
-   },
-   "composed": {
-    "version": 2,
-    "sheetHash": "b21db7e017222cfa",
-    "status": "ok",
-    "model": "claude-opus-5-5",
-    "tries": 1,
-    "runs": 3,
-    "body": "Tirante beat Tabilo 7–5, 7–6 in the SF in Stockholm to reach his first tour-level final at his third attempt, which makes the head to head Tirante 1, Tabilo 2. It was a match of two tight sets decided by very few points and he even got broken when he served for the match.\n\nThe first set could easily have gone the other way. Tirante got the only break for 6–5, then faced 3 break points when he served for the set. He saved all 3 and held for 7–5. In the second set he broke for 5–4. Nerves got to him when he served for the match and Tabilo broke straight back for 5–5. He stayed calm after that and took the tiebreak 7–1. He has now played 4 tiebreaks this week. On that game at 5–4, Tirante said: \"Well, always we have nervous all the matches … I think I keep believing in me, in my team\"\n\nThe serve won him this match. Tirante won 90% of his first-serve points (!!!) and was dominant on serve from the start. He also moved forward at the earliest chance and was excellent at the net, while most of his winners came from the forehand. He knows where his danger lies: \"With the forehand and with the serve there is a very danger for them.\"\n\nTabilo showed good touch and used the whole court. At times his shot choices were unclear, some of his volleys were not good enough and his forehand was not reliable.\n\nAll in all, Tirante stayed calm in the big moments and won it with his serve and his forehand, the weapons of an attacking baseliner who also likes to finish at the net. The one thing to follow is physical, as it is already his second medical timeout this week. Next is Fritz, who has not dropped a set this week. He beat Norrie in straight sets, got a walkover from Rune in the QF and then beat Musetti in straight sets in the SF."
-   },
-   "fields": {
-    "score": "7-5, 7-6",
-    "round": "semi-finals",
-    "retired": false,
-    "h2h": {
-     "a": 1,
-     "b": 2,
-     "n": 3
-    },
-    "durationMinutes": 106,
-    "facts": {
-     "tiebreakSets": [
-      {
-       "set": 2,
-       "winner": "p2"
-      }
-     ],
-     "brokenForMatch": {
-      "p2": 1
-     }
-    },
-    "standouts": [
-     {
-      "player": "winner",
-      "tone": "good",
-      "metric": "aces",
-      "value": 14
-     },
-     {
-      "player": "winner",
-      "tone": "good",
-      "metric": "firstWon",
-      "value": 90,
-      "won": 36,
-      "total": 40
-     },
-     {
-      "player": "winner",
-      "tone": "good",
-      "metric": "winnersErrors",
-      "winners": 35,
-      "unforcedErrors": 20
-     }
-    ],
-    "winner": {
-     "aces": 14,
-     "winners": 35,
-     "unforcedErrors": 20,
-     "breakPointsSaved": 3,
-     "breakPointsFaced": 4,
-     "breakPointsSource": "box score"
-    },
-    "loser": {
-     "aces": 5,
-     "winners": 25,
-     "unforcedErrors": 23,
-     "breakPointsSaved": 0,
-     "breakPointsFaced": 2,
-     "breakPointsSource": "box score"
-    }
-   },
-   "sourceName": "Stennisfy match data (api-tennis box score and point-by-point)",
-   "sourceUrl": "pbp/12179750.json",
-   "language": "en",
-   "translated": false,
-   "sourceHash": "3f607eb4339c8054",
-   "publishedAt": "2026-11-13T15:26:52.221Z",
-   "revisedAt": "2026-11-14T10:33:40.337Z",
-   "revision": 8,
    "file": "news-ticker/1681-2026.json"
   }
  ]
