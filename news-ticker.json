@@ -1,6 +1,18 @@
 {
- "generatedAt": "2026-11-14T11:22:02.494Z",
+ "generatedAt": "2026-11-14T11:42:25.841Z",
  "tournaments": [
+  {
+   "key": "tour",
+   "season": "2026",
+   "name": "ATP Tour",
+   "file": "news-ticker/tour-2026.json",
+   "items": 58,
+   "byType": {
+    "quote": 58
+   },
+   "latestTimestamp": "2026-11-14T10:54:23.000Z",
+   "updatedAt": "2026-11-14T11:42:25.841Z"
+  },
   {
    "key": "1681",
    "season": "2026",
@@ -14,18 +26,6 @@
    },
    "latestTimestamp": "2026-11-14T10:30:00.000Z",
    "updatedAt": "2026-11-14T11:22:02.494Z"
-  },
-  {
-   "key": "tour",
-   "season": "2026",
-   "name": "ATP Tour",
-   "file": "news-ticker/tour-2026.json",
-   "items": 57,
-   "byType": {
-    "quote": 57
-   },
-   "latestTimestamp": "2026-11-14T05:30:00.000Z",
-   "updatedAt": "2026-11-14T06:54:31.012Z"
   },
   {
    "key": "1725",
@@ -51,6 +51,37 @@
   }
  ],
  "latest": [
+  {
+   "id": "quote-c6c862202e908f",
+   "type": "quote",
+   "playerId": "1093",
+   "opponentId": null,
+   "player": "D. Medvedev",
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-14T10:54:23.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "I no longer want to play this season, but I have to do it",
+   "originalText": "Je n’ai plus envie de jouer cette saison, mais je dois le faire",
+   "language": "fr",
+   "translated": true,
+   "translationModel": "claude-opus-5-5",
+   "sourceName": "We Love Tennis",
+   "sourceUrl": "https://www.welovetennis.fr/atp/atp-finals-atp/medvedev-jai-vu-que-tout-le-monde-avait-deja-commence-a-publier-des-photos-de-vacances-je-vais-donc-tout-donner-et-ensuite-direction-les-maldives",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On his lack of desire to keep playing this season",
+   "sourceHash": "84a2d9e5e2711b88",
+   "publishedAt": "2026-11-14T11:42:25.841Z",
+   "file": "news-ticker/tour-2026.json"
+  },
   {
    "id": "quote-68b64c79571fa4",
    "type": "quote",
@@ -1737,39 +1768,6 @@
    "revisedAt": "2026-11-13T07:43:17.649Z",
    "revision": 1,
    "file": "news-ticker/1681-2026.json"
-  },
-  {
-   "id": "quote-6fa8fb8b904061",
-   "type": "quote",
-   "playerId": "2382",
-   "opponentId": null,
-   "player": "C. Alcaraz",
-   "opponent": null,
-   "tournament": "ATP Tour",
-   "tournamentKey": "tour",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-12T17:30:27.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Interviews",
-   "context": null,
-   "eventKey": null,
-   "won": null,
-   "text": "I’m going to believe that I can do that, and, you know, I’m going to go this year with a lot of confidence. I’m going to go for it, for sure.",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "Tennis365",
-   "sourceUrl": "https://www.tennis365.com/tennis-news/carlos-alcaraz-injury-update-atp-finals",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "sourceHash": "b6e752b3f02758de",
-   "publishedAt": "2026-11-12T18:48:47.677Z",
-   "topic": "On approaching this season with confidence",
-   "revisedAt": "2026-11-13T07:43:17.649Z",
-   "revision": 1,
-   "file": "news-ticker/tour-2026.json"
   }
  ]
 }
