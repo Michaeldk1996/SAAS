@@ -1,31 +1,31 @@
 {
- "generatedAt": "2026-11-14T14:18:13.897Z",
+ "generatedAt": "2026-11-14T14:44:36.468Z",
  "tournaments": [
-  {
-   "key": "tour",
-   "season": "2026",
-   "name": "ATP Tour",
-   "file": "news-ticker/tour-2026.json",
-   "items": 61,
-   "byType": {
-    "quote": 61
-   },
-   "latestTimestamp": "2026-11-14T13:46:19.000Z",
-   "updatedAt": "2026-11-14T14:18:13.897Z"
-  },
   {
    "key": "1681",
    "season": "2026",
    "name": "Stockholm",
    "file": "news-ticker/1681-2026.json",
-   "items": 123,
+   "items": 124,
    "byType": {
+    "report": 29,
     "quote": 88,
-    "report": 28,
     "status": 7
    },
-   "latestTimestamp": "2026-11-14T10:30:00.000Z",
-   "updatedAt": "2026-11-14T11:22:02.494Z"
+   "latestTimestamp": "2026-11-14T14:24:08.240Z",
+   "updatedAt": "2026-11-14T14:44:36.468Z"
+  },
+  {
+   "key": "tour",
+   "season": "2026",
+   "name": "ATP Tour",
+   "file": "news-ticker/tour-2026.json",
+   "items": 62,
+   "byType": {
+    "quote": 62
+   },
+   "latestTimestamp": "2026-11-14T14:00:12.000Z",
+   "updatedAt": "2026-11-14T14:44:36.468Z"
   },
   {
    "key": "1725",
@@ -51,6 +51,160 @@
   }
  ],
  "latest": [
+  {
+   "id": "report-12179948",
+   "type": "report",
+   "playerId": "2832",
+   "opponentId": "366",
+   "player": "T. Fritz",
+   "opponent": "T. A. Tirante",
+   "tournament": "Stockholm",
+   "tournamentKey": "1681",
+   "season": "2026",
+   "stage": "main draw",
+   "round": "final",
+   "eventKey": "12179948",
+   "timestamp": "2026-11-14T14:24:08.240Z",
+   "timestampKind": "observed",
+   "observed": {
+    "endedAt": "2026-11-14T14:24:08.240Z",
+    "startedAt": "2026-11-14T12:12:12.740Z",
+    "minutes": 132
+   },
+   "category": "Statistics",
+   "text": "Fritz beat Tirante 6–2, 4–6, 7–6 in the final to win the title and the head to head now stands at one win each. It was a one-sided first set and then a long fight, with no break of serve in the third set and a tiebreak at the end.\n\nFritz broke early for 3–1 and stayed in control. At 5–2 Tirante saved a set point on his own serve but Fritz needed 2 break points in that game to break again and take the set 6–2. Tirante saved a break point to hold for 1–1 in the second set, then broke for 4–3 and held on to win it 6–4. In the third set both players held every game, so it came down to the tiebreak, where Fritz was the steadier player and won it 7–3.\n\nThe serve won Fritz this final. He won 73% of the points behind his second serve, far above his 53% average on hard. Even his weaker serve gave Tirante almost nothing and Tirante got only one break point in the whole match.\n\nTirante's problem was the start. He really struggled behind his second serve in the first set and won only 17% of those points, which gave Fritz the two breaks that decided the opening set. He was also broken once from 40-0 up.\n\nAll in all, a strong final from Fritz, built on a serve that hardly ever gave Tirante a chance. That is exactly what makes a big server and complete baseliner like him so dangerous when a match gets tight. He beat Norrie in R2, got a walkover from Rune in the QF, beat Musetti in the SF and then took the title, with only 1 set dropped all week.\n\nFritz: W: 22 / UE: 21 | DR: 1.30\n\nTirante: W: 35 / UE: 36 | DR: 0.77",
+   "baseText": "Fritz beat Tirante 6–2, 4–6, 7–6 in the final to win the title and the head to head now stands at one win each. It was a one-sided first set and then a long fight, with no break of serve in the third set and a tiebreak at the end.\n\nFritz broke early for 3–1 and stayed in control. At 5–2 Tirante saved a set point on his own serve but Fritz needed 2 break points in that game to break again and take the set 6–2. Tirante saved a break point to hold for 1–1 in the second set, then broke for 4–3 and held on to win it 6–4. In the third set both players held every game, so it came down to the tiebreak, where Fritz was the steadier player and won it 7–3.\n\nThe serve won Fritz this final. He won 73% of the points behind his second serve, far above his 53% average on hard. Even his weaker serve gave Tirante almost nothing and Tirante got only one break point in the whole match.\n\nTirante's problem was the start. He really struggled behind his second serve in the first set and won only 17% of those points, which gave Fritz the two breaks that decided the opening set. He was also broken once from 40-0 up.\n\nAll in all, a strong final from Fritz, built on a serve that hardly ever gave Tirante a chance. That is exactly what makes a big server and complete baseliner like him so dangerous when a match gets tight. He beat Norrie in R2, got a walkover from Rune in the QF, beat Musetti in the SF and then took the title, with only 1 set dropped all week.",
+   "rating": [
+    "Fritz: W: 22 / UE: 21 | DR: 1.30",
+    "Tirante: W: 35 / UE: 36 | DR: 0.77"
+   ],
+   "composed": {
+    "version": 2,
+    "sheetHash": "95812d5cfe995afb",
+    "status": "ok",
+    "model": "claude-opus-5-5",
+    "tries": 1,
+    "runs": 1,
+    "body": "Fritz beat Tirante 6–2, 4–6, 7–6 in the final to win the title and the head to head now stands at one win each. It was a one-sided first set and then a long fight, with no break of serve in the third set and a tiebreak at the end.\n\nFritz broke early for 3–1 and stayed in control. At 5–2 Tirante saved a set point on his own serve but Fritz needed 2 break points in that game to break again and take the set 6–2. Tirante saved a break point to hold for 1–1 in the second set, then broke for 4–3 and held on to win it 6–4. In the third set both players held every game, so it came down to the tiebreak, where Fritz was the steadier player and won it 7–3.\n\nThe serve won Fritz this final. He won 73% of the points behind his second serve, far above his 53% average on hard. Even his weaker serve gave Tirante almost nothing and Tirante got only one break point in the whole match.\n\nTirante's problem was the start. He really struggled behind his second serve in the first set and won only 17% of those points, which gave Fritz the two breaks that decided the opening set. He was also broken once from 40-0 up.\n\nAll in all, a strong final from Fritz, built on a serve that hardly ever gave Tirante a chance. That is exactly what makes a big server and complete baseliner like him so dangerous when a match gets tight. He beat Norrie in R2, got a walkover from Rune in the QF, beat Musetti in the SF and then took the title, with only 1 set dropped all week."
+   },
+   "fields": {
+    "score": "6-2, 4-6, 7-6",
+    "round": "final",
+    "retired": false,
+    "h2h": {
+     "a": 1,
+     "b": 1,
+     "n": 2
+    },
+    "durationMinutes": 132,
+    "facts": {
+     "tiebreakSets": [
+      {
+       "set": 3,
+       "winner": "p1"
+      }
+     ],
+     "brokenFrom400": {
+      "p2": 1
+     }
+    },
+    "standouts": [
+     {
+      "player": "winner",
+      "tone": "good",
+      "metric": "firstWon",
+      "value": 76,
+      "won": 38,
+      "total": 50
+     },
+     {
+      "player": "winner",
+      "tone": "good",
+      "metric": "secondWon",
+      "value": 73,
+      "won": 24,
+      "total": 33,
+      "baseline": 53,
+      "scope": "last52",
+      "surface": "Hard",
+      "n": 53
+     },
+     {
+      "player": "winner",
+      "tone": "bad",
+      "metric": "ret2Won",
+      "value": 43,
+      "won": 16,
+      "total": 37,
+      "baseline": 53,
+      "scope": "last52",
+      "surface": "Hard",
+      "n": 53
+     },
+     {
+      "player": "loser",
+      "tone": "bad",
+      "metric": "winnersErrors",
+      "winners": 35,
+      "unforcedErrors": 36
+     }
+    ],
+    "winner": {
+     "aces": 7,
+     "winners": 22,
+     "unforcedErrors": 21,
+     "breakPointsSaved": 0,
+     "breakPointsFaced": 1,
+     "breakPointsSource": "box score"
+    },
+    "loser": {
+     "aces": 10,
+     "winners": 35,
+     "unforcedErrors": 36,
+     "breakPointsSaved": 2,
+     "breakPointsFaced": 4,
+     "breakPointsSource": "box score"
+    }
+   },
+   "sourceName": "Stennisfy match data (api-tennis box score and point-by-point)",
+   "sourceUrl": "pbp/12179948.json",
+   "language": "en",
+   "translated": false,
+   "sourceHash": "245f54c8f8074140",
+   "publishedAt": "2026-11-14T14:44:36.468Z",
+   "file": "news-ticker/1681-2026.json"
+  },
+  {
+   "id": "quote-b52ffc7d9a01c3",
+   "type": "quote",
+   "playerId": "1980",
+   "opponentId": null,
+   "player": "A. Zverev",
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-14T14:00:12.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "First of all, this isn’t that kind of interview. Secondly, you know that the accusations have been proven false?",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "Tennis365",
+   "sourceUrl": "https://www.tennis365.com/tennis-news/alexander-zverev-sued-ex-girlfriend-controversial-comments-abuse-case",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On the domestic abuse allegations against him",
+   "sourceHash": "960cc7a0d2d7d91d",
+   "publishedAt": "2026-11-14T14:44:36.468Z",
+   "file": "news-ticker/tour-2026.json"
+  },
   {
    "id": "quote-74899a9a78880b",
    "type": "quote",
@@ -1557,71 +1711,6 @@
    "topic": "On his opponent's aggression",
    "sourceHash": "252b526ac192a6e4",
    "publishedAt": "2026-11-13T07:43:17.649Z",
-   "file": "news-ticker/1681-2026.json"
-  },
-  {
-   "id": "quote-3e2de4a3fde02a",
-   "type": "quote",
-   "playerId": "2849",
-   "opponentId": "1105",
-   "player": "L. Musetti",
-   "opponent": "U. Humbert",
-   "tournament": "Stockholm",
-   "tournamentKey": "1681",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-12T22:11:00.000Z",
-   "timestampKind": "observed (Tennis TV published the clip then)",
-   "category": "Quotes",
-   "context": "after beating U. Humbert",
-   "eventKey": "12179396",
-   "won": true,
-   "text": "I think the key of the match was you know to To have a reaction after you know losing the second set … The the break back it gave me that energy back and the confidence",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "On-court interview",
-   "sourceUrl": "https://www.tennistv.com/videos/4608415/stockholm-2026-qf-lorenzo-musetti-interview",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the clip's audio, transcribed by the interviews worker",
-   "interview": "on-court",
-   "topic": "On the key to the match",
-   "sourceHash": "171e790722c97bfd",
-   "publishedAt": "2026-11-13T07:43:17.649Z",
-   "file": "news-ticker/1681-2026.json"
-  },
-  {
-   "id": "quote-4f48086019aaa8",
-   "type": "quote",
-   "playerId": "2849",
-   "opponentId": "1105",
-   "player": "L. Musetti",
-   "opponent": "U. Humbert",
-   "tournament": "Stockholm",
-   "tournamentKey": "1681",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-12T22:10:00.000Z",
-   "timestampKind": "observed (the site's own publication time)",
-   "category": "Quotes",
-   "context": "after beating U. Humbert",
-   "eventKey": "12179396",
-   "won": true,
-   "text": "It was a really tough match. We both served pretty well, … So, it was not easy to find a way out. The key to the match was to have a [positive] reaction after losing the second set and [trailing by] a break at the beginning of the third set.",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "ATP Tour daily report (via the official tournament site)",
-   "sourceUrl": "https://www.stockholmopen.se/en/tournament/nyheter/stockholm-2026-thursday-report-qfs",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "sourceHash": "37e75a4eb8d42268",
-   "publishedAt": "2026-11-12T23:42:25.282Z",
-   "topic": "On rallying after losing the second set",
-   "revisedAt": "2026-11-13T07:43:17.649Z",
-   "revision": 1,
    "file": "news-ticker/1681-2026.json"
   }
  ]
