@@ -15,18 +15,18 @@
       "p1": 1.53,
       "p2": 2.5,
       "bookmaker": "bet365",
-      "seenAt": "2026-11-14T19:10:36.106Z"
+      "seenAt": "2026-11-14T23:54:44.666Z"
     },
     "bestOdds": {
       "p1": {
-        "price": 1.62,
-        "bookmaker": "Betfair"
+        "price": 1.6,
+        "bookmaker": "Pncl"
       },
       "p2": {
-        "price": 2.57,
-        "bookmaker": "1xBet"
+        "price": 2.52,
+        "bookmaker": "Pncl"
       },
-      "seenAt": "2026-11-14T19:10:36.106Z"
+      "seenAt": "2026-11-14T23:54:44.666Z"
     },
     "tournamentRound": null,
     "qualifying": false,
@@ -2148,107 +2148,7 @@
       "cpiYear": 2025,
       "category": "Fast"
     },
-    "weather": {
-      "temperature": 7.4,
-      "windSpeed": 2.1,
-      "humidity": 82,
-      "source": "Open-Meteo",
-      "historical": false,
-      "weekRange": "Nov 9 – 15, 2026",
-      "week": [
-        {
-          "date": "2026-11-09",
-          "dow": "Mon",
-          "label": "Nov 9",
-          "code": 61,
-          "hi": 12,
-          "lo": 6,
-          "rain": 38,
-          "wind": 4,
-          "humidity": 87,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-11-10",
-          "dow": "Tue",
-          "label": "Nov 10",
-          "code": 45,
-          "hi": 13,
-          "lo": 8,
-          "rain": 15,
-          "wind": 6,
-          "humidity": 84,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-11-11",
-          "dow": "Wed",
-          "label": "Nov 11",
-          "code": 45,
-          "hi": 13,
-          "lo": 8,
-          "rain": 18,
-          "wind": 6,
-          "humidity": 84,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-11-12",
-          "dow": "Thu",
-          "label": "Nov 12",
-          "code": 63,
-          "hi": 11,
-          "lo": 9,
-          "rain": 100,
-          "wind": 8,
-          "humidity": 94,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-11-13",
-          "dow": "Fri",
-          "label": "Nov 13",
-          "code": 45,
-          "hi": 18,
-          "lo": 8,
-          "rain": 38,
-          "wind": 10,
-          "humidity": 83,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-11-14",
-          "dow": "Sat",
-          "label": "Nov 14",
-          "code": 80,
-          "hi": 11,
-          "lo": 8,
-          "rain": 90,
-          "wind": 13,
-          "humidity": 75,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-11-15",
-          "dow": "Sun",
-          "label": "Nov 15",
-          "code": 3,
-          "hi": 11,
-          "lo": 7,
-          "rain": 10,
-          "wind": 3,
-          "humidity": 72,
-          "isMatch": true,
-          "available": true
-        }
-      ]
-    },
+    "weather": null,
     "live": false,
     "liveStatus": null,
     "liveScore": null,
@@ -2779,7 +2679,7 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-11-14T19:40:36.000Z"
+            "checkedAt": "2026-11-15T00:43:11.000Z"
           }
         }
       }
@@ -2843,55 +2743,55 @@
       "WilliamHill": {
         "p1": 1.57,
         "p2": 2.38,
-        "seenAt": "2026-11-14T19:11:40.794Z",
+        "seenAt": "2026-11-14T23:59:29.992Z",
         "since": "2026-11-14T02:11:45.478Z"
       },
       "bet365": {
         "p1": 1.53,
         "p2": 2.5,
-        "seenAt": "2026-11-14T19:11:40.794Z",
+        "seenAt": "2026-11-14T23:59:29.992Z",
         "since": "2026-11-14T02:11:45.478Z"
       },
       "Marathon": {
-        "p1": 1.53,
-        "p2": 2.53,
-        "seenAt": "2026-11-14T19:11:40.794Z",
-        "since": "2026-11-14T19:11:40.794Z"
+        "p1": 1.55,
+        "p2": 2.47,
+        "seenAt": "2026-11-14T23:59:29.992Z",
+        "since": "2026-11-14T23:59:29.992Z"
       },
       "Betfair": {
-        "p1": 1.62,
-        "p2": 2.25,
-        "seenAt": "2026-11-14T19:11:40.794Z",
-        "since": "2026-11-14T02:11:45.478Z"
+        "p1": 1.53,
+        "p2": 2.5,
+        "seenAt": "2026-11-14T23:59:29.992Z",
+        "since": "2026-11-14T23:59:29.992Z"
       },
       "BetVictor": {
         "p1": 1.53,
         "p2": 2.5,
-        "seenAt": "2026-11-14T19:11:40.794Z",
+        "seenAt": "2026-11-14T23:59:29.992Z",
         "since": "2026-11-14T19:11:40.794Z"
       },
       "Pncl": {
         "p1": 1.6,
         "p2": 2.52,
-        "seenAt": "2026-11-14T19:11:40.794Z",
+        "seenAt": "2026-11-14T23:59:29.992Z",
         "since": "2026-11-14T12:20:19.957Z"
       },
       "Sbo": {
         "p1": 1.5,
         "p2": 2.26,
-        "seenAt": "2026-11-14T19:11:40.794Z",
+        "seenAt": "2026-11-14T23:59:29.992Z",
         "since": "2026-11-14T02:11:45.478Z"
       },
       "1xBet": {
-        "p1": 1.56,
-        "p2": 2.57,
-        "seenAt": "2026-11-14T19:11:40.794Z",
-        "since": "2026-11-14T19:11:40.794Z"
+        "p1": 1.58,
+        "p2": 2.52,
+        "seenAt": "2026-11-14T23:59:29.992Z",
+        "since": "2026-11-14T23:59:29.992Z"
       },
       "Betano": {
         "p1": 1.53,
         "p2": 2.5,
-        "seenAt": "2026-11-14T19:11:40.794Z",
+        "seenAt": "2026-11-14T23:59:29.992Z",
         "since": "2026-11-14T12:20:19.957Z"
       }
     },
@@ -2925,18 +2825,18 @@
       "p1": 1.4,
       "p2": 3,
       "bookmaker": "bet365",
-      "seenAt": "2026-11-14T19:10:36.106Z"
+      "seenAt": "2026-11-14T23:54:44.666Z"
     },
     "bestOdds": {
       "p1": {
-        "price": 1.45,
-        "bookmaker": "1xBet"
+        "price": 1.44,
+        "bookmaker": "WilliamHill"
       },
       "p2": {
         "price": 3.01,
         "bookmaker": "Pncl"
       },
-      "seenAt": "2026-11-14T19:10:36.106Z"
+      "seenAt": "2026-11-14T23:54:44.666Z"
     },
     "tournamentRound": null,
     "qualifying": false,
@@ -5902,107 +5802,7 @@
       "cpiYear": 2025,
       "category": "Fast"
     },
-    "weather": {
-      "temperature": 10.9,
-      "windSpeed": 0.8,
-      "humidity": 56,
-      "source": "Open-Meteo",
-      "historical": false,
-      "weekRange": "Nov 9 – 15, 2026",
-      "week": [
-        {
-          "date": "2026-11-09",
-          "dow": "Mon",
-          "label": "Nov 9",
-          "code": 61,
-          "hi": 12,
-          "lo": 6,
-          "rain": 38,
-          "wind": 4,
-          "humidity": 87,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-11-10",
-          "dow": "Tue",
-          "label": "Nov 10",
-          "code": 45,
-          "hi": 13,
-          "lo": 8,
-          "rain": 15,
-          "wind": 6,
-          "humidity": 84,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-11-11",
-          "dow": "Wed",
-          "label": "Nov 11",
-          "code": 45,
-          "hi": 13,
-          "lo": 8,
-          "rain": 18,
-          "wind": 6,
-          "humidity": 84,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-11-12",
-          "dow": "Thu",
-          "label": "Nov 12",
-          "code": 63,
-          "hi": 11,
-          "lo": 9,
-          "rain": 100,
-          "wind": 8,
-          "humidity": 94,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-11-13",
-          "dow": "Fri",
-          "label": "Nov 13",
-          "code": 45,
-          "hi": 18,
-          "lo": 8,
-          "rain": 38,
-          "wind": 10,
-          "humidity": 83,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-11-14",
-          "dow": "Sat",
-          "label": "Nov 14",
-          "code": 80,
-          "hi": 11,
-          "lo": 8,
-          "rain": 90,
-          "wind": 13,
-          "humidity": 75,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-11-15",
-          "dow": "Sun",
-          "label": "Nov 15",
-          "code": 3,
-          "hi": 11,
-          "lo": 7,
-          "rain": 10,
-          "wind": 3,
-          "humidity": 72,
-          "isMatch": true,
-          "available": true
-        }
-      ]
-    },
+    "weather": null,
     "live": false,
     "liveStatus": null,
     "liveScore": null,
@@ -6389,7 +6189,7 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-11-14T19:40:36.000Z"
+            "checkedAt": "2026-11-15T00:43:11.000Z"
           }
         }
       }
@@ -6453,55 +6253,55 @@
       "WilliamHill": {
         "p1": 1.44,
         "p2": 2.75,
-        "seenAt": "2026-11-14T19:11:40.794Z",
+        "seenAt": "2026-11-14T23:59:29.992Z",
         "since": "2026-11-14T02:11:45.478Z"
       },
       "bet365": {
         "p1": 1.4,
         "p2": 3,
-        "seenAt": "2026-11-14T19:11:40.794Z",
+        "seenAt": "2026-11-14T23:59:29.992Z",
         "since": "2026-11-14T12:20:19.957Z"
       },
       "Marathon": {
-        "p1": 1.42,
-        "p2": 2.89,
-        "seenAt": "2026-11-14T19:11:40.794Z",
-        "since": "2026-11-14T02:11:45.478Z"
+        "p1": 1.41,
+        "p2": 2.94,
+        "seenAt": "2026-11-14T23:59:29.992Z",
+        "since": "2026-11-14T23:59:29.992Z"
       },
       "Betfair": {
-        "p1": 1.44,
-        "p2": 2.75,
-        "seenAt": "2026-11-14T19:11:40.794Z",
-        "since": "2026-11-14T02:11:45.478Z"
+        "p1": 1.4,
+        "p2": 2.88,
+        "seenAt": "2026-11-14T23:59:29.992Z",
+        "since": "2026-11-14T23:59:29.992Z"
       },
       "BetVictor": {
         "p1": 1.4,
-        "p2": 2.88,
-        "seenAt": "2026-11-14T19:11:40.794Z",
-        "since": "2026-11-14T12:20:19.957Z"
+        "p2": 2.9,
+        "seenAt": "2026-11-14T23:59:29.992Z",
+        "since": "2026-11-14T23:59:29.992Z"
       },
       "Pncl": {
         "p1": 1.44,
         "p2": 3.01,
-        "seenAt": "2026-11-14T19:11:40.794Z",
+        "seenAt": "2026-11-14T23:59:29.992Z",
         "since": "2026-11-14T12:20:19.957Z"
       },
       "Sbo": {
         "p1": 1.36,
         "p2": 2.58,
-        "seenAt": "2026-11-14T19:11:40.794Z",
+        "seenAt": "2026-11-14T23:59:29.992Z",
         "since": "2026-11-14T02:11:45.478Z"
       },
       "1xBet": {
-        "p1": 1.45,
-        "p2": 2.94,
-        "seenAt": "2026-11-14T19:11:40.794Z",
-        "since": "2026-11-14T02:11:45.478Z"
+        "p1": 1.44,
+        "p2": 2.99,
+        "seenAt": "2026-11-14T23:59:29.992Z",
+        "since": "2026-11-14T23:59:29.992Z"
       },
       "Betano": {
         "p1": 1.42,
         "p2": 2.9,
-        "seenAt": "2026-11-14T19:11:40.794Z",
+        "seenAt": "2026-11-14T23:59:29.992Z",
         "since": "2026-11-14T19:11:40.794Z"
       }
     },
@@ -9217,89 +9017,7 @@
       "cpiYear": 2025,
       "category": "Fast"
     },
-    "weather": {
-      "temperature": 11.1,
-      "windSpeed": 3.2,
-      "humidity": 59,
-      "source": "Open-Meteo",
-      "historical": false,
-      "weekRange": "Nov 16 – 22, 2026",
-      "week": [
-        {
-          "date": "2026-11-16",
-          "dow": "Mon",
-          "label": "Nov 16",
-          "code": 61,
-          "hi": 11,
-          "lo": 5,
-          "rain": 13,
-          "wind": 5,
-          "humidity": 78,
-          "isMatch": true,
-          "available": true
-        },
-        {
-          "date": "2026-11-17",
-          "dow": "Tue",
-          "label": "Nov 17",
-          "code": 45,
-          "hi": 10,
-          "lo": 4,
-          "rain": 15,
-          "wind": 3,
-          "humidity": 85,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-11-18",
-          "dow": "Wed",
-          "label": "Nov 18",
-          "code": 45,
-          "hi": 13,
-          "lo": 3,
-          "rain": 8,
-          "wind": 6,
-          "humidity": 85,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-11-19",
-          "dow": "Thu",
-          "label": "Nov 19",
-          "code": 3,
-          "hi": 13,
-          "lo": 6,
-          "rain": 5,
-          "wind": 6,
-          "humidity": 77,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-11-20",
-          "dow": "Fri",
-          "label": "Nov 20",
-          "code": 1,
-          "hi": 16,
-          "lo": 5,
-          "rain": 5,
-          "wind": 4,
-          "humidity": 76,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-11-21",
-          "available": false
-        },
-        {
-          "date": "2026-11-22",
-          "available": false
-        }
-      ]
-    },
+    "weather": null,
     "live": false,
     "liveStatus": null,
     "liveScore": null,
@@ -9606,7 +9324,7 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-11-14T19:40:36.000Z"
+            "checkedAt": "2026-11-15T00:43:11.000Z"
           }
         }
       }
@@ -12752,89 +12470,7 @@
       "cpiYear": 2025,
       "category": "Fast"
     },
-    "weather": {
-      "temperature": 7.4,
-      "windSpeed": 2.2,
-      "humidity": 76,
-      "source": "Open-Meteo",
-      "historical": false,
-      "weekRange": "Nov 16 – 22, 2026",
-      "week": [
-        {
-          "date": "2026-11-16",
-          "dow": "Mon",
-          "label": "Nov 16",
-          "code": 61,
-          "hi": 11,
-          "lo": 5,
-          "rain": 13,
-          "wind": 5,
-          "humidity": 78,
-          "isMatch": true,
-          "available": true
-        },
-        {
-          "date": "2026-11-17",
-          "dow": "Tue",
-          "label": "Nov 17",
-          "code": 45,
-          "hi": 10,
-          "lo": 4,
-          "rain": 15,
-          "wind": 3,
-          "humidity": 85,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-11-18",
-          "dow": "Wed",
-          "label": "Nov 18",
-          "code": 45,
-          "hi": 13,
-          "lo": 3,
-          "rain": 8,
-          "wind": 6,
-          "humidity": 85,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-11-19",
-          "dow": "Thu",
-          "label": "Nov 19",
-          "code": 3,
-          "hi": 13,
-          "lo": 6,
-          "rain": 5,
-          "wind": 6,
-          "humidity": 77,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-11-20",
-          "dow": "Fri",
-          "label": "Nov 20",
-          "code": 1,
-          "hi": 16,
-          "lo": 5,
-          "rain": 5,
-          "wind": 4,
-          "humidity": 76,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-11-21",
-          "available": false
-        },
-        {
-          "date": "2026-11-22",
-          "available": false
-        }
-      ]
-    },
+    "weather": null,
     "live": false,
     "liveStatus": null,
     "liveScore": null,
@@ -13121,6 +12757,10 @@
               [
                 "2026-11-14T09:28:44.218Z",
                 1.294
+              ],
+              [
+                "2026-11-15T00:30:10.444Z",
+                1.291
               ]
             ],
             "p2": [
@@ -13179,6 +12819,10 @@
               [
                 "2026-11-14T09:28:44.218Z",
                 3.89
+              ],
+              [
+                "2026-11-15T00:30:10.444Z",
+                3.92
               ]
             ]
           }
@@ -13269,7 +12913,7 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-11-14T19:40:36.000Z"
+            "checkedAt": "2026-11-15T00:43:11.000Z"
           }
         }
       }
@@ -16372,89 +16016,7 @@
       "cpiYear": 2025,
       "category": "Fast"
     },
-    "weather": {
-      "temperature": 9.4,
-      "windSpeed": 2.6,
-      "humidity": 75,
-      "source": "Open-Meteo",
-      "historical": false,
-      "weekRange": "Nov 16 – 22, 2026",
-      "week": [
-        {
-          "date": "2026-11-16",
-          "dow": "Mon",
-          "label": "Nov 16",
-          "code": 61,
-          "hi": 11,
-          "lo": 5,
-          "rain": 13,
-          "wind": 5,
-          "humidity": 78,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-11-17",
-          "dow": "Tue",
-          "label": "Nov 17",
-          "code": 45,
-          "hi": 10,
-          "lo": 4,
-          "rain": 15,
-          "wind": 3,
-          "humidity": 85,
-          "isMatch": true,
-          "available": true
-        },
-        {
-          "date": "2026-11-18",
-          "dow": "Wed",
-          "label": "Nov 18",
-          "code": 45,
-          "hi": 13,
-          "lo": 3,
-          "rain": 8,
-          "wind": 6,
-          "humidity": 85,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-11-19",
-          "dow": "Thu",
-          "label": "Nov 19",
-          "code": 3,
-          "hi": 13,
-          "lo": 6,
-          "rain": 5,
-          "wind": 6,
-          "humidity": 77,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-11-20",
-          "dow": "Fri",
-          "label": "Nov 20",
-          "code": 1,
-          "hi": 16,
-          "lo": 5,
-          "rain": 5,
-          "wind": 4,
-          "humidity": 76,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-11-21",
-          "available": false
-        },
-        {
-          "date": "2026-11-22",
-          "available": false
-        }
-      ]
-    },
+    "weather": null,
     "live": false,
     "liveStatus": null,
     "liveScore": null,
@@ -16463,97 +16025,7 @@
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/2382_c-alcaraz.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1093_d-medvedev.jpg",
     "tournamentKey": "2794",
-    "oddsMovement": {
-      "chart": {
-        "books": {},
-        "meta": {
-          "Superbet": {
-            "source": "odds-api.io",
-            "group": "soft",
-            "clock": "vendor updatedAt",
-            "note": "no recorded event matched",
-            "checkedAt": "2026-11-15T00:29:16.254Z"
-          },
-          "Napoleon Sports BE (odds-api.io)": {
-            "source": "odds-api.io",
-            "group": "soft",
-            "clock": "vendor updatedAt",
-            "note": "no recorded event matched",
-            "checkedAt": "2026-11-15T00:29:16.254Z"
-          },
-          "Bet105": {
-            "source": "Kibl",
-            "group": "sharp",
-            "clock": "Kibl insert",
-            "note": "no Bet105 fixture matched",
-            "checkedAt": "2026-11-15T00:28:24.000Z"
-          },
-          "Pinnacle (api-tennis)": {
-            "source": "api-tennis",
-            "group": "sharp",
-            "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-30T21:22:18.554Z",
-            "note": "api-tennis lists no odds for this match"
-          },
-          "Betano": {
-            "source": "api-tennis",
-            "group": "soft",
-            "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-30T21:22:18.554Z",
-            "note": "api-tennis lists no odds for this match"
-          },
-          "1xBet": {
-            "source": "api-tennis",
-            "group": "soft",
-            "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-30T21:22:18.554Z",
-            "note": "api-tennis lists no odds for this match"
-          },
-          "BetVictor": {
-            "source": "api-tennis",
-            "group": "soft",
-            "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-30T21:22:18.554Z",
-            "note": "api-tennis lists no odds for this match"
-          },
-          "Betfair Sportsbook (api-tennis)": {
-            "source": "api-tennis",
-            "group": "soft",
-            "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-30T21:22:18.554Z",
-            "note": "api-tennis lists no odds for this match"
-          },
-          "Marathon": {
-            "source": "api-tennis",
-            "group": "soft",
-            "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-30T21:22:18.554Z",
-            "note": "api-tennis lists no odds for this match"
-          },
-          "bet365 (api-tennis)": {
-            "source": "api-tennis",
-            "group": "soft",
-            "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-30T21:22:18.554Z",
-            "note": "api-tennis lists no odds for this match"
-          },
-          "Sbobet": {
-            "source": "api-tennis",
-            "group": "soft",
-            "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-30T21:22:18.554Z",
-            "note": "api-tennis lists no odds for this match"
-          },
-          "William Hill": {
-            "source": "api-tennis",
-            "group": "soft",
-            "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-30T21:22:18.554Z",
-            "note": "api-tennis lists no odds for this match"
-          }
-        }
-      }
-    }
+    "oddsMovement": null
   },
   {
     "id": "upcoming-12179697",
@@ -18858,89 +18330,7 @@
       "cpiYear": 2025,
       "category": "Fast"
     },
-    "weather": {
-      "temperature": 9.4,
-      "windSpeed": 2.6,
-      "humidity": 75,
-      "source": "Open-Meteo",
-      "historical": false,
-      "weekRange": "Nov 16 – 22, 2026",
-      "week": [
-        {
-          "date": "2026-11-16",
-          "dow": "Mon",
-          "label": "Nov 16",
-          "code": 61,
-          "hi": 11,
-          "lo": 5,
-          "rain": 13,
-          "wind": 5,
-          "humidity": 78,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-11-17",
-          "dow": "Tue",
-          "label": "Nov 17",
-          "code": 45,
-          "hi": 10,
-          "lo": 4,
-          "rain": 15,
-          "wind": 3,
-          "humidity": 85,
-          "isMatch": true,
-          "available": true
-        },
-        {
-          "date": "2026-11-18",
-          "dow": "Wed",
-          "label": "Nov 18",
-          "code": 45,
-          "hi": 13,
-          "lo": 3,
-          "rain": 8,
-          "wind": 6,
-          "humidity": 85,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-11-19",
-          "dow": "Thu",
-          "label": "Nov 19",
-          "code": 3,
-          "hi": 13,
-          "lo": 6,
-          "rain": 5,
-          "wind": 6,
-          "humidity": 77,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-11-20",
-          "dow": "Fri",
-          "label": "Nov 20",
-          "code": 1,
-          "hi": 16,
-          "lo": 5,
-          "rain": 5,
-          "wind": 4,
-          "humidity": 76,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-11-21",
-          "available": false
-        },
-        {
-          "date": "2026-11-22",
-          "available": false
-        }
-      ]
-    },
+    "weather": null,
     "live": false,
     "liveStatus": null,
     "liveScore": null,
@@ -18949,97 +18339,7 @@
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/2382_c-alcaraz.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/372_f-cobolli.jpg",
     "tournamentKey": "2794",
-    "oddsMovement": {
-      "chart": {
-        "books": {},
-        "meta": {
-          "Superbet": {
-            "source": "odds-api.io",
-            "group": "soft",
-            "clock": "vendor updatedAt",
-            "note": "no recorded event matched",
-            "checkedAt": "2026-11-15T00:29:16.254Z"
-          },
-          "Napoleon Sports BE (odds-api.io)": {
-            "source": "odds-api.io",
-            "group": "soft",
-            "clock": "vendor updatedAt",
-            "note": "no recorded event matched",
-            "checkedAt": "2026-11-15T00:29:16.254Z"
-          },
-          "Bet105": {
-            "source": "Kibl",
-            "group": "sharp",
-            "clock": "Kibl insert",
-            "note": "no Bet105 fixture matched",
-            "checkedAt": "2026-11-15T00:28:24.000Z"
-          },
-          "Pinnacle (api-tennis)": {
-            "source": "api-tennis",
-            "group": "sharp",
-            "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-30T21:22:18.554Z",
-            "note": "api-tennis lists no odds for this match"
-          },
-          "Betano": {
-            "source": "api-tennis",
-            "group": "soft",
-            "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-30T21:22:18.554Z",
-            "note": "api-tennis lists no odds for this match"
-          },
-          "1xBet": {
-            "source": "api-tennis",
-            "group": "soft",
-            "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-30T21:22:18.554Z",
-            "note": "api-tennis lists no odds for this match"
-          },
-          "BetVictor": {
-            "source": "api-tennis",
-            "group": "soft",
-            "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-30T21:22:18.554Z",
-            "note": "api-tennis lists no odds for this match"
-          },
-          "Betfair Sportsbook (api-tennis)": {
-            "source": "api-tennis",
-            "group": "soft",
-            "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-30T21:22:18.554Z",
-            "note": "api-tennis lists no odds for this match"
-          },
-          "Marathon": {
-            "source": "api-tennis",
-            "group": "soft",
-            "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-30T21:22:18.554Z",
-            "note": "api-tennis lists no odds for this match"
-          },
-          "bet365 (api-tennis)": {
-            "source": "api-tennis",
-            "group": "soft",
-            "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-30T21:22:18.554Z",
-            "note": "api-tennis lists no odds for this match"
-          },
-          "Sbobet": {
-            "source": "api-tennis",
-            "group": "soft",
-            "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-30T21:22:18.554Z",
-            "note": "api-tennis lists no odds for this match"
-          },
-          "William Hill": {
-            "source": "api-tennis",
-            "group": "soft",
-            "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-30T21:22:18.554Z",
-            "note": "api-tennis lists no odds for this match"
-          }
-        }
-      }
-    }
+    "oddsMovement": null
   },
   {
     "id": "upcoming-12179699",
@@ -21892,89 +21192,7 @@
       "cpiYear": 2025,
       "category": "Fast"
     },
-    "weather": {
-      "temperature": 9.4,
-      "windSpeed": 2.6,
-      "humidity": 75,
-      "source": "Open-Meteo",
-      "historical": false,
-      "weekRange": "Nov 16 – 22, 2026",
-      "week": [
-        {
-          "date": "2026-11-16",
-          "dow": "Mon",
-          "label": "Nov 16",
-          "code": 61,
-          "hi": 11,
-          "lo": 5,
-          "rain": 13,
-          "wind": 5,
-          "humidity": 78,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-11-17",
-          "dow": "Tue",
-          "label": "Nov 17",
-          "code": 45,
-          "hi": 10,
-          "lo": 4,
-          "rain": 15,
-          "wind": 3,
-          "humidity": 85,
-          "isMatch": true,
-          "available": true
-        },
-        {
-          "date": "2026-11-18",
-          "dow": "Wed",
-          "label": "Nov 18",
-          "code": 45,
-          "hi": 13,
-          "lo": 3,
-          "rain": 8,
-          "wind": 6,
-          "humidity": 85,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-11-19",
-          "dow": "Thu",
-          "label": "Nov 19",
-          "code": 3,
-          "hi": 13,
-          "lo": 6,
-          "rain": 5,
-          "wind": 6,
-          "humidity": 77,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-11-20",
-          "dow": "Fri",
-          "label": "Nov 20",
-          "code": 1,
-          "hi": 16,
-          "lo": 5,
-          "rain": 5,
-          "wind": 4,
-          "humidity": 76,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-11-21",
-          "available": false
-        },
-        {
-          "date": "2026-11-22",
-          "available": false
-        }
-      ]
-    },
+    "weather": null,
     "live": false,
     "liveStatus": null,
     "liveScore": null,
@@ -21983,97 +21201,7 @@
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/372_f-cobolli.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2846_f-tiafoe.jpg",
     "tournamentKey": "2794",
-    "oddsMovement": {
-      "chart": {
-        "books": {},
-        "meta": {
-          "Superbet": {
-            "source": "odds-api.io",
-            "group": "soft",
-            "clock": "vendor updatedAt",
-            "note": "no recorded event matched",
-            "checkedAt": "2026-11-15T00:29:16.254Z"
-          },
-          "Napoleon Sports BE (odds-api.io)": {
-            "source": "odds-api.io",
-            "group": "soft",
-            "clock": "vendor updatedAt",
-            "note": "no recorded event matched",
-            "checkedAt": "2026-11-15T00:29:16.254Z"
-          },
-          "Bet105": {
-            "source": "Kibl",
-            "group": "sharp",
-            "clock": "Kibl insert",
-            "note": "no Bet105 fixture matched",
-            "checkedAt": "2026-11-15T00:28:24.000Z"
-          },
-          "Pinnacle (api-tennis)": {
-            "source": "api-tennis",
-            "group": "sharp",
-            "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-30T21:22:18.554Z",
-            "note": "api-tennis lists no odds for this match"
-          },
-          "Betano": {
-            "source": "api-tennis",
-            "group": "soft",
-            "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-30T21:22:18.554Z",
-            "note": "api-tennis lists no odds for this match"
-          },
-          "1xBet": {
-            "source": "api-tennis",
-            "group": "soft",
-            "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-30T21:22:18.554Z",
-            "note": "api-tennis lists no odds for this match"
-          },
-          "BetVictor": {
-            "source": "api-tennis",
-            "group": "soft",
-            "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-30T21:22:18.554Z",
-            "note": "api-tennis lists no odds for this match"
-          },
-          "Betfair Sportsbook (api-tennis)": {
-            "source": "api-tennis",
-            "group": "soft",
-            "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-30T21:22:18.554Z",
-            "note": "api-tennis lists no odds for this match"
-          },
-          "Marathon": {
-            "source": "api-tennis",
-            "group": "soft",
-            "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-30T21:22:18.554Z",
-            "note": "api-tennis lists no odds for this match"
-          },
-          "bet365 (api-tennis)": {
-            "source": "api-tennis",
-            "group": "soft",
-            "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-30T21:22:18.554Z",
-            "note": "api-tennis lists no odds for this match"
-          },
-          "Sbobet": {
-            "source": "api-tennis",
-            "group": "soft",
-            "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-30T21:22:18.554Z",
-            "note": "api-tennis lists no odds for this match"
-          },
-          "William Hill": {
-            "source": "api-tennis",
-            "group": "soft",
-            "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-30T21:22:18.554Z",
-            "note": "api-tennis lists no odds for this match"
-          }
-        }
-      }
-    }
+    "oddsMovement": null
   },
   {
     "id": "upcoming-12179700",
@@ -24131,89 +23259,7 @@
       "cpiYear": 2025,
       "category": "Fast"
     },
-    "weather": {
-      "temperature": 9.4,
-      "windSpeed": 2.6,
-      "humidity": 75,
-      "source": "Open-Meteo",
-      "historical": false,
-      "weekRange": "Nov 16 – 22, 2026",
-      "week": [
-        {
-          "date": "2026-11-16",
-          "dow": "Mon",
-          "label": "Nov 16",
-          "code": 61,
-          "hi": 11,
-          "lo": 5,
-          "rain": 13,
-          "wind": 5,
-          "humidity": 78,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-11-17",
-          "dow": "Tue",
-          "label": "Nov 17",
-          "code": 45,
-          "hi": 10,
-          "lo": 4,
-          "rain": 15,
-          "wind": 3,
-          "humidity": 85,
-          "isMatch": true,
-          "available": true
-        },
-        {
-          "date": "2026-11-18",
-          "dow": "Wed",
-          "label": "Nov 18",
-          "code": 45,
-          "hi": 13,
-          "lo": 3,
-          "rain": 8,
-          "wind": 6,
-          "humidity": 85,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-11-19",
-          "dow": "Thu",
-          "label": "Nov 19",
-          "code": 3,
-          "hi": 13,
-          "lo": 6,
-          "rain": 5,
-          "wind": 6,
-          "humidity": 77,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-11-20",
-          "dow": "Fri",
-          "label": "Nov 20",
-          "code": 1,
-          "hi": 16,
-          "lo": 5,
-          "rain": 5,
-          "wind": 4,
-          "humidity": 76,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-11-21",
-          "available": false
-        },
-        {
-          "date": "2026-11-22",
-          "available": false
-        }
-      ]
-    },
+    "weather": null,
     "live": false,
     "liveStatus": null,
     "liveScore": null,
@@ -24222,97 +23268,7 @@
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1759_a-fils.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/50323_r-jodar.jpg",
     "tournamentKey": "2794",
-    "oddsMovement": {
-      "chart": {
-        "books": {},
-        "meta": {
-          "Superbet": {
-            "source": "odds-api.io",
-            "group": "soft",
-            "clock": "vendor updatedAt",
-            "note": "no recorded event matched",
-            "checkedAt": "2026-11-15T00:29:16.254Z"
-          },
-          "Napoleon Sports BE (odds-api.io)": {
-            "source": "odds-api.io",
-            "group": "soft",
-            "clock": "vendor updatedAt",
-            "note": "no recorded event matched",
-            "checkedAt": "2026-11-15T00:29:16.254Z"
-          },
-          "Bet105": {
-            "source": "Kibl",
-            "group": "sharp",
-            "clock": "Kibl insert",
-            "note": "no Bet105 fixture matched",
-            "checkedAt": "2026-11-15T00:28:24.000Z"
-          },
-          "Pinnacle (api-tennis)": {
-            "source": "api-tennis",
-            "group": "sharp",
-            "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-30T21:22:18.554Z",
-            "note": "api-tennis lists no odds for this match"
-          },
-          "Betano": {
-            "source": "api-tennis",
-            "group": "soft",
-            "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-30T21:22:18.554Z",
-            "note": "api-tennis lists no odds for this match"
-          },
-          "1xBet": {
-            "source": "api-tennis",
-            "group": "soft",
-            "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-30T21:22:18.554Z",
-            "note": "api-tennis lists no odds for this match"
-          },
-          "BetVictor": {
-            "source": "api-tennis",
-            "group": "soft",
-            "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-30T21:22:18.554Z",
-            "note": "api-tennis lists no odds for this match"
-          },
-          "Betfair Sportsbook (api-tennis)": {
-            "source": "api-tennis",
-            "group": "soft",
-            "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-30T21:22:18.554Z",
-            "note": "api-tennis lists no odds for this match"
-          },
-          "Marathon": {
-            "source": "api-tennis",
-            "group": "soft",
-            "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-30T21:22:18.554Z",
-            "note": "api-tennis lists no odds for this match"
-          },
-          "bet365 (api-tennis)": {
-            "source": "api-tennis",
-            "group": "soft",
-            "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-30T21:22:18.554Z",
-            "note": "api-tennis lists no odds for this match"
-          },
-          "Sbobet": {
-            "source": "api-tennis",
-            "group": "soft",
-            "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-30T21:22:18.554Z",
-            "note": "api-tennis lists no odds for this match"
-          },
-          "William Hill": {
-            "source": "api-tennis",
-            "group": "soft",
-            "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-30T21:22:18.554Z",
-            "note": "api-tennis lists no odds for this match"
-          }
-        }
-      }
-    }
+    "oddsMovement": null
   },
   {
     "id": "upcoming-12179702",
@@ -27849,89 +26805,7 @@
       "cpiYear": 2025,
       "category": "Fast"
     },
-    "weather": {
-      "temperature": 9.4,
-      "windSpeed": 2.6,
-      "humidity": 75,
-      "source": "Open-Meteo",
-      "historical": false,
-      "weekRange": "Nov 16 – 22, 2026",
-      "week": [
-        {
-          "date": "2026-11-16",
-          "dow": "Mon",
-          "label": "Nov 16",
-          "code": 61,
-          "hi": 11,
-          "lo": 5,
-          "rain": 13,
-          "wind": 5,
-          "humidity": 78,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-11-17",
-          "dow": "Tue",
-          "label": "Nov 17",
-          "code": 45,
-          "hi": 10,
-          "lo": 4,
-          "rain": 15,
-          "wind": 3,
-          "humidity": 85,
-          "isMatch": true,
-          "available": true
-        },
-        {
-          "date": "2026-11-18",
-          "dow": "Wed",
-          "label": "Nov 18",
-          "code": 45,
-          "hi": 13,
-          "lo": 3,
-          "rain": 8,
-          "wind": 6,
-          "humidity": 85,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-11-19",
-          "dow": "Thu",
-          "label": "Nov 19",
-          "code": 3,
-          "hi": 13,
-          "lo": 6,
-          "rain": 5,
-          "wind": 6,
-          "humidity": 77,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-11-20",
-          "dow": "Fri",
-          "label": "Nov 20",
-          "code": 1,
-          "hi": 16,
-          "lo": 5,
-          "rain": 5,
-          "wind": 4,
-          "humidity": 76,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-11-21",
-          "available": false
-        },
-        {
-          "date": "2026-11-22",
-          "available": false
-        }
-      ]
-    },
+    "weather": null,
     "live": false,
     "liveStatus": null,
     "liveScore": null,
@@ -27940,97 +26814,7 @@
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1093_d-medvedev.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2846_f-tiafoe.jpg",
     "tournamentKey": "2794",
-    "oddsMovement": {
-      "chart": {
-        "books": {},
-        "meta": {
-          "Superbet": {
-            "source": "odds-api.io",
-            "group": "soft",
-            "clock": "vendor updatedAt",
-            "note": "no recorded event matched",
-            "checkedAt": "2026-11-15T00:29:16.254Z"
-          },
-          "Napoleon Sports BE (odds-api.io)": {
-            "source": "odds-api.io",
-            "group": "soft",
-            "clock": "vendor updatedAt",
-            "note": "no recorded event matched",
-            "checkedAt": "2026-11-15T00:29:16.254Z"
-          },
-          "Bet105": {
-            "source": "Kibl",
-            "group": "sharp",
-            "clock": "Kibl insert",
-            "note": "no Bet105 fixture matched",
-            "checkedAt": "2026-11-15T00:28:24.000Z"
-          },
-          "Pinnacle (api-tennis)": {
-            "source": "api-tennis",
-            "group": "sharp",
-            "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-30T21:22:18.554Z",
-            "note": "api-tennis lists no odds for this match"
-          },
-          "Betano": {
-            "source": "api-tennis",
-            "group": "soft",
-            "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-30T21:22:18.554Z",
-            "note": "api-tennis lists no odds for this match"
-          },
-          "1xBet": {
-            "source": "api-tennis",
-            "group": "soft",
-            "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-30T21:22:18.554Z",
-            "note": "api-tennis lists no odds for this match"
-          },
-          "BetVictor": {
-            "source": "api-tennis",
-            "group": "soft",
-            "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-30T21:22:18.554Z",
-            "note": "api-tennis lists no odds for this match"
-          },
-          "Betfair Sportsbook (api-tennis)": {
-            "source": "api-tennis",
-            "group": "soft",
-            "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-30T21:22:18.554Z",
-            "note": "api-tennis lists no odds for this match"
-          },
-          "Marathon": {
-            "source": "api-tennis",
-            "group": "soft",
-            "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-30T21:22:18.554Z",
-            "note": "api-tennis lists no odds for this match"
-          },
-          "bet365 (api-tennis)": {
-            "source": "api-tennis",
-            "group": "soft",
-            "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-30T21:22:18.554Z",
-            "note": "api-tennis lists no odds for this match"
-          },
-          "Sbobet": {
-            "source": "api-tennis",
-            "group": "soft",
-            "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-30T21:22:18.554Z",
-            "note": "api-tennis lists no odds for this match"
-          },
-          "William Hill": {
-            "source": "api-tennis",
-            "group": "soft",
-            "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-30T21:22:18.554Z",
-            "note": "api-tennis lists no odds for this match"
-          }
-        }
-      }
-    }
+    "oddsMovement": null
   },
   {
     "id": "upcoming-12179704",
@@ -30034,89 +28818,7 @@
       "cpiYear": 2025,
       "category": "Fast"
     },
-    "weather": {
-      "temperature": 9.4,
-      "windSpeed": 2.6,
-      "humidity": 75,
-      "source": "Open-Meteo",
-      "historical": false,
-      "weekRange": "Nov 16 – 22, 2026",
-      "week": [
-        {
-          "date": "2026-11-16",
-          "dow": "Mon",
-          "label": "Nov 16",
-          "code": 61,
-          "hi": 11,
-          "lo": 5,
-          "rain": 13,
-          "wind": 5,
-          "humidity": 78,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-11-17",
-          "dow": "Tue",
-          "label": "Nov 17",
-          "code": 45,
-          "hi": 10,
-          "lo": 4,
-          "rain": 15,
-          "wind": 3,
-          "humidity": 85,
-          "isMatch": true,
-          "available": true
-        },
-        {
-          "date": "2026-11-18",
-          "dow": "Wed",
-          "label": "Nov 18",
-          "code": 45,
-          "hi": 13,
-          "lo": 3,
-          "rain": 8,
-          "wind": 6,
-          "humidity": 85,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-11-19",
-          "dow": "Thu",
-          "label": "Nov 19",
-          "code": 3,
-          "hi": 13,
-          "lo": 6,
-          "rain": 5,
-          "wind": 6,
-          "humidity": 77,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-11-20",
-          "dow": "Fri",
-          "label": "Nov 20",
-          "code": 1,
-          "hi": 16,
-          "lo": 5,
-          "rain": 5,
-          "wind": 4,
-          "humidity": 76,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-11-21",
-          "available": false
-        },
-        {
-          "date": "2026-11-22",
-          "available": false
-        }
-      ]
-    },
+    "weather": null,
     "live": false,
     "liveStatus": null,
     "liveScore": null,
@@ -30125,97 +28827,7 @@
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/2973_b-shelton.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/50323_r-jodar.jpg",
     "tournamentKey": "2794",
-    "oddsMovement": {
-      "chart": {
-        "books": {},
-        "meta": {
-          "Superbet": {
-            "source": "odds-api.io",
-            "group": "soft",
-            "clock": "vendor updatedAt",
-            "note": "no recorded event matched",
-            "checkedAt": "2026-11-15T00:29:16.254Z"
-          },
-          "Napoleon Sports BE (odds-api.io)": {
-            "source": "odds-api.io",
-            "group": "soft",
-            "clock": "vendor updatedAt",
-            "note": "no recorded event matched",
-            "checkedAt": "2026-11-15T00:29:16.254Z"
-          },
-          "Bet105": {
-            "source": "Kibl",
-            "group": "sharp",
-            "clock": "Kibl insert",
-            "note": "no Bet105 fixture matched",
-            "checkedAt": "2026-11-15T00:28:24.000Z"
-          },
-          "Pinnacle (api-tennis)": {
-            "source": "api-tennis",
-            "group": "sharp",
-            "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-30T21:22:18.554Z",
-            "note": "api-tennis lists no odds for this match"
-          },
-          "Betano": {
-            "source": "api-tennis",
-            "group": "soft",
-            "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-30T21:22:18.554Z",
-            "note": "api-tennis lists no odds for this match"
-          },
-          "1xBet": {
-            "source": "api-tennis",
-            "group": "soft",
-            "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-30T21:22:18.554Z",
-            "note": "api-tennis lists no odds for this match"
-          },
-          "BetVictor": {
-            "source": "api-tennis",
-            "group": "soft",
-            "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-30T21:22:18.554Z",
-            "note": "api-tennis lists no odds for this match"
-          },
-          "Betfair Sportsbook (api-tennis)": {
-            "source": "api-tennis",
-            "group": "soft",
-            "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-30T21:22:18.554Z",
-            "note": "api-tennis lists no odds for this match"
-          },
-          "Marathon": {
-            "source": "api-tennis",
-            "group": "soft",
-            "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-30T21:22:18.554Z",
-            "note": "api-tennis lists no odds for this match"
-          },
-          "bet365 (api-tennis)": {
-            "source": "api-tennis",
-            "group": "soft",
-            "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-30T21:22:18.554Z",
-            "note": "api-tennis lists no odds for this match"
-          },
-          "Sbobet": {
-            "source": "api-tennis",
-            "group": "soft",
-            "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-30T21:22:18.554Z",
-            "note": "api-tennis lists no odds for this match"
-          },
-          "William Hill": {
-            "source": "api-tennis",
-            "group": "soft",
-            "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-30T21:22:18.554Z",
-            "note": "api-tennis lists no odds for this match"
-          }
-        }
-      }
-    }
+    "oddsMovement": null
   },
   {
     "id": "upcoming-12179705",
@@ -33342,89 +31954,7 @@
       "cpiYear": 2025,
       "category": "Fast"
     },
-    "weather": {
-      "temperature": 9.4,
-      "windSpeed": 2.6,
-      "humidity": 75,
-      "source": "Open-Meteo",
-      "historical": false,
-      "weekRange": "Nov 16 – 22, 2026",
-      "week": [
-        {
-          "date": "2026-11-16",
-          "dow": "Mon",
-          "label": "Nov 16",
-          "code": 61,
-          "hi": 11,
-          "lo": 5,
-          "rain": 13,
-          "wind": 5,
-          "humidity": 78,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-11-17",
-          "dow": "Tue",
-          "label": "Nov 17",
-          "code": 45,
-          "hi": 10,
-          "lo": 4,
-          "rain": 15,
-          "wind": 3,
-          "humidity": 85,
-          "isMatch": true,
-          "available": true
-        },
-        {
-          "date": "2026-11-18",
-          "dow": "Wed",
-          "label": "Nov 18",
-          "code": 45,
-          "hi": 13,
-          "lo": 3,
-          "rain": 8,
-          "wind": 6,
-          "humidity": 85,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-11-19",
-          "dow": "Thu",
-          "label": "Nov 19",
-          "code": 3,
-          "hi": 13,
-          "lo": 6,
-          "rain": 5,
-          "wind": 6,
-          "humidity": 77,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-11-20",
-          "dow": "Fri",
-          "label": "Nov 20",
-          "code": 1,
-          "hi": 16,
-          "lo": 5,
-          "rain": 5,
-          "wind": 4,
-          "humidity": 76,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-11-21",
-          "available": false
-        },
-        {
-          "date": "2026-11-22",
-          "available": false
-        }
-      ]
-    },
+    "weather": null,
     "live": false,
     "liveStatus": null,
     "liveScore": null,
@@ -33433,97 +31963,7 @@
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1980_a-zverev.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2973_b-shelton.jpg",
     "tournamentKey": "2794",
-    "oddsMovement": {
-      "chart": {
-        "books": {},
-        "meta": {
-          "Superbet": {
-            "source": "odds-api.io",
-            "group": "soft",
-            "clock": "vendor updatedAt",
-            "note": "no recorded event matched",
-            "checkedAt": "2026-11-15T00:29:16.254Z"
-          },
-          "Napoleon Sports BE (odds-api.io)": {
-            "source": "odds-api.io",
-            "group": "soft",
-            "clock": "vendor updatedAt",
-            "note": "no recorded event matched",
-            "checkedAt": "2026-11-15T00:29:16.254Z"
-          },
-          "Bet105": {
-            "source": "Kibl",
-            "group": "sharp",
-            "clock": "Kibl insert",
-            "note": "no Bet105 fixture matched",
-            "checkedAt": "2026-11-15T00:28:24.000Z"
-          },
-          "Pinnacle (api-tennis)": {
-            "source": "api-tennis",
-            "group": "sharp",
-            "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-30T21:22:18.554Z",
-            "note": "api-tennis lists no odds for this match"
-          },
-          "Betano": {
-            "source": "api-tennis",
-            "group": "soft",
-            "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-30T21:22:18.554Z",
-            "note": "api-tennis lists no odds for this match"
-          },
-          "1xBet": {
-            "source": "api-tennis",
-            "group": "soft",
-            "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-30T21:22:18.554Z",
-            "note": "api-tennis lists no odds for this match"
-          },
-          "BetVictor": {
-            "source": "api-tennis",
-            "group": "soft",
-            "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-30T21:22:18.554Z",
-            "note": "api-tennis lists no odds for this match"
-          },
-          "Betfair Sportsbook (api-tennis)": {
-            "source": "api-tennis",
-            "group": "soft",
-            "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-30T21:22:18.554Z",
-            "note": "api-tennis lists no odds for this match"
-          },
-          "Marathon": {
-            "source": "api-tennis",
-            "group": "soft",
-            "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-30T21:22:18.554Z",
-            "note": "api-tennis lists no odds for this match"
-          },
-          "bet365 (api-tennis)": {
-            "source": "api-tennis",
-            "group": "soft",
-            "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-30T21:22:18.554Z",
-            "note": "api-tennis lists no odds for this match"
-          },
-          "Sbobet": {
-            "source": "api-tennis",
-            "group": "soft",
-            "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-30T21:22:18.554Z",
-            "note": "api-tennis lists no odds for this match"
-          },
-          "William Hill": {
-            "source": "api-tennis",
-            "group": "soft",
-            "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-30T21:22:18.554Z",
-            "note": "api-tennis lists no odds for this match"
-          }
-        }
-      }
-    }
+    "oddsMovement": null
   },
   {
     "id": "upcoming-12179706",
@@ -36681,89 +35121,7 @@
       "cpiYear": 2025,
       "category": "Fast"
     },
-    "weather": {
-      "temperature": 9.4,
-      "windSpeed": 2.6,
-      "humidity": 75,
-      "source": "Open-Meteo",
-      "historical": false,
-      "weekRange": "Nov 16 – 22, 2026",
-      "week": [
-        {
-          "date": "2026-11-16",
-          "dow": "Mon",
-          "label": "Nov 16",
-          "code": 61,
-          "hi": 11,
-          "lo": 5,
-          "rain": 13,
-          "wind": 5,
-          "humidity": 78,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-11-17",
-          "dow": "Tue",
-          "label": "Nov 17",
-          "code": 45,
-          "hi": 10,
-          "lo": 4,
-          "rain": 15,
-          "wind": 3,
-          "humidity": 85,
-          "isMatch": true,
-          "available": true
-        },
-        {
-          "date": "2026-11-18",
-          "dow": "Wed",
-          "label": "Nov 18",
-          "code": 45,
-          "hi": 13,
-          "lo": 3,
-          "rain": 8,
-          "wind": 6,
-          "humidity": 85,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-11-19",
-          "dow": "Thu",
-          "label": "Nov 19",
-          "code": 3,
-          "hi": 13,
-          "lo": 6,
-          "rain": 5,
-          "wind": 6,
-          "humidity": 77,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-11-20",
-          "dow": "Fri",
-          "label": "Nov 20",
-          "code": 1,
-          "hi": 16,
-          "lo": 5,
-          "rain": 5,
-          "wind": 4,
-          "humidity": 76,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-11-21",
-          "available": false
-        },
-        {
-          "date": "2026-11-22",
-          "available": false
-        }
-      ]
-    },
+    "weather": null,
     "live": false,
     "liveStatus": null,
     "liveScore": null,
@@ -36772,97 +35130,7 @@
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1980_a-zverev.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1759_a-fils.jpg",
     "tournamentKey": "2794",
-    "oddsMovement": {
-      "chart": {
-        "books": {},
-        "meta": {
-          "Superbet": {
-            "source": "odds-api.io",
-            "group": "soft",
-            "clock": "vendor updatedAt",
-            "note": "no recorded event matched",
-            "checkedAt": "2026-11-15T00:29:16.254Z"
-          },
-          "Napoleon Sports BE (odds-api.io)": {
-            "source": "odds-api.io",
-            "group": "soft",
-            "clock": "vendor updatedAt",
-            "note": "no recorded event matched",
-            "checkedAt": "2026-11-15T00:29:16.254Z"
-          },
-          "Bet105": {
-            "source": "Kibl",
-            "group": "sharp",
-            "clock": "Kibl insert",
-            "note": "no Bet105 fixture matched",
-            "checkedAt": "2026-11-15T00:28:24.000Z"
-          },
-          "Pinnacle (api-tennis)": {
-            "source": "api-tennis",
-            "group": "sharp",
-            "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-30T21:22:18.554Z",
-            "note": "api-tennis lists no odds for this match"
-          },
-          "Betano": {
-            "source": "api-tennis",
-            "group": "soft",
-            "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-30T21:22:18.554Z",
-            "note": "api-tennis lists no odds for this match"
-          },
-          "1xBet": {
-            "source": "api-tennis",
-            "group": "soft",
-            "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-30T21:22:18.554Z",
-            "note": "api-tennis lists no odds for this match"
-          },
-          "BetVictor": {
-            "source": "api-tennis",
-            "group": "soft",
-            "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-30T21:22:18.554Z",
-            "note": "api-tennis lists no odds for this match"
-          },
-          "Betfair Sportsbook (api-tennis)": {
-            "source": "api-tennis",
-            "group": "soft",
-            "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-30T21:22:18.554Z",
-            "note": "api-tennis lists no odds for this match"
-          },
-          "Marathon": {
-            "source": "api-tennis",
-            "group": "soft",
-            "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-30T21:22:18.554Z",
-            "note": "api-tennis lists no odds for this match"
-          },
-          "bet365 (api-tennis)": {
-            "source": "api-tennis",
-            "group": "soft",
-            "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-30T21:22:18.554Z",
-            "note": "api-tennis lists no odds for this match"
-          },
-          "Sbobet": {
-            "source": "api-tennis",
-            "group": "soft",
-            "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-30T21:22:18.554Z",
-            "note": "api-tennis lists no odds for this match"
-          },
-          "William Hill": {
-            "source": "api-tennis",
-            "group": "soft",
-            "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-30T21:22:18.554Z",
-            "note": "api-tennis lists no odds for this match"
-          }
-        }
-      }
-    }
+    "oddsMovement": null
   },
   {
     "id": "past-12178503",
@@ -36882,7 +35150,7 @@
       "p1": 1.28,
       "p2": 3.75,
       "bookmaker": "bet365",
-      "seenAt": "2026-11-14T19:11:10.199Z"
+      "seenAt": "2026-11-14T23:57:34.238Z"
     },
     "bestOdds": {
       "p1": {
@@ -36893,7 +35161,7 @@
         "price": 4.03,
         "bookmaker": "Pncl"
       },
-      "seenAt": "2026-11-14T19:11:10.199Z"
+      "seenAt": "2026-11-14T23:57:34.238Z"
     },
     "tournamentRound": "ATP Stockholm - 1/8-finals",
     "qualifying": false,
@@ -40169,9 +38437,9 @@
       "category": "Medium"
     },
     "weather": {
-      "temperature": 5.5,
-      "windSpeed": 2.2,
-      "humidity": 91,
+      "temperature": 3.2,
+      "windSpeed": 1.5,
+      "humidity": 98,
       "source": "Open-Meteo",
       "historical": true,
       "weekRange": "Nov 9 – 15, 2026",
@@ -40182,10 +38450,10 @@
           "label": "Nov 9",
           "code": 3,
           "hi": 5,
-          "lo": 3,
-          "rain": 0,
-          "wind": 15,
-          "humidity": 77,
+          "lo": 1,
+          "rain": null,
+          "wind": 14,
+          "humidity": 87,
           "isMatch": false,
           "available": true
         },
@@ -40194,11 +38462,11 @@
           "dow": "Tue",
           "label": "Nov 10",
           "code": 51,
-          "hi": 6,
-          "lo": 5,
-          "rain": 37,
-          "wind": 11,
-          "humidity": 78,
+          "hi": 5,
+          "lo": 2,
+          "rain": null,
+          "wind": 13,
+          "humidity": 83,
           "isMatch": false,
           "available": true
         },
@@ -40207,11 +38475,11 @@
           "dow": "Wed",
           "label": "Nov 11",
           "code": 51,
-          "hi": 6,
-          "lo": 5,
-          "rain": 43,
-          "wind": 10,
-          "humidity": 93,
+          "hi": 4,
+          "lo": 2,
+          "rain": null,
+          "wind": 8,
+          "humidity": 97,
           "isMatch": true,
           "available": true
         },
@@ -40220,11 +38488,11 @@
           "dow": "Thu",
           "label": "Nov 12",
           "code": 55,
-          "hi": 6,
-          "lo": 4,
-          "rain": 100,
-          "wind": 22,
-          "humidity": 89,
+          "hi": 5,
+          "lo": 2,
+          "rain": null,
+          "wind": 15,
+          "humidity": 96,
           "isMatch": false,
           "available": true
         },
@@ -40232,12 +38500,12 @@
           "date": "2026-11-13",
           "dow": "Fri",
           "label": "Nov 13",
-          "code": 61,
-          "hi": 4,
-          "lo": 1,
-          "rain": 84,
-          "wind": 29,
-          "humidity": 87,
+          "code": 75,
+          "hi": 3,
+          "lo": 0,
+          "rain": null,
+          "wind": 25,
+          "humidity": 91,
           "isMatch": false,
           "available": true
         },
@@ -40248,24 +38516,15 @@
           "code": 3,
           "hi": 5,
           "lo": 0,
-          "rain": 0,
-          "wind": 24,
-          "humidity": 77,
+          "rain": null,
+          "wind": 19,
+          "humidity": 81,
           "isMatch": false,
           "available": true
         },
         {
           "date": "2026-11-15",
-          "dow": "Sun",
-          "label": "Nov 15",
-          "code": 3,
-          "hi": 7,
-          "lo": 5,
-          "rain": 25,
-          "wind": 28,
-          "humidity": 83,
-          "isMatch": false,
-          "available": true
+          "available": false
         }
       ]
     },
@@ -41588,7 +39847,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-11-14T19:11:40.795Z"
+      "seenAt": "2026-11-14T23:59:29.992Z"
     },
     "pinClose": {
       "p1": 1.281,
@@ -41644,7 +39903,7 @@
       "p1": 2.75,
       "p2": 1.44,
       "bookmaker": "bet365",
-      "seenAt": "2026-11-14T19:11:10.199Z"
+      "seenAt": "2026-11-14T23:57:34.238Z"
     },
     "bestOdds": {
       "p1": {
@@ -41655,7 +39914,7 @@
         "price": 1.53,
         "bookmaker": "Pncl"
       },
-      "seenAt": "2026-11-14T19:11:10.199Z"
+      "seenAt": "2026-11-14T23:57:34.238Z"
     },
     "tournamentRound": "ATP Stockholm - 1/8-finals",
     "qualifying": false,
@@ -44616,107 +42875,7 @@
       "cpiYear": null,
       "category": "Medium"
     },
-    "weather": {
-      "temperature": 5.5,
-      "windSpeed": 2.2,
-      "humidity": 91,
-      "source": "Open-Meteo",
-      "historical": true,
-      "weekRange": "Nov 9 – 15, 2026",
-      "week": [
-        {
-          "date": "2026-11-09",
-          "dow": "Mon",
-          "label": "Nov 9",
-          "code": 3,
-          "hi": 5,
-          "lo": 3,
-          "rain": 0,
-          "wind": 15,
-          "humidity": 77,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-11-10",
-          "dow": "Tue",
-          "label": "Nov 10",
-          "code": 51,
-          "hi": 6,
-          "lo": 5,
-          "rain": 37,
-          "wind": 11,
-          "humidity": 78,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-11-11",
-          "dow": "Wed",
-          "label": "Nov 11",
-          "code": 51,
-          "hi": 6,
-          "lo": 5,
-          "rain": 43,
-          "wind": 10,
-          "humidity": 93,
-          "isMatch": true,
-          "available": true
-        },
-        {
-          "date": "2026-11-12",
-          "dow": "Thu",
-          "label": "Nov 12",
-          "code": 55,
-          "hi": 6,
-          "lo": 4,
-          "rain": 100,
-          "wind": 22,
-          "humidity": 89,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-11-13",
-          "dow": "Fri",
-          "label": "Nov 13",
-          "code": 61,
-          "hi": 4,
-          "lo": 1,
-          "rain": 84,
-          "wind": 29,
-          "humidity": 87,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-11-14",
-          "dow": "Sat",
-          "label": "Nov 14",
-          "code": 3,
-          "hi": 5,
-          "lo": 0,
-          "rain": 0,
-          "wind": 24,
-          "humidity": 77,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-11-15",
-          "dow": "Sun",
-          "label": "Nov 15",
-          "code": 3,
-          "hi": 7,
-          "lo": 5,
-          "rain": 25,
-          "wind": 28,
-          "humidity": 83,
-          "isMatch": false,
-          "available": true
-        }
-      ]
-    },
+    "weather": null,
     "live": false,
     "liveStatus": null,
     "liveScore": null,
@@ -45928,7 +44087,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-11-14T19:11:40.795Z"
+      "seenAt": "2026-11-14T23:59:29.992Z"
     },
     "pinClose": {
       "p1": 2.85,
@@ -45984,7 +44143,7 @@
       "p1": 5,
       "p2": 1.16,
       "bookmaker": "bet365",
-      "seenAt": "2026-11-14T19:11:10.199Z"
+      "seenAt": "2026-11-14T23:57:34.238Z"
     },
     "bestOdds": {
       "p1": {
@@ -45995,7 +44154,7 @@
         "price": 1.22,
         "bookmaker": "WilliamHill"
       },
-      "seenAt": "2026-11-14T19:11:10.199Z"
+      "seenAt": "2026-11-14T23:57:34.238Z"
     },
     "tournamentRound": "ATP Stockholm - 1/8-finals",
     "qualifying": false,
@@ -48893,9 +47052,9 @@
       "category": "Medium"
     },
     "weather": {
-      "temperature": 5.6,
-      "windSpeed": 2.9,
-      "humidity": 95,
+      "temperature": 3.4,
+      "windSpeed": 4.2,
+      "humidity": 98,
       "source": "Open-Meteo",
       "historical": true,
       "weekRange": "Nov 9 – 15, 2026",
@@ -48906,10 +47065,10 @@
           "label": "Nov 9",
           "code": 3,
           "hi": 5,
-          "lo": 3,
-          "rain": 0,
-          "wind": 15,
-          "humidity": 77,
+          "lo": 1,
+          "rain": null,
+          "wind": 14,
+          "humidity": 87,
           "isMatch": false,
           "available": true
         },
@@ -48918,11 +47077,11 @@
           "dow": "Tue",
           "label": "Nov 10",
           "code": 51,
-          "hi": 6,
-          "lo": 5,
-          "rain": 37,
-          "wind": 11,
-          "humidity": 78,
+          "hi": 5,
+          "lo": 2,
+          "rain": null,
+          "wind": 13,
+          "humidity": 83,
           "isMatch": false,
           "available": true
         },
@@ -48931,11 +47090,11 @@
           "dow": "Wed",
           "label": "Nov 11",
           "code": 51,
-          "hi": 6,
-          "lo": 5,
-          "rain": 43,
-          "wind": 10,
-          "humidity": 93,
+          "hi": 4,
+          "lo": 2,
+          "rain": null,
+          "wind": 8,
+          "humidity": 97,
           "isMatch": true,
           "available": true
         },
@@ -48944,11 +47103,11 @@
           "dow": "Thu",
           "label": "Nov 12",
           "code": 55,
-          "hi": 6,
-          "lo": 4,
-          "rain": 100,
-          "wind": 22,
-          "humidity": 89,
+          "hi": 5,
+          "lo": 2,
+          "rain": null,
+          "wind": 15,
+          "humidity": 96,
           "isMatch": false,
           "available": true
         },
@@ -48956,12 +47115,12 @@
           "date": "2026-11-13",
           "dow": "Fri",
           "label": "Nov 13",
-          "code": 61,
-          "hi": 4,
-          "lo": 1,
-          "rain": 84,
-          "wind": 29,
-          "humidity": 87,
+          "code": 75,
+          "hi": 3,
+          "lo": 0,
+          "rain": null,
+          "wind": 25,
+          "humidity": 91,
           "isMatch": false,
           "available": true
         },
@@ -48972,24 +47131,15 @@
           "code": 3,
           "hi": 5,
           "lo": 0,
-          "rain": 0,
-          "wind": 24,
-          "humidity": 77,
+          "rain": null,
+          "wind": 19,
+          "humidity": 81,
           "isMatch": false,
           "available": true
         },
         {
           "date": "2026-11-15",
-          "dow": "Sun",
-          "label": "Nov 15",
-          "code": 3,
-          "hi": 7,
-          "lo": 5,
-          "rain": 25,
-          "wind": 28,
-          "humidity": 83,
-          "isMatch": false,
-          "available": true
+          "available": false
         }
       ]
     },
@@ -50296,7 +48446,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-11-14T19:11:40.795Z"
+      "seenAt": "2026-11-14T23:59:29.992Z"
     },
     "pinClose": {
       "p1": 5.22,
@@ -50352,7 +48502,7 @@
       "p1": 1.61,
       "p2": 2.3,
       "bookmaker": "bet365",
-      "seenAt": "2026-11-14T19:11:10.199Z"
+      "seenAt": "2026-11-14T23:57:34.238Z"
     },
     "bestOdds": {
       "p1": {
@@ -50363,7 +48513,7 @@
         "price": 2.38,
         "bookmaker": "Betfair"
       },
-      "seenAt": "2026-11-14T19:11:10.199Z"
+      "seenAt": "2026-11-14T23:57:34.238Z"
     },
     "tournamentRound": "ATP Stockholm - 1/8-finals",
     "qualifying": false,
@@ -53451,107 +51601,7 @@
       "cpiYear": null,
       "category": "Medium"
     },
-    "weather": {
-      "temperature": 5.7,
-      "windSpeed": 2.9,
-      "humidity": 93,
-      "source": "Open-Meteo",
-      "historical": true,
-      "weekRange": "Nov 9 – 15, 2026",
-      "week": [
-        {
-          "date": "2026-11-09",
-          "dow": "Mon",
-          "label": "Nov 9",
-          "code": 3,
-          "hi": 5,
-          "lo": 3,
-          "rain": 0,
-          "wind": 15,
-          "humidity": 77,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-11-10",
-          "dow": "Tue",
-          "label": "Nov 10",
-          "code": 51,
-          "hi": 6,
-          "lo": 5,
-          "rain": 37,
-          "wind": 11,
-          "humidity": 78,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-11-11",
-          "dow": "Wed",
-          "label": "Nov 11",
-          "code": 51,
-          "hi": 6,
-          "lo": 5,
-          "rain": 43,
-          "wind": 10,
-          "humidity": 93,
-          "isMatch": true,
-          "available": true
-        },
-        {
-          "date": "2026-11-12",
-          "dow": "Thu",
-          "label": "Nov 12",
-          "code": 55,
-          "hi": 6,
-          "lo": 4,
-          "rain": 100,
-          "wind": 22,
-          "humidity": 89,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-11-13",
-          "dow": "Fri",
-          "label": "Nov 13",
-          "code": 61,
-          "hi": 4,
-          "lo": 1,
-          "rain": 84,
-          "wind": 29,
-          "humidity": 87,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-11-14",
-          "dow": "Sat",
-          "label": "Nov 14",
-          "code": 3,
-          "hi": 5,
-          "lo": 0,
-          "rain": 0,
-          "wind": 24,
-          "humidity": 77,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-11-15",
-          "dow": "Sun",
-          "label": "Nov 15",
-          "code": 3,
-          "hi": 7,
-          "lo": 5,
-          "rain": 25,
-          "wind": 28,
-          "humidity": 83,
-          "isMatch": false,
-          "available": true
-        }
-      ]
-    },
+    "weather": null,
     "live": false,
     "liveStatus": null,
     "liveScore": null,
@@ -54999,7 +53049,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-11-14T19:11:40.795Z"
+      "seenAt": "2026-11-14T23:59:29.992Z"
     },
     "pinClose": {
       "p1": 1.653,
@@ -55049,7 +53099,7 @@
       "p1": 3.2,
       "p2": 1.36,
       "bookmaker": "bet365",
-      "seenAt": "2026-11-14T19:11:10.199Z"
+      "seenAt": "2026-11-14T23:57:34.238Z"
     },
     "bestOdds": {
       "p1": {
@@ -55060,7 +53110,7 @@
         "price": 1.39,
         "bookmaker": "Pncl"
       },
-      "seenAt": "2026-11-14T19:11:10.199Z"
+      "seenAt": "2026-11-14T23:57:34.238Z"
     },
     "tournamentRound": "ATP Stockholm - 1/8-finals",
     "qualifying": false,
@@ -57504,9 +55554,9 @@
       "category": "Medium"
     },
     "weather": {
-      "temperature": 5.7,
-      "windSpeed": 5,
-      "humidity": 95,
+      "temperature": 3.8,
+      "windSpeed": 7,
+      "humidity": 98,
       "source": "Open-Meteo",
       "historical": true,
       "weekRange": "Nov 9 – 15, 2026",
@@ -57517,10 +55567,10 @@
           "label": "Nov 9",
           "code": 3,
           "hi": 5,
-          "lo": 3,
-          "rain": 0,
-          "wind": 15,
-          "humidity": 77,
+          "lo": 1,
+          "rain": null,
+          "wind": 14,
+          "humidity": 87,
           "isMatch": false,
           "available": true
         },
@@ -57529,11 +55579,11 @@
           "dow": "Tue",
           "label": "Nov 10",
           "code": 51,
-          "hi": 6,
-          "lo": 5,
-          "rain": 37,
-          "wind": 11,
-          "humidity": 78,
+          "hi": 5,
+          "lo": 2,
+          "rain": null,
+          "wind": 13,
+          "humidity": 83,
           "isMatch": false,
           "available": true
         },
@@ -57542,11 +55592,11 @@
           "dow": "Wed",
           "label": "Nov 11",
           "code": 51,
-          "hi": 6,
-          "lo": 5,
-          "rain": 43,
-          "wind": 10,
-          "humidity": 93,
+          "hi": 4,
+          "lo": 2,
+          "rain": null,
+          "wind": 8,
+          "humidity": 97,
           "isMatch": true,
           "available": true
         },
@@ -57555,11 +55605,11 @@
           "dow": "Thu",
           "label": "Nov 12",
           "code": 55,
-          "hi": 6,
-          "lo": 4,
-          "rain": 100,
-          "wind": 22,
-          "humidity": 89,
+          "hi": 5,
+          "lo": 2,
+          "rain": null,
+          "wind": 15,
+          "humidity": 96,
           "isMatch": false,
           "available": true
         },
@@ -57567,12 +55617,12 @@
           "date": "2026-11-13",
           "dow": "Fri",
           "label": "Nov 13",
-          "code": 61,
-          "hi": 4,
-          "lo": 1,
-          "rain": 84,
-          "wind": 29,
-          "humidity": 87,
+          "code": 75,
+          "hi": 3,
+          "lo": 0,
+          "rain": null,
+          "wind": 25,
+          "humidity": 91,
           "isMatch": false,
           "available": true
         },
@@ -57583,24 +55633,15 @@
           "code": 3,
           "hi": 5,
           "lo": 0,
-          "rain": 0,
-          "wind": 24,
-          "humidity": 77,
+          "rain": null,
+          "wind": 19,
+          "humidity": 81,
           "isMatch": false,
           "available": true
         },
         {
           "date": "2026-11-15",
-          "dow": "Sun",
-          "label": "Nov 15",
-          "code": 3,
-          "hi": 7,
-          "lo": 5,
-          "rain": 25,
-          "wind": 28,
-          "humidity": 83,
-          "isMatch": false,
-          "available": true
+          "available": false
         }
       ]
     },
@@ -58915,7 +56956,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-11-14T19:11:40.795Z"
+      "seenAt": "2026-11-14T23:59:29.992Z"
     },
     "pinClose": {
       "p1": 3.4,
@@ -58964,7 +57005,7 @@
       "p1": 1.25,
       "p2": 4,
       "bookmaker": "bet365",
-      "seenAt": "2026-11-14T19:11:23.383Z"
+      "seenAt": "2026-11-14T23:59:10.247Z"
     },
     "bestOdds": {
       "p1": {
@@ -58975,7 +57016,7 @@
         "price": 4.27,
         "bookmaker": "Pncl"
       },
-      "seenAt": "2026-11-14T19:11:23.383Z"
+      "seenAt": "2026-11-14T23:59:10.247Z"
     },
     "tournamentRound": "ATP Stockholm - Quarter-finals",
     "qualifying": false,
@@ -62851,7 +60892,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-11-14T19:11:40.795Z"
+      "seenAt": "2026-11-14T23:59:29.992Z"
     },
     "pinClose": {
       "p1": 1.271,
@@ -62907,7 +60948,7 @@
       "p1": 1.44,
       "p2": 2.75,
       "bookmaker": "bet365",
-      "seenAt": "2026-11-14T19:11:23.383Z"
+      "seenAt": "2026-11-14T23:59:10.247Z"
     },
     "bestOdds": {
       "p1": {
@@ -62918,7 +60959,7 @@
         "price": 2.78,
         "bookmaker": "1xBet"
       },
-      "seenAt": "2026-11-14T19:11:23.383Z"
+      "seenAt": "2026-11-14T23:59:10.247Z"
     },
     "tournamentRound": "ATP Stockholm - Quarter-finals",
     "qualifying": false,
@@ -68034,7 +66075,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-11-14T19:11:40.795Z"
+      "seenAt": "2026-11-14T23:59:29.992Z"
     },
     "pinClose": {
       "p1": 1.543,
@@ -68090,7 +66131,7 @@
       "p1": 2,
       "p2": 1.8,
       "bookmaker": "bet365",
-      "seenAt": "2026-11-14T19:11:23.383Z"
+      "seenAt": "2026-11-14T23:59:10.247Z"
     },
     "bestOdds": {
       "p1": {
@@ -68101,7 +66142,7 @@
         "price": 1.92,
         "bookmaker": "Pncl"
       },
-      "seenAt": "2026-11-14T19:11:23.383Z"
+      "seenAt": "2026-11-14T23:59:10.247Z"
     },
     "tournamentRound": "ATP Stockholm - Quarter-finals",
     "qualifying": false,
@@ -72270,7 +70311,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-11-14T19:11:40.795Z"
+      "seenAt": "2026-11-14T23:59:29.992Z"
     },
     "pinClose": {
       "p1": 1.961,
@@ -72326,7 +70367,7 @@
       "p1": 1.44,
       "p2": 2.75,
       "bookmaker": "bet365",
-      "seenAt": "2026-11-14T19:11:23.383Z"
+      "seenAt": "2026-11-14T23:59:10.247Z"
     },
     "bestOdds": {
       "p1": {
@@ -72337,7 +70378,7 @@
         "price": 2.95,
         "bookmaker": "Betano"
       },
-      "seenAt": "2026-11-14T19:11:23.383Z"
+      "seenAt": "2026-11-14T23:59:10.247Z"
     },
     "tournamentRound": "ATP Stockholm - Quarter-finals",
     "qualifying": false,
@@ -75818,7 +73859,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-11-14T19:11:40.795Z"
+      "seenAt": "2026-11-14T23:59:29.992Z"
     },
     "pinClose": {
       "p1": 1.483,
@@ -75856,7 +73897,7 @@
       "p1": 1.61,
       "p2": 2.3,
       "bookmaker": "bet365",
-      "seenAt": "2026-11-14T19:11:33.224Z"
+      "seenAt": "2026-11-14T23:59:22.239Z"
     },
     "bestOdds": {
       "p1": {
@@ -75867,7 +73908,7 @@
         "price": 2.36,
         "bookmaker": "Pncl"
       },
-      "seenAt": "2026-11-14T19:11:33.224Z"
+      "seenAt": "2026-11-14T23:59:22.239Z"
     },
     "tournamentRound": "ATP Stockholm - Semi-finals",
     "qualifying": false,
@@ -81608,7 +79649,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-11-14T19:11:40.795Z"
+      "seenAt": "2026-11-14T23:59:29.992Z"
     },
     "pinClose": {
       "p1": 1.662,
@@ -81664,7 +79705,7 @@
       "p1": 1.61,
       "p2": 2.3,
       "bookmaker": "bet365",
-      "seenAt": "2026-11-14T19:11:33.224Z"
+      "seenAt": "2026-11-14T23:59:22.239Z"
     },
     "bestOdds": {
       "p1": {
@@ -81675,7 +79716,7 @@
         "price": 2.52,
         "bookmaker": "Betano"
       },
-      "seenAt": "2026-11-14T19:11:33.224Z"
+      "seenAt": "2026-11-14T23:59:22.239Z"
     },
     "tournamentRound": "ATP Stockholm - Semi-finals",
     "qualifying": false,
@@ -85830,7 +83871,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-11-14T19:11:40.795Z"
+      "seenAt": "2026-11-14T23:59:29.992Z"
     },
     "pinClose": {
       "p1": 1.625,
@@ -85886,7 +83927,7 @@
       "p1": 1.14,
       "p2": 5.5,
       "bookmaker": "bet365",
-      "seenAt": "2026-11-14T19:11:37.883Z"
+      "seenAt": "2026-11-14T23:59:26.791Z"
     },
     "bestOdds": {
       "p1": {
@@ -85897,7 +83938,7 @@
         "price": 5.87,
         "bookmaker": "Pncl"
       },
-      "seenAt": "2026-11-14T19:11:37.883Z"
+      "seenAt": "2026-11-14T23:59:26.791Z"
     },
     "tournamentRound": "ATP Stockholm - Final",
     "qualifying": false,
@@ -90120,7 +88161,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-11-14T19:11:40.795Z"
+      "seenAt": "2026-11-14T23:59:29.992Z"
     },
     "pinClose": {
       "p1": 1.171,
