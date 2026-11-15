@@ -1,6 +1,19 @@
 {
- "generatedAt": "2026-11-15T23:11:49.202Z",
+ "generatedAt": "2026-11-15T23:31:14.565Z",
  "tournaments": [
+  {
+   "key": "2794",
+   "season": "2026",
+   "name": "Finals - Turin",
+   "file": "news-ticker/2794-2026.json",
+   "items": 4,
+   "byType": {
+    "quote": 2,
+    "report": 2
+   },
+   "latestTimestamp": "2026-11-15T22:51:36.000Z",
+   "updatedAt": "2026-11-15T23:31:14.565Z"
+  },
   {
    "key": "tour",
    "season": "2026",
@@ -12,19 +25,6 @@
    },
    "latestTimestamp": "2026-11-15T21:58:00.000Z",
    "updatedAt": "2026-11-15T22:47:23.201Z"
-  },
-  {
-   "key": "2794",
-   "season": "2026",
-   "name": "Finals - Turin",
-   "file": "news-ticker/2794-2026.json",
-   "items": 3,
-   "byType": {
-    "report": 2,
-    "quote": 1
-   },
-   "latestTimestamp": "2026-11-15T21:40:54.138Z",
-   "updatedAt": "2026-11-15T23:11:49.202Z"
   },
   {
    "key": "1681",
@@ -54,6 +54,37 @@
   }
  ],
  "latest": [
+  {
+   "id": "quote-df7f4ef2255f5b",
+   "type": "quote",
+   "playerId": "1759",
+   "opponentId": "2973",
+   "player": "A. Fils",
+   "opponent": "B. Shelton",
+   "tournament": "Finals - Turin",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-15T22:51:36.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Quotes",
+   "context": "after losing to B. Shelton",
+   "eventKey": "12179703",
+   "won": false,
+   "text": "It's a shame that I started the third set with the handbrake slightly on … I'm staying positive ahead of the next matches",
+   "originalText": "Un peccato che io abbia iniziato il terzo set con il freno a mano un po’ tirato … Resto positivo in vista dei prossimi match",
+   "language": "it",
+   "translated": true,
+   "translationModel": "claude-opus-5-5",
+   "sourceName": "Ubitennis",
+   "sourceUrl": "https://www.ubitennis.com/blog/2026/11/15/atp-finals-fils-il-pubblico-italiano-uno-dei-migliori-al-mondo/",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On his hesitant start to the third set",
+   "sourceHash": "0553368e5720c8c0",
+   "publishedAt": "2026-11-15T23:31:14.565Z",
+   "file": "news-ticker/2794-2026.json"
+  },
   {
    "id": "quote-b12e60772d3693",
    "type": "quote",
@@ -1682,37 +1713,6 @@
    "topic": "On the domestic abuse allegations against him",
    "sourceHash": "960cc7a0d2d7d91d",
    "publishedAt": "2026-11-14T14:44:36.468Z",
-   "file": "news-ticker/tour-2026.json"
-  },
-  {
-   "id": "quote-74899a9a78880b",
-   "type": "quote",
-   "playerId": "2382",
-   "opponentId": null,
-   "player": "C. Alcaraz",
-   "opponent": null,
-   "tournament": "ATP Tour",
-   "tournamentKey": "tour",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-14T13:46:19.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Interviews",
-   "context": null,
-   "eventKey": null,
-   "won": null,
-   "text": "They are exercises to hit, or try to hit, the ball in the sweet spot of the racket, bringing the hand forward … Here the ball travels very fast and you have very little time. If you try to play like on clay, trying to get the ball high over the net, in the end they put you under pressure",
-   "originalText": "Sono esercizi per colpire, o cercare di colpire, la palla nel punto ideale della racchetta, portando la mano in avanti … Qui la palla viaggia molto velocemente e hai pochissimo margine di tempo. Se provi a giocare come sulla terra battuta, cercando di far passare la palla alta sopra la rete, alla fine ti mettono sotto pressione",
-   "language": "it",
-   "translated": true,
-   "translationModel": "claude-opus-5-5",
-   "sourceName": "La Gazzetta dello Sport",
-   "sourceUrl": "https://video.gazzetta.it/video-alcaraz-perche-si-allena-con-una-racchetta-senza-corde-a-torino/7ffa9752-7cb7-4d4e-ab8f-95aa8bbe1xlk",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "topic": "On practicing with a stringless racket in Turin",
-   "sourceHash": "173ed130c658c81e",
-   "publishedAt": "2026-11-14T14:18:13.897Z",
    "file": "news-ticker/tour-2026.json"
   }
  ]
