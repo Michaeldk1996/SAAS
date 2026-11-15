@@ -501,13 +501,14 @@ function marketHtml(c){
   const pop = mk.state === 'ok' ? `${mk.span}; Database rows, Pinnacle closing else Bet365 per match; retirements settle on Pinnacle rules` : '';
   const why = mk.state === 'loading' ? 'Loading.' : mk.state === 'failed' ? 'The market figures did not load.'
     : !a ? `No closing prices joined to ${c.name} in our archive${allYears() ? '' : ' for these years'}.` : `Fewer than ${MIN_MATCHES} priced matches at ${c.name} in these years (n = ${fmtN(a.n)}).`;
+  const pend = mk.state === 'loading';   // still loading = a blank pending figure, never the em dash that means "no data"
   const roiTile = (label, side, v, avg) => {
     const d = ok ? v - avg : 0;
     const col = !ok ? '' : Math.abs(d) < 1 ? 'color:var(--text);' : d > 0 ? 'color:var(--pos);' : 'color:var(--neg);';
-    const fig = ok ? signed(v, 1) + '%' : DASH;
-    const cmp = ok ? (Math.abs(d) < 1 ? 'in line with tour average' : signed(d, 1) + 'pp vs tour avg') : DASH;
+    const fig = ok ? signed(v, 1) + '%' : pend ? '&nbsp;' : DASH;
+    const cmp = ok ? (Math.abs(d) < 1 ? 'in line with tour average' : signed(d, 1) + 'pp vs tour avg') : pend ? '&nbsp;' : DASH;
     const tip = 'Flat-stake yield. Click for the graphics by price band.' + (ok ? ` n = ${fmtN(a.n)} matches at ${c.name}, ${pop}. Tour ${signed(avg, 1)}% over ${fmtN(base.n)} matches.` : ' ' + why);
-    return `<div class="tt-ov-card tt-ov-tile${openable ? ' open tt-ov-seg' : ''}" data-tt-tile="${side}"${openable ? ` onclick="TTOverview.openRoi('${side}')"` : ''} title="${esc(tip)}"><div class="tt-ov-hd"><span class="tt-ov-cap">${label}</span>${openable ? `<span class="tt-ov-lnk">Graphics ${chev()}</span>` : ''}</div><div class="tt-ov-tf${ok ? '' : ' tt-ov-dash'}" style="${col}">${fig}</div><div class="tt-ov-tl">${cmp}</div></div>`;
+    return `<div class="tt-ov-card tt-ov-tile${openable ? ' open tt-ov-seg' : ''}" data-tt-tile="${side}"${openable ? ` onclick="TTOverview.openRoi('${side}')"` : ''} title="${esc(tip)}"><div class="tt-ov-hd"><span class="tt-ov-cap">${label}</span>${openable ? `<span class="tt-ov-lnk">Graphics ${chev()}</span>` : ''}</div><div class="tt-ov-tf${ok || pend ? '' : ' tt-ov-dash'}"${pend && !ok ? ' data-tt-pending="1"' : ''} style="${col}">${fig}</div><div class="tt-ov-tl">${cmp}</div></div>`;
   };
   // Favourite reliability: printed figure; gap = printed − printed tour (adds up on screen); verdict at ±3pp.
   const rel = ok && a.favRel != null && base.favRel != null;
@@ -517,9 +518,9 @@ function marketHtml(c){
   const relTip = rel ? `Share of matches won by the favourite (shorter closing price): ${fr}% over n = ${fmtN(a.nRel)} matches at ${c.name}, ${mk.span}; tour ${tr}% over ${fmtN(base.nRel)}. Retirements count on the official result; walkovers and exact price ties never. Ranked among the ${rk ? rk.of : DASH} events with ${MIN_MATCHES}+ priced matches in the same years.` : why;
   const relTile = `<div class="tt-ov-card tt-ov-tile" data-tt-tile="rel" title="${esc(relTip)}">
       <div class="tt-ov-hd"><span class="tt-ov-cap">Favourite reliability</span><span class="tt-ov-verdict">${rel ? (d >= 3 ? 'Reliable' : d <= -3 ? 'Upset-prone' : 'Moderate') : ''}</span></div>
-      <div class="tt-ov-rel"><span class="f${rel ? '' : ' tt-ov-dash'}">${rel ? fr + '%' : DASH}</span>${rel ? `<span class="gp" style="${gapCol}">${(d >= 0 ? '+' : MINUS) + Math.abs(d).toFixed(1)}pp</span><span class="vs">vs tour</span>` : ''}</div>
+      <div class="tt-ov-rel"><span class="f${rel || pend ? '' : ' tt-ov-dash'}"${pend && !rel ? ' data-tt-pending="1"' : ''}>${rel ? fr + '%' : pend ? '&nbsp;' : DASH}</span>${rel ? `<span class="gp" style="${gapCol}">${(d >= 0 ? '+' : MINUS) + Math.abs(d).toFixed(1)}pp</span><span class="vs">vs tour</span>` : ''}</div>
       <div class="tt-ov-rbar" title="Share of matches won by the favourite. The tick marks the tour average.">${rel ? `<span class="fill" style="width:${Math.max(2, Math.min(100, (fr - 50) / 40 * 100)).toFixed(1)}%;"></span><span class="tick" style="left:${Math.max(2, Math.min(98, (tr - 50) / 40 * 100)).toFixed(1)}%;"></span>` : ''}</div>
-      <div class="tt-ov-rfoot"><span>${rk ? ord(rk.rank) + ' of ' + rk.of + ' tournaments' : DASH}</span><span>${rel ? 'tour ' + tr + '%' : ''}</span></div>
+      <div class="tt-ov-rfoot"><span>${rk ? ord(rk.rank) + ' of ' + rk.of + ' tournaments' : pend ? '&nbsp;' : DASH}</span><span>${rel ? 'tour ' + tr + '%' : ''}</span></div>
     </div>`;
   return line + `<div class="tt-ov-tiles">${roiTile('Backing favourites', 'fav', a && a.roiFav, base && base.roiFav)}${roiTile('Backing underdogs', 'dog', a && a.roiDog, base && base.roiDog)}${relTile}</div>`;
 }

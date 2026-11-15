@@ -106,6 +106,15 @@ const CHECKS = {
     const fav = (w.roiFav > 0 ? '+' : w.roiFav < 0 ? '−' : '') + Math.abs(w.roiFav).toFixed(1) + '%';
     return h.includes(fav) ? null : `fav yield ${fav} not printed for the 2024 window`;
   },
+  'a window still loading prints blank tiles, never the no-data dash'(B){
+    const keep = B.I.state.db; B.I.state.db = undefined; B.I.state.dbP = Promise.resolve();   // rows in flight
+    B.T.setYear('from', 2023); B.T.setYear('to', 2025);
+    const h = B.I.marketHtml(B.I.events().find(t => t.name === 'Wimbledon'));
+    B.T.resetYears(); B.I.state.db = keep; B.I.state.dbP = null;
+    const tiles = h.slice(h.indexOf('tt-ov-tiles'));
+    if (!/data-tt-pending/.test(tiles)) return 'no pending marker on the loading tiles';
+    return text(tiles).includes('—') ? 'a loading tile prints the em dash' : null;
+  },
   "court speed 'own': every speed figure is a dash"(B){
     const c = B.I.events().find(t => t.name === 'Wimbledon');
     const card = B.I.speedCardHtml(c), rail = B.I.railHtml(), box = B.I.speedBoxHtml(), yr = B.I.speedYearsHtml(c);
@@ -201,7 +210,8 @@ const MUTANTS = [
   ['hold from the sheet (count-less)', s => s.replace('return { pct: 100 * e.held / e.games,', 'return { pct: 81,')],
   ['ROI coloured by sign', s => s.replace("const col = !ok ? '' : Math.abs(d) < 1 ? 'color:var(--text);' : d > 0 ? 'color:var(--pos);' : 'color:var(--neg);';", "const col = !ok ? '' : v > 0 ? 'color:var(--pos);' : 'color:var(--neg);';")],
   ['rank over all events (no 30-match floor)', s => s.replace('const ok = Object.values(mk.tours).filter(a => a && a.n >= MIN_MATCHES && a.favRel != null);', 'const ok = Object.values(mk.tours).filter(a => a);')],
-  ['tiles show 0 when there is no data', s => s.replace("const fig = ok ? signed(v, 1) + '%' : DASH;", "const fig = ok ? signed(v, 1) + '%' : '0.0%';")],
+  ['tiles show 0 when there is no data', s => s.replace("const fig = ok ? signed(v, 1) + '%' : pend ? '&nbsp;' : DASH;", "const fig = ok ? signed(v, 1) + '%' : '0.0%';")],
+  ['loading tiles print the no-data dash', s => s.replace("const fig = ok ? signed(v, 1) + '%' : pend ? '&nbsp;' : DASH;", "const fig = ok ? signed(v, 1) + '%' : DASH;")],
   ['rail sorted by speed', s => s.replace('return list.slice().sort((a, b) => (ix.has(a.name)', 'return list.slice().sort((a, b) => 0 || (ix.has(a.name)').replace('function events(){', 'function events(){ return (typeof tourxOverviewEvents === "function" ? tourxOverviewEvents() : catalog()).slice().sort((a, b) => (b.abstractSpeed || 0) - (a.abstractSpeed || 0));')],
   ['empty search hides the heads', s => s.replace('<div class="tt-ov-list"><div class="tt-ov-gh">This week</div>${wk.map(row).join(\'\')}', '<div class="tt-ov-list">${wk.length ? \'<div class="tt-ov-gh">This week</div>\' : \'\'}${wk.map(row).join(\'\')}')],
   ['quote-less card clickable', s => s.replace('<div class="tt-ov-card tt-ov-qcard" data-tt-quotes="0">', '<div class="tt-ov-card tt-ov-qcard" data-tt-quotes="0" onclick="TTOverview.openQuotes()">')],
