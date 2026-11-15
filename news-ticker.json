@@ -1,17 +1,17 @@
 {
- "generatedAt": "2026-11-15T19:26:04.081Z",
+ "generatedAt": "2026-11-15T21:31:32.182Z",
  "tournaments": [
   {
    "key": "tour",
    "season": "2026",
    "name": "ATP Tour",
    "file": "news-ticker/tour-2026.json",
-   "items": 89,
+   "items": 90,
    "byType": {
-    "quote": 89
+    "quote": 90
    },
-   "latestTimestamp": "2026-11-15T18:36:41.000Z",
-   "updatedAt": "2026-11-15T19:26:04.081Z"
+   "latestTimestamp": "2026-11-15T20:53:14.000Z",
+   "updatedAt": "2026-11-15T21:31:32.182Z"
   },
   {
    "key": "2794",
@@ -54,6 +54,37 @@
   }
  ],
  "latest": [
+  {
+   "id": "quote-b79a17d52f6890",
+   "type": "quote",
+   "playerId": "50323",
+   "opponentId": null,
+   "player": "R. Jodar",
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-15T20:53:14.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "I still have this tournament and next week, Davis Cup as well, … I think these two tournaments are very special for me, because representing my country [&#8230;] in the Final 8 will be something unique. … I’m very grateful and lucky to be part of the Team Spain.",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "Tennis Majors",
+   "sourceUrl": "https://www.tennismajors.com/atp/nitto-atp-finals-atp/jodar-confirms-davis-cup-final-8-with-spain-something-unique-867064.html",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On representing Spain at the Davis Cup Final 8",
+   "sourceHash": "1cc28ba6691cba70",
+   "publishedAt": "2026-11-15T21:31:32.182Z",
+   "file": "news-ticker/tour-2026.json"
+  },
   {
    "id": "quote-6d7f0062d70c0f",
    "type": "quote",
@@ -1574,37 +1605,6 @@
    "sourceHash": "aa4083b58ecb51ce",
    "publishedAt": "2026-11-14T15:43:24.367Z",
    "file": "news-ticker/1681-2026.json"
-  },
-  {
-   "id": "quote-e5b8edb48e6251",
-   "type": "quote",
-   "playerId": "1980",
-   "opponentId": null,
-   "player": "A. Zverev",
-   "opponent": null,
-   "tournament": "ATP Tour",
-   "tournamentKey": "tour",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-14T13:00:00.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Interviews",
-   "context": null,
-   "eventKey": null,
-   "won": null,
-   "text": "We shouldn't treat anyone with disrespect. I'm not thinking about Carlos at the moment. I'm thinking about these three young gentlemen here",
-   "originalText": "Wir sollten niemanden respektlos behandeln. Ich denke im Moment nicht an Carlos. Ich denke an diese drei jungen Herren hier",
-   "language": "de",
-   "translated": true,
-   "translationModel": "claude-opus-5-5",
-   "sourceName": "tennisnet.com",
-   "sourceUrl": "https://www.tennisnet.com/news/keine-gedanken-an-alcaraz-zverev-gut-gelaunt-in-turin",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "topic": "On focusing on his group, not Alcaraz",
-   "sourceHash": "de799fc8f7e7b2a3",
-   "publishedAt": "2026-11-14T14:00:06.614Z",
-   "file": "news-ticker/tour-2026.json"
   }
  ]
 }
