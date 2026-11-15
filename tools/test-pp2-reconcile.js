@@ -2016,6 +2016,17 @@ check('every tab and segment renders without leaking NaN/undefined into the DOM'
 // Absent locally (career-history/ is gitignored), so this prints its own skip
 // rather than passing silently — a green run that checked nothing is the bug
 // this whole file exists to prevent.
+// Founder 2026-11-15 ("we need to fix this and have the same total"): the Calendar counts the CAREER RECORD's counted
+// rows — the dated feed rows less every row the record leaves out (walkover, unconfirmed, junior, not in Tennis
+// Explorer…), plus its Tennis Explorer-only rows. With no record overlay that is the dated played feed rows.
+const recordCountedOf = (k) => {
+  const rec = CAREER_REC && CAREER_REC[k], dated = (r) => r && /^\d{4}-\d{2}-\d{2}$/.test(String(r.date));
+  const ch = CAREER_HIST[k] || [];
+  if (!rec) return ch.filter((r) => dated(r) && !r.walkover && !r.unconfirmed).length;
+  const out = new Set((rec.out || []).map((e) => e[0]));
+  return ch.filter((r, i) => !out.has(i) && dated(r) && !r.walkover && !r.unconfirmed).length +
+    (rec.add || []).filter((r) => dated(r) && !r.walkover && !r.unconfirmed).length;
+};
 check('real shards: Σ grid cells = subtitle M, and the priced set is a subset', () => {
   const keys = Object.keys(CAREER_HIST).filter(k => PLAYERS[k] && CAREER_HIST[k].length);
   if (!keys.length) {
@@ -2033,7 +2044,7 @@ check('real shards: Σ grid cells = subtitle M, and the priced set is a subset',
       // founder 2026-10-22 · walkover and unconfirmed rows are listed, never counted: the played spine excludes exactly
       // them, and the listed spine (calSpineAll) carries every dated row
       const dated = datedAll.filter(r => !r.walkover && !r.unconfirmed);
-      assert.strictEqual(rows.length, dated.length, `${k}: spine dropped rows`);
+      assert.strictEqual(rows.length, recordCountedOf(k), `${k}: the Calendar is not the career record's counted rows`);
       assert.strictEqual(I.calSpineAll(p).length, datedAll.length, `${k}: the listed spine dropped a walkover/unconfirmed row`);
       let total = 0;
       I.calGrid(rows).forEach(yr => yr.cells.forEach(c => { total += c.won + c.lost; }));
@@ -2059,9 +2070,7 @@ check('cal-2 · the Calendar spine is the CAREER rows, never the priced archive 
       const p = PLAYERS[k];
       if (!p) continue;
       const rows = I.calSpineFiltered(p);
-      assert.strictEqual(rows.length, (CAREER_HIST[k] || [])
-        .filter(r => r && /^\d{4}-\d{2}-\d{2}$/.test(String(r.date)) && !r.walkover && !r.unconfirmed).length,
-        `${k}: the Calendar spine is not the career match rows`);
+      assert.strictEqual(rows.length, recordCountedOf(k), `${k}: the Calendar spine is not the career record's rows`);
       if (rows.length) {
         assert.notStrictEqual(rows.length, I.calMarketRows(p).length,
           `${k}: the Calendar spine equals the priced archive — ruling cal-2 was reverted`);
