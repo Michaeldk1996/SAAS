@@ -24,7 +24,7 @@ import { reportText, statusItems, h2hAfter, roundWords, breakPoints, mtoSentence
 import { shotSentences } from './match-cards.mjs';
 import { pbpFacts, scoreFacts } from './pbp-facts.mjs';
 import { mergeItems, buildIndex, fileOf, observedTimes, tourKeep } from './ticker-core.mjs';
-import { factSheet, composeReport, assemble, pathLines, physicalParagraph, matchQuotes, roundCode, COMPOSE_VERSION, MAX_COMPOSE_RUNS, COMPOSE_FRESH_HOURS } from './compose.mjs';
+import { factSheet, composeReport, assemble, pathLines, physicalParagraph, matchQuotes, roundCode, COMPOSE_VERSION, MAX_COMPOSE_RUNS, COMPOSE_FRESH_HOURS, COMPOSE_WAIT_MIN, COMPOSE_WAIT_MAX_MIN, COMPOSE_UPGRADE_HOURS } from './compose.mjs';
 
 const require = createRequire(import.meta.url);
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -187,11 +187,11 @@ export async function build({ nowIso, times, rewrite = null, writer = null, apiK
         // published only when every number, name and quotation in it is on that sheet (compose.mjs). Written once per
         // sheet; a sheet that failed is not tried again until its facts change. No key, a failed check or the call
         // cap = the report above (template + voice), exactly as before.
-        let composed = null, phys = { sentences: [], facts: [] };
+        let composed = null, phys = { sentences: [], facts: [] }, waiting = false, keepOld = false;
         if (composeOn) {
           // the same player's earlier matches here, in order, with their medical timeouts ("his second in two matches")
           const sk = (c) => `${c.date || ''} ${c.time || '99:99'}`, earlier = {};
-          for (const k of [w, l]) earlier[k] = allCards.filter((c) => c.id !== m.id && [c.p1Key, c.p2Key].map(String).includes(String(m[k + 'Key'])) && sk(c) < sk(m) && c.finalScore && !c.walkover).sort((a, b) => sk(a).localeCompare(sk(b))).map((c) => ({ rows: mtoByMatch[ek(c)] || [] }));
+          for (const k of [w, l]) earlier[k] = allCards.filter((c) => c.id !== m.id && [c.p1Key, c.p2Key].map(String).includes(String(m[k + 'Key'])) && sk(c) < sk(m) && c.finalScore && !c.walkover).sort((a, b) => sk(a).localeCompare(sk(b))).map((c) => ({ rows: mtoByMatch[ek(c)] || [], round: roundCode(rwOf(c)) }));
           phys = physicalParagraph(m, mtoByMatch[ek(m)], { winner: w, final: rw === 'final', quotes: quoteItems, earlier, seen: cm && cm.text ? cm.text : null });
           const sheet = factSheet({ m, w, l, rep, shard: sp, round: rw, duration: obs && obs.minutes != null ? obs.minutes : null, card: cardsByMatch[ek(m)] || null,
             commentary: cm && cm.text ? cm.text : null, quotes: matchQuotes(m, ek(m), quoteItems, phys.sentences.join(' ')), physical: phys.facts,
@@ -200,7 +200,18 @@ export async function build({ nowIso, times, rewrite = null, writer = null, apiK
           const ageH = (Date.parse(nowIso) - Date.parse(obs && obs.endedAt ? obs.endedAt : startIso(m))) / 3600000;
           const onlyEk = process.env.NEWS_COMPOSE_ONLY ? process.env.NEWS_COMPOSE_ONLY.split(',') : null;   // measurement runs (compose-probe): write this one match, whatever is stored
           const use = (c) => ({ input: ((pc && pc.usage && pc.usage.input) || 0) + ((c.usage && c.usage.input) || 0), output: ((pc && pc.usage && pc.usage.output) || 0) + ((c.usage && c.usage.output) || 0), calls: ((pc && pc.usage && pc.usage.calls) || 0) + c.tries });
-          const frozen = onlyEk ? !onlyEk.includes(String(ek(m))) : pc && (pc.sheetHash === sheet.hash || (pc.runs || 0) >= MAX_COMPOSE_RUNS || !(ageH <= COMPOSE_FRESH_HOURS));
+          // Written ONCE (founder 2026-11-15): when what was seen in the match is on file and 45 minutes have passed,
+          // else at 75 minutes with what there is. A stored report is never written again for new quotes; only a report
+          // whose write failed its check is tried once more. A report of an older version is written again once, while
+          // its match is recent; older ones keep their text as published.
+          const oldC = !pc && prev && prev.composed && prev.composed.body && prev.composed.version !== COMPOSE_VERSION ? prev.composed : null;
+          const ready = ageH * 60 >= (cm && cm.text ? COMPOSE_WAIT_MIN : COMPOSE_WAIT_MAX_MIN);
+          const frozen = onlyEk ? !onlyEk.includes(String(ek(m)))
+            : pc ? (pc.status === 'ok' && !pc.keptAfterFailedRewrite) || pc.sheetHash === sheet.hash || (pc.runs || 0) >= MAX_COMPOSE_RUNS || !(ageH <= COMPOSE_FRESH_HOURS)
+              : oldC ? oldC.upgradeFailed === COMPOSE_VERSION || !(ageH <= COMPOSE_UPGRADE_HOURS)
+                : !ready || !(ageH <= COMPOSE_UPGRADE_HOURS);   // an old match with no written report keeps what it shows: no call is spent on it
+          if (frozen && oldC) keepOld = true;
+          if (!pc && !oldC && !onlyEk && !ready) waiting = true;
           if (frozen) composed = pc;
           else if (composeCalls < (ageH <= COMPOSE_FRESH_HOURS ? COMPOSE_MAX : COMPOSE_MAX - 2)) {
             composeCalls++;
@@ -209,9 +220,14 @@ export async function build({ nowIso, times, rewrite = null, writer = null, apiK
             if (c.status === 'ok') { composed = { version: COMPOSE_VERSION, sheetHash: sheet.hash, status: 'ok', model: c.model, tries: c.tries, runs: ((pc && pc.runs) || 0) + 1, usage: use(c), ...(c.retryWhy ? { retryWhy: c.retryWhy } : {}), body: c.text }; summary.composed = (summary.composed || 0) + 1; }
             else if (c.status === 'failed-check') { composed = { version: COMPOSE_VERSION, sheetHash: sheet.hash, status: 'failed-check', tries: c.tries, runs: ((pc && pc.runs) || 0) + 1, usage: use(c), failures: c.failures.slice(0, 8), ...(pc && pc.body ? { body: pc.body, status: 'ok', keptAfterFailedRewrite: true } : {}) }; summary.composeFailed = (summary.composeFailed || 0) + 1; summary.composeFailures = (summary.composeFailures || []).concat(`${ek(m)}: ${c.failures.slice(0, 3).join(' | ')}`).slice(0, 10); }
             else { composed = pc; summary.voice.errors++; summary.voice.lastError = `compose ${c.status}${c.detail ? ': ' + c.detail : ''}`; }
-          } else composed = pc;
+          } else { composed = pc; if (oldC) keepOld = true; else if (!pc) waiting = true; }
+          // an older report whose new write did not pass keeps its published text and is not tried again
+          if (oldC && !keepOld && !(composed && composed.body)) { keepOld = true; if (composed && composed.status === 'failed-check') oldC.upgradeFailed = COMPOSE_VERSION; }
         }
-        if (composed && composed.body) { baseText = composed.body; text = assemble(composed.body, phys.sentences, rating); summary.reportsComposed = (summary.reportsComposed || 0) + 1; }
+        if (keepOld) { composed = prev.composed; baseText = prev.baseText || prev.text; text = prev.text; summary.reportsComposed = (summary.reportsComposed || 0) + 1; }
+        // not written yet: the result line and the closing lines, no paid call (the full report follows within 75 minutes)
+        else if (waiting) { baseText = plainNames(rep.sentences[0], [{ card: m[w] }, { card: m[l] }]); text = [baseText, ...rating].join('\n\n'); summary.reportsWaiting = (summary.reportsWaiting || 0) + 1; }
+        else if (composed && composed.body) { baseText = composed.body; text = assemble(composed.body, phys.sentences, rating); summary.reportsComposed = (summary.reportsComposed || 0) + 1; }
         else {
           if (composeOn) await voiceStep();
           baseText = text;

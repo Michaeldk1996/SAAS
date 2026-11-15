@@ -7,7 +7,8 @@ ticker page comes through Claude Design). Tests: `tools/test-news-ticker.mjs`, `
 
 ## Scope
 - **Match reports are ATP main draw only** (founder 2026-11-15: "we don't do match reports of qualifying matches"): a qualifying card writes no report and a stored qualifying report leaves the feed on the next build; status items (qualifier, lucky loser) and quotes are unchanged. **Test:** `tools/test-news-ticker-live.mjs` "reports are main draw only".
-- **Length** (founder 2026-11-15, "we can also make them shorter"): the writer is asked for 150 to 200 words, at most two quotes; the check refuses over 260. **Cost is recorded per match**: `composed.usage` (input, output tokens, calls) and `composed.retryWhy` (why a first try was refused). Measured 15 Nov on 6 writes: one try about $0.06, two tries about $0.12.
+- **The short report (founder feedback 2026-11-15, two rounds; replaces "150 to 200 words").** One version per match, 150 to 180 words with the quotes (the check refuses over `WORDS_MAX` 215 words outside quotations). **Test, each one applied to a published report:** the opening sentence is who beat who, the score, the round and what it means, with no head to head (only in a big rivalry: both top 10 and 10+ meetings, as "who now leads the head-to-head 10–7"); one sentence per set at most, no game by game; ONE stat, inside a sentence that links it to the story, never as its own paragraph, never per set, nothing explained after it; every paragraph opens with a link to the one before; no chain of short sentences; the report is about the winner, the loser gets a line only for important information; the archetype is attached to him and the conditions ("like him … in these conditions"), never a general truth; no recap of anybody's week, the next opponent in one clause; the reason of a medical timeout is never mentioned, not even as unknown. The three reports the founder wrote (Stockholm 2026 final and semi-finals) are the models in the writer's instructions (`SYSTEM`). **Cost is recorded per match**: `composed.usage` (input, output tokens, calls) and `composed.retryWhy`.
+- **Follow-up** (founder 2026-11-15): a player who took a medical timeout in his previous match here and none in this one gets a fact on the sheet ("did not call for one in this match"); the body part is named only when the sheet has it.
 - A final's highlights clip has no names in its title ("Stockholm 2026 Final Highlights"): it joins the one finished main-draw singles final of that event. **Test:** `tools/test-ttv-interviews.mjs`.
 - ATP singles, every tournament on the board. **Test:** a doubles card, a non-ATP card and an
   unfinished card produce no item.
@@ -40,24 +41,9 @@ it was, the match in playing order, the numbers that explain it, one or two quot
   most; no comma before "but" or "and" (founder 2026-11-14); the last paragraph starts "All in all,". One retry with the reasons; a second failure keeps the older report
   (template + voice, below) and the same facts are not sent again. The check cannot read meaning: it keeps anything NEW
   out of the text.
-- **Written once per fact sheet** (`composed {version, sheetHash, status, runs, body}` on the item): new facts (a later
-  quote, the next opponent) write it again, at most `MAX_COMPOSE_RUNS` (3) times and only within `COMPOSE_FRESH_HOURS`
-  (36) of the match; `COMPOSE_VERSION` rewrites every report on file. A run writes at most `NEWS_COMPOSE_MAX_CALLS` (6)
-  reports, 2 of them kept for matches that have just finished.
-- **The founder's review of Tirante – Tabilo (2026-11-14) — each is a check or a sheet rule:** the score of every set
-  and the round are in the first sentence; no three sentences of 7 words or fewer in a row; at most `STAT_NUMBERS_MAX`
-  (4) percentages and quality figures ("one number per idea, never two numbers for the same thing"); winners and
-  errors per set are not on the sheet (they live on the closing line); a quote sits inside the paragraph it explains,
-  its speaker named earlier in that paragraph; a player's week is told in order and WITHOUT scores (`pathLines`:
-  "beat Norrie in straight sets (R2)", sets dropped, tiebreaks), and a walkover is said to rest him only when it was
-  his last round; the court's pace is a sheet line (`m.courtSpeed.category`, never a word of ours); each report is
-  offered 4 of the founder's phrases (`PHRASES`, by match id) so no sentence returns in every report.
-- **The physical paragraph** (`physicalParagraph`): a medical timeout is something to follow, never proof of a problem (founder 2026-11-14: "some players just take MTOs for other reasons") — **Test:** does the paragraph or "All in all" say he was hurt, unfit or "did not look 100%"? Only when he spoke about his body on court or what was seen in the match says so about HIM (`PHYSICAL_CONFIRMED`); otherwise it only says it is to follow and counts the timeouts ("already his second medical timeout this week"). Its opener rotates (`PHYSICAL_OPENERS`); the timeout is told by
-  where in the set it came (early / in the middle of / late), not by the game score; the same player's earlier rounds
-  are read for the pattern ("his second medical timeout in two matches" = timeouts in consecutive matches ending with
-  this one); "We do not know the reason yet." unless he spoke about his body on court. Its facts are also a sheet
-  section, so "All in all" names the doubt again.
-- **Added by code, never by the model:** the physical paragraph (before the verdict) and the closing line per player
+- **Written once** (founder 2026-11-15, "Good"): from `COMPOSE_WAIT_MIN` (45) minutes after the match when what was seen in the match is on file, else at `COMPOSE_WAIT_MAX_MIN` (75) with what there is; until then the item is the result line and the closing lines, and no paid call is made. **Test:** does a later quote or clip write a published report again? Never. Only a report whose write failed its check is tried once more (`MAX_COMPOSE_RUNS` 2, within `COMPOSE_FRESH_HOURS` 36). A report of an older `COMPOSE_VERSION` is written again once while its match is at most `COMPOSE_UPGRADE_HOURS` (72) old; older ones keep their published text. A run writes at most `NEWS_COMPOSE_MAX_CALLS` (6) reports.
+- **Physical** (`physicalParagraph`, founder 2026-11-15: "told, not listed"): code adds no paragraph; the facts go on the sheet and the writer tells them in ONE sentence before "All in all". A medical timeout is never proof of a problem (founder 2026-11-14): the fact says so unless he spoke about his body on court or what was seen says it about HIM. Told by where in the set it came, with the count across consecutive matches ("his second medical timeout in two matches").
+- **Added by code, never by the model:** the closing line per player
   (`assemble`).
 - **Test:** `tools/test-news-compose.mjs` (a real match frozen from the live site; every "refuses" check is a mutant of a
   passing text). Read-only measurement on live data: `tools/news-ticker/compose-probe.mjs`.

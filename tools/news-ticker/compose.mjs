@@ -23,17 +23,22 @@ const require = createRequire(import.meta.url);
 const PI = require('../../pbp-integrity.js');
 
 const API_URL = 'https://api.anthropic.com/v1/messages';
-export const COMPOSE_VERSION = 2;        // bump to have every report on file written again
-export const MAX_COMPOSE_RUNS = 3;       // a report is written at most this many times (later quotes, the next opponent)
-export const COMPOSE_FRESH_HOURS = 36;   // after this, new data no longer rewrites a report
+export const COMPOSE_VERSION = 3;        // 3 = the short report of the founder's 15 Nov feedback
+export const MAX_COMPOSE_RUNS = 2;       // a report is written ONCE (founder 2026-11-15); the second run exists only for a report whose first write failed its check
+export const COMPOSE_FRESH_HOURS = 36;   // after this, a report that failed its check is no longer tried again
+// Written once, when the quotes and the highlights are in (founder 2026-11-15: "Good"): from 45 minutes after the match
+// when what was seen in the match is on file, else at 75 minutes with what there is. Until then: the result line.
+export const COMPOSE_WAIT_MIN = 45, COMPOSE_WAIT_MAX_MIN = 75;
+export const COMPOSE_UPGRADE_HOURS = 72; // a report of an older version is written again once, only this long after its match
 export const MAX_QUOTES = 6, QUOTE_MAX_CHARS = 520, QUOTES_IN_TEXT = 2;
-export const WORDS_MIN = 70, WORDS_MAX = 260;   // founder 2026-11-15: "we can also make them shorter" (330 before; the writer is asked for 150 to 200 and a first try a little over is not worth a second paid call; his own model report is about 270 with the rating lines)
-export const STAT_NUMBERS_MAX = 4;       // percentages and quality figures in one report (founder 2026-11-14: "one number per idea")
+export const WORDS_MIN = 70, WORDS_MAX = 215;   // founder 2026-11-15: 150 to 180 words with the quotes; this counts the words outside quotations, with room so a first try a little over is not paid twice
+export const STAT_NUMBERS_MAX = 3;       // founder 2026-11-15: one stat per report (with the player's average when the gap is big)
 export const SHORT_WORDS = 7, SHORT_RUN = 3;   // three sentences of 7 words or fewer in a row read like a machine
 export const PHRASES = ['The first set could easily have gone the other way.', 'From there the match turned completely.', 'It was the same story in the second set.', 'That was the moment of the match.',
   'He really struggled behind his second serve.', 'He was clearly the better player from the baseline.', 'He did not see another break point.', 'He got broken straight back.', 'He served it out.',
-  'It was not his best return performance.', 'That made the difference in the end.', 'Once again he won it with his serve.', 'He stayed calm.', 'Credit to him.'];
+  'It was not his best return performance.', 'That made the difference in the end.', 'He stayed calm.', 'Credit to him.'];
 // a wing is "his best shot" from 10 winners and 1.5 times the other wing; "most of his errors" from 12 and 1.5 times
+export const H2H_MIN_MEETINGS = 10, H2H_TOP_RANK = 10;
 export const BEST_SHOT_MIN = 10, WEAK_SIDE_MIN = 12, BEST_SHOT_RATIO = 1.5;
 
 const num = (v) => (typeof v === 'number' && Number.isFinite(v) ? v : null);
@@ -143,28 +148,12 @@ const earlierOf = (m, key, all, limit) => all.filter((c) => c.id !== m.id && has
 // The way to and from this match inside the tournament. all = every card of the edition we hold; rc(card) = its round code.
 export function pathLines(m, w, all, rc, isFinal) {
   const out = [], wKey = m[w + 'Key'], me = startKey(m), W = surnameOf(m[w]);
-  const week = (key, limit) => earlierOf(m, key, all, limit).map((c) => weekEntry(c, key, rc)).filter(Boolean);
-  const own = week(wKey, me);
-  if (own.length) {
-    out.push(`${W} earlier this week, in order: ${own.map((x) => x.text).join('; ')}.`);
-    const l = w === 'p1' ? 'p2' : 'p1', sets = m.finalScore.sets || [], tbNow = sets.filter((x) => (x.p1 === 7 && x.p2 === 6) || (x.p1 === 6 && x.p2 === 7)).length;
-    const dropped = own.reduce((t, x) => t + x.dropped, 0) + sets.filter((x) => x[l] > x[w]).length, tbs = own.reduce((t, x) => t + x.tiebreaks, 0) + tbNow;
-    out.push(dropped === 0 ? `${W} has not dropped a set this week.` : `${W} has dropped ${pl(dropped, 'set')} this week.`);
-    if (tbs >= 2) out.push(`${W} has played ${tbs} tiebreaks this week, this match included.`);
-  }
+  // no recap of anybody's week (founder 2026-11-15: "we know it from the earlier match reports"): the title, or the next opponent
   if (isFinal) { out.push(`This was the final: ${W} wins the title.`); return out; }
   const next = all.filter((c) => c.id !== m.id && has(c, wKey) && startKey(c) > me).sort((a, b) => startKey(a).localeCompare(startKey(b)))[0];
   if (!next) return out;
-  const oKey = next[other(sideOf(next, wKey)) + 'Key'], O = surnameOf(next[other(sideOf(next, wKey))]);
+  const O = surnameOf(next[other(sideOf(next, wKey))]);
   out.push(`Next for ${W}: ${O}${rc(next) ? ` in ${rc(next)}` : ''}.`);
-  const their = week(oKey, startKey(next));
-  if (their.length) {
-    out.push(`${O} this week, in order: ${their.map((x) => x.text).join('; ')}.`);
-    const d = their.reduce((t, x) => t + x.dropped, 0);
-    out.push(d === 0 ? `${O} has not dropped a set this week.` : `${O} has dropped ${pl(d, 'set')} this week.`);
-    // a walkover says something about freshness only when it was his last round (founder 2026-11-14)
-    if (their.some((x) => x.walkover)) out.push(their[their.length - 1].walkover ? `The last round of ${O} was the walkover: he did not play that day.` : `The walkover of ${O} was not his last round: he played after it, so it does not make him fresher.`);
-  }
   return out;
 }
 
@@ -177,8 +166,6 @@ const ORD_WORD = { 1: 'first', 2: 'second', 3: 'third', 4: 'fourth', 5: 'fifth' 
 // A medical timeout is something to follow, not proof of a problem (founder 2026-11-14: "some players just take MTOs
 // for other reasons"): the opener never says how he looked. "did not look 100%" is used only when it is confirmed —
 // he spoke about his body on court, or what was seen in the match says so.
-export const PHYSICAL_OPENERS = [(N) => `One thing to follow is the body of ${N}.`, (N) => `There is one physical point to follow for ${N}.`, (N) => `The fitness of ${N} is the thing to watch.`, (N) => `Physically, ${N} is something to follow.`];
-export const PHYSICAL_CONFIRMED = (N) => `${N} did not look 100%.`;
 const BODY_SEEN = /\b(injur|physio|trainer|treatment|limp|strapp|taped?|cramp|pain|struggl\w* (?:physically|with his)|not (?:moving|100)|hampered|bothered)/i;
 export function physicalParagraph(m, rows, { winner = null, final = false, quotes = [], earlier = {}, seen = null } = {}) {
   const last = (x) => String(x || '').trim().split(/\s+/).pop().toLowerCase(), mine = (k, rs) => (rs || []).filter((r) => r && !r.retired && last(r.player) === last(m[k]));
@@ -194,9 +181,14 @@ export function physicalParagraph(m, rows, { winner = null, final = false, quote
     if (!by.has(sides[0])) by.set(sides[0], []);
     by.get(sides[0]).push(`${played <= 3 ? 'early in' : (played >= 8 ? 'late in' : 'in the middle of')} the ${SET_WORD[own.length]} set`);
   }
-  if (!by.size) return { sentences: [], facts: [] };
-  const pick = (arr, salt) => arr[parseInt(crypto.createHash('sha256').update(`${m.id}|${salt}`).digest('hex').slice(0, 6), 16) % arr.length];
   const sentences = [], facts = [];
+  // follow-up (founder 2026-11-15: "if we flagged it, the next report says what happened"): a player who took a medical
+  // timeout in his previous match here and none in this one
+  for (const k of ['p1', 'p2']) {
+    if (by.has(k)) continue;
+    const e = (earlier[k] || []).slice(-1)[0];
+    if (e && mine(k, e.rows).length) facts.push(`${surnameOf(m[k])} called the physio (a medical timeout) in his previous match here${e.round ? ` (${e.round})` : ''} and did not call for one in this match. Say exactly that in one clause, nothing about how he looked.`);
+  }
   for (const [k, at] of by) {
     const N = surnameOf(m[k]);
     // the run of matches in a row, ending with this one, in which he took a medical timeout
@@ -206,11 +198,7 @@ export function physicalParagraph(m, rows, { winner = null, final = false, quote
     const what = at.length === 1 ? `${N} called the physio ${at[0]}` : `${N} called the physio ${at.length === 2 ? 'twice' : 'three times'}: ${at.slice(0, -1).join(', ')} and ${at[at.length - 1]}`;
     const q = (quotes || []).find((x) => x && x.interview === 'on-court' && String(x.playerId) === String(m[k + 'Key']) && /\b(physical|body|injur|fitness|health|pain|hand|wrist|arm|shoulder|back|leg|knee|ankle|foot|hip|blister|cramp)/i.test(String(x.topic || '')) && String(x.text || '').length <= 260);
     const confirmed = !!q || (seen && BODY_SEEN.test(String(seen)) && new RegExp(`\\b${N.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`).test(String(seen)));
-    sentences.push(confirmed ? PHYSICAL_CONFIRMED(N) : pick(PHYSICAL_OPENERS, k)(N));
-    sentences.push(`${what.replace(N, 'He')}${pattern ? `, ${pattern}` : ''}.`);   // the opener has just named him
-    sentences.push(q ? `${N} after the match: "${String(q.text).trim()}"` : 'We do not know the reason yet.');
-    if (winner && k !== winner) sentences.push(`Something to follow for the next tournaments of ${N}.`);
-    facts.push(`${what}${pattern ? `, ${pattern}` : ''}. The reason is not known${confirmed ? '' : ' and nothing confirms a physical problem: say only that it is something to follow, never that he is hurt or not fit'}.${winner && k === winner && !final ? (matches >= 2 ? ` In "All in all", mention that it is already his ${ORD_WORD[total] || 'next'} medical timeout this week.` : ' In "All in all", mention the medical timeout in a few words as something to follow.') : ''}`);
+    facts.push(`${what}${pattern ? `, ${pattern}` : ''}.${confirmed ? '' : ' Nothing confirms a physical problem: never write that he is hurt or not fit.'} Never write anything about the reason.${winner && k === winner && !final ? ' He plays again: it is the doubt before his next match.' : ''}`);
   }
   return { sentences, facts };
 }
@@ -233,7 +221,8 @@ export function factSheet({ m, w, l, rep, shard = null, round = null, duration =
   const sets = (m.finalScore.sets || []).map((s) => `${s[w]}–${s[l]}`), tbs = tiebreakScores(m.finalScore);
   const res = [`${W} beat ${L} ${sets.map((s, i) => (tbs[i] ? `${s} (tiebreak ${tbs[i]})` : s)).join(', ')}${m.retired ? ' (retirement)' : ''}${round ? ` in ${roundCode(round)}` : ''}${m.qualifying ? '' : ''}.`];
   const h = rep && rep.fields && rep.fields.h2h;
-  if (h && h.n >= 1) res.push(h.n === 1 ? 'It was their first meeting.' : `Head to head after this match: ${W} ${h.a}, ${L} ${h.n - h.a} (${h.n} meetings).`);
+  // head to head only in a big rivalry (founder 2026-11-15): both in the top 10 and 10 meetings or more
+  if (h && h.n >= H2H_MIN_MEETINGS && [w, l].every((k) => num(m[k + 'Rank']) != null && m[k + 'Rank'] <= H2H_TOP_RANK)) { const a = h.a, b2 = h.n - h.a; res.push(a === b2 ? `Big rivalry: the head-to-head is now level at ${a}–${b2}.` : `Big rivalry: ${a > b2 ? W : L} now leads the head-to-head ${Math.max(a, b2)}–${Math.min(a, b2)}.`); }
   if (num(duration) != null) res.push(`Match time: ${duration} minutes (${Math.floor(duration / 60)}h${String(duration % 60).padStart(2, '0')}).`);
   if (m.surface) res.push(`Surface: ${m.surface}${m.venue && m.venue.indoor ? ', indoors' : ''}.`);
   for (const k of [w, l]) { const r = num(m[k + 'Rank']); if (r != null) res.push(`${surnameOf(m[k])} is ranked ${r}.`); }
@@ -243,12 +232,7 @@ export function factSheet({ m, w, l, rep, shard = null, round = null, duration =
   add('WHAT STOOD OUT (each figure already compared with the player\'s own average where one is given)', rep ? rep.sentences.slice(1).map((s) => [m[w], m[l]].reduce((t, c) => t.split(c).join(surnameOf(c)), s)) : []);
   const wueOk = wueUsable(ms);
   add('BOX SCORE, WHOLE MATCH', [w, l].map((k) => { const s = statLine(ms[k], { wue: wueOk }); return s ? `${surnameOf(m[k])}: ${s}.` : null; }));
-  const per = [];
-  for (const n of Object.keys(m.setStats || {}).sort()) {
-    const ss = m.setStats[n]; if (!ss || !SET_WORD[n]) continue;
-    for (const k of [w, l]) { const s = statLine(ss[k], { wue: false, full: false }); if (s) per.push(`${surnameOf(m[k])} in the ${SET_WORD[n]} set: ${s}.`); }
-  }
-  add('BOX SCORE, PER SET', per);
+  // no box score per set (founder 2026-11-15: "never per set: 17% in one set is built on a handful of points")
   if (card && card.p1 && card.p2) {
     const c = [];
     for (const k of [w, l]) {
@@ -280,11 +264,12 @@ export function factSheet({ m, w, l, rep, shard = null, round = null, duration =
   }
   if (commentary) add('SEEN IN THE MATCH (observations; never name where they come from)', [String(commentary).trim()]);
   add('THE TOURNAMENT', path);
-  if (physical.length) add('PHYSICAL (a paragraph with these facts is added just before your last paragraph: do not write that paragraph, but name the doubt again in one sentence of "All in all")', physical);
+  if (physical.length) add('PHYSICAL (tell it in ONE flowing sentence, as its own short paragraph just before "All in all")', physical);
   const cs = m.courtSpeed && m.courtSpeed.category ? String(m.courtSpeed.category).toLowerCase() : null;
-  // the same court line in every report of a tournament would be the repeated sentence the founder does not want:
-  // one report in three is offered it (by match id)
-  if (cs && m.venue && m.venue.city && parseInt(crypto.createHash('sha256').update(`${m.id}|conditions`).digest('hex').slice(0, 6), 16) % 3 === 0) add('CONDITIONS', [`The court in ${m.venue.city} plays ${cs === 'medium' ? 'at a medium pace' : cs}${m.venue.indoor ? ', indoors' : ''} (our court-speed reading${m.courtSpeed.abstractSpeedYear ? ` from ${m.courtSpeed.abstractSpeedYear}` : ''}; do not print the year).`]);
+  // the conclusion ties his style to the conditions of this tournament (founder 2026-11-15), so every sheet says what they are
+  { const c = []; if (m.surface) c.push(`${m.surface} court${m.venue && m.venue.indoor ? ', indoors' : ''}.`);
+    if (cs && m.venue && m.venue.city) c.push(`The court in ${m.venue.city} plays ${cs === 'medium' ? 'at a medium pace' : cs} (our court-speed reading${m.courtSpeed.abstractSpeedYear ? ` from ${m.courtSpeed.abstractSpeedYear}` : ''}; do not print the year).`);
+    add('CONDITIONS', c); }
   // the founder's phrases: each report is offered a few of them, so no sentence returns in every report
   const ph = PHRASES.map((x, i) => [crypto.createHash('sha256').update(`${m.id}|${i}`).digest('hex'), x]).sort((x, y) => x[0].localeCompare(y[0])).slice(0, 4).map((x) => x[1]);
   add('WORDING (phrases of the founder you may use here, two at most; none is required)', ph);
@@ -378,53 +363,76 @@ export function checkComposed(text, sheet, { surnames = new Set() } = {}) {
 // ---- the writer -----------------------------------------------------------------------------------------------------
 export const SYSTEM = `You write the match report of one ATP tennis match for Stennisfy, in the voice of its founder, who watches every match and writes for bettors in plain English. You receive a FACT SHEET and a list of QUOTES. Write the report from the fact sheet only.
 
-What the report looks like:
-- 4 to 6 paragraphs, separated by one blank line. Plain text: no title, no headings, no bullet points, no bold.
-- First sentence: the winner, the loser, the score of every set and the round, and the head to head when the sheet has it ("Tirante beat Tabilo 7–5, 7–6 in the SF to reach the final."). Then one sentence on what kind of match it was.
-- Then tell the match as a story, in playing order: the moment of the match, who broke first, the break points or set points that were saved, who served for a set and got broken, the tiebreaks. Join what belongs together in one sentence ("he broke for 5–4, got broken straight back when serving for the match but stayed calm and took the tiebreak 7–1"). Never a chain of very short sentences.
-- One paragraph on why he won: the shot or the part of the game that decided it (serve, return, forehand, backhand, baseline), with ONE number that proves it. One short paragraph on the loser when the sheet shows what went wrong for him, again with one number.
-- Quotes: put a quote right after the moment or the idea it explains, inside that paragraph, never as a line on its own. Introduce it naturally ("On that game at 5–4, he said: ...", "He knows it himself: ..."). Use one or two.
-- Last paragraph: it starts with "All in all," and says what went well, what makes the winner dangerous (his style of play when the sheet gives it and it fits how he won), and the conditions when the sheet has a CONDITIONS line. When the sheet has a PHYSICAL section about the winner, name that doubt again in one sentence. Then the next opponent: describe his week from the sheet in the right order of rounds, without any score ("Next is Fritz, who has not dropped a set this week and beat Norrie and Musetti in straight sets on the way."). After a final: the title.
+The report is SHORT and it reads fluently. 150 to 180 words, quotes included. It is a small story told out loud, never a list of facts.
+
+Shape (4 or 5 short paragraphs, one blank line between them, plain text: no title, no headings, no lists, no bold):
+1. One opening sentence: who beat who, the score of every set, the round and what it means when the sheet says it (the title, a first final). No head to head, unless the sheet has a "Big rivalry" line: then add it naturally ("Alcaraz, who now leads the head-to-head 10–7").
+2. The match. One sentence per set at most and only the most important thing of each set: who was the better player, who got the break, a tiebreak. No game by game: never "broke for 3–1", "saved a set point at 5–2", "needed 2 break points". Put one quote here, right after the moment it explains, introduced naturally ("He explained it himself:", "On that game at 5–4 he said:", "Fritz knows he let it slip:").
+3. How the winner played: one flowing sentence that carries ONE number, linked to what came before ("That aggression also showed on serve, where even his second serve was a weapon: he won 77% of the points behind it, far above his average of 53% on hard." / "Once again his serve carried him, with 90% of the points won behind his first serve (!!!) and the forehand did the rest."). When the sheet has a SEEN IN THE MATCH section, use it here and in paragraph 2 for HOW he played (aggressive, stepping in, the forehand, the net), in a few words.
+4. Only when the sheet has a PHYSICAL section: one flowing sentence as its own paragraph ("The one doubt before the final is his body: he called the physio early in the second set, his second medical timeout in two matches." / "Musetti, who needed the physio in the QF, did not call for a medical timeout this time but he never found a way into the match."). Never a word about the reason.
+5. The last paragraph starts with "All in all," and says in one sentence what the win was built on. Then the winner's style of play, attached to HIM and to the conditions of this tournament ("That is what makes a big server and complete baseliner like him so effective in these conditions." / "the two shots that make an attacking baseliner like him so effective in these indoor conditions"), never as a general truth about a type of player. Then the next opponent in one short clause ("Next is Tirante in the final."). After a final: the title, and a second quote about the title may close the report.
+
+How it reads:
+- Simple words, the way you would say it out loud. If a sentence needs to be read twice, rewrite it. No idioms, no tennis-writer words ("lost the thread", "a tight decider", "sealed", "clinical", "dug deep").
+- Plain words for who was better: "Fritz was the better player in the first set and took it 6–2", "was the better player at the end".
+- No chains of short sentences. Join what belongs together and let one sentence lead into the next. Vary the rhythm: one longer sentence, then a shorter one.
+- Every paragraph after the first opens with a link to the one before it ("That aggression also showed", "Once again", "The one doubt before the final is"), not with a name and a fact.
+- A number never stands alone as its own sentence or paragraph: it sits inside a sentence that links it to the story. After the number, stop: do not explain what the number already says.
+- Do not link two facts with "so" when one simply follows the other. Tell it as one natural sentence and vary how you say it from report to report ("The third set stayed on serve all the way to the tiebreak, where Fritz was the better player at the end and took it 7–3." / "Neither player got broken in the third set and Fritz was the better player in the tiebreak, taking it 7–3.").
+- Do not write that he "won it with his serve" unless the serve really was the story of the match. Otherwise just highlight it ("was very solid behind his serve").
+- The report is about the winner. The loser gets a clause or a line only when the sheet has important information about him (the PHYSICAL section, or one clear reason he lost).
+- No recap of anybody's week. No "so dangerous". Do not use the same closing words in every report.
 
 Numbers:
-- One number per idea. Never two numbers for the same thing: first-serve points won, serve quality, unreturned serves and aces all say "he served well", so pick the strongest one and leave the others out.
-- At most 3 percentages or quality figures in the whole report. If a number does not change how the match is read, say it in words or leave it out.
-- Winners and unforced errors of the match are printed under your text. Do not repeat them, and never give winners or errors per set. Use them only when they are the story of the match (for example the errors on one wing).
-- Read the numbers together before you write. Do not praise and criticise the same thing ("returned well" next to "won only 10% of the points on return"). Choose the reading that matches what happened in the match.
-- Percentages only, never the counts behind them. Compare with a player's own average only when the sheet gives that average and the gap is big.
-- Look at the lines about earlier rounds: when the same thing happened before in this tournament (another tiebreak, another three-setter, another medical timeout), say it as a pattern.
+- ONE stat in the whole report: the one that matters most, with the player's own average only when the sheet gives it and the gap is big. A second-serve figure only when that gap is big. Never a figure for one set. Never winners or unforced errors: they are printed under your text.
+- Percentages only, never the counts behind them.
 
 Hard rules:
 - Every fact comes from the fact sheet. Never use your own knowledge of the players, the tournament, rankings, injuries, past seasons or anything that happened after the match. If the sheet does not say it, it is not in the report.
-- Copy every number and every score exactly as the sheet writes it, as digits (3 break points, 7–5, 90%). Scores with an en dash. Do not calculate new numbers.
+- Copy every number and every score exactly as the sheet writes it, as digits (7–5, 90%, 5 games in a row). Scores with an en dash. Do not calculate new numbers.
 - Players by SURNAME ONLY, never a first name or an initial.
-- A quote is copied word for word from the QUOTES list, inside straight double quotation marks ("). You may use a whole quote, or whole sentences from the start of it. Never change, shorten inside, translate or tidy a quote. Nothing else goes inside quotation marks. The speaker's surname must appear earlier in the same paragraph.
+- A quote is copied word for word from the QUOTES list, inside straight double quotation marks ("). You may use a whole quote, or whole sentences from the start of it. Never change, shorten inside, translate or tidy a quote. Nothing else goes inside quotation marks. The speaker's surname must appear earlier in the same paragraph. One quote; two only after a final. In the match paragraph prefer a short quote; after a final, close with the quote that says most about the title.
 - Never say where anything comes from: no "the stats", "the data", "the card", "the commentators", "the highlights", "in his interview", "according to".
-- Never write about a shot (forehand, backhand, volley, net), the body (injury, pain, tired, fresh), nerves, the crowd, the court speed or the balls unless a line of the fact sheet says so. A quote does not count as a line of the fact sheet. Never say a walkover made a player fresh unless the sheet says it was his last round.
-- Do not write the paragraph about a medical timeout: it is added for you. Only the one sentence in "All in all".
+- Never write about a shot (forehand, backhand, volley, net), the body (injury, pain, knee, tired, fresh), nerves, the crowd, the court speed or the balls unless a line of the fact sheet says so. A quote does not count as a line of the fact sheet.
+- About a medical timeout: only what the PHYSICAL section says. Never the reason, never "the reason is not known", never how he looked.
 - No "I", "me", "my", "we" or "our" outside a quote. No questions. No exclamation marks, except "(!!!)" at most once, straight after one number that is truly exceptional.
-- Never put a comma before "but" or before "and".
-- Simple words everybody understands. No idioms, no sports-page phrases ("sealed the deal", "punched his ticket", "dug deep", "clinical"). Past tense for what happened.
-- Do not print a ranking, a dominance ratio or a performance rating.
-- The WORDING section of the sheet offers a few phrases of the founder. Use two of them at most, only where they fit. Do not use any other stock phrase twice.
-- Length: 150 to 200 words when the sheet has the match in playing order, never more than 220; 80 to 130 words when it does not. Four or five short paragraphs. One quote in most reports, two at most. When the sheet has a SEEN IN THE MATCH section, build the story on it and on the playing order together and cut numbers to make room: the report must not get longer.
-- Use what was SEEN IN THE MATCH for how each player played (shots, tactics, net play, how he looked) and keep the claims it makes about a player's season or career to one short clause at most.
+- Past tense for what happened. Do not print a ranking, a dominance ratio or a performance rating.
+- The WORDING section of the sheet offers a few phrases of the founder. Use one at most, only where it fits.
+- When the sheet has no match in playing order: 80 to 120 words.
 
-The founder's own report of one match, as the model for voice, shape and how few numbers it uses (never reuse its facts; the paragraph about the body was added separately there too):
+Three reports written by the founder, as the models for length, voice and flow (never reuse their facts or their exact sentences):
 
 ---
-Tirante beat Tabilo 7–5, 7–6 in the SF to reach the final. Two very close sets decided on a few points and he even got broken when he served for the match.
+Fritz beat Tirante 6–2, 4–6, 7–6 in the final to win the title in Stockholm.
 
-The moment of the match came at the end of the first set. Tirante got the only break for 6–5 and then had to save 3 break points when he served for the set. He saved all 3 and held. The second set was the same story for a long time: he broke for 5–4, got broken straight back when serving for the match but stayed calm and took the tiebreak 7–1. On that game at 5–4, he said: "Well, always we have nervous all the matches … I think I keep believing in me, in my team"
+Fritz was the better player in the first set and took it 6–2. The second set went the other way: Tirante got the break and won it 6–4. Fritz knows he let it slip: "It was a stressful match, … I came out and was playing really well but then let some opportunities slip." The third set stayed on serve all the way to the tiebreak, where Fritz was the better player at the end and took it 7–3.
 
-Once again he won it with his serve. Tirante won 90% of the points behind his first serve (!!!) and Tabilo could do almost nothing against it. When the rally started, the forehand did the rest, especially in the second set, where he was clearly the better player from the baseline. He knows it himself: "With the forehand and with the serve there is a very danger for them."
+Fritz was very solid behind his serve, especially his second serve, where he won 73% of the points, far above his average of 53% on hard.
 
-Tabilo stayed close in both sets but his forehand was not reliable enough, with 15 unforced errors on that side. That made the difference in the end.
+All in all, a deserved title for Fritz, built on a strong start and a serve that held when the final got tight. That is what makes a big server and complete baseliner like him so effective in these conditions. On the title he said: "I have lost a lot of indoor finals but at the same time I didn't look too much into it, because when I won Tokyo, it was pretty much indoors as the roof was closed a lot, … It feels good to get that one now."
+---
+Fritz beat Musetti 6–4, 6–2 in the SF to reach his first final in Stockholm.
 
-All in all, a clutch win from Tirante, built on his serve and his forehand, the two shots that make him so dangerous. The only doubt before the final is physical, after two medical timeouts in two matches. Next is Fritz, who has not dropped a set this week and beat Norrie and Musetti in straight sets on the way.
+Fritz was the more aggressive player from the very first games and never let Musetti settle. One break was enough to take the first set and after Musetti won the first game of the second, Fritz won 5 games in a row to finish the job. He explained it himself: "But the short answer is I just was a lot more aggressive and took on a lot more shots that are a bit uncomfortable for me. But I felt like against him, I have to if I wanted to win."
+
+That aggression also showed on serve, where even his second serve was a weapon: he won 77% of the points behind it, far above his average of 53% on hard.
+
+Musetti, who needed the physio for his knee in the QF, did not call for a medical timeout this time but he never found a way into the match.
+
+All in all, a complete win from Fritz, who attacked from the first game to the last. That is what makes a big server and complete baseliner like him so effective in these conditions. Next is Tirante in the final.
+---
+Tirante beat Tabilo 7–5, 7–6 in the SF to reach his first tour-level final.
+
+Both sets were close and decided on a few points. Tirante got the only break of the first set late to take it 7–5 and in the second he served for the match at 5–4 but could not finish it, as Tabilo broke back. He stayed calm and was clearly the better player in the tiebreak, taking it 7–1. On that game at 5–4 he said: "Well, always we have nervous all the matches … I think I keep believing in me, in my team"
+
+Once again his serve carried him, with 90% of the points won behind his first serve (!!!) and the forehand did the rest.
+
+The one doubt before the final is his body: he called the physio early in the second set, his second medical timeout in two matches.
+
+All in all, a strong win from Tirante, built on his first serve and his forehand, the two shots that make an attacking baseliner like him so effective in these indoor conditions. Next is Fritz in the final.
 ---
 
-Reply with the report text only.`;
+Before you answer, read your report out loud in your head. If it sounds like a list being read, rewrite it. Reply with the report text only.`;
 
 export function userMessage(sheet, failures = null, previous = null) {
   const q = sheet.quotes.length ? sheet.quotes.map((x, i) => `Q${i + 1} — ${x.speaker}${x.topic ? ` (${x.topic})` : ''}: "${x.text}"`).join('\n') : '(none)';

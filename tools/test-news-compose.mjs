@@ -33,12 +33,15 @@ const check = (t) => checkComposed(t, SHEET, { surnames: SUR });
 const refuses = (t, re) => { const c = check(t); yes(!c.ok, 'the text passed'); yes(c.failures.some((f) => re.test(f)), `no failure matching ${re}: ${c.failures.join(' | ')}`); };
 
 console.log('fact sheet');
-await ok('the sheet carries the result, the breaks in playing order, both box scores, the per-set numbers, the shot numbers and the way to the final', () => {
+await ok('the sheet carries the result, the breaks in playing order, both box scores, the shot numbers, the conditions and the next opponent; no per-set numbers, no week recap, no head to head', () => {
   const t = SHEET.text;
   for (const s of ['Fritz beat Musetti 6–4, 6–2 in the SF.', 'First set: Fritz won it 6–4.', 'Fritz broke for 2–1.', 'Fritz broke for 2–1 (he needed 2 break points in that game).', 'Fritz broke for 4–1.',
-    'Fritz in the second set: 2 aces, 0 double faults, first serve in 83%', 'Fritz: serve quality 9.4, 41% unreturned serves, return quality 7.3', 'Next for Fritz: Tirante in the final.',
-    'Fritz earlier this week, in order: beat Norrie in straight sets (the round of 16); walkover from Rune, no match played (the QF).', 'Fritz has not dropped a set this week.', 'Tirante this week, in order: beat Tabilo in straight sets (the SF).', 'Fritz: 13 forehand winners, 6 backhand winners.', 'Musetti: 7 forehand winners, 2 backhand winners.']) yes(t.includes(s), `missing: ${s}`);
+    'Fritz: serve quality 9.4, 41% unreturned serves, return quality 7.3', 'Next for Fritz: Tirante in the final.',
+    'Fritz: 13 forehand winners, 6 backhand winners.', 'Musetti: 7 forehand winners, 2 backhand winners.']) yes(t.includes(s), `missing: ${s}`);
   yes(!/dominance ratio|performance rating/.test(t), 'the closing-line figures are not sheet facts');
+  // founder 2026-11-15: never a figure per set, no recap of the week, head to head only in a big rivalry
+  yes(!/in the (first|second) set: \d+ aces/.test(t) && !/this week/.test(t) && !/[Hh]ead.to.head|first meeting/.test(t), 'per-set numbers, a week recap or a head to head is on the sheet');
+  yes(/## CONDITIONS\n/.test(t), 'every sheet says what the conditions are');
   yes(/(best shot of Fritz|Fritz did most of his damage with the forehand|forehand of Fritz made the difference|winners of Fritz came from the forehand|forehand was the big weapon of Fritz)/.test(t), 'the forehand of Fritz is named (13 to 6), in one of the wordings');
   yes(!/(of|with the) Musetti|Musetti (did|missed|played)|backhand of|errors of Fritz|all or nothing/.test(t.split('## SHOT NUMBERS')[1].split('##')[0].replace(/^Musetti: .*$/gm, '')), 'no best shot under 10 winners, no weak side under 12 errors');
   eq(check(GOOD.replace('and that was enough to take it', 'and his forehand did the damage with 13 forehand winners')).failures, [], 'the forehand may be named when the sheet names it');
@@ -119,32 +122,31 @@ await ok('the first sentence gives the score; no chain of very short sentences; 
   refuses(GOOD.replace('Fritz won it with his serve.', 'Fritz served well. Musetti did not. That was it.'), /very short sentences in a row/);
   refuses(GOOD.replace('He ended with a 9.4 serve quality', 'He had 71% of first serves in, won 81% and 77% behind first and second serve, had 41% unreturned serves and a 9.4 serve quality'), /percentages and quality figures/);
 });
-await ok('the week of a player is told without scores, in order; a walkover that was not his last round does not make him fresh', () => {
-  const t = pathLines(FX.cards.find((c) => c.id === 'past-12179750'), 'p2', FX.cards, rc, false).join('\n');
-  yes(t.includes('Next for Tirante: Fritz in the final.') && t.includes('Fritz this week, in order: beat Norrie in straight sets (the round of 16); walkover from Rune, no match played (the QF); beat Musetti in straight sets (the SF).'), t);
-  yes(t.includes('The walkover of Fritz was not his last round: he played after it, so it does not make him fresher.') && t.includes('Fritz has not dropped a set this week.'), t);
-  yes(!/\d–\d/.test(t), 'no score in the week lines');
-  const cards = FX.cards.filter((c) => c.id !== 'past-12179838');   // without his semi-final, the walkover IS his last round
-  yes(pathLines(FX.cards.find((c) => c.id === 'past-12179750'), 'p2', cards, rc, false).join(' ').includes('The last round of Fritz was the walkover: he did not play that day.'));
+await ok('the way on is one line: the next opponent, or the title; nobody\'s week is told again', () => {
+  const t = pathLines(FX.cards.find((c) => c.id === 'past-12179750'), 'p2', FX.cards, rc, false);
+  eq(t, ['Next for Tirante: Fritz in the final.']);
+  eq(pathLines(FX.cards.find((c) => c.id === 'past-12179750'), 'p2', FX.cards, rc, true), ['This was the final: Tirante wins the title.']);
 });
-await ok('the physical paragraph: where in the set, the pattern across rounds, a changing opener, never a reason we do not have', () => {
+await ok('physical facts: where in the set, the pattern across rounds, the follow-up of a flagged player, never a reason; no paragraph is added by code', () => {
   const T = FX.cards.find((c) => c.id === 'past-12179750');
   const row = (g) => [{ calledAt: '2026-11-13T14:10:19+00:00', player: 'Thiago Agustin Tirante', playerSide: 1, games: g, retired: false }];
   const one = physicalParagraph(T, row([[7, 1], [5, 2]]), { winner: 'p2' });
-  yes(one.sentences.join(' ').includes('He called the physio early in the second set.') && one.sentences.includes('We do not know the reason yet.'), one.sentences.join(' '));
+  eq(one.sentences, [], 'the writer tells it in one sentence: nothing is added by code');
+  yes(one.facts[0].startsWith('Tirante called the physio early in the second set.') && one.facts[0].includes('Never write anything about the reason') && one.facts[0].includes('the doubt before his next match'), one.facts[0]);
   const two = physicalParagraph(T, row([[7, 1], [5, 2]]), { winner: 'p2', earlier: { p2: [{ rows: [] }, { rows: row([[7, 2], [6, 3]]) }] } });
-  yes(two.sentences.join(' ').includes('He called the physio early in the second set, his second medical timeout in two matches.'), two.sentences.join(' '));
-  yes(two.facts[0].includes('his second medical timeout in two matches') && two.facts[0].includes('nothing confirms a physical problem') && two.facts[0].includes('already his second medical timeout this week') && one.facts[0].includes('mention the medical timeout in a few words') && !one.facts[0].includes('already'), two.facts[0]);
-  // founder 2026-11-14: a timeout is something to follow, never "he did not look 100%" unless it is confirmed
-  for (let i = 0; i < 40; i++) yes(!/100%|worry|question mark/.test(physicalParagraph({ ...T, id: 'past-' + i }, row([[7, 1], [5, 2]]), {}).sentences.join(' ')), 'no assumption in the opener');
+  yes(two.facts[0].startsWith('Tirante called the physio early in the second set, his second medical timeout in two matches.') && two.facts[0].includes('Nothing confirms a physical problem'), two.facts[0]);
+  // founder 2026-11-15: "never write the reason is not known"
+  for (const f of [...one.facts, ...two.facts]) yes(!/not known|do not know/i.test(f), f);
   const said = physicalParagraph(T, row([[7, 1], [5, 2]]), { winner: 'p2', seen: 'Tirante was struggling with his back and needed treatment in the second set.' });
-  eq(said.sentences[0], 'Tirante did not look 100%.'); yes(!said.facts[0].includes('nothing confirms'));
-  yes(!/100%/.test(physicalParagraph(T, row([[7, 1], [5, 2]]), { seen: 'Tabilo needed treatment on his back.' }).sentences.join(' ')), 'what was seen about the OTHER player confirms nothing');
-  yes(!physicalParagraph(T, row([[7, 1], [5, 2]]), { winner: 'p2', earlier: { p2: [{ rows: row([[7, 2], [6, 3]]) }, { rows: [] }] } }).sentences.join(' ').includes('in two matches'), 'a match without a timeout in between ends the pattern');
-  eq(physicalParagraph(T, [], {}).sentences, []);
-  const openers = new Set(); for (let i = 0; i < 40; i++) openers.add(physicalParagraph({ ...T, id: 'past-' + i }, row([[7, 1], [5, 2]]), {}).sentences[0]);
-  yes(openers.size >= 3, `the opener changes from report to report (${openers.size})`);
-  yes(/late in the first set/.test(physicalParagraph(T, row([[5], [6]]), {}).sentences.join(' ')) && /in the middle of the first set/.test(physicalParagraph(T, row([[3], [2]]), {}).sentences.join(' ')));
+  yes(!said.facts[0].includes('Nothing confirms'));
+  yes(physicalParagraph(T, row([[7, 1], [5, 2]]), { seen: 'Tabilo needed treatment on his back.' }).facts[0].includes('Nothing confirms'), 'what was seen about the OTHER player confirms nothing');
+  yes(!physicalParagraph(T, row([[7, 1], [5, 2]]), { winner: 'p2', earlier: { p2: [{ rows: row([[7, 2], [6, 3]]) }, { rows: [] }] } }).facts[0].includes('in two matches'), 'a match without a timeout in between ends the pattern');
+  eq(physicalParagraph(T, [], {}).facts, []);
+  yes(/late in the first set/.test(physicalParagraph(T, row([[5], [6]]), {}).facts[0]) && /in the middle of the first set/.test(physicalParagraph(T, row([[3], [2]]), {}).facts[0]));
+  // the follow-up (founder 2026-11-15): flagged in his previous match here, no timeout now -> one fact saying exactly that
+  const f = physicalParagraph(T, [], { winner: 'p2', earlier: { p2: [{ rows: row([[7, 2], [6, 3]]), round: 'the QF' }] } }).facts;
+  eq(f.length, 1); yes(f[0].startsWith('Tirante called the physio (a medical timeout) in his previous match here (the QF) and did not call for one in this match.'), f[0]);
+  eq(physicalParagraph(T, [], { earlier: { p2: [{ rows: row([[7, 2], [6, 3]]) }, { rows: [] }] } }).facts, [], 'only his PREVIOUS match counts');
 });
 await ok('refuses first person, a named source, an initial, a question, markdown and a missing "All in all"', () => {
   refuses(GOOD.replace('The second set was a different Fritz:', 'I think the second set was a different Fritz:'), /first person/);
@@ -211,17 +213,33 @@ await ok('a report that fails the check keeps the older report text, and the sam
   const off = mk(); run(off, '2026-11-13T19:00:00.000Z', 'off');
   eq(item(off, '12179838').text, it.text, 'the fallback is exactly the report built with no writer at all');
 });
-await ok('new facts (a later quote) write the report again, but never after the fresh window', () => {
+await ok('a report is written ONCE: a later quote never writes it again (founder 2026-11-15)', () => {
   const d = mk(); run(d, '2026-11-13T19:00:00.000Z', 'good');
   const q = { ...FX.quotes[0], id: 'quote-new', text: 'This is a new sentence he said about the match afterwards, long enough to count.' };
   fs.writeFileSync(path.join(d, 'news-quotes', '1681-2026.json'), JSON.stringify({ items: FX.quotes.concat(q) }));
-  yes(run(d, '2026-11-13T20:00:00.000Z', 'good').calls >= 1, 'inside the window: written again');
-  eq(item(d, '12179838').composed.runs, 2);
-  fs.writeFileSync(path.join(d, 'news-quotes', '1681-2026.json'), JSON.stringify({ items: FX.quotes.concat(q, { ...q, id: 'quote-newer', text: 'And yet another sentence that arrived days later, also long enough to count here.' }) }));
-  const late = run(d, '2026-11-16T20:00:00.000Z', 'good');
-  eq(item(d, '12179838').composed.runs, 2, 'after 36 hours the text is frozen');
+  eq(run(d, '2026-11-13T20:00:00.000Z', 'good').calls, 0, 'a new quote one hour later: no call');
+  eq(item(d, '12179838').composed.runs, 1);
 });
-
+await ok('before the report is written the item is the result line and the closing lines, with no paid call; at 75 minutes it is written', () => {
+  const d = mk();
+  const start = Date.parse(`${M.date}T${M.time}:00+01:00`);   // the card's Berlin start (CET in November)
+  const early = run(d, new Date(start + 20 * 60000).toISOString(), 'good');
+  const it = item(d, '12179838');
+  if (it) { yes(!it.composed, 'no report yet'); yes(it.text.split('\n\n').length <= 3 && /performance rating/.test(it.text), it.text); }
+  const mineEarly = early.calls;
+  const later = run(d, new Date(start + 76 * 60000).toISOString(), 'good');
+  yes(later.calls >= 1 && item(d, '12179838').composed && item(d, '12179838').composed.runs === 1, `written at 76 minutes (calls ${mineEarly} then ${later.calls})`);
+});
+await ok('a report of the older version is written again once while its match is recent, and keeps its published text when it is not', () => {
+  const d = mk(); run(d, '2026-11-13T19:00:00.000Z', 'good');
+  const f = path.join(d, 'news-ticker', '1681-2026.json'), age = (v, txt) => { const j = JSON.parse(fs.readFileSync(f, 'utf8')); for (const x of j.items) if (x.composed) { x.composed.version = v; if (txt && x.id === 'report-12179838') { x.text = txt; x.baseText = txt; x.composed.body = txt; x.sourceHash = 'old'; } } fs.writeFileSync(f, JSON.stringify(j)); };
+  age(COMPOSE_VERSION - 1, 'OLD TEXT as published');
+  yes(run(d, '2026-11-14T19:00:00.000Z', 'good').calls >= 1, 'one day later: written again under the new version');
+  eq(item(d, '12179838').composed.version, COMPOSE_VERSION); yes(item(d, '12179838').text.startsWith('Fritz beat Musetti'));
+  age(COMPOSE_VERSION - 1, 'OLD TEXT as published');
+  eq(run(d, '2026-11-20T19:00:00.000Z', 'good').calls, 0, 'a week later: nothing is written, not this report and not the ones that failed before');
+  eq(item(d, '12179838').text, 'OLD TEXT as published', 'and the published text stays');
+});
 await ok('a run writes at most NEWS_COMPOSE_MAX_CALLS reports and keeps 2 of them for fresh matches (the rest wait for the next run)', () => {
   const d = mk();
   eq(run(d, '2026-11-13T19:00:00.000Z', 'good', '1').calls, 1, 'three finished matches, one slot');
