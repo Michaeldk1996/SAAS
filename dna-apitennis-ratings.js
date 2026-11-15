@@ -692,7 +692,8 @@ async function main() {
         underPressure: 'copied from surface-ratings.json (TEN-328: one builder, floors, 3-of-4 -> mean*4 estimated:true, Challenger fold-in x0.9); last52 <- last52, sinceBase <- career',
         dominanceRatio: 'returnPtsWon% / (100 − servicePtsWon%)',
       },
-      roster: { source: 'player-index.json hasProfile (names: player-profiles.json, else profiles/<key>.json)', fetchedAt: pp.fetchedAt || null, players: rosterSize },
+      // `source` stays the store's own word ('deployed'): dna-ratings.yml refuses to commit anything else
+      roster: { source: pp.source, from: 'player-index.json hasProfile (names: player-profiles.json, else profiles/<key>.json)', fetchedAt: pp.fetchedAt || null, players: rosterSize },
       rosterSize,
       ratedPlayers: rated.length,
       eloResolved,

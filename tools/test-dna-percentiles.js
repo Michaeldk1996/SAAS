@@ -261,6 +261,9 @@ check('full roster (founder 2026-11-15): every profiled player (player-index has
   assert.ok(/store\.fetchShards\('profiles', missing\)/.test(src) && /refusing a partial roster/.test(src), 'profile names / fail-closed');
   assert.ok(/const roster = fullRoster\(store, pp\.players \|\| \{\}\);/.test(src), 'the eager file is the roster again');
   assert.ok(/rosterSize < ROSTER_MIN/.test(src), 'the shrink guard is gone');
+  // dna-ratings.yml commits only a file whose _meta.roster.source is 'deployed' (it refused 15 Nov 10:24Z when it was not)
+  const wf = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'dna-ratings.yml'), 'utf8');
+  assert.ok(/m\.roster\.source !== "deployed"/.test(wf) && /roster: \{ source: pp\.source,/.test(src), 'the meta no longer says deployed: the workflow refuses to commit');
 });
 
 console.log(`\n${pass} passed, ${fails.length} failed`);
