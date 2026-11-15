@@ -1,17 +1,17 @@
 {
- "generatedAt": "2026-11-14T21:09:13.853Z",
+ "generatedAt": "2026-11-15T00:55:58.924Z",
  "tournaments": [
   {
    "key": "tour",
    "season": "2026",
    "name": "ATP Tour",
    "file": "news-ticker/tour-2026.json",
-   "items": 65,
+   "items": 66,
    "byType": {
-    "quote": 65
+    "quote": 66
    },
    "latestTimestamp": "2026-11-14T20:24:00.000Z",
-   "updatedAt": "2026-11-14T21:09:13.853Z"
+   "updatedAt": "2026-11-15T00:55:58.924Z"
   },
   {
    "key": "1681",
@@ -80,6 +80,37 @@
    "topic": "On the discontinued domestic abuse case against him",
    "sourceHash": "8085f81ef562790e",
    "publishedAt": "2026-11-14T21:09:13.853Z",
+   "file": "news-ticker/tour-2026.json"
+  },
+  {
+   "id": "quote-80349adba6fcf6",
+   "type": "quote",
+   "playerId": "2382",
+   "opponentId": null,
+   "player": "C. Alcaraz",
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-14T16:53:43.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "Vision of a Champion (\"Vision of a Champion",
+   "originalText": "Vision eines Champions („Vision of a Champion",
+   "language": "de",
+   "translated": true,
+   "translationModel": "claude-opus-5-5",
+   "sourceName": "tennis MAGAZIN",
+   "sourceUrl": "https://www.tennismagazin.de/news/atp-finals-arthur-fils-manifestiert-ticket-fuer-turin-schon-2025/",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On Fils's prediction of reaching Turin",
+   "sourceHash": "9aa3f2fd21287838",
+   "publishedAt": "2026-11-15T00:55:58.924Z",
    "file": "news-ticker/tour-2026.json"
   },
   {
@@ -1595,38 +1626,6 @@
    "interview": "on-court",
    "topic": "On serving at 5-4 in the second set",
    "sourceHash": "8cbd5b6cf5d21e48",
-   "publishedAt": "2026-11-13T18:43:33.043Z",
-   "file": "news-ticker/1681-2026.json"
-  },
-  {
-   "id": "quote-d6f321c7e1cfc0",
-   "type": "quote",
-   "playerId": "366",
-   "opponentId": "2982",
-   "player": "T. A. Tirante",
-   "opponent": "A. Tabilo",
-   "tournament": "Stockholm",
-   "tournamentKey": "1681",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-13T15:15:00.000Z",
-   "timestampKind": "observed (Tennis TV published the clip then)",
-   "category": "Quotes",
-   "context": "after beating A. Tabilo",
-   "eventKey": "12179750",
-   "won": true,
-   "text": "Actually, I am very happy to play here.",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "On-court interview",
-   "sourceUrl": "https://www.tennistv.com/videos/4608795/stockholm-2026-sf-thiago-agustin-tirante-interview",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the clip's audio, transcribed by the interviews worker",
-   "interview": "on-court",
-   "topic": "On reaching his first final",
-   "sourceHash": "9c230841ed499a5b",
    "publishedAt": "2026-11-13T18:43:33.043Z",
    "file": "news-ticker/1681-2026.json"
   }
