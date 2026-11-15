@@ -24,7 +24,7 @@ import { reportText, statusItems, h2hAfter, roundWords, breakPoints, mtoSentence
 import { shotSentences } from './match-cards.mjs';
 import { pbpFacts, scoreFacts } from './pbp-facts.mjs';
 import { mergeItems, buildIndex, fileOf, observedTimes, tourKeep } from './ticker-core.mjs';
-import { factSheet, composeReport, assemble, pathLines, physicalParagraph, matchQuotes, roundCode, COMPOSE_VERSION, MAX_COMPOSE_RUNS, COMPOSE_FRESH_HOURS, COMPOSE_WAIT_MIN, COMPOSE_WAIT_MAX_MIN, COMPOSE_UPGRADE_HOURS } from './compose.mjs';
+import { factSheet, composeReport, assemble, pathLines, physicalParagraph, matchQuotes, roundCode, milestoneLines, COMPOSE_VERSION, MAX_COMPOSE_RUNS, COMPOSE_FRESH_HOURS, COMPOSE_WAIT_MIN, COMPOSE_WAIT_MAX_MIN, COMPOSE_UPGRADE_HOURS } from './compose.mjs';
 
 const require = createRequire(import.meta.url);
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -197,7 +197,8 @@ export async function build({ nowIso, times, rewrite = null, writer = null, apiK
           phys = physicalParagraph(m, mtoByMatch[ek(m)], { winner: w, final: rw === 'final', quotes: quoteItems, earlier, seen: cm && cm.text ? cm.text : null });
           const sheet = factSheet({ m, w, l, rep, shard: sp, round: rw, duration: obs && obs.minutes != null ? obs.minutes : null, card: cardsByMatch[ek(m)] || null,
             commentary: cm && cm.text ? cm.text : null, quotes: matchQuotes(m, ek(m), quoteItems, phys.sentences.join(' ')), physical: phys.facts,
-            path: pathLines(m, w, allCards, (c) => roundCode(rwOf(c)), rw === 'final'), styles: { [w]: styleOf(m[w]), [l]: styleOf(m[l]) }, bestOf });
+            path: pathLines(m, w, allCards, (c) => roundCode(rwOf(c)), rw === 'final'), styles: { [w]: styleOf(m[w]), [l]: styleOf(m[l]) }, bestOf,
+            milestones: milestoneLines({ m, w, l, round: rw, eventKey: ek(m), histW: ((shard(m[w + 'Key']) || {}).matches) || [], histL: ((shard(m[l + 'Key']) || {}).matches) || [] }) });
           const pc = prev && prev.composed && prev.composed.version === COMPOSE_VERSION ? prev.composed : null;
           const ageH = (Date.parse(nowIso) - Date.parse(obs && obs.endedAt ? obs.endedAt : startIso(m))) / 3600000;
           const onlyEk = process.env.NEWS_COMPOSE_ONLY ? process.env.NEWS_COMPOSE_ONLY.split(',') : null;   // measurement runs (compose-probe): write this one match, whatever is stored

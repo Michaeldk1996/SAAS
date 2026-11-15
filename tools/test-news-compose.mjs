@@ -38,7 +38,15 @@ await ok('the sheet carries the result, the breaks in playing order, both box sc
   for (const s of ['Fritz beat Musetti 6–4, 6–2 in the SF.', 'First set: Fritz won it 6–4.', 'Fritz broke for 2–1.', 'Fritz broke for 2–1 (he needed 2 break points in that game).', 'Fritz broke for 4–1.',
     'Fritz: serve quality 9.4, 41% unreturned serves, return quality 7.3', 'Next for Fritz: Tirante in the final.',
     'Fritz: 13 forehand winners, 6 backhand winners.', 'Musetti: 7 forehand winners, 2 backhand winners.']) yes(t.includes(s), `missing: ${s}`);
-  yes(!/dominance ratio|performance rating/.test(t), 'the closing-line figures are not sheet facts');
+  yes(!/Performance rating of Musetti/.test(t), 'only the winner\'s rating, and only when it stands out (9.0 or more)');
+  // founder 2026-11-15: a dominance ratio may be used when it really stands out (2.10 here)
+  yes(/## SUMMARY FIGURES THAT STAND OUT[^\n]*\nDominance ratio: Fritz 2\.10, Musetti 0\.48[^\n]*\nPerformance rating of Fritz: 9\.4 out of 10/.test(t), 'a standout dominance ratio and performance rating are on the sheet');
+  // founder 2026-11-15: "use it once in a while": asked for in about half of the reports that have one
+  { const n = [...Array(40).keys()].filter((i) => /use the (performance rating|dominance ratio) from the SUMMARY FIGURES/.test(factSheet({ m: { ...M, id: 'past-d' + i }, w, l, rep: null, card: FX.card }).text)).length; yes(n >= 10 && n <= 30, `asked for in ${n} of 40`); }
+  // founder 2026-11-15: what was not good in the winner's match is said
+  { const bad = factSheet({ m: { ...M, matchStats: { p1: { ...M.matchStats.p1, 'Points:Unforced errors': 54, 'Points:Winners': 47, 'Service:Double Faults': 7 }, p2: M.matchStats.p2 } }, w, l, rep: null }).text;
+    yes(/## NOT GOOD IN THE WINNER'S MATCH[^\n]*\nFritz made 54 unforced errors against 47 winners\.\nFritz made 7 double faults\./.test(bad), bad.split('## BOX')[0].slice(-300)); yes(!/NOT GOOD IN THE WINNER/.test(t), 'a clean match has no such section'); }
+  yes(!/SUMMARY FIGURES/.test(factSheet({ m: { ...M, matchStats: { p1: { ...M.matchStats.p1, 'Points:Return Points Won': 38, 'Points:Service Points Won': 66 }, p2: M.matchStats.p2 } }, w, l, rep: null }).text), 'an ordinary one is not');
   // founder 2026-11-15: never a figure per set, no recap of the week, head to head only in a big rivalry
   yes(!/in the (first|second) set: \d+ aces/.test(t) && !/this week/.test(t) && !/[Hh]ead.to.head|first meeting/.test(t), 'per-set numbers, a week recap or a head to head is on the sheet');
   yes(/## CONDITIONS\n/.test(t), 'every sheet says what the conditions are');
@@ -52,16 +60,41 @@ await ok('a run of games is told inside its set, never across two sets; the styl
   yes(!/games in a row from|\d games in a row in the match/.test(SHEET.text), 'no run counted across sets');
   // founder 2026-11-15: "don't always give the archetype, just do it once it's needed and the stats really show it"
   const st = (o) => ({ 'Service:1st serve points won': 70, 'Service:Aces': 5, 'Points:Winners': 20, 'Points:Unforced errors': 25, 'Points:Return Points Won': 38, ...o });
-  yes(styleEarned('big server', st({ 'Service:1st serve points won': 85 }), st({})) && !styleEarned('big server', st({}), st({})), 'big server: only on a big serving day');
-  yes(styleEarned('attacking baseliner', st({ 'Points:Winners': 40 }), st({})) && !styleEarned('attacking baseliner', st({}), st({})), 'attacking baseliner: only with clearly more winners than errors');
-  yes(styleEarned('counterpuncher', st({ 'Points:Unforced errors': 12 }), st({ 'Points:Unforced errors': 30 })) && !styleEarned('counterpuncher', st({ 'Points:Unforced errors': 76, 'Points:Return Points Won': 45 }), st({ 'Points:Unforced errors': 69 })), 'counterpuncher: never with more errors than the opponent');
-  const withStyle = (ms) => factSheet({ m: { ...M, matchStats: ms }, w, l, rep: null, shard: FX.pbp, round: 'semi-finals', styles: { p1: 'big server + complete baseliner', p2: 'all court elite' } }).text;
-  yes(/Playing style of Fritz: big server \+ complete baseliner/.test(withStyle(M.matchStats)) && !/Playing style of Musetti/.test(withStyle(M.matchStats)), 'the winner\'s style when earned, never the loser\'s');
-  yes(!/Playing style/.test(withStyle({ p1: st({}), p2: st({}) })), 'an ordinary serving day: no style on the sheet');
+  // "really confirmed": two things in the numbers, not one
+  yes(styleEarned('big server', st({ 'Service:1st serve points won': 85, 'Service:Aces': 12 }), st({})) && !styleEarned('big server', st({ 'Service:1st serve points won': 85 }), st({})) && !styleEarned('big server', st({}), st({})), 'big server: a high first-serve figure AND aces');
+  yes(styleEarned('attacking baseliner', st({ 'Points:Winners': 40 }), st({})) && !styleEarned('attacking baseliner', st({ 'Points:Winners': 28 }), st({})), 'attacking baseliner: only with clearly more winners than errors');
+  yes(styleEarned('counterpuncher', st({ 'Points:Unforced errors': 12, 'Points:Return Points Won': 42 }), st({ 'Points:Unforced errors': 30 })) && !styleEarned('counterpuncher', st({ 'Points:Unforced errors': 76, 'Points:Return Points Won': 45 }), st({ 'Points:Unforced errors': 69 })), 'counterpuncher: never with more errors than the opponent');
+  const withStyle = (ms, id) => factSheet({ m: { ...M, id, matchStats: ms }, w, l, rep: null, shard: FX.pbp, round: 'semi-finals', styles: { p1: 'big server + complete baseliner', p2: 'all court elite' } }).text;
+  const big = { p1: st({ 'Service:1st serve points won': 85, 'Service:Aces': 12, 'Points:Winners': 30 }), p2: st({}) };
+  const named = [...Array(40).keys()].map((i) => withStyle(big, 'past-s' + i)).filter((t) => /Playing style of Fritz: big server \+ complete baseliner/.test(t));
+  // named in a part of the reports that earn it: only when the ending of that report is built on it
+  yes(named.length >= 2 && named.length <= 25, `the style is on ${named.length} of 40 sheets that earn it`);
+  yes(named.every((t) => /build it on his style of play/.test(t)) && !/Playing style of Musetti/.test(named.join(' ')), 'only with an ending built on it, never the loser\'s');
+  yes([...Array(20).keys()].every((i) => !/Playing style|style of play/.test(withStyle({ p1: st({}), p2: st({}) }, 'past-n' + i))), 'an ordinary day: no style on the sheet and no ending built on it');
+  yes(SHEET.text.includes('The next opponent: ') && SHEET.text.includes('The quote is introduced through '), 'the next-opponent clause and the quote lead-in vary too');
 });
-await ok('a point log that does not add up to the final score gives no playing-order lines (never half a story)', () => {
+await ok('context and variety (founder 2026-11-15): where the match stands after each set, the match time only when it is the story, R4, a shape per report', () => {
+  yes(SHEET.text.includes('  After this set: Fritz leads by a set and is one set away from winning the match.') && SHEET.text.includes('  After this set: Fritz wins the match.'), SHEET.text.split('## WHAT')[0]);
+  const sheet = (o) => factSheet({ m: M, w, l, rep: null, shard: FX.pbp, round: 'semi-finals', quotes: QUOTES, ...o });
+  yes(!/Match time/.test(sheet({ duration: 95 }).text), 'an ordinary 1h35 is not told');
+  yes(/Match time: 63 minutes \(63 minutes; it is part of the story/.test(sheet({ duration: 63 }).text) && /Match time: 3 hours 05/.test(sheet({ duration: 185 }).text), 'a very short or a very long match is');
+  yes(!/Match time/.test(sheet({}).text) && !/\[time\]/.test(sheet({}).text), 'no time on file: no line, and no opening shape that needs one');
+  yes(!sheet({}).long && !/LONG REPORT/.test(sheet({}).text), 'straight sets: the normal length');
+  const five = { ...M, finalScore: { ...M.finalScore, sets: [{ p1: 6, p2: 7 }, { p1: 6, p2: 1 }, { p1: 6, p2: 3 }, { p1: 1, p2: 6 }, { p1: 7, p2: 6 }], display: '6-7(5), 6-1, 6-3, 1-6, 7-6(7)' } };
+  const f5 = factSheet({ m: five, w, l, rep: null, round: 'round of 16', bestOf: 5 });
+  yes(f5.long && /LONG REPORT/.test(f5.text) && f5.text.includes('in R4.'), f5.text.slice(0, 300));
+  yes(/in the round of 16\./.test(factSheet({ m: M, w, l, rep: null, round: 'round of 16' }).text), 'R4 is a Grand Slam word only');
+  // the shape changes from match to match and never asks for a fact the sheet lacks
+  const shapes = new Set(); for (let i = 0; i < 30; i++) { const t = factSheet({ m: { ...M, id: 'past-' + i }, w, l, rep: null, shard: FX.pbp, round: 'semi-finals' }).text.split('## SHAPE OF THIS REPORT')[1].split('##')[0]; shapes.add(t); yes(!/WHAT IT MEANS|style of play|doubt that stays|own words/.test(t), 'a shape that needs a missing fact: ' + t); }
+  yes(shapes.size >= 10, `only ${shapes.size} different shapes in 30 matches`);
+  yes(/What it means|WHAT IT MEANS/.test([...Array(40).keys()].map((i) => factSheet({ m: { ...M, id: 'past-m' + i }, w, l, rep: null, round: 'semi-finals', milestones: ['Fritz reaches his first tour-level final in our records.'] }).text.split('## SHAPE')[1]).join(' ')), 'a milestone on the sheet is offered as an opening or an ending');
+});
+await ok('a point log with one set that does not add up: that set gets its score only, the sets that add up are still told', () => {
   const bad = JSON.parse(JSON.stringify(FX.pbp)); bad.sets[0].games.pop();
-  eq(setStory(bad, M), []);
+  const t = setStory(bad, M);
+  eq(t[0], 'First set: Fritz won it 6–4.'); eq(t[1], '  After this set: Fritz leads by a set and is one set away from winning the match.'); yes(t[2].startsWith('Second set:'), 'nothing is told about the broken set but its score and where the match stands');
+  yes(t.some((x) => x.includes('Fritz broke for 4–1')), 'the complete set keeps its story');
+  eq(setStory({ ...bad, sets: bad.sets.slice(0, 1) }, M), [], 'a log with the wrong number of sets gives nothing');
   yes(setStory(FX.pbp, M).length >= 5);
 });
 await ok('set points and serving for a set come from the point scores (synthetic set: the server is broken at 5–3 after 3 set points)', () => {
@@ -75,6 +108,10 @@ await ok('set points and serving for a set come from the point scores (synthetic
   yes(s.includes('Beta saved 3 set points with Alpha leading 5–3 (Alpha serving).'), s);
   yes(s.includes('Beta broke for 4–5 (Alpha was serving for the set).'), s);
   yes(s.includes('Alpha broke for 7–5 (that game won him the set).'), s);
+  // founder 2026-11-15: a point saved in a game he then lost anyway is not told
+  const lost = games.slice(0, 11).concat(g(12, 'p2', 'p1', '7 - 5', ['15 - 0', '30 - 0', '40 - 0', '40 - 15', '40 - 30', '40 - 40', 'A - 40']));
+  const told = setStory({ sets: [{ games: lost }] }, m).join('\n');
+  yes(!/leading 6–5/.test(told) && told.includes('Beta saved 3 set points with Alpha leading 5–3'), told);
 });
 await ok('tiebreak scores are read from the final score, from the set winner\'s side', () => eq(tiebreakScores({ display: '7-6(2), 6-7(7), 7-5', sets: [{ p1: 7, p2: 6 }, { p1: 6, p2: 7 }, { p1: 7, p2: 5 }] }), ['7–2', '9–7', null]));
 await ok('quotes: only this match, only its two players, the longest version of a quote once', () => {
@@ -131,7 +168,9 @@ await ok('a wing with most of the winners AND most of the errors is "all or noth
   yes(plain.size >= 4, `the best-shot line has several wordings (${plain.size})`);
 });
 await ok('the first sentence gives the score; no chain of very short sentences; few stat numbers (founder 2026-11-14)', () => {
-  refuses(GOOD.replace('Fritz beat Musetti 6–4, 6–2 in the SF to reach the final.', 'Fritz beat Musetti in straight sets to reach the final.'), /first sentence does not give the score/);
+  refuses(GOOD.replace('Fritz beat Musetti 6–4, 6–2 in the SF to reach the final.', 'Fritz beat Musetti easily to reach the final.'), /neither the score/);
+  // founder 2026-11-15: "you can also say beat him in 5 sets, important to alternate sentences"
+  eq(check(GOOD.replace('Fritz beat Musetti 6–4, 6–2 in the SF to reach the final.', 'Fritz beat Musetti in straight sets in the SF to reach the final.')).failures, []);
   refuses(GOOD.replace('Fritz won it with his serve.', 'Fritz served well. Musetti did not. That was it.'), /very short sentences in a row/);
   refuses(GOOD.replace('He ended with a 9.4 serve quality', 'He had 71% of first serves in, won 81% and 77% behind first and second serve, had 41% unreturned serves and a 9.4 serve quality'), /percentages and quality figures/);
 });
@@ -161,13 +200,19 @@ await ok('physical facts: where in the set, the pattern across rounds, the follo
   eq(f.length, 1); yes(f[0].startsWith('Tirante called the physio (a medical timeout) in his previous match here (the QF) and did not call for one in this match.'), f[0]);
   eq(physicalParagraph(T, [], { earlier: { p2: [{ rows: row([[7, 2], [6, 3]]) }, { rows: [] }] } }).facts, [], 'only his PREVIOUS match counts');
 });
+await ok('how he felt may set up his own quotation; without a quotation it still needs a sheet line', () => {
+  eq(check(GOOD.replace('He explained it himself:', 'He was angry at himself and said why:')).failures, []);
+  const noQuote = GOOD.replace(/ He explained it himself: "[^"]*"/, ' He was angry at himself.');
+  yes(noQuote !== GOOD); refuses(noQuote, /"angry"/);
+});
 await ok('refuses first person, a named source, an initial, a question, markdown and a missing "All in all"', () => {
   refuses(GOOD.replace('The second set was a different Fritz:', 'I think the second set was a different Fritz:'), /first person/);
   refuses(GOOD.replace('He ended with', 'According to the data he ended with'), /names a source/);
   refuses(GOOD.replace('Fritz beat Musetti', 'Fritz beat L. Musetti'), /initial/);
   refuses(GOOD.replace('Fritz won it with his serve.', 'Did Fritz win it with his serve?'), /question mark/);
   refuses(GOOD.replace('The first set was', '**The first set** was'), /markdown/);
-  refuses(GOOD.replace('All in all, a', 'In short, a'), /All in all/);
+  // founder 2026-11-15: the ending is not always "All in all"
+  eq(check(GOOD.replace('All in all, a', 'In the end, a')).failures, []);
 });
 
 console.log('the writer loop');

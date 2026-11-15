@@ -25,6 +25,7 @@ import { fileURLToPath } from 'node:url';
 import { verbatimIn, resolvePlayer, foldText } from './news-core.mjs';
 import { collectQuotes, addContext } from './quote-sources.mjs';
 import { readOutlet, surnameOf, initialOf } from './outlet-reader.mjs';
+import { slamPressCandidates, slamTitle } from './slam-press.mjs';
 import { translateQuote, topicQuote } from './translate.mjs';
 import { mergeItems, dedupeQuotes, sameQuote, tourKeep } from './ticker-core.mjs';
 import { sendTelegram } from '../price-alert-send.mjs';
@@ -235,6 +236,24 @@ async function main() {
     const used = () => { if (c.interview) ttvUsed++; else inboxUsed++; };
     if (hit) { addContext(c, hit.main); hit.extra.push(c); used(); } else if (to === TOUR_KEY) { tourCandidates.push(c); used(); }
   }
+  // Grand Slam press conferences (founder 2026-11-15): the Slams are not on Tennis TV, so the players' own words come
+  // from the official transcripts (slam-press.mjs). A finished main-draw match of the last 3 days whose two players are
+  // not both held yet is looked up; a transcript is read once (the fetched list). A failed read never stops the run.
+  let pressAdded = 0, pressMatches = 0;
+  const fullNameOf = (key) => { const p = ((index && index.players) || []).find((x) => String(x.key) === String(key)); return p ? p.name : null; };
+  for (const x of prep) {
+    if (!slamTitle(x.t.name)) continue;
+    const heldPress = new Set((((rd(`news-quotes/${x.key}-${x.t.season}.json`) || {}).items) || []).filter((q) => q.interview === 'press').map((q) => `${q.eventKey}|${q.playerId}`));
+    for (const m of x.main) {
+      const mk2 = String(m.id).split('-').slice(1).join('-'), age = Date.parse(nowIso) - Date.parse(m.date + 'T00:00:00Z');
+      if (m.qualifying || m.walkover || !(age >= 0 && age < 3 * 86400000) || ['p1', 'p2'].every((k) => heldPress.has(`${mk2}|${m[k + 'Key']}`))) continue;
+      pressMatches++;
+      try {
+        for (const c of await slamPressCandidates({ tournament: x.t.name, match: m, fullName: fullNameOf, surnameOf, cache: fetched, log: (t) => console.log(t) })) { x.extra.push(c); pressAdded++; }
+      } catch (e) { console.log(`::warning::press conferences: ${m.id} not read (${e && e.message})`); }
+    }
+  }
+  run.press = { matchesLookedUp: pressMatches, answers: pressAdded };
   run.ttvInbox = { held: ttvInbox.length, routed: ttvUsed };
   run.atpInbox = { held: inbox.length, routed: inboxUsed };
   const off = switchedOff(registry);
