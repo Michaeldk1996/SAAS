@@ -6472,13 +6472,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 1.12,
+      "p2": 7.38,
+      "bookmaker": "1xBet"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 1.12,
+        "bookmaker": "1xBet"
+      },
+      "p2": {
+        "price": 8.1,
+        "bookmaker": "Pncl"
+      }
     },
     "tournamentRound": null,
     "qualifying": false,
@@ -9519,13 +9525,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 1.25,
+      "p2": 4.0,
+      "bookmaker": "bet365"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 1.29,
+        "bookmaker": "BetVictor"
+      },
+      "p2": {
+        "price": 4.01,
+        "bookmaker": "Pncl"
+      }
     },
     "tournamentRound": null,
     "qualifying": false,
@@ -48111,7 +48123,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-7, 6-4, 6-3",
+      "display": "6-7(5), 6-4, 6-3",
       "sets": [
         {
           "p1": 6,
@@ -52570,7 +52582,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-7, 7-6, 5-7",
+      "display": "6-7(2), 7-6(7), 5-7",
       "sets": [
         {
           "p1": 6,
@@ -60745,7 +60757,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "5-7, 6-7",
+      "display": "5-7, 6-7(2)",
       "sets": [
         {
           "p1": 5,
@@ -64688,7 +64700,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6, 3-6, 6-4",
+      "display": "7-6(5), 3-6, 6-4",
       "sets": [
         {
           "p1": 7,
@@ -69824,7 +69836,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6, 6-7, 6-3",
+      "display": "7-6(5), 6-7(5), 6-3",
       "sets": [
         {
           "p1": 7,
@@ -77902,7 +77914,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "5-7, 6-7",
+      "display": "5-7, 6-7(1)",
       "sets": [
         {
           "p1": 5,
