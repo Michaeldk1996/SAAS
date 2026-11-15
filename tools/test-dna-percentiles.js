@@ -189,7 +189,9 @@ check('player-profile-v2 (v3): ATP average = mean over players with 10+ main-dra
   assert.ok(pool.length > 20 && pool.length < rows.length, `pool ${pool.length} of ${rows.length}`);
   let n = 0;
   for (const a of m.axes) {
-    const vals = pool.map(r => a.key === 'elo' ? (r.surfaces.All.elo || {}).rating : (r.surfaces.All[scope][a.key] || {}).rating).filter(v => v != null);
+    // founder 2026-11-15: the profile's Under pressure is the ATP-rule node when the file carries it (dnaAxNode)
+    const nodeOf = (r) => (a.key === 'underPressure' && r.surfaces.All[scope].underPressureAtp) || r.surfaces.All[scope][a.key] || {};
+    const vals = pool.map(r => a.key === 'elo' ? (r.surfaces.All.elo || {}).rating : nodeOf(r).rating).filter(v => v != null);
     if (!vals.length) continue;
     const mean = vals.reduce((x, y) => x + y, 0) / vals.length, lo = Math.min(...vals), hi = Math.max(...vals);
     assert.ok(Math.abs(a.tour - mean) < 1e-9, `${a.key}: mean ${a.tour} vs ${mean}`);
