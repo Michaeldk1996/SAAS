@@ -67,7 +67,9 @@ function harness(failEarly) {   // failEarly: how many times the first chunk fai
   vm.createContext(box); vm.runInContext(fn('tourxPartialText') + '\nthis.a = tourxPartialText("Shanghai"); this.b = tourxPartialText("Almaty");', box);
   check('Reports + W/UE say it in plain words: "Partial data: the score feed did not answer for 5 Oct–12 Oct — …"', box.a === 'Partial data: the score feed did not answer for 5 Oct–12 Oct — matches played on those days are missing here', box.a);
   check('a complete tournament says nothing', box.b === '');
-  check('the Reports card renders the partial line; the W/UE status is prefixed by it', html.includes('${filterBar}${partialLine}') && html.includes("const note = (partial ? partial + ' · ' : '')"));
+  // Founder 2026-11-15 ("Design wins"): Reports allows no line above the cards, so the partial line rides the "?" hover.
+  const ttReports = fs.readFileSync(path.join(ROOT, 'tournaments-reports.js'), 'utf8');
+  check('the Reports "?" hover carries the partial line; the W/UE status is prefixed by it', /tourxPartialText\(M\.name\)/.test(ttReports) && html.includes("const note = (partial ? partial + ' · ' : '')"));
   const src = fs.readFileSync(path.join(ROOT, 'bsp-pipeline.js'), 'utf8');
   check('pipeline: retries per chunk (0 / 5 s / 15 s) and records failedRanges on the result', /\[0, 5000, 15000\]/.test(src) && /merged\.failedRanges = failedRanges/.test(src));
   console.log(`\n${pass} passed, ${fail} failed`);

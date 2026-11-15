@@ -87,8 +87,10 @@ check('the upcoming filter no longer skips in-play fixtures', !pipe.includes("  
 check('the upcoming card takes the fixture live state', pipe.includes('...fixtureLiveState(fixture),'));
 
 // ── B9 · tooltip ──
-check('tooltip shows content last changed (sourcePublished)', html.includes("content last changed: ' + fmtDateTime(drawMeta.sourcePublished)"));
-check('tooltip no longer shows our fetch time as the draw time', !html.includes("last fetched by us: ' + fmtDateTime(drawMeta.generatedAt)"));
+// The Entry list moved to tournaments-entry.js (founder 2026-11-15); the head count's hover carries the draw time.
+const ttEntry = fs.readFileSync(path.join(ROOT, 'tournaments-entry.js'), 'utf8');
+check('tooltip shows content last changed (sourcePublished)', ttEntry.includes("' Draw sheets: content last changed ' + fmtWhen(m.drawMeta.sourcePublished)"));
+check('tooltip no longer shows our fetch time as the draw time', !/content last changed ' \+ fmtWhen\(m\.drawMeta\.generatedAt/.test(ttEntry) && !html.includes("last fetched by us: ' + fmtDateTime(drawMeta.generatedAt)"));
 
 // ── B10 · content-only commits, on REAL committed shards ──
 const H = path.join(ROOT, 'tools', 'entry-lists', 'content-hash.py');

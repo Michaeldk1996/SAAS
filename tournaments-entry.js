@@ -90,6 +90,13 @@
   var LENS = '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="var(--text-label)" stroke-width="1.6" stroke-linecap="round"><circle cx="6" cy="6" r="4.4"></circle><path d="M9.4 9.4 L12.6 12.6"></path></svg>';
   var XMARK = '<svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="var(--text-soft)" stroke-width="1.6" stroke-linecap="round"><path d="M1.5 1.5 L8.5 8.5 M8.5 1.5 L1.5 8.5"></path></svg>';
 
+  // Member zone (stennisfy.tz via newsTz, else the browser's): "15 Nov, 09:12".
+  function fmtWhen(v){
+    var d = new Date(v); if (isNaN(d)) return String(v);
+    var o = { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit', hour12:false };
+    try { var tz = typeof newsTz === 'function' ? newsTz() : undefined; if (tz) o.timeZone = tz; } catch (e) {}
+    return d.toLocaleString('en-GB', o);
+  }
   function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]; }); }
   function fold(s){ return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(); }
   function EL(){ return window.EntryListsTab || null; }
@@ -231,7 +238,10 @@
     var count = searching ? (shown.length === 1 ? 'Entered in 1 event' : 'Entered in ' + shown.length + ' events') + ' · all weeks'
       : (nEv == null ? '—' : nEv) + (nEv === 1 ? ' event' : ' events') + ' · ' + nLists + (nLists === 1 ? ' list' : ' lists') + ' loaded';
     var countTitle = 'Events = every ATP-tour event that week; lists loaded = events whose acceptance list is in the build.'
-      + (m.advMeta && m.advMeta.fetchStatus === 'stale' ? ' The advance source could not be refreshed: these are the last lists fetched (' + (m.advMeta.generatedAt || 'unknown') + ').' : '');
+      + (m.advMeta && m.advMeta.fetchStatus === 'stale' ? ' The advance source could not be refreshed: these are the last lists fetched (' + (m.advMeta.generatedAt || 'unknown') + ').' : '')
+      // B9 (kept through the rebuild): the draw sheets' CONTENT last changed (sourcePublished), never our fetch time alone.
+      + (m.drawMeta && m.drawMeta.sourcePublished ? ' Draw sheets: content last changed ' + fmtWhen(m.drawMeta.sourcePublished)
+          + (m.drawMeta.generatedAt ? ', checked ' + fmtWhen(m.drawMeta.generatedAt) : '') + '.' : '');
     var weeksHtml = '<div class="tt-entry-weeks" role="tablist" aria-label="Entry list weeks" style="opacity:' + (searching ? 0.55 : 1) + ';">'
       + weeks.map(function(w){
           var on = !searching && w.key === S.week;

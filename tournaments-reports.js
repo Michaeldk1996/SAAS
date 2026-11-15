@@ -334,7 +334,8 @@
   function viewHtml(M, available) {
     const view = S.view, nRounds = M.labels.length;
     const tours = available.map(n => `<span class="tt-rp-pill tour${n === M.name ? ' on' : ''}" data-act="tour" data-v="${esc(n)}">${esc(n)} <span class="tt-rp-pfig">${esc(M.year)}</span></span>`).join('')
-      + `<span class="tt-rp-help" title="${esc(HELP[view])}">?</span>`;
+      // The score feed's partial-data disclosure (test-partial-fetch) rides the "?" hover: the design allows no line above the cards.
+      + `<span class="tt-rp-help" title="${esc(HELP[view] + (typeof tourxPartialText === 'function' && tourxPartialText(M.name) ? '\n\n' + tourxPartialText(M.name) + '.' : ''))}">?</span>`;
     const reports = [['round', 'Round comparison'], ['player', 'Player progression'], ['h2h', 'Head-to-head']]
       .map(([v, l]) => `<span class="tt-rp-pill rep${view === v ? ' on' : ''}" data-act="view" data-v="${v}">${l}</span>`).join('');
     let filter = ROW('Tournament', tours) + ROW('Report', reports);

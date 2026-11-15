@@ -211,8 +211,9 @@ readers = [f for f in shipped if not f.startswith(("tools/", "test", ".github/",
            and "draws.json" in open(os.path.join(ROOT, f), encoding="utf-8", errors="ignore").read()]
 #    Founder 2026-10-31 (publish-and-qualifying): the pipeline reads it to mark the Today's Matches qualifying cards
 #    (board-qualifying.js, called from bsp-pipeline.js) — the feed's qualifying flag is missing on Paris 2026.
-check("draws.json's shipped readers are exactly wue-sheet.js (W/UE quarters, ruling 7), the Entry list tab (ruling 1), the Draw view (ruling 2, 20 Oct) + the board's qualifying marker (31 Oct)",
-      sorted(readers) == ["board-qualifying.js", "bsp-consult-dashboard.html", "bsp-pipeline.js", "draw-view.js", "wue-sheet.js"], readers)
+#    Founder 2026-11-15 (Tournaments tab rebuild): the Draw tab's module tournaments-draw.js reads it too.
+check("draws.json's shipped readers are exactly wue-sheet.js (W/UE quarters, ruling 7), the Entry list tab (ruling 1), the Draw view (ruling 2, 20 Oct; tournaments-draw.js since 15 Nov) + the board's qualifying marker (31 Oct)",
+      sorted(readers) == ["board-qualifying.js", "bsp-consult-dashboard.html", "bsp-pipeline.js", "draw-view.js", "tournaments-draw.js", "wue-sheet.js"], readers)
 
 # ── draws.yml cadence clock (fixed 2026-10-20): the last run that FETCHED, never a skipped run ──
 spec3 = importlib.util.spec_from_file_location("lfr", os.path.join(ROOT, "tools", "draws", "last-fetch-run.py"))

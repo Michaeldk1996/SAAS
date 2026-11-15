@@ -1205,12 +1205,9 @@ test('price range: fewer than 3 priced meetings shows its count as a chip (n=2 l
   assert.match(sliceBlock(), /const FH_PRICE_THIN = 3;/);
   assert.match(sliceBlock(), /nP > 1 && nP < FH_PRICE_THIN \? chip\('n=' \+ nP\)/);   // rendered n = 1, 2, 3: test-ten331-h2h.mjs
 });
-test('untracked counts are missing, not 0, downstream: the Live modal bar and the Tournament Reports field line', () => {
-  const f = new Function('tourxFmt', slice('tourxLineChartSvg') + '; return tourxLineChartSvg;')(v => String(v));
-  const svg = f([20, 22], [null, 18], '#6a9af8', 'count', ['R1', 'R2']);
-  assert.ok(!/NaN/.test(svg));
-  const pts = /stroke-dasharray="4 4"/.test(svg) && /<polyline points="([^"]+)" fill="none" stroke="var\(--viz-rule\)"/.exec(svg)[1];   // TEN-376: rgba(255,255,255,.32) is the --viz-rule token
-  assert.equal(pts.split(' ').length, 1, 'the missing field point is skipped, not drawn at 0');
+// The Tournament Reports half (tourxLineChartSvg's field line) retired with the old Reports head-to-head charts (founder
+// 2026-11-15, "Design wins"); the new Reports dashes are locked in tools/test-tt-reports.mjs.
+test('untracked counts are missing, not 0, downstream: the Live modal bar', () => {
   const H = readFileSync(join(HERE, 'bsp-consult-dashboard.html'), 'utf8');
   const ts = /const twoSided=\(label,aV,bV,aTxt,bTxt,aDen,bDen,kind,key\)=>\{[\s\S]*?\n  \};/.exec(H)[0];
   const two = new Function('fhStatBarWidth', 'msBarFloor', 'msBarScale', 'DASH', 'MISS', 'INK', ts + '; return twoSided;')(

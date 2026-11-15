@@ -265,6 +265,12 @@ test('r3.3 Matches board: the card head, the story strip and the chips print the
 });
 
 // r3.4 (the Entry list's Canadian Open · Toronto) RETIRED 2026-11-15 with r2.5 above (founder ruling 1: city key).
+// The Entry list was sfEventKey(name, city)'s only caller; the city branch is locked here directly so it stays right if reused.
+test('r3.4b sfEventKey(name, city): a shared official name takes the row\'s city; a city never moves a different event', () => {
+  assert.equal(P.sfEventKey('Canadian Open'), 'Montreal', 'the shared name alone reads back to Montreal');
+  assert.equal(P.sfEventKey('Canadian Open', 'Toronto'), 'Toronto', 'a Toronto row keeps Toronto');
+  assert.equal(P.sfEventKey('Swiss Indoors', 'Paris'), 'Basel', 'a city never moves a row onto another event');
+});
 
 test('r3.5 the ATP Cup prints "ATP Cup" (the cleaner strips "ATP " to "Cup"); other team events keep their names', () => {
   for (const s of ['Cup', 'ATP Cup', 'cup']) assert.equal(P.sfEventName(s), 'ATP Cup', s);
