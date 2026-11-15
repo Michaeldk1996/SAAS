@@ -1,0 +1,21 @@
+name: Compose probe (throwaway)
+on:
+  push:
+    branches: [probe-ten]
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - name: Stockholm final
+        env: { NEWS_COMPOSE_MAX_CALLS: '9', NEWS_COMPOSE_ONLY: '12179948' }
+        run: echo "=====STOCKHOLM" && node tools/news-ticker/compose-probe.mjs --only 1681
+      - name: Slams
+        run: echo "=====SLAMS" && node tools/news-ticker/slam-probe.mjs 12162596:1980 12161078:2973 12161947:2973 12132419:1192 12131865:2846
