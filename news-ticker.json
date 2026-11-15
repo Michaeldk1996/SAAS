@@ -1,5 +1,5 @@
 {
- "generatedAt": "2026-11-15T01:16:09.336Z",
+ "generatedAt": "2026-11-15T02:05:21.881Z",
  "tournaments": [
   {
    "key": "tour",
@@ -18,14 +18,14 @@
    "season": "2026",
    "name": "Stockholm",
    "file": "news-ticker/1681-2026.json",
-   "items": 131,
+   "items": 127,
    "byType": {
     "quote": 95,
-    "report": 29,
+    "report": 25,
     "status": 7
    },
    "latestTimestamp": "2026-11-14T16:03:27.000Z",
-   "updatedAt": "2026-11-15T01:16:09.336Z"
+   "updatedAt": "2026-11-15T02:05:21.881Z"
   },
   {
    "key": "1725",
@@ -360,6 +360,11 @@
      "maxDiff": 0
     }
    },
+   "commentary": {
+    "text": "Fritz won the Stockholm final against Tirante in three sets, taking his first indoor title and the 12th title of his career. Fritz broke early in the first set after some strong defence and played well in that set but Tirante improved and took the second set to force a deciding set. Tirante played aggressive, attacking tennis and came to the net often, winning several points with his volleys, though some volleys were not good enough. Fritz hit some powerful returns and found his forehand more and more often as the match went on and he returned to his first-set level to close it out. Tirante, playing in his first final, pushed Fritz all the way and Fritz's experience may have made the difference.",
+    "sourceName": "Tennis TV highlights commentary",
+    "sourceUrl": "https://www.tennistv.com/videos/4609119/stockholm-2026-final-highlights"
+   },
    "composed": {
     "version": 2,
     "sheetHash": "b4300625ee180027",
@@ -452,10 +457,10 @@
    "sourceUrl": "pbp/12179948.json",
    "language": "en",
    "translated": false,
-   "sourceHash": "fadcd03fd237050f",
+   "sourceHash": "a58ac85fcf10fad9",
    "publishedAt": "2026-11-14T14:44:36.468Z",
-   "revisedAt": "2026-11-14T19:46:54.419Z",
-   "revision": 3,
+   "revisedAt": "2026-11-15T02:05:21.881Z",
+   "revision": 4,
    "file": "news-ticker/1681-2026.json"
   },
   {

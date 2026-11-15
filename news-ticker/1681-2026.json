@@ -2,7 +2,7 @@
  "tournament": "Stockholm",
  "tournamentKey": "1681",
  "season": "2026",
- "updatedAt": "2026-11-15T01:16:09.336Z",
+ "updatedAt": "2026-11-15T02:05:21.881Z",
  "items": [
   {
    "id": "quote-d297a576fe51d4",
@@ -216,6 +216,11 @@
      "maxDiff": 0
     }
    },
+   "commentary": {
+    "text": "Fritz won the Stockholm final against Tirante in three sets, taking his first indoor title and the 12th title of his career. Fritz broke early in the first set after some strong defence and played well in that set but Tirante improved and took the second set to force a deciding set. Tirante played aggressive, attacking tennis and came to the net often, winning several points with his volleys, though some volleys were not good enough. Fritz hit some powerful returns and found his forehand more and more often as the match went on and he returned to his first-set level to close it out. Tirante, playing in his first final, pushed Fritz all the way and Fritz's experience may have made the difference.",
+    "sourceName": "Tennis TV highlights commentary",
+    "sourceUrl": "https://www.tennistv.com/videos/4609119/stockholm-2026-final-highlights"
+   },
    "composed": {
     "version": 2,
     "sheetHash": "b4300625ee180027",
@@ -308,10 +313,10 @@
    "sourceUrl": "pbp/12179948.json",
    "language": "en",
    "translated": false,
-   "sourceHash": "fadcd03fd237050f",
+   "sourceHash": "a58ac85fcf10fad9",
    "publishedAt": "2026-11-14T14:44:36.468Z",
-   "revisedAt": "2026-11-14T19:46:54.419Z",
-   "revision": 3
+   "revisedAt": "2026-11-15T02:05:21.881Z",
+   "revision": 4
   },
   {
    "id": "quote-1d90baa7254518",
@@ -6722,50 +6727,6 @@
    "revision": 3
   },
   {
-   "id": "report-12178224",
-   "type": "report",
-   "playerId": "566",
-   "opponentId": "12951",
-   "player": "A. Shevchenko",
-   "opponent": "J. Fearnley",
-   "tournament": "Stockholm",
-   "tournamentKey": "1681",
-   "season": "2026",
-   "stage": "qualifying",
-   "round": "final round of qualifying",
-   "eventKey": "12178224",
-   "timestamp": "2026-11-08T13:20:00.000Z",
-   "timestampKind": "scheduled",
-   "observed": null,
-   "category": "Statistics",
-   "text": "Shevchenko beat Fearnley 6-2, 6-4 in the final round of qualifying. Shevchenko: 4 aces, saved 1 of 1 break point. Fearnley: 3 aces, saved 0 of 3 break points.",
-   "fields": {
-    "score": "6-2, 6-4",
-    "round": "final round of qualifying",
-    "retired": false,
-    "winner": {
-     "aces": 4,
-     "breakPointsSaved": 1,
-     "breakPointsFaced": 1,
-     "breakPointsSource": "box score"
-    },
-    "loser": {
-     "aces": 3,
-     "breakPointsSaved": 0,
-     "breakPointsFaced": 3,
-     "breakPointsSource": "box score"
-    }
-   },
-   "sourceName": "Stennisfy match data (api-tennis box score and point-by-point)",
-   "sourceUrl": "pbp/12178224.json",
-   "language": "en",
-   "translated": false,
-   "sourceHash": "40f19b6a871f0946",
-   "publishedAt": "2026-11-11T18:39:24.726Z",
-   "revisedAt": "2026-11-13T10:53:28.081Z",
-   "revision": 1
-  },
-  {
    "id": "status-q-12178224",
    "type": "status",
    "playerId": "566",
@@ -6788,63 +6749,6 @@
    "season": "2026",
    "sourceHash": "27cd33d22a6d1043",
    "publishedAt": "2026-11-11T18:39:24.726Z"
-  },
-  {
-   "id": "report-12178225",
-   "type": "report",
-   "playerId": "15184",
-   "opponentId": "438",
-   "player": "T. Samuel",
-   "opponent": "A. Mannarino",
-   "tournament": "Stockholm",
-   "tournamentKey": "1681",
-   "season": "2026",
-   "stage": "qualifying",
-   "round": "final round of qualifying",
-   "eventKey": "12178225",
-   "timestamp": "2026-11-08T13:10:00.000Z",
-   "timestampKind": "scheduled",
-   "observed": null,
-   "category": "Statistics",
-   "text": "Samuel beat Mannarino 3-6, 7-5, 6-1 in the final round of qualifying. Samuel came from a set down. Samuel was broken when serving for the match. Samuel was broken when serving for a set. Samuel won 7 games in a row. Samuel: 6 aces, saved 6 of 10 break points. Mannarino: 1 ace, saved 3 of 9 break points.",
-   "fields": {
-    "score": "3-6, 7-5, 6-1",
-    "round": "final round of qualifying",
-    "retired": false,
-    "facts": {
-     "fromSetDown": true,
-     "brokenForMatch": {
-      "p2": 1
-     },
-     "brokenForSet": {
-      "p2": 1
-     },
-     "longestRun": {
-      "side": "p2",
-      "n": 7
-     }
-    },
-    "winner": {
-     "aces": 6,
-     "breakPointsSaved": 6,
-     "breakPointsFaced": 10,
-     "breakPointsSource": "box score"
-    },
-    "loser": {
-     "aces": 1,
-     "breakPointsSaved": 3,
-     "breakPointsFaced": 9,
-     "breakPointsSource": "box score"
-    }
-   },
-   "sourceName": "Stennisfy match data (api-tennis box score and point-by-point)",
-   "sourceUrl": "pbp/12178225.json",
-   "language": "en",
-   "translated": false,
-   "sourceHash": "463ad802aecac576",
-   "publishedAt": "2026-11-11T18:39:24.726Z",
-   "revisedAt": "2026-11-13T10:53:28.081Z",
-   "revision": 1
   },
   {
    "id": "status-ll-12178225",
@@ -6893,108 +6797,6 @@
    "season": "2026",
    "sourceHash": "f3c86af2ee803587",
    "publishedAt": "2026-11-11T18:39:24.726Z"
-  },
-  {
-   "id": "report-12178166",
-   "type": "report",
-   "playerId": "377",
-   "opponentId": "424",
-   "player": "B. Gojo",
-   "opponent": "N. Basilashvili",
-   "tournament": "Stockholm",
-   "tournamentKey": "1681",
-   "season": "2026",
-   "stage": "qualifying",
-   "round": "final round of qualifying",
-   "eventKey": "12178166",
-   "timestamp": "2026-11-08T11:10:00.000Z",
-   "timestampKind": "scheduled",
-   "observed": null,
-   "category": "Statistics",
-   "text": "Gojo beat Basilashvili 6-3, 7-6 in the final round of qualifying. Set 2 went to a tiebreak, won by Gojo. Gojo: 18 aces, saved 7 of 8 break points. Basilashvili: 11 aces, saved 2 of 4 break points.",
-   "fields": {
-    "score": "6-3, 7-6",
-    "round": "final round of qualifying",
-    "retired": false,
-    "facts": {
-     "tiebreakSets": [
-      {
-       "set": 2,
-       "winner": "p2"
-      }
-     ]
-    },
-    "winner": {
-     "aces": 18,
-     "breakPointsSaved": 7,
-     "breakPointsFaced": 8,
-     "breakPointsSource": "box score"
-    },
-    "loser": {
-     "aces": 11,
-     "breakPointsSaved": 2,
-     "breakPointsFaced": 4,
-     "breakPointsSource": "box score"
-    }
-   },
-   "sourceName": "Stennisfy match data (api-tennis box score and point-by-point)",
-   "sourceUrl": "pbp/12178166.json",
-   "language": "en",
-   "translated": false,
-   "sourceHash": "92bf30b8a6d2a1a2",
-   "publishedAt": "2026-11-11T18:39:24.726Z",
-   "revisedAt": "2026-11-13T10:53:28.081Z",
-   "revision": 1
-  },
-  {
-   "id": "report-12178198",
-   "type": "report",
-   "playerId": "2843",
-   "opponentId": "10232",
-   "player": "L. Sonego",
-   "opponent": "I. Montes-De La Torre",
-   "tournament": "Stockholm",
-   "tournamentKey": "1681",
-   "season": "2026",
-   "stage": "qualifying",
-   "round": "final round of qualifying",
-   "eventKey": "12178198",
-   "timestamp": "2026-11-08T11:10:00.000Z",
-   "timestampKind": "scheduled",
-   "observed": null,
-   "category": "Statistics",
-   "text": "Sonego beat Montes-De La Torre 7-5, 6-3 in the final round of qualifying. Sonego won 5 games in a row. Sonego: 7 aces, saved 4 of 5 break points. Montes-De La Torre: 2 aces, saved 1 of 4 break points.",
-   "fields": {
-    "score": "7-5, 6-3",
-    "round": "final round of qualifying",
-    "retired": false,
-    "facts": {
-     "longestRun": {
-      "side": "p2",
-      "n": 5
-     }
-    },
-    "winner": {
-     "aces": 7,
-     "breakPointsSaved": 4,
-     "breakPointsFaced": 5,
-     "breakPointsSource": "box score"
-    },
-    "loser": {
-     "aces": 2,
-     "breakPointsSaved": 1,
-     "breakPointsFaced": 4,
-     "breakPointsSource": "box score"
-    }
-   },
-   "sourceName": "Stennisfy match data (api-tennis box score and point-by-point)",
-   "sourceUrl": "pbp/12178198.json",
-   "language": "en",
-   "translated": false,
-   "sourceHash": "91deb4d552d944ce",
-   "publishedAt": "2026-11-11T18:39:24.726Z",
-   "revisedAt": "2026-11-13T10:53:28.081Z",
-   "revision": 1
   },
   {
    "id": "status-q-12178166",
