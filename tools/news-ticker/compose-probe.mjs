@@ -31,6 +31,8 @@ for (const f of fs.readdirSync(path.join(dir, 'news-ticker'))) {
     if (x.type !== 'report' || !x.composed) continue;
     console.log(`\n######## ${x.id} ${x.player} d. ${x.opponent} (${x.round}) — ${x.composed.status}, ${x.composed.tries} tr${x.composed.tries === 1 ? 'y' : 'ies'}${x.composed.failures ? ' — ' + x.composed.failures.join(' | ') : ''}`);
     console.log(x.text);
+    if (x.composed.retryWhy) console.log(`RETRYWHY ${x.id} ${JSON.stringify(x.composed.retryWhy)}`);
+    if (x.composed.usage) console.log(`USAGE ${x.id} ${JSON.stringify(x.composed.usage)} words ${String(x.composed.body || '').split(/\s+/).length}`);
   }
 }
 console.log('\nCOMPOSE-PROBE ' + JSON.stringify({ composed: s.composed || 0, failed: s.composeFailed || 0, failures: s.composeFailures || [], reports: s.reports, errors: s.voice.errors, lastError: s.voice.lastError, tokens: s.voice.tokens, reportErrors: s.reportErrors }));

@@ -79,6 +79,13 @@ export function pickClips(feed, state, cards, nowIso) {
 
 // "Stockholm 2026 QF Musetti Humbert Highlights" -> the finished match of those two players on our board (exactly one).
 export function resolveHighlights(clip, cards) {
+  // a singles final carries no names ("Stockholm 2026 Final Highlights"): the one finished main-draw final of that event
+  const f = /^(.+?)\s+(20\d\d)\s+Final\s+highlights\s*$/i.exec(String(clip.title || '').trim());
+  if (f) {
+    const hits = (cards || []).filter((c) => fold(c.tour).includes(fold(f[1])) && c.finalScore && c.finalScore.winner && !c.walkover && !c.qualifying && !/\//.test(String(c.p1)) && /-\s*final\s*$/i.test(String(c.tournamentRound || '')));
+    if (hits.length !== 1) return null;
+    return { eventKey: String(hits[0].id).split('-').slice(1).join('-'), p1: hits[0].p1, p2: hits[0].p2, tournament: f[1].trim(), round: 'FINAL' };
+  }
   const m = /^(.+?)\s+(20\d\d)\s+(R\d|QF|SF|F|Final|RR)\s+(.+?)\s+highlights\s*$/i.exec(String(clip.title || '').trim());
   if (!m) return null;
   const tour = fold(m[1]), names = words(m[4]);

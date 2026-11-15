@@ -81,6 +81,12 @@ await ok('refuses a count written as a word when the sheet does not have it (a c
   eq(check(GOOD.replace('only 1 unforced error', 'only one unforced error')).failures, []);
 });
 await ok('refuses a player who is not on the sheet, inside a sentence and at its start', () => { refuses(GOOD.replace('Next is Tirante', 'Next is Sinner'), /"Sinner"/); refuses(GOOD.replace('Next is Tirante in the final', 'Alcaraz is waiting for him now. Next is Tirante in the final'), /"Alcaraz"/); });
+await ok('a sentence that starts after a closing quotation mark is a sentence start, not an unknown name (measured 2026-11-15: "Nobody" cost a paid retry)', () => {
+  const tiny = { text: 'Alpha beat Beta 6–4 in R1.', quotes: [], winner: 'Alpha', loser: 'Beta' };
+  const f = (t) => checkComposed(t, tiny).failures.filter((x) => /is not on the sheet/.test(x));
+  eq(f('Alpha beat Beta. He said it was "a hard day." Nobody broke after that.'), []);
+  eq(f('Alpha beat Beta. He said it was "a hard day." Then Gamma arrived.').length, 1);
+});
 await ok('refuses a quotation that is not word for word, one cut mid-sentence, and one without its speaker', () => {
   refuses(GOOD.replace('play a certain type of way.', 'play differently.'), /not on the sheet word for word/);
   refuses(GOOD.replace(' so I knew I had to change a lot of things and play a certain type of way. I executed what I wanted to do really well."', ' so I knew I had to change"'), /cut in the middle/);

@@ -126,11 +126,14 @@ await ok('build: timestamp is the observed end and the text carries the duration
   assert.deepEqual([s.added, s.revised], [0, 0]); assert.equal(fs.readFileSync(path.join(d, 'news-ticker', '77-2026.json'), 'utf8'), before);
   assert.deepEqual(s.filesWritten, [], 'nothing regenerated when nothing changed');
 });
-await ok('build: qualifying matches are in scope (report says so); doubles and non-ATP cards are not', () => {
-  const d = fixture([card({ id: 'past-100', qualifying: true, tournamentRound: 'ATP Testville - Final' }), card({ id: 'past-103', p1: 'A. One / C. Three' }), card({ id: 'past-104', tourBadge: 'WTA' })]);
+await ok('build: reports are main draw only — a qualifying, doubles or non-ATP card writes none, and a stored qualifying report leaves the feed', () => {
+  const d = fixture([card({ id: 'past-100', qualifying: true, tournamentRound: 'ATP Testville - Final' }), card({ id: 'past-101' }), card({ id: 'past-103', p1: 'A. One / C. Three' }), card({ id: 'past-104', tourBadge: 'WTA' })]);
+  fs.mkdirSync(path.join(d, 'news-ticker'), { recursive: true });
+  fs.writeFileSync(path.join(d, 'news-ticker', '77-2026.json'), JSON.stringify({ tournament: 'Testville', tournamentKey: '77', season: '2026', items: [
+    { id: 'report-90', type: 'report', stage: 'qualifying', tournamentKey: '77', season: '2026', timestamp: '2026-11-08T10:00:00.000Z', text: 'old qualifying report' },
+    { id: 'report-91', type: 'report', stage: 'main draw', tournamentKey: '77', season: '2026', timestamp: '2026-11-09T10:00:00.000Z', text: 'old main draw report' }] }));
   runBuild(d, '2026-11-10T15:00:00.000Z');
-  const it = itemsOf(d); assert.deepEqual(it.filter((x) => x.type === 'report').map((x) => x.id), ['report-100']);
-  assert.match(it.find((x) => x.id === 'report-100').text, /in the final round of qualifying\./);
+  assert.deepEqual(itemsOf(d).filter((x) => x.type === 'report').map((x) => x.id).sort(), ['report-101', 'report-91']);
 });
 await ok('build: the collector\'s quotes are folded into the same tournament file', () => {
   const q = { id: 'quote-abc', type: 'quote', playerId: '1', tournament: 'Testville', tournamentKey: '77', season: '2026', timestamp: '2026-11-10T14:00:00.000Z', timestampKind: 'observed', category: 'Quotes', text: 'I played well.', language: 'en', translated: false, sourceName: 'S', sourceUrl: 'https://s/x' };

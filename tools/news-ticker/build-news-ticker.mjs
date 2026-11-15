@@ -140,6 +140,7 @@ export async function build({ nowIso, times, rewrite = null, writer = null, apiK
     const done = g.cards.filter((m) => m.finalScore && m.finalScore.winner).concat(g.offBoard || []);
     for (const m of done) {
       if (m.walkover) continue;
+      if (m.qualifying) continue;   // founder 2026-11-15: match reports are main draw only
       summary.finished++;
       try {
         const w = m.finalScore.winner, l = w === 'p1' ? 'p2' : 'p1', id = `report-${ek(m)}`;
@@ -197,14 +198,16 @@ export async function build({ nowIso, times, rewrite = null, writer = null, apiK
             path: pathLines(m, w, allCards, (c) => roundCode(rwOf(c)), rw === 'final'), styles: { [w]: styleOf(m[w]), [l]: styleOf(m[l]) } });
           const pc = prev && prev.composed && prev.composed.version === COMPOSE_VERSION ? prev.composed : null;
           const ageH = (Date.parse(nowIso) - Date.parse(obs && obs.endedAt ? obs.endedAt : startIso(m))) / 3600000;
-          const frozen = pc && (pc.sheetHash === sheet.hash || (pc.runs || 0) >= MAX_COMPOSE_RUNS || !(ageH <= COMPOSE_FRESH_HOURS));
+          const onlyEk = process.env.NEWS_COMPOSE_ONLY ? process.env.NEWS_COMPOSE_ONLY.split(',') : null;   // measurement runs (compose-probe): write this one match, whatever is stored
+          const use = (c) => ({ input: ((pc && pc.usage && pc.usage.input) || 0) + ((c.usage && c.usage.input) || 0), output: ((pc && pc.usage && pc.usage.output) || 0) + ((c.usage && c.usage.output) || 0), calls: ((pc && pc.usage && pc.usage.calls) || 0) + c.tries });
+          const frozen = onlyEk ? !onlyEk.includes(String(ek(m))) : pc && (pc.sheetHash === sheet.hash || (pc.runs || 0) >= MAX_COMPOSE_RUNS || !(ageH <= COMPOSE_FRESH_HOURS));
           if (frozen) composed = pc;
           else if (composeCalls < (ageH <= COMPOSE_FRESH_HOURS ? COMPOSE_MAX : COMPOSE_MAX - 2)) {
             composeCalls++;
             const c = await composeReport(sheet, { writer, apiKey, surnames });
             if (c.usage) { summary.voice.tokens.input += c.usage.input; summary.voice.tokens.output += c.usage.output; }
-            if (c.status === 'ok') { composed = { version: COMPOSE_VERSION, sheetHash: sheet.hash, status: 'ok', model: c.model, tries: c.tries, runs: ((pc && pc.runs) || 0) + 1, body: c.text }; summary.composed = (summary.composed || 0) + 1; }
-            else if (c.status === 'failed-check') { composed = { version: COMPOSE_VERSION, sheetHash: sheet.hash, status: 'failed-check', tries: c.tries, runs: ((pc && pc.runs) || 0) + 1, failures: c.failures.slice(0, 8), ...(pc && pc.body ? { body: pc.body, status: 'ok', keptAfterFailedRewrite: true } : {}) }; summary.composeFailed = (summary.composeFailed || 0) + 1; summary.composeFailures = (summary.composeFailures || []).concat(`${ek(m)}: ${c.failures.slice(0, 3).join(' | ')}`).slice(0, 10); }
+            if (c.status === 'ok') { composed = { version: COMPOSE_VERSION, sheetHash: sheet.hash, status: 'ok', model: c.model, tries: c.tries, runs: ((pc && pc.runs) || 0) + 1, usage: use(c), ...(c.retryWhy ? { retryWhy: c.retryWhy } : {}), body: c.text }; summary.composed = (summary.composed || 0) + 1; }
+            else if (c.status === 'failed-check') { composed = { version: COMPOSE_VERSION, sheetHash: sheet.hash, status: 'failed-check', tries: c.tries, runs: ((pc && pc.runs) || 0) + 1, usage: use(c), failures: c.failures.slice(0, 8), ...(pc && pc.body ? { body: pc.body, status: 'ok', keptAfterFailedRewrite: true } : {}) }; summary.composeFailed = (summary.composeFailed || 0) + 1; summary.composeFailures = (summary.composeFailures || []).concat(`${ek(m)}: ${c.failures.slice(0, 3).join(' | ')}`).slice(0, 10); }
             else { composed = pc; summary.voice.errors++; summary.voice.lastError = `compose ${c.status}${c.detail ? ': ' + c.detail : ''}`; }
           } else composed = pc;
         }
@@ -243,7 +246,7 @@ export async function build({ nowIso, times, rewrite = null, writer = null, apiK
     const qf = readJson(`news-quotes/${g.key}-${g.season}.json`);
     for (const q of (qf && qf.items) || []) { if (hidden(q)) continue; fresh.push(q); summary.quotes++; }
 
-    const kept = ((existing && existing.items) || []).filter((x) => !hidden(x)), dropped = ((existing && existing.items) || []).length - kept.length;
+    const kept = ((existing && existing.items) || []).filter((x) => !hidden(x) && !(x.type === 'report' && x.stage === 'qualifying')), dropped = ((existing && existing.items) || []).length - kept.length;
     summary.hiddenByOffSwitch += dropped;
     const merged = mergeItems(kept, fresh, nowIso);
     summary.added += merged.added; summary.revised += merged.revised; summary.unchanged += merged.unchanged; summary.tournaments++;

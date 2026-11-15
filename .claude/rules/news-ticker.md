@@ -6,7 +6,10 @@ ticker page comes through Claude Design). Tests: `tools/test-news-ticker.mjs`, `
 `tools/test-live-match-end.py`.
 
 ## Scope
-- ATP singles, main draw and qualifying, every tournament on the board. **Test:** a doubles card, a non-ATP card and an
+- **Match reports are ATP main draw only** (founder 2026-11-15: "we don't do match reports of qualifying matches"): a qualifying card writes no report and a stored qualifying report leaves the feed on the next build; status items (qualifier, lucky loser) and quotes are unchanged. **Test:** `tools/test-news-ticker-live.mjs` "reports are main draw only".
+- **Length** (founder 2026-11-15, "we can also make them shorter"): the writer is asked for 150 to 200 words, at most two quotes; the check refuses over 260. **Cost is recorded per match**: `composed.usage` (input, output tokens, calls) and `composed.retryWhy` (why a first try was refused). Measured 15 Nov on 6 writes: one try about $0.06, two tries about $0.12.
+- A final's highlights clip has no names in its title ("Stockholm 2026 Final Highlights"): it joins the one finished main-draw singles final of that event. **Test:** `tools/test-ttv-interviews.mjs`.
+- ATP singles, every tournament on the board. **Test:** a doubles card, a non-ATP card and an
   unfinished card produce no item.
 
 ## Feed files

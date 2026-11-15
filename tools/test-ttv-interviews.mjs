@@ -79,6 +79,14 @@ await ok('highlights: the clip is tied to the one finished match of those two pl
     { id: 'upcoming-1', tour: 'ATP Stockholm', p1: 'L. Musetti', p2: 'T. Fritz' }];
   assert.deepEqual(resolveHighlights({ title: 'Stockholm 2026 QF Musetti Humbert Highlights' }, cs), { eventKey: '12179396', p1: 'L. Musetti', p2: 'U. Humbert', tournament: 'Stockholm', round: 'QF' });
   assert.equal(resolveHighlights({ title: 'Stockholm 2026 QF Fritz Rune Highlights' }, cs), null);
+  { // a final's clip has no names: the one finished main-draw singles final; a qualifying final, a doubles final or two finals -> nothing
+    const fin = { id: 'past-900', tour: 'ATP Stockholm', p1: 'T. Fritz', p2: 'T. A. Tirante', tournamentRound: 'ATP Stockholm - Final', finalScore: { winner: 'p1' } };
+    const qf = { ...fin, id: 'past-901', qualifying: true }, dbl = { ...fin, id: 'past-902', p1: 'A. One / B. Two' };
+    assert.equal(resolveHighlights({ title: 'Stockholm 2026 Final Highlights' }, [fin, qf, dbl]).eventKey, '900');
+    assert.equal(resolveHighlights({ title: 'Stockholm 2026 Final Highlights' }, [qf, dbl]), null);
+    assert.equal(resolveHighlights({ title: 'Stockholm 2026 Final Highlights' }, [fin, { ...fin, id: 'past-903' }]), null);
+    assert.equal(resolveHighlights({ title: 'Stockholm 2026 Doubles Final Highlights' }, [fin]), null);
+  }
   assert.equal(resolveHighlights({ title: 'Stockholm 2026 SF Musetti Fritz Highlights' }, cs), null);
   const feed = { content: [1, 2, 3].map((i) => ({ id: i, title: 'Stockholm 2026 QF Musetti Humbert Highlights', date: '2026-11-12T22:1' + i + ':00Z', titleUrlSegment: 'x' + i, tags: [{ label: 'video-type:match-highlights' }, { label: 'match-type:singles' }] })) };
   const got = pickHighlights(feed, { clips: { hl1: { status: 'done' } } }, cs, '2026-11-13T00:00:00.000Z');
