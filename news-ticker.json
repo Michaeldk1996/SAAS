@@ -1,5 +1,5 @@
 {
- "generatedAt": "2026-11-15T17:15:57.379Z",
+ "generatedAt": "2026-11-15T18:01:39.448Z",
  "tournaments": [
   {
    "key": "2794",
@@ -12,7 +12,7 @@
     "report": 1
    },
    "latestTimestamp": "2026-11-15T16:53:14.000Z",
-   "updatedAt": "2026-11-15T17:15:57.379Z"
+   "updatedAt": "2026-11-15T18:01:39.448Z"
   },
   {
    "key": "tour",
@@ -424,6 +424,59 @@
     "Zverev: W: 21 / UE: 18 | DR: 2.01",
     "Jodar: W: 12 / UE: 10 | DR: 0.50"
    ],
+   "shotStats": {
+    "p1": {
+     "performance": null,
+     "serveQuality": null,
+     "unreturnedPct": null,
+     "firstInPct": 84,
+     "firstWonPct": 86,
+     "secondWonPct": 50,
+     "secondSpeed": null,
+     "returnQuality": null,
+     "fhWinners": null,
+     "bhWinners": null,
+     "fhUnforced": null,
+     "bhUnforced": null,
+     "forcedErrors": null,
+     "baselineWon": null,
+     "under9Won": null,
+     "over9Won": null,
+     "bpWon": [
+      2,
+      7
+     ],
+     "netWon": null
+    },
+    "p2": {
+     "performance": null,
+     "serveQuality": null,
+     "unreturnedPct": null,
+     "firstInPct": 63,
+     "firstWonPct": 67,
+     "secondWonPct": 50,
+     "secondSpeed": null,
+     "returnQuality": null,
+     "fhWinners": null,
+     "bhWinners": null,
+     "fhUnforced": null,
+     "bhUnforced": null,
+     "forcedErrors": null,
+     "baselineWon": null,
+     "under9Won": null,
+     "over9Won": null,
+     "bpWon": [
+      0,
+      2
+     ],
+     "netWon": null
+    },
+    "postedAt": "2026-11-15T15:01:01.000Z",
+    "readAt": "2026-11-15T17:26:26.803Z",
+    "sourceName": "ATP broadcast match statistics (via @ATP_Entry)",
+    "sourceUrl": "https://x.com/ATP_Entry/status/2121981804450029833",
+    "agreed": "6 of 6 serve figures within 3 points of ours; set scores and break points equal"
+   },
    "commentary": {
     "text": "Zverev beat Jodar 6-4, 6-4 in just under an hour and a half, in the opening singles match of the week. Jodar, aged 20 and making his debut at the event, came through his first two service games well but his serve was named as an area where he can still improve. The ball was not flying through the air and the players seemed to struggle at times to control it. Zverev served big and posted a high first serve percentage, taking the first set after 40 minutes. The second set followed a similar pattern. Jodar's movement and athleticism were good enough to compete at this level but Zverev's serving proved a little too much for him.",
     "sourceName": "Tennis TV highlights commentary",
@@ -501,10 +554,10 @@
    "sourceUrl": "pbp/12179707.json",
    "language": "en",
    "translated": false,
-   "sourceHash": "921900b4aef7d442",
+   "sourceHash": "838d9fb9d62c59e7",
    "publishedAt": "2026-11-15T15:18:15.690Z",
-   "revisedAt": "2026-11-15T16:04:26.409Z",
-   "revision": 1,
+   "revisedAt": "2026-11-15T18:01:39.448Z",
+   "revision": 2,
    "file": "news-ticker/2794-2026.json"
   },
   {
