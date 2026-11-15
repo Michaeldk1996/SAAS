@@ -1,17 +1,17 @@
 {
- "generatedAt": "2026-11-15T09:05:09.514Z",
+ "generatedAt": "2026-11-15T10:29:59.312Z",
  "tournaments": [
   {
    "key": "tour",
    "season": "2026",
    "name": "ATP Tour",
    "file": "news-ticker/tour-2026.json",
-   "items": 67,
+   "items": 68,
    "byType": {
-    "quote": 67
+    "quote": 68
    },
-   "latestTimestamp": "2026-11-15T08:15:57.803Z",
-   "updatedAt": "2026-11-15T09:05:09.514Z"
+   "latestTimestamp": "2026-11-15T09:41:35.000Z",
+   "updatedAt": "2026-11-15T10:29:59.312Z"
   },
   {
    "key": "1681",
@@ -51,6 +51,37 @@
   }
  ],
  "latest": [
+  {
+   "id": "quote-c97b20550b80b5",
+   "type": "quote",
+   "playerId": "1980",
+   "opponentId": null,
+   "player": "A. Zverev",
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-15T09:41:35.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "The meter gave an incorrect reading, which caused me to inject far too much insulin before the match",
+   "originalText": "De meter gaf een onjuiste meting, waardoor ik voor de partij veel te veel insuline injecteerde",
+   "language": "nl",
+   "translated": true,
+   "translationModel": "claude-opus-5-5",
+   "sourceName": "NOS Sport",
+   "sourceUrl": "https://nos.nl/artikel/2639556-nummer-een-van-de-wereld-zverev-schaamde-zich-jarenlang-voor-zijn-diabetes",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On his insulin overdose before Halle loss",
+   "sourceHash": "3794e5d44e8e6616",
+   "publishedAt": "2026-11-15T10:29:59.312Z",
+   "file": "news-ticker/tour-2026.json"
+  },
   {
    "id": "quote-c73fbe4d1df6d5",
    "type": "quote",
@@ -1608,38 +1639,6 @@
    "interview": "on-court",
    "topic": "On his forehand and serve",
    "sourceHash": "a0863782a7290dac",
-   "publishedAt": "2026-11-13T18:43:33.043Z",
-   "file": "news-ticker/1681-2026.json"
-  },
-  {
-   "id": "quote-c7543d62453839",
-   "type": "quote",
-   "playerId": "366",
-   "opponentId": "2982",
-   "player": "T. A. Tirante",
-   "opponent": "A. Tabilo",
-   "tournament": "Stockholm",
-   "tournamentKey": "1681",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-13T15:15:00.000Z",
-   "timestampKind": "observed (Tennis TV published the clip then)",
-   "category": "Quotes",
-   "context": "after beating A. Tabilo",
-   "eventKey": "12179750",
-   "won": true,
-   "text": "I think the, the mental, the mental thing. You know, the mental part and my physically. … I am, I am very, very fast, I think",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "On-court interview",
-   "sourceUrl": "https://www.tennistv.com/videos/4608795/stockholm-2026-sf-thiago-agustin-tirante-interview",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the clip's audio, transcribed by the interviews worker",
-   "interview": "on-court",
-   "topic": "On his improvement",
-   "sourceHash": "e1322a913927ee18",
    "publishedAt": "2026-11-13T18:43:33.043Z",
    "file": "news-ticker/1681-2026.json"
   }
