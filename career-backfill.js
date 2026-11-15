@@ -746,7 +746,11 @@ function mergePlayer(history, tmlMatches) {
 
   // TML matches, grouped by canonical id then year.
   const tml = new Map(); // id -> { display, byYear:{year->matches[]} }
-  for (const m of tmlMatches) {
+  for (const m0 of tmlMatches) {
+    // Founder 2026-11-15 ("this problem can not be happening again"): TML dates an event at its START, so an edition
+    // that starts in late December (Brisbane 31 Dec 2018, Hong Kong, United Cup) carried the old year while api-tennis
+    // files it under its season — one match listed under two editions. The edition year is the season it belongs to.
+    const m = tmlEditionYear(m0) !== m0.year ? Object.assign({}, m0, { year: tmlEditionYear(m0) }) : m0;
     if (m.year > BACKFILL_UP_TO_YEAR) continue;
     const { id, display } = canonicalTournament(m.tourney);
     let e = tml.get(id);
@@ -758,15 +762,20 @@ function mergePlayer(history, tmlMatches) {
     // (buildArchiveHistories via flipSets, embedded matches via swapScore) already
     // compensate; this profile-editions path did not, so every pre-2021 edition
     // printed its score reversed. Flip it here, at the single uncompensated site.
-    (e.byYear[m.year] = e.byYear[m.year] || []).push({ res: m.won ? 'W' : (m.walkover ? 'WD' : 'L'), round: m.round, opp: m.oppName, oppKey: '', score: flipSets(m.score), ...(m.ret ? { ret: true } : {}), ...(m.walkover ? { walkover: true } : {}) });   // TEN-313: a TML walkover carries its flag ('WD' when given), so no W-L counter counts it
+    (e.byYear[m.year] = e.byYear[m.year] || []).push({ res: m.won ? 'W' : (m.walkover ? 'WD' : 'L'), round: m.round, opp: m.oppName, oppKey: '', score: flipSets(m.score), _d: m0.date || null, ...(m.ret ? { ret: true } : {}), ...(m.walkover ? { walkover: true } : {}) });   // TEN-313: a TML walkover carries its flag ('WD' when given), so no W-L counter counts it
   }
 
-  let addedEditions = 0;
+  let addedEditions = 0, droppedDuplicates = 0;
   for (const [id, e] of tml) {
     const g = group(id, e.display, false);
-    for (const [yStr, ms] of Object.entries(e.byYear)) {
+    for (const [yStr, ms0] of Object.entries(e.byYear)) {
       const y = playedYear(e.display, yStr);   // fx5 item 5: the played year, as the API side
       if (g.apiYears.has(y) || (y in g.byYear)) continue; // existing/API year wins
+      // The guard (founder 2026-11-15): an archive match already held by the API edition of the season before or after
+      // — same result, round, score and opponent — is that edition's match, never a second one.
+      const ms = ms0.filter((m) => !sameMatchInAdjacentEdition(g.byYear, y, m));
+      droppedDuplicates += ms0.length - ms.length;
+      if (!ms.length) continue;
       g.byYear[y] = ms;
       addedEditions++;
     }
@@ -775,7 +784,44 @@ function mergePlayer(history, tmlMatches) {
   const hist = [];
   for (const g of groups.values()) hist.push(finalizeTournament(g.display, g.byYear));
   hist.sort((a, b) => (b.won + b.lost) - (a.won + a.lost));
-  return { history: hist, addedEditions };
+  return { history: hist, addedEditions, droppedDuplicates };
+}
+// The season a TML edition belongs to: its start date's year, except an edition starting 24–31 December (the next
+// season's opening week: Brisbane, Hong Kong, United Cup, Hopman Cup), which is next year's — the api-tennis season and
+// Tennis Explorer's edition year (pipeline-records.md "Season = TE's edition year").
+function tmlEditionYear(m) {
+  const y = Number(m && m.year);
+  return /^\d{4}-12-(2[4-9]|3[01])$/.test(String((m && m.date) || '')) ? y + 1 : y;
+}
+function sameMatchInAdjacentEdition(byYear, y, m) {
+  // only an edition that starts 24–31 December can sit under two seasons; any other repeat meeting is a real match
+  if (!/^\d{4}-12-(2[4-9]|3[01])$/.test(String(m._d || ''))) return false;
+  const mine = new Set(holeNameTokens(m.opp));
+  if (!mine.size) return false;
+  return [y - 1, y + 1].some((yy) => (byYear[yy] || []).some((o) => o.res === m.res && o.round === m.round &&
+    String(o.score || '').replace(/\s+/g, '') === String(m.score || '').replace(/\s+/g, '') &&
+    holeNameTokens(o.opp).some((t) => mine.has(t))));
+}
+// Every match listed under two editions of one tournament (adjacent seasons, same result, round, score and opponent):
+// the pipeline guard and the tests read this; a merged history must return none.
+function crossEditionDuplicates(history) {
+  const out = [];
+  for (const t of (Array.isArray(history) ? history : [])) {
+    const by = {};
+    for (const ed of (t.editions || [])) by[Number(ed.year)] = ed.matches || [];
+    for (const [yStr, ms] of Object.entries(by)) {
+      const y = Number(yStr);
+      for (const m of ms) {
+        if (m.walkover) continue;
+        const mine = new Set(holeNameTokens(m.opp));
+        const o = (by[y + 1] || []).find((x) => !x.walkover && x.res === m.res && x.round === m.round &&
+          String(x.score || '').replace(/\s+/g, '') === String(m.score || '').replace(/\s+/g, '') &&
+          holeNameTokens(x.opp).some((z) => mine.has(z)) && (!m.oppKey || !x.oppKey));
+        if (o) out.push({ tournament: t.name, years: [y, y + 1], opp: m.opp, res: m.res, round: m.round });
+      }
+    }
+  }
+  return out;
 }
 
 // ---------------------------------------------------------------------------
@@ -947,19 +993,23 @@ async function backfillProfilesHistory(profiles, opts = {}) {
 
   const apiToTml = reconcile(profiles, index.identity, countryToIoc, log);
 
-  let backfilled = 0, addedEditions = 0;
+  let backfilled = 0, addedEditions = 0, dropped = 0, suspect = 0;
   for (const [apiKey, tmlId] of apiToTml) {
     const matches = index.byId.get(tmlId);
     if (!matches || !matches.length) continue;
-    const { history, addedEditions: added } = mergePlayer(profiles[apiKey].tournamentHistory, matches);
+    const { history, addedEditions: added, droppedDuplicates } = mergePlayer(profiles[apiKey].tournamentHistory, matches);
+    dropped += droppedDuplicates || 0;
     if (added > 0) {
       profiles[apiKey].tournamentHistory = history;
       backfilled++;
       addedEditions += added;
     }
+    const dup = crossEditionDuplicates(profiles[apiKey].tournamentHistory);
+    if (dup.length) { suspect += dup.length; dup.slice(0, 3).forEach((d) => log(`::warning::tournament history ${apiKey}: ${d.opp} ${d.res} ${d.round} listed under ${d.tournament} ${d.years.join(' and ')}`)); }
   }
-  log(`  Backfill: enriched ${backfilled} players with ${addedEditions} pre-2021 editions.`);
-  return { backfilled, addedEditions };
+  log(`  Backfill: enriched ${backfilled} players with ${addedEditions} pre-2021 editions; ${dropped} archive match(es) already in the ` +
+    `adjacent season's edition left out; ${suspect} match(es) still listed under two adjacent editions.`);
+  return { backfilled, addedEditions, droppedDuplicates: dropped, crossEditionSuspects: suspect };
 }
 
 // TEN-310 (founder ruling 2026-09-27, "Backfill career-history (2021 hole) and keep both joins").
@@ -1003,6 +1053,9 @@ function fillFixtureHole(fixtureRows, tmlRows, year) {
 }
 
 module.exports = {
+  mergePlayer,
+  tmlEditionYear,
+  crossEditionDuplicates,
   backfillProfilesHistory,
   backfillMatchesTournamentHistory,
   buildArchiveHistories,

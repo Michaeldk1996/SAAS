@@ -69,8 +69,15 @@ H.check('8.1 Price sensitivity (LOCKED): one card 22/24/6, two role groups on Al
   assert(/data-mk-ps style="[^"]*border-radius:16px;padding:22px 24px 6px;/.test(h), 'card');
   assert.deepStrictEqual((ps.match(/data-mk-psgroup="(\w+)"/g) || []).map((x) => x.slice(17, -1)), ['fav', 'dog']);
   // one 58px row per MK_BANDS entry (the band count is not pinned here: the ladder may grow, rows follow MK_BANDS)
+  // founder 2026-11-15: a group is its ROLE (shorter price = favourite); its rows are that role's matches by price band —
+  // every band of its own side, plus any other band the role reaches (a favourite at 2.10 v 2.20), in ladder order
   const ids = (ps.match(/data-mk-band="(\d+)"/g) || []).map((x) => +/(\d+)/.exec(x)[1]);
-  assert(ids.length >= 8 && ids.every((v, i) => v === i), 'band rows not one per band in order: ' + ids.join(','));
+  for (const g of ['fav', 'dog']) {
+    const gi = (ps.match(new RegExp('data-mk-band="(\\d+)" data-mk-role="' + g + '"', 'g')) || []).map((x) => +/(\d+)/.exec(x)[1]);
+    const own = I.MK_BANDS.map((B, i) => B[0] === g ? i : -1).filter((i) => i >= 0);
+    assert(own.every((i) => gi.includes(i)) && gi.every((v, k) => !k || v > gi[k - 1]), g + ' rows: ' + gi.join(','));
+  }
+  assert(ids.length >= 8, 'band rows ' + ids.length);
   assert.strictEqual((ps.match(/min-height:58px/g) || []).length, ids.length, '58px band rows');
   assert((ps.match(/grid-template-columns:minmax\(120px,200px\) 64px 64px minmax\(0,1fr\) 68px;gap:0 20px;/g) || []).length === ids.length + 2, 'locked grid');
   const heads = (ps.match(/<span[^>]*>(Price|W–L|Win %|Yield vs break even|Yield)<\/span>/g) || []).length;

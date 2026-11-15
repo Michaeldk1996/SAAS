@@ -69,39 +69,39 @@ function ratingsHtml() {
   return html;
 }
 
-// ── RULING 1 (founder 2026-11-13 — "we have the service games, so count it") ──
-// Aces and double faults per SERVICE GAME (the builder's acesPerSG / dfPerSG = window aces ÷ service games), 2 dp.
-check('RULING 1: the count tiles are "Aces per service game" / "Double faults per service game", 2 dp, no unit', () => {
+// ── RULING 1, REPLACED (founder 2026-11-15 — "Always do it based on the ATP rules") ──
+// The 2026-11-13 per-SERVICE-GAME counts are withdrawn: the Serve rating (ATP leaderboard) adds aces and double faults
+// PER MATCH, so the boxes print those same terms and the six boxes reproduce the rating (1 dp).
+check('RULING 1 (2026-11-15): the count tiles are "Aces per match" / "Double faults per match", 1 dp, no unit', () => {
   const { M } = load();
   const serve = M._internals.DNA_TILES.serve;
-  assert.deepStrictEqual(serve.map(t => t.f), ['firstInPct', 'firstWonPct', 'secondWonPct', 'holdPct', 'acesPerSG', 'dfPerSG'],
-    'the Serve boxes are not the four rates + the two per-service-game counts');
-  const ace = serve.find(t => t.f === 'acesPerSG'), df = serve.find(t => t.f === 'dfPerSG');
-  assert.strictEqual(ace.label, 'Aces per service game'); assert.strictEqual(df.label, 'Double faults per service game');
-  assert.strictEqual(ace.dp, 2); assert.strictEqual(df.dp, 2);
+  assert.deepStrictEqual(serve.map(t => t.f), ['firstInPct', 'firstWonPct', 'secondWonPct', 'holdPct', 'acesPerMatch', 'dfPerMatch'],
+    'the Serve boxes are not the six terms of the Serve rating');
+  const ace = serve.find(t => t.f === 'acesPerMatch'), df = serve.find(t => t.f === 'dfPerMatch');
+  assert.strictEqual(ace.label, 'Aces per match'); assert.strictEqual(df.label, 'Double faults per match');
+  assert.strictEqual(ace.dp, 1); assert.strictEqual(df.dp, 1);
   assert.ok(!ace.unit && !df.unit, 'a count carries a unit');
   assert.ok(df.lower === true, 'double faults are not lower-is-better');
 });
-check('RULING 1: the per-service-game counts are the per-match counts over the service games (a count, not a guess)', () => {
-  let n = 0;
+check('RULING 1 (2026-11-15): the six Serve boxes add up to the Serve rating (ATP rule), every rated player', () => {
+  let n = 0, worst = 0;
   for (const r of ROWS) {
     const s = r.surfaces && r.surfaces.All && r.surfaces.All.last52 && r.surfaces.All.last52.serve;
-    if (!s || s.acesPerSG == null || s.acesPerMatch == null || !s.acesPerSG) continue;
-    // service games per match = acesPerMatch / acesPerSG; a tour player serves 8–16 games a best-of-3 match, up to ~25 with five-setters
-    const sgPerMatch = s.acesPerMatch / s.acesPerSG;
-    assert.ok(sgPerMatch > 6 && sgPerMatch < 26, `${r.name}: ${sgPerMatch.toFixed(1)} service games a match`);
+    if (!s || s.rating == null || [s.firstInPct, s.firstWonPct, s.secondWonPct, s.holdPct, s.acesPerMatch, s.dfPerMatch].some(v => v == null)) continue;
+    const sum = s.firstInPct + s.firstWonPct + s.secondWonPct + s.holdPct + s.acesPerMatch - s.dfPerMatch;
+    worst = Math.max(worst, Math.abs(sum - s.rating));
     n++;
   }
   assert.ok(n > 50, `only ${n} players compared — vacuous`);
+  assert.ok(worst < 0.6, `the boxes miss the rating by ${worst.toFixed(2)} (more than rounding)`);
 });
 check('RULING 1: the rendered panel prints no % beside either count', () => {
   const html = ratingsHtml();
-  for (const label of ['Aces per service game', 'Double faults per service game']) {
+  for (const label of ['Aces per match', 'Double faults per match']) {
     assert.ok(html.includes(label), `panel never prints "${label}"`);
     const printed = html.replace(/color-mix\(in srgb, var\(--[\w-]+\) [\d.]+%, transparent\)/g, 'color-mix()');
     const i = printed.indexOf(label);
     const tile = printed.slice(Math.max(0, i - 700), i + 400);
-    // the box reads value · Δ · label · "ATP average X" — only the neighbouring boxes may carry a %
     const own = tile.slice(tile.lastIndexOf('data-pp2-dnabox'), tile.indexOf('</div></div>', tile.lastIndexOf('data-pp2-dnabox')));
     assert.ok(!/\d%/.test(own), `a % appears inside the "${label}" box`);
   }

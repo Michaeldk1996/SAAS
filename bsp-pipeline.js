@@ -5815,7 +5815,9 @@ function historyCacheFresh(cached, now, isSeed) {
 // v7 (founder 2026-10-22): walkover rows listed in each edition, walkover-only editions kept with the round reached.
 // v8 (founder 2026-10-30): the single qualifying rule (h2h-core qualifyingByMainDraw) — a word-round fixture before his
 // first "1/N-finals" round of the edition is 'Q' (Ofner, Wimbledon 2021 read "Final" for a qualifying final). Busts the cache.
-const TOURNAMENT_HISTORY_SCHEMA_VERSION = 8;
+// v9 (founder 2026-11-15): a season-ending Finals' group-stage match with no round is kept as 'RR' (Fritz's Turin 2022 and
+// 2024 round robins were missing). Busts the cache so every history rebuilds with them.
+const TOURNAMENT_HISTORY_SCHEMA_VERSION = 9;
 
 // Round depth ranking (higher = deeper run). Used to derive each player's best
 // result at a tournament. Covers both the word forms ("Quarter-finals") and the
@@ -5925,6 +5927,8 @@ function normalizeTournamentName(name) {
 //   { name, won, lost, firstYear, lastYear, titles, bestResult, bestYears[],
 //     editions: [ { year, finish, finishWon,
 //       matches: [ { res:'W'|'L', round, opp, oppKey, score } ] } ] }  // newest first
+// The season-ending Finals (ATP Finals in any spelling, Next Gen Finals) — never a team event's finals.
+const TOUR_FINALS_RR = /^(?!.*\b(davis|cup|billie|laver|hopman|olympic)).*(\b(atp\s+|tour\s+|nitto\s+)?finals\b|next\s?gen)/i;
 async function fetchPlayerCareerHistory(playerKey) {
   const stop = new Date().toISOString().split('T')[0];
   const url = `${API_TENNIS_BASE}?method=get_fixtures&APIkey=${API_TENNIS_KEY}&date_start=2000-01-01&date_stop=${stop}&event_type_key=265&player_key=${playerKey}`;
@@ -5947,7 +5951,12 @@ async function fetchPlayerCareerHistory(playerKey) {
   }
   const byTournament = {};
   for (const f of data.result) {
-    if (!f.tournament_name || !f.tournament_round) continue;
+    // Founder 2026-11-15 ("fix the ATP Finals record"): api-tennis sends a season-ending Finals' group-stage matches
+    // with an EMPTY round (Fritz, Turin 2022 and 2024: Nadal, Ruud, Auger-Aliassime / Medvedev, Sinner, de Minaur), so
+    // the round test below dropped every one and the edition read SF / F only. A round-robin Finals match with no round
+    // is its round robin ('RR', exempt from the qualifying nets like every RR row). Team events are out of this rule.
+    const rrFinals = !f.tournament_round && f.tournament_name && TOUR_FINALS_RR.test(f.tournament_name);
+    if (!f.tournament_name || (!f.tournament_round && !rrFinals)) continue;
     // TEN-157/TEN-158 ROOT FIX: never derive a durable career-history row from a
     // NON-FINAL match. A live/in-play snapshot can carry a declared winner while
     // event_final_result still lags (e.g. "2 - 1" mid-3rd-set), which froze a real
@@ -5976,7 +5985,7 @@ async function fetchPlayerCareerHistory(playerKey) {
     if (!name) continue;
     const year = parseInt(f.tournament_season || (f.event_date || '').slice(0, 4), 10);
     if (!year) continue;
-    let code = isQualifying ? 'Q' : careerRoundShort(f.tournament_round);
+    let code = isQualifying ? 'Q' : rrFinals ? 'RR' : careerRoundShort(f.tournament_round);
     if (code !== 'Q' && !ROUND_ROBIN_NAMES.test(name)
         && H2H_QUAL_RULE({ date: f.event_date, round: f.tournament_round }, edRows.get(`${f.tournament_key}|${f.tournament_season || String(f.event_date || '').slice(0, 4)}`))) code = 'Q';
     const opp = (isP1 ? f.event_second_player : f.event_first_player) || '';

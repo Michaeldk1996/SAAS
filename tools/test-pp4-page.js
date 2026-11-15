@@ -159,6 +159,40 @@ check('Record per tournament: a priced retirement left out of Backing says "void
     /I\.splTourRowsOf\(d\)/.test(B) && /node tools\/build-splits-tour-rows\.js \. \|\|/.test(RS) && /var groups = splGroupsDef\(all\.rows\);/.test(SRC) || 'builder');
 }
 
+// ── founder 2026-11-15: the six audit fixes ─────────────────────────────────
+{
+  const I = load(SRC);
+  check('favourite = the shorter closing price: 1.95 v 1.96 favourite, 1.96 v 1.95 underdog, 1.95 v 1.95 neither', () =>
+    I.mkRoleOf({ price: 1.95, oppPrice: 1.96, role: 'dog' }) === 'fav' && I.mkRoleOf({ price: 1.96, oppPrice: 1.95, role: 'fav' }) === 'dog' &&
+    I.mkRoleOf({ price: 1.95, oppPrice: 1.95, role: 'fav' }) === 'tie' && I.mkRoleOf({ price: 2.1, role: 'fav' }) === 'fav' || 'roles');
+  check('Level & round: the Next Gen Finals are not the ATP Finals', () =>
+    I.splLevelOf({ lv: 'F', t: 'NextGen Finals' }) !== 'ATP Finals' && I.splLevelOf({ lv: 'F', t: 'Next Gen ATP Finals' }) !== 'ATP Finals' &&
+    I.splLevelOf({ lv: 'F', t: 'Tour Finals' }) === 'ATP Finals' || 'level');
+  const sv = (I.DNA_TILES.serve || []).map(t => t.f + ':' + t.label);
+  check('Ratings · Serve boxes are the rating\'s own terms: aces and double faults per match (ATP leaderboard rule)', () =>
+    sv.includes('acesPerMatch:Aces per match') && sv.includes('dfPerMatch:Double faults per match') && !sv.some(x => /PerSvcGame|per service game/i.test(x)) || sv.join(', '));
+  const atp = { bpConvPct: 37.9, bpSavedPct: 64.1, tbWinPct: 55.9, decWinPct: 54.8, rating: 212.7, rule: 'atp' };
+  check('Ratings · Under pressure reads the ATP-rule node (its four boxes add up to its rating), else the old one', () =>
+    I.dnaAxNode({ underPressure: { rating: 1 }, underPressureAtp: atp }, 'underPressure') === atp &&
+    I.dnaAxNode({ underPressure: { rating: 1 } }, 'underPressure').rating === 1 &&
+    Math.abs(atp.bpConvPct + atp.bpSavedPct + atp.tbWinPct + atp.decWinPct - atp.rating) < 0.05 || 'node');
+  const UB = fs.readFileSync(path.join(ROOT, 'dna-apitennis-ratings.js'), 'utf8');
+  check('the DNA builder writes underPressureAtp = BP converted + BP saved + tiebreaks won + deciders won (ATP leaderboard)', () =>
+    /underPressureAtp/.test(UB) && /tbWinPct: pct\(a\.tbWon, a\.tbPlayed\), decWinPct: pct\(a\.decWon, a\.decPlayed\)/.test(UB) || 'builder');
+}
+{
+  // the Calendar counts the Career record's rows: a Tennis Explorer-only row is in it, a row TE leaves out is not
+  const ch = [{ date: '2025-03-01', tournament: 'A', opponent: 'X. One', won: true }, { date: '2025-04-01', tournament: 'B', opponent: 'X. Two', won: false },
+    { date: '2025-05-01', tournament: 'C', opponent: 'X. Junior', won: true }];
+  const rec = { add: [{ date: '2025-06-01', tournament: 'D', opponent: 'X. Three', won: true, src: 'te', year: 2025 }], out: [[2, 'junior']], over: [] };
+  const p = { key: '77', name: 'T. Test', careerByYear: [{ year: '2025', total: { won: 2, lost: 1 } }] };
+  const I = load(SRC, { careerHistory: { 77: ch }, careerRecord: { 77: rec } });
+  const W = global.window; global.window = Object.assign({}, W || {}, { careerHistory: { 77: ch }, careerRecord: { 77: rec } });
+  let n, rows;
+  try { n = I.calScope(p).n; rows = I.calRows(p).length; } finally { if (W === undefined) delete global.window; else global.window = W; }
+  check('Calendar total = Career record total: 3 = 3 (the TE-only row in, the junior row out)', () => n === 3 && rows === 3 || JSON.stringify({ n, rows }));
+}
+
 // ── mutants: each must turn a check red ─────────────────────────────────────
 const MUT = [
   ['window ignored', s => s.replace('if (!isFinite(at) || at < cut.getTime() || at > now) return;', 'if (!isFinite(at)) return;')],

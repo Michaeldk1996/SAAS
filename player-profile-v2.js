@@ -4906,12 +4906,13 @@
       { f: 'firstInPct', label: 'First serve in', dp: 1, unit: '%' },
       { f: 'firstWonPct', label: 'First serve points won', dp: 1, unit: '%' },
       { f: 'secondWonPct', label: 'Second serve points won', dp: 1, unit: '%' },
-      // v3 C3 (Ratings brief point 4): the terms of the Serve rating, with Service games won. Founder 2026-11-13: aces and
-      // double faults are counted PER SERVICE GAME ("we have the service games, so count it"): the builder's acesPerSG /
-      // dfPerSG = the window's aces (double faults) ÷ its service games, 2 dp. The rating itself is unchanged.
+      // v3 C3 (Ratings brief point 4): the terms of the Serve rating, with Service games won.
       { f: 'holdPct', label: 'Service games won', dp: 1, unit: '%' },
-      { f: 'acesPerSG', label: 'Aces per service game', dp: 2, unit: '' },
-      { f: 'dfPerSG', label: 'Double faults per service game', dp: 2, unit: '', lower: true }
+      // founder 2026-11-15 ("always the ATP rules"): the ATP Serve rating adds average aces PER MATCH and subtracts average
+      // double faults PER MATCH, so the boxes show those (replaces the 2026-11-13 per-service-game boxes, which could not
+      // reproduce the rating)
+      { f: 'acesPerMatch', label: 'Aces per match', dp: 1, unit: '' },
+      { f: 'dfPerMatch', label: 'Double faults per match', dp: 1, unit: '', lower: true }
     ],
     return: [
       { f: 'ret1stWonPct', label: '1st serve return points won', dp: 1, unit: '%' },
@@ -4929,6 +4930,14 @@
   };
 
   function dnaStore() { return window.dnaRatings || null; }
+  // founder 2026-11-15 ("build it on the ATP rules"): Under pressure on this tab is the ATP leaderboard sum over the SAME
+  // matches as Serve and Return (the builder's underPressureAtp), so its break points converted is Return's and its four
+  // boxes add up to it. A file built before it falls back to the radar's node (TEN-328).
+  function dnaAxNode(sc, key) {
+    if (!sc) return null;
+    if (key === 'underPressure' && sc.underPressureAtp) return sc.underPressureAtp;
+    return sc[key] || null;
+  }
   // The head scope control is the ONE control for this modal (file :3321-3338
   // renders `headScopeTabs`, and sets `dnaScopeOn:false` so the DNA block's own
   // scope tabs are suppressed). 'career' maps to the file's `sinceBase` node.
@@ -4985,7 +4994,7 @@
           if (sf.elo && sf.elo.rating != null) push('elo', sf.elo.rating);
           return;
         }
-        var node = sc[ax.key];
+        var node = dnaAxNode(sc, ax.key);
         if (node && node.rating != null) push(ax.key, node.rating);
         if (node) {
           (DNA_TILES[ax.key] || []).forEach(function (t) {
@@ -4998,7 +5007,7 @@
     Object.keys(acc).forEach(function (k) {
       var v = acc[k];
       out[k] = { mean: v.reduce(function (a, b) { return a + b; }, 0) / v.length, n: v.length,
-        min: Math.min.apply(null, v), max: Math.max.apply(null, v) };
+        min: Math.min.apply(null, v), max: Math.max.apply(null, v), vals: v };
     });
     _dnaTour[scope] = out;
     return out;
@@ -5063,12 +5072,19 @@
         pct = rating != null ? dnaPctFromPop(scope, 'elo', rating) : null;
         if (pct == null && sf && sf.elo && sf.elo.pct != null) pct = sf.elo.pct;
       } else {
-        var node = sc[ax.key];
+        var node = dnaAxNode(sc, ax.key);
         rating = (node && node.rating != null) ? node.rating : null;
-        pct = (node && node.pct != null) ? node.pct : dnaPctFromPop(scope, ax.key, rating);
+        // the ATP-rule node's percentile is its rank in the same ATP pool the tab's average uses
+        var atpNode = ax.key === 'underPressure' && node && node.rule === 'atp';
+        var poolVals = atpNode && tour[ax.key] ? tour[ax.key].vals : null;
+        pct = atpNode ? (rating != null && poolVals && poolVals.length
+            ? 100 * (poolVals.filter(function (x) { return x < rating; }).length + poolVals.filter(function (x) { return x === rating; }).length / 2) / poolVals.length : null)
+          : (node && node.pct != null) ? node.pct : dnaPctFromPop(scope, ax.key, rating);
       }
       var t = tour[ax.key] || null;
-      var tPct = t ? dnaPctFromPop(scope, ax.key, t.mean) : null;
+      var atpUp = ax.key === 'underPressure' && sc.underPressureAtp;
+      var tPct = t ? (atpUp && t.vals ? 100 * (t.vals.filter(function (x) { return x < t.mean; }).length) / t.vals.length
+        : dnaPctFromPop(scope, ax.key, t.mean)) : null;
       // v3 C3 point 2 · the radar's scale: lowest ATP player at the centre, highest at the edge (fraction of the range)
       var span = t && t.max > t.min ? t.max - t.min : null;
       var fr = function (v) { return v == null || span == null ? null : Math.max(0, Math.min(1, (v - t.min) / span)); };
@@ -5086,7 +5102,7 @@
     return {
       state: matches >= DNA_FLOOR && drawable ? 'ok' : (drawable ? 'thin' : 'thin'),
       scope: scope, matches: matches, axes: axes,
-      estimated: !!(sc.underPressure && sc.underPressure.estimated),
+      estimated: !sc.underPressureAtp && !!(sc.underPressure && sc.underPressure.estimated),
       sinceBaseMatches: ((sf && sf.sinceBase && sf.sinceBase.sample && sf.sinceBase.sample.matches) || 0),
       latest: rec.latestMatch || null,
       meta: st.meta || {},
@@ -5348,7 +5364,7 @@
     var node = m.node || {}, ts = m.tourStats || {};
     function boxes(ax) {
       return DNA_TILES[ax].map(function (spec) {
-        var a2 = spec.from || ax, s2 = node[a2] || {};
+        var a2 = spec.from || ax, s2 = dnaAxNode(node, a2) || {};
         var t = ts[a2 + '.' + spec.f];
         var v = s2[spec.f] != null && dnaRateShown(spec, node) ? s2[spec.f] : null;
         return dnaBoxHtml(spec, v, t ? t.mean : null);
@@ -6969,11 +6985,14 @@
       return Math.max(1, i - first + 1);
     };
   }
+  var SPL_NEXTGEN = /\bnext\s?gen(?:eration)?(?:\s+atp)?\s+finals\b/i;
   function splLevelOf(m) {
     if (m.lv === 'G') return 'Grand Slams';
     if (m.lv === 'M') return 'Masters 1000';
     if (m.lv === 'D') return 'Team events';
-    if (m.lv === 'F') return 'ATP Finals';
+    // founder 2026-11-15 ("fix the ATP Finals record"): Tennis Abstract files the Next Gen Finals under level F too; it is
+    // not the ATP Finals. It is an ATP tour event with no 500 category, so it reads as the other such events do (ATP 250).
+    if (m.lv === 'F') return SPL_NEXTGEN.test(String(m.t || '')) ? 'ATP 250' : 'ATP Finals';
     if (m.lv === 'C') return 'Challenger';
     if (m.lv === 'A') {
       var c = typeof window.pp2EventCategory === 'function' ? window.pp2EventCategory(m.t) : null;
@@ -9153,9 +9172,11 @@
     for (var i = 0; i < MK_BANDS.length; i++) if (price >= MK_BANDS[i][3] - 1e-9 && price < MK_BANDS[i][4] - 1e-9) return i;
     return -1;
   }
-  // favourite = the shorter closing price of the two; an exact tie keeps the builder's role
+  // Founder 2026-11-15: the favourite is the player whose closing price is SHORTER than his opponent's (1.95 v 1.96 =
+  // favourite, 1.96 v 1.95 = underdog), whatever side of 2.00 it sits; an exact tie is neither ('tie'). One rule for the
+  // role cards, the page box and Price sensitivity. A row with no opponent price keeps the builder's role.
   function mkRoleOf(m) {
-    if (m.price != null && m.oppPrice != null && m.price !== m.oppPrice) return m.price < m.oppPrice ? 'fav' : 'dog';
+    if (m.price != null && m.oppPrice != null) return m.price < m.oppPrice ? 'fav' : m.price > m.oppPrice ? 'dog' : 'tie';
     return m.role === 'fav' || m.role === 'favourite' ? 'fav' : 'dog';
   }
   // Court speed from the row's abstract speed (Tennis Abstract, 1.00 = tour average): gap > +0.08 fast, < −0.08 slow.
@@ -9354,20 +9375,26 @@
     var stats = MK_BANDS.map(function (B, i) {
       return Object.assign({ i: i, B: B }, mkStat(pool.filter(function (m) { return mkBandIdx(m.price) === i; })));
     });
+    // founder 2026-11-15: a group is a ROLE (the shorter price), so each band's figures are that role's matches in it
+    var statsOf = function (gpool) {
+      return MK_BANDS.map(function (B, i) { return Object.assign({ i: i, B: B }, mkStat(gpool.filter(function (m) { return mkBandIdx(m.price) === i; }))); });
+    };
     var max = Math.max.apply(null, [1].concat(stats.filter(function (b) { return b.n >= MK_FLOOR; }).map(function (b) { return Math.abs(b.y); })));
     var sel = state.fb && state.fb.box === 'mkband' ? String(state.fb.v) : null;
     var M = 'font-family:\'IBM Plex Mono\',monospace;';
     var roles = filt === 'all' ? ['fav', 'dog'] : [filt];
     var groups = roles.map(function (key, gi) {
-      // All matches: the two groups split by the band's side of 2.00 (the rows sum to the group). A picked role: the pool
-      // is already that role (the shorter price of the two), so its group is the whole pool and a band on the other side
-      // of 2.00 that holds one of its matches (both prices over 2.00, say) is listed too, never dropped.
-      var gs = mkStat(filt !== 'all' ? pool : pool.filter(function (m) { var bi = mkBandIdx(m.price); return bi >= 0 && MK_BANDS[bi][0] === key; })), ok = gs.n >= MK_FLOOR;
+      // Founder 2026-11-15: each group is its ROLE — the matches where his closing price was shorter (favourite) or longer
+      // (underdog) than his opponent's; exact ties are in neither. Its rows are that role's matches by his price band, so a
+      // favourite at 2.10 v 2.20 sits in the favourite group's 2.00–2.49 row (listed, never dropped) and the rows sum to the group.
+      var gpool = pool.filter(function (m) { return mkRoleOf(m) === key; });
+      var gstats = statsOf(gpool);
+      var gs = mkStat(gpool), ok = gs.n >= MK_FLOOR;
       var rec = !gs.n ? 'no matches' : recordText(gs.w, gs.l) + ' ' + MIDDOT + ' ' + (ok ? gs.win.toFixed(1) + '% won' : 'under ' + MK_FLOOR);
-      var rows = stats.filter(function (b) { return b.B[0] === key || (filt !== 'all' && b.n > 0); }).map(function (b) {
-        var thin = b.n < MK_FLOOR, empty = !b.n, on = sel === String(b.i);
+      var rows = gstats.filter(function (b) { return b.B[0] === key || b.n > 0; }).map(function (b) {
+        var thin = b.n < MK_FLOOR, empty = !b.n, on = sel === key + ':' + b.i;
         var half = thin ? 0 : Math.abs(b.y) / max * 46;
-        return '<div ' + (empty ? '' : 'data-pp2="fb-open" data-box="mkband" data-v="' + b.i + '" ') + 'data-mk-band="' + b.i + '" class="pp2-mkps" style="' + MK_PS_COLS +
+        return '<div ' + (empty ? '' : 'data-pp2="fb-open" data-box="mkband" data-v="' + key + ':' + b.i + '" ') + 'data-mk-band="' + b.i + '" data-mk-role="' + key + '" class="pp2-mkps" style="' + MK_PS_COLS +
           'align-items:center;box-sizing:border-box;min-height:58px;margin:0 -24px;padding:8px 24px;cursor:' + (empty ? 'default' : 'pointer') + ';' +
           'background:' + (on ? 'var(--selected)' : 'transparent') + ';border-top:1px solid var(--line);">' +
           '<span style="display:flex;flex-direction:column;gap:4px;min-width:0;pointer-events:none;">' +
@@ -9447,9 +9474,11 @@
   (typeof FB_BUILD === 'object' ? FB_BUILD : {}).mkband = function (p, v) {
     var mk = marketFor(p.key);
     if (!mk) return null;
-    var i = parseInt(v, 10), B = MK_BANDS[i];
+    // v = "<role>:<band>" (founder 2026-11-15: a band row is its role's matches); a bare band index = every match in it
+    var vs = String(v), role = vs.indexOf(':') > 0 ? vs.split(':')[0] : null;
+    var i = parseInt(role ? vs.split(':')[1] : vs, 10), B = MK_BANDS[i];
     if (!B) return null;
-    var filt = state.mkRole || 'all';
+    var filt = role || state.mkRole || 'all';
     var pool = mkFiltered(p, mk).filter(function (m) { return filt === 'all' || mkRoleOf(m) === filt; });
     var ms = pool.filter(function (m) { return mkBandIdx(m.price) === i; }).sort(function (a, b) { return String(b.date).localeCompare(String(a.date)); });
     var b = mkStat(ms), thin = b.n < MK_FLOOR;
@@ -10470,7 +10499,7 @@
     return m;
   }
   function calSpineFiltered(p) {
-    var rows = calSpine(p);
+    var rows = countedSpine(p);
     var s = state.calSurface || 'all';
     if (s === 'all') return rows;
     // Indoors is a COURT TYPE, not a surface, and career-history carries no
@@ -10483,7 +10512,7 @@
     return rows.filter(function (r) { return r.surface === s; });
   }
   function calScope(p) {
-    var rows = calSpine(p);
+    var rows = countedSpine(p);
     return {
       n: rows.length,
       m: spineTotal(p).n,
@@ -10515,25 +10544,18 @@
     countedSpine(p).forEach(function (r) {
       if (win[String(r.year)]) inWindow += 1;
     });
-    calSpine(p).forEach(function (r) {
+    // founder 2026-11-15 ("we need to fix this and have the same total"): the Calendar paints the career record's own
+    // counted rows (countedSpine: Tennis Explorer's edition year, its TE-only rows, the rows it leaves out left out), so
+    // no record row is missing from it and no feed row outside the record is in it — the two clauses below stay 0.
+    countedSpine(p).forEach(function (r) {
       if (win[String(r.year)]) tile += 1; else out.push(String(r.year));
     });
     out.sort();
     var m = spineTotal(p).n;
-    var rec = countedSpine(p) !== calSpine(p);
     return {
       m: m,
-      teOnly: rec ? recordSpine(p).filter(function (r) { return r.teOnly && !r.wo && !r.unconf && win[String(r.year)]; }).length : 0,
-      // the tile's feed rows the record leaves out (not in Tennis Explorer, junior, duplicate, walkover, exhibition)
-      notInRecord: (function () {
-        var lay = ((typeof window !== 'undefined' && window.careerRecord) || {})[String(p.key)] || null;
-        var ch = careerHistoryFor(p.key) || [];
-        if (!lay) return 0;
-        return (lay.out || []).filter(function (e) {
-          var r = ch[e[0]];
-          return r && typeof r.date === 'string' && win[r.date.slice(0, 4)];
-        }).length;
-      }()),
+      teOnly: 0,
+      notInRecord: 0,
       // SIGNED (TEN-384 fx2 item 8; it used to be clamped at zero). If the dated store ever held MORE
       // in-window rows than the spine totals, the negative is a third, different defect: it is never
       // printed as this one (calResidualNote prints only > 0) and never hidden either —
@@ -10718,12 +10740,15 @@
     return 'asia';
   }
   /** Every played spine row with its calendar facets (swing, country, speed band, format, price band, style). */
+  // founder 2026-11-15: the Calendar (and its Streaks) count the career record's own rows — countedSpine, the population
+  // careerByYear counts — so its total is the Career record's total (796 = 796 for Fritz), never the feed's 618.
   function calRows(p) {
-    var sp = calSpine(p), sr = speedRows(p);
+    var sp = countedSpine(p), sr = typeof window !== 'undefined' ? window.courtSpeedMap : null;
     var eloNow = typeof window.pp2EloReady === 'function' && window.pp2EloReady();
     if (calRows._sp === sp && calRows._sr === sr && calRows._elo === eloNow && calRows._v) return calRows._v;
     var out = sp.map(function (r, i) {
-      var cc = calCountryOf(r), spd = sr[i] ? spdBandOf(spdEditionSpeed(sr[i])) : null;
+      var sri = speedRowOf(r);
+      var cc = calCountryOf(r), spd = sri ? spdBandOf(spdEditionSpeed(sri)) : null;
       return { r: r, i: i, cc: cc, sw: calSwingOf(r, cc), surf: r.seasonIndoor === true ? 'Indoors' : mkSurfOf(r), speed: spd,
         fmt: r.level === 'Grand Slam' || (r.setGames && r.setGames.length >= 4) ? 'bo5' : 'bo3',
         band: r.price != null ? mkBandIdx(+r.price) : -1, arch: styleArchetypeOf(mkOppName(r.opp)) || null,
@@ -11404,7 +11429,7 @@
     return String(ev || DASH);
   }
   function cal26Rows(p) {
-    return calSpine(p).filter(function (r) { return r.year === CAL_SEASON; });
+    return countedSpine(p).filter(function (r) { return r.year === CAL_SEASON; });
   }
   function cal26Best(rows) {
     var evs = [], by = {};
@@ -16967,7 +16992,7 @@
       renderTournDetail: renderTournDetail,
       tournJoin: tournJoin,
       tournViews: tournViews,
-      tournDisplayName: tournDisplayName, mkStat: mkStat, mkRoleOf: mkRoleOf, splTourRowsOf: splTourRowsOf, splRatesOf: splRatesOf, splTourFor: splTourFor,
+      tournDisplayName: tournDisplayName, mkStat: mkStat, mkRoleOf: mkRoleOf, splLevelOf: splLevelOf, dnaAxNode: dnaAxNode, splTourRowsOf: splTourRowsOf, splRatesOf: splRatesOf, splTourFor: splTourFor,
       tournLevelMeta: tournLevelMeta,
       over35Of: over35Of,
       winRateColour: winRateColour,

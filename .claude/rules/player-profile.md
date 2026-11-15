@@ -11,7 +11,6 @@ Newer rulings that also bind the profile: `modal-analysis.md` "Walkovers and ret
 The 2026-11-09 handoff (`Player Profile.dc.html`, `Player Stat Boxes LOCKED 2026-11-09.dc.html`) is the spec for the profile.
 Where a ruling below reverses an older one in this file, the older one is superseded (named in brackets).
 - **Hand / backhand** ("R / 2HBH") in the identity line, from api-tennis or Tennis Explorer; none on record = a dash.
-- **Aces / double faults per service game** = aces ÷ service games, DF ÷ service games (2 dp), from the stored counts.
 - **Calendar swings / event country:** the 12 swing codes and the catalog's event countries are enough; no more sources.
 - **Court speed (profile):** ATP only for now. Band per EDITION on Tennis Abstract's abstract speed, gap = speed − 1.00
   (the tour average): Fast > +0.08 · Medium −0.08…+0.08 · Slow < −0.08; order Fast · Medium · Slow
@@ -390,10 +389,16 @@ Supersedes the v2 items it names; everything else stays v2. Reference: `Player P
   an unknown flag do not count). No counts in the file → no ATP group: every average / Δ / scale is a dash ("not built
   yet"), never the old rated pool. Radar: lowest ATP player at the centre, highest at the edge; the ATP average one solid
   `--text-soft` 1.5px line above the fill; corner labels "304 · ATP best 331"; no vertex chips. Every Δ = the shown figure
-  minus the shown average (both rounded first); a zero gap is a grey "0". Serve boxes = first serve in, first / second serve
-  points won, service games won, aces and double faults **per service game** (founder 2026-11-13: "we have the service
-  games, so count it"; the builder's `acesPerSG` / `dfPerSG`; the Serve rating's formula is unchanged); Break points converted is
-  one figure (Return's) in both groups; a rate on fewer than 5 of its own count is a dash. Ratings opens on Last 52 weeks
+  minus the shown average (both rounded first); a zero gap is a grey "0". Serve boxes = the Serve rating's own six terms (ATP
+  leaderboard rule, founder 2026-11-15, replacing 2026-11-13's per service game): first serve in, first / second serve
+  points won, service games won, aces and double faults **per match** (`acesPerMatch` / `dfPerMatch`, 1 dp), so the six
+  boxes add up to the rating. **Under pressure = the ATP leaderboard rule** (founder 2026-11-15): BP converted % + BP
+  saved % + tiebreaks won % + deciding sets won %, all from the same box-score window as Serve and Return
+  (`dna-apitennis-ratings.js` `underPressureAtp`, its percentile against the ATP group's own values); its four boxes add
+  up to it and its BP converted equals Return's. A file without the node shows the TEN-328 figure (surface-ratings).
+  *Known:* the Match analysis radar, Head to Head and the Database board still read the TEN-328 Under pressure — one
+  builder there, not yet ruled to move.
+  **Test:** `test-ratings-rulings.js` RULING 1 (boxes sum to the rating), `test-pp4-page.js` "Ratings ·"; a rate on fewer than 5 of its own count is a dash. Ratings opens on Last 52 weeks
   unless the window was picked in the drawer. **Test:** `tools/test-dna-percentiles.js` (v3 checks + the no-counts control).
 - **Calendar (D1–D3):** band Window · Surface read by both pages; Filters at its right end (Calendar only, popover
   right). Tiles: name 16/700 · Win rate | Yield (sign) · one grey line; Swing view Best surface · Best swing · Worst swing ·
@@ -454,3 +459,17 @@ Supersedes the v3 values it restates. Reference = `Player Stat Boxes.dc.html` / 
   matches (else the overall yield). **Test:** `test-pp2-reconcile.js` "market box headline and the modal quote the same yield".
 - **Event names in the match lists** (founder 2026-11-14): a Tennis-Data sponsor name prints the site's one event name
   through the Database page's sponsor → city map (`sfSponsorCity`; a season-split name and Astana stay as written).
+- **Audit fixes (founder 2026-11-15).** Each a test in `tools/test-pp4-page.js` unless named.
+  - **Calendar total = Career record total:** the Calendar (and its Streaks) count the record's counted rows
+    (`countedSpine`: Tennis Explorer's edition year, its TE-only rows in, the rows it leaves out out), never the feed
+    rows (Fritz 796 = 796, was 618).
+  - **Favourite = the shorter closing price, on every Market edge figure:** 1.95 v 1.96 favourite, 1.96 v 1.95 underdog;
+    an exact tie is neither. Price sensitivity groups by that role; a favourite at 2.10 v 2.20 is in the favourite group's
+    2.00–2.49 row, and a row opens only that role's matches (`test-pp4-market.js`).
+  - **ATP Finals = the ATP Finals:** the Next Gen Finals (Tennis Abstract level F) read as ATP 250 in Level & round;
+    Record per tournament keeps the Finals' round robins (api-tennis sends them with no round; `RR`), Fritz 6–6
+    (`tools/test-tournament-history-editions.js`).
+  - **One match, one edition:** an archive edition that starts 24–31 December is the next season's (Brisbane 31 Dec 2018
+    = 2019), and an archive copy of a match the adjacent season's api-tennis edition holds is left out; the pipeline logs
+    every match still listed under two adjacent editions (`career-backfill.js` `crossEditionDuplicates`;
+    `tools/test-tournament-history-editions.js`).

@@ -251,8 +251,22 @@ function computeRatings(a) {
       rating: denom > 0 ? R2(retPWonPct / denom) : null,
     };
   }
+  // UNDER PRESSURE by the ATP leaderboard rule (founder 2026-11-15: "build it on the ATP rules"), over THIS window's
+  // matches — the same matches as Serve and Return, so its break points converted IS Return's: break points converted %
+  // + break points saved % + tiebreaks won % + deciding sets won %. All four are required (no 3-of-4 estimate); a
+  // missing term leaves the rating null. Read by the Player Profile's Ratings tab. `underPressure` (TEN-328, the
+  // surface-ratings career figure) stays for the radars and boards that read it.
+  const pct = (w, t) => t > 0 ? w / t * 100 : null;
+  const upTerms = { bpConvPct: pct(a.bpConvWon, a.bpConvTot), bpSavedPct: pct(a.bpSavedWon, a.bpSavedTot),
+    tbWinPct: pct(a.tbWon, a.tbPlayed), decWinPct: pct(a.decWon, a.decPlayed) };
+  const upAll = Object.values(upTerms).every(v => v != null);
+  const underPressureAtp = {
+    bpConvPct: R1(upTerms.bpConvPct), bpSavedPct: R1(upTerms.bpSavedPct), tbWinPct: R1(upTerms.tbWinPct), decWinPct: R1(upTerms.decWinPct),
+    rating: upAll ? R1(upTerms.bpConvPct + upTerms.bpSavedPct + upTerms.tbWinPct + upTerms.decWinPct) : null,
+    rule: 'atp',
+  };
   return {
-    serve, return: ret, underPressure: null, dominanceRatio: dom,
+    serve, return: ret, underPressure: null, underPressureAtp, dominanceRatio: dom,
     sample: { matches: a.matches, mdMatches: a.mdMatches, qualUnknown: a.qualUnknown, svpt: a.svpt, bpFaced: a.bpSavedTot, bpChances: a.bpConvTot, tbPlayed: a.tbPlayed, decPlayed: a.decPlayed },
   };
 }
