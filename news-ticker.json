@@ -1,17 +1,29 @@
 {
- "generatedAt": "2026-11-15T14:33:07.487Z",
+ "generatedAt": "2026-11-15T15:18:15.690Z",
  "tournaments": [
+  {
+   "key": "2794",
+   "season": "2026",
+   "name": "Finals - Turin",
+   "file": "news-ticker/2794-2026.json",
+   "items": 1,
+   "byType": {
+    "report": 1
+   },
+   "latestTimestamp": "2026-11-15T14:55:53.134Z",
+   "updatedAt": "2026-11-15T15:18:15.690Z"
+  },
   {
    "key": "tour",
    "season": "2026",
    "name": "ATP Tour",
    "file": "news-ticker/tour-2026.json",
-   "items": 71,
+   "items": 72,
    "byType": {
-    "quote": 71
+    "quote": 72
    },
    "latestTimestamp": "2026-11-15T13:55:09.000Z",
-   "updatedAt": "2026-11-15T14:33:07.487Z"
+   "updatedAt": "2026-11-15T15:18:15.690Z"
   },
   {
    "key": "1681",
@@ -38,19 +50,98 @@
    },
    "latestTimestamp": "2026-11-08T14:20:00.000Z",
    "updatedAt": "2026-11-14T07:14:55.951Z"
-  },
-  {
-   "key": "2794",
-   "season": "2026",
-   "name": "Finals - Turin",
-   "file": "news-ticker/2794-2026.json",
-   "items": 0,
-   "byType": {},
-   "latestTimestamp": null,
-   "updatedAt": null
   }
  ],
  "latest": [
+  {
+   "id": "report-12179707",
+   "type": "report",
+   "playerId": "1980",
+   "opponentId": "50323",
+   "player": "A. Zverev",
+   "opponent": "R. Jodar",
+   "tournament": "Finals - Turin",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "stage": "main draw",
+   "round": null,
+   "eventKey": "12179707",
+   "timestamp": "2026-11-15T14:55:53.134Z",
+   "timestampKind": "observed",
+   "observed": {
+    "endedAt": "2026-11-15T14:55:53.134Z",
+    "startedAt": "2026-11-15T13:28:51.970Z",
+    "minutes": 87
+   },
+   "category": "Statistics",
+   "text": "Zverev beat Jodar for the 2nd time in 2 meetings, 6-4, 6-4.\n\nZverev: W: 21 / UE: 18 | DR: 2.01\n\nJodar: W: 12 / UE: 10 | DR: 0.50",
+   "baseText": "Zverev beat Jodar for the 2nd time in 2 meetings, 6-4, 6-4.",
+   "rating": [
+    "Zverev: W: 21 / UE: 18 | DR: 2.01",
+    "Jodar: W: 12 / UE: 10 | DR: 0.50"
+   ],
+   "fields": {
+    "score": "6-4, 6-4",
+    "round": null,
+    "retired": false,
+    "h2h": {
+     "a": 2,
+     "b": 0,
+     "n": 2
+    },
+    "durationMinutes": 87,
+    "standouts": [
+     {
+      "player": "winner",
+      "tone": "good",
+      "metric": "servePointsLost",
+      "value": 10,
+      "total": 51
+     },
+     {
+      "player": "winner",
+      "tone": "good",
+      "metric": "aces",
+      "value": 10
+     },
+     {
+      "player": "winner",
+      "tone": "good",
+      "metric": "firstWon",
+      "value": 86,
+      "won": 37,
+      "total": 43,
+      "baseline": 74,
+      "scope": "last52",
+      "surface": "Hard",
+      "n": 49
+     }
+    ],
+    "winner": {
+     "aces": 10,
+     "winners": 21,
+     "unforcedErrors": 18,
+     "breakPointsSaved": 2,
+     "breakPointsFaced": 2,
+     "breakPointsSource": "box score"
+    },
+    "loser": {
+     "aces": 3,
+     "winners": 12,
+     "unforcedErrors": 10,
+     "breakPointsSaved": 5,
+     "breakPointsFaced": 7,
+     "breakPointsSource": "box score"
+    }
+   },
+   "sourceName": "Stennisfy match data (api-tennis box score and point-by-point)",
+   "sourceUrl": "pbp/12179707.json",
+   "language": "en",
+   "translated": false,
+   "sourceHash": "f304a31878d8a4b2",
+   "publishedAt": "2026-11-15T15:18:15.690Z",
+   "file": "news-ticker/2794-2026.json"
+  },
   {
    "id": "quote-5e5a576db3dca2",
    "type": "quote",
@@ -297,6 +388,37 @@
    "topic": "On qualifying for his first ATP Finals",
    "sourceHash": "fccaa169a2df914e",
    "publishedAt": "2026-11-15T13:48:35.446Z",
+   "file": "news-ticker/tour-2026.json"
+  },
+  {
+   "id": "quote-ccd0ec268e5586",
+   "type": "quote",
+   "playerId": "2072",
+   "opponentId": null,
+   "player": "J. Sinner",
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-14T16:00:00.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "To get back healthy, this is my first goal, … I love the competition. I love to play in front of people. I miss this event. I'm just looking forward to next year and hopefully it's going to be a good one.",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "ATP Tour",
+   "sourceUrl": "https://www.atptour.com/en/news/no-1-club-ceremony-nitto-atp-finals-2026-sunday",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the fetched ATP page, by the ATP reader",
+   "topic": "On getting healthy and returning next year",
+   "sourceHash": "a8aadf04d93dc6ba",
+   "publishedAt": "2026-11-15T15:18:15.690Z",
    "file": "news-ticker/tour-2026.json"
   },
   {
@@ -1572,72 +1694,6 @@
    "sourceHash": "ac0917b377576e64",
    "publishedAt": "2026-11-13T18:20:32.080Z",
    "revisedAt": "2026-11-13T23:52:23.101Z",
-   "revision": 1,
-   "file": "news-ticker/1681-2026.json"
-  },
-  {
-   "id": "quote-430d2eb676002c",
-   "type": "quote",
-   "playerId": "366",
-   "opponentId": "2982",
-   "player": "T. A. Tirante",
-   "opponent": "A. Tabilo",
-   "tournament": "Stockholm",
-   "tournamentKey": "1681",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-13T17:10:00.000Z",
-   "timestampKind": "observed (the site's own publication time)",
-   "category": "Quotes",
-   "context": "after beating A. Tabilo",
-   "eventKey": "12179750",
-   "won": true,
-   "text": "I am very happy I am going to play my first ATP final, … Actually, I am very happy to play it here. This is my third semi-final, and my first one was in Bastad, so I think Sweden [is a good place for me].",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "ATP Tour daily report (via the official tournament site)",
-   "sourceUrl": "https://www.stockholmopen.se/en/tournament/nyheter/fritz-musetti-tabilo-tirante-stockholm-2026-sfs",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "topic": "On reaching his first ATP final in Sweden",
-   "sourceHash": "a7244ef1bd811fda",
-   "publishedAt": "2026-11-13T17:21:12.943Z",
-   "revisedAt": "2026-11-13T18:20:32.080Z",
-   "revision": 1,
-   "file": "news-ticker/1681-2026.json"
-  },
-  {
-   "id": "quote-d06acc59d5bda0",
-   "type": "quote",
-   "playerId": "366",
-   "opponentId": "2982",
-   "player": "T. A. Tirante",
-   "opponent": "A. Tabilo",
-   "tournament": "Stockholm",
-   "tournamentKey": "1681",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-13T17:10:00.000Z",
-   "timestampKind": "observed (the site's own publication time)",
-   "category": "Quotes",
-   "context": "after beating A. Tabilo",
-   "eventKey": "12179750",
-   "won": true,
-   "text": "You always have nerves in matches, and playing a semi-final in front of a lot of people is very special for me, … At important moments you start [to feel it]. I think I didn't play a good game [at 5-4], but I kept believing in myself and my team to close it out in the tie-break.",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "ATP Tour daily report (via the official tournament site)",
-   "sourceUrl": "https://www.stockholmopen.se/en/tournament/nyheter/fritz-musetti-tabilo-tirante-stockholm-2026-sfs",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "topic": "On his nerves closing out the semi-final",
-   "sourceHash": "560172b21b5e2af5",
-   "publishedAt": "2026-11-13T17:21:12.943Z",
-   "revisedAt": "2026-11-13T18:20:32.080Z",
    "revision": 1,
    "file": "news-ticker/1681-2026.json"
   }

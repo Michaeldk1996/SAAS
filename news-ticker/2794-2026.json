@@ -2,6 +2,95 @@
  "tournament": "Finals - Turin",
  "tournamentKey": "2794",
  "season": "2026",
- "updatedAt": "2026-11-12T13:40:12.663Z",
- "items": []
+ "updatedAt": "2026-11-15T15:18:15.690Z",
+ "items": [
+  {
+   "id": "report-12179707",
+   "type": "report",
+   "playerId": "1980",
+   "opponentId": "50323",
+   "player": "A. Zverev",
+   "opponent": "R. Jodar",
+   "tournament": "Finals - Turin",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "stage": "main draw",
+   "round": null,
+   "eventKey": "12179707",
+   "timestamp": "2026-11-15T14:55:53.134Z",
+   "timestampKind": "observed",
+   "observed": {
+    "endedAt": "2026-11-15T14:55:53.134Z",
+    "startedAt": "2026-11-15T13:28:51.970Z",
+    "minutes": 87
+   },
+   "category": "Statistics",
+   "text": "Zverev beat Jodar for the 2nd time in 2 meetings, 6-4, 6-4.\n\nZverev: W: 21 / UE: 18 | DR: 2.01\n\nJodar: W: 12 / UE: 10 | DR: 0.50",
+   "baseText": "Zverev beat Jodar for the 2nd time in 2 meetings, 6-4, 6-4.",
+   "rating": [
+    "Zverev: W: 21 / UE: 18 | DR: 2.01",
+    "Jodar: W: 12 / UE: 10 | DR: 0.50"
+   ],
+   "fields": {
+    "score": "6-4, 6-4",
+    "round": null,
+    "retired": false,
+    "h2h": {
+     "a": 2,
+     "b": 0,
+     "n": 2
+    },
+    "durationMinutes": 87,
+    "standouts": [
+     {
+      "player": "winner",
+      "tone": "good",
+      "metric": "servePointsLost",
+      "value": 10,
+      "total": 51
+     },
+     {
+      "player": "winner",
+      "tone": "good",
+      "metric": "aces",
+      "value": 10
+     },
+     {
+      "player": "winner",
+      "tone": "good",
+      "metric": "firstWon",
+      "value": 86,
+      "won": 37,
+      "total": 43,
+      "baseline": 74,
+      "scope": "last52",
+      "surface": "Hard",
+      "n": 49
+     }
+    ],
+    "winner": {
+     "aces": 10,
+     "winners": 21,
+     "unforcedErrors": 18,
+     "breakPointsSaved": 2,
+     "breakPointsFaced": 2,
+     "breakPointsSource": "box score"
+    },
+    "loser": {
+     "aces": 3,
+     "winners": 12,
+     "unforcedErrors": 10,
+     "breakPointsSaved": 5,
+     "breakPointsFaced": 7,
+     "breakPointsSource": "box score"
+    }
+   },
+   "sourceName": "Stennisfy match data (api-tennis box score and point-by-point)",
+   "sourceUrl": "pbp/12179707.json",
+   "language": "en",
+   "translated": false,
+   "sourceHash": "f304a31878d8a4b2",
+   "publishedAt": "2026-11-15T15:18:15.690Z"
+  }
+ ]
 }
