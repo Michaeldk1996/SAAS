@@ -38,6 +38,7 @@ export const PHRASES = ['The first set could easily have gone the other way.', '
   'He really struggled behind his second serve.', 'He was clearly the better player from the baseline.', 'He did not see another break point.', 'He got broken straight back.', 'He served it out.',
   'It was not his best return performance.', 'That made the difference in the end.', 'He stayed calm.', 'Credit to him.'];
 // a wing is "his best shot" from 10 winners and 1.5 times the other wing; "most of his errors" from 12 and 1.5 times
+export const RUN_IN_SET = 4;
 export const H2H_MIN_MEETINGS = 10, H2H_TOP_RANK = 10;
 export const BEST_SHOT_MIN = 10, WEAK_SIDE_MIN = 12, BEST_SHOT_RATIO = 1.5;
 
@@ -55,6 +56,7 @@ const gamePoint = (sc, k) => { const o = other(k); return (sc[k] === 3 && sc[o] 
 export function tiebreakScores(finalScore) {
   const parts = String((finalScore && finalScore.display) || '').split(',').map((x) => x.trim());
   return ((finalScore && finalScore.sets) || []).map((s, i) => {
+    if (finalScore.tb && finalScore.tb[i]) return `${Math.max(...finalScore.tb[i])}–${Math.min(...finalScore.tb[i])}`;
     const m = /\((\d+)\)/.exec(parts[i] || '');
     if (!m || !((s.p1 === 7 && s.p2 === 6) || (s.p1 === 6 && s.p2 === 7))) return null;
     const lo = +m[1]; return `${Math.max(7, lo + 2)}–${lo}`;
@@ -69,7 +71,7 @@ export function setStory(shard, m, bestOf = 3) {
   const setsWon = { p1: 0, p2: 0 }, out = [];
   for (let i = 0; i < shard.sets.length; i++) {
     const games = (shard.sets[i].games || []).filter((g) => PI.isGame(g)), sw = SET_WORD[i + 1] || `set ${i + 1}`, lines = [];
-    let prev = { p1: 0, p2: 0 }, lastBreakBy = null, lastBreakIdx = -9, breaks = 0;
+    let prev = { p1: 0, p2: 0 }, lastBreakBy = null, lastBreakIdx = -9, breaks = 0, run = { k: null, n: 0 }, best = { k: null, n: 0, end: false };
     games.forEach((g, j) => {
       const h = hdr(g.score), s = g.server, r = other(s), broken = g.winner !== s, st = strictGame(g);
       const clinch = (k) => prev[k] >= 5 && prev[k] > prev[other(k)];
@@ -97,10 +99,14 @@ export function setStory(shard, m, bestOf = 3) {
         lastBreakBy = r; lastBreakIdx = j;
       }
       prev = h;
+      run = g.winner === run.k ? { k: run.k, n: run.n + 1 } : { k: g.winner, n: 1 };
+      if (run.n >= best.n) best = { k: run.k, n: run.n, end: j === games.length - 1 };
     });
     const f = fs[i], wk = f.p1 > f.p2 ? 'p1' : 'p2';
     out.push(`${sw[0].toUpperCase()}${sw.slice(1)} set: ${N(wk)} won it ${f[wk]}–${f[other(wk)]}${tbs[i] ? ` (tiebreak ${tbs[i]})` : ''}.${breaks === 0 ? ' No break of serve in this set.' : ''}`);
     out.push(...lines.map((x) => `  ${x}`));
+    // a run of games is told inside its set (founder 2026-11-15: "he won 5 games in a row to win 6–1"), never across two sets
+    if (best.n >= RUN_IN_SET && best.k === wk) out.push(`  ${N(wk)} won ${best.n} games in a row in this set${best.end ? ' to take it' : ''}.`);
     setsWon[wk]++;
   }
   return out;
@@ -215,7 +221,22 @@ export function matchQuotes(m, eventKey, items, exclude = '') {
 }
 
 // -> { lines: string[], quotes, hash, winner, loser }
-export function factSheet({ m, w, l, rep, shard = null, round = null, duration = null, card = null, commentary = null, quotes = [], path = [], styles = null, physical = [] }) {
+// The archetype is named only when the numbers of this match show it (founder 2026-11-15: "we can't say that for each
+// match report"). st = the winner's box score, opp = the loser's.
+export function styleEarned(style, st, opp) {
+  const s = String(style || '').toLowerCase(), v = (o, k) => num(o && o[k]);
+  const first = v(st, 'Service:1st serve points won'), aces = v(st, 'Service:Aces'), W = v(st, 'Points:Winners'), U = v(st, 'Points:Unforced errors'), oU = v(opp, 'Points:Unforced errors'), ret = v(st, 'Points:Return Points Won');
+  const serve = (first != null && first >= 80) || (aces != null && aces >= 12);
+  const attack = W != null && U != null && W >= 25 && W >= U * 1.2;
+  const solid = U != null && oU != null && oU >= 15 && (U <= oU * 0.6 || (U < oU && ret != null && ret >= 43));
+  if (/big server/.test(s)) return /first strike|baseliner/.test(s) ? serve && (attack || solid || first >= 82) : serve;
+  if (/attacking|first strike/.test(s)) return attack;
+  if (/counterpuncher|defender|solid/.test(s)) return solid;
+  if (/all court/.test(s)) return attack && solid;
+  return false;
+}
+
+export function factSheet({ m, w, l, rep, shard = null, round = null, duration = null, card = null, commentary = null, quotes = [], path = [], styles = null, physical = [], bestOf = 3, milestones = [] }) {
   const W = surnameOf(m[w]), L = surnameOf(m[l]), ms = m.matchStats || {}, lines = [];
   const add = (head, arr) => { const a = (arr || []).filter(Boolean); if (a.length) { lines.push(`## ${head}`); lines.push(...a); } };
   const sets = (m.finalScore.sets || []).map((s) => `${s[w]}–${s[l]}`), tbs = tiebreakScores(m.finalScore);
@@ -226,10 +247,11 @@ export function factSheet({ m, w, l, rep, shard = null, round = null, duration =
   if (num(duration) != null) res.push(`Match time: ${duration} minutes (${Math.floor(duration / 60)}h${String(duration % 60).padStart(2, '0')}).`);
   if (m.surface) res.push(`Surface: ${m.surface}${m.venue && m.venue.indoor ? ', indoors' : ''}.`);
   for (const k of [w, l]) { const r = num(m[k + 'Rank']); if (r != null) res.push(`${surnameOf(m[k])} is ranked ${r}.`); }
-  if (styles) for (const k of [w, l]) if (styles[k]) res.push(`Playing style of ${surnameOf(m[k])}: ${styles[k]}.`);
+  if (styles && styles[w] && styleEarned(styles[w], ms[w], ms[l])) res.push(`Playing style of ${W}: ${styles[w]} (the numbers of this match show it).`);
   add('RESULT', res);
-  add('THE MATCH IN PLAYING ORDER (from the point log)', shard ? setStory(shard, m, 3) : []);
-  add('WHAT STOOD OUT (each figure already compared with the player\'s own average where one is given)', rep ? rep.sentences.slice(1).map((s) => [m[w], m[l]].reduce((t, c) => t.split(c).join(surnameOf(c)), s)) : []);
+  add('THE MATCH IN PLAYING ORDER (from the point log)', shard ? setStory(shard, m, bestOf) : []);
+  add('WHAT IT MEANS (from our own records)', milestones);
+  add('WHAT STOOD OUT (each figure already compared with the player\'s own average where one is given)', rep ? rep.sentences.slice(1).filter((s) => !/games in a row/.test(s)).map((s) => [m[w], m[l]].reduce((t, c) => t.split(c).join(surnameOf(c)), s)) : []);
   const wueOk = wueUsable(ms);
   add('BOX SCORE, WHOLE MATCH', [w, l].map((k) => { const s = statLine(ms[k], { wue: wueOk }); return s ? `${surnameOf(m[k])}: ${s}.` : null; }));
   // no box score per set (founder 2026-11-15: "never per set: 17% in one set is built on a handful of points")
@@ -366,11 +388,11 @@ export const SYSTEM = `You write the match report of one ATP tennis match for St
 The report is SHORT and it reads fluently. 150 to 180 words, quotes included. It is a small story told out loud, never a list of facts.
 
 Shape (4 or 5 short paragraphs, one blank line between them, plain text: no title, no headings, no lists, no bold):
-1. One opening sentence: who beat who, the score of every set, the round and what it means when the sheet says it (the title, a first final). No head to head, unless the sheet has a "Big rivalry" line: then add it naturally ("Alcaraz, who now leads the head-to-head 10–7").
+1. One opening sentence: who beat who, the score of every set, the round and what it means when the sheet says it (the title, a first final). In a best-of-five match tell the sets in two or three sentences, not one sentence per set. No head to head, unless the sheet has a "Big rivalry" line: then add it naturally ("Alcaraz, who now leads the head-to-head 10–7").
 2. The match. One sentence per set at most and only the most important thing of each set: who was the better player, who got the break, a tiebreak. No game by game: never "broke for 3–1", "saved a set point at 5–2", "needed 2 break points". Put one quote here, right after the moment it explains, introduced naturally ("He explained it himself:", "On that game at 5–4 he said:", "Fritz knows he let it slip:").
 3. How the winner played: one flowing sentence that carries ONE number, linked to what came before ("That aggression also showed on serve, where even his second serve was a weapon: he won 77% of the points behind it, far above his average of 53% on hard." / "Once again his serve carried him, with 90% of the points won behind his first serve (!!!) and the forehand did the rest."). When the sheet has a SEEN IN THE MATCH section, use it here and in paragraph 2 for HOW he played (aggressive, stepping in, the forehand, the net), in a few words.
 4. Only when the sheet has a PHYSICAL section: one flowing sentence as its own paragraph ("The one doubt before the final is his body: he called the physio early in the second set, his second medical timeout in two matches." / "Musetti, who needed the physio in the QF, did not call for a medical timeout this time but he never found a way into the match."). Never a word about the reason.
-5. The last paragraph starts with "All in all," and says in one sentence what the win was built on. Then the winner's style of play, attached to HIM and to the conditions of this tournament ("That is what makes a big server and complete baseliner like him so effective in these conditions." / "the two shots that make an attacking baseliner like him so effective in these indoor conditions"), never as a general truth about a type of player. Then the next opponent in one short clause ("Next is Tirante in the final."). After a final: the title, and a second quote about the title may close the report.
+5. The last paragraph starts with "All in all," and says in one sentence what the win was built on. Only when the sheet has a "Playing style" line: tie the win to that style, attached to HIM and to the conditions of this tournament ("That is what makes a big server and complete baseliner like him so effective in these conditions." / "the two shots that make an attacking baseliner like him so effective in these indoor conditions"), never as a general truth about a type of player. When the sheet has no "Playing style" line, do not name a style of play at all: most reports end without one. Then the next opponent in one short clause ("Next is Tirante in the final."). After a final: the title, and a second quote about the title may close the report.
 
 How it reads:
 - Simple words, the way you would say it out loud. If a sentence needs to be read twice, rewrite it. No idioms, no tennis-writer words ("lost the thread", "a tight decider", "sealed", "clinical", "dug deep").
@@ -378,6 +400,8 @@ How it reads:
 - No chains of short sentences. Join what belongs together and let one sentence lead into the next. Vary the rhythm: one longer sentence, then a shorter one.
 - Every paragraph after the first opens with a link to the one before it ("That aggression also showed", "Once again", "The one doubt before the final is"), not with a name and a fact.
 - A number never stands alone as its own sentence or paragraph: it sits inside a sentence that links it to the story. After the number, stop: do not explain what the number already says.
+- A run of games is told inside its set, with the score it led to ("he won 5 games in a row to take it 6–1"). Never count a run across two sets and never write "from 1–1".
+- When the sheet has a WHAT IT MEANS section, use its most important line in the opening sentence or in "All in all" (a first final, a title number).
 - Do not link two facts with "so" when one simply follows the other. Tell it as one natural sentence and vary how you say it from report to report ("The third set stayed on serve all the way to the tiebreak, where Fritz was the better player at the end and took it 7–3." / "Neither player got broken in the third set and Fritz was the better player in the tiebreak, taking it 7–3.").
 - Do not write that he "won it with his serve" unless the serve really was the story of the match. Otherwise just highlight it ("was very solid behind his serve").
 - The report is about the winner. The loser gets a clause or a line only when the sheet has important information about him (the PHYSICAL section, or one clear reason he lost).

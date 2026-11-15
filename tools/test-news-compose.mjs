@@ -8,7 +8,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { factSheet, checkComposed, composeReport, assemble, setStory, tiebreakScores, pathLines, physicalParagraph, matchQuotes, roundCode, noCommaBefore, COMPOSE_VERSION } from './news-ticker/compose.mjs';
+import { styleEarned, factSheet, checkComposed, composeReport, assemble, setStory, tiebreakScores, pathLines, physicalParagraph, matchQuotes, roundCode, noCommaBefore, COMPOSE_VERSION } from './news-ticker/compose.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const FX = JSON.parse(fs.readFileSync(path.join(ROOT, 'tools/fixtures/news-compose/stockholm-sf.json'), 'utf8'));
@@ -45,6 +45,19 @@ await ok('the sheet carries the result, the breaks in playing order, both box sc
   yes(/(best shot of Fritz|Fritz did most of his damage with the forehand|forehand of Fritz made the difference|winners of Fritz came from the forehand|forehand was the big weapon of Fritz)/.test(t), 'the forehand of Fritz is named (13 to 6), in one of the wordings');
   yes(!/(of|with the) Musetti|Musetti (did|missed|played)|backhand of|errors of Fritz|all or nothing/.test(t.split('## SHOT NUMBERS')[1].split('##')[0].replace(/^Musetti: .*$/gm, '')), 'no best shot under 10 winners, no weak side under 12 errors');
   eq(check(GOOD.replace('and that was enough to take it', 'and his forehand did the damage with 13 forehand winners')).failures, [], 'the forehand may be named when the sheet names it');
+});
+await ok('a run of games is told inside its set, never across two sets; the style is on the sheet only when the numbers of the match show it', () => {
+  // founder 2026-11-15: "talk about the set, he won 5 games in a row to win 6–1"
+  yes(SHEET.text.includes('Fritz won 5 games in a row in this set.'), SHEET.text.split('## WHAT')[0]);
+  yes(!/games in a row from|\d games in a row in the match/.test(SHEET.text), 'no run counted across sets');
+  // founder 2026-11-15: "don't always give the archetype, just do it once it's needed and the stats really show it"
+  const st = (o) => ({ 'Service:1st serve points won': 70, 'Service:Aces': 5, 'Points:Winners': 20, 'Points:Unforced errors': 25, 'Points:Return Points Won': 38, ...o });
+  yes(styleEarned('big server', st({ 'Service:1st serve points won': 85 }), st({})) && !styleEarned('big server', st({}), st({})), 'big server: only on a big serving day');
+  yes(styleEarned('attacking baseliner', st({ 'Points:Winners': 40 }), st({})) && !styleEarned('attacking baseliner', st({}), st({})), 'attacking baseliner: only with clearly more winners than errors');
+  yes(styleEarned('counterpuncher', st({ 'Points:Unforced errors': 12 }), st({ 'Points:Unforced errors': 30 })) && !styleEarned('counterpuncher', st({ 'Points:Unforced errors': 76, 'Points:Return Points Won': 45 }), st({ 'Points:Unforced errors': 69 })), 'counterpuncher: never with more errors than the opponent');
+  const withStyle = (ms) => factSheet({ m: { ...M, matchStats: ms }, w, l, rep: null, shard: FX.pbp, round: 'semi-finals', styles: { p1: 'big server + complete baseliner', p2: 'all court elite' } }).text;
+  yes(/Playing style of Fritz: big server \+ complete baseliner/.test(withStyle(M.matchStats)) && !/Playing style of Musetti/.test(withStyle(M.matchStats)), 'the winner\'s style when earned, never the loser\'s');
+  yes(!/Playing style/.test(withStyle({ p1: st({}), p2: st({}) })), 'an ordinary serving day: no style on the sheet');
 });
 await ok('a point log that does not add up to the final score gives no playing-order lines (never half a story)', () => {
   const bad = JSON.parse(JSON.stringify(FX.pbp)); bad.sets[0].games.pop();

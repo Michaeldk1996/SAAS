@@ -145,7 +145,9 @@ export async function build({ nowIso, times, rewrite = null, writer = null, apiK
       try {
         const w = m.finalScore.winner, l = w === 'p1' ? 'p2' : 'p1', id = `report-${ek(m)}`;
         const sp = readJson(`pbp/${ek(m)}.json`);
-        const pbp = sp ? pbpFacts(sp, m.finalScore, 3) : null;
+        // a Grand Slam main draw is best of five (the point log is checked and told on that basis)
+        const bestOf = !m.qualifying && /australian open|french open|roland garros|wimbledon|us open/i.test(String(m.tour || '')) ? 5 : 3;
+        const pbp = sp ? pbpFacts(sp, m.finalScore, bestOf) : null;
         const h2h = m.qualifying ? null : h2hAfter(H2HCore, m, w, l, shard(m[w + 'Key']), shard(m[l + 'Key']), names, ek(m));   // qualifying is not in the H2H population
         // observed times: this run's read, else what the stored item already holds (a failed read never downgrades it)
         const prev = old.get(id);
@@ -195,7 +197,7 @@ export async function build({ nowIso, times, rewrite = null, writer = null, apiK
           phys = physicalParagraph(m, mtoByMatch[ek(m)], { winner: w, final: rw === 'final', quotes: quoteItems, earlier, seen: cm && cm.text ? cm.text : null });
           const sheet = factSheet({ m, w, l, rep, shard: sp, round: rw, duration: obs && obs.minutes != null ? obs.minutes : null, card: cardsByMatch[ek(m)] || null,
             commentary: cm && cm.text ? cm.text : null, quotes: matchQuotes(m, ek(m), quoteItems, phys.sentences.join(' ')), physical: phys.facts,
-            path: pathLines(m, w, allCards, (c) => roundCode(rwOf(c)), rw === 'final'), styles: { [w]: styleOf(m[w]), [l]: styleOf(m[l]) } });
+            path: pathLines(m, w, allCards, (c) => roundCode(rwOf(c)), rw === 'final'), styles: { [w]: styleOf(m[w]), [l]: styleOf(m[l]) }, bestOf });
           const pc = prev && prev.composed && prev.composed.version === COMPOSE_VERSION ? prev.composed : null;
           const ageH = (Date.parse(nowIso) - Date.parse(obs && obs.endedAt ? obs.endedAt : startIso(m))) / 3600000;
           const onlyEk = process.env.NEWS_COMPOSE_ONLY ? process.env.NEWS_COMPOSE_ONLY.split(',') : null;   // measurement runs (compose-probe): write this one match, whatever is stored
