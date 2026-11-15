@@ -1,6 +1,18 @@
 {
- "generatedAt": "2026-11-15T18:01:39.448Z",
+ "generatedAt": "2026-11-15T18:25:41.781Z",
  "tournaments": [
+  {
+   "key": "tour",
+   "season": "2026",
+   "name": "ATP Tour",
+   "file": "news-ticker/tour-2026.json",
+   "items": 85,
+   "byType": {
+    "quote": 85
+   },
+   "latestTimestamp": "2026-11-15T17:30:26.000Z",
+   "updatedAt": "2026-11-15T18:25:41.781Z"
+  },
   {
    "key": "2794",
    "season": "2026",
@@ -13,18 +25,6 @@
    },
    "latestTimestamp": "2026-11-15T16:53:14.000Z",
    "updatedAt": "2026-11-15T18:01:39.448Z"
-  },
-  {
-   "key": "tour",
-   "season": "2026",
-   "name": "ATP Tour",
-   "file": "news-ticker/tour-2026.json",
-   "items": 84,
-   "byType": {
-    "quote": 84
-   },
-   "latestTimestamp": "2026-11-15T16:37:00.000Z",
-   "updatedAt": "2026-11-15T17:15:57.379Z"
   },
   {
    "key": "1681",
@@ -54,6 +54,37 @@
   }
  ],
  "latest": [
+  {
+   "id": "quote-dc9fe6d146f273",
+   "type": "quote",
+   "playerId": "1858",
+   "opponentId": null,
+   "player": "J. Jones",
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-15T17:30:26.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "It was our worst performance, got off to a bad start and couldn&#x27;t sort of fight our way out of it,",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "RNZ",
+   "sourceUrl": "https://www.rnz.co.nz/news/sport/2619127/rugby-league-world-cup-final-coach-stacey-jones-on-worst-performance-by-kiwis",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On the Kiwis' World Cup final loss",
+   "sourceHash": "4f4124e42bfae359",
+   "publishedAt": "2026-11-15T18:25:41.781Z",
+   "file": "news-ticker/tour-2026.json"
+  },
   {
    "id": "quote-2fa1fb1434e63f",
    "type": "quote",
@@ -1573,37 +1604,6 @@
    "topic": "On seeing former coach Ferrero again",
    "sourceHash": "a56e5f6ef7c2643b",
    "publishedAt": "2026-11-14T06:54:31.012Z",
-   "file": "news-ticker/tour-2026.json"
-  },
-  {
-   "id": "quote-b8f668aee32207",
-   "type": "quote",
-   "playerId": "1858",
-   "opponentId": null,
-   "player": "J. Jones",
-   "opponent": null,
-   "tournament": "ATP Tour",
-   "tournamentKey": "tour",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-14T03:30:00.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Interviews",
-   "context": null,
-   "eventKey": null,
-   "won": null,
-   "text": "It broke my stride a little bit, … (But) I still shouldn&#x27;t have got caught.",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "The Times of India",
-   "sourceUrl": "https://timesofindia.indiatimes.com/sports/nfl/news/the-truth-didnt-save-me-mike-tomlin-revisits-100000-nfl-fine-after-controversial-jacoby-jones-incident-against-baltimore-ravens-in-2013/articleshow/135820987.cms",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "topic": "On Tomlin interfering with his kick return",
-   "sourceHash": "ee53ba35f8d7f719",
-   "publishedAt": "2026-11-14T05:28:14.361Z",
    "file": "news-ticker/tour-2026.json"
   }
  ]
