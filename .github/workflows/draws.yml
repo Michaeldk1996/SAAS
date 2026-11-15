@@ -52,17 +52,22 @@ jobs:
         run: |
           curl -sf -o player-index.json "https://michaeldk1996.github.io/SAAS/player-index.json?_=$(date +%s)"
           curl -sf -o board.json "https://michaeldk1996.github.io/SAAS/matches.json?_=$(date +%s)"
+          # finished results for the archive (founder 2026-11-15); unreadable → no file → nothing archived, nothing pruned
+          curl -sf -o progression.json "https://michaeldk1996.github.io/SAAS/tournament-progression.json?_=$(date +%s)" || rm -f progression.json
       - name: Build draws.json (fail-closed parser)
+        id: build
         if: steps.gate.outputs.go == '1'
-        run: python3 tools/draws/build-draws.py --roster player-index.json
+        run: python3 tools/draws/build-draws.py --roster player-index.json --progression progression.json
       - name: Staleness check (F1–F4) — a red run, never a green badge on empty data
         if: steps.gate.outputs.go == '1'
         run: python3 tools/draws/check-draws.py --board board.json
-      - name: Commit draws.json on a content change only
-        if: steps.gate.outputs.go == '1'
+      # Runs even when the staleness check is red (the red run stays visible): a failed CHECK must never throw away a good
+      # BUILD. From 8 Nov 2026 the check failed every run (F1) and draws.json froze for a week (fixed 2026-11-15).
+      - name: Commit draws.json (+ draws-archive.json) on a content change only
+        if: always() && steps.gate.outputs.go == '1' && steps.build.outcome == 'success'
         run: |
-          git add draws.json 2>/dev/null || true
-          if git diff --cached --quiet -- draws.json; then echo "draws.json unchanged — nothing to commit"; exit 0; fi
+          git add draws.json draws-archive.json 2>/dev/null || true
+          if git diff --cached --quiet -- draws.json draws-archive.json; then echo "draws.json / draws-archive.json unchanged — nothing to commit"; exit 0; fi
           git -c user.name='BSP Draws Bot' -c user.email='bot@bspconsult.local' commit -q -m "chore(draws): official draw content changed [skip ci]"
           for i in 1 2 3; do git pull -q --rebase origin main && git push -q origin HEAD:main && exit 0; sleep 5; done
           echo "::error title=draws::could not push draws.json after 3 attempts"; exit 1

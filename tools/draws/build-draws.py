@@ -176,12 +176,60 @@ def active(t, today):
     return s <= today <= e
 
 
+ARCHIVE_KEEP = ("feedName", "rounds", "matches", "qualifying")
+
+
+def results_for(prog, e):
+    """The finished results of one draw event from the deployed tournament-progression.json — this week's
+    `tournaments`, else `drawResults` (an event off the board) — keyed by feed city. None unless COMPLETE: not partial
+    and the final has a winner (founder 2026-11-15: a finished draw is never shown back at round 1)."""
+    city = e.get("feedCity") or e.get("city")
+    for part in ("tournaments", "drawResults"):
+        r = ((prog or {}).get(part) or {}).get(city)
+        if r and not r.get("partial") and any(m.get("roundCode") == "F" and m.get("winner") in (1, 2) for m in r.get("matches") or []):
+            return {k: r[k] for k in ARCHIVE_KEEP if k in r}
+    return None
+
+
+def archive_and_prune(out, archive, prog, today, now):
+    """An event whose window closed more than 14 days ago leaves the working set (draws.json) for the archive
+    (draws-archive.json) with its draw sheet and final results. Written once, never replaced or removed. An event whose
+    complete results are not in the published progression yet is NOT pruned (the pipeline rebuilds them every run while
+    it is listed); it moves on a later run. Returns (archived ids, held ids)."""
+    moved, held = [], []
+    for k in list(out["tournaments"]):
+        e = out["tournaments"][k]
+        if not (e.get("endDate") and datetime.date.fromisoformat(e["endDate"]) < today - datetime.timedelta(days=14)):
+            continue
+        if k in archive["tournaments"]:
+            del out["tournaments"][k]; continue
+        if (e.get("main") or {}).get("status") != "posted":
+            del out["tournaments"][k]; continue        # never posted: nothing to show, nothing to archive
+        res = results_for(prog, e)
+        if not res:
+            held.append(k); continue
+        archive["tournaments"][k] = {**e, "results": res, "archivedAt": now}
+        moved.append(k)
+        del out["tournaments"][k]
+    return moved, held
+
+
+def write_json(path, obj):
+    fd, tmp = tempfile.mkstemp(dir=os.path.dirname(os.path.abspath(path)), suffix=".tmp")
+    with os.fdopen(fd, "w") as f:
+        json.dump(obj, f, ensure_ascii=False, indent=1, sort_keys=True)
+        f.write("\n")
+    os.replace(tmp, path)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--calendar", default=os.path.join(HERE, "calendar-2026.json"))
     ap.add_argument("--roster", required=True)
     ap.add_argument("--out", default=os.path.join(REPO, "draws.json"))
     ap.add_argument("--today")
+    ap.add_argument("--progression", help="the deployed tournament-progression.json (finished results for the archive)")
+    ap.add_argument("--archive", default=os.path.join(REPO, "draws-archive.json"))
     ap.add_argument("--pdf-dir")
     ap.add_argument("--only", help="comma-separated ATP ids (tests / probes)")
     a = ap.parse_args()
@@ -225,18 +273,21 @@ def main():
         entry["contentHash"] = h
         entry["contentChangedAt"] = old["contentChangedAt"] if old and old.get("contentHash") == h else now
         out["tournaments"][tid] = entry
-    # drop events whose window closed more than 14 days ago (the file stays a working set, not an archive)
-    for k in list(out["tournaments"]):
-        e = out["tournaments"][k]
-        if e.get("endDate") and datetime.date.fromisoformat(e["endDate"]) < today - datetime.timedelta(days=14):
-            del out["tournaments"][k]
+    # events whose window closed more than 14 days ago move to the archive with their final results (draws.json stays
+    # a working set; the archive keeps every finished draw of the season)
+    prog = json.load(open(a.progression)) if a.progression and os.path.exists(a.progression) else None
+    archive = json.load(open(a.archive)) if os.path.exists(a.archive) else {"season": cal["season"], "tournaments": {}}
+    n_arch = len(archive["tournaments"])
+    moved, held = archive_and_prune(out, archive, prog, today, now)
+    if len(archive["tournaments"]) != n_arch:
+        write_json(a.archive, archive)
+    for k in moved:
+        print(f"archived {k} {archive['tournaments'][k].get('article')}")
+    for k in held:
+        print(f"held {k} {out['tournaments'][k].get('article')}: no complete results in the published progression yet")
     changed = content_hash(out) != content_hash({k: v for k, v in prev.items()}) if prev.get("tournaments") is not None else True
     if changed:
-        fd, tmp = tempfile.mkstemp(dir=os.path.dirname(os.path.abspath(a.out)), suffix=".tmp")
-        with os.fdopen(fd, "w") as f:
-            json.dump(out, f, ensure_ascii=False, indent=1, sort_keys=True)
-            f.write("\n")
-        os.replace(tmp, a.out)
+        write_json(a.out, out)
     posted = sum(1 for e in out["tournaments"].values() if (e.get("main") or {}).get("status") == "posted")
     print(f"draws: {len(events)} event(s) in window, {posted} main draw(s) posted, "
           f"{'written' if changed else 'unchanged (not written)'}, {len(errors)} error(s)")

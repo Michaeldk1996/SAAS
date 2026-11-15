@@ -177,30 +177,43 @@ function fmtChanged(iso, tz) {
 }
 
 // state + data the page hands in
-const S = { city: null, kind: 'main', from: null, draws: null, prog: null, board: null, drawStore: null, tz: undefined, el: null };
+const S = { city: null, kind: 'main', from: null, draws: null, archive: null, prog: null, board: null, drawStore: null, tz: undefined, el: null };
 // An event is named by its feed city (draws.json `feedCity`, e.g. "Paris" for the 2026 Paris Masters played in Nanterre),
 // the name tournament-progression.json and the board use; else the calendar city.
 const cityOf = t => t.feedCity || t.city;
 function cities() { return S.draws ? Object.values(S.draws.tournaments || {}).filter(t => t.main && t.main.status === 'posted').map(cityOf).sort() : []; }
-function drawOf(city) { return Object.values((S.draws && S.draws.tournaments) || {}).find(t => cityOf(t) === city) || null; }
+// Finished draws (founder 2026-11-15: "afterwards they go in the archive"): draws-archive.json holds every draw that left
+// the 14-day working set, with its draw sheet AND its final results. An archived draw is selected as "arch:<atpId>".
+const ARCH = 'arch:';
+const isArch = k => String(k || '').startsWith(ARCH);
+const archOf = k => (isArch(k) && S.archive && S.archive.tournaments && S.archive.tournaments[String(k).slice(ARCH.length)]) || null;
+function archived() {
+  const live = new Set(cities());
+  return Object.entries((S.archive && S.archive.tournaments) || {})
+    .filter(([, t]) => t && t.main && t.main.status === 'posted' && t.results)
+    .sort((a, b) => String(b[1].endDate).localeCompare(String(a[1].endDate)) || cityOf(a[1]).localeCompare(cityOf(b[1])))
+    .map(([id, t]) => ({ key: ARCH + id, label: cityOf(t), live: live.has(cityOf(t)) }));
+}
+function drawOf(city) { if (isArch(city)) return archOf(city); return Object.values((S.draws && S.draws.tournaments) || {}).find(t => cityOf(t) === city) || null; }
 // This week's events are in `tournaments`; an event that has left the board keeps its results in `drawResults` (the
 // pipeline rebuilds them every run while draws.json lists the draw — founder 2026-11-15).
 function progMaps() { return S.prog ? [S.prog.tournaments, S.prog.drawResults].filter(Boolean) : []; }
-function entryOf(city) { for (const t of progMaps()) { const e = t[city] || Object.values(t).find(x => x && x.feedName === city); if (e) return e; } return null; }
-function entryName(city) { for (const t of progMaps()) { const k = t[city] ? city : Object.keys(t).find(x => t[x] && t[x].feedName === city); if (k) return k; } return null; }
-function boardOf(city) { return (S.board || []).filter(m => String(m.tour || '').replace(/^ATP /, '') === city && !m.finalScore); }
+function entryOf(city) { if (isArch(city)) { const a = archOf(city); return a ? a.results : null; } for (const t of progMaps()) { const e = t[city] || Object.values(t).find(x => x && x.feedName === city); if (e) return e; } return null; }
+function entryName(city) { if (isArch(city)) return null; for (const t of progMaps()) { const k = t[city] ? city : Object.keys(t).find(x => t[x] && t[x].feedName === city); if (k) return k; } return null; }
+function boardOf(city) { if (isArch(city)) return []; return (S.board || []).filter(m => String(m.tour || '').replace(/^ATP /, '') === city && !m.finalScore); }
 
 function render() {
   const el = S.el; if (!el) return;
-  const list = cities();
-  if (!list.length) { el.innerHTML = '<div class="dv-empty">No official draw is posted for this week yet.</div>'; return; }
-  if (!S.city || !list.includes(S.city)) S.city = list[0];
+  const list = cities(), arch = archived();
+  if (!list.length && !arch.length) { el.innerHTML = '<div class="dv-empty">No official draw is posted for this week yet.</div>'; return; }
+  if (!S.city || !(list.includes(S.city) || arch.some(a => a.key === S.city))) S.city = list.length ? list[0] : arch[0].key;
   const d = drawOf(S.city), e = entryOf(S.city);
   const M = model({ draw: d, entry: e, upcoming: boardOf(S.city), kind: S.kind });
   const seg = typeof window !== 'undefined' && typeof window.sfSegHtml === 'function' ? window.sfSegHtml : null;
   const chips = (items, label) => seg ? seg(items, { label, wrap: true }) : items.map(i => `<button onclick="${i.onclick}">${i.label}</button>`).join('');
   const head = `<div class="dv-head">`
-    + chips(list.map(c => ({ label: esc(c), on: c === S.city, onclick: `DrawView.set('city','${esc(c)}')` })), 'Tournament')
+    + (list.length ? chips(list.map(c => ({ label: esc(c), on: c === S.city, onclick: `DrawView.set('city','${esc(c)}')` })), 'Tournament') : '')
+    + (arch.length ? `<div class="dv-from"><span class="dv-cap">Archive</span>${chips(arch.map(a => ({ label: esc(a.label), on: a.key === S.city, onclick: `DrawView.set('city','${esc(a.key)}')` })), 'Archived draws')}</div>` : '')
     + chips([['main', 'Main draw'], ['qualifying', 'Qualifying']].map(([v, l]) => ({ label: l, on: S.kind === v, disabled: v === 'qualifying' && !(d.qualifying && d.qualifying.status === 'posted'), onclick: `DrawView.set('kind','${v}')` })), 'Draw')
     // Round 3: the one place for the W/UE sheet — the page's own bar (download, per-round copy, "R32: 11 of 12 · …")
     // beside the tournament selector, for the selected tournament. No progression entry for it → nothing (the bar
@@ -219,7 +232,7 @@ function render() {
   el.innerHTML = head + picker
     // Item 13: two clocks, said separately — results come from the pipeline's progression fetch; the draw sheet's time
     // is when its CONTENT last changed (it is re-checked about every 2 h; an unchanged sheet keeps its time).
-    + `<div class="dv-stale">Results: ${esc(S.prog && S.prog.fetchedAt ? ago(S.prog.fetchedAt) : DASH)} · Draw sheet: ${esc(fmtChanged(M.changedAt, S.tz))}</div>`
+    + `<div class="dv-stale">${isArch(S.city) ? `Final results · archived ${esc(fmtChanged(archOf(S.city).archivedAt, S.tz))}` : `Results: ${esc(S.prog && S.prog.fetchedAt ? ago(S.prog.fetchedAt) : DASH)}`} · Draw sheet: ${esc(fmtChanged(M.changedAt, S.tz))}</div>`
     + `<div class="dv-scroll"><div class="dv-bracket" style="--dv-cols:${vis.length};--dv-rows:${vis[0].cells.length}">${cols}</div></div>`;
 }
 

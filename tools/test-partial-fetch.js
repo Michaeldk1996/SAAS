@@ -81,11 +81,11 @@ function harness(failEarly) {   // failEarly: how many times the first chunk fai
     3: D('2026-11-08', '2026-11-14', { city: 'Stockholm' }), 4: D('2026-11-16', '2026-11-22', { city: 'Metz' }), 5: Object.assign(D('2026-11-02', '2026-11-08', { city: 'Athens' }), { main: { status: 'not_posted' } }) } };
   const ev = h.P.drawResultEvents(draws, ['ATP Stockholm', 'ATP Finals - Turin'], new RD('2026-11-15T09:00:00Z'));
   check('drawResultEvents: every posted draw off the board, by feed city, over start − 9 … end + 1 (Paris 24 Oct – 9 Nov)',
-    JSON.stringify(ev) === JSON.stringify([{ city: 'Paris', tourName: 'ATP Paris', from: '2026-10-24', to: '2026-11-09' }]), JSON.stringify(ev));
-  check('…skips an event on the board (Stockholm), one not started (Metz), one not posted (Athens), one past the 14-day keep (Brussels)',
-    !ev.some(e => /Stockholm|Metz|Athens|Brussels/.test(e.city)));
-  check('…keeps it through the 14th day after its end (Brussels on 8 Nov), its window capped at today',
-    JSON.stringify(h.P.drawResultEvents(draws, [], new RD('2026-11-08T09:00:00Z')).find(e => e.city === 'Brussels')) === JSON.stringify({ city: 'Brussels', tourName: 'ATP Brussels', from: '2026-10-10', to: '2026-10-26' }));
+    JSON.stringify(ev.find(e => e.city === 'Paris')) === JSON.stringify({ city: 'Paris', tourName: 'ATP Paris', from: '2026-10-24', to: '2026-11-09' }) && ev.length === 2, JSON.stringify(ev));
+  check('…skips an event on the board (Stockholm), one not started (Metz), one not posted (Athens)',
+    !ev.some(e => /Stockholm|Metz|Athens/.test(e.city)));
+  check('…and has no age limit of its own: Brussels, ended 25 Oct, is rebuilt while draws.json still lists it (until archived)',
+    JSON.stringify(ev.find(e => e.city === 'Brussels')) === JSON.stringify({ city: 'Brussels', tourName: 'ATP Brussels', from: '2026-10-10', to: '2026-10-26' }));
   // ── on screen ──
   const html = fs.readFileSync(path.join(ROOT, 'bsp-consult-dashboard.html'), 'utf8');
   const fn = n => { const i = html.indexOf(`function ${n}(`); let d = 0, j = html.indexOf('{', i); for (; j < html.length; j++) { if (html[j] === '{') d++; else if (html[j] === '}' && --d === 0) break; } return html.slice(i, j + 1); };

@@ -227,6 +227,39 @@ check("draws.json's shipped readers are exactly wue-sheet.js (W/UE quarters, rul
       sorted(readers) == ["board-qualifying.js", "bsp-consult-dashboard.html", "bsp-pipeline.js", "draw-view.js", "tournaments-draw.js", "wue-sheet.js"], readers)
 
 # ── draws.yml cadence clock (fixed 2026-10-20): the last run that FETCHED, never a skipped run ──
+# ── finished draws → the archive (founder 2026-11-15: "afterwards they go in the archive … not possible that they are
+# back at round 1") ──
+import datetime as _dt
+def _ev(city, end, posted=True, **kw):
+    return {"city": city, "startDate": "2026-10-19", "endDate": end, "main": {"status": "posted" if posted else "not_posted"}, **kw}
+FIN = {"feedName": "Brussels", "rounds": ["R1", "F"], "matches": [{"roundCode": "R1", "winner": 1}, {"roundCode": "F", "winner": 2}], "qualifying": [], "players": {"x": 1}, "scheduled": []}
+out_ = {"tournaments": {"7485": _ev("Brussels", "2026-10-25"), "9410": _ev("Almaty", "2026-10-25"), "1": _ev("Old", "2026-10-01", posted=False),
+                         "352": _ev("Nanterre", "2026-11-08", feedCity="Paris")}}
+arch_ = {"tournaments": {}}
+prog_ = {"tournaments": {}, "drawResults": {"Brussels": FIN, "Almaty": {**FIN, "matches": [{"roundCode": "R1", "winner": 1}]}}}
+moved, held = B.archive_and_prune(out_, arch_, prog_, _dt.date(2026, 11, 15), "2026-11-15T10:00:00Z")
+check("archive: a finished draw past the 14 days moves to the archive WITH its final results (sheet + matches)",
+      moved == ["7485"] and arch_["tournaments"]["7485"]["results"]["matches"] == FIN["matches"] and arch_["tournaments"]["7485"]["main"]["status"] == "posted"
+      and "players" not in arch_["tournaments"]["7485"]["results"] and "7485" not in out_["tournaments"], (moved, held))
+check("archive: results without a final are NOT archived and the draw is NOT pruned (never shown back at round 1)",
+      held == ["9410"] and "9410" in out_["tournaments"] and "9410" not in arch_["tournaments"])
+check("archive: a never-posted draw is just dropped; a draw inside its 14 days stays in draws.json",
+      "1" not in out_["tournaments"] and "1" not in arch_["tournaments"] and "352" in out_["tournaments"])
+check("archive: a partial build is not complete", B.results_for({"drawResults": {"Brussels": {**FIN, "partial": {"failedRanges": [1]}}}}, _ev("Brussels", "x")) is None)
+check("archive: this week's `tournaments` entry counts too, joined by feed city",
+      B.results_for({"tournaments": {"Paris": FIN}}, _ev("Nanterre", "x", feedCity="Paris")) is not None)
+arch_["tournaments"]["7485"]["results"]["matches"] = ["kept"]
+out2 = {"tournaments": {"7485": _ev("Brussels", "2026-10-25")}}
+B.archive_and_prune(out2, arch_, prog_, _dt.date(2026, 11, 15), "2026-11-16T10:00:00Z")
+check("archive: written once, never replaced (a later run with the event back in draws.json leaves the archived copy)",
+      arch_["tournaments"]["7485"]["results"]["matches"] == ["kept"] and "7485" not in out2["tournaments"])
+o3 = {"tournaments": {"7485": _ev("Brussels", "2026-10-25")}}; a3 = {"tournaments": {}}
+B.archive_and_prune(o3, a3, None, _dt.date(2026, 11, 15), "x")
+check("archive: progression unreadable → nothing archived, nothing pruned", "7485" in o3["tournaments"] and not a3["tournaments"])
+wf = open(os.path.join(ROOT, ".github", "workflows", "draws.yml")).read()
+check("draws.yml: passes the deployed progression, commits draws-archive.json, and commits even when the staleness check is red",
+      "--progression progression.json" in wf and "git add draws.json draws-archive.json" in wf and "always() && steps.gate.outputs.go == '1' && steps.build.outcome == 'success'" in wf)
+check("pipeline.yml publishes draws-archive.json", "cp draws-archive.json _site/" in open(os.path.join(ROOT, ".github", "workflows", "pipeline.yml")).read())
 spec3 = importlib.util.spec_from_file_location("lfr", os.path.join(ROOT, "tools", "draws", "last-fetch-run.py"))
 LFR = importlib.util.module_from_spec(spec3); spec3.loader.exec_module(LFR)
 runs = [{"id": 9, "run_started_at": "T3"}, {"id": 3, "run_started_at": "T2"}, {"id": 2, "run_started_at": "T1"}, {"id": 1, "run_started_at": "T0"}]

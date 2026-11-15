@@ -149,5 +149,17 @@ check('the W/UE sheet finds the Paris draw by its feed name (status "R64: 13 of 
   DV.mount(el3, { draws, prog: { fetchedAt: '2026-10-20T12:00:00Z', tournaments: {} }, board: [], tz: 'UTC' });
   check('CONTROL (the bug): without the event\'s results the same draw reads "0 of 12"', /0 of 12/.test(el3.innerHTML) && !/9 of 12/.test(el3.innerHTML));
 }
+// …and after its 14 days the draw lives in draws-archive.json with its results: an Archive row opens it, results placed.
+{
+  const el4 = { innerHTML: '' };
+  const arch = { tournaments: { 9410: Object.assign({}, draw, { results: entry, archivedAt: '2026-11-15T10:00:00Z' }) } };
+  DV.mount(el4, { draws: { tournaments: {} }, archive: arch, prog: { fetchedAt: '2026-11-15T10:00:00Z', tournaments: {} }, board: [], tz: 'UTC', city: null });
+  check('archive only (no current draw): the Archive row lists Almaty and opens it with its results ("9 of 12"), final-results line',
+    /Archive/.test(el4.innerHTML) && /Almaty/.test(el4.innerHTML) && /9 of 12/.test(el4.innerHTML) && /Final results · archived/.test(el4.innerHTML), (el4.innerHTML.match(/<div class="dv-stale">[^<]*/) || [''])[0]);
+  const el5 = { innerHTML: '' };
+  DV.mount(el5, { draws, archive: arch, prog: { fetchedAt: '2026-11-15T10:00:00Z', tournaments: { Almaty: entry } }, board: [], tz: 'UTC', city: null });
+  DV.set('city', 'arch:9410');
+  check('an archived draw picked beside the current ones reads its own stored results', /9 of 12/.test(el5.innerHTML) && /Final results/.test(el5.innerHTML));
+}
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

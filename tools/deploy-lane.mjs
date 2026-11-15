@@ -170,7 +170,8 @@ export const DATA_FILES = new Set([
   'te-history-index.json', 'te-refresh-log.jsonl',                               // te-refresh.yml (TEN-443)
 ]);
 export const DATA_DIRS = ['style-meetings/', 'bet365-history/', 'splits-matches/', 'career-splits/', 'weather/archive/'];   // weather/archive/: pipeline.yml commit-back (TEN-304); career-splits/: refresh-career-splits.sh (TEN-391)
-DATA_FILES.add('draws.json');   // draws.yml commit-back, BSP Draws Bot (bot@bspconsult.local): its only output. Missing, it refused a land on 2026-10-22 (66cbec83)
+DATA_FILES.add('draws.json');   // draws.yml commit-back, BSP Draws Bot (bot@bspconsult.local). Missing, it refused a land on 2026-10-22 (66cbec83)
+DATA_FILES.add('draws-archive.json');   // draws.yml commit-back, BSP Draws Bot: finished draws + their results (2026-11-15)
 DATA_FILES.add('points-to-defend.json');   // points-to-defend.yml commit-back, BSP Points Bot (bot@bspconsult.local): its only output (round 2 item 2.3)
 DATA_DIRS.push('te-history/');
 DATA_DIRS.push('news-ticker/', 'news-quotes/');   // news ticker (founder 2026-11-11): pipeline.yml commit-back (news-ticker/ + news-ticker.json) and news-quotes.yml (bsp-bot, every 30 min)

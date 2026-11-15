@@ -3117,8 +3117,9 @@ function progressionSheetMatches(played, roundLabelByName) {
 // are back to the first round"). The progression used to be built only for events on matches.json (~4 days), so a
 // finished event's draw lost every result while build-draws.py kept the draw for 14 days after its end. Each one is
 // rebuilt every run from its own week (qualifying from start − 9 days, as build-draws.py fetches it, to end + 1 day),
-// from the same fixtures fetch. Pure; `today` a Date.
-const DRAW_RESULTS_KEEP_DAYS = 14;   // = build-draws.py's prune (an event whose end is > 14 days ago leaves draws.json)
+// from the same fixtures fetch. No age limit here: draws.json decides. build-draws.py moves an event to
+// draws-archive.json (with these results) only once they are complete, so an event stays listed — and rebuilt —
+// until its results are archived. Pure; `today` a Date.
 function drawResultEvents(draws, activeTourNames, today) {
   const day = 86400000, iso = d => d.toISOString().slice(0, 10);
   const onBoard = new Set();
@@ -3132,7 +3133,6 @@ function drawResultEvents(draws, activeTourNames, today) {
     const city = t.feedCity || t.city;
     if (!city || onBoard.has(city)) continue;
     const start = new Date(t.startDate + 'T00:00:00Z'), end = new Date(t.endDate + 'T00:00:00Z');
-    if (end.getTime() < today.getTime() - DRAW_RESULTS_KEEP_DAYS * day - day) continue;
     if (start.getTime() > today.getTime()) continue;   // not started: nothing to show
     const to = new Date(Math.min(end.getTime() + day, today.getTime()));
     out.push({ city, tourName: 'ATP ' + city, from: iso(new Date(start.getTime() - 9 * day)), to: iso(to) });
