@@ -8,6 +8,7 @@
 import crypto from 'node:crypto';
 
 export const ASAP = 'https://www.asapsports.com', ASAP_UA = 'StennisfyNewsBot/1.0 (press-conference quotes, attributed)';
+export const ASAP_RETRY_MS = 8000;
 export const ASAP_GAP_MS = 2000, PRESS_MAX_PER_PLAYER = 4, PRESS_MIN_CHARS = 60, PRESS_MAX_CHARS = 420, PRESS_DAYS = 2;
 export const PRESS_SOURCE = 'Press conference (ASAP Sports transcript)';
 // our tournament name -> the transcript site's event title
@@ -72,7 +73,9 @@ const topicOf = (q) => { const s = String(q || '').replace(/\s+/g, ' ').trim().s
 export async function slamPressCandidates({ tournament, match, fullName, surnameOf, cache = {}, fetchFn = fetch, sleep = (ms) => new Promise((r) => setTimeout(r, ms)), log = () => {} }) {
   const title = slamTitle(tournament), out = [];
   if (!title || !match || !match.date) return out;
-  const get = async (url) => { await sleep(ASAP_GAP_MS); const r = await fetchFn(url, { headers: { 'user-agent': ASAP_UA }, signal: AbortSignal.timeout(30000) }); if (!r.ok) throw new Error(`HTTP ${r.status}`); return new TextDecoder('latin1').decode(await r.arrayBuffer()); };
+  // one more try after a pause when the connection itself fails (measured 2026-11-15: a whole run without quotes); an HTTP error is not retried
+  const once = async (url) => { await sleep(ASAP_GAP_MS); const r = await fetchFn(url, { headers: { 'user-agent': ASAP_UA }, signal: AbortSignal.timeout(30000) }); if (!r.ok) throw Object.assign(new Error(`HTTP ${r.status}`), { http: true }); return new TextDecoder('latin1').decode(await r.arrayBuffer()); };
+  const get = async (url) => { try { return await once(url); } catch (e) { if (e.http) throw e; await sleep(ASAP_RETRY_MS); return once(url); } };
   const sides = ['p1', 'p2'].map((k) => ({ k, key: String(match[k + 'Key']), card: match[k], full: fullName(match[k + 'Key']), sur: surnameOf(match[k]) })).filter((s) => s.full);
   const d0 = Date.parse(match.date + 'T00:00:00Z'), done = new Set();
   for (let i = 0; i < PRESS_DAYS && done.size < sides.length; i++) {

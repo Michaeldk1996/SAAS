@@ -383,7 +383,7 @@ export function factSheet({ m, w, l, rep, shard = null, round = null, duration =
   // No two reports built the same way (founder 2026-11-15): the opening, the number paragraph and the ending of THIS
   // report are picked here, by match, from the shapes the founder listed; a shape that needs a fact the sheet lacks
   // (a match time, a milestone, a style line, a physical doubt) is not offered.
-  { const pk = (arr, salt) => arr[parseInt(crypto.createHash('sha256').update(`${m.id}|shape|${salt}`).digest('hex').slice(0, 6), 16) % arr.length];
+  { const pk = (arr, salt) => arr[parseInt(crypto.createHash('sha256').update(`${m.id}|shape|${salt}|${process.env.NEWS_SHAPE_SALT || ''}`).digest('hex').slice(0, 6), 16) % arr.length];
     const five = bestOf === 5 && nSets === 5, hasMile = milestones.length > 0, final = /\bfinal$/.test(String(round || ''));
     const open = [`"${W} beat ${L} [score] in [the round] to ..."`, `"${W} beat ${L} in ${nSets === 2 || (bestOf === 5 && nSets === 3) ? 'straight sets' : `${['', '', '', 'three', 'four', 'five'][nSets]} sets`} in [the round] ..." with the set scores told in the next paragraph`];
     if (timeTold) open.push(...(duration <= TIME_SHORT_MIN ? [`"It took ${W} only [time] to beat ${L} [score]."`] : [`"${W} needed ${five ? 'five sets and ' : ''}[time] to get past ${L}, [score]."`, `"${W} beat ${L} in a ${five ? 'five-setter' : 'three-setter'} of [time], [score], to ..."`, `"${W} came through a [time] battle against ${L}, [score]."`]));
@@ -451,7 +451,10 @@ export function checkComposed(text, sheet, { surnames = new Set() } = {}) {
     const whole = foldText(q.text), part = foldText(sp[1]), at = whole.indexOf(part), pre = whole.slice(0, at).trim(), post = whole.slice(at + part.length).trim();
     if ((pre && !/[.!?…]$|\.\.\.$/.test(pre)) || (post && !/[.!?…,]$|\.\.\.$/.test(part))) fail.push(`quotation cut in the middle of a sentence: "${sp[1].slice(0, 60)}"`);
     const lead = full.slice(0, sp.index).split('\n').pop();   // a quote sits inside the paragraph it explains: its speaker is named earlier in that paragraph
-    if (!norm(lead).toLowerCase().includes(norm(q.speaker).toLowerCase())) fail.push(`the speaker (${q.speaker}) is not named before his quotation`);
+    // when every quote on the sheet is one player's, his name anywhere before the quotation is enough ("He said:" in a
+    // paragraph about him cost a paid retry three times on 2026-11-15)
+    const oneVoice = new Set(sheet.quotes.map((x) => x.speaker)).size === 1, before = oneVoice ? full.slice(0, sp.index) : lead;
+    if (!norm(before).toLowerCase().includes(norm(q.speaker).toLowerCase())) fail.push(`the speaker (${q.speaker}) is not named before his quotation`);
     if (used.has(q.id)) fail.push('the same quotation twice'); used.add(q.id);
   }
   const body = full.replace(/"[^"]*"/g, ' QUOTE ');
@@ -508,7 +511,7 @@ export const SYSTEM = `You write the match report of one ATP tennis match for St
 
 The report is short and it reads fluently. It is a small story told out loud: after reading it, somebody who did not see the match can picture what happened. It is never a list of facts and it never sounds like the report before it.
 
-Length: 150 to 180 words, quotes included. Only when the sheet says "LONG REPORT": up to about 250 words, and the extra words go to the context and the turning point, never to more numbers or to game by game.
+Length: 150 to 180 words, quotes included. Only when the sheet says "LONG REPORT": up to about 250 words, and the extra words go to the context and the turning point, never to more numbers or to game by game. In a long report too, a game score ("at 5–4", "1–4 behind") appears at most twice, only at the turning point: say "served for the set", "a break down", "late in the set" instead.
 
 Shape (4 or 5 short paragraphs, one blank line between them, plain text: no title, no headings, no lists, no bold):
 1. The opening sentence: who beat who, the round, what it means when the sheet says it (a title, a first final, a first Grand Slam quarter-final) and either the score of every set or how many sets it took. Build it the way the SHAPE section of the sheet asks. When the sheet has a "Match time" line, the time goes in this sentence; when it has none, never mention a time. No head to head, unless the sheet has a "Big rivalry" line.
@@ -538,7 +541,7 @@ Hard rules:
 - Every fact comes from the fact sheet. Never use your own knowledge of the players, the tournament, rankings, injuries, past seasons or anything that happened after the match. If the sheet does not say it, it is not in the report.
 - Copy every number and every score exactly as the sheet writes it, as digits (7–5, 90%, 5 games in a row). Scores with an en dash. Do not calculate new numbers. Percentages, never the counts behind them. Never a figure for one set. Winners are printed under your text and stay out of it; unforced errors may be the one number only when they are the story.
 - Players by SURNAME ONLY, never a first name or an initial.
-- A quote is copied word for word from the QUOTES list, inside straight double quotation marks ("). You may use a whole quote, or whole sentences from the start of it. Never change, shorten inside, translate or tidy a quote. Nothing else goes inside quotation marks. The speaker's surname must appear earlier in the same paragraph. One quote; two only after a final, where the last one is the quote that says most about the title.
+- A quote is copied word for word from the QUOTES list, inside straight double quotation marks ("). You may use a whole quote, or whole sentences from the start of it. Never change, shorten inside, translate or tidy a quote. Nothing else goes inside quotation marks. The speaker's surname must appear earlier in the same paragraph. One quote; two only after a final, where the last one is the quote that says most about the title. When the QUOTES list is not empty, the report carries a quote.
 - Never say where anything comes from: no "the stats", "the data", "the card", "the commentators", "the highlights", "in his interview", "in his press conference", "according to".
 - Never write about a shot (forehand, backhand, volley, net), the body (injury, pain, knee, tired, fresh), nerves, the crowd, the court speed or the balls unless a line of the fact sheet says so. A quote does not count as a line of the fact sheet.
 - About a medical timeout: only what the PHYSICAL section says. Never the reason, never "the reason is not known", never how he looked.
