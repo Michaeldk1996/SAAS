@@ -1,17 +1,17 @@
 {
- "generatedAt": "2026-11-15T13:48:35.446Z",
+ "generatedAt": "2026-11-15T14:33:07.487Z",
  "tournaments": [
   {
    "key": "tour",
    "season": "2026",
    "name": "ATP Tour",
    "file": "news-ticker/tour-2026.json",
-   "items": 70,
+   "items": 71,
    "byType": {
-    "quote": 70
+    "quote": 71
    },
-   "latestTimestamp": "2026-11-15T09:41:35.000Z",
-   "updatedAt": "2026-11-15T13:48:35.446Z"
+   "latestTimestamp": "2026-11-15T13:55:09.000Z",
+   "updatedAt": "2026-11-15T14:33:07.487Z"
   },
   {
    "key": "1681",
@@ -51,6 +51,37 @@
   }
  ],
  "latest": [
+  {
+   "id": "quote-5e5a576db3dca2",
+   "type": "quote",
+   "playerId": "1759",
+   "opponentId": null,
+   "player": "A. Fils",
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-15T13:55:09.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "I'm 7th in the world, I know I belong here … It has always been a childhood dream (to take part in the Masters) and now that I'm here, I'm trying to make the most of it … in downtown Turin.",
+   "originalText": "Je suis 7e dans le monde, je sais que je suis à ma place … Ça a toujours été un rêve d'enfant (de participer aux Masters) et maintenant que j'y suis, j'essaie de profiter pleinement … dans le centre-ville de Turin.",
+   "language": "fr",
+   "translated": true,
+   "translationModel": "claude-opus-5-5",
+   "sourceName": "RMC Sport",
+   "sourceUrl": "https://rmcsport.bfmtv.com/tennis/atp/masters-a-quelle-heure-et-sur-quelle-chaine-tv-regarder-le-match-entre-arthur-fils-et-ben-shelton_AV-202611150264.html",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On qualifying for his first ATP Finals",
+   "sourceHash": "776a866b0312cd3b",
+   "publishedAt": "2026-11-15T14:33:07.487Z",
+   "file": "news-ticker/tour-2026.json"
+  },
   {
    "id": "quote-c97b20550b80b5",
    "type": "quote",
@@ -1609,37 +1640,6 @@
    "revisedAt": "2026-11-13T18:20:32.080Z",
    "revision": 1,
    "file": "news-ticker/1681-2026.json"
-  },
-  {
-   "id": "quote-c17f836c062fb6",
-   "type": "quote",
-   "playerId": "431",
-   "opponentId": null,
-   "player": "D. Shapovalov",
-   "opponent": null,
-   "tournament": "ATP Tour",
-   "tournamentKey": "tour",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-13T17:00:00.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Injuries",
-   "context": null,
-   "eventKey": null,
-   "won": null,
-   "text": "During my match against Khachanov in Paris, I sustained an adductor injury, … Given the seriousness of the injury, I unfortunately haven't had enough time to heal to be fully ready to compete in the Davis Cup Finals. I always love representing my country so I'm extremely disappointed.",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "TennisUpToDate",
-   "sourceUrl": "https://tennisuptodate.com/atp/canada-dealt-major-davis-cup-blow-as-shapovalov-and-diallo-withdraw-ahead-of-czechia-clash",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "topic": "On withdrawing from Davis Cup Finals with adductor injury",
-   "sourceHash": "ae85933f7d5a1944",
-   "publishedAt": "2026-11-13T17:40:01.077Z",
-   "file": "news-ticker/tour-2026.json"
   }
  ]
 }
