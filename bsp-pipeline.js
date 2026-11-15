@@ -3159,8 +3159,11 @@ async function buildTournamentProgression(tourName, win, fetchFrom) {
   if (!fetched) return null;
   // Same rows as before for an event on the board (its 15-day window); a wider shared fetch is cut back to this window,
   // and a failed chunk marks this event partial only when it overlaps the window.
-  const fixtures = fetched.filter(f => !f.event_date || (f.event_date >= from && f.event_date <= to));
-  if (fetched.failedRanges) fixtures.failedRanges = fetched.failedRanges.filter(r => r.to >= from && r.from <= to);
+  // Only when the fetch reaches past this event's window (a finished draw, or the shared wider fetch); otherwise the
+  // fetch IS the window and the rows are passed through untouched, exactly as before.
+  const narrow = !!win || fetchStart < windowStart;
+  const fixtures = narrow ? fetched.filter(f => !f.event_date || (f.event_date >= from && f.event_date <= to)) : fetched;
+  if (narrow && fetched.failedRanges) fixtures.failedRanges = fetched.failedRanges.filter(r => r.to >= from && r.from <= to);
 
   const played = fixtures.filter(f =>
     f.tournament_name && matchNames.some(nm => f.tournament_name.includes(nm)) &&
