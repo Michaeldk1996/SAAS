@@ -611,6 +611,31 @@ function assignPercentiles(rated) {
   return { percentiles, eloPercentiles };
 }
 
+// The full roster: { key: { name } } for every player-index.json row with hasProfile.
+function fullRoster(store, eager) {
+  const idx = store.fetchJson('player-index.json', { maxAgeMs: 0 });
+  const rows = idx && (Array.isArray(idx.players) ? idx.players : Object.values(idx.players || {}));
+  if (!rows || !rows.length) throw new Error('deployed player-index.json unreachable or empty — no roster');
+  const keys = rows.filter((r) => r && r.hasProfile && r.key != null).map((r) => String(r.key));
+  const roster = {};
+  const missing = [];
+  for (const k of keys) {
+    if (eager[k] && eager[k].name) roster[k] = { name: eager[k].name };
+    else missing.push(k);
+  }
+  if (missing.length) {
+    const got = store.fetchShards('profiles', missing);
+    if (got.failed.length) throw new Error(`${got.failed.length} profile shard(s) failed to load (${got.failed.slice(0, 5).join(', ')}) — refusing a partial roster`);
+    for (const [k, t] of got.ok) {
+      const j = JSON.parse(t);
+      const name = j && j.profile && j.profile.name;
+      if (!name) throw new Error(`profiles/${k}.json carries no name — refusing a partial roster`);
+      roster[k] = { name };
+    }
+  }
+  return roster;
+}
+
 // ---- main ----------------------------------------------------------------------
 async function main() {
   const t0 = Date.now();
@@ -620,11 +645,16 @@ async function main() {
   // Roster — deployed or nothing. A fresh fetch every run (maxAgeMs 0), so a day-old
   // cache in a local .deployed-cache/ cannot stand in for today's roster.
   const pp = store.playerProfiles({ maxAgeMs: 0 });
-  const roster = pp.players || {};
-  const rosterSize = Object.keys(roster).length;
   if (pp.source !== 'deployed') throw new Error(`roster source is '${pp.source}' (${JSON.stringify(pp.drift)}) — refusing to rate the committed July fossil`);
-  if (rosterSize < ROSTER_MIN) throw new Error(`deployed roster has ${rosterSize} players (< ${ROSTER_MIN}) — refusing to publish a shrunken board`);
+  // Founder 2026-11-15 ("yes, full roster"): the roster is EVERY player the site serves a profile for (player-index.json
+  // hasProfile: 741 on 15 Nov), not only the board's eager profiles (264 in ATP Finals week, fewer in the off-season —
+  // the build had refused every run since 14 Nov). Names are the profile's own spelling (the joins below key on it):
+  // the eager file's, else the player's profile shard. A shard that will not load stops the build.
   assertFetchedThisRun(store, 'player-profiles.json', t0);
+  const roster = fullRoster(store, pp.players || {});
+  const rosterSize = Object.keys(roster).length;
+  if (rosterSize < ROSTER_MIN) throw new Error(`deployed roster has ${rosterSize} players (< ${ROSTER_MIN}) — refusing to publish a shrunken board`);
+  assertFetchedThisRun(store, 'player-index.json', t0);
 
   // Surface map — deployed copy (the committed one lags the pipeline's refresh).
   const sm = store.fetchJson('tournament-surfaces.json', { maxAgeMs: 0 });
@@ -655,14 +685,14 @@ async function main() {
       source: `api-tennis box scores, ATP main-tour singles (event_type 265), ${STATS_FLOOR}..${today} — NO Sackmann/TML`,
       scopes: { last52: `matches within ${LAST52_DAYS}d of player's most-recent match (last52From..latestMatch)`, sinceBase: `all data since ${STATS_FLOOR} (shown as "Since Mar 2024")` },
       surfaces: 'Hard/Clay/Grass/All; indoor->Hard, carpet->dropped (via tournament-surfaces.json normalizeSurface)',
-      inclusion: `deployed-roster player with > 10 (>=${INCLUDE_MIN_MATCHES}) sinceBase-All matches`,
+      inclusion: `profiled player (player-index.json hasProfile) with > 10 (>=${INCLUDE_MIN_MATCHES}) sinceBase-All matches`,
       lockedFormulas: {
         serve: '%1stIn + %1stWon + %2ndWon + hold% + acesPerMatch − DFPerMatch (aces/DF raw per-match)',
         return: '%1stReturnWon + %2ndReturnWon + %returnGamesWon + %BPconverted',
         underPressure: 'copied from surface-ratings.json (TEN-328: one builder, floors, 3-of-4 -> mean*4 estimated:true, Challenger fold-in x0.9); last52 <- last52, sinceBase <- career',
         dominanceRatio: 'returnPtsWon% / (100 − servicePtsWon%)',
       },
-      roster: { source: pp.source, fetchedAt: pp.fetchedAt || null, players: rosterSize },
+      roster: { source: 'player-index.json hasProfile (names: player-profiles.json, else profiles/<key>.json)', fetchedAt: pp.fetchedAt || null, players: rosterSize },
       rosterSize,
       ratedPlayers: rated.length,
       eloResolved,

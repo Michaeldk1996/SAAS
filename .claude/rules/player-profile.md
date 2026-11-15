@@ -396,6 +396,10 @@ Supersedes the v2 items it names; everything else stays v2. Reference: `Player P
   saved % + tiebreaks won % + deciding sets won %, all from the same box-score window as Serve and Return
   (`dna-apitennis-ratings.js` `underPressureAtp`, its percentile against the ATP group's own values); its four boxes add
   up to it and its BP converted equals Return's. A file without the node shows the TEN-328 figure (surface-ratings).
+  **Roster (founder 2026-11-15, "full roster"):** `dna-apitennis-ratings.js` rates every player the site serves a profile
+  for (`player-index.json` `hasProfile`, 741), named as his profile (the eager file, else `profiles/<key>.json`), never
+  only the board's eager profiles (264 in ATP Finals week stopped the build 14–15 Nov). A shard that will not load stops
+  the build; the 300-player guard applies to the full roster. **Test:** `tools/test-dna-percentiles.js` "full roster".
   *Known:* the Match analysis radar, Head to Head and the Database board still read the TEN-328 Under pressure — one
   builder there, not yet ruled to move.
   **Test:** `test-ratings-rulings.js` RULING 1 (boxes sum to the rating), `test-pp4-page.js` "Ratings ·"; a rate on fewer than 5 of its own count is a dash. Ratings opens on Last 52 weeks

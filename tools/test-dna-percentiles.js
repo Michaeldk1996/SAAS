@@ -255,5 +255,13 @@ check('builder refuses a stale cached "deployed" roster when the live fetch fail
   } finally { fs.rmSync(tmp, { recursive: true, force: true }); }
 });
 
+check('full roster (founder 2026-11-15): every profiled player (player-index hasProfile), names from the profile, a failed shard stops the build', () => {
+  const src = fs.readFileSync(path.join(ROOT, 'dna-apitennis-ratings.js'), 'utf8');
+  assert.ok(/function fullRoster\(store, eager\)/.test(src) && /r\.hasProfile/.test(src), 'roster not read from player-index hasProfile');
+  assert.ok(/store\.fetchShards\('profiles', missing\)/.test(src) && /refusing a partial roster/.test(src), 'profile names / fail-closed');
+  assert.ok(/const roster = fullRoster\(store, pp\.players \|\| \{\}\);/.test(src), 'the eager file is the roster again');
+  assert.ok(/rosterSize < ROSTER_MIN/.test(src), 'the shrink guard is gone');
+});
+
 console.log(`\n${pass} passed, ${fails.length} failed`);
 if (fails.length) process.exit(1);
