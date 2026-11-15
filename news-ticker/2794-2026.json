@@ -2,8 +2,129 @@
  "tournament": "Finals - Turin",
  "tournamentKey": "2794",
  "season": "2026",
- "updatedAt": "2026-11-15T18:01:39.448Z",
+ "updatedAt": "2026-11-15T22:09:59.550Z",
  "items": [
+  {
+   "id": "report-12179703",
+   "type": "report",
+   "playerId": "2973",
+   "opponentId": "1759",
+   "player": "B. Shelton",
+   "opponent": "A. Fils",
+   "tournament": "Finals - Turin",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "stage": "main draw",
+   "round": null,
+   "eventKey": "12179703",
+   "timestamp": "2026-11-15T21:40:54.138Z",
+   "timestampKind": "observed",
+   "observed": {
+    "endedAt": "2026-11-15T21:40:54.138Z",
+    "startedAt": "2026-11-15T19:43:09.184Z",
+    "minutes": 118
+   },
+   "category": "Statistics",
+   "text": "Shelton beat Fils for the 3rd time in 4 meetings, 6-2, 3-6, 6-3.\n\nShelton: W: 28 / UE: 32 | DR: 1.37\n\nFils: W: 21 / UE: 22 | DR: 0.73",
+   "baseText": "Shelton beat Fils for the 3rd time in 4 meetings, 6-2, 3-6, 6-3.",
+   "rating": [
+    "Shelton: W: 28 / UE: 32 | DR: 1.37",
+    "Fils: W: 21 / UE: 22 | DR: 0.73"
+   ],
+   "fields": {
+    "score": "6-2, 3-6, 6-3",
+    "round": null,
+    "retired": false,
+    "h2h": {
+     "a": 3,
+     "b": 1,
+     "n": 4
+    },
+    "durationMinutes": 118,
+    "facts": {
+     "longestRun": {
+      "side": "p1",
+      "n": 5,
+      "set": 1,
+      "from": {
+       "me": 1,
+       "opp": 2
+      },
+      "afterBeingBroken": false,
+      "toTheEnd": false
+     }
+    },
+    "standouts": [
+     {
+      "player": "winner",
+      "tone": "good",
+      "metric": "aces",
+      "value": 12
+     },
+     {
+      "player": "winner",
+      "tone": "good",
+      "metric": "firstWon",
+      "value": 76,
+      "won": 37,
+      "total": 49
+     },
+     {
+      "player": "winner",
+      "tone": "good",
+      "metric": "secondWon",
+      "value": 68,
+      "won": 17,
+      "total": 25,
+      "baseline": 53,
+      "scope": "last52",
+      "surface": "Hard",
+      "n": 37
+     },
+     {
+      "player": "winner",
+      "tone": "bad",
+      "metric": "winnersErrors",
+      "winners": 28,
+      "unforcedErrors": 32
+     },
+     {
+      "player": "loser",
+      "tone": "bad",
+      "metric": "firstWon",
+      "value": 66,
+      "won": 46,
+      "total": 70,
+      "baseline": 76,
+      "scope": "last52",
+      "surface": "Hard",
+      "n": 43
+     }
+    ],
+    "winner": {
+     "aces": 12,
+     "winners": 28,
+     "unforcedErrors": 32,
+     "breakPointsSaved": 3,
+     "breakPointsFaced": 4,
+     "breakPointsSource": "box score"
+    },
+    "loser": {
+     "aces": 4,
+     "winners": 21,
+     "unforcedErrors": 22,
+     "breakPointsSaved": 9,
+     "breakPointsFaced": 12,
+     "breakPointsSource": "box score"
+    }
+   },
+   "sourceName": "Stennisfy match data (api-tennis box score and point-by-point)",
+   "sourceUrl": "pbp/12179703.json",
+   "language": "en",
+   "translated": false,
+   "sourceHash": "d54f5f1479c90d0d",
+   "publishedAt": "2026-11-15T22:09:59.550Z"
+  },
   {
    "id": "quote-2fa1fb1434e63f",
    "type": "quote",

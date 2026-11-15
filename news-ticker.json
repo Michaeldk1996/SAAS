@@ -1,6 +1,19 @@
 {
- "generatedAt": "2026-11-15T21:31:32.182Z",
+ "generatedAt": "2026-11-15T22:09:59.550Z",
  "tournaments": [
+  {
+   "key": "2794",
+   "season": "2026",
+   "name": "Finals - Turin",
+   "file": "news-ticker/2794-2026.json",
+   "items": 3,
+   "byType": {
+    "report": 2,
+    "quote": 1
+   },
+   "latestTimestamp": "2026-11-15T21:40:54.138Z",
+   "updatedAt": "2026-11-15T22:09:59.550Z"
+  },
   {
    "key": "tour",
    "season": "2026",
@@ -12,19 +25,6 @@
    },
    "latestTimestamp": "2026-11-15T20:53:14.000Z",
    "updatedAt": "2026-11-15T21:31:32.182Z"
-  },
-  {
-   "key": "2794",
-   "season": "2026",
-   "name": "Finals - Turin",
-   "file": "news-ticker/2794-2026.json",
-   "items": 2,
-   "byType": {
-    "quote": 1,
-    "report": 1
-   },
-   "latestTimestamp": "2026-11-15T16:53:14.000Z",
-   "updatedAt": "2026-11-15T18:01:39.448Z"
   },
   {
    "key": "1681",
@@ -54,6 +54,128 @@
   }
  ],
  "latest": [
+  {
+   "id": "report-12179703",
+   "type": "report",
+   "playerId": "2973",
+   "opponentId": "1759",
+   "player": "B. Shelton",
+   "opponent": "A. Fils",
+   "tournament": "Finals - Turin",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "stage": "main draw",
+   "round": null,
+   "eventKey": "12179703",
+   "timestamp": "2026-11-15T21:40:54.138Z",
+   "timestampKind": "observed",
+   "observed": {
+    "endedAt": "2026-11-15T21:40:54.138Z",
+    "startedAt": "2026-11-15T19:43:09.184Z",
+    "minutes": 118
+   },
+   "category": "Statistics",
+   "text": "Shelton beat Fils for the 3rd time in 4 meetings, 6-2, 3-6, 6-3.\n\nShelton: W: 28 / UE: 32 | DR: 1.37\n\nFils: W: 21 / UE: 22 | DR: 0.73",
+   "baseText": "Shelton beat Fils for the 3rd time in 4 meetings, 6-2, 3-6, 6-3.",
+   "rating": [
+    "Shelton: W: 28 / UE: 32 | DR: 1.37",
+    "Fils: W: 21 / UE: 22 | DR: 0.73"
+   ],
+   "fields": {
+    "score": "6-2, 3-6, 6-3",
+    "round": null,
+    "retired": false,
+    "h2h": {
+     "a": 3,
+     "b": 1,
+     "n": 4
+    },
+    "durationMinutes": 118,
+    "facts": {
+     "longestRun": {
+      "side": "p1",
+      "n": 5,
+      "set": 1,
+      "from": {
+       "me": 1,
+       "opp": 2
+      },
+      "afterBeingBroken": false,
+      "toTheEnd": false
+     }
+    },
+    "standouts": [
+     {
+      "player": "winner",
+      "tone": "good",
+      "metric": "aces",
+      "value": 12
+     },
+     {
+      "player": "winner",
+      "tone": "good",
+      "metric": "firstWon",
+      "value": 76,
+      "won": 37,
+      "total": 49
+     },
+     {
+      "player": "winner",
+      "tone": "good",
+      "metric": "secondWon",
+      "value": 68,
+      "won": 17,
+      "total": 25,
+      "baseline": 53,
+      "scope": "last52",
+      "surface": "Hard",
+      "n": 37
+     },
+     {
+      "player": "winner",
+      "tone": "bad",
+      "metric": "winnersErrors",
+      "winners": 28,
+      "unforcedErrors": 32
+     },
+     {
+      "player": "loser",
+      "tone": "bad",
+      "metric": "firstWon",
+      "value": 66,
+      "won": 46,
+      "total": 70,
+      "baseline": 76,
+      "scope": "last52",
+      "surface": "Hard",
+      "n": 43
+     }
+    ],
+    "winner": {
+     "aces": 12,
+     "winners": 28,
+     "unforcedErrors": 32,
+     "breakPointsSaved": 3,
+     "breakPointsFaced": 4,
+     "breakPointsSource": "box score"
+    },
+    "loser": {
+     "aces": 4,
+     "winners": 21,
+     "unforcedErrors": 22,
+     "breakPointsSaved": 9,
+     "breakPointsFaced": 12,
+     "breakPointsSource": "box score"
+    }
+   },
+   "sourceName": "Stennisfy match data (api-tennis box score and point-by-point)",
+   "sourceUrl": "pbp/12179703.json",
+   "language": "en",
+   "translated": false,
+   "sourceHash": "d54f5f1479c90d0d",
+   "publishedAt": "2026-11-15T22:09:59.550Z",
+   "file": "news-ticker/2794-2026.json"
+  },
   {
    "id": "quote-b79a17d52f6890",
    "type": "quote",
@@ -1572,37 +1694,6 @@
     }
    ],
    "sourceHash": "8a7ea630d364d334",
-   "publishedAt": "2026-11-14T15:43:24.367Z",
-   "file": "news-ticker/1681-2026.json"
-  },
-  {
-   "id": "quote-b171444c4351ae",
-   "type": "quote",
-   "playerId": "2832",
-   "opponentId": "366",
-   "player": "T. Fritz",
-   "opponent": "T. A. Tirante",
-   "tournament": "Stockholm",
-   "tournamentKey": "1681",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-14T13:13:00.000Z",
-   "timestampKind": "observed (the site's own publication time)",
-   "category": "Quotes",
-   "context": "after beating T. A. Tirante",
-   "eventKey": "12179948",
-   "won": true,
-   "text": "It is really big for me to deal with what I dealt with in Paris, … I wanted to go home so bad, but I knew I would feel better coming here. I am glad I came here and made the most of it.",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "ATP Tour daily report (via the official tournament site)",
-   "sourceUrl": "https://www.stockholmopen.se/en/tournament/nyheter/fritz-tirante-stockholm-2026-final-saturday",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "topic": "On bouncing back from his Paris disappointment",
-   "sourceHash": "aa4083b58ecb51ce",
    "publishedAt": "2026-11-14T15:43:24.367Z",
    "file": "news-ticker/1681-2026.json"
   }
