@@ -1,17 +1,17 @@
 {
- "generatedAt": "2026-11-15T18:46:03.234Z",
+ "generatedAt": "2026-11-15T19:26:04.081Z",
  "tournaments": [
   {
    "key": "tour",
    "season": "2026",
    "name": "ATP Tour",
    "file": "news-ticker/tour-2026.json",
-   "items": 88,
+   "items": 89,
    "byType": {
-    "quote": 88
+    "quote": 89
    },
-   "latestTimestamp": "2026-11-15T18:26:01.000Z",
-   "updatedAt": "2026-11-15T18:46:03.234Z"
+   "latestTimestamp": "2026-11-15T18:36:41.000Z",
+   "updatedAt": "2026-11-15T19:26:04.081Z"
   },
   {
    "key": "2794",
@@ -54,6 +54,37 @@
   }
  ],
  "latest": [
+  {
+   "id": "quote-6d7f0062d70c0f",
+   "type": "quote",
+   "playerId": "1980",
+   "opponentId": null,
+   "player": "A. Zverev",
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-15T18:36:41.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "No, because it’s noise that you hear. It’s noise that you hear from the side. I don’t really recognize that. I think I played a fantastic season.",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "Tennis Majors",
+   "sourceUrl": "https://www.tennismajors.com/atp/nitto-atp-finals-atp/hes-a-robot-not-a-human-being-zverev-on-sinner-and-his-record-against-the-top-10-867061.html",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On criticism of his record against top-10 players",
+   "sourceHash": "c752c8970d07395b",
+   "publishedAt": "2026-11-15T19:26:04.081Z",
+   "file": "news-ticker/tour-2026.json"
+  },
   {
    "id": "quote-1ca58c54d41b37",
    "type": "quote",
@@ -1572,37 +1603,6 @@
    "verbatimCheckedOn": "the original-language text of the fetched page",
    "topic": "On focusing on his group, not Alcaraz",
    "sourceHash": "de799fc8f7e7b2a3",
-   "publishedAt": "2026-11-14T14:00:06.614Z",
-   "file": "news-ticker/tour-2026.json"
-  },
-  {
-   "id": "quote-f94520d34fc787",
-   "type": "quote",
-   "playerId": "1980",
-   "opponentId": null,
-   "player": "A. Zverev",
-   "opponent": null,
-   "tournament": "ATP Tour",
-   "tournamentKey": "tour",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-14T13:00:00.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Interviews",
-   "context": null,
-   "eventKey": null,
-   "won": null,
-   "text": "I am very happy to be back here. It doesn't matter how many times you have already taken part in this tournament … It is always a special honour to be among the eight best players in the world - Jannik Sinner excepted.",
-   "originalText": "Ich freue mich sehr, wieder hier zu sein. Es spielt keine Rolle, wie oft man schon an diesem Turnier teilgenommen hat … Es ist immer wieder eine besondere Ehre zu den besten acht Spielern der Welt zu gehören - Jannik Sinner ausgenommen.",
-   "language": "de",
-   "translated": true,
-   "translationModel": "claude-opus-5-5",
-   "sourceName": "tennisnet.com",
-   "sourceUrl": "https://www.tennisnet.com/news/keine-gedanken-an-alcaraz-zverev-gut-gelaunt-in-turin",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "topic": "On returning to the ATP Finals",
-   "sourceHash": "ed642c3bf98609c1",
    "publishedAt": "2026-11-14T14:00:06.614Z",
    "file": "news-ticker/tour-2026.json"
   }
