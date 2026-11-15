@@ -1,17 +1,17 @@
 {
- "generatedAt": "2026-11-15T16:28:17.739Z",
+ "generatedAt": "2026-11-15T16:54:26.231Z",
  "tournaments": [
   {
    "key": "tour",
    "season": "2026",
    "name": "ATP Tour",
    "file": "news-ticker/tour-2026.json",
-   "items": 81,
+   "items": 82,
    "byType": {
-    "quote": 81
+    "quote": 82
    },
    "latestTimestamp": "2026-11-15T15:53:00.000Z",
-   "updatedAt": "2026-11-15T16:28:17.739Z"
+   "updatedAt": "2026-11-15T16:54:26.231Z"
   },
   {
    "key": "2794",
@@ -442,6 +442,37 @@
    "topic": "On qualifying for his first ATP Finals",
    "sourceHash": "776a866b0312cd3b",
    "publishedAt": "2026-11-15T14:33:07.487Z",
+   "file": "news-ticker/tour-2026.json"
+  },
+  {
+   "id": "quote-bea8c53874b55e",
+   "type": "quote",
+   "playerId": "1980",
+   "opponentId": null,
+   "player": "A. Zverev",
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-15T13:11:35.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "It wasn&#039;t the perfect match, but I&#039;m happy; it&#039;s a great start to the tournament for me,",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "Gulf Times",
+   "sourceUrl": "https://www.gulf-times.com/article/738260/sport/tennis/zverev-too-strong-for-debutant-jodar-in-atp-finals",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On his ATP Finals opening win over Jodar",
+   "sourceHash": "607ec86e538d79f7",
+   "publishedAt": "2026-11-15T16:54:26.231Z",
    "file": "news-ticker/tour-2026.json"
   },
   {
@@ -1518,37 +1549,6 @@
    "verbatimCheckedOn": "the original-language text of the fetched page",
    "topic": "On his hopes of a first ATP Finals title",
    "sourceHash": "fe8ed9473e406ffa",
-   "publishedAt": "2026-11-13T20:41:38.767Z",
-   "file": "news-ticker/tour-2026.json"
-  },
-  {
-   "id": "quote-ad40c2c0f37f14",
-   "type": "quote",
-   "playerId": "2382",
-   "opponentId": null,
-   "player": "C. Alcaraz",
-   "opponent": null,
-   "tournament": "ATP Tour",
-   "tournamentKey": "tour",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-13T20:00:00.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Interviews",
-   "context": null,
-   "eventKey": null,
-   "won": null,
-   "text": "I didn't even have breakfast this morning because I couldn't. I woke up with my stomach feeling a bit upset,",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "SuperSport",
-   "sourceUrl": "https://supersport.com/tennis/news/e43a6596-3e2a-4486-96dc-398f6eb451ae/alcaraz-confident-ahead-of-atp-finals-despite-stomach-issue",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "topic": "On his upset stomach before the ATP Finals",
-   "sourceHash": "26d5a3e1a6ca53f2",
    "publishedAt": "2026-11-13T20:41:38.767Z",
    "file": "news-ticker/tour-2026.json"
   }
