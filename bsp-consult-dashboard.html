@@ -389,6 +389,7 @@ window.sfEarlyFetch = function (u, init) {
 <link rel="stylesheet" href="./drops-page.css">
 <!-- Picks page, read-only (export design_handoff_picks, LOCKED 2026-10-27). Scoped under [data-page="picks"]. -->
 <link rel="stylesheet" href="./picks-page.css">
+<link rel="stylesheet" href="./tournaments-tab.css">
 <!-- Sharp drop alerts (beta, founder 2026-11-14): #sharp, admins only. Scoped under [data-page="sharp"]. -->
 <link rel="stylesheet" href="./sharp-drops-page.css">
 <!-- Bet Tracker (export design_handoff_bet_tracker, LOCKED 2026-10-28). Night only; scoped under [data-page="tracker"]. -->
@@ -26764,8 +26765,7 @@ function renderTournamentsTab(){
   const secs = [['overview', 'Overview']]
     .concat(window.FEATURE_ENTRY_LISTS ? [['entry', 'Entry list']] : [])
     .concat([['draw', 'Draw']])          // founder ruling 2026-10-20 item 2: the official draw as a bracket (draw-view.js)
-    .concat([['reports', 'Reports']])
-    .concat([['stats', 'Stats']]);   // founder 2026-10-26: How it plays, Favourites vs underdogs, Points to defend
+    .concat([['reports', 'Reports']]);   // founder 2026-11-15 "Design wins": the Stats tab is gone (README "Do not bring back")
   if (tourxState.section === 'entry' && !window.FEATURE_ENTRY_LISTS) tourxState.section = 'overview';
   // TEN-401 item 2: the page tabs are the darker track (sfSegHtml) — selected --inner + --edge-10, white 700; no blue.
   tabs.innerHTML = sfSegHtml(secs.map(([v, l]) => ({ label: l, on: tourxState.section === v, onclick: `tourxSetSection('${v}')`, cls: 'tourx-secttab' })),
@@ -26785,7 +26785,12 @@ function renderTournamentsTab(){
   if (en) en.style.display = sec === 'entry' ? '' : 'none';
   rp.style.display = sec === 'reports' ? '' : 'none';
   if (dw) dw.style.display = sec === 'draw' ? '' : 'none';
-  if (sec === 'overview' || sec === 'stats') renderTourxOverview();
+  // Tournaments tab rebuild (handoff 2026-11-15): each section is its own module (tournaments-*.js); the old renderer
+  // runs only while that module is absent.
+  const TT = { overview: window.TTOverview, entry: window.TTEntry, draw: window.TTDraw, reports: window.TTReports };
+  const tsec = sec === 'stats' ? 'overview' : sec;
+  if (TT[tsec] && TT[tsec].render) TT[tsec].render({ overview: ov, entry: en, draw: dw, reports: rp }[tsec]);
+  else if (sec === 'overview' || sec === 'stats') renderTourxOverview();
   else if (sec === 'entry') { if (window.EntryListsTab) window.EntryListsTab.init(); }
   else if (sec === 'draw') tourxRenderDraw();
   else renderTourxReports();
@@ -36399,6 +36404,10 @@ window.DatabaseTab = (function(){
 <script src="wue-sheet.js"></script>
 <!-- Draw view (window.DrawView) — Tournaments → Draw (founder ruling 2026-10-20 item 2). -->
 <script src="draw-view.js"></script>
+<script src="tournaments-overview.js"></script>
+<script src="tournaments-entry.js"></script>
+<script src="tournaments-reports.js"></script>
+<script src="tournaments-draw.js"></script>
 <!-- TEN-294 Dropping Odds. FEATURE_DROPS (default ON; ?drops=0 or localStorage stennisfy.flags.drops=0 = off) is read inside the file. -->
 <script src="arb-page.js" defer></script>
 <script src="drops-page.js" defer></script>

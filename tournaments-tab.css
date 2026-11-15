@@ -1,0 +1,15 @@
+/* Tournaments tab rebuild (design_handoff_tournaments_tab, founder 2026-11-15 "Design wins").
+   Night only. Inside the page the foundation surfaces read the export's own values (--tt-* in tokens.css); every rule
+   is scoped to .tabpage[data-page="tournaments"]. Each section module injects its own stylesheet (one <style> per
+   module, built in its JS), so this file holds only the palette mapping. */
+.tabpage[data-page="tournaments"] {
+  --card: var(--tt-card);
+  --inner: var(--tt-inset);
+  --selected: var(--tt-raised);
+  --text: var(--tt-text);
+  --text-soft: var(--tt-soft);
+  --text-label: var(--tt-muted);
+  --pos: var(--tt-green);
+  --neg: var(--tt-red);
+  --link: var(--tt-blue);
+}

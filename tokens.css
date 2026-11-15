@@ -169,6 +169,34 @@
   --r-sidebar:   22px;   /* floating sidebar panel */
 }
 
+/* Tournaments tab (handoff design_handoff_tournaments_tab, founder 2026-11-15 "Design wins"): the export's own
+   values, named apart from the foundation tokens. tournaments-tab.css maps them onto the page's surfaces inside
+   .tabpage[data-page="tournaments"] (night only); nothing else reads them. */
+:root {
+  --tt-page:     #06070A;
+  --tt-card:     #0E1019;
+  --tt-inset:    #0C0E16;
+  --tt-raised:   #131623;
+  --tt-text:     #E7E9EE;
+  --tt-white:    #FFFFFF;
+  --tt-soft:     #C6CCDB;
+  --tt-soft-2:   #CFD6E6;
+  --tt-muted:    #8B96B5;
+  --tt-past:     #4A5470;
+  --tt-a3:       #A3AABE;   /* Reports heat cells */
+  --tt-blue:     #5B9BFF;
+  --tt-blue-fav: #8BB8FF;   /* FAV badge text */
+  --tt-blue-hov: #82B4FF;   /* link hover */
+  --tt-blue-btn: #74ABFF;   /* primary button hover */
+  --tt-red:      #E0616F;
+  --tt-green:    #3DD68C;
+  --tt-black:    #000000;   /* shadows only */
+  --tt-scrim:    rgba(3, 5, 9, 0.74);
+  --tt-shadow-overlay: 0 30px 80px rgba(0, 0, 0, 0.6);
+  --tt-shadow-menu:    0 12px 28px rgba(0, 0, 0, 0.45);
+  --tt-shadow-tip:     0 12px 26px rgba(0, 0, 0, 0.6);
+}
+
 /* Player Profile v2 — founder 2026-11-10 ("fix the colours to match the design export", ruling 2026-11-09 "colours
    follow the design export"): the Player Stat Boxes export's own values, named apart from the foundation tokens. The
    profile maps them onto its surfaces inside .pp2-x (player-profile-v2.js PP2_PALETTE_CSS, night only); nothing else
