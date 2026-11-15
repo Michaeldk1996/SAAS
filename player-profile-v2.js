@@ -6166,7 +6166,8 @@
           price: jp && jp.price != null ? jp.price : null,
           oppPrice: jp && jp.price != null ? jp.oppPrice : null,
           book: jp && jp.price != null ? jp.book : null, srcLabel: jp && jp.price != null ? jp.srcLabel || null : null, sheetId: x.sheetId || null,
-          retired: !!x.retired, walkover: !!(m.walkover || x.walkover)
+          retired: !!x.retired, walkover: !!(m.walkover || x.walkover),
+          settle: jp && jp.price != null && (jp.settle === 'void' || jp.settle === 'no-sets') ? jp.settle : null
         };
       });
       ms.sort(function (a, b) {
@@ -6708,7 +6709,12 @@
           cell('font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;font-weight:700;color:' + (m.walkover ? DASH_COLOUR : wl) +
                ';padding:6px 0;', m.walkover ? DASH : m.sets ? esc(m.sets) : (m.rawSets ? esc(m.rawSets) : DASH)) +
           cell('font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:var(--text-label);white-space:nowrap;' +
-               'padding:6px 0;', m.walkover ? DASH : m.setScores ? esc(m.setScores) : DASH) +
+               'padding:6px 0;', (m.walkover ? DASH : m.setScores ? esc(m.setScores) : DASH) +
+               // data review 2026-11-14: a priced retirement left out of the Backing says so beside its score
+               (m.settle && !m.walkover ? ' <span data-pp2-void="' + m.settle + '" title="' + esc((m.settle === 'void'
+                 ? 'Retired before the first set was completed: void under Pinnacle rules, not in Backing'
+                 : 'Retirement with no set scores on record: no units, not in Backing')) + '" style="font-size:10px;color:var(--text-label);">' +
+                 (m.settle === 'void' ? 'void' : 'no units') + '</span>' : '')) +
           // a walkover is not a priced match: – in H and A, never a price, never units
           cell('font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:var(--text-soft);text-align:right;' +
                'padding:6px 0;', m.walkover ? DASH : t.backingPending ? BACKING_PEND_HTML : pxAfterHtml(m, t) || pxSrcHtml(m, m.price)) +
@@ -7003,13 +7009,11 @@
     s.dfPct = s.pts ? 100 * s.dfs / s.pts : null;
     return s;
   }
-  function splModel(p) {
-    var f = typeof window.pp2DrawMatches === 'function' ? window.pp2DrawMatches(p.key) : { st: 'none' };
-    if (f.st !== 'ready') return { st: f.st };
-    var all = drawRowsFor(p, f.d), scope = state.splitScope === 'last52' ? 'last52' : 'career', cut = f.d.cutoff52;
-    var rows = all.rows.filter(function (r) { return scope !== 'last52' || String(r.m.d) >= String(cut); });
-    var rk = splRoundKeyer(all.rows);
-    var groups = {
+  // The rows of Level & round, one definition: the drawer (splModel) and the tour pool (splTourRowsOf, built for every
+  // tracked player by tools/build-splits-tour-rows.js) read the same predicates, so a tour figure is the same row's pool.
+  function splGroupsDef(allRows) {
+    var rk = splRoundKeyer(allRows);
+    return {
       'By round': SPL_ROUND.map(function (x) { return [x[0], function (r) { return rk(r.m) === x[1]; }]; }),
       'Level': ['Grand Slams', 'Masters 1000', 'ATP 500', 'ATP 250', 'Challenger', 'Team events', 'ATP Finals']
         .map(function (l) { return [l, function (r) { return splLevelOf(r.m) === l; }]; }),
@@ -7018,6 +7022,35 @@
         ['Best of 5', function (r) { return r.m.bo === 5; }], ['Best of 3', function (r) { return r.m.bo === 3; }],
         ['Over 3.5 sets', function (r) { return r.m.bo === 5 && splSetCount(r) >= 4; }]]
     };
+  }
+  var SPL_COUNT_KEYS = ['n', 'w', 'sw', 'sl', 'gw', 'gl', 'tw', 'tl', 'sv', 'held', 'ret', 'broke', 'aces', 'dfs', 'pts', 'svN'];
+  // One player's per-row COUNTS (career and his own last 52 weeks) from his splits-matches file — the builder sums these
+  // over every tracked player. Pure: no window, no prices. 'All matches' = every counted row in the window.
+  function splTourRowsOf(d) {
+    var all = (d && d.matches || []).map(function (m, i) { return { i: i, m: m, sc: drawScore(m), won: m.wl === 'W' }; });
+    var groups = splGroupsDef(all), out = {};
+    ['career', 'last52'].forEach(function (scope) {
+      var rows = all.filter(function (r) { return scope !== 'last52' || String(r.m.d) >= String(d.cutoff52); });
+      var o = out[scope] = {};
+      var put = function (label, rs) { var st = splStats(rs), c = {}; SPL_COUNT_KEYS.forEach(function (k) { c[k] = st[k]; }); o[label] = c; };
+      put('All matches', rows);
+      Object.keys(groups).forEach(function (g) { groups[g].forEach(function (x) { put(x[0], rows.filter(x[1])); }); });
+    });
+    return out;
+  }
+  // splStats' rates from summed counts (the same formulas)
+  function splRatesOf(c) {
+    return { n: c.n, w: c.w, players: c.players, rate: c.n ? 100 * c.w / c.n : null,
+      setPct: c.sw + c.sl ? 100 * c.sw / (c.sw + c.sl) : null, gamePct: c.gw + c.gl ? 100 * c.gw / (c.gw + c.gl) : null,
+      tbPct: c.tw + c.tl ? 100 * c.tw / (c.tw + c.tl) : null, hold: c.sv ? 100 * c.held / c.sv : null,
+      brk: c.ret ? 100 * c.broke / c.ret : null, acePct: c.pts ? 100 * c.aces / c.pts : null, dfPct: c.pts ? 100 * c.dfs / c.pts : null };
+  }
+  function splModel(p) {
+    var f = typeof window.pp2DrawMatches === 'function' ? window.pp2DrawMatches(p.key) : { st: 'none' };
+    if (f.st !== 'ready') return { st: f.st };
+    var all = drawRowsFor(p, f.d), scope = state.splitScope === 'last52' ? 'last52' : 'career', cut = f.d.cutoff52;
+    var rows = all.rows.filter(function (r) { return scope !== 'last52' || String(r.m.d) >= String(cut); });
+    var groups = splGroupsDef(all.rows);
     var base = splStats(rows);
     var out = {};
     Object.keys(groups).forEach(function (g) {
@@ -7087,6 +7120,10 @@
   }
   // { rate, M, players } for a row label in a window, or null (no category / no pool)
   function splTourFor(label, scope) {
+    // founder 2026-11-15 ("fix the statistics that are a dash"): the per-row pool of every tracked player
+    // (career-splits-tour.json `rows`, tools/build-splits-tour-rows.js) carries every row and every view's counts
+    var f = splTourFile(), rr = f && f.rows && f.rows[scope === 'last52' ? 'last52' : 'career'];
+    if (rr) { var c = rr[label]; return c && c.n ? splRatesOf(c) : null; }
     var cat = SPL_TOUR_CAT[label], pool = splTourPool();
     if (!cat || !pool) return null;
     var a = pool[scope === 'last52' ? 'last52' : 'career'][cat];
@@ -7138,22 +7175,23 @@
     if (none) { var e = []; for (var i = 0; i < width; i++) e.push(['d', DASH]); return e; }
     var pc = function (v) { return thin || v == null ? DASH : v.toFixed(1) + '%'; };
     var his = function (v, b) { return thin || v == null || b == null ? DASH : splPp(v - b); };
-    var tourCell = function (v) {
+    // tourCell(his value, the tour's value in the same unit): sets view = sets won, service = hold, results = win %
+    var tourCell = function (v, tv) {
       if (tourPend) return ['t', '', 'var(--text-label)'];
-      if (thin || v == null || !tour) return ['t', DASH, 'var(--text-label)'];
-      return ['t', splPp(v - tour.rate), n < PP4.SPL_MINB ? 'var(--text-label)' : splPpColour(v - tour.rate)];
+      if (thin || v == null || tv == null) return ['t', DASH, 'var(--text-label)'];
+      return ['t', splPp(v - tv), n < PP4.SPL_MINB ? 'var(--text-label)' : splPpColour(v - tv)];
     };
-    if (x.tb) {   // the tiebreak record (Results only): W–L · won % · vs his win % · no tour figure
-      return [['d', recordText(s.w, s.l)], ['k', pc(s.win)], ['h', his(s.win, B.win)], ['t', DASH, 'var(--text-label)']];
+    if (x.tb) {   // the tiebreak record (Results only): W–L · won % · vs his win % · vs the tour's tiebreaks won
+      return [['d', recordText(s.w, s.l)], ['k', pc(s.win)], ['h', his(s.win, B.win)], tourCell(s.win, tour && tour.tbPct)];
     }
     if (view === 'sets') {
       return [['k', pc(s.tbPct)], ['d', thin ? DASH : ((s.tw + s.tl) / n).toFixed(2)], ['k', pc(s.gamePct)], ['k', pc(s.setPct)],
-        ['h', his(s.setPct, B.setPct)], ['t', DASH, 'var(--text-label)']];
+        ['h', his(s.setPct, B.setPct)], tourCell(s.setPct, tour && tour.setPct)];
     }
     if (view === 'service') {
-      return [['d', pc(s.acePct)], ['d', pc(s.dfPct)], ['k', pc(s.hold)], ['k', pc(s.brk)], ['h', his(s.hold, B.hold)], ['t', DASH, 'var(--text-label)']];
+      return [['d', pc(s.acePct)], ['d', pc(s.dfPct)], ['k', pc(s.hold)], ['k', pc(s.brk)], ['h', his(s.hold, B.hold)], tourCell(s.hold, tour && tour.hold)];
     }
-    return [['d', recordText(s.w, s.l)], ['k', pc(s.win)], ['h', his(s.win, B.win)], tourCell(s.win)];
+    return [['d', recordText(s.w, s.l)], ['k', pc(s.win)], ['h', his(s.win, B.win)], tourCell(s.win, tour && tour.rate)];
   }
   // the band: caps scope · 20px figure · descriptor · matches · (?) left, the Window pills right (reference modal.isSplits)
   function splBandHtml(base, scope, p) {
@@ -7216,7 +7254,7 @@
           return '<span style="text-align:right;font-size:10.5px;font-weight:' + (h[1] ? 800 : 700) + ';color:' + (h[1] ? 'var(--text)' : 'var(--text-label)') + ';white-space:nowrap;">' + h[0] + '</span>';
         }).join('') + '</div>';
       var rows = items.map(function (x) {
-        var n = x.s.n, none = !n, tour = x.tb ? null : splTourFor(x.label, scope);
+        var n = x.s.n, none = !n, tour = splTourFor(x.tb ? 'All matches' : x.label, scope);
         var target = x.tb ? 'spltb:' : 'spl:' + x.group + '|' + x.label, on = openKey === target;
         if (!x.tb && n >= PP4.SPL_MINB) infos.push({ x: x, tour: tour, target: target });
         var hook = none ? '' : 'data-pp2="fb-open" data-box="' + (x.tb ? 'spltb' : 'spl') + '" data-v="' + esc(x.tb ? 'Extra stats|Tiebreak record' : x.group + '|' + x.label) + '" ';
@@ -7262,17 +7300,23 @@
       boxes = [winBox('Strongest level', lv, 1), winBox('Weakest level', lv, -1), winBox('Best round', rd, 1),
         t10 ? box('vs Top 10', 'Top 10 opponents', t10.x.s.win, t10.tour ? t10.tour.rate : null, 100, recordText(t10.x.s.w, t10.x.s.l), t10.target) : nob('vs Top 10', minbWhy)];
     } else if (view === 'sets') {
-      var tbN = B.tw + B.tl;
-      // sets won has no tour figure on any row (the tour pool is win–loss only), so no situation can be ranked vs tour
-      var sitWhy = infos.length ? tourWhy : minbWhy;
-      boxes = [tbN ? box('Tiebreaks', 'Tiebreaks won', 100 * B.tw / tbN, null, 100, recordText(B.tw, B.tl) + ' ' + MIDDOT + ' ' + (tbN / B.n).toFixed(2) + ' per match', 'spltb:') : nob('Tiebreaks', 'no tiebreak played'),
-        box('Sets won', 'All sets', B.setPct, null, 100, recordText(B.sw, B.sl), 'spl:Overall|All matches'),
-        nob('Strongest situation', sitWhy), nob('Weakest situation', sitWhy)];
+      var tbN = B.tw + B.tl, TA = splTourFor('All matches', scope);
+      // founder 2026-11-15: sets won against the same row's tour pool; the situations rank rows by that gap (15+ matches)
+      var setT = infos.filter(function (i) { return i.tour && i.tour.setPct != null && i.x.s.setPct != null; });
+      var setBox = function (label, dir) {
+        if (!infos.length) return nob(label, minbWhy);
+        if (!setT.length) return nob(label, tourWhy);
+        var i = setT.slice().sort(function (a, b) { return dir * ((b.x.s.setPct - b.tour.setPct) - (a.x.s.setPct - a.tour.setPct)); })[0];
+        return box(label, i.x.label, i.x.s.setPct, i.tour.setPct, 100, recordText(i.x.s.sw, i.x.s.sl) + ' sets', i.target);
+      };
+      boxes = [tbN ? box('Tiebreaks', 'Tiebreaks won', 100 * B.tw / tbN, TA && TA.tbPct, 100, recordText(B.tw, B.tl) + ' ' + MIDDOT + ' ' + (tbN / B.n).toFixed(2) + ' per match', 'spltb:') : nob('Tiebreaks', 'no tiebreak played'),
+        box('Sets won', 'All sets', B.setPct, TA && TA.setPct, 100, recordText(B.sw, B.sl), 'spl:Overall|All matches'),
+        setBox('Strongest situation', 1), setBox('Weakest situation', -1)];
     } else {
-      var svSub = B.svN + ' matches';
-      boxes = [box('Hold', 'Service games held', B.hold, null, 100, svSub, B.svN ? 'spl:Overall|All matches' : null),
-        box('Return games won', 'Opponents' + '’' + ' service games won', B.brk, null, 40, svSub, B.svN ? 'spl:Overall|All matches' : null),
-        box('Aces', 'Aces per 100 serve points', B.acePct, null, 12, svSub, B.svN ? 'spl:Overall|All matches' : null)];
+      var svSub = B.svN + ' matches', TS = splTourFor('All matches', scope);
+      boxes = [box('Hold', 'Service games held', B.hold, TS && TS.hold, 100, svSub, B.svN ? 'spl:Overall|All matches' : null),
+        box('Return games won', 'Opponents' + '’' + ' service games won', B.brk, TS && TS.brk, 40, svSub, B.svN ? 'spl:Overall|All matches' : null),
+        box('Aces', 'Aces per 100 serve points', B.acePct, TS && TS.acePct, 12, svSub, B.svN ? 'spl:Overall|All matches' : null)];
     }
     var boxHtml = '<div style="display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:10px;">' + boxes.map(function (b) {
       return '<div ' + (b.v ? 'data-pp2="fb-open" data-box="splbox" data-v="' + esc(b.v) + '" ' : '') + 'data-pp2-splbox="' + esc(b.label) + '" class="pp2-splbox" ' +
@@ -16923,7 +16967,7 @@
       renderTournDetail: renderTournDetail,
       tournJoin: tournJoin,
       tournViews: tournViews,
-      tournDisplayName: tournDisplayName, mkStat: mkStat, mkRoleOf: mkRoleOf,
+      tournDisplayName: tournDisplayName, mkStat: mkStat, mkRoleOf: mkRoleOf, splTourRowsOf: splTourRowsOf, splRatesOf: splRatesOf, splTourFor: splTourFor,
       tournLevelMeta: tournLevelMeta,
       over35Of: over35Of,
       winRateColour: winRateColour,

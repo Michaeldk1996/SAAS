@@ -139,6 +139,25 @@ check('Record per tournament: a search that matches nothing leaves the list card
   /\(q \|\| lvl !== 'all' \|\| sf !== 'all' \? '<div data-pp2-tourn-empty="1"><\/div>'/.test(SRC) && !/No tournament matches that search/.test(SRC) || 'tourn empty');
 check('Money in units (founder 2026-11-14): no match-list P&L or drawer headline prints a %', () =>
   !/signed\(m\.pl \|\| 0, 2, '%'\)/.test(SRC) && !/fig: signed\(b\.u, 1, '%'\)/.test(SRC) && /\(has \? signed\(s\.u, 2, 'u'\) : DASH\)/.test(SRC) || 'units');
+const HOST = fs.readFileSync(path.join(ROOT, 'bsp-consult-dashboard.html'), 'utf8');
+check('Record per tournament: a priced retirement left out of Backing says "void" / "no units" beside its score (data review 2026-11-14)', () =>
+  /settle: r\.price != null && window\.MarketEdgeCore \? window\.MarketEdgeCore\.retSettlement\(r\) : null/.test(HOST) &&
+  /settle: jp && jp\.price != null && \(jp\.settle === 'void' \|\| jp\.settle === 'no-sets'\)/.test(SRC) &&
+  /data-pp2-void="' \+ m\.settle/.test(SRC) || 'void mark');
+{
+  // founder 2026-11-15: a Level & round tour figure is the same row's pooled counts (career-splits-tour.json `rows`)
+  const counts = { n: 10, w: 6, sw: 14, sl: 10, gw: 120, gl: 100, tw: 3, tl: 1, sv: 100, held: 80, ret: 100, broke: 20, aces: 50, dfs: 20, pts: 700, svN: 10, players: 4 };
+  const I = load(SRC, { careerSplitsTour: { rows: { career: { 'ATP 500': counts }, last52: {} } } });
+  const W = global.window; global.window = { careerSplitsTour: { rows: { career: { 'ATP 500': counts }, last52: {} } } };
+  let t, none;
+  try { t = I.splTourFor('ATP 500', 'career'); none = I.splTourFor('Challenger', 'career'); } finally { if (W === undefined) delete global.window; else global.window = W; }
+  check('Level & round tour rows: a row reads its pooled counts (win, sets, tiebreaks, hold, break, aces); a row with none stays a dash', () =>
+    !!t && t.rate === 60 && Math.abs(t.setPct - 100 * 14 / 24) < 1e-9 && t.tbPct === 75 && t.hold === 80 && t.brk === 20 && Math.abs(t.acePct - 100 * 50 / 700) < 1e-9 && none === null
+    || JSON.stringify({ t, none }));
+  const B = fs.readFileSync(path.join(ROOT, 'tools', 'build-splits-tour-rows.js'), 'utf8'), RS = fs.readFileSync(path.join(ROOT, 'tools', 'refresh-career-splits.sh'), 'utf8');
+  check('Level & round tour rows are built with the drawer\'s own row rules and refreshed with the splits', () =>
+    /I\.splTourRowsOf\(d\)/.test(B) && /node tools\/build-splits-tour-rows\.js \. \|\|/.test(RS) && /var groups = splGroupsDef\(all\.rows\);/.test(SRC) || 'builder');
+}
 
 // ── mutants: each must turn a check red ─────────────────────────────────────
 const MUT = [

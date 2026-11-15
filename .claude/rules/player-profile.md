@@ -438,6 +438,17 @@ Supersedes the v3 values it restates. Reference = `Player Stat Boxes.dc.html` / 
   row carries the reference's "under 5" tag and its hollow dot sits at its own rate; a Record per tournament search that
   matches nothing leaves the list card empty; the Live trading situation / heatmap boxes sit where the reference puts them in
   their drawer (110px in). Record per tournament's tiebreak box keeps "7–6(11)" (only the loser's points are stored).
+- **Level & round tour figures = the same row's pool** (founder 2026-11-15, "fix the statistics that are a dash"): every row,
+  every view (win %, sets / games / tiebreaks, hold / break / aces / DF) and the Sets / Service boxes read
+  `career-splits-tour.json` `rows` — Σ counts over every tracked player's `splits-matches` rows, through the drawer's own row
+  rules (`splTourRowsOf` → `splGroupsDef` + `splStats`), built by `tools/build-splits-tour-rows.js` in the splits refresh.
+  A row the pool holds no match for (Challenger: the Tennis Abstract splits carry none) stays a dash. **Test:**
+  `tools/test-pp4-page.js` "Level & round tour rows".
+- **The ribbon's 18 matches** (data review 2026-11-15): the served-profile pass caps recentForm with the build's own rule
+  (`capRecentFormMatches`); the old "season + last 10 rows" cut (130 of 741 ribbons short) is gone, and a profile it cut
+  rebuilds once (`profileCacheStaleByForm`).
+- **A voided retirement says so** (data review 2026-11-15): in Record per tournament a priced retirement the Backing leaves out
+  reads "void" (first set not completed) or "no units" (no set scores) beside its score, with the reason on hover.
 - **Market edge page box = the drawer's figures** (data review 2026-11-14): its yields are the drawer's own (units ÷ priced over
   the career rows, never the shard's 1-dp `yield` printed to 2 dp) and a role leads the headline only on 10+ priced
   matches (else the overall yield). **Test:** `test-pp2-reconcile.js` "market box headline and the modal quote the same yield".

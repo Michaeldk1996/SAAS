@@ -24,5 +24,18 @@ ok(P.profileCacheStaleBySurface({ builtAt: '2026-11-10T00:00:00Z', profile: unk 
 ok(!P.profileCacheStaleBySurface({ builtAt: '2026-11-10T00:00:00Z', profile: full }), 'a profile with every surface known is NOT rebuilt (control)');
 ok(!P.profileCacheStaleBySurface({ builtAt: '2026-11-15T00:00:00Z', profile: unk }), 'once rebuilt after the fill it is never re-flagged (no rebuild loop)');
 ok(!P.profileCacheStaleBySurface({ builtAt: '2026-11-10T00:00:00Z', profile: null }), 'a cached null is not touched');
+// data review 2026-11-14: the served-profile pass caps recentForm with the build's own rule (18 Form rows), not the old
+// "season + last 10 rows" cut that undid it; profiles that cut left short rebuild once
+const src = require('fs').readFileSync(require('path').join(__dirname, '..', 'bsp-pipeline.js'), 'utf8');
+ok(/rf\.matches = capRecentFormMatches\(rf\.matches, _capYear\)/.test(src) && !/i < 10 \|\| String\(m\.date/.test(src),
+  'the served-profile pass uses capRecentFormMatches, not "season + last 10 rows"');
+const rows = (n, y) => Array.from({ length: n }, (_, i) => ({ date: y + '-0' + (1 + (i % 9)) + '-01', tournament: 'X', won: true }));
+const capped = P.capRecentFormMatches(rows(15, 2026).concat(rows(10, 2025)), 2026);
+ok(capped.length === 18, 'a 15-match season keeps 3 older rows to reach 18 Form rows (got ' + capped.length + ')');
+const short = { careerByYear: [{ year: 2025, total: { won: 30, lost: 10 } }], recentForm: { matches: rows(15, 2026) } };
+ok(P.profileCacheStaleByForm({ builtAt: '2026-11-10T00:00:00Z', profile: short }), 'a cached profile cut to 15 Form rows (40 played) is rebuilt');
+ok(!P.profileCacheStaleByForm({ builtAt: '2026-11-16T00:00:00Z', profile: short }), 'once rebuilt after the fix it is never re-flagged');
+ok(!P.profileCacheStaleByForm({ builtAt: '2026-11-10T00:00:00Z', profile: { careerByYear: [{ total: { won: 10, lost: 5 } }], recentForm: { matches: rows(15, 2026) } } }),
+  'a player who has played only 15 matches is not rebuilt (control)');
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

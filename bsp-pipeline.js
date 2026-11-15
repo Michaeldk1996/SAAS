@@ -6274,6 +6274,18 @@ function profileHasUnknownSurface(profile) {
     return n(y.total) > n(y.clay) + n(y.hard) + n(y.grass);
   }));
 }
+// Data review 2026-11-14: the served-profile pass cut recentForm to "season + last 10 rows" (fixed above), and wrote the cut
+// into the cache. A cached profile built before FORM_FIX_AT whose list holds fewer than PROFILE_FORM_WINDOW Form rows while
+// his record holds more played matches is rebuilt once (the fixture fetch restores the rows). Pure; tools/test-surface-fill.js.
+const FORM_FIX_AT = '2026-11-15T06:00:00Z';
+function profileCacheStaleByForm(cached) {
+  if (!cached || !cached.builtAt || !cached.profile || new Date(cached.builtAt).getTime() >= Date.parse(FORM_FIX_AT)) return false;
+  const p = cached.profile, ms = (p.recentForm && p.recentForm.matches) || [];
+  const form = ms.reduce((n, row) => n + (FORM_NOT_ATP_RECORD.test(String(row.tournament || '')) ? 0 : 1), 0);
+  if (form >= PROFILE_FORM_WINDOW) return false;
+  const played = (p.careerByYear || []).reduce((n, y) => n + (y && y.total ? (y.total.won || 0) + (y.total.lost || 0) : 0), 0);
+  return played > form;
+}
 function profileCacheStaleBySurface(cached) {
   if (!cached || !cached.builtAt || !cached.profile) return false;
   return new Date(cached.builtAt).getTime() < Date.parse(SURFACE_FILL_AT) && profileHasUnknownSurface(cached.profile);
@@ -6302,7 +6314,7 @@ async function buildPlayerProfiles(matches, surfaceMap) {
   // is stale whatever its age: it cannot hold that match.
   const lastBoardDate = boardMatchDatesByPlayer();
   const staleByBoard = (key, cached) => profileCacheStaleByBoard(cached, lastBoardDate.get(String(key)))
-    || profileCacheStaleBySurface(cached);
+    || profileCacheStaleBySurface(cached) || profileCacheStaleByForm(cached);
 
   // Pass 1 — seed players, always fresh. Collect their opponents along the way.
   for (const [key, name] of seedPlayers) {
@@ -6440,18 +6452,15 @@ async function buildPlayerProfiles(matches, surfaceMap) {
     + `${((Date.now() - shardStart) / 1000).toFixed(0)}s spent`
     + `${shardDeferred ? `, ${shardDeferred} deferred to a later run` : ''}).`);
 
-  // Cap EVERY served profile's recentForm to current-year + last-10 — the only
-  // slice the Player Profile page reads. buildOneProfile already caps freshly
-  // built profiles, but opponents reused from the 14-day cache (built before
-  // this cap existed) still carry the full ~5-year list, so re-apply it to every
-  // profile here. This is the single biggest driver of player-profiles.json size.
+  // Cap EVERY served profile's recentForm with the SAME rule buildOneProfile uses (capRecentFormMatches: the current
+  // season + every row down to the 18th Form row, TEN-391). Data review 2026-11-14: this pass still applied the pre-TEN-391
+  // "current season + last 10 rows" cut, so it undid TEN-391 on every profile — 130 of 741 ribbons drew fewer than 18
+  // (Draper 15) and the cut was written back into the cache. A profile it cut rebuilds once (profileCacheStaleByForm).
   // Idempotent; mutates the shared cached objects so the cache shrinks too.
-  const _capYear = String(new Date().getFullYear());
+  const _capYear = new Date().getFullYear();
   for (const key of Object.keys(profiles)) {
     const rf = profiles[key] && profiles[key].recentForm;
-    if (rf && Array.isArray(rf.matches) && rf.matches.length) {
-      rf.matches = rf.matches.filter((m, i) => i < 10 || String(m.date || '').slice(0, 4) === _capYear);
-    }
+    if (rf && Array.isArray(rf.matches) && rf.matches.length) rf.matches = capRecentFormMatches(rf.matches, _capYear);
   }
 
   // Full-career tournament history — attach to every profile so the player
@@ -8523,7 +8532,7 @@ module.exports = { profileRoster, writeProfileShardsAtomic, applyQualifyingRule,
   NEXTGEN_TOURNAMENT_KEY, CAREER_HISTORY_INDEX_PATH,
   writeTournamentHistoryShards, profilesWithoutTournamentHistory,
   TOURNAMENT_HISTORY_SHARD_DIR, TOURNAMENT_HISTORY_INDEX_PATH,
-  fetchPlayerCareerHistory, boardMatchDatesByPlayer, profileCacheStaleByBoard, profileCacheStaleBySurface, profileHasUnknownSurface, SURFACE_FILL_AT, nameSurface, deriveSlamBoxes, dedupeByPlayerKeyPair, historyCacheFresh,
+  fetchPlayerCareerHistory, boardMatchDatesByPlayer, profileCacheStaleByBoard, profileCacheStaleBySurface, profileCacheStaleByForm, FORM_FIX_AT, profileHasUnknownSurface, SURFACE_FILL_AT, nameSurface, deriveSlamBoxes, dedupeByPlayerKeyPair, historyCacheFresh,
   TOURNAMENT_HISTORY_SCHEMA_VERSION,
   // TEN-206 search/shard split. loadAtpStandings is exported alongside the two
   // writers because the index is built from the rows it keeps as a side effect —

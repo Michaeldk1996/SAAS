@@ -18077,7 +18077,10 @@ function trProfilePriceOf(key, name, t, m){
   const r = P.src.get(m);
   return r ? { price: r.price, oppPrice: r.oppPrice, book: r.price != null ? (r.book === 'B' ? (r.src === 'atb' ? 'bet365-approx-at' : r.src === 'teb' ? 'bet365-approx-te' : r.src === 'cap' ? 'bet365-capture' : 'bet365-archive') : r.book === 'A' ? (r.src === 'oth' ? 'other-approx' : r.src === 'od10' ? 'pinnacle-approx-od10' : r.src === 'te' ? 'pinnacle-approx-te' : r.src === 'sch' ? 'pinnacle-approx-sched' : r.src === 'early' ? 'pinnacle-early' : 'pinnacle-approx')
     : r.src === 'hist' ? 'pinnacle-history' : r.src === 'cap' ? 'pinnacle-capture' : 'pinnacle') : null,
-    srcLabel: r.price != null && r.src === 'oth' ? r.srcLabel : undefined } : null;   // founder 2026-11-03: the other book's name for the hover
+    srcLabel: r.price != null && r.src === 'oth' ? r.srcLabel : undefined,   // founder 2026-11-03: the other book's name for the hover
+    // data review 2026-11-14: a priced retirement the Backing leaves out (Pinnacle rules: 'void' before a completed first
+    // set, 'no-sets' with no stored set scores) — the row says so, so its shown prices never read as counted
+    settle: r.price != null && window.MarketEdgeCore ? window.MarketEdgeCore.retSettlement(r) : null } : null;
 }
 window.trProfilePriceOf = trProfilePriceOf;
 function trProfileBacking(key, name, t){

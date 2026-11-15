@@ -95,6 +95,10 @@ node tools/build-career-splits.js 2>&1 | tee "$BUILD_LOG"
 # from cache (no fresh matches pulled this run); otherwise it fetched.
 if grep -q "every page came from cache" "$BUILD_LOG"; then FRESH="cached"; else FRESH="fresh"; fi
 rm -f "$BUILD_LOG"
+# founder 2026-11-15 ("fix the statistics that are a dash"): the Level & round tour figures — every row's pooled counts
+# over every tracked player's splits-matches, written into career-splits-tour.json `rows` (the profile's own row rules).
+# Fail-closed: a broken pool publishes nothing new (the page then keeps the last committed rows).
+node tools/build-splits-tour-rows.js . || { echo "build-splits-tour-rows failed — not publishing"; STATUS="tour-rows-failed"; exit 1; }
 
 NEW_COUNT=$(node -e "$COUNT_JS")
 echo "coverage: prev=$PREV_COUNT new=$NEW_COUNT"
