@@ -132,7 +132,8 @@ check('round label resolved', out[0] && out[0].round === 'R1');
   const html = fs.readFileSync(path.join(ROOT, 'bsp-consult-dashboard.html'), 'utf8');
   check('page loads wue-sheet.js', html.includes('<script src="wue-sheet.js"></script>'));
   // Round 3 (founder 2026-10-21): one place for the W/UE sheet — the Draw tab, beside the tournament selector. Reports no longer has it.
-  check('Reports card no longer renders the W/UE bar', html.includes("el.innerHTML = `<div class=\"tourx-rpcard\">${filterBar}${partialLine}${viewBar}${body}</div>`;") && !/tourx-rpcard[^\n]*tourxWueBarHtml/.test(html));
+  // 2026-11-15: the old Reports renderer is retired; the rebuilt Reports (tournaments-reports.js) carries no W/UE bar either.
+  check('Reports never renders the W/UE bar', !/tourxWueBarHtml|WueSheet\.(download|copyRound)/.test(fs.readFileSync(path.join(ROOT, 'tournaments-reports.js'), 'utf8')) && !/function renderTourxReports/.test(html));
   const dv = fs.readFileSync(path.join(ROOT, 'draw-view.js'), 'utf8');
   check('the Draw tab renders it inside the header row, for the selected tournament', /window\.tourxWueBarHtml;[\s\S]{0,160}<div class="dv-wue">\$\{f\(n\)\}<\/div>[\s\S]{0,40}\+ `<\/div>`;/.test(dv));
   const yml = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'pipeline.yml'), 'utf8');

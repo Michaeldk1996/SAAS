@@ -191,6 +191,11 @@
   --tt-red:      #E0616F;
   --tt-green:    #3DD68C;
   --tt-black:    #000000;   /* shadows only */
+  --tt-tip-text: #E8ECF4;   /* Reports bar / cell tooltips */
+  --tt-avatar:     #1A2033;               /* Draw: every avatar circle */
+  --tt-blue-btn-2: #7AAEFF;               /* Draw: solid-blue button hover */
+  --tt-scrim-62:   rgba(4, 5, 9, 0.62);   /* Draw: opponent report */
+  --tt-scrim-66:   rgba(4, 5, 9, 0.66);   /* Draw: past-editions box and match box */
   --tt-scrim:    rgba(3, 5, 9, 0.74);
   --tt-shadow-overlay: 0 30px 80px rgba(0, 0, 0, 0.6);
   --tt-shadow-menu:    0 12px 28px rgba(0, 0, 0, 0.45);

@@ -12,7 +12,7 @@
 // THE CHECKS (`judge`, pure, unit-tested in tools/test-post-deploy-check.mjs):
 //   1. no uncaught exception during load (Runtime.exceptionThrown, from navigation until the page is ready + SETTLE_MS);
 //   2. <meta name="build-sha"> equals the deployed build-info.json `commit` (the page and its stamp are one build);
-//   3. the main view rendered: the page globals the main script declares exist (renderTourxOverview, tpPageEvents,
+//   3. the main view rendered: the page globals the main script declares exist (renderTourxOverview, tourxOverviewEvents,
 //      H2HPage, sfDbPxRows — a script that failed to compile declares none of them) AND the default view's list
 //      (#matchlist, empty in the HTML) holds an element: renderMatches ran, cards or its own empty-board message.
 //      Waited for up to --timeout-ms (default 90 s); never ready by then = a failure.
@@ -31,7 +31,7 @@ import { tmpdir } from 'node:os';
 import { join, extname } from 'node:path';
 import { sendTelegram } from './price-alert-send.mjs';
 
-export const GLOBALS = { renderTourxOverview: 'function', tpPageEvents: 'function', H2HPage: 'object', sfDbPxRows: 'function' };
+export const GLOBALS = { renderTourxOverview: 'function', tourxOverviewEvents: 'function', H2HPage: 'object', sfDbPxRows: 'function' };
 export const VIEW_ROOT = '#matchlist';
 // renderMatches' own text for an empty `matches` array: drawn once before the fixtures arrive, so it is not "rendered"
 export const NO_DATA = /No data loaded yet/;

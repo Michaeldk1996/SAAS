@@ -1,0 +1,104 @@
+{
+ "schema": 1,
+ "basis": "market-edge",
+ "equalsDatabaseTour": true,
+ "source": "build-database-yield.js over odds-archive/*.csv, the same run that writes database-yield.json",
+ "priceRule": "Pinnacle closing, else Bet365 closing, per row (build-market-edge.js pickBook)",
+ "filters": "ATP main tour, all levels incl. Finals, all surfaces, seasons 2010 on; completed matches, plus retirements settled on Pinnacle rules (settlement.js settleBet: after the first set was completed the bet stands on the result; before it, or with no set scores, void); walkovers excluded; exact price ties and overround > 1.15 excluded; favourite = the shorter price; flat 1u, a win pays price − 1",
+ "dateRange": [
+  "2010-01-04",
+  "2026-11-14"
+ ],
+ "bookCounts": {
+  "Pinnacle": 41056,
+  "Bet365": 0,
+  "Pinnacle (approx.)": 891
+ },
+ "roles": {
+  "all": {
+   "matches": 41947,
+   "bets": 83894,
+   "yield": -0.039484897608887896
+  },
+  "favourite": {
+   "n": 41947,
+   "yield": -0.019789853863209316
+  },
+  "underdog": {
+   "n": 41947,
+   "yield": -0.05917994135456648
+  }
+ },
+ "bands8": [
+  {
+   "lo": 1.01,
+   "hi": 1.21,
+   "n": 7938,
+   "winRate": 89.2,
+   "yield": -0.91
+  },
+  {
+   "lo": 1.21,
+   "hi": 1.36,
+   "n": 8016,
+   "winRate": 77.3,
+   "yield": -1.09
+  },
+  {
+   "lo": 1.36,
+   "hi": 1.51,
+   "n": 8109,
+   "winRate": 69.8,
+   "yield": -0.41
+  },
+  {
+   "lo": 1.51,
+   "hi": 1.71,
+   "n": 10037,
+   "winRate": 59.8,
+   "yield": -4.26
+  },
+  {
+   "lo": 1.71,
+   "hi": 2,
+   "n": 8742,
+   "winRate": 53.2,
+   "yield": -2.87
+  },
+  {
+   "lo": 2,
+   "hi": 2.5,
+   "n": 11974,
+   "winRate": 44.3,
+   "yield": -1.21
+  },
+  {
+   "lo": 2.5,
+   "hi": 3,
+   "n": 8047,
+   "winRate": 36.3,
+   "yield": -1.53
+  },
+  {
+   "lo": 3,
+   "hi": 4,
+   "n": 8575,
+   "winRate": 27.6,
+   "yield": -6
+  },
+  {
+   "lo": 4,
+   "hi": 6,
+   "n": 6393,
+   "winRate": 19.3,
+   "yield": -8.38
+  },
+  {
+   "lo": 6,
+   "hi": null,
+   "n": 6063,
+   "winRate": 8.8,
+   "yield": -18.53
+  }
+ ]
+}

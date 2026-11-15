@@ -22,10 +22,6 @@ import { dirname, join } from 'node:path';
 const HERE = dirname(fileURLToPath(import.meta.url));
 const SRC = readFileSync(join(HERE, 'bsp-consult-dashboard.html'), 'utf8');
 const QUOTES = JSON.parse(readFileSync(join(HERE, 'tournament-quotes.json'), 'utf8')).tournaments;
-// C18 (founder brief 2026-10-20): f1.3 / f1.4 read a PINNED real snapshot (entry_lists.json @ 3bda62e37 + entry_lists_advance.json
-// @ a062e5a1b, 7 Oct), never the live shards — the old read of the committed entry_lists.json passed only because that file
-// had gone stale (China Open, a 28 Sep event, was still in it on 20 Oct). A fresh shard can no longer turn this red or green.
-const PIN = JSON.parse(readFileSync(join(HERE, 'tools', 'fixtures', 'ten401-f1a', 'entry-lists-2026-10-07.json'), 'utf8'));
 
 // Cut `function name(...)` out of a source by plain brace counting (the test-ten401-b slicer: the sliced functions carry
 // regex literals with quote marks, which a string-aware slicer misreads; their braces are balanced).
@@ -151,159 +147,6 @@ function checkQuoteExclusions(src) {
   if (dropped.length < 4) return 'expected ≥ 4 drops (3 listed + Musetti), got ' + dropped.join(', ');
   return null;
 }
-function checkQuoteCard(src) {
-  const card = fnSource(src, 'function tourxQuotesCardHtml(c){');
-  if (!/class="tourx-qlead" style="[^"]*display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden;"/.test(card)) return 'the lead quote is not clamped to 3 lines';
-  if ((card.match(/tourxQuoteText\(/g) || []).length !== 1) return 'the card must render exactly one quote';
-  const panel = fnSource(src, 'function tourxQuotesPanelHtml(){');
-  if (!/tourxQuoteText\(qt\)/.test(panel) || !/tourxQuoteAttrib\(qt\)/.test(panel)) return 'the overlay does not render through the cleaner';
-  return null;
-}
-
-// ------------------------------------------------------------------ 3. en dash in every range
-const MONTHS = "var MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];\n";
-function rangeApi(src) {
-  return new Function(MONTHS + ['isoMonday', 'fmtKey', 'keyToDate', 'weekRangeLabel', 'weekRangeHtml', 'computeWeeks'].map(n => inEntry(src, n)).join('\n')
-    + '\nreturn { weekRangeLabel, weekRangeHtml, computeWeeks };')();
-}
-function checkRanges(src) {
-  const api = rangeApi(src);
-  const keys = new Set();
-  for (const k of PIN.weekStarts) keys.add(k);
-  // the four chips at clocks that cross months / years
-  const RD = Date;
-  for (const iso of ['2026-10-08T10:00:00Z', '2026-10-27T10:00:00Z', '2026-12-29T10:00:00Z', '2027-03-30T10:00:00Z']) {
-    globalThis.Date = class extends RD { constructor(...a) { super(...(a.length ? a : [iso])); } };
-    try { api.computeWeeks().forEach(k => keys.add(k)); } finally { globalThis.Date = RD; }
-  }
-  if (keys.size < 8) return 'vacuous: ' + keys.size + ' week keys';
-  let cross = 0;
-  for (const k of keys) {
-    const l = api.weekRangeLabel(k), h = api.weekRangeHtml(k);
-    if (!l.includes('–')) return k + ': no en dash in "' + l + '"';
-    if (/\d\s*-\s*\d|[A-Za-z]\s*-\s*\d/.test(l)) return k + ': ASCII hyphen between the dates in "' + l + '"';
-    if (/ – /.test(l)) cross++;
-    if (h.replace(/<span class="el-ndash">–<\/span>/g, '') .includes('–')) return k + ': a dash renders outside .el-ndash: ' + h;
-    if (h.replace(/<[^>]*>/g, '') !== l) return k + ': the html range reads differently from the label';
-  }
-  if (!cross) return 'vacuous: no cross-month range ("26 Oct – 1 Nov") checked';
-  if (api.weekRangeLabel('2026-10-26') !== '26 Oct – 1 Nov') return 'cross-month label: ' + api.weekRangeLabel('2026-10-26');
-  // the rendered chip + empty state go through the html form, and the dash is set in Plex
-  const tabs = inEntry(src, 'renderWeekTabs');
-  if (!/<span class="el-weektab-range">'\+weekRangeHtml\(k\)\+'<\/span>/.test(tabs)) return 'week chips do not render weekRangeHtml';
-  const render = inEntry(src, 'render');
-  if (!/' in the week of ' \+ weekRangeHtml\(activeWeek\) \+ '\./.test(render)) return 'empty-state copy does not render weekRangeHtml';
-  if (!/\[data-page="entry-lists"\] \.el-ndash\{ font-family:var\(--font-nums\); \}/.test(src)) return '.el-ndash is not set in --font-nums';
-  return null;
-}
-
-// ------------------------------------------------------------------ 4. missing country = grey —
-function playersApi(src) {
-  const vars = MONTHS + "var GROUP_ORDER = ['Grand Slam','ATP 250','ATP 500','Masters','Challenger','ITF'];\nvar rosterSrc = null, rosterByKey = null, rosterByToks = null;\n";
-  return new Function('playerIndex', vars + ['fmtStatus', 'fmtName', 'norm', 'nameToks', 'namesAgree', 'rosterIndex', 'rosterFor', 'displayName', 'rankOf', 'renderPlayers'].map(n => inEntry(src, n)).join('\n')
-    + '\nreturn renderPlayers;')([]);
-}
-const countryCells = html => [...html.matchAll(/<span class="el-pcountry" style="([^"]*)">([^<]*)<\/span>/g)].map(m => ({ style: m[1], text: m[2] }));
-function checkCountry(src) {
-  const render = playersApi(src);
-  const china = PIN.chinaOpen;
-  if (!china || china.name !== 'China Open') return 'the pinned China Open snapshot is missing';
-  const players = china.sections.flatMap(s => s.players);
-  const noFlag = players.filter(p => p.status !== 'BYE' && !p.country).map(p => p.name);
-  for (const n of ['MEDVEDEV', 'RUBLEV', 'KHACHANOV', 'SAFIULLIN']) if (!noFlag.some(x => x.startsWith(n))) return 'vacuous: ' + n + ' carries a country now';
-  const cells = countryCells(render(players));
-  if (cells.length !== players.length) return 'read ' + cells.length + ' country cells for ' + players.length + ' players';
-  const blank = players.map((p, i) => [p, cells[i]]).filter(([p, c]) => p.status !== 'BYE' && !c.text.trim());
-  if (blank.length) return blank.length + ' blank country cells: ' + blank.map(([p]) => p.name).join(', ');
-  const dashed = players.map((p, i) => [p, cells[i]]).filter(([p]) => p.status !== 'BYE' && !p.country);
-  if (!dashed.every(([, c]) => c.text === '—' && /color:var\(--text-label\)/.test(c.style))) return 'a missing country is not a grey —';
-  const fixture = countryCells(render([{ name: 'X, Y', country: 'FRA', status: 'DA' }, { name: 'Bye', status: 'BYE' }]));
-  if (fixture[0].text !== 'FRA' || fixture[1].text !== '') return 'a country / a Bye no longer prints as before: ' + JSON.stringify(fixture);
-  return null;
-}
-
-// ------------------------------------------------------------------ 5. rail reveal
-// A fake rail: list box [listTop, listTop+clientHeight] in a viewport of vh; row i sits at offset i*50 inside the list.
-function railRun(src, { listTop, clientHeight, rows, selIdx, scrollTop = 0, vh = 982 }) {
-  const reveal = new Function('document', 'window', fnSource(src, 'function tourxRevealRailSel(){') + '\nreturn tourxRevealRailSel;');
-  const ROW = 44, GAP = 6;
-  const list = { scrollTop, clientHeight, style: {}, get scrollHeight() { return rows * (ROW + GAP) + (parseFloat(this.style.paddingBottom) || 0); },
-    getBoundingClientRect() { return { top: listTop, bottom: listTop + clientHeight }; },
-    querySelector: () => row };
-  const row = { getBoundingClientRect() { const t = listTop + selIdx * (ROW + GAP) - list.scrollTop; return { top: t, bottom: t + ROW, height: ROW }; } };
-  // the browser clamps scrollTop to [0, scrollHeight - clientHeight]
-  let st = scrollTop; Object.defineProperty(list, 'scrollTop', { get: () => st, set: v => { st = Math.max(0, Math.min(v, list.scrollHeight - list.clientHeight)); } });
-  let pageScrolled = false;
-  const win = { innerHeight: vh, scrollTo() { pageScrolled = true; }, scrollBy() { pageScrolled = true; } };
-  reveal({ querySelector: (s) => (s === '#tourxOverview .tourlist' ? list : null), documentElement: { clientHeight: vh } }, win)();
-  const r = row.getBoundingClientRect();
-  return { visible: r.top >= Math.max(listTop, 0) && r.bottom <= Math.min(listTop + clientHeight, vh), r, scrollTop: list.scrollTop, pageScrolled };
-}
-function checkRail(src) {
-  // first load: Wimbledon is row 22 of 64 in a list that starts at 324 and runs to 1398 (measured at 1512×982)
-  const w = railRun(src, { listTop: 324, clientHeight: 1074, rows: 64, selIdx: 22 });
-  if (!w.visible) return 'Wimbledon (row 22) is off screen after the reveal: ' + JSON.stringify(w.r);
-  // Hamburg: row 62 of 64 — needs more travel than the list has
-  const h = railRun(src, { listTop: 324, clientHeight: 1074, rows: 64, selIdx: 62 });
-  if (!h.visible) return 'Hamburg (row 62) is off screen after the reveal: ' + JSON.stringify(h.r);
-  // a visible tile does not move (nearest)
-  const v = railRun(src, { listTop: 324, clientHeight: 1074, rows: 64, selIdx: 3, scrollTop: 0 });
-  if (v.scrollTop !== 0) return 'a visible tile scrolled the list';
-  // a tile above the visible part scrolls up
-  const u = railRun(src, { listTop: 324, clientHeight: 1074, rows: 64, selIdx: 2, scrollTop: 900 });
-  if (!u.visible) return 'a tile above the fold stayed hidden';
-  if ([w, h, v, u].some(x => x.pageScrolled)) return 'the page scrolled';
-  const fn = fnSource(src, 'function tourxRevealRailSel(){');
-  if (/scrollIntoView|smooth|window\.scroll/.test(fn)) return 'the reveal scrolls the page or animates';
-  // every Overview render reveals, after the rail exists, and keeps the list's own scroll
-  const ov = fnSource(src, 'function renderTourxOverview(){');
-  const at = ov.indexOf('el.innerHTML = '), rv = ov.indexOf('tourxRevealRailSel();');
-  if (at < 0 || rv < at) return 'renderTourxOverview does not reveal the selected tile after rendering the rail';
-  if (!/list\.scrollTop = keepTop;/.test(ov)) return 'the rail list loses its scroll on every render';
-  if (!/function tourxSelectCondition\(name\)\{\n  tourxState\.tsSel = name;\n  renderTourxOverview\(\);/.test(src)) return 'a rail pick no longer re-renders the Overview';
-  return null;
-}
-
-// Review fix (repro A): the WHOLE renderTourxOverview runs against a fake DOM whose innerHTML rebuilds the list (no
-// spacer, scrollTop 0), exactly as the browser does. Page at top: select Hamburg (row 62, needs a spacer), then click
-// Barcelona (row 61, fully visible) — Barcelona must not move.
-function railRerender(src, steps, { listTop = 324, clientHeight = 1074, rows = 64, vh = 982 } = {}) {
-  const ROW = 44, GAP = 6;
-  const state = { tsQ: '', railQ: '', tsOpen: false, sel: 0 };
-  function makeList() {
-    let st = 0;
-    const list = { clientHeight, style: {},
-      get scrollHeight() { return rows * (ROW + GAP) + (parseFloat(this.style.paddingBottom) || 0); },
-      getBoundingClientRect() { return { top: listTop, bottom: listTop + clientHeight }; },
-      querySelector: () => ({ getBoundingClientRect() { const t = listTop + state.sel * (ROW + GAP) - list.scrollTop; return { top: t, bottom: t + ROW, height: ROW }; } }) };
-    Object.defineProperty(list, 'scrollTop', { get: () => st, set: v => { st = Math.max(0, Math.min(v, list.scrollHeight - list.clientHeight)); } });
-    return list;
-  }
-  const el = { _list: null, querySelector(q) { return q === '.tourlist' ? this._list : null; }, set innerHTML(v) { this._list = makeList(); } };
-  const doc = { getElementById: id => (id === 'tourxOverview' ? el : null), querySelector: q => (q === '#tourxOverview .tourlist' ? el._list : null), documentElement: { clientHeight: vh } };
-  const win = { innerHeight: vh };
-  const render = new Function('document', 'window', 'tourxState', 'requestAnimationFrame', 'tourxOverviewListHtml', 'tourxConditionsPanelHtml',
-    fnSource(src, 'function renderTourxOverview(){') + '\n' + fnSource(src, 'function tourxRevealRailSel(){') + '\nreturn renderTourxOverview;')(
-    doc, win, state, f => f(), () => '', () => '');
-  const out = [];
-  for (const idx of steps) {
-    const before = el._list ? (state.sel = idx, el._list.querySelector().getBoundingClientRect().top) : null;
-    state.sel = idx; render();
-    out.push({ idx, before, after: el._list.querySelector().getBoundingClientRect().top });
-  }
-  return out;
-}
-function checkRailRerender(src) {
-  const [ham, bar] = railRerender(src, [62, 61]);
-  if (ham.after + 44 > 982) return 'Hamburg off screen: ' + ham.after;
-  if (bar.before + 44 > 976) return 'fixture: Barcelona is not fully visible before the click (' + bar.before + ')';
-  if (bar.after !== bar.before) return 'Barcelona (fully visible at ' + bar.before + ') jumped to ' + bar.after;
-  // and a pick near the top after that is still revealed
-  const [, , top] = railRerender(src, [62, 61, 2]);
-  if (top.after < 324 || top.after + 44 > 982) return 'a row-2 pick after Hamburg is off screen: ' + top.after;
-  return null;
-}
-
 // ------------------------------------------------------------------ review 3: the Database row lock's month branch
 // The month filter drops 0 real rows today (every European Open clay row is in July), so a synthetic set proves it bites.
 function checkRowLockMonths(src) {
@@ -328,20 +171,14 @@ function checkRowLockMonths(src) {
 
 test('f1.1 quotes: the player\'s words only — no dateline / "said X" / lead-in; context in the meta; nothing invented', () => assert.equal(checkQuotes(SRC), null));
 test('f1.1 review: hand-reviewed exclusions (Fucsovics, Bellucci, De Jong) + a lead-in naming another event is not traceable', () => assert.equal(checkQuoteExclusions(SRC), null));
-test('f1.1 quotes: the Overview card shows one quote clamped to 3 lines; the overlay renders through the cleaner', () => assert.equal(checkQuoteCard(SRC), null));
-test('f1.3 every Entry-list week range carries an en dash (Plex .el-ndash), never a hyphen — chips + empty state', () => assert.equal(checkRanges(SRC), null));
-test('f1.4 a missing country is a grey — (China Open: Medvedev, Rublev, Khachanov, Safiullin)', () => assert.equal(checkCountry(SRC), null));
-test('f1.5 the rail scrolls its own list so the selected tile is on screen (Wimbledon, Hamburg); the page never scrolls', () => assert.equal(checkRail(SRC), null));
-
-test('f1.5 review: re-rendering keeps the spacer — a fully visible tile never moves (Hamburg → Barcelona)', () => assert.equal(checkRailRerender(SRC), null));
 
 test('review 3: the Database row lock filters by month (synthetic rows: European Open July vs October)', () => assert.equal(checkRowLockMonths(SRC), null));
 
-// Founder 634ea470: a dash in the Entry list now means "no rank" OR "no country", so the footnote names neither.
-test('footnote: "a dash = not listed in the feed" (founder copy, 634ea470)', () => {
-  assert.ok(SRC.includes('a dash = not listed in the feed. Acceptance order, not seeding.'), 'footnote copy missing');
-  assert.ok(!SRC.includes('a dash = no ranking found'), 'the old footnote copy is back');
-});
+// The old Entry list footnote test (founder 634ea470) is RETIRED: the export's footnote replaces it (founder 2026-11-15).
+
+// Retired 2026-11-15 (founder "Design wins", tournaments tab rebuild): the Overview quote card's 3-line clamp and the rail's
+// scroll-into-view (f1.5) belonged to the old renderer (renderTourxOverview / tourxQuotesCardHtml); the design draws neither.
+// The new Overview is locked by tools/test-tt-overview.mjs.
 
 test('CONTROL: each ruling goes red on its mutant', () => {
   const m = (a, b) => { assert.ok(SRC.split(a).length === 2, 'mutant anchor not found exactly once: ' + a.slice(0, 60)); return SRC.replace(a, b); };
@@ -360,20 +197,6 @@ test('CONTROL: each ruling goes red on its mutant', () => {
   assert.ok(red(checkQuoteExclusions, m("  if (has(ev)) return null;", "  return null;")), '1 other-event guard off');
   assert.ok(red(checkQuoteExclusions, m("  if (has(ev)) return null;", "")), '1 other-event guard drops notes that also name their own event');
   assert.ok(red(checkQuoteExclusions, m("    && !(ev && (TOURX_QUOTE_EXCLUDE[ev + '|' + q.player + '|' + q.year] || tourxQuoteOtherEvent(q, ev)));", "    ;")), '1 event rules not applied');
-  assert.ok(red(checkQuoteCard, m("display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden;\">${tourxQuoteText(lead)}", "\">${tourxQuoteText(lead)}")), '1 no clamp');
   // review 3
   assert.ok(red(checkRowLockMonths, m("    if(f.months && !f.months.has(Math.floor(r[0]/100)%100)) return false;\n", "")), 'r3 month check deleted');
-  // 3
-  assert.ok(red(checkRanges, m("label: '<span class=\"el-weektab-range\">'+weekRangeHtml(k)+'</span>", "label: '<span class=\"el-weektab-range\">'+weekRangeLabel(k)+'</span>")), '3 chips off the Plex dash');
-  assert.ok(red(checkRanges, m("' in the week of ' + weekRangeHtml(activeWeek) + '.", "' in the week of ' + weekRangeLabel(activeWeek) + '.")), '3 empty state off the Plex dash');
-  assert.ok(red(checkRanges, m("  [data-page=\"entry-lists\"] .el-ndash{ font-family:var(--font-nums); }\n", "")), '3 dash back in Hanken');
-  assert.ok(red(checkRanges, m("MON[mon.getMonth()] + ' – ' + sun.getDate()", "MON[mon.getMonth()] + ' - ' + sun.getDate()")), '3 cross-month hyphen');
-  // 4
-  assert.ok(red(checkCountry, m("+(isBye ? '' : (p.country || '—'))+'</span>'", "+((!isBye && p.country)?p.country:'')+'</span>'")), '4 blank country');
-  // 5
-  assert.ok(red(checkRail, m("  tourxRevealRailSel();\n  // first paint", "  // first paint")), '5 no reveal on render');
-  assert.ok(red(checkRail, m("  if (want > room) list.style.paddingBottom = ((parseFloat(list.style.paddingBottom) || 0) + Math.ceil(want - room)) + 'px';\n", "")), '5 Hamburg out of travel');
-  // review fix: the spacer not carried over → the restored scroll clamps and a visible tile jumps (repro A)
-  assert.ok(red(checkRailRerender, m("  if (list) { if (keepPad) list.style.paddingBottom = keepPad; list.scrollTop = keepTop; }", "  if (list) { list.scrollTop = keepTop; }")), '5 spacer dropped on re-render');
-  assert.ok(red(checkRail, m("  if (rr.bottom <= bottom) return;", "  return;")), '5 never scrolls down');
 });

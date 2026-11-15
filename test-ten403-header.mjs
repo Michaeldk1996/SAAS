@@ -82,8 +82,9 @@ function checkPages(dash, js, css) {
     if (!new RegExp(`<h1 class="sfh__title[^"]*">${title.replace(/'/g, "'")}</h1>`).test(head)) return `${page}: title is not .sfh__title "${title}"`;
     if (!/<p class="sfh__sub"/.test(head)) return `${page}: no one-line .sfh__sub sentence`;
   }
-  // the two embedded Database mounts (ROI overlays) carry the same header
-  if ((dash.match(/<div class="sfh db-headcard" data-db="head"><div class="sfh__text"><h1 class="sfh__title">Database<\/h1><p class="sfh__sub" data-db="subtitle"><\/p><\/div><div class="sfh__stats" data-db="fresh"><\/div><\/div>/g) || []).length !== 2)
+  // the two embedded Database mounts (ROI overlays) carry the same header — the Tournaments one lives in
+  // tournaments-overview.js since the 2026-11-15 rebuild
+  if (((dash + read('tournaments-overview.js')).match(/<div class="sfh db-headcard" data-db="head"><div class="sfh__text"><h1 class="sfh__title">Database<\/h1><p class="sfh__sub" data-db="subtitle"><\/p><\/div><div class="sfh__stats" data-db="fresh"><\/div><\/div>/g) || []).length !== 2)
     return 'database: an embedded mount is not the 35b header';
   const jsHeads = { trading: /'<div class="sfh tr-hdr">' \+\s*'<div class="sfh__text">' \+\s*'<h1 class="sfh__title">Trading Report<\/h1>' \+\s*'<p class="sfh__sub">/,
     series: /'<div class="sfh sr-head">' \+\s*'<div class="sfh__text"><h1 class="sfh__title">Series<\/h1><p class="sfh__sub">'/,

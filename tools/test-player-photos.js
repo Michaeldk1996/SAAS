@@ -108,7 +108,7 @@ const USES = [
   ['Draw view', 'draw-view.js', 'window.playerPhotoUrl(String(s.playerKey))'],
   ['Player Profile (V2)', 'player-profile-v2.js', "window.playerPhotoUrl(p.key, 'l')"],
   ['Dropping Odds', 'drops-page.js', 'playerPhotoImg(r.photoKey, r.dSide || r.side)'],
-  ['Tournament quotes', 'bsp-consult-dashboard.html', 'playerPhotoImg(String(qt.playerKey), qt.player)'],
+  ['Tournament quotes', 'tournaments-overview.js', 'playerPhotoImg(String(q.playerKey), q.player)'],
 ];
 const missing = USES.filter(([, f, t]) => !fs.readFileSync(path.join(ROOT, f), 'utf8').includes(t)).map(([l]) => l);
 check(`every avatar surface reads the one resolver (${USES.length} surfaces)`, missing.length === 0, 'missing: ' + missing.join(', '));

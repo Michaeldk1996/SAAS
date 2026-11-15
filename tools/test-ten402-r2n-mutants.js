@@ -13,37 +13,12 @@ const MUTANTS = [
   ['Montreal / Toronto print the same "Canadian Open"', '  return (tourxEventShared[off] || 0) > 1 && off !== key ? off + TOURX_EVENT_CITY_SUFFIX + key : off;', '  return off;'],
   ['every renamed event carries its city', '  return (tourxEventShared[off] || 0) > 1 && off !== key ? off + TOURX_EVENT_CITY_SUFFIX + key : off;',
     '  return off !== key ? off + TOURX_EVENT_CITY_SUFFIX + key : off;'],
-  // ---- rail + search
-  ['the rail row prints the key', "font-weight:${seld ? 600 : 700};color:var(--text);white-space:normal;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-height:1.3;\">${typeof tourxEventName === 'function' ? tourxEventName(t.name) : t.name}</span>",
-    'font-weight:${seld ? 600 : 700};color:var(--text);white-space:normal;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-height:1.3;">${t.name}</span>'],
-  ['the rail name back on one ellipsised line (the Canadian rows read alike)', 'font-weight:${seld ? 600 : 700};color:var(--text);white-space:normal;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-height:1.3;',
-    'font-weight:${seld ? 600 : 700};color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;'],
-  ['the rail click carries the printed name (state off its key)', "<div class=\"tourx-ovrow${seld ? ' on' : ''}\" onclick=\"tourxSelectCondition('${tourxEsc(t.name)}')\"",
-    "<div class=\"tourx-ovrow${seld ? ' on' : ''}\" onclick=\"tourxSelectCondition('${tourxEsc(tourxEventName(t.name))}')\""],
-  ['search reads the key only', "  const match = t => !q || (typeof tourxEventSearchText === 'function' ? tourxEventSearchText(t.name) : t.name.toLowerCase()).includes(q);",
-    '  const match = t => !q || t.name.toLowerCase().includes(q);'],
+  // ---- search (the rail and the hero / overlays moved to tournaments-overview.js and print the city key — founder ruling 1,
+  //      2026-11-15; their mutants are retired with test-ten402-r2n.mjs r2.2 rail / r2.3)
   ['search forgets the city', "  return [tourxEventName(key), off, key].concat(also).join(' | ').toLowerCase();", "  return [tourxEventName(key), off].concat(also).join(' | ').toLowerCase();"],
   ['search forgets the other catalog spelling (French Open)', "  return [tourxEventName(key), off, key].concat(also).join(' | ').toLowerCase();", "  return [tourxEventName(key), off, key].join(' | ').toLowerCase();"],
-  // ---- hero + overlays
-  ['the hero title prints the key', "letter-spacing:-0.015em;color:var(--text);\">${typeof tourxEventName === 'function' ? tourxEventName(c.name) : c.name}</span>${badge}",
-    'letter-spacing:-0.015em;color:var(--text);">${c.name}</span>${badge}'],
-  ['Compare all prints the key', "color:${on ? 'var(--text)' : 'var(--text-soft)'};white-space:normal;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-height:1.3;\">${typeof tourxEventName === 'function' ? tourxEventName(t.name) : t.name}</span>",
-    "color:${on ? 'var(--text)' : 'var(--text-soft)'};white-space:normal;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-height:1.3;\">${t.name}</span>"],
-  ['the ROI overlay title prints the key', "    title: `${typeof tourxEventName === 'function' ? tourxEventName(c.name) : c.name} · favourites and underdogs`,", '    title: `${c.name} · favourites and underdogs`,'],
-  ['the What players say title prints the key', "    title: `${typeof tourxEventName === 'function' ? tourxEventName(c.name) : c.name} · what players say`,", '    title: `${c.name} · what players say`,'],
-  ['the ROI chip label prints the key', "        initialTournamentLabel: typeof tourxEventName === 'function' ? tourxEventName(c.name) : c.name,", '        initialTournamentLabel: c.name,'],
-  ['the ROI overlay joins on the printed name', '    const mkt = c && tourxMarketFor(c.name);\n    const names = mkt && mkt.archiveNames;',
-    '    const mkt = c && tourxMarketFor(tourxEventName(c.name));\n    const names = mkt && mkt.archiveNames;'],
-  // ---- Reports
-  ['the Reports picker prints the key', '      + `${tourxRpEsc(shown)}${yr', '      + `${tourxRpEsc(name)}${yr'],
-  ['the Reports monogram reads the key', '${tourxRpEsc(tournamentInitials(shown))}', '${tourxRpEsc(tournamentInitials(name))}'],
-  ['the Reports picker selects by the printed name', "    return tourxSegItem(name === tourxState.tour, label, `tourxSelectTour('${tourxEsc(name)}')`, 'tour');",
-    "    return tourxSegItem(name === tourxState.tour, label, `tourxSelectTour('${tourxEsc(shown)}')`, 'tour');"],
-  ['the match-stats sheet header prints the key', '  const meta = [(' + TN + ') + (yr', '  const meta = [T.name + (yr'],
-  ['a Reports empty line prints the key', 'No box scores have been ingested for ${' + TN + '} yet', 'No box scores have been ingested for ${T.name} yet'],
-  // ---- Entry list
-  ['the Entry list row keeps the shard name', '      if(rk) name = tourxEventName(rk);\n', ''],
-  ['a Challenger row in a registry city is renamed', "    if(/^(atp|grand slam)/i.test(''+(t.tier||'')) && !/challenger/i.test(''+t.tier) && typeof sfEventKey", '    if(true && typeof sfEventKey'],
+  // ---- Reports: retired 2026-11-15 (founder ruling 1: the rebuilt Reports prints the city key; test-ten402-r2n.mjs r2.4)
+  // ---- Entry list: retired 2026-11-15 (founder ruling 1: the rebuilt Entry list prints the city key; tools/test-tt-entry.mjs)
   // ---- H2H chips
   ['the H2H suggestion chip prints the board word', "event: pr[2] ? (typeof sfEventName === 'function' ? sfEventName(pr[2]) : pr[2]) : '',", "event: pr[2] || '',"],
   // ════ round 3 (one name site-wide) ════
@@ -74,7 +49,6 @@ const MUTANTS = [
   // ---- the one-name function
   ['r3: the row city never breaks a shared name', '  if (ck && ck !== hit && SF_EVENT_NAMES[hit] && SF_EVENT_NAMES[ck] === SF_EVENT_NAMES[hit]) return ck;', ''],
   ['r3: the row city moves any event', '  if (ck && ck !== hit && SF_EVENT_NAMES[hit] && SF_EVENT_NAMES[ck] === SF_EVENT_NAMES[hit]) return ck;', '  if (ck) return ck;'],
-  ['r3: the Entry list ignores the row city', '      var rk = sfEventKey(t.name, t.city) ||', '      var rk = sfEventKey(t.name) ||'],
   ['r3: the ATP Cup prints "Cup"', "const SF_EVENT_LITERAL = { 'cup': 'ATP Cup' };", 'const SF_EVENT_LITERAL = {};'],
 ];
 // The profile module (player-profile-v2.js, TEN402_PP2): Record per tournament.

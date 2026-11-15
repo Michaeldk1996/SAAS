@@ -38,8 +38,8 @@ f = judge({ ...healthy, metaShas: [OTHER] });
 ok(f.length === 1 && /page build-sha bbbbbbbbb ≠ build-info\.json commit aaaaaaaaa/.test(f[0]), 'page build-sha ≠ build-info commit → failure', f);
 ok(judge({ ...healthy, metaShas: [] }).some((x) => /0 build-sha meta tags/.test(x)), 'no build-sha meta → failure');
 ok(judge({ ...healthy, info: null, infoWhy: 'HTTP 404' }).some((x) => /build-info\.json has no commit \(HTTP 404\)/.test(x)), 'build-info.json unreadable → failure');
-f = judge({ ...healthy, globals: { ...G, tpPageEvents: 'undefined' } });
-ok(f.length === 1 && /page globals missing: tpPageEvents/.test(f[0]), 'one page global missing → failure naming it', f);
+f = judge({ ...healthy, globals: { ...G, tourxOverviewEvents: 'undefined' } });
+ok(f.length === 1 && /page globals missing: tourxOverviewEvents/.test(f[0]), 'one page global missing → failure naming it', f);
 ok(judge({ ...healthy, view: { children: 0, text: '' } }).some((x) => /\(#matchlist\) never rendered/.test(x)), 'the default view empty → failure');
 ok(judge({ ...healthy, view: { children: 1, text: 'No matches found. No data loaded yet — check the status message above.' } }).some((x) => /never loaded its fixtures/.test(x)),
   "the view stuck on renderMatches' pre-data message → failure (that render happens before the fixtures arrive)");

@@ -9,7 +9,6 @@ const SCORE = '  #h2hRoot .h2hc-led .ma-row-score{ min-width:0; white-space:norm
 const MEET = "            sets: r.pS == null || r.ret ? '—' : r.pS + '–' + r.oS,";
 const STYLE = "          sets: m.ret ? '—' : m.pS + m.oS ? m.pS + '–' + m.oS : m.sets, scores:";
 const TR = "    sets: r.wo || r.pS == null ? FH_DASHC : r.pS + '–' + r.oS, setsColor: r.wo || r.pS == null ? FH_DASH : null,\n    scores: fhH2hSetScores(r), scoresTitle: r.sets ? fhH2hSetScores(r) : 'No set scores on record for this match',";
-const EMPTY = "        + '<div class=\"el-empty__t\">No lists loaded for ' + weekRangeHtml(activeWeek) + '</div>'";
 const MUTANTS = [
   // ---- fix 1 · the strip above the sticky header
   ['fix 1: the band removed (cards show above the header again)', BAND + '\n', ''],
@@ -35,10 +34,7 @@ const MUTANTS = [
   ['fix 3: the Tournament rows back to "3 - 1"', TR, TR.replace("r.pS + '–' + r.oS", "r.pS + ' - ' + r.oS")],
   ['fix 3: the Tournament rows spaced en dash ("3 – 1")', TR, TR.replace("r.pS + '–' + r.oS", "r.pS + ' – ' + r.oS")],
   ['fix 3: a walkover gets "0–0"', TR, TR.replace('sets: r.wo || r.pS == null ? FH_DASHC', 'sets: r.pS == null ? FH_DASHC')],
-  // ---- fix 5 · Entry list empty state
-  ['fix 5: the title back to "this week"', EMPTY, "        + '<div class=\"el-empty__t\">No lists loaded for this week</div>'"],
-  ['fix 5: the title names the current week, not the selected one', EMPTY, "        + '<div class=\"el-empty__t\">No lists loaded for ' + weekRangeHtml(pickDefaultWeek()) + '</div>'"],
-  ['fix 5: the title\'s dash back in Hanken (plain label)', EMPTY, "        + '<div class=\"el-empty__t\">No lists loaded for ' + weekRangeLabel(activeWeek) + '</div>'"],
+  // ---- fix 5 (Entry list empty state) retired 2026-11-15 with its test (founder ruling 1; tools/test-tt-entry.mjs)
 ];
 const SUITES = ['test-ten402-r4n.mjs'];
 const run = env => spawnSync(process.execPath, ['--test', ...SUITES.map(f => path.join(ROOT, f))], { env: Object.assign({}, process.env, env), encoding: 'utf8' });

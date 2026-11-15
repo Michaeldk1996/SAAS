@@ -5,9 +5,9 @@
 //   1. Header (item 1): caps line, title 29/800, sub 13.5 --text-soft, Today's Matches card (12 / --top-light); stats
 //      Events · This week · Updated only when all three are live (L4), otherwise the block is empty.
 //   2. Darker track (item 2): sfSegHtml + .sf-seg — track --card + --edge-6, selected --inner + --edge-10 white 700,
-//      idle --text-label, no blue; the page tabs and the Entry list week chips render through it.
-//   3. Entry list (item 8): 6% row hairlines + --inner hover, tier chip --inner grey no edge, caret --inner grey ▾ /
-//      white ▴ open, expanded panel --inner, tier heads on a 10% rule, table and empty state = card; names title-cased.
+//      idle --text-label, no blue; the page tabs render through it.
+//   3. Entry list: names title-cased by the data layer. (Item 8's look, r1.7 and r1.8 are retired by the Tournaments tab
+//      rebuild, founder 2026-11-15 "design wins"; the new look is locked in tools/test-tt-entry.mjs.)
 //   4. Database (step-6 carry-over): in a table with gated cells the All-row yield keeps its sign colour (Hangzhou Open,
 //      50 matches: every band hard-gated, the All rows +1.54% / −3.04% in --pos / --neg).
 //
@@ -112,39 +112,16 @@ function checkSeg(src) {
   if (/\.sf-seg__opt:hover/.test(src)) return 'the darker track grew a hover tint (the reference has none)';
   const tabs = top(src, 'renderTournamentsTab');
   if (!/tabs\.innerHTML = sfSegHtml\(/.test(tabs)) return 'the page tabs are not the darker track';
-  if (!/rail\.innerHTML = sfSegHtml\(/.test(inEntry(src, 'renderWeekTabs'))) return 'the week chips are not the darker track';
+  // (the Entry list week chips left this helper: tournaments-entry.js draws the export's week track, founder 2026-11-15
+  // "design wins" — locked in tools/test-tt-entry.mjs)
   return null;
 }
 
 // ------------------------------------------------------------------ 3. Entry list
-function entryRow(src, t) {
-  const sandbox = ['const MON=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];',
-    'function hasList(t){ return !!(t.sections && t.sections.length); }', 'function renderPlayers(){ return ""; }',
-    inEntry(src, 'tierCode'), inEntry(src, 'shortDate'), inEntry(src, 'countCell'), inEntry(src, 'renderTournament'), 'return renderTournament;'].join('\n');
-  return new Function(sandbox)()(t, 0);
-}
+// The Entry list's look (item 8: tier chip, caret, --inner panel, caps tier heads, sfSegHtml week chips) is RETIRED by
+// the Tournaments tab rebuild (founder 2026-11-15 ruling 1, "design wins": tournaments-entry.js draws the locked export,
+// checked in tools/test-tt-entry.mjs). What stays here: the data layer's name formatting.
 function checkEntry(src) {
-  const sec = [{ title: 'Main Draw', players: [] }];
-  const r500 = entryRow(src, { name: 'China Open', tier: 'ATP 500', surface: 'Hard', counts: { MD: 31, Q: 15, ALT: 1 }, sections: sec, startDate: '2026-09-30' });
-  const rCh = entryRow(src, { name: 'Bari', tier: 'Challenger 50', surface: 'Clay', counts: { MD: 21, Q: null, ALT: 10 }, sections: sec, startDate: '2026-09-28' });
-  if (!/<span class="el-tierchip el-tierchip--fig">500<\/span>/.test(r500)) return 'a figure tier chip is not Plex (el-tierchip--fig)';
-  if (!/<span class="el-tierchip el-tierchip--code">CH<\/span>/.test(rCh)) return 'a letter tier chip is not the caps label (el-tierchip--code)';
-  if (!/<span class="el-caret" aria-hidden="true">▾<\/span>/.test(r500)) return 'caret carries inline colour / edge';
-  if (/border:1px solid var\(--edge|var\(--line\)|--bar|--link/.test(r500)) return 'an event row still paints an inline edge / 5% line / blue';
-  if (!/color:var\(--text-label\);">—<\/span>/.test(rCh)) return 'a missing count is not a grey —';
-  const R = s => cssRule(src, '[data-page="entry-lists"] ' + s);
-  if (!/border-top:1px solid var\(--edge-6\)/.test(R('.elrow'))) return 'row hairline is not 6%';
-  if (!/background:var\(--inner\)/.test(R('.elrow:hover'))) return 'row hover is not --inner';
-  if (!/background:var\(--inner\); border:none; color:var\(--text-label\)/.test(R('.el-tierchip'))) return 'tier chip is not --inner grey, no edge';
-  if (!/color:var\(--text-label\); background:var\(--inner\); border:none/.test(R('.el-caret'))) return 'caret is not an --inner control, grey';
-  if (!/color:var\(--text\)/.test(R('.el-card.open .el-caret'))) return 'open caret is not white';
-  if (!/background:var\(--inner\)/.test(R('.el-body'))) return 'expanded panel is not --inner';
-  if (!/background:var\(--line-strong\)/.test(R('.el-levelhead__rule'))) return 'tier head rule is not 10%';
-  if (!/font-size:10\.5px; font-weight:700; letter-spacing:0\.10em; text-transform:uppercase; color:var\(--text-label\)/.test(R('.el-levelhead__t'))) return 'tier head is not the caps label';
-  if (!/background:var\(--card\); border:1px solid var\(--edge-6\); border-radius:12px/.test(R('.el-table'))) return 'table is not a card';
-  if (!/background:var\(--card\); border:1px solid var\(--edge-6\)/.test(R('.el-empty'))) return 'empty state is not a card';
-  if (!/background:var\(--inner\); border-color:var\(--edge-10\)/.test(cssRule(src, '.sf-seg__opt.on'))) return 'selected week is not --inner + --edge-10';
-  if (/var\(--(pos|neg)\)/.test(src.slice(src.indexOf('<!-- ENTRY LISTS TAB'), src.indexOf('window.EntryListsTab')))) return 'green / red on the Entry list (status colour)';
   const fmtName = new Function(inEntry(src, 'fmtName') + '\nreturn fmtName;')();
   const got = ['SHANG, Juncheng', 'CARRENO BUSTA, Pablo', 'de MINAUR, Alex', 'Kolář, Zdeněk'].map(n => fmtName({ name: n }));
   if (got.join('|') !== 'Juncheng Shang|Pablo Carreno Busta|Alex de Minaur|Zdeněk Kolář') return 'names: ' + got.join('|');
@@ -263,8 +240,10 @@ function thisWeekFigures(src, clockIso, inPlay, tourns) {
   const week = () => new Set(inPlay);
   const hostE = { innerHTML: '' }, hostH = { innerHTML: '' };
   const data = { tournaments: tourns || (SHARDS ? entryFns(src, ['norm', 'cityKey', 'mergeShards'], 'return mergeShards;', [], [])(SHARDS[0], SHARDS[1]) : []) };
-  const el = entryFns(src, ['isoMonday', 'fmtKey', 'keyToDate', 'weekRangeLabel', 'norm', 'hasList', 'renderHead', 'weekEventCount', 'currentWeekRows'],
-    'return { renderHead, weekEventCount, currentWeekRows, isoMonday, fmtKey };',
+  // Tournaments tab rebuild (founder 2026-11-15 ruling 1): the Entry list head now counts the SELECTED week, so the old
+  // eyebrow (renderHead) is retired; the shared set still feeds the header and the current week's chip.
+  const el = entryFns(src, ['isoMonday', 'fmtKey', 'norm', 'hasList', 'weekEventCount', 'currentWeekRows'],
+    'return { weekEventCount, currentWeekRows, isoMonday, fmtKey };',
     ['document', 'Date', 'data', 'activeWeek', 'advMeta', 'loaded', 'tourxThisWeekEvents'],
     [{ getElementById: () => hostE }, D, data, '2026-11-02', null, true, () => shared()]);
   const win = { EntryListsTab: { currentWeekRows: el.currentWeekRows } };
@@ -272,16 +251,13 @@ function thisWeekFigures(src, clockIso, inPlay, tourns) {
   const hdr = new Function('document', 'tourxConditionRegistry', 'tourxActiveWeekNames', 'tournamentProgression', 'newsTz', 'tourxThisWeekEvents',
     'const TOURX_HEAD_STATS = true;\n' + ['tourxHeadStatValues', 'tourxHeadStamp', 'tourxRenderHeadStats'].map(n => top(src, n)).join('\n') + '\nreturn tourxRenderHeadStats;')(
     { getElementById: () => hostH }, reg, week, { fetchedAt: '2026-09-30T08:00:00Z' }, () => 'UTC', shared);
-  hdr(); el.renderHead();
-  const e = /> ?(\d+) events? · (\d+) lists? loaded</.exec(hostE.innerHTML) || [];
-  const cur = el.fmtKey(el.isoMonday(new D()));
+  hdr();
+  const cur = el.fmtKey(el.isoMonday(new D())), set = shared() || [];
   return { header: +((/This week<\/span><span class="sfh__v[^"]*">(\d+)</.exec(hostH.innerHTML) || [])[1]),
-    events: +e[1], lists: +e[2], chip: el.weekEventCount(cur), set: shared() };
+    events: set.length, lists: set.filter(e => e.hasList).length, chip: el.weekEventCount(cur), set };
 }
 function checkThisWeek(src) {
   if (!/const wk = tourxThisWeekEvents\(\);/.test(top(src, 'tourxHeadStatValues'))) return 'header This week does not read tourxThisWeekEvents()';
-  const head = inEntry(src, 'renderHead');
-  if (!/tourxThisWeekEvents\(\)/.test(head) || /activeWeek/.test(head)) return 'Entry list eyebrow does not read the shared set (or follows the chip)';
   const ok = f => f.header === f.events && f.events === f.chip && f.lists <= f.events;
   // synthetic: shard rows of this week (one with a list) ∪ in-play registry events, de-duplicated on city
   const syn = thisWeekFigures(src, '2026-09-30T10:00:00Z', ['Shanghai', 'Tokyo', 'Beijing'], [
@@ -313,14 +289,15 @@ const ROSTER = [
   { key: '1206', name: 'Calvin Hemery', rank: 309 },
   { key: '2227', name: 'Coleman Wong Chak Lam', rank: 101 },
 ];
+// Tournaments tab rebuild (founder 2026-11-15): the old row renderer (renderPlayers) is retired; the data layer's join
+// (displayName / rankOf / linkKey — what tournaments-entry.js prints) is executed here instead. A Bye is not a player.
 function playersHtml(src, players, roster) {
-  return entryFns(src, ['fmtStatus', 'fmtName', 'norm', 'nameToks', 'namesAgree', 'rosterIndex', 'rosterFor', 'displayName', 'rankOf', 'renderPlayers'],
-    'return renderPlayers;', ['playerIndex'], [roster])(players);
+  const f = entryFns(src, ['fmtStatus', 'fmtName', 'norm', 'nameToks', 'namesAgree', 'rosterIndex', 'rosterFor', 'displayName', 'rankOf', 'linkKey'],
+    'return { displayName, rankOf, linkKey };', ['playerIndex'], [roster]);
+  return players.map(p => { if (p.status === 'BYE') return { name: 'Bye', rank: '', link: null };
+    const rk = f.rankOf(p); return { name: f.displayName(p), rank: rk ? '#' + rk.rank : '—', link: f.linkKey(p) }; });
 }
-function playerRows(html) {
-  return [...html.matchAll(/<span class="el-pname"[^>]*>(.*?)<\/span><span class="el-pcountry" style="text-align:right[^>]*>[^<]*<\/span><span class="el-prank" style="([^"]*)"[^>]*>([^<]*)<\/span>/g)]
-    .map(m => ({ name: m[1].replace(/<[^>]*>/g, '').trim(), style: m[2], rank: m[3] }));
-}
+function playerRows(rows) { return rows; }
 function checkRanksNames(src) {
   const players = [
     { name: 'VACHEROT, Valentin', rank: 19, status: 'SEED', playerKey: '1852', country: 'MON' },   // list rank wins (19, not 14)
@@ -338,62 +315,31 @@ function checkRanksNames(src) {
   if (rows.length !== 9) return 'expected 9 player rows, read ' + rows.length;
   const ranks = rows.map(r => r.rank).join(' ');
   if (ranks !== '#19 #29 #55 #65 — —  — #101') return 'ranks: "' + ranks + '" (want "#19 #29 #55 #65 — —  — #101": Hemery is not Calvin Hemery)';
-  // list-flash fix (founder 2026-10-30): the link opens through sfGoToProfile (Players page straight on the profile)
-  if (/(?:sfGoToProfile|showPlayerProfile)\('1206'\)/.test(html)) return 'Clement Hemery still links to Calvin Hemery\'s profile';
-  if (!/(?:sfGoToProfile|showPlayerProfile)\('2227'\)/.test(html)) return 'a key whose name agrees lost its profile link';
-  if (rows.some(r => !/font-family:'IBM Plex Mono'[^;]*;[^"]*color:var\(--text-label\)/.test(r.style))) return 'a rank cell is not grey mono';
+  // list-flash fix (founder 2026-10-30): a key whose roster name disagrees gets no profile link
+  if (rows[7].link !== null) return 'Clement Hemery still links to Calvin Hemery\'s profile';
+  if (rows[8].link !== '2227') return 'a key whose name agrees lost its profile link';
   const names = rows.map(r => r.name).slice(0, 6);
-  const want = ['Valentin Vacherot SEED', 'Alejandro Davidovich Fokina', 'Juan Manuel Cerundolo', 'Pablo Carreno Busta Q', 'Known Nobody', 'Smith, Jo…'];
+  const want = ['Valentin Vacherot', 'Alejandro Davidovich Fokina', 'Juan Manuel Cerundolo', 'Pablo Carreno Busta', 'Known Nobody', 'Smith, Jo…'];
   for (let i = 0; i < want.length; i++) if (names[i] !== want[i]) return 'name ' + i + ': "' + names[i] + '" (want "' + want[i] + '")';
   if (names.some(n => /…\s\S/.test(n))) return 'a name is cut in the middle';
   // a second, ambiguous candidate kills the name join (never a guess)
   const amb = playerRows(playersHtml(src, [players[3]], ROSTER.concat([{ key: '9', name: 'Busta Pablo Carreno', rank: 900 }])));
   if (amb[0].rank !== '—') return 'an ambiguous name join still printed a rank';
-  // the cell ellipsises at the end only
-  if (!/white-space:nowrap;overflow:hidden;text-overflow:ellipsis;/.test(inEntry(src, 'renderPlayers'))) return 'name cell lost its end-ellipsis';
   return null;
 }
-
-// ------------------------------------------------------------------ r1.7 no "published"
-function checkNoPublished(src) {
-  const sec = [{ title: 'Main Draw', players: [] }];
-  for (const t of [{ name: 'China Open', tier: 'ATP 500', surface: 'Hard', counts: { MD: 31, Q: 15, ALT: 1 }, sections: sec, startDate: '2026-09-30', regime: 'draw', sourcePublished: '2026-10-06T13:01:56Z' },
-    { name: 'Jinan (CH 125)', tier: 'Challenger', surface: 'Hard', counts: { MD: 21, Q: 20, ALT: 1 }, sections: sec, startDate: '2026-10-12', regime: 'advance', sourcePublished: '2026-10-06T12:55:00Z' }]) {
-    const html = entryRow(src, t);
-    if (/publish/i.test(html)) return t.name + ': the row still prints a publish date';
-    if (/6 Oct/.test(html)) return t.name + ': the fetch / re-post date is on the row';
-  }
-  if (!/30 Sep · hard · official draw/.test(entryRow(src, { name: 'X', tier: 'ATP 500', surface: 'Hard', sections: sec, startDate: '2026-09-30', regime: 'draw' }))) return 'meta line is not "{date} · {surface} · official draw"';
-  return null;
-}
-
-// ------------------------------------------------------------------ r1.8 en dash + empty-state copy
-function checkEmptyCopy(src) {
-  const lbl = entryFns(src, ['keyToDate', 'weekRangeLabel'], 'return weekRangeLabel;', [], []);
-  if (lbl('2026-11-02') !== '2\u20138 Nov' || lbl('2026-10-12') !== '12\u201318 Oct') return 'week range is not an en dash: ' + lbl('2026-11-02') + ' / ' + lbl('2026-10-12');
-  const body = { innerHTML: '' };
-  const tourns = Array.from({ length: 21 }, (_, i) => ({ tour: 'ATP', name: 'E' + i, city: 'C' + i, weekStart: '2026-11-02', sections: [] }));
-  const render = entryFns(src, ['isoMonday', 'fmtKey', 'keyToDate', 'weekRangeLabel', 'weekRangeHtml', 'norm', 'hasList', 'weekEventCount', 'levelGroup', 'deriveWeeks', 'pickDefaultWeek', 'render'],
-    'function renderWeekTabs(){} function renderHead(){} function staleBannerHtml(){ return ""; } function renderFreshness(){}\nreturn render;',
-    ['document', 'Date', 'data', 'activeWeek', 'weeks', 'weekPicked', 'tourxThisWeekEvents'],
-    [{ getElementById: () => body }, fixedDate('2026-10-08T10:00:00Z'), { tournaments: tourns }, '2026-11-02', [], true, () => null]);
-  render();
-  // TEN-401 f1 item 3: the range's dash is wrapped in .el-ndash (Plex) — read the copy as text
-  if (!/The ATP has 21 events in the week of 2\u20138 Nov\. Their acceptance lists are not in the build yet/.test(body.innerHTML.replace(/<span class="el-ndash">(\u2013)<\/span>/g, '$1'))) return 'empty state: ' + body.innerHTML.replace(/<[^>]*>/g, ' ').trim();
-  return null;
-}
+// r1.7 (no "published" date) and r1.8 (en-dash ranges + "in the week of" empty copy) are RETIRED with the old Entry list
+// renderer: the founder's 2026-11-15 rulings print "published —" and the export's week label / empty copy (both
+// locked in tools/test-tt-entry.mjs).
 
 test('header card: the 35b page header (TEN-403), no caps line, stats only when all three are live (L4)', () => assert.equal(checkHeader(SRC), null));
-test('darker track: one helper, card + 6% track, inner + 10% selected, no blue; tabs + week chips use it', () => assert.equal(checkSeg(SRC), null));
-test('Entry list: hairlines, chips, caret, panel, tier heads, card table / empty state, names', () => assert.equal(checkEntry(SRC), null));
+test('darker track: one helper, card + 6% track, inner + 10% selected, no blue; the page tabs use it', () => assert.equal(checkSeg(SRC), null));
+test('Entry list data layer: source names title-cased (the look moved to tools/test-tt-entry.mjs)', () => assert.equal(checkEntry(SRC), null));
 test('Database: in a table with gated cells the All-row yield keeps its sign colour (Hangzhou Open)', () => assert.equal(checkAllRow(SRC), null));
 
 test('r1.1 All row From / To span the side on both sides (Hangzhou Open, live store)', () => assert.equal(checkAllSpan(SRC), null));
 test('r1.2 band cells never wrap; the Tournament row fits the ROI overlay at 1512', () => assert.equal(checkBandNoWrap(SRC), null));
-test('r1.4 one "This week" source for header + Entry list eyebrow; the current week is the first chip', () => assert.equal(checkThisWeek(SRC), null));
+test('r1.4 one "This week" source for the header and the current week chip; the current week is the first chip', () => assert.equal(checkThisWeek(SRC), null));
 test('r1.5 / r1.6 every player row has a rank (list, else ATP standings, else —) and a full name', () => assert.equal(checkRanksNames(SRC), null));
-test('r1.7 event rows print no "published" date', () => assert.equal(checkNoPublished(SRC), null));
-test('r1.8 en dash week ranges; empty state "…21 events in the week of 2–8 Nov…"', () => assert.equal(checkEmptyCopy(SRC), null));
 
 test('CONTROL: each ruling goes red on its mutant', () => {
   const m = (a, b) => { assert.ok(SRC.split(a).length === 2, 'mutant anchor not found exactly once: ' + a.slice(0, 60)); return SRC.replace(a, b); };
@@ -403,8 +349,6 @@ test('CONTROL: each ruling goes red on its mutant', () => {
   assert.ok(red(checkHeader, m("if (!stamps.length) return null;", '')), 'stats without a live stamp');
   assert.ok(red(checkSeg, m('.sf-seg__opt.on{ background:var(--inner); border-color:var(--edge-10);', '.sf-seg__opt.on{ background:var(--bar); border-color:var(--edge-10);')), 'blue selected');
   assert.notEqual(checkSeg(m("tabs.innerHTML = sfSegHtml(", "tabs.innerHTML = String(")), null, 'tabs off the helper');
-  assert.ok(red(checkEntry, m('[data-page="entry-lists"] .elrow:hover{ background:var(--inner); }', '[data-page="entry-lists"] .elrow:hover{ background:var(--tile-hover); }')), 'darker hover');
-  assert.ok(red(checkEntry, m("[data-page=\"entry-lists\"] .el-card.open .el-caret{ color:var(--text);", "[data-page=\"entry-lists\"] .el-card.open .el-caret{ color:var(--bar);")), 'blue caret');
   assert.ok(red(checkEntry, m("    return tc(giv) + ' ' + tc(sur);", "    return giv + ' ' + sur;")), 'raw names');
   assert.notEqual(checkAllRow(m("arow.appendChild(el('div',null,yieldCell(a, true)));", "arow.appendChild(el('div',null,yieldCell(a)));")), null, 'All row muted');
   // round 1
@@ -412,16 +356,9 @@ test('CONTROL: each ruling goes red on its mutant', () => {
   assert.ok(red(checkBandNoWrap, m("color:var(--text-soft); white-space:nowrap; }", "color:var(--text-soft); }")), 'r1.2 band cell wraps');
   assert.ok(red(checkBandNoWrap, m("      ? 'minmax(108px,1fr) 45px 45px 52px 58px 62px 62px'", "      ? 'minmax(72px,1fr) 45px 45px 52px 58px 74px 74px'")), 'r1.2 old tracks');
   assert.ok(red(checkThisWeek, m("    set[cur] = 1;\n", "")), 'r1.4 current week dropped when empty');
-  assert.ok(red(checkThisWeek, m("    var nWeek = wk ? wk.length : null;", "    var nWeek = (data.tournaments||[]).filter(function(t){ return t.weekStart === activeWeek; }).length;")), 'r1.4 eyebrow follows the chip');
   assert.ok(red(checkThisWeek, m("      if(wk) return wk.length;", "")), 'r1.4 chip counts shard rows only');
   assert.ok(red(checkThisWeek, m("  rows.forEach(t => { const k = key(t.city || t.name); if (seen.has(k)) return; seen.add(k);", "  [].forEach(t => { const k = key(t.city || t.name); if (seen.has(k)) return; seen.add(k);")), 'r1.4 header = registry only');
-  assert.ok(red(checkThisWeek, m("    var loaded = wk ? wk.filter(function(e){ return e.hasList; }).length : 0;", "    var loaded = 99;")), 'r1.4 lists beyond the set');
   assert.ok(red(checkRanksNames, m("    if(byKey && namesAgree(p.name, byKey.name, true)) return byKey;", "    if(byKey) return byKey;")), 'r1.5 key trusted over a disagreeing name');
   assert.ok(red(checkRanksNames, m("    return (Number.isFinite(m) && m > 0) ? { rank: m, src: 'atp' } : null;", "    return null;")), 'r1.5 seeds-only ranks');
-  assert.ok(red(checkRanksNames, m("(isBye ? '' : (rk ? '#'+rk.rank : '—'))", "(isBye ? '' : (rk ? '#'+rk.rank : ''))")), 'r1.5 blank unknown rank');
-  assert.ok(red(checkRanksNames, m("      var nm = displayName(p);", "      var nm = fmtName(p);")), 'r1.6 cut names printed as the source cut them');
   assert.ok(red(checkRanksNames, m("    return fmtName(p, true);", "    return fmtName(p);")), 'r1.6 unresolved cut mid-name');
-  assert.ok(red(checkNoPublished, m("    if(t.regime === 'draw') bits.push('official draw');", "    bits.push('published '+shortDate(t.sourcePublished));\n    if(t.regime === 'draw') bits.push('official draw');")), 'r1.7 published back');
-  assert.ok(red(checkEmptyCopy, m("' in the week of ' + weekRangeHtml(activeWeek)", "' in ' + weekRangeHtml(activeWeek)")), 'r1.8 old copy');
-  assert.ok(red(checkEmptyCopy, m("      return mon.getDate() + '–' + sun.getDate() + ' ' + MON[mon.getMonth()];", "      return mon.getDate() + '-' + sun.getDate() + ' ' + MON[mon.getMonth()];")), 'r1.8 hyphen');
 });

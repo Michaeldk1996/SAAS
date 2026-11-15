@@ -67,47 +67,11 @@ ok('win-detection uses the player-oriented `eliminated` flag', /p\.eliminated/.t
 ok('win-detection does NOT parse resultDisplay (winner-oriented scoreline)', !/resultDisplay/.test(block));
 ok('win-detection does NOT re-introduce "a > b" scoreline compare', !/parts\[0\]\s*>\s*parts\[1\]/.test(block));
 
-// ---- Source guard: "Include eliminated" must actually surface eliminated players. ----
-// Founder ruling 2026-09-08 (interaction a5a9819d): "on all rounds + include eliminated,
-// you should see their data until the round they were, simple." Without a larger cap
-// the toggle is a no-op on a live event (survivors sort deepest and fill all 4 slots),
-// which was the reopened complaint. Guard: the expanded cap exists AND the pool logic
-// partitions alive/knocked-out so the deepest eliminated are guaranteed a slot.
-console.log('=== source guard: Include-eliminated reveal (TEN-170 postscript) ===');
-// [2026-09-09] The cap became UNCAPPED (TOURX_PP_CAP_INCL = null): a fixed 8 truncated
-// the field at a position, not a boundary. These guards now lock the uncapped contract —
-// the combined list must reach the grid whole — in place of the old numeric-slice guard.
-ok('TOURX_PP_CAP_INCL constant defined', /TOURX_PP_CAP_INCL\s*=\s*(null|\d+)/.test(html));
-ok('Include-eliminated is uncapped (TOURX_PP_CAP_INCL = null)',
-   /const\s+TOURX_PP_CAP_INCL\s*=\s*null\b/.test(html));
-ok('Include-eliminated renders the whole combined list (no unconditional slice)',
-   /const\s+combined\s*=\s*alive\.concat\(knockedOut\);/.test(html)
-   && /TOURX_PP_CAP_INCL\s*==\s*null\s*\?\s*combined\s*:/.test(html));
-ok('Include-eliminated no longer truncates the alive group to TOURX_PP_CAP',
-   /const\s+alive\s*=\s*progressable\.filter\(isAlive\);/.test(html));
-ok('Include-eliminated guarantees knocked-out players a slot (alive/knockedOut partition)',
-   /const\s+knockedOut\s*=\s*progressable\.filter\(p\s*=>\s*!isAlive\(p\)\)/.test(html));
-
-// ---- Source guard: the 2-rounds-deep ENTRY RULE (a separate, older ruling). ----
-// Founder ruling 2026-08-24, REAFFIRMED 2026-09-09 (interaction 0ac7a8ed, answer
-// "keep"): Player progression is only available once a player is 2 rounds into the
-// tournament — "a single round is one data point, so there's no trend to compare."
-// This is why uncapping "Include eliminated" tops out at the players with depth >= 2
-// (64 of 128 at US Open 2026) and every R128 loser stays out: they have one populated
-// cell and no progression. Loosening this to >= 1 is a one-line change that would
-// silently contradict the ruling AND the empty-state copy, so both are locked here:
-// the rule at BOTH filter sites (hand-picked players and the auto-filled pool), and
-// the user-facing "2 rounds" wording that explains it. Depth is drawDepth (byes
-// counted), not matches played — a bye recipient is 2 rounds in after one win.
-console.log('=== source guard: 2-rounds-deep entry rule (founder 2026-08-24, reaffirmed 2026-09-09) ===');
-const depthGates = html.match(/p\.drawDepth\s*>=\s*\d+/g) || [];
-ok('entry rule present at both filter sites (selected players + auto pool)',
-   depthGates.length === 2, depthGates);
-ok('entry rule threshold is 2 rounds everywhere (not loosened to 1)',
-   depthGates.length > 0 && depthGates.every(g => />=\s*2$/.test(g)), depthGates);
-ok('empty-state copy still explains the 2-round rule (rule and wording cannot drift apart)',
-   (html.match(/>2 rounds</g) || []).length === 2,
-   (html.match(/>2 rounds</g) || []).length);
+// ---- RETIRED 2026-11-15 (founder "Design wins", Tournaments tab rebuild): the "Include eliminated" cap guards
+// (TOURX_PP_CAP_INCL, alive / knockedOut partition) and the 2-rounds-deep entry rule (p.drawDepth >= 2, ">2 rounds<"
+// copy) locked the old Player progression renderer. The rebuilt Reports (tournaments-reports.js) shows every player of
+// the quarter filter by default, with the design's Reached filter (Any round + the last three rounds) in place of the
+// auto-fill toggle and the entry rule; tools/test-tt-reports.mjs locks the new behaviour.
 
 // ---- Invariant on a fixture mirroring the reported US Open 2026 scenario. ----
 console.log('=== ranking invariant (fixture) ===');

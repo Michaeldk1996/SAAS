@@ -83,123 +83,39 @@ test('r2.1 Montreal / Toronto: one official name, two rows — the city tells th
   assert.deepEqual(P.reg.filter(t => /Roland|French/.test(t.name)).map(t => t.name), ['Roland Garros']);
 });
 
-// ── 2 · the rail: rows, search, keys ─────────────────────────────────────────────────────────────────────────────────
-const railFor = (q, week) => make([lineSrc('const TOURX_TIER_CODE'), fnSrc('tourxTierCode'), lineSrc('const TOURX_TIER_CHIP_MONO_ALL'),
-  fnSrc('tourxEsc'), fnSrc('tpEventLabel'), fnSrc('tpPageEvents'), fnSrc('tourxOverviewListHtml')].join('\n'), 'tourxOverviewListHtml()',
-  { tourxState: { tsQ: q, tsSel: 'Turin' }, tourxActiveWeekNames: () => new Set(week || ['Shanghai']) });
-const rows = h => [...h.matchAll(/class="tourx-ovrow[^"]*" onclick="tourxSelectCondition\('((?:[^'\\]|\\.)*)'\)"[\s\S]*?text-overflow:ellipsis;[^"]*">([^<]*)<\/span>/g)]
-  .map(m => ({ key: m[1].replace(/\\'/g, "'"), name: m[2] }));
-
-test('r2.2 the rail prints the one name on every row and keeps the KEY in its click (state = data key)', () => {
-  const r = rows(railFor(''));
-  // founder 2026-10-26: the pre-round-2 rail (64 rated events) + the two listUnrated events, Brussels and Lyon (France)
-  assert.equal(r.length, 66);
-  assert.ok(r.some(x => x.key === 'Brussels') && r.some(x => x.key === 'Lyon (France)'), 'the unrated 2026 events are listed');
-  assert.equal(r.filter(x => x.name === 'Roland Garros').length, 1, 'one event, one row');
-  for (const x of r) assert.equal(x.name, P.tourxEventName(x.key), x.key);
-  assert.ok(r.some(x => x.key === 'Turin' && x.name === 'ATP Finals'));
-  assert.ok(r.some(x => x.key === 'Shanghai' && x.name === 'Shanghai Masters'), 'the This-week row too');
-  // the two Canadian rows can never ellipsise into the same words: the name takes up to two lines, it is not cut at one
-  assert.match(railFor(''), /-webkit-line-clamp:2;line-height:1\.3;">Canadian Open · Montreal<\/span>/);
-  // control: no row prints the bare city of a renamed event
-  for (const city of ['Turin', 'Cincinnati', 'Beijing', 'Tokyo', 'Monte Carlo', 'Vienna', 'Basel']) assert.ok(!r.some(x => x.name === city), city);
-});
-
+// ── 2 · search ───────────────────────────────────────────────────────────────────────────────────────────────────
+// RETIRED 2026-11-15 (founder ruling 1, Tournaments tab rebuild: "city names as the design prints them, not tourxEventName"):
+// r2.2 "the rail prints the one name" and both r2.3 checks (hero title, Compare all rows, ROI / What players say titles, the
+// ROI join) locked the deleted renderTourxOverview / tourxOverviewListHtml / tourxConditionsPanelHtml / tourx*PanelHtml. The
+// rebuilt Overview (tournaments-overview.js) prints the city key; its rail search still reads tourxEventSearchText, and its
+// ROI join reads tournament-market.json archiveNames by the key (tools/test-tt-overview.mjs, test-ten242-rulings.mjs phase 2 B).
+const findKeys = q => P.reg.map(t => t.name).filter(k => P.tourxEventSearchText(k).includes(String(q).toLowerCase()));
 test('r2.2 search: "Cincinnati Open" and "Cincinnati" both find it; the city, the official name and another spelling all work', () => {
-  const find = q => rows(railFor(q)).map(x => x.name);
-  assert.deepEqual(find('Cincinnati Open'), ['Cincinnati Open']);
-  assert.deepEqual(find('cincinnati'), ['Cincinnati Open']);
-  assert.deepEqual(find('Turin'), ['ATP Finals']);
-  assert.deepEqual(find('ATP Finals'), ['ATP Finals']);
-  assert.deepEqual(find('china open'), ['China Open']);
-  assert.deepEqual(find('Beijing'), ['China Open']);
-  assert.deepEqual(find('Monte-Carlo'), ['Monte-Carlo Masters']);
-  assert.deepEqual(find('Monte Carlo'), ['Monte-Carlo Masters']);
-  assert.deepEqual(find('French'), ['Roland Garros'], 'the other catalog spelling of the same event');
-  assert.deepEqual(find('Canadian').sort(), ['Canadian Open · Montreal', 'Canadian Open · Toronto']);
-  assert.deepEqual(find('Toronto'), ['Canadian Open · Toronto']);
-  assert.deepEqual(find('Antwerp'), ['Antwerp']);
-  // control: a word in no name finds nothing
-  assert.match(railFor('Zzyzx'), /No tournament matches/);
-});
-
-// ── 3 · hero, Compare all, overlays ──────────────────────────────────────────────────────────────────────────────────
-test('r2.3 the hero title, the Compare all rows and the ROI / What players say overlay titles print the one name', () => {
-  const stub = name => ({ name, category: 'ATP Finals', surface: 'hard', abstractSpeed: 1.36, altitude: 240, speedCat: 'Fast' });
-  const hero = make(fnSrc('tourxConditionsPanelHtml'), 'tourxConditionsPanelHtml()', {
-    tourxState: { tsSel: 'Turin' }, tourxResolveCondition: stub, tourxKnobPct: () => 50, tourxRankLineHtml: () => '', tourxCap: s => s,
-    tourxConditionsProse: () => '', tourxBounce: () => '', tourxQuotesCardHtml: () => '', tourxSpeedSeriesHtml: () => '', tourxRoiPairHtml: () => '',
-    tpPointsDefendHtml: () => '', tpHowItPlaysHtml: () => '', tpFavDogHtml: () => '',
-    tourxReliabilityHtml: () => '', tourxReportCtaHtml: () => '' });
-  assert.match(hero, /letter-spacing:-0\.015em;color:var\(--text\);">ATP Finals<\/span>/);
-  assert.doesNotMatch(hero, />Turin</, 'control: the key is not printed');
-  const shell = fnSrc('tourxOverlayShell');
-  const roi = make(shell + '\n' + fnSrc('tourxRoiPanelHtml'), 'tourxRoiPanelHtml()', { tourxState: { tsSel: 'Montreal' }, tourxResolveCondition: stub });
-  assert.match(roi, /aria-label="Canadian Open · Montreal · favourites and underdogs"/);
-  const qp = make(shell + '\n' + fnSrc('tourxQuotesPanelHtml'), 'tourxQuotesPanelHtml()', { tourxState: { tsSel: 'Hamburg' }, tourxResolveCondition: stub,
-    tourxQuotesFor: () => [{ player: 'A. Zverev', year: 2025, text: 'x' }], tourxQuoteAttrib: () => '2025', tourxQuoteText: () => '“x”', tourxEscHtml: s => String(s) });
-  assert.match(qp, /aria-label="Hamburg Open · what players say"/);
-  const cmp = make([fnSrc('tourxMedian'), fnSrc('tourxEsc'), shell, fnSrc('tourxSpeedPanelHtml')].join('\n'), 'tourxSpeedPanelHtml()', { tourxState: { tsSel: 'Tokyo' } });
-  const names = [...cmp.matchAll(/onclick="tourxSelectCondition\('((?:[^'\\]|\\.)*)'\)"[\s\S]*?text-overflow:ellipsis;[^"]*">([^<]*)<\/span>/g)].map(m => [m[1].replace(/\\'/g, "'"), m[2]]);
-  assert.equal(names.length, 64);
-  for (const [k, n] of names) assert.equal(n, P.tourxEventName(k), k);
-  assert.ok(names.some(([k, n]) => k === 'Tokyo' && n === 'Japan Open'));
-});
-
-test('r2.3 the ROI overlay joins on the archive names, never on the printed name (Hamburg 565 / Antwerp 260 unchanged)', () => {
-  const ro = fnSrc('tourxRenderOverlays');
-  assert.match(ro, /const mkt = c && tourxMarketFor\(c\.name\);/, 'the market row is read by the registry KEY');
-  assert.match(ro, /initialTournamentNames: names,/);
-  assert.match(ro, /initialTournamentFilter: mkt\.archiveFilter \|\| null,/);
-  assert.match(ro, /initialTournamentLabel: typeof tourxEventName === 'function' \? tourxEventName\(c\.name\) : c\.name,/, 'only the chip label is the printed name');
-  for (const f of ['tourxRoiPairHtml', 'tourxReliabilityHtml']) assert.match(fnSrc(f), /const mkt = tourxMarketFor\(c\.name\);/, f);
-  assert.match(fnSrc('tourxQuotesCardHtml'), /const list = tourxQuotesFor\(c\.name\);/);
+  assert.deepEqual(findKeys('Cincinnati Open'), ['Cincinnati']);
+  assert.deepEqual(findKeys('cincinnati'), ['Cincinnati']);
+  assert.deepEqual(findKeys('ATP Finals'), ['Turin']);
+  assert.deepEqual(findKeys('china open'), ['Beijing']);
+  assert.deepEqual(findKeys('Beijing'), ['Beijing'], 'the city key itself (the printed and official names are China Open)');
+  assert.deepEqual(findKeys('Monte-Carlo'), ['Monte Carlo']);
+  assert.deepEqual(findKeys('French'), ['Roland Garros'], 'the other catalog spelling of the same event');
+  assert.deepEqual(findKeys('Toronto'), ['Toronto']);
+  assert.deepEqual(findKeys('Zzyzx'), []);
 });
 
 // ── 4 · Reports ──────────────────────────────────────────────────────────────────────────────────────────────────────
-test('r2.4 Reports: the tournament picker prints the one name + its monogram; the click and state keep the key', () => {
-  const el = { innerHTML: '' };
-  const env = { document: { getElementById: id => (id === 'tourxReports' ? el : null) }, tournamentProgression: { fetchedAt: '2026-10-09T02:00:00Z', tournaments: { Shanghai: {}, Tokyo: {}, Beijing: {} } },
-    tourxState: { tour: 'Tokyo', view: 'round' }, tourxBuildTournament: n => ({ name: n }), TOURX_ROUND_LABELS: [], tourxActiveLabels: null,
-    tourxPlayerViewHtml: () => '', tourxH2HViewHtml: () => '', tourxRoundViewHtml: () => '', tourxCloseMatchSheet: () => {} };
-  make([fnSrc('tournamentInitials'), fnSrc('tourxRpEsc'), fnSrc('tourxEsc'), fnSrc('tourxReportYear'), fnSrc('tourxCapsLbl'), fnSrc('tourxSegItem'), fnSrc('renderTourxReports')].join('\n'), 'renderTourxReports()', env);
-  const chips = [...el.innerHTML.matchAll(/<span class="tx-seg( on)?" onclick="tourxSelectTour\('([^']+)'\)"[^>]*><span[^>]*>([^<]+)<\/span>([^<]+)<span/g)].map(m => [m[2], m[3], m[4], !!m[1]]);
-  assert.deepEqual(chips, [['Shanghai', 'SM', 'Shanghai Masters', false], ['Tokyo', 'JO', 'Japan Open', true], ['Beijing', 'CO', 'China Open', false]]);
-  assert.equal(env.tourxState.tour, 'Tokyo', 'the state still holds the key');
+// RETIRED 2026-11-15 (founder ruling 1, Tournaments tab rebuild: "city names as the design prints them, not
+// tourxEventName"): the two r2.4 checks — the old Reports picker printing sfEventName + a monogram, and the old
+// match-stats sheet header / empty lines printing the event name — locked the deleted renderTourxReports /
+// tourxMatchSheetHtml. The rebuilt Reports (tournaments-reports.js) prints the city key as the design does:
+test('r2.4 Reports (rebuild): the tournament pill and the sheet meta print the city key, as the design does', () => {
+  const tt = readFileSync(join(dirname(fileURLToPath(import.meta.url)), 'tournaments-reports.js'), 'utf8');
+  assert.match(tt, /data-act="tour" data-v="\$\{esc\(n\)\}">\$\{esc\(n\)\} <span class="tt-rp-pfig">/);
+  assert.match(tt, /const meta = \[M\.name \+ \(M\.year/);
+  assert.doesNotMatch(tt, /tourxEventName|sfEventName/, 'the rebuilt Reports never renames the event');
 });
 
-test('r2.4 Reports: the match-stats sheet header and the empty-state lines print the one name', () => {
-  const box = { TOURX_METRICS: [{ key: 'firstServePct', label: '1st serve %', kind: 'pct' }], tourxActiveLabels: ['R32', 'R16', 'QF', 'SF', 'F'],
-    tournamentProgression: { fetchedAt: '2026-10-05T10:00:00Z' }, tourxTournamentCategory: () => 'ATP 500' };
-  const sheet = make(['tourxFmt', 'tourxMsFmt', 'tourxSurname', 'tourxRpEsc', 'tourxReportYear', 'tourxRoundOutcome', 'tourxPlayerScore', 'tourxSetsToWin', 'tourxMatchSheetHtml'].map(fnSrc).join('\n'),
-    'tourxMatchSheetHtml', box);
-  const mk = (name, opp) => ({ name, opponents: [null, null, opp], results: [null, null, '2 - 0'], eliminated: false, eliminatedKnown: true, maxWonIdx: 2, drawDepth: 3,
-    data: { firstServePct: [null, null, 70] } });
-  const T = { name: 'Tokyo', rounds: ['R1', 'R2', 'QF'], roundLabels: ['R32', 'R16', 'QF', 'SF', 'F'], players: [mk('C. Alcaraz', 'J. Lehecka'), mk('J. Lehecka', 'C. Alcaraz')] };
-  const h = sheet(T, 'C. Alcaraz', 2);
-  assert.match(h, /Japan Open 2026 · QF · hard · Alcaraz won/);
-  assert.doesNotMatch(h, /Tokyo 2026/, 'control: the key is not printed');
-  // the "no box scores yet" / "not played yet" / progression empty lines name the event the same way
-  const printed = (html.match(/\$\{typeof tourxEventName === 'function' \? tourxEventName\(T\.name\) : T\.name\}/g) || []).length;
-  assert.equal(printed, 6, 'round view (4) + player progression (2) print the event through tourxEventName');
-  assert.doesNotMatch(fnSrc('tourxRoundViewHtml') + fnSrc('tourxPlayerViewHtml'), /\$\{T\.name\}/, 'a raw ${T.name} is printed');
-});
-
-// ── 5 · Entry list ───────────────────────────────────────────────────────────────────────────────────────────────────
-test('r2.5 Entry list: an ATP-tour row prints the one name; a Challenger / ITF row or an off-registry name keeps its own', () => {
-  const render = make(['levelGroup', 'tierCode', 'countCell', 'hasList', 'renderTournament'].map(innerFn).join('\n'), 'renderTournament', { shortDate: () => '26 Oct' });
-  const nameOf = t => (render(t, 0).match(/letter-spacing:-0\.005em;color:var\(--text\);[^"]*">([^<]*)<\/span>/) || [])[1];
-  const row = (name, city, tier) => ({ name, city, tier, weekStart: '2026-10-26', sections: [] });
-  assert.equal(nameOf(row('Basel', 'Basel', 'ATP 500')), 'Swiss Indoors');
-  assert.equal(nameOf(row('Vienna', 'Vienna', 'ATP 500')), 'Vienna Open');
-  assert.equal(nameOf(row('Paris', 'Paris', 'ATP 1000')), 'Paris Masters');
-  assert.equal(nameOf(row('China Open', 'Beijing', 'ATP 500')), 'China Open');
-  assert.equal(nameOf(row('AITO Hangzhou Open', 'Hangzhou', 'ATP 250')), 'Hangzhou', 'an ATP 250 prints the registry name');
-  assert.equal(nameOf(row('Brussels', 'Brussels', 'ATP 250')), 'Brussels', 'not in the registry: the shard\'s own words');
-  // control: a Challenger in a registry city is NOT the tour event
-  assert.equal(nameOf(row('Rome (CH 75)', 'Rome', 'Challenger')), 'Rome (CH 75)');
-  assert.equal(nameOf(row('M25 Vienna', 'Vienna', 'ITF')), 'M25 Vienna');
-});
+// ── 5 · Entry list: RETIRED 2026-11-15 (founder ruling 1, Tournaments tab rebuild: the Entry list prints the city key as the
+// export does, never tourxEventName — tournaments-entry.js, locked in tools/test-tt-entry.mjs).
 
 // ── 6 · H2H suggestion chips ─────────────────────────────────────────────────────────────────────────────────────────
 test('r2.6 the H2H suggestion chip prints the event\'s one name ("Shanghai" → Shanghai Masters); the pair keeps the board word', () => {
@@ -348,24 +264,7 @@ test('r3.3 Matches board: the card head, the story strip and the chips print the
   assert.deepEqual([...state.tournaments], ['ATP Shanghai'], 'the selection is still the data name');
 });
 
-test('r3.4 Entry list: "Canadian Open" in a Toronto year is Canadian Open · Toronto — the row\'s city breaks a shared official name', () => {
-  // the index alone sends every shared spelling to ONE event (control: this is the defect the city fixes)
-  for (const s of ['Canadian Open', 'National Bank Open', 'Rogers Cup', 'Canada Masters']) assert.equal(P.sfEventKey(s), 'Montreal', s);
-  for (const s of ['Canadian Open', 'National Bank Open', 'Rogers Cup', 'Canada Masters']) assert.equal(P.sfEventKey(s, 'Toronto'), 'Toronto', s + ' / Toronto');
-  assert.equal(P.sfEventKey('Canadian Open', 'Montréal'), 'Montreal');
-  // a city never moves an event onto a DIFFERENT one
-  assert.equal(P.sfEventKey('Shanghai', 'Toronto'), 'Shanghai');
-  assert.equal(P.sfEventKey('Basel', 'Vienna'), 'Basel');
-  assert.equal(P.sfEventKey('Nowhere Open', 'Toronto'), null);
-  const render = make(['levelGroup', 'tierCode', 'countCell', 'hasList', 'renderTournament'].map(innerFn).join('\n'), 'renderTournament', { shortDate: () => '27 Jul' });
-  const nameOf = t => (render(t, 0).match(/letter-spacing:-0\.005em;color:var\(--text\);[^"]*">([^<]*)<\/span>/) || [])[1];
-  const row = (name, city) => ({ name, city, tier: 'ATP 1000', weekStart: '2026-07-27', sections: [] });
-  assert.equal(nameOf(row('Canadian Open', 'Toronto')), 'Canadian Open · Toronto');
-  assert.equal(nameOf(row('National Bank Open', 'Toronto')), 'Canadian Open · Toronto');
-  assert.equal(nameOf(row('Canadian Open', 'Montreal')), 'Canadian Open · Montreal');
-  assert.equal(nameOf(row('Toronto', 'Toronto')), 'Canadian Open · Toronto');
-  assert.equal(nameOf(row('Shanghai', 'Shanghai')), 'Shanghai Masters');
-});
+// r3.4 (the Entry list's Canadian Open · Toronto) RETIRED 2026-11-15 with r2.5 above (founder ruling 1: city key).
 
 test('r3.5 the ATP Cup prints "ATP Cup" (the cleaner strips "ATP " to "Cup"); other team events keep their names', () => {
   for (const s of ['Cup', 'ATP Cup', 'cup']) assert.equal(P.sfEventName(s), 'ATP Cup', s);

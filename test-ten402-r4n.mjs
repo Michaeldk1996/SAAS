@@ -138,28 +138,5 @@ test('r4 fix 3: no Sets value on Head to Head (or in trRowData) is built with " 
   assert.ok(/\bsets: [^\n]*?' - '/.test(fnSrc('fhH2hRowData')), 'control: the sweep regex finds a hyphen builder');
 });
 
-// ── fix 5 · Entry list empty state names the selected week ──────────────────────────────────────────────────────────
-// Apply: Tournaments → Entry list, pick a week with no list loaded (2–8 Nov): the title reads "No lists loaded for 2–8 Nov"
-// — the same range as that week's chip (U+2013 in Plex). The current week reads its range too.
-const EL0 = html.indexOf('window.EntryListsTab = (function(){');
-const elFn = name => sliceFrom(html.indexOf(`\n  function ${name}(`, EL0) + 1, name);
-const MONL = (() => { const a = html.indexOf('\n  var MON = [', EL0) + 1; assert.ok(a > 0, 'MON'); return html.slice(a, html.indexOf('\n', a)); })();
-test('r4 fix 5: "No lists loaded for {selected week}" — the chip\'s own range, never "this week"', () => {
-  const lab = new Function('sel', [MONL, elFn('keyToDate'), elFn('weekRangeLabel'), 'return weekRangeLabel(sel);'].join('\n'));
-  for (const [wk, want] of [['2026-11-02', 'No lists loaded for 2–8 Nov'], ['2026-10-26', 'No lists loaded for 26 Oct – 1 Nov'], ['2026-10-05', 'No lists loaded for 5–11 Oct']]) {
-    const body = { innerHTML: '' };
-    const src = [MONL, elFn('keyToDate'), elFn('weekRangeLabel'), elFn('weekRangeHtml'),
-      'var weeks = [], weekPicked = true, activeWeek = sel, data = { tournaments: [] };', elFn('render'), 'render(); return host.innerHTML;'].join('\n');
-    const out = new Function('sel', 'host', 'document', 'deriveWeeks', 'pickDefaultWeek', 'renderWeekTabs', 'renderHead', 'staleBannerHtml', 'hasList',
-      'weekEventCount', 'renderFreshness', src)(wk, body, { getElementById: () => body }, () => ['2026-10-05', '2026-10-12', '2026-10-19', '2026-10-26', '2026-11-02'],
-      () => '2026-10-05', () => {}, () => {}, () => '', () => false, () => 21, () => {});
-    const t = /<div class="el-empty__t">([\s\S]*?)<\/div>/.exec(out);
-    assert.ok(t, `${wk}: the empty state rendered`);
-    assert.equal(text(t[1]), want, `${wk}`);
-    assert.ok(text(t[1]).endsWith(lab(wk)), `${wk}: the title's range = the chip's range`);
-    assert.match(t[1], /<span class="el-ndash">–<\/span>/, `${wk}: the dash is set in Plex like the chips`);
-    assert.ok(!/this week/i.test(t[1]));
-    // control: the body sentence still names the same week, so the title and the sentence agree
-    assert.ok(text(out).includes('in the week of ' + lab(wk)), `${wk}: body names the week`);
-  }
-});
+// ── fix 5 (Entry list "No lists loaded for {week range}") RETIRED 2026-11-15: the Tournaments tab rebuild draws the export's
+// empty state ("No lists loaded for this week" + "…events in {week label}…", founder ruling 1) — tools/test-tt-entry.mjs.

@@ -34,6 +34,8 @@ import { dirname, join } from 'node:path';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const DASH = readFileSync(join(HERE, 'bsp-consult-dashboard.html'), 'utf8');
+// the Overview's ROI overlay (the Database mount call site) lives in tournaments-overview.js since the 2026-11-15 rebuild
+const OV = readFileSync(join(HERE, 'tournaments-overview.js'), 'utf8');
 // founder ruling 2026-10-25 (round 2 item 1.3): the two retirement rules, read from the one module
 const Settlement = createRequire(import.meta.url)(join(HERE, 'settlement.js'));
 const PIPE = readFileSync(join(HERE, 'bsp-pipeline.js'), 'utf8');
@@ -66,27 +68,6 @@ function literal(src, re) {
 }
 
 // ---------------------------------------------------------------- RULING 1
-test('ruling 1: the hero band word derives from courtSpeedCategory(), not the README ladder', () => {
-  assert.match(PIPE, /function courtSpeedCategory\(speed\)/,
-    'courtSpeedCategory() is the ruled single source of truth and must exist in the pipeline');
-
-  // The Tournaments detail column must read speedCat (courtSpeedCategory's output
-  // via tourxConditionRegistry), NOT a locally re-derived ladder (founder 2026-10-26: the Overview hero is back).
-  const detail = DASH.slice(DASH.indexOf('function tourxConditionsPanelHtml()'),
-                            DASH.indexOf('function tourxRankLineHtml'));
-  assert.ok(detail.length > 500, 'could not isolate the detail-column renderer');
-  assert.match(detail, /const bandWord = c\.speedCat/,
-    'the hero word must come from c.speedCat (courtSpeedCategory), not a local threshold');
-
-  // and the README's ladder must not be reintroduced anywhere on the page.
-  assert.ok(!/Medium-slow/.test(DASH_CODE),
-    'README §2.2\'s "Medium-slow" band is OVERRULED — it must not be rendered by the build');
-  assert.ok(!/as >= 1\.05 \? 'Fast'/.test(DASH_CODE),
-    'the old 3-band asLabel ladder (>=1.05) must not come back either');
-  assert.ok(!/1\.10 \? 'Fast'/.test(DASH_CODE) && !/0\.82 \? /.test(DASH_CODE),
-    'the README\'s four-band thresholds must not be re-implemented');
-});
-
 test('ruling 1: courtSpeedCategory() still partitions all 64 rated venues into 3 bands', () => {
   // A band word the page prints for an event it cannot classify would be a
   // fabricated label. Every rated venue must classify.
@@ -112,21 +93,6 @@ test('the court-speed table has ONE source: the two copies must stay identical',
 });
 
 // ---------------------------------------------------------------- RULING 2
-test('ruling 2: the five figures render bare, and the §5 sample gate survives', () => {
-  const roi = DASH.slice(DASH.indexOf('function tourxRoiPairHtml'), DASH.indexOf('function tourxReliabilityHtml'));
-  const rel = DASH.slice(DASH.indexOf('function tourxReliabilityHtml'), DASH.indexOf('function tourxReportCtaHtml'));
-  assert.ok(roi.length > 300 && rel.length > 300, 'could not isolate the ROI / reliability renderers');
-  for (const [name, body] of [['ROI', roi], ['reliability', rel]]) {
-    assert.ok(!/n\s*=\s*\$\{/.test(body) && !/'n='/.test(body) && !/"n="/.test(body),
-      `${name} must render a BARE percentage — the founder ruled against an inline n`);
-  }
-  // The gate is not decoration: it is the only thing between a thin future event
-  // and a confident-looking percentage, so it must still be wired, not deleted.
-  assert.match(DASH, /function tourxSampleGate\(n\)/, '§5 sample gate must remain in the build');
-  assert.match(roi, /tourxSampleGate\(/, 'the ROI cards must still consult the gate');
-  assert.match(rel, /tourxSampleGate\(/, 'reliability must still consult the gate');
-});
-
 test('the four prototype scaffolding formulas are absent (no fallback can emit a plausible number)', () => {
   // README: roiFav/roiDog/favRel/upsetRate are derived from court speed purely so
   // the mock stays self-consistent. A fallback formula standing in for a query is
@@ -149,14 +115,8 @@ test('ruling 3: a never-fetched entry list mints no ALT zero, and the gate polic
     'validate() must police ALT alongside MD and Q — checking only two of three is how this shipped');
 });
 
-test('the entry-list renderer tells a real zero apart from no data', () => {
-  // The other direction of item 6.3: `alt || '—'` dashed a TRUE zero (a loaded
-  // event with no alternates) exactly as if we had never fetched it.
-  assert.match(DASH, /function countCell\(v\)/, 'the count cell helper must exist');
-  const cell = DASH.slice(DASH.indexOf('function countCell(v)'), DASH.indexOf('function renderTournament'));
-  assert.match(cell, /var isNull = \(v == null\)/, 'null, not falsiness, must decide the dash');
-  assert.ok(!/\balt \|\| '—'\b/.test(DASH_CODE), 'the falsy-collapse that dashed a true zero has come back');
-});
+// 'the entry-list renderer tells a real zero apart from no data' moved with the renderer (founder 2026-11-15 rebuild):
+// tools/test-tt-entry.mjs checkDashes executes tournaments-entry.js — Montevideo ALT 0 prints 0, a missing count "—".
 
 // ------------------------------------------------------------- brief items
 // SUPERSEDED count: TEN-286 locked design/reference/portal-12a.html, whose nav carries Dropping Odds between
@@ -184,34 +144,10 @@ test('item 1.3: the entry-lists alias still routes rather than 404ing', () => {
     'the alias must select the Entry list section');
 });
 
-test('phase 2 C2: the quotes card renders ONLY when quotes exist — never a placeholder', () => {
-  // SUPERSEDES the phase-1 guard "What players say is not built". Phase 1 had no
-  // quote source; phase 2 imported 425 of them from the founder's sheet. The
-  // invariant that survives is the one that always mattered: nothing on this page
-  // may imply quotes exist for an event that has none. 19 of our 64 rated events
-  // have none and must show no card at all.
-  assert.match(DASH, /function tourxQuotesCardHtml\(c\)\{/);
-  const card = DASH.slice(DASH.indexOf('function tourxQuotesCardHtml(c){'),
-                          DASH.indexOf('function tourxQuotesPanelHtml'));
-  assert.match(card, /if \(!list\) return '';/,
-    'no quotes must return an EMPTY STRING — an empty node would still occupy the column gap');
-  const cardCode = code(card);
-  assert.ok(!/coming soon|not yet|no quotes|placeholder/i.test(cardCode),
-    'no empty state, no "coming soon", nothing that implies the data exists');
-
-  // FOUNDER TEN-401 f1 (2026-10-08) SUPERSEDES the 2026-09-19 "render verbatim" ruling: every note is the player's
-  // words only, in curly quotes — tourxQuoteClean strips dateline / "said X" / lead-in (test-ten401-f1a.mjs item 1).
-  assert.match(DASH, /return `“\$\{tourxEscHtml\(tourxQuoteClean\(qt\)\.text\)\}”`;/,
-    'the note renders as its cleaned words in one pair of curly quotes');
-
-  // C4: attribution shows only what exists. Never an invented year, never "n.d."
-  const attrib = DASH.slice(DASH.indexOf('function tourxQuoteAttrib(qt){'),
-                            DASH.indexOf('function tourxQuoteText'));
-  assert.match(attrib, /if \(qt\.year\) bits\.push/);
-  assert.ok(!/n\.d\.|unknown|—/.test(code(attrib)),
-    'a missing year contributes NOTHING to the attribution line, not a placeholder');
-});
-
+// Retired 2026-11-15 (founder "Design wins", tournaments tab rebuild — the old Overview renderer is gone): ruling 1 hero band word
+// (3-band → the design's 4-band label), ruling 2 sample gate on bare figures (n now in hover titles), C2 no-quotes = no card (the
+// design always draws the card; a dash), the speed-series span, TEN-401 items 3–7 (rail / hero / Compare all / overlay scrim /
+// seven-year chart without fill) and L1 ROI by sign (the design colours by gap to tour). The new Overview: tools/test-tt-overview.mjs.
 test('phase 2 B: the Database page is mountable, and the standalone call site is untouched', () => {
   assert.match(DASH, /function mount\(root, opts\)\{/, 'mount(root, opts) must exist');
   assert.match(DASH, /return \{.*\bmount:\s*mount\b.*\binit:\s*init\b.*$/m,
@@ -236,19 +172,19 @@ test('phase 2 B: the Database page is mountable, and the standalone call site is
   // clicked card was pooled from: any other source could make the panel show a
   // different population than the number the reader just clicked.
   assert.match(m, /state\.tournament=opts\.initialTournamentNames\.slice\(\);/);
-  assert.ok(!/initialTournament:\s*c\.name/.test(DASH_CODE),
+  assert.ok(!/initialTournament:\s*c\.name/.test(DASH_CODE + OV),
     'the catalog name must never be passed as the Database subject');
-  assert.match(DASH, /const names = mkt && mkt\.archiveNames;/,
+  assert.match(OV, /const names = mkt && mkt\.archiveNames;/,
     'the archive names must come from tournament-market.json, not be re-derived');
   // and no fallback: an event with no archive names opens nothing at all
-  assert.match(DASH, /if \(host && c && names && names\.length\)\{/);
+  assert.match(OV, /if \(host && c && names && names\.length\) root\.DatabaseTab\.mount\(/);
 
   // The filter must accept a SET — 28 of 61 events pool several sponsor strings.
   assert.match(DASH, /Array\.isArray\(state\.tournament\) \? state\.tournament : \[state\.tournament\]/);
   assert.match(DASH, /if\(!tSet \|\| !tSet\.length\) return out; if\(tSet\.indexOf\(r\[4\]\)<0\) continue;/);
 
   // The embed must carry data-page=database or every --db-* var is undefined.
-  assert.match(DASH, /data-db-root="roi" data-page="database"/,
+  assert.match(OV, /data-db-root="roi" data-page="database"/,
     'the mount root carries the attribute the --db-* custom properties are declared on');
   assert.match(DASH, /#dbBody, \[data-db="body"\]\{/,
     'an ID selector cannot match the embedded body');
@@ -262,17 +198,9 @@ test('phase 2 B: the Database page is mountable, and the standalone call site is
   assert.match(DASH, /inst\.side = opts\.side \|\| null;/);
 });
 
-test('item 6.1: the per-week absence fires on "nothing loaded", not "no events"', () => {
-  // The spec\'s own copy — "The ATP has {n} events in {week}. Their acceptance
-  // lists are not in the build yet" — is a sentence about a week that HAS events
-  // and no lists. Caught by a manufactured empty-week control: a 2-event week
-  // with nothing loaded was rendering two per-EVENT "not loaded" rows instead.
-  assert.match(DASH, /if\(!tourns\.length \|\| !tourns\.some\(hasList\)\)\{/,
-    'the week-level empty state must also fire when no event that week carries a list');
-  assert.match(DASH, /No lists loaded for ' \+ weekRangeHtml\(activeWeek\) \+ '/);   // TEN-402 r4 fix 5: the selected week
-  assert.match(DASH, /Acceptance list not loaded for this event yet\./);
-  assert.match(DASH, /Advance entry lists could not be updated/);
-});
+// 'item 6.1: the per-week absence fires on "nothing loaded"' RETIRED 2026-11-15 (founder ruling 1, design wins): the
+// export lists a week's events with "Names pending" and shows the week empty state only when the week has no event row;
+// the per-row "not loaded" body and the stale banner are gone with the old renderer (tools/test-tt-entry.mjs).
 
 // ===========================================================================
 // EXECUTED, not grepped.
@@ -313,79 +241,9 @@ function fnSource(src, sig) {
   return src.slice(i, k + 1);
 }
 
-test('EXECUTED: a never-fetched row dashes all three counts even on a shard that carries ALT: 0', () => {
-  // The exact shape the DEPLOYED artefact serves for a pending tournament.
-  const DEPLOYED_PENDING = { counts: { MD: null, Q: null, ALT: 0 }, sections: [],
-    name: 'M25 Somewhere', tier: 'ITF', surface: 'Hard', startDate: '2026-10-05', weekStart: '2026-10-05' };
-  const LOADED_NO_ALTS = { counts: { MD: 28, Q: 16, ALT: 0 }, sections: [{ title: 'Main Draw', players: [] }],
-    name: 'Real Event', tier: 'ATP 250', surface: 'Clay', startDate: '2026-10-05', weekStart: '2026-10-05', sourcePublished: '2026-09-15T20:30:00Z' };
-
-  const sandbox = [
-    'const MON=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];',
-    'function hasList(t){ return !!(t.sections && t.sections.length); }',
-    'function renderPlayers(){ return ""; }',
-    'function fmtName(p){ return p.name; }',
-    'function fmtStatus(){ return ""; }',
-    fnSource(DASH, 'function tierCode(tier){'),
-    fnSource(DASH, 'function shortDate(iso){'),
-    fnSource(DASH, 'function countCell(v){'),
-    fnSource(DASH, 'function renderTournament(t, idx){'),
-    'return renderTournament;',
-  ].join('\n');
-  const renderTournament = eval(`(function(){ ${sandbox} })()`);
-
-  // three right-aligned count cells, in grid order MD / Q / Alt
-  const cells = (html) => [...html.matchAll(/<span style="text-align:right;font-family:[^"]*font-weight:700;font-variant-numeric:tabular-nums;color:(var\(--[a-z0-9-]+\));">([^<]*)<\/span>/g)]   // TEN-376: colours are tokens
-    .map((m) => ({ colour: m[1], text: m[2] }));
-
-  const never = cells(renderTournament(DEPLOYED_PENDING, 0));
-  assert.equal(never.length, 3, 'expected three count cells');
-  assert.deepEqual(never.map((c) => c.text), ['—', '—', '—'],
-    'a never-fetched row must dash ALL THREE counts — the deployed shard\'s ALT: 0 must not reach the screen');
-  assert.deepEqual([...new Set(never.map((c) => c.colour))], ['var(--text-label)'],
-    'all three dashes must use the no-data colour (TEN-376: #6e7a93 → --text-label)');
-
-  // ...and the other direction: a REAL zero on a loaded row must survive.
-  const real = cells(renderTournament(LOADED_NO_ALTS, 1));
-  assert.deepEqual(real.map((c) => c.text), ['28', '16', '0'],
-    'a loaded event with no alternates must print 0 — "no alternates" is not "never fetched"');
-  assert.equal(real[2].colour, 'var(--text)', 'a real zero is real data and takes the data colour (TEN-376: #ebf1f2 → --text)');
-});
-
-test('EXECUTED: the speed-series trend states the year SPAN, not the number of points', () => {
-  const src = fnSource(DASH, 'function tourxSpeedSeriesHtml(c){');
-  const tourxSpeedSeriesHtml = eval(`(function(){ ${src} return tourxSpeedSeriesHtml; })()`);
-  const label = (html) => (html.match(/([+−]\d+\.\d\d) over (\d+) (yrs?)/) || []).slice(1);
-
-  // Brisbane's real data: two points, ONE year apart.
-  assert.deepEqual(label(tourxSpeedSeriesHtml({ as2023: null, as2024: 1.26, as2025: 1.23 })),
-    ['−0.03', '1', 'yr'], 'two adjacent seasons are a ONE-year move');
-  // Montreal's real data: two points either side of a hole, TWO years apart.
-  assert.deepEqual(label(tourxSpeedSeriesHtml({ as2023: 1.07, as2024: null, as2025: 1.02 })),
-    ['−0.05', '2', 'yrs'], 'a 2023->2025 move spans two years even though a season is missing');
-  // three points, two years.
-  assert.deepEqual(label(tourxSpeedSeriesHtml({ as2023: 1.10, as2024: 1.11, as2025: 1.11 }))[1], '2');
-
-  // and the honesty rules the brief is explicit about
-  const montreal = tourxSpeedSeriesHtml({ as2023: 1.07, as2024: null, as2025: 1.02 });
-  assert.ok(!/>2024</.test(montreal), 'a missing season must not be plotted or labelled');
-  assert.match(montreal, /Abstract court speed · 2023–2025/, 'the eyebrow states the real range');
-  // TEN-401 item 6: a white dot inside a 2px card-tone ring (one per real season).
-  const DOT = /width:9px;height:9px;border-radius:50%;background:var\(--text\);border:2px solid var\(--card\);/g;
-  assert.equal((montreal.match(DOT) || []).length, 2, 'exactly one dot per real season');
-
-  // a single season: one dot, single-year eyebrow, and NO trend (nothing to trend)
-  const one = tourxSpeedSeriesHtml({ as2023: null, as2024: 1.01, as2025: null });
-  assert.match(one, /Abstract court speed · 2024/);
-  assert.ok(!/Holding steady|Trending/.test(one), 'one point is not a trend');
-  assert.equal((one.match(DOT) || []).length, 1);
-
-  // no seasons at all: render nothing rather than an empty chart
-  assert.equal(tourxSpeedSeriesHtml({ as2023: null, as2024: null, as2025: null }), '');
-
-  // all-equal values must not divide by zero
-  assert.doesNotThrow(() => tourxSpeedSeriesHtml({ as2023: 1.00, as2024: 1.00, as2025: 1.00 }));
-});
+// 'EXECUTED: a never-fetched row dashes all three counts even on a shard that carries ALT: 0' moved with the renderer:
+// tools/test-tt-entry.mjs checkDashes runs the shipped tournaments-entry.js on a row with counts and no sections (three
+// grey dashes) and on the 7 Dec pending rows (nine dashes), plus its mutant.
 
 test('the second entry-list builder and its gate carry the same ruling', () => {
   // The draw shard has its own builder and its own QA gate. The gate REQUIRED
@@ -687,104 +545,6 @@ test('RULING: the profit chart plots by MATCH INDEX, not by date', () => {
 });
 
 // TEN-401 ticket item 7 (founder, step 7) supersedes the 2026-09-20 surface-tinted selection (gate 33f71aab).
-test('TEN-401 item 7: Compare all — matched row is the selected tile, white text, Ring-blue bars; columns and marks neutral', () => {
-  const i = DASH.indexOf('function tourxSpeedPanelHtml');
-  assert.ok(i > 0, 'tourxSpeedPanelHtml not found');
-  const fn = DASH.slice(i, DASH.indexOf('\n/* ---------- Section 1', i));
-  const fnCode = code(fn);
-  // matched row = the selected tile class (--selected + inset 16% ring), never a tint or an inset bar
-  assert.match(fn, /class="tourx-cmprow\$\{on \? ' on' : ''\}"/);
-  assert.match(DASH, /\.tourx-cmprow\.on\{ background:var\(--selected\); box-shadow:inset 0 0 0 1px var\(--edge-16\); \}/);
-  assert.ok(!/inset 2px 0 0|tintOf|SURF\[|hexA\(/.test(fnCode), 'a surface tint / inset bar survives on the matched row');
-  // white text, white value — no blue value
-  assert.match(fn, /color:\$\{on \? 'var\(--text\)' : 'var\(--text-soft\)'\}/);
-  assert.match(fn, /font-weight:700;color:var\(--text\);flex:none;">\$\{t\.abstractSpeed\.toFixed\(2\)\}/);
-  // bars: solid --bar for the matched event, --bar-2 (45%) for the rest
-  assert.match(fn, /background:\$\{on \? 'var\(--bar\)' : 'var\(--bar-2\)'\}/);
-  // columns card tone; marks = badges (--inner, no edge, grey)
-  assert.match(fn, /return `<div style="background:var\(--card\);display:flex;flex-direction:column;">/);
-  const head = /height:41px[\s\S]*?\$\{rows\.length\} · med/.exec(fn);
-  assert.ok(head, 'column header block not found');
-  assert.match(head[0], /background:var\(--inner\);color:var\(--text-label\);font-family:var\(--font-words\)/);
-  assert.ok(!/border:1px solid/.test(head[0]), 'the IND / OUT / CLY / GRS mark carries an edge');
-});
-
-test('TEN-401 item 7: every overlay is a pop-up sheet over a content-area scrim; Close is a control', () => {
-  const sh = fnSource(DASH, 'function tourxOverlayShell(opts){');
-  assert.match(sh, /inset:0 0 0 var\(--sf-side, 0px\)/, 'the scrim must start at the sidebar edge');
-  assert.match(sh, /background:var\(--backdrop\); backdrop-filter:blur\(3px\);clip-path:inset\(0\)/);
-  assert.match(sh, /background:var\(--card\);border:1px solid var\(--edge-10\);border-radius:16px;box-shadow:var\(--shadow-modal\)/);
-  assert.match(sh, /class="tourx-closebtn"[^>]*background:var\(--inner\)/);
-  assert.ok(!/border:1px solid var\(--edge-6\)/.test(sh), 'the sheet or its Close button still carries the old 6% panel edge');
-  // Esc + outside click + the sidebar closer
-  // Esc: a layer in the one handler (esc-nav.js, ESC brief 2026-10-21), open while any panel is
-  assert.match(DASH, /\{ id: 'tourx-overlay', z: \d+, isOpen: function\(\)\{ return !!\(tourxState\.speedPanel \|\| tourxState\.quotesPanel \|\| tourxState\.roiPanel\); \}, close: function\(\)\{ tourxCloseOverlays\(\); \} \}/);
-  assert.match(DASH, /if \(scrim && e\.target === scrim\) tourxCloseOverlays\(\);/);
-  assert.match(DASH, /\(\) => \{ if \(typeof tourxCloseOverlays === 'function'\) tourxCloseOverlays\(\); \}/);
-  // quote avatars: initials grey on --inner, no edge
-  const qp = fnSource(DASH, 'function tourxQuotesPanelHtml(){');
-  assert.match(qp, /border-radius:50%;background:var\(--inner\);display:inline-flex;[^"]*color:var\(--text-label\);/);
-});
-
-test('TEN-401 items 3–5: rail, hero scale and Overview blocks', () => {
-  const rail = fnSource(DASH, 'function tourxOverviewListHtml(){');
-  // selected row = selected tile, no surface wash; tier chip grey, no edge
-  assert.match(rail, /class="tourx-ovrow\$\{seld \? ' on' : ''\}"/);
-  assert.ok(!/TOURX_RAIL_SURF|background:\$\{bg\}/.test(rail), 'a surface-coloured row wash survives');
-  assert.match(rail, /border:none;color:var\(--text-label\);\$\{chipFont\}/);
-  // search = control: --inner, no edge
-  assert.match(rail, /class="tourx-search" style="display:flex;align-items:center;gap:10px;background:var\(--inner\);/);
-  assert.match(DASH, /#tourxOverview \.tourx-search\{ border:1px solid transparent; \}/);
-  const panel = fnSource(DASH, 'function tourxConditionsPanelHtml(){');
-  // item 4 (override): 8px track at 6% white, no gradient; white knob + 3px card ring, nothing else (founder 2026-10-26: restored)
-  assert.match(panel, /height:8px;border-radius:5px;background:var\(--track\);cursor:pointer;/);
-  assert.ok(!/linear-gradient/.test(code(panel)), 'the court-speed scale still carries a gradient');
-  assert.match(panel, /width:16px;height:16px;border-radius:50%;background:var\(--text\);border:3px solid var\(--card\);transform:translate\(-50%,-50%\);"/);
-  // Completed badge: inner, grey caps, no edge
-  assert.match(panel, /text-transform:uppercase;color:var\(--text-label\);background:var\(--inner\);border:1px solid transparent;[^`]*>Completed</);
-  // ROI cards: clickable tiles when they open something; report button: inner, white, 10% edge on hover only
-  const roi = fnSource(DASH, 'function tourxRoiPairHtml(c){');
-  assert.match(roi, /class="tourx-roitile open"/);
-  assert.match(DASH, /#tourxOverview \.tourx-roitile\{ background:var\(--card\); border:1px solid var\(--edge-7\);/);
-  assert.match(DASH, /#tourxOverview \.tourx-roitile\.open:hover\{ background:var\(--tile-hover\); border-color:var\(--edge-16\); \}/);
-  const cta = fnSource(DASH, 'function tourxReportCtaHtml(c){');
-  assert.match(cta, /class="tourx-reportbtn"[^>]*color:var\(--text\);background:var\(--inner\)/);
-  assert.ok(!/border:1px solid var\(--edge-10\)|var\(--bar\)/.test(cta), 'the report button carries a resting edge or a blue fill');
-  assert.match(DASH, /#tourxOverview \.tourx-reportbtn:hover\{ border-color:var\(--edge-10\); \}/);
-  // reliability bar: Ring blue on the 6% track
-  const rel = fnSource(DASH, 'function tourxReliabilityHtml(c){');
-  assert.match(rel, /background:var\(--track\);overflow:hidden;margin-top:11px;"><span style="display:block;height:100%;width:\$\{v\}%;background:var\(--bar\)/);
-});
-
-test('TEN-401 item 6: seven-year chart — no area fill, white 2.4px line, grey mono years', () => {
-  const src = fnSource(DASH, 'function tourxSpeedSeriesHtml(c){');
-  const f = eval(`(function(){ ${src} return tourxSpeedSeriesHtml; })()`);
-  const h = f({ as2023: 1.10, as2024: 1.08, as2025: 1.11 });
-  assert.ok(!/<path|linearGradient|fill="url/.test(h), 'an area fill (or its gradient) is drawn under the line');
-  assert.match(h, /<polyline [^>]*fill="none" stroke="var\(--text\)" stroke-width="2\.4"/);
-  assert.equal((h.match(/font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0\.06em;color:var\(--text-label\);">20\d\d</g) || []).length, 3);
-  assert.equal((h.match(/font-size:12\.5px;font-weight:700;color:var\(--text\);white-space:nowrap;">\d\.\d\d</g) || []).length, 3, 'value labels are mono white');
-});
-
-test('TEN-401 item 5 / L1: ROI yield is green / red by SIGN, grey within 1pp of the tour; a thin event is a dash, never 0', () => {
-  const src = fnSource(DASH, 'function tourxRoiPairHtml(c){');
-  const gate = (n) => n == null ? { mode: 'none' } : n >= 30 ? { mode: 'full' } : { mode: 'small' };
-  const run = (mkt) => eval(`(function(){ const tourxSampleGate = ${gate.toString()}; const tourxMarketFor = () => (${JSON.stringify(mkt)}); ${src} return tourxRoiPairHtml; })()`)({ name: 'X' });
-  const vals = (h) => [...h.matchAll(/font-size:26px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums;color:([^;]+);">([^<]+)</g)].map(m => [m[1], m[2]]);
-  const base = { roiFav: -1.8, roiDog: -7 };
-  assert.deepEqual(vals(run({ n: 1949, roiFav: 0.3, roiDog: -12, baseline: base, archiveNames: ['Wimbledon'] })),
-    [['var(--pos)', '+0.3%'], ['var(--neg)', '−12.0%']], 'beyond 1pp: green above the tour, red below, true minus');
-  assert.deepEqual(vals(run({ n: 987, roiFav: -2.0, roiDog: -7.5, baseline: base, archiveNames: ['Madrid'] })),
-    [['var(--text-label)', '−2.0%'], ['var(--text-label)', '−7.5%']], 'within 1pp of the tour: grey');
-  assert.deepEqual(vals(run(null)), [['var(--text-label)', '—'], ['var(--text-label)', '—']], 'no join: a grey dash, not a zero');
-  // Founder ruling TEN-401 (card c572b773 roicol = sign): colour follows the SIGN, not the gap to the tour. Madrid
-  // underdogs −4.4% (tour −7.0) beat the tour by 2.6pp but lose money → red; a +0.5% favourite 2.3pp above the tour → green.
-  assert.deepEqual(vals(run({ n: 987, roiFav: 0.5, roiDog: -4.4, baseline: base, archiveNames: ['Madrid'] })),
-    [['var(--pos)', '+0.5%'], ['var(--neg)', '−4.4%']], 'sign, not gap: a losing yield above the tour is red');
-  // a card that opens nothing is a panel, not a clickable tile
-  assert.ok(!/tourx-roitile/.test(run({ n: 40, roiFav: 1, roiDog: 1, baseline: base, archiveNames: [] })));
-});
-
 test('TEN-401 Data 3 / L3: a quote ships only with a traceable source (resolved speaker + year)', () => {
   const src = fnSource(DASH, 'function tourxQuoteTraceable(q, ev){') + '\nconst tourxQuoteCleanCache = new WeakMap();\n'
     + fnSource(DASH, 'function tourxQuoteSurname(player){') + '\n' + fnSource(DASH, 'function tourxQuoteClean(qt){');
