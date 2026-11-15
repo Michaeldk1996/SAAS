@@ -1,17 +1,17 @@
 {
- "generatedAt": "2026-11-15T04:33:42.379Z",
+ "generatedAt": "2026-11-15T09:05:09.514Z",
  "tournaments": [
   {
    "key": "tour",
    "season": "2026",
    "name": "ATP Tour",
    "file": "news-ticker/tour-2026.json",
-   "items": 66,
+   "items": 67,
    "byType": {
-    "quote": 66
+    "quote": 67
    },
-   "latestTimestamp": "2026-11-14T20:24:00.000Z",
-   "updatedAt": "2026-11-15T00:55:58.924Z"
+   "latestTimestamp": "2026-11-15T08:15:57.803Z",
+   "updatedAt": "2026-11-15T09:05:09.514Z"
   },
   {
    "key": "1681",
@@ -51,6 +51,37 @@
   }
  ],
  "latest": [
+  {
+   "id": "quote-c73fbe4d1df6d5",
+   "type": "quote",
+   "playerId": "2406",
+   "opponentId": null,
+   "player": "T. Daniel",
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-15T08:15:57.803Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "It was up and down. Nice to score a goal and contribute to a penalty. Then it turns out how it turns out in the second half, but we held on and won",
+   "originalText": "Det var upp och ned. Skönt att göra mål och bidra till en straff. Sen blir det som det blir i andra halvlek, men vi höll undan och vann",
+   "language": "sv",
+   "translated": true,
+   "translationModel": "claude-opus-5-5",
+   "sourceName": "Expressen",
+   "sourceUrl": "https://www.expressen.se/sport/fotboll/landslaget/daniel-svensson-om-speciella-firandet/",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On Sweden's 3-2 win over Bosnia",
+   "sourceHash": "92a69aaeced4117f",
+   "publishedAt": "2026-11-15T09:05:09.514Z",
+   "file": "news-ticker/tour-2026.json"
+  },
   {
    "id": "quote-3b120e0fa8b308",
    "type": "quote",
@@ -1609,38 +1640,6 @@
    "interview": "on-court",
    "topic": "On his improvement",
    "sourceHash": "e1322a913927ee18",
-   "publishedAt": "2026-11-13T18:43:33.043Z",
-   "file": "news-ticker/1681-2026.json"
-  },
-  {
-   "id": "quote-d6e8f92d70691c",
-   "type": "quote",
-   "playerId": "366",
-   "opponentId": "2982",
-   "player": "T. A. Tirante",
-   "opponent": "A. Tabilo",
-   "tournament": "Stockholm",
-   "tournamentKey": "1681",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-13T15:15:00.000Z",
-   "timestampKind": "observed (Tennis TV published the clip then)",
-   "category": "Quotes",
-   "context": "after beating A. Tabilo",
-   "eventKey": "12179750",
-   "won": true,
-   "text": "Well, always we have nervous all the matches … I think I keep believing in me, in my team",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "On-court interview",
-   "sourceUrl": "https://www.tennistv.com/videos/4608795/stockholm-2026-sf-thiago-agustin-tirante-interview",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the clip's audio, transcribed by the interviews worker",
-   "interview": "on-court",
-   "topic": "On serving at 5-4 in the second set",
-   "sourceHash": "8cbd5b6cf5d21e48",
    "publishedAt": "2026-11-13T18:43:33.043Z",
    "file": "news-ticker/1681-2026.json"
   }
