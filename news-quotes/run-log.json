@@ -21881,6 +21881,184 @@
     "byOutlet": []
    },
    "alerts": []
+  },
+  {
+   "at": "2026-11-15T00:23:28.471Z",
+   "activeTournaments": [
+    "Finals - Turin",
+    "Stockholm"
+   ],
+   "tournaments": [
+    {
+     "name": "Finals - Turin",
+     "key": "2794",
+     "sources": [],
+     "fromOutlets": 0,
+     "counts": {
+      "candidates": 0,
+      "droppedNotVerbatim": 0,
+      "droppedNoPlayer": 0,
+      "droppedAmbiguous": 0,
+      "notTranslatedNoKey": 0,
+      "notTranslatedApiError": 0,
+      "droppedTranslationCheck": 0,
+      "droppedEnglishExists": 0,
+      "mergedSameQuote": 0,
+      "alreadyHeld": 0,
+      "items": 0,
+      "tokens": {
+       "input": 0,
+       "output": 0
+      },
+      "modelError": null,
+      "retryUrls": 0
+     },
+     "added": 0,
+     "held": 0,
+     "byCategory": {},
+     "finishedMatches": 0,
+     "matchesWithWinnerQuote": 0
+    },
+    {
+     "name": "Stockholm",
+     "key": "1681",
+     "sources": [
+      {
+       "name": "ATP Tour daily report (via the official tournament site)",
+       "articles": 25,
+       "candidates": 15,
+       "robotsStatus": 200,
+       "skippedByRobots": 0,
+       "unnamed": 4
+      }
+     ],
+     "fromOutlets": 47,
+     "counts": {
+      "candidates": 62,
+      "droppedNotVerbatim": 0,
+      "droppedNoPlayer": 0,
+      "droppedAmbiguous": 0,
+      "notTranslatedNoKey": 0,
+      "notTranslatedApiError": 0,
+      "droppedTranslationCheck": 0,
+      "droppedEnglishExists": 0,
+      "mergedSameQuote": 4,
+      "alreadyHeld": 0,
+      "items": 58,
+      "tokens": {
+       "input": 0,
+       "output": 0
+      },
+      "modelError": null,
+      "retryUrls": 0
+     },
+     "added": 0,
+     "held": 95,
+     "byCategory": {
+      "Quotes": 55,
+      "Interviews": 34,
+      "Injuries": 6
+     },
+     "finishedMatches": 11,
+     "matchesWithWinnerQuote": 10
+    },
+    {
+     "name": "ATP Tour",
+     "key": "tour",
+     "sources": [],
+     "fromOutlets": 8,
+     "counts": {
+      "candidates": 8,
+      "droppedNotVerbatim": 0,
+      "droppedNoPlayer": 0,
+      "droppedAmbiguous": 0,
+      "notTranslatedNoKey": 0,
+      "notTranslatedApiError": 0,
+      "droppedTranslationCheck": 0,
+      "droppedEnglishExists": 0,
+      "mergedSameQuote": 0,
+      "alreadyHeld": 0,
+      "items": 8,
+      "tokens": {
+       "input": 1352,
+       "output": 425
+      },
+      "modelError": null,
+      "retryUrls": 0,
+      "topicsAdded": 3
+     },
+     "added": 1,
+     "held": 66,
+     "byCategory": {
+      "Interviews": 60,
+      "Injuries": 6
+     },
+     "finishedMatches": 0,
+     "matchesWithWinnerQuote": 0
+    }
+   ],
+   "newItems": 1,
+   "tokens": {
+    "input": 1352,
+    "output": 425
+   },
+   "ttvInbox": {
+    "held": 56,
+    "routed": 46
+   },
+   "atpInbox": {
+    "held": 12,
+    "routed": 8
+   },
+   "outlets": {
+    "read": 131,
+    "withCandidates": 1,
+    "blocked": [
+     "Fox Sports Australia: the site refuses a plain request",
+     "El Deber: the site refuses a plain request",
+     "Tenniskafe: the site refuses a plain request",
+     "TenisovySvet.cz: the site refuses a plain request",
+     "The Indian Express: the site refuses a plain request",
+     "Israel Tennis Association: unexpected answer",
+     "ESPN México (Tenis): unexpected answer",
+     "Aftonbladet: unexpected answer",
+     "ESPN: unexpected answer"
+    ],
+    "articlesFetched": 7,
+    "paywalled": 1,
+    "unnamed": 6,
+    "byOutlet": [
+     {
+      "outlet": "Lance!",
+      "country": "Brazil",
+      "language": "pt",
+      "fetched": 1,
+      "candidates": 0
+     },
+     {
+      "outlet": "tennis MAGAZIN",
+      "country": "Germany",
+      "language": "de",
+      "fetched": 4,
+      "candidates": 1
+     },
+     {
+      "outlet": "AS (Diario AS)",
+      "country": "Spain",
+      "language": "es",
+      "fetched": 1,
+      "candidates": 0
+     },
+     {
+      "outlet": "Tuoi Tre",
+      "country": "Vietnam",
+      "language": "vi",
+      "fetched": 1,
+      "candidates": 0
+     }
+    ]
+   },
+   "alerts": []
   }
  ]
 }
