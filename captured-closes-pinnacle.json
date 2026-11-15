@@ -1,31 +1,31 @@
 {
- "generatedAt": "2026-11-14T16:20:21.346Z",
+ "generatedAt": "2026-11-15T13:40:07.251Z",
  "source": "matches.json git history: oddsMovement.books.Pinnacle (Oddspapi pinnacle, to 2026-09-02) and oddsMovement.chart.books[\"Pinnacle +30s\"] (Oddspapi pinnacle+30, from 2026-09-23)",
  "rule": "each side = last tick at or before the actual start (the earlier of Oddspapi trueStart and the card-state start: Oddspapi, the live-flip lower bound, the Bet105 switch or the first point — founder 2026-11-08; a cut at Oddspapi start before a verified start counts at the verified start only when the same tick, seen within 60 min and within 1.5pp of the Bet105 close, else it stays held back); both sides required; dropped when no unique actual start. seenAt = our last capture read before the start that confirmed the close (founder 2026-10-28); age = start - (seenAt or at)",
  "scannedThrough": {
-  "commit": "d99c8d4bf44754048062a58a09dc1bf5be4b375b",
-  "at": "2026-11-14T16:15:11Z"
+  "commit": "a720a728273403b3fa8fd7751829885796366393",
+  "at": "2026-11-15T13:30:09Z"
  },
- "commitsScanned": 6830,
+ "commitsScanned": 6853,
  "lastRun": {
-  "from": "2026-11-14T13:00:19Z",
-  "snapshots": 16,
-  "added": 0,
+  "from": "2026-11-14T16:15:11Z",
+  "snapshots": 24,
+  "added": 1,
   "replaced": 0,
   "seenBackfilled": 0,
   "earlierCutBackfilled": 0,
   "series": 16,
-  "kept": 11,
+  "kept": 12,
   "bySource": {
    "oddspapi": 1,
-   "bet105-switch": 9,
+   "bet105-switch": 10,
    "first-point": 1
   },
   "byBook": {
-   "Pinnacle +30s": 11
+   "Pinnacle +30s": 12
   },
   "dropped": {
-   "noStart": 5
+   "noStart": 4
   }
  },
  "stats": {
@@ -16094,6 +16094,28 @@
    "o2": 5.71,
    "oAt": "2026-11-13T18:38:04.890Z",
    "winner": "p1"
+  },
+  {
+   "eventKey": 12179707,
+   "date": "2026-11-15",
+   "p1Key": 1980,
+   "p2Key": 50323,
+   "p1Name": "A. Zverev",
+   "p2Name": "R. Jodar",
+   "p1": 1.362,
+   "p2": 3.44,
+   "at": "2026-11-15T09:42:19.860Z",
+   "trueStart": "2026-11-15T13:24:02.000Z",
+   "startSource": "bet105-switch",
+   "book": "Pinnacle +30s",
+   "round": null,
+   "qualifying": false,
+   "event": "ATP Finals - Turin",
+   "o1": 1.495,
+   "o2": 2.78,
+   "oAt": "2026-11-13T16:54:07.119Z",
+   "winner": null,
+   "seenAt": "2026-11-15T10:21:38.000Z"
   }
  ]
 }
