@@ -2311,3 +2311,28 @@ priced 1.01–1.50 win 1.3–2.6 points more than their no-vig price (yield ≈ 
 (yield ≈ −3.8%); the flip holds in 2010–17 and 2018–26 alike. Underdogs 2.00–2.99 are fair (≈ −2%), 3.00+ lose to the price
 (−7%, −11% at 4.00, −20% at 6.00+). New edges 1.21 / 1.36 / 1.51 / 1.71 / 2.00 / 2.50 / 3.00 / 4.00 / 6.00: the regime cuts
 plus resolution cuts keeping ~10% of matches per band (a 568-match career gets ~40–80 per band instead of 17–25).
+
+## 2026-11-15 — Tournaments tab rebuild (design_handoff_tournaments_tab; founder rulings)
+- **Why the design wins here:** Michael designed the whole tab (Overview · Entry list · Draw · Reports) in Claude Design and
+  locked it as one handoff. Ten weeks of per-item rulings (TEN-401 styling, the darker track, Ring-blue Reports bars, the
+  site event name on this tab, the rail reveal) had drifted the page away from any one design; restyling would not converge,
+  so the tab was rebuilt to the export and the contradicting rulings were retired by name (`tournaments.md` "The design is the
+  specification"). The rules files were rewritten rather than appended so no superseded rule survives beside its replacement.
+- **Colours:** the export's exact values live as `--tt-*` tokens and are mapped onto the foundation names inside the page
+  scope only (`tournaments-tab.css`), so the colour lint stays at zero and no other page moves. Night only, as every rebuilt
+  page.
+- **Dashes by ruling:** the prototype's chances, fair-odds and opening-price ranges, warnings and underdog lists were drawn
+  from invented formulas; we have no model for them yet, so the boxes ship with "—" rather than a plausible number.
+- **Court speed:** the only speed figures we held were Tennis Abstract's, which is not our data. They are off by default
+  behind one switch (`TT_SPEED_SOURCE`) so the founder can turn them back on without a code change.
+- **n on hover:** the design prints no counts; the data rule ("no figure without a count") is kept by putting every n and
+  its population in the figure's hover.
+- **Stats tab:** removed with How it plays, Favourites vs underdogs by round and Points to defend on this page; the builders
+  keep running because the Overview (1st serve points won) and the Draw's Statistics view read their files.
+- **Reports:** the 2026-10-24 winners-only list is reversed: every player of the round is ranked inside his quarter, and the
+  averages are the mean of the rows on screen, as the design draws them. Quarters still come only from the posted draw; a
+  player the draw does not place goes in a "Quarter —" group rather than a guessed quarter.
+- **Draw clicks:** a bracket name now selects the player (the route card), as the design does; Match analysis is still
+  reachable for finished draw matches through `draw-matches.json` / `matchById`.
+- **Head to Head hand-off:** `sfGoToH2H(keyA, keyB)` is the live receiver; `stn_h2h_pair` carries api-tennis keys (not the
+  design's names) so the receiver never joins on a name.

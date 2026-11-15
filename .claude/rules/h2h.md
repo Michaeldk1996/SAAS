@@ -194,9 +194,9 @@ no day work, checks or screenshots on this page until the founder reopens it.
   1000 and ATP 500; an ATP 250 keeps the registry's name; a name outside the registry keeps its own). Printed by the shared
   normalised rows (`fhRowFromForm`, `meRowFromCareer`, the Match analysis H2H rows, Market edge rows → ledgers, hot-line
   tips and the match-stats sheet header), `psGroupMeetings` (Playing style group headers) and this page's Tournament picker
-  + info box, the Suggested matchups chips ("… · Shanghai Masters", never "Shanghai") and — round 2, founder card
-  7bc622d5 — the whole Tournaments page (`tourxEventName`, `tournaments.md` "Event names"; Montreal / Toronto print
-  "Canadian Open · {city}" where both are listed). Display only — joins read the raw name; the chip's pair keeps the
+  + info box and the Suggested matchups chips ("… · Shanghai Masters", never "Shanghai"). *Exception (founder
+  2026-11-15, "Design wins"):* the Tournaments tab prints the design's city keys (`tournaments.md` "Event names on this
+  tab"). Display only — joins read the raw name; the chip's pair keeps the
   board's word. `psTourMeta` / `fhTournCode` read a printed name through its registry key. **Apply:** an event name
   anywhere on the site equals `sfEventName` of any of its spellings. **Test:** `test-ten402-r1x.mjs` fix 2,
   `test-ten402-r2n.mjs` r2.6.
