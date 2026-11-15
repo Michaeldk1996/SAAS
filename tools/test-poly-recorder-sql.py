@@ -10,7 +10,7 @@ Applies the real tools/drops-scope.sql (the api-tennis fixture spine), stubs the
   anon cannot push; compare() sets ours beside odds-api.io's 'Polymarket'; switch() renames ours to 'Polymarket' and
   takes it out of ten287_rec.config.books. CONTROL: a 0 / 1 ask is not a price (NULL, never a default).
 No Postgres binaries on this machine -> SKIP out loud (never a pass); CI runners carry them."""
-import os, sys, json
+import os, sys, json, datetime
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from _pinarch_pg import PG
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -49,7 +49,10 @@ create function ten287_rec.tier(p_league text, p_home text) returns text languag
   select case when coalesce(p_home, '') like '%/%' then null when p_league like 'ATP - %' then 'ATP'
               when p_league like 'Challenger - %' then 'Challenger' when p_league like '%ITF Men%' then 'ITF Men' else null end $$;
 """
-START = "2026-11-05T12:00:00Z"
+# Dated from today: drops_scope_ingest prunes fixtures that started more than 10 days ago, so a fixed date
+# turned this test red on 15 Nov 2026 (the 5 Nov fixture was deleted on ingest and the tier read NULL).
+DAY = (datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=1)).strftime("%Y-%m-%d")
+START = DAY + "T12:00:00Z"
 def row(**kw):
     r = {'pmId': '123456', 'title': 'Rolex Paris Masters: Alex Molcan vs Titouan Droguet', 'a': 'Alex Molcan', 'b': 'Titouan Droguet',
          'start': START, 'live': False, 'ended': False, 'askA': 0.45, 'sizeA': 1000, 'askB': 0.56, 'sizeB': 500}
@@ -65,7 +68,7 @@ try:
     for i in (1, 2):
         rc, err = pg.file(SQL); check(f'poly-recorder.sql applies (pass {i}: idempotent)', rc == 0, err)
     rc, out = q("select public.drops_scope_ingest($j$" + json.dumps([
-        {'event_key': 7001, 'event_date': '2026-11-05', 'event_time': '12:00', 'first': 'A. Molcan', 'second': 'T. Droguet',
+        {'event_key': 7001, 'event_date': DAY, 'event_time': '12:00', 'first': 'A. Molcan', 'second': 'T. Droguet',
          'type': 'Atp Singles', 'qual': 'False', 'tournament': 'ATP Paris', 'round': 'R32'}]) + "$j$::jsonb, 'test')", 'service_role')
     check('fixture in', rc == 0, out)
     rc, out = push([row()]); check('a push writes one tick', rc == 0 and out == '1', out)
