@@ -21,6 +21,10 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.abspath(os.path.join(HERE, "..", ".."))
 STALE_H = 24
 FETCH_STALE_H = 6
+# Events the calendar leaves out on purpose (build-calendar.mjs NOT_EVENTS): round robins and team events have no
+# knockout draw sheet, so they never need an id. Without this, the ATP Finals failed F1 every run of its week and the
+# run never reached its commit step (draws.json frozen from 8 Nov 2026, fixed 2026-11-15).
+NO_DRAW_SHEET = re.compile(r"^(Finals\b|Next ?Gen|Davis Cup|United Cup|Laver Cup)", re.I)
 
 
 def iso(s):
@@ -70,6 +74,9 @@ def run(board, draws, cal, now, last_fetch_run=None):
     today = now.date()
     fails, notes, active = [], [], []
     for name, ms in sorted(board_tournaments(board).items()):
+        if NO_DRAW_SHEET.search(name):
+            notes.append(f"{name}: no knockout draw sheet (round robin / team event) — not checked")
+            continue
         t = calendar_for(cal, name, today)
         if t == "inactive":
             continue

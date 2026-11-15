@@ -36,7 +36,7 @@ function fnSrc(name) {
 // ── A5 · W/UE bar ──
 const W = require(path.join(ROOT, 'wue-sheet.js'));
 const FX = JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures', 'wue-sheet', 'almaty-2026-r1.json'), 'utf8'));
-const parts = ['tourxWueBarHtml', 'tourxWueDisabledSeg', 'tourxSegItem', 'tourxCapsLbl', 'tourxEsc', 'tourxRpEsc'].map(fnSrc);
+const parts = ['tourxWueEntry', 'tourxWueBarHtml', 'tourxWueDisabledSeg', 'tourxSegItem', 'tourxCapsLbl', 'tourxEsc', 'tourxRpEsc'].map(fnSrc);
 check('bar functions present in the page', parts.every(Boolean), parts.map((p, i) => p ? '' : i).join(' '));
 function bar(entry) {
   const box = { window: { WueSheet: W }, tournamentProgression: { tournaments: { T: entry } } };

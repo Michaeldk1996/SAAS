@@ -27,6 +27,8 @@ const VERIFIED = {
   7485: { header: 'BNP Paribas Fortis European Open · Brussels · 19 October — 25 October 2026' },
   496: { header: 'Grand Prix Auvergne-Rhone-Alpes · Lyon, France · 19 October — 25 October 2026' },
   5014: { header: 'Rolex Shanghai Masters · Shanghai · 7 October — 18 October 2026' },
+  // Header-verified 2026-11-15 (protennislive.com/posting/2026/429/mds.pdf).
+  429: { header: 'Bybit Stockholm Open · Stockholm, Sweden · 8 November — 14 November 2026' },
 };
 // Header-verified events whose Wikipedia article carries no atptour link (Shanghai, Lyon): the article is still the
 // source of the dates; the id comes from the verified sheet.
@@ -41,6 +43,8 @@ const ID_BY_ARTICLE = {
 const WIKIDATA_SERIES = {
   '2026 Erste Bank Open': 'Q300007',   // Vienna
   '2026 Swiss Indoors': 'Q299174',     // Basel
+  '2026 Stockholm Open': 'Q299745',    // Stockholm (P3456 = 429; added 2026-11-15: no id in the article, so the draw
+                                       // check failed F1 every run from 8 Nov and draws.json stopped committing)
 };
 const NOT_EVENTS = /–|ATP Tour|ATP Challenger|WTA|Davis Cup|United Cup|Laver Cup|Next Gen|ATP Finals|in tennis|ITF|Billie Jean King|Masters 1000 tournaments/;
 const MONTHS = ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'];
@@ -137,4 +141,4 @@ async function main() {
   console.log(`calendar-${SEASON}: ${rows.length} events with an id (${rows.filter((r) => r.verified).length} header-verified), `
     + `${noId.length} articles without an id, ${ambiguous.length} ambiguous, ${rows.filter((r) => !r.startDate).length} without parsable dates`);
 }
-if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) main().catch((e) => { console.error(e.message); process.exit(1); });
+if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) main().catch((e) => { console.error(e.message, e.cause || ""); process.exit(1); });

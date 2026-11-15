@@ -60,11 +60,37 @@ function harness(failEarly) {   // failEarly: how many times the first chunk fai
   check('no reachable global dispatcher → plain fetch (no options), the fetch still completes', t && t.matches.length === 7 && (h.calls.opts || []).every(o => o === undefined));
   globalThis[SYM] = had;
   global.Date = RD;
+  // ── finished draws keep their results (founder 2026-11-15: "even the completed draws are back to the first round") ──
+  // The event left the board, so it is built from its OWN week (draws.json start − 9 … end + 1), from the one shared fetch.
+  global.Date = class extends RD { constructor(...a) { super(...(a.length ? a : ['2026-11-01T14:00:00Z'])); } static now() { return new RD('2026-11-01T14:00:00Z').getTime(); } };
+  h = harness(0);
+  t = await h.P.buildTournamentProgression('ATP Shanghai');
+  check('CONTROL (the bug): 2 weeks after the final, the board-only 15-day window finds 0 of Shanghai\'s matches', t === null || t.matches.length < 7, t && t.matches.length);
+  h = harness(0);
+  t = await h.P.buildTournamentProgression('ATP Shanghai', { from: '2026-09-28', to: '2026-10-19' }, new RD('2026-09-28T00:00:00Z'));
+  check('a finished draw built from its own week: all 7 matches, not partial', t && t.matches.length === 7 && !('partial' in t), JSON.stringify(t && t.partial));
+  h = harness(0);
+  const tw = await h.P.buildTournamentProgression('ATP Shanghai', { from: '2026-10-12', to: '2026-10-19' }, new RD('2026-09-28T00:00:00Z'));
+  check('the shared wider fetch is cut back to the event\'s window (from 12 Oct: the 4 later matches only)', tw && tw.matches.length === 4, tw && tw.matches.length);
+  h = harness(99);
+  const tl = await h.P.buildTournamentProgression('ATP Shanghai', { from: '2026-10-14', to: '2026-10-19' }, new RD('2026-09-28T00:00:00Z'));
+  check('a failed chunk outside the event\'s window does not mark it partial (from 14 Oct: 3 matches)', tl && tl.matches.length === 3 && !('partial' in tl), JSON.stringify(tl && tl.partial));
+  global.Date = RD;
+  const D = (s, e, extra) => Object.assign({ startDate: s, endDate: e, main: { status: 'posted' } }, extra);
+  const draws = { tournaments: { 1: D('2026-10-19', '2026-10-25', { city: 'Brussels' }), 2: D('2026-11-02', '2026-11-08', { city: 'Nanterre', feedCity: 'Paris' }),
+    3: D('2026-11-08', '2026-11-14', { city: 'Stockholm' }), 4: D('2026-11-16', '2026-11-22', { city: 'Metz' }), 5: Object.assign(D('2026-11-02', '2026-11-08', { city: 'Athens' }), { main: { status: 'not_posted' } }) } };
+  const ev = h.P.drawResultEvents(draws, ['ATP Stockholm', 'ATP Finals - Turin'], new RD('2026-11-15T09:00:00Z'));
+  check('drawResultEvents: every posted draw off the board, by feed city, over start − 9 … end + 1 (Paris 24 Oct – 9 Nov)',
+    JSON.stringify(ev) === JSON.stringify([{ city: 'Paris', tourName: 'ATP Paris', from: '2026-10-24', to: '2026-11-09' }]), JSON.stringify(ev));
+  check('…skips an event on the board (Stockholm), one not started (Metz), one not posted (Athens), one past the 14-day keep (Brussels)',
+    !ev.some(e => /Stockholm|Metz|Athens|Brussels/.test(e.city)));
+  check('…keeps it through the 14th day after its end (Brussels on 8 Nov), its window capped at today',
+    JSON.stringify(h.P.drawResultEvents(draws, [], new RD('2026-11-08T09:00:00Z')).find(e => e.city === 'Brussels')) === JSON.stringify({ city: 'Brussels', tourName: 'ATP Brussels', from: '2026-10-10', to: '2026-10-26' }));
   // ── on screen ──
   const html = fs.readFileSync(path.join(ROOT, 'bsp-consult-dashboard.html'), 'utf8');
   const fn = n => { const i = html.indexOf(`function ${n}(`); let d = 0, j = html.indexOf('{', i); for (; j < html.length; j++) { if (html[j] === '{') d++; else if (html[j] === '}' && --d === 0) break; } return html.slice(i, j + 1); };
   const box = { tournamentProgression: { tournaments: { Shanghai: { partial: { failedRanges: [{ from: '2026-10-05', to: '2026-10-12', reason: 'failed: fetch failed' }] } }, Almaty: {} } } };
-  vm.createContext(box); vm.runInContext(fn('tourxPartialText') + '\nthis.a = tourxPartialText("Shanghai"); this.b = tourxPartialText("Almaty");', box);
+  vm.createContext(box); vm.runInContext(fn('tourxWueEntry') + '\n' + fn('tourxPartialText') + '\nthis.a = tourxPartialText("Shanghai"); this.b = tourxPartialText("Almaty");', box);
   check('Reports + W/UE say it in plain words: "Partial data: the score feed did not answer for 5 Oct–12 Oct — …"', box.a === 'Partial data: the score feed did not answer for 5 Oct–12 Oct — matches played on those days are missing here', box.a);
   check('a complete tournament says nothing', box.b === '');
   // Founder 2026-11-15 ("Design wins"): Reports allows no line above the cards, so the partial line rides the "?" hover.

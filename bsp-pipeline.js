@@ -3113,7 +3113,36 @@ function progressionSheetMatches(played, roundLabelByName) {
     });
 }
 
-async function buildTournamentProgression(tourName) {
+// Draw events still listed in draws.json whose event has left the board (founder 2026-11-15: "even the completed draws
+// are back to the first round"). The progression used to be built only for events on matches.json (~4 days), so a
+// finished event's draw lost every result while build-draws.py kept the draw for 14 days after its end. Each one is
+// rebuilt every run from its own week (qualifying from start − 9 days, as build-draws.py fetches it, to end + 1 day),
+// from the same fixtures fetch. Pure; `today` a Date.
+const DRAW_RESULTS_KEEP_DAYS = 14;   // = build-draws.py's prune (an event whose end is > 14 days ago leaves draws.json)
+function drawResultEvents(draws, activeTourNames, today) {
+  const day = 86400000, iso = d => d.toISOString().slice(0, 10);
+  const onBoard = new Set();
+  for (const t of activeTourNames || []) {
+    onBoard.add(String(t).replace(/^ATP\s+/, '').trim());
+    for (const c of tourFeedCities(t)) onBoard.add(c);
+  }
+  const out = [];
+  for (const t of Object.values((draws && draws.tournaments) || {})) {
+    if (!t || !t.startDate || !t.endDate || !t.main || t.main.status !== 'posted') continue;
+    const city = t.feedCity || t.city;
+    if (!city || onBoard.has(city)) continue;
+    const start = new Date(t.startDate + 'T00:00:00Z'), end = new Date(t.endDate + 'T00:00:00Z');
+    if (end.getTime() < today.getTime() - DRAW_RESULTS_KEEP_DAYS * day - day) continue;
+    if (start.getTime() > today.getTime()) continue;   // not started: nothing to show
+    const to = new Date(Math.min(end.getTime() + day, today.getTime()));
+    out.push({ city, tourName: 'ATP ' + city, from: iso(new Date(start.getTime() - 9 * day)), to: iso(to) });
+  }
+  return out.sort((a, b) => a.city.localeCompare(b.city));
+}
+
+// win (optional): { from, to } ISO days — build from this window only (a draw event that left the board); fetchFrom
+// (optional Date): the start of the ONE shared fetch, so every event of a run reads the same fixtures call.
+async function buildTournamentProgression(tourName, win, fetchFrom) {
   const bareName = tourName.replace(/^ATP\s+/, '').trim();
   // Names to match the feed's `tournament_name` against: for a sponsor-brand
   // event the feed uses the host city (Montreal/Toronto), never the brand; for
@@ -3121,10 +3150,17 @@ async function buildTournamentProgression(tourName) {
   const feedCities = tourFeedCities(tourName);
   const matchNames = feedCities.length ? feedCities : [bareName];
   const today = new Date();
+  const isoDay = d => d.toISOString().slice(0, 10);
   const windowStart = new Date(today.getTime() - PROGRESSION_WINDOW_DAYS * 86400000);
+  const from = win && win.from ? win.from : isoDay(windowStart), to = win && win.to ? win.to : isoDay(today);
+  const fetchStart = fetchFrom && fetchFrom < windowStart ? fetchFrom : windowStart;
 
-  const fixtures = await fetchProgressionFixtures(windowStart, today);
-  if (!fixtures) return null;
+  const fetched = await fetchProgressionFixtures(fetchStart, today);
+  if (!fetched) return null;
+  // Same rows as before for an event on the board (its 15-day window); a wider shared fetch is cut back to this window,
+  // and a failed chunk marks this event partial only when it overlaps the window.
+  const fixtures = fetched.filter(f => !f.event_date || (f.event_date >= from && f.event_date <= to));
+  if (fetched.failedRanges) fixtures.failedRanges = fetched.failedRanges.filter(r => r.to >= from && r.from <= to);
 
   const played = fixtures.filter(f =>
     f.tournament_name && matchNames.some(nm => f.tournament_name.includes(nm)) &&
@@ -8062,8 +8098,13 @@ async function runPipeline() {
   const activeTournamentNames = [...new Set(matches.map(m => m.tour).filter(Boolean))];
   console.log(`Building tournament progression for ${activeTournamentNames.length} active tournament(s): ${activeTournamentNames.join(', ')}`);
   const progressionTournaments = {};
+  // Draw events off the board (see drawResultEvents): one shared fetch reaches back to the earliest of their weeks.
+  let drawEvents = [];
+  try { drawEvents = drawResultEvents(JSON.parse(fs.readFileSync('draws.json', 'utf8')), activeTournamentNames, new Date()); }
+  catch (e) { console.log(`Draw results: draws.json not read (${e.message}) — finished draws get no results this run`); }
+  const progFetchFrom = drawEvents.length ? new Date(drawEvents.map(d => d.from).sort()[0] + 'T00:00:00Z') : null;
   for (const tourName of activeTournamentNames) {
-    const progression = await buildTournamentProgression(tourName);
+    const progression = await buildTournamentProgression(tourName, null, progFetchFrom);
     if (!progression) continue;
     // Keyed by the name the client's Tournaments catalog gates the report on. For
     // an ordinary event that's the bare tournament name (stripping "ATP "), e.g.
@@ -8076,9 +8117,18 @@ async function runPipeline() {
     const key = tourFeedCities(tourName).length ? progression.feedName : bare;
     progressionTournaments[key] = progression;
   }
+  // Kept apart from `tournaments` (Reports, the Progression tab's draw average and the board readers stay on this week's
+  // events): only the Draw tab and its W/UE sheet read `drawResults`.
+  const drawResults = {};
+  for (const d of drawEvents) {
+    const progression = await buildTournamentProgression(d.tourName, { from: d.from, to: d.to }, progFetchFrom);
+    if (progression) drawResults[d.city] = progression;
+  }
+  if (drawEvents.length) console.log(`Draw results for events off the board: ${Object.keys(drawResults).join(', ') || 'none'} (of ${drawEvents.map(d => d.city).join(', ')})`);
   writeJsonAtomic('tournament-progression.json', {
     fetchedAt: new Date().toISOString(),
     tournaments: progressionTournaments,
+    drawResults,
   });
   console.log(`Wrote tournament-progression.json (${Object.keys(progressionTournaments).length}/${activeTournamentNames.length} tournaments had enough finished rounds for a progression chart).`);
 
@@ -8531,7 +8581,7 @@ if (require.main === module) {
   });
 }
 
-module.exports = { profileRoster, writeProfileShardsAtomic, applyQualifyingRule, venueHintKeyFor, buildDrawMatchesStore, feedSetScores, drawFixtureRow, feedRoundCode, liveCardCheck, isCardableFixture, fixtureLiveState, olympicSurface, fixtureSurface, modelH2hMatches, modelMatchStarted, modelEventKey, modelPreMatchCandidates, buildModelOutput, isUnplayedFinishedFixture, buildMatchObject, buildUpcomingMatchObject, buildOneProfile, profileNameFromFixtures, findApiTennisFixture, fixtureFirstIsHome, pinnacleOrFirst, normalizeName, venueAndCourtSpeedFor, courtConditionsFor, courtSpeedRecordFromFixtures, COURT_CONDITIONS, ocsMatchKey, ocsNameKey, fetchH2H, h2hCountsInAtpRecord, H2H_NOT_ATP_RECORD, FORM_NOT_ATP_RECORD, recentFormPct, capRecentFormMatches, PROFILE_FORM_WINDOW, tourLabelOf, aggregatePlayerWue, aggregateStatsFromFixtures, isCancelledFixture, profileRosterFloorVerdict, lastPublishedRosterCount, profilesWithoutTournamentHistory, PROFILE_ROSTER_BACKSTOP, PROFILE_ROSTER_RATIO, MAX_OPPONENT_BUILDS_PER_RUN, isIndoorTournament, loadTournamentCourtMap, fetchRecentSinglesFixtures, recentFormFromFixtures, progressionSheetMatches, buildTournamentProgression, extractProgressionMetrics, buildSetStatsFromFixture, buildMatchStatsFromFixture, extractFormShards, buildRecentFormForMatch,
+module.exports = { drawResultEvents, profileRoster, writeProfileShardsAtomic, applyQualifyingRule, venueHintKeyFor, buildDrawMatchesStore, feedSetScores, drawFixtureRow, feedRoundCode, liveCardCheck, isCardableFixture, fixtureLiveState, olympicSurface, fixtureSurface, modelH2hMatches, modelMatchStarted, modelEventKey, modelPreMatchCandidates, buildModelOutput, isUnplayedFinishedFixture, buildMatchObject, buildUpcomingMatchObject, buildOneProfile, profileNameFromFixtures, findApiTennisFixture, fixtureFirstIsHome, pinnacleOrFirst, normalizeName, venueAndCourtSpeedFor, courtConditionsFor, courtSpeedRecordFromFixtures, COURT_CONDITIONS, ocsMatchKey, ocsNameKey, fetchH2H, h2hCountsInAtpRecord, H2H_NOT_ATP_RECORD, FORM_NOT_ATP_RECORD, recentFormPct, capRecentFormMatches, PROFILE_FORM_WINDOW, tourLabelOf, aggregatePlayerWue, aggregateStatsFromFixtures, isCancelledFixture, profileRosterFloorVerdict, lastPublishedRosterCount, profilesWithoutTournamentHistory, PROFILE_ROSTER_BACKSTOP, PROFILE_ROSTER_RATIO, MAX_OPPONENT_BUILDS_PER_RUN, isIndoorTournament, loadTournamentCourtMap, fetchRecentSinglesFixtures, recentFormFromFixtures, progressionSheetMatches, buildTournamentProgression, extractProgressionMetrics, buildSetStatsFromFixture, buildMatchStatsFromFixture, extractFormShards, buildRecentFormForMatch,
   // The Career-record pair. Exported together on purpose: their whole contract
   // is that the counts one returns are tallyable from the rows the other
   // returns, and that is what ten8-career-verify.js asserts.

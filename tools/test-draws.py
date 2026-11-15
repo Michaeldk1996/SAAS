@@ -6,7 +6,7 @@ Pinned inputs: six real official sheets (protennislive, fetched 2026-10-20) in t
   496 Lyon mds ("WC2" = wildcard + seed 2, entry "NG") · 5014 Shanghai mds (128, two halves).
 Run: python3 tools/test-draws.py
 """
-import copy, importlib.util, json, os, shutil, subprocess, sys, tempfile
+import copy, importlib.util, json, os, re, shutil, subprocess, sys, tempfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.abspath(os.path.join(HERE, ".."))
@@ -186,6 +186,14 @@ check("F5: fetcher silent > 6 h in an active week (host asleep / job disabled)",
       any(f.startswith("F5") for f in C.run(board, good, calj, now, C.iso("2026-10-18T09:00:00Z"))[1]))
 nolyon = copy.deepcopy(calj); nolyon["tournaments"] = [t for t in nolyon["tournaments"] if t["atpId"] != 496]
 check("F1: a board tournament this week with no ATP id", any(f.startswith("F1 Lyon") for f in C.run(board, good, nolyon, now)[1]))
+# 15 Nov 2026: the ATP Finals ("Finals - Turin", left out of the calendar on purpose) failed F1 every run of its week, and a
+# failed check skips the commit step, so draws.json froze. A round robin / team event has no knockout sheet: not checked.
+finals = [{"id": "past-8", "tour": "ATP Finals - Turin", "date": "2026-11-14", "finalScore": {"display": "6-4 6-4"}}]
+ff = C.run(finals, good, calj, C.iso("2026-11-14T20:00:00Z"))
+check("the ATP Finals (no draw sheet, not in the calendar) never fail F1", not any(f.startswith("F1") for f in ff[1]), ff)
+saved = C.NO_DRAW_SHEET; C.NO_DRAW_SHEET = re.compile(r"$^")
+check("CONTROL: without the exemption the Finals fail F1 (the 8–15 Nov freeze)", any(f.startswith("F1 Finals") for f in C.run(finals, good, calj, C.iso("2026-11-14T20:00:00Z"))[1]))
+C.NO_DRAW_SHEET = saved
 paris = [{"id": "past-9", "tour": "ATP Paris", "date": "2026-11-03", "finalScore": {"display": "6-4 6-4"}, "finishedAt": "2026-11-03T12:00:00Z"}]
 pf = C.run(paris, {"tournaments": {}}, calj, C.iso("2026-11-03T14:00:00Z"))
 check("board 'ATP Paris' finds the calendar's 2026 Rolex Paris Masters (city Nanterre) — F2, not a false F1",
@@ -201,7 +209,10 @@ check("calendar: Vienna 337 + Basel 328 from Wikidata P3456, unverified until a 
       ids.get(337, {}).get("idSource", "").startswith("wikidata-P3456") and ids.get(328, {}).get("idSource", "").startswith("wikidata-P3456")
       and not ids[337]["verified"] and not ids[328]["verified"] and ids[337]["city"] == "Vienna" and ids[328]["city"] == "Basel")
 check("calendar: no id is ever guessed — events without one are listed, not filled",
-      "2026 Stockholm Open" in calj["articlesWithoutId"] and not any("Stockholm" in (t["article"] or "") for t in calj["tournaments"]))
+      "2026 Libéma Open" in calj["articlesWithoutId"] and not any("Libéma" in (t["article"] or "") for t in calj["tournaments"]))
+check("calendar: Stockholm 429 from Wikidata P3456, header-verified 15 Nov (it had no id, so F1 failed every run from 8 Nov)",
+      ids.get(429, {}).get("idSource", "") == "wikidata-P3456 (Q299745)" and ids[429]["verified"] and ids[429]["city"] == "Stockholm"
+      and "2026 Stockholm Open" not in calj["articlesWithoutId"])
 check("calendar: non-empty (>= 40 events with an id)", len(calj["tournaments"]) >= 40, len(calj["tournaments"]))
 
 # ── founder rulings 2026-10-20: draws.json published as data only, then the W/UE quarters + BYE rows APPROVED (ruling

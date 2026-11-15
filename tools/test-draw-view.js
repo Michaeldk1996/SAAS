@@ -139,5 +139,15 @@ check('Paris qualifying: 28 slots in sections of 4 → Q1 14 of 14, Q2 7 of 7', 
 DV.set('kind', 'main');
 const WS = require(path.join(ROOT, 'wue-sheet.js'));
 check('the W/UE sheet finds the Paris draw by its feed name (status "R64: 13 of 24")', WS.drawFor(PX.draws, 'Paris') === pdraw && WS.roundStatus(PX.progression.tournaments.Paris, pdraw) === 'R64: 13 of 24');
+// Founder 2026-11-15 ("even the completed draws are back to the first round"): an event that has left the board keeps
+// its results in tournament-progression.json `drawResults`; the draw reads them there, the same as this week's events.
+{
+  const el2 = { innerHTML: '' };
+  DV.mount(el2, { draws, prog: { fetchedAt: '2026-10-20T12:00:00Z', tournaments: {}, drawResults: { Almaty: entry } }, board: [], tz: 'UTC' });
+  check('a finished event read from drawResults: its results stay placed ("9 of 12"), not back to the first round', /9 of 12/.test(el2.innerHTML));
+  const el3 = { innerHTML: '' };
+  DV.mount(el3, { draws, prog: { fetchedAt: '2026-10-20T12:00:00Z', tournaments: {} }, board: [], tz: 'UTC' });
+  check('CONTROL (the bug): without the event\'s results the same draw reads "0 of 12"', /0 of 12/.test(el3.innerHTML) && !/9 of 12/.test(el3.innerHTML));
+}
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

@@ -326,7 +326,8 @@ async function fetchLatest(tour) {
   const res = await fetch(`${PROGRESSION_URL}?_=${Date.now()}`, { cache: 'no-store' });
   if (!res.ok) throw new Error(`tournament-progression.json HTTP ${res.status}`);
   const data = await res.json();
-  const entry = data && data.tournaments ? data.tournaments[tour] : null;
+  // A finished draw's results live in `drawResults` once the event leaves the board (founder 2026-11-15).
+  const entry = (data && data.tournaments && data.tournaments[tour]) || (data && data.drawResults && data.drawResults[tour]) || null;
   if (!entry) throw new Error(`${tour} is no longer in the published progression data`);
   if (!Array.isArray(entry.matches)) throw new Error(`${tour}: published data has no per-match sheet rows yet`);
   // The official draw is optional: absent / unreachable → the sheet stays in match order (no quarters), never invented.
