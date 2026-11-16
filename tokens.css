@@ -228,3 +228,25 @@
   --pp-x-track:       #0A0D14;   /* v4 Live trading: the situation box's All / Happened / Did not track */
   --pp-x-shadow-box:  0 30px 80px rgba(0, 0, 0, 0.6);   /* v4 Live trading: the situation record / heatmap box shadow */
 }
+
+/* Database v2 (handoff design_handoff_database_v2, founder brief 2026-11-16 "pixel for pixel, identical colours"): the
+   export's own values, named apart from the foundation tokens. The Database maps them onto its surfaces inside
+   [data-db-root] (night only), so the standalone page and every embedded mount read them; nothing else does. */
+:root {
+  --db2-page:     #06070A;
+  --db2-card:     #0E1019;
+  --db2-inset:    #0C0E16;
+  --db2-raised:   #131623;
+  --db2-ink:      #E7E9EE;
+  --db2-ink-2:    #C6CCDB;
+  --db2-muted:    #8B96B5;
+  --db2-blue:     #5B9BFF;
+  --db2-blue-hov: #82B4FF;
+  --db2-blue-hv2: #8DB6FF;
+  --db2-green:    #3DD68C;
+  --db2-red:      #E0616F;
+  --db2-white:    #FFFFFF;
+  --db2-black:    #000000;
+  --db2-dark:     #07080D;   /* text on a solid blue button, the tick in a picked box */
+  --db2-shadow-menu: 0 12px 28px rgba(0, 0, 0, 0.45);
+}

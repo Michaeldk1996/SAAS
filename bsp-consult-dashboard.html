@@ -3400,6 +3400,66 @@ window.sfPlanLocks(null);   // locked until the account says Edge / Pro: no unlo
   .db-reset{ margin-left:auto; font-family:var(--db-ui); font-size:12.5px; font-weight:600; color:var(--text); background:none; border:none; cursor:pointer; padding:0; }   /* TEN-399 item 3: Reset is white, not blue */
   .db-reset:hover{ color:var(--text); }
 
+  /* ===== Database v2 shell (design_handoff_database_v2, founder brief 2026-11-16). Night only: inside every mount
+     ([data-db-root]) the foundation surfaces read the export's own values (--db2-* in tokens.css). Values are the
+     reference's inline styles (Database.dc.html L44-135), unrounded. ===== */
+  [data-db-root]{ --card:var(--db2-card); --inner:var(--db2-inset); --selected:var(--db2-raised);
+    --text:var(--db2-ink); --text-soft:var(--db2-ink-2); --text-label:var(--db2-muted);
+    --pos:var(--db2-green); --neg:var(--db2-red); --link:var(--db2-blue);
+    --db2-h6:color-mix(in srgb, var(--db2-white) 6%, transparent); --db2-h8:color-mix(in srgb, var(--db2-white) 8%, transparent);
+    --db2-h10:color-mix(in srgb, var(--db2-white) 10%, transparent); --db2-h16:color-mix(in srgb, var(--db2-white) 16%, transparent);
+    --db2-h18:color-mix(in srgb, var(--db2-white) 18%, transparent); --db2-h20:color-mix(in srgb, var(--db2-white) 20%, transparent); }
+  [data-db-root] .db-ctl{ background:var(--db2-card); border:1.25px solid var(--db2-h6); border-radius:14px; padding:4px 18px; box-shadow:none; }
+  [data-db-root] .db-ctltop{ display:grid; grid-template-columns:104px minmax(0,1fr) auto; align-items:center; gap:14px; padding:12px 0; background:none; border-radius:0; }
+  [data-db-root] .db-ctlbot{ display:grid; grid-template-columns:104px minmax(0,1fr); align-items:start; gap:14px; padding:12px 0;
+    background:none; border-top:1px solid var(--db2-h6); border-radius:0; }
+  [data-db-root] .db-rlab{ font-family:var(--db-ui); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--db2-muted); }
+  [data-db-root] .db-ctlbot > .db-rlab{ height:36px; display:flex; align-items:center; }
+  [data-db-root] .db-fctl{ display:flex; align-items:center; flex-wrap:wrap; gap:8px; min-width:0; }
+  [data-db-root] .db-fctl .db-zL, [data-db-root] .db-fctl .db-zR{ display:contents; }
+  [data-db-root] .db-fctl .db-zR.div{ padding:0; border:0; }
+  [data-db-root] .db-ctltop .db-seg{ display:inline-flex; justify-self:start; max-width:100%; overflow-x:auto; scrollbar-width:none; gap:3px;
+    background:var(--db2-inset); border:1px solid var(--db2-h6); border-radius:10px; padding:3px; }
+  [data-db-root] .db-ctltop .db-seg button{ padding:6px 16px; border-radius:7px; font-size:13px; font-weight:600; color:var(--db2-muted);
+    background:transparent; border:1px solid transparent; transition:none; }
+  [data-db-root] .db-ctltop .db-seg button.active{ font-weight:700; color:var(--db2-ink); background:var(--db2-raised); border-color:var(--db2-h16); }
+  [data-db-root] .db-reset2{ justify-self:end; font-family:var(--db-ui); font-size:12.5px; font-weight:600; color:var(--db2-blue); white-space:nowrap;
+    background:none; border:0; padding:0; cursor:pointer; }
+  [data-db-root] .db-reset2:hover{ color:var(--db2-blue-hov); }
+  [data-db-root] .db-ctlbot .db-reset{ display:none; }   /* one Reset filters, in the View row */
+  /* dropdown trigger: grey 12px label · 13px value · × · CSS chevron (L82-91) */
+  [data-db-root] .db-trig{ gap:8px; height:36px; padding:0 13px; border-radius:9px; font-size:13px; font-weight:600;
+    color:var(--db2-ink-2); background:transparent; border:1px solid var(--db2-h6); transition:none; }
+  [data-db-root] .db-trig.open{ color:var(--db2-ink); border-color:var(--db2-h16); }
+  [data-db-root] .db-trig.on{ color:var(--db2-ink); background:var(--db2-raised); border-color:var(--db2-h16); }
+  [data-db-root] .db-trig .db-tl{ font-size:12px; font-weight:500; color:var(--db2-muted); }
+  [data-db-root] .db-trig i{ max-width:190px; overflow:hidden; text-overflow:ellipsis; font-family:var(--db-ui); font-style:normal;
+    font-size:13px; font-weight:600; color:var(--db2-ink-2); }
+  [data-db-root] .db-trig.on i{ color:var(--db2-ink); }
+  [data-db-root] .db-trig .db-clear{ width:17px; height:17px; border:1px solid var(--db2-h18); font-size:10px; color:var(--db2-muted); }
+  [data-db-root] .db-caret{ display:block; flex:none; width:6px; height:6px; margin:-3px 2px 0 2px; box-sizing:border-box; font-size:0; color:transparent;
+    border-right:1.5px solid var(--db2-muted); border-bottom:1.5px solid var(--db2-muted); transform:rotate(45deg); }
+  /* menus (L93-104) */
+  [data-db-root] .db-menu, [data-db-root] .db-pop{ background:var(--db2-card); border:1px solid var(--db2-h10); border-radius:10px; padding:4px; box-shadow:var(--db2-shadow-menu); }
+  [data-db-root] .db-mrow, [data-db-root] .db-prow{ gap:8px; padding:6px 9px; border-radius:7px; font-size:12.5px; font-weight:500; color:var(--db2-ink-2); transition:none; }
+  [data-db-root] .db-mrow:hover, [data-db-root] .db-prow:hover{ background:var(--db2-inset); }
+  [data-db-root] .db-mrow.on, [data-db-root] .db-prow.on{ font-weight:700; color:var(--db2-ink); background:var(--db2-h6); box-shadow:none; }
+  [data-db-root] .db-box{ width:12px; height:12px; border-radius:3px; border:1px solid var(--db2-h20); }
+  [data-db-root] .db-mrow.on .db-box{ background:var(--db2-ink); border-color:var(--db2-ink); }
+  [data-db-root] .db-msearch{ background:var(--db2-card); }
+  [data-db-root] .db-msearch input{ height:32px; background:var(--db2-inset); border-radius:8px; font-size:12.5px; }
+  /* year range (L234-246) */
+  [data-db-root] .db-yr{ align-items:stretch; height:36px; box-sizing:border-box; border-radius:9px; background:transparent; border:1px solid var(--db2-h6); }
+  [data-db-root] .db-yr.on{ background:transparent; border-color:var(--db2-h16); }
+  [data-db-root] .db-yrlab{ display:inline-flex; align-items:center; padding:0 2px 0 13px; font-family:var(--db-ui); font-size:12px; font-weight:500; color:var(--db2-muted); }
+  [data-db-root] .db-yrsep{ padding:0 5px; font-size:12px; color:var(--db2-muted); }
+  [data-db-root] .db-yrend .db-trig, [data-db-root] .db-yrend .db-trig.open{ height:100%; background:transparent; border:0; box-shadow:none; }
+  [data-db-root] .db-yrend:first-of-type .db-trig{ padding:0 4px 0 10px; border-radius:0; }
+  [data-db-root] .db-yrend:last-child .db-trig{ padding:0 10px 0 4px; border-radius:0; }
+  [data-db-root] .db-yrend .db-trig i{ font-family:var(--db-mono); font-size:12px; font-weight:400; color:var(--db2-ink); }
+  [data-db-root] .db-menu.year{ top:calc(100% + 6px); min-width:96px; z-index:20; }
+  [data-db-root] .db-menu.year .db-mrow{ justify-content:space-between; gap:10px; font-family:var(--db-mono); font-size:12px; color:var(--db2-ink); }
+  [data-db-root] .db-menu.year .db-mrow.on{ background:var(--db2-h6); }
   /* TEN-242 phase 2: an ID selector cannot match the embedded mount, whose body
      is addressed by data-db. Both forms, one rule. */
   #dbBody, [data-db="body"]{ display:flex; flex-direction:column; gap:22px; }
@@ -3856,8 +3916,8 @@ window.sfPlanLocks(null);   // locked until the account says Edge / Pro: no unlo
           <button class="active" data-dbview="tour">Tour</button>
           <button data-dbview="tournaments">Tournament</button>
           <button data-dbview="players">Player</button>
-          <button data-dbview="ratings">Ratings</button>
           <button data-dbview="lines">Lines</button>
+          <button data-dbview="ratings">Ratings</button>
         </div>
       </div>
       <div class="db-ctlbot" id="dbFilters" data-db="filters"></div>
@@ -30253,6 +30313,7 @@ window.DatabaseTab = (function(){
     var lo=state.yearMin!=null?state.yearMin:y0, hi=state.yearMax!=null?state.yearMax:y1;
     var moved = !(lo===y0 && hi===y1);
     var box=el('div','db-yr'+(moved?' on':''));
+    box.appendChild(el('span','db-yrlab','Years'));   // Database v2: "Years 2010 to 2026" (design L234-246)
     function end(key, val, onPick){
       var w=trigger('', String(val), false, key, function(){
         return singleMenu(years.map(function(y){ return [y, String(y)]; }), val, onPick, false, 'year');
@@ -30261,7 +30322,7 @@ window.DatabaseTab = (function(){
       return w;
     }
     box.appendChild(end('y0', lo, function(v){ state.yearMin=v; if(state.yearMax!=null && v>state.yearMax) state.yearMax=v; }));
-    box.appendChild(el('span','db-yrsep','–'));
+    box.appendChild(el('span','db-yrsep','to'));
     box.appendChild(end('y1', hi, function(v){ state.yearMax=v; if(state.yearMin!=null && v<state.yearMin) state.yearMin=v; }));
     return box;
   }
@@ -30350,6 +30411,9 @@ window.DatabaseTab = (function(){
   function renderFilters(){
     var bar=q('filters'); if(!bar) return;
     bar.innerHTML='';
+    // Database v2: the Filters row = a caps label in a 104px track + the controls (design L55-57).
+    bar.appendChild(el('span','db-rlab','Filters'));
+    var _fc=el('div','db-fctl'); bar.appendChild(_fc); bar=_fc;
     // TEN-243 STEP 1.4 - the bar is TWO zones: the subject on the left, the
     // slicers on the right. The divider between them is applied below, and only
     // when the left zone actually rendered something, so on Tour the bar reads
@@ -33553,6 +33617,15 @@ window.DatabaseTab = (function(){
     // Bound per INSTANCE, not once per document: a second mount needs its own
     // tab clicks. The flag lives on the instance's own node.
     var inst=I, tabs=q('viewtabs');
+    var top=tabs && tabs.parentNode;
+    if(top && !top._dbShaped){
+      top._dbShaped=true;
+      var vl=el('span','db-rlab','View'); if(inst.lockSubject) vl.style.visibility='hidden';
+      top.insertBefore(vl, tabs);
+      var rs=el('button','db-reset2','Reset filters'); rs.type='button';
+      rs.onclick=function(){ use(inst); resetFilters(); render(); };
+      top.appendChild(rs);
+    }
     if(tabs && !tabs._dbBound){
       tabs._dbBound=true;
       tabs.addEventListener('click', function(e){
