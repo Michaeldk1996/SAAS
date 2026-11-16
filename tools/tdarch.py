@@ -1025,7 +1025,8 @@ TE_LEVELS = ('atp-q', 'atp-x', 'atp-nt', 'ch', 'ch-q', 'itf')
 # carries its Tennis-Data row (td: date, tournament, winner, loser; a / b = winner / loser) and no api-tennis key: the row is
 # joined to its ONE api-tennis fixture with the main-draw snapshots' own join (approx_join) for the event key and the start
 # the in-play rule checks against; no fixture = no start = not stored. Stored under the Tennis-Data key with NO detail.level,
-# so it travels the main-draw feed (pinnacle-approx.csv), where the Database ranks it after api-tennis and before Bet365.
+# so it travels the main-draw feed (pinnacle-approx.csv), where the Database ranks it ABOVE api-tennis's snapshot (founder
+# 2026-11-16) and before Bet365.
 TE_MD_LEVEL = 'atp-md'
 RESULT_STATUSES = ('Finished', 'Retired')
 

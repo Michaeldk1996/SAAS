@@ -84,6 +84,14 @@ reference screenshots): `design_handoff_database_v2/step1/` (never published).
   A priced Database row of the same match wins and the `j` row is dropped (`meta.lower.mdjHasTd`). **Test:** does a `j` row
   change any Database file, ROI, baseline or Market edge yield? It must not — `tools/test-lower-master.js` "atp-mdj",
   `tools/test-tdarch.py` "pre21-md".
+- **Tennis Explorer's Pinnacle ranks above api-tennis's on the ATP main draw** (founder 2026-11-16, "use the Tennis
+  Explorer download to have the Pinnacle close"; replaces 2026-10-30's "api-tennis > TE"). Order per row: Tennis-Data
+  Pinnacle > our archive close > E > Tennis Explorer Pinnacle (book 8) > api-tennis Pinnacle (book 2) > Bet365 > a dash.
+  Tennis Explorer carries the time of Pinnacle's last change and passed the in-play rule; api-tennis's snapshot carries no
+  time. Still labelled Pinnacle (approx.) — the 17 Oct close rule is unchanged. Switch `TE_OVER_API`
+  (`build-database-yield.js`), counted in `meta.approx.sources.te.overApiTennis`. The 13 Jan – 12 Apr 2026 ATP main draw
+  (758 matches on api-tennis's snapshot) is downloaded by the `atp-md-approx-*` batches (stennisfy-ops). **Test:**
+  `tools/test-approx-pinnacle.mjs` "TE ranks above api-tennis Pinnacle" (mutant: the switch off).
 - **Retirements settle through settlement.js (founder ruling 2026-10-25, round 2 item 1.3; replaces the 2026-09-20 "void
   them" and 2026-10-08 "behind a flag, no Database figure" rulings).** Two rules, two functions, one module (`settlement.js`,
   UMD, `window.Settlement`): **yields / ROI / units → `settleBet`** (Pinnacle rules: a retirement after the first set was
