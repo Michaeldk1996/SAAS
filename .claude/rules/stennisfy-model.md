@@ -1,7 +1,9 @@
 # Stennisfy Model page (TEN-418, step 12)
 
 Reference: `OFFICIAL VERSION 1.html` → Stennisfy Model (`Stennisfy Model.dc.html`; its raw hexes are legacy, read through
-`tokens.json → legacyColourMap`). Night only. Header = the shared 35b `.sfh` (`app-shell.md`). The page owns no
+`tokens.json → legacyColourMap`). Night only. **Rebuilt 2026-11-16 on `design_handoff_stennisfy_model/` (founder brief: pixel for pixel, identical colours,
+every figure from the live model): its `reference/Stennisfy Model.dc.html` is the look and layout; "Look" below.** The page
+has the reference's own head (title, one line, "?"), not the shared `.sfh`. The page owns no
 navigation: no sidebar, no sub-tabs, no "Back to dashboard" (the shell rail is the only navigation). Tests:
 `test-ten418-model.mjs` (runs the shipped renderer on a real frozen row) and `tools/test-ten418-mutants.js`.
 Founder rulings: TEN-418 card 7a80b6fe, R1 review and R2 review 73f754f9 (2026-10-10).
@@ -33,7 +35,8 @@ Founder rulings: TEN-418 card 7a80b6fe, R1 review and R2 review 73f754f9 (2026-1
   price and Biggest movers; Layers active / Updated read `—`. **Never an Elo-only price as the model price.** *(This page only: the Head to Head page's pair estimate is a separate, labelled product — `h2h.md` "Model", founder 2026-11-16.)* In play:
   match header + "Match in play…". Display gate (founder 2026-07-25): a price shows only for state 2 inside 0–30 h of
   the real start (`aOddsStartMs`).
-- **Updated** = the shown run's `generatedAt` (HH:MM, hover "Model run …"), never the clock. Times read `stennisfy.tz`,
+- **No stat header and no Updated on this page** (founder 2026-11-16: "follow the design"); the rail head carries the
+  match count, the Value layers pill the active-layer count. Times read `stennisfy.tz`,
   else the browser zone.
 - **Weight** = the layer's cap `maxMagnitude` → Highest ≥ 0.06 · High ≥ 0.035 · Medium-high ≥ 0.025 · Medium ≥ 0.016 ·
   Low. **Quality** = Good (applied, confidence high / med; or inputs in for both but too close to move — Favours "Even",
@@ -110,14 +113,30 @@ Founder rulings: TEN-418 card 7a80b6fe, R1 review and R2 review 73f754f9 (2026-1
 
 ## Pro gating
 - Free = the rail's own lock (`.is-locked`, set by `sfPlanLocks`); the page adds no rail code. Free sees the whole page,
-  the layer breakdown included (founder card 283aa920: not gated for now), plus the Biggest movers Upgrade button. Upgrade / Generate = the avatar menu's
+  the layer breakdown included (founder card 283aa920: not gated for now), with no Upgrade button (removed by the client in the 2026-11-16 handoff). Generate = the avatar menu's
   `.sf-upgrade`.
 
-## Look
-- Cards `--card` + `--top-light`, no outline, radius 16; panels and tiles `--inner`, radius 12–14, no edge; chips
-  `--inner` radius 6, caps 10.5/700/0.10em grey; Market context view = the Darker track; rail drop-down = `sfDd` with the
-  News page's small chevron; the Layer breakdown toggle = `--selected` + 1px `--line`, white caps; an
-  open layer row = `--selected`, so its `--inner` Weight chip stays visible (founder R3).
-- **Colour test:** green / red only on signed figures (edges, gaps, shifts, movers, move %), grey at 0.0; amber only
-  on the quality strip, dot and label; the signal bar `--bar` on `--track` with the centre tick; links (`↻ Regenerate`)
-  `--link`; player names white, underline on hover; odd inputs take a 16% edge on focus, never a blue ring.
+## Look (handoff design_handoff_stennisfy_model, 2026-11-16)
+- **Colours = the export's own values as `--sm-*` tokens** (`tokens.css`; white / black alphas = `color-mix` of
+  `--sm-white` / `--sm-black` at the export's %). Player one = blue ring (`--sm-blue`), player two = white; names white,
+  underline on hover; links and chevrons `--sm-blue`; green / red only on signed figures and verdict pills; amber only on
+  the medium-quality strip segment, dot and pill. **Test:** `test-ten418-model.mjs` "look".
+- **Sections:** page head · matches rail (244, one tournament dropdown, no search / day switch / Reset) · Match header
+  (48 avatars, Tournament · Surface · Round · Format pills, Match card › = the Match analysis modal, Head to Head › =
+  `sfGoToH2H` + `?a=&b=` + sessionStorage `stn_h2h_pair`) · Market context (four rows: Soft open · Soft now · Pinnacle
+  open · Pinnacle now; Bet105 is not a row here) · Value layers (strip, legend, toggle, face-to-face breakdown) · Fair
+  price & value (Best soft · Pinnacle fields, Bet105 read-only with its odds movement pop-up) · Biggest movers. No
+  Stennisfy Analysis section while `analysisOn` is off; no Upgrade to Pro.
+- **Quality on this page:** the live rule (Good / Medium / Poor) except a layer switched off by a model rule or not
+  played in this format, which reads **Not applicable** (grey). A shift under `EDGE_LEVEL_PP` (0.05pp) is level: no pill,
+  sub line "· level".
+- **Verdict pills = the model's own flags** (`stage3.flags`, never recomputed): Sharp value / Soft book value (green) on
+  the flagged side, Market side (grey) on the other; no flag = No value, red on the side with the larger engine edge,
+  grey on the other. A typed odd moves only its own gap.
+- **Biggest movers share** = the three largest shifts over the summed shifts of every layer that moved (absolute values).
+- **Base, net adjustment and adjusted fair are shown as computed, with no step line between them** (founder 2026-11-16:
+  "follow the design export"). They do not add up because the model applies the rank-tier ceiling and the stage-3
+  calibration after the net (h2h-model/model.js).
+- **Bet105 odds movement pop-up:** the Today's Matches data path (`PriceHistoryBox.fetchHistory` → `sideRows` →
+  `changesOnly`, cut at the start) on margin-removed prices (÷ `EDGE_B105_K`); 312px, below the odd or above it within
+  400px of the bottom, 160 ms leave delay. Today's Matches' own pop-up is untouched.

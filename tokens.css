@@ -277,3 +277,29 @@
   --db2-dark:     #07080D;   /* text on a solid blue button, the tick in a picked box */
   --db2-shadow-menu: 0 12px 28px rgba(0, 0, 0, 0.45);
 }
+
+/* Stennisfy Model page (handoff design_handoff_stennisfy_model, founder brief 2026-11-16 "pixel for pixel, identical
+   colours"): the export's own values, named apart from the foundation tokens. The Model page maps them onto its
+   surfaces inside [data-page="edge"] (night only); nothing else reads them. White and black alphas are color-mix of
+   --sm-white / --sm-black at the export's own percentage. */
+:root {
+  --sm-page:      #0D0E16;   /* page */
+  --sm-card:      #0E1019;   /* section card, caps strips, opened-row panel, pop-ups, dropdown menu */
+  --sm-inner:     #0C0E16;   /* inner card, pills, field tracks, dropdown trigger */
+  --sm-raised:    #131623;   /* lifted / selected / hover, avatar fill, odd fields */
+  --sm-text:      #E7E9EE;   /* text, player two ring */
+  --sm-soft:      #C6CCDB;   /* secondary */
+  --sm-body:      #C9CDD9;   /* body text in an opened layer panel */
+  --sm-muted:     #8B96B5;   /* labels, sub lines */
+  --sm-blue:      #5B9BFF;   /* player one ring, links, chevrons */
+  --sm-blue-hov:  #82B4FF;
+  --sm-pos:       #3DD68C;
+  --sm-neg:       #E0616F;
+  --sm-q-good:    #5CCB84;   /* data quality: good */
+  --sm-q-med:     #E8A84E;   /* data quality: medium (amber: Stennisfy Model only, foundation.md) */
+  --sm-q-poor:    #E06266;   /* data quality: poor */
+  --sm-white:     #FFFFFF;
+  --sm-black:     #000000;
+  --sm-shadow-pop:  0 18px 44px rgba(0, 0, 0, 0.55);
+  --sm-shadow-menu: 0 12px 28px rgba(0, 0, 0, 0.45);
+}

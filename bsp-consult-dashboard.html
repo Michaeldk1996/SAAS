@@ -4706,178 +4706,275 @@ window.EntryListsTab = (function(){
 <!-- [data-page="edge"] so they do not touch the rest of the app.    -->
 <!-- ============================================================= -->
 <style>
-  [data-page="edge"]{
-    background:transparent;   /* transparent: the root's --page-bg (page + glow) shows through, as on OFFICIAL VERSION 1 (founder S6) */
-    font-family:'Hanken Grotesk', sans-serif;
-    color:var(--text);
-  }
-  /* ── TEN-418 step 12 — Stennisfy Model page (night). Reference: OFFICIAL VERSION 1 → Stennisfy Model
-     (Stennisfy Model.dc.html); legacy hexes read through the legacy map. Shell = shared .sfh header + the rail;
-     this page owns no header rule. Rules: .claude/rules/stennisfy-model.md. ── */
-  .em-page{ max-width:1360px; box-sizing:content-box; padding:30px 40px 70px; display:flex; flex-direction:column; gap:18px; line-height:normal; font-family:var(--font-words); color:var(--text); }
-  .em-cols{ display:flex; align-items:flex-start; gap:18px; }
-  .em-main{ flex:1; min-width:0; display:flex; flex-direction:column; gap:14px; }
+  /* ── Stennisfy Model page — handoff design_handoff_stennisfy_model (founder brief 2026-11-16, pixel for pixel).
+     Reference: reference/Stennisfy Model.dc.html (its inline styles are the spec); colours = the export's own values,
+     named --sm-* in tokens.css. Night only. Rules: .claude/rules/stennisfy-model.md. ── */
+  [data-page="edge"]{ background:var(--sm-page); font-family:'Hanken Grotesk', sans-serif; color:var(--sm-text); -webkit-font-smoothing:antialiased; }
+  [data-page="edge"].active{ min-height:100vh; }
+  [data-page="edge"] .sm-page, [data-page="edge"] .sm-page *, .sm-pop, .sm-pop *{ box-sizing:border-box; }
+  .sm-page{ max-width:1360px; font-size:16px; padding:30px 40px 70px; display:flex; flex-direction:column; gap:18px; line-height:normal; font-family:'Hanken Grotesk', sans-serif; color:var(--sm-text); }
+  .sm-page a{ color:var(--sm-blue); text-decoration:none; } .sm-page a:hover{ color:var(--sm-blue-hov); }
+  .sm-mono{ font-family:'IBM Plex Mono', monospace; }
+  .sm-caps{ font-family:'Hanken Grotesk', sans-serif; font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--sm-muted); }
+  .sm-q{ flex:none; width:22px; height:22px; border-radius:50%; border:1px solid color-mix(in srgb, var(--sm-white) 16%, transparent); display:inline-flex; align-items:center; justify-content:center; font-family:'Hanken Grotesk', sans-serif; font-size:12px; font-weight:700; color:var(--sm-muted); cursor:help; }
+  .sm-plink{ cursor:pointer; color:var(--sm-text) !important; text-decoration:none; }
+  .sm-plink:hover{ text-decoration:underline !important; }
+  .sm-seg{ cursor:pointer; transition:background .14s ease, color .14s ease, border-color .14s ease; }
+
+  /* page head */
+  .sm-head{ display:flex; align-items:flex-end; justify-content:space-between; gap:16px; }
+  .sm-head-t{ min-width:0; display:flex; flex-direction:column; gap:6px; }
+  .sm-title{ font-size:29px; font-weight:800; letter-spacing:-0.02em; line-height:1.1; margin:0; }
+  .sm-sub{ font-size:13.5px; color:var(--sm-soft); text-wrap:pretty; margin:0; }
+  .sm-head .sm-q{ align-self:center; }
+  .sm-cols{ display:flex; align-items:flex-start; gap:18px; min-width:0; }
+  .sm-main{ flex:1; min-width:0; display:flex; flex-direction:column; gap:14px; }
+
+  /* matches rail */
+  .sm-rail{ width:244px; flex:none; position:sticky; top:16px; background:var(--sm-card); border:1.25px solid color-mix(in srgb, var(--sm-white) 6%, transparent); border-radius:14px; padding:18px 12px 12px; display:flex; flex-direction:column; gap:12px; max-height:calc(100vh - 32px); }
+  .sm-rail-head{ display:flex; align-items:center; justify-content:space-between; gap:8px; padding:0 4px; }
+  .sm-rail-head > span{ display:flex; flex-direction:column; gap:3px; min-width:0; }
+  .sm-rail-t{ font-size:15px; font-weight:800; color:var(--sm-text); }
+  .sm-rail-n{ font-size:12px; color:var(--sm-muted); }
+  .sm-dd-w{ display:flex; flex-direction:column; gap:8px; }
+  .sm-dd{ position:relative; display:flex; align-items:center; }
+  .sm-dd-t{ display:flex; align-items:center; justify-content:space-between; gap:8px; width:100%; background:var(--sm-inner); border:1px solid color-mix(in srgb, var(--sm-white) 8%, transparent); border-radius:9px; color:var(--sm-text); font-size:12.5px; font-weight:600; padding:9px 11px; font-family:'Hanken Grotesk', sans-serif; text-align:left; }
+  .sm-dd.open .sm-dd-t{ border-color:color-mix(in srgb, var(--sm-white) 16%, transparent); }
+  .sm-dd-l{ min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .sm-dd-c{ flex:none; font-size:15px; font-weight:700; line-height:1; color:var(--sm-blue); transform:rotate(90deg); transition:transform .14s ease; }
+  .sm-dd.open .sm-dd-c{ transform:rotate(-90deg); }
+  .sm-dd-m{ position:absolute; top:calc(100% + 6px); left:0; right:0; z-index:40; display:flex; flex-direction:column; gap:1px; background:var(--sm-card); border:1px solid color-mix(in srgb, var(--sm-white) 10%, transparent); border-radius:10px; padding:4px; box-shadow:var(--sm-shadow-menu); max-height:252px; overflow:auto; scrollbar-width:thin; }
+  .sm-dd-o{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:7px 9px; border-radius:7px; font-size:12.5px; font-weight:600; color:var(--sm-text); background:transparent; }
+  .sm-dd-o:hover{ background:var(--sm-raised); }
+  .sm-dd-o.on{ font-weight:700; background:var(--sm-raised); }
+  .sm-dd-o > span:first-child{ min-width:0; }
+  .sm-dd-o .n{ flex:none; font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--sm-muted); }
+  .sm-dd-o.on .n{ color:var(--sm-text); }
+  .sm-rail-list{ display:flex; flex-direction:column; gap:12px; overflow-y:auto; min-height:0; scrollbar-width:thin; border-top:1px solid color-mix(in srgb, var(--sm-white) 6%, transparent); padding-top:12px; }
+  .sm-grp{ display:flex; flex-direction:column; gap:3px; }
+  .sm-grp-h{ display:flex; align-items:baseline; justify-content:space-between; gap:8px; padding:0 10px 4px; }
+  .sm-grp-h .sm-caps{ min-width:0; overflow-wrap:anywhere; }
+  .sm-grp-m{ flex:none; font-size:11.5px; color:var(--sm-muted); white-space:nowrap; }
+  .sm-mrow{ background:transparent; box-shadow:none; border-radius:9px; padding:9px 10px; display:grid; grid-template-columns:minmax(0,1fr) 10px; gap:8px; align-items:center; }
+  .sm-mrow.on{ background:var(--sm-raised); box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--sm-white) 16%, transparent); }
+  .sm-mrow-x{ display:flex; flex-direction:column; gap:2px; min-width:0; }
+  .sm-mrow-nm{ font-size:12.5px; font-weight:600; line-height:1.35; color:var(--sm-soft); overflow-wrap:anywhere; text-wrap:pretty; }
+  .sm-mrow.on .sm-mrow-nm{ font-weight:700; color:var(--sm-text); }
+  .sm-mrow-nm .v{ color:var(--sm-muted); font-weight:500; }
+  .sm-mrow-m{ font-size:11.5px; color:var(--sm-muted); margin-top:2px; white-space:nowrap; }
+  .sm-mrow-m .sm-mono{ color:var(--sm-soft); }
+  .sm-mrow.on .sm-mrow-m .sm-mono{ color:var(--sm-text); }
+  .sm-mrow-c{ font-size:15px; font-weight:700; line-height:1; color:var(--sm-blue); opacity:0; }
+  .sm-mrow.on .sm-mrow-c{ opacity:1; }
+  .sm-rail-empty{ font-size:12.5px; line-height:1.45; color:var(--sm-muted); padding:4px 10px 10px; text-wrap:pretty; }
+
+  /* section cards */
+  .sm-card{ background:var(--sm-card); border:1.25px solid color-mix(in srgb, var(--sm-white) 6%, transparent); border-radius:14px; padding:24px 26px; display:flex; flex-direction:column; gap:16px; }
+  .sm-card.sm-mk{ gap:18px; }
+  .sm-empty{ font-size:13px; color:var(--sm-muted); line-height:1.6; text-wrap:pretty; }
+  .sm-sh{ display:flex; align-items:center; justify-content:space-between; gap:12px 16px; flex-wrap:wrap; }
+  .sm-sh-t{ display:flex; flex-direction:column; gap:4px; min-width:0; }
+  .sm-sh-h{ font-size:18px; font-weight:800; letter-spacing:-0.01em; color:var(--sm-text); }
+  .sm-sh-s{ font-size:12.5px; color:var(--sm-muted); text-wrap:pretty; }
+  .sm-sh-r{ display:flex; align-items:center; gap:12px; margin-left:auto; }
+  .sm-mk .sm-sh-r{ align-self:center; flex-wrap:wrap; justify-content:flex-end; }
+  .sm-pill{ font-size:12.5px; color:var(--sm-muted); background:var(--sm-inner); border-radius:999px; padding:6px 13px; white-space:nowrap; }
+  .sm-pill .sm-mono.b{ color:var(--sm-text); font-weight:700; }
+  .sm-pill .w{ color:var(--sm-text); font-weight:700; }
+
+  /* avatar (one component: 48 header, 38 card heads, 24 movers) */
+  .sm-av{ display:block; flex:none; position:relative; border-radius:50%; background:var(--sm-raised); overflow:hidden; box-shadow:0 0 0 2px var(--sm-text); }
+  .sm-av.a{ box-shadow:0 0 0 2px var(--sm-blue); }
+  .sm-av > i{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-style:normal; font-family:'IBM Plex Mono', monospace; font-weight:700; color:var(--sm-text); }
+  .sm-av.s48{ width:48px; height:48px; } .sm-av.s48 > i{ font-size:13px; }
+  .sm-av.s38{ width:38px; height:38px; } .sm-av.s38 > i{ font-size:12px; } .sm-av.s38.f13 > i{ font-size:13px; }
+  .sm-av.s24{ width:24px; height:24px; box-shadow:0 0 0 1.5px var(--sm-text); } .sm-av.s24.a{ box-shadow:0 0 0 1.5px var(--sm-blue); } .sm-av.s24 > i{ font-size:8.5px; }
+  .sm-av .sf-ph.sf-on{ background:var(--sm-raised); }
+
+  /* 1 · match header */
+  .sm-card.sm-mh{ padding:24px 26px 0; gap:22px; }
+  .sm-mh-g{ display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); align-items:center; gap:18px; }
+  .sm-mh-p{ display:flex; align-items:center; gap:14px; min-width:0; }
+  .sm-mh-p.b{ justify-content:flex-end; }
+  .sm-mh-l{ display:flex; flex-direction:column; align-items:flex-start; gap:4px; min-width:0; }
+  .sm-mh-p.b .sm-mh-l{ align-items:flex-end; }
+  .sm-mh-nm{ font-size:22px; font-weight:800; letter-spacing:-0.015em; max-width:100%; overflow-wrap:anywhere; }
+  .sm-mh-p.b .sm-mh-nm{ text-align:right; }
+  .sm-mh-sub{ display:flex; flex-wrap:wrap; gap:1px 6px; font-size:12.5px; color:var(--sm-muted); max-width:100%; }
+  .sm-mh-p.b .sm-mh-sub{ justify-content:flex-end; text-align:right; }
+  .sm-mh-sub .sm-mono{ white-space:nowrap; }
+  .sm-mh-vs{ flex:none; }
+  .sm-mh-f{ display:flex; align-items:center; flex-wrap:wrap; gap:8px; margin:0 -26px; padding:14px 26px; border-top:1px solid color-mix(in srgb, var(--sm-white) 6%, transparent); }
+  .sm-tag{ display:inline-flex; align-items:baseline; gap:8px; background:var(--sm-inner); border-radius:999px; padding:6px 13px; font-size:12.5px; white-space:nowrap; }
+  .sm-tag .l{ color:var(--sm-muted); } .sm-tag .v{ font-weight:700; color:var(--sm-text); }
+  .sm-mh-links{ margin-left:auto; display:flex; align-items:center; gap:18px; }
+  .sm-mh-links a{ display:inline-flex; align-items:center; gap:5px; font-size:12.5px; font-weight:600; color:var(--sm-blue); text-decoration:none; white-space:nowrap; cursor:pointer; }
+  .sm-mh-links a:hover{ color:var(--sm-blue-hov); }
+  .sm-mh-links a .c{ font-size:13px; }
+
+  /* inner cards */
+  .sm-ic{ background:var(--sm-inner); border:1px solid color-mix(in srgb, var(--sm-white) 6%, transparent); border-radius:12px; overflow:hidden; display:flex; flex-direction:column; min-width:0; }
+  .sm-scroll{ display:flex; flex-direction:column; overflow-x:auto; }
+  .sm-scroll.cq{ container-type:inline-size; }
+  .sm-ich{ display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); gap:14px; align-items:center; padding:18px; }
+  .sm-scroll .sm-ich, .sm-scroll .sm-cs, .sm-scroll .sm-row{ min-width:400px; }
+  .sm-ich-s{ display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:10px; min-width:0; }
+  .sm-ich-s.b{ flex-direction:row-reverse; }
+  .sm-ich-w{ display:flex; align-items:center; gap:11px; min-width:0; }
+  .sm-ich-s.b .sm-ich-w{ flex-direction:row-reverse; }
+  .sm-ich-nm{ min-width:0; font-size:15px; font-weight:800; letter-spacing:-0.01em; text-align:left; }
+  .sm-ich-s.b .sm-ich-nm{ text-align:right; }
+  .sm-ich-big{ font-family:'IBM Plex Mono', monospace; font-size:26px; font-weight:700; line-height:1; color:var(--sm-text); white-space:nowrap; }
+  .sm-ich-c{ display:flex; flex-direction:column; align-items:center; gap:3px; }
+  .sm-ich-c .sm-mono{ font-size:11.5px; color:var(--sm-muted); white-space:nowrap; }
+  .sm-cs{ display:grid; gap:8px; padding:8px 14px 7px; background:var(--sm-card); border-top:1px solid color-mix(in srgb, var(--sm-white) 6%, transparent); font-family:'Hanken Grotesk', sans-serif; font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--sm-muted); text-align:center; }
+  .sm-row{ display:grid; gap:8px; align-items:center; border-top:1px solid color-mix(in srgb, var(--sm-white) 6%, transparent); text-align:center; }
+  .sm-ep{ text-align:center; font-family:'IBM Plex Mono', monospace; font-size:12px; font-weight:700; border-radius:999px; padding:4px 0; white-space:nowrap; color:var(--sm-muted); background:transparent; }
+  .sm-ep.pos{ color:var(--sm-pos); background:color-mix(in srgb, var(--sm-pos) 12%, transparent); }
+  .sm-ep.neg{ color:var(--sm-neg); background:color-mix(in srgb, var(--sm-neg) 12%, transparent); }
+  .sm-bk{ display:flex; flex-direction:column; gap:2px; min-width:0; }
+  .sm-bk-l{ font-size:13px; font-weight:600; color:var(--sm-soft); }
+  .sm-bk-s{ font-size:11.5px; color:var(--sm-muted); line-height:1.3; text-wrap:balance; }
+
+  /* 2 · market context */
+  .sm-mk-show{ font-size:12.5px; color:var(--sm-muted); white-space:nowrap; }
+  .sm-sw{ display:inline-flex; gap:2px; background:var(--sm-inner); border:1px solid color-mix(in srgb, var(--sm-white) 6%, transparent); border-radius:10px; padding:3px; }
+  .sm-sw-t{ text-align:center; padding:6px 16px; border-radius:7px; font-size:13px; font-weight:600; color:var(--sm-muted); background:transparent; box-shadow:inset 0 0 0 1px transparent; white-space:nowrap; border:0; font-family:'Hanken Grotesk', sans-serif; }
+  .sm-sw-t:hover{ color:var(--sm-text); }
+  .sm-sw-t.on{ font-weight:700; color:var(--sm-text); background:var(--sm-raised); box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--sm-white) 16%, transparent); }
+  .sm-mk .sm-cs, .sm-mk .sm-row{ grid-template-columns:minmax(0,1fr) 62px 56px minmax(104px,190px) 56px 62px minmax(0,1fr); }
+  .sm-mk .sm-row{ padding:12px 14px; background:transparent; }
+  .sm-mk .sm-row.now{ background:color-mix(in srgb, var(--sm-white) 3%, transparent); }
+  .sm-mk-px{ text-align:center; font-family:'IBM Plex Mono', monospace; font-size:15px; font-weight:500; color:var(--sm-soft); }
+  .sm-mk .sm-row.now .sm-mk-px{ font-weight:700; color:var(--sm-text); }
+  .sm-mk .sm-row.now .sm-bk-l{ font-weight:700; color:var(--sm-text); }
+  .sm-mk-line{ font-size:12px; color:var(--sm-muted); }
+  .sm-mk-line .sm-mono{ font-family:'IBM Plex Mono', monospace; }
+
+  /* 3 · value layers */
+  .sm-vl-cov{ display:flex; flex-direction:column; gap:10px; }
+  .sm-strip{ display:flex; gap:3px; }
+  .sm-sg{ position:relative; flex:1; height:8px; border-radius:4px; cursor:pointer; outline:none; outline-offset:2px; }
+  .sm-sg.flash{ outline:1px solid var(--sm-text); }
+  .sm-sg > b{ position:absolute; inset:0; border-radius:3px; }
+  .sm-sg > i{ position:absolute; bottom:calc(100% + 8px); left:50%; transform:translateX(-50%); background:var(--sm-raised); border:1px solid color-mix(in srgb, var(--sm-white) 16%, transparent); border-radius:9px; padding:7px 10px; font-family:'Hanken Grotesk', sans-serif; font-style:normal; font-size:12.5px; color:var(--sm-text); white-space:nowrap; z-index:30; opacity:0; visibility:hidden; transition:opacity .12s ease; pointer-events:none; }
+  .sm-sg:hover > i{ opacity:1; visibility:visible; }
+  .q-good{ --sm-q: var(--sm-q-good); } .q-med{ --sm-q: var(--sm-q-med); } .q-poor{ --sm-q: var(--sm-q-poor); } .q-na{ --sm-q: color-mix(in srgb, var(--sm-white) 22%, transparent); }
+  .sm-sg > b, .sm-dot{ background:var(--sm-q); }
+  .sm-legend{ display:flex; flex-wrap:wrap; gap:6px 18px; font-size:12.5px; color:var(--sm-muted); }
+  .sm-legend > span{ display:inline-flex; align-items:center; gap:7px; white-space:nowrap; }
+  .sm-legend .sm-dot{ width:8px; height:8px; border-radius:50%; }
+  .sm-legend .sm-mono{ font-weight:700; color:var(--sm-text); }
+  .sm-tog{ text-align:center; display:flex; align-items:center; justify-content:center; gap:8px; background:var(--sm-inner); border:1px solid color-mix(in srgb, var(--sm-white) 6%, transparent); border-radius:10px; padding:11px 14px; font-size:13px; font-weight:600; color:var(--sm-blue); font-family:'Hanken Grotesk', sans-serif; width:100%; }
+  .sm-tog:hover{ background:var(--sm-raised); border-color:color-mix(in srgb, var(--sm-white) 16%, transparent); }
+  .sm-tog .c{ display:inline-block; font-size:10px; transition:transform 0.2s; }
+  .sm-ich-fav{ font-size:12px; color:var(--sm-muted); }
+  .sm-ich-tot{ font-family:'IBM Plex Mono', monospace; font-size:26px; font-weight:700; line-height:1; color:var(--sm-pos); white-space:nowrap; }
+  .sm-ich-nb{ display:flex; flex-direction:column; gap:3px; min-width:0; }
+  .sm-ich-s.b .sm-ich-nb{ align-items:flex-end; text-align:right; }
+  .sm-ich-nb .nm{ font-size:15px; font-weight:800; line-height:1.2; color:var(--sm-text); overflow-wrap:anywhere; }
+  .sm-net{ font-family:'IBM Plex Mono', monospace; font-size:15px; font-weight:700; color:var(--sm-pos); }
+  .sm-net.zero{ color:var(--sm-muted); }
+  .sm-ich-c .tw{ font-size:11.5px; color:var(--sm-muted); white-space:nowrap; }
+  .sm-vl .sm-cs, .sm-lrg{ grid-template-columns:minmax(14px,1fr) 62px 46px minmax(92px,240px) 46px 62px minmax(14px,1fr); gap:6px; }
+  .sm-lr{ display:flex; flex-direction:column; border-top:1px solid color-mix(in srgb, var(--sm-white) 6%, transparent); background:transparent; box-shadow:none; transition:box-shadow .3s ease, background .2s ease; min-width:400px; }
+  .sm-lr.open{ background:var(--sm-raised); }
+  .sm-lr.flash{ box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--sm-white) 35%, transparent); }
+  .sm-lrg{ display:grid; align-items:center; padding:12px 14px; text-align:center; cursor:pointer; }
+  .sm-lrg:hover{ background:var(--sm-raised); }
+  .sm-sp{ text-align:center; font-family:'IBM Plex Mono', monospace; font-size:12px; font-weight:700; color:var(--sm-pos); background:transparent; border-radius:999px; padding:4px 0; white-space:nowrap; }
+  .sm-sp.on{ background:color-mix(in srgb, var(--sm-pos) 12%, transparent); }
+  .sm-rt{ text-align:center; font-family:'IBM Plex Mono', monospace; font-size:15px; font-weight:500; color:var(--sm-soft); }
+  .sm-rt.lead{ font-weight:700; color:var(--sm-text); }
+  .sm-rt.na{ color:var(--sm-muted); }
+  .sm-ln{ display:flex; flex-direction:column; gap:2px; min-width:0; }
+  .sm-ln-n{ font-size:13px; font-weight:600; color:var(--sm-text); line-height:1.3; text-wrap:balance; }
+  .sm-ln-n.na{ color:var(--sm-soft); }
+  .sm-ln-s{ font-size:11.5px; color:var(--sm-muted); line-height:1.3; text-wrap:balance; }
+  .sm-ln-s .sm-dot{ display:inline-block; width:7px; height:7px; border-radius:50%; margin-right:6px; vertical-align:1px; }
+  .sm-chev{ justify-self:end; width:14px; height:14px; display:inline-flex; align-items:center; justify-content:center; font-size:14px; line-height:1; color:var(--sm-blue); transition:transform .16s; }
+  .sm-lr.open .sm-chev{ transform:rotate(90deg); }
+  .sm-lp{ position:sticky; left:0; width:100cqw; max-width:100%; padding:2px 16px 16px; }
+  .sm-lp-in{ background:var(--sm-card); border-radius:10px; padding:14px 16px; display:grid; grid-template-columns:repeat(auto-fit, minmax(min(200px,100%),1fr)); gap:14px 24px; text-align:left; }
+  .sm-lp-c{ display:flex; flex-direction:column; gap:6px; }
+  .sm-lp-h{ display:flex; align-items:center; flex-wrap:wrap; gap:6px 8px; min-height:22px; }
+  .sm-lp-h.dq{ flex-wrap:nowrap; gap:8px; }
+  .sm-lp-p{ font-size:11.5px; font-weight:600; color:var(--sm-soft); background:color-mix(in srgb, var(--sm-white) 5%, transparent); border-radius:999px; padding:3px 9px; }
+  .sm-lp-p.nw{ white-space:nowrap; }
+  .sm-lp-st{ font-size:11.5px; font-weight:700; color:var(--sm-q); background:color-mix(in srgb, var(--sm-q) 12%, transparent); border-radius:999px; padding:3px 9px; white-space:nowrap; }
+  .sm-lp-st.q-na{ color:var(--sm-muted); background:color-mix(in srgb, var(--sm-white) 5%, transparent); }
+  .sm-lp-why{ font-size:13px; line-height:1.55; color:var(--sm-body); text-wrap:pretty; }
+  .sm-lp-dq{ font-size:13px; line-height:1.55; color:var(--sm-muted); text-wrap:pretty; }
+
+  /* 4 · fair price & value */
+  .sm-fp .sm-cs, .sm-fp .sm-row{ grid-template-columns:minmax(0,1fr) 60px 64px minmax(92px,200px) 64px 60px minmax(0,1fr); gap:6px; }
+  .sm-fp .sm-row{ padding:10px 14px; }
+  .sm-fp-who{ display:flex; flex-direction:column; align-items:flex-start; gap:5px; min-width:0; }
+  .sm-ich-s.b .sm-fp-who{ align-items:flex-end; text-align:right; }
+  .sm-fp-who .sm-plink{ font-size:15px; font-weight:800; line-height:1.2; overflow-wrap:anywhere; }
+  .sm-vd{ font-size:11.5px; font-weight:700; color:var(--sm-muted); background:color-mix(in srgb, var(--sm-white) 5%, transparent); border-radius:999px; padding:3px 9px; white-space:nowrap; }
+  .sm-vd.pos{ color:var(--sm-pos); background:color-mix(in srgb, var(--sm-pos) 12%, transparent); }
+  .sm-vd.neg{ color:var(--sm-neg); background:color-mix(in srgb, var(--sm-neg) 12%, transparent); }
+  .sm-fp .sm-ich-c .sm-mono{ font-size:11px; }
+  .sm-odd{ width:100%; min-width:0; background:var(--sm-raised); border:1px solid color-mix(in srgb, var(--sm-white) 10%, transparent); border-radius:9px; padding:7px 2px; color:var(--sm-text); font-family:'IBM Plex Mono', monospace; font-size:15px; font-weight:700; text-align:center; outline:none; transition:border-color .14s ease; }
+  .sm-odd:hover{ border-color:color-mix(in srgb, var(--sm-white) 22%, transparent) !important; }
+  .sm-odd:focus{ border-color:var(--sm-blue) !important; }
+  .sm-fp .sm-bk-l{ font-weight:700; color:var(--sm-text); }
+  .sm-fp .sm-bk-s.nw{ white-space:nowrap; }
+  .sm-fp .sm-bk-s.sm-mono{ font-family:'IBM Plex Mono', monospace; }
+  .sm-b105{ font-family:'IBM Plex Mono', monospace; font-size:15px; font-weight:700; color:var(--sm-text); padding:7px 2px; border-radius:8px; white-space:nowrap; cursor:default; transition:background .14s ease; }
+  .sm-b105:hover, .sm-b105.on{ background:var(--sm-raised); }
+
+  /* bet105 odds movement pop-up */
+  .sm-pop{ position:fixed; z-index:120; width:312px; font-size:16px; background:var(--sm-card); border:1px solid color-mix(in srgb, var(--sm-white) 10%, transparent); border-radius:12px; box-shadow:var(--sm-shadow-pop); overflow:hidden; display:flex; flex-direction:column; font-family:'Hanken Grotesk', sans-serif; color:var(--sm-text); line-height:normal; -webkit-font-smoothing:antialiased; }
+  .sm-pop[hidden]{ display:none; }
+  .sm-pop-t{ padding:14px 16px 12px; display:flex; flex-direction:column; gap:10px; }
+  .sm-pop-r1{ display:flex; align-items:baseline; justify-content:space-between; gap:10px; }
+  .sm-pop-bk{ font-size:11.5px; color:var(--sm-muted); white-space:nowrap; }
+  .sm-pop-nm{ font-size:12.5px; font-weight:700; color:var(--sm-text); }
+  .sm-pop-r3{ display:flex; align-items:baseline; gap:8px; font-family:'IBM Plex Mono', monospace; }
+  .sm-pop-r3 .o{ font-size:15px; color:var(--sm-muted); }
+  .sm-pop-r3 .ar{ font-size:13px; color:var(--sm-muted); }
+  .sm-pop-r3 .w{ font-size:22px; font-weight:700; line-height:1; color:var(--sm-text); }
+  .sm-pop-r3 .ch{ font-size:12px; font-weight:700; color:var(--sm-muted); }
+  .sm-pop-r3 .mv{ margin-left:auto; font-size:11.5px; color:var(--sm-muted); }
+  .sm-pop .pos{ color:var(--sm-pos); } .sm-pop .neg{ color:var(--sm-neg); }
+  .sm-pop-l{ max-height:236px; overflow-y:auto; border-top:1px solid color-mix(in srgb, var(--sm-white) 6%, transparent); padding:6px; }
+  .sm-pop-k{ display:grid; grid-template-columns:minmax(0,1fr) 52px 62px; gap:8px; align-items:center; padding:6px 10px; border-radius:7px; background:transparent; font-family:'IBM Plex Mono', monospace; font-size:12px; }
+  .sm-pop-k.latest{ background:color-mix(in srgb, var(--sm-white) 5%, transparent); }
+  .sm-pop-k .t{ color:var(--sm-muted); }
+  .sm-pop-k .p, .sm-pop-k .d{ text-align:right; font-weight:700; color:var(--sm-text); }
+  .sm-pop-k .d{ color:var(--sm-muted); }
+  .sm-pop-k .d.pos{ color:var(--sm-pos); } .sm-pop-k .d.neg{ color:var(--sm-neg); }
+  .sm-pop-note{ padding:16px 10px; font-size:12px; color:var(--sm-muted); text-align:center; font-family:'Hanken Grotesk', sans-serif; }
+  .sm-pop-f{ display:grid; grid-template-columns:minmax(0,1fr) 52px 62px; gap:8px; align-items:center; padding:10px 16px 12px; border-top:1px solid color-mix(in srgb, var(--sm-white) 6%, transparent); font-family:'IBM Plex Mono', monospace; font-size:12px; }
+  .sm-pop-f > span:first-child{ display:flex; flex-direction:column; gap:3px; }
+  .sm-pop-f .t{ color:var(--sm-muted); }
+  .sm-pop-f .p{ text-align:right; font-weight:700; color:var(--sm-text); }
+
+  /* 5 · biggest movers */
+  .sm-mv .sm-cs, .sm-mvr{ grid-template-columns:22px minmax(0,1fr) 132px 62px 10px; gap:10px; }
+  .sm-mv .sm-cs{ border-top:0; text-align:left; }
+  .sm-mv .sm-cs > span:nth-child(4){ text-align:center; }
+  .sm-mvr{ display:grid; align-items:center; padding:12px 14px; border-top:1px solid color-mix(in srgb, var(--sm-white) 6%, transparent); cursor:pointer; transition:background .14s ease; }
+  .sm-mvr:hover{ background:var(--sm-raised); }
+  .sm-mvr-rk{ font-family:'IBM Plex Mono', monospace; font-size:12px; font-weight:700; color:var(--sm-muted); }
+  .sm-mvr-l{ display:flex; flex-direction:column; gap:3px; min-width:0; }
+  .sm-mvr-l .n{ font-size:13.5px; font-weight:600; line-height:1.3; color:var(--sm-text); overflow-wrap:anywhere; }
+  .sm-mvr-l .s{ font-size:11.5px; line-height:1.35; color:var(--sm-muted); }
+  .sm-mvr-w{ display:flex; align-items:center; justify-content:flex-start; gap:8px; min-width:0; }
+  .sm-mvr-w .sm-plink, .sm-mvr-w > span.nm{ font-size:12.5px; font-weight:600; overflow-wrap:anywhere; }
+  .sm-mvr-c{ font-size:15px; font-weight:700; line-height:1; color:var(--sm-blue); }
+  .sm-mvr-none{ padding:12px 14px; border-top:1px solid color-mix(in srgb, var(--sm-white) 6%, transparent); font-size:13px; color:var(--sm-muted); }
+  /* Stennisfy Analysis (off: model-output.json analysisOn, founder 2026-10-10) keeps its own rules. */
   .em-card{ background:var(--card); box-shadow:var(--top-light); border-radius:16px; }
   .em-caps{ font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label); }
   .em-mono{ font-family:var(--font-nums); }
-  .em-note{ font-size:11.5px; color:var(--text-label); line-height:1.5; text-wrap:pretty; }
-  .em-pos{ color:var(--pos); } .em-neg{ color:var(--neg); } .em-zero{ color:var(--text-label); }
-  .em-plink{ color:var(--text); text-decoration:none; cursor:pointer; }
-  .em-plink:hover{ text-decoration:underline; }
   .em-link{ color:var(--link); text-decoration:none; cursor:pointer; }
   .em-link:hover{ text-decoration:underline; }
   .em-chip{ display:inline-flex; align-items:center; font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label); background:var(--inner); border-radius:6px; padding:3px 8px; white-space:nowrap; }
-
-  /* Match rail (236, sticky) */
-  .em-rail{ width:236px; flex:none; position:sticky; top:18px; box-sizing:border-box; padding:16px 12px 12px; display:flex; flex-direction:column; gap:12px; max-height:calc(100vh - 36px); }
-  .em-rail-head{ display:flex; align-items:baseline; justify-content:space-between; gap:8px; padding:0 4px; }
-  .em-rail-n{ font-family:var(--font-nums); font-size:10.5px; color:var(--text-label); }
-  #edgeRailTour{ display:flex; width:100%; }
-  /* The small site chevron — the same trigger chevron as the News page (R1 fix 10). */
-  [data-page="edge"] .sf-dd-trig .sf-dd-chev{ font-size:0; }
-  [data-page="edge"] .sf-dd-trig .sf-dd-chev::after{ content:'\25BE'; font-size:12.5px; color:var(--text); font-family:'Hanken Grotesk', system-ui, sans-serif; }
-  .em-rail-list{ display:flex; flex-direction:column; gap:10px; overflow-y:auto; min-height:0; scrollbar-width:thin; }
-  .em-rail-grp{ display:flex; flex-direction:column; gap:3px; }
-  .em-rail-gl{ padding:4px 10px 3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .em-rail-row{ display:flex; flex-direction:column; gap:3px; min-width:0; padding:8px 10px; border-radius:8px; border:1px solid transparent; background:transparent; cursor:pointer; text-align:left; font-family:var(--font-words); }
-  .em-rail-row:hover{ background:var(--tile-hover); }
-  .em-rail-row.on{ background:var(--selected); border-color:var(--edge-16); }
-  .em-rail-nm{ font-size:12.5px; font-weight:600; color:var(--text-soft); overflow-wrap:anywhere; }   /* names never truncate (CLAUDE.md): a long pair wraps */
-  .em-rail-row.on .em-rail-nm{ color:var(--text); }
-  .em-rail-meta{ font-family:var(--font-nums); font-size:10.5px; color:var(--text-label); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .em-rail-empty{ padding:6px 10px; font-size:12px; color:var(--text-label); }
-
-  /* Match header card */
-  .em-mh{ padding:22px 24px 18px; display:flex; flex-direction:column; gap:18px; }
-  .em-mh-row{ display:flex; align-items:center; justify-content:center; gap:14px 36px; flex-wrap:wrap; }
-  .em-mh-p{ display:flex; align-items:center; gap:13px; min-width:0; flex:0 1 auto; }
-  .em-av{ width:40px; height:40px; border-radius:50%; background:var(--inner); display:flex; align-items:center; justify-content:center; font-family:var(--font-nums); font-size:12px; font-weight:600; color:var(--text); flex:none; }
-  .em-mh-txt{ display:flex; flex-direction:column; gap:3px; min-width:0; }
-  .em-mh-p.b .em-mh-txt{ align-items:flex-end; }
-  .em-mh-nm{ font-size:21px; font-weight:800; letter-spacing:-0.01em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .em-mh-sub{ font-size:12px; color:var(--text-label); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .em-mh-vs{ padding:0 6px; flex:none; }
-  .em-mh-stats{ display:grid; grid-template-columns:minmax(0,1.6fr) repeat(3,minmax(0,1fr)); gap:10px; padding-top:16px; border-top:1px solid var(--edge-6); }
-  .em-mh-stat{ display:flex; flex-direction:column; gap:4px; min-width:0; }
-  .em-mh-v{ font-size:14px; font-weight:700; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-
-  /* Market context */
-  .em-mk{ padding:20px 22px; display:flex; flex-direction:column; gap:14px; }
-  .em-head{ display:flex; align-items:baseline; justify-content:space-between; gap:12px; flex-wrap:wrap; }
-  .em-seg{ display:inline-flex; gap:3px; background:var(--inner); border-radius:10px; padding:3px; }
-  .em-seg-b{ font-family:var(--font-words); font-size:12px; font-weight:600; color:var(--text-label); background:transparent; border:1px solid transparent; border-radius:7px; padding:5px 12px; cursor:pointer; }
-  .em-seg-b.on{ background:var(--selected); border-color:var(--edge-16); color:var(--text); font-weight:700; }
-  .em-mk-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:12px; }
-  .em-mk-p{ background:var(--inner); border-radius:14px; padding:16px 18px; display:flex; flex-direction:column; gap:12px; }
-  .em-mk-nm{ display:flex; justify-content:center; padding:2px 0; font-size:15px; font-weight:800; }
-  .em-mk-row{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:9px 0; border-top:1px solid var(--edge-6); }
-  .em-mk-p.b .em-mk-row, .em-mk-p.b .em-mk-base, .em-mk-p.b .em-mk-pv{ flex-direction:row-reverse; }
-  .em-mk-l{ display:flex; flex-direction:column; gap:1px; flex:1; min-width:0; }
-  .em-mk-p.b .em-mk-l{ align-items:flex-end; }
-  .em-mk-lb{ font-size:12.5px; font-weight:600; color:var(--text); }
-  .em-mk-sub{ font-family:var(--font-nums); font-size:10.5px; color:var(--text-label); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; }
-  .em-mk-pv{ display:flex; align-items:baseline; gap:9px; flex:none; }
-  .em-mk-v{ font-family:var(--font-nums); font-size:15px; font-weight:500; color:var(--text-label); }
-  .em-mk-v.now{ font-weight:700; color:var(--text); }
-  .em-mk-d{ font-family:var(--font-nums); font-size:11px; font-weight:700; min-width:48px; text-align:right; }
-  .em-mk-p.b .em-mk-d{ text-align:left; }
-  .em-mk-base{ display:flex; align-items:center; justify-content:space-between; gap:10px; background:var(--inner); border-radius:12px; padding:11px 13px; }
-  .em-mk-base-l{ display:flex; flex-direction:column; gap:2px; }
-  .em-mk-p.b .em-mk-base-l{ align-items:flex-end; }
-  .em-mk-base-v{ font-family:var(--font-nums); font-size:26px; font-weight:700; line-height:1; color:var(--text); }
-
-  /* Value layers */
-  .em-vl{ padding:20px 22px; display:flex; flex-direction:column; gap:12px; }
-  .em-vl-t{ display:flex; align-items:baseline; gap:12px; }
-  .em-vl-n{ display:flex; align-items:baseline; gap:14px; font-size:11.5px; color:var(--text-label); white-space:nowrap; }
-  .em-vl-n b{ font-family:var(--font-nums); font-size:12.5px; font-weight:700; color:var(--text); }
-  .em-vl-n .act{ font-family:var(--font-nums); font-weight:600; color:var(--text); }
-  .em-vl-n .sep{ width:1px; height:12px; background:var(--edge-16); align-self:center; }
-  .em-vl-n .q{ display:inline-flex; align-items:baseline; gap:5px; }
-  .em-strip{ display:flex; gap:3px; }
-  .em-seg-q{ position:relative; flex:1; height:6px; border-radius:3px; cursor:pointer; }
-  .em-seg-q .tip{ position:absolute; bottom:calc(100% + 8px); left:50%; transform:translateX(-50%); background:var(--card); border:1px solid var(--edge-10); box-shadow:var(--shadow-pop); border-radius:9px; padding:7px 10px; font-size:12.5px; color:var(--text); white-space:nowrap; z-index:30; opacity:0; visibility:hidden; pointer-events:none; transition:opacity .12s ease; }
-  .em-seg-q:hover .tip{ opacity:1; visibility:visible; }
-  .em-q-good{ background:var(--pos); } .em-q-medium{ background:var(--amber); } .em-q-poor{ background:var(--neg); }
-  .em-qt-good{ color:var(--pos); } .em-qt-medium{ color:var(--amber); } .em-qt-poor{ color:var(--neg); }
-  .em-tog{ display:flex; align-items:center; gap:12px; padding-top:6px; }
-  .em-tog .ln{ flex:1; height:1px; background:var(--edge-6); }
-  .em-tog-b{ display:inline-flex; align-items:center; gap:7px; background:var(--selected); border:1px solid var(--line); border-radius:7px; padding:5px 11px; white-space:nowrap; cursor:pointer; color:var(--text); }
-  .em-tog-b .chev{ display:inline-block; font-size:12.5px; line-height:1; color:var(--text); transition:transform .2s; font-family:'Hanken Grotesk', system-ui, sans-serif; }
-  .em-tbl{ display:flex; flex-direction:column; overflow-x:auto; }
-  .em-tr{ display:grid; grid-template-columns:16px minmax(130px,1fr) 96px 52px 60px 100px 60px 92px 56px; gap:10px; align-items:center; min-width:742px; }
-  .em-th{ padding:0 0 8px; border-bottom:1px solid var(--line-strong); align-items:end; }
-  .em-th > span{ text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .em-th > span:nth-child(2){ text-align:left; }
-  .em-lrow{ display:flex; flex-direction:column; border-bottom:1px solid var(--edge-6); margin:0 -10px; padding:0 10px; border-radius:8px; min-width:742px; transition:box-shadow .3s ease, background .2s ease; }
-  .em-lrow.open{ background:var(--selected); }   /* the Weight chip (--inner) stays visible on an open row (R3 fix 4) */
-  .em-lrow.flash{ box-shadow:inset 0 0 0 1px var(--edge-24); }
-  .em-lrow .em-tr{ padding:9px 0; cursor:pointer; min-width:0; }
-  .em-lrow .tw{ font-size:12.5px; line-height:1; color:var(--text-label); display:inline-block; transition:transform .16s; font-family:'Hanken Grotesk', system-ui, sans-serif; }
-  .em-lrow.open .tw{ transform:rotate(90deg); }
-  .em-lname{ font-size:13px; font-weight:600; color:var(--text); }
-  .em-lrow .em-chip{ justify-self:center; }
-  .em-qdot{ justify-self:center; width:8px; height:8px; border-radius:50%; }
-  .em-sc{ font-family:var(--font-nums); font-size:13.5px; font-weight:700; color:var(--text); text-align:center; }
-  .em-sc.na{ color:var(--text-label); font-weight:500; }
-  .em-sig{ position:relative; height:6px; background:var(--track); border-radius:3px; }
-  .em-sig .tick{ position:absolute; left:50%; top:-3px; width:1px; height:12px; background:var(--edge-24); }
-  .em-sig .fill{ position:absolute; top:0; height:6px; border-radius:3px; background:var(--bar); }
-  .em-fav{ font-size:12.5px; font-weight:700; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; text-align:center; }
-  .em-fav.na{ color:var(--text-label); }
-  .em-shift{ font-family:var(--font-nums); font-size:12px; font-weight:600; text-align:center; }
-  .em-ldet{ display:grid; grid-template-columns:minmax(0,1fr) 1px minmax(0,1fr); gap:18px; padding:4px 0 14px 26px; }
-  .em-ldet .col{ display:flex; flex-direction:column; gap:4px; }
-  .em-ldet .div{ background:var(--edge-10); align-self:stretch; }
-  .em-ldet .why{ font-size:12.5px; line-height:1.55; color:var(--text-soft); text-wrap:pretty; }
-  .em-ldet .dq{ font-size:12.5px; line-height:1.55; color:var(--text-label); text-wrap:pretty; }
-  .em-ldet .dqh{ display:flex; align-items:center; gap:6px; }
-  .em-ldet .dqh i{ width:6px; height:6px; border-radius:50%; }
-  .em-vl-foot{ font-size:11px; color:var(--text-label); padding-top:10px; }
-
-  /* Fair price & value */
-  .em-fp{ overflow:hidden; }
-  .em-fp-head{ padding:20px 22px 16px; border-bottom:1px solid var(--edge-6); display:flex; align-items:baseline; justify-content:space-between; gap:12px; flex-wrap:wrap; }
-  .em-fp-t{ display:flex; flex-direction:column; gap:5px; }
-  .em-fp-title{ font-size:18px; font-weight:800; color:var(--text); }
-  .em-fp-net{ font-size:11.5px; color:var(--text-label); }
-  .em-fp-net b{ color:var(--text); font-weight:600; }
-  .em-fp-cols{ display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); }
-  .em-fp-col{ padding:18px 22px 20px; display:flex; flex-direction:column; gap:14px; }
-  .em-fp-col.a{ border-right:1px solid var(--edge-6); }
-  .em-fp-top{ display:flex; align-items:center; justify-content:space-between; gap:12px; }
-  .em-fp-col.b .em-fp-top{ flex-direction:row-reverse; }
-  .em-fp-who{ display:flex; flex-direction:column; align-items:flex-start; gap:6px; }
-  .em-fp-col.b .em-fp-who{ align-items:flex-end; }
-  .em-fp-nm{ font-size:14.5px; font-weight:800; }
-  .em-fp-odd{ display:flex; flex-direction:column; align-items:flex-end; gap:4px; }
-  .em-fp-col.b .em-fp-odd{ align-items:flex-start; }
-  .em-fp-big{ font-family:var(--font-nums); font-size:40px; font-weight:700; line-height:0.9; color:var(--text); }
-  .em-fp-tiles{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
-  .em-fp-b105{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:10px; padding:8px 12px; border-radius:10px; background:var(--inner); }
-  .em-fp-b105-v{ display:flex; align-items:baseline; gap:10px; font-size:13px; color:var(--text); }
-  .em-b105-warn{ margin-left:6px; color:var(--text); font-size:11px; letter-spacing:0; }
-  .em-tile{ display:flex; flex-direction:column; gap:8px; background:var(--inner); border-radius:12px; padding:12px 13px; }
-  .em-tile-h{ display:flex; justify-content:space-between; align-items:baseline; gap:6px; min-height:16px; }
-  .em-gap{ font-family:var(--font-nums); font-size:12.5px; font-weight:700; }
-  .em-odd{ width:100%; box-sizing:border-box; background:var(--inner); border:1px solid transparent; border-radius:9px; padding:9px 12px; color:var(--text); font-family:var(--font-nums); font-size:16px; font-weight:600; text-align:center; outline:none; transition:border-color .14s ease; }
-  .em-odd:hover{ border-color:var(--edge-10); }
-  .em-odd:focus, .em-odd:focus-visible{ border-color:var(--edge-16); outline:none; box-shadow:none; }
-  .em-tile-f{ font-family:var(--font-nums); font-size:11px; color:var(--text-label); text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .em-fp-foot{ display:block; padding:10px 22px 14px; font-size:11px; color:var(--text-label); border-top:1px solid var(--edge-6); }
-
-  /* Biggest movers */
-  .em-mv{ padding:20px 22px; display:flex; flex-direction:column; gap:12px; }
-  .em-mv-row{ display:flex; align-items:center; gap:14px; padding:12px 2px; border-top:1px solid var(--edge-6); }
-  .em-mv-rk{ font-family:var(--font-nums); font-size:11px; color:var(--text-label); width:16px; }
-  .em-mv-nm{ flex:1; min-width:0; font-size:13.5px; font-weight:600; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .em-mv-who{ font-size:12.5px; font-weight:600; color:var(--text-label); text-decoration:none; }
-  .em-mv-who.lk{ cursor:pointer; } .em-mv-who.lk:hover{ text-decoration:underline; }
-  .em-mv-d{ font-family:var(--font-nums); font-size:14.5px; font-weight:700; width:66px; text-align:right; }
   .em-mv-up{ padding-top:14px; border-top:1px solid var(--edge-6); display:flex; justify-content:center; }
   .em-btn.sf-upgrade{ display:inline-flex; width:auto; padding:0 18px; }
-
-  /* Stennisfy Analysis */
   .em-ai{ padding:22px 24px; display:flex; flex-direction:column; gap:16px; }
   .em-ai-head{ display:flex; align-items:flex-start; justify-content:space-between; gap:16px; flex-wrap:wrap; }
   .em-ai-tl{ display:flex; flex-direction:column; gap:7px; }
@@ -4895,34 +4992,20 @@ window.EntryListsTab = (function(){
   .em-ai-para p{ margin:0; font-size:14.5px; line-height:1.72; color:var(--text-soft); max-width:68ch; text-wrap:pretty; }
   .em-ai-foot{ padding-top:14px; border-top:1px solid var(--edge-6); display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; font-size:11px; color:var(--text-label); }
   .em-ai-stamp{ font-family:var(--font-nums); font-size:10.5px; color:var(--text-label); }
-
-  /* Empty / gated states */
-  .em-mk-anchor{ margin-left:auto; margin-right:12px; font-size:11px; color:var(--text-label); white-space:nowrap; }
-  .em-empty{ padding:26px 24px; font-size:13px; color:var(--text-label); line-height:1.6; }
-  @media (max-width:900px){
-    .em-page{ padding:18px 14px 60px; }
-    .em-cols{ flex-direction:column; }
-    .em-rail{ width:100%; position:static; max-height:none; }
-    .em-rail-list{ max-height:300px; }
-  }
 </style>
 <div class="tabpage" data-page="edge">
-  <div class="em-page">
-    <!-- TEN-418: the shared compact page header (.sfh, app-shell.md). Stats filled by renderEdgeModel. -->
-    <div class="sfh em-head-card">
-      <div class="sfh__text">
-        <h1 class="sfh__title">Stennisfy Model</h1>
-        <p class="sfh__sub" id="edgeHeadSub">Fair prices from weighted layers, against the market.</p>
+  <div class="sm-page">
+    <!-- Handoff design_handoff_stennisfy_model (2026-11-16): the page head is the reference's own; "?" filled by edgeSetHeader. -->
+    <div class="sm-head">
+      <div class="sm-head-t">
+        <h1 class="sm-title">Stennisfy Model</h1>
+        <p class="sm-sub">Our fair price for every match, set against the market.</p>
       </div>
-      <div class="sfh__stats" id="edgeHeadStats"></div>
+      <span class="sm-q" id="edgeHeadQ">?</span>
     </div>
-    <div class="em-cols">
-      <aside class="em-rail em-card">
-        <div class="em-rail-head"><span class="em-caps">Matches</span><span class="em-rail-n" id="edgeRailN"></span></div>
-        <span class="sf-dd" id="edgeRailTour"></span>
-        <div class="em-rail-list" id="edgeRailList"></div>
-      </aside>
-      <div class="em-main" id="edgeBody"></div>
+    <div class="sm-cols">
+      <aside class="sm-rail" id="edgeRail"></aside>
+      <div class="sm-main" id="edgeBody"></div>
     </div>
   </div>
 </div>
@@ -11269,39 +11352,6 @@ function edgeB105Tip(bl, m){
   if (d != null) t += ` bet105 and Pinnacle (api-tennis) disagree by ${d.toFixed(1)}pp (over ${EDGE_B105_DISAGREE_PP}pp) — one book has not caught up.`;
   return t;
 }
-// Market context row (the card's own convention: edge = the model's base probability minus this line's no-vig).
-function edgeB105RowHtml(bl, m, s, bp, pct){
-  if (!bl) return '';
-  const live = bl.live;
-  const q = live ? { p1: bl.p1, p2: bl.p2 } : null;
-  const v = !q ? '—' : (pct ? (bl.nv[s] * 100).toFixed(1) + '%' : mxOddsTxt(q[s]));
-  const d = (q && bp != null) ? edgePP((bp - bl.nv[s]) * 100) : { t: '—', c: 'em-zero' };
-  const sub = live ? `${edgeEsc(edgeClockSec(bl.at) || '—')} · bet105 ÷ 0.9956` : '— stale';
-  return `<div class="em-mk-row em-b105" id="emB105-mk-${s}" title="${edgeEsc(edgeB105Tip(bl, m))}"><span class="em-mk-l"><span class="em-mk-lb">bet105 (margin removed)${edgeB105WarnHtml(bl, m)}</span><span class="em-mk-sub">${sub}</span></span>`
-    + `<span class="em-mk-pv"><span class="em-mk-v">${v}</span><span class="em-mk-d ${d.c}">${d.t}</span></span></div>`;
-}
-// Fair price card line: gap = the adjusted fair probability (as printed, 1 dp) minus this line's no-vig probability.
-function edgeB105FairHtml(bl, m, s, prob){
-  if (!bl) return '';
-  const live = bl.live;
-  const g = (live && prob != null) ? edgePP(Math.round(prob * 1000) / 10 - bl.nv[s] * 100) : { t: '—', c: 'em-zero' };
-  const px = live ? mxOddsTxt(bl[s]) : '—';
-  return `<div class="em-fp-b105" id="emB105-fp-${s}" title="${edgeEsc(edgeB105Tip(bl, m))}"><span class="em-caps">bet105 (margin removed)${edgeB105WarnHtml(bl, m)}</span>`
-    + `<span class="em-fp-b105-v"><span class="em-mono">${px}</span><span class="em-gap ${g.c}">${g.t}</span></span></div>`;
-}
-// A stream change repaints only these four elements — the page is not re-rendered, so an odd being typed survives.
-function edgeB105Paint(){
-  const c = edgeB105Ctx; if (!c || c.id !== edgeCurrentId) return;
-  const pg = document.querySelector('.tabpage[data-page="edge"]');
-  if (pg && pg.classList && !pg.classList.contains('active')) return;
-  const m = matches.find(x => x.id === c.id) || null;
-  const bl = edgeB105Line(m);
-  ['p1', 'p2'].forEach(s => {
-    const mk = document.getElementById('emB105-mk-' + s), fp = document.getElementById('emB105-fp-' + s);
-    if (mk) mk.outerHTML = edgeB105RowHtml(bl, m, s, c.base[s], c.pct) || '<div id="emB105-mk-' + s + '"></div>';
-    if (fp) fp.outerHTML = edgeB105FairHtml(bl, m, s, c.fair[s]) || '<div id="emB105-fp-' + s + '"></div>';
-  });
-}
 // The shown pre-match match joins the stream's Realtime scope (kibl-now-stream.js scopeKeys).
 if (typeof window !== 'undefined'){
   window.kiblExtraKeys = () => {
@@ -11315,7 +11365,6 @@ if (typeof window !== 'undefined'){
     const k = (typeof ocsKeyOf === 'function') ? ocsKeyOf(m) : null;
     return k ? [k] : [];
   };
-  if (typeof window.addEventListener === 'function') window.addEventListener('kiblnow:change', edgeB105Paint);
 }
 function edgeNoVig(q, side){ if (!q) return null; const a = 1 / q.p1, b = 1 / q.p2; return (side === 'p1' ? a : b) / (a + b); }
 function edgeMargin(q){ return q ? ((1 / q.p1 + 1 / q.p2 - 1) * 100).toFixed(1) + '%' : '—'; }
@@ -11520,42 +11569,59 @@ function edgeIsFree(){ const b = document.querySelector('.sf-nav [data-tab="edge
   }).observe(b, { attributes: true, attributeFilter: ['class'] });
 })();
 
-// ── Header (shared .sfh) ───────────────────────────────────────────────────
-// Matches = the rail's list (Today's Matches' own list); Layers active = the shown match's applied / visible layers;
-// Updated = the time of the model run behind the shown price (its generatedAt), never the clock; — when unsourced.
+// ── Header ────────────────────────────────────────────────────────────────
+// The page head is the reference's own (title + one line + "?"; handoff design_handoff_stennisfy_model, 2026-11-16).
+// The "?" carries the method (founder 2026-11-16: follow the design — no stat header, no Updated on this page).
 function edgeSetHeader(e){
-  const sub = document.getElementById('edgeHeadSub'), st = document.getElementById('edgeHeadStats');
-  if (!sub || !st) return;
-  const all = edgeBoardList();
+  const q = document.getElementById('edgeHeadQ'); if (!q) return;
   let total = (e && e.stage2 && e.stage2.adjustments) ? e.stage2.adjustments.length : 0;
   if (!total) Object.values((modelOutput && modelOutput.matches) || {}).forEach(x => { if (x && x.ok && x.stage2) total = Math.max(total, (x.stage2.adjustments || []).length); });
-  sub.textContent = total ? `Fair prices from ${total} weighted layers, against the market.` : 'Fair prices from weighted layers, against the market.';
-  let act = '—', upd = null, updFull = null;
-  if (e){
-    const adjs = edgeVisibleAdjs(e.stage2.adjustments);
-    act = `${adjs.filter(a => a.applied).length}/${adjs.length}`;   // all 14 layers (R1 fix 1)
-    const at = e.generatedAt || (modelOutput && modelOutput.generatedAt);
-    upd = edgeClock(at); updFull = edgeClock(at, 'full');
-  }
-  const stat = (l, v, cls, title) => `<div class="sfh__stat"><span class="sfh__l">${l}</span><span class="sfh__v${cls ? ' ' + cls : ''}"${title ? ` title="${edgeEsc(title)}"` : ''}>${edgeEsc(v)}</span></div>`;
-  st.innerHTML = stat('Matches', String(all.length))
-    + stat('Layers active', act, act === '—' ? 'sfh__v--none' : '')
-    + stat('Updated', upd || '—', upd ? 'sfh__v--soft' : 'sfh__v--none', updFull ? 'Model run ' + updFull : '');
+  q.title = `The model starts from a base price (Elo, blended 50/50 with Pinnacle’s price when one is confirmed), then folds in ${total || 'its'} value layers. The adjusted fair price is compared with Pinnacle and the best soft book.`;
 }
+
+// ── Shared pieces (one component each) ─────────────────────────────────────
+// The value a layer must move the fair price by to count as a move: under it the layer reads "level" (handoff README).
+const EDGE_LEVEL_PP = 0.05;
+// Avatar: the player's photo by key over his initials, in a circle ringed in his colour (player one blue, two white).
+function smAv(name, key, size, isA, cls){
+  return `<span class="sm-av em-av s${size}${isA ? ' a' : ''}${cls ? ' ' + cls : ''}"><i>${edgeEsc(playerInitials(name))}</i>${typeof playerPhotoImg === 'function' ? playerPhotoImg(key, name) : ''}</span>`;
+}
+function smQ(tip){ return `<span class="sm-q" title="${edgeEsc(tip)}">?</span>`; }
+function smHead(title, scope, right, cls){
+  return `<div class="sm-sh"><span class="sm-sh-t"><span class="sm-sh-h">${title}</span><span class="sm-sh-s">${scope}</span></span><span class="sm-sh-r">${right}</span></div>`;
+}
+function smName(name, key, cls){ return edgeHasProfile(key) ? `<a class="sm-plink ${cls || ''}" onclick="openPlayerProfileFromMatch('${edgeJs(key)}')">${edgeEsc(name)}</a>` : `<span class="${cls || ''}">${edgeEsc(name)}</span>`; }
+// A sub line only breaks after a separator: inside a part, spaces and hyphens do not break (handoff README).
+function smNb(s){ return String(s).split(' · ').map(x => edgeEsc(x).replace(/ /g, '\u00a0').replace(/-/g, '\u2011')).join('\u00a0· '); }
+function smPP(v){ const p = edgePP(v); return { t: p.t, c: p.c === 'em-pos' ? 'pos' : p.c === 'em-neg' ? 'neg' : '' }; }
 
 // ── Match rail ─────────────────────────────────────────────────────────────
 // The same list as Today's Matches (getFiltered: same feed, same order, same count), grouped by tournament in the
 // order the board first shows each one; a row = "A v B" + "round · time".
+let edgeRailOpen = false;
 function edgeRailPick(id){ openEdgeModel(id); }
-// Row time label: the board's day bucket ("Today/Tomorrow") + the start in the member's zone; no time = no half.
-function edgeWhenLabel(m){
+function edgeWhenParts(m){
   const t = isFinite(cardStartMs(m)) ? cardFmtStart(m, false) : '';
   let day = '';
   const b = (typeof matchDayBucket === 'function') ? matchDayBucket(m) : null;
   if (b === 'today') day = 'Today';
   else if (b === 'tomorrow') day = 'Tomorrow';
   else if (m && m.date){ const d = new Date(m.date + 'T00:00:00'); if (!isNaN(d)) day = d.toLocaleDateString('en-GB', { weekday: 'short' }); }
-  return [day, t].filter(Boolean).join(' ');
+  return { day, clock: t };
+}
+function edgeWhenLabel(m){ const w = edgeWhenParts(m); return [w.day, w.clock].filter(Boolean).join(' '); }
+function edgeRailToggle(ev){ if (ev) ev.stopPropagation(); edgeRailOpen = !edgeRailOpen; edgeRenderRail(); }
+function edgeRailSetTour(v){ edgeRailTour = v; edgeRailOpen = false; edgeRenderRail(); }
+// An option is picked by its index (a feed tournament name can hold any character, so it never goes into an onclick).
+let edgeRailOpts = [];
+function edgeRailSetTourAt(i){ if (edgeRailOpts[i] != null) edgeRailSetTour(edgeRailOpts[i]); }
+if (typeof document !== 'undefined' && document.addEventListener){
+  document.addEventListener('click', ev => {
+    if (!edgeRailOpen) return;
+    const dd = document.getElementById('edgeRailDd');
+    if (dd && dd.contains(ev.target)) return;
+    edgeRailOpen = false; edgeRenderRail();
+  });
 }
 // The rail's list = Today's Matches' own (getFiltered), or — after "Show all upcoming matches" — the board's every
 // upcoming day under the same predicate with no search / chips / surface. Today's Matches' state is put back in a finally.
@@ -11595,115 +11661,157 @@ function edgeEmptyBoardHtml(){
     : ((typeof matchesLoadedOnce !== 'undefined' && !matchesLoadedOnce) ? 'Loading the match board…' : 'No matches on the board right now. The Stennisfy Model prices each match as soon as the board has fixtures.' + runLine));
   const up = edgeUpcomingAll().length;
   if (!up || edgeScopeAll) return edgeEmptyCard('No upcoming matches on the board right now. The Stennisfy Model prices each match as soon as the board has fixtures.' + runLine);
-  return `<div class="em-card em-empty">${edgeEsc('This page follows the Today’s Matches view, which has no matches (' + edgeBoardViewText() + '). ' + up + ' upcoming match' + (up === 1 ? ' is' : 'es are') + ' on the board.' + runLine)}
-    <div><a class="em-link" onclick="edgeShowAllUpcoming()">Show all upcoming matches</a></div></div>`;
+  return `<div class="sm-card"><span class="sm-empty">${edgeEsc('This page follows the Today’s Matches view, which has no matches (' + edgeBoardViewText() + '). ' + up + ' upcoming match' + (up === 1 ? ' is' : 'es are') + ' on the board.' + runLine)}
+    <a onclick="edgeShowAllUpcoming()" style="cursor:pointer">Show all upcoming matches</a></span></div>`;
 }
 function edgeRenderRail(){
-  const listEl = document.getElementById('edgeRailList'), nEl = document.getElementById('edgeRailN');
-  if (!listEl) return;
+  const el = document.getElementById('edgeRail');
+  if (!el) return;
   const all = edgeBoardList();
   const order = [], by = {};
   all.forEach(m => { const t = m.tour || '—'; if (!by[t]){ by[t] = []; order.push(t); } by[t].push(m); });
   if (edgeRailTour !== 'all' && !by[edgeRailTour]) edgeRailTour = 'all';
-  sfDdRender('edgeRailTour', { ariaLabel: 'Tournament', value: edgeRailTour,
-    onChange: v => { edgeRailTour = v; edgeRenderRail(); },
-    options: [{ value: 'all', label: 'All tournaments' }].concat(order.map(t => ({ value: t, label: edgeEventName(t) }))) });
   const shown = edgeRailTour === 'all' ? order : [edgeRailTour];
-  const shownN = shown.reduce((n, t) => n + by[t].length, 0);
-  if (nEl) nEl.textContent = `${shownN} of ${all.length}`;
-  listEl.innerHTML = all.length ? shown.map(t => `
-      <div class="em-rail-grp"><span class="em-caps em-rail-gl">${edgeEsc(edgeEventName(t))}</span>${by[t].map(m => {
-        const meta = [edgeRoundCode(m, null) || '', edgeWhenLabel(m)].filter(Boolean).join(' · ');
-        return `<button type="button" class="em-rail-row${m.id === edgeCurrentId ? ' on' : ''}" onclick="edgeRailPick('${edgeJs(m.id)}')">
-            <span class="em-rail-nm">${edgeEsc(edgePlayerName(m, null, 'p1'))} v ${edgeEsc(edgePlayerName(m, null, 'p2'))}</span>
-            <span class="em-rail-meta">${edgeEsc(meta)}</span></button>`; }).join('')}</div>`).join('')
-    : `<div class="em-rail-empty">${matches.length && edgeUpcomingAll().length && !edgeScopeAll ? 'No matches in this view.' : 'No matches on the board right now.'}</div>`;
+  const opts = [{ v: 'all', l: 'All tournaments', n: all.length }].concat(order.map(t => ({ v: t, l: edgeEventName(t), n: by[t].length })));
+  const cur = opts.find(o => o.v === edgeRailTour) || opts[0];
+  edgeRailOpts = opts.map(o => o.v);
+  const menu = edgeRailOpen ? `<span class="sm-dd-m" role="listbox">${opts.map((o, i) => `<span class="sm-dd-o sm-seg${o.v === edgeRailTour ? ' on' : ''}" role="option" onclick="edgeRailSetTourAt(${i})"><span>${edgeEsc(o.l)}</span><span class="n">${o.n}</span></span>`).join('')}</span>` : '';
+  const list = all.length ? shown.map(t => {
+    const rows = by[t];
+    const meta = [edgeCap(rows[0].surface || ''), String(rows.length)].filter(Boolean).join(' · ');
+    return `<div class="sm-grp"><div class="sm-grp-h"><span class="sm-caps">${edgeEsc(edgeEventName(t))}</span><span class="sm-grp-m">${edgeEsc(meta)}</span></div>${rows.map(m => {
+      const w = edgeWhenParts(m), rd = edgeRoundCode(m, null) || '—';
+      return `<div class="sm-mrow sm-seg${m.id === edgeCurrentId ? ' on' : ''}" role="button" tabindex="0" onclick="edgeRailPick('${edgeJs(m.id)}')" onkeydown="if(event.key==='Enter')edgeRailPick('${edgeJs(m.id)}')">
+          <span class="sm-mrow-x"><span class="sm-mrow-nm">${edgeEsc(edgePlayerName(m, null, 'p1'))} <span class="v">v</span> ${edgeEsc(edgePlayerName(m, null, 'p2'))}</span>
+          <span class="sm-mrow-m">${edgeEsc(rd)}${w.day ? ' · ' + edgeEsc(w.day) : ''}${w.clock ? ` <span class="sm-mono">${edgeEsc(w.clock)}</span>` : ''}</span></span>
+          <span class="sm-mrow-c">›</span></div>`; }).join('')}</div>`; }).join('')
+    : `<span class="sm-rail-empty">${matches.length && edgeUpcomingAll().length && !edgeScopeAll ? 'No matches in this view.' : 'No matches on the board right now.'}</span>`;
+  const shownN = shown.reduce((n, t) => n + (by[t] ? by[t].length : 0), 0);
+  const nTxt = edgeRailTour === 'all' ? `${all.length} match${all.length === 1 ? '' : 'es'}` : `${shownN} of ${all.length} matches`;
+  el.innerHTML = `<div class="sm-rail-head"><span><span class="sm-rail-t">Matches</span><span class="sm-rail-n">${nTxt}</span></span></div>
+    <div class="sm-dd-w"><div class="sm-dd${edgeRailOpen ? ' open' : ''}" id="edgeRailDd"><button type="button" class="sm-dd-t sm-seg" aria-haspopup="listbox" aria-expanded="${edgeRailOpen}" onclick="edgeRailToggle(event)"><span class="sm-dd-l">${edgeEsc(cur.l)}</span><span class="sm-dd-c">›</span></button>${menu}</div></div>
+    <div class="sm-rail-list">${list}</div>`;
 }
 
 // ── Cards ──────────────────────────────────────────────────────────────────
-function edgeEmptyCard(msg){ return `<div class="em-card em-empty">${edgeEsc(msg)}</div>`; }
-// Turn a raw engine failure reason into a member-facing sentence (never an internal field name).
+function edgeEmptyCard(msg){ return `<div class="sm-card"><span class="sm-empty">${edgeEsc(msg)}</span></div>`; }
 function edgeReasonText(e){
   const r = (e && e.reason) ? String(e.reason) : '';
   if (/elo/i.test(r)) return 'Not enough data to run the model on this match: one of the players has no Elo rating on file yet (usually a lower-tier or first-time entrant). The model runs as soon as the data exists.';
   if (/engine error/i.test(r)) return 'The model could not be computed for this match. It retries on the next pipeline run.';
   return 'The model could not be run for this match yet. It runs every 15 minutes as new data arrives.';
 }
+// Head to Head with the pair set: the site's own hand-over (sfGoToH2H, by player key) plus the pair in the URL query
+// and in sessionStorage stn_h2h_pair (brief 2026-11-16).
+function edgeGoH2H(ev, a, b){
+  if (ev) ev.preventDefault();
+  try { sessionStorage.setItem('stn_h2h_pair', JSON.stringify({ a, b })); } catch (x) {}
+  if (typeof sfGoToH2H === 'function') sfGoToH2H(a, b);
+}
 function edgeMatchHeadHtml(m, e){
   if (!m && !e) return '';
+  const id = (m && m.id) || (e && e.match && e.match.id);
+  const keys = { p1: edgePlayerKey(m, e, 'p1'), p2: edgePlayerKey(m, e, 'p2') };
   const side = s => {
-    const name = edgePlayerName(m, e, s), key = edgePlayerKey(m, e, s);
+    const name = edgePlayerName(m, e, s), key = keys[s];
     const P = (e && e.players && e.players[s]) || {};
     const style = edgeStyleName(name, key);
-    const elo = P.eloAll != null ? `<span class="em-mono">Elo ${edgeEsc(P.eloAll)}</span>` : '';
-    const sub = s === 'p1' ? [elo, style ? edgeEsc(style) : ''].filter(Boolean).join(' · ') : [style ? edgeEsc(style) : '', elo].filter(Boolean).join(' · ');
-    const av = `<span class="em-av">${edgeEsc(playerInitials(name))}${typeof playerPhotoImg === 'function' ? playerPhotoImg(key, name) : ''}</span>`;
-    const txt = `<span class="em-mh-txt"><span class="em-mh-nm">${edgeNameHtml(name, key)}</span><span class="em-mh-sub">${sub || '—'}</span></span>`;
-    return `<div class="em-mh-p ${s === 'p1' ? 'a' : 'b'}">${s === 'p1' ? av + txt : txt + av}</div>`;
+    const sub = `<span class="sm-mh-sub"><span>${edgeEsc(style || '—')}</span><span class="sm-mono">Elo ${P.eloAll != null ? edgeEsc(P.eloAll) : '—'}</span></span>`;
+    const nm = edgeHasProfile(key) ? `<a class="sm-plink sm-mh-l" onclick="openPlayerProfileFromMatch('${edgeJs(key)}')"><span class="sm-mh-nm">${edgeEsc(name)}</span>${sub}</a>`
+                                   : `<span class="sm-mh-l"><span class="sm-mh-nm">${edgeEsc(name)}</span>${sub}</span>`;
+    const av = smAv(name, key, 48, s === 'p1');
+    return `<div class="sm-mh-p ${s === 'p1' ? 'a' : 'b'}">${s === 'p1' ? av + nm : nm + av}</div>`;
   };
   const tour = edgeEventName((m && m.tour) || (e && e.match && e.match.tour));
   const surf = edgeCap((m && m.surface) || (e && e.match && e.match.surface) || '');
   const rnd = edgeRoundFull(edgeRoundCode(m, e));
   const bo = (e && e.match && e.match.bestOf) || (m && m.bestOf);
-  const stat = (l, v) => `<span class="em-mh-stat"><span class="em-caps">${l}</span><span class="em-mh-v">${edgeEsc(v || '—')}</span></span>`;
+  const tag = (l, v) => `<span class="sm-tag"><span class="l">${l}</span><span class="v">${edgeEsc(v || '—')}</span></span>`;
+  const pairLink = (keys.p1 != null && keys.p2 != null)
+    ? `<a href="?a=${encodeURIComponent(keys.p1)}&amp;b=${encodeURIComponent(keys.p2)}" onclick="edgeGoH2H(event,'${edgeJs(keys.p1)}','${edgeJs(keys.p2)}')">Head to Head <span class="c">›</span></a>` : '';
+  const card = (m && id && typeof openAnalysisModal === 'function') ? `<a onclick="openAnalysisModal('${edgeJs(id)}')">Match card <span class="c">›</span></a>` : '';
   return `
-    <div class="em-card em-mh">
-      <div class="em-mh-row">${side('p1')}<span class="em-caps em-mh-vs">vs</span>${side('p2')}</div>
-      <div class="em-mh-stats">${stat('Tournament', tour)}${stat('Surface', surf)}${stat('Round', rnd)}${stat('Format', bo ? 'Best of ' + bo : null)}</div>
+    <div class="sm-card sm-mh">
+      <div class="sm-mh-g">${side('p1')}<span class="sm-caps sm-mh-vs">vs</span>${side('p2')}</div>
+      <div class="sm-mh-f">${tag('Tournament', tour)}${tag('Surface', surf)}${tag('Round', rnd)}${tag('Format', bo ? 'Best of ' + bo : null)}
+        <span class="sm-mh-links">${card}${pairLink}</span></div>
     </div>`;
 }
 function edgeSetMkView(v){ edgeMkView = v; renderEdgeModel(edgeCurrentId); }
+// The soft book of a side, with a typed Best soft price folded into its own book's pair (typed odds stay on screen).
+function edgeSoftNow(m, s){
+  const soft = edgeBestSoft(m, s); if (!soft) return null;
+  const typed = edgeParseOdd((edgeOddEdits[edgeCurrentId] || {})['soft:' + s]);
+  return typed ? Object.assign({}, soft.now, { [s]: typed }) : soft.now;
+}
 function edgeMarketHtml(m, e, names, keys, noModel){
-  // noModel (R1 fix 14): no model price for this match — the book rows only; no Model base tile, edges read —.
+  // noModel (R1 fix 14): no model price for this match — the book rows only; no model base, edges read —.
   const st1 = (!noModel && e && e.stage1) || {};
   const base = { p1: st1.baseP1, p2: st1.baseP2 };
   const sharp = edgeSharp(m);
   const pct = edgeMkView === 'pct';
-  const fmtV = (q, s) => !q ? '—' : (pct ? (edgeNoVig(q, s) * 100).toFixed(1) + '%' : mxOddsTxt(q[s]));
-  const softA = edgeBestSoft(m, 'p1'), softB = edgeBestSoft(m, 'p2');
-  const b105 = edgeB105Line(m);
-  edgeB105Ctx = { id: m && m.id, base, fair: { p1: null, p2: null }, pct };
-  const panel = s => {
-    const soft = s === 'p1' ? softA : softB;
-    const bp = base[s];
-    const rows = [];
-    const row = (label, sub, q, now) => {
-      const d = (q && bp != null) ? edgePP((bp - edgeNoVig(q, s)) * 100) : { t: '—', c: 'em-zero' };
-      return `<div class="em-mk-row"><span class="em-mk-l"><span class="em-mk-lb">${label}</span><span class="em-mk-sub">${sub}</span></span>`
-        + `<span class="em-mk-pv"><span class="em-mk-v${now ? ' now' : ''}">${fmtV(q, s)}</span><span class="em-mk-d ${d.c}">${d.t}</span></span></div>`;
-    };
-    rows.push(row('Soft open', soft ? `${edgeEsc(soft.name)} · ${edgeMargin(soft.open)}` : 'no soft book', soft ? soft.open : null));
-    const sn = sharp ? sharp.name : 'Pinnacle';
-    rows.push(row(`${sn} open`, sharp && sharp.open ? `${edgeEsc(edgeClock(sharp.open.seenAt, 'stamp') || '—')} · ${edgeMargin(sharp.open)}` : 'not quoted', sharp ? sharp.open : null));
-    let nowSub = 'not quoted';
-    if (sharp && sharp.now){
-      const mv = sharp.open ? edgePP((edgeNoVig(sharp.now, s) - edgeNoVig(sharp.open, s)) * 100).t + ' since open · ' : '';
-      nowSub = mv + edgeMargin(sharp.now);
-    }
-    rows.push(row(`${sn} now`, nowSub, sharp ? sharp.now : null, true));
-    rows.push(edgeB105RowHtml(b105, m, s, bp, pct) || `<div id="emB105-mk-${s}"></div>`);
-    const odd = bp > 0 ? (1 / bp).toFixed(2) : '—', p = bp != null ? (bp * 100).toFixed(1) + '%' : '—';
-    return `<div class="em-mk-p ${s === 'p1' ? 'a' : 'b'}">
-        <div class="em-mk-nm">${edgeNameHtml(names[s], keys[s])}</div>
-        <div>${rows.join('')}</div>
-        ${noModel ? '' : `<div class="em-mk-base"><span class="em-mk-base-l"><span class="em-caps">Model base</span><span class="em-mk-sub">${pct ? odd : p} · no margin</span></span><span class="em-mk-base-v">${pct ? p : odd}</span></div>`}
-      </div>`;
+  const softA = edgeBestSoft(m, 'p1'), softB = edgeBestSoft(m, 'p2'), soft = { p1: softA, p2: softB };
+  const one = softA && softB && softA.key === softB.key;
+  const cell = (q, s) => {
+    const v = !q ? '—' : (pct ? (edgeNoVig(q, s) * 100).toFixed(1) + '%' : mxOddsTxt(q[s]));
+    const d = (q && base[s] != null) ? smPP((base[s] - edgeNoVig(q, s)) * 100) : { t: '—', c: '' };
+    return { v, d };
   };
+  const move = (o, n) => (o && n) ? smPP((edgeNoVig(n, 'p1') - edgeNoVig(o, 'p1')) * 100).t : null;
+  const softNow = { p1: edgeSoftNow(m, 'p1'), p2: edgeSoftNow(m, 'p2') };
+  const books2 = (a, b) => !softA && !softB ? 'no soft book' : (one ? a : [softA ? a : '—', softB ? b : '—'].join(' / '));
+  const marg = q => edgeMargin(q);
+  const softOpenSub = !softA && !softB ? 'no soft book'
+    : (one ? `${softA.name} · margin ${marg(softA.open)}` : `${softA ? softA.name : '—'} / ${softB ? softB.name : '—'} · margin ${softA ? marg(softA.open) : '—'} / ${softB ? marg(softB.open) : '—'}`);
+  const softNowSub = !softA && !softB ? 'no soft book'
+    : (one ? [move(softA.open, softNow.p1) ? `${names.p1} ${move(softA.open, softNow.p1)} since open` : null, `margin ${marg(softNow.p1)}`].filter(Boolean).join(' · ')
+           : `margin ${softA ? marg(softNow.p1) : '—'} / ${softB ? marg(softNow.p2) : '—'}`);
+  const sn = sharp ? sharp.name : 'Pinnacle';
+  const pinOpenSub = sharp && sharp.open ? `${edgeClock(sharp.open.seenAt, 'stamp') || '—'} · margin ${marg(sharp.open)}` : 'not quoted';
+  const pinNowSub = sharp && sharp.now ? [move(sharp.open, sharp.now) ? `${names.p1} ${move(sharp.open, sharp.now)} since open` : null, `margin ${marg(sharp.now)}`].filter(Boolean).join(' · ') : 'not quoted';
+  const rows = [
+    { l: 'Soft open', sub: softOpenSub, q: { p1: softA ? softA.open : null, p2: softB ? softB.open : null } },
+    { l: 'Soft now', sub: softNowSub, q: softNow, now: true },
+    { l: `${sn} open`, sub: pinOpenSub, q: { p1: sharp ? sharp.open : null, p2: sharp ? sharp.open : null } },
+    { l: `${sn} now`, sub: pinNowSub, q: { p1: sharp ? sharp.now : null, p2: sharp ? sharp.now : null }, now: true },
+  ].map(r => {
+    const a = cell(r.q.p1, 'p1'), b = cell(r.q.p2, 'p2');
+    return `<div class="sm-row${r.now ? ' now' : ''}"><span></span><span class="sm-ep ${a.d.c}">${a.d.t}</span><span class="sm-mk-px">${a.v}</span>`
+      + `<span class="sm-bk"><span class="sm-bk-l">${edgeEsc(r.l)}</span><span class="sm-bk-s">${smNb(r.sub)}</span></span>`
+      + `<span class="sm-mk-px">${b.v}</span><span class="sm-ep ${b.d.c}">${b.d.t}</span><span></span></div>`;
+  }).join('');
+  const odd = s => base[s] > 0 ? (1 / base[s]).toFixed(2) : '—', p = s => base[s] != null ? (base[s] * 100).toFixed(1) + '%' : '—';
+  const head = s => {
+    const big = noModel ? '—' : (pct ? p(s) : odd(s));
+    return `<div class="sm-ich-s ${s === 'p1' ? 'a' : 'b'}"><div class="sm-ich-w">${smAv(names[s], keys[s], 38, s === 'p1', 'f13')}${smName(names[s], keys[s], 'sm-ich-nm')}</div><span class="sm-ich-big">${big}</span></div>`;
+  };
+  const alt = noModel ? '— · —' : (pct ? `${odd('p1')} · ${odd('p2')}` : `${p('p1')} · ${p('p2')}`);
   const unit = pct ? 'No-vig implied probability · switch to Odds for decimal prices' : 'Decimal odds · switch to Implied % for no-vig probabilities';
-  const softNote = [softA, softB].filter(Boolean).filter((b, i, a) => a.findIndex(x => x.key === b.key) === i)
-    .map(b => `<span class="em-mono">${edgeMargin(b.open)}</span> (${edgeEsc(b.name)})`).join(' / ');   // the Soft open rows' own margin (R1 fix 5)
+  const softM = [softA, softB].filter(Boolean).filter((b, i, a) => a.findIndex(x => x.key === b.key) === i).map(b => `${marg(b.open)} (${b.name})`).join(' / ');
+  const pinRead = edgePinRead(m);
+  const help = `${unit}. Edge = the model base probability minus the no-vig probability of the book; green = the model has the player shorter than the book.`
+    + (sharp && sharp.now ? ` ${sharp.name} margin ${marg(sharp.now)}` : '') + (softM ? `, soft margin at open ${softM}` : '') + '.'
+    + (pinRead ? ` The model anchors to Pinnacle’s quote from api-tennis, read ${edgeClock(pinRead, 'full')}.` : '');
+  const seg = (v, l, tip) => `<button type="button" class="sm-sw-t sm-seg${edgeMkView === v ? ' on' : ''}" role="tab" title="${tip}" onclick="edgeSetMkView('${v}')">${l}</button>`;
   const opened = sharp && sharp.open ? edgeClock(sharp.open.seenAt, 'stamp') : null;
-  const seg = (v, l) => `<button type="button" class="em-seg-b${edgeMkView === v ? ' on' : ''}" onclick="edgeSetMkView('${v}')">${l}</button>`;
+  const softNames = books2(softA ? softA.name : '', softB ? softB.name : '');
   return `
-    <div class="em-card em-mk">
-      <div class="em-head"><span class="em-caps">Market context · match winner</span>${edgeAnchorHtml(m)}<div class="em-seg">${seg('odds', 'Odds')}${seg('pct', 'Implied %')}</div></div>
-      <div class="em-mk-grid">${panel('p1')}${panel('p2')}</div>
-      <span class="em-note">${unit}${noModel ? '' : ' · edge = model’s base probability minus the book’s no-vig probability, green = model has the player shorter than the book'}${sharp && sharp.now ? ` · ${edgeEsc(sharp.name)} margin now <span class="em-mono">${edgeMargin(sharp.now)}</span>` : ''}${softNote ? `, soft at open ${softNote}` : ''}${opened ? ` · opened <span class="em-mono">${edgeEsc(opened)}</span>` : ''}</span>
+    <div class="sm-card sm-mk">
+      ${smHead('Market context', 'Match winner · the model base price against each book',
+        `<span class="sm-mk-show">Show prices as</span><div class="sm-sw" role="tablist">${seg('odds', 'Odds', 'Decimal prices as the book lists them')}${seg('pct', 'Implied %', 'Win probability with the book margin removed')}</div>${smQ(help)}`)}
+      <div class="sm-ic">
+        <div class="sm-ich">${head('p1')}<div class="sm-ich-c" title="The model base price, before the value layers. No margin."><span class="sm-caps">Model base</span><span class="sm-mono">${alt}</span></div>${head('p2')}</div>
+        <div class="sm-cs"><span></span><span title="Model base probability minus the book's probability with the margin removed">Edge</span><span>${pct ? 'Implied' : 'Odds'}</span><span>Book</span><span>${pct ? 'Implied' : 'Odds'}</span><span>Edge</span><span></span></div>
+        ${rows}
+      </div>
+      <span class="sm-mk-line">Soft book ${edgeEsc(softNames)} · market opened <span class="sm-mono">${edgeEsc(opened || '—')}</span></span>
     </div>`;
 }
+
+// ── Value layers ───────────────────────────────────────────────────────────
 function edgeToggleLayers(){ edgeLayersOpen = !edgeLayersOpen; renderEdgeModel(edgeCurrentId); }
 function edgeToggleLayer(key){ edgeLayerOpen = edgeLayerOpen === key ? null : key; renderEdgeModel(edgeCurrentId); }
-// Strip click: open the breakdown, open that row, scroll its container (no scrollIntoView) and flash the row.
+// Strip / mover click: open the breakdown, open that row, scroll its container (no scrollIntoView) and flash the row.
 function edgeScroller(el){
   for (let p = el.parentElement; p && p !== document.body; p = p.parentElement){
     const o = getComputedStyle(p).overflowY;
@@ -11718,135 +11826,251 @@ function edgeJumpLayer(key){
   const r = el.getBoundingClientRect(), top = r.top - window.innerHeight / 2 + r.height / 2, sc = edgeScroller(el);
   (sc === window ? window : sc).scrollBy({ top, behavior: 'smooth' });
   clearTimeout(edgeFlashTimer);
-  edgeFlashTimer = setTimeout(() => { edgeLayerFlash = null; const x = document.getElementById('emLayer-' + key); if (x) x.classList.remove('flash'); }, 1600);
+  edgeFlashTimer = setTimeout(() => { edgeLayerFlash = null; document.querySelectorAll('[data-page="edge"] .flash').forEach(x => x.classList.remove('flash')); }, 1600);
+}
+// Quality on this page: the live rule (edgeQuality) — Good / Medium / Poor — except a layer switched off by a model rule
+// or not played in this format, which reads "Not applicable" (grey), as the handoff draws it.
+function edgeNa(a){ return !!(a && (a.gated || edgeNotThisFormat(a))); }
+function edgeQKey(a){ if (edgeNa(a)) return 'na'; const q = edgeQuality(a); return q === 'Good' ? 'good' : q === 'Medium' ? 'med' : 'poor'; }
+const EDGE_QWORD = { good: 'Good', med: 'Medium', poor: 'Poor', na: 'Not applicable' };
+function edgeNaWhy(a){ return edgeNotThisFormat(a) ? 'best of 3' : 'switched off'; }
+function edgeLayerView(r, names){
+  const a = r.a, qk = edgeQKey(a), na = qk === 'na';
+  const has = !na && (!!a.applied || edgeEven(a));
+  const delta = Math.abs(a.deltaP1 || 0) * 100;
+  const moved = has && !!a.applied && a.direction !== 'neutral' && delta >= EDGE_LEVEL_PP;
+  const favA = a.direction === 'p1';
+  const fig = has ? edgeFigures(a) : null;
+  const shift = moved ? '+' + delta.toFixed(1) + 'pp' : '';
+  const sub = na ? `Not applicable · ${edgeNaWhy(a)}`
+    : has ? `${r.w.word} weight · ${EDGE_QWORD[qk].toLowerCase()} data${moved ? '' : ' · level'}`
+    : `${r.w.word} weight · ${a.key === 'subjective' ? 'no analyst note' : 'no data'}`;
+  const fav = na ? 'Not applicable' : !has ? 'No data' : moved ? 'Favours ' + (favA ? names.p1 : names.p2) : 'Even';
+  return { a, qk, na, has, moved, favA, fig, shift, sub, fav, delta };
 }
 function edgeLayersHtml(e, names, keys){
   const rows = edgeLayerRows(e, names, keys);
-  const n = { Good: 0, Medium: 0, Poor: 0 }; rows.forEach(r => n[r.q]++);
+  const views = rows.map(r => Object.assign({ r }, edgeLayerView(r, names)));
+  const n = { good: 0, med: 0, poor: 0, na: 0 }; views.forEach(v => n[v.qk]++);
   const active = rows.filter(r => r.a.applied).length;
-  const qc = q => 'em-q-' + q.toLowerCase(), qt = q => 'em-qt-' + q.toLowerCase();
-  const strip = rows.map(r => `<span class="em-seg-q ${qc(r.q)}" onclick="edgeJumpLayer('${edgeJs(r.a.key)}')"><span class="tip">${edgeEsc(edgeLayerName(r.a))} · ${r.q}</span></span>`).join('');
+  const strip = views.map(v => `<span class="sm-sg q-${v.qk}${edgeLayerFlash === v.a.key ? ' flash' : ''}" onclick="edgeJumpLayer('${edgeJs(v.a.key)}')"><b></b><i>${edgeEsc(edgeLayerName(v.a))} · ${edgeEsc(v.na ? 'Not applicable · ' + edgeNaWhy(v.a) : EDGE_QWORD[v.qk])}</i></span>`).join('');
+  const legend = [['good', 'good data'], ['med', 'medium'], ['poor', 'poor']].concat(n.na ? [['na', 'not applicable']] : [])
+    .map(([k, l]) => `<span class="q-${k}"><span class="sm-dot"></span><span class="sm-mono">${n[k]}</span><span>${l}</span></span>`).join('');
   let table = '';
   if (edgeLayersOpen){
-    const body = rows.map(r => {
-      const a = r.a, applied = !!a.applied, signal = a.signal || 0;
-      const even = !applied || a.direction === 'neutral' || Math.abs(signal) < 0.02;
-      const width = Math.min(50, Math.abs(signal) * 50);
-      const fill = (!even && width > 0.2) ? `<span class="fill" style="left:${a.direction === 'p1' ? (50 - width).toFixed(1) : '50'}%; width:${width.toFixed(1)}%"></span>` : '';
-      const fig = edgeFigures(a);   // the players' real figures in the layer's unit (R1 fix 2); the bar stays normalised
-      const sa = fig ? fig[0] : '—', sb = fig ? fig[1] : '—';
-      const delta = Math.abs(a.deltaP1 || 0) * 100;
-      let fav, shift;
-      if (!applied && edgeEven(a)){ fav = '<span class="em-fav na">Even</span>'; shift = '<span class="em-shift em-zero">0.0pp</span>'; }
-      else if (!applied){ fav = `<span class="em-fav na">${(a.gated || edgeNotThisFormat(a)) ? 'Gated' : 'No data'}</span>`; shift = '<span class="em-shift em-zero">—</span>'; }
-      else if (even || delta < 0.05){ fav = '<span class="em-fav na">Even</span>'; shift = '<span class="em-shift em-zero">0.0pp</span>'; }
-      else { fav = `<span class="em-fav">${edgeEsc(a.direction === 'p1' ? names.p1 : names.p2)}</span>`; const p = edgePP(delta); shift = `<span class="em-shift ${p.c}">${p.t}</span>`; }
-      const open = edgeLayerOpen === a.key;
-      const det = open ? `<div class="em-ldet">
-          <span class="col"><span class="em-caps">Why</span><span class="why">${edgeNumHtml(a.key === 'styleMatchup' && !applied ? edgeStyleWhy(names, keys) : edgeWhyText(a, names)) || '—'}</span></span>
-          <span class="div"></span>
-          <span class="col"><span class="dqh"><span class="em-caps">Data quality</span><i class="${qc(r.q)}"></i><span class="em-caps ${qt(r.q)}">${r.q}</span></span><span class="dq">${edgeEsc(r.cell ? 'The model doesn’t read playing styles yet.' : edgeDqText(a))}</span></span>
-        </div>` : '';
-      return `<div class="em-lrow${open ? ' open' : ''}${edgeLayerFlash === a.key ? ' flash' : ''}" id="emLayer-${edgeEsc(a.key)}">
-          <div class="em-tr" onclick="edgeToggleLayer('${edgeJs(a.key)}')">
-            <span class="tw">▸</span><span class="em-lname">${edgeEsc(edgeLayerName(a))}</span><span class="em-chip">${r.w.word}</span>
-            <span class="em-qdot ${qc(r.q)}" title="${r.q}"></span>
-            <span class="em-sc${fig && applied ? '' : ' na'}">${edgeEsc(sa)}</span><span class="em-sig"><span class="tick"></span>${fill}</span><span class="em-sc${fig && applied ? '' : ' na'}">${edgeEsc(sb)}</span>
-            ${fav}${shift}
-          </div>${det}
+    const side = isA => {
+      const r = views.filter(v => v.moved && v.favA === isA);
+      return { n: r.length + (r.length === 1 ? ' layer' : ' layers'), tot: '+' + r.reduce((s, v) => s + v.delta, 0).toFixed(1) + 'pp' };
+    };
+    const fa = side(true), fb = side(false);
+    const net = ((e.stage2 && e.stage2.totalDeltaP1) || 0) * 100, netZero = Math.round(Math.abs(net) * 10) === 0;
+    const hs = (s, f) => `<div class="sm-ich-s ${s === 'p1' ? 'a' : 'b'}"><div class="sm-ich-w">${smAv(names[s], keys[s], 38, s === 'p1')}<span class="sm-ich-nb"><span class="nm">${edgeEsc(names[s])}</span><span class="sm-ich-fav">${f.n} in his favour</span></span></div><span class="sm-ich-tot" title="Sum of the shifts of the layers that help him">${f.tot}</span></div>`;
+    const body = views.map(v => {
+      const a = v.a, open = edgeLayerOpen === a.key;
+      const lead = s => v.moved && (s === 'p1') === v.favA;
+      const rt = s => `<span class="sm-rt${!v.has ? ' na' : lead(s) ? ' lead' : ''}">${edgeEsc(v.has && v.fig ? v.fig[s === 'p1' ? 0 : 1] : '—')}</span>`;
+      const sp = s => `<span class="sm-sp${lead(s) ? ' on' : ''}">${lead(s) ? v.shift : ''}</span>`;
+      const why = a.key === 'styleMatchup' && !a.applied && v.r.cell ? edgeStyleWhy(names, keys) : (a.key === 'styleMatchup' && !a.applied ? edgeStyleWhy(names, keys) : edgeWhyText(a, names));
+      const det = open ? `<div class="sm-lp"><div class="sm-lp-in">
+          <span class="sm-lp-c"><span class="sm-lp-h"><span class="sm-caps">Why</span><span class="sm-lp-p nw">${edgeEsc(v.r.w.word)} weight</span><span class="sm-lp-p">${edgeEsc(v.fav)}</span></span><span class="sm-lp-why">${edgeEsc(why || '—')}</span></span>
+          <span class="sm-lp-c"><span class="sm-lp-h dq"><span class="sm-caps">Data quality</span><span class="sm-lp-st q-${v.qk}">${EDGE_QWORD[v.qk]}</span></span><span class="sm-lp-dq">${edgeEsc(v.r.cell ? 'The model doesn’t read playing styles yet.' : edgeDqText(a))}</span></span>
+        </div></div>` : '';
+      return `<div class="sm-lr${open ? ' open' : ''}${edgeLayerFlash === a.key ? ' flash' : ''}" id="emLayer-${edgeEsc(a.key)}">
+          <div class="sm-lrg" onclick="edgeToggleLayer('${edgeJs(a.key)}')"><span></span>${sp('p1')}${rt('p1')}
+            <span class="sm-ln"><span class="sm-ln-n${v.has ? '' : ' na'}">${edgeEsc(edgeLayerName(a))}</span><span class="sm-ln-s"><span class="sm-dot q-${v.qk}" title="${EDGE_QWORD[v.qk]}"></span>${smNb(v.sub)}</span></span>
+            ${rt('p2')}${sp('p2')}<span class="sm-chev">›</span></div>${det}
         </div>`;
     }).join('');
-    table = `<div class="em-tbl">
-        <div class="em-tr em-th em-caps"><span></span><span>Layer</span><span>Weight</span><span>Quality</span><span>${edgeEsc(names.p1)}</span><span>Signal</span><span>${edgeEsc(names.p2)}</span><span>Favours</span><span>Shift</span></div>
+    table = `<div class="sm-ic"><div class="sm-scroll cq">
+        <div class="sm-ich">${hs('p1', fa)}<div class="sm-ich-c"><span class="sm-caps">Net adjustment</span><span class="sm-net${netZero ? ' zero' : ''}">${netZero ? '0.0pp' : '+' + Math.abs(net).toFixed(1) + 'pp'}</span><span class="tw">${netZero ? 'level' : 'toward ' + edgeEsc(net >= 0 ? names.p1 : names.p2)}</span></div>${hs('p2', fb)}</div>
+        <div class="sm-cs"><span></span><span title="How far the layer moves the fair price, shown on the side of the player it helps">Shift</span><span>Rating</span><span>Layer</span><span>Rating</span><span>Shift</span><span></span></div>
         ${body}
-        <span class="em-vl-foot">Rows ordered by weight, Highest → Low · click a strip segment to jump to its layer · signal bar grows from the centre toward the player it favours · shift = movement of the fair price in percentage points</span>
-      </div>`;
+      </div></div>`;
   }
+  const help = 'One segment per layer: green = good data, amber = medium, red = poor, grey = not applicable to this match. Click a segment to jump to its layer. In the breakdown each layer shows the two players’ figures face to face, the one it favours in white. The green pill beside a figure is how far the layer moves the fair price toward that player, in percentage points; under ' + EDGE_LEVEL_PP + 'pp the layer counts as level. Layers run from the highest weight to the lowest.';
   return `
-    <div class="em-card em-vl">
-      <div class="em-head">
-        <span class="em-vl-t"><span class="em-caps">Value layers</span><span class="em-note">Data quality behind each adjustment folded into the price</span></span>
-        <span class="em-vl-n"><span><span class="act">${active}</span> of <span class="em-mono">${rows.length}</span> active</span><span class="sep"></span>
-          <span class="q"><b>${n.Good}</b><span>good</span></span><span class="q"><b>${n.Medium}</b><span>medium</span></span><span class="q"><b>${n.Poor}</b><span>poor</span></span></span>
-      </div>
-      <div class="em-strip">${strip}</div>
-      <div class="em-tog"><span class="ln"></span><button type="button" class="em-tog-b em-caps" aria-expanded="${edgeLayersOpen}" onclick="edgeToggleLayers()">Layer breakdown<span class="chev" style="transform:rotate(${edgeLayersOpen ? 180 : 0}deg)">▾</span></button><span class="ln"></span></div>
+    <div class="sm-card sm-vl">
+      ${smHead('Value layers', 'Data quality behind each adjustment folded into the price',
+        `<span class="sm-pill"><span class="sm-mono b">${active}</span> of <span class="sm-mono">${rows.length}</span> layers active</span>${smQ(help)}`)}
+      <div class="sm-vl-cov"><div class="sm-strip">${strip}</div><div class="sm-legend">${legend}</div></div>
+      <button type="button" class="sm-tog sm-seg" aria-expanded="${edgeLayersOpen}" onclick="edgeToggleLayers()">${edgeLayersOpen ? 'Hide the layer breakdown' : 'Show all ' + rows.length + ' layers'}<span class="c" style="transform:rotate(${edgeLayersOpen ? 180 : 0}deg)">▾</span></button>
       ${table}
     </div>`;
+}
+
+// ── Fair price & value ─────────────────────────────────────────────────────
+// Verdicts are the model's own flags (stage3.flags, the live thresholds: Sharp Value ≥ 3% vs Pinnacle no-vig, Soft
+// Book Value ≥ 5% vs the best soft price), never recomputed here; a typed odd moves only its own gap.
+function edgeVerdicts(e){
+  const st3 = e.stage3 || {}, flags = st3.flags || [];
+  const by = s => { const f = flags.filter(x => x.side === s); return f.find(x => /sharp/i.test(x.type)) ? 'Sharp value' : (f.find(x => /soft/i.test(x.type)) ? 'Soft book value' : null); };
+  const v = { p1: by('p1'), p2: by('p2') };
+  if (v.p1 || v.p2){
+    return { p1: v.p1 ? { t: v.p1, c: 'pos' } : { t: 'Market side', c: '' }, p2: v.p2 ? { t: v.p2, c: 'pos' } : { t: 'Market side', c: '' } };
+  }
+  const best = s => Math.max(...[st3.sharp && st3.sharp.edge && st3.sharp.edge[s], st3.soft && st3.soft.edge && st3.soft.edge[s]].filter(x => x != null && isFinite(x)), -Infinity);
+  const dec = best('p1') >= best('p2') ? 'p1' : 'p2';
+  return { p1: { t: 'No value', c: dec === 'p1' ? 'neg' : '' }, p2: { t: 'No value', c: dec === 'p2' ? 'neg' : '' } };
 }
 // Editing an odd re-computes its own gap in place (no re-render, the caret stays); bad input reads —.
 function edgeOddInput(el, id, tile, side){
   (edgeOddEdits[id] = edgeOddEdits[id] || {})[tile + ':' + side] = el.value;
   const e = modelOutput.matches && modelOutput.matches[id];
   const f = e && e.stage3 && e.stage3.fair && e.stage3.fair[side];
-  const g = edgePP(edgeGapOf(f ? f.prob : null, edgeParseOdd(el.value)));
+  const g = smPP(edgeGapOf(f ? f.prob : null, edgeParseOdd(el.value)));
   const out = document.getElementById(`emGap-${tile}-${side}`);
-  if (out){ out.textContent = g.t; out.className = 'em-gap ' + g.c; }
+  if (out){ out.textContent = g.t; out.className = 'sm-ep ' + g.c; }
 }
+function edgeB105Cell(bl, s){ return bl && bl.live ? mxOddsTxt(bl[s]) : '—'; }
+function edgeB105Gap(bl, s, prob){ return smPP((bl && bl.live && prob != null) ? Math.round(prob * 1000) / 10 - bl.nv[s] * 100 : null); }
 function edgeFairHtml(m, e, names, keys){
-  const st3 = e.stage3 || {}, fair = st3.fair || {}, flags = st3.flags || [];
+  const st3 = e.stage3 || {}, fair = st3.fair || {};
   const sharp = edgeSharp(m);
   const edits = edgeOddEdits[edgeCurrentId] || {};
-  const netPP = ((e.stage2 && e.stage2.totalDeltaP1) || 0) * 100;
+  const netPP = ((e.stage2 && e.stage2.totalDeltaP1) || 0) * 100, netZero = Math.round(Math.abs(netPP) * 10) === 0;
   const netWho = netPP >= 0 ? names.p1 : names.p2;
   const b105 = edgeB105Line(m);
-  if (edgeB105Ctx && edgeB105Ctx.id === (m && m.id)) edgeB105Ctx.fair = { p1: fair.p1 && fair.p1.prob != null ? fair.p1.prob : null, p2: fair.p2 && fair.p2.prob != null ? fair.p2.prob : null };
-  const col = s => {
-    const f = fair[s] || {}, prob = f.prob != null ? f.prob : null;
-    const flag = flags.find(x => x.side === s);
-    const soft = edgeBestSoft(m, s);
-    const tile = (kind, label, def, foot) => {
-      const raw = edits[kind + ':' + s] != null ? edits[kind + ':' + s] : (def != null ? mxOddsTxt(def) : '');
-      const g = edgePP(edgeGapOf(prob, edgeParseOdd(raw)));
-      return `<div class="em-tile"><span class="em-tile-h"><span class="em-caps">${label}</span><span class="em-gap ${g.c}" id="emGap-${kind}-${s}">${g.t}</span></span>`
-        + `<input type="text" inputmode="decimal" class="em-odd" aria-label="${edgeEsc(label)} odd for ${edgeEsc(names[s])}" value="${edgeEsc(raw)}" oninput="edgeOddInput(this,'${edgeJs(edgeCurrentId)}','${kind}','${s}')">`
-        + `<span class="em-tile-f">${foot}</span></div>`;
-    };
-    let pinFoot = '—';
-    if (sharp){
-      const o = sharp.open ? sharp.open[s] : null, n = sharp.now ? sharp.now[s] : null;
-      const mv = (typeof mxMovePct === 'function') ? mxMovePct(o, n) : null;
-      pinFoot = `${o != null ? mxOddsTxt(o) : '—'} → ${n != null ? mxOddsTxt(n) : '—'} · <span class="${mv ? (mv.dir === 'pos' ? 'em-pos' : mv.dir === 'neg' ? 'em-neg' : 'em-zero') : 'em-zero'}">${mv ? mv.text : '—'}</span>`;
-    }
-    return `<div class="em-fp-col ${s === 'p1' ? 'a' : 'b'}">
-        <div class="em-fp-top">
-          <span class="em-fp-who"><span class="em-fp-nm">${edgeNameHtml(names[s], keys[s])}</span><span class="em-chip">${edgeEsc(flag ? flag.type : 'No value')}</span></span>
-          <span class="em-fp-odd"><span class="em-fp-big">${f.odds != null ? Number(f.odds).toFixed(2) : '—'}</span><span class="em-caps">Adjusted fair odd · ${prob != null ? (prob * 100).toFixed(1) + '%' : '—'}</span></span>
-        </div>
-        <div class="em-fp-tiles">
-          ${tile('soft', 'Best soft', soft ? soft.price : null, soft ? edgeEsc(soft.name) : 'no soft book')}
-          ${tile('pin', sharp ? sharp.name : 'Pinnacle', sharp && sharp.now ? sharp.now[s] : null, pinFoot)}
-        </div>
-        ${edgeB105FairHtml(b105, m, s, prob) || `<div id="emB105-fp-${s}"></div>`}
-      </div>`;
+  const prob = s => fair[s] && fair[s].prob != null ? fair[s].prob : null;
+  edgeB105Ctx = { id: m && m.id, fair: { p1: prob('p1'), p2: prob('p2') } };
+  const vd = edgeVerdicts(e);
+  const head = s => `<div class="sm-ich-s ${s === 'p1' ? 'a' : 'b'}"><div class="sm-ich-w">${smAv(names[s], keys[s], 38, s === 'p1')}<span class="sm-fp-who">${smName(names[s], keys[s])}<span class="sm-vd ${vd[s].c}">${edgeEsc(vd[s].t)}</span></span></div>`
+    + `<span class="sm-ich-big" title="Adjusted fair odd: the model base price after the value layers. No margin.">${fair[s] && fair[s].odds != null ? Number(fair[s].odds).toFixed(2) : '—'}</span></div>`;
+  const field = (kind, s, def) => {
+    const raw = edits[kind + ':' + s] != null ? edits[kind + ':' + s] : (def != null ? mxOddsTxt(def) : '');
+    return `<input type="text" inputmode="decimal" class="sm-odd" title="Edit to check another price" aria-label="${kind === 'soft' ? 'Best soft' : (sharp ? sharp.name : 'Pinnacle')} odd for ${edgeEsc(names[s])}" value="${edgeEsc(raw)}" oninput="edgeOddInput(this,'${edgeJs(edgeCurrentId)}','${kind}','${s}')">`;
   };
-  const books = edgeSoftBooks(m).map(edgeBookName);
+  const gap = (kind, s, def) => {
+    const raw = edits[kind + ':' + s] != null ? edits[kind + ':' + s] : (def != null ? mxOddsTxt(def) : '');
+    const g = smPP(edgeGapOf(prob(s), edgeParseOdd(raw)));
+    return `<span class="sm-ep ${g.c}" id="emGap-${kind}-${s}">${g.t}</span>`;
+  };
+  const softA = edgeBestSoft(m, 'p1'), softB = edgeBestSoft(m, 'p2');
+  const softName = !softA && !softB ? 'no soft book' : (softA && softB && softA.key === softB.key ? softA.name : `${softA ? softA.name : '—'} / ${softB ? softB.name : '—'}`);
+  const sd = { p1: softA ? softA.price : null, p2: softB ? softB.price : null };
+  const pd = { p1: sharp && sharp.now ? sharp.now.p1 : null, p2: sharp && sharp.now ? sharp.now.p2 : null };
+  const po = s => sharp && sharp.open ? mxOddsTxt(sharp.open[s]) : '—';
+  const b105Row = s => `<span class="sm-b105" id="emB105-v-${s}" onmouseenter="edgeB105In(this,'${s}')" onmouseleave="edgeB105Out()">${edgeB105Cell(b105, s)}</span>`;
+  const b105Gap = s => { const g = edgeB105Gap(b105, s, prob(s)); return `<span class="sm-ep ${g.c}" id="emB105-g-${s}">${g.t}</span>`; };
   const surf = edgeCap((m && m.surface) || (e.match && e.match.surface) || '');
+  const pctOf = s => prob(s) != null ? (prob(s) * 100).toFixed(1) + '%' : '—';
+  const help = 'Gap = adjusted fair probability minus the probability implied by the book price. Green means the book pays more than our fair price. The Best soft and Pinnacle odds are fields: type another price to see its gap to our fair price; the verdict is the model’s own and does not change. Bet105 is shown with its margin removed and is not editable.';
   return `
-    <div class="em-card em-fp">
-      <div class="em-fp-head">
-        <span class="em-fp-t"><span class="em-caps">Adjusted model price vs the market${surf ? ' · ' + edgeEsc(surf) : ''}</span><span class="em-fp-title">Fair price &amp; value</span></span>
-        <span class="em-fp-net">Net adjustment <b class="em-mono">${Math.round(Math.abs(netPP) * 10) === 0 ? '0.0' : '+' + Math.abs(netPP).toFixed(1)}pp</b> toward <b>${edgeEsc(netWho)}</b></span>
-      </div>
-      <div class="em-fp-cols">${col('p1')}${col('p2')}</div>
-      <span class="em-fp-foot">Gap = adjusted fair probability minus the book’s implied probability · edit either odd to re-check${books.length ? ' · best soft scans ' + edgeEsc(books.join(', ')) : ''}</span>
+    <div class="sm-card sm-fp">
+      ${smHead('Fair price &amp; value', `Adjusted model price against the market${surf ? ' · ' + edgeEsc(surf) : ''}`,
+        `<span class="sm-pill">Net adjustment <span class="sm-mono b">${netZero ? '0.0pp' : '+' + Math.abs(netPP).toFixed(1) + 'pp'}</span>${netZero ? '' : ` toward <span class="w">${edgeEsc(netWho)}</span>`}</span>${smQ(help)}`)}
+      <div class="sm-ic"><div class="sm-scroll">
+        <div class="sm-ich">${head('p1')}<div class="sm-ich-c"><span class="sm-caps">Adjusted fair</span><span class="sm-mono">${pctOf('p1')}</span><span class="sm-mono">${pctOf('p2')}</span></div>${head('p2')}</div>
+        <div class="sm-cs"><span></span><span title="Adjusted fair probability minus the probability implied by the book price">Gap</span><span>Odds</span><span>Book</span><span>Odds</span><span>Gap</span><span></span></div>
+        <div class="sm-row"><span></span>${gap('soft', 'p1', sd.p1)}${field('soft', 'p1', sd.p1)}<span class="sm-bk"><span class="sm-bk-l">Best soft</span><span class="sm-bk-s">${edgeEsc(softName)}</span></span>${field('soft', 'p2', sd.p2)}${gap('soft', 'p2', sd.p2)}<span></span></div>
+        <div class="sm-row"><span></span>${gap('pin', 'p1', pd.p1)}${field('pin', 'p1', pd.p1)}<span class="sm-bk"><span class="sm-bk-l">${edgeEsc(sharp ? sharp.name : 'Pinnacle')}</span><span class="sm-bk-s sm-mono nw">open ${po('p1')} · ${po('p2')}</span></span>${field('pin', 'p2', pd.p2)}${gap('pin', 'p2', pd.p2)}<span></span></div>
+        <div class="sm-row"><span></span>${b105Gap('p1')}${b105Row('p1')}<span class="sm-bk" title="${edgeEsc(edgeB105Tip(b105, m))}"><span class="sm-bk-l">Bet105</span><span class="sm-bk-s nw">margin removed</span></span>${b105Row('p2')}${b105Gap('p2')}<span></span></div>
+      </div></div>
     </div>`;
 }
-function edgeMoversHtml(e, names, keys, free){
-  const movers = edgeVisibleAdjs(e.stage2.adjustments).filter(a => a.applied && Math.abs(a.deltaP1 || 0) >= 0.0005)
-    .sort((a, b) => Math.abs(b.deltaP1) - Math.abs(a.deltaP1)).slice(0, 3);
-  const rows = movers.length ? movers.map((a, i) => {
-    const s = a.direction === 'p1' ? 'p1' : 'p2', p = edgePP(Math.abs(a.deltaP1) * 100);
-    const who = edgeHasProfile(keys[s]) ? `<a class="em-mv-who lk" onclick="openPlayerProfileFromMatch('${edgeJs(keys[s])}')">${edgeEsc(names[s])}</a>` : `<span class="em-mv-who">${edgeEsc(names[s])}</span>`;
-    return `<div class="em-mv-row"><span class="em-mv-rk">${i + 1}.</span><span class="em-mv-nm">${edgeEsc(edgeLayerName(a))}</span>${who}<span class="em-mv-d ${p.c}">${p.t}</span></div>`;
-  }).join('') : '<div class="em-mv-row"><span class="em-mv-nm" style="color:var(--text-label);">No layer moved the price.</span></div>';
+// A stream change repaints only the two Bet105 cells and their gaps — an odd being typed survives.
+function edgeB105Paint(){
+  const c = edgeB105Ctx; if (!c || c.id !== edgeCurrentId) return;
+  const pg = document.querySelector('.tabpage[data-page="edge"]');
+  if (pg && pg.classList && !pg.classList.contains('active')) return;
+  const m = matches.find(x => x.id === c.id) || null;
+  const bl = edgeB105Line(m);
+  ['p1', 'p2'].forEach(s => {
+    const v = document.getElementById('emB105-v-' + s), g = document.getElementById('emB105-g-' + s);
+    if (v) v.textContent = edgeB105Cell(bl, s);
+    if (g){ const x = edgeB105Gap(bl, s, c.fair[s]); g.textContent = x.t; g.className = 'sm-ep ' + x.c; }
+  });
+}
+if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') window.addEventListener('kiblnow:change', edgeB105Paint);
+
+// ── Bet105 odds movement pop-up ────────────────────────────────────────────
+// The Today's Matches pop-up's anatomy and its data path (PriceHistoryBox: the price_history rows of the card, cut at
+// the start, changes only), here on Bet105's margin-removed prices (÷ EDGE_B105_K) to match the row it opens from.
+let edgePopTimer = null, edgePopToken = null;
+function edgePopEl(){
+  let p = document.getElementById('edgeB105Pop');
+  if (!p){
+    p = document.createElement('div'); p.id = 'edgeB105Pop'; p.className = 'sm-pop'; p.hidden = true; p.setAttribute('role', 'dialog');
+    p.addEventListener('mouseenter', () => clearTimeout(edgePopTimer));
+    p.addEventListener('mouseleave', edgeB105Out);
+    document.body.appendChild(p);
+  }
+  return p;
+}
+function edgeB105Out(){ clearTimeout(edgePopTimer); edgePopTimer = setTimeout(edgeB105Hide, 160); }
+function edgeB105Hide(){ const p = document.getElementById('edgeB105Pop'); if (p) p.hidden = true; edgePopToken = null; document.querySelectorAll('.sm-b105.on').forEach(x => x.classList.remove('on')); }
+function edgeB105Place(el){
+  const p = edgePopEl(), r = el.getBoundingClientRect(), vh = window.innerHeight, vw = window.innerWidth;
+  const up = r.bottom + 400 > vh && r.top > 400;
+  p.style.left = Math.max(8, Math.min(vw - 320, r.left + r.width / 2 - 156)) + 'px';
+  p.style.top = up ? 'auto' : (r.bottom + 8) + 'px';
+  p.style.bottom = up ? (vh - r.top + 8) + 'px' : 'auto';
+  p.dataset.at = up ? 'above' : 'below';
+}
+function edgeB105PopHtml(name, rows, now, state){
+  const PH = window.PriceHistoryBox || {};
+  const fmtWhen = t => typeof PH.fmtWhen === 'function' ? PH.fmtWhen(t) : '—';
+  const fmtD = d => typeof PH.fmtDelta === 'function' ? PH.fmtDelta(d) : '';
+  const open = rows.length ? rows[0] : null;
+  const listed = rows.slice(1).filter((r, i) => mxOddsTxt(r.price) !== mxOddsTxt(rows[i].price));
+  const items = listed.map((r, i) => ({ at: r.at, price: r.price, d: Math.round((r.price - (i ? listed[i - 1].price : open.price)) * 1000) / 1000 })).reverse();
+  const pct = open && now != null && typeof mxMovePct === 'function' ? mxMovePct(open.price, now) : null;
+  let list;
+  if (state) list = `<div class="sm-pop-note">${state}</div>`;
+  else if (!rows.length) list = '<div class="sm-pop-note">No price history yet</div>';
+  else if (!items.length) list = '<div class="sm-pop-note">No price change recorded</div>';
+  else list = items.map((k, i) => `<div class="sm-pop-k${i ? '' : ' latest'}"><span class="t">${edgeEsc(fmtWhen(k.at))}</span><span class="p">${mxOddsTxt(k.price)}</span><span class="d${k.d > 0 ? ' pos' : k.d < 0 ? ' neg' : ''}">${edgeEsc(fmtD(k.d))}</span></div>`).join('');
+  return `<div class="sm-pop-t"><div class="sm-pop-r1"><span class="sm-caps">Odds movement</span><span class="sm-pop-bk">Bet105 · margin removed</span></div>
+      <span class="sm-pop-nm">${edgeEsc(name)}</span>
+      <div class="sm-pop-r3"><span class="o">${open ? mxOddsTxt(open.price) : '—'}</span><span class="ar">→</span><span class="w">${now != null ? mxOddsTxt(now) : '—'}</span>${pct ? `<span class="ch${pct.dir ? ' ' + pct.dir : ''}">${pct.text}</span>` : ''}${state || !rows.length ? '' : `<span class="mv">${items.length} move${items.length === 1 ? '' : 's'}</span>`}</div></div>
+    <div class="sm-pop-l">${list}</div>
+    ${open ? `<div class="sm-pop-f"><span><span class="sm-caps">Opening</span><span class="t">${edgeEsc(fmtWhen(open.at))}</span></span><span class="p">${mxOddsTxt(open.price)}</span><span></span></div>` : ''}`;
+}
+async function edgeB105In(el, s){
+  clearTimeout(edgePopTimer);
+  const m = matches.find(x => x.id === edgeCurrentId); if (!m) return;
+  const PH = window.PriceHistoryBox;
+  const bl = edgeB105Line(m), now = bl && bl.live ? bl[s] : null;
+  const name = edgePlayerName(m, null, s);
+  const token = {}; edgePopToken = token;
+  document.querySelectorAll('.sm-b105.on').forEach(x => x.classList.remove('on')); el.classList.add('on');
+  const p = edgePopEl(); p.innerHTML = edgeB105PopHtml(name, [], now, 'Loading price history…'); p.hidden = false; edgeB105Place(el);
+  if (!PH || typeof PH.fetchHistory !== 'function'){ p.innerHTML = edgeB105PopHtml(name, [], now, 'Price history unavailable'); return; }
+  const payload = await PH.fetchHistory(ocsKeyOf(m));
+  if (edgePopToken !== token) return;
+  if (!payload){ p.innerHTML = edgeB105PopHtml(name, [], now, 'Price history unavailable'); edgeB105Place(el); return; }
+  const st = (typeof cardStartMs === 'function') ? cardStartMs(m) : NaN;
+  const raw = PH.changesOnly(PH.sideRows(payload, ocsNameKey(m[s]), ocsNameKey).filter(r => !isFinite(st) || r.at <= st));
+  const rows = raw.filter(r => r.price >= 1.01).map(r => ({ at: r.at, price: r.price / EDGE_B105_K }));
+  p.innerHTML = edgeB105PopHtml(name, rows, now, null); edgeB105Place(el);
+}
+if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') window.addEventListener('scroll', () => { const p = document.getElementById('edgeB105Pop'); if (p && !p.hidden) edgeB105Hide(); }, { passive: true });
+
+// ── Biggest movers ─────────────────────────────────────────────────────────
+// The three layers with the largest shift (each ≥ EDGE_LEVEL_PP); share = their summed shift over the summed shift of
+// every layer that moved, either way (absolute values; the net adjustment is the signed sum).
+function edgeMoversHtml(e, names, keys){
+  const views = edgeLayerRows(e, names, keys).map(r => Object.assign({ r }, edgeLayerView(r, names))).filter(v => v.moved);
+  const top = views.slice().sort((x, y) => y.delta - x.delta).slice(0, 3);
+  const all = views.reduce((s, v) => s + v.delta, 0), t3 = top.reduce((s, v) => s + v.delta, 0);
+  const share = all > 0 ? Math.round(t3 / all * 100) + '%' : '—';
+  const rows = top.length ? top.map((v, i) => {
+    const s = v.favA ? 'p1' : 'p2';
+    const sub = `${v.r.w.word} weight` + (v.fig ? ` · ${v.fig[0]} v ${v.fig[1]}` : '');
+    const who = edgeHasProfile(keys[s]) ? `<a class="sm-plink" onclick="event.stopPropagation(); openPlayerProfileFromMatch('${edgeJs(keys[s])}')">${edgeEsc(names[s])}</a>` : `<span class="nm">${edgeEsc(names[s])}</span>`;
+    return `<div class="sm-mvr" title="Open this layer in the breakdown" onclick="edgeJumpLayer('${edgeJs(v.a.key)}')"><span class="sm-mvr-rk">${i + 1}</span>
+        <span class="sm-mvr-l"><span class="n">${edgeEsc(edgeLayerName(v.a))}</span><span class="s">${smNb(sub)}</span></span>
+        <span class="sm-mvr-w">${smAv(names[s], keys[s], 24, s === 'p1')}${who}</span>
+        <span class="sm-ep pos">${v.shift}</span><span class="sm-mvr-c">›</span></div>`;
+  }).join('') : '<div class="sm-mvr-none">No layer moved the price.</div>';
+  const surf = edgeCap((e.match && e.match.surface) || '');
   return `
-    <div class="em-card em-mv">
-      <div class="em-head"><span class="em-caps">Biggest movers</span><span class="em-note">The three factors that moved the price most</span></div>
-      <div>${rows}</div>
-      ${free ? '<div class="em-mv-up"><a class="sf-upgrade em-btn" href="account.html">Upgrade to Pro to unlock all factors</a></div>' : ''}
+    <div class="sm-card sm-mv">
+      ${smHead('Biggest movers', `The three layers that moved the price most${surf ? ' · ' + edgeEsc(surf) : ''}`,
+        `<span class="sm-pill"><span class="sm-mono b">${share}</span> of the total shift</span>${smQ('Shift = how far that layer moved the fair probability, in percentage points, toward the player it favours. The share is the three shifts over the shifts of every layer that moved the price, either way. Click a layer to open it in the value layers breakdown.')}`)}
+      <div class="sm-ic"><div class="sm-cs"><span></span><span>Layer</span><span>Favours</span><span>Shift</span><span></span></div>${rows}</div>
     </div>`;
 }
+
 // Generate / Regenerate = read the newest pipeline run of model-output.json (the analysis is written pipeline-side,
 // cached per match by its facts); the shimmer covers that read.
 function edgeGenerate(id){

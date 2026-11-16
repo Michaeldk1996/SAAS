@@ -1,4 +1,5 @@
-// TEN-418 step 12 (founder 2026-10-10): the Stennisfy Model page redesign. The SHIPPED Model renderer (the block from
+// Stennisfy Model page — handoff design_handoff_stennisfy_model (founder brief 2026-11-16, pixel for pixel; first built
+// TEN-418 step 12, founder 2026-10-10). The SHIPPED Model renderer (the block from
 // `let edgeCurrentId` to the end of renderEdgeModel in bsp-consult-dashboard.html) runs for real, with the page's own
 // price, name and move helpers, against a frozen real board row + its model run (tools/fixtures/ten418-model.json:
 // L. Darderi v S. Tsitsipas, Shanghai, 10 Oct 2026, run 04:51Z). Every check names the mutation that turns it red
@@ -20,7 +21,7 @@ const BLOCK = (() => {
   return html.slice(a, b);
 })();
 const PAGE = (() => { const a = html.indexOf('<div class="tabpage" data-page="edge">'); return html.slice(a, html.indexOf('<div class="modal-overlay" id="favModal">', a)); })();
-const CSS = (() => { const a = html.indexOf('/* ── TEN-418 step 12'); return html.slice(a, html.indexOf('</style>', a)); })();
+const CSS = (() => { const a = html.indexOf('/* ── Stennisfy Model page — handoff'); return html.slice(a, html.indexOf('</style>', a)); })();
 function fn(name) {
   const at = html.indexOf('\nfunction ' + name + '(');
   assert.ok(at >= 0, 'function ' + name);
@@ -37,14 +38,14 @@ const NOW = Date.parse('2026-10-10T05:00:00Z');   // 3.5 h before the 08:30Z sta
 function boot(opts = {}) {
   const els = {};
   const el = id => (els[id] = els[id] || { id, innerHTML: '', textContent: '', className: '' });
-  ['edgeBody', 'edgeHeadSub', 'edgeHeadStats', 'edgeRailList', 'edgeRailN'].forEach(el);
+  ['edgeBody', 'edgeHeadQ', 'edgeRail'].forEach(el);
   const navBtn = { matches: sel => sel === '.is-locked' && !!opts.free };
   const calls = { scrollBy: [], scrollIntoView: 0, dd: null, profile: [], b105: {}, pairFor: [] };
   const rowEl = { getBoundingClientRect: () => ({ top: 1400, height: 40 }), parentElement: null, classList: { remove() {} }, scrollIntoView() { calls.scrollIntoView++; } };
   const document = {
     getElementById: id => id.startsWith('emB105-') ? (calls.b105[id] = calls.b105[id] || { id, outerHTML: '' }) : (id.startsWith('emLayer-') ? (els.edgeBody.innerHTML.includes(`id="${id}"`) ? rowEl : null) : (els[id] || null)),
     querySelector: sel => (sel === '.sf-nav [data-tab="edge"]' ? navBtn : null),
-    querySelectorAll: () => [],
+    querySelectorAll: () => [], addEventListener() {}, body: { appendChild() {} }, createElement: () => ({ addEventListener() {}, setAttribute() {}, style: {} }),
   };
   const M = JSON.parse(JSON.stringify(opts.m || FIX.m1)), M2 = JSON.parse(JSON.stringify(FIX.m2));
   M.p1 = 'Darderi L.';   // a vendor spelling: the page must print the profile's (shared formatter), never the feed's
@@ -70,204 +71,301 @@ function boot(opts = {}) {
   ctx.globalThis = ctx;
   vm.createContext(ctx);
   const block = opts.staleMin != null ? BLOCK.replace('const EDGE_PIN_STALE_MIN = 120;', `const EDGE_PIN_STALE_MIN = ${opts.staleMin};`) : BLOCK;
-  vm.runInContext(HELPERS + '\n' + block + '\nthis.API = { renderEdgeModel, openEdgeModel, edgeOddInput, edgeJumpLayer, edgeSharp, edgeBestSoft, edgeLayerRows, edgeParseOdd, edgeWhyText, edgeToggleLayers, edgeToggleLayer, edgeGenerate, edgeAiState, edgeB105Line, edgeB105Paint, openEdgeModelTab, edgeShowAllUpcoming, get scopeAll(){ return edgeScopeAll; }, get open(){ return [edgeLayersOpen, edgeLayerOpen]; } };', ctx);
+  vm.runInContext(HELPERS + '\n' + block + '\nthis.API = { renderEdgeModel, openEdgeModel, edgeOddInput, edgeJumpLayer, edgeSharp, edgeBestSoft, edgeLayerRows, edgeParseOdd, edgeWhyText, edgeToggleLayers, edgeToggleLayer, edgeGenerate, edgeAiState, edgeB105Line, edgeB105Paint, openEdgeModelTab, edgeShowAllUpcoming, edgeVerdicts, edgeLayerView, edgeRailToggle, edgeRailSetTour, edgeB105PopHtml, get scopeAll(){ return edgeScopeAll; }, get open(){ return [edgeLayersOpen, edgeLayerOpen]; } };', ctx);
   const api = ctx.API;
   api.render = (id = M.id) => { api.openEdgeModel(id); return els.edgeBody.innerHTML; };
   return { api, els, calls, M, E, ctx };
 }
-const text = h => h.replace(/<[^>]+>/g, ' ').replace(/&amp;/g, '&').replace(/\s+/g, ' ').trim();
+const text = h => h.replace(/<[^>]+>/g, ' ').replace(/&amp;/g, '&').replace(/\u2011/g, '-').replace(/\s+/g, ' ').trim();
 
-test('header: title, layer sentence from the engine, Matches = the board list, Layers active, Updated = the model run (not the clock)', () => {
+
+// ── page head + rail ──────────────────────────────────────────────────────
+test('page head: the reference head (title, one line, "?"); the "?" names the layer count; no stat header, no Updated (founder 2026-11-16)', () => {
   const { api, els } = boot();
   api.render();
-  assert.match(PAGE, /<h1 class="sfh__title">Stennisfy Model<\/h1>/);
-  assert.equal(els.edgeHeadSub.textContent, 'Fair prices from 14 weighted layers, against the market.');
-  const t = text(els.edgeHeadStats.innerHTML);
-  assert.match(t, /^Matches 12 Layers active 9\/14 Updated 04:51$/, t);   // R1 fix 1: 14 everywhere
-  assert.match(els.edgeHeadStats.innerHTML, /title="Model run 10 Oct, 04:51:34"/);
+  assert.match(PAGE, /<h1 class="sm-title">Stennisfy Model<\/h1>\s*<p class="sm-sub">Our fair price for every match, set against the market\.<\/p>/);
+  assert.match(els.edgeHeadQ.title, /then folds in 14 value layers\. The adjusted fair price is compared with Pinnacle and the best soft book\.$/);
+  assert.ok(!/Model run|Updated/.test(els.edgeHeadQ.title + PAGE), 'no Updated on this page');
+  assert.ok(!/class="sfh/.test(PAGE), 'no shared stat header on this page (the reference draws none)');
 });
-
-test('rail: Today’s Matches list (same list, count, order), grouped under the canonical event, shared names, selected row', () => {
-  const { api, els, calls } = boot();
+test('rail: Today’s Matches list in board order, the canonical event as group head with "surface · count", shared names, round · day time, one dropdown', () => {
+  const { api, els } = boot();
   api.render();
-  assert.equal(els.edgeRailN.textContent, '12 of 12');
-  const rows = [...els.edgeRailList.innerHTML.matchAll(/onclick="edgeRailPick\('([^']+)'\)"/g)].map(x => x[1]);
+  const h = els.edgeRail.innerHTML;
+  assert.match(text(h), /^Matches 12 matches All tournaments › Shanghai Masters 12 X\. A87/, 'group meta = the first row’s surface (none on this synthetic row) · count');
+  const rows = [...h.matchAll(/onclick="edgeRailPick\('([^']+)'\)"/g)].map(x => x[1]);
   assert.deepEqual(rows, FIX.board, 'every board match, in board order');
-  assert.match(els.edgeRailList.innerHTML, /<span class="em-caps em-rail-gl">Shanghai Masters<\/span>/);
-  assert.match(els.edgeRailList.innerHTML, /class="em-rail-row on" onclick="edgeRailPick\('upcoming-12169478'\)">\s*<span class="em-rail-nm">L\. Darderi v S\. Tsitsipas<\/span>\s*<span class="em-rail-meta">R64 · Today 08:30<\/span>/);
-  assert.equal(JSON.stringify(calls.dd.options.map(o => o.label)), JSON.stringify(['All tournaments', 'Shanghai Masters']));
+  assert.match(h, /<div class="sm-mrow sm-seg on"[^>]*onclick="edgeRailPick\('upcoming-12169478'\)"[\s\S]*?L\. Darderi <span class="v">v<\/span> S\. Tsitsipas<\/span>\s*<span class="sm-mrow-m">R64 · Today <span class="sm-mono">08:30<\/span>/);
+  assert.ok(!/sm-dd-m/.test(h), 'the dropdown opens on demand');
+  api.edgeRailToggle();
+  assert.equal(text(els.edgeRail.innerHTML.match(/<span class="sm-dd-m"[\s\S]*?<\/span><\/span><\/span>/)[0]), 'All tournaments 12 Shanghai Masters 12');
+  api.edgeRailSetTour('ATP Shanghai');
+  assert.match(text(els.edgeRail.innerHTML), /^Matches 12 of 12 matches Shanghai Masters ›/);
+  assert.ok(!/sm-dd-m/.test(els.edgeRail.innerHTML), 'a pick closes the menu');
+  assert.ok(!/search|Reset|Today Tomorrow/i.test(text(els.edgeRail.innerHTML).replace(/Today \d\d:\d\d/g, '')), 'no search, day switch or Reset (dead code in the reference)');
 });
 
-test('match header: initials, shared name, ELO · step-9 style (mirrored), Tournament · Surface · Round · Format', () => {
+// ── match header ──────────────────────────────────────────────────────────
+test('match header: avatars, shared names, step-9 style + Elo, the four pills, Head to Head with the pair', () => {
   const { api } = boot();
-  const t = text(api.render());
-  assert.match(t, /^LD L\. Darderi Elo 1830 · Attacking Baseliner vs S\. Tsitsipas Big Server \+ Complete Baseliner · Elo 1884 ST Tournament Shanghai Masters Surface Hard Round Round of 64 Format Best of 3/);
+  const h = api.render();
+  assert.match(text(h), /^LD L\. Darderi Attacking Baseliner Elo 1830 vs S\. Tsitsipas Big Server \+ Complete Baseliner Elo 1884 ST Tournament Shanghai Masters Surface Hard Round Round of 64 Format Best of 3 Head to Head ›/);
+  assert.match(h, /<span class="sm-av em-av s48 a">/, 'player one: the 48px avatar, blue ring');
+  assert.match(h, /href="\?a=8781&amp;b=1906" onclick="edgeGoH2H\(event,'8781','1906'\)">Head to Head/);
+  assert.match(html, /sessionStorage\.setItem\('stn_h2h_pair', JSON\.stringify\(\{ a, b \}\)\)/);
+  assert.ok(!/text-overflow:ellipsis/.test(CSS.slice(CSS.indexOf('.sm-mh-nm'), CSS.indexOf('.sm-mh-sub'))), 'names wrap, never an ellipsis');
 });
 
-test('prices: Pinnacle else bet365; best soft never Pinnacle; open → now · move is mxMovePct on the 2 dp prices', () => {
+// ── market context ────────────────────────────────────────────────────────
+test('market context: Pinnacle else Bet365, best soft never Pinnacle or an exchange; edges = base − the book’s no-vig; four rows', () => {
   const { api, M } = boot();
-  const h = api.render();
+  const t = text(api.render());
   assert.equal(api.edgeSharp(M).name, 'Pinnacle');
   assert.equal(api.edgeBestSoft(M, 'p1').key, 'bet365', 'Pinnacle 3.01 is the highest quote on Darderi, but it is not a soft book');
-  assert.match(text(h), /Pinnacle −2\.8pp 2\.94 → 3\.03 · \+3\.1%/);
   const noPin = JSON.parse(JSON.stringify(M)); delete noPin.bookNow.Pncl; delete noPin.bookOpens.Pncl;
   assert.equal(api.edgeSharp(noPin).name, 'Bet365', 'no Pinnacle → Bet365');
   assert.ok(api.edgeBestSoft(noPin, 'p1').key !== 'bet365', 'the sharp tile’s book is not also the best soft');
   const pulled = JSON.parse(JSON.stringify(M)); delete pulled.bookNow.Pncl;
   assert.equal(api.edgeSharp(pulled).name, 'Bet365', 'Pinnacle with no price now falls to Bet365');
-  assert.match(text(h), /best soft scans William Hill, Bet365, Marathon, Betfair Sportsbook, BetVictor, SBOBET, 1xBet, Betano/, 'api-tennis Betfair = the sportsbook, named in full (R2 fix 4)');
   const ex = JSON.parse(JSON.stringify(M)); ex.bookNow['Betfair Exchange'] = { p1: 9.5, p2: 9.5 };
   assert.equal(api.edgeBestSoft(ex, 'p1').key, 'bet365', 'an exchange never counts as a soft book (R2 fix 4)');
-  assert.match(text(h), /Pinnacle margin now 2\.9% , soft at open 4\.8% \(Bet365\) \/ 4\.9% \(Betano\)/, 'one margin source: the Soft open rows (R1 fix 5)');
-  assert.match(text(h), /Best soft −3\.1pp Bet365 Pinnacle −2\.8pp/, 'gaps from the fair % as printed (R1 fix 6)');
-  assert.match(text(h), /Soft open Bet365 · 4\.8% 3\.00 \+2\.7pp Pinnacle open 8 Oct · 11:22 · 3\.5% 2\.94 \+1\.6pp Pinnacle now −0\.8pp since open · 2\.9% 3\.03 \+2\.4pp Model base 34\.5% · no margin 2\.90/);
+  assert.match(t, /LD L\. Darderi 2\.90 Model base 34\.5% · 65\.5% ST S\. Tsitsipas 1\.53 Edge Odds Book Odds Edge \+2\.7pp 3\.00 Soft open Bet365 \/ Betano · margin 4\.8% \/ 4\.9% 1\.42 −1\.6pp \+2\.7pp 3\.00 Soft now margin 4\.8% \/ 4\.5% 1\.44 −0\.9pp \+1\.6pp 2\.94 Pinnacle open 8 Oct · 11:22 · margin 3\.5% 1\.44 −1\.6pp \+2\.4pp 3\.03 Pinnacle now L\. Darderi −0\.8pp since open · margin 2\.9% 1\.43 −2\.4pp Soft book Bet365 \/ Betano · market opened 8 Oct · 11:22/);
+  api.edgeSetMkView && api.edgeSetMkView('pct');
+});
+test('market context: Implied % shows the no-vig % and the model base as %, the odds under "Model base"', () => {
+  const b = boot(); b.api.render(); b.ctx.edgeMkView = 'pct';
+  vm.runInContext("edgeMkView = 'pct'", b.ctx);
+  const t = text(b.api.render());
+  assert.match(t, /L\. Darderi 34\.5% Model base 2\.90 · 1\.53 ST S\. Tsitsipas 65\.5% Edge Implied Book Implied Edge \+2\.7pp 31\.8% Soft open/);
+  assert.ok(!/NaN/.test(t));
+  vm.runInContext("edgeMkView = 'odds'", b.ctx);
+});
+test('market context: the anchor read time is in the "?" (Pinnacle from api-tennis, the pipeline read)', () => {
+  const h = boot().api.render();
+  assert.match(h, /The model anchors to Pinnacle’s quote from api-tennis, read 10 Oct, 04:49:51\./);
+  const noPin = JSON.parse(JSON.stringify(FIX.m1)); delete noPin.bookNow.Pncl;
+  assert.doesNotMatch(boot({ m: noPin }).api.render(), /anchors to Pinnacle’s quote/);
 });
 
-test('fair price: editing an odd re-computes its gap in place; empty, ≤ 1.00 and non-numbers read —, never NaN', () => {
+// ── fair price & value ────────────────────────────────────────────────────
+test('fair price: the model’s fair odd and %, gaps from the fair % as printed (R1 fix 6), Pinnacle open in the sub line', () => {
+  const t = text(boot().api.render());
+  assert.match(t, /LD L\. Darderi No value 3\.31 Adjusted fair 30\.2% 69\.8% ST S\. Tsitsipas No value 1\.43 Gap Odds Book Odds Gap −3\.1pp Best soft Bet365 \/ Betano \+0\.4pp −2\.8pp Pinnacle open 2\.94 · 1\.44 −0\.1pp/);
+});
+test('fair price: editing an odd re-computes its own gap in place; empty, ≤ 1.00 and non-numbers read —, never NaN', () => {
   const { api, els } = boot();
   api.render();
   const gap = { textContent: '', className: '' };
   els['emGap-soft-p1'] = gap;
-  for (const [v, want, cls] of [['3.40', '+0.8pp', 'em-pos'], ['3,00', '−3.1pp', 'em-neg'], ['', '—', 'em-zero'], ['1.00', '—', 'em-zero'], ['0.9', '—', 'em-zero'], ['abc', '—', 'em-zero'], ['2.5x', '—', 'em-zero']]) {
+  for (const [v, want, cls] of [['3.40', '+0.8pp', 'pos'], ['3,00', '−3.1pp', 'neg'], ['', '—', ''], ['1.00', '—', ''], ['0.9', '—', ''], ['abc', '—', ''], ['2.5x', '—', '']]) {
     api.edgeOddInput({ value: v }, 'upcoming-12169478', 'soft', 'p1');
     assert.equal(gap.textContent, want, `typed "${v}"`);
-    assert.equal(gap.className, 'em-gap ' + cls);
+    assert.equal(gap.className, 'sm-ep ' + cls);
   }
   assert.ok(!/NaN/.test(api.render()), 'no NaN after a bad edit');
   assert.match(api.render(), /value="2\.5x"/, 'the typed text survives a re-render');
 });
+test('verdicts: the model’s own flags (live thresholds), one per side; a typed odd never moves them', () => {
+  const { api, E } = boot();
+  const f = e => JSON.parse(JSON.stringify(api.edgeVerdicts(e)));
+  const no = f(E), ed = s => Math.max(...[E.stage3.sharp && E.stage3.sharp.edge && E.stage3.sharp.edge[s], E.stage3.soft && E.stage3.soft.edge && E.stage3.soft.edge[s]].filter(x => x != null), -Infinity);
+  const dec = ed('p1') >= ed('p2') ? 'p1' : 'p2';
+  assert.equal(no[dec].c, 'neg', 'no flag: red "No value" on the side with the larger edge');
+  assert.equal(no[dec === 'p1' ? 'p2' : 'p1'].c, '', 'grey on the other');
+  const sharp = JSON.parse(JSON.stringify(E)); sharp.stage3.flags = [{ type: 'Sharp Value', side: 'p2' }, { type: 'Soft Book Value', side: 'p2' }];
+  assert.deepEqual(f(sharp), { p1: { t: 'Market side', c: '' }, p2: { t: 'Sharp value', c: 'pos' } });
+  const soft = JSON.parse(JSON.stringify(E)); soft.stage3.flags = [{ type: 'Soft Book Value', side: 'p1' }];
+  assert.deepEqual(f(soft), { p1: { t: 'Soft book value', c: 'pos' }, p2: { t: 'Market side', c: '' } });
+  const b = boot({ e: sharp }); b.api.render();
+  b.api.edgeOddInput({ value: '9.99' }, 'upcoming-12169478', 'pin', 'p1');
+  assert.match(text(b.api.render()), /S\. Tsitsipas Sharp value/, 'typed odds change gaps only');
+  assert.ok(!/stage3\.flags\s*=|flags\.push/.test(BLOCK), 'the page never writes a flag');
+});
+test('fair price: no step line between base and adjusted fair (founder 2026-11-16: follow the design)', () => {
+  assert.ok(!/edgeFairStepTip|calibration \(temperature/.test(BLOCK));
+});
 
-test('value layers: 14 rows by weight then shift; real figures; plain Why that agrees with Data quality; strip click scrolls the container', () => {
+// ── value layers ──────────────────────────────────────────────────────────
+test('value layers: 14 rows by weight then shift; strip by quality (gated / not this format = Not applicable); legend counts; active = applied', () => {
   const { api, calls } = boot();
   const rows = JSON.parse(JSON.stringify(api.edgeLayerRows(boot().E).map(r => [r.a.key, r.w.word, r.q])));
   assert.deepEqual(rows.slice(0, 4), [['styleMatchup', 'Highest', 'Poor'], ['subjective', 'Highest', 'Poor'], ['surface', 'High', 'Good'], ['clutch', 'Medium-high', 'Medium']]);
   assert.equal(rows.length, 14, 'every engine layer is a row, the format split included (R1 fix 1)');
   let h = api.render();
-  assert.match(text(h), /Value layers Data quality behind each adjustment folded into the price 9 of 14 active 6 good 5 medium 3 poor/);
-  assert.equal((h.match(/class="em-seg-q /g) || []).length, 14, 'the strip has 14 segments');
-  assert.ok(!/em-lrow/.test(h), 'the breakdown opens on demand');
+  assert.match(text(h), /Value layers Data quality behind each adjustment folded into the price 9 of 14 layers active \?/);
+  assert.equal((h.match(/class="sm-sg q-/g) || []).length, 14, 'the strip has 14 segments');
+  assert.match(text(h), /6 good data 3 medium 3 poor 2 not applicable Show all 14 layers ▾/);
+  assert.match(h, /Weather \/ conditions · Not applicable · switched off<\/i>/);
+  assert.ok(!/class="sm-lr/.test(h), 'the breakdown opens on demand');
   api.edgeJumpLayer('surface');
   h = api.render();
   assert.equal(JSON.stringify(api.open), JSON.stringify([true, 'surface']));
   assert.equal(calls.scrollIntoView, 0); assert.equal(calls.scrollBy.length, 1);
-  // R1 fixes 2 + 3: the players' real figures; the Why in plain words; one state in the label and the sentence
-  assert.match(text(h), /Surface record High 44 ?% 63 ?% S\. Tsitsipas \+1\.0pp Why Hard-court record 44 ?% vs 63 ?% over career and the last 52 weeks, each against their own career baseline\. Data quality Good The inputs behind this layer are complete for both players in this match\./);
-  for (const [k, a, b] of [['clutch', '29', '74'], ['serve', '258.0', '303.5'], ['winnerUE', '0.89', '1.05'], ['fatigue', '4.0', '8.0'], ['qualityForm', '−22.0pp', '−8.0pp'], ['h2h', '0', '1']])
-    assert.match(h, new RegExp(`id="emLayer-${k}"[\\s\\S]*?<span class="em-sc">${a.replace('.', '\\.')}</span>[\\s\\S]*?<span class="em-sc">${b.replace('.', '\\.')}</span>`), k + ' figures');
-  assert.ok(!/career\+52wk|recency-wtd|Nₑₓ|rel-to-archetype/.test(h), 'no engine shorthand on the page');
+  assert.match(text(h), /Hide the layer breakdown ▾ LD L\. Darderi 2 layers in his favour \+1\.3pp Net adjustment \+4\.3pp toward S\. Tsitsipas ST S\. Tsitsipas 7 layers in his favour \+5\.6pp Shift Rating Layer Rating Shift/);
+  assert.match(text(h), /44% Surface record High weight · good data 63% \+1\.0pp › Why High weight Favours S\. Tsitsipas Hard-court record 44% vs 63% over career and the last 52 weeks, each against their own career baseline\. Data quality Good The inputs behind this layer are complete for both players in this match\./);
+  assert.match(h, /id="emLayer-surface"/);
+});
+test('value layers: the players’ real figures, the one it favours white, the shift pill on that side only; level under 0.05pp', () => {
+  const { api } = boot();
+  api.edgeToggleLayers(); const h = api.render();
+  for (const [k, a, b] of [['clutch', '29', '74'], ['serve', '258.0', '303.5'], ['winnerUE', '0.89', '1.05'], ['fatigue', '4.0', '8.0'], ['qualityForm', '−22.0pp', '−8.0pp'], ['h2h', '0', '1']]) {
+    const row = h.match(new RegExp(`id="emLayer-${k}"[\\s\\S]*?<span class="sm-chev">`))[0];
+    const r = [...row.matchAll(/<span class="sm-rt([^"]*)">([^<]*)<\/span>/g)].map(x => [x[1].trim(), x[2]]);
+    assert.deepEqual(r.map(x => x[1]), [a, b], k + ' figures');
+    const sp = [...row.matchAll(/<span class="sm-sp( on)?">([^<]*)<\/span>/g)].map(x => x[2]);
+    assert.equal(sp.filter(Boolean).length, 1, k + ': one shift pill, on the helped side');
+    const leadSide = sp[0] ? 0 : 1;
+    assert.equal(r[leadSide][0], 'lead', k + ': the favoured figure is white 700'); assert.equal(r[1 - leadSide][0], '', k + ': the other soft');
+  }
+  assert.match(html, /^const EDGE_LEVEL_PP = 0\.05;/m, 'the level threshold is one named constant');
+  const ev = JSON.parse(JSON.stringify(FIX.e1)); const fa = ev.stage2.adjustments.find(x => x.key === 'fatigue');
+  Object.assign(fa, { applied: true, deltaP1: 0.0004, direction: 'p1', confidence: 'med' });
+  const lv = boot({ e: ev }); lv.api.edgeToggleLayers();
+  const row = lv.api.render().match(/id="emLayer-fatigue"[\s\S]*?<span class="sm-chev">/)[0];
+  assert.match(text(row), /Medium-high weight · good data · level/, '0.04pp counts as level');
+  assert.ok(!/sm-sp on/.test(row), 'no pill on a level layer');
+});
+test('value layers: inactive and not-applicable rows: dashes, no pill, the reason in the sub line; Why / Data quality are the live texts', () => {
+  const { api } = boot();
+  api.edgeToggleLayer('formatSplit'); api.edgeToggleLayers();
+  let t = text(api.render());
+  assert.match(t, /— Format split \(Bo5\) Not applicable · best of 3 — › Why Medium-high weight Not applicable Best of 3 ?: this layer applies to best-of-five only\. Data quality Not applicable The layer does not apply to a best-of-three match\./);
+  api.edgeToggleLayer('weather');
+  assert.match(text(api.render()), /Weather \/ conditions Not applicable · switched off — › Why Medium-high weight Not applicable Switched off for every match until the match-time fix and an indoor check are both in\. Data quality Not applicable The layer is switched off by a model rule for every match, not by missing data\./);
+  api.edgeToggleLayer('subjective');
+  assert.match(text(api.render()), /— Manual context Highest weight · no analyst note — › Why Highest weight No data No analyst note is attached to this match, so the layer stays neutral\./, 'one name: Manual context');
+  api.edgeToggleLayer('styleMatchup');
+  assert.match(text(api.render()), /Style matchup Highest weight · no data — › Why Highest weight No data On the Playing Styles grid, Attacking Baseliners win 38% of 1,259 matches against Big Server \+ Complete Baseliners\. The model doesn’t read playing styles yet, so this layer doesn’t move the price\. Data quality Poor The model doesn’t read playing styles yet\./);
   api.edgeToggleLayer('qualityForm');
-  assert.match(text(api.render()), /Why Win rate against top- ?50 opponents minus the player’s overall win rate, in percentage points \(recent matches weigh more\): L\. Darderi −22\.0 ?pp over \d+ top- ?50 matches, S\. Tsitsipas −8\.0 ?pp over \d+\. On hard courts, top- ?50 win rate there minus top- ?50 win rate overall: L\. Darderi −8\.3 ?pp over 21 matches, S\. Tsitsipas −1\.7 ?pp over 228\./, 'the number says what it is, who is who, true minus (R2 fix 3, R3 fix 3)');
-  assert.ok(!/(^|[ (])- ?\d+\.\d ?pp/.test(text(api.render())), 'no hyphen-minus on a signed figure');
+  assert.match(text(api.render()), /Why Medium-high weight Favours S\. Tsitsipas Win rate against top-50 opponents minus the player’s overall win rate, in percentage points \(recent matches weigh more\): L\. Darderi −22\.0pp over \d+ top-50 matches, S\. Tsitsipas −8\.0pp over \d+\. On hard courts, top-50 win rate there minus top-50 win rate overall: L\. Darderi −8\.3pp over 21 matches, S\. Tsitsipas −1\.7pp over 228\./, 'the number says what it is, who is who, true minus (R2 fix 3, R3 fix 3)');
+  const all = api.render();
+  assert.ok(!/career\+52wk|recency-wtd|Nₑₓ|rel-to-archetype/.test(all), 'no engine shorthand on the page');
+  assert.ok(!/TEN-\d/.test(text(all)), 'no ticket numbers on the page (R3 fix 1)');
+  assert.ok(!/Gated|17 layers|Home \/ Away/.test(text(all)), 'never "Gated", "17 layers", "Home / Away"');
   const fl = { key: 'qualityForm', applied: true, detail: 'Career top50 dev -2.1pp(133m) vs -4.0pp(40m); Hard top50 dev -2.1pp(133m) vs +0.0pp(5m).' };
   assert.match(api.edgeWhyText(fl, { p1: 'A. One', p2: 'B. Two' }), /A\. One −2\.1pp over 133 matches, B\. Two under 10 top-50 matches there \(not counted\)\./, 'a court figure under the engine floor is not shown as measured (review)');
-  assert.match(CSS, /\.em-lrow\{[^}]*min-width:742px;/, 'rows are as wide as their 742px grid (review)');
-  api.edgeToggleLayer('formatSplit');
-  assert.match(text(api.render()), /Format split \(Bo5\) Medium-high — — Gated — Why Best of 3 ?: this layer applies to best-of-five only\. Data quality Medium The layer does not apply to a best-of-three match\./);
-  api.edgeToggleLayer('weather');
-  assert.match(text(api.render()), /Weather \/ conditions Medium-high — — Gated — Why Switched off for every match until the match-time fix and an indoor check are both in\. Data quality Medium The layer is switched off by a model rule for every match, not by missing data\./);
-  api.edgeToggleLayer('subjective');
-  assert.match(text(api.render()), /Manual context Highest — — No data — Why No analyst note is attached to this match, so the layer stays neutral\./, 'one name: Manual context');
-  api.edgeToggleLayer('styleMatchup');
-  assert.match(text(api.render()), /Style matchup Highest — — No data — Why On the Playing Styles grid, Attacking Baseliners win 38% of 1,259 matches against Big Server \+ Complete Baseliners\. The model doesn’t read playing styles yet, so this layer doesn’t move the price\. Data quality Poor The model doesn’t read playing styles yet\./, 'labels known: No data, Poor, the pair cell in the Why (R2 fix 2, R3 fix 1 copy)');
-  assert.ok(!/TEN-\d/.test(text(api.render())), 'no ticket numbers on the page (R3 fix 1)');
-  assert.ok(!/em-fav[^"]*">(?!No data|Gated|Even)[A-Z][a-z]+</.test(api.render().replace(/em-fav[^"]*"><a[^]*?<\/a>/g, '')), 'Favours = a player, Even, Gated or No data only (R2 fix 2)');
-  // an even row (inputs in, no shift): Good + "Even", never "No data / Poor"
   const ev = JSON.parse(JSON.stringify(FIX.e1)); const fa = ev.stage2.adjustments.find(x => x.key === 'fatigue');
   Object.assign(fa, { applied: false, confidence: 'none', direction: 'neutral', signal: 0, deltaP1: 0, detail: '10d load even on Hard: 6s/3m=6.0u vs 7s/3m=7.0u (gap -1.0u < 2).' });
   const evb = boot({ e: ev }); evb.api.render(); evb.api.edgeJumpLayer('fatigue');
-  assert.match(text(evb.api.render()), /Fatigue \(recent load\) Medium-high 6\.0 7\.0 Even 0\.0pp Why Match load over the last 10 days: L\. Darderi 6 sets in 3 matches \( ?6\.0 units\), S\. Tsitsipas 7 sets in 3 matches \( ?7\.0 units\)\. The loads are too close for the layer to move the price\. Data quality Good/);
+  assert.match(text(evb.api.render()), /6\.0 Fatigue \(recent load\) Medium-high weight · good data · level 7\.0 › Why Medium-high weight Even Match load over the last 10 days: L\. Darderi 6 sets in 3 matches \(6\.0 units\), S\. Tsitsipas 7 sets in 3 matches \(7\.0 units\)\. The loads are too close for the layer to move the price\. Data quality Good/);
   const thin = boot({ cell: { pct: null, n: 12 } }); thin.api.render(); thin.api.edgeJumpLayer('styleMatchup');
-  assert.match(text(thin.api.render()), /Why Attacking Baseliner v Big Server \+ Complete Baseliner: 12 matches, under 30\./, 'the pair cell under 30, with its count');
+  assert.match(text(thin.api.render()), /Attacking Baseliner v Big Server \+ Complete Baseliner: 12 matches, under 30\./, 'the pair cell under 30, with its count');
+});
+test('sub lines break only after a separator: no plain space or hyphen inside a part', () => {
+  const { api } = boot(); api.edgeToggleLayers();
+  const subs = [...api.render().matchAll(/<span class="sm-ln-s"><span[^>]*><\/span>([^<]*)<\/span>/g)].map(x => x[1]);
+  assert.equal(subs.length, 14);
+  for (const s of subs) for (const part of s.split('\u00a0· ')) assert.ok(!/[ -]/.test(part), JSON.stringify(part));
 });
 
-test('biggest movers + Pro gating: the Upgrade line is Free-only', () => {
-  const pro = boot();
-  let t = text(pro.api.render());
-  assert.match(t, /Biggest movers The three factors that moved the price most 1\. Under pressure S\. Tsitsipas \+1\.4pp 2\. Serve strength S\. Tsitsipas \+1\.3pp 3\. Winner \/ unforced-error ratio S\. Tsitsipas \+1\.1pp/);
-  assert.ok(!/Upgrade to Pro/.test(t), 'no upgrade line on Pro');
-  const free = boot({ free: true });
-  assert.match(free.api.render(), /<a class="sf-upgrade em-btn" href="account\.html">Upgrade to Pro to unlock all factors<\/a>/);
+// ── biggest movers ────────────────────────────────────────────────────────
+test('biggest movers: the three largest moves, share = their shifts over every moved layer’s, a row opens its layer', () => {
+  const { api } = boot();
+  const t = text(api.render());
+  assert.match(t, /Biggest movers The three layers that moved the price most · Hard 55% of the total shift \? Layer Favours Shift 1 Under pressure Medium-high weight · 29 v 74 ST S\. Tsitsipas \+1\.4pp › 2 Serve strength Medium-high weight · 258\.0 v 303\.5 ST S\. Tsitsipas \+1\.3pp › 3 Winner \/ unforced-error ratio Medium weight · 0\.89 v 1\.05 ST S\. Tsitsipas \+1\.1pp ›$/);
+  const moved = boot().E.stage2.adjustments.filter(a => a.applied && Math.abs(a.deltaP1) * 100 >= 0.05).map(a => Math.abs(a.deltaP1));
+  const top = moved.slice().sort((a, b) => b - a).slice(0, 3);
+  assert.equal(Math.round(top.reduce((s, x) => s + x, 0) / moved.reduce((s, x) => s + x, 0) * 100), 55, 'the share recomputed from the run');
+  assert.match(api.render(), /onclick="edgeJumpLayer\('clutch'\)"/);
+  assert.ok(!/Upgrade to Pro/.test(boot({ free: true }).api.render()), 'no Upgrade to Pro on the page (removed by the client)');
 });
 
-test('analysis: OFF = no section for anyone; when on: cached text for Pro with stamp, Free = Players + the shared Upgrade, failure keeps Generate', async () => {
-  const P = ['One 1.53.', 'Two.', 'Three.', 'Four.', 'Five.'];
-  const e = JSON.parse(JSON.stringify(FIX.e1)); e.summary = { ok: true, text: P.join('\n\n'), generatedAt: '2026-10-10T05:12:00Z' };
-  for (const free of [false, true]) assert.ok(!/Stennisfy Analysis/.test(boot({ e, free }).api.render()), 'switch off (founder 2026-10-10): no section, Pro or Free');
-  const none = boot({ analysisOn: true });
-  assert.match(none.api.render(), /Generate Stennisfy Analysis/, 'on, nothing cached: Pro gets the empty state + Generate');
-  assert.ok(!/Stennisfy Analysis/.test(boot({ analysisOn: true, free: true }).api.render()), 'Free cannot generate');
-  const pro = text(boot({ e, analysisOn: true }).api.render());
-  assert.match(pro, /Players One 1\.53\. Matchup Two\. Tournament Three\. Keys Four\. Verdict Five\. Stennisfy Analysis is generated by Stennisfy’s proprietary model and is for informational purposes only\. Generated 05:12/, 'cached text shown to Pro');
-  assert.match(pro, /↻ Regenerate/);
-  const fr = boot({ e, analysisOn: true, free: true }).api.render();
-  assert.match(text(fr), /Players One 1\.53\. Upgrade to Pro to unlock the full analysis/);
-  assert.ok(!/Matchup Two|↻ Regenerate|Generated 05:12|em-ai-fade/.test(fr), 'Free: no second paragraph, no Regenerate, no stamp, no fade');
-  assert.equal((fr.match(/class="sf-upgrade em-btn"/g) || []).length, 2, 'one button style: the shared Upgrade');
-  const g = boot({ analysisOn: true });
-  g.ctx.fetch = () => Promise.resolve({ ok: true, json: () => Promise.resolve({ generatedAt: 'x', analysisOn: true, matches: { 'upcoming-12169478': Object.assign({}, FIX.e1, { summary: { ok: false } }) } }) });
-  g.api.render(); g.api.edgeGenerate('upcoming-12169478');
-  for (let i = 0; i < 4; i++) await new Promise(r => setImmediate(r));
-  const t = text(g.api.render());
-  assert.match(t, /Generate Stennisfy Analysis Couldn’t generate the analysis\. Try again\./, 'a failed generate keeps the section');
-  const r = boot({ e, analysisOn: true });
-  r.ctx.fetch = g.ctx.fetch;
-  r.api.render(); r.api.edgeGenerate('upcoming-12169478');
-  for (let i = 0; i < 4; i++) await new Promise(z => setImmediate(z));
-  assert.match(text(r.api.render()), /Players One 1\.53\./, 'Regenerate keeps the analysis when the newer run has none');
+// ── Bet105 ────────────────────────────────────────────────────────────────
+var B105 = (p1, p2, live = true) => ({ p1, p2, book: 'bet105', live, sideAt: { p1: '2026-10-10T04:58:10.000Z', p2: '2026-10-10T04:57:40.000Z' } });
+test('Bet105 line: the derivation — prices ÷ 0.9956, no-vig = the pair’s own, the older side’s time, both legs or nothing', () => {
+  const { api, M } = boot({ kibl: B105(3.0, 1.42) });
+  const bl = api.edgeB105Line(M);
+  assert.deepEqual([+(bl.p1).toFixed(4), +(bl.p2).toFixed(4)], [+(3.0 / 0.9956).toFixed(4), +(1.42 / 0.9956).toFixed(4)]);
+  const nv = (1 / 3.0) / (1 / 3.0 + 1 / 1.42);
+  assert.ok(Math.abs(bl.nv.p1 - nv) < 1e-12 && Math.abs(bl.nv.p1 + bl.nv.p2 - 1) < 1e-12);
+  assert.equal(bl.at, '2026-10-10T04:57:40.000Z', 'the Kibl time of the OLDER side');
+  assert.equal(boot({ kibl: { p1: 3.0, p2: null, book: 'bet105', live: true } }).api.edgeB105Line(M), null, 'one leg = no line');
+  assert.equal(boot({ kibl: null }).api.edgeB105Line(M), null, 'no pair = no line');
+  assert.equal(boot().api.edgeB105Line(M), null, 'no stream on the page = no line');
+  const started = JSON.parse(JSON.stringify(M)); started.date = '2026-10-09';
+  const s = boot({ kibl: B105(3.0, 1.42) });
+  assert.equal(s.api.edgeB105Line(started), null, 'a started match has no line');
+  const live = JSON.parse(JSON.stringify(M)); live.live = true;
+  assert.equal(s.api.edgeB105Line(live), null, 'a live match has no line');
+  s.api.edgeB105Line(M);
+  assert.ok(s.calls.pairFor.length > 0 && s.calls.pairFor.every(([, b]) => b === 'bet105'), 'asks the stream for Bet105 only');
+});
+test('Bet105 row: the margin-removed price, read only; gap = the fair % as printed − the line’s no-vig; stale = dashes', () => {
+  const { api, E } = boot({ kibl: B105(3.0, 1.42) });
+  const h = api.render();
+  const row = h.match(/<div class="sm-row"><span><\/span><span class="sm-ep[^"]*" id="emB105-g-p1">[\s\S]*?<span><\/span><\/div>/)[0];
+  const nv = (1 / 3.0) / (1 / 3.0 + 1 / 1.42), g = Math.round(E.stage3.fair.p1.prob * 1000) / 10 - nv * 100;
+  assert.match(text(row), new RegExp('^' + (g < 0 ? '−' : '\\+') + Math.abs(g).toFixed(1) + 'pp 3\\.01 Bet105 margin removed 1\\.43 '), text(row));
+  assert.ok(!/<input/.test(row), 'Bet105 is not editable');
+  assert.match(row, /title="bet105’s price with its fixed 0\.44% margin removed/);
+  const st = text(boot({ kibl: B105(3.0, 1.42, false) }).api.render().match(/<span class="sm-ep[^"]*" id="emB105-g-p1">[\s\S]*?<span><\/span><\/div>/)[0]);
+  assert.match(st, /^— — Bet105 margin removed — —$/, 'a stale stream is a dash everywhere');
+  const mk = h.slice(h.indexOf('sm-card sm-mk'), h.indexOf('sm-card sm-vl'));
+  assert.ok(mk.length > 100 && !/bet105/i.test(mk), 'no Bet105 row in Market context (the handoff: four rows)');
+});
+test('Bet105 row: a stream change repaints the two cells and gaps in place; the fair price never moves', () => {
+  let pair = B105(3.0, 1.42);
+  const { api, els, calls } = boot({ kibl: () => pair });
+  api.render();
+  const cells = calls.b105;
+  const fairBefore = text(els.edgeBody.innerHTML).match(/Adjusted fair [0-9.]+% [0-9.]+%/)[0];
+  pair = B105(3.2, 1.36);
+  els.edgeBody.innerHTML += '<!--sentinel-->';
+  api.edgeB105Paint();
+  assert.match(els.edgeBody.innerHTML, /<!--sentinel-->$/, 'the body is not re-rendered (an odd being typed survives)');
+  assert.equal(cells['emB105-v-p1'].textContent, '3.21'); assert.equal(cells['emB105-v-p2'].textContent, '1.37');
+  assert.equal(text(els.edgeBody.innerHTML).match(/Adjusted fair [0-9.]+% [0-9.]+%/)[0], fairBefore);
+  pair = null; api.edgeB105Paint();
+  assert.equal(cells['emB105-v-p1'].textContent, '—', 'the pair gone: a dash');
+});
+test('Bet105 pop-up: the Today’s Matches data path on margin-removed prices; ledger newest first, deltas from the row before', () => {
+  const { api } = boot();
+  const rows = [{ at: Date.parse('2026-10-09T10:00:00Z'), price: 3.0 }, { at: Date.parse('2026-10-09T12:00:00Z'), price: 3.1 }, { at: Date.parse('2026-10-10T01:00:00Z'), price: 3.05 }];
+  vm.runInContext("window.PriceHistoryBox = { fmtWhen: t => new Date(t).toISOString().slice(5,16), fmtDelta: d => (d > 0 ? '+' : d < 0 ? '−' : '±') + Math.abs(d).toFixed(3) }", api.__ctx || boot().ctx);
+  const h = api.edgeB105PopHtml('L. Darderi', rows, 3.05, null);
+  assert.match(text(h), /^Odds movement Bet105 · margin removed L\. Darderi 3\.00 → 3\.05 \+1\.7% 2 moves /);
+  assert.match(text(api.edgeB105PopHtml('L. Darderi', [], null, 'Price history unavailable')), /— → — Price history unavailable$/);
+  assert.match(BLOCK, /rows = raw\.filter\(r => r\.price >= 1\.01\)\.map\(r => \(\{ at: r\.at, price: r\.price \/ EDGE_B105_K \}\)\);/, 'the ledger is the margin-removed price');
+  assert.match(BLOCK, /PH\.changesOnly\(PH\.sideRows\(payload, ocsNameKey\(m\[s\]\), ocsNameKey\)\.filter\(r => !isFinite\(st\) \|\| r\.at <= st\)\)/, 'the shared rows, cut at the start');
+  assert.match(BLOCK, /const up = r\.bottom \+ 400 > vh && r\.top > 400;/, 'above the odd when within 400px of the bottom');
+  assert.match(BLOCK, /edgePopTimer = setTimeout\(edgeB105Hide, 160\)/, '160 ms leave delay');
+});
+test('Bet105 line: isolation — the derived price lives on the Model page only', () => {
+  const { execFileSync } = createRequire(import.meta.url)('child_process');
+  const files = execFileSync('git', ['ls-files'], { cwd: HERE, encoding: 'utf8' }).split('\n')
+    .filter(f => /\.(js|mjs|py|html|sql|yml)$/.test(f) && !/^(test-|tools\/test-|tools\/fixtures\/|design|\.ten)/.test(f) && f !== 'bsp-consult-dashboard.html');
+  const hits = files.filter(f => { try { return /EDGE_B105_K|bet105 \(margin removed\)|Pinnacle line \(from Bet105\)|0\.9956/.test(readFileSync(join(HERE, f), 'utf8')); } catch { return false; } });
+  assert.deepEqual(hits, [], 'no other page, pipeline file or builder carries the derived line');
+  assert.doesNotMatch(html.replace(BLOCK, ''), /EDGE_B105_K|edgeB105/, 'the dashboard uses it inside the Model block only');
 });
 
-test('no model price (R1 fix 14): header + Market context book rows, no Model base, one grey line; never an Elo-only price', () => {
-  const { api, els } = boot();
-  const t = text(api.render('upcoming-12169534'));
-  assert.match(t, /Market context · match winner/);
+// ── gates, empty states ───────────────────────────────────────────────────
+test('no model price (R1 fix 14): header + Market context book rows, model base a dash, one line; never an Elo-only price', () => {
+  const t = text(boot().api.render('upcoming-12169534'));
+  assert.match(t, /Market context/);
+  assert.match(t, /Y\. Bu — Model base — · — CR C\. Ruud —/, 'no model base price without a model');
   assert.match(t, /No model price for this match yet\.$/);
-  assert.ok(!/Model base|Fair price|Value layers|Biggest movers|edge = model/.test(t));
-  assert.match(text(els.edgeHeadStats.innerHTML), /Layers active — Updated —/);
+  assert.ok(!/Fair price|Value layers|Biggest movers/.test(t));
 });
-
-test('data: no sample data, no page sidebar, no Market Signal block; colour: links --link only, names white, amber only on quality', () => {
-  assert.ok(!/sample data/i.test(PAGE + BLOCK + CSS), 'no "sample data" note');
-  assert.ok(!/edge-subtab|Back to dashboard|Player ratings/.test(PAGE + BLOCK), 'the page owns no navigation of its own');
-  assert.ok(!/buildMarketSignalBlock|Market Signal/.test(BLOCK));
-  assert.ok(!/#[0-9a-fA-F]{3,8}\b/.test(CSS.replace(/'\\25BE'/g, '')), 'no raw colours');
-  assert.match(CSS, /\.em-plink\{ color:var\(--text\); text-decoration:none; cursor:pointer; \}/);
-  assert.match(CSS, /\.em-link\{ color:var\(--link\);/);
-  assert.equal((CSS.match(/var\(--link\)/g) || []).length, 1, '--link on .em-link only');
-  assert.equal((CSS.match(/var\(--amber\)/g) || []).length, 2, 'amber = the quality strip / dot and the quality label only');
-  assert.ok(!/outline:[^;]*var\(--bar\)|box-shadow:[^;]*var\(--bar\)|border[^;]*var\(--bar\)/.test(CSS), 'no blue rings or outlines');
-  assert.match(CSS, /\.em-lrow\.open\{ background:var\(--selected\); \}/, 'an open row is the selected tone, so its inner-tone Weight chip stays visible (R3 fix 4)');
-  assert.match(CSS, /\.em-odd:focus, \.em-odd:focus-visible\{ border-color:var\(--edge-16\); outline:none; box-shadow:none; \}/);
+test('anchor stale gate: a Pinnacle read older than 120 min dashes the model price and says how old; the Bet105 line never stands in', () => {
+  const old = JSON.parse(JSON.stringify(FIX.m1)); old.bookNow.Pncl.seenAt = '2026-10-10T01:50:00.000Z';
+  const t = text(boot({ m: old, kibl: B105(3.0, 1.42) }).api.render());
+  assert.match(t, /Pinnacle quote stale \(3h 10m\)\. No model price until the next read\.$/, t);
+  assert.doesNotMatch(t, /Value layers|Adjusted fair/);
+  const edge = (min) => { const x = JSON.parse(JSON.stringify(FIX.m1)); x.bookNow.Pncl.seenAt = new Date(NOW - min * 60000).toISOString(); return x; };
+  assert.match(text(boot({ m: edge(120) }).api.render()), /Adjusted fair/, 'exactly 120 min: priced');
+  assert.match(text(boot({ m: edge(121) }).api.render()), /Pinnacle quote stale \(2h 1m\)/, '121 min: dashed');
+  assert.match(html, /^const EDGE_PIN_STALE_MIN = 120;/m);
 });
-
-test('the analysis generator reads the page’s own rules, character for character', () => {
-  const src = readFileSync(join(HERE, 'h2h-model/summary.js'), 'utf8');
-  const a = src.indexOf('// >>> page rules'), b = src.indexOf('// <<< page rules');
-  const copy = src.slice(src.indexOf('\n', a) + 1, b);
-  for (const name of ['edgeQuote', 'edgeBookName', 'edgeSharp', 'edgeSoftBooks', 'edgeBestSoft', 'edgeNoVig', 'edgeGapOf', 'edgeWeightTag', 'edgeCovState', 'edgeEven', 'edgeFigures', 'edgeNotThisFormat', 'edgeQuality', 'edgeVisibleAdjs', 'edgeLayerName', 'edgeSigned', 'edgeCourt', 'edgeEventPart', 'edgeWhyText', 'mxBookLabel'])
-    assert.ok(copy.includes(fn(name)), `${name}: summary.js copy differs from the page`);
-  for (const c of ['MX_BOOK_LABELS']) assert.ok(copy.includes(block(c)), c);
-  for (const line of ["const EDGE_SHARP = [['Pncl', 'Pinnacle'], ['bet365', 'Bet365']];", "const EDGE_LAYER_NAMES = { subjective: 'Manual context' };"]) {
-    assert.ok(html.includes(line), 'page: ' + line); assert.ok(copy.includes(line), 'summary.js: ' + line);
-  }
-  const require = createRequire(import.meta.url);
-  assert.equal(require('./h2h-model/config.js').summary.enabled, false, 'founder 2026-10-10: Stennisfy Analysis is off (no Claude calls)');
-  const facts = require('./h2h-model/summary.js').buildFacts(FIX.e1, FIX.m1);
-  assert.deepEqual(facts.market.bestSoft, { 'L. Darderi': { book: 'Bet365', price: 3, gapPP: -3.1 }, 'S. Tsitsipas': { book: 'Betano', price: 1.44, gapPP: 0.4 } });
-  assert.deepEqual(facts.market.sharpNowGapPP, { 'L. Darderi': -2.8, 'S. Tsitsipas': -0.1 }, 'the page’s own gaps, not the model’s guess');
-  const pipe = readFileSync(join(HERE, 'bsp-pipeline.js'), 'utf8');
-  assert.match(pipe, /\} else if \(priorSum && priorSum\.ok\) \{\n[^}]*entry\.summary = Object\.assign\(\{\}, priorSum, \{ lastError: s\.reason \}\);/, 'a failed regeneration keeps the last good analysis');
-  assert.equal(facts.market.sharpBook, 'Pinnacle');
-  assert.deepEqual(facts.biggestMovers.map(x => x.shiftPP), [1.4, 1.3, 1.1]);
-  assert.equal(facts.match.round, 'Round of 64');
-  assert.ok(!JSON.stringify(facts).includes('Shanghai'), 'no event name for the model to repeat');
-  assert.equal(facts.layersShown, 14, 'the analysis counts the same 14 layers');
-  assert.match(pipe, /analysisOn: !!require\('\.\/h2h-model\/config'\)\.summary\.enabled,/, 'the one switch reaches the page');
-  assert.match(pipe, /update\(JSON\.stringify\(\[m\.id, fr\.p1 && fr\.p1\.odds, fr\.p2 && fr\.p2\.odds\]\)\)/, 'cached per match until the shown fair price changes');
+test('display gate: a state-3 match is not priced', () => {
+  const e = JSON.parse(JSON.stringify(FIX.e1)); e.stage1.baseState.state = 3;
+  assert.match(text(boot({ e }).api.render()), /No model price for this match yet\.$/);
 });
-
-// Model page empty (founder 2026-10-30): the rail follows Today's Matches' view, so a Completed view / another day /
-// a search left "0 of 0" saying "No matches on the board right now" while the board held priced fixtures. The empty
-// state names the reason and the model's last run, and one click shows every upcoming board match.
+test('analysis: OFF = no section for anyone (the switch is model-output.json analysisOn)', () => {
+  const e = JSON.parse(JSON.stringify(FIX.e1)); e.summary = { ok: true, text: 'One.\n\nTwo.', generatedAt: '2026-10-10T05:12:00Z' };
+  for (const free of [false, true]) assert.ok(!/Stennisfy Analysis/.test(boot({ e, free }).api.render()));
+  assert.match(boot({ analysisOn: true }).api.render(), /Generate Stennisfy Analysis/, 'the switch still works when turned on');
+});
 const boardPredicate = (st, all) => all.filter(m => {
   if (st.view === 'completed') return /^past-/.test(m.id);
   if (/^past-/.test(m.id)) return false;
@@ -276,186 +374,47 @@ const boardPredicate = (st, all) => all.filter(m => {
   return !st.tournaments.size || st.tournaments.has(m.tour);
 });
 test('empty view: the reason, the board count and the model run — never "no matches on the board" while fixtures exist', () => {
-  for (const [st, words] of [
-    [{ day: 'today', view: 'completed', search: '', surface: 'all', tournaments: new Set() }, null],
-    [{ day: 'tomorrow', view: 'upcoming', search: '', surface: 'all', tournaments: new Set() }, 'Upcoming · Tomorrow'],
-    [{ day: 'today', view: 'upcoming', search: 'zzz', surface: 'all', tournaments: new Set() }, 'Upcoming · search “zzz”'],
-  ]) {
-    const S = Object.assign({}, st);
-    const filtered = (s, all) => (s.view === 'completed' ? [] : boardPredicate(s, all));
-    const { api, els, ctx } = boot({ state: S, filtered });
-    api.openEdgeModelTab();
-    const t = text(els.edgeBody.innerHTML);
-    assert.match(t, new RegExp('This page follows the Today’s Matches view, which has no matches \\(' + (words || 'Completed · Today').replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\)\\. 12 upcoming matches are on the board\\. Model last run 10 Oct · 04:51\\.'), t);
-    assert.doesNotMatch(t, /No matches on the board right now/);
-    assert.match(els.edgeBody.innerHTML, /<a class="em-link" onclick="edgeShowAllUpcoming\(\)">Show all upcoming matches<\/a>/);
-    assert.equal(els.edgeRailN.textContent, '0 of 0');
-    assert.match(els.edgeRailList.innerHTML, /No matches in this view\./);
-    assert.deepEqual([ctx.state.day, ctx.state.view, ctx.state.search], [st.day, st.view, st.search], 'Today’s Matches state untouched');
-    // one click: every upcoming board match, priced; the board's own state is put back
-    api.edgeShowAllUpcoming();
-    assert.equal(els.edgeRailN.textContent, '12 of 12', 'the 12 upcoming board matches, never the finished one');
-    assert.match(text(els.edgeHeadStats.innerHTML), /^Matches 12 /);
-    assert.deepEqual([ctx.state.day, ctx.state.view, ctx.state.search, ctx.state.tournaments.size], [st.day, st.view, st.search, 0], 'state restored');
-    assert.equal(ctx.state.tournaments, S.tournaments, 'the same Set back');
-    // a background reload keeps the chosen scope; a fresh visit from the rail follows the board again
-    api.openEdgeModelTab(true); assert.equal(els.edgeRailN.textContent, '12 of 12');
-    api.openEdgeModelTab(); assert.equal(api.scopeAll, false); assert.equal(els.edgeRailN.textContent, '0 of 0');
-  }
+  const S = { day: 'tomorrow', view: 'upcoming', search: '', surface: 'all', tournaments: new Set() };
+  const { api, els, ctx } = boot({ state: S, filtered: (s, all) => boardPredicate(s, all) });
+  api.openEdgeModelTab();
+  const t = text(els.edgeBody.innerHTML);
+  assert.match(t, /This page follows the Today’s Matches view, which has no matches \(Upcoming · Tomorrow\)\. 12 upcoming matches are on the board\. Model last run 10 Oct · 04:51\. Show all upcoming matches/);
+  assert.match(text(els.edgeRail.innerHTML), /No matches in this view\./);
+  api.edgeShowAllUpcoming();
+  assert.match(text(els.edgeRail.innerHTML), /^Matches 12 matches/);
+  assert.deepEqual([ctx.state.day, ctx.state.view], ['tomorrow', 'upcoming'], 'Today’s Matches state restored');
+  api.openEdgeModelTab(); assert.equal(api.scopeAll, false);
 });
 test('empty board: no upcoming match / not loaded yet / load failed each say so', () => {
   const S = () => ({ day: 'today', view: 'upcoming', search: '', surface: 'all', tournaments: new Set() });
-  let b = boot({ state: S(), filtered: () => [] , noBoard: true });
+  let b = boot({ state: S(), filtered: () => [], noBoard: true });
   b.api.openEdgeModelTab();
   assert.equal(text(b.els.edgeBody.innerHTML), 'No matches on the board right now. The Stennisfy Model prices each match as soon as the board has fixtures. Model last run 10 Oct · 04:51.');
   b = boot({ state: S(), filtered: () => [], noBoard: true, loadedOnce: false });
   b.api.openEdgeModelTab();
   assert.equal(text(b.els.edgeBody.innerHTML), 'Loading the match board…');
-  b = boot({ state: S(), filtered: () => [], noBoard: true });
-  b.els.dataStatus = { classList: { contains: c => c === 'error' } };
-  b.api.openEdgeModelTab();
-  assert.match(text(b.els.edgeBody.innerHTML), /^The match board could not be loaded, so there is nothing to price\. The page tries again every 3 minutes\. Model last run/);
-  b = boot({ state: S(), filtered: (s, all) => (s.day === 'all' ? [] : []) });   // only the finished match: nothing upcoming
-  b.ctx.matches = b.ctx.matches.filter(m => /^past-/.test(m.id));
-  b.api.openEdgeModelTab();
-  assert.match(text(b.els.edgeBody.innerHTML), /^No upcoming matches on the board right now\./);
 });
 
-// Model anchor — api-tennis Pinnacle (founder brief 2026-10-30): the Market context head names the anchor quote and the
-// pipeline's last read of it; a stale gate (threshold = Michael's, OFF until set) dashes the model price with its age.
-test('anchor label: "Pinnacle (api-tennis) · read HH:MM" from bookNow.Pncl.seenAt (the pipeline read), age on hover', () => {
-  const { api } = boot();
-  const h = api.render();
-  assert.match(h, /<span class="em-mk-anchor" title="Pipeline read 10 Oct, 04:49:51 · 10 min ago\. The model anchors to this Pinnacle quote from api-tennis\.">Pinnacle \(api-tennis\) · read <span class="em-mono">04:49<\/span><\/span>/);
-  assert.match(h, /Value layers/i, 'gate off: the full model shows');
-  const noPin = JSON.parse(JSON.stringify(FIX.m1)); delete noPin.bookNow.Pncl;
-  assert.doesNotMatch(boot({ m: noPin }).api.render(), /em-mk-anchor/, 'no api-tennis Pinnacle quote now: no anchor label');
-  assert.match(html, /^const EDGE_PIN_STALE_MIN = 120;/m, 'the founder’s threshold (2026-11-01): 120 minutes');
+// ── look ──────────────────────────────────────────────────────────────────
+test('look: the export’s colours as --sm-* tokens only; no sample data; player one blue ring, player two white; links blue', () => {
+  assert.ok(!/sample data/i.test(PAGE + BLOCK + CSS), 'no "sample data" note');
+  assert.ok(!/#[0-9a-fA-F]{3,8}\b|rgba?\(/.test(CSS), 'no raw colours in the page CSS');
+  const tok = readFileSync(join(HERE, 'tokens.css'), 'utf8');
+  for (const [k, v] of [['--sm-page', '#0D0E16'], ['--sm-card', '#0E1019'], ['--sm-inner', '#0C0E16'], ['--sm-raised', '#131623'], ['--sm-text', '#E7E9EE'], ['--sm-soft', '#C6CCDB'], ['--sm-body', '#C9CDD9'], ['--sm-muted', '#8B96B5'], ['--sm-blue', '#5B9BFF'], ['--sm-blue-hov', '#82B4FF'], ['--sm-pos', '#3DD68C'], ['--sm-neg', '#E0616F'], ['--sm-q-good', '#5CCB84'], ['--sm-q-med', '#E8A84E'], ['--sm-q-poor', '#E06266']])
+    assert.match(tok, new RegExp(k + ':\\s+' + v + ';'), k);
+  assert.match(CSS, /\.sm-av\.a\{ box-shadow:0 0 0 2px var\(--sm-blue\); \}/);
+  assert.match(CSS, /\.sm-av\{[^}]*box-shadow:0 0 0 2px var\(--sm-text\);/);
+  assert.match(CSS, /\.sm-plink\{ cursor:pointer; color:var\(--sm-text\) !important;/, 'names white, underline on hover');
+  assert.match(CSS, /\.sm-odd:focus\{ border-color:var\(--sm-blue\) !important; \}/);
+  assert.match(CSS, /\.sm-card\{ background:var\(--sm-card\); border:1\.25px solid color-mix\(in srgb, var\(--sm-white\) 6%, transparent\); border-radius:14px; padding:24px 26px;/);
+  assert.match(CSS, /\.sm-rail\{ width:244px;/);
 });
-test('stale gate: a Pinnacle read older than 120 min dashes the model price and says how old', () => {
-  const old = JSON.parse(JSON.stringify(FIX.m1)); old.bookNow.Pncl.seenAt = '2026-10-10T01:50:00.000Z';   // 3h 10m before NOW
-  const { api, els } = boot({ m: old });
-  const t = text(api.render());
-  assert.match(t, /Pinnacle quote stale \(3h 10m\)\. No model price until the next read\.$/, t);
-  assert.doesNotMatch(t, /Value layers|Model base/);
-  assert.match(text(els.edgeHeadStats.innerHTML), /Layers active — Updated —/);
-  const fresh = boot();   // 10 min old → priced
-  assert.match(text(fresh.api.render()), /Model base/);
-  const edge = (min) => { const x = JSON.parse(JSON.stringify(FIX.m1)); x.bookNow.Pncl.seenAt = new Date(NOW - min * 60000).toISOString(); return x; };
-  const at = (min) => text(boot({ m: edge(min) }).api.render());
-  assert.match(at(120), /Model base/, 'exactly 120 min old: still priced');
-  assert.match(at(121), /Pinnacle quote stale \(2h 1m\)/, '121 min old: dashed');
-});
-// Founder 2026-11-01: a stale Pinnacle quote never hands the model to the bet105 line — the price stays a dash, the
-// bet105 row stays live (its own price), and nothing on the page is priced off it.
-test('stale gate: the bet105 line stays live and is never the model’s anchor in its place', () => {
-  const old = JSON.parse(JSON.stringify(FIX.m1)); old.bookNow.Pncl.seenAt = '2026-10-10T01:50:00.000Z';
-  const { api } = boot({ m: old, kibl: B105(3.0, 1.42) });
-  const h = api.render(), t = text(h);
-  assert.match(t, /Pinnacle quote stale \(3h 10m\)\. No model price until the next read\.$/, t);
-  assert.doesNotMatch(t, /Model base|Value layers|Adjusted fair odd/, 'no model price from any source');
-  const row = h.match(/<div class="em-mk-row em-b105" id="emB105-mk-p1"[\s\S]*?<\/div>/);
-  assert.ok(row, 'the bet105 row is still drawn');
-  assert.match(text(row[0]), /^bet105 \(margin removed\) 04:57:40 · bet105 ÷ 0\.9956 3\.01 —$/, 'live price, no edge (no model base)');
-});
-
-// Pinnacle line from Bet105 (founder brief 2026-10-31): Bet105's live pair with its fixed cut removed (÷ 0.9956),
-// labelled as derived from Bet105, in Market context and the Fair price card; repainted in place; display only.
-var B105 = (p1, p2, live = true) => ({ p1, p2, book: 'bet105', live, sideAt: { p1: '2026-10-10T04:58:10.000Z', p2: '2026-10-10T04:57:40.000Z' } });
-test('Bet105 line: the derivation — prices ÷ 0.9956, no-vig = the pair’s own, the older side’s time, both legs or nothing', () => {
-  const { api, M } = boot({ kibl: B105(3.0, 1.42) });
-  const bl = api.edgeB105Line(M);
-  assert.deepEqual([+(bl.p1).toFixed(4), +(bl.p2).toFixed(4)], [+(3.0 / 0.9956).toFixed(4), +(1.42 / 0.9956).toFixed(4)]);
-  const nv = (1 / 3.0) / (1 / 3.0 + 1 / 1.42);
-  assert.ok(Math.abs(bl.nv.p1 - nv) < 1e-12 && Math.abs(bl.nv.p1 + bl.nv.p2 - 1) < 1e-12, 'no-vig of the Bet105 pair itself (the cut does not change it)');
-  assert.equal(bl.at, '2026-10-10T04:57:40.000Z', 'the Kibl time of the OLDER side');
-  assert.equal(boot({ kibl: { p1: 3.0, p2: null, book: 'bet105', live: true } }).api.edgeB105Line(M), null, 'one leg = no line');
-  assert.equal(boot({ kibl: null }).api.edgeB105Line(M), null, 'no pair = no line');
-  assert.equal(boot().api.edgeB105Line(M), null, 'no stream on the page = no line');
-  const started = JSON.parse(JSON.stringify(M)); started.date = '2026-10-09';   // cardStartMs → before NOW
-  const s = boot({ kibl: B105(3.0, 1.42) });
-  assert.equal(s.api.edgeB105Line(started), null, 'a started match has no line');
-  const live = JSON.parse(JSON.stringify(M)); live.live = true;
-  assert.equal(s.api.edgeB105Line(live), null, 'a live match has no line');
-  s.api.edgeB105Line(M);
-  assert.ok(s.calls.pairFor.length > 0 && s.calls.pairFor.every(([, b]) => b === 'bet105'), 'asks the stream for Bet105 only');
-});
-test('Bet105 line: the Market context row and the Fair price line — labelled "(from Bet105)", time, derived price, gaps', () => {
-  const { api, E } = boot({ kibl: B105(3.0, 1.42) });
-  const h = api.render();
-  const row = h.match(/<div class="em-mk-row em-b105" id="emB105-mk-p1"[\s\S]*?<\/div>/)[0];
-  assert.match(row, /title="bet105’s price with its fixed 0\.44% margin removed \(bet105 = Pinnacle × 0\.9956, measured on 3,489 moments, 6–31 Oct\)\. It tracks Pinnacle closely\. Kibl recorded bet105’s last change at 04:58:10 \(Kibl insert time, not bet105’s own time\)\. Not a Pinnacle price\."/);
-  assert.match(text(row), /^bet105 \(margin removed\) 04:57:40 · bet105 ÷ 0\.9956 3\.01 /, text(row));
-  const nv = (1 / 3.0) / (1 / 3.0 + 1 / 1.42), base = E.stage1.baseP1;
-  const want = ((base - nv) * 100);
-  assert.match(text(row), new RegExp((want < 0 ? '−' : '\\+') + Math.abs(want).toFixed(1) + 'pp$'), 'edge = base − this line’s no-vig (the card’s convention)');
-  const fp = h.match(/<div class="em-fp-b105" id="emB105-fp-p1"[\s\S]*?<\/span><\/span><\/div>/)[0];
-  const fair = E.stage3.fair.p1.prob, g = Math.round(fair * 1000) / 10 - nv * 100;
-  assert.match(text(fp), new RegExp('^bet105 \\(margin removed\\) 3\\.01 ' + (g < 0 ? '−' : '\\+') + Math.abs(g).toFixed(1) + 'pp$'), text(fp));
-  assert.doesNotMatch(h, />Pinnacle ·/, 'never "Pinnacle ·" on the derived line');
-  assert.equal((h.match(/bet105 \(margin removed\)/g) || []).length, 4, 'two rows + two Fair price lines');
-  assert.doesNotMatch(h, /Pinnacle line \(from Bet105\)/, 'the old label is gone');
-});
-test('Bet105 line: stale stream = dashes + "— stale", the last pair in the hover; no pair = no row', () => {
-  const { api } = boot({ kibl: B105(3.0, 1.42, false) });
-  const h = api.render();
-  const row = h.match(/<div class="em-mk-row em-b105" id="emB105-mk-p1"[\s\S]*?<\/div>/)[0];
-  assert.match(text(row), /^bet105 \(margin removed\) — stale — —$/);
-  assert.match(row, /Stream not live: last bet105 pair 3\.00 \/ 1\.42 at 04:57:40\./);
-  assert.match(text(h.match(/<div class="em-fp-b105" id="emB105-fp-p2"[\s\S]*?<\/span><\/span><\/div>/)[0]), /^bet105 \(margin removed\) — —$/);
-  const none = boot({ kibl: null }).api.render();
-  assert.doesNotMatch(none, /em-b105|em-fp-b105/, 'no pair: no row and no line');
-});
-// Founder 2026-11-01: over 1.5pp between bet105's no-vig line and api-tennis Pinnacle's, a warning mark on the row and
-// the Fair price line, the gap in the hover; the price stays, nothing is hidden, the model is not touched.
-test('Bet105 line: disagreement over 1.5pp = a warning mark + the gap on hover; the price stays; at or under 1.5pp nothing', () => {
-  const pin = FIX.m1.bookNow.Pncl, pnv = (1 / pin.p1) / (1 / pin.p1 + 1 / pin.p2);
-  // a bet105 pair whose no-vig p1 sits exactly d pp above Pinnacle's
-  const pairAt = d => { const q = pnv + d / 100, p1 = 1 / q, p2 = 1 / (1 - q); return B105(+(p1 * 0.9956).toFixed(6), +(p2 * 0.9956).toFixed(6)); };
-  const far = boot({ kibl: pairAt(2.4) }), h = far.api.render();
-  const row = h.match(/<div class="em-mk-row em-b105" id="emB105-mk-p1"[\s\S]*?<\/span><\/span><\/div>/)[0];
-  assert.match(row, /<span class="em-mk-lb">bet105 \(margin removed\)<span class="em-b105-warn"[^>]*>/, 'the mark on the row');
-  assert.match(row, /bet105 and Pinnacle \(api-tennis\) disagree by 2\.4pp \(over 1\.5pp\)/, 'the gap on hover');
-  assert.match(text(row), /^bet105 \(margin removed\) ⚠︎ 04:57:40 · bet105 ÷ 0\.9956 \d\.\d\d [+−]?\d+\.\dpp$/, 'price and edge still shown: ' + text(row));
-  assert.equal((h.match(/class="em-b105-warn"/g) || []).length, 4, 'both rows and both Fair price lines');
-  const strip = x => x.replace(/<div class="em-mk-row em-b105"[\s\S]*?<\/span><\/span><\/div>/g, '').replace(/<div class="em-fp-b105"[\s\S]*?<\/span><\/span><\/div>/g, '');
-  assert.equal(strip(h), strip(boot({ kibl: pairAt(0.2) }).api.render()), 'every other figure (model, fair, anchor) identical either way');
-  for (const d of [1.4, 0.2]) {
-    const n = boot({ kibl: pairAt(d) }).api.render();
-    assert.doesNotMatch(n, /em-b105-warn|disagree by/, d + 'pp: no warning');
-  }
-  assert.doesNotMatch(boot({ kibl: B105(3.0, 1.42, false) }).api.render(), /em-b105-warn/, 'a stale stream is never compared');
-  const noPin = JSON.parse(JSON.stringify(FIX.m1)); delete noPin.bookNow.Pncl;
-  assert.doesNotMatch(boot({ m: noPin, kibl: pairAt(5) }).api.render(), /em-b105-warn/, 'no Pinnacle quote: nothing to compare');
-  assert.match(html, /^const EDGE_B105_DISAGREE_PP = 1\.5;/m, 'the founder’s threshold');
-});
-test('Bet105 line: a stream change repaints the four elements in place; the fair price never moves', () => {
-  let pair = B105(3.0, 1.42);
-  const { api, calls, els } = boot({ kibl: () => pair });
-  api.render();
-  const fairBefore = text(els.edgeBody.innerHTML).match(/Adjusted fair odd · [0-9.]+%/g).join('|');
-  pair = B105(3.2, 1.36);
-  els.edgeBody.innerHTML = els.edgeBody.innerHTML + '<!--sentinel-->';
-  api.edgeB105Paint();
-  assert.match(els.edgeBody.innerHTML, /<!--sentinel-->$/, 'the page body is not re-rendered (an odd being typed survives)');
-  assert.match(text(calls.b105['emB105-mk-p1'].outerHTML), /^bet105 \(margin removed\) .* 3\.21 /);
-  assert.match(text(calls.b105['emB105-fp-p2'].outerHTML), /^bet105 \(margin removed\)( ⚠︎)? 1\.37 /);
-  assert.equal(text(els.edgeBody.innerHTML).match(/Adjusted fair odd · [0-9.]+%/g).join('|'), fairBefore, 'the pipeline’s fair price is untouched');
-  pair = null; api.edgeB105Paint();
-  assert.equal(calls.b105['emB105-mk-p1'].outerHTML, '<div id="emB105-mk-p1"></div>', 'the pair gone: the row leaves, its slot stays');
-});
-test('Bet105 line: the api-tennis Pinnacle rows, the anchor label and every other figure are byte-identical with and without the stream', () => {
-  const strip = h => h.replace(/<div class="em-mk-row em-b105"[\s\S]*?<\/span><\/span><\/div>/g, '').replace(/<div class="em-fp-b105"[\s\S]*?<\/span><\/span><\/div>/g, '')
-    .replace(/<div id="emB105-(mk|fp)-p[12]"><\/div>/g, '');
-  const a = strip(boot().api.render()), b = strip(boot({ kibl: B105(3.0, 1.42) }).api.render());
-  assert.equal(a, b);
-});
-test('Bet105 line: isolation — the derived price lives on the Model page only', () => {
-  const { execFileSync } = createRequire(import.meta.url)('child_process');
-  const files = execFileSync('git', ['ls-files'], { cwd: HERE, encoding: 'utf8' }).split('\n')
-    .filter(f => /\.(js|mjs|py|html|sql|yml)$/.test(f) && !/^(test-|tools\/test-|tools\/fixtures\/|design|\.ten)/.test(f) && f !== 'bsp-consult-dashboard.html');
-  const hits = files.filter(f => { try { return /EDGE_B105_K|bet105 \(margin removed\)|Pinnacle line \(from Bet105\)|0\.9956/.test(readFileSync(join(HERE, f), 'utf8')); } catch { return false; } });
-  assert.deepEqual(hits, [], 'no other page, pipeline file or builder carries the derived line');
-  const outside = html.replace(BLOCK, '');
-  assert.doesNotMatch(outside, /EDGE_B105_K|edgeB105/, 'the dashboard uses it inside the Model block only');
+test('the analysis generator reads the page’s own rules, character for character', () => {
+  const src = readFileSync(join(HERE, 'h2h-model/summary.js'), 'utf8');
+  const a = src.indexOf('// >>> page rules'), b = src.indexOf('// <<< page rules');
+  const copy = src.slice(src.indexOf('\n', a) + 1, b);
+  for (const name of ['edgeQuote', 'edgeBookName', 'edgeSharp', 'edgeSoftBooks', 'edgeBestSoft', 'edgeNoVig', 'edgeGapOf', 'edgeWeightTag', 'edgeCovState', 'edgeEven', 'edgeFigures', 'edgeNotThisFormat', 'edgeQuality', 'edgeVisibleAdjs', 'edgeLayerName', 'edgeSigned', 'edgeCourt', 'edgeEventPart', 'edgeWhyText', 'mxBookLabel'])
+    assert.ok(copy.includes(fn(name)), `${name}: summary.js copy differs from the page`);
+  const require = createRequire(import.meta.url);
+  assert.equal(require('./h2h-model/config.js').summary.enabled, false, 'founder 2026-10-10: Stennisfy Analysis is off (no Claude calls)');
 });
