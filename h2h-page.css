@@ -77,3 +77,22 @@
 #h2hRoot .x-mrow:hover { background: color-mix(in srgb, var(--h2h-white) 5%, transparent); }
 #h2hRoot .x-nav:hover { color: var(--h2h-text) !important; background: color-mix(in srgb, var(--h2h-white) 5%, transparent); }
 #h2hRoot .x-sugg:hover { color: var(--h2h-text) !important; border-color: color-mix(in srgb, var(--h2h-white) 16%, transparent) !important; }
+/* rows and controls (DF style-hover): a row / band / career / tournament / news / line row = the raised tone; the Overall
+   box lifts with a 16% edge; a ✕ and the Filters button brighten their ring */
+#h2hRoot .x-row:hover, #h2hRoot .x-hl:hover, #h2hRoot .x-more:hover, #h2hRoot .x-topt:hover { background: var(--h2h-raised) !important; }
+#h2hRoot .x-ovbox:hover { border-color: color-mix(in srgb, var(--h2h-white) 16%, transparent) !important; background: var(--h2h-raised) !important; }
+#h2hRoot .x-close:hover { color: var(--h2h-text) !important; border-color: color-mix(in srgb, var(--h2h-white) 30%, transparent) !important; }
+#h2hRoot .x-filt:hover { border-color: color-mix(in srgb, var(--h2h-white) 30%, transparent) !important; }
+/* Narrow pane (the reference cuts the names and lets the hot-lines table spill at 760; ours does neither): below 900px
+   the two pickers stack around the VS / swap row, a picked name wraps instead of being cut, and the hot-lines table
+   scrolls sideways inside its card. */
+@media (max-width: 900px) {
+  #h2hRoot .x-pick { grid-template-columns: minmax(0, 1fr) !important; }
+  #h2hRoot .x-pick > div:nth-child(2) { flex-direction: row !important; justify-content: center; padding-top: 0 !important; }
+  #h2hRoot .x-pname { white-space: normal !important; overflow: visible !important; }
+  #h2hRoot .x-hotscroll { overflow-x: auto; }
+  #h2hRoot .x-hotscroll > * { min-width: 600px; }
+}
+/* the radar's axis labels sit outside its box: below 900px it takes its own row (centred, max 440) so they never run
+   into the face-to-face rows */
+@media (max-width: 900px) { #h2hRoot .x-radar { flex-basis: 100% !important; } }

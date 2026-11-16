@@ -220,6 +220,7 @@
   --h2h-blue-hov: #9EC4FF;   /* link hover */
   --h2h-up:       #3DD68C;   /* positive signed figure, Won / Covered */
   --h2h-down:     #E0616F;   /* negative signed figure, Lost / Missed */
+  --h2h-page-0:   rgba(6, 7, 10, 0);   /* the sticky picker's fade end (the page tone, transparent) */
   --h2h-white:    #FFFFFF;   /* white alphas (hairlines, rings, washes) are color-mix of it */
   --h2h-overlay:  rgba(3, 5, 9, 0.72);
   --h2h-shadow-sticky: 0 12px 28px rgba(0, 0, 0, 0.35);
