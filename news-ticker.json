@@ -1,6 +1,19 @@
 {
- "generatedAt": "2026-11-16T23:01:28.698Z",
+ "generatedAt": "2026-11-16T23:24:29.441Z",
  "tournaments": [
+  {
+   "key": "2794",
+   "season": "2026",
+   "name": "Finals - Turin",
+   "file": "news-ticker/2794-2026.json",
+   "items": 10,
+   "byType": {
+    "quote": 6,
+    "report": 4
+   },
+   "latestTimestamp": "2026-11-16T22:49:22.000Z",
+   "updatedAt": "2026-11-16T23:24:29.441Z"
+  },
   {
    "key": "tour",
    "season": "2026",
@@ -11,20 +24,7 @@
     "quote": 132
    },
    "latestTimestamp": "2026-11-16T22:20:57.000Z",
-   "updatedAt": "2026-11-16T23:01:28.698Z"
-  },
-  {
-   "key": "2794",
-   "season": "2026",
-   "name": "Finals - Turin",
-   "file": "news-ticker/2794-2026.json",
-   "items": 9,
-   "byType": {
-    "report": 4,
-    "quote": 5
-   },
-   "latestTimestamp": "2026-11-16T21:23:30.496Z",
-   "updatedAt": "2026-11-16T22:38:44.644Z"
+   "updatedAt": "2026-11-16T23:24:29.441Z"
   },
   {
    "key": "1681",
@@ -54,6 +54,37 @@
   }
  ],
  "latest": [
+  {
+   "id": "quote-fbe83f56ff7379",
+   "type": "quote",
+   "playerId": "1093",
+   "opponentId": "372",
+   "player": "D. Medvedev",
+   "opponent": "F. Cobolli",
+   "tournament": "Finals - Turin",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-16T22:49:22.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Quotes",
+   "context": "after beating F. Cobolli",
+   "eventKey": "12179701",
+   "won": true,
+   "text": "I think this is the best surface for me to try to beat Alcaraz … With Golubev we will continue next year too",
+   "originalText": "Credo che questa sia per me la superficie migliore in cui cercare di battere Alcaraz … Con Golubev continueremo anche l’anno prossimo",
+   "language": "it",
+   "translated": true,
+   "translationModel": "claude-opus-5-5",
+   "sourceName": "Ubitennis",
+   "sourceUrl": "https://www.ubitennis.com/blog/2026/11/16/atp-finals-medvedev-strano-affrontare-a-torino-un-italiano-che-non-sia-sinner/",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On beating Alcaraz on this surface and Golubev",
+   "sourceHash": "772ad635c0a7c967",
+   "publishedAt": "2026-11-16T23:24:29.441Z",
+   "file": "news-ticker/2794-2026.json"
+  },
   {
    "id": "quote-78c2bc46611eaf",
    "type": "quote",
@@ -1576,38 +1607,6 @@
    "topic": "On constant questions about coach Juan Carlos Ferrero",
    "sourceHash": "72bfe57204b471c0",
    "publishedAt": "2026-11-15T23:55:19.451Z",
-   "file": "news-ticker/tour-2026.json"
-  },
-  {
-   "id": "quote-b12e60772d3693",
-   "type": "quote",
-   "playerId": "2973",
-   "opponentId": null,
-   "player": "B. Shelton",
-   "opponent": null,
-   "tournament": "ATP Tour",
-   "tournamentKey": "tour",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-15T21:58:00.000Z",
-   "timestampKind": "observed (Tennis TV published the clip then)",
-   "category": "Interviews",
-   "context": null,
-   "eventKey": null,
-   "won": null,
-   "text": "Yeah, it means a lot … Giving myself a little bit of momentum moving forward is huge. All the matches are really tough here, so it can be an uphill battle if you get behind early and for me to get my first win here in front of this crowd is amazing.",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "On-court interview",
-   "sourceUrl": "https://www.tennistv.com/videos/4609560/turin-2026-rr-shelton-interview",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the clip's audio, transcribed by the interviews worker",
-   "interview": "on-court",
-   "topic": "On his first win at the Finals",
-   "sourceHash": "0cb5dd1841f0df29",
-   "publishedAt": "2026-11-15T22:47:23.201Z",
    "file": "news-ticker/tour-2026.json"
   }
  ]
