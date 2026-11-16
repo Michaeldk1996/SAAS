@@ -1,5 +1,5 @@
 {
- "generatedAt": "2026-11-16T22:20:56.006Z",
+ "generatedAt": "2026-11-16T22:38:44.644Z",
  "tournaments": [
   {
    "key": "2794",
@@ -12,7 +12,7 @@
     "quote": 5
    },
    "latestTimestamp": "2026-11-16T21:23:30.496Z",
-   "updatedAt": "2026-11-16T21:39:49.438Z"
+   "updatedAt": "2026-11-16T22:38:44.644Z"
   },
   {
    "key": "tour",
@@ -75,12 +75,31 @@
     "minutes": 85
    },
    "category": "Statistics",
-   "text": "Medvedev beat Cobolli for the 3rd time in 4 meetings, 7-6, 6-3.\n\nMedvedev: W: 17 / UE: 18 | DR: 1.86\n\nCobolli: W: 14 / UE: 20 | DR: 0.54",
-   "baseText": "Medvedev beat Cobolli for the 3rd time in 4 meetings, 7-6, 6-3.",
+   "text": "Medvedev beat Cobolli in straight sets in Turin, where Cobolli was playing the event for the first time and he needed only two sets to do it.\n\nThe first set stayed on serve all the way. Medvedev had five break points in it, early in the set and again at 4–4 but Cobolli saved them all and held each time. Medvedev did not let those missed chances bother him and was too solid in the tiebreak, which he took 7–4 to lead by a set. The second set was tight until he finally broke for 4–3. From there he held and broke once more in the last game, winning 4 games in a row to take the set 6–3 and the match.\n\nThose breaks came late but Medvedev was never in trouble on his own serve. His first serve worked very well and he did not face a single break point all match. On the other side, Cobolli really struggled behind his second serve.\n\nOverall, the gap between the two was clear on a quick indoor hard court that suited Medvedev and a dominance ratio of 1.86 shows how much more he got out of the points than Cobolli. Next is Alcaraz.\n\nMedvedev: W: 17 / UE: 18 | DR: 1.86\n\nCobolli: W: 14 / UE: 20 | DR: 0.54",
+   "baseText": "Medvedev beat Cobolli in straight sets in Turin, where Cobolli was playing the event for the first time and he needed only two sets to do it.\n\nThe first set stayed on serve all the way. Medvedev had five break points in it, early in the set and again at 4–4 but Cobolli saved them all and held each time. Medvedev did not let those missed chances bother him and was too solid in the tiebreak, which he took 7–4 to lead by a set. The second set was tight until he finally broke for 4–3. From there he held and broke once more in the last game, winning 4 games in a row to take the set 6–3 and the match.\n\nThose breaks came late but Medvedev was never in trouble on his own serve. His first serve worked very well and he did not face a single break point all match. On the other side, Cobolli really struggled behind his second serve.\n\nOverall, the gap between the two was clear on a quick indoor hard court that suited Medvedev and a dominance ratio of 1.86 shows how much more he got out of the points than Cobolli. Next is Alcaraz.",
    "rating": [
     "Medvedev: W: 17 / UE: 18 | DR: 1.86",
     "Cobolli: W: 14 / UE: 20 | DR: 0.54"
    ],
+   "commentary": {
+    "text": "Cobolli made his debut at the event and Medvedev beat him in straight sets. The first set went to a tiebreak after five break points came and went and Medvedev was too solid in the tiebreak. Medvedev played well, especially on serve, where his first serve worked very well. The match was played on a quick indoor hard court, conditions that favoured Medvedev.",
+    "sourceName": "Tennis TV highlights commentary",
+    "sourceUrl": "https://www.tennistv.com/videos/4610057/turin-2026-rr-medvedev-cobolli-highlights"
+   },
+   "composed": {
+    "version": 3,
+    "sheetHash": "5483698f694c30cc",
+    "status": "ok",
+    "model": "claude-opus-5-5",
+    "tries": 1,
+    "runs": 1,
+    "usage": {
+     "input": 6082,
+     "output": 1874,
+     "calls": 1
+    },
+    "body": "Medvedev beat Cobolli in straight sets in Turin, where Cobolli was playing the event for the first time and he needed only two sets to do it.\n\nThe first set stayed on serve all the way. Medvedev had five break points in it, early in the set and again at 4–4 but Cobolli saved them all and held each time. Medvedev did not let those missed chances bother him and was too solid in the tiebreak, which he took 7–4 to lead by a set. The second set was tight until he finally broke for 4–3. From there he held and broke once more in the last game, winning 4 games in a row to take the set 6–3 and the match.\n\nThose breaks came late but Medvedev was never in trouble on his own serve. His first serve worked very well and he did not face a single break point all match. On the other side, Cobolli really struggled behind his second serve.\n\nOverall, the gap between the two was clear on a quick indoor hard court that suited Medvedev and a dominance ratio of 1.86 shows how much more he got out of the points than Cobolli. Next is Alcaraz."
+   },
    "fields": {
     "score": "7-6, 6-3",
     "round": null,
@@ -182,8 +201,10 @@
    "sourceUrl": "pbp/12179701.json",
    "language": "en",
    "translated": false,
-   "sourceHash": "ac57aa730788504a",
+   "sourceHash": "6c2635df8f22b397",
    "publishedAt": "2026-11-16T21:39:49.438Z",
+   "revisedAt": "2026-11-16T22:38:44.644Z",
+   "revision": 1,
    "file": "news-ticker/2794-2026.json"
   },
   {
