@@ -2,8 +2,132 @@
  "tournament": "Finals - Turin",
  "tournamentKey": "2794",
  "season": "2026",
- "updatedAt": "2026-11-16T02:23:50.617Z",
+ "updatedAt": "2026-11-16T14:52:36.833Z",
  "items": [
+  {
+   "id": "report-12179698",
+   "type": "report",
+   "playerId": "2382",
+   "opponentId": "2846",
+   "player": "C. Alcaraz",
+   "opponent": "F. Tiafoe",
+   "tournament": "Finals - Turin",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "stage": "main draw",
+   "round": null,
+   "eventKey": "12179698",
+   "timestamp": "2026-11-16T14:22:14.229Z",
+   "timestampKind": "observed",
+   "observed": {
+    "endedAt": "2026-11-16T14:22:14.229Z",
+    "startedAt": "2026-11-16T13:13:45.685Z",
+    "minutes": 68
+   },
+   "category": "Statistics",
+   "text": "Alcaraz beat Tiafoe for the 3rd time in 4 meetings, 6-2, 6-2.\n\nAlcaraz: W: 21 / UE: 9 | DR: 2.06\n\nTiafoe: W: 12 / UE: 11 | DR: 0.49",
+   "baseText": "Alcaraz beat Tiafoe for the 3rd time in 4 meetings, 6-2, 6-2.",
+   "rating": [
+    "Alcaraz: W: 21 / UE: 9 | DR: 2.06",
+    "Tiafoe: W: 12 / UE: 11 | DR: 0.49"
+   ],
+   "fields": {
+    "score": "6-2, 6-2",
+    "round": null,
+    "retired": false,
+    "h2h": {
+     "a": 3,
+     "b": 1,
+     "n": 4
+    },
+    "durationMinutes": 68,
+    "facts": {
+     "longestRun": {
+      "side": "p1",
+      "n": 4,
+      "set": 1,
+      "from": {
+       "me": 0,
+       "opp": 0
+      },
+      "afterBeingBroken": false,
+      "toTheEnd": false
+     }
+    },
+    "standouts": [
+     {
+      "player": "winner",
+      "tone": "good",
+      "metric": "servePointsLost",
+      "value": 10,
+      "total": 46
+     },
+     {
+      "player": "winner",
+      "tone": "good",
+      "metric": "firstIn",
+      "value": 78,
+      "baseline": 64,
+      "scope": "last52",
+      "surface": "Hard",
+      "n": 49
+     },
+     {
+      "player": "winner",
+      "tone": null,
+      "metric": "ret1Won",
+      "value": 26,
+      "won": 9,
+      "total": 35,
+      "baseline": 34,
+      "scope": "last52",
+      "surface": "Hard",
+      "n": 49
+     },
+     {
+      "player": "winner",
+      "tone": null,
+      "metric": "ret2Won",
+      "value": 100,
+      "won": 12,
+      "total": 12,
+      "baseline": 54,
+      "scope": "last52",
+      "surface": "Hard",
+      "n": 49
+     },
+     {
+      "player": "winner",
+      "tone": "good",
+      "metric": "breakPoints",
+      "saved": 3,
+      "faced": 3
+     }
+    ],
+    "winner": {
+     "aces": 4,
+     "winners": 21,
+     "unforcedErrors": 9,
+     "breakPointsSaved": 3,
+     "breakPointsFaced": 3,
+     "breakPointsSource": "box score"
+    },
+    "loser": {
+     "aces": 7,
+     "winners": 12,
+     "unforcedErrors": 11,
+     "breakPointsSaved": 1,
+     "breakPointsFaced": 5,
+     "breakPointsSource": "box score"
+    }
+   },
+   "sourceName": "Stennisfy match data (api-tennis box score and point-by-point)",
+   "sourceUrl": "pbp/12179698.json",
+   "language": "en",
+   "translated": false,
+   "sourceHash": "06f3cecf45584363",
+   "publishedAt": "2026-11-16T14:52:36.833Z"
+  },
   {
    "id": "quote-df7f4ef2255f5b",
    "type": "quote",

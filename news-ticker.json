@@ -1,30 +1,30 @@
 {
- "generatedAt": "2026-11-16T14:06:47.274Z",
+ "generatedAt": "2026-11-16T14:52:36.833Z",
  "tournaments": [
-  {
-   "key": "tour",
-   "season": "2026",
-   "name": "ATP Tour",
-   "file": "news-ticker/tour-2026.json",
-   "items": 109,
-   "byType": {
-    "quote": 109
-   },
-   "latestTimestamp": "2026-11-16T11:32:02.000Z",
-   "updatedAt": "2026-11-16T14:06:47.274Z"
-  },
   {
    "key": "2794",
    "season": "2026",
    "name": "Finals - Turin",
    "file": "news-ticker/2794-2026.json",
-   "items": 4,
+   "items": 5,
    "byType": {
-    "quote": 2,
-    "report": 2
+    "report": 3,
+    "quote": 2
    },
-   "latestTimestamp": "2026-11-15T22:51:36.000Z",
-   "updatedAt": "2026-11-16T02:23:50.617Z"
+   "latestTimestamp": "2026-11-16T14:22:14.229Z",
+   "updatedAt": "2026-11-16T14:52:36.833Z"
+  },
+  {
+   "key": "tour",
+   "season": "2026",
+   "name": "ATP Tour",
+   "file": "news-ticker/tour-2026.json",
+   "items": 110,
+   "byType": {
+    "quote": 110
+   },
+   "latestTimestamp": "2026-11-16T14:20:37.000Z",
+   "updatedAt": "2026-11-16T14:52:36.833Z"
   },
   {
    "key": "1681",
@@ -54,6 +54,162 @@
   }
  ],
  "latest": [
+  {
+   "id": "report-12179698",
+   "type": "report",
+   "playerId": "2382",
+   "opponentId": "2846",
+   "player": "C. Alcaraz",
+   "opponent": "F. Tiafoe",
+   "tournament": "Finals - Turin",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "stage": "main draw",
+   "round": null,
+   "eventKey": "12179698",
+   "timestamp": "2026-11-16T14:22:14.229Z",
+   "timestampKind": "observed",
+   "observed": {
+    "endedAt": "2026-11-16T14:22:14.229Z",
+    "startedAt": "2026-11-16T13:13:45.685Z",
+    "minutes": 68
+   },
+   "category": "Statistics",
+   "text": "Alcaraz beat Tiafoe for the 3rd time in 4 meetings, 6-2, 6-2.\n\nAlcaraz: W: 21 / UE: 9 | DR: 2.06\n\nTiafoe: W: 12 / UE: 11 | DR: 0.49",
+   "baseText": "Alcaraz beat Tiafoe for the 3rd time in 4 meetings, 6-2, 6-2.",
+   "rating": [
+    "Alcaraz: W: 21 / UE: 9 | DR: 2.06",
+    "Tiafoe: W: 12 / UE: 11 | DR: 0.49"
+   ],
+   "fields": {
+    "score": "6-2, 6-2",
+    "round": null,
+    "retired": false,
+    "h2h": {
+     "a": 3,
+     "b": 1,
+     "n": 4
+    },
+    "durationMinutes": 68,
+    "facts": {
+     "longestRun": {
+      "side": "p1",
+      "n": 4,
+      "set": 1,
+      "from": {
+       "me": 0,
+       "opp": 0
+      },
+      "afterBeingBroken": false,
+      "toTheEnd": false
+     }
+    },
+    "standouts": [
+     {
+      "player": "winner",
+      "tone": "good",
+      "metric": "servePointsLost",
+      "value": 10,
+      "total": 46
+     },
+     {
+      "player": "winner",
+      "tone": "good",
+      "metric": "firstIn",
+      "value": 78,
+      "baseline": 64,
+      "scope": "last52",
+      "surface": "Hard",
+      "n": 49
+     },
+     {
+      "player": "winner",
+      "tone": null,
+      "metric": "ret1Won",
+      "value": 26,
+      "won": 9,
+      "total": 35,
+      "baseline": 34,
+      "scope": "last52",
+      "surface": "Hard",
+      "n": 49
+     },
+     {
+      "player": "winner",
+      "tone": null,
+      "metric": "ret2Won",
+      "value": 100,
+      "won": 12,
+      "total": 12,
+      "baseline": 54,
+      "scope": "last52",
+      "surface": "Hard",
+      "n": 49
+     },
+     {
+      "player": "winner",
+      "tone": "good",
+      "metric": "breakPoints",
+      "saved": 3,
+      "faced": 3
+     }
+    ],
+    "winner": {
+     "aces": 4,
+     "winners": 21,
+     "unforcedErrors": 9,
+     "breakPointsSaved": 3,
+     "breakPointsFaced": 3,
+     "breakPointsSource": "box score"
+    },
+    "loser": {
+     "aces": 7,
+     "winners": 12,
+     "unforcedErrors": 11,
+     "breakPointsSaved": 1,
+     "breakPointsFaced": 5,
+     "breakPointsSource": "box score"
+    }
+   },
+   "sourceName": "Stennisfy match data (api-tennis box score and point-by-point)",
+   "sourceUrl": "pbp/12179698.json",
+   "language": "en",
+   "translated": false,
+   "sourceHash": "06f3cecf45584363",
+   "publishedAt": "2026-11-16T14:52:36.833Z",
+   "file": "news-ticker/2794-2026.json"
+  },
+  {
+   "id": "quote-9a3462263547b5",
+   "type": "quote",
+   "playerId": "1759",
+   "opponentId": null,
+   "player": "A. Fils",
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-16T14:20:37.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "I&#8217;ll have to go after him and beat him. I&#8217;ll have to be very positive in my head, have a good attitude, … It won&#8217;t be easy, it&#8217;s for sure. He has beaten me twice this year, I have beaten him once. We&#8217;ll see what it gives. I&#8217;ll have my chances, he&#8217;ll have his.",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "Tennis Majors",
+   "sourceUrl": "https://www.tennismajors.com/atp/nitto-atp-finals-atp/fils-vs-jodar-a-must-win-rematch-in-turin-after-two-defeats-to-the-spaniard-this-summer-867127.html",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On facing Rafael Jodar at the ATP Finals",
+   "sourceHash": "817740b158bcd689",
+   "publishedAt": "2026-11-16T14:52:36.833Z",
+   "file": "news-ticker/tour-2026.json"
+  },
   {
    "id": "quote-17eff05739323b",
    "type": "quote",
@@ -1548,68 +1704,6 @@
    "sourceHash": "8085f81ef562790e",
    "publishedAt": "2026-11-14T21:09:13.853Z",
    "file": "news-ticker/tour-2026.json"
-  },
-  {
-   "id": "quote-80349adba6fcf6",
-   "type": "quote",
-   "playerId": "2382",
-   "opponentId": null,
-   "player": "C. Alcaraz",
-   "opponent": null,
-   "tournament": "ATP Tour",
-   "tournamentKey": "tour",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-14T16:53:43.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Interviews",
-   "context": null,
-   "eventKey": null,
-   "won": null,
-   "text": "Vision of a Champion (\"Vision of a Champion",
-   "originalText": "Vision eines Champions („Vision of a Champion",
-   "language": "de",
-   "translated": true,
-   "translationModel": "claude-opus-5-5",
-   "sourceName": "tennis MAGAZIN",
-   "sourceUrl": "https://www.tennismagazin.de/news/atp-finals-arthur-fils-manifestiert-ticket-fuer-turin-schon-2025/",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "topic": "On Fils's prediction of reaching Turin",
-   "sourceHash": "9aa3f2fd21287838",
-   "publishedAt": "2026-11-15T00:55:58.924Z",
-   "file": "news-ticker/tour-2026.json"
-  },
-  {
-   "id": "quote-d297a576fe51d4",
-   "type": "quote",
-   "playerId": "2832",
-   "opponentId": "366",
-   "player": "T. Fritz",
-   "opponent": "T. A. Tirante",
-   "tournament": "Stockholm",
-   "tournamentKey": "1681",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-14T16:03:27.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Quotes",
-   "context": "after beating T. A. Tirante",
-   "eventKey": "12179948",
-   "won": true,
-   "text": "But I knew that I would feel better if I came here to play. I'm glad that I did that and got the maximum out of it.",
-   "originalText": "Maar ik wist dat ik me beter zou voelen als ik hier kwam spelen. Ik ben blij dat ik dat gedaan heb en er het maximale uit heb gehaald.",
-   "language": "nl",
-   "translated": true,
-   "translationModel": "claude-opus-5-5",
-   "sourceName": "Sporza (VRT)",
-   "sourceUrl": "https://sporza.be/nl/matches/tennis/2026-11/taylor-fritz-thiago-tirante-taylor-fritz-spoelt-gemiste-atp-finals-door-met-titel-in-stockholm-na-thriller~1794671532460/",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "topic": "On choosing to play after Paris setback",
-   "sourceHash": "6a6d1182c4f3cb44",
-   "publishedAt": "2026-11-14T16:54:47.306Z",
-   "file": "news-ticker/1681-2026.json"
   }
  ]
 }
