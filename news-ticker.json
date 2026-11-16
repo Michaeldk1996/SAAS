@@ -1,6 +1,18 @@
 {
- "generatedAt": "2026-11-16T22:38:44.644Z",
+ "generatedAt": "2026-11-16T23:01:28.698Z",
  "tournaments": [
+  {
+   "key": "tour",
+   "season": "2026",
+   "name": "ATP Tour",
+   "file": "news-ticker/tour-2026.json",
+   "items": 132,
+   "byType": {
+    "quote": 132
+   },
+   "latestTimestamp": "2026-11-16T22:20:57.000Z",
+   "updatedAt": "2026-11-16T23:01:28.698Z"
+  },
   {
    "key": "2794",
    "season": "2026",
@@ -13,18 +25,6 @@
    },
    "latestTimestamp": "2026-11-16T21:23:30.496Z",
    "updatedAt": "2026-11-16T22:38:44.644Z"
-  },
-  {
-   "key": "tour",
-   "season": "2026",
-   "name": "ATP Tour",
-   "file": "news-ticker/tour-2026.json",
-   "items": 129,
-   "byType": {
-    "quote": 129
-   },
-   "latestTimestamp": "2026-11-16T17:25:00.000Z",
-   "updatedAt": "2026-11-16T22:20:56.006Z"
   },
   {
    "key": "1681",
@@ -54,6 +54,101 @@
   }
  ],
  "latest": [
+  {
+   "id": "quote-78c2bc46611eaf",
+   "type": "quote",
+   "playerId": "1093",
+   "opponentId": null,
+   "player": "D. Medvedev",
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-16T22:20:57.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "I managed to serve well,",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "Ubitennis",
+   "sourceUrl": "https://www.ubitennis.net/2026/11/daniil-medvedev-begins-title-tilt-with-resilient-victory-over-flavio-cobolli/",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On his serving in the win over Cobolli",
+   "sourceHash": "a82a10a342f9673f",
+   "publishedAt": "2026-11-16T23:01:28.698Z",
+   "file": "news-ticker/tour-2026.json"
+  },
+  {
+   "id": "quote-6df12e5ff0586d",
+   "type": "quote",
+   "playerId": "1093",
+   "opponentId": null,
+   "player": "D. Medvedev",
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-16T22:03:00.000Z",
+   "timestampKind": "observed (Tennis TV published the clip then)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "Yeah, I managed to serve well. It's a very fast indoor court, so the serve is important and I managed to do it better than him today.",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "On-court interview",
+   "sourceUrl": "https://www.tennistv.com/videos/4610063/turin-2026-rr-medvedev-interview",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the clip's audio, transcribed by the interviews worker",
+   "interview": "on-court",
+   "topic": "On his serve",
+   "sourceHash": "d80fd082e96c5079",
+   "publishedAt": "2026-11-16T23:01:28.698Z",
+   "file": "news-ticker/tour-2026.json"
+  },
+  {
+   "id": "quote-cc3351a12161be",
+   "type": "quote",
+   "playerId": "1093",
+   "opponentId": null,
+   "player": "D. Medvedev",
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-16T22:03:00.000Z",
+   "timestampKind": "observed (Tennis TV published the clip then)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "Well, yes and no, because you can lose and still be in the tournament … So I would challenge that a bit, but the difference is that there is no other tournament in the world where you're going to play a top 10 player in the first match.",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "On-court interview",
+   "sourceUrl": "https://www.tennistv.com/videos/4610063/turin-2026-rr-medvedev-interview",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the clip's audio, transcribed by the interviews worker",
+   "interview": "on-court",
+   "topic": "On the tournament format",
+   "sourceHash": "320f400c520ea53b",
+   "publishedAt": "2026-11-16T23:01:28.698Z",
+   "file": "news-ticker/tour-2026.json"
+  },
   {
    "id": "report-12179701",
    "type": "report",
@@ -1513,275 +1608,6 @@
    "topic": "On his first win at the Finals",
    "sourceHash": "0cb5dd1841f0df29",
    "publishedAt": "2026-11-15T22:47:23.201Z",
-   "file": "news-ticker/tour-2026.json"
-  },
-  {
-   "id": "quote-f236a6135a5c49",
-   "type": "quote",
-   "playerId": "2973",
-   "opponentId": null,
-   "player": "B. Shelton",
-   "opponent": null,
-   "tournament": "ATP Tour",
-   "tournamentKey": "tour",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-15T21:58:00.000Z",
-   "timestampKind": "observed (Tennis TV published the clip then)",
-   "category": "Interviews",
-   "context": null,
-   "eventKey": null,
-   "won": null,
-   "text": "Really intense, especially the first set. The balls were a bit older that set. I don't know that I've played that many rallies out here on tour on a court this fast. So it was physical, really physical, tough contest. I was breathing hard after pretty much every point … My overall level was good and I thought it was a great match that I'll be able to build on this week.",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "On-court interview",
-   "sourceUrl": "https://www.tennistv.com/videos/4609560/turin-2026-rr-shelton-interview",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the clip's audio, transcribed by the interviews worker",
-   "interview": "on-court",
-   "topic": "On the intensity of the match",
-   "sourceHash": "ec629a0834449a6c",
-   "publishedAt": "2026-11-15T22:47:23.201Z",
-   "file": "news-ticker/tour-2026.json"
-  },
-  {
-   "id": "report-12179703",
-   "type": "report",
-   "playerId": "2973",
-   "opponentId": "1759",
-   "player": "B. Shelton",
-   "opponent": "A. Fils",
-   "tournament": "Finals - Turin",
-   "tournamentKey": "2794",
-   "season": "2026",
-   "stage": "main draw",
-   "round": null,
-   "eventKey": "12179703",
-   "timestamp": "2026-11-15T21:40:54.138Z",
-   "timestampKind": "observed",
-   "observed": {
-    "endedAt": "2026-11-15T21:40:54.138Z",
-    "startedAt": "2026-11-15T19:43:09.184Z",
-    "minutes": 118
-   },
-   "category": "Statistics",
-   "text": "Shelton beat Fils in three sets at the ATP Finals and it was his first ever win at this event.\n\nHe played a very strong first set. Fils got out of an early game on his serve but Shelton broke him twice after that and won 5 games in a row to take it 6–2, mixing big serves into the body with wide ones. Fils pushed hard in the second set and won some of the best points of the match. He broke late, then had to save break points while he served for the set but he held to take it 6–3 and make it one set all.\n\nThe deciding set turned early. Shelton broke for 2–0, though it took him several chances in that game and then had to protect that lead. Fils had two chances to break back before Shelton held for 4–1 and Fils got one more look when Shelton served for the match. Shelton held again and won the set 6–3. Credit to him: once he was ahead in the third, he never gave the break back.\n\n68% behind his second serve shows why Fils found it so hard to break him, far above his 53% average on hard. His backhand was a real weapon too, with several clean winners.\n\nShelton did what he had to do but it was not perfect: he made 32 unforced errors and that is what he has to clean up for the next match. He plays Jodar next.\n\nShelton: performance rating 8.8 | W: 28 / UE: 32 | DR: 1.37\n\nFils: performance rating 8.1 | W: 21 / UE: 22 | DR: 0.73",
-   "baseText": "Shelton beat Fils in three sets at the ATP Finals and it was his first ever win at this event.\n\nHe played a very strong first set. Fils got out of an early game on his serve but Shelton broke him twice after that and won 5 games in a row to take it 6–2, mixing big serves into the body with wide ones. Fils pushed hard in the second set and won some of the best points of the match. He broke late, then had to save break points while he served for the set but he held to take it 6–3 and make it one set all.\n\nThe deciding set turned early. Shelton broke for 2–0, though it took him several chances in that game and then had to protect that lead. Fils had two chances to break back before Shelton held for 4–1 and Fils got one more look when Shelton served for the match. Shelton held again and won the set 6–3. Credit to him: once he was ahead in the third, he never gave the break back.\n\n68% behind his second serve shows why Fils found it so hard to break him, far above his 53% average on hard. His backhand was a real weapon too, with several clean winners.\n\nShelton did what he had to do but it was not perfect: he made 32 unforced errors and that is what he has to clean up for the next match. He plays Jodar next.",
-   "rating": [
-    "Shelton: performance rating 8.8 | W: 28 / UE: 32 | DR: 1.37",
-    "Fils: performance rating 8.1 | W: 21 / UE: 22 | DR: 0.73"
-   ],
-   "shotStats": {
-    "p1": {
-     "performance": 8.8,
-     "serveQuality": 9.4,
-     "unreturnedPct": 54,
-     "firstInPct": 66,
-     "firstWonPct": 76,
-     "secondWonPct": 68,
-     "secondSpeed": 184,
-     "returnQuality": 7.6,
-     "fhWinners": 7,
-     "bhWinners": 6,
-     "fhUnforced": 11,
-     "bhUnforced": 20,
-     "forcedErrors": 26,
-     "baselineWon": 33,
-     "under9Won": 74,
-     "over9Won": 14,
-     "bpWon": [
-      3,
-      12
-     ],
-     "netWon": [
-      8,
-      11
-     ]
-    },
-    "p2": {
-     "performance": 8.1,
-     "serveQuality": 8.4,
-     "unreturnedPct": 31,
-     "firstInPct": 76,
-     "firstWonPct": 66,
-     "secondWonPct": 55,
-     "secondSpeed": 159,
-     "returnQuality": 6.3,
-     "fhWinners": 10,
-     "bhWinners": 5,
-     "fhUnforced": 13,
-     "bhUnforced": 9,
-     "forcedErrors": 37,
-     "baselineWon": 38,
-     "under9Won": 67,
-     "over9Won": 11,
-     "bpWon": [
-      1,
-      4
-     ],
-     "netWon": [
-      9,
-      15
-     ]
-    },
-    "postedAt": "2026-11-15T21:45:08.000Z",
-    "readAt": "2026-11-16T01:48:36.324Z",
-    "sourceName": "ATP broadcast match statistics (via @ATP_Entry)",
-    "sourceUrl": "https://x.com/ATP_Entry/status/2122083504121073848",
-    "agreed": "6 of 6 serve figures within 3 points of ours; set scores and break points equal",
-    "wue": {
-     "compared": 4,
-     "maxDiff": 3
-    }
-   },
-   "commentary": {
-    "text": "Shelton won his first ever match at the ATP Finals in just under two hours. He played a very strong opening set and served well throughout, mixing big serves into the body with wide serves. His backhand was a real weapon, producing several clean winners and he also hit big forehands. Fils pushed hard and won some of the best points of the match and both players reached a high level at times.",
-    "sourceName": "Tennis TV highlights commentary",
-    "sourceUrl": "https://www.tennistv.com/videos/4609555/turin-2026-rr-shelton-fils-highlights"
-   },
-   "composed": {
-    "version": 3,
-    "sheetHash": "1a06c45fe8b132df",
-    "status": "ok",
-    "model": "claude-opus-5-5",
-    "tries": 1,
-    "runs": 1,
-    "usage": {
-     "input": 6147,
-     "output": 1683,
-     "calls": 1
-    },
-    "body": "Shelton beat Fils in three sets at the ATP Finals and it was his first ever win at this event.\n\nHe played a very strong first set. Fils got out of an early game on his serve but Shelton broke him twice after that and won 5 games in a row to take it 6–2, mixing big serves into the body with wide ones. Fils pushed hard in the second set and won some of the best points of the match. He broke late, then had to save break points while he served for the set but he held to take it 6–3 and make it one set all.\n\nThe deciding set turned early. Shelton broke for 2–0, though it took him several chances in that game and then had to protect that lead. Fils had two chances to break back before Shelton held for 4–1 and Fils got one more look when Shelton served for the match. Shelton held again and won the set 6–3. Credit to him: once he was ahead in the third, he never gave the break back.\n\n68% behind his second serve shows why Fils found it so hard to break him, far above his 53% average on hard. His backhand was a real weapon too, with several clean winners.\n\nShelton did what he had to do but it was not perfect: he made 32 unforced errors and that is what he has to clean up for the next match. He plays Jodar next."
-   },
-   "fields": {
-    "score": "6-2, 3-6, 6-3",
-    "round": null,
-    "retired": false,
-    "h2h": {
-     "a": 3,
-     "b": 1,
-     "n": 4
-    },
-    "durationMinutes": 118,
-    "facts": {
-     "longestRun": {
-      "side": "p1",
-      "n": 5,
-      "set": 1,
-      "from": {
-       "me": 1,
-       "opp": 2
-      },
-      "afterBeingBroken": false,
-      "toTheEnd": false
-     }
-    },
-    "standouts": [
-     {
-      "player": "winner",
-      "tone": "good",
-      "metric": "aces",
-      "value": 12
-     },
-     {
-      "player": "winner",
-      "tone": "good",
-      "metric": "firstWon",
-      "value": 76,
-      "won": 37,
-      "total": 49
-     },
-     {
-      "player": "winner",
-      "tone": "good",
-      "metric": "secondWon",
-      "value": 68,
-      "won": 17,
-      "total": 25,
-      "baseline": 53,
-      "scope": "last52",
-      "surface": "Hard",
-      "n": 37
-     },
-     {
-      "player": "winner",
-      "tone": "bad",
-      "metric": "winnersErrors",
-      "winners": 28,
-      "unforcedErrors": 32
-     },
-     {
-      "player": "loser",
-      "tone": "bad",
-      "metric": "firstWon",
-      "value": 66,
-      "won": 46,
-      "total": 70,
-      "baseline": 76,
-      "scope": "last52",
-      "surface": "Hard",
-      "n": 43
-     }
-    ],
-    "winner": {
-     "aces": 12,
-     "winners": 28,
-     "unforcedErrors": 32,
-     "breakPointsSaved": 3,
-     "breakPointsFaced": 4,
-     "breakPointsSource": "box score"
-    },
-    "loser": {
-     "aces": 4,
-     "winners": 21,
-     "unforcedErrors": 22,
-     "breakPointsSaved": 9,
-     "breakPointsFaced": 12,
-     "breakPointsSource": "box score"
-    }
-   },
-   "sourceName": "Stennisfy match data (api-tennis box score and point-by-point)",
-   "sourceUrl": "pbp/12179703.json",
-   "language": "en",
-   "translated": false,
-   "sourceHash": "e1307f6620caf5da",
-   "publishedAt": "2026-11-15T22:09:59.550Z",
-   "revisedAt": "2026-11-16T02:23:50.617Z",
-   "revision": 2,
-   "file": "news-ticker/2794-2026.json"
-  },
-  {
-   "id": "quote-b79a17d52f6890",
-   "type": "quote",
-   "playerId": "50323",
-   "opponentId": null,
-   "player": "R. Jodar",
-   "opponent": null,
-   "tournament": "ATP Tour",
-   "tournamentKey": "tour",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-15T20:53:14.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Interviews",
-   "context": null,
-   "eventKey": null,
-   "won": null,
-   "text": "I still have this tournament and next week, Davis Cup as well, … I think these two tournaments are very special for me, because representing my country [&#8230;] in the Final 8 will be something unique. … I’m very grateful and lucky to be part of the Team Spain.",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "Tennis Majors",
-   "sourceUrl": "https://www.tennismajors.com/atp/nitto-atp-finals-atp/jodar-confirms-davis-cup-final-8-with-spain-something-unique-867064.html",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "topic": "On representing Spain at the Davis Cup Final 8",
-   "sourceHash": "1cc28ba6691cba70",
-   "publishedAt": "2026-11-15T21:31:32.182Z",
    "file": "news-ticker/tour-2026.json"
   }
  ]
