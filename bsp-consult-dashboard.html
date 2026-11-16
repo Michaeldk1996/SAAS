@@ -3698,6 +3698,133 @@ window.sfPlanLocks(null);   // locked until the account says Edge / Pro: no unlo
   [data-db-root] .db2-ccv{ display:flex; align-items:baseline; justify-content:center; gap:7px; }
   [data-db-root] .db2-ccn{ font-family:var(--db-mono); font-size:19px; letter-spacing:-0.02em; font-variant-numeric:tabular-nums; }
   [data-db-root] .db2-ccd{ font-family:var(--db-mono); font-size:12px; font-weight:600; color:var(--db2-red); }
+  /* lines (L163-206 filter row + panel, L406-665 body) */
+  [data-db-root] .db2-lnpill{ padding:6px 13px; }
+  [data-db-root] .db2-fbtn{ display:inline-flex; align-items:center; gap:8px; height:36px; box-sizing:border-box; padding:0 13px; border-radius:9px; font-family:var(--db-ui); font-size:13px; font-weight:600;
+    cursor:pointer; color:var(--db2-ink-2); background:transparent; border:1px solid var(--db2-h6); white-space:nowrap; }
+  [data-db-root] .db2-fbtn.on{ color:var(--db2-ink); border-color:var(--db2-h16); }
+  [data-db-root] .db2-fbtn.dirty{ background:var(--db2-raised); }
+  [data-db-root] .db2-fbtn:hover{ border-color:color-mix(in srgb, var(--db2-white) 22%, transparent); color:var(--db2-ink); }
+  [data-db-root] .db2-fbadge{ display:inline-flex; align-items:center; justify-content:center; min-width:18px; height:18px; box-sizing:border-box; padding:0 5px; border-radius:9px; background:var(--db2-blue);
+    font-family:var(--db-mono); font-size:10.5px; font-weight:700; color:var(--db2-white); }
+  [data-db-root] .db2-fpanel{ order:99; flex:0 0 100%; box-sizing:border-box; margin-top:4px; background:var(--db2-inset); border:1px solid var(--db2-h10); border-radius:12px; padding:16px 18px 12px; line-height:normal; font-family:var(--db-ui); }
+  [data-db-root] .db2-fphead{ display:flex; align-items:center; gap:10px; padding:0 2px 14px; }
+  [data-db-root] .db2-fpt{ font-size:15px; font-weight:800; letter-spacing:-0.01em; color:var(--db2-ink); }
+  [data-db-root] .db2-fpn{ font-size:12px; color:var(--db2-muted); }
+  [data-db-root] .db2-fpx{ margin-left:auto; width:24px; height:24px; font-size:13px; }
+  [data-db-root] .db2-fpx:hover{ color:var(--db2-ink); border-color:color-mix(in srgb, var(--db2-white) 32%, transparent); }
+  [data-db-root] .db2-fpshow{ display:flex; align-items:center; flex-wrap:wrap; gap:8px 10px; padding:14px 2px 16px; border-top:1px solid var(--db2-h8); }
+  [data-db-root] .db2-fpcap{ flex:0 0 100%; padding-bottom:2px; }
+  [data-db-root] .db2-fpchip{ flex:1 1 170px; box-sizing:border-box; min-width:0; display:flex; align-items:center; gap:9px; height:36px; padding:0 12px 0 11px; border-radius:9px; cursor:pointer; white-space:nowrap;
+    font-family:var(--db-ui); font-size:13px; font-weight:500; color:var(--db2-muted); background:transparent; border:0; box-shadow:inset 0 0 0 1px var(--db2-h10); }
+  [data-db-root] .db2-fpchip.on{ font-weight:700; color:var(--db2-ink); background:color-mix(in srgb, var(--db2-blue) 10%, transparent); box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--db2-blue) 45%, transparent); }
+  [data-db-root] .db2-fpchip:hover{ box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--db2-blue) 60%, transparent); }
+  [data-db-root] .db2-fpbox{ flex:none; width:16px; height:16px; border-radius:5px; display:inline-flex; align-items:center; justify-content:center; box-shadow:inset 0 0 0 1.5px color-mix(in srgb, var(--db2-white) 28%, transparent); }
+  [data-db-root] .db2-fpchip.on .db2-fpbox{ background:var(--db2-blue); box-shadow:inset 0 0 0 1.5px var(--db2-blue); }
+  [data-db-root] .db2-fpcn{ margin-left:auto; font-family:var(--db-mono); font-size:11px; font-weight:400; color:var(--db2-muted); }
+  [data-db-root] .db2-fpgrid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:18px 22px; padding-top:16px; border-top:1px solid var(--db2-h8); }
+  [data-db-root] .db2-fpcol{ display:flex; flex-direction:column; gap:16px; min-width:0; }
+  [data-db-root] .db2-fpg{ display:flex; flex-direction:column; gap:2px; min-width:0; }
+  [data-db-root] .db2-fpgt{ padding:0 8px 7px; }
+  [data-db-root] .db2-fprow{ display:flex; justify-content:space-between; align-items:center; gap:8px; cursor:pointer; padding:7px 9px; border-radius:7px; font-family:var(--db-ui); font-size:13px; font-weight:500;
+    color:var(--db2-ink-2); background:transparent; border:0; text-align:left; }
+  [data-db-root] .db2-fprow:hover{ background:var(--db2-h5); }
+  [data-db-root] .db2-fprow.on{ font-weight:700; color:var(--db2-ink); background:var(--db2-h6); }
+  [data-db-root] .db2-fprl{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  [data-db-root] .db2-fprm{ display:flex; gap:8px; align-items:center; flex:none; }
+  [data-db-root] .db2-fprm span{ font-family:var(--db-mono); font-size:10.5px; color:var(--db2-muted); font-weight:400; white-space:nowrap; }
+  [data-db-root] .db2-fpfoot{ display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--db2-h8); margin-top:16px; padding-top:12px; }
+  [data-db-root] .db2-fpfoot .db2-link:hover{ color:var(--db2-blue-hv2); }
+  [data-db-root] .db2-done{ display:inline-flex; align-items:center; height:34px; padding:0 18px; border-radius:9px; background:var(--db2-blue); color:var(--db2-dark); font-family:var(--db-ui); font-size:13px; font-weight:700; border:0; cursor:pointer; }
+  [data-db-root] .db2-done:hover{ background:var(--db2-blue-hov); }
+  [data-db-root] .db2-lncard{ padding:22px 24px 18px; }
+  [data-db-root] .db2-lnhead{ display:flex; align-items:center; gap:14px; padding-bottom:16px; border-bottom:1px solid var(--db2-h6); }
+  [data-db-root] .db2-ttl2{ letter-spacing:-0.012em; }
+  [data-db-root] .db2-lnsub{ margin-top:3px; line-height:1.5; }
+  [data-db-root] .db2-lnhq{ margin-left:auto; }
+  [data-db-root] .db2-lnwho{ display:flex; align-items:center; gap:12px; min-width:0; }
+  [data-db-root] .db2-lnav{ flex:none; position:relative; overflow:hidden; display:inline-flex; align-items:center; justify-content:center; width:40px; height:40px; box-sizing:border-box; border-radius:50%;
+    background:var(--db2-raised); border:1px solid var(--db2-h16); font-family:var(--db-mono); font-size:12px; font-weight:700; color:var(--db2-ink); }
+  [data-db-root] .db2-lnav img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+  [data-db-root] .db2-lnwt{ min-width:0; }
+  [data-db-root] .db2-lnnm{ display:block; font-size:18px; font-weight:800; letter-spacing:-0.012em; color:var(--db2-ink); text-decoration:none; }
+  [data-db-root] .db2-lnnm span{ font-family:var(--db-mono); font-size:12px; font-weight:400; color:var(--db2-muted); }
+  [data-db-root] .db2-lnwait{ margin-top:16px; }
+  [data-db-root] .db2-lntiles{ display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:10px; margin-top:16px; }
+  [data-db-root] .db2-lntile{ cursor:pointer; background:var(--db2-inset); border:1px solid var(--db2-h6); border-radius:12px; padding:14px 16px; display:flex; align-items:center; gap:14px; min-width:0; }
+  [data-db-root] .db2-lntile:hover{ border-color:color-mix(in srgb, var(--db2-blue) 55%, transparent); }
+  [data-db-root] .db2-lntl{ min-width:0; flex:1; }
+  [data-db-root] .db2-lntl .db2-caps{ white-space:nowrap; }
+  [data-db-root] .db2-lntline{ margin-top:6px; font-size:15px; font-weight:700; color:var(--db2-ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  [data-db-root] .db2-lntsub{ margin-top:2px; font-size:12px; color:var(--db2-muted); }
+  [data-db-root] .db2-lntr{ flex:none; text-align:right; }
+  [data-db-root] .db2-lntrate{ font-family:var(--db-mono); font-variant-numeric:tabular-nums; font-size:21px; font-weight:800; color:var(--db2-ink); }
+  [data-db-root] .db2-lntd{ margin-top:2px; font-family:var(--db-mono); font-variant-numeric:tabular-nums; font-size:12.5px; font-weight:600; }
+  [data-db-root] .db2-chev{ flex:none; font-size:15px; font-weight:700; color:var(--db2-blue); }
+  [data-db-root] .db2-chev.r{ text-align:right; font-size:14px; }
+  [data-db-root] .db2-lnfam{ display:flex; flex-wrap:wrap; align-items:baseline; gap:5px 10px; margin-top:14px; padding:22px 4px 14px; border-top:1px solid transparent; }
+  [data-db-root] .db2-lnfam.rule{ margin-top:26px; border-top-color:var(--db2-h8); }
+  [data-db-root] .db2-lnfn{ font-size:16px; font-weight:800; letter-spacing:-0.01em; color:var(--db2-ink); }
+  [data-db-root] .db2-lnfc{ font-size:12px; color:var(--db2-muted); }
+  [data-db-root] .db2-lnfs{ flex-basis:100%; font-size:12.5px; line-height:1.5; color:var(--db2-muted); }
+  [data-db-root] .db2-lncards{ display:grid; grid-template-columns:repeat(auto-fit,minmax(440px,1fr)); gap:16px; align-items:start; }
+  [data-db-root] .db2-lncardc{ background:var(--db2-inset); border:1.25px solid var(--db2-h6); border-radius:12px; padding:18px 20px 8px; min-width:0; }
+  [data-db-root] .db2-lncols{ display:grid; gap:0 9px; margin-top:18px; padding:0 8px 9px; font-family:var(--db-ui); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--db2-muted); }
+  [data-db-root] .db2-lncols .r, [data-db-root] .db2-lncmph2 .r{ text-align:right; }
+  [data-db-root] .db2-lnrow{ cursor:pointer; display:grid; gap:0 9px; align-items:center; padding:13px 8px; border-radius:0; border-top:1px solid var(--db2-h6); transition:background .15s; }
+  [data-db-root] .db2-lnrow:hover{ background:color-mix(in srgb, var(--db2-blue) 8%, transparent); }
+  [data-db-root] .db2-lnrow.open{ background:color-mix(in srgb, var(--db2-blue) 10%, transparent); box-shadow:inset 0 0 0 1px var(--db2-blue); border-radius:8px; }
+  [data-db-root] .db2-lnbet{ font-family:var(--db-mono); font-variant-numeric:tabular-nums; font-size:15px; font-weight:700; letter-spacing:-0.01em; color:var(--db2-ink); white-space:nowrap; }
+  [data-db-root] .db2-lnrate{ text-align:right; font-family:var(--db-mono); font-variant-numeric:tabular-nums; font-size:15px; }
+  [data-db-root] .db2-lnq{ text-align:right; font-family:var(--db-mono); font-variant-numeric:tabular-nums; font-size:13px; color:var(--db2-muted); }
+  [data-db-root] .db2-lnq.nw{ white-space:nowrap; }
+  [data-db-root] .db2-lnedge{ text-align:right; font-family:var(--db-mono); font-variant-numeric:tabular-nums; font-size:15px; font-weight:700; letter-spacing:-0.01em; white-space:nowrap; }
+  [data-db-root] .db2-mx{ margin:8px 0 14px; background:var(--db2-card); border:1px solid var(--db2-h8); border-radius:10px; padding:14px 16px 6px; overflow-x:auto; }
+  [data-db-root] .db2-mxin{ min-width:540px; }
+  [data-db-root] .db2-mx.cmp{ margin:6px 0 12px; background:var(--db2-inset); overflow-x:visible; }
+  [data-db-root] .db2-mx.cmp .db2-mxin{ min-width:0; }
+  [data-db-root] .db2-mx.cmp .db2-mxtrack{ background:var(--db2-card); }
+  [data-db-root] .db2-mxhead{ display:flex; align-items:center; flex-wrap:wrap; gap:10px 14px; padding-bottom:12px; border-bottom:1px solid var(--db2-h6); }
+  [data-db-root] .db2-mxt{ font-size:14px; font-weight:700; color:var(--db2-ink); }
+  [data-db-root] .db2-mxs{ margin-top:2px; font-size:12px; color:var(--db2-muted); }
+  [data-db-root] .db2-mxtrack{ margin-left:auto; }
+  [data-db-root] .db2-mxpill{ padding:5px 12px; }
+  [data-db-root] .db2-mxx{ width:22px; height:22px; font-size:12px; }
+  [data-db-root] .db2-mxcols, [data-db-root] .db2-mxrow{ display:grid; grid-template-columns:70px minmax(96px,1.2fr) minmax(90px,1fr) minmax(104px,1.1fr) 56px 62px; gap:10px; }
+  [data-db-root] .db2-mxcols{ padding:10px 0 6px; font-family:var(--db-ui); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--db2-muted); white-space:nowrap; }
+  [data-db-root] .db2-mxcols .r{ text-align:right; }
+  [data-db-root] .db2-mxrow{ align-items:center; padding:8px 0; border-top:1px solid var(--db2-h5); }
+  [data-db-root] .db2-mxd{ font-family:var(--db-mono); font-variant-numeric:tabular-nums; font-size:12px; color:var(--db2-muted); white-space:nowrap; }
+  [data-db-root] .db2-mxtn{ font-size:13px; color:var(--db2-ink-2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  [data-db-root] .db2-mxtn span{ font-family:var(--db-mono); font-size:11.5px; color:var(--db2-muted); }
+  [data-db-root] .db2-mxo{ font-size:13px; font-weight:600; color:var(--db2-ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  [data-db-root] .db2-mxsc{ font-family:var(--db-mono); font-variant-numeric:tabular-nums; font-size:12.5px; color:var(--db2-ink-2); white-space:nowrap; }
+  [data-db-root] .db2-mxv{ text-align:right; font-family:var(--db-mono); font-variant-numeric:tabular-nums; font-size:13px; color:var(--db2-ink); }
+  [data-db-root] .db2-mxr{ text-align:right; font-size:12.5px; font-weight:700; }
+  [data-db-root] .db2-mxempty{ padding:14px 0; border-top:1px solid var(--db2-h5); font-size:12.5px; color:var(--db2-muted); }
+  [data-db-root] .db2-lnfoot{ padding:14px 4px 0; font-size:12px; color:var(--db2-muted); }
+  [data-db-root] .db2-lncmpsc{ overflow-x:auto; }
+  [data-db-root] .db2-lncmph{ display:grid; gap:12px; padding:16px 8px 0; }
+  [data-db-root] .db2-lncmpp{ grid-column:span 2; display:flex; align-items:center; justify-content:flex-end; gap:8px; padding-bottom:9px; border-bottom:1px solid color-mix(in srgb, var(--db2-white) 14%, transparent); text-decoration:none; white-space:nowrap; min-width:0; }
+  [data-db-root] .db2-lncmpp .db-av{ flex:none; position:relative; overflow:hidden; display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; box-sizing:border-box; border-radius:50%;
+    background:var(--db2-raised); border:1px solid var(--db2-h16); font-family:var(--db-mono); font-size:9.5px; font-weight:700; color:var(--db2-ink); }
+  [data-db-root] .db2-lncmpp .db-av img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+  [data-db-root] .db2-lncmpn{ font-size:13.5px; font-weight:800; letter-spacing:-0.01em; color:var(--db2-ink); overflow:hidden; text-overflow:ellipsis; }
+  [data-db-root] .db2-lncmph2{ display:grid; gap:12px; padding:9px 8px 0; }
+  [data-db-root] .db2-lncmph2 .db2-caps{ white-space:nowrap; }
+  [data-db-root] .db2-lncmpfam{ display:flex; align-items:baseline; gap:10px; padding:20px 8px 9px; border-bottom:1px solid var(--db2-h10); }
+  [data-db-root] .db2-lncmpfam span:first-child{ font-size:14.5px; font-weight:700; letter-spacing:-0.005em; color:var(--db2-ink); }
+  [data-db-root] .db2-lncmpfam span + span{ font-size:12px; color:var(--db2-muted); }
+  [data-db-root] .db2-lncmprow{ cursor:pointer; display:grid; gap:12px; align-items:center; padding:9px 8px; border-radius:8px; border-bottom:1px solid var(--db2-h5); }
+  [data-db-root] .db2-lncmprow:hover{ background:color-mix(in srgb, var(--db2-white) 3%, transparent); }
+  [data-db-root] .db2-lncmprow.open{ background:color-mix(in srgb, var(--db2-blue) 8%, transparent); }
+  [data-db-root] .db2-lncmpl{ display:flex; align-items:center; gap:9px; min-width:0; font-size:13.5px; font-weight:600; color:var(--db2-ink); white-space:nowrap; }
+  [data-db-root] .db2-lncmpl span:last-child{ overflow:hidden; text-overflow:ellipsis; }
+  [data-db-root] .db2-lncmpchev{ flex:none; width:6px; height:6px; box-sizing:border-box; border-right:1.5px solid var(--db2-blue); border-bottom:1.5px solid var(--db2-blue); transform:rotate(-45deg); transition:transform .18s; }
+  [data-db-root] .db2-lncmpchev.on{ transform:rotate(45deg); }
+  [data-db-root] .db2-lncmprate{ cursor:pointer; text-align:right; font-family:var(--db-mono); font-variant-numeric:tabular-nums; font-size:14.5px; }
+  [data-db-root] .db2-lncmpd{ cursor:pointer; text-align:right; font-family:var(--db-mono); font-variant-numeric:tabular-nums; font-size:13px; font-weight:600; }
+  [data-db-root] .db2-lncmpf{ text-align:right; font-family:var(--db-mono); font-variant-numeric:tabular-nums; font-size:12.5px; color:var(--db2-muted); }
   /* TEN-242 phase 2: an ID selector cannot match the embedded mount, whose body
      is addressed by data-db. Both forms, one rule. */
   #dbBody, [data-db="body"]{ display:flex; flex-direction:column; gap:22px; }
@@ -29752,7 +29879,7 @@ window.DatabaseTab = (function(){
       // deliberately ABSENT: see the Side note in lnPaint - career-history rows
       // carry no price and no favourite marker, so a side key would be a control
       // with nothing behind it.
-      lnSel:[], lnQ:'', lnSurf:'All', lnScope:'career', lnCat:null,
+      lnSel:[], lnQ:'', lnSurf:'All', lnScope:'l52', lnCat:null, lnSide:'all', lnBand:null, lnArch:null, lnLevel:null, lnHide:{}, lnOpen:null,
       // TEN-260 · Bo3 | Bo5 is a segmented control (README TAB 5): one ladder on
       // screen at a time, Bo3 by default, as in the prototype.
       lnFmt:'bo3'
@@ -30601,10 +30728,11 @@ window.DatabaseTab = (function(){
     // Ratings keys are cleared here too and not only while that tab is open.
     // Resetting from Tour and then finding four players still compared on
     // Ratings would make Reset mean "reset this tab", which is not the spec.
-    state.ratSurf='All'; state.ratScope='career'; state.ratBoard='overview';
+    state.ratSurf='All'; state.ratScope='last52'; state.ratBoard='overview'; state.r2Sort=null; state.r2Dir='desc';
     state.ratSel=[]; state.ratQ=''; state.ratSortKey='elo'; state.ratSortDir='desc'; state.ratMView='both';
     // Same rule for Lines, for the same reason: Reset means every tab.
-    state.lnSel=[]; state.lnQ=''; state.lnSurf='All'; state.lnScope='career'; state.lnCat=null; state.lnFmt='bo3';
+    state.lnSel=[]; state.lnQ=''; state.lnSurf='All'; state.lnScope='l52'; state.lnCat=null; state.lnFmt='bo3';
+    state.lnSide='all'; state.lnBand=null; state.lnArch=null; state.lnLevel=null; state.lnHide={}; state.lnOpen=null;
   }
   function countOf(set){ return set? String(set.size) : 'All'; }
   var lastTotal=0;
@@ -30745,18 +30873,7 @@ window.DatabaseTab = (function(){
       // Surface ▾ · Line group ▾ · Reset. Bo3 and Bo5 are SEPARATE LADDERS, so the
       // format is a segmented control, not a filter. No Side control (ruled out:
       // career-history carries no price and no favourite marker).
-      zR.appendChild(pillGroup([['bo3','Bo3'],['bo5','Bo5']],
-        state.lnFmt, function(v){ state.lnFmt=v; }, false, 'lines'));
-      zR.appendChild(pillGroup([['career','Career'],['l52','Last 52']],
-        state.lnScope, function(v){ state.lnScope=v; }, false, 'lines'));
-      zR.appendChild(trigger('Surface', state.lnSurf, state.lnSurf!=='All', 'lnsurf', function(){
-        return singleMenu([['All','All'],['Hard','Hard'],['Clay','Clay'],['Grass','Grass']],
-          state.lnSurf, function(v){ state.lnSurf=v; });
-      }));
-      zR.appendChild(trigger('Line group', state.lnCat || 'All groups', !!state.lnCat, 'lncat', function(){
-        return singleMenu([[null,'All groups']].concat(LN_GROUPS.map(function(g){ return [g,g]; })),
-          state.lnCat, function(v){ state.lnCat=v; });
-      }));
+      db2LnFilterRow(zR);   // Database v2: Bo3 · Bo5 | Last 52 weeks · Career | All matches · As favourite · As underdog | Filters
       var lreset=el('button','db-reset','Reset'); lreset.onclick=function(){ resetFilters(); render(); };
       zR.appendChild(lreset);
       if(zL.childNodes.length) zR.classList.add('div');
@@ -32208,21 +32325,21 @@ window.DatabaseTab = (function(){
   // bundle's own prototype (design_handoff_database/Database.dc.html, `LIT`),
   // which is the authoritative spec for this tab. Inventing which lines to
   // publish would be a methodology decision, and those are the founder's.
-  var LN_LADDERS = {
-    bo3: {
-      'Games handicap': [['−4.5 games','gm',-4.5],['−2.5 games','gm',-2.5],['+2.5 games','gm',2.5],['+4.5 games','gm',4.5]],
-      'Set handicap':   [['−1.5 sets','st',-1.5],['+1.5 sets','st',1.5]],
-      'Total games':    [['over 22.5','ov',22.5],['under 22.5','un',22.5],['over 20.5','ov',20.5],['under 20.5','un',20.5]],
-      'Match shape':    [['won 2–0','sh','2-0'],['won 2–1','sh','2-1'],['lost 1–2','sh','1-2'],['lost 0–2','sh','0-2']],
-    },
-    bo5: {
-      'Games handicap': [['−6.5 games','gm',-6.5],['−3.5 games','gm',-3.5],['+3.5 games','gm',3.5],['+6.5 games','gm',6.5]],
-      'Set handicap':   [['−2.5 sets','st',-2.5],['+2.5 sets','st',2.5]],
-      'Total games':    [['over 37.5','ov',37.5],['under 37.5','un',37.5],['over 34.5','ov',34.5]],
-      'Match shape':    [['won 3–0','sh','3-0'],['won 3–1','sh','3-1'],['won 3–2','sh','3-2'],['lost 2–3','sh','2-3'],['lost 1–3','sh','1-3'],['lost 0–3','sh','0-3']],
-    },
-  };
-  var LN_GROUPS = ['Games handicap','Set handicap','Total games','Match shape'];
+  // Database v2 (founder 2026-11-16 "follow the design", README "Ladders"): Bo3 game handicap ±1 … ±6.5, set handicap ±1.5,
+  // totals over / under 20 … 24.5; Bo5 game handicap ±2.5 … ±7.5, set handicap ±2.5, totals 34.5 / 37.5 / 40.5. Match shape is
+  // not a family any more. build-lines-field.js reads this table, so the field file follows it on the next data run.
+  var LN_LADDERS = (function(){
+    function gh(v){ return [[(v<0?'\u2212':'+')+Math.abs(v)+' games','gm',v]]; }
+    function hc(vals){ var o=[]; vals.forEach(function(v){ o=o.concat(gh(-v)); }); vals.forEach(function(v){ o=o.concat(gh(v)); }); return o; }
+    function tot(vals){ return vals.map(function(v){ return ['over '+v,'ov',v]; }).concat(vals.map(function(v){ return ['under '+v,'un',v]; })); }
+    return {
+      bo3: { 'Games handicap': hc([1,1.5,2,2.5,3,3.5,4,4.5,5.5,6.5]), 'Set handicap': [['\u22121.5 sets','st',-1.5],['+1.5 sets','st',1.5]],
+             'Total games': tot([20,20.5,21,21.5,22,22.5,23,23.5,24,24.5]) },
+      bo5: { 'Games handicap': hc([2.5,3.5,4.5,5.5,6.5,7.5]), 'Set handicap': [['\u22122.5 sets','st',-2.5],['+2.5 sets','st',2.5]],
+             'Total games': tot([34.5,37.5,40.5]) }
+    };
+  })();
+  var LN_GROUPS = ['Games handicap','Set handicap','Total games'];
 
   // Name -> api-tennis player key. surface-ratings.json carries NO key (only
   // name and rank), and the career-history shards are keyed by player key, so
@@ -32373,7 +32490,320 @@ window.DatabaseTab = (function(){
   function lnSgn(v){ var x=Math.round(v*10)/10; return (x>0?'+':x<0?'−':'')+Math.abs(x).toFixed(1); }
   function lnSgnCol(v){ var x=Math.round(v*10)/10; return x>0?'var(--pos)':x<0?'var(--neg)':'var(--text-label)'; }
 
+  // ===== Database v2 Lines (design L163-206 filter row + panel, L406-665 body; logic linesBoard). Founder 2026-11-16
+  // "follow the design". Cover is worked out from set scores (lnHit; a whole line's push is not covered, the design's own
+  // predicate); Field = the field median from lines-field.json at the format · surface · period slice (the pipeline builds
+  // it from LN_LADDERS, so every ladder line gets one) and an en dash under any other filter (no field file holds those);
+  // As favourite / As underdog and price bands read the Database's one price join (Pinnacle closing), the player's shorter
+  // price = favourite, an exact tie neither (no opening price on record).
+  var DB2_LN_FAMS=['Games handicap','Set handicap','Total games'];
+  var DB2_LN_ARCH=['Big Server','Big Server + First Strike','Big Server + Complete Baseliner','Attacking Baseliner','Solid Baseliner','Counterpuncher','Solid Defender','All Court Elite'];
+  var DB2_LN_LEVELS=['Grand Slam','Masters 1000','ATP 500','ATP 250'];
+  var DB2_LN_SHOWN=12;                 // the match list shows the latest 12
+  var DB2_LN_FULL=10;                  // a rate at full weight from 10 matches (5-9 muted, under LN_MIN_N a dash)
+  function db2LnFam(f){ return f.replace('Games','Game'); }
+  function db2LnIsL(lab){ return lab.charAt(0)==='−' || lab.indexOf('over')===0; }
+  function db2LnMag(lab){ return parseFloat(lab.replace(/[^0-9.]/g,' ').trim()); }
+  function db2LnBet(fam, lab){ var v=db2LnMag(lab), L=db2LnIsL(lab); return fam==='Total games' ? (L?'Over ':'Under ')+v : (L?'−':'+')+v; }
+  function db2LnLevelOf(r){
+    if(!r || r.level!=='atp') return null;
+    var k=(typeof sfEventKey==='function' && sfEventKey(r.tournament)) || r.tournament;
+    var c=(typeof TOURNAMENT_CATALOG!=='undefined') ? TOURNAMENT_CATALOG.filter(function(e){ return e.name===k || e.name===r.tournament; })[0] : null;
+    if(!c) return null;
+    return c.category==='ATP 1000' ? 'Masters 1000' : c.category;
+  }
+  function db2LnArchOf(r){
+    if(typeof ppStyleFor!=='function' || !r || !r.opponent) return null;
+    var s=null; try{ s=ppStyleFor(r.opponent, r.oppKey); }catch(_){}
+    return s && s.archetype_label ? s.archetype_label : null;
+  }
+  // Price each usable row once per player on the Database join (the Player Profile / Head to Head join).
+  var DB2_LN_PX={};
+  function db2LnPrice(name, rows){
+    if(DB2_LN_PX[name]) return DB2_LN_PX[name];
+    var J=window.H2HPage && window.H2HPage.priceJoin;
+    if(typeof J!=='function' || typeof _sfDbJoin==='undefined' || !_sfDbJoin) return null;
+    var js=rows.map(function(r){ return { date:r.date, won:r.won, round:r.round, opp:r.opponent }; });
+    try{ J(js, { full:name }, null, _sfDbJoin, null, rows); }catch(_){ return null; }
+    var m=new Map(); rows.forEach(function(r,i){ var x=js[i]; if(x && x.price!=null && x.oppPrice!=null) m.set(r, { p:x.price, op:x.oppPrice }); });
+    return (DB2_LN_PX[name]=m);
+  }
+  function db2LnNeedsPx(){ return state.lnSide!=='all' || state.lnBand!=null; }
+  function db2LnBandDef(){ if(state.lnBand==null) return null; var p=state.lnBand.split('|'); return { side:p[0], B:DB2_BANDS[p[0]][+p[1]] }; }
+  function db2LnFilterCount(){ return (state.lnSurf!=='All'?1:0)+(state.lnBand!=null?1:0)+(state.lnArch?1:0)+(state.lnLevel?1:0)+DB2_LN_FAMS.filter(function(f){ return state.lnHide[f]; }).length; }
+  function db2LnPool(name, rows){
+    var pools=lnPools(rows||[], state.lnSurf, state.lnScope), pool=pools.byFmt[state.lnFmt]||[];
+    var needPx=db2LnNeedsPx(), px=needPx ? db2LnPrice(name, rows||[]) : null, bd=db2LnBandDef();
+    if(needPx && !px) return { pending:true, pool:[] };
+    var lvlOk = state.lnLevel && ((state.lnFmt==='bo5') === (state.lnLevel==='Grand Slam')) ? state.lnLevel : null;
+    var out=pool.filter(function(r){
+      if(needPx){
+        var q=px.get(r); if(!q || q.p===q.op) return false;
+        var fav=q.p<q.op;
+        if(state.lnSide==='fav' && !fav) return false;
+        if(state.lnSide==='dog' && fav) return false;
+        if(bd && (bd.side==='fav')!==fav) return false;
+        if(bd && !db2InBand(bd.B, q.p)) return false;
+      }
+      if(state.lnArch && db2LnArchOf(r)!==state.lnArch) return false;
+      if(lvlOk && db2LnLevelOf(r)!==lvlOk) return false;
+      return true;
+    });
+    return { pending:false, pool:out };
+  }
+  function db2LnFieldOK(){ return state.lnSide==='all' && state.lnBand==null && !state.lnArch && !state.lnLevel; }
+  function db2LnMetric(pool, spec, name){
+    var L=lnLine(pool, spec[1], spec[2]), n=L.n, rate=n ? L.hit/n*100 : null;
+    var g = n===0 ? 'zero' : n<LN_MIN_N ? 'hard' : n<DB2_LN_FULL ? 'soft' : 'full';
+    var fs = db2LnFieldOK() && rate!=null ? lnFieldStats(state.lnFmt, spec[0], Math.round(rate*1000)/1000, name) : null;
+    var fm = fs ? fs.median : null;
+    var show = g==='full' || g==='soft';
+    var delta = (show && fm!=null) ? (Math.round(rate*10)/10 - Math.round(fm*10)/10) : null;
+    return { spec:spec, n:n, hit:L.hit, rate:rate, g:g, show:show, field:fm, delta:delta, dv: g==='full' ? delta : null,
+             rank: fs ? fs.rank : null, size: fs ? fs.size : null, marg: L.margN ? L.marg/L.margN : null };
+  }
+  function db2LnPills(items, cur, onPick){
+    var t=el('span','db2-track db2-lntrack');
+    items.forEach(function(it){ var b=el('button','db2-pill db2-lnpill'+(cur===it[0]?' on':''), it[1]); b.type='button';
+      b.onclick=function(e){ e.stopPropagation(); onPick(it[0]); state.lnOpen=null; render(); }; t.appendChild(b); });
+    return t;
+  }
+  // The filter row's right half (pills, Filters button, full-width panel). Called from renderFilters.
+  function db2LnFilterRow(zR){
+    zR.appendChild(db2LnPills([['bo3','Bo3'],['bo5','Bo5']], state.lnFmt, function(v){ state.lnFmt=v; if(state.lnLevel && ((v==='bo5')!==(state.lnLevel==='Grand Slam'))) state.lnLevel=null; }));
+    zR.appendChild(db2LnPills([['l52','Last 52 weeks'],['career','Career']], state.lnScope, function(v){ state.lnScope=v; }));
+    zR.appendChild(db2LnPills([['all','All matches'],['fav','As favourite'],['dog','As underdog']], state.lnSide, function(v){ state.lnSide=v; state.lnBand=null; }));
+    var n=db2LnFilterCount(), open=state.menu==='lnAll';
+    var fb=el('button','db2-fbtn'+(open||n?' on':'')+(n?' dirty':'')); fb.type='button'; fb.setAttribute('data-menu','1');
+    fb.innerHTML='<svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M1 2.5h10M3 6h6M5 9.5h2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>Filters'+
+      (n?'<span class="db2-fbadge">'+n+'</span>':'')+'<span class="db-caret db2-fcaret"></span>';
+    fb.onclick=function(e){ e.stopPropagation(); state.menu = open ? null : 'lnAll'; renderFilters(); };
+    zR.appendChild(fb);
+    if(open) zR.appendChild(db2LnPanel());
+  }
+  function db2LnPanel(){
+    var p=el('div','db2-fpanel'); p.setAttribute('data-menu','1'); p.onclick=function(e){ e.stopPropagation(); };
+    var n=db2LnFilterCount();
+    var hd=el('div','db2-fphead','<span class="db2-fpt">Filters</span><span class="db2-fpn">'+(n ? n+(n===1?' filter on':' filters on') : 'No filter on')+'</span>');
+    var x=el('button','db2-x db2-fpx','×'); x.type='button'; x.title='Close'; x.onclick=function(){ state.menu=null; renderFilters(); }; hd.appendChild(x);
+    p.appendChild(hd);
+    var sh=el('div','db2-fpshow'); sh.appendChild(el('span','db2-caps db2-fpcap','Lines shown'));
+    var shownN=DB2_LN_FAMS.filter(function(f){ return !state.lnHide[f]; }).length;
+    DB2_LN_FAMS.forEach(function(f){
+      var on=!state.lnHide[f], last=on && shownN===1, cnt=(LN_LADDERS[state.lnFmt][f]||[]).length;
+      var c=el('button','db2-fpchip'+(on?' on':'')); c.type='button'; c.title=cnt+' lines · '+(last?'at least one family stays shown':on?'click to hide':'click to show');
+      c.innerHTML='<span class="db2-fpbox">'+(on?'<svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true"><path d="M1.5 5.5l2.5 2.5 4.5-5" stroke="var(--db2-dark)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>':'')+'</span><span>'+db2LnFam(f)+'</span><span class="db2-fpcn">'+cnt+'</span>';
+      c.onclick=function(){ if(last) return; var h=Object.assign({}, state.lnHide); h[f]=!h[f]; state.lnHide=h; state.lnOpen=null; render(); };
+      sh.appendChild(c);
+    });
+    p.appendChild(sh);
+    function group(title, rows){
+      var g=el('div','db2-fpg'); g.appendChild(el('span','db2-caps db2-fpgt',title));
+      rows.forEach(function(r){ var b=el('button','db2-fprow'+(r.on?' on':''), '<span class="db2-fprl">'+esc(r.label)+'</span><span class="db2-fprm"><span>'+esc(r.meta||'')+'</span>'+
+        (r.on?'<svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true"><path d="M1.5 5.5l2.5 2.5 4.5-5" stroke="var(--db2-blue)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>':'')+'</span>');
+        b.type='button'; b.onclick=function(){ r.pick(); state.lnOpen=null; render(); }; g.appendChild(b); });
+      return g;
+    }
+    var grid=el('div','db2-fpgrid');
+    var c1=el('div','db2-fpcol');
+    ['fav','dog'].forEach(function(sd){
+      c1.appendChild(group(sd==='fav'?'Price band · favourites':'Price band · underdogs', DB2_BANDS[sd].map(function(B,i){
+        var id=sd+'|'+i, on=state.lnBand===id;
+        return { label:B[0], meta:B[1]+(B[2]==='+'?' +':' – '+B[2]), on:on, pick:function(){ if(on) state.lnBand=null; else { state.lnBand=id; state.lnSide=sd; } } }; })));
+    });
+    var c2=el('div','db2-fpcol');
+    c2.appendChild(group('Opponent archetype', DB2_LN_ARCH.map(function(a){ var on=state.lnArch===a; return { label:a, on:on, pick:function(){ state.lnArch = on ? null : a; } }; })));
+    c2.appendChild(group('Surface', [['Hard','Hard'],['Clay','Clay'],['Grass','Grass']].map(function(s){ var on=state.lnSurf===s[0]; return { label:s[1], on:on, pick:function(){ state.lnSurf = on ? 'All' : s[0]; } }; })));
+    var c3=el('div','db2-fpcol');
+    c3.appendChild(group('Level', DB2_LN_LEVELS.filter(function(l){ return (state.lnFmt==='bo5')===(l==='Grand Slam'); }).map(function(l){ var on=state.lnLevel===l; return { label:l, on:on, pick:function(){ state.lnLevel = on ? null : l; } }; })));
+    grid.appendChild(c1); grid.appendChild(c2); grid.appendChild(c3); p.appendChild(grid);
+    var ft=el('div','db2-fpfoot');
+    var rs=el('button','db2-link','Reset filters'); rs.type='button'; rs.onclick=function(){ state.lnSurf='All'; state.lnBand=null; state.lnArch=null; state.lnLevel=null; state.lnHide={}; state.lnOpen=null; render(); };
+    var dn=el('button','db2-done','Done'); dn.type='button'; dn.onclick=function(){ state.menu=null; renderFilters(); };
+    ft.appendChild(rs); ft.appendChild(dn); p.appendChild(ft);
+    return p;
+  }
+  function db2LnSub(nLines){
+    var bd=db2LnBandDef();
+    var ftxt=[bd ? bd.B[0].toLowerCase()+' '+bd.B[1]+(bd.B[2]==='+'?' +':' – '+bd.B[2]) : '', state.lnArch ? 'against '+state.lnArch : '', state.lnLevel||''].filter(Boolean).map(function(x){ return ' · '+x; }).join('');
+    return nLines+' lines · '+(state.lnFmt==='bo3'?'Best of 3':'Best of 5')+' · '+(state.lnSurf==='All'?'all surfaces':state.lnSurf.toLowerCase())+' · '+
+      (state.lnScope==='l52'?'last 52 weeks':'career')+' · '+(state.lnSide==='all'?'all matches':state.lnSide==='fav'?'as favourite':'as underdog')+ftxt;
+  }
+  var DB2_LN_HELP='How often the player covered each line. Lines are written as a bookmaker lists them: handicap lines read −2.5 or +2.5 under their family name, totals read Over or Under. Cover is his share of matches that covered the line; Field is the median cover of the tour field on that line (format, surface and period only; under any other filter it is a dash); Edge is Cover minus Field, in points. Lines are worked out from set scores, not from settled bets. Best of 3 and best of 5 are counted apart. A rate needs '+LN_MIN_N+' matches and is muted under '+DB2_LN_FULL+'. Click a line to see the matches behind it. Hover a row for his rank and average margin.';
+  function db2LnMatches(pool, spec, fam){
+    var rows=pool.map(function(r){ var h=lnHit(r, spec[1], spec[2]); return { r:r, ok: !!(h && h.hit) }; })
+      .sort(function(a,b){ return String(b.r.date).localeCompare(String(a.r.date)); });
+    return rows;
+  }
+  function db2LnDate(d){ var s=String(d||''); if(s.length<10) return '—'; return s.slice(8,10)+' '+MON[+s.slice(5,7)-1]+' '+s.slice(2,4); }
+  function db2LnRound(rd){
+    var t=(typeof maRoundName==='function') ? maRoundName(rd) : rd;
+    return ({'Quarter-finals':'QF','Semi-finals':'SF','Final':'F','Round Robin':'RR'})[t] || t || '';
+  }
+  function db2LnBox(name, spec, fam, pool, metric, opts){
+    var K=fam+'|'+spec[0], t=(state.lnOpen && state.lnOpen.t) || 'all';
+    var all=db2LnMatches(pool, spec, fam), rows=all.filter(function(x){ return t==='all' || (t==='hit')===x.ok; }).slice(0, DB2_LN_SHOWN);
+    var box=el('div', opts && opts.cmp ? 'db2-mx cmp' : 'db2-mx'), inner=el('div','db2-mxin');
+    var hd=el('div','db2-mxhead');
+    hd.appendChild(el('div','', '<div class="db2-mxt">'+esc(name)+' · '+(fam==='Total games' ? db2LnBet(fam, spec[0]) : db2LnFam(fam)+' '+db2LnBet(fam, spec[0]))+'</div>'+
+      '<div class="db2-mxs">'+(metric.n ? 'Covered '+metric.hit+' of '+metric.n+' matches · latest '+Math.min(DB2_LN_SHOWN, all.length)+' shown' : 'No matches on record')+'</div>'));
+    var trk=el('span','db2-track db2-mxtrack');
+    [['all','All'],['hit','Covered'],['miss','Missed']].forEach(function(x){ var b=el('button','db2-pill db2-mxpill'+(t===x[0]?' on':''), x[1]); b.type='button';
+      b.onclick=function(e){ e.stopPropagation(); state.lnOpen={ k:K, p:name, t:x[0] }; render(); }; trk.appendChild(b); });
+    hd.appendChild(trk);
+    var cx=el('button','db2-x db2-mxx','×'); cx.type='button'; cx.title='Close'; cx.onclick=function(e){ e.stopPropagation(); state.lnOpen=null; render(); }; hd.appendChild(cx);
+    inner.appendChild(hd);
+    var valHead = fam==='Games handicap' ? 'Games' : fam==='Total games' ? 'Total' : 'Sets';
+    inner.appendChild(el('div','db2-mxcols','<span>Date</span><span>Tournament</span><span>Opponent</span><span>Score</span><span class="r">'+valHead+'</span><span class="r">Line</span>'));
+    rows.forEach(function(x){
+      var r=x.r, pg=0, og=0, ps=0, os=0; r.sets.forEach(function(s){ pg+=s.p; og+=s.o; if(s.p>s.o) ps++; else if(s.o>s.p) os++; });
+      var gm=pg-og, val = fam==='Games handicap' ? (gm>0?'+':gm<0?'−':'')+Math.abs(gm) : fam==='Total games' ? String(pg+og) : ps+'–'+os;
+      var tn=(typeof sfEventName==='function' ? sfEventName(r.tournament) : r.tournament) || r.tournament;
+      inner.appendChild(el('div','db2-mxrow','<span class="db2-mxd">'+db2LnDate(r.date)+'</span><span class="db2-mxtn">'+esc(tn)+' <span>'+esc(db2LnRound(r.round))+'</span></span>'+
+        '<span class="db2-mxo">'+esc(r.opponent||'—')+'</span><span class="db2-mxsc">'+r.sets.map(function(s){ return s.p+'–'+s.o; }).join('  ')+'</span>'+
+        '<span class="db2-mxv">'+val+'</span><span class="db2-mxr" style="color:'+(x.ok?'var(--db2-green)':'var(--db2-red)')+'">'+(x.ok?'Covered':'Missed')+'</span>'));
+    });
+    if(!rows.length) inner.appendChild(el('div','db2-mxempty', metric.n ? 'No match in this list.' : 'No matches on record for these filters.'));
+    box.appendChild(inner);
+    return box;
+  }
   function renderLines(body){
+    if(!RAT){
+      body.appendChild(el('div','db-loading','Loading the ratings archive…'));
+      var linst=I;
+      loadRatings().then(function(){ use(linst); if(state.view==='lines') render(); })
+        .catch(function(){ use(linst); var b=q('body'); if(b && state.view==='lines'){ b.innerHTML=''; b.appendChild(el('div','db-loading','The ratings archive could not be loaded, so the player picker has nothing to search.')); } });
+      return;
+    }
+    var card=el('div','db2-card db2-lncard'); body.appendChild(card);
+    if(!state.lnSel.length){
+      card.appendChild(el('div','db2-lnhead','<div><div class="db2-ttl">Line coverage</div><div class="db2-sub">Choose a player above to see how often he covered each line.</div></div>'));
+      return;
+    }
+    var picks=state.lnSel.slice(0,3), inst=I, want=picks.join('\u0001');
+    var host=el('div'); card.appendChild(host);
+    host.appendChild(el('div','db2-sub','Loading match rows…'));
+    if(typeof playerStyles!=='undefined' && !playerStyles.byKey && typeof loadPlayerStyles==='function' && !DB2_LN_PX.__styles){ DB2_LN_PX.__styles=1; loadPlayerStyles().then(function(){ use(inst); if(state.view==='lines') render(); }); }
+    var needPx=db2LnNeedsPx();
+    var jp = needPx && (typeof _sfDbJoinSt==='undefined' || _sfDbJoinSt!=='ready') && typeof sfDbJoinLoad==='function' ? sfDbJoinLoad() : null;
+    Promise.all([loadLinesField(), jp].concat(picks.map(function(nm){ var k=lnKeyForName(nm); return k ? loadCareerHistory(k) : Promise.resolve(null); })))
+      .then(function(rs){
+        use(inst); if(state.view!=='lines' || state.lnSel.slice(0,3).join('\u0001')!==want) return;
+        host.innerHTML=''; db2LnPaint(card, host, picks.map(function(nm,i){ return { nm:nm, rows:rs[i+2] || [] }; }));
+      }).catch(function(){ use(inst); host.innerHTML=''; host.appendChild(el('div','db2-sub','Match rows could not be loaded.')); });
+  }
+  function db2LnPaint(card, host, players){
+    var fams=DB2_LN_FAMS.filter(function(f){ return !state.lnHide[f]; });
+    var P=players.map(function(p){ var pl=db2LnPool(p.nm, p.rows); return { nm:p.nm, pool:pl.pool, pending:pl.pending, rat:ratRoster().filter(function(x){ return x.name===p.nm; })[0] || null }; });
+    var nLines=fams.reduce(function(s,f){ return s+(LN_LADDERS[state.lnFmt][f]||[]).length; },0);
+    var cmp=P.length>1;
+    var head=el('div','db2-lnhead');
+    if(cmp) head.appendChild(el('div','', '<div class="db2-ttl db2-ttl2">Line coverage</div><div class="db2-sub db2-lnsub">'+P.length+' players · '+esc(db2LnSub(nLines))+'</div>'));
+    else {
+      var p0=P[0], who=el('div','db2-lnwho');
+      who.innerHTML=(p0.rat ? ratAvatar(p0.rat,false) : '<span class="db-av">'+esc(ratInitials(p0.nm))+'</span>').replace(/class="db-av[^"]*"/,'class="db-av db2-lnav"');
+      var tx=el('div','db2-lnwt'), a=el('a','db2-lnnm', esc(p0.nm)+' <span>'+(p0.rat && p0.rat.rank!=null?'#'+p0.rat.rank:'')+'</span>'); a.href='#'; a.onclick=function(ev){ ev.preventDefault(); ratOpenPlayer(p0.nm); };
+      tx.appendChild(a); tx.appendChild(el('div','db2-sub db2-lnsub','Line coverage · '+esc(db2LnSub(nLines))));
+      who.appendChild(tx); head.appendChild(who);
+    }
+    var q=el('span','db2-q db2-q16 db2-lnhq','?'); q.title=DB2_LN_HELP; head.appendChild(q);
+    card.insertBefore(head, host);
+    if(P.some(function(p){ return p.pending; })){ host.appendChild(el('div','db2-sub db2-lnwait','Loading closing prices…')); return; }
+    if(!cmp) db2LnSingle(host, P[0], fams); else db2LnCompare(host, P, fams);
+  }
+  function db2LnSingle(host, p, fams){
+    var G=fams.map(function(f){ return { fam:f, rows:(LN_LADDERS[state.lnFmt][f]||[]).map(function(spec){ return db2LnMetric(p.pool, spec, p.nm); }) }; });
+    var rated=[]; G.forEach(function(g){ g.rows.forEach(function(m){ if(m.dv!=null) rated.push({g:g, m:m}); }); });
+    var open=state.lnOpen;
+    function openLine(fam, spec){ var K=fam+'|'+spec[0]; state.lnOpen = (open && open.k===K && open.p===p.nm) ? null : { k:K, p:p.nm, t:'all' }; render(); }
+    if(rated.length>=2){
+      var hi=rated.reduce(function(x,r){ return r.m.dv>x.m.dv?r:x; }), lo=rated.reduce(function(x,r){ return r.m.dv<x.m.dv?r:x; });
+      var tg=el('div','db2-lntiles');
+      [['Most above the field',hi],['Most below the field',lo]].forEach(function(t){
+        var m=t[1].m, fam=t[1].g.fam, d=m.delta;
+        var tl=el('div','db2-lntile','<div class="db2-lntl"><div class="db2-caps">'+t[0]+'</div><div class="db2-lntline">'+(fam==='Total games'?'':db2LnFam(fam)+' ')+db2LnBet(fam, m.spec[0])+'</div>'+
+          '<div class="db2-lntsub">'+m.hit+'–'+(m.n-m.hit)+' · field '+(m.field==null?'—':m.field.toFixed(1)+'%')+'</div></div>'+
+          '<div class="db2-lntr"><div class="db2-lntrate">'+m.rate.toFixed(1)+'%</div><div class="db2-lntd" style="color:'+lnSgnCol(d)+'">'+lnSgn(d)+'pp</div></div><span class="db2-chev">›</span>');
+        tl.onclick=function(){ openLine(fam, m.spec); }; tg.appendChild(tl);
+      });
+      host.appendChild(tg);
+    }
+    G.forEach(function(g, gi){
+      var fam=g.fam, gn=g.rows.reduce(function(x,m){ return Math.max(x,m.n); },0);
+      var rt=g.rows.filter(function(m){ return m.dv!=null; }), top=rt.length ? rt.reduce(function(x,m){ return m.dv>x.dv?m:x; }) : null;
+      var sum = !top ? '' : top.dv>0 ? 'Above the field on '+rt.filter(function(m){ return m.dv>0; }).length+' of '+rt.length+' lines · biggest edge at '+db2LnBet(fam, top.spec[0])+' ('+lnSgn(top.delta)+'pp)'
+        : 'No line above the field · closest to the field at '+db2LnBet(fam, top.spec[0])+' ('+lnSgn(top.delta)+'pp)';
+      var fh=el('div','db2-lnfam'+(gi?' rule':''),'<span class="db2-lnfn">'+db2LnFam(fam)+'</span><span class="db2-lnfc">'+g.rows.length+' lines · '+gn+' matches</span><span class="db2-lnfs">'+esc(sum)+'</span>');
+      host.appendChild(fh);
+      var lw=Math.max(48, Math.ceil(((fam==='Total games'?6:1) + g.rows.reduce(function(x,m){ return Math.max(x, String(db2LnMag(m.spec[0])).length); },0))*9.1+2));
+      var cols=lw+'px minmax(52px,1fr) minmax(48px,1fr) minmax(56px,1fr) minmax(60px,1fr) 10px';
+      var grid=el('div','db2-lncards');
+      [[true, fam==='Total games'?'Over':'− lines'],[false, fam==='Total games'?'Under':'+ lines']].forEach(function(cd){
+        var rows=g.rows.filter(function(m){ return db2LnIsL(m.spec[0])===cd[0]; }).sort(function(a,b){ return db2LnMag(a.spec[0])-db2LnMag(b.spec[0]); });
+        var rr=rows.filter(function(m){ return m.dv!=null; }), av=rr.length ? rr.reduce(function(s,m){ return s+m.dv; },0)/rr.length : null;
+        var c=el('div','db2-lncardc');
+        c.innerHTML='<div class="db2-bhead"><div><div class="db2-caps" style="white-space:nowrap">'+db2LnFam(fam)+'</div><div class="db2-btitle">'+cd[1]+'</div></div>'+
+          '<div class="db2-ball"><div class="db2-ballv" style="color:'+(av==null?'var(--db2-muted)':lnSgnCol(av))+'">'+(av==null?'–':lnSgn(av)+'pp')+'</div><div class="db2-balls">average edge · '+rows.length+(rows.length===1?' line':' lines')+'</div></div></div>';
+        var hh=el('div','db2-lncols','<span>Line</span><span class="r">Cover</span><span class="r">Field</span><span class="r">Record</span><span class="r">Edge</span><span></span>'); hh.style.gridTemplateColumns=cols; c.appendChild(hh);
+        rows.forEach(function(m){
+          var K=fam+'|'+m.spec[0], isOpen=!!(open && open.k===K && open.p===p.nm);
+          var r=el('div','db2-lnrow'+(isOpen?' open':'')); r.style.gridTemplateColumns=cols;
+          r.title=p.nm+' · '+db2LnBet(fam, m.spec[0])+' · '+(m.n ? 'covered '+m.hit+' of '+m.n+' matches'+(m.g==='soft'?' (small sample)':m.g==='hard'?' (fewer than '+LN_MIN_N+' matches, no rate shown)':'')+(m.rank==null?'':' · ranked '+m.rank+' of '+m.size)+(m.marg==null?'':' · average margin '+lnSgn(m.marg)+(fam==='Set handicap'?' sets':' games')) : 'no matches on record');
+          r.innerHTML='<span class="db2-lnbet">'+db2LnBet(fam, m.spec[0])+'</span>'+
+            '<span class="db2-lnrate" style="font-weight:'+(m.g==='full'?700:500)+';color:'+(m.show?(m.g==='full'?'var(--db2-ink)':'var(--db2-muted)'):'color-mix(in srgb, var(--db2-muted) 55%, transparent)')+'">'+(m.show?m.rate.toFixed(1)+'%':'–')+'</span>'+
+            '<span class="db2-lnq">'+(m.field==null?'–':m.field.toFixed(1)+'%')+'</span><span class="db2-lnq nw">'+(m.n?m.hit+'–'+(m.n-m.hit):'–')+'</span>'+
+            '<span class="db2-lnedge" style="color:'+(m.delta==null?'color-mix(in srgb, var(--db2-muted) 55%, transparent)':lnSgnCol(m.delta))+'">'+(m.delta==null?'–':lnSgn(m.delta)+'pp')+'</span><span class="db2-chev r">›</span>';
+          r.onclick=function(){ openLine(fam, m.spec); };
+          c.appendChild(r);
+          if(isOpen) c.appendChild(db2LnBox(p.nm, m.spec, fam, p.pool, m));
+        });
+        grid.appendChild(c);
+      });
+      host.appendChild(grid);
+    });
+    host.appendChild(el('div','db2-lnfoot','Click any line to see the matches behind it.'));
+  }
+  function db2LnCompare(host, P, fams){
+    var cols='minmax(110px,1.2fr) '+P.map(function(){ return 'repeat(2,minmax(62px,1fr))'; }).join(' ')+' 58px';
+    var sc=el('div','db2-lncmpsc'), t=el('div'); t.style.minWidth=(110+P.length*136+58+(P.length*2+1)*12)+'px';
+    var h1=el('div','db2-lncmph'); h1.style.gridTemplateColumns=cols; h1.appendChild(el('span'));
+    P.forEach(function(p){ var a=el('a','db2-lncmpp'); a.href='#'; a.title=p.nm; a.onclick=function(ev){ ev.preventDefault(); ratOpenPlayer(p.nm); };
+      a.innerHTML=(p.rat ? ratAvatar(p.rat,true) : '<span class="db-av db-av26">'+esc(ratInitials(p.nm))+'</span>')+'<span class="db2-lncmpn">'+esc(p.nm)+'</span>'; h1.appendChild(a); });
+    h1.appendChild(el('span')); t.appendChild(h1);
+    var h2=el('div','db2-lncmph2'); h2.style.gridTemplateColumns=cols; h2.appendChild(el('span','db2-caps','Line'));
+    P.forEach(function(){ h2.appendChild(el('span','db2-caps r','Rate')); h2.appendChild(el('span','db2-caps r','Vs field')); });
+    h2.appendChild(el('span','db2-caps r','Field')); t.appendChild(h2);
+    var open=state.lnOpen;
+    fams.forEach(function(f){
+      var specs=LN_LADDERS[state.lnFmt][f]||[], ms=P.map(function(p){ return specs.map(function(s){ return db2LnMetric(p.pool, s, p.nm); }); });
+      var gn=0; ms.forEach(function(a){ a.forEach(function(m){ gn=Math.max(gn,m.n); }); });
+      t.appendChild(el('div','db2-lncmpfam','<span>'+db2LnFam(f)+'</span><span>'+specs.length+' lines · '+gn+' matches</span>'));
+      specs.forEach(function(spec, si){
+        var K=f+'|'+spec[0], isOpen=!!(open && open.k===K), op=isOpen ? (P.filter(function(p){ return p.nm===open.p; })[0] || P[0]) : null;
+        var each=P.map(function(p,pi){ return ms[pi][si]; }), best=Math.max.apply(null, each.map(function(m){ return m.show ? m.rate : -1; }));
+        var fld=null; each.forEach(function(m){ if(fld==null && m.field!=null) fld=m.field; });
+        var r=el('div','db2-lncmprow'+(isOpen?' open':'')); r.style.gridTemplateColumns=cols;
+        r.appendChild(el('span','db2-lncmpl','<span class="db2-lncmpchev'+(isOpen?' on':'')+'"></span><span>'+db2LnBet(f, spec[0])+'</span>'));
+        each.forEach(function(m, pi){
+          var lead=m.show && m.rate===best;
+          var a=el('span','db2-lncmprate', m.show ? m.rate.toFixed(1)+'%' : '–'); a.style.fontWeight=lead?800:500;
+          a.style.color = !m.show ? 'color-mix(in srgb, var(--db2-muted) 55%, transparent)' : lead ? 'var(--db2-ink)' : 'var(--db2-ink-2)';
+          var d=el('span','db2-lncmpd', m.delta==null ? '–' : lnSgn(m.delta)+'pp'); d.style.color = m.delta==null ? 'color-mix(in srgb, var(--db2-muted) 55%, transparent)' : lnSgnCol(m.delta);
+          var tip=P[pi].nm+' · '+f+' · '+db2LnBet(f, spec[0])+' · '+(m.n ? m.hit+' of '+m.n : 'no matches on record');
+          a.title=tip; d.title=tip;
+          var go=function(e){ e.stopPropagation(); state.lnOpen = (open && open.k===K && open.p===P[pi].nm) ? null : { k:K, p:P[pi].nm, t:'all' }; render(); };
+          a.onclick=go; d.onclick=go; r.appendChild(a); r.appendChild(d);
+        });
+        r.appendChild(el('span','db2-lncmpf', fld==null ? '–' : fld.toFixed(1)+'%'));
+        r.onclick=function(){ state.lnOpen = isOpen ? null : { k:K, p:P[0].nm, t:'all' }; render(); };
+        t.appendChild(r);
+        if(isOpen){ var oi=P.indexOf(op); t.appendChild(db2LnBox(op.nm, spec, f, op.pool, ms[oi][si], { cmp:true })); }
+      });
+    });
+    sc.appendChild(t); host.appendChild(sc);
+  }
+
+  function renderLinesV1(body){
     // The subject picker searches the ratings roster, and that store is LAZY —
     // it was loaded only by renderRatings. A member opening Lines first got a
     // picker that could never offer anyone, with nothing on screen to explain it.
