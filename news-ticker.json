@@ -1,6 +1,18 @@
 {
- "generatedAt": "2026-11-16T23:24:29.441Z",
+ "generatedAt": "2026-11-16T23:47:08.657Z",
  "tournaments": [
+  {
+   "key": "tour",
+   "season": "2026",
+   "name": "ATP Tour",
+   "file": "news-ticker/tour-2026.json",
+   "items": 132,
+   "byType": {
+    "quote": 132
+   },
+   "latestTimestamp": "2026-11-16T22:55:07.000Z",
+   "updatedAt": "2026-11-16T23:47:08.657Z"
+  },
   {
    "key": "2794",
    "season": "2026",
@@ -12,18 +24,6 @@
     "report": 4
    },
    "latestTimestamp": "2026-11-16T22:49:22.000Z",
-   "updatedAt": "2026-11-16T23:24:29.441Z"
-  },
-  {
-   "key": "tour",
-   "season": "2026",
-   "name": "ATP Tour",
-   "file": "news-ticker/tour-2026.json",
-   "items": 132,
-   "byType": {
-    "quote": 132
-   },
-   "latestTimestamp": "2026-11-16T22:20:57.000Z",
    "updatedAt": "2026-11-16T23:24:29.441Z"
   },
   {
@@ -54,6 +54,39 @@
   }
  ],
  "latest": [
+  {
+   "id": "quote-37a061d5b300d1",
+   "type": "quote",
+   "playerId": "1980",
+   "opponentId": null,
+   "player": "A. Zverev",
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-16T22:55:07.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "but I'm happy with this good start.",
+   "originalText": "maar ik ben tevreden met deze goeie start.",
+   "language": "nl",
+   "translated": true,
+   "translationModel": "claude-opus-5-5",
+   "sourceName": "Sporza (VRT)",
+   "sourceUrl": "https://sporza.be/nl/2026/11/09/favoriet-carlos-alcaraz-begint-als-wervelwind-ook-medvedev-opent-atp-finals-met-zege~1794210031734/",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On his opening ATP Finals win over Jodar",
+   "sourceHash": "9a06a3b7c02048a3",
+   "publishedAt": "2026-11-15T16:28:17.739Z",
+   "revisedAt": "2026-11-16T23:47:08.657Z",
+   "revision": 3,
+   "file": "news-ticker/tour-2026.json"
+  },
   {
    "id": "quote-fbe83f56ff7379",
    "type": "quote",
@@ -953,39 +986,6 @@
    "topic": "On Diallo's FIFA presidential candidacy",
    "sourceHash": "218ecf0eeaf856ac",
    "publishedAt": "2026-11-16T19:00:10.786Z",
-   "file": "news-ticker/tour-2026.json"
-  },
-  {
-   "id": "quote-37a061d5b300d1",
-   "type": "quote",
-   "playerId": "1980",
-   "opponentId": null,
-   "player": "A. Zverev",
-   "opponent": null,
-   "tournament": "ATP Tour",
-   "tournamentKey": "tour",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-16T14:38:38.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Interviews",
-   "context": null,
-   "eventKey": null,
-   "won": null,
-   "text": "but I'm happy with this good start.",
-   "originalText": "maar ik ben tevreden met deze goeie start.",
-   "language": "nl",
-   "translated": true,
-   "translationModel": "claude-opus-5-5",
-   "sourceName": "Sporza (VRT)",
-   "sourceUrl": "https://sporza.be/nl/2026/11/09/favoriet-carlos-alcaraz-begint-als-wervelwind-aan-de-atp-finals~1794210031734/",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "topic": "On his opening ATP Finals win over Jodar",
-   "sourceHash": "3fdb8ecf2001ff72",
-   "publishedAt": "2026-11-15T16:28:17.739Z",
-   "revisedAt": "2026-11-16T15:37:28.086Z",
-   "revision": 2,
    "file": "news-ticker/tour-2026.json"
   },
   {
