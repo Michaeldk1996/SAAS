@@ -3408,7 +3408,9 @@ window.sfPlanLocks(null);   // locked until the account says Edge / Pro: no unlo
     --pos:var(--db2-green); --neg:var(--db2-red); --link:var(--db2-blue);
     --db2-h6:color-mix(in srgb, var(--db2-white) 6%, transparent); --db2-h8:color-mix(in srgb, var(--db2-white) 8%, transparent);
     --db2-h10:color-mix(in srgb, var(--db2-white) 10%, transparent); --db2-h16:color-mix(in srgb, var(--db2-white) 16%, transparent);
-    --db2-h18:color-mix(in srgb, var(--db2-white) 18%, transparent); --db2-h20:color-mix(in srgb, var(--db2-white) 20%, transparent); }
+    --db2-h18:color-mix(in srgb, var(--db2-white) 18%, transparent); --db2-h20:color-mix(in srgb, var(--db2-white) 20%, transparent);
+    --db2-h5:color-mix(in srgb, var(--db2-white) 5%, transparent); --db2-h7:color-mix(in srgb, var(--db2-white) 7%, transparent);
+    --db2-h13:color-mix(in srgb, var(--db2-white) 13%, transparent); }
   [data-db-root] .db-ctl{ background:var(--db2-card); border:1.25px solid var(--db2-h6); border-radius:14px; padding:4px 18px; box-shadow:none; }
   [data-db-root] .db-ctltop{ display:grid; grid-template-columns:104px minmax(0,1fr) auto; align-items:center; gap:14px; padding:12px 0; background:none; border-radius:0; }
   [data-db-root] .db-ctlbot{ display:grid; grid-template-columns:104px minmax(0,1fr); align-items:start; gap:14px; padding:12px 0;
@@ -3495,6 +3497,92 @@ window.sfPlanLocks(null);   // locked until the account says Edge / Pro: no unlo
   [data-db-root] .db-plate.dog b{ color:var(--db2-ink-2); }
   [data-db-root] .db-plate span{ color:var(--db2-ink); }
   [data-db-root] .db-xcap{ font-size:10.5px; line-height:normal; }
+  /* compare page (L850-1015) */
+  [data-db-root] .db2-cmp{ display:flex; flex-direction:column; gap:16px; line-height:normal; }
+  [data-db-root] .db2-card{ background:var(--db2-card); border:1.25px solid var(--db2-h6); border-radius:14px; min-width:0; font-family:var(--db-ui); color:var(--db2-ink); line-height:normal; }
+  [data-db-root] .db2-sum{ padding:26px 28px; }
+  [data-db-root] .db2-sumhead{ display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); align-items:center; gap:16px; padding-bottom:20px; border-bottom:1px solid var(--db2-h7); }
+  [data-db-root] .db2-sumside{ display:flex; align-items:center; gap:10px; min-width:0; }
+  [data-db-root] .db2-sumside.r{ justify-content:flex-end; text-align:right; }
+  [data-db-root] .db2-logo{ flex:none; width:44px; height:44px; box-sizing:border-box; border-radius:10px; background:var(--db2-inset); border:1px solid var(--db2-h8); overflow:hidden; position:relative; }
+  [data-db-root] .db2-logo.round{ border-radius:50%; }
+  [data-db-root] .db2-logo img{ position:relative; width:100%; height:100%; object-fit:cover; display:block; }
+  [data-db-root] .db2-logoph{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-family:var(--db-mono); font-size:11px; font-weight:700; color:var(--db2-muted); }
+  [data-db-root] .db2-dot{ width:10px; height:10px; border-radius:50%; flex:none; }
+  [data-db-root] .db2-sumname{ min-width:0; }
+  [data-db-root] .db2-sumt{ font-size:18px; font-weight:800; letter-spacing:-0.01em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  [data-db-root] .db2-sums{ margin-top:3px; font-size:12px; color:var(--db2-muted); }
+  [data-db-root] .db2-x{ flex:none; width:18px; height:18px; box-sizing:border-box; border-radius:50%; border:1px solid var(--db2-h16); background:none; padding:0;
+    display:inline-flex; align-items:center; justify-content:center; font-family:var(--db-ui); font-size:10px; line-height:1; color:var(--db2-muted); cursor:pointer; }
+  [data-db-root] .db2-x:hover{ border-color:color-mix(in srgb, var(--db2-blue) 55%, transparent); color:var(--db2-ink); }
+  [data-db-root] .db2-sumrange{ display:inline-flex; align-items:center; gap:10px; font-size:12px; color:var(--db2-muted); white-space:nowrap; }
+  [data-db-root] .db2-halves{ display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:20px; margin-top:20px; }
+  [data-db-root] .db2-half{ display:grid; grid-template-columns:1fr 1fr; gap:10px; min-width:0; }
+  [data-db-root] .db2-tile{ background:var(--db2-inset); border:1px solid var(--db2-h5); border-radius:11px; padding:14px 16px; min-width:0; }
+  [data-db-root] .db2-tilev{ margin-top:9px; font-family:var(--db-mono); font-size:21px; letter-spacing:-0.02em; }
+  [data-db-root] .db2-best{ grid-column:1 / -1; display:flex; align-items:center; justify-content:space-between; gap:12px; }
+  [data-db-root] .db2-bestn{ margin-top:8px; font-size:15px; font-weight:800; letter-spacing:-0.01em; }
+  [data-db-root] .db2-bests{ margin-top:3px; font-size:12px; color:var(--db2-muted); }
+  [data-db-root] .db2-bestv{ flex:none; font-family:var(--db-mono); font-size:21px; font-weight:700; letter-spacing:-0.02em; }
+  [data-db-root] .db2-multi{ padding:22px 24px; }
+  [data-db-root] .db2-multihead{ display:flex; align-items:center; justify-content:space-between; gap:12px; }
+  [data-db-root] .db2-ttl{ font-size:18px; font-weight:800; letter-spacing:-0.01em; }
+  [data-db-root] .db2-sub{ margin-top:5px; font-size:12.5px; color:var(--db2-muted); }
+  [data-db-root] .db2-bests2{ display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:12px; margin-top:18px; }
+  [data-db-root] .db2-bestt{ display:flex; align-items:center; justify-content:space-between; gap:14px; }
+  [data-db-root] .db2-bestrow{ margin-top:7px; display:flex; align-items:center; gap:9px; min-width:0; }
+  [data-db-root] .db2-sw{ width:14px; height:3px; border-radius:2px; flex:none; }
+  [data-db-root] .db2-bestnm{ font-size:15px; font-weight:800; letter-spacing:-0.01em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  [data-db-root] .db2-bestv2{ flex:none; font-family:var(--db-mono); font-size:20px; font-weight:700; letter-spacing:-0.02em; }
+  [data-db-root] .db2-mscroll{ margin-top:16px; overflow-x:auto; scrollbar-width:thin; }
+  [data-db-root] .db2-mhead{ display:grid; gap:0 14px; align-items:end; padding-bottom:12px; }
+  [data-db-root] .db2-mevtop{ display:flex; align-items:center; gap:8px; min-width:0; }
+  [data-db-root] .db2-mevn{ font-size:14px; font-weight:800; letter-spacing:-0.01em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  [data-db-root] .db2-mev .db2-x{ width:17px; height:17px; }
+  [data-db-root] .db2-mevs{ margin-top:4px; font-size:12px; color:var(--db2-muted); }
+  [data-db-root] .db2-mrow{ display:grid; gap:0 14px; align-items:center; padding:9px 0; border-top:1px solid var(--db2-h6); }
+  [data-db-root] .db2-mlab{ font-size:13px; color:var(--db2-ink-2); }
+  [data-db-root] .db2-mcell{ justify-self:start; margin-left:-9px; padding:4px 9px; border-radius:7px; font-family:var(--db-mono); font-size:14px; font-weight:500; }
+  [data-db-root] .db2-mcell.lead{ background:var(--db2-h13); font-weight:700; }
+  [data-db-root] .db2-mkey{ margin-top:10px; display:flex; align-items:center; gap:8px; font-size:12px; color:var(--db2-muted); }
+  [data-db-root] .db2-mkeysw{ width:18px; height:12px; border-radius:4px; background:var(--db2-h13); }
+  [data-db-root] .db2-cchart{ padding:22px 24px; }
+  [data-db-root] .db2-cchead{ display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap; }
+  [data-db-root] .db2-track{ display:inline-flex; gap:3px; background:var(--db2-inset); border:1px solid var(--db2-h6); border-radius:9px; padding:3px; }
+  [data-db-root] .db2-pill{ white-space:nowrap; cursor:pointer; padding:5px 12px; border-radius:7px; font-family:var(--db-ui); font-size:12px; font-weight:600; color:var(--db2-muted); background:transparent; border:1px solid transparent; }
+  [data-db-root] .db2-pill.on{ font-weight:700; color:var(--db2-ink); background:var(--db2-raised); border-color:var(--db2-h16); }
+  [data-db-root] .db2-ccrow{ margin-top:14px; display:flex; gap:12px; }
+  [data-db-root] .db2-ccy{ position:relative; width:56px; height:300px; flex:none; }
+  [data-db-root] .db2-ccy span{ position:absolute; right:0; transform:translateY(-50%); font-family:var(--db-mono); font-size:11px; color:var(--db2-muted); }
+  [data-db-root] .db2-ccarea{ position:relative; flex:1; min-width:220px; height:300px; }
+  [data-db-root] .db2-ccarea svg{ width:100%; height:100%; display:block; overflow:visible; }
+  [data-db-root] .db2-ccdot{ position:absolute; right:-4.5px; width:9px; height:9px; margin-top:-4.5px; border-radius:50%; box-shadow:0 0 0 3px var(--db2-card); }
+  [data-db-root] .db2-ccplates{ position:relative; width:180px; height:300px; flex:none; }
+  [data-db-root] .db2-ccplate{ position:absolute; left:0; right:0; transform:translateY(-50%); display:flex; align-items:center; gap:8px; padding:6px 9px; border-radius:8px; background:var(--db2-raised); border:1px solid var(--db2-h16); }
+  [data-db-root] .db2-ccpn{ font-size:11.5px; font-weight:600; color:var(--db2-ink-2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  [data-db-root] .db2-ccpv{ margin-left:auto; font-family:var(--db-mono); font-size:12px; font-weight:700; }
+  [data-db-root] .db2-ccx{ margin:8px 192px 0 68px; position:relative; height:16px; }
+  [data-db-root] .db2-ccx span{ position:absolute; transform:translateX(-50%); font-family:var(--db-mono); font-size:11px; color:var(--db2-muted); }
+  [data-db-root] .db2-cccap{ margin-top:10px; font-family:var(--db-mono); font-size:11px; color:var(--db2-muted); }
+  [data-db-root] .db2-bandboxes{ display:grid; grid-template-columns:repeat(auto-fit,minmax(340px,1fr)); gap:16px; align-items:stretch; }
+  [data-db-root] .db2-bbox{ padding:22px 24px 10px; }
+  [data-db-root] .db2-bboxhead{ display:flex; align-items:center; gap:10px; min-width:0; }
+  [data-db-root] .db2-bgh{ display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin-top:18px; padding-bottom:9px; }
+  [data-db-root] .db2-bgt{ font-size:15px; font-weight:800; }
+  [data-db-root] .db2-bgr{ display:grid; grid-template-columns:minmax(0,1fr) 96px 86px; gap:0 12px; align-items:center; padding:10px 0; border-top:1px solid var(--db2-h6); }
+  [data-db-root] .db2-bgrange{ font-family:var(--db-mono); font-size:12.5px; color:var(--db2-muted); }
+  [data-db-root] .db2-bgv{ text-align:right; font-family:var(--db-mono); font-size:15px; }
+  /* search with chips (L106-133) */
+  [data-db-root] .db-chipbox{ flex:0 1 auto; min-width:200px; max-width:520px; }
+  [data-db-root] .db-chipin{ display:flex; align-items:center; flex-wrap:wrap; gap:6px; min-height:36px; box-sizing:border-box; padding:4px 9px; border-radius:9px;
+    background:var(--db2-inset); border:1px solid var(--db2-h6); line-height:normal; }
+  [data-db-root] .db-chipin.hot, [data-db-root] .db-chipin:focus-within{ border-color:var(--db2-h16); }
+  [data-db-root] .db-chip{ display:inline-flex; align-items:center; gap:7px; height:26px; box-sizing:border-box; padding:0 7px 0 10px; border-radius:6px;
+    background:var(--db2-raised); border:1px solid var(--db2-h16); white-space:nowrap; }
+  [data-db-root] .db-chip span{ font-family:var(--db-ui); font-size:12.5px; font-weight:600; color:var(--db2-ink); }
+  [data-db-root] .db-chip button{ font-size:11px; line-height:1; color:var(--db2-muted); background:none; border:0; padding:0; width:auto; height:auto; }
+  [data-db-root] .db-capnote{ font-family:var(--db-ui); font-size:12px; color:var(--db2-muted); white-space:nowrap; padding:0; }
+  [data-db-root] .db-chipin input{ flex:1 1 110px; min-width:110px; height:26px; background:transparent; border:none; padding:0 3px; color:var(--db2-ink); font-size:13px; font-family:var(--db-ui); outline:none; }
   /* TEN-242 phase 2: an ID selector cannot match the embedded mount, whose body
      is addressed by data-db. Both forms, one rule. */
   #dbBody, [data-db="body"]{ display:flex; flex-direction:column; gap:22px; }
@@ -33553,146 +33641,209 @@ window.DatabaseTab = (function(){
     // Database.dc.html yieldOf: (e.fav + e.dog) / 2). The f + d sum counted every match twice.
     return side==='fav' ? f : side==='dog' ? d : (f+d)/2;
   }
-  function renderCompare(body){
-    var picks=tournPicks().slice(0,TC_MAX), side=state.tcSide||'all';
-    var evs=picks.map(function(p){
-      var rows=filteredRows(p.names);
-      var fav=bands(rows.map(function(r){ return {p:r[5], w:r[7], b:r[8]}; })).all;
-      var dog=bands(rows.map(function(r){ return {p:r[6], w:r[7]?0:1, b:r[8]}; })).all;
-      var e=catalogEntryForNames(p.names);
-      return { label:p.label, rows:rows, n:rows.length, fav:fav, dog:dog, surface: e ? (catalogSurface(e)||'—') : '—' };
-    });
-    var card=el('div','db-tcmp');
-    card.appendChild(el('div','db-eyebrow','Compare events'));
-
-    // ---- table: one column per event (README rows, in order) ----
-    var cols='150px repeat('+evs.length+', minmax(170px,1fr))';
-    var scroll=el('div','db-tcscroll'), tbl=el('div','db-tctable');
-    tbl.style.minWidth=(150+evs.length*184)+'px';
-    var hd=el('div','db-tch'); hd.style.gridTemplateColumns=cols;
-    hd.appendChild(el('span'));
-    evs.forEach(function(ev){
-      var h=el('span','db-tcname','<b title="'+esc(ev.label)+'">'+esc(ev.label)+'</b>');
-      var x=el('button',null,'×'); x.title='Remove '+ev.label;
-      x.onclick=function(e2){ e2.stopPropagation(); removeTournPick(ev.label); render(); };
-      h.appendChild(x); hd.appendChild(h);
-    });
-    tbl.appendChild(hd);
-    var ROWS=[
-      ['Surface',          function(ev){ return { html:esc(ev.surface), col:'var(--text-soft)', cls:'w' }; }],
-      ['Matches',          function(ev){ return { html:fmtInt(ev.n), col:'var(--text)' }; }],
-      ['Favourite yield',  function(ev){ return tcYield(ev.fav); }],
-      ['Underdog yield',   function(ev){ return tcYield(ev.dog); }],
-      ['Median fav price', function(ev){ return { html:fmtP(ev.fav?ev.fav.median:null), col:'var(--text-soft)' }; }],
-      ['Median dog price', function(ev){ return { html:fmtP(ev.dog?ev.dog.median:null), col:'var(--text-soft)' }; }]
-    ];
-    ROWS.forEach(function(rw){
-      var r=el('div','db-tcr'); r.style.gridTemplateColumns=cols;
-      r.appendChild(el('span','db-tclab',rw[0]));
-      evs.forEach(function(ev){ var c=rw[1](ev), s=el('span','db-tcval'+(c.cls?' '+c.cls:''),c.html); s.style.color=c.col; r.appendChild(s); });
-      tbl.appendChild(r);
-    });
-    scroll.appendChild(tbl); card.appendChild(scroll);
-
-    // ---- multi-series chart ----
-    var ch=el('div','db-tcchart');
-    var head=el('div','db-tchead');
-    head.appendChild(el('h3',null,'Cumulative profit, flat 1u'));
-    head.appendChild(pillGroup([['all','All matches'],['fav','Favourites'],['dog','Underdogs']],
-      side, function(v){ state.tcSide=v; }, false, 'db-tcside'));
-    ch.appendChild(head);
-
-    // ONE shared x, in SEASON SLOTS: every season in the union of the picked events gets
-    // the same width, and inside a slot each event's matches are spaced by their own
-    // match index. So two events read side by side season for season, an event that
-    // joined the archive later starts later (CHARTS.md §5 late-start rule) instead of
-    // being stretched across the width, and a one-fortnight event is not a staircase —
-    // the defect a shared calendar or a shared match spine both draw (on the union spine
-    // each event is flat while the other events' matches advance x — seen on AO / RG /
-    // Wimbledon before this layout).
-    // Each series starts at 0 at the opening of its first season. No date span is used.
-    var seasons={}, N=0;
-    evs.forEach(function(ev){ ev.rows.forEach(function(r){ seasons[yr(r[0])]=1; }); N+=ev.rows.length; });
-    var years=Object.keys(seasons).map(Number).sort(function(a,b){ return a-b; }), S=years.length;
-    var series=evs.map(function(ev, k){
-      var s={ ev:ev, sty:TC_SERIES[k], xs:[], vals:[], c:0 };
-      var ord=ev.rows.slice().sort(function(a,b){ return a[0]-b[0]; }), byY={};
-      ord.forEach(function(r){ var y=yr(r[0]); (byY[y]||(byY[y]=[])).push(r); });
-      if(ord.length){ s.xs.push(years.indexOf(yr(ord[0][0]))/S); s.vals.push(0); }
-      years.forEach(function(y, si){
-        var rs=byY[y]; if(!rs) return;
-        for(var j=0;j<rs.length;j++){ s.c+=tcProfit(rs[j], side); s.xs.push((si+(j+1)/rs.length)/S); s.vals.push(s.c); }
-      });
-      s.end = ord.length ? s.c : null;
-      return s;
-    });
-
-    var leg=el('div','db-tcleg');
-    series.forEach(function(s){
-      var endTxt = s.end==null ? '—' : tcUnits(s.end);
-      leg.appendChild(el('span',null,
-        '<svg width="18" height="3" viewBox="0 0 18 3" aria-hidden="true"><line x1="0" y1="1.5" x2="18" y2="1.5" stroke="'+s.sty.stroke+'" stroke-width="3"'+(s.sty.dash?' stroke-dasharray="'+s.sty.dash+'"':'')+'/></svg>'+
-        '<em>'+esc(s.ev.label)+'</em><b style="color:'+(s.end==null?'var(--text-label)':tcSignCol(endTxt))+'">'+endTxt+'</b>'));
-    });
-    ch.appendChild(leg);
-
-    if(!N){
-      ch.appendChild(el('div','db-note','No matches for these events under the current round and year range.'));
-      card.appendChild(ch); body.appendChild(card); return;
+  // ===== Database v2 compare page (design L850-1015, logic tournCompare / tournCurves). One page for 2-4 events and,
+  // with mode 'player', for two players. Every figure is the event's own rows on the fixed bands; nothing is derived.
+  // evs: [{ label, rows, sub, ph, avatarKey, profit(r, side) }]; rows carry [date, ..., favPrice(5), dogPrice(6), favWon(7)].
+  var DB2_SERIES=[{c:'var(--db2-blue)',d:''},{c:'var(--db2-ink)',d:''},{c:'var(--db2-grey3)',d:'6 5'},{c:'var(--db2-ink)',d:'6 5'}];
+  function db2Swatch(i){ var s=DB2_SERIES[i%4]; return s.d ? 'repeating-linear-gradient(90deg,'+s.c+' 0 4px,transparent 4px 7px)' : s.c; }
+  function db2Pc(v){ return v==null ? '—' : (v>0?'+':v<0?'−':'')+Math.abs(v*100).toFixed(2)+'%'; }
+  function db2PcCol(v){ return v==null ? 'var(--db2-muted)' : v>0 ? 'var(--db2-green)' : v<0 ? 'var(--db2-red)' : 'var(--db2-muted)'; }
+  // A yield prints only at or above the hard floor; under it the cell is an en dash (its count in the hover).
+  function db2Gy(a){ return (a && a.n>=HARD_GATE) ? a.yield : null; }
+  function db2Ev(ev){
+    var fv=ev.rows.map(function(r){ return {p:r[5], w:r[7], b:r[8]}; }), dv=ev.rows.map(function(r){ return {p:r[6], w:r[7]?0:1, b:r[8]}; });
+    ev.favB=fixedBands(fv,'fav'); ev.dogB=fixedBands(dv,'dog');
+    ev.fav=ev.favB.all; ev.dog=ev.dogB.all; ev.n=ev.rows.length;
+    return ev;
+  }
+  function db2Logo(ev, mode, extra){
+    var box=el('span','db2-logo'+(mode==='player'?' round':'')+(extra?' '+extra:''));
+    box.appendChild(el('span','db2-logoph', esc(ev.ph)));
+    if(mode==='player' && ev.avatarKey!=null && typeof playerPhotoImg==='function'){
+      try{ var im=playerPhotoImg(ev.avatarKey, ev.label); if(im) box.insertAdjacentHTML('beforeend', im); }catch(_){}
     }
-    // CHARTS.md §3 y-axis: shared across every series AND zero; step = first of
-    // [5,10,25,50,100,250,500] with span/step <= 8, else 1000.
-    var allV=[0];
-    series.forEach(function(s){ allV=allV.concat(s.vals); });
-    var rawHi=Math.max.apply(null,allV), rawLo=Math.min.apply(null,allV), span=Math.max(1, rawHi-rawLo);
-    var step=[5,10,25,50,100,250,500].filter(function(v){ return span/v<=8; })[0] || 1000;
-    var hi=Math.ceil(rawHi/step)*step, lo=Math.floor(rawLo/step)*step;
-    if(hi===lo) hi=lo+step;
-    var H=300;
-    function Y(v){ return ((hi-v)/(hi-lo))*H; }
-    var gy=[];
-    for(var v=hi; v>=lo; v-=step) gy.push({ y:Y(v), label: v===0 ? '0' : tcUnits(v) });
-
-    var plot=el('div','db-plot db-tcplot');
-    var yax=el('div','db-yaxis');
-    gy.forEach(function(g){ var d=el('div',null,g.label); d.style.top=(g.y/H*100).toFixed(2)+'%'; yax.appendChild(d); });
-    plot.appendChild(yax);
-    var area=el('div','db-plotarea');
-    var svg='<svg viewBox="0 0 1000 '+H+'" preserveAspectRatio="none" role="img" aria-label="Cumulative profit of each compared event by match index">';
-    gy.forEach(function(g){ svg+='<line x1="0" y1="'+g.y.toFixed(1)+'" x2="1000" y2="'+g.y.toFixed(1)+'" stroke="var(--viz-guide)" stroke-width="1" stroke-dasharray="2 6" vector-effect="non-scaling-stroke"/>'; });
-    svg+='<line class="db-tczero" x1="0" y1="'+Y(0).toFixed(1)+'" x2="1000" y2="'+Y(0).toFixed(1)+'" stroke="var(--viz-rule)" stroke-width="1.25" vector-effect="non-scaling-stroke"/>';
-    // Paint 4 → 1 so the lead series sits on top.
-    series.slice().reverse().forEach(function(s){
-      if(!s.vals.length) return;
-      svg+='<polyline data-series="'+(series.indexOf(s)+1)+'" points="'+poly(s.xs,s.vals,Y,N_TOURN)+'" fill="none" stroke="'+s.sty.stroke+'" stroke-width="'+s.sty.w+'"'+
-        (s.sty.dash?' stroke-dasharray="'+s.sty.dash+'"':'')+' stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>';
+    return box;
+  }
+  function db2X(onClick){ var x=el('button','db2-x','×'); x.type='button'; x.title='Remove'; x.onclick=function(e){ e.stopPropagation(); onClick(); }; return x; }
+  function renderCmp2(body, evs, mode, onRemove){
+    var PM = mode==='player', side=state.tcSide||'all';
+    evs.forEach(db2Ev);
+    var wrap=el('div','db2-cmp'); body.appendChild(wrap);
+    var range = PM ? (state.db2PlRange||'') : yearRangeTxt(' to ');
+    var note='Yield at a flat 1% stake on Pinnacle closing prices, over the selected years. The highlighted figure is the best of the selected '+(PM?'players':'events')+'.';
+    if(evs.length===2){
+      var A=evs[0], B=evs[1];
+      var sum=el('div','db2-card db2-sum');
+      var hd=el('div','db2-sumhead');
+      function sideHead(ev, i, right){
+        var d=el('div','db2-sumside'+(right?' r':''));
+        var nm=el('div','db2-sumname', '<div class="db2-sumt">'+esc(ev.label)+'</div><div class="db2-sums">'+esc(ev.sub)+'</div>');
+        var dot=el('span','db2-dot'); dot.style.background=DB2_SERIES[i].c;
+        var x=db2X(function(){ onRemove(ev.label); render(); });
+        if(!right){ d.appendChild(db2Logo(ev, mode)); d.appendChild(dot); d.appendChild(nm); d.appendChild(x); }
+        else { d.appendChild(x); d.appendChild(nm); d.appendChild(dot); d.appendChild(db2Logo(ev, mode)); }
+        return d;
+      }
+      hd.appendChild(sideHead(A,0,false));
+      hd.appendChild(el('span','db2-sumrange', esc(range)+'<span class="db2-q" title="'+esc(note)+'">?</span>'));
+      hd.appendChild(sideHead(B,1,true));
+      sum.appendChild(hd);
+      var halves=el('div','db2-halves');
+      [[A,B],[B,A]].forEach(function(pr){
+        var e=pr[0], o=pr[1], h=el('div','db2-half');
+        [[PM?'As favourite':'Favourite yield','fav'],[PM?'As underdog':'Underdog yield','dog']].forEach(function(t){
+          var v=db2Gy(e[t[1]]), ov=db2Gy(o[t[1]]);
+          var w = (v!=null && (ov==null || v>=ov)) ? 800 : 500;
+          h.appendChild(el('div','db2-tile', '<div class="db2-caps">'+t[0]+'</div><div class="db2-tilev" style="font-weight:'+w+';color:'+db2PcCol(v)+'">'+db2Pc(v)+'</div>'));
+        });
+        // Best price band = the highest yield among this side's bands with at least HARD_GATE matches (a thinner band is not a yield).
+        var best=null;
+        [['fav',e.favB],['dog',e.dogB]].forEach(function(sb){ sb[1].bands.forEach(function(b){
+          var y=db2Gy(b.agg); if(y!=null && (!best || y>best.y)) best={ y:y, b:b, side:sb[0] }; }); });
+        var bt=el('div','db2-tile db2-best');
+        bt.innerHTML = best
+          ? '<div style="min-width:0"><div class="db2-caps">Best price band</div><div class="db2-bestn">'+esc(best.b.def[0])+'</div><div class="db2-bests">'+
+            (best.side==='fav'?(PM?'As favourite':'Favourites'):(PM?'As underdog':'Underdogs'))+' · '+best.b.def[1]+(best.b.def[2]==='+'?' +':' – '+best.b.def[2])+'</div></div>'+
+            '<span class="db2-bestv" style="color:'+db2PcCol(best.y)+'">'+db2Pc(best.y)+'</span>'
+          : '<div style="min-width:0"><div class="db2-caps">Best price band</div><div class="db2-bestn">—</div><div class="db2-bests">No band with '+HARD_GATE+' or more matches</div></div>';
+        h.appendChild(bt);
+        halves.appendChild(h);
+      });
+      sum.appendChild(halves);
+      wrap.appendChild(sum);
+    } else {
+      var mc=el('div','db2-card db2-multi');
+      mc.innerHTML='<div class="db2-multihead"><div style="min-width:0"><div class="db2-ttl">'+(PM?'Compare players':'Compare events')+'</div>'+
+        '<div class="db2-sub">'+evs.length+' '+(PM?'players':'events')+' · '+esc(yearRangeTxt('–'))+' · flat 1% stake</div></div><span class="db2-q" title="'+esc(note)+'">?</span></div>';
+      var bests=el('div','db2-bests2');
+      [[PM?'Best as favourite':'Best for favourites','fav'],[PM?'Best as underdog':'Best for underdogs','dog']].forEach(function(t){
+        var bi=-1, bv=null; evs.forEach(function(e,i){ var v=db2Gy(e[t[1]]); if(v!=null && (bv==null || v>bv)){ bv=v; bi=i; } });
+        bests.appendChild(el('div','db2-tile db2-bestt','<div style="min-width:0"><div class="db2-caps">'+t[0]+'</div><div class="db2-bestrow">'+
+          (bi>=0?'<span class="db2-sw" style="background:'+db2Swatch(bi)+'"></span><span class="db2-bestnm">'+esc(evs[bi].label)+'</span>':'<span class="db2-bestnm">—</span>')+
+          '</div></div><span class="db2-bestv2" style="color:'+db2PcCol(bv)+'">'+db2Pc(bv)+'</span>'));
+      });
+      mc.appendChild(bests);
+      var cols='170px repeat('+evs.length+',minmax(140px,1fr))';
+      var sc=el('div','db2-mscroll'), tb=el('div'); tb.style.minWidth=(170+evs.length*154)+'px';
+      var th=el('div','db2-mhead'); th.style.gridTemplateColumns=cols; th.appendChild(el('span','db2-caps','Figure'));
+      evs.forEach(function(e,i){
+        var c=el('div','db2-mev'), top=el('div','db2-mevtop','<span class="db2-sw" style="background:'+db2Swatch(i)+'"></span><span class="db2-mevn">'+esc(e.label)+'</span>');
+        top.appendChild(db2X(function(){ onRemove(e.label); render(); }));
+        c.appendChild(top); c.appendChild(el('div','db2-mevs', esc(e.surfaceOnly||e.sub))); th.appendChild(c);
+      });
+      tb.appendChild(th);
+      function mrow(label, fn, lead){
+        var r=el('div','db2-mrow'); r.style.gridTemplateColumns=cols; r.appendChild(el('span','db2-mlab',label));
+        var vals=evs.map(fn), best=null;
+        if(lead) vals.forEach(function(v){ if(v.raw!=null && (best==null || v.raw>best)) best=v.raw; });
+        vals.forEach(function(v){ var on = lead && v.raw!=null && v.raw===best;
+          r.appendChild(el('span','db2-mcell'+(on?' lead':''), '<span style="color:'+v.c+'">'+v.t+'</span>')); });
+        tb.appendChild(r);
+      }
+      mrow(PM?'As favourite':'Favourite yield', function(e){ var v=db2Gy(e.fav); return {t:db2Pc(v), c:db2PcCol(v), raw:v}; }, true);
+      mrow(PM?'As underdog':'Underdog yield', function(e){ var v=db2Gy(e.dog); return {t:db2Pc(v), c:db2PcCol(v), raw:v}; }, true);
+      mrow('Matches', function(e){ return {t:fmtInt(e.n), c:'var(--db2-ink)', raw:null}; }, false);
+      mrow('Median favourite price', function(e){ return {t:fmtP(e.fav?e.fav.median:null), c:'var(--db2-ink-2)', raw:null}; }, false);
+      mrow('Median underdog price', function(e){ return {t:fmtP(e.dog?e.dog.median:null), c:'var(--db2-ink-2)', raw:null}; }, false);
+      sc.appendChild(tb); mc.appendChild(sc);
+      mc.appendChild(el('div','db2-mkey','<span class="db2-mkeysw"></span>Best of the selected '+(PM?'players':'events')));
+      wrap.appendChild(mc);
+    }
+    wrap.appendChild(cmpChart2(evs, side, PM));
+    if(evs.length===2){
+      var cards=el('div','db2-bandboxes');
+      evs.forEach(function(e,k){
+        var o=evs[1-k], c=el('div','db2-card db2-bbox');
+        var hd=el('div','db2-bboxhead'); hd.appendChild(db2Logo(e, mode));
+        var dot=el('span','db2-dot'); dot.style.background=DB2_SERIES[k].c; hd.appendChild(dot);
+        hd.appendChild(el('div','db2-sumname','<div class="db2-sumt">'+esc(e.label)+'</div><div class="db2-sums">Yield by price band</div>'));
+        c.appendChild(hd);
+        [['fav',PM?'As favourite':'Favourites'],['dog',PM?'As underdog':'Underdogs']].forEach(function(g){
+          c.appendChild(el('div','db2-bgh','<span class="db2-bgt">'+g[1]+'</span><span class="db2-caps">Yield</span>'));
+          var mine=e[g[0]+'B'].bands, theirs=o[g[0]+'B'].bands;
+          mine.forEach(function(b,i){
+            var v=db2Gy(b.agg), ov=db2Gy(theirs[i].agg), n=b.agg?b.agg.n:0;
+            var w=(v!=null && (ov==null || v>=ov)) ? 800 : 500;
+            var r=el('div','db2-bgr','<span class="db2-bband">'+esc(b.def[0])+'</span><span class="db2-bgrange">'+b.def[1]+(b.def[2]==='+'?' +':' – '+b.def[2])+'</span>'+
+              '<span class="db2-bgv" style="font-weight:'+w+';color:'+db2PcCol(v)+'">'+db2Pc(v)+'</span>');
+            r.title=fmtInt(n)+' '+dbMatchWord(n)+(v==null && n?', too few for a yield':'');
+            c.appendChild(r);
+          });
+        });
+        cards.appendChild(c);
+      });
+      wrap.appendChild(cards);
+    }
+  }
+  function yearRangeTxt(sep){
+    var ys=presentYears(), lo=state.yearMin!=null?state.yearMin:ys[0], hi=state.yearMax!=null?state.yearMax:ys[ys.length-1];
+    return lo+sep+hi;
+  }
+  // The shared chart (tournCurves): x = real match date on one domain for every series, y = cumulative units at the side.
+  function cmpChart2(evs, side, PM){
+    var card=el('div','db2-card db2-cchart');
+    var hd=el('div','db2-cchead'); hd.appendChild(el('span','db2-ttl','Cumulative return, flat 1% stake'));
+    var trk=el('span','db2-track');
+    [['all','All matches'],['fav',PM?'As favourite':'Favourites'],['dog',PM?'As underdog':'Underdogs']].forEach(function(t){
+      var b=el('button','db2-pill'+(side===t[0]?' on':''), t[1]); b.type='button';
+      b.onclick=function(e){ e.stopPropagation(); state.tcSide=t[0]; render(); }; trk.appendChild(b);
     });
-    svg+='</svg>';
-    area.innerHTML=svg;
-    var be=el('div','db-ovl db-belab','Break even');
-    be.style.top=(Y(0)/H*100).toFixed(2)+'%';
-    area.appendChild(be);
-    plot.appendChild(area);
-    ch.appendChild(plot);
-
-    // Season ticks at each slot's opening; the Tour pitch rule (4 over 12 seasons, 2 over
-    // 6, else 1), always closing on the last season.
-    var pitch = S>12 ? 4 : (S>6 ? 2 : 1), ticks=[];
-    years.forEach(function(y, si){ if(si%pitch===0 || si===S-1) ticks.push({ label:String(y), x:si/S }); });
-    if(ticks.length>2 && ticks[ticks.length-1].x - ticks[ticks.length-2].x < 0.5*pitch/S) ticks.splice(ticks.length-2, 1);
-    var xax=el('div','db-tcx');
-    ticks.forEach(function(t){ var d=el('div',null,t.label); d.style.left=(t.x*100).toFixed(2)+'%'; xax.appendChild(d); });
-    ch.appendChild(xax);
-    ch.appendChild(el('div','db-tccap','<span class="db-eyebrow">Season · match index · flat 1u · '+
-      (side==='fav' ? 'backing the favourite' : side==='dog' ? 'backing the underdog' : 'both sides of every match')+'</span>'));
-    card.appendChild(ch);
-    card.appendChild(el('div','db-tcnote','Yields are flat 1u on each match’s '+esc(M.books[0])+' closing price, else '+esc(M.books[1])+
-      dbApproxNote()+', across the selected round and year range. Every season takes the same width and each event’s matches are spaced in order inside it, so an event that joined the archive later starts later.'));
-    body.appendChild(card);
+    hd.appendChild(trk); card.appendChild(hd);
+    var t0=Infinity, t1=-Infinity;
+    evs.forEach(function(e){ e.rows.forEach(function(r){ var ms=db2Ms(r[0]); if(ms<t0) t0=ms; if(ms>t1) t1=ms; }); });
+    if(!isFinite(t0)){ card.appendChild(el('div','db2-bnote','No matches for these '+(PM?'players':'events')+' under the current filters.')); return card; }
+    var y0=new Date(t0).getUTCFullYear(), y1=new Date(t1).getUTCFullYear(); t0=Date.UTC(y0,0,1); if(t1<=t0) t1=t0+864e5;
+    var series=evs.map(function(e,i){
+      var ord=e.rows.slice().sort(function(a,b){ return a[0]-b[0]; }), xs=[], vs=[], c=0;
+      ord.forEach(function(r){ c+=(e.profit||tcProfit)(r, side); xs.push((db2Ms(r[0])-t0)/(t1-t0)); vs.push(c); });
+      return { e:e, i:i, xs:xs, vs:vs, end: ord.length ? c : null };
+    });
+    var all=[0]; series.forEach(function(s){ all=all.concat(s.vs); });
+    var rawHi=Math.max.apply(null,all), rawLo=Math.min.apply(null,all), span=Math.max(1, rawHi-rawLo);
+    var step=(PM?[1,2]:[]).concat([5,10,25,50,100,250,500]).filter(function(v){ return span/v<=8; })[0] || 1000;
+    var hi=Math.ceil(rawHi/step)*step, lo=Math.floor(rawLo/step)*step; if(hi===lo) hi=lo+step;
+    var H=300; function Y(v){ return ((hi-v)/(hi-lo))*H; }
+    var row=el('div','db2-ccrow'), yax=el('div','db2-ccy'), area=el('div','db2-ccarea'), pc=el('div','db2-ccplates');
+    var svg='<svg viewBox="0 0 1000 300" preserveAspectRatio="none" aria-hidden="true">';
+    for(var v=hi; v>=lo; v-=step){
+      var y=Y(v); svg+=dbGuide(y);
+      var lab=el('span',null,(v>0?'+':v<0?'−':'')+fmtInt(Math.abs(Math.round(v)))+'u'); lab.style.top=(y/H*100).toFixed(2)+'%'; yax.appendChild(lab);
+    }
+    svg+=dbBreakEven(Y(0));
+    series.forEach(function(s){
+      if(!s.vs.length) return;
+      svg+='<polyline points="'+poly(s.xs,s.vs,Y,N_TOURN)+'" fill="none" stroke="'+DB2_SERIES[s.i].c+'"'+(DB2_SERIES[s.i].d?' stroke-dasharray="'+DB2_SERIES[s.i].d+'"':'')+
+        ' stroke-width="2" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>';
+    });
+    area.innerHTML=svg+'</svg>';
+    var plates=series.filter(function(s){ return s.end!=null; }).map(function(s){ return { s:s, p:Y(s.end)/H*100 }; }).sort(function(a,b){ return a.p-b.p; });
+    var gap=36/300*100; for(var k=1;k<plates.length;k++) if(plates[k].p-plates[k-1].p<gap) plates[k].p=plates[k-1].p+gap;
+    plates.forEach(function(o){
+      var s=o.s, dt=el('span','db2-ccdot'); dt.style.top=(Y(s.end)/H*100).toFixed(2)+'%'; dt.style.background=DB2_SERIES[s.i].c; area.appendChild(dt);
+      var end=(s.end>0?'+':s.end<0?'−':'')+fmtInt(Math.abs(Math.round(s.end)))+'u';
+      var pl=el('div','db2-ccplate','<span class="db2-sw" style="background:'+db2Swatch(s.i)+'"></span><span class="db2-ccpn">'+esc(s.e.label)+'</span>'+
+        '<span class="db2-ccpv" style="color:'+db2PcCol(s.end)+'">'+end+'</span>');
+      pl.style.top=Math.min(93,Math.max(7,o.p)).toFixed(2)+'%'; pc.appendChild(pl);
+    });
+    row.appendChild(yax); row.appendChild(area); row.appendChild(pc); card.appendChild(row);
+    var xt=el('div','db2-ccx'), ys=y1-y0, stp=ys>12?4:ys>6?2:1;
+    for(var yy=y0; yy<=y1; yy+=stp){ var x=(Date.UTC(yy,0,1)-t0)/(t1-t0); if(x<0||x>1) continue; var d=el('span',null,String(yy)); d.style.left=(x*100).toFixed(2)+'%'; xt.appendChild(d); }
+    card.appendChild(xt);
+    card.appendChild(el('div','db2-cccap','Season · flat 1% stake · '+(side==='fav'?'backing the favourite':side==='dog'?'backing the underdog':'both sides of every match')));
+    return card;
+  }
+  function renderCompare(body){
+    var picks=tournPicks().slice(0,TC_MAX);
+    var evs=picks.map(function(p){
+      var rows=filteredRows(p.names), e=catalogEntryForNames(p.names), surf=e ? (catalogSurface(e)||'—') : '—';
+      var w=(p.label||'').replace(/[^A-Za-z ]/g,' ').split(' ').filter(Boolean);
+      return { label:p.label, rows:rows, surfaceOnly:surf, sub:surf+' · '+fmtInt(rows.length)+' matches',
+               ph:((w[0]||'').charAt(0)+(w[1]||'').charAt(0)).toUpperCase() };
+    });
+    renderCmp2(body, evs, 'tourn', function(label){ removeTournPick(label); });
     renderFootnote(body);
   }
 
-  // ---------- footnote (S1) + disclaimer ----------
   function renderFootnote(body){
     var ex=M.exclusions, bc=M.bookCounts, f=el('div','db-footnote');
     // founder 2026-10-25: how the retRows settled (meta.settlement: the builder's figure rows = the page's figure view)
