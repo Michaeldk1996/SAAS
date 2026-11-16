@@ -3338,6 +3338,7 @@ window.sfPlanLocks(null);   // locked until the account says Edge / Pro: no unlo
   [data-db-root] .db2-logo{ flex:none; width:44px; height:44px; box-sizing:border-box; border-radius:10px; background:var(--db2-inset); border:1px solid var(--db2-h8); overflow:hidden; position:relative; }
   [data-db-root] .db2-logo.round{ border-radius:50%; }
   [data-db-root] .db2-logo img{ position:relative; width:100%; height:100%; object-fit:cover; display:block; }
+  [data-db-root] .db2-logo img.db2-tlogo{ object-fit:contain; background:var(--db2-inset); }
   [data-db-root] .db2-logoph{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-family:var(--db-mono); font-size:11px; font-weight:700; color:var(--db2-muted); }
   [data-db-root] .db2-dot{ width:10px; height:10px; border-radius:50%; flex:none; }
   [data-db-root] .db2-sumname{ min-width:0; }
@@ -3472,6 +3473,9 @@ window.sfPlanLocks(null);   // locked until the account says Edge / Pro: no unlo
   [data-db-root] .db2-rv.rtg{ font-weight:700; color:var(--db2-ink); }
   [data-db-root] .db2-rv.on{ font-weight:700; color:var(--db2-white); }
   [data-db-root] .db2-rv.dash{ color:var(--db2-muted); }
+  [data-db-root] .db2-rv.vspk{ font-weight:700; color:var(--db2-muted); }
+  [data-db-root] .db2-rv.vspk.on{ color:var(--db2-white); }
+  [data-db-root] .db2-rv.vspk.red, [data-db-root] .db2-rv.vspk.red.on{ color:var(--db2-red); }
   [data-db-root] .db2-plus{ order:-1; justify-self:start; width:24px; height:24px; box-sizing:border-box; border-radius:50%; border:1px solid color-mix(in srgb, var(--db2-white) 14%, transparent);
     background:transparent; box-shadow:none; display:inline-flex; align-items:center; justify-content:center; color:var(--db2-muted); padding:0; cursor:pointer;
     transition:background .18s ease, border-color .18s ease, box-shadow .18s ease, color .18s ease, transform .12s ease; }
@@ -31730,6 +31734,7 @@ window.DatabaseTab = (function(){
   // design": boards Overview · Elo · Serve · Return · Under pressure (no Mental Edge); ONE period at a time, Last 52 weeks
   // first and the default; the board lists the whole (gated) field while comparing; compare = face to face for two, a
   // column card for one, three or four. Data unchanged: surface-ratings.json + the weekly Elo list (no Last 52 Elo: a dash).
+  var DB2_VSPK_RED=-60;   // Vs pk: red below this (the export's threshold)
   var DB2_RBOARDS=[['overview','Overview'],['elo','Elo'],['serve','Serve'],['return','Return'],['up','Under pressure']];
   function db2RatPeriod(){ return state.ratScope==='last52' ? 'Last 52 weeks' : 'Career'; }
   function db2RatSurfWord(){ return state.ratSurf==='All' ? 'all surfaces' : state.ratSurf.toLowerCase(); }
@@ -31839,8 +31844,9 @@ window.DatabaseTab = (function(){
       r.appendChild(db2RatPlayerCell(p));
       var n=ratMatches(p); r.appendChild(el('span','db2-rq',n==null?'—':fmtInt(n)));
       heads.forEach(function(c,ci){ var v=valOf(p,c.k);
-        // ratings.md: Vs pk carries no colour at any value (founder 2026-09-23; the design's red below -60 stays overturned).
-        var s=el('span','db2-rv'+(ci===0?' rtg':'')+(sortK===c.k?' on':'')+(v==null?' dash':''), fmt(c,v)); s.title=c.full+' · '+p.name; r.appendChild(s); });
+        // Vs pk as the export draws it (founder 2026-11-16, replacing the 2026-09-23 no-colour ruling): 700, muted at -60 or
+        // better, red below; a red figure keeps its red when its column is sorted.
+        var s=el('span','db2-rv'+(ci===0?' rtg':'')+(sortK===c.k?' on':'')+(v==null?' dash':'')+(c.sgn && v!=null ? (Math.round(v)>=DB2_VSPK_RED ? ' vspk' : ' vspk red') : ''), fmt(c,v)); s.title=c.full+' · '+p.name; r.appendChild(s); });
       t.appendChild(r);
     });
     sc.appendChild(t); return sc;
@@ -32493,10 +32499,12 @@ window.DatabaseTab = (function(){
       pg+=s.p; og+=s.o;
       if(s.p>s.o) ps++; else if(s.o>s.p) os++;
     });
-    if(kind==='gm'){ var gm=(pg-og)+arg; return { hit: gm>0, margin: gm }; }
-    if(kind==='st'){ var sm=(ps-os)+arg; return { hit: sm>0, margin: sm }; }
-    if(kind==='ov'){ var t=pg+og;         return { hit: t>arg,  margin: t-arg }; }
-    if(kind==='un'){ var t2=pg+og;        return { hit: t2<arg, margin: arg-t2 }; }
+    // A whole line that lands exactly on the number is a PUSH: void, neither covered nor missed, out of the rate
+    // (founder 2026-11-16). hit = true covered · false missed · null void. Half lines can never push.
+    if(kind==='gm'){ var gm=(pg-og)+arg; return { hit: gm>0 ? true : gm<0 ? false : null, margin: gm }; }
+    if(kind==='st'){ var sm=(ps-os)+arg; return { hit: sm>0 ? true : sm<0 ? false : null, margin: sm }; }
+    if(kind==='ov'){ var t=pg+og;         return { hit: t>arg ? true : t<arg ? false : null,  margin: t-arg }; }
+    if(kind==='un'){ var t2=pg+og;        return { hit: t2<arg ? true : t2>arg ? false : null, margin: arg-t2 }; }
     if(kind==='sh'){ return { hit: (ps+'-'+os)===arg, margin: null }; }
     return null;
   }
@@ -32506,14 +32514,15 @@ window.DatabaseTab = (function(){
   // (build-lines-field.js slices this function out of this file), so a rate on
   // screen and the field it is ranked in are computed by ONE definition.
   function lnLine(pool, kind, arg){
-    var hit=0, n=0, marg=0, margN=0;
+    var hit=0, n=0, marg=0, margN=0, voids=0;
     pool.forEach(function(r){
       var h=lnHit(r, kind, arg);
       if(!h) return;
+      if(h.hit===null){ voids++; return; }   // a push: void, in no rate
       n++; if(h.hit) hit++;
       if(h.margin!=null){ marg+=h.margin; margN++; }
     });
-    return { n:n, hit:hit, marg:marg, margN:margN };
+    return { n:n, hit:hit, marg:marg, margN:margN, voids:voids };
   }
   // A player's rows at a slice, split into the two ladders ONCE so each ladder
   // is counted over its own population. Also shared with the field builder.
@@ -32638,7 +32647,7 @@ window.DatabaseTab = (function(){
     var fm = fs ? fs.median : null;
     var show = g==='full' || g==='soft';
     var delta = (show && fm!=null) ? (Math.round(rate*10)/10 - Math.round(fm*10)/10) : null;
-    return { spec:spec, n:n, hit:L.hit, rate:rate, g:g, show:show, field:fm, delta:delta, dv: g==='full' ? delta : null,
+    return { spec:spec, n:n, hit:L.hit, voids:L.voids||0, rate:rate, g:g, show:show, field:fm, delta:delta, dv: g==='full' ? delta : null,
              rank: fs ? fs.rank : null, size: fs ? fs.size : null, marg: L.margN ? L.marg/L.margN : null };
   }
   function db2LnPills(items, cur, onPick){
@@ -32710,7 +32719,7 @@ window.DatabaseTab = (function(){
   }
   var DB2_LN_HELP='How often the player covered each line. Lines are written as a bookmaker lists them: handicap lines read −2.5 or +2.5 under their family name, totals read Over or Under. Cover is his share of matches that covered the line; Field is the median cover of the tour field on that line (format, surface and period only; under any other filter it is a dash); Edge is Cover minus Field, in points. Lines are worked out from set scores, not from settled bets. Best of 3 and best of 5 are counted apart. A rate needs '+LN_MIN_N+' matches and is muted under '+DB2_LN_FULL+'. Click a line to see the matches behind it. Hover a row for his rank and average margin.';
   function db2LnMatches(pool, spec, fam){
-    var rows=pool.map(function(r){ var h=lnHit(r, spec[1], spec[2]); return { r:r, ok: !!(h && h.hit) }; })
+    var rows=pool.map(function(r){ var h=lnHit(r, spec[1], spec[2]); return { r:r, ok: h ? h.hit : false }; })   // ok: true / false / null (push, void)
       .sort(function(a,b){ return String(b.r.date).localeCompare(String(a.r.date)); });
     return rows;
   }
@@ -32721,11 +32730,11 @@ window.DatabaseTab = (function(){
   }
   function db2LnBox(name, spec, fam, pool, metric, opts){
     var K=fam+'|'+spec[0], t=(state.lnOpen && state.lnOpen.t) || 'all';
-    var all=db2LnMatches(pool, spec, fam), rows=all.filter(function(x){ return t==='all' || (t==='hit')===x.ok; }).slice(0, DB2_LN_SHOWN);
+    var all=db2LnMatches(pool, spec, fam), rows=all.filter(function(x){ return t==='all' || (t==='hit' ? x.ok===true : x.ok===false); }).slice(0, DB2_LN_SHOWN);
     var box=el('div', opts && opts.cmp ? 'db2-mx cmp' : 'db2-mx'), inner=el('div','db2-mxin');
     var hd=el('div','db2-mxhead');
     hd.appendChild(el('div','', '<div class="db2-mxt">'+esc(name)+' · '+(fam==='Total games' ? db2LnBet(fam, spec[0]) : db2LnFam(fam)+' '+db2LnBet(fam, spec[0]))+'</div>'+
-      '<div class="db2-mxs">'+(metric.n ? 'Covered '+metric.hit+' of '+metric.n+' matches · latest '+Math.min(DB2_LN_SHOWN, all.length)+' shown' : 'No matches on record')+'</div>'));
+      '<div class="db2-mxs">'+(metric.n ? 'Covered '+metric.hit+' of '+metric.n+' matches'+(metric.voids ? ' · '+metric.voids+' void' : '')+' · latest '+Math.min(DB2_LN_SHOWN, all.length)+' shown' : 'No matches on record')+'</div>'));
     var trk=el('span','db2-track db2-mxtrack');
     [['all','All'],['hit','Covered'],['miss','Missed']].forEach(function(x){ var b=el('button','db2-pill db2-mxpill'+(t===x[0]?' on':''), x[1]); b.type='button';
       b.onclick=function(e){ e.stopPropagation(); state.lnOpen={ k:K, p:name, t:x[0] }; render(); }; trk.appendChild(b); });
@@ -32740,7 +32749,7 @@ window.DatabaseTab = (function(){
       var tn=(typeof sfEventName==='function' ? sfEventName(r.tournament) : r.tournament) || r.tournament;
       inner.appendChild(el('div','db2-mxrow','<span class="db2-mxd">'+db2LnDate(r.date)+'</span><span class="db2-mxtn">'+esc(tn)+' <span>'+esc(db2LnRound(r.round))+'</span></span>'+
         '<span class="db2-mxo">'+esc(r.opponent||'—')+'</span><span class="db2-mxsc">'+r.sets.map(function(s){ return s.p+'–'+s.o; }).join('  ')+'</span>'+
-        '<span class="db2-mxv">'+val+'</span><span class="db2-mxr" style="color:'+(x.ok?'var(--db2-green)':'var(--db2-red)')+'">'+(x.ok?'Covered':'Missed')+'</span>'));
+        '<span class="db2-mxv">'+val+'</span><span class="db2-mxr" style="color:'+(x.ok===null?'var(--db2-muted)':x.ok?'var(--db2-green)':'var(--db2-red)')+'">'+(x.ok===null?'Void':x.ok?'Covered':'Missed')+'</span>'));
     });
     if(!rows.length) inner.appendChild(el('div','db2-mxempty', metric.n ? 'No match in this list.' : 'No matches on record for these filters.'));
     box.appendChild(inner);
@@ -33211,7 +33220,7 @@ window.DatabaseTab = (function(){
     if(state.view==='tournaments' && state.tournament==null){
       var p=el('div','db-prompt');
       p.innerHTML='<h3>Choose a tournament</h3><p>Search above to pick an event, and this tab will show its favourite and underdog yields by price band and the cumulative profit curve across the whole archive.</p>';
-      body.appendChild(p); renderFootnote(body); return;
+      body.appendChild(p); db2FootIntoQ(body); return;
     }
     var rows=filteredRows();
     // TEN-399 D4 (lead default): the blue-dot book line above the tables is gone (a blue dot
@@ -33222,7 +33231,7 @@ window.DatabaseTab = (function(){
     if(!rows.length){
       var e=el('div','db-empty');
       e.innerHTML='<h3>No matches for this filter</h3><p>Widen the round or year range.</p>';
-      body.appendChild(e); renderFootnote(body); return;
+      body.appendChild(e); db2FootIntoQ(body); return;
     }
 
     var favVals=rows.map(function(r){ return {p:r[5], w:r[7], b:r[8]}; });
@@ -33235,7 +33244,7 @@ window.DatabaseTab = (function(){
     body.appendChild(grid);
 
     body.appendChild(renderCurveCard(rows, isTourn));
-    renderFootnote(body);
+    db2FootIntoQ(body);
   }
 
   // TEN-243 gate `2ebfa608`, `hardgate` — see SOFT_GATE/HARD_GATE. Three states, and
@@ -33954,20 +33963,20 @@ window.DatabaseTab = (function(){
     if(!state.player){
       var p=el('div','db-prompt');
       p.innerHTML='<h3>Choose a player</h3><p>Search above to pick a player, and this tab will show what backing — or fading — him returned at a flat 1% stake, by price band as favourite and as underdog, against the tour.</p>';
-      body.appendChild(p); renderFootnote(body); return;
+      body.appendChild(p); db2FootIntoQ(body); return;
     }
     var fading = state.stance==='fade';
     if(state.player2){
       state.db2PlRange = db2PeriodLabel()+(state.psurf==null?'':' · '+M.surfaces[state.psurf])+(fading?' · fading':'');
       var evs=[db2PlayerEv(state.player, fading), db2PlayerEv(state.player2, fading)];
       renderCmp2(body, evs, 'player', function(n){ if(n===state.player){ state.player=state.player2; state.player2=null; } else state.player2=null; });
-      renderFootnote(body); return;
+      db2FootIntoQ(body); return;
     }
     var ev=db2PlayerEv(state.player, fading), recs=ev.rows;
     if(!recs.length){
       var e=el('div','db-empty');
       e.innerHTML='<h3>No matches for this filter</h3><p>No archive rows for '+esc(state.player)+' in the selected period, surface and tournament.</p>';
-      body.appendChild(e); renderFootnote(body); return;
+      body.appendChild(e); db2FootIntoQ(body); return;
     }
     var A=aggRecs(recs, fading), TT=db2PlayerTour(), tb=TT.both();
     // head card
@@ -34014,7 +34023,7 @@ window.DatabaseTab = (function(){
     });
     body.appendChild(grid);
     body.appendChild(db2PlayerChart(ev, fading));
-    renderFootnote(body);
+    db2FootIntoQ(body);
   }
   function db2PlayerChart(ev, fading){
     var card=el('div','db-card'), head=el('div','db-charthead');
@@ -34490,6 +34499,7 @@ window.DatabaseTab = (function(){
   // ===== Database v2 compare page (design L850-1015, logic tournCompare / tournCurves). One page for 2-4 events and,
   // with mode 'player', for two players. Every figure is the event's own rows on the fixed bands; nothing is derived.
   // evs: [{ label, rows, sub, ph, avatarKey, profit(r, side) }]; rows carry [date, ..., favPrice(5), dogPrice(6), favWon(7)].
+  var DB2_BEST_MIN=20;   // founder 2026-11-16: the Best price band needs 20 matches
   var DB2_SERIES=[{c:'var(--db2-blue)',d:''},{c:'var(--db2-ink)',d:''},{c:'var(--db2-grey3)',d:'6 5'},{c:'var(--db2-ink)',d:'6 5'}];
   function db2Swatch(i){ var s=DB2_SERIES[i%4]; return s.d ? 'repeating-linear-gradient(90deg,'+s.c+' 0 4px,transparent 4px 7px)' : s.c; }
   function db2Pc(v){ return v==null ? '—' : (v>0?'+':v<0?'−':'')+Math.abs(v*100).toFixed(2)+'%'; }
@@ -34503,9 +34513,22 @@ window.DatabaseTab = (function(){
     ev.fav=ev.favB.all; ev.dog=ev.dogB.all; ev.n=ev.rows.length;
     return ev;
   }
+  // Tournament logos (founder 2026-11-16: "link the tournament logo"): self-hosted files listed in
+  // tournament-logos/index.json { "<catalog event name>": "<file>" }, the player-photo pattern. No file / no entry = the
+  // initials tile. A failed image load removes the image, so the initials show.
+  var DB2_TLOGOS=null, DB2_TLOGOS_P=null;
+  function db2TLogosLoad(){
+    if(DB2_TLOGOS || DB2_TLOGOS_P) return DB2_TLOGOS_P;
+    var inst=I;
+    DB2_TLOGOS_P=fetch('./tournament-logos/index.json',{cache:'no-cache'}).then(function(r){ return r.ok ? r.json() : {}; })
+      .catch(function(){ return {}; }).then(function(j){ DB2_TLOGOS=(j && j.logos) || {}; use(inst); if(state.view==='tournaments') render(); });
+    return DB2_TLOGOS_P;
+  }
+  function db2TLogoFile(label){ if(!DB2_TLOGOS){ db2TLogosLoad(); return null; } return DB2_TLOGOS[label] || null; }
   function db2Logo(ev, mode, extra){
     var box=el('span','db2-logo'+(mode==='player'?' round':'')+(extra?' '+extra:''));
     box.appendChild(el('span','db2-logoph', esc(ev.ph)));
+    if(mode!=='player'){ var lf=db2TLogoFile(ev.label); if(lf){ var im=document.createElement('img'); im.alt=ev.label+' logo'; im.loading='lazy'; im.src='./tournament-logos/'+lf; im.onerror=function(){ im.remove(); }; im.className='db2-tlogo'; box.appendChild(im); } }
     if(mode==='player' && ev.avatarKey!=null && typeof playerPhotoImg==='function'){
       try{ var im=playerPhotoImg(ev.avatarKey, ev.label); if(im) box.insertAdjacentHTML('beforeend', im); }catch(_){}
     }
@@ -34543,16 +34566,16 @@ window.DatabaseTab = (function(){
           var w = (v!=null && (ov==null || v>=ov)) ? 800 : 500;
           h.appendChild(el('div','db2-tile', '<div class="db2-caps">'+t[0]+'</div><div class="db2-tilev" style="font-weight:'+w+';color:'+db2PcCol(v)+'">'+db2Pc(v)+'</div>'));
         });
-        // Best price band = the highest yield among this side's bands with at least HARD_GATE matches (a thinner band is not a yield).
+        // Best price band = the highest yield among this side's bands with at least DB2_BEST_MIN matches (founder 2026-11-16: 20).
         var best=null;
         [['fav',e.favB],['dog',e.dogB]].forEach(function(sb){ sb[1].bands.forEach(function(b){
-          var y=db2Gy(b.agg); if(y!=null && (!best || y>best.y)) best={ y:y, b:b, side:sb[0] }; }); });
+          var y=(b.agg && b.agg.n>=DB2_BEST_MIN) ? b.agg.yield : null; if(y!=null && (!best || y>best.y)) best={ y:y, b:b, side:sb[0] }; }); });
         var bt=el('div','db2-tile db2-best');
         bt.innerHTML = best
           ? '<div style="min-width:0"><div class="db2-caps">Best price band</div><div class="db2-bestn">'+esc(best.b.def[0])+'</div><div class="db2-bests">'+
             (best.side==='fav'?(PM?'As favourite':'Favourites'):(PM?'As underdog':'Underdogs'))+' · '+best.b.def[1]+(best.b.def[2]==='+'?' +':' – '+best.b.def[2])+'</div></div>'+
             '<span class="db2-bestv" style="color:'+db2PcCol(best.y)+'">'+db2Pc(best.y)+'</span>'
-          : '<div style="min-width:0"><div class="db2-caps">Best price band</div><div class="db2-bestn">—</div><div class="db2-bests">No band with '+HARD_GATE+' or more matches</div></div>';
+          : '<div style="min-width:0"><div class="db2-caps">Best price band</div><div class="db2-bestn">—</div><div class="db2-bests">No band with '+DB2_BEST_MIN+' or more matches</div></div>';
         h.appendChild(bt);
         halves.appendChild(h);
       });
@@ -34689,9 +34712,15 @@ window.DatabaseTab = (function(){
                ph:((w[0]||'').charAt(0)+(w[1]||'').charAt(0)).toUpperCase() };
     });
     renderCmp2(body, evs, 'tourn', function(label){ removeTournPick(label); });
-    renderFootnote(body);
+    db2FootIntoQ(body);
   }
 
+  // Database v2 (founder 2026-11-16): "How this is built" and the disclaimer live in the page's "?" hovers, not under it.
+  function db2FootIntoQ(body){
+    var h=document.createElement('div'); renderFootnote(h);
+    var t=Array.prototype.map.call(h.children, function(c){ return c.textContent; }).join('\n\n');
+    var qs=body.querySelectorAll('.db2-q'); for(var i=0;i<qs.length;i++) qs[i].title=(qs[i].title?qs[i].title+'\n\n':'')+t;
+  }
   function renderFootnote(body){
     var ex=M.exclusions, bc=M.bookCounts, f=el('div','db-footnote');
     // founder 2026-10-25: how the retRows settled (meta.settlement: the builder's figure rows = the page's figure view)
@@ -34703,8 +34732,8 @@ window.DatabaseTab = (function(){
       (M.pinnacleLastPriced && (''+M.pinnacleLastPriced)<(''+M.dateRange[1]) ? ' (the source’s '+esc(M.books[0])+' prices stop on '+fmtDate(M.pinnacleLastPriced)+')' : '')+
       // TEN-399 D4: the book line above the tables is gone, so the note no longer points at it.
       '; prices are never de-vigged. '+
-      'The favourite is the shorter price; each pick is a flat 1-unit stake; yield is (returns − stakes) ÷ stakes. '+
-      'Bands are equal terciles recomputed inside whatever filter is active, and labelled by their price cut-points.</p>'+
+      'The favourite is the shorter price; each pick is a flat 1% stake (one unit = 1% of the bankroll); yield is (returns − stakes) ÷ stakes. '+
+      'Bands are fixed price bands; a band runs from its From price up to, not including, the next band’s From.</p>'+
       '<p><b>What is included.</b> '+fmtInt(stl ? stl.figureRows : M.used)+' ATP main-tour matches with a usable closing price, drawn from an archive of '+fmtInt(M.archiveRows)+' rows'+
       // founder ruling 2026-10-25 (round 2 item 1.3): retirements settle on Pinnacle rules (settlement.js settleBet)
       (stl && stl.retired.stands ? ', '+fmtInt(stl.retired.stands)+' of them retirements after the first set was completed (settled on the result, Pinnacle rules)' : '')+

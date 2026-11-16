@@ -8,9 +8,11 @@ Applies to the Database tab's Lines view (`renderLines`, `db2Ln*` in `bsp-consul
 - **Ladders** (`LN_LADDERS`, a literal — `build-lines-field.js` slices it, so the field file follows it on the next data
   run): Bo3 game handicap ±1 … ±6.5, set handicap ±1.5, total games over / under 20 … 24.5; Bo5 game handicap ±2.5 … ±7.5,
   set handicap ±2.5, totals 34.5 / 37.5 / 40.5. Three families; Match shape is not one. Bo3 and Bo5 are counted apart.
-- **Cover** = his share of matches that covered the line, worked out from set scores (`lnHit`); **a whole line's push is
-  not covered** (the design's own predicate, `margin > 0`). Record = covered–missed. A rate needs LN_MIN_N (5) matches and
-  is muted under 10 (DB2_LN_FULL).
+- **Cover** = his share of matches that covered the line, worked out from set scores (`lnHit`). **A whole line that lands
+  exactly on the number is a push: void** (founder 2026-11-16) — neither covered nor missed, out of the rate and the Record
+  (covered–missed); the match list marks it "Void" (grey) and its head counts "· N void". Half lines cannot push. The field
+  file is built from the same `lnHit` / `lnLine`, so its rates exclude pushes too. A rate needs LN_MIN_N (5) matches and is
+  muted under 10 (DB2_LN_FULL).
 - **Field** = the field median from `lines-field.json` at the format · surface · period slice; **under any other filter
   (side, price band, archetype, level) it is an en dash** — no field file holds those. Edge = Cover − Field, both as shown.
 - **As favourite / As underdog and price bands** (founder 2026-11-16, replacing "The Side control is not built"): the

@@ -161,14 +161,17 @@ reference screenshots): `design_handoff_database_v2/step1/` (never published).
   last match; season ticks on 1 January, every 4 / 2 / 1 years); plot 400px; Favourites `--db2-blue` 2.4px, Underdogs
   `--db2-ink-2` 2px; 12% dotted guides, 32% break-even 1.25px; end plates `--db2-raised` + 16%. **Test:** "dates".
   Display smoothing (`SMOOTH_MODE`) is unchanged and lands on the printed end value.
+- **"How this is built" and the disclaimer live in the "?" hovers** (founder 2026-11-16): `db2FootIntoQ` puts the footnote's
+  words into every "?" of the Tour, Tournament and Player views; nothing is painted under the page.
 
 ## Tournament
-- One event = the Tour cards with the Tour column. Two events = the summary card (logo slot = the event's initials, a
-  neutral tile; never a mark), the chart with its All matches · Favourites · Underdogs switch, and one band box per event
+- One event = the Tour cards with the Tour column. Two events = the summary card (logo slot = **the tournament's logo**,
+  founder 2026-11-16: self-hosted files listed in `tournament-logos/index.json` by catalog event name, the player-photo
+  pattern; until a file exists, or if it fails to load, the event's initials on a neutral tile), the chart with its All matches · Favourites · Underdogs switch, and one band box per event
   (yield 800 when better than the other event). Three or four = "Best for favourites / underdogs" tiles, one aligned table
   (the row's best on a 13% white pill) and the chart. Series: blue, ink, `--db2-grey3` dashed 6 5, ink dashed.
-- **Best price band** = the event's highest band yield among bands with at least HARD_GATE matches (a thinner band is not
-  a yield). **"All matches" counts each match once:** `(fav + dog) / 2` per match (founder 2026-10-23; test "compareOnce").
+- **Best price band** = the event's highest band yield among bands with at least `DB2_BEST_MIN` = **20** matches (founder
+  2026-11-16). **"All matches" counts each match once:** `(fav + dog) / 2` per match (founder 2026-10-23; test "compareOnce").
 
 ## Player
 - One player: head card (60px avatar, blue ring; photo and "ATP #n" only when the Tennis-Data name joins exactly one

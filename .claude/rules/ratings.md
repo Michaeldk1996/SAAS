@@ -19,37 +19,11 @@ Applies to the Database tab's Ratings view (`renderRatings`, `db2RatOverview`, `
   Elo · grass · Serve rating · Return rating · Under pressure.
 - The design's own colours (`--db2-*`); the ruled footnote words live in the board's "?" hover.
 
-## Vs pk renders with NO colour (founder ruling, 2026-09-23)
-
-**The rule.** The Elo board's `Vs pk` column (current overall Elo minus peak Elo)
-renders as a signed figure in the same tabular mono as its neighbouring component
-cells, at the same 13px / weight 400, **with no colour applied at any value**.
-
-**The test someone can apply.** Render the Elo board and read the computed style of
-any `Vs pk` cell. It must carry no sign colour — not `--neg`, not `--pos` — and
-no colour distinct from the other component cells in the same row. `ratFmt` must
-contain no colour branch for its `sgn` path. Locked by
-`test-ten254-rulings-3-4.mjs`.
-
-**This SUPERSEDES the bundle.** README TAB 4 "Leaderboards" specifies
-`Vs pk` as *"13px / 700, signed, `--text-label` at −60 or better and `--neg` below"*.
-**That text is overturned — do not implement it, and do not "fix" the code back
-toward it.**
-
-**The measurement behind the ruling** (2026-09-23, on the published store, computed
-by executing the shipped `ratBoardPool('elo')` and `ratVal`): the Elo board renders
-**216 rows**, every one with a non-null `Vs pk`. The bundle's −60 threshold would
-colour **173 of 216 (80.1%)** red; median `Vs pk` is **−159**, p25 −207, p75 −77.
-The threshold was calibrated against the prototype's 23-player roster, whose peaks
-were *derived* (`career value ± 20`), not against real scraped peaks — so on real
-data it reddens four rows in five. Thresholds that would redden about a quarter of
-the field are −200 (57 of 216, 26.4%) and −250 (34, 15.7%). The founder chose no
-colour rather than a re-picked threshold.
-
-**Exception:** none. This applies at every value, including 0 (a player at his
-peak) and a dash (a player with no peak in the source).
-
----
+## Vs pk as the export draws it (founder 2026-11-16, "follow export"; replaces the 2026-09-23 no-colour ruling)
+- **Test:** on the Elo board every `Vs pk` cell (current overall Elo − peak) is signed mono 13px **weight 700**, muted
+  (`--db2-muted`) at −60 or better and red (`--db2-red`) below (`DB2_VSPK_RED = -60`); a red cell keeps its red when its
+  column is sorted. `test-database-v2.mjs` "constants" (mutant: uncoloured). The 23 Sep measurement (173 of 216 rows below
+  −60 on real peaks) stands as context: most of the board reads red.
 
 ## Fewer than 10 matches hides the WHOLE player (founder ruling, 2026-09-23)
 

@@ -102,7 +102,7 @@ const loadStore = () => JSON.parse(readFileSync(STORE, 'utf8'));
 // ── RULING 3 · Vs pk carries no colour ──────────────────────────────────────
 // ratFmt is the one place a sign colour could be minted for this column, and the
 // cell builder is the one place it could be applied. Check BOTH by execution.
-test('ruling 3: ratFmt never returns colour markup for a signed value', () => {
+test('ruling 3: ratFmt never returns colour markup for a signed value', { skip: 'superseded: founder 2026-11-16 Database v2 "follow export" - Vs pk is 700, red below -60 (test-database-v2.mjs constants)' }, () => {
   const api = build(SRC, { players: [] });
   for (const v of [-495, -200, -61, -60, -59, -1, 0, 1, 250]) {
     const out = api.ratFmt(v, 0, false, true);
@@ -119,7 +119,7 @@ test('ruling 3: ratFmt never returns colour markup for a signed value', () => {
   assert.equal(api.ratFmt(null, 0, false, true), '—');
 });
 
-test('ruling 3: no rendered Vs pk cell carries a colour', (t) => {
+test('ruling 3: no rendered Vs pk cell carries a colour', { skip: 'superseded: founder 2026-11-16 Database v2 "follow export" - Vs pk is 700, red below -60 (test-database-v2.mjs constants)' }, (t) => {
   if (!HAVE_STORE) { t.skip('surface-ratings.json absent — skipping OUT LOUD, not passing'); return; }
   // The Elo board needs an ELO store; build a minimal real-shaped one so Vs pk
   // actually renders values rather than dashing out and passing vacuously.

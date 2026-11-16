@@ -73,13 +73,33 @@ const CHECKS = {
     if (lab[0] !== '−1 games' || lab[10] !== '+1 games') return 'bo3 game handicap labels ' + lab.slice(0, 2);
     return null;
   },
-  // Cover is worked out from the score; a push (margin exactly 0 on a whole line) is not covered.
+  // Cover is worked out from the score; a push (margin exactly 0 on a whole line) is VOID (founder 2026-11-16): neither
+  // covered nor missed, out of the rate.
   push(src) {
-    const lnHit = new Function(fnSource(src, 'lnHit') + '\nreturn lnHit;')();
-    const r = { sets: [{ p: 6, o: 4 }, { p: 4, o: 6 }, { p: 6, o: 3 }] };   // won by 3 games
-    if (lnHit(r, 'gm', -3).hit !== false) return 'a push on -3 counts as covered';
+    const { lnHit, lnLine } = new Function(fnSource(src, 'lnHit') + '\n' + fnSource(src, 'lnLine') + '\nreturn {lnHit, lnLine};')();
+    const r = { sets: [{ p: 6, o: 4 }, { p: 4, o: 6 }, { p: 6, o: 3 }] };   // won by 3 games, 29 games
+    if (lnHit(r, 'gm', -3).hit !== null) return 'a push on -3 is not void';
     if (lnHit(r, 'gm', -2.5).hit !== true) return '-2.5 is not covered by a 3-game win';
-    if (lnHit(r, 'ov', 29).hit !== false) return 'a push on over 29 counts as covered';
+    if (lnHit(r, 'ov', 29).hit !== null) return 'a push on over 29 is not void';
+    const lost = { sets: [{ p: 3, o: 6 }, { p: 4, o: 6 }] };
+    const L = lnLine([r, lost], 'gm', -3);
+    if (L.n !== 1 || L.hit !== 0 || L.voids !== 1) return 'a void counts in the rate: ' + JSON.stringify(L);
+    return null;
+  },
+  // Best price band needs DB2_BEST_MIN = 20 matches; Vs pk is red below DB2_VSPK_RED = -60 (founder 2026-11-16).
+  constants(src) {
+    if (!/var DB2_BEST_MIN=20;/.test(src)) return 'Best price band floor is not 20';
+    if (!/b\.agg\.n>=DB2_BEST_MIN/.test(src)) return 'Best price band does not read DB2_BEST_MIN';
+    if (!/var DB2_VSPK_RED=-60;/.test(src)) return 'Vs pk threshold is not -60';
+    if (!/Math\.round\(v\)>=DB2_VSPK_RED \? ' vspk' : ' vspk red'/.test(src)) return 'Vs pk does not take the red below the threshold';
+    if (!/\.db2-rv\.vspk\.red, \[data-db-root\] \.db2-rv\.vspk\.red\.on\{ color:var\(--db2-red\); \}/.test(src)) return 'red Vs pk is not --db2-red';
+    return null;
+  },
+  // "How this is built" lives in the "?" hover: no footnote painted under the Tour / Tournament / Player views.
+  footnote(src) {
+    const a = src.indexOf('  function renderBandView(body){'), b = src.indexOf('  // Database v2 (founder 2026-11-16): "How this is built"');
+    if (/renderFootnote\(body\)/.test(src.slice(a, b))) return 'a view still paints the footnote under the page';
+    if (!/qs\[i\]\.title=/.test(fnSource(src, 'db2FootIntoQ'))) return 'the footnote is not put in the "?"';
     return null;
   },
   // Field = the field file's median at the format · surface · period slice only; any other filter is a dash.
@@ -128,7 +148,11 @@ const MUTANTS = [
   ['ticks off 1 January', 'dates', s => s.replace("var x=(Date.UTC(y,0,1)-t0)/(t1-t0);", "var x=(Date.UTC(y,6,1)-t0)/(t1-t0);")],
   ['ladder computed', 'ladders', s => s.replace("  var LN_LADDERS = {", "  var LN_LADDERS = (function(){ return {").replace("  var LN_GROUPS = ['Games", "  var LN_GROUPS_X = 1; var LN_GROUPS = ['Games")],
   ['match shape back', 'ladders', s => s.replace("var LN_GROUPS = ['Games handicap','Set handicap','Total games'];", "var LN_GROUPS = ['Games handicap','Set handicap','Total games','Match shape'];")],
-  ['push covered', 'push', s => s.replace("if(kind==='gm'){ var gm=(pg-og)+arg; return { hit: gm>0, margin: gm }; }", "if(kind==='gm'){ var gm=(pg-og)+arg; return { hit: gm>=0, margin: gm }; }")],
+  ['push covered', 'push', s => s.replace("if(kind==='gm'){ var gm=(pg-og)+arg; return { hit: gm>0 ? true : gm<0 ? false : null, margin: gm }; }", "if(kind==='gm'){ var gm=(pg-og)+arg; return { hit: gm>0, margin: gm }; }")],
+  ['void in the rate', 'push', s => s.replace("      if(h.hit===null){ voids++; return; }   // a push: void, in no rate\n", "")],
+  ['best band floor 30', 'constants', s => s.replace('var DB2_BEST_MIN=20;', 'var DB2_BEST_MIN=30;')],
+  ['vs pk uncoloured', 'constants', s => s.replace("(Math.round(v)>=DB2_VSPK_RED ? ' vspk' : ' vspk red')", "' vspk'")],
+  ['footnote under the page', 'footnote', s => s.replace("    body.appendChild(renderCurveCard(rows, isTourn));\n    db2FootIntoQ(body);", "    body.appendChild(renderCurveCard(rows, isTourn));\n    renderFootnote(body);")],
   ['field under a filter', 'field', s => s.replace("function db2LnFieldOK(){ return state.lnSide==='all' && state.lnBand==null && !state.lnArch && !state.lnLevel; }", "function db2LnFieldOK(){ return true; }")],
   ['ratings open on Career', 'ratings', s => s.replace("ratSurf:'All', ratScope:'last52', ratBoard:'overview'", "ratSurf:'All', ratScope:'career', ratBoard:'overview'")],
   ['mental edge back', 'ratings', s => s.replace("['up','Under pressure']];", "['up','Under pressure'],['mental','Mental Edge']];")],
