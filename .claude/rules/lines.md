@@ -1,19 +1,26 @@
-# Lines tab — founder rulings and the facts behind them
+# Lines tab — Database v2 (founder 2026-11-16, "follow the design")
 
-Applies to the Database tab's Lines view (`renderLines`, `lnPaint`, `lnHead` in
-`bsp-consult-dashboard.html`) and to `build-lines-field.js`.
+Applies to the Database tab's Lines view (`renderLines`, `db2Ln*` in `bsp-consult-dashboard.html`) and to
+`build-lines-field.js`. Design = `design_handoff_database_v2/reference/Database.dc.html` L163-206 and L406-665.
+**Test:** `test-database-v2.mjs` "ladders", "push", "field".
 
-## The Side control is not built (founder ruling, TEN-256 / TEN-260)
-
-README TAB 5 specs a **Side** menu (All matches / As favourite / As underdog) splitting
-handicap lines. It is **not built and must not be**: career-history rows carry no price
-and no favourite marker — measured 2026-09-23, **0 of 85,779 rows across all 225 shards**.
-The only honest paths are a pipeline join to the odds archive (ATP main draw only,
-2004–2026, partial, with its own denominator) or a rank-based "favourite", which is a
-different statistic under a market heading — neither is ruled. This explanation lives
-HERE, not in the UI (founder, TEN-260 Part C.9).
-
-**Test:** the Lines control bar renders no Side control and no "All matches" chip.
+## What the view is (founder 2026-11-16)
+- **Ladders** (`LN_LADDERS`, a literal — `build-lines-field.js` slices it, so the field file follows it on the next data
+  run): Bo3 game handicap ±1 … ±6.5, set handicap ±1.5, total games over / under 20 … 24.5; Bo5 game handicap ±2.5 … ±7.5,
+  set handicap ±2.5, totals 34.5 / 37.5 / 40.5. Three families; Match shape is not one. Bo3 and Bo5 are counted apart.
+- **Cover** = his share of matches that covered the line, worked out from set scores (`lnHit`); **a whole line's push is
+  not covered** (the design's own predicate, `margin > 0`). Record = covered–missed. A rate needs LN_MIN_N (5) matches and
+  is muted under 10 (DB2_LN_FULL).
+- **Field** = the field median from `lines-field.json` at the format · surface · period slice; **under any other filter
+  (side, price band, archetype, level) it is an en dash** — no field file holds those. Edge = Cover − Field, both as shown.
+- **As favourite / As underdog and price bands** (founder 2026-11-16, replacing "The Side control is not built"): the
+  player's shorter Pinnacle closing price on the Database's one price join (`H2HPage.priceJoin`, the Player Profile's) =
+  favourite; an exact tie is neither (no opening price on record); a row the join does not price is in no side view.
+- Opponent archetype = the eight locked classifier labels (`playing-styles.json`); Level = the tournament catalogue
+  (Grand Slam only under Bo5; Masters 1000 / ATP 500 / ATP 250 only under Bo3). Never colour a cover rate green.
+- Layout: the Filters panel full width inside the filter card; answer tiles; per family two band cards (− lines / + lines,
+  Over / Under) with the match list directly under the clicked row (latest 12, All · Covered · Missed); 2-3 players = the
+  flat list.
 
 ## Field / Vs field / Ranking come from the pipeline file (TEN-260 Part B)
 
@@ -39,46 +46,3 @@ paints Ranking "—" while the active player paints "1/3". Locked by `test-ten26
 field under 10 carries a `field N` small-sample mark and every Ranking shows its
 denominator — flagged, not hidden, not filled.
 
-## Compare view and notes (founder TEN-399 fix 3 + 4, card ff586600, and R2 post-live, 2026-10-08)
-
-**Test:** a compare row reads Line | Field (one shared field median) | per player **Rate · Vs field · Record** (R2 item 4);
-Vs field is in the three-way sign colour at the single table's 13px mono (the old "neutral compare delta" is retired).
-The note above the table names no file and no pipeline step. With the field file it reads exactly "Field = the median
-rate on each line across tour players with at least 5 matches on that line. Last 52 = matches since <date>."; without it
-"Field, Vs field and Ranking are not published yet; Rate is computed from each player’s own matches." The coverage line
-keeps "Lines computed on N of M matches (x%) · K best of three" and carries no "excluded as unfinished or a different
-format" clause (R2 item 1); no "no readable best-of" line and no unresolved-name list. Locked by `test-ten260-lines.mjs`
-(compare, noField) and `test-ten399-fixes.mjs` (linesCoverage).
-
-## Vs field adds up on screen (founder card 0122a989 "ship-rounded", 2026-10-08)
-
-**Test:** Vs field = the displayed Rate (1 dp) minus the displayed Field (1 dp), in the single table and in compare, so
-the three figures on screen always add up (Alcaraz −1.5 sets: 57.8% − 37.9% = +19.9pp, not the unrounded +20.0pp).
-Ranking still uses the unrounded rate. Locked by `test-ten399-fixes.mjs` (vsFieldDisplayed) and `test-ten260-lines.mjs` (field).
-
-## Rate highlight = full sample at 65% (founder step-6 ticket TEN-399 item 8, 2026-10-07)
-
-A **full-sample rate at 65% or better** is the highlight state: `--pos` text, weight 700,
-on a **12% `--pos` wash** (`color-mix(in srgb, var(--pos) 12%, transparent)`), **no
-border**. This SUPERSEDES README TAB 5's lighter green on a 15% wash with a 34% green border —
-do not put the border back.
-
-Full sample = n ≥ 10. A rate on n < 10 is `--text-label` ink with no wash. **Test:** 65.0%
-at n = 20 highlighted; 64.5% at n = 200 not; 100% at n = 9 not (and grey). Locked by
-`test-ten260-lines.mjs`.
-
-## Surfaces and marks (TEN-399 item 8)
-
-- The Lines card is a top-level card: `--card` + `--top-light`, no outline.
-- State chips (format · surface · period · line group): `--inner`, no edge, Hanken 10.5 /
-  700 / 0.10em caps in `--text-label`.
-- Group headings: Hanken 10.5 / 700 / 0.10em caps, `--text-label`, the same in the
-  compare view (the old 9px / 600 compare heading is gone).
-- Small-sample marks (`n < 5`, `small n`, `field N`) are grey caps labels
-  (`--text-label`). **No amber anywhere on the tab.**
-- Compare view: each player's name band is white 14 / 800 on a **14% white rule**
-  (`--text` at 14%).
-
-**Test:** each rule read off the page's stylesheet, plus the painted small-sample marks
-(no inline colour) and the highlight state. Locked by `test-ten260-lines.mjs` (TEN-399
-block, 8 mutants).

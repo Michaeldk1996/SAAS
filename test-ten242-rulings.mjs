@@ -513,7 +513,7 @@ test('RULING: retirements settle through settlement.js (yields: Pinnacle rules; 
     'the What-is-included footnote does not name the retirements that stand');
 });
 
-test('RULING: the profit chart plots by MATCH INDEX, not by date', () => {
+test('RULING: the profit chart plots by MATCH INDEX, not by date', { skip: 'superseded: Database v2 (founder 2026-11-16, "follow the design") plots every cumulative chart by real match date' }, () => {
   const i = DASH.indexOf('function renderCurveCard');
   assert.ok(i > 0, 'renderCurveCard not found');
   const fn = DASH.slice(i, DASH.indexOf('\n  function ', i + 10));
@@ -602,7 +602,7 @@ test('RULING: NO chart maps x from a date — the class, not the two instances',
     'the detector does not match a real date mapping — it is not testing anything');
 });
 
-test('RULING: the Player panels use the career match index and its season ticks', () => {
+test('RULING: the Player panels use the career match index and its season ticks', { skip: 'superseded: Database v2 (founder 2026-11-16, "follow the design") plots every cumulative chart by real match date' }, () => {
   const i = DASH.indexOf('function playerCharts');
   assert.ok(i > 0, 'playerCharts not found');
   const fn = DASH.slice(i, DASH.indexOf('\n  function panelFor', i));

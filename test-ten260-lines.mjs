@@ -219,8 +219,9 @@ CHECKS.rateFirst = async function (src) {
   if (!rate.startsWith('60.0%')) return `rate while the field loads: ${rate}`;
   return null;
 };
+const RETIRED_V2 = new Set(['compare','unresolved','eyebrow','highlight','colour','rateFirst']);   // superseded: Database v2 (founder 2026-11-16, "follow the design") replaced this renderer; test-database-v2.mjs locks the new rules
 for (const [name, fn] of Object.entries(CHECKS)) {
-  test('TEN-260 Lines · ' + name, async () => { const e = await fn(SRC); assert.equal(e, null, e); });
+  test('TEN-260 Lines · ' + name, RETIRED_V2.has(name) ? { skip: 'superseded: Database v2 (founder 2026-11-16, "follow the design") replaced this renderer; test-database-v2.mjs locks the new rules' } : {}, async () => { const e = await fn(SRC); assert.equal(e, null, e); });
 }
 
 const MUTANTS = [
@@ -246,6 +247,7 @@ const MUTANTS = [
 test('CONTROL: every TEN-260 Lines mutant is caught', async () => {
   const survivors = [];
   for (const [name, which, mutate] of MUTANTS) {
+    if (RETIRED_V2.has(which)) continue;
     const m = mutate(SRC);
     assert.notEqual(m, SRC, `mutant "${name}" did not apply — it proves nothing`);
     let caught; try { caught = (await CHECKS[which](m)) !== null; } catch { caught = true; }

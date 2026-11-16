@@ -276,13 +276,13 @@ function checkCompareOnce(src) {
 }
 
 const RULES = { checkSideFlip, checkSharedAxes, checkRoleCards, checkClay, checkTournRow, checkCompare, checkCompareOnce };
-test('TEN-399 b · Player: Side flips every figure, note and curve', () => assert.equal(checkSideFlip(SRC), null));
-test('TEN-399 b · Player: three charts share one y-domain and one tick set, 2013 … 2026', () => assert.equal(checkSharedAxes(SRC), null));
-test('TEN-399 b · Player: role cards — gap row only, neutral baseline, split one convention', () => assert.equal(checkRoleCards(SRC), null));
-test('TEN-399 b · Player: Surface = Clay — recompute (as built) and the — path under the gate', () => assert.equal(checkClay(SRC), null));
+test('TEN-399 b · Player: Side flips every figure, note and curve', { skip: 'superseded: Database v2 (founder 2026-11-16, "follow the design") replaced this renderer; test-database-v2.mjs locks the new rules' }, () => assert.equal(checkSideFlip(SRC), null));
+test('TEN-399 b · Player: three charts share one y-domain and one tick set, 2013 … 2026', { skip: 'superseded: Database v2 (founder 2026-11-16, "follow the design") replaced this renderer; test-database-v2.mjs locks the new rules' }, () => assert.equal(checkSharedAxes(SRC), null));
+test('TEN-399 b · Player: role cards — gap row only, neutral baseline, split one convention', { skip: 'superseded: Database v2 (founder 2026-11-16, "follow the design") replaced this renderer; test-database-v2.mjs locks the new rules' }, () => assert.equal(checkRoleCards(SRC), null));
+test('TEN-399 b · Player: Surface = Clay — recompute (as built) and the — path under the gate', { skip: 'superseded: Database v2 (founder 2026-11-16, "follow the design") replaced this renderer; test-database-v2.mjs locks the new rules' }, () => assert.equal(checkClay(SRC), null));
 test('TEN-399 b · Tournament: tour comparison inline, no event name in the band header', () => assert.equal(checkTournRow(SRC), null));
-test('TEN-399 b · Compare events: max 4, series colours by pick order, legend end values only', () => assert.equal(checkCompare(SRC), null));
-test('Compare events · All matches counts each match once (founder 2026-10-23)', () => assert.equal(checkCompareOnce(SRC), null));
+test('TEN-399 b · Compare events: max 4, series colours by pick order, legend end values only', { skip: 'superseded: Database v2 (founder 2026-11-16, "follow the design") replaced this renderer; test-database-v2.mjs locks the new rules' }, () => assert.equal(checkCompare(SRC), null));
+test('Compare events · All matches counts each match once (founder 2026-10-23)', { skip: 'superseded: Database v2 (founder 2026-11-16, "follow the design") replaced this renderer; test-database-v2.mjs locks the new rules' }, () => assert.equal(checkCompareOnce(SRC), null));
 
 const MUTANTS = {
   checkSideFlip: s => s.replace("price=fading?v.op:v.p, won=fading?(v.w?0:1):v.w;", "price=v.p, won=v.w;"),
@@ -296,7 +296,9 @@ const MUTANTS = {
   checkCompare: s => s.replace("{ stroke:'var(--viz-tick)',       w:2,   dash:null },", "{ stroke:'var(--viz-amber)',      w:2,   dash:null },"),
 };
 test('CONTROL: every TEN-399 b ruling goes red on its mutant', () => {
+  const RETIRED = new Set(['checkSideFlip','checkSharedAxes','checkRoleCards','checkClay','checkCompare','checkCompareOnce']);
   for (const [rule, mut] of Object.entries(MUTANTS)) {
+    if (RETIRED.has(rule)) continue;   // superseded: Database v2 (founder 2026-11-16, "follow the design") replaced this renderer; test-database-v2.mjs locks the new rules
     const m = mut(SRC);
     assert.notEqual(m, SRC, rule + ': mutant anchor not found');
     let out;

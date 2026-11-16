@@ -1,18 +1,23 @@
-# Ratings board — founder rulings that OVERRIDE the design bundle
+# Ratings board — Database v2 (founder 2026-11-16, "follow the design")
 
-Applies to the Database tab's Ratings board (`ratLeaderboard`, `ratOverview`,
-`ratBoardPool`, `ratComparePanel` in `bsp-consult-dashboard.html`).
+Applies to the Database tab's Ratings view (`renderRatings`, `db2RatOverview`, `db2RatBoard`, `db2RatCompare` in
+`bsp-consult-dashboard.html`). Design = `design_handoff_database_v2/reference/Database.dc.html` L254-403. **Test:**
+`test-database-v2.mjs` "ratings".
 
-⚠️ **Why this file exists rather than an edit to the bundle.** The authoritative
-Database handoff is `.ten243-design/design_handoff_database/` — the ZIP the founder
-sent. **It is not committed to this repo.** Both tracked copies
-(`design-export/database-handoff/` and `design-export/database-handoff-4/`) carry a
-`SUPERSEDED.md` reading "do not build from this bundle". So a ruling written into
-either tracked copy would be written into a bundle the next reader is told to
-ignore, and a ruling written into the untracked copy exists on one laptop only —
-invisible to every other agent and to CI. Rulings therefore live **here**.
-
----
+## The board and the compare card (founder 2026-11-16)
+- **One period at a time: Last 52 weeks first and the default, then Career** (replaces TEN-262 #1's Career-first control
+  and the compare panel's Last 52 + Career + Δ columns). There is still no Last 52 Elo: every Elo cell on Last 52 weeks is
+  a dash (TEN-262 ruling 1 stands; never create one).
+- **Boards: Overview · Elo · Serve · Return · Under pressure** — the Mental Edge board, its view pills, the 200-point
+  ranking minimum and its count line are gone with it (the design has none).
+- The board lists the whole gated field while players are compared; a "Field median" row heads every table; the sorted
+  column is white 700, the others ink-2 400; places 1-3 white 700. The "+" in the first track picks a player (blue + 3px
+  halo, the row on a 9% blue wash; rotates to × in .22s; "Four players maximum").
+- Compare card above the board: exactly two players = face to face (tally "a – b ratings ahead", one row per rating, a
+  4px line leaning to the better player with the difference on a chip, "Level" on a tie); one, three or four = columns,
+  the row's best white 800, every other cell its gap in red ("−n"). Rows, always seven: Elo · Elo · hard · Elo · clay ·
+  Elo · grass · Serve rating · Return rating · Under pressure.
+- The design's own colours (`--db2-*`); the ruled footnote words live in the board's "?" hover.
 
 ## Vs pk renders with NO colour (founder ruling, 2026-09-23)
 
@@ -78,16 +83,6 @@ discloses it.
 
 ---
 
-## Mental Edge — the pressure-point count stays
-
-Every Mental Edge ratio carries its pressure-point count (PW + PL), on the board
-**and** in the Compare panel. This is the founder's standing instruction while the
-ranking minimum is unset; a minimum being chosen later does **not** make the count
-redundant — the minimum decides who is *ranked*, the count says how thin the ones
-on screen are. Locked by `test-ten254-mental-count.mjs` (12 mutants).
-
----
-
 ## Retired players leave the board (founder ruling TEN-254 #4, built TEN-260)
 
 **The rule.** Every name in `retired-players.json` → `retired[]` is absent from every
@@ -115,68 +110,3 @@ Higher is better in every column."). The compare panel's Career figures are `--t
 sign-coloured. Locked by `test-ten399-fixes.mjs` (ratingsCopy, careerWhite). Locked by `test-ten260-ratings.mjs`; the list itself (every name on the store, every entry sourced, the seven
 TEN-262 names present, Kyrgios absent) by `test-ten262.mjs`.
 
-## Mental Edge: three views, 200-point ranking minimum (founder rulings TEN-254, built TEN-260)
-
-**The rule.**
-- Views: **ATP only** (the store's `mental.pw/pl`), **Challenger only**
-  (`challBpSaved + challBpConverted` over `(challBpFaced − challBpSaved) + (challBpChances − challBpConverted)`),
-  **ATP + Challenger** (the two counts summed, ratio recomputed from the sums). Default
-  **ATP + Challenger**. No discount — `CHALL_DISCOUNT 0.9` is Serve / Return / Under
-  pressure only.
-- A player is **ranked** on a view only with **≥ 200 pressure points (PW + PL) on that
-  view**. Below it: ratio and count shown, rank cell `—`, in a block labelled "Below 200
-  pressure points · not ranked", placed after the ranked block.
-- `challResolved !== true`: Challenger view → `—` with the reason; combined view → the
-  ATP figure, tagged "ATP only", in its own block, never ranked.
-- The count line reads **"ranked X of Y"** on every view (Y = every row the view shows).
-- The whole-row 10-match gate uses the view's own match count (tour / Challenger / sum).
-
-**The test.** Recompute PW, PL, ratio and n from the raw sample fields for every painted
-row on each view; every numbered row has ≥ 200 pp; every row in the below block has `—`
-and < 200 pp. Locked by `test-ten260-ratings.mjs` (14 mutants).
-
-**Supersedes** the TEN-243 method note "Mental Edge — tour level only (no Challenger
-fold-in)", for the combined and Challenger views.
-
-## Career / Last 52 control is ACTIVE on Ratings (founder ruling TEN-262 #1, 2026-09-23)
-
-**The rule.**
-- The control switches **every board column** between the store's `career` and `last52`
-  scopes (`surface-ratings.json` → `surfaces.<surface>.<scope>`). The compare panel shows both periods and the
-  Δ (Last 52 − career); its **highlighted column** (the 4% white wash) is **Last 52 at every scope** (founder
-  TEN-399 fix 5, card ff586600, 2026-10-08 — replaces "the wash follows the selected scope").
-- It stays on screen and enabled **while players are picked**. This replaces TEN-260 Part C
-  "hidden while players are picked".
-- Style and labels are the Lines tab's control: `db-pills lines`, "Career" / "Last 52".
-- **Elo has no last-52 value.** On Last 52, every Elo cell (Overview column, Elo board,
-  compare) is a dash, and the Elo board has no rows and says so. Never create a last-52 Elo.
-- The 10-match row gate and the 200-pressure-point ranking minimum apply to the scope on
-  screen; "ranked X of Y" is computed at that scope.
-
-**The test.** Paint the Serve board at each scope: C. Alcaraz's painted rating equals
-`surfaces.All.<scope>.serve.rating`; the Return board's rows at each scope equal the players
-whose node at that scope clears the gate; on Last 52 no Overview Elo cell is a number; the
-compare panel's `live` sub-heads read "Last 52" on both scopes; the
-control renders enabled with two players picked. Locked by `test-ten262.mjs` (5 mutants).
-
-## Surfaces and ink (founder step-6 ticket TEN-399 item 7, 2026-10-07)
-
-**The rule.** Tokens only (`tokens.css`); night and day re-theme with no reload.
-- The Ratings card is a top-level card: `--card` + `--top-light`, **no outline**.
-- Board tabs (Overview · Elo · Serve · Return · Under pressure · Mental Edge) are the
-  Darker track: track `--card` + 1px `--edge-6`; selected `--inner` + 1px `--edge-10`,
-  white 700; idle `--text-label` 600.
-- Compare panel = nested panel, `--card` + 1px `--edge-6`. The scope column (sub-head and
-  cells) is a **4% white wash** (`--wash-4`) — never blue, never `--inner`. Δ keeps the
-  three-way sign colour (`--pos` / `--neg`, `--text-label` at zero or a dash).
-- Avatars: the player's photo by the row's player ID (`surface-ratings.json` `key`, founder 2026-10-22; `player-photos.md`) over initials, white mono, on `--inner` — no gradient, no blue ink. A row without an ID = initials, never a name-matched photo.
-- Sortable heads: `--text-label` idle, `--text` (white) on the sort column; the ↑/↓ arrow
-  is white, never blue, and carries no inline colour.
-- Field-median row: a **2.5% white wash** (`--text` at 2.5%).
-- Player names are links in white, white on hover too.
-- Places 1–3 of a ranked block print white 700 (the reference); 4 on stay `--text-label`.
-
-**The test.** Read each rule off the page's stylesheet and paint the boards and the
-compare panel from the published store: Δ cells carry `var(--pos)` / `var(--neg)` by sign,
-the ascending head reads `↑` in a bare `<i>`, only rows 1–3 carry `.top`. Locked by
-`test-ten262.mjs` (TEN-399 block, 14 mutants).

@@ -3365,7 +3365,8 @@ window.sfPlanLocks(null);   // locked until the account says Edge / Pro: no unlo
   .db-trig i{ font-style:normal; font-family:var(--db-mono); font-size:11px; font-weight:600; color:var(--text-label); }
   .db-trig.on i{ color:var(--text); }
   /* THE caret - one glyph, size, colour and gap for every trigger on the bar (TEN-399 item 3). */
-  .db-caret{ text-decoration:none; font-family:var(--db-ui); font-size:9px; font-weight:600; line-height:1; color:var(--text-label); }
+  .db-caret{ display:block; flex:none; width:6px; height:6px; margin:-3px 2px 0 2px; box-sizing:border-box; font-size:0; color:transparent; text-decoration:none;
+    border-right:1.5px solid var(--db2-muted); border-bottom:1.5px solid var(--db2-muted); transform:rotate(45deg); }   /* Database v2: the design's CSS chevron (L91) */
   .db-clear{ width:17px; height:17px; box-sizing:border-box; border-radius:50%; border:1px solid var(--line); display:inline-flex; align-items:center; justify-content:center;
     font-size:10px; line-height:1; color:var(--text-label); }
   .db-clear:hover{ color:var(--text); }
@@ -3439,8 +3440,6 @@ window.sfPlanLocks(null);   // locked until the account says Edge / Pro: no unlo
     font-size:13px; font-weight:600; color:var(--db2-ink-2); }
   [data-db-root] .db-trig.on i{ color:var(--db2-ink); }
   [data-db-root] .db-trig .db-clear{ width:17px; height:17px; border:1px solid var(--db2-h18); font-size:10px; color:var(--db2-muted); }
-  [data-db-root] .db-caret{ display:block; flex:none; width:6px; height:6px; margin:-3px 2px 0 2px; box-sizing:border-box; font-size:0; color:transparent;
-    border-right:1.5px solid var(--db2-muted); border-bottom:1.5px solid var(--db2-muted); transform:rotate(45deg); }
   /* menus (L93-104) */
   [data-db-root] .db-menu, [data-db-root] .db-pop{ background:var(--db2-card); border:1px solid var(--db2-h10); border-radius:10px; padding:4px; box-shadow:var(--db2-shadow-menu); }
   [data-db-root] .db-mrow, [data-db-root] .db-prow{ gap:8px; padding:6px 9px; border-radius:7px; font-size:12.5px; font-weight:500; color:var(--db2-ink-2); transition:none; }
@@ -3483,7 +3482,6 @@ window.sfPlanLocks(null);   // locked until the account says Edge / Pro: no unlo
   [data-db-root]{ --viz-guide:color-mix(in srgb, var(--db2-white) 12%, transparent); --viz-rule:color-mix(in srgb, var(--db2-white) 32%, transparent);
     --viz-lead:var(--db2-blue); --viz-white-lead:var(--db2-ink-2); }
   [data-db-root] .db-card{ background:var(--db2-card); border:1.25px solid var(--db2-h6); box-shadow:none; border-radius:12px; padding:16px 18px; }
-  [data-db-root] .db-yaxis, [data-db-root] .db-plotarea, [data-db-root] .db-endcol{ height:400px; }
   [data-db-root] .db-yaxis div, [data-db-root] .db-xaxis div{ color:var(--db2-muted); }
   [data-db-root] .db2-ctitle{ display:inline-flex; align-items:center; gap:10px; }
   [data-db-root] .db2-q{ flex:none; display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; box-sizing:border-box; border-radius:50%;
@@ -3896,11 +3894,11 @@ window.sfPlanLocks(null);   // locked until the account says Edge / Pro: no unlo
      percentage offset then includes the padding and lands off-target. The padding
      is gone and the plates moved to their own column. */
   .db-plot{ margin-top:18px; display:flex; gap:12px; }
-  .db-yaxis{ position:relative; width:70px; height:340px; flex:none; }   /* TEN-399 item 4: plot 340px */
+  .db-yaxis{ position:relative; width:70px; height:400px; flex:none; }   /* Database v2: plot 400px (design L1076) */
   .db-yaxis div{ position:absolute; right:0; transform:translateY(-50%); font-family:var(--db-mono); font-size:11.5px; font-weight:500; color:var(--db-sec); }
-  .db-plotarea{ position:relative; flex:1; min-width:0; height:340px; }
+  .db-plotarea{ position:relative; flex:1; min-width:0; height:400px; }
   .db-plotarea svg{ width:100%; height:100%; display:block; overflow:visible; }
-  .db-endcol{ position:relative; width:104px; height:340px; flex:none; }
+  .db-endcol{ position:relative; width:104px; height:400px; flex:none; }
   /* §6 — HTML overlays on the plot. The opaque --db-surface background is what makes
      these legible where they cross a gridline. */
   .db-ovl{ position:absolute; padding:2px 7px; border-radius:5px; background:var(--db-surface);
@@ -32328,17 +32326,18 @@ window.DatabaseTab = (function(){
   // Database v2 (founder 2026-11-16 "follow the design", README "Ladders"): Bo3 game handicap ±1 … ±6.5, set handicap ±1.5,
   // totals over / under 20 … 24.5; Bo5 game handicap ±2.5 … ±7.5, set handicap ±2.5, totals 34.5 / 37.5 / 40.5. Match shape is
   // not a family any more. build-lines-field.js reads this table, so the field file follows it on the next data run.
-  var LN_LADDERS = (function(){
-    function gh(v){ return [[(v<0?'\u2212':'+')+Math.abs(v)+' games','gm',v]]; }
-    function hc(vals){ var o=[]; vals.forEach(function(v){ o=o.concat(gh(-v)); }); vals.forEach(function(v){ o=o.concat(gh(v)); }); return o; }
-    function tot(vals){ return vals.map(function(v){ return ['over '+v,'ov',v]; }).concat(vals.map(function(v){ return ['under '+v,'un',v]; })); }
-    return {
-      bo3: { 'Games handicap': hc([1,1.5,2,2.5,3,3.5,4,4.5,5.5,6.5]), 'Set handicap': [['\u22121.5 sets','st',-1.5],['+1.5 sets','st',1.5]],
-             'Total games': tot([20,20.5,21,21.5,22,22.5,23,23.5,24,24.5]) },
-      bo5: { 'Games handicap': hc([2.5,3.5,4.5,5.5,6.5,7.5]), 'Set handicap': [['\u22122.5 sets','st',-2.5],['+2.5 sets','st',2.5]],
-             'Total games': tot([34.5,37.5,40.5]) }
-    };
-  })();
+  var LN_LADDERS = {
+    bo3: {
+      'Games handicap': [['−1 games','gm',-1], ['−1.5 games','gm',-1.5], ['−2 games','gm',-2], ['−2.5 games','gm',-2.5], ['−3 games','gm',-3], ['−3.5 games','gm',-3.5], ['−4 games','gm',-4], ['−4.5 games','gm',-4.5], ['−5.5 games','gm',-5.5], ['−6.5 games','gm',-6.5], ['+1 games','gm',1], ['+1.5 games','gm',1.5], ['+2 games','gm',2], ['+2.5 games','gm',2.5], ['+3 games','gm',3], ['+3.5 games','gm',3.5], ['+4 games','gm',4], ['+4.5 games','gm',4.5], ['+5.5 games','gm',5.5], ['+6.5 games','gm',6.5]],
+      'Set handicap':   [['−1.5 sets','st',-1.5],['+1.5 sets','st',1.5]],
+      'Total games':    [['over 20','ov',20], ['over 20.5','ov',20.5], ['over 21','ov',21], ['over 21.5','ov',21.5], ['over 22','ov',22], ['over 22.5','ov',22.5], ['over 23','ov',23], ['over 23.5','ov',23.5], ['over 24','ov',24], ['over 24.5','ov',24.5], ['under 20','un',20], ['under 20.5','un',20.5], ['under 21','un',21], ['under 21.5','un',21.5], ['under 22','un',22], ['under 22.5','un',22.5], ['under 23','un',23], ['under 23.5','un',23.5], ['under 24','un',24], ['under 24.5','un',24.5]],
+    },
+    bo5: {
+      'Games handicap': [['−2.5 games','gm',-2.5], ['−3.5 games','gm',-3.5], ['−4.5 games','gm',-4.5], ['−5.5 games','gm',-5.5], ['−6.5 games','gm',-6.5], ['−7.5 games','gm',-7.5], ['+2.5 games','gm',2.5], ['+3.5 games','gm',3.5], ['+4.5 games','gm',4.5], ['+5.5 games','gm',5.5], ['+6.5 games','gm',6.5], ['+7.5 games','gm',7.5]],
+      'Set handicap':   [['−2.5 sets','st',-2.5],['+2.5 sets','st',2.5]],
+      'Total games':    [['over 34.5','ov',34.5], ['over 37.5','ov',37.5], ['over 40.5','ov',40.5], ['under 34.5','un',34.5], ['under 37.5','un',37.5], ['under 40.5','un',40.5]],
+    },
+  };
   var LN_GROUPS = ['Games handicap','Set handicap','Total games'];
 
   // Name -> api-tennis player key. surface-ratings.json carries NO key (only

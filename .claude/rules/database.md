@@ -1,11 +1,13 @@
-# Database page — Tour · Tournament · Player (founder step 6, TEN-399, 2026-10-07)
+# Database page — Tour · Tournament · Player · Lines · Ratings (Database v2, founder 2026-11-16)
 
-Applies to `window.DatabaseTab` in `bsp-consult-dashboard.html` (header, control bar, Tour / Tournament / Player
-views, the cumulative-profit charts). Ratings and Lines carry their own files (`ratings.md`, `lines.md`); colours and
-surfaces follow `foundation.md`. The handoff (`design_handoff_database/`, 17 Sep) still governs tab structure, grids,
-gates, data shapes and the chart algorithms; its colours and chart treatment are superseded by this file. The
-reference `OFFICIAL VERSION 1.html` draws the **old** Database content (Heavy / Firm / Narrow favourite, Bet365 seam) —
-take styling from it, structure from the rules below.
+Applies to `window.DatabaseTab` in `bsp-consult-dashboard.html` (shell, filter card, the five views, the cumulative
+charts). **Design = `design_handoff_database_v2/` (README + `reference/Database.dc.html`), pixel for pixel, identical
+colours** — the founder's brief of 2026-11-16 and his ruling "follow the design" on the conflicts it raised (fixed price
+bands, the dated "flat 1% stake" chart, Lines favourite / underdog and price bands, Ratings one period with Last 52 weeks
+first, no Mental Edge board). The design's own colours are `--db2-*` in `tokens.css`, mapped onto the foundation surfaces
+inside every mount (`[data-db-root]`), as the Tournaments tab and Player Profile do. Ratings and Lines rules: `ratings.md`,
+`lines.md`. **Test:** `test-database-v2.mjs` (each rule with a mutant). Step-1 evidence (checklist, feasibility, the
+reference screenshots): `design_handoff_database_v2/step1/` (never published).
 
 ## Price join — one join, no seam
 - **Test:** every row of `database-yield.json` is priced on a Pinnacle price, per match (founder ruling 2026-10-30, replacing
@@ -113,16 +115,18 @@ take styling from it, structure from the rules below.
   "· updates pending" — nothing sits under the Updated date (R1 item 7 SUPERSEDES the note under Updated). Both mounts
   (standalone + ROI overlay) paint through the same `renderChrome()` / `dbHeadStats()` (`test-ten262.mjs` archive stamp).
 
-## Control bar
-- **Test:** no native `<select>` in the page DOM with any menu open, year range included (`test-ten399-database-frame.mjs`).
-- Tab row and every pill group = darker track (track `--card` + `--edge-6`; selected `--inner` + `--edge-10`, white 700;
-  idle `--text-label`); a disabled option is 40% grey with no fill.
-- Dropdown triggers = `--inner`, no edge; all five Tour triggers (Level · Surface · Round · year from · year to) render
-  the same caret element (`DB_CARET`: ▼, 9px, `--text-label`, 8px gap).
-- Menus = `--card` + 1px `--edge-10`, radius 10, padding 4, `--shadow-menu`; max 212px (search) / 252px (filter) then
-  scroll; rows 12.5px, padding 6×9; hover `--inner`; selected `--selected`; ticks white; in-menu search 32px `--inner`.
-- Chips-and-search box `--inner`, no edge (`data-search`); chips `--inner` + white text, remove × grey; cap notes grey.
-  Reset = white text.
+## Filter card (design L41-251)
+- **Test:** one card (`--db2-card`, 1.25px 6% edge, radius 14, padding 4×18). Rows `104px 1fr` (+ `auto` on the View row),
+  gap 14, padding 12×0, a 6% rule between rows, caps label in the first track. View row: the darker track (`--db2-inset`,
+  6% edge, radius 10, padding 3) with **Tour · Tournament · Player · Lines · Ratings** (6×16, 13px; selected `--db2-raised`
+  + 16% edge, 700; idle muted 600) and one blue **Reset filters** at the right end (12.5/600, hover `--db2-blue-hov`).
+- Dropdown triggers: grey 12/500 label · 13/600 value · × once picked · the CSS chevron (`.db-caret`, 6px, 1.5px muted
+  borders, rotated); transparent on a 6% edge, picked = `--db2-raised` + 16%. Year range = one transparent pill "Years
+  2010 to 2026", mono 12 years. Menus `--db2-card` + 10% edge, radius 10, padding 4, `0 12px 28px` black 45%; rows
+  12.5/500, picked 6% white + 700, hover `--db2-inset`. Search with chips: inset box on a 6% edge (16% while typing), chips
+  `--db2-raised` + 16%, 26px, cap note grey ("Four events maximum", "Two players maximum", "Three players maximum").
+- Filters per view, as the reference draws them: Tour = Level · Surface · Round · Years; Tournament = event search ·
+  Round · Years; Player = player search · Surface · Period · Tournament · Side; Lines and Ratings in their files.
 
 - **A broken Tennis-Data Pinnacle pair falls through** (founder 2026-11-11, "find the closest price"; odds.md "Suspended
   market"): a `psw` / `psl` pair adding up to more than 115% (Marseille 2015 final, 1.58 / 1.58) is read as missing, so the
@@ -130,68 +134,42 @@ take styling from it, structure from the rules below.
   whole; `meta.exclusions.pinnacleBrokenFellThrough` counts them. **Test:** `tools/test-approx-pinnacle.mjs` "broken".
 
 ## Tour
-- **Test:** Favourites left | Underdogs right, each a panel (`--card` + `--edge-6`); rows Heavy favourite · Firm favourite ·
-  Narrow favourite and Narrow underdog · Mid underdog · Long shot (founder fix 7, card ff586600, 2026-10-08 — replaces the
-  ticket's Super / Mid / Slight names; Tour and Tournament; `FAV_NAMES` / `DOG_NAMES`, `test-ten399-fixes.mjs`), each with its
-  own From / To (a 45px track = five mono characters, the same in both tables). **Band names never wrap**
-  (`white-space:nowrap` on the band cell; founder TEN-401 r1 fix 2): the band track is `minmax(108px,1fr)` and the yield
-  columns are 62px, so the ROI overlay at 1512 keeps "Narrow underdog" (107px) on one line. **Test:** `test-ten401-b.mjs` r1.2.
-- **Test:** each band carries its own Matches; the three bands sum to the All row on each side. All yield =
-  match-weighted (total profit ÷ matches, 2 dp, sign colour); All median = pooled median, inside the side's range.
-- **Test (card 52bf5cc5 "superdog" = to-plus; reverses TEN-196's real-top-end ruling):** Long shot From = its real
-  lower cut, To = that + "+" (`3.75` / `3.75+`). Cut-points follow the active filter (`DB_DOG_OPEN_TOP=true`).
-- **Test (founder TEN-401 r1 fix 1, 2026-10-08, both sides, Tour and Tournament):** an All row spans its side — From =
-  the lowest band's From, To = the **top band's To exactly as that row prints it**. Underdogs All = Narrow underdog From /
-  Long shot To (`1.88` / `3.75+`; Hangzhou Open `2.04` / `3.05+` on the archive to 13 Sep, `2.00` / `3.00+` to 6 Oct; Wimbledon `1.95` / `5.57+`); Favourites All = Heavy
-  favourite From / Narrow favourite To (`1.01` / `1.97`; Hangzhou `1.20` / `1.85`, Wimbledon `1.01` / `1.95`). Never the
-  side's lowest price + "+" (the old Underdogs "1.88+"). `test-ten399-database-frame.mjs` bands, `test-ten401-b.mjs` r1.1.
-- **Test (card 52bf5cc5 "allcount" = figures):** both All rows count every priced match (40,972; exact-price ties
-  excluded) and each carries its own median and yield — never one shared row.
-- Sample gates as built (soft 100 grey / hard 30 no yield). **An All row keeps its sign colour under the soft gate**
-  (founder TEN-401 carry-over, 2026-10-08: it rendered grey; bands still go grey). **Test:** `test-ten401-b.mjs` — Hangzhou
-  Open (50 matches) All rows read `--pos` / `--neg` over grey bands. A hard-gated band or All cell prints `—` and the panel
-  carries one note under the table (founder card ff586600 "hardnote" = ok) ("— fewer than 30 matches: too few for a yield."); the Player book split gates each
-  book the same way ("N matches priced on … (too few for a yield)").
-- No "Back the shorter price" / "Back the longer price" copy anywhere. Column heads Hanken 10.5 caps on a 10% rule;
-  All row on a 14% 2px rule. Chart plot 340px, title 19/800, legend swatches `--viz-lead` (Favourites) ·
-  `--viz-white-lead` (Underdogs).
+- **Fixed price bands** (founder 2026-11-16, replacing the terciles of TEN-399 / card ff586600): Favourites = Heavy
+  favourite 1.01–1.20 · Clear favourite 1.21–1.35 · Favourite 1.36–1.50 · Slight favourite 1.51–1.70 · Near coin-flip
+  1.71–1.99; Underdogs = Near coin-flip 1.71–1.99 · Slight underdog 2.00–2.49 · Underdog 2.50–2.99 · Big underdog
+  3.00–3.99 · Long underdog 4.00–5.99 · Longshot 6.00 + (`DB2_BANDS`). Edges are half-open, the Player Profile's MK_BANDS rule:
+  a band runs from its From up to, not including, the next band's From (an archive close of 1.357 is a Clear favourite).
+  **Test:** every price lands in exactly one band (`test-database-v2.mjs` bands; measured 16 Nov: no favourite at 2.00+,
+  no underdog under 1.71). The bands are a display grouping of the same rows; yields, gates and populations are unchanged.
+- Band card (design L1018-1059): caps hint "Back the shorter / longer price" + title 18/800; right the side's yield 26px
+  mono (green / red) over "N matches · median X" (+ " · tour Y" on Tournament / Player). Columns Band · From · To · Median
+  · Matches · Yield (Event / Player) (+ Tour), `minmax(120px,1fr) 50 52 52 58 70` (with Tour `minmax(96px,1fr) 46 50 50 54
+  66 62`). Gates SOFT_GATE 100 (yield muted 500) / HARD_GATE 30 ("n=N — too few matches for a yield", 11px; a Player
+  cell an en dash). The Tour column shows while round and years are untouched, else a dash and the note "Tour baselines are
+  not computed for these filters."
+- **Cumulative return chart:** "Cumulative return, flat 1% stake" + the 22px "?" (1 unit = 1% of the bankroll, so the
+  figures are the same units; only the words changed); x = the **real match date** (1 January of the first season to the
+  last match; season ticks on 1 January, every 4 / 2 / 1 years); plot 400px; Favourites `--db2-blue` 2.4px, Underdogs
+  `--db2-ink-2` 2px; 12% dotted guides, 32% break-even 1.25px; end plates `--db2-raised` + 16%. **Test:** "dates".
+  Display smoothing (`SMOOTH_MODE`) is unchanged and lands on the printed end value.
 
 ## Tournament
-- **Test:** same Favourites | Underdogs layout; each row's tour comparison sits in the same row as the event figure;
-  the band-box header carries only the side title (the event name sits outside), so Tour and Tournament boxes are the
-  same height. Baseline `—` rule unchanged. The "Choose a tournament" prompt names the band yields and the curve only —
-  never the per-book split (founder fix 1).
-- **Test (card 52bf5cc5 "tmtcount" = own count):** each band's Matches is its own tercile count and the All row is the
-  event total, the same as Tour (Australian Open on the one join: 684 × 3 = 2,052).
-- **Compare events (2–4):** a panel (`--card` + `--edge-6`) with the table and one multi-series chart; at most 4
-  events; series 1 `--viz-lead` 2.4px, 2 `--viz-white-lead`, 3 `--viz-tick`, 4 `--viz-white-lead` dashed `6 5`; no
-  categorical hue; end values in the legend only (no plates, no end dots). Series 2 is solid white (founder card ff586600
-  "series2" = solid; the chart rule's "second line white 45%" applies to two-series charts only). `test-ten399-b.mjs`.
-- **Compare events · "All matches" counts each match once** (founder 2026-10-23). The cumulative-profit curve and its
-  legend units add `(fav + dog) / 2` per match, as the design's `yieldOf`; the both-sides sum counted every match twice
-  (Australian Open −457u → −228u on the 22 Oct store). **Test:** is the All-matches end value Σ (fav + dog) / 2 over the
-  event's rows? `test-ten399-b.mjs` "counts each match once" (mutant: the sum → red).
+- One event = the Tour cards with the Tour column. Two events = the summary card (logo slot = the event's initials, a
+  neutral tile; never a mark), the chart with its All matches · Favourites · Underdogs switch, and one band box per event
+  (yield 800 when better than the other event). Three or four = "Best for favourites / underdogs" tiles, one aligned table
+  (the row's best on a 13% white pill) and the chart. Series: blue, ink, `--db2-grey3` dashed 6 5, ink dashed.
+- **Best price band** = the event's highest band yield among bands with at least HARD_GATE matches (a thinner band is not
+  a yield). **"All matches" counts each match once:** `(fav + dog) / 2` per match (founder 2026-10-23; test "compareOnce").
 
 ## Player
-- **Test:** Side = Backing him / Fading him flips every figure, note and curve.
-- **Test:** As favourite / As underdog = card, no outline; no status pill, no gap bar or legend; the "Gap vs tour
-  baseline" row is the only rendering of the gap and its only sign colour besides the player's yield; the tour-baseline
-  figure is `--text-label` (#A3AABE) at the same 26px, **weight 500** (R2 item 6), so it reads as secondary.
-- **Test (R2 item 5):** the Player split strip reads "Each match is priced on its Pinnacle closing price, else Bet365. Split
-  by book: <yield> across N matches priced on Pinnacle, <yield> across M matches priced on Bet365."; a book under 30
-  matches reads "M matches priced on Bet365 (too few for a yield)" — never "too few matches for a yield across M".
-- **Test:** the three charts share one y-domain and one tick set (match-index axis, season ticks, first season to
-  2026); no coverage caption.
-- **Test (founder card ff586600 "clay" = recompute, 2026-10-08):** under a Player Surface / Level filter the tour baseline
-  is recomputed with the same filter (`PLAYER_BASELINE_SCOPE='recompute'`; Khachanov Clay: tour −1.43% / −7.16%). The
-  `'gate'` (`—`) path stays in code, unused.
-
-## Charts (all Database charts)
-- **Test:** horizontal guides only, `--viz-guide` dotted `2 6`; no vertical tick line, no loss wash, no area fill;
-  break-even `--viz-rule` 1.25px; Favourites `--viz-lead` 2.4px, **Underdogs white `--viz-white-lead` 2px** (founder
-  TEN-401 r1 fix 3, as the reference draws it — was white 45%; `COL_DOG`); end dots and legend swatches match their line; axis and
-  tick labels mono `--text-label`. Smoothing (`SMOOTH_MODE='guarded'`), the y-axis algorithm, shared scales, the
-  late-start rule and "nothing interactive" are unchanged.
+- One player: head card (60px avatar, blue ring; photo and "ATP #n" only when the Tennis-Data name joins exactly one
+  ranked player — the archive name table, else surname + first initial against this week's standings; else initials and
+  "ATP #—"), tiles All matches (tour figure recomputed under the same filters, PLAYER_BASELINE_SCOPE 'recompute') and
+  Record, "Compare with" = the five best-ranked players this week who have Database rows. Band cards As favourite / As
+  underdog on HIS price, with the Tour column (whole archive, same filters, same band). Two-line chart As favourite / As
+  underdog, real dates, end labels signed 1 dp. Side = Backing him / Fading him flips every figure; fading hides the Tour
+  column. Two players = the Tournament two-event page with circle avatars. **The "Split by book" strip is gone** (the
+  Database holds no Bet365 row since 30 Oct).
 
 ## Formatting
 - **Test:** yields 2 dp with sign, `pp` deltas, units, all with a true minus `−` (`fmtPct`, `fmtPP`, `fmtU`);

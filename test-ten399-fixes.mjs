@@ -75,9 +75,10 @@ const MUTANTS = [
   ['old band names', 'bandNames', s => s.replace("var FAV_NAMES=['Heavy favourite','Firm favourite','Narrow favourite'];", "var FAV_NAMES=['Super Fav','Mid Fav','Slight Fav'];")],
   ['tabs back under the count', 'ratingsHeader', s => s.replace("rhead.appendChild(rtl); rhead.appendChild(ratBoardTabs()); card.appendChild(rhead);", "rhead.appendChild(rtl); card.appendChild(rhead); card.appendChild(ratBoardTabs());")],
 ];
-for (const [n, fn] of Object.entries(CHECKS)) test('TEN-399 fix · ' + n, () => assert.equal(fn(SRC), null));
+const RETIRED_V2 = new Set(['ratingsHeader']);   // superseded: Database v2 (founder 2026-11-16, "follow the design") replaced this renderer; test-database-v2.mjs locks the new rules
+for (const [n, fn] of Object.entries(CHECKS)) test('TEN-399 fix · ' + n, RETIRED_V2.has(n) ? { skip: 'superseded: Database v2 (founder 2026-11-16, "follow the design") replaced this renderer; test-database-v2.mjs locks the new rules' } : {}, () => assert.equal(fn(SRC), null));
 test('CONTROL: every TEN-399 fix mutant is caught', () => {
   const survived = [];
-  for (const [name, key, mut] of MUTANTS) { const m = mut(SRC); if (m === SRC) { survived.push(name + ' (did not apply)'); continue; } if (CHECKS[key](m) === null) survived.push(name); }
+  for (const [name, key, mut] of MUTANTS) { if (RETIRED_V2.has(key)) continue; const m = mut(SRC); if (m === SRC) { survived.push(name + ' (did not apply)'); continue; } if (CHECKS[key](m) === null) survived.push(name); }
   assert.deepEqual(survived, []);
 });

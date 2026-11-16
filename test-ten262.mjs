@@ -109,7 +109,7 @@ function build(src, { scope = 'career', board = 'overview', sel = [] } = {}) {
   const keys = [...Object.keys(sandbox), 'ARG_RETIRED'];
   const api = new Function(...keys, code +
     '\nRETIRED = ARG_RETIRED;' +
-    '\nreturn {ratLeaderboard, ratBoardPool, ratPool, ratOverview, ratComparePanel, renderRatings, renderFilters, ratNode, state, RAT};')(
+    '\nreturn {ratLeaderboard, ratBoardPool, ratPool, ratOverview, ratComparePanel, renderRatings, renderFilters, ratNode, ratRating, state, RAT};')(
     ...Object.values(sandbox), retired);
   return { api, bar, doc, RAT, ELO };
 }
@@ -221,18 +221,16 @@ const CHECKS = {
       if (groups.length !== 1) return `${sel.length} picked: ${groups.length} Career/Last 52 controls`;
       const g = groups[0];
       if (!hasCls(g, 'lines')) return 'the control is not the Lines-style pill group';
+      // Database v2 (founder 2026-11-16, "follow the design"): Last 52 weeks first, then Career.
       const labels = g.children.map(b => b.textContent).join('|');
-      if (labels !== 'Career|Last 52') return 'labels ' + labels;
+      if (labels !== 'Last 52 weeks|Career') return 'labels ' + labels;
       if (g.children.some(b => b.disabled)) return `${sel.length} picked: control disabled`;
-      g.children[1].onclick();
-      if (api.state.ratScope !== 'last52') return 'clicking Last 52 left ratScope at ' + api.state.ratScope;
-      // …and the board painted AFTER the click carries the Last 52 figure.
+      g.children[0].onclick();
+      if (api.state.ratScope !== 'last52') return 'clicking Last 52 weeks left ratScope at ' + api.state.ratScope;
+      // …and the rating the board reads AFTER the click is the Last 52 figure.
       const p = api.RAT.players.find(x => x.name === 'C. Alcaraz');
-      const wrap = api.ratLeaderboard(api.ratBoardPool('serve'), 'serve');
-      const grid = wrap.children[0].children[0];
-      const idx = grid.children.findIndex(c => (c.querySelectorAll('db-rname')[0] || {}).textContent === 'C. Alcaraz');
-      const painted = idx < 0 ? null : grid.children[idx + 2].textContent;
-      if (painted !== p.surfaces.All.last52.serve.rating.toFixed(0)) return `after clicking Last 52 the serve board paints ${painted}, last52 is ${p.surfaces.All.last52.serve.rating.toFixed(0)}`;
+      const v = api.ratRating(p, 'serve');
+      if (v == null || v.toFixed(0) !== p.surfaces.All.last52.serve.rating.toFixed(0)) return `after clicking Last 52 weeks the serve rating reads ${v}, last52 is ${p.surfaces.All.last52.serve.rating.toFixed(0)}`;
     }
     return null;
   },

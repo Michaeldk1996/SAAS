@@ -140,7 +140,8 @@ CHECKS.caret = (src) => {
   // one CSS rule styles the caret: no per-trigger size / colour override
   const rules = [...src.matchAll(/\n\s*([^{}\n]*db-caret[^{}\n]*)\{/g)].map(m => m[1].trim());
   if (rules.length !== 1 || rules[0] !== '.db-caret') return 'the caret is styled by more than one rule: ' + JSON.stringify(rules);
-  if (!/font-size:9px/.test(cssRule(src, '.db-caret')) || !/color:var\(--text-label\)/.test(cssRule(src, '.db-caret'))) return 'caret is not 9px --text-label';
+  // Database v2 (founder 2026-11-16, design L91): a 6px CSS chevron, 1.5px muted borders, rotated 45deg; the glyph is hidden.
+  if (!/width:6px; height:6px/.test(cssRule(src, '.db-caret')) || !/border-right:1.5px solid var\(--db2-muted\)/.test(cssRule(src, '.db-caret'))) return 'caret is not the design chevron';
   return null;
 };
 // the pre-TEN-399 year range: its own chevron (the sfDd glyph), not the bar's caret
@@ -211,7 +212,7 @@ function paintCurve(src) {
   const code = ['DB_PLOT_H', 'N_TOUR', 'N_TOURN', 'SMOOTH_MODE', 'COL_FAV'].map(v => v === 'N_TOUR' || v === 'N_TOURN' ? '' : varLine(src, v)).join('\n') +
     '\nvar N_TOUR=260, N_TOURN=240;\n' +
     ['el', 'esc', 'yr', 'fmtInt', 'fmtU', 'smoothVals', 'sampleKeep', 'paintSeries', 'poly', 'seasonIndexTicks',
-      'dbGuide', 'dbBreakEven', 'dbSeries', 'dbLegend', 'dbEndDot', 'renderCurveCard'].map(f => fnSource(src, f)).join('\n') +
+      'dbGuide', 'dbBreakEven', 'dbSeries', 'dbLegend', 'dbEndDot', 'renderCurveCard', 'db2Ms', 'db2SeasonTicks'].map(f => fnSource(src, f)).join('\n') +
     '\nreturn renderCurveCard(ROWS, false);';
   const doc = makeDoc();
   const card = new Function('document', 'M', 'ROWS', code)(doc, j.meta, j.rows);
@@ -238,8 +239,9 @@ CHECKS.seam = (src) => {
   const dots = all.filter(n => has(n, 'db-enddot')).map(n => n.style.background);
   if (dots.join('|') !== 'var(--viz-lead)|var(--viz-white-lead)') return 'end dots do not match their series: ' + dots;
   if (!/<i style="background:var\(--viz-white-lead\)"><\/i>Underdogs/.test(html)) return 'Underdogs legend swatch is not white';
-  if (!/var DB_PLOT_H=340;/.test(src)) return 'plot height constant is not 340';
-  for (const sel of ['.db-yaxis', '.db-plotarea', '.db-endcol']) if (!/height:340px/.test(cssRule(src, sel) || '')) return sel + ' is not 340px tall';
+  // Database v2 (founder 2026-11-16, design L1076-1093): the plot is 400px tall again.
+  if (!/var DB_PLOT_H=400;/.test(src)) return 'plot height constant is not 400';
+  for (const sel of ['.db-yaxis', '.db-plotarea', '.db-endcol']) if (!/height:400px/.test(cssRule(src, sel) || '')) return sel + ' is not 400px tall';
   return null;
 };
 MUTANTS.seam = s => s.replace("    s+=dbBreakEven(zeroY);\n", "    s+=dbBreakEven(zeroY);\n    s+='<line x1=\"500\" y1=\"0\" x2=\"500\" y2=\"300\" stroke=\"var(--text-label)\" stroke-dasharray=\"4 4\"/>';\n");
@@ -275,7 +277,7 @@ CHECKS.css = (src) => {
   for (const [sel, re, why] of want) { const r = cssRule(src, sel); if (r === null) return sel + ' rule is gone'; if (!re.test(r)) return why + ' (' + sel + '{' + r + '})'; }
   if (/db-bookline/.test(fnSource(src, 'renderBandView'))) return 'the Tour / Tournament view still paints the blue-dot book line';
   if (/book line above each table/.test(fnSource(src, 'renderFootnote'))) return 'the footnote still points at the book line';
-  if (/'Back the (shorter|longer) price'|>Back the (shorter|longer) price</.test(src)) return '"Back the … price" copy in the page';
+  // (TEN-399's "no 'Back the … price' copy" is superseded: Database v2, founder 2026-11-16, draws the design's caps hint.)
   return null;
 };
 MUTANTS.css = s => s.replace("color:var(--text); background:none; border:none; cursor:pointer; padding:0; }   /* TEN-399 item 3: Reset is white, not blue */",

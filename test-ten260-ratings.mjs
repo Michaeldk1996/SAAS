@@ -298,8 +298,9 @@ const CHECKS = {
   },
 };
 
+const RETIRED_V2 = new Set(['rankedOf']);   // superseded: Database v2 (founder 2026-11-16, "follow the design") replaced this renderer; test-database-v2.mjs locks the new rules (the Mental Edge board is gone)
 for (const [name, check] of Object.entries(CHECKS)) {
-  test('TEN-260 Part A · ' + name, (t) => {
+  test('TEN-260 Part A · ' + name, RETIRED_V2.has(name) ? { skip: 'superseded: Database v2 (founder 2026-11-16, "follow the design") replaced this renderer; test-database-v2.mjs locks the new rules' } : {}, (t) => {
     if (!HAVE) { t.skip('store or retired list absent — skipping OUT LOUD, not passing'); return; }
     const err = check(SRC);
     assert.equal(err, null, err);
@@ -331,6 +332,7 @@ test('CONTROL: every TEN-260 Part A mutant is caught', (t) => {
   if (!HAVE) { t.skip('store absent — skipping OUT LOUD'); return; }
   const survivors = [];
   for (const [name, which, mutate] of MUTANTS) {
+    if (RETIRED_V2.has(which)) continue;
     const m = mutate(SRC);
     assert.notEqual(m, SRC, `mutant "${name}" did not apply — it proves nothing`);
     let caught;
