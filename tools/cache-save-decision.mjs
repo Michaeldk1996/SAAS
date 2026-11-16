@@ -24,6 +24,11 @@ export function decide({ stats, todayCount, pbp = null }) {
   if (pbp && Number.isInteger(pbp.replaced) && pbp.replaced > 0) return { save: true, reason: `replaced ${pbp.replaced} stored point log(s) with the provider's latest` };
   const built = stats && Number.isInteger(stats.opponentsBuilt) ? stats.opponentsBuilt : null;
   if (built == null) return { save: false, reason: 'no profile-build stats from this run' };
+  // 2026-11-16: a tournament-history schema bump refetches 250 histories a run; unsaved, every later run of the day
+  // restored the morning's entry and refetched the SAME 250 (09:13Z, 09:33Z, 09:57Z: "fetched 250, reused 399" each),
+  // so the rest of the roster waited a day per batch. A run that fetched MIN_BUILT or more histories is worth an entry.
+  const hist = Number.isInteger(stats.historiesFetched) ? stats.historiesFetched : 0;
+  if (hist >= MIN_BUILT) return { save: true, reason: `fetched ${hist} tournament histories (>= ${MIN_BUILT})` };
   return built >= MIN_BUILT
     ? { save: true, reason: `built ${built} opponent profiles (>= ${MIN_BUILT})` }
     : { save: false, reason: `built ${built} opponent profiles (< ${MIN_BUILT}); today's ${todayCount} entr${todayCount === 1 ? 'y' : 'ies'} already hold the rest` };

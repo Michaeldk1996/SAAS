@@ -13,6 +13,9 @@ check('the day\'s first run saves (nothing to restore today otherwise)', decide(
 check(`a run that built ${MIN_BUILT}+ opponents saves (20 Oct: 286–296 per run were lost)`, decide({ stats: { opponentsBuilt: 291 }, todayCount: 2 }).save === true);
 check(`a run that built < ${MIN_BUILT} does not (the steady state: 0–6 a run)`, decide({ stats: { opponentsBuilt: 6 }, todayCount: 1 }).save === false);
 check(`safety valve: ${MAX_PER_DAY} entries today → no save, whatever was built`, decide({ stats: { opponentsBuilt: 400 }, todayCount: MAX_PER_DAY }).save === false && /safety valve/.test(decide({ stats: { opponentsBuilt: 400 }, todayCount: MAX_PER_DAY }).reason));
+check(`a run that fetched ${MIN_BUILT}+ tournament histories saves (16 Nov: the same 250 refetched every run)`, decide({ stats: { opponentsBuilt: 0, historiesFetched: 250 }, todayCount: 1 }).save === true && /250 tournament histories/.test(decide({ stats: { opponentsBuilt: 0, historiesFetched: 250 }, todayCount: 1 }).reason));
+check(`[control] a run that fetched < ${MIN_BUILT} histories and built < ${MIN_BUILT} opponents does not save`, decide({ stats: { opponentsBuilt: 0, historiesFetched: 12 }, todayCount: 1 }).save === false);
+check('the safety valve still wins over a history refetch', decide({ stats: { opponentsBuilt: 0, historiesFetched: 250 }, todayCount: MAX_PER_DAY }).save === false);
 check('an unknown entry count (the API did not answer) never saves blind', decide({ stats: { opponentsBuilt: 400 }, todayCount: NaN }).save === false);
 check('no stats file from this run → no save after the first', decide({ stats: null, todayCount: 1 }).save === false);
 const cli = (stats, today) => {
@@ -41,7 +44,7 @@ check('no actions/cache@v4 left on the bsp-caches entry (its implicit save would
 // ── the pipeline ──
 const src = fs.readFileSync(path.join(ROOT, 'bsp-pipeline.js'), 'utf8');
 check('the profile cache is written atomically (temp + rename), never a bare writeFileSync', /writeJsonAtomic\(PLAYER_PROFILE_CACHE_PATH, \{ fetchedAt/.test(src) && !/fs\.writeFileSync\(PLAYER_PROFILE_CACHE_PATH/.test(src));
-check('the run writes profile-build-stats.json {opponentsBuilt} for the decision', /writeJsonAtomic\('profile-build-stats\.json', \{ builtAt: [^}]*opponentsBuilt: built/.test(src));
+check('the run writes profile-build-stats.json {opponentsBuilt, historiesFetched} for the decision', /writeJsonAtomic\('profile-build-stats\.json', \{ builtAt: [^}]*opponentsBuilt: built[^}]*historiesFetched: histFetched/.test(src));
 check('profile-build-stats.json is gitignored (a per-run output, never committed)', fs.readFileSync(path.join(ROOT, '.gitignore'), 'utf8').split('\n').includes('profile-build-stats.json'));
 
 console.log(`\n${pass} passed, ${fail} failed`);

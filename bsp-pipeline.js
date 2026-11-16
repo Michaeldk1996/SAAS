@@ -6608,7 +6608,8 @@ async function buildPlayerProfiles(matches, surfaceMap) {
   // half-written file must never be what a later run restores.
   writeJsonAtomic(PLAYER_PROFILE_CACHE_PATH, { fetchedAt: new Date().toISOString(), players: cachedPlayers });
   // tools/cache-save-decision.mjs reads this to decide whether the run's caches are worth saving
-  writeJsonAtomic('profile-build-stats.json', { builtAt: new Date().toISOString(), opponentsBuilt: built, reused, noStats: skippedNull, wrongSchema: wrongSchemaRejections });
+  writeJsonAtomic('profile-build-stats.json', { builtAt: new Date().toISOString(), opponentsBuilt: built, reused, noStats: skippedNull, wrongSchema: wrongSchemaRejections,
+    historiesFetched: histFetched });   // 2026-11-16: the cache-save rule counts refetched tournament histories too
   console.log(`Player profiles: ${Object.keys(seedProfiles).length} seed, `
     + `opponents [built ${built}, reused ${reused}, no-stats ${skippedNull}, `
     + `wrong-schema ${wrongSchemaRejections}] `
