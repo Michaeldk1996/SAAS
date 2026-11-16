@@ -215,7 +215,8 @@ test('9: a started or completed match shows the line\'s CLOSE, labelled as the c
 test('7: wiring — line prices only in the match card: the H2H tab, Key factors and Market edge Derived lines; never the profile or the Head-to-head page', () => {
   assert.match(html, /results: HM\.mode === 'results', price: x => fhLinePxCell\(x\.L, pxCtx\),/, 'H2H tab: the Price column (mutant: hook removed)');
   assert.match(html, /\$\{x\.c\} of \$\{x\.n\}<\/span>\$\{fhLinePx\(x\.L, kfPx\)\}/, 'Key factors H2H card');
-  const page = html.slice(html.indexOf("const HM = fhHotModel(F, fhH2hLineDefs(h.aS, h.bS), null)"), html.indexOf("const toSheet = s => s.replace(/fhOpenSheet"));
+  // the Head to Head page's own hot lines (design build 2026-11-16): xHotHTML, then the record card around it
+  const page = html.slice(html.indexOf('  function xHotHTML('), html.indexOf('  function h2hBoxHTML('));
   assert.ok(page.length > 200 && !/price:|fhLinePx|LinePrices/.test(page), 'the Head-to-head page shows no line price (founder 2026-10-26: tied to no match)');
   assert.match(slice('meLinesCol'), /fhLinePxCell\(/, 'Match analysis → Market edge → Derived lines prices each line in its Price column');
   // founder 2026-10-26 (close brief item 2): its own column between Line and Rate; Covered is the count only

@@ -28,7 +28,13 @@ function block(sel) {
 }
 const NIGHT_SURF = block(':root,\n[data-theme="night"]'), DAY = block('[data-theme="day"]'), SHARED = block('\n:root');
 const NIGHT = Object.assign({}, NIGHT_SURF, SHARED);
-const TOKENS = new Set(Object.keys(NIGHT));
+// every custom property a `:root {` block of tokens.css defines (the foundation's shared block plus the page-scoped sets a
+// design build names apart: --pp-x-*, --tt-*, --h2h-* — the Head to Head page's sheet reads its own, founder 2026-11-16)
+const ROOT_VARS = (() => { const out = new Set(); let at = -1;
+  while ((at = CSS.indexOf('\n:root {', at + 1)) >= 0) { const body = CSS.slice(at, CSS.indexOf('\n}', at)).replace(/\/\*[\s\S]*?\*\//g, '');
+    for (const m of body.matchAll(/(--[\w-]+)\s*:/g)) out.add(m[1]); }
+  return out; })();
+const TOKENS = new Set([...Object.keys(NIGHT), ...ROOT_VARS]);
 const norm = v => { let s = String(v).replace(/\s+/g, '').toUpperCase(); if (/^#[0-9A-F]{3}$/.test(s)) s = '#' + [...s.slice(1)].map(c => c + c).join(''); return s; };
 
 // Mutation: drift a foundation value in tokens.css (e.g. --text-soft #DDE0EA → #DDE0EB), or move a text / meaning token
