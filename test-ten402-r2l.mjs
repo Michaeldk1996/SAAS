@@ -228,20 +228,22 @@ test('R3 fix 1 · H2H failed, then the profile loads the join → the H2H ledger
 
 test('R3 fix 1 · a failed load never loops on render; a render after H2H_DB_RETRY_MS or the next visit asks again', async () => {
   const { env, api } = page({ fail: 99 });
+  // one attempt = one request for the Database rows (2026-11-16: an attempt asks for its four files together)
+  const attempts = e => e.fetched.filter(u => u === './database-yield.json').length;
   api.h2hEnsureDb(); for (let i = 0; i < 10; i++) await flush();
   assert.equal(api.h2hSt, 'failed');
   assert.ok(env.h2hRenders >= 1, 'the failure did not repaint the page');
-  assert.equal(yieldFetches(env), 1, 'the render after a failure fetched again (loop): ' + env.fetched.join(', '));
+  assert.equal(attempts(env), 1, 'the render after a failure fetched again (loop): ' + env.fetched.join(', '));
   api.h2hEnsureDb(); api.h2hEnsureDb(); await flush();
-  assert.equal(yieldFetches(env), 1, 'a render inside the retry window fetched');
+  assert.equal(attempts(env), 1, 'a render inside the retry window fetched');
   env.now += 15000;                       // H2H_DB_RETRY_MS later
   api.h2hEnsureDb(); for (let i = 0; i < 10; i++) await flush();
-  assert.equal(yieldFetches(env), 2, 'a render after the retry window did not ask again');
+  assert.equal(attempts(env), 2, 'a render after the retry window did not ask again');
   // the next visit (the nav's ensureInit(true)) asks at once, inside the window; a non-visit ensureInit does not
   api.ensureInit(); for (let i = 0; i < 10; i++) await flush();
-  assert.equal(yieldFetches(env), 2, 'loadMatches\' ensureInit() hand-back retried');
+  assert.equal(attempts(env), 2, 'loadMatches\' ensureInit() hand-back retried');
   api.ensureInit(true); for (let i = 0; i < 10; i++) await flush();
-  assert.equal(yieldFetches(env), 3, 'the next visit did not retry the failed join');
+  assert.equal(attempts(env), 3, 'the next visit did not retry the failed join');
   // the visit retry that lands prices the ledger
   env.fail = 0; api.ensureInit(true); for (let i = 0; i < 10; i++) await flush();
   assert.equal(api.st, 'ready'); assert.equal(priced(ledger(api)), ROWS.length);
