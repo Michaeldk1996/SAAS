@@ -3583,6 +3583,27 @@ window.sfPlanLocks(null);   // locked until the account says Edge / Pro: no unlo
   [data-db-root] .db-chip button{ font-size:11px; line-height:1; color:var(--db2-muted); background:none; border:0; padding:0; width:auto; height:auto; }
   [data-db-root] .db-capnote{ font-family:var(--db-ui); font-size:12px; color:var(--db2-muted); white-space:nowrap; padding:0; }
   [data-db-root] .db-chipin input{ flex:1 1 110px; min-width:110px; height:26px; background:transparent; border:none; padding:0 3px; color:var(--db2-ink); font-size:13px; font-family:var(--db-ui); outline:none; }
+  /* player head card (L823-848) */
+  [data-db-root] .db2-phead{ padding:22px 28px; display:flex; align-items:center; flex-wrap:wrap; gap:16px 22px; }
+  [data-db-root] .db2-pav{ flex:none; width:60px; height:60px; border-radius:50%; background:var(--db2-inset); box-shadow:0 0 0 2px var(--db2-blue); overflow:hidden; position:relative; }
+  [data-db-root] .db2-pav img{ position:relative; width:60px; height:60px; object-fit:cover; display:block; }
+  [data-db-root] .db2-pavi{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-family:var(--db-mono); font-size:17px; font-weight:700; color:var(--db2-muted); }
+  [data-db-root] .db2-pname{ flex:1 1 220px; min-width:0; display:flex; flex-direction:column; gap:5px; }
+  [data-db-root] .db2-pnm{ font-size:21px; font-weight:800; letter-spacing:-0.015em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  [data-db-root] .db2-psub{ font-size:12.5px; color:var(--db2-muted); }
+  [data-db-root] .db2-ptiles{ display:grid; grid-template-columns:repeat(2,minmax(150px,1fr)); gap:10px; flex:0 1 380px; min-width:0; }
+  [data-db-root] .db2-ptv{ margin-top:9px; font-family:var(--db-mono); font-size:21px; font-weight:700; letter-spacing:-0.02em; }
+  [data-db-root] .db2-pts{ margin-top:6px; font-size:12px; color:var(--db2-muted); white-space:nowrap; }
+  [data-db-root] .db2-pcw{ flex:1 1 100%; min-width:0; display:flex; align-items:center; flex-wrap:wrap; gap:8px 10px; padding-top:16px; border-top:1px solid var(--db2-h7); }
+  [data-db-root] .db2-pcwl{ margin-right:4px; }
+  [data-db-root] .db2-pill2{ display:flex; align-items:center; gap:8px; height:34px; box-sizing:border-box; padding:0 13px 0 5px; border-radius:17px; background:var(--db2-inset);
+    border:1px solid var(--db2-h10); font-family:var(--db-ui); font-size:12.5px; font-weight:600; color:var(--db2-ink); white-space:nowrap; cursor:pointer; }
+  [data-db-root] .db2-pill2:hover{ border-color:var(--db2-blue); background:color-mix(in srgb, var(--db2-blue) 10%, transparent); }
+  [data-db-root] .db2-pill2i{ flex:none; width:24px; height:24px; border-radius:50%; background:var(--db2-avatar); display:flex; align-items:center; justify-content:center; position:relative; overflow:hidden;
+    font-family:var(--db-mono); font-size:9.5px; font-weight:700; color:var(--db2-muted); }
+  [data-db-root] .db2-pill2i img{ position:absolute; inset:0; width:24px; height:24px; object-fit:cover; }
+  [data-db-root] .db2-pcwmore{ margin-left:auto; font-family:var(--db-ui); font-size:12.5px; font-weight:600; color:var(--db2-blue); white-space:nowrap; background:none; border:0; padding:0; cursor:pointer; }
+  [data-db-root] .db2-pcwmore:hover{ color:var(--db2-blue-hov); }
   /* TEN-242 phase 2: an ID selector cannot match the embedded mount, whose body
      is addressed by data-db. Both forms, one rule. */
   #dbBody, [data-db="body"]{ display:flex; flex-direction:column; gap:22px; }
@@ -29578,6 +29599,9 @@ setInterval(loadMatches, 3 * 60 * 1000);
  *   S1/S2/S4 kept: reconciliation footnote, freshness line, per-filter book label.
  *   S3/S5/S6/S8 deleted. Fade side computed in full — no dashes where we hold data.
  */
+// Database v2: the page-wide standings (player-index.json) for the Database's photo / rank join; the tab's own
+// `playerIndex` (Tennis-Data name -> rows) shadows the global inside its closure.
+function sfGlobalPlayerIndex(){ return (typeof playerIndex!=='undefined' && Array.isArray(playerIndex)) ? playerIndex : null; }
 window.DatabaseTab = (function(){
   'use strict';
   var BASE_URL = './database-yield.json';
@@ -29611,7 +29635,7 @@ window.DatabaseTab = (function(){
       view:'tour',
       levels:null, surfaces:null, rounds:null,
       yearMin:null, yearMax:null,
-      tournament:null, tournLabel:null, player:null,
+      tournament:null, tournLabel:null, player:null, player2:null,
       // TEN-399 item 5 · Compare events: the 2nd–4th picks ({names, label}) after
       // `tournament` (pick 1), and the compare chart's side (README `tcSide`).
       tcmp:[], tcSide:'all',
@@ -30477,6 +30501,7 @@ window.DatabaseTab = (function(){
     state.yearMin=null; state.yearMax=null;
     state.tq=''; state.pq=''; state.menu=null; state.menuQ='';
     state.tcmp=[]; state.tcSide='all';   // TEN-399 b: Reset clears the compared events
+    state.player2=null;   // Database v2: Reset clears the compared player
     state.period='all'; state.psurf=null; state.plevel=null; state.ptourn=null; state.stance='back';
     // TEN-243 STEP 1.8 - "Reset clears every tab's state at once", so the
     // Ratings keys are cleared here too and not only while that tab is open.
@@ -30704,42 +30729,28 @@ window.DatabaseTab = (function(){
       if(rdOpts) zR.appendChild(trigger('Round', countOf(state.rounds), !!state.rounds, 'round', function(){ return multiMenu(rdOpts, state.rounds, function(s){state.rounds=s;}, true); }, function(){ state.rounds=null; }));
       zR.appendChild(yearControl());
     } else {
-      if(state.player){
-        var pchip=el('div','db-subject','<span>'+esc(state.player)+'</span>');
-        var px=el('button',null,'×'); px.title='Clear player';
-        px.onclick=function(){ state.player=null; state.pq=''; state.ptourn=null; render(); };
-        pchip.appendChild(px); zL.appendChild(pchip);
-      }
-      zL.appendChild(searchField({
-        placeholder:'Search players…', query:state.pq, noun:'player', prompting:!state.player,
-        onInput:function(v){ state.pq=v; },
+      // Database v2 (design PLAYER_DEFS + playerSearch): a player search that adds a chip, TWO players maximum
+      // ("Two players maximum"), then Surface · Period · Tournament · Side. The design has no Level control here.
+      var _picks=[state.player, state.player2].filter(Boolean);
+      zL.appendChild(chipSearch({
+        picks:_picks, cap:2, capNote:'Two players maximum', noun:'player',
+        placeholder:'Search players\u2026', placeholder2:'Compare with\u2026', query:state.pq,
         pending:!playerIndex,
+        onInput:function(v){ state.pq=v; },
         match:function(q){ if(!playerIndex) return []; var ql=q.toLowerCase();
-          var hits=Object.keys(playerIndex).filter(function(n){ return n.toLowerCase().indexOf(ql)>=0; }).sort();
-          lastTotal=hits.length;
+          var hits=Object.keys(playerIndex).filter(function(n){ return n.toLowerCase().indexOf(ql)>=0 && _picks.indexOf(n)<0; }).sort();
           return hits.slice(0,40).map(function(n){ return {label:n, value:n, meta:fmtInt(playerIndex[n].length)}; }); },
-        total:function(){ return lastTotal; },
-        selected:state.player,
-        onPick:function(n){ state.player=n; state.pq=''; state.ptourn=null; render(); }
+        onPick:function(n){ if(!state.player){ state.player=n; state.ptourn=null; } else if(!state.player2 && n!==state.player) state.player2=n; state.pq=''; },
+        onRemove:function(n){ if(n===state.player){ state.player=state.player2||null; state.player2=null; state.ptourn=null; } else if(n===state.player2) state.player2=null; }
       }));
+      var SURF=[[null,'All']].concat(M.surfaces.map(function(s,i){return [i,s];}));
+      zR.appendChild(trigger('Surface', state.psurf==null?'All':M.surfaces[state.psurf], state.psurf!=null, 'psurf', function(){
+        return singleMenu(SURF, state.psurf, function(v){ state.psurf=v; }, false); }));
       var PERIODS=[['all','All time'],['w52','Last 52 weeks'],['y2','Last 2Y'],['y5','Last 5Y']];
       var curP=PERIODS.filter(function(p){return p[0]===state.period;})[0];
       zR.appendChild(trigger('Period', curP?curP[1]:'All time', state.period!=='all', 'period', function(){
         return singleMenu(PERIODS, state.period, function(v){ state.period=v; }, false); }));
-      var SURF=[[null,'All']].concat(M.surfaces.map(function(s,i){return [i,s];}));
-      zR.appendChild(trigger('Surface', state.psurf==null?'All':M.surfaces[state.psurf], state.psurf!=null, 'psurf', function(){
-        return singleMenu(SURF, state.psurf, function(v){ state.psurf=v; }, false); }));
-      // Level — founder ruling TEN-196 2026-09-13: "build it with four levels,
-      // fold Finals away". Finals is 238 matches for the whole tour across 16
-      // seasons, so it is thin by construction for almost every player. It is not
-      // offered as a choice; it is NOT removed from the archive, so the default
-      // "All" still counts it and no match is hidden from the unfiltered record.
-      // Single-select, matching this tab's own Surface/Tournament controls — which
-      // also means "all four picked" can never be mistaken for "All".
-      var PL=playerLevels();
-      if(PL) zR.appendChild(trigger('Level', state.plevel==null?'All':M.levels[state.plevel], state.plevel!=null, 'plevel', function(){
-        return singleMenu([[null,'All']].concat(PL), state.plevel, function(v){ state.plevel=v; state.ptourn=null; }, false); }));
-      else state.plevel=null;   // dictionary moved: fail closed, and never filter on a stale index
+      state.plevel=null;
       var events=playerEvents();
       zR.appendChild(trigger('Tournament', state.ptourn==null?'All':tournLabel(state.ptourn), state.ptourn!=null, 'ptourn', function(){
         return singleMenu([[null,'All']].concat(events), state.ptourn, function(v){ state.ptourn=v; }, true); }));
@@ -33118,24 +33129,81 @@ window.DatabaseTab = (function(){
                     ap: byb[2].n?{n:byb[2].n,yield:byb[2].pr/byb[2].n}:null } };
   }
 
+  // ===== Database v2 Player view (design L823-848 head card, L1017-1060 band cards, tourChart two lines; two players =
+  // the compare page with circle avatars). Figures: the player's own Database rows (playerIndex), his price per match,
+  // flat 1u (1u = 1% of bankroll), Pinnacle closing price per row as the whole Database.
+  function db2Recs(name){
+    var all=(playerIndex&&playerIndex[name])||[], anchor=dnum(+(''+M.dateRange[1]).replace(/-/g,''));
+    return all.filter(function(v){
+      if(state.psurf!=null && v.surf!==state.psurf) return false;
+      if(state.ptourn!=null && v.tour!==state.ptourn) return false;
+      return inPeriod(v.d, anchor);
+    });
+  }
+  // Per band of HIS price, both roles, on the shape fixedBands returns (so the band card and the compare page read it).
+  function db2RecBands(recs, sideKey, fading){
+    var role=recs.filter(function(v){ return sideKey==='fav' ? v.fav : !v.fav; });
+    var mk=function(rs){ if(!rs.length) return null; var a=aggRecs(rs, fading); return { n:a.n, yield:a.yield, median:a.median }; };
+    return { all:mk(role), recs:role, bands:DB2_BANDS[sideKey].map(function(B){
+      return { def:B, agg:mk(role.filter(function(v){ return db2InBand(B, v.p); })) }; }) };
+  }
+  // The tour figure beside the player's: the whole archive under the SAME surface / period / tournament filter
+  // (PLAYER_BASELINE_SCOPE 'recompute', founder TEN-196), per fixed band of the side's price.
+  function db2PlayerTour(){
+    var rows=DATA.rows, anchor=dnum(+(''+M.dateRange[1]).replace(/-/g,'')), out={fav:[], dog:[]};
+    for(var i=0;i<rows.length;i++){
+      var r=rows[i];
+      if(state.psurf!=null && r[2]!==state.psurf) continue;
+      if(state.ptourn!=null && r[4]!==state.ptourn) continue;
+      if(!inPeriod(r[0], anchor)) continue;
+      out.fav.push({p:r[5], pr: r[7] ? (r[5]-1) : -1});
+      out.dog.push({p:r[6], pr: r[7] ? -1 : (r[6]-1)});
+    }
+    function y(list, B){ var n=0,s=0; for(var k=0;k<list.length;k++){ if(!B || db2InBand(B, list[k].p)){ n++; s+=list[k].pr; } } return n ? {n:n, yield:s/n} : null; }
+    return { band:function(side, B){ return y(out[side], B); }, all:function(side){ return y(out[side], null); },
+             both:function(){ var a=y(out.fav,null), b=y(out.dog,null); return (a&&b) ? {n:a.n, yield:(a.yield+b.yield)/2} : null; } };
+  }
+  // Tennis-Data name ("Khachanov K.") -> the ranked player it names, for the photo and "ATP #n" ONLY. Identity, never a
+  // guess: the archive name table first (database-yield-players.json `aliases`), then surname + first initial against this
+  // week's standings, and only a single candidate counts. No candidate, or two, = initials and no rank.
+  var DB2_WHO={};
+  function db2Who(td){
+    if(Object.prototype.hasOwnProperty.call(DB2_WHO, td)) return DB2_WHO[td];
+    return (DB2_WHO[td]=db2Who0(td));
+  }
+  function db2Who0(td){
+    var idx=(typeof sfGlobalPlayerIndex==='function') ? sfGlobalPlayerIndex() : null;
+    if(!idx || !idx.length || !td) return null;
+    var nm=(NAMES && NAMES.aliases && NAMES.aliases[td]) || td, sur, ini, m;
+    if((m=/^(.+?)\s+([A-Z][A-Za-z\-]*\.(?:[A-Z][A-Za-z]*\.)*)$/.exec(nm))){ sur=m[1]; ini=m[2].charAt(0); }
+    else if((m=/^([A-Z][A-Za-z\-]*\.(?:\s?[A-Z][A-Za-z]*\.)*)\s+(.+)$/.exec(nm))){ sur=m[2]; ini=m[1].charAt(0); }
+    else return null;
+    var fold=function(x){ return String(x).normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[^a-z ]/g,' ').replace(/\s+/g,' ').trim(); };
+    var fs=fold(sur), hits=idx.filter(function(p){ var f=fold(p.name); return (f===fs || f.slice(-fs.length-1)===' '+fs) && f.charAt(0)===ini.toLowerCase(); });
+    return hits.length===1 ? hits[0] : null;
+  }
+  function db2Ini(name){ var p=String(name||'').replace(/[^A-Za-z ]/g,'').split(' ').filter(Boolean); return ((p[0]||'').charAt(0)+(p.length>1?(p[p.length-1]||'').charAt(0):'')).toUpperCase(); }
+  function db2PlayerEv(name, fading){
+    var recs=db2Recs(name), who=db2Who(name);
+    var fb=db2RecBands(recs,'fav',fading), dbb=db2RecBands(recs,'dog',fading);
+    var surf = state.psurf==null ? '' : ' · '+M.surfaces[state.psurf];
+    return { label:name, rows:recs, n:recs.length, favB:fb, dogB:dbb, fav:fb.all, dog:dbb.all,
+      sub:(who && who.rank!=null ? 'ATP #'+who.rank : 'ATP #—')+' · '+fmtInt(recs.length)+' matches', surfaceOnly:(who && who.rank!=null ? 'ATP #'+who.rank : 'ATP #—'),
+      ph:db2Ini(name), avatarKey: who ? who.key : null,
+      date:function(v){ return v.d; },
+      inc:function(v, side){ return side==='fav' ? v.fav : side==='dog' ? !v.fav : true; },
+      profit:function(v){ var pr=fading?v.op:v.p, won=fading?!v.w:!!v.w; return won ? pr-1 : -1; } };
+  }
+  function db2PeriodLabel(){ return ({all:'All time', w52:'Last 52 weeks', y2:'Last 2Y', y5:'Last 5Y'})[state.period] || 'All time'; }
   function renderPlayers(body){
     if(!NAMES){
       body.appendChild(el('div','db-loading','Loading player archive…'));
-      // Guard the tab on BOTH paths: without it a late shard failure wipes whatever
-      // the user has since navigated to. Bind once — re-entering the tab must not
-      // stack another handler on the memoised promise.
       if(!namesBound){
         namesBound=true;
-        // Capture the instance. Both continuations used to read module-level
-        // `state`/`I`, which is whichever mount rendered LAST — open the ROI
-        // overlay while this shard is in flight and the standalone page's
-        // re-render is silently dropped, or its error card is painted into the
-        // overlay. mount()'s own loadBase() continuations already do this.
         var inst=I;
         loadNames().then(function(){ use(inst); if(state.view==='players') render(); })
           .catch(function(){
-            namesBound=false;
-            use(inst);
+            namesBound=false; use(inst);
             if(state.view!=='players') return;
             var b=q('body');
             if(b){ b.innerHTML=''; b.appendChild(el('div','db-empty','<h3>Player archive unavailable</h3><p>The per-player shard could not be loaded from this environment.</p>')); }
@@ -33145,73 +33213,111 @@ window.DatabaseTab = (function(){
     }
     if(!state.player){
       var p=el('div','db-prompt');
-      p.innerHTML='<h3>Choose a player</h3><p>Search above to pick a player, and this tab will show what backing — or fading — him returned at a flat 1-unit stake, split by favourite and underdog role, against the tour baseline.</p>';
+      p.innerHTML='<h3>Choose a player</h3><p>Search above to pick a player, and this tab will show what backing — or fading — him returned at a flat 1% stake, by price band as favourite and as underdog, against the tour.</p>';
       body.appendChild(p); renderFootnote(body); return;
     }
     var fading = state.stance==='fade';
-    var recs=playerRecs();
+    if(state.player2){
+      state.db2PlRange = db2PeriodLabel()+(state.psurf==null?'':' · '+M.surfaces[state.psurf])+(fading?' · fading':'');
+      var evs=[db2PlayerEv(state.player, fading), db2PlayerEv(state.player2, fading)];
+      renderCmp2(body, evs, 'player', function(n){ if(n===state.player){ state.player=state.player2; state.player2=null; } else state.player2=null; });
+      renderFootnote(body); return;
+    }
+    var ev=db2PlayerEv(state.player, fading), recs=ev.rows;
     if(!recs.length){
       var e=el('div','db-empty');
-      e.innerHTML='<h3>No matches for this filter</h3><p>No archive rows for '+esc(state.player)+' in the selected period, surface, level and tournament.</p>';
+      e.innerHTML='<h3>No matches for this filter</h3><p>No archive rows for '+esc(state.player)+' in the selected period, surface and tournament.</p>';
       body.appendChild(e); renderFootnote(body); return;
     }
-    // TEN-399 item 6 / D4: no blue-dot basis line above the Player figures — the
-    // per-book split strip below states the join instead (ticket item 1).
-    var bl=bookLabel(recs.map(function(v){return v.b;}));
-
-    var favRecs=recs.filter(function(v){ return v.fav; });
-    var dogRecs=recs.filter(function(v){ return !v.fav; });
-    var A=aggRecs(recs, fading), F=aggRecs(favRecs, fading), D=aggRecs(dogRecs, fading);
-
-    var TB2=playerBaselines();
-    var known = !!TB2;
-    var tFav=known?TB2.fav:null, tDog=known?TB2.dog:null, tAll=known?TB2.all:null;
-    // Fading crosses the sides over: the stake sits on the other price.
-    var baseF = fading ? tDog : tFav, baseD = fading ? tFav : tDog;
-
-    // 1 - all-matches line
-    var al=el('div','db-allline');
-    var ay=fmtPct(A.yield);
-    // TEN-243 `hardgate`: the same three states as yieldCell, at this line's own type
-    // scale. Under the hard gate the 22px figure is replaced outright — a suppressed
-    // yield must not leave a big coloured number on the most prominent line of the tab.
-    var abig = (A.n<HARD_GATE)
-      ? '<span class="big" style="font-size:12.5px;font-weight:500;color:var(--db-mute);">n='+fmtInt(A.n)+' — too few matches for a yield</span>'
-      : (A.n<SOFT_GATE
-        ? '<span class="big" style="font-weight:500;color:var(--db-mute);">'+ay+'</span>'
-        : '<span class="big" style="color:'+signCol(ay)+'">'+ay+'</span>');
-    al.innerHTML='<span class="lbl">All matches</span>'+
-      abig+
-      '<span class="meta"><b>'+A.wins+'–'+A.losses+'</b> · '+(A.winpct==null?'—':Math.round(A.winpct*100)+'% win')+'</span>'+
-      '<span class="meta">Median odds <b>'+fmtP(A.median)+'</b></span>'+
-      '<span class="meta">'+(known?('Tour '+fmtPct(tAll)):'Tour — not computed for this filter')+'</span>'+
-      (A.n>=HARD_GATE && A.n<SOFT_GATE ? '<span class="meta">n='+fmtInt(A.n)+'</span>' : '');
-    body.appendChild(al);
-
-    // 2 - role cards
-    var gapF = (F.yield==null||!known) ? null : (F.yield-baseF)*100;
-    var gapD = (D.yield==null||!known) ? null : (D.yield-baseD)*100;
-    var roles=el('div','db-roles');
-    roles.appendChild(roleCard('As Favourite', F, baseF, gapF, known,
-      fading ? 'Matches where he was the shorter price, with his opponent backed flat 1u.' : 'Matches where he was the shorter price, backed flat 1u.'));
-    roles.appendChild(roleCard('As Underdog', D, baseD, gapD, known,
-      fading ? 'Matches where he was the longer price, with his opponent backed flat 1u.' : 'Matches where he was the longer price, backed flat 1u.'));
-    body.appendChild(roles);
-
-    // 3 - per-book split (computed on both stances — X3/X4 ruling). TEN-399 item 6:
-    // both figures in ONE convention (playerBookSplit) and the strip states the join.
-    body.appendChild(el('div','db-card db-psplit','<div class="db-split">'+playerBookSplit(A.book, bl)+'</div>'));
-
-    // 4 - charts
-    body.appendChild(playerCharts(recs, favRecs, dogRecs, fading));
+    var A=aggRecs(recs, fading), TT=db2PlayerTour(), tb=TT.both();
+    // head card
+    var hc=el('div','db2-card db2-phead');
+    var av=el('span','db2-pav'); av.appendChild(el('span','db2-pavi', esc(ev.ph)));
+    if(ev.avatarKey!=null && typeof playerPhotoImg==='function'){ try{ var im=playerPhotoImg(ev.avatarKey, state.player); if(im) av.insertAdjacentHTML('beforeend', im); }catch(_){} }
+    hc.appendChild(av);
+    hc.appendChild(el('div','db2-pname','<div class="db2-pnm">'+esc(state.player)+'</div><div class="db2-psub">'+esc(ev.surfaceOnly+' · '+fmtInt(recs.length)+' matches · '+db2PeriodLabel()+' · '+
+      (state.psurf==null?'all surfaces':M.surfaces[state.psurf])+(state.ptourn==null?'':' · '+tournLabel(state.ptourn)))+'</div>'));
+    var allY = A.n>=HARD_GATE ? A.yield : null;
+    var tiles=el('div','db2-ptiles');
+    tiles.appendChild(el('div','db2-tile','<div class="db2-caps">'+(fading?'All matches, fading him':'All matches')+'</div><div class="db2-ptv" style="color:'+db2PcCol(allY)+'">'+db2Pc(allY)+'</div>'+
+      '<div class="db2-pts" style="color:'+(!fading && tb ? db2PcCol(tb.yield) : 'var(--db2-muted)')+'">'+(!fading && tb ? 'Tour '+db2Pc(tb.yield) : 'Tour not computed here')+'</div>'));
+    tiles.appendChild(el('div','db2-tile','<div class="db2-caps">'+(fading?'Record against him':'Record')+'</div><div class="db2-ptv" style="color:var(--db2-ink)">'+A.wins+'–'+A.losses+'</div>'+
+      '<div class="db2-pts">'+(A.n?Math.round(A.wins/A.n*100)+'% won':'—')+'</div>'));
+    hc.appendChild(tiles);
+    var cw=el('div','db2-pcw'); cw.appendChild(el('span','db2-caps db2-pcwl','Compare with'));
+    // The design's pills are the tour's best-known names; here: the five best-ranked players this week who have Database
+    // rows, the subject excluded (a stated rule, no hand list).
+    var idx=(typeof sfGlobalPlayerIndex==='function') ? (sfGlobalPlayerIndex()||[]) : [];
+    var tdNames=Object.keys(playerIndex), byKey={};
+    tdNames.forEach(function(n){ var w=db2Who(n); if(w && byKey[w.key]==null) byKey[w.key]=n; });
+    idx.slice().filter(function(x){ return x.rank!=null && byKey[x.key]!=null && byKey[x.key]!==state.player; })
+      .sort(function(a,b){ return a.rank-b.rank; }).slice(0,5).forEach(function(x){
+        var tdn=byKey[x.key], g=el('button','db2-pill2'); g.type='button'; g.title='Compare '+state.player+' with '+tdn;
+        var gi=el('span','db2-pill2i', esc(db2Ini(tdn)));
+        if(typeof playerPhotoImg==='function'){ try{ var im2=playerPhotoImg(x.key, tdn); if(im2) gi.insertAdjacentHTML('beforeend', im2); }catch(_){} }
+        g.appendChild(gi); g.appendChild(document.createTextNode(tdn));
+        g.onclick=function(){ state.player2=tdn; state.pq=''; render(); };
+        cw.appendChild(g);
+      });
+    var so=el('button','db2-pcwmore','Search another player ›'); so.type='button';
+    so.onclick=function(){ var n=qsel('.db-chipin input'); if(n) n.focus(); };
+    cw.appendChild(so);
+    hc.appendChild(cw);
+    body.appendChild(hc);
+    // band cards
+    var grid=el('div','db2-bands');
+    ['fav','dog'].forEach(function(sk){
+      var res = sk==='fav' ? ev.favB : ev.dogB;
+      var tAll=TT.all(sk);
+      grid.appendChild(bandCard2(sk, res, 'player', { fade:fading, baseKnown:true,
+        baseAll: tAll ? fmtPct(tAll.yield) : '—', baseFor:function(B){ return TT.band(sk, B); } }));
+    });
+    body.appendChild(grid);
+    body.appendChild(db2PlayerChart(ev, fading));
     renderFootnote(body);
   }
+  function db2PlayerChart(ev, fading){
+    var card=el('div','db-card'), head=el('div','db-charthead');
+    head.innerHTML='<span class="db2-ctitle"><h3>Cumulative return, flat 1% stake</h3><span class="db2-q" title="Every match is settled at the Pinnacle closing price. One unit is 1% of the bankroll, staked flat on every match. Below zero is a loss.">?</span></span>'+
+      dbLegend([['As favourite',COL_FAV],['As underdog',COL_DOG]]);
+    card.appendChild(head);
+    card.appendChild(el('div','db-subline','Return as % of bankroll at a flat 1% stake per match, cumulative — below zero is a loss.'));
+    var ord=ev.rows.slice().sort(function(a,b){ return a.d-b.d; });
+    var t0=Date.UTC(Math.floor(ord[0].d/10000),0,1), t1=db2Ms(ord[ord.length-1].d); if(t1<=t0) t1=t0+864e5;
+    function ser(fav){ var xs=[], vs=[], c=0; ord.forEach(function(v){ if(!!v.fav!==fav) return; c+=ev.profit(v); xs.push((db2Ms(v.d)-t0)/(t1-t0)); vs.push(c); }); return {xs:xs, vs:vs, end: vs.length ? c : null}; }
+    var F=ser(true), D=ser(false), all=[0].concat(F.vs, D.vs);
+    var rawHi=Math.max.apply(null,all), rawLo=Math.min.apply(null,all), sp=rawHi-rawLo;
+    var step=[1,2,5,10,25,50,100,250,500,1000,2500].filter(function(s){ return sp/s<=10; })[0] || 5000, rnd=Math.max(1, step/10);
+    var hi = rawHi>0 ? Math.ceil(rawHi/step)*step : Math.max(rnd, Math.ceil(rawHi/rnd)*rnd), lo=Math.floor(rawLo/rnd)*rnd; if(hi===lo) hi=lo+rnd;
+    var H=300; function Y(v){ return ((hi-v)/(hi-lo))*H; }
+    var plot=el('div','db-plot'), yax=el('div','db-yaxis'), area=el('div','db-plotarea');
+    var svg='<svg viewBox="0 0 1000 300" preserveAspectRatio="none" aria-hidden="true">', v;
+    for(v=Math.floor(hi/step)*step; v>0; v-=step){ svg+=dbGuide(Y(v)); var d1=el('div',null,'+'+fmtInt(v)+'u'); d1.style.top=(Y(v)/H*100).toFixed(2)+'%'; yax.appendChild(d1); }
+    for(v=0; v>=lo; v-=step){ svg+=dbGuide(Y(v)); var d2=el('div',null, v===0?'0':fmtU(v)); d2.style.top=(Y(v)/H*100).toFixed(2)+'%'; yax.appendChild(d2); }
+    svg+=dbBreakEven(Y(0));
+    if(D.vs.length) svg+=dbSeries(poly(D.xs,D.vs,Y,N_PMAIN), COL_DOG, false);
+    if(F.vs.length) svg+=dbSeries(poly(F.xs,F.vs,Y,N_PMAIN), COL_FAV, true);
+    area.innerHTML=svg+'</svg>';
+    var be=el('div','db-ovl db-belab','Break even'); be.style.top=(Y(0)/H*100).toFixed(2)+'%'; area.appendChild(be);
+    var ends=[{cls:'fav', name:'As favourite', col:COL_FAV, s:F},{cls:'dog', name:'As underdog', col:COL_DOG, s:D}].filter(function(e){ return e.s.end!=null; });
+    ends.forEach(function(e){ e.pct=Y(e.s.end)/H*100; area.appendChild(dbEndDot(e.pct, e.col)); });
+    plot.appendChild(yax); plot.appendChild(area);
+    var endcol=el('div','db-endcol'), MINGAP=54/DB_PLOT_H*100;
+    if(ends.length===2 && Math.abs(ends[0].pct-ends[1].pct)<MINGAP){ var mid=(ends[0].pct+ends[1].pct)/2, h=MINGAP/2, f=ends[0].pct>=ends[1].pct;
+      ends[0].pct=f?mid+h:mid-h; ends[1].pct=f?mid-h:mid+h; }
+    ends.forEach(function(e){
+      var val=e.s.end, txt=(val>0?'+':val<0?'−':'')+Math.abs(val).toFixed(1)+'u';
+      var pl=el('div','db-plate '+e.cls,'<b>'+e.name+'</b><span style="color:'+db2PcCol(val)+'">'+txt+'</span>');
+      pl.style.top=Math.max(4,Math.min(96,e.pct)).toFixed(2)+'%'; endcol.appendChild(pl);
+    });
+    plot.appendChild(endcol); card.appendChild(plot);
+    var xax=el('div','db-xaxis'), y0=Math.floor(ord[0].d/10000), y1=Math.floor(ord[ord.length-1].d/10000), stp=(y1-y0)>12?4:(y1-y0)>6?2:1;
+    db2SeasonTicks(y0, y1, stp, t0, t1).forEach(function(t){ var d=el('div',null,t.label); d.style.left=(t.x*100).toFixed(2)+'%'; xax.appendChild(d); });
+    card.appendChild(xax);
+    card.appendChild(el('div','db-xcap','<span class="db-eyebrow">Season</span>'));
+    return card;
+  }
 
-  // TEN-399 item 6 "Split-by-book strip: both figures one convention". Each book's
-  // figure goes through the SAME formatter — same phrase ("across N matches priced on
-  // <book>"), same type, same sample gate — so neither reads as the qualified one.
-  // The strip opens with the join (ticket item 1: "the per-book split paragraph on the
-  // Player tab stays and states the join").
   function playerBookSplit(book, bl){
     function seg(s, name){
       if(!s) return 'none priced on '+esc(name);
@@ -33651,6 +33757,7 @@ window.DatabaseTab = (function(){
   // A yield prints only at or above the hard floor; under it the cell is an en dash (its count in the hover).
   function db2Gy(a){ return (a && a.n>=HARD_GATE) ? a.yield : null; }
   function db2Ev(ev){
+    if(ev.favB) return ev;   // the Player view hands its bands over ready (his price, per role)
     var fv=ev.rows.map(function(r){ return {p:r[5], w:r[7], b:r[8]}; }), dv=ev.rows.map(function(r){ return {p:r[6], w:r[7]?0:1, b:r[8]}; });
     ev.favB=fixedBands(fv,'fav'); ev.dogB=fixedBands(dv,'dog');
     ev.fav=ev.favB.all; ev.dog=ev.dogB.all; ev.n=ev.rows.length;
@@ -33790,12 +33897,13 @@ window.DatabaseTab = (function(){
     });
     hd.appendChild(trk); card.appendChild(hd);
     var t0=Infinity, t1=-Infinity;
-    evs.forEach(function(e){ e.rows.forEach(function(r){ var ms=db2Ms(r[0]); if(ms<t0) t0=ms; if(ms>t1) t1=ms; }); });
+    evs.forEach(function(e){ var D=e.date||function(r){ return r[0]; }; e.rows.forEach(function(r){ var ms=db2Ms(D(r)); if(ms<t0) t0=ms; if(ms>t1) t1=ms; }); });
     if(!isFinite(t0)){ card.appendChild(el('div','db2-bnote','No matches for these '+(PM?'players':'events')+' under the current filters.')); return card; }
     var y0=new Date(t0).getUTCFullYear(), y1=new Date(t1).getUTCFullYear(); t0=Date.UTC(y0,0,1); if(t1<=t0) t1=t0+864e5;
     var series=evs.map(function(e,i){
-      var ord=e.rows.slice().sort(function(a,b){ return a[0]-b[0]; }), xs=[], vs=[], c=0;
-      ord.forEach(function(r){ c+=(e.profit||tcProfit)(r, side); xs.push((db2Ms(r[0])-t0)/(t1-t0)); vs.push(c); });
+      var D=e.date||function(r){ return r[0]; }, inc=e.inc||function(){ return true; };
+      var ord=e.rows.filter(function(r){ return inc(r, side); }).sort(function(a,b){ return D(a)-D(b); }), xs=[], vs=[], c=0;
+      ord.forEach(function(r){ c+=(e.profit||tcProfit)(r, side); xs.push((db2Ms(D(r))-t0)/(t1-t0)); vs.push(c); });
       return { e:e, i:i, xs:xs, vs:vs, end: ord.length ? c : null };
     });
     var all=[0]; series.forEach(function(s){ all=all.concat(s.vs); });
