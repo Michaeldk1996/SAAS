@@ -26221,6 +26221,8 @@ function renderTournamentsTab(){
   const TT = { overview: window.TTOverview, entry: window.TTEntry, draw: window.TTDraw, reports: window.TTReports };
   const tsec = sec === 'stats' ? 'overview' : sec;
   if (TT[tsec] && TT[tsec].render) TT[tsec].render({ overview: ov, entry: en, draw: dw, reports: rp }[tsec]);
+  // draw-matches.json (finished draw matches kept all week, read by matchById) still loads with the Draw section.
+  if (sec === 'draw') loadDrawMatchStore();
   else if (sec === 'overview' || sec === 'stats') renderTourxOverview();
   else if (sec === 'entry') { if (window.EntryListsTab) window.EntryListsTab.init(); }
   // Reports = tournaments-reports.js (window.TTReports); the old renderer is retired (founder 2026-11-15).

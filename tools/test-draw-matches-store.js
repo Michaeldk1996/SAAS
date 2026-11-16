@@ -90,8 +90,8 @@ const look = matchById(brd, st);
 check('matchById: the board row wins (fresher); off the board → the store copy; unscored or unknown → null', look('past-1').tag === 'board' && look('past-2').tag === 'store' && look('past-3') === null && look('past-x') === null && matchById(brd, null)('past-2') === null);
 check('openAnalysisModal and the back-navigation reopen both use matchById', /function openAnalysisModal\(matchId, tab\)\{\n  const m = matchById\(matchId\);/.test(html) && html.includes('reopenModal(s){ if (matchById(s.id)) openAnalysisModal(s.id, s.tab); }'));
 check('the Key factors model card falls back to the store\'s model entry when model-output.json no longer holds the match', /const mo = \(typeof modelOutput[^\n]*modelOutput\.matches\[m\.id\] : null\) \|\| \(ds && ds\.model\) \|\| null;/.test(html));
-check('the store is declared beside the board (no use-before-declaration), loaded with the draw, and passed to the Draw view',
-  /let matches = \[\];\nlet _drawMatchStore = null, _drawMatchStoreLoad = null;/.test(html) && /fetch\('\.\/draw-matches\.json\?_=/.test(html) && /drawStore: _drawMatchStore,/.test(html));
+check('the store is declared beside the board (no use-before-declaration) and loaded with the Draw section (tournaments-draw.js since the 2026-11-15 rebuild)',
+  /let matches = \[\];\nlet _drawMatchStore = null, _drawMatchStoreLoad = null;/.test(html) && /fetch\('\.\/draw-matches\.json\?_=/.test(html) && /if \(sec === 'draw'\) loadDrawMatchStore\(\);/.test(html));
 
 // ── workflow: restored, published copy fetched, saved every run, deployed ──
 const yml = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'pipeline.yml'), 'utf8');
