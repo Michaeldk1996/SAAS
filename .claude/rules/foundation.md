@@ -51,6 +51,9 @@ column draws a 7px `--pos` live dot before its clock (`app-shell.md` "Page heade
   label). **Names are white everywhere** (favourite, winner, player A — Q2.3). **Selection is lift (tone + edge),
   never blue**: tabs / segmented / chip rows are the darker track (track `--card` + `--edge-6`, selected `--inner` +
   `--edge-10`, white 700 text). Toggle words (Show… / Hide… / ↓ ▾) are white.
+- *Exception (founder 2026-11-16, Head to Head rebuild):* the Head to Head page reads the design export's own palette
+  (`--h2h-*`, page-scoped): player one is blue `#5B9BFF` (name in the Playing style head, figures, rings, lines, bars),
+  player two white, and its links / chevrons are that blue — `.claude/rules/h2h.md`.
 - **Green / red = signed values only** (+/−%, pp, profit/loss, W/L squares and result markers, winner pill, break
   outlines). Never a status, never a decoration, never a surface — so the Odds **best price is neutral** (white bold
   mono, no fill, no outline; only the clicked Per-book row is marked: `--inner` + `--edge-10`), and **Weather severity

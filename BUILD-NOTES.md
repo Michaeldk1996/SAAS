@@ -2352,3 +2352,12 @@ pair. Local trial 16 Nov (an older standings file): 195 of 200 players priced �
 row; A. Ilagan, J. Kumstat and K. Smith have no profile name to join theirs (the engine's rule: no Elo → no price);
 18,915 of 19,900 pairs. Each live run's counts are in pair-prices-index.json `stats`.
 
+
+## 2026-11-16 · Head to Head rebuild (design_handoff_head_to_head)
+Founder brief: the live page matches the new design pixel for pixel, a display rebuild on the live data layer. The
+TEN-402 renderers and CSS were deleted, not hidden; the page now reads the export's own colours as page-scoped tokens
+(--h2h-*), as the Tournaments and Player Profile rebuilds did. Rulings the same day: the better face-to-face figure is
+highlighted as the export draws it (a CLAUDE.md exception), the style record defaults to Career (its tour average is
+career-only), hot lines follow the design's thresholds. Kept from live on purpose: 12 hot lines (not 13), the thin-sample
+rule on rates, en-dash Sets, scores never cut, the Model foot ruled for the pair estimate the same day. Not sourced: total
+points before 2025 (box scores only from 2024-25), an opening price for exact-tie meetings, news "Quotes" beyond ASAP items.

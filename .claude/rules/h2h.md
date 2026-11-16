@@ -1,54 +1,87 @@
-# Head to Head page — header, cards, data, bars, sheet (founder step 8, TEN-402, 2026-10-08)
+# Head to Head page — the design build (founder 2026-11-16, design_handoff_head_to_head)
 
-Applies to `window.H2HPage` in `bsp-consult-dashboard.html`. Reference = `OFFICIAL VERSION 1.html` → Head to Head,
-night, 1512px; the reference wins except where a rule below says *(override)*. The Aug handoff
-`design_handoff_head_to_head/` (not committed; founder's Downloads) holds structure and interactions only; its colours
-are superseded by `foundation.md`. **Night only** (founder f49da477): the day theme is being redesigned separately —
-no day work, checks or screenshots on this page until the founder reopens it.
+Applies to `window.H2HPage` in `bsp-consult-dashboard.html` (the block after "H2H REBUILD (design_handoff_head_to_head)")
+and `h2h-page.css`. **Design source:** `design_handoff_head_to_head/` (repo root, never published): `README.md` and
+`reference/Head to Head.dc.html` — the reference file wins over the README for every pixel; its own `PROMPT_STEP8*.md`,
+`FIXES_STEP8_*.md` and `PROMPT_CLAUDE_CODE.md` are the old version's history and are not followed. Night only. **This file
+replaces the TEN-402 look** (white bars, caps section heads, the darker-track rows, the 35b header card): founder brief
+2026-11-16, "the live Head to Head page matches the design … pixel for pixel". A display rebuild: every figure keeps its
+live calculation (Data below).
 
 ## Page
-- **Order:** header card · Suggested matchups (empty state) · thin-data caveat · Stennisfy Model · Playing style DNA ·
-  Head-to-head record · Playing styles · Tournament · Market edge · Latest news. The older Serve / Return / Under
-  pressure / Holds & breaks cards are off — founder-ruled 2026-10-08, card 01102d24 (`H2H_SHOW_STAT_CARDS = false`; code
-  kept). **Test:** `test-ten402-c.mjs` "flag and block order".
-- **Header card** = the shared 35b header, controls variant (TEN-403, overrides step 8 item 1's 29 / 22×26 / caps
-  line): `.sfh.sfh--ctl` (18×26×22) → `.sfh__row` (margin-bottom 16: title 24/800, ONE line "Two players, mirrored
-  across every metric." + the coverage line as the grey `.sfh__tail`, reading "· a dash means not covered" (founder R1
-  nit 2026-10-09, replaces "· Data honesty · em dash means not covered"); no caps line, no stats) → pickers → Surface /
-  Format strip, all in the one card. Sticky with its shadow; the page owns only that shadow (`#h2hRoot .h2h-head`), no
-  header type/padding rule. Search box `--inner`, no edge; avatars = the player's photo by ID over initials (`playerPhotoImg`, founder 2026-10-22); "Change" Hanken 10.5 caps
-  `--text-label`, white on hover. **Test:** `test-ten403-header.mjs` (H2H check + mutants), `test-ten402-a.mjs`.
-- **Nothing shows above the sticky header** (founder r4 fix 1, 2026-10-09): the window scrolls and the header sticks 30px
-  down; the strip above it is page tone at every scroll position — a sticky page-wide band in `.h2h-page`'s own top
-  padding (`.h2h-page::before`: top 0, height = the padding = the stick's `top`, `--page`, z under the header so its
-  shadow paints over it). Page-level, not inside the header card. **Apply:** scroll to any position;
-  `elementFromPoint` at y 1–29 across the content width never hits a card, and the strip's pixels are `--page` (plus the
-  card's shadow). **Test:** `test-ten402-r4n.mjs` fix 1, `tools/test-ten402-r4n-mutants.js`.
-- **Cards:** every section card `--card` + `--top-light`, no outline; titles via `sectionHead` (caps 10.5 on a 6%
-  hairline). Boxes inside a card (Model boxes, Tournament info box, player panels, stat tiles, price-sensitivity panel,
-  every ledger) = `--card` + 1px `--edge-6`; ledger heads panel tone, no edge; rows on 6% hairlines, `--inner` hover.
-- **Every tab / chip row** (Surface / Format, DNA tabs, H2H scope chips, Market edge scope tabs) = `h2hSeg` (the site
-  darker track `sfSegHtml`): track `--card` + `--edge-6`, selected `--inner` + `--edge-10` white 700, idle grey. No blue.
-  The H2H scope chips carry the track although the reference draws none (ticket item 4 overrides).
-- **Menus** (player pickers, tournament picker) = compact site menu: `--card` + 1px `--edge-10`, r10, `--shadow-menu`,
-  ~6 rows then scroll, `--inner` hover, white tick on the current pick *(override: reference r12 / padding 6)*.
-- **Toggle words** (Breakdown ▾, Show all lines (N), Meetings ↓, Show / Hide career meetings) are white.
+- **Colours = the export's own values**, page-scoped tokens `--h2h-*` in `tokens.css` (`--h2h-card` #0E1019,
+  `--h2h-inner` #0C0E16, `--h2h-raised` #131623, `--h2h-text` #E7E9EE, `--h2h-soft` #C6CCDB, `--h2h-grey` #8B96B5,
+  `--h2h-blue` #5B9BFF, `--h2h-up` / `--h2h-down`; white alphas = `color-mix` of `--h2h-white`). Nothing else reads them.
+  **Test:** `tools/lint-raw-colours.mjs` (0 raw colours) and the H2H suites (each role's token).
+- **Player one is blue, player two white, everywhere on the page** (README): avatar rings, the radar polygons, the
+  face-to-face lean, the bullets, the return chart, the sheet's figures and split bars. Green / red only on signed figures
+  and results. *Exception (founder 2026-11-16, CLAUDE.md non-negotiables):* the Playing style face-to-face rows print the
+  better figure white 800 and the other grey 500, as the export draws it (`H2H_FTF_LEAD_EMPHASIS`).
+- **Order** (README "Page structure"): page head + "?" · sticky picker (pickers, VS + swap, jump links, Surface Hard /
+  Clay / Grass, Format Best of 3 / 5) · empty state with Suggested matchups / loading skeleton · thin-data caveat ·
+  Stennisfy Model · Playing style · Head to head record (Overall box, Hot lines) · Record against each style · Tournament
+  record · Market edge · Latest news. The head to head box (z 80) and the match sheet open over it.
+- **One component each:** the avatar `xAv` (photo by player ID from the one resolver over initials, ring 2px / 1.5px on
+  the 20–22px column-head avatars), the "?" `xHelp` (22px, its explanation is the hover title — **no footnotes**; every
+  definition lives in a "?" or a label's title), the pill switch `xSw`, the section head `xHead`. Hovers are classes in
+  `h2h-page.css` (the reference's style-hover): rows, bands and lines → the raised tone; the Overall box lifts with a 16%
+  edge; a ✕ / Filters ring brightens to 30%.
+- **Narrow (< 900px; the reference breaks there):** the pickers stack around the VS row, a picked name wraps instead of
+  being cut, the radar takes its own row, the hot-lines table scrolls sideways inside its card.
+- **Hand-over:** `?a=&b=` (player keys, or a name that resolves to exactly one player), else sessionStorage
+  `stn_h2h_pair` ([a, b], read once and removed), read when the page script runs; it opens Head to Head on the pair. While
+  the page shows a pair the URL carries `?a=<key>&b=<key>`; leaving the page drops them. **Test:** the H2H suites.
+- **Jump links** scroll the window to the section with its top under the sticky picker (never `scrollIntoView`).
+
+## Sections (what the design build shows, on which live data)
+- **Stennisfy Model:** the pair estimate (Data → Model) in two inner cards; a Surface / Format switch flashes both prices
+  blue for 520 ms. The foot = the founder's ruled lines (win chances + context; Elo base, N of 10 layers, margin with n,
+  model run), drawn in the design's foot style.
+- **Playing style:** radar (both polygons solid, A blue on top) + ten face-to-face rows: Elo on <surface>, Serve, Return,
+  Under pressure, Dominance ratio (DNA ratings) · 1st / 2nd serve points won, Service games held · Return games won,
+  Break points converted (the DNA file's `serve.firstWonPct`, `secondWonPct`, `holdPct`, `return.returnGamesWonPct`,
+  `bpConvPct`). Window Last 52 weeks · Since Mar 2024 (the file has no career scope, modal-analysis.md D6). Under the
+  10-match floor: no shape, "—" on every row, the reason in the "?". The lean and its chip read the printed figures.
+- **Head to head record:** surface tabs with counts (a surface with no meeting is inert, `--h2h-dead`); the Overall box
+  (score all white, one bullet per meeting oldest → newest, blue = A won, white = B; "X won the last n meetings";
+  "All n meetings ›" opens the box). Never met: the design's one sentence.
+- **Hot lines (founder 2026-11-16, "follow the design"):** ranked once the scope has `H2H_HOT_MIN_MEETINGS` = 3 meetings
+  (fewer → "Not enough meetings to rank lines (n=…)"); a line shows with `H2H_HOT_MIN_LINE` = 1 eligible meeting; no rate
+  floor (`H2H_HOT_MIN_RATE` null); best line per family, "Show all lines (N)". The Rate keeps the page's thin rule (under
+  5 eligible no %, 5–9 grey). The lines are `fhH2hLineDefs` (12; the design's 13th, "B +3.5 games", is not added).
+  A line opens its panel: Covered, Last five, the average behind the line, every eligible meeting newest first with its
+  figure on the line and Covered / Missed. Match analysis keeps its own model (rule a0) and table.
+- **Head to head box:** four tiles — Total points won (the meetings' own box scores, `setstats/`, summed; the sub says
+  "over k of n meetings"; none → "—"), On <global surface> (+ the other two), Went to a deciding set, Favourite won (the
+  shorter closing price; an exact tie is counted out and named — no opening price exists for archive meetings) — then the
+  meetings by year, prices under each player's mini avatar, "X leads a–b" in the count line.
+- **Record against each style:** each player's record against the other's archetype, filtered for real by Window (Last 52
+  weeks · Last 24 months · Career — **Career by default**, founder 2026-11-16), Surface and Court speed (the profile's one
+  speed rule, `speedRowOf` → `speedBandForRow`; a venue with no rating leaves a picked speed and the card says how many).
+  Win rate from `H2H_STYLE_FLOOR` = 5 matches (= the profile's Match-up record floor), greyed 5–9. **Vs style average** =
+  his win rate minus the matchup-matrix cell for his own style against that style (career, all surfaces — the only
+  population the matrix holds; it does not follow the filters, the label's title says so). Career match cards: 6 rows,
+  "Show n more", opponents by surname, every row opens the sheet.
+- **Tournament record:** opens on an event of this week whose posted main draw lists both players
+  (`EntryListsTab.currentWeekRows`, by key), else the most recent event both have played, else the first listed. Tiles
+  Best result, Sets won, Last played, Backing (flat 1u on the one join, Data below); year groups.
+- **Market edge:** windows Last 52 weeks · Last 24 months · Career; bands = `MarketEdgeCore.BANDS` (the ten-band
+  definition), named as the profile names them; a band click filters the chart. "Return at a flat 1% stake" = the live
+  flat-1u units (1u = 1% of bankroll), printed in u. The chart = the design's (`H2H_CHART_SMOOTH`: smoothed line, faint
+  tint below break even, vertical month ticks — flagged against the foundation's chart rule), x = each player's own
+  priced matches.
+- **Latest news:** pills All · Match reports · Quotes · Injuries · Articles from the site's own fields — an ASAP item is a
+  Quote; a feed article takes the News page's `newsClassify` (Match Reports → Match reports, Withdrawals & Injuries →
+  Injuries, the rest → Articles); sources print the outlet names (`newsSourceNames`). No item → the design's sentence.
+- **Match sheet:** the shared sheet, drawn by player only when this page opens it (`fhSheetTone()` 'h2h', host
+  `#fhSheet.h2hx`): A's figures and bars blue, B's white, the scope tracks on the inner tone, price chips on the page tone,
+  no per-set chips. Match analysis, the Match Stats tab and the profile are unchanged. **Test:** the H2H suites + the
+  Match analysis sheet suites (`test-ten314-sheet.mjs`, `test-ten338-match-stats.mjs`).
 
 - **One short name per player (founder, TEN-408 card 78054b1c):** `shortOf` keeps a given name that is already
   abbreviated ("C. Alcaraz", "Dar. Blanch", "J-L. Struff"), so the picker, the Tournament card, the DNA line and every
   sentence print the same name; re-cutting "Dar." to "D." printed Darwin under his brother Dali's spelling.
   **Test:** `test-ten408-styles.mjs` "founder R2".
-
-## Bars and charts *(override — the one page exempt from Ring blue)*
-- **Every data bar is white:** lead `--viz-white-lead` solid, second 70% of it, on `--viz-track`. The tone follows who
-  LEADS, never the side (`h2hTug`: B 3–1 up on clay draws B's bar solid). Hot-lines dots stay
-  blue (dots, not bars). Signed bars (Record vs style) = `--pos` wins / `--neg` losses. The match-stats sheet shows
-  white bars only when opened from this page. **Test:** `test-ten402-b.mjs`, `test-ten402-c.mjs` "white bars".
-- **Profit chart:** horizontal dotted guides only (`--viz-guide`, dash 2 6), no vertical ticks, no area fill;
-  break-even rule `--viz-rule` 1.25px; A white 2.4px, B white 45% 2px. x = each player's OWN priced-match index
-  (`cChartModel`; the reference: "each line spans that player's own matches"), axis dates read off the longer series;
-  "Break even" sits on the rule at the left and the lines start right of it (`C_BE_INSET`). **Test:** `test-ten402-c.mjs`. **DNA radar:** A solid white + 12% fill, B white
-  dashed. **Model prices** mono white, no colour.
 
 ## Data
 - **Meetings** = `H2HCore.joinMeetings` (`h2h-core.js`) over both players' career-history shards — the ONE site-wide H2H
@@ -160,7 +193,7 @@ no day work, checks or screenshots on this page until the founder reopens it.
   again after 60 s; never a price of the page's own. **Test:** `test-ten402-a.mjs` "Model:" (+ mutants),
   `tools/test-pair-prices.js` (the real engine). **Elo** = the weekly Elo of Database → Ratings.
 - **Playing styles / DNA** = the Playing Styles page's archetypes and ratings. **Tournament** rows = Player Profile →
-  Draw record for the event. **News** = the News page feed, items it attributes to A or B; none → card hidden.
+  Draw record for the event. **News** = the News page feed, items it attributes to A or B; none → the card's one sentence.
 - **Suggested matchups** = ATP main-draw pairs on this week's board (Mon–Sun), both on the roster, best combined rank
   first, max 3; none → no chips.
 - An unsourced metric is grey `—`, never 0.
@@ -176,22 +209,15 @@ no day work, checks or screenshots on this page until the founder reopens it.
 - **The page never re-enters its own loaders:** `triggerLoads` runs at most once per `H2H_RELOAD_MS` (60 s).
   `loadMatches` ends by calling `H2HPage.ensureInit()`, which used to restart the loaders and repaint the pair ~17×/s.
   **Test:** `test-ten402-lead.mjs` (runs the page's own `triggerLoads`; its control removes the guard and goes red).
-- **Match-stats sheet** from a meeting row: `--card` + 1px `--edge-10`, `--shadow-modal`, over `--backdrop` + blur(3px)
-  covering the content area only; Esc + outside click close; on `window.sfOverlayClosers`. Dominance ratio: both
-  figures white *(override)*, the better 700, the other `--text-label` 500 — in the Key stats row AND the Match / Set
-  scopes' Dominance ratio card (`fhSheetStatsHtml`, Head to Head only). On this sheet the **bright bar is the better
-  figure's** too: lower is better on the site's own list (`MATCH_STAT_ORDER`'s lowerBetter flag via
-  `fhLowerIsBetter`: Double faults, Unforced errors and "Unforced errors / total points") — Monte Carlo 2026 F, Sinner 2
-  v Alcaraz 5 double faults lights Sinner's bar; a tie / dash / gated count falls back to the longer bar. Every other host
-  keeps the longer-bar rule.
+- **Match sheet** from any row on this page: the design's overlay (`--h2h-overlay`, no blur) over the content area; Esc,
+  ✕ and an outside click close it; on `window.sfOverlayClosers`. Drawn by player (Sections → Match sheet): no
+  better-figure emphasis and no better-bar rule on this page any more (the 2026-10 Dominance / lower-is-better emphasis is
+  replaced by the design, founder 2026-11-16).
 - **The H2H tone belongs only to a sheet opened from this page.** The profile's hand-off (`window.pp2OpenMatchSheet`)
   never reuses a state whose pseudo match carries `h2hPage` (it used to: open + close an H2H sheet, then Players →
-  Zverev → the "Djokovic N." chip drew white bars and the Dominance emphasis). **Test:** `test-ten402-b.mjs` "review 2
-  item 2" (the real opener, `fhStateFor`, `fhOpenSheet`).
-- **Hot lines "Show all lines (N)"**: N = the lines that clear the eligibility gate (≥ `FH_HOT_MIN_ELIGIBLE` meetings) in
-  the CURRENT scope — the shared component's count of lines, not meetings. Sinner–Alcaraz shows 12 on All (17
-  meetings) and on Clay (5) because all 12 line definitions clear the gate in both. Founder 2026-10-26: below 3
-  meetings (Grass, 2) the lines show their results ("c of 2", no rate, no ranking, no toggle) — `modal-form-h2h.md` a0.
+  Zverev → the "Djokovic N." chip drew the page's tone). **Test:** `test-ten402-b.mjs` "review 2 item 2" (the real opener,
+  `fhStateFor`, `fhOpenSheet`).
+- **Hot lines "Show all lines (N)"**: N = the lines with an eligible meeting in the CURRENT scope (Sections → Hot lines).
   No line prices on this page (it is tied to no match).
 
 ## Founder round 1 (2026-10-09) — fixes 1, 2, 5, 6 (builder X)
