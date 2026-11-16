@@ -14317,6 +14317,7 @@
   var SHEET_BOOK = { pinnacle: ['P', 'td'], 'pinnacle-capture': ['P', 'cap'], 'bet365-archive': ['B', 'td'],
     'bet365-capture': ['B', 'cap'], bet365: ['B', 'cap'], 'bet365-approx-at': ['B', 'atb'], 'bet365-approx-te': ['B', 'teb'], 'pinnacle-approx': ['A', 'td'], 'pinnacle-approx-od10': ['A', 'od10'], 'pinnacle-approx-sched': ['A', 'sch'], 'other-approx': ['A', 'oth'], 'pinnacle-approx-te': ['A', 'te'],
     'pinnacle-early': ['A', 'early'],   // founder ruling 2026-10-25: the early cut (Database book 9), marked 'E' by the host
+    'pinnacle-te': ['P', 'tec'],   // founder 2026-11-16: Tennis Explorer's ATP main-draw Pinnacle price is a close
     'pinnacle-history': ['P', 'hist'] };   // hist: our Pinnacle archive, 'from Pinnacle history' (founder 2026-10-16, round 3 item 1)   // A: Pinnacle (approx.), a snapshot (founder 2026-10-16)
   function sheetPayload(p, ctx, id) {
     var x = sheetRowFor(p, ctx, id);

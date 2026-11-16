@@ -69,6 +69,23 @@ check('trDbJoinPx passes the join\'s own source on (the Tournament tab printed e
     !/priceTs|xTs/.test(html) && !/priceTs|xTs/.test(readFileSync(join(ROOT, 'player-profile-v2.js'), 'utf8')) && !/priceTs|xTs/.test(readFileSync(join(ROOT, 'build-database-yield.js'), 'utf8')));
   check('the profile hands a TE price to its sheet as A / te', /r\.src === 'te' \? 'pinnacle-approx-te'/.test(fn(html, 'trProfilePriceOf'))
     && /'pinnacle-approx-te': \['A', 'te'\]/.test(readFileSync(join(ROOT, 'player-profile-v2.js'), 'utf8')));
+  // founder 2026-11-16 ("call it a close"): on the ATP main draw the join reads book 8 as a Pinnacle close, P / tec;
+  // a lower-level row (flag l) keeps the approx. A / te. Mutants: the main-draw branch dropped, the flag ignored.
+  const TEC = 'Pinnacle close · Tennis Explorer, last pre-match price';
+  check('TE close: a P / tec price hovers "' + TEC + '"', T.fhSrcTitle({ book: 'P', src: 'tec' }) === TEC, T.fhSrcTitle({ book: 'P', src: 'tec' }));
+  const jb = fn(html, 'h2hPriceJoin'), line = "if (bk === 8 && !(db.lIx && db.lIx.has(i))) { r.book = 'P'; r.src = 'tec'; r.srcLabel = undefined; }";
+  const pick = (src, i, lower) => { const r = {}; const bk = 8, db = { lIx: new Set(lower ? [i] : []) };
+    r.book = 'A'; r.src = 'te'; new Function('r', 'bk', 'db', 'i', src)(r, bk, db, i); return r.book + '/' + r.src; };
+  const L = jb.includes(line) ? line : '';
+  check('TE close: the join marks a main-draw book 8 row P / tec and leaves a lower-level one A / te',
+    !!L && pick(L, 3, false) === 'P/tec' && pick(L, 3, true) === 'A/te', JSON.stringify([!!L]));
+  check('MUTANT the main-draw branch dropped is caught', pick('', 3, false) !== 'P/tec');
+  check('MUTANT the lower-level flag ignored is caught', pick(L.replace(' && !(db.lIx && db.lIx.has(i))', ''), 3, true) !== 'A/te');
+  check('TE close: the era shard\'s lower-level rows are indexed by their flag l (dbPriceJoinRows)',
+    /lIx\.add\(x0 \+ j\)/.test(html) && /String\(x\[9\] \|\| ''\)\.indexOf\('l'\) >= 0\) lIx\.add/.test(html) && /tIx: tIx, lIx: lIx,/.test(html));
+  check('TE close: the profile, the host map and the publish check carry pinnacle-te as P / tec',
+    /'pinnacle-te': \['P', 'tec'\]/.test(readFileSync(join(ROOT, 'player-profile-v2.js'), 'utf8')) && /'pinnacle-te': \['P', 'tec'\]/.test(html)
+    && /hit\.book === 'pinnacle-te' \? 'tec'/.test(readFileSync(join(ROOT, 'tools/price-consistency.mjs'), 'utf8')));
 }
 
 // ── Tennis Explorer · Bet365 (the join's book 10, founder 2026-10-30, "last before dash"): Bet365, an approx, its own hover ──
@@ -318,7 +335,7 @@ check('control: without the snapshot feed the same row is Bet365 (the join\'s "B
   check('TE on the ATP main draw: meta counts TE in Pinnacle (approx.) and names it: used, over api-tennis, over Bet365, filled a dash, filled a start − 10 dash',
     MT.approx.sources.te.used === 4 && MT.approx.sources.te.overApiTennis === 1 && MT.approx.sources.te.overBet365 === 1 && MT.approx.sources.te.filledDash === 1 && MT.approx.sources.te.filledStart10Dash === 1
     && MT.od10Dropped.pricedByTe === 1 && MT.bookCounts['Pinnacle (approx.)'] === MT.approx.sources.at.used + MT.approx.sources.od.used + 4
-    && MT.approx.sources.te.hover === 'Tennis Explorer, last pre-match price, not a confirmed close', JSON.stringify({ s: MT.approx.sources.te, bc: MT.bookCounts }));
+    && MT.approx.sources.te.hover === 'Tennis Explorer, last pre-match price', JSON.stringify({ s: MT.approx.sources.te, bc: MT.bookCounts }));
   const src = readFileSync(join(ROOT, 'build-database-yield.js'), 'utf8');
   const mut = (a, b, name) => { if (!src.includes(a)) { check('mutant anchor present: ' + name, false); return null; } const f = join(d, 'mut.js'); writeFileSync(f, src.replace(a, b)); return teRun(f); };
   const m1 = mut('const TE_OVER_API = true;', 'const TE_OVER_API = false;', 'TE back below api-tennis');
@@ -330,16 +347,17 @@ check('control: without the snapshot feed the same row is Bet365 (the join\'s "B
   const a8 = new Function(`function median(a){ return a.length ? a[a.length >> 1] : null; }\n${fn(html, 'agg')}\nreturn agg;`)()([{ p: 1.5, w: 1, b: 8 }, { p: 1.6, w: 0, b: 0 }]);
   check('the Database folds book 8 into Pinnacle (approx.) (the per-book split had no bucket for it: a crash)', a8.book.ap && a8.book.ap.n === 1 && a8.book.ps.n === 1, JSON.stringify(a8.book));
   const fT = paintFoot({ ...M0, books: ['Pinnacle', 'Bet365', 'Pinnacle (approx.)'], bookCounts: { ...M0.bookCounts, 'Pinnacle (approx.)': 755 },
-    approx: { hover: HOVER, sources: { at: { used: 752 }, od: { used: 0 }, te: { used: 3, hover: 'Tennis Explorer, last pre-match price, not a confirmed close' } } } });
-  check('the footnote names TE apart, with its own count, outside the dated 13 Jan – 16 Sep sentence',
-    /and 752 on Pinnacle \(approx\.\) — /.test(fT) && /and 3 on Pinnacle \(approx\.\) · Tennis Explorer, last pre-match price, not a confirmed close \(ATP main draw, where no Pinnacle close exists\)/.test(fT), fT.slice(0, 1200));
+    approx: { hover: HOVER, sources: { at: { used: 752 }, od: { used: 0 }, te: { used: 3, hover: 'Tennis Explorer, last pre-match price' } } } });
+  check('the footnote names TE apart as the Pinnacle close (founder 2026-11-16), with its own count, outside the dated 13 Jan – 16 Sep sentence',
+    /and 752 on Pinnacle \(approx\.\) — /.test(fT) && /and 3 on the Pinnacle close · Tennis Explorer, last pre-match price \(ATP main draw, founder 2026-11-16\)/.test(fT), fT.slice(0, 1200));
 }
 {
   const { createRequire } = await import('node:module');
   const ME = createRequire(import.meta.url)(join(ROOT, 'build-market-edge.js'));
   const meSrc = readFileSync(join(ROOT, 'build-market-edge.js'), 'utf8');
-  check('Market edge reads Database book 8 as Tennis Explorer (pinnacle-approx-te, the page\'s own book id) and keeps it on its basis',
-    JSON.stringify(ME.DB_BOOK[8]) === JSON.stringify(['pinnacle-approx-te', 'Pinnacle (approx.) · Tennis Explorer']) && /'pinnacle-approx-te', 'bet365-approx-te', 'pinnacle-approx-sched'\]\);/.test(meSrc)
+  check('Market edge reads Database book 8 as the Tennis Explorer close (founder 2026-11-16: pinnacle-te, the page\'s own book id) and keeps it on its basis',
+    JSON.stringify(ME.DB_BOOK[8]) === JSON.stringify(['pinnacle-te', 'Pinnacle close · Tennis Explorer']) && /'pinnacle-approx-te', 'pinnacle-te', 'bet365-approx-te', 'pinnacle-approx-sched'\]\);/.test(meSrc)
+    && /'pinnacle-te': \['P', 'tec'\]/.test(html)
     && JSON.stringify(ME.DB_BOOK[10]) === JSON.stringify(['bet365-approx-te', 'Bet365 (approx.) · Tennis Explorer'])
     && /'pinnacle-approx-te': \['A', 'te'\]/.test(html), JSON.stringify(ME.DB_BOOK[8]));
 }

@@ -102,7 +102,8 @@ const TE_BOOK = 8, TE_B365_BOOK = 10;
 // (tdarch.py te_in_play), where api-tennis's carries no time at all. Order: Tennis-Data Pinnacle > our archive close > E >
 // Tennis Explorer Pinnacle > api-tennis Pinnacle > Bet365 > a dash. Still labelled Pinnacle (approx.) (the 17 Oct close rule).
 const TE_OVER_API = true;
-const APPROX_HOVER_TE = 'Tennis Explorer, last pre-match price, not a confirmed close';
+// founder 2026-11-16 ("call it a close"): on the ATP main draw Tennis Explorer's last pre-match Pinnacle price is the close
+const APPROX_HOVER_TE = 'Tennis Explorer, last pre-match price';
 const APPROX_HOVER_OD10 = 'Pinnacle history, taken 10 minutes before the recorded start, not a confirmed close';
 
 // --- TEN-384 · the price join (founder ruling 2026-10-07, option "me") --------

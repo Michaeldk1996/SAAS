@@ -350,6 +350,10 @@ closes, odds performance and started-evidence.
   B365 tag, the sheet meta, the Overview pop-up and the Head to Head page). **Test:** `tools/test-close-label.py`
   (every exported close carries a verified start; a start-alone / pre-17-Sep captured / snapshot row is never exported;
   every snapshot hover and label in the code says "not a confirmed close" and never "close ·"; controls).
+  *Exception (founder 2026-11-16, "call it a close"):* on the ATP main draw a Tennis Explorer Pinnacle price (its last change
+  passed the in-play rule) IS labelled a close: "Pinnacle close · Tennis Explorer, last pre-match price" (the join's P / `tec`,
+  Market edge `pinnacle-te`). Lower-level Tennis Explorer prices keep "Pinnacle (approx.)". **Test:**
+  `tools/test-approx-pinnacle.mjs` "TE close" (mutants: the main-draw branch dropped, the lower-level flag ignored).
 - **Our captured Pinnacle closes are cut at the card state's start, the 3 Nov cut included** (founder 2026-11-08,
   price-source task, "fix it", option B). `build-captured-pinnacle.js` takes the card-state start when its source is
   `oddspapi`, `api-tennis-live`, `bet105-switch` (Bet105's switch to in-play) or `first-point` (the first point we saw),

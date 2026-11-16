@@ -36,7 +36,7 @@ check('every master price counts: Pinnacle (approx.) and Bet365 counted and mark
     r('2025-10-15', 'Almaty Open', '1st Round', 1.5, 2.6, { book: 1 }), r('2025-10-15', 'Almaty Open', '1st Round', 2.6, 1.5, { book: 8 }),
     r('2025-10-16', 'Almaty Open', '1st Round', 1.5, 2.6, { book: 0 }), r('2025-10-16', 'Almaty Open', '1st Round', null, null, { book: 0 })]);
   const x = lastRow(out.events.Almaty.past.rows);
-  assert.deepStrictEqual([x.n, x.fav, x.dog, x.noClose, x.ties, x.b365, x.approx], [4, 3, 1, 1, 1, 1, 2]);
+  assert.deepStrictEqual([x.n, x.fav, x.dog, x.noClose, x.ties, x.b365, x.approx], [4, 3, 1, 1, 1, 1, 1]);   // book 8 (Tennis Explorer) is a close since 2026-11-16
 });
 // Mutation: Brussels pooled by name alone (no ROW_SPLIT year rule) → Antwerp 2024 counts for Brussels → red.
 check('lineage = same venue: Brussels = European Open October 2025+ only (never Antwerp ≤2024, never Hamburg July)', () => {

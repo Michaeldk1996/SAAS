@@ -9,7 +9,7 @@
 // RULES
 //   · Prices: database-yield-master.json — the ONE master every page prices from (single-price rule; founder 2026-11-16:
 //     "we need these prices, everywhere"). Favourite = the shorter of the match's master price, whatever its book: a
-//     Pinnacle close (books 0 / 3 / 4), else Pinnacle (approx.) (api-tennis, Tennis Explorer, start − 10, early cut:
+//     Pinnacle close (books 0 / 3 / 4, and 8 = Tennis Explorer, founder 2026-11-16), else Pinnacle (approx.) (api-tennis, start − 10, early cut:
 //     books 2, 5, 8, 9 — counted per scope as `approx`), else Bet365 (books 1, 6, 7 — counted as `b365`). Only a match
 //     the master does not price at all is `noClose`.
 //   · Exact closing tie → the shorter first-captured Pinnacle price; no first-captured price is held for these rows, so
@@ -31,7 +31,7 @@ const SAMPLE_FLOOR = 15;                                    // founder default 2
 const BASELINE_YEARS = [2016, 2025];                        // the last 10 completed seasons
 const ROUND_ORDER = ['1st Round', '2nd Round', '3rd Round', '4th Round', 'Quarterfinals', 'Semifinals', 'The Final'];
 const ROUND_SHORT = { 'Quarterfinals': 'QF', 'Semifinals': 'SF', 'The Final': 'F' };
-const PIN_CLOSE = new Set([0, 3, 4]), B365_BOOKS = new Set([1, 6, 7]);
+const PIN_CLOSE = new Set([0, 3, 4, 8]), B365_BOOKS = new Set([1, 6, 7]);
 // tournament-progression.json keys the current week by CITY: its 'Lyon' is the October event (Lyon (France)), never the
 // clay Lyon, which therefore reads no progression row.
 const PROGRESSION_KEY = { 'Lyon (France)': 'Lyon', 'Lyon': null };

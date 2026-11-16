@@ -88,7 +88,8 @@ reference screenshots): `design_handoff_database_v2/step1/` (never published).
   Explorer download to have the Pinnacle close"; replaces 2026-10-30's "api-tennis > TE"). Order per row: Tennis-Data
   Pinnacle > our archive close > E > Tennis Explorer Pinnacle (book 8) > api-tennis Pinnacle (book 2) > Bet365 > a dash.
   Tennis Explorer carries the time of Pinnacle's last change and passed the in-play rule; api-tennis's snapshot carries no
-  time. Still labelled Pinnacle (approx.) — the 17 Oct close rule is unchanged. Switch `TE_OVER_API`
+  time. Labelled a close (founder 2026-11-16, "call it a close"): the join reads book 8 on the ATP main draw as P / `tec`,
+  "Pinnacle close · Tennis Explorer, last pre-match price"; a lower-level row (flag l) stays A / `te`. Switch `TE_OVER_API`
   (`build-database-yield.js`), counted in `meta.approx.sources.te.overApiTennis`. The 13 Jan – 12 Apr 2026 ATP main draw
   (758 matches on api-tennis's snapshot) is downloaded by the `atp-md-approx-*` batches (stennisfy-ops). **Test:**
   `tools/test-approx-pinnacle.mjs` "TE ranks above api-tennis Pinnacle" (mutant: the switch off).
