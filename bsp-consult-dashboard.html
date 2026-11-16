@@ -28068,7 +28068,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, profileRosterMap: () =
     const v = renderVals();
     root.innerHTML = pageHTML(v);
     bindEvents(root);
-    if (root.offsetParent) xKeepPairInUrl();
+    if (root.closest('.tabpage.active')) xKeepPairInUrl();   // a class check, never a layout read (offsetParent forces one)
     if (focusId) {
       const el = document.getElementById(focusId);
       if (el) { el.focus(); if (caret != null) { try { el.setSelectionRange(caret, caret); } catch (e) {} } }
