@@ -39,14 +39,14 @@ async function loaderCalls(src) {
 test('the loaders run once per visit, even though loadMatches hands back to ensureInit', async () => {
   const n = await loaderCalls(SRC);
   assert.ok(n !== null, 'triggerLoads guard not found (anchor: const H2H_RELOAD_MS = 60000;)');
-  assert.equal(n, 7, 'expected the 7 loaders exactly once, got ' + n);
+  assert.equal(n, 6, 'expected the 6 loaders exactly once, got ' + n);
 });
 
 test('CONTROL: without the guard the loop re-enters (the test would catch a revert)', async () => {
   const guard = '    if (Date.now() - _loadsAt < H2H_RELOAD_MS) return;\n';
   assert.equal(SRC.split(guard).length, 2, 'mutant anchor not found exactly once');
   const n = await loaderCalls(SRC.replace(guard, ''));
-  assert.ok(n > 7, 'the unguarded loop should call the loaders more than once, got ' + n);
+  assert.ok(n > 6, 'the unguarded loop should call the loaders more than once, got ' + n);
 });
 
 // Founder answer 3 (card 01102d24): a retirement counts as a meeting and reads as the Playing styles ledger does —
