@@ -3460,6 +3460,41 @@ window.sfPlanLocks(null);   // locked until the account says Edge / Pro: no unlo
   [data-db-root] .db-menu.year{ top:calc(100% + 6px); min-width:96px; z-index:20; }
   [data-db-root] .db-menu.year .db-mrow{ justify-content:space-between; gap:10px; font-family:var(--db-mono); font-size:12px; color:var(--db2-ink); }
   [data-db-root] .db-menu.year .db-mrow.on{ background:var(--db2-h6); }
+  /* band cards (L1017-1060) */
+  [data-db-root] .db2-caps{ font-family:var(--db-ui); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--db2-muted); }
+  [data-db-root] .db2-bands{ display:grid; grid-template-columns:repeat(auto-fit,minmax(440px,1fr)); grid-auto-rows:1fr; gap:16px; align-items:stretch; }
+  [data-db-root] .db2-bcard{ line-height:normal; background:var(--db2-card); border:1.25px solid var(--db2-h6); border-radius:12px; padding:18px 20px 8px; min-width:0; display:flex; flex-direction:column; font-family:var(--db-ui); color:var(--db2-ink); }
+  [data-db-root] .db2-bhead{ display:flex; align-items:flex-end; justify-content:space-between; gap:14px; }
+  [data-db-root] .db2-btitle{ font-size:18px; font-weight:800; letter-spacing:-0.01em; margin-top:5px; }
+  [data-db-root] .db2-ball{ text-align:right; }
+  [data-db-root] .db2-ballv{ font-family:var(--db-mono); font-size:26px; font-weight:700; line-height:1; letter-spacing:-0.02em; }
+  [data-db-root] .db2-balls{ margin-top:6px; font-family:var(--db-mono); font-size:11.5px; color:var(--db2-muted); white-space:nowrap; }
+  [data-db-root] .db2-bcols{ display:grid; gap:0 9px; margin-top:16px; padding-bottom:9px; }
+  [data-db-root] .db2-brow{ flex:1 1 auto; display:grid; gap:0 9px; align-items:center; padding:12px 0; border-top:1px solid var(--db2-h6); }
+  [data-db-root] .db2-bband{ font-size:13.5px; font-weight:600; color:var(--db2-ink-2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  [data-db-root] .db2-bft{ text-align:right; font-family:var(--db-mono); font-size:15px; font-weight:700; letter-spacing:-0.01em; color:var(--db2-ink); }
+  [data-db-root] .db2-bq{ text-align:right; font-family:var(--db-mono); font-size:13px; color:var(--db2-muted); }
+  [data-db-root] .db2-by{ text-align:right; font-family:var(--db-mono); letter-spacing:-0.01em; }
+  [data-db-root] .db2-bt{ text-align:right; font-family:var(--db-mono); font-size:13px; font-weight:500; }
+  [data-db-root] .db2-bnote{ padding:10px 0; border-top:1px solid var(--db2-h6); font-family:var(--db-mono); font-size:10.5px; color:var(--db2-muted); }
+  /* cumulative return chart (L1063-1117), style "3 · Dotted guides": 12% dotted guides, 32% break-even 1.25px */
+  [data-db-root]{ --viz-guide:color-mix(in srgb, var(--db2-white) 12%, transparent); --viz-rule:color-mix(in srgb, var(--db2-white) 32%, transparent);
+    --viz-lead:var(--db2-blue); --viz-white-lead:var(--db2-ink-2); }
+  [data-db-root] .db-card{ background:var(--db2-card); border:1.25px solid var(--db2-h6); box-shadow:none; border-radius:12px; padding:16px 18px; }
+  [data-db-root] .db-yaxis, [data-db-root] .db-plotarea, [data-db-root] .db-endcol{ height:400px; }
+  [data-db-root] .db-yaxis div, [data-db-root] .db-xaxis div{ color:var(--db2-muted); }
+  [data-db-root] .db2-ctitle{ display:inline-flex; align-items:center; gap:10px; }
+  [data-db-root] .db2-q{ flex:none; display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; box-sizing:border-box; border-radius:50%;
+    border:1px solid var(--db2-h18); font-family:var(--db-ui); font-size:12px; font-weight:700; color:var(--db2-muted); cursor:help; }
+  [data-db-root] .db2-q:hover{ border-color:color-mix(in srgb, var(--db2-blue) 55%, transparent); color:var(--db2-ink); }
+  [data-db-root] .db-legend{ color:var(--db2-muted); }
+  [data-db-root] .db-ovl{ background:var(--db2-card); }
+  [data-db-root] .db-enddot{ box-shadow:0 0 0 3px var(--db2-card); }
+  [data-db-root] .db-plate.fav, [data-db-root] .db-plate.dog{ background:var(--db2-raised); border:1px solid var(--db2-h16); }
+  [data-db-root] .db-plate.fav b{ color:var(--db2-blue); }
+  [data-db-root] .db-plate.dog b{ color:var(--db2-ink-2); }
+  [data-db-root] .db-plate span{ color:var(--db2-ink); }
+  [data-db-root] .db-xcap{ font-size:10.5px; line-height:normal; }
   /* TEN-242 phase 2: an ID selector cannot match the embedded mount, whose body
      is addressed by data-db. Both forms, one rule. */
   #dbBody, [data-db="body"]{ display:flex; flex-direction:column; gap:22px; }
@@ -29558,7 +29593,7 @@ window.DatabaseTab = (function(){
   // solid; lead line 2.4px, second line 2px; no vertical gridlines, no loss wash, no area fill;
   // end dots in the series colour; legend swatches 18x3 bars. Axis + tick labels are mono
   // --text-label in CSS (.db-yaxis / .db-xaxis / .db-pcaxis / .db-pcticks).
-  var DB_PLOT_H=340;   // TEN-399 item 4: the cumulative-profit plot is 340px tall (was 400)
+  var DB_PLOT_H=400;   // TEN-399 item 4: the cumulative-profit plot is 340px tall (was 400)
   function dbGuide(y){ return '<line x1="0" y1="'+y.toFixed(1)+'" x2="1000" y2="'+y.toFixed(1)+'" stroke="var(--viz-guide)" stroke-width="1" stroke-dasharray="2 6" vector-effect="non-scaling-stroke"/>'; }
   function dbBreakEven(y){ return '<line x1="0" y1="'+y.toFixed(1)+'" x2="1000" y2="'+y.toFixed(1)+'" stroke="var(--viz-rule)" stroke-width="1.25" vector-effect="non-scaling-stroke"/>'; }
   function dbSeries(points, col, lead){ return '<polyline points="'+points+'" fill="none" stroke="'+col+'" stroke-width="'+(lead?'2.4':'2')+'" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>'; }
@@ -30094,6 +30129,29 @@ window.DatabaseTab = (function(){
     }
     return out;
   }
+  // Database v2 (founder 2026-11-16, "follow the design"): FIXED price bands replace the terciles on Tour, Tournament
+  // and Player. Half-open edges, the Player Profile's MK_BANDS rule (an archive close of 1.357 is Clear favourite):
+  // a band runs from its From up to, not including, the next band's From. Every ATP main-draw price lands in one band
+  // (measured 16 Nov: 0 favourites at 2.00 or more, 0 underdogs under 1.71). Printed From / To are the design's words.
+  var DB2_BANDS={
+    fav:[['Heavy favourite','1.01','1.20',1.01,1.21],['Clear favourite','1.21','1.35',1.21,1.36],['Favourite','1.36','1.50',1.36,1.51],
+         ['Slight favourite','1.51','1.70',1.51,1.71],['Near coin-flip','1.71','1.99',1.71,2.00]],
+    dog:[['Near coin-flip','1.71','1.99',1.71,2.00],['Slight underdog','2.00','2.49',2.00,2.50],['Underdog','2.50','2.99',2.50,3.00],
+         ['Big underdog','3.00','3.99',3.00,4.00],['Long underdog','4.00','5.99',4.00,6.00],['Longshot','6.00','+',6.00,Infinity]]
+  };
+  function db2InBand(B, p){ return p>=B[3]-1e-9 && p<B[4]-1e-9; }
+  function fixedBands(values, sideKey){
+    var vs=values.slice().sort(function(a,b){return a.p-b.p;});
+    return { all:agg(vs), bands:DB2_BANDS[sideKey].map(function(B){
+      return { def:B, agg:agg(vs.filter(function(v){ return db2InBand(B, v.p); })) };
+    }) };
+  }
+  // The tour figure for one fixed band (Tournament / Player "Tour" column): the same half-open edges.
+  function db2TourBand(sideKey, B){
+    var s=tourBaseIndex()[sideKey], i=lowerBound(s.prices, B[3]-1e-9), j=B[4]===Infinity?s.n:lowerBound(s.prices, B[4]-1e-9), n=j-i;
+    return n ? { n:n, yield:(s.ps[j]-s.ps[i])/n } : null;
+  }
+
   // Founder ruling 2026-10-16: Pinnacle (approx.) = book 2, a snapshot (no timestamp, not a confirmed close). Named only
   // when the store holds such rows (meta.books[2] + bookCounts); without them every sentence is unchanged.
   // founder 2026-10-30 ("TE above Bet365"): Tennis Explorer's Pinnacle price (book 8) is in the same bucket at any date; it is
@@ -32342,14 +32400,11 @@ window.DatabaseTab = (function(){
 
     var favVals=rows.map(function(r){ return {p:r[5], w:r[7], b:r[8]}; });
     var dogVals=rows.map(function(r){ return {p:r[6], w:r[7]?0:1, b:r[8]}; });
-    var favRes=bands(favVals), dogRes=bands(dogVals);
-
     var isTourn = state.view==='tournaments';
-    // TEN-399 item 4: Favourites left | Underdogs right, side by side, each its own panel
-    // (card + 6% edge) - no outer card around the pair (one container per block).
-    var grid=el('div','db-bands');
-    grid.appendChild(bandPanel('Favourites', favRes, FAV_NAMES, 'fav', isTourn, bl.seam));
-    grid.appendChild(bandPanel('Underdogs', dogRes, DOG_NAMES, 'dog', isTourn, bl.seam));
+    // Database v2: two band cards side by side (design L1017-1060).
+    var grid=el('div','db2-bands');
+    grid.appendChild(bandCard2('fav', fixedBands(favVals,'fav'), isTourn?'tourn':'tour'));
+    grid.appendChild(bandCard2('dog', fixedBands(dogVals,'dog'), isTourn?'tourn':'tour'));
     body.appendChild(grid);
 
     body.appendChild(renderCurveCard(rows, isTourn));
@@ -32460,6 +32515,58 @@ window.DatabaseTab = (function(){
     return panel;
   }
 
+  // Database v2 band card (design L1018-1059, renderVals tRow / tAllRow). mode: 'tour' | 'tourn' | 'player'.
+  // Gates: SOFT_GATE / HARD_GATE (the design's soft 100 / hard 30). Under the hard floor a Tour / Tournament cell reads
+  // "n=N — too few matches for a yield" (11px), a Player cell an en dash; under the soft floor the yield is muted / 500
+  // (Player keeps its sign colour). The Tour column shows only while round and years are untouched (baselineAllowed).
+  function bandCard2(sideKey, res, mode, opts){
+    opts=opts||{};
+    var isPl = mode==='player', withBase = mode==='tourn' || (isPl && !opts.fade);
+    var baseKnown = isPl ? (opts.baseKnown!==false) : baselineAllowed();
+    var title = isPl ? (sideKey==='fav'?'As favourite':'As underdog') : (sideKey==='fav'?'Favourites':'Underdogs');
+    var hint = isPl ? (sideKey==='fav' ? (opts.fade?'He is the shorter price \u00b7 opponent backed':'He is the shorter price')
+                                       : (opts.fade?'He is the longer price \u00b7 opponent backed':'He is the longer price'))
+                    : (sideKey==='fav'?'Back the shorter price':'Back the longer price');
+    var cols = withBase ? 'minmax(96px,1fr) 46px 50px 50px 54px 66px 62px' : 'minmax(120px,1fr) 50px 52px 52px 58px 70px';
+    var card=el('div','db2-bcard'); card.setAttribute('data-side', sideKey);
+    var a=res.all;
+    var allTxt = !a ? '\u2014' : (a.n<HARD_GATE ? '\u2014' : fmtPct(a.yield));
+    var allCol = allTxt.charAt(0)==='+' ? 'var(--pos)' : allTxt.charAt(0)==='\u2212' ? 'var(--neg)' : 'var(--text-label)';
+    var tourAll = withBase ? (baseKnown ? (opts.baseAll!==undefined ? opts.baseAll : (function(){ var b=baseAll(sideKey); return b?fmtPct(b.yield):'\u2014'; })()) : '\u2014') : null;
+    card.innerHTML='<div class="db2-bhead"><div><div class="db2-caps">'+esc(hint)+'</div><div class="db2-btitle">'+esc(title)+'</div></div>'+
+      '<div class="db2-ball"><div class="db2-ballv" style="color:'+allCol+'">'+allTxt+'</div><div class="db2-balls">'+
+      (a?fmtInt(a.n):'0')+' matches \u00b7 median '+(a?fmtP(a.median):'\u2014')+(tourAll!=null?' \u00b7 tour '+tourAll:'')+'</div></div></div>';
+    var hd=el('div','db2-bcols db2-caps'); hd.style.gridTemplateColumns=cols;
+    ['Band','From','To','Median','Matches', isPl?'Player':(mode==='tourn'?'Event':'Yield')].concat(withBase?['Tour']:[])
+      .forEach(function(c,i){ var sp=el('span',null,c); if(i) sp.style.textAlign='right'; hd.appendChild(sp); });
+    card.appendChild(hd);
+    res.bands.forEach(function(b){
+      var B=b.def, g=b.agg, n=g?g.n:0, row=el('div','db2-brow'); row.style.gridTemplateColumns=cols;
+      var yt, yc, yw, ys='14px', tip='';
+      if(n<HARD_GATE){
+        tip=fmtInt(n)+' matches, too few for a yield';
+        if(isPl){ yt='\u2014'; yc='var(--text-label)'; yw=500; }
+        else { yt='n='+fmtInt(n)+' \u2014 too few matches for a yield'; yc='var(--text-label)'; yw=500; ys='11px'; }
+      } else {
+        yt=fmtPct(g.yield);
+        var sc=yt.charAt(0)==='+'?'var(--pos)':'var(--neg)';
+        if(n<SOFT_GATE){ yc=isPl?sc:'var(--text-label)'; yw=500; } else { yc=sc; yw=700; }
+      }
+      var h='<span class="db2-bband">'+esc(B[0])+'</span><span class="db2-bft">'+B[1]+'</span><span class="db2-bft">'+B[2]+'</span>'+
+        '<span class="db2-bq">'+(g?fmtP(g.median):'\u2014')+'</span><span class="db2-bq">'+fmtInt(n)+'</span>'+
+        '<span class="db2-by" style="font-size:'+ys+';font-weight:'+yw+';color:'+yc+'"'+(tip?' title="'+esc(tip)+'"':'')+'>'+yt+'</span>';
+      if(withBase){
+        var tb = baseKnown ? (opts.baseFor ? opts.baseFor(B) : db2TourBand(sideKey, B)) : null;
+        var tv = tb ? fmtPct(tb.yield) : '\u2014';
+        var tc = (isPl && tb && baseKnown) ? (tv.charAt(0)==='+'?'var(--pos)':'var(--neg)') : 'var(--text-label)';
+        h+='<span class="db2-bt" style="color:'+tc+'">'+tv+'</span>';
+      }
+      row.innerHTML=h; card.appendChild(row);
+    });
+    if(withBase && !baseKnown) card.appendChild(el('div','db2-bnote','Tour baselines are not computed for these filters.'));
+    return card;
+  }
+
   // ---------- cumulative profit chart ----------
   // x is the MATCH INDEX (founder ruling TEN-196 2026-09-13 round 3, superseding the
   // C3 date basis). The season ticks and the book seam sit on that same basis, which
@@ -32469,9 +32576,11 @@ window.DatabaseTab = (function(){
     var card=el('div','db-card');
     var head=el('div','db-charthead');
     // TEN-399 item 4: legend swatches Ring blue (Favourites) · white 45% (Underdogs).
-    head.innerHTML='<h3>Cumulative profit, flat 1u</h3>'+dbLegend([['Favourites',COL_FAV],['Underdogs',COL_DOG]]);
+    // Database v2 (design L1063-1117): "Cumulative return, flat 1% stake" + the 22px "?" (its hover is the design's words).
+    // One unit = 1% of bankroll, so the units ARE the per cent of bankroll: the figures are unchanged, only the words.
+    head.innerHTML='<span class="db2-ctitle"><h3>Cumulative return, flat 1% stake</h3><span class="db2-q" title="Every match is settled at the Pinnacle closing price, from '+(M.dateRange?String(M.dateRange[0]).slice(0,4):'2010')+' to '+(M.dateRange?String(M.dateRange[1]).slice(0,4):'2026')+'. One unit is 1% of the bankroll, staked flat on every match. Below zero is a loss.">?</span></span>'+dbLegend([['Favourites',COL_FAV],['Underdogs',COL_DOG]]);
     card.appendChild(head);
-    card.appendChild(el('div','db-subline','Units returned on a flat 1-unit stake, cumulative — below zero is a loss.'));
+    card.appendChild(el('div','db-subline','Return as % of bankroll at a flat 1% stake per match, cumulative \u2014 below zero is a loss.'));
 
     var ordered=rows.slice().sort(function(a,b){ return a[0]-b[0]; });
     // x is MATCH INDEX, not calendar date — founder ruling TEN-196 2026-09-13 item 2.
@@ -32562,12 +32671,15 @@ window.DatabaseTab = (function(){
     // is 0 today. It exists so a late series stays late rather than being
     // stretched across the full width.
     var x0=0, nPts=ordered.length;
+    // Database v2: x is the real match date (design "Season" axis, dated). Domain = 1 Jan of the first year shown to the
+    // last match shown; season ticks sit on 1 January (db2SeasonTicks).
+    var _t0=Date.UTC(yr(ordered[0][0]),0,1), _t1=db2Ms(ordered[nPts-1][0]); if(_t1<=_t0) _t1=_t0+864e5;
+    function db2DateX(d){ return (db2Ms(d)-_t0)/(_t1-_t0); }
     for(var i=0;i<nPts;i++){
       var r=ordered[i];
       cf += r[7] ? (r[5]-1) : -1;
       cd += r[7] ? -1 : (r[6]-1);
-      var x = nPts>1 ? (x0 + (1-x0) * i/(nPts-1)) : 0;
-      favV.push(cf); dogV.push(cd); xs.push(x);
+      favV.push(cf); dogV.push(cd); xs.push(db2DateX(r[0]));
       // TEN-399 item 1 (override): no book seam. One join per match (Pinnacle closing, else
       // Bet365) in every season, so there is no book change to mark on the curve.
     }
@@ -32637,7 +32749,7 @@ window.DatabaseTab = (function(){
     // cluster in tournament weeks — so the label is placed from the real rows.
     var spanYears=(yr(ordered[nPts-1][0]) - yr(ordered[0][0])) + 1;
     var tickSteps = spanYears>12 ? [4,2,1] : (spanYears>6 ? [2,1] : [1]);
-    var ticks=seasonIndexTicks(ordered, xs, tickSteps);
+    var ticks=db2SeasonTicks(yr(ordered[0][0]), yr(ordered[nPts-1][0]), tickSteps[0], _t0, _t1);
 
     var plot=el('div','db-plot');
     var yax=el('div','db-yaxis');
@@ -32719,8 +32831,13 @@ window.DatabaseTab = (function(){
     // Captioning that "Season" alone invites the reader to measure durations off
     // an axis that does not carry them — the objection recorded when the axis
     // last changed. Naming both is the honest form and costs nothing.
-    card.appendChild(el('div','db-xcap','<span class="db-eyebrow">Season · match index</span>'));
+    card.appendChild(el('div','db-xcap','<span class="db-eyebrow">Season</span>'));
     return card;
+  }
+  function db2Ms(d){ return Date.UTC(Math.floor(d/10000), Math.floor(d/100)%100-1, d%100); }
+  function db2SeasonTicks(y0, y1, step, t0, t1){
+    var out=[]; for(var y=y0; y<=y1; y+=step){ var x=(Date.UTC(y,0,1)-t0)/(t1-t0); if(x>=0 && x<=1) out.push({label:String(y), x:x}); }
+    return out;
   }
   // Season ticks on a CALENDAR axis — now the ONE tick ladder on this page, used by
   // Tour, Tournaments and the Players panels alike. The match-index variant that used
