@@ -656,8 +656,9 @@ test('H2H page: no captured step — every meeting reads the master\'s join only
   const page = slice('h2hPairFor');
   assert.match(page, /if \(_h2hDbSt === 'ready'\) h2hPriceJoin\(S\.rows, a, b, _h2hDb, null, S\.chA\);\n\s*S\.priced = /, 'the join is the last price step');
   assert.doesNotMatch(page, /fhCloseFor|\.cap\b/, 'no closes-shard price on this page');
-  // our archive's closes ('cap' captured, 'hist' from Pinnacle history) still name their source on the join's rows
-  assert.match(slice('h2hPriceTitle'), /r\.src === 'cap' \|\| r\.src === 'hist' \? 'Pinnacle closing price · ' \+ \(r\.srcLabel \|\| FH_SRC\[r\.src\]\)/);
+  // our archive's closes ('cap' captured, 'hist' from Pinnacle history) and, on the ATP main draw, Tennis Explorer's close
+  // ('tec', founder 2026-11-16) still name their source on the join's rows
+  assert.match(slice('h2hPriceTitle'), /r\.src === 'cap' \|\| r\.src === 'hist' \|\| r\.src === 'tec' \? 'Pinnacle closing price · ' \+ \(r\.srcLabel \|\| FH_SRC\[r\.src\]\)/);
 });
 
 // ── 17 · the model's prediction is made once, before the match, and never changes after the start ─────────────────────
