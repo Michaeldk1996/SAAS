@@ -1,17 +1,17 @@
 {
- "generatedAt": "2026-11-16T06:19:33.989Z",
+ "generatedAt": "2026-11-16T08:01:20.803Z",
  "tournaments": [
   {
    "key": "tour",
    "season": "2026",
    "name": "ATP Tour",
    "file": "news-ticker/tour-2026.json",
-   "items": 101,
+   "items": 102,
    "byType": {
-    "quote": 101
+    "quote": 102
    },
-   "latestTimestamp": "2026-11-16T05:50:00.000Z",
-   "updatedAt": "2026-11-16T06:19:33.989Z"
+   "latestTimestamp": "2026-11-16T07:00:00.000Z",
+   "updatedAt": "2026-11-16T08:01:20.803Z"
   },
   {
    "key": "2794",
@@ -54,6 +54,37 @@
   }
  ],
  "latest": [
+  {
+   "id": "quote-92c6d4a9d720c7",
+   "type": "quote",
+   "playerId": "1980",
+   "opponentId": null,
+   "player": "A. Zverev",
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-16T07:00:00.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "That was a solid match, but it wasn't perfect … With a 6:4, 6:4 win against a top player, that's a successful start to the tournament. You gladly take that. I'm very happy with the match, but there are also some things to improve.",
+   "originalText": "Das war ein solides Match, aber perfekt war das nicht … Mit einem 6:4, 6:4-Erfolg gegen einen Topspieler ist das ein gelungener Turnierstart. Das nimmt man gerne mit. Ich bin sehr happy mit der Partie, aber es gibt auch einige Dinge zu verbessern.",
+   "language": "de",
+   "translated": true,
+   "translationModel": "claude-opus-5-5",
+   "sourceName": "tennisnet.com",
+   "sourceUrl": "https://www.tennisnet.com/news/nach-auftaktsieg-gegen-jodar-alexander-zverev-entdeckt-verbesserungspotenzial",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On his ATP Finals opening win over Jodar",
+   "sourceHash": "3ac8a9220d8419e9",
+   "publishedAt": "2026-11-16T08:01:20.803Z",
+   "file": "news-ticker/tour-2026.json"
+  },
   {
    "id": "quote-0cc052875e7818",
    "type": "quote",
@@ -1580,38 +1611,6 @@
    "sourceHash": "81ab4a1e84b4723b",
    "publishedAt": "2026-11-14T15:43:24.367Z",
    "file": "news-ticker/1681-2026.json"
-  },
-  {
-   "id": "quote-f4686cdf762695",
-   "type": "quote",
-   "playerId": "2832",
-   "opponentId": null,
-   "player": "T. Fritz",
-   "opponent": null,
-   "tournament": "ATP Tour",
-   "tournamentKey": "tour",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-14T14:33:00.000Z",
-   "timestampKind": "observed (Tennis TV published the clip then)",
-   "category": "Interviews",
-   "context": null,
-   "eventKey": null,
-   "won": null,
-   "text": "Stressful match for sure. You know, I felt like I came out, I was playing really well, and then I let some opportunities slip in the second set, and then he played a good game, really, really good defensive game. I made a couple mistakes. He's got a big serve, he was playing well. It kind of changed the the momentum of the match. I was having a really hard time breaking him after that, and you know, it turned into a really a really tight just war of match.",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "On-court interview",
-   "sourceUrl": "https://www.tennistv.com/videos/4609109/stockholm-2026-final-taylor-fritz-interview",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the clip's audio, transcribed by the interviews worker",
-   "interview": "on-court",
-   "topic": "On the match",
-   "sourceHash": "6a3131bb16db3305",
-   "publishedAt": "2026-11-16T00:32:47.443Z",
-   "file": "news-ticker/tour-2026.json"
   }
  ]
 }
