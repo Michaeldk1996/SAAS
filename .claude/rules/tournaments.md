@@ -41,12 +41,13 @@ Rationale: `BUILD-NOTES.md` "2026-11-15 — Tournaments tab rebuild".
   leader / rows / quarter cards, the Outright pill, any verdict built on chances), fair-odds ranges, likely opening price
   ranges, "Be careful" / "No warning", the underdog lists. The boxes are built; the figures read "—"; a sentence built only
   on chances is omitted. **Test:** `tools/test-tt-draw.mjs` "chances are dashes everywhere" (mutant: a chance figure).
-- **Court speed: our own data only.** We hold no court-speed figure of our own (Tennis Abstract is not ours), so the speed
-  figure, its band word, the rank line, the speed-by-year series and the Court speed box figures are "—", behind ONE switch
-  `TT_SPEED_SOURCE` (`tournaments-overview.js`; `'own'` default). `'ta'` turns the Tennis Abstract readings in
-  `COURT_CONDITIONS` back on, credited on hover, with the 4-band label (≥ 1.10 Fast · ≥ 0.95 Medium · ≥ 0.82 Medium-slow ·
-  Slow). Other surfaces (Match analysis Tournament tab, Key factors, Weather, the profile) keep their own speed rules.
-  **Test:** `tools/test-tt-overview.mjs` "court speed 'own': every speed figure is a dash" + "court speed 'ta'".
+- **Court speed = the Tennis Abstract readings we hold** (founder 2026-11-16, "we have court speed data"; replaces the
+  2026-11-15 dashes). The figure, its band word, the rank line, the speed-by-year series (2023–2025 readings; a year with
+  none is a dash) and the Court speed box read `COURT_CONDITIONS` (`abstractSpeed`, `as2023`–`as2025`) — the same figures
+  Match analysis, Key factors and the profile print — credited on hover, with the 4-band label (≥ 1.10 Fast · ≥ 0.95 Medium
+  · ≥ 0.82 Medium-slow · Slow). ONE switch `TT_SPEED_SOURCE` (`tournaments-overview.js`; `'ta'` default, `'own'` = every
+  figure a dash). **Test:** `tools/test-tt-overview.mjs` "court speed defaults to the Tennis Abstract figure" + "court
+  speed 'own'" (mutant: the default back on `'own'`).
 - **Every n is on hover.** A figure that rests on a sample carries its count and population in its `title` ("n = 1,949");
   none prints it beside the figure. **Test:** `tools/test-tt-overview.mjs` "service hold … n on hover", "ROI … " (yield n
   in the hover); `tools/test-tt-reports.mjs` "the hover states n".
@@ -118,7 +119,7 @@ Rationale: `BUILD-NOTES.md` "2026-11-15 — Tournaments tab rebuild".
   reviewed, a reason per entry) is not traceable. A note prints the player's words only (`tourxQuoteClean`: no dateline, no
   "said X", the lead-in goes to the meta line; words never rewritten); the CSV and `tournament-quotes.json` stay verbatim.
   An event with no traceable note shows the card with "—" and no click. The box's year pills carry the abstract speed
-  ("AS —" under `'own'`). **Test:** `test-ten401-f1a.mjs` f1.1 + "hand-reviewed exclusions", `test-ten242-rulings.mjs`
+  ("AS —" in a year with no reading). **Test:** `test-ten401-f1a.mjs` f1.1 + "hand-reviewed exclusions", `test-ten242-rulings.mjs`
   "TEN-401 Data 3 / L3", `tools/test-quote-speaker.js`, `tools/test-tt-overview.mjs` "quotes".
 - **Overlays:** Court speed box (four courts side by side), What players say box, Betting market detail (mounts
   `DatabaseTab` with the event's `archiveFilter`). Scrim covers the rail; backdrop click and ✕ close them.
@@ -145,7 +146,8 @@ Rationale: `BUILD-NOTES.md` "2026-11-15 — Tournaments tab rebuild".
   undecided slot is empty, never a guessed name. Results from `tournament-progression.json` (`drawResults` once an event
   leaves the board) and `draws-archive.json` (a 404 = none). **Test:** `tools/test-draw-view.js`, `tools/test-tt-draw.mjs`
   "quarters come from draw positions" + "compare: where they meet from positions".
-- **Events:** This week · Finished (the two newest ended draws) · Archive (the rest + `draws-archive.json`). Views Draw ·
+- **Events:** This week · Finished (the two newest ended draws) · Archive (the rest + `draws-archive.json`; the
+  design draws no Archive group — kept by the founder, 2026-11-16). Views Draw ·
   Statistics · Outright chances; Main draw / Qualifying (Qualifying greyed while its draw is not posted; no From pills on
   qualifying; From never offers the final). **Test:** `tools/test-tt-draw.mjs` "draw view …" + "qualifying".
 - **Status line names both clocks:** "Results {ago}" (progression `fetchedAt`; an archived draw "Final results · archived
@@ -161,6 +163,8 @@ Rationale: `BUILD-NOTES.md` "2026-11-15 — Tournaments tab rebuild".
 - **The W/UE sheet bar lives on the Draw view only**, under the progress line (`tourxWueBarHtml`: "Download W/UE sheet",
   one "Copy {round}" per round, the round status). Reports does not carry it. **Test:** `tools/test-wue-sheet.js`,
   `tools/test-wue-fixes.js`, `tools/test-wue-rounds.js`.
+- **How it plays may be shown to members** (founder 2026-11-16: we have an agreement covering the Sackmann data it is
+  built from, 2016–24), on the Overview's 1st serve points won and the Draw Statistics Speed tiles.
 - **Statistics:** Speed tiles = `how-it-plays.json` (this edition + tour average; "vs 2025", "vs past five" and the past
   bars "—" where How it plays holds only the pooled figure). Favourites and underdogs = `favourites-by-round.json`
   (Favourites won) + this event's `database-yield.json` rows + retRows through `settlement.js` (yields, the match box) +

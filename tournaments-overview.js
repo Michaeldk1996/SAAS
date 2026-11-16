@@ -7,8 +7,9 @@
 //
 // DATA (feasibility table, inventory v1-4 §4; founder rulings 2026-11-15):
 //   rail / title         TOURNAMENT_CATALOG + COURT_CONDITIONS (tourxOverviewEvents), "This week" = tourxActiveWeekNames()
-//   court speed          TT_SPEED_SOURCE: 'own' (default) = every speed figure is a dash — we hold no court-speed figure of
-//                        our own (ruling 4). 'ta' = the Tennis Abstract readings in COURT_CONDITIONS, credited on hover.
+//   court speed          TT_SPEED_SOURCE: 'ta' (default; founder 2026-11-16 "we have court speed data") = the Tennis
+//                        Abstract readings in COURT_CONDITIONS (the figures Match analysis, Key factors and the profile
+//                        print), credited on hover. 'own' = every speed figure is a dash.
 //   Altitude             COURT_CONDITIONS.altitude (a fact)
 //   1st serve points won how-it-plays.json past.metrics.firstServeWon (num / den, n matches) — hard courts only
 //   Service hold         event-hold.json held / games (our box scores, main draw, every edition on file)
@@ -19,8 +20,8 @@
 (function (root) {
 'use strict';
 
-// ONE switch (founder ruling 4, 2026-11-15): 'own' = our data only (dashes); 'ta' = the live Tennis Abstract figures.
-const TT_SPEED_SOURCE = (root && root.TT_SPEED_SOURCE) || 'own';
+// ONE switch (founder 2026-11-16, replacing ruling 4's dashes): 'ta' = the Tennis Abstract figures we hold; 'own' = dashes.
+const TT_SPEED_SOURCE = (root && root.TT_SPEED_SOURCE) || 'ta';
 const YEARS = [2020, 2021, 2022, 2023, 2024, 2025, 2026];   // the design's From / To options
 const MIN_MATCHES = 30;                                        // tournament-market.json minMatches (build-tournament-market.js)
 const DASH = '—', MINUS = '−';

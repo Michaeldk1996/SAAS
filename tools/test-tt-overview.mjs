@@ -6,7 +6,7 @@
 //   1. the year window recomputes from database-yield.json rows through settlement.js — every all-years event equals
 //      tournament-market.json (so the window is the builder's population, never an offset);
 //   2. a window recomputes the event, the tour baseline and the rank over the SAME years;
-//   3. TT_SPEED_SOURCE 'own' = every court-speed figure is a dash; 'ta' = Tennis Abstract, credited on hover;
+//   3. TT_SPEED_SOURCE 'ta' (default, founder 2026-11-16) = Tennis Abstract, credited on hover; 'own' = every figure a dash;
 //   4. Service hold = event-hold.json held / games; 1st serve = how-it-plays.json num / den; n in the hover title;
 //   5. ROI coloured by its gap to the tour (design wins); reliability rank of N; dashes, never 0;
 //   6. structure: rail groups, quotes card (traceable count / dash), overlays, page-scoped CSS.
@@ -115,7 +115,8 @@ const CHECKS = {
     if (!/data-tt-pending/.test(tiles)) return 'no pending marker on the loading tiles';
     return text(tiles).includes('—') ? 'a loading tile prints the em dash' : null;
   },
-  "court speed 'own': every speed figure is a dash"(B){
+  "court speed 'own': every speed figure is a dash"(){
+    const B = boot(MOD_SRC, { speed: 'own' });
     const c = B.I.events().find(t => t.name === 'Wimbledon');
     const card = B.I.speedCardHtml(c), rail = B.I.railHtml(), box = B.I.speedBoxHtml(), yr = B.I.speedYearsHtml(c);
     if (!between(card, 'tt-ov-fig48').endsWith('—')) return 'the 48px figure is not a dash';
@@ -125,8 +126,7 @@ const CHECKS = {
     if (/Tennis Abstract/.test(B.I.conditionsText(c))) return 'Conditions read cites Tennis Abstract under own';
     return null;
   },
-  "court speed 'ta': the Tennis Abstract figure, credited on hover"(){
-    const B2 = boot(MOD_SRC, { speed: 'ta' });
+  "court speed defaults to the Tennis Abstract figure, credited on hover"(B2){
     const c = B2.I.events().find(t => t.name === 'Wimbledon'), as = B2.cc.Wimbledon.abstractSpeed;
     const card = B2.I.speedCardHtml(c);
     if (!card.includes('>' + as.toFixed(2) + '<')) return 'figure is not COURT_CONDITIONS.abstractSpeed';
@@ -188,7 +188,7 @@ const CHECKS = {
     const none = B.I.quotesCardHtml({ name: 'Basel' });
     if (/onclick/.test(none) || !none.includes('—')) return 'a quote-less event must show a dash card without a click';
     B.ts.quotesPanel = true; const box = B.I.quotesBoxHtml(); B.ts.quotesPanel = false;
-    if (!/All years/.test(box) || !/AS —/.test(box)) return 'quotes box: year pills must carry AS — under own';
+    if (!/All years/.test(box) || !/· AS (\d\.\d\d|—)/.test(box)) return 'quotes box: year pills must carry the AS reading or a dash';
     return null;
   },
   'CSS: every selector page-scoped, the export borders kept'(B){
@@ -206,7 +206,7 @@ const MUTANTS = [
   ['window ignores the years', s => s.replace('return yF == null || (y >= yF && y <= yT);', 'return true;')],
   ['tour baseline kept at all years under a window', s => s.replace('return { baseline: aggRows(rows), tours };', 'return { baseline: mkt.baseline, tours };')],
   ['archiveFilter ignored (Montreal pools Toronto years)', s => s.replace("pool = pool.concat(f ? rs.filter(", 'pool = pool.concat(false ? rs.filter(')],
-  ['speed switch defaults to Tennis Abstract', s => s.replace("(root && root.TT_SPEED_SOURCE) || 'own'", "'ta'")],
+  ['speed switch defaults to dashes (own)', s => s.replace("(root && root.TT_SPEED_SOURCE) || 'ta'", "(root && root.TT_SPEED_SOURCE) || 'own'")],
   ['hold from the sheet (count-less)', s => s.replace('return { pct: 100 * e.held / e.games,', 'return { pct: 81,')],
   ['ROI coloured by sign', s => s.replace("const col = !ok ? '' : Math.abs(d) < 1 ? 'color:var(--text);' : d > 0 ? 'color:var(--pos);' : 'color:var(--neg);';", "const col = !ok ? '' : v > 0 ? 'color:var(--pos);' : 'color:var(--neg);';")],
   ['rank over all events (no 30-match floor)', s => s.replace('const ok = Object.values(mk.tours).filter(a => a && a.n >= MIN_MATCHES && a.favRel != null);', 'const ok = Object.values(mk.tours).filter(a => a);')],
