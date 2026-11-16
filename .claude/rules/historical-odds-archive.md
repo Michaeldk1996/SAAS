@@ -98,6 +98,16 @@ file we hold is irreplaceable.
   fixture)"); no time = not stored, counted. The result is te-history's (both players' rows agree; a walkover is not stored).
   The lower feed and the Database build take the rows unchanged (join-only, flag `l`). **Test:** `tools/test-tdarch.py`
   "pre-2021", stennisfy-ops `tools/te-pre21-starts.test.mjs`.
+- **Matches only Tennis Explorer lists, 2025 on (founder 2026-11-16: "all players need a price and tennisexplorer has
+  pinnacle close, if they are lower league players, pinnacle close is not mandatory").** Every match the career record counts
+  from Tennis Explorer alone (`career-record/<key>.json` `record.add`, walkovers and unconfirmed rows out — no api-tennis
+  fixture, so `te-import` can never price it) takes the same path as the pre-2021 rows: targets by TE match ID (stennisfy-ops
+  `tools/te-targets-teonly.mjs`, batches `pre21-teo-NN` in `te-odds-pre2021/`, read by the one polite TE reader), Pinnacle
+  where the page shows it, else Bet365, else another book with its margin removed (`b365-` / `other-` batches); ITF and ITF
+  qualifying as level `pre-itf` → `itf`, Davis Cup and multi-sport games → `atp-x`. The TE page start for the in-play rule, the
+  te-history result, `event_key` = −(TE match ID); never stored over a match the archive already prices (the same two keys,
+  ±1 day, 2025 on). Join-only downstream (flags `l` / `t` / `j`): no Database figure, ROI or baseline reads them. **Test:**
+  `tools/test-tdarch.py` "TE-only".
 - **Where it is used:** the Database join only (`database.md` "Pinnacle (approx.)"), never over a Tennis-Data or Oddspapi
   close; Bet365 stays the fallback where api-tennis has no pair. The private CSV export does NOT carry it (its columns are
   closes).

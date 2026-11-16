@@ -1998,7 +1998,13 @@ PRE21_STARTS = 'starts.json'
 # database, just to have a price"): an ATP main-draw match the live site showed unpriced, by TE match ID (stennisfy-ops
 # te-targets pre21-md-NN) -> 'atp-mdj': the Database build's join-only flag j (never a Database figure, ROI, Market edge or
 # odds performance), dropped there when a priced Database row of the same match exists
-PRE21_LEVELS = {'pre-atp-q': 'atp-q', 'pre-ch': 'ch', 'pre-ch-q': 'ch-q', 'pre-atp-x': 'atp-x', 'pre-atp-md': 'atp-mdj'}
+# 'pre-itf' + the 2025-on Tennis-Explorer-only matches (founder 2026-11-16: "all players need a price and tennisexplorer has
+# pinnacle close, if they are lower league players, pinnacle close is not mandatory"): every match the career record counts
+# from Tennis Explorer alone (career-record record.add: no api-tennis fixture, so te-import can never price it), by TE match ID
+# (stennisfy-ops te-targets-teonly.mjs, batches pre21-teo-NN in the same folder) -> the same path as every row above: the TE page
+# start for the in-play rule, the te-history result, the negative TE match ID, join-only downstream (l / t / j)
+PRE21_LEVELS = {'pre-atp-q': 'atp-q', 'pre-ch': 'ch', 'pre-ch-q': 'ch-q', 'pre-atp-x': 'atp-x', 'pre-atp-md': 'atp-mdj', 'pre-itf': 'itf'}
+TEONLY_FROM = '2025-01-01'   # the TE-only window: its already-priced lookup is cut from the same one read as pre-2021's
 PRE21_START_KIND = 'TE match page (no api-tennis fixture)'
 
 
@@ -2132,7 +2138,7 @@ def cmd_te_pre21_import(store, dry_run=False):
     # one read in id order; a match_date filter on an id-ordered page scans the whole table per page and times out (57014, 11 Nov)
     held = P.select_all(SNAP, 'id,dedupe_key,source,match_date,tournament,winner,loser,supersedes,event_key,'
                               'wk:detail->>winnerKey,lk:detail->>loserKey')
-    lower = [h for h in held if str(h.get('match_date') or '')[:10] < '2021-01-03']
+    lower = [h for h in held if str(h.get('match_date') or '')[:10] < '2021-01-03' or str(h.get('match_date') or '')[:10] >= TEONLY_FROM]
     rows, rep = te_pre21_rows(docs, starts, hist, te_pre21_priced_index(lower))
     add = plan_snapshots(rows, held)
     ids = []

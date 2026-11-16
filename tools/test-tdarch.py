@@ -681,7 +681,8 @@ try:
     T.plan_snapshots = lambda rows, held: []
     T.te_pre21_priced_index = lambda lower: _seen.setdefault('lower', lower)
     T.P.select_all = lambda table, cols, filt='', page=1000: _calls.append((cols, filt)) or [
-        {'id': 1, 'match_date': '2016-10-16', 'wk': '1064', 'lk': '1748'}, {'id': 2, 'match_date': '2024-05-01', 'wk': '1', 'lk': '2'}]
+        {'id': 1, 'match_date': '2016-10-16', 'wk': '1064', 'lk': '1748'}, {'id': 2, 'match_date': '2024-05-01', 'wk': '1', 'lk': '2'},
+        {'id': 3, 'match_date': '2025-06-02', 'wk': '3', 'lk': '4'}]
     with contextlib.redirect_stdout(io.StringIO()):
         T.cmd_te_pre21_import('unused', True)
 finally:
@@ -689,7 +690,21 @@ finally:
     T.P.select_all = _ksa
 check('pre-2021 import: one unfiltered read of the snapshot table (no match_date filter: it timed out, 57014), the pre-2021 lookup cut from it',
       len(_calls) == 1 and _calls[0][1] == '' and 'wk:detail->>winnerKey' in _calls[0][0]
-      and [r['id'] for r in _seen.get('lower', [])] == [1], (_calls, _seen))
+      and [r['id'] for r in _seen.get('lower', [])] == [1, 3], (_calls, _seen))
+# founder 2026-11-16 ("all players need a price … if they are lower league players, pinnacle close is not mandatory"): a match
+# only Tennis Explorer lists (career-record record.add, no api-tennis fixture) from 2025 rides the same path; ITF as 'pre-itf'
+trows, trep = T.te_pre21_rows([{'batch': 'pre21-teo-01', 'source': T.TE_SOURCE, 'complete': True,
+                                'rows': [PX(21, lv='pre-itf', date='2026-06-01', kb=None), PX(22, lv='pre-itf', date='2026-06-01', kb=None, t1='2026-06-01T15:05:00Z')]}],
+                              {k: {'start': '2026-06-01T15:00:00Z', 'stamp': '01.06.2026 17:00', 'pageSha256': SHA} for k in ('21', '22')},
+                              {'21': [('1064', H(1, rnd='Q-2R'))], '22': [('1064', H(1))]})
+check('TE-only (founder 2026-11-16): an ITF match with no api-tennis fixture is stored as itf, keyed by the negative TE match ID; the in-play rule drops a later change',
+      [(r['event_key'], r['detail']['level'], r['detail']['noApiTennisFixture']) for r in trows] == [(-21, 'itf', True)]
+      and trep.get('dropped: last change after the start') == 1
+      and [r['level'] for r in T.lower_feed_rows([dict(trows[0], id=995)])] == ['itf'], (trows, trep))
+_, trep2 = T.te_pre21_rows([{'batch': 'pre21-teo-01', 'source': T.TE_SOURCE, 'complete': True, 'rows': [PX(23, lv='pre-itf', date='2026-06-01')]}],
+                           {'23': {'start': '2026-06-01T15:00:00Z', 'pageSha256': SHA}}, {'23': [('1064', H(1))]},
+                           T.te_pre21_priced_index([{'wk': '1748', 'lk': '1064', 'match_date': '2026-06-02'}]))
+check('TE-only: a match the archive already prices (the same two keys +-1 day, 2025 on) is never stored over', trep2.get('already priced in the archive') == 1, trep2)
 pix = T.te_pre21_priced_index([{'wk': '1064', 'lk': '1748', 'match_date': '2016-10-16'}])
 check('pre-2021: the already-priced lookup is the same two keys +-1 day, either order', pix('1748', '1064', '2016-10-15') and not pix('1748', '1064', '2016-10-13') and not pix('1064', '', '2016-10-16'))
 check('names: a hyphenated initial is dotted as Tennis-Data writes it (Struff J.L., Herbert P.H.); plain initials unchanged',
