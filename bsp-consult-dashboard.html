@@ -1552,6 +1552,7 @@ window.sfEarlyFetch = function (u, init) {
   #h2hRoot .h2h-model__px{ display:flex; flex-direction:column; align-items:center; gap:3px; }
   #h2hRoot .h2h-model__price{ font-family:var(--font-nums); font-size:28px; font-weight:800; line-height:1.05; color:var(--text); font-variant-numeric:tabular-nums; white-space:nowrap; }
   #h2hRoot .h2h-model__price.na{ color:var(--text-label); }
+  #h2hRoot .h2h-model__feet{ display:flex; flex-direction:column; gap:4px; }
   #h2hRoot .h2h-model__foot{ font-size:11px; color:var(--text-label); text-align:center; }
   #h2hRoot .h2h-model__foot .n{ font-family:var(--font-nums); }
   #h2hRoot .h2h-model__empty{ font-size:13px; line-height:1.6; color:var(--text-label); text-align:center; }
@@ -27708,8 +27709,8 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, profileRosterMap: () =
     view.market = marketVals(a, b, S);
     view.styles = stylesVals(a, b, S);
 
-    // TEN-402 (a): Stennisfy Model = the Model page's own output (modelVals); DNA (dnaVals); news (newsVals).
-    view.model = modelVals(a, b);
+    // Stennisfy Model = the pair's likely opening price (modelVals, founder 2026-11-16); DNA (dnaVals); news (newsVals).
+    view.model = modelVals(a, b, S);
     view.dna = dnaVals(a, b);
     view.news = newsVals(a, b);
     return view;
@@ -27909,18 +27910,22 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, profileRosterMap: () =
       ${newsCard(v)}
     </div>`;
   }
-  // TEN-402 page order 4 / item 7 — Stennisfy Model: the Model page's own output for the pair (modelVals), prices mono
-  // white, no blue; two player boxes are panels (--card + 1px --edge-6). No model price → the one empty line, never a
-  // price of our own; the weekly-Elo line prints whenever both players hold a weekly Elo.
+  // TEN-402 page order 4 / item 7 — Stennisfy Model: the pair's likely opening price (modelVals, founder 2026-11-16),
+  // prices mono white, no blue; two player boxes are panels (--card + 1px --edge-6). Under them one grey line with each
+  // player's win chance and the context, one with how the price is built. No estimate → one empty line with its reason.
   function modelCard(v) {
     const m = v.model;
     const box = (mono, name, price) => `<div class="h2h-model__box">
       <div class="h2h-model__who"><span class="h2h-model__av">${E(mono)}</span><span class="h2h-model__nm">${E(name)}</span></div>
       <div class="h2h-model__px"><span class="h2h-cap">Likely opening price</span><span class="h2h-model__price">${E(price)}</span></div>
     </div>`;
-    const f = m.foot;
-    const foot = !f ? '' : `<div class="h2h-model__foot">Elo gap <span class="n">${E(f.gap)}</span> implies <span class="n">~${E(f.pct)}%</span> for ${E(f.fav)}${f.model != null ? ` — the model sits at <span class="n">${E(f.model)}%</span>` : ''}.</div>`;
-    return `<div class="h2h-card h2h-model" data-h2h-model="${m.priced ? 'priced' : 'empty'}">
+    const f = m.foot, n = x => `<span class="n">${E(x)}</span>`;
+    const foot = !f ? '' : `<div class="h2h-model__foot">Win chance ${E(f.aShort)} ${n(f.aPct + '%')} · ${E(f.bShort)} ${n(f.bPct + '%')}`
+      + ` · ${E(f.surface)}, best of ${n(f.bestOf)}</div>`
+      + `<div class="h2h-model__foot">Elo base ${n(f.basePct + '%')} for ${E(f.aShort)}, moved by ${n(f.layers)} of ${n(f.of)} model layers`
+      + ` · plus Pinnacle’s typical opening margin, ${n(f.margin + '%')}${f.marginN ? ` (n=${n(f.marginN)})` : ''}`
+      + `${f.at ? ` · model run ${n(f.at)}` : ''}</div>`;
+    return `<div class="h2h-card h2h-model" data-h2h-model="${m.priced ? 'priced' : (m.loading ? 'loading' : 'empty')}">
       <div class="h2h-model__hd">
         <h2 class="h2h-model__t">Stennisfy Model</h2>
         <span class="h2h-model__s">Where the model expects the market to open this matchup</span>
@@ -27928,7 +27933,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, profileRosterMap: () =
       <div class="h2h-model__wrap">
         ${m.priced ? `<div class="h2h-model__grid">${box(m.aMono, m.aName, m.aPrice)}${box(m.bMono, m.bName, m.bPrice)}</div>`
           : `<div class="h2h-model__empty">${E(m.emptyText)}</div>`}
-        ${foot}
+        ${foot ? `<div class="h2h-model__feet">${foot}</div>` : ''}
       </div>
     </div>`;
   }
@@ -28835,56 +28840,71 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, profileRosterMap: () =
     if (!f || !full) return null;
     try { const r = f(full); return r == null ? null : String(r); } catch (e) { return null; }
   }
-  // The Stennisfy Model page's own output for this pair: the board match whose two player keys are A and B, read from
-  // model-output.json (written by the pipeline; the dashboard never recomputes the model). Returns null (no board match
-  // for the pair), { m, e: null } (a board match with no runnable output) or { m, e, aIsP1 }.
-  function modelOutputFor(a, b) {
-    const mo = (typeof modelOutput !== 'undefined' && modelOutput && modelOutput.matches) ? modelOutput.matches : {};
-    const ks = [String(a.key), String(b.key)];
-    const ms = (DV('matches') || []).filter(m => m && m.p1Key != null && m.p2Key != null && String(m.p1Key) !== String(m.p2Key)
-      && ks.includes(String(m.p1Key)) && ks.includes(String(m.p2Key)));
-    for (const m of ms) { const e = mo[m.id]; if (e && e.ok) return { m, e, aIsP1: String(m.p1Key) === String(a.key) }; }
-    return ms.length ? { m: ms[0], e: null } : null;
+  // ---- Stennisfy Model on this page — the pair's likely opening price (founder 2026-11-16) --------------------------
+  // "The head to head is to compare two players, to have a likely opening price based on our database, Elo ratings
+  // etc." — so the card prices ANY two players, not only a board match. pair-prices/<key>.json is written every pipeline
+  // run by build-pair-prices.js: the Stennisfy Model engine itself (h2h-model runModel, pairOnly) on every pair of this
+  // week's ATP top 200, per surface and format, with no market anchor (Elo + surface Elo) and without the layers that
+  // need a real match (date, weather, market, manual note). The page never computes the model; it reads that file.
+  // Price = 1 / (p × (1 + margin)), margin = Pinnacle's median opening margin (the shard carries it and its n).
+  // One fetch per player per session; a failed one is asked again after H2H_PAIR_RETRY_MS; a 404 = not covered.
+  const H2H_PAIR_RETRY_MS = 60e3;
+  const H2H_PAIR_LAYERS = 10;          // the engine's 14 layers less the 4 that need a match (PAIR_SKIP_LAYERS)
+  const _pairPx = {};                  // key → { st: 'loading' | 'ready' | 'none' | 'failed', d, at }
+  function pairPxFor(key) {
+    const k = String(key);
+    const c = _pairPx[k];
+    if (c && (c.st !== 'failed' || Date.now() - c.at < H2H_PAIR_RETRY_MS)) return c;
+    const e = _pairPx[k] = { st: 'loading', d: null, at: Date.now() };
+    const done = () => { if (built && state.aSel && state.bSel && [String(state.aSel), String(state.bSel)].includes(k)) render(); };
+    try {
+      fetch('pair-prices/' + encodeURIComponent(k) + '.json', { cache: 'no-cache' })
+        .then(r => { if (r.status === 404) return null; if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+        .then(d => { Object.assign(e, d && d.opp ? { st: 'ready', d } : { st: 'none' }, { at: Date.now() }); done(); },
+              () => { Object.assign(e, { st: 'failed', at: Date.now() }); done(); });
+    } catch (err) { Object.assign(e, { st: 'failed', at: Date.now() }); }
+    return e;
   }
-  // The Model page's display gate (renderEdgeModel, founder 2026-07-25): its price shows only when the match is State-2
-  // confirmed (a Pinnacle line: stage1.baseState.state === 2) and 0 < hours to the real start <= 30 (aOddsStartMs).
-  function modelGate(e, m, nowMs) {
-    const st = e && e.stage1 && e.stage1.baseState && e.stage1.baseState.state;
-    const startMs = (m && typeof aOddsStartMs === 'function') ? aOddsStartMs(m) : NaN;
-    const h = Number.isFinite(startMs) ? (startMs - (nowMs != null ? nowMs : Date.now())) / 3.6e6 : null;
-    return { ok: st === 2 && h != null && h > 0 && h <= 30, started: h != null && h <= 0 };
+  function pairClock(iso) {
+    const t = Date.parse(iso || '');
+    if (!Number.isFinite(t)) return null;
+    const tzf = fn('newsTz'); let tz;
+    try { tz = tzf ? tzf() : undefined; } catch (err) { tz = undefined; }
+    try { return new Date(t).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: tz || undefined }); }
+    catch (err) { return new Date(t).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }); }
   }
-  // The card's figures. The Model page's price is the stage-3 "Adjusted fair odd" — a POINT price per player, so a
-  // point price is shown (the reference's range is placeholder). Elo line = the weekly-Elo gap and its expectation
-  // 1 / (1 + 10^(−gap/400)) for the higher-rated player, plus that player's model probability when the model prices it.
-  function modelVals(a, b) {
-    const out = { aName: a.full, bName: b.full, aMono: a.mono, bMono: b.mono, priced: false, aPrice: '—', bPrice: '—', emptyText: '', foot: null };
-    const hit = modelOutputFor(a, b);
-    let pA = null, pB = null;
-    if (hit && hit.e) {
-      const g = modelGate(hit.e, hit.m);
-      const fair = hit.e.stage3 && hit.e.stage3.fair;
-      const fa = fair && (hit.aIsP1 ? fair.p1 : fair.p2), fb = fair && (hit.aIsP1 ? fair.p2 : fair.p1);
-      if (g.ok && fa && fb && Number(fa.odds) > 1 && Number(fb.odds) > 1) {
-        out.priced = true; out.aPrice = Number(fa.odds).toFixed(2); out.bPrice = Number(fb.odds).toFixed(2);
-        pA = Number(fa.prob); pB = Number(fb.prob);
-      } else {
-        out.emptyText = g.started ? 'This pair’s match has started, and the Stennisfy Model shows no price once a match is in play.'
-          : 'The Stennisfy Model prices this pair’s match once a confirmed market line is in, inside 30 hours of the start.';
-      }
-    } else if (hit) {
-      out.emptyText = 'The Stennisfy Model hasn’t produced a price for this pair’s match yet.';
-    } else {
-      out.emptyText = 'The Stennisfy Model has no price for this pairing. It prices the matches on this week’s board.';
+  // The card's figures for A and B on the page's Surface / Format toggles. Each player's price and win chance, the
+  // engine's Elo-only base, how many layers moved it, the margin and the model run time. Missing = "—" with the reason.
+  function modelVals(a, b, S) {
+    const surface = (S && ['Hard', 'Clay', 'Grass'].includes(S.ctxSurface)) ? S.ctxSurface : 'Hard';
+    const bestOf = (S && S.ctxFormat === 5) ? 5 : 3;
+    const out = { aName: a.full, bName: b.full, aMono: a.mono, bMono: b.mono, priced: false, loading: false,
+      aPrice: '—', bPrice: '—', emptyText: '', foot: null };
+    const sa = pairPxFor(a.key), sb = pairPxFor(b.key);
+    if (sa.st === 'loading' || sb.st === 'loading') { out.loading = true; out.emptyText = 'Loading the estimate…'; return out; }
+    if (sa.st === 'failed' || sb.st === 'failed') { out.emptyText = 'The estimate couldn’t load. It will try again.'; return out; }
+    const outside = [sa.st !== 'ready' ? a.short : null, sb.st !== 'ready' ? b.short : null].filter(Boolean);
+    if (outside.length) {
+      out.emptyText = 'No estimate for this pair: the model prices every pair in this week’s ATP top 200 with a weekly Elo, and '
+        + outside.join(' and ') + (outside.length > 1 ? ' are' : ' is') + ' not among them.';
+      return out;
     }
-    const eA = weeklyElo(a.full), eB = weeklyElo(b.full);
-    if (eA != null && eB != null) {
-      const ra = Number(eA), rb = Number(eB), gap = Math.abs(ra - rb), favA = ra >= rb;
-      const pFav = 1 / (1 + Math.pow(10, -gap / 400));
-      const pm = favA ? pA : pB;
-      out.foot = { gap: String(Math.round(gap)), pct: String(Math.round(pFav * 100)), fav: favA ? a.short : b.short,
-        model: (out.priced && pm != null && isFinite(pm)) ? String(Math.round(pm * 100)) : null };
+    const row = sa.d.opp[String(b.key)];
+    const cell = row && row[surface[0] + bestOf];
+    if (!cell || !(cell[0] > 0 && cell[0] < 1e4)) {
+      out.emptyText = 'The model could not price this pair on ' + surface.toLowerCase() + ', best of ' + bestOf + '.';
+      return out;
     }
+    const m = Number(sa.d.margin);
+    if (!(m >= 0 && m < 0.2)) { out.emptyText = 'The estimate file carries no margin, so no price is shown.'; return out; }
+    const pA = cell[0] / 1e4, pB = 1 - pA;
+    out.priced = true;
+    out.aPrice = (1 / (pA * (1 + m))).toFixed(2);
+    out.bPrice = (1 / (pB * (1 + m))).toFixed(2);
+    const pct = x => String(Math.round(x * 100));
+    out.foot = { aShort: a.short, bShort: b.short, aPct: pct(pA), bPct: pct(pB), surface, bestOf,
+      basePct: pct(cell[1] / 1e4), layers: String(cell[2]), of: String(H2H_PAIR_LAYERS),
+      margin: (m * 100).toFixed(1), marginN: sa.d.marginN != null ? String(sa.d.marginN) : null, at: pairClock(sa.d.generatedAt) };
     return out;
   }
 
@@ -29260,13 +29280,13 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, profileRosterMap: () =
   const H2H_RELOAD_MS = 60000;
   let _loadsAt = 0;
   function triggerLoads() {
-    // TEN-402 (a): the weekly Elo, the news feed and the Model page's output (model-output.json, re-read so a pipeline
-    // refresh is picked up) can land after the page painted — a showing pair repaints once each loader settles.
+    // TEN-402 (a): the weekly Elo and the news feed can land after the page painted — a showing pair repaints once each
+    // loader settles. (The Stennisfy Model card reads pair-prices/, loaded by pairPxFor, not model-output.json.)
     // TEN-402 lead: loadMatches ends by calling H2HPage.ensureInit() while this page is open, and ensureInit calls
     // triggerLoads — without this guard the pair repainted ~17x a second forever and real clicks were lost.
     if (Date.now() - _loadsAt < H2H_RELOAD_MS) return;
     _loadsAt = Date.now();
-    ['loadProfileRoster', 'loadSurfaceRatings', 'loadPlayerStyles', 'loadEloRatings', 'loadNews', 'loadMatches', 'loadModelOutput'].forEach(n => {
+    ['loadProfileRoster', 'loadSurfaceRatings', 'loadPlayerStyles', 'loadEloRatings', 'loadNews', 'loadMatches'].forEach(n => {
       const f = fn(n); if (!f) return;
       try { Promise.resolve(f()).then(() => { if (built && state.aSel && state.bSel) render(); }).catch(() => {}); } catch (e) {}
     });

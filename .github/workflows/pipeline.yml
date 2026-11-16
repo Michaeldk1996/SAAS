@@ -904,6 +904,15 @@ jobs:
       # rules out of bsp-consult-dashboard.html, so the page and the field share one
       # definition. Best-effort: if it fails, the page dashes those three columns
       # and says the file is not published; Rate never depends on it.
+      # The Head to Head page's likely opening price (founder 2026-11-16): the Stennisfy Model engine on every pair of
+      # this week's ATP top 200, per surface and format, plus Pinnacle's opening margin. Needs player-profiles.json,
+      # career-history/ and player-index.json from the run above. pair-prices/ + its index, published, never committed.
+      - name: Build pair estimates (best-effort)
+        run: |
+          t0=$(date +%s); rc=0
+          node build-pair-prices.js || rc=$?
+          node tools/step-check.mjs --step "Build pair estimates (best-effort)" --rc "$rc" --since "$t0" --fresh pair-prices-index.json
+
       - name: Build Lines field distribution (best-effort)
         run: |
           t0=$(date +%s); rc=0
@@ -1171,6 +1180,9 @@ jobs:
           # empties the entire Edge Model page. bsp-pipeline.js writes it last,
           # after matches.json, on every run.
           cp model-output.json _site/ 2>/dev/null || true
+          # The Head to Head page's pair estimates (build-pair-prices.js); a missing shard reads as "not covered".
+          cp pair-prices-index.json _site/ 2>/dev/null || true
+          cp -r pair-prices _site/ 2>/dev/null || true
           # Career-record drill-down, one shard per player. The index gates every
           # request, so if it doesn't ship, no cell in the Career-record table
           # opens at all — publish both or neither.

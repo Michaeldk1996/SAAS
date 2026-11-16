@@ -147,8 +147,18 @@ no day work, checks or screenshots on this page until the founder reopens it.
   shared `trRowData`, so Match analysis → Tournament prints the same (intended). `ps2Meeting` keeps " - " for its other
   hosts, and Match analysis Form / H2H (`fhFormRowData`, `fhH2hRowData`) still print "2 - 0" — outside this round.
   **Apply:** every Sets cell on this page matches `^\d+–\d+$` or is `—`. **Test:** `test-ten402-r4n.mjs` fix 3.
-- **Model** = the Stennisfy Model page's `model-output.json` fair price behind the same display gate; otherwise one
-  empty line, never a price of our own. **Elo** = the weekly Elo of Database → Ratings.
+- **Model = the pair's likely opening price, for ANY two players** (founder 2026-11-16, replacing "the Model page's
+  board price, else one empty line"): "the head to head is to compare two players, to have a likely opening price based
+  on our database, Elo ratings etc." `build-pair-prices.js` (every pipeline run) runs the Stennisfy Model engine itself
+  (`runModel(m, { pairOnly, bestOf })`) on every pair of this week's ATP top 200 (`player-index.json`), per surface
+  (Hard / Clay / Grass) × format (3 / 5): base state 3 (Elo + surface Elo, no market), the 10 layers that need only the
+  two players (`PAIR_SKIP_LAYERS` = manual note, fatigue, weather, market movement never run), H2H = the screens' list.
+  Price = 1 / (p × (1 + 3.39%)), 3.39% = Pinnacle's median first two-sided price on the board (n = 442, 27 Sep – 16 Nov
+  2026). The card follows the page's Surface / Format toggles; under the boxes: each player's win chance (whole %), the
+  context, the Elo base, "N of 10 model layers", the margin with its n, the model run time. Not in the file (outside the
+  top 200 / no weekly Elo) → "No estimate for this pair … X is not among them"; a failed load → "couldn't load", asked
+  again after 60 s; never a price of the page's own. **Test:** `test-ten402-a.mjs` "Model:" (+ mutants),
+  `tools/test-pair-prices.js` (the real engine). **Elo** = the weekly Elo of Database → Ratings.
 - **Playing styles / DNA** = the Playing Styles page's archetypes and ratings. **Tournament** rows = Player Profile →
   Draw record for the event. **News** = the News page feed, items it attributes to A or B; none → card hidden.
 - **Suggested matchups** = ATP main-draw pairs on this week's board (Mon–Sun), both on the roster, best combined rank

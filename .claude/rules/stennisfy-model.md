@@ -30,7 +30,7 @@ Founder rulings: TEN-418 card 7a80b6fe, R1 review and R2 review 73f754f9 (2026-1
   lacks (Round performance, H2H trend, Tournament surface speed). The engine's "Subjective input" is named "Manual context".
 - **No model price** (state ≠ 2, no run, or a failed run, before the start): match header + Market context book rows
   (no Model base tile, edges `—`) + one grey line "No model price for this match yet." in place of Value layers, Fair
-  price and Biggest movers; Layers active / Updated read `—`. **Never an Elo-only price as the model price.** In play:
+  price and Biggest movers; Layers active / Updated read `—`. **Never an Elo-only price as the model price.** *(This page only: the Head to Head page's pair estimate is a separate, labelled product — `h2h.md` "Model", founder 2026-11-16.)* In play:
   match header + "Match in play…". Display gate (founder 2026-07-25): a price shows only for state 2 inside 0–30 h of
   the real start (`aOddsStartMs`).
 - **Updated** = the shown run's `generatedAt` (HH:MM, hover "Model run …"), never the clock. Times read `stennisfy.tz`,

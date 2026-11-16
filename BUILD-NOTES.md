@@ -2336,3 +2336,19 @@ plus resolution cuts keeping ~10% of matches per band (a 568-match career gets ~
   reachable for finished draw matches through `draw-matches.json` / `matchById`.
 - **Head to Head hand-off:** `sfGoToH2H(keyA, keyB)` is the live receiver; `stn_h2h_pair` carries api-tennis keys (not the
   design's names) so the receiver never joins on a name.
+
+## 2026-11-16 — Head to Head: the Stennisfy Model card prices any pair (founder)
+Founder: "It shouldn't price the match, it should give the probability based on the Elo ratings etc. The head to head is
+actually to compare two players, to have a likely opening price based on our database, Elo ratings etc." → "do both for a
+likely opening price". Before, the card showed the Model page's price only for a board match inside its 30 h gate, so a
+comparison page showed an empty line for almost every pair (Zverev v Alcaraz: different Finals groups).
+Why pipeline-side and not in the browser: the engine reads stores the site never publishes (rank-at-time.json,
+clutch-supplement.json, clutch-surface.json) and style-radar.json (licence); running it in the pipeline keeps ONE formula.
+Cost measured: 0.28 ms a run; 200 players → 19,900 pairs × 6 contexts in ~26 s; ~4.6 KB gz a player shard. Margin:
+Pinnacle's first two-sided price on 442 board matches (matches.json history, 27 Sep – 16 Nov 2026) median 3.39% (p25
+2.93, p75 3.50); its ATP closing margin is 2.67% (2025, n = 2,532) — the opening one is used because the card says
+"likely opening price". Layers that need a real match (manual note, fatigue, weather, market movement) never run for a
+pair. Local trial 16 Nov (an older standings file): 195 of 200 players priced — H. Rune and A. Cazaux have no weekly Elo
+row; A. Ilagan, J. Kumstat and K. Smith have no profile name to join theirs (the engine's rule: no Elo → no price);
+18,915 of 19,900 pairs. Each live run's counts are in pair-prices-index.json `stats`.
+

@@ -198,3 +198,7 @@ news-ticker-run.json
 
 # built every pipeline run from the MTO archive, never committed
 mto-matches.json
+
+# Head to Head pair estimates (build-pair-prices.js) — built and published every pipeline run, never committed
+pair-prices/
+pair-prices-index.json

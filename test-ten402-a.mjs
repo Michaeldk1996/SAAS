@@ -151,46 +151,77 @@ test('H6: the card interleaves A, B, A, B … and shows at most H2H_NEWS_MAX row
   assert.deepEqual(v.feed.map(x => x.id), ['a1', 'b1', 'a2', 'b2', 'a3', 'b3']);
 });
 
-// ── Data 3 / L-default H4: Stennisfy Model = the Model page's output; Elo = the weekly Elo ───────────────────────────
-function model({ out, matches, startMs, elo }) {
-  const src = slice('weeklyElo') + slice('modelOutputFor') + slice('modelGate') + slice('modelVals');
-  return new Function('modelOutput', 'aOddsStartMs', 'DV', 'fn', src + '\nreturn modelVals;')(
-    { matches: out }, m => startMs[m.id], n => (n === 'matches' ? matches : null),
-    n => (n === 'tourxRating' ? (full => (elo[full] != null ? String(elo[full]) : null)) : null));
+// ── Stennisfy Model (founder 2026-11-16): the pair's likely opening price from pair-prices/<key>.json ───────────────
+// Drives the shipped pairPxFor + modelVals + modelCard with a stubbed fetch; every check has its control.
+async function modelHarness(files, { now = 0 } = {}) {
+  const calls = [];
+  const fetch = url => { calls.push(url); const f = files[url];
+    if (f === 'fail') return Promise.reject(new Error('net'));
+    if (f === undefined) return Promise.resolve({ status: 404, ok: false, json: async () => null });
+    return Promise.resolve({ status: 200, ok: true, json: async () => JSON.parse(JSON.stringify(f)) }); };
+  const state = { aSel: '10', bSel: '20' };
+  let renders = 0;
+  const src = sliceConst('H2H_PAIR_RETRY_MS') + sliceConst('H2H_PAIR_LAYERS') + sliceConst('_pairPx')
+    + slice('pairPxFor') + slice('pairClock') + slice('modelVals') + slice('modelCard');
+  const mod = new Function('fetch', 'state', 'built', 'render', 'fn', 'E', 'Date',
+    src + '\nreturn { modelVals, modelCard, pairPxFor };')(fetch, state, true, () => { renders++; }, () => null, E,
+    Object.assign(function () { return new globalThis.Date(...arguments); }, { now: () => now, parse: globalThis.Date.parse }));
+  const settle = () => new Promise(r => setTimeout(r, 0));
+  return Object.assign(mod, { calls, settle, renders: () => renders });
 }
 const A = { key: '10', full: 'A. One', short: 'A. One', mono: 'AO' }, B = { key: '20', full: 'B. Two', short: 'B. Two', mono: 'BT' };
-const OUT = st => ({ ok: true, stage1: { baseState: { state: st } }, stage3: { fair: { p1: { prob: 0.6, odds: 1.67 }, p2: { prob: 0.4, odds: 2.5 } } } });
-const nowPlus = h => Date.now() + h * 3600e3;
+// A at 33.40% on hard best of 3 (Elo base 34.65%, 6 layers); B's shard is the mirror.
+const SH_A = { v: 1, generatedAt: '2026-11-16T07:19:32Z', margin: 0.0339, marginN: 442, key: '10',
+  opp: { 20: { H3: [3340, 3465, 6], C5: [3828, 3938, 7] } } };
+const SH_B = { v: 1, generatedAt: '2026-11-16T07:19:32Z', margin: 0.0339, marginN: 442, key: '20',
+  opp: { 10: { H3: [6660, 6535, 6], C5: [6172, 6062, 7] } } };
+const FILES = { 'pair-prices/10.json': SH_A, 'pair-prices/20.json': SH_B };
 
-test('H4: the price is the Model page\'s own fair odd (point price), oriented to A, under the Model page\'s display gate', () => {
-  const matches = [{ id: 'm1', p1Key: 20, p2Key: 10 }];                       // A is the match's p2
-  const v = model({ out: { m1: OUT(2) }, matches, startMs: { m1: nowPlus(5) }, elo: { 'A. One': 2000, 'B. Two': 2100 } })(A, B);
+test('Model: any pair gets a price — p from the engine file, plus the margin: 1 / (p × (1 + m)), oriented to A', async () => {
+  const h = await modelHarness(FILES);
+  assert.equal(h.modelVals(A, B, { ctxSurface: 'Hard', ctxFormat: 3 }).loading, true, 'loading first, never a price');
+  await h.settle();
+  const v = h.modelVals(A, B, { ctxSurface: 'Hard', ctxFormat: 3 });
   assert.equal(v.priced, true);
-  assert.equal(v.aPrice, '2.50'); assert.equal(v.bPrice, '1.67');
-  // Elo line: weekly Elo gap 100 → 1/(1+10^(-100/400)) = 64% for B; the model has B at 60%
-  assert.deepEqual(v.foot, { gap: '100', pct: '64', fav: 'B. Two', model: '60' });
+  assert.equal(v.aPrice, (1 / (0.334 * 1.0339)).toFixed(2)); assert.equal(v.aPrice, '2.90');
+  assert.equal(v.bPrice, (1 / (0.666 * 1.0339)).toFixed(2)); assert.equal(v.bPrice, '1.45');
+  assert.equal(v.foot.aPct, '33'); assert.equal(v.foot.bPct, '67'); assert.equal(v.foot.basePct, '35');
+  assert.equal(v.foot.layers, '6'); assert.equal(v.foot.of, '10'); assert.equal(v.foot.margin, '3.4'); assert.equal(v.foot.marginN, '442');
+  // control: the toggles pick the context — clay best of 5 is another cell
+  const c = h.modelVals(A, B, { ctxSurface: 'Clay', ctxFormat: 5 });
+  assert.equal(c.aPrice, (1 / (0.3828 * 1.0339)).toFixed(2)); assert.notEqual(c.aPrice, v.aPrice);
+  // swapping the players swaps the prices (B's own shard read)
+  const s = h.modelVals(B, A, { ctxSurface: 'Hard', ctxFormat: 3 });
+  assert.equal(s.aPrice, '1.45'); assert.equal(s.bPrice, '2.90');
+  assert.equal(h.calls.length, 2, 'one fetch per player per session');
+  // the card draws both boxes and the two grey lines
+  const html2 = h.modelCard({ model: v });
+  assert.match(html2, /data-h2h-model="priced"/);
+  assert.match(html2, /Likely opening price<\/span><span class="h2h-model__price">2\.90/);
+  assert.match(html2, /Win chance A\. One <span class="n">33%<\/span> · B\. Two <span class="n">67%<\/span> · Hard, best of <span class="n">3<\/span>/);
+  assert.match(html2, /moved by <span class="n">6<\/span> of <span class="n">10<\/span> model layers/);
+  assert.match(html2, /opening margin, <span class="n">3\.4%<\/span> \(n=<span class="n">442<\/span>\)/);
 });
-test('H4: no runnable / no confirmed / started / no board match → the empty line, never a price of our own', () => {
-  const matches = [{ id: 'm1', p1Key: 10, p2Key: 20 }];
-  const elo = { 'A. One': 2000, 'B. Two': 2100 };
-  const cases = [
-    [{ m1: OUT(3) }, nowPlus(5), /confirmed market line/],                        // no Pinnacle line (state 3)
-    [{ m1: OUT(2) }, nowPlus(31), /confirmed market line/],                       // outside 30 h
-    [{ m1: OUT(2) }, nowPlus(-1), /has started/],                                 // in play
-    [{ m1: { ok: false } }, nowPlus(5), /hasn’t produced a price/],               // model could not run
-  ];
-  for (const [out, st, re] of cases) {
-    const v = model({ out, matches, startMs: { m1: st }, elo })(A, B);
-    assert.equal(v.priced, false); assert.equal(v.aPrice, '—'); assert.equal(v.bPrice, '—'); assert.match(v.emptyText, re);
-    assert.equal(v.foot.model, null, 'no model % without a model price');
-  }
-  const none = model({ out: {}, matches: [], startMs: {}, elo })(A, B);
-  assert.equal(none.priced, false); assert.match(none.emptyText, /no price for this pairing/);
-  // no weekly Elo for one player → no Elo line (never an estimate)
-  assert.equal(model({ out: {}, matches: [], startMs: {}, elo: { 'A. One': 2000 } })(A, B).foot, null);
-  // the retired page-side Elo blend is gone: the model card computes no price itself
-  assert.doesNotMatch(slice('modelVals'), /Math\.pow\(10, -\(be/);
-  assert.doesNotMatch(html.slice(H2H_AT, H2H_AT + 200000), /MODEL_ELO_W/);
+test('Model: a context the engine could not price, a player outside the file, a failed load — a reason, never a price', async () => {
+  const h = await modelHarness(FILES); h.modelVals(A, B, {}); await h.settle();
+  const g = h.modelVals(A, B, { ctxSurface: 'Grass', ctxFormat: 3 });
+  assert.equal(g.priced, false); assert.equal(g.aPrice, '—'); assert.match(g.emptyText, /could not price this pair on grass, best of 3/);
+  // B not covered (404)
+  const h2 = await modelHarness({ 'pair-prices/10.json': SH_A }); h2.modelVals(A, B, {}); await h2.settle();
+  const n = h2.modelVals(A, B, { ctxSurface: 'Hard', ctxFormat: 3 });
+  assert.equal(n.priced, false); assert.match(n.emptyText, /top 200 with a weekly Elo, and B\. Two is not among them/);
+  assert.equal(n.foot, null);
+  // failed load → the retry line; after H2H_PAIR_RETRY_MS it is asked again
+  const h3 = await modelHarness({ 'pair-prices/10.json': 'fail', 'pair-prices/20.json': SH_B }); h3.modelVals(A, B, {}); await h3.settle();
+  const f = h3.modelVals(A, B, { ctxSurface: 'Hard', ctxFormat: 3 });
+  assert.equal(f.priced, false); assert.match(f.emptyText, /couldn’t load/);
+  assert.equal(h3.calls.filter(u => u === 'pair-prices/10.json').length, 1, 'no refetch inside the retry window');
+  // a file with no margin prints no price (never an unmargined price passed off as an opening line)
+  const h4 = await modelHarness({ 'pair-prices/10.json': Object.assign({}, SH_A, { margin: undefined }), 'pair-prices/20.json': SH_B });
+  h4.modelVals(A, B, {}); await h4.settle();
+  assert.equal(h4.modelVals(A, B, { ctxSurface: 'Hard', ctxFormat: 3 }).priced, false);
+  // the page never reads model-output.json or a board match for this card
+  assert.doesNotMatch(slice('modelVals'), /modelOutput|DV\('matches'\)/);
 });
 test('Data 3: the header Elo is the weekly Elo Database → Ratings shows (tourxRating), "—" when not held', () => {
   const rv = slice('renderVals');

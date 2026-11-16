@@ -25,6 +25,9 @@ const { baseProbability } = require('./elo');
 const { runAll, clamp } = require('./adjustments');
 const { priceAndValue, vigFree, pinnacleSeries, bookSeries } = require('./price');
 
+// Layers that read a real match (its date, venue, weather, market or a manual note), so a pair estimate never runs them.
+const PAIR_SKIP_LAYERS = ['subjective', 'fatigue', 'weather', 'oddsMovement'];
+
 function inferBestOf(match) {
   const tour = String(match.tour || '');
   const isGS = config.bestOf5Tours.some(t => tour.toLowerCase().includes(t.toLowerCase()));
@@ -39,7 +42,10 @@ function runModel(match, opts = {}) {
   const p1 = data.resolvePlayer(match.p1Key, match.p1);
   const p2 = data.resolvePlayer(match.p2Key, match.p2);
   const surface = match.surface;
-  const bestOf = inferBestOf(match);
+  // Pair estimate (founder 2026-11-16, the Head to Head page): two players with no match behind them. The caller names
+  // the format (bestOf) and the layers that need a real match (PAIR_SKIP_LAYERS) do not run.
+  const pairOnly = !!opts.pairOnly;
+  const bestOf = pairOnly && (opts.bestOf === 3 || opts.bestOf === 5) ? opts.bestOf : inferBestOf(match);
 
   // ---- Stage 1 (Model v2.0 STEP 2): three-state market-anchored base ----
   // elo.js stays pure — it returns the component win-probs; the state
@@ -68,10 +74,17 @@ function runModel(match, opts = {}) {
     p1, p2, match, surface, bestOf,
     subjectiveSignal: opts.subjectiveSignal,
     matchupMatrix: data.loadMatchupMatrix(),
-    progression: data.loadProgression(),      // Tier-1 serve (this tournament)
+    progression: pairOnly ? { tournaments: {} } : data.loadProgression(),      // Tier-1 serve (this tournament; none for a pair)
     historicalStats: data.loadHistoricalStats(), // Tier-2 serve (last-3 on surface)
   };
   const adjustments = runAll(ctx);
+  if (pairOnly) {
+    for (const a of adjustments) {
+      if (!PAIR_SKIP_LAYERS.includes(a.key)) continue;
+      Object.assign(a, { applied: false, gated: false, signal: 0, deltaP1: 0, direction: 'neutral', confidence: 'none',
+        detail: 'Not applied: needs a scheduled match.', pairSkipped: true });
+    }
+  }
 
   // ---- Layer dampening by base state (Model v2.0 STEP 3) ----
   // Statistical layers the market already prices (#4/#5/#7/#9/#10) are dampened
@@ -292,4 +305,4 @@ function selectMarketAnchor(match) {
   return { state: 3, market: null, book: null, anchorPrice: null, frozen: false, flag: flags[3] };
 }
 
-module.exports = { runModel, inferBestOf, selectMarketAnchor, calibrate };
+module.exports = { runModel, inferBestOf, selectMarketAnchor, calibrate, PAIR_SKIP_LAYERS };
