@@ -47,4 +47,6 @@ paints Ranking "—" while the active player paints "1/3". Locked by `test-ten26
 **Open, NOT ruled:** a field-size floor (field size runs 215 down to 5 after the TEN-262 retired exclusion, measured 2026-09-23). Until ruled, a
 field under 10 carries a `field N` small-sample mark and every Ranking shows its
 denominator — flagged, not hidden, not filled.
-
+- **Answer tiles keep their place** (review 2026-11-16): with fewer than two lines that carry a field (any filter the
+  field file does not cover — side, price band, style, level), both tiles show a grey dash and "No field to compare under
+  these filters", not clickable; never a figure in place of the field.

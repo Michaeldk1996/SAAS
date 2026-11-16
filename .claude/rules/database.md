@@ -129,10 +129,11 @@ reference screenshots): `design_handoff_database_v2/step1/` (never published).
   gap 14, padding 12×0, a 6% rule between rows, caps label in the first track. View row: the darker track (`--db2-inset`,
   6% edge, radius 10, padding 3) with **Tour · Tournament · Player · Lines · Ratings** (6×16, 13px; selected `--db2-raised`
   + 16% edge, 700; idle muted 600) and one blue **Reset filters** at the right end (12.5/600, hover `--db2-blue-hov`).
-- Dropdown triggers: grey 12/500 label · 13/600 value · × once picked · the CSS chevron (`.db-caret`, 6px, 1.5px muted
+- Dropdown triggers: grey 12/500 label · 13/600 value (the picked names: up to two joined ", ", else "First +N";
+  "All" when none) · × once picked · the CSS chevron (`.db-caret`, 6px, 1.5px muted
   borders, rotated); transparent on a 6% edge, picked = `--db2-raised` + 16%. Year range = one transparent pill "Years
   2010 to 2026", mono 12 years. Menus `--db2-card` + 10% edge, radius 10, padding 4, `0 12px 28px` black 45%; rows
-  12.5/500, picked 6% white + 700, hover `--db2-inset`. Search with chips: inset box on a 6% edge (16% while typing), chips
+  12.5/500, picked 6% white + 700, hover `--db2-inset`. Search with chips: inset box on a 6% edge (16% while nothing is picked, never on focus; result pop-up 260px), chips
   `--db2-raised` + 16%, 26px, cap note grey ("Four events maximum", "Two players maximum", "Three players maximum").
 - Filters per view, as the reference draws them: Tour = Level · Surface · Round · Years; Tournament = event search ·
   Round · Years; Player = player search · Surface · Period · Tournament · Side; Lines and Ratings in their files.
@@ -153,8 +154,9 @@ reference screenshots): `design_handoff_database_v2/step1/` (never published).
 - Band card (design L1018-1059): caps hint "Back the shorter / longer price" + title 18/800; right the side's yield 26px
   mono (green / red) over "N matches · median X" (+ " · tour Y" on Tournament / Player). Columns Band · From · To · Median
   · Matches · Yield (Event / Player) (+ Tour), `minmax(120px,1fr) 50 52 52 58 70` (with Tour `minmax(96px,1fr) 46 50 50 54
-  66 62`). Gates SOFT_GATE 100 (yield muted 500) / HARD_GATE 30 ("n=N — too few matches for a yield", 11px; a Player
-  cell an en dash). The Tour column shows while round and years are untouched, else a dash and the note "Tour baselines are
+  66 62`). Gates SOFT_GATE 100 (yield muted 500) / HARD_GATE 30: the cell is a grey dash with "n=N — too few matches for a yield" on hover, on every card
+  (DESIGN GAP: the export's 11px words wrap to five lines in the 66–70px column and stretch every row of both cards;
+  review 2026-11-16). The Tour column shows while round and years are untouched, else a dash and the note "Tour baselines are
   not computed for these filters."
 - **Cumulative return chart:** "Cumulative return, flat 1% stake" + the 22px "?" (1 unit = 1% of the bankroll, so the
   figures are the same units; only the words changed); x = the **real match date** (1 January of the first season to the

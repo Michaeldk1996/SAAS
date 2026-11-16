@@ -3293,7 +3293,6 @@ window.sfPlanLocks(null);   // locked until the account says Edge / Pro: no unlo
   [data-db-root] .db-yrend .db-trig i{ font-family:var(--db-mono); font-size:12px; font-weight:400; color:var(--db2-ink); }
   [data-db-root] .db-menu.year{ top:calc(100% + 6px); min-width:96px; z-index:20; }
   [data-db-root] .db-menu.year .db-mrow{ justify-content:space-between; gap:10px; font-family:var(--db-mono); font-size:12px; color:var(--db2-ink); }
-  [data-db-root] .db-menu.year .db-mrow.on{ background:var(--db2-h6); }
   /* band cards (L1017-1060) */
   [data-db-root] .db2-caps{ font-family:var(--db-ui); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--db2-muted); }
   [data-db-root] .db2-bands{ display:grid; grid-template-columns:repeat(auto-fit,minmax(440px,1fr)); grid-auto-rows:1fr; gap:16px; align-items:stretch; }
@@ -3408,11 +3407,12 @@ window.sfPlanLocks(null);   // locked until the account says Edge / Pro: no unlo
   [data-db-root] .db-chipbox{ flex:0 1 auto; min-width:200px; max-width:520px; }
   [data-db-root] .db-chipin{ display:flex; align-items:center; flex-wrap:wrap; gap:6px; min-height:36px; box-sizing:border-box; padding:4px 9px; border-radius:9px;
     background:var(--db2-inset); border:1px solid var(--db2-h6); line-height:normal; }
-  [data-db-root] .db-chipin.hot, [data-db-root] .db-chipin:focus-within{ border-color:var(--db2-h16); }
+  [data-db-root] .db-chipin.hot, [data-db-root] .db-chipin.hot:focus-within{ border-color:var(--db2-h16); }
+  [data-db-root] .db-chipin:focus-within{ border-color:var(--db2-h6); }
   [data-db-root] .db-chip{ display:inline-flex; align-items:center; gap:7px; height:26px; box-sizing:border-box; padding:0 7px 0 10px; border-radius:6px;
     background:var(--db2-raised); border:1px solid var(--db2-h16); white-space:nowrap; }
   [data-db-root] .db-chip span{ font-family:var(--db-ui); font-size:12.5px; font-weight:600; color:var(--db2-ink); }
-  [data-db-root] .db-chip button{ font-size:11px; line-height:1; color:var(--db2-muted); background:none; border:0; padding:0; width:auto; height:auto; }
+  [data-db-root] .db-chip button{ font-family:var(--db-ui); font-size:11px; line-height:1; color:var(--db2-muted); background:none; border:0; padding:0; width:auto; height:auto; }
   [data-db-root] .db-capnote{ font-family:var(--db-ui); font-size:12px; color:var(--db2-muted); white-space:nowrap; padding:0; }
   [data-db-root] .db-chipin input{ flex:1 1 110px; min-width:110px; height:26px; background:transparent; border:none; padding:0 3px; color:var(--db2-ink); font-size:13px; font-family:var(--db-ui); outline:none; }
   /* player head card (L823-848) */
@@ -3449,6 +3449,24 @@ window.sfPlanLocks(null);   // locked until the account says Edge / Pro: no unlo
   [data-db-root] .db2-rbtrack{ flex:0 1 auto; min-width:0; overflow-x:auto; scrollbar-width:none; }
   [data-db-root] .db2-rbpill{ padding:6px 13px; font-size:12.5px; }
   [data-db-root] .db2-q16{ border-color:var(--db2-h16); }
+
+  /* Database v2 review fixes (side-by-side 2026-11-16) */
+  [data-db-root] .db-rlab{ line-height:normal; }
+  [data-db-root] .db-menu.year .db-mrow.on{ background:var(--db2-raised); }
+  [data-db-root] .db-tick{ padding-left:0; line-height:normal; font-weight:inherit; }
+  [data-db-root] .db-menu.has-search{ max-height:252px; }
+  [data-db-root] .db-pop{ width:260px; }
+  [data-db-root] .db-prow:hover{ color:var(--db2-ink); }
+  [data-db-root] .db-pempty{ padding:7px 9px; font-size:12px; color:var(--db2-muted); }
+  [data-db-root] .db-yaxis div, [data-db-root] .db-xaxis div{ line-height:normal; }
+  [data-db-root] .db-subline{ color:var(--db2-muted); }
+  [data-db-root] .db-prompt{ background:var(--db2-card); border:1.25px solid var(--db2-h6); }
+  [data-db-root] .db-prompt h3{ line-height:normal; margin:0; color:var(--db2-ink); }
+  [data-db-root] .db-prompt p{ margin:10px 0 0; color:var(--db2-muted); }
+  [data-db-root] .db2-lntile0{ cursor:default; }
+  [data-db-root] .db2-lntile.db2-lntile0:hover{ border-color:var(--db2-h6); }
+  [data-db-root] .db2-lntile0 .db2-lntline, [data-db-root] .db2-lntile0 .db2-lntrate{ color:var(--db2-muted); }
+  [data-db-root] .db2-q16:hover{ border-color:var(--db2-h16); color:var(--db2-muted); }
   [data-db-root] .db2-rscroll{ overflow-x:auto; margin-top:16px; }
   [data-db-root] .db2-rgh{ display:grid; gap:8px; padding:0 8px 9px; border-bottom:1px solid var(--db2-h10); }
   [data-db-root] .db2-rh{ font-family:var(--db-ui); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--db2-muted); }
@@ -30736,7 +30754,8 @@ window.DatabaseTab = (function(){
       var on = cur===o[0];
       var row=el('div','db-mrow single'+(on?' on':''));
       row.setAttribute('role','option'); row.setAttribute('aria-selected', on?'true':'false');
-      row.innerHTML='<span>'+esc(o[1])+'</span><span class="db-tick" aria-hidden="true">✓</span>';
+      row.innerHTML = kind==='year' ? '<span>'+esc(o[1])+'</span><span class="db-tick" aria-hidden="true">✓</span>'
+                                    : '<span class="db-box"></span><span>'+esc(o[1])+'</span>';
       row.onclick=function(){ onPick(o[0]); state.menu=null; state.menuQ=''; render(); };
       m.appendChild(row);
     });
@@ -30816,7 +30835,13 @@ window.DatabaseTab = (function(){
     state.lnSel=[]; state.lnQ=''; state.lnSurf='All'; state.lnScope='l52'; state.lnCat=null; state.lnFmt='bo3';
     state.lnSide='all'; state.lnBand=null; state.lnArch=null; state.lnLevel=null; state.lnHide={}; state.lnOpen=null;
   }
-  function countOf(set){ return set? String(set.size) : 'All'; }
+  // Database v2: the trigger names what is picked (the export: two names, else the first + the rest).
+  function countOf(set, opts){
+    if(!set) return 'All';
+    var names=(opts||[]).filter(function(o){ return set.has(o[0]); }).map(function(o){ return o[1]; });
+    if(names.length!==set.size) return String(set.size);
+    return names.length<=2 ? names.join(', ') : names[0]+' +'+(names.length-1);
+  }
   var lastTotal=0;
 
   // Pill group. `disabled` is a real state, not an absence: the buttons stay on
@@ -30840,7 +30865,7 @@ window.DatabaseTab = (function(){
   function chipSearch(o){
     var wrap=el('div','db-chipbox');
     var q=(o.query||'').trim();
-    var box=el('div','db-chipin'+((o.prompting||q)?' hot':''));
+    var box=el('div','db-chipin'+(o.picks.length?'':' hot'));
     box.setAttribute('data-search','');   // TEN-399 item 3: chips-and-search box - --inner, no edge
     o.picks.forEach(function(name){
       var chip=el('div','db-chip','<span>'+esc(name)+'</span>');
@@ -30966,11 +30991,11 @@ window.DatabaseTab = (function(){
       // Clear the filter alongside the control, matching the Players branch. Without
       // it a dropped control could leave an applied filter with no way to clear it.
       if(!lvOpts) state.levels=null;
-      if(lvOpts) zR.appendChild(trigger('Level', countOf(state.levels), !!state.levels, 'level', function(){ return multiMenu(lvOpts, state.levels, function(s){state.levels=s;}); }, function(){ state.levels=null; }));
-      zR.appendChild(trigger('Surface', countOf(state.surfaces), !!state.surfaces, 'surface', function(){ return multiMenu(allOpts(M.surfaces), state.surfaces, function(s){state.surfaces=s;}); }, function(){ state.surfaces=null; }));
+      if(lvOpts) zR.appendChild(trigger('Level', countOf(state.levels, lvOpts), !!state.levels, 'level', function(){ return multiMenu(lvOpts, state.levels, function(s){state.levels=s;}); }, function(){ state.levels=null; }));
+      zR.appendChild(trigger('Surface', countOf(state.surfaces, allOpts(M.surfaces)), !!state.surfaces, 'surface', function(){ return multiMenu(allOpts(M.surfaces), state.surfaces, function(s){state.surfaces=s;}); }, function(){ state.surfaces=null; }));
       var rdOpts=roundOpts();   // null => dictionary moved; drop the control and the filter with it
       if(!rdOpts) state.rounds=null;
-      if(rdOpts) zR.appendChild(trigger('Round', countOf(state.rounds), !!state.rounds, 'round', function(){ return multiMenu(rdOpts, state.rounds, function(s){state.rounds=s;}, true); }, function(){ state.rounds=null; }));
+      if(rdOpts) zR.appendChild(trigger('Round', countOf(state.rounds, rdOpts), !!state.rounds, 'round', function(){ return multiMenu(rdOpts, state.rounds, function(s){state.rounds=s;}, true); }, function(){ state.rounds=null; }));
       zR.appendChild(yearControl());
     } else if(state.view==='tournaments' && !(I && I.lockSubject)){
       // TEN-399 item 5 · Compare events. The subject is the chips-and-search box: the
@@ -30996,7 +31021,7 @@ window.DatabaseTab = (function(){
       }));
       var rdOptsT=roundOpts();
       if(!rdOptsT) state.rounds=null;
-      if(rdOptsT) zR.appendChild(trigger('Round', countOf(state.rounds), !!state.rounds, 'round', function(){ return multiMenu(rdOptsT, state.rounds, function(s){state.rounds=s;}, true); }, function(){ state.rounds=null; }));
+      if(rdOptsT) zR.appendChild(trigger('Round', countOf(state.rounds, rdOptsT), !!state.rounds, 'round', function(){ return multiMenu(rdOptsT, state.rounds, function(s){state.rounds=s;}, true); }, function(){ state.rounds=null; }));
       zR.appendChild(yearControl());
     } else if(state.view==='tournaments'){
       // Locked embed (Tournaments → ROI overlay): one fixed subject, no picker, no compare.
@@ -31019,7 +31044,7 @@ window.DatabaseTab = (function(){
       // C11 — no Surface filter here; Round + years only, per the export.
       var rdOpts=roundOpts();   // null => dictionary moved; drop the control and the filter with it
       if(!rdOpts) state.rounds=null;
-      if(rdOpts) zR.appendChild(trigger('Round', countOf(state.rounds), !!state.rounds, 'round', function(){ return multiMenu(rdOpts, state.rounds, function(s){state.rounds=s;}, true); }, function(){ state.rounds=null; }));
+      if(rdOpts) zR.appendChild(trigger('Round', countOf(state.rounds, rdOpts), !!state.rounds, 'round', function(){ return multiMenu(rdOpts, state.rounds, function(s){state.rounds=s;}, true); }, function(){ state.rounds=null; }));
       zR.appendChild(yearControl());
     } else {
       // Database v2 (design PLAYER_DEFS + playerSearch): a player search that adds a chip, TWO players maximum
@@ -32815,6 +32840,15 @@ window.DatabaseTab = (function(){
         tl.onclick=function(){ openLine(fam, m.spec); }; tg.appendChild(tl);
       });
       host.appendChild(tg);
+    } else {
+      // No field under these filters (or under two rated lines): the tiles keep their place with dashes, never a guess.
+      var tg0=el('div','db2-lntiles');
+      ['Most above the field','Most below the field'].forEach(function(c){
+        var tl=el('div','db2-lntile db2-lntile0','<div class="db2-lntl"><div class="db2-caps">'+c+'</div><div class="db2-lntline">\u2014</div>'+
+          '<div class="db2-lntsub">No field to compare under these filters</div></div><div class="db2-lntr"><div class="db2-lntrate">\u2014</div><div class="db2-lntd">&nbsp;</div></div>');
+        tg0.appendChild(tl);
+      });
+      host.appendChild(tg0);
     }
     G.forEach(function(g, gi){
       var fam=g.fam, gn=g.rows.reduce(function(x,m){ return Math.max(x,m.n); },0);
@@ -33381,8 +33415,10 @@ window.DatabaseTab = (function(){
       var yt, yc, yw, ys='14px', tip='';
       if(n<HARD_GATE){
         tip=fmtInt(n)+' matches, too few for a yield';
-        if(isPl){ yt='\u2014'; yc='var(--text-label)'; yw=500; }
-        else { yt='n='+fmtInt(n)+' \u2014 too few matches for a yield'; yc='var(--text-label)'; yw=500; ys='11px'; }
+        // DESIGN GAP: the export's "n=N — too few matches for a yield" wraps to five lines in the 66-70px yield
+        // column and stretches every row of both cards; the cell is the Player card's dash, the words on hover.
+        yt='\u2014'; yc='var(--text-label)'; yw=500;
+        if(!isPl) tip='n='+fmtInt(n)+' \u2014 too few matches for a yield';
       } else {
         yt=fmtPct(g.yield);
         var sc=yt.charAt(0)==='+'?'var(--pos)':'var(--neg)';
