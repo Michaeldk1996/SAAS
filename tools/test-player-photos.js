@@ -101,7 +101,7 @@ const USES = [
   ['Match analysis header + Form/H2H rows', 'bsp-consult-dashboard.html', 'attrs = profileLinkAttrs(key, name), src = playerPhotoUrl(key);'],
   ['Ratings board', 'bsp-consult-dashboard.html', "playerPhotoImg(String(p.key), p.name)"],
   ['Stennisfy Model head', 'bsp-consult-dashboard.html', "playerPhotoImg(key, name) : ''}</span>`;"],
-  ['H2H picked cards', 'bsp-consult-dashboard.html', 'playerPhotoImg(String(v.a.key), v.a.full)'],
+  ['H2H avatars (picker, sections, rows: the one xAv)', 'bsp-consult-dashboard.html', "playerPhotoImg(key, p.full || '')"],
   ['Live page', 'bsp-consult-dashboard.html', "playerPhotoImg(String(key),name):''}</span>"],
   ['Trading Report', 'trading-report.js', 'playerPhotoImg(String(row.key), row.name)'],
   ['Series cards', 'series.js', "playerPhotoImg(String(key), name)"],
