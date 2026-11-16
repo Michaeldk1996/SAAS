@@ -45,4 +45,22 @@ const ctl = SRC.replace(/if \(TI && TI\.CANONICAL_ALIASES && TI\.CANONICAL_ALIAS
 assert.notStrictEqual(ctl, SRC, 'control: the identity line is present'); pass++;
 const c = finals(ctl);
 assert.ok(['C. Ruud', 'C. Alcaraz', 'T. Fritz'].every(o => !c.find(m => m.opp === o).setScores), 'control: pre-fix join leaves them dashed'); pass++;
+// same opponent twice at one event in one year (round robin + final, Zverev v Medvedev ATP Finals 2021): the round
+// tells them apart; control: without the round tie-breaker both rows are dashes
+TH[0].editions.push({ year: 2021, finish: 'Won', matches: [
+  { res: 'W', round: 'RR', opp: 'D. Medvedev', score: '2 - 1' }, { res: 'W', round: 'F', opp: 'D. Medvedev', score: '2 - 0' }] });
+CH.push({ date: '2021-11-21', tournament: 'Finals - Turin', round: 'Final', opponent: 'D. Medvedev', won: true, sets: [{ p: 6, o: 4 }, { p: 6, o: 4 }] },
+        { date: '2021-11-16', tournament: 'Finals - Turin', round: '', opponent: 'D. Medvedev', won: false, sets: [{ p: 3, o: 6 }, { p: 7, o: 6, pTb: 7, oTb: 3 }, { p: 6, o: 7, pTb: 6, oTb: 8 }] });
+function ed21(src) {
+  const p = { key: '1980', name: 'A. Zverev', recentForm: { matches: [] }, tournamentHistory: JSON.parse(JSON.stringify(TH)) };
+  const sb = { FEATURE_PP2: true, playerProfiles: { players: { 1980: p } }, careerHistory: { 1980: CH }, TournamentIdentity: require('../tournament-identity.js') };
+  global.window = sb; new Function('window', src)(sb);
+  const I = sb.PlayerProfileV2._internals;
+  return I.tournViews(I.profileFor('1980')).find(t => t.name === 'Tour Finals').editions.find(e => e.year === 2021).matches;
+}
+const m21 = ed21(SRC);
+assert.deepStrictEqual(m21.map(m => [m.round, m.setScores, m.date]), [['F', '6-4, 6-4', '2021-11-21'], ['RR', '3-6, 7-6(3), 6-7(6)', '2021-11-16']], 'Medvedev twice: each row its own match'); pass++;
+const ctl2 = SRC.replace(/      if \(kr && edIdx\.byRound\[kr\] && idx\.byRound\[kr\]\) return idx\.byRound\[kr\];\n/, '');
+assert.notStrictEqual(ctl2, SRC, 'control: the round line is present'); pass++;
+assert.ok(ed21(ctl2).every(m => !m.setScores), 'control: without the round tie-breaker both Medvedev rows are dashes'); pass++;
 console.log(`test-pp-finals-join: ${pass} checks passed`);

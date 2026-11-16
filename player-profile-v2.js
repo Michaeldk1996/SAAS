@@ -5833,8 +5833,15 @@
   // falls back to (year, surname) when the event key misses AND that weaker key
   // is unique on both sides. Zverev 740 rows: 700 on the event key, 11 on the
   // fallback, 29 unmatched (96.1%). Martinez 203: 198 / 4 / 1 (99.5%).
-  function pairIndex(list, yearOf, eventOf, oppOf) {
-    var byEvent = {}, byYear = {};
+  // The round half of the tie-breaker key: the same opponent twice at one event in one year (a round-robin
+  // meeting and the final — Zverev v Medvedev, ATP Finals 2021) is told apart by its round. A blank or
+  // round-robin round reads "RR" on both sides (career-history leaves the Finals' group rounds blank).
+  function rkeyOf(round) {
+    var c = qualifyingCode(round) || roundOfN(round) || String(round || '').trim();
+    return (!c || c === 'RR' || /round robin|group/i.test(c)) ? 'RR' : c;
+  }
+  function pairIndex(list, yearOf, eventOf, oppOf, roundOf) {
+    var byEvent = {}, byYear = {}, byRound = {};
     function put(map, k, row) {
       if (Object.prototype.hasOwnProperty.call(map, k)) map[k] = null;
       else map[k] = row;
@@ -5843,8 +5850,9 @@
       var r = list[i], y = yearOf(r);
       put(byEvent, ekey(y, eventOf(r), oppOf(r)), r);
       put(byYear, tkey(y, oppOf(r)), r);
+      if (roundOf) put(byRound, ekey(y, eventOf(r), oppOf(r)) + '|' + rkeyOf(roundOf(r)), r);
     }
-    return { byEvent: byEvent, byYear: byYear };
+    return { byEvent: byEvent, byYear: byYear, byRound: byRound };
   }
 
   function careerHistoryFor(key) {
@@ -5980,16 +5988,17 @@
     var edRows = [];
     th.forEach(function (t) {
       (t.editions || []).forEach(function (e) {
-        (e.matches || []).forEach(function (m) { edRows.push({ y: e.year, t: t.name, o: m.opp }); });
+        (e.matches || []).forEach(function (m) { edRows.push({ y: e.year, t: t.name, o: m.opp, r: m.round }); });
       });
     });
     var edIdx = pairIndex(edRows,
-      function (r) { return r.y; }, function (r) { return r.t; }, function (r) { return r.o; });
+      function (r) { return r.y; }, function (r) { return r.t; }, function (r) { return r.o; }, function (r) { return r.r; });
 
     var chIdx = pairIndex((ch || []).filter(function (r) { return r && r.date; }),
       function (r) { return String(r.date).slice(0, 4); },
       function (r) { return r.tournament; },
-      function (r) { return r.opponent; });
+      function (r) { return r.opponent; },
+      function (r) { return r.round; });
     // The market shard's event vocabulary is its own, so its rows are indexed
     // under the tournamentHistory name step 2 assigned them, not under `event`.
     var mkTagged = mrows.map(function (r, i) {
@@ -6006,8 +6015,10 @@
 
     // Resolve one edition row against one store: strong key if unique on both
     // sides, else the weak key if unique on both sides, else nothing.
-    function pick(idx, ke, ky) {
+    function pick(idx, ke, ky, kr) {
       if (edIdx.byEvent[ke] && idx.byEvent[ke]) return idx.byEvent[ke];
+      // the event key is taken twice on either side → the round decides, only when it is unique on both
+      if (kr && edIdx.byRound[kr] && idx.byRound[kr]) return idx.byRound[kr];
       if (edIdx.byYear[ky] && idx.byYear[ky]) return idx.byYear[ky];
       return null;
     }
@@ -6015,12 +6026,14 @@
     var enrich = {};
     var joinStats = { rows: 0, strong: 0, weak: 0, none: 0 };
     edRows.forEach(function (r) {
-      var ke = ekey(r.y, r.t, r.o), ky = tkey(r.y, r.o);
-      var e = enrich[ke] = enrich[ke] || {};
+      var ke = ekey(r.y, r.t, r.o), ky = tkey(r.y, r.o), kr = ke + '|' + rkeyOf(r.r);
+      // a row whose event key another edition row shares is stored under its round key, so the two never share one entry
+      var ek2 = edIdx.byEvent[ke] ? ke : kr;
+      var e = enrich[ek2] = enrich[ek2] || {};
       joinStats.rows++;
       var got = false;
 
-      var c = pick(chIdx, ke, ky);
+      var c = pick(chIdx, ke, ky, kr);
       if (c) {
         e.date = c.date; e.surface = c.surface || null; e.level = c.level || null;
         e.sheetId = c.date + '|' + (c.opponent || '');
@@ -6168,7 +6181,8 @@
     return (t.editions || []).map(function (e) {
       var esf = tournEditionSurface(t.name, e.year);
       var ms = (e.matches || []).map(function (m, i) {
-        var x = j.enrich[ekey(e.year, t.name, m.opp)] || {};
+        var ek0 = ekey(e.year, t.name, m.opp);
+        var x = j.enrich[ek0 + '|' + rkeyOf(m.round)] || j.enrich[ek0] || {};
         // TEN-402 (founder 2026-10-08, one price join across the site): H / A = the page's per-event model row
         // (trProfilePriceOf → trProfileModel: the Database join, Pinnacle closing else Bet365 closing, retirements
         // settled on the ATP result) — the rows the Backing column and tile sum. Never the market shard's price.
