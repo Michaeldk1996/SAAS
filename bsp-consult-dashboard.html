@@ -30472,10 +30472,19 @@ window.DatabaseTab = (function(){
   };
   function db2InBand(B, p){ return p>=B[3]-1e-9 && p<B[4]-1e-9; }
   function fixedBands(values, sideKey){
-    var vs=values.slice().sort(function(a,b){return a.p-b.p;});
-    return { all:agg(vs), bands:DB2_BANDS[sideKey].map(function(B){
-      return { def:B, agg:agg(vs.filter(function(v){ return db2InBand(B, v.p); })) };
-    }) };
+    // One pass: each price goes to its band (half-open edges), profit summed on the way; medians from typed-array sorts
+    // (no comparator). Measured 16 Nov over the 42k-row archive: an object sort cost ~150ms, this ~10ms.
+    var D=DB2_BANDS[sideKey], nb=D.length, acc=D.map(function(){ return { ps:[], pr:0 }; }), all={ ps:new Float64Array(values.length), pr:0 };
+    for(var i=0;i<values.length;i++){
+      var v=values[i], pr=v.w?(v.p-1):-1; all.ps[i]=v.p; all.pr+=pr;
+      for(var k=0;k<nb;k++){ if(db2InBand(D[k], v.p)){ acc[k].ps.push(v.p); acc[k].pr+=pr; break; } }
+    }
+    function fin(ps, pr){
+      var n=ps.length; if(!n) return null;
+      var a=(ps instanceof Float64Array) ? ps : Float64Array.from(ps); a.sort();
+      var m=n>>1; return { n:n, median: n%2 ? a[m] : (a[m-1]+a[m])/2, yield:pr/n, lo:a[0], hi:a[n-1] };
+    }
+    return { all:fin(all.ps, all.pr), bands:D.map(function(B,k){ return { def:B, agg:fin(acc[k].ps, acc[k].pr) }; }) };
   }
   // The tour figure for one fixed band (Tournament / Player "Tour" column): the same half-open edges.
   function db2TourBand(sideKey, B){
@@ -33421,7 +33430,7 @@ window.DatabaseTab = (function(){
     // Database v2: x is the real match date (design "Season" axis, dated). Domain = 1 Jan of the first year shown to the
     // last match shown; season ticks sit on 1 January (db2SeasonTicks).
     var _t0=Date.UTC(yr(ordered[0][0]),0,1), _t1=db2Ms(ordered[nPts-1][0]); if(_t1<=_t0) _t1=_t0+864e5;
-    function db2DateX(d){ return (db2Ms(d)-_t0)/(_t1-_t0); }
+    var _xc={}; function db2DateX(d){ var x=_xc[d]; if(x===undefined) x=_xc[d]=(db2Ms(d)-_t0)/(_t1-_t0); return x; }   // one Date.UTC per match day
     for(var i=0;i<nPts;i++){
       var r=ordered[i];
       cf += r[7] ? (r[5]-1) : -1;
@@ -33814,10 +33823,23 @@ window.DatabaseTab = (function(){
   // Tennis-Data name ("Khachanov K.") -> the ranked player it names, for the photo and "ATP #n" ONLY. Identity, never a
   // guess: the archive name table first (database-yield-players.json `aliases`), then surname + first initial against this
   // week's standings, and only a single candidate counts. No candidate, or two, = initials and no rank.
-  var DB2_WHO={};
+  var DB2_WHO={}, DB2_TD_BYKEY=null;
   function db2Who(td){
+    var _ix=(typeof sfGlobalPlayerIndex==='function') ? sfGlobalPlayerIndex() : null;
+    if(!_ix || !_ix.length) return null;   // standings not in yet: no answer, and none remembered
     if(Object.prototype.hasOwnProperty.call(DB2_WHO, td)) return DB2_WHO[td];
     return (DB2_WHO[td]=db2Who0(td));
+  }
+  // One lookup index over this week's standings, built once: "surname words|first initial" -> players (every trailing run
+  // of the full name's words is a surname candidate, so "Pablo Carreno Busta" answers "carreno busta|p" and "busta|p").
+  var DB2_WHO_IX=null, DB2_WHO_IXN=-1;
+  function db2Fold(x){ return String(x).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z ]/g,' ').replace(/\s+/g,' ').trim(); }
+  function db2WhoIndex(idx){
+    if(DB2_WHO_IX && DB2_WHO_IXN===idx.length) return DB2_WHO_IX;
+    var ix={};
+    idx.forEach(function(p){ var w=db2Fold(p.name).split(' '); if(w.length<2) return;
+      for(var i=1;i<w.length;i++){ var k=w.slice(i).join(' ')+'|'+w[0].charAt(0); (ix[k]||(ix[k]=[])).push(p); } });
+    DB2_WHO_IX=ix; DB2_WHO_IXN=idx.length; return ix;
   }
   function db2Who0(td){
     var idx=(typeof sfGlobalPlayerIndex==='function') ? sfGlobalPlayerIndex() : null;
@@ -33826,8 +33848,7 @@ window.DatabaseTab = (function(){
     if((m=/^(.+?)\s+([A-Z][A-Za-z\-]*\.(?:[A-Z][A-Za-z]*\.)*)$/.exec(nm))){ sur=m[1]; ini=m[2].charAt(0); }
     else if((m=/^([A-Z][A-Za-z\-]*\.(?:\s?[A-Z][A-Za-z]*\.)*)\s+(.+)$/.exec(nm))){ sur=m[2]; ini=m[1].charAt(0); }
     else return null;
-    var fold=function(x){ return String(x).normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[^a-z ]/g,' ').replace(/\s+/g,' ').trim(); };
-    var fs=fold(sur), hits=idx.filter(function(p){ var f=fold(p.name); return (f===fs || f.slice(-fs.length-1)===' '+fs) && f.charAt(0)===ini.toLowerCase(); });
+    var hits=db2WhoIndex(idx)[db2Fold(sur)+'|'+ini.toLowerCase()] || [];
     return hits.length===1 ? hits[0] : null;
   }
   function db2Ini(name){ var p=String(name||'').replace(/[^A-Za-z ]/g,'').split(' ').filter(Boolean); return ((p[0]||'').charAt(0)+(p.length>1?(p[p.length-1]||'').charAt(0):'')).toUpperCase(); }
@@ -33896,8 +33917,8 @@ window.DatabaseTab = (function(){
     // The design's pills are the tour's best-known names; here: the five best-ranked players this week who have Database
     // rows, the subject excluded (a stated rule, no hand list).
     var idx=(typeof sfGlobalPlayerIndex==='function') ? (sfGlobalPlayerIndex()||[]) : [];
-    var tdNames=Object.keys(playerIndex), byKey={};
-    tdNames.forEach(function(n){ var w=db2Who(n); if(w && byKey[w.key]==null) byKey[w.key]=n; });
+    if(!DB2_TD_BYKEY && idx.length){ DB2_TD_BYKEY={}; Object.keys(playerIndex).forEach(function(n){ var w=db2Who(n); if(w && DB2_TD_BYKEY[w.key]==null) DB2_TD_BYKEY[w.key]=n; }); }
+    var byKey=DB2_TD_BYKEY||{};
     idx.slice().filter(function(x){ return x.rank!=null && byKey[x.key]!=null && byKey[x.key]!==state.player; })
       .sort(function(a,b){ return a.rank-b.rank; }).slice(0,5).forEach(function(x){
         var tdn=byKey[x.key], g=el('button','db2-pill2'); g.type='button'; g.title='Compare '+state.player+' with '+tdn;
