@@ -115,7 +115,7 @@ global.Date = RD;
 
 // ── page + deploy wiring ──
 const html = fs.readFileSync(path.join(ROOT, 'bsp-consult-dashboard.html'), 'utf8');
-check('Tournaments gets a "Draw" section, its container, loader and script', html.includes("[['draw', 'Draw']]") && html.includes('id="tourxDraw"') && html.includes('function tourxRenderDraw(){') && html.includes('<script src="draw-view.js"></script>'));
+check('Tournaments gets a "Draw" section, its container, loader and script', html.includes("[['draw', 'Draw']]") && html.includes('id="tourxDraw"') && html.includes('tournaments-draw.js') && !html.includes('function tourxRenderDraw(){') && html.includes('<script src="draw-view.js"></script>'));
 // 21 Oct: at 375px a long name + seed + three sets ("A. Shevchenko [3] 6 6 7") ran past the 186px card. Names are never
 // truncated (CLAUDE.md), so every bracket column — desktop and phone — is at least as wide as its widest card.
 const gridRules = html.match(/#tourxDraw \.dv-bracket\{[^}]*grid-template-columns:[^;]*;/g) || [];

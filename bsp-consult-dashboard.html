@@ -26223,7 +26223,6 @@ function renderTournamentsTab(){
   if (TT[tsec] && TT[tsec].render) TT[tsec].render({ overview: ov, entry: en, draw: dw, reports: rp }[tsec]);
   else if (sec === 'overview' || sec === 'stats') renderTourxOverview();
   else if (sec === 'entry') { if (window.EntryListsTab) window.EntryListsTab.init(); }
-  else if (sec === 'draw') tourxRenderDraw();
   // Reports = tournaments-reports.js (window.TTReports); the old renderer is retired (founder 2026-11-15).
   tourxRenderOverlays();
 }
@@ -26231,15 +26230,6 @@ function tourxSetSection(v){ tourxState.section = v; renderTournamentsTab(); }
 // Item 2 (founder 2026-10-20): the Draw section. draws.json (official sheets, refreshed by draws.yml) + the page's own
 // tournament-progression.json (results, set scores, qualifying, today's fixtures) + matches.json (start times).
 let _tourxDraws = null, _tourxDrawsLoad = null;
-// Finished draws with their final results (draws-archive.json, founder 2026-11-15). Loaded once beside the draw; a
-// failed load just shows no archive row (the current draws never wait for it).
-let _tourxDrawArchive = null, _tourxDrawArchiveLoad = null;
-function loadDrawArchive(){
-  if (_tourxDrawArchive || _tourxDrawArchiveLoad) return _tourxDrawArchiveLoad || Promise.resolve(_tourxDrawArchive);
-  _tourxDrawArchiveLoad = fetch('./draws-archive.json?_=' + Date.now(), { cache: 'no-store' }).then(r => (r.ok ? r.json() : null)).catch(() => null)
-    .then(a => { _tourxDrawArchive = a && a.tournaments ? a : null; _tourxDrawArchiveLoad = null; return _tourxDrawArchive; });
-  return _tourxDrawArchiveLoad;
-}
 // Round 3 (founder 2026-10-21): draw-matches.json — every finished main-draw match's board row + model entry, kept after
 // the board's 4-day window, so a draw card still opens its Match Analysis all week. Loaded once, beside the draw; a
 // failed load leaves only the board's matches clickable (never an error on the page).
@@ -26249,19 +26239,7 @@ function loadDrawMatchStore(){
     .then(s => { _drawMatchStore = s && s.matches ? s : null; _drawMatchStoreLoad = null; return _drawMatchStore; });
   return _drawMatchStoreLoad;
 }
-function tourxRenderDraw(){
-  const el = document.getElementById('tourxDraw');
-  if (!el || !window.DrawView) return;
-  const mount = () => window.DrawView.mount(el, { draws: _tourxDraws, archive: _tourxDrawArchive, prog: (typeof tournamentProgression !== 'undefined' ? tournamentProgression : null),
-    board: (typeof matches !== 'undefined' ? matches : []), drawStore: _drawMatchStore, tz: (typeof newsTz === 'function' ? newsTz() : undefined) });
-  // the store arriving after the draw re-mounts, so its cards become clickable (the draw itself never waits for it)
-  if (!_drawMatchStore) loadDrawMatchStore().then(s => { if (s && _tourxDraws && document.getElementById('tourxDraw') === el) mount(); });
-  if (!_tourxDrawArchive) loadDrawArchive().then(a => { if (a && _tourxDraws && document.getElementById('tourxDraw') === el) mount(); });
-  if (_tourxDraws) return mount();
-  el.innerHTML = '<div class="dv-empty">Loading the official draw…</div>';
-  _tourxDrawsLoad = _tourxDrawsLoad || fetch('./draws.json?_=' + Date.now(), { cache: 'no-store' }).then(r => (r.ok ? r.json() : null)).catch(() => null);
-  _tourxDrawsLoad.then(d => { _tourxDrawsLoad = null; if (!d) { el.innerHTML = '<div class="dv-empty">The official draw could not be loaded — try again in a minute.</div>'; return; } _tourxDraws = d; mount(); });
-}
+// The Draw section is tournaments-draw.js (window.TTDraw, Tournaments rebuild 2026-11-15); the old tourxRenderDraw is retired.
 
 // TEN-401 item 2 — the darker-track segmented control, one helper for the site (page tabs, Entry list week chips,
 // Reports View toggle / tournament picker / round chips / metric chips). CSS: .sf-seg / .sf-seg__opt.
