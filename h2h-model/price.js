@@ -171,10 +171,30 @@ function pinnaclePrices(match) {
   return { p1: s.current.p1, p2: s.current.p2, source: s.source };
 }
 
-// Best available price per side (from bestOdds; that's the max across books)
+// Best available SOFT price per side (founder 2026-11-16: "Pinnacle is sharp book"). The soft reference never reads a
+// sharp book (config.value.sharpBooks: Pinnacle / api-tennis "Pncl") or an exchange: the highest current price per side
+// across every other book on the match's api-tennis record (bookNow; a side below 1.01 is not a price). A match with no
+// bookNow falls back to bestOdds, and only when neither side's best book is a sharp book.
+function isSharpBook(name) {
+  const n = String(name || '').toLowerCase();
+  return n.startsWith('pinnacle') || (config.value.sharpBooks || []).some(b => n === String(b).toLowerCase());
+}
+function isExchange(name) { return /exchange|matchbook|smarkets|betdaq/i.test(String(name || '')); }
 function bestPrices(match) {
-  const bo = match.bestOdds;
-  if (!bo || !bo.p1 || !bo.p2) return null;
+  const bn = match && match.bookNow;
+  if (bn && typeof bn === 'object' && Object.keys(bn).length) {
+    let p1 = null, p2 = null;
+    for (const k of Object.keys(bn)) {
+      if (isSharpBook(k) || isExchange(k)) continue;
+      const q = bn[k] || {}, a = Number(q.p1), b = Number(q.p2);
+      if (a >= 1.01 && (!p1 || a > p1.price)) p1 = { price: a, book: k };
+      if (b >= 1.01 && (!p2 || b > p2.price)) p2 = { price: b, book: k };
+    }
+    if (!p1 || !p2) return null;
+    return { p1: p1.price, p2: p2.price, p1Book: p1.book, p2Book: p2.book };
+  }
+  const bo = match && match.bestOdds;
+  if (!bo || !bo.p1 || !bo.p2 || isSharpBook(bo.p1.bookmaker) || isSharpBook(bo.p2.bookmaker)) return null;
   return {
     p1: bo.p1.price, p2: bo.p2.price,
     p1Book: bo.p1.bookmaker, p2Book: bo.p2.bookmaker,

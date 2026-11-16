@@ -366,5 +366,23 @@ console.log('=== resolvePlayer Elo join: aliases + no-key fallback (TEN-263 foll
   ok('stage 3 prices the calibrated probability and records the raw one', /const cal = calibrate\(adjustedP1, config\.calibration\);\s*const pricing = priceAndValue\(cal\.p1, match\);/.test(src) && /rawP1: round4\(adjustedP1\)/.test(src));
 }
 
+// ---- Stage 3 soft reference: Pinnacle is a sharp book (founder 2026-11-16) ----
+{
+  console.log('\nStage 3 soft reference');
+  const { priceAndValue } = require('./price');
+  const base = { p1: 'A. One', p2: 'B. Two' };
+  const pv = m => priceAndValue(0.5, Object.assign({}, base, m));
+  let s = pv({ bookNow: { Pncl: { p1: 3.2, p2: 1.6 }, bet365: { p1: 2.9, p2: 1.45 }, Betano: { p1: 2.8, p2: 1.5 } } }).soft;
+  ok('Pinnacle\'s higher price is never the best soft', s && s.book.p1 === 'bet365' && s.price.p1 === 2.9 && s.book.p2 === 'Betano' && s.price.p2 === 1.5, s);
+  s = pv({ bookNow: { Pncl: { p1: 3.2, p2: 1.6 }, 'Betfair Exchange': { p1: 3.5, p2: 1.7 }, '1xBet': { p1: 2.7, p2: 1.4 } } }).soft;
+  ok('an exchange is never the best soft', s && s.book.p1 === '1xBet' && s.book.p2 === '1xBet', s);
+  const only = pv({ bookNow: { Pncl: { p1: 3.2, p2: 1.6 } } });
+  ok('only Pinnacle quoted: no soft reference, no Soft Book Value flag', only.soft === null && !only.flags.some(f => /Soft/.test(f.type)), only.soft);
+  const fb = pv({ bestOdds: { p1: { price: 3.2, bookmaker: 'Pinnacle' }, p2: { price: 1.6, bookmaker: 'bet365' } } });
+  ok('no bookNow: a bestOdds side from Pinnacle gives no soft reference', fb.soft === null, fb.soft);
+  const fb2 = pv({ bestOdds: { p1: { price: 2.9, bookmaker: 'bet365' }, p2: { price: 1.5, bookmaker: 'Betano' } } }).soft;
+  ok('no bookNow: soft bestOdds still read', fb2 && fb2.price.p1 === 2.9, fb2);
+}
+
 console.log(`\nRESULT: ${pass} passed, ${fail} failed`);
 process.exit(fail?1:0);

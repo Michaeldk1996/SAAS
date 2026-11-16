@@ -130,6 +130,10 @@ Founder rulings: TEN-418 card 7a80b6fe, R1 review and R2 review 73f754f9 (2026-1
 - **Quality on this page:** the live rule (Good / Medium / Poor) except a layer switched off by a model rule or not
   played in this format, which reads **Not applicable** (grey). A shift under `EDGE_LEVEL_PP` (0.05pp) is level: no pill,
   sub line "· level".
+- **Pinnacle is a sharp book, never soft (founder 2026-11-16).** The model's soft reference (`h2h-model/price.js`
+  `bestPrices`, behind the Soft Book Value flag) takes the best current price per side across every book on `bookNow`
+  except Pinnacle (`config.value.sharpBooks`) and exchanges, as the page's Best soft does. **Test:** `h2h-model/test-h2h.js`
+  "Stage 3 soft reference".
 - **Verdict pills = the model's own flags** (`stage3.flags`, never recomputed): Sharp value / Soft book value (green) on
   the flagged side, Market side (grey) on the other; no flag = No value, red on the side with the larger engine edge,
   grey on the other. A typed odd moves only its own gap.
