@@ -5806,6 +5806,12 @@
   // no published W-L can move because of it.
   function evKeyOf(name) {
     var s = String(name || '');
+    // One event, one key: a name the shared identity table aliases ("ATP Finals - Turin", "Finals - Turin",
+    // "Masters Cup" = "Tour Finals"; "ATP Montreal" = "Canada Masters") is keyed by its canonical name first, so the
+    // strong key meets tournamentHistory's spelling and a twice-met opponent keeps its set scores (Zverev, ATP
+    // Finals 2024: Ruud, Alcaraz, Fritz). A lookup only — no tournamentHistory row is merged by it.
+    var TI = window.TournamentIdentity;
+    if (TI && TI.CANONICAL_ALIASES && TI.CANONICAL_ALIASES[TI.identityKey(s)]) s = TI.canonicalTournament(s).display;
     var i = s.indexOf(' - ');
     if (i > 0) s = s.slice(0, i);
     s = s.replace(/^(ATP|WTA|ITF)\s+/i, '');
@@ -6186,8 +6192,13 @@
           settle: jp && jp.price != null && (jp.settle === 'void' || jp.settle === 'no-sets') ? jp.settle : null
         };
       });
+      // Within one round (round robin, qualifying) the newest match comes first when every row of that round is
+      // dated; otherwise the feed's order stands (a partly dated group is never half sorted).
+      var allDated = {};
+      ms.forEach(function (m) { allDated[m.depth] = allDated[m.depth] !== false && !!m.date; });
       ms.sort(function (a, b) {
         if (a.depth !== b.depth) return a.depth - b.depth;    // F first
+        if (allDated[a.depth] && a.date !== b.date) return a.date < b.date ? 1 : -1;
         return b.order - a.order;
       });
       var w = 0, l = 0;
