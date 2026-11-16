@@ -17,7 +17,27 @@ SQL = os.path.join(HERE, '..', 'supabase', 'migrations', '20261106090000_market_
 pg = PG()
 if not pg.available():
     print(f'SKIP  test-market-live-sql: {pg.why} — NOT A PASS (the code gate runs it)'); sys.exit(0)
-q = pg.q
+# The table drops rows read more than 10 days ago (market_live_push), so fixtures written on fixed dates expire: on
+# 16 Nov 2026 09:00Z the 6 Nov rows aged out and every code gate went red. Every fixture date in this file is moved to a
+# day relative to today on the way in (the gaps between them kept) and moved back in what the database answers, so the
+# checks keep their literal dates and never age.
+import datetime as _dt
+_BASE = _dt.date(2026, 11, 6)
+_TODAY0 = _dt.datetime.now(_dt.timezone.utc).date() - _dt.timedelta(days=1)
+_SHIFT = {}
+for _d in ('2026-11-06', '2026-11-07', '2026-11-12'):
+    _off = (_dt.date.fromisoformat(_d) - _BASE).days
+    _SHIFT[_d] = (_TODAY0 + _dt.timedelta(days=_off)).isoformat()
+assert len(set(_SHIFT.values())) == len(_SHIFT), _SHIFT
+import re as _re
+_BACK = {b: a for a, b in _SHIFT.items()}
+def _sub(m, t):   # one pass, so a shifted day never shifts again
+    return _re.sub('|'.join(map(_re.escape, m)), lambda x: m[x.group(0)], t)
+def _fwd(t): return _sub(_SHIFT, t)
+def _back(t): return _sub(_BACK, t)
+def q(sql, *a, **k):
+    rc, out = pg.q(_fwd(sql), *a, **k)
+    return rc, _back(out) if isinstance(out, str) else out
 passed = failed = 0
 def check(name, ok, detail=''):
     global passed, failed
