@@ -581,6 +581,44 @@
     rows.sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; });
     return rows;
   }
+  // Founder 2026-11-16 ("still fix this, all players need a price"): the recent form ribbon, the full ledger and the
+  // header's run read his CAREER RECORD's matches — the api-tennis rows plus the rows only Tennis Explorer lists (the
+  // record's `add`, career-record/<key>.json), so a lower-league player whose feed misses matches still shows his last 18.
+  // Supersedes, for the profile, the 2026-10-21 option A note that kept TE-only rows out (they carry no box score; the
+  // ledger shows them without one). A walkover / unconfirmed TE row is never a form row. Until the record file answers,
+  // the feed rows alone (the host repaints when it lands).
+  function teFormRow(r) {
+    var cat = String(r.teCat || ''), lvl = String(r.level || '');
+    var tier = /itf/i.test(cat) ? 'itf' : /chall/i.test(cat) ? 'challenger' : lvl === 'atp' ? 'atp' : lvl === 'chitf' ? 'challenger' : null;
+    return { opponent: r.opponent || r.opp || '', opponentKey: r.oppKey || null, date: r.date, tournament: r.tournament || '',
+      round: r.round || '', surface: r.surface || null, result: r.result || null, won: !!r.won, sets: r.sets || null,
+      retired: !!(r.ret || r.retired), walkover: false, qualifying: /^Q/.test(String(r.round || '')) || /qual/i.test(cat),
+      tier: tier, eventKey: null, src: 'te' };
+  }
+  var _formMemo = null;
+  function formMatches(p) {
+    var base = ledgerMatches(p);
+    var lay = (typeof window !== 'undefined' && window.careerRecord && window.careerRecord[String(p && p.key)]) || null;
+    var add = lay && Array.isArray(lay.add) ? lay.add : null;
+    if (!add || !add.length) return base;
+    if (_formMemo && _formMemo.p === p && _formMemo.add === add && _formMemo.n === base.length) return _formMemo.v;
+    var today = todayISO();
+    var te = add.filter(function (r) {
+      return r && typeof r.date === 'string' && r.date <= today && !r.walkover && !r.unconfirmed && !r.notCounted &&
+        (r.result || (r.sets && r.sets.length));
+    }).map(teFormRow);
+    var v = base.concat(te);
+    v.sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; });
+    // the pipeline's cut for recentForm (capRecentFormMatches): the current season + every row down to the 18th form row
+    var yr = currentYear(), formN = 0, keep = [];
+    for (var i = v.length - 1; i >= 0; i--) {
+      if (formN >= 18 && String(v[i].date).slice(0, 4) !== yr) break;
+      keep.push(v[i]); if (inForm(v[i])) formN++;
+    }
+    v = keep.reverse();
+    _formMemo = { p: p, add: add, n: base.length, v: v };
+    return v;
+  }
   function todayISO() {
     // new Date() with no argument is the fabrication trap that has bitten this
     // repo before (a year invented at render time). It is used here ONLY to
@@ -1363,6 +1401,41 @@
   // Attaches price/role to each ledger row. Rows neither source priced keep
   // price null, which both the odds columns and the price filters read as "not
   // held" rather than as a role.
+  // The ledger's rows priced on the site's one join (window.pp2DrawJoin → H2HPage.priceJoin over the Database rows and
+  // his career-history), keyed date|opponent. Null until the join and his career store have answered (the host
+  // repaints then). Memoised on the rows and the join state, so a ready join runs once per set of rows.
+  var _ledgerJoinMemo = null;
+  function ledgerRoundCode(r) {
+    var x = String(r || '');
+    if (/^Q|qualif/i.test(x)) return 'Q';
+    var f = /1\/(\d+)\s*-?\s*finals?/i.exec(x); if (f) return 'R' + (2 * Number(f[1]));
+    if (/quarter/i.test(x) || /\bQF\b/.test(x)) return 'QF';
+    if (/semi/i.test(x) || /\bSF\b/.test(x)) return 'SF';
+    if (/(^|[^-])final$/i.test(x.trim()) || /^F$/.test(x.trim())) return 'F';
+    var g = /\bR(\d+)\b/.exec(x); return g ? 'R' + g[1] : null;
+  }
+  // The join's book ('P' | 'A' | 'B') and source → the sheet's book names (SHEET_BOOK), so a row opens with its source
+  function joinBookName(r) {
+    var k = r.book + '|' + (r.src || 'td');
+    for (var n in SHEET_BOOK) if (SHEET_BOOK[n][0] + '|' + SHEET_BOOK[n][1] === k) return n;
+    return r.book === 'P' ? 'pinnacle' : r.book === 'B' ? 'bet365-archive' : r.book === 'A' ? 'pinnacle-approx' : null;
+  }
+  function ledgerJoinPrices(p) {
+    if (typeof window === 'undefined' || typeof window.pp2DrawJoin !== 'function') return null;
+    var ms = formMatches(p), mm = _ledgerJoinMemo;
+    if (mm && mm.p === p && mm.ms === ms && mm.st === 'ready') return mm.idx;
+    var rows = ms.filter(function (m) { return m && m.date && !m.walkover; }).map(function (m) {
+      return { m: m, date: m.date, won: !!m.won, opp: m.opponent || null, round: ledgerRoundCode(m.round) };
+    });
+    var st = window.pp2DrawJoin(p.key, p.name, rows);
+    var idx = null;
+    if (st === 'ready') {
+      idx = {};
+      rows.forEach(function (r) { if (r.price != null) idx[r.date + '|' + oppKeyOf(r.opp)] = r; });
+    }
+    _ledgerJoinMemo = { p: p, ms: ms, st: st, idx: idx };
+    return idx;
+  }
   function ledgerRows(p) {
     var idx = ledgerPriceIndex(p.key);
     // TEN-384 fix 6 · ONE price per match. Where the career match store holds this match (date +
@@ -1371,8 +1444,19 @@
     // be priced in one and dashed (or priced differently) in another. The date-only lookup below is
     // the fallback for a match the career store does not hold (or has not loaded).
     var sp = careerHistoryFor(p.key) ? pairKeyIndex(calSpine(p), function (r) { return r.date + '|' + oppKeyOf(r.opp); }) : {};
-    return ledgerMatches(p).map(function (m) {
+    var jp = ledgerJoinPrices(p);
+    return formMatches(p).map(function (m) {
       var cs = sp[m.date + '|' + oppKeyOf(m.opponent)];
+      // 2026-11-16: a row the Market edge shard / closes do not price takes the site's ONE price join (the Database join:
+      // Pinnacle closing, else Bet365, and for the lower levels the snapshots the master holds — TE Pinnacle (approx.),
+      // api-tennis Bet365 …), the price every other surface prints for that match
+      var jr = jp && jp[m.date + '|' + oppKeyOf(m.opponent)];
+      if (jr && jr.price != null && !(cs && (cs.price != null || cs.oppPrice != null))) {
+        var bothJ = jr.oppPrice != null;
+        return { m: m, price: jr.price, oppPrice: jr.oppPrice != null ? jr.oppPrice : null,
+          role: bothJ ? (jr.price < jr.oppPrice ? 'fav' : jr.price > jr.oppPrice ? 'dog' : 'level') : null,
+          book: joinBookName(jr), basis: 'close', src: jr.src || null };
+      }
       if (cs) {
         if (cs.price == null && cs.oppPrice == null) {
           return { m: m, price: null, oppPrice: null, role: null, book: null, basis: null };
@@ -16233,7 +16317,7 @@
   };
 
   function buildCtx(p) {
-    var rows = ledgerMatches(p);
+    var rows = formMatches(p);   // 2026-11-16: the record's TE-only rows too (formMatches)
     // One filtered set, shared by the ribbon strip/rate/chips and the ledger.
     // README §3 requires them to agree, and the only way to guarantee that is
     // for both to read the same array rather than two parallel filter passes.
@@ -16820,7 +16904,7 @@
       FORM_NOT_ATP_RECORD: FORM_NOT_ATP_RECORD,
       ledgerMatches: ledgerMatches,
       // §4 Full ledger
-      ledgerRows: ledgerRows,
+      ledgerRows: ledgerRows, formMatches: formMatches, ledgerJoinPrices: ledgerJoinPrices, joinBookName: joinBookName,
       ledgerFiltered: ledgerFiltered,
       ledgerPriceIndex: ledgerPriceIndex,
       renderLedger: renderLedger,

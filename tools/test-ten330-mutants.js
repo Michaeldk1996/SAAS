@@ -81,7 +81,7 @@ try {
 const pp2 = fs.readFileSync(path.join(ROOT, 'player-profile-v2.js'), 'utf8');
 const PP2_MUTANTS = [
   ['TEN-383: Laver Cup back in the profile Recent form', '    var frows = lrows.filter(function (x) { return inForm(x.m); });', '    var frows = lrows;'],
-  ['TEN-383: the profile header filtered (Current run is a record)', '    var rows = ledgerMatches(p);\n    // One filtered set', '    var rows = ledgerMatches(p).filter(inForm);\n    // One filtered set'],
+  ['TEN-383: the profile header filtered (Current run is a record)', '    var rows = formMatches(p);   // 2026-11-16: the record\'s TE-only rows too (formMatches)\n    // One filtered set', '    var rows = formMatches(p).filter(inForm);\n    // One filtered set'],
   ['TEN-383: the profile list drifts (Davis Cup out)', 'var FORM_NOT_ATP_RECORD = /laver cup|', 'var FORM_NOT_ATP_RECORD = /laver cup|davis cup|'],
   // TEN-384: the ledger's provenance footnote (its own window count) is gone; the ledger now draws and counts
   // ctx.ledgerFiltered (the form rows) — the mutant hands it every record row instead.

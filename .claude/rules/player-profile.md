@@ -142,6 +142,18 @@ Where a ruling below reverses an older one in this file, the older one is supers
 - **Recent form counts the Form list** (founder TEN-383, 2026-10-04): Laver Cup and exhibitions are never a Recent form
   row — the ribbon (rate, strip, chips) and the full ledger, in both renderers; Davis Cup and United Cup stay; records keep
   every match. Rule and test: `modal-form-h2h.md` "A Laver Cup match never becomes a Form row".
+- **Recent form reads the career record's matches, every one priced where any source has a price (founder 2026-11-16,
+  "still fix this, all players need a price"; for the profile this supersedes `pipeline-records.md` option A's "the
+  record's Tennis-Explorer-only rows" exclusion).** The ribbon, the full ledger and the header's run read the api-tennis
+  rows plus the rows only Tennis Explorer lists (`career-record/<key>.json` `add`; walkovers and unconfirmed rows out),
+  cut like recentForm: this season + down to the 18th form row (`formMatches`). A row the Market edge shard does not
+  price takes the site's one price join (`window.pp2DrawJoin` → `H2HPage.priceJoin`: Pinnacle closing, else Bet365; for
+  the lower levels the master's snapshots), so a Challenger / ITF row prints the price every other surface prints. Test:
+  does a lower-league player with matches on Tennis Explorer show 18 form rows? (Snoussi 15 → 18, Matthysen 17 → 18, 8
+  of 18 priced each, 16 Nov.) `tools/test-pp-form-te.js` (control: without the record file, the feed rows alone).
+  *Open:* a Tennis-Explorer-only match has no price in the master yet (its odds import joins TE to an api-tennis fixture
+  only): 1,854 such rows since Jan 2025 on 256 players, mostly ITF qualifying — a price-source change, so the
+  price-source task's.
 
 - **Per-event Backing = the ONE price join across the site (founder ruling 2026-10-08, TEN-402 card 01102d24;
   supersedes Q8's "the Match analysis Tournament tab's rows" and the 2026-10-07 "keep the tab join").** Record per

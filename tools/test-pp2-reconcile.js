@@ -658,7 +658,12 @@ mustFail('ribbon check would catch a strip/caption mismatch', () => {
   const p = JSON.parse(JSON.stringify(SAMPLE[0]));
   const before = I.build(p).filtered.slice(-18).length;
   p.recentForm.matches = p.recentForm.matches.slice(0, 3);   // shrink the window
-  const html = M.render(p);
+  // 2026-11-16: the form rows include the career record's TE-only rows (formMatches) — take them away too, or they
+  // refill the window and the corruption never bites
+  const W = globalThis.window || {}, cr = W.careerRecord;
+  W.careerRecord = {};
+  let html;
+  try { html = M.render(p); } finally { W.careerRecord = cr; }
   assert(html.includes('last ' + before + ' ·'), 'caption followed the data');
 });
 
