@@ -143,7 +143,8 @@ check('every "B" marker site now draws through fhPxMark (Form, H2H tab, Tourname
   const old = html.match(/hMark: r\.price != null && r\.book === 'B' \? 'B' : ''/g) || [];
   assert.equal(old.length, 0, 'no hMark site keeps the B-only expression');
   assert.equal((html.match(/hMark: fhPxMark\(r\)/g) || []).length, 3);
-  assert.equal((html.match(/hMark: typeof fhPxMark === 'function' \? fhPxMark\(r\)/g) || []).length, 1);
+  // the Head to Head page (design build 2026-11-16): the meetings box draws fhPxMark's letter (B or E) after A's price
+  assert.equal((html.match(/r\.price != null && typeof fhPxMark === 'function' && fhPxMark\(r\) \? `<sup [^`]*>\$\{E\(fhPxMark\(r\)\)\}<\/sup>`/g) || []).length, 1);
   assert.match(slice('fhPriceCell'), /fhPxMark\(r\)/);
   assert.match(html, /if \(bk === 9\) \{ r\.book = 'A'; r\.src = 'early'; r\.srcLabel = /);
 });
