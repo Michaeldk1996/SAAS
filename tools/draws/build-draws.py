@@ -67,6 +67,9 @@ ALIASES = {
     # Shevchenko" (Kazakhstan): api-tennis 566 born 29.11.2000; Wikidata Q110287122 (both spellings resolve to it)
     # born 2000-11-29, ATP id S0H2; the only Shevchenko among 2,479 roster players.
     ("SHEVCHENKO, Aleksandr", "KAZ"): "566",
+    # The same approved player, cut by the sheet (Stockholm 2026 mds, slot 30, Q, KAZ; the qualifying sheet of the same
+    # event prints "Aleksandr" in full and resolves through the entry above). Same identity, same evidence.
+    ("SHEVCHENKO, Aleksa…", "KAZ"): "566",
 }
 
 
@@ -176,6 +179,18 @@ def active(t, today):
     return s <= today <= e
 
 
+def backfill(t, today, prev):
+    """An event that ended within the archive window (14 days) whose main draw this file has never held as posted, e.g.
+    an ATP id added to the calendar after the event's fetch window closed (Stockholm 2026: id 429 added 16 Nov, ended
+    14 Nov). Fetched until it is posted, so it reaches the Draw tab and, later, the archive with its results."""
+    if not t.get("startDate") or not t.get("endDate"):
+        return False
+    s = datetime.date.fromisoformat(t["startDate"])
+    e = datetime.date.fromisoformat(t["endDate"]) + datetime.timedelta(days=14)
+    held = ((prev.get("tournaments") or {}).get(str(t["atpId"])) or {}).get("main") or {}
+    return s <= today <= e and held.get("status") != "posted"
+
+
 ARCHIVE_KEEP = ("feedName", "rounds", "matches", "qualifying")
 
 
@@ -239,7 +254,8 @@ def main():
     prev = json.load(open(a.out)) if os.path.exists(a.out) else {"tournaments": {}}
     now = datetime.datetime.now(datetime.timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
     only = set(a.only.split(",")) if a.only else None
-    events = [t for t in cal["tournaments"] if (str(t["atpId"]) in only if only else active(t, today))]
+    events = [t for t in cal["tournaments"] if (str(t["atpId"]) in only if only else
+                                               active(t, today) or backfill(t, today, prev))]
     out = {"season": cal["season"], "source": "protennislive.com official ATP draw sheets (mds = main draw, qs = qualifying)",
            "tournaments": {}}
     # keep previous entries for events still in their window (a later, failed run never erases a good draw)

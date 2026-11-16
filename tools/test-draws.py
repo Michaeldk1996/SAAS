@@ -260,6 +260,17 @@ wf = open(os.path.join(ROOT, ".github", "workflows", "draws.yml")).read()
 check("draws.yml: passes the deployed progression, commits draws-archive.json, and commits even when the staleness check is red",
       "--progression progression.json" in wf and "git add draws.json draws-archive.json" in wf and "always() && steps.gate.outputs.go == '1' && steps.build.outcome == 'success'" in wf)
 check("pipeline.yml publishes draws-archive.json", "cp draws-archive.json _site/" in open(os.path.join(ROOT, ".github", "workflows", "pipeline.yml")).read())
+check("alias: the sheet's cut 'SHEVCHENKO, Aleksa…' (KAZ) is the approved 566, as 'Aleksandr' is; another IOC is not",
+      B.resolve_key([], "SHEVCHENKO, Aleksa…", "KAZ")[0] == "566" and B.resolve_key([], "SHEVCHENKO, Aleksa…", "UKR")[0] is None)
+_stk = {"atpId": 429, "startDate": "2026-11-08", "endDate": "2026-11-14"}
+check("backfill: an event that ended 2 days ago and was never fetched is fetched (Stockholm, id added late)",
+      not B.active(_stk, _dt.date(2026, 11, 16)) and B.backfill(_stk, _dt.date(2026, 11, 16), {"tournaments": {}}))
+check("backfill: not once its main draw is held as posted, nor past 14 days, nor before it starts",
+      not B.backfill(_stk, _dt.date(2026, 11, 16), {"tournaments": {"429": {"main": {"status": "posted"}}}})
+      and not B.backfill(_stk, _dt.date(2026, 11, 29), {"tournaments": {}})
+      and not B.backfill(_stk, _dt.date(2026, 11, 7), {"tournaments": {}}))
+check("backfill: a never-posted fetch keeps being retried inside the window",
+      B.backfill(_stk, _dt.date(2026, 11, 20), {"tournaments": {"429": {"main": {"status": "absent"}}}}))
 spec3 = importlib.util.spec_from_file_location("lfr", os.path.join(ROOT, "tools", "draws", "last-fetch-run.py"))
 LFR = importlib.util.module_from_spec(spec3); spec3.loader.exec_module(LFR)
 runs = [{"id": 9, "run_started_at": "T3"}, {"id": 3, "run_started_at": "T2"}, {"id": 2, "run_started_at": "T1"}, {"id": 1, "run_started_at": "T0"}]
