@@ -27189,7 +27189,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, profileRosterMap: () =
     styleAAll: false, styleBAll: false,   // per-column "+N more" state for the career style-meeting lists (TEN-117)
     mOpen: null, mView: 'stats', mSScope: 'match', mPScope: 's1', yrOpen: null, newsOpen: null,
     h2hSurf: 'all', h2hAllLines: false,
-    hotOpen: null, h2hBox: false, boxSel: null, psFilt: false, psRecWin: 'w52', psRecSurf: 'all', psSpeed: 'all', newsCat: 'all',   // TEN-402 b: the Head-to-head record's scope chip and Hot lines' "Show all lines"
+    hotOpen: null, h2hBox: false, boxSel: null, psFilt: false, psRecWin: 'career', psRecSurf: 'all', psSpeed: 'all', newsCat: 'all',   // TEN-402 b: the Head-to-head record's scope chip and Hot lines' "Show all lines"
   };
   // TEN-402 (a): the DNA card's tab (Last 52 weeks | Since Mar 2024) and its "Show player profile" toggle.
   Object.assign(state, { dnaWin: 'w52', dnaProf: false });
@@ -28940,11 +28940,13 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, profileRosterMap: () =
   // ── Head to head record (design §3, DF L293–379) + the Head to head box (DF L381–425) ──────────────────────────────
   // Meetings = h2hPairFor (H2HCore.joinMeetings, ATP's H2H population — unchanged); prices = the Database join
   // (h2hPriceJoin — unchanged). The Hot lines read the shared model (fhHotModel + fhH2hLineDefs, rule a0: 1–2 meetings =
-  // results, no rate) and draw them in this page's design; Match analysis keeps its own table (fhHotLinesTable).
-  // The two thresholds the founder will set (brief 2026-11-16): a line shows when it has at least
-  // H2H_HOT_MIN_MEETINGS eligible meetings (today's live rule: FH_HOT_MIN_ELIGIBLE) and, when set, a rate of at least
-  // H2H_HOT_MIN_RATE (today: no rate floor).
-  const H2H_HOT_MIN_MEETINGS = (typeof FH_HOT_MIN_ELIGIBLE !== 'undefined') ? FH_HOT_MIN_ELIGIBLE : 3;
+  // ranked lines, drawn in this page's design; Match analysis keeps its own model and table (fhHotModel, fhHotLinesTable).
+  // Thresholds = the design's (founder 2026-11-16, "follow the design"): the lines are ranked once the pair has
+  // H2H_HOT_MIN_MEETINGS meetings in the scope (fewer → one sentence, "Not enough meetings to rank lines (n=…)"); a line
+  // shows with at least H2H_HOT_MIN_LINE eligible meeting; no rate floor (H2H_HOT_MIN_RATE null). The Rate keeps the
+  // page's thin-sample rule (under 5 eligible no %, 5–9 greyed).
+  const H2H_HOT_MIN_MEETINGS = 3;
+  const H2H_HOT_MIN_LINE = 1;
   const H2H_HOT_MIN_RATE = null;
   const X_UP = 'var(--h2h-up)', X_DN = 'var(--h2h-down)', X_BL = 'var(--h2h-blue)', X_WH = 'var(--h2h-text)', X_G = 'var(--h2h-grey)';
   const xSgn = v => (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v);
@@ -28972,11 +28974,12 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, profileRosterMap: () =
     const v = av(m => (m.sets[0][0] - m.sets[0][1]) * sd); return { k: 'Average set 1 margin', v: xSg1(v), s: 'games in the first set', c: tone(v) };
   }
   function xHotHTML(h, F) {
-    const HM = fhHotModel(F, fhH2hLineDefs(h.aS, h.bS), null);
+    const HM = F.length < H2H_HOT_MIN_MEETINGS ? { mode: 'none', note: 'Not enough meetings to rank lines (n=' + F.length + ')' }
+      : { mode: 'rank', sc: fhScoreLines(F, fhH2hLineDefs(h.aS, h.bS), { min: H2H_HOT_MIN_LINE }) };
     const wrap = inner => `<div style="background:var(--h2h-inner); border:1px solid color-mix(in srgb, var(--h2h-white) 6%, transparent); border-radius:12px; padding:6px 18px 10px; display:flex; flex-direction:column; gap:10px;">${inner}</div>`;
     if (HM.mode === 'none') return wrap(`<div style="padding:22px 0 14px; text-align:center; font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--h2h-grey);">${E(HM.note || 'No meetings')}</div>`);
-    const results = HM.mode === 'results';
-    const scored = HM.sc.scored.filter(x => results || (x.n >= H2H_HOT_MIN_MEETINGS && (H2H_HOT_MIN_RATE == null || x.r * 100 >= H2H_HOT_MIN_RATE)));
+    const results = false;   // Match analysis's 1–2-meeting results mode (rule a0) is not this page's: the design's thresholds
+    const scored = HM.sc.scored.filter(x => x.n >= H2H_HOT_MIN_LINE && (H2H_HOT_MIN_RATE == null || x.r * 100 >= H2H_HOT_MIN_RATE));
     const topK = !results && scored.length ? scored[0].k : -1;
     const cols = 'repeat(' + F.length + ',minmax(22px,1fr))';
     const meets = F.map(r => `<span title="${E(r.tourn + ' ' + String(r.date).slice(0, 4) + ' · ' + (r.surface || '—') + ' · ' + (r.round || '—'))}" style="display:flex; flex-direction:column; align-items:center; gap:2px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:8.5px; color:var(--h2h-grey); white-space:nowrap;">${E(fhTournCode(r.tournRaw || r.tourn))}</span><span style="font-family:'IBM Plex Mono',monospace; font-size:8.5px; color:var(--h2h-grey);">'${E(String(r.date).slice(2, 4))}</span></span>`).join('');
@@ -28988,10 +28991,11 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, profileRosterMap: () =
       const dots = F.map(r => { const e = fhEligible(r, L), c = e && L.cov(r);
         const tip = r.tourn + ' ' + String(r.date).slice(0, 4) + ' · ' + (!e ? 'not eligible' + (fhIneligibleWhy(r, L) ? ' (' + fhIneligibleWhy(r, L) + ')' : '') : c ? 'covered' : 'not covered');
         return `<span style="display:flex; justify-content:center;"><span title="${E(tip)}" style="width:${e ? 10 : 6}px; height:${e ? 10 : 6}px; border-radius:50%; background:${!e ? 'color-mix(in srgb, var(--h2h-white) 8%, transparent)' : c ? X_BL : 'transparent'}; border:1.5px solid ${!e ? 'transparent' : X_BL}; box-sizing:border-box; flex:none;"></span></span>`; }).join('');
-      const pct = results ? '—' : Math.round(x.c / x.n * 100) + '%';
+      const gm = maGate(x.n).mode, rated = !results && (gm === 'full' || gm === 'small');
+      const pct = rated ? Math.round(x.c / x.n * 100) + '%' : '—';
       const row = `<div class="seg x-hl" data-hid="${bindH(() => setState({ hotOpen: op ? null : L.name }))}" style="display:grid; grid-template-columns:${GRID}; align-items:center; gap:12px; padding:11px 12px; margin:0 -12px; border-radius:10px; background:${isTop || op ? 'var(--h2h-raised)' : 'transparent'}; box-shadow:inset 0 0 0 1px ${isTop || op ? 'color-mix(in srgb, var(--h2h-white) 16%, transparent)' : 'transparent'}; cursor:pointer;">
         <span style="display:flex; flex-direction:column; gap:3px; min-width:0;">${famLbl ? `<span style="${X_CAP}">${E(famLbl)}</span>` : ''}<span style="font-size:13.5px; font-weight:700;">${E(L.name)}</span>${isTop ? `<span style="${X_CAP} color:${X_BL};">Most covered</span>` : ''}</span>
-        <span title="${E(results ? 'Results only: fewer than ' + H2H_HOT_MIN_MEETINGS + ' meetings' : x.c + ' of ' + x.n + ' eligible')}" style="font-family:'IBM Plex Mono',monospace; font-size:15px; font-weight:700; color:${results ? X_G : X_WH};">${E(pct)}</span>
+        <span title="${E(!rated ? x.n + ' eligible: too few for a rate' : gm === 'small' ? 'Small sample · n=' + x.n : x.c + ' of ' + x.n + ' eligible')}" style="font-family:'IBM Plex Mono',monospace; font-size:15px; font-weight:700; color:${rated && gm !== 'small' ? X_WH : X_G};">${E(pct)}</span>
         <span style="display:flex; flex-direction:column; gap:2px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:12.5px; font-weight:600; color:var(--h2h-soft-2); white-space:nowrap;">${x.c} of ${x.n}</span>${hasBasis ? `<span style="font-family:'IBM Plex Mono',monospace; font-size:9.5px; color:${X_G}; white-space:nowrap;">${E(L.basis)}</span>` : ''}</span>
         <span style="display:grid; grid-template-columns:${cols}; align-items:center;">${dots}</span>
         <span style="color:${X_BL}; font-size:15px; font-weight:700; display:inline-block; transition:transform .2s; transform:${op ? 'rotate(90deg)' : 'none'};">›</span>
@@ -28999,7 +29003,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, profileRosterMap: () =
       if (!op) return row;
       const nl = elig.slice().reverse(), l5 = nl.slice(0, 5);
       const tiles = [
-        { k: 'Covered', v: results ? '—' : Math.round(x.c / x.n * 100) + '%', s: x.c + ' of ' + x.n + ' meetings', c: X_WH },
+        { k: 'Covered', v: rated ? Math.round(x.c / x.n * 100) + '%' : '—', s: x.c + ' of ' + x.n + ' meetings', c: rated && gm !== 'small' ? X_WH : X_G },
         { k: 'Last five', v: l5.filter(L.cov).length + ' of ' + l5.length, s: 'most recent meetings', c: X_WH },
         xAvgTile(L, side, elig),
       ];
@@ -29027,7 +29031,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, profileRosterMap: () =
     if (showAll) FH_HOT_FAM.forEach(f => { const ls = scored.filter(x => fhFamOf(x.L.g) === f[0]); if (!ls.length) return;
       out.push(`<span style="${X_CAP} padding:12px 0 4px;">${E(f[1])}</span>`); ls.forEach(x => out.push(lineHtml(x, ''))); });
     else FH_HOT_FAM.forEach(f => { const best = scored.find(x => fhFamOf(x.L.g) === f[0]); if (best) out.push(lineHtml(best, f[1])); });
-    if (!out.length) return wrap(`<div style="padding:22px 0 14px; text-align:center; font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--h2h-grey);">No line reaches ${H2H_HOT_MIN_MEETINGS} eligible meetings (n=${F.length})</div>`);
+    if (!out.length) return wrap(`<div style="padding:22px 0 14px; text-align:center; font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--h2h-grey);">No line has an eligible meeting (n=${F.length})</div>`);
     const hasMore = !results && (scored.length > out.length || state.h2hAllLines);
     return wrap(`<div style="display:flex; flex-direction:column;">
         <div style="display:grid; grid-template-columns:${GRID}; align-items:end; gap:12px; padding:10px 0 8px; border-bottom:1px solid color-mix(in srgb, var(--h2h-white) 6%, transparent);"><span style="${X_CAP}">Line</span><span style="${X_CAP}">Rate</span><span style="${X_CAP}">Covered</span><div style="display:grid; grid-template-columns:${cols};">${meets}</div><span></span></div>
@@ -29073,7 +29077,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, profileRosterMap: () =
         <span style="font-size:12.5px; font-weight:600; color:${X_BL}; white-space:nowrap;">All ${n} ${n === 1 ? 'meeting' : 'meetings'} ›</span>
       </div>
     </div>`;
-    const hotHead = `<div style="display:flex; align-items:flex-end; justify-content:space-between; gap:8px 24px; flex-wrap:wrap; padding-top:6px;"><div style="display:flex; flex-direction:column; gap:4px;"><span style="font-size:15px; font-weight:700; letter-spacing:-0.01em;">Hot lines</span><span style="font-size:12.5px; color:${X_G};">${E(fhHotSub(fhHotModel(F, fhH2hLineDefs(h.aS, h.bS), null), 'Best-covered line in each market family across these meetings · click a line to see every meeting'))}</span></div></div>`;
+    const hotHead = `<div style="display:flex; align-items:flex-end; justify-content:space-between; gap:8px 24px; flex-wrap:wrap; padding-top:6px;"><div style="display:flex; flex-direction:column; gap:4px;"><span style="font-size:15px; font-weight:700; letter-spacing:-0.01em;">Hot lines</span><span style="font-size:12.5px; color:${X_G};">Best-covered line in each market family across these meetings · click a line to see every meeting</span></div></div>`;
     return sec(overall + hotHead + xHotHTML(h, F));
   }
   // Total points won over the meetings: each meeting's own box score (setstats/{eventKey}.json, Points:Total Points
@@ -29172,7 +29176,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, profileRosterMap: () =
     return b ? String(b.label || b.key || '').toLowerCase() : null;
   }
   function xStyleFilter(rows, S) {
-    const win = S.psRecWin || 'w52', sf = S.psRecSurf || 'all', sp = S.psSpeed || 'all';
+    const win = S.psRecWin || 'career', sf = S.psRecSurf || 'all', sp = S.psSpeed || 'all';
     const now = new Date(); let cut = null;
     if (win === 'w52') cut = new Date(now.getTime() - 364 * 864e5);
     else if (win === 'm24') { cut = new Date(now); cut.setFullYear(cut.getFullYear() - 2); }
@@ -29190,10 +29194,10 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, profileRosterMap: () =
     const s = v.styles; if (!s) return '';
     const S = state;
     if (S.psSpeed && S.psSpeed !== 'all' && typeof loadPp2SpeedMap === 'function' && !window.courtSpeedMap) loadPp2SpeedMap(null).then(() => render());
-    const RW = S.psRecWin || 'w52', RS = S.psRecSurf || 'all', SP = S.psSpeed || 'all';
+    const RW = S.psRecWin || 'career', RS = S.psRecSurf || 'all', SP = S.psSpeed || 'all';
     const RWL = [['w52', 'Last 52 weeks'], ['m24', 'Last 24 months'], ['career', 'Career']], SPL = [['all', 'All'], ['slow', 'Slow'], ['medium', 'Medium'], ['fast', 'Fast']];
     const recScope = RWL.find(t => t[0] === RW)[1] + ' · ' + (RS === 'all' ? 'all surfaces' : RS) + (SP === 'all' ? ' · all court speeds' : ' · ' + SP + ' courts');
-    const filtN = (RW !== 'w52' ? 1 : 0) + (RS !== 'all' ? 1 : 0) + (SP !== 'all' ? 1 : 0), filtOpen = !!S.psFilt;
+    const filtN = (RW !== 'career' ? 1 : 0) + (RS !== 'all' ? 1 : 0) + (SP !== 'all' ? 1 : 0), filtOpen = !!S.psFilt;
     const pill = (lbl, on, fn) => ({ label: lbl, on, hid: bindH(fn) });
     const groups = [
       { label: 'Window', pills: RWL.map(t => pill(t[1], RW === t[0], () => setState({ psRecWin: t[0], styleAAll: false, styleBAll: false }))) },
@@ -29203,7 +29207,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, profileRosterMap: () =
     const filtBtn = `<span class="seg x-filt" data-hid="${bindH(() => setState({ psFilt: !filtOpen }))}" title="Filters" style="flex:none; display:flex; align-items:center; gap:9px; padding:7px 12px; border-radius:9px; border:1px solid ${filtOpen ? 'color-mix(in srgb, var(--h2h-white) 30%, transparent)' : 'color-mix(in srgb, var(--h2h-white) 12%, transparent)'}; background:${filtOpen ? 'var(--h2h-raised)' : 'transparent'}; font-size:12.5px; font-weight:600; color:var(--h2h-text);"><span style="display:flex; flex-direction:column; align-items:center; gap:3px;"><span style="width:14px; height:1.5px; border-radius:1px; background:var(--h2h-soft);"></span><span style="width:10px; height:1.5px; border-radius:1px; background:var(--h2h-soft);"></span><span style="width:6px; height:1.5px; border-radius:1px; background:var(--h2h-soft);"></span></span>Filters${filtN ? `<span style="font-family:'IBM Plex Mono',monospace; font-size:10.5px; font-weight:700; color:var(--h2h-page); background:var(--h2h-blue); border-radius:9px; padding:1px 6px;">${filtN}</span>` : ''}</span>`;
     const panel = !filtOpen ? '' : `<div style="display:flex; flex-direction:column; gap:1px; background:color-mix(in srgb, var(--h2h-white) 6%, transparent); border:1px solid color-mix(in srgb, var(--h2h-white) 6%, transparent); border-radius:12px; overflow:hidden;">
       ${groups.map(g => `<div style="display:grid; grid-template-columns:96px minmax(0,1fr); align-items:center; gap:12px; background:var(--h2h-inner); padding:9px 16px;"><span style="${X_CAP}">${E(g.label)}</span><div style="display:flex; flex-wrap:wrap; gap:4px;">${g.pills.map(p => `<span class="seg x-sw__o${p.on ? ' on' : ''}" data-hid="${p.hid}" style="white-space:nowrap; padding:5px 12px; border-radius:7px; font-size:12.5px; font-weight:${p.on ? 700 : 600}; color:${p.on ? 'var(--h2h-text)' : 'var(--h2h-grey)'}; background:${p.on ? 'var(--h2h-raised)' : 'transparent'}; border:1px solid ${p.on ? 'color-mix(in srgb, var(--h2h-white) 16%, transparent)' : 'transparent'};">${E(p.label)}</span>`).join('')}</div></div>`).join('')}
-      <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; background:var(--h2h-inner); padding:10px 16px;"><span class="seg" data-hid="${bindH(() => setState({ psRecWin: 'w52', psRecSurf: 'all', psSpeed: 'all', styleAAll: false, styleBAll: false }))}" style="font-size:12.5px; font-weight:600; color:var(--h2h-blue);">Reset filters</span><span class="seg x-done" data-hid="${bindH(() => setState({ psFilt: false }))}" style="font-size:12.5px; font-weight:700; color:var(--h2h-page); background:var(--h2h-blue); border-radius:8px; padding:6px 16px;">Done</span></div>
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; background:var(--h2h-inner); padding:10px 16px;"><span class="seg" data-hid="${bindH(() => setState({ psRecWin: 'career', psRecSurf: 'all', psSpeed: 'all', styleAAll: false, styleBAll: false }))}" style="font-size:12.5px; font-weight:600; color:var(--h2h-blue);">Reset filters</span><span class="seg x-done" data-hid="${bindH(() => setState({ psFilt: false }))}" style="font-size:12.5px; font-weight:700; color:var(--h2h-page); background:var(--h2h-blue); border-radius:8px; padding:6px 16px;">Done</span></div>
     </div>`;
     const cards = s.sides.map((x, i) => {
       const R = x.R, sd = i ? 'b' : 'a', p = x.p, who = p.short;

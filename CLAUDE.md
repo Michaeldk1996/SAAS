@@ -149,6 +149,8 @@ Each is phrased as a test you can apply. Surface-specific rulings live in `.clau
 
 - Never show a pipeline health banner or infrastructure warning to end users. *Exception:* the Dropping Odds page's "FEED DISCONNECTED" banner, worded exactly as its export draws it (founder, TEN-297 card 79e9db02 Q3) — see `.claude/rules/drops.md`.
 - Never highlight the better stat between two players with colour — neutral display only. **Test:** both players' figures and text are the same colour. *Exception (founder ruling 8, TEN-380, 2026-10-03):* two-player BARS split leader / trailer — the leader's bar solid, the trailer's at 45% (`--white-bar` / `--white-bar-2`, or `--bar` / `--bar-2`); the figures beside them stay white. *Exception (founder TEN-417, 2026-10-10):* on the Live page's sheet (Ratings, Stats) the leading figure is white 700 and the trailing one `--text-soft` 500 — larger figure leads, a tie leads on both sides (`.claude/rules/live.md`).
+  *Exception (founder 2026-11-16, Head to Head rebuild):* the Head to Head page's Playing style face-to-face rows print the
+  better figure white 800 and the other grey 500, as the design export draws it (`.claude/rules/h2h.md`).
 - Never show "went the distance (4+ sets)" for best-of-three tournaments
 - Recent form always includes Challenger and ITF — never ATP-only
 - Tournament records reflect full career history, not a truncated range
