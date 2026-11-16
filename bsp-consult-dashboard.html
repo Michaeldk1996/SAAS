@@ -3604,6 +3604,100 @@ window.sfPlanLocks(null);   // locked until the account says Edge / Pro: no unlo
   [data-db-root] .db2-pill2i img{ position:absolute; inset:0; width:24px; height:24px; object-fit:cover; }
   [data-db-root] .db2-pcwmore{ margin-left:auto; font-family:var(--db-ui); font-size:12.5px; font-weight:600; color:var(--db2-blue); white-space:nowrap; background:none; border:0; padding:0; cursor:pointer; }
   [data-db-root] .db2-pcwmore:hover{ color:var(--db2-blue-hov); }
+  /* pill groups in the filter row (L149-162) */
+  [data-db-root] .db-fctl .db-pills{ gap:3px; background:var(--db2-inset); border:1px solid var(--db2-h6); border-radius:9px; padding:3px; }
+  [data-db-root] .db-fctl .db-pills button, [data-db-root] .db-fctl .db-pills.lines button{ padding:6px 14px; border-radius:7px; font-size:12px; font-weight:600; color:var(--db2-muted); background:transparent; border:1px solid transparent; }
+  [data-db-root] .db-fctl .db-pills button.active{ font-weight:700; color:var(--db2-ink); background:var(--db2-raised); border-color:var(--db2-h16); }
+  [data-db-root] .db-fctl .db-pills:not(.lines) button.active{ font-weight:600; }   /* the Ratings surface pills stay 600 (L152) */
+  /* ratings (L254-403) */
+  [data-db-root] .db2-rcol{ display:flex; flex-direction:column; gap:16px; line-height:normal; }
+  [data-db-root] .db2-rboard{ padding:22px 24px 12px; }
+  [data-db-root] .db2-rbhead{ display:flex; align-items:center; justify-content:space-between; gap:12px 14px; flex-wrap:wrap; }
+  [data-db-root] .db2-rbhr{ display:flex; align-items:center; gap:10px; min-width:0; max-width:100%; }
+  [data-db-root] .db2-rbtrack{ flex:0 1 auto; min-width:0; overflow-x:auto; scrollbar-width:none; }
+  [data-db-root] .db2-rbpill{ padding:6px 13px; font-size:12.5px; }
+  [data-db-root] .db2-q16{ border-color:var(--db2-h16); }
+  [data-db-root] .db2-rscroll{ overflow-x:auto; margin-top:16px; }
+  [data-db-root] .db2-rgh{ display:grid; gap:8px; padding:0 8px 9px; border-bottom:1px solid var(--db2-h10); }
+  [data-db-root] .db2-rh{ font-family:var(--db-ui); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--db2-muted); }
+  [data-db-root] .db2-rh.r{ text-align:right; }
+  [data-db-root] .db2-rhs{ text-align:right; line-height:1.4; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; background:none; border:0; padding:0; cursor:pointer; }
+  [data-db-root] .db2-rhs.on{ color:var(--db2-ink); }
+  [data-db-root] .db2-rhs span{ color:var(--db2-ink); }
+  [data-db-root] .db2-rmed{ display:grid; gap:8px; align-items:center; padding:9px 8px; background:var(--db2-inset); border-bottom:1px solid var(--db2-h6); }
+  [data-db-root] .db2-rq{ text-align:right; font-family:var(--db-mono); font-size:13px; font-variant-numeric:tabular-nums; color:var(--db2-muted); }
+  [data-db-root] .db2-rrow{ display:grid; gap:8px; align-items:center; padding:10px 8px; border-bottom:1px solid var(--db2-h6); transition:background .15s; }
+  [data-db-root] .db2-rrow:hover{ background:color-mix(in srgb, var(--db2-white) 3.5%, transparent); }
+  [data-db-root] .db2-rrow.on{ background:color-mix(in srgb, var(--db2-blue) 9%, transparent); }
+  [data-db-root] .db2-rrank{ font-family:var(--db-mono); font-size:12px; font-weight:400; color:var(--db2-muted); }
+  [data-db-root] .db2-rrank.top{ font-weight:700; color:var(--db2-ink); }
+  [data-db-root] .db2-rpl{ display:flex; align-items:center; gap:10px; min-width:0; }
+  [data-db-root] .db2-rpl .db-av{ flex:none; display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; box-sizing:border-box; border-radius:50%; position:relative; overflow:hidden;
+    background:var(--db2-raised); border:1px solid var(--db2-h16); font-family:var(--db-mono); font-size:9.5px; font-weight:700; color:var(--db2-ink); }
+  [data-db-root] .db2-rpl .db-av img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+  [data-db-root] .db2-rnm{ font-size:13.5px; font-weight:600; color:var(--db2-ink); text-decoration:none; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  [data-db-root] .db2-ratp{ flex:none; font-family:var(--db-mono); font-size:10px; color:var(--db2-muted); }
+  [data-db-root] .db2-rv{ text-align:right; font-family:var(--db-mono); font-size:13px; font-weight:400; color:var(--db2-ink-2); font-variant-numeric:tabular-nums; white-space:nowrap; }
+  [data-db-root] .db2-rv.rtg{ font-weight:700; color:var(--db2-ink); }
+  [data-db-root] .db2-rv.on{ font-weight:700; color:var(--db2-white); }
+  [data-db-root] .db2-rv.dash{ color:var(--db2-muted); }
+  [data-db-root] .db2-plus{ order:-1; justify-self:start; width:24px; height:24px; box-sizing:border-box; border-radius:50%; border:1px solid color-mix(in srgb, var(--db2-white) 14%, transparent);
+    background:transparent; box-shadow:none; display:inline-flex; align-items:center; justify-content:center; color:var(--db2-muted); padding:0; cursor:pointer;
+    transition:background .18s ease, border-color .18s ease, box-shadow .18s ease, color .18s ease, transform .12s ease; }
+  [data-db-root] .db2-plus:hover{ border-color:var(--db2-blue); color:var(--db2-white); }
+  [data-db-root] .db2-plus:active{ transform:scale(0.84); }
+  [data-db-root] .db2-plus.on{ background:var(--db2-blue); border-color:var(--db2-blue); color:var(--db2-white); box-shadow:0 0 0 3px color-mix(in srgb, var(--db2-blue) 22%, transparent); }
+  [data-db-root] .db2-plus.full{ color:color-mix(in srgb, var(--db2-muted) 45%, transparent); cursor:default; }
+  [data-db-root] .db2-plus.full:hover{ border-color:color-mix(in srgb, var(--db2-white) 14%, transparent); color:color-mix(in srgb, var(--db2-muted) 45%, transparent); }
+  [data-db-root] .db2-plusx{ position:relative; display:block; width:10px; height:10px; transition:transform .22s cubic-bezier(.3,1.4,.5,1); }
+  [data-db-root] .db2-plus.on .db2-plusx{ transform:rotate(45deg); }
+  [data-db-root] .db2-plusx i{ position:absolute; left:0; top:4.25px; width:10px; height:1.5px; border-radius:1px; background:currentColor; }
+  [data-db-root] .db2-plusx i + i{ transform:rotate(90deg); }
+  [data-db-root] .db2-rcmp{ padding:22px 24px 10px; }
+  [data-db-root] .db2-rchead{ display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap; }
+  [data-db-root] .db2-link{ font-family:var(--db-ui); font-size:12.5px; font-weight:600; color:var(--db2-blue); white-space:nowrap; background:none; border:0; padding:0; cursor:pointer; }
+  [data-db-root] .db2-link:hover{ color:var(--db2-blue-hov); }
+  [data-db-root] .db2-cav{ flex:none; position:relative; width:44px; height:44px; box-sizing:border-box; border-radius:50%; background:var(--db2-inset); border:1px solid var(--db2-h16); overflow:hidden; }
+  [data-db-root] .db2-cav.a{ border:0; box-shadow:0 0 0 2px var(--db2-blue); }
+  [data-db-root] .db2-cav.b{ border:0; box-shadow:0 0 0 2px var(--db2-ink); }
+  [data-db-root] .db2-cav .db-av{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; width:auto; height:auto; border:0; border-radius:50%; background:none;
+    font-family:var(--db-mono); font-size:11px; font-weight:700; color:var(--db2-muted); overflow:hidden; }
+  [data-db-root] .db2-cav .db-av img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+  [data-db-root] .db2-cnl{ display:flex; align-items:center; gap:7px; min-width:0; }
+  [data-db-root] .db2-cnl.r{ justify-content:flex-end; }
+  [data-db-root] .db2-cnm{ font-size:17px; font-weight:800; letter-spacing:-0.01em; color:var(--db2-ink); text-decoration:none; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  [data-db-root] .db2-cnm15{ font-size:15px; }
+  [data-db-root] .db2-xr{ border-color:var(--db2-h18); font-size:11px; }
+  [data-db-root] .db2-xr:hover{ border-color:var(--db2-ink); color:var(--db2-ink); }
+  [data-db-root] .db2-catp{ font-size:12px; color:var(--db2-muted); margin-top:2px; }
+  [data-db-root] .db2-f2f{ margin-top:20px; padding:0 12px; }
+  [data-db-root] .db2-f2fhead{ display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); align-items:center; gap:16px; padding-bottom:18px; }
+  [data-db-root] .db2-f2fside{ display:flex; align-items:center; gap:12px; min-width:0; }
+  [data-db-root] .db2-f2fside.r{ justify-content:flex-end; }
+  [data-db-root] .db2-f2ft{ min-width:0; text-align:left; }
+  [data-db-root] .db2-f2ft.r{ text-align:right; }
+  [data-db-root] .db2-f2ftally{ text-align:center; }
+  [data-db-root] .db2-f2fn{ font-family:var(--db-mono); font-size:24px; font-weight:700; letter-spacing:-0.02em; white-space:nowrap; }
+  [data-db-root] .db2-f2fns{ font-size:11.5px; color:var(--db2-muted); margin-top:2px; white-space:nowrap; }
+  [data-db-root] .db2-f2frow{ display:grid; grid-template-columns:96px minmax(0,1fr) 96px; align-items:center; gap:20px; padding:14px 0 16px; border-top:1px solid var(--db2-h7); }
+  [data-db-root] .db2-f2fv{ font-family:var(--db-mono); font-size:22px; letter-spacing:-0.02em; font-variant-numeric:tabular-nums; }
+  [data-db-root] .db2-f2fv.r{ text-align:right; }
+  [data-db-root] .db2-f2fmid{ display:flex; flex-direction:column; align-items:center; gap:13px; }
+  [data-db-root] .db2-f2fmid .db2-caps{ white-space:nowrap; }
+  [data-db-root] .db2-f2fline{ position:relative; width:100%; height:4px; border-radius:2px; background:var(--db2-h7); }
+  [data-db-root] .db2-f2fseg{ position:absolute; top:0; height:4px; border-radius:2px; }
+  [data-db-root] .db2-f2fchip{ position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); font-family:var(--db-mono); font-size:12px; font-weight:700; background:var(--db2-card);
+    border:1px solid; border-radius:10px; padding:2px 9px; white-space:nowrap; }
+  [data-db-root] .db2-ccols{ overflow-x:auto; margin-top:18px; }
+  [data-db-root] .db2-cch{ display:grid; gap:0 8px; align-items:end; padding-bottom:14px; }
+  [data-db-root] .db2-ccp{ display:flex; flex-direction:column; align-items:center; gap:8px; min-width:0; }
+  [data-db-root] .db2-ccpn{ display:flex; align-items:center; gap:7px; max-width:100%; }
+  [data-db-root] .db2-catp2{ font-family:var(--db-mono); font-size:10.5px; color:var(--db2-muted); }
+  [data-db-root] .db2-ccr{ display:grid; gap:0 8px; align-items:center; border-top:1px solid var(--db2-h7); padding:13px 0; }
+  [data-db-root] .db2-cclab{ font-weight:600; }
+  [data-db-root] .db2-ccv{ display:flex; align-items:baseline; justify-content:center; gap:7px; }
+  [data-db-root] .db2-ccn{ font-family:var(--db-mono); font-size:19px; letter-spacing:-0.02em; font-variant-numeric:tabular-nums; }
+  [data-db-root] .db2-ccd{ font-family:var(--db-mono); font-size:12px; font-weight:600; color:var(--db2-red); }
   /* TEN-242 phase 2: an ID selector cannot match the embedded mount, whose body
      is addressed by data-db. Both forms, one rule. */
   #dbBody, [data-db="body"]{ display:flex; flex-direction:column; gap:22px; }
@@ -29647,7 +29741,7 @@ window.DatabaseTab = (function(){
       // showRankBand as built-but-never-mounted, so no state key is minted.
       // These live in freshState, not at module level, because a second mount
       // must not inherit or overwrite the standalone page's compare set.
-      ratSurf:'All', ratScope:'career', ratBoard:'overview', ratSel:[], ratQ:'',
+      ratSurf:'All', ratScope:'last52', ratBoard:'overview', ratSel:[], ratQ:'',
       ratSortKey:'elo', ratSortDir:'desc',
       // TEN-260 Part A.2 · Mental Edge view: 'atp' | 'chall' | 'both'. The
       // founder's ruled default is ATP + Challenger as a simple sum of counts.
@@ -30594,7 +30688,7 @@ window.DatabaseTab = (function(){
     if(state.view==='ratings'){
       zL.appendChild(chipSearch({
         picks:state.ratSel, cap:4, capNote:'Four players maximum', noun:'player',
-        placeholder:'Compare with…', placeholder2:'Add a player…', query:state.ratQ,
+        placeholder:'Search players…', placeholder2:'Add a player…', query:state.ratQ,
         pending:!RAT,
         onInput:function(v){ state.ratQ=v; },
         match:function(q){
@@ -30617,7 +30711,7 @@ window.DatabaseTab = (function(){
       // the compare panel's highlighted column to the same scope. Labels and
       // padding are the Lines tab's control ('lines' pills), per the ruling.
       // This replaces TEN-260 Part C's "hidden while players are picked".
-      zR.appendChild(pillGroup([['career','Career'],['last52','Last 52']],
+      zR.appendChild(pillGroup([['last52','Last 52 weeks'],['career','Career']],
         state.ratScope, function(v){ state.ratScope=v; }, false, 'lines'));
       var rreset=el('button','db-reset','Reset'); rreset.onclick=function(){ resetFilters(); render(); };
       zR.appendChild(rreset);
@@ -31437,67 +31531,192 @@ window.DatabaseTab = (function(){
     return median(vals);
   }
 
+  // ===== Database v2 Ratings (design L254-403, logic ratCompare / lb / ratBoards). Founder 2026-11-16 "follow the
+  // design": boards Overview · Elo · Serve · Return · Under pressure (no Mental Edge); ONE period at a time, Last 52 weeks
+  // first and the default; the board lists the whole (gated) field while comparing; compare = face to face for two, a
+  // column card for one, three or four. Data unchanged: surface-ratings.json + the weekly Elo list (no Last 52 Elo: a dash).
+  var DB2_RBOARDS=[['overview','Overview'],['elo','Elo'],['serve','Serve'],['return','Return'],['up','Under pressure']];
+  function db2RatPeriod(){ return state.ratScope==='last52' ? 'Last 52 weeks' : 'Career'; }
+  function db2RatSurfWord(){ return state.ratSurf==='All' ? 'all surfaces' : state.ratSurf.toLowerCase(); }
+  function db2RatOverVal(p, k){ return k==='elo' ? ratRating(p,'elo') : ratRating(p, k); }
+  function db2PickBtn(p){
+    var on=state.ratSel.indexOf(p.name)>=0, full=!on && state.ratSel.length>=4;
+    var b=el('button','db2-plus'+(on?' on':'')+(full?' full':'')); b.type='button';
+    b.title = on ? 'Remove '+p.name+' from the comparison' : full ? 'Four players maximum' : 'Compare '+p.name;
+    b.innerHTML='<span class="db2-plusx"><i></i><i></i></span>';
+    b.onclick=function(e){ e.stopPropagation();
+      if(on) state.ratSel=state.ratSel.filter(function(x){ return x!==p.name; });
+      else if(!full) state.ratSel=state.ratSel.concat([p.name]);
+      render(); };
+    return b;
+  }
+  function db2RatPlayerCell(p){
+    var c=el('span','db2-rpl');
+    c.innerHTML=ratAvatar(p,true).replace('class="db-av db-av26"','class="db-av db-av26 db2-rav"');
+    var a=el('a','db2-rnm',esc(p.name)); a.href='#'; a.title=p.name; a.onclick=function(ev){ ev.preventDefault(); ratOpenPlayer(p.name); };
+    c.appendChild(a);
+    if(p.rank!=null) c.appendChild(el('span','db2-ratp','#'+p.rank));
+    return c;
+  }
+  function db2Med(vals){ var v=vals.filter(function(x){ return typeof x==='number' && !isNaN(x); }).sort(function(a,b){return a-b;}); if(!v.length) return null; var m=Math.floor(v.length/2); return v.length%2?v[m]:(v[m-1]+v[m])/2; }
   function renderRatings(body){
     if(!RAT){
       body.appendChild(el('div','db-loading','Loading the ratings archive…'));
-      // Capture the instance: both continuations used to read module-level
-      // `state` and a document-wide id, so a mount that happened while this
-      // shard was in flight silently stole the render. Same class as the names
-      // loader above, and the site the TEN-242 guard now blocks from returning.
       var inst=I;
       loadRatings().then(function(){ use(inst); if(state.view==='ratings') render(); })
-        .catch(function(err){
-          console.warn('DatabaseTab ratings load failed', err);
-          use(inst);
-          var b=q('body');
-          if(b && state.view==='ratings'){ b.innerHTML=''; b.appendChild(el('div','db-loading','The ratings archive could not be loaded.')); }
-        });
+        .catch(function(err){ console.warn('DatabaseTab ratings load failed', err); use(inst);
+          var b=q('body'); if(b && state.view==='ratings'){ b.innerHTML=''; b.appendChild(el('div','db-loading','The ratings archive could not be loaded.')); } });
       return;
     }
-    var card=el('div','db-rcard');
-    // TEN-399 founder fix 6 (card ff586600): the board tabs sit in the card header, right of the title.
-    var rhead=el('div','db-rcardhead'), rtl=el('div','db-rcardhead-l');
-    rhead.appendChild(rtl); rhead.appendChild(ratBoardTabs()); card.appendChild(rhead);
-    rtl.appendChild(el('div','db-rbrow','Ratings board'));
-    rtl.appendChild(el('h2','db-rtitle','Player ratings by surface'));
-    // TEN-260 Part A.6 · the description says where each column comes from and
-    // no more. Elo is NOT ours (a scraped weekly list), serve / return / under
-    // pressure fold Challenger in only for players thin at tour level, and
-    // Mental Edge now counts Challenger break points on two of its three views.
-    // TEN-399 R2 item 2: two lines, no discount factor.
-    rtl.appendChild(el('p','db-rdesc','Elo comes from an external weekly list. Serve, return and under-pressure are built from our ATP match archive, with Challenger matches added for players thin at tour level. Higher is better in every column.'));
-    var pool=ratPool();
-    // The count names the field of the board on screen. It is not one number for
-    // the tab: the Serve board and the Mental Edge board have different fields
-    // because they rest on different match sets.
-    var shown = state.ratBoard==='overview' ? pool : ratBoardPool(state.ratBoard);
-    // Prototype behaviour (Database.dc.html: `if (ratCmp) rPool = picked`): with
-    // players picked, the board lists just them and the count says so. The
-    // field median still runs over the whole field (ratMedian ignores ratSel).
-    var sel=state.ratSel.length ? state.ratSel : null;
-    var pick=function(list){ return sel ? list.filter(function(p){ return sel.indexOf(p.name)>=0; }) : list; };
-    var cnt=el('div','db-rcount','<b>'+fmtInt(pick(shown).length)+'</b> players');
-    if(state.ratBoard==='mental'){
-      // Part A.5 · "ranked X of Y" on every view, over the whole field at the
-      // slice (never over the picks): Y is every row the view shows, X the
-      // ones that clear the pressure-point minimum.
-      var ext=ratMentalExtras(shown), rk=0;
-      shown.forEach(function(p){ var pp=ratPP(ratMentalFor(p, ratNode(p))); if(pp!=null && pp>=ME_RANK_MIN) rk++; });
-      var tot=shown.length + (sel ? ratMentalExtrasAll(shown) : ext).length;
-      cnt.innerHTML='<b>'+fmtInt(pick(shown).length + ext.length)+'</b> players · ranked <b>'+fmtInt(rk)+'</b> of <b>'+fmtInt(tot)+'</b>';
-    }
-    card.appendChild(cnt);
-
-    if(state.ratSel.length) card.appendChild(ratComparePanel());
-    if(state.ratBoard==='mental') card.appendChild(ratMViewPills());
-    // Each board has its OWN field, because each rests on its own match set.
-    card.appendChild(state.ratBoard==='overview'
-      ? ratOverview(pick(pool))
-      : ratLeaderboard(pick(ratBoardPool(state.ratBoard)), state.ratBoard));
-    card.appendChild(ratRetiredNote());
-    body.appendChild(card);
+    if(state.ratBoard==='mental') state.ratBoard='overview';
+    var col=el('div','db2-rcol'); body.appendChild(col);
+    if(state.ratSel.length) col.appendChild(db2RatCompare());
+    var board=state.ratBoard, card=el('div','db2-card db2-rboard');
+    var pool = board==='overview' ? ratPool() : ratBoardPool(board);
+    var head=el('div','db2-rbhead');
+    head.appendChild(el('div','', '<div class="db2-ttl">Player ratings</div><div class="db2-sub">'+fmtInt(pool.length)+' '+(pool.length===1?'player':'players')+' · '+db2RatPeriod()+' · '+db2RatSurfWord()+' · all players</div>'));
+    var hr=el('div','db2-rbhr'), trk=el('span','db2-track db2-rbtrack');
+    DB2_RBOARDS.forEach(function(t){ var b=el('button','db2-pill db2-rbpill'+(board===t[0]?' on':''), t[1]); b.type='button';
+      b.onclick=function(){ state.ratBoard=t[0]; state.r2Sort=null; state.r2Dir='desc'; render(); }; trk.appendChild(b); });
+    hr.appendChild(trk);
+    hr.appendChild(el('span','db2-q db2-q16','?')).title='Elo is a weekly external list (Tennis Abstract): Last 52 weeks is a dash, Career is today’s rating. Serve, return and under-pressure are built from our ATP match archive, with Challenger matches added for players thin at tour level. Higher is better in every column. Click a column head to sort. Press + on a row to compare up to four players. n is the serve-stat match count. Players under '+RAT_GATE+' matches and retired players are not listed.';
+    head.appendChild(hr); card.appendChild(head);
+    card.appendChild(board==='overview' ? db2RatOverview(pool) : db2RatBoard(pool, board));
+    col.appendChild(card);
   }
-  // Extras over the whole field regardless of the picks - for the "of Y" total.
+  function db2SortHead(label, key, full, sorted, dir, onClick){
+    var h=el('button','db2-rh db2-rhs'+(sorted?' on':''), esc(label)+' <span>'+(sorted?(dir==='asc'?'↑':'↓'):'')+'</span>');
+    h.type='button'; if(full) h.title=full; h.onclick=onClick; return h;
+  }
+  function db2RatOverview(pool){
+    var cols=[['elo','Elo','Elo, current surface'],['serve','Serve','Serve rating'],['return','Return','Return rating'],['up','Under pressure','Under-pressure rating']];
+    var key=state.r2Sort||'elo', dir=state.r2Dir||'desc';
+    var rows=pool.map(function(p){ return {p:p, v:db2RatOverVal(p,key)}; }).sort(function(a,b){
+      if(a.v==null && b.v==null) return (a.p.rank||9999)-(b.p.rank||9999); if(a.v==null) return 1; if(b.v==null) return -1;
+      var d = dir==='asc' ? a.v-b.v : b.v-a.v; return d || (a.p.rank||9999)-(b.p.rank||9999); });
+    var tpl='28px 28px minmax(170px,2.4fr) 40px repeat(4,minmax(72px,1fr))';
+    var sc=el('div','db2-rscroll'), t=el('div'); t.style.minWidth='620px';
+    var hd=el('div','db2-rgh'); hd.style.gridTemplateColumns=tpl;
+    hd.appendChild(el('span')); hd.appendChild(el('span','db2-rh','#')); hd.appendChild(el('span','db2-rh','Player')); hd.appendChild(el('span','db2-rh r','n'));
+    cols.forEach(function(c){ hd.appendChild(db2SortHead(c[1], c[0], c[2], key===c[0], dir, function(){ state.r2Dir = key===c[0] ? (dir==='desc'?'asc':'desc') : 'desc'; state.r2Sort=c[0]; render(); })); });
+    t.appendChild(hd);
+    var md=el('div','db2-rmed'); md.style.gridTemplateColumns=tpl;
+    md.appendChild(el('span')); md.appendChild(el('span')); md.appendChild(el('span','db2-rh','Field median'));
+    var mn=db2Med(pool.map(function(p){ return ratN(p,'serve'); })); md.appendChild(el('span','db2-rq',mn==null?'—':String(Math.round(mn))));
+    cols.forEach(function(c){ var m=db2Med(pool.map(function(p){ return db2RatOverVal(p,c[0]); })); md.appendChild(el('span','db2-rq',m==null?'—':String(Math.round(m)))); });
+    t.appendChild(md);
+    rows.forEach(function(o,i){
+      var p=o.p, on=state.ratSel.indexOf(p.name)>=0, r=el('div','db2-rrow'+(on?' on':'')); r.style.gridTemplateColumns=tpl;
+      r.appendChild(db2PickBtn(p));
+      r.appendChild(el('span','db2-rrank'+(i<3?' top':''),String(i+1)));
+      r.appendChild(db2RatPlayerCell(p));
+      var n=ratN(p,'serve'); r.appendChild(el('span','db2-rq',n==null?'—':fmtInt(n)));
+      cols.forEach(function(c){ var v=db2RatOverVal(p,c[0]), s=el('span','db2-rv'+(key===c[0]?' on':'')+(v==null?' dash':''), v==null?'—':String(Math.round(v))); s.title=c[2]+' · '+p.name; r.appendChild(s); });
+      t.appendChild(r);
+    });
+    sc.appendChild(t); return sc;
+  }
+  function db2RatBoard(pool, board){
+    var B=RAT_BOARDS[board], key=state.r2Sort||'rtg', dir=state.r2Dir||'desc';
+    var valOf=function(p,k){ return k==='rtg' ? ratRating(p, board) : ratVal(p, k); };
+    var sortK = key==='rtg' ? 'rtg' : (B.cols.filter(function(c){ return c.k===key; })[0] ? key : 'rtg');
+    var rows=pool.map(function(p){ return {p:p, v:valOf(p,sortK)}; }).sort(function(a,b){
+      if(a.v==null && b.v==null) return (a.p.rank||9999)-(b.p.rank||9999); if(a.v==null) return 1; if(b.v==null) return -1;
+      var d = dir==='asc' ? a.v-b.v : b.v-a.v; return d || (a.p.rank||9999)-(b.p.rank||9999); });
+    var nc=B.cols.length+1, pmin=Math.max(140, Math.min(170, 680-96-nc*52-(nc+3)*8));
+    var tpl='28px 28px minmax('+pmin+'px,2.4fr) 40px '+new Array(nc+1).join('minmax(52px,1fr) ').trim();
+    var sc=el('div','db2-rscroll'), t=el('div'); t.style.minWidth=(96+pmin+nc*52+(nc+3)*8)+'px';
+    var hd=el('div','db2-rgh'); hd.style.gridTemplateColumns=tpl;
+    hd.appendChild(el('span')); hd.appendChild(el('span','db2-rh','#')); hd.appendChild(el('span','db2-rh','Player')); hd.appendChild(el('span','db2-rh r','n'));
+    var heads=[{k:'rtg', h:B.rtg, full:B.label+' rating', dec:B.rtgDec}].concat(B.cols);
+    heads.forEach(function(c){ hd.appendChild(db2SortHead(c.h, c.k, c.full, sortK===c.k, dir, function(){ state.r2Dir = sortK===c.k ? (dir==='desc'?'asc':'desc') : 'desc'; state.r2Sort=c.k; render(); })); });
+    t.appendChild(hd);
+    var fmt=function(c, v){ if(v==null || isNaN(v)) return '—'; if(c.sgn){ var g=Math.round(v); return (g>=0?'+':'−')+Math.abs(g); } return c.pct ? v.toFixed(c.dec)+'%' : v.toFixed(c.dec||0); };
+    var md=el('div','db2-rmed'); md.style.gridTemplateColumns=tpl;
+    md.appendChild(el('span')); md.appendChild(el('span')); md.appendChild(el('span','db2-rh','Field median'));
+    var mn=db2Med(pool.map(function(p){ return ratMatches(p); })); md.appendChild(el('span','db2-rq',mn==null?'—':String(Math.round(mn))));
+    heads.forEach(function(c){ var m=db2Med(pool.map(function(p){ return valOf(p,c.k); })); md.appendChild(el('span','db2-rq',fmt(c,m))); });
+    t.appendChild(md);
+    rows.forEach(function(o,i){
+      var p=o.p, on=state.ratSel.indexOf(p.name)>=0, r=el('div','db2-rrow'+(on?' on':'')); r.style.gridTemplateColumns=tpl;
+      r.appendChild(db2PickBtn(p));
+      r.appendChild(el('span','db2-rrank'+(i<3?' top':''),String(i+1)));
+      r.appendChild(db2RatPlayerCell(p));
+      var n=ratMatches(p); r.appendChild(el('span','db2-rq',n==null?'—':fmtInt(n)));
+      heads.forEach(function(c,ci){ var v=valOf(p,c.k);
+        // ratings.md: Vs pk carries no colour at any value (founder 2026-09-23; the design's red below -60 stays overturned).
+        var s=el('span','db2-rv'+(ci===0?' rtg':'')+(sortK===c.k?' on':'')+(v==null?' dash':''), fmt(c,v)); s.title=c.full+' · '+p.name; r.appendChild(s); });
+      t.appendChild(r);
+    });
+    sc.appendChild(t); return sc;
+  }
+  // Compare card (L256-313). One period (the control's); the best of each row white 800, every other cell its gap in red.
+  function db2RatCompare(){
+    var all=ratRoster(), players=state.ratSel.map(function(n){ return all.filter(function(p){ return p.name===n; })[0]; }).filter(Boolean);
+    var M7=[['Elo',function(p){ return ratVal(p,'elo.all'); },1],['Elo · hard',function(p){ return ratVal(p,'elo.hard'); },1],
+      ['Elo · clay',function(p){ return ratVal(p,'elo.clay'); },1],['Elo · grass',function(p){ return ratVal(p,'elo.grass'); },1],
+      ['Serve rating',function(p){ return ratRating(p,'serve'); },0],['Return rating',function(p){ return ratRating(p,'return'); },0],
+      ['Under pressure',function(p){ return ratRating(p,'up'); },0]];
+    var card=el('div','db2-card db2-rcmp'), pair=players.length===2;
+    var sub = pair ? 'The line leans toward the better player · the figure on it is the difference'
+                   : players.length>2 ? db2RatPeriod()+' · best of each row in white · red = how far behind the best' : db2RatPeriod()+' · best of each row in white';
+    var hd=el('div','db2-rchead'); hd.appendChild(el('div','', '<div class="db2-ttl">Compare players</div><div class="db2-sub">'+esc(sub)+'</div>'));
+    var clr=el('button','db2-link','Clear all'); clr.type='button'; clr.onclick=function(){ state.ratSel=[]; render(); }; hd.appendChild(clr);
+    card.appendChild(hd);
+    function av(p, ring){ var a=el('span','db2-cav'+(ring?' '+ring:'')); a.innerHTML=ratAvatar(p,false).replace('class="db-av"','class="db-av db2-cavi"'); return a; }
+    function nameLine(p, right){
+      var w=el('div','db2-cnl'+(right?' r':'')), a=el('a','db2-cnm',esc(p.name)); a.href='#'; a.onclick=function(ev){ ev.preventDefault(); ratOpenPlayer(p.name); };
+      var x=el('button','db2-x db2-xr','×'); x.type='button'; x.title='Remove'; x.onclick=function(){ state.ratSel=state.ratSel.filter(function(n){ return n!==p.name; }); render(); };
+      w.appendChild(a); w.appendChild(x); return w;
+    }
+    if(pair){
+      var A=players[0], Bp=players[1], box=el('div','db2-f2f'), top=el('div','db2-f2fhead');
+      var la=el('div','db2-f2fside'); la.appendChild(av(A,'a')); var lt=el('div','db2-f2ft'); lt.appendChild(nameLine(A,false)); lt.appendChild(el('div','db2-catp','ATP '+(A.rank!=null?'#'+A.rank:'—'))); la.appendChild(lt);
+      var rb=el('div','db2-f2fside r'); var rt=el('div','db2-f2ft r'); rt.appendChild(nameLine(Bp,true)); rt.appendChild(el('div','db2-catp','ATP '+(Bp.rank!=null?'#'+Bp.rank:'—'))); rb.appendChild(rt); rb.appendChild(av(Bp,'b'));
+      var aN=0, bN=0, rowsH=[];
+      M7.forEach(function(m){
+        var va=m[1](A), vb=m[1](Bp), ok=va!=null && vb!=null, d=ok?Math.abs(va-vb):null, tie=ok && d<0.0005, aL=ok && !tie && va>vb, bL=ok && !tie && vb>va;
+        if(aL) aN++; if(bL) bN++;
+        var w = ok && !tie ? Math.max(4, Math.min(50, d/(m[2]?300:40)*50)) : 0;
+        var lc = !ok ? 'var(--db2-muted)' : tie ? 'var(--db2-muted)' : aL ? 'var(--db2-blue)' : 'var(--db2-ink)';
+        var gap = !ok ? '—' : tie ? 'Level' : '+'+String(Math.round(d));
+        var r=el('div','db2-f2frow');
+        r.innerHTML='<span class="db2-f2fv" style="font-weight:'+(aL?800:500)+';color:'+(aL?'var(--db2-white)':'var(--db2-muted)')+'">'+(va==null?'—':String(Math.round(va)))+'</span>'+
+          '<div class="db2-f2fmid"><span class="db2-caps">'+m[0]+'</span><div class="db2-f2fline">'+(w?'<span class="db2-f2fseg" style="left:'+(aL?(50-w).toFixed(1):'50')+'%;width:'+w.toFixed(1)+'%;background:'+lc+'"></span>':'')+
+          '<span class="db2-f2fchip" style="color:'+lc+';border-color:'+lc+'" title="'+esc(!ok?'Not available for both players':tie?'Level':(aL?A.name:Bp.name)+' is '+Math.round(d)+' ahead')+'">'+gap+'</span></div></div>'+
+          '<span class="db2-f2fv r" style="font-weight:'+(bL?800:500)+';color:'+(bL?'var(--db2-white)':'var(--db2-muted)')+'">'+(vb==null?'—':String(Math.round(vb)))+'</span>';
+        rowsH.push(r);
+      });
+      top.appendChild(la);
+      top.appendChild(el('div','db2-f2ftally','<div class="db2-f2fn"><span style="color:var(--db2-blue)">'+aN+'</span><span style="color:var(--db2-muted)"> – </span><span style="color:var(--db2-ink)">'+bN+'</span></div><div class="db2-f2fns">ratings ahead · '+db2RatPeriod()+'</div>'));
+      top.appendChild(rb);
+      box.appendChild(top); rowsH.forEach(function(r){ box.appendChild(r); });
+      card.appendChild(box);
+      return card;
+    }
+    var cols='116px repeat('+players.length+',minmax(128px,1fr))', sc=el('div','db2-ccols'), t=el('div'); t.style.minWidth=(116+players.length*136)+'px';
+    var h=el('div','db2-cch'); h.style.gridTemplateColumns=cols; h.appendChild(el('span'));
+    players.forEach(function(p){ var c=el('span','db2-ccp'); c.appendChild(av(p,'')); var nl=el('span','db2-ccpn'); var a=el('a','db2-cnm db2-cnm15',esc(p.name)); a.href='#'; a.onclick=function(ev){ ev.preventDefault(); ratOpenPlayer(p.name); };
+      nl.appendChild(a); nl.appendChild(el('span','db2-catp2',p.rank!=null?'#'+p.rank:'—'));
+      var x=el('button','db2-x db2-xr','×'); x.type='button'; x.title='Remove'; x.onclick=function(){ state.ratSel=state.ratSel.filter(function(n){ return n!==p.name; }); render(); }; nl.appendChild(x);
+      c.appendChild(nl); h.appendChild(c); });
+    t.appendChild(h);
+    M7.forEach(function(m){
+      var vals=players.map(m[1]), best=null; vals.forEach(function(v){ if(v!=null && (best==null || v>best)) best=v; });
+      var r=el('div','db2-ccr'); r.style.gridTemplateColumns=cols; r.appendChild(el('span','db2-mlab db2-cclab',m[0]));
+      vals.forEach(function(v,i){
+        var topV = players.length>1 && v!=null && v===best;
+        var w = topV ? 800 : players.length>1 ? 500 : 700, c = topV ? 'var(--db2-white)' : players.length>1 ? 'var(--db2-ink-2)' : 'var(--db2-ink)';
+        var d = (players.length<2 || v==null || topV || best==null) ? '' : '−'+String(Math.round(best-v));
+        var s=el('span','db2-ccv','<span class="db2-ccn" style="font-weight:'+w+';color:'+(v==null?'var(--db2-muted)':c)+'">'+(v==null?'—':String(Math.round(v)))+'</span><span class="db2-ccd">'+d+'</span>');
+        s.title=players[i].name+' · '+m[0]; r.appendChild(s);
+      });
+      t.appendChild(r);
+    });
+    sc.appendChild(t); card.appendChild(sc);
+    return card;
+  }
+
   function ratMentalExtrasAll(pool){
     var keep=state.ratSel; state.ratSel=[];
     try { return ratMentalExtras(pool); } finally { state.ratSel=keep; }
