@@ -1,17 +1,17 @@
 {
- "generatedAt": "2026-11-16T08:01:20.803Z",
+ "generatedAt": "2026-11-16T09:04:39.232Z",
  "tournaments": [
   {
    "key": "tour",
    "season": "2026",
    "name": "ATP Tour",
    "file": "news-ticker/tour-2026.json",
-   "items": 102,
+   "items": 103,
    "byType": {
-    "quote": 102
+    "quote": 103
    },
-   "latestTimestamp": "2026-11-16T07:00:00.000Z",
-   "updatedAt": "2026-11-16T08:01:20.803Z"
+   "latestTimestamp": "2026-11-16T08:12:00.000Z",
+   "updatedAt": "2026-11-16T09:04:39.232Z"
   },
   {
    "key": "2794",
@@ -54,6 +54,37 @@
   }
  ],
  "latest": [
+  {
+   "id": "quote-7e160213e33ab6",
+   "type": "quote",
+   "playerId": "2973",
+   "opponentId": null,
+   "player": "B. Shelton",
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-16T08:12:00.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "The court is fast. Yes, very fast. You know, they say Paris was one of the fastest courts of all time. I think that with the slight altitude here, the ball flies a bit more. In my opinion, the playing conditions are slightly faster than in Paris, but they remain comparable. It's quite close. It's nice to have a bit of continuity from one week to the next, playing on a fast hard court in Paris, then here in Turin. Last year, Paris was really slow, it was one of the slowest hard-court tournaments of the year, whereas in Turin, it's really fast",
+   "originalText": "Le court est rapide. Oui, très rapide. Vous savez, on dit que Paris était l’un des courts les plus rapides de tous les temps. Je pense qu’avec la légère alti­tude ici, la balle vole un peu plus. À mon avis, les condi­tions de jeu sont légè­re­ment plus rapides qu’à Paris, mais elles restent compa­rables. C’est assez proche. C’est agréable d’avoir un peu de conti­nuité d’une semaine à l’autre, en jouant sur un dur rapide à Paris, puis ici à Turin. L’année dernière, Paris était vrai­ment lent, c’était l’un des tour­nois sur dur les plus lents de l’année, alors qu’à Turin, c’est vrai­ment rapide",
+   "language": "fr",
+   "translated": true,
+   "translationModel": "claude-opus-5-5",
+   "sourceName": "We Love Tennis",
+   "sourceUrl": "https://www.welovetennis.fr/atp/atp-finals-atp/ben-shelton-vainqueur-darthur-fils-sur-le-masters-de-turin-vous-savez-on-dit-que-paris-etait-lun-des-courts-les-plus-rapides-de-tous-les-temps-je-pense-quavec-la-lege",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On the fast court conditions in Turin",
+   "sourceHash": "f006ae618e40a3b4",
+   "publishedAt": "2026-11-16T09:04:39.232Z",
+   "file": "news-ticker/tour-2026.json"
+  },
   {
    "id": "quote-92c6d4a9d720c7",
    "type": "quote",
@@ -1579,38 +1610,6 @@
    "sourceHash": "76177ed9b10c2978",
    "publishedAt": "2026-11-16T00:32:47.443Z",
    "file": "news-ticker/tour-2026.json"
-  },
-  {
-   "id": "quote-89334d215ebb52",
-   "type": "quote",
-   "playerId": "2832",
-   "opponentId": "366",
-   "player": "T. Fritz",
-   "opponent": "T. A. Tirante",
-   "tournament": "Stockholm",
-   "tournamentKey": "1681",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-14T14:33:00.000Z",
-   "timestampKind": "observed (Tennis TV published the clip then)",
-   "category": "Quotes",
-   "context": "after beating T. A. Tirante",
-   "eventKey": "12179948",
-   "won": true,
-   "text": "It's really big for me to kind of deal with what I dealt with in Paris, and I mean, I wanted to go home so bad, obviously. I think anyone would. … So I'm glad I came here and I made the most of it, and you know, I'm playing great tennis and I get to end the year with the title.",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "On-court interview",
-   "sourceUrl": "https://www.tennistv.com/videos/4609109/stockholm-2026-final-taylor-fritz-interview",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the clip's audio, transcribed by the interviews worker",
-   "interview": "on-court",
-   "topic": "On ending the year after Paris",
-   "sourceHash": "81ab4a1e84b4723b",
-   "publishedAt": "2026-11-14T15:43:24.367Z",
-   "file": "news-ticker/1681-2026.json"
   }
  ]
 }
