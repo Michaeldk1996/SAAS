@@ -169,7 +169,11 @@ Rationale: `BUILD-NOTES.md` "2026-11-15 — Tournaments tab rebuild".
   bars "—" where How it plays holds only the pooled figure). Favourites and underdogs = `favourites-by-round.json`
   (Favourites won) + this event's `database-yield.json` rows + retRows through `settlement.js` (yields, the match box) +
   `tour-baselines.json`; decider / comeback from this edition's scores. **Test:** `tools/test-tt-draw.mjs` "statistics".
+- **Favourites won prices every match on the price every page shows** (founder 2026-11-16, "we need these prices,
+  everywhere"): `build-favourites-by-round.js` takes each match's `database-yield-master.json` price whatever its book —
+  Pinnacle close, else Pinnacle (approx.) (api-tennis, Tennis Explorer, early cut), else Bet365 — and counts the approx.
+  and Bet365 matches per scope (`approx`, `b365`; the tile's hover names the split). Only a match the master does not price
+  is `noClose`. **Test:** `tools/test-favourites-by-round.js` "every master price counts" (the closes-only builder fails it).
 - **Opponent report:** head to head and last five from `H2HCore` over career-history shards; record against his archetype
   from `playing-styles.json` + style-meetings; every chance / warning a dash.
-- *Open (not ruled):* "Favourites won" mixes this edition's favourites-by-round with past Database rows; played bracket
-  matches carry no closing-price hover.
+- *Open (not ruled):* played bracket matches carry no closing-price hover.

@@ -329,7 +329,7 @@ function statsModel(ev, M) {
   const series = k => { const o = {}; Object.keys(sf).forEach(y => { if (+y < cy && sf[y][k] != null) o[y] = sf[y][k]; }); return o; };
   const mkt = [
     { key: 'fav', label: 'Favourites won', unit: '%', sign: false, v: fCur ? pctOf(fCur) : cyF ? cyF.fav : null, tour: pctOf(fBase), series: series('fav'),
-      vTitle: fCur ? `${fCur.fav} of ${fCur.n} priced matches won by the shorter Pinnacle close (ties, no close and walkovers out)` : cyF ? `${cyF.favW} of ${cyF.favN} priced matches won by the shorter closing price (Database rows, retirements count)` : `No ${cy} favourites figure`,
+      vTitle: fCur ? `${fCur.fav} of ${fCur.n} priced matches won by the shorter price, the price every page shows for the match (${fCur.n - (fCur.approx || 0) - (fCur.b365 || 0)} Pinnacle closes, ${fCur.approx || 0} Pinnacle (approx.), ${fCur.b365 || 0} Bet365; ties and walkovers out)` : cyF ? `${cyF.favW} of ${cyF.favN} priced matches won by the shorter closing price (Database rows, retirements count)` : `No ${cy} favourites figure`,
       tourTitle: fBase ? `ATP ${String(fe.court).toLowerCase()}, ${(fB.years || []).join(NDASH)}, ${fBase.n} matches` : '' },
     { key: 'favY', label: 'Backing favourites', unit: '%', sign: true, v: cyF ? cyF.favY : null, tour: role('favourite') ? role('favourite').yield * 100 : null, series: series('favY'),
       vTitle: cyF ? `1 unit on every favourite, ${cyF.betN} priced matches (retirements settle on Pinnacle rules)` : `No ${cy} priced matches`,

@@ -7,10 +7,11 @@
 // last 10 seasons).
 //
 // RULES
-//   · Prices: database-yield-master.json — the ONE master every page prices from (single-price rule). Favourite = the
-//     shorter Pinnacle CLOSE (books 0 Tennis-Data Pinnacle, 3 from Pinnacle history, 4 captured — the captured close
-//     stands until the archive supersedes it). Book 1 (Tennis-Data Bet365 close, Jan–Apr 2026) is used and marked "B".
-//     A snapshot (books 2, 5–8, "Pinnacle (approx.)") is not a close: that match counts as "no Pinnacle close" (a dash).
+//   · Prices: database-yield-master.json — the ONE master every page prices from (single-price rule; founder 2026-11-16:
+//     "we need these prices, everywhere"). Favourite = the shorter of the match's master price, whatever its book: a
+//     Pinnacle close (books 0 / 3 / 4), else Pinnacle (approx.) (api-tennis, Tennis Explorer, start − 10, early cut:
+//     books 2, 5, 8, 9 — counted per scope as `approx`), else Bet365 (books 1, 6, 7 — counted as `b365`). Only a match
+//     the master does not price at all is `noClose`.
 //   · Exact closing tie → the shorter first-captured Pinnacle price; no first-captured price is held for these rows, so
 //     every tie is a dash, counted (`ties`).
 //   · Winner = Settlement.matchWinner: the official result — a retirement counts, a walkover is not a match. Walkovers
@@ -30,7 +31,7 @@ const SAMPLE_FLOOR = 15;                                    // founder default 2
 const BASELINE_YEARS = [2016, 2025];                        // the last 10 completed seasons
 const ROUND_ORDER = ['1st Round', '2nd Round', '3rd Round', '4th Round', 'Quarterfinals', 'Semifinals', 'The Final'];
 const ROUND_SHORT = { 'Quarterfinals': 'QF', 'Semifinals': 'SF', 'The Final': 'F' };
-const PIN_CLOSE = new Set([0, 3, 4]), B365_CLOSE = 1;
+const PIN_CLOSE = new Set([0, 3, 4]), B365_BOOKS = new Set([1, 6, 7]);
 // tournament-progression.json keys the current week by CITY: its 'Lyon' is the October event (Lyon (France)), never the
 // clay Lyon, which therefore reads no progression row.
 const PROGRESSION_KEY = { 'Lyon (France)': 'Lyon', 'Lyon': null };
@@ -54,26 +55,26 @@ function masterObjects(master) {
   return master.rows.map(a => Object.fromEntries(c.map(k => [k, a[ix[k]]])));
 }
 
-// One match → its scope outcome: { kind: 'fav'|'dog'|'tie'|'noClose'|'walkover', b365 }.
+// One match → its scope outcome: { kind: 'fav'|'dog'|'tie'|'noClose'|'walkover', b365, approx }.
 function outcomeOf(r) {
   const book = Number(r.book);
-  if (!PIN_CLOSE.has(book) && book !== B365_CLOSE) return { kind: 'noClose' };
   const pw = Number(r.pw), pl = Number(r.pl);
-  if (!(pw >= 1.01) || !(pl >= 1.01)) return { kind: 'noClose' };
-  if (pw === pl) return { kind: 'tie', b365: book === B365_CLOSE };
+  if (!Number.isFinite(book) || !(pw >= 1.01) || !(pl >= 1.01)) return { kind: 'noClose' };
+  const b365 = B365_BOOKS.has(book), approx = !b365 && !PIN_CLOSE.has(book);
+  if (pw === pl) return { kind: 'tie', b365, approx };
   const w = matchWinner({ comment: r.comment, winnerSide: pw < pl ? 'fav' : 'dog' });
   if (w == null) return { kind: 'walkover' };
-  return { kind: w, b365: book === B365_CLOSE, retired: String(r.comment).trim() !== 'Completed' };
+  return { kind: w, b365, approx, retired: String(r.comment).trim() !== 'Completed' };
 }
 
 // Cumulative rows over the round ladder present in `rounds` (Tennis-Data round names, draw order).
 function cumulative(matches, ladder) {
   const out = [];
-  const acc = { n: 0, fav: 0, dog: 0, ties: 0, noClose: 0, b365: 0, retirements: 0 };
+  const acc = { n: 0, fav: 0, dog: 0, ties: 0, noClose: 0, b365: 0, approx: 0, retirements: 0 };
   ladder.forEach((rnd, i) => {
     for (const m of matches.filter(x => x.round === rnd)) {
       const o = outcomeOf(m);
-      if (o.kind === 'fav' || o.kind === 'dog') { acc.n++; acc[o.kind]++; if (o.b365) acc.b365++; if (o.retired) acc.retirements++; }
+      if (o.kind === 'fav' || o.kind === 'dog') { acc.n++; acc[o.kind]++; if (o.b365) acc.b365++; if (o.approx) acc.approx++; if (o.retired) acc.retirements++; }
       else if (o.kind === 'tie') acc.ties++;
       else if (o.kind === 'noClose') acc.noClose++;
     }
@@ -130,7 +131,7 @@ function buildFavouritesByRound({ master, csvRows, progression, now }) {
     return { court, years: BASELINE_YEARS, rows: cumulative(pool, ROUND_ORDER.filter(r => pool.some(m => m.round === r))),
       walkovers: wo(r => r.surface === 'Hard' && yearOf(r.date) >= BASELINE_YEARS[0] && yearOf(r.date) <= BASELINE_YEARS[1]) };
   };
-  return { v: 1, floor: SAMPLE_FLOOR, priceBasis: 'database-yield-master.json: Pinnacle close (books 0/3/4), Bet365 close "B" (book 1)',
+  return { v: 1, floor: SAMPLE_FLOOR, priceBasis: 'database-yield-master.json: the master price of every match (Pinnacle close, else Pinnacle (approx.), else Bet365)',
     winnerRule: 'Settlement.matchWinner — official result, retirements count, walkovers excluded', events,
     baseline: { Indoor: base('Indoor'), Outdoor: base('Outdoor') } };
 }

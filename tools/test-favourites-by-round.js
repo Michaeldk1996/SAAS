@@ -29,12 +29,14 @@ check('winner = matchWinner: a retirement counts on the official result (and is 
   const x = lastRow(out.events.Almaty.past.rows);
   assert.deepStrictEqual([x.n, x.dog, x.retirements], [1, 1, 1]);
 });
-// Mutation: treat a snapshot as a close, or a tie as a favourite win → red.
-check('a snapshot (Pinnacle approx.) is "no Pinnacle close"; an exact tie is a dash, counted; Bet365 close is used and marked B', () => {
-  const out = build([r('2025-10-14', 'Almaty Open', '1st Round', 1.5, 2.6, { book: 5 }), r('2025-10-14', 'Almaty Open', '1st Round', 1.9, 1.9, { set: 'tie' }),
-    r('2025-10-15', 'Almaty Open', '1st Round', 1.5, 2.6, { book: 1 })]);
+// Founder 2026-11-16 ("we need these prices, everywhere"): every master price counts, whatever its book.
+// Mutation: a snapshot dropped as "no close" again, or a tie read as a favourite win → red.
+check('every master price counts: Pinnacle (approx.) and Bet365 counted and marked; an exact tie is a dash; only an unpriced match is noClose', () => {
+  const out = build([r('2025-10-14', 'Almaty Open', '1st Round', 1.5, 2.6, { book: 2 }), r('2025-10-14', 'Almaty Open', '1st Round', 1.9, 1.9, { set: 'tie' }),
+    r('2025-10-15', 'Almaty Open', '1st Round', 1.5, 2.6, { book: 1 }), r('2025-10-15', 'Almaty Open', '1st Round', 2.6, 1.5, { book: 8 }),
+    r('2025-10-16', 'Almaty Open', '1st Round', 1.5, 2.6, { book: 0 }), r('2025-10-16', 'Almaty Open', '1st Round', null, null, { book: 0 })]);
   const x = lastRow(out.events.Almaty.past.rows);
-  assert.deepStrictEqual([x.n, x.fav, x.noClose, x.ties, x.b365], [1, 1, 1, 1, 1]);
+  assert.deepStrictEqual([x.n, x.fav, x.dog, x.noClose, x.ties, x.b365, x.approx], [4, 3, 1, 1, 1, 1, 2]);
 });
 // Mutation: Brussels pooled by name alone (no ROW_SPLIT year rule) → Antwerp 2024 counts for Brussels → red.
 check('lineage = same venue: Brussels = European Open October 2025+ only (never Antwerp ≤2024, never Hamburg July)', () => {
