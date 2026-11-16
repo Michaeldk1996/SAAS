@@ -1,18 +1,18 @@
 {
- "generatedAt": "2026-11-16T21:21:01.688Z",
+ "generatedAt": "2026-11-16T21:39:49.438Z",
  "tournaments": [
   {
    "key": "2794",
    "season": "2026",
    "name": "Finals - Turin",
    "file": "news-ticker/2794-2026.json",
-   "items": 8,
+   "items": 9,
    "byType": {
-    "quote": 5,
-    "report": 3
+    "report": 4,
+    "quote": 5
    },
-   "latestTimestamp": "2026-11-16T17:31:05.000Z",
-   "updatedAt": "2026-11-16T19:21:56.715Z"
+   "latestTimestamp": "2026-11-16T21:23:30.496Z",
+   "updatedAt": "2026-11-16T21:39:49.438Z"
   },
   {
    "key": "tour",
@@ -24,7 +24,7 @@
     "quote": 128
    },
    "latestTimestamp": "2026-11-16T17:25:00.000Z",
-   "updatedAt": "2026-11-16T21:21:01.688Z"
+   "updatedAt": "2026-11-16T21:39:49.438Z"
   },
   {
    "key": "1681",
@@ -54,6 +54,138 @@
   }
  ],
  "latest": [
+  {
+   "id": "report-12179701",
+   "type": "report",
+   "playerId": "1093",
+   "opponentId": "372",
+   "player": "D. Medvedev",
+   "opponent": "F. Cobolli",
+   "tournament": "Finals - Turin",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "stage": "main draw",
+   "round": null,
+   "eventKey": "12179701",
+   "timestamp": "2026-11-16T21:23:30.496Z",
+   "timestampKind": "observed",
+   "observed": {
+    "endedAt": "2026-11-16T21:23:30.496Z",
+    "startedAt": "2026-11-16T19:58:09.586Z",
+    "minutes": 85
+   },
+   "category": "Statistics",
+   "text": "Medvedev beat Cobolli for the 3rd time in 4 meetings, 7-6, 6-3.\n\nMedvedev: W: 17 / UE: 18 | DR: 1.86\n\nCobolli: W: 14 / UE: 20 | DR: 0.54",
+   "baseText": "Medvedev beat Cobolli for the 3rd time in 4 meetings, 7-6, 6-3.",
+   "rating": [
+    "Medvedev: W: 17 / UE: 18 | DR: 1.86",
+    "Cobolli: W: 14 / UE: 20 | DR: 0.54"
+   ],
+   "fields": {
+    "score": "7-6, 6-3",
+    "round": null,
+    "retired": false,
+    "h2h": {
+     "a": 3,
+     "b": 1,
+     "n": 4
+    },
+    "durationMinutes": 85,
+    "facts": {
+     "tiebreakSets": [
+      {
+       "set": 1,
+       "winner": "p1"
+      }
+     ],
+     "longestRun": {
+      "side": "p1",
+      "n": 4,
+      "set": 2,
+      "from": {
+       "me": 2,
+       "opp": 3
+      },
+      "afterBeingBroken": false,
+      "toTheEnd": true
+     }
+    },
+    "standouts": [
+     {
+      "player": "winner",
+      "tone": "good",
+      "metric": "firstIn",
+      "value": 76,
+      "baseline": 62,
+      "scope": "last52",
+      "surface": "Hard",
+      "n": 52
+     },
+     {
+      "player": "winner",
+      "tone": "good",
+      "metric": "firstWon",
+      "value": 83,
+      "won": 34,
+      "total": 41
+     },
+     {
+      "player": "winner",
+      "tone": "good",
+      "metric": "secondWon",
+      "value": 69,
+      "won": 9,
+      "total": 13,
+      "baseline": 50,
+      "scope": "last52",
+      "surface": "Hard",
+      "n": 52
+     },
+     {
+      "player": "winner",
+      "tone": "good",
+      "metric": "breakPoints",
+      "saved": 0,
+      "faced": 0
+     },
+     {
+      "player": "loser",
+      "tone": "bad",
+      "metric": "secondWon",
+      "value": 42,
+      "won": 10,
+      "total": 24,
+      "baseline": 52,
+      "scope": "last52",
+      "surface": "Hard",
+      "n": 31
+     }
+    ],
+    "winner": {
+     "aces": 9,
+     "winners": 17,
+     "unforcedErrors": 18,
+     "breakPointsSaved": 0,
+     "breakPointsFaced": 0,
+     "breakPointsSource": "point-by-point"
+    },
+    "loser": {
+     "aces": 6,
+     "winners": 14,
+     "unforcedErrors": 20,
+     "breakPointsSaved": 6,
+     "breakPointsFaced": 8,
+     "breakPointsSource": "box score"
+    }
+   },
+   "sourceName": "Stennisfy match data (api-tennis box score and point-by-point)",
+   "sourceUrl": "pbp/12179701.json",
+   "language": "en",
+   "translated": false,
+   "sourceHash": "ac57aa730788504a",
+   "publishedAt": "2026-11-16T21:39:49.438Z",
+   "file": "news-ticker/2794-2026.json"
+  },
   {
    "id": "quote-0a079538e2173b",
    "type": "quote",
@@ -769,17 +901,10 @@
    "verbatimCheckedOn": "the clip's audio, transcribed by the interviews worker",
    "interview": "on-court",
    "topic": "On his unusual year",
-   "alsoReportedBy": [
-    {
-     "sourceName": "TSN",
-     "sourceUrl": "https://www.tsn.ca/tennis/article/alcaraz-dominates-tiafoe-in-atp-finals-opener-extends-winning-streak-to-10-matches/",
-     "language": "en"
-    }
-   ],
-   "sourceHash": "75e3de25a606c4a3",
+   "sourceHash": "a2414e37810e1f8d",
    "publishedAt": "2026-11-16T15:56:20.689Z",
-   "revisedAt": "2026-11-16T21:21:01.688Z",
-   "revision": 1,
+   "revisedAt": "2026-11-16T21:39:49.438Z",
+   "revision": 2,
    "file": "news-ticker/tour-2026.json"
   },
   {
@@ -1636,37 +1761,6 @@
    "topic": "On representing Spain at the Davis Cup Final 8",
    "sourceHash": "1cc28ba6691cba70",
    "publishedAt": "2026-11-15T21:31:32.182Z",
-   "file": "news-ticker/tour-2026.json"
-  },
-  {
-   "id": "quote-6d7f0062d70c0f",
-   "type": "quote",
-   "playerId": "1980",
-   "opponentId": null,
-   "player": "A. Zverev",
-   "opponent": null,
-   "tournament": "ATP Tour",
-   "tournamentKey": "tour",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-15T18:36:41.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Interviews",
-   "context": null,
-   "eventKey": null,
-   "won": null,
-   "text": "No, because it’s noise that you hear. It’s noise that you hear from the side. I don’t really recognize that. I think I played a fantastic season.",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "Tennis Majors",
-   "sourceUrl": "https://www.tennismajors.com/atp/nitto-atp-finals-atp/hes-a-robot-not-a-human-being-zverev-on-sinner-and-his-record-against-the-top-10-867061.html",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "topic": "On criticism of his record against top-10 players",
-   "sourceHash": "c752c8970d07395b",
-   "publishedAt": "2026-11-15T19:26:04.081Z",
    "file": "news-ticker/tour-2026.json"
   }
  ]

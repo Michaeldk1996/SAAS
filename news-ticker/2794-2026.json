@@ -2,8 +2,139 @@
  "tournament": "Finals - Turin",
  "tournamentKey": "2794",
  "season": "2026",
- "updatedAt": "2026-11-16T19:21:56.715Z",
+ "updatedAt": "2026-11-16T21:39:49.438Z",
  "items": [
+  {
+   "id": "report-12179701",
+   "type": "report",
+   "playerId": "1093",
+   "opponentId": "372",
+   "player": "D. Medvedev",
+   "opponent": "F. Cobolli",
+   "tournament": "Finals - Turin",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "stage": "main draw",
+   "round": null,
+   "eventKey": "12179701",
+   "timestamp": "2026-11-16T21:23:30.496Z",
+   "timestampKind": "observed",
+   "observed": {
+    "endedAt": "2026-11-16T21:23:30.496Z",
+    "startedAt": "2026-11-16T19:58:09.586Z",
+    "minutes": 85
+   },
+   "category": "Statistics",
+   "text": "Medvedev beat Cobolli for the 3rd time in 4 meetings, 7-6, 6-3.\n\nMedvedev: W: 17 / UE: 18 | DR: 1.86\n\nCobolli: W: 14 / UE: 20 | DR: 0.54",
+   "baseText": "Medvedev beat Cobolli for the 3rd time in 4 meetings, 7-6, 6-3.",
+   "rating": [
+    "Medvedev: W: 17 / UE: 18 | DR: 1.86",
+    "Cobolli: W: 14 / UE: 20 | DR: 0.54"
+   ],
+   "fields": {
+    "score": "7-6, 6-3",
+    "round": null,
+    "retired": false,
+    "h2h": {
+     "a": 3,
+     "b": 1,
+     "n": 4
+    },
+    "durationMinutes": 85,
+    "facts": {
+     "tiebreakSets": [
+      {
+       "set": 1,
+       "winner": "p1"
+      }
+     ],
+     "longestRun": {
+      "side": "p1",
+      "n": 4,
+      "set": 2,
+      "from": {
+       "me": 2,
+       "opp": 3
+      },
+      "afterBeingBroken": false,
+      "toTheEnd": true
+     }
+    },
+    "standouts": [
+     {
+      "player": "winner",
+      "tone": "good",
+      "metric": "firstIn",
+      "value": 76,
+      "baseline": 62,
+      "scope": "last52",
+      "surface": "Hard",
+      "n": 52
+     },
+     {
+      "player": "winner",
+      "tone": "good",
+      "metric": "firstWon",
+      "value": 83,
+      "won": 34,
+      "total": 41
+     },
+     {
+      "player": "winner",
+      "tone": "good",
+      "metric": "secondWon",
+      "value": 69,
+      "won": 9,
+      "total": 13,
+      "baseline": 50,
+      "scope": "last52",
+      "surface": "Hard",
+      "n": 52
+     },
+     {
+      "player": "winner",
+      "tone": "good",
+      "metric": "breakPoints",
+      "saved": 0,
+      "faced": 0
+     },
+     {
+      "player": "loser",
+      "tone": "bad",
+      "metric": "secondWon",
+      "value": 42,
+      "won": 10,
+      "total": 24,
+      "baseline": 52,
+      "scope": "last52",
+      "surface": "Hard",
+      "n": 31
+     }
+    ],
+    "winner": {
+     "aces": 9,
+     "winners": 17,
+     "unforcedErrors": 18,
+     "breakPointsSaved": 0,
+     "breakPointsFaced": 0,
+     "breakPointsSource": "point-by-point"
+    },
+    "loser": {
+     "aces": 6,
+     "winners": 14,
+     "unforcedErrors": 20,
+     "breakPointsSaved": 6,
+     "breakPointsFaced": 8,
+     "breakPointsSource": "box score"
+    }
+   },
+   "sourceName": "Stennisfy match data (api-tennis box score and point-by-point)",
+   "sourceUrl": "pbp/12179701.json",
+   "language": "en",
+   "translated": false,
+   "sourceHash": "ac57aa730788504a",
+   "publishedAt": "2026-11-16T21:39:49.438Z"
+  },
   {
    "id": "quote-0a079538e2173b",
    "type": "quote",
